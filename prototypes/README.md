@@ -6,7 +6,10 @@ jsDelivr CDN, so they need internet access. Start at [index.html](index.html).
 
 | Page | Shows |
 | --- | --- |
-| `home.html` | Home: play a friend, play the computer (three levels), puzzles |
+| `home-board.html` | Home, take A: the board first, with labelled buttons beside it |
+| `home-cards.html` | Home, take B: three solid cards with scenes made of pieces |
+| `home-menu.html` | Home, take C: a title menu over the photograph and a 3D board |
+| `home.html` | Home, the first take: three glass tiles with icons only |
 | `game.html` | The game: a selected piece and its capture, a forced capture, the side panel |
 | `puzzles.html` | The puzzle picker: three theme rows of ten, with 0 to 3 stars |
 | `solved.html` | A solved puzzle: stars over the dimmed board |
@@ -15,11 +18,14 @@ jsDelivr CDN, so they need internet access. Start at [index.html](index.html).
 
 Shared parts: `kabe.css` (theme tokens, glass, buttons, board, pieces, light) and
 `kabe.js` (the season's background and the glass over it, the board in 2D and 3D,
-icons). The background is the season's master from `design/backgrounds/masters/`, which
-is local and out of git ([its README](../design/backgrounds/README.md) says how to make
-it); without it the pages paint a stand-in. A switcher at the bottom right of every page
-changes the season, board theme (auto follows the season), view, king style, and font,
-also as URL parameters: `game.html?season=winter&theme=sea&view=3d&king=stack&font=tenor`.
+icons). Behind the 2D board is a flat tabletop in the theme's color, painted by
+`kabe.js`. Behind the 3D board (and with `?bg=photo`) is the season's master from
+`design/backgrounds/masters/`, which is local and out of git
+([its README](../design/backgrounds/README.md) says how to make it); without it the
+pages paint a stand-in. A switcher at the bottom right of every page
+changes the season, board theme (auto follows the season), view, king style, background,
+and font, also as URL parameters:
+`game.html?season=winter&theme=sea&view=3d&king=stack&bg=photo&font=tenor`.
 
 Prototypes only use what the native renderer can draw cheaply: rounded rects, SDF
 circles, gradients, one pre-blurred background for glass (see

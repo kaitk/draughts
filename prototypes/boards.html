@@ -14,9 +14,8 @@
   .row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
   figure { margin: 0; display: grid; gap: 10px; justify-items: center; }
   figure > div { width: 100%; }
-  figure.wide { grid-column: span 2; }
   figcaption { color: var(--fg-dim); }
-  @media (orientation: portrait) { .row { grid-template-columns: repeat(2, minmax(0, 1fr)); } figure.wide { grid-column: span 2; } }
+  
 </style>
 </head>
 <body>
@@ -32,16 +31,16 @@
   };
   const SEASON = { wood: 'autumn', stone: 'winter', birch: 'spring', sea: 'summer' };
   const root = document.getElementById('boards');
-  function section(title, note, items) {
+  function section(title, note, items, cols = 4) {
     const sec = document.createElement('section');
     sec.innerHTML = `<h2>${title} <span>${note}</span></h2>`;
     const row = document.createElement('div');
     row.className = 'row';
+    row.style.gridTemplateColumns = `repeat(${Math.min(cols, innerWidth > innerHeight ? 4 : 2)}, minmax(0, 1fr))`;
     sec.appendChild(row);
     root.appendChild(sec);
     for (const it of items) {
       const fig = document.createElement('figure');
-      if (it.wide) fig.className = 'wide';
       fig.innerHTML = `<div></div><figcaption>${it.caption}</figcaption>`;
       row.appendChild(fig);
       Kabe.board(fig.firstChild, it.opts);
@@ -60,8 +59,10 @@
   section('10×10', '', [
     { caption: '2D', opts: { n: 10, white: w, black: b } },
     { caption: '3D', opts: { n: 10, white: w, black: b, view: '3d' } },
-    { caption: 'the 3D king, close', wide: true, opts: { n: 4, white: ['b1'], black: ['c2', 'a3'], kings: ['b1', 'a3'], view: '3d', selected: 'b1' } },
-  ]);
+  ], 2);
+  section('The 3D king, close', '', [
+    { caption: 'a stack of two, the crown on top', opts: { n: 4, white: ['b1'], black: ['c2', 'a3'], kings: ['b1', 'a3'], view: '3d', selected: 'b1' } },
+  ], 2);
 </script>
 </body>
 </html>

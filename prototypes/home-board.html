@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="et">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kabe: home, board first</title>
+<link rel="stylesheet" href="kabe.css">
+<script src="kabe.js"></script>
+<style>
+  /* Take A: the board is the home. The game in progress (or a fresh one) stands where
+     it will be played, and the choices are labelled buttons beside it: continue, a
+     friend, the computer with its level, puzzles with progress. One tap from home to
+     the game, and the board is never far away. */
+  .home {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 40px;
+    height: 100%;
+    padding: 24px 48px 24px 24px;
+  }
+  #board { width: calc(100vh - 48px); }
+  .side { display: grid; gap: 16px; align-content: center; max-width: 420px; }
+  h1 { margin: 0 0 12px; font-size: 64px; font-weight: 400; letter-spacing: 0.04em; }
+  .row {
+    --r: 24px;
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    align-items: center;
+    gap: 16px;
+    min-height: 88px;
+    padding: 0 22px;
+    color: var(--fg);
+    text-decoration: none;
+    font-size: 24px;
+  }
+  .row .icon { width: 40px; height: 40px; stroke-width: 2.2; }
+  .row small { display: block; color: var(--fg-dim); font-size: 16px; margin-top: 2px; }
+  .row.primary { background: color-mix(in srgb, var(--glow) 26%, transparent); border-radius: var(--r);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--glow) 55%, transparent); }
+  .levels { display: flex; gap: 8px; }
+  .levels span { width: 34px; height: 34px; border-radius: 12px; display: grid; place-items: center;
+    font-size: 16px; background: rgb(255 255 255 / 0.08); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16); }
+  .levels span.on { background: color-mix(in srgb, var(--glow) 30%, transparent); box-shadow: inset 0 0 0 1px var(--glow); }
+  .stars { display: flex; align-items: center; gap: 4px; color: var(--glow); font-size: 18px; }
+  .stars .icon { width: 18px; height: 18px; }
+  @media (orientation: portrait) {
+    .home { grid-template-columns: 1fr; grid-template-rows: auto 1fr; padding: 24px; gap: 24px; }
+    #board { width: calc(100vw - 48px); }
+    .side { max-width: none; align-content: start; }
+    h1 { display: none; }
+  }
+</style>
+</head>
+<body>
+<main class="home">
+  <div id="board"></div>
+  <div class="side">
+    <h1>Kabe</h1>
+    <a class="row primary" href="game.html"><span data-icon="next"></span><span>Jätka mängu<small>Valge käik · 12. käik</small></span><span></span></a>
+    <a class="row glass" href="game.html"><span data-icon="friend"></span><span>Mängi sõbraga<small>Kaks mängijat, üks laud</small></span><span></span></a>
+    <a class="row glass" href="game.html"><span data-icon="computer"></span><span>Mängi arvutiga</span>
+      <span class="levels"><span>1</span><span class="on">2</span><span>3</span></span></a>
+    <a class="row glass" href="puzzles.html"><span data-icon="puzzle"></span><span>Ülesanded<small>Püüa, krooni, pääse</small></span>
+      <span class="stars" id="stars"></span></a>
+  </div>
+</main>
+<script>
+  Kabe.init();
+  Kabe.board(document.getElementById('board'), {
+    white: ['a1', 'c1', 'e1', 'g1', 'b2', 'f2', 'h2', 'c3', 'e3', 'd4', 'h6'],
+    black: ['b8', 'd8', 'f8', 'h8', 'a7', 'c7', 'b6', 'e5', 'g5'],
+    kings: ['h6'], last: ['h4', 'g5'],
+  });
+  document.getElementById('stars').innerHTML = Kabe.icon('star') + '<span>23 / 90</span>';
+</script>
+</body>
+</html>

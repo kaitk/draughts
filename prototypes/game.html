@@ -9,7 +9,7 @@
 <style>
   .game {
     --gap: 24px;
-    --panel: 230px;
+    --panel: 272px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -23,12 +23,15 @@
   .panel {
     display: grid;
     justify-items: center;
-    gap: 18px;
+    align-content: center;
+    gap: 22px;
     width: var(--panel);
-    padding: 22px 20px;
+    height: min(100vh - 2 * var(--gap), 100vw - var(--panel) - 3 * var(--gap));
+    padding: 24px;
   }
   .panel .rule { width: 100%; height: 1px; background: rgb(255 255 255 / 0.18); }
-  .controls { display: grid; grid-template-columns: repeat(2, var(--target)); gap: 14px; }
+  .controls { display: grid; grid-template-columns: repeat(2, 104px); grid-auto-rows: 104px; gap: 16px; }
+  .controls .button svg { width: 50px; height: 50px; }
   .turn { display: grid; place-items: center; width: var(--target); height: var(--target); }
   /* The side to move: a piece of its color with a glow ring, no text. */
   .turn .piece { --u: 6px; position: relative; inset: auto; width: 64px; height: 64px;
@@ -39,9 +42,10 @@
   @media (orientation: portrait) {
     .game { --panel: 220px; flex-direction: column; }
     #board { width: min(100vw - 2 * var(--gap), 100vh - var(--panel) - 3 * var(--gap)); }
-    .panel { width: min(100vw - 2 * var(--gap), 100vh - var(--panel) - 3 * var(--gap)); padding: 18px 24px 22px; }
+    .panel { width: min(100vw - 2 * var(--gap), 100vh - var(--panel) - 3 * var(--gap)); height: auto; gap: 18px; padding: 18px 24px 22px; }
     .panel .rule { display: none; }
-    .controls { grid-template-columns: repeat(4, var(--target)); gap: 24px; }
+    .controls { grid-template-columns: repeat(4, var(--target)); grid-auto-rows: var(--target); gap: 24px; }
+    .controls .button svg { width: 44px; height: 44px; }
   }
 </style>
 </head>

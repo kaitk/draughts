@@ -31,6 +31,7 @@ const Kabe = (() => {
     theme: pick('theme', THEMES, SEASON_THEME[season]),
     view: pick('view', ['2d', '3d'], '2d'),
     king: pick('king', KINGS, 'auto'),
+    bg: pick('bg', ['auto', 'table', 'photo'], 'auto'),
     font: FONTS[params.get('font')] ? params.get('font') : 'libertinus',
   };
 
@@ -51,8 +52,42 @@ const Kabe = (() => {
     return `'${f.family}', sans-serif`;
   }
 
-  // The background: the season's master from design/backgrounds/masters/ (local, out of
-  // git; its README says how to make it). Without it, a painted stand-in.
+  // The background. For the 2D board, a flat tabletop in the theme's color: the board
+  // reads cleanest on a calm surface. For 3D (and with ?bg=photo), the season's
+  // photograph from design/backgrounds/masters/ (local, out of git; its README says how
+  // to make it), or a painted stand-in without it.
+  const TABLES = { wood: '#3a2c22', stone: '#25313e', birch: '#2a382f', sea: '#1e3838' };
+
+  // A tabletop: the color, a little lighter under the board, darker toward the edges,
+  // with a faint fine texture like matte cloth. Natively: one full-screen shader.
+  function paintTable(theme, w, h) {
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    const g = c.getContext('2d');
+    g.fillStyle = TABLES[theme];
+    g.fillRect(0, 0, w, h);
+    const r = Math.hypot(w, h) / 2;
+    const v = g.createRadialGradient(w * 0.45, h * 0.45, 0, w * 0.5, h * 0.5, r);
+    v.addColorStop(0, 'rgb(255 255 255 / 0.07)');
+    v.addColorStop(0.55, 'rgb(255 255 255 / 0)');
+    v.addColorStop(1, 'rgb(0 0 0 / 0.35)');
+    g.fillStyle = v;
+    g.fillRect(0, 0, w, h);
+    const img = g.getImageData(0, 0, w, h);
+    let seed = 11;
+    for (let i = 0; i < img.data.length; i += 4) {
+      seed = (seed * 16807) % 2147483647;
+      const n = ((seed / 2147483647) - 0.5) * 7;
+      img.data[i] += n; img.data[i + 1] += n; img.data[i + 2] += n;
+    }
+    g.putImageData(img, 0, 0);
+    return c.toDataURL('image/jpeg', 0.9);
+  }
+
+  function useTable() {
+    return settings.bg === 'table' || (settings.bg === 'auto' && settings.view === '2d');
+  }
   const SCENE_FILE = (s) => `../design/backgrounds/masters/${s}-01-2048.jpg`;
   let sceneAspect = 1;  // width / height of the scene image
 
@@ -97,6 +132,10 @@ const Kabe = (() => {
   }
 
   function loadScene() {
+    if (useTable()) {
+      setScene(paintTable(settings.theme, 1280, Math.round(1280 * innerHeight / innerWidth)), innerWidth / innerHeight);
+      return;
+    }
     const img = new Image();
     img.onload = () => setScene(img.src, img.naturalWidth / img.naturalHeight);
     img.onerror = () => setScene(paintScene(settings.season, 1280, 1280), 1);
@@ -206,6 +245,7 @@ const Kabe = (() => {
     el.innerHTML = select('season', SEASONS, settings.season) +
       select('theme', ['auto', ...THEMES], params.has('theme') ? settings.theme : 'auto') +
       select('view', ['2d', '3d'], settings.view) + select('king', KINGS, settings.king) +
+      select('bg', ['auto', 'table', 'photo'], settings.bg) +
       select('font', Object.keys(FONTS), settings.font);
     el.addEventListener('change', (e) => {
       const { key } = e.target.dataset;
@@ -220,7 +260,7 @@ const Kabe = (() => {
     document.documentElement.style.setProperty('--font', loadFont(settings.font));
     document.body.classList.add(`theme-${settings.theme}`);
     loadScene();
-    addEventListener('resize', syncGlass);
+    addEventListener('resize', () => (useTable() ? loadScene() : syncGlass()));
     addEventListener('scroll', syncGlass, true);
     addEventListener('load', syncGlass);
     document.fonts.ready.then(syncGlass);
@@ -230,5 +270,5 @@ const Kabe = (() => {
     });
   }
 
-  return { settings, FONTS, THEMES, SEASON_THEME, icon, board, init, loadFont, syncGlass, kingStyle };
+  return { settings, FONTS, THEMES, SEASON_THEME, icon, board, init, loadFont, syncGlass, kingStyle, ICONS };
 })();
