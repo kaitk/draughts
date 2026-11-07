@@ -3,11 +3,12 @@
 // the screen showing and switches when that asks: home's continue opens the game, a
 // friend and the computer open a new game's setup in home's column, whose play starts
 // the game; settings opens from home and from the game and goes back where it came from.
-// It holds the settings, keeps the game's move hints in step with them, and says when
-// they changed, for the app to write and apply; and where the board goes this frame, if
-// anywhere, turned when the child plays black, and whether the photograph behind it is
-// sharp, for the app to draw. A game against the computer plays at the skill kept for
-// its level, which each finished game moves (ai::adapt). Tests run it headless.
+// It holds the settings, keeps the game's move hints and kings in step with them, and
+// says when they changed, for the app to write and apply; and where the board goes this
+// frame, turned when the child plays black, and whether the photograph behind it is
+// sharp, for the app to draw. Settings show their own board, the preview, beside them.
+// A game against the computer plays at the skill kept for its level, which each
+// finished game moves (ai::adapt). Tests run it headless.
 namespace shell;
 import std;
 import vec;
@@ -28,19 +29,20 @@ let SETTINGS = 2;
 struct Shell {
     screen:  i64 = HOME,
     game:    game::Game,
+    preview: board::Board,                    // the board beside settings, as they make it
     prefs:   settings::Settings = settings::Settings {},
     changed: bool               = false,      // prefs changed since the app last wrote them
     drawn:   i64                = -1,         // the screen the last frame declared
     back:    i64                = HOME,       // where settings goes back to
     setup:   i64                = home::NOTHING, // home's column: the menu, or a setup
     layout:  board::Layout,                   // where the board is this frame
-    board:   bool = true,                     // whether there is a board this frame
     sharp:   bool = true,                     // the photograph as it is (home, settings), or blurred (the game)
 }
 
 fn new(variant: u8) -> Shell {
     let g = game::new(variant);
-    return Shell { game: g, layout: board::layout(1.0, 1.0, rules::VARIANTS[variant].size), .. };
+    return Shell { game: g, preview: board::new(variant), layout: board::layout(1.0, 1.0, rules::VARIANTS[variant].size),
+                   .. };
 }
 
 // One frame, after gui::begin, on a screen width × height pixels. Returns whether
@@ -50,13 +52,13 @@ fn frame(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> bool {
     // new one is a change, however long ago the tap was.
     let fresh = sh.drawn != sh.screen;
     sh.drawn = sh.screen;
-    let changed = declare(sh, g, width, height, now);
+    let changed = declare(sh, g, width, height, now, fresh);
     return changed || fresh;
 }
 
-fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> bool {
+fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, fresh: bool) -> bool {
+    sh.game.b.king_look = settings::king_look(sh.prefs);
     let n = rules::VARIANTS[sh.game.b.variant].size;
-    sh.board = true;
     if sh.screen == GAME {
         sh.layout = board::layout(width, height, n);
         sh.layout.flip = sh.game.computer == rules::WHITE;
@@ -85,18 +87,21 @@ fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> bool 
     // Time away from the game screen isn't on the clock.
     game::pause(sh.game);
     sh.sharp = true;
-    var changed = board::update(sh.game.b, now) || g.input.pressed || g.input.released;
+    var changed = g.input.pressed || g.input.released;
     if sh.screen == SETTINGS {
-        sh.board = false;
-        sh.game.overlay.clear();
-        let ask = settings::frame(sh.prefs, g, width, height, strings::current);
+        // The preview shows the settings as they are on opening and after each change.
+        if fresh { settings::stage(sh.preview, sh.prefs, now); }
+        changed = board::update(sh.preview, now) || changed;
+        let ask = settings::frame(sh.prefs, sh.game, g, sh.layout, width, height, strings::current);
         if ask == settings::CHANGED {
             sh.game.b.hints = sh.prefs.hints;
+            settings::stage(sh.preview, sh.prefs, now);
             sh.changed = true;
         }
         if ask == settings::BACK { sh.screen = sh.back; }
         return changed || ask != settings::NOTHING;
     }
+    changed = board::update(sh.game.b, now) || changed;
     let pick = home::frame(sh.game, g, sh.layout, width, height, sh.setup, sh.prefs);
     // The board is turned for a child playing black against the computer.
     sh.layout.flip = sh.game.computer == rules::WHITE;
@@ -218,5 +223,6 @@ fn restore(sh: Shell&, file: const u8[:]) -> bool {
 // Whether anything is still moving at `now`; the app draws while it is.
 fn animating(sh: Shell&, g: gui::Gui&, now: f64) -> bool {
     return if sh.screen == GAME { game::animating(sh.game, g, now) }
+           else if sh.screen == SETTINGS { board::animating(sh.preview, now) || gui::animating(g) }
            else { board::animating(sh.game.b, now) || gui::animating(g) };
 }

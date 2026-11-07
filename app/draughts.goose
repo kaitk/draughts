@@ -240,9 +240,15 @@ fn main() {
             dirty = true;
         }
         if dirty || shell::animating(sh, g, now) {
-            board::fill(b, l, now);
+            // Settings show their preview; the other screens the game's board.
+            let preview = sh.screen == shell::SETTINGS;
+            if preview { board::fill(sh.preview, l, now); } else { board::fill(b, l, now); }
             widgets::upload(w, g);
-            draw::frame(d, b, gm.overlay, l, colors, sh.sharp, sh.board, now, size.x, size.y);
+            if preview {
+                draw::frame(d, sh.preview, gm.overlay, l, colors, sh.sharp, now, size.x, size.y);
+            } else {
+                draw::frame(d, b, gm.overlay, l, colors, sh.sharp, now, size.x, size.y);
+            }
             widgets::frame(w, g, d.scene, colors, size.x, size.y);
             draw::overlay(d, colors, now);
             gfx::end_pass();

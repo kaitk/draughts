@@ -96,7 +96,7 @@ fn frame(gm: game::Game&, g: gui::Gui&, l: board::Layout&, width: f32, height: f
     // the right.
     var mark = gui::cut_top(content, MARK_H * u);
     let piece = gui::cut_left(mark, 56.0 * u);
-    game::put(gm, float2 { piece.x + 0.5 * piece.z, piece.y + 0.5 * piece.w }, 28.0 * u, rules::WHITE, true,
+    game::put(gm, float2 { piece.x + 0.5 * piece.z, piece.y + 0.5 * piece.w }, 28.0 * u, rules::WHITE, board::CROWN,
               1.0, false);
     gui::cut_left(mark, 14.0 * u);
     var pick = NOTHING;
@@ -187,7 +187,7 @@ fn choose(gm: game::Game&, g: gui::Gui&, c: float4, computer: bool, s: settings:
             let tapped, pic = gui::pick(g, 350 + i, across(colors, 2, i, u), 30.0,
                                         strings::get(if i == 0 { strings::COLOR_WHITE } else { strings::COLOR_BLACK }), "",
                                         s.color == i, true);
-            game::put(gm, float2 { pic.x + 0.5 * pic.z, pic.y + 0.5 * pic.w }, 15.0 * u, i, false, 1.0, false);
+            game::put(gm, float2 { pic.x + 0.5 * pic.z, pic.y + 0.5 * pic.w }, 15.0 * u, i, 0, 1.0, false);
             if tapped {
                 s.color = i;
                 ask = CHANGED;

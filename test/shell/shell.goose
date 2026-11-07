@@ -1,8 +1,8 @@
 // The screens (shell/), headless, driven through the pointer as the app drives them:
 // the app opens at home with the board beside the menu; continue opens the game as it
 // stands and home on the panel returns home with the game kept; puzzles do nothing until
-// task 007; settings opens settings, with no board, and its back returns where it came
-// from, home or the game. A friend and the computer open a setup in home's column whose
+// task 007; settings opens settings, with their own board beside them, and its back
+// returns where it came from, home or the game. A friend and the computer open a setup in home's column whose
 // choices are kept in the settings and whose play starts that game over the old one;
 // against the computer playing white the board is turned, the game takes the skill kept
 // for its level and the number of games against the computer so far, which goes up, and
@@ -103,7 +103,7 @@ fn main() {
     gui::begin(g, gui::Input { at: off, .. }, 1.0, 3.0);
     let first = shell::frame(sh, g, W, H, 3.0);
     gui::begin(g, gui::Input { at: off, .. }, 1.0, 3.1);
-    print("settings: ", screen(sh), ", board ", sh.board, ", sharp ", sh.sharp, ", its first frame drawn ", first,
+    print("settings: ", screen(sh), ", board at ", sh.layout.board, ", sharp ", sh.sharp, ", its first frame drawn ", first,
           ", the next ", shell::frame(sh, g, W, H, 3.1));
     tap(sh, g, tile(g, 0), 3.2);            // back
     print("back from settings: ", screen(sh));

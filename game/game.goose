@@ -268,9 +268,9 @@ fn animating(gm: Game&, g: gui::Gui&, now: f64) -> bool {
     return board::animating(gm.b, now) || gui::animating(g) || celebrating || gm.asking != 0;
 }
 
-// A piece of `side` over the UI at c with radius r, at opacity a, crowned or not, with
-// a glow ring right round it or not.
-fn put(gm: Game&, c: float2, r: f32, side: i64, king: bool, a: f32, ring: bool) {
+// A piece of `side` over the UI at c with radius r, at opacity a, a man (0) or a king
+// as board::CROWN or board::STACK draws it, with a glow ring right round it or not.
+fn put(gm: Game&, c: float2, r: f32, side: i64, king: i64, a: f32, ring: bool) {
     panel::piece(gm.overlay, c, r, side, king, a, if ring { 1.0 } else { 0.0 });
 }
 
@@ -306,7 +306,7 @@ fn celebrate(gm: Game&, g: gui::Gui&, l: board::Layout, won: i64, now: f64) -> i
     let k = clamp(t / POP, 0.0, 1.0);
     let s = 1.0 + 2.70158 * pow(k - 1.0, 3.0) + 1.70158 * pow(k - 1.0, 2.0);
     let grow = 0.3 + 0.7 * s;
-    put(gm, float2 { spot.x + 0.5 * spot.z, spot.y + 0.5 * spot.w }, 44.0 * u * grow as f32, won, true, clamp(2.0 * k, 0.0, 1.0) as f32, true);
+    put(gm, float2 { spot.x + 0.5 * spot.z, spot.y + 0.5 * spot.w }, 44.0 * u * grow as f32, won, gm.b.king_look, clamp(2.0 * k, 0.0, 1.0) as f32, true);
     // Sparks over the board: each starts at its own time and place, drifts 160 dp up
     // easing out, fading in over the first fifth and out over the rest.
     for i in SPARKS {

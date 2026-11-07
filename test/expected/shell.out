@@ -3,16 +3,16 @@ the wordmark's piece: 1, crowned 1.0, no ring true
 continue: game, sharp false, board at vec4<f32> { 280.0, 40.0, 720.0, 11.52 }, glyphs 43, W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 0
 home: home, sharp true, board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, glyphs 57, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
 puzzles: home, sharp true, board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, glyphs 57, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
-settings: settings, board false, sharp true, its first frame drawn true, the next false
+settings: settings, board at vec4<f32> { 688.79504, 129.04501, 541.91, 8.67056 }, sharp true, its first frame drawn true, the next false
 back from settings: home
 settings from the game: settings
 back from settings: game, sharp false, board at vec4<f32> { 280.0, 40.0, 720.0, 11.52 }, glyphs 43, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
-a friend's setup: home, tiles 8, small boards 3, season = by-date;board = 2d;hints = mistakes;language = system;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0;
-Russian, 5+3: changed true, season = by-date;board = 2d;hints = mistakes;language = system;draughts = russian;level = medium;color = white;clock = 5+3;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0;
+a friend's setup: home, tiles 8, small boards 3, season = by-date;board = 2d;hints = mistakes;kings = auto;language = system;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0;
+Russian, 5+3: changed true, season = by-date;board = 2d;hints = mistakes;kings = auto;language = system;draughts = russian;level = medium;color = white;clock = 5+3;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0;
 back: setup 0, home
 play: game, 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, clock 1, computer -1, level 1, skill 45, number 0, turned false
 the computer's setup: tiles 13, pieces over the UI 2
-play: game, 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, clock 2, computer 0, level 2, skill 90, number 0, turned true; season = by-date;board = 2d;hints = mistakes;language = system;draughts = russian;level = hard;color = black;clock = 10+5;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 1;
+play: game, 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, clock 2, computer 0, level 2, skill 90, number 0, turned true; season = by-date;board = 2d;hints = mistakes;kings = auto;language = system;draughts = russian;level = hard;color = black;clock = 10+5;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 1;
 home: the computer's row notes hard; glyphs 55, turned true
 portrait: board vec4<f32> { 80.0, 66.0, 640.0, 10.240001 }, sheet from 772.0, clear true
 portrait setup: board vec4<f32> { 164.0, 40.0, 472.0, 7.5520005 }, sheet from 552.0, clear true

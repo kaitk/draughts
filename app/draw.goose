@@ -15,7 +15,7 @@ struct BoardUniforms {
     screen: float4,     // width, height in pixels, time, squares per side
     rect:   float4,     // the board: x, y, size, corner radius
     inner:  float4,     // the squares: x, y, size, one square
-    scene:  float4,     // x: 1 when there is a photograph; y: how bright it is shown; z: 1 for no board; w: 1 turned
+    scene:  float4,     // x: 1 when there is a photograph; y: how bright it is shown; w: 1 turned
     wrong:  float4,     // a wrong move's square (y * size + x, or -1), and how far its flash is, 0..1
     marks:  board::Marks,
 }
@@ -84,11 +84,6 @@ let BOARD_FRAG = """
             : page.rgb;
         vec2 bc = rect.xy + 0.5 * rect.z;
         vec2 bh = vec2(0.5 * rect.z);
-        // A screen without a board shows only the photograph.
-        if (scene.z > 0.5) {
-            result = vec4(c, 1.0);
-            return;
-        }
         // A soft shadow under the board, a little down.
         float sd = box(px, bc + vec2(0.0, 1.4 * u), bh - u, rect.w);
         c *= 1.0 - 0.55 * (1.0 - smoothstep(-3.6 * u, 3.6 * u, sd));
@@ -169,6 +164,12 @@ let BOARD_FRAG = """
     }
     """;
 
+// A stacked king's upper disc sits 1.3% of the board above the lower one, as deep as
+// that: the side's 0.55% times this.
+let STACK_BLOCK = """
+    const float STACK = 2.3636;
+    """;
+
 let PIECE_VERT = """
     layout(std430, set = 0, binding = 0) readonly buffer Pieces { vec4 p[]; };
     layout(set = 1, binding = 0) uniform View { vec4 screen; };
@@ -184,9 +185,10 @@ let PIECE_VERT = """
         float r = at.z;
         float lift = at.w / r;
         float side = screen.z;
-        // A quad around the disc in units of its radius, room for the lift, the
-        // side, the rings, and the shadow.
-        vec2 l = mix(vec2(-1.9, -1.9 - lift), vec2(1.9, 2.1 + side), CORNERS[gl_VertexIndex]);
+        // A quad around the disc in units of its radius, room for the lift, a stacked
+        // king's upper disc, the side, the rings, and the shadow.
+        float up = p[i + 1].y > 1.5 ? STACK * side : 0.0;
+        vec2 l = mix(vec2(-1.9, -1.9 - lift - up), vec2(1.9, 2.1 + side), CORNERS[gl_VertexIndex]);
         vec2 px = at.xy + l * r;
         gl_Position = vec4(px.x / screen.x * 2.0 - 1.0, 1.0 - px.y / screen.y * 2.0, 0.0, 1.0);
         v_local = l;
@@ -198,8 +200,8 @@ let PIECE_VERT = """
 
 let PIECE_FRAG = """
     layout(location = 0) in vec2 v_local;
-    layout(location = 1) flat in vec4 v_look;     // black, king, selected, opacity
-    layout(location = 2) flat in vec4 v_extra;    // must capture, lift, side, one pixel
+    layout(location = 1) flat in vec4 v_look;     // black, king (0, 1 crown, 2 stack), selected, opacity
+    layout(location = 2) flat in vec4 v_extra;    // must capture (1 pulsing, 2 still), lift, side, one pixel
     layout(location = 3) flat in vec4 v_ring;     // y: a glow ring tight round it, 0 to 1
     layout(location = 0) out vec4 result;
     layout(set = 3, binding = 1) uniform Clock { vec4 time; };
@@ -273,38 +275,48 @@ let PIECE_FRAG = """
         over(vec3(0.0), 0.3 * (1.0 - smoothstep(-0.08, 0.06, d1)) * (1.0 - smoothstep(0.0, 0.2, lift)));
         vec2 f = (p + vec2(0.0, lift)) / scale;
         float r = length(f);
-        vec2 dir = f / max(r, 0.001);
         if (sel > 0.0) over(glow.rgb, sel * 0.4 * exp(-max(r - 1.0, 0.0) * 5.0));
-        // The thin side under the face, rounder in the middle, darkest at its foot.
-        float sy = f.y - clamp(f.y, 0.0, side / scale);
-        float foot = clamp((f.y - sqrt(max(1.0 - f.x * f.x, 0.0))) / (side / scale), 0.0, 1.0);
-        vec3 sc = sidec * (0.8 + 0.25 * sqrt(max(1.0 - f.x * f.x, 0.0))) * (1.0 - 0.25 * foot);
-        over(sc, fill(length(vec2(f.x, sy)) - 1.0, w));
-        // The top is flat and matte, as a turned disc's is: one color and one height,
-        // with a narrow groove cut into it at 70% of the radius and only the outer edge
-        // rounded. The light from above catches the outer edge's upper side softly; in
-        // the groove, which is concave, it catches the wall that faces it, nearer the
-        // center on the top half, and leaves the far wall in shade.
-        vec3 col = tint(face, -0.02 * f.y);
-        float l = shoulder(r, 0.86, 1.0, dir.y);
-        col = lit(col, l > 0.0 ? (black ? 1.0 : 1.2) * l : (black ? 0.28 : 0.4) * l);
-        float g = groove(r, 0.63, 0.76, dir.y);
-        col = lit(col, g > 0.0 ? (black ? 0.4 : 0.5) * g : (black ? 0.6 : 1.2) * g);
-        col = lit(col, -(black ? 0.3 : 0.45) * (1.0 - smoothstep(0.0, 0.05, abs(r - 0.695))));
-        if (v_look.y > 0.5) {
-            vec3 cc = black ? vec3(0.914, 0.769, 0.416) : crown_w.rgb;
-            col = mix(col, cc, fill(0.56 * crown(f / 0.56), w));
+        // A man or a crowned king is one disc; a stacked king two plain ones, the upper
+        // one as deep as it sits above the lower.
+        bool stack = v_look.y > 1.5;
+        for (int k = 0; k < 2; k++) {
+            if (k == 1 && !stack) break;
+            float up = k == 1 ? STACK * side : 0.0;
+            float depth = (k == 1 ? up : side) / scale;
+            f = (p + vec2(0.0, lift + up)) / scale;
+            r = length(f);
+            vec2 dir = f / max(r, 0.001);
+            // The thin side under the face, rounder in the middle, darkest at its foot.
+            float sy = f.y - clamp(f.y, 0.0, depth);
+            float foot = clamp((f.y - sqrt(max(1.0 - f.x * f.x, 0.0))) / depth, 0.0, 1.0);
+            vec3 sc = sidec * (0.8 + 0.25 * sqrt(max(1.0 - f.x * f.x, 0.0))) * (1.0 - 0.25 * foot);
+            over(sc, fill(length(vec2(f.x, sy)) - 1.0, w));
+            // The top is flat and matte, as a turned disc's is: one color and one height,
+            // with a narrow groove cut into it at 70% of the radius and only the outer
+            // edge rounded. The light from above catches the outer edge's upper side
+            // softly; in the groove, which is concave, it catches the wall that faces it,
+            // nearer the center on the top half, and leaves the far wall in shade.
+            vec3 col = tint(face, -0.02 * f.y);
+            float l = shoulder(r, 0.86, 1.0, dir.y);
+            col = lit(col, l > 0.0 ? (black ? 1.0 : 1.2) * l : (black ? 0.28 : 0.4) * l);
+            float g = groove(r, 0.63, 0.76, dir.y);
+            col = lit(col, g > 0.0 ? (black ? 0.4 : 0.5) * g : (black ? 0.6 : 1.2) * g);
+            col = lit(col, -(black ? 0.3 : 0.45) * (1.0 - smoothstep(0.0, 0.05, abs(r - 0.695))));
+            if (v_look.y > 0.5 && !stack) {
+                vec3 cc = black ? vec3(0.914, 0.769, 0.416) : crown_w.rgb;
+                col = mix(col, cc, fill(0.56 * crown(f / 0.56), w));
+            }
+            over(col, fill(r - 1.0, w));
         }
-        over(col, fill(r - 1.0, w));
         // Selected: a ring in the glow color a little out from the piece.
         if (sel > 0.0) {
             float rd = abs(r - 1.13) - 0.055;
             over(glow.rgb, sel * 0.6 * exp(-max(rd, 0.0) * 7.0));
             over(mix(glow.rgb, vec3(1.0), 0.25), sel * fill(rd, w));
         }
-        // Must capture: a red ring that pulses every 1.4 s.
+        // Must capture: a red ring that pulses every 1.4 s, or stays at its brightest.
         if (v_extra.x > 0.5) {
-            float ph = 0.5 - 0.5 * cos(time.x * 6.2831853 / 1.4);
+            float ph = v_extra.x > 1.5 ? 0.0 : 0.5 - 0.5 * cos(time.x * 6.2831853 / 1.4);
             float rr = 1.15 * (0.94 + 0.14 * ph);
             float op = 0.95 - 0.55 * ph;
             vec3 red = vec3(1.0, 0.353, 0.29);
@@ -332,8 +344,8 @@ struct Drawer {
 fn new(kind: i64) -> Drawer {
     let full = embed_shader("vert", FULL_VERT);
     let board_fs = embed_shader("frag", THEME_BLOCK, BOARD_FRAG);
-    let piece_vs = embed_shader("vert", PIECE_VERT);
-    let piece_fs = embed_shader("frag", THEME_BLOCK, PIECE_FRAG);
+    let piece_vs = embed_shader("vert", STACK_BLOCK, PIECE_VERT);
+    let piece_fs = embed_shader("frag", THEME_BLOCK, STACK_BLOCK, PIECE_FRAG);
     var d = Drawer {
         full:           full,
         board_pipeline: gfx::pipeline(full, board_fs, gfx::PipelineDesc {}),
@@ -354,10 +366,10 @@ fn new(kind: i64) -> Drawer {
 
 // Draws one frame of the board as fill() left it, into the screen's pass, which it
 // leaves open for the UI; the caller ends it. The pieces in `over` are copied now and
-// drawn by overlay(), after the UI. `sharp` shows the photograph as it is (home),
-// otherwise blurred and dimmed (the game); without `shown`, only the photograph.
+// drawn by overlay(), after the UI. `sharp` shows the photograph as it is (home,
+// settings), otherwise blurred and dimmed (the game).
 fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::Layout,
-         t: theme::Theme, sharp: bool, shown: bool, now: f64, width: f32, height: f32) {
+         t: theme::Theme, sharp: bool, now: f64, width: f32, height: f32) {
     for i in b.pieces.len { d.upload[i] = b.pieces[i]; }
     gfx::update_buffer(d.pieces, bytes_of(d.upload));
     d.over_count = min(over.len, MAX_OVERLAY);
@@ -371,8 +383,7 @@ fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::La
     gfx::uniforms(gfx::FRAGMENT, 1, BoardUniforms {
         screen: float4 { width, height, now as f32, l.n },
         rect:   l.board, inner: l.inner,
-        scene: float4 { if d.scene.has { 1.0 } else { 0.0 }, if sharp { 1.0 } else { 0.8 }, if shown { 0.0 } else { 1.0 },
-                       if l.flip { 1.0 } else { 0.0 } },
+        scene:  float4 { if d.scene.has { 1.0 } else { 0.0 }, if sharp { 1.0 } else { 0.8 }, 0.0, if l.flip { 1.0 } else { 0.0 } },
         wrong: b.flash, marks: b.marks });
     gfx::bind_texture(gfx::FRAGMENT, 0, if sharp { d.scene.sharp } else { d.scene.photo }, d.scene.sampler);
     gfx::draw(3);
@@ -381,7 +392,7 @@ fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::La
     gfx::uniforms(gfx::VERTEX, 0, d.view);
     gfx::uniforms(gfx::FRAGMENT, 0, t);
     gfx::uniforms(gfx::FRAGMENT, 1, Clock { time: float4 { now as f32, 0.0, 0.0, 0.0 } });
-    gfx::draw_instanced(6, if shown { b.pieces.len } else { 0 });
+    gfx::draw_instanced(6, b.pieces.len);
 }
 
 // Swaps the scene for theme `kind`'s.

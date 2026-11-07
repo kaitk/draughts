@@ -26,12 +26,12 @@ let WIDE_H = 80.0;          // take back in portrait
 let CLOCK_H = 72.0;
 let OVER = 4;               // pieces over the UI: two clocks and the winner, at most
 
-// A piece of `side` over the UI at c with radius r, at opacity a, crowned or not, with
-// a glow ring right round it as strong as `ring`, 0 to 1.
-fn piece(over: board::Piece[..OVER]&, c: float2, r: f32, side: i64, king: bool, a: f32, ring: f32) {
+// A piece of `side` over the UI at c with radius r, at opacity a, a man (0) or a king
+// (board::CROWN, board::STACK), with a glow ring right round it as strong as `ring`, 0
+// to 1.
+fn piece(over: board::Piece[..OVER]&, c: float2, r: f32, side: i64, king: i64, a: f32, ring: f32) {
     guard over.len < OVER else { return; }
-    let k = if king { 1.0 } else { 0.0 };
-    over.push(board::Piece { at: float4 { c.x, c.y, r, 0.0 }, look: float4 { side, k, 0.0, a },
+    over.push(board::Piece { at: float4 { c.x, c.y, r, 0.0 }, look: float4 { side, king, 0.0, a },
                              ring: float4 { 0.0, ring, 0.0, 0.0 } });
 }
 
@@ -46,7 +46,7 @@ fn clock_of(g: gui::Gui&, r: float4, c: clock::Clock&, side: i64, ring: f32, ove
     gui::cut_left(room, 14.0 * u);
     gui::cut_right(room, 14.0 * u);
     let spot = gui::cut_left(room, 44.0 * u);
-    piece(over, float2 { spot.x + 0.5 * spot.z, spot.y + 0.5 * spot.w }, 22.0 * u, side, false,
+    piece(over, float2 { spot.x + 0.5 * spot.z, spot.y + 0.5 * spot.w }, 22.0 * u, side, 0,
           if runs { 1.0 } else { 0.7 }, ring);
     var t: u8[..8] = [];
     clock::text(clock::shown(c, side), t);
@@ -94,7 +94,7 @@ fn game(g: gui::Gui&, l: board::Layout, c: clock::Clock&, side: i64, won: bool, 
             // The piece, its glow ring, and the words under it.
             gui::cut_top(right, 18.0 * u);
             let spot = gui::cut_top(right, 72.0 * u);
-            piece(over, float2 { spot.x + 0.5 * spot.z, spot.y + 0.5 * spot.w }, 36.0 * u, side, false, 1.0, glow);
+            piece(over, float2 { spot.x + 0.5 * spot.z, spot.y + 0.5 * spot.w }, 36.0 * u, side, 0, 1.0, glow);
             gui::cut_top(right, 18.0 * u);
             let f .= g.faces[gui::HEADING];
             gui::text(g, gui::HEADING, gui::cut_top(right, f.ascent - f.descent), strings::get(turn_key), 1.0, 0.0,
@@ -128,7 +128,7 @@ fn game(g: gui::Gui&, l: board::Layout, c: clock::Clock&, side: i64, won: bool, 
         let span = 52.0 * u + 18.0 * u + gui::text_width(g, gui::HEADING, label, 0.0);
         var row = gui::center(top, span, top.w);
         let spot = gui::cut_left(row, 52.0 * u);
-        piece(over, float2 { spot.x + 0.5 * spot.z, spot.y + 0.5 * spot.w }, 26.0 * u, side, false, 1.0, glow);
+        piece(over, float2 { spot.x + 0.5 * spot.z, spot.y + 0.5 * spot.w }, 26.0 * u, side, 0, 1.0, glow);
         gui::cut_left(row, 18.0 * u);
         gui::text(g, gui::HEADING, row, label, 1.0, 0.0, gui::LEFT);
     }

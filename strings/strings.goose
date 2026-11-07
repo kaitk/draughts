@@ -16,11 +16,13 @@ let KEYS = [
     "language.name", "app.name",
     "home.continue", "home.friend", "home.computer", "home.puzzles", "home.settings",
     "level.easy", "level.medium", "level.hard",
-    "settings.background", "settings.by_date", "settings.board", "settings.hints",
-    "settings.language",
+    "settings.game", "settings.look", "settings.tutorial",
+    "settings.background", "settings.by_date", "settings.board", "settings.hints", "settings.kings",
     "season.winter", "season.spring", "season.summer", "season.autumn",
     "hints.mistakes", "hints.moves",
-    "board.flat", "board.raised",
+    "board.flat", "board.flat_note", "board.raised", "board.raised_note",
+    "kings.auto", "kings.auto_note", "kings.crown", "kings.stack",
+    "tutorial.learn",
     "game.home", "game.start_over", "game.take_back",
     "turn.white", "turn.black", "won.white", "won.black",
     "setup.draughts", "setup.level", "setup.color", "setup.clock", "setup.play",
@@ -39,47 +41,57 @@ let HOME_SETTINGS = 6;
 let LEVEL_EASY = 7;
 let LEVEL_MEDIUM = 8;
 let LEVEL_HARD = 9;
-let SETTINGS_BACKGROUND = 10;
-let SETTINGS_BY_DATE = 11;
-let SETTINGS_BOARD = 12;
-let SETTINGS_HINTS = 13;
-let SETTINGS_LANGUAGE = 14;
-let SEASON_WINTER = 15;
-let SEASON_SPRING = 16;
-let SEASON_SUMMER = 17;
-let SEASON_AUTUMN = 18;
-let HINTS_MISTAKES = 19;
-let HINTS_MOVES = 20;
-let BOARD_FLAT = 21;
-let BOARD_RAISED = 22;
-let GAME_HOME = 23;
-let GAME_START_OVER = 24;
-let GAME_TAKE_BACK = 25;
-let TURN_WHITE = 26;
-let TURN_BLACK = 27;
-let WON_WHITE = 28;
-let WON_BLACK = 29;
-let SETUP_DRAUGHTS = 30;
-let SETUP_LEVEL = 31;
-let SETUP_COLOR = 32;
-let SETUP_CLOCK = 33;
-let SETUP_PLAY = 34;
-let VARIANT_INTERNATIONAL = 35;
-let VARIANT_BRAZILIAN = 36;
-let VARIANT_RUSSIAN = 37;
-let SIZE_10 = 38;
-let SIZE_8 = 39;
-let PICK_EASY = 40;
-let PICK_MEDIUM = 41;
-let PICK_HARD = 42;
-let COLOR_WHITE = 43;
-let COLOR_BLACK = 44;
-let CLOCK_NONE = 45;
-let CLOCK_BLITZ = 46;
-let CLOCK_BLITZ_NOTE = 47;
-let CLOCK_RAPID = 48;
-let CLOCK_RAPID_NOTE = 49;
-let COUNT = 50;
+let SETTINGS_GAME = 10;
+let SETTINGS_LOOK = 11;
+let SETTINGS_TUTORIAL = 12;
+let SETTINGS_BACKGROUND = 13;
+let SETTINGS_BY_DATE = 14;
+let SETTINGS_BOARD = 15;
+let SETTINGS_HINTS = 16;
+let SETTINGS_KINGS = 17;
+let SEASON_WINTER = 18;
+let SEASON_SPRING = 19;
+let SEASON_SUMMER = 20;
+let SEASON_AUTUMN = 21;
+let HINTS_MISTAKES = 22;
+let HINTS_MOVES = 23;
+let BOARD_FLAT = 24;
+let BOARD_FLAT_NOTE = 25;
+let BOARD_RAISED = 26;
+let BOARD_RAISED_NOTE = 27;
+let KINGS_AUTO = 28;
+let KINGS_AUTO_NOTE = 29;
+let KINGS_CROWN = 30;
+let KINGS_STACK = 31;
+let TUTORIAL_LEARN = 32;
+let GAME_HOME = 33;
+let GAME_START_OVER = 34;
+let GAME_TAKE_BACK = 35;
+let TURN_WHITE = 36;
+let TURN_BLACK = 37;
+let WON_WHITE = 38;
+let WON_BLACK = 39;
+let SETUP_DRAUGHTS = 40;
+let SETUP_LEVEL = 41;
+let SETUP_COLOR = 42;
+let SETUP_CLOCK = 43;
+let SETUP_PLAY = 44;
+let VARIANT_INTERNATIONAL = 45;
+let VARIANT_BRAZILIAN = 46;
+let VARIANT_RUSSIAN = 47;
+let SIZE_10 = 48;
+let SIZE_8 = 49;
+let PICK_EASY = 50;
+let PICK_MEDIUM = 51;
+let PICK_HARD = 52;
+let COLOR_WHITE = 53;
+let COLOR_BLACK = 54;
+let CLOCK_NONE = 55;
+let CLOCK_BLITZ = 56;
+let CLOCK_BLITZ_NOTE = 57;
+let CLOCK_RAPID = 58;
+let CLOCK_RAPID_NOTE = 59;
+let COUNT = 60;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

@@ -24,6 +24,11 @@ let MAX_HISTORY = 512;      // moves undo can take back; the oldest go first
 let MISTAKES = 0;
 let MOVES = 1;
 
+// How a king is drawn (rendering.md, "Kings"): a crown on its face, or a stack of two
+// plain discs. A piece's look.y is 0 for a man or one of these.
+let CROWN = 1;
+let STACK = 2;
+
 // Where things go, in pixels. `scale` is pixels per dp: the prototypes' 800 px short side.
 struct Layout {
     scale: f32,
@@ -118,8 +123,8 @@ fn center(l: Layout, v: rules::Variant&, b: i64) -> float2 {
 // the storage buffer the piece shader pulls from.
 struct Piece {
     at:   float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x, y center in pixels, radius, lift in pixels
-    look: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // black (0 or 1), king (0 or 1), selected glow 0..1, opacity
-    ring: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: must-capture ring; y: a glow ring tight round it, 0 to 1
+    look: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // black (0 or 1), 0 or CROWN or STACK, selected glow 0..1, opacity
+    ring: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: must-capture ring, 1 pulsing, 2 still; y: a glow ring tight round it, 0 to 1
 }
 
 // What the board shader marks, one bit per square numbered y * size + x.
@@ -159,6 +164,12 @@ struct Board {
     wrong:     i64,             // the square of the last wrong move, a bit, or -1
     wrong_at:  f64,
     hint:      i64,             // the move a hint shows, an index into moves, or -1
+    king_look: i64,             // CROWN or STACK
+    // A picture rather than a game (settings' preview): once a wrong move's ring has
+    // flashed, it stays, and once the pieces that must capture have pulsed, their rings
+    // stay, lit and still (`held`), so the picture needs no frames after.
+    still: bool,
+    held:  bool,
     // A press on a piece, and whether it became a drag.
     pressed:  i64,
     press_at: float2,
@@ -171,7 +182,7 @@ struct Board {
 }
 
 fn new(variant: u8) -> Board {
-    var b = Board { variant: variant, selected: -1, wrong: -1, hint: -1, pressed: -1, .. };
+    var b = Board { variant: variant, selected: -1, wrong: -1, hint: -1, king_look: CROWN, pressed: -1, .. };
     set(b, rules::start(variant));
     return b;
 }
@@ -183,6 +194,7 @@ fn show(b: Board&, p: rules::Position) {
     b.selected = -1;
     b.moving = false;
     b.wrong = -1;
+    b.held = false;
     b.pulse_end = 0.0;
     b.pressed = -1;
     b.dragging = false;
@@ -280,6 +292,7 @@ fn must_capture(b: Board&) -> bool { b.moves.len > 0 && b.moves[0].captured != 0
 fn mistake(b: Board&, sq: i64, now: f64) {
     b.wrong = sq;
     b.wrong_at = now;
+    b.held = false;
     if must_capture(b) { b.pulse_end = now + PULSE; }
 }
 
@@ -373,8 +386,8 @@ fn update(b: Board&, now: f64) -> bool {
         b.pulse_end = 0.0;
         ended = true;
     }
-    if b.wrong >= 0 && now >= b.wrong_at + FLASH {
-        b.wrong = -1;
+    if b.wrong >= 0 && !b.held && now >= b.wrong_at + FLASH {
+        if b.still { b.held = true; } else { b.wrong = -1; }
         ended = true;
     }
     return ended;
@@ -389,13 +402,15 @@ fn mark(b: Board&, bits: u32[4]&, sq: i64) {
     set_bit(bits, v.y_of[sq] * v.size + v.x_of[sq]);
 }
 
+// A piece to draw; `ring` is its must-capture ring: 0 none, 1 pulsing, 2 still.
 fn add(b: Board&, at: float2, r: f32, lift: f32, black: bool, king: bool, glow: f32,
-       alpha: f32, ring: bool) {
+       alpha: f32, ring: f32) {
     guard b.pieces.len < MAX_PIECES else { return; }
+    let look = if king { b.king_look } else { 0 };
     b.pieces.push(Piece {
         at:   float4 { at.x, at.y, r, lift },
-        look: float4 { if black { 1.0 } else { 0.0 }, if king { 1.0 } else { 0.0 }, glow, alpha },
-        ring: float4 { if ring { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0 } });
+        look: float4 { if black { 1.0 } else { 0.0 }, look, glow, alpha },
+        ring: float4 { ring, 0.0, 0.0, 0.0 } });
 }
 
 // Fills b.pieces and b.marks for the frame at `now`. Pieces go top row first, so a lower
@@ -409,8 +424,9 @@ fn fill(b: Board&, l: Layout, now: f64) {
     let shown = if b.moving { b.before } else { b.pos };
     let t = now - b.since;
     let pulsing = now < b.pulse_end;
+    let ring: f32 = if pulsing { 1.0 } else { 2.0 };
     var must: u64 = 0;
-    if pulsing && must_capture(b) {
+    if (pulsing || b.held) && must_capture(b) {
         for i in b.moves.len { must |= rules::bit(b.moves[i].from); }
     }
     let fade_at = hops(b.move) as f64 * HOP;
@@ -431,7 +447,7 @@ fn fill(b: Board&, l: Layout, now: f64) {
             }
             let selected = sq == b.selected;
             add(b, center(l, v, sq), r, if selected { 1.1 * unit } else { 0.0 }, black,
-                shown.kings & m != 0, if selected { 1.0 } else { 0.0 }, alpha, must & m != 0);
+                shown.kings & m != 0, if selected { 1.0 } else { 0.0 }, alpha, if must & m != 0 { ring } else { 0.0 });
         }
     }
     if b.moving {
@@ -457,10 +473,10 @@ fn fill(b: Board&, l: Layout, now: f64) {
             }
             if t >= n * HOP { king = true; }
         }
-        add(b, at, r, lift, b.before.side == rules::BLACK, king, 0.0, 1.0, false);
+        add(b, at, r, lift, b.before.side == rules::BLACK, king, 0.0, 1.0, 0.0);
     } else if b.dragging && b.selected >= 0 {
         add(b, b.drag_at, r * 1.06, 1.6 * unit, b.pos.side == rules::BLACK,
-            b.pos.kings & rules::bit(b.selected) != 0, 1.0, 1.0, false);
+            b.pos.kings & rules::bit(b.selected) != 0, 1.0, 1.0, 0.0);
     }
     if b.has_last && !b.moving {
         mark(b, b.marks.last, b.last.from);
@@ -468,8 +484,9 @@ fn fill(b: Board&, l: Layout, now: f64) {
     }
     b.flash = float4 { -1.0, 1.0, 0.0, 0.0 };
     if b.wrong >= 0 {
-        b.flash = float4 { v.y_of[b.wrong] * v.size + v.x_of[b.wrong],
-                           clamp((now - b.wrong_at) / FLASH, 0.0, 1.0) as f32, 0.0, 0.0 };
+        // Held, the ring stays as bright as its flash gets.
+        let t = if b.held { 0.2 } else { clamp((now - b.wrong_at) / FLASH, 0.0, 1.0) };
+        b.flash = float4 { v.y_of[b.wrong] * v.size + v.x_of[b.wrong], t as f32, 0.0, 0.0 };
     }
     if b.selected >= 0 && !b.moving {
         for i in b.moves.len {

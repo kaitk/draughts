@@ -14,11 +14,14 @@ level.easy = easy
 level.medium = medium
 level.hard = hard
 
+settings.game = Game
+settings.look = Look
+settings.tutorial = Tutorial
 settings.background = Background
 settings.by_date = By the date
 settings.board = Board
 settings.hints = Move hints
-settings.language = Language
+settings.kings = Kings
 
 season.winter = Winter
 season.spring = Spring
@@ -28,8 +31,17 @@ season.autumn = Autumn
 hints.mistakes = Mistakes only
 hints.moves = All moves
 
-board.flat = 2D
-board.raised = 3D
+board.flat = Flat
+board.flat_note = 2D
+board.raised = Raised
+board.raised_note = 3D
+
+kings.auto = Auto
+kings.auto_note = crown flat, stack raised
+kings.crown = Crown
+kings.stack = Stack
+
+tutorial.learn = Learn the moves
 
 game.home = Home
 game.start_over = Start over

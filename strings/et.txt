@@ -13,11 +13,14 @@ level.easy = kerge
 level.medium = keskmine
 level.hard = raske
 
+settings.game = Mäng
+settings.look = Välimus
+settings.tutorial = Õpetus
 settings.background = Taust
 settings.by_date = Kuupäeva järgi
 settings.board = Laud
 settings.hints = Vihjed
-settings.language = Keel
+settings.kings = Tammid
 
 season.winter = Talv
 season.spring = Kevad
@@ -27,8 +30,17 @@ season.autumn = Sügis
 hints.mistakes = Ainult vead
 hints.moves = Kõik käigud
 
-board.flat = 2D
-board.raised = 3D
+board.flat = Lame
+board.flat_note = 2D
+board.raised = Ruumiline
+board.raised_note = 3D
+
+kings.auto = Automaatne
+kings.auto_note = 2D kroon, 3D virn
+kings.crown = Kroon
+kings.stack = Virn
+
+tutorial.learn = Õpi käike
 
 game.home = Koju
 game.start_over = Alusta uuesti

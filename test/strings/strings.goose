@@ -10,9 +10,11 @@ let NAMED = [
     "language.name", "app.name", "home.continue", "home.friend", "home.computer",
     "home.puzzles", "home.settings", "level.easy", "level.medium",
     "level.hard", "settings.background", "settings.by_date", "settings.board",
-    "settings.hints", "settings.language", "season.winter", "season.spring",
+    "settings.hints", "settings.kings", "season.winter", "season.spring",
     "season.summer", "season.autumn", "hints.mistakes", "hints.moves", "board.flat",
-    "board.raised",
+    "board.raised", "settings.game", "settings.look", "settings.tutorial", "board.flat_note",
+    "board.raised_note", "kings.auto", "kings.auto_note", "kings.crown", "kings.stack",
+    "tutorial.learn",
 ];
 
 fn main() {
@@ -46,9 +48,13 @@ fn main() {
               strings::HOME_SETTINGS, strings::LEVEL_EASY,
               strings::LEVEL_MEDIUM, strings::LEVEL_HARD, strings::SETTINGS_BACKGROUND,
               strings::SETTINGS_BY_DATE, strings::SETTINGS_BOARD, strings::SETTINGS_HINTS,
-              strings::SETTINGS_LANGUAGE, strings::SEASON_WINTER, strings::SEASON_SPRING,
+              strings::SETTINGS_KINGS, strings::SEASON_WINTER, strings::SEASON_SPRING,
               strings::SEASON_SUMMER, strings::SEASON_AUTUMN, strings::HINTS_MISTAKES,
-              strings::HINTS_MOVES, strings::BOARD_FLAT, strings::BOARD_RAISED];
+              strings::HINTS_MOVES, strings::BOARD_FLAT, strings::BOARD_RAISED,
+              strings::SETTINGS_GAME, strings::SETTINGS_LOOK, strings::SETTINGS_TUTORIAL,
+              strings::BOARD_FLAT_NOTE, strings::BOARD_RAISED_NOTE, strings::KINGS_AUTO,
+              strings::KINGS_AUTO_NOTE, strings::KINGS_CROWN, strings::KINGS_STACK,
+              strings::TUTORIAL_LEARN];
     var wrong = 0;
     for k, i in ks {
         if strings::KEYS[k] != NAMED[i] {
