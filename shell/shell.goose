@@ -198,24 +198,18 @@ fn restore(sh: Shell&, file: const u8[:]) -> bool {
           && s.computer <= rules::BLACK && s.level >= game::EASY && s.level <= game::HARD
           && s.clock.kind >= 0 && s.clock.kind < clock::KINDS && s.skill >= 0 && s.skill <= 100
     else { return false; }
-    let b .= sh.game.b;
-    b.variant = s.variant;
+    // The game as started, then its board and clocks as they were.
+    let gm .= sh.game;
+    game::start(gm, s.variant, s.clock.kind, s.computer, s.level, s.skill, s.number);
+    let b .= gm.b;
     board::set(b, s.start);
     board::show(b, s.pos);
     b.history = s.history;
     b.has_last = s.has_last;
     b.last = rules::Move { from: s.last_from, to: s.last_to, .. };
-    sh.game.clock = s.clock;
-    sh.game.computer = s.computer;
-    sh.game.level = s.level;
-    sh.game.skill = s.skill;
-    sh.game.number = s.number;
-    sh.game.counted = s.counted;
-    sh.game.result = 0;
-    sh.game.asking = 0;
-    sh.game.turn = b.pos.side;
-    sh.game.won_at = -1.0;
-    sh.game.seen = -1.0;
+    gm.clock = s.clock;
+    gm.counted = s.counted;
+    gm.turn = b.pos.side;
     sh.screen = s.screen;
     return true;
 }
