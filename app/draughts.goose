@@ -113,7 +113,6 @@ fn main() {
     let prefs = settings::parse(prefs_text);
     if kind < 0 { kind = theme_for(prefs.season); }
     if hints < 0 { hints = prefs.hints; }
-    var colors = theme::get(kind);
     var locales: u8[256] = [0; 256];
     let system_lang = strings::pick(locales[..draughts_locales(locales)]);
     if lang < 0 { lang = if prefs.language >= 0 { prefs.language } else { system_lang }; }
@@ -182,10 +181,8 @@ fn main() {
         // (80 to 95 ms on the tablet) holds the thread.
         if season_in > 0 {
             season_in--;
-            if season_in == 0 && theme_for(sh.prefs.season) != kind {
-                kind = theme_for(sh.prefs.season);
-                colors = theme::get(kind);
-                draw::reload(d, kind);
+            if season_in == 0 && theme_for(sh.prefs.season) != d.kind {
+                draw::reload(d, theme_for(sh.prefs.season));
                 trim_memory();
                 dirty = true;
             }
@@ -218,7 +215,7 @@ fn main() {
             write_file_atomic(prefs_path, out);
             let next = if sh.prefs.language >= 0 { sh.prefs.language } else { system_lang };
             if next != strings::current { strings::use(next); }
-            if theme_for(sh.prefs.season) != kind { season_in = 2; }
+            if theme_for(sh.prefs.season) != d.kind { season_in = 2; }
             dirty = true;
         }
         if sh.screen == shell::SETTINGS && w.thumbs.id == 0 {
@@ -241,9 +238,9 @@ fn main() {
             let shown .= shell::shown(sh);
             board::fill(shown, l, now);
             widgets::upload(w, g);
-            draw::frame(d, shown, gm.overlay, l, colors, sh.sharp, now, size.x, size.y);
-            widgets::frame(w, g, d.scene, colors, size.x, size.y);
-            draw::overlay(d, colors, now);
+            draw::frame(d, shown, gm.overlay, l, sh.sharp, now, size.x, size.y);
+            widgets::frame(w, g, d.scene, d.colors, size.x, size.y);
+            draw::overlay(d, now);
             gfx::end_pass();
             dirty = false;
         }

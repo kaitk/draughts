@@ -333,6 +333,8 @@ struct Drawer {
     pieces:         gfx::Buffer,
     overlay:        gfx::Buffer,
     scene:          scene::Scene,
+    kind:           i64,             // the theme drawn (theme::WOOD..), whose scene is loaded
+    colors:         theme::Theme,
     // What goes into the buffers: always the whole of each, so SDL can cycle them.
     upload:      board::Piece[board::MAX_PIECES],
     over_upload: board::Piece[panel::OVER],     // the pieces drawn over the UI
@@ -353,6 +355,8 @@ fn new(kind: i64) -> Drawer {
         pieces:      gfx::Buffer { 0 },
         overlay:     gfx::Buffer { 0 },
         scene:       scene::load(kind, full),
+        kind:        kind,
+        colors:      theme::get(kind),
         upload:      [board::Piece {}; board::MAX_PIECES],
         over_upload: [board::Piece {}; panel::OVER],
         over_count:  0,
@@ -367,8 +371,9 @@ fn new(kind: i64) -> Drawer {
 // leaves open for the UI; the caller ends it. The pieces in `over` are copied now and
 // drawn by overlay(), after the UI. `sharp` shows the photograph as it is (home,
 // settings), otherwise blurred and dimmed (the game).
-fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::Layout,
-         t: theme::Theme, sharp: bool, now: f64, width: f32, height: f32) {
+fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::Layout, sharp: bool, now: f64,
+         width: f32, height: f32) {
+    let t = d.colors;
     for i in b.pieces.len { d.upload[i] = b.pieces[i]; }
     gfx::update_buffer(d.pieces, bytes_of(d.upload));
     d.over_count = min(over.len, panel::OVER);
@@ -394,15 +399,18 @@ fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::La
     gfx::draw_instanced(6, b.pieces.len);
 }
 
-// Swaps the scene for theme `kind`'s.
+// Swaps the theme and its scene for theme `kind`'s.
 fn reload(d: Drawer&, kind: i64) {
     scene::release(d.scene);
     d.scene = scene::load(kind, d.full);
+    d.kind = kind;
+    d.colors = theme::get(kind);
 }
 
 // Draws the pieces frame() was given for over the UI, in the open pass.
-fn overlay(d: Drawer&, t: theme::Theme, now: f64) {
+fn overlay(d: Drawer&, now: f64) {
     guard d.over_count > 0 else { return; }
+    let t = d.colors;
     gfx::bind(d.piece_pipeline);
     gfx::bind_storage_buffer(gfx::VERTEX, 0, d.overlay);
     gfx::uniforms(gfx::VERTEX, 0, d.view);
