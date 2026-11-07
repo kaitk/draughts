@@ -20,8 +20,9 @@ let DRAG_START = 10.0;      // dp a press moves before it becomes a drag
 // Where things go, in pixels. `scale` is pixels per dp: the prototypes' 800 px short side.
 struct Layout {
     scale: f32,
-    board: float4,      // x, y, size of the board with its frame; w: the corner radius
-    inner: float4,      // x, y, size of the squares; w: one square
+    board: float4,      // x, y, size of the board; w: the corner radius
+    inner: float4,      // x, y, size of the squares; w: one square (the 2D board has no
+    // frame, so they are the board; the 3D board's will have one)
     panel: float4,      // x, y, width, height of the space for the side panel
     n:     i64,         // squares per side
 }
@@ -37,19 +38,17 @@ fn layout(width: f32, height: f32, n: i64) -> Layout {
         let size = min(height - 2.0 * gap, width - panel - 3.0 * gap);
         let x = (width - (size + gap + panel)) / 2.0;
         let y = (height - size) / 2.0;
-        l.board = float4 { x, y, size, 0.022 * size };
+        l.board = float4 { x, y, size, 0.012 * size };
         l.panel = float4 { x + size + gap, y, panel, size };
     } else {
         let panel = 220.0 * s;
         let size = min(width - 2.0 * gap, height - panel - 3.0 * gap);
         let x = (width - size) / 2.0;
         let y = (height - (size + gap + panel)) / 2.0;
-        l.board = float4 { x, y, size, 0.022 * size };
+        l.board = float4 { x, y, size, 0.012 * size };
         l.panel = float4 { x, y + size + gap, size, panel };
     }
-    let frame = 0.024 * l.board.z;
-    let inner = l.board.z - 2.0 * frame;
-    l.inner = float4 { l.board.x + frame, l.board.y + frame, inner, inner / n };
+    l.inner = float4 { l.board.x, l.board.y, l.board.z, l.board.z / n };
     return l;
 }
 

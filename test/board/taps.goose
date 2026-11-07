@@ -49,10 +49,10 @@ fn main() {
     print("board ", l.board, " square ", l.inner.w, " panel ", l.panel);
     let p = board::layout(800.0, 1280.0, 8);
     print("portrait board ", p.board, " panel ", p.panel);
-    // The corners of the squares: a1 bottom left, h8 top right; the frame is no square.
+    // The corners of the squares: a1 bottom left, h8 top right; just off the board is no square.
     print("hits: ", name(v, board::hit(l, v, float2 { l.inner.x + 1.0, l.inner.y + l.inner.z - 1.0 })),
           " ", name(v, board::hit(l, v, float2 { l.inner.x + l.inner.z - 1.0, l.inner.y + 1.0 })),
-          " ", name(v, board::hit(l, v, float2 { l.board.x + 2.0, l.board.y + 2.0 })));
+          " ", name(v, board::hit(l, v, float2 { l.board.x - 2.0, l.board.y + l.board.z - 2.0 })));
 
     var b = board::new(rules::RUSSIAN);
     tap(b, l, "c3", 0.0);       // selects

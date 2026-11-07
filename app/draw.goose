@@ -1,7 +1,7 @@
-// Drawing the board: one full-screen pass for the page, the frame, and the squares with
-// their marks, worked out per pixel; then every piece in one instanced draw that pulls
-// its piece from a storage buffer (docs/architecture/rendering.md). Both light the scene
-// with one key light from the top left ("Light").
+// Drawing the board: one full-screen pass for the blurred photograph and the squares
+// with their marks, worked out per pixel; then every piece in one instanced draw that
+// pulls its piece from a storage buffer (docs/architecture/rendering.md, "Look"). The
+// board is flat; only the pieces have a soft light.
 namespace draw;
 import std;
 import vec;
@@ -13,9 +13,10 @@ import .scene;
 // The board pass's uniforms, std140.
 struct BoardUniforms {
     screen: float4,     // width, height in pixels, time, squares per side
-    rect:   float4,     // the board with its frame: x, y, size, corner radius
+    rect:   float4,     // the board: x, y, size, corner radius
     inner:  float4,     // the squares: x, y, size, one square
     scene:  float4,     // x: 1 when there is a photograph
+    wrong:  float4,     // a wrong move's square (y * size + x, or -1), and how far its flash is, 0..1
     marks:  board::Marks,
 }
 
@@ -42,7 +43,8 @@ let BOARD_FRAG = """
     layout(location = 0) in vec2 v_uv;
     layout(location = 0) out vec4 result;
     layout(set = 3, binding = 1) uniform BoardUniforms {
-        vec4 screen; vec4 rect; vec4 inner; vec4 scene; uvec4 last; uvec4 target; uvec4 via;
+        vec4 screen; vec4 rect; vec4 inner; vec4 scene; vec4 wrong;
+        uvec4 last; uvec4 target; uvec4 via;
     };
     layout(set = 2, binding = 0) uniform sampler2D photo;
     float box(vec2 p, vec2 c, vec2 h, float r) {
@@ -54,7 +56,21 @@ let BOARD_FRAG = """
         return ((w >> uint(n & 31)) & 1u) != 0u;
     }
     float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float noise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
+                   mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+    }
     vec3 tint(vec3 c, float a) { return a > 0.0 ? mix(c, vec3(1.0), a) : mix(c, vec3(0.0), -a); }
+    // A ring of radius r and half width w around a point d pixels away, with a glow
+    // that falls off over g pixels.
+    vec3 ring(vec3 c, vec3 col, float d, float r, float w, float g, float a) {
+        float rd = abs(d - r) - w;
+        c = mix(c, col, a * 0.45 * exp(-max(rd, 0.0) / g));
+        return mix(c, col, a * clamp(0.5 - rd, 0.0, 1.0));
+    }
     void main() {
         vec2 px = vec2(v_uv.x, 1.0 - v_uv.y) * screen.xy;
         float u = rect.z * 0.01;                // 1% of the board
@@ -66,75 +82,64 @@ let BOARD_FRAG = """
             : page.rgb;
         vec2 bc = rect.xy + 0.5 * rect.z;
         vec2 bh = vec2(0.5 * rect.z);
-        // The board's shadow falls down and to the right, away from the light.
-        float sd = box(px, bc + vec2(1.2, 2.4) * u, bh - u, rect.w);
-        c *= 1.0 - 0.7 * (1.0 - smoothstep(-2.0 * u, 3.0 * u, sd));
+        // A soft shadow under the board, a little down.
+        float sd = box(px, bc + vec2(0.0, 1.4 * u), bh - u, rect.w);
+        c *= 1.0 - 0.55 * (1.0 - smoothstep(-3.6 * u, 3.6 * u, sd));
         float fd = box(px, bc, bh, rect.w);
         if (fd < 1.0) {
-            // The frame: lighter toward the light, bevelled at its outer edge.
-            vec2 f = (px - rect.xy) / rect.z;
-            float diag = 0.5 * (f.x + f.y);
-            vec3 fr = mix(tint(frame.rgb, 0.14), frame.rgb, smoothstep(0.0, 0.4, diag));
-            fr = mix(fr, frame.rgb * 0.75, smoothstep(0.4, 1.0, diag));
-            vec2 dir = normalize(px - bc + 0.001);
-            float lit = dot(dir, vec2(-0.7071));
-            float edge = 1.0 - smoothstep(0.0, 0.6 * u, -fd);
-            fr = tint(fr, edge * (lit > 0.0 ? 0.22 * lit : 0.35 * lit));
-            vec3 col = fr;
-            vec2 ic = inner.xy + 0.5 * inner.z;
-            float id = box(px, ic, vec2(0.5 * inner.z), u);
-            if (id < 1.0) {
-                int n = int(screen.w);
-                vec2 q = (px - inner.xy) / inner.w;
-                ivec2 cell = clamp(ivec2(floor(q)), ivec2(0), ivec2(n - 1));
-                int x = cell.x;
-                int y = n - 1 - cell.y;
-                vec2 fq = fract(q);
-                vec3 s = ((x + y) & 1) == 0 ? dark.rgb : light.rgb;
-                // The square's surface.
-                int k = int(kind.x);
-                float a = 0.0;
-                if (k == 0) {
-                    // Wood: fine grain that wanders, a light-to-dark sweep across.
-                    float g = fract((px.x + 1.6 * u * sin(px.y / (9.0 * u) + float(x * 7 + y * 3)))
-                                    / (0.75 * u) + hash(vec2(cell)));
-                    a += g < 0.24 ? -0.07 : (g > 0.62 && g < 0.78 ? 0.04 : 0.0);
-                    a += mix(0.05, -0.07, fq.x);
-                } else if (k == 1) {
-                    // Stone: two soft patches.
-                    a += 0.09 * (1.0 - smoothstep(0.0, 0.55, length(fq - vec2(0.3, 0.25))));
-                    a -= 0.07 * (1.0 - smoothstep(0.0, 0.5, length(fq - vec2(0.75, 0.8))));
-                } else if (k == 2) {
-                    // Birch: faint fibre across, and the sheen.
-                    a += fract(px.y / (0.9 * u)) < 0.13 ? 0.05 : 0.0;
-                    a += mix(0.06, -0.05, 0.5 * (fq.x + fq.y));
-                } else {
-                    a += mix(0.06, -0.05, 0.5 * (fq.x + fq.y));
-                }
-                s = tint(s, a);
-                int sq = y * n + x;
-                if (has(last, sq)) s = mix(s, glow.rgb, 0.16);
-                // The pool of light, warm toward the top left, dark in the far corner.
-                vec2 g2 = (px - inner.xy) / inner.z;
-                float t = length((g2 - vec2(0.22, 0.18)) / 1.3);
-                s = mix(s, vec3(1.0, 0.97, 0.9), 0.22 * (1.0 - smoothstep(0.0, 0.45, t)));
-                s *= 1.0 - 0.4 * smoothstep(0.45, 1.0, t);
-                // A soft shadow where the squares meet the frame.
-                s *= 1.0 - 0.35 * exp(-max(-id, 0.0) / (0.7 * u));
-                // A legal target: a glowing dot; a capture's stop: a ring.
-                float r = length(fq - 0.5) * inner.w;
-                if (has(target, sq)) {
-                    s += glow.rgb * 0.6 * exp(-max(r - 0.15 * inner.w, 0.0) / (1.2 * u));
-                    s = mix(s, glow.rgb, 0.9 * clamp(0.15 * inner.w - r + 0.5, 0.0, 1.0));
-                }
-                if (has(via, sq)) {
-                    float rd = abs(r - 0.18 * inner.w) - 0.25 * u;
-                    s += glow.rgb * 0.4 * exp(-max(rd, 0.0) / u);
-                    s = mix(s, glow.rgb, clamp(0.5 - rd, 0.0, 1.0));
-                }
-                col = mix(fr, s, clamp(0.5 - id, 0.0, 1.0));
+            int n = int(screen.w);
+            vec2 q = (px - inner.xy) / inner.w;
+            ivec2 cell = clamp(ivec2(floor(q)), ivec2(0), ivec2(n - 1));
+            int x = cell.x;
+            int y = n - 1 - cell.y;
+            vec2 fq = fract(q);
+            bool dk = ((x + y) & 1) == 0;
+            vec3 s = dk ? dark.rgb : light.rgb;
+            // The square's faint surface: never busy.
+            int k = int(kind.x);
+            float h = hash(vec2(cell));
+            float a = 0.0;
+            if (k == 0) {
+                // Wood: fine grain along the board's height that wanders a little, and
+                // each square's own tone.
+                float gx = px.x / u + 0.5 * sin(px.y / (6.0 * u) + 6.28 * h) + 37.0 * h;
+                float g = 0.55 * sin(gx * 2.3) + 0.3 * sin(gx * 5.9 + 1.7) +
+                          0.6 * (noise(vec2(gx * 1.4, px.y / (5.0 * u))) - 0.5);
+                a += (dk ? 0.035 : 0.045) * g + 0.04 * (h - 0.5);
+            } else if (k == 1) {
+                // Stone: faint paper-like mottling.
+                vec2 m = px / u;
+                float f = 0.6 * noise(m * 0.45 + 13.0 * h) + 0.4 * noise(m * 1.3);
+                a += 0.07 * (f - 0.5);
+            } else if (k == 2) {
+                // Birch: a hint of fibre across.
+                a += 0.03 * (noise(vec2(px.x / (3.0 * u), px.y / (0.35 * u))) - 0.5);
+            } else {
+                a += 0.02 * (noise(px / (2.0 * u)) - 0.5);
             }
-            c = mix(c, col, clamp(0.5 - fd, 0.0, 1.0));
+            // Where squares meet: a hair of light on each square's top edge.
+            float e = fq.y * inner.w;
+            a += 0.04 * (1.0 - smoothstep(0.0, 0.18 * u, e));
+            s = tint(s, a);
+            int sq = y * n + x;
+            if (has(last, sq)) s = mix(s, glow.rgb, 0.16);
+            // A legal target: a glowing dot; a capture's stop: a ring.
+            float r = length(fq - 0.5) * inner.w;
+            if (has(target, sq)) {
+                s += glow.rgb * 0.5 * exp(-max(r - 0.15 * inner.w, 0.0) / (1.2 * u));
+                s = mix(s, glow.rgb, 0.9 * clamp(0.15 * inner.w - r + 0.5, 0.0, 1.0));
+            }
+            if (has(via, sq)) s = ring(s, glow.rgb, r, 0.18 * inner.w, 0.25 * u, u, 1.0);
+            // A wrong move: a red ring on its square that flashes twice.
+            if (int(wrong.x) == sq && wrong.y < 1.0) {
+                float t = fract(wrong.y * 2.0);
+                float op = t < 0.4 ? t / 0.4 : 1.0 - 0.4 * (t - 0.4) / 0.6;
+                vec3 red = vec3(1.0, 0.353, 0.29);
+                float sc = 0.8 + 0.2 * min(t / 0.4, 1.0);
+                s = mix(s, red, op * 0.22 * clamp(0.42 * inner.w * sc - r + 0.5, 0.0, 1.0));
+                s = ring(s, red, r, 0.42 * inner.w * sc, 0.25 * u, 1.2 * u, op);
+            }
+            c = mix(c, s, clamp(0.5 - fd, 0.0, 1.0));
         }
         result = vec4(c, 1.0);
     }
@@ -287,7 +292,8 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, t: theme::Theme, now: f
     gfx::uniforms(gfx::FRAGMENT, 1, BoardUniforms {
         screen: float4 { width, height, now as f32, l.n },
         rect:   l.board, inner: l.inner,
-        scene: float4 { if d.scene.has { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0 }, marks: b.marks });
+        scene:  float4 { if d.scene.has { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0 },
+        wrong: float4 { -1.0, 1.0, 0.0, 0.0 }, marks: b.marks });
     gfx::bind_texture(gfx::FRAGMENT, 0, d.scene.photo, d.scene.sampler);
     gfx::draw(3);
     gfx::bind(d.piece_pipeline);
