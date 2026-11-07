@@ -360,7 +360,7 @@ fn labelled(g: Gui&, id: i64, r: float4, icon: i64, size: f32, label: const u8[:
     if arrange == BESIDE {
         cut_left(c, 14.0 * u);
     } else {
-        let w = s + gap + text_width(g, face, label, 0.0);
+        let w = s + gap + text_width(g, face, label);
         c = center(r, w, r.w);
     }
     glyph_icon(g, center(cut_left(c, s), s, s), icon, PLAIN, p, 1.0);
@@ -396,7 +396,7 @@ fn pick(g: Gui&, id: i64, r: float4, pic: f32, label: const u8[:], note: const u
     }
     if label.len > 0 {
         // A word too wide for the tile, as a translation's may be, takes the small face.
-        let face = if text_width(g, BODY, label, 0.0) > r.z - 8.0 * u { SMALL } else { BODY };
+        let face = if text_width(g, BODY, label) > r.z - 8.0 * u { SMALL } else { BODY };
         text(g, face, cut_top(c, body), label, a, 0.0, CENTER);
         cut_top(c, gap);
     }
@@ -449,14 +449,14 @@ fn glyph_of(f: Face&, c: i64) -> i64 {
     return if k >= 0 { k } else { glyph_index(63) };
 }
 
-// How wide s is in face `face`, in pixels, with `spacing` pixels after each character.
-fn text_width(g: Gui&, face: i64, s: const u8[:], spacing: f32) -> f32 {
+// How wide s is in face `face`, in pixels.
+fn text_width(g: Gui&, face: i64, s: const u8[:]) -> f32 {
     let f .= g.faces[face];
     var w: f32 = 0.0;
     var i = 0;
     while i < s.len {
         let c, next = next_char(s, i);
-        w += f.glyphs[glyph_of(f, c)].advance + spacing;
+        w += f.glyphs[glyph_of(f, c)].advance;
         i = next;
     }
     return w;

@@ -212,7 +212,7 @@ fn choose(gm: game::Game&, g: gui::Gui&, c: float4, computer: bool, s: settings:
     let play = gui::cut_top(c, ROW_H * u);
     let word = strings::get(strings::SETUP_PLAY);
     // Play: the row's icon and word centered.
-    let w = 34.0 * u + 18.0 * u + gui::text_width(g, gui::LABEL, word, 0.0) + 36.0 * u;
+    let w = 34.0 * u + 18.0 * u + gui::text_width(g, gui::LABEL, word) + 36.0 * u;
     if gui::row(g, 370, play, gui::NO_ICON, "", "", true, true) { ask = PLAY; }
     var mid = gui::center(play, w, play.w);
     gui::cut_left(mid, 18.0 * u);

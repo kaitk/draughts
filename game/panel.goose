@@ -127,7 +127,7 @@ fn game(g: gui::Gui&, l: board::Layout, c: clock::Clock&, side: i64, won: bool, 
     } else {
         // The piece beside the words, centered.
         let label = strings::get(turn_key);
-        let span = 52.0 * u + 18.0 * u + gui::text_width(g, gui::HEADING, label, 0.0);
+        let span = 52.0 * u + 18.0 * u + gui::text_width(g, gui::HEADING, label);
         var row = gui::center(top, span, top.w);
         let spot = gui::cut_left(row, 52.0 * u);
         piece(over, spot, 26.0 * u, side, 0, 1.0, glow);

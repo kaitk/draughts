@@ -241,10 +241,10 @@ fn note(row: i64, i: i64) -> const u8[:] {
 fn tile_width(g: gui::Gui&, row: i64, i: i64) -> f32 {
     let u = g.scale;
     let label = strings::get(word(row, i));
-    if row == BACKGROUND_ROW { return max(THUMB_W * u, gui::text_width(g, gui::SMALL, label, 0.0)) + 12.0 * u; }
-    let w = gui::text_width(g, gui::BODY, label, 0.0);
+    if row == BACKGROUND_ROW { return max(THUMB_W * u, gui::text_width(g, gui::SMALL, label)) + 12.0 * u; }
+    let w = gui::text_width(g, gui::BODY, label);
     if row == TUTORIAL_ROW { return (16.0 + 26.0 + 10.0 + 16.0) * u + w; }
-    return max(88.0 * u, max(w, gui::text_width(g, gui::SMALL, note(row, i), 0.0)) + 32.0 * u);
+    return max(88.0 * u, max(w, gui::text_width(g, gui::SMALL, note(row, i))) + 32.0 * u);
 }
 
 // Declares tile i of a row in r. True when a tap changed s.
@@ -262,7 +262,7 @@ fn tile(s: Settings&, gm: game::Game&, g: gui::Gui&, row: i64, i: i64, r: float4
     if row == TUTORIAL_ROW {
         // A bulb and the words, dimmed and taking no tap until the tutorial exists.
         let unused, at = gui::pick(g, id, r, 0.0, "", "", false, false);
-        var c = gui::center(r, 36.0 * u + gui::text_width(g, gui::BODY, label, 0.0), r.w);
+        var c = gui::center(r, 36.0 * u + gui::text_width(g, gui::BODY, label), r.w);
         gui::glyph_icon(g, gui::center(gui::cut_left(c, 26.0 * u), 26.0 * u, 26.0 * u), gui::HINT, gui::PLAIN, 0.0, 0.4);
         gui::cut_left(c, 10.0 * u);
         gui::text(g, gui::BODY, c, label, 0.4, 0.0, gui::LEFT);
@@ -366,7 +366,7 @@ fn group(s: Settings&, gm: game::Game&, g: gui::Gui&, group: i64, r: float4, lan
 
 // A language's tile width: its name in itself with 16 dp either side, at least 76 dp.
 fn language_width(g: gui::Gui&, lang: i64) -> f32 {
-    return max(76.0 * g.scale, gui::text_width(g, gui::BODY, strings::name_of(lang), 0.0) + 32.0 * g.scale);
+    return max(76.0 * g.scale, gui::text_width(g, gui::BODY, strings::name_of(lang)) + 32.0 * g.scale);
 }
 
 // How wide the language's glass is: a globe, then a tile per language.
@@ -420,7 +420,7 @@ fn frame(s: Settings&, gm: game::Game&, g: gui::Gui&, l: board::Layout&, width: 
         // The choices as wide as they want, at most 55% of the page, wrapping beyond; the
         // board in the rest, centered.
         let want = max(max(group_width(g, 0), group_width(g, 1)), (HEAD_H + 40.0) * u + languages_width(g)
-                       + gui::text_width(g, gui::LABEL, strings::get(strings::HOME_SETTINGS), 0.0));
+                       + gui::text_width(g, gui::LABEL, strings::get(strings::HOME_SETTINGS)));
         var side = gui::cut_left(page, min(want, 0.55 * page.z));
         gui::cut_left(page, SIDE_GAP * u);
         let size = 0.94 * min(page.z, page.w);
