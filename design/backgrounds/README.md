@@ -1,0 +1,67 @@
+# Seasonal backgrounds
+
+One photograph-like background per season, behind the board. The board theme follows
+the season: autumn wood, winter stone, spring birch, summer sea
+([rendering](../../docs/architecture/rendering.md)).
+
+| Files | What they are |
+| --- | --- |
+| `<season>-01.png` | The originals from ChatGPT, 1254 × 1254 px. Kept as they are. |
+| `masters/<season>-01-2048.png` | Placeholder masters, 2048 × 2048, Lanczos and a light sharpen. |
+| `masters/<season>-01-2048.jpg` | The same at JPEG quality 85, 0.46 to 0.70 MB. |
+
+Originals and masters stay local and out of git (`.gitignore`): they're temporary, and
+this README says how to make them again. What the app ships, and where, is decided in
+task 012.
+
+## The originals (2026-11-07)
+
+Generated in one ChatGPT chat, square, with a calm soft-focus middle for the board and
+sharp framing at the edges. The prompts asked for the view from inside each place, with
+no lake or horizon across the middle. Summer is from an earlier run in the same chat:
+its frame (a pine and a birch at the edges, a forested point, boulders) shows more
+beside the board than the later, open-sea version.
+
+Shared part of each prompt:
+
+> A photograph-like background for a calm board game app. Square, 2048 × 2048; it will
+> be cropped to both 16:10 landscape and 10:16 portrait, and a game board will cover the
+> middle. Eye-level view from inside the landscape, not a vista: near trees or rocks frame
+> the edges and corners in sharp focus, and the middle is the depth of the place, softly
+> out of focus through natural shallow depth of field (like a 50 mm lens at f/2), calm
+> and even in tone. No lake, river, or pond unless the season below asks for water, and
+> no single horizon line across the middle. Soft natural light, slightly muted, a little
+> darker than a normal photo so light text and glass panels read well over it. No people,
+> animals, buildings, paths leading into the centre, text, board, pieces, or UI. Nothing
+> falling through the air (no snowflakes, leaves, or rain; the app adds those).
+
+Per season:
+
+- Autumn: "Inside a mixed Estonian forest in early October: maple and birch branches
+  with orange, amber and red leaves close at the top corners, a mossy boulder and fallen
+  leaves on the ground at the bottom, warm low sunlight glowing between the trunks in the
+  soft-focus depth. Warm browns and ambers."
+- Winter: "Inside a snowy spruce forest at blue hour: snow-laden spruce boughs close at
+  the sides and top, deep untouched snow with soft drifts at the bottom, tall spruces
+  fading into blue haze in the middle, a faint pink and violet glow of sky through the
+  gaps. Cool blue-grey, quiet and clean."
+- Spring: "Inside a light birch grove in late May: white birch trunks with black marks
+  close at the left and right edges, fresh bright-green leaves at the top, white wood
+  anemones and new grass at the bottom, morning light filtering through the leaves into
+  a soft green depth. Fresh greens and creamy whites."
+- Summer (earlier run): "The rocky North Estonian coast on a calm summer evening: large
+  rounded granite boulders, a pine at a top corner, a forested point beyond, a peach and
+  blue sky. Sea greens, sage, and warm stone."
+
+## The placeholder masters
+
+```sh
+magick <season>-01.png -alpha off -colorspace RGB -filter Lanczos -resize 2048x2048 \
+  -colorspace sRGB -unsharp 0x1+0.4+0.02 masters/<season>-01-2048.png
+magick masters/<season>-01-2048.png -quality 85 -sampling-factor 4:2:0 -strip \
+  masters/<season>-01-2048.jpg
+```
+
+Resizing in linear light avoids dark fringes; the sharpen is light enough to leave no
+halos at 1:1. They add no detail: fine behind the board and glass, soft up close. Task
+014 replaces them with a real upscale.
