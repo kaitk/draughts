@@ -115,9 +115,11 @@ sea almost flat.
 ### Light
 
 The 2D board is kept simple: flat squares with no light pool, as on the design boards.
-The pieces have a soft, diffuse light from above (2026-11-07): the upper side
-of the rounded edge and of the step catch it and the lower sides miss it, and nothing
-else; the pieces are matte. A strong light pool
+The pieces have a soft, diffuse light from above the board and toward its top
+(2026-11-07): the rounded outer edge catches it on its upper side, most halfway round,
+and is in shade on its lower side; in the groove the wall facing the light is lit and
+the other in shade. Nothing else: no glossy spot, the face matte. Shade darkens toward a
+deeper tone of the piece's own color, which keeps a cream warm where black would grey it. A strong light pool
 and, with the tabletops, a crafted board with a soft light were tried on 2026-11-07 and
 set aside. The 3D board has one key light from the top left,
 as in the design boards, a few terms in its shaders with no lighting pass. The terms
@@ -170,13 +172,14 @@ the prototype tried, kept for 3D:
   than the first design boards' frameless board and two-ringed pieces. The 3D board has a
   frame 2.4% of the board's width. 10 × 10 uses the same.
 - **Pieces** are SDF discs filling 78% of a square, flat-topped and matte like turned
-  discs: an outer band and a face of one color with a fine step between them at 70% of
-  the radius, only the outer edge rounded (from 86%), and the side under the disc (0.55%
-  of the board deep). A short soft shadow falls straight down and a touch right (a
-  quarter of the radius down, softened over a third of it), with a tight one where it
-  touches. Each side has one color in the theme; the rest is worked out from it. Light
-  pieces: the band 2% toward black, side 32%. Dark pieces: the band 6% toward black,
-  side 50%.
+  discs, as the 3D close-up shows them: one color and one height across the top, with
+  a narrow groove cut into it at 70% of the radius (9% of the radius wide), only the
+  outer edge rounded (from 86%), and the side under the disc (0.55% of the board deep).
+  A short soft shadow falls straight down and a touch right (a quarter of the radius
+  down, softened over a third of it), with a tight one where it touches. Each side has
+  one color in the theme; the rest is worked out from it. The edge's highlight is
+  clearer on dark pieces than on light ones. Light pieces: the side the face's color
+  squared, at 92%. Dark pieces: the side 50% toward black.
 - **Kings** are a setting: crown, stack, or auto (the default). Auto draws a crown on
   the face in the top-down board (the theme's dark piece color on a light piece, gold
   `#e9c46a` on a dark one), which reads at a glance, and in a 3D board a stack of two

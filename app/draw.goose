@@ -216,14 +216,23 @@ let PIECE_FRAG = """
         return min(poly, band);
     }
     vec3 tint(vec3 c, float a) { return a > 0.0 ? mix(c, vec3(1.0), a) : mix(c, vec3(0.0), -a); }
-    // A raised round edge across radii a..b: the light from above catches its upper
-    // side and misses its lower one, softly. -1 where its top faces away from the light,
-    // 1 where it faces it; 0 off the edge. `dy` is the point's direction's y (down is +).
-    float bead(float r, float a, float b, float dy) {
+    // Light toward white, shade toward a deeper tone of the same color, which keeps a
+    // cream warm where black would turn it grey.
+    vec3 lit(vec3 c, float a) { return a > 0.0 ? mix(c, vec3(1.0), a) : mix(c, c * c * 0.85, -a); }
+    // A rounded outer edge across radii a..b, flat at a and turning down to the side at
+    // b, under a soft light from above the board and toward its top: lit on its upper
+    // side, most halfway round, and in shade on its lower side, most at the bottom.
+    // 0 on the flat top; `dy` is the point's direction's y (down is +).
+    float shoulder(float r, float a, float b, float dy) {
+        float th = 1.45 * clamp((r - a) / (b - a), 0.0, 1.0);
+        return 0.7071 * (-dy * sin(th) + cos(th) - 1.0);
+    }
+    // A groove cut into a flat top across radii a..b: concave, so lit the other way
+    // round from a bead, and smooth to nothing at both of its edges.
+    float groove(float r, float a, float b, float dy) {
         float t = (r - a) / (b - a);
         if (t <= 0.0 || t >= 1.0) return 0.0;
-        float th = (t - 0.5) * 3.0;             // the edge's slope, -1.5..1.5 radians
-        return -dy * sin(th) * (1.0 - 0.3 * abs(th));
+        return -dy * sin(6.2831853 * t);
     }
     void main() {
         vec2 p = v_local;
@@ -234,8 +243,7 @@ let PIECE_FRAG = """
         float scale = 1.0 + 0.05 * sel;
         float w = v_extra.w / scale;            // one pixel in the face's units
         vec3 face = black ? b_face.rgb : w_face.rgb;
-        vec3 rim = black ? mix(face, vec3(0.0), 0.18) : mix(face, vec3(0.0), 0.06);
-        vec3 sidec = black ? mix(face, vec3(0.0), 0.5) : mix(face, vec3(0.0), 0.32);
+        vec3 sidec = black ? mix(face, vec3(0.0), 0.5) : face * face * 0.92;
         // A short soft shadow, straight down and a touch right, that spreads as the
         // piece lifts, and a tight one where it touches the board.
         float d0 = length(p - vec2(0.04, 0.25 + 0.6 * lift)) - 1.0;
@@ -252,17 +260,17 @@ let PIECE_FRAG = """
         float foot = clamp((f.y - sqrt(max(1.0 - f.x * f.x, 0.0))) / (side / scale), 0.0, 1.0);
         vec3 sc = sidec * (0.8 + 0.25 * sqrt(max(1.0 - f.x * f.x, 0.0))) * (1.0 - 0.25 * foot);
         over(sc, fill(length(vec2(f.x, sy)) - 1.0, w));
-        // The top is flat and matte, as a turned disc's is: an outer band and a face of
-        // the same color with a fine step between them, and only the outer edge rounded,
-        // catching the light from above on its upper side.
-        vec3 col = mix(face, rim, 0.35 * smoothstep(0.69, 0.72, r));
-        col = tint(col, -0.02 * f.y);
-        float hi = black ? 0.16 : 0.45;
-        float lo = black ? 0.3 : 0.2;
-        float l = bead(r, 0.86, 1.0, dir.y) + 1.3 * bead(r, 0.66, 0.74, dir.y);
-        col = tint(col, l > 0.0 ? hi * l : lo * l);
-        col = tint(col, -(black ? 0.3 : 0.2) * (1.0 - smoothstep(0.004, 0.02, abs(r - 0.7))));
-        col = tint(col, -(black ? 0.2 : 0.14) * smoothstep(0.96, 1.0, r));
+        // The top is flat and matte, as a turned disc's is: one color and one height,
+        // with a narrow groove cut into it at 70% of the radius and only the outer edge
+        // rounded. The light from above catches the outer edge's upper side softly; in
+        // the groove, which is concave, it catches the wall that faces it, nearer the
+        // center on the top half, and leaves the far wall in shade.
+        vec3 col = tint(face, -0.02 * f.y);
+        float l = shoulder(r, 0.86, 1.0, dir.y);
+        col = lit(col, l > 0.0 ? (black ? 1.0 : 1.2) * l : (black ? 0.28 : 0.4) * l);
+        float g = groove(r, 0.655, 0.745, dir.y);
+        col = lit(col, g > 0.0 ? (black ? 0.4 : 0.45) * g : (black ? 0.55 : 0.6) * g);
+        col = lit(col, -0.15 * (1.0 - smoothstep(0.0, 0.035, abs(r - 0.7))));
         if (v_look.y > 0.5) {
             vec3 cc = black ? vec3(0.914, 0.769, 0.416) : crown_w.rgb;
             col = mix(col, cc, fill(0.56 * crown(f / 0.56), w));
