@@ -37,8 +37,8 @@ number ("task 004"), not by path.
 
 ## Order
 
-001 confirmed the stack (Goose runs on the tablet), 002 built the rules engine, and 003
-settled the look in HTML prototypes; all three are archived. 004 and 005 are next, then
-006 to 009. Together
-they make the MVP in `docs/product.md`. 010 runs alongside: goose_gfx changes to propose
-upstream.
+001 confirmed the stack (Goose runs on the tablet), 002 built the rules engine, 003
+settled the look in HTML prototypes, and 005 made the idle app draw nothing; all four
+are archived. 004 is next, then 006 to 009. Together they make the MVP in
+`docs/product.md`. 010 runs alongside: goose_gfx changes to propose upstream. 011, the
+last idle CPU (SDL's accelerometer), can come any time before release.

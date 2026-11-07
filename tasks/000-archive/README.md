@@ -13,3 +13,7 @@ and the commit that last has it.
 - 003: UI prototypes. Done: seven HTML pages settled the look (Snowtime's glass over a
   pre-blurred seasonal scene, a wood board with crowned kings, Libertinus Sans), recorded
   in `docs/architecture/rendering.md`. `003-ui-prototypes.md`, `878aa1f`
+- 005: Draw only when something changes. Done: a goose_gfx patch makes `frame()` present
+  only what was drawn and wait for events when idle, with SDL's poll sentinel off on
+  Android so the wait blocks; the idle program thread went from 17% of a core to 0.02%.
+  `005-on-demand-frames.md`, `522ce35`
