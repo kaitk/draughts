@@ -15,6 +15,8 @@ description, and let the user send it.
 - [ ] A way to wait for events instead of polling: task 005's
       `patches/goose_gfx/0002-draw-on-demand.patch`, made opt-in for upstream
       (`docs/goose-findings.md` says how), with a sample that draws on demand
+- [ ] Possibly `load_texture` from memory and JPEG (`docs/goose-findings.md`); we don't
+      need it, so only if upstream wants it
 - [ ] Possibly an Android path in goose_gfx's CMake (shared SDL), if upstream wants it
 - [ ] Not ours to send: the SDL swapchain leak (`patches/SDL/`), the wait that spins on
       Android, and the always-on accelerometer. SDL takes no

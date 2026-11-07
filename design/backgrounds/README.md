@@ -11,8 +11,9 @@ the season: autumn wood, winter stone, spring birch, summer sea
 | `masters/<season>-01-2048.jpg` | The same at JPEG quality 85, 0.46 to 0.70 MB. |
 
 Originals and masters stay local and out of git (`.gitignore`): they're temporary, and
-this README says how to make them again. What the app ships, and where, is decided in
-task 012.
+this README says how to make them again. The app ships the final JPEGs as
+`assets/backgrounds/<season>.jpg`, built into the program
+([rendering](../../docs/architecture/rendering.md#scene-and-glass)).
 
 ## The originals (2026-11-07)
 

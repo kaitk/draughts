@@ -3,6 +3,20 @@
 Gaps found in Goose, goose_gfx, and the SDL it pins, while building for Android, with what
 we do about each here and what could go upstream. Newest first.
 
+## goose_gfx: `load_texture` reads only PNG and BMP, and only from a file (2026-11-07)
+
+`gs_gfx_load_texture` picks `SDL_LoadBMP` for `.bmp` and `SDL_LoadPNG` for anything
+else, from a path. There is no JPEG, and no way to load from bytes already in memory,
+such as an `embed_file`. A photograph-like background is about 5 MB as PNG and 0.5 to
+0.7 MB as JPEG. goose_gfx `6cfa3de`, Goose v2026.4.
+
+- Here: no patch. The program decodes its JPEGs with stb_image in its own C (a
+  `c_sources` entry in its sidecar) and uploads the pixels with `gfx::texture2d` and
+  `update_texture`, which works with the built-in gfx on the Mac too
+  ([rendering](architecture/rendering.md#scene-and-glass)).
+- Upstream: possibly `load_texture_from_memory(bytes, flags)` and JPEG through
+  stb_image, which goose_gfx's Nuklear demos already carry. Small and optional.
+
 ## SDL: the Java side keeps the accelerometer on at 50 Hz (2026-11-07)
 
 `SDLSurface.handleResume` (and `SDLActivity` at start) registers the accelerometer at

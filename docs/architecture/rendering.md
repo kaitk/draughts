@@ -36,74 +36,123 @@ call directly.
 ## Look
 
 Reference: Snowtime's UI ([repo](https://github.com/Snowhound/snowtime), its
-`prototypes/`): dark frosted glass panels over a scene, thin light borders, flat
-buttons. The HTML prototypes in [`prototypes/`](../../prototypes/README.md) settled the
-values below on 2026-11-07; they use only what this renderer draws cheaply.
+`prototypes/`): frosted glass panels over a scene, thin light borders, flat buttons;
+and the seasonal design boards made with `prototypes/design-boards-prompt.md`, which set
+each season's palette. The HTML
+prototypes in [`prototypes/`](../../prototypes/README.md) settled the values below on
+2026-11-07; they use only what this renderer draws cheaply.
+
+### Seasons and themes
+
+The season, picked from the date, chooses the background and the board theme together;
+the theme can be overridden in settings. Values from the design boards (2026-11-07):
+
+| | Autumn: wood | Winter: stone | Spring: birch | Summer: sea |
+| --- | --- | --- | --- | --- |
+| Light square | `#e5c18a` | `#d8dee7` | `#e8e2d3` | `#c7d5c6` |
+| Dark square | `#5a341d` | `#5a6777` | `#6b7f6a` | `#2e5546` |
+| Frame | `#3b2112` | `#2a3442` | `#3d4a3c` | `#1d3a30` |
+| Light piece | `#f7e6c8` | `#f3eee2` | `#f6f3e7` | `#f6f1e4` |
+| Dark piece | `#4a2918` | `#2b3440` | `#3a4a3f` | `#b56a57` (terracotta) |
+| Glow | `#ffd75a` | `#a7d0fb` | `#8fd4ff` | `#86e7d3` |
+| Glass tint | `#2b1e18` at 66% | `#1e2f45` at 40% | `#1e2f45` at 40% | `#1e4a4a` at 40% |
+| Glass copy dimmed to | 0.9 | 0.75 | 0.75 | 0.75 |
+| Text | `#f8f3e6` | `#e6f4ff` | `#e6f4ff` | `#f4f8f2` |
+| Page under the scene | `#1c1410` | `#0b1622` | `#101a14` | `#0d1c1c` |
+| Square surface | wood grain | soft mottling | faint fibre | plain sheen |
+
+Secondary text is the text color at 66%. The surfaces are a few gradients each, sines in
+the board shader: wood is fine vertical grain with a light-to-dark sweep, stone two soft
+radial patches, birch faint horizontal fibre, sea only the sheen every square has.
 
 ### Scene and glass
 
-- **The scene** is a calm Estonian landscape for the season, picked from the date, and
-  the season picks the board too (overridable): autumn forest with the wood board,
-  winter spruces with stone, spring birches with a birch board, summer coast with a sea
-  board. Each scene is a photograph-like picture (`design/backgrounds/`, placeholders
-  until task 014). The prototypes still paint the scene and soften it with a 6 px blur;
-  task 012 brings them to the photographs and each theme's palette, glow, and glass
-  tint, from the user's design boards.
-- **Stored** as one JPEG per season, decoded with stb_image, cover-cropped to the
-  screen. Only the current season is loaded. The glass copy is made from it on the GPU
-  whenever the season or screen size changes, so nothing pre-blurred is stored. If
-  graphics memory gets tight, ASTC at build time cuts a 2048² image from 16 MB to about
-  2 MB. AVIF was ruled out: it needs libavif and an AV1 decoder on both platforms to save
-  about 1 MB of APK. (Task 012 confirms this.)
+- **The scene** is a calm Estonian landscape for the season: autumn forest, winter
+  spruces, spring birches, summer coast. Each is a photograph-like picture
+  (`design/backgrounds/`, placeholders until task 014), shown as it is, cover-cropped to
+  the screen, with no blur.
+- **Stored** as one JPEG per season, 2048 × 2048 at quality 85 (0.46 to 0.70 MB each),
+  in `assets/backgrounds/<season>.jpg` and built into the program with `embed_file`, as
+  the font is: nothing to package in the APK's assets, and the same path on the Mac and
+  Android. goose_gfx's `load_texture` reads only PNG and BMP from a file (through SDL),
+  so the program decodes the JPEG itself: stb_image, JPEG only, in the program's own C
+  (a `c_sources` entry in its `.build` sidecar), from the embedded bytes to RGBA, then
+  `gfx::texture2d` and `update_texture`. No goose_gfx patch is needed
+  ([findings](../goose-findings.md)). Only the current season is decoded. PNG was
+  rejected at about 5 MB a season; AVIF needs libavif and an AV1 decoder on both
+  platforms to save about 1 MB. If graphics memory gets tight, ASTC at build time cuts
+  a 2048² image from 16 MB to about 2 MB.
 - **Glass is a pre-blurred copy, not a live blur.** Snowtime measured live backdrop blur
   costing more than its weather animation, and switched to a copy of the background
-  blurred once (its `docs/architecture/scene.md`). Here the scene is blurred once, when it
-  changes, into a small texture (240 px wide, the blur a 24 px one would be at full width,
-  saturation 1.3). A glass panel samples it at its screen position: one texture fetch per
-  pixel, no blur per frame.
-- **Glass layers**, bottom to top: the copy; black at 40% (the copy dimmed to 0.6); the
-  card color `#142438` at 40%; a 1 px border of white at 14%; a 1 px top highlight of
-  white at 12%; a shadow `0 12px 32px -14px` of black at 55%. Corner radius 28 px.
-  These are Snowtime's dark glass values.
-- **Text** is `#eef5fb`, and secondary text the same at 66%. The page color under
-  everything is `#0b1622`.
+  blurred once (its `docs/architecture/scene.md`). Here the scene is blurred on the GPU
+  when the season or screen size changes, into a small texture (240 px wide, the blur a
+  24 px one would be at full width, saturation 1.3), so nothing pre-blurred is stored. A
+  glass panel samples it at its screen position: one texture fetch per pixel, no blur
+  per frame.
+- **Glass layers**, bottom to top: the copy, dimmed as the table says; the theme's
+  glass tint; a 1 px border of white at 14%; a 1 px top highlight of white at 12%; a
+  shadow `0 12px 32px -14px` of black at 55%. Corner radius 28 px.
+
+### Light
+
+One key light from the top left lights the board and pieces, as in the design boards;
+everything is a few terms in the board and piece shaders, no lighting pass:
+
+- **Board**: a pool of light toward the top left (warm white at 22%) falling off to
+  black at 40% in the bottom-right corner, over the squares; a soft inner shadow where
+  the squares meet the frame; the frame bevelled, lit on its top-left edge and shaded
+  on its bottom-right.
+- **Pieces**: a specular spot at 32%, 28% of the disc (white at 60% on light pieces,
+  30% on dark), the face darkening toward the bottom right (black at 18%, 30% on dark),
+  a lit upper rim and a shaded lower one, and a soft shadow cast down and to the right:
+  a tight contact shadow and a wider one. The disc's side is 0.8% of the board deep.
+- **3D**: the same light on lit meshes; the side of a disc lit on the left and dark on
+  the right.
 
 ### Controls
 
 - **Buttons** are flat fills on the glass: white at 7%, 13% when hovered, 20% while
   pressed (and scaled to 0.96); radius 22 px; at least 88 × 88 px (dp) for small hands,
   icons 40 px with 2 px strokes. A primary button is the glow color at 22%.
-- **Icons** are line icons on a 24 px grid, 2 px round strokes, in the Lucide style: back,
-  undo, hint (a bulb), restart, next, a friend (two figures), the computer (a robot head,
-  with three level dots under it), puzzles (a jigsaw piece), star, crown, lock.
+- **Icons** are line icons on a 24 px grid, 2 px round strokes, in the Lucide style:
+  undo, hint (a bulb), restart, back (an arrow left), next, star, crown, lock, and the
+  puzzle themes' target, crown, and shield. The home tiles' icons are filled shapes,
+  which read better large: two figures, a robot head, a jigsaw piece.
 - **Game screen**: in landscape the board fills the height less a 24 px margin, and a
-  128 px glass panel stands to its right: back at the top, the side to move (a piece of
-  its color with a glow ring, no text) in the middle, hint, undo, and restart at the
-  bottom. In portrait the board fills the width and the panel is a 128 px row below it.
-- **Home**: three large glass tiles (play a friend, play the computer, puzzles), in a
-  row in landscape and a column in portrait. **Puzzle picker**: one glass row per tier,
-  ten tiles of at least 64 px each with 0 to 3 stars; locked tiles show a lock, the next
-  unsolved one a glow ring. **Solved**: three stars that pop in over the dimmed board, a
-  few drifting sparks, and again or next.
+  230 px glass panel stands to its right: the side to move on top (a piece of its color
+  with a glow ring, no text), a 1 px rule, then undo, hint, restart, and back in a 2 × 2
+  grid. In portrait the board fills the width and the panel below it holds the side to
+  move over the four buttons in a row.
+- **Home**: three large glass tiles with no text (play a friend, play the computer with
+  three level dots, filled or rings, puzzles), in a row in landscape and a column in
+  portrait. **Puzzle picker**: one glass row per theme (capture, become a king, the
+  only safe move), its icon and ten tiles of at least 64 px with 0 to 3 stars in the
+  glow color; locked tiles show a lock, the next unsolved one a glow ring.
+  **Solved**: three stars that pop in over the dimmed board, a few drifting sparks, and
+  again or next.
 
 ### Board and pieces
 
-- **Board**: wood. Light squares `#e8c99a`, dark `#9a6a45`, a frame `#5b3a24` 2.4% of the
-  board's width with rounded corners. Stone (`#d7d4cd`, `#66707a`, frame `#3a4048`) and
-  flat (`#dfe6d2`, `#6f9270`, frame `#3f5c48`) were compared and kept as later options.
+- **Board**: the theme's squares, inside a frame 2.4% of the board's width with rounded
+  corners. 10 × 10 uses the same.
 - **Pieces** are SDF discs filling 78% of a square: a face, an inner ring at 45 to 52%
-  of the radius, a rim from 80%, and a side under the disc 0.55% of the board deep, over a
-  soft shadow. White: face `#f6ead6`, ring `#d9c3a0`, rim `#e6d3b3`, side `#b89c74`.
-  Black: face `#4a2c1c`, ring `#6d4630`, rim `#3a2215`, side `#1e110a`.
-- **Kings** are a setting: crown, stack, or auto (the default). Auto draws a gold crown
-  on the face in the top-down board (`#c08a2c` on white, `#e9c46a` on black), which reads
-  at a glance, and in a 3D board a stack of two discs with the crown on top, as kings are
-  in Estonian play. Top down, a stack reads as a shadow at tablet size, so it's there
-  for those who want it.
-- **States**, all in the glow color `#ffd36e`: the selected piece lifts by 1.1% of the
-  board and grows to 1.06 with a glow ring; a legal target is a glowing dot 30% of a
-  square; a capture's stop on the way is a ring. A piece that must capture pulses a ring
-  in `#ff9466` every 1.4 s. The last move's squares are tinted with the glow color at 16%.
+  of the radius, a rim from 80%, and the side under the disc, over the light above.
+  Each side has one color in the theme; the rest is worked out from it. Light pieces:
+  ring 13% toward black, rim 6%, side 32%. Dark pieces: ring 16% toward white, rim 18%
+  toward black, side 50%.
+- **Kings** are a setting: crown, stack, or auto (the default). Auto draws a crown on
+  the face in the top-down board (the theme's dark piece color on a light piece, gold
+  `#e9c46a` on a dark one), which reads at a glance, and in a 3D board a stack of two
+  discs with the crown on top, as kings are in Estonian play. Top down, a stack reads as
+  a shadow at tablet size, so it's there for those who want it.
+- **3D board**: the same board tilted (about 38°, in perspective) with a front edge,
+  pieces as discs with height (one disc 1.7% of the board), and the selected piece
+  lifted. `prototypes/boards.html` shows it for every theme.
+- **States**, in the theme's glow color: the selected piece lifts by 1.1% of the board
+  and grows to 1.06 with a glow ring; a legal target is a glowing dot 30% of a square; a
+  capture's stop on the way is a ring. A piece that must capture pulses a red ring
+  `#ff5a4a` with a soft red glow every 1.4 s, in every theme. The last move's squares are
+  tinted with the glow color at 16%.
 
 ## Fonts
 
