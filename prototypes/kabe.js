@@ -15,6 +15,8 @@ const Kabe = (() => {
   };
   const SEASONS = ['autumn', 'winter', 'spring', 'summer'];
   // The season picks the board: autumn wood, winter stone, spring birch, summer sea.
+  // Tabletop pictures in design/tabletops/, by the switcher's name: <season>-<file>.png.
+  const TOPS = { plain: '', real: 'real-02', felt: 'felt-01' };
   const SEASON_THEME = { autumn: 'wood', winter: 'stone', spring: 'birch', summer: 'sea' };
   const THEMES = Object.values(SEASON_THEME);
   const KINGS = ['auto', 'crown', 'stack'];
@@ -32,6 +34,9 @@ const Kabe = (() => {
     view: pick('view', ['2d', '3d'], '2d'),
     king: pick('king', KINGS, 'auto'),
     bg: pick('bg', ['auto', 'table', 'photo'], 'auto'),
+    // The table's look: painted, or a generated tabletop picture (task 016; local only,
+    // autumn so far).
+    top: pick('top', Object.keys(TOPS), 'plain'),
     // Move hints: "mistakes" (the default) only marks a wrong move; "moves" shows the
     // selected piece's targets, on by default only in the first lessons (docs/product.md).
     assist: pick('assist', ['moves', 'mistakes'], 'mistakes'),
@@ -137,7 +142,13 @@ const Kabe = (() => {
 
   function loadScene() {
     if (useTable()) {
-      setScene(paintTable(settings.theme, 1280, Math.round(1280 * innerHeight / innerWidth)), innerWidth / innerHeight);
+      const painted = () =>
+        setScene(paintTable(settings.theme, 1280, Math.round(1280 * innerHeight / innerWidth)), innerWidth / innerHeight);
+      if (settings.top === 'plain') return painted();
+      const img = new Image();
+      img.onload = () => setScene(img.src, img.naturalWidth / img.naturalHeight);
+      img.onerror = painted;
+      img.src = `../design/tabletops/${settings.season}-${TOPS[settings.top]}.png`;
       return;
     }
     const img = new Image();
@@ -257,6 +268,7 @@ const Kabe = (() => {
       select('view', ['2d', '3d'], settings.view) + select('king', KINGS, settings.king) +
       select('bg', ['auto', 'table', 'photo'], settings.bg) +
       select('assist', ['moves', 'mistakes'], settings.assist) +
+      select('top', Object.keys(TOPS), settings.top) +
       select('font', Object.keys(FONTS), settings.font);
     el.addEventListener('change', (e) => {
       const { key } = e.target.dataset;
@@ -271,7 +283,7 @@ const Kabe = (() => {
     document.documentElement.style.setProperty('--font', loadFont(settings.font));
     document.body.classList.add(`theme-${settings.theme}`);
     loadScene();
-    addEventListener('resize', () => (useTable() ? loadScene() : syncGlass()));
+    addEventListener('resize', () => (useTable() && settings.top === 'plain' ? loadScene() : syncGlass()));
     addEventListener('scroll', syncGlass, true);
     addEventListener('load', syncGlass);
     document.fonts.ready.then(syncGlass);
