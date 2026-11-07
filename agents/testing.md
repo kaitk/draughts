@@ -18,8 +18,8 @@ which would overwrite the main checkout's while another session uses them.
   over, home and settings, presses kept apart, the celebration, a clocked game with its
   frames, pause, and flag, the turned board; the computer's turn, answered at once with
   `ai::think` as the app's worker would; and the clock value on its own), `shell`
-  (home, the switch to the game and back, settings and their file, home's setup and
-  play, the saved game of any variant and damaged images of it, the computer's skill
+  (home, the switch to the game and back, settings and their file, their taps and the
+  board beside them, home's setup and play, the saved game of any variant and damaged images of it, the computer's skill
   moving across games), `strings` (every language file has every key), and `ai` (the computer player:
   its search against a plain minimax, the table changing no score, keys, what each level
   plays in known shots, the same move in steps as at once, and that no level hangs a
@@ -45,6 +45,17 @@ which would overwrite the main checkout's while another session uses them.
   the test's comment only after each move is checked with `test/perft.py moves`; a
   line printed by repeated searches stops mid-combination unless it runs on until the
   material settles.
+
+## Screenshots on the Mac
+
+- A `--frames` run reads the Mac's settings from `~/Library/Application
+  Support/kaitk/draughts/settings.txt` (`app/storage.c`), and there is no flag for most
+  of them (the kings, the draughts settings show). To shoot settings as chosen, copy the
+  file aside, write the keys wanted (`kings = stack`, `draughts = russian`, `hints =
+  moves`), run, and put the copy back.
+- The prototypes' painter (`Paint` in `prototypes/draughts.js`) is a port of the piece
+  shader, so a native crop beside the prototype's at the same scale shows a shader
+  change exactly (the stacked king was checked that way).
 
 ## Rules
 

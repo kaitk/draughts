@@ -274,6 +274,17 @@ the prototype tried, kept for 3D:
   a wrong move's red ring and the piece that must capture pulsing), over the season's
   photograph. It is home's board: opening settings moves it aside (task 022 animates
   that).
+  Natively (`shell/settings.goose`) the preview is a board of its own on one fixed
+  position, the same on every board size and a square in from the corner on 10 × 10:
+  white must capture two, with the man on d4 or the king on h6. With all moves d4 is
+  selected and its capture shown, target and stop; with mistakes only, a wrong move to
+  c5 flashes and both capturing pieces pulse as in a game, then the ring and the pulse
+  stay lit and still, so the screen draws nothing more until the next tap. Each tap
+  sets the preview up again. The choices take the width their words want, at most 55% of
+  the page, and wrap beyond it; their notes and the thumbnails' labels are in the 17 px
+  face, which makes them a little wider than the prototype's 13 px, so the landscape
+  board is about 550 px where the prototype's is 590. The tutorial's tile and the raised
+  board are dimmed and take no tap until they exist.
   **Puzzle picker**: one glass row per theme (capture, become a king, the
   only safe move), its icon and ten tiles of at least 64 px with 0 to 3 stars in the
   glow color; locked tiles show a lock, the next unsolved one a glow ring.
@@ -304,14 +315,18 @@ the prototype tried, kept for 3D:
   the face in the top-down board (the theme's dark piece color on a light piece, gold
   `#e9c46a` on a dark one), which reads at a glance, and in a 3D board a stack of two
   plain discs, no crown, as kings are in Estonian play (2026-11-07). Top down, a stack reads as
-  a shadow at tablet size, so it's there for those who want it.
+  a shadow at tablet size, so it's there for those who want it. The stack's upper disc
+  sits 1.3% of the board above the lower one, its side as deep, so the lower disc's rim
+  shows under it. The setting applies to the game's board, the winner's piece,
+  and the preview; home's wordmark keeps its crown.
 - **Native form** (`app/draw.goose`): the blurred photograph, the board's shadow, lip,
   squares, and marks are one full-screen fragment pass, worked out at `gl_FragCoord`
   (interpolated coordinates put a square's edge a pixel off on some rows); the pieces
-  are one instanced draw of quads, each pulling `{center, radius, lift; black, king,
-  selected, opacity; must capture, side to move}` from a storage buffer and drawing its shadows, side, face, light, crown, and rings in the fragment
-  shader, blended premultiplied, top row first so a lower piece covers the shadow above
-  it. The crown is a signed-distance polygon in that shader. The panel's line icons are
+  are one instanced draw of quads, each pulling `{center, radius, lift; black, king (none,
+  crown, or stack), selected, opacity; must capture (pulsing or still), side to move}`
+  from a storage buffer and drawing its shadows, side, face, light, crown or second disc,
+  and rings in the fragment shader, blended premultiplied, top row first so a lower
+  piece covers the shadow above it. The crown is a signed-distance polygon in that shader. The panel's line icons are
   to be drawn the same way, as distances to their strokes' segments and arcs, rather than
   baked into the font atlas: crisp at any size, no texture.
 - **3D board**: the same board tilted (about 38°, in perspective) with a front edge,

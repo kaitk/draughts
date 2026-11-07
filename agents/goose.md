@@ -95,6 +95,8 @@ find out by compiling, so the next session doesn't.
 - Adjacent string literals don't join: `f("a" "b")` doesn't parse; write one literal.
 - A struct literal's fields must come in declaration order, or it doesn't compile.
 - `match` arms with block bodies are separated by commas: `A => { f(); },`.
+- A `T&` parameter takes no temporary: `f(Settings {})` doesn't compile against
+  `fn f(s: Settings&)`. Bind it to a `var` first, or take a small struct by value.
 - An `if` expression can't be an operand: `x + if c { 1 } else { 0 }` and
   `t[(a + if k { 1 } else { 0 }) * 64]` don't parse. Bind it to a `let` first.
 - A type on a `for` binder is only for an integer count or range: `for v: u8 in 3` works,
