@@ -13,19 +13,25 @@
      once; a tap applies at once, there is no save. Beside them one preview shows what the
      choices make: the board as it will be (its size, flat or raised, the kings, and what
      the move hints show), over the season's photograph. The kings' tiles show their king.
-     In portrait the preview is on top. */
-  .settings { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 1fr; gap: 16px 24px;
-    height: 100%; padding: 24px 32px; }
-  .top { grid-column: 1 / -1; display: flex; align-items: center; gap: 20px; }
+     The language is in the title row. In portrait the board is on top and game and look
+     stand side by side under it. */
+  /* Landscape: the choices on one half, the board on the other. */
+  .settings { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; height: 100%; padding: 24px 32px; }
+  .side { display: grid; grid-template-rows: auto 1fr; gap: 14px; min-height: 0; }
+  .top { display: flex; align-items: center; gap: 20px; }
+  /* The language, set once, in the title row's right end. */
+  .lang { --r: 20px; display: flex; align-items: center; gap: 8px; margin-left: auto; padding: 6px 6px 6px 14px; }
+  .lang .tile { min-height: 48px; min-width: 76px; }
+  .lang > .icon { width: 28px; height: 28px; opacity: 0.85; margin-right: 4px; }
   .top h1 { margin: 0; font-size: 34px; font-weight: 400; }
-  .groups { display: grid; gap: 14px; align-content: center; }
-  .group { --r: 24px; display: grid; gap: 10px; padding: 16px 22px 18px; }
+  .groups { display: grid; gap: 10px; align-content: center; }
+  .group { --r: 24px; display: grid; gap: 10px; padding: 14px 20px 16px; }
   .group h2 { margin: 0 0 2px; display: flex; align-items: center; gap: 12px; font-size: 24px; font-weight: 400; }
   .group h2 .icon { width: 30px; height: 30px; stroke-width: 2; opacity: 0.85; }
-  .group.inline { grid-template-columns: 164px 1fr; align-items: center; gap: 14px; padding: 12px 22px; }
+  .group.inline { grid-template-columns: 134px 1fr; align-items: center; gap: 14px; padding: 10px 20px; }
   .group.inline h2 { margin: 0; }
   /* A setting: its name at the left, its tiles to the right. */
-  .setting { display: grid; grid-template-columns: 150px 1fr; align-items: center; gap: 14px; }
+  .setting { display: grid; grid-template-columns: 120px 1fr; align-items: center; gap: 14px; }
   .setting h3 { margin: 0; font-size: 18px; font-weight: 400; color: var(--fg-dim); letter-spacing: 0.03em; }
   .tiles { display: flex; gap: 10px; flex-wrap: wrap; }
   .tile { display: grid; justify-items: center; align-content: center; gap: 2px; min-width: 88px; min-height: 56px; padding: 4px 16px 6px;
@@ -33,33 +39,39 @@
     background: var(--button); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12); }
   .tile small { font-size: 13px; color: var(--fg-dim); }
   .tile.on { background: color-mix(in srgb, var(--glow) 22%, transparent); box-shadow: inset 0 0 0 2px var(--glow); }
-  .tile.pic { padding: 5px 5px 6px; font-size: 14px; }
-  .tile .thumb { width: 84px; height: 52px; border-radius: 11px; background: center / cover; display: grid; place-items: center; }
+  .tile.pic { min-width: 0; padding: 4px 4px 5px; font-size: 13px; }
+  .tile .thumb { width: 66px; height: 42px; border-radius: 11px; background: center / cover; display: grid; place-items: center; }
   .tile .thumb .icon { width: 26px; height: 26px; }
   .tile.action { display: flex; align-items: center; justify-content: center; gap: 10px; }
   .tile.action .icon { width: 26px; height: 26px; }
 
   /* The preview: the board as the choices make it, and a king close up. */
-  .preview { position: relative; align-self: center; display: grid; place-items: center; width: 420px; height: 420px; }
-  .preview #board { width: 380px; }
+  .preview { container-type: size; display: grid; place-items: center; min-height: 0; }
+  .preview #board { width: calc(min(100cqw, 100cqh) * 0.94); }
   .preview .board:not(.view-3d) { isolation: isolate; }  /* isolation would flatten 3D */
   /* A king as each style draws it top down: a crown on the face, or two plain discs. */
   .kp { position: relative; width: 34px; height: 38px; }
   .kp .piece { --u: 3px; inset: 4px 0 0; }
   @media (orientation: portrait) {
-    .settings { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; overflow: auto; }
-    .preview { grid-row: 2; justify-self: center; width: 340px; height: 340px; }
-    .preview #board { width: 310px; }
-    .groups { align-content: start; }
+    /* Portrait: the title row, the board as large as the rest leaves, and game and look
+       side by side under it, each name above its tiles. */
+    .settings { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr) auto; gap: 16px; }
+    .side { display: contents; }
+    .top { order: -2; }
+    .preview { order: -1; }
+    .groups { grid-template-columns: 1fr 1fr; align-items: start; }
+    .group { height: 100%; align-content: start; }
     .setting { grid-template-columns: 1fr; gap: 6px; }
-    .group.inline { grid-template-columns: 1fr; gap: 8px; }
   }
 </style>
 </head>
 <body>
 <main class="settings">
-  <div class="top"><a class="button glass" href="home.html" data-icon="back" aria-label="Back"></a><h1>Settings</h1></div>
-  <div class="groups" id="groups"></div>
+  <div class="side">
+    <div class="top"><a class="button glass" href="home.html" data-icon="back" aria-label="Back"></a><h1>Settings</h1>
+      <div class="lang glass" id="lang"></div></div>
+    <div class="groups" id="groups"></div>
+  </div>
   <div class="preview"><div id="board"></div></div>
 </main>
 <script>
@@ -104,9 +116,9 @@
       setting('Kings',
         tile(S.king === 'auto', 'king', 'auto', 'Auto<small>crown flat, stack raised</small>') +
         tile(S.king === 'crown', 'king', 'crown', `${king(false)}Crown`) +
-        tile(S.king === 'stack', 'king', 'stack', `${king(true)}Stack`))) +
-    group('globe', 'Language',
-      `<div class="tiles">${tile(params.get('lang') !== 'et', 'lang', 'en', 'English')}${tile(params.get('lang') === 'et', 'lang', 'et', 'Eesti')}</div>`, 'inline');
+        tile(S.king === 'stack', 'king', 'stack', `${king(true)}Stack`)));
+  document.getElementById('lang').innerHTML = Draughts.icon('globe') +
+    tile(params.get('lang') !== 'et', 'lang', 'en', 'English') + tile(params.get('lang') === 'et', 'lang', 'et', 'Eesti');
   document.querySelectorAll('button.tile').forEach((t) => t.onclick = () => go(t.dataset.k, t.dataset.v || null));
   // The preview: the game's position, where white must capture. With all moves, d4 is
   // selected and its capture shown; with mistakes only, a wrong move to c5 has flashed
