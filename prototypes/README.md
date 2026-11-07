@@ -24,7 +24,7 @@ blurred behind the 2D board and sharp elsewhere (`?bg=blur` or `photo`), which i
 pages paint a stand-in. A switcher at the bottom right of every page
 changes the season, board theme (auto follows the season), view, king style, background,
 and move hints, also as URL parameters:
-`game.html?season=winter&theme=sea&view=3d&king=stack&bg=photo`.
+`game.html?season=winter&theme=sunset&view=3d&king=stack&bg=photo`.
 
 Prototypes only use what the native renderer can draw cheaply: rounded rects, SDF
 circles, gradients, one pre-blurred background for glass (see

@@ -38,12 +38,12 @@ gfx layer.
 
 ```sh
 cd app && ../build/goose-v2026.4-macos-arm64/goose draughts.goose
-../build/goose-v2026.4-macos-arm64/goose draughts.goose -- --theme sea --size 800x1280
+../build/goose-v2026.4-macos-arm64/goose draughts.goose -- --theme sunset --size 800x1280
 ../build/goose-v2026.4-macos-arm64/goose draughts.goose -- --fen W:Wc3,e3,Kh2:Bd4,f6 --tap c3 --frames 30
 ```
 
 `app/draughts.goose` is the app; its development flags pick the board theme (`wood`,
-`stone`, `birch`, `sea`; the season's by default, with its photograph), the window size, a
+`stone`, `birch`, `sunset`; the season's by default, with its photograph), the window size, a
 starting position, squares to tap on the first frames, move hints (`--hints moves` shows
 the targets; mistakes only by default), the language (`--lang et`; the system's by
 default), and a frame to stop at and save as `draughts.png`. `app/draughts.build` adds the

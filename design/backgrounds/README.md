@@ -1,7 +1,7 @@
 # Seasonal backgrounds
 
 One photograph-like background per season, behind the board. The board theme follows
-the season: autumn wood, winter stone, spring birch, summer sea
+the season: autumn wood, winter stone, spring birch, summer sunset
 ([rendering](../../docs/architecture/rendering.md)).
 
 | Files | What they are |

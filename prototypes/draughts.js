@@ -11,8 +11,8 @@ const Draughts = (() => {
   // The app's face (docs/architecture/rendering.md, "Fonts").
   const FONT = { family: 'Libertinus Sans', pkg: 'libertinus-sans', weights: [400, 700] };
   const SEASONS = ['autumn', 'winter', 'spring', 'summer'];
-  // The season picks the board: autumn wood, winter stone, spring birch, summer sea.
-  const SEASON_THEME = { autumn: 'wood', winter: 'stone', spring: 'birch', summer: 'sea' };
+  // The season picks the board: autumn wood, winter stone, spring birch, summer sunset.
+  const SEASON_THEME = { autumn: 'wood', winter: 'stone', spring: 'birch', summer: 'sunset' };
   const THEMES = Object.values(SEASON_THEME);
   const KINGS = ['auto', 'crown', 'stack'];
 
@@ -188,7 +188,7 @@ const Draughts = (() => {
       s = s.trim();
       return [1, 3, 5].map((i) => parseInt(s.slice(i, i + 2), 16) / 255);
     };
-    const KIND = { wood: 0, stone: 1, birch: 2, sea: 3 };
+    const KIND = { wood: 0, stone: 1, birch: 2, sunset: 3 };
 
     function canvas(w, h) {
       const c = document.createElement('canvas');

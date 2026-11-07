@@ -37,11 +37,11 @@
   --glow: #8fd4ff; --glass-tint: rgb(30 47 69 / 0.4); --glass-dim: 0.75;
   --fg: #e6f4ff; --page: #101a14;
 }
-.theme-sea {
-  --light: #c7d5c6; --dark: #2e5546; --frame: #1d3a30; --kind: sea;
-  --w-face: #f6f1e4; --b-face: #b56a57; --crown-w: #2e5546;
-  --glow: #86e7d3; --glass-tint: rgb(30 74 74 / 0.4); --glass-dim: 0.75;
-  --fg: #f4f8f2; --page: #0d1c1c;
+.theme-sunset {
+  --light: #efd9c3; --dark: #9a6655; --frame: #4a2c26; --kind: sunset;
+  --w-face: #fbf3e8; --b-face: #4a2f35; --crown-w: #4a2f35;
+  --glow: #ffb08a; --glass-tint: rgb(70 40 40 / 0.45); --glass-dim: 0.8;
+  --fg: #fff3ea; --page: #20140f;
 }
 
 * { box-sizing: border-box; }

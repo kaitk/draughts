@@ -4,7 +4,7 @@
 //
 //   goose draughts.goose                          on the Mac, at home
 //   goose draughts.goose -- --screen game         the game screen; --fen and --tap open it too
-//   goose draughts.goose -- --theme sea           another board than the season's
+//   goose draughts.goose -- --theme sunset           another board than the season's
 //   goose draughts.goose -- --frames 30 --tap c3  taps squares, then saves draughts.png
 //   goose draughts.goose -- --fen W:Wc3,Kh6:Be5   starts from a position
 //   goose draughts.goose -- --hints moves         shows the selected piece's targets

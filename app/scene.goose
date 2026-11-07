@@ -63,7 +63,7 @@ struct Scene {
     has:     bool,             // whether there is a photograph
 }
 
-// The photograph of theme `kind` (theme::WOOD..SEA), decoded and blurred.
+// The photograph of theme `kind` (theme::WOOD..SUNSET), decoded and blurred.
 fn load(kind: i64, full_vert: const u8[:]) -> Scene {
     let sampler = gfx::sampler(gfx::LINEAR, gfx::CLAMP);
     var px: u8[>..] = [];

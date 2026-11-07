@@ -59,25 +59,52 @@ prototypes in [`prototypes/`](../../prototypes/README.md) settled the values bel
 The season, picked from the date, chooses the background and the board theme together;
 the theme can be overridden in settings. Values from the design boards (2026-11-07):
 
-| | Autumn: wood | Winter: stone | Spring: birch | Summer: sea |
+| | Autumn: wood | Winter: stone | Spring: birch | Summer: sunset |
 | --- | --- | --- | --- | --- |
-| Light square | `#e2b070` | `#d8dee7` | `#e8e2d3` | `#c7d5c6` |
-| Dark square | `#7a4626` | `#5a6777` | `#6b7f6a` | `#2e5546` |
-| Frame | `#3b2112` | `#2a3442` | `#3d4a3c` | `#1d3a30` |
-| Light piece | `#f0d4a4` | `#f3eee2` | `#f6f3e7` | `#f6f1e4` |
-| Dark piece | `#4a2918` | `#2b3440` | `#3a4a3f` | `#b56a57` (terracotta) |
-| Glow | `#ffd75a` | `#a7d0fb` | `#8fd4ff` | `#86e7d3` |
-| Glass tint | `#2b1e18` at 66% | `#1e2f45` at 40% | `#1e2f45` at 40% | `#1e4a4a` at 40% |
-| Glass copy dimmed to | 0.9 | 0.75 | 0.75 | 0.75 |
-| Text | `#f8f3e6` | `#e6f4ff` | `#e6f4ff` | `#f4f8f2` |
-| Page under the scene | `#1c1410` | `#0b1622` | `#101a14` | `#0d1c1c` |
+| Light square | `#e2b070` | `#d8dee7` | `#e8e2d3` | `#efd9c3` |
+| Dark square | `#7a4626` | `#5a6777` | `#6b7f6a` | `#9a6655` |
+| Frame | `#3b2112` | `#2a3442` | `#3d4a3c` | `#4a2c26` |
+| Light piece | `#f0d4a4` | `#f3eee2` | `#f6f3e7` | `#fbf3e8` |
+| Dark piece | `#4a2918` | `#2b3440` | `#3a4a3f` | `#4a2f35` (plum) |
+| Glow | `#ffd75a` | `#a7d0fb` | `#8fd4ff` | `#ffb08a` (coral) |
+| Glass tint | `#2b1e18` at 66% | `#1e2f45` at 40% | `#1e2f45` at 40% | `#462828` at 45% |
+| Glass copy dimmed to | 0.9 | 0.75 | 0.75 | 0.8 |
+| Text | `#f8f3e6` | `#e6f4ff` | `#e6f4ff` | `#fff3ea` |
+| Page under the scene | `#1c1410` | `#0b1622` | `#101a14` | `#20140f` |
 | Square surface | wood grain | soft mottling | faint fibre | plain sheen |
+
+Summer's sunset (chosen 2026-11-07) takes the summer photograph's evening sky, peach and
+dusky rose, where the design boards' sea greens were cold against it and close to
+spring's sage. The crown on a light piece is the dark piece's color.
 
 Secondary text is the text color at 66%. The surfaces are faint, never busy: a few sines
 and value noise in the board shader. Wood is fine irregular streaks along the board and
 a broad soft figure, never a regular stripe, which reads as bands from afar, with each
 square its own tone; stone a paper-like mottling; birch a hint of fibre across;
-sea almost flat.
+sunset almost flat.
+
+#### Themes kept for later
+
+Set aside, not rejected: candidates for another season's photograph, a theme setting, or
+a later board. Values as in the table above.
+
+| | Sand and pine (2026-11-07) | Sea (the design boards' summer, until 2026-11-07) |
+| --- | --- | --- |
+| Light square | `#e6cfa6` | `#c7d5c6` |
+| Dark square | `#56603f` | `#2e5546` |
+| Frame | `#33361f` | `#1d3a30` |
+| Light piece | `#f7efdf` | `#f6f1e4` |
+| Dark piece | `#b5603f` (terracotta) | `#b56a57` (terracotta) |
+| Crown on a light piece | `#56603f` | `#2e5546` |
+| Glow | `#ffc67a` | `#86e7d3` |
+| Glass tint | `#3a2a1e` at 50% | `#1e4a4a` at 40% |
+| Glass copy dimmed to | 0.8 | 0.75 |
+| Text | `#fbf3e6` | `#f4f8f2` |
+| Page under the scene | `#1e1a12` | `#0d1c1c` |
+| Square surface | soft mottling, like sand | plain sheen |
+
+Sand and pine is warm sand with olive pine squares; it suits the summer photograph too,
+but its olive sits nearer spring's greens than the sunset does.
 
 ### Scene and glass
 

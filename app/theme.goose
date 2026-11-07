@@ -8,7 +8,7 @@ import vec;
 let WOOD = 0;
 let STONE = 1;
 let BIRCH = 2;
-let SEA = 3;
+let SUNSET = 3;
 
 // The shaders' uniform block, std140: vec4s, colors in sRGB 0..1.
 struct Theme {
@@ -20,7 +20,7 @@ struct Theme {
     crown_w: float4,    // the crown on a light piece; on a dark one it is gold
     glow:    float4,
     page:    float4,    // the color under everything
-    kind:    float4,    // x: the square surface (WOOD..SEA)
+    kind:    float4,    // x: the square surface (WOOD..SUNSET)
     glass:   float4,    // the glass tint, w: its opacity
     text:    float4,    // the text and icons; w: how much the glass copy is dimmed to
 }
@@ -46,10 +46,10 @@ fn get(kind: i64) -> Theme {
                          w_face: rgb(0xf6f3e7), b_face: rgb(0x3a4a3f), crown_w: rgb(0x3a4a3f),
                          glow:   rgb(0x8fd4ff), page: rgb(0x101a14), kind: k,
                          glass: rgba(0x1e2f45, 0.4), text: rgba(0xe6f4ff, 0.75) },
-        _ => Theme { light: rgb(0xc7d5c6), dark: rgb(0x2e5546), frame: rgb(0x1d3a30),
-                     w_face: rgb(0xf6f1e4), b_face: rgb(0xb56a57), crown_w: rgb(0x2e5546),
-                     glow:   rgb(0x86e7d3), page: rgb(0x0d1c1c), kind: k,
-                     glass: rgba(0x1e4a4a, 0.4), text: rgba(0xf4f8f2, 0.75) },
+        _ => Theme { light: rgb(0xefd9c3), dark: rgb(0x9a6655), frame: rgb(0x4a2c26),
+                     w_face: rgb(0xfbf3e8), b_face: rgb(0x4a2f35), crown_w: rgb(0x4a2f35),
+                     glow:   rgb(0xffb08a), page: rgb(0x20140f), kind: k,
+                     glass: rgba(0x462828, 0.45), text: rgba(0xfff3ea, 0.8) },
     };
 }
 
@@ -65,12 +65,12 @@ fn month(epoch: f64) -> i64 {
     return if mp < 10 { mp + 3 } else { mp - 9 };
 }
 
-// The season picks the board: autumn wood, winter stone, spring birch, summer sea.
+// The season picks the board: autumn wood, winter stone, spring birch, summer sunset.
 fn for_month(m: i64) -> i64 {
-    return if m == 12 || m <= 2 { STONE } else if m <= 5 { BIRCH } else if m <= 8 { SEA } else { WOOD };
+    return if m == 12 || m <= 2 { STONE } else if m <= 5 { BIRCH } else if m <= 8 { SUNSET } else { WOOD };
 }
 
 fn by_name(name: const u8[:]) -> i64 {
     return if name == "wood" { WOOD } else if name == "stone" { STONE } else if name == "birch" { BIRCH }
-           else if name == "sea" { SEA } else { -1 };
+           else if name == "sunset" { SUNSET } else { -1 };
 }

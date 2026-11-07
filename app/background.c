@@ -57,7 +57,7 @@ static const unsigned char summer[] = {
 static const unsigned char summer[] = { 0 };
 #endif
 
-// By theme: wood (autumn), stone (winter), birch (spring), sea (summer).
+// By theme: wood (autumn), stone (winter), birch (spring), sunset (summer).
 static const unsigned char *const images[4] = { autumn, winter, spring, summer };
 static const int64_t lengths[4] = { sizeof autumn - 1, sizeof winter - 1, sizeof spring - 1,
                                     sizeof summer - 1 };

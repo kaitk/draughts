@@ -12,7 +12,7 @@ import gui from "../gui";
 import strings from "../strings";
 
 // The board themes by season, as app/theme.goose numbers them, in the order the tiles
-// show the seasons: winter stone, spring birch, summer sea, autumn wood.
+// show the seasons: winter stone, spring birch, summer sunset, autumn wood.
 let SEASON_KINDS = [1, 2, 3, 0];
 let SEASON_KEYS = [strings::SEASON_WINTER, strings::SEASON_SPRING, strings::SEASON_SUMMER, strings::SEASON_AUTUMN];
 let SEASON_NAMES = ["winter", "spring", "summer", "autumn"];
