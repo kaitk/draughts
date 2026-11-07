@@ -14,6 +14,9 @@ the board and panel is calm; low contrast and a little dark; no board, pieces, o
 
 ## Prompts
 
+Ready to paste, all twelve in order: `design/tabletops/prompts.txt`. The
+templates:
+
 Realistic:
 
 > Top-down orthographic photo of a [TABLE] tabletop, perfectly flat overhead view, soft

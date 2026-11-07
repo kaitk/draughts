@@ -1,0 +1,63 @@
+Tabletop prompts for ChatGPT (task 016). Paste each block between the lines as it is,
+one per new image, in this order. Realistic first, then the Amiga style, then the felt mat.
+Save each result next to this file as <season>-<style>-NN.png (autumn-real-01.png ...).
+
+========================================================================
+1. Autumn, realistic
+========================================================================
+Top-down orthographic photo of a tabletop made of dark oiled oak with fine straight grain, perfectly flat overhead view, soft even diffuse light, no strong shadows, no perspective. The centre 75% of the image is plain, calm, slightly darker table surface with subtle texture and no objects. Only along the outer edges and corners, partly cut off by the frame: a few fallen orange maple leaves, a mug of tea, two acorns. Muted, low-contrast colors, gentle vignette. No game board, no pieces, no text. Square image.
+
+========================================================================
+2. Winter, realistic
+========================================================================
+Top-down orthographic photo of a tabletop made of grey-blue slate, perfectly flat overhead view, soft even diffuse light, no strong shadows, no perspective. The centre 75% of the image is plain, calm, slightly darker table surface with subtle texture and no objects. Only along the outer edges and corners, partly cut off by the frame: a pair of knitted wool mittens, a small pine sprig, a white candle stub, a few snow crystals. Muted, low-contrast colors, gentle vignette. No game board, no pieces, no text. Square image.
+
+========================================================================
+3. Spring, realistic
+========================================================================
+Top-down orthographic photo of a tabletop made of pale birch plywood with a light green-grey stain, perfectly flat overhead view, soft even diffuse light, no strong shadows, no perspective. The centre 75% of the image is plain, calm, slightly darker table surface with subtle texture and no objects. Only along the outer edges and corners, partly cut off by the frame: birch twigs with small new leaves, a few small wildflowers, a pencil. Muted, low-contrast colors, gentle vignette. No game board, no pieces, no text. Square image.
+
+========================================================================
+4. Summer, realistic
+========================================================================
+Top-down orthographic photo of a tabletop made of sun-bleached teal-painted wooden boards, perfectly flat overhead view, soft even diffuse light, no strong shadows, no perspective. The centre 75% of the image is plain, calm, slightly darker table surface with subtle texture and no objects. Only along the outer edges and corners, partly cut off by the frame: a few seashells, smooth grey pebbles, a piece of driftwood, a little beach sand in one corner. Muted, low-contrast colors, gentle vignette. No game board, no pieces, no text. Square image.
+
+========================================================================
+5. Autumn, Amiga style
+========================================================================
+Top-down view of a tabletop made of dark oiled oak with fine straight grain in the style of a high-resolution 1990s Amiga game screen: hand-painted pixel art with crisp clean chunky pixels, ordered-dither gradients, a limited rich palette of about 32 colors per material, the polished look of a Deluxe Paint title screen, but at modern high resolution. Flat overhead view, even light, no perspective. The centre 75% is plain table surface with gentle dithered shading and no objects. Only along the outer edges and corners, partly cut off by the frame: a few fallen orange maple leaves, a mug of tea, two acorns, drawn in the same pixel style. No game board, no pieces, no text. Square image.
+
+========================================================================
+6. Winter, Amiga style
+========================================================================
+Top-down view of a tabletop made of grey-blue slate in the style of a high-resolution 1990s Amiga game screen: hand-painted pixel art with crisp clean chunky pixels, ordered-dither gradients, a limited rich palette of about 32 colors per material, the polished look of a Deluxe Paint title screen, but at modern high resolution. Flat overhead view, even light, no perspective. The centre 75% is plain table surface with gentle dithered shading and no objects. Only along the outer edges and corners, partly cut off by the frame: a pair of knitted wool mittens, a small pine sprig, a white candle stub, a few snow crystals, drawn in the same pixel style. No game board, no pieces, no text. Square image.
+
+========================================================================
+7. Spring, Amiga style
+========================================================================
+Top-down view of a tabletop made of pale birch plywood with a light green-grey stain in the style of a high-resolution 1990s Amiga game screen: hand-painted pixel art with crisp clean chunky pixels, ordered-dither gradients, a limited rich palette of about 32 colors per material, the polished look of a Deluxe Paint title screen, but at modern high resolution. Flat overhead view, even light, no perspective. The centre 75% is plain table surface with gentle dithered shading and no objects. Only along the outer edges and corners, partly cut off by the frame: birch twigs with small new leaves, a few small wildflowers, a pencil, drawn in the same pixel style. No game board, no pieces, no text. Square image.
+
+========================================================================
+8. Summer, Amiga style
+========================================================================
+Top-down view of a tabletop made of sun-bleached teal-painted wooden boards in the style of a high-resolution 1990s Amiga game screen: hand-painted pixel art with crisp clean chunky pixels, ordered-dither gradients, a limited rich palette of about 32 colors per material, the polished look of a Deluxe Paint title screen, but at modern high resolution. Flat overhead view, even light, no perspective. The centre 75% is plain table surface with gentle dithered shading and no objects. Only along the outer edges and corners, partly cut off by the frame: a few seashells, smooth grey pebbles, a piece of driftwood, a little beach sand in one corner, drawn in the same pixel style. No game board, no pieces, no text. Square image.
+
+========================================================================
+9. Autumn, felt mat
+========================================================================
+Top-down orthographic photo of a tabletop made of deep rust-brown wool felt game mat with a fine woven texture and a stitched border just inside its edges, lying on a dark oiled oak with fine straight grain that shows only at the very edges of the image. Flat overhead view, soft even diffuse light, no perspective. The felt is plain and calm with no objects on it. Muted, low-contrast colors. No game board, no pieces, no text. Square image.
+
+========================================================================
+10. Winter, felt mat
+========================================================================
+Top-down orthographic photo of a tabletop made of dark slate-blue wool felt game mat with a fine woven texture and a stitched border just inside its edges, lying on a grey-blue slate that shows only at the very edges of the image. Flat overhead view, soft even diffuse light, no perspective. The felt is plain and calm with no objects on it. Muted, low-contrast colors. No game board, no pieces, no text. Square image.
+
+========================================================================
+11. Spring, felt mat
+========================================================================
+Top-down orthographic photo of a tabletop made of muted moss-green wool felt game mat with a fine woven texture and a stitched border just inside its edges, lying on a pale birch plywood with a light green-grey stain that shows only at the very edges of the image. Flat overhead view, soft even diffuse light, no perspective. The felt is plain and calm with no objects on it. Muted, low-contrast colors. No game board, no pieces, no text. Square image.
+
+========================================================================
+12. Summer, felt mat
+========================================================================
+Top-down orthographic photo of a tabletop made of deep teal wool felt game mat with a fine woven texture and a stitched border just inside its edges, lying on a sun-bleached teal-painted wooden boards that shows only at the very edges of the image. Flat overhead view, soft even diffuse light, no perspective. The felt is plain and calm with no objects on it. Muted, low-contrast colors. No game board, no pieces, no text. Square image.

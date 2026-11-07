@@ -5,3 +5,5 @@ __pycache__/
 design/backgrounds/*.png
 design/backgrounds/masters/
 app/kabe.png
+# Generated tabletops stay local until the user agrees (task 016)
+design/tabletops/*.png
