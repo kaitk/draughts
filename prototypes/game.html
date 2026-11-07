@@ -37,6 +37,14 @@
   .turn .piece { --u: 6px; position: relative; inset: auto; width: 64px; height: 64px;
     box-shadow: 0 3px 0 var(--side), 0 0 0 4px color-mix(in srgb, var(--glow) 80%, transparent),
       0 0 22px 4px color-mix(in srgb, var(--glow) 45%, transparent); }
+  /* Move hints, one tap from the game: on shows the targets, off marks only mistakes. */
+  .top { position: relative; display: grid; place-items: center; width: 100%; }
+  .assist { position: absolute; right: 0; top: 50%; translate: 0 -50%; width: 52px; height: 52px; border: 0;
+    border-radius: 16px; display: grid; place-items: center; color: var(--fg); cursor: pointer;
+    background: rgb(255 255 255 / 0.08); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18); }
+  .assist .icon { width: 26px; height: 26px; }
+  .assist.on { background: color-mix(in srgb, var(--glow) 26%, transparent); box-shadow: inset 0 0 0 1px var(--glow); color: var(--glow); }
+  .assist.off .icon { opacity: 0.45; }
   /* Portrait: the board fills the width; below it the side to move, then the four
      buttons in a row. */
   @media (orientation: portrait) {
@@ -49,11 +57,14 @@
   }
 </style>
 </head>
-<body>
+<body data-screen="board">
 <main class="game">
   <div id="board"></div>
   <aside class="panel glass">
-    <div class="turn" aria-label="White to move"><div class="piece white"></div></div>
+    <div class="top">
+      <div class="turn" aria-label="White to move"><div class="piece white"></div></div>
+      <button class="assist" id="assist" aria-label="Move hints"></button>
+    </div>
     <div class="rule"></div>
     <div class="controls">
       <button class="button" data-icon="undo" aria-label="Undo"></button>
@@ -67,7 +78,19 @@
   Kabe.init();
   // White to move must capture: d4 (two pieces, via f6 to h4) and the king on h6 (two,
   // via f4 to d6). d4 is selected. Black's last move was g7-f6... then f6-g5.
+  const mistakes = Kabe.settings.assist === 'mistakes';
+  const assist = document.getElementById('assist');
+  assist.className = `assist ${mistakes ? 'off' : 'on'}`;
+  assist.innerHTML = Kabe.icon('dots');
+  assist.onclick = () => {
+    const p = new URLSearchParams(location.search);
+    p.set('assist', mistakes ? 'moves' : 'mistakes');
+    location.search = p.toString();
+  };
+  // With mistakes only: d4 was selected and moved toward c5, which isn't legal, since
+  // white must capture; c5 flashes and the pieces that must capture pulse.
   Kabe.board(document.getElementById('board'), {
+    error: mistakes ? ['c5'] : [],
     white: ['a1', 'c1', 'e1', 'g1', 'b2', 'f2', 'h2', 'c3', 'e3', 'd4', 'h6'],
     black: ['b8', 'd8', 'f8', 'h8', 'a7', 'c7', 'b6', 'e5', 'g5'],
     kings: ['h6'],

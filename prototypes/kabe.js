@@ -32,6 +32,9 @@ const Kabe = (() => {
     view: pick('view', ['2d', '3d'], '2d'),
     king: pick('king', KINGS, 'auto'),
     bg: pick('bg', ['auto', 'table', 'photo'], 'auto'),
+    // Move hints: "mistakes" (the default) only marks a wrong move; "moves" shows the
+    // selected piece's targets, on by default only in the first lessons (docs/product.md).
+    assist: pick('assist', ['moves', 'mistakes'], 'mistakes'),
     font: FONTS[params.get('font')] ? params.get('font') : 'libertinus',
   };
 
@@ -52,9 +55,9 @@ const Kabe = (() => {
     return `'${f.family}', sans-serif`;
   }
 
-  // The background. For the 2D board, a flat tabletop in the theme's color: the board
-  // reads cleanest on a calm surface. For 3D (and with ?bg=photo), the season's
-  // photograph from design/backgrounds/masters/ (local, out of git; its README says how
+  // The background. Behind the 2D board (pages with <body data-screen="board">), a flat
+  // tabletop in the theme's color: the board reads cleanest on a calm surface. Everywhere
+  // else (home, puzzles) and behind the 3D board, the season's photograph from design/backgrounds/masters/ (local, out of git; its README says how
   // to make it), or a painted stand-in without it.
   const TABLES = { wood: '#3a2c22', stone: '#25313e', birch: '#2a382f', sea: '#1e3838' };
 
@@ -86,7 +89,8 @@ const Kabe = (() => {
   }
 
   function useTable() {
-    return settings.bg === 'table' || (settings.bg === 'auto' && settings.view === '2d');
+    return settings.bg === 'table' ||
+      (settings.bg === 'auto' && settings.view === '2d' && document.body.dataset.screen === 'board');
   }
   const SCENE_FILE = (s) => `../design/backgrounds/masters/${s}-01-2048.jpg`;
   let sceneAspect = 1;  // width / height of the scene image
@@ -172,6 +176,7 @@ const Kabe = (() => {
     starOff: '<path d="M12 2l3.1 6.3 6.9 1-5 4.8 1.2 6.9-6.2-3.2-6.2 3.2 1.2-6.9-5-4.8 6.9-1z"/>',
     crown: '<path class="solid" d="M3 17 2 7l5 4 5-7 5 7 5-4-1 10z"/><path class="solid" d="M3 19h18v2H3z"/>',
     crownLine: '<path d="M3 17 2 7l5 4 5-7 5 7 5-4-1 10z"/><path d="M3 20.5h18"/>',
+    dots: '<circle class="solid" cx="7" cy="7" r="2.2"/><circle class="solid" cx="17" cy="7" r="2.2"/><circle class="solid" cx="7" cy="17" r="2.2"/><circle class="solid" cx="17" cy="17" r="2.2"/>',
     target: '<circle cx="12" cy="12" r="7"/><circle class="solid" cx="12" cy="12" r="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>',
     shield: '<path d="M12 2.5 4 5.5v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10v-6z"/>',
     lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
@@ -205,7 +210,8 @@ const Kabe = (() => {
     const set = (list) => new Set(list || []);
     const white = set(opts.white), black = set(opts.black), kings = set(opts.kings);
     const forced = set(opts.forced), targets = set(opts.targets), via = set(opts.via);
-    const last = set(opts.last);
+    const last = set(opts.last), error = set(opts.error);
+    const hints = (opts.assist || settings.assist) === 'moves';
     el.classList.add('board', `theme-${opts.theme || settings.theme}`);
     if (style === 'stack') el.classList.add('stack');
     if (view === '3d') el.classList.add('view-3d');
@@ -224,11 +230,12 @@ const Kabe = (() => {
           } else {
             inner = `<div class="piece ${color} ${kings.has(sq) ? 'king' : ''} ${cls}">${kings.has(sq) ? `<div class="crown">${icon('crown')}</div>` : ''}</div>`;
           }
-        } else if (targets.has(sq)) {
+        } else if (targets.has(sq) && hints) {
           inner = '<div class="target"></div>';
-        } else if (via.has(sq)) {
+        } else if (via.has(sq) && hints) {
           inner = '<div class="target via"></div>';
         }
+        if (error.has(sq)) inner += '<div class="error"></div>';
         html += `<div class="sq${dark ? ' dark' : ''}${last.has(sq) ? ' last' : ''}">${inner}</div>`;
       }
     }
@@ -246,6 +253,7 @@ const Kabe = (() => {
       select('theme', ['auto', ...THEMES], params.has('theme') ? settings.theme : 'auto') +
       select('view', ['2d', '3d'], settings.view) + select('king', KINGS, settings.king) +
       select('bg', ['auto', 'table', 'photo'], settings.bg) +
+      select('assist', ['moves', 'mistakes'], settings.assist) +
       select('font', Object.keys(FONTS), settings.font);
     el.addEventListener('change', (e) => {
       const { key } = e.target.dataset;

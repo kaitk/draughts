@@ -256,6 +256,19 @@ body {
   box-shadow: 0 0 calc(1.6 * var(--u)) color-mix(in srgb, var(--glow) 50%, transparent);
 }
 
+/* A wrong move, when hints show mistakes only: the square flashes red with a ring, and
+   the piece that must capture (if that was why) pulses. */
+.error {
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  border: calc(0.5 * var(--u)) solid var(--forced);
+  background: color-mix(in srgb, var(--forced) 22%, transparent);
+  box-shadow: 0 0 calc(2 * var(--u)) color-mix(in srgb, var(--forced) 50%, transparent);
+  animation: flash 0.6s ease-out 2;
+}
+@keyframes flash { 0% { opacity: 0; scale: 0.8; } 40% { opacity: 1; scale: 1; } 100% { opacity: 0.85; } }
+
 /* The 3D board: the same board tilted in perspective, its squares in one 3D space, and
    pieces as real discs (layers for the side, a face on top). It stands in for the lit
    meshes of a 3D renderer; the king is a stack of two discs with the crown on top. */
