@@ -2,7 +2,7 @@
 // a few middlegame positions of each variant, and its speed in nodes a second.
 //
 //   goose build -o build/aibench tools/aibench.goose
-//   build/aibench [russian|international] [FEN]
+//   build/aibench [russian|international|brazilian] [FEN]
 //
 // Prints one line per position and level: the move, the deepest iteration finished,
 // nodes, milliseconds; then each level's slowest reply and the nodes a second overall.
@@ -26,6 +26,14 @@ let INTERNATIONAL_FENS = [
     "W:W25,32,33,34,35,36,38,39,40,42,43,44,46,47,49,50:B1,2,3,4,7,9,11,13,14,15,16,18,19,20,23,24",
     "W:W31,35,36,38,39,40,41,43,44,45,46,47,48,49:B1,2,3,4,5,6,7,10,11,12,13,14,17,22",
     "W:W27,30,31,34,37,38,39,40,43,44,46,47,50:B1,3,4,7,9,12,13,14,16,17,18,23,29",
+];
+
+let BRAZILIAN_FENS = [
+    "W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8",
+    "W:Wa1,c1,e1,g1,f2,h2,a3,e3,g3,b4,f4,a5:Bh4,c5,e5,d6,f6,a7,c7,e7,g7,b8,f8,h8",
+    "W:Wa1,g1,b2,d2,f2,h2,a3,g3,b4,a5,g5:Bd4,h4,e5,d6,f6,a7,c7,e7,g7,f8,h8",
+    "W:Wa1,g1,f2,h2,a3,c3,g3,b4:Bf4,h4,c5,e5,f6,a7,b8,f8,h8",
+    "W:Wb2,h2,c3,e3,b4,d4,h4:Bf4,a5,g5,f6,h6,a7,e7",
 ];
 
 fn bench(e: ai::Engine&, variant: u8, fen: const u8[:], slowest: f64[]&, nodes: i64[]&,
@@ -65,6 +73,10 @@ fn main() {
     if both || a[1] == "international" {
         if a.len >= 3 { bench(e, rules::INTERNATIONAL, a[2], slowest, nodes, seconds); }
         else { for f in INTERNATIONAL_FENS { bench(e, rules::INTERNATIONAL, f, slowest, nodes, seconds); } }
+    }
+    if both || a[1] == "brazilian" {
+        if a.len >= 3 { bench(e, rules::BRAZILIAN, a[2], slowest, nodes, seconds); }
+        else { for f in BRAZILIAN_FENS { bench(e, rules::BRAZILIAN, f, slowest, nodes, seconds); } }
     }
     for level in ai::LEVELS {
         let rate = if seconds[level] > 0.0 { nodes[level] / seconds[level] } else { 0.0 };

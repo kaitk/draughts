@@ -3,6 +3,11 @@
 How to run everything: `docs/development.md`, "Test the rules". Run `scripts/test.sh`
 before committing a change to `rules/`.
 
+In a separate working tree of the repo, make `build/` a real directory holding only a
+symlink to the main checkout's `build/goose-v2026.4-macos-arm64`, not a symlink to its
+whole `build/`: the tests and tools write `build/perft`, `build/test/`, and the like,
+which would overwrite the main checkout's while another session uses them.
+
 ## What each kind of test is for
 
 - `test/<area>/<name>.goose` with `test/expected/<name>.out`: one program per behavior,

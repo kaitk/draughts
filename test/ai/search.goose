@@ -2,8 +2,8 @@
 // with no pruning and no table: every root move the machine scores exactly must have
 // the minimax value, and every other must be worse than the best by more than the
 // margin. Then the transposition table must change no exact root score at a fixed
-// depth, only the number of nodes. Positions: the starts and middlegames of both variants,
-// one with kings.
+// depth, only the number of nodes. Positions: the starts and middlegames of each variant,
+// and one with kings.
 import std;
 import rules from "../../rules";
 import ai from "../../ai";
@@ -85,8 +85,13 @@ fn main() {
     against_minimax(e, rules::INTERNATIONAL, "W:W31-50:B1-20", 3, 2, 40);
     against_minimax(e, rules::INTERNATIONAL, "W:W27,30,31,34,37,38,39,40,43,44,46,47,50:B1,3,4,7,9,12,13,14,16,17,18,23,29", 3, 3, 90);
     against_minimax(e, rules::INTERNATIONAL, "W:WK46,32,33,38:BK5,18,19,24", 3, 2, 60);
+    against_minimax(e, rules::BRAZILIAN, "W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8", 4, 2, 40);
+    against_minimax(e, rules::BRAZILIAN, "W:Wa1,g1,b2,d2,f2,h2,a3,g3,b4,a5,g5:Bd4,h4,e5,d6,f6,a7,c7,e7,g7,f8,h8", 4, 4, 0);
+    against_minimax(e, rules::BRAZILIAN, "B:WKa1,c3,e3,g3:BKh2,b6,d6", 4, 2, 60);
     with_and_without_table(e, rules::RUSSIAN, "W:Wa1,e1,g1,b2,d2,f2,h2,a3,e3,f4,a5:Bg5,b6,d6,f6,h6,a7,c7,e7,g7,b8,f8", 7, 6);
     with_and_without_table(e, rules::RUSSIAN, "B:WKa1,c3,e3,g3:BKh2,b6,d6", 7, 4);
     with_and_without_table(e, rules::INTERNATIONAL, "W:W25,32,33,34,35,36,38,39,40,42,43,44,46,47,49,50:B1,2,3,4,7,9,11,13,14,15,16,18,19,20,23,24", 5, 6);
     with_and_without_table(e, rules::INTERNATIONAL, "W:WK46,32,33,38:BK5,18,19,24", 6, 4);
+    with_and_without_table(e, rules::BRAZILIAN, "W:Wb2,h2,c3,e3,b4,d4,h4:Bf4,a5,g5,f6,h6,a7,e7", 7, 6);
+    with_and_without_table(e, rules::BRAZILIAN, "B:WKa1,c3,e3,g3:BKh2,b6,d6", 7, 4);
 }

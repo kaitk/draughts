@@ -14,6 +14,7 @@ import rules from "../../rules";
 import ai from "../../ai";
 
 let SEEDS = 2;
+let NAMES = ["russian", "international", "english", "brazilian"];
 
 fn material(p: rules::Position) -> i64 {
     var s = 0;
@@ -44,7 +45,8 @@ fn main() {
     // the choosing, not the strength.
     e.node_limit = 4000;
     var moves: rules::Moves = [];
-    for variant: u8 in 2 {
+    let tested: u8[3] = [rules::RUSSIAN, rules::INTERNATIONAL, rules::BRAZILIAN];
+    for variant in tested {
         var positions = 0;
         var checked: i64[ai::LEVELS] = [0; ai::LEVELS];
         var hangs:   i64[ai::LEVELS] = [0; ai::LEVELS];
@@ -93,7 +95,7 @@ fn main() {
                 p = rules::play(p, ai::think(e, p, ai::level_skill(ai::MEDIUM), (game * 100 + ply + 7) as u64));
             }
         }
-        print(if variant == rules::RUSSIAN { "russian" } else { "international" }, ": ", positions,
+        print(NAMES[variant], ": ", positions,
               " positions; moves checked per level ", checked[0], ", ", checked[1], ", ", checked[2],
               "; hangs ", hangs[0], ", ", hangs[1], ", ", hangs[2], "; sacrifices ", sacrifices,
               "; combinations left ", gifts);

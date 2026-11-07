@@ -89,13 +89,13 @@ build/aimatch russian 90 45 20      # skill 90 against 45, 20 games, colors swap
 scripts/android_cli.sh tools/aibench.goose                          # the same on the tablet
 ```
 
-`tools/aibench.goose` times each level in a few middlegames of both variants and prints
-its speed in nodes a second ([computer player](architecture/ai.md)); give it a variant
-and a FEN to time one position. `tools/aimatch.goose` plays the computer against itself
-at two skills (`--nodes A B` gives each side its own node limit; `--fens PLY` prints the
-positions games reach, for benchmarks). `scripts/android_cli.sh` builds any headless
-Goose program as a plain Android executable with the NDK's clang at -O2, pushes it to
-`/data/local/tmp`, and runs it with the arguments given: no APK, no SDL.
+`tools/aibench.goose` times each level in a few middlegames of Russian, International, and
+Brazilian and prints its speed in nodes a second ([computer player](architecture/ai.md));
+give it a variant and a FEN to time one position. `tools/aimatch.goose` plays the computer
+against itself at two skills (`--nodes A B` gives each side its own node limit;
+`--fens PLY` prints the positions games reach, for benchmarks). `scripts/android_cli.sh`
+builds any headless Goose program as a plain Android executable with the NDK's clang at
+-O2, pushes it to `/data/local/tmp`, and runs it with the arguments given: no APK, no SDL.
 `adb shell "taskset 0f /data/local/tmp/aibench"` keeps it on the tablet's four little
 cores (`f0`, the big ones).
 

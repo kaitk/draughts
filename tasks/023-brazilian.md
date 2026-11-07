@@ -53,8 +53,26 @@ a check here.
 a flying king; a white and a black man crossing the far row mid-capture and ending as men;
 a capture ending on the far row crowning, where Russian's new king would fly on.
 
+The computer player, 2026-11-08, built on the Mac (M-series): Brazilian takes
+International's king (300) and Russian's 8×8 rows, both from the variant's fields
+(`ai/eval.goose`), so it needed no weights of its own.
+
+- `build/aimatch brazilian 90 45 20`: hard 19 won, 1 drawn, 0 lost, 67 plies a game
+  (36 s).
+- `build/aimatch brazilian 45 10 20`: medium 18 won, 1 drawn, 1 lost, 59 plies a game.
+- `build/aibench brazilian` (the start and four middlegames from medium's own games):
+  hard's slowest reply 105 ms, 8.6 M nodes a second (Russian's positions: 91 ms,
+  9.4 M).
+- `test/ai/`: no level hangs a piece in 91 Brazilian positions (182 moves checked per
+  level; 21 sacrifices, 5 combinations left for the child); the search matches minimax
+  on the start, a middlegame, and a king ending, and the table changes no root score.
+
 ## Open for the user
 
+- The setup offers Brazilian once tasks 021 and 025 build it: the variant is
+  `rules::BRAZILIAN`, and the board, game, shell, and saved game already read size and
+  rules from `rules::VARIANTS`. The settings and setup criterion stays open until then,
+  with its strings (a name in `strings/<lang>.txt`) and the tutorial's 8×8 steps.
 - Squares are written a1..h8 as in Russian (lidraughts shows Brazilian with letters and
   numbers too); numbered squares (1–32, as Halbersma's FEN) would be one flag in
   `rules::VARIANTS`. Reading accepts both either way.

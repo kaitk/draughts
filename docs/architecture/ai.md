@@ -61,6 +61,8 @@ second for an event ([rendering](rendering.md#frames-and-battery)).
 - **Evaluation**, in hundredths of a man, for the side to move: a man 100, a king 300
   (150 in English, whose kings don't fly); a man gains as it advances, most near the far
   row; a man on its own back row 3 to 4, for keeping kings out; a man on a central square 3.
+  The weights follow from the variant's fields: the king's from flying, the rows' from the
+  board's size, so Brazilian has International's king on Russian's 8×8 rows.
   All of it is integer arithmetic on the bitboards.
 
 Nothing allocates per node: the frames, their move buffers (`rules::Moves`, 512 moves),
@@ -104,5 +106,5 @@ How each part plays like a person:
    the position as it stands, which few of the child's other moves do. Captures are
    compulsory, so leaving a capture would only hang a piece, not leave something to find.
 
-Played against itself, each level beats the one below it nearly every game, in both
-variants.
+Played against itself, each level beats the one below it nearly every game, in each
+variant.

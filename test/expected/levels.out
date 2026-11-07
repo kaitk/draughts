@@ -41,4 +41,12 @@ W:W31,35,36,38,39,40,41,43,44,45,46,47,48,49:B1,2,3,4,5,6,7,10,11,12,13,14,17,22
   level 0: 38-33 38-33 38-32 38-32  (the same in steps)
   level 1: 48-42 31-26 39-34 31-26  (the same in steps)
   level 2: 39-34 39-34 40-34 31-27  (the same in steps)
+W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8
+  level 0: a3-b4 c3-d4 c3-b4 c3-d4  (the same in steps)
+  level 1: e3-d4 c3-b4 e3-d4 c3-d4  (the same in steps)
+  level 2: a3-b4 g3-f4 e3-f4 e3-d4  (the same in steps)
+W:Wa1,c1,e1,g1,f2,h2,a3,e3,g3,b4,f4,a5:Bh4,c5,e5,d6,f6,a7,c7,e7,g7,b8,f8,h8
+  level 0: a1-b2 a1-b2 f4-g5 e1-d2  (the same in steps)
+  level 1: c1-b2 c1-b2 c1-d2 c1-b2  (the same in steps)
+  level 2: a1-b2 c1-b2 e1-d2 c1-b2  (the same in steps)
 easy, after wins, then losses: 14 18 22 26 30 30 30 26 22 22 18 14 10 6 2 0 0

@@ -2,7 +2,7 @@
 // ordered and to see how often each wins.
 //
 //   goose build -o build/aimatch tools/aimatch.goose
-//   build/aimatch russian|international SKILL_A SKILL_B GAMES [--fens PLY] [--nodes A B]
+//   build/aimatch russian|international|brazilian SKILL_A SKILL_B GAMES [--fens PLY] [--nodes A B]
 //
 // Each pair of games starts from the same position with colors swapped. A game is
 // drawn after 300 plies, or after 50 plies with no capture and no man moved. Prints
@@ -16,10 +16,12 @@ import ai from "../ai";
 fn main() {
     let a = args();
     if a.len < 5 {
-        write_stderr("usage: aimatch russian|international SKILL_A SKILL_B GAMES [--fens PLY] [--nodes A B]\n");
+        write_stderr("usage: aimatch russian|international|brazilian SKILL_A SKILL_B GAMES [--fens PLY] [--nodes A B]\n");
         exit(2);
     }
-    let variant: u8 = if a[1] == "russian" { rules::RUSSIAN } else { rules::INTERNATIONAL };
+    let variant: u8 = if a[1] == "russian" { rules::RUSSIAN }
+                      else if a[1] == "brazilian" { rules::BRAZILIAN }
+                      else { rules::INTERNATIONAL };
     let sa, oka = parse_int(a[2]);
     let sb, okb = parse_int(a[3]);
     let games, okg = parse_int(a[4]);
