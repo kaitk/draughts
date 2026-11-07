@@ -37,7 +37,11 @@ before committing a change to `rules/`.
 
 What can't run headless is checked on the tablet with scripts that print numbers:
 `scripts/lifecycle_memory.sh` for memory across pause, resume, and rotation, and
-`scripts/idle_cpu.sh` for CPU while idle. Things learned measuring there:
+`scripts/idle_cpu.sh` for CPU while idle. Run them when a larger iteration finishes (a
+task, or a group of subtasks), or when a change is likely to move idle or memory (new
+textures, threads, frame pacing), not after every small change (2026-11-07). A run
+during which the tablet was touched or rotated isn't an idle figure. Things learned
+measuring there:
 
 - The screen sleeps after 5 minutes and Android then pauses the app, so a longer run
   measures a paused app. Run `adb shell svc power stayon usb` first (and
