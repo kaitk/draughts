@@ -15,6 +15,12 @@ data:
 | Man reaching the last row mid-capture | crowned, keeps capturing as a king | crowned only if the move ends there | move ends, crowned |
 | Moves first | white | white | black |
 
+International's crowning is FMJD's Official Rules (Annex 1), art. 3.5 (a man is crowned
+when it "reaches and stops" on the far row) and art. 4.15 (one that passes over the far
+row during a capture and ends elsewhere "remains a man"); FMJD Annexes, February 2018:
+<https://www.ffjd.fr/fichiers/reglements/FMJD_Annexes_2018_en.pdf>. No federation plays
+10×10 otherwise; "Polish draughts" is another name for International.
+
 Common to all three: capturing is compulsory, a capture continues while it can, and
 captured pieces come off after the whole move, so no piece is jumped twice (the Turkish
 strike rule).
