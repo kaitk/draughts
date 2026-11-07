@@ -33,6 +33,8 @@ import .text;
 extern fn draughts_locales(out: u8[:]) -> i64;
 // The app's storage folder, ending in a separator (storage.c); returns how many bytes.
 extern fn draughts_storage(out: u8[:]) -> i64;
+// Wakes the loop in ms milliseconds, where frame() waits for events (wake.c).
+extern fn draughts_wake_in(ms: i64);
 
 // The theme a season setting picks: its own, or by the date.
 fn theme_for(season: i64) -> i64 {
@@ -156,6 +158,7 @@ fn main() {
     var tapped = 0;
     var focused = true;
     var season_in = 0;
+    var wake_at = -1.0;
     while gfx::frame() {
         if gfx::key_pressed("Escape") { break; }
         // Android may kill the app once it is paused; it loses focus then, and SDL lets
@@ -232,6 +235,16 @@ fn main() {
             gfx::end_pass();
             dirty = false;
             drawn++;
+        }
+        // A running clock is drawn when the time it shows changes; a timer wakes the loop
+        // then, rather than whenever the idle wait ends (wake.c).
+        let ck .= sh.game.clock;
+        if sh.screen == shell::GAME && ck.running >= 0 {
+            let next = clock::until_next(ck);
+            if wake_at < now || now + next < wake_at - 0.005 {
+                draughts_wake_in((1000.0 * next) as i64 + 2);
+                wake_at = now + next;
+            }
         }
         // A widget declared this frame before a click changed what it shows (a choice
         // lit, a toggle), so the next frame draws again; this one drew, so the next
