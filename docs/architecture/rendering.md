@@ -37,26 +37,71 @@ call directly.
 
 Reference: Snowtime's UI ([repo](https://github.com/Snowhound/snowtime), its
 `prototypes/`): dark frosted glass panels over a scene, thin light borders, flat
-buttons. Prototypes in `prototypes/` (task 003) settle the look before it is built.
+buttons. The HTML prototypes in [`prototypes/`](../../prototypes/README.md) settled the
+values below on 2026-11-07; they use only what this renderer draws cheaply.
 
+### Scene and glass
+
+- **The scene** is a calm Nordic landscape for the season (winter, spring, summer,
+  autumn), picked from the date. It is a static picture, drawn under everything softened
+  by a 6 px blur.
 - **Glass is a pre-blurred copy, not a live blur.** Snowtime measured live backdrop blur
   costing more than its weather animation, and switched to a copy of the background
-  blurred once (its `docs/architecture/scene.md`, task 069). Here, the background is
-  blurred once into a texture when it changes, and a glass panel samples that texture
-  at its screen position, then adds tint, a border, and a highlight. One texture fetch
-  per pixel, no blur per frame.
-- Snowtime's dark glass is 40% card color over the scene dimmed to 0.6 brightness at 1.3
-  saturation. That's our starting point.
+  blurred once (its `docs/architecture/scene.md`). Here the scene is blurred once, when it
+  changes, into a small texture (240 px wide, the blur a 24 px one would be at full width,
+  saturation 1.3). A glass panel samples it at its screen position: one texture fetch per
+  pixel, no blur per frame.
+- **Glass layers**, bottom to top: the copy; black at 40% (the copy dimmed to 0.6); the
+  card color `#142438` at 40%; a 1 px border of white at 14%; a 1 px top highlight of
+  white at 12%; a shadow `0 12px 32px -14px` of black at 55%. Corner radius 28 px.
+  These are Snowtime's dark glass values.
+- **Text** is `#eef5fb`, and secondary text the same at 66%. The page color under
+  everything is `#0b1622`.
+
+### Controls
+
+- **Buttons** are flat fills on the glass: white at 7%, 13% when hovered, 20% while
+  pressed (and scaled to 0.96); radius 22 px; at least 88 × 88 px (dp) for small hands,
+  icons 40 px with 2 px strokes. A primary button is the glow color at 22%.
+- **Icons** are line icons on a 24 px grid, 2 px round strokes, in the Lucide style: back,
+  undo, hint (a bulb), restart, next, a friend (two figures), the computer (a robot head,
+  with three level dots under it), puzzles (a jigsaw piece), star, crown, lock.
+- **Game screen**: in landscape the board fills the height less a 24 px margin, and a
+  128 px glass panel stands to its right: back at the top, the side to move (a piece of
+  its color with a glow ring, no text) in the middle, hint, undo, and restart at the
+  bottom. In portrait the board fills the width and the panel is a 128 px row below it.
+- **Home**: three large glass tiles (play a friend, play the computer, puzzles), in a
+  row in landscape and a column in portrait. **Puzzle picker**: one glass row per tier,
+  ten tiles of at least 64 px each with 0 to 3 stars; locked tiles show a lock, the next
+  unsolved one a glow ring. **Solved**: three stars that pop in over the dimmed board, a
+  few drifting sparks, and again or next.
+
+### Board and pieces
+
+- **Board**: wood. Light squares `#e8c99a`, dark `#9a6a45`, a frame `#5b3a24` 2.4% of the
+  board's width with rounded corners. Stone (`#d7d4cd`, `#66707a`, frame `#3a4048`) and
+  flat (`#dfe6d2`, `#6f9270`, frame `#3f5c48`) were compared and kept as later options.
+- **Pieces** are SDF discs filling 78% of a square: a face, an inner ring at 45 to 52%
+  of the radius, a rim from 80%, and a side under the disc 0.55% of the board deep, over a
+  soft shadow. White: face `#f6ead6`, ring `#d9c3a0`, rim `#e6d3b3`, side `#b89c74`.
+  Black: face `#4a2c1c`, ring `#6d4630`, rim `#3a2215`, side `#1e110a`.
+- **Kings** carry a gold crown on the face (`#c08a2c` on white, `#e9c46a` on black). A
+  stacked double disc was compared and rejected: at tablet size it reads as a shadow,
+  where the crown reads at a glance.
+- **States**, all in the glow color `#ffd36e`: the selected piece lifts by 1.1% of the
+  board and grows to 1.06 with a glow ring; a legal target is a glowing dot 30% of a
+  square; a capture's stop on the way is a ring. A piece that must capture pulses a ring
+  in `#ff9466` every 1.4 s. The last move's squares are tinted with the glow color at 16%.
 
 ## Fonts
 
-Wanted: a humanist sans with flared strokes, in the style of Optima. Optima itself is a
-commercial font, so the app needs an open-licensed font in that style. The reference the
-user liked (arXiv 2611.07289) is set in Linux Biolinum, whose maintained fork is
-Libertinus Sans (SIL OFL). Candidates to compare in a prototype: Libertinus Sans, Tenor
-Sans, Belleza, Marcellus. Each must have õ ä ö ü š ž and allow embedding (SIL OFL or
-similar). The atlas bakes Latin-1, Latin Extended-A, and general punctuation. Task 001
-uses Tenor Sans (`assets/fonts/`, OFL), which has all the Estonian letters.
+**Libertinus Sans** (SIL OFL 1.1), the maintained fork of Linux Biolinum: a humanist sans
+with flared strokes in the style of Optima, the face of the reference the user liked
+(arXiv 2611.07289), with a regular and a bold. Tenor Sans, Belleza, and Marcellus were
+compared in `prototypes/fonts.html`; all four have õ ä ö ü š ž. Tenor Sans, which the
+proof of concept uses (`assets/fonts/`), is the runner-up: clean and wide, but one weight
+only. Marcellus has small serifs, further from Optima. The atlas bakes Latin-1, Latin
+Extended-A, and general punctuation.
 
 ## Frames and battery
 

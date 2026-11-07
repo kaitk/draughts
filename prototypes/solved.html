@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="et">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kabe: solved</title>
+<link rel="stylesheet" href="kabe.css">
+<script src="kabe.js"></script>
+<style>
+  .stage { display: grid; place-items: center; height: 100%; padding: 24px; }
+  #board { width: min(100vh - 48px, 100vw - 48px); filter: brightness(0.55); }
+  .card {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: grid;
+    justify-items: center;
+    gap: 28px;
+    padding: 40px 56px;
+  }
+  .stars { display: flex; gap: 14px; color: var(--glow); }
+  .stars .icon { width: 84px; height: 84px; filter: drop-shadow(0 0 14px rgb(255 211 110 / 0.6)); }
+  .stars .icon:nth-child(2) { transform: translateY(-18px) scale(1.15); }
+  .stars .icon { animation: pop 600ms cubic-bezier(.2, 1.6, .4, 1) both; }
+  .stars .icon:nth-child(2) { animation-delay: 150ms; }
+  .stars .icon:nth-child(3) { animation-delay: 300ms; }
+  @keyframes pop { from { opacity: 0; scale: 0.3; } to { opacity: 1; scale: 1; } }
+  .actions { display: flex; gap: 20px; }
+  .actions .button { width: 112px; }
+  /* Sparks: a few discs that drift up, cheap as SDF circles. */
+  .spark {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--glow);
+    box-shadow: 0 0 12px var(--glow);
+    animation: drift 2.4s ease-out infinite;
+    opacity: 0;
+  }
+  @keyframes drift { 0% { opacity: 0; transform: translateY(0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-160px); } }
+</style>
+</head>
+<body>
+<main class="stage">
+  <div id="board"></div>
+  <div class="card glass">
+    <div class="stars" id="stars"></div>
+    <div class="actions">
+      <a class="button" href="game.html" data-icon="restart" aria-label="Again"></a>
+      <a class="button primary" href="puzzles.html" data-icon="next" aria-label="Next puzzle"></a>
+    </div>
+  </div>
+</main>
+<script>
+  Kabe.init();
+  Kabe.board(document.getElementById('board'), {
+    white: ['c1', 'e3', 'd8'], black: ['h8'], kings: ['d8'], last: ['b6', 'd8'],
+  });
+  document.getElementById('stars').innerHTML = Kabe.icon('star').repeat(3);
+  for (let i = 0; i < 14; i++) {
+    const s = document.createElement('div');
+    s.className = 'spark';
+    s.style.left = `${20 + Math.random() * 60}%`;
+    s.style.top = `${40 + Math.random() * 40}%`;
+    s.style.animationDelay = `${Math.random() * 2.4}s`;
+    document.body.appendChild(s);
+  }
+</script>
+</body>
+</html>

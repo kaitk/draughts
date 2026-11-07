@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="et">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kabe: game</title>
+<link rel="stylesheet" href="kabe.css">
+<script src="kabe.js"></script>
+<style>
+  .game {
+    --gap: 24px;
+    --panel: 128px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap);
+    height: 100%;
+    padding: var(--gap);
+  }
+  /* Landscape: the board fills the height, the panel stands to its right. */
+  #board { width: min(100vh - 2 * var(--gap), 100vw - var(--panel) - 3 * var(--gap)); }
+  .panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    width: var(--panel);
+    padding: 18px 0;
+    height: min(100vh - 2 * var(--gap), 100vw - var(--panel) - 3 * var(--gap));
+  }
+  .panel .spacer { flex: 1; }
+  .turn { display: grid; place-items: center; width: var(--target); height: var(--target); }
+  .turn .disc {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #f6ead6 0 45%, #d9c3a0 45% 52%, #f6ead6 52% 80%, #e6d3b3 80%);
+    box-shadow: 0 4px 0 #b89c74, 0 0 0 4px rgb(255 211 110 / 0.8), 0 0 22px 4px rgb(255 211 110 / 0.45);
+  }
+  /* Portrait: the board fills the width, the controls go below it. */
+  @media (orientation: portrait) {
+    .game { flex-direction: column; }
+    #board { width: min(100vw - 2 * var(--gap), 100vh - var(--panel) - 3 * var(--gap)); }
+    .panel {
+      flex-direction: row;
+      width: min(100vw - 2 * var(--gap), 100vh - var(--panel) - 3 * var(--gap));
+      height: var(--panel);
+      padding: 0 18px;
+    }
+  }
+</style>
+</head>
+<body>
+<main class="game">
+  <div id="board"></div>
+  <aside class="panel glass">
+    <button class="button" data-icon="back" aria-label="Back" onclick="location.href='home.html'"></button>
+    <div class="spacer"></div>
+    <div class="turn" aria-label="White to move"><div class="disc"></div></div>
+    <div class="spacer"></div>
+    <button class="button" data-icon="hint" aria-label="Hint"></button>
+    <button class="button" data-icon="undo" aria-label="Undo"></button>
+    <button class="button" data-icon="restart" aria-label="Restart"></button>
+  </aside>
+</main>
+<script>
+  Kabe.init();
+  // White to move must capture: d4 (two pieces, via f6 to h4) and the king on h6 (two,
+  // via f4 to d6). d4 is selected. Black's last move was g7-f6... then f6-g5.
+  Kabe.board(document.getElementById('board'), {
+    white: ['a1', 'c1', 'e1', 'g1', 'b2', 'f2', 'h2', 'c3', 'e3', 'd4', 'h6'],
+    black: ['b8', 'd8', 'f8', 'h8', 'a7', 'c7', 'b6', 'e5', 'g5'],
+    kings: ['h6'],
+    selected: 'd4',
+    forced: ['h6'],
+    via: ['f6'],
+    targets: ['h4'],
+    last: ['h4', 'g5'],
+  });
+</script>
+</body>
+</html>

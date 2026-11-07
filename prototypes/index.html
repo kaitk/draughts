@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kabe prototypes</title>
+<link rel="stylesheet" href="kabe.css">
+<script src="kabe.js"></script>
+<style>
+  body { overflow: auto; }
+  main { max-width: 760px; margin: 48px auto; padding: 32px; display: grid; gap: 14px; }
+  h1 { margin: 0 0 8px; font-weight: 400; }
+  a { color: var(--fg); font-size: 22px; }
+  p { margin: 0; color: var(--fg-dim); font: 15px/1.5 system-ui, sans-serif; }
+</style>
+</head>
+<body>
+<main class="glass">
+  <h1>Kabe prototypes</h1>
+  <a href="home.html">Home</a><p>Three tiles: play a friend, play the computer (three levels), puzzles.</p>
+  <a href="game.html">Game</a><p>Board with a selected piece, its capture, a forced capture, and the side panel (below the board in portrait).</p>
+  <a href="puzzles.html">Puzzle picker</a><p>Three tiers of ten, with stars.</p>
+  <a href="solved.html">Puzzle solved</a><p>Stars over the dimmed board, again and next.</p>
+  <a href="boards.html">Boards</a><p>Wood, stone, and flat, with crowned and stacked kings, and 10×10.</p>
+  <a href="fonts.html">Fonts</a><p>Tenor Sans, Libertinus Sans, Belleza, Marcellus, with Estonian text.</p>
+  <p>The switcher at the bottom right changes theme, font, season, and king style on any page.</p>
+</main>
+<script>Kabe.init();</script>
+</body>
+</html>

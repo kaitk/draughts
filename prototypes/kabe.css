@@ -1,0 +1,219 @@
+/* Shared look of the kabe prototypes. Every value here is one the native renderer can
+   draw cheaply: flat fills, gradients, SDF discs and rounded rects, and glass that
+   samples one pre-blurred copy of the scene at its screen position (no backdrop-filter).
+   The chosen values are recorded in docs/architecture/rendering.md. */
+
+:root {
+  --page: #0b1622;
+  --card: #142438;
+  --fg: #eef5fb;
+  --fg-dim: rgb(238 245 251 / 0.66);
+  /* Glass: 40% card color over the scene copy dimmed to 0.6 (Snowtime's dark glass). */
+  --glass-card: rgb(20 36 56 / 0.4);
+  --glass-shade: rgb(0 0 0 / 0.4);
+  --glass-border: rgb(255 255 255 / 0.14);
+  --glass-highlight: rgb(255 255 255 / 0.12);
+  --glass-copy: none;
+  --radius-panel: 28px;
+  --radius-button: 22px;
+  --button: rgb(255 255 255 / 0.07);
+  --button-hover: rgb(255 255 255 / 0.13);
+  --button-down: rgb(255 255 255 / 0.2);
+  --target: 88px;
+  --glow: #ffd36e;
+  --forced: #ff9466;
+  --font: 'Libertinus Sans', sans-serif;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; height: 100%; }
+
+body {
+  background: var(--page) var(--scene) center / cover fixed;
+  color: var(--fg);
+  font-family: var(--font);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  overflow: hidden;
+}
+
+/* Glass: the scene's blurred copy, fixed to the viewport so each panel shows the part
+   behind it, under a black shade and the card tint, then a 1 px border and a top
+   highlight. Natively: one texture fetch at the fragment's screen position. */
+.glass {
+  background:
+    linear-gradient(var(--glass-card), var(--glass-card)),
+    linear-gradient(var(--glass-shade), var(--glass-shade)),
+    var(--glass-copy) center / cover fixed,
+    var(--page);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-panel);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), 0 12px 32px -14px rgb(0 0 0 / 0.55);
+}
+
+/* Flat buttons on the glass: a light fill, no bevel, no gradient. */
+.button {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  min-width: var(--target);
+  min-height: var(--target);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-button);
+  background: var(--button);
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+  transition: background 120ms, transform 120ms;
+}
+.button:hover { background: var(--button-hover); }
+.button:active { background: var(--button-down); transform: scale(0.96); }
+.button svg { width: 40px; height: 40px; }
+.button.primary { background: rgb(255 211 110 / 0.22); }
+.button.primary:hover { background: rgb(255 211 110 / 0.3); }
+
+.icon {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.icon .solid { fill: currentColor; stroke: none; }
+
+.caption { color: var(--fg-dim); font-size: 15px; letter-spacing: 0.02em; }
+
+/* Board. The board element is a size container: 1cqw is 1% of its width, so every
+   board size scales. Squares are a grid; pieces are discs drawn as an SDF would be. */
+.board {
+  --n: 8;
+  container-type: inline-size;
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 2.2cqw;
+  padding: 2.4%;
+  background: var(--frame);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 18px 40px -16px rgb(0 0 0 / 0.7);
+}
+.squares {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  grid-template-rows: repeat(var(--n), 1fr);
+  width: 100%;
+  height: 100%;
+  border-radius: 1cqw;
+  overflow: hidden;
+}
+.sq { position: relative; background: var(--light); }
+.sq.dark { background: var(--dark); }
+.sq.last { box-shadow: inset 0 0 0 100cqw rgb(255 211 110 / 0.16); }
+
+/* A piece: a rim, a face, an inner ring, and a side showing its thickness, with a soft
+   shadow under it. */
+.piece {
+  position: absolute;
+  inset: 11%;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+      var(--face) 0 45%, var(--ring) 45% 52%, var(--face) 52% 80%, var(--rim) 80% 100%);
+  box-shadow:
+    0 0.55cqw 0 var(--side),
+    0 1.2cqw 1.6cqw rgb(0 0 0 / 0.45);
+  transition: transform 160ms, box-shadow 160ms;
+}
+.piece.white { --face: var(--w-face); --ring: var(--w-ring); --rim: var(--w-rim); --side: var(--w-side); }
+.piece.black { --face: var(--b-face); --ring: var(--b-ring); --rim: var(--b-rim); --side: var(--b-side); }
+
+/* A king: a crown on the face, or (style "stack") a second disc on top. */
+.piece .crown { position: absolute; inset: 22%; color: var(--crown); }
+.piece.white { --crown: #c08a2c; }
+.piece.black { --crown: #e9c46a; }
+.piece .crown svg { width: 100%; height: 100%; }
+.stack .piece.king {
+  transform: translateY(-1.3cqw);
+  box-shadow:
+    0 0.55cqw 0 var(--side),
+    0 0.75cqw 0 rgb(0 0 0 / 0.35),
+    0 1.3cqw 0 var(--rim),
+    0 1.85cqw 0 var(--side),
+    0 3cqw 1.8cqw rgb(0 0 0 / 0.45);
+}
+.stack .piece .crown { display: none; }
+
+/* Selected: lifted, with a glow. */
+.piece.selected {
+  transform: translateY(-1.1cqw) scale(1.06);
+  box-shadow:
+    0 0.55cqw 0 var(--side),
+    0 0 0 0.45cqw var(--glow),
+    0 0 3cqw 0.6cqw rgb(255 211 110 / 0.55),
+    0 2.6cqw 2.4cqw rgb(0 0 0 / 0.5);
+}
+
+/* Must capture: a pulsing ring. */
+.piece.forced::after {
+  content: '';
+  position: absolute;
+  inset: -12%;
+  border-radius: 50%;
+  border: 0.55cqw solid var(--forced);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(0.94); opacity: 0.95; }
+  50% { transform: scale(1.08); opacity: 0.35; }
+}
+
+/* Legal targets: glowing dots; a capture's stop on the way is a ring. */
+.target {
+  position: absolute;
+  inset: 35%;
+  border-radius: 50%;
+  background: var(--glow);
+  box-shadow: 0 0 2cqw 0.4cqw rgb(255 211 110 / 0.6);
+  opacity: 0.9;
+}
+.target.via {
+  inset: 32%;
+  background: none;
+  border: 0.5cqw solid var(--glow);
+  box-shadow: 0 0 1.6cqw rgb(255 211 110 / 0.5);
+}
+
+/* Board themes. */
+.theme-wood {
+  --light: #e8c99a; --dark: #9a6a45; --frame: #5b3a24;
+  --w-face: #f6ead6; --w-ring: #d9c3a0; --w-rim: #e6d3b3; --w-side: #b89c74;
+  --b-face: #4a2c1c; --b-ring: #6d4630; --b-rim: #3a2215; --b-side: #1e110a;
+}
+.theme-stone {
+  --light: #d7d4cd; --dark: #66707a; --frame: #3a4048;
+  --w-face: #f5f3ef; --w-ring: #d6d2ca; --w-rim: #e7e4de; --w-side: #a9a49b;
+  --b-face: #2c2f33; --b-ring: #4a4f55; --b-rim: #222428; --b-side: #0f1012;
+}
+.theme-flat {
+  --light: #dfe6d2; --dark: #6f9270; --frame: #3f5c48;
+  --w-face: #f8f2e2; --w-ring: #e2d6b8; --w-rim: #efe6cf; --w-side: #c4b48e;
+  --b-face: #c4663f; --b-ring: #dd8460; --b-rim: #a95534; --b-side: #74371f;
+}
+
+/* The prototype switcher: not part of the app. */
+.proto-bar {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 10;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 12px;
+  background: rgb(0 0 0 / 0.55);
+  font: 12px system-ui, sans-serif;
+  opacity: 0.35;
+  transition: opacity 150ms;
+}
+.proto-bar:hover { opacity: 1; }
+.proto-bar select { font: inherit; background: #1d2733; color: #ddd; border: 0; border-radius: 6px; padding: 3px; }
