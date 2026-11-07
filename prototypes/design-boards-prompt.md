@@ -1,7 +1,7 @@
 # Design boards prompt
 
 A prompt for an image model (ChatGPT) to make design boards: PNG mood boards and screen
-options that task 003's HTML prototypes then settle. Paste it whole; ask for one board
+options that the HTML prototypes then settle. Paste it whole; ask for one board
 per reply, varying the direction named at the end.
 
 ---

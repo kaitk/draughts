@@ -37,7 +37,8 @@ number ("task 004"), not by path.
 
 ## Order
 
-001 confirmed the stack (Goose runs on the tablet) and 002 built the rules engine; both
-are archived. 003 (HTML prototypes) is next. Then 004 and 005, then 006 to 009. Together
+001 confirmed the stack (Goose runs on the tablet), 002 built the rules engine, and 003
+settled the look in HTML prototypes; all three are archived. 004 and 005 are next, then
+006 to 009. Together
 they make the MVP in `docs/product.md`. 010 runs alongside: goose_gfx changes to propose
 upstream.

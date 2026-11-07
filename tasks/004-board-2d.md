@@ -18,3 +18,14 @@ touch to squares.
 - [ ] Pieces that must capture pulse when the player touches any other piece
 - [ ] Kings are clearly distinct at a glance
 - [ ] No allocation in the frame loop (checked, and how is recorded)
+
+## Notes (2026-11-07)
+
+- The look, with every color and size, is settled in `docs/architecture/rendering.md`
+  ("Look"), from the prototypes in `prototypes/` (`game.html`, `boards.html`).
+- The icons (a gold crown on kings, and the panel's back, undo, hint, restart) need a
+  native form: SDF shapes drawn in a shader, or glyphs baked into the font atlas from
+  their SVG paths (`prototypes/kabe.js` has the paths). Decide here and record it in
+  `rendering.md`.
+- The engine for legal moves and playing them is `rules/` (`rules::generate`,
+  `rules::play`); a move's `path` gives each hop of a multi-jump to animate.

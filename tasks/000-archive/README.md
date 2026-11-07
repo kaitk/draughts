@@ -10,3 +10,6 @@ and the commit that last has it.
   Russian, International, and English; perft matches published values (International to
   depth 10, English to 11) and an independent Python generator (Russian to 10).
   `002-rules-engine.md`, `cb8ab4a`
+- 003: UI prototypes. Done: seven HTML pages settled the look (Snowtime's glass over a
+  pre-blurred seasonal scene, a wood board with crowned kings, Libertinus Sans), recorded
+  in `docs/architecture/rendering.md`. `003-ui-prototypes.md`, `878aa1f`
