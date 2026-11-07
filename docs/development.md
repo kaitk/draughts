@@ -94,6 +94,19 @@ immersive window with the system bars hidden. It knows it's on Android from
 `gfx::mouse_pressed` and `gfx::mouse_released`: a tap can press and release within one
 frame, which `gfx::mouse_down` never sees. `adb shell input tap X Y` checks it.
 
+## Check idle CPU
+
+```sh
+adb shell svc power stayon usb     # keep the screen on: Android pauses the app when it sleeps
+scripts/idle_cpu.sh 60             # with the app running on the tablet, untouched
+adb shell svc power stayon false
+```
+
+It prints the CPU time of the thread running the program and of the whole process, and
+how many times the program's thread went to sleep. An idle board should use a fraction
+of a percent of a core with about one wakeup a second
+([rendering](architecture/rendering.md#frames-and-battery)).
+
 ## Check memory over the Android lifecycle
 
 ```sh

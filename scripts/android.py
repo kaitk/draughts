@@ -64,7 +64,8 @@ def main():
     fresh = out / "goose_gfx_src.new"
     if fresh.exists():
         shutil.rmtree(fresh)
-    shutil.copytree(ROOT / "third_party/goose_gfx/src", fresh / "src")
+    # Fresh timestamps (shutil.copy), so ninja rebuilds what a removed patch restores.
+    shutil.copytree(ROOT / "third_party/goose_gfx/src", fresh / "src", copy_function=shutil.copy)
     for patch in sorted((ROOT / "patches/goose_gfx").glob("*.patch")):
         run("patch", "-s", "-p1", "-i", patch, cwd=fresh)
     if gfx_src.exists():
@@ -82,7 +83,8 @@ def main():
         fresh = sdl_src.with_name("SDL_src.new")
         if fresh.exists():
             shutil.rmtree(fresh)
-        shutil.copytree(SDL, fresh, ignore=shutil.ignore_patterns(".git"))
+        shutil.copytree(SDL, fresh, ignore=shutil.ignore_patterns(".git"),
+                        copy_function=shutil.copy)
         for patch in sdl_patches:
             run("patch", "-s", "-p1", "-i", patch, cwd=fresh)
         (fresh / ".kabe-stamp").write_text(stamp.hexdigest())

@@ -130,6 +130,8 @@ the display's rate, which costs nothing that matters there. The patched `frame()
   frames after Android recreates the surface on resume;
 - leaves the wait out of `delta_time()`, so the first animation frame after idle doesn't
   jump.
+- on Android, turns off SDL's poll sentinel, without which SDL's wait spins instead of
+  blocking there.
 
 Work that finishes on another thread, such as the computer's reply, is seen within the
 second; while the computer thinks, the board shows a small animation, which keeps

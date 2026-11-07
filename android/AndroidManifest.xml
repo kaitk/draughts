@@ -18,6 +18,8 @@
         android:allowBackup="true"
         android:extractNativeLibs="false"
         android:hardwareAccelerated="true">
+        <!-- Lets profilers (Perfetto, Android Studio) attach to this release build. -->
+        <profileable android:shell="true" />
         <activity android:name="org.libsdl.app.SDLActivity"
             android:label="Kabe"
             android:alwaysRetainTaskState="true"

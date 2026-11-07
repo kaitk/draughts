@@ -3,6 +3,35 @@
 Gaps found in Goose, goose_gfx, and the SDL it pins, while building for Android, with what
 we do about each here and what could go upstream. Newest first.
 
+## SDL: the Java side keeps the accelerometer on at 50 Hz (2026-11-07)
+
+`SDLSurface.handleResume` (and `SDLActivity` at start) registers the accelerometer at
+`SENSOR_DELAY_GAME` whenever the app is resumed, whether or not the program opens a
+sensor or joystick. SDL uses it for an accelerometer joystick and to notice display
+rotation. With the idle board drawing nothing, it is what remains: 1.9% of a core on
+the Java main thread and 50 wakeups a second, plus the sensor's power. SDL 3.4.16
+(`fa2c02b`).
+
+- Here: not yet; task 011 plans a patch to SDL's Java in `patches/SDL/`.
+- Upstream: for the user only, as with the other SDL entries.
+
+## SDL: `SDL_WaitEventTimeout` busy-waits on Android (2026-11-07)
+
+On Android every pass of the wait loop in `SDL_WaitEventTimeoutNS` calls
+`SDL_PumpEventsInternal(true)`, which takes the poll sentinel out of the queue and pushes
+a new one. Pushing any event calls `SDL_SendWakeupEvent`, which on Android queues a
+lifecycle WAKE event, and that WAKE ends `Android_PumpEvents(delay)` at once. So the loop
+never blocks: on the tablet a 1 s wait used a whole core (1814 s of CPU in 30 minutes,
+no voluntary context switches). SDL 3.4.16 (`fa2c02b`).
+
+- Here: patch 0002 sets `SDL_HINT_POLL_SENTINEL` to `"0"` on Android before video init.
+  With no sentinel nothing is pushed while waiting, and the wait blocks until an event or
+  the timeout: one wakeup a second, 0.41 s of CPU in 30 minutes idle. gfx's
+  `SDL_PollEvent` loop drains the queue the same way without the sentinel.
+- Upstream: for the user only, under SDL's rule on AI-written reports (see the swapchain
+  entry). The likely fix is in SDL: don't push a sentinel inside the wait loop, or don't
+  send a wakeup for the sentinel. Check first whether a newer SDL fixes it.
+
 ## goose_gfx: `frame()` presents every frame, so an idle program redraws at the display rate (2026-11-07)
 
 `gs_gfx_frame` presents the screen and polls events on every call, whether or not
@@ -18,7 +47,8 @@ vsync wait its loop would spin. There is no way to wait for an event instead. go
   `frame()` returns and no presents in 5 seconds, and a tap still wakes it at once
   ([rendering](architecture/rendering.md#frames-and-battery)). The first version lost
   the picture on resume: the first present after Android recreates the surface gets no
-  image, so the patch keeps trying for up to 8 frames.
+  image, so the patch keeps trying for up to 8 frames. The wait also needs the next
+  entry's workaround, or it spins on Android.
 - Upstream: the same in `gs_gfx_frame`, but opt-in, since a program that polls input
   without drawing would otherwise block for up to a second: for example
   `gfx::set_wait_when_idle(true)`, or a window flag for `gfx::open`. A frame that drew
