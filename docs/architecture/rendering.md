@@ -241,8 +241,9 @@ the prototype tried, kept for 3D:
   still change it), move hints, and the tutorial (one tile, learn the moves, which
   opens the first start's tutorial). **Look**: the background as thumbnails of
   the four photographs (96 × 60 px, 84 × 54 in portrait) after a tile for by the date,
-  the board (flat or raised, 3D dimmed until task 015), and kings (auto, crown, stack,
-  each drawn). **Language**: each by its own name. Each setting is a dim 18 px label over
+  the board (flat or raised, each tile showing a small board as that view draws it, top
+  down or tilted; 3D dimmed until task 015), and kings (auto, crown, or stack, each
+  drawn as the board draws it). **Language**: each by its own name. Each setting is a dim 18 px label over
   its row of tiles; a tile has radius 16 px and is lit in the glow color at 22% with a 2 px
   glow border when on, as wide as its label needs. In landscape game and look stand side
   by side, look as wide as its thumbnails, over language across both; in portrait they
@@ -275,7 +276,7 @@ the prototype tried, kept for 3D:
 - **Kings** are a setting: crown, stack, or auto (the default). Auto draws a crown on
   the face in the top-down board (the theme's dark piece color on a light piece, gold
   `#e9c46a` on a dark one), which reads at a glance, and in a 3D board a stack of two
-  discs with the crown on top, as kings are in Estonian play. Top down, a stack reads as
+  plain discs, no crown, as kings are in Estonian play (2026-11-07). Top down, a stack reads as
   a shadow at tablet size, so it's there for those who want it.
 - **Native form** (`app/draw.goose`): the blurred photograph, the board's shadow, lip,
   squares, and marks are one full-screen fragment pass, worked out at `gl_FragCoord`

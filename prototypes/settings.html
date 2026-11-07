@@ -41,8 +41,12 @@
   .tile.action .icon { width: 26px; height: 26px; }
   /* A king as each style draws it top down: a crown on the face, or a second disc. */
   .kp { position: relative; width: 34px; height: 38px; }
-  .kp .piece { --u: 3px; inset: 0 0 4px; }
-  .kp.stack .piece:first-child { translate: 0 4px; }
+  .kp .piece { --u: 3px; inset: 4px 0 0; }
+  /* The board's tiles show a corner of the board as it is drawn, flat or raised. */
+  .tile .view { width: 112px; height: 88px; overflow: hidden; display: grid; place-items: center; margin-bottom: 2px; }
+  .tile .view .board { width: 76px; }
+  /* Its own stacking context, so the painted board isn't drawn behind the tile. */
+  .tile .board { isolation: isolate; }
   @media (orientation: portrait) {
     .settings { overflow: auto; }
     .groups { grid-template-columns: 1fr; grid-template-rows: none; align-content: start; }
@@ -74,7 +78,8 @@
   const setting = (title, tiles) => `<div class="setting"><h3>${title}</h3><div class="tiles">${tiles}</div></div>`;
   const group = (iconName, title, body, cls = '') =>
     `<section class="group glass ${cls}"><h2>${Draughts.icon(iconName)}${title}</h2>${body}</section>`;
-  const king = (stack) => `<span class="kp${stack ? ' stack' : ''}">${stack ? '<span class="piece white"></span>' : ''}<span class="piece white king"></span></span>`;
+  // A king as the style draws it: the painter draws a king inside .stack as two plain discs.
+  const king = (stack) => `<span class="kp${stack ? ' stack' : ''}"><span class="piece white king"></span></span>`;
   const seasons = [['winter', 'Winter'], ['spring', 'Spring'], ['summer', 'Summer'], ['autumn', 'Autumn']];
   document.getElementById('groups').innerHTML =
     group('target', 'Game',
@@ -92,8 +97,8 @@
         tile(now, 'season', '', `<span class="thumb" style="background: color-mix(in srgb, var(--glow) 18%, rgb(255 255 255 / 0.06))">${Draughts.icon('sun')}</span>By the date`, 'pic') +
         seasons.map(([s, name]) => tile(!now && S.season === s, 'season', s, `<span class="thumb" style="background-image: url(${photo(s)})"></span>${name}`, 'pic')).join('')) +
       setting('Board',
-        tile(S.view === '2d', 'view', '2d', 'Flat<small>2D</small>') +
-        tile(S.view === '3d', 'view', '3d', 'Raised<small>3D</small>')) +
+        tile(S.view === '2d', 'view', '2d', '<span class="view"><span class="board" data-view="2d"></span></span>Flat<small>2D</small>') +
+        tile(S.view === '3d', 'view', '3d', '<span class="view"><span class="board" data-view="3d"></span></span>Raised<small>3D</small>')) +
       setting('Kings',
         tile(S.king === 'auto', 'king', 'auto', 'Auto<small>crown flat, stack raised</small>') +
         tile(S.king === 'crown', 'king', 'crown', `${king(false)}Crown`) +
@@ -101,6 +106,10 @@
     group('globe', 'Language',
       `<div class="tiles">${tile(params.get('lang') !== 'et', 'lang', 'en', 'English')}${tile(params.get('lang') === 'et', 'lang', 'et', 'Eesti')}</div>`, 'wide');
   for (const el of document.querySelectorAll('[data-n]')) Draughts.board(el, Draughts.start(+el.dataset.n));
+  // A few pieces and a king, on the board as each view draws it.
+  for (const el of document.querySelectorAll('[data-view]')) {
+    Draughts.board(el, { n: 6, view: el.dataset.view, white: ['a1', 'c1', 'b2', 'd4'], black: ['f6', 'b6', 'e5'], kings: ['d4'] });
+  }
   document.querySelectorAll('button.tile').forEach((t) => t.onclick = () => go(t.dataset.k, t.dataset.v || null));
   Draughts.paint();
   Draughts.syncGlass();

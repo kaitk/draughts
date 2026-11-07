@@ -35,7 +35,7 @@ const Draughts = (() => {
   };
 
   // Auto: a crown on the face top down, where a stack reads as a shadow; a stack of two
-  // discs with the crown on top in 3D, as kings are in Estonian play.
+  // plain discs in 3D, as kings are in Estonian play.
   function kingStyle(view, king = settings.king) {
     return king === 'auto' ? (view === '3d' ? 'stack' : 'crown') : king;
   }
@@ -351,7 +351,7 @@ const Draughts = (() => {
             const gr = groove(r, 0.63, 0.76, dy);
             col = lit(col, gr > 0 ? (black ? 0.4 : 0.5) * gr : (black ? 0.6 : 1.2) * gr);
             col = lit(col, -(black ? 0.3 : 0.45) * (1 - smooth(0, 0.05, Math.abs(r - 0.695))));
-            if (o.king === 'crown' || (o.king === 'stack' && up > 0)) {
+            if (o.king === 'crown') {
               col = mix(col, black ? gold : crownW, fill(0.56 * crown(fx / 0.56, fy / 0.56), w));
             }
             over(col, fill(r - 1, w));
@@ -424,7 +424,7 @@ const Draughts = (() => {
   })();
 
   // A 3D disc: a soft shadow, layers for the side, and the face on top. A stacked king is
-  // two discs; a king's crown is on the top face.
+  // two plain discs, as in Estonian play; a crowned king has its crown on the top face.
   function disc3d(color, discs, crown, cls) {
     const per = 6;
     let html = `<div class="p3 ${color} ${cls}"><div class="shadow"></div>`;
@@ -463,7 +463,8 @@ const Draughts = (() => {
           const color = white.has(sq) ? 'white' : 'black';
           const cls = [opts.selected === sq ? 'selected' : '', forced.has(sq) ? 'forced' : ''].join(' ');
           if (view === '3d') {
-            inner = disc3d(color, kings.has(sq) && style === 'stack' ? 2 : 1, kings.has(sq), cls);
+            const stacked = kings.has(sq) && style === 'stack';
+            inner = disc3d(color, stacked ? 2 : 1, kings.has(sq) && !stacked, cls);
           } else {
             inner = `<div class="piece ${color} ${kings.has(sq) ? 'king' : ''} ${cls}"></div>`;
           }

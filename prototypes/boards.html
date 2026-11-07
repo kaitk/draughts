@@ -49,7 +49,7 @@
   const each = (view, king) => Draughts.THEMES.map((theme) => ({
     caption: `${SEASON[theme]}: ${theme}`, opts: { ...pos, theme, view, king } }));
   section('2D, king auto', '(a crown on the face)', each('2d', 'auto'));
-  section('3D, king auto', '(a stack of two with the crown on top)', each('3d', 'auto'));
+  section('3D, king auto', '(a stack of two plain discs)', each('3d', 'auto'));
   section('2D, king stack', '(the setting for those who want it)', each('2d', 'stack'));
   const w = [], b = [];
   for (let y = 0; y < 10; y++) for (let x = 0; x < 10; x++) if ((x + y) % 2 === 0) {
@@ -61,7 +61,7 @@
     { caption: '3D', opts: { n: 10, white: w, black: b, view: '3d' } },
   ], 2);
   section('The 3D king, close', '', [
-    { caption: 'a stack of two, the crown on top', opts: { n: 4, white: ['b1'], black: ['c2', 'a3'], kings: ['b1', 'a3'], view: '3d', selected: 'b1' } },
+    { caption: 'a stack of two plain discs', opts: { n: 4, white: ['b1'], black: ['c2', 'a3'], kings: ['b1', 'a3'], view: '3d', selected: 'b1' } },
   ], 2);
 </script>
 </body>
