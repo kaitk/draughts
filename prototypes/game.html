@@ -9,7 +9,7 @@
 <style>
   .game {
     --gap: 24px;
-    --panel: 128px;
+    --panel: 230px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -17,36 +17,31 @@
     height: 100%;
     padding: var(--gap);
   }
-  /* Landscape: the board fills the height, the panel stands to its right. */
+  /* Landscape: the board fills the height; the panel stands to its right, the side to
+     move on top, then undo, hint, restart, and back in a 2×2 grid. */
   #board { width: min(100vh - 2 * var(--gap), 100vw - var(--panel) - 3 * var(--gap)); }
   .panel {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 14px;
+    display: grid;
+    justify-items: center;
+    gap: 18px;
     width: var(--panel);
-    padding: 18px 0;
-    height: min(100vh - 2 * var(--gap), 100vw - var(--panel) - 3 * var(--gap));
+    padding: 22px 20px;
   }
-  .panel .spacer { flex: 1; }
+  .panel .rule { width: 100%; height: 1px; background: rgb(255 255 255 / 0.18); }
+  .controls { display: grid; grid-template-columns: repeat(2, var(--target)); gap: 14px; }
   .turn { display: grid; place-items: center; width: var(--target); height: var(--target); }
-  .turn .disc {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: radial-gradient(circle, #f6ead6 0 45%, #d9c3a0 45% 52%, #f6ead6 52% 80%, #e6d3b3 80%);
-    box-shadow: 0 4px 0 #b89c74, 0 0 0 4px rgb(255 211 110 / 0.8), 0 0 22px 4px rgb(255 211 110 / 0.45);
-  }
-  /* Portrait: the board fills the width, the controls go below it. */
+  /* The side to move: a piece of its color with a glow ring, no text. */
+  .turn .piece { --u: 6px; position: relative; inset: auto; width: 64px; height: 64px;
+    box-shadow: 0 3px 0 var(--side), 0 0 0 4px color-mix(in srgb, var(--glow) 80%, transparent),
+      0 0 22px 4px color-mix(in srgb, var(--glow) 45%, transparent); }
+  /* Portrait: the board fills the width; below it the side to move, then the four
+     buttons in a row. */
   @media (orientation: portrait) {
-    .game { flex-direction: column; }
+    .game { --panel: 220px; flex-direction: column; }
     #board { width: min(100vw - 2 * var(--gap), 100vh - var(--panel) - 3 * var(--gap)); }
-    .panel {
-      flex-direction: row;
-      width: min(100vw - 2 * var(--gap), 100vh - var(--panel) - 3 * var(--gap));
-      height: var(--panel);
-      padding: 0 18px;
-    }
+    .panel { width: min(100vw - 2 * var(--gap), 100vh - var(--panel) - 3 * var(--gap)); padding: 18px 24px 22px; }
+    .panel .rule { display: none; }
+    .controls { grid-template-columns: repeat(4, var(--target)); gap: 24px; }
   }
 </style>
 </head>
@@ -54,13 +49,14 @@
 <main class="game">
   <div id="board"></div>
   <aside class="panel glass">
-    <button class="button" data-icon="back" aria-label="Back" onclick="location.href='home.html'"></button>
-    <div class="spacer"></div>
-    <div class="turn" aria-label="White to move"><div class="disc"></div></div>
-    <div class="spacer"></div>
-    <button class="button" data-icon="hint" aria-label="Hint"></button>
-    <button class="button" data-icon="undo" aria-label="Undo"></button>
-    <button class="button" data-icon="restart" aria-label="Restart"></button>
+    <div class="turn" aria-label="White to move"><div class="piece white"></div></div>
+    <div class="rule"></div>
+    <div class="controls">
+      <button class="button" data-icon="undo" aria-label="Undo"></button>
+      <button class="button" data-icon="hint" aria-label="Hint"></button>
+      <button class="button" data-icon="restart" aria-label="Restart"></button>
+      <button class="button" data-icon="back" aria-label="Back" onclick="location.href='home.html'"></button>
+    </div>
   </aside>
 </main>
 <script>

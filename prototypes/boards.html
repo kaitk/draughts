@@ -8,41 +8,60 @@
 <script src="kabe.js"></script>
 <style>
   body { overflow: auto; }
-  .boards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding: 24px; }
+  main { display: grid; gap: 28px; padding: 24px; }
+  h2 { margin: 0; font-size: 22px; font-weight: 400; }
+  h2 span { color: var(--fg-dim); font-size: 16px; }
+  .row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
   figure { margin: 0; display: grid; gap: 10px; justify-items: center; }
   figure > div { width: 100%; }
+  figure.wide { grid-column: span 2; }
   figcaption { color: var(--fg-dim); }
-  @media (orientation: portrait) { .boards { grid-template-columns: repeat(2, 1fr); } }
+  @media (orientation: portrait) { .row { grid-template-columns: repeat(2, minmax(0, 1fr)); } figure.wide { grid-column: span 2; } }
 </style>
 </head>
 <body>
-<main class="boards" id="boards"></main>
+<main id="boards"></main>
 <script>
   Kabe.init();
+  // One position on every board: a selected piece with its capture, a king that must
+  // capture, and a king of each color.
   const pos = {
     white: ['a1', 'c1', 'e1', 'g1', 'b2', 'f2', 'h2', 'c3', 'e3', 'd4', 'h6'],
     black: ['b8', 'd8', 'f8', 'h8', 'a7', 'c7', 'b6', 'e5', 'g5', 'a5'],
     kings: ['h6', 'a5'], selected: 'd4', forced: ['h6'], via: ['f6'], targets: ['h4'], last: ['h4', 'g5'],
   };
-  const items = [];
-  for (const theme of Kabe.THEMES) items.push({ theme, king: 'crown', caption: `${theme}, crowned king` });
-  for (const theme of Kabe.THEMES) items.push({ theme, king: 'stack', caption: `${theme}, stacked king` });
+  const SEASON = { wood: 'autumn', stone: 'winter', birch: 'spring', sea: 'summer' };
   const root = document.getElementById('boards');
-  for (const it of items) {
-    const fig = document.createElement('figure');
-    fig.innerHTML = `<div></div><figcaption>${it.caption}</figcaption>`;
-    root.appendChild(fig);
-    Kabe.board(fig.firstChild, { ...pos, theme: it.theme, king: it.king });
+  function section(title, note, items) {
+    const sec = document.createElement('section');
+    sec.innerHTML = `<h2>${title} <span>${note}</span></h2>`;
+    const row = document.createElement('div');
+    row.className = 'row';
+    sec.appendChild(row);
+    root.appendChild(sec);
+    for (const it of items) {
+      const fig = document.createElement('figure');
+      if (it.wide) fig.className = 'wide';
+      fig.innerHTML = `<div></div><figcaption>${it.caption}</figcaption>`;
+      row.appendChild(fig);
+      Kabe.board(fig.firstChild, it.opts);
+    }
   }
-  const ten = document.createElement('figure');
-  ten.innerHTML = '<div></div><figcaption>10×10, stone</figcaption>';
-  root.appendChild(ten);
+  const each = (view, king) => Kabe.THEMES.map((theme) => ({
+    caption: `${SEASON[theme]}: ${theme}`, opts: { ...pos, theme, view, king } }));
+  section('2D, king auto', '(a crown on the face)', each('2d', 'auto'));
+  section('3D, king auto', '(a stack of two with the crown on top)', each('3d', 'auto'));
+  section('2D, king stack', '(the setting for those who want it)', each('2d', 'stack'));
   const w = [], b = [];
   for (let y = 0; y < 10; y++) for (let x = 0; x < 10; x++) if ((x + y) % 2 === 0) {
     const sq = String.fromCharCode(97 + x) + (y + 1);
     if (y < 4) w.push(sq); else if (y > 5) b.push(sq);
   }
-  Kabe.board(ten.firstChild, { n: 10, white: w, black: b, theme: 'stone' });
+  section('10×10', '', [
+    { caption: '2D', opts: { n: 10, white: w, black: b } },
+    { caption: '3D', opts: { n: 10, white: w, black: b, view: '3d' } },
+    { caption: 'the 3D king, close', wide: true, opts: { n: 4, white: ['b1'], black: ['c2', 'a3'], kings: ['b1', 'a3'], view: '3d', selected: 'b1' } },
+  ]);
 </script>
 </body>
 </html>

@@ -38,11 +38,11 @@
     transition: transform 140ms;
   }
   .tile:active { transform: scale(0.97); }
-  .tile .icon { width: 108px; height: 108px; stroke-width: 1.6; }
-  .tile .caption { font-size: 20px; }
-  .levels { display: flex; gap: 10px; }
-  .levels span { width: 14px; height: 14px; border-radius: 50%; background: var(--glow); }
-  .levels span.off { background: rgb(255 255 255 / 0.22); }
+  .tile .icon { width: 120px; height: 120px; stroke-width: 2; }
+  /* The computer's level: three dots, the chosen ones filled, the rest rings. */
+  .levels { display: flex; gap: 12px; }
+  .levels span { width: 18px; height: 18px; border-radius: 50%; background: var(--fg); }
+  .levels span.off { background: none; box-shadow: inset 0 0 0 2.5px var(--fg); }
   @media (orientation: portrait) {
     .tiles { grid-template-columns: 1fr; width: min(100%, 520px); justify-self: center; }
     .tile { aspect-ratio: auto; height: 300px; }
@@ -53,17 +53,15 @@
 <main class="home">
   <h1>Kabe</h1>
   <div class="tiles">
-    <a class="tile glass" href="game.html">
+    <a class="tile glass" href="game.html" aria-label="Mängi sõbraga">
       <span data-icon="friend"></span>
-      <span class="caption">Mängi sõbraga</span>
     </a>
-    <a class="tile glass" href="game.html">
+    <a class="tile glass" href="game.html" aria-label="Mängi arvutiga">
       <span data-icon="computer"></span>
       <span class="levels"><span></span><span></span><span class="off"></span></span>
     </a>
-    <a class="tile glass" href="puzzles.html">
+    <a class="tile glass" href="puzzles.html" aria-label="Ülesanded">
       <span data-icon="puzzle"></span>
-      <span class="caption">Ülesanded</span>
     </a>
   </div>
 </main>
