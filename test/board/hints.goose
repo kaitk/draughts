@@ -17,7 +17,7 @@ fn name(v: rules::Variant&, sq: i64) -> u8[>..] {
 }
 
 fn at(l: board::Layout, v: rules::Variant&, text: const u8[:]) -> float2 {
-    return board::center(l, v, board::bit_at(v, text[0] - 97, text[1] - 49));
+    return board::center(l, v, rules::bit_at(v, text[0] - 97, text[1] - 49));
 }
 
 fn targets(b: board::Board&) -> i64 {

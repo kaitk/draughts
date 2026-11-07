@@ -86,8 +86,8 @@ fn main() {
 
     tap(sh, g, tile(g, 0), 1.0);            // continue
     show(sh, g, "continue");
-    let c3 = board::center(sh.layout, v, board::bit_at(v, 2, 2));
-    let d4 = board::center(sh.layout, v, board::bit_at(v, 3, 3));
+    let c3 = board::center(sh.layout, v, rules::bit_at(v, 2, 2));
+    let d4 = board::center(sh.layout, v, rules::bit_at(v, 3, 3));
     tap(sh, g, c3, 1.1);
     tap(sh, g, d4, 1.2);
     frame(sh, g, off, false, false, false, 2.0);

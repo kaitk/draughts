@@ -32,7 +32,7 @@ fn marked(v: rules::Variant&, bits: u32[4]&) -> u8[>..] {
     for y in v.size {
         for x in v.size {
             let n = y * v.size + x;
-            if (bits[n / 32] >> (n % 32)) & 1 != 0 { s.append(name(v, board::bit_at(v, x, y))); s.append(" "); }
+            if (bits[n / 32] >> (n % 32)) & 1 != 0 { s.append(name(v, rules::bit_at(v, x, y))); s.append(" "); }
         }
     }
     return s;
@@ -40,7 +40,7 @@ fn marked(v: rules::Variant&, bits: u32[4]&) -> u8[>..] {
 
 fn square(l: board::Layout, text: const u8[:]) -> float2 {
     let v .= rules::VARIANTS[rules::RUSSIAN];
-    return board::center(l, v, board::bit_at(v, text[0] - 97, text[1] - 49));
+    return board::center(l, v, rules::bit_at(v, text[0] - 97, text[1] - 49));
 }
 
 // One frame with the pointer at `at`; returns what the screen asks the shell for.

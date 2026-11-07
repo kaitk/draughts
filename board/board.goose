@@ -90,13 +90,6 @@ fn place(l: Layout&) {
     l.inner = float4 { l.board.x + lip, l.board.y + lip, inner, inner / l.n };
 }
 
-// A square as its rules bit, from its column and row (a1 is 0, 0); -1 off the board or
-// on a light square.
-fn bit_at(v: rules::Variant&, x: i64, y: i64) -> i64 {
-    guard x >= 0 && y >= 0 && x < v.size && y < v.size && (x + y) % 2 == 0 else { return -1; }
-    return y * v.h + x / 2 + (y + 1) / 2;
-}
-
 // The square under a point, as a rules bit, or -1. White plays up the screen, black on
 // a turned board.
 fn hit(l: Layout, v: rules::Variant&, p: float2) -> i64 {
@@ -105,7 +98,7 @@ fn hit(l: Layout, v: rules::Variant&, p: float2) -> i64 {
     guard fx >= 0.0 && fy >= 0.0 && fx < v.size && fy < v.size else { return -1; }
     let x = floor(fx) as i64;
     let row = floor(fy) as i64;
-    return if l.flip { bit_at(v, v.size - 1 - x, row) } else { bit_at(v, x, v.size - 1 - row) };
+    return if l.flip { rules::bit_at(v, v.size - 1 - x, row) } else { rules::bit_at(v, x, v.size - 1 - row) };
 }
 
 // The center of a square, in pixels.
@@ -433,7 +426,7 @@ fn fill(b: Board&, l: Layout, now: f64) {
     for row in v.size {
         let y = if l.flip { row } else { v.size - 1 - row };
         for x in v.size {
-            let sq = bit_at(v, x, y);
+            let sq = rules::bit_at(v, x, y);
             guard sq >= 0 else { continue; }
             let m = rules::bit(sq);
             let white = shown.pieces[rules::WHITE] & m != 0;

@@ -54,12 +54,10 @@ fn parse_square(v: Variant&, text: const u8[:]) -> i64, bool {
     guard text.len > 0 else { return 0, false; }
     let c = text[0];
     if c >= 'a' && c <= 'z' {
-        let x = (c - 'a') as i64;
         let rank, ok = parse_int(text[1..]);
-        guard ok && x < v.size && rank >= 1 && rank <= v.size && (x + rank - 1) % 2 == 0
-        else { return 0, false; }
-        let y = rank - 1;
-        return y * v.h + x / 2 + (y + 1) / 2, true;
+        let b = if ok && rank >= 1 { bit_at(v, c - 'a', rank - 1) } else { -1 };
+        guard b >= 0 else { return 0, false; }
+        return b, true;
     }
     let n, ok = parse_int(text);
     guard ok && text[0] != '+' && text[0] != '-' && n >= 1 && n <= v.size * v.h

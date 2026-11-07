@@ -31,7 +31,7 @@ fn tap(sh: shell::Shell&, g: gui::Gui&, p: float2, now: f64) {
 
 fn square(sh: shell::Shell&, text: const u8[:]) -> float2 {
     let v .= rules::VARIANTS[rules::RUSSIAN];
-    return board::center(sh.layout, v, board::bit_at(v, text[0] - 97, text[1] - 49));
+    return board::center(sh.layout, v, rules::bit_at(v, text[0] - 97, text[1] - 49));
 }
 
 // The game's start over tile: the third of the game's tiles.

@@ -152,7 +152,7 @@ let PREVIEW_KINGS = "h6";
 
 // A square a preview list names ("c3"), k squares in from the corner, as its rules bit.
 fn square(v: rules::Variant&, name: const u8[:], k: i64) -> i64 {
-    return board::bit_at(v, name[0] - 'a' + k, name[1] - '1' + k);
+    return rules::bit_at(v, name[0] - 'a' + k, name[1] - '1' + k);
 }
 
 // The squares a preview list names, as a set of bits.

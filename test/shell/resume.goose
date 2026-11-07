@@ -23,9 +23,9 @@ fn play(b: board::Board&, from: i64, to: i64, now: f64) {
     let l = board::layout(1280.0, 800.0, 8);
     let v .= rules::VARIANTS[b.variant];
     board::update(b, now);
-    board::press(b, l, board::center(l, v, board::bit_at(v, from % 8, from / 8)), now);
-    board::release(b, l, board::center(l, v, board::bit_at(v, from % 8, from / 8)), now);
-    board::press(b, l, board::center(l, v, board::bit_at(v, to % 8, to / 8)), now);
+    board::press(b, l, board::center(l, v, rules::bit_at(v, from % 8, from / 8)), now);
+    board::release(b, l, board::center(l, v, rules::bit_at(v, from % 8, from / 8)), now);
+    board::press(b, l, board::center(l, v, rules::bit_at(v, to % 8, to / 8)), now);
     board::update(b, now + 1.0);
 }
 

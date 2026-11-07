@@ -24,7 +24,7 @@ let RESTART = 2;
 
 fn square(l: board::Layout, text: const u8[:]) -> float2 {
     let v .= rules::VARIANTS[rules::RUSSIAN];
-    return board::center(l, v, board::bit_at(v, text[0] - 97, text[1] - 49));
+    return board::center(l, v, rules::bit_at(v, text[0] - 97, text[1] - 49));
 }
 
 fn frame(gm: game::Game&, g: gui::Gui&, l: board::Layout, at: float2, down: bool, pressed: bool,

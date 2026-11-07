@@ -228,11 +228,12 @@ fn main() {
         let l = sh.layout;
         if tapped < taps.len && !b.moving && sh.screen == shell::GAME && b.pos.side != gm.computer {
             let v .= rules::VARIANTS[b.variant];
-            let t .= taps[tapped];
-            let row, ok = parse_int(t[1..]);
-            let p = board::center(l, v, board::bit_at(v, t[0] - 97, row - 1));
-            board::press(b, l, p, now);
-            board::release(b, l, p, now);
+            let sq, ok = rules::parse_square(v, taps[tapped]);
+            if ok {
+                let p = board::center(l, v, sq);
+                board::press(b, l, p, now);
+                board::release(b, l, p, now);
+            }
             tapped++;
             dirty = true;
         }

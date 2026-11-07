@@ -68,6 +68,13 @@ type Path = u8[..MAX_PATH];
 
 fn bit(n: i64) -> u64 { (1 as u64) << n }
 
+// A square as its bit, from its column and row (a1 is 0, 0); -1 off the board or on a
+// light square.
+fn bit_at(v: Variant&, x: i64, y: i64) -> i64 {
+    guard x >= 0 && y >= 0 && x < v.size && y < v.size && (x + y) % 2 == 0 else { return -1; }
+    return y * v.h + x / 2 + (y + 1) / 2;
+}
+
 fn make_variant(size: i64, rows: i64, back_captures: bool, flying: bool, majority: bool,
                 crowning: i64, first: u8, algebraic: bool) -> Variant {
     let h = size / 2;
@@ -77,8 +84,8 @@ fn make_variant(size: i64, rows: i64, back_captures: bool, flying: bool, majorit
     v.delta = [h, h + 1, -(h + 1), -h];
     for y in size {
         for x in size {
-            guard (x + y) % 2 == 0 else { continue; }
-            let b = y * h + x / 2 + (y + 1) / 2;
+            let b = bit_at(v, x, y);
+            guard b >= 0 else { continue; }
             let number = (size - 1 - y) * h + x / 2 + 1;
             v.mask |= bit(b);
             if y == size - 1 { v.promotion[WHITE] |= bit(b); }

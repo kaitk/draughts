@@ -18,7 +18,7 @@ fn name(v: rules::Variant&, sq: i64) -> u8[>..] {
 }
 
 fn square(v: rules::Variant&, text: const u8[:]) -> i64 {
-    return board::bit_at(v, text[0] - 97, text[1] - 49);
+    return rules::bit_at(v, text[0] - 97, text[1] - 49);
 }
 
 // The squares a mark set holds, by name.
@@ -27,7 +27,7 @@ fn marked(v: rules::Variant&, bits: u32[4]&) -> u8[>..] {
     for y in v.size {
         for x in v.size {
             let n = y * v.size + x;
-            if (bits[n / 32] >> (n % 32)) & 1 != 0 { s.append(name(v, board::bit_at(v, x, y))); s.append(" "); }
+            if (bits[n / 32] >> (n % 32)) & 1 != 0 { s.append(name(v, rules::bit_at(v, x, y))); s.append(" "); }
         }
     }
     return s;
