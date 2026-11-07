@@ -33,3 +33,7 @@ and the commit that last has it.
 - 018: The pieces' shape and shine. Done: flat matte discs with a groove at 70% of the
   radius shaded as a cut, a rounded outer shoulder with a soft highlight, and shade
   toward the color squared, after the 3D reference. `018-piece-shape.md`, `d515400`
+- 009: String table. Done: `strings/` with English (the default) and Estonian, a
+  constant per key, lookups as views into the embedded files, the language from SDL's
+  preferred locales; `test/strings/` fails on a key missing from any file.
+  `009-strings.md`, `ecfe920`
