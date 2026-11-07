@@ -80,6 +80,25 @@ runs `test/perft.py compare`: random games, with every position's legal moves ch
 against an independent Python generator. It takes about 20 seconds. On an M-series Mac
 the native perft runs at 12 to 16 million positions a second.
 
+## Time the computer player
+
+```sh
+goose build -o build/aibench tools/aibench.goose && build/aibench   # each level's reply time
+goose build -o build/aimatch tools/aimatch.goose
+build/aimatch russian 90 45 20      # skill 90 against 45, 20 games, colors swapped
+scripts/android_cli.sh tools/aibench.goose                          # the same on the tablet
+```
+
+`tools/aibench.goose` times each level in a few middlegames of both variants and prints
+its speed in nodes a second ([computer player](architecture/ai.md)); give it a variant
+and a FEN to time one position. `tools/aimatch.goose` plays the computer against itself
+at two skills (`--nodes A B` gives each side its own node limit; `--fens PLY` prints the
+positions games reach, for benchmarks). `scripts/android_cli.sh` builds any headless
+Goose program as a plain Android executable with the NDK's clang at -O2, pushes it to
+`/data/local/tmp`, and runs it with the arguments given: no APK, no SDL.
+`adb shell "taskset 0f /data/local/tmp/aibench"` keeps it on the tablet's four little
+cores (`f0`, the big ones).
+
 ## Run on the tablet
 
 The tablet needs Developer options with **USB debugging** on, and Samsung's **Auto

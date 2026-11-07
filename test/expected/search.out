@@ -1,0 +1,11 @@
+W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8  depth 4+2 margin 40: 7 moves, 7 exact, 0 wrong
+W:Wa1,e1,g1,f2,a3,e3,g3,b4,f4,a5:Bd4,h4,c5,g5,b6,d6,h6,a7,c7,b8,f8  depth 4+4 margin 0: 4 moves, 2 exact, 0 wrong
+W:Wc1,g1,d2,f2,g3,b4,a5:Bh4,g5,f6,h6,a7,c7,e7,b8  depth 5+3 margin 90: 8 moves, 5 exact, 0 wrong
+B:WKa1,c3,e3,g3:BKh2,b6,d6  depth 4+2 margin 60: 3 moves, 2 exact, 0 wrong
+W:W31-50:B1-20  depth 3+2 margin 40: 9 moves, 9 exact, 0 wrong
+W:W27,30,31,34,37,38,39,40,43,44,46,47,50:B1,3,4,7,9,12,13,14,16,17,18,23,29  depth 3+3 margin 90: 14 moves, 9 exact, 0 wrong
+W:WK46,32,33,38:BK5,18,19,24  depth 3+2 margin 60: 6 moves, 3 exact, 0 wrong
+W:Wa1,e1,g1,b2,d2,f2,h2,a3,e3,f4,a5:Bg5,b6,d6,f6,h6,a7,c7,e7,g7,b8,f8  depth 7+6: 0 root scores differ, table saves nodes: true
+B:WKa1,c3,e3,g3:BKh2,b6,d6  depth 7+4: 0 root scores differ, table saves nodes: true
+W:W25,32,33,34,35,36,38,39,40,42,43,44,46,47,49,50:B1,2,3,4,7,9,11,13,14,15,16,18,19,20,23,24  depth 5+6: 0 root scores differ, table saves nodes: true
+W:WK46,32,33,38:BK5,18,19,24  depth 6+4: 0 root scores differ, table saves nodes: true

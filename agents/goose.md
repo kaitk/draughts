@@ -56,6 +56,13 @@ find out by compiling, so the next session doesn't.
   relative paths (`"../../rules"` and `"../rules"`): they resolve to one directory.
 - `os::args()` for a program's arguments; `exit(code)`. On Android they come from the
   intent's `args` extra (`android/java/.../DraughtsActivity.java`).
+- State with several large buffers (the computer player's 4 MB table and its frames) is
+  a `root struct` owned by a local, each buffer a resizable field filled once; functions
+  take `Engine&` (`ai/ai.goose`). A root can't be copied, passed by value, or held in
+  another struct, and a worker can't receive one, only build its own.
+- A deep recursion that must stop and resume (a search sliced across frames) is a loop
+  over an explicit array of frames, one per level, with ENTER/RETURN modes
+  (`ai/search.goose`); no coroutines are needed.
 - A program's own C goes in `c_sources` in its `.build` sidecar (`app/draughts.build`).
   `goose run` and `goose build` both compile it with the system clang, so C23 `#embed`
   and `__has_embed` work (with `-Wc23-extensions` silenced); a slice arrives in C as
@@ -82,6 +89,11 @@ find out by compiling, so the next session doesn't.
 - A local named `fill` or `count` shadows the std function of that name.
 - A struct literal's fields must come in declaration order, or it doesn't compile.
 - `match` arms with block bodies are separated by commas: `A => { f(); },`.
+- An `if` expression can't be an operand: `x + if c { 1 } else { 0 }` and
+  `t[(a + if k { 1 } else { 0 }) * 64]` don't parse. Bind it to a `let` first.
+- A type on a `for` binder is only for an integer count or range: `for v: u8 in 3` works,
+  `for v: u8 in [a, b]` doesn't.
+- There is no `size_of`; work a struct's size out from its fields.
 - `float4` has no swizzles (`.xy`); build the `float2` from `.x` and `.y`.
 - `as` binds looser than `&`: write `(x as i64) & 0x3F`; `x as i64 & 0x3F` doesn't parse.
 - An array of untyped float literals (`let FACE_DP = [64.0, 30.0]`) holds `f64`s; cast an
@@ -92,6 +104,9 @@ find out by compiling, so the next session doesn't.
   back. Inside the scope it frees nothing, since the value is still live.
 - `gl_InstanceIndex` doesn't count a draw's `first_instance`, so a second group of
   instances drawn at another time (pieces over the UI) gets its own storage buffer.
+- `goose run` refuses a program that starts a thread at all, so the app, which runs on the
+  Mac through `goose run`, can't hold a `thread_fn` unless the Mac run moves to `goose
+  build`. Work that must not stall a frame is cut into steps instead (`ai::step`).
 - `goose run` (TinyCC) doesn't optimize and can't start threads; time things with
   `goose build`, which compiles the C at -O2. TinyCC is still quick to start: the eight
   rules tests run in a fraction of a second through one `goose --multi-test`.
@@ -112,6 +127,10 @@ find out by compiling, so the next session doesn't.
   build and loops under TinyCC. Iterate set bits with `ctz(x)` and `x &= x - 1`.
 - Passing a large struct by value copies it; take `T&` for anything over a few words
   read in a hot loop.
+- The computer player's search runs at about 9 million nodes a second built on an M-series
+  Mac, 1 million through `goose run`, and 4 million on the tablet's big cores, 1.5 million
+  on its little ones (`tools/aibench.goose`, `scripts/android_cli.sh`). A larger table
+  isn't always faster: clearing it each search and cache misses cost.
 
 ## New in v2026.4 (2026-11-06)
 
