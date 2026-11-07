@@ -72,7 +72,7 @@ let BOARD_FRAG = """
         return mix(c, col, a * clamp(0.5 - rd, 0.0, 1.0));
     }
     void main() {
-        vec2 px = vec2(v_uv.x, 1.0 - v_uv.y) * screen.xy;
+        vec2 px = gl_FragCoord.xy;              // pixels from the top left, exact
         float u = rect.z * 0.01;                // 1% of the board
         // The season's photograph, blurred, cover-cropped by the long side and dimmed to
         // 0.8; or the page color without one.
@@ -199,49 +199,70 @@ let PIECE_FRAG = """
         float band = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0);
         return min(poly, band);
     }
+    vec3 tint(vec3 c, float a) { return a > 0.0 ? mix(c, vec3(1.0), a) : mix(c, vec3(0.0), -a); }
+    // A raised round edge across radii a..b: the light from above catches its upper
+    // side and misses its lower one, softly. -1 where its top faces away from the light,
+    // 1 where it faces it; 0 off the edge. `dy` is the point's direction's y (down is +).
+    float bead(float r, float a, float b, float dy) {
+        float t = (r - a) / (b - a);
+        if (t <= 0.0 || t >= 1.0) return 0.0;
+        float th = (t - 0.5) * 3.0;             // the edge's slope, -1.5..1.5 radians
+        return -dy * sin(th) * (1.0 - 0.3 * abs(th));
+    }
     void main() {
         vec2 p = v_local;
         bool black = v_look.x > 0.5;
         float sel = v_look.z;
         float lift = v_extra.y;
         float side = v_extra.z;
-        float scale = 1.0 + 0.06 * sel;
+        float scale = 1.0 + 0.05 * sel;
         float w = v_extra.w / scale;            // one pixel in the face's units
         vec3 face = black ? b_face.rgb : w_face.rgb;
         vec3 ring = black ? mix(face, vec3(1.0), 0.16) : mix(face, vec3(0.0), 0.13);
         vec3 rim = black ? mix(face, vec3(0.0), 0.18) : mix(face, vec3(0.0), 0.06);
         vec3 sidec = black ? mix(face, vec3(0.0), 0.5) : mix(face, vec3(0.0), 0.32);
-        float spec = black ? 0.3 : 0.6;
-        float shade = black ? 0.3 : 0.18;
-        // Shadows on the board, away from the light: a wide soft one that spreads as the
-        // piece lifts, and a tight one where it touches.
-        float d0 = length(p - vec2(0.1, 0.22 + 0.5 * lift)) - 1.0;
-        over(vec3(0.0), 0.35 * (1.0 - smoothstep(-0.3, 0.5 + lift, d0)));
-        float d1 = length(p - vec2(0.04, 0.1)) - 0.98;
-        over(vec3(0.0), 0.4 * (1.0 - smoothstep(-0.1, 0.15, d1)) * (1.0 - smoothstep(0.0, 0.3, lift)));
+        // A short soft shadow, straight down and a touch right, that spreads as the
+        // piece lifts, and a tight one where it touches the board.
+        float d0 = length(p - vec2(0.04, 0.25 + 0.6 * lift)) - 1.0;
+        float soft = 0.16 + 0.5 * lift;
+        over(vec3(0.0), (0.4 - 0.1 * sel) * (1.0 - smoothstep(-2.0 * soft, 2.0 * soft, d0)));
+        float d1 = length(p - vec2(0.0, 0.06 + side)) - 1.0;
+        over(vec3(0.0), 0.3 * (1.0 - smoothstep(-0.08, 0.06, d1)) * (1.0 - smoothstep(0.0, 0.2, lift)));
         vec2 f = (p + vec2(0.0, lift)) / scale;
         float r = length(f);
-        if (sel > 0.0) over(glow.rgb, sel * 0.5 * exp(-max(r - 1.0, 0.0) * 4.0));
-        // The side under the face, darker away from the light.
+        vec2 dir = f / max(r, 0.001);
+        if (sel > 0.0) over(glow.rgb, sel * 0.4 * exp(-max(r - 1.0, 0.0) * 5.0));
+        // The thin side under the face, rounder in the middle, darkest at its foot.
         float sy = f.y - clamp(f.y, 0.0, side / scale);
-        over(sidec * (1.05 - 0.2 * f.x), fill(length(vec2(f.x, sy)) - 1.0, w));
-        // The face: inner ring, rim, then the light on it.
-        vec3 col = face;
-        col = mix(col, ring, clamp((r - 0.45) / w + 0.5, 0.0, 1.0) * clamp((0.52 - r) / w + 0.5, 0.0, 1.0));
-        col = mix(col, rim, clamp((r - 0.80) / w + 0.5, 0.0, 1.0));
-        float diag = dot(f, vec2(0.7071));
-        col = mix(col, vec3(1.0), 0.1 * clamp(-diag, 0.0, 1.0));
-        col = mix(col, vec3(0.0), shade * smoothstep(-0.1, 1.0, diag));
-        float edge = smoothstep(0.84, 0.98, r);
-        float lit = -diag / max(r, 0.001);
-        col = mix(col, lit > 0.0 ? vec3(1.0) : vec3(0.0), edge * (lit > 0.0 ? 0.25 : 0.22) * abs(lit));
+        float foot = clamp((f.y - sqrt(max(1.0 - f.x * f.x, 0.0))) / (side / scale), 0.0, 1.0);
+        vec3 sc = sidec * (0.8 + 0.25 * sqrt(max(1.0 - f.x * f.x, 0.0))) * (1.0 - 0.25 * foot);
+        over(sc, fill(length(vec2(f.x, sy)) - 1.0, w));
+        // The face: a gentle gradient from top to bottom, the raised inner ring, and the
+        // rounded rim, lit softly from above.
+        vec3 col = mix(face, rim, smoothstep(0.7, 0.76, r));
+        col = tint(col, -0.07 * f.y);
+        col = mix(col, ring, 0.6 * (1.0 - smoothstep(0.0, 0.035, abs(r - 0.5))));
+        float hi = black ? 0.32 : 0.6;
+        float lo = black ? 0.4 : 0.22;
+        float b1 = bead(r, 0.72, 1.0, dir.y);
+        float b2 = 0.55 * bead(r, 0.44, 0.56, dir.y);
+        float l = b1 + b2;
+        col = tint(col, l > 0.0 ? hi * l : lo * l);
+        if (black) {
+            // Dark pieces are a little glossy.
+            col = tint(col, 0.07 * (1.0 - smoothstep(0.0, 0.6, length(f - vec2(-0.1, -0.4)))));
+        }
+        col = tint(col, -(black ? 0.25 : 0.18) * smoothstep(0.95, 1.0, r));
         if (v_look.y > 0.5) {
             vec3 cc = black ? vec3(0.914, 0.769, 0.416) : crown_w.rgb;
             col = mix(col, cc, fill(0.5 * crown(f / 0.5), w));
         }
-        col = mix(col, vec3(1.0), spec * (1.0 - smoothstep(0.0, 0.42, length(f - vec2(-0.36, -0.44)))));
         over(col, fill(r - 1.0, w));
-        if (sel > 0.0) over(glow.rgb, sel * fill(abs(r - 1.08) - 0.05, w));
+        // Selected: a ring in the glow color a little out from the piece.
+        if (sel > 0.0) {
+            over(glow.rgb, sel * 0.5 * exp(-max(abs(r - 1.13) - 0.04, 0.0) * 12.0));
+            over(glow.rgb, sel * fill(abs(r - 1.13) - 0.04, w));
+        }
         // Must capture: a red ring that pulses every 1.4 s.
         if (v_extra.x > 0.5) {
             float ph = 0.5 - 0.5 * cos(time.x * 6.2831853 / 1.4);
@@ -298,7 +319,7 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, t: theme::Theme, now: f
     gfx::draw(3);
     gfx::bind(d.piece_pipeline);
     gfx::bind_storage_buffer(gfx::VERTEX, 0, d.pieces);
-    gfx::uniforms(gfx::VERTEX, 0, View { screen: float4 { width, height, 0.008 * l.board.z, 0.0 } });
+    gfx::uniforms(gfx::VERTEX, 0, View { screen: float4 { width, height, 0.0055 * l.board.z, 0.0 } });
     gfx::uniforms(gfx::FRAGMENT, 0, t);
     gfx::uniforms(gfx::FRAGMENT, 1, Clock { time: float4 { now as f32, 0.0, 0.0, 0.0 } });
     gfx::draw_instanced(6, b.pieces.len);
