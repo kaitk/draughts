@@ -1,0 +1,13 @@
+W:WKc1:Bb2,d2,b4,d4,f4
+  c1:a3:c5:e3:c1  takes 4
+  c1:a3:c5:e3:g5  takes 4
+  c1:a3:c5:e3:h6  takes 4
+  c1:a3:d6:g3  takes 3
+  c1:a3:d6:h2  takes 3
+  c1:e3:g5  takes 2
+  c1:e3:h6  takes 2
+7 moves
+after: B:WKc1:B
+W:Wc1:Bd2,e3
+  c1-b2
+1 move

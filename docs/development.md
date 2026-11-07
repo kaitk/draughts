@@ -41,6 +41,21 @@ cd poc && ../build/goose-v2026.4-macos-arm64/goose poc.goose
 ../build/goose-v2026.4-macos-arm64/goose poc.goose -- --frames 60   # saves poc.png
 ```
 
+## Test the rules
+
+```sh
+test/run_tests.py           # test/<area>/*.goose against test/expected/, through TinyCC
+test/run_tests.py --build   # the same, each built natively at -O2
+test/run_tests.py --bless   # write each test's output as its expected output
+scripts/test.sh             # all of the above, then perft and the random-game check
+```
+
+`scripts/test.sh` also builds `tools/perft.goose` into `build/perft`, which counts moves
+from a position (`build/perft russian 9`, `build/perft international 8 FEN --divide`), and
+runs `test/perft.py compare`: random games, with every position's legal moves checked
+against an independent Python generator. It takes about 20 seconds. On an M-series Mac
+the native perft runs at 12 to 16 million positions a second.
+
 ## Run on the tablet
 
 The tablet needs Developer options with **USB debugging** on, and Samsung's **Auto

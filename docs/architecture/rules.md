@@ -6,23 +6,60 @@ Estonian kabe is Russian draughts on 8×8, and International draughts on 10×10.
 checkers is rarely played in Estonia, so it comes last. The engine takes the variant as
 data:
 
-| | Russian | International | English (later) |
+| | Russian | International | English (engine only, for now) |
 | --- | --- | --- | --- |
 | Board | 8×8 | 10×10 | 8×8 |
 | Men capture backward | yes | yes | no |
 | Kings | flying | flying | one square |
 | Must take the most pieces | no | yes | no |
 | Man reaching the last row mid-capture | crowned, keeps capturing as a king | crowned only if the move ends there | move ends, crowned |
+| Moves first | white | white | black |
 
 Common to all three: capturing is compulsory, a capture continues while it can, and
 captured pieces come off after the whole move, so no piece is jumped twice (the Turkish
 strike rule).
 
+Flying kings must land, after a capture, on a square from which the capture goes on, if
+any such square exists. Russian states this rule; in International the majority rule
+already gives it. A capture is one move per start square, end square, and set of pieces
+taken, however many paths lead there.
+
 ## Representation
 
-- A position is `u64` bitboards over the dark squares: men and kings for each side, plus
-  side to move and the variant. 8×8 uses 32 bits, 10×10 uses 50.
-- A move is a from-square, a to-square, a bitboard of captured pieces, and the path for
-  animation. Moves are generated into a fixed-size buffer.
-- Positions read and write as text in the FEN format used by PDN.
-- Move generation is checked with perft counts against published values (task 002).
+The engine is `rules/` (namespace `rules`): pure Goose with no graphics, so the app, the
+computer player, and the tests share it.
+
+- **Bitboards with ghost bits.** One bit per dark square, with an unused bit before each
+  odd row. Square (x, y), a1 being (0, 0), is bit `y * h + x / 2 + (y + 1) / 2`, where
+  `h` is the dark squares per row (4 or 5): 36 bits for 8×8, 55 for 10×10. Every
+  diagonal step is then a fixed shift (up-left `+h`, up-right `+h + 1`, down-left
+  `-(h + 1)`, down-right `-h`), and a step off the board lands on a ghost bit or outside
+  the board mask. All plain moves of men come from two shifts per direction.
+- **Position** (`rules::Position`): pieces per side as two `u64`, kings as one `u64`,
+  the side to move, and the variant. It is a value: undo keeps old positions, and
+  `rules::play` returns a new one.
+- **Variant as data** (`rules::Variant`, in `rules::VARIANTS`): board size, starting rows,
+  whether men capture backward, flying kings, the majority rule, what crowning mid-capture
+  does, who moves first, and how squares are written. English is implemented from the
+  same fields and checked by perft, though the app doesn't offer it yet.
+- **Move** (`rules::Move`): start and end square, the bitboard of pieces taken, whether
+  it crowns, and the stops from start to end, for showing the move. `rules::generate`
+  fills a `rules::Moves` buffer the caller owns (512 moves), so generating allocates
+  nothing.
+
+## Text
+
+Positions read and write as in PDN: `W:W31,32,K46:B1,2`, the side to move, then each
+side's pieces with `K` before a king. Squares are numbered from the top-left dark square,
+row by row (on 10×10, 1 is b10 and 46 is a1). Russian writes squares as a1..h8 instead.
+Reading accepts either form for every variant, ranges such as `31-50`, spaces, and a
+trailing `.`. Moves print as `32-28`, or a capture's stops, `28x19x10` (`c3:e5:c7` in
+Russian).
+
+## Checks
+
+Move generation matches the published International perft counts through depth 10
+(258,895,763) and English through depth 11 (85,242,128). Russian has no published table:
+its counts agree with an independent Python generator (`test/perft.py`) through depth 10:
+7, 49, 302, 1469, 7482, 37986, 190146, 929899, 4570586, 22444032. Running and extending
+the tests: [development](../development.md#test-the-rules).

@@ -1,0 +1,29 @@
+W:WKa1:Bd4
+  a1:e5  takes 1
+  a1:f6  takes 1
+  a1:g7  takes 1
+  a1:h8  takes 1
+4 moves
+W:WKa1:Bd4,e7
+  a1:f6:d8  takes 2
+1 move
+W:WKa1,f6:Bd4
+  a1:e5  takes 1
+1 move
+W:WKa1:Bd4,e5
+  a1-b2
+  a1-c3
+2 moves
+W:WK46:B28
+  46x10  takes 1
+  46x14  takes 1
+  46x19  takes 1
+  46x23  takes 1
+  46x5  takes 1
+5 moves
+W:WK29:B18
+  29-25
+1 move
+W:WK29:B25
+  29x22  takes 1
+1 move

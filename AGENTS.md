@@ -1,17 +1,17 @@
 # Agent rules
 
+This file holds what every session needs. `agents/` holds the rules for particular
+work.
+
 ## Project context
 
 - Product scope: `docs/product.md`
 - Architecture decisions: `docs/architecture/`
 - Task tracking: `tasks/` (see `tasks/README.md`)
-- The language: the pinned release's `build/goose-v2026.4-macos-arm64/docs/`: read
-  `tutorial.md` before writing Goose, look things up in `reference.md` (every feature
-  with a compiling example), check `goose_spec.md` before assuming a feature exists, and
-  `stdlib.md` for the library. Write Goose the way the release's `samples/` and
-  `stdlib/` do. goose-http (another Goose project by the same user) is a model for
-  layout and tests: one program per test under `test/<area>/`, its output checked
-  against `test/expected/<name>.out`, batched with `goose --multi-test`
+- The language: `agents/goose.md` first, which sums up what writing Goose here needs;
+  the pinned release's `build/goose-v2026.4-macos-arm64/docs/` for the rest. Write
+  Goose the way the release's `samples/` and `stdlib/` do. goose-http (another Goose
+  project by the same user) is a model for layout and tests.
 - Toolchain, building, and running on the Mac and the tablet: `docs/development.md`
 - UI prototypes: `prototypes/` (see `prototypes/README.md`), checked in a browser with the
   `agent-browser` CLI
@@ -22,14 +22,15 @@
 Follow the recorded decisions. If a change contradicts one, update the doc in the same
 change or ask first.
 
-## Writing
+## Rules for particular work
 
-- Lead with the decision, behavior, or action, then explain why. Use concrete facts and
-  cut filler.
-- Record a decision in `docs/architecture/` with its reason, and what was rejected when
-  that matters. Keep each fact in one place and link to it elsewhere. Use absolute dates.
-- Tasks follow `tasks/README.md`, with concrete acceptance criteria. Use sentence-case
-  headings, backticks for identifiers and commands, and wrap prose at about 90 characters.
+Read the file a task touches before starting it, and add to it what the next session
+would otherwise look up again:
+
+- `agents/goose.md`: writing Goose, its traps and speed, and recording what it lacks
+- `agents/writing.md`: docs, tasks, and prose; what goes in `docs/` and what only in
+  `agents/`
+- `agents/testing.md`: the tests, what each kind is for, and how to run them
 
 ## Code rules
 
