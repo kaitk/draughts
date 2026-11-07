@@ -179,8 +179,9 @@ the prototype tried, kept for 3D:
 - **Home** is a title menu (`prototypes/home-menu.html`, chosen 2026-11-07 over the
   icon tiles and two other takes): the scene and the 3D board, and one glass column
   with the wordmark, then continue, a friend, the computer with its level, and puzzles
-  with stars, each an icon and a word. Beside the wordmark, the language (one button
-  showing the current one) and settings. In portrait the column is a sheet below the
+  with stars, each an icon and a word. Beside the wordmark, settings. The language is
+  only in settings (2026-11-07): kids who can't read yet don't need it on home, and a
+  tablet set to one language can still play in another. In portrait the column is a sheet below the
   board. **Puzzle picker**: one glass row per theme (capture, become a king, the
   only safe move), its icon and ten tiles of at least 64 px with 0 to 3 stars in the
   glow color; locked tiles show a lock, the next unsolved one a glow ring.

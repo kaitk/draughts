@@ -9,8 +9,8 @@
 <style>
   /* Take C: a title screen. The season's photograph and a 3D board set the mood; the
      wordmark and a plain menu of large words sit on one glass column at the side; the
-     2D game itself stays on the calm table. The language and settings sit beside the
-     wordmark. The chosen take (task 008). */
+     2D game itself stays on the calm table. Settings sit beside the wordmark. The chosen
+     take (task 008). */
   .home { display: grid; grid-template-columns: 440px 1fr; height: 100%; }
   .menu { display: grid; align-content: center; gap: 10px; padding: 48px 40px; border-radius: 0 32px 32px 0; }
   .menu.glass { --r: 0px; }
@@ -23,8 +23,8 @@
   .item .icon { width: 34px; height: 34px; stroke-width: 2.2; opacity: 0.85; }
   .item.primary { background: color-mix(in srgb, var(--glow) 24%, transparent); }
   .item small { margin-left: auto; font-size: 17px; color: var(--fg-dim); }
-  /* Beside the wordmark, the two quiet controls: the language (one button showing the
-     current one; a tap switches, a list once there are more) and the way to settings. */
+  /* Beside the wordmark, one quiet control: the way to settings, which hold the
+     language. */
   .tools { display: flex; gap: 8px; margin-left: auto; }
   .tools > * { width: 48px; height: 48px; min-width: 0; border-radius: 16px; display: grid; place-items: center;
     color: var(--fg); text-decoration: none; font-size: 17px; letter-spacing: 0.06em; cursor: pointer;
@@ -45,7 +45,7 @@
 <main class="home">
   <nav class="menu glass">
     <div class="mark"><div class="piece white king"></div><h1>Draughts</h1>
-      <div class="tools"><a class="lang" href="#" aria-label="Language">EN</a><a href="settings.html" data-icon="gear" aria-label="Settings"></a></div>
+      <div class="tools"><a href="settings.html" data-icon="gear" aria-label="Settings"></a></div>
     </div>
     <a class="item primary" href="game.html"><span data-icon="next"></span>Continue</a>
     <a class="item" href="game.html"><span data-icon="friend"></span>A friend</a>
@@ -56,10 +56,6 @@
 </main>
 <script>
   // The title screen always shows the photograph and the 3D board.
-  document.querySelector('.lang').onclick = (e) => {
-    e.preventDefault();
-    e.target.textContent = e.target.textContent === 'EN' ? 'ET' : 'EN';
-  };
   Draughts.settings.bg = 'photo';
   Draughts.init();
   Draughts.board(document.getElementById('board'), {
