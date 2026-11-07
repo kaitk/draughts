@@ -17,3 +17,8 @@ and the commit that last has it.
   only what was drawn and wait for events when idle, with SDL's poll sentinel off on
   Android so the wait blocks; the idle program thread went from 17% of a core to 0.02%.
   `005-on-demand-frames.md`, `522ce35`
+- 012: Seasonal themes in the prototypes. Done: the season picks the board (autumn wood,
+  winter stone, spring birch, summer sea) with each board's palette, glow, and glass
+  tint over photo backgrounds, a key-light model, and crown/stack/auto kings with a 3D
+  stacked king; backgrounds to ship as embedded JPEGs decoded with stb_image.
+  `012-seasonal-themes.md`, `5187404`
