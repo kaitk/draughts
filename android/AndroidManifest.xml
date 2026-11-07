@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The app runs SDL's stock SDLActivity, which loads libSDL3.so and libmain.so and enters
+     the Goose program at SDL_main. There is no Java of our own and no resources: the label
+     is a literal and the theme is the platform's. scripts/android.py builds the APK. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.kaitk.kabe"
+    android:versionCode="1"
+    android:versionName="0.1">
+
+    <!-- SDL_GPU draws through Vulkan; 1.1 is what SDL asks of Android drivers. -->
+    <uses-feature android:name="android.hardware.vulkan.version" android:version="0x401000"
+        android:required="true" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+
+    <application
+        android:label="Kabe"
+        android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+        android:allowBackup="true"
+        android:extractNativeLibs="false"
+        android:hardwareAccelerated="true">
+        <activity android:name="org.libsdl.app.SDLActivity"
+            android:label="Kabe"
+            android:alwaysRetainTaskState="true"
+            android:launchMode="singleInstance"
+            android:configChanges="layoutDirection|locale|grammaticalGender|fontScale|fontWeightAdjustment|orientation|uiMode|screenLayout|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"
+            android:preferMinimalPostProcessing="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
