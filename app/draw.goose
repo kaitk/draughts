@@ -252,20 +252,17 @@ let PIECE_FRAG = """
         float foot = clamp((f.y - sqrt(max(1.0 - f.x * f.x, 0.0))) / (side / scale), 0.0, 1.0);
         vec3 sc = sidec * (0.8 + 0.25 * sqrt(max(1.0 - f.x * f.x, 0.0))) * (1.0 - 0.25 * foot);
         over(sc, fill(length(vec2(f.x, sy)) - 1.0, w));
-        // The face: flat and a little below one wide rounded rim, lit softly from above.
-        vec3 col = mix(face, rim, smoothstep(0.64, 0.68, r));
-        col = tint(col, -0.03 * f.y);
-        float hi = black ? 0.4 : 0.55;
-        float lo = black ? 0.4 : 0.24;
-        float l = bead(r, 0.64, 1.0, dir.y);
+        // The top is flat and matte, as a turned disc's is: an outer band and a face of
+        // the same color with a fine step between them, and only the outer edge rounded,
+        // catching the light from above on its upper side.
+        vec3 col = mix(face, rim, 0.35 * smoothstep(0.69, 0.72, r));
+        col = tint(col, -0.02 * f.y);
+        float hi = black ? 0.16 : 0.45;
+        float lo = black ? 0.3 : 0.2;
+        float l = bead(r, 0.86, 1.0, dir.y) + 1.3 * bead(r, 0.66, 0.74, dir.y);
         col = tint(col, l > 0.0 ? hi * l : lo * l);
-        // The groove where the face sits below the rim.
-        col = tint(col, -(black ? 0.3 : 0.14) * (1.0 - smoothstep(0.0, 0.03, abs(r - 0.655))));
-        if (black) {
-            // Dark pieces are a little glossy.
-            col = tint(col, 0.07 * (1.0 - smoothstep(0.0, 0.6, length(f - vec2(-0.1, -0.4)))));
-        }
-        col = tint(col, -(black ? 0.25 : 0.18) * smoothstep(0.95, 1.0, r));
+        col = tint(col, -(black ? 0.3 : 0.2) * (1.0 - smoothstep(0.004, 0.02, abs(r - 0.7))));
+        col = tint(col, -(black ? 0.2 : 0.14) * smoothstep(0.96, 1.0, r));
         if (v_look.y > 0.5) {
             vec3 cc = black ? vec3(0.914, 0.769, 0.416) : crown_w.rgb;
             col = mix(col, cc, fill(0.56 * crown(f / 0.56), w));

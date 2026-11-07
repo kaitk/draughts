@@ -116,7 +116,8 @@ sea almost flat.
 
 The 2D board is kept simple: flat squares with no light pool, as on the design boards.
 The pieces have a soft, diffuse light from above (2026-11-07): the upper side
-of the rim catches it and the lower side misses it, and nothing else. A strong light pool
+of the rounded edge and of the step catch it and the lower sides miss it, and nothing
+else; the pieces are matte. A strong light pool
 and, with the tabletops, a crafted board with a soft light were tried on 2026-11-07 and
 set aside. The 3D board has one key light from the top left,
 as in the design boards, a few terms in its shaders with no lighting pass. The terms
@@ -168,13 +169,14 @@ the prototype tried, kept for 3D:
   tones and calm grain follow the close-up boards chosen on 2026-11-07, which read better
   than the first design boards' frameless board and two-ringed pieces. The 3D board has a
   frame 2.4% of the board's width. 10 × 10 uses the same.
-- **Pieces** are SDF discs filling 78% of a square: a flat face sunk a little below one
-  wide rounded rim from 64% of the radius, a thin groove between them, and the side
-  under the disc (0.55% of the board deep), with a short soft shadow straight down and
-  a touch right (a quarter of the radius down, softened over a third of it) and a tight
-  one where it touches. Each side has one color in the theme; the rest is worked out
-  from it. Light pieces: rim 6% toward black, side 32%. Dark pieces: rim 18% toward
-  black, side 50%, and a faint gloss on the face.
+- **Pieces** are SDF discs filling 78% of a square, flat-topped and matte like turned
+  discs: an outer band and a face of one color with a fine step between them at 70% of
+  the radius, only the outer edge rounded (from 86%), and the side under the disc (0.55%
+  of the board deep). A short soft shadow falls straight down and a touch right (a
+  quarter of the radius down, softened over a third of it), with a tight one where it
+  touches. Each side has one color in the theme; the rest is worked out from it. Light
+  pieces: the band 2% toward black, side 32%. Dark pieces: the band 6% toward black,
+  side 50%.
 - **Kings** are a setting: crown, stack, or auto (the default). Auto draws a crown on
   the face in the top-down board (the theme's dark piece color on a light piece, gold
   `#e9c46a` on a dark one), which reads at a glance, and in a 3D board a stack of two

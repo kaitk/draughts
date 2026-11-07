@@ -14,6 +14,7 @@ missing: ask the user for them rather than guessing from memory.
 | --- | --- | --- |
 | `Autumn Checkers Board with Crowned King-1.png` | A close-up of the autumn board, 1254 px | The preferred board and pieces: the thin raised lip with a light outer line, one wide rim around a flat face, warm wood with calm grain |
 | `Winter Stone Checkers Board-2.png` | The same close-up for winter | The same, in stone: a steel-blue lip, felt-like squares |
+| `ChatGPT Image Nov 7, 2026, 08_19_31 PM.png` | The autumn board in 3D, a low angle | The pieces' true shape: flat-topped matte discs with a fine step, rounded only at the outer edge; read the top-down look from it |
 | `kabe_theme_design_boards/kabe_autumn_wood.png` | The autumn design board: home, game in both orientations, puzzles, palette | Layout, panel, buttons, states (glow ring, dots, red ring) |
 | `kabe_theme_design_boards/kabe_winter_stone.png` | The winter design board | As above |
 | `kabe_theme_design_boards/kabe_spring_birch_four_seasons.png` | The four seasons side by side, and the spring screens | Each season's palette and scene |
@@ -51,8 +52,8 @@ pieces (chosen 2026-11-07); the design boards still set the layout, glass, and c
   The 2D board stays simple; rich materials and lighting belong to the 3D board (task 015).
 - Visible wood grain, and any regular stripe in it (sines), which bands when the board
   is seen from afar: the close-up's grain is smooth, irregular, and barely there.
-- Two rings on the pieces (an inner ring at half the radius as well as the rim): the
-  close-ups' flatter face reads better.
+- Two rings on the pieces (an inner ring at half the radius as well as the rim), then a
+  wide rounded rim like a tyre, and gloss: the pieces are flat, matte turned discs.
 
 When an idea drifts from the references, prototype it cheaply and put it next to the
 matching reference before investing in it.
