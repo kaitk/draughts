@@ -26,7 +26,7 @@ struct Clock { time: float4 }      // seconds
 let THEME_BLOCK = """
     layout(set = 3, binding = 0) uniform Theme {
         vec4 light; vec4 dark; vec4 frame; vec4 w_face; vec4 b_face; vec4 crown_w;
-        vec4 glow; vec4 page; vec4 kind;
+        vec4 glow; vec4 page; vec4 kind; vec4 glass; vec4 text;
     };
     """;
 
@@ -321,7 +321,8 @@ fn new(kind: i64) -> Drawer {
     return d;
 }
 
-// Draws one frame of the board as fill() left it.
+// Draws one frame of the board as fill() left it, into the screen's pass, which it
+// leaves open for the UI; the caller ends it.
 fn frame(d: Drawer&, b: board::Board&, l: board::Layout, t: theme::Theme, now: f64,
          width: f32, height: f32) {
     for i in b.pieces.len { d.upload[i] = b.pieces[i]; }
@@ -342,5 +343,4 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, t: theme::Theme, now: f
     gfx::uniforms(gfx::FRAGMENT, 0, t);
     gfx::uniforms(gfx::FRAGMENT, 1, Clock { time: float4 { now as f32, 0.0, 0.0, 0.0 } });
     gfx::draw_instanced(6, b.pieces.len);
-    gfx::end_pass();
 }

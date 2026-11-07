@@ -32,21 +32,21 @@ struct Layout {
     n:     i64,         // squares per side
 }
 
-// Landscape: the board fills the height less a 24 dp margin, with a 230 dp panel to its
-// right. Portrait: the board fills the width, with a 220 dp panel below it.
+// Landscape: the board fills the height less a 24 dp margin, with a 272 dp panel to its
+// right. Portrait: the board fills the width, with a 240 dp panel below it.
 fn layout(width: f32, height: f32, n: i64) -> Layout {
     let s = min(width, height) / 800.0;
     let gap = 24.0 * s;
     var l = Layout { scale: s, n: n, .. };
     if width >= height {
-        let panel = 230.0 * s;
+        let panel = 272.0 * s;
         let size = min(height - 2.0 * gap, width - panel - 3.0 * gap);
         let x = (width - (size + gap + panel)) / 2.0;
         let y = (height - size) / 2.0;
         l.board = float4 { x, y, size, 0.016 * size };
         l.panel = float4 { x + size + gap, y, panel, size };
     } else {
-        let panel = 220.0 * s;
+        let panel = 240.0 * s;
         let size = min(width - 2.0 * gap, height - panel - 3.0 * gap);
         let x = (width - size) / 2.0;
         let y = (height - (size + gap + panel)) / 2.0;

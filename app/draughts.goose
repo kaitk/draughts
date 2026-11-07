@@ -17,9 +17,12 @@ import os;
 import rules from "../rules";
 import board from "../board";
 import strings from "../strings";
+import gui from "../gui";
 import .theme;
 import .draw;
 import .scene;
+import .widgets;
+import .panel;
 
 // The system's preferred locales, "et-EE,en-US" (locale.c); returns how many bytes.
 extern fn draughts_locales(out: u8[:]) -> i64;
@@ -82,6 +85,8 @@ fn main() {
         board::set(b, p);
     }
     var d = draw::new(kind);
+    var w = widgets::new();
+    var g = gui::Gui {};
     var size = int2 { 0, 0 };
     var dirty = true;
     var drawn = 0;
@@ -106,20 +111,25 @@ fn main() {
             dirty = true;
         }
         // A quick tap can press and release within one frame, which mouse_down never
-        // sees; pressed and released catch it.
-        let p = gfx::mouse_pos();
-        if gfx::mouse_pressed(gfx::MOUSE_LEFT) {
-            board::press(b, l, p, now);
-            dirty = true;
+        // sees; pressed and released catch it. The UI sees the pointer first; a press
+        // that lands on it never reaches the board.
+        let input = gui::Input { at: gfx::mouse_pos(), down: gfx::mouse_down(gfx::MOUSE_LEFT),
+                                 pressed: gfx::mouse_pressed(gfx::MOUSE_LEFT),
+                                 released: gfx::mouse_released(gfx::MOUSE_LEFT) };
+        gui::begin(g, input, l.scale, now);
+        if panel::game(g, l) != panel::NOTHING { dirty = true; }
+        if input.pressed || input.released { dirty = true; }
+        if !g.took {
+            if input.pressed { board::press(b, l, input.at, now); }
+            if input.down && board::drag(b, l, input.at) { dirty = true; }
+            if input.released { board::release(b, l, input.at, now); }
         }
-        if gfx::mouse_down(gfx::MOUSE_LEFT) && board::drag(b, l, p) { dirty = true; }
-        if gfx::mouse_released(gfx::MOUSE_LEFT) {
-            board::release(b, l, p, now);
-            dirty = true;
-        }
-        if dirty || board::animating(b, now) {
+        if dirty || board::animating(b, now) || gui::animating(g) {
             board::fill(b, l, now);
+            widgets::upload(w, g);
             draw::frame(d, b, l, colors, now, size.x, size.y);
+            widgets::frame(w, g, d.scene, colors, size.x, size.y);
+            gfx::end_pass();
             dirty = false;
             drawn++;
         }

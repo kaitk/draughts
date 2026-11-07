@@ -21,10 +21,17 @@ draws its HUD:
 
 - Each frame, screens are declared in code. Layout cuts rows, columns, and grids from
   the screen rect.
-- `button(id, rect, icon)` returns true on release. A small fixed table holds per-id state
-  for pressed and hover animation.
-- Calls append quads (`rect`, `panel`, `text`, `icon`) to one vertex array, and one
-  pipeline draws them.
+- `button(id, rect, icon)` returns true on release over the button it went down on. A
+  small fixed table holds per-id state for the press animation (0.12 s). A press that
+  lands on the UI is the UI's and never reaches the board.
+- Calls append quads (`panel`, `button`, `icon`, `fill`; `text` with home) to one fixed
+  array, reset each frame, and one pipeline draws them in one instanced draw.
+- **Native form**: `gui/` holds the layer with no graphics (tested headless in
+  `test/gui/`), and `app/widgets.goose` draws it: each quad pulls `{rect, color, kind,
+  radius, icon, pressed, dp}` from one storage buffer, and its fragment shader works it
+  out as a signed-distance shape: glass with its shadow, a tile with its shadow, a line
+  icon as distances to its strokes' segments and arcs. `app/panel.goose` declares the
+  game screen's panel.
 
 Nuklear (`ui`) is only for developer tools, such as a puzzle editor, because restyling
 its desktop widgets into the kid UI would fight it. If layout outgrows rect-cutting
@@ -103,11 +110,12 @@ sea almost flat.
 - **Glass is a pre-blurred copy, not a live blur.** Snowtime measured live backdrop blur
   costing more than its weather animation, and switched to a copy of the background
   blurred once (its `docs/architecture/scene.md`). Here the scene is blurred on the GPU
-  when the season or screen size changes, into a small texture (240 px wide, the blur a
-  24 px one would be at full width, saturation 1.3), so nothing pre-blurred is stored.
-  Task 008 can blur the 2D game's 512 px copy further for it. A
-  glass panel samples it at its screen position: one texture fetch per pixel, no blur
-  per frame.
+  when the season is picked, into a small texture (the blur a 24 px one would be at
+  1280 px wide, saturation 1.3), so nothing pre-blurred is stored. Natively
+  (`app/scene.goose`) two more passes blur the 512 px copy into a 256 × 256 one (sigma
+  3.9 texels, on the copy's 2.8), the same at every screen size for the same reason as
+  the board's copy. A glass panel samples it at its screen position: one texture fetch
+  per pixel, no blur per frame.
 - **Glass layers**, bottom to top: the copy, dimmed as the table says; the theme's
   glass tint; a 1 px border of white at 14%; a 1 px top highlight of white at 12%; a
   shadow `0 12px 32px -14px` of black at 55%. Corner radius 28 px.
@@ -140,16 +148,18 @@ the prototype tried, kept for 3D:
 
 - **Buttons** are glass tiles: white at 10%, 16% when hovered, 24% while pressed (and
   scaled to 0.96), with an inset 1 px border of white at 20% and a top highlight; radius
-  22 px; at least 88 × 88 px (dp) for small hands, icons 44 px with 2.4 px strokes. A primary button is the glow color at 22%.
-- **Icons** are line icons on a 24 px grid, 2 px round strokes, in the Lucide style:
+  22 px; at least 88 × 88 px (dp) for small hands, icons half the tile with strokes 2.4
+  units of their 24-unit grid. A primary button is the glow color at 22%.
+- **Icons** are line icons on a 24-unit grid with round strokes, in the Lucide style:
   undo, hint (a bulb), restart, back (an arrow left), next, star, crown, lock, and the
   puzzle themes' target, crown, and shield. The home tiles' icons are filled shapes,
   which read better large: two figures, a robot head, a jigsaw piece.
 - **Game screen**: in landscape the board fills the height less a 24 px margin, and a
-  glass panel as tall as the board stands to its right: the side to move on top (a piece
-  of its color with a glow ring, no text) with the move-hints toggle beside it, a 1 px
-  rule, then undo, hint, restart, and back in a 2 × 2 grid. In portrait the board fills the width and the panel below it holds the side to
-  move over the four buttons in a row.
+  glass panel 272 px wide and as tall as the board stands to its right: the side to move
+  on top (a piece of its color with a glow ring, no text) with the move-hints toggle
+  beside it, a 1 px rule, then undo, hint, restart, and back in a 2 × 2 grid of 104 px
+  tiles. In portrait the board fills the width and the panel, 240 px tall, below it
+  holds the side to move over the four buttons in a row of 88 px tiles.
 - **Home** is a title menu (`prototypes/home-menu.html`, chosen 2026-11-07 over the
   icon tiles and two other takes): the scene and the 3D board, and one glass column
   with the wordmark, then continue, a friend, the computer with its level, and puzzles

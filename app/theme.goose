@@ -21,11 +21,14 @@ struct Theme {
     glow:    float4,
     page:    float4,    // the color under everything
     kind:    float4,    // x: the square surface (WOOD..SEA)
+    glass:   float4,    // the glass tint, w: its opacity
+    text:    float4,    // the text and icons; w: how much the glass copy is dimmed to
 }
 
-fn rgb(hex: i64) -> float4 {
+fn rgb(hex: i64) -> float4 { rgba(hex, 1.0) }
+fn rgba(hex: i64, w: f32) -> float4 {
     return float4 { ((hex >> 16) & 255) / 255.0, ((hex >> 8) & 255) / 255.0,
-                    (hex & 255) / 255.0, 1.0 };
+                    (hex & 255) / 255.0, w };
 }
 
 fn get(kind: i64) -> Theme {
@@ -33,16 +36,20 @@ fn get(kind: i64) -> Theme {
     return match kind {
         WOOD => Theme { light: rgb(0xe2b070), dark: rgb(0x7a4626), frame: rgb(0x3b2112),
                         w_face: rgb(0xf0d4a4), b_face: rgb(0x4a2918), crown_w: rgb(0x4a2918),
-                        glow: rgb(0xffd75a), page: rgb(0x1c1410), kind: k },
+                        glow:   rgb(0xffd75a), page: rgb(0x1c1410), kind: k,
+                        glass: rgba(0x2b1e18, 0.66), text: rgba(0xf8f3e6, 0.9) },
         STONE => Theme { light: rgb(0xd8dee7), dark: rgb(0x5a6777), frame: rgb(0x2a3442),
                          w_face: rgb(0xf3eee2), b_face: rgb(0x2b3440), crown_w: rgb(0x2b3440),
-                         glow: rgb(0xa7d0fb), page: rgb(0x0b1622), kind: k },
+                         glow:   rgb(0xa7d0fb), page: rgb(0x0b1622), kind: k,
+                         glass: rgba(0x1e2f45, 0.4), text: rgba(0xe6f4ff, 0.75) },
         BIRCH => Theme { light: rgb(0xe8e2d3), dark: rgb(0x6b7f6a), frame: rgb(0x3d4a3c),
                          w_face: rgb(0xf6f3e7), b_face: rgb(0x3a4a3f), crown_w: rgb(0x3a4a3f),
-                         glow: rgb(0x8fd4ff), page: rgb(0x101a14), kind: k },
+                         glow:   rgb(0x8fd4ff), page: rgb(0x101a14), kind: k,
+                         glass: rgba(0x1e2f45, 0.4), text: rgba(0xe6f4ff, 0.75) },
         _ => Theme { light: rgb(0xc7d5c6), dark: rgb(0x2e5546), frame: rgb(0x1d3a30),
                      w_face: rgb(0xf6f1e4), b_face: rgb(0xb56a57), crown_w: rgb(0x2e5546),
-                     glow: rgb(0x86e7d3), page: rgb(0x0d1c1c), kind: k },
+                     glow:   rgb(0x86e7d3), page: rgb(0x0d1c1c), kind: k,
+                     glass: rgba(0x1e4a4a, 0.4), text: rgba(0xf4f8f2, 0.75) },
     };
 }
 
