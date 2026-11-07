@@ -65,7 +65,7 @@ fn content_height(setup: i64, landscape: bool, u: f32) -> f32 {
 // in s. Returns what was tapped.
 fn frame(gm: game::Game&, g: gui::Gui&, l: board::Layout&, width: f32, height: f32, setup: i64,
          s: settings::Settings&) -> i64 {
-    let u = min(width, height) / 800.0;
+    let u = g.scale;
     let n = rules::VARIANTS[gm.b.variant].size;
     let landscape = width >= height;
     let content_h = content_height(setup, landscape, u);

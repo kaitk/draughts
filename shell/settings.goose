@@ -410,7 +410,7 @@ fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64) -> i64 {
 // the language showing, and sets l to where the preview goes. The kings' tiles put their
 // pieces in gm's overlay. Returns BACK, CHANGED after a tap changed s, or NOTHING.
 fn frame(s: Settings&, gm: game::Game&, g: gui::Gui&, l: board::Layout&, width: f32, height: f32, shown: i64) -> i64 {
-    let u = min(width, height) / 800.0;
+    let u = g.scale;
     let landscape = width >= height;
     let n = rules::VARIANTS[s.variant].size;
     var page = float4 { PAD_X * u, PAD_Y * u, width - 2.0 * PAD_X * u, height - 2.0 * PAD_Y * u };
