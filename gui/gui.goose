@@ -228,9 +228,12 @@ fn animating(g: Gui&) -> bool {
 // A glass panel. A press on it belongs to the UI.
 fn panel(g: Gui&, r: float4) { glass(g, r, 28.0); }
 
+// A press that lands on r belongs to the UI and never reaches the board.
+fn take(g: Gui&, r: float4) { if g.input.pressed && inside(r, g.input.at) { g.took = true; } }
+
 // A glass panel with corners of `radius` dp.
 fn glass(g: Gui&, r: float4, radius: f32) {
-    if g.input.pressed && inside(r, g.input.at) { g.took = true; }
+    take(g, r);
     add(g, Quad { rect: r, look: float4 { GLASS, radius * g.scale, 0.0, 0.0 },
                   extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
 }
@@ -261,6 +264,15 @@ fn hold(g: Gui&, id: i64, r: float4) -> bool, f32 {
     return clicked, pressed(g, id);
 }
 
+// As hold for a widget that is on; one that is off takes a press but never goes down.
+fn hold_if(g: Gui&, id: i64, r: float4, on: bool) -> bool, f32 {
+    guard on else {
+        take(g, r);
+        return false, 0.0;
+    }
+    return hold(g, id, r);
+}
+
 // A tile in one of the looks PLAIN..ROW_PRIMARY with corner radius `radius` dp;
 // otherwise as button.
 fn tile(g: Gui&, id: i64, r: float4, icon: i64, style: i64, radius: f32) -> bool {
@@ -287,17 +299,11 @@ fn glyph_icon(g: Gui&, r: float4, icon: i64, style: i64, p: f32, a: f32) {
 fn row(g: Gui&, id: i64, r: float4, icon: i64, label: const u8[:], note: const u8[:], primary: bool,
        on: bool) -> bool {
     let u = g.scale;
-    var clicked = false;
-    var p: f32 = 0.0;
-    if on {
-        clicked, p = hold(g, id, r);
-    } else if g.input.pressed && inside(r, g.input.at) {
-        g.took = true;
-    }
+    let clicked, p = hold_if(g, id, r, on);
     let style = if primary { ROW_PRIMARY } else { ROW };
     add(g, Quad { rect: r, look: float4 { BUTTON, 20.0 * u, 0.0, p }, extra: float4 { u, style, 0.0, 0.0 } });
     let a: f32 = if on { 1.0 } else { 0.4 };
-    var c = inset(r, 0.0);
+    var c = r;
     cut_left(c, 18.0 * u);
     cut_right(c, 18.0 * u);
     glyph_icon(g, center(cut_left(c, 34.0 * u), 34.0 * u, 34.0 * u), icon, style, 0.0, 0.85 * a);
@@ -308,25 +314,15 @@ fn row(g: Gui&, id: i64, r: float4, icon: i64, label: const u8[:], note: const u
 }
 
 // A choice tile (prototypes/settings.html): a picture of size `pic` (centered across)
-// with a label under it, or for kind -2 a word; lit in the glow color when on. A picture is a season's
-// thumbnail (pic, a theme), or for -1 the glow's tint with a sun. A choice that isn't
+// with a label under it, lit in the glow color when on. The picture is a season's
+// thumbnail (kind, a theme), or for -1 the glow's tint with a sun. A choice that isn't
 // `enabled` is dimmed and takes no tap. True when it is tapped.
 fn choice(g: Gui&, id: i64, r: float4, kind: i64, pic: float2, label: const u8[:], on: bool, enabled: bool) -> bool {
     let u = g.scale;
-    var clicked = false;
-    if enabled {
-        let c, p = hold(g, id, r);
-        clicked = c;
-    } else if g.input.pressed && inside(r, g.input.at) {
-        g.took = true;
-    }
+    let clicked, unused = hold_if(g, id, r, enabled);
     let a: f32 = if enabled { 1.0 } else { 0.4 };
     add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { BUTTON, 16.0 * u, 0.0, 0.0 },
                   extra: float4 { u, if on { CHOSEN } else { CHOICE }, 0.0, 0.0 } });
-    if kind == -2 {
-        text(g, BODY, r, label, a, 0.0, CENTER);
-        return clicked;
-    }
     var c = inset(r, 6.0 * u);
     let picture = center(cut_top(c, pic.y), pic.x, pic.y);
     add(g, Quad { rect: picture, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { PICTURE, 11.0 * u, kind, 0.0 },
@@ -380,13 +376,7 @@ fn labelled(g: Gui&, id: i64, r: float4, icon: i64, size: f32, label: const u8[:
 fn pick(g: Gui&, id: i64, r: float4, pic: f32, label: const u8[:], note: const u8[:], on: bool,
         enabled: bool) -> bool, float4 {
     let u = g.scale;
-    var clicked = false;
-    if enabled {
-        let c, p = hold(g, id, r);
-        clicked = c;
-    } else if g.input.pressed && inside(r, g.input.at) {
-        g.took = true;
-    }
+    let clicked, unused = hold_if(g, id, r, enabled);
     let a: f32 = if enabled { 1.0 } else { 0.4 };
     add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { BUTTON, 16.0 * u, 0.0, 0.0 },
                   extra: float4 { u, if on { CHOSEN } else { CHOICE }, 0.0, 0.0 } });
@@ -434,7 +424,7 @@ fn pips(g: Gui&, r: float4, full: i64, a: f32) {
 // runs, red when low, faint while it waits. It takes a press, so a press on it never
 // reaches the board.
 fn clock_tile(g: Gui&, r: float4, style: i64) {
-    if g.input.pressed && inside(r, g.input.at) { g.took = true; }
+    take(g, r);
     add(g, Quad { rect: r, look: float4 { BUTTON, 20.0 * g.scale, 0.0, 0.0 }, extra: float4 { g.scale, style, 0.0, 0.0 } });
 }
 
