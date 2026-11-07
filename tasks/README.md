@@ -41,4 +41,6 @@ number ("task 004"), not by path.
 settled the look in HTML prototypes, and 005 made the idle app draw nothing; all four
 are archived. 004 is next, then 006 to 009. Together they make the MVP in
 `docs/product.md`. 010 runs alongside: goose_gfx changes to propose upstream. 011, the
-last idle CPU (SDL's accelerometer), can come any time before release.
+last idle CPU (SDL's accelerometer), can come any time before release. 012 brings the
+prototypes to the seasonal design boards before 004 draws the board; 013 adds season
+effects later.
