@@ -1,6 +1,6 @@
 # 017: The native board on the season, as the design boards show it
 
-Status: todo
+Status: done
 
 Bring the app on the tablet to the look the prototypes and the user settled on
 (2026-11-07), for all four seasons: the simple flat 2D board on the season's photograph,
@@ -62,14 +62,50 @@ menus are task 008, not this one.
 
 ## Acceptance criteria
 
-- [ ] The blurred season photograph behind the board, all four seasons, on the Mac and
+- [x] The blurred season photograph behind the board, all four seasons, on the Mac and
       the tablet; a missing image falls back to the page color
-- [ ] The board flat with no frame or light pool, the faint per-theme surface only
-- [ ] Pieces with the design boards' soft rim light, face gradient, inner ring, and
+- [x] The board flat with no frame or light pool, the faint per-theme surface only (and,
+      after the later boards, a thin lip)
+- [x] Pieces with the design boards' soft rim light, face gradient, inner ring, and
       short shadow; crown, selection, and must-capture pulse kept
-- [ ] Hints on mistakes only by default, with a red mark for a wrong move; tested
-- [ ] Mac screenshots of each season compared with its design board, and differences
+- [x] Hints on mistakes only by default, with a red mark for a wrong move; tested
+- [x] Mac screenshots of each season compared with its design board, and differences
       either fixed or noted here
-- [ ] Idle CPU and memory measured on the tablet and recorded here; still no frames
+- [x] Idle CPU and memory measured on the tablet and recorded here; still no frames
       while idle
-- [ ] rendering.md updated where the native form differs from what it says
+- [x] rendering.md updated where the native form differs from what it says
+
+## Outcome (2026-11-07)
+
+- **Background**: `app/background.c` embeds the four masters with `#embed` under
+  `__has_embed` and decodes one with stb_image 2.28 (goose_gfx's Nuklear demo copy, used
+  in place), scaled to 512 × 512; `app/scene.goose` blurs it once on the GPU. A checkout
+  without the masters builds and shows the page color (checked: birch gave `#101a14`).
+  `scripts/android.py` builds the sidecar's C into the APK, now 5.0 MB (was 2.8 MB).
+  `--theme` reaches the program on Android through `KabeActivity`'s `args` extra.
+- **Board**: flat, faint surfaces, soft shadow. After the user's later ChatGPT close-ups
+  (winter and autumn, kept local), a thin raised lip with a light line on its outer edge.
+- **Pieces**: one wide rounded rim around a flat face, lit softly from above, the thin
+  side, the short shadow; the inner ring the first boards had is gone, as the user
+  preferred the flatter faces of the later ones.
+- **Hints**: mistakes only by default; `--hints moves` for the dots; `test/board/hints.goose`.
+
+### Compared with the design boards
+
+Mac screenshots at 1920 × 1200 and 1200 × 1920 for every season, beside the boards:
+board, pieces, states, and background match. Left as they are:
+
+- The boards set the board and the panel in one glass card; that is task 008.
+- Wood grain on the boards is finer and straighter; ours wanders a little more.
+- The boards' lifted piece shows a tall side; ours lifts 0.8% of the board with a
+  growing shadow, as rendering.md says.
+
+### On the tablet
+
+All four seasons in both orientations look as on the Mac. Idle, untouched, 60 s:
+the program thread 0.02 s of CPU (0.03% of a core) with 60 voluntary switches, the
+process 1.22 s (the accelerometer, task 011): the same as before the photograph. Over 20
+cycles of home, resume, and rotation (`scripts/lifecycle_memory.sh 20`), one process
+throughout, no errors: PSS 257 to 261 MB, native heap 26 MB, graphics 211 to 215 MB,
+flat apart from two 2 MB steps. At rest after a fresh start, graphics was 159 MB. The
+first idle sample right after start-up read 0.12% and 259 switches: start-up, not idle.

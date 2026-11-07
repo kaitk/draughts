@@ -61,19 +61,25 @@ the theme can be overridden in settings. Values from the design boards (2026-11-
 | Page under the scene | `#1c1410` | `#0b1622` | `#101a14` | `#0d1c1c` |
 | Square surface | wood grain | soft mottling | faint fibre | plain sheen |
 
-Secondary text is the text color at 66%. The surfaces are a few gradients each, sines in
-the board shader: wood is fine vertical grain with a light-to-dark sweep, stone two soft
-radial patches, birch faint horizontal fibre, sea only the sheen every square has.
+Secondary text is the text color at 66%. The surfaces are faint, never busy: a few sines
+and value noise in the board shader. Wood is fine vertical grain that wanders a little,
+with each square its own tone; stone a paper-like mottling; birch a hint of fibre across;
+sea almost flat.
 
 ### Scene and glass
 
 - **The scene** is a calm Estonian landscape for the season: autumn forest, winter
   spruces, spring birches, summer coast. Each is a photograph-like picture
   (`design/backgrounds/`, placeholders until task 014), shown as it is, cover-cropped to
-  the screen, sharp behind the title menu, the puzzle picker, settings, and the 3D
+  the screen by its long side, sharp behind the title menu, the puzzle picker, settings, and the 3D
   board.
 - **Behind the 2D game the scene is blurred** (a 14 px blur at 1280 px wide, dimmed to
-  0.8), as on the design boards, so the flat board reads cleanly. Tried and set aside
+  0.8), as on the design boards, so the flat board reads cleanly. Natively
+  (`app/scene.goose`) the decoded image is scaled down to 512 × 512 and blurred once on
+  the GPU when the season is picked, two passes of a Gaussian of sigma 5.6 texels: since
+  a square image is cover-cropped by the screen's long side, that is the same blur at
+  every screen size and orientation, so a new screen size needs no new blur. The board
+  pass samples it, a 1 MB texture. Tried and set aside
   on 2026-11-07: the sharp photograph (busy behind the board), a plain painted tabletop,
   and generated tabletop pictures with a crafted board (task 016).
 - **The 3D board floats in front of the scene**, with a soft shadow under it: no room or
@@ -86,7 +92,10 @@ radial patches, birch faint horizontal fibre, sea only the sheen every square ha
   so the program decodes the JPEG itself: stb_image, JPEG only, in the program's own C
   (a `c_sources` entry in its `.build` sidecar), from the embedded bytes to RGBA, then
   `gfx::texture2d` and `update_texture`. No goose_gfx patch is needed
-  ([findings](../goose-findings.md)). Only the current season is decoded. PNG was
+  ([findings](../goose-findings.md)). Only the current season is decoded. Until the
+  images are checked in, `app/background.c` embeds the local masters with C23 `#embed`
+  under `__has_embed`, so a checkout without them builds and shows the page color; the
+  four add 2.3 MB to the APK (5.0 MB). PNG was
   rejected at about 5 MB a season; AVIF needs libavif and an AV1 decoder on both
   platforms to save about 1 MB. If graphics memory gets tight, ASTC at build time cuts
   a 2048² image from 16 MB to about 2 MB.
@@ -94,7 +103,8 @@ radial patches, birch faint horizontal fibre, sea only the sheen every square ha
   costing more than its weather animation, and switched to a copy of the background
   blurred once (its `docs/architecture/scene.md`). Here the scene is blurred on the GPU
   when the season or screen size changes, into a small texture (240 px wide, the blur a
-  24 px one would be at full width, saturation 1.3), so nothing pre-blurred is stored. A
+  24 px one would be at full width, saturation 1.3), so nothing pre-blurred is stored.
+  Task 008 can blur the 2D game's 512 px copy further for it. A
   glass panel samples it at its screen position: one texture fetch per pixel, no blur
   per frame.
 - **Glass layers**, bottom to top: the copy, dimmed as the table says; the theme's
@@ -103,10 +113,11 @@ radial patches, birch faint horizontal fibre, sea only the sheen every square ha
 
 ### Light
 
-The 2D board is kept simple for now: flat squares and plain pieces with no light, as on
-the design boards. A strong light pool and, with the tabletops, a crafted board with a
-soft light were tried on 2026-11-07 and set aside; if light comes back, it is soft and
-diffuse and comes from where the background's light is. The 3D board has one key light from the top left,
+The 2D board is kept simple: flat squares with no light pool, as on the design boards.
+The pieces have a soft, diffuse light from above (2026-11-07, task 017): the upper side
+of the rim catches it and the lower side misses it, and nothing else. A strong light pool
+and, with the tabletops, a crafted board with a soft light were tried on 2026-11-07 and
+set aside. The 3D board has one key light from the top left,
 as in the design boards, a few terms in its shaders with no lighting pass. The terms
 the prototype tried, kept for 3D:
 
@@ -148,24 +159,31 @@ the prototype tried, kept for 3D:
 
 ### Board and pieces
 
-- **Board** in 2D: the theme's squares with no frame, corners rounded 1.2% of the
-  board's width, and a soft shadow under it on the table. The 3D board has a frame 2.4%
-  of the board's width. 10 × 10 uses the same.
-- **Pieces** are SDF discs filling 78% of a square: a face, an inner ring at 45 to 52%
-  of the radius, a rim from 80%, and the side under the disc, over the light above.
-  Each side has one color in the theme; the rest is worked out from it. Light pieces:
-  ring 13% toward black, rim 6%, side 32%. Dark pieces: ring 16% toward white, rim 18%
-  toward black, side 50%.
+- **Board** in 2D: the theme's squares in a thin raised lip 1.1% of the board's width,
+  corners rounded 1.6%, and a soft shadow under it (down 1.4%, 3.6% soft, black at 55%).
+  The lip is the dark square's color, with a line of the light square's color on its
+  outer edge (gold on wood, pale blue on stone), brightest on top, and a dark seam where
+  the squares sit below it. The lip and the pieces' single rim follow two later ChatGPT
+  boards the user preferred (2026-11-07, winter and autumn close-ups, kept local); the
+  HTML prototype still has no lip and the inner ring. The 3D board has a frame 2.4% of
+  the board's width. 10 × 10 uses the same.
+- **Pieces** are SDF discs filling 78% of a square: a flat face sunk a little below one
+  wide rounded rim from 64% of the radius, a thin groove between them, and the side
+  under the disc (0.55% of the board deep), with a short soft shadow straight down and
+  a touch right (a quarter of the radius down, softened over a third of it) and a tight
+  one where it touches. Each side has one color in the theme; the rest is worked out
+  from it. Light pieces: rim 6% toward black, side 32%. Dark pieces: rim 18% toward
+  black, side 50%, and a faint gloss on the face.
 - **Kings** are a setting: crown, stack, or auto (the default). Auto draws a crown on
   the face in the top-down board (the theme's dark piece color on a light piece, gold
   `#e9c46a` on a dark one), which reads at a glance, and in a 3D board a stack of two
   discs with the crown on top, as kings are in Estonian play. Top down, a stack reads as
   a shadow at tablet size, so it's there for those who want it.
-- **Native form** (`app/draw.goose`, still with the frame and light the prototype has
-  since dropped from 2D): the page, frame, squares, light, and marks are one full-screen
-  fragment pass; the pieces are one instanced draw of quads, each pulling
-  `{center, radius, lift; black, king, selected, opacity; must capture}` from a storage
-  buffer and drawing its shadows, side, face, light, crown, and rings in the fragment
+- **Native form** (`app/draw.goose`): the blurred photograph, the board's shadow, lip,
+  squares, and marks are one full-screen fragment pass, worked out at `gl_FragCoord`
+  (interpolated coordinates put a square's edge a pixel off on some rows); the pieces
+  are one instanced draw of quads, each pulling `{center, radius, lift; black, king,
+  selected, opacity; must capture}` from a storage buffer and drawing its shadows, side, face, light, crown, and rings in the fragment
   shader, blended premultiplied, top row first so a lower piece covers the shadow above
   it. The crown is a signed-distance polygon in that shader. The panel's line icons are
   to be drawn the same way, as distances to their strokes' segments and arcs, rather than
@@ -174,10 +192,12 @@ the prototype tried, kept for 3D:
   pieces as discs with height (one disc 1.7% of the board), and the selected piece
   lifted. `prototypes/boards.html` shows it for every theme.
 - **States**, in the theme's glow color: the selected piece lifts by 0.8% of the board
-  and grows to 1.05 with a glow ring; with move hints on, a legal target is a glowing
+  and grows to 1.05 with a glow ring a little out from it (at 1.13 of the radius); with move hints on, a legal target is a glowing
   dot 30% of a square and a capture's stop on the way is a ring. With hints on mistakes
   only (the default, `docs/product.md`), there are no dots: a wrong move flashes a red
-  ring on its square twice, and the piece that must capture pulses. A piece that must capture pulses a red ring
+  ring on its square twice (0.6 s each), and the piece that must capture pulses; the
+piece stays selected. A tap or a drop on an empty square that isn't a move is wrong, as
+is touching a piece that can't move because another must capture. A piece that must capture pulses a red ring
   `#ff5a4a` with a soft red glow every 1.4 s, in every theme. The last move's squares are
   tinted with the glow color at 16%.
 
