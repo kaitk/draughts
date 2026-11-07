@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The app runs SDL's stock SDLActivity, which loads libSDL3.so and libmain.so and enters
-     the Goose program at SDL_main. There is no Java of our own and no resources: the label
-     is a literal and the theme is the platform's. scripts/android.py builds the APK. -->
+     the Goose program at SDL_main, through KabeActivity (android/java/), which only adds
+     development flags from the intent. There are no resources: the label is a literal and
+     the theme is the platform's. scripts/android.py builds the APK. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.kaitk.kabe"
     android:versionCode="1"
@@ -20,7 +21,7 @@
         android:hardwareAccelerated="true">
         <!-- Lets profilers (Perfetto, Android Studio) attach to this release build. -->
         <profileable android:shell="true" />
-        <activity android:name="org.libsdl.app.SDLActivity"
+        <activity android:name="com.kaitk.kabe.KabeActivity"
             android:label="Kabe"
             android:alwaysRetainTaskState="true"
             android:launchMode="singleInstance"

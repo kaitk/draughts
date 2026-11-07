@@ -6,7 +6,7 @@
 #
 #   scripts/lifecycle_memory.sh [cycles]      default 20
 P=com.kaitk.kabe
-A=$P/org.libsdl.app.SDLActivity
+A=$P/.KabeActivity
 N=${1:-20}
 acc=$(adb shell settings get system accelerometer_rotation)
 rot=$(adb shell settings get system user_rotation)
