@@ -67,6 +67,9 @@ adb logcat -s goose:* SDL:*                 # the program's output and SDL's log
    libraries, stored uncompressed. `zipalign -P 16` aligns them to 16 KB pages, and
    `apksigner` signs with `~/.android/debug.keystore`, which it creates if missing.
 
+The POC's APK is 2.8 MB: `libSDL3.so` 1.9 MB and `libmain.so` 0.9 MB stripped, SDL's dex
+43 KB.
+
 The CMake build directory is configured once. Delete `build/android/<program>/native`
 after changing `android/CMakeLists.txt`.
 
