@@ -229,18 +229,23 @@ the prototype tried, kept for 3D:
   a quiet button beside the wordmark, so the sheet leaves the board its room. A friend
   and the computer open a new game's setup in the same column: back and the title, then
   a row of tiles per choice, lit as in settings: which draughts (international 10 × 10,
-  the default, or Russian 8 × 8), the level against the computer (easy, medium, hard,
-  with one to three pips), and the clock (none, 5 min, 10 min); then play, a primary
-  row. The choices are kept for next time. The language is
+  the default, Russian 8 × 8, or Brazilian 8 × 8), the level against the computer
+  (easy, medium, hard, with one to three pips), and the clock (none, 5 min, 10 min);
+  then play, a primary row. The choices are kept for next time. The language is
   only in settings (2026-11-07): kids who can't read yet don't need it on home, and a
   tablet set to one language can still play in another. In portrait the column is a sheet below the
-  board. **Settings** (`prototypes/settings.html`): back, then a glass group per
-  setting (radius 24 px, its icon and title in 24 px), each choice a tile of 16 px
-  radius, lit in the glow color at 22% with a 2 px glow border when on: the background
-  as thumbnails of the four photographs (104 × 64 px, 88 × 56 in portrait) after a
-  tile for by the date, the board (3D dimmed until task 015), move hints, and each
-  language by its own name; then learn, one tile that starts the tutorial again from
-  the first start. A tile is as wide as its label needs. **Puzzle picker**: one glass row per theme (capture, become a king, the
+  board. **Settings** (`prototypes/settings.html`, regrouped 2026-11-07): back and the
+  title, then three glass groups (radius 24 px, icon and title in 26 px) by what they
+  change and how often. **Game**: the draughts a new game starts on (international,
+  Russian, Brazilian; the setup can still change it), move hints, and learn the moves
+  again (the tutorial from the first start). **Look**: the background as thumbnails of
+  the four photographs (96 × 60 px, 84 × 54 in portrait) after a tile for by the date,
+  the board (flat or raised, 3D dimmed until task 015), and kings (auto, crown, stack,
+  each drawn). **Language**: each by its own name. Each setting is a dim 18 px label over
+  its row of tiles; a tile has radius 16 px and is lit in the glow color at 22% with a 2 px
+  glow border when on, as wide as its label needs. In landscape game and look stand side
+  by side, look as wide as its thumbnails, over language across both; in portrait they
+  stack. **Puzzle picker**: one glass row per theme (capture, become a king, the
   only safe move), its icon and ten tiles of at least 64 px with 0 to 3 stars in the
   glow color; locked tiles show a lock, the next unsolved one a glow ring.
   **Solved**: three stars that pop in over the dimmed board, a few drifting sparks, and

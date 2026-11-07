@@ -33,7 +33,7 @@
   .tools svg { width: 26px; height: 26px; stroke-width: 2; }
   /* A new game (?pick=friend or computer): the column turns into its setup, back and the
      title, then a row of tiles per choice: which draughts (international, the default
-     once it exists, or Russian 8×8), the level against the computer, and the clock (none,
+     once it exists, Russian 8×8, or Brazilian 8×8), the level against the computer, and the clock (none,
      5+3, 10+5, task 019); then play. A tile is lit as in settings. The choices are kept
      for next time. */
   .head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; font-size: 34px; }
@@ -46,7 +46,7 @@
   .choose .tiles.two { grid-template-columns: repeat(2, 1fr); }
   .pick, .choose a, .head a { text-decoration: none; }
   .pick { display: grid; justify-items: center; align-content: center; gap: 4px; min-height: 76px; padding: 8px 6px;
-    border: 0; border-radius: 16px; cursor: pointer; color: var(--fg); font: inherit; font-size: 20px;
+    border: 0; border-radius: 16px; cursor: pointer; color: var(--fg); font: inherit; font-size: 18px;
     background: var(--button); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12); }
   .pick.on { background: color-mix(in srgb, var(--glow) 22%, transparent); box-shadow: inset 0 0 0 2px var(--glow); }
   .pick small { font-size: 15px; color: var(--fg-dim); }
@@ -98,9 +98,10 @@
     document.querySelector('.menu').innerHTML =
       `<div class="head"><a class="back" href="home.html" aria-label="Back">${Draughts.icon('back')}</a>` +
       `${Draughts.icon(computer ? 'computer' : 'friend')}${computer ? 'The computer' : 'A friend'}</div>` +
-      '<div class="choose"><h2>Draughts</h2><div class="tiles two">' +
+      '<div class="choose"><h2>Draughts</h2><div class="tiles">' +
       tile('v', 'intl', v === 'intl', 'International<small>10 × 10</small>') +
-      tile('v', 'russian', v === 'russian', 'Russian<small>8 × 8</small>') + '</div>' +
+      tile('v', 'russian', v === 'russian', 'Russian<small>8 × 8</small>') +
+      tile('v', 'brazilian', v === 'brazilian', 'Brazilian<small>8 × 8</small>') + '</div>' +
       (computer ? '<h2>Level</h2><div class="tiles">' +
         tile('level', 'easy', level === 'easy', `${pips(1)}Easy`) +
         tile('level', 'medium', level === 'medium', `${pips(2)}Medium`) +

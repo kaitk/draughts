@@ -7,40 +7,58 @@
 <link rel="stylesheet" href="draughts.css">
 <script src="draughts.js"></script>
 <style>
-  /* Settings, reached from the title menu. Few choices, each a row of large tiles that
-     show what they pick: the background (by the date, or one season), the board (2D or
-     3D), move hints, and the language; then the tutorial, to learn the moves again. A tap
-     applies a choice at once; there is no save. */
-  a.tile { text-decoration: none; }
-  .settings { display: grid; grid-template-columns: auto 1fr; gap: 24px; height: 100%; padding: 24px 32px; }
-  .list { display: grid; gap: 14px; align-content: center; max-width: 980px; }
-  .group { --r: 24px; display: grid; grid-template-columns: 200px 1fr; align-items: center; gap: 20px; padding: 16px 20px; }
-  .group h2 { margin: 0; display: flex; align-items: center; gap: 14px; font-size: 24px; font-weight: 400; }
-  .group h2 .icon { width: 34px; height: 34px; stroke-width: 2; opacity: 0.85; }
-  .tiles { display: flex; gap: 12px; flex-wrap: wrap; }
-  .tile { display: grid; justify-items: center; gap: 6px; padding: 6px 6px 8px; border: 0; border-radius: 16px; cursor: pointer;
-    color: var(--fg); font: inherit; font-size: 16px; background: var(--button); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12); }
+  /* Settings, reached from home and the game, in three groups by what they change and
+     how often: the game (which draughts a new game starts on, move hints, the tutorial
+     again), the look (background, board, kings), and the language, set once. Each
+     setting is a label over a row of large tiles that show what they pick; a tap applies
+     at once, there is no save. In landscape game and look stand side by side over the
+     language; in portrait they stack. */
+  .settings { display: grid; grid-template-rows: auto 1fr; gap: 18px; height: 100%; padding: 24px 32px; }
+  .top { display: flex; align-items: center; gap: 20px; }
+  .top h1 { margin: 0; font-size: 34px; font-weight: 400; }
+  .groups { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; gap: 16px; align-content: center;
+    max-width: 1180px; width: 100%; justify-self: center; }
+  .group { --r: 24px; display: grid; align-content: start; gap: 6px; padding: 18px 22px 22px; }
+  .group.wide { grid-column: 1 / -1; grid-template-columns: auto 1fr; align-items: center; gap: 24px; }
+  .group h2 { margin: 0 0 6px; display: flex; align-items: center; gap: 12px; font-size: 26px; font-weight: 400; }
+  .group.wide h2 { margin: 0; }
+  .group h2 .icon { width: 32px; height: 32px; stroke-width: 2; opacity: 0.85; }
+  .setting { display: grid; gap: 8px; }
+  .setting + .setting { margin-top: 12px; }
+  .setting h3 { margin: 0 2px; font-size: 18px; font-weight: 400; color: var(--fg-dim); letter-spacing: 0.03em; }
+  .tiles { display: flex; gap: 10px; flex-wrap: wrap; }
+  .tile { display: grid; justify-items: center; align-content: center; gap: 4px; min-width: 96px; min-height: 64px; padding: 6px 16px 8px;
+    border: 0; border-radius: 16px; cursor: pointer; color: var(--fg); font: inherit; font-size: 19px; text-decoration: none;
+    background: var(--button); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12); }
+  .tile small { font-size: 14px; color: var(--fg-dim); }
   .tile.on { background: color-mix(in srgb, var(--glow) 22%, transparent); box-shadow: inset 0 0 0 2px var(--glow); }
-  .tile .pic { width: 104px; height: 64px; border-radius: 11px; background: center / cover; display: grid; place-items: center; }
-  .tile .pic .icon { width: 30px; height: 30px; }
-  .tile.text { min-width: 104px; min-height: 64px; place-content: center; font-size: 20px; padding: 0 18px; }
+  .tile.pic { padding: 6px 6px 8px; font-size: 15px; }
+  .tile .thumb { width: 96px; height: 60px; border-radius: 11px; background: center / cover; display: grid; place-items: center; }
+  .tile .thumb .icon { width: 28px; height: 28px; }
+  .tile.action { display: flex; gap: 10px; }
+  .tile.action .icon { width: 26px; height: 26px; }
+  /* A king as each style draws it top down: a crown on the face, or a second disc. */
+  .kp { position: relative; width: 34px; height: 38px; }
+  .kp .piece { --u: 3px; inset: 0 0 4px; }
+  .kp.stack .piece:first-child { translate: 0 4px; }
   @media (orientation: portrait) {
-    .settings { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-    .settings > div:first-child { justify-self: start; }
-    .group { grid-template-columns: 1fr; gap: 12px; }
-    .tile .pic { width: 88px; height: 56px; }
+    .settings { overflow: auto; }
+    .groups { grid-template-columns: 1fr; grid-template-rows: none; align-content: start; }
+    .group.wide { grid-template-columns: 1fr; gap: 6px; }
+    .tile .thumb { width: 84px; height: 54px; }
   }
 </style>
 </head>
 <body>
 <main class="settings">
-  <div><a class="button glass" href="home.html" data-icon="back" aria-label="Back"></a></div>
-  <div class="list" id="list"></div>
+  <div class="top"><a class="button glass" href="home.html" data-icon="back" aria-label="Back"></a><h1>Settings</h1></div>
+  <div class="groups" id="groups"></div>
 </main>
 <script>
   Draughts.init();
   const S = Draughts.settings, params = new URLSearchParams(location.search);
   const now = params.get('season') === null;
+  const v = params.get('v') || 'intl';
   const photo = (s) => `../design/backgrounds/masters/${s}-01-2048.jpg`;
   // A choice reloads the page with it in the query, as the switcher does.
   const go = (key, value) => {
@@ -49,23 +67,39 @@
     if (key === 'season') p.delete('theme');
     location.search = p.toString();
   };
-  const tile = (on, key, value, inner, label) =>
-    `<button class="tile${inner ? '' : ' text'}${on ? ' on' : ''}" data-k="${key}" data-v="${value}">${inner || ''}${label}</button>`;
-  const group = (iconName, title, tiles) =>
-    `<section class="group glass"><h2>${Draughts.icon(iconName)}${title}</h2><div class="tiles">${tiles}</div></section>`;
+  const tile = (on, key, value, label, cls = '') =>
+    `<button class="tile ${cls}${on ? ' on' : ''}" data-k="${key}" data-v="${value}">${label}</button>`;
+  const setting = (title, tiles) => `<div class="setting"><h3>${title}</h3><div class="tiles">${tiles}</div></div>`;
+  const group = (iconName, title, body, cls = '') =>
+    `<section class="group glass ${cls}"><h2>${Draughts.icon(iconName)}${title}</h2>${body}</section>`;
+  const king = (stack) => `<span class="kp${stack ? ' stack' : ''}">${stack ? '<span class="piece white"></span>' : ''}<span class="piece white king"></span></span>`;
   const seasons = [['winter', 'Winter'], ['spring', 'Spring'], ['summer', 'Summer'], ['autumn', 'Autumn']];
-  document.getElementById('list').innerHTML =
-    group('sun', 'Background',
-      tile(now, 'season', '', `<span class="pic" style="background: color-mix(in srgb, var(--glow) 18%, rgb(255 255 255 / 0.06))">${Draughts.icon('sun')}</span>`, 'By the date') +
-      seasons.map(([s, name]) => tile(!now && S.season === s, 'season', s, `<span class="pic" style="background-image: url(${photo(s)})"></span>`, name)).join('')) +
-    group('dots', 'Board',
-      tile(S.view === '2d', 'view', '2d', '', '2D') + tile(S.view === '3d', 'view', '3d', '', '3D')) +
-    group('target', 'Move hints',
-      tile(S.assist === 'mistakes', 'assist', 'mistakes', '', 'Mistakes only') + tile(S.assist === 'moves', 'assist', 'moves', '', 'All moves')) +
-    group('globe', 'Language', tile(params.get('lang') !== 'et', 'lang', 'en', '', 'English') +
-      tile(params.get('lang') === 'et', 'lang', 'et', '', 'Eesti')) +
-    group('hint', 'Learn', `<a class="tile text" href="first-start.html?page=learn">Learn the moves again</a>`);
-  document.querySelectorAll('.tile').forEach((t) => t.onclick = () => go(t.dataset.k, t.dataset.v || null));
+  document.getElementById('groups').innerHTML =
+    group('target', 'Game',
+      setting('Draughts for a new game',
+        tile(v === 'intl', 'v', 'intl', 'International<small>10 × 10</small>') +
+        tile(v === 'russian', 'v', 'russian', 'Russian<small>8 × 8</small>') +
+        tile(v === 'brazilian', 'v', 'brazilian', 'Brazilian<small>8 × 8</small>')) +
+      setting('Move hints',
+        tile(S.assist === 'mistakes', 'assist', 'mistakes', 'Mistakes only') +
+        tile(S.assist === 'moves', 'assist', 'moves', 'All moves')) +
+      setting('The moves',
+        `<a class="tile action" href="first-start.html?page=learn&v=${v}">${Draughts.icon('hint')}Learn them again</a>`)) +
+    group('sun', 'Look',
+      setting('Background',
+        tile(now, 'season', '', `<span class="thumb" style="background: color-mix(in srgb, var(--glow) 18%, rgb(255 255 255 / 0.06))">${Draughts.icon('sun')}</span>By the date`, 'pic') +
+        seasons.map(([s, name]) => tile(!now && S.season === s, 'season', s, `<span class="thumb" style="background-image: url(${photo(s)})"></span>${name}`, 'pic')).join('')) +
+      setting('Board',
+        tile(S.view === '2d', 'view', '2d', 'Flat<small>2D</small>') +
+        tile(S.view === '3d', 'view', '3d', 'Raised<small>3D</small>')) +
+      setting('Kings',
+        tile(S.king === 'auto', 'king', 'auto', 'Auto<small>crown flat, stack raised</small>') +
+        tile(S.king === 'crown', 'king', 'crown', `${king(false)}Crown`) +
+        tile(S.king === 'stack', 'king', 'stack', `${king(true)}Stack`))) +
+    group('globe', 'Language',
+      `<div class="tiles">${tile(params.get('lang') !== 'et', 'lang', 'en', 'English')}${tile(params.get('lang') === 'et', 'lang', 'et', 'Eesti')}</div>`, 'wide');
+  document.querySelectorAll('button.tile').forEach((t) => t.onclick = () => go(t.dataset.k, t.dataset.v || null));
+  Draughts.paint();
   Draughts.syncGlass();
 </script>
 </body>
