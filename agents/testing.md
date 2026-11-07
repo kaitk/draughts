@@ -101,3 +101,8 @@ measuring there:
   `adb shell input swipe X Y X Y 2500 &`, then `adb exec-out screencap -p` a second later.
 - The batterystats estimate reads 0 while the tablet charges over USB, so it says
   nothing; CPU time is the measure.
+- When the lock screen asks for a PIN (`adb shell dumpsys window | grep
+  isKeyguardShowing` stays true after `wm dismiss-keyguard`), the app is paused at
+  once and never draws; ask the user to unlock. Headless programs still run through
+  `scripts/android_cli.sh`: the computer's worker was timed that way, with its threads'
+  state read from `/proc/<pid>/task/*/stat` while the program waited (2026-11-08).

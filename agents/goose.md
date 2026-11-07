@@ -143,6 +143,8 @@ What `app/think.goose` needed, from `reference.md` section 22 and spec 11.2:
 - Threads work on Android as on the Mac: the NDK's clang compiles the runtime's thread
   locals, and `scripts/android_cli.sh` runs a threaded headless program as is.
 - A built program takes its flags right after the executable, with no `--`.
+- std has no `sleep`. `qget<T>(ms)` on a queue nothing puts to waits that long without
+  spinning.
 
 ## Speed
 
