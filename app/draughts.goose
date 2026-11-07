@@ -1,16 +1,19 @@
-// Draughts: home and the game screen, playable by two on one screen. It draws only
-// when something changed: input, a move or a pulse animating, or a new screen size
-// (docs/architecture/rendering.md, "Frames and battery").
+// Draughts: home and the game screen, played by two on one screen or against the
+// computer, which thinks on a worker thread (think.goose). It draws only when something
+// changed: input, a move or a pulse animating, or a new screen size
+// (docs/architecture/rendering.md, "Frames and battery"). The thread needs a build: on
+// the Mac, from app/, `goose build -o ../build/draughts draughts.goose`, then
 //
-//   goose draughts.goose                          on the Mac, at home
-//   goose draughts.goose -- --screen game         the game screen; --fen and --tap open it too
-//   goose draughts.goose -- --theme sunset           another board than the season's
-//   goose draughts.goose -- --frames 30 --tap c3  taps squares, then saves draughts.png
-//   goose draughts.goose -- --fen W:Wc3,Kh6:Be5   starts from a position
-//   goose draughts.goose -- --hints moves         shows the selected piece's targets
-//   goose draughts.goose -- --lang et             another language than the system's
-//   goose draughts.goose -- --variant russian     a new game of another draughts
-//   goose draughts.goose -- --clock 5+3           with a clock; --computer white plays white
+//   ../build/draughts                             at home
+//   ../build/draughts --screen game               the game screen; --fen and --tap open it too
+//   ../build/draughts --theme sunset              another board than the season's
+//   ../build/draughts --frames 30 --tap c3        taps squares, then saves draughts.png
+//   ../build/draughts --fen W:Wc3,Kh6:Be5         starts from a position
+//   ../build/draughts --hints moves               shows the selected piece's targets
+//   ../build/draughts --lang et                   another language than the system's
+//   ../build/draughts --variant russian           a new game of another draughts
+//   ../build/draughts --clock 5+3                 with a clock
+//   ../build/draughts --computer white --level hard   against the computer playing white
 //   scripts/android.py app/draughts.goose --run   on the tablet (docs/development.md)
 
 import std;
@@ -27,7 +30,9 @@ import .scene;
 import .widgets;
 import game from "../game";
 import shell from "../shell";
+import ai from "../ai";
 import .text;
+import .think;
 
 // The system's preferred locales, "et-EE,en-US" (locale.c); returns how many bytes.
 extern fn draughts_locales(out: u8[:]) -> i64;
@@ -49,8 +54,8 @@ fn main() {
     // home|game|settings|friend|computer (home unless a position, taps, a clock, or the
     // computer are given; the last two open home's setup), --variant
     // international|brazilian|russian, --clock none|5+3|10+5, --computer white|black (a
-    // new game). --theme, --hints, and --lang override the settings for the run without
-    // changing them.
+    // new game; --level easy|medium|hard, the setup's last by default). --theme, --hints,
+    // and --lang override the settings for the run without changing them.
     var width = 1280;
     var height = 800;
     var kind = -1;
@@ -61,6 +66,7 @@ fn main() {
     var variant = -1;
     var clock_kind = -1;
     var computer = -1;
+    var level = -1;
     var setup = 0;
     var fen:  u8[>..]       = [];
     var taps: u8[..3][..16] = [];
@@ -84,6 +90,7 @@ fn main() {
         for name, k in settings::DRAUGHTS_NAMES { if argv[i] == "--variant" && argv[i + 1] == name { variant = settings::DRAUGHTS[k]; } }
         for name, k in settings::CLOCK_NAMES { if argv[i] == "--clock" && argv[i + 1] == name { clock_kind = k; } }
         if argv[i] == "--computer" { computer = if argv[i + 1] == "white" { rules::WHITE } else { rules::BLACK }; }
+        for name, k in settings::LEVEL_NAMES { if argv[i] == "--level" && argv[i + 1] == name { level = k; } }
         if argv[i] == "--screen" {
             screen = if argv[i + 1] == "game" { shell::GAME } else if argv[i + 1] == "settings" { shell::SETTINGS } else { shell::HOME };
             if argv[i + 1] == "friend" { setup = home::FRIEND; }
@@ -123,7 +130,8 @@ fn main() {
     // A new game of the draughts the setup last chose, until a saved game is restored.
     var sh = shell::new((if variant >= 0 { variant } else { prefs.variant }) as u8);
     if clock_kind >= 0 || computer >= 0 {
-        game::start(sh.game, sh.game.b.variant, max(clock_kind, 0), computer, prefs.level);
+        let lv = if level >= 0 { level } else { prefs.level };
+        game::start(sh.game, sh.game.b.variant, max(clock_kind, 0), computer, lv, prefs.skill[lv], prefs.games);
     }
     sh.prefs = prefs;
     sh.prefs.hints = hints;
@@ -159,6 +167,7 @@ fn main() {
     var focused = true;
     var season_in = 0;
     var wake_at = -1.0;
+    var thinker = think::Thinker {};
     while gfx::frame() {
         if gfx::key_pressed("Escape") { break; }
         // Android may kill the app once it is paused; it loses focus then, and SDL lets
@@ -201,6 +210,8 @@ fn main() {
                                  released: gfx::mouse_released(gfx::MOUSE_LEFT) };
         gui::begin(g, input, scale, now);
         if shell::frame(sh, g, size.x, size.y, now) { dirty = true; }
+        // The computer's move: the worker gets what the game asks, and the game the answer.
+        think::frame(thinker, sh.game);
         // A tap in settings applies at once and is written; a new season reloads the
         // photograph and its blurred copies, once the tile shows lit.
         if sh.changed {
@@ -218,7 +229,7 @@ fn main() {
             trim_memory();
         }
         let l = sh.layout;
-        if tapped < taps.len && !b.moving && sh.screen == shell::GAME {
+        if tapped < taps.len && !b.moving && sh.screen == shell::GAME && b.pos.side != gm.computer {
             let v .= rules::VARIANTS[b.variant];
             let t .= taps[tapped];
             let row, ok = parse_int(t[1..]);

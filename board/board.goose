@@ -119,7 +119,7 @@ fn center(l: Layout, v: rules::Variant&, b: i64) -> float2 {
 struct Piece {
     at:   float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x, y center in pixels, radius, lift in pixels
     look: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // black (0 or 1), king (0 or 1), selected glow 0..1, opacity
-    ring: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: must-capture ring; y: a glow ring tight round it (0 or 1)
+    ring: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: must-capture ring; y: a glow ring tight round it, 0 to 1
 }
 
 // What the board shader marks, one bit per square numbered y * size + x.

@@ -110,9 +110,13 @@ find out by compiling, so the next session doesn't.
   back. Inside the scope it frees nothing, since the value is still live.
 - `gl_InstanceIndex` doesn't count a draw's `first_instance`, so a second group of
   instances drawn at another time (pieces over the UI) gets its own storage buffer.
-- `goose run` refuses a program that starts a thread at all, so the app, which runs on the
-  Mac through `goose run`, can't hold a `thread_fn` unless the Mac run moves to `goose
-  build`. Work that must not stall a frame is cut into steps instead (`ai::step`).
+- `goose run` refuses a program that starts a thread at all, so the app is built on the
+  Mac too (`docs/development.md`), and its one thread stays in `app/think.goose`: the
+  packages and tests stay thread-free and run through TinyCC.
+- Packages are declared by the root file only. A file of the app can't `import ai from
+  "../ai"`; the root declares it and the file uses `ai::`. When a package starts
+  importing another (`shell` importing `ai`), every root that imports it must declare
+  the new one too: each test in `test/shell/`.
 - `goose run` (TinyCC) doesn't optimize and can't start threads; time things with
   `goose build`, which compiles the C at -O2. TinyCC is still quick to start: the eight
   rules tests run in a fraction of a second through one `goose --multi-test`.
@@ -120,6 +124,25 @@ find out by compiling, so the next session doesn't.
   gfx and nothing patched. A gfx patch that adds a function can't be called from code
   that also runs on the Mac; change behavior inside existing functions instead
   (`patches/goose_gfx/0002-draw-on-demand.patch`).
+
+## Threads
+
+What `app/think.goose` needed, from `reference.md` section 22 and spec 11.2:
+
+- A `thread_fn` and all it calls compile as a separate program with its own data stacks
+  and its own copies of the globals it reaches, taken at `thread_spawn`. Nothing is
+  shared; no locks exist. Only flat values cross: the arguments and queue elements. A
+  root struct can't, so the worker builds and `ai::init`s its own `ai::Engine`.
+- Queues are typed and global, one per element type: `qput(v)` never blocks (it fails
+  only past a `qlimit`), `qget<T>()` blocks, `qpoll<T>() -> T, bool` doesn't,
+  `qget<T>(ms)` waits at most that long. Any flat struct is a queue type, also one from a
+  package (`game::Ask`). Queues allocate in the runtime, outside the data stacks.
+- `goose build --stacks` lists each worker's data stacks: the computer's worker uses 8,
+  each a 2 GB reservation committed only as it is used.
+- Workers still running when `main` returns are killed; the app never stops its worker.
+- Threads work on Android as on the Mac: the NDK's clang compiles the runtime's thread
+  locals, and `scripts/android_cli.sh` runs a threaded headless program as is.
+- A built program takes its flags right after the executable, with no `--`.
 
 ## Speed
 

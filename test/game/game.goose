@@ -7,8 +7,9 @@
 // and its restart starts over. With a 5+3 clock: no clock runs before the first move,
 // the running one counts the time between frames but not a pause, adds the increment,
 // asks for a frame only when its shown time changes, turns red under ten seconds, and
-// ends the game on a flag. Against the computer playing white the board is turned and
-// the game says when the computer is to move. In portrait the panels are above and
+// ends the game on a flag. Against the computer playing white the board is turned, the
+// game says when the computer is to move, and the child can't move its pieces (the
+// computer's moves: test/game/computer.goose). In portrait the panels are above and
 // below the board.
 import std;
 import vec;
@@ -200,7 +201,7 @@ fn main() {
     // A 5+3 game: no clock runs until white's first move, then black's counts the time
     // between frames; a frame is drawn when the time shown changes, not between.
     gm = game::new(rules::RUSSIAN);
-    game::start(gm, rules::RUSSIAN, clock::BLITZ, -1, game::MEDIUM);
+    game::start(gm, rules::RUSSIAN, clock::BLITZ, -1, game::MEDIUM, 45, 0);
     frame(gm, g, l, away, false, false, false, 20.0);
     frame(gm, g, l, away, false, false, false, 30.0);
     print("5+3, 10 s before a move: ", clocks(gm, g), "; over the UI ", pieces(gm));
@@ -249,15 +250,16 @@ fn main() {
 
     // Against the computer playing white the board is turned: the child's black pieces
     // are at the bottom, a tap lands on the turned square, and the child's clock is the
-    // lower one.
-    game::start(gm, rules::RUSSIAN, clock::RAPID, rules::WHITE, game::HARD);
+    // lower one. While the computer is to move, a tap on its piece does nothing, and its
+    // clock's piece has a pulsing ring though no clock runs yet.
+    game::start(gm, rules::RUSSIAN, clock::RAPID, rules::WHITE, game::HARD, 90, 0);
     var turned = board::layout(1280.0, 800.0, 8);
     turned.flip = true;
     print("the computer to move: ", game::computer_to_move(gm));
     tap(gm, g, turned, square(turned, "c3"), 600.0);
     tap(gm, g, turned, square(turned, "d4"), 600.1);
     frame(gm, g, turned, away, false, false, false, 601.0);
-    print("c3 at ", square(turned, "c3"), ", f6 at ", square(turned, "f6"), "; c3-d4 played by hand: ",
+    print("c3 at ", square(turned, "c3"), ", f6 at ", square(turned, "f6"), "; a tap on c3 and d4 leaves ",
           rules::fen(gm.b.pos), "; the computer to move: ", game::computer_to_move(gm), "; ", clocks(gm, g),
           "; over the UI ", pieces(gm));
 

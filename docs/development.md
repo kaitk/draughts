@@ -37,16 +37,21 @@ gfx layer.
 ## Run on the Mac
 
 ```sh
-cd app && ../build/goose-v2026.4-macos-arm64/goose draughts.goose
-../build/goose-v2026.4-macos-arm64/goose draughts.goose -- --theme sunset --size 800x1280
-../build/goose-v2026.4-macos-arm64/goose draughts.goose -- --fen W:Wc3,e3,Kh2:Bd4,f6 --tap c3 --frames 30
+cd app
+../build/goose-v2026.4-macos-arm64/goose build -o ../build/draughts draughts.goose
+../build/draughts
+../build/draughts --theme sunset --size 800x1280
+../build/draughts --fen W:Wc3,e3,Kh2:Bd4,f6 --tap c3 --frames 30
 ```
 
-`app/draughts.goose` is the app; its development flags pick the board theme (`wood`,
-`stone`, `birch`, `sunset`; the season's by default, with its photograph), the window size, a
-starting position, squares to tap on the first frames, move hints (`--hints moves` shows
-the targets; mistakes only by default), the language (`--lang et`; the system's by
-default), and a frame to stop at and save as `draughts.png`. `app/draughts.build` adds the
+The app is built, not run through `goose run`: the computer thinks on a worker thread
+(`app/think.goose`), and `goose run` refuses a program that starts one. The build takes
+about 3 s, and the flags follow the executable with no `--`. `app/draughts.goose` is the
+app; its development flags pick the board theme (`wood`, `stone`, `birch`, `sunset`; the
+season's by default, with its photograph), the window size, a starting position,
+squares to tap on the first frames, move hints (`--hints moves` shows the targets;
+mistakes only by default), the language (`--lang et`; the system's by default), and a
+frame to stop at and save as `draughts.png`. `app/draughts.build` adds the
 program's own C (`app/background.c`, the photographs and their JPEG decoder;
 `app/locale.c`, the system's locales; `app/wake.c`, the timer a running clock wakes the
 loop with), which `scripts/android.py` builds into the APK too. The photographs are
@@ -60,8 +65,11 @@ the screens around it `shell/` (home, and which screen shows), each tested headl
 `--screen settings` settings, `--screen friend` or `computer` home's setup. `--variant
 international|brazilian|russian` starts a new game of that draughts (else the setup's
 last choice), `--clock 5+3|10+5` with a clock, and `--computer white|black` against
-the computer playing that side (the board turned when it plays white). The
-settings file is `settings.txt` in the app's storage folder (on the Mac
+the computer playing that side (the board turned when it plays white), at `--level
+easy|medium|hard` (else the setup's last choice). A `--frames` run doesn't wait for the
+display, so a screenshot of the computer's reply, which comes after a pause of under a
+second, takes some thousands of frames: `--variant russian --computer black --tap c3
+--tap d4 --frames 5000`. The settings file is `settings.txt` in the app's storage folder (on the Mac
 `~/Library/Application Support/kaitk/draughts/`); `--theme`, `--hints`, and `--lang`
 override it for a run without changing it. The game is kept in `game.bin` beside it; a
 run with `--fen`, `--tap`, `--screen`, `--frames`, `--variant`, `--clock`, or
@@ -70,8 +78,8 @@ screenshots don't depend on the last session. On the tablet, check a resume with
 `adb shell input keyevent HOME`, `adb shell am kill com.kaitk.draughts`, and starting
 the app again. The flags reach the tablet through the intent:
 `adb shell am start -n com.kaitk.draughts/.DraughtsActivity --es args "'--clock 5+3'"`.
-A clock counts only while the window has focus, so on the Mac it stands still in a
-window launched from a terminal behind it. `poc/` keeps
+On Android a clock counts only while the app has focus; on the Mac, where a window
+started from a terminal never has it, the clocks run while the window shows. `poc/` keeps
 task 001's and task 005's small programs.
 
 ## Test the rules

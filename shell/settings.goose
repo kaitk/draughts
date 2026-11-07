@@ -2,7 +2,8 @@
 // board (2D; 3D once task 015 exists), move hints, and the language, each a glass group
 // with a title and tiles. A tap applies at once; there is no save button. The values
 // are kept across runs as a small text file, one `key = value` per line, which the app
-// reads at start and writes after a change.
+// reads at start and writes after a change. The file also keeps the computer's skill at
+// each level, which moves after each game against it, and how many such games began.
 namespace settings;
 import std;
 import vec;
@@ -11,6 +12,7 @@ import rules from "../rules";
 import board from "../board";
 import gui from "../gui";
 import strings from "../strings";
+import ai from "../ai";
 
 // The board themes by season, as app/theme.goose numbers them, in the order the tiles
 // show the seasons: winter stone, spring birch, summer sunset, autumn wood.
@@ -33,6 +35,7 @@ let DRAUGHTS_NAMES = ["international", "brazilian", "russian"];
 let DEFAULT_DRAUGHTS = rules::INTERNATIONAL;
 // The computer's levels (game::EASY..) and the clocks (clock::NONE..), in the file.
 let LEVEL_NAMES = ["easy", "medium", "hard"];
+let SKILL_KEYS = ["skill_easy", "skill_medium", "skill_hard"];
 let CLOCK_NAMES = ["none", "5+3", "10+5"];
 
 struct Settings {
@@ -45,6 +48,9 @@ struct Settings {
     level:   i64 = 1,           // medium
     color:   i64 = rules::WHITE, // the child's pieces against the computer
     clock:   i64 = 0,           // none
+    // The computer's skill at each level (ai::adapt), and the games against it so far.
+    skill: i64[3] = ai::LEVEL_SKILL,
+    games: i64    = 0,
 }
 
 // What the screen asks for.
@@ -81,6 +87,10 @@ fn parse(text: const u8[:]) -> Settings {
         if key == "clock" {
             for name, i in CLOCK_NAMES { if value == name { s.clock = i; } }
         }
+        // A skill stays within its level's band, as adapting keeps it.
+        let n, number = parse_int(value);
+        for name, i in SKILL_KEYS { if key == name && number { s.skill[i] = ai::adapt(n, i, 0); } }
+        if key == "games" && number && n >= 0 { s.games = n; }
     }
     return s;
 }
@@ -102,7 +112,8 @@ fn write(s: Settings, out: u8[>..]&) {
     out.append(if s.color == rules::BLACK { "\ncolor = black" } else { "\ncolor = white" });
     out.append("\nclock = ");
     out.append(CLOCK_NAMES[s.clock]);
-    out.append("\n");
+    for name, i in SKILL_KEYS { format(out, "\n", name, " = ", s.skill[i]); }
+    format(out, "\ngames = ", s.games, "\n");
 }
 
 // Declares the screen for this frame on a screen width × height pixels, with `shown`

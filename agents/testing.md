@@ -16,9 +16,11 @@ which would overwrite the main checkout's while another session uses them.
   position shows it. Areas so far: `rules`, `board` (taps and hints through the board
   package), `gui`, `game` (the game screen driven through the pointer: take back, start
   over, home and settings, presses kept apart, the celebration, a clocked game with its
-  frames, pause, and flag, the turned board; and the clock value on its own), `shell`
+  frames, pause, and flag, the turned board; the computer's turn, answered at once with
+  `ai::think` as the app's worker would; and the clock value on its own), `shell`
   (home, the switch to the game and back, settings and their file, home's setup and
-  play, the saved game of any variant and damaged images of it), `strings` (every language file has every key), and `ai` (the computer player:
+  play, the saved game of any variant and damaged images of it, the computer's skill
+  moving across games), `strings` (every language file has every key), and `ai` (the computer player:
   its search against a plain minimax, the table changing no score, keys, what each level
   plays in known shots, the same move in steps as at once, and that no level hangs a
   piece). A

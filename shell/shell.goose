@@ -6,7 +6,8 @@
 // It holds the settings, keeps the game's move hints in step with them, and says when
 // they changed, for the app to write and apply; and where the board goes this frame, if
 // anywhere, turned when the child plays black, and whether the photograph behind it is
-// sharp, for the app to draw. Tests run it headless.
+// sharp, for the app to draw. A game against the computer plays at the skill kept for
+// its level, which each finished game moves (ai::adapt). Tests run it headless.
 namespace shell;
 import std;
 import vec;
@@ -16,6 +17,7 @@ import board from "../board";
 import gui from "../gui";
 import game from "../game";
 import strings from "../strings";
+import ai from "../ai";
 import .home;
 import .settings;
 
@@ -60,6 +62,14 @@ fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> bool 
         sh.layout.flip = sh.game.computer == rules::WHITE;
         sh.sharp = false;
         let go, changed = game::frame(sh.game, g, sh.layout, now);
+        // A game against the computer ended: the child meets a stronger or weaker one next.
+        let gm .= sh.game;
+        if gm.result != 0 {
+            let k = clamp(gm.level, game::EASY, game::HARD);
+            sh.prefs.skill[k] = ai::adapt(sh.prefs.skill[k], k, gm.result);
+            gm.result = 0;
+            sh.changed = true;
+        }
         if go == game::HOME {
             sh.screen = HOME;
             sh.setup = home::NOTHING;
@@ -102,10 +112,15 @@ fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> bool 
         home::BACK => { sh.setup = home::NOTHING; },
         home::CHANGED => { sh.changed = true; },
         home::PLAY => {
-            // A new game as the setup stands; it replaces the one there was.
+            // A new game as the setup stands; it replaces the one there was. Against the
+            // computer it is counted, for the computer's seeds.
             let p .= sh.prefs;
             let computer = if sh.setup == home::COMPUTER { 1 - p.color } else { -1 };
-            game::start(sh.game, p.variant as u8, p.clock, computer, p.level);
+            game::start(sh.game, p.variant as u8, p.clock, computer, p.level, p.skill[p.level], p.games);
+            if computer >= 0 {
+                p.games += 1;
+                sh.changed = true;
+            }
             sh.setup = home::NOTHING;
             sh.screen = GAME;
         },
@@ -115,10 +130,10 @@ fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> bool 
 }
 
 // What is kept when the app is paused, for Android may kill it then: the screen and the
-// game with its variant, undo history, clocks, and whom it is against, one flat value (docs/architecture/README.md, "Game state is
-// a value"). VERSION changes when its layout does; an image of another layout doesn't
-// verify, and the app starts afresh.
-let VERSION = 2;
+// game with its variant, undo history, clocks, and whom it is against at which skill, one
+// flat value (docs/architecture/README.md, "Game state is a value"). VERSION changes when
+// its layout does; an image of another layout doesn't verify, and the app starts afresh.
+let VERSION = 3;
 
 struct Saved {
     version:   i64,
@@ -133,6 +148,9 @@ struct Saved {
     clock:     clock::Clock,
     computer:  i64,
     level:     i64,
+    skill:     i64,
+    number:    i64,
+    counted:   bool,
 }
 
 // FNV-1a over bytes, for the image's checksum: from_bytes checks an image's shape, not
@@ -150,7 +168,8 @@ fn save(sh: Shell&) -> u8[>..] {
     var one: Saved[>..] = [];
     one.push(Saved { version: VERSION, screen: sh.screen, variant: b.variant, start: b.start, pos: b.pos,
                      last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.history,
-                     clock: sh.game.clock, computer: sh.game.computer, level: sh.game.level });
+                     clock:     sh.game.clock, computer: sh.game.computer, level: sh.game.level, skill: sh.game.skill,
+                     number: sh.game.number, counted: sh.game.counted });
     var image = to_bytes(one);
     let h = checksum(image);
     for i in 8 { image.push(((h >> (8 * i)) & 0xFF) as u8); }
@@ -172,7 +191,7 @@ fn restore(sh: Shell&, file: const u8[:]) -> bool {
     guard s.version == VERSION && s.variant < rules::VARIANT_COUNT && s.start.variant == s.variant
           && s.pos.variant == s.variant && s.screen >= HOME && s.screen <= SETTINGS && s.computer >= -1
           && s.computer <= rules::BLACK && s.level >= game::EASY && s.level <= game::HARD
-          && s.clock.kind >= 0 && s.clock.kind < clock::KINDS
+          && s.clock.kind >= 0 && s.clock.kind < clock::KINDS && s.skill >= 0 && s.skill <= 100
     else { return false; }
     let b .= sh.game.b;
     b.variant = s.variant;
@@ -184,6 +203,11 @@ fn restore(sh: Shell&, file: const u8[:]) -> bool {
     sh.game.clock = s.clock;
     sh.game.computer = s.computer;
     sh.game.level = s.level;
+    sh.game.skill = s.skill;
+    sh.game.number = s.number;
+    sh.game.counted = s.counted;
+    sh.game.result = 0;
+    sh.game.asking = 0;
     sh.game.turn = b.pos.side;
     sh.game.won_at = -1.0;
     sh.game.seen = -1.0;

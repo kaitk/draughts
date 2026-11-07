@@ -27,18 +27,17 @@ let CLOCK_H = 72.0;
 let OVER = 4;               // pieces over the UI: two clocks and the winner, at most
 
 // A piece of `side` over the UI at c with radius r, at opacity a, crowned or not, with
-// a glow ring right round it or not.
-fn piece(over: board::Piece[..OVER]&, c: float2, r: f32, side: i64, king: bool, a: f32, ring: bool) {
+// a glow ring right round it as strong as `ring`, 0 to 1.
+fn piece(over: board::Piece[..OVER]&, c: float2, r: f32, side: i64, king: bool, a: f32, ring: f32) {
     guard over.len < OVER else { return; }
     let k = if king { 1.0 } else { 0.0 };
-    let glow = if ring { 1.0 } else { 0.0 };
     over.push(board::Piece { at: float4 { c.x, c.y, r, 0.0 }, look: float4 { side, k, 0.0, a },
-                             ring: float4 { 0.0, glow, 0.0, 0.0 } });
+                             ring: float4 { 0.0, ring, 0.0, 0.0 } });
 }
 
 // One side's clock in r: its piece and its time, lit while it runs (red under ten
-// seconds), faint while it waits.
-fn clock_of(g: gui::Gui&, r: float4, c: clock::Clock&, side: i64, over: board::Piece[..OVER]&) {
+// seconds), faint while it waits; its piece's ring as strong as `ring`.
+fn clock_of(g: gui::Gui&, r: float4, c: clock::Clock&, side: i64, ring: f32, over: board::Piece[..OVER]&) {
     let u = g.scale;
     let runs = c.running == side;
     let low = clock::low(c, side);
@@ -48,16 +47,19 @@ fn clock_of(g: gui::Gui&, r: float4, c: clock::Clock&, side: i64, over: board::P
     gui::cut_right(room, 14.0 * u);
     let spot = gui::cut_left(room, 44.0 * u);
     piece(over, float2 { spot.x + 0.5 * spot.z, spot.y + 0.5 * spot.w }, 22.0 * u, side, false,
-          if runs { 1.0 } else { 0.7 }, runs);
+          if runs { 1.0 } else { 0.7 }, ring);
     var t: u8[..8] = [];
     clock::text(clock::shown(c, side), t);
     gui::figures(g, gui::FIGURES, room, t, if runs { 1.0 } else { 0.66 }, low, gui::RIGHT);
 }
 
 // Declares the panels for this frame, with the clocks `c`, and `side` the side to move,
-// or the winner when `won`. Pieces shown on the panels go into `over`. Returns the tile
-// tapped this frame, if any.
-fn game(g: gui::Gui&, l: board::Layout, c: clock::Clock&, side: i64, won: bool, over: board::Piece[..OVER]&) -> i64 {
+// or the winner when `won`. The side to move's piece has a ring as strong as `glow`; it
+// pulses while the computer thinks, when its clock's piece has it even before the
+// clocks start. Pieces shown on the panels go into `over`. Returns the tile tapped this
+// frame, if any.
+fn game(g: gui::Gui&, l: board::Layout, c: clock::Clock&, side: i64, won: bool, thinking: bool, glow: f32,
+        over: board::Piece[..OVER]&) -> i64 {
     let u = g.scale;
     let landscape = l.left.z < l.left.w;
     var chosen = NOTHING;
@@ -69,6 +71,8 @@ fn game(g: gui::Gui&, l: board::Layout, c: clock::Clock&, side: i64, won: bool, 
     // The clock nearer the player whose pieces are at the bottom goes second: under the
     // other in landscape, right of it in portrait.
     let first = if l.flip { 0 } else { 1 };
+    var rings: f32[2] = [0.0, 0.0];
+    for s in 2 { if c.running == s || (thinking && s == side) { rings[s] = glow; } }
     gui::panel(g, l.left);
     gui::panel(g, l.right);
     if landscape {
@@ -83,14 +87,14 @@ fn game(g: gui::Gui&, l: board::Layout, c: clock::Clock&, side: i64, won: bool, 
         var right = float4 { l.right.x + 16.0 * u, l.right.y + 20.0 * u, l.right.z - 32.0 * u, l.right.w - 40.0 * u };
         let back = gui::cut_bottom(right, TALL_H * u);
         if clock::on(c) {
-            clock_of(g, gui::cut_top(right, CLOCK_H * u), c, first, over);
+            clock_of(g, gui::cut_top(right, CLOCK_H * u), c, first, rings[first], over);
             gui::cut_top(right, 10.0 * u);
-            clock_of(g, gui::cut_top(right, CLOCK_H * u), c, 1 - first, over);
+            clock_of(g, gui::cut_top(right, CLOCK_H * u), c, 1 - first, rings[1 - first], over);
         } else {
             // The piece, its glow ring, and the words under it.
             gui::cut_top(right, 18.0 * u);
             let spot = gui::cut_top(right, 72.0 * u);
-            piece(over, float2 { spot.x + 0.5 * spot.z, spot.y + 0.5 * spot.w }, 36.0 * u, side, false, 1.0, true);
+            piece(over, float2 { spot.x + 0.5 * spot.z, spot.y + 0.5 * spot.w }, 36.0 * u, side, false, 1.0, glow);
             gui::cut_top(right, 18.0 * u);
             let f .= g.faces[gui::HEADING];
             gui::text(g, gui::HEADING, gui::cut_top(right, f.ascent - f.descent), strings::get(turn_key), 1.0, 0.0,
@@ -116,15 +120,15 @@ fn game(g: gui::Gui&, l: board::Layout, c: clock::Clock&, side: i64, won: bool, 
     gui::cut_top(right, 12.0 * u);
     if clock::on(c) {
         let half = 0.5 * (top.z - 16.0 * u);
-        clock_of(g, gui::cut_left(top, half), c, first, over);
-        clock_of(g, gui::cut_right(top, half), c, 1 - first, over);
+        clock_of(g, gui::cut_left(top, half), c, first, rings[first], over);
+        clock_of(g, gui::cut_right(top, half), c, 1 - first, rings[1 - first], over);
     } else {
         // The piece beside the words, centered.
         let label = strings::get(turn_key);
         let span = 52.0 * u + 18.0 * u + gui::text_width(g, gui::HEADING, label, 0.0);
         var row = gui::center(top, span, top.w);
         let spot = gui::cut_left(row, 52.0 * u);
-        piece(over, float2 { spot.x + 0.5 * spot.z, spot.y + 0.5 * spot.w }, 26.0 * u, side, false, 1.0, true);
+        piece(over, float2 { spot.x + 0.5 * spot.z, spot.y + 0.5 * spot.w }, 26.0 * u, side, false, 1.0, glow);
         gui::cut_left(row, 18.0 * u);
         gui::text(g, gui::HEADING, row, label, 1.0, 0.0, gui::LEFT);
     }

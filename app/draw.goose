@@ -200,7 +200,7 @@ let PIECE_FRAG = """
     layout(location = 0) in vec2 v_local;
     layout(location = 1) flat in vec4 v_look;     // black, king, selected, opacity
     layout(location = 2) flat in vec4 v_extra;    // must capture, lift, side, one pixel
-    layout(location = 3) flat in vec4 v_ring;     // y: a glow ring tight round it
+    layout(location = 3) flat in vec4 v_ring;     // y: a glow ring tight round it, 0 to 1
     layout(location = 0) out vec4 result;
     layout(set = 3, binding = 1) uniform Clock { vec4 time; };
     vec4 acc = vec4(0.0);
@@ -257,11 +257,12 @@ let PIECE_FRAG = """
         vec3 sidec = black ? mix(face, vec3(0.0), 0.5) : face * face * 0.92;
         // The side to move: a ring an eighth of the radius wide in the glow color at 80%
         // right round the disc, and a soft glow, under the piece and its shadow (CSS
-        // `0 0 0 4px` and `0 0 22px 4px` on a 64 px disc).
-        if (v_ring.y > 0.5) {
+        // `0 0 0 4px` and `0 0 22px 4px` on a 64 px disc); fainter as y falls, which
+        // pulses it while the computer thinks.
+        if (v_ring.y > 0.0) {
             float rr = length(p);
-            over(glow.rgb, 0.45 * (1.0 - smoothstep(-0.34, 0.34, rr - 1.125)));
-            over(glow.rgb, 0.8 * fill(abs(rr - 1.0625) - 0.0625, w));
+            over(glow.rgb, v_ring.y * 0.45 * (1.0 - smoothstep(-0.34, 0.34, rr - 1.125)));
+            over(glow.rgb, v_ring.y * 0.8 * fill(abs(rr - 1.0625) - 0.0625, w));
         }
         // A short soft shadow, straight down and a touch right, that spreads as the
         // piece lifts, and a tight one where it touches the board.

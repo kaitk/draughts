@@ -11,6 +11,7 @@ import board from "../../board";
 import gui from "../../gui";
 import game from "../../game";
 import shell from "../../shell";
+import ai from "../../ai";
 import strings from "../../strings";
 
 let W = 1280.0;

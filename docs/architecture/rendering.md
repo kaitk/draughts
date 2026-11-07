@@ -210,7 +210,10 @@ the prototype tried, kept for 3D:
   Take back takes back one move, also one still animating; start over goes back to where
   the game began; home goes home; settings opens settings, whose back returns to the
   game. Against the computer the child's pieces are at the bottom: when the child plays
-  black the board is turned, black playing up the screen (2026-11-08).
+  black the board is turned, black playing up the screen (2026-11-08). While the
+  computer thinks its piece's glow ring pulses, and its move comes after a short pause;
+  take back then takes back the child's move and the computer's reply
+  ([computer player](ai.md#in-the-game)).
   The words are 24 px; the turn's words say who has won once a side has.
 - **Clocks**: each side's piece and its time, m:ss in 36 px tabular figures, in a tile
   of radius 20 px; black's on top, as black's side of the board is (white's on a turned
@@ -386,7 +389,8 @@ when the time shown changes (`app/wake.c`), which pushes an event of the program
 type and ends the wait; the second is then drawn within 5 ms. The Mac's gfx doesn't
 wait, so the timer is Android's only.
 
-Work that finishes on another thread, such as the computer's reply, is seen within the
-second; while the computer thinks, the board shows a small animation, which keeps
-frames coming. While Android has the app paused, SDL blocks the loop: it draws nothing
-and submits no GPU work.
+Work that finishes on another thread, such as the computer's reply, would be seen only
+when the wait ends; so while the computer thinks its piece on the panel pulses, which
+keeps frames coming, and the reply is seen the next frame. Once its move has landed
+nothing animates and the app draws nothing. While Android has the app paused, SDL blocks
+the loop: it draws nothing and submits no GPU work.

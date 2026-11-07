@@ -13,23 +13,75 @@ and then find a long combination a move later; that is what this avoids.
 var e = ai::Engine { .. };
 ai::init(e);                                  // once: the table and the frames
 ai::start(e, position, skill, seed);          // a move to find
-while !ai::step(e, 20000) { /* draw a frame */ }
+while !ai::step(e, 10000) { /* a newer ask? */ }
 let m = ai::reply(e);                         // one of position's legal moves
 ```
 
 `step` searches for about the given number of nodes and returns whether the reply is
 ready. The search is alpha-beta unrolled into one frame per ply (`Engine.plies`), so it
-stops after any node and goes on at the next call. This is the same code on every
-platform: Goose threads need a native build, and `goose run` (TinyCC, how the app runs on
-the Mac) refuses a program that starts one. A worker thread can still run the same steps
-where the program is built.
+stops after any node and goes on at the next call.
 
 The search counts nodes, never time, so the same position, skill, and seed give the same
 move on every machine, however the thinking is cut into steps. Tests rely on that, and a
 game can be replayed.
 
-The app must animate something while the computer thinks: an idle frame waits up to a
-second for an event ([rendering](rendering.md#frames-and-battery)).
+## Thinking on a worker
+
+The app thinks on one worker thread (`app/think.goose`), so the frame loop never waits
+for the search:
+
+- The game says what it wants: on the computer's turn it opens an ask, `game::Ask`, a
+  flat value holding an id, the position, the skill, and the seed; `game::answer` takes
+  the move for an id and ignores one for an ask no longer open. Take back, start over,
+  leaving the game, or the app pausing closes the ask; the next turn opens a new one.
+- Each frame the app puts the game's ask on the typed queue for `game::Ask` when it
+  changed (id 0 for none) and polls the queue for `think::Thought`, the answer.
+- The worker, a `thread_fn`, builds its own `ai::Engine` and calls `ai::init` once: a
+  root can't cross to a thread. It waits on its queue (`qget`, blocking, no CPU), runs
+  `ai::step` 10,000 nodes at a time, about 2 ms on the tablet's big cores, and between
+  steps looks for a newer ask (`qpoll`). One that comes drops the search under way, so a
+  take back never waits for a stale reply. The answer carries the move, the nodes, and
+  the time it took.
+- The worker starts at the first ask, so a game against a friend costs no thread and
+  none of the engine's 6 MB.
+
+Threads stay in `app/`: `game/`, `shell/`, and the tests run headless through TinyCC,
+which can't start a thread, and tests answer an ask with `ai::think` at once. The app is
+therefore built on the Mac too ([development](../development.md#run-on-the-mac)).
+
+A worker was chosen over slices of the search on the drawing thread (2026-11-08): hard
+takes up to 0.2 s on the tablet's big cores and 0.65 s on its little ones, which sliced
+into frames is 20 to 60 frames of 10 ms each, and the slices make the frames uneven.
+On a worker the frame loop draws as it would without the computer.
+
+## In the game
+
+- **A person's pause.** The computer's move begins 0.8 s after its turn begins (the
+  child's move has landed) on easy, 0.6 s on medium, and 0.45 s on hard, or when the
+  search ends if that is later; then it plays through the board's move animation. Easy
+  answers in under a millisecond, and a reply at once feels like a machine. Medium and
+  hard pause less, as they take time of their own on the tablet.
+- **While it thinks**, its piece on the panel pulses: the glow ring fades from full to a
+  third and back every 1.2 s, on its clock's piece when there are clocks, even before
+  they start. That keeps frames coming, so the answer is seen the next frame; an idle
+  frame waits up to a second for an event ([rendering](rendering.md#frames-and-battery)).
+  Once its move has landed nothing animates and the app draws nothing. The child can't
+  move the computer's pieces; home, settings, start over, and take back still work.
+- **Take back** takes back the child's last move and the computer's reply, so it is the
+  child's turn again; while the computer thinks, it drops the search and takes back the
+  child's move. Before the child's first move it does nothing.
+- **Clocks**: the computer's clock runs while it thinks and pauses, and its move adds the
+  increment, as any move does.
+- **The seed** of a move is the game's number times 1000 plus the ply: replies vary from
+  one game to the next, and the same game replays the same. The number counts the games
+  begun against the computer, kept in `settings.txt` (`games`).
+- **Skill**: `settings.txt` keeps one skill per level (`skill_easy`, `skill_medium`,
+  `skill_hard`, from the level's starting skill), and a game plays at its level's skill
+  as it began, kept with the saved game. A game that ends moves its level's skill with
+  `ai::adapt`: up when the child won, down when the computer did, by the clock too. It
+  counts once, when it first ends; taken back and ended again, it doesn't count again. A
+  game started over or replaced before it ends doesn't count. The rules have no draw
+  yet; a draw would leave the skill.
 
 ## Search
 
@@ -99,7 +151,7 @@ How each part plays like a person:
    small steps of adapting are felt.
 4. **It adapts.** `ai::adapt` moves the skill 4 up after the child wins and 4 down after
    the child loses, within 20 of the level's start, so a child meets an opponent they
-   beat about half the time.
+   beat about half the time ([in the game](#in-the-game)).
 5. **It leaves chances to learn.** Below skill 25, now and then (the table's last row),
    it looks among moves that cost it at most 1.2 men for one that leaves the child a
    combination: no capture to make, but a quiet move that wins at least 0.8 of a man on

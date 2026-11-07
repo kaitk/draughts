@@ -32,6 +32,6 @@ black's flag: white 5:00, black 0:00, running -1, tiles top to bottom wait wait 
 take back after the flag: white 5:00, black 0:00, running -1, tiles top to bottom wait wait , flag 1
 start over: white 5:00, black 5:00, running -1, tiles top to bottom wait wait , flag -1, celebrating false
 the computer to move: true
-c3 at vec2<f32> { 772.03, 267.96997 }, f6 at vec2<f32> { 507.97, 532.02997 }; c3-d4 played by hand: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8; the computer to move: false; white 10:00, black 10:00, running 1, tiles top to bottom wait run ; over the UI white 0.7 0.0; black 1.0 1.0; 
+c3 at vec2<f32> { 772.03, 267.96997 }, f6 at vec2<f32> { 507.97, 532.02997 }; a tap on c3 and d4 leaves W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8; the computer to move: true; white 10:00, black 10:00, running -1, tiles top to bottom wait wait ; over the UI white 0.7 0.825; black 0.7 0.0; 
 portrait: panels vec4<f32> { 24.0, 90.0, 752.0, 104.0 } vec4<f32> { 24.0, 994.0, 752.0, 196.0 }, board vec4<f32> { 24.0, 218.0, 752.0, 12.032001 }, take back at vec2<f32> { 400.0, 1134.0 }
 portrait take back undoes: true

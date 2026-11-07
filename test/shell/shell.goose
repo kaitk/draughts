@@ -4,7 +4,9 @@
 // task 007; settings opens settings, with no board, and its back returns where it came
 // from, home or the game. A friend and the computer open a setup in home's column whose
 // choices are kept in the settings and whose play starts that game over the old one;
-// against the computer playing white the board is turned, and home notes the level.
+// against the computer playing white the board is turned, the game takes the skill kept
+// for its level and the number of games against the computer so far, which goes up, and
+// home notes the level.
 // Home and the setup lay out in landscape and portrait, the board clear of the column.
 import std;
 import vec;
@@ -13,6 +15,7 @@ import board from "../../board";
 import gui from "../../gui";
 import game from "../../game";
 import shell from "../../shell";
+import ai from "../../ai";
 import strings from "../../strings";
 
 let W = 1280.0;
@@ -66,7 +69,7 @@ fn game_of(sh: shell::Shell&) -> u8[>..] {
     let gm .= sh.game;
     return str(rules::VARIANTS[gm.b.variant].size, "x", rules::VARIANTS[gm.b.variant].size, " ",
                rules::fen(gm.b.pos), ", clock ", gm.clock.kind, ", computer ", gm.computer, ", level ", gm.level,
-               ", turned ", sh.layout.flip);
+               ", skill ", gm.skill, ", number ", gm.number, ", turned ", sh.layout.flip);
 }
 
 fn main() {

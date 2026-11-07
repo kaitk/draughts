@@ -7,6 +7,10 @@ draughts = international
 level = medium
 color = white
 clock = none
+skill_easy = 10
+skill_medium = 45
+skill_hard = 90
+games = 0
 
 read back:
 season = winter
@@ -17,6 +21,10 @@ draughts = brazilian
 level = easy
 color = black
 clock = 10+5
+skill_easy = 10
+skill_medium = 45
+skill_hard = 90
+games = 0
 
 unknown values and a line without one:
 season = by-date
@@ -27,9 +35,13 @@ draughts = international
 level = medium
 color = white
 clock = none
+skill_easy = 10
+skill_medium = 45
+skill_hard = 90
+games = 0
 
-summer: season = summer;board = 2d;hints = mistakes;language = system;draughts = international;level = medium;color = white;clock = none; changed true, board hints moves false
-3D: season = summer;board = 2d;hints = mistakes;language = system;draughts = international;level = medium;color = white;clock = none; changed false, board hints moves false
-all moves: season = summer;board = 2d;hints = moves;language = system;draughts = international;level = medium;color = white;clock = none; changed true, board hints moves true
-Eesti: season = summer;board = 2d;hints = moves;language = et;draughts = international;level = medium;color = white;clock = none; changed true, board hints moves true
-by the date: season = by-date;board = 2d;hints = moves;language = et;draughts = international;level = medium;color = white;clock = none; changed true, board hints moves true
+summer: season = summer;board = 2d;hints = mistakes;language = system;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0; changed true, board hints moves false
+3D: season = summer;board = 2d;hints = mistakes;language = system;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0; changed false, board hints moves false
+all moves: season = summer;board = 2d;hints = moves;language = system;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0; changed true, board hints moves true
+Eesti: season = summer;board = 2d;hints = moves;language = et;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0; changed true, board hints moves true
+by the date: season = by-date;board = 2d;hints = moves;language = et;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0; changed true, board hints moves true

@@ -1,0 +1,9 @@
+at first: skills 10 45 90, changed false
+the child won on easy: winner 0, skills 14 45 90, changed true
+  a frame later: skills 14 45 90, changed false
+the computer won on medium: winner 1, skills 14 41 90, changed true
+started over on hard: skills 14 41 90, changed false
+read back: skills 14 41 90
+out of the band: skills 30 25 90
+restored: true
+  against 1 at level 0, asks true at skill 14

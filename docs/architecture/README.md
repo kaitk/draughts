@@ -53,7 +53,9 @@ Checked against goose_gfx's source on 2026-11-07:
 
 - **No allocation in the frame loop.** Goose gives this through its data stacks. Per-frame
   arrays live in the frame's scope. Long-lived tables, such as the transposition table,
-  are sized once at startup.
+  are sized once at startup (the computer's worker, when it starts). Goose's typed
+  queues, which carry the computer's ask and answer, allocate in the runtime: once a
+  turn, never per frame.
 - **Draw only on change.** See [rendering.md](rendering.md#frames-and-battery).
 - **Game state is a value.** A position is a few `u64`s plus side to move. Undo is a stack
   of positions; saving is writing the value.
@@ -73,11 +75,11 @@ Checked against goose_gfx's source on 2026-11-07:
   are read at start. Nothing is written while idle.
 - **The saved game is one flat value** (`shell::Saved`): the screen, the variant, the
   position, where the game began, the last move, the undo history (a limited array),
-  the clocks, and the side and level of the computer, if it plays; written with
-  Goose's `to_bytes` and an FNV-1a checksum after it, about 15 KB. `from_bytes` verifies
-  the image's shape and the checksum its bytes; a file that fails either, or has
-  another `VERSION`, is ignored and the app starts afresh. The pause is seen as the
-  window losing focus: SDL runs the loop once more after Android pauses the app before
-  it blocks.
+  the clocks, and the computer's side, level, and skill, if it plays, with the game's
+  number for its seeds; written with Goose's `to_bytes` and an FNV-1a checksum after
+  it, about 15 KB. `from_bytes` verifies the image's shape and the checksum its bytes; a
+  file that fails either, or has another `VERSION`, is ignored and the app starts
+  afresh. The pause is seen as the window losing focus: SDL runs the loop once more
+  after Android pauses the app before it blocks.
 - **Assets are embedded** in the binary (shaders by `embed_shader`, fonts and puzzles as
   data), so no code reads Android's asset manager.

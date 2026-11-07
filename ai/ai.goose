@@ -8,8 +8,9 @@
 //   var e = ai::Engine { .. };
 //   ai::init(e);                                  once: the table and the frames
 //   ai::start(e, position, skill, seed);          a move to find
-//   while !ai::step(e, 20000) { draw a frame }    nodes a frame can spare: 20000 is
-//                                                 about 4 ms on the tablet's big cores
+//   while !ai::step(e, 10000) { a newer ask? }    the app's worker thread looks for a
+//                                                 newer ask every 10000 nodes, about
+//                                                 2 ms on the tablet's big cores
 //   let m = ai::reply(e);                         one of position's legal moves
 //
 // The same skill, position, and seed give the same move, however the thinking is cut
