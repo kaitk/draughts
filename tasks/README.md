@@ -40,7 +40,8 @@ number ("task 004"), not by path.
 001 confirmed the stack (Goose runs on the tablet), 002 built the rules engine, 003
 settled the look in HTML prototypes, 005 made the idle app draw nothing, 012 brought the
 prototypes to the seasonal design boards, and 004 drew the board natively; all six are
-archived. 017 brought the native board to the settled look; 006 to 009 follow.
+archived. 017 brought the native board to the settled look, and 018 finishes the pieces' shape;
+006 to 009 follow.
 Together they make the MVP in `docs/product.md`. 010 runs alongside: goose_gfx changes
 to propose upstream. 011, the last idle CPU (SDL's accelerometer), can come any time
 before release. 013 adds season effects later. 014 upscales the backgrounds on the
