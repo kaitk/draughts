@@ -114,7 +114,7 @@ sea almost flat.
 ### Light
 
 The 2D board is kept simple: flat squares with no light pool, as on the design boards.
-The pieces have a soft, diffuse light from above (2026-11-07, task 017): the upper side
+The pieces have a soft, diffuse light from above (2026-11-07): the upper side
 of the rim catches it and the lower side misses it, and nothing else. A strong light pool
 and, with the tabletops, a crafted board with a soft light were tried on 2026-11-07 and
 set aside. The 3D board has one key light from the top left,
@@ -163,10 +163,10 @@ the prototype tried, kept for 3D:
   corners rounded 1.6%, and a soft shadow under it (down 1.4%, 3.6% soft, black at 55%).
   The lip is the dark square's color, with a line of the light square's color on its
   outer edge (gold on wood, pale blue on stone), brightest on top, and a dark seam where
-  the squares sit below it. The lip and the pieces' single rim follow two later ChatGPT
-  boards the user preferred (2026-11-07, winter and autumn close-ups, kept local); the
-  HTML prototype still has no lip and the inner ring. The 3D board has a frame 2.4% of
-  the board's width. 10 × 10 uses the same.
+  the squares sit below it. The lip, the pieces' single rim, and the wood theme's warm
+  tones and calm grain follow the close-up boards chosen on 2026-11-07, which read better
+  than the first design boards' frameless board and two-ringed pieces. The 3D board has a
+  frame 2.4% of the board's width. 10 × 10 uses the same.
 - **Pieces** are SDF discs filling 78% of a square: a flat face sunk a little below one
   wide rounded rim from 64% of the radius, a thin groove between them, and the side
   under the disc (0.55% of the board deep), with a short soft shadow straight down and

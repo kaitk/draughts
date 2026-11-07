@@ -99,6 +99,9 @@ board, pieces, states, and background match. Left as they are:
 - Wood grain on the boards is finer and straighter; ours wanders a little more.
 - The boards' lifted piece shows a tall side; ours lifts 0.8% of the board with a
   growing shadow, as rendering.md says.
+- After the close-ups, the wood theme was warmed (light `#e2b070`, dark `#7a4626`, light
+  piece `#f0d4a4`) and its grain calmed. `prototypes/` has the new wood colors but not
+  yet the lip or the single rim: bring them over before task 008 leans on them.
 
 ### On the tablet
 
