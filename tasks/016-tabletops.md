@@ -7,51 +7,27 @@ color ([rendering](../docs/architecture/rendering.md#scene-and-glass)). Try gene
 tabletops in ChatGPT, one per season, with a few objects at the edges that belong with
 the board. Images stay local until the user agrees to add them to git.
 
-Every prompt keeps to these: straight top-down with flat, even light (a tilt or a shadow
-direction fights the flat board); square, at least 2048 px, so one picture crops to
-1920 × 1200 either way; objects only in the outer 12% of each side, so the middle under
-the board and panel is calm; low contrast and a little dark; no board, pieces, or text.
+The prompts keep to these:
 
-## Prompts
+- **The season is in the colors and the light, not the objects.** Leaves and acorns on a
+  table read as a stock photo, not a place to play (the first autumn try, 2026-11-07).
+  The things around are what you'd have at a game at home: a mug on a coaster, a
+  candlestick, the wooden box the pieces live in, books and a pencil, a sand timer, a
+  blanket's corner.
+- **Things only at the left and right edges, cut off by the frame.** In landscape the
+  board fills the height and only about the outer 9% shows on each side (the panel's
+  glass blurs part of the right). A square picture loses its corners to the crop, so
+  landscape and portrait are made separately (3:2 and 2:3), portrait with things at the
+  top and bottom.
+- Looking straight down, warm soft light from the top, calm fine grain, low contrast and
+  a little dark; no board, pieces, or text.
 
-Ready to paste, all twelve in order: `design/tabletops/prompts.txt`. The
-templates:
-
-Realistic:
-
-> Top-down orthographic photo of a [TABLE] tabletop, perfectly flat overhead view, soft
-> even diffuse light, no strong shadows, no perspective. The centre 75% of the image is
-> plain, calm, slightly darker table surface with subtle texture and no objects. Only
-> along the outer edges and corners, partly cut off by the frame: [OBJECTS]. Muted,
-> low-contrast colors, gentle vignette. No game board, no pieces, no text. Square,
-> 2048×2048.
-
-1990s Amiga style, at modern resolution (generate at the final size, or ask for chunky
-3×3 pixels, since pixel art doesn't upscale cleanly):
-
-> Top-down view of a [TABLE] tabletop in the style of a high-resolution 1990s Amiga game
-> screen: hand-painted pixel art with crisp clean pixels, ordered-dither gradients, a
-> limited rich palette of about 32 colors per material, the polished look of a Deluxe
-> Paint title screen, but at modern high resolution. Flat overhead view, even light.
-> The centre 75% is plain table surface with gentle dithered shading and no objects.
-> Only along the edges and corners: [OBJECTS], drawn in the same pixel style. No game
-> board, no pieces, no text. Square.
-
-A game mat instead of a table:
-
-> Top-down flat photo of a [color] wool felt game mat with a fine woven texture and a
-> stitched border just inside the edges, on a [TABLE]. Even soft light, plain centre, no
-> objects in the middle. No game board, no pieces, no text. Square.
-
-| Season | TABLE | OBJECTS |
-| --- | --- | --- |
-| Autumn (wood) | dark oiled oak with fine straight grain | a few fallen maple leaves, a mug of tea, an acorn or two |
-| Winter (stone) | grey-blue slate or painted wood | knitted mittens, a pine sprig, a candle stub, a few snow crystals |
-| Spring (birch) | pale birch plywood, light green-grey stain | birch twigs with small new leaves, a few wildflowers, a pencil |
-| Summer (sea) | sun-bleached teal-painted boards | a few seashells, smooth pebbles, a piece of driftwood, sand at one corner |
+Ready to paste: `design/tabletops/prompts.txt`, autumn first in three styles
+(realistic, the 1990s Amiga look at modern resolution, a felt mat on the table) and a
+busier realistic one; the other seasons once a style is picked.
 
 ## Acceptance criteria
 
-- [ ] A few tabletops per season tried behind `prototypes/game.html` at both sizes
+- [ ] Autumn tried in the three styles, then the other seasons in the chosen one, behind `prototypes/game.html` at both sizes
 - [ ] The user picks a style, or keeps the plain table
 - [ ] If pictures win: stored as the scenes are, added to git only once the user agrees
