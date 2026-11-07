@@ -21,7 +21,7 @@ fn main() {
     var android_root: u8[>..] = [];
     let on_android = env("ANDROID_ROOT", android_root);
     let window_flags = if on_android { gfx::WINDOW_FULLSCREEN } else { gfx::WINDOW_RESIZABLE };
-    guard gfx::open("Kabe POC", 1280, 800, window_flags) else {
+    guard gfx::open("Draughts POC", 1280, 800, window_flags) else {
         abort(str("gfx: ", gfx::error()));
     }
     defer gfx::close();
@@ -112,7 +112,7 @@ fn main() {
         ui::input_end(hud);
         if ui::begin(hud, "hud", ui::rect(0, 0, size.x, 160),
                      ui::WINDOW_NO_INPUT | ui::WINDOW_NO_SCROLLBAR) {
-            ui::draw_text(hud, ui::rect(40, 40, size.x - 80, 60), "Kabe — õäöüšž ÕÄÖÜŠŽ", font,
+            ui::draw_text(hud, ui::rect(40, 40, size.x - 80, 60), "Draughts — õäöüšž ÕÄÖÜŠŽ", font,
                           ui::Color { 0, 0, 0, 0 }, ui::Color { 240, 236, 228, 255 });
             ui::draw_text(hud, ui::rect(40, 100, size.x - 80, 60),
                           str(gfx::driver(), "  ", size.x, "×", size.y), font,

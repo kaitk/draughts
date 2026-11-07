@@ -1,6 +1,6 @@
 # checkers
 
-A small draughts (kabe) learning app for young kids: play, puzzles, and lessons. It runs
+A small draughts learning app for young kids: play, puzzles, and lessons. It runs
 first on an Android Galaxy tablet, later on the Play Store for free.
 
 Written in [Goose](https://github.com/aardappel/goose), compiled to C, drawn with SDL3's

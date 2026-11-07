@@ -8,7 +8,7 @@
 # An idle board should show a fraction of a percent and about one voluntary switch a
 # second (frame()'s wait). A spinning loop shows near 100% and almost no voluntary
 # switches.
-P=com.kaitk.kabe
+P=com.kaitk.draughts
 S=${1:-60}
 pid=$(adb shell pidof $P | tr -d '\r')
 [ -n "$pid" ] || { echo "$P is not running" >&2; exit 1; }

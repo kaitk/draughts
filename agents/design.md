@@ -1,6 +1,6 @@
 # Design work: references, images, and the look
 
-What a session needs to work on kabe's look without the conversations that settled it.
+What a session needs to work on the app's look without the conversations that settled it.
 The values themselves are in `docs/architecture/rendering.md` ("Look"); this file says
 where they came from, how to check against them, and what has been tried.
 

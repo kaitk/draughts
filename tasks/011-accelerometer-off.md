@@ -5,7 +5,7 @@ Status: todo
 SDL's Java side registers the accelerometer at `SENSOR_DELAY_GAME` (50 Hz) whenever the
 app is resumed (`SDLSurface.handleResume`, and at start in `SDLActivity`), whether or not
 the program reads sensors. It uses it for two things: an accelerometer joystick, which
-kabe doesn't open, and noticing display rotation (`onNativeRotationChanged`). On the
+the app doesn't open, and noticing display rotation (`onNativeRotationChanged`). On the
 idle board this is all the CPU left after task 005: 1.9% of a core on the Java main
 thread, 50 wakeups a second, plus the sensor's own power.
 

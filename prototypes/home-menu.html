@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="et">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kabe: home, title menu</title>
-<link rel="stylesheet" href="kabe.css">
-<script src="kabe.js"></script>
+<title>Draughts: home, title menu</title>
+<link rel="stylesheet" href="draughts.css">
+<script src="draughts.js"></script>
 <style>
   /* Take C: a title screen. The season's photograph and a 3D board set the mood; the
      wordmark and a plain menu of large words sit on one glass column at the side; the
@@ -44,13 +44,13 @@
 <body>
 <main class="home">
   <nav class="menu glass">
-    <div class="mark"><div class="piece white king"></div><h1>Kabe</h1>
-      <div class="tools"><a class="lang" href="#" aria-label="Keel">ET</a><a href="settings.html" data-icon="gear" aria-label="Seaded"></a></div>
+    <div class="mark"><div class="piece white king"></div><h1>Draughts</h1>
+      <div class="tools"><a class="lang" href="#" aria-label="Language">EN</a><a href="settings.html" data-icon="gear" aria-label="Settings"></a></div>
     </div>
-    <a class="item primary" href="game.html"><span data-icon="next"></span>Jätka</a>
-    <a class="item" href="game.html"><span data-icon="friend"></span>Sõbraga</a>
-    <a class="item" href="game.html"><span data-icon="computer"></span>Arvutiga<small>keskmine</small></a>
-    <a class="item" href="puzzles.html"><span data-icon="puzzle"></span>Ülesanded<small>23 / 90</small></a>
+    <a class="item primary" href="game.html"><span data-icon="next"></span>Continue</a>
+    <a class="item" href="game.html"><span data-icon="friend"></span>A friend</a>
+    <a class="item" href="game.html"><span data-icon="computer"></span>The computer<small>medium</small></a>
+    <a class="item" href="puzzles.html"><span data-icon="puzzle"></span>Puzzles<small>23 / 90</small></a>
   </nav>
   <div class="stage"><div id="board"></div></div>
 </main>
@@ -58,11 +58,11 @@
   // The title screen always shows the photograph and the 3D board.
   document.querySelector('.lang').onclick = (e) => {
     e.preventDefault();
-    e.target.textContent = e.target.textContent === 'ET' ? 'EN' : 'ET';
+    e.target.textContent = e.target.textContent === 'EN' ? 'ET' : 'EN';
   };
-  Kabe.settings.bg = 'photo';
-  Kabe.init();
-  Kabe.board(document.getElementById('board'), {
+  Draughts.settings.bg = 'photo';
+  Draughts.init();
+  Draughts.board(document.getElementById('board'), {
     view: '3d',
     white: ['a1', 'c1', 'e1', 'g1', 'b2', 'f2', 'h2', 'c3', 'e3', 'd4', 'h6'],
     black: ['b8', 'd8', 'f8', 'h8', 'a7', 'c7', 'b6', 'e5', 'g5'],

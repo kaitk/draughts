@@ -1,13 +1,13 @@
-// Kabe: the board, playable by two on one screen. It draws only when
+// Draughts: the board, playable by two on one screen. It draws only when
 // something changed: input, a move or a pulse animating, or a new screen size
 // (docs/architecture/rendering.md, "Frames and battery").
 //
-//   goose kabe.goose                          on the Mac
-//   goose kabe.goose -- --theme sea           another board than the season's
-//   goose kabe.goose -- --frames 30 --tap c3  taps squares, then saves kabe.png
-//   goose kabe.goose -- --fen W:Wc3,Kh6:Be5   starts from a position
-//   goose kabe.goose -- --hints moves         shows the selected piece's targets
-//   scripts/android.py app/kabe.goose --run   on the tablet (docs/development.md)
+//   goose draughts.goose                          on the Mac
+//   goose draughts.goose -- --theme sea           another board than the season's
+//   goose draughts.goose -- --frames 30 --tap c3  taps squares, then saves draughts.png
+//   goose draughts.goose -- --fen W:Wc3,Kh6:Be5   starts from a position
+//   goose draughts.goose -- --hints moves         shows the selected piece's targets
+//   scripts/android.py app/draughts.goose --run   on the tablet (docs/development.md)
 
 import std;
 import vec;
@@ -22,7 +22,7 @@ import .scene;
 fn main() {
     // Development flags: --theme NAME, --size WxH (the window), --fen POSITION,
     // --tap SQUARE (any number, played in order on the first frames), --frames N (then
-    // save kabe.png), --hints moves (show targets; mistakes only by default).
+    // save draughts.png), --hints moves (show targets; mistakes only by default).
     var width = 1280;
     var height = 800;
     var kind = theme::for_month(theme::month(time()));
@@ -57,7 +57,7 @@ fn main() {
     var android_root: u8[>..] = [];
     let on_android = env("ANDROID_ROOT", android_root);
     let window_flags = if on_android { gfx::WINDOW_FULLSCREEN } else { gfx::WINDOW_RESIZABLE };
-    guard gfx::open("Kabe", width, height, window_flags) else { abort(str("gfx: ", gfx::error())); }
+    guard gfx::open("Draughts", width, height, window_flags) else { abort(str("gfx: ", gfx::error())); }
     defer gfx::close();
 
     var b = board::new(rules::RUSSIAN);
@@ -111,5 +111,5 @@ fn main() {
         }
         if frames > 0 && gfx::frame_count() >= frames { break; }
     }
-    if frames > 0 { gfx::screenshot("kabe.png"); }
+    if frames > 0 { gfx::screenshot("draughts.png"); }
 }

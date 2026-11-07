@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="et">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kabe: settings</title>
-<link rel="stylesheet" href="kabe.css">
-<script src="kabe.js"></script>
+<title>Draughts: settings</title>
+<link rel="stylesheet" href="draughts.css">
+<script src="draughts.js"></script>
 <style>
   /* Settings, reached from the title menu. Few choices, each a row of large tiles that
      show what they pick: the background (by the date, or one season), the board (2D or
@@ -32,12 +32,12 @@
 </head>
 <body>
 <main class="settings">
-  <div><a class="button glass" href="home-menu.html" data-icon="back" aria-label="Tagasi"></a></div>
+  <div><a class="button glass" href="home-menu.html" data-icon="back" aria-label="Back"></a></div>
   <div class="list" id="list"></div>
 </main>
 <script>
-  Kabe.init();
-  const S = Kabe.settings, params = new URLSearchParams(location.search);
+  Draughts.init();
+  const S = Draughts.settings, params = new URLSearchParams(location.search);
   const now = params.get('season') === null;
   const photo = (s) => `../design/backgrounds/masters/${s}-01-2048.jpg`;
   // A choice reloads the page with it in the query, as the switcher does.
@@ -50,20 +50,20 @@
   const tile = (on, key, value, inner, label) =>
     `<button class="tile${inner ? '' : ' text'}${on ? ' on' : ''}" data-k="${key}" data-v="${value}">${inner || ''}${label}</button>`;
   const group = (iconName, title, tiles) =>
-    `<section class="group glass"><h2>${Kabe.icon(iconName)}${title}</h2><div class="tiles">${tiles}</div></section>`;
-  const seasons = [['winter', 'Talv'], ['spring', 'Kevad'], ['summer', 'Suvi'], ['autumn', 'Sügis']];
+    `<section class="group glass"><h2>${Draughts.icon(iconName)}${title}</h2><div class="tiles">${tiles}</div></section>`;
+  const seasons = [['winter', 'Winter'], ['spring', 'Spring'], ['summer', 'Summer'], ['autumn', 'Autumn']];
   document.getElementById('list').innerHTML =
-    group('sun', 'Taust',
-      tile(now, 'season', '', `<span class="pic" style="background: color-mix(in srgb, var(--glow) 18%, rgb(255 255 255 / 0.06))">${Kabe.icon('sun')}</span>`, 'Aastaaeg') +
+    group('sun', 'Background',
+      tile(now, 'season', '', `<span class="pic" style="background: color-mix(in srgb, var(--glow) 18%, rgb(255 255 255 / 0.06))">${Draughts.icon('sun')}</span>`, 'By the date') +
       seasons.map(([s, name]) => tile(!now && S.season === s, 'season', s, `<span class="pic" style="background-image: url(${photo(s)})"></span>`, name)).join('')) +
-    group('dots', 'Laud',
+    group('dots', 'Board',
       tile(S.view === '2d', 'view', '2d', '', '2D') + tile(S.view === '3d', 'view', '3d', '', '3D')) +
-    group('target', 'Vihjed',
-      tile(S.assist === 'mistakes', 'assist', 'mistakes', '', 'Ainult vead') + tile(S.assist === 'moves', 'assist', 'moves', '', 'Kõik käigud')) +
-    group('globe', 'Keel', tile(params.get('lang') !== 'en', 'lang', 'et', '', 'Eesti') +
-      tile(params.get('lang') === 'en', 'lang', 'en', '', 'English'));
+    group('target', 'Move hints',
+      tile(S.assist === 'mistakes', 'assist', 'mistakes', '', 'Mistakes only') + tile(S.assist === 'moves', 'assist', 'moves', '', 'All moves')) +
+    group('globe', 'Language', tile(params.get('lang') !== 'et', 'lang', 'en', '', 'English') +
+      tile(params.get('lang') === 'et', 'lang', 'et', '', 'Eesti'));
   document.querySelectorAll('.tile').forEach((t) => t.onclick = () => go(t.dataset.k, t.dataset.v || null));
-  Kabe.syncGlass();
+  Draughts.syncGlass();
 </script>
 </body>
 </html>

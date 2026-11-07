@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The app runs SDL's stock SDLActivity, which loads libSDL3.so and libmain.so and enters
-     the Goose program at SDL_main, through KabeActivity (android/java/), which only adds
+     the Goose program at SDL_main, through DraughtsActivity (android/java/), which only adds
      development flags from the intent. There are no resources: the label is a literal and
      the theme is the platform's. scripts/android.py builds the APK. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.kaitk.kabe"
+    package="com.kaitk.draughts"
     android:versionCode="1"
     android:versionName="0.1">
 
@@ -14,15 +14,15 @@
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
     <application
-        android:label="Kabe"
+        android:label="Draughts"
         android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
         android:allowBackup="true"
         android:extractNativeLibs="false"
         android:hardwareAccelerated="true">
         <!-- Lets profilers (Perfetto, Android Studio) attach to this release build. -->
         <profileable android:shell="true" />
-        <activity android:name="com.kaitk.kabe.KabeActivity"
-            android:label="Kabe"
+        <activity android:name="com.kaitk.draughts.DraughtsActivity"
+            android:label="Draughts"
             android:alwaysRetainTaskState="true"
             android:launchMode="singleInstance"
             android:configChanges="layoutDirection|locale|grammaticalGender|fontScale|fontWeightAdjustment|orientation|uiMode|screenLayout|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"

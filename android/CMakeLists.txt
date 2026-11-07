@@ -8,7 +8,7 @@
 # with the same settings as goose_gfx's CMakeLists. scripts/android.py configures this.
 
 cmake_minimum_required(VERSION 3.20)
-project(kabe_android C)
+project(draughts_android C)
 
 set(GOOSE_PROGRAM_C "" CACHE FILEPATH "The program's C, from goose -o")
 set(GOOSE_RUNTIME_C "" CACHE FILEPATH "The Goose runtime's C, from goose --emit-runtime")

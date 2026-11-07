@@ -43,7 +43,7 @@ What can't run headless is checked on the tablet with scripts that print numbers
   voluntary switches) from a waiting one. The program runs on the thread named
   `SDLThread`.
 - To see inside SDL, add `SDL_Log` lines to the copy in `build/android/SDL_src/`
-  (never the submodule), then delete `build/android/SDL_src/.kabe-stamp` so the next
+  (never the submodule), then delete `build/android/SDL_src/.draughts-stamp` so the next
   build copies it fresh. Grep the APK's `libSDL3.so` with `strings` to make sure the
   logs are gone.
 - The batterystats estimate reads 0 while the tablet charges over USB, so it says

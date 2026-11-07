@@ -24,7 +24,7 @@ The pipeline, from that README:
 5. Encode for the app: JPEG quality 85, 2048 × 2048, as `assets/backgrounds/<season>.jpg`
    ([rendering](../docs/architecture/rendering.md#scene-and-glass)).
 
-For kabe the target is smaller than Snowtime's 3840 px: the tablet is 1920 × 1200, and a
+For this app the target is smaller than Snowtime's 3840 px: the tablet is 1920 × 1200, and a
 square image covering it in both orientations needs 1920 px. Steps 2 and 3 at 2048 px
 may be enough, without step 4; try that first.
 

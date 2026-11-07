@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A draughts (kabe) learning app for children of about 5 to 8: play, puzzles, and later
+A draughts learning app for children of about 5 to 8: play, puzzles, and later
 lessons. It runs first on an Android Galaxy tablet, then on the Play Store for free.
 Chess may follow on the same base.
 
@@ -43,7 +43,7 @@ Chess may follow on the same base.
    and design boards.
 4. **Release.** Play Store under Google's Families Policy: no ads or tracking, a privacy
    policy. English checkers as a rules toggle. Before the first upload: the final app id
-   (`com.kaitk.kabe` is a placeholder in `android/AndroidManifest.xml`), an icon, a release
+   (`com.kaitk.draughts` is a placeholder in `android/AndroidManifest.xml`), an icon, a release
    signing key kept outside the repo, an app bundle (AAB) if Play requires one over an
    APK, and the target SDK Play asks for then.
 5. **Chess**, reusing the platform, rendering, UI, puzzle, and lesson layers.

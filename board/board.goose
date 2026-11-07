@@ -1,6 +1,6 @@
 // The board on screen, with no graphics: where it goes, which square a point is on,
 // what a tap or a drag does, how a move animates, and what to draw each frame. The app
-// (app/kabe.goose) feeds it input and time and draws what it fills in; tests run it
+// (app/draughts.goose) feeds it input and time and draws what it fills in; tests run it
 // headless. Values are from docs/architecture/rendering.md ("Look").
 //
 // Nothing here allocates: the legal moves and the draw lists are fixed buffers in the

@@ -14,7 +14,7 @@ import gfx;
 // no texels.
 let SIZE = 512;
 
-extern fn kabe_background(kind: i64, size: i64, out: u8[:]) -> bool;
+extern fn draughts_background(kind: i64, size: i64, out: u8[:]) -> bool;
 
 let BLUR_FRAG = """
     layout(location = 0) in vec2 v_uv;
@@ -47,7 +47,7 @@ fn load(kind: i64, full_vert: const u8[:]) -> Scene {
     let sampler = gfx::sampler(gfx::LINEAR, gfx::CLAMP);
     var px: u8[>..] = [];
     px.resize(SIZE * SIZE * 4, 0);
-    if !kabe_background(kind, SIZE, px) {
+    if !draughts_background(kind, SIZE, px) {
         let none = gfx::texture2d(1, 1);
         gfx::update_texture(none, px[0..4]);
         return Scene { photo: none, sampler: sampler, has: false };

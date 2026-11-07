@@ -1,11 +1,11 @@
-// Shared parts of the kabe prototypes: the season's background and the glass that shows
+// Shared parts of the draughts prototypes: the season's background and the glass that shows
 // its blurred copy, the board in 2D (painted by a port of the native shaders) and 3D,
 // icons, and a switcher for the season, board theme, view, king style, and font
 // (?season=, ?theme=, ?view=3d, ?king=, ?font=).
 // Plain script, no build step.
 'use strict';
 
-const Kabe = (() => {
+const Draughts = (() => {
   const params = new URLSearchParams(location.search);
 
   const FONTS = {
@@ -142,7 +142,7 @@ const Kabe = (() => {
       setScene(paintTable(settings.theme, 1280, Math.round(1280 * innerHeight / innerWidth)), innerWidth / innerHeight);
       return;
     }
-    // Blurred in CSS (kabe.css, .scene-blur), since a canvas can't read a file:// image.
+    // Blurred in CSS (draughts.css, .scene-blur), since a canvas can't read a file:// image.
     document.body.classList.toggle('scene-blur', useBlur());
     const img = new Image();
     img.onload = () => setScene(img.src, img.naturalWidth / img.naturalHeight);
@@ -241,7 +241,7 @@ const Kabe = (() => {
     }
 
     // The board B px wide with its soft shadow, on a canvas reaching 5% past it on every
-    // side (kabe.css places it so). squaresOnly: just the squares, for the 3D board.
+    // side (draughts.css places it so). squaresOnly: just the squares, for the 3D board.
     function board(t, n, B, squaresOnly) {
       const u = B * 0.01;
       const lw = squaresOnly ? 0 : 1.1 * u;              // the lip

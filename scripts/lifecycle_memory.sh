@@ -5,8 +5,8 @@
 # settings are restored at the end. The app must be running.
 #
 #   scripts/lifecycle_memory.sh [cycles]      default 20
-P=com.kaitk.kabe
-A=$P/.KabeActivity
+P=com.kaitk.draughts
+A=$P/.DraughtsActivity
 N=${1:-20}
 acc=$(adb shell settings get system accelerometer_rotation)
 rot=$(adb shell settings get system user_rotation)

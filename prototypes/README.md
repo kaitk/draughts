@@ -17,10 +17,10 @@ jsDelivr CDN, so they need internet access. Start at [index.html](index.html).
 | `boards.html` | The four season boards in 2D and 3D, crowned and stacked kings, and 10×10 |
 | `fonts.html` | The font candidates with Estonian text, and a check of their letters |
 
-Shared parts: `kabe.css` (theme tokens, glass, buttons, board, pieces, light) and
-`kabe.js` (the season's background and the glass over it, the board in 2D and 3D,
+Shared parts: `draughts.css` (theme tokens, glass, buttons, board, pieces, light) and
+`draughts.js` (the season's background and the glass over it, the board in 2D and 3D,
 icons). The 2D board and its pieces are painted by a port of the native shaders
-(`app/draw.goose`) in `kabe.js`, into images at their size on screen, so they look as
+(`app/draw.goose`) in `draughts.js`, into images at their size on screen, so they look as
 the app does: the lip, the squares' faint surface, the pieces' groove and rounded edge.
 Change that port with the shaders. The background is the season's master from `design/backgrounds/masters/`,
 blurred behind the 2D board and sharp elsewhere (`?bg=blur`, `photo`, or `table` for a
@@ -43,10 +43,10 @@ Check a prototype with the `agent-browser` CLI at tablet sizes, 1280×800 landsc
 800×1280 portrait:
 
 ```sh
-agent-browser --session kabe set viewport 1280 800
-agent-browser --session kabe open "file://$PWD/prototypes/game.html"
-agent-browser --session kabe screenshot /tmp/game.png
-agent-browser --session kabe errors
+agent-browser --session draughts set viewport 1280 800
+agent-browser --session draughts open "file://$PWD/prototypes/game.html"
+agent-browser --session draughts screenshot /tmp/game.png
+agent-browser --session draughts errors
 ```
 
 Design boards from an image model are made with `design-boards-prompt.md` and kept out

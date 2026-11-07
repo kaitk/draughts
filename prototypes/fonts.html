@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="et">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kabe: fonts</title>
-<link rel="stylesheet" href="kabe.css">
-<script src="kabe.js"></script>
+<title>Draughts: fonts</title>
+<link rel="stylesheet" href="draughts.css">
+<script src="draughts.js"></script>
 <style>
   body { overflow: auto; }
   .fonts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; padding: 24px; }
@@ -21,7 +21,7 @@
 <body>
 <main class="fonts" id="fonts"></main>
 <script>
-  Kabe.init();
+  Draughts.init();
   const notes = {
     tenor: 'Tenor Sans, Denis Masharov. SIL OFL 1.1. Used by the proof of concept.',
     libertinus: 'Libertinus Sans, Caleb Maclennan and contributors, a fork of Linux Biolinum. SIL OFL 1.1. Has a bold.',
@@ -30,16 +30,16 @@
   };
   const ESTONIAN = 'õäöüšž ÕÄÖÜŠŽ';
   const root = document.getElementById('fonts');
-  for (const [key, f] of Object.entries(Kabe.FONTS)) {
-    const family = Kabe.loadFont(key);
+  for (const [key, f] of Object.entries(Draughts.FONTS)) {
+    const family = Draughts.loadFont(key);
     const el = document.createElement('section');
     el.className = 'font glass';
     el.style.fontFamily = family;
     el.innerHTML = `
-      <h2>Kabe</h2>
-      <div class="line">Kabe — mängi sõbraga, õpi ülesannetest</div>
-      <div class="small">Šašlõkk ja žürii: õun, äädikas, öökull, üllatus. 0123456789</div>
-      <div class="small">Play a friend · Puzzles · Well done!</div>
+      <h2>Draughts</h2>
+      <div class="line">Draughts — play a friend, learn from puzzles</div>
+      <div class="small">Play a friend · Puzzles · Well done! 0123456789</div>
+      <div class="small">Estonian: Kabe — mängi sõbraga. Šašlõkk ja žürii: õun, äädikas, öökull, üllatus.</div>
       <div class="meta">${notes[key]} <span class="check" data-family="${f.family}"></span></div>`;
     root.appendChild(el);
   }

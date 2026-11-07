@@ -8,7 +8,7 @@ Steps: Goose writes the program's C and the runtime's C; goose_gfx's sources are
 and patches/goose_gfx applied, and SDL is copied and patches/SDL applied; CMake with the
 NDK builds
 libSDL3.so and libmain.so (android/CMakeLists.txt); javac and d8 compile SDL's stock Java
-glue and KabeActivity; aapt2 links the manifest; zip adds the dex and the stripped libraries, the libraries
+glue and DraughtsActivity; aapt2 links the manifest; zip adds the dex and the stripped libraries, the libraries
 stored uncompressed; zipalign aligns them to 16 KB; apksigner signs with the debug key.
 
 Tools come from the environment or the defaults below: GOOSE, ANDROID_HOME, ANDROID_NDK,
@@ -30,7 +30,7 @@ BUILD_TOOLS = Path(os.environ.get("ANDROID_BUILD_TOOLS", SDK / "build-tools/36.0
 PLATFORM = Path(os.environ.get("ANDROID_PLATFORM", SDK / "platforms/android-36"))
 GOOSE = Path(os.environ.get("GOOSE", ROOT / "build/goose-v2026.4-macos-arm64/goose"))
 SDL = ROOT / "third_party/goose_gfx/third_party/SDL"
-PACKAGE = "com.kaitk.kabe"
+PACKAGE = "com.kaitk.draughts"
 MIN_SDK = "29"
 TARGET_SDK = "36"
 
@@ -90,7 +90,7 @@ def main():
         ["git", "-C", SDL, "rev-parse", "HEAD"], check=True, capture_output=True).stdout)
     for patch in sdl_patches:
         stamp.update(patch.read_bytes())
-    stamp_file = sdl_src / ".kabe-stamp"
+    stamp_file = sdl_src / ".draughts-stamp"
     if not stamp_file.exists() or stamp_file.read_text() != stamp.hexdigest():
         fresh = sdl_src.with_name("SDL_src.new")
         if fresh.exists():
@@ -99,7 +99,7 @@ def main():
                         copy_function=shutil.copy)
         for patch in sdl_patches:
             run("patch", "-s", "-p1", "-i", patch, cwd=fresh)
-        (fresh / ".kabe-stamp").write_text(stamp.hexdigest())
+        (fresh / ".draughts-stamp").write_text(stamp.hexdigest())
         if sdl_src.exists():
             shutil.rmtree(sdl_src)
         fresh.rename(sdl_src)
@@ -158,7 +158,7 @@ def main():
 
     if args.run:
         run("adb", "install", "-r", aligned)
-        run("adb", "shell", "am", "start", "-n", f"{PACKAGE}/.KabeActivity")
+        run("adb", "shell", "am", "start", "-n", f"{PACKAGE}/.DraughtsActivity")
 
 
 if __name__ == "__main__":

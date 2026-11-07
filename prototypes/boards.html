@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="et">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kabe: boards</title>
-<link rel="stylesheet" href="kabe.css">
-<script src="kabe.js"></script>
+<title>Draughts: boards</title>
+<link rel="stylesheet" href="draughts.css">
+<script src="draughts.js"></script>
 <style>
   body { overflow: auto; }
   main { display: grid; gap: 28px; padding: 24px; }
@@ -21,7 +21,7 @@
 <body data-screen="board">
 <main id="boards"></main>
 <script>
-  Kabe.init();
+  Draughts.init();
   // One position on every board: a selected piece with its capture, a king that must
   // capture, and a king of each color.
   const pos = {
@@ -43,10 +43,10 @@
       const fig = document.createElement('figure');
       fig.innerHTML = `<div></div><figcaption>${it.caption}</figcaption>`;
       row.appendChild(fig);
-      Kabe.board(fig.firstChild, it.opts);
+      Draughts.board(fig.firstChild, it.opts);
     }
   }
-  const each = (view, king) => Kabe.THEMES.map((theme) => ({
+  const each = (view, king) => Draughts.THEMES.map((theme) => ({
     caption: `${SEASON[theme]}: ${theme}`, opts: { ...pos, theme, view, king } }));
   section('2D, king auto', '(a crown on the face)', each('2d', 'auto'));
   section('3D, king auto', '(a stack of two with the crown on top)', each('3d', 'auto'));

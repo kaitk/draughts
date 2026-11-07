@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="et">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kabe: home, cards</title>
-<link rel="stylesheet" href="kabe.css">
-<script src="kabe.js"></script>
+<title>Draughts: home, cards</title>
+<link rel="stylesheet" href="draughts.css">
+<script src="draughts.js"></script>
 <style>
   /* Take B: three solid cards like paper on the table, each with a small scene made of
      the game's own pieces instead of an icon, a title, and one line. Light cards with
@@ -61,33 +61,33 @@
 </head>
 <body>
 <main class="home">
-  <h1>Kabe <small>mängi sõbraga, õpi ülesannetest</small></h1>
+  <h1>Draughts <small>play a friend, learn from puzzles</small></h1>
   <div class="cards">
     <a class="card" href="game.html">
       <div class="scene">
         <div class="piece white" style="left: 16cqw; top: 26cqw"></div>
         <div class="piece black" style="right: 16cqw; top: 26cqw"></div>
       </div>
-      <h2>Sõbraga</h2><p>Kaks mängijat, üks laud</p>
+      <h2>A friend</h2><p>Two players, one board</p>
     </a>
     <a class="card" href="game.html">
       <div class="scene">
         <div class="piece white" style="left: 14cqw; top: 26cqw"></div>
         <span class="robot" data-icon="computer"></span>
       </div>
-      <h2>Arvutiga</h2>
-      <div class="levels"><span>Kerge</span><span class="on">Keskmine</span><span>Raske</span></div>
+      <h2>The computer</h2>
+      <div class="levels"><span>Easy</span><span class="on">Medium</span><span>Hard</span></div>
     </a>
     <a class="card" href="puzzles.html">
       <div class="scene">
         <div class="mini" id="mini"></div>
       </div>
-      <h2>Ülesanded</h2><p>23 / 90 tähte</p>
+      <h2>Puzzles</h2><p>23 / 90 stars</p>
     </a>
   </div>
 </main>
 <script>
-  Kabe.init();
+  Draughts.init();
   document.querySelectorAll('.robot svg').forEach((s) => { s.style.width = '100%'; s.style.height = '100%'; });
   // A capture in three squares: white jumps the black piece.
   const cells = ['d', '', 'd', '', 'd', '', 'd', '', 'd'];

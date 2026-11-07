@@ -37,16 +37,16 @@ gfx layer.
 ## Run on the Mac
 
 ```sh
-cd app && ../build/goose-v2026.4-macos-arm64/goose kabe.goose
-../build/goose-v2026.4-macos-arm64/goose kabe.goose -- --theme sea --size 800x1280
-../build/goose-v2026.4-macos-arm64/goose kabe.goose -- --fen W:Wc3,e3,Kh2:Bd4,f6 --tap c3 --frames 30
+cd app && ../build/goose-v2026.4-macos-arm64/goose draughts.goose
+../build/goose-v2026.4-macos-arm64/goose draughts.goose -- --theme sea --size 800x1280
+../build/goose-v2026.4-macos-arm64/goose draughts.goose -- --fen W:Wc3,e3,Kh2:Bd4,f6 --tap c3 --frames 30
 ```
 
-`app/kabe.goose` is the app; its development flags pick the board theme (`wood`,
+`app/draughts.goose` is the app; its development flags pick the board theme (`wood`,
 `stone`, `birch`, `sea`; the season's by default, with its photograph), the window size, a
 starting position, squares to tap on the first frames, move hints (`--hints moves` shows
-the targets; mistakes only by default), and a frame to stop at and save as `kabe.png`.
-`app/kabe.build` adds the program's own C (`app/background.c`, the photographs and their
+the targets; mistakes only by default), and a frame to stop at and save as `draughts.png`.
+`app/draughts.build` adds the program's own C (`app/background.c`, the photographs and their
 JPEG decoder), which `scripts/android.py` builds into the APK too. The photographs are
 embedded from `design/backgrounds/masters/` when they are there; without them the board
 sits on the page color. goose caches the program's C by its source, so after adding or
@@ -77,7 +77,7 @@ and sideloading. Use USB mode **Transferring files** and allow the Mac's key.
 `adb devices` should list it.
 
 ```sh
-scripts/android.py app/kabe.goose --run     # build, install, start
+scripts/android.py app/draughts.goose --run     # build, install, start
 adb logcat -s goose:* SDL:*                 # the program's output and SDL's log
 ```
 

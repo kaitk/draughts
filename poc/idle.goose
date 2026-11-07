@@ -19,7 +19,7 @@ fn main() {
     var android_root: u8[>..] = [];
     let on_android = env("ANDROID_ROOT", android_root);
     let window_flags = if on_android { gfx::WINDOW_FULLSCREEN } else { gfx::WINDOW_RESIZABLE };
-    guard gfx::open("Kabe idle", 1280, 800, window_flags) else {
+    guard gfx::open("Draughts idle", 1280, 800, window_flags) else {
         abort(str("gfx: ", gfx::error()));
     }
     defer gfx::close();

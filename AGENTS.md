@@ -57,5 +57,8 @@ would otherwise look up again:
   each frame or into fixed tables sized at startup.
 - The app draws only when something changed (`docs/architecture/rendering.md`).
 - No user-facing string literals in code; strings come from `strings/<lang>.txt`.
+- Everything is in English: code, identifiers, docs, prototypes, and the app's default
+  language. The app is called Draughts. Estonian is a translation, a file in `strings/`
+  like any other language, never the default or a name in the code (2026-11-07).
 - Game rules are pure functions over value types, with no graphics, so they can be
   tested headless.

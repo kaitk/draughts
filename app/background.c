@@ -18,7 +18,7 @@
 #include <string.h>
 
 // A Goose slice of bytes, as an extern fn passes it.
-typedef struct { uint8_t *data; int64_t len; } kabe_bytes;
+typedef struct { uint8_t *data; int64_t len; } draughts_bytes;
 
 // Each image's bytes and then one 0, so the array is never empty. #embed is C23, which
 // clang takes in C11 too.
@@ -60,7 +60,7 @@ static const int64_t lengths[4] = { sizeof autumn - 1, sizeof winter - 1, sizeof
 // Decodes theme `kind`'s photograph, crops the middle square, and scales it down to
 // `size` × `size` RGBA by averaging, into `out` (size * size * 4 bytes). False when the
 // image isn't built in or doesn't decode.
-_Bool kabe_background(int64_t kind, int64_t size, kabe_bytes out) {
+_Bool draughts_background(int64_t kind, int64_t size, draughts_bytes out) {
     if (kind < 0 || kind > 3 || lengths[kind] == 0 || size <= 0 || out.len < size * size * 4) {
         return 0;
     }

@@ -49,8 +49,8 @@ find out by compiling, so the next session doesn't.
 - A root file and a package it imports may both declare the same package by different
   relative paths (`"../../rules"` and `"../rules"`): they resolve to one directory.
 - `os::args()` for a program's arguments; `exit(code)`. On Android they come from the
-  intent's `args` extra (`android/java/.../KabeActivity.java`).
-- A program's own C goes in `c_sources` in its `.build` sidecar (`app/kabe.build`).
+  intent's `args` extra (`android/java/.../DraughtsActivity.java`).
+- A program's own C goes in `c_sources` in its `.build` sidecar (`app/draughts.build`).
   `goose run` and `goose build` both compile it with the system clang, so C23 `#embed`
   and `__has_embed` work (with `-Wc23-extensions` silenced); a slice arrives in C as
   `struct { uint8_t *data; int64_t len; }` by value (`app/background.c`). The compiled C

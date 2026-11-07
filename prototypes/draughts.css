@@ -1,4 +1,4 @@
-/* Shared look of the kabe prototypes. Every value here is one the native renderer can
+/* Shared look of the draughts prototypes. Every value here is one the native renderer can
    draw cheaply: flat fills, gradients, SDF discs and rounded rects, and glass that
    samples one pre-blurred copy of the scene at its screen position (no backdrop-filter).
    The chosen values are recorded in docs/architecture/rendering.md. */
@@ -70,7 +70,7 @@ body.scene-blur::before {
 }
 
 /* Glass: the scene's blurred copy, placed so each panel shows the part of the scene
-   behind it (kabe.js sets --gx and --gy), dimmed, under the theme's tint, then a 1 px
+   behind it (draughts.js sets --gx and --gy), dimmed, under the theme's tint, then a 1 px
    border and a top highlight. Natively: one texture fetch at the fragment's screen
    position into a copy blurred once. */
 .glass {
@@ -142,7 +142,7 @@ body.scene-blur::before {
    board size scales. --u is that unit for the marks, so a piece outside a board (the
    turn piece) can set its own.
 
-   The 2D board and its pieces are painted by kabe.js with a port of the native
+   The 2D board and its pieces are painted by draughts.js with a port of the native
    shaders (app/draw.goose): --board-img is the board with its thin raised lip, its
    squares' faint surface, and its soft shadow, on an image reaching 5% past the board;
    --sprite is a piece with its shadow, side, groove, rounded edge, crown, and selection

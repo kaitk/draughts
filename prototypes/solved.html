@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="et">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kabe: solved</title>
-<link rel="stylesheet" href="kabe.css">
-<script src="kabe.js"></script>
+<title>Draughts: solved</title>
+<link rel="stylesheet" href="draughts.css">
+<script src="draughts.js"></script>
 <style>
   .stage { display: grid; place-items: center; height: 100%; padding: 24px; }
   #board { width: min(100vh - 48px, 100vw - 48px); filter: brightness(0.55); }
@@ -54,11 +54,11 @@
   </div>
 </main>
 <script>
-  Kabe.init();
-  Kabe.board(document.getElementById('board'), {
+  Draughts.init();
+  Draughts.board(document.getElementById('board'), {
     white: ['c1', 'e3', 'd8'], black: ['h8'], kings: ['d8'], last: ['b6', 'd8'],
   });
-  document.getElementById('stars').innerHTML = Kabe.icon('star').repeat(3);
+  document.getElementById('stars').innerHTML = Draughts.icon('star').repeat(3);
   for (let i = 0; i < 14; i++) {
     const s = document.createElement('div');
     s.className = 'spark';

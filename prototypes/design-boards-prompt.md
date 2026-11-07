@@ -8,7 +8,7 @@ per reply, varying the direction named at the end.
 
 Make a design board (one 1920×1200 PNG, landscape) for a draughts learning app for
 children of about 5 to 8, played on a 11-inch Android tablet (1920×1200, used in landscape
-and portrait). The game is Russian draughts, called "kabe" in Estonian: 8×8 board, the
+and portrait). The game is Russian draughts: 8×8 board, the
 pieces on the dark squares, kings that fly along diagonals. Later a 10×10 international
 board.
 
@@ -37,8 +37,8 @@ The look:
   legal target squares marked with glowing dots, and a piece that must capture
   pulsing with a ring.
 - Typography: a humanist sans with flared strokes, in the style of Optima (for example
-  Libertinus Sans, Tenor Sans, Marcellus or Belleza). Include one line of Estonian
-  ("Kabe — mängi sõbraga, õpi ülesannetest") to show õ ä ö ü.
+  Libertinus Sans, Tenor Sans, Marcellus or Belleza). All text in English, and one line of the Estonian
+  translation ("Kabe — mängi sõbraga, õpi ülesannetest") to show õ ä ö ü.
 
 On the board, show:
 1. The home screen: three large glass tiles, "Play a friend" (two figures), "Play the
