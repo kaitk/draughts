@@ -228,7 +228,7 @@ fn winner(b: Board&) -> i64 {
     return 1 - b.pos.side as i64;
 }
 
-// Shows one good move: until the computer player exists (task 006), a capture that
+// Shows one good move, kept for puzzles (task 007; a game has no hint): a capture that
 // must be made, the one taking the most; its piece is selected and its target marked
 // whatever the move hints are. False when no capture is due.
 fn hint(b: Board&) -> bool {
