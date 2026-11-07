@@ -48,5 +48,10 @@ What can't run headless is checked on the tablet with scripts that print numbers
   (never the submodule), then delete `build/android/SDL_src/.draughts-stamp` so the next
   build copies it fresh. Grep the APK's `libSDL3.so` with `strings` to make sure the
   logs are gone.
+- Rotation for a screenshot: `adb shell settings put system accelerometer_rotation 0`,
+  then `user_rotation 0` is portrait (1200 × 1920) and `1` landscape on this tablet;
+  read both settings first and put them back after.
+- A button's press shows in a screenshot taken during a long press:
+  `adb shell input swipe X Y X Y 2500 &`, then `adb exec-out screencap -p` a second later.
 - The batterystats estimate reads 0 while the tablet charges over USB, so it says
   nothing; CPU time is the measure.
