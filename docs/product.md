@@ -29,7 +29,7 @@ Chess may follow on the same base.
 | Play | Pass-and-play; vs computer at 3 levels |
 | Puzzles | About 30 in 3 tiers: find the capture; multi-jumps and crowning; shots and "the only safe move" |
 | Controls | Undo, hint, restart |
-| Language | English by default, Estonian as a translation, from a string table picked by the system's locale |
+| Language | English by default, from a string table picked by the system's locale; Estonian as a translation if it stays cheap, finished after the core gameplay (2026-11-07) |
 | Platforms | Android APK sideloaded onto the tablet; macOS for development |
 
 ## After the MVP, in order
