@@ -1,0 +1,17 @@
+en: 22 keys, 0 problems
+et: 22 keys, 0 problems
+a broken file: 4 problems
+  unknown key: home.puzzle
+  given twice: app.name
+  not key = text: no text here
+  missing: home.puzzles
+
+constants: 22 checked, 0 wrong
+en: Draughts / Continue / All moves
+et: Kabe / Jätka / Kõik käigud
+locales "et-EE,en-US": et
+locales "en-GB": en
+locales "de-DE,et": et
+locales "ET_ee": et
+locales "fi-FI,sv-SE": en
+locales "": en

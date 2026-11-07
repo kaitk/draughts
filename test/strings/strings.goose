@@ -1,0 +1,71 @@
+// The string table (strings/): every language file has every key and nothing else, so
+// a key missing from a translation fails here rather than showing English on screen; the
+// checker finds each kind of mistake; the key constants name the keys they should; and
+// the language is picked from the system's preferred locales, English when none has a
+// file.
+import std;
+import strings from "../../strings";
+
+let NAMED = [
+    "language.name", "app.name", "home.continue", "home.friend", "home.computer",
+    "home.puzzles", "home.settings", "home.language", "level.easy", "level.medium",
+    "level.hard", "settings.background", "settings.by_date", "settings.board",
+    "settings.hints", "settings.language", "season.winter", "season.spring",
+    "season.summer", "season.autumn", "hints.mistakes", "hints.moves",
+];
+
+fn main() {
+    var bad = 0;
+    // Each language's file: none missing, none unknown, none twice.
+    for code, lang in strings::LANGUAGES {
+        var out: u8[>..] = [];
+        let n = strings::problems(strings::file(lang), out);
+        print(code, ": ", strings::COUNT, " keys, ", n, " problems");
+        if n > 0 { print(out); }
+        bad += n;
+    }
+    // The checker itself, on a file with a missing key, an unknown one, one given twice,
+    // and a line that isn't key = text.
+    var out:    u8[>..] = [];
+    var sample: u8[>..] = [];
+    sample.append(strings::file(strings::EN));
+    let cut = find(sample, "home.puzzles");
+    var broken: u8[>..] = [];
+    broken.append(sample[..cut]);
+    broken.append("home.puzzle = Puzzles\napp.name = Again\nno text here\n");
+    let at = find(sample[cut..], "\n");
+    broken.append(sample[cut + at + 1..]);
+    let n = strings::problems(broken, out);
+    print("a broken file: ", n, " problems");
+    print(out);
+    // The constants name the keys they index.
+    assert(strings::KEYS.len == strings::COUNT);
+    let ks = [strings::LANGUAGE_NAME, strings::APP_NAME, strings::HOME_CONTINUE,
+              strings::HOME_FRIEND, strings::HOME_COMPUTER, strings::HOME_PUZZLES,
+              strings::HOME_SETTINGS, strings::HOME_LANGUAGE, strings::LEVEL_EASY,
+              strings::LEVEL_MEDIUM, strings::LEVEL_HARD, strings::SETTINGS_BACKGROUND,
+              strings::SETTINGS_BY_DATE, strings::SETTINGS_BOARD, strings::SETTINGS_HINTS,
+              strings::SETTINGS_LANGUAGE, strings::SEASON_WINTER, strings::SEASON_SPRING,
+              strings::SEASON_SUMMER, strings::SEASON_AUTUMN, strings::HINTS_MISTAKES,
+              strings::HINTS_MOVES];
+    var wrong = 0;
+    for k, i in ks {
+        if strings::KEYS[k] != NAMED[i] {
+            print("constant ", i, " names ", strings::KEYS[k], ", not ", NAMED[i]);
+            wrong++;
+        }
+    }
+    print("constants: ", ks.len, " checked, ", wrong, " wrong");
+    bad += wrong;
+    // The strings each language shows.
+    for code, lang in strings::LANGUAGES {
+        strings::use(lang);
+        print(code, ": ", strings::get(strings::APP_NAME), " / ",
+              strings::get(strings::HOME_CONTINUE), " / ", strings::get(strings::HINTS_MOVES));
+    }
+    // Picking the language.
+    for locales in ["et-EE,en-US", "en-GB", "de-DE,et", "ET_ee", "fi-FI,sv-SE", ""] {
+        print("locales \"", locales, "\": ", strings::LANGUAGES[strings::pick(locales)]);
+    }
+    if bad > 0 { exit(1); }
+}

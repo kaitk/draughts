@@ -1,0 +1,29 @@
+# Estonian, a translation of en.txt with the same keys.
+
+language.name = Eesti
+app.name = Kabe
+
+home.continue = Jätka
+home.friend = Sõbraga
+home.computer = Arvutiga
+home.puzzles = Ülesanded
+home.settings = Seaded
+home.language = Keel
+
+level.easy = kerge
+level.medium = keskmine
+level.hard = raske
+
+settings.background = Taust
+settings.by_date = Kuupäeva järgi
+settings.board = Laud
+settings.hints = Vihjed
+settings.language = Keel
+
+season.winter = Talv
+season.spring = Kevad
+season.summer = Suvi
+season.autumn = Sügis
+
+hints.mistakes = Ainult vead
+hints.moves = Kõik käigud

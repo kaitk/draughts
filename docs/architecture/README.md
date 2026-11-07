@@ -56,8 +56,14 @@ Checked against goose_gfx's source on 2026-11-07:
 - **Draw only on change.** See [rendering.md](rendering.md#frames-and-battery).
 - **Game state is a value.** A position is a few `u64`s plus side to move. Undo is a stack
   of positions; saving is writing the value.
-- **Strings by key.** Every user-facing string comes from `strings/<lang>.txt`, picked from
-  the system locale with English as the fallback. Adding Estonian is a new file. Kids who
-  can't read get icons, and later voice clips keyed the same way.
+- **Strings by key.** Every user-facing string comes from `strings/<lang>.txt`
+  (`key = text` per line), built into the program with `embed_file`. Code names a string
+  by its constant (`strings::HOME_CONTINUE`) and `strings::get` returns a view into the
+  embedded file, so looking one up allocates nothing. English is the default and fills in
+  any key a translation lacks; Estonian is `et.txt`. The language is the first of the
+  system's preferred locales (SDL's, through `app/locale.c`) that has a file, else
+  English. A language is a new file plus its code in `strings::LANGUAGES`;
+  `test/strings/` fails on a key missing from any file. Kids who can't read get icons,
+  and later voice clips keyed the same way.
 - **Assets are embedded** in the binary (shaders by `embed_shader`, fonts and puzzles as
   data), so no code reads Android's asset manager.

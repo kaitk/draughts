@@ -1,0 +1,30 @@
+# English, the default language. One string per line: key = text. The keys are
+# strings::KEYS (strings/strings.goose); every language file has all of them.
+
+language.name = English
+app.name = Draughts
+
+home.continue = Continue
+home.friend = A friend
+home.computer = The computer
+home.puzzles = Puzzles
+home.settings = Settings
+home.language = Language
+
+level.easy = easy
+level.medium = medium
+level.hard = hard
+
+settings.background = Background
+settings.by_date = By the date
+settings.board = Board
+settings.hints = Move hints
+settings.language = Language
+
+season.winter = Winter
+season.spring = Spring
+season.summer = Summer
+season.autumn = Autumn
+
+hints.mistakes = Mistakes only
+hints.moves = All moves

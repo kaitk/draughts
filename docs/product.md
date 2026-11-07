@@ -29,7 +29,7 @@ Chess may follow on the same base.
 | Play | Pass-and-play; vs computer at 3 levels |
 | Puzzles | About 30 in 3 tiers: find the capture; multi-jumps and crowning; shots and "the only safe move" |
 | Controls | Undo, hint, restart |
-| Language | English, from a string table; the font has Estonian letters |
+| Language | English by default, Estonian as a translation, from a string table picked by the system's locale |
 | Platforms | Android APK sideloaded onto the tablet; macOS for development |
 
 ## After the MVP, in order
@@ -38,7 +38,7 @@ Chess may follow on the same base.
    puzzles, and AI tuning.
 2. **Learning.** Lessons on mini-boards (4×4, 6×6), one rule each, with icons and voice;
    100+ puzzles; endgame drills (2 kings vs 1, Petrov's triangle); two child profiles
-   with stars; sound; Estonian.
+   with stars; sound.
 3. **Looks.** A 3D board from the same game state, and the glass UI from the prototypes
    and design boards.
 4. **Release.** Play Store under Google's Families Policy: no ads or tracking, a privacy

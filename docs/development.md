@@ -45,9 +45,10 @@ cd app && ../build/goose-v2026.4-macos-arm64/goose draughts.goose
 `app/draughts.goose` is the app; its development flags pick the board theme (`wood`,
 `stone`, `birch`, `sea`; the season's by default, with its photograph), the window size, a
 starting position, squares to tap on the first frames, move hints (`--hints moves` shows
-the targets; mistakes only by default), and a frame to stop at and save as `draughts.png`.
-`app/draughts.build` adds the program's own C (`app/background.c`, the photographs and their
-JPEG decoder), which `scripts/android.py` builds into the APK too. The photographs are
+the targets; mistakes only by default), the language (`--lang et`; the system's by
+default), and a frame to stop at and save as `draughts.png`. `app/draughts.build` adds the
+program's own C (`app/background.c`, the photographs and their JPEG decoder;
+`app/locale.c`, the system's locales), which `scripts/android.py` builds into the APK too. The photographs are
 embedded from `design/backgrounds/masters/` when they are there; without them the board
 sits on the page color. goose caches the program's C by its source, so after adding or
 changing a master, touch `app/background.c`. The

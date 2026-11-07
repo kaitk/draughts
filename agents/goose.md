@@ -56,6 +56,9 @@ find out by compiling, so the next session doesn't.
   `struct { uint8_t *data; int64_t len; }` by value (`app/background.c`). The compiled C
   is cached by its source: touch the `.c` after a file it embeds appears or changes.
 - A missing `embed_file` path is a compile error; embed optional files from the C side.
+- The program's C is linked on the Mac as its own dylib with no undefined symbols, so it
+  can't call SDL directly though the goose binary carries SDL: look the function up with
+  `dlsym(RTLD_DEFAULT, ...)`, which also works on Android (`app/locale.c`).
 
 ## Traps
 
