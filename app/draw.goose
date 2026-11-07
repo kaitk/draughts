@@ -255,13 +255,14 @@ let PIECE_FRAG = """
         col = tint(col, -(black ? 0.25 : 0.18) * smoothstep(0.95, 1.0, r));
         if (v_look.y > 0.5) {
             vec3 cc = black ? vec3(0.914, 0.769, 0.416) : crown_w.rgb;
-            col = mix(col, cc, fill(0.5 * crown(f / 0.5), w));
+            col = mix(col, cc, fill(0.56 * crown(f / 0.56), w));
         }
         over(col, fill(r - 1.0, w));
         // Selected: a ring in the glow color a little out from the piece.
         if (sel > 0.0) {
-            over(glow.rgb, sel * 0.5 * exp(-max(abs(r - 1.13) - 0.04, 0.0) * 12.0));
-            over(glow.rgb, sel * fill(abs(r - 1.13) - 0.04, w));
+            float rd = abs(r - 1.13) - 0.055;
+            over(glow.rgb, sel * 0.6 * exp(-max(rd, 0.0) * 7.0));
+            over(mix(glow.rgb, vec3(1.0), 0.25), sel * fill(rd, w));
         }
         // Must capture: a red ring that pulses every 1.4 s.
         if (v_extra.x > 0.5) {
