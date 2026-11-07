@@ -11,7 +11,7 @@
        variant  which draughts, as two cards with the starting position: international
                 10 × 10 (lit, the default once it exists) and Russian 8 × 8;
        learn    learn the moves, or just play;
-       1..7     the tutorial: one idea a page on the chosen board, move hints showing
+       1..8     the tutorial: one idea a page on the chosen board, move hints showing
                 the moves, the only place they do by default (docs/product.md);
        done     what to play first; move hints go back to mistakes only.
      ?v=intl or russian carries the choice. Later the tutorial's lines are spoken too. */
@@ -114,6 +114,11 @@
       board: { white: ['c3', 'g3'], black: ['d4', 'f6', 'h4'], forced: ['c3'], selected: 'c3', via: ['e5'], targets: ['g7'] } }] : []),
     { title: 'Become a king', text: `Reach the far side and your piece becomes a king, with a crown.`,
       board: { white: [`e${far - 1}`, 'c1'], black: ['h2'], kings: [], selected: `e${far - 1}`, targets: [`d${far}`, `f${far}`] } },
+    // The two variants crown differently in the middle of a capture (rules.md).
+    intl ? { title: 'Crowned only at the end', text: 'If a capture crosses the far side and goes on jumping, the piece stays a man. It is crowned only if it stops there.',
+      board: { white: ['b8'], black: ['c9', 'e9'], selected: 'b8', via: ['d10'], targets: ['f8'] } }
+      : { title: 'Crowned on the way', text: 'If a capture reaches the far side, the piece is crowned at once and goes on jumping as a king.',
+      board: { white: ['b6'], black: ['c7', 'g5'], selected: 'b6', via: ['d8'], targets: ['h4'] } },
     { title: 'Kings fly', text: 'A king moves any number of squares along a diagonal, forward or back.',
       board: { white: ['d4'], black: ['b8'], kings: ['d4'], selected: 'd4',
         targets: ['c3', 'b2', 'a1', 'e5', 'f6', 'g7', 'c5', 'b6', 'a7', 'e3', 'f2', 'g1'] } },
@@ -154,7 +159,7 @@
       `${i === STEPS.length - 1 ? 'Done' : 'Next'}<span data-icon="next"></span></a></div></aside></div>`;
   }
   // The "learn" page's count of steps follows the variant.
-  main.innerHTML = main.innerHTML.replace('Seven short steps', `${STEPS.length === 7 ? 'Seven' : 'Six'} short steps`);
+  main.innerHTML = main.innerHTML.replace('Seven short steps', `${['Six', 'Seven', 'Eight'][STEPS.length - 6]} short steps`);
   Draughts.init();
   for (const el of document.querySelectorAll('[data-n]')) {
     const size = +el.dataset.n;

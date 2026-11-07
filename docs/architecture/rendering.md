@@ -239,7 +239,8 @@ the prototype tried, kept for 3D:
   radius, lit in the glow color at 22% with a 2 px glow border when on: the background
   as thumbnails of the four photographs (104 × 64 px, 88 × 56 in portrait) after a
   tile for by the date, the board (3D dimmed until task 015), move hints, and each
-  language by its own name. A tile is as wide as its label needs. **Puzzle picker**: one glass row per theme (capture, become a king, the
+  language by its own name; then learn, one tile that starts the tutorial again from
+  the first start. A tile is as wide as its label needs. **Puzzle picker**: one glass row per theme (capture, become a king, the
   only safe move), its icon and ten tiles of at least 64 px with 0 to 3 stars in the
   glow color; locked tiles show a lock, the next unsolved one a glow ring.
   **Solved**: three stars that pop in over the dimmed board, a few drifting sparks, and

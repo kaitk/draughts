@@ -9,7 +9,9 @@
 <style>
   /* Settings, reached from the title menu. Few choices, each a row of large tiles that
      show what they pick: the background (by the date, or one season), the board (2D or
-     3D), move hints, and the language. A tap applies it at once; there is no save. */
+     3D), move hints, and the language; then the tutorial, to learn the moves again. A tap
+     applies a choice at once; there is no save. */
+  a.tile { text-decoration: none; }
   .settings { display: grid; grid-template-columns: auto 1fr; gap: 24px; height: 100%; padding: 24px 32px; }
   .list { display: grid; gap: 14px; align-content: center; max-width: 980px; }
   .group { --r: 24px; display: grid; grid-template-columns: 200px 1fr; align-items: center; gap: 20px; padding: 16px 20px; }
@@ -61,7 +63,8 @@
     group('target', 'Move hints',
       tile(S.assist === 'mistakes', 'assist', 'mistakes', '', 'Mistakes only') + tile(S.assist === 'moves', 'assist', 'moves', '', 'All moves')) +
     group('globe', 'Language', tile(params.get('lang') !== 'et', 'lang', 'en', '', 'English') +
-      tile(params.get('lang') === 'et', 'lang', 'et', '', 'Eesti'));
+      tile(params.get('lang') === 'et', 'lang', 'et', '', 'Eesti')) +
+    group('hint', 'Learn', `<a class="tile text" href="first-start.html?page=learn">Learn the moves again</a>`);
   document.querySelectorAll('.tile').forEach((t) => t.onclick = () => go(t.dataset.k, t.dataset.v || null));
   Draughts.syncGlass();
 </script>

@@ -83,6 +83,10 @@ if the older child asks for it.
   variant and the level.
 - International 10×10 is the default variant once it exists (`docs/product.md`); the
   MVP stays Russian 8×8 until then.
+- The 8×8 variant stays Russian, not Brazilian: Estonian 8×8 is Russian, and Estonian
+  trainers teach its rule that a man crowned mid-capture goes on as a king (a puzzle
+  shows it). Each variant's tutorial has a step for how it crowns mid-capture. The
+  variant is chosen per game in the setup; settings can start the tutorial again.
 
 ## Acceptance criteria
 
