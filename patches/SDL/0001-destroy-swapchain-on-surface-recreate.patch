@@ -1,0 +1,16 @@
+--- a/src/gpu/vulkan/SDL_gpu_vulkan.c	2026-11-07 11:15:19
++++ b/src/gpu/vulkan/SDL_gpu_vulkan.c	2026-11-07 11:15:19
+@@ -10175,6 +10175,13 @@
+         SDL_VideoDevice *videoDevice = SDL_GetVideoDevice();
+         SDL_assert(videoDevice);
+         SDL_assert(videoDevice->Vulkan_CreateSurface);
++        /* The old swapchain belongs to the old surface, and CreateSwapchain won't pass it as
++           oldSwapchain, so nothing else destroys it: each resume on Android leaked one
++           swapchain and its images. Destroy it before the surface it was made from. */
++        if (!VULKAN_Wait((SDL_GPURenderer *)renderer)) {
++            return false;
++        }
++        VULKAN_INTERNAL_DestroySwapchain(renderer, windowData);
+         renderer->vkDestroySurfaceKHR(
+                 renderer->instance,
+                 windowData->surface,

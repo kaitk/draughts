@@ -15,7 +15,13 @@ import os;
 struct Piece { center_radius: float4, screen: float4, color: float4 }
 
 fn main() {
-    guard gfx::open("Kabe POC", 1280, 800, gfx::WINDOW_RESIZABLE) else {
+    // Full screen on Android hides the status and navigation bars (SDL makes it
+    // immersive); the Mac keeps a resizable window. Goose has no platform query, but
+    // every Android app process has ANDROID_ROOT in its environment.
+    var android_root: u8[>..] = [];
+    let on_android = env("ANDROID_ROOT", android_root);
+    let window_flags = if on_android { gfx::WINDOW_FULLSCREEN } else { gfx::WINDOW_RESIZABLE };
+    guard gfx::open("Kabe POC", 1280, 800, window_flags) else {
         abort(str("gfx: ", gfx::error()));
     }
     defer gfx::close();
@@ -82,7 +88,12 @@ fn main() {
     while gfx::frame() {
         if gfx::key_pressed("Escape") { break; }
         let size = gfx::screen_size();
-        if gfx::mouse_down(gfx::MOUSE_LEFT) { center = gfx::mouse_pos(); }
+        // A quick tap can press and release within one frame, so mouse_down alone
+        // misses it; pressed and released catch the tap, down follows a drag.
+        if gfx::mouse_pressed(gfx::MOUSE_LEFT) || gfx::mouse_released(gfx::MOUSE_LEFT) ||
+           gfx::mouse_down(gfx::MOUSE_LEFT) {
+            center = gfx::mouse_pos();
+        }
         let radius: f32 = min(size.x, size.y) / 14.0;
 
         gfx::begin_screen(float4 { 0.0, 0.0, 0.0, 1.0 });

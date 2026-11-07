@@ -12,5 +12,5 @@ idle.
 - [tasks/](tasks/README.md): one file per task
 - [prototypes/](prototypes/README.md): HTML UI prototypes
 
-Status: task 001's proof of concept runs on the tablet through Vulkan. Setup and running are in
+Status: Goose runs on the tablet through Vulkan (task 001, done). Setup and running are in
 [docs/development.md](docs/development.md).

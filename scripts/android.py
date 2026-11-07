@@ -5,7 +5,8 @@
     scripts/android.py poc/poc.goose --run       build, install over adb, and start it
 
 Steps: Goose writes the program's C and the runtime's C; goose_gfx's sources are copied
-and patches/goose_gfx applied; CMake with the NDK builds
+and patches/goose_gfx applied, and SDL is copied and patches/SDL applied; CMake with the
+NDK builds
 libSDL3.so and libmain.so (android/CMakeLists.txt); javac and d8 compile SDL's stock Java
 glue; aapt2 links the manifest; zip adds the dex and the stripped libraries, the libraries
 stored uncompressed; zipalign aligns them to 16 KB; apksigner signs with the debug key.
@@ -14,6 +15,7 @@ Tools come from the environment or the defaults below: GOOSE, ANDROID_HOME, ANDR
 ANDROID_BUILD_TOOLS, ANDROID_PLATFORM. docs/development.md lists the versions.
 """
 import argparse
+import hashlib
 import os
 import shutil
 import subprocess
@@ -68,6 +70,25 @@ def main():
     if gfx_src.exists():
         shutil.rmtree(gfx_src)
     fresh.rename(gfx_src)
+    # SDL is large, so its patched copy is remade only when the pin or a patch changes.
+    sdl_src = ROOT / "build/android/SDL_src"
+    sdl_patches = sorted((ROOT / "patches/SDL").glob("*.patch"))
+    stamp = hashlib.sha256(subprocess.run(
+        ["git", "-C", SDL, "rev-parse", "HEAD"], check=True, capture_output=True).stdout)
+    for patch in sdl_patches:
+        stamp.update(patch.read_bytes())
+    stamp_file = sdl_src / ".kabe-stamp"
+    if not stamp_file.exists() or stamp_file.read_text() != stamp.hexdigest():
+        fresh = sdl_src.with_name("SDL_src.new")
+        if fresh.exists():
+            shutil.rmtree(fresh)
+        shutil.copytree(SDL, fresh, ignore=shutil.ignore_patterns(".git"))
+        for patch in sdl_patches:
+            run("patch", "-s", "-p1", "-i", patch, cwd=fresh)
+        (fresh / ".kabe-stamp").write_text(stamp.hexdigest())
+        if sdl_src.exists():
+            shutil.rmtree(sdl_src)
+        fresh.rename(sdl_src)
     if not (native / "build.ninja").exists():
         run("cmake", "-S", ROOT / "android", "-B", native, "-G", "Ninja",
             f"-DCMAKE_TOOLCHAIN_FILE={NDK / 'build/cmake/android.toolchain.cmake'}",
@@ -75,7 +96,8 @@ def main():
             "-DCMAKE_BUILD_TYPE=Release",
             f"-DGOOSE_PROGRAM_C={gen / 'program.c'}",
             f"-DGOOSE_RUNTIME_C={gen / 'goose_runtime.c'}",
-            f"-DGOOSE_GFX_SRC={gfx_src / 'src'}")
+            f"-DGOOSE_GFX_SRC={gfx_src / 'src'}",
+            f"-DSDL_SRC={sdl_src}")
     run("cmake", "--build", native, "--target", "main")
 
     # 3. The APK's tree: stripped libraries and SDL's Java as dex.

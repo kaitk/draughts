@@ -57,6 +57,8 @@ adb logcat -s goose:* SDL:*                 # the program's output and SDL's log
 
 1. Goose writes the program's C (`goose -o`) and the runtime's C (`goose --emit-runtime`).
 2. goose_gfx's `src/` is copied, and `patches/goose_gfx/*.patch` applied to the copy.
+   SDL is copied to `build/android/SDL_src/` and `patches/SDL/*.patch` applied, again only
+   when SDL's commit or a patch changes.
 3. CMake with the NDK toolchain builds `android/CMakeLists.txt`: `libSDL3.so` and
    `libmain.so` (the program, the runtime, goose_gfx's layers, and
    `android/stdio_to_logcat.c`). The program's `main` is compiled as `SDL_main`.
@@ -67,3 +69,21 @@ adb logcat -s goose:* SDL:*                 # the program's output and SDL's log
 
 The CMake build directory is configured once. Delete `build/android/<program>/native`
 after changing `android/CMakeLists.txt`.
+
+On Android the program opens with `gfx::WINDOW_FULLSCREEN`, which SDL turns into an
+immersive window with the system bars hidden. It knows it's on Android from
+`ANDROID_ROOT` in the environment ([findings](goose-findings.md)). Act on taps with
+`gfx::mouse_pressed` and `gfx::mouse_released`: a tap can press and release within one
+frame, which `gfx::mouse_down` never sees. `adb shell input tap X Y` checks it.
+
+## Check memory over the Android lifecycle
+
+```sh
+scripts/lifecycle_memory.sh 20     # with the app running on the tablet
+```
+
+Each cycle goes home and back, then rotates to portrait and back. It prints PSS, native
+heap, and graphics memory per cycle and any errors in logcat, then restores the rotation
+settings. Graphics memory should stay flat apart from short driver spikes. On 2026-11-07,
+`poc/poc.goose` held it at 112 to 114 MB over 20 cycles, with the native heap at 25 MB
+and the same process throughout.

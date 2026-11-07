@@ -15,6 +15,8 @@ set(GOOSE_RUNTIME_C "" CACHE FILEPATH "The Goose runtime's C, from goose --emit-
 set(GOOSE_GFX "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/goose_gfx")
 # goose_gfx's src/ with patches/goose_gfx applied (scripts/android.py makes the copy).
 set(GOOSE_GFX_SRC "${GOOSE_GFX}/src" CACHE PATH "goose_gfx's C layers")
+# SDL with patches/SDL applied (scripts/android.py makes the copy).
+set(SDL_SRC "${GOOSE_GFX}/third_party/SDL" CACHE PATH "SDL's sources")
 
 # --- SDL, shared, configured as goose_gfx configures it ---------------------------------
 set(SDL_SHARED ON CACHE BOOL "" FORCE)
@@ -24,7 +26,7 @@ set(SDL_CAMERA OFF CACHE BOOL "" FORCE)
 set(SDL_RENDER OFF CACHE BOOL "" FORCE)
 set(SDL_OPENGL OFF CACHE BOOL "" FORCE)
 set(SDL_OPENGLES OFF CACHE BOOL "" FORCE)
-add_subdirectory("${GOOSE_GFX}/third_party/SDL" SDL EXCLUDE_FROM_ALL)
+add_subdirectory("${SDL_SRC}" SDL EXCLUDE_FROM_ALL)
 
 # --- libmain -----------------------------------------------------------------------------
 set(ui_layer_sources

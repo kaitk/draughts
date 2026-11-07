@@ -20,8 +20,8 @@ part of the code keeps. The rest is by area:
 
 **Decided 2026-11-07 (task 001): Goose.** The proof of concept runs on the Galaxy Tab
 A11+ through Vulkan with no change to the Goose compiler or runtime. It needed one
-goose_gfx patch, one C shim, and a shared SDL build, all listed in
-[goose-findings](../goose-findings.md).
+goose_gfx patch, one SDL patch (a swapchain leak on resume), one C shim, and a shared SDL
+build, all listed in [goose-findings](../goose-findings.md).
 
 **Fallback: C99 + sokol** (sokol_app, sokol_gfx, sokol_audio, sokol-shdc; NativeActivity
 on GLES3), if SDL_GPU's Vulkan path turns out unreliable on the tablet. The structure and

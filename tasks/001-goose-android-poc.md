@@ -1,6 +1,6 @@
 # 001: Goose on Android proof of concept
 
-Status: in-progress
+Status: done
 
 Prove that a Goose program using `gfx` runs on the Galaxy tablet: Goose → C → NDK clang
 (arm64) → APK, with SDL3 + SDL_GPU (Vulkan) and the `goose_gfx` native layer. If it can't
@@ -42,19 +42,31 @@ Each item is in `docs/goose-findings.md`, with what to propose upstream.
 - [x] SDL3 and goose_gfx's C build with the NDK; the Goose `main` is entered as `SDL_main`
 - [x] On the tablet: a cleared screen, one shader-drawn shape, touch moves it, one line of
       TrueType text including "õäöüšž"
-- [ ] It survives pause/resume and rotation without leaking or crashing. Home → resume
-      and portrait ↔ landscape keep the same process with no errors (checked over adb).
-      Leaks over many cycles are not measured yet
+- [x] It survives pause/resume and rotation without leaking or crashing: 20 cycles of
+      home → resume and portrait ↔ landscape keep the same process with no errors and
+      flat memory (below)
 - [x] The same program runs on macOS in-process (`goose poc.goose`)
 - [x] One script builds and installs the APK (`adb install`); the steps are in `docs/development.md`
 - [x] Decision recorded in `docs/architecture/README.md`: Goose
 
-## Left for the next session
+## Closing (2026-11-07)
 
-- The window sits under the status bar: the top 45 px of the app are covered. Make it
-  full screen (immersive) on Android, through SDL's fullscreen window or a hint.
-- `adb shell input tap` doesn't move the piece: a quick tap presses and releases within
-  one frame, so `gfx::mouse_down` never sees it. The board must act on
-  `gfx::mouse_pressed`/`mouse_released` or on events. Drags work.
-- Measure memory over 20 pause/resume and rotation cycles (`adb shell dumpsys meminfo
-  com.kaitk.kabe`), then close this task.
+- Full screen: on Android the POC opens with `gfx::WINDOW_FULLSCREEN`, found through
+  `ANDROID_ROOT`. The status bar's inset reports `visible=false`, and the app draws all
+  1920×1200 pixels.
+- Taps: the piece moves on `gfx::mouse_pressed` or `mouse_released` as well as
+  `mouse_down`, so `adb shell input tap` moves it.
+- Memory, `scripts/lifecycle_memory.sh 20`, each cycle home → resume then portrait →
+  landscape:
+
+  | | Graphics (KB) | Native heap (KB) | PSS (KB) |
+  | --- | --- | --- | --- |
+  | Before the SDL patch, cycle 0 | 112 216 | 26 252 | 155 664 |
+  | Before the SDL patch, cycle 20 | 681 652 | 27 524 | 727 657 |
+  | With it, cycle 0 | 111 952 | 26 232 | 176 188 |
+  | With it, cycle 20 | 114 416 | 25 324 | 175 431 |
+
+  Without the patch, graphics memory rose 28.4 MB on every resume (rotation alone stayed
+  flat): SDL_GPU leaked the old Vulkan swapchain when it recreated the surface
+  (`docs/goose-findings.md`). With the patch it stays at 112 to 114 MB, apart from one
+  66 MB rise at cycles 4 and 5 that the driver gave back. Same pid, no errors in logcat.

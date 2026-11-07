@@ -1,7 +1,33 @@
 # Goose findings
 
-Gaps found in Goose and goose_gfx while building for Android, with what we do about each
-here and what could go upstream. Newest first.
+Gaps found in Goose, goose_gfx, and the SDL it pins, while building for Android, with what
+we do about each here and what could go upstream. Newest first.
+
+## SDL: SDL_GPU's Vulkan backend leaks a swapchain on every Android resume (2026-11-07)
+
+When Android brings the app back, SDL_GPU recreates the Vulkan surface
+(`needsSurfaceRecreate` in `VULKAN_INTERNAL_AcquireSwapchainTexture`). It destroys the old
+surface but not the old swapchain: `VULKAN_INTERNAL_RecreateSwapchain` frees only its
+images' views, and `VULKAN_INTERNAL_CreateSwapchain` passes no `oldSwapchain` when the
+surface is new, so nothing destroys it. On the tablet each home → resume leaked 28.4 MB
+of graphics memory, three 1920×1200 images. Rotation doesn't recreate the surface and
+didn't leak. SDL 3.4.16 (`fa2c02b`, goose_gfx's pin).
+
+- Here: `patches/SDL/0001-destroy-swapchain-on-surface-recreate.patch` waits for the device
+  and destroys the old swapchain before the old surface. `scripts/android.py` builds SDL
+  from a patched copy. After it, 20 cycles hold graphics memory at 112 to 114 MB
+  (task 001).
+- Upstream: SDL's `CLAUDE.md` asks that no AI-generated code or text go into SDL bug
+  reports or pull requests. So the report is the user's own, in their own words, if they
+  send one. Check first whether a newer SDL already fixes it.
+
+## Goose: no way to ask which platform the program runs on (2026-11-07)
+
+The program needs to know it's on Android to open full screen (SDL then hides the system
+bars) while keeping a resizable window on the Mac.
+
+- Here: `env("ANDROID_ROOT", ...)` is true in every Android app process.
+- Upstream: possibly an `os` function naming the platform, if more than one program needs it.
 
 ## goose_gfx: SDL_GPU requires `shaderClipDistance`, which Mali GPUs lack (2026-11-07)
 
