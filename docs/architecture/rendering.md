@@ -229,7 +229,7 @@ the prototype tried, kept for 3D:
   a quiet button beside the wordmark, so the sheet leaves the board its room. A friend
   and the computer open a new game's setup in the same column: back and the title, then
   a row of tiles per choice, lit as in settings: which draughts (international 10 × 10,
-  the default, Russian 8 × 8, or Brazilian 8 × 8), the level against the computer
+  the default, Russian 8 × 8, or Brazilian 8 × 8, each with its board at the start), the level against the computer
   (easy, medium, hard, with one to three pips), and the clock (none, 5 min, 10 min);
   then play, a primary row. The choices are kept for next time. The language is
   only in settings (2026-11-07): kids who can't read yet don't need it on home, and a
@@ -237,8 +237,9 @@ the prototype tried, kept for 3D:
   board. **Settings** (`prototypes/settings.html`, regrouped 2026-11-07): back and the
   title, then three glass groups (radius 24 px, icon and title in 26 px) by what they
   change and how often. **Game**: the draughts a new game starts on (international,
-  Russian, Brazilian; the setup can still change it), move hints, and learn the moves
-  again (the tutorial from the first start). **Look**: the background as thumbnails of
+  Russian, Brazilian, each tile showing its board at the start, 72 px; the setup can
+  still change it), move hints, and the tutorial (one tile, learn the moves, which
+  opens the first start's tutorial). **Look**: the background as thumbnails of
   the four photographs (96 × 60 px, 84 × 54 in portrait) after a tile for by the date,
   the board (flat or raised, 3D dimmed until task 015), and kings (auto, crown, stack,
   each drawn). **Language**: each by its own name. Each setting is a dim 18 px label over

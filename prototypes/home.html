@@ -54,6 +54,7 @@
   .pick .pips i { width: 10px; height: 10px; border-radius: 50%; background: currentColor; opacity: 0.25; }
   .pick .pips i.full { opacity: 0.9; }
   .pick .icon { width: 26px; height: 26px; opacity: 0.85; }
+  .pick .mini { width: 64px; margin-bottom: 4px; }
   .play { margin-top: 18px; justify-content: center; }
   .stage { display: grid; place-items: center; padding: 40px; overflow: hidden; }
   #board { width: min(70vh, 100%); }
@@ -99,9 +100,9 @@
       `<div class="head"><a class="back" href="home.html" aria-label="Back">${Draughts.icon('back')}</a>` +
       `${Draughts.icon(computer ? 'computer' : 'friend')}${computer ? 'The computer' : 'A friend'}</div>` +
       '<div class="choose"><h2>Draughts</h2><div class="tiles">' +
-      tile('v', 'intl', v === 'intl', 'International<small>10 × 10</small>') +
-      tile('v', 'russian', v === 'russian', 'Russian<small>8 × 8</small>') +
-      tile('v', 'brazilian', v === 'brazilian', 'Brazilian<small>8 × 8</small>') + '</div>' +
+      tile('v', 'intl', v === 'intl', '<span class="mini" data-n="10"></span>International<small>10 × 10</small>') +
+      tile('v', 'russian', v === 'russian', '<span class="mini" data-n="8"></span>Russian<small>8 × 8</small>') +
+      tile('v', 'brazilian', v === 'brazilian', '<span class="mini" data-n="8"></span>Brazilian<small>8 × 8</small>') + '</div>' +
       (computer ? '<h2>Level</h2><div class="tiles">' +
         tile('level', 'easy', level === 'easy', `${pips(1)}Easy`) +
         tile('level', 'medium', level === 'medium', `${pips(2)}Medium`) +
@@ -113,6 +114,7 @@
       `<a class="item primary play" href="game.html${clock === 'none' ? '' : '?clock=on'}"><span data-icon="next"></span>Play</a>`;
   }
   Draughts.init();
+  for (const el of document.querySelectorAll('[data-n]')) Draughts.board(el, Draughts.start(+el.dataset.n));
   Draughts.board(document.getElementById('board'), {
     view: '3d',
     white: ['a1', 'c1', 'e1', 'g1', 'b2', 'f2', 'h2', 'c3', 'e3', 'd4', 'h6'],

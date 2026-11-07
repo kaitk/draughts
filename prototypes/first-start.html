@@ -86,17 +86,6 @@
     for (const [k, val] of Object.entries(extra)) q.set(k, val);
     return `?${q}`;
   };
-  // The starting position: men on the dark squares of the first four rows (10 × 10)
-  // or three (8 × 8) on each side.
-  const start = (size) => {
-    const rows = size === 10 ? 4 : 3, white = [], black = [];
-    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
-      if ((x + y) % 2) continue;
-      const sq = String.fromCharCode(97 + x) + (y + 1);
-      if (y < rows) white.push(sq); else if (y >= size - rows) black.push(sq);
-    }
-    return { white, black };
-  };
   const far = n;   // the far row
   // The tutorial: one idea a page. Squares are named as on the board, a1 at white's
   // bottom left; the same lines work on both boards, with the far row and international's
@@ -163,7 +152,7 @@
   Draughts.init();
   for (const el of document.querySelectorAll('[data-n]')) {
     const size = +el.dataset.n;
-    if (size) Draughts.board(el, { n: size, ...start(size) });
+    if (size) Draughts.board(el, Draughts.start(size));
   }
   const b = document.getElementById('board');
   if (b) {

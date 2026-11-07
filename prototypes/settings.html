@@ -35,7 +35,9 @@
   .tile.pic { padding: 6px 6px 8px; font-size: 15px; }
   .tile .thumb { width: 96px; height: 60px; border-radius: 11px; background: center / cover; display: grid; place-items: center; }
   .tile .thumb .icon { width: 28px; height: 28px; }
-  .tile.action { display: flex; gap: 10px; }
+  .tile.action { display: flex; align-items: center; justify-content: center; gap: 10px; }
+  /* A variant's tile shows its board at the start. */
+  .tile .mini { width: 72px; margin-bottom: 4px; }
   .tile.action .icon { width: 26px; height: 26px; }
   /* A king as each style draws it top down: a crown on the face, or a second disc. */
   .kp { position: relative; width: 34px; height: 38px; }
@@ -77,14 +79,14 @@
   document.getElementById('groups').innerHTML =
     group('target', 'Game',
       setting('Draughts for a new game',
-        tile(v === 'intl', 'v', 'intl', 'International<small>10 × 10</small>') +
-        tile(v === 'russian', 'v', 'russian', 'Russian<small>8 × 8</small>') +
-        tile(v === 'brazilian', 'v', 'brazilian', 'Brazilian<small>8 × 8</small>')) +
+        tile(v === 'intl', 'v', 'intl', '<span class="mini" data-n="10"></span>International<small>10 × 10</small>') +
+        tile(v === 'russian', 'v', 'russian', '<span class="mini" data-n="8"></span>Russian<small>8 × 8</small>') +
+        tile(v === 'brazilian', 'v', 'brazilian', '<span class="mini" data-n="8"></span>Brazilian<small>8 × 8</small>')) +
       setting('Move hints',
         tile(S.assist === 'mistakes', 'assist', 'mistakes', 'Mistakes only') +
         tile(S.assist === 'moves', 'assist', 'moves', 'All moves')) +
-      setting('The moves',
-        `<a class="tile action" href="first-start.html?page=learn&v=${v}">${Draughts.icon('hint')}Learn them again</a>`)) +
+      setting('Tutorial',
+        `<a class="tile action" href="first-start.html?page=1&v=${v}">${Draughts.icon('hint')}Learn the moves</a>`)) +
     group('sun', 'Look',
       setting('Background',
         tile(now, 'season', '', `<span class="thumb" style="background: color-mix(in srgb, var(--glow) 18%, rgb(255 255 255 / 0.06))">${Draughts.icon('sun')}</span>By the date`, 'pic') +
@@ -98,6 +100,7 @@
         tile(S.king === 'stack', 'king', 'stack', `${king(true)}Stack`))) +
     group('globe', 'Language',
       `<div class="tiles">${tile(params.get('lang') !== 'et', 'lang', 'en', 'English')}${tile(params.get('lang') === 'et', 'lang', 'et', 'Eesti')}</div>`, 'wide');
+  for (const el of document.querySelectorAll('[data-n]')) Draughts.board(el, Draughts.start(+el.dataset.n));
   document.querySelectorAll('button.tile').forEach((t) => t.onclick = () => go(t.dataset.k, t.dataset.v || null));
   Draughts.paint();
   Draughts.syncGlass();

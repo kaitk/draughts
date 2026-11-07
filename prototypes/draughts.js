@@ -480,6 +480,18 @@ const Draughts = (() => {
     Paint.all(el.parentNode || document);
   }
 
+  // The starting position on a size × size board: men on the dark squares of the first
+  // four rows (10 × 10) or three (8 × 8) on each side.
+  function start(size) {
+    const rows = size === 10 ? 4 : 3, white = [], black = [];
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      if ((x + y) % 2) continue;
+      const sq = String.fromCharCode(97 + x) + (y + 1);
+      if (y < rows) white.push(sq); else if (y >= size - rows) black.push(sq);
+    }
+    return { n: size, white, black };
+  }
+
   // The prototype switcher, bottom right, faint until hovered. Theme "auto" follows the
   // season.
   function bar() {
@@ -522,5 +534,5 @@ const Draughts = (() => {
     });
   }
 
-  return { settings, THEMES, SEASON_THEME, icon, board, init, loadFont, syncGlass, kingStyle, ICONS, paint: () => Paint.all() };
+  return { settings, start, THEMES, SEASON_THEME, icon, board, init, loadFont, syncGlass, kingStyle, ICONS, paint: () => Paint.all() };
 })();
