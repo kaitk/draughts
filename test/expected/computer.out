@@ -3,11 +3,13 @@ c3-d4 moving: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8
 landed: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 1, moving false, asking 1, clocks 300.00 299.70 running 1, ring 1.00
   ask 1 at skill 10 seed 3001: f6-e5, legal true
 thinking: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 1, moving false, asking 1, clocks 300.00 299.40 running 1, ring 0.65
+  animating true
   a tap on f6: selected -1
 the pause, 0.8 s on easy, not over: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 1, moving false, asking 1, clocks 300.00 298.91 running 1, ring 0.46
   move f6-e5
 the pause over, the reply moving: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Be5,b6,d6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 2, moving true, asking 0, clocks 300.00 301.90 running 0, ring 0.47
 landed: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Be5,b6,d6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 2, moving false, asking 0, clocks 299.70 301.90 running 0, ring 1.00
+  animating false
 take back: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 0, moving false, asking 0, clocks 299.18 301.90 running -1, ring 1.00
 take back while it thinks: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 0, moving false, asking 0, clocks 299.18 301.48 running -1, ring 0.93
   the dropped ask's answer taken: false

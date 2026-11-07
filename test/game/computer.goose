@@ -8,7 +8,8 @@
 // back the child's move; an answer to a dropped ask is ignored, and so is one after
 // leaving the game, which asks again on return. When the child plays black the computer
 // moves first, and take back does nothing before the child's first move. A game that
-// ends reports its result once, for the shell to move the skill.
+// ends reports its result once, for the shell to move the skill. Once the reply has
+// landed nothing animates, so the app draws nothing more.
 import std;
 import vec;
 import rules from "../../rules";
@@ -118,6 +119,7 @@ fn main() {
     print("  ", answer(gm, e));
     idle(gm, g, l, 1.7);
     show(gm, "thinking");
+    print("  animating ", game::animating(gm, g, 1.7));
     tap(gm, g, l, square(l, "f6"), 1.8);
     print("  a tap on f6: selected ", gm.b.selected);
     idle(gm, g, l, 2.19);
@@ -127,6 +129,7 @@ fn main() {
     show(gm, "the pause over, the reply moving");
     idle(gm, g, l, 2.5);
     show(gm, "landed");
+    print("  animating ", game::animating(gm, g, 2.5));
 
     // Take back: the reply and the child's move; at the start no clock runs.
     tap(gm, g, l, tile(g, UNDO), 3.0);

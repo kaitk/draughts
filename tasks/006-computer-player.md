@@ -13,11 +13,14 @@ It runs off the main thread or in small slices, so the UI never stalls.
   level beats the one below nearly every game (measurements below). Whether children
   beat easy and hard beats an adult needs the screens wired and people playing.
 - [x] Hard replies in under 1 s on the tablet: 207 ms at most on its big cores, 631 ms
-  pinned to its little ones, over ten middlegames of both variants (below). Measure
-  again in the app, where thinking shares the frame.
+  pinned to its little ones, over ten middlegames of both variants (below). The app's
+  worker, run on the tablet as the app runs it, takes at most 200 ms (2026-11-08), under
+  hard's 0.45 s pause, so the pause decides when its move comes.
 - [x] Works for both variants from task 002: every `test/ai/` test and the benchmark use
   Russian and International positions.
-- [ ] Wired into home ("The computer") and the game screen
+- [x] Wired into home ("The computer") and the game screen (2026-11-08, below): checked
+  in the app on the Mac and headless; on the tablet only the worker headless, the tablet
+  being PIN-locked (open below).
 
 ## Notes (2026-11-07)
 
@@ -132,7 +135,7 @@ drew even with 10 (8, 5, 7), so adapting within easy changed nothing a child wou
 `1 + s / 12` from skill 0, steeper above 60, makes each 15 points win about three games
 in four.
 
-## Wiring it in (next)
+## Wiring it in (plan, 2026-11-07; the worker settled below replaced the slices)
 
 - The game screen starts a search when the computer is to move, calls `ai::step` each
   frame with a time budget (`clock()` around steps of a few thousand nodes), and plays
@@ -172,4 +175,84 @@ in four.
   a worker building its own root), as the release's `docs/` and samples
   `23_mandelbrot_threads.goose` and `32_pool_worker_snapshots.goose` write them.
 
+## Wired in (2026-11-08)
+
+- `app/think.goose`: one worker thread (`thread_fn`), started at the first ask, builds
+  and inits its own `ai::Engine`, waits on the queue for `game::Ask` (id, position,
+  skill, seed), steps the search 10,000 nodes at a time and polls for a newer ask
+  between steps, which drops the search; it answers with a `Thought` (move, nodes,
+  time). The app gives the worker the game's ask when it changes and the game the answer.
+- `game/`: on the computer's turn the game opens an ask, plays the answer through the
+  board's move animation once the pause is over (0.8, 0.6, 0.45 s by level, from the
+  child's move landing), pulses the computer's ring on the panel meanwhile (also on its
+  clock's piece before the clocks start), and keeps the child's hands off its pieces.
+  Take back takes two plies (one while it thinks; none before the child's first move);
+  start over, home, settings, and Android pausing drop the ask. The game reports its
+  result once, as it first ends.
+- `shell/`: `settings.txt` keeps `skill_easy`, `skill_medium`, `skill_hard` (from
+  `ai::level_skill`, kept within the level's band when read) and `games`, the games
+  begun against the computer. Play against the computer starts the game at its level's
+  skill with the count as its number (seed: number × 1000 + ply) and raises the count;
+  a reported result moves the level's skill with `ai::adapt`. The saved game keeps its
+  skill, number, and whether its result was counted (`VERSION` 3).
+- The Mac builds the app (`goose build -o ../build/draughts draughts.goose`, about
+  3 s); `docs/development.md` says how. `--level` joins `--computer`; `--tap` no longer
+  plays the computer's moves.
+- Tests: `test/game/computer.goose` (the ask, legal answers at each level after their
+  pauses, the pulse, no moving the computer's pieces, take back of two plies and while
+  thinking, dropped and stale answers ignored, leaving and returning, the child playing
+  black, start over, the result once; nothing animates once the reply has landed) and
+  `test/shell/adapt.goose` (a win on easy raises its skill to 14, a loss on medium
+  lowers it to 41, start over counts nothing, the file keeps the skills and clamps them
+  to the band, a restored game asks at its own skill); `resume`, `settings`, and `shell`
+  show the skill and count.
+
+## Measurements in the app (2026-11-08)
+
+The tablet was PIN-locked, so the app couldn't come to the foreground there. The worker
+was measured on the tablet as a headless program running the app's `think.goose`
+unchanged, driven over the same queues (`scripts/android_cli.sh`, default scheduling):
+the worker's own time per ask over four middlegames (black to move, from
+`tools/aibench.goose`'s), and the round trip from `qput` to the answer.
+
+| Tablet, worker | Easy | Medium | Hard | Hard's nodes |
+| --- | --- | --- | --- | --- |
+| Russian, each middlegame | 0.2 ms | 0.4 to 0.7 ms | 167 to 184 ms | 800,000 |
+| International, each middlegame | 0.2 to 0.3 ms | 0.9 to 2.0 ms | 178 to 200 ms | 800,000 |
+| Round trip, slowest | 2.6 ms (the first ask, with the engine's init) | 2.1 ms | 201 ms | |
+
+- A hard search dropped 5 ms in for an easy ask: the easy answer came 2.1 ms after it was
+  asked, so a take back never waits on a stale search.
+- The worker idle: blocked in `qget`, state `S`, its CPU time (1.46 s, all of it the
+  searches) and voluntary switches (25) unchanged over 12 s: it waits, it doesn't spin.
+- From the child's move landing to the computer's move starting, in the app built on the
+  Mac, hard, eight moves of a Russian middlegame: 450.0 to 450.5 ms, the pause; the
+  search took 91 to 100 ms (800,000 nodes) and its answer reached the game within a
+  frame of finishing. On the tablet the worker finishes inside every level's pause on
+  the big cores, so the move starts at 0.8, 0.6, or 0.45 s after landing plus at most a
+  frame; on the little cores hard's search (631 ms in the benchmark) would decide.
+- The drawing thread no longer searches: it only puts the ask on the queue once a turn
+  and polls for the answer each frame.
+- Idle after a reply, headless: once the reply has landed nothing animates
+  (`test/game/computer.goose`), so the app draws nothing more (a running clock still
+  draws once a second).
+
 ## Open for the user
+
+- The tablet was PIN-locked: the app with its worker thread hasn't run in the
+  foreground on the tablet yet. Still to check there: the reply time from landing to the
+  move per level, the worker waiting while the app is idle, `scripts/idle_cpu.sh` after a
+  reply, and the pulse's look.
+- Taken as defaults (2026-11-08), each easy to change:
+  - The pauses: 0.8 s on easy, 0.6 on medium, 0.45 on hard, counted from the child's
+    move landing; the pulse: the ring from full to a third and back every 1.2 s.
+  - A game counts once, when it first ends; taken back and ended again it doesn't count
+    again. A loss on the clock counts as any loss. The rules have no draw; one would
+    leave the skill.
+  - Take back right after the computer's first move (the child playing black) does
+    nothing, as at the start, rather than make the computer play it again.
+  - `games` counts games begun against the computer from home's play; a game started
+    with `--computer` uses the count without raising it.
+  - Leaving the game or Android pausing the app drops the search, and the pause starts
+    again on return.
+- Whether an older child beats easy and hard beats an adult needs people playing.
