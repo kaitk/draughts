@@ -19,6 +19,13 @@ let GLASS = 0;              // a glass panel, with its shadow
 let BUTTON = 1;             // a glass tile, with its shadow; look.w: how far it is pressed
 let ICON = 2;               // a line icon on a 24-unit grid; look.z: which
 let FILL = 3;               // a plain rounded rect in `color`
+let SPARK = 4;              // a glowing disc in the glow color; color.a: its opacity
+
+// How a tile and its icon look (extra.y), in the theme's colors.
+let PLAIN = 0;              // white at 10%
+let PRIMARY = 1;            // the glow color at 22%
+let ON = 2;                 // a toggle that is on: the glow color, with a glow border and icon
+let OFF = 3;                // a toggle that is off: white at 8%, the icon faded
 
 // The line icons the shader knows (rendering.md, "Controls").
 let NO_ICON = 0;
@@ -26,13 +33,14 @@ let UNDO = 1;
 let HINT = 2;
 let RESTART = 3;
 let BACK = 4;
+let DOTS = 5;               // move hints: four dots
 
 // One quad for the UI shader.
 struct Quad {
     rect:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x, y, width, height in pixels
     color: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // straight alpha
     look:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // kind, corner radius in pixels, icon, pressed 0..1
-    extra: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: pixels per dp
+    extra: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: pixels per dp; y: PLAIN..OFF
 }
 
 // The pointer this frame. A quick tap can be pressed and released in one frame.
@@ -162,7 +170,11 @@ fn fill(g: Gui&, r: float4, color: float4, radius: f32) {
 // A glass tile with a line icon (rendering.md, "Controls"), true on the frame the
 // pointer is released over it after going down on it. id is any nonzero number unique
 // on the screen.
-fn button(g: Gui&, id: i64, r: float4, icon: i64) -> bool {
+fn button(g: Gui&, id: i64, r: float4, icon: i64) -> bool { tile(g, id, r, icon, PLAIN, 22.0) }
+
+// A tile in one of the looks PLAIN..OFF with corner radius `radius` dp; otherwise as
+// button.
+fn tile(g: Gui&, id: i64, r: float4, icon: i64, style: i64, radius: f32) -> bool {
     let over = inside(r, g.input.at);
     if g.input.pressed && over {
         g.active = id;
@@ -172,13 +184,20 @@ fn button(g: Gui&, id: i64, r: float4, icon: i64) -> bool {
     let clicked = g.active == id && g.input.released && over;
     set_down(g, id, held);
     let p = pressed(g, id);
-    add(g, Quad { rect: r, look: float4 { BUTTON, 22.0 * g.scale, 0.0, p },
-                  extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
+    add(g, Quad { rect: r, look: float4 { BUTTON, radius * g.scale, 0.0, p },
+                  extra: float4 { g.scale, style, 0.0, 0.0 } });
     if icon != NO_ICON {
         // Icons are 44 dp in an 88 dp tile, scaled with it and with the press.
-        let s = 0.5 * r.z * (1.0 - 0.04 * p);
+        let s = 0.5 * min(r.z, r.w) * (1.0 - 0.04 * p);
         add(g, Quad { rect: center(r, s, s), color: float4 { 1.0, 1.0, 1.0, 1.0 },
-                      look: float4 { ICON, 0.0, icon, p }, extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
+                      look: float4 { ICON, 0.0, icon, p }, extra: float4 { g.scale, style, 0.0, 0.0 } });
     }
     return clicked;
+}
+
+// A spark: a disc of diameter d centered at c, in the glow color at opacity a, with a
+// soft glow round it.
+fn spark(g: Gui&, c: float2, d: f32, a: f32) {
+    add(g, Quad { rect: float4 { c.x - 0.5 * d, c.y - 0.5 * d, d, d }, color: float4 { 1.0, 1.0, 1.0, a },
+                  look: float4 { SPARK, 0.5 * d, 0.0, 0.0 }, extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
 }

@@ -9,7 +9,9 @@ before committing a change to `rules/`.
   printing what a reader can check by eye (positions as FEN, moves sorted, how many
   pieces each takes). A test explains in a comment what rule it shows and why the
   position shows it. Areas so far: `rules`, `board` (taps and hints through the board
-  package), and `strings` (every language file has every key). Shared helpers are in
+  package), `gui`, `game` (the game screen driven through the pointer: undo, hint,
+  restart, the toggle, presses kept apart, the celebration), and `strings` (every
+  language file has every key). Shared helpers are in
   `test/check.goose` (`check::show`, `check::play_only`), imported as
   `import check from "../";`.
 - `test/perft.py`: an independent generator sharing no code or layout with `rules/`.

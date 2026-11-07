@@ -28,10 +28,15 @@ draws its HUD:
   array, reset each frame, and one pipeline draws them in one instanced draw.
 - **Native form**: `gui/` holds the layer with no graphics (tested headless in
   `test/gui/`), and `app/widgets.goose` draws it: each quad pulls `{rect, color, kind,
-  radius, icon, pressed, dp}` from one storage buffer, and its fragment shader works it
-  out as a signed-distance shape: glass with its shadow, a tile with its shadow, a line
-  icon as distances to its strokes' segments and arcs. `app/panel.goose` declares the
-  game screen's panel.
+  radius, icon, pressed, dp, look}` from one storage buffer, and its fragment shader works
+  it out as a signed-distance shape: glass with its shadow, a tile with its shadow (plain,
+  primary, or a toggle on or off), a line icon as distances to its strokes' segments and
+  arcs, a spark. `game/` is the game screen with no graphics, tested headless in
+  `test/game/`: it declares the panel (`game/panel.goose`) and the celebration, does what
+  their buttons ask, and hands the pointer to the board only when a press didn't land on
+  the UI. Pieces shown on the UI (the side to move, the winner) are drawn after it by the
+  piece pipeline from a second small storage buffer, so they look exactly like the
+  board's.
 
 Nuklear (`ui`) is only for developer tools, such as a puzzle editor, because restyling
 its desktop widgets into the kid UI would fight it. If layout outgrows rect-cutting
@@ -156,10 +161,21 @@ the prototype tried, kept for 3D:
   which read better large: two figures, a robot head, a jigsaw piece.
 - **Game screen**: in landscape the board fills the height less a 24 px margin, and a
   glass panel 272 px wide and as tall as the board stands to its right: the side to move
-  on top (a piece of its color with a glow ring, no text) with the move-hints toggle
-  beside it, a 1 px rule, then undo, hint, restart, and back in a 2 × 2 grid of 104 px
-  tiles. In portrait the board fills the width and the panel, 240 px tall, below it
-  holds the side to move over the four buttons in a row of 88 px tiles.
+  on top (a 64 px piece of its color with a glow ring right round it, 4 px of the glow
+  color at 80% and a 22 px glow, no text) with the move-hints toggle at the row's right,
+  a 1 px rule, then undo, hint, restart, and back in a 2 × 2 grid of 104 px tiles. In
+  portrait the board fills the width and the panel, 240 px tall, below it holds the
+  same top row over the four buttons in a row of 88 px tiles. The toggle is a 52 px
+  tile, radius 16 px, with four dots: on (hints show moves) the glow color at 26% with a
+  glow border and glow dots; off, white at 8% with a border at 18% and the dots at 45%.
+  Undo takes back one move, also one still animating; hint selects the piece of the
+  capture that takes the most, if one is due, and marks its target whatever the hints
+  are; restart goes back to where the game began; back goes home.
+- **A win**: once the winning move has shown, the board dims to 55% and a glass card
+  over it shows the winner's piece, crowned, popping in (0.6 s, from 0.3 past its size),
+  over back and restart (primary), 112 × 88 px; fourteen sparks, 10 px discs of the glow
+  color with a 12 px glow, drift 160 px up over the board twice each (2.4 s, fading in
+  over the first fifth), then the screen is still. The panel's piece shows the winner.
 - **Home** is a title menu (`prototypes/home-menu.html`, chosen 2026-11-07 over the
   icon tiles and two other takes): the scene and the 3D board, and one glass column
   with the wordmark, then continue, a friend, the computer with its level, and puzzles
@@ -200,7 +216,7 @@ the prototype tried, kept for 3D:
   squares, and marks are one full-screen fragment pass, worked out at `gl_FragCoord`
   (interpolated coordinates put a square's edge a pixel off on some rows); the pieces
   are one instanced draw of quads, each pulling `{center, radius, lift; black, king,
-  selected, opacity; must capture}` from a storage buffer and drawing its shadows, side, face, light, crown, and rings in the fragment
+  selected, opacity; must capture, side to move}` from a storage buffer and drawing its shadows, side, face, light, crown, and rings in the fragment
   shader, blended premultiplied, top row first so a lower piece covers the shadow above
   it. The crown is a signed-distance polygon in that shader. The panel's line icons are
   to be drawn the same way, as distances to their strokes' segments and arcs, rather than

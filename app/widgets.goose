@@ -28,9 +28,10 @@ let VERT = """
         vec4 rect = q[i];
         vec4 look = q[i + 2];
         vec4 extra = q[i + 3];
-        // Room round the rect for the shadow: glass casts one 30 dp down, a tile 12 dp.
+        // Room round the rect for the shadow: glass casts one 30 dp down, a tile 12 dp;
+        // a spark's glow reaches 12 dp.
         int kind = int(look.x);
-        float m = (kind == 0 ? 48.0 : kind == 1 ? 20.0 : 1.0) * extra.x;
+        float m = (kind == 0 ? 48.0 : kind == 1 ? 20.0 : kind == 4 ? 16.0 : 1.0) * extra.x;
         vec2 px = mix(rect.xy - m, rect.xy + rect.zw + m, CORNERS[gl_VertexIndex]);
         gl_Position = vec4(px.x / screen.x * 2.0 - 1.0, 1.0 - px.y / screen.y * 2.0, 0.0, 1.0);
         v_px = px;
@@ -105,6 +106,10 @@ let FRAG = """
             float d = seg(p, vec2(19.0, 12.0), vec2(5.0, 12.0));
             return min(d, min(seg(p, vec2(11.0, 18.0), vec2(5.0, 12.0)), seg(p, vec2(5.0, 12.0), vec2(11.0, 6.0))));
         }
+        if (k == 5) {           // move hints: four solid dots of radius 2.2
+            vec2 q = vec2(p.x < 12.0 ? 7.0 : 17.0, p.y < 12.0 ? 7.0 : 17.0);
+            return length(p - q) - 1.0;
+        }
         return 1e9;
     }
     void main() {
@@ -133,18 +138,25 @@ let FRAG = """
             result = vec4(g * a, a + s);
             return;
         }
+        int style = int(v_extra.y);             // plain, primary, toggle on, toggle off
         if (kind == 1) {
-            // A glass tile: white at 10%, 24% pressed and scaled to 0.96; an inset light
-            // border and top highlight; a small shadow.
+            // A glass tile: white at 10%, 14 points more pressed and scaled to 0.96; an
+            // inset light border and top highlight; a small shadow. A primary tile is the
+            // glow color at 22%. A toggle has no highlight: on, the glow color at 26%
+            // with a glow border; off, white at 8% with a border at 18%.
             float pr = v_look.w;
             h *= 1.0 - 0.04 * pr;
             float d = box(p, c, h, r);
             over(vec3(0.0), 0.5 * shadow(p, c, h, r, 6.0 * u, 14.0 * u, -8.0 * u) * (1.0 - cover(d)));
             float a = cover(d);
-            vec4 tile = vec4(vec3(1.0), mix(0.10, 0.24, pr));
-            float line = max(0.2 * (1.0 - cover(d + u)), 0.18 * top_line(p, c, h, r, u));
-            tile = vec4(vec3(1.0), tile.a + (1.0 - tile.a) * line);
-            acc = vec4(tile.rgb * tile.a * a, tile.a * a) + acc * (1.0 - tile.a * a);
+            vec3 fc = style == 1 || style == 2 ? glow.rgb : vec3(1.0);
+            float fa = (style == 1 ? 0.22 : style == 2 ? 0.26 : style == 3 ? 0.08 : 0.10) + 0.14 * pr;
+            vec4 tile = vec4(fc * fa, fa);
+            float edge = (style == 2 ? 1.0 : style == 3 ? 0.18 : 0.2) * (1.0 - cover(d + u));
+            tile = vec4((style == 2 ? glow.rgb : vec3(1.0)) * edge, edge) + tile * (1.0 - edge);
+            float hl = style >= 2 ? 0.0 : 0.18 * top_line(p, c, h, r, u);
+            tile = vec4(vec3(hl), hl) + tile * (1.0 - hl);
+            acc = tile * a + acc * (1.0 - tile.a * a);
             result = acc;
             return;
         }
@@ -154,8 +166,17 @@ let FRAG = """
             vec2 q = (p - v_rect.xy) / v_rect.zw * 24.0;
             float px = 24.0 / v_rect.z;         // one pixel in grid units
             float d = icon(int(v_look.z), q) - 1.2;
-            float a = clamp(0.5 - d / px, 0.0, 1.0);
-            result = vec4(text.rgb * a, a);
+            float a = clamp(0.5 - d / px, 0.0, 1.0) * (style == 3 ? 0.45 : 1.0);
+            vec3 ic = style == 2 ? glow.rgb : text.rgb;
+            result = vec4(ic * a, a);
+            return;
+        }
+        if (kind == 4) {
+            // A spark: a disc in the glow color with a 12 dp glow round it.
+            float d = length(p - c) - r;
+            over(glow.rgb, 0.8 * (1.0 - smoothstep(-12.0 * u, 12.0 * u, d)));
+            over(glow.rgb, cover(d));
+            result = acc * v_color.a;
             return;
         }
         // A plain rounded rect.

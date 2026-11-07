@@ -52,7 +52,8 @@ program's own C (`app/background.c`, the photographs and their JPEG decoder;
 embedded from `design/backgrounds/masters/` when they are there; without them the board
 sits on the page color. goose caches the program's C by its source, so after adding or
 changing a master, touch `app/background.c`. The
-board's logic is the `board/` package, tested headless (`test/board/`). `poc/` keeps
+board's logic is the `board/` package, the UI layer `gui/`, and the game screen `game/`,
+each tested headless (`test/board/`, `test/gui/`, `test/game/`). `poc/` keeps
 task 001's and task 005's small programs.
 
 ## Test the rules

@@ -1,4 +1,4 @@
-// Draughts: the board, playable by two on one screen. It draws only when
+// Draughts: the game screen, playable by two on one screen. It draws only when
 // something changed: input, a move or a pulse animating, or a new screen size
 // (docs/architecture/rendering.md, "Frames and battery").
 //
@@ -22,7 +22,7 @@ import .theme;
 import .draw;
 import .scene;
 import .widgets;
-import .panel;
+import game from "../game";
 
 // The system's preferred locales, "et-EE,en-US" (locale.c); returns how many bytes.
 extern fn draughts_locales(out: u8[:]) -> i64;
@@ -77,7 +77,8 @@ fn main() {
     guard gfx::open(strings::get(strings::APP_NAME), width, height, window_flags) else { abort(str("gfx: ", gfx::error())); }
     defer gfx::close();
 
-    var b = board::new(rules::RUSSIAN);
+    var gm = game::new(rules::RUSSIAN);
+    let b .= gm.b;
     b.hints = hints;
     if fen.len > 0 {
         let p, ok = rules::parse_fen(fen, b.variant);
@@ -100,7 +101,17 @@ fn main() {
             dirty = true;
         }
         let l = board::layout(size.x, size.y, rules::VARIANTS[b.variant].size);
-        if board::update(b, now) { dirty = true; }
+        // A quick tap can press and release within one frame, which mouse_down never
+        // sees; pressed and released catch it. The game screen gives the pointer to the
+        // UI first; a press that lands on it never reaches the board.
+        let input = gui::Input { at: gfx::mouse_pos(), down: gfx::mouse_down(gfx::MOUSE_LEFT),
+                                 pressed: gfx::mouse_pressed(gfx::MOUSE_LEFT),
+                                 released: gfx::mouse_released(gfx::MOUSE_LEFT) };
+        gui::begin(g, input, l.scale, now);
+        let go, changed = game::frame(gm, g, l, now);
+        if changed { dirty = true; }
+        // Back goes home once there is one (task 008-03); until then it does nothing.
+        if go == game::HOME { dirty = true; }
         if tapped < taps.len && !b.moving {
             let v .= rules::VARIANTS[b.variant];
             let t .= taps[tapped];
@@ -110,25 +121,12 @@ fn main() {
             tapped++;
             dirty = true;
         }
-        // A quick tap can press and release within one frame, which mouse_down never
-        // sees; pressed and released catch it. The UI sees the pointer first; a press
-        // that lands on it never reaches the board.
-        let input = gui::Input { at: gfx::mouse_pos(), down: gfx::mouse_down(gfx::MOUSE_LEFT),
-                                 pressed: gfx::mouse_pressed(gfx::MOUSE_LEFT),
-                                 released: gfx::mouse_released(gfx::MOUSE_LEFT) };
-        gui::begin(g, input, l.scale, now);
-        if panel::game(g, l) != panel::NOTHING { dirty = true; }
-        if input.pressed || input.released { dirty = true; }
-        if !g.took {
-            if input.pressed { board::press(b, l, input.at, now); }
-            if input.down && board::drag(b, l, input.at) { dirty = true; }
-            if input.released { board::release(b, l, input.at, now); }
-        }
-        if dirty || board::animating(b, now) || gui::animating(g) {
+        if dirty || game::animating(gm, g, now) {
             board::fill(b, l, now);
             widgets::upload(w, g);
-            draw::frame(d, b, l, colors, now, size.x, size.y);
+            draw::frame(d, b, gm.overlay, l, colors, now, size.x, size.y);
             widgets::frame(w, g, d.scene, colors, size.x, size.y);
+            draw::overlay(d, colors, now);
             gfx::end_pass();
             dirty = false;
             drawn++;

@@ -17,6 +17,7 @@ let FADE = 0.18;            // captured pieces fade out after the move
 let PULSE = 2.8;            // must-capture rings pulse for two of their 1.4 s cycles
 let DRAG_START = 10.0;      // dp a press moves before it becomes a drag
 let FLASH = 1.2;            // a wrong move's red ring flashes twice, 0.6 s each
+let MAX_HISTORY = 512;      // moves undo can take back; the oldest go first
 
 // Move hints (docs/product.md): mistakes only, the default, marks a wrong move and pulses
 // the pieces that must capture; moves also shows the selected piece's targets.
@@ -88,7 +89,7 @@ fn center(l: Layout, v: rules::Variant&, b: i64) -> float2 {
 struct Piece {
     at:   float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x, y center in pixels, radius, lift in pixels
     look: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // black (0 or 1), king (0 or 1), selected glow 0..1, opacity
-    ring: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: must-capture ring (0 or 1)
+    ring: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: must-capture ring; y: a glow ring tight round it (0 or 1)
 }
 
 // What the board shader marks, one bit per square numbered y * size + x.
@@ -98,9 +99,19 @@ struct Marks {
     via:    u32[4] = [0; 4],
 }
 
+// A position the game was in, for undo, with the move that led to it.
+struct Step {
+    pos:       rules::Position,
+    last_from: u8,
+    last_to:   u8,
+    has_last:  bool,
+}
+
 struct Board {
     variant:  u8,
+    start:    rules::Position,  // where the game began, for restart
     pos:      rules::Position,
+    history:  Step[..MAX_HISTORY],  // the positions before each move, oldest first
     moves:    rules::Moves,     // the legal moves of pos
     selected: i64,              // a bit, or -1
     // The move being shown: the position before it, when it started, and where the
@@ -117,6 +128,7 @@ struct Board {
     hints:     i64,             // MISTAKES or MOVES
     wrong:     i64,             // the square of the last wrong move, a bit, or -1
     wrong_at:  f64,
+    hint:      i64,             // the move a hint shows, an index into moves, or -1
     // A press on a piece, and whether it became a drag.
     pressed:  i64,
     press_at: float2,
@@ -129,20 +141,64 @@ struct Board {
 }
 
 fn new(variant: u8) -> Board {
-    var b = Board { variant: variant, pos: rules::start(variant), selected: -1, wrong: -1,
-                    pressed: -1, .. };
-    rules::generate(b.pos, b.moves);
+    var b = Board { variant: variant, selected: -1, wrong: -1, hint: -1, pressed: -1, .. };
+    set(b, rules::start(variant));
     return b;
 }
 
-// Starts over from position p.
-fn set(b: Board&, p: rules::Position) {
+// Shows position p with nothing selected, moving, or flashing.
+fn show(b: Board&, p: rules::Position) {
     b.pos = p;
     rules::generate(b.pos, b.moves);
     b.selected = -1;
     b.moving = false;
-    b.has_last = false;
     b.wrong = -1;
+    b.pulse_end = 0.0;
+    b.pressed = -1;
+    b.dragging = false;
+    b.hint = -1;
+}
+
+// Starts a new game from position p.
+fn set(b: Board&, p: rules::Position) {
+    b.start = p;
+    b.history.clear();
+    b.has_last = false;
+    show(b, p);
+}
+
+// Starts the game over from where it began.
+fn restart(b: Board&) { set(b, b.start); }
+
+// Takes back the last move, even one still animating; false when there is none.
+fn undo(b: Board&) -> bool {
+    guard b.history.len > 0 else { return false; }
+    let s = b.history.pop();
+    b.has_last = s.has_last;
+    b.last = rules::Move { from: s.last_from, to: s.last_to, .. };
+    show(b, s.pos);
+    return true;
+}
+
+// The side that has won, the other having no move left, or -1 while the game goes on
+// or a move is still showing.
+fn winner(b: Board&) -> i64 {
+    guard !b.moving && b.moves.len == 0 else { return -1; }
+    return 1 - b.pos.side as i64;
+}
+
+// Shows one good move: until the computer player exists (task 006), a capture that
+// must be made, the one taking the most; its piece is selected and its target marked
+// whatever the move hints are. False when no capture is due.
+fn hint(b: Board&) -> bool {
+    guard !b.moving && must_capture(b) else { return false; }
+    var best = 0;
+    for i in b.moves.len {
+        if popcount(b.moves[i].captured) > popcount(b.moves[best].captured) { best = i; }
+    }
+    b.hint = best;
+    b.selected = b.moves[best].from;
+    return true;
 }
 
 fn has_move_from(b: Board&, from: i64) -> bool {
@@ -161,6 +217,11 @@ fn move_to(b: Board&, to: i64) -> i64 {
 }
 
 fn start_move(b: Board&, i: i64, now: f64) {
+    if b.history.len == MAX_HISTORY {
+        for k in MAX_HISTORY - 1 { b.history[k] = b.history[k + 1]; }
+        b.history.pop();
+    }
+    b.history.push(Step { pos: b.pos, last_from: b.last.from, last_to: b.last.to, has_last: b.has_last });
     b.move = b.moves[i];
     b.before = b.pos;
     b.pos = rules::play(b.pos, b.move);
@@ -170,6 +231,7 @@ fn start_move(b: Board&, i: i64, now: f64) {
     b.last = b.move;
     b.has_last = true;
     b.selected = -1;
+    b.hint = -1;
 }
 
 fn must_capture(b: Board&) -> bool { b.moves.len > 0 && b.moves[0].captured != 0 }
@@ -195,6 +257,7 @@ fn press(b: Board&, l: Layout, p: float2, now: f64) {
     let v .= rules::VARIANTS[b.variant];
     let sq = hit(l, v, p);
     let i = move_to(b, sq);
+    if i != b.hint { b.hint = -1; }
     if i >= 0 {
         b.dropped = false;
         start_move(b, i, now);
@@ -369,10 +432,10 @@ fn fill(b: Board&, l: Layout, now: f64) {
         b.flash = float4 { v.y_of[b.wrong] * v.size + v.x_of[b.wrong],
                            clamp((now - b.wrong_at) / FLASH, 0.0, 1.0) as f32, 0.0, 0.0 };
     }
-    if b.hints == MOVES && b.selected >= 0 && !b.moving {
+    if b.selected >= 0 && !b.moving {
         for i in b.moves.len {
             let m .= b.moves[i];
-            guard m.from == b.selected else { continue; }
+            guard m.from == b.selected && (b.hints == MOVES || i == b.hint) else { continue; }
             mark(b, b.marks.target, m.to);
             for j in 1..m.path.len - 1 { mark(b, b.marks.via, m.path[j]); }
         }

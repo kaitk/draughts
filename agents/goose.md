@@ -74,6 +74,11 @@ find out by compiling, so the next session doesn't.
 - A cast that changes nothing is a warning; casts that narrow need `as` (checked in
   debug) or `as!` (never).
 - A local named `fill` or `count` shadows the std function of that name.
+- A struct literal's fields must come in declaration order, or it doesn't compile.
+- `match` arms with block bodies are separated by commas: `A => { f(); },`.
+- `float4` has no swizzles (`.xy`); build the `float2` from `.x` and `.y`.
+- `gl_InstanceIndex` doesn't count a draw's `first_instance`, so a second group of
+  instances drawn at another time (pieces over the UI) gets its own storage buffer.
 - `goose run` (TinyCC) doesn't optimize and can't start threads; time things with
   `goose build`, which compiles the C at -O2. TinyCC is still quick to start: the eight
   rules tests run in a fraction of a second through one `goose --multi-test`.

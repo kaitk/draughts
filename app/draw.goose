@@ -20,7 +20,9 @@ struct BoardUniforms {
     marks:  board::Marks,
 }
 
-struct View { screen: float4 }     // width, height, the disc's side depth in pixels
+struct View { screen: float4 }     // width, height, the disc's side depth in radii
+
+let MAX_OVERLAY = 4;               // pieces drawn over the UI
 struct Clock { time: float4 }      // seconds
 
 let THEME_BLOCK = """
@@ -167,6 +169,7 @@ let PIECE_VERT = """
     layout(location = 0) out vec2 v_local;
     layout(location = 1) flat out vec4 v_look;
     layout(location = 2) flat out vec4 v_extra;
+    layout(location = 3) flat out vec4 v_ring;
     const vec2 CORNERS[6] = vec2[](vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(1.0, 1.0),
                                    vec2(0.0, 0.0), vec2(1.0, 1.0), vec2(0.0, 1.0));
     void main() {
@@ -174,7 +177,7 @@ let PIECE_VERT = """
         vec4 at = p[i];
         float r = at.z;
         float lift = at.w / r;
-        float side = screen.z / r;
+        float side = screen.z;
         // A quad around the disc in units of its radius, room for the lift, the
         // side, the rings, and the shadow.
         vec2 l = mix(vec2(-1.9, -1.9 - lift), vec2(1.9, 2.1 + side), CORNERS[gl_VertexIndex]);
@@ -183,6 +186,7 @@ let PIECE_VERT = """
         v_local = l;
         v_look = p[i + 1];
         v_extra = vec4(p[i + 2].x, lift, side, 1.0 / r);
+        v_ring = p[i + 2];
     }
     """;
 
@@ -190,6 +194,7 @@ let PIECE_FRAG = """
     layout(location = 0) in vec2 v_local;
     layout(location = 1) flat in vec4 v_look;     // black, king, selected, opacity
     layout(location = 2) flat in vec4 v_extra;    // must capture, lift, side, one pixel
+    layout(location = 3) flat in vec4 v_ring;     // y: a glow ring tight round it
     layout(location = 0) out vec4 result;
     layout(set = 3, binding = 1) uniform Clock { vec4 time; };
     vec4 acc = vec4(0.0);
@@ -244,6 +249,14 @@ let PIECE_FRAG = """
         float w = v_extra.w / scale;            // one pixel in the face's units
         vec3 face = black ? b_face.rgb : w_face.rgb;
         vec3 sidec = black ? mix(face, vec3(0.0), 0.5) : face * face * 0.92;
+        // The side to move: a ring an eighth of the radius wide in the glow color at 80%
+        // right round the disc, and a soft glow, under the piece and its shadow (CSS
+        // `0 0 0 4px` and `0 0 22px 4px` on a 64 px disc).
+        if (v_ring.y > 0.5) {
+            float rr = length(p);
+            over(glow.rgb, 0.45 * (1.0 - smoothstep(-0.34, 0.34, rr - 1.125)));
+            over(glow.rgb, 0.8 * fill(abs(rr - 1.0625) - 0.0625, w));
+        }
         // A short soft shadow, straight down and a touch right, that spreads as the
         // piece lifts, and a tight one where it touches the board.
         float d0 = length(p - vec2(0.04, 0.25 + 0.6 * lift)) - 1.0;
@@ -299,9 +312,13 @@ struct Drawer {
     board_pipeline: gfx::Pipeline,
     piece_pipeline: gfx::Pipeline,
     pieces:         gfx::Buffer,
+    overlay:        gfx::Buffer,
     scene:          scene::Scene,
-    // What goes into the buffer: always the whole of it, so SDL can cycle it.
-    upload: board::Piece[board::MAX_PIECES],
+    // What goes into the buffers: always the whole of each, so SDL can cycle them.
+    upload:      board::Piece[board::MAX_PIECES],
+    over_upload: board::Piece[MAX_OVERLAY],
+    over_count:  i64,
+    view:        View,
 }
 
 fn new(kind: i64) -> Drawer {
@@ -313,20 +330,31 @@ fn new(kind: i64) -> Drawer {
         board_pipeline: gfx::pipeline(full, board_fs, gfx::PipelineDesc {}),
         piece_pipeline: gfx::pipeline(piece_vs, piece_fs,
                                       gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED }),
-        pieces: gfx::Buffer { 0 },
-        scene:  scene::load(kind, full),
-        upload: [board::Piece {}; board::MAX_PIECES],
+        pieces:      gfx::Buffer { 0 },
+        overlay:     gfx::Buffer { 0 },
+        scene:       scene::load(kind, full),
+        upload:      [board::Piece {}; board::MAX_PIECES],
+        over_upload: [board::Piece {}; MAX_OVERLAY],
+        over_count:  0,
+        view:        View { screen: float4 { 0.0, 0.0, 0.0, 0.0 } },
     };
     d.pieces = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(d.upload));
+    d.overlay = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(d.over_upload));
     return d;
 }
 
 // Draws one frame of the board as fill() left it, into the screen's pass, which it
-// leaves open for the UI; the caller ends it.
-fn frame(d: Drawer&, b: board::Board&, l: board::Layout, t: theme::Theme, now: f64,
-         width: f32, height: f32) {
+// leaves open for the UI; the caller ends it. The pieces in `over` are copied now and
+// drawn by overlay(), after the UI.
+fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::Layout,
+         t: theme::Theme, now: f64, width: f32, height: f32) {
     for i in b.pieces.len { d.upload[i] = b.pieces[i]; }
     gfx::update_buffer(d.pieces, bytes_of(d.upload));
+    d.over_count = min(over.len, MAX_OVERLAY);
+    for i in d.over_count { d.over_upload[i] = over[i]; }
+    if d.over_count > 0 { gfx::update_buffer(d.overlay, bytes_of(d.over_upload)); }
+    // The disc's side is 0.55% of the board deep, whatever a piece's size.
+    d.view = View { screen: float4 { width, height, 0.0055 * l.board.z / (0.39 * l.inner.w), 0.0 } };
     gfx::begin_screen(t.page);
     gfx::bind(d.board_pipeline);
     gfx::uniforms(gfx::FRAGMENT, 0, t);
@@ -339,8 +367,19 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, t: theme::Theme, now: f
     gfx::draw(3);
     gfx::bind(d.piece_pipeline);
     gfx::bind_storage_buffer(gfx::VERTEX, 0, d.pieces);
-    gfx::uniforms(gfx::VERTEX, 0, View { screen: float4 { width, height, 0.0055 * l.board.z, 0.0 } });
+    gfx::uniforms(gfx::VERTEX, 0, d.view);
     gfx::uniforms(gfx::FRAGMENT, 0, t);
     gfx::uniforms(gfx::FRAGMENT, 1, Clock { time: float4 { now as f32, 0.0, 0.0, 0.0 } });
     gfx::draw_instanced(6, b.pieces.len);
+}
+
+// Draws the pieces frame() was given for over the UI, in the open pass.
+fn overlay(d: Drawer&, t: theme::Theme, now: f64) {
+    guard d.over_count > 0 else { return; }
+    gfx::bind(d.piece_pipeline);
+    gfx::bind_storage_buffer(gfx::VERTEX, 0, d.overlay);
+    gfx::uniforms(gfx::VERTEX, 0, d.view);
+    gfx::uniforms(gfx::FRAGMENT, 0, t);
+    gfx::uniforms(gfx::FRAGMENT, 1, Clock { time: float4 { now as f32, 0.0, 0.0, 0.0 } });
+    gfx::draw_instanced(6, d.over_count);
 }

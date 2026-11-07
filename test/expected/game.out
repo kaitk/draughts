@@ -1,0 +1,26 @@
+quads 12, over the UI 1 (black 0.0)
+turn after c3-d4: black 1.0
+two moves: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Be5,b6,d6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 2, last f6-e5
+undo: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1, last c3-d4
+undo: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 0, last none
+undo at the start: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 0, last none
+hint with no capture due: selected -, hint -1
+moving true
+undo while moving: moving false
+  then: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 0, last none
+hint: selected c3, targets g7 , via e5 with hints on mistakes true
+press elsewhere: selected h2, targets 
+the hinted capture played: B:Wa1,h2,g7:Bg3,h8, history 1, last c3-g7
+restart: W:Wa1,h2,c3:Bg3,d4,f6,h8, history 0, last none
+toggle: moves true
+toggle again: moves false
+press on undo, released on d4: moving false, selected c3
+press on f6, released on undo: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1, last c3-d4
+while the capture shows: celebrating false
+after: celebrating since 11.0, winner black 0.0, pieces over the UI 2, the winner crowned 1.0
+sparks at 0.0 s 0, animating true
+sparks at 2.0 s 11, animating at 8 s false
+back on the card asks for home: true
+restart on the card: W:Wa1,c3:Bd4, history 0, last none
+celebrating false
+back on the panel asks for home: true

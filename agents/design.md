@@ -56,6 +56,9 @@ pieces (chosen 2026-11-07); the design boards still set the layout, glass, and c
   wide rounded rim like a tyre, and gloss: the pieces are flat, matte turned discs. The
   close-ups' rims are wider and rounder than ours; ours follow the 3D reference, with a
   groove and a narrow shoulder. A face too matte lost the dark pieces' edge highlight.
+- The design boards' icons are a little heavier, and their bulb is filled; the
+  prototypes' 2.4-unit stroke and outlined bulb look right on the tablet and stay
+  (2026-11-07).
 - Left different from the design boards on purpose: their wood grain is finer and
   straighter; their lifted piece shows a tall side, ours lifts 0.8% of the board with a
   growing shadow; they set board and panel in one glass card, which task 008 decides.
