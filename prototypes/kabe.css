@@ -19,8 +19,8 @@
    the squares, the two piece colors (ring, rim, and side are worked out from the face),
    the glow, the glass tint, the text, and the page color under the scene. */
 .theme-wood {
-  --light: #e5c18a; --dark: #5a341d; --frame: #3b2112; --grain: var(--grain-wood);
-  --w-face: #f7e6c8; --b-face: #4a2918; --crown-w: #5a341d;
+  --light: #e2b070; --dark: #7a4626; --frame: #3b2112; --grain: var(--grain-wood);
+  --w-face: #f0d4a4; --b-face: #4a2918; --crown-w: #4a2918;
   --glow: #ffd75a; --glass-tint: rgb(43 30 24 / 0.66); --glass-dim: 0.9;
   --fg: #f8f3e6; --page: #1c1410;
 }

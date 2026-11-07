@@ -49,10 +49,10 @@ the theme can be overridden in settings. Values from the design boards (2026-11-
 
 | | Autumn: wood | Winter: stone | Spring: birch | Summer: sea |
 | --- | --- | --- | --- | --- |
-| Light square | `#e5c18a` | `#d8dee7` | `#e8e2d3` | `#c7d5c6` |
-| Dark square | `#5a341d` | `#5a6777` | `#6b7f6a` | `#2e5546` |
+| Light square | `#e2b070` | `#d8dee7` | `#e8e2d3` | `#c7d5c6` |
+| Dark square | `#7a4626` | `#5a6777` | `#6b7f6a` | `#2e5546` |
 | Frame | `#3b2112` | `#2a3442` | `#3d4a3c` | `#1d3a30` |
-| Light piece | `#f7e6c8` | `#f3eee2` | `#f6f3e7` | `#f6f1e4` |
+| Light piece | `#f0d4a4` | `#f3eee2` | `#f6f3e7` | `#f6f1e4` |
 | Dark piece | `#4a2918` | `#2b3440` | `#3a4a3f` | `#b56a57` (terracotta) |
 | Glow | `#ffd75a` | `#a7d0fb` | `#8fd4ff` | `#86e7d3` |
 | Glass tint | `#2b1e18` at 66% | `#1e2f45` at 40% | `#1e2f45` at 40% | `#1e4a4a` at 40% |

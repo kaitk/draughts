@@ -31,8 +31,8 @@ fn rgb(hex: i64) -> float4 {
 fn get(kind: i64) -> Theme {
     let k = float4 { kind, 0.0, 0.0, 0.0 };
     return match kind {
-        WOOD => Theme { light: rgb(0xe5c18a), dark: rgb(0x5a341d), frame: rgb(0x3b2112),
-                        w_face: rgb(0xf7e6c8), b_face: rgb(0x4a2918), crown_w: rgb(0x5a341d),
+        WOOD => Theme { light: rgb(0xe2b070), dark: rgb(0x7a4626), frame: rgb(0x3b2112),
+                        w_face: rgb(0xf0d4a4), b_face: rgb(0x4a2918), crown_w: rgb(0x4a2918),
                         glow: rgb(0xffd75a), page: rgb(0x1c1410), kind: k },
         STONE => Theme { light: rgb(0xd8dee7), dark: rgb(0x5a6777), frame: rgb(0x2a3442),
                          w_face: rgb(0xf3eee2), b_face: rgb(0x2b3440), crown_w: rgb(0x2b3440),
