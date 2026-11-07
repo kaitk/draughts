@@ -103,8 +103,13 @@ radial patches, birch faint horizontal fibre, sea only the sheen every square ha
 
 ### Light
 
-The 2D board has no lighting: flat squares and plain pieces read cleanest (decided
-2026-11-07 after trying the light). The 3D board has one key light from the top left,
+The 2D board's light is soft and diffuse, never a pool or a hard spot (a strong pool
+was tried and dropped on 2026-11-07), and it comes from where the background's light
+is: the lamp or the sun, top centre in the autumn pictures. On the crafted board
+(`look=crafted` in the prototypes, to go with a detailed tabletop) it is a broad
+falloff about 10% lighter toward the light and 14% darker away, and on each piece a
+faint highlight on the side toward it and a shade on the other. The flat board on a
+plain or blurred background may need none. The 3D board has one key light from the top left,
 as in the design boards, a few terms in its shaders with no lighting pass. The terms
 the prototype tried, kept for 3D:
 
