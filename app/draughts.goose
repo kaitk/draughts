@@ -166,8 +166,10 @@ fn main() {
         // write per pause, none while idle.
         if keep && focused && !gfx::focused() { write_file_atomic(save_path, shell::save(sh)); }
         // The clocks count only time the game was on screen: not the gap while Android had
-        // the app paused, nor while it was in the background.
-        if !focused || !gfx::focused() { game::pause(sh.game); }
+        // the app paused, nor while it was in the background. On the Mac a window started
+        // from a terminal never has focus, and the loop never blocks there, so focus is
+        // left out and the clock runs while the window shows.
+        if on_android && (!focused || !gfx::focused()) { game::pause(sh.game); }
         focused = gfx::focused();
         // A new season's photograph, colors, and blurred copies load two frames after the
         // tap: the frame after it shows the tile lit, and is on screen before the load

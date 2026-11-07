@@ -52,8 +52,8 @@ home for a friend and the computer.
   puzzles. Settings from the game returns to it (`Shell.back`).
 - `game/clock.goose`: the clock value; the game advances it from the difference of `now`
   between frames, at most 2 s a frame, and counts nothing for the frame after a pause
-  (`game::pause`: the app calls it while the window is unfocused and on the frame focus
-  returns; the shell while home or settings shows). It starts with the first move, so
+  (`game::pause`: on Android the app calls it while the window is unfocused and on the
+  frame focus returns; the shell while home or settings shows). It starts with the first move, so
   white's first move is untimed. `game::winner` takes a flag as a loss.
 - Home's setup (`shell/home.goose`, `gui::pick`, `gui::mini`, `gui::pips`): the draughts
   as a table in `shell/settings.goose` (`DRAUGHTS`, `DRAUGHTS_ON`), the level and color
@@ -97,8 +97,8 @@ home for a friend and the computer.
   computer's first move starts the child's clock. Starting at once is a one-line change
   in `clock::moved`/`game::start`.
 - Only time with the game on screen counts: the clock stops while home or settings
-  shows, and while the window has no focus (on the Mac, a window launched from a
-  terminal behind it never counts).
+  shows, and on Android while the app has no focus. On the Mac focus is left out, since
+  a window started from a terminal never has it (2026-11-08).
 - Take back with a clock gives the move back but not the time: the side to move again
   keeps the time it has. After a flag, take back does nothing; start over sets both
   clocks full.
