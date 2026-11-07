@@ -70,12 +70,12 @@ radial patches, birch faint horizontal fibre, sea only the sheen every square ha
 - **The scene** is a calm Estonian landscape for the season: autumn forest, winter
   spruces, spring birches, summer coast. Each is a photograph-like picture
   (`design/backgrounds/`, placeholders until task 014), shown as it is, cover-cropped to
-  the screen, with no blur. It is behind the title menu, the puzzle picker, settings,
-  and the 3D board, but not the 2D game.
-- **The 2D game sits on a flat tabletop**, so the board reads cleanly on a calm surface:
-  for now the theme's table color (wood `#3a2c22`, stone `#25313e`, birch `#2a382f`, sea
-  `#1e3838`) as a soft radial gradient with fine noise; generated tabletop pictures may
-  replace it (task 016). Glass over the table samples the table the same way.
+  the screen, sharp behind the title menu, the puzzle picker, settings, and the 3D
+  board.
+- **Behind the 2D game the scene is blurred** (a 14 px blur at 1280 px wide, dimmed to
+  0.8), as on the design boards, so the flat board reads cleanly. Tried and set aside
+  on 2026-11-07: the sharp photograph (busy behind the board), a plain painted tabletop,
+  and generated tabletop pictures with a crafted board (task 016).
 - **The 3D board floats in front of the scene**, with a soft shadow under it: no room or
   table to model. A painted backdrop with a real table comes later only if this falls
   short (task 015).
@@ -103,13 +103,10 @@ radial patches, birch faint horizontal fibre, sea only the sheen every square ha
 
 ### Light
 
-The 2D board's light is soft and diffuse, never a pool or a hard spot (a strong pool
-was tried and dropped on 2026-11-07), and it comes from where the background's light
-is: the lamp or the sun, top centre in the autumn pictures. On the crafted board
-(`look=crafted` in the prototypes, to go with a detailed tabletop) it is a broad
-falloff about 10% lighter toward the light and 14% darker away, and on each piece a
-faint highlight on the side toward it and a shade on the other. The flat board on a
-plain or blurred background may need none. The 3D board has one key light from the top left,
+The 2D board is kept simple for now: flat squares and plain pieces with no light, as on
+the design boards. A strong light pool and, with the tabletops, a crafted board with a
+soft light were tried on 2026-11-07 and set aside; if light comes back, it is soft and
+diffuse and comes from where the background's light is. The 3D board has one key light from the top left,
 as in the design boards, a few terms in its shaders with no lighting pass. The terms
 the prototype tried, kept for 3D:
 

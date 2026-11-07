@@ -19,13 +19,13 @@ jsDelivr CDN, so they need internet access. Start at [index.html](index.html).
 
 Shared parts: `kabe.css` (theme tokens, glass, buttons, board, pieces, light) and
 `kabe.js` (the season's background and the glass over it, the board in 2D and 3D,
-icons). Behind the 2D board is a flat tabletop in the theme's color, painted by
-`kabe.js`. Behind the 3D board (and with `?bg=photo`) is the season's master from
-`design/backgrounds/masters/`, which is local and out of git
+icons). The background is the season's master from `design/backgrounds/masters/`,
+blurred behind the 2D board and sharp elsewhere (`?bg=blur`, `photo`, or `table` for a
+plain painted tabletop), which is local and out of git
 ([its README](../design/backgrounds/README.md) says how to make it); without it the
 pages paint a stand-in. A switcher at the bottom right of every page
 changes the season, board theme (auto follows the season), view, king style, background,
-and font, also as URL parameters:
+move hints, and font, also as URL parameters:
 `game.html?season=winter&theme=sea&view=3d&king=stack&bg=photo&font=tenor`.
 
 Prototypes only use what the native renderer can draw cheaply: rounded rects, SDF

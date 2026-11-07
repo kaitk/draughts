@@ -15,8 +15,6 @@ const Kabe = (() => {
   };
   const SEASONS = ['autumn', 'winter', 'spring', 'summer'];
   // The season picks the board: autumn wood, winter stone, spring birch, summer sea.
-  // Tabletop pictures in design/tabletops/, by the switcher's name: <season>-<file>.png.
-  const TOPS = { plain: '', forest: '', real: 'real-02', felt: 'felt-01' };
   const SEASON_THEME = { autumn: 'wood', winter: 'stone', spring: 'birch', summer: 'sea' };
   const THEMES = Object.values(SEASON_THEME);
   const KINGS = ['auto', 'crown', 'stack'];
@@ -33,12 +31,7 @@ const Kabe = (() => {
     theme: pick('theme', THEMES, SEASON_THEME[season]),
     view: pick('view', ['2d', '3d'], '2d'),
     king: pick('king', KINGS, 'auto'),
-    bg: pick('bg', ['auto', 'table', 'photo'], 'auto'),
-    // The table's look: painted, or a generated tabletop picture (task 016; local only,
-    // autumn so far).
-    top: pick('top', Object.keys(TOPS), 'plain'),
-    // The 2D board: flat, or crafted (grain, seams, an edge, turned pieces; no light).
-    look: pick('look', ['flat', 'crafted'], 'flat'),
+    bg: pick('bg', ['auto', 'blur', 'photo', 'table'], 'auto'),
     // Move hints: "mistakes" (the default) only marks a wrong move; "moves" shows the
     // selected piece's targets, on by default only in the first lessons (docs/product.md).
     assist: pick('assist', ['moves', 'mistakes'], 'mistakes'),
@@ -62,10 +55,11 @@ const Kabe = (() => {
     return `'${f.family}', sans-serif`;
   }
 
-  // The background. Behind the 2D board (pages with <body data-screen="board">), a flat
-  // tabletop in the theme's color: the board reads cleanest on a calm surface. Everywhere
-  // else (home, puzzles) and behind the 3D board, the season's photograph from design/backgrounds/masters/ (local, out of git; its README says how
-  // to make it), or a painted stand-in without it.
+  // The background: the season's photograph from design/backgrounds/masters/ (local, out
+  // of git; its README says how to make it), or a painted stand-in without it. Behind the
+  // 2D board (pages with <body data-screen="board">) it is blurred, as on the design
+  // boards, so the flat board reads cleanly; sharp everywhere else (home, puzzles) and
+  // behind the 3D board. "table", a plain painted tabletop, stays to compare.
   const TABLES = { wood: '#3a2c22', stone: '#25313e', birch: '#2a382f', sea: '#1e3838' };
 
   // A tabletop: the color, a little lighter under the board, darker toward the edges,
@@ -95,8 +89,8 @@ const Kabe = (() => {
     return c.toDataURL('image/jpeg', 0.9);
   }
 
-  function useTable() {
-    return settings.bg === 'table' ||
+  function useBlur() {
+    return settings.bg === 'blur' ||
       (settings.bg === 'auto' && settings.view === '2d' && document.body.dataset.screen === 'board');
   }
   const SCENE_FILE = (s) => `../design/backgrounds/masters/${s}-01-2048.jpg`;
@@ -143,27 +137,12 @@ const Kabe = (() => {
   }
 
   function loadScene() {
-    if (useTable()) {
-      const painted = () =>
-        setScene(paintTable(settings.theme, 1280, Math.round(1280 * innerHeight / innerWidth)), innerWidth / innerHeight);
-      if (settings.top === 'plain') return painted();
-      const img = new Image();
-      if (settings.top === 'forest') {
-        // The season's photograph, blurred and dimmed a little (kabe.css, .scene-blur),
-        // as a calm backdrop. CSS, since a canvas can't read a file:// image back.
-        img.onload = () => {
-          document.body.classList.add('scene-blur');
-          setScene(img.src, img.naturalWidth / img.naturalHeight);
-        };
-        img.onerror = painted;
-        img.src = SCENE_FILE(settings.season);
-        return;
-      }
-      img.onload = () => setScene(img.src, img.naturalWidth / img.naturalHeight);
-      img.onerror = painted;
-      img.src = `../design/tabletops/${settings.season}-${TOPS[settings.top]}.png`;
+    if (settings.bg === 'table') {
+      setScene(paintTable(settings.theme, 1280, Math.round(1280 * innerHeight / innerWidth)), innerWidth / innerHeight);
       return;
     }
+    // Blurred in CSS (kabe.css, .scene-blur), since a canvas can't read a file:// image.
+    document.body.classList.toggle('scene-blur', useBlur());
     const img = new Image();
     img.onload = () => setScene(img.src, img.naturalWidth / img.naturalHeight);
     img.onerror = () => setScene(paintScene(settings.season, 1280, 1280), 1);
@@ -242,7 +221,6 @@ const Kabe = (() => {
     el.classList.add('board', `theme-${opts.theme || settings.theme}`);
     if (style === 'stack') el.classList.add('stack');
     if (view === '3d') el.classList.add('view-3d');
-    else if (settings.look === 'crafted') el.classList.add('crafted');
     el.style.setProperty('--n', n);
     let html = '<div class="squares">';
     for (let y = n - 1; y >= 0; y--) {
@@ -280,10 +258,8 @@ const Kabe = (() => {
     el.innerHTML = select('season', SEASONS, settings.season) +
       select('theme', ['auto', ...THEMES], params.has('theme') ? settings.theme : 'auto') +
       select('view', ['2d', '3d'], settings.view) + select('king', KINGS, settings.king) +
-      select('bg', ['auto', 'table', 'photo'], settings.bg) +
+      select('bg', ['auto', 'blur', 'photo', 'table'], settings.bg) +
       select('assist', ['moves', 'mistakes'], settings.assist) +
-      select('top', Object.keys(TOPS), settings.top) +
-      select('look', ['flat', 'crafted'], settings.look) +
       select('font', Object.keys(FONTS), settings.font);
     el.addEventListener('change', (e) => {
       const { key } = e.target.dataset;
@@ -298,7 +274,7 @@ const Kabe = (() => {
     document.documentElement.style.setProperty('--font', loadFont(settings.font));
     document.body.classList.add(`theme-${settings.theme}`);
     loadScene();
-    addEventListener('resize', () => (useTable() && settings.top === 'plain' ? loadScene() : syncGlass()));
+    addEventListener('resize', () => (settings.bg === 'table' ? loadScene() : syncGlass()));
     addEventListener('scroll', syncGlass, true);
     addEventListener('load', syncGlass);
     document.fonts.ready.then(syncGlass);

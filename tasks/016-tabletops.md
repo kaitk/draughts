@@ -1,6 +1,12 @@
 # 016: Tabletop pictures for the 2D game
 
-Status: todo
+Status: cancelled
+
+Cancelled by the user on 2026-11-07: the generated tabletops came out as flat stock
+textures next to the design boards, and the 2D board stays simple, on the blurred
+season photograph as the design boards show it. The tabletop switch and the crafted
+board (grain, seams, a frame edge, turned pieces, a soft top light) were in the
+prototypes at commit aea573c; the prompts stay in `design/tabletops/prompts.txt`.
 
 The 2D game sits on a flat tabletop, for now a gradient with noise in the theme's table
 color ([rendering](../docs/architecture/rendering.md#scene-and-glass)). Try generated
