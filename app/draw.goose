@@ -22,7 +22,6 @@ struct BoardUniforms {
 
 struct View { screen: float4 }     // width, height, the disc's side depth in radii
 
-let MAX_OVERLAY = 4;               // pieces drawn over the UI
 struct Clock { time: float4 }      // seconds
 
 let THEME_BLOCK = """
@@ -336,7 +335,7 @@ struct Drawer {
     scene:          scene::Scene,
     // What goes into the buffers: always the whole of each, so SDL can cycle them.
     upload:      board::Piece[board::MAX_PIECES],
-    over_upload: board::Piece[MAX_OVERLAY],
+    over_upload: board::Piece[panel::OVER],     // the pieces drawn over the UI
     over_count:  i64,
     view:        View,
 }
@@ -355,7 +354,7 @@ fn new(kind: i64) -> Drawer {
         overlay:     gfx::Buffer { 0 },
         scene:       scene::load(kind, full),
         upload:      [board::Piece {}; board::MAX_PIECES],
-        over_upload: [board::Piece {}; MAX_OVERLAY],
+        over_upload: [board::Piece {}; panel::OVER],
         over_count:  0,
         view:        View { screen: float4 { 0.0, 0.0, 0.0, 0.0 } },
     };
@@ -372,7 +371,7 @@ fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::La
          t: theme::Theme, sharp: bool, now: f64, width: f32, height: f32) {
     for i in b.pieces.len { d.upload[i] = b.pieces[i]; }
     gfx::update_buffer(d.pieces, bytes_of(d.upload));
-    d.over_count = min(over.len, MAX_OVERLAY);
+    d.over_count = min(over.len, panel::OVER);
     for i in d.over_count { d.over_upload[i] = over[i]; }
     if d.over_count > 0 { gfx::update_buffer(d.overlay, bytes_of(d.over_upload)); }
     // The disc's side is 0.55% of the board deep, whatever a piece's size.
