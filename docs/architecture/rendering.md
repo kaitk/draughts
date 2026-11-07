@@ -42,9 +42,19 @@ values below on 2026-11-07; they use only what this renderer draws cheaply.
 
 ### Scene and glass
 
-- **The scene** is a calm Nordic landscape for the season (winter, spring, summer,
-  autumn), picked from the date. It is a static picture, drawn under everything softened
-  by a 6 px blur.
+- **The scene** is a calm Estonian landscape for the season, picked from the date, and
+  the season picks the board too (overridable): autumn forest with the wood board,
+  winter spruces with stone, spring birches with a birch board, summer coast with a sea
+  board. Each scene is a photograph-like picture (`design/backgrounds/`, placeholders
+  until task 014). The prototypes still paint the scene and soften it with a 6 px blur;
+  task 012 brings them to the photographs and each theme's palette, glow, and glass
+  tint, from the user's design boards.
+- **Stored** as one JPEG per season, decoded with stb_image, cover-cropped to the
+  screen. Only the current season is loaded. The glass copy is made from it on the GPU
+  whenever the season or screen size changes, so nothing pre-blurred is stored. If
+  graphics memory gets tight, ASTC at build time cuts a 2048² image from 16 MB to about
+  2 MB. AVIF was ruled out: it needs libavif and an AV1 decoder on both platforms to save
+  about 1 MB of APK. (Task 012 confirms this.)
 - **Glass is a pre-blurred copy, not a live blur.** Snowtime measured live backdrop blur
   costing more than its weather animation, and switched to a copy of the background
   blurred once (its `docs/architecture/scene.md`). Here the scene is blurred once, when it
@@ -85,9 +95,11 @@ values below on 2026-11-07; they use only what this renderer draws cheaply.
   of the radius, a rim from 80%, and a side under the disc 0.55% of the board deep, over a
   soft shadow. White: face `#f6ead6`, ring `#d9c3a0`, rim `#e6d3b3`, side `#b89c74`.
   Black: face `#4a2c1c`, ring `#6d4630`, rim `#3a2215`, side `#1e110a`.
-- **Kings** carry a gold crown on the face (`#c08a2c` on white, `#e9c46a` on black). A
-  stacked double disc was compared and rejected: at tablet size it reads as a shadow,
-  where the crown reads at a glance.
+- **Kings** are a setting: crown, stack, or auto (the default). Auto draws a gold crown
+  on the face in the top-down board (`#c08a2c` on white, `#e9c46a` on black), which reads
+  at a glance, and in a 3D board a stack of two discs with the crown on top, as kings are
+  in Estonian play. Top down, a stack reads as a shadow at tablet size, so it's there
+  for those who want it.
 - **States**, all in the glow color `#ffd36e`: the selected piece lifts by 1.1% of the
   board and grows to 1.06 with a glow ring; a legal target is a glowing dot 30% of a
   square; a capture's stop on the way is a ring. A piece that must capture pulses a ring
@@ -101,7 +113,8 @@ with flared strokes in the style of Optima, the face of the reference the user l
 compared in `prototypes/fonts.html`; all four have õ ä ö ü š ž. Tenor Sans, which the
 proof of concept uses (`assets/fonts/`), is the runner-up: clean and wide, but one weight
 only. Marcellus has small serifs, further from Optima. The atlas bakes Latin-1, Latin
-Extended-A, and general punctuation.
+Extended-A, and general punctuation. If titles want more character, Tenor Sans could set
+them and Libertinus the rest; one face is the default, for one atlas.
 
 ## Frames and battery
 
