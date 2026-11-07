@@ -241,15 +241,13 @@ the prototype tried, kept for 3D:
   the setup can still change it), move hints, and the tutorial (one tile, learn the
   moves). **Look**: the background as thumbnails of the four photographs (84 × 52 px)
   after a tile for by the date, the board (flat or raised, 3D dimmed until task 015), and
-  kings (auto, crown, or stack). **Language**: one row, each language by its own name.
+  kings (auto, crown, or stack, the last two each with its king drawn on the tile). **Language**: one row, each language by its own name.
   Each setting is a dim 18 px name at the left of its tiles (above them in portrait); a
   tile has radius 16 px and is lit in the glow color at 22% with a 2 px glow border when
   on. The preview is the board as the choices make it, 380 px: its size, flat or
   raised, the kings, and what the move hints show (all moves: the selected piece's
   capture; mistakes only: a wrong move's red ring and the piece that must capture
-  pulsing), over the season's photograph; in its corner a raised close-up of one king,
-  seen lower than the board, so a stack's two discs show even when the board is flat.
-  In portrait the preview is above the groups. **Puzzle picker**: one glass row per theme (capture, become a king, the
+  pulsing), over the season's photograph. In portrait the preview is above the groups. **Puzzle picker**: one glass row per theme (capture, become a king, the
   only safe move), its icon and ten tiles of at least 64 px with 0 to 3 stars in the
   glow color; locked tiles show a lock, the next unsolved one a glow ring.
   **Solved**: three stars that pop in over the dimmed board, a few drifting sparks, and

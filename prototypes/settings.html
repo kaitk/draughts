@@ -12,9 +12,8 @@
      hints, the tutorial), the look (background, board, kings), and the language, set
      once; a tap applies at once, there is no save. Beside them one preview shows what the
      choices make: the board as it will be (its size, flat or raised, the kings, and what
-     the move hints show), over the season's photograph, with a raised close-up of a king
-     in its corner, so a stack reads as a stack even on the flat board. In portrait the
-     preview is on top. */
+     the move hints show), over the season's photograph. The kings' tiles show their king.
+     In portrait the preview is on top. */
   .settings { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 1fr; gap: 16px 24px;
     height: 100%; padding: 24px 32px; }
   .top { grid-column: 1 / -1; display: flex; align-items: center; gap: 20px; }
@@ -44,13 +43,9 @@
   .preview { position: relative; align-self: center; display: grid; place-items: center; width: 420px; height: 420px; }
   .preview #board { width: 380px; }
   .preview .board:not(.view-3d) { isolation: isolate; }  /* isolation would flatten 3D */
-  .king-up { --r: 20px; position: absolute; right: -12px; bottom: -12px; display: grid; justify-items: center; gap: 2px;
-    width: 116px; padding: 8px 8px 10px; font-size: 14px; color: var(--fg-dim); }
-  .king-up .board { width: 76px; margin: 22px 0 2px; }
-  /* Seen lower than the board, so a stack's two discs and a crown's face both show. */
-  .king-up .view-3d { transform: perspective(170cqw) rotateX(60deg); }
-  /* A disc's height is a share of the board's width; here the board is one square. */
-  .king-up .p3 { --t: 13cqw; }
+  /* A king as each style draws it top down: a crown on the face, or two plain discs. */
+  .kp { position: relative; width: 34px; height: 38px; }
+  .kp .piece { --u: 3px; inset: 4px 0 0; }
   @media (orientation: portrait) {
     .settings { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; overflow: auto; }
     .preview { grid-row: 2; justify-self: center; width: 340px; height: 340px; }
@@ -65,8 +60,7 @@
 <main class="settings">
   <div class="top"><a class="button glass" href="home.html" data-icon="back" aria-label="Back"></a><h1>Settings</h1></div>
   <div class="groups" id="groups"></div>
-  <div class="preview"><div id="board"></div>
-    <div class="king-up glass"><div id="king"></div>King</div></div>
+  <div class="preview"><div id="board"></div></div>
 </main>
 <script>
   Draughts.init();
@@ -86,6 +80,8 @@
   const setting = (title, tiles) => `<div class="setting"><h3>${title}</h3><div class="tiles">${tiles}</div></div>`;
   const group = (iconName, title, body, cls = '') =>
     `<section class="group glass ${cls}"><h2>${Draughts.icon(iconName)}${title}</h2>${body}</section>`;
+  // A king as the style draws it: the painter draws a king inside .stack as two plain discs.
+  const king = (stack) => `<span class="kp${stack ? ' stack' : ''}"><span class="piece white king"></span></span>`;
   const seasons = [['winter', 'Winter'], ['spring', 'Spring'], ['summer', 'Summer'], ['autumn', 'Autumn']];
   document.getElementById('groups').innerHTML =
     group('target', 'Game',
@@ -107,8 +103,8 @@
         tile(S.view === '3d', 'view', '3d', 'Raised<small>3D</small>')) +
       setting('Kings',
         tile(S.king === 'auto', 'king', 'auto', 'Auto<small>crown flat, stack raised</small>') +
-        tile(S.king === 'crown', 'king', 'crown', 'Crown') +
-        tile(S.king === 'stack', 'king', 'stack', 'Stack'))) +
+        tile(S.king === 'crown', 'king', 'crown', `${king(false)}Crown`) +
+        tile(S.king === 'stack', 'king', 'stack', `${king(true)}Stack`))) +
     group('globe', 'Language',
       `<div class="tiles">${tile(params.get('lang') !== 'et', 'lang', 'en', 'English')}${tile(params.get('lang') === 'et', 'lang', 'et', 'Eesti')}</div>`, 'inline');
   document.querySelectorAll('button.tile').forEach((t) => t.onclick = () => go(t.dataset.k, t.dataset.v || null));
@@ -124,10 +120,6 @@
     forced: ['h6'],
     ...(moves ? { selected: 'd4', via: ['f6'], targets: ['h4'] } : { error: ['c5'] }),
     last: ['h4', 'g5'],
-  });
-  // The king close up, raised whatever the board, in the style the board uses.
-  Draughts.board(document.getElementById('king'), {
-    n: 1, view: '3d', king: Draughts.kingStyle(S.view), white: ['a1'], kings: ['a1'],
   });
   Draughts.paint();
   Draughts.syncGlass();
