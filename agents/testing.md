@@ -14,10 +14,11 @@ which would overwrite the main checkout's while another session uses them.
   printing what a reader can check by eye (positions as FEN, moves sorted, how many
   pieces each takes). A test explains in a comment what rule it shows and why the
   position shows it. Areas so far: `rules`, `board` (taps and hints through the board
-  package), `gui`, `game` (the game screen driven through the pointer: undo, hint,
-  restart, the toggle, presses kept apart, the celebration), `shell` (home, the switch
-  to the game and back, settings and their file, the saved game and damaged images of
-  it), `strings` (every language file has every key), and `ai` (the computer player:
+  package), `gui`, `game` (the game screen driven through the pointer: take back, start
+  over, home and settings, presses kept apart, the celebration, a clocked game with its
+  frames, pause, and flag, the turned board; and the clock value on its own), `shell`
+  (home, the switch to the game and back, settings and their file, home's setup and
+  play, the saved game of any variant and damaged images of it), `strings` (every language file has every key), and `ai` (the computer player:
   its search against a plain minimax, the table changing no score, keys, what each level
   plays in known shots, the same move in steps as at once, and that no level hangs a
   piece). A
@@ -79,6 +80,21 @@ measuring there:
 - Rotation for a screenshot: `adb shell settings put system accelerometer_rotation 0`,
   then `user_rotation 0` is portrait (1200 × 1920) and `1` landscape on this tablet;
   read both settings first and put them back after.
+- Tests that tap tiles find them by the order of `gui::BUTTON` quads; the clocks are
+  `BUTTON` quads too, so the game's helpers skip styles from `gui::CLOCK_RUN` on.
+- To see when something happens on the tablet, log from the program's C with
+  `extern void SDL_Log(const char *, ...)` (Android only; it shows in `adb logcat` as
+  `SDL/APP`) and remove it after. The clock's lag was measured that way.
+- In a git worktree: `build/` is a real directory holding a link to the main checkout's
+  `build/goose-v2026.4-macos-arm64` (tests write `build/test/`, so never link all of
+  `build/`). Init the submodules, and inside `third_party/goose_gfx` also
+  `third_party/nuklear` and `third_party/SDL` (the app's C needs nuklear's headers,
+  `scripts/android.py` SDL's revision); link `build/android/SDL_src` to the main
+  checkout's to skip copying SDL. The first Android build then takes about 35 s.
+- Flags reach the app on the tablet through the intent, quoted twice:
+  `adb shell am start -n com.kaitk.draughts/.DraughtsActivity --es args "'--clock 5+3'"`.
+  A run with flags neither reads nor writes `game.bin`. Clean the app's data (settings
+  and the game) with `adb uninstall com.kaitk.draughts` and a fresh install.
 - A button's press shows in a screenshot taken during a long press:
   `adb shell input swipe X Y X Y 2500 &`, then `adb exec-out screencap -p` a second later.
 - The batterystats estimate reads 0 while the tablet charges over USB, so it says

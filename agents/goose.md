@@ -52,6 +52,10 @@ find out by compiling, so the next session doesn't.
 - A package's other files' namespaces come with it: after `import shell from
   "../shell";` the app calls `settings::parse` from `shell/settings.goose`. Importing
   the same directory again under another name is an error.
+- A package's files see each other's namespaces without importing them: `panel.goose`
+  uses `clock::` because `game.goose` imports `.clock`. From outside, a file's namespace
+  is reached by its own name (`home::COMPUTER` after `import shell`), never
+  `shell::home::COMPUTER`, which doesn't parse.
 - A root file and a package it imports may both declare the same package by different
   relative paths (`"../../rules"` and `"../rules"`): they resolve to one directory.
 - `os::args()` for a program's arguments; `exit(code)`. On Android they come from the
@@ -86,7 +90,9 @@ find out by compiling, so the next session doesn't.
   only.
 - A cast that changes nothing is a warning; casts that narrow need `as` (checked in
   debug) or `as!` (never).
-- A local named `fill` or `count` shadows the std function of that name.
+- A local named `fill` or `count` shadows the std function of that name. `in` and `pad`
+  can't name a local at all (both are reserved).
+- Adjacent string literals don't join: `f("a" "b")` doesn't parse; write one literal.
 - A struct literal's fields must come in declaration order, or it doesn't compile.
 - `match` arms with block bodies are separated by commas: `A => { f(); },`.
 - An `if` expression can't be an operand: `x + if c { 1 } else { 0 }` and

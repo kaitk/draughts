@@ -48,21 +48,30 @@ starting position, squares to tap on the first frames, move hints (`--hints move
 the targets; mistakes only by default), the language (`--lang et`; the system's by
 default), and a frame to stop at and save as `draughts.png`. `app/draughts.build` adds the
 program's own C (`app/background.c`, the photographs and their JPEG decoder;
-`app/locale.c`, the system's locales), which `scripts/android.py` builds into the APK too. The photographs are
+`app/locale.c`, the system's locales; `app/wake.c`, the timer a running clock wakes the
+loop with), which `scripts/android.py` builds into the APK too. The photographs are
 embedded from `design/backgrounds/masters/` when they are there; without them the board
 sits on the page color. goose caches the program's C by its source, so after adding or
 changing a master, touch `app/background.c`. The
 board's logic is the `board/` package, the UI layer `gui/`, the game screen `game/`, and
 the screens around it `shell/` (home, and which screen shows), each tested headless
 (`test/board/`, `test/gui/`, `test/game/`, `test/shell/`). The app opens at home; `--fen`,
-`--tap`, or `--screen game` open the game screen, `--screen settings` settings. The
+`--tap` (`c3`, or `d10` on 10 × 10), or `--screen game` open the game screen,
+`--screen settings` settings, `--screen friend` or `computer` home's setup. `--variant
+international|brazilian|russian` starts a new game of that draughts (else the setup's
+last choice), `--clock 5+3|10+5` with a clock, and `--computer white|black` against
+the computer playing that side (the board turned when it plays white). The
 settings file is `settings.txt` in the app's storage folder (on the Mac
 `~/Library/Application Support/kaitk/draughts/`); `--theme`, `--hints`, and `--lang`
 override it for a run without changing it. The game is kept in `game.bin` beside it; a
-run with `--fen`, `--tap`, `--screen`, or `--frames` neither reads nor writes it, so
+run with `--fen`, `--tap`, `--screen`, `--frames`, `--variant`, `--clock`, or
+`--computer` neither reads nor writes it, so
 screenshots don't depend on the last session. On the tablet, check a resume with
 `adb shell input keyevent HOME`, `adb shell am kill com.kaitk.draughts`, and starting
-the app again. `poc/` keeps
+the app again. The flags reach the tablet through the intent:
+`adb shell am start -n com.kaitk.draughts/.DraughtsActivity --es args "'--clock 5+3'"`.
+A clock counts only while the window has focus, so on the Mac it stands still in a
+window launched from a terminal behind it. `poc/` keeps
 task 001's and task 005's small programs.
 
 ## Test the rules

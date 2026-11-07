@@ -208,13 +208,26 @@ the prototype tried, kept for 3D:
   it. There is no hint button and no move-hints toggle: help that does the thinking
   doesn't belong a tap away, and move hints are a setting, reached through settings.
   Take back takes back one move, also one still animating; start over goes back to where
-  the game began; home goes home.
+  the game began; home goes home; settings opens settings, whose back returns to the
+  game. Against the computer the child's pieces are at the bottom: when the child plays
+  black the board is turned, black playing up the screen (2026-11-08).
+  The words are 24 px; the turn's words say who has won once a side has.
 - **Clocks**: each side's piece and its time, m:ss in 36 px tabular figures, in a tile
-  of radius 20 px; black's on top, as black's side of the board is. The running clock is
+  of radius 20 px; black's on top, as black's side of the board is (white's on a turned
+  board, so the child's clock is the nearer one). The running clock is
   the glow color at 18% with a 2 px glow border and its piece has the glow ring; the
   other is white at 6% with its text and piece dimmed. Under ten seconds the running
-  clock turns the forced-capture red. A running clock redraws once a second. The player
-  whose time runs out loses, as FMJD's rules say. The choices are no clock, 5+3, and
+  clock turns the forced-capture red. A running clock redraws once a second, when the
+  time it shows changes; a stopped one draws nothing. The time shown is rounded up, so
+  0:00 shows only once the time is out. The player whose time runs out loses, as FMJD's
+  rules say, and the win card shows the other. The clocks start with the first move:
+  white's first move is untimed, then black's clock runs (2026-11-08), so a child can
+  settle before anything counts. A move adds the increment to the clock that ran; take
+  back runs the clock of the side to move again, the time taken staying taken, and none
+  back at the start; start over sets both full again. Only time with the game on screen
+  counts: not while Android has the app paused or it is in the background, nor while
+  home or settings shows. A clock is the value `game/clock.goose`, no graphics, saved
+  with the game. The choices are no clock, 5+3, and
   10+5 (five minutes plus three seconds a move, ten plus five): 5+3 is FMJD's usual
   blitz and both are in IDF's 8×8 rapid list, gentle enough for children.
 - **A win**: once the winning move has shown, the board dims to 55% and a glass card
@@ -228,10 +241,15 @@ the prototype tried, kept for 3D:
   with stars, then settings, each an icon and a word. In portrait settings is instead
   a quiet button beside the wordmark, so the sheet leaves the board its room. A friend
   and the computer open a new game's setup in the same column: back and the title, then
-  a row of tiles per choice, lit as in settings: which draughts (international 10 × 10,
-  the default, Brazilian 8 × 8, or Russian 8 × 8, each with its board at the start), the level against the computer
-  (easy, medium, hard, with one to three pips), and the clock (none, 5 min, 10 min);
-  then play, a primary row. The choices are kept for next time. The language is
+  a row of tiles per choice, lit as in settings, each with its dim name above it: which
+  draughts (international 10 × 10, the default, Brazilian 8 × 8, or Russian 8 × 8, each
+  with a small board at the start), the level against the computer (easy, medium, hard,
+  with one to three pips), the child's pieces against the computer (white, the default,
+  or black, each tile showing its piece; 2026-11-08), and the clock (none with a
+  stopwatch, 5 min +3 s a move, 10 min +5 s a move); then play, a primary row. The
+  choices are kept for next time in `settings.txt`, and play replaces a saved game
+  without asking. A tile's word too wide for it, as a translation's may be, takes the
+  small face. Home's computer row notes the kept level. The language is
   only in settings (2026-11-07): kids who can't read yet don't need it on home, and a
   tablet set to one language can still play in another. In portrait the column is a sheet below the
   board. **Settings** (`prototypes/settings.html`, regrouped 2026-11-07): back and the
@@ -359,6 +377,14 @@ the display's rate, which costs nothing that matters there. The patched `frame()
 An animation's last frame is not the resting state: the frame after a move or a pulse
 ends is drawn too (`board::update` reports it), or the board would keep the move's last
 in-between frame without its marks.
+
+A running clock must show its next second on time, which the wait doesn't: after a drawn
+frame the next wait ends a second and a frame later, so the clock was drawn 6 ms later
+each second, up to a second late, and skipped a second every two and a half minutes
+(measured on the tablet, 2026-11-08). So while a clock runs the app sets an SDL timer for
+when the time shown changes (`app/wake.c`), which pushes an event of the program's own
+type and ends the wait; the second is then drawn within 5 ms. The Mac's gfx doesn't
+wait, so the timer is Android's only.
 
 Work that finishes on another thread, such as the computer's reply, is seen within the
 second; while the computer thinks, the board shows a small animation, which keeps

@@ -71,8 +71,9 @@ Checked against goose_gfx's source on 2026-11-07:
   written whole and atomically after a change; and the game as it stands, `game.bin`,
   written when the app is paused or quits, since Android may kill a paused app. Both
   are read at start. Nothing is written while idle.
-- **The saved game is one flat value** (`shell::Saved`): the screen, the position, where
-  the game began, the last move, and the undo history (a limited array), written with
+- **The saved game is one flat value** (`shell::Saved`): the screen, the variant, the
+  position, where the game began, the last move, the undo history (a limited array),
+  the clocks, and the side and level of the computer, if it plays; written with
   Goose's `to_bytes` and an FNV-1a checksum after it, about 15 KB. `from_bytes` verifies
   the image's shape and the checksum its bytes; a file that fails either, or has
   another `VERSION`, is ignored and the app starts afresh. The pause is seen as the
