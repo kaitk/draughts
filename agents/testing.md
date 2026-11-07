@@ -11,7 +11,8 @@ before committing a change to `rules/`.
   position shows it. Areas so far: `rules`, `board` (taps and hints through the board
   package), `gui`, `game` (the game screen driven through the pointer: undo, hint,
   restart, the toggle, presses kept apart, the celebration), `shell` (home, the switch
-  to the game and back, settings and their file), and `strings` (every language file has every key). A
+  to the game and back, settings and their file, the saved game and damaged images of
+  it), and `strings` (every language file has every key). A
   test that lays out text calls `gui::test_faces` for glyph sizes without an atlas, and
   `strings::use` before reading a string. Shared helpers are in
   `test/check.goose` (`check::show`, `check::play_only`), imported as

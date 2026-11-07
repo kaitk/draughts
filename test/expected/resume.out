@@ -1,0 +1,11 @@
+saved: screen 1, W:We3,g3,d4:Be5,b6,d6, began W:Wc3,e3,g3:Bb6,d6,f6, history 2, last true 25-20
+image 14932 bytes
+restored: true
+  as it was: screen 1, W:We3,g3,d4:Be5,b6,d6, began W:Wc3,e3,g3:Bb6,d6,f6, history 2, last true 25-20
+  undo: screen 1, B:We3,g3,d4:Bb6,d6,f6, began W:Wc3,e3,g3:Bb6,d6,f6, history 1, last true 10-15
+  undo: screen 1, W:Wc3,e3,g3:Bb6,d6,f6, began W:Wc3,e3,g3:Bb6,d6,f6, history 0, last false 0-0
+a damaged byte in the middle: false
+cut short: false
+not an image: false
+empty: false
+  left as it was: screen 0, W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, began W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 0, last false 0-0

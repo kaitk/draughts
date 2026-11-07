@@ -84,6 +84,9 @@ fn main() {
     var prefs_path: u8[>..] = [];
     prefs_path.append(folder[..draughts_storage(folder)]);
     prefs_path.append("settings.txt");
+    var save_path: u8[>..] = [];
+    save_path.append(prefs_path[..prefs_path.len - 12]);
+    save_path.append("game.bin");
     var prefs_text: u8[>..] = [];
     read_file(prefs_path, prefs_text);
     let prefs = settings::parse(prefs_text);
@@ -113,6 +116,14 @@ fn main() {
         board::set(b, p);
     }
     sh.screen = if screen >= 0 { screen } else if fen.len > 0 || taps.len > 0 { shell::GAME } else { shell::HOME };
+    // The game as it was when the app was last paused (shell::restore; nothing changes
+    // for a missing or damaged file). A run with flags that set up a game or take a
+    // screenshot neither reads nor writes it.
+    let keep = screen < 0 && fen.len == 0 && taps.len == 0 && frames < 0;
+    if keep {
+        var saved: u8[>..] = [];
+        if read_file(save_path, saved) { shell::restore(sh, saved); }
+    }
     var d = draw::new(kind);
     // Loading the photograph took 16 MB of data stack for its pixels; give the pages back
     // rather than keep them resident. The same after baking the text.
@@ -124,8 +135,14 @@ fn main() {
     var dirty = true;
     var drawn = 0;
     var tapped = 0;
+    var focused = true;
     while gfx::frame() {
         if gfx::key_pressed("Escape") { break; }
+        // Android may kill the app once it is paused; it loses focus then, and SDL lets
+        // the loop run once more before blocking, so the game is written here: one small
+        // write per pause, none while idle.
+        if keep && focused && !gfx::focused() { write_file_atomic(save_path, shell::save(sh)); }
+        focused = gfx::focused();
         let now = gfx::time();
         let s = gfx::screen_size();
         if s.x != size.x || s.y != size.y {
@@ -187,4 +204,5 @@ fn main() {
         if frames > 0 && gfx::frame_count() >= frames { break; }
     }
     if frames > 0 { gfx::screenshot("draughts.png"); }
+    if keep { write_file_atomic(save_path, shell::save(sh)); }
 }

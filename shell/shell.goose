@@ -96,6 +96,69 @@ fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> bool 
     return changed;
 }
 
+// What is kept when the app is paused, for Android may kill it then: the screen and the
+// game with its undo history, one flat value (docs/architecture/README.md, "Game state is
+// a value"). VERSION changes when its layout does; an image of another layout doesn't
+// verify, and the app starts afresh.
+let VERSION = 1;
+
+struct Saved {
+    version:   i64,
+    screen:    i64,
+    variant:   u8,
+    start:     rules::Position,
+    pos:       rules::Position,
+    last_from: u8,
+    last_to:   u8,
+    has_last:  bool,
+    history:   board::Step[..board::MAX_HISTORY],
+}
+
+// FNV-1a over bytes, for the image's checksum: from_bytes checks an image's shape, not
+// that its bytes are the ones written.
+fn checksum(data: const u8[:]) -> u64 {
+    var h: u64 = 0xcbf29ce484222325;
+    for c in data { h = (h ^ c) * 0x100000001b3; }
+    return h;
+}
+
+// The image of what is kept, then its checksum (8 bytes, little-endian), for the app to
+// write.
+fn save(sh: Shell&) -> u8[>..] {
+    let b .= sh.game.b;
+    var one: Saved[>..] = [];
+    one.push(Saved { version: VERSION, screen: sh.screen, variant: b.variant, start: b.start, pos: b.pos,
+                     last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.history });
+    var image = to_bytes(one);
+    let h = checksum(image);
+    for i in 8 { image.push(((h >> (8 * i)) & 0xFF) as u8); }
+    return image;
+}
+
+// Brings back what an image kept: the screen, and the game as it was, with no move or
+// selection under way. False, changing nothing, for an image that isn't one.
+fn restore(sh: Shell&, file: const u8[:]) -> bool {
+    guard file.len > 8 else { return false; }
+    let image = file[..file.len - 8];
+    var h: u64 = 0;
+    for i in 8 { h |= (file[image.len + i] as u64) << (8 * i); }
+    guard h == checksum(image) else { return false; }
+    let one, ok = from_bytes<Saved[>..]>(image);
+    guard ok && one.len == 1 else { return false; }
+    let s .= one[0];
+    guard s.version == VERSION && s.variant == sh.game.b.variant && s.screen >= HOME && s.screen <= SETTINGS
+    else { return false; }
+    let b .= sh.game.b;
+    board::set(b, s.start);
+    board::show(b, s.pos);
+    b.history = s.history;
+    b.has_last = s.has_last;
+    b.last = rules::Move { from: s.last_from, to: s.last_to, .. };
+    sh.game.won_at = -1.0;
+    sh.screen = s.screen;
+    return true;
+}
+
 // Whether anything is still moving at `now`; the app draws while it is.
 fn animating(sh: Shell&, g: gui::Gui&, now: f64) -> bool {
     return if sh.screen == GAME { game::animating(sh.game, g, now) }

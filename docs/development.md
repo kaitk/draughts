@@ -58,7 +58,11 @@ the screens around it `shell/` (home, and which screen shows), each tested headl
 `--tap`, or `--screen game` open the game screen, `--screen settings` settings. The
 settings file is `settings.txt` in the app's storage folder (on the Mac
 `~/Library/Application Support/kaitk/draughts/`); `--theme`, `--hints`, and `--lang`
-override it for a run without changing it. `poc/` keeps
+override it for a run without changing it. The game is kept in `game.bin` beside it; a
+run with `--fen`, `--tap`, `--screen`, or `--frames` neither reads nor writes it, so
+screenshots don't depend on the last session. On the tablet, check a resume with
+`adb shell input keyevent HOME`, `adb shell am kill com.kaitk.draughts`, and starting
+the app again. `poc/` keeps
 task 001's and task 005's small programs.
 
 ## Test the rules

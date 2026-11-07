@@ -66,7 +66,16 @@ Checked against goose_gfx's source on 2026-11-07:
   `test/strings/` fails on a key missing from any file. Kids who can't read get icons,
   and later voice clips keyed the same way.
 - **Kept in the app's storage folder** (SDL's pref path, through `app/storage.c`): the
-  settings as a small `key = value` file (`shell/settings.goose`), written whole and
-  atomically after a change and read at start. Nothing is written while idle.
+  settings as a small `key = value` file (`settings.txt`, `shell/settings.goose`),
+  written whole and atomically after a change; and the game as it stands, `game.bin`,
+  written when the app is paused or quits, since Android may kill a paused app. Both
+  are read at start. Nothing is written while idle.
+- **The saved game is one flat value** (`shell::Saved`): the screen, the position, where
+  the game began, the last move, and the undo history (a limited array), written with
+  Goose's `to_bytes` and an FNV-1a checksum after it, about 15 KB. `from_bytes` verifies
+  the image's shape and the checksum its bytes; a file that fails either, or has
+  another `VERSION`, is ignored and the app starts afresh. The pause is seen as the
+  window losing focus: SDL runs the loop once more after Android pauses the app before
+  it blocks.
 - **Assets are embedded** in the binary (shaders by `embed_shader`, fonts and puzzles as
   data), so no code reads Android's asset manager.
