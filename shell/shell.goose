@@ -220,9 +220,11 @@ fn restore(sh: Shell&, file: const u8[:]) -> bool {
     return true;
 }
 
+// The board on screen: settings show their preview, the other screens the game's.
+fn shown(sh: Shell&) -> board::Board& { return if sh.screen == SETTINGS { sh.preview } else { sh.game.b }; }
+
 // Whether anything is still moving at `now`; the app draws while it is.
 fn animating(sh: Shell&, g: gui::Gui&, now: f64) -> bool {
     return if sh.screen == GAME { game::animating(sh.game, g, now) }
-           else if sh.screen == SETTINGS { board::animating(sh.preview, now) || gui::animating(g) }
-           else { board::animating(sh.game.b, now) || gui::animating(g) };
+           else { board::animating(shown(sh), now) || gui::animating(g) };
 }
