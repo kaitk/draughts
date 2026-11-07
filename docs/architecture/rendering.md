@@ -238,11 +238,12 @@ the prototype tried, kept for 3D:
   title, with the language at the title row's right end on glass, each named in itself;
   the choices as words in two glass groups (radius 24 px, icon and title in 24 px) by
   what they change; and beside them one preview of what they make. In landscape the
-  choices take one half of the screen and the board the other; in portrait the board is
+  choices take the width they need at the left, as home's menu does, and the board the
+  rest, about two thirds, so from home the board only moves a little; in portrait the board is
   on top, as large as the rest leaves, and the two groups stand side by side under it.
   **Game**: the draughts a new game starts on (international, Brazilian, Russian; the
   setup can still change it), move hints, and the tutorial (one tile, learn the moves).
-  **Look**: the background as thumbnails of the four photographs (66 × 42 px) after a
+  **Look**: the background as thumbnails of the four photographs (62 × 40 px) after a
   tile for by the date, the board (flat or raised, 3D dimmed until task 015), and kings
   (auto, crown, or stack, the last two each with its king drawn on the tile). Each
   setting is a dim 18 px name at the left of its tiles (above them in portrait); a tile
