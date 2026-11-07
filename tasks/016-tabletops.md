@@ -22,13 +22,16 @@ The prompts keep to these:
 - Looking straight down, warm soft light from the top, calm fine grain, low contrast and
   a little dark; no board, pieces, or text.
 
-Ready to paste: `design/tabletops/prompts.txt`, autumn first in three styles
-(realistic, the 1990s Amiga look at modern resolution, a felt mat on the table) and a
-busier realistic one; the other seasons once a style is picked.
+Autumn is chosen (2026-11-07): `autumn-felt-01.png`, a rust felt mat on walnut with a
+mug and a candlestick at the sides, behind the crafted board. The plain painted table
+and the blurred forest suit only the flat board; the walnut try's things were too big
+next to the pieces. Ready to paste for the other seasons, felt and plain wood, with the
+things kept as small as autumn's: `design/tabletops/prompts.txt`.
 
 ## Acceptance criteria
 
-- [ ] Autumn tried in the three styles, then the other seasons in the chosen one,
+- [x] Autumn tried in the three styles; the felt chosen
+- [ ] The other seasons in felt (and plain wood to compare),
       behind `prototypes/game.html` at both sizes
-- [ ] The user picks a style, or keeps the plain table
+- [ ] Portrait versions (2:3, things at the top and bottom)
 - [ ] If pictures win: stored as the scenes are, added to git only once the user agrees
