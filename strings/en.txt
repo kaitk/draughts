@@ -27,3 +27,6 @@ season.autumn = Autumn
 
 hints.mistakes = Mistakes only
 hints.moves = All moves
+
+board.flat = 2D
+board.raised = 3D

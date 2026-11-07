@@ -11,7 +11,8 @@ let NAMED = [
     "home.puzzles", "home.settings", "level.easy", "level.medium",
     "level.hard", "settings.background", "settings.by_date", "settings.board",
     "settings.hints", "settings.language", "season.winter", "season.spring",
-    "season.summer", "season.autumn", "hints.mistakes", "hints.moves",
+    "season.summer", "season.autumn", "hints.mistakes", "hints.moves", "board.flat",
+    "board.raised",
 ];
 
 fn main() {
@@ -47,7 +48,7 @@ fn main() {
               strings::SETTINGS_BY_DATE, strings::SETTINGS_BOARD, strings::SETTINGS_HINTS,
               strings::SETTINGS_LANGUAGE, strings::SEASON_WINTER, strings::SEASON_SPRING,
               strings::SEASON_SUMMER, strings::SEASON_AUTUMN, strings::HINTS_MISTAKES,
-              strings::HINTS_MOVES];
+              strings::HINTS_MOVES, strings::BOARD_FLAT, strings::BOARD_RAISED];
     var wrong = 0;
     for k, i in ks {
         if strings::KEYS[k] != NAMED[i] {
@@ -56,6 +57,7 @@ fn main() {
         }
     }
     print("constants: ", ks.len, " checked, ", wrong, " wrong");
+    print("the languages' own names: ", strings::name_of(strings::EN), ", ", strings::name_of(strings::ET));
     bad += wrong;
     // The strings each language shows.
     for code, lang in strings::LANGUAGES {

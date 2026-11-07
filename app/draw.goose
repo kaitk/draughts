@@ -15,7 +15,7 @@ struct BoardUniforms {
     screen: float4,     // width, height in pixels, time, squares per side
     rect:   float4,     // the board: x, y, size, corner radius
     inner:  float4,     // the squares: x, y, size, one square
-    scene:  float4,     // x: 1 when there is a photograph; y: how bright it is shown
+    scene:  float4,     // x: 1 when there is a photograph; y: how bright it is shown; z: 1 for no board
     wrong:  float4,     // a wrong move's square (y * size + x, or -1), and how far its flash is, 0..1
     marks:  board::Marks,
 }
@@ -84,6 +84,11 @@ let BOARD_FRAG = """
             : page.rgb;
         vec2 bc = rect.xy + 0.5 * rect.z;
         vec2 bh = vec2(0.5 * rect.z);
+        // A screen without a board shows only the photograph.
+        if (scene.z > 0.5) {
+            result = vec4(c, 1.0);
+            return;
+        }
         // A soft shadow under the board, a little down.
         float sd = box(px, bc + vec2(0.0, 1.4 * u), bh - u, rect.w);
         c *= 1.0 - 0.55 * (1.0 - smoothstep(-3.6 * u, 3.6 * u, sd));
@@ -309,6 +314,7 @@ let PIECE_FRAG = """
     """;
 
 struct Drawer {
+    full:           const u8[:],     // the full-screen vertex shader, for reloading the scene
     board_pipeline: gfx::Pipeline,
     piece_pipeline: gfx::Pipeline,
     pieces:         gfx::Buffer,
@@ -327,6 +333,7 @@ fn new(kind: i64) -> Drawer {
     let piece_vs = embed_shader("vert", PIECE_VERT);
     let piece_fs = embed_shader("frag", THEME_BLOCK, PIECE_FRAG);
     var d = Drawer {
+        full:           full,
         board_pipeline: gfx::pipeline(full, board_fs, gfx::PipelineDesc {}),
         piece_pipeline: gfx::pipeline(piece_vs, piece_fs,
                                       gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED }),
@@ -346,9 +353,9 @@ fn new(kind: i64) -> Drawer {
 // Draws one frame of the board as fill() left it, into the screen's pass, which it
 // leaves open for the UI; the caller ends it. The pieces in `over` are copied now and
 // drawn by overlay(), after the UI. `sharp` shows the photograph as it is (home),
-// otherwise blurred and dimmed (the game).
+// otherwise blurred and dimmed (the game); without `shown`, only the photograph.
 fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::Layout,
-         t: theme::Theme, sharp: bool, now: f64, width: f32, height: f32) {
+         t: theme::Theme, sharp: bool, shown: bool, now: f64, width: f32, height: f32) {
     for i in b.pieces.len { d.upload[i] = b.pieces[i]; }
     gfx::update_buffer(d.pieces, bytes_of(d.upload));
     d.over_count = min(over.len, MAX_OVERLAY);
@@ -362,7 +369,7 @@ fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::La
     gfx::uniforms(gfx::FRAGMENT, 1, BoardUniforms {
         screen: float4 { width, height, now as f32, l.n },
         rect:   l.board, inner: l.inner,
-        scene:  float4 { if d.scene.has { 1.0 } else { 0.0 }, if sharp { 1.0 } else { 0.8 }, 0.0, 0.0 },
+        scene:  float4 { if d.scene.has { 1.0 } else { 0.0 }, if sharp { 1.0 } else { 0.8 }, if shown { 0.0 } else { 1.0 }, 0.0 },
         wrong: b.flash, marks: b.marks });
     gfx::bind_texture(gfx::FRAGMENT, 0, if sharp { d.scene.sharp } else { d.scene.photo }, d.scene.sampler);
     gfx::draw(3);
@@ -371,7 +378,13 @@ fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::La
     gfx::uniforms(gfx::VERTEX, 0, d.view);
     gfx::uniforms(gfx::FRAGMENT, 0, t);
     gfx::uniforms(gfx::FRAGMENT, 1, Clock { time: float4 { now as f32, 0.0, 0.0, 0.0 } });
-    gfx::draw_instanced(6, b.pieces.len);
+    gfx::draw_instanced(6, if shown { b.pieces.len } else { 0 });
+}
+
+// Swaps the scene for theme `kind`'s.
+fn reload(d: Drawer&, kind: i64) {
+    scene::release(d.scene);
+    d.scene = scene::load(kind, d.full);
 }
 
 // Draws the pieces frame() was given for over the UI, in the open pass.

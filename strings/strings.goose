@@ -20,6 +20,7 @@ let KEYS = [
     "settings.language",
     "season.winter", "season.spring", "season.summer", "season.autumn",
     "hints.mistakes", "hints.moves",
+    "board.flat", "board.raised",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -42,7 +43,9 @@ let SEASON_SUMMER = 17;
 let SEASON_AUTUMN = 18;
 let HINTS_MISTAKES = 19;
 let HINTS_MOVES = 20;
-let COUNT = 21;
+let BOARD_FLAT = 21;
+let BOARD_RAISED = 22;
+let COUNT = 23;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];
@@ -91,6 +94,18 @@ fn use(lang: i64) {
 
 // The current language's string for a key (one of the constants above).
 fn get(k: i64) -> const u8[:] { return table[k]; }
+
+// A language's own name, as its file gives it, whichever language is current.
+fn name_of(lang: i64) -> const u8[:] {
+    var text = file(lang);
+    while text.len > 0 {
+        let line, rest = next_line(text);
+        text = rest;
+        let name, value, ok = entry(line);
+        if ok && name == KEYS[LANGUAGE_NAME] { return value; }
+    }
+    return LANGUAGES[lang];
+}
 
 // The language to use, from the system's preferred locales in order, separated by
 // commas ("et-EE,en-US"): the first whose language has a file, else English.

@@ -21,6 +21,7 @@ let ICON = 2;               // a line icon on a 24-unit grid; look.z: which
 let FILL = 3;               // a plain rounded rect in `color`
 let SPARK = 4;              // a glowing disc in the glow color; color.a: its opacity
 let TEXT = 5;               // a glyph from the font atlas in the text color; look.yzw, extra.y: its uv
+let PICTURE = 6;            // a season's thumbnail (look.z: its theme), or the glow's tint for -1
 
 // How a tile and its icon look (extra.y), in the theme's colors.
 let PLAIN = 0;              // white at 10%
@@ -30,6 +31,8 @@ let OFF = 3;                // a toggle that is off: white at 8%, the icon faded
 let QUIET = 4;              // white at 8% with a border at 18%, no highlight
 let ROW = 5;                // a menu row: nothing until pressed, no border or shadow
 let ROW_PRIMARY = 6;        // a menu row in the glow color at 24%
+let CHOSEN = 7;             // a choice that is on: the glow color at 22%, a 2 dp glow border
+let CHOICE = 8;             // a choice that is off: white at 10%, a border at 12%
 
 // The line icons the shader knows (rendering.md, "Controls").
 let NO_ICON = 0;
@@ -43,14 +46,19 @@ let FRIEND = 7;             // home's filled icons: two figures,
 let COMPUTER = 8;           // a robot head,
 let PUZZLE = 9;             // a jigsaw piece
 let GEAR = 10;              // settings
+let SUN = 11;               // settings' groups: the background,
+let TARGET = 12;            // move hints,
+let GLOBE = 13;             // the language
 
 // Text faces (rendering.md, "Fonts"): one size each, in dp, baked by the app at the
 // screen's pixel size.
-let TITLE = 0;
-let LABEL = 1;
-let SMALL = 2;
-let FACES = 3;
-let FACE_DP = [64.0, 30.0, 17.0];
+let TITLE = 0;              // the wordmark
+let LABEL = 1;              // menu rows
+let HEADING = 2;            // a settings group's title
+let BODY = 3;               // a choice's word
+let SMALL = 4;              // notes, a picture's label
+let FACES = 5;
+let FACE_DP = [64.0, 30.0, 24.0, 20.0, 17.0];
 
 // The characters the faces hold (the atlas's ranges): Latin-1 and Latin Extended-A from
 // the space on, and general punctuation. Others are drawn as '?'.
@@ -283,6 +291,35 @@ fn row(g: Gui&, id: i64, r: float4, icon: i64, label: const u8[:], note: const u
     cut_left(c, 18.0 * u);
     text(g, LABEL, c, label, a, 0.0, LEFT);
     text(g, SMALL, c, note, 0.66 * a, 0.0, RIGHT);
+    return clicked;
+}
+
+// A choice tile (prototypes/settings.html): a picture of size `pic` (centered across)
+// with a label under it, or for kind -2 a word; lit in the glow color when on. A picture is a season's
+// thumbnail (pic, a theme), or for -1 the glow's tint with a sun. A choice that isn't
+// `enabled` is dimmed and takes no tap. True when it is tapped.
+fn choice(g: Gui&, id: i64, r: float4, kind: i64, pic: float2, label: const u8[:], on: bool, enabled: bool) -> bool {
+    let u = g.scale;
+    var clicked = false;
+    if enabled {
+        let c, p = hold(g, id, r);
+        clicked = c;
+    } else if g.input.pressed && inside(r, g.input.at) {
+        g.took = true;
+    }
+    let a: f32 = if enabled { 1.0 } else { 0.4 };
+    add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { BUTTON, 16.0 * u, 0.0, 0.0 },
+                  extra: float4 { u, if on { CHOSEN } else { CHOICE }, 0.0, 0.0 } });
+    if kind == -2 {
+        text(g, BODY, r, label, a, 0.0, CENTER);
+        return clicked;
+    }
+    var c = inset(r, 6.0 * u);
+    let picture = center(cut_top(c, pic.y), pic.x, pic.y);
+    add(g, Quad { rect: picture, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { PICTURE, 11.0 * u, kind, 0.0 },
+                  extra: float4 { u, 0.0, 0.0, 0.0 } });
+    if kind == -1 { glyph_icon(g, center(picture, 30.0 * u, 30.0 * u), SUN, PLAIN, 0.0, a); }
+    text(g, SMALL, c, label, a, 0.0, CENTER);
     return clicked;
 }
 

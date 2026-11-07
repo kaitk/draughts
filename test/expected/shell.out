@@ -2,7 +2,8 @@ start: home, sharp true, board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, glyph
 the wordmark's piece: 1, crowned 1.0, no ring true
 continue: game, sharp false, board at vec4<f32> { 116.0, 24.0, 752.0, 12.032001 }, glyphs 0, W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 0
 back: home, sharp true, board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, glyphs 57, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
-the computer, puzzles, settings: home, sharp true, board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, glyphs 57, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
+the computer, puzzles: home, sharp true, board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, glyphs 57, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
+settings: settings, board false, sharp true, its first frame drawn true, the next false
 continue: game, sharp false, board at vec4<f32> { 116.0, 24.0, 752.0, 12.032001 }, glyphs 0, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
 a friend: game, sharp false, board at vec4<f32> { 116.0, 24.0, 752.0, 12.032001 }, glyphs 0, W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 0
 portrait: board vec4<f32> { 80.0, 66.0, 640.0, 10.240001 }, sheet from 772.0, clear true

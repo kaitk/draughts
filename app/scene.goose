@@ -26,6 +26,12 @@ let GLASS_SIZE = 256;
 let GLASS_SIGMA = 3.9;
 
 extern fn draughts_background(kind: i64, size: i64, out: u8[:]) -> bool;
+extern fn draughts_background_crop(kind: i64, width: i64, height: i64, out: u8[:]) -> bool;
+
+// A season's thumbnail in settings: the photograph's middle at the picture's 104 × 64
+// shape, about a texel to a pixel at 1.5 pixels per dp; the four stacked in one texture.
+let THUMB_W = 160;
+let THUMB_H = 98;
 extern fn draughts_background_done();
 
 let BLUR_FRAG = """
@@ -101,4 +107,28 @@ fn pass(blur: gfx::Pipeline, sampler: gfx::Sampler, src: gfx::Texture, dst: gfx:
     gfx::uniforms(gfx::FRAGMENT, 0, Blur { dir: dir });
     gfx::draw(3);
     gfx::end_pass();
+}
+
+// Releases the scene's textures, for another season's.
+fn release(s: Scene&) {
+    gfx::release(s.photo);
+    if s.has {
+        gfx::release(s.sharp);
+        gfx::release(s.glass);
+    }
+    gfx::release(s.sampler);
+}
+
+// The four seasons' thumbnails stacked, by theme, top to bottom, in one texture; a
+// season without a photograph is black. Each decodes its photograph, so this is made
+// only when settings first opens.
+fn thumbs() -> gfx::Texture {
+    var px: u8[>..] = [];
+    px.resize(THUMB_W * THUMB_H * 4 * 4, 0);
+    let one = THUMB_W * THUMB_H * 4;
+    for kind in 4 { draughts_background_crop(kind, THUMB_W, THUMB_H, px[kind * one..(kind + 1) * one]); }
+    draughts_background_done();
+    let t = gfx::texture2d(THUMB_W, 4 * THUMB_H);
+    gfx::update_texture(t, px);
+    return t;
 }

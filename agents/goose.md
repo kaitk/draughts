@@ -46,6 +46,9 @@ find out by compiling, so the next session doesn't.
   `sort(lines) { a, b => compare(a, b) < 0 };` (`test/check.goose`).
 - A fixed buffer the caller owns, passed by reference into a `recursive fn`, is how move
   generation fills moves without allocating (`rules::Moves`, `rules::jump`).
+- A package's other files' namespaces come with it: after `import shell from
+  "../shell";` the app calls `settings::parse` from `shell/settings.goose`. Importing
+  the same directory again under another name is an error.
 - A root file and a package it imports may both declare the same package by different
   relative paths (`"../../rules"` and `"../rules"`): they resolve to one directory.
 - `os::args()` for a program's arguments; `exit(code)`. On Android they come from the

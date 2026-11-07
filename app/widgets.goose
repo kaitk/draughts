@@ -52,6 +52,7 @@ let FRAG = """
     layout(location = 0) out vec4 result;
     layout(set = 2, binding = 0) uniform sampler2D glass_copy;
     layout(set = 2, binding = 1) uniform sampler2D atlas;
+    layout(set = 2, binding = 2) uniform sampler2D thumbs;   // four seasons, stacked
     layout(set = 3, binding = 1) uniform View { vec4 screen; };
     vec4 acc = vec4(0.0);
     void over(vec3 c, float a) { acc = vec4(c * a, a) + acc * (1.0 - a); }
@@ -84,6 +85,13 @@ let FRAG = """
         vec2 e0 = c + r * vec2(cos(a0), sin(a0));
         vec2 e1 = c + r * vec2(cos(a0 + sweep), sin(a0 + sweep));
         return min(length(p - e0), length(p - e1));
+    }
+    // Eight rays from radius a to b round the origin: the four axes and the diagonals.
+    float rays(vec2 q, float a, float b) {
+        vec2 s = abs(q);
+        float d = seg(vec2(max(s.x, s.y), min(s.x, s.y)), vec2(a, 0.0), vec2(b, 0.0));
+        vec2 r = vec2(s.x + s.y, abs(s.x - s.y)) * 0.70710678;
+        return min(d, seg(r, vec2(a, 0.0), vec2(b, 0.0)));
     }
     float icon(int k, vec2 p) {
         if (k == 1) {           // undo
@@ -139,11 +147,22 @@ let FRAG = """
         }
         if (k == 10) {          // settings: a gear of two rings and eight spokes
             vec2 q = p - 12.0;
-            float d = min(abs(length(q) - 3.2), abs(length(q) - 6.5));
+            return min(min(abs(length(q) - 3.2), abs(length(q) - 6.5)), rays(q, 6.5, 9.5));
+        }
+        if (k == 11) {          // the background: a sun
+            vec2 q = p - 12.0;
+            return min(abs(length(q) - 4.0), rays(q, 7.5, 10.0));
+        }
+        if (k == 12) {          // move hints: a target
+            vec2 q = p - 12.0;
+            float d = min(abs(length(q) - 7.0), length(q) - 0.8);
             vec2 a = abs(q);
-            d = min(d, seg(vec2(max(a.x, a.y), min(a.x, a.y)), vec2(6.5, 0.0), vec2(9.5, 0.0)));
-            vec2 r = vec2(a.x + a.y, abs(a.x - a.y)) * 0.70710678;
-            return min(d, seg(r, vec2(6.5, 0.0), vec2(9.5, 0.0)));
+            return min(d, seg(vec2(max(a.x, a.y), min(a.x, a.y)), vec2(6.0, 0.0), vec2(10.0, 0.0)));
+        }
+        if (k == 13) {          // the language: a globe
+            vec2 q = p - 12.0;
+            float d = min(abs(length(q) - 9.0), seg(p, vec2(3.0, 12.0), vec2(21.0, 12.0)));
+            return min(d, abs(length(q / vec2(3.8, 9.0)) - 1.0) * 3.8);
         }
         return 1e9;
     }
@@ -180,19 +199,24 @@ let FRAG = """
             // inset light border and top highlight; a small shadow. A primary tile is the
             // glow color at 22%. A toggle has no highlight: on, the glow color at 26%
             // with a glow border; off, white at 8% with a border at 18%; a quiet tile
-            // too. A menu row has no border or shadow: clear, or the glow color at 24%.
+            // too. A menu row has no border or shadow: clear, or the glow color at 24%. A
+            // choice has no shadow either: on, the glow color at 22% with a 2 dp glow
+            // border; off, white at 10% with a border at 12%. color.a dims a tile.
             float pr = v_look.w;
-            bool row = style >= 5;
-            if (!row) h *= 1.0 - 0.04 * pr;
+            bool flat = style >= 5;
+            if (!flat) h *= 1.0 - 0.04 * pr;
             float d = box(p, c, h, r);
-            if (!row) over(vec3(0.0), 0.5 * shadow(p, c, h, r, 6.0 * u, 14.0 * u, -8.0 * u) * (1.0 - cover(d)));
-            float a = cover(d);
-            vec3 fc = style == 1 || style == 2 || style == 6 ? glow.rgb : vec3(1.0);
+            if (!flat) over(vec3(0.0), 0.5 * shadow(p, c, h, r, 6.0 * u, 14.0 * u, -8.0 * u) * (1.0 - cover(d)));
+            float a = cover(d) * (v_color.a > 0.0 ? v_color.a : 1.0);
+            bool lit = style == 1 || style == 2 || style == 6 || style == 7;
+            vec3 fc = lit ? glow.rgb : vec3(1.0);
             float fa = (style == 1 ? 0.22 : style == 2 ? 0.26 : style == 3 || style == 4 ? 0.08
-                        : style == 5 ? 0.0 : style == 6 ? 0.24 : 0.10) + 0.14 * pr;
+                        : style == 5 ? 0.0 : style == 6 ? 0.24 : style == 7 ? 0.22 : 0.10) + 0.14 * pr;
             vec4 tile = vec4(fc * fa, fa);
-            float edge = (row ? 0.0 : style == 2 ? 1.0 : style >= 3 ? 0.18 : 0.2) * (1.0 - cover(d + u));
-            tile = vec4((style == 2 ? glow.rgb : vec3(1.0)) * edge, edge) + tile * (1.0 - edge);
+            float ea = style == 5 || style == 6 ? 0.0 : style == 2 || style == 7 ? 1.0 : style == 8 ? 0.12
+                       : style >= 3 ? 0.18 : 0.2;
+            float edge = ea * (1.0 - cover(d + (style == 7 ? 2.0 : 1.0) * u));
+            tile = vec4((style == 2 || style == 7 ? glow.rgb : vec3(1.0)) * edge, edge) + tile * (1.0 - edge);
             float hl = style >= 2 ? 0.0 : 0.18 * top_line(p, c, h, r, u);
             tile = vec4(vec3(hl), hl) + tile * (1.0 - hl);
             acc = tile * a + acc * (1.0 - tile.a * a);
@@ -208,6 +232,18 @@ let FRAG = """
             float a = clamp(0.5 - d / px, 0.0, 1.0) * (style == 3 ? 0.45 : 1.0) * v_color.a;
             vec3 ic = style == 2 ? glow.rgb : text.rgb;
             result = vec4(ic * a, a);
+            return;
+        }
+        if (kind == 6) {
+            // A picture: a season's thumbnail, cover-cropped; or for -1 the glow at 18%
+            // mixed into white at 6% (CSS color-mix), which leaves it 23% opaque.
+            float a = cover(box(p, c, h, r)) * v_color.a;
+            int k = int(v_look.z);
+            vec2 t = (p - v_rect.xy) / v_rect.zw;
+            if (k < 0) a *= 0.23;
+            vec3 pc = k >= 0 ? texture(thumbs, vec2(t.x, (float(k) + t.y) * 0.25)).rgb
+                             : mix(vec3(1.0), glow.rgb, 0.78);
+            result = vec4(pc * a, a);
             return;
         }
         if (kind == 5) {
@@ -236,6 +272,7 @@ struct Widgets {
     quads:    gfx::Buffer,
     upload:   gui::Quad[gui::MAX_QUADS],
     atlas:    gfx::Texture,     // the text's glyphs (text.goose), or 0 before they're baked
+    thumbs:   gfx::Texture,     // the seasons' thumbnails (scene.goose), or 0 before settings
 }
 
 fn new() -> Widgets {
@@ -245,6 +282,7 @@ fn new() -> Widgets {
         quads:  gfx::Buffer { 0 },
         upload: [gui::Quad {}; gui::MAX_QUADS],
         atlas:  gfx::Texture { 0 },
+        thumbs: gfx::Texture { 0 },
     };
     w.quads = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(w.upload));
     return w;
@@ -267,5 +305,6 @@ fn frame(w: Widgets&, g: gui::Gui&, s: scene::Scene&, t: theme::Theme, width: f3
     gfx::uniforms(gfx::FRAGMENT, 1, view);
     gfx::bind_texture(gfx::FRAGMENT, 0, s.glass, s.sampler);
     gfx::bind_texture(gfx::FRAGMENT, 1, if w.atlas.id != 0 { w.atlas } else { s.glass }, s.sampler);
+    gfx::bind_texture(gfx::FRAGMENT, 2, if w.thumbs.id != 0 { w.thumbs } else { s.glass }, s.sampler);
     gfx::draw_instanced(6, g.quads.len);
 }

@@ -29,18 +29,26 @@ import .text;
 
 // The system's preferred locales, "et-EE,en-US" (locale.c); returns how many bytes.
 extern fn draughts_locales(out: u8[:]) -> i64;
+// The app's storage folder, ending in a separator (storage.c); returns how many bytes.
+extern fn draughts_storage(out: u8[:]) -> i64;
+
+// The theme a season setting picks: its own, or by the date.
+fn theme_for(season: i64) -> i64 {
+    return if season >= 0 { season } else { theme::for_month(theme::month(time())) };
+}
 
 fn main() {
     // Development flags: --theme NAME, --size WxH (the window), --fen POSITION,
     // --tap SQUARE (any number, played in order on the first frames), --frames N (then
     // save draughts.png), --hints moves (show targets; mistakes only by default), --lang
     // CODE (a language with a file in strings/; the system's by default), --screen
-    // home|game (home unless a position or taps are given).
+    // home|game|settings (home unless a position or taps are given). --theme, --hints, and
+    // --lang override the settings for the run without changing them.
     var width = 1280;
     var height = 800;
-    var kind = theme::for_month(theme::month(time()));
+    var kind = -1;
     var frames = -1;
-    var hints = board::MISTAKES;
+    var hints = -1;
     var lang = -1;
     var screen = -1;
     var fen:  u8[>..]       = [];
@@ -62,19 +70,29 @@ fn main() {
         if argv[i] == "--fen" { fen.append(argv[i + 1]); }
         if argv[i] == "--hints" && argv[i + 1] == "moves" { hints = board::MOVES; }
         if argv[i] == "--lang" { lang = strings::pick(argv[i + 1]); }
-        if argv[i] == "--screen" { screen = if argv[i + 1] == "game" { shell::GAME } else { shell::HOME }; }
+        if argv[i] == "--screen" {
+            screen = if argv[i + 1] == "game" { shell::GAME } else if argv[i + 1] == "settings" { shell::SETTINGS } else { shell::HOME };
+        }
         if argv[i] == "--tap" && argv[i + 1].len == 2 && taps.len < 16 {
             let t .= taps.push([]);
             t.append(argv[i + 1]);
         }
         i += 2;
     }
-    let colors = theme::get(kind);
-    if lang < 0 {
-        var locales: u8[256] = [0; 256];
-        let n = draughts_locales(locales);
-        lang = strings::pick(locales[..n]);
-    }
+    // The settings, kept in the app's storage folder (shell/settings.goose).
+    var folder:     u8[512] = [0; 512];
+    var prefs_path: u8[>..] = [];
+    prefs_path.append(folder[..draughts_storage(folder)]);
+    prefs_path.append("settings.txt");
+    var prefs_text: u8[>..] = [];
+    read_file(prefs_path, prefs_text);
+    let prefs = settings::parse(prefs_text);
+    if kind < 0 { kind = theme_for(prefs.season); }
+    if hints < 0 { hints = prefs.hints; }
+    var colors = theme::get(kind);
+    var locales: u8[256] = [0; 256];
+    let system_lang = strings::pick(locales[..draughts_locales(locales)]);
+    if lang < 0 { lang = if prefs.language >= 0 { prefs.language } else { system_lang }; }
     strings::use(lang);
 
     var android_root: u8[>..] = [];
@@ -84,6 +102,8 @@ fn main() {
     defer gfx::close();
 
     var sh = shell::new(rules::RUSSIAN);
+    sh.prefs = prefs;
+    sh.prefs.hints = hints;
     let gm .= sh.game;
     let b .= gm.b;
     b.hints = hints;
@@ -123,6 +143,27 @@ fn main() {
                                  released: gfx::mouse_released(gfx::MOUSE_LEFT) };
         gui::begin(g, input, scale, now);
         if shell::frame(sh, g, size.x, size.y, now) { dirty = true; }
+        // A tap in settings applies at once and is written; a new season reloads the
+        // photograph and its blurred copies.
+        if sh.changed {
+            sh.changed = false;
+            var out: u8[>..] = [];
+            settings::write(sh.prefs, out);
+            write_file_atomic(prefs_path, out);
+            let next = if sh.prefs.language >= 0 { sh.prefs.language } else { system_lang };
+            if next != strings::current { strings::use(next); }
+            if theme_for(sh.prefs.season) != kind {
+                kind = theme_for(sh.prefs.season);
+                colors = theme::get(kind);
+                draw::reload(d, kind);
+                trim_memory();
+            }
+            dirty = true;
+        }
+        if sh.screen == shell::SETTINGS && w.thumbs.id == 0 {
+            w.thumbs = scene::thumbs();
+            trim_memory();
+        }
         let l = sh.layout;
         if tapped < taps.len && !b.moving && sh.screen == shell::GAME {
             let v .= rules::VARIANTS[b.variant];
@@ -136,7 +177,7 @@ fn main() {
         if dirty || shell::animating(sh, g, now) {
             board::fill(b, l, now);
             widgets::upload(w, g);
-            draw::frame(d, b, gm.overlay, l, colors, sh.sharp, now, size.x, size.y);
+            draw::frame(d, b, gm.overlay, l, colors, sh.sharp, sh.board, now, size.x, size.y);
             widgets::frame(w, g, d.scene, colors, size.x, size.y);
             draw::overlay(d, colors, now);
             gfx::end_pass();

@@ -70,10 +70,12 @@ void draughts_background_done(void) {
 }
 
 // Decodes theme `kind`'s photograph (once for any number of sizes), crops the middle
-// square, and scales it down to `size` × `size` RGBA by averaging, into `out` (size *
-// size * 4 bytes). False when the image isn't built in or doesn't decode.
-_Bool draughts_background(int64_t kind, int64_t size, draughts_bytes out) {
-    if (kind < 0 || kind > 3 || lengths[kind] == 0 || size <= 0 || out.len < size * size * 4) {
+// of its middle square to the shape of `width` × `height`, and scales that down to
+// width × height RGBA by averaging, into `out` (width * height * 4 bytes). False when
+// the image isn't built in or doesn't decode.
+_Bool draughts_background_crop(int64_t kind, int64_t width, int64_t height, draughts_bytes out) {
+    if (kind < 0 || kind > 3 || lengths[kind] == 0 || width <= 0 || height <= 0 || height > width ||
+        out.len < width * height * 4) {
         return 0;
     }
     if (decoded_kind != kind) {
@@ -86,11 +88,12 @@ _Bool draughts_background(int64_t kind, int64_t size, draughts_bytes out) {
     int w = decoded_w, h = decoded_h;
     const unsigned char *px = decoded;
     int side = w < h ? w : h;
-    int x0 = (w - side) / 2, y0 = (h - side) / 2;
-    for (int64_t y = 0; y < size; y++) {
-        int ya = y0 + (int)(y * side / size), yb = y0 + (int)((y + 1) * side / size);
-        for (int64_t x = 0; x < size; x++) {
-            int xa = x0 + (int)(x * side / size), xb = x0 + (int)((x + 1) * side / size);
+    int crop = (int)(side * height / width);
+    int x0 = (w - side) / 2, y0 = (h - crop) / 2;
+    for (int64_t y = 0; y < height; y++) {
+        int ya = y0 + (int)(y * crop / height), yb = y0 + (int)((y + 1) * crop / height);
+        for (int64_t x = 0; x < width; x++) {
+            int xa = x0 + (int)(x * side / width), xb = x0 + (int)((x + 1) * side / width);
             uint32_t r = 0, g = 0, b = 0, count = 0;
             for (int sy = ya; sy < yb; sy++) {
                 const unsigned char *p = px + ((size_t)sy * w + xa) * 3;
@@ -98,7 +101,7 @@ _Bool draughts_background(int64_t kind, int64_t size, draughts_bytes out) {
                     r += p[0]; g += p[1]; b += p[2]; count++;
                 }
             }
-            uint8_t *o = out.data + (y * size + x) * 4;
+            uint8_t *o = out.data + (y * width + x) * 4;
             o[0] = (uint8_t)((r + count / 2) / count);
             o[1] = (uint8_t)((g + count / 2) / count);
             o[2] = (uint8_t)((b + count / 2) / count);
@@ -106,4 +109,9 @@ _Bool draughts_background(int64_t kind, int64_t size, draughts_bytes out) {
         }
     }
     return 1;
+}
+
+// The middle square of theme `kind`'s photograph, `size` × `size`; as above.
+_Bool draughts_background(int64_t kind, int64_t size, draughts_bytes out) {
+    return draughts_background_crop(kind, size, size, out);
 }

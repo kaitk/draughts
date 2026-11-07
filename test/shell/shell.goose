@@ -1,8 +1,9 @@
 // The screens (shell/), headless, driven through the pointer as the app drives them:
 // the app opens at home with the board beside the menu; continue opens the game as it
 // stands and back on the panel returns home with the game kept; a friend starts a new
-// game; the computer and puzzles do nothing until tasks 006 and 007; home lays out the
-// same in landscape and portrait, the board clear of the menu.
+// game; the computer and puzzles do nothing until tasks 006 and 007; settings opens
+// settings, with no board, and its back returns home; home lays out the same in
+// landscape and portrait, the board clear of the menu.
 import std;
 import vec;
 import rules from "../../rules";
@@ -40,7 +41,9 @@ fn tile(g: gui::Gui&, n: i64) -> float2 {
     return float2 { 0.0, 0.0 };
 }
 
-fn screen(sh: shell::Shell&) -> const u8[:] { if sh.screen == shell::HOME { "home" } else { "game" } }
+fn screen(sh: shell::Shell&) -> const u8[:] {
+    if sh.screen == shell::HOME { "home" } else if sh.screen == shell::GAME { "game" } else { "settings" }
+}
 
 fn show(sh: shell::Shell&, g: gui::Gui&, what: const u8[:]) {
     var glyphs = 0;
@@ -72,8 +75,18 @@ fn main() {
     show(sh, g, "back");
     tap(sh, g, tile(g, 2), 2.1);            // the computer
     tap(sh, g, tile(g, 3), 2.2);            // puzzles
-    tap(sh, g, tile(g, 4), 2.3);            // settings
-    show(sh, g, "the computer, puzzles, settings");
+    show(sh, g, "the computer, puzzles");
+    // Settings, and an idle frame long after the tap: the new screen's first frame is
+    // drawn, the next one isn't.
+    let at = tile(g, 4);
+    frame(sh, g, at, true, true, false, 2.3);
+    frame(sh, g, at, false, false, true, 2.32);
+    gui::begin(g, gui::Input { at: off, .. }, 1.0, 3.0);
+    let first = shell::frame(sh, g, W, H, 3.0);
+    gui::begin(g, gui::Input { at: off, .. }, 1.0, 3.1);
+    print("settings: ", screen(sh), ", board ", sh.board, ", sharp ", sh.sharp, ", its first frame drawn ", first,
+          ", the next ", shell::frame(sh, g, W, H, 3.1));
+    tap(sh, g, tile(g, 0), 2.35);           // back
     tap(sh, g, tile(g, 0), 2.4);            // continue
     show(sh, g, "continue");
     tap(sh, g, tile(g, 3), 2.5);

@@ -26,3 +26,6 @@ season.autumn = Sügis
 
 hints.mistakes = Ainult vead
 hints.moves = Kõik käigud
+
+board.flat = 2D
+board.raised = 3D

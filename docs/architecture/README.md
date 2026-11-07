@@ -65,5 +65,8 @@ Checked against goose_gfx's source on 2026-11-07:
   English. A language is a new file plus its code in `strings::LANGUAGES`;
   `test/strings/` fails on a key missing from any file. Kids who can't read get icons,
   and later voice clips keyed the same way.
+- **Kept in the app's storage folder** (SDL's pref path, through `app/storage.c`): the
+  settings as a small `key = value` file (`shell/settings.goose`), written whole and
+  atomically after a change and read at start. Nothing is written while idle.
 - **Assets are embedded** in the binary (shaders by `embed_shader`, fonts and puzzles as
   data), so no code reads Android's asset manager.

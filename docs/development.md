@@ -55,7 +55,10 @@ changing a master, touch `app/background.c`. The
 board's logic is the `board/` package, the UI layer `gui/`, the game screen `game/`, and
 the screens around it `shell/` (home, and which screen shows), each tested headless
 (`test/board/`, `test/gui/`, `test/game/`, `test/shell/`). The app opens at home; `--fen`,
-`--tap`, or `--screen game` open the game screen. `poc/` keeps
+`--tap`, or `--screen game` open the game screen, `--screen settings` settings. The
+settings file is `settings.txt` in the app's storage folder (on the Mac
+`~/Library/Application Support/kaitk/draughts/`); `--theme`, `--hints`, and `--lang`
+override it for a run without changing it. `poc/` keeps
 task 001's and task 005's small programs.
 
 ## Test the rules
