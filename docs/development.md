@@ -86,6 +86,8 @@ the native perft runs at 12 to 16 million positions a second.
 goose build -o build/aibench tools/aibench.goose && build/aibench   # each level's reply time
 goose build -o build/aimatch tools/aimatch.goose
 build/aimatch russian 90 45 20      # skill 90 against 45, 20 games, colors swapped
+goose build -o build/play tools/play.goose
+build/play russian easy white       # play it yourself in the terminal
 scripts/android_cli.sh tools/aibench.goose                          # the same on the tablet
 ```
 
@@ -93,7 +95,9 @@ scripts/android_cli.sh tools/aibench.goose                          # the same o
 Brazilian and prints its speed in nodes a second ([computer player](architecture/ai.md));
 give it a variant and a FEN to time one position. `tools/aimatch.goose` plays the computer
 against itself at two skills (`--nodes A B` gives each side its own node limit;
-`--fens PLY` prints the positions games reach, for benchmarks). `scripts/android_cli.sh`
+`--fens PLY` prints the positions games reach, for benchmarks). `tools/play.goose` lets you
+play it in the terminal at a level or a skill (0 to 100) with either color: type a move
+as its list shows it or its number, `u` to take back your move and its reply. `scripts/android_cli.sh`
 builds any headless Goose program as a plain Android executable with the NDK's clang at
 -O2, pushes it to `/data/local/tmp`, and runs it with the arguments given: no APK, no SDL.
 `adb shell "taskset 0f /data/local/tmp/aibench"` keeps it on the tablet's four little
