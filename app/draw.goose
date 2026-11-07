@@ -86,7 +86,22 @@ let BOARD_FRAG = """
         float sd = box(px, bc + vec2(0.0, 1.4 * u), bh - u, rect.w);
         c *= 1.0 - 0.55 * (1.0 - smoothstep(-3.6 * u, 3.6 * u, sd));
         float fd = box(px, bc, bh, rect.w);
-        if (fd < 1.0) {
+        // The lip: a thin raised edge round the squares, the dark square's color, with a
+        // line of the light square's color along its outer edge (brightest on top) and a
+        // dark seam where the squares sit below it.
+        vec2 ic = inner.xy + 0.5 * inner.z;
+        float id = box(px, ic, vec2(0.5 * inner.z), 0.5 * rect.w);
+        if (fd < 1.0 && id > -1.0) {
+            float lw = 0.5 * (rect.z - inner.z);
+            float t = clamp(-fd / lw, 0.0, 1.0);    // 0 at the outer edge, 1 at the squares
+            float ny = (px.y - bc.y) / bh.y;
+            vec3 lip = tint(dark.rgb, 0.06 - 0.1 * ny);
+            vec3 line = mix(light.rgb, vec3(1.0), 0.25);
+            lip = mix(lip, line, (0.75 - 0.25 * ny) * (1.0 - smoothstep(0.1, 0.26, t)));
+            lip = tint(lip, -0.35 * smoothstep(0.7, 1.0, t));
+            c = mix(c, lip, clamp(0.5 - fd, 0.0, 1.0));
+        }
+        if (id < 1.0) {
             int n = int(screen.w);
             vec2 q = (px - inner.xy) / inner.w;
             ivec2 cell = clamp(ivec2(floor(q)), ivec2(0), ivec2(n - 1));
@@ -139,7 +154,7 @@ let BOARD_FRAG = """
                 s = mix(s, red, op * 0.22 * clamp(0.42 * inner.w * sc - r + 0.5, 0.0, 1.0));
                 s = ring(s, red, r, 0.42 * inner.w * sc, 0.25 * u, 1.2 * u, op);
             }
-            c = mix(c, s, clamp(0.5 - fd, 0.0, 1.0));
+            c = mix(c, s, clamp(0.5 - id, 0.0, 1.0));
         }
         result = vec4(c, 1.0);
     }
@@ -218,7 +233,6 @@ let PIECE_FRAG = """
         float scale = 1.0 + 0.05 * sel;
         float w = v_extra.w / scale;            // one pixel in the face's units
         vec3 face = black ? b_face.rgb : w_face.rgb;
-        vec3 ring = black ? mix(face, vec3(1.0), 0.16) : mix(face, vec3(0.0), 0.13);
         vec3 rim = black ? mix(face, vec3(0.0), 0.18) : mix(face, vec3(0.0), 0.06);
         vec3 sidec = black ? mix(face, vec3(0.0), 0.5) : mix(face, vec3(0.0), 0.32);
         // A short soft shadow, straight down and a touch right, that spreads as the
@@ -237,17 +251,15 @@ let PIECE_FRAG = """
         float foot = clamp((f.y - sqrt(max(1.0 - f.x * f.x, 0.0))) / (side / scale), 0.0, 1.0);
         vec3 sc = sidec * (0.8 + 0.25 * sqrt(max(1.0 - f.x * f.x, 0.0))) * (1.0 - 0.25 * foot);
         over(sc, fill(length(vec2(f.x, sy)) - 1.0, w));
-        // The face: a gentle gradient from top to bottom, the raised inner ring, and the
-        // rounded rim, lit softly from above.
-        vec3 col = mix(face, rim, smoothstep(0.7, 0.76, r));
-        col = tint(col, -0.07 * f.y);
-        col = mix(col, ring, 0.6 * (1.0 - smoothstep(0.0, 0.035, abs(r - 0.5))));
-        float hi = black ? 0.32 : 0.6;
-        float lo = black ? 0.4 : 0.22;
-        float b1 = bead(r, 0.72, 1.0, dir.y);
-        float b2 = 0.55 * bead(r, 0.44, 0.56, dir.y);
-        float l = b1 + b2;
+        // The face: flat and a little below one wide rounded rim, lit softly from above.
+        vec3 col = mix(face, rim, smoothstep(0.64, 0.68, r));
+        col = tint(col, -0.03 * f.y);
+        float hi = black ? 0.4 : 0.55;
+        float lo = black ? 0.4 : 0.24;
+        float l = bead(r, 0.64, 1.0, dir.y);
         col = tint(col, l > 0.0 ? hi * l : lo * l);
+        // The groove where the face sits below the rim.
+        col = tint(col, -(black ? 0.3 : 0.14) * (1.0 - smoothstep(0.0, 0.03, abs(r - 0.655))));
         if (black) {
             // Dark pieces are a little glossy.
             col = tint(col, 0.07 * (1.0 - smoothstep(0.0, 0.6, length(f - vec2(-0.1, -0.4)))));
