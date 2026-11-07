@@ -16,6 +16,7 @@ import rules from "../rules";
 import board from "../board";
 import .theme;
 import .draw;
+import .scene;
 
 fn main() {
     // Development flags: --theme NAME, --size WxH (the window), --fen POSITION,
@@ -62,7 +63,7 @@ fn main() {
         guard ok else { abort(str("not a position: ", fen)); }
         board::set(b, p);
     }
-    var d = draw::new();
+    var d = draw::new(kind);
     var size = int2 { 0, 0 };
     var dirty = true;
     var drawn = 0;

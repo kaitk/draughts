@@ -8,12 +8,14 @@ import vec;
 import gfx;
 
 import board from "../board";
+import .scene;
 
 // The board pass's uniforms, std140.
 struct BoardUniforms {
     screen: float4,     // width, height in pixels, time, squares per side
     rect:   float4,     // the board with its frame: x, y, size, corner radius
     inner:  float4,     // the squares: x, y, size, one square
+    scene:  float4,     // x: 1 when there is a photograph
     marks:  board::Marks,
 }
 
@@ -40,8 +42,9 @@ let BOARD_FRAG = """
     layout(location = 0) in vec2 v_uv;
     layout(location = 0) out vec4 result;
     layout(set = 3, binding = 1) uniform BoardUniforms {
-        vec4 screen; vec4 rect; vec4 inner; uvec4 last; uvec4 target; uvec4 via;
+        vec4 screen; vec4 rect; vec4 inner; vec4 scene; uvec4 last; uvec4 target; uvec4 via;
     };
+    layout(set = 2, binding = 0) uniform sampler2D photo;
     float box(vec2 p, vec2 c, vec2 h, float r) {
         vec2 q = abs(p - c) - h + r;
         return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
@@ -55,9 +58,12 @@ let BOARD_FRAG = """
     void main() {
         vec2 px = vec2(v_uv.x, 1.0 - v_uv.y) * screen.xy;
         float u = rect.z * 0.01;                // 1% of the board
-        vec2 uv = px / screen.xy;
-        // The page, lighter toward the light; the season's photograph goes here.
-        vec3 c = page.rgb * (1.6 - 0.9 * length(uv - vec2(0.25, 0.15)));
+        // The season's photograph, blurred, cover-cropped by the long side and dimmed to
+        // 0.8; or the page color without one.
+        float side = max(screen.x, screen.y);
+        vec3 c = scene.x > 0.5
+            ? 0.8 * texture(photo, (px - 0.5 * (screen.xy - side)) / side).rgb
+            : page.rgb;
         vec2 bc = rect.xy + 0.5 * rect.z;
         vec2 bh = vec2(0.5 * rect.z);
         // The board's shadow falls down and to the right, away from the light.
@@ -248,11 +254,12 @@ struct Drawer {
     board_pipeline: gfx::Pipeline,
     piece_pipeline: gfx::Pipeline,
     pieces:         gfx::Buffer,
+    scene:          scene::Scene,
     // What goes into the buffer: always the whole of it, so SDL can cycle it.
     upload: board::Piece[board::MAX_PIECES],
 }
 
-fn new() -> Drawer {
+fn new(kind: i64) -> Drawer {
     let full = embed_shader("vert", FULL_VERT);
     let board_fs = embed_shader("frag", THEME_BLOCK, BOARD_FRAG);
     let piece_vs = embed_shader("vert", PIECE_VERT);
@@ -262,6 +269,7 @@ fn new() -> Drawer {
         piece_pipeline: gfx::pipeline(piece_vs, piece_fs,
                                       gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED }),
         pieces: gfx::Buffer { 0 },
+        scene:  scene::load(kind, full),
         upload: [board::Piece {}; board::MAX_PIECES],
     };
     d.pieces = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(d.upload));
@@ -278,7 +286,9 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, t: theme::Theme, now: f
     gfx::uniforms(gfx::FRAGMENT, 0, t);
     gfx::uniforms(gfx::FRAGMENT, 1, BoardUniforms {
         screen: float4 { width, height, now as f32, l.n },
-        rect: l.board, inner: l.inner, marks: b.marks });
+        rect:   l.board, inner: l.inner,
+        scene: float4 { if d.scene.has { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0 }, marks: b.marks });
+    gfx::bind_texture(gfx::FRAGMENT, 0, d.scene.photo, d.scene.sampler);
     gfx::draw(3);
     gfx::bind(d.piece_pipeline);
     gfx::bind_storage_buffer(gfx::VERTEX, 0, d.pieces);

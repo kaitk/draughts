@@ -17,6 +17,7 @@ ANDROID_BUILD_TOOLS, ANDROID_PLATFORM. docs/development.md lists the versions.
 import argparse
 import hashlib
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -42,6 +43,17 @@ def run(*cmd, cwd=None):
 def llvm_bin(name):
     hosts = sorted((NDK / "toolchains/llvm/prebuilt").iterdir())
     return hosts[0] / "bin" / name
+
+
+def sidecar(program, key):
+    """The paths a list in the program's .build sidecar names, made absolute."""
+    build = program.with_suffix(".build")
+    if not build.exists():
+        return []
+    text = re.sub(r"//[^\n]*", "", build.read_text())
+    m = re.search(rf"\b{key}\s*=\s*\[([^\]]*)\]", text)
+    names = re.findall(r'"([^"]*)"', m.group(1)) if m else []
+    return [(program.parent / n).resolve() for n in names]
 
 
 def main():
@@ -91,15 +103,17 @@ def main():
         if sdl_src.exists():
             shutil.rmtree(sdl_src)
         fresh.rename(sdl_src)
-    if not (native / "build.ninja").exists():
-        run("cmake", "-S", ROOT / "android", "-B", native, "-G", "Ninja",
-            f"-DCMAKE_TOOLCHAIN_FILE={NDK / 'build/cmake/android.toolchain.cmake'}",
-            "-DANDROID_ABI=arm64-v8a", f"-DANDROID_PLATFORM=android-{MIN_SDK}",
-            "-DCMAKE_BUILD_TYPE=Release",
-            f"-DGOOSE_PROGRAM_C={gen / 'program.c'}",
-            f"-DGOOSE_RUNTIME_C={gen / 'goose_runtime.c'}",
-            f"-DGOOSE_GFX_SRC={gfx_src / 'src'}",
-            f"-DSDL_SRC={sdl_src}")
+    # Configured every time, so a change to the sidecar is seen; it is quick once done.
+    run("cmake", "-S", ROOT / "android", "-B", native, "-G", "Ninja",
+        f"-DCMAKE_TOOLCHAIN_FILE={NDK / 'build/cmake/android.toolchain.cmake'}",
+        "-DANDROID_ABI=arm64-v8a", f"-DANDROID_PLATFORM=android-{MIN_SDK}",
+        "-DCMAKE_BUILD_TYPE=Release",
+        f"-DGOOSE_PROGRAM_C={gen / 'program.c'}",
+        f"-DGOOSE_RUNTIME_C={gen / 'goose_runtime.c'}",
+        f"-DGOOSE_GFX_SRC={gfx_src / 'src'}",
+        f"-DSDL_SRC={sdl_src}",
+        "-DGOOSE_PROGRAM_SOURCES=" + ";".join(map(str, sidecar(program, "c_sources"))),
+        "-DGOOSE_PROGRAM_INCLUDE=" + ";".join(map(str, sidecar(program, "c_include"))))
     run("cmake", "--build", native, "--target", "main")
 
     # 3. The APK's tree: stripped libraries and SDL's Java as dex.

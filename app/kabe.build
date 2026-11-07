@@ -1,0 +1,5 @@
+// The program's own C: the season's photograph and its JPEG decoder
+// (docs/architecture/rendering.md, "Scene and glass"). scripts/android.py reads
+// c_sources and c_include from here too.
+c_sources = ["background.c"];
+c_include = ["../third_party/goose_gfx/third_party/nuklear/demo/common/filebrowser"];

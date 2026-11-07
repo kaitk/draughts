@@ -12,6 +12,9 @@ project(kabe_android C)
 
 set(GOOSE_PROGRAM_C "" CACHE FILEPATH "The program's C, from goose -o")
 set(GOOSE_RUNTIME_C "" CACHE FILEPATH "The Goose runtime's C, from goose --emit-runtime")
+# The program's own C and its include directories, from its .build sidecar.
+set(GOOSE_PROGRAM_SOURCES "" CACHE STRING "The sidecar's c_sources")
+set(GOOSE_PROGRAM_INCLUDE "" CACHE STRING "The sidecar's c_include")
 set(GOOSE_GFX "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/goose_gfx")
 # goose_gfx's src/ with patches/goose_gfx applied (scripts/android.py makes the copy).
 set(GOOSE_GFX_SRC "${GOOSE_GFX}/src" CACHE PATH "goose_gfx's C layers")
@@ -40,6 +43,7 @@ set(ui_layer_sources
 add_library(main SHARED
     ${GOOSE_PROGRAM_C}
     ${GOOSE_RUNTIME_C}
+    ${GOOSE_PROGRAM_SOURCES}
     stdio_to_logcat.c
     ${GOOSE_GFX_SRC}/gfx/gfx_device.c
     ${GOOSE_GFX_SRC}/gfx/gfx_resources.c
@@ -50,7 +54,7 @@ add_library(main SHARED
     ${ui_layer_sources}
 )
 set_target_properties(main PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON)
-target_include_directories(main PRIVATE "${GOOSE_GFX}/third_party/nuklear")
+target_include_directories(main PRIVATE "${GOOSE_GFX}/third_party/nuklear" ${GOOSE_PROGRAM_INCLUDE})
 target_link_libraries(main PRIVATE SDL3::SDL3-shared android log m)
 # SDLActivity calls SDL_main; the Goose program's C defines main.
 set_source_files_properties(${GOOSE_PROGRAM_C} PROPERTIES COMPILE_DEFINITIONS "main=SDL_main")
