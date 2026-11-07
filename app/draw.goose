@@ -268,9 +268,9 @@ let PIECE_FRAG = """
         vec3 col = tint(face, -0.02 * f.y);
         float l = shoulder(r, 0.86, 1.0, dir.y);
         col = lit(col, l > 0.0 ? (black ? 1.0 : 1.2) * l : (black ? 0.28 : 0.4) * l);
-        float g = groove(r, 0.655, 0.745, dir.y);
-        col = lit(col, g > 0.0 ? (black ? 0.4 : 0.45) * g : (black ? 0.55 : 0.6) * g);
-        col = lit(col, -0.15 * (1.0 - smoothstep(0.0, 0.035, abs(r - 0.7))));
+        float g = groove(r, 0.63, 0.76, dir.y);
+        col = lit(col, g > 0.0 ? (black ? 0.4 : 0.5) * g : (black ? 0.6 : 1.2) * g);
+        col = lit(col, -(black ? 0.3 : 0.45) * (1.0 - smoothstep(0.0, 0.05, abs(r - 0.695))));
         if (v_look.y > 0.5) {
             vec3 cc = black ? vec3(0.914, 0.769, 0.416) : crown_w.rgb;
             col = mix(col, cc, fill(0.56 * crown(f / 0.56), w));

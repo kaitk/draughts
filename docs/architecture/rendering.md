@@ -173,7 +173,8 @@ the prototype tried, kept for 3D:
   frame 2.4% of the board's width. 10 × 10 uses the same.
 - **Pieces** are SDF discs filling 78% of a square, flat-topped and matte like turned
   discs, as the 3D close-up shows them: one color and one height across the top, with
-  a narrow groove cut into it at 70% of the radius (9% of the radius wide), only the
+  a groove cut into it at 70% of the radius (13% of the radius wide, its floor in soft
+  shade, so it reads as a ring on light pieces too), only the
   outer edge rounded (from 86%), and the side under the disc (0.55% of the board deep).
   A short soft shadow falls straight down and a touch right (a quarter of the radius
   down, softened over a third of it), with a tight one where it touches. Each side has
