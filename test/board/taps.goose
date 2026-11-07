@@ -55,6 +55,7 @@ fn main() {
           " ", name(v, board::hit(l, v, float2 { l.board.x - 2.0, l.board.y + l.board.z - 2.0 })));
 
     var b = board::new(rules::RUSSIAN);
+    b.hints = board::MOVES;     // to see the targets; test/board/hints.goose has the default
     tap(b, l, "c3", 0.0);       // selects
     board::fill(b, l, 0.0);
     print("targets ", marked(v, b.marks.target), ", pieces ", b.pieces.len);

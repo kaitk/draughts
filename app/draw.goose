@@ -314,7 +314,7 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, t: theme::Theme, now: f
         screen: float4 { width, height, now as f32, l.n },
         rect:   l.board, inner: l.inner,
         scene:  float4 { if d.scene.has { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0 },
-        wrong: float4 { -1.0, 1.0, 0.0, 0.0 }, marks: b.marks });
+        wrong: b.flash, marks: b.marks });
     gfx::bind_texture(gfx::FRAGMENT, 0, d.scene.photo, d.scene.sampler);
     gfx::draw(3);
     gfx::bind(d.piece_pipeline);

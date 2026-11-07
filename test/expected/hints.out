@@ -1,0 +1,10 @@
+default hints are mistakes: true
+c3 selected: selected c3, targets 0, wrong - flash -1.0 at 1.0, pulsing 0
+tap c5: selected c3, targets 0, wrong c5 flash 34.0 at 0.25, pulsing 0
+animating at 1.2 s: true, at 1.4 s: false, the frame that ends it is drawn: true
+after the flash: selected c3, targets 0, wrong - flash -1.0 at 1.0, pulsing 0
+tap b6: selected -, targets 0, wrong - flash -1.0 at 1.0, pulsing 0
+drop e3 on e5: selected e3, targets 0, wrong e5 flash 36.0 at 0.0, pulsing 0
+d4 to c5 with a capture due: selected d4, targets 0, wrong c5 flash 34.0 at 0.083333336, pulsing 1
+touch a3: selected -, targets 0, wrong a3 flash 16.0 at 0.0, pulsing 1
+hints on moves, d4 selected: selected d4, targets 1, wrong - flash -1.0 at 1.0, pulsing 1

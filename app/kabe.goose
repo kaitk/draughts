@@ -6,6 +6,7 @@
 //   goose kabe.goose -- --theme sea           another board than the season's
 //   goose kabe.goose -- --frames 30 --tap c3  taps squares, then saves kabe.png
 //   goose kabe.goose -- --fen W:Wc3,Kh6:Be5   starts from a position
+//   goose kabe.goose -- --hints moves         shows the selected piece's targets
 //   scripts/android.py app/kabe.goose --run   on the tablet (docs/development.md)
 
 import std;
@@ -21,11 +22,12 @@ import .scene;
 fn main() {
     // Development flags: --theme NAME, --size WxH (the window), --fen POSITION,
     // --tap SQUARE (any number, played in order on the first frames), --frames N (then
-    // save kabe.png).
+    // save kabe.png), --hints moves (show targets; mistakes only by default).
     var width = 1280;
     var height = 800;
     var kind = theme::for_month(theme::month(time()));
     var frames = -1;
+    var hints = board::MISTAKES;
     var fen:  u8[>..]       = [];
     var taps: u8[..2][..16] = [];
     let argv = args();
@@ -43,6 +45,7 @@ fn main() {
             if found && ok_a && ok_c { width = a; height = c; }
         }
         if argv[i] == "--fen" { fen.append(argv[i + 1]); }
+        if argv[i] == "--hints" && argv[i + 1] == "moves" { hints = board::MOVES; }
         if argv[i] == "--tap" && argv[i + 1].len == 2 && taps.len < 16 {
             let t .= taps.push([]);
             t.append(argv[i + 1]);
@@ -58,6 +61,7 @@ fn main() {
     defer gfx::close();
 
     var b = board::new(rules::RUSSIAN);
+    b.hints = hints;
     if fen.len > 0 {
         let p, ok = rules::parse_fen(fen, b.variant);
         guard ok else { abort(str("not a position: ", fen)); }

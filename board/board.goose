@@ -16,6 +16,12 @@ let HOP = 0.2;              // seconds per square of a quiet move, per stop of a
 let FADE = 0.18;            // captured pieces fade out after the move
 let PULSE = 2.8;            // must-capture rings pulse for two of their 1.4 s cycles
 let DRAG_START = 10.0;      // dp a press moves before it becomes a drag
+let FLASH = 1.2;            // a wrong move's red ring flashes twice, 0.6 s each
+
+// Move hints (docs/product.md): mistakes only, the default, marks a wrong move and pulses
+// the pieces that must capture; moves also shows the selected piece's targets.
+let MISTAKES = 0;
+let MOVES = 1;
 
 // Where things go, in pixels. `scale` is pixels per dp: the prototypes' 800 px short side.
 struct Layout {
@@ -107,6 +113,9 @@ struct Board {
     last:      rules::Move,
     has_last:  bool,
     pulse_end: f64,
+    hints:     i64,             // MISTAKES or MOVES
+    wrong:     i64,             // the square of the last wrong move, a bit, or -1
+    wrong_at:  f64,
     // A press on a piece, and whether it became a drag.
     pressed:  i64,
     press_at: float2,
@@ -115,10 +124,12 @@ struct Board {
     // Filled by fill() for the app to draw.
     pieces: Piece[..MAX_PIECES],
     marks:  Marks,
+    flash:  float4,             // x: the wrong move's square (y * size + x) or -1; y: its flash, 0..1
 }
 
 fn new(variant: u8) -> Board {
-    var b = Board { variant: variant, pos: rules::start(variant), selected: -1, pressed: -1, .. };
+    var b = Board { variant: variant, pos: rules::start(variant), selected: -1, wrong: -1,
+                    pressed: -1, .. };
     rules::generate(b.pos, b.moves);
     return b;
 }
@@ -130,6 +141,7 @@ fn set(b: Board&, p: rules::Position) {
     b.selected = -1;
     b.moving = false;
     b.has_last = false;
+    b.wrong = -1;
 }
 
 fn has_move_from(b: Board&, from: i64) -> bool {
@@ -159,9 +171,24 @@ fn start_move(b: Board&, i: i64, now: f64) {
     b.selected = -1;
 }
 
+fn must_capture(b: Board&) -> bool { b.moves.len > 0 && b.moves[0].captured != 0 }
+
+// A wrong move ending on square `sq`: its ring flashes, and if a capture was due, the
+// pieces that must capture pulse.
+fn mistake(b: Board&, sq: i64, now: f64) {
+    b.wrong = sq;
+    b.wrong_at = now;
+    if must_capture(b) { b.pulse_end = now + PULSE; }
+}
+
+fn empty(b: Board&, sq: i64) -> bool {
+    sq >= 0 && ((b.pos.pieces[rules::WHITE] | b.pos.pieces[rules::BLACK]) >> sq) & 1 == 0
+}
+
 // A finger or the mouse goes down at p. On a piece that can move: select it (and it may
-// be dragged). On a target of the selected piece: play that move. On a piece that can't
-// move because another must capture: pulse the pieces that must. Elsewhere: deselect.
+// be dragged). On a target of the selected piece: play that move. On another empty
+// square while a piece is selected, or on a piece that can't move because another must
+// capture: a mistake. Elsewhere: deselect.
 fn press(b: Board&, l: Layout, p: float2, now: f64) {
     guard !b.moving else { return; }
     let v .= rules::VARIANTS[b.variant];
@@ -180,7 +207,11 @@ fn press(b: Board&, l: Layout, p: float2, now: f64) {
             b.dragging = false;
             return;
         }
-        if b.moves.len > 0 && b.moves[0].captured != 0 { b.pulse_end = now + PULSE; }
+        if must_capture(b) { mistake(b, sq, now); }
+    }
+    if b.selected >= 0 && empty(b, sq) {
+        mistake(b, sq, now);
+        return;
     }
     b.selected = -1;
 }
@@ -195,18 +226,22 @@ fn drag(b: Board&, l: Layout, p: float2) -> bool {
     return true;
 }
 
-// The pointer goes up at p. A drag dropped on a target plays the move from there;
-// anywhere else the piece goes back, still selected.
+// The pointer goes up at p. A drag dropped on a target plays the move from there; on
+// another empty square it is a mistake. Either way but a move, the piece goes back,
+// still selected.
 fn release(b: Board&, l: Layout, p: float2, now: f64) {
     let was = b.dragging;
     b.pressed = -1;
     b.dragging = false;
     guard was else { return; }
-    let i = move_to(b, hit(l, rules::VARIANTS[b.variant], p));
+    let sq = hit(l, rules::VARIANTS[b.variant], p);
+    let i = move_to(b, sq);
     if i >= 0 {
         b.drop = p;
         b.dropped = true;
         start_move(b, i, now);
+    } else if empty(b, sq) {
+        mistake(b, sq, now);
     }
 }
 
@@ -220,7 +255,7 @@ fn duration(m: rules::Move&) -> f64 {
 
 // Whether anything is still changing at `now`; the app draws while it is.
 fn animating(b: Board&, now: f64) -> bool {
-    b.moving || now < b.pulse_end
+    b.moving || now < b.pulse_end || (b.wrong >= 0 && now < b.wrong_at + FLASH)
 }
 
 // Ends the move, or the pulse, once its time is up. Call before input each frame; true
@@ -233,6 +268,10 @@ fn update(b: Board&, now: f64) -> bool {
     }
     if b.pulse_end > 0.0 && now >= b.pulse_end {
         b.pulse_end = 0.0;
+        ended = true;
+    }
+    if b.wrong >= 0 && now >= b.wrong_at + FLASH {
+        b.wrong = -1;
         ended = true;
     }
     return ended;
@@ -268,7 +307,7 @@ fn fill(b: Board&, l: Layout, now: f64) {
     let t = now - b.since;
     let pulsing = now < b.pulse_end;
     var must: u64 = 0;
-    if pulsing && b.moves.len > 0 && b.moves[0].captured != 0 {
+    if pulsing && must_capture(b) {
         for i in b.moves.len { must |= rules::bit(b.moves[i].from); }
     }
     let fade_at = hops(b.move) as f64 * HOP;
@@ -324,7 +363,12 @@ fn fill(b: Board&, l: Layout, now: f64) {
         mark(b, b.marks.last, b.last.from);
         mark(b, b.marks.last, b.last.to);
     }
-    if b.selected >= 0 && !b.moving {
+    b.flash = float4 { -1.0, 1.0, 0.0, 0.0 };
+    if b.wrong >= 0 {
+        b.flash = float4 { v.y_of[b.wrong] * v.size + v.x_of[b.wrong],
+                           clamp((now - b.wrong_at) / FLASH, 0.0, 1.0) as f32, 0.0, 0.0 };
+    }
+    if b.hints == MOVES && b.selected >= 0 && !b.moving {
         for i in b.moves.len {
             let m .= b.moves[i];
             guard m.from == b.selected else { continue; }
