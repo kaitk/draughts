@@ -4,6 +4,7 @@ The decisions the code follows, and why. This file holds the stack and the rules
 part of the code keeps. The rest is by area:
 
 - [rules.md](rules.md): draughts variants and how the engine represents them
+- [ai.md](ai.md): the computer player, its search, and how its levels play like a person
 - [rendering.md](rendering.md): drawing, the UI layer, glass, fonts, and frame pacing
 
 ## Stack

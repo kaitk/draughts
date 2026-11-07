@@ -12,7 +12,10 @@ before committing a change to `rules/`.
   package), `gui`, `game` (the game screen driven through the pointer: undo, hint,
   restart, the toggle, presses kept apart, the celebration), `shell` (home, the switch
   to the game and back, settings and their file, the saved game and damaged images of
-  it), and `strings` (every language file has every key). A
+  it), `strings` (every language file has every key), and `ai` (the computer player:
+  its search against a plain minimax, the table changing no score, keys, what each level
+  plays in known shots, the same move in steps as at once, and that no level hangs a
+  piece). A
   test that lays out text calls `gui::test_faces` for glyph sizes without an atlas, and
   `strings::use` before reading a string. Shared helpers are in
   `test/check.goose` (`check::show`, `check::play_only`), imported as
@@ -23,6 +26,17 @@ before committing a change to `rules/`.
   generation. Keep it plain and independent: it's the only check of Russian.
 - `build/perft`: published counts, speed, and `--divide` to find which move's subtree
   differs when a count is off.
+
+## The computer player's tests
+
+- The search counts nodes, so a test's moves change with `Engine.node_limit`. Tests that
+  call hard lower it to stay quick through TinyCC (`test/ai/blunders.goose`, the seeds
+  in `test/ai/levels.goose`); the whole `ai` area takes about 10 s that way.
+- Positions come from the computer's own games (`build/aimatch ... --fens PLY`) and from
+  scanning them for moves a deep search rates far above the rest. A shot's line goes in
+  the test's comment only after each move is checked with `test/perft.py moves`; a
+  line printed by repeated searches stops mid-combination unless it runs on until the
+  material settles.
 
 ## Rules
 
