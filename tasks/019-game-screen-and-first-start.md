@@ -70,5 +70,6 @@ if the older child asks for it.
 
 - [x] Game panel takes in landscape and portrait, with labels, next to the current one
 - [x] Blitz time controls recorded with sources; the clock prototyped on the game screen
-- [ ] The first start: variant cards and the tutorial's first pages, linked in order
+- [x] The first start: variant cards and the tutorial's first pages, linked in order
+  (`prototypes/first-start.html`, waiting for the user's review)
 - [x] The chosen takes recorded in `docs/architecture/rendering.md` once the user picks

@@ -7,6 +7,7 @@ jsDelivr CDN, so they need internet access. Start at [index.html](index.html).
 | Page | Shows |
 | --- | --- |
 | `home.html` | Home: a title menu over the photograph and a 3D board; `?pick=friend` or `computer` shows a new game's setup |
+| `first-start.html` | The first start, pages in order (`?page=variant`, `learn`, `1` to `7`, `done`; `&v=russian`) |
 | `settings.html` | Settings: background, board, move hints, language |
 | `game.html` | The game: the board between the way out and the play, a selected piece and its capture, a forced capture; `?clock=on` or `low` for the clocks |
 | `puzzles.html` | The puzzle picker: three theme rows of ten, with 0 to 3 stars |
