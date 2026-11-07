@@ -67,7 +67,7 @@ fn params(skill: i64) -> Params {
     let s = clamp(skill, 0, 100);
     let temper = 2 + 60 * (100 - s) * (100 - s) / 10000;
     return Params {
-        depth:  2 + s * s / 1000,
+        depth:  1 + s / 12 + max(s - 60, 0) / 6,
         extra:  2 + s / 8,
         margin: min(MAX_MARGIN, 3 * temper),
         temper: temper,

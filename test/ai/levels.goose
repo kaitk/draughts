@@ -83,7 +83,7 @@ fn main() {
     // Six plies, too deep for easy: a3-b4 c5:a3:c1 (two men for a king), e3-d4 c1:g5
     // h4:f6:h8, and white has a king and a man more than it gave.
     shot(e, rules::RUSSIAN, "W:Wb2,a3,c3,e3,g3,f4,h4:Ba5,c5,e5,b6,d6,h6,g7");
-    // Only g1-f2 holds: easy's f4-e5 loses a man some plies on.
+    // Only g1-f2 holds; the rest lose material some plies on.
     shot(e, rules::RUSSIAN, "W:Wc1,g1,b2,d2,h2,a3,c3,e3,g3,f4,h4:Ba5,c5,g5,b6,d6,f6,h6,e7,g7,b8,d8");
     // 28-23 19x28 22x33x24x15: one man for two.
     shot(e, rules::INTERNATIONAL, "W:W22,27,28,36,37,38,39,40,42,43,44,45,46,47,48,50:B1,2,4,6,7,8,9,10,11,12,13,16,17,19,20,29,35");
