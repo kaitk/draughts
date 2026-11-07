@@ -7,6 +7,9 @@ panels over a calm scene, flat buttons, big touch targets. They settle the look 
 it's built natively, and they use only what the native renderer can draw cheaply
 (`prototypes/README.md`). Checked with `agent-browser` at 1280×800 and 800×1280.
 
+Design boards from an image model, made with `prototypes/design-boards-prompt.md`, may
+feed the choices; the HTML prototypes settle them.
+
 ## Acceptance criteria
 
 - [ ] Screens: home, game (board, side panel with undo, hint, restart), puzzle picker

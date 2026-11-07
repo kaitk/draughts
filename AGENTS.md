@@ -5,6 +5,13 @@
 - Product scope: `docs/product.md`
 - Architecture decisions: `docs/architecture/`
 - Task tracking: `tasks/` (see `tasks/README.md`)
+- The language: the pinned release's `build/goose-v2026.4-macos-arm64/docs/`: read
+  `tutorial.md` before writing Goose, look things up in `reference.md` (every feature
+  with a compiling example), check `goose_spec.md` before assuming a feature exists, and
+  `stdlib.md` for the library. Write Goose the way the release's `samples/` and
+  `stdlib/` do. goose-http (another Goose project by the same user) is a model for
+  layout and tests: one program per test under `test/<area>/`, its output checked
+  against `test/expected/<name>.out`, batched with `goose --multi-test`
 - Toolchain, building, and running on the Mac and the tablet: `docs/development.md`
 - UI prototypes: `prototypes/` (see `prototypes/README.md`), checked in a browser with the
   `agent-browser` CLI
