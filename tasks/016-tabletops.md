@@ -28,6 +28,7 @@ busier realistic one; the other seasons once a style is picked.
 
 ## Acceptance criteria
 
-- [ ] Autumn tried in the three styles, then the other seasons in the chosen one, behind `prototypes/game.html` at both sizes
+- [ ] Autumn tried in the three styles, then the other seasons in the chosen one,
+      behind `prototypes/game.html` at both sizes
 - [ ] The user picks a style, or keeps the plain table
 - [ ] If pictures win: stored as the scenes are, added to git only once the user agrees
