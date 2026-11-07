@@ -21,3 +21,10 @@ before then: the flows should exist first, so the review is of real code (asked
 
 - [ ] A written review with the changes proposed, agreed with the user
 - [ ] The agreed changes made, tests passing, the app unchanged on the Mac and tablet
+
+## Settled (2026-11-08)
+
+Once tasks 021, 025, and the computer's wiring are in, review the code with subagents and
+make the clear-cut fixes without waiting for agreement: tangles and real duplication
+whose fix is obvious, no abstractions ahead of need. Anything larger or arguable goes in
+the written review for the user to agree.
