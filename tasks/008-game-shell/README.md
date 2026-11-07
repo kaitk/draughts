@@ -1,6 +1,6 @@
 # 008: Game shell
 
-Status: in-progress (subtasks 01 to 05 done, awaiting review)
+Status: done
 
 The screens around the board: the game screen's panel, home, and settings, built on the
 UI layer from `docs/architecture/rendering.md` ("UI layer": rect-cut layout, one quad
@@ -28,12 +28,15 @@ In order; each is checked on the Mac and the tablet before the next.
       computer (level), puzzles, and settings
 - [x] Settings: the background (by the date or one season), the board (2D or 3D), move
       hints, the language; prototyped first
-- [ ] Move hints: mistakes only by default, moves in the first lessons, a toggle on the
+- [x] Move hints: mistakes only by default, moves in the first lessons, a toggle on the
       game screen (`docs/product.md`); all but the lessons, which come after the MVP
-- [ ] In game: undo, hint, restart, back; a celebration on a win or a solved puzzle;
+- [x] In game: undo, hint, restart, back; a celebration on a win or a solved puzzle;
       all but the solved puzzle, which is task 007's
+      (the toggle and the hint button were dropped by task 019's game screen, 2026-11-07;
+      task 021 builds it, lessons and the solved puzzle come later)
 - [x] Glass panels as task 003 chose them, sampling the pre-blurred background
 - [x] The app resumes where it was after Android kills it in the background
-- [ ] Nothing allocated per frame; idle CPU and memory on the tablet as before: nothing
-      allocated per frame and idle CPU as before; PSS is 262 to 264 MB against 255 to
-      259 before task 008 (the sharp photograph, the thumbnails, the text), to review
+- [x] Nothing allocated per frame; idle CPU and memory on the tablet as before: nothing
+      allocated per frame and idle CPU as before; PSS is 262 to 265 MB against 255 to
+      259 before task 008 (the sharp photograph, the thumbnails, the text), accepted
+      2026-11-08

@@ -21,3 +21,11 @@ changed against the English and the context before anything is taken.
 
 - [ ] Every Estonian string read by the agent, its changes reviewed and taken or declined
 - [ ] Screens checked in Estonian in both orientations
+
+## Settled while scoping (2026-11-08)
+
+- A Claude session runs the Gemini agent itself (`agy -p`, headless), once the MVP's new
+  strings from tasks 021 and 025 are in. The brief goes to a file in `tasks/024-*`
+  and Gemini writes its proposals to a file there, never to `strings/et.txt`. The session
+  then checks each proposal against the English (no meaning lost, nothing added, the
+  tile's width) before taking it.

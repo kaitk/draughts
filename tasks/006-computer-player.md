@@ -152,3 +152,20 @@ in four.
   settings and moved with `ai::adapt` after each game. A seed per move (game count and
   ply) keeps replies varied yet reproducible.
 
+
+## Settled while scoping (2026-11-08)
+
+- The computer thinks on a worker thread (`thread_fn`), not in slices on the drawing
+  thread. The Mac then runs the app with `goose build`, not `goose run`;
+  `docs/development.md` and `ai.md` say so. The thread stays in `app/`, so `game/`,
+  `shell/`, and the tests run headless through TinyCC with the search called directly.
+  The worker steps the search and checks between steps whether the game still wants the
+  reply, so take back or leaving the game drops a search under way.
+- Take back against the computer takes back the computer's reply and the child's move,
+  so it is the child's turn again; while the computer thinks it drops the search and
+  takes back the child's move.
+- The child picks white or black in the setup (task 021); the computer plays the other.
+- With a clock, the computer's clock runs while it thinks and during its pause, with the
+  same increment.
+
+## Open for the user

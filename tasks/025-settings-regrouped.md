@@ -26,3 +26,10 @@ board beside them showing what the choices make.
 - [ ] Settings match the prototype in both orientations, on the Mac and the tablet
 - [ ] Each choice changes the board beside them at once and survives a restart
 - [ ] Headless tests for the new settings and their file
+
+## Settled while scoping (2026-11-08)
+
+- International is the default draughts for a new game once 10×10 is on screen (task
+  021); settings' draughts row and the setup's are one setting in `settings.txt`.
+
+## Open for the user

@@ -27,3 +27,19 @@ home for a friend and the computer.
 - [ ] A 5+3 game counts down, adds the increment, survives a pause, and ends on a flag
 - [ ] Headless tests for the clock, the panel's taps, and the setup's choices
 - [ ] Idle with a clock stopped draws nothing; with one running, one frame a second
+
+## Settled while scoping (2026-11-08)
+
+- The computer's setup gets a color row the prototype lacks: white and black, white the
+  default, kept in `settings.txt`. When the child plays black, the board turns so the
+  child's pieces are at the bottom, and the clocks follow (the child's clock nearer the
+  child). A friend's setup has no color row.
+- Play replaces a saved game without asking; continue then resumes the new one.
+- Variants: if 10×10 draws and plays correctly on screen, International is enabled in the
+  setup and settings and becomes the default for a new game (`docs/product.md`);
+  Brazilian is enabled once task 023 is merged. A saved game keeps its own variant
+  (`shell::restore` no longer rejects one that differs from the default).
+- Clocks run in both kinds of game; against the computer its clock runs while it thinks
+  and pauses (the wiring, task 006).
+
+## Open for the user
