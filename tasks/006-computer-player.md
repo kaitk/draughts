@@ -168,7 +168,8 @@ in four.
 - With a clock, the computer's clock runs while it thinks and during its pause, with the
   same increment.
 
-## Open for the user
 - The worker thread follows Goose's own patterns for threads (`thread_fn`, typed queues,
   a worker building its own root), as the release's `docs/` and samples
   `23_mandelbrot_threads.goose` and `32_pool_worker_snapshots.goose` write them.
+
+## Open for the user
