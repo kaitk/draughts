@@ -245,6 +245,9 @@ fn start_move(b: Board&, i: i64, now: f64) {
     b.has_last = true;
     b.selected = -1;
     b.hint = -1;
+    // A move starts from its square unless release says it was dropped elsewhere; a
+    // move played by code (the computer's) must not start from the last drop.
+    b.dropped = false;
 }
 
 fn must_capture(b: Board&) -> bool { b.moves.len > 0 && b.moves[0].captured != 0 }
@@ -314,9 +317,9 @@ fn release(b: Board&, l: Layout, p: float2, now: f64) {
     let sq = hit(l, rules::VARIANTS[b.variant], p);
     let i = move_to(b, sq);
     if i >= 0 {
+        start_move(b, i, now);
         b.drop = p;
         b.dropped = true;
-        start_move(b, i, now);
     } else if empty(b, sq) {
         mistake(b, sq, now);
     }
