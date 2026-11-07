@@ -115,11 +115,13 @@ let BOARD_FRAG = """
             float h = hash(vec2(cell));
             float a = 0.0;
             if (k == 0) {
-                // Wood: smooth, fine, nearly straight grain along the board's height,
-                // barely there, and each square's own tone.
-                float gx = px.x / u + 0.2 * sin(px.y / (9.0 * u) + 6.28 * h) + 37.0 * h;
-                float g = 0.5 * sin(gx * 3.1) + 0.5 * (noise(vec2(gx * 2.2, px.y / (8.0 * u))) - 0.5);
-                a += 0.016 * g + 0.025 * (h - 0.5);
+                // Wood: no regular stripes, which read as bands from afar; fine
+                // irregular streaks along the board's height, a broad soft figure, and
+                // each square's own tone, all barely there.
+                vec2 m = px / u + 41.0 * h;
+                float fine = noise(vec2(m.x * 2.6, m.y * 0.08)) - 0.5;
+                float broad = noise(m * vec2(0.35, 0.06)) - 0.5;
+                a += 0.022 * fine + 0.03 * broad + 0.02 * (h - 0.5);
             } else if (k == 1) {
                 // Stone: faint paper-like mottling.
                 vec2 m = px / u;

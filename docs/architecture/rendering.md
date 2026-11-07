@@ -62,8 +62,9 @@ the theme can be overridden in settings. Values from the design boards (2026-11-
 | Square surface | wood grain | soft mottling | faint fibre | plain sheen |
 
 Secondary text is the text color at 66%. The surfaces are faint, never busy: a few sines
-and value noise in the board shader. Wood is fine vertical grain that wanders a little,
-with each square its own tone; stone a paper-like mottling; birch a hint of fibre across;
+and value noise in the board shader. Wood is fine irregular streaks along the board and
+a broad soft figure, never a regular stripe, which reads as bands from afar, with each
+square its own tone; stone a paper-like mottling; birch a hint of fibre across;
 sea almost flat.
 
 ### Scene and glass

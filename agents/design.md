@@ -49,7 +49,8 @@ pieces (chosen 2026-11-07); the design boards still set the layout, glass, and c
   generated-image rounds for 2D surfaces.
 - A strong light pool, a frame, and a crafted board with grain and seams on the 2D board.
   The 2D board stays simple; rich materials and lighting belong to the 3D board (task 015).
-- Visible wood grain: the close-up's grain is smooth and barely there.
+- Visible wood grain, and any regular stripe in it (sines), which bands when the board
+  is seen from afar: the close-up's grain is smooth, irregular, and barely there.
 - Two rings on the pieces (an inner ring at half the radius as well as the rim): the
   close-ups' flatter face reads better.
 
