@@ -1,7 +1,9 @@
 // What taps and drags on the board do, on a 1280×800 landscape screen, through the
 // same calls the app makes: layout, which square a point is on, selecting, playing a
 // move by tap and by drag, the pulse when a piece that can't move is touched while
-// another must capture, and the draw lists for one frame.
+// another must capture, the draw lists for one frame, and that the frame after an
+// animation ends is drawn (else the last move's marks or a pulse ring would stay as the
+// last animated frame left them).
 import std;
 import vec;
 import rules from "../../rules";
@@ -59,7 +61,7 @@ fn main() {
     tap(b, l, "d4", 0.1);       // plays c3-d4
     board::update(b, 0.2);
     print("at 0.2 s: moving ", b.moving);
-    board::update(b, 0.35);
+    print("the frame that ends it is drawn: ", board::update(b, 0.35));
     print("after ", board::duration(b.move), " s: moving ", b.moving, ", ", rules::fen(b.pos));
 
     // Black to move: drag f6 to e5 by way of a point past the drag threshold.
@@ -79,5 +81,6 @@ fn main() {
     board::fill(b, l, 2.0);
     var rings = 0;
     for i in b.pieces.len { if b.pieces[i].ring.x > 0.0 { rings++; } }
-    print("rings ", rings, ", animating ", board::animating(b, 2.0), " then ", board::animating(b, 5.0));
+    print("rings ", rings, ", animating ", board::animating(b, 2.0), " then ", board::animating(b, 5.0),
+          ", the frame that ends it is drawn: ", board::update(b, 5.0));
 }

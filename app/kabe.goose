@@ -76,7 +76,7 @@ fn main() {
             dirty = true;
         }
         let l = board::layout(size.x, size.y, rules::VARIANTS[b.variant].size);
-        board::update(b, now);
+        if board::update(b, now) { dirty = true; }
         if tapped < taps.len && !b.moving {
             let v .= rules::VARIANTS[b.variant];
             let t .= taps[tapped];

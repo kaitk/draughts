@@ -224,9 +224,19 @@ fn animating(b: Board&, now: f64) -> bool {
     b.moving || now < b.pulse_end
 }
 
-// Ends the move once its time is up. Call before fill() each frame.
-fn update(b: Board&, now: f64) {
-    if b.moving && now - b.since >= duration(b.move) { b.moving = false; }
+// Ends the move, or the pulse, once its time is up. Call before input each frame; true
+// when something ended, so the frame after an animation is drawn too.
+fn update(b: Board&, now: f64) -> bool {
+    var ended = false;
+    if b.moving && now - b.since >= duration(b.move) {
+        b.moving = false;
+        ended = true;
+    }
+    if b.pulse_end > 0.0 && now >= b.pulse_end {
+        b.pulse_end = 0.0;
+        ended = true;
+    }
+    return ended;
 }
 
 fn ease(t: f64) -> f64 { t * t * (3.0 - 2.0 * t) }

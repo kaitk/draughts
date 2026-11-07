@@ -5,9 +5,10 @@ tap c3: selected c3, moving false, pulse false
 targets b4 d4 , pieces 24
 tap d4: selected -, moving true, pulse false
 at 0.2 s: moving true
+the frame that ends it is drawn: true
 after 0.2 s: moving false, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8
 drag starts: true, dragging true
 dragged piece last: true
 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Be5,b6,d6,h6,a7,c7,e7,g7,b8,d8,f8,h8
 tap g3: selected -, moving false, pulse true
-rings 1, animating true then false
+rings 1, animating true then false, the frame that ends it is drawn: true

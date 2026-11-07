@@ -37,9 +37,16 @@ gfx layer.
 ## Run on the Mac
 
 ```sh
-cd poc && ../build/goose-v2026.4-macos-arm64/goose poc.goose
-../build/goose-v2026.4-macos-arm64/goose poc.goose -- --frames 60   # saves poc.png
+cd app && ../build/goose-v2026.4-macos-arm64/goose kabe.goose
+../build/goose-v2026.4-macos-arm64/goose kabe.goose -- --theme sea --size 800x1280
+../build/goose-v2026.4-macos-arm64/goose kabe.goose -- --fen W:Wc3,e3,Kh2:Bd4,f6 --tap c3 --frames 30
 ```
+
+`app/kabe.goose` is the app; its development flags pick the board theme (`wood`,
+`stone`, `birch`, `sea`; the season's by default), the window size, a starting position,
+squares to tap on the first frames, and a frame to stop at and save as `kabe.png`. The
+board's logic is the `board/` package, tested headless (`test/board/`). `poc/` keeps
+task 001's and task 005's small programs.
 
 ## Test the rules
 
@@ -64,7 +71,7 @@ and sideloading. Use USB mode **Transferring files** and allow the Mac's key.
 `adb devices` should list it.
 
 ```sh
-scripts/android.py poc/poc.goose --run      # build, install, start
+scripts/android.py app/kabe.goose --run     # build, install, start
 adb logcat -s goose:* SDL:*                 # the program's output and SDL's log
 ```
 

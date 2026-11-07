@@ -145,6 +145,14 @@ everything is a few terms in the board and piece shaders, no lighting pass:
   `#e9c46a` on a dark one), which reads at a glance, and in a 3D board a stack of two
   discs with the crown on top, as kings are in Estonian play. Top down, a stack reads as
   a shadow at tablet size, so it's there for those who want it.
+- **Native form** (`app/draw.goose`): the page, frame, squares, light, and marks are one
+  full-screen fragment pass; the pieces are one instanced draw of quads, each pulling
+  `{center, radius, lift; black, king, selected, opacity; must capture}` from a storage
+  buffer and drawing its shadows, side, face, light, crown, and rings in the fragment
+  shader, blended premultiplied, top row first so a lower piece covers the shadow above
+  it. The crown is a signed-distance polygon in that shader. The panel's line icons are
+  to be drawn the same way, as distances to their strokes' segments and arcs, rather than
+  baked into the font atlas: crisp at any size, no texture.
 - **3D board**: the same board tilted (about 38°, in perspective) with a front edge,
   pieces as discs with height (one disc 1.7% of the board), and the selected piece
   lifted. `prototypes/boards.html` shows it for every theme.
@@ -194,6 +202,10 @@ the display's rate, which costs nothing that matters there. The patched `frame()
   jump.
 - on Android, turns off SDL's poll sentinel, without which SDL's wait spins instead of
   blocking there.
+
+An animation's last frame is not the resting state: the frame after a move or a pulse
+ends is drawn too (`board::update` reports it), or the board would keep the move's last
+in-between frame without its marks.
 
 Work that finishes on another thread, such as the computer's reply, is seen within the
 second; while the computer thinks, the board shows a small animation, which keeps
