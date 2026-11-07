@@ -53,6 +53,24 @@ as rapid. Proposed presets for the app: no clock (the default), **5+3**, and **1
 both in IDF's rapid list and FMJD's blitz range, and gentle enough for children; 3+2 only
 if the older child asks for it.
 
+## How often each variant is played (found 2026-11-07)
+
+- Lidraughts, players rated this month (`lidraughts.org/stat/rating/distribution/<perf>`;
+  a player can count in several): International 10×10 blitz 6,546, rapid 1,817, bullet
+  1,717; Brazilian 2,356; Russian 2,298; Frisian 99. Lidraughts began in the Netherlands,
+  so it leans to 10×10.
+- PlayOK has checkers (American), "draughts" (Brazilian 8×8), "draughts 100"
+  (International), Russian checkers, Italian, Spanish, Turkish, and Tanzanian draughts;
+  its pages give only the site's total online (about 14,800), not per game.
+- Wikipedia (Draughts): International is "the most popular version outside the
+  Anglosphere"; American checkers leads in English-speaking countries; Russian is played
+  mainly in the former USSR and Israel; Brazilian in Brazil. No player counts.
+- Federations: FMJD (10×10 first) has about 70 to 80 national members; IDF (the
+  64-square games, Russian and Brazilian among them) said 49 in 2015.
+- Brazilian is International's rules on an 8×8 board (men capture backward, kings fly,
+  the capture that takes the most is compulsory). Russian differs: any capture may be
+  chosen, and a man crowned mid-capture goes on as a king.
+
 ## Settled (2026-11-07)
 
 - The game screen is take d of four (`prototypes/game.html`, rendering.md "Game
