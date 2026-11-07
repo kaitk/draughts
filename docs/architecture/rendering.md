@@ -105,7 +105,33 @@ Extended-A, and general punctuation.
 
 ## Frames and battery
 
-The app draws only when something changed: input, a running animation, or the AI's reply.
-Otherwise it blocks in `SDL_WaitEvent`. goose_gfx polls events each frame, so this needs
-a wait variant in goose_gfx (task 005). While Android has the app paused, it draws
-nothing and submits no GPU work.
+The app draws only when something changed: input, a running animation, the AI's reply, or
+a new screen size. Otherwise it draws nothing in that frame, and goose_gfx's `frame()`
+then neither presents nor spins: it waits for the next event, up to a second. An idle
+board costs about one wakeup a second and no GPU work. The loop is the same on every
+platform:
+
+```goose
+while gfx::frame() {
+    // read input, advance animations; set dirty if anything changed
+    if dirty || animating { draw(); dirty = false; }
+}
+```
+
+This is `patches/goose_gfx/0002-draw-on-demand.patch`, applied in the Android build
+([findings](../goose-findings.md)). The Mac's built-in gfx still presents every frame at
+the display's rate, which costs nothing that matters there. The patched `frame()`:
+
+- presents only if something used the GPU since the last call, or the window needs the
+  screen again (exposed, restored, back in the foreground, resized);
+- after a frame with nothing drawn, waits in `SDL_WaitEventTimeout` for up to 1 s before
+  reading events, so input wakes it at once and timers still run once a second;
+- tries again for up to 8 frames when the window has no image to show, as on the first
+  frames after Android recreates the surface on resume;
+- leaves the wait out of `delta_time()`, so the first animation frame after idle doesn't
+  jump.
+
+Work that finishes on another thread, such as the computer's reply, is seen within the
+second; while the computer thinks, the board shows a small animation, which keeps
+frames coming. While Android has the app paused, SDL blocks the loop: it draws nothing
+and submits no GPU work.

@@ -12,7 +12,9 @@ description, and let the user send it.
 - [ ] Clip distance off at device creation (`patches/goose_gfx/0001-no-clip-distance.patch`),
       checked on macOS too
 - [ ] `ui::input_from_gfx` starts SDL text input only while a text field has focus
-- [ ] A way to wait for events instead of polling, once task 005 has one that works
+- [ ] A way to wait for events instead of polling: task 005's
+      `patches/goose_gfx/0002-draw-on-demand.patch`, made opt-in for upstream
+      (`docs/goose-findings.md` says how), with a sample that draws on demand
 - [ ] Possibly an Android path in goose_gfx's CMake (shared SDL), if upstream wants it
 - [ ] Not ours to send: the SDL swapchain leak (`patches/SDL/`). SDL takes no
       AI-written reports or code, so the user reports it in their own words, or a newer

@@ -41,6 +41,13 @@ find out by compiling, so the next session doesn't.
   ...)` appends, `print(...)` writes a line. `split`, `split_once`, `trim`,
   `parse_int` are in `std`.
 - Errors: a trailing `bool` result, or `return x from f` to unwind to a caller.
+- Sortable strings: limited arrays in a resizable, `var lines: u8[..80][>..] = [];`, filled
+  with `let l .= lines.push([]); l.append(text);` and sorted with
+  `sort(lines) { a, b => compare(a, b) < 0 };` (`test/check.goose`).
+- A fixed buffer the caller owns, passed by reference into a `recursive fn`, is how move
+  generation fills moves without allocating (`rules::Moves`, `rules::jump`).
+- A root file and a package it imports may both declare the same package by different
+  relative paths (`"../../rules"` and `"../rules"`): they resolve to one directory.
 - `os::args()` for a program's arguments; `exit(code)`.
 
 ## Traps
@@ -57,7 +64,12 @@ find out by compiling, so the next session doesn't.
   debug) or `as!` (never).
 - A local named `fill` or `count` shadows the std function of that name.
 - `goose run` (TinyCC) doesn't optimize and can't start threads; time things with
-  `goose build`, which compiles the C at -O2.
+  `goose build`, which compiles the C at -O2. TinyCC is still quick to start: the eight
+  rules tests run in a fraction of a second through one `goose --multi-test`.
+- The `goose` binary exports SDL's and gfx's symbols, so a desktop run sees the built-in
+  gfx and nothing patched. A gfx patch that adds a function can't be called from code
+  that also runs on the Mac; change behavior inside existing functions instead
+  (`patches/goose_gfx/0002-draw-on-demand.patch`).
 
 ## Speed
 

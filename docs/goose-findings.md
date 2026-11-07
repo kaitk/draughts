@@ -3,6 +3,27 @@
 Gaps found in Goose, goose_gfx, and the SDL it pins, while building for Android, with what
 we do about each here and what could go upstream. Newest first.
 
+## goose_gfx: `frame()` presents every frame, so an idle program redraws at the display rate (2026-11-07)
+
+`gs_gfx_frame` presents the screen and polls events on every call, whether or not
+anything was drawn since the last one. A program that draws only on change still
+acquires a swapchain image and blits the screen each frame, and without the present's
+vsync wait its loop would spin. There is no way to wait for an event instead. goose_gfx
+`6cfa3de`, Goose v2026.4.
+
+- Here: `patches/goose_gfx/0002-draw-on-demand.patch`. `frame()` presents only when
+  something used the GPU since the last call or the window needs the screen again, and
+  after a frame that drew nothing it waits for an event (up to 1 s) before reading
+  events. On the tablet an idle program went from a present at every 90 Hz refresh to 5
+  `frame()` returns and no presents in 5 seconds, and a tap still wakes it at once
+  ([rendering](architecture/rendering.md#frames-and-battery)). The first version lost
+  the picture on resume: the first present after Android recreates the surface gets no
+  image, so the patch keeps trying for up to 8 frames.
+- Upstream: the same in `gs_gfx_frame`, but opt-in, since a program that polls input
+  without drawing would otherwise block for up to a second: for example
+  `gfx::set_wait_when_idle(true)`, or a window flag for `gfx::open`. A frame that drew
+  nothing could skip the present by default, which only saves work.
+
 ## SDL: SDL_GPU's Vulkan backend leaks a swapchain on every Android resume (2026-11-07)
 
 When Android brings the app back, SDL_GPU recreates the Vulkan surface
