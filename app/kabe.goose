@@ -1,4 +1,4 @@
-// Kabe: the board, playable by two on one screen (task 004). It draws only when
+// Kabe: the board, playable by two on one screen. It draws only when
 // something changed: input, a move or a pulse animating, or a new screen size
 // (docs/architecture/rendering.md, "Frames and battery").
 //

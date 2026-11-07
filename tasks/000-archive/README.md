@@ -22,3 +22,7 @@ and the commit that last has it.
   tint over photo backgrounds, a key-light model, and crown/stack/auto kings with a 3D
   stacked king; backgrounds to ship as embedded JPEGs decoded with stb_image.
   `012-seasonal-themes.md`, `5187404`
+- 004: 2D board and pieces. Done: `app/kabe.goose` draws the board in one pass and the
+  pieces in one instanced draw with the season's theme and key light; taps, drags, and
+  hop-by-hop moves work on the tablet, idle at 0.03% of a core, nothing allocated per
+  frame. `004-board-2d.md`, `1d60fce`
