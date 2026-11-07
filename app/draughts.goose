@@ -102,14 +102,12 @@ fn main() {
         }
         i += 2;
     }
-    // The settings, kept in the app's storage folder (shell/settings.goose).
-    var folder:     u8[512] = [0; 512];
-    var prefs_path: u8[>..] = [];
-    prefs_path.append(folder[..draughts_storage(folder)]);
-    prefs_path.append("settings.txt");
-    var save_path: u8[>..] = [];
-    save_path.append(prefs_path[..prefs_path.len - 12]);
-    save_path.append("game.bin");
+    // The settings and the game, kept in the app's storage folder (shell/settings.goose,
+    // shell::save).
+    var folder: u8[512] = [0; 512];
+    let dir = folder[..draughts_storage(folder)];
+    let prefs_path = str(dir, "settings.txt");
+    let save_path = str(dir, "game.bin");
     var prefs_text: u8[>..] = [];
     read_file(prefs_path, prefs_text);
     let prefs = settings::parse(prefs_text);
@@ -162,7 +160,6 @@ fn main() {
     var t = text::Text {};
     var size = int2 { 0, 0 };
     var dirty = true;
-    var drawn = 0;
     var tapped = 0;
     var focused = true;
     var season_in = 0;
@@ -248,7 +245,6 @@ fn main() {
             draw::overlay(d, colors, now);
             gfx::end_pass();
             dirty = false;
-            drawn++;
         }
         // A running clock is drawn when the time it shows changes; a timer wakes the loop
         // then, rather than whenever the idle wait ends (wake.c).
