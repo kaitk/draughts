@@ -172,6 +172,8 @@ const Draughts = (() => {
     restart: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
     back: '<path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/>',
     next: '<path d="M5 12h14"/><path d="M13 6l6 6-6 6"/>',
+    home: '<path d="M3.5 10.5 12 3.5l8.5 7"/><path d="M5.5 9v11.5h13V9"/><path d="M10 20.5v-6h4v6"/>',
+    clock: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M9.5 2.5h5"/>',
     // Home tiles: filled shapes, which read better large.
     friend: '<circle class="solid" cx="8.5" cy="7.5" r="3.6"/><path class="solid" d="M1.5 20.5a7 7 0 0 1 14 0z"/><circle class="solid" cx="16.5" cy="8.3" r="3.1"/><path class="solid" d="M15.6 13.7a6.3 6.3 0 0 1 6.9 6.8h-5.3a8.6 8.6 0 0 0-1.6-6.8z"/>',
     computer: '<rect x="4" y="6" width="16" height="10" rx="3.5"/><path d="M12 6V3.5"/><circle class="solid" cx="12" cy="2.6" r="1.3"/><circle class="solid" cx="9" cy="11" r="1.4"/><circle class="solid" cx="15" cy="11" r="1.4"/>',

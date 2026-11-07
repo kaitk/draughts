@@ -12,6 +12,7 @@ jsDelivr CDN, so they need internet access. Start at [index.html](index.html).
 | `home.html` | Home, the first take: three glass tiles with icons only |
 | `settings.html` | Settings: background, board, move hints, language |
 | `game.html` | The game: a selected piece and its capture, a forced capture, the side panel |
+| `game-panel.html` | Takes on the game's controls with words (`?take=a` to `d`) and the clocks (`&clock=on`, `low`, `&flip=1`), against `game.html` (task 019) |
 | `puzzles.html` | The puzzle picker: three theme rows of ten, with 0 to 3 stars |
 | `solved.html` | A solved puzzle: stars over the dimmed board |
 | `boards.html` | The four season boards in 2D and 3D, crowned and stacked kings, and 10×10 |

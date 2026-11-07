@@ -22,6 +22,37 @@ especially in landscape (2026-11-07).
   of the moves, the only place where move hints show moves by default. Draw the flow
   as pages linked in order.
 
+## Time controls (found 2026-11-07)
+
+Base time per player plus a Fischer increment per move, written `5+3` (minutes, seconds).
+
+- **FMJD, 10×10** (Annexes, February 2018 edition, a mirror on the French federation's
+  site: <https://www.ffjd.fr/fichiers/reglements/FMJD_Annexes_2018_en.pdf>; the 2024
+  edition's URL on fmjd.org was dead). Annex 6: rapid is 15 to 30 minutes per player, blitz
+  5 to 15, Fischer increment obligatory in official FMJD events; no category below blitz.
+  Annex 3: classical is by default 80 minutes plus 1 minute a move. Events use rapid
+  15+10 and blitz 5+3 (European rapid and blitz 2025, from a search summary of its score
+  table, not read). Flag fall: the player whose time runs out loses (Annex 6, art. 7.1;
+  Annex 3, art. 6.11), with no draw when the opponent couldn't win.
+- **IDF, 8×8 "draughts-64"** (Regulations of official competitions, in force 1 January 2017:
+  <https://idf64.org/wp-content/uploads/2016/09/IDF_Rules_of_Official_competitions_rus-01.01.2017.pdf>,
+  art. 10.2). Classical: 45 minutes, or 45+30, 45+15, 45+10, 25+10, 25+5, 20+10, 20+5.
+  Rapid ("быстрая игра"): 10 minutes, or 10, 7, 6, or 5 minutes plus 3 or 5 seconds.
+  Lightning ("молниеносная игра", blitz): 3 minutes, or 3+2, 3+3. The Russian federation's
+  own regulation wasn't found.
+- **Lidraughts** (the main server for both): quick-pairing pools 1+0, 2+1, 3+0, 3+2, 5+0,
+  5+3, 10+0, 15+15 (`modules/pool/src/main/PoolList.scala` in
+  <https://github.com/RoepStoep/lidraughts>). Categories by estimated game length:
+  bullet under 3 minutes, blitz 3 to 8, rapid 8 to 25, classical 25 and more
+  (`Speed.scala` in <https://github.com/RoepStoep/scaladraughts>). The estimate's formula
+  wasn't checked; Lichess, which Lidraughts forks, counts base plus 40 increments.
+- Estonian blitz ("välkkabe") rules weren't found.
+
+So "blitz" means 5+3 under FMJD and in events, and 3+2 under IDF for 8×8, where 5+3 counts
+as rapid. Proposed presets for the app: no clock (the default), **5+3**, and **10+5**,
+both in IDF's rapid list and FMJD's blitz range, and gentle enough for children; 3+2 only
+if the older child asks for it.
+
 ## Open with the user
 
 - Which variant is the go-to: the user named 10×10 international and 8×8; the MVP in
