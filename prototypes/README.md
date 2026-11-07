@@ -19,7 +19,10 @@ jsDelivr CDN, so they need internet access. Start at [index.html](index.html).
 
 Shared parts: `kabe.css` (theme tokens, glass, buttons, board, pieces, light) and
 `kabe.js` (the season's background and the glass over it, the board in 2D and 3D,
-icons). The background is the season's master from `design/backgrounds/masters/`,
+icons). The 2D board and its pieces are painted by a port of the native shaders
+(`app/draw.goose`) in `kabe.js`, into images at their size on screen, so they look as
+the app does: the lip, the squares' faint surface, the pieces' groove and rounded edge.
+Change that port with the shaders. The background is the season's master from `design/backgrounds/masters/`,
 blurred behind the 2D board and sharp elsewhere (`?bg=blur`, `photo`, or `table` for a
 plain painted tabletop), which is local and out of git
 ([its README](../design/backgrounds/README.md) says how to make it); without it the

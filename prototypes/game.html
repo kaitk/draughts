@@ -35,7 +35,7 @@
   .turn { display: grid; place-items: center; width: var(--target); height: var(--target); }
   /* The side to move: a piece of its color with a glow ring, no text. */
   .turn .piece { --u: 6px; position: relative; inset: auto; width: 64px; height: 64px;
-    box-shadow: 0 3px 0 var(--side), 0 0 0 4px color-mix(in srgb, var(--glow) 80%, transparent),
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--glow) 80%, transparent),
       0 0 22px 4px color-mix(in srgb, var(--glow) 45%, transparent); }
   /* Move hints, one tap from the game: on shows the targets, off marks only mistakes. */
   .top { position: relative; display: grid; place-items: center; width: 100%; }
