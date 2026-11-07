@@ -11,6 +11,7 @@ jsDelivr CDN, so they need internet access. Start at [index.html](index.html).
 | `settings.html` | Settings: background, board, move hints, language |
 | `game.html` | The game: the board between the way out and the play, a selected piece and its capture, a forced capture; `?clock=on` or `low` for the clocks |
 | `puzzles.html` | The puzzle picker: three theme rows of ten, with 0 to 3 stars |
+| `puzzle.html` | Takes on playing one puzzle (`?take=a` to `c`, `&state=play`, `wrong`, `hint`, `solved`), waiting for a pick (task 007) |
 | `solved.html` | A solved puzzle: stars over the dimmed board |
 | `boards.html` | The four season boards in 2D and 3D, crowned and stacked kings, and 10×10 |
 

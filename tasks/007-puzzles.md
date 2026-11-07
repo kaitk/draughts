@@ -6,6 +6,24 @@ Puzzles in a plain text file: a position, the side to move, a goal ("win materia
 "crown", "capture all") and the solution lines. A move that reaches the goal by a
 different line counts too. About 30 for Russian 8×8, in three tiers.
 
+## Puzzle screen takes (2026-11-08)
+
+`prototypes/puzzle.html`, waiting for the user's pick; `?take=` and `&state=play`,
+`wrong`, `hint`, or `solved`. All keep the game screen's layout (puzzles, settings, and
+start over on the left; the goal, three stars at stake, and one big tile on the right),
+and a wrong move slides back by itself, its square flashing the red ring over a fading
+ghost of the piece, with "try again" and a star going out.
+
+- **a**: the goal as the side to move, the theme's icon, and "Capture 2"; a hint tile
+  where take back is, which makes the piece to move pulse a glow ring; a miss or the hint
+  costs a star; solved shows the card over the dimmed board, again or next.
+- **b**: the goal drawn as the pieces to take, which dim as they go; the hint tile
+  appears only after a miss and is free; the theme's ten as dots with next on the left,
+  to move on at any time; solved shows the card.
+- **c**: no hint tile, as in a game: after two misses the piece to move glows by itself;
+  next is the big tile, dim until solved, then lit, with the stars filling in the panel
+  and no card over the board.
+
 ## Acceptance criteria
 
 - [ ] Format documented, loaded at startup, validated by the rules engine (every solution legal)
