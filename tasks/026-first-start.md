@@ -1,6 +1,6 @@
 # 026: Build the first start and the tutorial
 
-Status: todo
+Status: todo (after the MVP's menus, 2026-11-07: not in the MVP's scope)
 
 Bring the first start to `prototypes/first-start.html` (task 019): which draughts (two
 cards with the starting position: international, the default once it exists, and
