@@ -136,6 +136,7 @@ fn main() {
     var drawn = 0;
     var tapped = 0;
     var focused = true;
+    var season_in = 0;
     while gfx::frame() {
         if gfx::key_pressed("Escape") { break; }
         // Android may kill the app once it is paused; it loses focus then, and SDL lets
@@ -143,6 +144,19 @@ fn main() {
         // write per pause, none while idle.
         if keep && focused && !gfx::focused() { write_file_atomic(save_path, shell::save(sh)); }
         focused = gfx::focused();
+        // A new season's photograph, colors, and blurred copies load two frames after the
+        // tap: the frame after it shows the tile lit, and is on screen before the load
+        // (80 to 95 ms on the tablet) holds the thread.
+        if season_in > 0 {
+            season_in--;
+            if season_in == 0 && theme_for(sh.prefs.season) != kind {
+                kind = theme_for(sh.prefs.season);
+                colors = theme::get(kind);
+                draw::reload(d, kind);
+                trim_memory();
+                dirty = true;
+            }
+        }
         let now = gfx::time();
         let s = gfx::screen_size();
         if s.x != size.x || s.y != size.y {
@@ -161,7 +175,7 @@ fn main() {
         gui::begin(g, input, scale, now);
         if shell::frame(sh, g, size.x, size.y, now) { dirty = true; }
         // A tap in settings applies at once and is written; a new season reloads the
-        // photograph and its blurred copies.
+        // photograph and its blurred copies, once the tile shows lit.
         if sh.changed {
             sh.changed = false;
             var out: u8[>..] = [];
@@ -169,12 +183,7 @@ fn main() {
             write_file_atomic(prefs_path, out);
             let next = if sh.prefs.language >= 0 { sh.prefs.language } else { system_lang };
             if next != strings::current { strings::use(next); }
-            if theme_for(sh.prefs.season) != kind {
-                kind = theme_for(sh.prefs.season);
-                colors = theme::get(kind);
-                draw::reload(d, kind);
-                trim_memory();
-            }
+            if theme_for(sh.prefs.season) != kind { season_in = 2; }
             dirty = true;
         }
         if sh.screen == shell::SETTINGS && w.thumbs.id == 0 {
@@ -201,6 +210,10 @@ fn main() {
             dirty = false;
             drawn++;
         }
+        // A widget declared this frame before a click changed what it shows (a choice
+        // lit, a toggle), so the next frame draws again; this one drew, so the next
+        // doesn't wait for an event.
+        if g.acted { dirty = true; }
         if frames > 0 && gfx::frame_count() >= frames { break; }
     }
     if frames > 0 { gfx::screenshot("draughts.png"); }

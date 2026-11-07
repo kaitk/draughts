@@ -104,7 +104,11 @@ sea almost flat.
   Android. goose_gfx's `load_texture` reads only PNG and BMP from a file (through SDL),
   so the program decodes the JPEG itself: stb_image, JPEG only, in the program's own C
   (a `c_sources` entry in its `.build` sidecar), from the embedded bytes to RGBA, then
-  `gfx::texture2d` and `update_texture`. No goose_gfx patch is needed
+  `gfx::texture2d` and `update_texture`. stb_image's NEON loops are switched on for ARM
+  (`STBI_NEON`; on x86 it uses SSE2 by itself, elsewhere its plain C), and it decodes to
+  four channels, the only case its NEON color conversion handles. A season is picked
+  by a settings tile, which lights in the frame after the tap; the photograph loads in
+  the frame after that, once the lit tile is on screen. No goose_gfx patch is needed
   ([findings](../goose-findings.md)). Only the current season is decoded, once: into
   the sharp texture behind home, 2048 × 2048 as stored (16 MB of graphics memory), and
   the 512 px copy that is blurred. The pixels' data-stack pages are given back with

@@ -9,22 +9,22 @@ centered 100 x 50: 150.0 110.0 100.0 50.0
 2 x 2 cell 1: 208.0 23.0 104.0 104.0
 2 x 2 cell 2: 88.0 143.0 104.0 104.0
 2 x 2 cell 3: 208.0 143.0 104.0 104.0
-idle: a false, b false, took false, a pressed 0.0, animating false, quads 5
-down on a: a false, b false, took true, a pressed 0.0, animating true, quads 5
-held, halfway down: a false, b false, took true, a pressed 0.5, animating true, quads 5
-held, all the way: a false, b false, took true, a pressed 1.0, animating false, quads 5
-up on a: a true, b false, took true, a pressed 1.0, animating true, quads 5
-after, halfway up: a false, b false, took true, a pressed 0.5, animating true, quads 5
-after, all the way: a false, b false, took true, a pressed 0.0, animating false, quads 5
-down on a: a false, b false, took true, a pressed 0.0, animating true, quads 5
-slid to b: a false, b false, took true, a pressed 1.0, animating true, quads 5
-up on b: a false, b false, took true, a pressed 0.074074075, animating true, quads 5
-down on the panel: a false, b false, took true, a pressed 0.0, animating false, quads 5
-up on b: a false, b false, took true, a pressed 0.0, animating false, quads 5
-down off the UI: a false, b false, took false, a pressed 0.0, animating false, quads 5
-up off the UI: a false, b false, took false, a pressed 0.0, animating false, quads 5
-tap on b in one frame: a false, b true, took true, a pressed 0.0, animating false, quads 5
-after: a false, b false, took true, a pressed 0.0, animating false, quads 5
+idle: a false, b false, took false, a pressed 0.0, animating false, acted false, quads 5
+down on a: a false, b false, took true, a pressed 0.0, animating true, acted false, quads 5
+held, halfway down: a false, b false, took true, a pressed 0.5, animating true, acted false, quads 5
+held, all the way: a false, b false, took true, a pressed 1.0, animating false, acted false, quads 5
+up on a: a true, b false, took true, a pressed 1.0, animating true, acted true, quads 5
+after, halfway up: a false, b false, took true, a pressed 0.5, animating true, acted false, quads 5
+after, all the way: a false, b false, took true, a pressed 0.0, animating false, acted false, quads 5
+down on a: a false, b false, took true, a pressed 0.0, animating true, acted false, quads 5
+slid to b: a false, b false, took true, a pressed 1.0, animating true, acted false, quads 5
+up on b: a false, b false, took true, a pressed 0.074074075, animating true, acted false, quads 5
+down on the panel: a false, b false, took true, a pressed 0.0, animating false, acted false, quads 5
+up on b: a false, b false, took true, a pressed 0.0, animating false, acted false, quads 5
+down off the UI: a false, b false, took false, a pressed 0.0, animating false, acted false, quads 5
+up off the UI: a false, b false, took false, a pressed 0.0, animating false, acted false, quads 5
+tap on b in one frame: a false, b true, took true, a pressed 0.0, animating false, acted true, quads 5
+after: a false, b false, took true, a pressed 0.0, animating false, acted false, quads 5
 quad 0: kind 0.0, rect 0.0 0.0 300.0 200.0, radius 28.0, icon 0.0
 quad 1: kind 1.0, rect 20.0 20.0 88.0 88.0, radius 22.0, icon 0.0
 quad 2: kind 2.0, rect 42.0 42.0 44.0 44.0, radius 0.0, icon 1.0

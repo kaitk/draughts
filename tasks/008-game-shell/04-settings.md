@@ -62,3 +62,12 @@ Then back to by the date and English the same way. Opening settings the first ti
 the program thread 0.03 s of CPU (0.05% of a core) with 60 voluntary switches, the
 process 1.19 s. Over 20 cycles of home, resume, and rotation: one process, no errors,
 PSS 263 to 265 MB (259 to 263 before), native heap 27 MB, graphics 213 to 215 MB.
+
+Fixed after review (2026-11-07): on the tablet a season's tile sometimes showed the old
+choice lit, or none, until the next touch. A tile is declared before the tap changes the
+setting, and the reload ran in that frame and outlasted the press animation, so no later
+frame was drawn. Now a click draws one more frame (`gui::Gui.acted`), and the reload
+waits for the frame showing the lit tile. Decoding with stb_image's NEON loops, to RGBA,
+and scaling without a divide per pixel (a 1:1 crop is a row copy) took a reload from
+0.15 to 0.16 s down to 0.075 to 0.095 s, and opening settings from 0.21 to 0.15 s; on
+the Mac the decode and scale of one photograph went from 46 to 16 ms.

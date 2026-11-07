@@ -12,6 +12,11 @@
 #define STBI_NO_LINEAR
 #define STBI_NO_HDR
 #define STBI_FAILURE_USERMSG
+// stb_image turns on its NEON loops (the IDCT, and the color conversion when decoding
+// to four channels) only when asked; on x86 it finds SSE2 itself.
+#if defined(__aarch64__) || defined(__ARM_NEON)
+#define STBI_NEON
+#endif
 #include "stb_image.h"
 
 #include <stdint.h>
@@ -72,39 +77,52 @@ void draughts_background_done(void) {
 // Decodes theme `kind`'s photograph (once for any number of sizes), crops the middle
 // of its middle square to the shape of `width` × `height`, and scales that down to
 // width × height RGBA by averaging, into `out` (width * height * 4 bytes). False when
-// the image isn't built in or doesn't decode.
+// the image isn't built in or doesn't decode. It decodes to RGBA, which stb converts
+// with NEON and a 1:1 crop copies by rows; a box's sum is divided by one reciprocal
+// multiply. Measured on the Mac for a 2048 px JPEG: 16 ms against 46 for RGB, a divide
+// per pixel, and no NEON.
 _Bool draughts_background_crop(int64_t kind, int64_t width, int64_t height, draughts_bytes out) {
     if (kind < 0 || kind > 3 || lengths[kind] == 0 || width <= 0 || height <= 0 || height > width ||
-        out.len < width * height * 4) {
+        width > 4096 || out.len < width * height * 4) {
         return 0;
     }
     if (decoded_kind != kind) {
         draughts_background_done();
         int n = 0;
-        decoded = stbi_load_from_memory(images[kind], (int)lengths[kind], &decoded_w, &decoded_h, &n, 3);
+        decoded = stbi_load_from_memory(images[kind], (int)lengths[kind], &decoded_w, &decoded_h, &n, 4);
         if (!decoded) return 0;
         decoded_kind = kind;
     }
     int w = decoded_w, h = decoded_h;
-    const unsigned char *px = decoded;
     int side = w < h ? w : h;
     int crop = (int)(side * height / width);
+    if (side < width || crop < height) return 0;    // it only scales down
     int x0 = (w - side) / 2, y0 = (h - crop) / 2;
+    if (side == width && crop == height) {
+        for (int64_t y = 0; y < height; y++) {
+            memcpy(out.data + y * width * 4, decoded + ((size_t)(y0 + y) * w + x0) * 4, (size_t)width * 4);
+        }
+        return 1;
+    }
+    static int xs[4097];        // each column's first source column, and the end
+    for (int64_t x = 0; x <= width; x++) xs[x] = x0 + (int)(x * side / width);
     for (int64_t y = 0; y < height; y++) {
         int ya = y0 + (int)(y * crop / height), yb = y0 + (int)((y + 1) * crop / height);
         for (int64_t x = 0; x < width; x++) {
-            int xa = x0 + (int)(x * side / width), xb = x0 + (int)((x + 1) * side / width);
-            uint32_t r = 0, g = 0, b = 0, count = 0;
+            int xa = xs[x], xb = xs[x + 1];
+            uint32_t r = 0, g = 0, b = 0;
             for (int sy = ya; sy < yb; sy++) {
-                const unsigned char *p = px + ((size_t)sy * w + xa) * 3;
-                for (int sx = xa; sx < xb; sx++, p += 3) {
-                    r += p[0]; g += p[1]; b += p[2]; count++;
+                const unsigned char *p = decoded + ((size_t)sy * w + xa) * 4;
+                for (int sx = xa; sx < xb; sx++, p += 4) {
+                    r += p[0]; g += p[1]; b += p[2];
                 }
             }
+            uint32_t count = (uint32_t)((yb - ya) * (xb - xa));
+            uint32_t inv = (65536 + count / 2) / count;
             uint8_t *o = out.data + (y * width + x) * 4;
-            o[0] = (uint8_t)((r + count / 2) / count);
-            o[1] = (uint8_t)((g + count / 2) / count);
-            o[2] = (uint8_t)((b + count / 2) / count);
+            o[0] = (uint8_t)((r * inv + 32768) >> 16);
+            o[1] = (uint8_t)((g * inv + 32768) >> 16);
+            o[2] = (uint8_t)((b * inv + 32768) >> 16);
             o[3] = 255;
         }
     }

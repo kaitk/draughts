@@ -122,6 +122,7 @@ struct Gui {
     input:  Input             = Input {},
     active: i64               = 0,     // the widget the pointer went down on, or 0
     took:   bool              = false, // whether this press landed on the UI, not the board
+    acted:  bool              = false, // whether a widget was clicked this frame
     quads:  Quad[..MAX_QUADS] = [],
     slots:  Slot[MAX_IDS]     = [Slot {}; MAX_IDS],
     faces:  Face[FACES]       = [Face {}; FACES],
@@ -169,6 +170,7 @@ fn inside(r: float4, p: float2) -> bool { p.x >= r.x && p.x < r.x + r.z && p.y >
 fn begin(g: Gui&, input: Input, scale: f32, now: f64) {
     if !g.input.down && !g.input.pressed { g.active = 0; }
     if input.pressed { g.took = false; }
+    g.acted = false;
     g.input = input;
     g.scale = scale;
     g.now = now;
@@ -244,6 +246,7 @@ fn hold(g: Gui&, id: i64, r: float4) -> bool, f32 {
     }
     let held = g.active == id && g.input.down && over;
     let clicked = g.active == id && g.input.released && over;
+    if clicked { g.acted = true; }
     set_down(g, id, held);
     return clicked, pressed(g, id);
 }

@@ -2,7 +2,9 @@
 // frame the pointer is released over it after going down on it, so a press that slides
 // off, or one that starts elsewhere and is released over it, does nothing; a press on
 // the UI is taken from the board; the press animation runs for its 0.12 s and then
-// stops asking for frames; and the quads one frame makes.
+// stops asking for frames; acted is set on a click's frame only, for the app to draw
+// the next one, where widgets declared before the click show what it changed; and the
+// quads one frame makes.
 import std;
 import vec;
 import gui from "../../gui";
@@ -16,7 +18,7 @@ fn frame(g: gui::Gui&, at: float2, down: bool, pressed: bool, released: bool, no
     let a = gui::button(g, 1, float4 { 20.0, 20.0, 88.0, 88.0 }, gui::UNDO);
     let b = gui::button(g, 2, float4 { 120.0, 20.0, 88.0, 88.0 }, gui::HINT);
     print(what, ": a ", a, ", b ", b, ", took ", g.took, ", a pressed ", gui::pressed(g, 1),
-          ", animating ", gui::animating(g), ", quads ", g.quads.len);
+          ", animating ", gui::animating(g), ", acted ", g.acted, ", quads ", g.quads.len);
 }
 
 fn main() {
