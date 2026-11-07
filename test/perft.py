@@ -10,7 +10,7 @@ to be read.
     test/perft.py compare VARIANT GAMES PLIES     random games, each position's
                                                   moves checked against build/perft
 
-VARIANT is russian, international or english. A move prints as its start, its
+VARIANT is russian, international, english or brazilian. A move prints as its start, its
 end, and the squares it takes, sorted: "c3 e5 d4", the form `perft --moves`
 prints too.
 """
@@ -36,6 +36,9 @@ VARIANTS = {
     "russian": Variant("russian", 8, 3, True, True, False, "continue", "w", True),
     "international": Variant("international", 10, 4, True, True, True, "end", "w", False),
     "english": Variant("english", 8, 3, False, False, False, "stop", "b", False),
+    # International's rules on 8x8: men take backward, kings fly, the most pieces must
+    # be taken, and a man is crowned only where its move ends.
+    "brazilian": Variant("brazilian", 8, 3, True, True, True, "end", "w", True),
 }
 
 

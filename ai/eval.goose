@@ -44,7 +44,8 @@ fn make_weights(variant: u8) -> Weights {
     return w;
 }
 
-let WEIGHTS: Weights[rules::VARIANT_COUNT] = [make_weights(0), make_weights(1), make_weights(2)];
+let WEIGHTS: Weights[rules::VARIANT_COUNT] = [make_weights(0), make_weights(1), make_weights(2),
+                                               make_weights(3)];
 
 fn side_value(w: Weights&, p: rules::Position&, side: i64) -> i64 {
     let men = p.pieces[side] & ~p.kings;

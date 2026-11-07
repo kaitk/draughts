@@ -6,29 +6,30 @@ Estonian kabe is Russian draughts on 8×8, and International draughts on 10×10.
 checkers is rarely played in Estonia, so it comes last. The engine takes the variant as
 data:
 
-| | Russian | International | English (engine only, for now) |
-| --- | --- | --- | --- |
-| Board | 8×8 | 10×10 | 8×8 |
-| Men capture backward | yes | yes | no |
-| Kings | flying | flying | one square |
-| Must take the most pieces | no | yes | no |
-| Man reaching the last row mid-capture | crowned, keeps capturing as a king | crowned only if the move ends there | move ends, crowned |
-| Moves first | white | white | black |
+| | Russian | International | Brazilian | English (engine only, for now) |
+| --- | --- | --- | --- | --- |
+| Board | 8×8 | 10×10 | 8×8 | 8×8 |
+| Men capture backward | yes | yes | yes | no |
+| Kings | flying | flying | flying | one square |
+| Must take the most pieces | no | yes | yes | no |
+| Man reaching the last row mid-capture | crowned, keeps capturing as a king | crowned only if the move ends there | crowned only if the move ends there | move ends, crowned |
+| Moves first | white | white | white | black |
 
-International's crowning is FMJD's Official Rules (Annex 1), art. 3.5 (a man is crowned
-when it "reaches and stops" on the far row) and art. 4.15 (one that passes over the far
-row during a capture and ends elsewhere "remains a man"); FMJD Annexes, February 2018:
+Brazilian is International's rules on 8×8. International's crowning is FMJD's Official
+Rules (Annex 1), art. 3.5 (a man is crowned when it "reaches and stops" on the far row)
+and art. 4.15 (one that passes over the far row during a capture and ends elsewhere
+"remains a man"); FMJD Annexes, February 2018:
 <https://www.ffjd.fr/fichiers/reglements/FMJD_Annexes_2018_en.pdf>. No federation plays
 10×10 otherwise; "Polish draughts" is another name for International.
 
-Common to all three: capturing is compulsory, a capture continues while it can, and
+Common to all four: capturing is compulsory, a capture continues while it can, and
 captured pieces come off after the whole move, so no piece is jumped twice (the Turkish
 strike rule).
 
 Flying kings must land, after a capture, on a square from which the capture goes on, if
-any such square exists. Russian states this rule; in International the majority rule
-already gives it. A capture is one move per start square, end square, and set of pieces
-taken, however many paths lead there.
+any such square exists. Russian states this rule; in International and Brazilian the
+majority rule already gives it. A capture is one move per start square, end square, and
+set of pieces taken, however many paths lead there.
 
 ## Representation
 
@@ -57,15 +58,18 @@ computer player, and the tests share it.
 
 Positions read and write as in PDN: `W:W31,32,K46:B1,2`, the side to move, then each
 side's pieces with `K` before a king. Squares are numbered from the top-left dark square,
-row by row (on 10×10, 1 is b10 and 46 is a1). Russian writes squares as a1..h8 instead.
-Reading accepts either form for every variant, ranges such as `31-50`, spaces, and a
-trailing `.`. Moves print as `32-28`, or a capture's stops, `28x19x10` (`c3:e5:c7` in
-Russian).
+row by row (on 10×10, 1 is b10 and 46 is a1). Russian and Brazilian write squares as
+a1..h8 instead. Reading accepts either form for every variant, ranges such as `31-50`,
+spaces, and a trailing `.`. Moves print as `32-28`, or a capture's stops, `28x19x10`
+(`c3:e5:c7` in Russian and Brazilian).
 
 ## Checks
 
 Move generation matches the published International perft counts through depth 10
-(258,895,763) and English through depth 11 (85,242,128). Russian has no published table:
-its counts agree with an independent Python generator (`test/perft.py`) through depth 10:
-7, 49, 302, 1469, 7482, 37986, 190146, 929899, 4570586, 22444032. Running and extending
-the tests: [development](../development.md#test-the-rules).
+(258,895,763), English through depth 11 (85,242,128), and Brazilian through depth 11:
+7, 49, 302, 1469, 7473, 37628, 187302, 907830, 4431766, 21560022, 105491257, the counts
+of two independent generators that count a capture once per start, end, and set of
+pieces taken (<https://damforum.nl/viewtopic.php?t=2666>). Russian has no published
+table: its counts agree with an independent Python generator (`test/perft.py`) through
+depth 10: 7, 49, 302, 1469, 7482, 37986, 190146, 929899, 4570586, 22444032. Running and
+extending the tests: [development](../development.md#test-the-rules).

@@ -2,7 +2,7 @@
 // against published counts and against test/perft.py.
 //
 //   goose build -o build/perft tools/perft.goose
-//   build/perft russian|international|english DEPTH [FEN] [--divide | --moves]
+//   build/perft russian|international|english|brazilian DEPTH [FEN] [--divide | --moves]
 //
 // Prints each depth's count and time up to DEPTH. --divide prints the count
 // below each move at DEPTH instead, one "move count" per line. --moves prints
@@ -16,11 +16,12 @@ fn variant_named(name: const u8[:]) -> u8, bool {
     if name == "russian" { return rules::RUSSIAN, true; }
     if name == "international" { return rules::INTERNATIONAL, true; }
     if name == "english" { return rules::ENGLISH, true; }
+    if name == "brazilian" { return rules::BRAZILIAN, true; }
     return 0, false;
 }
 
 fn usage() {
-    write_stderr("usage: perft russian|international|english DEPTH [FEN] [--divide | --moves]\n");
+    write_stderr("usage: perft russian|international|english|brazilian DEPTH [FEN] [--divide | --moves]\n");
     exit(2);
 }
 

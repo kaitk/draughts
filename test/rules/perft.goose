@@ -1,5 +1,5 @@
-// Move counts from the start position: International and English against
-// published values, Russian against test/perft.py. tools/perft.goose goes
+// Move counts from the start position: International, English, and Brazilian
+// against published values, Russian against test/perft.py. tools/perft.goose goes
 // deeper, natively.
 import rules from "../../rules";
 

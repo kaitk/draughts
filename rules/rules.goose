@@ -1,7 +1,7 @@
 // The rules of draughts as pure functions over values, with no graphics:
 // positions, legal moves, and playing a move. The variant is data
-// (docs/architecture/rules.md): Russian 8×8, International 10×10, and English
-// 8×8 differ only in the fields of a `Variant`.
+// (docs/architecture/rules.md): Russian 8×8, International 10×10, English 8×8,
+// and Brazilian 8×8 differ only in the fields of a `Variant`.
 //
 // The board is one bit per dark square, with a ghost bit before each odd row,
 // so every diagonal step is a fixed shift and a step off the board lands on a
@@ -21,11 +21,12 @@ let BLACK = 1;
 let RUSSIAN = 0;
 let INTERNATIONAL = 1;
 let ENGLISH = 2;
-let VARIANT_COUNT = 3;
+let BRAZILIAN = 3;
+let VARIANT_COUNT = 4;
 
 // What happens when a man reaches the far row in the middle of a capture.
 let CROWN_CONTINUES = 0;    // Russian: crowned at once, keeps capturing as a king
-let CROWN_AT_END = 1;       // International: crowned only if the move ends there
+let CROWN_AT_END = 1;       // International, Brazilian: crowned only if the move ends there
 let CROWN_ENDS_MOVE = 2;    // English: crowned, and the move ends
 
 // Room for the longest move: a capture's stops, from the start square on.
@@ -97,6 +98,7 @@ let VARIANTS: Variant[VARIANT_COUNT] = [
     make_variant(8, 3, true, true, false, CROWN_CONTINUES, WHITE, true),
     make_variant(10, 4, true, true, true, CROWN_AT_END, WHITE, false),
     make_variant(8, 3, false, false, false, CROWN_ENDS_MOVE, BLACK, false),
+    make_variant(8, 3, true, true, true, CROWN_AT_END, WHITE, true),
 ];
 
 fn start(variant: u8) -> Position {

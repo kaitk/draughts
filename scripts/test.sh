@@ -3,7 +3,7 @@
 #
 # 1. test/run_tests.py: the programs under test/<area>/ against their golden output.
 # 2. tools/perft.goose, built natively: move counts from each start position
-#    against published values (International, English) and against
+#    against published values (International, English, Brazilian) and against
 #    test/perft.py's (Russian).
 # 3. test/perft.py compare: random games, every position's moves against the
 #    independent Python generator.
@@ -29,7 +29,9 @@ check() {
 check international 8 6483961
 check english 9 3963680
 check russian 9 4570586
+check brazilian 9 4431766
 
 python3 test/perft.py compare russian 40 120
 python3 test/perft.py compare international 20 150
 python3 test/perft.py compare english 40 120
+python3 test/perft.py compare brazilian 40 120

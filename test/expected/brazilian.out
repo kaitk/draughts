@@ -1,0 +1,21 @@
+W:Wh2,c3:Bg3,d4,f6
+  c3:e5:g7  takes 2
+1 move
+W:Wh2,e5:Bb2,g3,d4
+  e5:c3:a1  takes 2
+1 move
+W:WKa1,h2:Bc3,g3,f6
+  a1:d4:g7  takes 2
+  a1:d4:h8  takes 2
+2 moves
+W:Wb6:Bc7,e7
+  b6:d8:f6  takes 2
+1 move
+after: B:Wf6:B
+B:Wd2,f2:Bg3
+  g3:e1:c3  takes 2
+1 move
+W:Wb6:Bg5,c7
+  b6:d8  takes 1  crowned
+1 move
+after: B:WKd8:Bg5
