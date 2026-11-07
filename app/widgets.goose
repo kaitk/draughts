@@ -31,7 +31,8 @@ let VERT = """
         // Room round the rect for the shadow: glass casts one 30 dp down, a tile 12 dp;
         // a spark's glow reaches 12 dp.
         int kind = int(look.x);
-        float m = (kind == 0 ? 48.0 : kind == 1 ? 20.0 : kind == 4 ? 16.0 : 1.0) * extra.x;
+        // A glyph is drawn exactly over its rect, a texel to a pixel.
+        float m = (kind == 0 ? 48.0 : kind == 1 ? 20.0 : kind == 4 ? 16.0 : kind == 5 ? 0.0 : 1.0) * extra.x;
         vec2 px = mix(rect.xy - m, rect.xy + rect.zw + m, CORNERS[gl_VertexIndex]);
         gl_Position = vec4(px.x / screen.x * 2.0 - 1.0, 1.0 - px.y / screen.y * 2.0, 0.0, 1.0);
         v_px = px;
@@ -50,6 +51,7 @@ let FRAG = """
     layout(location = 4) flat in vec4 v_extra;
     layout(location = 0) out vec4 result;
     layout(set = 2, binding = 0) uniform sampler2D glass_copy;
+    layout(set = 2, binding = 1) uniform sampler2D atlas;
     layout(set = 3, binding = 1) uniform View { vec4 screen; };
     vec4 acc = vec4(0.0);
     void over(vec3 c, float a) { acc = vec4(c * a, a) + acc * (1.0 - a); }
@@ -106,9 +108,42 @@ let FRAG = """
             float d = seg(p, vec2(19.0, 12.0), vec2(5.0, 12.0));
             return min(d, min(seg(p, vec2(11.0, 18.0), vec2(5.0, 12.0)), seg(p, vec2(5.0, 12.0), vec2(11.0, 6.0))));
         }
+        // Filled shapes give their signed distance plus half a stroke.
         if (k == 5) {           // move hints: four solid dots of radius 2.2
             vec2 q = vec2(p.x < 12.0 ? 7.0 : 17.0, p.y < 12.0 ? 7.0 : 17.0);
             return length(p - q) - 1.0;
+        }
+        if (k == 6) {           // next: an arrow right
+            float d = seg(p, vec2(5.0, 12.0), vec2(19.0, 12.0));
+            return min(d, min(seg(p, vec2(13.0, 6.0), vec2(19.0, 12.0)), seg(p, vec2(19.0, 12.0), vec2(13.0, 18.0))));
+        }
+        if (k == 7) {           // a friend: two figures, the second behind the first
+            float s = length(p - vec2(8.5, 7.5)) - 3.6;
+            s = min(s, max(length(p - vec2(8.5, 20.5)) - 7.0, p.y - 20.5));
+            s = min(s, length(p - vec2(16.5, 8.3)) - 3.1);
+            float back = max(length(p - vec2(16.22, 19.97)) - 6.3, 8.6 - length(p - vec2(8.75, 18.9)));
+            return min(s, max(back, p.y - 20.5)) + 1.2;
+        }
+        if (k == 8) {           // the computer: a robot head
+            float d = abs(box(p, vec2(12.0, 11.0), vec2(8.0, 5.0), 3.5));
+            d = min(d, seg(p, vec2(12.0, 6.0), vec2(12.0, 3.5)));
+            float s = length(p - vec2(12.0, 2.6)) - 1.3;
+            s = min(s, min(length(p - vec2(9.0, 11.0)), length(p - vec2(15.0, 11.0))) - 1.4);
+            return min(d, s + 1.2);
+        }
+        if (k == 9) {           // puzzles: a jigsaw piece
+            float s = box(p, vec2(11.0, 14.0), vec2(7.0, 7.0), 0.0);
+            s = min(s, min(length(p - vec2(11.0, 7.0)), length(p - vec2(18.0, 14.0))) - 2.8);
+            s = max(s, 2.6 - length(p - vec2(4.0, 13.9)));
+            return s + 1.2;
+        }
+        if (k == 10) {          // settings: a gear of two rings and eight spokes
+            vec2 q = p - 12.0;
+            float d = min(abs(length(q) - 3.2), abs(length(q) - 6.5));
+            vec2 a = abs(q);
+            d = min(d, seg(vec2(max(a.x, a.y), min(a.x, a.y)), vec2(6.5, 0.0), vec2(9.5, 0.0)));
+            vec2 r = vec2(a.x + a.y, abs(a.x - a.y)) * 0.70710678;
+            return min(d, seg(r, vec2(6.5, 0.0), vec2(9.5, 0.0)));
         }
         return 1e9;
     }
@@ -138,21 +173,25 @@ let FRAG = """
             result = vec4(g * a, a + s);
             return;
         }
-        int style = int(v_extra.y);             // plain, primary, toggle on, toggle off
+        // plain, primary, toggle on, toggle off, quiet, row, primary row
+        int style = int(v_extra.y);
         if (kind == 1) {
             // A glass tile: white at 10%, 14 points more pressed and scaled to 0.96; an
             // inset light border and top highlight; a small shadow. A primary tile is the
             // glow color at 22%. A toggle has no highlight: on, the glow color at 26%
-            // with a glow border; off, white at 8% with a border at 18%.
+            // with a glow border; off, white at 8% with a border at 18%; a quiet tile
+            // too. A menu row has no border or shadow: clear, or the glow color at 24%.
             float pr = v_look.w;
-            h *= 1.0 - 0.04 * pr;
+            bool row = style >= 5;
+            if (!row) h *= 1.0 - 0.04 * pr;
             float d = box(p, c, h, r);
-            over(vec3(0.0), 0.5 * shadow(p, c, h, r, 6.0 * u, 14.0 * u, -8.0 * u) * (1.0 - cover(d)));
+            if (!row) over(vec3(0.0), 0.5 * shadow(p, c, h, r, 6.0 * u, 14.0 * u, -8.0 * u) * (1.0 - cover(d)));
             float a = cover(d);
-            vec3 fc = style == 1 || style == 2 ? glow.rgb : vec3(1.0);
-            float fa = (style == 1 ? 0.22 : style == 2 ? 0.26 : style == 3 ? 0.08 : 0.10) + 0.14 * pr;
+            vec3 fc = style == 1 || style == 2 || style == 6 ? glow.rgb : vec3(1.0);
+            float fa = (style == 1 ? 0.22 : style == 2 ? 0.26 : style == 3 || style == 4 ? 0.08
+                        : style == 5 ? 0.0 : style == 6 ? 0.24 : 0.10) + 0.14 * pr;
             vec4 tile = vec4(fc * fa, fa);
-            float edge = (style == 2 ? 1.0 : style == 3 ? 0.18 : 0.2) * (1.0 - cover(d + u));
+            float edge = (row ? 0.0 : style == 2 ? 1.0 : style >= 3 ? 0.18 : 0.2) * (1.0 - cover(d + u));
             tile = vec4((style == 2 ? glow.rgb : vec3(1.0)) * edge, edge) + tile * (1.0 - edge);
             float hl = style >= 2 ? 0.0 : 0.18 * top_line(p, c, h, r, u);
             tile = vec4(vec3(hl), hl) + tile * (1.0 - hl);
@@ -166,9 +205,16 @@ let FRAG = """
             vec2 q = (p - v_rect.xy) / v_rect.zw * 24.0;
             float px = 24.0 / v_rect.z;         // one pixel in grid units
             float d = icon(int(v_look.z), q) - 1.2;
-            float a = clamp(0.5 - d / px, 0.0, 1.0) * (style == 3 ? 0.45 : 1.0);
+            float a = clamp(0.5 - d / px, 0.0, 1.0) * (style == 3 ? 0.45 : 1.0) * v_color.a;
             vec3 ic = style == 2 ? glow.rgb : text.rgb;
             result = vec4(ic * a, a);
+            return;
+        }
+        if (kind == 5) {
+            // A glyph: the atlas's coverage over the quad, in the text color.
+            vec2 t = (p - v_rect.xy) / v_rect.zw;
+            float a = texture(atlas, mix(v_look.yz, vec2(v_look.w, v_extra.y), t)).a * v_color.a;
+            result = vec4(text.rgb * a, a);
             return;
         }
         if (kind == 4) {
@@ -189,6 +235,7 @@ struct Widgets {
     pipeline: gfx::Pipeline,
     quads:    gfx::Buffer,
     upload:   gui::Quad[gui::MAX_QUADS],
+    atlas:    gfx::Texture,     // the text's glyphs (text.goose), or 0 before they're baked
 }
 
 fn new() -> Widgets {
@@ -197,6 +244,7 @@ fn new() -> Widgets {
                                 gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED }),
         quads:  gfx::Buffer { 0 },
         upload: [gui::Quad {}; gui::MAX_QUADS],
+        atlas:  gfx::Texture { 0 },
     };
     w.quads = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(w.upload));
     return w;
@@ -218,5 +266,6 @@ fn frame(w: Widgets&, g: gui::Gui&, s: scene::Scene&, t: theme::Theme, width: f3
     gfx::uniforms(gfx::FRAGMENT, 0, t);
     gfx::uniforms(gfx::FRAGMENT, 1, view);
     gfx::bind_texture(gfx::FRAGMENT, 0, s.glass, s.sampler);
+    gfx::bind_texture(gfx::FRAGMENT, 1, if w.atlas.id != 0 { w.atlas } else { s.glass }, s.sampler);
     gfx::draw_instanced(6, g.quads.len);
 }

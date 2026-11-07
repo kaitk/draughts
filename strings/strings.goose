@@ -15,7 +15,6 @@ let LANGUAGES = ["en", "et"];
 let KEYS = [
     "language.name", "app.name",
     "home.continue", "home.friend", "home.computer", "home.puzzles", "home.settings",
-    "home.language",
     "level.easy", "level.medium", "level.hard",
     "settings.background", "settings.by_date", "settings.board", "settings.hints",
     "settings.language",
@@ -29,22 +28,21 @@ let HOME_FRIEND = 3;
 let HOME_COMPUTER = 4;
 let HOME_PUZZLES = 5;
 let HOME_SETTINGS = 6;
-let HOME_LANGUAGE = 7;
-let LEVEL_EASY = 8;
-let LEVEL_MEDIUM = 9;
-let LEVEL_HARD = 10;
-let SETTINGS_BACKGROUND = 11;
-let SETTINGS_BY_DATE = 12;
-let SETTINGS_BOARD = 13;
-let SETTINGS_HINTS = 14;
-let SETTINGS_LANGUAGE = 15;
-let SEASON_WINTER = 16;
-let SEASON_SPRING = 17;
-let SEASON_SUMMER = 18;
-let SEASON_AUTUMN = 19;
-let HINTS_MISTAKES = 20;
-let HINTS_MOVES = 21;
-let COUNT = 22;
+let LEVEL_EASY = 7;
+let LEVEL_MEDIUM = 8;
+let LEVEL_HARD = 9;
+let SETTINGS_BACKGROUND = 10;
+let SETTINGS_BY_DATE = 11;
+let SETTINGS_BOARD = 12;
+let SETTINGS_HINTS = 13;
+let SETTINGS_LANGUAGE = 14;
+let SEASON_WINTER = 15;
+let SEASON_SPRING = 16;
+let SEASON_SUMMER = 17;
+let SEASON_AUTUMN = 18;
+let HINTS_MISTAKES = 19;
+let HINTS_MOVES = 20;
+let COUNT = 21;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

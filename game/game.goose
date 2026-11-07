@@ -62,7 +62,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: board::Layout, now: f64) -> i64, bool {
     }
     // The side to move, or the winner once there is one.
     let side = if won >= 0 { won } else { b.pos.side as i64 };
-    put(gm, float2 { turn.x, turn.y }, turn.z, side, false, 1.0);
+    put(gm, float2 { turn.x, turn.y }, turn.z, side, false, 1.0, true);
     if gm.won_at >= 0.0 {
         let ask = celebrate(gm, g, l, won, now);
         if ask == panel::RESTART {
@@ -85,13 +85,14 @@ fn animating(gm: Game&, g: gui::Gui&, now: f64) -> bool {
     return board::animating(gm.b, now) || gui::animating(g) || celebrating;
 }
 
-// A piece of `side` over the UI with a glow ring right round it, at c with radius r,
-// at opacity a, crowned or not.
-fn put(gm: Game&, c: float2, r: f32, side: i64, king: bool, a: f32) {
+// A piece of `side` over the UI at c with radius r, at opacity a, crowned or not, with
+// a glow ring right round it or not.
+fn put(gm: Game&, c: float2, r: f32, side: i64, king: bool, a: f32, ring: bool) {
     guard gm.overlay.len < MAX_OVERLAY else { return; }
     let k = if king { 1.0 } else { 0.0 };
+    let glow = if ring { 1.0 } else { 0.0 };
     gm.overlay.push(board::Piece { at: float4 { c.x, c.y, r, 0.0 }, look: float4 { side, k, 0.0, a },
-                                   ring: float4 { 0.0, 1.0, 0.0, 0.0 } });
+                                   ring: float4 { 0.0, glow, 0.0, 0.0 } });
 }
 
 fn hash(i: i64, k: i64) -> f32 {
@@ -126,7 +127,7 @@ fn celebrate(gm: Game&, g: gui::Gui&, l: board::Layout, won: i64, now: f64) -> i
     let k = clamp(t / POP, 0.0, 1.0);
     let s = 1.0 + 2.70158 * pow(k - 1.0, 3.0) + 1.70158 * pow(k - 1.0, 2.0);
     let grow = 0.3 + 0.7 * s;
-    put(gm, float2 { spot.x + 0.5 * spot.z, spot.y + 0.5 * spot.w }, 44.0 * u * grow as f32, won, true, clamp(2.0 * k, 0.0, 1.0) as f32);
+    put(gm, float2 { spot.x + 0.5 * spot.z, spot.y + 0.5 * spot.w }, 44.0 * u * grow as f32, won, true, clamp(2.0 * k, 0.0, 1.0) as f32, true);
     // Sparks over the board: each starts at its own time and place, drifts 160 dp up
     // easing out, fading in over the first fifth and out over the rest.
     for i in SPARKS {

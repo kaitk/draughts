@@ -25,7 +25,7 @@ In order; each is checked on the Mac and the tablet before the next.
 ## Acceptance criteria
 
 - [ ] Home: the title menu (`prototypes/home-menu.html`): continue, a friend, the
-      computer (level), puzzles, with settings beside the wordmark
+      computer (level), puzzles, and settings
 - [ ] Settings: the background (by the date or one season), the board (2D or 3D), move
       hints, the language; prototyped first
 - [ ] Move hints: mistakes only by default, moves in the first lessons, a toggle on the

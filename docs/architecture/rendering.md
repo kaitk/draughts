@@ -105,7 +105,10 @@ sea almost flat.
   so the program decodes the JPEG itself: stb_image, JPEG only, in the program's own C
   (a `c_sources` entry in its `.build` sidecar), from the embedded bytes to RGBA, then
   `gfx::texture2d` and `update_texture`. No goose_gfx patch is needed
-  ([findings](../goose-findings.md)). Only the current season is decoded. Until the
+  ([findings](../goose-findings.md)). Only the current season is decoded, once: into
+  the sharp texture behind home, 2048 × 2048 as stored (16 MB of graphics memory), and
+  the 512 px copy that is blurred. The pixels' data-stack pages are given back with
+  `trim_memory()` after loading. Until the
   images are checked in, `app/background.c` embeds the local masters with C23 `#embed`
   under `__has_embed`, so a checkout without them builds and shows the page color; the
   four add 2.3 MB to the APK (5.0 MB). PNG was
@@ -179,7 +182,8 @@ the prototype tried, kept for 3D:
 - **Home** is a title menu (`prototypes/home-menu.html`, chosen 2026-11-07 over the
   icon tiles and two other takes): the scene and the 3D board, and one glass column
   with the wordmark, then continue, a friend, the computer with its level, and puzzles
-  with stars, each an icon and a word. Beside the wordmark, settings. The language is
+  with stars, then settings, each an icon and a word. In portrait settings is instead
+  a quiet button beside the wordmark, so the sheet leaves the board its room. The language is
   only in settings (2026-11-07): kids who can't read yet don't need it on home, and a
   tablet set to one language can still play in another. In portrait the column is a sheet below the
   board. **Puzzle picker**: one glass row per theme (capture, become a king, the
@@ -245,6 +249,15 @@ proof of concept uses (`assets/fonts/`), is the runner-up: clean and wide, but o
 only. Marcellus has small serifs, further from Optima. The atlas bakes Latin-1, Latin
 Extended-A, and general punctuation. If titles want more character, Tenor Sans could set
 them and Libertinus the rest; one face is the default, for one atlas.
+
+Natively (`app/text.goose`) the regular weight (`assets/fonts/`, from the v7.051
+release) is baked by `ui`'s atlas once per size the UI uses, at the screen's pixel size,
+so a glyph is drawn a texel to a pixel: 64 dp for the wordmark, 30 for labels, 17 for
+notes. The atlas sizes a font by its ascent less its descent, 1.14 em for Libertinus,
+so each is baked at 1.14 times its size in ems to match the prototypes' CSS. The glyphs'
+boxes and atlas places are copied into `gui`'s fixed tables, which lay text out headless,
+the image into a texture, and the atlas is then destroyed. A glyph is one more quad kind
+in the UI's one draw. Baked again only when the layout's scale changes.
 
 ## Frames and battery
 

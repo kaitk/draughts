@@ -54,10 +54,23 @@ fn layout(width: f32, height: f32, n: i64) -> Layout {
         l.board = float4 { x, y, size, 0.016 * size };
         l.panel = float4 { x, y + size + gap, size, panel };
     }
+    place(l);
+    return l;
+}
+
+// A board of side `size` at x, y, with no panel, for a screen that shows the board on
+// its own (home).
+fn layout_at(x: f32, y: f32, size: f32, scale: f32, n: i64) -> Layout {
+    var l = Layout { scale: scale, board: float4 { x, y, size, 0.016 * size }, n: n, .. };
+    place(l);
+    return l;
+}
+
+// The squares inside the board's thin lip.
+fn place(l: Layout&) {
     let lip = 0.011 * l.board.z;
     let inner = l.board.z - 2.0 * lip;
-    l.inner = float4 { l.board.x + lip, l.board.y + lip, inner, inner / n };
-    return l;
+    l.inner = float4 { l.board.x + lip, l.board.y + lip, inner, inner / l.n };
 }
 
 // A square as its rules bit, from its column and row (a1 is 0, 0); -1 off the board or

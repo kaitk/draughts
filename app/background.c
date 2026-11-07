@@ -57,16 +57,34 @@ static const unsigned char *const images[4] = { autumn, winter, spring, summer }
 static const int64_t lengths[4] = { sizeof autumn - 1, sizeof winter - 1, sizeof spring - 1,
                                     sizeof summer - 1 };
 
-// Decodes theme `kind`'s photograph, crops the middle square, and scales it down to
-// `size` × `size` RGBA by averaging, into `out` (size * size * 4 bytes). False when the
-// image isn't built in or doesn't decode.
+// The last image decoded, kept for the next size until draughts_background_done.
+static unsigned char *decoded;
+static int decoded_w, decoded_h;
+static int64_t decoded_kind = -1;
+
+// Frees the decoded image.
+void draughts_background_done(void) {
+    stbi_image_free(decoded);
+    decoded = 0;
+    decoded_kind = -1;
+}
+
+// Decodes theme `kind`'s photograph (once for any number of sizes), crops the middle
+// square, and scales it down to `size` × `size` RGBA by averaging, into `out` (size *
+// size * 4 bytes). False when the image isn't built in or doesn't decode.
 _Bool draughts_background(int64_t kind, int64_t size, draughts_bytes out) {
     if (kind < 0 || kind > 3 || lengths[kind] == 0 || size <= 0 || out.len < size * size * 4) {
         return 0;
     }
-    int w = 0, h = 0, n = 0;
-    unsigned char *px = stbi_load_from_memory(images[kind], (int)lengths[kind], &w, &h, &n, 3);
-    if (!px) return 0;
+    if (decoded_kind != kind) {
+        draughts_background_done();
+        int n = 0;
+        decoded = stbi_load_from_memory(images[kind], (int)lengths[kind], &decoded_w, &decoded_h, &n, 3);
+        if (!decoded) return 0;
+        decoded_kind = kind;
+    }
+    int w = decoded_w, h = decoded_h;
+    const unsigned char *px = decoded;
     int side = w < h ? w : h;
     int x0 = (w - side) / 2, y0 = (h - side) / 2;
     for (int64_t y = 0; y < size; y++) {
@@ -87,6 +105,5 @@ _Bool draughts_background(int64_t kind, int64_t size, draughts_bytes out) {
             o[3] = 255;
         }
     }
-    stbi_image_free(px);
     return 1;
 }

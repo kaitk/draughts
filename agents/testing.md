@@ -10,8 +10,10 @@ before committing a change to `rules/`.
   pieces each takes). A test explains in a comment what rule it shows and why the
   position shows it. Areas so far: `rules`, `board` (taps and hints through the board
   package), `gui`, `game` (the game screen driven through the pointer: undo, hint,
-  restart, the toggle, presses kept apart, the celebration), and `strings` (every
-  language file has every key). Shared helpers are in
+  restart, the toggle, presses kept apart, the celebration), `shell` (home and the
+  switch to the game and back), and `strings` (every language file has every key). A
+  test that lays out text calls `gui::test_faces` for glyph sizes without an atlas, and
+  `strings::use` before reading a string. Shared helpers are in
   `test/check.goose` (`check::show`, `check::play_only`), imported as
   `import check from "../";`.
 - `test/perft.py`: an independent generator sharing no code or layout with `rules/`.

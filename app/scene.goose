@@ -1,9 +1,10 @@
-// The season's photograph behind the 2D game, blurred once on the GPU when the season
-// is picked (docs/architecture/rendering.md, "Scene and glass"). The program's C
-// (background.c) decodes the built-in JPEG and scales it down; two passes of a Gaussian,
-// across and then down, blur it into the texture the board pass samples. A season whose
-// image isn't built in has no photograph, and the board pass shows the page color.
-// Glass panels sample a copy blurred further, made at the same time.
+// The season's photograph (docs/architecture/rendering.md, "Scene and glass"): sharp
+// behind home, and blurred once on the GPU when the season is picked behind the 2D game.
+// The program's C (background.c) decodes the built-in JPEG once and scales it to each
+// size; two passes of a Gaussian, across and then down, blur the small copy into the
+// texture the board pass samples behind the game. A season whose image isn't built in
+// has no photograph, and the board pass shows the page color. Glass panels sample a
+// copy blurred further, made at the same time.
 namespace scene;
 import std;
 import vec;
@@ -15,12 +16,17 @@ import gfx;
 // no texels.
 let SIZE = 512;
 
+// The sharp photograph's side: as the JPEG is stored, about a texel to a pixel across a
+// 1920 px screen. 16 MB of graphics memory.
+let SHARP_SIZE = 2048;
+
 // The glass copy's side, and its blur: the one a 24 px blur is at 1280 px (rendering.md,
 // "Scene and glass"), 4.8 texels here, of which the 512 px copy already has 2.8.
 let GLASS_SIZE = 256;
 let GLASS_SIGMA = 3.9;
 
 extern fn draughts_background(kind: i64, size: i64, out: u8[:]) -> bool;
+extern fn draughts_background_done();
 
 let BLUR_FRAG = """
     layout(location = 0) in vec2 v_uv;
@@ -45,6 +51,7 @@ struct Blur { dir: float4 }
 
 struct Scene {
     photo:   gfx::Texture,     // the blurred copy, or a 1×1 stand-in when there is none
+    sharp:   gfx::Texture,     // the photograph as it is, or the stand-in
     glass:   gfx::Texture,     // the copy glass samples, blurred further
     sampler: gfx::Sampler,
     has:     bool,             // whether there is a photograph
@@ -54,14 +61,18 @@ struct Scene {
 fn load(kind: i64, full_vert: const u8[:]) -> Scene {
     let sampler = gfx::sampler(gfx::LINEAR, gfx::CLAMP);
     var px: u8[>..] = [];
-    px.resize(SIZE * SIZE * 4, 0);
-    if !draughts_background(kind, SIZE, px) {
+    px.resize(SHARP_SIZE * SHARP_SIZE * 4, 0);
+    if !draughts_background(kind, SHARP_SIZE, px) {
         let none = gfx::texture2d(1, 1);
         gfx::update_texture(none, px[0..4]);
-        return Scene { photo: none, glass: none, sampler: sampler, has: false };
+        return Scene { photo: none, sharp: none, glass: none, sampler: sampler, has: false };
     }
+    let sharp = gfx::texture2d(SHARP_SIZE, SHARP_SIZE);
+    gfx::update_texture(sharp, px);
+    draughts_background(kind, SIZE, px);
+    draughts_background_done();
     let src = gfx::texture2d(SIZE, SIZE);
-    gfx::update_texture(src, px);
+    gfx::update_texture(src, px[..SIZE * SIZE * 4]);
     let across = gfx::render_target(SIZE, SIZE, gfx::RGBA8);
     let blurred = gfx::render_target(SIZE, SIZE, gfx::RGBA8);
     let glass_across = gfx::render_target(GLASS_SIZE, GLASS_SIZE, gfx::RGBA8);
@@ -78,7 +89,7 @@ fn load(kind: i64, full_vert: const u8[:]) -> Scene {
     gfx::release(across);
     gfx::release(glass_across);
     gfx::release(src);
-    return Scene { photo: blurred, glass: glass, sampler: sampler, has: true };
+    return Scene { photo: blurred, sharp: sharp, glass: glass, sampler: sampler, has: true };
 }
 
 // One blur pass from src into dst, in direction dir (Blur's fields).

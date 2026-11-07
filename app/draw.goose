@@ -15,7 +15,7 @@ struct BoardUniforms {
     screen: float4,     // width, height in pixels, time, squares per side
     rect:   float4,     // the board: x, y, size, corner radius
     inner:  float4,     // the squares: x, y, size, one square
-    scene:  float4,     // x: 1 when there is a photograph
+    scene:  float4,     // x: 1 when there is a photograph; y: how bright it is shown
     wrong:  float4,     // a wrong move's square (y * size + x, or -1), and how far its flash is, 0..1
     marks:  board::Marks,
 }
@@ -76,11 +76,11 @@ let BOARD_FRAG = """
     void main() {
         vec2 px = gl_FragCoord.xy;              // pixels from the top left, exact
         float u = rect.z * 0.01;                // 1% of the board
-        // The season's photograph, blurred, cover-cropped by the long side and dimmed to
-        // 0.8; or the page color without one.
+        // The season's photograph, cover-cropped by the long side: blurred and dimmed to
+        // 0.8 behind the game, sharp behind home; or the page color without one.
         float side = max(screen.x, screen.y);
         vec3 c = scene.x > 0.5
-            ? 0.8 * texture(photo, (px - 0.5 * (screen.xy - side)) / side).rgb
+            ? scene.y * texture(photo, (px - 0.5 * (screen.xy - side)) / side).rgb
             : page.rgb;
         vec2 bc = rect.xy + 0.5 * rect.z;
         vec2 bh = vec2(0.5 * rect.z);
@@ -345,9 +345,10 @@ fn new(kind: i64) -> Drawer {
 
 // Draws one frame of the board as fill() left it, into the screen's pass, which it
 // leaves open for the UI; the caller ends it. The pieces in `over` are copied now and
-// drawn by overlay(), after the UI.
+// drawn by overlay(), after the UI. `sharp` shows the photograph as it is (home),
+// otherwise blurred and dimmed (the game).
 fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::Layout,
-         t: theme::Theme, now: f64, width: f32, height: f32) {
+         t: theme::Theme, sharp: bool, now: f64, width: f32, height: f32) {
     for i in b.pieces.len { d.upload[i] = b.pieces[i]; }
     gfx::update_buffer(d.pieces, bytes_of(d.upload));
     d.over_count = min(over.len, MAX_OVERLAY);
@@ -361,9 +362,9 @@ fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::La
     gfx::uniforms(gfx::FRAGMENT, 1, BoardUniforms {
         screen: float4 { width, height, now as f32, l.n },
         rect:   l.board, inner: l.inner,
-        scene:  float4 { if d.scene.has { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0 },
+        scene:  float4 { if d.scene.has { 1.0 } else { 0.0 }, if sharp { 1.0 } else { 0.8 }, 0.0, 0.0 },
         wrong: b.flash, marks: b.marks });
-    gfx::bind_texture(gfx::FRAGMENT, 0, d.scene.photo, d.scene.sampler);
+    gfx::bind_texture(gfx::FRAGMENT, 0, if sharp { d.scene.sharp } else { d.scene.photo }, d.scene.sampler);
     gfx::draw(3);
     gfx::bind(d.piece_pipeline);
     gfx::bind_storage_buffer(gfx::VERTEX, 0, d.pieces);

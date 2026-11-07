@@ -8,7 +8,7 @@ import strings from "../../strings";
 
 let NAMED = [
     "language.name", "app.name", "home.continue", "home.friend", "home.computer",
-    "home.puzzles", "home.settings", "home.language", "level.easy", "level.medium",
+    "home.puzzles", "home.settings", "level.easy", "level.medium",
     "level.hard", "settings.background", "settings.by_date", "settings.board",
     "settings.hints", "settings.language", "season.winter", "season.spring",
     "season.summer", "season.autumn", "hints.mistakes", "hints.moves",
@@ -42,7 +42,7 @@ fn main() {
     assert(strings::KEYS.len == strings::COUNT);
     let ks = [strings::LANGUAGE_NAME, strings::APP_NAME, strings::HOME_CONTINUE,
               strings::HOME_FRIEND, strings::HOME_COMPUTER, strings::HOME_PUZZLES,
-              strings::HOME_SETTINGS, strings::HOME_LANGUAGE, strings::LEVEL_EASY,
+              strings::HOME_SETTINGS, strings::LEVEL_EASY,
               strings::LEVEL_MEDIUM, strings::LEVEL_HARD, strings::SETTINGS_BACKGROUND,
               strings::SETTINGS_BY_DATE, strings::SETTINGS_BOARD, strings::SETTINGS_HINTS,
               strings::SETTINGS_LANGUAGE, strings::SEASON_WINTER, strings::SEASON_SPRING,

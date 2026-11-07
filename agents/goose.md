@@ -77,6 +77,13 @@ find out by compiling, so the next session doesn't.
 - A struct literal's fields must come in declaration order, or it doesn't compile.
 - `match` arms with block bodies are separated by commas: `A => { f(); },`.
 - `float4` has no swizzles (`.xy`); build the `float2` from `.x` and `.y`.
+- `as` binds looser than `&`: write `(x as i64) & 0x3F`; `x as i64 & 0x3F` doesn't parse.
+- An array of untyped float literals (`let FACE_DP = [64.0, 30.0]`) holds `f64`s; cast an
+  element `as f32` to use it with `f32`s. Typed arrays from untyped integer constants
+  work (`let r: u32[2] = [0x20, END - 1]`), from an untyped constant array they don't.
+- A large temporary on a data stack (a 16 MB image) stays resident after its scope ends;
+  call `trim_memory()` (`os`) from a caller once the scope is over to give the pages
+  back. Inside the scope it frees nothing, since the value is still live.
 - `gl_InstanceIndex` doesn't count a draw's `first_instance`, so a second group of
   instances drawn at another time (pieces over the UI) gets its own storage buffer.
 - `goose run` (TinyCC) doesn't optimize and can't start threads; time things with

@@ -8,7 +8,6 @@ home.friend = Sõbraga
 home.computer = Arvutiga
 home.puzzles = Ülesanded
 home.settings = Seaded
-home.language = Keel
 
 level.easy = kerge
 level.medium = keskmine

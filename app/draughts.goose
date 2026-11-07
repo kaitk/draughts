@@ -1,8 +1,9 @@
-// Draughts: the game screen, playable by two on one screen. It draws only when
-// something changed: input, a move or a pulse animating, or a new screen size
+// Draughts: home and the game screen, playable by two on one screen. It draws only
+// when something changed: input, a move or a pulse animating, or a new screen size
 // (docs/architecture/rendering.md, "Frames and battery").
 //
-//   goose draughts.goose                          on the Mac
+//   goose draughts.goose                          on the Mac, at home
+//   goose draughts.goose -- --screen game         the game screen; --fen and --tap open it too
 //   goose draughts.goose -- --theme sea           another board than the season's
 //   goose draughts.goose -- --frames 30 --tap c3  taps squares, then saves draughts.png
 //   goose draughts.goose -- --fen W:Wc3,Kh6:Be5   starts from a position
@@ -23,6 +24,8 @@ import .draw;
 import .scene;
 import .widgets;
 import game from "../game";
+import shell from "../shell";
+import .text;
 
 // The system's preferred locales, "et-EE,en-US" (locale.c); returns how many bytes.
 extern fn draughts_locales(out: u8[:]) -> i64;
@@ -31,13 +34,15 @@ fn main() {
     // Development flags: --theme NAME, --size WxH (the window), --fen POSITION,
     // --tap SQUARE (any number, played in order on the first frames), --frames N (then
     // save draughts.png), --hints moves (show targets; mistakes only by default), --lang
-    // CODE (a language with a file in strings/; the system's by default).
+    // CODE (a language with a file in strings/; the system's by default), --screen
+    // home|game (home unless a position or taps are given).
     var width = 1280;
     var height = 800;
     var kind = theme::for_month(theme::month(time()));
     var frames = -1;
     var hints = board::MISTAKES;
     var lang = -1;
+    var screen = -1;
     var fen:  u8[>..]       = [];
     var taps: u8[..2][..16] = [];
     let argv = args();
@@ -57,6 +62,7 @@ fn main() {
         if argv[i] == "--fen" { fen.append(argv[i + 1]); }
         if argv[i] == "--hints" && argv[i + 1] == "moves" { hints = board::MOVES; }
         if argv[i] == "--lang" { lang = strings::pick(argv[i + 1]); }
+        if argv[i] == "--screen" { screen = if argv[i + 1] == "game" { shell::GAME } else { shell::HOME }; }
         if argv[i] == "--tap" && argv[i + 1].len == 2 && taps.len < 16 {
             let t .= taps.push([]);
             t.append(argv[i + 1]);
@@ -77,7 +83,8 @@ fn main() {
     guard gfx::open(strings::get(strings::APP_NAME), width, height, window_flags) else { abort(str("gfx: ", gfx::error())); }
     defer gfx::close();
 
-    var gm = game::new(rules::RUSSIAN);
+    var sh = shell::new(rules::RUSSIAN);
+    let gm .= sh.game;
     let b .= gm.b;
     b.hints = hints;
     if fen.len > 0 {
@@ -85,9 +92,14 @@ fn main() {
         guard ok else { abort(str("not a position: ", fen)); }
         board::set(b, p);
     }
+    sh.screen = if screen >= 0 { screen } else if fen.len > 0 || taps.len > 0 { shell::GAME } else { shell::HOME };
     var d = draw::new(kind);
+    // Loading the photograph took 16 MB of data stack for its pixels; give the pages back
+    // rather than keep them resident. The same after baking the text.
+    trim_memory();
     var w = widgets::new();
     var g = gui::Gui {};
+    var t = text::Text {};
     var size = int2 { 0, 0 };
     var dirty = true;
     var drawn = 0;
@@ -100,19 +112,19 @@ fn main() {
             size = s;
             dirty = true;
         }
-        let l = board::layout(size.x, size.y, rules::VARIANTS[b.variant].size);
+        let scale = min(size.x, size.y) / 800.0;
+        if text::bake(t, g, scale) { trim_memory(); }
+        w.atlas = t.texture;
         // A quick tap can press and release within one frame, which mouse_down never
-        // sees; pressed and released catch it. The game screen gives the pointer to the
-        // UI first; a press that lands on it never reaches the board.
+        // sees; pressed and released catch it. The screens give the pointer to the UI
+        // first; a press that lands on it never reaches the board.
         let input = gui::Input { at: gfx::mouse_pos(), down: gfx::mouse_down(gfx::MOUSE_LEFT),
                                  pressed: gfx::mouse_pressed(gfx::MOUSE_LEFT),
                                  released: gfx::mouse_released(gfx::MOUSE_LEFT) };
-        gui::begin(g, input, l.scale, now);
-        let go, changed = game::frame(gm, g, l, now);
-        if changed { dirty = true; }
-        // Back goes home once there is one (task 008-03); until then it does nothing.
-        if go == game::HOME { dirty = true; }
-        if tapped < taps.len && !b.moving {
+        gui::begin(g, input, scale, now);
+        if shell::frame(sh, g, size.x, size.y, now) { dirty = true; }
+        let l = sh.layout;
+        if tapped < taps.len && !b.moving && sh.screen == shell::GAME {
             let v .= rules::VARIANTS[b.variant];
             let t .= taps[tapped];
             let p = board::center(l, v, board::bit_at(v, t[0] - 97, t[1] - 49));
@@ -121,10 +133,10 @@ fn main() {
             tapped++;
             dirty = true;
         }
-        if dirty || game::animating(gm, g, now) {
+        if dirty || shell::animating(sh, g, now) {
             board::fill(b, l, now);
             widgets::upload(w, g);
-            draw::frame(d, b, gm.overlay, l, colors, now, size.x, size.y);
+            draw::frame(d, b, gm.overlay, l, colors, sh.sharp, now, size.x, size.y);
             widgets::frame(w, g, d.scene, colors, size.x, size.y);
             draw::overlay(d, colors, now);
             gfx::end_pass();
