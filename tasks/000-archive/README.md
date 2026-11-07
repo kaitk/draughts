@@ -26,3 +26,10 @@ and the commit that last has it.
   pieces in one instanced draw with the season's theme and key light; taps, drags, and
   hop-by-hop moves work on the tablet, idle at 0.03% of a core, nothing allocated per
   frame. `004-board-2d.md`, `1d60fce`
+- 017: The native board on the season. Done: the blurred season photograph behind a flat
+  board with a thin lip and faint per-theme surfaces, soft-lit pieces, hints on mistakes
+  only; idle at 0.03% of a core and flat memory over 20 lifecycle cycles on the tablet.
+  `017-native-look.md`, `55b0f28`
+- 018: The pieces' shape and shine. Done: flat matte discs with a groove at 70% of the
+  radius shaded as a cut, a rounded outer shoulder with a soft highlight, and shade
+  toward the color squared, after the 3D reference. `018-piece-shape.md`, `d515400`

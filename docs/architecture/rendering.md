@@ -167,9 +167,9 @@ the prototype tried, kept for 3D:
   corners rounded 1.6%, and a soft shadow under it (down 1.4%, 3.6% soft, black at 55%).
   The lip is the dark square's color, with a line of the light square's color on its
   outer edge (gold on wood, pale blue on stone), brightest on top, and a dark seam where
-  the squares sit below it. The lip, the pieces' single rim, and the wood theme's warm
-  tones and calm grain follow the close-up boards chosen on 2026-11-07, which read better
-  than the first design boards' frameless board and two-ringed pieces. The 3D board has a
+  the squares sit below it. The lip, the pieces' flat tops with one groove, and the wood
+  theme's warm tones and calm grain follow the close-up boards chosen on 2026-11-07,
+  which read better than the first design boards' frameless board and two-ringed pieces. The 3D board has a
   frame 2.4% of the board's width. 10 × 10 uses the same.
 - **Pieces** are SDF discs filling 78% of a square, flat-topped and matte like turned
   discs, as the 3D close-up shows them: one color and one height across the top, with
