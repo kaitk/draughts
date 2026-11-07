@@ -274,7 +274,7 @@ fn tile(s: Settings&, gm: game::Game&, g: gui::Gui&, row: i64, i: i64, r: float4
     // The crown's and the stack's tiles each show their king.
     let king = row == KINGS_ROW && i != AUTO;
     let tapped, pic = gui::pick(g, id, r, if king { 34.0 } else { 0.0 }, label, note(row, i), on, enabled);
-    if king { game::put(gm, float2 { pic.x + 0.5 * pic.z, pic.y + 0.5 * pic.w }, 15.0 * u, rules::WHITE, i, 1.0, false); }
+    if king { game::put(gm, pic, 15.0 * u, rules::WHITE, i, 1.0, false); }
     guard tapped else { return false; }
     if row == DRAUGHTS_ROW { s.variant = DRAUGHTS[i]; }
     if row == HINTS_ROW { s.hints = i; }
