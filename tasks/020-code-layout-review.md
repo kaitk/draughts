@@ -28,3 +28,9 @@ Once tasks 021, 025, and the computer's wiring are in, review the code with suba
 make the clear-cut fixes without waiting for agreement: tangles and real duplication
 whose fix is obvious, no abstractions ahead of need. Anything larger or arguable goes in
 the written review for the user to agree.
+
+The review also reads the code as Goose: whether each part is written the way the
+release's `docs/`, `samples/`, and `stdlib/` write it, and where writing it more
+idiomatically would simplify it meaningfully. The user's other Goose projects,
+`~/projects/goose/goose-http` and `~/projects/goose/plod`, are models to compare with.
+Change only what gains clearly; finding nothing of real value is a fine answer.
