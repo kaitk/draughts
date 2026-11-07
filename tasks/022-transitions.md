@@ -17,6 +17,8 @@ About 0.2 to 0.3 s each.
 - The board's rect eases from home's `board::layout` to the game's. With the 3D home
   board (task 015) its camera tilt eases to top-down as well.
 - The board pass crossfades the sharp and blurred photograph with one uniform.
+- Settings' preview is home's board: opening settings slides it to the right half
+  (portrait: up) and the choices come in beside it, rather than a new board appearing.
 - Prototype the takes first, as for the other screens.
 
 ## Acceptance criteria
