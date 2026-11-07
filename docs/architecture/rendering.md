@@ -70,7 +70,15 @@ radial patches, birch faint horizontal fibre, sea only the sheen every square ha
 - **The scene** is a calm Estonian landscape for the season: autumn forest, winter
   spruces, spring birches, summer coast. Each is a photograph-like picture
   (`design/backgrounds/`, placeholders until task 014), shown as it is, cover-cropped to
-  the screen, with no blur.
+  the screen, with no blur. It is behind the title menu, the puzzle picker, settings,
+  and the 3D board, but not the 2D game.
+- **The 2D game sits on a flat tabletop**, so the board reads cleanly on a calm surface:
+  for now the theme's table color (wood `#3a2c22`, stone `#25313e`, birch `#2a382f`, sea
+  `#1e3838`) as a soft radial gradient with fine noise; generated tabletop pictures may
+  replace it (task 016). Glass over the table samples the table the same way.
+- **The 3D board floats in front of the scene**, with a soft shadow under it: no room or
+  table to model. A painted backdrop with a real table comes later only if this falls
+  short (task 015).
 - **Stored** as one JPEG per season, 2048 × 2048 at quality 85 (0.46 to 0.70 MB each),
   in `assets/backgrounds/<season>.jpg` and built into the program with `embed_file`, as
   the font is: nothing to package in the APK's assets, and the same path on the Mac and
@@ -95,8 +103,10 @@ radial patches, birch faint horizontal fibre, sea only the sheen every square ha
 
 ### Light
 
-One key light from the top left lights the board and pieces, as in the design boards;
-everything is a few terms in the board and piece shaders, no lighting pass:
+The 2D board has no lighting: flat squares and plain pieces read cleanest (decided
+2026-11-07 after trying the light). The 3D board has one key light from the top left,
+as in the design boards, a few terms in its shaders with no lighting pass. The terms
+the prototype tried, kept for 3D:
 
 - **Board**: a pool of light toward the top left (warm white at 22%) falling off to
   black at 40% in the bottom-right corner, over the squares; a soft inner shadow where
@@ -111,21 +121,24 @@ everything is a few terms in the board and piece shaders, no lighting pass:
 
 ### Controls
 
-- **Buttons** are flat fills on the glass: white at 7%, 13% when hovered, 20% while
-  pressed (and scaled to 0.96); radius 22 px; at least 88 × 88 px (dp) for small hands,
-  icons 40 px with 2 px strokes. A primary button is the glow color at 22%.
+- **Buttons** are glass tiles: white at 10%, 16% when hovered, 24% while pressed (and
+  scaled to 0.96), with an inset 1 px border of white at 20% and a top highlight; radius
+  22 px; at least 88 × 88 px (dp) for small hands, icons 44 px with 2.4 px strokes. A primary button is the glow color at 22%.
 - **Icons** are line icons on a 24 px grid, 2 px round strokes, in the Lucide style:
   undo, hint (a bulb), restart, back (an arrow left), next, star, crown, lock, and the
   puzzle themes' target, crown, and shield. The home tiles' icons are filled shapes,
   which read better large: two figures, a robot head, a jigsaw piece.
 - **Game screen**: in landscape the board fills the height less a 24 px margin, and a
-  230 px glass panel stands to its right: the side to move on top (a piece of its color
-  with a glow ring, no text), a 1 px rule, then undo, hint, restart, and back in a 2 × 2
-  grid. In portrait the board fills the width and the panel below it holds the side to
+  glass panel as tall as the board stands to its right: the side to move on top (a piece
+  of its color with a glow ring, no text) with the move-hints toggle beside it, a 1 px
+  rule, then undo, hint, restart, and back in a 2 × 2 grid. In portrait the board fills the width and the panel below it holds the side to
   move over the four buttons in a row.
-- **Home**: three large glass tiles with no text (play a friend, play the computer with
-  three level dots, filled or rings, puzzles), in a row in landscape and a column in
-  portrait. **Puzzle picker**: one glass row per theme (capture, become a king, the
+- **Home** is a title menu (`prototypes/home-menu.html`, chosen 2026-11-07 over the
+  icon tiles and two other takes): the scene and the 3D board, and one glass column
+  with the wordmark, then continue, a friend, the computer with its level, and puzzles
+  with stars, each an icon and a word. Beside the wordmark, the language (one button
+  showing the current one) and settings. In portrait the column is a sheet below the
+  board. **Puzzle picker**: one glass row per theme (capture, become a king, the
   only safe move), its icon and ten tiles of at least 64 px with 0 to 3 stars in the
   glow color; locked tiles show a lock, the next unsolved one a glow ring.
   **Solved**: three stars that pop in over the dimmed board, a few drifting sparks, and
@@ -133,8 +146,9 @@ everything is a few terms in the board and piece shaders, no lighting pass:
 
 ### Board and pieces
 
-- **Board**: the theme's squares, inside a frame 2.4% of the board's width with rounded
-  corners. 10 × 10 uses the same.
+- **Board** in 2D: the theme's squares with no frame, corners rounded 1.2% of the
+  board's width, and a soft shadow under it on the table. The 3D board has a frame 2.4%
+  of the board's width. 10 × 10 uses the same.
 - **Pieces** are SDF discs filling 78% of a square: a face, an inner ring at 45 to 52%
   of the radius, a rim from 80%, and the side under the disc, over the light above.
   Each side has one color in the theme; the rest is worked out from it. Light pieces:
@@ -145,8 +159,9 @@ everything is a few terms in the board and piece shaders, no lighting pass:
   `#e9c46a` on a dark one), which reads at a glance, and in a 3D board a stack of two
   discs with the crown on top, as kings are in Estonian play. Top down, a stack reads as
   a shadow at tablet size, so it's there for those who want it.
-- **Native form** (`app/draw.goose`): the page, frame, squares, light, and marks are one
-  full-screen fragment pass; the pieces are one instanced draw of quads, each pulling
+- **Native form** (`app/draw.goose`, still with the frame and light the prototype has
+  since dropped from 2D): the page, frame, squares, light, and marks are one full-screen
+  fragment pass; the pieces are one instanced draw of quads, each pulling
   `{center, radius, lift; black, king, selected, opacity; must capture}` from a storage
   buffer and drawing its shadows, side, face, light, crown, and rings in the fragment
   shader, blended premultiplied, top row first so a lower piece covers the shadow above
@@ -156,9 +171,11 @@ everything is a few terms in the board and piece shaders, no lighting pass:
 - **3D board**: the same board tilted (about 38°, in perspective) with a front edge,
   pieces as discs with height (one disc 1.7% of the board), and the selected piece
   lifted. `prototypes/boards.html` shows it for every theme.
-- **States**, in the theme's glow color: the selected piece lifts by 1.1% of the board
-  and grows to 1.06 with a glow ring; a legal target is a glowing dot 30% of a square; a
-  capture's stop on the way is a ring. A piece that must capture pulses a red ring
+- **States**, in the theme's glow color: the selected piece lifts by 0.8% of the board
+  and grows to 1.05 with a glow ring; with move hints on, a legal target is a glowing
+  dot 30% of a square and a capture's stop on the way is a ring. With hints on mistakes
+  only (the default, `docs/product.md`), there are no dots: a wrong move flashes a red
+  ring on its square twice, and the piece that must capture pulses. A piece that must capture pulses a red ring
   `#ff5a4a` with a soft red glow every 1.4 s, in every theme. The last move's squares are
   tinted with the glow color at 16%.
 

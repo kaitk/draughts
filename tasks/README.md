@@ -43,4 +43,5 @@ prototypes to the seasonal design boards, and 004 drew the board natively; all s
 archived. 006 to 009 are next. Together they make the MVP in `docs/product.md`. 010 runs
 alongside: goose_gfx changes to propose upstream. 011, the last idle CPU (SDL's
 accelerometer), can come any time before release. 013 adds season effects later. 014
-upscales the backgrounds on the desktop; placeholders do until then.
+upscales the backgrounds on the desktop; placeholders do until then. 015 (the 3D board)
+and 016 (tabletop pictures) come after the MVP.

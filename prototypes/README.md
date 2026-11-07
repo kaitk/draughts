@@ -8,7 +8,7 @@ jsDelivr CDN, so they need internet access. Start at [index.html](index.html).
 | --- | --- |
 | `home-board.html` | Home, take A: the board first, with labelled buttons beside it |
 | `home-cards.html` | Home, take B: three solid cards with scenes made of pieces |
-| `home-menu.html` | Home, take C: a title menu over the photograph and a 3D board |
+| `home-menu.html` | Home, take C (chosen): a title menu over the photograph and a 3D board, with the language and settings beside the wordmark |
 | `home.html` | Home, the first take: three glass tiles with icons only |
 | `game.html` | The game: a selected piece and its capture, a forced capture, the side panel |
 | `puzzles.html` | The puzzle picker: three theme rows of ten, with 0 to 3 stars |

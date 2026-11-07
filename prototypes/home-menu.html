@@ -8,20 +8,28 @@
 <script src="kabe.js"></script>
 <style>
   /* Take C: a title screen. The season's photograph and a 3D board set the mood; the
-     wordmark and a plain menu of large words sit on one glass column at the side. The
-     only place the landscape shows, so the 2D game itself stays on the calm table. */
-  .home { display: grid; grid-template-columns: 420px 1fr; height: 100%; }
+     wordmark and a plain menu of large words sit on one glass column at the side; the
+     2D game itself stays on the calm table. The language and settings sit beside the
+     wordmark. The chosen take (task 008). */
+  .home { display: grid; grid-template-columns: 440px 1fr; height: 100%; }
   .menu { display: grid; align-content: center; gap: 10px; padding: 48px 40px; border-radius: 0 32px 32px 0; }
   .menu.glass { --r: 0px; }
-  .mark { display: flex; align-items: center; gap: 18px; margin-bottom: 28px; }
-  .mark .piece { position: relative; inset: auto; width: 64px; height: 64px; --u: 6px; }
-  .mark h1 { margin: 0; font-size: 72px; font-weight: 400; letter-spacing: 0.06em; }
+  .mark { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+  .mark .piece { position: relative; inset: auto; width: 56px; height: 56px; --u: 5px; flex: none; }
+  .mark h1 { margin: 0; font-size: 64px; font-weight: 400; letter-spacing: 0.06em; }
   .item { display: flex; align-items: center; gap: 18px; min-height: 80px; padding: 0 18px; border-radius: 20px;
     color: var(--fg); text-decoration: none; font-size: 30px; }
   .item:hover { background: rgb(255 255 255 / 0.08); }
   .item .icon { width: 34px; height: 34px; stroke-width: 2.2; opacity: 0.85; }
   .item.primary { background: color-mix(in srgb, var(--glow) 24%, transparent); }
   .item small { margin-left: auto; font-size: 17px; color: var(--fg-dim); }
+  /* Beside the wordmark, the two quiet controls: the language (one button showing the
+     current one; a tap switches, a list once there are more) and the way to settings. */
+  .tools { display: flex; gap: 8px; margin-left: auto; }
+  .tools > * { width: 48px; height: 48px; min-width: 0; border-radius: 16px; display: grid; place-items: center;
+    color: var(--fg); text-decoration: none; font-size: 17px; letter-spacing: 0.06em; cursor: pointer;
+    background: rgb(255 255 255 / 0.08); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18); }
+  .tools svg { width: 26px; height: 26px; stroke-width: 2; }
   .stage { display: grid; place-items: center; padding: 40px; overflow: hidden; }
   #board { width: min(70vh, 100%); }
   @media (orientation: portrait) {
@@ -36,7 +44,9 @@
 <body>
 <main class="home">
   <nav class="menu glass">
-    <div class="mark"><div class="piece white king"></div><h1>Kabe</h1></div>
+    <div class="mark"><div class="piece white king"></div><h1>Kabe</h1>
+      <div class="tools"><a class="lang" href="#" aria-label="Keel">ET</a><a href="settings.html" data-icon="gear" aria-label="Seaded"></a></div>
+    </div>
     <a class="item primary" href="game.html"><span data-icon="next"></span>Jätka</a>
     <a class="item" href="game.html"><span data-icon="friend"></span>Sõbraga</a>
     <a class="item" href="game.html"><span data-icon="computer"></span>Arvutiga<small>keskmine</small></a>
@@ -46,6 +56,10 @@
 </main>
 <script>
   // The title screen always shows the photograph and the 3D board.
+  document.querySelector('.lang').onclick = (e) => {
+    e.preventDefault();
+    e.target.textContent = e.target.textContent === 'ET' ? 'EN' : 'ET';
+  };
   Kabe.settings.bg = 'photo';
   Kabe.init();
   document.querySelector('.mark .piece').innerHTML = `<div class="crown">${Kabe.icon('crown')}</div>`;
