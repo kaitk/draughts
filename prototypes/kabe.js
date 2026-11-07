@@ -16,7 +16,7 @@ const Kabe = (() => {
   const SEASONS = ['autumn', 'winter', 'spring', 'summer'];
   // The season picks the board: autumn wood, winter stone, spring birch, summer sea.
   // Tabletop pictures in design/tabletops/, by the switcher's name: <season>-<file>.png.
-  const TOPS = { plain: '', real: 'real-02', felt: 'felt-01' };
+  const TOPS = { plain: '', forest: '', real: 'real-02', felt: 'felt-01' };
   const SEASON_THEME = { autumn: 'wood', winter: 'stone', spring: 'birch', summer: 'sea' };
   const THEMES = Object.values(SEASON_THEME);
   const KINGS = ['auto', 'crown', 'stack'];
@@ -37,6 +37,8 @@ const Kabe = (() => {
     // The table's look: painted, or a generated tabletop picture (task 016; local only,
     // autumn so far).
     top: pick('top', Object.keys(TOPS), 'plain'),
+    // The 2D board: flat, or crafted (grain, seams, an edge, turned pieces; no light).
+    look: pick('look', ['flat', 'crafted'], 'flat'),
     // Move hints: "mistakes" (the default) only marks a wrong move; "moves" shows the
     // selected piece's targets, on by default only in the first lessons (docs/product.md).
     assist: pick('assist', ['moves', 'mistakes'], 'mistakes'),
@@ -146,6 +148,17 @@ const Kabe = (() => {
         setScene(paintTable(settings.theme, 1280, Math.round(1280 * innerHeight / innerWidth)), innerWidth / innerHeight);
       if (settings.top === 'plain') return painted();
       const img = new Image();
+      if (settings.top === 'forest') {
+        // The season's photograph, blurred and dimmed a little (kabe.css, .scene-blur),
+        // as a calm backdrop. CSS, since a canvas can't read a file:// image back.
+        img.onload = () => {
+          document.body.classList.add('scene-blur');
+          setScene(img.src, img.naturalWidth / img.naturalHeight);
+        };
+        img.onerror = painted;
+        img.src = SCENE_FILE(settings.season);
+        return;
+      }
       img.onload = () => setScene(img.src, img.naturalWidth / img.naturalHeight);
       img.onerror = painted;
       img.src = `../design/tabletops/${settings.season}-${TOPS[settings.top]}.png`;
@@ -229,6 +242,7 @@ const Kabe = (() => {
     el.classList.add('board', `theme-${opts.theme || settings.theme}`);
     if (style === 'stack') el.classList.add('stack');
     if (view === '3d') el.classList.add('view-3d');
+    else if (settings.look === 'crafted') el.classList.add('crafted');
     el.style.setProperty('--n', n);
     let html = '<div class="squares">';
     for (let y = n - 1; y >= 0; y--) {
@@ -269,6 +283,7 @@ const Kabe = (() => {
       select('bg', ['auto', 'table', 'photo'], settings.bg) +
       select('assist', ['moves', 'mistakes'], settings.assist) +
       select('top', Object.keys(TOPS), settings.top) +
+      select('look', ['flat', 'crafted'], settings.look) +
       select('font', Object.keys(FONTS), settings.font);
     el.addEventListener('change', (e) => {
       const { key } = e.target.dataset;
