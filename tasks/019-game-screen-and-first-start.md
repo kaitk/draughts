@@ -1,6 +1,6 @@
 # 019: Prototype the game screen's controls, a clock, and the first start
 
-Status: todo
+Status: in-progress
 
 Prototypes only (`prototypes/`, checked with agent-browser), to settle before building:
 the user finds home very readable but the game screen's four icon buttons confusing,
@@ -53,15 +53,22 @@ as rapid. Proposed presets for the app: no clock (the default), **5+3**, and **1
 both in IDF's rapid list and FMJD's blitz range, and gentle enough for children; 3+2 only
 if the older child asks for it.
 
-## Open with the user
+## Settled (2026-11-07)
 
-- Which variant is the go-to: the user named 10×10 international and 8×8; the MVP in
-  `docs/product.md` is Russian 8×8 with International after it. Settle the order before
-  changing the product scope.
+- The game screen is take d of four (`prototypes/game.html`, rendering.md "Game
+  screen"): the board between the way out (home, settings, start over) and the play
+  (whose turn or the clocks, take back), every control with its word. The hint button
+  and the move-hints toggle are gone from the game; move hints stay in settings. The
+  other takes and the old prototypes were removed.
+- Clocks: no clock, 5+3, 10+5, against a friend and against the computer, chosen in a
+  new game's setup on home (`prototypes/home.html?pick=computer`), which also picks the
+  variant and the level.
+- International 10×10 is the default variant once it exists (`docs/product.md`); the
+  MVP stays Russian 8×8 until then.
 
 ## Acceptance criteria
 
-- [ ] Game panel takes in landscape and portrait, with labels, next to the current one
-- [ ] Blitz time controls recorded with sources; the clock prototyped on the game screen
+- [x] Game panel takes in landscape and portrait, with labels, next to the current one
+- [x] Blitz time controls recorded with sources; the clock prototyped on the game screen
 - [ ] The first start: variant cards and the tutorial's first pages, linked in order
-- [ ] The chosen takes recorded in `docs/architecture/rendering.md` once the user picks
+- [x] The chosen takes recorded in `docs/architecture/rendering.md` once the user picks

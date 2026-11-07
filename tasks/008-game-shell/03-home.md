@@ -2,7 +2,7 @@
 
 Status: done (awaiting review)
 
-The title menu (`prototypes/home-menu.html`, rendering.md "Home"): the sharp season
+The title menu (`prototypes/home.html`, rendering.md "Home"): the sharp season
 scene, and one glass column with the wordmark, then continue, a friend, the computer
 with its level, puzzles with stars, and settings, each an icon and a word; in portrait
 settings is a button beside the wordmark instead. The language is chosen in settings
@@ -56,7 +56,7 @@ task 015; until then the 2D board stands beside the menu.
 ### Compared
 
 Mac screenshots at 1920 × 1200 and 1200 × 1920 for all four seasons, in English and
-Estonian, beside `prototypes/home-menu.html` at the same pixel size: column, wordmark,
+Estonian, beside `prototypes/home.html` at the same pixel size: column, wordmark,
 rows, icons, and text sizes match. The prototype's wordmark and gear overflowed its
 440 px column; with settings a row in landscape the wordmark fits.
 

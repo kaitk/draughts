@@ -1,19 +1,15 @@
 // Shared parts of the draughts prototypes: the season's background and the glass that shows
 // its blurred copy, the board in 2D (painted by a port of the native shaders) and 3D,
-// icons, and a switcher for the season, board theme, view, king style, and font
-// (?season=, ?theme=, ?view=3d, ?king=, ?font=).
+// icons, and a switcher for the season, board theme, view, king style, background, and
+// move hints (?season=, ?theme=, ?view=3d, ?king=, ?bg=, ?assist=).
 // Plain script, no build step.
 'use strict';
 
 const Draughts = (() => {
   const params = new URLSearchParams(location.search);
 
-  const FONTS = {
-    tenor: { family: 'Tenor Sans', pkg: 'tenor-sans', weights: [400] },
-    libertinus: { family: 'Libertinus Sans', pkg: 'libertinus-sans', weights: [400, 700] },
-    belleza: { family: 'Belleza', pkg: 'belleza', weights: [400] },
-    marcellus: { family: 'Marcellus', pkg: 'marcellus', weights: [400] },
-  };
+  // The app's face (docs/architecture/rendering.md, "Fonts").
+  const FONT = { family: 'Libertinus Sans', pkg: 'libertinus-sans', weights: [400, 700] };
   const SEASONS = ['autumn', 'winter', 'spring', 'summer'];
   // The season picks the board: autumn wood, winter stone, spring birch, summer sea.
   const SEASON_THEME = { autumn: 'wood', winter: 'stone', spring: 'birch', summer: 'sea' };
@@ -32,11 +28,10 @@ const Draughts = (() => {
     theme: pick('theme', THEMES, SEASON_THEME[season]),
     view: pick('view', ['2d', '3d'], '2d'),
     king: pick('king', KINGS, 'auto'),
-    bg: pick('bg', ['auto', 'blur', 'photo', 'table'], 'auto'),
+    bg: pick('bg', ['auto', 'blur', 'photo'], 'auto'),
     // Move hints: "mistakes" (the default) only marks a wrong move; "moves" shows the
     // selected piece's targets, on by default only in the first lessons (docs/product.md).
     assist: pick('assist', ['moves', 'mistakes'], 'mistakes'),
-    font: FONTS[params.get('font')] ? params.get('font') : 'libertinus',
   };
 
   // Auto: a crown on the face top down, where a stack reads as a shadow; a stack of two
@@ -45,8 +40,8 @@ const Draughts = (() => {
     return king === 'auto' ? (view === '3d' ? 'stack' : 'crown') : king;
   }
 
-  function loadFont(key) {
-    const f = FONTS[key];
+  function loadFont() {
+    const f = FONT;
     for (const w of f.weights) {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
@@ -60,36 +55,7 @@ const Draughts = (() => {
   // of git; its README says how to make it), or a painted stand-in without it. Behind the
   // 2D board (pages with <body data-screen="board">) it is blurred, as on the design
   // boards, so the flat board reads cleanly; sharp everywhere else (home, puzzles) and
-  // behind the 3D board. "table", a plain painted tabletop, stays to compare.
-  const TABLES = { wood: '#3a2c22', stone: '#25313e', birch: '#2a382f', sea: '#1e3838' };
-
-  // A tabletop: the color, a little lighter under the board, darker toward the edges,
-  // with a faint fine texture like matte cloth. Natively: one full-screen shader.
-  function paintTable(theme, w, h) {
-    const c = document.createElement('canvas');
-    c.width = w;
-    c.height = h;
-    const g = c.getContext('2d');
-    g.fillStyle = TABLES[theme];
-    g.fillRect(0, 0, w, h);
-    const r = Math.hypot(w, h) / 2;
-    const v = g.createRadialGradient(w * 0.45, h * 0.45, 0, w * 0.5, h * 0.5, r);
-    v.addColorStop(0, 'rgb(255 255 255 / 0.07)');
-    v.addColorStop(0.55, 'rgb(255 255 255 / 0)');
-    v.addColorStop(1, 'rgb(0 0 0 / 0.35)');
-    g.fillStyle = v;
-    g.fillRect(0, 0, w, h);
-    const img = g.getImageData(0, 0, w, h);
-    let seed = 11;
-    for (let i = 0; i < img.data.length; i += 4) {
-      seed = (seed * 16807) % 2147483647;
-      const n = ((seed / 2147483647) - 0.5) * 7;
-      img.data[i] += n; img.data[i + 1] += n; img.data[i + 2] += n;
-    }
-    g.putImageData(img, 0, 0);
-    return c.toDataURL('image/jpeg', 0.9);
-  }
-
+  // behind the 3D board.
   function useBlur() {
     return settings.bg === 'blur' ||
       (settings.bg === 'auto' && settings.view === '2d' && document.body.dataset.screen === 'board');
@@ -138,10 +104,6 @@ const Draughts = (() => {
   }
 
   function loadScene() {
-    if (settings.bg === 'table') {
-      setScene(paintTable(settings.theme, 1280, Math.round(1280 * innerHeight / innerWidth)), innerWidth / innerHeight);
-      return;
-    }
     // Blurred in CSS (draughts.css, .scene-blur), since a canvas can't read a file:// image.
     document.body.classList.toggle('scene-blur', useBlur());
     const img = new Image();
@@ -528,9 +490,8 @@ const Draughts = (() => {
     el.innerHTML = select('season', SEASONS, settings.season) +
       select('theme', ['auto', ...THEMES], params.has('theme') ? settings.theme : 'auto') +
       select('view', ['2d', '3d'], settings.view) + select('king', KINGS, settings.king) +
-      select('bg', ['auto', 'blur', 'photo', 'table'], settings.bg) +
-      select('assist', ['moves', 'mistakes'], settings.assist) +
-      select('font', Object.keys(FONTS), settings.font);
+      select('bg', ['auto', 'blur', 'photo'], settings.bg) +
+      select('assist', ['moves', 'mistakes'], settings.assist);
     el.addEventListener('change', (e) => {
       const { key } = e.target.dataset;
       if (key === 'theme' && e.target.value === 'auto') params.delete('theme');
@@ -541,12 +502,12 @@ const Draughts = (() => {
   }
 
   function init() {
-    document.documentElement.style.setProperty('--font', loadFont(settings.font));
+    document.documentElement.style.setProperty('--font', loadFont());
     document.body.classList.add(`theme-${settings.theme}`);
     loadScene();
     let repaint = 0;
     addEventListener('resize', () => {
-      if (settings.bg === 'table') loadScene(); else syncGlass();
+      syncGlass();
       clearTimeout(repaint);
       repaint = setTimeout(() => Paint.all(), 150);
     });
@@ -561,5 +522,5 @@ const Draughts = (() => {
     });
   }
 
-  return { settings, FONTS, THEMES, SEASON_THEME, icon, board, init, loadFont, syncGlass, kingStyle, ICONS, paint: () => Paint.all() };
+  return { settings, THEMES, SEASON_THEME, icon, board, init, loadFont, syncGlass, kingStyle, ICONS, paint: () => Paint.all() };
 })();

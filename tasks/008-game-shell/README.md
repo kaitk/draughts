@@ -24,7 +24,7 @@ In order; each is checked on the Mac and the tablet before the next.
 
 ## Acceptance criteria
 
-- [x] Home: the title menu (`prototypes/home-menu.html`): continue, a friend, the
+- [x] Home: the title menu (`prototypes/home.html`): continue, a friend, the
       computer (level), puzzles, and settings
 - [x] Settings: the background (by the date or one season), the board (2D or 3D), move
       hints, the language; prototyped first

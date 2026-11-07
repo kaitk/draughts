@@ -271,7 +271,7 @@ fn glyph_icon(g: Gui&, r: float4, icon: i64, style: i64, p: f32, a: f32) {
                   extra: float4 { g.scale, style, 0.0, 0.0 } });
 }
 
-// A menu row (prototypes/home-menu.html): an icon, a label, and a note at the right in
+// A menu row (prototypes/home.html): an icon, a label, and a note at the right in
 // the dimmer small face, in a 20 dp rounded row that lights while pressed. A row that
 // is off is drawn at 40% and can't be pressed. True when it is tapped.
 fn row(g: Gui&, id: i64, r: float4, icon: i64, label: const u8[:], note: const u8[:], primary: bool,

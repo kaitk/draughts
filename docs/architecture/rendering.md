@@ -166,28 +166,45 @@ the prototype tried, kept for 3D:
   undo, hint (a bulb), restart, back (an arrow left), next, star, crown, lock, and the
   puzzle themes' target, crown, and shield. The home tiles' icons are filled shapes,
   which read better large: two figures, a robot head, a jigsaw piece.
-- **Game screen**: in landscape the board fills the height less a 24 px margin, and a
-  glass panel 272 px wide and as tall as the board stands to its right: the side to move
-  on top (a 64 px piece of its color with a glow ring right round it, 4 px of the glow
-  color at 80% and a 22 px glow, no text) with the move-hints toggle at the row's right,
-  a 1 px rule, then undo, hint, restart, and back in a 2 × 2 grid of 104 px tiles. In
-  portrait the board fills the width and the panel, 240 px tall, below it holds the
-  same top row over the four buttons in a row of 88 px tiles. The toggle is a 52 px
-  tile, radius 16 px, with four dots: on (hints show moves) the glow color at 26% with a
-  glow border and glow dots; off, white at 8% with a border at 18% and the dots at 45%.
-  Undo takes back one move, also one still animating; hint selects the piece of the
-  capture that takes the most, if one is due, and marks its target whatever the hints
-  are; restart goes back to where the game began; back goes home.
+- **Game screen** (`prototypes/game.html`, chosen 2026-11-07 over three other takes):
+  the board in the middle, leaving the game on its left and playing it on its right,
+  each control a glass tile with an icon and a word, as on home, since icons alone (three
+  arrows for undo, restart, and back) confused. In landscape the board fills the height
+  less a 24 px margin, between two glass panels 232 px wide and as tall as it: on the
+  left home (a house), settings, and at the bottom start over, 72 px rows with 34 px
+  icons and 24 px words; on the right whose turn it is (a 72 px piece of its color with
+  the glow ring, 4 px of the glow color at 80% and a 22 px glow, over "White's turn"),
+  or the two clocks, and at the bottom take back, a tall 132 px tile with a 48 px icon
+  over its word. In portrait the left side is a bar above the board, its three tiles in
+  a row, and the right side is below it: whose turn, or the clocks side by side, over
+  take back across the width. Start over sits far from take back so it isn't hit for
+  it. There is no hint button and no move-hints toggle: help that does the thinking
+  doesn't belong a tap away, and move hints are a setting, reached through settings.
+  Take back takes back one move, also one still animating; start over goes back to where
+  the game began; home goes home.
+- **Clocks**: each side's piece and its time, m:ss in 36 px tabular figures, in a tile
+  of radius 20 px; black's on top, as black's side of the board is. The running clock is
+  the glow color at 18% with a 2 px glow border and its piece has the glow ring; the
+  other is white at 6% with its text and piece dimmed. Under ten seconds the running
+  clock turns the forced-capture red. A running clock redraws once a second. The player
+  whose time runs out loses, as FMJD's rules say. The choices are no clock, 5+3, and
+  10+5 (five minutes plus three seconds a move, ten plus five): 5+3 is FMJD's usual
+  blitz and both are in IDF's 8×8 rapid list, gentle enough for children.
 - **A win**: once the winning move has shown, the board dims to 55% and a glass card
   over it shows the winner's piece, crowned, popping in (0.6 s, from 0.3 past its size),
   over back and restart (primary), 112 × 88 px; fourteen sparks, 10 px discs of the glow
   color with a 12 px glow, drift 160 px up over the board twice each (2.4 s, fading in
   over the first fifth), then the screen is still. The panel's piece shows the winner.
-- **Home** is a title menu (`prototypes/home-menu.html`, chosen 2026-11-07 over the
+- **Home** is a title menu (`prototypes/home.html`, chosen 2026-11-07 over the
   icon tiles and two other takes): the scene and the 3D board, and one glass column
   with the wordmark, then continue, a friend, the computer with its level, and puzzles
   with stars, then settings, each an icon and a word. In portrait settings is instead
-  a quiet button beside the wordmark, so the sheet leaves the board its room. The language is
+  a quiet button beside the wordmark, so the sheet leaves the board its room. A friend
+  and the computer open a new game's setup in the same column: back and the title, then
+  a row of tiles per choice, lit as in settings: which draughts (international 10 × 10,
+  the default, or Russian 8 × 8), the level against the computer (easy, medium, hard,
+  with one to three pips), and the clock (none, 5 min, 10 min); then play, a primary
+  row. The choices are kept for next time. The language is
   only in settings (2026-11-07): kids who can't read yet don't need it on home, and a
   tablet set to one language can still play in another. In portrait the column is a sheet below the
   board. **Settings** (`prototypes/settings.html`): back, then a glass group per
@@ -253,7 +270,7 @@ is touching a piece that can't move because another must capture. A piece that m
 **Libertinus Sans** (SIL OFL 1.1), the maintained fork of Linux Biolinum: a humanist sans
 with flared strokes in the style of Optima, the face of the reference the user liked
 (arXiv 2611.07289), with a regular and a bold. Tenor Sans, Belleza, and Marcellus were
-compared in `prototypes/fonts.html`; all four have õ ä ö ü š ž. Tenor Sans, which the
+compared with it in Estonian text; all four have õ ä ö ü š ž. Tenor Sans, which the
 proof of concept uses (`assets/fonts/`), is the runner-up: clean and wide, but one weight
 only. Marcellus has small serifs, further from Optima. The atlas bakes Latin-1, Latin
 Extended-A, and general punctuation. If titles want more character, Tenor Sans could set

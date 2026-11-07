@@ -6,17 +6,12 @@ jsDelivr CDN, so they need internet access. Start at [index.html](index.html).
 
 | Page | Shows |
 | --- | --- |
-| `home-board.html` | Home, take A: the board first, with labelled buttons beside it |
-| `home-cards.html` | Home, take B: three solid cards with scenes made of pieces |
-| `home-menu.html` | Home, take C (chosen): a title menu over the photograph and a 3D board, with the language and settings beside the wordmark |
-| `home.html` | Home, the first take: three glass tiles with icons only |
+| `home.html` | Home: a title menu over the photograph and a 3D board; `?pick=friend` or `computer` shows a new game's setup |
 | `settings.html` | Settings: background, board, move hints, language |
-| `game.html` | The game: a selected piece and its capture, a forced capture, the side panel |
-| `game-panel.html` | Takes on the game's controls with words (`?take=a` to `d`) and the clocks (`&clock=on`, `low`, `&flip=1`), against `game.html` (task 019) |
+| `game.html` | The game: the board between the way out and the play, a selected piece and its capture, a forced capture; `?clock=on` or `low` for the clocks |
 | `puzzles.html` | The puzzle picker: three theme rows of ten, with 0 to 3 stars |
 | `solved.html` | A solved puzzle: stars over the dimmed board |
 | `boards.html` | The four season boards in 2D and 3D, crowned and stacked kings, and 10×10 |
-| `fonts.html` | The font candidates with Estonian text, and a check of their letters |
 
 Shared parts: `draughts.css` (theme tokens, glass, buttons, board, pieces, light) and
 `draughts.js` (the season's background and the glass over it, the board in 2D and 3D,
@@ -24,13 +19,12 @@ icons). The 2D board and its pieces are painted by a port of the native shaders
 (`app/draw.goose`) in `draughts.js`, into images at their size on screen, so they look as
 the app does: the lip, the squares' faint surface, the pieces' groove and rounded edge.
 Change that port with the shaders. The background is the season's master from `design/backgrounds/masters/`,
-blurred behind the 2D board and sharp elsewhere (`?bg=blur`, `photo`, or `table` for a
-plain painted tabletop), which is local and out of git
+blurred behind the 2D board and sharp elsewhere (`?bg=blur` or `photo`), which is local and out of git
 ([its README](../design/backgrounds/README.md) says how to make it); without it the
 pages paint a stand-in. A switcher at the bottom right of every page
 changes the season, board theme (auto follows the season), view, king style, background,
-move hints, and font, also as URL parameters:
-`game.html?season=winter&theme=sea&view=3d&king=stack&bg=photo&font=tenor`.
+and move hints, also as URL parameters:
+`game.html?season=winter&theme=sea&view=3d&king=stack&bg=photo`.
 
 Prototypes only use what the native renderer can draw cheaply: rounded rects, SDF
 circles, gradients, one pre-blurred background for glass (see

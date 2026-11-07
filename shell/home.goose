@@ -1,4 +1,4 @@
-// Home, the title menu (prototypes/home-menu.html; rendering.md, "Home"): the sharp
+// Home, the title menu (prototypes/home.html; rendering.md, "Home"): the sharp
 // photograph, the board as the game stands, and one glass column with the wordmark, then
 // continue, a friend, the computer with its level, puzzles, and settings, each an icon
 // and a word. In landscape the column stands at the left, its left edge off the screen;
