@@ -1,10 +1,12 @@
 // The app's screens, with no graphics: home, the game, and settings, and which one
 // shows (docs/architecture/rendering.md, "Home", "Game screen"). Each frame it declares
-// the screen showing and switches when that asks: home's continue and a friend open the
-// game, its settings open settings, and back returns home. It holds the settings, keeps
-// the game's move hints in step with them, and says when they changed, for the app to
-// write and apply; and where the board goes this frame, if anywhere, and whether the
-// photograph behind it is sharp, for the app to draw. Tests run it headless.
+// the screen showing and switches when that asks: home's continue opens the game, a
+// friend and the computer open a new game's setup in home's column, whose play starts
+// the game; settings opens from home and from the game and goes back where it came from.
+// It holds the settings, keeps the game's move hints in step with them, and says when
+// they changed, for the app to write and apply; and where the board goes this frame, if
+// anywhere, turned when the child plays black, and whether the photograph behind it is
+// sharp, for the app to draw. Tests run it headless.
 namespace shell;
 import std;
 import vec;
@@ -25,11 +27,13 @@ struct Shell {
     screen:  i64 = HOME,
     game:    game::Game,
     prefs:   settings::Settings = settings::Settings {},
-    changed: bool               = false,  // prefs changed since the app last wrote them
-    drawn:   i64                = -1,     // the screen the last frame declared
-    layout:  board::Layout,               // where the board is this frame
-    board:   bool = true,                 // whether there is a board this frame
-    sharp:   bool = true,                 // the photograph as it is (home, settings), or blurred (the game)
+    changed: bool               = false,      // prefs changed since the app last wrote them
+    drawn:   i64                = -1,         // the screen the last frame declared
+    back:    i64                = HOME,       // where settings goes back to
+    setup:   i64                = home::NOTHING, // home's column: the menu, or a setup
+    layout:  board::Layout,                   // where the board is this frame
+    board:   bool = true,                     // whether there is a board this frame
+    sharp:   bool = true,                     // the photograph as it is (home, settings), or blurred (the game)
 }
 
 fn new(variant: u8) -> Shell {
@@ -44,7 +48,8 @@ fn frame(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> bool {
     // new one is a change, however long ago the tap was.
     let fresh = sh.drawn != sh.screen;
     sh.drawn = sh.screen;
-    return declare(sh, g, width, height, now) || fresh;
+    let changed = declare(sh, g, width, height, now);
+    return changed || fresh;
 }
 
 fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> bool {
@@ -52,19 +57,23 @@ fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> bool 
     sh.board = true;
     if sh.screen == GAME {
         sh.layout = board::layout(width, height, n);
+        sh.layout.flip = sh.game.computer == rules::WHITE;
         sh.sharp = false;
         let go, changed = game::frame(sh.game, g, sh.layout, now);
-        // The game's toggle changes the move-hints setting.
-        if sh.game.b.hints != sh.prefs.hints {
-            sh.prefs.hints = sh.game.b.hints;
-            sh.changed = true;
-        }
         if go == game::HOME {
             sh.screen = HOME;
+            sh.setup = home::NOTHING;
+            return true;
+        }
+        if go == game::SETTINGS {
+            sh.screen = SETTINGS;
+            sh.back = GAME;
             return true;
         }
         return changed;
     }
+    // Time away from the game screen isn't on the clock.
+    game::pause(sh.game);
     sh.sharp = true;
     var changed = board::update(sh.game.b, now) || g.input.pressed || g.input.released;
     if sh.screen == SETTINGS {
@@ -75,32 +84,41 @@ fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> bool 
             sh.game.b.hints = sh.prefs.hints;
             sh.changed = true;
         }
-        if ask == settings::BACK { sh.screen = HOME; }
+        if ask == settings::BACK { sh.screen = sh.back; }
         return changed || ask != settings::NOTHING;
     }
-    let pick = home::frame(sh.game, g, sh.layout, width, height);
-    if pick == home::SETTINGS {
-        sh.screen = SETTINGS;
-        changed = true;
-    }
-    if pick == home::CONTINUE {
-        sh.screen = GAME;
-        changed = true;
-    }
-    if pick == home::FRIEND {
-        board::set(sh.game.b, rules::start(sh.game.b.variant));
-        sh.game.won_at = -1.0;
-        sh.screen = GAME;
-        changed = true;
+    let pick = home::frame(sh.game, g, sh.layout, width, height, sh.setup, sh.prefs);
+    // The board is turned for a child playing black against the computer.
+    sh.layout.flip = sh.game.computer == rules::WHITE;
+    if pick != home::NOTHING { changed = true; }
+    match pick {
+        home::SETTINGS => {
+            sh.screen = SETTINGS;
+            sh.back = HOME;
+        },
+        home::CONTINUE => { sh.screen = GAME; },
+        home::FRIEND => { sh.setup = home::FRIEND; },
+        home::COMPUTER => { sh.setup = home::COMPUTER; },
+        home::BACK => { sh.setup = home::NOTHING; },
+        home::CHANGED => { sh.changed = true; },
+        home::PLAY => {
+            // A new game as the setup stands; it replaces the one there was.
+            let p .= sh.prefs;
+            let computer = if sh.setup == home::COMPUTER { 1 - p.color } else { -1 };
+            game::start(sh.game, p.variant as u8, p.clock, computer, p.level);
+            sh.setup = home::NOTHING;
+            sh.screen = GAME;
+        },
+        _ => {},
     }
     return changed;
 }
 
 // What is kept when the app is paused, for Android may kill it then: the screen and the
-// game with its undo history, one flat value (docs/architecture/README.md, "Game state is
+// game with its variant, undo history, clocks, and whom it is against, one flat value (docs/architecture/README.md, "Game state is
 // a value"). VERSION changes when its layout does; an image of another layout doesn't
 // verify, and the app starts afresh.
-let VERSION = 1;
+let VERSION = 2;
 
 struct Saved {
     version:   i64,
@@ -112,6 +130,9 @@ struct Saved {
     last_to:   u8,
     has_last:  bool,
     history:   board::Step[..board::MAX_HISTORY],
+    clock:     clock::Clock,
+    computer:  i64,
+    level:     i64,
 }
 
 // FNV-1a over bytes, for the image's checksum: from_bytes checks an image's shape, not
@@ -128,15 +149,17 @@ fn save(sh: Shell&) -> u8[>..] {
     let b .= sh.game.b;
     var one: Saved[>..] = [];
     one.push(Saved { version: VERSION, screen: sh.screen, variant: b.variant, start: b.start, pos: b.pos,
-                     last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.history });
+                     last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.history,
+                     clock: sh.game.clock, computer: sh.game.computer, level: sh.game.level });
     var image = to_bytes(one);
     let h = checksum(image);
     for i in 8 { image.push(((h >> (8 * i)) & 0xFF) as u8); }
     return image;
 }
 
-// Brings back what an image kept: the screen, and the game as it was, with no move or
-// selection under way. False, changing nothing, for an image that isn't one.
+// Brings back what an image kept: the screen, and the game as it was, of whichever
+// variant, with no move or selection under way. False, changing nothing, for an image
+// that isn't one.
 fn restore(sh: Shell&, file: const u8[:]) -> bool {
     guard file.len > 8 else { return false; }
     let image = file[..file.len - 8];
@@ -146,15 +169,24 @@ fn restore(sh: Shell&, file: const u8[:]) -> bool {
     let one, ok = from_bytes<Saved[>..]>(image);
     guard ok && one.len == 1 else { return false; }
     let s .= one[0];
-    guard s.version == VERSION && s.variant == sh.game.b.variant && s.screen >= HOME && s.screen <= SETTINGS
+    guard s.version == VERSION && s.variant < rules::VARIANT_COUNT && s.start.variant == s.variant
+          && s.pos.variant == s.variant && s.screen >= HOME && s.screen <= SETTINGS && s.computer >= -1
+          && s.computer <= rules::BLACK && s.level >= game::EASY && s.level <= game::HARD
+          && s.clock.kind >= 0 && s.clock.kind < clock::KINDS
     else { return false; }
     let b .= sh.game.b;
+    b.variant = s.variant;
     board::set(b, s.start);
     board::show(b, s.pos);
     b.history = s.history;
     b.has_last = s.has_last;
     b.last = rules::Move { from: s.last_from, to: s.last_to, .. };
+    sh.game.clock = s.clock;
+    sh.game.computer = s.computer;
+    sh.game.level = s.level;
+    sh.game.turn = b.pos.side;
     sh.game.won_at = -1.0;
+    sh.game.seen = -1.0;
     sh.screen = s.screen;
     return true;
 }

@@ -1,0 +1,19 @@
+5+3: white 5:00, black 5:00, running -1, flag -1, low false false, next in -1.0
+ticks before the first move: false
+  after 10 s: white 5:00, black 5:00, running -1, flag -1, low false false, next in -1.0
+white moved: white 5:00, black 5:00, running 1, flag -1, low false false, next in 1.0
+  4.25 s: white 5:00, black 4:56, running 1, flag -1, low false false, next in 0.75
+black moved: white 5:00, black 4:59, running 0, flag -1, low false false, next in 1.0
+white moved after 0.75 s: white 5:03, black 4:59, running 1, flag -1, low false false, next in 0.75
+take back: white 5:03, black 4:59, running 0, flag -1, low false false, next in 0.25
+take back to the start: white 5:03, black 4:59, running -1, flag -1, low false false, next in -1.0
+black at 12.5 s: white 5:03, black 0:13, running 1, flag -1, low false false, next in 0.5
+  9.5 s: white 5:03, black 0:10, running 1, flag -1, low false false, next in 0.5
+  9 s: white 5:03, black 0:09, running 1, flag -1, low false true, next in 1.0
+  out after 8.9 s: false
+  out after 0.2 s more: true
+black's time ran out: white 5:03, black 0:00, running -1, flag 1, low false false, next in -1.0
+  a move after the flag ticks: false
+  then: white 5:03, black 0:00, running -1, flag 1, low false false, next in -1.0
+10+5: 10:00, on true
+no clock: on false, running -1, ticks false

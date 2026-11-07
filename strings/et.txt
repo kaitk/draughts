@@ -29,3 +29,36 @@ hints.moves = Kõik käigud
 
 board.flat = 2D
 board.raised = 3D
+
+game.home = Koju
+game.start_over = Alusta uuesti
+game.take_back = Võta tagasi
+turn.white = Valge käik
+turn.black = Musta käik
+won.white = Valge võitis
+won.black = Must võitis
+
+setup.draughts = Kabe
+setup.level = Tase
+setup.color = Sinu nupud
+setup.clock = Kell
+setup.play = Mängi
+
+variant.international = Rahvusvaheline
+variant.brazilian = Brasiilia
+variant.russian = Vene
+size.10 = 10 × 10
+size.8 = 8 × 8
+
+pick.easy = Kerge
+pick.medium = Keskmine
+pick.hard = Raske
+
+color.white = Valged
+color.black = Mustad
+
+clock.none = Kellata
+clock.blitz = 5 min
+clock.blitz_note = +3 s käigu eest
+clock.rapid = 10 min
+clock.rapid_note = +5 s käigu eest

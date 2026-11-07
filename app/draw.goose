@@ -15,7 +15,7 @@ struct BoardUniforms {
     screen: float4,     // width, height in pixels, time, squares per side
     rect:   float4,     // the board: x, y, size, corner radius
     inner:  float4,     // the squares: x, y, size, one square
-    scene:  float4,     // x: 1 when there is a photograph; y: how bright it is shown; z: 1 for no board
+    scene:  float4,     // x: 1 when there is a photograph; y: how bright it is shown; z: 1 for no board; w: 1 turned
     wrong:  float4,     // a wrong move's square (y * size + x, or -1), and how far its flash is, 0..1
     marks:  board::Marks,
 }
@@ -112,8 +112,9 @@ let BOARD_FRAG = """
             int n = int(screen.w);
             vec2 q = (px - inner.xy) / inner.w;
             ivec2 cell = clamp(ivec2(floor(q)), ivec2(0), ivec2(n - 1));
-            int x = cell.x;
-            int y = n - 1 - cell.y;
+            bool turned = scene.w > 0.5;
+            int x = turned ? n - 1 - cell.x : cell.x;
+            int y = turned ? cell.y : n - 1 - cell.y;
             vec2 fq = fract(q);
             bool dk = ((x + y) & 1) == 0;
             vec3 s = dk ? dark.rgb : light.rgb;
@@ -369,7 +370,8 @@ fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::La
     gfx::uniforms(gfx::FRAGMENT, 1, BoardUniforms {
         screen: float4 { width, height, now as f32, l.n },
         rect:   l.board, inner: l.inner,
-        scene:  float4 { if d.scene.has { 1.0 } else { 0.0 }, if sharp { 1.0 } else { 0.8 }, if shown { 0.0 } else { 1.0 }, 0.0 },
+        scene: float4 { if d.scene.has { 1.0 } else { 0.0 }, if sharp { 1.0 } else { 0.8 }, if shown { 0.0 } else { 1.0 },
+                       if l.flip { 1.0 } else { 0.0 } },
         wrong: b.flash, marks: b.marks });
     gfx::bind_texture(gfx::FRAGMENT, 0, if sharp { d.scene.sharp } else { d.scene.photo }, d.scene.sampler);
     gfx::draw(3);

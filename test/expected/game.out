@@ -1,26 +1,37 @@
-quads 12, over the UI 1 (black 0.0)
-turn after c3-d4: black 1.0
+panels vec4<f32> { 24.0, 40.0, 232.0, 720.0 } vec4<f32> { 1024.0, 40.0, 232.0, 720.0 }, board vec4<f32> { 280.0, 40.0, 720.0, 11.52 }
+over the UI: white 1.0 1.0; 
+turn after c3-d4: black 1.0 1.0; 
 two moves: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Be5,b6,d6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 2, last f6-e5
 undo: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1, last c3-d4
 undo: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 0, last none
 undo at the start: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 0, last none
-hint with no capture due: selected -, hint -1
 moving true
 undo while moving: moving false
   then: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 0, last none
-hint: selected c3, targets g7 , via e5 with hints on mistakes true
-press elsewhere: selected h2, targets 
-the hinted capture played: B:Wa1,h2,g7:Bg3,h8, history 1, last c3-g7
-restart: W:Wa1,h2,c3:Bg3,d4,f6,h8, history 0, last none
-toggle: moves true
-toggle again: moves false
-press on undo, released on d4: moving false, selected c3
-press on f6, released on undo: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1, last c3-d4
+the capture played: B:Wa1,h2,g7:Bg3,h8, history 1, last c3-g7
+start over: W:Wa1,h2,c3:Bg3,d4,f6,h8, history 0, last none
+home asks for home: true
+settings asks for settings: true
+press on take back, released on d4: moving false, selected c3
+press on f6, released on take back: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1, last c3-d4
 while the capture shows: celebrating false
-after: celebrating since 11.0, winner black 0.0, pieces over the UI 2, the winner crowned 1.0
+after: celebrating since 11.0, over the UI white 1.0 1.0; white 0.0 1.0; the winner crowned 1.0
 sparks at 0.0 s 0, animating true
 sparks at 2.0 s 11, animating at 8 s false
 back on the card asks for home: true
 restart on the card: W:Wa1,c3:Bd4, history 0, last none
 celebrating false
-back on the panel asks for home: true
+5+3, 10 s before a move: white 5:00, black 5:00, running -1, tiles top to bottom wait wait ; over the UI black 0.7 0.0; white 0.7 0.0; 
+c3-d4: white 5:00, black 5:00, running 1, tiles top to bottom run wait ; over the UI black 1.0 1.0; white 0.7 0.0; 
+frames at 0.5, 0.8, 1.05 s on black's clock: drawn true false true; white 5:00, black 4:59, running 1, tiles top to bottom run wait 
+after a pause of 469 s: white 5:00, black 4:59, running 1, tiles top to bottom run wait 
+f6-e5 after 2 s more: white 5:00, black 5:01, running 0, tiles top to bottom wait run 
+take back: white 5:00, black 5:01, running 1, tiles top to bottom wait run , B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8
+under ten seconds: white 5:00, black 0:08, running 1, tiles top to bottom low wait 
+black's flag: white 5:00, black 0:00, running -1, tiles top to bottom wait wait ; winner 0, celebrating true, over the UI black 0.7 0.0; white 0.7 0.0; white 1.0 1.0; 
+take back after the flag: white 5:00, black 0:00, running -1, tiles top to bottom wait wait , flag 1
+start over: white 5:00, black 5:00, running -1, tiles top to bottom wait wait , flag -1, celebrating false
+the computer to move: true
+c3 at vec2<f32> { 772.03, 267.96997 }, f6 at vec2<f32> { 507.97, 532.02997 }; c3-d4 played by hand: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8; the computer to move: false; white 10:00, black 10:00, running 1, tiles top to bottom wait run ; over the UI white 0.7 0.0; black 1.0 1.0; 
+portrait: panels vec4<f32> { 24.0, 90.0, 752.0, 104.0 } vec4<f32> { 24.0, 994.0, 752.0, 196.0 }, board vec4<f32> { 24.0, 218.0, 752.0, 12.032001 }, take back at vec2<f32> { 400.0, 1134.0 }
+portrait take back undoes: true

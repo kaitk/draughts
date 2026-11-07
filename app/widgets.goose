@@ -164,6 +164,18 @@ let FRAG = """
             float d = min(abs(length(q) - 9.0), seg(p, vec2(3.0, 12.0), vec2(21.0, 12.0)));
             return min(d, abs(length(q / vec2(3.8, 9.0)) - 1.0) * 3.8);
         }
+        if (k == 14) {          // home: a house with a door
+            float d = min(seg(p, vec2(3.5, 10.5), vec2(12.0, 3.5)), seg(p, vec2(12.0, 3.5), vec2(20.5, 10.5)));
+            d = min(d, min(seg(p, vec2(5.5, 9.0), vec2(5.5, 20.5)), seg(p, vec2(18.5, 9.0), vec2(18.5, 20.5))));
+            d = min(d, seg(p, vec2(5.5, 20.5), vec2(18.5, 20.5)));
+            d = min(d, min(seg(p, vec2(10.0, 20.5), vec2(10.0, 14.5)), seg(p, vec2(14.0, 20.5), vec2(14.0, 14.5))));
+            return min(d, seg(p, vec2(10.0, 14.5), vec2(14.0, 14.5)));
+        }
+        if (k == 15) {          // no clock: a stopwatch
+            float d = abs(length(p - vec2(12.0, 13.0)) - 8.0);
+            d = min(d, min(seg(p, vec2(12.0, 9.0), vec2(12.0, 13.0)), seg(p, vec2(12.0, 13.0), vec2(14.5, 15.5))));
+            return min(d, seg(p, vec2(9.5, 2.5), vec2(14.5, 2.5)));
+        }
         return 1e9;
     }
     void main() {
@@ -192,7 +204,8 @@ let FRAG = """
             result = vec4(g * a, a + s);
             return;
         }
-        // plain, primary, toggle on, toggle off, quiet, row, primary row
+        // plain, primary, toggle on, toggle off, quiet, row, primary row, choice on and
+        // off, clock running, waiting, and low
         int style = int(v_extra.y);
         if (kind == 1) {
             // A glass tile: white at 10%, 14 points more pressed and scaled to 0.96; an
@@ -201,22 +214,29 @@ let FRAG = """
             // with a glow border; off, white at 8% with a border at 18%; a quiet tile
             // too. A menu row has no border or shadow: clear, or the glow color at 24%. A
             // choice has no shadow either: on, the glow color at 22% with a 2 dp glow
-            // border; off, white at 10% with a border at 12%. color.a dims a tile.
+            // border; off, white at 10% with a border at 12%. A clock has no shadow either:
+            // running, the glow color at 18% with a 2 dp glow border; waiting, white at 6%
+            // with a border at 12%; low, the forced-capture red at 16% with a 2 dp red
+            // border. color.a dims a tile.
             float pr = v_look.w;
             bool flat = style >= 5;
             if (!flat) h *= 1.0 - 0.04 * pr;
             float d = box(p, c, h, r);
             if (!flat) over(vec3(0.0), 0.5 * shadow(p, c, h, r, 6.0 * u, 14.0 * u, -8.0 * u) * (1.0 - cover(d)));
             float a = cover(d) * (v_color.a > 0.0 ? v_color.a : 1.0);
-            bool lit = style == 1 || style == 2 || style == 6 || style == 7;
-            vec3 fc = lit ? glow.rgb : vec3(1.0);
+            vec3 red = vec3(1.0, 0.353, 0.29);
+            bool lit = style == 1 || style == 2 || style == 6 || style == 7 || style == 9;
+            vec3 fc = style == 11 ? red : lit ? glow.rgb : vec3(1.0);
             float fa = (style == 1 ? 0.22 : style == 2 ? 0.26 : style == 3 || style == 4 ? 0.08
-                        : style == 5 ? 0.0 : style == 6 ? 0.24 : style == 7 ? 0.22 : 0.10) + 0.14 * pr;
+                        : style == 5 ? 0.0 : style == 6 ? 0.24 : style == 7 ? 0.22 : style == 9 ? 0.18
+                        : style == 10 ? 0.06 : style == 11 ? 0.16 : 0.10) + 0.14 * pr;
             vec4 tile = vec4(fc * fa, fa);
-            float ea = style == 5 || style == 6 ? 0.0 : style == 2 || style == 7 ? 1.0 : style == 8 ? 0.12
+            bool wide = style == 7 || style == 9 || style == 11;
+            float ea = style == 5 || style == 6 ? 0.0 : style == 2 || wide ? 1.0 : style == 8 || style == 10 ? 0.12
                        : style >= 3 ? 0.18 : 0.2;
-            float edge = ea * (1.0 - cover(d + (style == 7 ? 2.0 : 1.0) * u));
-            tile = vec4((style == 2 || style == 7 ? glow.rgb : vec3(1.0)) * edge, edge) + tile * (1.0 - edge);
+            float edge = ea * (1.0 - cover(d + (wide ? 2.0 : 1.0) * u));
+            vec3 ec = style == 11 ? red : style == 2 || style == 7 || style == 9 ? glow.rgb : vec3(1.0);
+            tile = vec4(ec * edge, edge) + tile * (1.0 - edge);
             float hl = style >= 2 ? 0.0 : 0.18 * top_line(p, c, h, r, u);
             tile = vec4(vec3(hl), hl) + tile * (1.0 - hl);
             acc = tile * a + acc * (1.0 - tile.a * a);
@@ -250,7 +270,24 @@ let FRAG = """
             // A glyph: the atlas's coverage over the quad, in the text color.
             vec2 t = (p - v_rect.xy) / v_rect.zw;
             float a = texture(atlas, mix(v_look.yz, vec2(v_look.w, v_extra.y), t)).a * v_color.a;
-            result = vec4(text.rgb * a, a);
+            result = vec4((v_extra.z > 0.5 ? v_color.rgb : text.rgb) * a, a);
+            return;
+        }
+        if (kind == 7) {
+            // A small board at the start: the theme's squares, rounded corners, and
+            // men on the first rows of each side, discs 76% of a square.
+            float a = cover(box(p, c, h, r)) * v_color.a;
+            float n = v_look.z;
+            vec2 q = (p - v_rect.xy) / v_rect.zw * n;
+            vec2 cell = floor(q);
+            float row = n - 1.0 - cell.y;
+            bool dk = mod(cell.x + row, 2.0) < 0.5;
+            vec3 s = dk ? dark.rgb : light.rgb;
+            if (dk && (row < v_look.w || row >= n - v_look.w)) {
+                float d = (length(fract(q) - 0.5) - 0.38) * v_rect.z / n;
+                s = mix(s, row < v_look.w ? w_face.rgb : b_face.rgb, cover(d));
+            }
+            result = vec4(s * a, a);
             return;
         }
         if (kind == 4) {

@@ -1,63 +1,136 @@
-// The game screen's panel (docs/architecture/rendering.md, "Game screen";
-// prototypes/game.html): a glass panel beside the board, the side to move on top with
-// the move-hints toggle beside it, then undo, hint, restart, and back, in a 2 × 2 grid
-// under a rule right of the board in landscape and in a row below it in portrait.
+// The game screen's panels (docs/architecture/rendering.md, "Game screen";
+// prototypes/game.html): the board between them, leaving the game on the left (home,
+// settings, and start over at the bottom) and playing it on the right (whose turn, or
+// the two clocks, and take back at the bottom, a tall tile). Each control is a glass
+// tile with an icon and a word. In portrait the left panel is a bar of three above the
+// board and the right one is below it: whose turn or the clocks side by side, over take
+// back across the width. Start over sits far from take back so it isn't hit for it.
 namespace panel;
 import std;
 import vec;
 
 import gui from "../gui";
 import board from "../board";
+import strings from "../strings";
 
-// What the panel's buttons ask for.
+// What the panels' tiles ask for.
 let NOTHING = 0;
 let UNDO = 1;
-let HINT = 2;
-let RESTART = 3;
-let BACK = 4;
-let HINTS = 5;              // the move-hints toggle
+let RESTART = 2;
+let HOME = 3;
+let SETTINGS = 4;
 
-let ICONS = [gui::UNDO, gui::HINT, gui::RESTART, gui::BACK];
+let ROW_H = 72.0;           // dp: a control's row
+let TALL_H = 132.0;         // take back in landscape
+let WIDE_H = 80.0;          // take back in portrait
+let CLOCK_H = 72.0;
+let OVER = 4;               // pieces over the UI: two clocks and the winner, at most
 
-// Declares the panel for this frame. Returns the button released this frame, if any,
-// and where the side to move goes: its center and radius.
-fn game(g: gui::Gui&, l: board::Layout, hints_on: bool) -> i64, float4 {
-    let u = l.scale;
-    gui::panel(g, l.panel);
-    let landscape = l.panel.z < l.panel.w;
-    var r = gui::inset(l.panel, 24.0 * u);
-    let top_h = 88.0 * u;
+// A piece of `side` over the UI at c with radius r, at opacity a, crowned or not, with
+// a glow ring right round it or not.
+fn piece(over: board::Piece[..OVER]&, c: float2, r: f32, side: i64, king: bool, a: f32, ring: bool) {
+    guard over.len < OVER else { return; }
+    let k = if king { 1.0 } else { 0.0 };
+    let glow = if ring { 1.0 } else { 0.0 };
+    over.push(board::Piece { at: float4 { c.x, c.y, r, 0.0 }, look: float4 { side, k, 0.0, a },
+                             ring: float4 { 0.0, glow, 0.0, 0.0 } });
+}
+
+// One side's clock in r: its piece and its time, lit while it runs (red under ten
+// seconds), faint while it waits.
+fn clock_of(g: gui::Gui&, r: float4, c: clock::Clock&, side: i64, over: board::Piece[..OVER]&) {
+    let u = g.scale;
+    let runs = c.running == side;
+    let low = clock::low(c, side);
+    gui::clock_tile(g, r, if low { gui::CLOCK_LOW } else if runs { gui::CLOCK_RUN } else { gui::CLOCK_IDLE });
+    var room = r;
+    gui::cut_left(room, 14.0 * u);
+    gui::cut_right(room, 14.0 * u);
+    let spot = gui::cut_left(room, 44.0 * u);
+    piece(over, float2 { spot.x + 0.5 * spot.z, spot.y + 0.5 * spot.w }, 22.0 * u, side, false,
+          if runs { 1.0 } else { 0.7 }, runs);
+    var t: u8[..8] = [];
+    clock::text(clock::shown(c, side), t);
+    gui::figures(g, gui::FIGURES, room, t, if runs { 1.0 } else { 0.66 }, low, gui::RIGHT);
+}
+
+// Declares the panels for this frame, with the clocks `c`, and `side` the side to move,
+// or the winner when `won`. Pieces shown on the panels go into `over`. Returns the tile
+// tapped this frame, if any.
+fn game(g: gui::Gui&, l: board::Layout, c: clock::Clock&, side: i64, won: bool, over: board::Piece[..OVER]&) -> i64 {
+    let u = g.scale;
+    let landscape = l.left.z < l.left.w;
     var chosen = NOTHING;
-    var top = r;
+    let words = [strings::GAME_HOME, strings::HOME_SETTINGS, strings::GAME_START_OVER];
+    let icons = [gui::HOME, gui::GEAR, gui::RESTART];
+    let asks = [HOME, SETTINGS, RESTART];
+    let turn_key = if won { if side == 0 { strings::WON_WHITE } else { strings::WON_BLACK } }
+                   else if side == 0 { strings::TURN_WHITE } else { strings::TURN_BLACK };
+    // The clock nearer the player whose pieces are at the bottom goes second: under the
+    // other in landscape, right of it in portrait.
+    let first = if l.flip { 0 } else { 1 };
+    gui::panel(g, l.left);
+    gui::panel(g, l.right);
     if landscape {
-        // The top row, a rule, and the 2 × 2 grid, centered down the panel.
-        let tile = min(104.0 * u, 0.5 * (r.z - 16.0 * u));
-        let gap = 22.0 * u;
-        let h = top_h + 2.0 * gap + u + 2.0 * tile + 16.0 * u;
-        var col = gui::center(r, r.z, h);
-        top = gui::cut_top(col, top_h);
-        gui::cut_top(col, gap);
-        gui::fill(g, gui::cut_top(col, u), float4 { 1.0, 1.0, 1.0, 0.18 }, 0.0);
-        gui::cut_top(col, gap);
-        for icon, i in ICONS {
-            if gui::button(g, 100 + i, gui::cell(col, 2, 2, tile, tile, 16.0 * u, i), icon) { chosen = UNDO + i; }
+        var left = float4 { l.left.x + 16.0 * u, l.left.y + 20.0 * u, l.left.z - 32.0 * u, l.left.w - 40.0 * u };
+        for i in 3 {
+            let r = if i < 2 { gui::cut_top(left, ROW_H * u) } else { gui::cut_bottom(left, ROW_H * u) };
+            if i == 0 { gui::cut_top(left, 12.0 * u); }
+            if gui::labelled(g, 110 + i, r, icons[i], 34.0, strings::get(words[i]), gui::HEADING, gui::BESIDE) {
+                chosen = asks[i];
+            }
         }
-    } else {
-        // The top row over the four buttons in a row.
-        let tile = 88.0 * u;
-        let gap = 18.0 * u;
-        var col = gui::center(r, r.z, top_h + gap + tile);
-        top = gui::cut_top(col, top_h);
-        gui::cut_top(col, gap);
-        for icon, i in ICONS {
-            if gui::button(g, 100 + i, gui::cell(col, 4, 1, tile, tile, 24.0 * u, i), icon) { chosen = UNDO + i; }
+        var right = float4 { l.right.x + 16.0 * u, l.right.y + 20.0 * u, l.right.z - 32.0 * u, l.right.w - 40.0 * u };
+        let back = gui::cut_bottom(right, TALL_H * u);
+        if clock::on(c) {
+            clock_of(g, gui::cut_top(right, CLOCK_H * u), c, first, over);
+            gui::cut_top(right, 10.0 * u);
+            clock_of(g, gui::cut_top(right, CLOCK_H * u), c, 1 - first, over);
+        } else {
+            // The piece, its glow ring, and the words under it.
+            gui::cut_top(right, 18.0 * u);
+            let spot = gui::cut_top(right, 72.0 * u);
+            piece(over, float2 { spot.x + 0.5 * spot.z, spot.y + 0.5 * spot.w }, 36.0 * u, side, false, 1.0, true);
+            gui::cut_top(right, 18.0 * u);
+            let f .= g.faces[gui::HEADING];
+            gui::text(g, gui::HEADING, gui::cut_top(right, f.ascent - f.descent), strings::get(turn_key), 1.0, 0.0,
+                      gui::CENTER);
+        }
+        if gui::labelled(g, 113, back, gui::UNDO, 48.0, strings::get(strings::GAME_TAKE_BACK), gui::HEADING,
+                         gui::STACKED) {
+            chosen = UNDO;
+        }
+        return chosen;
+    }
+    // Portrait: the bar of three, then the play.
+    let bar = float4 { l.left.x + 20.0 * u, l.left.y + 16.0 * u, l.left.z - 40.0 * u, ROW_H * u };
+    let w = (bar.z - 32.0 * u) / 3.0;
+    for i in 3 {
+        let r = float4 { bar.x + i * (w + 16.0 * u), bar.y, w, bar.w };
+        if gui::labelled(g, 110 + i, r, icons[i], 34.0, strings::get(words[i]), gui::HEADING, gui::MIDDLE) {
+            chosen = asks[i];
         }
     }
-    // The side to move, a 64 dp piece, in the middle of the top row; the toggle, a
-    // 52 dp tile, at its right: lit in the glow color while hints show moves.
-    let turn = float4 { top.x + 0.5 * top.z, top.y + 0.5 * top.w, 32.0 * u, 0.0 };
-    let toggle = gui::center(gui::cut_right(top, 52.0 * u), 52.0 * u, 52.0 * u);
-    let look = if hints_on { gui::ON } else { gui::OFF };
-    if gui::tile(g, 104, toggle, gui::DOTS, look, 16.0) { chosen = HINTS; }
-    return chosen, turn;
+    var right = float4 { l.right.x + 20.0 * u, l.right.y + 16.0 * u, l.right.z - 40.0 * u, l.right.w - 32.0 * u };
+    var top = gui::cut_top(right, CLOCK_H * u);
+    gui::cut_top(right, 12.0 * u);
+    if clock::on(c) {
+        let half = 0.5 * (top.z - 16.0 * u);
+        clock_of(g, gui::cut_left(top, half), c, first, over);
+        clock_of(g, gui::cut_right(top, half), c, 1 - first, over);
+    } else {
+        // The piece beside the words, centered.
+        let label = strings::get(turn_key);
+        let span = 52.0 * u + 18.0 * u + gui::text_width(g, gui::HEADING, label, 0.0);
+        var row = gui::center(top, span, top.w);
+        let spot = gui::cut_left(row, 52.0 * u);
+        piece(over, float2 { spot.x + 0.5 * spot.z, spot.y + 0.5 * spot.w }, 26.0 * u, side, false, 1.0, true);
+        gui::cut_left(row, 18.0 * u);
+        gui::text(g, gui::HEADING, row, label, 1.0, 0.0, gui::LEFT);
+    }
+    if gui::labelled(g, 113, gui::cut_top(right, WIDE_H * u), gui::UNDO, 36.0, strings::get(strings::GAME_TAKE_BACK),
+                     gui::HEADING, gui::MIDDLE) {
+        chosen = UNDO;
+    }
+    return chosen;
 }

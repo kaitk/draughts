@@ -22,6 +22,7 @@ let FILL = 3;               // a plain rounded rect in `color`
 let SPARK = 4;              // a glowing disc in the glow color; color.a: its opacity
 let TEXT = 5;               // a glyph from the font atlas in the text color; look.yzw, extra.y: its uv
 let PICTURE = 6;            // a season's thumbnail (look.z: its theme), or the glow's tint for -1
+let MINI = 7;               // a small board at the start; look.z: squares per side, look.w: rows of men
 
 // How a tile and its icon look (extra.y), in the theme's colors.
 let PLAIN = 0;              // white at 10%
@@ -33,6 +34,9 @@ let ROW = 5;                // a menu row: nothing until pressed, no border or s
 let ROW_PRIMARY = 6;        // a menu row in the glow color at 24%
 let CHOSEN = 7;             // a choice that is on: the glow color at 22%, a 2 dp glow border
 let CHOICE = 8;             // a choice that is off: white at 10%, a border at 12%
+let CLOCK_RUN = 9;          // the running clock: the glow color at 18%, a 2 dp glow border
+let CLOCK_IDLE = 10;        // a clock that waits: white at 6%, a border at 12%
+let CLOCK_LOW = 11;         // the running clock under ten seconds: the forced-capture red
 
 // The line icons the shader knows (rendering.md, "Controls").
 let NO_ICON = 0;
@@ -49,6 +53,8 @@ let GEAR = 10;              // settings
 let SUN = 11;               // settings' groups: the background,
 let TARGET = 12;            // move hints,
 let GLOBE = 13;             // the language
+let HOME = 14;              // the game's way home: a house
+let CLOCK = 15;             // no clock: a stopwatch
 
 // Text faces (rendering.md, "Fonts"): one size each, in dp, baked by the app at the
 // screen's pixel size.
@@ -57,8 +63,12 @@ let LABEL = 1;              // menu rows
 let HEADING = 2;            // a settings group's title
 let BODY = 3;               // a choice's word
 let SMALL = 4;              // notes, a picture's label
-let FACES = 5;
-let FACE_DP = [64.0, 30.0, 24.0, 20.0, 17.0];
+let FIGURES = 5;            // a clock's time
+let FACES = 6;
+let FACE_DP = [64.0, 30.0, 24.0, 20.0, 17.0, 36.0];
+
+// The forced-capture red (rendering.md, "States"), for a clock under ten seconds.
+let RED = float4 { 1.0, 0.353, 0.29, 1.0 };
 
 // The characters the faces hold (the atlas's ranges): Latin-1 and Latin Extended-A from
 // the space on, and general punctuation. Others are drawn as '?'.
@@ -98,7 +108,7 @@ struct Quad {
     rect:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x, y, width, height in pixels
     color: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // straight alpha
     look:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // kind, corner radius in pixels, icon, pressed 0..1
-    extra: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: pixels per dp; y: PLAIN..OFF
+    extra: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: pixels per dp; y: PLAIN..CLOCK_LOW; z: text in `color`
 }
 
 // The pointer this frame. A quick tap can be pressed and released in one frame.
@@ -326,6 +336,108 @@ fn choice(g: Gui&, id: i64, r: float4, kind: i64, pic: float2, label: const u8[:
     return clicked;
 }
 
+// How a labelled tile lays out its icon and word.
+let BESIDE = 0;             // the icon, then the word, from the left
+let MIDDLE = 1;             // the icon and the word side by side, centered
+let STACKED = 2;            // the icon over the word, centered
+
+// A glass tile with an icon `size` dp across and a word in face `face`
+// (prototypes/game.html): true when it is tapped.
+fn labelled(g: Gui&, id: i64, r: float4, icon: i64, size: f32, label: const u8[:], face: i64,
+            arrange: i64) -> bool {
+    let u = g.scale;
+    let clicked, p = hold(g, id, r);
+    add(g, Quad { rect: r, look: float4 { BUTTON, 22.0 * u, 0.0, p }, extra: float4 { u, PLAIN, 0.0, 0.0 } });
+    let s = size * u;
+    if arrange == STACKED {
+        let f .= g.faces[face];
+        let line = f.ascent - f.descent;
+        let gap = 8.0 * u;
+        var c = center(r, r.z, s + gap + line);
+        glyph_icon(g, center(cut_top(c, s), s, s), icon, PLAIN, p, 1.0);
+        cut_top(c, gap);
+        text(g, face, c, label, 1.0, 0.0, CENTER);
+        return clicked;
+    }
+    let gap = 12.0 * u;
+    var c = r;
+    if arrange == BESIDE {
+        cut_left(c, 14.0 * u);
+    } else {
+        let w = s + gap + text_width(g, face, label, 0.0);
+        c = center(r, w, r.w);
+    }
+    glyph_icon(g, center(cut_left(c, s), s, s), icon, PLAIN, p, 1.0);
+    cut_left(c, gap);
+    text(g, face, c, label, 1.0, 0.0, LEFT);
+    return clicked;
+}
+
+// A setup tile (prototypes/home.html): a picture `pic` dp tall over its label, and a
+// note under that in the small face, centered; lit as a choice when on, dimmed and
+// taking no tap when not enabled. Returns whether it was tapped and where the picture
+// goes, for the caller to draw.
+fn pick(g: Gui&, id: i64, r: float4, pic: f32, label: const u8[:], note: const u8[:], on: bool,
+        enabled: bool) -> bool, float4 {
+    let u = g.scale;
+    var clicked = false;
+    if enabled {
+        let c, p = hold(g, id, r);
+        clicked = c;
+    } else if g.input.pressed && inside(r, g.input.at) {
+        g.took = true;
+    }
+    let a: f32 = if enabled { 1.0 } else { 0.4 };
+    add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { BUTTON, 16.0 * u, 0.0, 0.0 },
+                  extra: float4 { u, if on { CHOSEN } else { CHOICE }, 0.0, 0.0 } });
+    let body = g.faces[BODY].ascent - g.faces[BODY].descent;
+    let small = g.faces[SMALL].ascent - g.faces[SMALL].descent;
+    let p = pic * u;
+    let gap = 4.0 * u;
+    var h: f32 = 0.0;
+    if p > 0.0 { h += p + gap; }
+    if label.len > 0 { h += body; }
+    if note.len > 0 { h += small + (if label.len > 0 { gap } else { 0.0 }); }
+    var c = center(r, r.z, h);
+    var picture = c;
+    if p > 0.0 {
+        picture = cut_top(c, p);
+        cut_top(c, gap);
+    }
+    if label.len > 0 {
+        // A word too wide for the tile, as a translation's may be, takes the small face.
+        let face = if text_width(g, BODY, label, 0.0) > r.z - 8.0 * u { SMALL } else { BODY };
+        text(g, face, cut_top(c, body), label, a, 0.0, CENTER);
+        cut_top(c, gap);
+    }
+    if note.len > 0 { text(g, SMALL, cut_top(c, small), note, 0.66 * a, 0.0, CENTER); }
+    return clicked, picture;
+}
+
+// A small board of n × n squares at the start of a game, `rows` rows of men a side,
+// centered in r at `size` pixels, at opacity a.
+fn mini(g: Gui&, r: float4, size: f32, n: i64, rows: i64, a: f32) {
+    add(g, Quad { rect: center(r, size, size), color: float4 { 1.0, 1.0, 1.0, a },
+                  look: float4 { MINI, 2.0 * g.scale, n, rows }, extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
+}
+
+// A level's pips: three dots 10 dp across, `full` of them lit, centered in r.
+fn pips(g: Gui&, r: float4, full: i64, a: f32) {
+    let u = g.scale;
+    for i in 3 {
+        let o: f32 = if i < full { 0.9 } else { 0.25 };
+        fill(g, cell(r, 3, 1, 10.0 * u, 10.0 * u, 5.0 * u, i), float4 { 1.0, 1.0, 1.0, o * a }, 5.0 * u);
+    }
+}
+
+// A clock's tile (rendering.md, "Clocks"): radius 20 dp, lit in the glow color while it
+// runs, red when low, faint while it waits. It takes a press, so a press on it never
+// reaches the board.
+fn clock_tile(g: Gui&, r: float4, style: i64) {
+    if g.input.pressed && inside(r, g.input.at) { g.took = true; }
+    add(g, Quad { rect: r, look: float4 { BUTTON, 20.0 * g.scale, 0.0, 0.0 }, extra: float4 { g.scale, style, 0.0, 0.0 } });
+}
+
 // How text lines up in its rect.
 let LEFT = 0;
 let CENTER = 1;
@@ -363,22 +475,56 @@ fn text_width(g: Gui&, face: i64, s: const u8[:], spacing: f32) -> f32 {
 // Text s in face `face` at opacity a, lined up in r and centered down it, `spacing`
 // pixels after each character. Glyphs land on whole pixels.
 fn text(g: Gui&, face: i64, r: float4, s: const u8[:], a: f32, spacing: f32, align: i64) {
+    write(g, face, r, s, float4 { 1.0, 1.0, 1.0, a }, false, spacing, align, false);
+}
+
+// The widest digit's advance in a face, the cell each digit takes in tabular figures.
+fn figure_width(g: Gui&, face: i64) -> f32 {
     let f .= g.faces[face];
-    let w = text_width(g, face, s, spacing) - spacing;
-    var x = if align == LEFT { r.x } else if align == CENTER { r.x + 0.5 * (r.z - w) } else { r.x + r.z - w };
-    let top = floor(r.y + 0.5 * (r.w - (f.ascent - f.descent)) + 0.5);
+    var w: f32 = 0.0;
+    for d in 10 { w = max(w, f.glyphs[glyph_of(f, '0' + d)].advance); }
+    return w;
+}
+
+// Figures, such as a clock's m:ss, in tabular form: each digit centered in a cell as
+// wide as the widest, so the time doesn't shift as it counts. In the text color at
+// opacity a, or in the forced-capture red.
+fn figures(g: Gui&, face: i64, r: float4, s: const u8[:], a: f32, red: bool, align: i64) {
+    let color = if red { float4 { RED.x, RED.y, RED.z, a } } else { float4 { 1.0, 1.0, 1.0, a } };
+    write(g, face, r, s, color, red, 0.0, align, true);
+}
+
+fn write(g: Gui&, face: i64, r: float4, s: const u8[:], color: float4, own: bool, spacing: f32, align: i64,
+         tabular: bool) {
+    let f .= g.faces[face];
+    let cell = if tabular { figure_width(g, face) } else { 0.0 };
+    var w: f32 = 0.0;
     var i = 0;
     while i < s.len {
         let c, next = next_char(s, i);
+        let adv = f.glyphs[glyph_of(f, c)].advance;
+        w += (if tabular && c >= '0' && c <= '9' { cell } else { adv }) + spacing;
+        i = next;
+    }
+    w -= spacing;
+    var x = if align == LEFT { r.x } else if align == CENTER { r.x + 0.5 * (r.z - w) } else { r.x + r.z - w };
+    let top = floor(r.y + 0.5 * (r.w - (f.ascent - f.descent)) + 0.5);
+    let tint: f32 = if own { 1.0 } else { 0.0 };
+    i = 0;
+    while i < s.len {
+        let c, next = next_char(s, i);
         let gl .= f.glyphs[glyph_of(f, c)];
-        let at = floor(x + 0.5);
+        let digit = tabular && c >= '0' && c <= '9';
+        let step = if digit { cell } else { gl.advance };
+        let shift = if digit { 0.5 * (cell - gl.advance) } else { 0.0 };
+        let at = floor(x + shift + 0.5);
         if gl.box.z > gl.box.x {
             add(g, Quad { rect: float4 { at + gl.box.x, top + gl.box.y, gl.box.z - gl.box.x, gl.box.w - gl.box.y },
-                          color: float4 { 1.0, 1.0, 1.0, a },
+                          color: color,
                           look:  float4 { TEXT, gl.uv.x, gl.uv.y, gl.uv.z },
-                          extra: float4 { g.scale, gl.uv.w, 0.0, 0.0 } });
+                          extra: float4 { g.scale, gl.uv.w, tint, 0.0 } });
         }
-        x += gl.advance + spacing;
+        x += step + spacing;
         i = next;
     }
 }

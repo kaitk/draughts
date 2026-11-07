@@ -7,6 +7,7 @@ namespace settings;
 import std;
 import vec;
 
+import rules from "../rules";
 import board from "../board";
 import gui from "../gui";
 import strings from "../strings";
@@ -21,11 +22,29 @@ let FLAT = 0;                   // the 2D board
 let RAISED = 1;                 // the 3D board (task 015)
 let SYSTEM = -1;                // the language the system's locales pick
 
+// The draughts a new game can be, in the order the setup shows them: the variant, its
+// name and board, whether it is offered, and its name in the file. International is the
+// default.
+let DRAUGHTS = [rules::INTERNATIONAL, rules::BRAZILIAN, rules::RUSSIAN];
+let DRAUGHTS_KEYS = [strings::VARIANT_INTERNATIONAL, strings::VARIANT_BRAZILIAN, strings::VARIANT_RUSSIAN];
+let DRAUGHTS_SIZES = [strings::SIZE_10, strings::SIZE_8, strings::SIZE_8];
+let DRAUGHTS_ON = [true, true, true];
+let DRAUGHTS_NAMES = ["international", "brazilian", "russian"];
+let DEFAULT_DRAUGHTS = rules::INTERNATIONAL;
+// The computer's levels (game::EASY..) and the clocks (clock::NONE..), in the file.
+let LEVEL_NAMES = ["easy", "medium", "hard"];
+let CLOCK_NAMES = ["none", "5+3", "10+5"];
+
 struct Settings {
     season:   i64 = BY_DATE,    // a theme (app/theme.goose), or BY_DATE
     board:    i64 = FLAT,
     hints:    i64 = board::MISTAKES,
     language: i64 = SYSTEM,     // strings::EN.., or SYSTEM
+    // A new game's setup, kept for the next one.
+    variant: i64 = DEFAULT_DRAUGHTS,
+    level:   i64 = 1,           // medium
+    color:   i64 = rules::WHITE, // the child's pieces against the computer
+    clock:   i64 = 0,           // none
 }
 
 // What the screen asks for.
@@ -52,6 +71,16 @@ fn parse(text: const u8[:]) -> Settings {
         if key == "language" {
             for name, i in strings::LANGUAGES { if value == name { s.language = i; } }
         }
+        if key == "draughts" {
+            for name, i in DRAUGHTS_NAMES { if value == name && DRAUGHTS_ON[i] { s.variant = DRAUGHTS[i]; } }
+        }
+        if key == "level" {
+            for name, i in LEVEL_NAMES { if value == name { s.level = i; } }
+        }
+        if key == "color" && value == "black" { s.color = rules::BLACK; }
+        if key == "clock" {
+            for name, i in CLOCK_NAMES { if value == name { s.clock = i; } }
+        }
     }
     return s;
 }
@@ -66,6 +95,13 @@ fn write(s: Settings, out: u8[>..]&) {
     out.append(if s.hints == board::MOVES { "\nhints = moves" } else { "\nhints = mistakes" });
     out.append("\nlanguage = ");
     out.append(if s.language >= 0 { strings::LANGUAGES[s.language] } else { "system" });
+    out.append("\ndraughts = ");
+    for v, i in DRAUGHTS { if s.variant == v { out.append(DRAUGHTS_NAMES[i]); } }
+    out.append("\nlevel = ");
+    out.append(LEVEL_NAMES[s.level]);
+    out.append(if s.color == rules::BLACK { "\ncolor = black" } else { "\ncolor = white" });
+    out.append("\nclock = ");
+    out.append(CLOCK_NAMES[s.clock]);
     out.append("\n");
 }
 

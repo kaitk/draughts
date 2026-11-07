@@ -3,22 +3,33 @@ season = by-date
 board = 2d
 hints = mistakes
 language = system
+draughts = international
+level = medium
+color = white
+clock = none
 
 read back:
 season = winter
 board = 3d
 hints = moves
 language = et
+draughts = brazilian
+level = easy
+color = black
+clock = 10+5
 
 unknown values and a line without one:
 season = by-date
 board = 2d
 hints = mistakes
 language = system
+draughts = international
+level = medium
+color = white
+clock = none
 
-summer: season = summer;board = 2d;hints = mistakes;language = system; changed true, board hints moves false
-3D: season = summer;board = 2d;hints = mistakes;language = system; changed false, board hints moves false
-all moves: season = summer;board = 2d;hints = moves;language = system; changed true, board hints moves true
-Eesti: season = summer;board = 2d;hints = moves;language = et; changed true, board hints moves true
-by the date: season = by-date;board = 2d;hints = moves;language = et; changed true, board hints moves true
-the game's toggle: season = by-date;board = 2d;hints = mistakes;language = et; changed true, board hints moves false
+summer: season = summer;board = 2d;hints = mistakes;language = system;draughts = international;level = medium;color = white;clock = none; changed true, board hints moves false
+3D: season = summer;board = 2d;hints = mistakes;language = system;draughts = international;level = medium;color = white;clock = none; changed false, board hints moves false
+all moves: season = summer;board = 2d;hints = moves;language = system;draughts = international;level = medium;color = white;clock = none; changed true, board hints moves true
+Eesti: season = summer;board = 2d;hints = moves;language = et;draughts = international;level = medium;color = white;clock = none; changed true, board hints moves true
+by the date: season = by-date;board = 2d;hints = moves;language = et;draughts = international;level = medium;color = white;clock = none; changed true, board hints moves true

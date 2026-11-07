@@ -1,6 +1,7 @@
 // Resuming after Android kills the app (shell::save, shell::restore), headless: the
 // screen, the position, where the game began, the last move's marks, and the undo
-// history come back from the image, and undo goes on working; an image that is damaged,
+// history come back from the image, and undo goes on working; a game of another variant
+// comes back with its own, its clocks, and whom it is against; an image that is damaged,
 // cut short, or of something else changes nothing.
 import std;
 import vec;
@@ -55,4 +56,16 @@ fn main() {
     print("not an image: ", shell::restore(other, "season = winter\n"));
     print("empty: ", shell::restore(other, ""));
     show(other, "  left as it was");
+
+    // An International game against the computer playing black, at easy, with black's
+    // 5+3 clock running, comes back into a shell started on Russian.
+    var intl = shell::new(rules::INTERNATIONAL);
+    game::start(intl.game, rules::INTERNATIONAL, clock::BLITZ, rules::BLACK, game::EASY);
+    clock::moved(intl.game.clock, rules::WHITE);
+    clock::tick(intl.game.clock, 12.5);
+    var russian = shell::new(rules::RUSSIAN);
+    print("International restored: ", shell::restore(russian, shell::save(intl)));
+    let gm .= russian.game;
+    print("  variant ", gm.b.variant, ", ", rules::fen(gm.b.pos), ", clock ", gm.clock.kind, " left ", gm.clock.left[0],
+          " ", gm.clock.left[1], " running ", gm.clock.running, ", computer ", gm.computer, ", level ", gm.level);
 }

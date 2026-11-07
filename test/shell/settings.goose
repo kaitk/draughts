@@ -2,7 +2,8 @@
 // was written, and a file that lacks a key or says something unknown leaves the default;
 // on the screen a tap applies at once and marks the settings changed for the app to
 // write: a season, move hints (which the game's board takes), the language; the 3D
-// board does nothing until task 015; the game's hints toggle changes the setting too.
+// board does nothing until task 015. A new game's setup is kept there too: the draughts,
+// the level, the child's color, and the clock.
 import std;
 import vec;
 import rules from "../../rules";
@@ -51,11 +52,11 @@ fn main() {
     var out: u8[>..] = [];
     settings::write(settings::Settings {}, out);
     print("defaults:\n", out);
-    let s = settings::parse("season = winter\nhints = moves\nlanguage = et\nboard = 3d\n");
+    let s = settings::parse("season = winter\nhints = moves\nlanguage = et\nboard = 3d\ndraughts = brazilian\nlevel = easy\ncolor = black\nclock = 10+5\n");
     out.clear();
     settings::write(s, out);
     print("read back:\n", out);
-    let odd = settings::parse("season = monsoon\nhints\nlanguage = xx\n  board =  2d  \n");
+    let odd = settings::parse("season = monsoon\nhints\nlanguage = xx\n  board =  2d  \ndraughts = english\nlevel = 4\ncolor = red\nclock = 3+2\n");
     out.clear();
     settings::write(odd, out);
     print("unknown values and a line without one:\n", out);
@@ -76,11 +77,4 @@ fn main() {
     show(sh, "Eesti");
     tap(sh, g, tile(g, 1), 1.4);            // by the date
     show(sh, "by the date");
-
-    // The game's toggle is the same setting.
-    tap(sh, g, tile(g, 0), 2.0);            // back
-    sh.screen = shell::GAME;
-    frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 2.1);
-    tap(sh, g, tile(g, 4), 2.2);            // the hints toggle
-    show(sh, "the game's toggle");
 }

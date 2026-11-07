@@ -1,5 +1,5 @@
 saved: screen 1, W:We3,g3,d4:Be5,b6,d6, began W:Wc3,e3,g3:Bb6,d6,f6, history 2, last true 25-20
-image 14932 bytes
+image 14988 bytes
 restored: true
   as it was: screen 1, W:We3,g3,d4:Be5,b6,d6, began W:Wc3,e3,g3:Bb6,d6,f6, history 2, last true 25-20
   undo: screen 1, B:We3,g3,d4:Bb6,d6,f6, began W:Wc3,e3,g3:Bb6,d6,f6, history 1, last true 10-15
@@ -9,3 +9,5 @@ cut short: false
 not an image: false
 empty: false
   left as it was: screen 0, W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, began W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 0, last false 0-0
+International restored: true
+  variant 1, W:W31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50:B1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20, clock 1 left 300.0 287.5 running 1, computer 1, level 0

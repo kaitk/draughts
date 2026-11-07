@@ -30,3 +30,36 @@ hints.moves = All moves
 
 board.flat = 2D
 board.raised = 3D
+
+game.home = Home
+game.start_over = Start over
+game.take_back = Take back
+turn.white = White's turn
+turn.black = Black's turn
+won.white = White wins
+won.black = Black wins
+
+setup.draughts = Draughts
+setup.level = Level
+setup.color = Your pieces
+setup.clock = Clock
+setup.play = Play
+
+variant.international = International
+variant.brazilian = Brazilian
+variant.russian = Russian
+size.10 = 10 × 10
+size.8 = 8 × 8
+
+pick.easy = Easy
+pick.medium = Medium
+pick.hard = Hard
+
+color.white = White
+color.black = Black
+
+clock.none = No clock
+clock.blitz = 5 min
+clock.blitz_note = +3 s a move
+clock.rapid = 10 min
+clock.rapid_note = +5 s a move

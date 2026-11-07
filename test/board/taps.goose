@@ -46,9 +46,9 @@ fn tap(b: board::Board&, l: board::Layout, text: const u8[:], now: f64) {
 fn main() {
     let v .= rules::VARIANTS[rules::RUSSIAN];
     let l = board::layout(1280.0, 800.0, 8);
-    print("board ", l.board, " square ", l.inner.w, " panel ", l.panel);
+    print("board ", l.board, " square ", l.inner.w, " panels ", l.left, " ", l.right);
     let p = board::layout(800.0, 1280.0, 8);
-    print("portrait board ", p.board, " panel ", p.panel);
+    print("portrait board ", p.board, " panels ", p.left, " ", p.right);
     // The corners of the squares: a1 bottom left, h8 top right; just off the board is no square.
     print("hits: ", name(v, board::hit(l, v, float2 { l.inner.x + 1.0, l.inner.y + l.inner.z - 1.0 })),
           " ", name(v, board::hit(l, v, float2 { l.inner.x + l.inner.z - 1.0, l.inner.y + 1.0 })),

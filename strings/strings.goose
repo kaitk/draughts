@@ -21,6 +21,13 @@ let KEYS = [
     "season.winter", "season.spring", "season.summer", "season.autumn",
     "hints.mistakes", "hints.moves",
     "board.flat", "board.raised",
+    "game.home", "game.start_over", "game.take_back",
+    "turn.white", "turn.black", "won.white", "won.black",
+    "setup.draughts", "setup.level", "setup.color", "setup.clock", "setup.play",
+    "variant.international", "variant.brazilian", "variant.russian", "size.10", "size.8",
+    "pick.easy", "pick.medium", "pick.hard",
+    "color.white", "color.black",
+    "clock.none", "clock.blitz", "clock.blitz_note", "clock.rapid", "clock.rapid_note",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -45,7 +52,34 @@ let HINTS_MISTAKES = 19;
 let HINTS_MOVES = 20;
 let BOARD_FLAT = 21;
 let BOARD_RAISED = 22;
-let COUNT = 23;
+let GAME_HOME = 23;
+let GAME_START_OVER = 24;
+let GAME_TAKE_BACK = 25;
+let TURN_WHITE = 26;
+let TURN_BLACK = 27;
+let WON_WHITE = 28;
+let WON_BLACK = 29;
+let SETUP_DRAUGHTS = 30;
+let SETUP_LEVEL = 31;
+let SETUP_COLOR = 32;
+let SETUP_CLOCK = 33;
+let SETUP_PLAY = 34;
+let VARIANT_INTERNATIONAL = 35;
+let VARIANT_BRAZILIAN = 36;
+let VARIANT_RUSSIAN = 37;
+let SIZE_10 = 38;
+let SIZE_8 = 39;
+let PICK_EASY = 40;
+let PICK_MEDIUM = 41;
+let PICK_HARD = 42;
+let COLOR_WHITE = 43;
+let COLOR_BLACK = 44;
+let CLOCK_NONE = 45;
+let CLOCK_BLITZ = 46;
+let CLOCK_BLITZ_NOTE = 47;
+let CLOCK_RAPID = 48;
+let CLOCK_RAPID_NOTE = 49;
+let COUNT = 50;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

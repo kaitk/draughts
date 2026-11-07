@@ -9,6 +9,8 @@
 //   goose draughts.goose -- --fen W:Wc3,Kh6:Be5   starts from a position
 //   goose draughts.goose -- --hints moves         shows the selected piece's targets
 //   goose draughts.goose -- --lang et             another language than the system's
+//   goose draughts.goose -- --variant russian     a new game of another draughts
+//   goose draughts.goose -- --clock 5+3           with a clock; --computer white plays white
 //   scripts/android.py app/draughts.goose --run   on the tablet (docs/development.md)
 
 import std;
@@ -42,8 +44,11 @@ fn main() {
     // --tap SQUARE (any number, played in order on the first frames), --frames N (then
     // save draughts.png), --hints moves (show targets; mistakes only by default), --lang
     // CODE (a language with a file in strings/; the system's by default), --screen
-    // home|game|settings (home unless a position or taps are given). --theme, --hints, and
-    // --lang override the settings for the run without changing them.
+    // home|game|settings|friend|computer (home unless a position, taps, a clock, or the
+    // computer are given; the last two open home's setup), --variant
+    // international|brazilian|russian, --clock none|5+3|10+5, --computer white|black (a
+    // new game). --theme, --hints, and --lang override the settings for the run without
+    // changing them.
     var width = 1280;
     var height = 800;
     var kind = -1;
@@ -51,8 +56,12 @@ fn main() {
     var hints = -1;
     var lang = -1;
     var screen = -1;
+    var variant = -1;
+    var clock_kind = -1;
+    var computer = -1;
+    var setup = 0;
     var fen:  u8[>..]       = [];
-    var taps: u8[..2][..16] = [];
+    var taps: u8[..3][..16] = [];
     let argv = args();
     var i = 1;
     while i + 1 < argv.len {
@@ -70,10 +79,15 @@ fn main() {
         if argv[i] == "--fen" { fen.append(argv[i + 1]); }
         if argv[i] == "--hints" && argv[i + 1] == "moves" { hints = board::MOVES; }
         if argv[i] == "--lang" { lang = strings::pick(argv[i + 1]); }
+        for name, k in settings::DRAUGHTS_NAMES { if argv[i] == "--variant" && argv[i + 1] == name { variant = settings::DRAUGHTS[k]; } }
+        for name, k in settings::CLOCK_NAMES { if argv[i] == "--clock" && argv[i + 1] == name { clock_kind = k; } }
+        if argv[i] == "--computer" { computer = if argv[i + 1] == "white" { rules::WHITE } else { rules::BLACK }; }
         if argv[i] == "--screen" {
             screen = if argv[i + 1] == "game" { shell::GAME } else if argv[i + 1] == "settings" { shell::SETTINGS } else { shell::HOME };
+            if argv[i + 1] == "friend" { setup = home::FRIEND; }
+            if argv[i + 1] == "computer" { setup = home::COMPUTER; }
         }
-        if argv[i] == "--tap" && argv[i + 1].len == 2 && taps.len < 16 {
+        if argv[i] == "--tap" && argv[i + 1].len >= 2 && argv[i + 1].len <= 3 && taps.len < 16 {
             let t .= taps.push([]);
             t.append(argv[i + 1]);
         }
@@ -104,7 +118,11 @@ fn main() {
     guard gfx::open(strings::get(strings::APP_NAME), width, height, window_flags) else { abort(str("gfx: ", gfx::error())); }
     defer gfx::close();
 
-    var sh = shell::new(rules::RUSSIAN);
+    // A new game of the draughts the setup last chose, until a saved game is restored.
+    var sh = shell::new((if variant >= 0 { variant } else { prefs.variant }) as u8);
+    if clock_kind >= 0 || computer >= 0 {
+        game::start(sh.game, sh.game.b.variant, max(clock_kind, 0), computer, prefs.level);
+    }
     sh.prefs = prefs;
     sh.prefs.hints = hints;
     let gm .= sh.game;
@@ -115,11 +133,12 @@ fn main() {
         guard ok else { abort(str("not a position: ", fen)); }
         board::set(b, p);
     }
-    sh.screen = if screen >= 0 { screen } else if fen.len > 0 || taps.len > 0 { shell::GAME } else { shell::HOME };
+    sh.screen = if screen >= 0 { screen } else if fen.len > 0 || taps.len > 0 || clock_kind >= 0 || computer >= 0 { shell::GAME } else { shell::HOME };
+    sh.setup = setup;
     // The game as it was when the app was last paused (shell::restore; nothing changes
     // for a missing or damaged file). A run with flags that set up a game or take a
     // screenshot neither reads nor writes it.
-    let keep = screen < 0 && fen.len == 0 && taps.len == 0 && frames < 0;
+    let keep = screen < 0 && fen.len == 0 && taps.len == 0 && frames < 0 && variant < 0 && clock_kind < 0 && computer < 0;
     if keep {
         var saved: u8[>..] = [];
         if read_file(save_path, saved) { shell::restore(sh, saved); }
@@ -143,6 +162,9 @@ fn main() {
         // the loop run once more before blocking, so the game is written here: one small
         // write per pause, none while idle.
         if keep && focused && !gfx::focused() { write_file_atomic(save_path, shell::save(sh)); }
+        // The clocks count only time the game was on screen: not the gap while Android had
+        // the app paused, nor while it was in the background.
+        if !focused || !gfx::focused() { game::pause(sh.game); }
         focused = gfx::focused();
         // A new season's photograph, colors, and blurred copies load two frames after the
         // tap: the frame after it shows the tile lit, and is on screen before the load
@@ -194,7 +216,8 @@ fn main() {
         if tapped < taps.len && !b.moving && sh.screen == shell::GAME {
             let v .= rules::VARIANTS[b.variant];
             let t .= taps[tapped];
-            let p = board::center(l, v, board::bit_at(v, t[0] - 97, t[1] - 49));
+            let row, ok = parse_int(t[1..]);
+            let p = board::center(l, v, board::bit_at(v, t[0] - 97, row - 1));
             board::press(b, l, p, now);
             board::release(b, l, p, now);
             tapped++;

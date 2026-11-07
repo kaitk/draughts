@@ -29,30 +29,42 @@ struct Layout {
     scale: f32,
     board: float4,      // x, y, size of the board; w: the corner radius
     inner: float4,      // x, y, size of the squares inside the board's thin lip; w: one square
-    panel: float4,      // x, y, width, height of the space for the side panel
+    left:  float4,      // x, y, width, height of the panel that leaves the game (above in portrait)
+    right: float4,      // and of the one that plays it (below in portrait)
     n:     i64,         // squares per side
+    flip:  bool,        // turned, black playing up the screen: a child playing black
 }
 
-// Landscape: the board fills the height less a 24 dp margin, with a 272 dp panel to its
-// right. Portrait: the board fills the width, with a 240 dp panel below it.
+let SIDE = 232.0;           // dp: each panel's width in landscape
+let TOP = 104.0;            // dp: the bar above the board in portrait
+let BOTTOM = 196.0;         // dp: the play below it
+let GAP = 24.0;
+
+// The game screen (rendering.md, "Game screen"). Landscape: the board fills the height
+// less a 24 dp margin, between two panels 232 dp wide and as tall as it. Portrait: the
+// board fills the width less the margin, with a 104 dp bar above it and the 196 dp play
+// below it, both as wide as the board.
 fn layout(width: f32, height: f32, n: i64) -> Layout {
     let s = min(width, height) / 800.0;
-    let gap = 24.0 * s;
+    let gap = GAP * s;
     var l = Layout { scale: s, n: n, .. };
     if width >= height {
-        let panel = 272.0 * s;
-        let size = min(height - 2.0 * gap, width - panel - 3.0 * gap);
-        let x = (width - (size + gap + panel)) / 2.0;
+        let side = SIDE * s;
+        let size = min(height - 2.0 * gap, width - 2.0 * side - 4.0 * gap);
+        let x = (width - (size + 2.0 * side + 2.0 * gap)) / 2.0;
         let y = (height - size) / 2.0;
-        l.board = float4 { x, y, size, 0.016 * size };
-        l.panel = float4 { x + size + gap, y, panel, size };
+        l.left = float4 { x, y, side, size };
+        l.board = float4 { x + side + gap, y, size, 0.016 * size };
+        l.right = float4 { x + side + gap + size + gap, y, side, size };
     } else {
-        let panel = 240.0 * s;
-        let size = min(width - 2.0 * gap, height - panel - 3.0 * gap);
+        let top = TOP * s;
+        let bottom = BOTTOM * s;
+        let size = min(width - 2.0 * gap, height - top - bottom - 4.0 * gap);
         let x = (width - size) / 2.0;
-        let y = (height - (size + gap + panel)) / 2.0;
-        l.board = float4 { x, y, size, 0.016 * size };
-        l.panel = float4 { x, y + size + gap, size, panel };
+        let y = (height - (top + size + bottom + 2.0 * gap)) / 2.0;
+        l.left = float4 { x, y, size, top };
+        l.board = float4 { x, y + top + gap, size, 0.016 * size };
+        l.right = float4 { x, y + top + gap + size + gap, size, bottom };
     }
     place(l);
     return l;
@@ -80,20 +92,25 @@ fn bit_at(v: rules::Variant&, x: i64, y: i64) -> i64 {
     return y * v.h + x / 2 + (y + 1) / 2;
 }
 
-// The square under a point, as a rules bit, or -1. White plays up the screen.
+// The square under a point, as a rules bit, or -1. White plays up the screen, black on
+// a turned board.
 fn hit(l: Layout, v: rules::Variant&, p: float2) -> i64 {
     let fx = (p.x - l.inner.x) / l.inner.w;
     let fy = (p.y - l.inner.y) / l.inner.w;
-    guard fx >= 0.0 && fy >= 0.0 else { return -1; }
+    guard fx >= 0.0 && fy >= 0.0 && fx < v.size && fy < v.size else { return -1; }
     let x = floor(fx) as i64;
     let row = floor(fy) as i64;
-    return bit_at(v, x, v.size - 1 - row);
+    return if l.flip { bit_at(v, v.size - 1 - x, row) } else { bit_at(v, x, v.size - 1 - row) };
 }
 
 // The center of a square, in pixels.
 fn center(l: Layout, v: rules::Variant&, b: i64) -> float2 {
-    let x = v.x_of[b] as f32;
-    let row = (v.size - 1 - v.y_of[b]) as f32;
+    var x = v.x_of[b] as f32;
+    var row = (v.size - 1 - v.y_of[b]) as f32;
+    if l.flip {
+        x = (v.size - 1) - x;
+        row = (v.size - 1) - row;
+    }
     return float2 { l.inner.x + (x + 0.5) * l.inner.w, l.inner.y + (row + 0.5) * l.inner.w };
 }
 
@@ -182,6 +199,12 @@ fn set(b: Board&, p: rules::Position) {
 
 // Starts the game over from where it began.
 fn restart(b: Board&) { set(b, b.start); }
+
+// Starts a new game of another variant, from its start.
+fn reset(b: Board&, variant: u8) {
+    b.variant = variant;
+    set(b, rules::start(variant));
+}
 
 // Takes back the last move, even one still animating; false when there is none.
 fn undo(b: Board&) -> bool {
@@ -392,7 +415,7 @@ fn fill(b: Board&, l: Layout, now: f64) {
     }
     let fade_at = hops(b.move) as f64 * HOP;
     for row in v.size {
-        let y = v.size - 1 - row;
+        let y = if l.flip { row } else { v.size - 1 - row };
         for x in v.size {
             let sq = bit_at(v, x, y);
             guard sq >= 0 else { continue; }
