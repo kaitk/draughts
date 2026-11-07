@@ -1,0 +1,44 @@
+level 0: skill 10, sees 2+3 plies, margin 60, temper 50, gift 75 per 1000
+level 1: skill 45, sees 4+7 plies, margin 60, temper 20, gift 0 per 1000
+level 2: skill 90, sees 10+13 plies, margin 6, temper 2, gift 0 per 1000
+W:Wb2,e1,b4,c3,g3:Bb6,f6,h6,f8  best wins in 13 plies
+  level 0: b4-c5  wins in 13 plies
+  level 1: b4-c5  wins in 13 plies
+  level 2: b4-c5  wins in 13 plies
+W:Wb2,a3,c3,e3,g3,f4,h4:Ba5,c5,e5,b6,d6,h6,g7  best 208
+  level 0: e3-d4  -101
+  level 1: a3-b4  208
+  level 2: a3-b4  208
+W:Wc1,g1,b2,d2,h2,a3,c3,e3,g3,f4,h4:Ba5,c5,g5,b6,d6,f6,h6,e7,g7,b8,d8  best 282
+  level 0: f4-e5  92
+  level 1: g1-f2  282
+  level 2: g1-f2  282
+W:W22,27,28,36,37,38,39,40,42,43,44,45,46,47,48,50:B1,2,4,6,7,8,9,10,11,12,13,16,17,19,20,29,35  best 100
+  level 0: 39-34  -207
+  level 1: 28-23  100
+  level 2: 28-23  100
+B:W27,29,31,32,33,34,35,37,41,43,44,45,46,49,50:B1,2,3,4,5,6,8,9,11,15,17,18,20,24,25  best 195
+  level 0: 5-10  -4
+  level 1: 18-23  195
+  level 2: 18-23  195
+W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8
+  level 0: e3-f4 c3-b4 c3-b4 c3-b4  (the same in steps)
+  level 1: e3-d4 c3-b4 e3-d4 c3-d4  (the same in steps)
+  level 2: c3-b4 c3-b4 e3-f4 g3-h4  (the same in steps)
+W:Wa1,c1,e1,g1,b2,d2,f2,a3,g3:Bd4,e5,d6,c7,e7,b8,d8,f8,h8
+  level 0: d2-e3 b2-c3 g3-h4 g3-f4  (the same in steps)
+  level 1: g3-f4 g3-f4 d2-c3 d2-e3  (the same in steps)
+  level 2: a3-b4 g3-f4 a3-b4 a3-b4  (the same in steps)
+B:WKa1,c3,e3,g3:BKh2,b6,d6
+  level 0: h2:f4:d2:b4 h2:f4:d2:b4 h2:f4:d2:a5 h2:f4:d2:b4  (the same in steps)
+  level 1: h2:f4:d2:b4 h2:f4:d2:b4 h2:f4:d2:a5 h2:f4:d2:b4  (the same in steps)
+  level 2: h2:f4:d2:b4 h2:f4:d2:b4 h2:f4:d2:b4 h2:f4:d2:a5  (the same in steps)
+W:W31-50:B1-20
+  level 0: 33-28 34-29 34-30 32-27  (the same in steps)
+  level 1: 33-28 33-29 33-29 34-30  (the same in steps)
+  level 2: 34-30 35-30 34-30 32-27  (the same in steps)
+W:W31,35,36,38,39,40,41,43,44,45,46,47,48,49:B1,2,3,4,5,6,7,10,11,12,13,14,17,22
+  level 0: 35-30 39-34 39-34 38-32  (the same in steps)
+  level 1: 48-42 31-26 39-34 31-26  (the same in steps)
+  level 2: 39-34 39-34 40-34 31-27  (the same in steps)
+easy, after wins, then losses: 14 18 22 26 30 30 30 26 22 22 18 14 10 6 2 0 0
