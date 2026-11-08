@@ -21,8 +21,11 @@ which would overwrite the main checkout's while another session uses them.
   `ai::think` as the app's worker would; the clock value on its own; and the computer's
   time a move on the clock, over whole games with simulated time, in `pace`), `shell`
   (home, the switch to the game and back, settings and their file, their taps and the
-  board beside them, the transition between home and settings (its frames, its end, a
-  tap during it, turning it round), home's setup and play, the setup's board (each
+  board beside them, the transitions between home and settings, home and the game, and
+  the puzzles to pick from and a puzzle (their frames, the end, a tap during them, turning
+  round, the game's clock and the computer frozen, a won game's way home, the screen
+  reached as opened straight: `transition`, `game_transition`, `puzzle_transition`),
+  home's setup and play, the setup's board (each
   draughts' start, turned for black, the game in progress back on the menu, the game play
   starts, `setup`), the puzzles' picker and a puzzle played through its misses, hint,
   reply, and stars, a capture tapped stop by stop in a puzzle and no targets in any tier,
@@ -139,10 +142,12 @@ measuring there:
 - Rotation for a screenshot: `adb shell settings put system accelerometer_rotation 0`,
   then `user_rotation 0` is portrait (1200 × 1920) and `1` landscape on this tablet;
   read both settings first and put them back after.
-- During a transition between home and settings both screens' quads are declared, the
-  one left first, so `drive::tile(g, n)` counts the wrong screen's tiles. A shell test
-  that taps again after such a switch idles past `shell::DURATION` first
-  (`test/shell/shell.goose`).
+- During a transition (home and settings, home and the game, the puzzles and a puzzle)
+  both screens' quads are declared, the one left first, so `drive::tile(g, n)` counts the
+  wrong screen's tiles and `drive::at(sh.layout, ...)` finds squares on a moving board. A
+  shell test that taps again after such a switch idles past `shell::DURATION` first
+  (`switch` in `test/shell/shell.goose`); a tile of the screen come to is found at rest
+  beforehand, its taps being where it rests.
 - Tests that tap tiles find them by the order of `gui::BUTTON` quads; the clocks are
   `BUTTON` quads too, so the game's helpers skip styles from `gui::CLOCK_RUN` on.
 - To see when something happens on the tablet, log from the program's C with

@@ -66,8 +66,8 @@ icon and launch). The order for what is left:
 4. 034, the setup's board shows the game being set up: built and checked on the Mac
    (2026-11-08); the tablet check is open.
 5. 022, transitions: continue and a new game with the sharp-to-blurred crossfade, the
-   game back to home, and a puzzle opened from the picker if it stays as cheap; not the
-   setups.
+   game back to home, and a puzzle opened from the picker: built and checked on the Mac
+   (2026-11-08); the tablet check is open. Not the setups.
 6. 030, phones and other screen sizes, before memory, so memory is sized and measured on
    the final layouts.
 7. 032, memory: measure first, then the blur against its alternatives, ASTC with a

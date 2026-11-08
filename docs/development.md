@@ -65,10 +65,17 @@ the screens around it `shell/` (home, and which screen shows), each tested headl
 `--tap` (`c3`, or `d10` on 10 × 10), or `--screen game` open the game screen,
 `--screen settings` settings, `--screen friend` or `computer` home's setup, `--screen
 puzzles` the puzzles to pick from, and `--puzzle ID` that puzzle, whose taps go to its
-board (`--puzzle 21 --tap f4 --tap e5`). `--go settings` (or `home`) switches there
-on the second frame through its transition, and `--hold 0.4` keeps a transition at 40%
-of the way, for a screenshot: `--go settings --hold 0.5 --frames 12`, or `--screen
-settings --go home --hold 0.5 --frames 12` for the way back. `--win 1.2` keeps a win
+board (`--puzzle 21 --tap f4 --tap e5`). `--go settings` (or `home`, `game`, `play`,
+`puzzles`, `puzzle`) switches there on the second frame through its transition, once
+any `--tap`s have played out, and `--hold 0.4` keeps a transition at 40% of the way, for
+a screenshot: `--go settings --hold 0.5 --frames 12`, or `--screen settings --go home
+--hold 0.5 --frames 12` for the way back. `game` goes as continue does, `play` as the
+setup's play (`--screen friend --variant russian --go play`; it leaves `settings.txt`
+alone), `puzzle` from the puzzles to pick from (`--screen puzzles --go puzzle --puzzle
+21`), and `puzzles` back to them (`--puzzle 21 --go puzzles`). `--hold 1` ends the
+transition at once, to shoot the screen reached through it. A won game's way home:
+`--variant russian --fen W:Wa1,c1,g1,b2,h2,e3:Bf4 --tap e3 --tap g5 --win 3 --go home
+--hold 0.5 --frames 3000`. `--win 1.2` keeps a win
 at 1.2 s into its celebration: `--variant russian --fen W:Wa1,c1,g1,b2,h2,e3:Bf4 --tap
 e3 --tap g5 --win 1.2 --frames 3000`. `--variant
 international|brazilian|russian` starts a new game of that draughts (else the setup's

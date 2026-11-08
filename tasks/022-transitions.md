@@ -1,7 +1,8 @@
 # 022: Transitions between screens
 
-Status: in-progress (home to settings and back done, 2026-11-08; continue, a friend, and
-the photograph's crossfade to come)
+Status: in-progress (home to settings, home to the game, the photograph's crossfade, and
+the puzzles to a puzzle built and checked on the Mac, 2026-11-08; the tablet check is
+open)
 
 Optional, after the MVP (2026-11-07): quick, not instant, changes between screens for
 feel: home's menu fading or sliding away on continue while the board grows into its
@@ -103,10 +104,86 @@ halfway through the slide.
   content crossfades, its height eased.
 - **The 3D home board (task 015)** adds its camera tilt to the eased layout when it comes.
 
+## Home and the game, the photograph, a puzzle (2026-11-08)
+
+Built on the base above in about 35 minutes, reading included. The same 0.25 s,
+smoothstep, 40 dp drift.
+
+- **Continue, play, and the game's home:** the board grows from home's place into the
+  game's (`panel::layout`): at 1280 × 800 from 560 px at x 580 to 720 px at x 280, at
+  800 × 1280 from 620 px at y 128 to 752 px at y 218. Home's column fades out under the
+  game's panels. One board, so no piece fades. Play from a setup leaves with the setup
+  as it was (`shell.left`, home's column when it was left), so its board, the game play
+  starts (task 034), grows into the game without a jump, turned for black against the
+  computer as it was. Back during it turns it round where it is (the board's x 386, 369,
+  then 386 px on the frames around a home tap at 1280 × 800). The switch frame shows
+  what was declared, as between home and settings.
+- **The game frozen:** `game::frame` takes `frozen` while the transition into the game
+  runs: no clock tick and no `think`; the clock counts from the frame after the end,
+  never the gap across it. Leaving, the shell pauses the game (as any screen but the game
+  does) and declares it with `game::still`, which declares the panels and a win's card
+  and changes nothing.
+- **A won game leaving:** its card fades out with the panels, and its dim, the winning
+  piece's lift, and the glow fade with them (`game::cheer` takes a share: the game's
+  `mix`). `gui::fade` now multiplies a quad's fade into the one it has, so a card fading
+  in during a transition fades further. The other way (continue into a won game) fades
+  them in.
+- **The photograph:** `shell.blur` replaces `sharp`, eased with the board between the two
+  screens' (0 home, settings, and the picker; 1 the game and a puzzle). The board pass
+  takes it in `scene.x` (0..1, or -1 with no photograph, which was `has`), the
+  brightness 1.0 to 0.8 in `scene.y`, binds the sharp texture beside the blurred one,
+  and mixes them only between the ends: at rest it samples one, so the screens at rest
+  are byte-identical. The glass copy is unchanged.
+- **A puzzle from the picker and back:** cheap, so done. The board grows out of the
+  tapped puzzle's tile (`picker::frame` reports the tile of a puzzle, `shell::in_tile`)
+  into its place, and shrinks back into it on the way out; at rest on the picker it lies
+  off the screen as before. The picker's board is the puzzle's now (`board_of`, `which`),
+  so no other board fades under it. Next goes on to the next puzzle at once, as before.
+- **Quads:** a landscape frame between home and the game declares 130 of the 512 (home
+  77, the game 53); from a friend's setup 185 (the setup 132); from the picker to a
+  puzzle 141. Pieces over the UI: at most 4, the limit (the computer's setup's two
+  beside a clocked game's two; a won game's two beside home's wordmark).
+- **Found in passing:** a game against the computer playing white, opened straight (a
+  restored game, or `--computer white`), drew its pieces unturned on a turned board,
+  since `shell.came` was only set by home and settings; every screen sets it now, and
+  the at-rest shot of that game changed to the turned one. The `--win` flag keeps a
+  negative start before 3 s of run time; `--go` waits for it.
+- **Watch on the tablet:** while the board grows into the game it passes under the
+  game's right panel (landscape) or home's sheet and the game's top bar (portrait) as
+  they fade, and a puzzle's board grows from behind the picker's glass rows. Each lasts
+  under 0.15 s at low opacity on the Mac; if it reads as busy, fade the incoming panels
+  in later (on e² rather than e) or drop the drift for the panel the board passes.
+- **Development flags:** `--go game|play|puzzles|puzzle` beside `home` and `settings`;
+  `--go` waits for `--tap`s and a `--win` to have played out, so a won game's way home
+  can be shot; `--go play` leaves `settings.txt` alone; `--hold 1` ends a transition at
+  once (`docs/development.md`).
+
+Checked:
+
+- Tests: `test/shell/game_transition.goose` (continue and home both ways, both
+  orientations: the frames, the board easing one way and growing, the end then no
+  frames, take back mid-way landing on the game, the game's home mid-way turning it
+  round, play from a friend's setup with its small boards fading and its board 8 × 8 all
+  the way, black's clock and the computer's ask unchanged through both transitions and
+  counting after, a won game's dim, lift, and card fading, and the game reached as the
+  game opened straight) and `test/shell/puzzle_transition.goose` (the board from the tile
+  and back, the end then no frames, the way out mid-way turning it round, the puzzle as
+  opened straight). `test/shell/shell.goose`, `setup.goose`, and `puzzles.goose` idle
+  past a transition before their next tap; no expected output changed. All 36 tests pass
+  through TinyCC and built at -O2.
+- On the Mac, at 960 × 600 and 600 × 960: frames at 25, 50, and 75% for home to the game,
+  the game to home, a friend's play, the computer's play (turned), a won game to home,
+  the picker to a puzzle, and back. Home, the game, a friend's setup, a won game, a
+  puzzle, and the picker at rest are byte-identical before and after the change;
+  settings vary run to run by their flash as before; the game against the computer
+  playing white changed (turned, above). The game, home, a puzzle, and the picker reached
+  through a transition are byte-identical to them opened straight.
+- Not yet on the tablet.
+
 ## Acceptance criteria
 
-- [ ] Continue, a friend, settings, and back animate in both orientations (settings and
-      back done)
+- [x] Continue, a friend, settings, and back animate in both orientations (on the Mac)
 - [x] A tap during a transition lands on the new screen
 - [x] Headless tests: a transition ends and stops asking for frames
+- [x] The game counts no time and the computer doesn't think during a transition
 - [ ] The tablet draws no frames once a transition has ended

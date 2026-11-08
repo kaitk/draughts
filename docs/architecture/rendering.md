@@ -346,23 +346,42 @@ the prototype tried, kept for 3D:
 
 ### Transitions
 
-Home to settings and back take 0.25 s, eased (smoothstep), rather than switching at once
-(task 022). The board slides and resizes from one screen's place to the other's: in
-landscape to the right, in portrait down a little as it shrinks under settings' title
-row. The screen left fades out and the one come to fades in, both drifting 40 dp the way
-the board moves. The photograph stays as it is, sharp behind both. Since settings' preview
-is its own fixed position, the game's pieces fade out under the preview's as the board
-slides; the marks, and the squares when the two sizes differ, switch halfway. A tap during
-a transition lands on the screen come to. Back, during one, turns it round where it is.
+Three switches take 0.25 s each way, eased (smoothstep), rather than switching at once:
+home and settings, home and the game (continue, a setup's play, and the game's home), and
+the puzzles to pick from and a puzzle. The board slides and resizes from one screen's
+place to the other's. To settings it moves right in landscape; in portrait it goes down a
+little as it shrinks under settings' title row. Into the game it grows into the game's
+place, left in landscape and down in portrait. A puzzle's board grows out of its tile on
+the puzzles to pick from, and shrinks back into it; at rest there the board isn't shown.
+The screen left fades out and the one come to fades in, both drifting 40 dp the way the
+board moves. The photograph goes from sharp to blurred and dimmed on the way into the game
+or a puzzle, and back on the way out; between home and settings it stays sharp.
+
+Since settings' preview is its own fixed position, the game's pieces fade out under the
+preview's as the board slides; the marks, and the squares when the two sizes differ,
+switch halfway. Home and the game show one board, so nothing crossfades: a setup already
+shows the game its play starts, and the column leaving is the setup as it was. On the way
+home from a won game, its dim, the winning piece's lift, and the card fade out with the
+game's panels. A tap during a transition lands on the screen come to. Back, during one,
+turns it round where it is. The game's clock counts no time and the computer is asked for
+nothing until the transition into the game is over; the clock counts from the frame after.
 
 Natively the shell keeps one transition: the screen left and when it began
-(`shell::go_to`). Each frame it declares the screen left with no pointer (`gui::listen`),
-then the screen come to. It fades and moves each one's quads (`gui::fade`; a quad's
-`extra.w`, which the UI shader multiplies its result by) and its pieces over the UI. It
-eases the board's rect between the two layouts. The app fills the board through
-`shell::fill`, which lays the other board's pieces under it at the other opacity
-(`board::under`). While a transition runs, `shell::animating` is true. The frame after it
-ends is drawn at rest, and then nothing more.
+(`shell::go_to`). Each frame it declares the screen left as it stands, with no pointer
+(`gui::listen`; the game through `game::still`, which counts nothing), then the screen
+come to, the game with its clock and the computer frozen. It fades and moves each one's
+quads (`gui::fade`; a quad's `extra.w`, which the UI shader multiplies its result by, so
+a win's card fading in fades further) and its pieces over the UI. It eases the board's
+rect between the two layouts, and the photograph's blur between the two screens': the
+board pass takes it in one uniform (`scene.x`, 0 sharp to 1 blurred, the brightness 1.0 to
+0.8 in `scene.y`) and mixes the sharp texture and the blurred one, both bound; at either
+end it samples only one, so a screen at rest draws as it did before. The glass copy is
+the same throughout. The app fills the board through `shell::fill`, which lays the other
+board's pieces under it at the other opacity (`board::under`), and scales the game's win
+by how much of the game shows (`game::cheer`). While a transition runs, `shell::animating`
+is true. The frame after it ends is drawn at rest, and then nothing more. A landscape
+frame between home and the game declares about 130 of the 512 quads (home 77, the game
+53), between home and settings about 350.
 
 ### Board and pieces
 
