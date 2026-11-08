@@ -1,6 +1,6 @@
 # 025: Build the regrouped settings with the board beside them
 
-Status: in-progress (built and checked on the Mac; tablet check pending, locked)
+Status: in-progress (built and checked on the Mac and the tablet)
 
 Bring settings to `prototypes/settings.html` (rendering.md "Settings", 2026-11-07): the
 choices as words in two groups, game (the draughts for a new game, move hints, the
@@ -23,8 +23,8 @@ board beside them showing what the choices make.
 
 ## Acceptance criteria
 
-- [ ] Settings match the prototype in both orientations, on the Mac and the tablet (Mac
-  done; tablet check pending, locked)
+- [x] Settings match the prototype in both orientations, on the Mac and the tablet
+  (tablet 2026-11-08, below)
 - [x] Each choice changes the board beside them at once and survives a restart
 - [x] Headless tests for the new settings and their file
 
@@ -69,6 +69,40 @@ board beside them showing what the choices make.
   1.2 s, the pulse for 2.8 s), then nothing animates (`test/shell/settings.goose`).
 - The APK is 5.6 MB.
 
+## On the tablet (2026-11-08)
+
+The app built from `564931d`, opened with `--screen settings` (so `game.bin` was never
+read or written), every tile tapped with `adb shell input tap`, in landscape (1920 ×
+1200) and portrait (1200 × 1920).
+
+- Both orientations lay out as on the Mac: landscape with the choices at the left and the
+  board at the right, portrait with the board under the title row and the two groups
+  side by side under it.
+- Each tap applied at once, in both orientations: the draughts (Brazilian and Russian
+  turn the board to 8 × 8, International back to 10 × 10), move hints (all moves shows
+  the capture's targets; mistakes only the wrong move's ring and the capturing pieces),
+  kings (crown, stack drawn as two discs, auto), and the seasons (photograph, board, and
+  glass colors). The tutorial's and raised's dimmed tiles took no tap. Stack, then auto,
+  each survived a restart. The language wasn't tapped: Estonian is task 024's check, and
+  a tap would write the system's choice over.
+- A season's photograph reloads after its tile shows lit, read from screen recordings:
+  the frame with the tile lit still has the old photograph, and the next frame has the
+  new one, 87 ms later for winter, 87 for spring, 73 for summer, 76 for autumn
+  (landscape), 75 for winter in portrait. By the date, from autumn in November, lit its
+  tile and loaded nothing.
+- `scripts/idle_cpu.sh 60` on settings, landscape, once the preview's flash and pulse
+  had stopped: the program's thread 0.02 s (0.03% of a core), the process 1.25 s, 60
+  voluntary switches, as task 021's game screen with no clock (0.03%).
+- `scripts/lifecycle_memory.sh 10` on settings: one process, no errors, PSS 272 to 274
+  MB (273 before the first cycle), native heap 27.5 MB, graphics 213 to 215 MB, flat;
+  273 MB at rest after. Task 021's game screen had 261 to 263 MB with graphics 211 to
+  213; settings hold the thumbnails as well.
+- Every setting was put back to its default after (international, mistakes only, by the
+  date, flat, auto). The settings file now exists on the tablet if it didn't before, with
+  the defaults and the language left at the system's.
+
+Screenshots and recordings are in the session's scratchpad, not in git.
+
 ## Open for the user
 
 - The tutorial's tile is dimmed and takes no tap until task 026 builds the tutorial.
@@ -90,5 +124,3 @@ board beside them showing what the choices make.
   wrap. Estonian's auto note was shortened to "2D kroon, 3D virn" to fit. Estonian
   drafts for task 024's review: Mäng, Välimus, Õpetus, Õpi käike, Tammid, Kroon, Virn,
   Automaatne, Lame, Ruumiline.
-- Tablet check pending (locked): both orientations, a tap on each choice, and that a
-  season's photograph reloads after its tile shows lit.
