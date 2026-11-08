@@ -142,9 +142,11 @@ adb logcat -s goose:* SDL:*                 # the program's output and SDL's log
    `libmain.so` (the program, the runtime, goose_gfx's layers, and
    `android/stdio_to_logcat.c`). The program's `main` is compiled as `SDL_main`.
 4. `javac` and `d8` compile SDL's stock Java (`SDL/android-project/.../org/libsdl/app`).
-5. `aapt2` links `android/AndroidManifest.xml`. `zip` adds the dex and the stripped
-   libraries, stored uncompressed. `zipalign -P 16` aligns them to 16 KB pages, and
-   `apksigner` signs with `~/.android/debug.keystore`, which it creates if missing.
+5. `aapt2` compiles `android/res` (the icon and the launch theme; `scripts/icon.py` makes
+   the icon, `design/icon/README.md`) and links it with `android/AndroidManifest.xml`.
+   `zip` adds the dex and the stripped libraries, stored uncompressed. `zipalign -P 16`
+   aligns them to 16 KB pages, and `apksigner` signs with `~/.android/debug.keystore`,
+   which it creates if missing.
 
 The POC's APK is 2.8 MB: `libSDL3.so` 1.9 MB and `libmain.so` 0.9 MB stripped, SDL's dex
 43 KB.
