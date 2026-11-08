@@ -31,8 +31,9 @@ look good, not merely work.
     detail analytic misses.
   - Antialiasing, the cheapest that looks clean, as options to compare: analytic edges
     (the 2D board's SDF coverage, carried to the few silhouettes: pieces, the frame),
-    a single-frame post filter (SMAA 1×, FXAA), or MSAA 4× (cheap on a tile-based GPU,
-    resolved in tile memory, but maybe overkill here). Specular antialiasing (roughness
+    SMAA 1× (single frame), or MSAA 4× (cheap on a tile-based GPU, resolved in tile
+    memory, but maybe overkill here); check which holds up. Not FXAA (the user,
+    2026-11-08: too blurry, not modern). Specular antialiasing (roughness
     widened by the normal's variance) either way, so highlights don't shimmer.
   - Shadows: a soft shadow map (PCF or PCSS) for the pieces, drawn only when the position
     changes, since the scene is static between moves.
