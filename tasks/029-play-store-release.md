@@ -1,7 +1,8 @@
 # 029: Release on Google Play
 
-Status: in-progress (the package and the drafts ready, 2026-11-08; the identity, the Play
-account, and the checks on the tablet remain)
+Status: in-progress (the package and the drafts ready, 2026-11-08; the listing's first
+screenshots and feature graphic, 2026-11-09; the identity, the Play account, and the
+checks on the tablet remain)
 
 Everything between a sideloaded APK and the app on Google Play, under Google's Families
 Policy: the app is for children, with no ads, no tracking, no accounts, and no network
@@ -82,12 +83,40 @@ masters present):
 - **Play Console:** the developer account (a personal account: identity check, then the
   closed test above), the app's entry, the listing pasted from `store/`, the 512 px icon
   (`~/Downloads/draughts-store/icon/play-512.png`, winter), the 1024 × 500 feature
-  graphic (not made yet), and screenshots from phones and tablets
-  (`~/Downloads/draughts-store/screenshots/play/`, retaken once task 037's puzzles are
-  in), then the App content forms from `store/play-console.md`, and Play App Signing
-  (Google-generated app key) at the first upload of `draughts-release.aab`.
-- **Read the drafts:** the Estonian listing and policy especially; the listing describes
-  the puzzles in general terms, as task 037 is replacing them.
+  graphic, and the screenshots (both below), then the App content forms from
+  `store/play-console.md`, and Play App Signing (Google-generated app key) at the first
+  upload of `draughts-release.aab`.
+- **Read the drafts:** the listing (rewritten for task 037's puzzles and task 038's
+  players), the Estonian especially, and the policy, which now names players and their
+  optional names.
+- **Pick or redo the images:** the feature graphic is a first draft; say whether the
+  screenshots' choice of scenes and the made-up player (Mia the fox) will do, and
+  whether the Estonian listing gets a full Estonian set.
+
+## The listing's images, first iteration (2026-11-09)
+
+- **Texts:** `store/listing-en.md` and `listing-et.md` describe the 64 puzzles in five
+  themes (the library, black to move in some, Learn opening the rest, the stars) and the
+  players (four, badge, name, each keeping their look, stars, computer level, and game);
+  English 74 and 2,218 characters, Estonian 64 and 2,284. `store/privacy/index.html` and
+  `store/play-console.md` said the app had no names to enter; they now say a player's
+  optional name stays on the device.
+- **Play's rules** (read 2026-11-09, in `store/README.md`): tablet screenshots must be
+  16:9 or 9:16, so the tablet's own 16:10 doesn't fit its slots; the tablet set is shot
+  at 2560 × 1440, and a 2560 × 1600 set is kept beside it.
+- **Screenshots** in `~/Downloads/draughts-store/screenshots/play-0.1/`: `tablet/`
+  (2560 × 1440), `phone/` (1080 × 1920 at 548 dp), `tablet-16x10/`, six each: home, a
+  game with a capture shown, the puzzle library, a Shots puzzle black to move mid-solve,
+  settings with the seasons, and the computer's setup in Estonian. Each checked by eye;
+  `shoot.sh` there retakes them (`store/README.md`).
+- **Feature graphic:** `feature-graphic-draft.png` there, the autumn photograph, the
+  board, and the wordmark in Libertinus Sans, by `feature.sh` (ImageMagick).
+- **Seen while shooting:** at 16:9 and 16:10 the library's right column of themes ends
+  about 24 dp from the screen's edge while the left starts 128 dp in, so the two columns
+  sit off centre; the counts aren't cut. One run of the puzzle shot at 1280x800 came out
+  as Learn's page instead of the puzzle and was right when run again; not looked into.
+- The old `screenshots/play/` set (2026-11-08, before the puzzles and players) is
+  superseded.
 
 ## Checks before upload
 
@@ -115,8 +144,8 @@ masters present):
       (2026-11-08; the key's backup is the user's)
 - [x] Task 030 done, so phones and larger tablets are listed
 - [ ] Store listing in English and Estonian, with icon, feature graphic, and screenshots
-      (the texts drafted in `store/`; the developer name, feature graphic, and
-      screenshots remain)
+      (texts, screenshots, and a feature graphic drafted 2026-11-09; the developer
+      name, the user's review, and the final feature graphic remain)
 - [ ] Target audience, content rating, Data safety, and privacy policy filled in (the
       answers and the policy drafted in `store/`)
 - [ ] Closed test run as Play requires, then the app published
