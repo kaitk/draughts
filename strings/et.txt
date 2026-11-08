@@ -17,7 +17,7 @@ settings.game = Mäng
 settings.look = Välimus
 settings.tutorial = Õpetus
 settings.background = Taust
-settings.by_date = Kuupäeva järgi
+settings.by_date = Automaatne
 settings.board = Kabelaud
 settings.hints = Vihjed
 settings.kings = Tammid
@@ -35,7 +35,7 @@ board.flat_note = 2D
 board.raised = Ruumiline
 board.raised_note = 3D
 
-kings.auto = Laua järgi
+kings.auto = Automaatne
 kings.auto_note = 2D kroon, 3D virn
 kings.crown = Kroon
 kings.stack = Virn

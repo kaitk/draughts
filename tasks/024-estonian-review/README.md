@@ -96,8 +96,9 @@ Screenshots are in the session's scratchpad, not in git.
 
 ## Open for the user
 
-- `kings.auto`: "Laua järgi" ("by the board", like "Kuupäeva järgi" two rows up), the
-  user's pick on 2026-11-08 over "Automaatne".
+- `kings.auto` and `settings.by_date`: both "Automaatne" (the user, 2026-11-08, after
+  trying "Laua järgi" and "Kuupäeva järgi"): one word for both automatic choices, and
+  the background's first tile no longer the tightest fit.
 - `clock.*_note`: "käigule" stays, the usual way to write an increment (the user,
   2026-11-08).
 - `variant.international`: "Rahvusvaheline" is the right term and has no shorter form.
