@@ -4,7 +4,9 @@
 // each with the stars won, 0 to 3. The next puzzle to solve is lit; a tier opens once
 // half the one before it is solved, and until then each of its tiles shows a lock. In
 // portrait the title stands beside back, and each tier's ten are two rows of five, at
-// least 88 dp. The sharp photograph shows behind it, and no board.
+// least 88 dp, as in landscape where ten in a row would be under that (4:3, 3:2, a
+// foldable). The tiles take what the width and the height leave, and the glass hugs
+// them. The sharp photograph shows behind it, and no board.
 namespace picker;
 import std;
 import vec;
@@ -17,6 +19,7 @@ let BACK = -2;              // what the screen asks for, or the index of a puzzl
 let NOTHING = -1;
 let MARKS = [gui::TARGET, gui::CROWN, gui::SHIELD];
 let PER_ROW = 10;           // tiles a tier's row has room for
+let TIER_GAP = 20.0;        // dp between the tiers' glass
 let OPENS = 5;              // puzzles of a tier solved to open the next
 
 // How many of a tier's puzzles have stars.
@@ -87,24 +90,29 @@ fn frame(g: gui::Gui&, width: f32, height: f32, stars: const u8[:], at: i64, spo
     }
     if landscape { gui::cut_left(page, 24.0 * u); } else { gui::cut_top(page, 20.0 * u); }
     let now_next = next(stars);
-    // Landscape: a tier is its mark and a row of ten. Portrait: its mark and two rows of
-    // five, so the tiles keep at least the 88 dp a small hand needs.
-    let per = if landscape { PER_ROW } else { PER_ROW / 2 };
     let gap = 10.0 * u;
     let margin = (if landscape { 18.0 } else { 16.0 }) * u;
     let mark = (if landscape { 88.0 } else { 56.0 }) * u;
     let mark_gap = (if landscape { 16.0 } else { 12.0 }) * u;
-    // The tiles are square: as wide as the row leaves them, at most 96 dp in landscape
-    // and 128 in portrait.
     let row_w = page.z - 2.0 * margin - mark - mark_gap;
-    let side = min((row_w - (per - 1) * gap) / per, (if landscape { 96.0 } else { 128.0 }) * u);
+    // A tier is its mark and a row of ten in landscape while they keep the 88 dp a small
+    // hand needs; else, and in portrait, its mark and two rows of five.
+    let ten = (row_w - (PER_ROW - 1) * gap) / PER_ROW;
+    let per = if landscape && ten >= 88.0 * u { PER_ROW } else { PER_ROW / 2 };
     let rows = (PER_ROW + per - 1) / per;
+    // The tiles are square: as large as the row's width and the page's height leave them,
+    // at most 96 dp in landscape and 128 in portrait.
+    let tall = ((page.w - (puzzles::TIERS - 1) * TIER_GAP * u) / puzzles::TIERS - 2.0 * margin - (rows - 1) * gap) / rows;
+    let side = min(min((row_w - (per - 1) * gap) / per, tall), (if landscape { 96.0 } else { 128.0 }) * u);
     let tier_h = rows * side + (rows - 1) * gap + 2.0 * margin;
-    let all_h = puzzles::TIERS * tier_h + (puzzles::TIERS - 1) * 20.0 * u;
+    let all_h = puzzles::TIERS * tier_h + (puzzles::TIERS - 1) * TIER_GAP * u;
+    // The glass as wide as its tiles, centered where they leave room.
+    let inside = page.z - (2.0 * margin + mark + mark_gap + per * side + (per - 1) * gap);
+    let off = max(0.0, floor(0.5 * inside + 0.5));
     var y = page.y + max(0.0, 0.5 * (page.w - all_h));
     for t in 1..puzzles::TIERS + 1 {
-        let glass = float4 { page.x, y, page.z, tier_h };
-        y += tier_h + 20.0 * u;
+        let glass = float4 { page.x + off, y, page.z - 2.0 * off, tier_h };
+        y += tier_h + TIER_GAP * u;
         gui::glass(g, glass, 28.0);
         var c = gui::inset(glass, margin);
         let icon = gui::cut_left(c, mark);
