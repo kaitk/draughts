@@ -131,7 +131,6 @@ fn main() {
         game::start(sh.game, sh.game.b.variant, max(clock_kind, 0), computer, lv, prefs.skill[lv], prefs.games);
     }
     sh.prefs = prefs;
-    sh.prefs.hints = hints;
     let gm .= sh.game;
     let b .= gm.b;
     b.hints = hints;
