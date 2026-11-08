@@ -117,6 +117,10 @@ before and after: six byte-identical; the clocked games, settings, and the compu
 game differ only where the moving piece, the preview's flash, and the computer's ring
 are at the last frame.
 
+On the tablet with task 007 (2026-11-08, `cc08c5a`): the game screen matches the Mac's
+shots in both orientations, and settings' crown and stack kings, home's wordmark piece,
+and a Russian win's card with its crowned piece and sparks look right.
+
 ## Review: left for the user
 
 Each with its reason and rough cost; none is needed for the MVP.

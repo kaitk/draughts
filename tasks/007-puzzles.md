@@ -1,6 +1,6 @@
 # 007: Puzzles
 
-Status: done (on the Mac; the tablet is checked at the merge)
+Status: done
 
 Puzzles in a plain text file: a position, the side to move, a goal ("win material",
 "crown", "capture all") and the solution lines. A move that reaches the goal by a
@@ -81,6 +81,48 @@ ghost of the piece, with "try again" and a star going out.
   the tablet.
 - Screenshots (local): `play`, `wrong`, `hint`, `solved`, `picker`, `home`, in 960 × 600
   and 600 × 960, English and Estonian, beside the prototype's take c.
+
+## On the tablet (2026-11-08)
+
+The APK built from `cc08c5a`, run with flags (`--screen puzzles`, `--puzzle ID`, `--lang`,
+so `game.bin` was never read or written), the moves played with `adb shell input tap`.
+Solving wrote stars to `settings.txt`; the file was put back as it was (the defaults, no
+stars) through a debuggable copy of the APK and `run-as`, and the normal APK installed
+again.
+
+- Layout: the picker, a puzzle (21), solved (21), and the hint's glow (7 after two
+  misses), in 1920 × 1200 and 1200 × 1920, English and Estonian, match the Mac's shots
+  pixel for pixel (`magick compare`, 6% fuzz) apart from the hint's label, which is
+  "try again" in the Mac's frame and back to the goal by the tablet's. The wrong move,
+  shot during its flash, matches by eye: the man slides back, the red ring over the
+  fading ghost, "try again" ("Proovi uuesti" fits the landscape panel), a star out.
+  Nothing cut off.
+- Played from the picker: puzzle 1's selected man showed its target (tier 1), the
+  capture solved it, the stars filled and Next lit; Next opened puzzle 2, Puzzles the
+  picker with puzzle 1's three stars and puzzle 2 lit. Puzzle 7: 37x28 twice, each
+  played, slid back with the ring and ghost, and put a star out; after the second the
+  man on 38 glowed. 38x27 solved it with one star, Next opened puzzle 8, and the picker
+  showed it. Home then read "7 / 90".
+- Frames (`screenrecord`, 90 Hz, 11 ms a frame): every move, slide back, and the stars
+  filling ran at 11.0 ms (median), at most 17.5 ms. The first puzzle opened from the
+  picker after the launch had one 31 ms and one 20 ms gap in its 0.17 s; later opens
+  (Next, the picker, puzzle 7, puzzle 8) none over 17 ms. After the second miss the
+  frames stopped about 4 s after the move (the slide back, the flash, the glow coming
+  in): nothing keeps drawing.
+- `scripts/idle_cpu.sh 60`, landscape: the picker, puzzle 21 at rest, and puzzle 1 three
+  seconds after it was solved each 0.02 s on the program's thread (0.03% of a core),
+  60 voluntary switches, the process 1.50 to 1.53 s. The game screen in the same build:
+  0.02 s, the process 1.47 s, so the process's rise from task 025's 1.25 s isn't the
+  puzzles'.
+- `scripts/lifecycle_memory.sh 10` on puzzle 21: one process, no errors, PSS 268 to
+  272 MB (298 before the first cycle), native heap 27.6 to 28 MB, graphics 211 to 215
+  MB; the puzzle was still on screen after. Task 006 had 267 to 271 MB in a game,
+  task 025 272 to 274 on settings.
+- `--tap` on the tablet stops at a tap that only selects a piece when nothing animates:
+  the loop waits for an event, so the next tap waits too (on the Mac the loop never
+  waits). A development flag only; these shots were played with `input tap`.
+
+Screenshots and the recording are in the session's scratchpad, not in git.
 
 ## Open for the user
 
