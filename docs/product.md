@@ -28,7 +28,7 @@ Chess may follow on the same base.
 | Rules | Russian draughts 8×8, complete ([rules](architecture/rules.md)) |
 | Board | Flat 2D, GPU-drawn; move hints (moves or mistakes only), forced captures pulse, multi-jumps animate; tap or drag to move |
 | Play | Pass-and-play; vs computer at 3 levels; either with no clock, 5+3, or 10+5 |
-| Puzzles | About 30 in 3 tiers: find the capture; multi-jumps and crowning; shots and "the only safe move" |
+| Puzzles | About 30 in 3 tiers, International 10×10 first (2026-11-08): find the capture; multi-jumps and crowning; shots and "the only safe move" |
 | Controls | Take back, start over, home, settings |
 | Language | English by default, from a string table picked by the system's locale; Estonian as a translation if it stays cheap, finished after the core gameplay (2026-11-07) |
 | Platforms | Android APK sideloaded onto the tablet; macOS for development |

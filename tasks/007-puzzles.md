@@ -4,7 +4,8 @@ Status: todo
 
 Puzzles in a plain text file: a position, the side to move, a goal ("win material",
 "crown", "capture all") and the solution lines. A move that reaches the goal by a
-different line counts too. About 30 for Russian 8×8, in three tiers.
+different line counts too. About 30 for International 10×10 first, in three tiers
+(2026-11-08: the default game, and a starting point for Russian ones later).
 
 ## Puzzle screen takes (2026-11-08)
 
