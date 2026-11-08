@@ -240,13 +240,6 @@ fn goal_words(pz: puzzles::Puzzle&, out: u8[..64]&) {
     strings::fill_in(out, key, [pz.count]);
 }
 
-// The largest of the faces from `face` down that fits `text` in w.
-fn fitting(g: gui::Gui&, face: i64, text: const u8[:], w: f32) -> i64 {
-    var f = face;
-    while f < gui::SMALL && gui::text_width(g, f, text) > w { f++; }
-    return f;
-}
-
 // The stars in r, centered, `size` dp each and `gap` apart: lit for those at stake or
 // won, popping in once solved, outlined for those gone.
 fn stake(pl: Play&, g: gui::Gui&, r: float4, size: f32, gap: f32, now: f64) {
@@ -294,7 +287,7 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
     if again {
         // A pill in the forced-capture red at 16%: the undo arrow and "try again".
         let said = strings::get(strings::PUZZLE_TRY_AGAIN);
-        let face = fitting(g, gui::HEADING, said, c.z - 72.0 * u);
+        let face = gui::fitting(g, gui::HEADING, said, c.z - 72.0 * u);
         let w = min(c.z, 30.0 * u + 10.0 * u + gui::text_width(g, face, said) + 32.0 * u);
         let pill = if stacked { gui::center(gui::cut_top(c, 48.0 * u), w, 48.0 * u) }
                    else { gui::center(float4 { c.x, c.y, w, c.w }, w, 48.0 * u) };
@@ -307,7 +300,7 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
         gui::text(g, face, inner, said, 1.0, 0.0, gui::LEFT);
         return;
     }
-    let face = fitting(g, gui::LABEL, text, c.z);
+    let face = gui::fitting(g, gui::LABEL, text, c.z);
     let f .= g.faces[face];
     let line = if stacked { gui::cut_top(c, f.ascent - f.descent) } else { c };
     gui::text(g, face, line, text, 1.0, 0.0, if stacked { gui::CENTER } else { gui::LEFT });
@@ -336,7 +329,9 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64) -> i64 {
         let f .= g.faces[gui::LABEL];
         goal(pl, g, gui::cut_top(right, 72.0 * u + 8.0 * u + max(48.0 * u, f.ascent - f.descent)), 72.0, true, now);
         gui::cut_top(right, 16.0 * u);
-        stake(pl, g, gui::cut_top(right, 56.0 * u), if solved { 56.0 } else { 44.0 }, 8.0, now);
+        // Smaller where the panel is narrowed near square.
+        let most = (right.z / u - 2.0 * 8.0) / STAKE;
+        stake(pl, g, gui::cut_top(right, 56.0 * u), min(if solved { 56.0 } else { 44.0 }, most), 8.0, now);
         if gui::labelled(g, 114, next, gui::NEXT, 48.0, word, gui::HEADING, gui::STACKED, style, solved) { ask = NEXT; }
         return ask;
     }

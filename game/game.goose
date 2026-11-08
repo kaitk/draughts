@@ -422,17 +422,24 @@ fn celebrate(gm: Game&, g: gui::Gui&, l: board::Layout, won: i64, now: f64, over
     let u = l.scale;
     let area = float4 { l.board.x, l.board.y, l.board.z, l.board.z };
     // The card: 40 dp above and below, 56 dp at the sides; the piece, a 28 dp gap, the
-    // buttons.
+    // buttons, 112 × 88 dp. On a board under panel::BOARD all but the buttons' height
+    // shrink with it, the buttons' width down to 88 dp: 356 × 300 dp, 49% of the
+    // tablet's board, comes to 52% of the smallest (the foldable's 520 dp) where it
+    // would be 68%.
+    let fit: f32 = min(1.0, l.board.z / (panel::BOARD * u));
+    let button = max(88.0, 112.0 * fit);
     let first = g.quads.len;
-    let card = gui::center(area, 356.0 * u, 300.0 * u);
+    let card = gui::center(area, (112.0 * fit + 2.0 * button + 20.0 * fit) * u,
+                           ((40.0 + 40.0 + 104.0 + 28.0) * fit + 88.0) * u);
     gui::panel(g, card);
-    var c = gui::inset(card, 40.0 * u);
-    var spot = gui::cut_top(c, 104.0 * u);
-    gui::cut_top(c, 28.0 * u);
+    var c = gui::inset(card, 40.0 * fit * u);
+    var spot = gui::cut_top(c, 104.0 * fit * u);
+    gui::cut_top(c, 28.0 * fit * u);
     let row = gui::cut_top(c, 88.0 * u);
     var ask = panel::NOTHING;
-    if gui::button(g, 200, gui::cell(row, 2, 1, 112.0 * u, 88.0 * u, 20.0 * u, 0), gui::BACK) { ask = panel::HOME; }
-    if gui::tile(g, 201, gui::cell(row, 2, 1, 112.0 * u, 88.0 * u, 20.0 * u, 1), gui::RESTART, gui::PRIMARY, 22.0) {
+    let gap = 20.0 * fit * u;
+    if gui::button(g, 200, gui::cell(row, 2, 1, button * u, 88.0 * u, gap, 0), gui::BACK) { ask = panel::HOME; }
+    if gui::tile(g, 201, gui::cell(row, 2, 1, button * u, 88.0 * u, gap, 1), gui::RESTART, gui::PRIMARY, 22.0) {
         ask = panel::RESTART;
     }
     let k = ease_out(span(t, CARD_AT, CARD_AT + 0.7));
@@ -442,7 +449,7 @@ fn celebrate(gm: Game&, g: gui::Gui&, l: board::Layout, won: i64, now: f64, over
     spot.y += drop;
     let a = smooth(span(t, CROWN_AT, STILL)) as f32;
     let n = over.len;
-    panel::piece(over, spot, 44.0 * u, won, gm.b.king_look, a, a);
+    panel::piece(over, spot, 44.0 * fit * u, won, gm.b.king_look, a, a);
     if over.len > n { over[n].win.w = 1.0; }   // on the board, as the card is
     return ask;
 }

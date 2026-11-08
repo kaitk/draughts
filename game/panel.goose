@@ -27,7 +27,10 @@ let WIDE_H = 80.0;          // take back in portrait
 let CLOCK_H = 72.0;
 let OVER = 4;               // pieces over the UI: two clocks and the winner, at most
 
-let SIDE = 232.0;           // dp: each panel's width in landscape
+let SIDE = 232.0;           // dp: each panel's width in landscape,
+let NARROW = 192.0;         // narrowing to this near square
+let BOARD = 720.0;          // dp: the board the panels narrow for, the tablet's at 16:10
+let STACK_H = 96.0;         // dp: a left panel's row in landscape with its icon over its word
 let TOP = 104.0;            // dp: the bar above the board in portrait
 let BOTTOM = 196.0;         // dp: the play below it
 let GAP = 24.0;
@@ -40,14 +43,17 @@ struct Layout {
 }
 
 // The game screen (rendering.md, "Game screen"). Landscape: the board fills the height
-// less a 24 dp margin, between two panels 232 dp wide and as tall as it. Portrait: the
-// board fills the width less the margin, with a 104 dp bar above it and the 196 dp play
-// below it, both as wide as the board.
+// less a 24 dp margin, between two panels 232 dp wide and as tall as it; where that
+// leaves the board under 720 dp (narrower than 16:10), the panels narrow, down to 192 dp,
+// for the board to grow. Portrait: the board fills the width less the margin, with a
+// 104 dp bar above it and the 196 dp play below it, both as wide as the board.
 fn layout(width: f32, height: f32, n: i64) -> Layout {
     let s = gui::scale_of(width, height);
     let gap = GAP * s;
     if width >= height {
-        let side = SIDE * s;
+        let room = width - 4.0 * gap;
+        var side = SIDE * s;
+        if room - 2.0 * side < BOARD * s { side = max(NARROW * s, 0.5 * (room - BOARD * s)); }
         let size = min(height - 2.0 * gap, width - 2.0 * side - 4.0 * gap);
         let x = (width - (size + 2.0 * side + 2.0 * gap)) / 2.0;
         let y = (height - size) / 2.0;
@@ -103,20 +109,42 @@ fn leave(g: gui::Gui&, l: Layout, icon: i64, word: i64) -> i64 {
     let icons = [icon, gui::GEAR, gui::RESTART];
     let asks = [HOME, SETTINGS, RESTART];
     if l.left.z < l.left.w {
+        // Each icon beside its word, or, where a word doesn't fit so in a narrowed panel,
+        // every icon over its word in taller rows.
         var left = float4 { l.left.x + 16.0 * u, l.left.y + 20.0 * u, l.left.z - 32.0 * u, l.left.w - 40.0 * u };
+        var arrange = gui::BESIDE;
         for i in 3 {
-            let r = if i < 2 { gui::cut_top(left, ROW_H * u) } else { gui::cut_bottom(left, ROW_H * u) };
+            if gui::labelled_width(g, 34.0, strings::get(words[i]), gui::HEADING, gui::BESIDE) > left.z {
+                arrange = gui::STACKED;
+            }
+        }
+        let h = (if arrange == gui::BESIDE { ROW_H } else { STACK_H }) * u;
+        for i in 3 {
+            let r = if i < 2 { gui::cut_top(left, h) } else { gui::cut_bottom(left, h) };
             if i == 0 { gui::cut_top(left, 12.0 * u); }
-            if gui::labelled(g, 110 + i, r, icons[i], 34.0, strings::get(words[i]), gui::HEADING, gui::BESIDE) {
+            if gui::labelled(g, 110 + i, r, icons[i], 34.0, strings::get(words[i]), gui::HEADING, arrange) {
                 chosen = asks[i];
             }
         }
         return chosen;
     }
+    // Thirds of the bar while each word fits its third; else each tile as wide as its
+    // word wants and an even share of the rest, as the setup's draughts are.
     let bar = float4 { l.left.x + 20.0 * u, l.left.y + 16.0 * u, l.left.z - 40.0 * u, ROW_H * u };
-    let w = (bar.z - 32.0 * u) / 3.0;
+    let free = bar.z - 32.0 * u;
+    var wants: f32[3] = [0.0, 0.0, 0.0];
+    var fits = true;
     for i in 3 {
-        let r = float4 { bar.x + i * (w + 16.0 * u), bar.y, w, bar.w };
+        wants[i] = gui::labelled_width(g, 34.0, strings::get(words[i]), gui::HEADING, gui::MIDDLE);
+        if wants[i] > free / 3.0 { fits = false; }
+    }
+    let share = (free - wants[0] - wants[1] - wants[2]) / 3.0;
+    let even = fits || share < 0.0;
+    var x = bar.x;
+    for i in 3 {
+        let w = if even { free / 3.0 } else { wants[i] + share };
+        let r = if even { float4 { bar.x + i * (w + 16.0 * u), bar.y, w, bar.w } } else { float4 { x, bar.y, w, bar.w } };
+        x += w + 16.0 * u;
         if gui::labelled(g, 110 + i, r, icons[i], 34.0, strings::get(words[i]), gui::HEADING, gui::MIDDLE) {
             chosen = asks[i];
         }
@@ -166,8 +194,9 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, thinkin
             piece(over, spot, 36.0 * u, side, 0, 1.0, glow);
             gui::cut_top(right, 18.0 * u);
             let f .= g.faces[gui::HEADING];
-            gui::text(g, gui::HEADING, gui::cut_top(right, f.ascent - f.descent), strings::get(turn_key), 1.0, 0.0,
-                      gui::CENTER);
+            let words = strings::get(turn_key);
+            gui::text(g, gui::fitting(g, gui::HEADING, words, right.z), gui::cut_top(right, f.ascent - f.descent), words,
+                      1.0, 0.0, gui::CENTER);
         }
         if gui::labelled(g, 113, back, gui::UNDO, 48.0, strings::get(strings::GAME_TAKE_BACK), gui::HEADING,
                          gui::STACKED) {

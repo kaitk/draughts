@@ -388,6 +388,8 @@ fn choice(g: Gui&, id: i64, r: float4, kind: i64, pic: float2, label: const u8[:
 let BESIDE = 0;             // the icon, then the word, from the left
 let MIDDLE = 1;             // the icon and the word side by side, centered
 let STACKED = 2;            // the icon over the word, centered
+let LABEL_PAD = 8.0;        // dp a labelled tile's word keeps from its sides at least
+let INDENT = 14.0;          // dp before the icon BESIDE
 
 // A glass tile with an icon `size` dp across and a word in face `face`
 // (prototypes/game.html): true when it is tapped. `style` lights it (CHOSEN, a puzzle's
@@ -400,6 +402,8 @@ fn labelled(g: Gui&, id: i64, r: float4, icon: i64, size: f32, label: const u8[:
     add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { BUTTON, 22.0 * u, 0.0, p },
                   extra: float4 { u, style, 0.0, 0.0 } });
     let s = size * u;
+    // The word keeps LABEL_PAD from the tile's sides, in a smaller face where it is too
+    // wide for its own.
     if arrange == STACKED {
         let f .= g.faces[face];
         let line = f.ascent - f.descent;
@@ -407,21 +411,36 @@ fn labelled(g: Gui&, id: i64, r: float4, icon: i64, size: f32, label: const u8[:
         var c = center(r, r.z, s + gap + line);
         glyph_icon(g, center(cut_top(c, s), s, s), icon, PLAIN, p, a);
         cut_top(c, gap);
-        text(g, face, c, label, a, 0.0, CENTER);
+        text(g, fitting(g, face, label, r.z - 2.0 * LABEL_PAD * u), c, label, a, 0.0, CENTER);
         return clicked;
     }
     let gap = 12.0 * u;
+    let shown = fitting(g, face, label, r.z - labelled_width(g, size, "", face, arrange));
     var c = r;
     if arrange == BESIDE {
-        cut_left(c, 14.0 * u);
+        cut_left(c, INDENT * u);
     } else {
-        let w = s + gap + text_width(g, face, label);
+        let w = s + gap + text_width(g, shown, label);
         c = center(r, w, r.w);
     }
     glyph_icon(g, center(cut_left(c, s), s, s), icon, PLAIN, p, a);
     cut_left(c, gap);
-    text(g, face, c, label, a, 0.0, LEFT);
+    text(g, shown, c, label, a, 0.0, LEFT);
     return clicked;
+}
+
+// How wide a labelled tile must be for its icon `size` dp across and its word in face
+// `face` side by side, BESIDE or MIDDLE, keeping LABEL_PAD at the sides.
+fn labelled_width(g: Gui&, size: f32, label: const u8[:], face: i64, arrange: i64) -> f32 {
+    let lead = if arrange == BESIDE { INDENT } else { LABEL_PAD };
+    return (lead + size + 12.0 + LABEL_PAD) * g.scale + text_width(g, face, label);
+}
+
+// The largest of the faces from `face` down to SMALL that fits `text` in w pixels.
+fn fitting(g: Gui&, face: i64, text: const u8[:], w: f32) -> i64 {
+    var f = face;
+    while f < SMALL && text_width(g, f, text) > w { f++; }
+    return f;
 }
 
 // A setup tile (prototypes/home.html): a picture `pic` dp tall over its label, and a
