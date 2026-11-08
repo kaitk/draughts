@@ -1,6 +1,6 @@
 # 027: The computer spends its clock as a player of its level would
 
-Status: in-progress
+Status: done
 
 Against the clock the computer now answers after a fixed pause (0.8, 0.6, 0.45 s by
 level, task 006), whatever the clock and the position. Over a 5 or 10 minute game its
@@ -30,8 +30,8 @@ on easy, without playing better or worse than its skill for it.
       `test/game/computer.goose` are as they were
 - [x] Headless test over whole games at each level and clock: no loss on time, and the
       time used is within the level's range (`test/game/pace.goose`, below)
-- [ ] Checked on the tablet: idle while waiting (no frames beyond the clock's second).
-      Checked on the Mac (below); the tablet after merging.
+- [x] Checked on the tablet: idle while waiting (no frames beyond the clock's second).
+      On the Mac and on the tablet (below)
 
 ## The rule (2026-11-08)
 
@@ -126,6 +126,54 @@ until 1.50 s, draws at 2.10 and 3.10, the move 1.3 ms after it was due. Once the
 landed, one draw a second for the child's clock. On the Mac the loop doesn't wait
 (rendering.md), so the timer for the due move matters on the tablet; there it should
 show as the move starting within a frame of its time.
+
+## On the tablet (2026-11-08)
+
+The APK built from `c9f4482` with a log (removed after, never committed) of each ask,
+its wait, the move's start, and every draw, in the app's time; Russian, run with flags
+(`--computer black --level ... --clock ...`, so neither `settings.txt` nor `game.bin`
+was touched), the child's moves played with `adb shell input tap`, the screen recorded
+with `adb shell screenrecord` (90 Hz, a frame 11 ms).
+
+The computer's time per move, the log's wait (the rule's time), and how late its move
+began after it was due, in the app's time:
+
+| | Ply 1 | 3 | 5 | 7 | 9 | 11 | 13 | 15 | 17 | Late |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 5+3 hard | 1.62 | 1.30 | 4.90 | 2.60 | 1.63 | 1.96 | 0.45 (a lone capture) | 1.97 | 2.96 (captures) | 2.3 to 3.5 ms |
+| 10+5 hard | 3.12 | 1.88 | 9.42 | 12.49 | 15.00 (the cap) | 14.63 | | | | 3.2 to 4.3 ms |
+| 5+3 medium | 1.08 | 2.17 | 3.27 | 4.35 | 5.42 | 1.94 (captures) | 1.29 | | | 3.4 to 6.3 ms |
+| 5+3 easy | 0.80 | 1.09 | 1.64 | 0.88 | 0.80 (a lone capture) | 3.32 | 3.32 | | | 2.5 to 9.2 ms |
+
+The times fit the table: hard's ply 1 is the 1.6 s it gives for five close moves, the
+captures 2.96 and 1.94 against 2.93 and 1.95, medium's 1.29 a single close move, easy's
+3.32 its five-close 3.25 with the clock at 308 s. The computer's clock stayed near its
+start (297 to 308 s on 5+3, 581 to 604 on 10+5): the increment covered most of what it
+spent.
+
+- On time: a move due after the pulse is woken by the timer, so it starts 2 to 4 ms
+  after it was due (the timer's whole milliseconds and its 2 ms margin), on its own
+  frame. One due during the pulse starts at the next vsync after it, up to a frame
+  late (9.2 ms the most, 14 ms once without a clock, the first reply after a launch;
+  3 ms on the rerun).
+- On the recording, from the frame the child's last-move marks appear to the computer's
+  piece's first moving frame: the wait less 21 to 35 ms for every think longer than the
+  pulse (hard 10+5: 3.094, 1.853, 9.394, 12.461, 14.967, 14.607 s), and 0.452 s for the
+  0.45 lone capture. The shortfall is the display, not the timer: while the app draws
+  every vsync (the pulse) a frame reaches the screen about 30 ms (three vsyncs) after
+  it was drawn, measured against the recording; one drawn after an idle wait shows at
+  the next vsync. So the marks show late and the move on time; task 006's 454 ms for
+  0.45 had both inside one run of frames.
+- What it draws while it thinks, from the log and the same on the recording: every
+  vsync for the pulse (109 draws, the last 1.19 s after the turn began), then one draw
+  a second at the clock's seconds, then the move. Hard's 15 s think on 10+5: 109 draws,
+  14 at the seconds, the move at 15.004 s.
+- `scripts/idle_cpu.sh` over the still part of four hard thinks on 10+5 (started 1.2 s
+  in, the screen kept on): 6 s 0.01 s CPU (0.17%) and 6 voluntary switches; 9 s 0.02 s
+  (0.22%), 9; 12 s 0.03 s (0.25%), 12; 12 s 0.04 s (0.33%), 12. One wakeup a second,
+  the clock's.
+- Without a clock: easy 0.80, 0.80, 0.80 s; medium 0.60, 0.60; hard 0.45, 0.45, as
+  before; the move inside the pulse, 3 to 10 ms after it was due.
 
 ## Open for the user
 
