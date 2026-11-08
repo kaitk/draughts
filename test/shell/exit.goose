@@ -68,9 +68,9 @@ fn check(what: const u8[:], setup: i64) {
     var h = gui::Gui {};
     gui::test_faces(h);
     gui::begin(h, gui::Input { at: at, down: true, pressed: true, .. }, u, 3.0);
-    home::frame(over, h, l, 10, drive::size.x, drive::size.y, setup, sh.prefs);
+    home::frame(over, h, l, 10, float4 { 0.0, 0.0, drive::size.x, drive::size.y }, setup, sh.prefs);
     gui::begin(h, gui::Input { at: at, released: true, .. }, u, 3.02);
-    print("  home asks for EXIT: ", home::frame(over, h, l, 10, drive::size.x, drive::size.y, setup, sh.prefs) == home::EXIT);
+    print("  home asks for EXIT: ", home::frame(over, h, l, 10, float4 { 0.0, 0.0, drive::size.x, drive::size.y }, setup, sh.prefs) == home::EXIT);
 }
 
 fn main() {

@@ -138,18 +138,19 @@ fn play(sh: Shell&, now: f64) {
     sh.staged = false;
 }
 
-// One frame, after gui::begin, on a screen width × height pixels. Returns whether
+// One frame, after gui::begin, on a screen width × height pixels, each screen laid out in
+// its safe area (gui::safe, the insets in g). Returns whether
 // anything on screen changed.
 fn frame(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> bool {
     // A switch happens in a frame that declared the old screen, so the first frame of the
     // new one is a change, however long ago the tap was.
     let fresh = sh.drawn != sh.screen;
     sh.drawn = sh.screen;
-    let changed = declare(sh, g, width, height, now, fresh);
+    let changed = declare(sh, g, gui::safe(g, width, height), now, fresh);
     return changed || fresh;
 }
 
-fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, fresh: bool) -> bool {
+fn declare(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> bool {
     sh.game.b.king_look = settings::king_look(sh.prefs);
     // Time away from the game screen isn't on the clock.
     if sh.screen != GAME { game::pause(sh.game); }
@@ -168,17 +169,17 @@ fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, fresh: b
     let first = g.quads.len;
     if crossing {
         gui::listen(g, false);
-        still(sh, g, from, width, height, now, gone, sh.went);
+        still(sh, g, from, area, now, gone, sh.went);
         gui::listen(g, true);
     }
     let middle = g.quads.len;
     let changed = g.input.pressed || g.input.released;
     var asked = false;
-    if sh.screen == GAME { asked = game_screen(sh, g, width, height, now, crossing); }
-    else if sh.screen == PUZZLE { asked = puzzle_screen(sh, g, width, height, now); }
-    else if sh.screen == PICKER { asked = picker_screen(sh, g, width, height, now); }
-    else if sh.screen == SETTINGS { asked = settings_screen(sh, g, width, height, now, fresh); }
-    else { asked = home_screen(sh, g, width, height, now); }
+    if sh.screen == GAME { asked = game_screen(sh, g, area, now, crossing); }
+    else if sh.screen == PUZZLE { asked = puzzle_screen(sh, g, area, now); }
+    else if sh.screen == PICKER { asked = picker_screen(sh, g, area, now); }
+    else if sh.screen == SETTINGS { asked = settings_screen(sh, g, area, now, fresh); }
+    else { asked = home_screen(sh, g, area, now); }
     sh.came = sh.layout;
     sh.mix = 1.0;
     // Between home and settings the board is home's all the way: settings show their
@@ -196,16 +197,16 @@ fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, fresh: b
 }
 
 // Where the game puts the board and its panels, turned when the computer plays white.
-fn game_layout(sh: Shell&, width: f32, height: f32) -> panel::Layout {
-    var l = panel::layout(width, height, rules::VARIANTS[sh.game.b.variant].size);
+fn game_layout(sh: Shell&, area: float4, u: f32) -> panel::Layout {
+    var l = panel::layout_in(area, rules::VARIANTS[sh.game.b.variant].size, u);
     l.board.flip = sh.game.computer == rules::WHITE;
     return l;
 }
 
 // The game for this frame, `frozen` while its transition runs. Returns whether anything
 // on screen changed.
-fn game_screen(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, frozen: bool) -> bool {
-    let l = game_layout(sh, width, height);
+fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -> bool {
+    let l = game_layout(sh, area, g.scale);
     sh.layout = l.board;
     let go, changed = game::frame(sh.game, g, l, now, sh.over, frozen);
     // A game against the computer ended: the child meets a stronger or weaker one next.
@@ -230,18 +231,18 @@ fn game_screen(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, froz
 }
 
 // Where a puzzle puts the board and its panels, turned when black is to move.
-fn puzzle_layout(sh: Shell&, width: f32, height: f32) -> panel::Layout {
+fn puzzle_layout(sh: Shell&, area: float4, u: f32) -> panel::Layout {
     let pl .= sh.puzzle;
-    var l = panel::layout(width, height, rules::VARIANTS[pl.b.variant].size);
+    var l = panel::layout_in(area, rules::VARIANTS[pl.b.variant].size, u);
     l.board.flip = puzzle::current(pl).start.side == rules::BLACK;
     return l;
 }
 
 // The puzzle for this frame. Returns whether anything on screen changed.
-fn puzzle_screen(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> bool {
+fn puzzle_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     let pl .= sh.puzzle;
     pl.b.king_look = settings::king_look(sh.prefs);
-    let l = puzzle_layout(sh, width, height);
+    let l = puzzle_layout(sh, area, g.scale);
     sh.layout = l.board;
     let go, changed = puzzle::frame(pl, g, l, now, sh.over);
     // Solved: the stars kept are the most it has won.
@@ -273,10 +274,10 @@ fn in_tile(sh: Shell&, spot: float4, scale: f32) -> board::Layout {
 }
 
 // The puzzles to pick from for this frame. Returns whether anything on screen changed.
-fn picker_screen(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> bool {
+fn picker_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     sh.over.clear();
     var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
-    let pick = picker::frame(g, width, height, sh.prefs.stars, sh.puzzle.index, sh.tier, spot);
+    let pick = picker::frame(g, area, sh.prefs.stars, sh.puzzle.index, sh.tier, spot);
     if pick == picker::BACK {
         go_to(sh, HOME, now);
         sh.setup = home::NOTHING;
@@ -286,7 +287,7 @@ fn picker_screen(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) ->
     // No board at rest: it lies off the screen. Coming from a puzzle, or going to one,
     // it is the puzzle's, in its tile.
     if sh.from == PUZZLE || pick >= 0 { sh.layout = in_tile(sh, spot, g.scale); }
-    else { sh.layout = board::layout_at(-2.0 * width, 0.0, 0.5 * width, g.scale, sh.layout.n); }
+    else { sh.layout = board::layout_at(-2.0 * area.z, 0.0, 0.5 * area.z, g.scale, sh.layout.n); }
     return pick != picker::NOTHING;
 }
 
@@ -327,12 +328,12 @@ fn put(over: game::Overlay&, p: board::Piece, a: f32, d: float2) {
 }
 
 // Settings for this frame. Returns whether anything on screen changed.
-fn settings_screen(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, fresh: bool) -> bool {
+fn settings_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> bool {
     // The preview shows the settings as they are on opening and after each change; on
     // opening, its wrong move flashes once the board has arrived.
     if fresh { settings::stage(sh.preview, sh.prefs, now + (1.0 - progress(sh, now)) * DURATION); }
     let changed = board::update(sh.preview, now);
-    let ask = settings::frame(sh.prefs, sh.over, g, sh.layout, width, height, strings::current);
+    let ask = settings::frame(sh.prefs, sh.over, g, sh.layout, area, strings::current);
     if ask == settings::CHANGED {
         sh.game.b.hints = sh.prefs.hints;
         settings::stage(sh.preview, sh.prefs, now);
@@ -343,7 +344,7 @@ fn settings_screen(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, 
 }
 
 // Home for this frame. Returns whether anything on screen changed.
-fn home_screen(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> bool {
+fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     // On the menu the board is the game as it stands; in a setup, the game its play
     // starts, set up afresh when the draughts chosen changes. The board switches at once,
     // as the column does. A tap that changes the setup shows on the next frame, the board
@@ -357,7 +358,7 @@ fn home_screen(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> b
     let b .= board_of(sh, HOME);
     if board::update(b, now) { changed = true; }
     let flip = turned(sh, sh.setup);
-    let pick = home::frame(sh.over, g, sh.layout, rules::VARIANTS[b.variant].size, width, height, sh.setup, sh.prefs);
+    let pick = home::frame(sh.over, g, sh.layout, rules::VARIANTS[b.variant].size, area, sh.setup, sh.prefs);
     sh.layout.flip = flip;
     if pick != home::NOTHING { changed = true; }
     match pick {
@@ -381,24 +382,24 @@ fn home_screen(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> b
 // Declares `screen`, the one a transition leaves, as it stands, its pieces over the UI
 // put in `over`, and sets l to where it puts the board. It acts on nothing: the caller
 // has taken the pointer away, and the game's clocks are paused.
-fn still(sh: Shell&, g: gui::Gui&, screen: i64, width: f32, height: f32, now: f64, over: game::Overlay&,
+fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: game::Overlay&,
          l: board::Layout&) {
     if screen == SETTINGS {
-        settings::frame(sh.prefs, over, g, l, width, height, strings::current);
+        settings::frame(sh.prefs, over, g, l, area, strings::current);
     } else if screen == GAME {
-        let p = game_layout(sh, width, height);
+        let p = game_layout(sh, area, g.scale);
         game::still(sh.game, g, p, now, over);
         l = p.board;
     } else if screen == PUZZLE {
-        let p = puzzle_layout(sh, width, height);
+        let p = puzzle_layout(sh, area, g.scale);
         puzzle::panel_frame(sh.puzzle, g, p, now);
         l = p.board;
     } else if screen == PICKER {
         var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
-        picker::frame(g, width, height, sh.prefs.stars, sh.puzzle.index, sh.tier, spot);
+        picker::frame(g, area, sh.prefs.stars, sh.puzzle.index, sh.tier, spot);
         l = in_tile(sh, spot, g.scale);
     } else {
-        home::frame(over, g, l, rules::VARIANTS[board_of(sh, HOME).variant].size, width, height, sh.left, sh.prefs);
+        home::frame(over, g, l, rules::VARIANTS[board_of(sh, HOME).variant].size, area, sh.left, sh.prefs);
         l.flip = turned(sh, sh.left);
     }
 }

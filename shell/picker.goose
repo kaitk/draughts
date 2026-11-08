@@ -102,15 +102,15 @@ fn tier_tiles(g: gui::Gui&, c: float4, t: i64, per: i64, side: f32, gap: f32, st
     }
 }
 
-// Declares the screen on a screen width × height pixels with the stars won so far, and
+// Declares the screen in `area`, the screen's safe area, with the stars won so far, and
 // sets `spot` to the tile of the puzzle tapped, or else of puzzle `at` (an index in
 // puzzles::all, or -1 for none), which a puzzle's board grows out of and shrinks back
 // into. `tier` is the tier a phone's picker shows, 0 until a mark is tapped. Returns
 // BACK, the index in puzzles::all of a puzzle tapped, or NOTHING.
-fn frame(g: gui::Gui&, width: f32, height: f32, stars: const u8[:], at: i64, tier: i64&, spot: float4&) -> i64 {
+fn frame(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, tier: i64&, spot: float4&) -> i64 {
     let u = g.scale;
-    let landscape = width >= height;
-    var page = float4 { 24.0 * u, 24.0 * u, width - 48.0 * u, height - 48.0 * u };
+    let landscape = area.z >= area.w;
+    var page = float4 { area.x + 24.0 * u, area.y + 24.0 * u, area.z - 48.0 * u, area.w - 48.0 * u };
     var pick = NOTHING;
     let back = if landscape { gui::cut_left(page, 88.0 * u) } else { gui::cut_top(page, 88.0 * u) };
     let button = float4 { back.x, back.y, 88.0 * u, 88.0 * u };

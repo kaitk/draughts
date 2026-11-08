@@ -33,7 +33,9 @@ which would overwrite the main checkout's while another session uses them.
   across games, home's X closing the app and where it sits, and every screen at a
   foldable, 4:3, and a 20:9 phone in both orientations, and the phone's layout at 540
   and 480 dp (`gui::short_dp`, with a 9:16 phone at 480), its tiles on the screen and
-  apart, every tap 88 dp at least, and a phone's tabs in settings and the puzzles:
+  apart, every tap 88 dp at least, the phones again with the Pixel 7a's insets in both
+  orientations (the cutout at either side in landscape), every tile and the board inside
+  the safe area, and a phone's tabs in settings and the puzzles:
   `sizes`), `strings` (every language
   file has every key), `ai` (the computer player:
   its search against a plain minimax, the table changing no score, keys, what each level
@@ -126,6 +128,12 @@ which would overwrite the main checkout's while another session uses them.
   runs each screen in parallel in its own work folder, `cmp.sh` counts differing
   pixels). Run in parallel, the win's `--win 3` needs `--frames 9000`, not 3000, or the
   shot ends before the card (2026-11-08).
+- Insets are shot with `--inset L,T,R,B` in dp of the layout: at `--dp 540` a 1080 px
+  phone is 2 px a dp, so the Pixel 7a's 118 px cutout is 59 dp and its ~48 px gesture
+  bar 24 (at 480, 52 and 21). Task 030's "Insets" says where the scripts are; their
+  `sheets.py` tints the insets red over each shot, which shows at a glance whether
+  anything sits under them (2026-11-08). A headless test sets `g.insets` (pixels) on its
+  `gui::Gui`; `gui::begin` keeps it, so put it back to zero after.
 - A headless test can lay out at another `gui::short_dp` (`test/shell/sizes`,
   `test/shell/settings`): set it, then `g.scale = gui::scale_of(...)` before
   `gui::test_faces`, which sizes the faces at the scale; put it back to 800 after.
@@ -205,6 +213,11 @@ measuring there:
   `third_party/nuklear` and `third_party/SDL` (the app's C needs nuklear's headers,
   `scripts/android.py` SDL's revision); link `build/android/SDL_src` to the main
   checkout's to skip copying SDL. The first Android build then takes about 35 s.
+  `build/android/draughts/native` is a CMake cache bound to the main checkout's
+  `android/`: from a worktree sharing `build/android`, build a copy of the program under
+  another name (`app/x.goose` and `app/x.build`, deleted after) so it gets its own
+  `build/android/x/`, and remove that after. A new or changed `patches/SDL` patch makes
+  the shared `SDL_src` be copied again, for the main checkout too (2026-11-08).
 - Flags reach the app on the tablet through the intent, quoted twice:
   `adb shell am start -S -n com.kaitk.draughts/.DraughtsActivity --es args "'--clock 5+3'"`.
   Without `-S` a start that finds the app running only brings it back with its old

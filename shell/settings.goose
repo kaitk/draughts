@@ -494,15 +494,15 @@ fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, tabbed: bool = false)
     return ask;
 }
 
-// Declares the screen for this frame on a screen width × height pixels, with `shown`
+// Declares the screen for this frame in `area`, the screen's safe area, with `shown`
 // the language showing, and sets l to where the preview goes. The kings' tiles put their
 // pieces in `over`. Returns BACK, CHANGED after a tap changed s, SHOWN after a tab, or
 // NOTHING.
-fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, width: f32, height: f32, shown: i64) -> i64 {
+fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, area: float4, shown: i64) -> i64 {
     let u = g.scale;
-    let landscape = width >= height;
+    let landscape = area.z >= area.w;
     let n = rules::VARIANTS[s.variant].size;
-    var page = float4 { PAD_X * u, PAD_Y * u, width - 2.0 * PAD_X * u, height - 2.0 * PAD_Y * u };
+    var page = float4 { area.x + PAD_X * u, area.y + PAD_Y * u, area.z - 2.0 * PAD_X * u, area.w - 2.0 * PAD_Y * u };
     over.clear();
     var ask = NOTHING;
     if landscape {

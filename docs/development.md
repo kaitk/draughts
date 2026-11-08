@@ -52,9 +52,15 @@ season's by default, with its photograph), the window size, a starting position,
 squares to tap on the first frames, move hints (`--hints moves` shows the targets;
 mistakes only by default), the language (`--lang et`; the system's by default), the
 layout's shorter side in dp (`--dp 540`; 800 by default, for trying phone scales, task
-030; `gui::scale_of`), and a frame to stop at and save as `draughts.png`.
+030; `gui::scale_of`), a phone's insets (`--inset L,T,R,B`, in dp of the layout, left,
+top, right, bottom; the window's own safe area by default, all of it on the Mac), and a
+frame to stop at and save as `draughts.png`. The Pixel 7a in portrait at 540 dp, its 118 px cutout and a gesture bar
+of about 48 px, 2 px a dp at that scale: `--size 450x1000 --dp 540 --inset 0,59,0,24`,
+and in landscape `--size 1200x540 --dp 540 --inset 59,0,0,24` (or `0,0,59,24`, turned
+the other way).
 `app/draughts.build` adds the program's own C (`app/background.c`, the photographs and their JPEG decoder;
-`app/locale.c`, the system's locales; `app/wake.c`, the timer a running clock wakes the
+`app/locale.c`, the system's locales; `app/display.c`, the window's safe area and the
+display's scale; `app/wake.c`, the timer a running clock wakes the
 loop with; `app/launch.c`, which tells the activity the first frame is on screen, and
 to close and leave recents after home's X), which `scripts/android.py` builds into the APK too. The photographs are
 embedded from `design/backgrounds/masters/` when they are there; without them the board
@@ -178,7 +184,8 @@ adb logcat -s goose:* SDL:*                 # the program's output and SDL's log
 3. CMake with the NDK toolchain builds `android/CMakeLists.txt`: `libSDL3.so` and
    `libmain.so` (the program, the runtime, goose_gfx's layers, and
    `android/stdio_to_logcat.c`). The program's `main` is compiled as `SDL_main`.
-4. `javac` and `d8` compile SDL's stock Java (`SDL/android-project/.../org/libsdl/app`).
+4. `javac` and `d8` compile SDL's Java from the patched copy
+   (`SDL_src/android-project/.../org/libsdl/app`) and `android/java/`.
 5. `aapt2` compiles `android/res` (the icon and the launch theme; `scripts/icon.py` makes
    the icon, `design/icon/README.md`) and links it with `android/AndroidManifest.xml`.
    The launcher's name follows the phone's language: the script writes
@@ -199,7 +206,12 @@ On Android the program opens with `gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABL
 which SDL turns into an immersive window with the system bars hidden. Resizable makes
 SDL request `FULL_USER`, so the screen turns as the system's rotation lock allows;
 without it SDL locks the activity to the orientation it started in, which phones obey
-and large tablets ignore (found on the Pixel 7a, 2026-11-08). It knows it's on Android from
+and large tablets ignore (found on the Pixel 7a, 2026-11-08). From Android 11 SDL lays
+the window out under the camera's cutout too (`LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS`), so
+the window is the whole display and the layout keeps its taps and words in the safe
+area ([rendering](architecture/rendering.md#screen-sizes-and-the-safe-area)); on
+Android 10, the app's lowest, the window keeps out of the cutout instead (the default
+mode) and SDL reports no insets. It knows it's on Android from
 `ANDROID_ROOT` in the environment ([findings](goose-findings.md)). Act on taps with
 `gfx::mouse_pressed` and `gfx::mouse_released`: a tap can press and release within one
 frame, which `gfx::mouse_down` never sees. `adb shell input tap X Y` checks it.

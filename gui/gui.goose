@@ -18,7 +18,8 @@ let PRESS = 0.12;           // seconds a button takes to go down or up
 // how a phone looks with fewer dp across (task 030).
 var short_dp: f32 = 800.0;
 
-// The layout's scale, pixels a dp, on a screen width × height pixels.
+// The layout's scale, pixels a dp, on a screen width × height pixels: from the whole
+// screen's shorter side, its insets included, so it is the same in both orientations.
 fn scale_of(width: f32, height: f32) -> f32 { min(width, height) / short_dp }
 
 // What a quad is, as the UI shader draws it.
@@ -149,6 +150,34 @@ struct Gui {
     slots:   Slot[MAX_IDS]     = [Slot {}; MAX_IDS],
     faces:   Face[FACES]       = [Face {}; FACES],
     pointer: Input             = Input {}, // the frame's pointer, kept while input is off (listen)
+    // The screen's edges outside its safe area, in pixels: left, top, right, bottom (a
+    // phone's camera cutout and gesture bar). Taps and words stay inside (safe); the
+    // photograph, and glass that runs off the screen (bleed), reach the edges.
+    insets: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
+}
+
+// The safe area of a screen width × height pixels: where the screens lay out.
+fn safe(g: Gui&, width: f32, height: f32) -> float4 {
+    let e = g.insets;
+    return float4 { e.x, e.y, width - e.x - e.z, height - e.y - e.w };
+}
+
+// r, laid out in the safe area `area`, carried on to the screen's edges on each side
+// where it reaches the area's: a glass column or sheet that runs off the screen.
+fn bleed(g: Gui&, r: float4, area: float4) -> float4 {
+    let e = g.insets;
+    var b = r;
+    if r.x <= area.x + 0.5 {
+        b.x -= e.x;
+        b.z += e.x;
+    }
+    if r.y <= area.y + 0.5 {
+        b.y -= e.y;
+        b.w += e.y;
+    }
+    if r.x + r.z >= area.x + area.z - 0.5 { b.z += e.z; }
+    if r.y + r.w >= area.y + area.w - 0.5 { b.w += e.w; }
+    return b;
 }
 
 // Rect cuts: each takes a strip off r and returns it.

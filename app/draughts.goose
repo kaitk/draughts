@@ -12,6 +12,7 @@
 //   ../build/draughts --hints moves               shows the selected piece's targets
 //   ../build/draughts --lang et                   another language than the system's
 //   ../build/draughts --dp 540                    the layout 540 dp across its shorter side, not 800
+//   ../build/draughts --inset 0,59,0,24           a phone's insets, in dp: left, top, right, bottom
 //   ../build/draughts --variant russian           a new game of another draughts
 //   ../build/draughts --clock 5+3                 with a clock
 //   ../build/draughts --computer white --level hard   against the computer playing white
@@ -45,6 +46,9 @@ import .think;
 extern fn draughts_locales(out: u8[:]) -> i64;
 // The app's storage folder, ending in a separator (storage.c); returns how many bytes.
 extern fn draughts_storage(out: u8[:]) -> i64;
+// The insets around the window's safe area in pixels (left, top, right, bottom) and the
+// display's scale, into out[0..5] (display.c); 0, leaving out as it is, without a window.
+extern fn draughts_display(out: f32[:]) -> i64;
 // Wakes the loop in ms milliseconds, where frame() waits for events (wake.c).
 extern fn draughts_wake_in(ms: i64);
 // Tells Android the first frame is on screen, to lift the splash and the cover (launch.c).
@@ -79,6 +83,8 @@ fn main() {
     // --win T (keeps a win at T seconds into its celebration, for a screenshot). --theme,
     // --hints, and --lang override the settings for the run without changing them.
     // --3d (alone) shows settings' Board row, hidden until the 3D board exists (task 015).
+    // --dp N lays out N dp across the shorter side; --inset L,T,R,B in dp stands for a
+    // phone's safe area.
     var width = 1280;
     var height = 800;
     var kind = -1;
@@ -96,6 +102,7 @@ fn main() {
     var hold = -1.0;
     var win_at = -1.0;
     var show_3d = false;
+    var inset_dp = float4 { -1.0, 0.0, 0.0, 0.0 };     // x < 0: the window's own
     var fen:  u8[>..]       = [];
     var taps: u8[..3][..16] = [];
     let argv = args();
@@ -117,6 +124,19 @@ fn main() {
         if argv[i] == "--dp" {
             let n, ok = parse_int(argv[i + 1]);
             if ok && n >= 200 { gui::short_dp = n; }
+        }
+        if argv[i] == "--inset" {
+            var rest: const u8[:] = argv[i + 1];
+            var d:    f32[4]      = [0.0; 4];
+            var good = true;
+            for k in 4 {
+                let part, after, more = split_once(rest, ',');
+                let x, ok = parse_flt(part);
+                good = good && ok && more == (k < 3);
+                d[k] = x as f32;
+                rest = after;
+            }
+            if good { inset_dp = float4 { max(d[0], 0.0), max(d[1], 0.0), max(d[2], 0.0), max(d[3], 0.0) }; }
         }
         if argv[i] == "--fen" { fen.append(argv[i + 1]); }
         if argv[i] == "--hints" && argv[i + 1] == "moves" { hints = board::MOVES; }
@@ -223,6 +243,8 @@ fn main() {
     var g = gui::Gui {};
     var t = text::Text {};
     var size = int2 { 0, 0 };
+    var display:   f32[5] = [0.0; 5];
+    var was_scale: f32    = 0.0;
     var dirty = true;
     var tapped = 0;
     var focused = true;
@@ -260,7 +282,19 @@ fn main() {
             size = s;
             dirty = true;
         }
+        // The safe area, read each frame (a few fields in SDL): turning the screen moves
+        // the camera's cutout and the gesture bar, and a change of it is a change of the
+        // screen, as a new size is.
+        draughts_display(display);
         let scale = gui::scale_of(size.x, size.y);
+        let e = if inset_dp.x < 0.0 { float4 { display[0], display[1], display[2], display[3] } }
+                else { float4 { floor(inset_dp.x * scale + 0.5), floor(inset_dp.y * scale + 0.5),
+                                floor(inset_dp.z * scale + 0.5), floor(inset_dp.w * scale + 0.5) } };
+        if scale != was_scale || e.x != g.insets.x || e.y != g.insets.y || e.z != g.insets.z || e.w != g.insets.w {
+            was_scale = scale;
+            g.insets = e;
+            dirty = true;
+        }
         if text::bake(t, g, scale) { trim_memory(); }
         w.atlas = t.texture;
         // A quick tap can press and release within one frame, which mouse_down never

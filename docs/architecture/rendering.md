@@ -38,6 +38,28 @@ draws its HUD:
   piece pipeline from a second small storage buffer, so they look exactly like the
   board's.
 
+### Screen sizes and the safe area
+
+Layouts are in dp: the screen's shorter side is 800 dp (`gui::scale_of`, the one place the
+scale is computed), so the tablet's 1200 px are 1.5 px a dp.
+
+Each screen lays out its taps and words inside the window's **safe area**: the window less
+its insets, a phone's camera cutout and its gesture bar at the bottom. SDL reports them
+(`SDL_GetWindowSafeArea`; the program's own C, `app/display.c`, reads them each frame with
+the display scale, since goose_gfx has neither). The app draws behind the cutout (SDL
+sets `LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS`), so the photograph, the blurred page, and
+glass that runs off the screen's edge (home's column and sheet, `gui::bleed`) reach the
+screen's edges; everything else is placed in the safe rect as it would be in a whole
+window of that size (`gui::safe`, `shell::frame`). The scale stays the whole short
+side's: the same in both orientations, where the cutout falls on the long side in one and
+the short side in the other, so turning the screen doesn't rebake the text or change the
+size of a tap. The layouts hold down to a safe area 459 × 801 dp (a 9:16 phone at 480 dp
+less its cutout at a side and its gesture bar). SDL would also take the back gesture's
+strips down both sides (`systemGestures`) out of the safe area, though taps there still
+reach the window; `patches/SDL/0002` keeps them in, so a portrait phone keeps its width. A
+change of the insets or the scale counts as a change, as a new size does, and the screen
+is laid out and drawn again (see "Frames and battery").
+
 Nuklear (`ui`) is only for developer tools, such as a puzzle editor, because restyling
 its desktop widgets into the kid UI would fight it. If layout outgrows rect-cutting
 (scrolling lists, wrapping text, menus like Snowtime's), we copy
@@ -200,7 +222,9 @@ the prototype tried, kept for 3D:
   arrows for undo, restart, and back) confused. In landscape the board fills the height
   less a 24 px margin, between two glass panels 232 px wide and as tall as it (where
   that leaves the board under 720 px, the tablet's at 16:10, the panels narrow down to
-  192 px for it: 587 px at 4:3, 520 on a foldable; 2026-11-08): on the
+  192 px for it: 587 px at 4:3, 520 on a foldable; 2026-11-08; where the width holds the
+  board under 372 dp, a 16:9 phone less its cutout at a side, the panels stay 372 dp tall,
+  centered beside it): on the
   left home (a house), settings, and at the bottom start over, 88 px rows (the floor for
   small hands, 2026-11-08) with 34 px icons and 24 px words (in a narrowed panel, where a word doesn't fit beside its icon,
   all three icons over their words in 96 px rows); on the right whose turn it is (a 72 px piece of its color with
@@ -270,7 +294,7 @@ the prototype tried, kept for 3D:
   short for the menu with settings as a row (a phone under about 590 dp tall), where the
   column widens to 440 dp for the wordmark and the gear. The wordmark's letters close up
   where the gear leaves them too little room (2026-11-08). In the
-  screen's top right, 24 dp from both edges, a round glass button 88 dp across with a
+  screen's top right, 24 dp from both edges of its safe area, a round glass button 88 dp across with a
   32 dp X closes the app at once, asking nothing, since the game is kept anyway; on the
   menu and in a setup, in both orientations (`prototypes/exit.html?take=b`, chosen
   2026-11-08 over a quiet last row and a door). It is glass under a quiet tile, both
@@ -293,10 +317,11 @@ the prototype tried, kept for 3D:
   is 88 dp tall at least (2026-11-08). In a
   landscape too short for the column (a phone), it becomes two columns of 330 dp side by
   side: back, the title, the draughts, and the level in the first; the child's pieces,
-  the clock, and play in the second, the title in a smaller face if it needs it. In
-  portrait, where the sheet would reach the X (the computer's on a 9:16 phone at 480 dp),
-  back and the title leave the sheet for the top left, back on glass, level with the X,
-  as in settings. The
+  the clock, and play in the second, the title in a smaller face if it needs it; down to
+  290 dp each where the second would reach the X (a 16:9 phone less its cutout at a
+  side). In portrait, where the sheet would reach the X (the computer's on a 9:16 phone
+  at 480 dp), back and the title leave the sheet for the top left, back on glass, level
+  with the X, as in settings. The
   choices are kept for next time in `settings.txt`, and play replaces a saved game
   without asking. Beside a setup the board is the game play will start: the chosen
   draughts at its start, 10 × 10 or 8 × 8, turned when the child plays black against
@@ -526,7 +551,7 @@ in the UI's one draw. Baked again only when the layout's scale changes.
 ## Frames and battery
 
 The app draws only when something changed: input, a running animation, the AI's reply, or
-a new screen size. Otherwise it draws nothing in that frame, and goose_gfx's `frame()`
+a new screen size or safe area. Otherwise it draws nothing in that frame, and goose_gfx's `frame()`
 then neither presents nor spins: it waits for the next event, up to a second. An idle
 board costs about one wakeup a second and no GPU work. The loop is the same on every
 platform:

@@ -31,6 +31,7 @@ let OVER = 4;               // pieces over the UI: two clocks and the winner, at
 let SIDE = 232.0;           // dp: each panel's width in landscape,
 let NARROW = 192.0;         // narrowing to this near square
 let BOARD = 720.0;          // dp: the board the panels narrow for, the tablet's at 16:10
+let PANEL_LEAST = 372.0;    // dp: a landscape panel's height at least, room for its tiles
 let STACK_H = 96.0;         // dp: a tile with its icon over its word
 let TOP = 120.0;            // dp: the bar above the board in portrait,
 let TOP_STACKED = 128.0;    // with its icons over their words where the bar is narrow:
@@ -52,24 +53,34 @@ struct Layout {
 // 120 dp bar above it (128 where a third of it is under STACK_W, on a phone, its icons
 // over their words) and the 204 dp play below it, both as wide as the board.
 fn layout(width: f32, height: f32, n: i64) -> Layout {
-    let s = gui::scale_of(width, height);
+    return layout_in(float4 { 0.0, 0.0, width, height }, n, gui::scale_of(width, height));
+}
+
+// The same in `area`, a screen's safe area, at s pixels a dp.
+fn layout_in(area: float4, n: i64, s: f32) -> Layout {
+    let width = area.z;
+    let height = area.w;
     let gap = GAP * s;
     if width >= height {
         let room = width - 4.0 * gap;
         var side = SIDE * s;
         if room - 2.0 * side < BOARD * s { side = max(NARROW * s, 0.5 * (room - BOARD * s)); }
         let size = min(height - 2.0 * gap, width - 2.0 * side - 4.0 * gap);
-        let x = (width - (size + 2.0 * side + 2.0 * gap)) / 2.0;
-        let y = (height - size) / 2.0;
-        return Layout { board: board::layout_at(x + side + gap, y, size, s, n), left: float4 { x, y, side, size },
-                        right: float4 { x + side + gap + size + gap, y, side, size } };
+        let x = area.x + (width - (size + 2.0 * side + 2.0 * gap)) / 2.0;
+        let y = area.y + (height - size) / 2.0;
+        // The panels as tall as the board, or PANEL_LEAST where the width keeps the board
+        // shorter (a 16:9 phone less its camera's cutout at a side), centered beside it.
+        let tall = min(max(size, PANEL_LEAST * s), height - 2.0 * gap);
+        let py = area.y + (height - tall) / 2.0;
+        return Layout { board: board::layout_at(x + side + gap, y, size, s, n), left: float4 { x, py, side, tall },
+                        right: float4 { x + side + gap + size + gap, py, side, tall } };
     }
     let narrow = (width - 2.0 * gap - 72.0 * s) / 3.0 < STACK_W * s;
     let top = (if narrow { TOP_STACKED } else { TOP }) * s;
     let bottom = BOTTOM * s;
     let size = min(width - 2.0 * gap, height - top - bottom - 4.0 * gap);
-    let x = (width - size) / 2.0;
-    let y = (height - (top + size + bottom + 2.0 * gap)) / 2.0;
+    let x = area.x + (width - size) / 2.0;
+    let y = area.y + (height - (top + size + bottom + 2.0 * gap)) / 2.0;
     return Layout { board: board::layout_at(x, y + top + gap, size, s, n), left: float4 { x, y, size, top },
                     right: float4 { x, y + top + gap + size + gap, size, bottom } };
 }

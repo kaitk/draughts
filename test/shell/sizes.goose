@@ -8,8 +8,10 @@
 // per screen gives its tiles, the smallest tap across and down in dp, and the board in
 // dp (0 where none shows), so a layout that moves shows here. The words are the test
 // faces' (each character half its face wide), wider than the real font's, so a word
-// that fits here fits on screen. Then a phone's tabs: settings' Look tab and the
-// puzzles' crown each show their own tiles.
+// that fits here fits on screen. The phones again with the Pixel 7a's insets (its
+// camera's cutout at the top in portrait and at a side in landscape, either side, and
+// its gesture bar at the bottom): every tile and the board inside the safe area. Then a
+// phone's tabs: settings' Look tab and the puzzles' crown each show their own tiles.
 import std;
 import vec;
 import rules from "../../rules";
@@ -27,8 +29,9 @@ fn overlaps(a: float4, b: float4) -> bool {
     return a.x + e < b.x + b.z && b.x + e < a.x + a.z && a.y + e < b.y + b.w && b.y + e < a.y + a.w;
 }
 
-fn inside(r: float4, w: f32, h: f32) -> bool {
-    return r.x >= -0.5 && r.y >= -0.5 && r.x + r.z <= w + 0.5 && r.y + r.w <= h + 0.5;
+// Whether r lies inside a, a rect.
+fn inside(r: float4, a: float4) -> bool {
+    return r.x >= a.x - 0.5 && r.y >= a.y - 0.5 && r.x + r.z <= a.x + a.z + 0.5 && r.y + r.w <= a.y + a.w + 0.5;
 }
 
 fn whole(x: f32) -> i64 { floor(x + 0.5) as i64 }
@@ -51,6 +54,7 @@ fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool,
     let w = drive::size.x;
     let h = drive::size.y;
     let u = gui::scale_of(w, h);
+    let safe = gui::safe(g, w, h);
     let n = drive::tiles(g);
     var line = str("  ", what, ": ", n, " tiles");
     var narrow: f32     = 1.0e9;
@@ -65,7 +69,7 @@ fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool,
             narrow = min(narrow, r.z);
             low = min(low, r.w);
         }
-        if !inside(r, w, h) { format(wrong, " tile ", i, " off the screen;"); }
+        if !inside(r, safe) { format(wrong, " tile ", i, " off the safe area;"); }
         for j in i { if overlaps(r, drive::rect(g, j)) { format(wrong, " tiles ", j, " and ", i, " overlap;"); } }
         if board_shows && b.z > 0.0 && overlaps(r, b) && !(card && i >= n - 2) { format(wrong, " tile ", i, " on the board;"); }
         if tap && (r.z < 88.0 * u - 0.5 || r.w < 88.0 * u - 0.5) { small++; }
@@ -74,13 +78,13 @@ fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool,
     format(line, ", smallest ", whole(narrow / u), " x ", whole(low / u), " dp");
     if board_shows {
         format(line, ", board ", whole(b.z / u), " dp");
-        if !inside(b, w, h) { wrong.append(" the board off the screen;"); }
+        if b.z > 0.0 && !inside(b, safe) { wrong.append(" the board off the safe area;"); }
     }
     if card {
         // The card's two buttons, on the board.
         let back = drive::rect(g, n - 2);
         format(line, ", card buttons ", whole(back.z / u), " x ", whole(back.w / u), " dp");
-        if !inside(back, b.x + b.z, b.y + b.w) || back.x < b.x || back.y < b.y { wrong.append(" the card off the board;"); }
+        if !inside(back, b) { wrong.append(" the card off the board;"); }
     }
     line.append(if wrong.len > 0 { ";" } else { ", all in place" });
     line.append(wrong);
@@ -194,6 +198,34 @@ fn main() {
             }
         }
     }
+    // The Pixel 7a's insets in pixels, 118 for the camera and about 48 for the gesture bar:
+    // portrait, landscape with the camera at the left, and at the right.
+    for lang in [strings::EN, strings::ET] {
+        strings::use(lang);
+        print(strings::LANGUAGES[lang], ", with insets:");
+        for dp in [540.0, 480.0] {
+            gui::short_dp = dp as f32;
+            for size, i in phones {
+                guard i < 2 || dp < 500.0 else { continue; }
+                drive::size = size;
+                g.scale = gui::scale_of(size.x, size.y);
+                gui::test_faces(g);
+                // Both phones are 1080 px across, as the Pixel is.
+                let cut: f32 = 118.0;
+                let bar: f32 = 48.0;
+                let sides = if size.x > size.y { 2 } else { 1 };
+                for k in sides {
+                    g.insets = if size.x < size.y { float4 { 0.0, cut, 0.0, bar } }
+                               else if k == 0 { float4 { cut, 0.0, 0.0, bar } } else { float4 { 0.0, 0.0, cut, bar } };
+                    let e = g.insets;
+                    print(phone_names[i], ", ", size.x as i64, " x ", size.y as i64, " at ", dp as i64, " dp, insets ",
+                          e.x as i64, ", ", e.y as i64, ", ", e.z as i64, ", ", e.w as i64, " px:");
+                    screens(g);
+                }
+            }
+        }
+    }
+    g.insets = float4 { 0.0, 0.0, 0.0, 0.0 };
     strings::use(strings::EN);
     gui::short_dp = 480.0;
     drive::size = float2 { 1080.0, 2400.0 };
