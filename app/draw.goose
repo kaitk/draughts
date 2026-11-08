@@ -413,8 +413,10 @@ fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::La
     d.over_count = min(over.len, panel::OVER);
     for i in d.over_count { d.over_upload[i] = over[i]; }
     if d.over_count > 0 { gfx::update_buffer(d.overlay, bytes_of(d.over_upload)); }
-    // The disc's side is 0.55% of the board deep, whatever a piece's size.
-    d.view = View { screen: float4 { width, height, 0.0055 * l.board.z / (0.39 * l.inner.w), 0.0 } };
+    // The disc's side is 0.55% of the board deep, whatever a piece's size; the same for
+    // the pieces over the UI where no board shows (a setup on a short phone).
+    let across = if l.inner.w > 0.0 { l.board.z / l.inner.w } else { l.n / 0.978 };
+    d.view = View { screen: float4 { width, height, 0.0055 * across / 0.39, 0.0 } };
     gfx::begin_screen(t.page);
     gfx::bind(d.board_pipeline);
     gfx::uniforms(gfx::FRAGMENT, 0, t);

@@ -264,25 +264,39 @@ the prototype tried, kept for 3D:
 - **Home** is a title menu (`prototypes/home.html`, chosen 2026-11-07 over the
   icon tiles and two other takes): the scene and the 3D board, and one glass column
   with the wordmark, then continue, a friend, the computer with its level, and puzzles
-  with stars, then settings, each an icon and a word. In portrait settings is instead
-  a quiet button beside the wordmark, so the sheet leaves the board its room. In the
+  with stars, then settings, each an icon and a word, in rows 88 dp tall, 2 dp apart. In
+  portrait settings is instead a quiet 88 dp tile beside the wordmark, reaching 8 dp over
+  and under its row, so the sheet leaves the board its room; so too in a landscape too
+  short for the menu with settings as a row (a phone under about 590 dp tall), where the
+  column widens to 440 dp for the wordmark and the gear. The wordmark's letters close up
+  where the gear leaves them too little room (2026-11-08). In the
   screen's top right, 24 dp from both edges, a round glass button 88 dp across with a
   32 dp X closes the app at once, asking nothing, since the game is kept anyway; on the
   menu and in a setup, in both orientations (`prototypes/exit.html?take=b`, chosen
   2026-11-08 over a quiet last row and a door). It is glass under a quiet tile, both
   going down as a tile does while pressed. In landscape it sits above the photograph,
-  clear of the board (28 dp right of its edge, 8 dp above its top); in portrait, where
+  clear of the board (28 dp right of its edge, 8 dp above its top; on a phone, where the
+  board would reach it, the board moves down to 16 dp under it or narrows to its left,
+  whichever leaves it larger); in portrait, where
   it would reach the board, the board moves down to 16 dp under it and shrinks to keep
   24 dp above the sheet (640 to 620 dp on the tablet). The board keeps 40 dp above and
   below it, down to 24 where a setup's tall sheet near square would leave it under 40%
-  of the width (2026-11-08). A friend
-  and the computer open a new game's setup in the same column: back and the title, then
+  of the width (2026-11-08). A board under 96 dp isn't shown (a setup on a short phone);
+  the pieces on its tiles still are. A friend
+  and the computer open a new game's setup in the same column: back (88 dp) and the title, then
   a row of tiles per choice, lit as in settings, each with its dim name above it: which
   draughts (international 10 × 10, the default, Brazilian 8 × 8, or Russian 8 × 8, each
   with a small board at the start), the level against the computer (easy, medium, hard,
   with one to three pips), the child's pieces against the computer (white, the default,
   or black, each tile showing its piece; 2026-11-08), and the clock (none with a
-  stopwatch, 5 min +3 s a move, 10 min +5 s a move); then play, a primary row. The
+  stopwatch, 5 min +3 s a move, 10 min +5 s a move); then play, a primary row. Every tile
+  is 88 dp tall at least (the setup's tiles were 76 and back 56 until 2026-11-08). In a
+  landscape too short for the column (a phone), it becomes two columns of 330 dp side by
+  side: back, the title, the draughts, and the level in the first; the child's pieces,
+  the clock, and play in the second, the title in a smaller face if it needs it. In
+  portrait, where the sheet would reach the X (the computer's on a 9:16 phone at 480 dp),
+  back and the title leave the sheet for the top left, back on glass, level with the X,
+  as in settings. The
   choices are kept for next time in `settings.txt`, and play replaces a saved game
   without asking. Beside a setup the board is the game play will start: the chosen
   draughts at its start, 10 × 10 or 8 × 8, turned when the child plays black against
@@ -296,7 +310,8 @@ the prototype tried, kept for 3D:
   chosen differs from it; a tap's frame still shows what it declared, and the next
   shows the board and the column changed together. The draughts' tiles are thirds of their row while each name fits a
   third with 16 dp either side; else, as in landscape, each takes its name's width and
-  an even share of the rest (2026-11-08). A tile's word still too wide for it, as a
+  an even share of the rest (2026-11-08), each at least 88 dp wide; thirds again where
+  the names leave nothing to share. A tile's word still too wide for it, as a
   translation's may be, takes the small face. Home's computer row notes the kept level. The language is
   only in settings (2026-11-07): kids who can't read yet don't need it on home, and a
   tablet set to one language can still play in another. In portrait the column is a sheet below the

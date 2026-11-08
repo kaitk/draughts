@@ -37,24 +37,31 @@ let PUZZLES = 8;
 let EXIT = 9;               // close the app
 
 let ROWS = 4;               // and settings, a fifth in landscape
-let ROW_H = 80.0;           // dp
-let ROW_GAP = 10.0;
+let ROW_H = 88.0;           // dp, the floor for small hands
+let ROW_GAP = 2.0;
 let MARK_H = 72.0;          // the wordmark's row
-let MARK_GAP = 28.0;        // under it in landscape; 12 in portrait
+let MARK_GAP = 34.0;        // under it in landscape; 14 beside settings' gear
+let GEAR = 88.0;            // settings beside the wordmark, over its row's height
+let MARGIN = 16.0;          // dp the menu keeps from the screen's top and foot at least
 let CORNER = 88.0;          // the way out, round, in the top right,
 let EDGE = 24.0;            // this far from both edges,
 let CROSS = 32.0;           // its X
 
 // The setup's parts, in dp.
-let HEAD_H = 56.0;          // back and the title
+let HEAD_H = 88.0;          // back and the title
 let HEAD_GAP = 18.0;
 let GROUP_H = 34.0;         // a choice's dim name over its tiles
 let BOARD_TILE_H = 128.0;   // a draughts tile: its board at the start, name, and size
 let MINI_SIZE = 64.0;       // that board
 let WORD_PAD = 16.0;        // the room a draughts tile's name wants either side
-let TILE_H = 76.0;          // the other tiles
+let TILE_H = 88.0;          // the other tiles
 let TILE_GAP = 10.0;
 let PLAY_GAP = 18.0;
+let COLUMN_W = 360.0;       // the column's content in landscape;
+let GEAR_W = 440.0;         // the menu's with the gear beside the wordmark;
+let PAIR_W = 330.0;         // each of two side by side where one is too tall (a phone)
+let PAIR_GAP = 24.0;
+let LEAST = 96.0;           // dp: a board under this isn't shown
 
 let LEVEL_KEYS = [strings::PICK_EASY, strings::PICK_MEDIUM, strings::PICK_HARD];
 let LEVEL_NOTES = [strings::LEVEL_EASY, strings::LEVEL_MEDIUM, strings::LEVEL_HARD];
@@ -62,16 +69,42 @@ let LEVEL_NOTES = [strings::LEVEL_EASY, strings::LEVEL_MEDIUM, strings::LEVEL_HA
 // Where the way out is on a screen `width` pixels wide.
 fn corner(width: f32, u: f32) -> float4 { float4 { width - (EDGE + CORNER) * u, EDGE * u, CORNER * u, CORNER * u } }
 
-// How tall the column's content is: the menu, or a setup (FRIEND or COMPUTER).
-fn content_height(setup: i64, landscape: bool, u: f32) -> f32 {
-    if setup == NOTHING {
-        let mark_gap = (if landscape { MARK_GAP } else { 12.0 }) * u;
-        let rows = if landscape { ROWS + 1 } else { ROWS };
-        return MARK_H * u + mark_gap + ROW_GAP * u + rows * ROW_H * u + (rows - 1) * ROW_GAP * u;
-    }
+// How tall the menu is, with settings a row of its own or the gear beside the wordmark.
+fn menu_height(gear: bool, u: f32) -> f32 {
+    let rows = if gear { ROWS } else { ROWS + 1 };
+    let gap = if gear { 14.0 } else { MARK_GAP };
+    return (MARK_H + gap + rows * ROW_H + (rows - 1) * ROW_GAP) * u;
+}
+
+// Whether settings is the gear beside the wordmark: in portrait, and in a landscape too
+// short for the menu with it as a row (a phone).
+fn gear_beside(landscape: bool, height: f32, u: f32) -> bool {
+    return !landscape || menu_height(false, u) > height - 2.0 * MARGIN * u;
+}
+
+// How tall a setup's column is (FRIEND or COMPUTER): its groups, back and the title before
+// them (unless not `headed`) and play after, or, `paired`, two columns side by side, the
+// first with back, the title, and the first half of the groups, the second with the rest
+// and play.
+fn setup_height(setup: i64, paired: bool, u: f32, headed: bool = true) -> f32 {
     let groups = if setup == COMPUTER { 4 } else { 2 };
-    let tiles = BOARD_TILE_H + (groups - 1) * TILE_H;
-    return (HEAD_H + HEAD_GAP + groups * GROUP_H + tiles + PLAY_GAP + ROW_H) * u;
+    let head: f32 = if headed { HEAD_H + HEAD_GAP } else { 0.0 };
+    let play: f32 = PLAY_GAP + ROW_H;
+    guard paired else { return (head + groups * GROUP_H + BOARD_TILE_H + (groups - 1) * TILE_H + play) * u; }
+    let first = head + groups / 2 * GROUP_H + BOARD_TILE_H + (groups / 2 - 1) * TILE_H;
+    let second = groups / 2 * GROUP_H + groups / 2 * TILE_H + play;
+    return max(first, second) * u;
+}
+
+// Whether a setup's column is two side by side: in a landscape too short for one.
+fn paired(setup: i64, landscape: bool, height: f32, u: f32) -> bool {
+    return landscape && setup != NOTHING && setup_height(setup, false, u) > height - 2.0 * MARGIN * u;
+}
+
+// How tall the column's content is: the menu, or a setup (FRIEND or COMPUTER).
+fn content_height(setup: i64, landscape: bool, height: f32, u: f32) -> f32 {
+    if setup == NOTHING { return menu_height(gear_beside(landscape, height, u), u); }
+    return setup_height(setup, paired(setup, landscape, height, u), u);
 }
 
 // Declares home for this frame on a screen width × height pixels, its pieces over the UI
@@ -81,66 +114,103 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, width: f
          s: settings::Settings&) -> i64 {
     let u = g.scale;
     let landscape = width >= height;
-    let content_h = content_height(setup, landscape, u);
+    let content_h = content_height(setup, landscape, height, u);
+    let pair = paired(setup, landscape, height, u);
+    let clear = (EDGE + CORNER + 16.0) * u;
     var col = float4 { 0.0, 0.0, 0.0, 0.0 };
     var content = col;
+    var head = col;             // back and the title, where they leave the sheet
     if landscape {
-        // The column, 440 dp wide, its left corners off the screen; the board in the
-        // rest, 70% of the height at most, 40 dp from the column.
-        col = float4 { -32.0 * u, 0.0, 472.0 * u, height };
-        content = gui::center(float4 { 40.0 * u, 48.0 * u, 360.0 * u, height - 96.0 * u }, 360.0 * u, content_h);
-        let stage = float4 { 440.0 * u, 0.0, width - 440.0 * u, height };
-        let size = min(0.7 * height, stage.z - 80.0 * u);
-        l = board::layout_at(stage.x + 0.5 * (stage.z - size), 0.5 * (height - size), size, u, n);
+        // The column, its left corners off the screen, 360 dp of content (a setup too
+        // tall for that, two columns of 300 side by side); the board in the rest, 70% of
+        // the height at most, 40 dp from the column. Where the board would reach the way
+        // out (a phone), it moves down to 16 dp under it or narrows to its left, whichever
+        // leaves it larger.
+        let wide = if pair { 2.0 * PAIR_W + PAIR_GAP } else if setup == NOTHING && gear_beside(true, height, u) { GEAR_W }
+                   else { COLUMN_W };
+        let w = wide * u;
+        col = float4 { -32.0 * u, 0.0, w + 112.0 * u, height };
+        content = gui::center(float4 { 40.0 * u, 0.0, w, height }, w, content_h);
+        let stage = float4 { w + 80.0 * u, 0.0, width - w - 80.0 * u, height };
+        var size = min(0.7 * height, stage.z - 80.0 * u);
+        var x = stage.x + 0.5 * (stage.z - size);
+        var y = 0.5 * (height - size);
+        if y < clear && x + size > width - clear {
+            let down = min(size, height - 24.0 * u - clear);
+            let left = min(size, width - clear - stage.x - 40.0 * u);
+            if down >= left {
+                size = down;
+                x = stage.x + 0.5 * (stage.z - size);
+                y = clear;
+            } else {
+                size = left;
+                x = width - clear - size;
+                y = 0.5 * (height - size);
+            }
+        }
+        if size < LEAST * u { size = 0.0; }
+        l = board::layout_at(x, y, size, u, n);
     } else {
         // A sheet along the bottom, its lower corners off the screen; the board above it,
         // moving down to 16 dp under the way out where it would reach it, and shrinking to
-        // keep 24 dp above the sheet. (In landscape the board's top is 120 dp down at
-        // least, clear of it.) It keeps 40 dp above and below, less, down to 24, where a
-        // tall setup's sheet near square would leave it under 40% of the width.
-        let sheet_h = content_h + 64.0 * u;
+        // keep 24 dp above the sheet. It keeps 40 dp above and below, less, down to 24,
+        // where a tall setup's sheet near square would leave it under 40% of the width.
+        // Where a setup's sheet would reach the way out (the computer's on a short phone),
+        // back and the title leave it for the top left, level with the way out, and the
+        // board, with no room left, isn't shown.
+        var sheet_h = content_h + 64.0 * u;
+        if setup != NOTHING && height - sheet_h < clear {
+            sheet_h = setup_height(setup, false, u, false) + 64.0 * u;
+            head = float4 { EDGE * u, EDGE * u, width - (2.0 * EDGE + CORNER + 16.0) * u, HEAD_H * u };
+        }
         col = float4 { 0.0, height - sheet_h, width, sheet_h + 32.0 * u };
         content = float4 { 32.0 * u, height - sheet_h + 32.0 * u, width - 64.0 * u, content_h };
         let stage_h = height - sheet_h;
         let room = max(stage_h - 80.0 * u, min(stage_h - 48.0 * u, 0.4 * width));
         var size = min(min(0.8 * width, 0.6 * height), room);
         var y = 0.5 * (stage_h - size);
-        let clear = (EDGE + CORNER + 16.0) * u;
         if 0.5 * (width + size) > width - clear && y < clear {
             y = clear;
             size = min(size, stage_h - 24.0 * u - y);
         }
+        if head.z > 0.0 { y = max(y, clear); size = min(size, stage_h - 24.0 * u - y); }
+        if size < LEAST * u { size = 0.0; }
         l = board::layout_at(0.5 * (width - size), y, size, u, n);
     }
     gui::glass(g, col, 32.0);
     over.clear();
-    var pick = if setup != NOTHING { choose(over, g, content, setup == COMPUTER, s) }
-               else { menu(over, g, content, landscape, s) };
+    var pick = if setup != NOTHING { choose(over, g, content, setup == COMPUTER, pair, head, s) }
+               else { menu(over, g, content, gear_beside(landscape, height, u), s) };
     // The way out, declared last so the tiles before it keep their order.
     if gui::round_button(g, 309, corner(width, u), gui::CLOSE, CROSS) { pick = EXIT; }
     return pick;
 }
 
-// The menu in c: the wordmark, the rows, and settings.
-fn menu(over: game::Overlay&, g: gui::Gui&, c: float4, landscape: bool, s: settings::Settings&) -> i64 {
+// The menu in c: the wordmark, the rows, and settings, a row of its own or, `gear`, a
+// quiet tile at the wordmark's right (portrait, and a short landscape).
+fn menu(over: game::Overlay&, g: gui::Gui&, c: float4, gear: bool, s: settings::Settings&) -> i64 {
     let u = g.scale;
     var content = c;
 
-    // The wordmark: a crowned light piece and the app's name; in portrait, settings at
-    // the right.
+    // The wordmark: a crowned light piece and the app's name; settings at the right, 88
+    // dp, reaching 8 dp over and under the row.
     var mark = gui::cut_top(content, MARK_H * u);
     let piece = gui::cut_left(mark, 56.0 * u);
     game::put(over, piece, 28.0 * u, rules::WHITE, board::CROWN,
               1.0, false);
     gui::cut_left(mark, 14.0 * u);
     var pick = NOTHING;
-    if !landscape {
-        let gear = gui::center(gui::cut_right(mark, 48.0 * u), 48.0 * u, 48.0 * u);
-        if gui::tile(g, 300, gear, gui::GEAR, gui::QUIET, 16.0) { pick = SETTINGS; }
+    if gear {
+        let r = gui::center(gui::cut_right(mark, GEAR * u), GEAR * u, GEAR * u);
+        if gui::tile(g, 300, r, gui::GEAR, gui::QUIET, 16.0) { pick = SETTINGS; }
     }
-    gui::text(g, gui::TITLE, mark, strings::get(strings::APP_NAME), 1.0, 0.06 * gui::FACE_DP[gui::TITLE] as f32 * u,
-              gui::LEFT);
-    gui::cut_top(content, (if landscape { MARK_GAP } else { 12.0 }) * u + ROW_GAP * u);
+    // The name spaced out, less where the gear leaves it too little room (a phone).
+    let name = strings::get(strings::APP_NAME);
+    let gap = if gear { 12.0 * u } else { 0.0 };
+    let spaced = 0.06 * gui::FACE_DP[gui::TITLE] as f32 * u;
+    let room = (mark.z - gap - gui::text_width(g, gui::TITLE, name)) / max(1, name.len - 1);
+    gui::text(g, gui::TITLE, mark, name, 1.0, clamp(room, 0.0, spaced), gui::LEFT);
+    gui::cut_top(content, (if gear { 14.0 } else { MARK_GAP }) * u);
 
     // The menu.
     let rows = [CONTINUE, FRIEND, COMPUTER, PUZZLES];
@@ -155,7 +225,7 @@ fn menu(over: game::Overlay&, g: gui::Gui&, c: float4, landscape: bool, s: setti
         let note = if i == 2 { strings::get(LEVEL_NOTES[s.level]) } else if i == 3 && all > 0 { stars[..] } else { "" };
         if gui::row(g, 301 + i, r, icons[i], strings::get(keys[i]), note, i == 0, rows[i] != 0) { pick = rows[i]; }
     }
-    if landscape {
+    if !gear {
         let r = gui::cut_top(content, ROW_H * u);
         if gui::row(g, 305, r, gui::GEAR, strings::get(strings::HOME_SETTINGS), "", false, true) { pick = SETTINGS; }
     }
@@ -179,44 +249,68 @@ fn across(row: float4, count: i64, i: i64, u: f32) -> float4 {
     return float4 { row.x + i * (w + TILE_GAP * u), row.y, w, row.w };
 }
 
-// How wide draughts k's tile must be: its name or its board, whichever is wider.
-fn draughts_width(g: gui::Gui&, k: i64) -> f32 {
-    return max(gui::text_width(g, gui::BODY, strings::get(settings::DRAUGHTS_KEYS[k])), MINI_SIZE * g.scale);
+// How wide draughts k's tile must be: its name or its board, whichever is wider, and
+// `least` dp at least.
+fn draughts_width(g: gui::Gui&, k: i64, least: f32) -> f32 {
+    return max(gui::text_width(g, gui::BODY, strings::get(settings::DRAUGHTS_KEYS[k])), least * g.scale);
 }
 
 // Draughts i's tile in the row: a third of it when every name fits a third with room
 // either side; else each tile its name's width and an even share of the rest, so a long
-// name keeps the body face ("Rahvusvaheline", 130 dp, beside a landscape third of 113).
+// name keeps the body face ("Rahvusvaheline", 130 dp, beside a landscape third of 113),
+// each at least 88 dp wide. Thirds too where the names leave no room to share (two
+// columns on a phone): a name too wide for its third then takes the small face.
 fn draughts_tile(g: gui::Gui&, row: float4, i: i64) -> float4 {
     let u = g.scale;
     let count = settings::DRAUGHTS.len;
     let third = across(row, count, i, u);
-    var spare = row.z - (count - 1) * TILE_GAP * u;
+    var least:  f32 = MINI_SIZE;
+    var share:  f32 = 0.0;
     var widest: f32 = 0.0;
-    for k in count {
-        spare -= draughts_width(g, k);
-        widest = max(widest, draughts_width(g, k));
+    for pass in 2 {
+        var spare = row.z - (count - 1) * TILE_GAP * u;
+        var narrowest: f32 = 1.0e9;
+        for k in count {
+            spare -= draughts_width(g, k, least);
+            widest = max(widest, draughts_width(g, k, least));
+            narrowest = min(narrowest, draughts_width(g, k, least));
+        }
+        share = spare / count;
+        guard narrowest + share < 88.0 * u else { break; }
+        least = 88.0;
     }
-    guard widest + 2.0 * WORD_PAD * u > third.z else { return third; }
-    let share = spare / count;
+    guard widest + 2.0 * WORD_PAD * u > third.z && share >= 0.0 else { return third; }
     var x = row.x;
-    for k in i { x += draughts_width(g, k) + share + TILE_GAP * u; }
-    return float4 { x, row.y, draughts_width(g, i) + share, row.w };
+    for k in i { x += draughts_width(g, k, least) + share + TILE_GAP * u; }
+    return float4 { x, row.y, draughts_width(g, i, least) + share, row.w };
 }
 
 // The setup in c: back and the title, the choices, play.
-fn choose(over: game::Overlay&, g: gui::Gui&, c: float4, computer: bool, s: settings::Settings&) -> i64 {
+fn choose(over: game::Overlay&, g: gui::Gui&, content: float4, computer: bool, pair: bool, apart: float4,
+          s: settings::Settings&) -> i64 {
     let u = g.scale;
     var ask = NOTHING;
-    var head = gui::cut_top(c, HEAD_H * u);
-    gui::cut_top(c, HEAD_GAP * u);
-    if gui::tile(g, 320, gui::cut_left(head, 56.0 * u), gui::BACK, gui::PLAIN, 16.0) { ask = BACK; }
+    // One column, or two side by side, `pair`: back, the title, the draughts and the
+    // level in the first; the child's pieces, the clock, and play in the second. Back and
+    // the title are at the column's top, or in `apart` where that is set, back on glass
+    // there as in settings.
+    var c = if pair { float4 { content.x, content.y, PAIR_W * u, content.w } } else { content };
+    let second = float4 { content.x + (PAIR_W + PAIR_GAP) * u, content.y, PAIR_W * u, content.w };
+    var head = apart;
+    if apart.z <= 0.0 {
+        head = gui::cut_top(c, HEAD_H * u);
+        gui::cut_top(c, HEAD_GAP * u);
+    }
+    let back = gui::cut_left(head, HEAD_H * u);
+    if apart.z > 0.0 { gui::glass(g, back, 22.0); }
+    if gui::tile(g, 320, back, gui::BACK, gui::PLAIN, 16.0) { ask = BACK; }
     gui::cut_left(head, 14.0 * u);
     gui::glyph_icon(g, gui::center(gui::cut_left(head, 36.0 * u), 36.0 * u, 36.0 * u),
                     if computer { gui::COMPUTER } else { gui::FRIEND }, gui::PLAIN, 0.0, 0.85);
     gui::cut_left(head, 14.0 * u);
-    gui::text(g, gui::LABEL, head, strings::get(if computer { strings::HOME_COMPUTER } else { strings::HOME_FRIEND }),
-              1.0, 0.0, gui::LEFT);
+    // The title in a smaller face where it is too wide for the column (two side by side).
+    let title = strings::get(if computer { strings::HOME_COMPUTER } else { strings::HOME_FRIEND });
+    gui::text(g, gui::fitting(g, gui::LABEL, title, head.z), head, title, 1.0, 0.0, gui::LEFT);
 
     // The draughts, each with its board at the start.
     let kinds = group(g, c, strings::SETUP_DRAUGHTS, BOARD_TILE_H);
@@ -244,6 +338,7 @@ fn choose(over: game::Overlay&, g: gui::Gui&, c: float4, computer: bool, s: sett
                 ask = CHANGED;
             }
         }
+        if pair { c = second; }
         // The child's pieces, each tile showing one.
         let colors = group(g, c, strings::SETUP_COLOR, TILE_H);
         for i in 2 {
@@ -257,6 +352,7 @@ fn choose(over: game::Overlay&, g: gui::Gui&, c: float4, computer: bool, s: sett
             }
         }
     }
+    if pair && !computer { c = second; }
     // The clock.
     let clocks = group(g, c, strings::SETUP_CLOCK, TILE_H);
     let labels = [-1, strings::CLOCK_BLITZ, strings::CLOCK_RAPID];
