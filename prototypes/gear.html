@@ -53,6 +53,13 @@
     border-radius: 50%; color: var(--fg); }
   .corner::after { background: color-mix(in srgb, var(--glass-tint), rgb(255 255 255 / 0.08)); }
   .corner svg { width: 32px; height: 32px; stroke-width: 2.4; opacity: 0.9; }
+  /* ?x=a to d: takes on the X (task 035's button) beside the bare gear; a is as built. */
+  .x-b .corner, .x-c .corner, .x-d .corner { transition: background 120ms, box-shadow 120ms, transform 120ms; }
+  .x-b .corner:active, .x-c .corner:active { background: rgb(255 255 255 / 0.14); transform: scale(0.96); }
+  .x-b .corner svg { width: 40px; height: 40px; stroke-width: 2.4; opacity: 0.85; }
+  .x-c .corner svg { width: 32px; height: 32px; stroke-width: 2; opacity: 0.6; }
+  .x-d .corner svg { width: 34px; height: 34px; stroke-width: 2.8; opacity: 0.8; }
+  .x-d .corner:active { background: rgb(255 255 255 / 0.10); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.22); transform: scale(0.96); }
   .guides .gear, .guides .corner { outline: 1px dashed rgb(255 120 120 / 0.8); }
 </style>
 </head>
@@ -71,7 +78,9 @@
 <script>
   const params = new URLSearchParams(location.search);
   const TAKES = ['now', 'a', 'b'];
-  const take = TAKES.includes(params.get('take')) ? params.get('take') : 'now';
+  const XS = ['a', 'b', 'c', 'd'];
+  const x = XS.includes(params.get('x')) ? params.get('x') : 'a';
+  const take = TAKES.includes(params.get('take')) ? params.get('take') : params.has('x') ? 'a' : 'now';
   const lang = params.get('lang') === 'et' ? 'et' : 'en';
   const S = {
     en: { app: 'Draughts', continue: 'Continue', friend: 'A friend', computer: 'The computer', medium: 'medium',
@@ -80,7 +89,8 @@
       puzzles: 'Ülesanded' },
   }[lang];
   document.documentElement.lang = lang;
-  document.body.classList.add(`take-${take}`);
+  document.body.classList.add(`take-${take}`, `x-${x}`);
+  if (x !== 'a') document.querySelector('.corner').classList.remove('glass');
   document.body.classList.toggle('guides', params.has('guides'));
   if (take === 'b') document.querySelector('.gear').classList.add('glass');
   Draughts.ICONS.close = '<path d="M6 6l12 12"/><path d="M18 6 6 18"/>';
@@ -127,10 +137,11 @@
     el.addEventListener('click', (e) => { e.preventDefault(); el.blur(); });
   }
   const bar = document.querySelector('.proto-bar');
-  bar.insertAdjacentHTML('afterbegin', `<select aria-label="take">${TAKES.map((k) =>
+  bar.insertAdjacentHTML('afterbegin', `<select aria-label="x">${XS.map((k) =>
+    `<option${k === x ? ' selected' : ''}>${k}</option>`).join('')}</select>` + `<select aria-label="take">${TAKES.map((k) =>
     `<option${k === take ? ' selected' : ''}>${k}</option>`).join('')}</select>` +
     `<select aria-label="lang">${['en', 'et'].map((k) => `<option${k === lang ? ' selected' : ''}>${k}</option>`).join('')}</select>`);
-  for (const [i, key] of [[0, 'take'], [1, 'lang']]) {
+  for (const [i, key] of [[0, 'x'], [1, 'take'], [2, 'lang']]) {
     bar.querySelectorAll('select')[i].onchange = (e) => {
       e.stopPropagation();
       params.set(key, e.target.value);
