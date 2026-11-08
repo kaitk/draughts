@@ -206,15 +206,16 @@ fn main() {
     }
     // --dp says how many dp the shorter side has, so the floor stays off unless asked.
     if dp_given && !floor_given { gui::density_floor = 0.0; }
-    // The settings and the game, kept in the app's storage folder (shell/settings.goose,
-    // shell::save).
+    // The game as it was when the app was last paused (shell::restore; nothing changes
+    // for a missing or damaged file). A run with flags that set up a game or take a
+    // screenshot neither reads nor writes it.
+    let keep = screen < 0 && puzzle_id < 0 && go < 0 && win_at < 0.0 && fen.len == 0 && taps.len == 0 && frames < 0 && variant < 0 && clock_kind < 0 && computer < 0;
+    // The players, their settings, and their games, kept in the app's storage folder
+    // (shell/players.goose): the playing player's settings with the device's language.
     var folder: u8[512] = [0; 512];
     let dir = folder[..draughts_storage(folder)];
-    let prefs_path = str(dir, "settings.txt");
-    let save_path = str(dir, "game.bin");
-    var prefs_text: u8[>..] = [];
-    read_file(prefs_path, prefs_text);
-    let prefs = settings::parse(prefs_text);
+    var players_read = players::Players {};
+    let prefs = players::load(players_read, dir, keep);
     if kind < 0 { kind = theme_for(prefs.season); }
     if hints < 0 { hints = prefs.hints; }
     var locales: u8[256] = [0; 256];
@@ -237,6 +238,7 @@ fn main() {
     }
     sh.prefs = prefs;
     sh.prefs.show_board_row = show_3d;
+    sh.players = players_read;
     let gm .= sh.game;
     let b .= gm.b;
     b.hints = hints;
@@ -258,14 +260,8 @@ fn main() {
         shell::play_puzzle(sh, puzzles::find(puzzles::all, puzzle_id));
         screen = shell::PUZZLE;
     }
-    // The game as it was when the app was last paused (shell::restore; nothing changes
-    // for a missing or damaged file). A run with flags that set up a game or take a
-    // screenshot neither reads nor writes it.
-    let keep = screen < 0 && go < 0 && win_at < 0.0 && fen.len == 0 && taps.len == 0 && frames < 0 && variant < 0 && clock_kind < 0 && computer < 0;
-    if keep {
-        var saved: u8[>..] = [];
-        if read_file(save_path, saved) { shell::restore(sh, saved); }
-    }
+    // The playing player's game, with the screen it was on.
+    shell::read_game(sh);
     var d = draw::new(kind);
     var w = widgets::new();
     var g = gui::Gui {};
@@ -286,7 +282,7 @@ fn main() {
         // Android may kill the app once it is paused; it loses focus then, and SDL lets
         // the loop run once more before blocking, so the game is written here: one small
         // write per pause, none while idle.
-        if keep && focused && !gfx::focused() { write_file_atomic(save_path, shell::save(sh)); }
+        if focused && !gfx::focused() { shell::write_game(sh); }
         // The clocks count only time the game was on screen: not the gap while Android had
         // the app paused, nor while it was in the background. On the Mac a window started
         // from a terminal never has focus, and the loop never blocks there, so focus is
@@ -371,9 +367,7 @@ fn main() {
         // for the frame that starts it moving.
         if sh.changed && sh.from < 0 {
             sh.changed = false;
-            var out: u8[>..] = [];
-            settings::write(sh.prefs, out);
-            write_file_atomic(prefs_path, out);
+            players::write(sh.players, sh.prefs);
             let next = if sh.prefs.language >= 0 { sh.prefs.language } else { system_lang };
             if next != strings::current { strings::use(next); }
             if theme_for(sh.prefs.season) != d.kind { season_in = 2; }
@@ -444,6 +438,6 @@ fn main() {
         if frames > 0 && gfx::frame_count() >= frames { break; }
     }
     if frames > 0 { gfx::screenshot("draughts.png"); }
-    if keep { write_file_atomic(save_path, shell::save(sh)); }
+    shell::write_game(sh);
     if sh.quit { draughts_close(); }
 }

@@ -1,5 +1,6 @@
 // Settings (shell/settings.goose), headless: the file they are kept in reads back what
 // was written, and a file that lacks a key or says something unknown leaves the default.
+// The language is the device's (shell/players.goose), kept apart from the player's file.
 // On the regrouped screen a tap applies at once and marks the settings changed for the
 // app to write: the language in the title row; the draughts a new game starts on, move
 // hints (which the game's board takes), a season, and the kings (which the game's board
@@ -42,7 +43,7 @@ fn show(sh: shell::Shell&, what: const u8[:]) {
     var out: u8[>..] = [];
     settings::write(sh.prefs, out);
     for i in out.len { if out[i] == '\n' { out[i] = ';'; } }
-    print(what, ": ", out, " changed ", sh.changed, ", game's board hints moves ", sh.game.b.hints == board::MOVES,
+    print(what, ": ", out, " language ", sh.prefs.language, ", changed ", sh.changed, ", game's board hints moves ", sh.game.b.hints == board::MOVES,
           ", kings ", sh.game.b.king_look);
     sh.changed = false;
 }
@@ -85,7 +86,7 @@ fn main() {
     let s = settings::parse("season = winter\nhints = moves\nkings = stack\nlanguage = et\nboard = 3d\ndraughts = brazilian\nlevel = easy\ncolor = black\nclock = 10+5\n");
     out.clear();
     settings::write(s, out);
-    print("read back:\n", out);
+    print("read back:\n", out, "and the language, the device's: ", s.language);
     var twice: u8[>..] = [];
     settings::write(settings::parse(out), twice);
     print("written again the same: ", twice == out);

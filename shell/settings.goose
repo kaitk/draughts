@@ -12,10 +12,12 @@
 // and Look, choose which, in the title row in landscape and under it in portrait. A
 // tap applies at once; there is no save button.
 //
-// The values are kept across runs as a small text file, one `key = value` per line,
-// which the app reads at start and writes after a change. The file also keeps the
-// computer's skill at each level, which moves after each game against it, how many
-// such games began, and the stars won in each puzzle (`stars = 1:3 4:2`, by puzzle id).
+// The values are kept across runs as a small text file per player, one `key = value`
+// per line, which the app reads at start and writes after a change (players.goose): the
+// player's picture and name, whether they have had the first start, the choices here
+// but the language, which is the device's, a new game's setup, the computer's skill at
+// each level, which moves after each game against it, how many such games began, and
+// the stars won in each puzzle (`stars = 1:3 4:2`, by puzzle id).
 namespace settings;
 import std;
 import vec;
@@ -62,11 +64,16 @@ let SKILL_KEYS = ["skill_easy", "skill_medium", "skill_hard"];
 let CLOCK_NAMES = ["none", "5+3", "10+5"];
 
 struct Settings {
-    season:   i64 = BY_DATE,    // a theme (app/theme.goose), or BY_DATE
-    board:    i64 = FLAT,       // kept in the file; the flat board is drawn until show_board_row
-    hints:    i64 = board::MISTAKES,
-    kings:    i64 = AUTO,
-    language: i64 = SYSTEM,     // strings::EN.., or SYSTEM
+    // The player's picture (players::ANIMALS) and name, up to 12 characters, perhaps
+    // none; and whether they have had the first start (task 026).
+    picture:          i64           = 0,
+    name:             players::Name = [],
+    first_start_done: bool          = false,
+    season:           i64           = BY_DATE, // a theme (app/theme.goose), or BY_DATE
+    board:            i64           = FLAT,    // kept in the file; the flat board is drawn until show_board_row
+    hints:            i64           = board::MISTAKES,
+    kings:            i64           = AUTO,
+    language:         i64           = SYSTEM, // strings::EN.., or SYSTEM; the device's, in settings.txt
     // A new game's setup, kept for the next one.
     variant: i64 = DEFAULT_DRAUGHTS,
     level:   i64 = 1,           // medium
@@ -107,6 +114,11 @@ fn parse(text: const u8[:]) -> Settings {
         guard ok else { continue; }
         let key = trim(k);
         let value = trim(v);
+        if key == "picture" {
+            for name, i in players::ANIMALS { if value == name { s.picture = i; } }
+        }
+        if key == "name" { players::set_name(s.name, value); }
+        if key == "first_start" && value == "done" { s.first_start_done = true; }
         if key == "season" {
             for name, i in SEASON_NAMES { if value == name { s.season = SEASON_KINDS[i]; } }
         }
@@ -146,9 +158,16 @@ fn parse(text: const u8[:]) -> Settings {
     return s;
 }
 
-// The file for settings s, appended to out.
+// A player's file for settings s, appended to out: all but the language.
 fn write(s: Settings, out: u8[>..]&) {
-    out.append("season = ");
+    out.append("picture = ");
+    out.append(players::ANIMALS[clamp(s.picture, 0, players::ANIMALS.len - 1)]);
+    if s.name.len > 0 {
+        out.append("\nname = ");
+        out.append(s.name[..]);
+    }
+    if s.first_start_done { out.append("\nfirst_start = done"); }
+    out.append("\nseason = ");
     var season = "by-date";
     for kind, i in SEASON_KINDS { if s.season == kind { season = SEASON_NAMES[i]; } }
     out.append(season);
@@ -156,8 +175,6 @@ fn write(s: Settings, out: u8[>..]&) {
     out.append(if s.hints == board::MOVES { "\nhints = moves" } else { "\nhints = mistakes" });
     out.append("\nkings = ");
     out.append(KING_NAMES[s.kings]);
-    out.append("\nlanguage = ");
-    out.append(if s.language >= 0 { strings::LANGUAGES[s.language] } else { "system" });
     out.append("\ndraughts = ");
     for v, i in DRAUGHTS { if s.variant == v { out.append(DRAUGHTS_NAMES[i]); } }
     out.append("\nlevel = ");
