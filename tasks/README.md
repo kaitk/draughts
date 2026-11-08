@@ -54,22 +54,31 @@ desktop; placeholders do until then. 024 reviews the Estonian translation once t
 
 The MVP's features are in: puzzles, the computer with its clock, three variants, the
 icon and launch, the win (031), the setup's board (034), the transitions (022), and
-home's X (035, all but its phone check). Done on 2026-11-08 and archived or recorded in
-their tasks: the `--tap` stall (tablet runs start with `am start -S`), the launcher's
-name per language ("Kabe" in Estonian), the autumn icon (winter again for the winter
-months and the release, task 033), a multi-capture tapped stop by stop and puzzles with
-no targets (task 007), medium starting at skill 40 and never under 25 (task 006), and
-settings' Board row hidden until the 3D board exists (`--3d`, task 015).
+home's X (035, done; to archive). Done on 2026-11-08 and recorded in their tasks: the
+`--tap` stall, the launcher's name per language, the autumn icon, a multi-capture tapped
+stop by stop (007), medium's skill (006), settings' Board row hidden until 3D (015), and
+almost all of 030 (phones and other screen sizes): the survey, near-square fixes, phone
+layouts down to 480 dp with every tap at 88 dp, the density floor at F = 0.75 (the Pixel
+7a lays out about 549 dp across), the safe area (cutout and gesture bar; the top
+swipe-down strip and SDL's side strips left out, `patches/SDL/0002`), Android's back
+going back a screen, phones turning with the screen, larger tablets on the Mac, and the
+Pixel 7a and the tablet checked. The user liked the phone layouts' design choices
+(tabs on phones, two setup columns, play at the bottom of the second); Estonian kings
+are "Tammi kuju" with "Laua järgi".
 
 The order for what is left:
 
-1. 030, phones and other screen sizes: the survey, the fixes (home's portrait menu runs
-   off phones; home's portrait settings button is 48 dp, under the 88 dp floor), insets,
-   then the user's Pixel 7a. It closes 035's last criterion. Before memory, so memory is
-   sized and measured on the final layouts.
+1. 030's last step: the tablet's re-check, when it's next attached, of the two last
+   changes (Samsung's top strip no longer reserved, settings' landscape glass over the
+   hidden navigation bar so both groups show): insets 0,0,0,72 expected, settings in
+   landscape with both groups. Then 030 is done; archive 030 and 035.
 2. 032, memory: measure first, then the blur against its alternatives, ASTC with a
    fallback, sizing by each screen's size and density; the idle CPU rise; PSS was 277 to
-   278 MB on puzzle 21 after the lifecycle cycles (task 007 had 268 to 272).
+   278 MB on puzzle 21 after the lifecycle cycles (task 007 had 268 to 272). Starting
+   numbers from 030: the tablet 259 to 264 MB over 20 lifecycle cycles (graphics 211 to
+   215), idle 1.26 s a minute; the Pixel 7a 291 MB at home (graphics 252); the
+   photograph stretched 1.25× at 2560 and 1.41× at 2880 px (030, "Larger tablets on the
+   Mac"). The Pixel stays attached as a second device; one device agent at a time.
 3. 011 before release, then 029, the Play release (start the developer account early:
    a new personal account needs a 14-day closed test with 12 testers). Switch the icon
    back to winter before it ships.
