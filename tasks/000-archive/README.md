@@ -65,3 +65,42 @@ and the commit that last has it.
   on the tablet PSS at home 216 → 130 MB fresh and about 261 → 136 through the
   lifecycle, graphics at home 160 → 91 MB; the Pixel 7a at home 291 → 146 MB; each
   screen size checked on the Mac. `032-memory.md`, `65a6acc`
+- 006: Computer player. Done: `ai/` searches with alpha-beta and a fixed transposition
+  table at three levels with an adapting skill (medium starts at 40, never under 25);
+  the user judged it good enough to ship (2026-11-08), to retune after children play it.
+  `006-computer-player.md`, `8987f26`
+- 007: Puzzles. Done: International puzzles in a plain text file with goals and every
+  solving line counted, a picker and a puzzle screen (take c), stars, hints, and
+  multi-captures by hand; the 30 puzzles of three tiers were replaced by task 037's set.
+  `007-puzzles.md`, `8987f26`
+- 008: Game shell. Done: the UI layer, the game panel, home, settings, and resuming the
+  game after Android kills the app, in five subtasks. `008-game-shell/`, `8987f26`
+- 016: Tabletop pictures for the 2D game. Cancelled by the user on 2026-11-07: the
+  generated tabletops looked like flat stock textures, so the 2D board stays on the
+  blurred season photograph; the prompts stay in `design/tabletops/`.
+  `016-tabletops.md`, `8987f26`
+- 019: Prototype the game screen's controls, a clock, and the first start. Done:
+  the game screen's panel with labelled tiles, the clocks, and a setup on home settled in
+  prototypes (built by 021 and 025); the first start went to task 026.
+  `019-game-screen-and-first-start.md`, `8987f26`
+- 020: Review the code's layout as a whole. Done: the review's changes 6, 8, 1, 2, and 5
+  were made; a third was left for later. `020-code-layout-review.md`, `8987f26`
+- 021: The game screen, the clocks, and a new game's setup. Done: the board between two
+  panels of labelled tiles, clocks on the play side, and a setup on home for a friend
+  and the computer. `021-game-screen-and-setup.md`, `8987f26`
+- 023: Brazilian draughts. Done: International's rules on 8×8 as a `BRAZILIAN` variant
+  in `rules/`, offered in settings and in a new game's setup. `023-brazilian.md`,
+  `8987f26`
+- 024: Review the Estonian translation. Done: Gemini read every key twice (two models in
+  the first pass, then a second pass); the changes taken are in `strings/et.txt`, the
+  screens checked in both orientations on the Mac and the tablet. The briefs and
+  proposals were deleted with the folder. `024-estonian-review/`, `8987f26`
+- 025: The regrouped settings with the board beside them. Done: game and look groups,
+  the language in the title row, and home's board showing what the choices make.
+  `025-settings-regrouped.md`, `8987f26`
+- 027: The computer spends its clock as a player of its level would. Done: `game/pace.goose`
+  gives each move a share of what it could spend by level, keeping its clock; the numbers
+  are in `docs/architecture/ai.md`. `027-computer-clock.md`, `8987f26`
+- 028: The app icon and the launch screen. Done: the winter jump icon, the launcher's
+  name in the phone's language, and a launch theme with no blank frame; the icon is
+  `design/icon/`. `028-icon-and-launch.md`, `8987f26`

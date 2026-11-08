@@ -11,7 +11,7 @@
 // starts, the time it takes being pace::seconds from its clock at that point; the
 // increment comes with its move, and white's first move is untimed. Neither side may
 // lose on time, and the computer's time a move must fall in its level's range (the
-// ranges and why: tasks/027-computer-clock.md). The search counts nodes, so the games
+// ranges and why: docs/architecture/ai.md). The search counts nodes, so the games
 // replay the same on any machine; hard's node limit is lowered to stay quick through
 // TinyCC.
 import std;

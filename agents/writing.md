@@ -14,3 +14,26 @@
   headings, backticks for identifiers and commands, and wrap prose at about 90
   characters.
 - Docs and commits don't credit a decision or a request to a person; date it instead.
+
+## Reviewing a translation
+
+How the Estonian review ran (2026-11-08); repeat it for new strings or another language.
+
+- A Gemini agent proposes, a Claude session checks. Run it headless and without tools:
+  `agy --sandbox -p "<prompt>"`, the answer as text on stdout (`agy` takes the prompt only
+  as the argument, not on stdin; a run takes from 1 to 15 minutes by model). Gemini writes
+  the best Estonian of the models, given the right context.
+- The brief is one file: what the app is and who uses it (`docs/product.md`), every key
+  with its English, current text, where it shows, its face, and its room in dp, the
+  language's draughts terms, and the answer's format. Proposals go to a file, never into
+  `strings/<lang>.txt`.
+- Take a change only with a reason: wrong, unnatural, or too long for its tile. Check each
+  against the English (no meaning lost, nothing added) and measure its width the way
+  `gui::text_width` sums the face's advances. A second model or pass is a second opinion,
+  not a vote.
+- Keep every key in every language file (`test/strings/` fails otherwise), and check the
+  longer labels on the Mac in both orientations with `--lang <code>`.
+- The Estonian terms: Eesti Kabeliit's rules write *lööma* for capture, *kabend* for a
+  piece, *kivi* for a man and *kabe* for a king; sides are named in the plural (Valged,
+  Mustad). The tightest labels are "Rahvusvaheline" (the setups' tiles size to their
+  words, `home::draughts_tile`) and "Kuupäev"/"Tänane" on settings' background tile.
