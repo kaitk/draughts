@@ -8,7 +8,8 @@ Steps: Goose writes the program's C and the runtime's C; goose_gfx's sources are
 and patches/goose_gfx applied, and SDL is copied and patches/SDL applied; CMake with the
 NDK builds
 libSDL3.so and libmain.so (android/CMakeLists.txt); javac and d8 compile SDL's stock Java
-glue and DraughtsActivity; aapt2 links the manifest; zip adds the dex and the stripped libraries, the libraries
+glue and DraughtsActivity; aapt2 compiles android/res (the icon and the theme) and links
+it with the manifest; zip adds the dex and the stripped libraries, the libraries
 stored uncompressed; zipalign aligns them to 16 KB; apksigner signs with the debug key.
 
 Tools come from the environment or the defaults below: GOOSE, ANDROID_HOME, ANDROID_NDK,
@@ -139,8 +140,10 @@ def main():
     # 4. Link, add, align, sign.
     unaligned = out / f"{name}-unaligned.apk"
     aligned = out / f"{name}.apk"
+    res = out / "res.zip"
+    run(BUILD_TOOLS / "aapt2", "compile", "--dir", ROOT / "android/res", "-o", res)
     run(BUILD_TOOLS / "aapt2", "link", "-o", unaligned, "--manifest",
-        ROOT / "android/AndroidManifest.xml", "-I", android_jar,
+        ROOT / "android/AndroidManifest.xml", "-I", android_jar, res,
         "--min-sdk-version", MIN_SDK, "--target-sdk-version", TARGET_SDK)
     run("zip", "-q", unaligned, "classes.dex", cwd=apk_dir)
     run("zip", "-q", "-0", "-r", unaligned, "lib", cwd=apk_dir)

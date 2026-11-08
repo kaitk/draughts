@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The icon's navy, at its corners: its background layer, and the window and splash
+         behind the app until its first frame. -->
+    <color name="navy">#06172b</color>
+</resources>

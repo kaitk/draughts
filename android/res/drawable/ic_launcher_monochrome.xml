@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The icon's monochrome layer, for Android 13's themed icons: the winter jump drawn from
+     the master's geometry in dp of the 108 dp canvas, with the scene 64 dp wide and centred
+     as scripts/icon.py places the foreground. The board's top face and side as lines (the
+     side thickened from 2.3 to 3 dp so its lines stay apart), broken where the arc and the
+     king stand in front; the dark piece and the king's two discs as a face and side bands;
+     the arc tapering from 2 dp to its ends. Redraw it when the scene changes shape. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M22.16,54.61L30.48,49.5M34.24,47.2L53.96,35.11L69.91,44.93M79.66,50.93L85.76,54.69L85.76,57.69L53.96,80.26L22.16,57.61L22.16,54.61M22.16,54.61L53.96,77.26L85.76,54.69M53.96,77.26L53.96,80.26"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M47.73,51.77a6.23,3.24 0 1,0 12.46,0a6.23,3.24 0 1,0 -12.46,0zM47.73,52.37a6.23,3.24 0 0,0 12.46,0v2.07a6.23,3.24 0 0,1 -12.46,0zM68.81,47.73a4.98,2.75 0 1,0 9.95,0a4.98,2.75 0 1,0 -9.95,0zM68.81,48.33a4.98,2.75 0 0,0 9.95,0v1.26a4.98,2.75 0 0,1 -9.95,0zM68.81,50.19a4.98,2.75 0 0,0 9.95,0v1.26a4.98,2.75 0 0,1 -9.95,0z"
+        android:fillColor="#FFFFFFFF" />
+    <path
+        android:pathData="M31.19,52.9C38.62,27.1 60.14,19.63 73.35,47.45L73.9,47.2C62.43,18.63 36.2,26.5 30.61,52.75z"
+        android:fillColor="#FFFFFFFF" />
+</vector>
