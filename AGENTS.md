@@ -38,8 +38,10 @@ would otherwise look up again:
 
 - Commit each finished step with one lean sentence: no body, no `Co-Authored-By` or other
   trailers. Don't push unless asked.
-- Don't add images to git without asking. Design references, background originals, and
-  masters stay local (`agents/design.md`, `design/backgrounds/README.md`).
+- Images: a few essential ones the app needs, of a few MB at most (the icon's layers),
+  may go in git; large ones stay local, as design references, background originals, and
+  masters do (`agents/design.md`, `design/backgrounds/README.md`). Ask when unsure
+  (2026-11-08).
 - Never edit the submodules. A gap in Goose or goose_gfx gets a patch and a findings entry
   (above); for SDL, write only a note for the user, who decides about anything sent there.
 - The user maintains goose-ngfx and contributes to Goose and goose_gfx. Snowtime

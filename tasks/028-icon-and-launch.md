@@ -29,9 +29,9 @@ the monochrome silhouette (the prompts' follow-ups).
 - **Apple, for later:** one 1024 × 1024 opaque PNG, its dark and tinted variants from the
   same layers, and a launch screen that is a background color only (`UILaunchScreen`).
   Kept with the masters until an iOS build exists.
-- **Where the images live:** images don't go in git without the user's OK. The icon's
-  PNGs are small and the APK needs them; ask whether they go in `android/res/` or stay
-  local and are copied in at build time, as the background masters are.
+- **Where the images live:** the icon's PNGs go in git under `android/res/` (the user,
+  2026-11-08: a few essential images of a few MB at most may; large ones stay local).
+  The full-size masters from ChatGPT stay local.
 
 ## Acceptance criteria
 

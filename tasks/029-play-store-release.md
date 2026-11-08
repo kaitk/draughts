@@ -21,9 +21,7 @@ documentation when doing this, not this list.
   native libraries (the APK already aligns to 16 KB), and the target SDK Play asks for
   then.
 - **Screens:** the listing's screenshots must show the app as it runs on that class of
-  device. At phone proportions home's menu runs off the bottom (Settings is cut off,
-  `~/Downloads/draughts-store/README.md`, "Caveats"): fix the phone layout or list the
-  app for tablets only. A decision for the user.
+  device; phones are listed too once task 030 fits the layout to them.
 - **Play Console:** the developer account (a new personal account must run a closed
   test with at least 12 testers for 14 days before production; check the current
   rule), the app's entry, the store listing in English and Estonian (title, short and
@@ -41,7 +39,7 @@ documentation when doing this, not this list.
 ## Acceptance criteria
 
 - [ ] Final application id, upload key outside the repo, release AAB built by the script
-- [ ] Phone layout fixed, or the listing limited to tablets (the user's choice)
+- [ ] Task 030 done, so phones and larger tablets are listed
 - [ ] Store listing in English and Estonian, with icon, feature graphic, and screenshots
 - [ ] Target audience, content rating, Data safety, and privacy policy filled in
 - [ ] Closed test run as Play requires, then the app published
