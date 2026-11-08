@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Build a Goose program into an Android APK, without Gradle, and optionally install it.
 
-    scripts/android.py poc/poc.goose             build build/android/<name>.apk
+    scripts/android.py poc/poc.goose             build build/android/<name>/<name>.apk
     scripts/android.py poc/poc.goose --run       build, install over adb, and start it
+    scripts/android.py app/draughts.goose --release
+                                                 <name>-release.apk and <name>-release.aab
+                                                 beside it, signed with the upload key, for Play
 
 Steps: Goose writes the program's C and the runtime's C; goose_gfx's sources are copied
 and patches/goose_gfx applied, and SDL is copied and patches/SDL applied; CMake with the
@@ -10,8 +13,20 @@ NDK builds
 libSDL3.so and libmain.so (android/CMakeLists.txt); javac and d8 compile SDL's Java
 glue from the patched copy and DraughtsActivity; aapt2 compiles android/res (the icon and the theme) and the
 launcher's name per language (res/values*/strings.xml, written from strings/<lang>.txt's
-app.name) and links them with the manifest; zip adds the dex and the stripped libraries, the libraries
-stored uncompressed; zipalign aligns them to 16 KB; apksigner signs with the debug key.
+app.name) and links them with the manifest, giving it APP_ID and the version; zip adds the dex and
+the stripped libraries, the libraries stored uncompressed; zipalign aligns them to 16 KB;
+apksigner signs with the debug key, or with --release the upload key. A release also links
+the resources in protobuf form and packs them, the dex, and the libraries into the bundle's
+base module; bundletool builds the AAB, its libraries stored uncompressed and aligned to
+16 KB, and validates it; jarsigner signs it with the upload key. Every library's ELF
+segments, the APK, and the APKs bundletool makes from the AAB for an arm64 device are
+checked for 16 KB pages.
+
+The upload key is read from ~/.config/draughts/upload-key.properties (DRAUGHTS_UPLOAD_KEY
+overrides the path), which names the keystore, its alias, and its password;
+docs/development.md says how it was made and how to back it up. bundletool is
+build/bundletool-VERSION/, downloaded from its GitHub release and checked against its
+SHA-256 when missing.
 
 Tools come from the environment or the defaults below: GOOSE, ANDROID_HOME, ANDROID_NDK,
 ANDROID_BUILD_TOOLS, ANDROID_PLATFORM. docs/development.md lists the versions.
@@ -22,7 +37,11 @@ import os
 import re
 import shutil
 import subprocess
+import struct
 import sys
+import tempfile
+import urllib.request
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -32,14 +51,76 @@ BUILD_TOOLS = Path(os.environ.get("ANDROID_BUILD_TOOLS", SDK / "build-tools/36.0
 PLATFORM = Path(os.environ.get("ANDROID_PLATFORM", SDK / "platforms/android-36"))
 GOOSE = Path(os.environ.get("GOOSE", ROOT / "build/goose-v2026.4-macos-arm64/goose"))
 SDL = ROOT / "third_party/goose_gfx/third_party/SDL"
-PACKAGE = "com.kaitk.draughts"
+# The application id (2026-11-08): Play fixes it for good at the first upload. aapt2's
+# --rename-manifest-package gives it to the app, so this line alone sets it; the Java code's
+# package (android/java/) is the same name, which lets `adb shell am start -n ID/.DraughtsActivity`
+# work, and needs no change if the id ever does before the first upload.
+APP_ID = "io.github.kaitk.draughts"
+ACTIVITY = "io.github.kaitk.draughts.DraughtsActivity"
+VERSION_CODE = 1          # raised for every upload to Play
+VERSION_NAME = "0.1.0"
 MIN_SDK = "29"
-TARGET_SDK = "36"
+TARGET_SDK = "36"         # what Play requires of new apps and updates from 2026-08-31
+UPLOAD_KEY = Path(os.environ.get("DRAUGHTS_UPLOAD_KEY",
+                                 Path.home() / ".config/draughts/upload-key.properties"))
+BUNDLETOOL_VERSION = "1.18.3"
+BUNDLETOOL_SHA256 = "a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29"
+PAGE = 16384              # the page size Play requires native libraries to be aligned to
 
 
-def run(*cmd, cwd=None):
+def run(*cmd, cwd=None, env=None):
     print("+", " ".join(str(c) for c in cmd), flush=True)
-    subprocess.run([str(c) for c in cmd], cwd=cwd, check=True)
+    subprocess.run([str(c) for c in cmd], cwd=cwd, check=True,
+                   env=None if env is None else dict(os.environ, **env))
+
+
+def upload_key():
+    """The upload keystore, its alias, and its password, from UPLOAD_KEY's properties."""
+    if not UPLOAD_KEY.exists():
+        sys.exit(f"{UPLOAD_KEY} is missing: docs/development.md says how the upload key is made")
+    props = dict(line.split("=", 1) for line in UPLOAD_KEY.read_text().splitlines()
+                 if "=" in line and not line.startswith("#"))
+    if props.get("keyPassword", props["storePassword"]) != props["storePassword"]:
+        sys.exit(f"{UPLOAD_KEY}: the key's password must be the store's (PKCS12)")
+    return Path(props["storeFile"]).expanduser(), props["keyAlias"], props["storePassword"]
+
+
+def bundletool():
+    """build/bundletool-VERSION/bundletool-all-VERSION.jar, downloaded and checked if missing."""
+    jar = ROOT / f"build/bundletool-{BUNDLETOOL_VERSION}/bundletool-all-{BUNDLETOOL_VERSION}.jar"
+    if not jar.exists():
+        url = (f"https://github.com/google/bundletool/releases/download/{BUNDLETOOL_VERSION}/"
+               f"bundletool-all-{BUNDLETOOL_VERSION}.jar")
+        print(f"+ download {url}", flush=True)
+        data = urllib.request.urlopen(url).read()
+        if hashlib.sha256(data).hexdigest() != BUNDLETOOL_SHA256:
+            sys.exit(f"{url}: not the SHA-256 pinned in scripts/android.py")
+        jar.parent.mkdir(parents=True, exist_ok=True)
+        jar.write_bytes(data)
+    return jar
+
+
+def check_elf_pages(so):
+    """Exit unless every LOAD segment of a 64-bit ELF library is aligned to 16 KB pages."""
+    data = so.read_bytes()
+    if data[:5] != b"\x7fELF\x02":
+        sys.exit(f"{so}: not a 64-bit ELF")
+    phoff, = struct.unpack_from("<Q", data, 0x20)
+    phentsize, phnum = struct.unpack_from("<HH", data, 0x36)
+    for i in range(phnum):
+        p_type, = struct.unpack_from("<I", data, phoff + i * phentsize)
+        p_align, = struct.unpack_from("<Q", data, phoff + i * phentsize + 0x30)
+        if p_type == 1 and p_align < PAGE:  # PT_LOAD
+            sys.exit(f"{so}: a LOAD segment aligned to {p_align}, not {PAGE}")
+
+
+def check_zip_pages(apk):
+    """Exit unless the APK's libraries are stored uncompressed at 16 KB page offsets."""
+    run(BUILD_TOOLS / "zipalign", "-c", "-P", str(PAGE // 1024), "4", apk)
+    with zipfile.ZipFile(apk) as z:
+        for info in z.infolist():
+            if info.filename.endswith(".so") and info.compress_type != zipfile.ZIP_STORED:
+                sys.exit(f"{apk}: {info.filename} is compressed")
 
 
 def llvm_bin(name):
@@ -90,6 +171,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("program", type=Path)
     ap.add_argument("--run", action="store_true", help="install over adb and start it")
+    ap.add_argument("--release", action="store_true",
+                    help="sign with the upload key and build the AAB beside the APK")
     args = ap.parse_args()
     program = args.program.resolve()
     name = program.stem
@@ -153,6 +236,7 @@ def main():
     libs.mkdir(parents=True)
     for so in (native / "libmain.so", native / "SDL/libSDL3.so"):
         run(llvm_bin("llvm-strip"), "--strip-unneeded", so, "-o", libs / so.name)
+        check_elf_pages(libs / so.name)
 
     android_jar = PLATFORM / "android.jar"
     classes = out / "classes"
@@ -168,33 +252,87 @@ def main():
         "--output", apk_dir, *sorted(str(p) for p in classes.rglob("*.class")))
 
     # 4. Link, add, align, sign.
+    suffix = "-release" if args.release else ""
     unaligned = out / f"{name}-unaligned.apk"
-    aligned = out / f"{name}.apk"
+    aligned = out / f"{name}{suffix}.apk"
     res = out / "res.zip"
     names_dir, names = out / "res_strings", out / "res_strings.zip"
     write_app_names(names_dir)
     run(BUILD_TOOLS / "aapt2", "compile", "--dir", ROOT / "android/res", "-o", res)
     run(BUILD_TOOLS / "aapt2", "compile", "--dir", names_dir, "-o", names)
-    run(BUILD_TOOLS / "aapt2", "link", "-o", unaligned, "--manifest",
-        ROOT / "android/AndroidManifest.xml", "-I", android_jar, res, names,
-        "--min-sdk-version", MIN_SDK, "--target-sdk-version", TARGET_SDK)
+    link = [BUILD_TOOLS / "aapt2", "link", "--manifest", ROOT / "android/AndroidManifest.xml",
+            "-I", android_jar, res, names, "--rename-manifest-package", APP_ID,
+            "--version-code", VERSION_CODE, "--version-name", VERSION_NAME,
+            "--min-sdk-version", MIN_SDK, "--target-sdk-version", TARGET_SDK]
+    run(*link, "-o", unaligned)
     run("zip", "-q", unaligned, "classes.dex", cwd=apk_dir)
     run("zip", "-q", "-0", "-r", unaligned, "lib", cwd=apk_dir)
-    run(BUILD_TOOLS / "zipalign", "-f", "-P", "16", "4", unaligned, aligned)
-    keystore = Path.home() / ".android/debug.keystore"
-    if not keystore.exists():
-        keystore.parent.mkdir(exist_ok=True)
-        run("keytool", "-genkeypair", "-keystore", keystore, "-storepass", "android",
-            "-alias", "androiddebugkey", "-keypass", "android", "-keyalg", "RSA",
-            "-validity", "10000", "-dname", "CN=Android Debug,O=Android,C=US")
-    run(BUILD_TOOLS / "apksigner", "sign", "--ks", keystore, "--ks-pass", "pass:android",
-        aligned)
+    run(BUILD_TOOLS / "zipalign", "-f", "-P", PAGE // 1024, "4", unaligned, aligned)
+    if args.release:
+        # The password reaches the tools through the environment, never the command line.
+        keystore, alias, password = upload_key()
+        key_env = {"DRAUGHTS_UPLOAD_PASS": password}
+        run(BUILD_TOOLS / "apksigner", "sign", "--ks", keystore, "--ks-key-alias", alias,
+            "--ks-pass", "env:DRAUGHTS_UPLOAD_PASS", aligned, env=key_env)
+    else:
+        keystore = Path.home() / ".android/debug.keystore"
+        if not keystore.exists():
+            keystore.parent.mkdir(exist_ok=True)
+            run("keytool", "-genkeypair", "-keystore", keystore, "-storepass", "android",
+                "-alias", "androiddebugkey", "-keypass", "android", "-keyalg", "RSA",
+                "-validity", "10000", "-dname", "CN=Android Debug,O=Android,C=US")
+        run(BUILD_TOOLS / "apksigner", "sign", "--ks", keystore, "--ks-pass", "pass:android",
+            aligned)
     unaligned.unlink()
+    check_zip_pages(aligned)
     print(f"{aligned} ({aligned.stat().st_size // 1024} KB)")
+
+    # 5. A release's bundle: the base module in the bundle's layout (manifest/, dex/, lib/,
+    # res/, resources.pb, the resources in protobuf form), built, validated, and signed.
+    if args.release:
+        proto, module = out / "proto.apk", out / "base.zip"
+        aab = out / f"{name}-release.aab"
+        run(*link, "--proto-format", "-o", proto)
+        with zipfile.ZipFile(proto) as src, \
+                zipfile.ZipFile(module, "w", zipfile.ZIP_DEFLATED) as z:
+            for info in src.infolist():
+                path = ("manifest/AndroidManifest.xml" if info.filename == "AndroidManifest.xml"
+                        else info.filename)
+                z.writestr(path, src.read(info))
+            z.write(apk_dir / "classes.dex", "dex/classes.dex")
+            for so in sorted(libs.iterdir()):
+                z.write(so, f"lib/arm64-v8a/{so.name}")
+        config = out / "bundle-config.json"
+        config.write_text('{"optimizations": {"uncompressNativeLibraries": '
+                          '{"enabled": true, "alignment": "PAGE_ALIGNMENT_16K"}}}\n')
+        tool = bundletool()
+        run("java", "-jar", tool, "build-bundle", f"--modules={module}", f"--config={config}",
+            f"--output={aab}", "--overwrite")
+        run("jarsigner", "-sigalg", "SHA256withRSA", "-digestalg", "SHA-256", "-keystore",
+            keystore, "-storepass:env", "DRAUGHTS_UPLOAD_PASS", aab, alias, env=key_env)
+        run("java", "-jar", tool, "validate", f"--bundle={aab}")
+        # The APKs Play would serve from it to an arm64 device: their libraries stored and
+        # on 16 KB pages. Signed with the debug key, if any; they are only looked at.
+        with tempfile.TemporaryDirectory() as tmp:
+            apks, splits = Path(tmp) / "app.apks", Path(tmp) / "splits"
+            spec = Path(tmp) / "device.json"
+            spec.write_text('{"supportedAbis": ["arm64-v8a"], "supportedLocales": ["en"], '
+                            '"screenDensity": 240, "sdkVersion": 36}\n')
+            run("java", "-jar", tool, "build-apks", f"--bundle={aab}", f"--output={apks}",
+                f"--device-spec={spec}")
+            with zipfile.ZipFile(apks) as z:
+                z.extractall(splits)
+            with_libs = [a for a in sorted(splits.rglob("*.apk"))
+                         if any(n.endswith(".so") for n in zipfile.ZipFile(a).namelist())]
+            if not with_libs:
+                sys.exit(f"{aab}: no APK bundletool made from it has the libraries")
+            for a in with_libs:
+                check_zip_pages(a)
+        print(f"{aab} ({aab.stat().st_size // 1024} KB)")
 
     if args.run:
         run("adb", "install", "-r", aligned)
-        run("adb", "shell", "am", "start", "-n", f"{PACKAGE}/.DraughtsActivity")
+        run("adb", "shell", "am", "start", "-n", f"{APP_ID}/{ACTIVITY}")
 
 
 if __name__ == "__main__":

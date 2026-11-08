@@ -47,10 +47,9 @@ Chess may follow on the same base.
    and design boards. Settings' Board row (flat or 3D) stays hidden until the 3D board
    exists.
 4. **Release.** Play Store under Google's Families Policy: no ads or tracking, a privacy
-   policy. English checkers as a rules toggle. Before the first upload: the final app id
-   (`com.kaitk.draughts` is a placeholder in `android/AndroidManifest.xml`), an icon, a release
-   signing key kept outside the repo, an app bundle (AAB) if Play requires one over an
-   APK, and the target SDK Play asks for then.
+   policy. English checkers as a rules toggle. The application id is
+   `io.github.kaitk.draughts` (2026-11-08); the build signs an app bundle (AAB) for Play
+   with an upload key kept outside the repo ([development](development.md#release-builds)).
 5. **Chess**, reusing the platform, rendering, UI, puzzle, and lesson layers.
 6. **A NoGraphicsAPI version** through goose-ngfx, for desktop and Apple devices.
 

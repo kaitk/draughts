@@ -5,8 +5,8 @@
 # settings are restored at the end. The app must be running.
 #
 #   scripts/lifecycle_memory.sh [cycles]      default 20
-P=com.kaitk.draughts
-A=$P/.DraughtsActivity
+P=$(sed -n 's/^APP_ID = "\(.*\)"/\1/p' "$(dirname "$0")/android.py")   # the application id
+A=$P/$(sed -n 's/^ACTIVITY = "\(.*\)"/\1/p' "$(dirname "$0")/android.py")
 N=${1:-20}
 acc=$(adb shell settings get system accelerometer_rotation)
 rot=$(adb shell settings get system user_rotation)

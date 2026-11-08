@@ -16,6 +16,7 @@ Tested 2026-11-07 on macOS 26.3.1:
 | JDK | `javac` on `PATH` | OpenJDK 21 |
 | CMake, Ninja | Homebrew | CMake 4.4.4 |
 | Python | `python3` | 3.x |
+| bundletool | `build/bundletool-1.18.3/`, from the [release](https://github.com/google/bundletool/releases/tag/1.18.3), fetched by `scripts/android.py --release` | 1.18.3 |
 | astcenc | `build/astcenc-5.7.0/bin/astcenc`, from the [release](https://github.com/ARM-software/astc-encoder/releases/tag/5.7.0) (Apache 2.0; not in Homebrew) | 5.7.0, macOS universal |
 
 Set up from a fresh clone:
@@ -122,9 +123,9 @@ row is hidden). The game is kept in `game.bin` beside it; a
 run with `--fen`, `--tap`, `--screen`, `--frames`, `--variant`, `--clock`, or
 `--computer` neither reads nor writes it, so
 screenshots don't depend on the last session. On the tablet, check a resume with
-`adb shell input keyevent HOME`, `adb shell am kill com.kaitk.draughts`, and starting
+`adb shell input keyevent HOME`, `adb shell am kill io.github.kaitk.draughts`, and starting
 the app again. The flags reach the tablet through the intent:
-`adb shell am start -S -n com.kaitk.draughts/.DraughtsActivity --es args "'--clock 5+3'"`.
+`adb shell am start -S -n io.github.kaitk.draughts/.DraughtsActivity --es args "'--clock 5+3'"`.
 `-S` stops the app first: the activity is `singleInstance`, so a start that finds it
 running only brings it back, with the flags it started with.
 On Android a clock counts only while the app has focus; on the Mac, where a window
@@ -205,14 +206,18 @@ adb logcat -s goose:* SDL:*                 # the program's output and SDL's log
 4. `javac` and `d8` compile SDL's Java from the patched copy
    (`SDL_src/android-project/.../org/libsdl/app`) and `android/java/`.
 5. `aapt2` compiles `android/res` (the icon and the launch theme; `scripts/icon.py` makes
-   the icon, `design/icon/README.md`) and links it with `android/AndroidManifest.xml`.
+   the icon, `design/icon/README.md`) and links it with `android/AndroidManifest.xml`,
+   giving the app its id, `versionCode`, and `versionName` from `APP_ID`, `VERSION_CODE`,
+   and `VERSION_NAME` at the top of the script, the one place they are set. The id is
+   `io.github.kaitk.draughts`, the Java code's package too.
    The launcher's name follows the phone's language: the script writes
    `res/values/strings.xml` and `res/values-<lang>/strings.xml` into the build directory
    from each `strings/<lang>.txt`'s `app.name` key, and the manifest's label is
    `@string/app_name`.
    `zip` adds the dex and the stripped libraries, stored uncompressed. `zipalign -P 16`
    aligns them to 16 KB pages, and `apksigner` signs with `~/.android/debug.keystore`,
-   which it creates if missing.
+   which it creates if missing. The script checks that every library's ELF segments and
+   its offset in the APK are on 16 KB pages, as Play requires.
 
 The POC's APK is 2.8 MB: `libSDL3.so` 1.9 MB and `libmain.so` 0.9 MB stripped, SDL's dex
 43 KB.
@@ -242,6 +247,81 @@ USB: the Galaxy Tab A11+ (1920 × 1200, three-button navigation) and a Pixel 7a 
 2400, Android 17, gesture navigation, a punch-hole camera), one attached at a time.
 Larger tablets (2560 × 1600, 2880 × 1920, 4:3, a foldable's inner screen) are checked
 only on the Mac (2026-11-08), as there is no such device.
+
+## Release builds
+
+```sh
+scripts/android.py app/draughts.goose --release   # draughts-release.apk and .aab
+```
+
+A release build is signed with the upload key instead of the debug key, and also makes
+the Android App Bundle Play takes, both in `build/android/draughts/`:
+
+- `draughts-release.apk`, the same APK as a debug build but for its signature, to install
+  from a clean state and check before an upload. Android refuses it over a debug build,
+  as their signatures differ: `adb uninstall io.github.kaitk.draughts` first.
+- `draughts-release.aab`, for Play. `aapt2 link --proto-format` links the resources in
+  the bundle's protobuf form; the script packs them, the dex, and the libraries into the
+  base module's layout (`manifest/`, `dex/`, `lib/arm64-v8a/`, `res/`, `resources.pb`);
+  bundletool builds the bundle with its native libraries uncompressed and aligned to
+  16 KB pages (`PAGE_ALIGNMENT_16K` in the bundle's config); `jarsigner` signs it with the
+  upload key; and `bundletool validate` checks it. The script then has bundletool make the
+  APKs Play would serve an arm64 tablet from it and checks their libraries are on 16 KB
+  pages too.
+
+Build a release where `design/backgrounds/masters/` holds the `-6x6.astc` files, or it
+ships without the photographs: `libmain.so` is about 9 MB with them, 7.5 MB of it the four
+ASTC files.
+
+bundletool is [1.18.3](https://github.com/google/bundletool/releases/tag/1.18.3), in
+`build/bundletool-1.18.3/`; the script downloads it there when missing and checks it
+against the SHA-256 it pins. It needs `java`.
+
+The target SDK is 36: Play requires new apps and updates to target Android 16 (API 36)
+from 2026-08-31 ([target API level](https://developer.android.com/google/play/requirements/target-sdk),
+checked 2026-11-08). Raise `VERSION_CODE` for every upload; Play refuses one it has seen.
+
+### The upload key
+
+Play App Signing holds the key that signs the app on users' devices; the upload key only
+proves an upload comes from the developer. Lost, it can be reset through Play Console's
+support, which takes days, so keep a backup anyway. It is kept outside the repo, and
+neither it nor its password is ever committed:
+
+| File | What it is |
+| --- | --- |
+| `~/.config/draughts/upload-key.jks` | The keystore: PKCS12, alias `upload`, RSA 4096, `CN=Draughts`, valid until 2054-03-26 |
+| `~/.config/draughts/upload-key.properties` | `storeFile`, `keyAlias`, `storePassword`, and `keyPassword` (the same password, as PKCS12 has one), mode 600 |
+
+`DRAUGHTS_UPLOAD_KEY` points the script at another properties file. The script hands the
+password to `apksigner` and `jarsigner` through the environment, never the command line.
+Its certificate's SHA-256 is
+`C4:F6:7B:CD:9E:DD:45:3F:5B:64:5F:AF:16:E6:F3:50:71:46:29:24:59:39:17:51:4B:3C:53:FC:25:1D:6F:4B`
+(`keytool -list -v -keystore ~/.config/draughts/upload-key.jks`), which Play Console
+shows once the first upload has registered it.
+
+**Back it up before the first upload**, both files together, somewhere that survives the
+Mac: a password manager's file attachment (1Password, Bitwarden) is the simplest, or an
+encrypted disk image on a drive kept elsewhere:
+
+```sh
+hdiutil create -encryption AES-256 -srcfolder ~/.config/draughts -volname draughts-key \
+    ~/Desktop/draughts-key.dmg            # asks for a passphrase; store it apart from the image
+```
+
+Check a backup by restoring it to a scratch folder and running `keytool -list -keystore
+upload-key.jks` with the password from its properties file.
+
+The key was made once (2026-11-08) with:
+
+```sh
+mkdir -p ~/.config/draughts && chmod 700 ~/.config/draughts
+keytool -genkeypair -keystore ~/.config/draughts/upload-key.jks -storetype PKCS12 \
+    -alias upload -keyalg RSA -keysize 4096 -validity 10000 -dname "CN=Draughts" \
+    -storepass:env PASS -keypass:env PASS   # PASS: 40 random letters and digits
+```
+
+and the properties file written beside it with the same password, both `chmod 600`.
 
 ## Check idle CPU
 

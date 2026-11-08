@@ -212,8 +212,8 @@ measuring there:
   once. A swipe landing outside the app (on the launcher) opens apps, so check where a
   swipe test starts. Whether the activity was finished or kept shows in
   `adb logcat -b events | grep wm_` (`wm_finish_activity`, `wm_task_removed`) and in
-  `pidof com.kaitk.draughts` before and after; whether a card is in recents, in `adb
-  shell dumpsys activity recents`. `adb shell monkey -p com.kaitk.draughts -c
+  `pidof io.github.kaitk.draughts` before and after; whether a card is in recents, in `adb
+  shell dumpsys activity recents`. `adb shell monkey -p io.github.kaitk.draughts -c
   android.intent.category.LAUNCHER 1` starts the app as the launcher's icon does. To log from the program, `print` in the
   loop shows under `goose`; the APK's libraries are `lib/arm64-v8a/libmain.so` and
   `libSDL3.so`.
@@ -234,7 +234,7 @@ measuring there:
 - Presented frame times without a recording: `adb shell dumpsys SurfaceFlinger
   --timestats -enable -clear`, play the animation (taps with `input tap`), then
   `--timestats -dump` and `-disable`; the layer
-  `SurfaceView[com.kaitk.draughts/...](BLAST)` has a present2present histogram in ms
+  `SurfaceView[io.github.kaitk.draughts/...](BLAST)` has a present2present histogram in ms
   (gaps of 350 ms and more are the app idle between taps). `--latency LAYER` prints only
   the refresh period on Android 16, and `gfxinfo` counts only the Java views' frames
   (2026-11-08). A rotation recreates the layer, so its frames don't show there; a
@@ -274,11 +274,11 @@ measuring there:
   `build/android/x/`, and remove that after. A new or changed `patches/SDL` patch makes
   the shared `SDL_src` be copied again, for the main checkout too (2026-11-08).
 - Flags reach the app on the tablet through the intent, quoted twice:
-  `adb shell am start -S -n com.kaitk.draughts/.DraughtsActivity --es args "'--clock 5+3'"`.
+  `adb shell am start -S -n io.github.kaitk.draughts/.DraughtsActivity --es args "'--clock 5+3'"`.
   Without `-S` a start that finds the app running only brings it back with its old
   flags: new `--tap`s never arrive and the screen keeps the last run's state.
   A run with flags neither reads nor writes `game.bin`. Clean the app's data (settings
-  and the game) with `adb uninstall com.kaitk.draughts` and a fresh install.
+  and the game) with `adb uninstall io.github.kaitk.draughts` and a fresh install.
 - A button's press shows in a screenshot taken during a long press:
   `adb shell input swipe X Y X Y 2500 &`, then `adb exec-out screencap -p` a second later.
 - Which sensors the app holds: `adb shell dumpsys sensorservice`, its "Active sensors"

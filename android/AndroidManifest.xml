@@ -6,11 +6,11 @@
      scripts/android.py writes per language from strings/<lang>.txt. Back callbacks are on
      (as Android 16 has them for an app targeting it) from Android 13, so the system's back
      reaches DraughtsActivity's callback, which hands it to the program.
-     scripts/android.py builds the APK. -->
+     scripts/android.py builds the APK and gives it the application id (APP_ID, through
+     aapt2's rename-manifest-package), versionCode, and versionName, so they are set there
+     alone; the package here is the Java code's. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.kaitk.draughts"
-    android:versionCode="1"
-    android:versionName="0.1">
+    package="io.github.kaitk.draughts">
 
     <!-- SDL_GPU draws through Vulkan; 1.1 is what SDL asks of Android drivers. -->
     <uses-feature android:name="android.hardware.vulkan.version" android:version="0x401000"
@@ -27,7 +27,7 @@
         android:hardwareAccelerated="true">
         <!-- Lets profilers (Perfetto, Android Studio) attach to this release build. -->
         <profileable android:shell="true" />
-        <activity android:name="com.kaitk.draughts.DraughtsActivity"
+        <activity android:name="io.github.kaitk.draughts.DraughtsActivity"
             android:label="@string/app_name"
             android:alwaysRetainTaskState="true"
             android:launchMode="singleInstance"
