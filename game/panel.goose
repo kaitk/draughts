@@ -5,6 +5,7 @@
 // tile with an icon and a word. In portrait the left panel is a bar of three above the
 // board and the right one is below it: whose turn or the clocks side by side, over take
 // back across the width. Start over sits far from take back so it isn't hit for it.
+// layout() places the board and the two panels, for every screen that has them.
 namespace panel;
 import std;
 import vec;
@@ -25,6 +26,42 @@ let TALL_H = 132.0;         // take back in landscape
 let WIDE_H = 80.0;          // take back in portrait
 let CLOCK_H = 72.0;
 let OVER = 4;               // pieces over the UI: two clocks and the winner, at most
+
+let SIDE = 232.0;           // dp: each panel's width in landscape
+let TOP = 104.0;            // dp: the bar above the board in portrait
+let BOTTOM = 196.0;         // dp: the play below it
+let GAP = 24.0;
+
+// Where the board and the panels beside it go, in pixels.
+struct Layout {
+    board: board::Layout,
+    left:  float4,      // x, y, width, height of the panel that leaves the game (above in portrait)
+    right: float4,      // and of the one that plays it (below in portrait)
+}
+
+// The game screen (rendering.md, "Game screen"). Landscape: the board fills the height
+// less a 24 dp margin, between two panels 232 dp wide and as tall as it. Portrait: the
+// board fills the width less the margin, with a 104 dp bar above it and the 196 dp play
+// below it, both as wide as the board.
+fn layout(width: f32, height: f32, n: i64) -> Layout {
+    let s = min(width, height) / 800.0;
+    let gap = GAP * s;
+    if width >= height {
+        let side = SIDE * s;
+        let size = min(height - 2.0 * gap, width - 2.0 * side - 4.0 * gap);
+        let x = (width - (size + 2.0 * side + 2.0 * gap)) / 2.0;
+        let y = (height - size) / 2.0;
+        return Layout { board: board::layout_at(x + side + gap, y, size, s, n), left: float4 { x, y, side, size },
+                        right: float4 { x + side + gap + size + gap, y, side, size } };
+    }
+    let top = TOP * s;
+    let bottom = BOTTOM * s;
+    let size = min(width - 2.0 * gap, height - top - bottom - 4.0 * gap);
+    let x = (width - size) / 2.0;
+    let y = (height - (top + size + bottom + 2.0 * gap)) / 2.0;
+    return Layout { board: board::layout_at(x, y + top + gap, size, s, n), left: float4 { x, y, size, top },
+                    right: float4 { x, y + top + gap + size + gap, size, bottom } };
+}
 
 // A piece of `side` over the UI centered in `spot` with radius r, at opacity a, a man (0)
 // or a king (board::CROWN, board::STACK), with a glow ring right round it as strong as
@@ -60,7 +97,7 @@ fn clock_of(g: gui::Gui&, r: float4, c: clock::Clock&, side: i64, ring: f32, ove
 // pulses while the computer thinks, when its clock's piece has it even before the
 // clocks start. Pieces shown on the panels go into `over`. Returns the tile tapped this
 // frame, if any.
-fn game(g: gui::Gui&, l: board::Layout, c: clock::Clock&, side: i64, won: bool, thinking: bool, glow: f32,
+fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, thinking: bool, glow: f32,
         over: board::Piece[..OVER]&) -> i64 {
     let u = g.scale;
     let landscape = l.left.z < l.left.w;
@@ -72,7 +109,7 @@ fn game(g: gui::Gui&, l: board::Layout, c: clock::Clock&, side: i64, won: bool, 
                    else if side == 0 { strings::TURN_WHITE } else { strings::TURN_BLACK };
     // The clock nearer the player whose pieces are at the bottom goes second: under the
     // other in landscape, right of it in portrait.
-    let first = if l.flip { 0 } else { 1 };
+    let first = if l.board.flip { 0 } else { 1 };
     var rings: f32[2] = [0.0, 0.0];
     for s in 2 { if c.running == s || (thinking && s == side) { rings[s] = glow; } }
     gui::panel(g, l.left);

@@ -38,21 +38,21 @@ fn marked(v: rules::Variant&, bits: u32[4]&) -> u8[>..] {
     return s;
 }
 
-fn square(l: board::Layout, text: const u8[:]) -> float2 {
+fn square(l: panel::Layout, text: const u8[:]) -> float2 {
     let v .= rules::VARIANTS[rules::RUSSIAN];
-    return board::center(l, v, rules::bit_at(v, text[0] - 97, text[1] - 49));
+    return board::center(l.board, v, rules::bit_at(v, text[0] - 97, text[1] - 49));
 }
 
 // One frame with the pointer at `at`; returns what the screen asks the shell for.
-fn frame(gm: game::Game&, g: gui::Gui&, l: board::Layout, at: float2, down: bool, pressed: bool,
+fn frame(gm: game::Game&, g: gui::Gui&, l: panel::Layout, at: float2, down: bool, pressed: bool,
          released: bool, now: f64) -> i64 {
-    gui::begin(g, gui::Input { at: at, down: down, pressed: pressed, released: released }, l.scale, now);
+    gui::begin(g, gui::Input { at: at, down: down, pressed: pressed, released: released }, l.board.scale, now);
     let go, changed = game::frame(gm, g, l, now, over);
     return go;
 }
 
 // A tap at p: down on one frame, up on the next.
-fn tap(gm: game::Game&, g: gui::Gui&, l: board::Layout, p: float2, now: f64) -> i64 {
+fn tap(gm: game::Game&, g: gui::Gui&, l: panel::Layout, p: float2, now: f64) -> i64 {
     frame(gm, g, l, p, true, true, false, now);
     return frame(gm, g, l, p, false, false, true, now + 0.02);
 }
@@ -110,13 +110,13 @@ fn clocks(gm: game::Game&, g: gui::Gui&) -> u8[>..] {
 fn main() {
     strings::use(strings::EN);
     let v .= rules::VARIANTS[rules::RUSSIAN];
-    let l = board::layout(1280.0, 800.0, 8);
+    let l = panel::layout(1280.0, 800.0, 8);
     var g = gui::Gui {};
     gui::test_faces(g);
     var gm = game::new(rules::RUSSIAN);
     let away = float2 { 0.0, 0.0 };
     frame(gm, g, l, away, false, false, false, 0.0);
-    print("panels ", l.left, " ", l.right, ", board ", l.board);
+    print("panels ", l.left, " ", l.right, ", board ", l.board.board);
     print("over the UI: ", pieces());
 
     // Two moves, then undo each; undo at the start does nothing.
@@ -209,12 +209,12 @@ fn main() {
     print("5+3, 10 s before a move: ", clocks(gm, g), "; over the UI ", pieces());
     tap(gm, g, l, square(l, "c3"), 30.0);
     tap(gm, g, l, square(l, "d4"), 30.1);
-    gui::begin(g, gui::Input {}, l.scale, 30.6);
+    gui::begin(g, gui::Input {}, l.board.scale, 30.6);
     let a, drawn_a = game::frame(gm, g, l, 30.6, over);
     print("c3-d4: ", clocks(gm, g), "; over the UI ", pieces());
-    gui::begin(g, gui::Input {}, l.scale, 30.9);
+    gui::begin(g, gui::Input {}, l.board.scale, 30.9);
     let b, drawn_b = game::frame(gm, g, l, 30.9, over);
-    gui::begin(g, gui::Input {}, l.scale, 31.15);
+    gui::begin(g, gui::Input {}, l.board.scale, 31.15);
     let c, drawn_c = game::frame(gm, g, l, 31.15, over);
     print("frames at 0.5, 0.8, 1.05 s on black's clock: drawn ", drawn_a, " ", drawn_b, " ", drawn_c, "; ",
           clocks(gm, g));
@@ -255,8 +255,8 @@ fn main() {
     // lower one. While the computer is to move, a tap on its piece does nothing, and its
     // clock's piece has a pulsing ring though no clock runs yet.
     game::start(gm, rules::RUSSIAN, clock::RAPID, rules::WHITE, game::HARD, 90, 0);
-    var turned = board::layout(1280.0, 800.0, 8);
-    turned.flip = true;
+    var turned = panel::layout(1280.0, 800.0, 8);
+    turned.board.flip = true;
     print("the computer to move: ", game::computer_to_move(gm));
     tap(gm, g, turned, square(turned, "c3"), 600.0);
     tap(gm, g, turned, square(turned, "d4"), 600.1);
@@ -266,9 +266,9 @@ fn main() {
           "; over the UI ", pieces());
 
     // Portrait: the bar of three above the board, the play below it.
-    let pl = board::layout(800.0, 1280.0, 8);
+    let pl = panel::layout(800.0, 1280.0, 8);
     var pg = game::new(rules::RUSSIAN);
     frame(pg, g, pl, away, false, false, false, 0.0);
-    print("portrait: panels ", pl.left, " ", pl.right, ", board ", pl.board, ", take back at ", tile(g, UNDO));
+    print("portrait: panels ", pl.left, " ", pl.right, ", board ", pl.board.board, ", take back at ", tile(g, UNDO));
     print("portrait take back undoes: ", tap(pg, g, pl, tile(g, UNDO), 0.1) == game::STAY);
 }

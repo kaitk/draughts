@@ -43,8 +43,8 @@ struct Shell {
 
 fn new(variant: u8) -> Shell {
     let g = game::new(variant);
-    return Shell { game: g, preview: board::new(variant), layout: board::layout(1.0, 1.0, rules::VARIANTS[variant].size),
-                   .. };
+    return Shell { game: g, preview: board::new(variant),
+                   layout: panel::layout(1.0, 1.0, rules::VARIANTS[variant].size).board, .. };
 }
 
 // One frame, after gui::begin, on a screen width × height pixels. Returns whether
@@ -62,10 +62,11 @@ fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, fresh: b
     sh.game.b.king_look = settings::king_look(sh.prefs);
     let n = rules::VARIANTS[sh.game.b.variant].size;
     if sh.screen == GAME {
-        sh.layout = board::layout(width, height, n);
-        sh.layout.flip = sh.game.computer == rules::WHITE;
+        var l = panel::layout(width, height, n);
+        l.board.flip = sh.game.computer == rules::WHITE;
+        sh.layout = l.board;
         sh.sharp = false;
-        let go, changed = game::frame(sh.game, g, sh.layout, now, sh.over);
+        let go, changed = game::frame(sh.game, g, l, now, sh.over);
         // A game against the computer ended: the child meets a stronger or weaker one next.
         let gm .= sh.game;
         if gm.result != 0 {

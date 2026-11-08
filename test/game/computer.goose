@@ -26,22 +26,22 @@ let RESTART = 2;
 
 var over: game::Overlay;     // the pieces over the UI, which the shell holds in the app
 
-fn square(l: board::Layout, text: const u8[:]) -> float2 {
+fn square(l: panel::Layout, text: const u8[:]) -> float2 {
     let v .= rules::VARIANTS[rules::RUSSIAN];
-    return board::center(l, v, rules::bit_at(v, text[0] - 97, text[1] - 49));
+    return board::center(l.board, v, rules::bit_at(v, text[0] - 97, text[1] - 49));
 }
 
-fn frame(gm: game::Game&, g: gui::Gui&, l: board::Layout, at: float2, down: bool, pressed: bool,
+fn frame(gm: game::Game&, g: gui::Gui&, l: panel::Layout, at: float2, down: bool, pressed: bool,
          released: bool, now: f64) {
-    gui::begin(g, gui::Input { at: at, down: down, pressed: pressed, released: released }, l.scale, now);
+    gui::begin(g, gui::Input { at: at, down: down, pressed: pressed, released: released }, l.board.scale, now);
     game::frame(gm, g, l, now, over);
 }
 
-fn idle(gm: game::Game&, g: gui::Gui&, l: board::Layout, now: f64) {
+fn idle(gm: game::Game&, g: gui::Gui&, l: panel::Layout, now: f64) {
     frame(gm, g, l, float2 { 0.0, 0.0 }, false, false, false, now);
 }
 
-fn tap(gm: game::Game&, g: gui::Gui&, l: board::Layout, p: float2, now: f64) {
+fn tap(gm: game::Game&, g: gui::Gui&, l: panel::Layout, p: float2, now: f64) {
     frame(gm, g, l, p, true, true, false, now);
     frame(gm, g, l, p, false, false, true, now + 0.02);
 }
@@ -106,7 +106,7 @@ fn show(gm: game::Game&, what: const u8[:]) {
 
 fn main() {
     strings::use(strings::EN);
-    let l = board::layout(1280.0, 800.0, 8);
+    let l = panel::layout(1280.0, 800.0, 8);
     var g = gui::Gui {};
     gui::test_faces(g);
     var e = ai::Engine { .. };
@@ -188,7 +188,7 @@ fn main() {
     // The child plays black: the computer, white, moves first, at once asked; take back
     // does nothing before the child's first move, nor right after the computer's.
     var turned = l;
-    turned.flip = true;
+    turned.board.flip = true;
     game::start(gm, rules::RUSSIAN, clock::NONE, rules::WHITE, game::MEDIUM, 45, 3);
     idle(gm, g, turned, 10.0);
     show(gm, "the child plays black");

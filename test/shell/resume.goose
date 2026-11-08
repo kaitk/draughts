@@ -20,7 +20,7 @@ fn show(sh: shell::Shell&, what: const u8[:]) {
 }
 
 fn play(b: board::Board&, from: i64, to: i64, now: f64) {
-    let l = board::layout(1280.0, 800.0, 8);
+    let l = panel::layout(1280.0, 800.0, 8).board;
     let v .= rules::VARIANTS[b.variant];
     board::update(b, now);
     board::press(b, l, board::center(l, v, rules::bit_at(v, from % 8, from / 8)), now);

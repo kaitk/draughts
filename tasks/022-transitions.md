@@ -14,7 +14,7 @@ About 0.2 to 0.3 s each.
 - `gui` gets a layer multiplier (opacity, offset) applied in `gui::add`; during a
   transition the shell declares both screens, the old fading out and the new in, and
   only the new one takes input.
-- The board's rect eases from home's `board::layout` to the game's. With the 3D home
+- The board's rect eases from home's `board::layout_at` to the game's (`panel::layout`). With the 3D home
   board (task 015) its camera tilt eases to top-down as well.
 - The board pass crossfades the sharp and blurred photograph with one uniform.
 - Settings' preview is home's board: opening settings slides it to the right half

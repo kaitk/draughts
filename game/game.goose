@@ -215,7 +215,7 @@ fn due(gm: Game&, now: f64) -> f64 {
 
 // One frame, after gui::begin, its pieces over the UI put in `over`. Returns what the
 // shell should do and whether anything on screen changed.
-fn frame(gm: Game&, g: gui::Gui&, l: board::Layout, now: f64, over: Overlay&) -> i64, bool {
+fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&) -> i64, bool {
     let b .= gm.b;
     let input = g.input;
     var changed = board::update(b, now) || input.pressed || input.released;
@@ -254,16 +254,16 @@ fn frame(gm: Game&, g: gui::Gui&, l: board::Layout, now: f64, over: Overlay&) ->
         }
     }
     if gm.won_at >= 0.0 {
-        let ask = celebrate(gm, g, l, won, now, over);
+        let ask = celebrate(gm, g, l.board, won, now, over);
         if ask == panel::RESTART {
             restart(gm);
             changed = true;
         }
         if ask == panel::HOME { go = HOME; }
     } else if !g.took && b.pos.side != gm.computer {
-        if input.pressed { board::press(b, l, input.at, now); }
-        if input.down && board::drag(b, l, input.at) { changed = true; }
-        if input.released { board::release(b, l, input.at, now); }
+        if input.pressed { board::press(b, l.board, input.at, now); }
+        if input.down && board::drag(b, l.board, input.at) { changed = true; }
+        if input.released { board::release(b, l.board, input.at, now); }
     }
     // A move made or taken back, whichever way: the clocks follow it, and stop once the
     // side to move has none.

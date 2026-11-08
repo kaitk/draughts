@@ -7,6 +7,9 @@ import std;
 import vec;
 import rules from "../../rules";
 import board from "../../board";
+import gui from "../../gui";
+import strings from "../../strings";
+import game from "../../game";
 
 fn name(v: rules::Variant&, sq: i64) -> u8[>..] {
     if sq < 0 { return str("-"); }
@@ -44,7 +47,7 @@ fn tap(b: board::Board&, l: board::Layout, text: const u8[:], now: f64) {
 
 fn main() {
     let v .= rules::VARIANTS[rules::RUSSIAN];
-    let l = board::layout(1280.0, 800.0, 8);
+    let l = panel::layout(1280.0, 800.0, 8).board;
 
     var b = board::new(rules::RUSSIAN);
     print("default hints are mistakes: ", b.hints == board::MISTAKES);

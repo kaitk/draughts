@@ -29,54 +29,17 @@ let MOVES = 1;
 let CROWN = 1;
 let STACK = 2;
 
-// Where things go, in pixels. `scale` is pixels per dp: the prototypes' 800 px short side.
+// Where the board goes, in pixels. `scale` is pixels per dp: the prototypes' 800 px short
+// side. The screens place it: the game's panels beside it (game/panel.goose), or alone.
 struct Layout {
     scale: f32,
     board: float4,      // x, y, size of the board; w: the corner radius
     inner: float4,      // x, y, size of the squares inside the board's thin lip; w: one square
-    left:  float4,      // x, y, width, height of the panel that leaves the game (above in portrait)
-    right: float4,      // and of the one that plays it (below in portrait)
     n:     i64,         // squares per side
     flip:  bool,        // turned, black playing up the screen: a child playing black
 }
 
-let SIDE = 232.0;           // dp: each panel's width in landscape
-let TOP = 104.0;            // dp: the bar above the board in portrait
-let BOTTOM = 196.0;         // dp: the play below it
-let GAP = 24.0;
-
-// The game screen (rendering.md, "Game screen"). Landscape: the board fills the height
-// less a 24 dp margin, between two panels 232 dp wide and as tall as it. Portrait: the
-// board fills the width less the margin, with a 104 dp bar above it and the 196 dp play
-// below it, both as wide as the board.
-fn layout(width: f32, height: f32, n: i64) -> Layout {
-    let s = min(width, height) / 800.0;
-    let gap = GAP * s;
-    var l = Layout { scale: s, n: n, .. };
-    if width >= height {
-        let side = SIDE * s;
-        let size = min(height - 2.0 * gap, width - 2.0 * side - 4.0 * gap);
-        let x = (width - (size + 2.0 * side + 2.0 * gap)) / 2.0;
-        let y = (height - size) / 2.0;
-        l.left = float4 { x, y, side, size };
-        l.board = float4 { x + side + gap, y, size, 0.016 * size };
-        l.right = float4 { x + side + gap + size + gap, y, side, size };
-    } else {
-        let top = TOP * s;
-        let bottom = BOTTOM * s;
-        let size = min(width - 2.0 * gap, height - top - bottom - 4.0 * gap);
-        let x = (width - size) / 2.0;
-        let y = (height - (top + size + bottom + 2.0 * gap)) / 2.0;
-        l.left = float4 { x, y, size, top };
-        l.board = float4 { x, y + top + gap, size, 0.016 * size };
-        l.right = float4 { x, y + top + gap + size + gap, size, bottom };
-    }
-    place(l);
-    return l;
-}
-
-// A board of side `size` at x, y, with no panel, for a screen that shows the board on
-// its own (home).
+// A board of side `size` at x, y.
 fn layout_at(x: f32, y: f32, size: f32, scale: f32, n: i64) -> Layout {
     var l = Layout { scale: scale, board: float4 { x, y, size, 0.016 * size }, n: n, .. };
     place(l);
