@@ -121,6 +121,14 @@ which would overwrite the main checkout's while another session uses them.
   through `cmap`, times the face's dp over `unitsPerEm`; fontTools isn't installed, a
   30-line Python reader does it). The widest so far, at the 24 dp heading face: "Alusta
   uuesti" 130 dp, "Mustad võitsid" 148 (2026-11-08).
+- Phone layouts are shot with `--dp N` at the phones' proportions; task 030's "Phone
+  layouts" says where the scripts are (`shoot.sh` takes a set of sizes and dps, `all.sh`
+  runs each screen in parallel in its own work folder, `cmp.sh` counts differing
+  pixels). Run in parallel, the win's `--win 3` needs `--frames 9000`, not 3000, or the
+  shot ends before the card (2026-11-08).
+- A headless test can lay out at another `gui::short_dp` (`test/shell/sizes`,
+  `test/shell/settings`): set it, then `g.scale = gui::scale_of(...)` before
+  `gui::test_faces`, which sizes the faces at the scale; put it back to 800 after.
 - In a working tree, copy `design/backgrounds/masters/*.jpg` from the main checkout
   (local and ignored) and touch `app/background.c`, or shots show the page color where
   the photograph should be.

@@ -127,7 +127,9 @@ find out by compiling, so the next session doesn't.
   ("bytes_of cannot write theme::Theme&[1] out"); bind it with `=`.
 - `as` binds looser than `&`: write `(x as i64) & 0x3F`; `x as i64 & 0x3F` doesn't parse.
 - An array of untyped float literals (`let FACE_DP = [64.0, 30.0]`) holds `f64`s; cast an
-  element `as f32` to use it with `f32`s. Typed arrays from untyped integer constants
+  element `as f32` to use it with `f32`s. So is a `let` of untyped float constants
+  alone (`let head = HEAD_H + HEAD_GAP;`): write `let head: f32 = ...` to multiply it by
+  an `f32` (2026-11-08). Typed arrays from untyped integer constants
   work (`let r: u32[2] = [0x20, END - 1]`), from an untyped constant array they don't.
 - A large temporary on a data stack (a 16 MB image) stays resident after its scope ends;
   call `trim_memory()` (`os`) from a caller once the scope is over to give the pages

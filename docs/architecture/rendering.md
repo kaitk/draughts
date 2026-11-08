@@ -202,7 +202,7 @@ the prototype tried, kept for 3D:
   that leaves the board under 720 px, the tablet's at 16:10, the panels narrow down to
   192 px for it: 587 px at 4:3, 520 on a foldable; 2026-11-08): on the
   left home (a house), settings, and at the bottom start over, 88 px rows (the floor for
-  small hands; 72 until 2026-11-08) with 34 px icons and 24 px words (in a narrowed panel, where a word doesn't fit beside its icon,
+  small hands, 2026-11-08) with 34 px icons and 24 px words (in a narrowed panel, where a word doesn't fit beside its icon,
   all three icons over their words in 96 px rows); on the right whose turn it is (a 72 px piece of its color with
   the glow ring, 4 px of the glow color at 80% and a 22 px glow, over "White's turn"),
   or the two clocks, and at the bottom take back, a tall 132 px tile with a 48 px icon
@@ -290,7 +290,7 @@ the prototype tried, kept for 3D:
   with one to three pips), the child's pieces against the computer (white, the default,
   or black, each tile showing its piece; 2026-11-08), and the clock (none with a
   stopwatch, 5 min +3 s a move, 10 min +5 s a move); then play, a primary row. Every tile
-  is 88 dp tall at least (the setup's tiles were 76 and back 56 until 2026-11-08). In a
+  is 88 dp tall at least (2026-11-08). In a
   landscape too short for the column (a phone), it becomes two columns of 330 dp side by
   side: back, the title, the draughts, and the level in the first; the child's pieces,
   the clock, and play in the second, the title in a smaller face if it needs it. In
@@ -332,8 +332,8 @@ the prototype tried, kept for 3D:
   (`Settings.show_board_row`, `shell/settings.goose`). Each
   setting is a dim 18 px name at the left of its tiles (above them in portrait); a tile
   has radius 16 px and is lit in the glow color at 22% with a 2 px glow border when on.
-  Every tile, the language's too, is 88 px tall and wide at least (56 to 72 tall, the
-  language's 48 and the seasons' 74 wide, until 2026-11-08); the title row is 100 px,
+  Every tile, the language's and the seasons' too, is 88 px tall and wide at least
+  (2026-11-08); the title row is 100 px,
   the language's glass round its 88 px tiles.
   The preview is the board as the choices make it: its size, the kings,
   and what the move hints show (all moves: the selected piece's capture; mistakes only:

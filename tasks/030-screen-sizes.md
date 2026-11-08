@@ -1,6 +1,7 @@
 # 030: Phones and other screen sizes
 
-Status: in-progress (the survey and the layout fixes done; the density decision next)
+Status: in-progress (the survey, the layout fixes, and the phone layouts down to 480 dp done; the
+scale with density and the Pixel 7a next)
 
 The layouts were built and checked on one screen, the Galaxy tablet (1920 × 1200, 16:10)
 and its Mac stand-in. Play lists the app for phones and tablets alike, so every screen
@@ -305,6 +306,127 @@ list above makes concrete (1, 2, 4 need a phone landscape arrangement; 3, 5, 6, 
 that also help the near-square tablets), then switch the scale to
 `max(short / 800, 0.75 × density)` and check it on the Pixel.
 
+## Phone layouts (2026-11-08)
+
+Every screen made to work down to a 480 dp short side at phone proportions, for the
+partway scale the user chose (`max(short / 800, f × density)`, f about 0.75, not yet in
+the app: checked through `--dp`). Every tap is 88 dp at least, on the tablet too.
+Shots of every screen (home, both setups, the game without a clock, with one, and
+against the computer, settings, the win, the puzzles, puzzle 21) at 9:16, 9:20, and
+720 × 1280 in both orientations, English and Estonian, at 800, 600, 540, and 480 dp,
+and the tablet and near-square sizes at 800, before and after, out of git, in
+`/private/tmp/claude-501/-Users-kaitkasak-projects-personal-draughts/babe58e8-1877-410c-bc48-f7f8f48b403f/scratchpad/phone-layouts/`
+(`before/`, `after/` as `<screen>-<real size>-<dp>-<lang>.png`, the tablet's as
+`t1920x1200` and `t1200x1920`; `sheets/` for the comparisons below, made by
+`final_sheets.sh`; `shoot.sh`, `all.sh`, `cmp.sh`). `test/shell/sizes` now also runs the 20:9 phone at 540 and 480 dp and a 9:16
+phone at 480, both orientations and languages, and checks every tap at 88 dp: all in
+place everywhere. Numbers below are its, in dp, from the test faces (a little wider than
+the real font).
+
+The prototype's list, by number:
+
+1. **The computer's setup, landscape** (back, the title, and play off the screen at every
+   candidate): where the column is taller than the screen less 32 dp, it becomes two
+   columns of 330 dp side by side, back, the title, the draughts and the level in the
+   first, the child's pieces, the clock, and play in the second (`home::paired`). The
+   friend's setup does the same below about 530 dp (its column is 496 dp now, with 88 dp
+   tiles). Board beside it, 20:9: 356 at 540, 223 at 480 (both setups); the 9:16 phone
+   at 480 (853 × 480) has no room for one, so no board shows (below).
+2. **Settings, landscape** (the look group off the bottom): where neither the names
+   beside nor above the tiles fit the height, the names go back beside the tiles at the
+   width they want unwrapped (a foldable); where even that doesn't fit, one group shows
+   at a time, with two tabs, Game and Look (icon and title, the shown one lit) in the
+   title row in place of the title. Board 431 at 540 and 305 at 480 on 20:9; 105 on the
+   9:16 phone at 480.
+3. **The game's and a puzzle's bar, portrait** (words spilling from 160 → 97 dp thirds):
+   where a third of the bar would be under 170 dp, the bar is 128 dp and each icon
+   stands over its word, the tiles as wide as their words and a share of the rest. At
+   480 every word keeps the 24 dp heading face in both languages ("Alusta uuesti",
+   "Ülesanded"), smallest tile 96 to 107 dp wide.
+4. **Home, landscape** (the menu cut at 480): below about 590 dp tall, settings becomes
+   the 88 dp gear beside the wordmark, as in portrait, and the column widens to 440 dp;
+   the wordmark's letters close up where the gear leaves them too little room. The menu
+   is then 448 dp tall. The board moves down under the X or narrows to its left where it
+   would reach it (it sat under the X's corner at 411 and on the 9:16 phone): 336 at 480
+   on 20:9, 253 on 9:16.
+5. **The puzzles** (tiles 58 to 82 dp, stars spilling): where all three tiers would leave
+   the tiles under 88 dp (every phone candidate in both orientations), one tier shows at
+   a time: the three marks as 88 dp tiles on glass, the shown one lit, left of the tier
+   in landscape and in a row under back in portrait, and that tier's ten in rows of five,
+   or of four (4, 4, 2) where five don't fit (portrait under about 560 dp). It opens on
+   the tier of the puzzle last played, else of the next to solve. Tiles 88 to 96 dp, the
+   stars inside them. Unchanged on the tablet and near square (byte-identical shots).
+6. **Settings, portrait** (the title under the language from 480): the title takes a
+   smaller face or none where it doesn't fit beside the language; where the groups side
+   by side would leave the board under 45% of the width (every phone, and 4:3 and the
+   foldable now that the tiles are 88), one group shows at a time across the width,
+   the tabs in a row under the title row. Board 271 at 540 and 279 at 480 on 20:9.
+7. **The win card**: where it would cover the winning piece (a phone's board, and the
+   foldable's), it moves into the half of the board away from it, as near the middle as
+   clears the piece. On the tablet it doesn't move.
+8. **The computer's setup, portrait** (a thumbnail board): two columns don't fit 480 dp
+   across, so the sheet stays one column; on 20:9 the board is 244 at 540 and 192 at 480
+   (187 before). On the 9:16 phone at 480 the sheet would reach the X: back and the title
+   leave it for the top left, level with the X, back on glass as in settings, and no
+   board shows.
+9. **Under 88 dp, everywhere**: home's rows 80 → 88 (2 dp apart, so their pitch is the
+   same) and portrait gear 48 → 88; the setup's back 56 → 88, choices 76 → 88, play 80 →
+   88, the draughts' tiles 88 wide at least; settings' tiles 56 to 72 → 88 tall, the
+   seasons' 74 → 88 wide, the language's 48 → 88 (the title row 88 → 100); the game's
+   and a puzzle's panel tiles 72 → 88, portrait take back and next 80 → 88. The clocks
+   (72) take no tap and stay.
+10. Also: a landscape panel under 420 dp tall (a phone's) has its bottom tile 96 dp
+    instead of 132, so a puzzle's stars clear next at 480 on 9:16.
+
+**On the tablet (16:10, 1280 × 800 and 800 × 1280 dp)**, all from the 88 dp floor;
+shots side by side in `sheets/tablet-<screen>.png` (before left, after right):
+
+- Home: landscape the same but the lit and pressed rows 8 dp taller (menu 550 → 554,
+  its words 2 dp higher);
+  portrait the gear 48 → 88, overhanging its row 8 dp each side; the board unchanged
+  (560 landscape, 620 portrait).
+- The setups: back, the choices, and play 88 tall; landscape the column 664 → 740 (the
+  computer's) and 444 → 496 (a friend's), the board unchanged (560); portrait the board
+  472 → 396 (the computer's) and 620 → 568 (a friend's).
+- The game and a puzzle: landscape the left panel's rows 72 → 88; portrait the bar 104 →
+  120 and the play 196 → 204, take back and next 80 → 88, the board unchanged (752) and
+  4 dp lower.
+- Settings: every tile 88 tall, the seasons 88 wide, the language 88, the title row
+  100; landscape the same arrangement, the groups taller and the column wider (the five
+  seasons at 88), the board about 550 → 505 (measured in the shots); portrait the groups
+  taller, the board 632 → 530.
+- The puzzles and the win: unchanged.
+
+Near square, 800 dp at 4:3 and the foldable: no screen cut or overlapping. Settings
+landscape keeps both groups with the names beside unwrapped and a small board (305 at
+4:3, 242 on the foldable, test faces); settings portrait shows one group at a time (board
+371 and 307). The game portrait's board 671 → 647 (4:3) and 603 → 579 (foldable).
+
+**For the user to look at** (design choices taken, closest to the current look):
+
+- **Tabs** where a screen's groups don't fit: settings (Game and Look,
+  `sheets/choice-settings.png`) and the puzzles (the three marks,
+  `sheets/choice-puzzles.png`). The other ways (a scrolling list, smaller taps) break
+  "scroll-free" or the 88 dp floor.
+- **Two setup columns** on a short landscape (`sheets/choice-setup.png`).
+- **No board where there is no room**, rather than a thumbnail: both setups in
+  landscape on a 9:16 phone at 480 dp, the computer's setup and settings in portrait
+  there (`sheets/choice-noboard.png`); settings in landscape there keeps a 105 dp one. A
+  board under 96 dp isn't drawn.
+- **Back and the title over the photograph** in the computer's setup on a 9:16 phone at
+  480 dp portrait (in `sheets/choice-noboard.png`).
+- **The portrait bar's icons over their words** on phones (`sheets/choice-bar.png`).
+- **Home's gear beside the wordmark** in a short landscape (`sheets/choice-home.png`),
+  and **the win card moved off the winning piece** (`sheets/choice-win.png`).
+- **Settings with the Board row** (`--3d`, task 015): its three look rows don't fit
+  beside the game's in a landscape 800 dp tall, so with it the tablet too shows one
+  group at a time. `test/shell/settings` lays out at 900 dp to keep both on screen for
+  its taps.
+
+Left open: the scale itself (`max(short / 800, f × density)`) and its check on the
+Pixel 7a; the near-square settings' small board (242 to 305 dp) may want its own look;
+the phones' insets.
+
 ## Acceptance criteria
 
 - [x] A survey of every screen at each size above, with what broke (screenshots local)
@@ -313,4 +435,4 @@ that also help the near-square tablets), then switch the scale to
 - [ ] Larger tablets checked and anything broken fixed; memory at 2560 × 1600 recorded
 - [ ] Nothing under a cutout or the gesture bar
 - [ ] Checked on the Pixel 7a in both orientations, with its numbers
-- [ ] Tests cover the layouts at a phone size in both orientations
+- [x] Tests cover the layouts at a phone size in both orientations
