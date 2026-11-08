@@ -1,9 +1,6 @@
 # 030: Phones and other screen sizes
 
-Status: in-progress (the survey, the layout fixes, the phone layouts down to 480 dp, the
-insets, the density floor at F = 0.75, the Pixel 7a, larger tablets on the Mac, and the
-tablet done, the top strip checked on the Pixel, and settings' bleed over the tablet's
-navigation bar on the Mac; left: the tablet's own re-check of both when next attached)
+Status: done (2026-11-08; the tablet re-checked last)
 
 The layouts were built and checked on one screen, the Galaxy tablet (1920 × 1200, 16:10)
 and its Mac stand-in. Play lists the app for phones and tablets alike, so every screen
@@ -702,6 +699,14 @@ The user's two decisions after the tablet check:
 **Left for the tablet**, the next time it is attached: log `draughts_display` for 0, 0,
 0, 72 px in both orientations, and look at settings in landscape (both groups, the
 Kings row above the hidden bar) in both languages.
+
+## The tablet re-checked (2026-11-08)
+
+The APK from `5e9a6e7` on the tablet: settings in landscape shows both groups again, the
+Look group's glass running to the screen's bottom edge and its tiles above the hidden
+navigation bar, and nothing held back at the top (Samsung's strip no longer reserved).
+Portrait unchanged. No FATAL in logcat. Shots, out of git:
+`/private/tmp/claude-501/-Users-kaitkasak-projects-personal-draughts/babe58e8-1877-410c-bc48-f7f8f48b403f/scratchpad/tablet-recheck/`.
 
 ## Acceptance criteria
 

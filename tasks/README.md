@@ -68,10 +68,8 @@ are "Tammi kuju" with "Laua järgi".
 
 The order for what is left:
 
-1. 030's last step: the tablet's re-check, when it's next attached, of the two last
-   changes (Samsung's top strip no longer reserved, settings' landscape glass over the
-   hidden navigation bar so both groups show): insets 0,0,0,72 expected, settings in
-   landscape with both groups. Then 030 is done; archive 030 and 035.
+1. Archive 030 (done 2026-11-08, the tablet re-checked last) and 035, moving what the
+   docs need from them.
 2. 032, memory: measure first, then the blur against its alternatives, ASTC with a
    fallback, sizing by each screen's size and density; the idle CPU rise; PSS was 277 to
    278 MB on puzzle 21 after the lifecycle cycles (task 007 had 268 to 272). Starting
