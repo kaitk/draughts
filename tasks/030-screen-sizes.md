@@ -30,6 +30,10 @@ user on 2026-11-08: fix the layout rather than list the app for tablets only.
 - **Higher resolutions:** the baked text and the blurred backgrounds scale with the
   screen; check that text stays crisp, the photograph isn't upscaled past its source,
   and memory stays near the tablet's (261 to 263 MB) at 2560 × 1600 and above.
+- **On a real phone:** the user's Pixel 7a (1080 × 2400, 20:9, developer mode and USB
+  debugging on) once the survey's fixes are in on the Mac: the user swaps it for the
+  tablet on the USB cable when asked. Check every screen in both orientations, the
+  insets, and memory as on the tablet.
 - **Insets:** notches, rounded corners, and gesture bars on phones (Android's display
   cutout and system bar insets); nothing that takes a tap under them.
 
@@ -40,4 +44,5 @@ user on 2026-11-08: fix the layout rather than list the app for tablets only.
       and Estonian
 - [ ] Larger tablets checked and anything broken fixed; memory at 2560 × 1600 recorded
 - [ ] Nothing under a cutout or the gesture bar
+- [ ] Checked on the Pixel 7a in both orientations, with its numbers
 - [ ] Tests cover the layouts at a phone size in both orientations
