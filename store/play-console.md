@@ -1,7 +1,7 @@
 # Play Console answers
 
 The answers for Play Console's App content forms (Policy and programs → App content), and
-the store settings. Drafted 2026-11-08 from the app as built; the forms' questions change,
+the store settings. Drafted 2026-11-08 from the app as built, players added 2026-11-09; the forms' questions change,
 so read each one as it stands and answer from the facts in "What the answers rest on".
 
 ## What the answers rest on
@@ -11,7 +11,11 @@ so read each one as it stands and answer from the facts in "What the answers res
 - **No network.** Without `INTERNET` the app cannot open a socket; nothing in it tries.
 - **No third-party SDKs** that collect anything: the app is Goose, SDL3, goose_gfx, and
   Nuklear, all compiled in, none of which talks to a server.
-- **On the device only:** `settings.txt` and `game.bin` in the app's internal storage.
+- **On the device only:** `settings.txt`, and each player's `player-N.txt` and
+  `game-N.bin`, in the app's internal storage. A player's file holds the optional name a
+  child or parent types (up to 12 characters) and the badge; like the rest it never
+  leaves the device, which is why Data safety counts it as not collected (Play counts
+  data as collected only when it is sent off the device).
 - **Android's backup:** `android:allowBackup="true"`, so Android's own Auto Backup may
   copy those files to the user's Google account if the user turned backup on. The
   answers below count that as not collected, since the developer never receives it;
