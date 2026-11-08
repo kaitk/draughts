@@ -11,7 +11,9 @@
 //
 // try and find take `--variant NAME` (international by default; russian, brazilian) for
 // the rules and the board, and find `--rows N`, the rows from its own back row a side's
-// camp spans (the board's size less 3 by default: 7 of 10, 5 of 8).
+// camp spans (the board's size less 3 by default: 7 of 10, 5 of 8), and `--tempo`: a take
+// in more moves starts with a free tempo, a quiet move no reply captures after, rather
+// than a shot.
 //
 // For each puzzle it prints its theme, level, goal, pieces, the moves that solve it, and
 // what the checks found (puzzles::check); then the computer player at full skill: its
@@ -30,6 +32,7 @@ let LOSING = -50;           // a root score this far under even loses material (
 // The variant try and find work in, and the rows a camp spans (0: the board's size less 3).
 var variant: u8 = rules::INTERNATIONAL;
 var camp_rows = 0;
+var tempo = false;          // find: a take in more moves starts with a quiet move, not a shot
 
 // The computer's view of pz: its best move, and every move it scores within 50 of that,
 // appended to out, each marked if it doesn't solve the puzzle; then any right first
@@ -309,7 +312,8 @@ fn find(side: i64, goal: const u8[:], k: i64, mine: i64, theirs: i64, count: i64
                 if m.from == pz.lines[0].plies[0].from && m.to == pz.lines[0].plies[0].to { p1 = rules::play(p, m); }
             }
             rules::generate(p1, legal);
-            guard legal.len > 0 && legal[0].captured != 0 else { continue; }
+            // Or, with --tempo, a free tempo: no reply is a capture, and each gives men.
+            guard legal.len > 0 && (legal[0].captured != 0) != tempo else { continue; }
         }
         var out:  u8[>..] = [];
         var ways: u8[>..] = [];
@@ -345,6 +349,11 @@ fn main() {
             for name, k in puzzles::VARIANT_NAMES { if all[i + 1] == name { variant = k as u8; known = true; } }
             guard known else { abort(str("not a variant: ", all[i + 1])); }
             i += 2;
+            continue;
+        }
+        if all[i] == "--tempo" {
+            tempo = true;
+            i++;
             continue;
         }
         if i + 1 < all.len && all[i] == "--rows" {
