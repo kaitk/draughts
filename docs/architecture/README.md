@@ -1,7 +1,7 @@
 # Architecture
 
-The decisions the code follows, and why. This file holds the stack and the rules every
-part of the code keeps. The rest is by area:
+The decisions the code follows, and why. This file holds the stack, how the code is laid
+out, and the rules every part of it keeps. The rest is by area:
 
 - [rules.md](rules.md): draughts variants and how the engine represents them
 - [ai.md](ai.md): the computer player, its search, and how its levels play like a person
@@ -48,6 +48,51 @@ Checked against goose_gfx's source on 2026-11-07:
 - The binary carries SDL3, about 2 to 3 MB, against about 0.2 MB for sokol.
 - SDL owns the main loop and the Android lifecycle.
 - There is no GLES fallback: devices without a working Vulkan driver can't run the app.
+
+## Code layout
+
+The code is packages with no graphics, each run headless by its tests, and an app that
+feeds them the pointer and the time and draws what they leave (2026-11-08). Only `app/`
+imports `gfx`, so a second renderer (the NoGraphicsAPI version) rewrites `app/` and
+keeps the rest.
+
+| Directory | What it holds |
+| --- | --- |
+| `rules/` | The rules as pure functions over values: variants as data, positions, legal moves, playing a move, FEN, and the square at a column and row ([rules.md](rules.md)) |
+| `ai/` | The computer player over `rules`: a search sliced into steps, and its levels and skill ([ai.md](ai.md)) |
+| `strings/` | The user-facing text by key, from `strings/<lang>.txt` |
+| `gui/` | The UI layer ([rendering.md](rendering.md#ui-layer)): rect cuts, widgets with their press state, text laid out from glyph tables the app bakes; every call appends quads to one fixed array |
+| `board/` | The board on screen: the position, the legal moves, and the undo history; where the board goes and which square a point is on; taps and drags; a move's animation; and each frame's draw lists (pieces, the squares' marks, a wrong move's flash) |
+| `game/` | The game screen: its panels, the clocks, the computer's turn (asking for a move and playing the answer), the celebration, and the pieces drawn over the UI |
+| `shell/` | The screens and which one shows: home and a new game's setup, the game, settings with their preview board; the settings file and the saved game |
+| `app/` | The program: the main loop, the GPU drawing of the board, the pieces, and the UI's quads, the season's photograph and its blurs, the font atlas, the themes, the computer's worker thread, and its C (storage folder, locales, the clock's wake timer, the JPEG decoder) |
+| `tools/` | Programs for development: perft, the computer's benchmark and matches, and a terminal game against it |
+
+`ai` and `board` build on `rules`; `game` on `board`, `gui`, and `strings`; `shell` on
+`game` and `ai`; the app on all of them. What crosses to the renderer is flat and
+fixed-size, laid out as the shaders read it: `board::Piece`, `board::Marks`, the flash,
+`board::Layout`, `gui::Quad`, and `theme::Theme`.
+
+### A frame
+
+`app/draughts.goose` runs one loop on every platform
+([rendering.md](rendering.md#frames-and-battery)):
+
+1. The window: when it loses focus the game is written (Android may kill a paused app),
+   and on Android the clocks pause; a new season's photograph loads two frames after its
+   tile was tapped; the text is baked again if the scale changed.
+2. `gui::begin` takes the pointer and the time, and `shell::frame` declares the screen
+   showing. Its widgets append quads; a press that lands on the UI is the UI's, and only
+   otherwise does the game screen hand the pointer to `board`. The screen reports what
+   it asks for (another screen, a new game) and whether anything on it changed.
+3. `think::frame` hands the computer's worker the game's ask, and the game its answer.
+4. After a change in settings: the file is written, the language switched, and a new
+   season's photograph scheduled.
+5. If anything changed or still moves (`shell::animating`), the board the screen shows
+   (`shell::shown`) fills its draw lists, and the frame is drawn: the photograph and the
+   squares in one pass, the pieces, the UI's quads, then the pieces over the UI.
+   Otherwise nothing is drawn, and the next frame waits for input.
+6. While a clock runs, a timer is set for when the time it shows changes.
 
 ## Rules every part keeps
 

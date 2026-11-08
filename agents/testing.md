@@ -53,6 +53,11 @@ which would overwrite the main checkout's while another session uses them.
   of them (the kings, the draughts settings show). To shoot settings as chosen, copy the
   file aside, write the keys wanted (`kings = stack`, `draughts = russian`, `hints =
   moves`), run, and put the copy back.
+- To check that a change leaves the look alone, take the same shots before and after
+  and `cmp` them: home, the game, settings, both orientations, a setup, a clocked game
+  with taps, and one against the computer. Two runs of a shot are byte-identical except
+  where something moves at the last frame: the computer's pulsing ring and settings'
+  preview flash; compare those by eye (2026-11-08).
 - The prototypes' painter (`Paint` in `prototypes/draughts.js`) is a port of the piece
   shader, so a native crop beside the prototype's at the same scale shows a shader
   change exactly (the stacked king was checked that way).

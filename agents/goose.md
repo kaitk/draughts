@@ -29,6 +29,11 @@ find out by compiling, so the next session doesn't.
   an ordinary value and doesn't adapt.
 - `x.f(a)` is `f(x, a)` (UFCS). Several results: `fn f() -> i64, bool`, `let a, ok = f();`.
 - `let v .= table[i];` binds a reference (no copy); `=` would copy the element.
+- A function can return a reference, `fn shown(sh: Shell&) -> board::Board&`, which
+  `.=` binds (`shell::shown`, one of two boards). `.=` can't bind an `if` choosing
+  between two fields: it wants "a reference, a slice, or storage".
+- Trailing parameters can take defaults, `a: f32 = 1.0` (`reference.md`, "Parameters");
+  a call leaves them out.
 - A struct literal ending in `..` leaves the rest at defaults: `Move { from: f, .. }`.
 - `guard cond else { continue; }` for early exits; `if` and `match` are expressions, no
   ternary.
@@ -103,6 +108,8 @@ find out by compiling, so the next session doesn't.
   `for v: u8 in [a, b]` doesn't.
 - There is no `size_of`; work a struct's size out from its fields.
 - `float4` has no swizzles (`.xy`); build the `float2` from `.x` and `.y`.
+- `gfx::uniforms` takes its block by value: a struct bound with `.=` doesn't compile
+  ("bytes_of cannot write theme::Theme&[1] out"); bind it with `=`.
 - `as` binds looser than `&`: write `(x as i64) & 0x3F`; `x as i64 & 0x3F` doesn't parse.
 - An array of untyped float literals (`let FACE_DP = [64.0, 30.0]`) holds `f64`s; cast an
   element `as f32` to use it with `f32`s. Typed arrays from untyped integer constants
