@@ -26,7 +26,8 @@ let MEDIUM = 1;
 let HARD = 2;
 let LEVELS = 3;
 
-// Skill runs 0 to 100. Each level starts at its own and moves within BAND of it, never under its floor.
+// Skill runs 0 to 100. Each level starts at its own and moves within BAND of it, never
+// under its floor.
 let LEVEL_SKILL: i64[LEVELS] = [10, 40, 90];
 let BAND = 20;
 let LEVEL_FLOOR: i64[LEVELS] = [0, 25, 70];   // the lowest a level adapts to (medium never under 25)
