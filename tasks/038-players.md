@@ -1,7 +1,8 @@
 # 038: Players on one tablet
 
-Status: in progress (take a chosen 2026-11-09 and built; the chip's place chosen and
-built; the badges as carved pieces being built; to check on the Mac and the tablet)
+Status: in progress (take a chosen 2026-11-09 and built; the chip's place and the
+badges' look chosen and built, the badges' final silhouettes to come; to check on the
+Mac and the tablet)
 
 A family shares one tablet: children of different ages and a parent. Each child wants their
 own look (season and board) and their own puzzle stars, and a way to start them again
@@ -140,12 +141,34 @@ The user's answers to the open questions below:
 
 Changed while building (2026-11-09):
 
-- **The badges' art is open.** The animal pictures from the prototype broke the look and
-  are being redesigned apart from this task. A player's file keeps the badge as a name
-  (`picture = fox`, the six names standing for six badges and their colours), and
-  `app/widgets.goose` draws every badge through one function, `badge()`, for now a
-  placeholder: the badge's colour as a disc with a piece's turned rim. Replace that
-  function, and the names if they change, when the art is chosen.
+- **The badges are pieces (chosen 2026-11-09, `badges.html` direction 1).** Each badge
+  is home's king as the light pieces are drawn now (and later ivory, stone, the 3D
+  board, through the shared `man_top`), the animal in the crown's place and colour,
+  simple and bold as the crown is, with at most a faint inner shadow along its upper
+  edge: not a deep engraving. The king and its crown stay as they are. Six animals: fox,
+  hare, owl, hedgehog, bear, frog. A player's file keeps the badge as a name
+  (`picture = fox`); the six colours are gone.
+- **The art pipeline.** Each animal is a single-colour silhouette in
+  `assets/badges/<animal>.svg`; the final ones come later from the user (generated
+  images traced to SVG), and until then the files hold the prototype's hand-drawn
+  silhouettes. The app embeds the files when built and `badges/badges.goose` bakes them
+  at start into a signed distance texture (96 texels a side per animal), which
+  `badge()` in `app/widgets.goose` samples; nothing is evaluated per frame on the CPU.
+  Replacing a file and building again is all a swap takes; check it with
+  `test/badges` (bless its coarse drawing) and a look on screen. What a file must be:
+  a viewBox on the svg element, square best (the longer side spans the badge's square,
+  centred, ±0.56 of the piece's radius, the crown's room; keep the shape inside that
+  square's inscribed circle, the groove beyond it), and the shape as one or more paths
+  filled together even-odd (holes by even-odd or by reversed subpaths), each `d` of
+  M L H V C S Q T A Z in either case. Transforms on paths and groups are applied
+  (matrix, translate, scale, rotate: potrace's `translate(0,H) scale(0.1,-0.1)` works).
+  Fill, stroke, and any other element (circle, rect, use, text) are ignored, so
+  convert shapes and strokes to a filled path first. At most 4096 straight pieces after
+  flattening (each curve 2 to 32).
+- **Possible later, open:** a carved look for both the crown and the badges, the mark
+  recessed into the top and lit as the groove is (a darker floor, a lit lower wall and
+  a shadowed upper one, from the distance field). First briefed for this task and set
+  aside before it was built, for the crown's flat look (2026-11-09).
 - **Home keeps its king beside the wordmark**, and the player is a chip of their own,
   the badge and name in a round glass 88 dp tall, as the X is (`badges.html?home=2`).
 - **The chip's place (chosen 2026-11-09):** the same against the board in every
@@ -173,6 +196,8 @@ Changed while building (2026-11-09):
   `gui::face`, typed characters in `gui::Input`; the shader's ring, faces, and the plus,
   pencil, check, and bin icons; the app turns the keyboard on and off and feeds it in.
 - Strings in English and Estonian (`players.*`).
+- `badges/badges.goose` and `assets/badges/`: the animals' SVG files read and baked;
+  `draw::MAN_BLOCK` shared by the pieces and `badge()`.
 - Tests: `test/shell/players` (files, migration killed after each step, add, switch,
   start again, remove), `test/shell/who` (the card and sheet driven by the pointer, the
   holds, typing, back, the first run, the layouts at the tablet's and a phone's sizes in
@@ -223,6 +248,8 @@ and starts text input again on each tap).
 - [x] Every tap 88 dp; strings in English and Estonian, `test/strings/` passing
 - [ ] Checked on the Mac at the tablet's and a phone's sizes in both orientations, then on
       the tablet over USB
-- [ ] The badges' art chosen and drawn in `badge()`
+- [x] The badges' look chosen and drawn in `badge()`: home's man with the animal in the
+      crown's place, from SVG files baked at start (placeholder silhouettes)
+- [ ] The final silhouettes from the user in `assets/badges/`
 - [x] Where the player shows on home chosen, and `home::player_spot` moved there: above
       the board's top left in both orientations, checked off the column at every size

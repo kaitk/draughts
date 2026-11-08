@@ -50,7 +50,8 @@ which would overwrite the main checkout's while another session uses them.
   both groups in landscape), and a phone's tabs in settings and the puzzles:
   `sizes`; the title's and the clock's faces holding every character drawn in them, the
   app's name in every language and every clock time: `faces`), `strings` (every language
-  file has every key), `ai` (the computer player:
+  file has every key), `badges` (each badge's SVG baked into its distance field, drawn
+  coarsely, and the path syntax a tracer writes: bless it after replacing an animal), `ai` (the computer player:
   its search against a plain minimax, the table changing no score, keys, what each level
   plays in known shots, the same move in steps as at once, and that no level hangs a
   piece), and `puzzles` (the puzzle file's format and refusals, what `puzzles::check`

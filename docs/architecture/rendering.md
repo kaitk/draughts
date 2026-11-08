@@ -556,9 +556,28 @@ the prototype tried, kept for 3D:
   toward the text color), frames running only while it is held; let go early and
   nothing happens, and no dialog asks, since a dialog needs reading and a hold is what a
   child doesn't do in passing. Back goes from the sheet to the card and closes the card.
-  The badges' art is still open (2026-11-09): each is drawn by one function,
-  `badge()` in `app/widgets.goose`, for now a placeholder, the badge's colour as a disc
-  with a piece's turned rim.
+  **A badge** (chosen 2026-11-09, `badges.html` direction 1) is home's king as the light
+  pieces are drawn now, its animal in the crown's place and colour: a man with its side
+  and short shadow filling the face's disc, its top from `draw::MAN_BLOCK`'s `man_top`
+  (the board's pieces share it, so a new piece style reaches the badges with it), the
+  animal flat and bold as the crown is, with only a faint shadow inside its upper edge
+  (the distance 0.035 radii above, darkening the mark by up to 30%). `badge()` in
+  `app/widgets.goose` draws every badge. The animals are data: one SVG per animal,
+  `assets/badges/<animal>.svg` (fox, hare, bear, owl, frog, hedgehog, in
+  `players::ANIMALS`'s order), embedded when the app is built and baked at start by
+  `badges/badges.goose` into a signed distance field, a 96 × 96 cell per animal (an R8
+  texture of 96 × 576, 54 KB; the distance in texels, ±12 over the byte's range), in
+  well under a millisecond on the Mac. The bake flattens the outline into straight
+  pieces, each reaching only the texels within 12 of it, and takes inside and out from
+  crossings along each row (even-odd). The shader samples it (bilinear) over a square
+  of ±0.56 radii, the crown's room; a shape should keep inside the circle that square
+  inscribes. Swapping an animal is replacing its file and building again. An SVG must
+  have a viewBox on its svg element (the longer side spans the cell, centred) and one
+  or more paths, filled together even-odd, their `d` of M, L, H, V, C, S, Q, T, A, Z in
+  either case; transforms on paths and groups (matrix, translate, scale, rotate) are
+  applied, as potrace writes them; fills and strokes are ignored, and no other element
+  is read. A file that can't be read leaves a plain man and a line on stdout.
+  `test/badges` bakes each file and draws it coarsely.
 
 ### Transitions
 
