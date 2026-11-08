@@ -417,7 +417,9 @@ fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::La
     // the pieces over the UI where no board shows (a setup on a short phone).
     let across = if l.inner.w > 0.0 { l.board.z / l.inner.w } else { l.n / 0.978 };
     d.view = View { screen: float4 { width, height, 0.0055 * across / 0.39, 0.0 } };
-    gfx::begin_screen(t.page);
+    // No depth target: nothing tests depth, and asking for the screen's would make gfx
+    // keep a window-sized one (patches/goose_gfx/0003).
+    gfx::begin_pass(gfx::screen(), gfx::Texture { 0 }, t.page);
     gfx::bind(d.board_pipeline);
     gfx::uniforms(gfx::FRAGMENT, 0, t);
     // Dimmed to 0.8 blurred; the ends exact, so a screen at rest draws as it always has.

@@ -214,3 +214,53 @@ keep `SDLSurface` from registering the accelerometer (`DraughtsActivity` overrid
 
 With 1 to 3 the tablet's graphics would go from ~211 to ~135 MB and PSS from ~260 to
 ~185 MB.
+
+## Cuts
+
+### Cut 1: the screen without a depth target or cycling (2026-11-08)
+
+`patches/goose_gfx/0003-screen-without-depth-or-cycling.patch`: gfx makes the screen's
+depth target only when `screen_depth()` is first called, and `begin_pass` no longer
+cycles the screen when it clears it; the app begins its pass with no depth target. Why
+cycling was there: it lets SDL give a cleared target fresh memory while an earlier frame
+still reads it, so the GPU need not wait. For the screen that is the last frame's blit,
+nearly always in flight, so cycling kept a second copy for good. Without it SDL's barrier
+orders the clear after that blit on the GPU; the CPU never waits, and the frame times
+below show no stall.
+
+Galaxy tablet, landscape, rotation locked, `pm clear` before each build's run; before is
+`d3c2714`'s APK, after the same with the cut. Home and the game 8 s after a fresh
+launch; "after moves" after five moves and take-backs (c3-d4) in the game; "after a
+rotation" after those and a turn to portrait and back; then home and another turn.
+
+| PSS / graphics (GL + EGL mtrack), MB | Before | After |
+| --- | --- | --- |
+| Home, fresh | 215.4 / 156.6 (98.3 + 58.3) | 215.2 / 156.5 (98.2 + 58.3) |
+| Game, fresh | 212.6 / 156.6 (98.3 + 58.3) | 212.3 / 156.5 (98.2 + 58.3) |
+| Game after moves | 180.9 / 123.8 (92.3 + 31.5) | 181.0 / 123.7 (92.2 + 31.5) |
+| Game after a rotation | 324.9 / 267.3 (220.3 + 46.9) | 200.9 / 143.3 (91.9 + 51.4) |
+| Home after another rotation | 265.3 / 207.5 (156.1 + 51.4) | 196.0 / 138.9 (91.9 + 46.9) |
+| `dumpsys gpu --gpumem`, the last two | 282.9, 218.8 MiB | 154.5, 154.5 MiB |
+
+Fresh, nothing changes: the depth target sat inside the first 64 MiB block, which is
+taken whole either way. The cut is in the second block: before, a rotation remade the
+screen and its depth (19 MiB) beside their cycled copies and the old pair, and SDL took
+a second 64 MiB block (and a short peak above it); after, the screen, the photograph,
+and the atlas (34 MiB) and a remade screen fit in the first. GL mtrack stays at 92 MB
+through rotations, the steady state ~69 MB lower, PSS ~265 → ~196 MB. Either change
+alone might have kept this tablet in one block; both leave room.
+
+Frame times, SurfaceFlinger's `--timestats` present-to-present of the app's layer at
+90 Hz, over 15 moves and 15 take-backs, two runs a build (gaps of 350 ms and more, the
+app idle between taps, left out):
+
+| | Frames | 10 to 11 ms | 21 to 22 ms | 32 to 33 ms |
+| --- | --- | --- | --- | --- |
+| Before | 948 | 902 (95.1%) | 38 | 8 |
+| After | 946 | 908 (96.0%) | 28 | 10 |
+
+The same within run-to-run noise, no frames dropped. The look: the same Mac shots
+(home, the game, a transition held at 0.5, settings, puzzle 21, landscape and portrait)
+are byte-identical apart from settings' preview flash (25 pixels), and the tablet's shots
+of home and the game in landscape and portrait after rotations are byte-identical. The
+Mac runs the built-in gfx, so it shows only the app's side of the change.

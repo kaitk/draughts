@@ -11,6 +11,15 @@ NoGraphicsAPI's ideas, inside SDL_GPU:
   frame in flight.
 - **SDF shapes.** Pieces, highlights, rounded panels, and their soft shadows are signed
   distance shapes in fragment shaders, crisp at any resolution without textures.
+- **One screen, no depth.** A frame draws into goose_gfx's screen, an RGBA8 texture the
+  window's size that `frame()` blits into the swapchain. Nothing tests depth, so the pass
+  has no depth target (`gfx::begin_pass` with `Texture { 0 }`, not `begin_screen`). In the
+  Android build gfx makes the screen's depth target only when a program asks for it, and
+  never cycles the screen (`patches/goose_gfx/0003-screen-without-depth-or-cycling.patch`,
+  [findings](../goose-findings.md)): the GPU orders a frame's clear after the last
+  frame's blit instead of SDL keeping a fresh copy for each frame in flight. Together
+  they kept SDL from a second 64 MiB block after the first rotation, about 70 MB of
+  graphics memory on the tablet.
 - **3D later** reuses the game state and the storage buffer, with a camera and lit meshes
   in place of the 2D pieces.
 

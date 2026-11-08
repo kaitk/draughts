@@ -226,6 +226,13 @@ measuring there:
   022's switch frames took under 1 ms; the frames after them 9 to 19 ms in drawing).
 - A recording's frame times say little of what is slow inside: a recorded 20 ms frame
   may be the program's 1 ms and the rest presenting.
+- Presented frame times without a recording: `adb shell dumpsys SurfaceFlinger
+  --timestats -enable -clear`, play the animation (taps with `input tap`), then
+  `--timestats -dump` and `-disable`; the layer
+  `SurfaceView[com.kaitk.draughts/...](BLAST)` has a present2present histogram in ms
+  (gaps of 350 ms and more are the app idle between taps). `--latency LAYER` prints only
+  the refresh period on Android 16, and `gfxinfo` counts only the Java views' frames
+  (2026-11-08).
 - `dumpsys meminfo` at home right after launch counts about 24 MB more graphics than
   once a later frame has submitted GPU work (184 MB, and 160 MB with the
   thumbnails loaded in the first idle frame), likely the launch's uploads not yet let

@@ -3,6 +3,31 @@
 Gaps found in Goose, goose_gfx, and the SDL it pins, while building for Android, with what
 we do about each here and what could go upstream. Newest first.
 
+## goose_gfx: the screen always has a depth target, and is cycled every frame (2026-11-08)
+
+`gfx_create_screen` makes a window-sized depth target (D32F where supported) beside the
+RGBA8 screen, whether or not the program ever asks for `screen_depth()`, and remakes both
+on every resize. `begin_pass` sets `cycle` on every color target it clears, the screen
+included; since the last frame's blit nearly always still reads the screen when the next
+frame clears it, SDL_GPU's Vulkan backend keeps a second (or third) window-sized copy
+for good. On the tablet (Mali-G615, one memory type) SDL puts any resource over 2 MiB in
+a block rounded up to 64 MiB; the screen, its depth, and their copies and remakes after
+the first rotation needed a second such block: graphics 156.6 MB fresh, 207.5 MB after
+a rotation. goose_gfx `6cfa3de`, Goose v2026.4.
+
+- Here: `patches/goose_gfx/0003-screen-without-depth-or-cycling.patch` makes the screen's
+  depth target the first time `screen_depth()` is called (so `begin_screen` still works;
+  the POC uses it), and from then on with each resize; and clears the screen without
+  cycling. Not cycling is safe: SDL's barrier orders the clear after the last frame's
+  blit on the GPU, and the CPU never waits. The app begins its pass with
+  `gfx::begin_pass(gfx::screen(), gfx::Texture { 0 }, clear)`. Graphics after an
+  animation and a rotation: 207.5 → 138.9 MB, PSS 265 → 196 MB; frame times of a move at
+  90 Hz unchanged (task 032's file has the numbers).
+- Upstream: both in goose_gfx. Make the screen's depth lazily as here, or take a flag
+  in `gfx::open`; and don't cycle the screen in `begin_pass` (a program-made target that
+  is cleared each frame may still gain from cycling). A `cycle` field in `PassDesc`
+  would let a program choose.
+
 ## goose_gfx: no safe area and no display scale (2026-11-08)
 
 A phone's camera cutout and gesture bar take part of the window, and its density says
