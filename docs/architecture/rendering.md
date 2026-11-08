@@ -276,7 +276,7 @@ the prototype tried, kept for 3D:
   2026-11-08 over a quiet last row and a door). It is glass under a quiet tile, both
   going down as a tile does while pressed. In landscape it sits above the photograph,
   clear of the board (28 dp right of its edge, 8 dp above its top; on a phone, where the
-  board would reach it, the board moves down to 16 dp under it or narrows to its left,
+  board would reach it, the board moves down to 8 dp under it or narrows to 16 dp left of it,
   whichever leaves it larger); in portrait, where
   it would reach the board, the board moves down to 16 dp under it and shrinks to keep
   24 dp above the sheet (640 to 620 dp on the tablet). The board keeps 40 dp above and

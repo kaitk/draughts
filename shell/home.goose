@@ -124,8 +124,8 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, width: f
         // The column, its left corners off the screen, 360 dp of content (a setup too
         // tall for that, two columns of 300 side by side); the board in the rest, 70% of
         // the height at most, 40 dp from the column. Where the board would reach the way
-        // out (a phone), it moves down to 16 dp under it or narrows to its left, whichever
-        // leaves it larger.
+        // out (a phone), it moves down to 8 dp under it or narrows to 16 dp left of it,
+        // whichever leaves it larger.
         let wide = if pair { 2.0 * PAIR_W + PAIR_GAP } else if setup == NOTHING && gear_beside(true, height, u) { GEAR_W }
                    else { COLUMN_W };
         let w = wide * u;
@@ -135,13 +135,14 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, width: f
         var size = min(0.7 * height, stage.z - 80.0 * u);
         var x = stage.x + 0.5 * (stage.z - size);
         var y = 0.5 * (height - size);
-        if y < clear && x + size > width - clear {
-            let down = min(size, height - 24.0 * u - clear);
+        let below = (EDGE + CORNER + 8.0) * u;
+        if y < below && x + size > width - clear {
+            let down = min(size, height - 24.0 * u - below);
             let left = min(size, width - clear - stage.x - 40.0 * u);
             if down >= left {
                 size = down;
                 x = stage.x + 0.5 * (stage.z - size);
-                y = clear;
+                y = below;
             } else {
                 size = left;
                 x = width - clear - size;
