@@ -1,0 +1,52 @@
+loaded: true, the set russian
+1: learn 1, white, take 1 in 1, 4 pieces, 1 line; solved by c3:e5
+2: learn 1, white, take 1 in 1, 6 pieces, 1 line; solved by a5:c3
+3: learn 1, white, take 1 in 1, 5 pieces, 1 line; solved by d4:f6
+4: learn 1, white, take 1 in 1, 4 pieces, 1 line; solved by a1:h8
+5: learn 2, white, take 2 in 1, 5 pieces, 1 line; solved by a3:c5:a7
+6: learn 2, white, take 1 in 1, 12 pieces, 1 line; solved by c5:a3
+7: learn 2, white, take 2 in 1, 7 pieces, 1 line; solved by a3:c5:e3
+8: learn 2, white, take 2 in 1, 6 pieces, 1 line; solved by a5:c3:h8
+9: learn 3, white, take 3 in 1, 6 pieces, 1 line; solved by h4:f6:d8:b6
+10: learn 3, white, take 3 in 1, 7 pieces, 1 line; solved by d4:f6:d8:a5
+11: learn 3, white, take 3 in 1, 6 pieces, 1 line; solved by a5:c7:f4:h6
+12: learn 3, white, crown in 2, 8 pieces, 1 line; solved by e5-d6
+13: captures 1, white, take 2 in 1, 12 pieces, 1 line; solved by a3:c5:a7
+14: captures 1, white, take 2 in 1, 14 pieces, 1 line; solved by a3:c5:e3
+15: captures 1, black, take 2 in 1, 12 pieces, 1 line; solved by b6:d4:f2
+16: captures 1, white, take 2 in 1, 14 pieces, 1 line; solved by e3:c5:a7
+17: captures 2, white, take 3 in 1, 10 pieces, 1 line; solved by a5:c7:e5:g3
+18: captures 2, black, take 3 in 1, 12 pieces, 1 line; solved by f6:d4:f2:h4
+19: captures 2, white, take 3 in 1, 10 pieces, 1 line; solved by c3:e5:c7:a5
+20: captures 3, white, take 4 in 1, 10 pieces, 1 line; solved by f4:h6:f8:c5:a7
+21: captures 3, black, take 4 in 1, 12 pieces, 1 line; solved by c5:a3:c1:f4:h2
+22: captures 3, white, take 4 in 1, 10 pieces, 1 line; solved by c3:a5:c7:e5:g3
+23: crowning 1, white, crown in 1, 8 pieces, 1 line; solved by b4:d6:f8
+24: crowning 1, white, crown in 1, 8 pieces, 1 line; solved by f4:d6:b8
+25: crowning 1, white, crown in 1, 8 pieces, 1 line; solved by b4:d6:f8:h6
+26: crowning 1, black, crown in 1, 10 pieces, 1 line; solved by g5:e3:c1
+27: crowning 2, white, crown in 2, 8 pieces, 1 line; solved by g5-f6
+28: crowning 2, white, crown in 2, 8 pieces, 1 line; solved by c5-b6
+29: crowning 2, black, crown in 2, 10 pieces, 1 line; solved by b4-c3
+30: crowning 3, white, crown in 3, 8 pieces, 1 line; solved by c3-b4
+31: crowning 3, black, crown in 3, 10 pieces, 1 line; solved by f4-e3
+32: crowning 3, black, crown in 3, 10 pieces, 1 line; solved by f4-e3
+33: shots 1, white, take 2 in 2, 12 pieces, 1 line; solved by b2-c3
+34: shots 1, white, take 2 in 2, 12 pieces, 1 line; solved by b2-c3
+35: shots 1, black, take 2 in 2, 12 pieces, 1 line; solved by e7-f6
+36: shots 1, white, take 2 in 2, 14 pieces, 1 line; solved by c3-b4
+37: shots 1, white, take 2 in 2, 14 pieces, 1 line; solved by c3-b4
+38: shots 1, black, take 2 in 2, 12 pieces, 1 line; solved by a5-b4
+39: shots 2, white, take 3 in 2, 12 pieces, 1 line; solved by c3-b4
+40: shots 2, white, take 3 in 2, 12 pieces, 1 line; solved by d4-e5
+41: shots 2, black, take 3 in 2, 12 pieces, 1 line; solved by h6-g5
+42: shots 2, white, take 1 in 2, 10 pieces, 1 line; solved by c5-d6
+43: shots 2, black, take 1 in 2, 10 pieces, 1 line; solved by f4-e3
+44: shots 3, white, take 3 in 3, 12 pieces, 1 line; solved by b2-c3
+45: shots 3, white, take 3 in 3, 12 pieces, 1 line; solved by d2-e3
+46: shots 3, black, take 2 in 3, 14 pieces, 1 line; solved by d4-c3
+learn: 12 puzzles, by level 4 4 4
+captures: 10 puzzles, by level 4 3 3
+crowning: 10 puzzles, by level 4 3 3
+shots: 14 puzzles, by level 6 5 3
+46 puzzles, 12 black to move; at most 161 positions a check; 0 problems
