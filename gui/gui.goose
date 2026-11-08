@@ -200,14 +200,15 @@ fn listen(g: Gui&, on: bool) { g.input = if on { g.pointer } else { Input { at: 
 
 // Fades quads first..last (as g.quads.len counted them) to `opacity` and moves them by
 // `offset` pixels, whole ones, so glyphs stay a texel to a pixel: a screen in a
-// transition. Its taps stay where it is at rest.
+// transition. Its taps stay where it is at rest. A quad faded already (a win's card
+// coming in) fades further.
 fn fade(g: Gui&, first: i64, last: i64, opacity: f32, offset: float2) {
     let d = float2 { floor(offset.x + 0.5), floor(offset.y + 0.5) };
     for i in first..last {
         let q .= g.quads[i];
         q.rect.x += d.x;
         q.rect.y += d.y;
-        q.extra.w = 1.0 - opacity;
+        q.extra.w = 1.0 - (1.0 - q.extra.w) * opacity;
     }
 }
 

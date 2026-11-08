@@ -78,7 +78,9 @@ fn main() {
           icons(g, gui::SHIELD));
 
     // Puzzle 1: b2 can't move while d4 must capture, a miss; then d4 takes e5.
-    drive::tap(sh, g, drive::tile(g, 1), 1.0);
+    // It opens through its transition, the board growing out of its tile.
+    drive::tap(sh, g, drive::tile(g, 1), 0.5);
+    drive::idle(sh, g, 0.9);
     show(sh, "the first puzzle");
     tap_square(sh, g, "b2", 1.1);
     show(sh, "b2 tapped");
@@ -155,6 +157,7 @@ fn main() {
           " ", odd.stars[2], " ", odd.stars[4]);
     for id in [2, 3, 4] { sh.prefs.stars[id] = 3; }
     drive::tap(sh, g, drive::tile(g, 0), 30.0);             // the puzzles
+    drive::idle(sh, g, 30.4);
     show(sh, "puzzles");
     print("  locks ", icons(g, gui::LOCK), ", lit ", lit(g), ", stars won ", icons(g, gui::STAR));
 

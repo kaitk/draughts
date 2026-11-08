@@ -47,14 +47,16 @@ fn shows(sh: shell::Shell&, now: f64) -> u8[>..] {
 }
 
 // A tap at p as the app sees it: the frame of the release, where the tap acts, still
-// shows its board whole; the frame after it shows what the tap changed; then a frame
-// long after asks for no drawing and nothing animates.
+// shows its board whole; the frame after it shows what the tap changed; then, once a
+// transition to or from the game would be over and its last frame drawn, a frame long
+// after asks for no drawing and nothing animates.
 fn tap(sh: shell::Shell&, g: gui::Gui&, p: float2, now: f64, what: const u8[:]) {
     drive::frame(sh, g, p, true, true, false, now);
     drive::frame(sh, g, p, false, false, true, now + 0.02);
     let was = whole(sh, now + 0.02);
     drive::idle(sh, g, now + 0.04);
     let shown = shows(sh, now + 0.04);
+    drive::idle(sh, g, now + 0.4);
     let later = drive::idle(sh, g, now + 0.5);
     print(what, ": ", shown, "; the tap's frame whole ", was, ", then drawn ", later, " animating ",
           shell::animating(sh, g, now + 0.5));

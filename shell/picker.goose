@@ -66,9 +66,11 @@ fn tile(g: gui::Gui&, id: i64, r: float4, won: i64, lit: bool, opened: bool, sta
     return tapped;
 }
 
-// Declares the screen on a screen width × height pixels with the stars won so far.
-// Returns BACK, the index in puzzles::all of a puzzle tapped, or NOTHING.
-fn frame(g: gui::Gui&, width: f32, height: f32, stars: const u8[:]) -> i64 {
+// Declares the screen on a screen width × height pixels with the stars won so far, and
+// sets `spot` to the tile of the puzzle tapped, or else of puzzle `at` (an index in
+// puzzles::all, or -1 for none), which a puzzle's board grows out of and shrinks back
+// into. Returns BACK, the index in puzzles::all of a puzzle tapped, or NOTHING.
+fn frame(g: gui::Gui&, width: f32, height: f32, stars: const u8[:], at: i64, spot: float4&) -> i64 {
     let u = g.scale;
     let landscape = width >= height;
     var page = float4 { 24.0 * u, 24.0 * u, width - 48.0 * u, height - 48.0 * u };
@@ -115,7 +117,11 @@ fn frame(g: gui::Gui&, width: f32, height: f32, stars: const u8[:]) -> i64 {
             let i = puzzles::nth(puzzles::all, t, k);
             let r = float4 { c.x + (k % per) * (side + gap), c.y + (k / per) * (side + gap), side, side };
             let won = stars[puzzles::all.list[i].id] as i64;
-            if tile(g, 501 + i, r, won, i == now_next, opened, if landscape { 18.0 } else { 22.0 }) { pick = i; }
+            if i == at && pick < 0 { spot = r; }
+            if tile(g, 501 + i, r, won, i == now_next, opened, if landscape { 18.0 } else { 22.0 }) {
+                pick = i;
+                spot = r;
+            }
         }
     }
     return pick;

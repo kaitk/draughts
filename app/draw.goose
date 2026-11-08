@@ -15,7 +15,7 @@ struct BoardUniforms {
     screen: float4,     // width, height in pixels, time, squares per side
     rect:   float4,     // the board: x, y, size, corner radius
     inner:  float4,     // the squares: x, y, size, one square
-    scene:  float4,     // x: 1 when there is a photograph; y: how bright it is shown; z: the board dimmed by; w: 1 turned
+    scene:  float4,     // x: the photograph's blur, 0 sharp..1, or -1 with none; y: how bright it is shown; z: the board dimmed by; w: 1 turned
     wrong:  float4,     // a wrong move's square (y * size + x, or -1), and how far its flash is, 0..1
     marks:  board::Marks,
 }
@@ -63,7 +63,8 @@ let BOARD_FRAG = """
         vec4 screen; vec4 rect; vec4 inner; vec4 scene; vec4 wrong;
         uvec4 last; uvec4 target; uvec4 via;
     };
-    layout(set = 2, binding = 0) uniform sampler2D photo;
+    layout(set = 2, binding = 0) uniform sampler2D photo;       // blurred
+    layout(set = 2, binding = 1) uniform sampler2D sharp_photo;
     bool has(uvec4 m, int n) {
         uint w = n < 32 ? m.x : n < 64 ? m.y : n < 96 ? m.z : m.w;
         return ((w >> uint(n & 31)) & 1u) != 0u;
@@ -87,11 +88,14 @@ let BOARD_FRAG = """
         vec2 px = gl_FragCoord.xy;              // pixels from the top left, exact
         float u = rect.z * 0.01;                // 1% of the board
         // The season's photograph, cover-cropped by the long side: blurred and dimmed to
-        // 0.8 behind the game, sharp behind home; or the page color without one.
+        // 0.8 behind the game, sharp behind home, the two mixed in a transition between
+        // them; or the page color without one.
         float side = max(screen.x, screen.y);
-        vec3 c = scene.x > 0.5
-            ? scene.y * texture(photo, (px - 0.5 * (screen.xy - side)) / side).rgb
-            : page.rgb;
+        vec2 puv = (px - 0.5 * (screen.xy - side)) / side;
+        vec3 c = page.rgb;
+        if (scene.x >= 1.0) c = scene.y * texture(photo, puv).rgb;
+        else if (scene.x <= 0.0 && scene.x > -0.5) c = scene.y * texture(sharp_photo, puv).rgb;
+        else if (scene.x > 0.0) c = scene.y * mix(texture(sharp_photo, puv).rgb, texture(photo, puv).rgb, scene.x);
         vec2 bc = rect.xy + 0.5 * rect.z;
         vec2 bh = vec2(0.5 * rect.z);
         // A soft shadow under the board, a little down.
@@ -392,9 +396,9 @@ fn new(kind: i64) -> Drawer {
 
 // Draws one frame of the board as fill() left it, into the screen's pass, which it
 // leaves open for the UI; the caller ends it. The pieces in `over` are copied now and
-// drawn by overlay(), after the UI. `sharp` shows the photograph as it is (home,
-// settings), otherwise blurred and dimmed (the game).
-fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::Layout, sharp: bool, now: f64,
+// drawn by overlay(), after the UI. `blur` 0 shows the photograph as it is (home,
+// settings), 1 blurred and dimmed (the game), and between mixes the two (a transition).
+fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::Layout, blur: f32, now: f64,
          width: f32, height: f32) {
     let t = d.colors;
     for i in b.pieces.len { d.upload[i] = b.pieces[i]; }
@@ -407,12 +411,16 @@ fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::La
     gfx::begin_screen(t.page);
     gfx::bind(d.board_pipeline);
     gfx::uniforms(gfx::FRAGMENT, 0, t);
+    // Dimmed to 0.8 blurred; the ends exact, so a screen at rest draws as it always has.
+    let k = clamp(blur, 0.0, 1.0);
+    let bright: f32 = if k <= 0.0 { 1.0 } else if k >= 1.0 { 0.8 } else { 1.0 - 0.2 * k };
     gfx::uniforms(gfx::FRAGMENT, 1, BoardUniforms {
         screen: float4 { width, height, now as f32, l.n },
         rect:   l.board, inner: l.inner,
-        scene:  float4 { if d.scene.has { 1.0 } else { 0.0 }, if sharp { 1.0 } else { 0.8 }, b.dim, if l.flip { 1.0 } else { 0.0 } },
+        scene:  float4 { if d.scene.has { k } else { -1.0 }, bright, b.dim, if l.flip { 1.0 } else { 0.0 } },
         wrong: b.flash, marks: b.marks });
-    gfx::bind_texture(gfx::FRAGMENT, 0, if sharp { d.scene.sharp } else { d.scene.photo }, d.scene.sampler);
+    gfx::bind_texture(gfx::FRAGMENT, 0, d.scene.photo, d.scene.sampler);
+    gfx::bind_texture(gfx::FRAGMENT, 1, d.scene.sharp, d.scene.sampler);
     gfx::draw(3);
     gfx::bind(d.piece_pipeline);
     gfx::bind_storage_buffer(gfx::VERTEX, 0, d.pieces);

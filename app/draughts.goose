@@ -17,6 +17,7 @@
 //   ../build/draughts --screen puzzles            the puzzles to pick from
 //   ../build/draughts --puzzle 21 --tap f4 --tap e5   puzzle 21, taps on its board
 //   ../build/draughts --go settings --hold 0.4 --frames 10   home going to settings, held at 40%
+//   ../build/draughts --screen friend --go play --hold 0.5 --frames 10   a friend's play, halfway into the game
 //   ../build/draughts --fen W:Wa1,e3:Bf4 --tap e3 --tap g5 --win 1.2 --frames 60   a win held 1.2 s in
 //   scripts/android.py app/draughts.goose --run   on the tablet (docs/development.md)
 
@@ -51,6 +52,9 @@ extern fn draughts_first_frame();
 // Mac the window closes as the program returns (launch.c).
 extern fn draughts_close();
 
+// --go play: a new game from home's setup, as its play starts one.
+let GO_PLAY = 99;
+
 // The theme a season setting picks: its own, or by the date.
 fn theme_for(season: i64) -> i64 {
     return if season >= 0 { season } else { theme::for_month(theme::month(time())) };
@@ -67,8 +71,10 @@ fn main() {
     // international|brazilian|russian, --clock none|5+3|10+5, --computer white|black (a
     // new game; --level easy|medium|hard, the setup's last by default; with --screen
     // friend or computer, the setup's choices instead, the child playing the other
-    // color), --go home|settings (switches there on the second frame, through its
-    // transition), --hold T (keeps a transition at T of the way, 0..1, for a screenshot),
+    // color), --go home|settings|game|play|puzzles|puzzle (switches there on the second
+    // frame, through its transition: game as continue does, play as the setup's play,
+    // puzzle from the puzzles to pick from to --puzzle ID or the first; after any taps),
+    // --hold T (keeps a transition at T of the way, 0..1, for a screenshot),
     // --win T (keeps a win at T seconds into its celebration, for a screenshot). --theme,
     // --hints, and --lang override the settings for the run without changing them.
     var width = 1280;
@@ -116,7 +122,12 @@ fn main() {
             if argv[i + 1] == "computer" { setup = home::COMPUTER; }
             if argv[i + 1] == "puzzles" { screen = shell::PICKER; }
         }
-        if argv[i] == "--go" { go = if argv[i + 1] == "settings" { shell::SETTINGS } else { shell::HOME }; }
+        if argv[i] == "--go" {
+            let to = argv[i + 1];
+            go = if to == "settings" { shell::SETTINGS } else if to == "game" { shell::GAME }
+                 else if to == "play" { GO_PLAY } else if to == "puzzles" { shell::PICKER }
+                 else if to == "puzzle" { shell::PUZZLE } else { shell::HOME };
+        }
         if argv[i] == "--hold" {
             let n, ok = parse_flt(argv[i + 1]);
             if ok { hold = clamp(n, 0.0, 1.0); }
@@ -182,7 +193,7 @@ fn main() {
         if computer >= 0 { sh.prefs.color = 1 - computer; }
         if level >= 0 { sh.prefs.level = level; }
     }
-    if puzzle_id >= 0 && puzzles::find(puzzles::all, puzzle_id) >= 0 {
+    if puzzle_id >= 0 && puzzles::find(puzzles::all, puzzle_id) >= 0 && go != shell::PUZZLE {
         shell::play_puzzle(sh, puzzles::find(puzzles::all, puzzle_id));
         screen = shell::PUZZLE;
     }
@@ -249,8 +260,19 @@ fn main() {
                                  pressed: gfx::mouse_pressed(gfx::MOUSE_LEFT),
                                  released: gfx::mouse_released(gfx::MOUSE_LEFT) };
         gui::begin(g, input, scale, now);
-        if go >= 0 && gfx::frame_count() >= 2 {
-            shell::go_to(sh, go, now);
+        // A switch the flags ask for waits for their taps to have played out, and for the
+        // win they lead to, if any, held at --win's moment (which must be past: the
+        // celebration's start is kept as a time, never before 0).
+        if go >= 0 && gfx::frame_count() >= 2 && tapped >= taps.len && !b.moving
+           && (win_at < 0.0 || (sh.game.won_at >= 0.0 && now > win_at)) {
+            if go == GO_PLAY {
+                // As the setup's play, leaving settings.txt as it is: the count of games
+                // against the computer and the choices the flags gave aren't written.
+                shell::play(sh, now);
+                sh.changed = false;
+            }
+            else if go == shell::PUZZLE { shell::play_puzzle(sh, max(puzzles::find(puzzles::all, puzzle_id), 0), now); }
+            else { shell::go_to(sh, go, now); }
             go = -1;
         }
         if hold >= 0.0 && sh.from >= 0 { sh.since = now - hold * shell::DURATION; }
@@ -298,7 +320,7 @@ fn main() {
         if dirty || shell::animating(sh, g, now) {
             let shown .= shell::fill(sh, now);
             widgets::upload(w, g);
-            draw::frame(d, shown, sh.over, l, sh.sharp, now, size.x, size.y);
+            draw::frame(d, shown, sh.over, l, sh.blur, now, size.x, size.y);
             widgets::frame(w, g, d.scene, d.colors, size.x, size.y);
             draw::overlay(d, now);
             gfx::end_pass();

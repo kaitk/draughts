@@ -227,15 +227,17 @@ fn due(gm: Game&, now: f64) -> f64 {
 }
 
 // One frame, after gui::begin, its pieces over the UI put in `over`. Returns what the
-// shell should do and whether anything on screen changed.
-fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&) -> i64, bool {
+// shell should do and whether anything on screen changed. `frozen` (the shell's
+// transition into the game) counts no time on the clock and asks the computer for
+// nothing; the clock counts again from the frame after.
+fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, frozen: bool = false) -> i64, bool {
     let b .= gm.b;
     let input = g.input;
     var changed = board::update(b, now) || input.pressed || input.released;
     var go = STAY;
     over.clear();
-    if gm.seen >= 0.0 && clock::tick(gm.clock, min(now - gm.seen, STEP)) { changed = true; }
-    gm.seen = now;
+    if !frozen && gm.seen >= 0.0 && clock::tick(gm.clock, min(now - gm.seen, STEP)) { changed = true; }
+    gm.seen = if frozen { -1.0 } else { now };
 
     // The side to move, or the winner once there is one.
     var won = winner(gm);
@@ -251,7 +253,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&) ->
     }
     if pick != panel::NOTHING { changed = true; }
 
-    if think(gm, now) { changed = true; }
+    if !frozen && think(gm, now) { changed = true; }
     won = winner(gm);
     if won < 0 {
         gm.won_at = -1.0;
@@ -300,6 +302,17 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&) ->
         changed = true;
     }
     return go, changed;
+}
+
+// Declares the screen as it stands, its pieces over the UI put in `over`, doing nothing:
+// the shell's transition away from the game, with the pointer taken away and the clocks
+// paused. A win's card is declared as it is, to fade with the panels.
+fn still(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&) {
+    over.clear();
+    let won = winner(gm);
+    let side = if won >= 0 { won } else { gm.b.pos.side as i64 };
+    panel::game(g, l, gm.clock, side, won >= 0, gm.asking != 0, pulse(gm, now), over);
+    if gm.won_at >= 0.0 { celebrate(gm, g, l.board, won, now, over); }
 }
 
 // Whether anything is still moving at `now`; the app draws while it is.
@@ -361,14 +374,15 @@ fn bump(x: f64) -> f64 { if x <= 0.0 || x >= 1.0 { 0.0 } else { sin(PI * x) } }
 // piece, which lifts with its ring and is drawn last, over the others; the glow passes
 // the winner's other pieces, each lifting a little with its ring and its square lit. A
 // piece lifts 6% of its size and grows 5%. The pieces are on their squares: the win
-// waits for the move to show.
-fn cheer(gm: Game&, l: board::Layout, now: f64) {
+// waits for the move to show. `share` scales it all, the dim, the lifts, and the glow,
+// as the game screen fades out or in through a transition.
+fn cheer(gm: Game&, l: board::Layout, now: f64, share: f32 = 1.0) {
     guard gm.won_at >= 0.0 else { return; }
     let b .= gm.b;
     let v .= rules::VARIANTS[b.variant];
     let t = moment(gm, now);
     let won = winner(gm);
-    b.dim = (DIM * smooth(span(t, DIM_AT, DIM_AT + 0.6))) as f32;
+    b.dim = (DIM * smooth(span(t, DIM_AT, DIM_AT + 0.6))) as f32 * share;
     var top = -1;
     for i in b.pieces.len {
         let p .= b.pieces[i];
@@ -385,7 +399,8 @@ fn cheer(gm: Game&, l: board::Layout, now: f64) {
             k = bump(span(t, at, at + WAVE));
             p.win.y = k as f32;
         }
-        let f = k as f32;
+        let f = k as f32 * share;
+        p.win.y *= share;
         let r = p.at.z;
         p.at.z = r * (1.0 + 0.05 * f);
         p.at.w += 0.12 * r * f;
