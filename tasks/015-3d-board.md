@@ -8,6 +8,40 @@ the season's scene with a soft shadow under it, with no room or table to model
 ([rendering](../docs/architecture/rendering.md#scene-and-glass)). The scene photographs
 already exist (task 014 sharpens them).
 
+## Prototype first (the user, 2026-11-08)
+
+A small prototype before anything in the app: one program, the board and a fixed
+position, a camera that a drag can turn for inspection, nothing of the shell. It should
+look good, not merely work.
+
+- **Where:** native Goose and goose_gfx on the Mac (`poc/3d/`, as `poc/` keeps task 001's
+  and 005's programs), so its shaders and passes are what ships and it runs on the
+  tablet early to measure. Not WebGL: nothing of it would carry over.
+- **The look:** the 3D reference (`~/Downloads/ChatGPT Image Nov 7, 2026, 08_19_31
+  PM.png`, `agents/design.md`) and the close-ups beside it: good materials (wood, the
+  pieces' satin and gloss), specular where it belongs, soft shadows and self-shadowing
+  (the pieces' lips and the crown's deboss), ambient occlusion, and antialiasing.
+- **No temporal effects** (no TAA, no temporal accumulation or upscaling): the best
+  that a single frame can do. The app draws only on change, so a static frame must be
+  clean by itself, with nothing to converge.
+- **Methods to weigh in the prototype**, measured on the tablet:
+  - Ambient occlusion: a modern SSAO (GTAO-style, with a spatial-only denoise) against
+    the analytic disc and frame occlusion planned below. The geometry is known exactly
+    (discs on a plane), so analytic is exact and cheaper; SSAO earns its place only for
+    detail analytic misses.
+  - Antialiasing: MSAA 4× (cheap on the tablet's tile-based GPU, resolved in tile
+    memory), with specular antialiasing (roughness widened by the normal's variance) so
+    highlights don't shimmer.
+  - Shadows: a soft shadow map (PCF or PCSS) for the pieces, drawn only when the position
+    changes, since the scene is static between moves.
+  - Few full-screen passes: mobile GPUs pay for bandwidth, not math.
+- **Code and methods reference:** Spartan Engine (github.com/PanosK92/SpartanEngine, open
+  source, C++) for clear rendering code and current methods; a desktop engine with
+  global effects, so its ideas, not its frame structure. The bar: Carmack should be
+  pleased, not horrified. Flat data, fixed buffers, nothing allocated per frame, every
+  pass justified by a measurement.
+- The user has more to add before it starts.
+
 ## Later, only if the floating board falls short
 
 - **A painted backdrop and a real table.** The camera barely moves (about 50° down), so a
