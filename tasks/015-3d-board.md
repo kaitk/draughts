@@ -44,6 +44,19 @@ look good, not merely work.
   global effects, so its ideas, not its frame structure. The bar: Carmack should be
   pleased, not horrified. Flat data, fixed buffers, nothing allocated per frame, every
   pass justified by a measurement.
+- **Further references** (more from the user to come):
+  - Filament (google/filament) and its "Physically Based Rendering in Filament": a PBR
+    renderer built for mobile; shading model, specular antialiasing, image-based light.
+  - Wicked Engine (turanszkij/WickedEngine) and its blog: open source, clean, each
+    technique explained.
+  - GTAO: Jimenez et al. 2016, "Practical Realtime Strategies for Accurate Indirect
+    Occlusion".
+  - Íñigo Quilez's articles on analytic occlusion and soft shadows of simple shapes.
+  - Specular antialiasing: Kaplanyan and Tokuyoshi's normal-variance roughness.
+  - Karis 2013, "Real Shading in Unreal Engine 4": split-sum lighting from an
+    environment (the season's photograph).
+  - Sebastian Aaltonen on mobile GPUs (bandwidth, tile memory, few passes), and Arm's
+    Mali best practices for MSAA resolved in tile memory.
 - The user has more to add before it starts.
 
 ## Later, only if the floating board falls short
