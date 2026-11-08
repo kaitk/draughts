@@ -85,9 +85,12 @@ the task; the user has more to add first).
 
 Puzzles: 037 audits task 007's set and proposes a better one, grouped by theme with the
 picker redesigned around it (a prototype first), its Learn theme from today's best; it
-follows the puzzle input work under way (2026-11-08).
+follows the puzzle input work under way (2026-11-08). 038 adds players, one per child on
+the family's tablet, each with their own look, stars, level, and game; its takes are in
+`prototypes/profiles.html`, and it follows 037's library, whose stars it keeps per player.
 
-After the MVP: 026 (first start and tutorial; its prototype awaits the user's review),
+After the MVP: 026 (first start and tutorial; its prototype awaits the user's review), 038
+(players, a take to choose),
 Russian puzzles the way 037 says, each level's adapted skill shown as a
 rating (a number or stars on the computer's tile, like a chess rating; the user,
 2026-11-08), 015, 013, 014, 033's seasonal icons, and
