@@ -56,3 +56,12 @@ and the commit that last has it.
   right on home's menu and setups that closes at once, the game kept; on Android
   `finishAndRemoveTask()` takes the card out of recents and the next start restores the
   game. `035-exit-button.md`, `7f998da`
+- 011: Stop SDL's accelerometer listener. Done: `DraughtsActivity` gives SDL a surface
+  whose `enableSensor` ignores the accelerometer, no SDL patch; idle at home the process
+  went from 1.19 to 0.05 s a minute, and the screen still turns.
+  `011-accelerometer-off.md`, `bde1841`
+- 032: Bring memory use down. Done: the screen without depth or cycling, SDL's large
+  allocations at their size, the R8 atlas, the ASTC photographs, and the malloc purge;
+  on the tablet PSS at home 216 → 130 MB fresh and about 261 → 136 through the
+  lifecycle, graphics at home 160 → 91 MB; the Pixel 7a at home 291 → 146 MB; each
+  screen size checked on the Mac. `032-memory.md`, `65a6acc`

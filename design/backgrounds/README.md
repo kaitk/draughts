@@ -74,7 +74,7 @@ magick masters/<season>-01-2048.png -quality 85 -sampling-factor 4:2:0 -strip \
 The ASTC file (astcenc, `docs/development.md`) is LDR and linear (`-cl`), since the app
 samples the JPEG's bytes as they are too; `-esw rgb1` spends no bits on the opaque
 alpha. About a second a season. Against the PNG master, the JPEG is 37.5 to 41.5 dB,
-the ASTC 40 to 45 (4 × 4: 45.6 to 50, at 4 MB; task 032, cut 5).
+the ASTC 40 to 45 (4 × 4: 45.6 to 50, at 4 MB; why 6 × 6: `docs/architecture/rendering.md`).
 
 Resizing in linear light avoids dark fringes; the sharpen is light enough to leave no
 halos at 1:1. They add no detail: fine behind the board and glass, soft up close. Task

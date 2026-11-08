@@ -184,7 +184,7 @@ fn thumbs(full_vert: const u8[:]) -> gfx::Texture {
         if photo.id != 0 { gfx::release(photo); }
         // A released texture is freed once the GPU is done with it: waiting here keeps
         // one photograph at a time, which as ASTC (1.8 MB) sits in SDL's shared 16 MiB
-        // block; four at once took a second block that stayed (task 032, cut 5).
+        // block; four at once took a second block that stayed.
         gfx::flush();
     }
     gfx::release(shrink);

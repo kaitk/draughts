@@ -39,7 +39,7 @@ import org.libsdl.app.SDLSurface;
 // an app targeting it, and the key is no longer dispatched; the callback below hands
 // it to SDL instead. On home's menu the program gives it back through leaveApp().
 //
-// Its surface never turns on the accelerometer (task 011). SDL's registers it at 50 Hz
+// Its surface never turns on the accelerometer (docs/goose-findings.md). SDL's registers it at 50 Hz
 // whenever the app is resumed, for an accelerometer joystick the program doesn't open and
 // for SDL's display orientation, which nothing here reads; at idle that woke this thread
 // 52 times a second, nearly all the app's CPU. The screen still turns with the device:

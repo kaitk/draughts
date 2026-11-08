@@ -83,7 +83,7 @@ the JPEGs ([rendering](architecture/rendering.md#scene-and-glass)). To see the A
 Mac, compile goose_gfx's `src/gfx/*.c` with `patches/goose_gfx/0004-*.patch` applied
 (`clang -c -O2 -DNDEBUG -I third_party/goose_gfx/third_party/SDL/include`), archive them
 as `pkg/gfx/lib/libgoose_gfx.a` in a copy of the release (the rest linked), and build
-with that copy's `goose` (task 032, cut 5). The
+with that copy's `goose`. The
 board's logic is the `board/` package, the UI layer `gui/`, the game screen `game/`, and
 the screens around it `shell/` (home, and which screen shows), each tested headless
 (`test/board/`, `test/gui/`, `test/game/`, `test/shell/`). The app opens at home; `--fen`,

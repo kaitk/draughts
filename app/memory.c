@@ -3,8 +3,8 @@
 // pages in its primary regions until Android purges them as the app goes to the
 // background, and freed large blocks (up to 2 MB each) in its secondary cache, which
 // that purge leaves. The launch frees about 16 MB of the two, so the program calls this
-// once the launch's loads are done (task 032, leftovers): native heap at home 42.6 →
-// 26.7 MB, about 2 ms on the tablet. Elsewhere it does nothing.
+// once the launch's loads are done: native heap at home 42.6 → 26.7 MB, about 2 ms on
+// the tablet (docs/architecture/rendering.md, GPU memory). Elsewhere it does nothing.
 
 #if defined(__ANDROID__)
 #include <malloc.h>

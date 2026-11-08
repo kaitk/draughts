@@ -45,9 +45,10 @@ all nine are archived. 008 (a folder of subtasks) builds the shell, and 006 and 
 follow. Together they make the MVP in `docs/product.md`. 019 prototypes the game screen's controls, a clock, and the first start, alongside them, and
 021 builds the screen, clocks, and setup it settled, 025 the regrouped settings, and 023 adds Brazilian draughts; 026 (the first start and tutorial) comes after the MVP's menus; 020 reviews the code's
 layout once the MVP's flows work. 010 runs alongside: goose_gfx changes
-to propose upstream. 011 stopped SDL's accelerometer, the last idle CPU (2026-11-08). 013 adds season effects later. 014 upscales the backgrounds on the
+to propose upstream. 013 adds season effects later. 014 upscales the backgrounds on the
 desktop; placeholders do until then. 024 reviews the Estonian translation once the MVP's text is in. 015 (the 3D board) and 022 (transitions between screens, optional) come after the MVP, and so does 033 (an icon per season; until then one icon, switched by hand); 016
-(tabletop pictures) was cancelled. 031 makes the win calmer, and 032 brings memory down last. 027 has the computer spend its clock as a player of its level would. 028 (the icon and launch screen) and 029 (release on Google Play) make the release; 030 fitted the layouts to phones and other screen sizes and 035 added home's X, both archived.
+(tabletop pictures) was cancelled. 031 made the win calmer. 027 has the computer spend its clock as a player of its level would. 028 (the icon and launch screen) and 029 (release on Google Play) make the release; 030 fitted the layouts to phones and other screen sizes, 035 added home's X, 032 brought
+memory down, and 011 stopped SDL's accelerometer, the last idle CPU, all archived.
 
 ## Next (agreed 2026-11-08, updated at the session's end)
 
@@ -68,16 +69,12 @@ are "Tammi kuju" with "Laua järgi".
 The order for what is left:
 
 1. Done: 030 and 035 archived, what the docs need moved into them (2026-11-08).
-2. 032, memory: measure first, then the blur against its alternatives, ASTC with a
-   fallback, sizing by each screen's size and density; the idle CPU rise; PSS was 277 to
-   278 MB on puzzle 21 after the lifecycle cycles (task 007 had 268 to 272). Starting
-   numbers from 030 are in 032's file: the tablet 259 to 264 MB over 20 lifecycle cycles
-   (graphics 211 to 215), idle 1.26 s a minute; the Pixel 7a 291 MB at home (graphics
-   252); the photograph stretched 1.25× at 2560 and 1.41× at 2880 px. The Pixel stays
-   attached as a second device; one device agent at a time.
-3. 011 done (2026-11-08, as 032's cut 4); then 029, the Play release (start the developer account early:
-   a new personal account needs a 14-day closed test with 12 testers). Switch the icon
-   back to winter before it ships.
+2. Done: 032, memory (PSS at home on the tablet 216 → 130 MB, the Pixel 7a 291 → 146),
+   with 011 (the accelerometer, its cut 4), both archived and what the docs need moved
+   into them (2026-11-08).
+3. 029, the Play release (start the developer account early: a new personal account
+   needs a 14-day closed test with 12 testers). Switch the icon back to winter before it
+   ships.
 4. Children play it (task 006's last criterion; medium's strength, the
    computer's time on the clock).
 5. 036, the announcement (a tweet, the Goose Discord, a video, a thread on the methods),

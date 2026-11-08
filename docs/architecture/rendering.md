@@ -193,7 +193,7 @@ but its olive sits nearer spring's greens than the sunset does.
   `astcenc`, `design/backgrounds/README.md`), which the GPU samples as it is stored, with
   nothing decoded; and as **JPEG at quality 85** (0.46 to 0.70 MB each), the fallback for
   a GPU without ASTC: an Intel Mac, a desktop GPU with only BC, and the Mac's `goose`,
-  whose built-in gfx lacks compressed formats (below). Chosen in task 032, cut 5: 6 × 6
+  whose built-in gfx lacks compressed formats (below). Chosen on 2026-11-08: 6 × 6
   looks the same as the JPEG and 4 × 4 side by side at the tablet's and a phone's size,
   sharp behind home and blurred, and is nearer the master than the JPEG (44 to 45 dB
   against 40 to 41, summer 40 against 37.5); 4 × 4 (4 MB) buys nothing visible.
@@ -228,7 +228,7 @@ but its olive sits nearer spring's greens than the sunset does.
   2.2, the Mac's only), which the APK stores uncompressed (11.4 MB with the ASTC alone;
   13.7 with the JPEGs too, 6.0 without the ASTC): ASTC hardly compresses (3 to 5%). PNG was rejected at about 5 MB a season; AVIF
   needs libavif and an AV1 decoder on both platforms to save about 1 MB.
-- **One size for every screen** (task 032, cut 5): at 1.87 MB as ASTC, the sharp image
+- **One size for every screen** (2026-11-08): at 1.87 MB as ASTC, the sharp image
   sits in SDL's shared 16 MiB block; sizing it by the screen's density (1024 to 1536 on
   a dense phone) would save at most 1 MB there and needs several encodings or a choice
   at load, so it stays 2048 everywhere. Larger tablets stretch it 1.25 to 1.41×, as
@@ -242,6 +242,12 @@ but its olive sits nearer spring's greens than the sunset does.
   3.9 texels, on the copy's 2.8), the same at every screen size for the same reason as
   the board's copy. A glass panel samples it at its screen position: one texture fetch
   per pixel, no blur per frame.
+- **The blurred copies stay as they are** (2026-11-08): smaller copies (a sigma-5.6
+  blur at 512 keeps its look at 256 or 128), a dual-filter (Kawase) chain, sampling a
+  mip of the photograph, and copies blurred offline and shipped compressed were weighed
+  and dropped. The two copies are 1.25 MiB together inside SDL's shared 16 MiB block
+  ([GPU memory](#gpu-memory)), so none would save measurable memory, and the blur runs
+  only on a season change. The thumbnails as ASTC (0.4 MB) were dropped the same way.
 - **Glass layers**, bottom to top: the copy, dimmed as the table says; the theme's
   glass tint; a 1 px border of white at 14%; a 1 px top highlight of white at 12%; a
   shadow `0 12px 32px -14px` of black at 55%. Corner radius 28 px.
@@ -689,15 +695,40 @@ the driver. How the patched allocator works:
   after the submit that used it completes, so making several in a row (settings'
   thumbnails, four photographs) or a new scene beside the old one fills the shared block
   and opens another, which a later resident resource can keep alive. The app calls
-  `gfx::flush()` between them (task 032, cut 5: GL mtrack at home 60.7 → 36.4 MB, after
+  `gfx::flush()` between them (on the tablet GL mtrack at home 60.7 → 36.4 MB, after
   three season changes 57.3 → 40.9).
-- **Exact, not rounded to 4 or 8 MiB** (task 032, cut 2): the count of allocations is
+- **Exact, not rounded to 4 or 8 MiB** (2026-11-08): the count of allocations is
   the same either way, one per large resource, and rounding wastes half a step each on
   average (about 10 or 22 MiB on the tablet). It would pay only if a freed block were
   kept and taken by a later resource of nearly its size, but SDL makes the new screen or
   photograph before it releases the old one, so the old block is still in use when the
   new one wants it; and keeping freed blocks for reuse is how a large block stays alive
-  for a small tenant, the 64 MiB blocks' trouble.
+  for a small tenant, the 64 MiB blocks' trouble. A smaller fixed block shared as
+  upstream does (16 or 32 MiB) still needs its own for anything larger (the largest
+  tablet's screen, a 3D MSAA target) and stays alive while any tenant lives; SDL has no
+  `VK_KHR_dedicated_allocation` plumbing, and an exact plain allocation already gives
+  the memory back.
+
+What the memory is, on the tablet (1920 × 1200) at home: GL mtrack about 36 MB (the
+screen, 9.6 MiB, in its own allocation; one shared 16 MiB block with everything else;
+about 10 MB of the driver's pipelines and pools), EGL mtrack about 55 to 60 MB, and a
+native heap of about 27 MB. Two parts are out of the app's reach:
+
+- **The swapchain is the driver's minimum.** SDL asks for 2 images, but the Mali-G615's
+  `minImageCount` is 6 (about seven screen-sized images on the Pixel 7a), so it is 58 MiB
+  at 1920 × 1200, 21 at 720 × 1280, and 127 at 2880 × 1920: most of what is left at
+  every size. Drawing straight into the swapchain, dropping gfx's screen copy, would save
+  only the screen's 9.6 MiB for a large gfx patch; not done.
+- **The driver's own** about 10 MB.
+
+On the CPU side, Android's malloc (Scudo) keeps freed pages resident: small blocks' until
+Android purges them as the app goes to the background, freed large blocks (100 KB to
+1 MB) in a secondary cache that purge leaves. The launch frees about 16 MB of both, so
+the app calls `mallopt(M_PURGE_ALL, 0)` once, in the first idle frame after the launch
+(`app/memory.c`, 2 ms; [Frames and battery](#frames-and-battery)): native heap at home
+42.6 → 26.7 MB. Goose packs structs, so large tables carry no padding. The computer's
+worker's tables (about 5 MB, [ai](ai.md)) take memory only once it first plays; halving
+them would save about 3 MB, not worth checking what it costs in strength.
 
 What to watch when adding large resources (the 3D board, task 015: an MSAA target, a
 depth target, a shadow map, albedo, normal, and roughness atlases with mips):

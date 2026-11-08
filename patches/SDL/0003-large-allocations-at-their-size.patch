@@ -13,7 +13,7 @@ resource is released. Small resources are unchanged. Exact rather than rounded t
 releasing it, so a kept block would not be reused. Make large resources at load or on a
 resize, not per frame: each is one vkAllocateMemory and one vkFreeMemory.
 
-Draughts: docs/architecture/rendering.md (GPU memory), docs/goose-findings.md, task 032.
+Draughts: docs/architecture/rendering.md (GPU memory), docs/goose-findings.md.
 
 --- a/src/gpu/vulkan/SDL_gpu_vulkan.c	2026-11-08 20:45:40
 +++ b/src/gpu/vulkan/SDL_gpu_vulkan.c	2026-11-08 20:45:40

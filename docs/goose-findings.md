@@ -29,8 +29,8 @@ Goose v2026.4.
   `gs_gfx_format_supported` that answers no where gfx lacks the patch: the Mac's
   `goose build` links the release's prebuilt `libgoose_gfx.a`, so the Mac decodes the
   JPEG, as an Intel Mac or a BC-only GPU would. Linking a `libgoose_gfx.a` built from
-  the patched sources into a copy of the release gave the Mac the ASTC path for task
-  032's comparison (its file says how).
+  the patched sources into a copy of the release gives the Mac the ASTC path, to compare
+  the look (`docs/development.md` says how).
 - Upstream: the formats and `format_supported` in `gfx.goose` and the header, the byte
   count and upload in blocks, and `texel_size` (Goose side) returning a block's bytes
   for a block format, or a `format_bytes(format, w, h)`. Perhaps loading a `.astc` or
@@ -71,8 +71,7 @@ two. SDL 3.4.16 (`fa2c02b`).
   shared 16 MiB blocks. SDL has no `VK_KHR_dedicated_allocation` plumbing, so the patch
   doesn't add `VkMemoryDedicatedAllocateInfo`. On the tablet GL mtrack after an animation
   went from 94.4 to 63.6 MB and stays there through rotations and season changes (PSS
-  about 31 MB lower everywhere); frame times of moves and season changes unchanged (task
-  032's file has the numbers). Large allocations happen only at load, on a season
+  about 31 MB lower everywhere); frame times of moves and season changes unchanged. Large allocations happen only at load, on a season
   change, and on a resize. Rounding to 4 or 8 MiB instead was weighed and rejected
   (`docs/architecture/rendering.md`, GPU memory).
 - Upstream: for the user only, as with the other SDL entries. Upstream's rounding suits
@@ -98,7 +97,7 @@ a rotation. goose_gfx `6cfa3de`, Goose v2026.4.
   blit on the GPU, and the CPU never waits. The app begins its pass with
   `gfx::begin_pass(gfx::screen(), gfx::Texture { 0 }, clear)`. Graphics after an
   animation and a rotation: 207.5 → 138.9 MB, PSS 265 → 196 MB; frame times of a move at
-  90 Hz unchanged (task 032's file has the numbers).
+  90 Hz unchanged.
 - Upstream: both in goose_gfx. Make the screen's depth lazily as here, or take a flag
   in `gfx::open`; and don't cycle the screen in `begin_pass` (a program-made target that
   is cleared each frame may still gain from cycling). A `cycle` field in `PassDesc`

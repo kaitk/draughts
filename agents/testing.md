@@ -241,7 +241,7 @@ measuring there:
 - When SDL allocates GPU memory: an `SDL_Log` before `vkAllocateMemory` in
   `VULKAN_INTERNAL_AllocateMemory` and before `vkFreeMemory` in
   `VULKAN_INTERNAL_DeallocateMemory` (in `build/android/SDL_src`, as below), then
-  `adb logcat -d | grep SDL/APP` around a tap (task 032, cut 2).
+  `adb logcat -d | grep SDL/APP` around a tap (2026-11-08).
 - `dumpsys meminfo` at home right after launch counts about 24 MB more graphics than
   once a later frame has submitted GPU work (184 MB, and 160 MB with the
   thumbnails loaded in the first idle frame), likely the launch's uploads not yet let
@@ -253,10 +253,10 @@ measuring there:
   `[anon:scudo:secondary]` large ones (each its own mapping, freed ones kept cached);
   `mallopt(M_PURGE_ALL, 0)` before a second read shows what is only kept. Android's own
   purge as the app goes to the background empties the primary's free pages, not the
-  secondary cache (task 032, leftovers).
+  secondary cache (2026-11-08).
 - A transition's frames from the program's side: `gfx::time()` around `gfx::frame()` and
   each draw call, printed for drawn frames; the wait in `frame()` is where presenting
-  shows (task 032, leftovers). `gfx::frame_count()` counts presented frames, not loops,
+  shows (2026-11-08). `gfx::frame_count()` counts presented frames, not loops,
   so a trigger on it never fires while the app is idle.
 - To see when something happens on the tablet, log from the program's C with
   `extern void SDL_Log(const char *, ...)` (Android only; it shows in `adb logcat` as

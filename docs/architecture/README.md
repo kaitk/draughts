@@ -40,8 +40,10 @@ needs x86-64 with AVX2. It is a later, separate desktop and Apple version
 Checked against goose_gfx's source on 2026-11-07:
 
 - Game code is compiled C with no GC and no heap, and frame-loop code allocates nothing.
-- goose_gfx uploads through one persistent staging ring that SDL recycles. Its `realloc`s
-  run only when handle tables grow. Nothing is created or released while drawing.
+- goose_gfx's `realloc`s run only when handle tables grow, and no texture or target is
+  made or released while drawing. Its `update_buffer` does allocate and free a small
+  transfer buffer per buffer each drawn frame (three, about 35 KB:
+  [GPU memory](rendering.md#gpu-memory)).
 - Each call passes through goose_gfx's handle and misuse checks, then SDL_GPU, then
   Vulkan. With 10 to 20 draws a frame, the cost is negligible.
 - `update_buffer` copies through staging, where NoGraphicsAPI writes mapped memory
