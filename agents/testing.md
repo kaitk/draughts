@@ -29,10 +29,12 @@ which would overwrite the main checkout's while another session uses them.
   reached as opened straight: `transition`, `game_transition`, `puzzle_transition`),
   home's setup and play, the setup's board (each
   draughts' start, turned for black, the game in progress back on the menu, the game play
-  starts, `setup`), the puzzles' picker and a puzzle played through its misses, hint,
-  reply, and stars, a capture made by hand in a puzzle (tapped and dragged stop by stop,
-  dropped on its last square, left partway and next pressed: a miss) and no targets in
-  any tier,
+  starts, `setup`), the puzzles' library and a theme's page and a puzzle played through
+  its misses, hint, reply, and stars, a black puzzle on the turned board, next after a
+  theme's last (`puzzles`), the library and every theme's page laid out at the tablet's
+  and a phone's size (`picker`), a capture made by hand in a puzzle (tapped and dragged
+  stop by stop, dropped on its last square, left partway and next pressed: a miss) and
+  no targets in any puzzle,
   the saved game of any variant and damaged images of it, the players' files read and
   written back, their migration (killed after each step too), adding, switching,
   starting again, and removing (`players`), who's playing and a player's sheet, the
@@ -51,8 +53,11 @@ which would overwrite the main checkout's while another session uses them.
   file has every key), `ai` (the computer player:
   its search against a plain minimax, the table changing no score, keys, what each level
   plays in known shots, the same move in steps as at once, and that no level hangs a
-  piece), and `puzzles` (the puzzle file's format and refusals, what a move does to
-  each goal, and every built-in puzzle passing `puzzles::check`). A
+  piece), and `puzzles` (the puzzle file's format and refusals, what `puzzles::check`
+  refuses beyond the format, what a move does to each goal, and every built-in puzzle
+  passing `puzzles::check`, with its counts by theme and level). A new puzzle is checked
+  with `build/puzzles FILE` (the engine's view too) and `test/perft.py puzzles` before
+  `test/expected/set.out` is blessed. A
   test that lays out text calls `gui::test_faces` for glyph sizes without an atlas, and
   `strings::use` before reading a string. Shared helpers are in
   `test/check.goose` (`check::show`, `check::play_only`), imported as

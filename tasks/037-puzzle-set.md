@@ -1,6 +1,6 @@
 # 037: A better puzzle set
 
-Status: todo
+Status: in-progress
 
 Task 007's 30 International puzzles work, but the user (2026-11-08) found them odd, mostly
 too simple, with a strange difficulty curve (the first ones are fine), and some buggy:
@@ -12,8 +12,7 @@ tier 3, and black to move in a share of them.
 
 The findings below are from an engine pass on 2026-11-08 (a scratch program over
 `puzzles::judge`, `puzzles::value`, and the rules, not committed) and from the web.
-`puzzles/international.txt` is unchanged here: another task was changing the puzzle input
-code at the time.
+The audit was of the set before this task rebuilt it (below, "Built").
 
 ## Audit of the current 30
 
@@ -206,31 +205,104 @@ motifs come from there, and each position is ours, checked by `tools/puzzles.goo
 the variant set and by `test/perft.py`, the only independent check of Russian. `find`
 needs the variant and its camps as parameters.
 
-## Open for the user
 
-- **The take count**: "Capture 2" counts the balance (task 007). Tier 3's combinations
-  give two or three to take five; "take 5, lose 2" or "win 3 men" may read better.
-- **The themes**: the eight above and their counts, and which make the first release.
-- **The library's take**: from the prototype, once built.
-- **The safe move** looks two plies past the move; tier 2's safe puzzles want a threat
-  that is a shot, three or more plies deep.
+## Decisions (2026-11-09)
+
+- **The themes in the first release**: Learn 12, Captures 10, Crowning 12, Shots 20
+  (levels 1 and 2), and King shots 10, 64 in all (the user's "about 74" was these
+  counts). Safe move, Endgame, and Opening traps come later and are left out of the
+  code's theme list until then: adding them is a name, an icon, and a string each.
+- **The take count** is worded "Win N men" ("Võida N nuppu", `nupp` being et.txt's word
+  for a man, as in "Päästa nupp"), and "Win a man" / "Võida nupp" for one.
+- **Black to move**: about a third outside Learn, none in Learn; the panel says "Black
+  to move" / "White to move" ("Mustade käik" / "Valgete käik", as et.txt's turns).
+- **The picker**: take a, the library list (the user, 2026-11-09), with King shots as a
+  fifth first-release theme where the prototype's `themes=first` shows four.
+
+## Built (2026-11-09)
+
+**Format and stars.** `theme NAME` and `level 1..3` replace `tier`; `tier` is now an
+unknown key. Learn keeps ids 1, 3, 7, 8 (level 1), 6, 9, 10, 18 (level 2), 14, 17, 19,
+20 (level 3); the new puzzles are 31 to 82. `MAX_PUZZLES` is 150. Stars are written as
+`stars.international` in the player's file (task 038 moved them there) and the older
+`stars` is read as it. A dropped puzzle's stars (2, 4, 5, 11 to 13, 15, 16, 21 to 30)
+stay in the file but aren't counted; dropping them on write was left out to keep the
+settings change to the key and the table's size, for 038's rebase.
+
+**Learn's fixes.** 6: black's man on 5, not 6, so its one move doesn't hand the king a
+capture. 8: rebuilt, two men take two men onto one square (37 by 32, 39 by 33, both to
+28) and 33 takes back the first. 9: a king that lands on 15, not 20, where 25 would
+take it (`W:W31,K47:B8,24,25`). 10: two white men added on 48 and 49 so the material
+after the double is even and the engine scores it +289 (it was −112). 19: rebuilt, the
+king takes two and lands on 5, not 10 (`W:W27,K45:B14,15,20,34`). 20: rebuilt; the walk
+past the guard couldn't be made quiet with two crowning squares open (a king on 3 or 2
+sees every black reply), so it is now take the guard and walk on to 1
+(`W:W17,47:B11,22`, 17x6 22-27 6-1).
+
+**Composing.** `tools/puzzles.goose find` places the men in camps (each next man beside
+or behind one of its own, on its own side), requires every check to pass and the game to
+go on after the line, takes the side (a white puzzle turned round, checked again: the
+turned position's hardest reply can differ, which once let a line through unchecked),
+and kings. Candidates were picked by line shape (a quiet give answered by a capture;
+for Shots level 2 two gives and one capture, `\d+-\d+ \d+x… \d+-\d+ \d+x… \d+x…`),
+and by eye with a scratch board printer over `test/perft.py`. Four found ones were
+swapped out: three after `build/puzzles` showed the engine rating another move as high
+(a second route of the same length that also wins, or an equal quiet move), and one
+black crowning whose turned line `find` hadn't yet checked again.
+
+| Theme | Levels 1, 2, 3 | Black to move | Goals |
+|---|---|---|---|
+| Learn | 4, 4, 4 | 0 | take 1 to 3 in 1, crown in 2 |
+| Captures | 4, 3, 3 | 3 | take 2, 3, 4 in 1, two with a king |
+| Crowning | 4, 4, 4 | 5 | crown in 1, 2, 3 |
+| Shots | 10, 10, 0 | 7 | take 2 or 3 in 2; take 2 or 3 in 3 |
+| King shots | 4, 3, 3 | 3 | take 3 or 4 in 1, take 2 or 3 in 2 and 3 |
+
+18 of the 52 outside Learn are black's (35%). `build/puzzles`: 0 problems, the engine's
+best solves every take, and no right first move scores under −50. `test/perft.py
+puzzles`: 64 puzzles, 0 problems.
+
+**Solver's cost.** The longest lines are five plies (three of the solver's moves), under
+`MAX_PLIES` (8), so the limits stay. The most positions a check takes, built: Learn 10,
+Captures 8, Crowning 1, 17, and 129 by level, Shots 45 and 294, King shots 8, 81, and
+415 (0.2 ms), the most of the set (task 007's 30 took at most 387).
+
+**The picker** is take a, built natively (`shell/picker.goose`, its look in
+`docs/architecture/rendering.md`): a library of the five themes, and a theme's page of
+its levels. Two cases the prototype didn't reach needed a fallback, both Shots' page on a
+phone at 480 dp with the Pixel's insets: in landscape under the gesture bar the theme's
+mark and count go under back in place of the head; in 9:16 portrait each level's label
+is its mark alone beside its tiles. Headless: `test/shell/picker.goose` (the tablet and a
+20:9 phone at 480 dp, both orientations, every view), the Learn and Shots pages added to
+`test/shell/sizes.goose` at every size, and `test/shell/puzzles.goose` through the
+library, a page, a black puzzle on the turned board, half of Learn opening the rest,
+and next after a theme's last.
+
+## Open
+
+- **The safe move** looks two plies past the move; its puzzles want a threat that is a
+  shot, three or more plies deep.
+- **Shots level 3** (named shots, game finishes) and the later themes.
+- **The look on devices**: the new icons (book, jumps, king, the level bars) and the
+  glow-colored bar and marks are shader work the headless tests don't see.
 
 ## Acceptance criteria
 
-- [ ] A prototype of the library and a theme's page, and the user's pick of a take
-- [ ] The file's `theme` and `level` in place of `tier`, the picker as picked, and stars
+- [x] A prototype of the library and a theme's page, and the user's pick of a take
+- [x] The file's `theme` and `level` in place of `tier`, the picker as picked, and stars
       carried over by id per variant
-- [ ] Learn: about 12 of today's puzzles, each fixed so no capture is due for either side
+- [x] Learn: about 12 of today's puzzles, each fixed so no capture is due for either side
       after its line and against any reply
-- [ ] The first release's themes (Captures, Crowning, Shots levels 1 and 2), about a
-      third black to move, each `source` naming its motif or game, none copied position
-      for position from any collection (GoDraughts, lidraughts, books)
-- [ ] `puzzles::check` refuses a puzzle whose end isn't quiet, and one with an unlisted
+- [x] The first release's themes (Captures, Crowning, Shots levels 1 and 2, King shots),
+      about a third black to move, each `source` naming its motif or game, none copied
+      position for position from any collection (GoDraughts, lidraughts, books)
+- [x] `puzzles::check` refuses a puzzle whose end isn't quiet, and one with an unlisted
       solving move later in a line, not only the first
-- [ ] Every puzzle passes `build/puzzles` with the computer player's best move solving it
+- [x] Every puzzle passes `build/puzzles` with the computer player's best move solving it
       and no right move it scores as losing material; `test/perft.py puzzles` passes
-- [ ] A black-to-move puzzle tested headless on the turned board, its panel saying whose
+- [x] A black-to-move puzzle tested headless on the turned board, its panel saying whose
       move it is
-- [ ] The solver's limits fit the longest line (`MAX_PLIES` is 8, four of the solver's
+- [x] The solver's limits fit the longest line (`MAX_PLIES` is 8, four of the solver's
       moves), with its positions per check measured and recorded here
-- [ ] Children play the set and the tiers' order holds (the user)
+- [ ] The picker checked on the Mac and the tablet (the main session's screenshots)
+- [ ] Children play the set and the levels' order holds (the user)

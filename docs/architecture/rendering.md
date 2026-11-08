@@ -473,26 +473,36 @@ the prototype tried, kept for 3D:
   face, which makes them a little wider than the prototype's 13 px, so the landscape
   board is about 550 px where the prototype's is 590. The tutorial's tile (and the raised
   board's with `--3d`) is dimmed and takes no tap until it exists.
-  **Puzzle picker** (`prototypes/puzzles.html`): back, and one glass row per tier,
-  its mark (a target for captures, a crown for many jumps and crowning, a shield for
-  shots and the safe move) and its ten tiles, each with 0 to 3 stars in the glow color,
-  outlined for those not won; the next unsolved puzzle is lit; a tier not yet open shows
-  a lock on each tile. In portrait the title stands beside back, as in settings, and
-  each tier is its mark beside two rows of five tiles, about 120 dp on the tablet, where
-  ten in a row would be 66 dp, under the 88 dp a small hand needs; in landscape too
-  where ten in a row would be under 88 dp (4:3, 3:2, a foldable). The tiles take what
-  the width and the height leave (at most 96 dp in landscape, 128 in portrait), and each
-  tier's glass is as wide as its tiles, centered (2026-11-08). Where even that leaves
-  the tiles under 88 dp (every phone: portrait under about 630 dp across, landscape under
-  about 750 dp tall), one tier shows at a time: the three marks as 88 dp tiles on glass,
-  the shown tier's lit, in a column left of the tier in landscape and in a row under back
-  in portrait, and that tier's ten in rows of five, or of four (4, 4, 2, centered) where
-  five don't fit 88 dp across. It shows the tier of the puzzle last played, else of the
-  next to solve, until a mark is tapped (2026-11-08). Behind it the sharp
-  photograph and no board. **A puzzle** (`prototypes/puzzle.html`, take c, chosen
+  **Puzzle picker** (`prototypes/puzzles.html`, take a, a library list, chosen
+  2026-11-09; rejected: b's large theme tiles, which shrink long Estonian names and hold
+  the fewest themes a screen, and c's library beside the theme, which needs two
+  scrolling panes): two views, a library of the themes and a theme's page. The library
+  is back and one glass row per theme, 124 dp tall on the tablet and 96 on a phone: its
+  mark (the theme's icon, a book, two men and a jump, a crown, a target, a crowned ring,
+  on a disc of the glow color at 20%), its name, "n / total" solved, and a bar in the
+  glow color over a faint track. Learn is open; the others open once half of Learn is
+  solved, and until then each mark is plain with a lock badge, the name dim, and "Solve
+  n more in Learn" in place of the bar, and a tap on it does nothing. The title
+  "Puzzles" stands over the rows (beside back in portrait) except in landscape under
+  600 dp tall; the rows are one column at most 600 dp wide, or two where one doesn't fit
+  the height (the tablet in landscape, phones in landscape). A row opens the theme's
+  page: back (at the left in landscape, in the head in portrait), the theme's mark,
+  name, and count, over its levels as glass rows, each its level's mark (three rising
+  bars, one to three filled) and name beside its tiles, 96 dp on the tablet and 88 on a
+  phone, in rows as even as they go (ten go five and five); where four tiles don't fit
+  beside the label (a phone in portrait) the label stands over them. Each tile shows 0
+  to 3 stars in the glow color, outlined for those not won, and the theme's first
+  puzzle without stars is lit as a chosen tile. Where the page would be taller than the
+  safe area (Shots' two levels of ten on a phone with its gesture bar), in landscape
+  the theme's mark and count stand under back in place of the head, and in portrait each
+  level's label is its mark alone, the spacing as on a phone in landscape. Back on a
+  page (and Android's back) goes to the library, and from the library home; next on a
+  puzzle goes on inside its theme and after its last back to the library. Behind it the
+  sharp photograph and no board. **A puzzle** (`prototypes/puzzle.html`, take c, chosen
   2026-11-08): the game screen's layout, the left panel the game's with the puzzles in
-  home's place; on the right the goal's icon in the glow color over its words
-  ("Capture 2", "Become a king", "Stay safe"), the three stars at stake, 44 px, and at
+  home's place; on the right the goal's icon in the glow color over its words ("Win 2
+  men", "Win a man", "Become a king", "Stay safe") and under them, in the small face,
+  whose puzzle it is ("White to move", "Black to move"), the three stars at stake, 44 px, and at
   the bottom next, the tall tile, at 35% and taking no tap until the puzzle is solved,
   then lit as a chosen tile. While a piece waits partway through a capture, next is at
   full strength, unlit, and pressed then it is a miss: the capture is left unfinished,
