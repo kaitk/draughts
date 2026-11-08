@@ -65,6 +65,13 @@ user reconnects. Turn its stay-awake on first and leave it on until the session 
 Screenshots: keep them to a minimum, no portrait-and-landscape sweeps of every screen;
 shoot only at the very end, or where something concrete is or may be off.
 
+Ask first, build after (the user, 2026-11-08): at the session's start, while the user is
+there, put every open question and prototype to them in one go: 037's themes, counts,
+label, and picker take (prototype it early); 038's take and its open questions; and
+029's decisions only the user can make (the final application id, the developer name,
+where the privacy policy is hosted, the listing's wording, the version). Then the work
+that follows from the answers (037, 038, 029) can run while the user is away or asleep.
+
 The next session is lean: the main session delegates to subagents (the default model for
 judgment, Sonnet for mechanical work), one device agent at a time, stay-awake turned on
 first. The order:
