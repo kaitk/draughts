@@ -19,11 +19,13 @@ import org.libsdl.app.SDLActivity;
 // -S stops it first: a start that finds it running (singleInstance) only brings it back,
 // with the flags it started with.
 //
-// It also keeps the launch on the theme's background until the program's first frame is on
-// screen (task 028). SDL draws into a SurfaceView, whose hole in the window shows black
-// until SDL presents, and Android removes its splash at the window's first draw, before
-// that. So a view in that colour covers the whole window, and on Android 12+ the splash, the icon
-// on that colour, is held too; both go when the program calls firstFrame() (app/launch.c).
+// It also keeps the launch on the theme's background until the program's first frame is
+// on screen (task 028). SDL draws into a SurfaceView, whose hole in the window shows
+// black until SDL presents, and Android removes its splash at the window's first draw,
+// before that. So a view in that colour covers the whole window, and on Android 12+ the
+// splash, the icon on that colour, is held too; both go when the program calls
+// firstFrame() (app/launch.c). Home's way out closes it, card and all, through
+// closeApp().
 public class DraughtsActivity extends SDLActivity {
     // Lifts them anyway if the program never reports a frame, rather than stay covered.
     private static final long COVER_MAX_MS = 3000;
@@ -90,5 +92,15 @@ public class DraughtsActivity extends SDLActivity {
     // From the program's thread, once, after its first frame is presented.
     public void firstFrame() {
         runOnUiThread(show);
+    }
+
+    // From the program's thread, as it returns after home's way out (app/launch.c): ends
+    // the activity and takes its card out of recents, where SDL's own finish() would leave
+    // a card showing home as if the app still ran. Called here rather than posted, as SDL
+    // calls finish() from this thread too, so the activity is finishing by the time SDL
+    // looks and SDL leaves it. The next start is a fresh process (SDLActivity.onCreate
+    // exits one whose activity was created before), which restores the game.
+    public void closeApp() {
+        finishAndRemoveTask();
     }
 }

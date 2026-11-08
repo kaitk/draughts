@@ -14,6 +14,7 @@
 // place to the other's, crossfading into the other's board, while the screen left fades
 // out and the one come to fades in, both drifting a little with the board. A tap during
 // it lands on the screen come to.
+// Home's way out asks the app to stop (quit), which ends its loop as Escape does.
 // A game against the computer plays at the skill kept for its level, which each
 // finished game moves (ai::adapt). Tests run it headless.
 namespace shell;
@@ -47,6 +48,7 @@ struct Shell {
     preview: board::Board,                    // the board beside settings, as they make it
     prefs:   settings::Settings = settings::Settings {},
     changed: bool               = false,      // prefs changed since the app last wrote them
+    quit:    bool               = false,      // home's way out was tapped: the app stops
     drawn:   i64                = -1,         // the screen the last frame declared
     back:    i64                = HOME,       // where settings goes back to
     setup:   i64                = home::NOTHING, // home's column: the menu, or a setup
@@ -287,6 +289,7 @@ fn home_screen(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> b
         home::COMPUTER => { sh.setup = home::COMPUTER; },
         home::BACK => { sh.setup = home::NOTHING; },
         home::CHANGED => { sh.changed = true; },
+        home::EXIT => { sh.quit = true; },
         home::PLAY => {
             // A new game as the setup stands; it replaces the one there was. Against the
             // computer it is counted, for the computer's seeds.

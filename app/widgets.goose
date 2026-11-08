@@ -208,6 +208,9 @@ let FRAG = """
             for (int i = 0; i < 10; i++) d = min(d, seg(p, c[i], c[i + 1]));
             return d;
         }
+        if (k == 21) {          // home's way out: an X
+            return min(seg(p, vec2(6.0, 6.0), vec2(18.0, 18.0)), seg(p, vec2(18.0, 6.0), vec2(6.0, 18.0)));
+        }
         return 1e9;
     }
     void shade() {

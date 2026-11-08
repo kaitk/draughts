@@ -47,6 +47,9 @@ extern fn draughts_storage(out: u8[:]) -> i64;
 extern fn draughts_wake_in(ms: i64);
 // Tells Android the first frame is on screen, to lift the splash and the cover (launch.c).
 extern fn draughts_first_frame();
+// Closes the app on Android and takes it out of recents, as home's way out asks; on the
+// Mac the window closes as the program returns (launch.c).
+extern fn draughts_close();
 
 // The theme a season setting picks: its own, or by the date.
 fn theme_for(season: i64) -> i64 {
@@ -245,6 +248,8 @@ fn main() {
         if hold >= 0.0 && sh.from >= 0 { sh.since = now - hold * shell::DURATION; }
         if win_at >= 0.0 && sh.game.won_at >= 0.0 { sh.game.won_at = now - win_at; }
         if shell::frame(sh, g, size.x, size.y, now) { dirty = true; }
+        // Home's way out ends the loop as Escape does; the game is written below.
+        if sh.quit { break; }
         // The computer's move: the worker gets what the game asks, and the game the answer.
         think::frame(thinker, sh.game);
         // A tap in settings applies at once and is written; a new season reloads the
@@ -312,4 +317,5 @@ fn main() {
     }
     if frames > 0 { gfx::screenshot("draughts.png"); }
     if keep { write_file_atomic(save_path, shell::save(sh)); }
+    if sh.quit { draughts_close(); }
 }

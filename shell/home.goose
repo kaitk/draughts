@@ -10,6 +10,9 @@
 // title, then a row of tiles per choice, lit as in settings: the draughts, the level and
 // the child's color against the computer, the clock; then play. The choices are kept in
 // the settings.
+//
+// A round glass X in the screen's top right closes the app, at once: the game is kept in
+// any case. In portrait the board moves down and shrinks to clear it.
 namespace home;
 import std;
 import vec;
@@ -31,12 +34,16 @@ let BACK = 5;               // from a setup to the menu
 let PLAY = 6;               // a new game as the setup stands
 let CHANGED = 7;            // a choice in the setup
 let PUZZLES = 8;
+let EXIT = 9;               // close the app
 
 let ROWS = 4;               // and settings, a fifth in landscape
 let ROW_H = 80.0;           // dp
 let ROW_GAP = 10.0;
 let MARK_H = 72.0;          // the wordmark's row
 let MARK_GAP = 28.0;        // under it in landscape; 12 in portrait
+let CORNER = 88.0;          // the way out, round, in the top right,
+let EDGE = 24.0;            // this far from both edges,
+let CROSS = 32.0;           // its X
 
 // The setup's parts, in dp.
 let HEAD_H = 56.0;          // back and the title
@@ -51,6 +58,9 @@ let PLAY_GAP = 18.0;
 
 let LEVEL_KEYS = [strings::PICK_EASY, strings::PICK_MEDIUM, strings::PICK_HARD];
 let LEVEL_NOTES = [strings::LEVEL_EASY, strings::LEVEL_MEDIUM, strings::LEVEL_HARD];
+
+// Where the way out is on a screen `width` pixels wide.
+fn corner(width: f32, u: f32) -> float4 { float4 { width - (EDGE + CORNER) * u, EDGE * u, CORNER * u, CORNER * u } }
 
 // How tall the column's content is: the menu, or a setup (FRIEND or COMPUTER).
 fn content_height(setup: i64, landscape: bool, u: f32) -> f32 {
@@ -83,17 +93,36 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, width: f
         let size = min(0.7 * height, stage.z - 80.0 * u);
         l = board::layout_at(stage.x + 0.5 * (stage.z - size), 0.5 * (height - size), size, u, n);
     } else {
-        // A sheet along the bottom, its lower corners off the screen; the board above it.
+        // A sheet along the bottom, its lower corners off the screen; the board above it,
+        // moving down to 16 dp under the way out where it would reach it, and shrinking to
+        // keep 24 dp above the sheet. (In landscape the board's top is 120 dp down at
+        // least, clear of it.)
         let sheet_h = content_h + 64.0 * u;
         col = float4 { 0.0, height - sheet_h, width, sheet_h + 32.0 * u };
         content = float4 { 32.0 * u, height - sheet_h + 32.0 * u, width - 64.0 * u, content_h };
         let stage_h = height - sheet_h;
-        let size = min(min(0.8 * width, 0.6 * height), stage_h - 80.0 * u);
-        l = board::layout_at(0.5 * (width - size), 0.5 * (stage_h - size), size, u, n);
+        var size = min(min(0.8 * width, 0.6 * height), stage_h - 80.0 * u);
+        var y = 0.5 * (stage_h - size);
+        let clear = (EDGE + CORNER + 16.0) * u;
+        if 0.5 * (width + size) > width - clear && y < clear {
+            y = clear;
+            size = min(size, stage_h - 24.0 * u - y);
+        }
+        l = board::layout_at(0.5 * (width - size), y, size, u, n);
     }
     gui::glass(g, col, 32.0);
     over.clear();
-    if setup != NOTHING { return choose(over, g, content, setup == COMPUTER, s); }
+    var pick = if setup != NOTHING { choose(over, g, content, setup == COMPUTER, s) }
+               else { menu(over, g, content, landscape, s) };
+    // The way out, declared last so the tiles before it keep their order.
+    if gui::round_button(g, 309, corner(width, u), gui::CLOSE, CROSS) { pick = EXIT; }
+    return pick;
+}
+
+// The menu in c: the wordmark, the rows, and settings.
+fn menu(over: game::Overlay&, g: gui::Gui&, c: float4, landscape: bool, s: settings::Settings&) -> i64 {
+    let u = g.scale;
+    var content = c;
 
     // The wordmark: a crowned light piece and the app's name; in portrait, settings at
     // the right.

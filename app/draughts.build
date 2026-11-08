@@ -1,6 +1,7 @@
 // The program's own C: the season's photograph and its JPEG decoder
 // (docs/architecture/rendering.md, "Scene and glass"), the system's locales, the app's
-// storage folder, the wake a running clock asks for, and the first frame's signal to
-// Android. scripts/android.py reads c_sources and c_include from here too.
+// storage folder, the wake a running clock asks for, and what the program tells
+// Android (its first frame, and closing). scripts/android.py reads c_sources and
+// c_include from here too.
 c_sources = ["background.c", "launch.c", "locale.c", "storage.c", "wake.c"];
 c_include = ["../third_party/goose_gfx/third_party/nuklear/demo/common/filebrowser"];

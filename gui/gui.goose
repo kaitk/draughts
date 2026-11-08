@@ -59,6 +59,7 @@ let STAR_OFF = 17;          // a star still at stake or lost, outlined
 let LOCK = 18;              // a tier not yet open
 let CROWN = 19;             // the puzzles' goals: become a king,
 let SHIELD = 20;            // and the only safe move (TARGET for a capture)
+let CLOSE = 21;             // home's way out: an X
 
 // Text faces (rendering.md, "Fonts"): one size each, in dp, baked by the app at the
 // screen's pixel size.
@@ -307,6 +308,21 @@ fn tile(g: Gui&, id: i64, r: float4, icon: i64, style: i64, radius: f32) -> bool
         let s = 0.5 * min(r.z, r.w) * (1.0 - 0.04 * p);
         glyph_icon(g, center(r, s, s), icon, style, p, 1.0);
     }
+    return clicked;
+}
+
+// A round glass button `r` across (home's way out, rendering.md, "Home"): a glass panel
+// under a quiet tile, both going down as a tile does, and an icon `size` dp across at
+// 90%. True when it is tapped.
+fn round_button(g: Gui&, id: i64, r: float4, icon: i64, size: f32) -> bool {
+    let clicked, p = hold(g, id, r);
+    let k = 1.0 - 0.04 * p;
+    let d = 0.5 * min(r.z, r.w);
+    add(g, Quad { rect: center(r, r.z * k, r.w * k), look: float4 { GLASS, d * k, 0.0, 0.0 },
+                  extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
+    add(g, Quad { rect: r, look: float4 { BUTTON, d, 0.0, p }, extra: float4 { g.scale, QUIET, 0.0, 0.0 } });
+    let s = size * g.scale * k;
+    glyph_icon(g, center(r, s, s), icon, QUIET, p, 0.9);
     return clicked;
 }
 

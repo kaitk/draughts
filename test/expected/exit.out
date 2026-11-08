@@ -1,0 +1,27 @@
+landscape: the way out at vec4<f32> { 1168.0, 24.0, 88.0, 88.0 } (24.0 dp from the right, 24.0 from the top, 88.0 across), the board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, clear of the board true, of the column true, the board's gap under it 8.0 dp, beside it 28.0 dp
+  a tap just left of it and just under it: quit false, home, setup 0
+  held: pressed 1.0, quit false
+  released over it: quit true
+  home asks for EXIT: true
+landscape, the computer's setup: the way out at vec4<f32> { 1168.0, 24.0, 88.0, 88.0 } (24.0 dp from the right, 24.0 from the top, 88.0 across), the board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, clear of the board true, of the column true, the board's gap under it 8.0 dp, beside it 28.0 dp
+  a tap just left of it and just under it: quit false, home, setup 4
+  held: pressed 1.0, quit false
+  released over it: quit true
+  home asks for EXIT: true
+portrait: the way out at vec4<f32> { 688.0, 24.0, 88.0, 88.0 } (24.0 dp from the right, 24.0 from the top, 88.0 across), the board at vec4<f32> { 90.0, 128.0, 620.0, 9.92 }, clear of the board true, of the column true, the board's gap under it 16.0 dp, beside it -22.0 dp
+  a tap just left of it and just under it: quit false, home, setup 0
+  held: pressed 1.0, quit false
+  released over it: quit true
+  home asks for EXIT: true
+portrait, the computer's setup: the way out at vec4<f32> { 688.0, 24.0, 88.0, 88.0 } (24.0 dp from the right, 24.0 from the top, 88.0 across), the board at vec4<f32> { 164.0, 40.0, 472.0, 7.5520005 }, clear of the board true, of the column true, the board's gap under it -72.0 dp, beside it 52.0 dp
+  a tap just left of it and just under it: quit false, home, setup 4
+  held: pressed 1.0, quit false
+  released over it: quit true
+  home asks for EXIT: true
+portrait at 600 x 960: the way out at vec4<f32> { 516.0, 18.0, 66.0, 66.0 } (24.0 dp from the right, 24.0 from the top, 88.0 across), the board at vec4<f32> { 67.5, 96.0, 465.0, 7.4400005 }, clear of the board true, of the column true, the board's gap under it 16.0 dp, beside it -22.0 dp
+  a tap just left of it and just under it: quit false, home, setup 0
+  held: pressed 1.0, quit false
+  released over it: quit true
+  home asks for EXIT: true
+a game under way, the way out: quit true
+the next start restores it: true, screen 0, W:Wc3,e3:Bd6,f6, quit false

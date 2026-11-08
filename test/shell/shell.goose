@@ -147,14 +147,16 @@ fn main() {
     sh.screen = shell::HOME;
     gui::begin(g, gui::Input {}, 1.0, 7.0);
     shell::frame(sh, g, H, W, 7.0);
+    // The sheet is the first glass; the way out's is the last.
     var sheet = float4 { 0.0, 0.0, 0.0, 0.0 };
-    for q in g.quads { if q.look.x == gui::GLASS { sheet = q.rect; } }
+    for q in g.quads { if q.look.x == gui::GLASS && sheet.z == 0.0 { sheet = q.rect; } }
     print("portrait: board ", sh.layout.board, ", sheet from ", sheet.y, ", clear ",
           sh.layout.board.y + sh.layout.board.z < sheet.y);
     sh.setup = home::COMPUTER;
     gui::begin(g, gui::Input {}, 1.0, 7.1);
     shell::frame(sh, g, H, W, 7.1);
-    for q in g.quads { if q.look.x == gui::GLASS { sheet = q.rect; } }
+    sheet.z = 0.0;
+    for q in g.quads { if q.look.x == gui::GLASS && sheet.z == 0.0 { sheet = q.rect; } }
     print("portrait setup: board ", sh.layout.board, ", sheet from ", sheet.y, ", clear ",
           sh.layout.board.y + sh.layout.board.z < sheet.y);
     print("draughts tiles: ", draughts_widths(g));
