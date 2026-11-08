@@ -201,15 +201,17 @@ the prototype tried, kept for 3D:
   less a 24 px margin, between two glass panels 232 px wide and as tall as it (where
   that leaves the board under 720 px, the tablet's at 16:10, the panels narrow down to
   192 px for it: 587 px at 4:3, 520 on a foldable; 2026-11-08): on the
-  left home (a house), settings, and at the bottom start over, 72 px rows with 34 px
-  icons and 24 px words (in a narrowed panel, where a word doesn't fit beside its icon,
+  left home (a house), settings, and at the bottom start over, 88 px rows (the floor for
+  small hands; 72 until 2026-11-08) with 34 px icons and 24 px words (in a narrowed panel, where a word doesn't fit beside its icon,
   all three icons over their words in 96 px rows); on the right whose turn it is (a 72 px piece of its color with
   the glow ring, 4 px of the glow color at 80% and a 22 px glow, over "White's turn"),
   or the two clocks, and at the bottom take back, a tall 132 px tile with a 48 px icon
   over its word. In portrait the left side is a bar above the board, its three tiles in
-  a row, thirds of it while each word fits, else each as wide as its word and an even
-  share of the rest (2026-11-08), and the right side is below it: whose turn, or the clocks side by side, over
-  take back across the width. Start over sits far from take back so it isn't hit for
+  a row, 88 px tall, thirds of it while each word fits, else each as wide as its word and
+  an even share of the rest (2026-11-08); where a third would be under 170 px (a phone),
+  the bar is 8 px taller and each icon stands over its word, which needs less width. The
+  right side is below it: whose turn, or the clocks side by side, over take back across
+  the width, 88 px tall. Start over sits far from take back so it isn't hit for
   it. There is no hint button and no move-hints toggle: help that does the thinking
   doesn't belong a tap away, and move hints are a setting, reached through settings.
   Take back takes back one move, also one still animating; start over goes back to where
@@ -249,7 +251,8 @@ the prototype tried, kept for 3D:
   board and its pieces dim to 55% over 0.6 s, under the winning piece, which is drawn
   last and stays lit above the dim; from 1.0 s a glass card over the board (356 × 300
   px; on a board under 720 px all but the buttons' height shrink with it, the buttons
-  no narrower than 88 px, so it stays near half the board) slides up 28 px as it fades in (0.7 s, easing out), back and restart (primary,
+  no narrower than 88 px, so it stays near half the board; where it would cover the
+  winning piece, as on a phone's board, it moves into the half away from it) slides up 28 px as it fades in (0.7 s, easing out), back and restart (primary,
   112 × 88 px) on it, and from 1.2 s the winner's piece, crowned, with its ring fades in
   above them (0.5 s). The screen is still from 1.7 s, or once the glow has passed the
   winner's farthest piece (up to 1.77 s on 10 × 10); the frame then is drawn at rest,

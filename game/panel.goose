@@ -21,18 +21,20 @@ let RESTART = 2;
 let HOME = 3;
 let SETTINGS = 4;
 
-let ROW_H = 72.0;           // dp: a control's row
+let ROW_H = 88.0;           // dp: a control's row, the 88 dp a small hand needs
 let TALL_H = 132.0;         // take back in landscape
-let WIDE_H = 80.0;          // take back in portrait
+let WIDE_H = 88.0;          // take back in portrait
 let CLOCK_H = 72.0;
 let OVER = 4;               // pieces over the UI: two clocks and the winner, at most
 
 let SIDE = 232.0;           // dp: each panel's width in landscape,
 let NARROW = 192.0;         // narrowing to this near square
 let BOARD = 720.0;          // dp: the board the panels narrow for, the tablet's at 16:10
-let STACK_H = 96.0;         // dp: a left panel's row in landscape with its icon over its word
-let TOP = 104.0;            // dp: the bar above the board in portrait
-let BOTTOM = 196.0;         // dp: the play below it
+let STACK_H = 96.0;         // dp: a tile with its icon over its word
+let TOP = 120.0;            // dp: the bar above the board in portrait,
+let TOP_STACKED = 128.0;    // with its icons over their words where the bar is narrow:
+let STACK_W = 170.0;        // dp: a third of the bar under which it is
+let BOTTOM = 204.0;         // dp: the play below it
 let GAP = 24.0;
 
 // Where the board and the panels beside it go, in pixels.
@@ -46,7 +48,8 @@ struct Layout {
 // less a 24 dp margin, between two panels 232 dp wide and as tall as it; where that
 // leaves the board under 720 dp (narrower than 16:10), the panels narrow, down to 192 dp,
 // for the board to grow. Portrait: the board fills the width less the margin, with a
-// 104 dp bar above it and the 196 dp play below it, both as wide as the board.
+// 120 dp bar above it (128 where a third of it is under STACK_W, on a phone, its icons
+// over their words) and the 204 dp play below it, both as wide as the board.
 fn layout(width: f32, height: f32, n: i64) -> Layout {
     let s = gui::scale_of(width, height);
     let gap = GAP * s;
@@ -60,7 +63,8 @@ fn layout(width: f32, height: f32, n: i64) -> Layout {
         return Layout { board: board::layout_at(x + side + gap, y, size, s, n), left: float4 { x, y, side, size },
                         right: float4 { x + side + gap + size + gap, y, side, size } };
     }
-    let top = TOP * s;
+    let narrow = (width - 2.0 * gap - 72.0 * s) / 3.0 < STACK_W * s;
+    let top = (if narrow { TOP_STACKED } else { TOP }) * s;
     let bottom = BOTTOM * s;
     let size = min(width - 2.0 * gap, height - top - bottom - 4.0 * gap);
     let x = (width - size) / 2.0;
@@ -129,13 +133,20 @@ fn leave(g: gui::Gui&, l: Layout, icon: i64, word: i64) -> i64 {
         return chosen;
     }
     // Thirds of the bar while each word fits its third; else each tile as wide as its
-    // word wants and an even share of the rest, as the setup's draughts are.
-    let bar = float4 { l.left.x + 20.0 * u, l.left.y + 16.0 * u, l.left.z - 40.0 * u, ROW_H * u };
-    let free = bar.z - 32.0 * u;
+    // word wants and an even share of the rest, as the setup's draughts are. A bar made
+    // taller for it (TOP_STACKED) puts each icon over its word, which needs less width.
+    let stacked = l.left.w >= TOP_STACKED * u - 0.5;
+    let arrange = if stacked { gui::STACKED } else { gui::MIDDLE };
+    let bar = float4 { l.left.x + 20.0 * u, l.left.y + 16.0 * u, l.left.z - 40.0 * u, l.left.w - 32.0 * u };
+    let gap = (if stacked { 12.0 } else { 16.0 }) * u;
+    let free = bar.z - 2.0 * gap;
     var wants: f32[3] = [0.0, 0.0, 0.0];
     var fits = true;
     for i in 3 {
-        wants[i] = gui::labelled_width(g, 34.0, strings::get(words[i]), gui::HEADING, gui::MIDDLE);
+        let word = strings::get(words[i]);
+        let want = if stacked { gui::text_width(g, gui::HEADING, word) + 2.0 * gui::LABEL_PAD * u }
+                   else { gui::labelled_width(g, 34.0, word, gui::HEADING, gui::MIDDLE) };
+        wants[i] = max(want, 88.0 * u);
         if wants[i] > free / 3.0 { fits = false; }
     }
     let share = (free - wants[0] - wants[1] - wants[2]) / 3.0;
@@ -143,9 +154,9 @@ fn leave(g: gui::Gui&, l: Layout, icon: i64, word: i64) -> i64 {
     var x = bar.x;
     for i in 3 {
         let w = if even { free / 3.0 } else { wants[i] + share };
-        let r = if even { float4 { bar.x + i * (w + 16.0 * u), bar.y, w, bar.w } } else { float4 { x, bar.y, w, bar.w } };
-        x += w + 16.0 * u;
-        if gui::labelled(g, 110 + i, r, icons[i], 34.0, strings::get(words[i]), gui::HEADING, gui::MIDDLE) {
+        let r = if even { float4 { bar.x + i * (w + gap), bar.y, w, bar.w } } else { float4 { x, bar.y, w, bar.w } };
+        x += w + gap;
+        if gui::labelled(g, 110 + i, r, icons[i], 34.0, strings::get(words[i]), gui::HEADING, arrange) {
             chosen = asks[i];
         }
     }

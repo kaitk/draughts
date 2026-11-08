@@ -429,8 +429,20 @@ fn celebrate(gm: Game&, g: gui::Gui&, l: board::Layout, won: i64, now: f64, over
     let fit: f32 = min(1.0, l.board.z / (panel::BOARD * u));
     let button = max(88.0, 112.0 * fit);
     let first = g.quads.len;
-    let card = gui::center(area, (112.0 * fit + 2.0 * button + 20.0 * fit) * u,
+    var card = gui::center(area, (112.0 * fit + 2.0 * button + 20.0 * fit) * u,
                            ((40.0 + 40.0 + 104.0 + 28.0) * fit + 88.0) * u);
+    // Centered on the board, unless it would cover the winning piece (a phone's board):
+    // then in the half away from it, as near the middle as clears the piece.
+    if gm.won_on >= 0 {
+        let v .= rules::VARIANTS[gm.b.variant];
+        let at = board::center(l, v, gm.won_on);
+        let r = 0.39 * l.inner.w;           // the disc, as board::fill draws it
+        if at.x + r > card.x && at.x - r < card.x + card.z && at.y + r > card.y && at.y - r < card.y + card.w {
+            let middle = area.y + 0.5 * area.w;
+            card.y = if at.y >= middle { max(area.y, min(middle, at.y - r) - card.w) }
+                     else { min(area.y + area.w - card.w, max(middle, at.y + r)) };
+        }
+    }
     gui::panel(g, card);
     var c = gui::inset(card, 40.0 * fit * u);
     var spot = gui::cut_top(c, 104.0 * fit * u);

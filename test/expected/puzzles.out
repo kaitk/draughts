@@ -27,5 +27,5 @@ read back: 2 1 3; odd ones ignored: 3 0 0
 puzzles: picker
   locks 10, lit 1, stars won 12
 restored: true, picker
-portrait: board vec4<f32> { 24.0, 218.0, 752.0, 12.032001 }, next at vec4<f32> { 44.0, 1094.0, 712.0, 80.0 }
+portrait: board vec4<f32> { 24.0, 222.0, 752.0, 12.032001 }, next at vec4<f32> { 44.0, 1098.0, 712.0, 88.0 }
 portrait picker: title glyphs 7, tiles 31, the first vec4<f32> { 108.0, 259.80002, 122.4, 122.4 }, the sixth vec4<f32> { 108.0, 392.2, 122.4, 122.4 }, at least 88 dp true, the last tier ends at 1128.2

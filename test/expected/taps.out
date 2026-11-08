@@ -1,5 +1,5 @@
 board vec4<f32> { 280.0, 40.0, 720.0, 11.52 } square 88.02 panels vec4<f32> { 24.0, 40.0, 232.0, 720.0 } vec4<f32> { 1024.0, 40.0, 232.0, 720.0 }
-portrait board vec4<f32> { 24.0, 218.0, 752.0, 12.032001 } panels vec4<f32> { 24.0, 90.0, 752.0, 104.0 } vec4<f32> { 24.0, 994.0, 752.0, 196.0 }
+portrait board vec4<f32> { 24.0, 222.0, 752.0, 12.032001 } panels vec4<f32> { 24.0, 78.0, 752.0, 120.0 } vec4<f32> { 24.0, 998.0, 752.0, 204.0 }
 hits: a1 h8 -
 tap c3: selected c3, moving false, pulse false
 targets b4 d4 , pieces 24
