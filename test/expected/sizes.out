@@ -422,5 +422,51 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp, insets 0, 118, 0, 84 px:
   the puzzles: 14 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 91 x 88 dp, board 336 dp, all in place
   the win: 6 tiles, smallest 88 x 88 dp, board 336 dp, card buttons 88 x 88 dp, all in place
+en, the tablet with its navigation bar:
+1920 x 1200, insets 0, 0, 0, 72 px:
+  home: 6 tiles, smallest 88 x 88 dp, board 526 dp, all in place
+  a friend's setup: 9 tiles, smallest 88 x 88 dp, board 526 dp, all in place
+  the computer's setup: 14 tiles, smallest 88 x 88 dp, board 436 dp, all in place
+  the game: 4 tiles, smallest 200 x 88 dp, board 704 dp, all in place
+  the game on the clock: 6 tiles, smallest 200 x 88 dp, board 704 dp, all in place
+  settings: 17 tiles, smallest 88 x 88 dp, board 506 dp, all in place
+  the puzzles: 31 tiles, smallest 88 x 88 dp, all in place
+  a puzzle: 4 tiles, smallest 200 x 88 dp, board 704 dp, all in place
+  the win: 6 tiles, smallest 110 x 88 dp, board 704 dp, card buttons 110 x 88 dp, all in place
+  settings: 17 tiles, 17 with no inset: both groups
+1200 x 1920, insets 0, 0, 0, 72 px:
+  home: 6 tiles, smallest 88 x 88 dp, board 572 dp, all in place
+  a friend's setup: 9 tiles, smallest 88 x 88 dp, board 520 dp, all in place
+  the computer's setup: 14 tiles, smallest 88 x 88 dp, board 348 dp, all in place
+  the game: 4 tiles, smallest 227 x 88 dp, board 752 dp, all in place
+  the game on the clock: 6 tiles, smallest 227 x 88 dp, board 752 dp, all in place
+  settings: 17 tiles, smallest 88 x 88 dp, board 485 dp, all in place
+  the puzzles: 31 tiles, smallest 88 x 88 dp, all in place
+  a puzzle: 4 tiles, smallest 227 x 88 dp, board 752 dp, all in place
+  the win: 6 tiles, smallest 112 x 88 dp, board 752 dp, card buttons 112 x 88 dp, all in place
+  settings: 17 tiles, 17 with no inset: both groups
+et, the tablet with its navigation bar:
+1920 x 1200, insets 0, 0, 0, 72 px:
+  home: 6 tiles, smallest 88 x 88 dp, board 526 dp, all in place
+  a friend's setup: 9 tiles, smallest 88 x 88 dp, board 526 dp, all in place
+  the computer's setup: 14 tiles, smallest 88 x 88 dp, board 436 dp, all in place
+  the game: 4 tiles, smallest 200 x 96 dp, board 704 dp, all in place
+  the game on the clock: 6 tiles, smallest 200 x 96 dp, board 704 dp, all in place
+  settings: 17 tiles, smallest 88 x 88 dp, board 506 dp, all in place
+  the puzzles: 31 tiles, smallest 88 x 88 dp, all in place
+  a puzzle: 4 tiles, smallest 200 x 96 dp, board 704 dp, all in place
+  the win: 6 tiles, smallest 110 x 88 dp, board 704 dp, card buttons 110 x 88 dp, all in place
+  settings: 17 tiles, 17 with no inset: both groups
+1200 x 1920, insets 0, 0, 0, 72 px:
+  home: 6 tiles, smallest 88 x 88 dp, board 572 dp, all in place
+  a friend's setup: 9 tiles, smallest 88 x 88 dp, board 520 dp, all in place
+  the computer's setup: 14 tiles, smallest 88 x 88 dp, board 348 dp, all in place
+  the game: 4 tiles, smallest 227 x 88 dp, board 752 dp, all in place
+  the game on the clock: 6 tiles, smallest 227 x 88 dp, board 752 dp, all in place
+  settings: 17 tiles, smallest 88 x 88 dp, board 485 dp, all in place
+  the puzzles: 31 tiles, smallest 88 x 88 dp, all in place
+  a puzzle: 4 tiles, smallest 227 x 88 dp, board 752 dp, all in place
+  the win: 6 tiles, smallest 112 x 88 dp, board 752 dp, card buttons 112 x 88 dp, all in place
+  settings: 17 tiles, 17 with no inset: both groups
 settings' Look tab: group 1, tiles 11 then 13, changed false
 the puzzles' crown: tier 2, tiles 14, locks 10

@@ -10,8 +10,9 @@
 // faces' (each character half its face wide), wider than the real font's, so a word
 // that fits here fits on screen. The phones again with the Pixel 7a's insets (its
 // camera's cutout at the top in portrait and at a side in landscape, either side, and
-// its gesture bar at the bottom): every tile and the board inside the safe area. Then a
-// phone's tabs: settings' Look tab and the puzzles' crown each show their own tiles.
+// its gesture bar at the bottom): every tile and the board inside the safe area; and
+// the 16:10 tablet with its hidden navigation bar at the bottom. Then a phone's tabs:
+// settings' Look tab and the puzzles' crown each show their own tiles.
 import std;
 import vec;
 import rules from "../../rules";
@@ -224,6 +225,32 @@ fn main() {
                     screens(g);
                 }
             }
+        }
+    }
+    // The Galaxy tablet's hidden navigation bar, 72 px (48 dp) at the bottom, in both
+    // orientations: every tile inside the safe area, and settings in landscape still
+    // shows both groups, its look's glass running on over the bar (as many tiles as
+    // with no inset, not one group's and the tabs).
+    gui::short_dp = 800.0;
+    for lang in [strings::EN, strings::ET] {
+        strings::use(lang);
+        print(strings::LANGUAGES[lang], ", the tablet with its navigation bar:");
+        for size in [float2 { 1920.0, 1200.0 }, float2 { 1200.0, 1920.0 }] {
+            drive::size = size;
+            g.scale = gui::scale_of(size.x, size.y);
+            gui::test_faces(g);
+            g.insets = float4 { 0.0, 0.0, 0.0, 0.0 };
+            var bare = showing(shell::SETTINGS, home::NOTHING);
+            at_rest(bare, g);
+            let both = drive::tiles(g);
+            g.insets = float4 { 0.0, 0.0, 0.0, 72.0 };
+            print(size.x as i64, " x ", size.y as i64, ", insets 0, 0, 0, 72 px:");
+            screens(g);
+            var inset = showing(shell::SETTINGS, home::NOTHING);
+            at_rest(inset, g);
+            let shown = drive::tiles(g);
+            print("  settings: ", shown, " tiles, ", both, " with no inset: ",
+                  if shown == both { "both groups" } else { "one group" });
         }
     }
     g.insets = float4 { 0.0, 0.0, 0.0, 0.0 };
