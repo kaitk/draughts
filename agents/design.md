@@ -20,6 +20,8 @@ missing: ask the user for them rather than guessing from memory.
 | `kabe_theme_design_boards/kabe_spring_birch_four_seasons.png` | The four seasons side by side, and the spring screens | Each season's palette and scene |
 | `kabe_theme_design_boards/kabe_winter_sea_comparison.png` | Winter and summer (sea) screens | The sea theme |
 | `Kabe Winter Stone UI Board.png` | A winter UI board, 1536 px | Glass panels and buttons |
+| `draughts-store/icon/master-winter-jump-1254.png` | The chosen app icon (2026-11-08), the winter jump: a 3×3 stone board at three-quarters, a dark slate piece in the centre, the ivory stacked king jumping it along a pale blue arc, on navy (#06172b corners, #0d2139 top) | The icon's master: copy it to `design/icon/master.png` and run `scripts/icon.py` (`design/icon/README.md`); the monochrome layer is drawn from its geometry |
+| `draughts-store/tablet-home-with-icons.png` | The icon candidates mocked up on the tablet's real home screen, 82 px | How an icon reads at the launcher's size |
 
 Where the close-ups and the design boards differ, the close-ups win for the board and
 pieces (chosen 2026-11-07); the design boards still set the layout, glass, and controls.
@@ -42,6 +44,10 @@ pieces (chosen 2026-11-07); the design boards still set the layout, glass, and c
   1920 × 1200.
 - Measure colors instead of judging them: `magick ref.png -crop 100x100+X+Y +repage
   -scale 1x1! -format '%[pixel:p{0,0}]' info:` gives a patch's mean.
+- Preview SVG (an icon's vector layer, say) in a browser page shot with `agent-browser`:
+  ImageMagick's built-in SVG renderer drops stroked paths, and the Mac has no `rsvg`.
+  For an icon, show the central 72 of its 108 dp in circle and squircle masks at 48 and
+  82 px (the tablet's launcher size).
 
 ## What has been tried and set aside (2026-11-07)
 
