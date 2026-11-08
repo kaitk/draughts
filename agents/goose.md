@@ -47,7 +47,7 @@ find out by compiling, so the next session doesn't.
   imported as `import check from "../";`.
 - Strings: `u8[>..]` builders, `const u8[:]` views. `str(...)` makes one, `format(out,
   ...)` appends, `print(...)` writes a line. `split`, `split_once`, `trim`,
-  `parse_int` are in `std`.
+  `parse_int` are in `std`, and `parse_flt` for a float (not `parse_float`).
 - Errors: a trailing `bool` result, or `return x from f` to unwind to a caller.
 - Sortable strings: limited arrays in a resizable, `var lines: u8[..80][>..] = [];`, filled
   with `let l .= lines.push([]); l.append(text);` and sorted with

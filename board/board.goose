@@ -11,7 +11,7 @@ import math;
 import vec;
 import rules from "../rules";
 
-let MAX_PIECES = 48;        // 40 pieces on 10×10, the moving one, and margin
+let MAX_PIECES = 96;        // 40 pieces on 10×10, the moving one, and margin; two boards' in a transition
 let HOP = 0.2;              // seconds per square of a quiet move, per stop of a capture
 let FADE = 0.18;            // captured pieces fade out after the move
 let PULSE = 2.8;            // must-capture rings pulse for two of their 1.4 s cycles
@@ -491,5 +491,28 @@ fn fill(b: Board&, l: Layout, now: f64) {
             mark(b, b.marks.target, m.to);
             for j in 1..m.path.len - 1 { mark(b, b.marks.via, m.path[j]); }
         }
+    }
+}
+
+// Two boards in one place while a transition crossfades them (shell::fill): after both
+// are filled, b's pieces at opacity a over the other's at 1 - a, and the marks of the one
+// that shows more.
+fn under(b: Board&, other: Board&, a: f32) {
+    let n = b.pieces.len;
+    let k = min(other.pieces.len, MAX_PIECES - n);
+    for i in k { b.pieces.push(Piece {}); }
+    var i = n;
+    while i > 0 {
+        i--;
+        b.pieces[i + k] = b.pieces[i];
+        b.pieces[i + k].look.w *= a;
+    }
+    for j in k {
+        b.pieces[j] = other.pieces[j];
+        b.pieces[j].look.w *= 1.0 - a;
+    }
+    if a < 0.5 {
+        b.marks = other.marks;
+        b.flash = other.flash;
     }
 }

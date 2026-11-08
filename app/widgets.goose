@@ -211,7 +211,7 @@ let FRAG = """
         }
         return 1e9;
     }
-    void main() {
+    void shade() {
         int kind = int(v_look.x);
         float u = v_extra.x;                    // one dp in pixels
         vec2 p = v_px;
@@ -334,6 +334,11 @@ let FRAG = """
         // A plain rounded rect.
         float a = cover(box(p, c, h, r)) * v_color.a;
         result = vec4(v_color.rgb * a, a);
+    }
+    // Each quad as its kind draws it, faded with its layer (a screen in a transition).
+    void main() {
+        shade();
+        result *= 1.0 - v_extra.w;
     }
     """;
 

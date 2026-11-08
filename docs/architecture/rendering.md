@@ -275,8 +275,8 @@ the prototype tried, kept for 3D:
   The preview is the board as the choices make it: its size, flat or raised, the kings,
   and what the move hints show (all moves: the selected piece's capture; mistakes only:
   a wrong move's red ring and the piece that must capture pulsing), over the season's
-  photograph. It is home's board: opening settings moves it aside (task 022 animates
-  that).
+  photograph. It is home's board: opening settings moves it aside, and back moves it
+  home (see "Transitions").
   Natively (`shell/settings.goose`) the preview is a board of its own on one fixed
   position, the same on every board size and a square in from the corner on 10 × 10:
   white must capture two, with the man on d4 or the king on h6. With all moves d4 is
@@ -311,6 +311,26 @@ the prototype tried, kept for 3D:
   after another (56 px, 0.6 s each, 0.15 s apart), and next lights; nothing covers the
   board. In portrait the goal and the stars share a row under the board, over next
   across the width.
+
+### Transitions
+
+Home to settings and back take 0.25 s, eased (smoothstep), rather than switching at once
+(task 022). The board slides and resizes from one screen's place to the other's: in
+landscape to the right, in portrait down a little as it shrinks under settings' title
+row. The screen left fades out and the one come to fades in, both drifting 40 dp the way
+the board moves. The photograph stays as it is, sharp behind both. Since settings' preview
+is its own fixed position, the game's pieces fade out under the preview's as the board
+slides; the marks, and the squares when the two sizes differ, switch halfway. A tap during
+a transition lands on the screen come to. Back, during one, turns it round where it is.
+
+Natively the shell keeps one transition: the screen left and when it began
+(`shell::go_to`). Each frame it declares the screen left with no pointer (`gui::listen`),
+then the screen come to. It fades and moves each one's quads (`gui::fade`; a quad's
+`extra.w`, which the UI shader multiplies its result by) and its pieces over the UI. It
+eases the board's rect between the two layouts. The app fills the board through
+`shell::fill`, which lays the other board's pieces under it at the other opacity
+(`board::under`). While a transition runs, `shell::animating` is true. The frame after it
+ends is drawn at rest, and then nothing more.
 
 ### Board and pieces
 

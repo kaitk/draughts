@@ -113,7 +113,7 @@ struct Quad {
     rect:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x, y, width, height in pixels
     color: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // straight alpha
     look:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // kind, corner radius in pixels, icon, pressed 0..1
-    extra: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: pixels per dp; y: PLAIN..CLOCK_LOW; z: text in `color`
+    extra: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: pixels per dp; y: PLAIN..CLOCK_LOW; z: text in `color`; w: faded out, 0..1
 }
 
 // The pointer this frame. A quick tap can be pressed and released in one frame.
@@ -132,15 +132,16 @@ struct Slot {
 }
 
 struct Gui {
-    scale:  f32               = 1.0,
-    now:    f64               = 0.0,
-    input:  Input             = Input {},
-    active: i64               = 0,     // the widget the pointer went down on, or 0
-    took:   bool              = false, // whether this press landed on the UI, not the board
-    acted:  bool              = false, // whether a widget was clicked this frame
-    quads:  Quad[..MAX_QUADS] = [],
-    slots:  Slot[MAX_IDS]     = [Slot {}; MAX_IDS],
-    faces:  Face[FACES]       = [Face {}; FACES],
+    scale:   f32               = 1.0,
+    now:     f64               = 0.0,
+    input:   Input             = Input {},
+    active:  i64               = 0,     // the widget the pointer went down on, or 0
+    took:    bool              = false, // whether this press landed on the UI, not the board
+    acted:   bool              = false, // whether a widget was clicked this frame
+    quads:   Quad[..MAX_QUADS] = [],
+    slots:   Slot[MAX_IDS]     = [Slot {}; MAX_IDS],
+    faces:   Face[FACES]       = [Face {}; FACES],
+    pointer: Input             = Input {}, // the frame's pointer, kept while input is off (listen)
 }
 
 // Rect cuts: each takes a strip off r and returns it.
@@ -183,13 +184,31 @@ fn inside(r: float4, p: float2) -> bool { p.x >= r.x && p.x < r.x + r.z && p.y >
 
 // Starts a frame: no quads yet, this frame's pointer and time.
 fn begin(g: Gui&, input: Input, scale: f32, now: f64) {
-    if !g.input.down && !g.input.pressed { g.active = 0; }
+    if !g.pointer.down && !g.pointer.pressed { g.active = 0; }
     if input.pressed { g.took = false; }
     g.acted = false;
     g.input = input;
+    g.pointer = input;
     g.scale = scale;
     g.now = now;
     g.quads.clear();
+}
+
+// Whether what is declared from here on takes the pointer: not a screen a transition
+// leaves, which is declared with no pointer at all.
+fn listen(g: Gui&, on: bool) { g.input = if on { g.pointer } else { Input { at: float2 { -1.0e9, -1.0e9 }, .. } }; }
+
+// Fades quads first..last (as g.quads.len counted them) to `opacity` and moves them by
+// `offset` pixels, whole ones, so glyphs stay a texel to a pixel: a screen in a
+// transition. Its taps stay where it is at rest.
+fn fade(g: Gui&, first: i64, last: i64, opacity: f32, offset: float2) {
+    let d = float2 { floor(offset.x + 0.5), floor(offset.y + 0.5) };
+    for i in first..last {
+        let q .= g.quads[i];
+        q.rect.x += d.x;
+        q.rect.y += d.y;
+        q.extra.w = 1.0 - opacity;
+    }
 }
 
 fn add(g: Gui&, q: Quad) {

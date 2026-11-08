@@ -64,7 +64,10 @@ the screens around it `shell/` (home, and which screen shows), each tested headl
 `--tap` (`c3`, or `d10` on 10 × 10), or `--screen game` open the game screen,
 `--screen settings` settings, `--screen friend` or `computer` home's setup, `--screen
 puzzles` the puzzles to pick from, and `--puzzle ID` that puzzle, whose taps go to its
-board (`--puzzle 21 --tap f4 --tap e5`). `--variant
+board (`--puzzle 21 --tap f4 --tap e5`). `--go settings` (or `home`) switches there
+on the second frame through its transition, and `--hold 0.4` keeps a transition at 40%
+of the way, for a screenshot: `--go settings --hold 0.5 --frames 12`, or `--screen
+settings --go home --hold 0.5 --frames 12` for the way back. `--variant
 international|brazilian|russian` starts a new game of that draughts (else the setup's
 last choice), `--clock 5+3|10+5` with a clock, and `--computer white|black` against
 the computer playing that side (the board turned when it plays white), at `--level

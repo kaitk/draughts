@@ -20,7 +20,8 @@ which would overwrite the main checkout's while another session uses them.
   `ai::think` as the app's worker would; the clock value on its own; and the computer's
   time a move on the clock, over whole games with simulated time, in `pace`), `shell`
   (home, the switch to the game and back, settings and their file, their taps and the
-  board beside them, home's setup and play, the puzzles' picker and a puzzle played through its misses, hint, reply, and stars, the saved game of any variant and damaged images of it, the computer's skill
+  board beside them, the transition between home and settings (its frames, its end, a
+  tap during it, turning it round), home's setup and play, the puzzles' picker and a puzzle played through its misses, hint, reply, and stars, the saved game of any variant and damaged images of it, the computer's skill
   moving across games), `strings` (every language file has every key), `ai` (the computer player:
   its search against a plain minimax, the table changing no score, keys, what each level
   plays in known shots, the same move in steps as at once, and that no level hangs a
@@ -110,6 +111,10 @@ measuring there:
 - Rotation for a screenshot: `adb shell settings put system accelerometer_rotation 0`,
   then `user_rotation 0` is portrait (1200 × 1920) and `1` landscape on this tablet;
   read both settings first and put them back after.
+- During a transition between home and settings both screens' quads are declared, the
+  one left first, so `drive::tile(g, n)` counts the wrong screen's tiles. A shell test
+  that taps again after such a switch idles past `shell::DURATION` first
+  (`test/shell/shell.goose`).
 - Tests that tap tiles find them by the order of `gui::BUTTON` quads; the clocks are
   `BUTTON` quads too, so the game's helpers skip styles from `gui::CLOCK_RUN` on.
 - To see when something happens on the tablet, log from the program's C with

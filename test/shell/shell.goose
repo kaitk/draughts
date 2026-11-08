@@ -99,12 +99,13 @@ fn main() {
           ", the next ", shell::frame(sh, g, W, H, 3.1));
     drive::tap(sh, g, drive::tile(g, 0), 3.2);            // back
     print("back from settings: ", screen(sh));
-    drive::tap(sh, g, drive::tile(g, 0), 3.3);            // continue
-    drive::tap(sh, g, drive::tile(g, 1), 3.4);            // the game's settings
+    drive::idle(sh, g, 3.5);                              // its transition over
+    drive::tap(sh, g, drive::tile(g, 0), 3.6);            // continue
+    drive::tap(sh, g, drive::tile(g, 1), 3.7);            // the game's settings
     print("settings from the game: ", screen(sh));
-    drive::tap(sh, g, drive::tile(g, 0), 3.5);            // back
+    drive::tap(sh, g, drive::tile(g, 0), 3.8);            // back
     show(sh, g, "back from settings");
-    drive::tap(sh, g, drive::tile(g, 0), 3.6);            // home
+    drive::tap(sh, g, drive::tile(g, 0), 3.9);            // home
 
     // A friend's setup: back, the three draughts, the clock, play. Russian and 5+3 are
     // kept in the settings; play starts that game over the one there was.

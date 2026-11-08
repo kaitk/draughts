@@ -16,6 +16,7 @@
 //   ../build/draughts --computer white --level hard   against the computer playing white
 //   ../build/draughts --screen puzzles            the puzzles to pick from
 //   ../build/draughts --puzzle 21 --tap f4 --tap e5   puzzle 21, taps on its board
+//   ../build/draughts --go settings --hold 0.4 --frames 10   home going to settings, held at 40%
 //   scripts/android.py app/draughts.goose --run   on the tablet (docs/development.md)
 
 import std;
@@ -60,8 +61,10 @@ fn main() {
     // computer are given; the last two open home's setup; puzzles the puzzles to pick
     // from), --puzzle ID (that puzzle, its taps on its board), --variant
     // international|brazilian|russian, --clock none|5+3|10+5, --computer white|black (a
-    // new game; --level easy|medium|hard, the setup's last by default). --theme, --hints,
-    // and --lang override the settings for the run without changing them.
+    // new game; --level easy|medium|hard, the setup's last by default), --go home|settings
+    // (switches there on the second frame, through its transition), --hold T (keeps a
+    // transition at T of the way, 0..1, for a screenshot). --theme, --hints, and --lang
+    // override the settings for the run without changing them.
     var width = 1280;
     var height = 800;
     var kind = -1;
@@ -75,6 +78,8 @@ fn main() {
     var level = -1;
     var setup = 0;
     var puzzle_id = -1;
+    var go = -1;
+    var hold = -1.0;
     var fen:  u8[>..]       = [];
     var taps: u8[..3][..16] = [];
     let argv = args();
@@ -103,6 +108,11 @@ fn main() {
             if argv[i + 1] == "friend" { setup = home::FRIEND; }
             if argv[i + 1] == "computer" { setup = home::COMPUTER; }
             if argv[i + 1] == "puzzles" { screen = shell::PICKER; }
+        }
+        if argv[i] == "--go" { go = if argv[i + 1] == "settings" { shell::SETTINGS } else { shell::HOME }; }
+        if argv[i] == "--hold" {
+            let n, ok = parse_flt(argv[i + 1]);
+            if ok { hold = clamp(n, 0.0, 1.0); }
         }
         if argv[i] == "--puzzle" {
             let n, ok = parse_int(argv[i + 1]);
@@ -161,7 +171,7 @@ fn main() {
     // The game as it was when the app was last paused (shell::restore; nothing changes
     // for a missing or damaged file). A run with flags that set up a game or take a
     // screenshot neither reads nor writes it.
-    let keep = screen < 0 && fen.len == 0 && taps.len == 0 && frames < 0 && variant < 0 && clock_kind < 0 && computer < 0;
+    let keep = screen < 0 && go < 0 && fen.len == 0 && taps.len == 0 && frames < 0 && variant < 0 && clock_kind < 0 && computer < 0;
     if keep {
         var saved: u8[>..] = [];
         if read_file(save_path, saved) { shell::restore(sh, saved); }
@@ -221,6 +231,11 @@ fn main() {
                                  pressed: gfx::mouse_pressed(gfx::MOUSE_LEFT),
                                  released: gfx::mouse_released(gfx::MOUSE_LEFT) };
         gui::begin(g, input, scale, now);
+        if go >= 0 && gfx::frame_count() >= 2 {
+            shell::go_to(sh, go, now);
+            go = -1;
+        }
+        if hold >= 0.0 && sh.from >= 0 { sh.since = now - hold * shell::DURATION; }
         if shell::frame(sh, g, size.x, size.y, now) { dirty = true; }
         // The computer's move: the worker gets what the game asks, and the game the answer.
         think::frame(thinker, sh.game);
@@ -260,8 +275,7 @@ fn main() {
             dirty = true;
         }
         if dirty || shell::animating(sh, g, now) {
-            let shown .= shell::shown(sh);
-            board::fill(shown, l, now);
+            let shown .= shell::fill(sh, now);
             widgets::upload(w, g);
             draw::frame(d, shown, sh.over, l, sh.sharp, now, size.x, size.y);
             widgets::frame(w, g, d.scene, d.colors, size.x, size.y);
