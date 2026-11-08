@@ -9,7 +9,9 @@
 // says when they changed, for the app to write and apply; and where the board goes this
 // frame, turned when the child plays black, and whether the photograph behind it is
 // sharp, and the pieces the screen shows over the UI, for the app to draw. Settings show
-// their own board, the preview, beside them.
+// their own board, the preview, beside them; home's setup its own too, the game its play
+// starts, at the start of the chosen draughts and turned for a child playing black
+// against the computer, which play then starts as it shows.
 // Home and settings switch through a transition (task 022): the board slides from one's
 // place to the other's, crossfading into the other's board, while the screen left fades
 // out and the one come to fades in, both drifting a little with the board. A tap during
@@ -46,12 +48,14 @@ struct Shell {
     screen:  i64 = HOME,
     game:    game::Game,
     preview: board::Board,                    // the board beside settings, as they make it
+    next:    board::Board,                    // the board beside home's setup: the game its play starts
     prefs:   settings::Settings = settings::Settings {},
     changed: bool               = false,      // prefs changed since the app last wrote them
     quit:    bool               = false,      // home's way out was tapped: the app stops
     drawn:   i64                = -1,         // the screen the last frame declared
     back:    i64                = HOME,       // where settings goes back to
     setup:   i64                = home::NOTHING, // home's column: the menu, or a setup
+    staged:  bool               = false,      // home shows `next`, having declared a setup this frame
     layout:  board::Layout,                   // where the board is this frame
     sharp:   bool          = true,            // the photograph as it is (home, settings), or blurred (the game)
     over:    game::Overlay = [],              // the screen's pieces over the UI this frame
@@ -69,7 +73,8 @@ struct Shell {
 fn new(variant: u8) -> Shell {
     let g = game::new(variant);
     let l = panel::layout(1.0, 1.0, rules::VARIANTS[variant].size).board;
-    return Shell { game: g, preview: board::new(variant), layout: l, puzzle: puzzle::new(), went: l, came: l, .. };
+    return Shell { game: g, preview: board::new(variant), next: board::new(variant), layout: l, puzzle: puzzle::new(),
+                   went: l, came: l, .. };
 }
 
 // Whether a switch between screens a and b is drawn as a transition.
@@ -272,11 +277,21 @@ fn settings_screen(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, 
 
 // Home for this frame. Returns whether anything on screen changed.
 fn home_screen(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> bool {
-    var changed = board::update(sh.game.b, now);
-    let n = rules::VARIANTS[sh.game.b.variant].size;
-    let pick = home::frame(sh.over, g, sh.layout, n, width, height, sh.setup, sh.prefs);
-    // The board is turned for a child playing black against the computer.
-    sh.layout.flip = sh.game.computer == rules::WHITE;
+    // On the menu the board is the game as it stands; in a setup, the game its play
+    // starts, set up afresh when the draughts chosen changes. The board switches at once,
+    // as the column does. A tap that changes the setup shows on the next frame, the board
+    // and the column together: this one shows what it declared.
+    sh.staged = sh.setup != home::NOTHING;
+    var changed = false;
+    if sh.staged && sh.next.variant != sh.prefs.variant as u8 {
+        board::reset(sh.next, sh.prefs.variant as u8);
+        changed = true;
+    }
+    let b .= board_of(sh, HOME);
+    if board::update(b, now) { changed = true; }
+    let flip = turned(sh);
+    let pick = home::frame(sh.over, g, sh.layout, rules::VARIANTS[b.variant].size, width, height, sh.setup, sh.prefs);
+    sh.layout.flip = flip;
     if pick != home::NOTHING { changed = true; }
     match pick {
         home::SETTINGS => {
@@ -300,7 +315,9 @@ fn home_screen(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> b
                 p.games += 1;
                 sh.changed = true;
             }
+            // Home, come back to, shows this game rather than the setup's board.
             sh.setup = home::NOTHING;
+            sh.staged = false;
             go_to(sh, GAME, now);
         },
         _ => {},
@@ -316,8 +333,16 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, width: f32, height: f32, over: g
         settings::frame(sh.prefs, over, g, l, width, height, strings::current);
         return;
     }
-    home::frame(over, g, l, rules::VARIANTS[sh.game.b.variant].size, width, height, sh.setup, sh.prefs);
-    l.flip = sh.game.computer == rules::WHITE;
+    home::frame(over, g, l, rules::VARIANTS[board_of(sh, HOME).variant].size, width, height, sh.setup, sh.prefs);
+    l.flip = turned(sh);
+}
+
+// Whether home's board is turned, for a child playing black against the computer: in the
+// game as it stands on the menu, and in the computer's setup when black is chosen.
+fn turned(sh: Shell&) -> bool {
+    return if sh.setup == home::COMPUTER { sh.prefs.color == rules::BLACK }
+           else if sh.setup == home::FRIEND { false }
+           else { sh.game.computer == rules::WHITE };
 }
 
 // What is kept when the app is paused, for Android may kill it then: the screen and the
@@ -401,10 +426,11 @@ fn restore(sh: Shell&, file: const u8[:]) -> bool {
     return true;
 }
 
-// The board a screen shows: settings their preview, a puzzle its own, the other screens
-// the game's.
+// The board a screen shows: settings their preview, a puzzle its own, home's setup the
+// game its play starts, the other screens the game's.
 fn board_of(sh: Shell&, screen: i64) -> board::Board& {
-    return if screen == SETTINGS { sh.preview } else if screen == PUZZLE { sh.puzzle.b } else { sh.game.b };
+    return if screen == SETTINGS { sh.preview } else if screen == PUZZLE { sh.puzzle.b }
+           else if screen == HOME && sh.staged { sh.next } else { sh.game.b };
 }
 fn which(screen: i64) -> i64 { if screen == SETTINGS { SETTINGS } else if screen == PUZZLE { PUZZLE } else { GAME } }
 

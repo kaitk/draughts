@@ -1,0 +1,34 @@
+continue: 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, white at the bottom true, whole true; the tap's frame whole true, then drawn false animating false
+home: 8x8 B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, white at the bottom true, whole true; the tap's frame whole true, then drawn false animating false
+landscape
+a friend's setup: 10x10 W:W31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50:B1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20, white at the bottom true, whole true; the tap's frame whole true, then drawn false animating false
+  Brazilian: 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, white at the bottom true, whole true; the tap's frame whole true, then drawn false animating false
+  Russian: 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, white at the bottom true, whole true; the tap's frame whole true, then drawn false animating false
+  International: 10x10 W:W31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50:B1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20, white at the bottom true, whole true; the tap's frame whole true, then drawn false animating false
+back: 8x8 B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, white at the bottom true, whole true; the tap's frame whole true, then drawn false animating false
+the computer's setup: 10x10 W:W31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50:B1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20, white at the bottom true, whole true; the tap's frame whole true, then drawn false animating false
+  Brazilian: 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, white at the bottom true, whole true; the tap's frame whole true, then drawn false animating false
+  Russian: 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, white at the bottom true, whole true; the tap's frame whole true, then drawn false animating false
+  International: 10x10 W:W31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50:B1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20, white at the bottom true, whole true; the tap's frame whole true, then drawn false animating false
+  black: 10x10 W:W31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50:B1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20, white at the bottom false, whole true; the tap's frame whole true, then drawn false animating false
+  white: 10x10 W:W31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50:B1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20, white at the bottom true, whole true; the tap's frame whole true, then drawn false animating false
+  black: 10x10 W:W31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50:B1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20, white at the bottom false, whole true; the tap's frame whole true, then drawn false animating false
+  Brazilian, black: 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, white at the bottom false, whole true; the tap's frame whole true, then drawn false animating false
+back: 8x8 B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, white at the bottom true, whole true; the tap's frame whole true, then drawn false animating false
+portrait
+a friend's setup: 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, white at the bottom true, whole true; the tap's frame whole true, then drawn false animating false
+  Brazilian: 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, white at the bottom true, whole true; the tap's frame whole true, then drawn false animating false
+  Russian: 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, white at the bottom true, whole true; the tap's frame whole true, then drawn false animating false
+  International: 10x10 W:W31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50:B1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20, white at the bottom true, whole true; the tap's frame whole true, then drawn false animating false
+back: 8x8 B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, white at the bottom true, whole true; the tap's frame whole true, then drawn false animating false
+the computer's setup: 10x10 W:W31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50:B1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20, white at the bottom false, whole true; the tap's frame whole true, then drawn false animating false
+  Brazilian: 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, white at the bottom false, whole true; the tap's frame whole true, then drawn false animating false
+  Russian: 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, white at the bottom false, whole true; the tap's frame whole true, then drawn false animating false
+  International: 10x10 W:W31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50:B1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20, white at the bottom false, whole true; the tap's frame whole true, then drawn false animating false
+  black: 10x10 W:W31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50:B1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20, white at the bottom false, whole true; the tap's frame whole true, then drawn false animating false
+  white: 10x10 W:W31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50:B1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20, white at the bottom true, whole true; the tap's frame whole true, then drawn false animating false
+  black: 10x10 W:W31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50:B1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20, white at the bottom false, whole true; the tap's frame whole true, then drawn false animating false
+  Brazilian, black: 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, white at the bottom false, whole true; the tap's frame whole true, then drawn false animating false
+play: 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, white at the bottom false, whole true; the tap's frame whole true, then drawn false animating true
+the game: computer 0, turned true, as the setup showed true
+home: 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, white at the bottom false, whole true, turned true
