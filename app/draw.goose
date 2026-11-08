@@ -31,6 +31,22 @@ let THEME_BLOCK = """
     };
     """;
 
+// What the board's, the pieces', and the UI's shaders share: a quad's corners as two
+// triangles; a rounded rect's distance at p (center c, half size h, corner radius r);
+// a color taken toward white (a > 0) or black (a < 0); and a color laid over what a
+// pixel has so far, premultiplied, in acc.
+let SHARED_BLOCK = """
+    const vec2 CORNERS[6] = vec2[](vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(1.0, 1.0),
+                                   vec2(0.0, 0.0), vec2(1.0, 1.0), vec2(0.0, 1.0));
+    float box(vec2 p, vec2 c, vec2 h, float r) {
+        vec2 q = abs(p - c) - h + r;
+        return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+    }
+    vec3 tint(vec3 c, float a) { return a > 0.0 ? mix(c, vec3(1.0), a) : mix(c, vec3(0.0), -a); }
+    vec4 acc = vec4(0.0);
+    void over(vec3 c, float a) { acc = vec4(c * a, a) + acc * (1.0 - a); }
+    """;
+
 let FULL_VERT = """
     layout(location = 0) out vec2 v_uv;
     void main() {
@@ -48,10 +64,6 @@ let BOARD_FRAG = """
         uvec4 last; uvec4 target; uvec4 via;
     };
     layout(set = 2, binding = 0) uniform sampler2D photo;
-    float box(vec2 p, vec2 c, vec2 h, float r) {
-        vec2 q = abs(p - c) - h + r;
-        return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
-    }
     bool has(uvec4 m, int n) {
         uint w = n < 32 ? m.x : n < 64 ? m.y : n < 96 ? m.z : m.w;
         return ((w >> uint(n & 31)) & 1u) != 0u;
@@ -64,7 +76,6 @@ let BOARD_FRAG = """
         return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
                    mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
     }
-    vec3 tint(vec3 c, float a) { return a > 0.0 ? mix(c, vec3(1.0), a) : mix(c, vec3(0.0), -a); }
     // A ring of radius r and half width w around a point d pixels away, with a glow
     // that falls off over g pixels.
     vec3 ring(vec3 c, vec3 col, float d, float r, float w, float g, float a) {
@@ -176,8 +187,6 @@ let PIECE_VERT = """
     layout(location = 1) flat out vec4 v_look;
     layout(location = 2) flat out vec4 v_extra;
     layout(location = 3) flat out vec4 v_ring;
-    const vec2 CORNERS[6] = vec2[](vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(1.0, 1.0),
-                                   vec2(0.0, 0.0), vec2(1.0, 1.0), vec2(0.0, 1.0));
     void main() {
         int i = gl_InstanceIndex * 3;
         vec4 at = p[i];
@@ -204,8 +213,6 @@ let PIECE_FRAG = """
     layout(location = 3) flat in vec4 v_ring;     // y: a glow ring tight round it, 0 to 1
     layout(location = 0) out vec4 result;
     layout(set = 3, binding = 1) uniform Clock { vec4 time; };
-    vec4 acc = vec4(0.0);
-    void over(vec3 c, float a) { acc = vec4(c * a, a) + acc * (1.0 - a); }
     float fill(float d, float w) { return clamp(0.5 - d / w, 0.0, 1.0); }
     // The crown: five points over a band, in units where it spans -1..1.
     const vec2 CROWN[7] = vec2[](vec2(-0.72, 0.30), vec2(-0.88, -0.42), vec2(-0.40, 0.02),
@@ -227,7 +234,6 @@ let PIECE_FRAG = """
         float band = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0);
         return min(poly, band);
     }
-    vec3 tint(vec3 c, float a) { return a > 0.0 ? mix(c, vec3(1.0), a) : mix(c, vec3(0.0), -a); }
     // Light toward white, shade toward a deeper tone of the same color, which keeps a
     // cream warm where black would turn it grey.
     vec3 lit(vec3 c, float a) { return a > 0.0 ? mix(c, vec3(1.0), a) : mix(c, c * c * 0.85, -a); }
@@ -344,9 +350,9 @@ struct Drawer {
 
 fn new(kind: i64) -> Drawer {
     let full = embed_shader("vert", FULL_VERT);
-    let board_fs = embed_shader("frag", THEME_BLOCK, BOARD_FRAG);
-    let piece_vs = embed_shader("vert", STACK_BLOCK, PIECE_VERT);
-    let piece_fs = embed_shader("frag", THEME_BLOCK, STACK_BLOCK, PIECE_FRAG);
+    let board_fs = embed_shader("frag", THEME_BLOCK, SHARED_BLOCK, BOARD_FRAG);
+    let piece_vs = embed_shader("vert", SHARED_BLOCK, STACK_BLOCK, PIECE_VERT);
+    let piece_fs = embed_shader("frag", THEME_BLOCK, SHARED_BLOCK, STACK_BLOCK, PIECE_FRAG);
     var d = Drawer {
         full:           full,
         board_pipeline: gfx::pipeline(full, board_fs, gfx::PipelineDesc {}),

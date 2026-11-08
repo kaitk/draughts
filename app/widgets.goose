@@ -21,8 +21,6 @@ let VERT = """
     layout(location = 2) flat out vec4 v_color;
     layout(location = 3) flat out vec4 v_look;
     layout(location = 4) flat out vec4 v_extra;
-    const vec2 CORNERS[6] = vec2[](vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(1.0, 1.0),
-                                   vec2(0.0, 0.0), vec2(1.0, 1.0), vec2(0.0, 1.0));
     void main() {
         int i = gl_InstanceIndex * 4;
         vec4 rect = q[i];
@@ -54,13 +52,7 @@ let FRAG = """
     layout(set = 2, binding = 1) uniform sampler2D atlas;
     layout(set = 2, binding = 2) uniform sampler2D thumbs;   // four seasons, stacked
     layout(set = 3, binding = 1) uniform View { vec4 screen; };
-    vec4 acc = vec4(0.0);
-    void over(vec3 c, float a) { acc = vec4(c * a, a) + acc * (1.0 - a); }
     float cover(float d) { return clamp(0.5 - d, 0.0, 1.0); }
-    float box(vec2 p, vec2 c, vec2 h, float r) {
-        vec2 q = abs(p - c) - h + r;
-        return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
-    }
     // A CSS box-shadow under a rounded rect: offset y, blur, spread, all in pixels.
     float shadow(vec2 p, vec2 c, vec2 h, float r, float y, float blur, float spread) {
         float d = box(p, c + vec2(0.0, y), h + spread, max(r + spread, 0.0));
@@ -314,7 +306,8 @@ struct Widgets {
 
 fn new() -> Widgets {
     var w = Widgets {
-        pipeline: gfx::pipeline(embed_shader("vert", VERT), embed_shader("frag", draw::THEME_BLOCK, FRAG),
+        pipeline: gfx::pipeline(embed_shader("vert", draw::SHARED_BLOCK, VERT),
+                                embed_shader("frag", draw::THEME_BLOCK, draw::SHARED_BLOCK, FRAG),
                                 gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED }),
         quads:  gfx::Buffer { 0 },
         upload: [gui::Quad {}; gui::MAX_QUADS],
