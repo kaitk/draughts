@@ -22,8 +22,11 @@ which would overwrite the main checkout's while another session uses them.
   time a move on the clock, over whole games with simulated time, in `pace`), `shell`
   (home, the switch to the game and back, settings and their file, their taps and the
   board beside them, the transition between home and settings (its frames, its end, a
-  tap during it, turning it round), home's setup and play, the puzzles' picker and a puzzle played through its misses, hint, reply, and stars, a capture tapped stop by stop in a puzzle and no targets in any tier, the saved game of any variant and damaged images of it, the computer's skill
-  moving across games), `strings` (every language file has every key), `ai` (the computer player:
+  tap during it, turning it round), home's setup and play, the puzzles' picker and a
+  puzzle played through its misses, hint, reply, and stars, a capture tapped stop by stop
+  in a puzzle and no targets in any tier, the saved game of any variant and damaged images
+  of it, the computer's skill moving across games, home's X closing the app and where it
+  sits), `strings` (every language file has every key), `ai` (the computer player:
   its search against a plain minimax, the table changing no score, keys, what each level
   plays in known shots, the same move in steps as at once, and that no level hangs a
   piece), and `puzzles` (the puzzle file's format and refusals, what a move does to
@@ -78,6 +81,18 @@ which would overwrite the main checkout's while another session uses them.
 - A run against the computer (`--computer`) that ends moves the computer's skill and
   writes it to `settings.txt`, flags or not: put the skill back after shooting one, on
   the Mac and the tablet (2026-11-08).
+- A window taller than the Mac's screen is shrunk to fit: `--size 800x1280` comes out
+  800 × 1098 here, a shorter portrait. Shoot the tablet's portrait proportions at
+  `--size 600x960` (the same layout at 0.75 scale) and landscape at 960x600.
+- In a working tree, copy `design/backgrounds/masters/*.jpg` from the main checkout
+  (local and ignored) and touch `app/background.c`, or shots show the page color where
+  the photograph should be.
+- Clicks can't be posted to the window from a script: the terminal isn't trusted for
+  accessibility (`AXIsProcessTrusted()` is false), so CGEvent clicks are dropped. To run
+  a UI path in the real app (home's X closing the window, 2026-11-08), build a local
+  copy, never committed, that feeds `gui::begin` a press and a release at the control
+  on chosen frames. A run without flags reads and writes the Mac's `game.bin`: copy it
+  aside first and put it back after.
 - The prototypes' painter (`Paint` in `prototypes/draughts.js`) is a port of the piece
   shader, so a native crop beside the prototype's at the same scale shows a shader
   change exactly (the stacked king was checked that way).

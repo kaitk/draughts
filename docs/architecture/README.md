@@ -97,6 +97,14 @@ fixed-size, laid out as the shaders read it: `board::Piece`, `board::Marks`, the
    Otherwise nothing is drawn, and the next frame waits for input.
 6. While a clock runs, a timer is set for when the time it shows changes.
 
+The loop ends on Escape or when home's X asks the shell to stop (`Shell.quit`). The
+game is then written as at any loop's end; after home's X, on Android the program
+calls `DraughtsActivity.closeApp()` over JNI (`app/launch.c`), which finishes the
+activity with `finishAndRemoveTask()`, so no card is left in recents, before the
+program returns. SDL then finds the activity finishing and leaves it; the next start
+is a fresh process that restores the game. On the Mac the window closes as the program
+returns. Android's back gesture is SDL's: the system puts the app in the background.
+
 ## Rules every part keeps
 
 - **No allocation in the frame loop.** Goose gives this through its data stacks. Per-frame

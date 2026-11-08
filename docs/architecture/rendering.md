@@ -256,7 +256,15 @@ the prototype tried, kept for 3D:
   icon tiles and two other takes): the scene and the 3D board, and one glass column
   with the wordmark, then continue, a friend, the computer with its level, and puzzles
   with stars, then settings, each an icon and a word. In portrait settings is instead
-  a quiet button beside the wordmark, so the sheet leaves the board its room. A friend
+  a quiet button beside the wordmark, so the sheet leaves the board its room. In the
+  screen's top right, 24 dp from both edges, a round glass button 88 dp across with a
+  32 dp X closes the app at once, asking nothing, since the game is kept anyway; on the
+  menu and in a setup, in both orientations (`prototypes/exit.html?take=b`, chosen
+  2026-11-08 over a quiet last row and a door). It is glass under a quiet tile, both
+  going down as a tile does while pressed. In landscape it sits above the photograph,
+  clear of the board (28 dp right of its edge, 8 dp above its top); in portrait, where
+  it would reach the board, the board moves down to 16 dp under it and shrinks to keep
+  24 dp above the sheet (640 to 620 dp on the tablet). A friend
   and the computer open a new game's setup in the same column: back and the title, then
   a row of tiles per choice, lit as in settings, each with its dim name above it: which
   draughts (international 10 × 10, the default, Brazilian 8 × 8, or Russian 8 × 8, each

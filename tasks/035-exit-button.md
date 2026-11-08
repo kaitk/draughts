@@ -1,6 +1,6 @@
 # 035: A way to close the app from home
 
-Status: todo
+Status: in-progress
 
 Home's menu has no way to close the app (found 2026-11-08); on the tablet it takes the
 system's gestures, and on the Mac the window's close button or Escape. Add one control on
@@ -82,16 +82,59 @@ for small hands, beside an 88 dp X; task 030 can bring it up to size.
   launcher and from recents. Android's own back gesture is unchanged: SDL passes it to
   the system, which puts the app in the background.
 
+## Built (2026-11-08): b
+
+The user picked b. `shell/home.goose` declares the X last on home, on the menu and in a
+setup, so the tiles before it keep their order: `gui::round_button`, a glass panel under
+a quiet tile, both going down 4% while pressed as tiles do, with the new line icon
+`gui::CLOSE` (two strokes, 6 to 18 on the 24-unit grid) at 32 dp and 90%. A tap returns
+`home::EXIT`; the shell sets `Shell.quit`, the app's loop breaks as on Escape, writes
+`game.bin` after the loop as before, and then calls `draughts_close()` (`app/launch.c`),
+which on Android calls `DraughtsActivity.closeApp()`, `finishAndRemoveTask()`, from the
+program's thread, as SDL calls `finish()` from there too, so the activity is finishing
+when SDL looks. On the Mac it does nothing and the window closes as `main` returns. The
+X needs no string.
+
+In portrait the board moves to 16 dp under the X and shrinks to keep 24 dp above the
+sheet: 640 to 620 dp on the tablet's proportions, as the prototype. In a setup the
+sheet is taller and the board, 472 dp, already clears it beside (52 dp). In landscape
+the board's top is at least 120 dp down (its size is at most 70% of the 800 dp short
+side), so the X (to 112 dp) always clears it. Settings' transition eases from home's
+new portrait place (128 dp down rather than 66), so the board moves down less.
+
+Re-blessed: `shell.out` (the setups count one more tile; the portrait board at 90, 128,
+620) and `transition.out` (home's three more quads; the portrait transition from the
+new place). `test/shell/exit.goose` is new.
+
+Checked on the Mac: screenshots of home at 1280 × 800, 960 × 600, and 600 × 960, and
+800 × 1280, which the Mac's screen cuts to 800 × 1098, in English and Estonian, and the
+computer's setup in Estonian at 960 × 600 and 600 × 960: the X clear of the board, the
+column, the sheet, and the words in each, in
+`/private/tmp/claude-501/-Users-kaitkasak-projects-personal-draughts/d9f11ac9-ef2c-4a62-bf58-8c3587116c29/scratchpad/exit-built/`
+(`home-<size>-<lang>.png`, `computer-<size>-et.png`, `mac-exit-run1.png`). The X
+closing the window and the game coming back were run through a local copy of the app
+that taps the X on frame 30 (scripted clicks can't reach the window,
+`agents/testing.md`): started from a `game.bin` with a distinctive position, it showed
+that position on home, the window closed with exit code 0, and `game.bin` was written
+again (byte for byte the same, as nothing changed). The write after the loop is the one
+Escape already used; `test/shell/exit.goose` checks that the X sets `Shell.quit` and
+that the image saved then restores the game. The APK
+builds with the JNI call and `closeApp` in it.
+
+Left: the tablet check, in both orientations: exit closes the app with no card left in
+recents; starting it again from the launcher (and, if a card remains, from recents)
+opens the game where it was, in a fresh process, without an error or a blank start.
+
 ## Acceptance criteria
 
 - [x] Takes prototyped (a, b, c above), checked in both orientations and in Estonian
-- [ ] One picked by the user
-- [ ] Built in `shell/home.goose` with a new icon in `gui/` (an X, or the pick's glyph),
+- [x] One picked by the user: b
+- [x] Built in `shell/home.goose` with a new icon in `gui/` (an X, or the pick's glyph),
       88 dp, clear of the board and the menu in both orientations; any text in
-      `strings/en.txt` and `strings/et.txt`
-- [ ] Mac: exit closes the window; the next start opens the game where it was
+      `strings/en.txt` and `strings/et.txt` (none needed)
+- [x] Mac: exit closes the window; the next start opens the game where it was
 - [ ] Android: exit closes the app and removes it from recents; starting it again from
       the launcher opens the game where it was, without an error or a blank start
 - [ ] Clear of the gesture areas and of the board at the phone sizes in task 030
-- [ ] Headless test: tapping exit on home returns `home::EXIT`, in both orientations
-- [ ] Checked on the Mac and on the tablet, in both orientations
+- [x] Headless test: tapping exit on home returns `home::EXIT`, in both orientations
+- [ ] Checked on the Mac and on the tablet, in both orientations (the Mac done)
