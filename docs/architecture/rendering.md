@@ -358,7 +358,8 @@ ends is drawn at rest, and then nothing more.
   plain discs, no crown, as kings are in Estonian play (2026-11-07). Top down, a stack reads as
   a shadow at tablet size, so it's there for those who want it. The stack's upper disc
   sits 1.3% of the board above the lower one, its side as deep, so the lower disc's rim
-  shows under it. The setting applies to the game's board, the winner's piece,
+  shows under it. A selected or must-capture ring goes round the lower disc, the stack's
+  foot, with the upper disc hiding its back (2026-11-08). The setting applies to the game's board, the winner's piece,
   and the preview; home's wordmark keeps its crown.
 - **Native form** (`app/draw.goose`): the blurred photograph, the board's shadow, lip,
   squares, and marks are one full-screen fragment pass, worked out at `gl_FragCoord`

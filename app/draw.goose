@@ -252,6 +252,25 @@ let PIECE_FRAG = """
         if (t <= 0.0 || t >= 1.0) return 0.0;
         return -dy * sin(6.2831853 * t);
     }
+    // Selected: a ring in the glow color a little out from the piece. Must capture: a red
+    // ring that pulses every 1.4 s, or stays at its brightest. Both round the piece's
+    // foot: drawn after its lower disc, so a stacked king's upper disc hides their part
+    // behind it.
+    void rings(float r, float sel, float must, float w) {
+        if (sel > 0.0) {
+            float rd = abs(r - 1.13) - 0.055;
+            over(glow.rgb, sel * 0.6 * exp(-max(rd, 0.0) * 7.0));
+            over(mix(glow.rgb, vec3(1.0), 0.25), sel * fill(rd, w));
+        }
+        if (must > 0.5) {
+            float ph = must > 1.5 ? 0.0 : 0.5 - 0.5 * cos(time.x * 6.2831853 / 1.4);
+            float rr = 1.15 * (0.94 + 0.14 * ph);
+            float op = 0.95 - 0.55 * ph;
+            vec3 red = vec3(1.0, 0.353, 0.29);
+            over(red, op * 0.45 * exp(-abs(r - rr) * 7.0));
+            over(red, op * fill(abs(r - rr) - 0.06, w));
+        }
+    }
     void main() {
         vec2 p = v_local;
         bool black = v_look.x > 0.5;
@@ -312,21 +331,7 @@ let PIECE_FRAG = """
                 col = mix(col, cc, fill(0.56 * crown(f / 0.56), w));
             }
             over(col, fill(r - 1.0, w));
-        }
-        // Selected: a ring in the glow color a little out from the piece.
-        if (sel > 0.0) {
-            float rd = abs(r - 1.13) - 0.055;
-            over(glow.rgb, sel * 0.6 * exp(-max(rd, 0.0) * 7.0));
-            over(mix(glow.rgb, vec3(1.0), 0.25), sel * fill(rd, w));
-        }
-        // Must capture: a red ring that pulses every 1.4 s, or stays at its brightest.
-        if (v_extra.x > 0.5) {
-            float ph = v_extra.x > 1.5 ? 0.0 : 0.5 - 0.5 * cos(time.x * 6.2831853 / 1.4);
-            float rr = 1.15 * (0.94 + 0.14 * ph);
-            float op = 0.95 - 0.55 * ph;
-            vec3 red = vec3(1.0, 0.353, 0.29);
-            over(red, op * 0.45 * exp(-abs(r - rr) * 7.0));
-            over(red, op * fill(abs(r - rr) - 0.06, w));
+            if (k == 0) rings(r, sel, v_extra.x, w);
         }
         result = acc * v_look.w;
     }
