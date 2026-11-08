@@ -154,7 +154,12 @@ square names, not numbers: 47 is c1, 33 f4, 17 c7, 8 e9, and 37 c3.
   Since 2026-11-08 the stops of a capture of many jumps tapped one by one aren't misses
   (each took a star before): the board keeps them, ringed, and plays the capture at its
   last square or once only one capture goes on that way, the same in a game; a tap off
-  every way is still a miss, and so is a different legal capture.
+  every way is still a miss, and so is a different legal capture. Since later that day
+  a puzzle's capture is made by hand: a stop is kept even when only one capture goes on
+  from it, the piece waiting there, so a drop on the first jump no longer finishes the
+  capture and the puzzle by itself; next wakes while it waits, and pressing it leaves
+  the capture partway, a miss. The game keeps finishing a capture once one way is
+  left.
 - **No targets in puzzles** (2026-11-08, the user): no tier shows a selected piece's
   targets, whatever the move hints setting, since the point of a puzzle is that the child
   thinks. Until then tier 1 showed them always and tiers 2 and 3 followed the setting.

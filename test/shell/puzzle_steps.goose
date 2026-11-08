@@ -1,10 +1,15 @@
-// Puzzles and captures of many jumps (shell/puzzle.goose, board::follow): tapped stop
-// by stop, a right capture costs no star, as tapping its last square doesn't. Puzzle
-// 14's king takes three by 33 and 17, ending on 8 or 3; a tap off the way (28) is a
-// miss. Puzzle 10 has two doubles: tapping 29, the first stop of the wrong one, plays it,
-// a miss, and it slides back; 27 then plays the right one. Puzzles never show a selected
-// piece's targets, even with move hints on in settings and in the first tier: puzzle 4's
-// man on 37 is selected with nothing marked, and 28 plays its double.
+// Puzzles and captures of many jumps (shell/puzzle.goose, board::follow): a capture is
+// made by hand. A tap or a drop on a stop leaves the piece waiting there, drawn on it,
+// and never plays the rest of the way; a tap or a drop on the last square plays the
+// capture when one way alone goes there. A right capture made stop by stop costs no
+// star, as one dropped on its last square doesn't. Left partway, it is no move: next,
+// dim until solved, wakes while the piece waits, and pressed then the piece slides back
+// to its square with the red ring on the stop, and a star goes out; next does nothing
+// before. Puzzle 14's king takes three by 33 and 17, ending on 8 or 3; a tap off the
+// way (28) is a miss. Puzzle 10 has two doubles, 38 by 29 to 20 and by 27 to 16; the
+// first ends where it is taken back: a miss, and it slides back. Puzzle 4's man takes two
+// by 28 to 19. Puzzles never show a selected piece's targets, even with move hints on in
+// settings and in the first tier.
 import std;
 import vec;
 import rules from "../../rules";
@@ -30,13 +35,44 @@ fn named(bit: i64) -> u8[>..] { drive::name(rules::VARIANTS[rules::INTERNATIONAL
 
 fn tap(sh: shell::Shell&, g: gui::Gui&, n: i64, now: f64) { drive::tap(sh, g, drive::at(sh.layout, sq(n)), now); }
 
-fn show(sh: shell::Shell&, what: const u8[:], now: f64) {
+// A drag from square number `from` dropped on `to`, frame by frame as a finger makes it.
+fn drag(sh: shell::Shell&, g: gui::Gui&, from: i64, to: i64, now: f64) {
+    let a = drive::at(sh.layout, sq(from));
+    let c = drive::at(sh.layout, sq(to));
+    drive::frame(sh, g, a, true, true, false, now);
+    drive::frame(sh, g, a + (c - a) * 0.5, true, false, false, now + 0.02);
+    drive::frame(sh, g, c, true, false, false, now + 0.04);
+    drive::frame(sh, g, c, false, false, true, now + 0.06);
+    drive::idle(sh, g, now + 0.08);
+}
+
+// Next, the right panel's tile: whether it is drawn awake (not dim) and lit.
+fn next(g: gui::Gui&) -> u8[>..] {
+    let r = drive::rect(g, 3);
+    for q in g.quads {
+        guard q.look.x == gui::BUTTON && q.rect == r else { continue; }
+        return str(if q.color.w == 1.0 { "awake" } else { "dim" }, if q.extra.y == gui::CHOSEN { " lit" } else { "" });
+    }
+    return str("none");
+}
+
+// Where the selected piece is drawn, lifted and glowing: its square.
+fn drawn(sh: shell::Shell&, b: board::Board&) -> u8[>..] {
+    let v .= rules::VARIANTS[b.variant];
+    for p in b.pieces {
+        if p.look.z == 1.0 { return drive::name(v, board::hit(sh.layout, v, float2 { p.at.x, p.at.y })); }
+    }
+    return str("-");
+}
+
+fn show(sh: shell::Shell&, g: gui::Gui&, what: const u8[:], now: f64) {
     let pl .= sh.puzzle;
     let v .= rules::VARIANTS[pl.b.variant];
     let b .= shell::fill(sh, now);
     print(what, ": puzzle ", puzzle::current(pl).id, " tier ", puzzle::current(pl).tier, ", ", STATES[pl.state],
-          ", misses ", pl.misses, ", stars ", puzzle::stars(pl), ", selected ", drive::name(v, b.selected), ", ringed ",
-          drive::marked(v, b.marks.via), "targets ", drive::marked(v, b.marks.target), "wrong ", drive::name(v, b.wrong));
+          ", misses ", pl.misses, ", stars ", puzzle::stars(pl), ", selected ", drive::name(v, b.selected), " drawn on ",
+          drawn(sh, b), ", waits on ", drive::name(v, board::waiting(b)), ", ringed ", drive::marked(v, b.marks.via),
+          "targets ", drive::marked(v, b.marks.target), "wrong ", drive::name(v, b.wrong), ", next ", next(g));
 }
 
 fn main() {
@@ -47,42 +83,77 @@ fn main() {
     var sh = shell::new(rules::INTERNATIONAL);
     sh.prefs.hints = board::MOVES;
 
+    // Tapped stop by stop: the king waits on each stop, and the last solves.
     shell::play_puzzle(sh, 13);
     drive::idle(sh, g, 0.0);
     tap(sh, g, 47, 0.1);
     tap(sh, g, 33, 0.2);
+    show(sh, g, "47, 33", 0.3);
     tap(sh, g, 17, 0.3);
-    show(sh, "47, 33, 17", 0.4);
+    show(sh, g, "then 17", 0.4);
     tap(sh, g, 8, 0.5);
-    show(sh, "then 8", 0.6);
+    print("  the way shown from ", named(sh.puzzle.b.move.path[sh.puzzle.b.skip]), ", landing ",
+          sh.puzzle.b.since + board::duration(sh.puzzle.b.move) - 0.5, " s after the tap");
+    drive::idle(sh, g, 2.0);
+    show(sh, g, "then 8", 2.0);
     print("  ", rules::fen(sh.puzzle.b.pos), ", kept stars ", sh.prefs.stars[14]);
 
-    shell::play_puzzle(sh, 13);
+    shell::play_puzzle(sh, 13, 10.0);
     drive::idle(sh, g, 10.0);
     tap(sh, g, 47, 10.1);
     tap(sh, g, 33, 10.2);
     tap(sh, g, 28, 10.3);
-    show(sh, "again: 47, 33, 28", 10.4);
+    show(sh, g, "again: 47, 33, 28", 10.4);
 
-    shell::play_puzzle(sh, 9);
+    // The first stop of the wrong double waits; its end plays it, a miss. Then the right
+    // one dragged stop by stop solves it.
+    shell::play_puzzle(sh, 9, 20.0);
     drive::idle(sh, g, 20.0);
     tap(sh, g, 38, 20.1);
     tap(sh, g, 29, 20.2);
-    show(sh, "38, then 29", 20.3);
-    print("  playing ", named(sh.puzzle.b.move.from), "x", named(sh.puzzle.b.move.to));
+    show(sh, g, "38, then 29", 20.3);
+    tap(sh, g, 20, 20.3);
+    print("  then 20: ", STATES[sh.puzzle.state], ", playing ", named(sh.puzzle.b.move.from), "x",
+          named(sh.puzzle.b.move.to));
     drive::idle(sh, g, 21.0);
     drive::idle(sh, g, 21.5);
     drive::idle(sh, g, 22.5);
-    show(sh, "  slid back", 22.5);
-    tap(sh, g, 38, 23.0);
-    tap(sh, g, 27, 23.1);
-    show(sh, "38, then 27", 23.2);
-    print("  playing ", named(sh.puzzle.b.move.from), "x", named(sh.puzzle.b.move.to), ", kept stars ", sh.prefs.stars[10]);
+    show(sh, g, "  slid back", 22.5);
+    drag(sh, g, 38, 27, 23.0);
+    show(sh, g, "38 dropped on 27", 23.1);
+    drag(sh, g, 27, 16, 23.2);
+    show(sh, g, "then 27 dropped on 16", 23.3);
+    print("  playing ", named(sh.puzzle.b.move.from), "x", named(sh.puzzle.b.move.to), ", kept stars ",
+          sh.prefs.stars[10]);
 
-    shell::play_puzzle(sh, 3);
+    // Dropped on the capture's last square: one way goes there, so it is played.
+    shell::play_puzzle(sh, 3, 30.0);
     drive::idle(sh, g, 30.0);
     tap(sh, g, 37, 30.1);
-    show(sh, "37 selected, hints on moves in settings", 30.2);
-    tap(sh, g, 28, 30.3);
-    show(sh, "then 28", 30.4);
+    show(sh, g, "37 selected, hints on moves in settings", 30.2);
+    drag(sh, g, 37, 19, 30.3);
+    show(sh, g, "37 dropped on 19", 30.4);
+
+    // Left partway: next before a move does nothing; while the man waits on 28 next
+    // wakes, and pressed it is a miss, the man sliding back to 37.
+    shell::play_puzzle(sh, 3, 40.0);
+    drive::idle(sh, g, 40.0);
+    show(sh, g, "puzzle 4 again", 40.0);
+    drive::tap(sh, g, drive::tile(g, 3), 40.1);
+    show(sh, g, "next, nothing moved", 40.2);
+    drag(sh, g, 37, 28, 40.3);
+    show(sh, g, "37 dropped on 28", 40.4);
+    drive::tap(sh, g, drive::tile(g, 3), 40.5);
+    show(sh, g, "next", 40.6);
+    print("  sliding back ", sh.puzzle.b.moving && sh.puzzle.b.back, ", ", rules::fen(sh.puzzle.b.pos), ", try again ",
+          shell::animating(sh, g, 40.6));
+    drive::idle(sh, g, 41.0);
+    drive::idle(sh, g, 43.0);
+    show(sh, g, "  slid back", 43.0);
+    tap(sh, g, 37, 43.1);
+    tap(sh, g, 28, 43.2);
+    tap(sh, g, 19, 43.3);
+    drive::idle(sh, g, 45.0);
+    show(sh, g, "37, 28, 19", 45.0);
+    print("  kept stars ", sh.prefs.stars[4]);
 }

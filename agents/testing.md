@@ -14,7 +14,8 @@ which would overwrite the main checkout's while another session uses them.
   printing what a reader can check by eye (positions as FEN, moves sorted, how many
   pieces each takes). A test explains in a comment what rule it shows and why the
   position shows it. Areas so far: `rules`, `board` (taps, hints, and a capture tapped
-  stop by stop through the board package), `gui`, `game` (the game screen driven through
+  stop by stop through the board package, as a game does and by hand as a puzzle
+  does), `gui`, `game` (the game screen driven through
   the pointer: take back, start over, home and settings, presses kept apart, the
   celebration and its moments to the still frame (`win`), a clocked game with its
   frames, pause, and flag, the turned board; the computer's turn, answered at once with
@@ -28,7 +29,9 @@ which would overwrite the main checkout's while another session uses them.
   home's setup and play, the setup's board (each
   draughts' start, turned for black, the game in progress back on the menu, the game play
   starts, `setup`), the puzzles' picker and a puzzle played through its misses, hint,
-  reply, and stars, a capture tapped stop by stop in a puzzle and no targets in any tier,
+  reply, and stars, a capture made by hand in a puzzle (tapped and dragged stop by stop,
+  dropped on its last square, left partway and next pressed: a miss) and no targets in
+  any tier,
   the saved game of any variant and damaged images of it, the computer's skill moving
   across games, home's X closing the app and where it sits, Android's back and Escape
   on each screen against its own back tile (`back`), and every screen at a

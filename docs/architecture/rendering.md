@@ -486,7 +486,9 @@ the prototype tried, kept for 3D:
   home's place; on the right the goal's icon in the glow color over its words
   ("Capture 2", "Become a king", "Stay safe"), the three stars at stake, 44 px, and at
   the bottom next, the tall tile, at 35% and taking no tap until the puzzle is solved,
-  then lit as a chosen tile. There is no hint tile, as in a game. A wrong move plays,
+  then lit as a chosen tile. While a piece waits partway through a capture, next is at
+  full strength, unlit, and pressed then it is a miss: the capture is left unfinished,
+  which is no move, and the piece slides back from its stop as a wrong move does. There is no hint tile, as in a game. A wrong move plays,
   then 0.35 s after it lands slides back along its way, the pieces it took fading back
   in, while its square flashes the red ring over a ghost of the piece fading from 80%;
   the goal gives way for 2 s to "try again" in a pill of the forced-capture red at 16%,
@@ -600,7 +602,13 @@ is touching a piece that can't move because another must capture. A capture of m
 jumps is tapped by its last square or stop by stop (`board::follow`): a tap on the next
 stop of the selected piece's captures rings it, whatever the hints, and narrows the
 targets shown to the ways through it; once only one capture goes on that way it is
-played, and a tap off every way is wrong and forgets the stops. A piece that must
+played, and a tap off every way is wrong and forgets the stops. In a puzzle a capture
+is made by hand (`Board.by_hand`, 2026-11-08): a tap or a drop on a stop leaves the
+piece there, lifted and selected, the pieces it jumped still on the board as the rules
+leave them until the capture ends, and never plays the rest; the piece is pressed or
+dragged on from that stop, and the move, once its last stop is reached, is shown from
+there. A last square is played when the capture ends just after the stops or one
+capture alone goes there; one several captures reach waits for the stops. A piece that must
 capture pulses a red ring
   `#ff5a4a` with a soft red glow every 1.4 s, in every theme. The last move's squares are
   tinted with the glow color at 16%.

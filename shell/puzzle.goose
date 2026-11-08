@@ -7,7 +7,11 @@
 // after a short pause; a wrong one plays, then slides back by itself, its square
 // flashing the red ring over a fading ghost of the piece, while the goal gives way to
 // "try again" for a moment and a star goes out. A tap that isn't a move, which the board
-// flashes as a mistake, is a miss too. After two misses the piece to move glows. Solved,
+// flashes as a mistake, is a miss too. A capture of many jumps is made by hand: a tap or
+// a drop on a stop leaves the piece waiting there for the next jump, and next wakes;
+// pressed then, it leaves the capture unfinished, no move under the rules, so the piece
+// slides back as a wrong move does and it is a miss. After two misses the piece to move
+// glows. Solved,
 // the goal says so, the stars won pop in, and next lights; nothing covers the board.
 // A star stays at the least, so a puzzle solved is one, two, or three stars.
 namespace puzzle;
@@ -61,6 +65,7 @@ struct Play {
 fn new() -> Play {
     var pl = Play { b: board::new(rules::INTERNATIONAL), s: puzzles::Solver { moves: [], stack: [] }, path: [], .. };
     pl.b.hints = board::MISTAKES;
+    pl.b.by_hand = true;
     return pl;
 }
 
@@ -138,7 +143,7 @@ fn judge(pl: Play&, history: i64, wrong_at: f64, now: f64) {
         let m = b.move;
         played(pl, m);
         let what = puzzles::judge(pl.s, b.before, puzzles::short(m), pl.left);
-        pl.at = now + board::duration(m);
+        pl.at = b.since + board::duration(m);
         if what == puzzles::SOLVED {
             pl.won = stars(pl);
             pl.state = SOLVED;
@@ -208,6 +213,11 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: game::Overla
     }
     if ask == RESTART_ASK {
         restart(pl);
+        go = STAY;
+    }
+    if ask == NEXT && pl.state != SOLVED {
+        // A capture left partway: the piece slides back, and it is a miss.
+        if board::abandon(b, now) { missed(pl, now); }
         go = STAY;
     }
     if !g.took && ready(pl) && b.pos.side == side {
@@ -307,8 +317,10 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
 }
 
 // Declares the panels: the left one as the game's with the puzzles for home; on the right
-// the goal, the stars, and next, a tall tile in landscape, a wide one in portrait.
-// Returns PUZZLES, SETTINGS, NEXT, RESTART_ASK, or STAY.
+// the goal, the stars, and next, a tall tile in landscape, a wide one in portrait. Next
+// is lit once the puzzle is solved; before, it is dim and takes no tap, but while a piece
+// waits partway through a capture it wakes, unlit, to say the move is done, which a
+// capture left partway isn't. Returns PUZZLES, SETTINGS, NEXT, RESTART_ASK, or STAY.
 fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64) -> i64 {
     let u = g.scale;
     let landscape = l.left.z < l.left.w;
@@ -322,6 +334,7 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64) -> i64 {
     var right = panel::play_area(g, l);
     let solved = pl.state == SOLVED;
     let style = if solved { gui::CHOSEN } else { gui::PLAIN };
+    let on = solved || (pl.state == PLAYING && board::waiting(pl.b) >= 0);
     let word = strings::get(strings::PUZZLE_NEXT);
     if landscape {
         let next = gui::cut_bottom(right, panel::tall(l, u));
@@ -332,7 +345,7 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64) -> i64 {
         // Smaller where the panel is narrowed near square.
         let most = (right.z / u - 2.0 * 8.0) / STAKE;
         stake(pl, g, gui::cut_top(right, 56.0 * u), min(if solved { 56.0 } else { 44.0 }, most), 8.0, now);
-        if gui::labelled(g, 114, next, gui::NEXT, 48.0, word, gui::HEADING, gui::STACKED, style, solved) { ask = NEXT; }
+        if gui::labelled(g, 114, next, gui::NEXT, 48.0, word, gui::HEADING, gui::STACKED, style, on) { ask = NEXT; }
         return ask;
     }
     // Portrait: the goal at the left of the row and the stars at its right, over next.
@@ -344,7 +357,7 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64) -> i64 {
     goal(pl, g, top, 48.0, false, now);
     stake(pl, g, stars_at, if solved { 48.0 } else { 40.0 }, 6.0, now);
     if gui::labelled(g, 114, gui::cut_top(right, panel::WIDE_H * u), gui::NEXT, 36.0, word, gui::HEADING, gui::MIDDLE,
-                     style, solved) {
+                     style, on) {
         ask = NEXT;
     }
     return ask;

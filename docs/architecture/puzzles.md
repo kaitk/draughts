@@ -79,18 +79,31 @@ game, so a game in progress is kept. Their look is in
 [rendering](rendering.md#controls).
 
 - **Stars**: three are at stake. Each miss puts one out, down to one: a wrong move, which
-  plays and then slides back by itself, or a tap the board flashes as a mistake. The
-  stops of a capture of many jumps tapped one by one aren't misses: the board keeps
-  them until the capture is played ([rendering](rendering.md#board-and-pieces)), and
-  the capture is judged. A puzzle solved keeps the most stars it has won. Start over
-  begins the puzzle again with the misses kept, or afresh once it is solved.
+  plays and then slides back by itself, a tap the board flashes as a mistake, or a
+  capture left partway (below). A puzzle solved keeps the most stars it has won. Start
+  over begins the puzzle again with the misses kept, or afresh once it is solved.
+- **Captures of many jumps** are made by hand (2026-11-08, the user: children often
+  make them jump by jump). A tap or a drop on a stop leaves the piece waiting there for
+  the next jump; it never plays the rest of the way by itself, which would solve the
+  puzzle for the child. A tap or a drop on the last square plays the capture when one
+  capture alone goes there (or it ends just after the stops made), so the capture can
+  still be made in one go. Stops aren't misses; the capture is judged once played
+  ([rendering](rendering.md#board-and-pieces)). A capture must take every piece it can,
+  so one left partway is no move: while the piece waits, next wakes (unlit), and
+  pressed it is a miss, the piece sliding back from its stop with the red ring and "try
+  again", as after a wrong move. Next is the one way to say a move is done, so it is
+  where stopping short is caught; leaving for the puzzles, settings, or start over
+  isn't an answer and costs nothing. A game keeps its quicker way: a stop that only one
+  capture goes on through plays it whole, since nothing there is judged.
 - **Help**: after two misses the piece of the next right move glows; there is no hint
   tile. No tier shows a selected piece's targets, whatever the move hints setting: the
   child is to find the move ([product](../product.md), 2026-11-08). The selection, the
   glow, and a wrong move's flash still show.
 - **Tiers**: the first is open; each other opens once half the one before it is solved.
   The picker lights the first puzzle without stars in an open tier.
-- **Next** opens the puzzle after it in the file, and after the last the picker.
+- **Next** opens the puzzle after it in the file, and after the last the picker. Until
+  the puzzle is solved it is dim and takes no tap, except while a capture waits
+  partway, above.
 - **Kept**: the stars in `settings.txt`, `stars = 1:3 4:2` by puzzle id, written when a
   puzzle is solved. A puzzle under way isn't saved with the game: when the app is
   paused on one, it comes back on the picker.

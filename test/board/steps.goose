@@ -5,6 +5,10 @@
 // way is a mistake and forgets the stops; selecting the piece again does too, and a drag
 // dropped on a stop keeps it. The king of puzzle 14 (W:W46,K47:B5,12,22,38) takes 38, 22,
 // and 12 by 33 and 17, ending on 8 or 3; a man of puzzle 4 takes two by 28 alone.
+// Made by hand (`by_hand`, a puzzle's), a stop waits even when one way goes on from it,
+// and a last square two captures reach (W:WK9:B18,28,29,32, the king to 15 by 22 and 33
+// or by 27 and 38, taking 28 or 32) plays neither, nor is it a mistake: the piece stays
+// selected for its stops. In a game the first of the two is played.
 import std;
 import vec;
 import rules from "../../rules";
@@ -86,4 +90,35 @@ fn main() {
     tap(b, l, 28, 0.1);
     show(b, l, "37, then 28", 0.1);
     print("  to ", named(b.move.to), ", taking ", popcount(b.move.captured));
+
+    // By hand: 28 waits, and the man is drawn there; 19 then plays the rest.
+    board::set(b, man);
+    b.by_hand = true;
+    tap(b, l, 37, 1.0);
+    tap(b, l, 28, 1.1);
+    show(b, l, "by hand, 37, then 28", 1.1);
+    tap(b, l, 19, 1.2);
+    show(b, l, "then 19", 1.2);
+    print("  to ", named(b.move.to), ", taking ", popcount(b.move.captured), ", shown from ", named(b.move.path[b.skip]));
+
+    // Two captures end on 15: by hand, a tap there waits for the stops; 27, 38, 15 then
+    // plays the way by 27. In a game, the tap on 15 plays the first.
+    let two, ok3 = rules::parse_fen("W:WK9:B18,28,29,32", rules::INTERNATIONAL);
+    assert(ok3);
+    board::set(b, two);
+    tap(b, l, 9, 2.0);
+    tap(b, l, 15, 2.1);
+    show(b, l, "by hand, two ways: 9, then 15", 2.1);
+    tap(b, l, 27, 2.2);
+    tap(b, l, 38, 2.3);
+    show(b, l, "then 27, 38", 2.3);
+    tap(b, l, 15, 2.4);
+    show(b, l, "then 15", 2.4);
+    print("  by ", named(b.move.path[1]), ", taking ", popcount(b.move.captured));
+    board::set(b, two);
+    b.by_hand = false;
+    tap(b, l, 9, 3.0);
+    tap(b, l, 15, 3.1);
+    show(b, l, "in a game: 9, then 15", 3.1);
+    print("  by ", named(b.move.path[1]));
 }
