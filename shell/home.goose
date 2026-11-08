@@ -14,7 +14,8 @@
 // A bare X in the screen's top right, with no disc until pressed, closes the app, at
 // once: the game is kept in any case. In portrait the board moves down and shrinks to clear it.
 //
-// On the menu, the player's chip, their badge and name bare as the X is, opens who's
+// On the menu, the player's chip, their badge bare as the X is and their name on a small
+// glass pill (prototypes/chip.html, take d, so it reads on any photograph), opens who's
 // playing (who.goose): it mirrors the X, at the top left of the board's side of the
 // screen (the whole width in portrait, right of the column in landscape), so it is never
 // on the column (player_spot).
@@ -54,7 +55,11 @@ let CORNER = 88.0;          // the way out, round, in the top right,
 let EDGE = 24.0;            // this far from both edges,
 let CROSS = 34.0;           // its X, bare (clear until pressed)
 let CHIP_FACE = 64.0;       // the player's chip: their badge in an 88 dp tap, the name
-let CHIP_PAD = 24.0;        // beside it in the row labels' face, the tap this past its end
+let CHIP_GAP = 12.0;        // beside it in the row labels' face, this past the badge's 88 dp, on a glass pill
+let CHIP_PILL = 16.0;       // the pill's room either side of the name (prototypes/chip.html?take=d),
+let CHIP_PILL_H = 49.0;     // its height (the face's 30 dp, 9 above and 10 below),
+let CHIP_RADIUS = 22.0;     // its corners,
+let CHIP_PAD = 40.0;        // and the tap's end, this past the name's
 
 // The setup's parts, in dp.
 let HEAD_H = 88.0;          // back and the title
@@ -242,11 +247,11 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
 }
 
 // How wide the player's chip is: round, 88 dp, without a name (or `named` false); with
-// one, the badge's 88 dp, the name, and CHIP_PAD.
+// one, the badge's 88 dp, CHIP_GAP, the name, and CHIP_PAD (the pill ends 16 dp past the name).
 fn chip_width(g: gui::Gui&, s: settings::Settings&, named: bool = true) -> f32 {
     let u = g.scale;
     guard named && s.name.len > 0 else { return CORNER * u; }
-    return (CORNER + CHIP_PAD) * u + gui::text_width(g, gui::LABEL, s.name[..]);
+    return (CORNER + CHIP_GAP + CHIP_PAD) * u + gui::text_width(g, gui::LABEL, s.name[..]);
 }
 
 // Where a board in the way out's row must start, from the left of the board's side of
@@ -276,16 +281,26 @@ fn player_spot(g: gui::Gui&, area: float4, side: f32, b: float4, way: float4, s:
     return r;
 }
 
-// The player's chip in r, bare as the way out: their badge in its first 88 dp and their
-// name beside it, nothing round them until pressed. True when it is tapped.
+// The player's chip in r: their badge in its first 88 dp, bare as the way out, and their
+// name beside it on a glass pill hugging it; no name, no pill. The tap covers both, and
+// pressed it lights as the X's does. True when it is tapped.
 fn player_chip(g: gui::Gui&, r: float4, s: settings::Settings&) -> bool {
     let u = g.scale;
+    let named = r.z > CORNER * u + 0.5;
+    if named {
+        let w = gui::text_width(g, gui::LABEL, s.name[..]) + 2.0 * CHIP_PILL * u;
+        let pill = gui::center(float4 { r.x + (CORNER + CHIP_GAP - CHIP_PILL) * u, r.y, w, r.w }, w, CHIP_PILL_H * u);
+        gui::glass(g, pill, CHIP_RADIUS);
+    }
     let clicked, p = gui::bare(g, 308, r);
     let k = 1.0 - 0.04 * p;
     var c = r;
     let f = CHIP_FACE * u * k;
     gui::face(g, gui::center(gui::cut_left(c, CORNER * u), f, f), s.picture, 1.0, false);
-    if r.z > CORNER * u + 0.5 { gui::text(g, gui::LABEL, c, s.name[..], 1.0, 0.0, gui::LEFT); }
+    if named {
+        gui::cut_left(c, CHIP_GAP * u);
+        gui::text(g, gui::LABEL, c, s.name[..], 1.0, 0.0, gui::LEFT);
+    }
     return clicked;
 }
 

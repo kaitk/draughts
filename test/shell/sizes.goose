@@ -122,6 +122,14 @@ fn chip(g: gui::Gui&, sh: shell::Shell&) {
         if abs(c.y - way.y) > 0.5 { wrong.append(" not level with the X;"); }
         if abs(c.x - side - inset) > 0.5 { wrong.append(" not mirroring the X;"); }
         if b.z > 0.0 && b.x + 0.5 < side { wrong.append(" the board not on its side;"); }
+        // The name's glass pill: inside the chip's tap, none without a name.
+        var pills = 0;
+        for q in g.quads {
+            guard q.look.x == gui::GLASS && q.rect.z < c.z else { continue; }
+            pills++;
+            if q.rect.x < c.x || q.rect.x + q.rect.z > c.x + c.z { wrong.append(" the pill outside the chip;"); }
+        }
+        if pills != (if named { 1 } else { 0 }) { wrong.append(" the pill wrong;"); }
         line.append(if wrong.len > 0 { ";" } else { ", mirroring the X on the board's side, off the column and the board" });
         line.append(wrong);
         print(line);

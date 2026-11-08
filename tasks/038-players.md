@@ -197,6 +197,18 @@ Changed while building (2026-11-09):
   it is level with the X, as far from the board's side's left as the X from the right,
   and off the column, the X, and the board.
 
+- **The name on a glass pill (the user, 2026-11-09, take d of
+  `prototypes/chip.html`, after the bare name was hard to read on bright
+  photographs):** the badge stays bare; the name sits on a small glass pill
+  (`gui::glass`, the theme's own panel, no new shader): 22 dp corners, 16 dp either side
+  of the name, 49 dp tall (the 30 dp face, 9 above and 10 below), the name 12 dp past the
+  badge's 88 dp. The tap and its press look are as before, over badge and pill, and end
+  40 dp past the name (the pill ends 16 dp past it), so a named chip is 28 dp wider than
+  before (a twelve-character name in the tests' faces: 320 dp, was 292). No name, no pill.
+  The board's clearance and the fall back to the badge alone use `chip_width`, so they
+  follow the width; no tested size changed its fallback or its board. `test/shell/sizes`
+  also checks the pill is one glass inside the chip with a name, none without.
+
   The room kept above the board for the first place is given back. Board sizes in dp,
   before (the chip above the board) and after, from `test/shell/sizes` and the shell
   tests:

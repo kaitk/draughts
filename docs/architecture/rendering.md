@@ -525,8 +525,11 @@ the prototype tried, kept for 3D:
 - **Players** (`prototypes/profiles.html`, take a, chosen 2026-11-09; what a player
   holds and the files: [players](README.md#players)). On home's menu the player's chip
   opens who's playing: their badge (64 dp, centred in the first 88 dp) and their name
-  beside it in the row labels' 30 dp face, bare as the X and the gear are, with no disc
-  or glass; pressed, the tap lights as the X's does (white at 10% and a faint 1 px ring,
+  beside it in the row labels' 30 dp face on a small glass pill (`gui::glass`, 22 dp
+  corners, 16 dp either side of the name, 49 dp tall, the name 12 dp past the badge's
+  88 dp; the user, 2026-11-09, `prototypes/chip.html?take=d`, so the name reads on a
+  bright photograph), the badge bare as the X and the gear are; no name, no pill; the tap
+  ends 40 dp past the name and covers both; pressed, the tap lights as the X's does (white at 10% and a faint 1 px ring,
   a pill round badge and name, 88 dp tall; `gui::bare`). It mirrors the X (the user,
   2026-11-09, after the tablet): 24 dp from the top and from the left of the board's
   side of the screen, the safe area's left in portrait, the column's right edge in
