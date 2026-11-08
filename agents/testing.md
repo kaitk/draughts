@@ -101,9 +101,10 @@ which would overwrite the main checkout's while another session uses them.
   `450x1000`, the foldable's 1768 × 2208 as `868x1084`; 9:16 fits as `540x960`. Check
   the PNG with `sips -g pixelWidth -g pixelHeight`. The full table, and where the survey
   script is, are in task 030's "Survey".
-- The layout depends only on the proportions (the shorter side is 800 dp), so a phone
-  shot shows the tablet's layout in dp; how small it is on the hand is arithmetic from
-  the device's size, not something a screenshot shows (task 030, "Survey").
+- The layout depends only on the proportions (the shorter side is 800 dp, or `--dp N`),
+  so a phone shot shows the tablet's layout in dp; how small it is on the hand is
+  arithmetic from the device's size, not something a screenshot shows (task 030,
+  "Survey" and "Phone scale prototype").
 - In a working tree, copy `design/backgrounds/masters/*.jpg` from the main checkout
   (local and ignored) and touch `app/background.c`, or shots show the page color where
   the photograph should be.

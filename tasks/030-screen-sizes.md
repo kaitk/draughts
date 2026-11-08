@@ -163,6 +163,97 @@ opening the window resizable too (`docs/development.md`); both orientations then
 home and a clocked game. Home 4 s after a cold start: PSS 289 MB, of it 244 MB graphics
 (172 GL, 73 EGL), against the tablet's 261 to 263 MB.
 
+## Phone scale prototype (2026-11-08)
+
+The user chose to go partway toward the tablet's physical size on phones, prototyped
+first: `scale = max(short side / 800, f × density)`, density from SDL's display content
+scale (Android's density / 160: the Pixel 2.625, the tablet 1.5, so any f up to 1 leaves
+the tablet as it is). The development flag `--dp N` (`gui::scale_of`, now the one place
+the scale is computed: the app, `panel::layout`, and the tests' helpers) makes the
+shorter side N dp instead of 800, so a candidate can be shot on the Mac now and tried on
+the phone later (`--es args "'--dp 540'"`).
+
+Every screen of the survey at the Pixel 7a's proportions in both orientations, English
+and Estonian, at five short sides (200 shots, portrait as `--size 450x1000`, landscape at
+the real 2400 × 1080), with contact sheets, and for home, the game, and the computer's
+setup a sheet of the tablet beside the Pixel at each candidate at one mm a pixel, in
+`/private/tmp/claude-501/-Users-kaitkasak-projects-personal-draughts/babe58e8-1877-410c-bc48-f7f8f48b403f/scratchpad/phone-scale/`
+(`compare/`, `contact/`, `shots/`; `shoot.sh` and `sheets.py` make them).
+
+On the Pixel 7a (6.1", 63.6 mm across), portrait; the tablet for reference:
+
+| Short side | f | 1 dp | 88 dp tap | Label (30 dp) | Note (17 dp) | Square 8 × 8 | 10 × 10 | A 360 dp phone gets |
+|---|---|---|---|---|---|---|---|---|
+| 800 (today) | 0.51 | 0.080 mm | 7.0 mm | 2.4 mm | 1.4 mm | 7.3 mm | 5.8 mm | 800 dp |
+| 600 | 0.69 | 0.106 | 9.3 | 3.2 | 1.8 | 7.2 | 5.7 | 525 |
+| 540 | 0.76 | 0.118 | 10.4 | 3.5 | 2.0 | 7.1 | 5.7 | 472 |
+| 480 | 0.86 | 0.132 | 11.7 | 4.0 | 2.3 | 7.0 | 5.6 | 420 |
+| 411 | 1.00 | 0.155 | 13.6 | 4.6 | 2.6 | 6.9 | 5.5 | 360 |
+| Tablet, 800 | | 0.185 | 16.3 | 5.6 | 3.1 | 17.0 | 13.6 | |
+
+The scale grows the controls and the words, not the board: in portrait the board is the
+width less 2 × 24 dp whatever the scale, so its squares stay at 7 mm (8 × 8) and under 6
+mm (10 × 10), a little smaller as the margins grow. The same holds for what is sized
+from the width: the puzzles' portrait tiles get physically smaller (9.7 mm today, 8.7,
+8.2, 7.7, 7.0). Any f also sets the floor every layout must work at: a 360 dp phone gets
+360 / f dp across.
+
+What breaks, worst first (both languages unless named; today's 800 has none of it):
+
+1. **The computer's setup, landscape: back, the title, and Play off the screen** at every
+   candidate. Its column is 664 dp tall, centered in the height less 96: at 600 back and
+   Play are cut about 32 dp each, from 540 down they are gone (62, 92, 127 dp off each
+   end). The friend's (444 dp) fits down to 480, cut 16 dp each end at 411.
+   `shell/home.goose`, `frame` (`content_height`, the landscape `center`).
+2. **Settings, landscape: the look group runs off the bottom** at every candidate (600
+   the kings' row, 480 all its rows; at 411 it lies over the game group). The choices are
+   capped at 55% of a page with half its width unused. `shell/settings.goose`, `frame`;
+   the same as the survey's (2), now much worse.
+3. **The game's and a puzzle's top bar, portrait: words spill out of their tiles.** The
+   three tiles are `(N − 120) / 3` dp, 160, 140, 120, 97 (227 today): "Alusta uuesti"
+   from 600, "Start over" from 540, "Settings" and "Ülesanded" from 480, all three run
+   into each other at 411. `game/panel.goose`, `leave`; `gui::labelled` (`MIDDLE`), the
+   survey's (6).
+4. **Home, landscape: the menu is cut.** 550 dp tall: fits at 600 (into the margins),
+   touches the edges at 540, the wordmark and Settings row cut 35 dp each end at 480 and
+   gone at 411. `shell/home.goose`, `frame` and `content_height`.
+5. **The puzzles' tiles under 88 dp, and their stars spill.** Portrait `(N − 188) / 5`:
+   82, 70, 58, 45 dp; landscape `(2.22 N − 390) / 10`: 94, 81, 68, 52. The three stars
+   (70 dp portrait, 58 landscape) touch the tile's edges at 540 and spill over from 480
+   (portrait) and at 411 (landscape). `shell/picker.goose`, `frame` and `tile`.
+6. **Settings, portrait: the title row and, at 411, the preview.** The title runs under
+   the language glass from 480 ("Seaded" and "Settings"); at 411 the groups take the
+   whole height, the preview board is gone (its size negative) with the kings' pieces on
+   their tiles, and "crown flat, stack raised" and "Learn the moves" spill out of tiles
+   capped at the group's width. `shell/settings.goose`, `head`, `frame`, `lay`.
+7. **The win card hides the winning piece.** 356 × 300 dp on a portrait board of 552, 492,
+   432, 363 dp: 64% to 98% of its width, the piece beside it covered from 600 on (beside
+   it today); landscape alike. `game/game.goose`, `celebrate`; the survey's (7).
+8. **Previews shrink to thumbnails.** The computer's setup in portrait keeps its 728 dp
+   sheet: the board is 453, 320, 187, 105 dp (48, 38, 25, 16 mm; 51 mm today). Home's
+   portrait board holds its 51 mm to 480 and drops to 253 dp (39 mm) at 411.
+9. **At 411 only:** home's wordmark "Draughts" runs into the gear (229 dp of room);
+   home's X sits over the board's corner in landscape (home and both setups: the board is
+   0.7 of the height, its top 61 dp down); a puzzle's stars touch Next in landscape.
+10. **Still under 88 dp** at every candidate, as today in dp but now larger in mm: the
+    setups' tiles 76 dp (8.9 mm at 540), the game's panel tiles 72, settings' 56 to 72.
+
+Fine at every candidate in both languages: the game and a puzzle in landscape (the board
+552 to 353 dp between full panels), the clocks in both orientations, the friend's setup
+down to 480, home's portrait menu, and the goal and stars of a puzzle in portrait.
+
+**Recommendation: f = 0.75** (the Pixel about 550 dp across, a 360 dp phone 480). An 88
+dp tap is then 10.2 mm on the Pixel and about 10.5 on any phone (0.75 of Android's
+nominal 0.159 mm dp), about a child's fingertip and well over Android's 48 dp (7.6 mm);
+the label's face is 3.5 mm and the smallest notes 2.0 mm, readable without strain. Going further buys nothing where it
+matters most, the board, which the phone's width fixes, and at f = 1 every layout would
+have to work at 360 dp, where home, settings, and the game's bar break outright. Going
+less (0.69) leaves taps at 9.3 mm and still asks for most of the same layout work, since
+small phones would reach 525 dp. So: design for a short side down to 480 dp, which the
+list above makes concrete (1, 2, 4 need a phone landscape arrangement; 3, 5, 6, 7 fixes
+that also help the near-square tablets), then switch the scale to
+`max(short / 800, 0.75 × density)` and check it on the Pixel.
+
 ## Acceptance criteria
 
 - [x] A survey of every screen at each size above, with what broke (screenshots local)
