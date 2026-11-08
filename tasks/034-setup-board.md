@@ -1,6 +1,6 @@
 # 034: The setup's board shows the game being set up
 
-Status: in-progress (built and checked on the Mac; the tablet check is open)
+Status: done
 
 Found by the user on 2026-11-08. In home's setups (a friend, the computer), the board
 beside the choices is the game in progress or the last one played
@@ -54,8 +54,26 @@ choices change. Back to the menu shows the game in progress again, as now.
 - The Mac, 960 × 600 and 600 × 960: both setups with each draughts, and black against
   the computer on International and Russian, the board as chosen; the menu with a
   Russian game a move in. `settings.txt` unchanged after the runs.
-- Open: the tablet, both orientations. The shell holds one more `board::Board` (about
-  55 KB, by its fields), now four; check the app starts and runs as before there.
+- The tablet (2026-11-08), with the APK built from `6b20e66`, in 1920 × 1200 and
+  1200 × 1920. The setups were opened with `--screen friend|computer --variant V`, and
+  `--computer white` put the child on black. Each draughts showed its own start, on
+  10 × 10 or 8 × 8, and black turned the board on International and Russian.
+  - Matching the Mac's shots (`magick compare`, 6% fuzz): every landscape shot and every
+    computer portrait shot differs only in about 880 px (landscape) or 575 px
+    (portrait), which is the X. The Mac's shots were made before the X.
+  - The friend's setup in portrait differs by about 10%. Its board sits lower and
+    smaller, 16 dp under the X, as task 035 lays it out. The same two shots from a Mac
+    build of HEAD at 600 × 960 match the tablet's exactly (0 px).
+- The app starts and runs as before with four boards in the shell.
+  - Freshly started on home: PSS 267 MB, native heap 40.8 MB, graphics 189 MB.
+  - `scripts/lifecycle_memory.sh 3` on puzzle 21: 314 MB before the first cycle, then
+    277 to 278 MB, with native heap 28.0 to 28.6 MB and graphics 211 MB. That is one
+    process, flat, with no errors; task 007 had 268 to 272, 27.6 to 28, and 211 to 215.
+  - `scripts/idle_cpu.sh 60` on home in landscape: the program thread used 0.03 s
+    (0.05% of a core) with 60 voluntary switches, and the process 1.17 s.
+
+Screenshots, out of git:
+`/private/tmp/claude-501/-Users-kaitkasak-projects-personal-draughts/d9f11ac9-ef2c-4a62-bf58-8c3587116c29/scratchpad/tabletround/setup/`.
 
 ## Acceptance criteria
 
@@ -63,5 +81,4 @@ choices change. Back to the menu shows the game in progress again, as now.
       orientations
 - [x] Black against the computer turns the board; white turns it back
 - [x] Back to the menu shows the game in progress; play starts the game shown
-- [ ] Headless test of the above; checked on the Mac and the tablet (headless test and
-      the Mac done; the tablet open)
+- [x] Headless test of the above; checked on the Mac and the tablet

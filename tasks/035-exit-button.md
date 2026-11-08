@@ -1,6 +1,6 @@
 # 035: A way to close the app from home
 
-Status: in-progress
+Status: in-progress (the tablet checked; the phone sizes of task 030 are open)
 
 Home's menu has no way to close the app (found 2026-11-08); on the tablet it takes the
 system's gestures, and on the Mac the window's close button or Escape. Add one control on
@@ -121,9 +121,38 @@ Escape already used; `test/shell/exit.goose` checks that the X sets `Shell.quit`
 that the image saved then restores the game. The APK
 builds with the JNI call and `closeApp` in it.
 
-Left: the tablet check, in both orientations: exit closes the app with no card left in
-recents; starting it again from the launcher (and, if a card remains, from recents)
-opens the game where it was, in a fresh process, without an error or a blank start.
+## On the tablet (2026-11-08)
+
+This used the APK built from `6b20e66`, run without flags, so `game.bin` was read and
+written. The app's data was saved first through a debuggable copy and `run-as`. It held
+only `settings.txt`, which came through byte for byte the same, and the `game.bin` the
+check made was then removed.
+
+- **Where the X sits.** On home, in both orientations, and in both setups, the X is clear
+  of everything (`exit-*.png`):
+  - Landscape (1920 × 1200): the X is a 132 px (88 dp) circle centred near (1818, 101).
+    Its left edge is about 44 px (29 dp) right of the board's right edge, and its bottom
+    about 15 px above the board's top.
+  - Portrait (1200 × 1920): the board starts about 26 px (17 dp) under the X and is
+    930 px (620 dp) wide.
+  - The computer's setup in portrait: the X sits beside the board, about 51 dp right of
+    it.
+- **A tap closes the app.** Its card leaves recents: before the tap, `dumpsys activity
+  recents` listed Draughts as Recent #0, and two seconds after it the launcher. The
+  screen goes to the launcher. The process stays alive (the same pid 2 s later).
+- **The next start.** Started again, `SDLActivity.onCreate` in that process calls
+  `System.exit(0)`, and ActivityManager logs the process as died and starts a fresh one.
+  The fresh process opened home with the game where it was (a friend game two plies in),
+  and logcat had no FATAL. This was done three times:
+  - home's X in landscape, then
+    `adb shell monkey -p com.kaitk.draughts -c android.intent.category.LAUNCHER 1`;
+  - home's X in portrait, then a tap on the icon in the app drawer;
+  - the computer setup's X in landscape, then `monkey` again.
+  The two recorded launches showed only the icon's brown before the first frame (task
+  033).
+
+Screenshots and recordings, out of git:
+`/private/tmp/claude-501/-Users-kaitkasak-projects-personal-draughts/d9f11ac9-ef2c-4a62-bf58-8c3587116c29/scratchpad/tabletround/`.
 
 ## Acceptance criteria
 
@@ -133,8 +162,8 @@ opens the game where it was, in a fresh process, without an error or a blank sta
       88 dp, clear of the board and the menu in both orientations; any text in
       `strings/en.txt` and `strings/et.txt` (none needed)
 - [x] Mac: exit closes the window; the next start opens the game where it was
-- [ ] Android: exit closes the app and removes it from recents; starting it again from
+- [x] Android: exit closes the app and removes it from recents; starting it again from
       the launcher opens the game where it was, without an error or a blank start
 - [ ] Clear of the gesture areas and of the board at the phone sizes in task 030
 - [x] Headless test: tapping exit on home returns `home::EXIT`, in both orientations
-- [ ] Checked on the Mac and on the tablet, in both orientations (the Mac done)
+- [x] Checked on the Mac and on the tablet, in both orientations

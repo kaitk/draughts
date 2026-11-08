@@ -86,12 +86,43 @@ The preview of both at 82 and 48 px in a squircle, on mid-grey, dark, and the ta
 wallpaper, was made in a scratch folder (2026-11-08); make it again from the foregrounds
 (`scripts/icon.py autumn --res DIR`) to judge on the tablet.
 
+## The autumn icon on the tablet (2026-11-08)
+
+This used the APK built from `6b20e66` (`colors.xml` at #140c09, autumn's foregrounds),
+with the tablet in English (en-GB).
+
+- **The launcher.** The app drawer shows the autumn jump on dark brown, labelled
+  "Draughts" (`launcher-drawer.png`, `drawer-icon.png`). Its tile reads #1a0f0d.
+  - The home screen has no pinned Draughts icon, and none was added.
+  - The dock's recent-apps slot first showed the old winter icon, navy, from the
+    launcher's cache (`launcher-home.png`, `dock-icon.png`). After the app had run once
+    it showed autumn (`dock2.png`).
+  - `aapt2 dump badging` gives `application-label:'Draughts'` and
+    `application-label-et:'Kabe'`.
+- **The launch.** It was recorded from the drawer with `screenrecord`, once in landscape
+  and once in portrait (`launch1.mp4`, `launch2.mp4`; `splash-land.png`,
+  `splash-port.png`).
+  - The launcher's zoom fades into brown in about 0.1 s. The screen then holds a flat
+    #150b09 (#140c09 through the encoder) with the autumn icon in the middle: Android's
+    splash, and then the window's cover. This lasts 0.53 s in landscape and 0.46 s in
+    portrait, and the next changed frame is the app's first frame.
+  - No frame is navy or black. In the bottom 6%, where the taskbar fades out, the colour
+    goes from the wallpaper's green through brown-grey to the brown, and blue never
+    leads.
+  - On the splash, the icon's squircle is a shade lighter than the screen, about
+    #1d110d against #150b09: the foreground's own backdrop over `icon_background`. It
+    shows only up close.
+
+The files named are in
+`/private/tmp/claude-501/-Users-kaitkasak-projects-personal-draughts/d9f11ac9-ef2c-4a62-bf58-8c3587116c29/scratchpad/tabletround/`,
+out of git.
+
 ## Acceptance criteria
 
 - [x] The user decides: winter stays, autumn becomes the one icon, or the icon follows
       the season (2026-11-08: one icon, autumn now and winter for the winter months)
-- [ ] If one icon: shipped as `design/icon/README.md` says, checked on the tablet's home
-      screen and splash
+- [x] If one icon: shipped as `design/icon/README.md` says, checked on the tablet's home
+      screen and splash (2026-11-08: the drawer, the dock, and the splash; above)
 - [ ] If per season: a master per season with the same geometry; one alias per season in
       `AndroidManifest.xml`; the switch in `DraughtsActivity` on going to the
       background, only when the season changed; the splash colour chosen for all; what

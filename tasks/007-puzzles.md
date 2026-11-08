@@ -130,6 +130,17 @@ again.
 
 Screenshots and the recording are in the session's scratchpad, not in git.
 
+Since then, on 2026-11-08, with the APK built from `6b20e66` in landscape. The flags use
+square names, not numbers: 47 is c1, 33 f4, 17 c7, 8 e9, and 37 c3.
+
+- Puzzle 14, `--puzzle 14 --tap c1 --tap f4 --tap c7`: the king on c1 is selected, f4
+  and c7 are ringed, and all three stars stay. Adding `--tap e9` solves it with three
+  stars: the king ends on 8, three pieces are taken, and Next lights.
+- Puzzle 4 (tier 1), `--puzzle 4 --hints moves --tap c3`: the man on 37 is selected and
+  no target shows.
+- The run solved by `--tap` didn't write its stars: `settings.txt` was unchanged byte
+  for byte afterwards, and the picker still showed 14 with no stars.
+
 ## Open for the user
 
 - **Estonian drafts** for task 024's review: Edasi (next), Proovi uuesti (try again),
