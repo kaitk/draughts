@@ -30,7 +30,8 @@ which would overwrite the main checkout's while another session uses them.
   starts, `setup`), the puzzles' picker and a puzzle played through its misses, hint,
   reply, and stars, a capture tapped stop by stop in a puzzle and no targets in any tier,
   the saved game of any variant and damaged images of it, the computer's skill moving
-  across games, home's X closing the app and where it sits, and every screen at a
+  across games, home's X closing the app and where it sits, Android's back and Escape
+  on each screen against its own back tile (`back`), and every screen at a
   foldable, 4:3, and a 20:9 phone in both orientations, and the phone's layout at 540
   and 480 dp (`gui::short_dp`, with a 9:16 phone at 480), its tiles on the screen and
   apart, every tap 88 dp at least, the phones again with the Pixel 7a's insets in both
