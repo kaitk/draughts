@@ -144,9 +144,7 @@ are in "Numbers to gather" below.
   writes C, the NDK's clang and CMake build `libSDL3.so` and `libmain.so`, `javac` and
   `d8` compile SDL's stock Java plus one small activity of our own
   (`DraughtsActivity.java`, about 100 lines: the launch cover, the dev flags, closing
-  the app), `aapt2`, `zipalign -P 16`, `apksigner` (`docs/development.md`). Note:
-  `docs/product.md` still says "no Java/Kotlin of our own"; say "one small Java class"
-  instead.
+  the app), `aapt2`, `zipalign -P 16`, `apksigner` (`docs/development.md`).
 - **Draws only when something changed.** goose_gfx's `frame()` patched to skip the
   present when nothing drew and to wait for an event up to 1 s; idle is one wakeup a
   second and no GPU work. A running clock sets an SDL timer for its next second instead
@@ -383,8 +381,8 @@ About 30 to 60 s, no voice; captions in the corner at most.
       still says "checkers" and describes the state of task 002), and a check that no
       local paths, keys, or design masters are in the history.
 - [ ] The privacy policy URL from task 029 works.
-- [ ] `docs/product.md`'s "no Java/Kotlin of our own" made true or reworded before it
-      is quoted.
+- [x] `docs/product.md`'s "no Java/Kotlin of our own" reworded to one small Java class
+      (2026-11-08).
 - [ ] The goose_gfx patches proposed upstream or linked (task 010).
 - [ ] The video cut and checked on a phone.
 

@@ -19,8 +19,8 @@ Chess may follow on the same base.
   and in the tutorial at the first start. A game has no hint button (2026-11-07).
   Puzzles never show a selected piece's targets, whatever the setting: the point of a
   puzzle is that the child thinks (2026-11-08).
-- Lean: no engine, no Java/Kotlin of our own, no allocation in the frame loop, no frames
-  drawn while idle.
+- Lean: no engine, one small Java class over SDL's activity, no allocation in the frame
+  loop, no frames drawn while idle.
 
 ## MVP scope
 
