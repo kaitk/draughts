@@ -58,6 +58,9 @@ fruit. A holistic look, measuring before cutting.
   the same. Size it from the screen's density as well as its size, and compare side by
   side on the Pixel 7a. On a 20:9 screen more than half the square is cropped away, but
   turning the screen shows another slice, so the square stays unless a rotation reloads.
+  The blurred copies need neither: a blur has no fine detail, so its size can stay fixed
+  (or shrink, above) at every density and resolution. The GPU can't render into ASTC, so
+  a compressed blur means blurring offline and shipping it, or keeping the GPU blur small.
 - **Cut what is cheap and safe**, one change at a time, each with its before and after
   on the tablet and a look that it still renders the same.
 
