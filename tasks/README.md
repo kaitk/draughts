@@ -63,7 +63,8 @@ icon and launch). The order for what is left:
    `scripts/android.py` writes `res/values*/strings.xml` from `strings/<lang>.txt`, and
    the manifest takes `@string/app_name`. The icon is autumn for now (2026-11-08),
    winter again for the winter months and the release (task 033).
-4. 034, the setup's board shows the game being set up.
+4. 034, the setup's board shows the game being set up: built and checked on the Mac
+   (2026-11-08); the tablet check is open.
 5. 022, transitions: continue and a new game with the sharp-to-blurred crossfade, the
    game back to home, and a puzzle opened from the picker if it stays as cheap; not the
    setups.

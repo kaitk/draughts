@@ -22,11 +22,13 @@ which would overwrite the main checkout's while another session uses them.
   time a move on the clock, over whole games with simulated time, in `pace`), `shell`
   (home, the switch to the game and back, settings and their file, their taps and the
   board beside them, the transition between home and settings (its frames, its end, a
-  tap during it, turning it round), home's setup and play, the puzzles' picker and a
-  puzzle played through its misses, hint, reply, and stars, a capture tapped stop by stop
-  in a puzzle and no targets in any tier, the saved game of any variant and damaged images
-  of it, the computer's skill moving across games, home's X closing the app and where it
-  sits), `strings` (every language file has every key), `ai` (the computer player:
+  tap during it, turning it round), home's setup and play, the setup's board (each
+  draughts' start, turned for black, the game in progress back on the menu, the game play
+  starts, `setup`), the puzzles' picker and a puzzle played through its misses, hint,
+  reply, and stars, a capture tapped stop by stop in a puzzle and no targets in any tier,
+  the saved game of any variant and damaged images of it, the computer's skill moving
+  across games, home's X closing the app and where it sits), `strings` (every language
+  file has every key), `ai` (the computer player:
   its search against a plain minimax, the table changing no score, keys, what each level
   plays in known shots, the same move in steps as at once, and that no level hangs a
   piece), and `puzzles` (the puzzle file's format and refusals, what a move does to
@@ -70,6 +72,10 @@ which would overwrite the main checkout's while another session uses them.
   of them (the kings, the draughts settings show). To shoot settings as chosen, copy the
   file aside, write the keys wanted (`kings = stack`, `draughts = russian`, `hints =
   moves`), run, and put the copy back.
+- A setup is shot with its choices from flags, leaving `settings.txt` alone:
+  `--screen friend --variant brazilian`, or `--screen computer --variant russian
+  --computer white` for the child on black (`docs/development.md`). Add `--lang en`
+  when the Mac's settings name another language (2026-11-08).
 - To check that a change leaves the look alone, take the same shots before and after
   and `cmp` them: home, the game, settings, both orientations, a setup, a clocked game
   with taps, and one against the computer. Two runs of a shot are byte-identical except

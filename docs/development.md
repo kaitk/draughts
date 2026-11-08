@@ -74,7 +74,11 @@ e3 --tap g5 --win 1.2 --frames 3000`. `--variant
 international|brazilian|russian` starts a new game of that draughts (else the setup's
 last choice), `--clock 5+3|10+5` with a clock, and `--computer white|black` against
 the computer playing that side (the board turned when it plays white), at `--level
-easy|medium|hard` (else the setup's last choice). A `--frames` run doesn't wait for the
+easy|medium|hard` (else the setup's last choice). With `--screen friend` or
+`computer` those three set the setup's choices instead, the child playing the side
+`--computer` doesn't, and leave `settings.txt` alone unless a tap in the setup writes
+it: `--screen computer --variant russian --computer white --frames 12` shows the
+computer's setup for Russian with the child on black. A `--frames` run doesn't wait for the
 display, so a screenshot of the computer's reply, which comes after a pause of under a
 second, takes some thousands of frames: `--variant russian --computer black --tap c3
 --tap d4 --frames 5000`. The settings file is `settings.txt` in the app's storage folder (on the Mac

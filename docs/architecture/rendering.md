@@ -273,7 +273,17 @@ the prototype tried, kept for 3D:
   or black, each tile showing its piece; 2026-11-08), and the clock (none with a
   stopwatch, 5 min +3 s a move, 10 min +5 s a move); then play, a primary row. The
   choices are kept for next time in `settings.txt`, and play replaces a saved game
-  without asking. The draughts' tiles are thirds of their row while each name fits a
+  without asking. Beside a setup the board is the game play will start: the chosen
+  draughts at its start, 10 × 10 or 8 × 8, turned when the child plays black against
+  the computer, changing as the choices change; back to the menu shows the game in
+  progress again, and play starts the game as the board shows it, so nothing on it
+  jumps. The board switches at once, rather than crossfading its pieces as home and
+  settings do: it stays in place, so a crossfade between 10 × 10 and 8 × 8 would switch
+  the squares halfway under half-faded pieces, and the column beside it, opening the
+  setup or lighting a tile, changes in one frame too (2026-11-08). Natively the setup's
+  board is a board of its own (`Shell.next`), set to `rules::start` when the draughts
+  chosen differs from it; a tap's frame still shows what it declared, and the next
+  shows the board and the column changed together. The draughts' tiles are thirds of their row while each name fits a
   third with 16 dp either side; else, as in landscape, each takes its name's width and
   an even share of the rest (2026-11-08). A tile's word still too wide for it, as a
   translation's may be, takes the small face. Home's computer row notes the kept level. The language is
