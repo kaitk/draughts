@@ -1,6 +1,6 @@
 # 023: Brazilian draughts
 
-Status: in-progress
+Status: done
 
 Brazilian draughts is International's rules on an 8×8 board: men capture backward, kings
 fly, the capture that takes the most is compulsory, and a man is crowned only where its
@@ -21,7 +21,7 @@ Russian (task 019). Settings and a new game's setup offer it (rendering.md "Home
 
 - [x] Perft counts match published Brazilian counts and `test/perft.py` over random games
 - [x] The rules tests cover majority capture and crowning only at the end on 8×8
-- [ ] Settings and the setup start a Brazilian game
+- [x] Settings and the setup start a Brazilian game (2026-11-08; its tutorial steps are task 026's)
 
 ## Measured
 
@@ -69,10 +69,6 @@ International's king (300) and Russian's 8×8 rows, both from the variant's fiel
 
 ## Open for the user
 
-- The setup offers Brazilian once tasks 021 and 025 build it: the variant is
-  `rules::BRAZILIAN`, and the board, game, shell, and saved game already read size and
-  rules from `rules::VARIANTS`. The settings and setup criterion stays open until then,
-  with its strings (a name in `strings/<lang>.txt`) and the tutorial's 8×8 steps.
 - Squares are written a1..h8 as in Russian (lidraughts shows Brazilian with letters and
   numbers too); numbered squares (1–32, as Halbersma's FEN) would be one flag in
   `rules::VARIANTS`. Reading accepts both either way.
