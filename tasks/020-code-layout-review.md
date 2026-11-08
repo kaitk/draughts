@@ -1,6 +1,6 @@
 # 020: Review the code's layout as a whole
 
-Status: in-progress (6, 8, and 1 made; 2 and 5 wait for task 007)
+Status: done (6, 8, 1, 2, and 5 made; 3 maybe, later)
 
 Once the MVP's flows work in their basic form (task 008, then 006 and 007), look at the
 code as a whole: is it readable and neatly packaged, as a game's code would be, and does
@@ -20,7 +20,8 @@ before then: the flows should exist first, so the review is of real code (asked
 ## Acceptance criteria
 
 - [x] A written review with the changes proposed, agreed with the user
-- [ ] The agreed changes made, tests passing, the app unchanged on the Mac and tablet
+- [x] The agreed changes made, tests passing, the app unchanged on the Mac (the tablet
+      is checked with task 007's merge)
 
 ## Settled (2026-11-08)
 
@@ -99,6 +100,23 @@ settings, and the celebration differ only where the ring pulses, the preview fla
 and the winner pops in and the sparks drift, as two runs before any change did. The
 tablet is not checked.
 
+Made at the start of task 007, one commit each:
+
+- `ff46dfe` (2) `panel::layout` (`game/panel.goose`) places the board and the game's two
+  panels in a `panel::Layout`; `board::Layout` is the board alone, from
+  `board::layout_at`. The shell keeps the board's part for the app to draw.
+- `45a54e8` (5) `test/drive/` holds the UI tests' squares by name, tiles, and pointer
+  frames for the game screen and the shell; `test/run_tests.py` skips it as a package.
+  The shell's tap now always ends with a frame with the pointer away, as two of its
+  three copies did; no expected output changed.
+
+Checks: the tests pass through TinyCC and built, no expected output changed. Eleven
+`--frames 20` shots on the Mac (home, the game, settings, each in 960 × 600 and 600 ×
+960, both setups, `--clock 5+3 --tap c3 --tap d4` both ways, and `--computer white`)
+before and after: six byte-identical; the clocked games, settings, and the computer's
+game differ only where the moving piece, the preview's flash, and the computer's ring
+are at the last frame.
+
 ## Review: left for the user
 
 Each with its reason and rough cost; none is needed for the MVP.
@@ -114,7 +132,7 @@ Each with its reason and rough cost; none is needed for the MVP.
    `right`, while `game/panel.goose` is what fills them. Move `layout` and the panel
    rects to `game`, leaving `board::layout_at` for the board alone. About 1.5 h; five
    test files call `board::layout`. Worth it before task 019's further screens or other
-   screen sizes, not before.
+   screen sizes, not before. Done: `ff46dfe`.
 3. **Themes as a package.** `app/theme.goose` has no graphics, but because it is in
    `app/`, `settings` numbers the seasons by hand (`SEASON_KINDS = [1, 2, 3, 0]`) and
    the app holds `theme_for`. A `theme/` package would let settings name them and pick
