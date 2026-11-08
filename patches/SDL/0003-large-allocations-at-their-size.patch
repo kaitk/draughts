@@ -1,0 +1,76 @@
+SDL_GPU Vulkan: give a resource over 2 MiB memory of its own size, not a 64 MiB block.
+
+Upstream puts a resource up to SMALL_ALLOCATION_THRESHOLD (2 MiB) in shared 16 MiB blocks
+and rounds a larger one up to LARGE_ALLOCATION_INCREMENT (64 MiB), whose rest later large
+resources share. On a GPU with one memory type (Mali) a 2D app's screen, photograph, and
+text atlas (34 MiB on the tablet) took a whole 64 MiB block, the largest tablet's two.
+
+With this patch a large resource gets a VkDeviceMemory of exactly its memory requirements'
+size, as transfer buffers (`dedicated`) already did, and such allocations are kept out of
+the free list, so nothing else is placed in one and it is freed at a submit soon after its
+resource is released. Small resources are unchanged. Exact rather than rounded to 4 or
+8 MiB: the same allocation count, no waste, and SDL makes a resource's replacement before
+releasing it, so a kept block would not be reused. Make large resources at load or on a
+resize, not per frame: each is one vkAllocateMemory and one vkFreeMemory.
+
+Draughts: docs/architecture/rendering.md (GPU memory), docs/goose-findings.md, task 032.
+
+--- a/src/gpu/vulkan/SDL_gpu_vulkan.c	2026-11-08 20:45:40
++++ b/src/gpu/vulkan/SDL_gpu_vulkan.c	2026-11-08 20:45:40
+@@ -1967,6 +1967,7 @@
+     VkDeviceSize alignedOffset = 0;
+     VkDeviceSize newRegionSize, newRegionOffset;
+     Uint8 isHostVisible, smallAllocation, allocationResult;
++    bool exact;
+     Sint32 i;
+ 
+     isHostVisible =
+@@ -1976,6 +1977,10 @@
+     allocator = &renderer->memoryAllocator->subAllocators[memoryTypeIndex];
+     requiredSize = memoryRequirements->size;
+     smallAllocation = requiredSize <= SMALL_ALLOCATION_THRESHOLD;
++    /* Patched: a large resource gets memory of its own size, as a dedicated one does, rather
++       than a block rounded up to LARGE_ALLOCATION_INCREMENT that later large resources share.
++       On a GPU with one memory type a few window-sized textures took a second 64 MiB block. */
++    exact = dedicated || !smallAllocation;
+ 
+     if ((buffer == VK_NULL_HANDLE && image == VK_NULL_HANDLE) ||
+         (buffer != VK_NULL_HANDLE && image != VK_NULL_HANDLE)) {
+@@ -1987,7 +1992,7 @@
+ 
+     selectedRegion = NULL;
+ 
+-    if (dedicated) {
++    if (exact) {
+         // Force an allocation
+         allocationSize = requiredSize;
+     } else {
+@@ -2085,13 +2090,7 @@
+             VULKAN_INTERNAL_MarkAllocationsForDefrag(renderer);
+         }
+ 
+-        if (requiredSize > SMALL_ALLOCATION_THRESHOLD) {
+-            // allocate a page of required size aligned to LARGE_ALLOCATION_INCREMENT increments
+-            allocationSize =
+-                VULKAN_INTERNAL_NextHighestAlignment(requiredSize, LARGE_ALLOCATION_INCREMENT);
+-        } else {
+-            allocationSize = SMALL_ALLOCATION_SIZE;
+-        }
++        allocationSize = SMALL_ALLOCATION_SIZE;
+     }
+ 
+     allocationResult = VULKAN_INTERNAL_AllocateMemory(
+@@ -2133,6 +2132,13 @@
+             allocation,
+             newRegionOffset,
+             newRegionSize);
++    }
++
++    /* Patched: keep a resource's own memory out of the free list, so that once released
++       nothing else is placed in it (one of exactly 16 MiB would pass for a small block) and
++       it goes back to the driver at a later submit, as any empty allocation does. */
++    if (exact) {
++        allocation->availableForAllocation = 0;
+     }
+ 
+     SDL_UnlockMutex(renderer->allocatorLock);

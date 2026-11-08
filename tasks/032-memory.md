@@ -264,3 +264,96 @@ The same within run-to-run noise, no frames dropped. The look: the same Mac shot
 are byte-identical apart from settings' preview flash (25 pixels), and the tablet's shots
 of home and the game in landscape and portrait after rotations are byte-identical. The
 Mac runs the built-in gfx, so it shows only the app's side of the change.
+
+### Cut 2: large resources in memory of their own size (2026-11-08)
+
+`patches/SDL/0003-large-allocations-at-their-size.patch`: SDL_GPU's Vulkan allocator
+gives a resource over 2 MiB its own `VkDeviceMemory` of exactly its memory requirements'
+size instead of a block rounded up to 64 MiB, and keeps such allocations (transfer
+buffers' too) out of the free list, so nothing else lands in one and it is freed at a
+submit soon after its resource is released. Small resources keep the shared 16 MiB
+blocks. How it works and what to watch for 3D: `docs/architecture/rendering.md`, GPU
+memory.
+
+Galaxy tablet, landscape, rotation locked, `pm clear` before each launch; before is
+`c26c9e3` (cut 1), after the same with the patch, both built in one worktree. Home 8 s
+after a fresh launch; the game 8 s after its own launch (`--screen game`); after five
+moves and take-backs (b4-c5); after a turn to portrait and back; home after another
+turn; then settings, a season (Winter), back home and into the game.
+
+| PSS / graphics (GL + EGL mtrack), MB | Before | After |
+| --- | --- | --- |
+| Home, fresh | 220.0 / 160.3 (100.6 + 59.7) | 189.1 / 129.5 (69.8 + 59.7) |
+| Game, fresh | 219.7 / 160.3 (100.6 + 59.7) | 189.4 / 129.5 (69.8 + 59.7) |
+| Game after moves | 187.5 / 126.7 (94.4 + 32.2) | 157.2 / 95.9 (63.6 + 32.2) |
+| Game after a rotation | 207.9 / 146.7 (94.1 + 52.6) | 177.5 / 115.9 (63.3 + 52.6) |
+| Home after another rotation | 208.0 / 146.7 (94.1 + 52.6) | 177.0 / 115.9 (63.3 + 52.6) |
+| Settings | 173.1 / 112.6 (94.3 + 18.3) | 142.6 / 81.8 (63.5 + 18.3) |
+| Settings after a season change | 163.0 / 112.6 (94.3 + 18.3) | 132.5 / 81.8 (63.5 + 18.3) |
+| The game, from home after settings | 163.0 / 112.6 (94.3 + 18.3) | 132.6 / 81.8 (63.5 + 18.3) |
+| `dumpsys gpu --gpumem`: home fresh, after moves, after a rotation, after the season | 188.0, 182.0, 154.5, 154.7 MiB | 157.9, 151.9, 124.4, 124.6 MiB |
+
+GL mtrack is about 31 MB lower at every point, PSS 30 to 31 MB: the 64 MiB block's
+unused ~30 MiB. What is left is the resources' sum (screen 9.6 MiB, photograph 16.3,
+atlas 8.1; fresh, also the atlas's 8 MiB transfer until a frame is drawn), the 16 MiB
+small block, and about 10 MB of the driver's. EGL mtrack (the swapchain) moves with the
+screen shown, the same in both. Native heap is the same (it drops 10 MB in both once a
+season loads, the decode's buffers). Worked out, not measured: at 2880 × 1920 (screen
+21.1 MiB, atlas 32, photograph 16.3) two 64 MiB blocks become ~70 MiB, ~58 MiB saved; at
+720 × 1280 (screen 3.5, atlas 4) one block becomes ~24 MiB, ~40 saved.
+
+When large allocations happen, from a temporary build logging SDL's `vkAllocateMemory`
+and `vkFreeMemory` (not kept): at launch the screen (10.06 MB), the photograph (17.04 MB)
+and its 16 MiB transfer, the blur source's 1 MiB transfer, the atlas (8.52 MB) and its
+8 MiB transfer, and one 16 MiB small block; on a season change the new photograph and
+its transfer, then the old photograph freed; on a rotation the new screen, then the old
+one freed. A move or take-back allocates only the three per-frame transfers (32 KB, 3 KB,
+256 B), as before the patch. Opening settings allocates nothing large.
+
+Frame times, SurfaceFlinger's `--timestats` present-to-present at 90 Hz over 15 moves and
+15 take-backs, two runs a build (gaps of 350 ms and more left out):
+
+| | Frames | 10 to 11 ms | 21 to 22 ms | 32 to 33 ms |
+| --- | --- | --- | --- | --- |
+| Before | 956 | 883 (92.4%) | 65 | 8 |
+| After | 957 | 884 (92.4%) | 59 | 14 |
+
+The same within run-to-run noise, no frames dropped. A season change's longest frame
+gap, four seasons a build: before 58 to 78 ms, after 66 to 78 ms (the histogram's 4 ms
+buckets), the same. A rotation recreates the layer, so timestats doesn't see it; it
+allocates one screen and frees one. The look: the tablet's shots of the game and home
+after rotations, and the game in winter after the season change, are byte-identical
+before and after. The Mac uses Metal, untouched.
+
+Alternatives weighed (the user, 2026-11-08, asked whether rounding to 4 or 8 MiB would
+do as well):
+
+- **Rounded to 4 or 8 MiB:** the same allocation count (one per large resource), but
+  half a step wasted per resource on average: on the tablet 44 or 56 MiB for the 34 MiB
+  of resources, at 2880 × 1920 about 80 or 88 for 70. It would pay only if a freed
+  block were kept and taken by a later resource of nearly its size, and that doesn't
+  happen here: SDL makes the new screen on a rotation and the new photograph on a
+  season change before it releases the old (the log above), and the empty block is
+  freed at the next submit. Keeping freed blocks for reuse means a block's rest stays
+  free for others, and a large block kept alive by a small tenant is the 64 MiB
+  blocks' trouble. Rejected.
+- **A smaller fixed block (16 or 32 MiB) shared as upstream does:** less waste than 64,
+  but a resource larger than the block still needs its own, the largest tablet's atlas
+  (32 MiB) and a 3D MSAA target among them, and shared blocks stay alive while any tenant
+  lives. Rejected for exact.
+- **`VkMemoryDedicatedAllocateInfo`:** SDL has no `VK_KHR_dedicated_allocation`
+  plumbing (no `vkGet*MemoryRequirements2`); an exact plain allocation already gives
+  the memory back, and the extension would only let some drivers place it better.
+  Not worth the patch's size.
+- **A 3D board** (task 015: MSAA 4× target, depth, a shadow map, albedo, normal, and
+  roughness atlases with mips) adds perhaps a dozen large resources made at load or a
+  resize: a dozen allocations, far from Vulkan's guaranteed 4096, and exact sizing
+  keeps their cost at their bytes. What would hurt is a large resource made or cycled
+  per frame, with or without the patch.
+
+Risks in the patch: each large resource is one `vkAllocateMemory` (a handful here);
+on failure the allocator returns as before and SDL tries the next memory type, but a
+large resource can no longer slip into a block's spare room, so memory pressure shows
+a little sooner than with an oversized block already held. An SDL upgrade that changes
+`VULKAN_INTERNAL_BindResourceMemory` stops the patch applying and fails the build,
+loudly.

@@ -232,7 +232,12 @@ measuring there:
   `SurfaceView[com.kaitk.draughts/...](BLAST)` has a present2present histogram in ms
   (gaps of 350 ms and more are the app idle between taps). `--latency LAYER` prints only
   the refresh period on Android 16, and `gfxinfo` counts only the Java views' frames
-  (2026-11-08).
+  (2026-11-08). A rotation recreates the layer, so its frames don't show there; a
+  season change's do (one gap of 58 to 78 ms on the tablet).
+- When SDL allocates GPU memory: an `SDL_Log` before `vkAllocateMemory` in
+  `VULKAN_INTERNAL_AllocateMemory` and before `vkFreeMemory` in
+  `VULKAN_INTERNAL_DeallocateMemory` (in `build/android/SDL_src`, as below), then
+  `adb logcat -d | grep SDL/APP` around a tap (task 032, cut 2).
 - `dumpsys meminfo` at home right after launch counts about 24 MB more graphics than
   once a later frame has submitted GPU work (184 MB, and 160 MB with the
   thumbnails loaded in the first idle frame), likely the launch's uploads not yet let

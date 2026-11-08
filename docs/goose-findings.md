@@ -3,6 +3,33 @@
 Gaps found in Goose, goose_gfx, and the SDL it pins, while building for Android, with what
 we do about each here and what could go upstream. Newest first.
 
+## SDL: SDL_GPU's Vulkan allocator rounds large resources up to 64 MiB blocks (2026-11-08)
+
+`VULKAN_INTERNAL_BindResourceMemory` puts a resource up to 2 MiB
+(`SMALL_ALLOCATION_THRESHOLD`) in shared 16 MiB blocks, and gives a larger one a new
+`VkDeviceMemory` rounded up to a multiple of 64 MiB (`LARGE_ALLOCATION_INCREMENT`), whose
+free space later large resources share. A block is given back only once it is empty. On a
+GPU with one memory type, as Mali's, a 2D app's few large resources take a whole block:
+on the tablet (1920 × 1200) the screen, the photograph, and the text atlas are 34 MiB in a
+64 MiB block, and the largest tablet's (2880 × 1920: screen 21 MiB, atlas 32) would need
+two. SDL 3.4.16 (`fa2c02b`).
+
+- Here: `patches/SDL/0003-large-allocations-at-their-size.patch` gives a resource over
+  2 MiB its own `VkDeviceMemory` of exactly its memory requirements' size, as SDL already
+  does for transfer buffers (`dedicated`), and keeps such allocations, transfer buffers'
+  too, out of the free list, so nothing else is placed in one and it goes back to the
+  driver at a submit soon after its resource is released. Small resources keep the
+  shared 16 MiB blocks. SDL has no `VK_KHR_dedicated_allocation` plumbing, so the patch
+  doesn't add `VkMemoryDedicatedAllocateInfo`. On the tablet GL mtrack after an animation
+  went from 94.4 to 63.6 MB and stays there through rotations and season changes (PSS
+  about 31 MB lower everywhere); frame times of moves and season changes unchanged (task
+  032's file has the numbers). Large allocations happen only at load, on a season
+  change, and on a resize. Rounding to 4 or 8 MiB instead was weighed and rejected
+  (`docs/architecture/rendering.md`, GPU memory).
+- Upstream: for the user only, as with the other SDL entries. Upstream's rounding suits
+  a discrete GPU with many large resources; a threshold over which allocations are
+  dedicated (as VMA does for resources over half a block) would serve both.
+
 ## goose_gfx: the screen always has a depth target, and is cycled every frame (2026-11-08)
 
 `gfx_create_screen` makes a window-sized depth target (D32F where supported) beside the

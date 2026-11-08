@@ -19,7 +19,8 @@ NoGraphicsAPI's ideas, inside SDL_GPU:
   [findings](../goose-findings.md)): the GPU orders a frame's clear after the last
   frame's blit instead of SDL keeping a fresh copy for each frame in flight. Together
   they kept SDL from a second 64 MiB block after the first rotation, about 70 MB of
-  graphics memory on the tablet.
+  graphics memory on the tablet, before SDL's blocks were sized to their resources
+  ([GPU memory](#gpu-memory)).
 - **3D later** reuses the game state and the storage buffer, with a camera and lit meshes
   in place of the 2D pieces.
 
@@ -594,6 +595,53 @@ so each is baked at 1.14 times its size in ems to match the prototypes' CSS. The
 boxes and atlas places are copied into `gui`'s fixed tables, which lay text out headless,
 the image into a texture, and the atlas is then destroyed. A glyph is one more quad kind
 in the UI's one draw. Baked again only when the layout's scale changes.
+
+## GPU memory
+
+On Android all of the app's GPU memory comes from SDL_GPU's Vulkan allocator, as patched
+by `patches/SDL/0003-large-allocations-at-their-size.patch`
+([findings](../goose-findings.md)). The Mac uses Metal, whose allocation SDL leaves to
+the driver. How the patched allocator works:
+
+- **Up to 2 MiB** (`SMALL_ALLOCATION_THRESHOLD`, by the driver's memory requirements, not
+  the pixels): shared 16 MiB blocks, as upstream. The storage buffers, the blurred
+  copies, the thumbnails, and SDL's uniform buffers live there, one block on the tablet.
+  A block that empties goes back to the driver.
+- **Over 2 MiB**: a `VkDeviceMemory` of the resource's own size, nothing else ever placed
+  in it, given back to the driver at a submit soon after the resource is released.
+  Upstream rounds these up to 64 MiB blocks that later large resources share: on the
+  tablet the screen (9.6 MiB), the photograph (16.3), and the text atlas (8.1) took a
+  whole 64 MiB block, and on the largest tablet (2880 × 1920) they would take two.
+- **Transfer buffers** are their own exact allocations at any size, upstream too. Each
+  drawn frame allocates and frees three small ones (gfx's `update_buffer`: 32 KB, 3 KB,
+  256 B); a persistent upload buffer in gfx would end that.
+- **When:** on the tablet large allocations happen at launch, on a season change (the
+  new photograph and its 16 MiB transfer, then the old one freed), and on a resize or
+  rotation (the new screen, then the old one freed); never in a frame that only draws.
+- **Exact, not rounded to 4 or 8 MiB** (task 032, cut 2): the count of allocations is
+  the same either way, one per large resource, and rounding wastes half a step each on
+  average (about 10 or 22 MiB on the tablet). It would pay only if a freed block were
+  kept and taken by a later resource of nearly its size, but SDL makes the new screen or
+  photograph before it releases the old one, so the old block is still in use when the
+  new one wants it; and keeping freed blocks for reuse is how a large block stays alive
+  for a small tenant, the 64 MiB blocks' trouble.
+
+What to watch when adding large resources (the 3D board, task 015: an MSAA target, a
+depth target, a shadow map, albedo, normal, and roughness atlases with mips):
+
+- Each one over 2 MiB costs one `vkAllocateMemory` when made and one `vkFreeMemory` after
+  it is released. Make and release them at load, a season change, or a resize, never
+  per frame. Vulkan guarantees at least 4096 live allocations
+  (`maxMemoryAllocationCount`); a dozen large resources are far from it.
+- A large target SDL cycles (cleared or written with `cycle` while the GPU still reads
+  it) keeps a second or third copy for good, each its own allocation, as the screen did
+  before gfx stopped cycling it. Clear without cycling where the GPU can wait instead.
+- Uploading a large buffer each frame through a new transfer buffer would allocate and
+  free that much each frame; keep one transfer buffer and reuse it.
+- Graphics memory now follows the resources' bytes: GL mtrack is their sum, plus the
+  16 MiB small block, plus about 10 MB that is the driver's own; EGL mtrack is the
+  swapchain. A 4× MSAA target costs four times the screen's bytes, since SDL doesn't use
+  Mali's lazily allocated (tile-only) memory for transient targets.
 
 ## Frames and battery
 
