@@ -12,6 +12,7 @@ import strings from "../../strings";
 import game from "../../game";
 import ai from "../../ai";
 import shell from "../../shell";
+import puzzles from "../../puzzles";
 import drive from "../drive";
 
 fn show(sh: shell::Shell&, what: const u8[:]) {

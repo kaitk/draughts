@@ -92,6 +92,47 @@ fn clock_of(g: gui::Gui&, r: float4, c: clock::Clock&, side: i64, ring: f32, ove
     gui::figures(g, gui::FIGURES, room, t, if runs { 1.0 } else { 0.66 }, low, gui::RIGHT);
 }
 
+// The left panel's three tiles: the way out (`icon` and the word `word`: home, or the
+// puzzles), settings, and start over at the bottom, far from what plays; in portrait a
+// bar of three above the board. Returns HOME for the way out, SETTINGS, RESTART, or
+// NOTHING.
+fn leave(g: gui::Gui&, l: Layout, icon: i64, word: i64) -> i64 {
+    let u = g.scale;
+    var chosen = NOTHING;
+    let words = [word, strings::HOME_SETTINGS, strings::GAME_START_OVER];
+    let icons = [icon, gui::GEAR, gui::RESTART];
+    let asks = [HOME, SETTINGS, RESTART];
+    if l.left.z < l.left.w {
+        var left = float4 { l.left.x + 16.0 * u, l.left.y + 20.0 * u, l.left.z - 32.0 * u, l.left.w - 40.0 * u };
+        for i in 3 {
+            let r = if i < 2 { gui::cut_top(left, ROW_H * u) } else { gui::cut_bottom(left, ROW_H * u) };
+            if i == 0 { gui::cut_top(left, 12.0 * u); }
+            if gui::labelled(g, 110 + i, r, icons[i], 34.0, strings::get(words[i]), gui::HEADING, gui::BESIDE) {
+                chosen = asks[i];
+            }
+        }
+        return chosen;
+    }
+    let bar = float4 { l.left.x + 20.0 * u, l.left.y + 16.0 * u, l.left.z - 40.0 * u, ROW_H * u };
+    let w = (bar.z - 32.0 * u) / 3.0;
+    for i in 3 {
+        let r = float4 { bar.x + i * (w + 16.0 * u), bar.y, w, bar.w };
+        if gui::labelled(g, 110 + i, r, icons[i], 34.0, strings::get(words[i]), gui::HEADING, gui::MIDDLE) {
+            chosen = asks[i];
+        }
+    }
+    return chosen;
+}
+
+// The right panel's room inside its glass, where a screen plays.
+fn play_area(g: gui::Gui&, l: Layout) -> float4 {
+    let u = g.scale;
+    if l.left.z < l.left.w {
+        return float4 { l.right.x + 16.0 * u, l.right.y + 20.0 * u, l.right.z - 32.0 * u, l.right.w - 40.0 * u };
+    }
+    return float4 { l.right.x + 20.0 * u, l.right.y + 16.0 * u, l.right.z - 40.0 * u, l.right.w - 32.0 * u };
+}
+
 // Declares the panels for this frame, with the clocks `c`, and `side` the side to move,
 // or the winner when `won`. The side to move's piece has a ring as strong as `glow`; it
 // pulses while the computer thinks, when its clock's piece has it even before the
@@ -101,10 +142,6 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, thinkin
         over: board::Piece[..OVER]&) -> i64 {
     let u = g.scale;
     let landscape = l.left.z < l.left.w;
-    var chosen = NOTHING;
-    let words = [strings::GAME_HOME, strings::HOME_SETTINGS, strings::GAME_START_OVER];
-    let icons = [gui::HOME, gui::GEAR, gui::RESTART];
-    let asks = [HOME, SETTINGS, RESTART];
     let turn_key = if won { if side == 0 { strings::WON_WHITE } else { strings::WON_BLACK } }
                    else if side == 0 { strings::TURN_WHITE } else { strings::TURN_BLACK };
     // The clock nearer the player whose pieces are at the bottom goes second: under the
@@ -114,16 +151,9 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, thinkin
     for s in 2 { if c.running == s || (thinking && s == side) { rings[s] = glow; } }
     gui::panel(g, l.left);
     gui::panel(g, l.right);
+    var chosen = leave(g, l, gui::HOME, strings::GAME_HOME);
+    var right = play_area(g, l);
     if landscape {
-        var left = float4 { l.left.x + 16.0 * u, l.left.y + 20.0 * u, l.left.z - 32.0 * u, l.left.w - 40.0 * u };
-        for i in 3 {
-            let r = if i < 2 { gui::cut_top(left, ROW_H * u) } else { gui::cut_bottom(left, ROW_H * u) };
-            if i == 0 { gui::cut_top(left, 12.0 * u); }
-            if gui::labelled(g, 110 + i, r, icons[i], 34.0, strings::get(words[i]), gui::HEADING, gui::BESIDE) {
-                chosen = asks[i];
-            }
-        }
-        var right = float4 { l.right.x + 16.0 * u, l.right.y + 20.0 * u, l.right.z - 32.0 * u, l.right.w - 40.0 * u };
         let back = gui::cut_bottom(right, TALL_H * u);
         if clock::on(c) {
             clock_of(g, gui::cut_top(right, CLOCK_H * u), c, first, rings[first], over);
@@ -145,16 +175,7 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, thinkin
         }
         return chosen;
     }
-    // Portrait: the bar of three, then the play.
-    let bar = float4 { l.left.x + 20.0 * u, l.left.y + 16.0 * u, l.left.z - 40.0 * u, ROW_H * u };
-    let w = (bar.z - 32.0 * u) / 3.0;
-    for i in 3 {
-        let r = float4 { bar.x + i * (w + 16.0 * u), bar.y, w, bar.w };
-        if gui::labelled(g, 110 + i, r, icons[i], 34.0, strings::get(words[i]), gui::HEADING, gui::MIDDLE) {
-            chosen = asks[i];
-        }
-    }
-    var right = float4 { l.right.x + 20.0 * u, l.right.y + 16.0 * u, l.right.z - 40.0 * u, l.right.w - 32.0 * u };
+    // Portrait: the play below the board.
     var top = gui::cut_top(right, CLOCK_H * u);
     gui::cut_top(right, 12.0 * u);
     if clock::on(c) {

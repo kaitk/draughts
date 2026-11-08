@@ -1,7 +1,8 @@
 // The screens (shell/), headless, driven through the pointer as the app drives them:
 // the app opens at home with the board beside the menu; continue opens the game as it
-// stands and home on the panel returns home with the game kept; puzzles do nothing until
-// task 007; settings opens settings, with their own board beside them, and its back
+// stands and home on the panel returns home with the game kept; puzzles opens the
+// puzzles to pick from, its back home (test/shell/puzzles.goose has the rest), and home
+// notes the stars won of those there are; settings opens settings, with their own board beside them, and its back
 // returns where it came from, home or the game. A friend and the computer open a setup in home's column whose
 // choices are kept in the settings and whose play starts that game over the old one;
 // against the computer playing white the board is turned, the game takes the skill kept
@@ -20,6 +21,7 @@ import strings from "../../strings";
 import game from "../../game";
 import ai from "../../ai";
 import shell from "../../shell";
+import puzzles from "../../puzzles";
 import drive from "../drive";
 
 let W = 1280.0;
@@ -34,7 +36,8 @@ fn draughts_widths(g: gui::Gui&) -> u8[>..] {
 }
 
 fn screen(sh: shell::Shell&) -> const u8[:] {
-    if sh.screen == shell::HOME { "home" } else if sh.screen == shell::GAME { "game" } else { "settings" }
+    if sh.screen == shell::HOME { "home" } else if sh.screen == shell::GAME { "game" }
+    else if sh.screen == shell::PICKER { "puzzles" } else { "settings" }
 }
 
 fn show(sh: shell::Shell&, g: gui::Gui&, what: const u8[:]) {
@@ -63,6 +66,7 @@ fn main() {
     var g = gui::Gui {};
     gui::test_faces(g);
     strings::use(strings::EN);
+    puzzles::load();
     var sh = shell::new(rules::RUSSIAN);
     let off = float2 { -1.0, -1.0 };
     drive::frame(sh, g, off, false, false, false, 0.0);
@@ -81,6 +85,8 @@ fn main() {
     show(sh, g, "home");
     drive::tap(sh, g, drive::tile(g, 3), 2.2);            // puzzles
     show(sh, g, "puzzles");
+    drive::tap(sh, g, drive::tile(g, 0), 2.25);           // back
+    show(sh, g, "back from the puzzles");
     // Settings, and an idle frame long after the tap: the new screen's first frame is
     // drawn, the next one isn't.
     let at = drive::tile(g, 4);

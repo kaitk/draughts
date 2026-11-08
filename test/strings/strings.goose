@@ -71,6 +71,15 @@ fn main() {
         print(code, ": ", strings::get(strings::APP_NAME), " / ",
               strings::get(strings::HOME_CONTINUE), " / ", strings::get(strings::HINTS_MOVES));
     }
+    // Numbers filled into a string, each {} in turn.
+    for code, lang in strings::LANGUAGES {
+        strings::use(lang);
+        var goal:  u8[..64] = [];
+        var stars: u8[..64] = [];
+        strings::fill_in(goal, strings::GOAL_TAKE, [2]);
+        strings::fill_in(stars, strings::PUZZLES_STARS, [23, 90]);
+        print(code, ": ", goal, " / ", stars);
+    }
     // Picking the language.
     for locales in ["et-EE,en-US", "en-GB", "de-DE,et", "ET_ee", "fi-FI,sv-SE", ""] {
         print("locales \"", locales, "\": ", strings::LANGUAGES[strings::pick(locales)]);

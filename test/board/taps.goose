@@ -13,6 +13,7 @@ import strings from "../../strings";
 import game from "../../game";
 import ai from "../../ai";
 import shell from "../../shell";
+import puzzles from "../../puzzles";
 import drive from "../drive";
 
 fn tap(b: board::Board&, l: board::Layout, text: const u8[:], now: f64) {

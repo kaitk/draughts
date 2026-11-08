@@ -71,6 +71,27 @@ The search keeps each position's moves on one fixed stack in a `puzzles::Solver`
 caller owns, so it allocates nothing and needs little native stack. The 30 puzzles cost
 at most 387 positions to check, well under a millisecond.
 
+## The screen
+
+Home's puzzles opens the picker (`shell/picker.goose`), and a tile there the puzzle
+(`shell/puzzle.goose`), which the shell holds with its own board and solver beside the
+game, so a game in progress is kept. Their look is in
+[rendering](rendering.md#controls).
+
+- **Stars**: three are at stake. Each miss puts one out, down to one: a wrong move, which
+  plays and then slides back by itself, or a tap the board flashes as a mistake. A
+  puzzle solved keeps the most stars it has won. Start over begins the puzzle again with
+  the misses kept, or afresh once it is solved.
+- **Help**: after two misses the piece of the next right move glows; there is no hint
+  tile. The first tier shows a selected piece's targets whatever the move hints
+  setting, since it teaches the basics ([product](../product.md)); the others follow it.
+- **Tiers**: the first is open; each other opens once half the one before it is solved.
+  The picker lights the first puzzle without stars in an open tier.
+- **Next** opens the puzzle after it in the file, and after the last the picker.
+- **Kept**: the stars in `settings.txt`, `stars = 1:3 4:2` by puzzle id, written when a
+  puzzle is solved. A puzzle under way isn't saved with the game: when the app is
+  paused on one, it comes back on the picker.
+
 ## Checks
 
 `puzzles::check` (run by `test/puzzles/set.goose` on every puzzle, and by

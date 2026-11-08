@@ -14,6 +14,8 @@
 //   ../build/draughts --variant russian           a new game of another draughts
 //   ../build/draughts --clock 5+3                 with a clock
 //   ../build/draughts --computer white --level hard   against the computer playing white
+//   ../build/draughts --screen puzzles            the puzzles to pick from
+//   ../build/draughts --puzzle 21 --tap f4 --tap e5   puzzle 21, taps on its board
 //   scripts/android.py app/draughts.goose --run   on the tablet (docs/development.md)
 
 import std;
@@ -31,6 +33,7 @@ import .widgets;
 import game from "../game";
 import shell from "../shell";
 import ai from "../ai";
+import puzzles from "../puzzles";
 import .text;
 import .think;
 
@@ -52,7 +55,8 @@ fn main() {
     // save draughts.png), --hints moves (show targets; mistakes only by default), --lang
     // CODE (a language with a file in strings/; the system's by default), --screen
     // home|game|settings|friend|computer (home unless a position, taps, a clock, or the
-    // computer are given; the last two open home's setup), --variant
+    // computer are given; the last two open home's setup; puzzles the puzzles to pick
+    // from), --puzzle ID (that puzzle, its taps on its board), --variant
     // international|brazilian|russian, --clock none|5+3|10+5, --computer white|black (a
     // new game; --level easy|medium|hard, the setup's last by default). --theme, --hints,
     // and --lang override the settings for the run without changing them.
@@ -68,6 +72,7 @@ fn main() {
     var computer = -1;
     var level = -1;
     var setup = 0;
+    var puzzle_id = -1;
     var fen:  u8[>..]       = [];
     var taps: u8[..3][..16] = [];
     let argv = args();
@@ -95,6 +100,11 @@ fn main() {
             screen = if argv[i + 1] == "game" { shell::GAME } else if argv[i + 1] == "settings" { shell::SETTINGS } else { shell::HOME };
             if argv[i + 1] == "friend" { setup = home::FRIEND; }
             if argv[i + 1] == "computer" { setup = home::COMPUTER; }
+            if argv[i + 1] == "puzzles" { screen = shell::PICKER; }
+        }
+        if argv[i] == "--puzzle" {
+            let n, ok = parse_int(argv[i + 1]);
+            if ok { puzzle_id = n; }
         }
         if argv[i] == "--tap" && argv[i + 1].len >= 2 && argv[i + 1].len <= 3 && taps.len < 16 {
             let t .= taps.push([]);
@@ -117,6 +127,7 @@ fn main() {
     let system_lang = strings::pick(locales[..draughts_locales(locales)]);
     if lang < 0 { lang = if prefs.language >= 0 { prefs.language } else { system_lang }; }
     strings::use(lang);
+    puzzles::load();
 
     var android_root: u8[>..] = [];
     let on_android = env("ANDROID_ROOT", android_root);
@@ -141,6 +152,10 @@ fn main() {
     }
     sh.screen = if screen >= 0 { screen } else if fen.len > 0 || taps.len > 0 || clock_kind >= 0 || computer >= 0 { shell::GAME } else { shell::HOME };
     sh.setup = setup;
+    if puzzle_id >= 0 && puzzles::find(puzzles::all, puzzle_id) >= 0 {
+        shell::play_puzzle(sh, puzzles::find(puzzles::all, puzzle_id));
+        screen = shell::PUZZLE;
+    }
     // The game as it was when the app was last paused (shell::restore; nothing changes
     // for a missing or damaged file). A run with flags that set up a game or take a
     // screenshot neither reads nor writes it.
@@ -230,6 +245,13 @@ fn main() {
                 board::press(b, l, p, now);
                 board::release(b, l, p, now);
             }
+            tapped++;
+            dirty = true;
+        }
+        if tapped < taps.len && sh.screen == shell::PUZZLE && puzzle::ready(sh.puzzle) {
+            let v .= rules::VARIANTS[sh.puzzle.b.variant];
+            let sq, ok = rules::parse_square(v, taps[tapped]);
+            if ok { puzzle::tap(sh.puzzle, l, board::center(l, v, sq), now); }
             tapped++;
             dirty = true;
         }

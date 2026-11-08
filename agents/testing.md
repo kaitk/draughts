@@ -20,7 +20,7 @@ which would overwrite the main checkout's while another session uses them.
   `ai::think` as the app's worker would; the clock value on its own; and the computer's
   time a move on the clock, over whole games with simulated time, in `pace`), `shell`
   (home, the switch to the game and back, settings and their file, their taps and the
-  board beside them, home's setup and play, the saved game of any variant and damaged images of it, the computer's skill
+  board beside them, home's setup and play, the puzzles' picker and a puzzle played through its misses, hint, reply, and stars, the saved game of any variant and damaged images of it, the computer's skill
   moving across games), `strings` (every language file has every key), `ai` (the computer player:
   its search against a plain minimax, the table changing no score, keys, what each level
   plays in known shots, the same move in steps as at once, and that no level hangs a

@@ -30,6 +30,8 @@ let KEYS = [
     "pick.easy", "pick.medium", "pick.hard",
     "color.white", "color.black",
     "clock.none", "clock.blitz", "clock.blitz_note", "clock.rapid", "clock.rapid_note",
+    "puzzles.stars", "puzzle.next", "puzzle.try_again", "puzzle.solved",
+    "goal.take", "goal.crown", "goal.win", "goal.safe",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -91,7 +93,15 @@ let CLOCK_BLITZ = 56;
 let CLOCK_BLITZ_NOTE = 57;
 let CLOCK_RAPID = 58;
 let CLOCK_RAPID_NOTE = 59;
-let COUNT = 60;
+let PUZZLES_STARS = 60;     // stars won of those there are: "{} / {}"
+let PUZZLE_NEXT = 61;
+let PUZZLE_TRY_AGAIN = 62;
+let PUZZLE_SOLVED = 63;
+let GOAL_TAKE = 64;         // "{}", the pieces to capture
+let GOAL_CROWN = 65;
+let GOAL_WIN = 66;
+let GOAL_SAFE = 67;
+let COUNT = 68;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];
@@ -140,6 +150,30 @@ fn use(lang: i64) {
 
 // The current language's string for a key (one of the constants above).
 fn get(k: i64) -> const u8[:] { return table[k]; }
+
+// The string for a key into out, each {} in it replaced by the next of `numbers`.
+fn fill_in(out: u8[..64]&, k: i64, numbers: const i64[:]) {
+    out.clear();
+    var rest = table[k];
+    var n = 0;
+    while rest.len > 0 {
+        if rest.len >= 2 && rest[0] == '{' && rest[1] == '}' && n < numbers.len {
+            var digits: u8[..20] = [];
+            var x = max(numbers[n], 0);
+            if x == 0 { digits.push('0'); }
+            while x > 0 {
+                digits.push(('0' + x % 10) as u8);
+                x /= 10;
+            }
+            for i in digits.len { if out.len < 64 { out.push(digits[digits.len - 1 - i]); } }
+            n++;
+            rest = rest[2..];
+            continue;
+        }
+        if out.len < 64 { out.push(rest[0]); }
+        rest = rest[1..];
+    }
+}
 
 // A language's own name, as its file gives it, whichever language is current.
 fn name_of(lang: i64) -> const u8[:] {

@@ -74,3 +74,12 @@ clock.blitz = 5 min
 clock.blitz_note = +3 s käigule
 clock.rapid = 10 min
 clock.rapid_note = +5 s käigule
+
+puzzles.stars = {} / {}
+puzzle.next = Edasi
+puzzle.try_again = Proovi uuesti
+puzzle.solved = Lahendatud
+goal.take = Löö {}
+goal.crown = Saa tammiks
+goal.win = Võida mäng
+goal.safe = Ära anna nuppu

@@ -85,6 +85,23 @@ let FRAG = """
         vec2 r = vec2(s.x + s.y, abs(s.x - s.y)) * 0.70710678;
         return min(d, seg(r, vec2(a, 0.0), vec2(b, 0.0)));
     }
+    // The signed distance to Lucide's five-pointed star, negative inside.
+    float star(vec2 p) {
+        const vec2 v[10] = vec2[](vec2(12.0, 2.0), vec2(15.1, 8.3), vec2(22.0, 9.3), vec2(17.0, 14.1),
+                                  vec2(18.2, 21.0), vec2(12.0, 17.8), vec2(5.8, 21.0), vec2(7.0, 14.1),
+                                  vec2(2.0, 9.3), vec2(8.9, 8.3));
+        float d = 1e9;
+        float s = 1.0;
+        for (int i = 0, j = 9; i < 10; j = i, i++) {
+            vec2 e = v[j] - v[i];
+            vec2 w = p - v[i];
+            vec2 b = w - e * clamp(dot(w, e) / dot(e, e), 0.0, 1.0);
+            d = min(d, dot(b, b));
+            bvec3 c = bvec3(p.y >= v[i].y, p.y < v[j].y, e.x * w.y > e.y * w.x);
+            if (all(c) || all(not(c))) s = -s;
+        }
+        return s * sqrt(d);
+    }
     float icon(int k, vec2 p) {
         if (k == 1) {           // undo
             float d = min(seg(p, vec2(9.0, 14.0), vec2(4.0, 9.0)), seg(p, vec2(4.0, 9.0), vec2(9.0, 4.0)));
@@ -167,6 +184,30 @@ let FRAG = """
             float d = abs(length(p - vec2(12.0, 13.0)) - 8.0);
             d = min(d, min(seg(p, vec2(12.0, 9.0), vec2(12.0, 13.0)), seg(p, vec2(12.0, 13.0), vec2(14.5, 15.5))));
             return min(d, seg(p, vec2(9.5, 2.5), vec2(14.5, 2.5)));
+        }
+        if (k == 16 || k == 17) {   // a star, filled (won) or outlined (still at stake)
+            float s = star(p);
+            return k == 16 ? s + 1.2 : abs(s);
+        }
+        if (k == 18) {          // a locked tier: a padlock
+            float d = abs(box(p, vec2(12.0, 16.0), vec2(7.0, 5.0), 2.0));
+            d = min(d, min(seg(p, vec2(8.0, 11.0), vec2(8.0, 7.0)), seg(p, vec2(16.0, 7.0), vec2(16.0, 11.0))));
+            return min(d, arc(p, vec2(12.0, 7.0), 4.0, 3.1415927, 3.1415927));
+        }
+        if (k == 19) {          // become a king: a crown on a line
+            const vec2 c[7] = vec2[](vec2(3.0, 17.0), vec2(2.0, 7.0), vec2(7.0, 11.0), vec2(12.0, 4.0),
+                                     vec2(17.0, 11.0), vec2(22.0, 7.0), vec2(21.0, 17.0));
+            float d = seg(p, c[6], c[0]);
+            for (int i = 0; i < 6; i++) d = min(d, seg(p, c[i], c[i + 1]));
+            return min(d, seg(p, vec2(3.0, 20.5), vec2(21.0, 20.5)));
+        }
+        if (k == 20) {          // the only safe move: a shield, its curves as three segments each
+            const vec2 c[11] = vec2[](vec2(12.0, 2.5), vec2(4.0, 5.5), vec2(4.0, 11.5), vec2(5.05, 16.0),
+                                      vec2(7.88, 19.4), vec2(12.0, 21.5), vec2(16.12, 19.4), vec2(18.95, 16.0),
+                                      vec2(20.0, 11.5), vec2(20.0, 5.5), vec2(12.0, 2.5));
+            float d = 1e9;
+            for (int i = 0; i < 10; i++) d = min(d, seg(p, c[i], c[i + 1]));
+            return d;
         }
         return 1e9;
     }

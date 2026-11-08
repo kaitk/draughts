@@ -1,8 +1,10 @@
-// The app's screens, with no graphics: home, the game, and settings, and which one
-// shows (docs/architecture/rendering.md, "Home", "Game screen"). Each frame it declares
-// the screen showing and switches when that asks: home's continue opens the game, a
-// friend and the computer open a new game's setup in home's column, whose play starts
-// the game; settings opens from home and from the game and goes back where it came from.
+// The app's screens, with no graphics: home, the game, settings, and the puzzles, and
+// which one shows (docs/architecture/rendering.md, "Home", "Game screen";
+// docs/architecture/puzzles.md, "The screen"). Each frame it declares the screen showing
+// and switches when that asks: home's continue opens the game, a friend and the computer
+// open a new game's setup in home's column, whose play starts the game; puzzles opens
+// the puzzles to pick from, and a pick plays that puzzle, whose next plays the one after;
+// settings opens from home, the game, and a puzzle, and goes back where it came from.
 // It holds the settings, keeps the game's move hints and kings in step with them, and
 // says when they changed, for the app to write and apply; and where the board goes this
 // frame, turned when the child plays black, and whether the photograph behind it is
@@ -20,12 +22,17 @@ import gui from "../gui";
 import game from "../game";
 import strings from "../strings";
 import ai from "../ai";
+import puzzles from "../puzzles";
 import .home;
 import .settings;
+import .picker;
+import .puzzle;
 
 let HOME = 0;
 let GAME = 1;
 let SETTINGS = 2;
+let PICKER = 3;             // the puzzles to pick from
+let PUZZLE = 4;             // one puzzle
 
 struct Shell {
     screen:  i64 = HOME,
@@ -39,12 +46,19 @@ struct Shell {
     layout:  board::Layout,                   // where the board is this frame
     sharp:   bool          = true,            // the photograph as it is (home, settings), or blurred (the game)
     over:    game::Overlay = [],              // the screen's pieces over the UI this frame
+    puzzle:  puzzle::Play,                    // the puzzle playing, or last played
 }
 
 fn new(variant: u8) -> Shell {
     let g = game::new(variant);
     return Shell { game: g, preview: board::new(variant),
-                   layout: panel::layout(1.0, 1.0, rules::VARIANTS[variant].size).board, .. };
+                   layout: panel::layout(1.0, 1.0, rules::VARIANTS[variant].size).board, puzzle: puzzle::new(), .. };
+}
+
+// Opens puzzle `index` of puzzles::all.
+fn play_puzzle(sh: Shell&, index: i64) {
+    puzzle::open(sh.puzzle, index);
+    sh.screen = PUZZLE;
 }
 
 // One frame, after gui::begin, on a screen width × height pixels. Returns whether
@@ -89,8 +103,50 @@ fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, fresh: b
     }
     // Time away from the game screen isn't on the clock.
     game::pause(sh.game);
+    if sh.screen == PUZZLE {
+        let pl .= sh.puzzle;
+        pl.b.king_look = settings::king_look(sh.prefs);
+        // The first tier teaches the basics, so it shows a selected piece's targets
+        // (docs/product.md); the others take the setting.
+        pl.b.hints = if puzzle::current(pl).tier == 1 { board::MOVES } else { sh.prefs.hints };
+        var l = panel::layout(width, height, rules::VARIANTS[pl.b.variant].size);
+        l.board.flip = puzzle::current(pl).start.side == rules::BLACK;
+        sh.layout = l.board;
+        sh.sharp = false;
+        let go, changed = puzzle::frame(pl, g, l, now, sh.over);
+        // Solved: the stars kept are the most it has won.
+        if pl.fresh {
+            let id = puzzle::current(pl).id;
+            if pl.won > sh.prefs.stars[id] {
+                sh.prefs.stars[id] = pl.won as u8;
+                sh.changed = true;
+            }
+        }
+        if go == puzzle::PUZZLES { sh.screen = PICKER; }
+        if go == puzzle::SETTINGS {
+            sh.screen = SETTINGS;
+            sh.back = PUZZLE;
+        }
+        if go == puzzle::NEXT {
+            if pl.index + 1 < puzzles::all.list.len { play_puzzle(sh, pl.index + 1); } else { sh.screen = PICKER; }
+        }
+        return changed || go != puzzle::STAY;
+    }
     sh.sharp = true;
     var changed = g.input.pressed || g.input.released;
+    if sh.screen == PICKER {
+        // No board: it lies off the screen.
+        sh.layout = board::layout_at(-2.0 * width, 0.0, 0.5 * width, g.scale, sh.layout.n);
+        sh.over.clear();
+        let pick = picker::frame(g, width, height, sh.prefs.stars);
+        if pick == picker::BACK {
+            sh.screen = HOME;
+            sh.setup = home::NOTHING;
+        } else if pick >= 0 {
+            play_puzzle(sh, pick);
+        }
+        return changed || pick != picker::NOTHING;
+    }
     if sh.screen == SETTINGS {
         // The preview shows the settings as they are on opening and after each change.
         if fresh { settings::stage(sh.preview, sh.prefs, now); }
@@ -115,6 +171,7 @@ fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, fresh: b
             sh.back = HOME;
         },
         home::CONTINUE => { sh.screen = GAME; },
+        home::PUZZLES => { sh.screen = PICKER; },
         home::FRIEND => { sh.setup = home::FRIEND; },
         home::COMPUTER => { sh.setup = home::COMPUTER; },
         home::BACK => { sh.setup = home::NOTHING; },
@@ -197,7 +254,7 @@ fn restore(sh: Shell&, file: const u8[:]) -> bool {
     guard ok && one.len == 1 else { return false; }
     let s .= one[0];
     guard s.version == VERSION && s.variant < rules::VARIANT_COUNT && s.start.variant == s.variant
-          && s.pos.variant == s.variant && s.screen >= HOME && s.screen <= SETTINGS && s.computer >= -1
+          && s.pos.variant == s.variant && s.screen >= HOME && s.screen <= PUZZLE && s.computer >= -1
           && s.computer <= rules::BLACK && s.level >= game::EASY && s.level <= game::HARD
           && s.clock.kind >= 0 && s.clock.kind < clock::KINDS && s.skill >= 0 && s.skill <= 100
     else { return false; }
@@ -213,15 +270,20 @@ fn restore(sh: Shell&, file: const u8[:]) -> bool {
     gm.clock = s.clock;
     gm.counted = s.counted;
     gm.turn = b.pos.side;
-    sh.screen = s.screen;
+    // A puzzle isn't kept; the puzzles to pick from come back instead.
+    sh.screen = if s.screen == PUZZLE { PICKER } else { s.screen };
     return true;
 }
 
-// The board on screen: settings show their preview, the other screens the game's.
-fn shown(sh: Shell&) -> board::Board& { return if sh.screen == SETTINGS { sh.preview } else { sh.game.b }; }
+// The board on screen: settings show their preview, a puzzle its own, the other screens
+// the game's.
+fn shown(sh: Shell&) -> board::Board& {
+    return if sh.screen == SETTINGS { sh.preview } else if sh.screen == PUZZLE { sh.puzzle.b } else { sh.game.b };
+}
 
 // Whether anything is still moving at `now`; the app draws while it is.
 fn animating(sh: Shell&, g: gui::Gui&, now: f64) -> bool {
     return if sh.screen == GAME { game::animating(sh.game, g, now) }
+           else if sh.screen == PUZZLE { puzzle::animating(sh.puzzle, g, now) }
            else { board::animating(shown(sh), now) || gui::animating(g) };
 }

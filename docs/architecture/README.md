@@ -66,7 +66,7 @@ keeps the rest.
 | `gui/` | The UI layer ([rendering.md](rendering.md#ui-layer)): rect cuts, widgets with their press state, text laid out from glyph tables the app bakes; every call appends quads to one fixed array |
 | `board/` | The board on screen: the position, the legal moves, and the undo history; where the board goes and which square a point is on; taps and drags; a move's animation; and each frame's draw lists (pieces, the squares' marks, a wrong move's flash) |
 | `game/` | The game screen: its panels and where they and the board go (`panel::layout`), the clocks, the computer's turn (asking for a move and playing the answer), the celebration, and the pieces it puts over the UI |
-| `shell/` | The screens and which one shows: home and a new game's setup, the game, settings with their preview board; the pieces the screen showing puts over the UI (`Shell.over`, which the app draws); the settings file and the saved game |
+| `shell/` | The screens and which one shows: home and a new game's setup, the game, settings with their preview board, the puzzles to pick from and the puzzle playing ([puzzles.md](puzzles.md#the-screen)); the pieces the screen showing puts over the UI (`Shell.over`, which the app draws); the settings file and the saved game |
 | `app/` | The program: the main loop, the GPU drawing of the board, the pieces, and the UI's quads, the season's photograph and its blurs, the font atlas, the themes, the computer's worker thread, and its C (storage folder, locales, the clock's wake timer, the JPEG decoder) |
 | `tools/` | Programs for development: perft, the computer's benchmark and matches, a terminal game against it, and the puzzles' checks |
 

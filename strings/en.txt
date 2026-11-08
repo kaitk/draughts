@@ -75,3 +75,12 @@ clock.blitz = 5 min
 clock.blitz_note = +3 s a move
 clock.rapid = 10 min
 clock.rapid_note = +5 s a move
+
+puzzles.stars = {} / {}
+puzzle.next = Next
+puzzle.try_again = Try again
+puzzle.solved = Solved
+goal.take = Capture {}
+goal.crown = Become a king
+goal.win = Win the game
+goal.safe = Stay safe

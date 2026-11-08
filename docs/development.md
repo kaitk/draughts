@@ -62,7 +62,9 @@ board's logic is the `board/` package, the UI layer `gui/`, the game screen `gam
 the screens around it `shell/` (home, and which screen shows), each tested headless
 (`test/board/`, `test/gui/`, `test/game/`, `test/shell/`). The app opens at home; `--fen`,
 `--tap` (`c3`, or `d10` on 10 × 10), or `--screen game` open the game screen,
-`--screen settings` settings, `--screen friend` or `computer` home's setup. `--variant
+`--screen settings` settings, `--screen friend` or `computer` home's setup, `--screen
+puzzles` the puzzles to pick from, and `--puzzle ID` that puzzle, whose taps go to its
+board (`--puzzle 21 --tap f4 --tap e5`). `--variant
 international|brazilian|russian` starts a new game of that draughts (else the setup's
 last choice), `--clock 5+3|10+5` with a clock, and `--computer white|black` against
 the computer playing that side (the board turned when it plays white), at `--level

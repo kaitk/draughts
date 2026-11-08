@@ -13,6 +13,7 @@ import strings from "../../strings";
 import game from "../../game";
 import ai from "../../ai";
 import shell from "../../shell";
+import puzzles from "../../puzzles";
 import drive from "../drive";
 
 // Answers the game's ask at once, as the app's worker does later.

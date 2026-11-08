@@ -55,6 +55,11 @@ let TARGET = 12;            // move hints,
 let GLOBE = 13;             // the language
 let HOME = 14;              // the game's way home: a house
 let CLOCK = 15;             // no clock: a stopwatch
+let STAR = 16;              // a star won, filled
+let STAR_OFF = 17;          // a star still at stake or lost, outlined
+let LOCK = 18;              // a tier not yet open
+let CROWN = 19;             // the puzzles' goals: become a king,
+let SHIELD = 20;            // and the only safe move (TARGET for a capture)
 
 // Text faces (rendering.md, "Fonts"): one size each, in dp, baked by the app at the
 // screen's pixel size.
@@ -338,21 +343,24 @@ let MIDDLE = 1;             // the icon and the word side by side, centered
 let STACKED = 2;            // the icon over the word, centered
 
 // A glass tile with an icon `size` dp across and a word in face `face`
-// (prototypes/game.html): true when it is tapped.
+// (prototypes/game.html): true when it is tapped. `style` lights it (CHOSEN, a puzzle's
+// next once it is solved); one that isn't `on` is drawn at 35% and takes no tap.
 fn labelled(g: Gui&, id: i64, r: float4, icon: i64, size: f32, label: const u8[:], face: i64,
-            arrange: i64) -> bool {
+            arrange: i64, style: i64 = PLAIN, on: bool = true) -> bool {
     let u = g.scale;
-    let clicked, p = hold(g, id, r);
-    add(g, Quad { rect: r, look: float4 { BUTTON, 22.0 * u, 0.0, p }, extra: float4 { u, PLAIN, 0.0, 0.0 } });
+    let clicked, p = hold_if(g, id, r, on);
+    let a: f32 = if on { 1.0 } else { 0.35 };
+    add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { BUTTON, 22.0 * u, 0.0, p },
+                  extra: float4 { u, style, 0.0, 0.0 } });
     let s = size * u;
     if arrange == STACKED {
         let f .= g.faces[face];
         let line = f.ascent - f.descent;
         let gap = 8.0 * u;
         var c = center(r, r.z, s + gap + line);
-        glyph_icon(g, center(cut_top(c, s), s, s), icon, PLAIN, p, 1.0);
+        glyph_icon(g, center(cut_top(c, s), s, s), icon, PLAIN, p, a);
         cut_top(c, gap);
-        text(g, face, c, label, 1.0, 0.0, CENTER);
+        text(g, face, c, label, a, 0.0, CENTER);
         return clicked;
     }
     let gap = 12.0 * u;
@@ -363,9 +371,9 @@ fn labelled(g: Gui&, id: i64, r: float4, icon: i64, size: f32, label: const u8[:
         let w = s + gap + text_width(g, face, label);
         c = center(r, w, r.w);
     }
-    glyph_icon(g, center(cut_left(c, s), s, s), icon, PLAIN, p, 1.0);
+    glyph_icon(g, center(cut_left(c, s), s, s), icon, PLAIN, p, a);
     cut_left(c, gap);
-    text(g, face, c, label, 1.0, 0.0, LEFT);
+    text(g, face, c, label, a, 0.0, LEFT);
     return clicked;
 }
 

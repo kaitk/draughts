@@ -288,11 +288,27 @@ the prototype tried, kept for 3D:
   face, which makes them a little wider than the prototype's 13 px, so the landscape
   board is about 550 px where the prototype's is 590. The tutorial's tile and the raised
   board are dimmed and take no tap until they exist.
-  **Puzzle picker**: one glass row per theme (capture, become a king, the
-  only safe move), its icon and ten tiles of at least 64 px with 0 to 3 stars in the
-  glow color; locked tiles show a lock, the next unsolved one a glow ring.
-  **Solved**: three stars that pop in over the dimmed board, a few drifting sparks, and
-  again or next.
+  **Puzzle picker** (`prototypes/puzzles.html`): back, and one glass row per tier,
+  its mark (a target for captures, a crown for many jumps and crowning, a shield for
+  shots and the safe move) and its ten tiles, each with 0 to 3 stars in the glow color,
+  outlined for those not won; the next unsolved puzzle is lit; a tier not yet open shows
+  a lock on each tile. In portrait the mark stands above its row. Behind it the sharp
+  photograph and no board. **A puzzle** (`prototypes/puzzle.html`, take c, chosen
+  2026-11-08): the game screen's layout, the left panel the game's with the puzzles in
+  home's place; on the right the goal's icon in the glow color over its words
+  ("Capture 2", "Become a king", "Stay safe"), the three stars at stake, 44 px, and at
+  the bottom next, the tall tile, at 35% and taking no tap until the puzzle is solved,
+  then lit as a chosen tile. There is no hint tile, as in a game. A wrong move plays,
+  then 0.35 s after it lands slides back along its way, the pieces it took fading back
+  in, while its square flashes the red ring over a ghost of the piece fading from 80%;
+  the goal gives way for 2 s to "try again" in a pill of the forced-capture red at 16%,
+  and a star goes out. A tap the board flashes as a mistake is a miss too, without the
+  must-capture pulse, which would show the answer. After two misses the piece to move
+  has the glow ring, pulsing twice, then still. A right move that leaves the goal ahead
+  is answered 0.5 s after it lands. Solved, the words say so, the stars won pop in one
+  after another (56 px, 0.6 s each, 0.15 s apart), and next lights; nothing covers the
+  board. In portrait the goal and the stars share a row under the board, over next
+  across the width.
 
 ### Board and pieces
 

@@ -21,6 +21,7 @@ import strings from "../../strings";
 import game from "../../game";
 import ai from "../../ai";
 import shell from "../../shell";
+import puzzles from "../../puzzles";
 import drive from "../drive";
 
 let UNDO = 3;

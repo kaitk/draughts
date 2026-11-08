@@ -3,8 +3,8 @@
 // continue, a friend, the computer with its level, puzzles, and settings, each an icon
 // and a word. In landscape the column stands at the left, its left edge off the screen;
 // in portrait it is a sheet along the bottom, and settings is a quiet button beside the
-// wordmark, so the sheet leaves the board its room. Puzzles are dimmed until task 007
-// exists.
+// wordmark, so the sheet leaves the board its room. Puzzles notes the stars won of those
+// there are.
 //
 // A friend and the computer open a new game's setup in the same column: back and the
 // title, then a row of tiles per choice, lit as in settings: the draughts, the level and
@@ -19,6 +19,7 @@ import board from "../board";
 import gui from "../gui";
 import game from "../game";
 import strings from "../strings";
+import puzzles from "../puzzles";
 
 // What home asks for.
 let NOTHING = 0;
@@ -29,6 +30,7 @@ let COMPUTER = 4;           // the computer's setup
 let BACK = 5;               // from a setup to the menu
 let PLAY = 6;               // a new game as the setup stands
 let CHANGED = 7;            // a choice in the setup
+let PUZZLES = 8;
 
 let ROWS = 4;               // and settings, a fifth in landscape
 let ROW_H = 80.0;           // dp
@@ -110,13 +112,16 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, width: f
     gui::cut_top(content, (if landscape { MARK_GAP } else { 12.0 }) * u + ROW_GAP * u);
 
     // The menu.
-    let rows = [CONTINUE, FRIEND, COMPUTER, 0];
+    let rows = [CONTINUE, FRIEND, COMPUTER, PUZZLES];
     let icons = [gui::NEXT, gui::FRIEND, gui::COMPUTER, gui::PUZZLE];
     let keys = [strings::HOME_CONTINUE, strings::HOME_FRIEND, strings::HOME_COMPUTER, strings::HOME_PUZZLES];
     for i in ROWS {
         let r = gui::cut_top(content, ROW_H * u);
         gui::cut_top(content, ROW_GAP * u);
-        let note = if i == 2 { strings::get(LEVEL_NOTES[s.level]) } else { "" };
+        var stars: u8[..64] = [];
+        let won, all = picker::totals(s.stars);
+        strings::fill_in(stars, strings::PUZZLES_STARS, [won, all]);
+        let note = if i == 2 { strings::get(LEVEL_NOTES[s.level]) } else if i == 3 && all > 0 { stars[..] } else { "" };
         if gui::row(g, 301 + i, r, icons[i], strings::get(keys[i]), note, i == 0, rows[i] != 0) { pick = rows[i]; }
     }
     if landscape {

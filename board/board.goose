@@ -106,8 +106,9 @@ struct Board {
     moves:    rules::Moves,     // the legal moves of pos
     selected: i64,              // a bit, or -1
     // The move being shown: the position before it, when it started, and where the
-    // piece starts from if it was dropped there.
+    // piece starts from if it was dropped there; `back`, a move shown sliding back.
     moving:    bool,
+    back:      bool,
     move:      rules::Move,
     before:    rules::Position,
     since:     f64,
@@ -119,7 +120,10 @@ struct Board {
     hints:     i64,             // MISTAKES or MOVES
     wrong:     i64,             // the square of the last wrong move, a bit, or -1
     wrong_at:  f64,
-    hint:      i64,             // the move a hint shows, an index into moves, or -1
+    ghost:     bool,            // a ghost of the piece that slid back fades on the wrong square
+    ghost_of:  float2,          // its side (0 or 1) and whether it is a king
+    glow:      i64,             // the piece a hint shows with a glow ring, a bit, or -1
+    glow_at:   f64,
     king_look: i64,             // CROWN or STACK
     // A picture rather than a game (settings' preview): once a wrong move's ring has
     // flashed, it stays, and once the pieces that must capture have pulsed, their rings
@@ -138,7 +142,7 @@ struct Board {
 }
 
 fn new(variant: u8) -> Board {
-    var b = Board { variant: variant, selected: -1, wrong: -1, hint: -1, king_look: CROWN, pressed: -1, .. };
+    var b = Board { variant: variant, selected: -1, wrong: -1, glow: -1, king_look: CROWN, pressed: -1, .. };
     set(b, rules::start(variant));
     return b;
 }
@@ -154,7 +158,9 @@ fn show(b: Board&, p: rules::Position) {
     b.pulse_end = 0.0;
     b.pressed = -1;
     b.dragging = false;
-    b.hint = -1;
+    b.back = false;
+    b.ghost = false;
+    b.glow = -1;
 }
 
 // Starts a new game from position p.
@@ -191,17 +197,31 @@ fn winner(b: Board&) -> i64 {
     return 1 - b.pos.side as i64;
 }
 
-// Shows one good move, kept for puzzles (task 007; a game has no hint): a capture that
-// must be made, the one taking the most; its piece is selected and its target marked
-// whatever the move hints are. False when no capture is due.
-fn hint(b: Board&) -> bool {
-    guard !b.moving && must_capture(b) else { return false; }
-    var best = 0;
-    for i in b.moves.len {
-        if popcount(b.moves[i].captured) > popcount(b.moves[best].captured) { best = i; }
-    }
-    b.hint = best;
-    b.selected = b.moves[best].from;
+// A hint (puzzles): the piece on `sq` glows, pulsing for two cycles, then lit and still.
+fn glow_on(b: Board&, sq: i64, now: f64) {
+    b.glow = sq;
+    b.glow_at = now;
+}
+
+// Takes back the last move as a mistake: the piece slides back along its way and the
+// pieces it took fade back in, while its square flashes the red ring over a fading ghost
+// of it. False when there is no move to take back.
+fn slide_back(b: Board&, now: f64) -> bool {
+    guard b.history.len > 0 else { return false; }
+    let m = b.move;
+    let side = 1 - b.pos.side;
+    let king = b.pos.kings & rules::bit(m.to) != 0;
+    undo(b);
+    b.move = m;
+    b.before = b.pos;
+    b.moving = true;
+    b.back = true;
+    b.since = now;
+    b.dropped = false;
+    b.wrong = m.to;
+    b.wrong_at = now;
+    b.ghost = true;
+    b.ghost_of = float2 { side, if king { 1.0 } else { 0.0 } };
     return true;
 }
 
@@ -235,7 +255,7 @@ fn start_move(b: Board&, i: i64, now: f64) {
     b.last = b.move;
     b.has_last = true;
     b.selected = -1;
-    b.hint = -1;
+    b.glow = -1;
     // A move starts from its square unless release says it was dropped elsewhere; a
     // move played by code (the computer's) must not start from the last drop.
     b.dropped = false;
@@ -265,7 +285,6 @@ fn press(b: Board&, l: Layout, p: float2, now: f64) {
     let v .= rules::VARIANTS[b.variant];
     let sq = hit(l, v, p);
     let i = move_to(b, sq);
-    if i != b.hint { b.hint = -1; }
     if i >= 0 {
         b.dropped = false;
         start_move(b, i, now);
@@ -328,6 +347,7 @@ fn duration(m: rules::Move&) -> f64 {
 // Whether anything is still changing at `now`; the app draws while it is.
 fn animating(b: Board&, now: f64) -> bool {
     b.moving || now < b.pulse_end || (b.wrong >= 0 && now < b.wrong_at + FLASH)
+    || (b.glow >= 0 && b.glow_at >= 0.0 && now < b.glow_at + PULSE)
 }
 
 // Ends the move, or the pulse, once its time is up. Call before input each frame; true
@@ -336,6 +356,11 @@ fn update(b: Board&, now: f64) -> bool {
     var ended = false;
     if b.moving && now - b.since >= duration(b.move) {
         b.moving = false;
+        b.back = false;
+        ended = true;
+    }
+    if b.glow >= 0 && b.glow_at >= 0.0 && now >= b.glow_at + PULSE {
+        b.glow_at = -1.0;
         ended = true;
     }
     if b.pulse_end > 0.0 && now >= b.pulse_end {
@@ -343,7 +368,10 @@ fn update(b: Board&, now: f64) -> bool {
         ended = true;
     }
     if b.wrong >= 0 && !b.held && now >= b.wrong_at + FLASH {
-        if b.still { b.held = true; } else { b.wrong = -1; }
+        if b.still { b.held = true; } else {
+            b.wrong = -1;
+            b.ghost = false;
+        }
         ended = true;
     }
     return ended;
@@ -378,8 +406,13 @@ fn fill(b: Board&, l: Layout, now: f64) {
     let r = 0.39 * l.inner.w;           // a disc fills 78% of its square
     let unit = 0.01 * l.board.z;        // 1% of the board
     let shown = if b.moving { b.before } else { b.pos };
-    let t = now - b.since;
+    // A move sliding back is the move played backward.
+    let t = if b.back { max(duration(b.move) - (now - b.since), 0.0) } else { now - b.since };
     let pulsing = now < b.pulse_end;
+    // The hint's ring: full, fading to a third and back every 1.4 s, then full and still.
+    let glowing = if b.glow_at >= 0.0 && now < b.glow_at + PULSE {
+        (0.65 + 0.35 * cos(2.0 * PI * (now - b.glow_at) / (0.5 * PULSE))) as f32
+    } else { 1.0 };
     let ring: f32 = if pulsing { 1.0 } else { 2.0 };
     var must: u64 = 0;
     if (pulsing || b.held) && must_capture(b) {
@@ -404,7 +437,14 @@ fn fill(b: Board&, l: Layout, now: f64) {
             let selected = sq == b.selected;
             add(b, center(l, v, sq), r, if selected { 1.1 * unit } else { 0.0 }, black,
                 shown.kings & m != 0, if selected { 1.0 } else { 0.0 }, alpha, if must & m != 0 { ring } else { 0.0 });
+            if sq == b.glow && !b.moving && b.pieces.len > 0 { b.pieces[b.pieces.len - 1].ring.y = glowing; }
         }
+    }
+    if b.ghost && b.wrong >= 0 {
+        // The ghost fades from 0.8 out over the flash, slowly at first.
+        let k = clamp((now - b.wrong_at) / FLASH, 0.0, 1.0);
+        add(b, center(l, v, b.wrong), r, 0.0, b.ghost_of.x > 0.5, b.ghost_of.y > 0.5, 0.0,
+            (0.8 * (1.0 - k * k)) as f32, 0.0);
     }
     if b.moving {
         // The mover along its stops, with a little hop over each capture.
@@ -447,7 +487,7 @@ fn fill(b: Board&, l: Layout, now: f64) {
     if b.selected >= 0 && !b.moving {
         for i in b.moves.len {
             let m .= b.moves[i];
-            guard m.from == b.selected && (b.hints == MOVES || i == b.hint) else { continue; }
+            guard m.from == b.selected && b.hints == MOVES else { continue; }
             mark(b, b.marks.target, m.to);
             for j in 1..m.path.len - 1 { mark(b, b.marks.via, m.path[j]); }
         }
