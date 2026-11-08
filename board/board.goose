@@ -105,6 +105,7 @@ struct Board {
     history:  Step[..MAX_HISTORY],  // the positions before each move, oldest first
     moves:    rules::Moves,     // the legal moves of pos
     selected: i64,              // a bit, or -1
+    steps:    rules::Path,      // the stops of a capture tapped so far, after the selected piece's square
     // The move being shown: the position before it, when it started, and where the
     // piece starts from if it was dropped there; `back`, a move shown sliding back.
     moving:    bool,
@@ -152,6 +153,7 @@ fn show(b: Board&, p: rules::Position) {
     b.pos = p;
     rules::generate(b.pos, b.moves);
     b.selected = -1;
+    b.steps.clear();
     b.moving = false;
     b.wrong = -1;
     b.held = false;
@@ -230,14 +232,38 @@ fn has_move_from(b: Board&, from: i64) -> bool {
     return false;
 }
 
-// The selected piece's move ending on `to`, or -1.
-fn move_to(b: Board&, to: i64) -> i64 {
-    guard b.selected >= 0 && to >= 0 else { return -1; }
-    for i in b.moves.len {
-        let m .= b.moves[i];
-        if m.from == b.selected && m.to == to { return i; }
+// Whether move m is the selected piece's and makes the stops tapped so far, with more of
+// its way still to come.
+fn on_steps(b: Board&, m: rules::Move&) -> bool {
+    guard m.from == b.selected && m.path.len > b.steps.len + 1 else { return false; }
+    for s, k in b.steps { if m.path[k + 1] != s { return false; } }
+    return true;
+}
+
+// What a tap on `sq` does for the selected piece, among its moves that make the stops
+// tapped so far: one ending on sq is played (one with exactly those stops before it
+// first). Else, if sq is the next stop of several of them, it is kept as a stop, and if
+// of only one, that one is played: a capture of many jumps can be tapped stop by stop
+// or by its last square alone. Returns the move to play or -1, and whether sq was kept.
+fn follow(b: Board&, sq: i64) -> i64, bool {
+    guard b.selected >= 0 && sq >= 0 else { return -1, false; }
+    let k = b.steps.len + 1;    // where sq stands in a way
+    var end = -1;
+    var via = -1;
+    var vias = 0;
+    for m, i in b.moves {
+        guard on_steps(b, m) else { continue; }
+        if m.to == sq {
+            if end < 0 || (m.path.len == k + 1 && b.moves[end].path.len != k + 1) { end = i; }
+        } else if m.path[k] == sq {
+            if via < 0 { via = i; }
+            vias++;
+        }
     }
-    return -1;
+    if end >= 0 { return end, false; }
+    if vias == 1 { return via, false; }
+    if vias > 1 { b.steps.push(sq as u8); }
+    return -1, vias > 1;
 }
 
 fn start_move(b: Board&, i: i64, now: f64) {
@@ -255,6 +281,7 @@ fn start_move(b: Board&, i: i64, now: f64) {
     b.last = b.move;
     b.has_last = true;
     b.selected = -1;
+    b.steps.clear();
     b.glow = -1;
     // A move starts from its square unless release says it was dropped elsewhere; a
     // move played by code (the computer's) must not start from the last drop.
@@ -266,6 +293,7 @@ fn must_capture(b: Board&) -> bool { b.moves.len > 0 && b.moves[0].captured != 0
 // A wrong move ending on square `sq`: its ring flashes, and if a capture was due, the
 // pieces that must capture pulse.
 fn mistake(b: Board&, sq: i64, now: f64) {
+    b.steps.clear();
     b.wrong = sq;
     b.wrong_at = now;
     b.held = false;
@@ -277,22 +305,25 @@ fn empty(b: Board&, sq: i64) -> bool {
 }
 
 // A finger or the mouse goes down at p. On a piece that can move: select it (and it may
-// be dragged). On a target of the selected piece: play that move. On another empty
-// square while a piece is selected, or on a piece that can't move because another must
-// capture: a mistake. Elsewhere: deselect.
+// be dragged). On a target of the selected piece: play that move; on the next stop of
+// its captures, keep it (`follow`). On another empty square while a piece is selected,
+// or on a piece that can't move because another must capture: a mistake. Elsewhere:
+// deselect.
 fn press(b: Board&, l: Layout, p: float2, now: f64) {
     guard !b.moving else { return; }
     let v .= rules::VARIANTS[b.variant];
     let sq = hit(l, v, p);
-    let i = move_to(b, sq);
+    let i, kept = follow(b, sq);
     if i >= 0 {
         b.dropped = false;
         start_move(b, i, now);
         return;
     }
+    if kept { return; }
     if sq >= 0 && (b.pos.pieces[b.pos.side] >> sq) & 1 != 0 {
         if has_move_from(b, sq) {
             b.selected = sq;
+            b.steps.clear();
             b.pressed = sq;
             b.press_at = p;
             b.dragging = false;
@@ -305,6 +336,7 @@ fn press(b: Board&, l: Layout, p: float2, now: f64) {
         return;
     }
     b.selected = -1;
+    b.steps.clear();
 }
 
 // The pointer moves to p while down. Returns whether anything on screen changed.
@@ -317,21 +349,21 @@ fn drag(b: Board&, l: Layout, p: float2) -> bool {
     return true;
 }
 
-// The pointer goes up at p. A drag dropped on a target plays the move from there; on
-// another empty square it is a mistake. Either way but a move, the piece goes back,
-// still selected.
+// The pointer goes up at p. A drag dropped on a target plays the move from there, on a
+// capture's next stop keeps it, and on another empty square is a mistake. Either way but
+// a move, the piece goes back, still selected.
 fn release(b: Board&, l: Layout, p: float2, now: f64) {
     let was = b.dragging;
     b.pressed = -1;
     b.dragging = false;
     guard was else { return; }
     let sq = hit(l, rules::VARIANTS[b.variant], p);
-    let i = move_to(b, sq);
+    let i, kept = follow(b, sq);
     if i >= 0 {
         start_move(b, i, now);
         b.drop = p;
         b.dropped = true;
-    } else if empty(b, sq) {
+    } else if !kept && empty(b, sq) {
         mistake(b, sq, now);
     }
 }
@@ -485,11 +517,13 @@ fn fill(b: Board&, l: Layout, now: f64) {
         b.flash = float4 { v.y_of[b.wrong] * v.size + v.x_of[b.wrong], t as f32, 0.0, 0.0 };
     }
     if b.selected >= 0 && !b.moving {
+        // The stops tapped so far are ringed whatever the hints: the child chose them.
+        for s in b.steps { mark(b, b.marks.via, s); }
         for i in b.moves.len {
             let m .= b.moves[i];
-            guard m.from == b.selected && b.hints == MOVES else { continue; }
+            guard b.hints == MOVES && on_steps(b, m) else { continue; }
             mark(b, b.marks.target, m.to);
-            for j in 1..m.path.len - 1 { mark(b, b.marks.via, m.path[j]); }
+            for j in b.steps.len + 1..m.path.len - 1 { mark(b, b.marks.via, m.path[j]); }
         }
     }
 }

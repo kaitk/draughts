@@ -1,0 +1,13 @@
+47 is c1, 33 f4, 17 c7, 8 e9, 3 f10, 28 e5
+47, then 33: selected c1, stops 1, ringed f4 targets wrong -, moving false
+  with hints on moves: selected c1, stops 1, ringed f4 c7 targets e9 f10 wrong -, moving false
+then 17: selected c1, stops 2, ringed f4 c7 targets e9 f10 wrong -, moving false
+then 28: selected c1, stops 0, ringed f4 c7 targets e9 f10 wrong e5, moving false
+33, then 47 again: selected c1, stops 0, ringed f4 c7 targets e9 f10 wrong -, moving false
+33, 17, 8: selected -, stops 0, ringed targets wrong -, moving true
+  B:WK8,46:B5
+47 dropped on 33: selected c1, stops 1, ringed f4 targets wrong -, moving false
+then 3: selected -, stops 0, ringed targets wrong -, moving true
+  the way 3 jumps to f10
+37, then 28: selected -, stops 0, ringed targets wrong -, moving true
+  to g7, taking 2
