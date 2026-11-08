@@ -7,7 +7,7 @@ check on the Mac and the tablet)
 A family shares one tablet: children of different ages and a parent. Each child wants their
 own look (season and board) and their own puzzle stars, and a way to start them again
 (2026-11-08). Players are local only: no accounts, no network, no passwords. This is the
-"two child profiles with stars" in `docs/product.md`'s learning step, and comes after the
+"child profiles with stars" in `docs/product.md`'s learning step, and comes after the
 MVP, beside task 037's puzzle library, whose stars it keeps per player.
 
 ## What a player holds

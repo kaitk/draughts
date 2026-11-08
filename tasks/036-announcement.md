@@ -109,8 +109,8 @@ pages loaded for two apps. Check the notable ones by hand on Play before quoting
 
 For the tweet and the Discord post:
 
-- A draughts (checkers) app for children of about 5 to 8, on
-  an Android tablet first, free on Google Play.
+- A draughts (checkers) app for children of about 5 to 8, on an Android tablet first,
+  free on Google Play.
 - Three draughts: International 10 × 10 (the default), Brazilian 8 × 8 (International's
   rules on 8 × 8), and Russian 8 × 8 (what Estonians play as kabe). The engine also
   plays English checkers, not offered yet (`docs/architecture/rules.md`).

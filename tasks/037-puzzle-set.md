@@ -50,7 +50,7 @@ side about to lose everything.
 | 13 | The other capture `37x28` wins the same material; only the goal "crown" makes it wrong, and the crown is taken back in material at once (above). |
 | 21, 23, 25, 26, 28, 29, 30 | One pattern seven times: give one man, the reply is forced, take three to five. Positions are random men (`find`), unlike a game; 30's twelve men on six files look made up. |
 | 22, 24, 27 (safe) | Sound at the solver's two plies, but the hardest in the set for a child: no idea to find, only a scan of seven to ten moves. They sit among the shots, where they break the curve. |
-| all "take N" shots | The goal is the balance: "Capture 2" for a shot that takes three and gives one. a young child counts three. |
+| all "take N" shots | The goal is the balance: "Capture 2" for a shot that takes three and gives one. A young child counts three. |
 
 No mid-capture crowning was wrong: 17 passes the far row and goes on uncrowned, and 13,
 16, and 28 crown by ending there, all as International rules say.
@@ -103,8 +103,8 @@ marked so.
 
 The first release is about 64: Learn 12, Captures 10, Crowning 12, Shots 20, plus a
 few safe moves if they fit. Shots' three levels are the curve that goes past today's
-tier 3: two-move shots a child of 5 to 7 finds, three-move combinations for a
-strong older child, and named shots and game finishes for a grown-up. The library's order is
+tier 3: two-move shots a child of 5 to 7 finds, three-move combinations for a strong
+older child, and named shots and game finishes for a grown-up. The library's order is
 Learn first, then the rest in any order.
 
 **Learn, 12 kept (for the youngest players):** 1 (the first capture; one legal move is right

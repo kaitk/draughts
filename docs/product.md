@@ -41,8 +41,8 @@ Chess may follow on the same base.
    the first start and the one a new game's setup starts on, with Russian 8×8 beside it
    (2026-11-07).
 2. **Learning.** Lessons on mini-boards (4×4, 6×6), one rule each, with icons and voice;
-   100+ puzzles; endgame drills (2 kings vs 1, Petrov's triangle); two child profiles
-   with stars; sound.
+   100+ puzzles; endgame drills (2 kings vs 1, Petrov's triangle); child profiles with
+   stars; sound.
 3. **Looks.** A 3D board from the same game state, and the glass UI from the prototypes
    and design boards. Settings' Board row (flat or 3D) stays hidden until the 3D board
    exists.
