@@ -10,9 +10,11 @@
 // program returns. SDL then finds the activity finishing and leaves it; the next start
 // is a fresh process that restores the game.
 //
-// draughts_leave: Android's back on home's menu, which has no way back: SDL's
-// SDL_SendAndroidBackButton runs the activity's own onBackPressed, and the system puts
-// the app in the background as its back does for an app's first screen.
+// draughts_leave: Android's back on home's menu, which has no way back: the activity
+// moves its task to the background (leaveApp), as the system's back does for an app's
+// first screen, the process and the activity kept. Handing the back on to the activity's
+// onBackPressed (SDL_SendAndroidBackButton) finished it on Android 17 instead, taking
+// the card out of recents (the Pixel 7a, 2026-11-08).
 //
 // On the Mac there is nothing to tell: the window closes as the program returns.
 
@@ -21,7 +23,6 @@
 
 extern void *SDL_GetAndroidJNIEnv(void);
 extern void *SDL_GetAndroidActivity(void);
-extern void SDL_SendAndroidBackButton(void);
 
 // Calls the activity's method `name`, taking and returning nothing.
 static void call_activity(const char *name) {
@@ -40,7 +41,7 @@ static void call_activity(const char *name) {
 
 void draughts_first_frame(void) { call_activity("firstFrame"); }
 void draughts_close(void) { call_activity("closeApp"); }
-void draughts_leave(void) { SDL_SendAndroidBackButton(); }
+void draughts_leave(void) { call_activity("leaveApp"); }
 #else
 void draughts_first_frame(void) {}
 void draughts_close(void) {}

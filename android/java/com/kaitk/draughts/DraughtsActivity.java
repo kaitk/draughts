@@ -34,9 +34,7 @@ import org.libsdl.app.SDLActivity;
 // screen (shell::back). Up to Android 12 the key comes through SDL's own key handling.
 // From Android 13 the manifest opts into back callbacks, which Android 16 does anyway for
 // an app targeting it, and the key is no longer dispatched; the callback below hands
-// it to SDL instead. On home's menu the program gives it back: SDL's
-// SDL_SendAndroidBackButton runs onBackPressed, and the system puts the app in the
-// background.
+// it to SDL instead. On home's menu the program gives it back through leaveApp().
 public class DraughtsActivity extends SDLActivity {
     // Lifts them anyway if the program never reports a frame, rather than stay covered.
     private static final long COVER_MAX_MS = 3000;
@@ -123,5 +121,18 @@ public class DraughtsActivity extends SDLActivity {
     // exits one whose activity was created before), which restores the game.
     public void closeApp() {
         finishAndRemoveTask();
+    }
+
+    // From the program's thread, on the system's back at home's menu (app/launch.c): puts
+    // the app in the background, the activity and the game kept, as the system's back
+    // does for a launcher's root activity. onBackPressed, which SDL's own back would run,
+    // finished the activity and removed its card on Android 17 (the Pixel 7a).
+    public void leaveApp() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                moveTaskToBack(true);
+            }
+        });
     }
 }

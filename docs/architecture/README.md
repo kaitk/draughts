@@ -116,8 +116,8 @@ Android's back (the gesture or the button) and Escape on the Mac go back a scree
 the screen's own back or home control does (`shell::back`): a setup to home's menu, the
 game, settings, and the puzzles to pick from where their tile goes, a puzzle to the
 puzzles. On home's menu, which has no way back, back leaves the app as the system's back
-does, putting it in the background (`draughts_leave`, SDL's
-`SDL_SendAndroidBackButton`), and Escape ends the loop. Back reaches the program as SDL's
+does, putting it in the background with the activity kept (`draughts_leave`,
+`DraughtsActivity.leaveApp`, `moveTaskToBack`), and Escape ends the loop. Back reaches the program as SDL's
 "AC Back" key: up to Android 12 through SDL's own key handling, from Android 13 through
 an `OnBackInvokedCallback` in `DraughtsActivity` that hands it to SDL, the manifest
 opting into back callbacks (`enableOnBackInvokedCallback`), as Android 16 does for an app

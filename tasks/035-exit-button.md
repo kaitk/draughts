@@ -1,6 +1,6 @@
 # 035: A way to close the app from home
 
-Status: in-progress (the tablet checked; the phone sizes of task 030 are open)
+Status: done (the tablet and the Pixel 7a checked)
 
 Home's menu has no way to close the app (found 2026-11-08); on the tablet it takes the
 system's gestures, and on the Mac the window's close button or Escape. Add one control on
@@ -164,8 +164,10 @@ home, and the puzzles to pick from go home, settings opened from the game or a p
 back to it, and a puzzle to the puzzles; in a transition it turns round, as a tap would.
 On home's menu back leaves the app as before, the system putting it in the background
 (the activity is kept, unlike home's X): the program hands it back through
-`draughts_leave()` (`app/launch.c`), SDL's `SDL_SendAndroidBackButton`, which runs the
-activity's `onBackPressed`. Escape on the Mac does the same, and closes the window only
+`draughts_leave()` (`app/launch.c`), which has the activity move its task to the back
+(`DraughtsActivity.leaveApp`). It first went through SDL's `SDL_SendAndroidBackButton` and
+the activity's `onBackPressed`, which on the Pixel 7a (Android 17) finished the activity
+and took its card out of recents, as home's X does (below). Escape on the Mac does the same, and closes the window only
 from home's menu; nothing scripted used Escape. `test/shell/back.goose` checks each
 screen against its tile.
 
@@ -180,6 +182,31 @@ registers an `OnBackInvokedCallback` that hands the back to SDL as the key down 
 (`SDLActivity.onNativeKeyDown`). Up to Android 12 the key comes through SDL's surface as
 before. No SDL patch is needed.
 
+## Back on the Pixel 7a (2026-11-08)
+
+Android 17, gesture navigation, at the density floor (549 dp across). `adb shell input
+keyevent KEYCODE_BACK` and an edge swipe (`input swipe 5 1200 500 1200 150` in portrait,
+`5 540 600 540 150` in landscape), in portrait and landscape, from each screen: the
+friend's and the computer's setup, the game, settings from home, and the puzzles go to
+home's menu; settings opened from the game (by its tile) goes back to the game; puzzle 21
+goes to the puzzles, on its shield tier. Settings opened with `--screen game --go
+settings` goes home, not to the game: the flag opens it as from home, which a tap never
+does. The app hides the system bars, so the first edge swipe only shows them and the
+second goes back (Android's immersive mode); the key goes back at once.
+
+On home's menu back finished the activity (`wm_finish_activity ... app-request`,
+`onDestroy`, the task removed from recents), so the next start was a fresh process at
+home rather than a return. SDL's `SDL_SendAndroidBackButton` runs `onBackPressed`, which
+on Android 17, with back callbacks opted into, didn't move the root task to the back as
+older Android did. Now `draughts_leave` calls `DraughtsActivity.leaveApp`
+(`moveTaskToBack(true)` on the UI thread): the launcher shows, the card stays in recents,
+the process (same pid) and activity are kept, and starting the app again from the
+launcher opens home's menu as it was, drawn at once. Home's X still finishes it and
+removes the card. No FATAL or app errors in logcat.
+
+Home's X and every back control sit clear of the gesture areas in both orientations
+(task 030, "On the Pixel 7a (2026-11-08)").
+
 ## Acceptance criteria
 
 - [x] Takes prototyped (a, b, c above), checked in both orientations and in Estonian
@@ -190,6 +217,6 @@ before. No SDL patch is needed.
 - [x] Mac: exit closes the window; the next start opens the game where it was
 - [x] Android: exit closes the app and removes it from recents; starting it again from
       the launcher opens the game where it was, without an error or a blank start
-- [ ] Clear of the gesture areas and of the board at the phone sizes in task 030
+- [x] Clear of the gesture areas and of the board at the phone sizes in task 030
 - [x] Headless test: tapping exit on home returns `home::EXIT`, in both orientations
 - [x] Checked on the Mac and on the tablet, in both orientations
