@@ -284,14 +284,15 @@ so a frame is 11 ms.
   computer then played its own move.
 
 Screenshots and recordings are in the session's scratchpad, not in git.
+`scripts/idle_cpu.sh` found two `SDLThread`s once the worker existed and printed
+negative times; it now takes the first, the program's (these numbers came from a copy
+that did the same).
 
 ## Open for the user
 
-- `scripts/idle_cpu.sh` fails once the computer has been asked: the worker is a second
-  thread named `SDLThread`, so the script's thread lookup finds two and prints nonsense
-  (negative times). The program's thread is the first, the lower id; the numbers below
-  came from a copy that takes it (`head -1`). The script should take the first, or the
-  worker could name itself.
+- The levels' skills stay as they are for now (the user, 2026-11-08: medium looks fine,
+  adapting is bounded to 20 either side of each level's start); retune after children
+  have played.
 - Taken as defaults (2026-11-08), each easy to change:
   - The pauses: 0.8 s on easy, 0.6 on medium, 0.45 on hard, counted from the child's
     move landing; the pulse: the ring from full to a third and back every 1.2 s.

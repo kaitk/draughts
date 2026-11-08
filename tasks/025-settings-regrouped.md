@@ -1,6 +1,6 @@
 # 025: Build the regrouped settings with the board beside them
 
-Status: in-progress (built and checked on the Mac and the tablet)
+Status: done
 
 Bring settings to `prototypes/settings.html` (rendering.md "Settings", 2026-11-07): the
 choices as words in two groups, game (the draughts for a new game, move hints, the

@@ -12,7 +12,9 @@ P=com.kaitk.draughts
 S=${1:-60}
 pid=$(adb shell pidof $P | tr -d '\r')
 [ -n "$pid" ] || { echo "$P is not running" >&2; exit 1; }
-tid=$(adb shell "grep -l SDLThread /proc/$pid/task/*/comm" | tr -d '\r' | cut -d/ -f5)
+# The computer's worker (app/think.goose) is an SDLThread too, started later: take the
+# first, the program's.
+tid=$(adb shell "grep -l SDLThread /proc/$pid/task/*/comm" | tr -d '\r' | cut -d/ -f5 | sort -n | head -1)
 sample() {
   adb shell "cut -d' ' -f14,15 /proc/$pid/task/$tid/stat; cut -d' ' -f14,15 /proc/$pid/stat;
     grep ^voluntary /proc/$pid/task/$tid/status" | tr -d '\r' | tr '\n' ' '
