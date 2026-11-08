@@ -7,11 +7,12 @@ is in `shell/` ([rendering](rendering.md#controls)).
 
 ## The file
 
-`puzzles/international.txt` holds the International puzzles (International is the
-default game; Russian ones come later, composed for its own geometry). They are grouped
-by theme, each theme a short curve of its own in three levels, easy to hardest (chosen
-2026-11-09). The themes are a fixed list in code (`puzzles::THEME_NAMES`, their icons
-and names in `shell/picker.goose` and `strings/`), in the library's order:
+Each variant with puzzles has a file of its own: `puzzles/international.txt` holds the
+International puzzles (International is the default game), and `puzzles/russian.txt`
+the Russian ones ([Russian's set](#russians-set)). They are grouped by theme, each theme
+a short curve of its own in three levels, easy to hardest (chosen 2026-11-09). The
+themes are a fixed list in code (`puzzles::THEME_NAMES`, their icons and names in
+`shell/picker.goose` and `strings/`), in the library's order, International's:
 
 | Theme | What it teaches | Levels 1, 2, 3 |
 |---|---|---|
@@ -56,8 +57,32 @@ source own, motif: give one, take three; found by tools/puzzles.goose find ...
   and their order come from the courses that teach them (FMJD's courses, GoDraughts'
   course order, the named shots).
 
-The file is built into the program (`embed_file`) and read once at start into
-`puzzles::all`, a fixed table; nothing is read or allocated after.
+The files are built into the program (`embed_file`). The set of the player's draughts
+(`puzzles::set_of`) is read at start into `puzzles::all`, a fixed table, and read again
+only when the player's draughts change to another set, on home (below); nothing is read
+or allocated while puzzles are shown.
+
+## Russian's set
+
+`puzzles/russian.txt` is composed for Russian's own rules, not ported from
+International's ([rules](rules.md#variants)): men capture backward, no capture has to
+take the most, so the child picks among captures, and a man crowned mid-capture goes on
+capturing as a king, which makes the Russian school's shots through the crowning square.
+The motifs come from the Russian school's programmes for juniors (the shot onto and
+through the crowning square, the free tempo); every position is our own, found by
+`tools/puzzles.goose find --variant russian` from game-like camps but the first, made by
+hand. Squares are written a1..h8, moves `c3-d4`, captures by their stops `c3:e5:g3`.
+
+| Theme | What it teaches | Levels 1, 2, 3 |
+|---|---|---|
+| Learn | Russian's rules in action: the first capture, the backward one, two men that can take and the one not taken back, the flying king's landing, the free choice of capture (the double where one is wanted, the single where the double is answered by a double), a capture going on backward, a man crowned mid-capture going on as a king and on with a king's long jump, the king's zigzag, and a sacrifice that opens the way to crown. White to move. | 4, 4, 4 |
+| Captures | The double, not the single, among several captures; the route of three that lands safe, among up to five; four jumps, and a man crowned on the far row taking two more as a king. | 4, 3, 3 |
+| Crowning | A capture that ends on the far row, or crowns on the way and goes on; the breakthrough sacrifice; two men given for a crown. | 4, 3, 3 |
+| Shots | Give one, take three, onto the crowning square too (level 1, two moves); give one and take four through the crowning square, and the free tempo, a quiet move after which every move the other side has gives a man (level 2); give two, then take four or five through the crowning square (level 3, three moves). | 6, 5, 3 |
+
+That is 46, 12 of them black to move (35% of the 34 outside Learn). The library shows
+only the themes a set has, so a Russian player sees four rows. A Brazilian player is
+shown International's set. Russian's ids are its own, from 1.
 
 ## Goals
 
@@ -86,7 +111,8 @@ lines.
 The search keeps each position's moves on one fixed stack in a `puzzles::Solver` the
 caller owns, so it allocates nothing and needs little native stack. The 64 puzzles cost
 at most 415 positions to check (a king shot of three moves), 0.2 ms built;
-the longest line is five plies, within `MAX_PLIES` (8).
+the longest line is five plies, within `MAX_PLIES` (8). Russian's 46 cost at most 161
+(a shot of three moves), their longest line five plies too.
 
 ## The screen
 
@@ -127,15 +153,20 @@ whose puzzle it is. Their look is in [rendering](rendering.md#controls).
 - **Kept**: the stars in the player's file (`player-N.txt`,
   [players](README.md#players)), `stars.international = 1:3 4:2` by puzzle id, written
   when a puzzle is solved; each player has their own. Ids are a variant's own, so the key
-  names the variant; a file's older `stars` is read as International's. Home's count is
-  over the set: the stars of an id no longer in the file aren't counted. A puzzle under
-  way isn't saved with the game: when the app is paused on one, it comes back on the
-  picker.
+  names the variant (`stars.russian` for Russian's set, beside International's); a
+  file's older `stars` is read as International's. Home's count is over the set: the
+  stars of an id no longer in the file aren't counted. A puzzle under way isn't saved
+  with the game: when the app is paused on one, it comes back on the picker.
+- **The set** is that of the player's draughts, the setup's choice (`puzzles::set_of`).
+  The draughts change in home's setup, in settings, or with the player; home, where
+  every way to the puzzles starts, reads the other set then (`shell::sync_puzzles`), and
+  the picker starts at its library. A puzzle or the picker reached from settings keeps
+  the set it had until home.
 
 ## Checks
 
-`puzzles::check` (run by `test/puzzles/set.goose` on every puzzle, and by
-`tools/puzzles.goose`) refuses a puzzle when:
+`puzzles::check` (run by `test/puzzles/set.goose` and `russian_set.goose` on every
+puzzle, and by `tools/puzzles.goose`) refuses a puzzle when:
 
 - a line's move isn't right, or a line's last move doesn't reach the goal, or an earlier
   one does;
@@ -156,9 +187,11 @@ whose puzzle it is. Their look is in [rendering](rendering.md#controls).
 whether the moves it rates best solve the puzzle, a second engine sharing only the
 rules with the solver, and whether it scores a right first move as losing material
 (under −50, half a man). It plays for material, so it is not asked about crowning.
-`test/perft.py puzzles international puzzles/international.txt` plays every line with
-the independent generator, checking each move and each position's moves against
-`build/perft`.
+`test/perft.py puzzles international puzzles/international.txt` (and `russian
+puzzles/russian.txt`) plays every line with the independent generator, checking each
+move and each position's moves against `build/perft`; for Russian, which has no
+published perft table, it is the only independent check. `scripts/test.sh` runs it on
+both files.
 
 `tools/puzzles.goose try FEN GOAL MOVES` shows the moves that are right, the line the
 screen would play, and what the checks say of it. `find SIDE GOAL MOVES MINE THEIRS
@@ -167,4 +200,8 @@ side's men placed in camps as in a game (each next man beside or behind one of i
 on its own side of the board), some of the solver's made kings, with exactly one right
 move at each of the solver's turns, every check passed, and the game going on after the
 line; a take in more moves must be a shot, its first move answered by a capture. For
-black it finds the puzzle for white and turns the board round, checking it again.
+black it finds the puzzle for white and turns the board round, checking it again. Both
+take `--variant NAME` (International by default), and find `--rows N`, the rows from its
+own back row a camp spans (the board's size less 3 by default), and `--tempo`, which
+asks a take in more moves to start with a free tempo instead: a quiet move that no reply
+captures after, every reply giving men.

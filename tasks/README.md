@@ -112,7 +112,7 @@ the task; the user has more to add first).
 
 After the MVP: 026 (first start and tutorial; its prototype awaits the user's review), 038
 (players, a take to choose),
-Russian puzzles the way 037 says, each level's adapted skill shown as a
-rating (a number or stars on the computer's tile, like a chess rating; the user,
+more Russian puzzles (037 has a first 46) and Brazilian's, each level's adapted skill
+shown as a rating (a number or stars on the computer's tile, like a chess rating; the user,
 2026-11-08), 015, 013, 014, 033's seasonal icons, and
 010 alongside.

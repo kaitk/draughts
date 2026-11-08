@@ -159,7 +159,7 @@ fn theme_row(g: gui::Gui&, r: float4, theme: i64, stars: const u8[:], phone: boo
     return tapped && opened;
 }
 
-// The library: back, the title, and a row per theme.
+// The library: back, the title, and a row per theme the set has.
 fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, spot: float4&) -> i64 {
     let u = g.scale;
     let landscape = area.z >= area.w;

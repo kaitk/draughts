@@ -178,7 +178,14 @@ goose build -o build/puzzles tools/puzzles.goose && build/puzzles    # every puz
 build/puzzles try 'W:W33,38,43,45,47,48:B3,11,21,23,24,29' 'take 2' 2  # what solves a position
 build/puzzles find 'take 3' 2 7 7 6                                  # random shots to compose from
 test/perft.py puzzles international puzzles/international.txt       # the lines, by the independent generator
+build/puzzles --variant russian                                       # Russian's set, and the engine's view
+build/puzzles try --variant russian 'W:Wh4,a5:Bg5,c7,e7,g7' 'take 3' 1
+build/puzzles find black 'take 2' 2 7 7 6 --variant russian          # flags anywhere; --rows N, --tempo
+test/perft.py puzzles russian puzzles/russian.txt                    # Russian's only independent check
 ```
+
+The app shows the set of the player's draughts; `--variant russian` picks Russian's for
+a run (`--screen puzzles --variant russian`).
 
 `test/puzzles/` runs the same checks on every puzzle without the engine
 ([puzzles](architecture/puzzles.md#checks)).

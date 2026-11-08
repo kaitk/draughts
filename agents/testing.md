@@ -43,7 +43,8 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   theme's last (`puzzles`), the library and every theme's page laid out at the tablet's
   and a phone's size (`picker`), a capture made by hand in a puzzle (tapped and dragged
   stop by stop, dropped on its last square, left partway and next pressed: a miss) and
-  no targets in any puzzle,
+  no targets in any puzzle, a Russian player's set read on home, its library, a puzzle
+  crowned mid-capture made by hand, and its stars kept apart (`russian_puzzles`),
   the saved game of any variant and damaged images of it, the players' files read and
   written back, their migration (killed after each step too), adding, switching,
   starting again, and removing (`players`), who's playing and a player's sheet, the
@@ -65,9 +66,14 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   plays in known shots, the same move in steps as at once, and that no level hangs a
   piece), and `puzzles` (the puzzle file's format and refusals, what `puzzles::check`
   refuses beyond the format, what a move does to each goal, and every built-in puzzle
-  passing `puzzles::check`, with its counts by theme and level). A new puzzle is checked
-  with `build/puzzles FILE` (the engine's view too) and `test/perft.py puzzles` before
-  `test/expected/set.out` is blessed. A
+  passing `puzzles::check`, with its counts by theme and level: `set` International's,
+  `russian_set` Russian's). A new puzzle is checked with `build/puzzles FILE` (the
+  engine's view too) and `test/perft.py puzzles` before `test/expected/set.out` or
+  `russian_set.out` is blessed. With no FILE, `build/puzzles` checks the set built into
+  it, so rebuild it after a set changes, or an old build checks the old set. In tiny positions the engine sees the
+  game's end, so a Learn puzzle of a few men can fail its view (a right move scored as
+  lost, or another move winning sooner) though the solver passes it: add men, or pick
+  another from `find` (2026-11-09). A
   test that lays out text calls `gui::test_faces` for glyph sizes without an atlas, and
   `strings::use` before reading a string. Shared helpers are in
   `test/check.goose` (`check::show`, `check::play_only`), imported as

@@ -195,7 +195,7 @@ ids. Home's count ("7 / 90") is over the variant's set.
    move it scores as losing). `test/perft.py puzzles` replays the lines.
 4. `source` says "own, motif: coup turc", or "game: White–Black, year" for a game finish.
 
-## Russian (8×8) later
+## Russian (8×8)
 
 The same way, not a port: Russian's geometry is smaller, men capture backward but the
 majority rule doesn't apply, and a man crowned mid-capture goes on as a king
@@ -204,6 +204,76 @@ children is large (shots onto the crowning square, the sieve, the free tempo), s
 motifs come from there, and each position is ours, checked by `tools/puzzles.goose` with
 the variant set and by `test/perft.py`, the only independent check of Russian. `find`
 needs the variant and its camps as parameters.
+
+### Built (2026-11-09)
+
+**Plumbing.** `puzzles/russian.txt` (`variant russian`) is the set a Russian player
+sees: `puzzles::set_of` names the set of a variant (Russian's own; International's for
+International and, until it has one, Brazilian), `puzzles::load(variant)` reads it, and
+`puzzles::loaded` says which is in `all`. The shell reads the other set on home when the
+player's draughts change (`shell::sync_puzzles`: home is where every way to the puzzles
+starts, so a puzzle open from settings keeps its set), and the picker starts at its
+library. The library shows only the themes a set has. Stars are a table per variant,
+`stars[variant][id]`, written as `stars.russian` beside `stars.international`.
+`tools/puzzles.goose try` and `find` take `--variant`, `find` `--rows N` (a camp's rows,
+the board's size less 3 by default: 5 of 8) and `--tempo` (below); with no FILE it
+checks the variant's built-in set. `test/perft.py puzzles` reads `c3:e5` captures and
+refuses a file of another variant; `scripts/test.sh` runs it on both sets.
+
+**Composing.** Pools from `find --variant russian` (about 1,700 candidates over Learn's
+small camps of two to four men, captures, crowns, shots in two and three moves, black's,
+and free tempos), described by a scratch script over `test/perft.py` (how many each
+capture takes, backward, by a king, crowned mid-capture, the other captures there were),
+then run through `build/puzzles` for the engine's view, which about 87% of them passed.
+Picked by motif and by eye. Four were swapped after the whole file's check: Learn 2 and
+7 (two men against four, where the engine scores the right move as losing, −29,986 and
+−105), Learn 6 (another capture wins the tiny ending sooner), and Captures 17 (a single
+capture the engine rates at +603, above the triple). `find --tempo` was added for the
+free tempo: a quiet first move no reply captures after, every reply giving a man.
+
+| Theme | Levels 1, 2, 3 | Black to move | Goals | Most positions a check, by level |
+|---|---|---|---|---|
+| Learn | 4, 4, 4 | 0 | take 1 to 3 in 1, crown in 2 | 8, 8, 11 |
+| Captures | 4, 3, 3 | 3 | take 2, 3, 4 in 1 | 8, 14, 16 |
+| Crowning | 4, 3, 3 | 4 | crown in 1, 2, 3 | 1, 17, 100 |
+| Shots | 6, 5, 3 | 5 | take 2 in 2; take 3 or 1 in 2; take 3 or 2 in 3 | 49, 38, 161 |
+
+46 puzzles, ids 1 to 46; 12 of the 34 outside Learn are black's (35%). Learn: the first
+capture, the backward one, two men that can take, the flying king's landing, the free
+choice (the double where one is wanted; the single where the double is answered by a
+double), a capture going on backward, a man crowned mid-capture going on as a king (twice,
+once with the king's long jump after), the king's zigzag, give one to crown. Russian's
+motifs: crowned in a capture, going on as a king (5: Learn 9 and 10, Captures 20 and 21,
+Crowning 25), the shot onto the crowning square (Shots 37), the shot through the crowning
+square (39 to 41), its double sacrifice (44 to 46, five taken in one capture in 44 and
+45), and the free tempo (42, 43). The sieve isn't in it: what the syllabi mean by it
+wasn't pinned down here, so no position claims it.
+
+`build/puzzles --variant russian`: 0 problems, the engine's best solves every take, and
+no right first move scores under −50; of the crowns, Crowning 24's other double from the
+same square (`f4:d6:b4`) scores as high, and in Crowning 30 the engine wins the ending
+by quiet moves as well. `test/perft.py puzzles russian puzzles/russian.txt`: 46 puzzles,
+0 problems. The longest lines are five plies, within `MAX_PLIES`; the most a check takes
+is 161 positions (Shots 46). Headless: `test/puzzles/russian_set.goose` (every puzzle's
+checks and the counts) and `test/shell/russian_puzzles.goose` (a Russian player's set
+read on home, its four-row library, Learn 9 crowned on d8 mid-capture and made by hand
+stop by stop, `stars.russian = 9:3`, home's count over Russian's set, and International's
+library back with its stars apart).
+
+**Brazilian** is left: Russian's file read as Brazilian fails at once (Learn 6's single
+capture is illegal where the most must be taken), and Learn and every choice-of-capture
+puzzle teach what Brazilian forbids, so a Brazilian set wants its own selection, its
+Learn above all, rechecked under its rules.
+
+- [x] `puzzles/russian.txt` loaded for a Russian player, the library showing its set,
+      stars per variant (`stars.russian`)
+- [x] `tools/puzzles.goose find` and `try` taking the variant and its camps
+- [x] Learn, Captures, Crowning, and Shots in levels, 46, a third black outside Learn,
+      each `source` naming its motif, none copied
+- [x] Every puzzle passing the checks, the engine, and `test/perft.py puzzles` under
+      Russian rules; headless tests of the set and of a mid-capture crowning solved
+- [ ] The set on the Mac and the tablet, and its levels' order tried by players (the user)
+- [ ] Brazilian's own set
 
 
 ## Decisions (2026-11-09)
