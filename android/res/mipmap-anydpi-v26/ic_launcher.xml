@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The app icon (task 028): the winter jump on navy. scripts/icon.py makes the foreground
-     from design/icon/master.png; the monochrome layer, for Android 13's themed icons, is
+     from design/icon/master-winter.png; the monochrome layer, for Android 13's themed icons, is
      drawn by hand. minSdk is 29, so every launcher takes this and there are no legacy
      mipmaps. -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">

@@ -33,11 +33,19 @@ needs redrawing if the scene changes shape.
 
 - **Masters and the script:** the masters stay local and git-ignored in `design/icon/`
   (its `README.md` says where they come from). `scripts/icon.py` measures the scene's box
-  on the master (red above the navy), scales it to 64 dp of the 108 dp canvas, inside the
-  66 dp safe zone with a dp spare for the arc's glow, and centres it. It writes
+  on the master (red more than 37.5 of 255 over the mean of its four corners), scales it
+  to 64 dp of the 108 dp canvas, inside the 66 dp safe zone with a dp spare for the arc's
+  glow, and centres it. It writes
   `android/res/mipmap-{mdpi..xxxhdpi}/ic_launcher_foreground.png` (108 to 432 px), and
   with `--store` the Play and Apple icons into `~/Downloads/draughts-store/icon/`. Two
   runs give byte-identical PNGs.
+- **Any season's master** (2026-11-08): the script first took a fixed red threshold
+  (17.6%) tuned to the navy; it now measures against the master's corners and takes a
+  season, `design/icon/master-SEASON.png`, writing only the shipped one (`SHIPPED`,
+  winter) into `android/res`; another season goes to `--res DIR`. Winter's output is
+  byte-identical to before: the box is 791 × 635 at +232+303 for any red cut from 43 to
+  46, and the corners' red is 6.75, so the cut is 45 as before. The autumn master's box
+  is 792 × 639 at +231+299. Shipping autumn instead, and its numbers, are in task 033.
 - **Adaptive icon** (`mipmap-anydpi-v26/ic_launcher.xml`): the background the solid
   `navy` colour (#06172b); the foreground the opaque master, scaled and cropped, its
   edge pixels repeated past the master's edge so a launcher's parallax shows no seam;
