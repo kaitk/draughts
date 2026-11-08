@@ -1,6 +1,6 @@
 # 024: Review the Estonian translation
 
-Status: in-progress (the tablet check is open)
+Status: done
 
 Once the MVP's prototypes have their text mostly in (2026-11-07): a Gemini agent (agy;
 Gemini 3.8 writes the best Estonian of the models, given the right context) reads
@@ -26,8 +26,8 @@ changed against the English and the context before anything is taken.
 ## Acceptance criteria
 
 - [x] Every Estonian string read by the agent, its changes reviewed and taken or declined
-- [ ] Screens checked in Estonian in both orientations (the Mac is done; the tablet was
-  locked on 2026-11-08)
+- [x] Screens checked in Estonian in both orientations, on the Mac and the tablet
+  (2026-11-08)
 
 ## Settled while scoping (2026-11-08)
 
@@ -73,6 +73,27 @@ Widths (Libertinus advances at the face's size, as `gui::text_width` sums them; 
 Checked on the Mac at 960 × 600 and 600 × 960 with `--lang et`: home, the computer's
 setup, the game, a clocked game, a win, and settings. Every string shows whole.
 
+## On the tablet (2026-11-08)
+
+The app built from `36c1143`, run with `--lang et` and flags (so neither `settings.txt`
+nor `game.bin` changed), in landscape (1920 × 1200) and portrait (1200 × 1920): home, the
+computer's and a friend's setup, an International game with a 5+3 clock running, the
+win card (a Russian position won in one capture), and settings. Every string shows
+whole, nothing overlaps, and nothing wraps but the tiles that wrap by design (settings'
+backgrounds and kings in portrait).
+
+- "Rahvusvaheline" in the setups' landscape row is in the 20 dp face like its
+  neighbours, its tile 227 px wide inside the border, the word 189 px, with 20 px left
+  and 19 right (about 13 dp a side), as on the Mac. In portrait's thirds it has room.
+- Settings: "Laua järgi" and its note "2D kroon, 3D virn" fit their tile with room in
+  both orientations. The tightest word is "Kuupäeva järgi" on the background's first
+  tile, about 5 dp a side in both orientations, whole.
+- The game panel's "Alusta uuesti" ends about 10 dp from its tile's edge in landscape;
+  "Võta tagasi" and "Valged võitsid" have room. In portrait the top bar's three tiles
+  hold Koju, Seaded, and Alusta uuesti with room.
+
+Screenshots are in the session's scratchpad, not in git.
+
 ## Open for the user
 
 - `kings.auto`: "Laua järgi" ("by the board", like "Kuupäeva järgi" two rows up), the
@@ -91,4 +112,3 @@ setup, the game, a clocked game, a win, and settings. Every string shows whole.
   there in both orientations. Checked on the Mac at 960 × 600 and 600 × 960, both
   languages. No label at the tablet's size takes the 17 dp fallback now; `gui::pick`
   keeps it for narrower windows and longer translations.
-- The tablet check in both orientations, once it is unlocked.
