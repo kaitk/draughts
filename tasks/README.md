@@ -86,8 +86,12 @@ The order for what is left:
 Alongside, when the user wants it: 015's 3D prototype (`poc/3d/`, its plan and sources in
 the task; the user has more to add first).
 
+Puzzles: 037 audits task 007's set and proposes a better one, grouped by theme with the
+picker redesigned around it (a prototype first), its Learn theme from today's best; it
+follows the puzzle input work under way (2026-11-08).
+
 After the MVP: 026 (first start and tutorial; its prototype awaits the user's review),
-Russian puzzles from the International ones, each level's adapted skill shown as a
+Russian puzzles the way 037 says, each level's adapted skill shown as a
 rating (a number or stars on the computer's tile, like a chess rating; the user,
 2026-11-08), 015, 013, 014, 033's seasonal icons, and
 010 alongside.
