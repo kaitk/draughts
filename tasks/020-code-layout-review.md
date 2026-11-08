@@ -1,6 +1,6 @@
 # 020: Review the code's layout as a whole
 
-Status: in-progress (clear-cut fixes made; the review below waits for the user)
+Status: in-progress (6, 8, and 1 made; 2 and 5 wait for task 007)
 
 Once the MVP's flows work in their basic form (task 008, then 006 and 007), look at the
 code as a whole: is it readable and neatly packaged, as a game's code would be, and does
@@ -79,6 +79,26 @@ The user took the recommendations: 6, 8, and 1 now; 2 and 5 at the start of the 
 screen (task 007), which would otherwise add a third panel layout to `board` and another
 copy of each test helper; 3 maybe, later; 4, 7, and 9 left as they are.
 
+Made the same day, one commit each:
+
+- `7459320` (6) The app no longer puts `--hints` into `sh.prefs`; the flag sets the
+  game's board only, so a settings tap writes the hints chosen there and applies them,
+  as a tap ends `--theme` and `--lang` too.
+- `982656b` (8) `draw::SHARED_BLOCK` holds the quad's corners, `box`, `tint`, and
+  `over` with its `acc`, for the board's, the pieces', and the UI's shaders.
+- `cbedc28` (1) `Shell.over` (a `game::Overlay`) holds the pieces over the UI; the game
+  screen, home, and settings each clear and fill the list they are handed, home takes
+  the board's size rather than the game, and settings no longer threads the game
+  through its six functions. The game tests hold the list as a global.
+
+Checks: the tests pass through TinyCC and built, no expected output changed. Sixteen
+`--frames` shots on the Mac (home, settings, both setups, the game, `--clock 5+3 --tap c3
+--tap d4`, `--computer white`, and a Russian win's celebration, each in 960 × 600 and
+600 × 960) before and after each of 8 and 1: ten byte-identical; the computer's game,
+settings, and the celebration differ only where the ring pulses, the preview flashes,
+and the winner pops in and the sparks drift, as two runs before any change did. The
+tablet is not checked.
+
 ## Review: left for the user
 
 Each with its reason and rough cost; none is needed for the MVP.
@@ -88,7 +108,7 @@ Each with its reason and rough cost; none is needed for the MVP.
    functions only to put two kings on its tiles, and home takes the game for its
    wordmark's piece. Hold the overlay in `Shell` and hand the screens the list. About
    1 h: `game`, `home`, `settings`, `shell`, the app, and four tests that read
-   `sh.game.overlay`.
+   `sh.game.overlay`. Done: `cbedc28`.
 2. **The game screen's layout lives in `board`.** `board::layout` places the game's two
    panels (`SIDE`, `TOP`, `BOTTOM`) and `board::Layout` carries them as `left` and
    `right`, while `game/panel.goose` is what fills them. Move `layout` and the panel
@@ -111,12 +131,13 @@ Each with its reason and rough cost; none is needed for the MVP.
 6. **`--hints` leaks into the settings file.** The app puts the flag's value into
    `sh.prefs`, so a settings tap during such a run writes it, where the flag should
    override the run only. A dev flag; 15 min, but it changes behavior, so asked.
+   Done: `7459320`.
 7. **Home measures its setup twice.** `home::content_height` repeats the sizes `choose`
    cuts; settings already lays out and measures with one function (`rows` with
    `declare`). Arguable for one screen; about 45 min.
 8. **Shared shader helpers.** `box`, `tint`, `over`, and the quad corners are written
    twice each across the three shaders. A block like `THEME_BLOCK` would hold them, pixel
-   for pixel the same. 20 min; a second renderer ports them anyway.
+   for pixel the same. 20 min; a second renderer ports them anyway. Done: `982656b`.
 9. **Enums for screens and asks: not proposed.** Goose's C-like enums would make the
    screens and each screen's asks exhaustive in `match`, but the integer constants are
    the samples' way for UI state (`29_ui_todo.goose`), index arrays, go into shaders,
