@@ -9,6 +9,9 @@ to be read.
     test/perft.py moves VARIANT FEN               legal moves, one per line
     test/perft.py compare VARIANT GAMES PLIES     random games, each position's
                                                   moves checked against build/perft
+    test/perft.py puzzles VARIANT FILE            each puzzle's lines played here, every
+                                                  move legal and each position's moves
+                                                  checked against build/perft
 
 VARIANT is russian, international, english or brazilian. A move prints as its start, its
 end, and the squares it takes, sorted: "c3 e5 d4", the form `perft --moves`
@@ -265,6 +268,47 @@ def compare(v, games, plies, seed=1):
     return bad == 0
 
 
+def same_moves(v, board, side):
+    """Whether build/perft gives the position's moves as this generator does."""
+    f = fen(v, board, side)
+    want = sorted(move_text(v, m) for m in moves(v, board, side))
+    got = subprocess.run(["build/perft", v.name, "1", f, "--moves"], capture_output=True,
+                         text=True, check=True).stdout.split("\n")
+    if sorted(l for l in got if l) != want:
+        print(f"differs at {f}")
+        return False
+    return True
+
+
+def puzzles(v, path):
+    """Plays each `line` of a puzzle file (docs/architecture/puzzles.md) from its
+    `position`: a move is its squares apart by - or x, the stops of a capture or only
+    its ends, and must be exactly one legal move here."""
+    bad = count = 0
+    board = side = None
+    for raw in open(path):
+        key, _, value = raw.split("#")[0].strip().partition(" ")
+        if key == "position":
+            board, side = parse_fen(v, value)
+            count += 1
+        if key != "line":
+            continue
+        b, s = board, side
+        for word in value.split():
+            if not same_moves(v, b, s):
+                bad += 1
+            stops = [parse_square(v, t) for t in word.replace("x", "-").split("-")]
+            found = [m for m in moves(v, b, s) if m[0][0] == stops[0] and m[0][-1] == stops[-1]
+                     and (len(stops) == 2 or m[0] == stops)]
+            if len(found) != 1:
+                bad += 1
+                print(f"{word} is {len(found)} legal moves at {fen(v, b, s)}")
+                break
+            b, s = play(b, s, found[0])
+    print(f"{count} puzzles, {bad} problems")
+    return bad == 0
+
+
 def main():
     if len(sys.argv) < 3 or sys.argv[2] not in VARIANTS:
         sys.exit(__doc__)
@@ -280,6 +324,8 @@ def main():
             print(m)
     elif cmd == "compare":
         sys.exit(0 if compare(v, int(sys.argv[3]), int(sys.argv[4])) else 1)
+    elif cmd == "puzzles":
+        sys.exit(0 if puzzles(v, sys.argv[3]) else 1)
     else:
         sys.exit(__doc__)
 

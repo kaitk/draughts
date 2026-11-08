@@ -5,6 +5,7 @@ out, and the rules every part of it keeps. The rest is by area:
 
 - [rules.md](rules.md): draughts variants and how the engine represents them
 - [ai.md](ai.md): the computer player, its search, and how its levels play like a person
+- [puzzles.md](puzzles.md): the puzzles, their file, goals, and checks
 - [rendering.md](rendering.md): drawing, the UI layer, glass, fonts, and frame pacing
 
 ## Stack
@@ -60,15 +61,16 @@ keeps the rest.
 | --- | --- |
 | `rules/` | The rules as pure functions over values: variants as data, positions, legal moves, playing a move, FEN, and the square at a column and row ([rules.md](rules.md)) |
 | `ai/` | The computer player over `rules`: a search sliced into steps, and its levels and skill ([ai.md](ai.md)) |
+| `puzzles/` | The puzzles as plain text read into a fixed table, and the exact search that says whether a move solves one ([puzzles.md](puzzles.md)) |
 | `strings/` | The user-facing text by key, from `strings/<lang>.txt` |
 | `gui/` | The UI layer ([rendering.md](rendering.md#ui-layer)): rect cuts, widgets with their press state, text laid out from glyph tables the app bakes; every call appends quads to one fixed array |
 | `board/` | The board on screen: the position, the legal moves, and the undo history; where the board goes and which square a point is on; taps and drags; a move's animation; and each frame's draw lists (pieces, the squares' marks, a wrong move's flash) |
 | `game/` | The game screen: its panels and where they and the board go (`panel::layout`), the clocks, the computer's turn (asking for a move and playing the answer), the celebration, and the pieces it puts over the UI |
 | `shell/` | The screens and which one shows: home and a new game's setup, the game, settings with their preview board; the pieces the screen showing puts over the UI (`Shell.over`, which the app draws); the settings file and the saved game |
 | `app/` | The program: the main loop, the GPU drawing of the board, the pieces, and the UI's quads, the season's photograph and its blurs, the font atlas, the themes, the computer's worker thread, and its C (storage folder, locales, the clock's wake timer, the JPEG decoder) |
-| `tools/` | Programs for development: perft, the computer's benchmark and matches, and a terminal game against it |
+| `tools/` | Programs for development: perft, the computer's benchmark and matches, a terminal game against it, and the puzzles' checks |
 
-`ai` and `board` build on `rules`; `game` on `board`, `gui`, and `strings`; `shell` on
+`ai`, `board`, and `puzzles` build on `rules`; `game` on `board`, `gui`, and `strings`; `shell` on
 `game` and `ai`; the app on all of them. What crosses to the renderer is flat and
 fixed-size, laid out as the shaders read it: `board::Piece`, `board::Marks`, the flash,
 `board::Layout`, `gui::Quad`, and `theme::Theme`.

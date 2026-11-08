@@ -21,10 +21,11 @@ which would overwrite the main checkout's while another session uses them.
   time a move on the clock, over whole games with simulated time, in `pace`), `shell`
   (home, the switch to the game and back, settings and their file, their taps and the
   board beside them, home's setup and play, the saved game of any variant and damaged images of it, the computer's skill
-  moving across games), `strings` (every language file has every key), and `ai` (the computer player:
+  moving across games), `strings` (every language file has every key), `ai` (the computer player:
   its search against a plain minimax, the table changing no score, keys, what each level
   plays in known shots, the same move in steps as at once, and that no level hangs a
-  piece). A
+  piece), and `puzzles` (the puzzle file's format and refusals, what a move does to
+  each goal, and every built-in puzzle passing `puzzles::check`). A
   test that lays out text calls `gui::test_faces` for glyph sizes without an atlas, and
   `strings::use` before reading a string. Shared helpers are in
   `test/check.goose` (`check::show`, `check::play_only`), imported as

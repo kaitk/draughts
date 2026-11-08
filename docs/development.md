@@ -120,6 +120,18 @@ builds any headless Goose program as a plain Android executable with the NDK's c
 `adb shell "taskset 0f /data/local/tmp/aibench"` keeps it on the tablet's four little
 cores (`f0`, the big ones).
 
+## Check the puzzles
+
+```sh
+goose build -o build/puzzles tools/puzzles.goose && build/puzzles    # every puzzle, and the engine's view
+build/puzzles try 'W:W33,38,43,45,47,48:B3,11,21,23,24,29' 'take 2' 2  # what solves a position
+build/puzzles find 'take 3' 2 7 7 6                                  # random shots to compose from
+test/perft.py puzzles international puzzles/international.txt       # the lines, by the independent generator
+```
+
+`test/puzzles/` runs the same checks on every puzzle without the engine
+([puzzles](architecture/puzzles.md#checks)).
+
 ## Run on the tablet
 
 The tablet needs Developer options with **USB debugging** on, and Samsung's **Auto

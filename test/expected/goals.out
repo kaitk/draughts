@@ -1,0 +1,16 @@
+read: 1 puzzles
+refused, line 6: unknown key: colour
+refused, line 3: not a goal: take
+refused, line 5: not a legal move here: 32-27
+read: 1 puzzles
+refused, line 5: not a legal move here: 37x32x28
+refused, line 5: a puzzle needs a position and a line
+refused, line 10: not a new id: 1
+refused, line 1: outside a puzzle: line 32x23
+take W:W37,38:B19,23,32: 37x28 wrong; 38x27 solved; 
+crown W:W13,37,48:B6,8,32: 13x2 solved; 37x28 wrong; 
+win W:W36,37,42:B26: 36-31 solved; 37-31 wrong; 42-38 wrong; 
+safe W:W22,26,29,34,44:B3,7,13,15,18: 22-17 solved; 26-21 wrong; 44-39 wrong; 
+take W:W33,38,43,45,47,48:B3,11,21,23,24,29: 33-28 on; 48-42 wrong; 
+the shot: reply 23x32, then 38x27x16x7 solved; needs 2 moves from the start; the hint's piece on 33
+crown W:W13,46,47:B4,21,22: 13-8 on; 13-9 wrong; 
