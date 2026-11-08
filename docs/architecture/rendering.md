@@ -60,10 +60,13 @@ screen's edges; everything else is placed in the safe rect as it would be in a w
 window of that size (`gui::safe`, `shell::frame`). The scale stays the whole short
 side's: the same in both orientations, where the cutout falls on the long side in one and
 the short side in the other, so turning the screen doesn't rebake the text or change the
-size of a tap. The layouts hold down to a safe area 459 × 801 dp (a 9:16 phone at 480 dp
-less its cutout at a side and its gesture bar). SDL would also take the back gesture's
-strips down both sides (`systemGestures`) out of the safe area, though taps there still
-reach the window; `patches/SDL/0002` keeps them in, so a portrait phone keeps its width. A
+size of a tap. The layouts hold down to a safe area 443 × 801 dp (a 9:16 phone at 480 dp
+less its cutout at a side and an 84 px gesture bar). SDL would also take out of the safe
+area the back gesture's strips down both sides (`systemGestures`) and, with the system
+bars hidden, the strip at the top a swipe pulls them down from (`mandatorySystemGestures`'
+top), though taps in both still reach the window; `patches/SDL/0002` keeps them in, so
+the safe area is the cutout, the bars while shown, the system's tappable elements, and
+the gesture bar at the bottom (on the Pixel 7a 0, 118, 0, 84 px in portrait). A
 change of the insets or the scale counts as a change, as a new size does, and the screen
 is laid out and drawn again (see "Frames and battery").
 

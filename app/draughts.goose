@@ -12,7 +12,7 @@
 //   ../build/draughts --hints moves               shows the selected piece's targets
 //   ../build/draughts --lang et                   another language than the system's
 //   ../build/draughts --dp 540                    the layout 540 dp across its shorter side, not 800
-//   ../build/draughts --inset 0,59,0,24           a phone's insets, in dp: left, top, right, bottom
+//   ../build/draughts --inset 0,59,0,42           a phone's insets, in dp: left, top, right, bottom
 //   ../build/draughts --density-floor 0.75 --display-scale 2.625   the scale's floor, as on a phone
 //   ../build/draughts --variant russian           a new game of another draughts
 //   ../build/draughts --clock 5+3                 with a clock

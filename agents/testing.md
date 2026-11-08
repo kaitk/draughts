@@ -130,8 +130,8 @@ which would overwrite the main checkout's while another session uses them.
   pixels). Run in parallel, the win's `--win 3` needs `--frames 9000`, not 3000, or the
   shot ends before the card (2026-11-08).
 - Insets are shot with `--inset L,T,R,B` in dp of the layout: at `--dp 540` a 1080 px
-  phone is 2 px a dp, so the Pixel 7a's 118 px cutout is 59 dp and its ~48 px gesture
-  bar 24 (at 480, 52 and 21). Task 030's "Insets" says where the scripts are; their
+  phone is 2 px a dp, so the Pixel 7a's 118 px cutout is 59 dp and its 84 px gesture
+  bar 42 (at 480, 52 and 37). Task 030's "Insets" says where the scripts are; their
   `sheets.py` tints the insets red over each shot, which shows at a glance whether
   anything sits under them (2026-11-08). A headless test sets `g.insets` (pixels) on its
   `gui::Gui`; `gui::begin` keeps it, so put it back to zero after.
@@ -189,9 +189,11 @@ measuring there:
   read both settings first and put them back after.
 - On the Pixel 7a (2026-11-08): `user_rotation 1` is landscape with the camera on the
   left, `3` on the right. `accelerometer_rotation` can turn itself back on during a run,
-  so a script sets it to 0 before each start. Its insets with the bars hidden: portrait
-  0, 150, 0, 84 px; landscape 118 (camera side), 74 top, 84 bottom; so `--inset` for it
-  in dp at its 1.969 px a dp is about `0,76,0,43` and `60,38,0,43`. `adb shell input
+  so a script sets it to 0 before each start. Its insets with the bars hidden, measured
+  before the top swipe-down strip was left to taps: portrait 0, 150, 0, 84 px; landscape
+  118 (camera side), 74 top, 84 bottom. Expected since: portrait 0, 118, 0, 84; landscape
+  118, 0, 0, 84 and 0, 0, 118, 84; so `--inset` for it in dp at its 1.969 px a dp is
+  about `0,60,0,43` and `60,0,0,43`. `adb shell input
   swipe 5 1200 500 1200 150` is a back swipe in portrait, but the first only shows the
   hidden bars and a second one goes back; `input keyevent KEYCODE_BACK` goes back at
   once. A swipe landing outside the app (on the launcher) opens apps, so check where a

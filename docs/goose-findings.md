@@ -26,18 +26,22 @@ area is all of it). goose_gfx `6cfa3de`, Goose v2026.4.
   `src/gfx/gfx_api.h` and `gfx.goose` as the other window queries are; and a safe-area
   change counted as a resize where `frame()` reports one. Small.
 
-## SDL: the Android safe area includes the back gesture's side strips (2026-11-08)
+## SDL: the Android safe area includes the system gestures' strips (2026-11-08)
 
 `SDLSurface.onApplyWindowInsets` makes the safe area from `systemBars | systemGestures |
 mandatorySystemGestures | tappableElement | displayCutout`. With gesture navigation,
 `systemGestures` holds the back gesture's strips down both sides, which Android's docs
 say still pass taps to the window, so a portrait phone's safe area loses tens of dp of
-its width for no tap's sake. SDL 3.4.16 (`fa2c02b`).
+its width for no tap's sake. With the bars hidden, `mandatorySystemGestures` still holds
+the strip at the top a swipe pulls them down from, where taps reach the window too (on
+the Pixel 7a 150 px in portrait, 32 more than its camera, and 74 px in landscape). SDL
+3.4.16 (`fa2c02b`).
 
-- Here: `patches/SDL/0002-safe-area-without-back-gesture.patch` leaves `systemGestures`
-  out; the cutout and the bottom gesture bar (`mandatorySystemGestures`) still count.
-  `scripts/android.py` now compiles SDL's Java from the patched copy, as it does its C.
-  Not yet checked on a phone (task 030).
+- Here: `patches/SDL/0002-safe-area-without-system-gestures.patch` leaves
+  `systemGestures` out and takes only the bottom of `mandatorySystemGestures` (the
+  gesture bar); the cutout, the bars while shown, and `tappableElement` still count.
+  `scripts/android.py` compiles SDL's Java from the patched copy, as it does its C. The
+  side strips' part checked on the Pixel 7a; the top strip's waits for it (task 030).
 - Upstream: for the user only, as with the other SDL entries. Possibly a hint choosing
   which insets make the safe area.
 

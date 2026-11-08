@@ -469,7 +469,7 @@ glass that runs off the screen reaching its edges
 - **`--inset L,T,R,B`** (dp of the layout) stands for a phone's insets on the Mac
   (`docs/development.md`). `test/shell/sizes` runs the 20:9 phone at 540 and 480 dp and
   the 9:16 at 480 with the Pixel's 118 px cutout (top in portrait, either side in
-  landscape) and a 48 px gesture bar, both languages: every tile and the board inside
+  landscape) and a 48 px gesture bar (84 px since the Pixel, below), both languages: every tile and the board inside
   the safe area, every tap 88 dp. Boards, English, against the same phone without
   insets: 20:9 at 540 landscape, home 378 → 361, the setups 378 / 356 → 297, the game
   492 → 468, settings 431 → 375; portrait home 432 (the same), the computer's setup 244 →
@@ -564,15 +564,15 @@ Android 17, 1080 × 2400, gesture navigation, the density floor on (F = 0.75), f
 | Landscape, camera left (1) | 118, 74, 0, 84 | 2.625 | 1.969 |
 | Landscape, camera right (3) | 0, 74, 118, 84 | 2.625 | 1.969 |
 
-So the Pixel lays out 549 × 1219 dp, the safe area 549 × 1143 in portrait and 1159 ×
+So the Pixel lays out 549 × 1219 dp, the safe area 549 × 1100 in portrait and 1159 ×
 470 in landscape. No side strips (`patches/SDL/0002` works). The top is more than the
 camera: with the system bars hidden, `mandatorySystemGestures` still holds the strip at
 the top where a swipe pulls the bars down, 150 px (57 dp) in portrait, deeper than the
 camera's 118, and 74 px (28 dp) in landscape; the gesture bar at the bottom is 84 px
 (32 dp), not the 48 the Mac's `--inset` stood for. Landscape thus has 470 dp of height,
-under the 480 the phone layouts were made for; every screen still fits (below). Whether
-the top strip should be left to taps (a tap there reaches the app; only a swipe pulls
-the bars) is open: it costs 28 dp of landscape height.
+under the 480 the phone layouts were made for; every screen still fits (below). The top
+strip is left to taps since (a tap there reaches the app; only a swipe pulls the bars):
+see "The top strip" below.
 
 When the phone turns, the insets and the new size come a frame or two apart (the insets
 first); the layout follows each, and a shot 1.2 s after turning with settings or the
@@ -593,6 +593,28 @@ finishing the activity on Android 17.
 Memory 5 s after arriving, portrait: home PSS 291 MB, of it 252 MB graphics (180 GL, 73
 EGL); the game (International) 292 MB, graphics 252. Near the smoke test's 289 MB and
 the tablet's 261 to 263.
+
+## The top strip (2026-11-08)
+
+The user chose to stop reserving the top strip, which cost 28 dp of landscape height.
+`patches/SDL/0002` (renamed `-safe-area-without-system-gestures`) now makes the safe
+area `systemBars | tappableElement | displayCutout` (the bars count only while shown)
+and of `mandatorySystemGestures` only its bottom, the gesture bar. Expected on the Pixel
+7a: portrait 0, 118, 0, 84 px; landscape 118, 0, 0, 84 and 0, 0, 118, 84; so 549 × 1116
+dp in portrait and 1159 × 506 in landscape. The APK builds; not yet run on the phone.
+
+On the Mac, `test/shell/sizes` and `--inset` stand for the 84 px bar now, not 48 (at 540
+dp `--inset 0,59,0,42`). At 480 dp in landscape that leaves 443 dp of height, under the
+gear-beside menu's 444 plus the gear's 8 dp over the wordmark's row, so the gear went
+off the top: the gap under the wordmark shrinks from 14 dp down to 4 there
+(`home::mark_gap`). The other changes with the deeper bar: the 20:9 phone at 480 dp in
+portrait shows the computer's setup with no board (its sheet takes the height), and the
+9:16 at 480 the game's board 352 → 336 dp, its bar's tiles 96 → 91 dp wide.
+
+**Left for the Pixel 7a:** log `draughts_display` once in each orientation for the
+insets above; a tap in the top strip reaches the app (home's X in portrait, under the
+old 150 px line) and a swipe there still pulls the bars down; every screen in landscape
+with nothing under the camera or the gesture bar.
 
 ## Acceptance criteria
 

@@ -58,9 +58,9 @@ scale's floor in physical size (`--density-floor F` with `--display-scale S`: th
 becomes `max(short side / 800, F × S)`; off by default, and `--dp` turns it off unless
 `--density-floor` is given too; the Mac's own display scale is left out, so without
 `--display-scale` the floor does nothing there), and a frame to stop at and save as
-`draughts.png`. The Pixel 7a in portrait at 540 dp, its 118 px cutout and a gesture bar
-of about 48 px, 2 px a dp at that scale: `--size 450x1000 --dp 540 --inset 0,59,0,24`,
-and in landscape `--size 1200x540 --dp 540 --inset 59,0,0,24` (or `0,0,59,24`, turned
+`draughts.png`. The Pixel 7a in portrait at 540 dp, its 118 px cutout and its 84 px
+gesture bar, 2 px a dp at that scale: `--size 450x1000 --dp 540 --inset 0,59,0,42`,
+and in landscape `--size 1200x540 --dp 540 --inset 59,0,0,42` (or `0,0,59,42`, turned
 the other way). What the Pixel would show at a floor of 0.75: `--size 1200x540
 --density-floor 0.75 --display-scale 2.625` (1.97 px a dp, 548 dp across).
 `app/draughts.build` adds the program's own C (`app/background.c`, the photographs and their JPEG decoder;

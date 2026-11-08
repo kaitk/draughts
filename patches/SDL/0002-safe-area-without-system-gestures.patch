@@ -1,15 +1,25 @@
---- a/android-project/app/src/main/java/org/libsdl/app/SDLSurface.java	2026-11-08 14:53:26
-+++ b/android-project/app/src/main/java/org/libsdl/app/SDLSurface.java	2026-11-08 14:53:32
-@@ -204,8 +204,11 @@
+--- a/android-project/app/src/main/java/org/libsdl/app/SDLSurface.java	2026-11-08 18:47:54
++++ b/android-project/app/src/main/java/org/libsdl/app/SDLSurface.java	2026-11-08 18:47:54
+@@ -204,11 +204,17 @@
      @Override
      public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
          if (Build.VERSION.SDK_INT >= 30 /* Android 11 (R) */) {
+-            Insets combined = insets.getInsets(WindowInsets.Type.systemBars() |
+-                                               WindowInsets.Type.systemGestures() |
+-                                               WindowInsets.Type.mandatorySystemGestures() |
+-                                               WindowInsets.Type.tappableElement() |
+-                                               WindowInsets.Type.displayCutout());
 +            // Not systemGestures(): with gesture navigation it holds the back gesture's
 +            // strips down both sides, where taps still reach the window, and would take
-+            // them from a portrait phone's width. The cutout and the bottom gesture bar
-+            // (mandatorySystemGestures) stay out of the safe area.
-             Insets combined = insets.getInsets(WindowInsets.Type.systemBars() |
--                                               WindowInsets.Type.systemGestures() |
-                                                WindowInsets.Type.mandatorySystemGestures() |
-                                                WindowInsets.Type.tappableElement() |
-                                                WindowInsets.Type.displayCutout());
++            // them from a portrait phone's width. Of mandatorySystemGestures() only the
++            // bottom, the gesture bar: its top is the strip a swipe pulls hidden bars down
++            // from, where taps still reach the window too. The cutout, the bars while
++            // shown, and anything tappable of the system's stay out of the safe area.
++            Insets bars = insets.getInsets(WindowInsets.Type.systemBars() |
++                                           WindowInsets.Type.tappableElement() |
++                                           WindowInsets.Type.displayCutout());
++            Insets gestures = insets.getInsets(WindowInsets.Type.mandatorySystemGestures());
++            Insets combined = Insets.max(bars, Insets.of(0, 0, 0, gestures.bottom));
+ 
+             SDLActivity.onNativeInsetsChanged(combined.left, combined.right, combined.top, combined.bottom);
+ 

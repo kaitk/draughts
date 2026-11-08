@@ -198,8 +198,9 @@ fn main() {
             }
         }
     }
-    // The Pixel 7a's insets in pixels, 118 for the camera and about 48 for the gesture bar:
-    // portrait, landscape with the camera at the left, and at the right.
+    // The Pixel 7a's insets in pixels, 118 for the camera and 84 for the gesture bar (the
+    // swipe-down strip at the top is left to taps, patches/SDL/0002): portrait, landscape
+    // with the camera at the left, and at the right.
     for lang in [strings::EN, strings::ET] {
         strings::use(lang);
         print(strings::LANGUAGES[lang], ", with insets:");
@@ -212,7 +213,7 @@ fn main() {
                 gui::test_faces(g);
                 // Both phones are 1080 px across, as the Pixel is.
                 let cut: f32 = 118.0;
-                let bar: f32 = 48.0;
+                let bar: f32 = 84.0;
                 let sides = if size.x > size.y { 2 } else { 1 };
                 for k in sides {
                     g.insets = if size.x < size.y { float4 { 0.0, cut, 0.0, bar } }

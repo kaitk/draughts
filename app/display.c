@@ -4,8 +4,8 @@
 // it directly; on the Mac SDL is in the goose binary, so its functions are looked up once.
 //
 // The safe area: on Android SDL fills it from the window's insets, the display cutout
-// and the system bars and gestures (patches/SDL/0002: the back gesture's side strips
-// left out), in the window's pixels; on the Mac a window's safe area is all of it. The
+// the system bars while shown, and the bottom gesture bar (patches/SDL/0002: the back
+// gesture's side strips and the top swipe-down strip left out), in the window's pixels; on the Mac a window's safe area is all of it. The
 // display scale: on Android densityDpi / 160 (2.625 on the Pixel 7a, 1.5 on the Tab
 // A11+), on a Mac's Retina screen 2.
 
