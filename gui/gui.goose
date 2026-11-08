@@ -402,6 +402,17 @@ fn round_button(g: Gui&, id: i64, r: float4, icon: i64, size: f32) -> bool {
     return clicked;
 }
 
+// An icon alone, `size` dp across at 85% as a row's, centered in its tap r (home's gear
+// in portrait, rendering.md, "Home"): clear until pressed, then lit round as a pressed
+// row is. True when it is tapped.
+fn icon_button(g: Gui&, id: i64, r: float4, icon: i64, size: f32) -> bool {
+    let clicked, p = hold(g, id, r);
+    add(g, Quad { rect: r, look: float4 { BUTTON, 0.5 * min(r.z, r.w), 0.0, p }, extra: float4 { g.scale, ROW, 0.0, 0.0 } });
+    let s = size * g.scale * (1.0 - 0.04 * p);
+    glyph_icon(g, center(r, s, s), icon, ROW, p, 0.85);
+    return clicked;
+}
+
 // A line or filled icon in r, in the text color at opacity a (the glow color for ON).
 fn glyph_icon(g: Gui&, r: float4, icon: i64, style: i64, p: f32, a: f32) {
     add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { ICON, 0.0, icon, p },

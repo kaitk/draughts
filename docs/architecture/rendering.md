@@ -354,8 +354,12 @@ the prototype tried, kept for 3D:
   icon tiles and two other takes): the scene and the 3D board, and one glass column
   with the wordmark, then continue, a friend, the computer with its level, and puzzles
   with stars, then settings, each an icon and a word, in rows 88 dp tall, 2 dp apart. In
-  portrait settings is instead a quiet 88 dp tile beside the wordmark, reaching 8 dp over
-  and under its row, so the sheet leaves the board its room; so too in a landscape too
+  portrait settings is instead a gear beside the wordmark, so the sheet leaves the board
+  its room: the gear alone, 40 dp at 85%, with no tile, in an 88 dp tap reaching 8 dp over
+  and under the row, clear until pressed and then lit round as a pressed row is
+  (`prototypes/gear.html?take=a`, chosen 2026-11-08 over the 88 dp quiet tile, which
+  looked too big beside the wordmark, and the X's round glass button); the name may run
+  under the tap's clear side, up to 12 dp from the gear; so too in a landscape too
   short for the menu with settings as a row (a phone under about 590 dp tall), where the
   column widens to 440 dp for the wordmark and the gear. The wordmark's letters close up
   where the gear leaves them too little room (2026-11-08). In the

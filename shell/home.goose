@@ -2,7 +2,7 @@
 // photograph, the board as the game stands, and one glass column with the wordmark, then
 // continue, a friend, the computer with its level, puzzles, and settings, each an icon
 // and a word. In landscape the column stands at the left, its left edge off the screen;
-// in portrait it is a sheet along the bottom, and settings is a quiet button beside the
+// in portrait it is a sheet along the bottom, and settings is a gear alone beside the
 // wordmark, so the sheet leaves the board its room. Puzzles notes the stars won of those
 // there are.
 //
@@ -41,7 +41,8 @@ let ROW_H = 88.0;           // dp, the floor for small hands
 let ROW_GAP = 2.0;
 let MARK_H = 72.0;          // the wordmark's row
 let MARK_GAP = 34.0;        // under it in landscape; 14 beside settings' gear, down to 4
-let GEAR = 88.0;            // settings beside the wordmark, over its row's height
+let GEAR = 88.0;            // settings' tap beside the wordmark, over its row's height,
+let GEAR_ICON = 40.0;       // its gear alone, with no tile
 let MARGIN = 16.0;          // dp the menu keeps from the screen's top and foot at least
 let CORNER = 88.0;          // the way out, round, in the top right,
 let EDGE = 24.0;            // this far from both edges,
@@ -218,13 +219,14 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
 }
 
 // The menu in c: the wordmark, `below` dp under it, the rows, and settings, a row of its
-// own or, `gear`, a quiet tile at the wordmark's right (portrait, and a short landscape).
+// own or, `gear`, a gear at the wordmark's right (portrait, and a short landscape).
 fn menu(over: game::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, s: settings::Settings&) -> i64 {
     let u = g.scale;
     var content = c;
 
-    // The wordmark: a crowned light piece and the app's name; settings at the right, 88
-    // dp, reaching 8 dp over and under the row.
+    // The wordmark: a crowned light piece and the app's name; settings at the right, a
+    // gear with no tile in an 88 dp tap reaching 8 dp over and under the row. The name may
+    // run under the tap's clear left side, up to 12 dp from the gear.
     var mark = gui::cut_top(content, MARK_H * u);
     let piece = gui::cut_left(mark, 56.0 * u);
     game::put(over, piece, 28.0 * u, rules::WHITE, board::CROWN,
@@ -233,7 +235,8 @@ fn menu(over: game::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, s
     var pick = NOTHING;
     if gear {
         let r = gui::center(gui::cut_right(mark, GEAR * u), GEAR * u, GEAR * u);
-        if gui::tile(g, 300, r, gui::GEAR, gui::QUIET, 16.0) { pick = SETTINGS; }
+        if gui::icon_button(g, 300, r, gui::GEAR, GEAR_ICON) { pick = SETTINGS; }
+        mark.z += 0.5 * (GEAR - GEAR_ICON) * u;
     }
     // The name spaced out, less where the gear leaves it too little room (a phone).
     let name = strings::get(strings::APP_NAME);
