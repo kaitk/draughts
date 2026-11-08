@@ -305,8 +305,9 @@ the prototype tried, kept for 3D:
   it would reach the board, the board moves down to 16 dp under it and shrinks to keep
   24 dp above the sheet (640 to 620 dp on the tablet). The board keeps 40 dp above and
   below it, down to 24 where a setup's tall sheet near square would leave it under 40%
-  of the width (2026-11-08). A board under 96 dp isn't shown (a setup on a short phone);
-  the pieces on its tiles still are. A friend
+  of the width (2026-11-08). A board under 128 dp isn't shown (a setup on a short phone;
+  `board::SMALLEST`, the same for settings' preview): its squares would be under 13 dp
+  on 10 × 10. The pieces on its tiles still are. A friend
   and the computer open a new game's setup in the same column: back (88 dp) and the title, then
   a row of tiles per choice, lit as in settings, each with its dim name above it: which
   draughts (international 10 × 10, the default, Brazilian 8 × 8, or Russian 8 × 8, each
@@ -320,8 +321,9 @@ the prototype tried, kept for 3D:
   the clock, and play in the second, the title in a smaller face if it needs it; down to
   290 dp each where the second would reach the X (a 16:9 phone less its cutout at a
   side). In portrait, where the sheet would reach the X (the computer's on a 9:16 phone
-  at 480 dp), back and the title leave the sheet for the top left, back on glass, level
-  with the X, as in settings. The
+  at 480 dp), the sheet takes the height, 8 dp under its top at least, its margins above
+  and below the content shrinking from 32 dp to fit, and back, the title (in a smaller
+  face where it needs one), and the X share its first row; no board shows. The
   choices are kept for next time in `settings.txt`, and play replaces a saved game
   without asking. Beside a setup the board is the game play will start: the chosen
   draughts at its start, 10 × 10 or 8 × 8, turned when the child plays black against
@@ -381,7 +383,7 @@ the prototype tried, kept for 3D:
   in the title row in place of the title in landscape and in a row under it in portrait
   (where the groups side by side would leave the board under 45% of the width), and the
   group's glass, without its title row, is as tall as the taller of the two so the board
-  stays put. A board under 96 px isn't shown (a 9:16 phone at 480 dp, landscape). In
+  stays put. A board under 128 dp isn't shown, as on home (a 9:16 phone at 480 dp). In
   portrait the title takes a smaller face, or none, where it doesn't fit beside the
   language (2026-11-08). The Board row (`--3d`) makes the look group too tall for a
   landscape 800 px tall, so with it the tablet shows one group at a time too; their notes and the thumbnails' labels are in the 17 px

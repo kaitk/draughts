@@ -537,7 +537,7 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
         var side = gui::cut_left(page, w);
         gui::cut_left(page, SIDE_GAP * u);
         var size = 0.94 * min(page.z, page.w);
-        if size < 96.0 * u { size = 0.0; }
+        if size < board::SMALLEST * u { size = 0.0; }
         l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
         ask = head(s, g, gui::cut_top(side, HEAD_H * u), shown, tabbed);
         gui::cut_top(side, HEAD_GAP * u);
@@ -573,7 +573,7 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
             let glass = gui::cut_bottom(page, one);
             gui::cut_bottom(page, 16.0 * u);
             var size = 0.94 * min(page.z, page.w);
-            if size < 96.0 * u { size = 0.0; }
+            if size < board::SMALLEST * u { size = 0.0; }
             l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
             if group(s, over, g, s.group, glass, false, false) { ask = CHANGED; }
             return ask;

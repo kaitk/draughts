@@ -105,7 +105,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp:
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 373 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 373 dp, all in place
-  settings: 11 tiles, smallest 88 x 88 dp, board 105 dp, all in place
+  settings: 11 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the puzzles: 14 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 373 dp, all in place
   the win: 6 tiles, smallest 88 x 88 dp, board 373 dp, card buttons 88 x 88 dp, all in place

@@ -62,7 +62,6 @@ let GEAR_W = 440.0;         // the menu's with the gear beside the wordmark;
 let PAIR_W = 330.0;         // each of two side by side where one is too tall (a phone),
 let PAIR_LEAST = 290.0;     // narrowing to this to keep clear of the way out
 let PAIR_GAP = 24.0;
-let LEAST = 96.0;           // dp: a board under this isn't shown
 
 let LEVEL_KEYS = [strings::PICK_EASY, strings::PICK_MEDIUM, strings::PICK_HARD];
 let LEVEL_NOTES = [strings::LEVEL_EASY, strings::LEVEL_MEDIUM, strings::LEVEL_HARD];
@@ -127,7 +126,8 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
     let pair_w = if pair { clamp((width - clear) / u * 0.5 - 0.5 * (40.0 + PAIR_GAP), PAIR_LEAST, PAIR_W) } else { 0.0 };
     var col = float4 { 0.0, 0.0, 0.0, 0.0 };
     var content = col;
-    var head = col;             // back and the title, where they leave the sheet
+    var head = col;             // back and the title, where they share a row with the way out
+    var way = corner(area, u);  // the way out
     if landscape {
         // The column, its left corners off the screen, 360 dp of content (a setup too
         // tall for that, two columns of 300 side by side); the board in the rest, 70% of
@@ -162,7 +162,7 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
                 y = 0.5 * (height - size);
             }
         }
-        if size < LEAST * u { size = 0.0; }
+        if size < board::SMALLEST * u { size = 0.0; }
         l = board::layout_at(area.x + x, area.y + y, size, u, n);
     } else {
         // A sheet along the bottom, its lower corners off the screen; the board above it,
@@ -170,15 +170,23 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
         // keep 24 dp above the sheet. It keeps 40 dp above and below, less, down to 24,
         // where a tall setup's sheet near square would leave it under 40% of the width.
         // Where a setup's sheet would reach the way out (the computer's on a short phone),
-        // back and the title leave it for the top left, level with the way out, and the
-        // board, with no room left, isn't shown.
+        // the sheet takes the height, 8 dp under its top at least, its margins above and
+        // below shrinking to 8 dp to fit; back, the title, and the way out share its first
+        // row, and the board, with no room left, isn't shown.
         var sheet_h = content_h + 64.0 * u;
-        if setup != NOTHING && height - sheet_h < clear {
-            sheet_h = setup_height(setup, false, u, false) + 64.0 * u;
-            head = float4 { area.x + EDGE * u, area.y + EDGE * u, width - (2.0 * EDGE + CORNER + 16.0) * u, HEAD_H * u };
+        var rim = 32.0 * u;
+        let full = setup != NOTHING && height - sheet_h < clear;
+        if full {
+            rim = clamp(0.5 * (height - 8.0 * u - content_h), 8.0 * u, 32.0 * u);
+            sheet_h = content_h + 2.0 * rim;
         }
         col = float4 { area.x, area.y + height - sheet_h, width, sheet_h + 32.0 * u };
-        content = float4 { area.x + 32.0 * u, area.y + height - sheet_h + 32.0 * u, width - 64.0 * u, content_h };
+        content = float4 { area.x + 32.0 * u, area.y + height - sheet_h + rim, width - 64.0 * u, content_h };
+        if full {
+            head = float4 { content.x, content.y, content.z - (CORNER + 16.0) * u, HEAD_H * u };
+            way = float4 { content.x + content.z - CORNER * u, content.y, CORNER * u, CORNER * u };
+            gui::cut_top(content, (HEAD_H + HEAD_GAP) * u);
+        }
         let stage_h = height - sheet_h;
         let room = max(stage_h - 80.0 * u, min(stage_h - 48.0 * u, 0.4 * width));
         var size = min(min(0.8 * width, 0.6 * height), room);
@@ -187,8 +195,7 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
             y = clear;
             size = min(size, stage_h - 24.0 * u - y);
         }
-        if head.z > 0.0 { y = max(y, clear); size = min(size, stage_h - 24.0 * u - y); }
-        if size < LEAST * u { size = 0.0; }
+        if full || size < board::SMALLEST * u { size = 0.0; }
         l = board::layout_at(area.x + 0.5 * (width - size), area.y + y, size, u, n);
     }
     // The column or sheet runs on past the safe area to the screen's edges.
@@ -197,7 +204,7 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
     var pick = if setup != NOTHING { choose(over, g, content, setup == COMPUTER, pair_w, head, s) }
                else { menu(over, g, content, gear_beside(landscape, height, u), s) };
     // The way out, declared last so the tiles before it keep their order.
-    if gui::round_button(g, 309, corner(area, u), gui::CLOSE, CROSS) { pick = EXIT; }
+    if gui::round_button(g, 309, way, gui::CLOSE, CROSS) { pick = EXIT; }
     return pick;
 }
 
@@ -308,7 +315,7 @@ fn choose(over: game::Overlay&, g: gui::Gui&, content: float4, computer: bool, p
     // One column, or two side by side, pair_w dp each where it isn't 0: back, the title,
     // the draughts and the level in the first; the child's pieces, the clock, and play in
     // the second. Back and the title are at the column's top, or in `apart` where that is
-    // set, back on glass there as in settings.
+    // set, beside the way out.
     let pair = pair_w > 0.0;
     var c = if pair { float4 { content.x, content.y, pair_w * u, content.w } } else { content };
     let second = float4 { content.x + (pair_w + PAIR_GAP) * u, content.y, pair_w * u, content.w };
@@ -318,7 +325,6 @@ fn choose(over: game::Overlay&, g: gui::Gui&, content: float4, computer: bool, p
         gui::cut_top(c, HEAD_GAP * u);
     }
     let back = gui::cut_left(head, HEAD_H * u);
-    if apart.z > 0.0 { gui::glass(g, back, 22.0); }
     if gui::tile(g, 320, back, gui::BACK, gui::PLAIN, 16.0) { ask = BACK; }
     gui::cut_left(head, 14.0 * u);
     gui::glyph_icon(g, gui::center(gui::cut_left(head, 36.0 * u), 36.0 * u, 36.0 * u),

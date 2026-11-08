@@ -39,6 +39,11 @@ struct Layout {
     flip:  bool,        // turned, black playing up the screen: a child playing black
 }
 
+// dp: a board beside a screen's controls (home's, a setup's, settings' preview) smaller
+// than this isn't shown, where a phone leaves it too little room: its squares would be
+// under 13 dp on 10 × 10, too small to read a position from.
+let SMALLEST = 128.0;
+
 // A board of side `size` at x, y.
 fn layout_at(x: f32, y: f32, size: f32, scale: f32, n: i64) -> Layout {
     var l = Layout { scale: scale, board: float4 { x, y, size, 0.016 * size }, n: n, .. };
