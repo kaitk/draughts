@@ -292,7 +292,9 @@ the prototype tried, kept for 3D:
   its mark (a target for captures, a crown for many jumps and crowning, a shield for
   shots and the safe move) and its ten tiles, each with 0 to 3 stars in the glow color,
   outlined for those not won; the next unsolved puzzle is lit; a tier not yet open shows
-  a lock on each tile. In portrait the mark stands above its row. Behind it the sharp
+  a lock on each tile. In portrait the title stands beside back, as in settings, and
+  each tier is its mark beside two rows of five tiles, about 120 dp on the tablet, where
+  ten in a row would be 66 dp, under the 88 dp a small hand needs. Behind it the sharp
   photograph and no board. **A puzzle** (`prototypes/puzzle.html`, take c, chosen
   2026-11-08): the game screen's layout, the left panel the game's with the puzzles in
   home's place; on the right the goal's icon in the glow color over its words

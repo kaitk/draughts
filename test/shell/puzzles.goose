@@ -8,7 +8,8 @@
 // misses the piece to move glows. In a shot, a right move is answered by the line's
 // reply after a pause, and the capture after it solves the puzzle. Half a tier solved
 // opens the next. Settings opened from a puzzle go back to it as it was; a puzzle isn't
-// saved with the game, which brings back the picker instead.
+// saved with the game, which brings back the picker instead. In portrait the picker
+// shows each tier as two rows of five, the tiles at least 88 dp.
 import std;
 import vec;
 import rules from "../../rules";
@@ -167,4 +168,14 @@ fn main() {
     drive::size = float2 { 800.0, 1280.0 };
     drive::idle(sh, g, 40.0);
     print("portrait: board ", sh.layout.board, ", next at ", drive::rect(g, 3));
+    // The portrait picker: the title beside back, and each tier two rows of five tiles
+    // of at least 88 dp.
+    sh.screen = shell::PICKER;
+    drive::idle(sh, g, 41.0);
+    var glyphs = 0;
+    for q in g.quads { if q.look.x == gui::TEXT { glyphs++; } }
+    let first = drive::rect(g, 1);
+    let sixth = drive::rect(g, 6);
+    print("portrait picker: title glyphs ", glyphs, ", tiles ", drive::tiles(g), ", the first ", first, ", the sixth ",
+          sixth, ", at least 88 dp ", first.z >= 88.0, ", the last tier ends at ", drive::rect(g, 30).y + first.w);
 }

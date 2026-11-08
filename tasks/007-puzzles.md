@@ -101,5 +101,7 @@ ghost of the piece, with "try again" and a star going out.
   don't need.
 - **The ghost** fades from 80% to nothing over the 1.2 s flash; the prototype holds it
   at 35%.
-- **Portrait picker tiles** are 66 dp, under the 88 dp for small hands, to fit ten in a
-  row on 800 dp.
+- **Portrait picker**: ten tiles of 66 dp in a row broke the 88 dp floor and left half
+  the screen empty; since 2026-11-08 each tier is two rows of five, 122 dp at 800 dp
+  wide, the three tiers ending 1128 dp down of 1280, with the title beside back as in
+  settings. Landscape is as it was. The prototype has no title; that one is added.
