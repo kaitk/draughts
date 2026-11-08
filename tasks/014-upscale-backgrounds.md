@@ -5,9 +5,9 @@ Status: todo
 The seasonal backgrounds are 1254 px originals enlarged to 2048 px with Lanczos
 (`design/backgrounds/README.md`): sharp enough behind the board, soft up close. Upscale
 them properly on the user's desktop (RTX 4090, ComfyUI), with the pipeline Snowtime used
-for its backgrounds, recorded in
-`~/projects/snowtime/snowtime/design/backgrounds/README.md` (task 051 there). Its
-ComfyUI setup was cleared to save space, so it needs setting up again first.
+for its backgrounds, recorded in Snowtime's
+[`design/backgrounds/README.md`](https://github.com/Snowhound/snowtime/blob/main/design/backgrounds/README.md)
+(task 051 there). Its ComfyUI setup was cleared to save space, so it needs setting up again first.
 
 The pipeline, from that README:
 

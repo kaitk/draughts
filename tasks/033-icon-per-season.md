@@ -114,9 +114,7 @@ with the tablet in English (en-GB).
     #1d110d against #150b09: the foreground's own backdrop over `icon_background`. It
     shows only up close.
 
-The files named are in
-`/private/tmp/claude-501/-Users-kaitkasak-projects-personal-draughts/d9f11ac9-ef2c-4a62-bf58-8c3587116c29/scratchpad/tabletround/`,
-out of git.
+The files named were in that session's scratchpad (`tabletround/`), out of git.
 
 ## Acceptance criteria
 

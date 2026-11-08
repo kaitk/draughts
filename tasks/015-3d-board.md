@@ -68,9 +68,9 @@ look good, not merely work.
     from where.
   - The user's own digging into his work, mostly unpushed: the local repos
     `~/projects/goose/goose-ngfx` and `~/projects/goose/goose-nogfx` (their notes), and
-    the Claude Code sessions about them from about October 2026, under
-    `~/.claude-work/projects/-Users-kaitkasak-projects-goose-goose-{ngfx,nogfx,nogfx-prototype}/`
-    (some may be on the user's personal account instead; ask). Read these first.
+    the Claude Code sessions about them from about October 2026, in Claude Code's
+    project folders for `goose-ngfx`, `goose-nogfx`, and `goose-nogfx-prototype` (some
+    may be under another Claude account; ask). Read these first.
   - Arm's Mali best practices for MSAA resolved in tile memory.
 - The user has more to add before it starts.
 

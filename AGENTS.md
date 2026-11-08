@@ -46,9 +46,10 @@ would otherwise look up again:
   (2026-11-08).
 - Never edit the submodules. A gap in Goose or goose_gfx gets a patch and a findings entry
   (above); for SDL, write only a note for the user, who decides about anything sent there.
-- The user maintains goose-ngfx and contributes to Goose and goose_gfx. Snowtime
-  (github.com/Snowhound/snowtime) is the model for this repo's layout (AGENTS.md, docs/,
-  tasks/ with an archive, prototypes/ checked with agent-browser) and for the UI's look.
+- The user maintains goose-ngfx and contributes to Goose and goose_gfx. Snowtime, a
+  public time tracker (github.com/Snowhound/snowtime), is the model for this repo's layout
+  (AGENTS.md, docs/, tasks/ with an archive, prototypes/ checked with agent-browser) and
+  for the UI's look.
 - Code is lean and game-like, in the spirit of Carmack and Sebastian Aaltonen: flat data,
   fixed buffers, no allocation in hot paths, nothing clever without a measured reason.
 - Check a change that shows on screen on the Mac and then on the tablet over USB
