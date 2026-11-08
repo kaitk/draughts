@@ -6,9 +6,8 @@
 // on easy; more when several moves are about as good, less when one stands out or it
 // must capture; at once, after the level's pause, when it has a single move; and the
 // first moves of a game quickly, as a player knows them, longer as the game opens up.
-// Its clock
-// keeps it from running low: it never spends more than a tenth of what is left, so
-// with the increment it can't lose on time.
+// Its clock keeps it from running low: it never spends more than a tenth of what is
+// left, so with the increment it can't lose on time.
 namespace pace;
 import std;
 
