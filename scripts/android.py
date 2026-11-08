@@ -8,8 +8,9 @@ Steps: Goose writes the program's C and the runtime's C; goose_gfx's sources are
 and patches/goose_gfx applied, and SDL is copied and patches/SDL applied; CMake with the
 NDK builds
 libSDL3.so and libmain.so (android/CMakeLists.txt); javac and d8 compile SDL's stock Java
-glue and DraughtsActivity; aapt2 compiles android/res (the icon and the theme) and links
-it with the manifest; zip adds the dex and the stripped libraries, the libraries
+glue and DraughtsActivity; aapt2 compiles android/res (the icon and the theme) and the
+launcher's name per language (res/values*/strings.xml, written from strings/<lang>.txt's
+app.name) and links them with the manifest; zip adds the dex and the stripped libraries, the libraries
 stored uncompressed; zipalign aligns them to 16 KB; apksigner signs with the debug key.
 
 Tools come from the environment or the defaults below: GOOSE, ANDROID_HOME, ANDROID_NDK,
@@ -55,6 +56,34 @@ def sidecar(program, key):
     m = re.search(rf"\b{key}\s*=\s*\[([^\]]*)\]", text)
     names = re.findall(r'"([^"]*)"', m.group(1)) if m else []
     return [(program.parent / n).resolve() for n in names]
+
+
+def android_text(text):
+    """A string for strings.xml: XML escaped, and Android's own escapes for \\, quotes, and
+    a leading @ or ?."""
+    text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    text = text.replace("\\", "\\\\").replace("'", "\\'").replace('"', '\\"')
+    if text[:1] in ("@", "?"):
+        text = "\\" + text
+    return text
+
+
+def write_app_names(res_dir):
+    """res/values/strings.xml from strings/en.txt and res/values-<lang>/strings.xml from
+    every other strings/<lang>.txt, each holding app_name, the file's app.name."""
+    if res_dir.exists():
+        shutil.rmtree(res_dir)
+    for path in sorted((ROOT / "strings").glob("*.txt")):
+        lang = path.stem
+        m = re.search(r"^app\.name\s*=\s*(.+?)\s*$", path.read_text(encoding="utf-8"), re.M)
+        if not m:
+            sys.exit(f"{path}: no app.name")
+        folder = res_dir / ("values" if lang == "en" else f"values-{lang}")
+        folder.mkdir(parents=True)
+        (folder / "strings.xml").write_text(
+            '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n'
+            f'    <string name="app_name">{android_text(m.group(1))}</string>\n'
+            '</resources>\n', encoding="utf-8")
 
 
 def main():
@@ -141,9 +170,12 @@ def main():
     unaligned = out / f"{name}-unaligned.apk"
     aligned = out / f"{name}.apk"
     res = out / "res.zip"
+    names_dir, names = out / "res_strings", out / "res_strings.zip"
+    write_app_names(names_dir)
     run(BUILD_TOOLS / "aapt2", "compile", "--dir", ROOT / "android/res", "-o", res)
+    run(BUILD_TOOLS / "aapt2", "compile", "--dir", names_dir, "-o", names)
     run(BUILD_TOOLS / "aapt2", "link", "-o", unaligned, "--manifest",
-        ROOT / "android/AndroidManifest.xml", "-I", android_jar, res,
+        ROOT / "android/AndroidManifest.xml", "-I", android_jar, res, names,
         "--min-sdk-version", MIN_SDK, "--target-sdk-version", TARGET_SDK)
     run("zip", "-q", unaligned, "classes.dex", cwd=apk_dir)
     run("zip", "-q", "-0", "-r", unaligned, "lib", cwd=apk_dir)

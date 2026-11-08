@@ -59,7 +59,7 @@ icon and launch). The order for what is left:
    bringing back a running app with its old flags, so tablet runs start with `-S`
    (task 007).
 2. 031, the win: take a, the pieces answer.
-3. The launcher's name follows the phone's language ("Kabe" in Estonian):
+3. Done (2026-11-08): the launcher's name follows the phone's language ("Kabe" in Estonian):
    `scripts/android.py` writes `res/values*/strings.xml` from `strings/<lang>.txt`, and
    the manifest takes `@string/app_name`. The icon stays winter (task 033).
 4. 034, the setup's board shows the game being set up.

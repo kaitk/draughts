@@ -163,6 +163,10 @@ adb logcat -s goose:* SDL:*                 # the program's output and SDL's log
 4. `javac` and `d8` compile SDL's stock Java (`SDL/android-project/.../org/libsdl/app`).
 5. `aapt2` compiles `android/res` (the icon and the launch theme; `scripts/icon.py` makes
    the icon, `design/icon/README.md`) and links it with `android/AndroidManifest.xml`.
+   The launcher's name follows the phone's language: the script writes
+   `res/values/strings.xml` and `res/values-<lang>/strings.xml` into the build directory
+   from each `strings/<lang>.txt`'s `app.name` key, and the manifest's label is
+   `@string/app_name`.
    `zip` adds the dex and the stripped libraries, stored uncompressed. `zipalign -P 16`
    aligns them to 16 KB pages, and `apksigner` signs with `~/.android/debug.keystore`,
    which it creates if missing.
