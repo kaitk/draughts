@@ -29,9 +29,11 @@ look good, not merely work.
     the analytic disc and frame occlusion planned below. The geometry is known exactly
     (discs on a plane), so analytic is exact and cheaper; SSAO earns its place only for
     detail analytic misses.
-  - Antialiasing: MSAA 4× (cheap on the tablet's tile-based GPU, resolved in tile
-    memory), with specular antialiasing (roughness widened by the normal's variance) so
-    highlights don't shimmer.
+  - Antialiasing, the cheapest that looks clean, as options to compare: analytic edges
+    (the 2D board's SDF coverage, carried to the few silhouettes: pieces, the frame),
+    a single-frame post filter (SMAA 1×, FXAA), or MSAA 4× (cheap on a tile-based GPU,
+    resolved in tile memory, but maybe overkill here). Specular antialiasing (roughness
+    widened by the normal's variance) either way, so highlights don't shimmer.
   - Shadows: a soft shadow map (PCF or PCSS) for the pieces, drawn only when the position
     changes, since the scene is static between moves.
   - Few full-screen passes: mobile GPUs pay for bandwidth, not math.
