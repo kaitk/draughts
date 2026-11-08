@@ -140,6 +140,34 @@ Work before building it: a prototype `prototypes/puzzles.html` take with the lib
 and a theme's page, in both orientations and on a phone, checked with agent-browser,
 for the user to pick from, as task 007's screens were.
 
+The prototype (2026-11-08) is `prototypes/puzzles.html?take=a`, `b`, or `c` (`now` keeps
+task 007's tiers), with `&view=library` or `theme`, `&theme=learn`, `captures`, ...,
+`&themes=first` (Learn 12, Captures 10, Crowning 12, Shots 20) or `all` (the later four
+too, Shots 30), `&solved=0` to `12` for Learn's solved puzzles (the rest open at 6, below
+that each says how many more), and `&lang=et`. Every tap is at least 88 dp; a theme's
+levels are glass rows of tiles with stars, the first without stars lit, and rows of more
+than fit split evenly (ten go five and five). Checked with agent-browser at 1280×800,
+800×1280, 1040×480, and 480×1040: nothing cut or past the edge; only the later set's 30
+shots, and c's eight themes with them, scroll on a phone in landscape.
+
+- **a, a list like a library**: one glass row per theme (its mark, name, "n / total", a
+  bar), in two columns when all eight are shown in landscape; a row opens the theme's
+  page, its name over three level rows, back in the corner.
+- **b, large theme tiles**: square glass tiles with a large mark, the name, the bar and
+  count, four across in landscape and two in portrait; the theme's page sets its three
+  levels side by side as columns where they fit in three rows of tiles, else stacked.
+- **c, library and theme together**: the themes at the left (rows, or chips of mark,
+  count, and bar where they don't fit, as on a phone in landscape) and the chosen
+  theme's levels beside them; in portrait the themes are a strip of chips across the
+  top. One tap switches theme, and there is no library screen to go back to.
+
+Proposed: **a**. It is the GoDraughts library the themes came from, the names stay
+readable at every size (b shrinks long Estonian ones like "Kombinatsioonid", c drops
+them on a phone), the first release's set fits every size without scrolling, and it is
+the cheapest to build: home's rows and today's tier rows, one list and one page. c saves
+a tap on the tablet in landscape but needs two scrolling panes; b looks most like a game
+but holds the fewest themes per screen.
+
 ### The file and the variants
 
 One file per variant (`puzzles/international.txt`, later `russian.txt`,

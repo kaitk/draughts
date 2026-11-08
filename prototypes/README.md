@@ -10,7 +10,7 @@ jsDelivr CDN, so they need internet access. Start at [index.html](index.html).
 | `first-start.html` | The first start, pages in order (`?page=variant`, `learn`, `1` to `7`, `done`; `&v=russian`) |
 | `settings.html` | Settings: background, board, move hints, language |
 | `game.html` | The game: the board between the way out and the play, a selected piece and its capture, a forced capture; `?clock=on` or `low` for the clocks |
-| `puzzles.html` | The puzzle picker: three theme rows of ten, with 0 to 3 stars |
+| `puzzles.html` | Takes on the puzzle picker by theme (`?take=a` to `c`, `now` for the tiers of ten, `&view=library`, `theme`, `&theme=`, `&themes=first`, `all`, `&solved=0` to `12`, `&lang=et`): a library of themes and a theme's three levels (task 037) |
 | `puzzle.html` | Takes on playing one puzzle (`?take=a` to `c`, `&state=play`, `wrong`, `hint`, `solved`), waiting for a pick (task 007) |
 | `solved.html` | A solved puzzle: stars over the dimmed board |
 | `win.html` | Takes on a win (`?take=a` to `c`, `&t=` seconds to hold a moment; a click plays it again), take a built (task 031, archived) |
