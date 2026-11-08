@@ -91,10 +91,74 @@ fruit. A holistic look, measuring before cutting.
 
 ## Acceptance criteria
 
-- [ ] A table of where the memory goes, CPU and GPU, measured on the tablet
-- [ ] Each change with its before and after (PSS and graphics), the look unchanged
-- [ ] Memory measured at the smallest and largest screen sizes, everything still drawn right
-- [ ] Idle CPU and lifecycle memory scripts run at the end, numbers recorded
+- [x] A table of where the memory goes, CPU and GPU, measured on the tablet
+- [x] Each change with its before and after (PSS and graphics), the look unchanged
+- [x] Memory measured at the smallest and largest screen sizes, everything still drawn right
+  (on the Mac, with Android's graphics worked out from the inventory: no device at those
+  sizes, and the Pixel 7a wasn't attached for the closing run)
+- [x] Idle CPU and lifecycle memory scripts run at the end, numbers recorded
+
+## Result (2026-11-08)
+
+Main `a4d52ac`, all cuts (1 the screen without depth or cycling, 2 SDL's exact large
+allocations, 3 the R8 atlas, 4 the accelerometer off, 5 the ASTC photographs with the
+JPEGs out of the Android build, and the malloc purge after launch), built in a worktree.
+Galaxy tablet, landscape, rotation locked, `pm clear` before each launch, `dumpsys
+meminfo` 8 s after a fresh launch straight to the screen (`--screen game`, `--screen
+settings`, `--puzzle 21`), as "Measured" below. The start is that section's `27b2c23`
+and the starting numbers above; where the start wasn't measured, the earliest build
+that was is named.
+
+| Tablet | Start | End |
+| --- | --- | --- |
+| PSS, fresh: home, game, settings, puzzle 21 | 216.3, 216.9, 249.5, 216.1 MB | 130.2, 131.2, 107.8, 131.4 MB |
+| Native heap PSS, fresh (Heap Alloc) | 41.0 to 42.0 MB | 26.5 to 27.9 MB (40.2 to 42.3) |
+| Graphics (GL + EGL mtrack), fresh: home | 160.3 (100.7 + 59.7) MB | 91.4 (36.3 + 55.0) MB |
+| Graphics, fresh: settings | 192.5 (160.3 + 32.2) MB | 66.5 (38.9 + 27.6) MB |
+| `dumpsys gpu --gpumem`: home, settings | 197.2, 258.3 MiB | 116.2, 118.7 MiB |
+| Code, the rest (Dalvik, stack, other, unknown) | 9.6, 4.9 MB | 7.0 to 8.1, 5.2 MB |
+| Lifecycle (`lifecycle_memory.sh`): PSS | 273, then 259 to 264 MB (20 cycles) | 137.7, then 134.7 to 136.9 MB (5 cycles) |
+| Lifecycle: native heap, graphics | 27, 211 to 215 MB | 27.1 to 27.5, 89.6 to 91.7 MB (97.8 before the first) |
+| Idle at home, 60 s (`idle_cpu.sh`): program thread, process, switches | 0.03 s, 1.26 s, 60 | 0.02 s, 0.05 s, 60 |
+| Load peak (`VmHWM`): home, game, settings | 258.8, 259.1 MB (cut 4's `bde1841`) | 210.1, 210.8, 214.5 MB |
+| APK | 6.0 MB (cut 4's `bde1841`, the JPEGs) | 11.41 MB (11,412,700 bytes: the ASTC files, no JPEGs) |
+
+PSS is about 40% lower fresh and about 48% through the lifecycle, graphics 43% and 58%.
+The APK is the one thing that grew: the ASTC photographs are 7.5 MB in `libmain.so`
+against the JPEGs' 2.2, the price of no decode at load (the load peak 49 MB lower).
+The lifecycle ran 5 cycles, not 20 (the user asked to keep rotating the tablet short);
+the same process throughout, no errors in logcat, graphics flat but for one 2 MB step
+after cycle 2, as before. In settings the swapchain counts less (fewer images
+presented by 8 s), as at the start. The look wasn't shot again on the tablet: each
+cut's own check byte-compared it.
+
+**Per screen size.** The Mac at each size (`--size` in points on its Retina screen,
+the shots at the real pixels; 720 × 1280 as a phone at xhdpi with `--density-floor 0.75
+--display-scale 2`, UI scale 1.5), `footprint` 6 s after launch, home and a game
+(`--screen game`), English. Every shot draws right (home and the game at each size,
+the photograph, the atlas's text, the board). The Mac takes the JPEG path (the
+release's prebuilt gfx has no ASTC) and Metal, which has neither SDL's Vulkan
+allocator nor a 6-image swapchain: its numbers show how the cost grows with the pixels
+and that the cuts made in the app (the R8 atlas, no depth target) hold everywhere, not
+what Android's allocator or driver does. Android's column is worked out from the
+inventory and the tablet's measured 36.3 MB of GL: the screen in its own allocation (W
+× H × 4), the 16 MiB shared block holding the photograph (ASTC 6 × 6, 1.87 MB), the R8
+atlas (0.62 MiB at scale 1.5, 1.0 at 2.0, 1.45 at 2.4), the thumbnails, blur copies, and
+buffers, about 10.3 MB of the driver's, and the swapchain at the Mali's 6 images
+(another GPU may keep 3, half of it).
+
+| Size | Mac footprint, home / game (start) | Mac IOSurface | Android: screen + swapchain | Android graphics, worked out (start) |
+| --- | --- | --- | --- | --- |
+| 720 × 1280 | 97 / 97 MB | 11 MB | 3.7 + 22.1 MB | 53 MB (~116) |
+| 1920 × 1200 | 130 / 131 MB (160 / 159) | 27 MB | 9.2 + 55.3 MB | 91.4, measured (160.3 fresh, 211 to 215 cycled) |
+| 2560 × 1600 | 187 / 189 MB (215 / 215) | 48 MB | 16.4 + 98.3 MB | 142 MB (~260) |
+| 2880 × 1920 | 225 / 223 MB | 64 MB | 22.1 + 132.7 MB | 182 MB (~294) |
+
+The start's worked-out column is the same sum before the cuts: one 64 MiB block at
+720 × 1280 and two at 2560 × 1600 and 2880 × 1920 (screen and depth, cycled, the RGBA8
+photograph and atlas), the 16 MiB block, the driver, and the swapchain. What is left
+at every size is mostly the swapchain, the driver's minimum (candidate 5, out of the
+app's reach), then the screen; everything else fits the one 16 MiB block.
 
 ## Measured (2026-11-08)
 
