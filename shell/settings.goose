@@ -5,7 +5,8 @@
 // season), the board (flat or raised, a row hidden until the 3D board exists), and the kings (auto,
 // crown, or stack). Beside them is home's board as the choices make it: its size, the
 // kings, and what the move hints show, on a fixed position. In landscape the choices
-// take the width they need at the left and the board the rest; in portrait the board is
+// take the width they need at the left and the board the rest (near square, each
+// setting's name above its tiles, so the rows fit the height); in portrait the board is
 // on top and the groups stand side by side under it, each setting's name above its
 // tiles. A tap applies at once; there is no save button.
 //
@@ -222,12 +223,13 @@ let SIDE_GAP = 24.0;        // between the choices and the board in landscape
 let GROUP_GAP = 10.0;
 let GROUP_PAD = 20.0;       // a group's sides; 12 above, 14 below
 let TITLE_H = 34.0;         // a group's icon and title
-let NAME_W = 120.0;         // a setting's name, at the left of its tiles in landscape
+let NAME_W = 120.0;         // a setting's name, at the left of its tiles (most landscapes)
 let NAME_H = 28.0;          // and above them in portrait
 let ROW_GAP = 10.0;
 let TILE_GAP = 10.0;
 let THUMB_W = 62.0;         // a season's thumbnail
 let THUMB_H = 40.0;
+let SLACK = 0.5;            // px a row may pass its width by without wrapping
 
 // The settings in order, the first three in the game's group, the rest in the look's:
 // each one's name, how many tiles, and how tall they are.
@@ -322,7 +324,8 @@ fn tile(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, i: i64, r: f
 }
 
 // Lays out a row's tiles from r's top left, wrapping at its width, and declares them
-// when `declare`. Returns how tall they are, and whether a tap changed s.
+// when `declare`. Returns how tall they are, and whether a tap changed s. A row as wide
+// as r, as group_width makes it, doesn't wrap for a rounding difference: SLACK.
 fn lay(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, r: float4, declare: bool) -> f32, bool {
     let u = g.scale;
     let h = (ROW_H[row] as f32) * u;
@@ -331,7 +334,7 @@ fn lay(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, r: float4, de
     var changed = false;
     for i in ROW_TILES[row] {
         let w = min(tile_width(g, row, i), r.z);
-        if x > 0.0 && x + w > r.z {
+        if x > 0.0 && x + w > r.z + SLACK {
             x = 0.0;
             y += h + TILE_GAP * u;
         }
@@ -342,9 +345,9 @@ fn lay(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, r: float4, de
 }
 
 // A group's settings from r's top left, as wide as r, each its dim name and its tiles:
-// the name at the left in landscape, above them in portrait. Declares them when
+// the name at the left when `aside`, else above them. Declares them when
 // `declare`. Returns how tall they are, and whether a tap changed s.
-fn rows(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4, landscape: bool,
+fn rows(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4, aside: bool,
         declare: bool) -> f32, bool {
     let u = g.scale;
     var y = r.y;
@@ -352,30 +355,31 @@ fn rows(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4,
     for k in group_rows(s, group) {
         let row = group_row(s, group, k);
         if k > 0 { y += ROW_GAP * u; }
-        let aside = (NAME_W + 14.0) * u;
-        let tiles = if landscape { float4 { r.x + aside, y, r.z - aside, 0.0 } }
+        let left = (NAME_W + 14.0) * u;
+        let tiles = if aside { float4 { r.x + left, y, r.z - left, 0.0 } }
                     else { float4 { r.x, y + NAME_H * u, r.z, 0.0 } };
         let h, tapped = lay(s, over, g, row, tiles, declare);
         if declare {
-            let name = float4 { r.x, y, NAME_W * u, if landscape { h } else { NAME_H * u - 6.0 * u } };
+            let name = float4 { r.x, y, NAME_W * u, if aside { h } else { NAME_H * u - 6.0 * u } };
             gui::text(g, gui::SMALL, name, strings::get(ROW_NAMES[row]), 0.66, 0.03 * gui::FACE_DP[gui::SMALL] as f32 * u,
                       gui::LEFT);
         }
         if tapped { changed = true; }
-        y += if landscape { h } else { NAME_H * u + h };
+        y += if aside { h } else { NAME_H * u + h };
     }
     return y - r.y, changed;
 }
 
 // How tall a group's glass is at width w.
-fn group_height(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, w: f32, landscape: bool) -> f32 {
+fn group_height(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, w: f32, aside: bool) -> f32 {
     let u = g.scale;
-    let h, unused = rows(s, over, g, group, float4 { 0.0, 0.0, w - 2.0 * GROUP_PAD * u, 0.0 }, landscape, false);
+    let h, unused = rows(s, over, g, group, float4 { 0.0, 0.0, w - 2.0 * GROUP_PAD * u, 0.0 }, aside, false);
     return (12.0 + TITLE_H + ROW_GAP + 14.0) * u + h;
 }
 
-// How wide a group's glass wants to be in landscape, its rows unwrapped.
-fn group_width(s: Settings&, g: gui::Gui&, group: i64) -> f32 {
+// How wide a group's glass wants to be with its rows unwrapped, the names at their left
+// when `aside`.
+fn group_width(s: Settings&, g: gui::Gui&, group: i64, aside: bool) -> f32 {
     let u = g.scale;
     var widest: f32 = 0.0;
     for k in group_rows(s, group) {
@@ -384,11 +388,12 @@ fn group_width(s: Settings&, g: gui::Gui&, group: i64) -> f32 {
         for i in ROW_TILES[row] { w += tile_width(g, row, i) + TILE_GAP * u; }
         widest = max(widest, w);
     }
-    return widest + (NAME_W + 14.0 + 2.0 * GROUP_PAD) * u;
+    let names = if aside { NAME_W + 14.0 } else { 0.0 };
+    return widest + (names + 2.0 * GROUP_PAD) * u;
 }
 
 // A group's glass in r: its icon and title, then its settings. True when a tap changed s.
-fn group(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4, landscape: bool) -> bool {
+fn group(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4, aside: bool) -> bool {
     let u = g.scale;
     gui::glass(g, r, 24.0);
     var c = float4 { r.x + GROUP_PAD * u, r.y + 12.0 * u, r.z - 2.0 * GROUP_PAD * u, r.w - 26.0 * u };
@@ -398,7 +403,7 @@ fn group(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4
                     0.0, 0.85);
     gui::cut_left(title, 12.0 * u);
     gui::text(g, gui::HEADING, title, strings::get(GROUP_TITLES[group]), 1.0, 0.0, gui::LEFT);
-    let h, changed = rows(s, over, g, group, c, landscape, true);
+    let h, changed = rows(s, over, g, group, c, aside, true);
     return changed;
 }
 
@@ -455,24 +460,33 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, wi
     over.clear();
     var ask = NOTHING;
     if landscape {
-        // The choices as wide as they want, at most 55% of the page, wrapping beyond; the
-        // board in the rest, centered.
-        let want = max(max(group_width(s, g, 0), group_width(s, g, 1)), (HEAD_H + 40.0) * u + languages_width(g)
-                       + gui::text_width(g, gui::LABEL, strings::get(strings::HOME_SETTINGS)));
-        var side = gui::cut_left(page, min(want, 0.55 * page.z));
+        // The choices as wide as they want, at most 55% of the page, wrapping beyond, each
+        // setting's name at the left of its tiles; the board in the rest, centered. Near
+        // square, where the wrapped rows would run past the page's foot, the names go
+        // above the tiles instead, as in portrait, and the rows need less width.
+        let head_w = (HEAD_H + 40.0) * u + languages_width(g)
+                     + gui::text_width(g, gui::LABEL, strings::get(strings::HOME_SETTINGS));
+        let room = page.w - (HEAD_H + HEAD_GAP) * u;
+        var aside = true;
+        var w = min(max(max(group_width(s, g, 0, true), group_width(s, g, 1, true)), head_w), 0.55 * page.z);
+        if group_height(s, over, g, 0, w, true) + GROUP_GAP * u + group_height(s, over, g, 1, w, true) > room {
+            aside = false;
+            w = min(max(max(group_width(s, g, 0, false), group_width(s, g, 1, false)), head_w), 0.55 * page.z);
+        }
+        var side = gui::cut_left(page, w);
         gui::cut_left(page, SIDE_GAP * u);
         let size = 0.94 * min(page.z, page.w);
         l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
         ask = head(s, g, gui::cut_top(side, HEAD_H * u), shown);
         gui::cut_top(side, HEAD_GAP * u);
-        let game_h = group_height(s, over, g, 0, side.z, true);
-        let look_h = group_height(s, over, g, 1, side.z, true);
+        let game_h = group_height(s, over, g, 0, side.z, aside);
+        let look_h = group_height(s, over, g, 1, side.z, aside);
         // Centered down the rest, or from its top if they are taller.
         gui::cut_top(side, max(0.0, 0.5 * (side.w - game_h - GROUP_GAP * u - look_h)));
         var list = side;
-        if group(s, over, g, 0, gui::cut_top(list, game_h), true) { ask = CHANGED; }
+        if group(s, over, g, 0, gui::cut_top(list, game_h), aside) { ask = CHANGED; }
         gui::cut_top(list, GROUP_GAP * u);
-        if group(s, over, g, 1, gui::cut_top(list, look_h), true) { ask = CHANGED; }
+        if group(s, over, g, 1, gui::cut_top(list, look_h), aside) { ask = CHANGED; }
     } else {
         // The title row, the board as large as the rest leaves, and the groups side by
         // side along the bottom, as tall as the taller.
