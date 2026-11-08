@@ -187,6 +187,19 @@ measuring there:
 - Rotation for a screenshot: `adb shell settings put system accelerometer_rotation 0`,
   then `user_rotation 0` is portrait (1200 × 1920) and `1` landscape on this tablet;
   read both settings first and put them back after.
+- On the Pixel 7a (2026-11-08): `user_rotation 1` is landscape with the camera on the
+  left, `3` on the right. `accelerometer_rotation` can turn itself back on during a run,
+  so a script sets it to 0 before each start. Its insets with the bars hidden: portrait
+  0, 150, 0, 84 px; landscape 118 (camera side), 74 top, 84 bottom; so `--inset` for it
+  in dp at its 1.969 px a dp is about `0,76,0,43` and `60,38,0,43`. `adb shell input
+  swipe 5 1200 500 1200 150` is a back swipe in portrait, but the first only shows the
+  hidden bars and a second one goes back; `input keyevent KEYCODE_BACK` goes back at
+  once. A swipe landing outside the app (on the launcher) opens apps, so check where a
+  swipe test starts. Whether the activity was finished or kept shows in
+  `adb logcat -b events | grep wm_` (`wm_finish_activity`, `wm_task_removed`) and in
+  `pidof com.kaitk.draughts` before and after. To log from the program, `print` in the
+  loop shows under `goose`; the APK's libraries are `lib/arm64-v8a/libmain.so` and
+  `libSDL3.so`.
 - During a transition (home and settings, home and the game, the puzzles and a puzzle)
   both screens' quads are declared, the one left first, so `drive::tile(g, n)` counts the
   wrong screen's tiles and `drive::at(sh.layout, ...)` finds squares on a moving board. A

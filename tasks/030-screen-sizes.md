@@ -1,7 +1,7 @@
 # 030: Phones and other screen sizes
 
-Status: in-progress (the survey, the layout fixes, the phone layouts down to 480 dp, and the
-insets on the Mac done; the density floor plumbed but off, its F and the Pixel 7a next)
+Status: in-progress (the survey, the layout fixes, the phone layouts down to 480 dp, the
+insets, the density floor at F = 0.75, and the Pixel 7a done; larger tablets left)
 
 The layouts were built and checked on one screen, the Galaxy tablet (1920 × 1200, 16:10)
 and its Mac stand-in. Play lists the app for phones and tablets alike, so every screen
@@ -553,13 +553,54 @@ the same proportions, smaller (600x960 = 1200 x 1920, 640x960 = 1280 x 1920, 868
 - **Open:** a device's PSS at 2560 x 1600 waits for a device; the tablet's 261 to 263 MB at
   1920 x 1200 is the number to compare with.
 
+## On the Pixel 7a (2026-11-08)
+
+Android 17, 1080 × 2400, gesture navigation, the density floor on (F = 0.75), from
+`ec288c0`. A temporary log of `draughts_display` and the layout scale (removed after):
+
+| Orientation | Insets L, T, R, B (px) | Display scale | Layout scale |
+|---|---|---|---|
+| Portrait (`user_rotation 0`) | 0, 150, 0, 84 | 2.625 | 1.969 px a dp |
+| Landscape, camera left (1) | 118, 74, 0, 84 | 2.625 | 1.969 |
+| Landscape, camera right (3) | 0, 74, 118, 84 | 2.625 | 1.969 |
+
+So the Pixel lays out 549 × 1219 dp, the safe area 549 × 1143 in portrait and 1159 ×
+470 in landscape. No side strips (`patches/SDL/0002` works). The top is more than the
+camera: with the system bars hidden, `mandatorySystemGestures` still holds the strip at
+the top where a swipe pulls the bars down, 150 px (57 dp) in portrait, deeper than the
+camera's 118, and 74 px (28 dp) in landscape; the gesture bar at the bottom is 84 px
+(32 dp), not the 48 the Mac's `--inset` stood for. Landscape thus has 470 dp of height,
+under the 480 the phone layouts were made for; every screen still fits (below). Whether
+the top strip should be left to taps (a tap there reaches the app; only a swipe pulls
+the bars) is open: it costs 28 dp of landscape height.
+
+When the phone turns, the insets and the new size come a frame or two apart (the insets
+first); the layout follows each, and a shot 1.2 s after turning with settings or the
+computer's setup open shows the new orientation's layout.
+
+Checked, with the shots kept locally in
+`/private/tmp/claude-501/-Users-kaitkasak-projects-personal-draughts/babe58e8-1877-410c-bc48-f7f8f48b403f/scratchpad/pixel-final/`
+(`shots/`, `sheets/` with the insets tinted red, `back/`, the `back-*.png` sheets,
+`shoot.sh`, `few.sh`, `back.sh`, `sheets.py`, `pairs.py`): every screen of the survey in
+portrait in English and Estonian and in landscape (camera left) in English; the game and
+settings in Estonian landscape; home, the computer's setup, settings, and the game with
+the camera on the right. Nothing that takes a tap or reads lies under an inset, nothing
+is cut off or overlapping, and the taps measure about 88 dp (173 px). Nothing broke on
+screen. Settings in portrait shows the tabs in English and both groups side by side in
+Estonian, as on the Mac. Back on every screen: task 035, which fixed back on home's menu
+finishing the activity on Android 17.
+
+Memory 5 s after arriving, portrait: home PSS 291 MB, of it 252 MB graphics (180 GL, 73
+EGL); the game (International) 292 MB, graphics 252. Near the smoke test's 289 MB and
+the tablet's 261 to 263.
+
 ## Acceptance criteria
 
 - [x] A survey of every screen at each size above, with what broke (screenshots local)
-- [ ] Every screen fits and stays tappable on phones in both orientations, in English
+- [x] Every screen fits and stays tappable on phones in both orientations, in English
       and Estonian
 - [x] Larger tablets checked and anything broken fixed, on the Mac (a device's memory at
       2560 × 1600 waits for one)
-- [ ] Nothing under a cutout or the gesture bar
-- [ ] Checked on the Pixel 7a in both orientations, with its numbers
+- [x] Nothing under a cutout or the gesture bar
+- [x] Checked on the Pixel 7a in both orientations, with its numbers
 - [x] Tests cover the layouts at a phone size in both orientations
