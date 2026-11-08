@@ -14,24 +14,11 @@ import vec;
 import rules from "../../rules";
 import board from "../../board";
 import gui from "../../gui";
-import game from "../../game";
-import shell from "../../shell";
-import ai from "../../ai";
 import strings from "../../strings";
-
-var W: f32 = 1280.0;
-var H: f32 = 800.0;
-
-fn frame(sh: shell::Shell&, g: gui::Gui&, at: float2, down: bool, pressed: bool, released: bool, now: f64) {
-    gui::begin(g, gui::Input { at: at, down: down, pressed: pressed, released: released }, min(W, H) / 800.0, now);
-    shell::frame(sh, g, W, H, now);
-}
-
-fn tap(sh: shell::Shell&, g: gui::Gui&, p: float2, now: f64) {
-    frame(sh, g, p, true, true, false, now);
-    frame(sh, g, p, false, false, true, now + 0.02);
-    frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, now + 0.04);
-}
+import game from "../../game";
+import ai from "../../ai";
+import shell from "../../shell";
+import drive from "../drive";
 
 // The tiles in the order the screen declares them.
 let BACK = 0;
@@ -49,29 +36,6 @@ let RAISED = 15;
 let AUTO = 16;
 let STACK = 18;
 let TILES = 19;
-
-// The n-th tile the last frame declared.
-fn tile_rect(g: gui::Gui&, n: i64) -> float4 {
-    var k = 0;
-    for q in g.quads {
-        guard q.look.x == gui::BUTTON else { continue; }
-        if k == n { return q.rect; }
-        k++;
-    }
-    assert(false);
-    return float4 { 0.0, 0.0, 0.0, 0.0 };
-}
-
-fn tile(g: gui::Gui&, n: i64) -> float2 {
-    let r = tile_rect(g, n);
-    return float2 { r.x + 0.5 * r.z, r.y + 0.5 * r.w };
-}
-
-fn tiles(g: gui::Gui&) -> i64 {
-    var k = 0;
-    for q in g.quads { if q.look.x == gui::BUTTON { k++; } }
-    return k;
-}
 
 fn show(sh: shell::Shell&, what: const u8[:]) {
     var out: u8[>..] = [];
@@ -137,8 +101,8 @@ fn main() {
     strings::use(strings::EN);
     var sh = shell::new(rules::RUSSIAN);
     sh.screen = shell::SETTINGS;
-    frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 0.0);
-    print("tiles ", tiles(g), " of ", TILES, ", the kings' tiles' pieces ", sh.over.len, ": ",
+    drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 0.0);
+    print("tiles ", drive::tiles(g), " of ", TILES, ", the kings' tiles' pieces ", sh.over.len, ": ",
           sh.over[0].look.y, " and ", sh.over[1].look.y);
     // The board is right of the choices: every tile and the groups end left of it.
     var right: f32 = 0.0;
@@ -148,55 +112,54 @@ fn main() {
     print("opened, defaults:");
     preview(sh, 0.0);
     preview(sh, 1.0);
-    frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 2.0);
+    drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 2.0);
     print("after the flash:");
     preview(sh, 2.0);
-    frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 3.0);
+    drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 3.0);
     print("after the pulse:");
     preview(sh, 3.0);
 
-    tap(sh, g, tile(g, SUMMER), 4.0);
+    drive::tap(sh, g, drive::tile(g, SUMMER), 4.0);
     show(sh, "summer");
-    tap(sh, g, tile(g, RAISED), 4.1);
+    drive::tap(sh, g, drive::tile(g, RAISED), 4.1);
     show(sh, "3D");
-    tap(sh, g, tile(g, TUTORIAL), 4.2);
+    drive::tap(sh, g, drive::tile(g, TUTORIAL), 4.2);
     show(sh, "the tutorial");
-    tap(sh, g, tile(g, MOVES), 4.3);
+    drive::tap(sh, g, drive::tile(g, MOVES), 4.3);
     show(sh, "all moves");
     preview(sh, 4.4);
-    tap(sh, g, tile(g, RUSSIAN), 4.5);
+    drive::tap(sh, g, drive::tile(g, RUSSIAN), 4.5);
     show(sh, "Russian");
     preview(sh, 4.6);
-    tap(sh, g, tile(g, STACK), 4.7);
+    drive::tap(sh, g, drive::tile(g, STACK), 4.7);
     show(sh, "stack");
     preview(sh, 4.8);
-    tap(sh, g, tile(g, MISTAKES), 4.9);
+    drive::tap(sh, g, drive::tile(g, MISTAKES), 4.9);
     show(sh, "mistakes only");
     preview(sh, 5.0);
-    tap(sh, g, tile(g, BRAZILIAN), 9.0);
+    drive::tap(sh, g, drive::tile(g, BRAZILIAN), 9.0);
     show(sh, "Brazilian");
-    tap(sh, g, tile(g, AUTO), 9.1);
+    drive::tap(sh, g, drive::tile(g, AUTO), 9.1);
     show(sh, "auto");
-    tap(sh, g, tile(g, INTERNATIONAL), 9.2);
+    drive::tap(sh, g, drive::tile(g, INTERNATIONAL), 9.2);
     show(sh, "International");
-    tap(sh, g, tile(g, EESTI), 9.3);
+    drive::tap(sh, g, drive::tile(g, EESTI), 9.3);
     show(sh, "Eesti");
-    tap(sh, g, tile(g, BY_DATE), 9.4);
+    drive::tap(sh, g, drive::tile(g, BY_DATE), 9.4);
     show(sh, "by the date");
-    tap(sh, g, tile(g, ENGLISH), 9.5);
+    drive::tap(sh, g, drive::tile(g, ENGLISH), 9.5);
     show(sh, "English");
 
     // Portrait: the board on top, the groups side by side under it.
-    W = 800.0;
-    H = 1280.0;
-    frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 10.0);
-    let first = tile_rect(g, INTERNATIONAL);
-    let look = tile_rect(g, BY_DATE);
+    drive::size = float2 { 800.0, 1280.0 };
+    drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 10.0);
+    let first = drive::rect(g, INTERNATIONAL);
+    let look = drive::rect(g, BY_DATE);
     print("portrait: board at ", sh.layout.board, ", the groups from ", first.y, ", clear ",
           sh.layout.board.y + sh.layout.board.z < first.y, ", look beside game ", look.x > first.x + first.z,
-          ", tiles ", tiles(g));
-    tap(sh, g, tile(g, STACK), 10.1);
+          ", tiles ", drive::tiles(g));
+    drive::tap(sh, g, drive::tile(g, STACK), 10.1);
     show(sh, "portrait stack");
-    tap(sh, g, tile(g, BACK), 10.2);
+    drive::tap(sh, g, drive::tile(g, BACK), 10.2);
     print("back: ", sh.screen == shell::HOME);
 }

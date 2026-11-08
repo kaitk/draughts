@@ -28,6 +28,8 @@ EXPECTED = HERE / "expected"
 OUT = ROOT / "build" / "test"
 GOOSE = os.environ.get("GOOSE", str(ROOT / "build" / "goose-v2026.4-macos-arm64" / "goose"))
 TIMEOUT = 300
+# Directories under test/ that hold the tests' shared packages, not tests.
+PACKAGES = {"drive"}
 # What `goose --multi-test` ends each file's part of stdout and stderr with.
 MULTIMARK = "==== goose --multi-test: exit"
 
@@ -73,7 +75,7 @@ def build_and_run(test):
 
 
 def find_tests(names):
-    tests = sorted(p for p in HERE.glob("*/*.goose") if p.parent != EXPECTED)
+    tests = sorted(p for p in HERE.glob("*/*.goose") if p.parent != EXPECTED and p.parent.name not in PACKAGES)
     if names:
         wanted = {Path(n).stem for n in names}
         tests = [t for t in tests if t.stem in wanted or t.parent.name in wanted]

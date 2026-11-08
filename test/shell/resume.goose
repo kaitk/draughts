@@ -8,10 +8,11 @@ import vec;
 import rules from "../../rules";
 import board from "../../board";
 import gui from "../../gui";
-import game from "../../game";
-import shell from "../../shell";
-import ai from "../../ai";
 import strings from "../../strings";
+import game from "../../game";
+import ai from "../../ai";
+import shell from "../../shell";
+import drive from "../drive";
 
 fn show(sh: shell::Shell&, what: const u8[:]) {
     let b .= sh.game.b;

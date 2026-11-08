@@ -20,44 +20,11 @@ import gui from "../../gui";
 import strings from "../../strings";
 import game from "../../game";
 import ai from "../../ai";
+import shell from "../../shell";
+import drive from "../drive";
 
 let UNDO = 3;
 let RESTART = 2;
-
-var over: game::Overlay;     // the pieces over the UI, which the shell holds in the app
-
-fn square(l: panel::Layout, text: const u8[:]) -> float2 {
-    let v .= rules::VARIANTS[rules::RUSSIAN];
-    return board::center(l.board, v, rules::bit_at(v, text[0] - 97, text[1] - 49));
-}
-
-fn frame(gm: game::Game&, g: gui::Gui&, l: panel::Layout, at: float2, down: bool, pressed: bool,
-         released: bool, now: f64) {
-    gui::begin(g, gui::Input { at: at, down: down, pressed: pressed, released: released }, l.board.scale, now);
-    game::frame(gm, g, l, now, over);
-}
-
-fn idle(gm: game::Game&, g: gui::Gui&, l: panel::Layout, now: f64) {
-    frame(gm, g, l, float2 { 0.0, 0.0 }, false, false, false, now);
-}
-
-fn tap(gm: game::Game&, g: gui::Gui&, l: panel::Layout, p: float2, now: f64) {
-    frame(gm, g, l, p, true, true, false, now);
-    frame(gm, g, l, p, false, false, true, now + 0.02);
-}
-
-// The center of the n-th tile, leaving out the clocks: home, settings, start over, take
-// back.
-fn tile(g: gui::Gui&, n: i64) -> float2 {
-    var k = 0;
-    for q in g.quads {
-        guard q.look.x == gui::BUTTON && q.extra.y < gui::CLOCK_RUN else { continue; }
-        if k == n { return float2 { q.rect.x + 0.5 * q.rect.z, q.rect.y + 0.5 * q.rect.w }; }
-        k++;
-    }
-    assert(false);
-    return float2 { 0.0, 0.0 };
-}
 
 fn move_text(variant: u8, m: rules::Move) -> u8[>..] {
     var t: u8[>..] = [];
@@ -89,7 +56,7 @@ fn seconds(t: f64) -> u8[>..] {
 // panel (the side to move's piece over the UI).
 fn show(gm: game::Game&, what: const u8[:]) {
     var ring = 0.0;
-    for p in over { ring = max(ring, p.ring.y); }
+    for p in drive::over { ring = max(ring, p.ring.y); }
     var left: u8[>..] = [];
     if clock::on(gm.clock) {
         format(left, ", clocks ");
@@ -120,69 +87,69 @@ fn main() {
     // pulse nothing animates until its move, which the app wakes for (game::due).
     var gm = game::new(rules::RUSSIAN);
     game::start(gm, rules::RUSSIAN, clock::RAPID, rules::BLACK, game::HARD, 90, 3);
-    idle(gm, g, l, 0.0);
+    drive::idle(gm, g, l, 0.0);
     show(gm, "the child's turn");
-    tap(gm, g, l, square(l, "c3"), 1.0);
-    tap(gm, g, l, square(l, "d4"), 1.1);
-    idle(gm, g, l, 1.2);
+    drive::tap(gm, g, l, drive::at(l.board, "c3"), 1.0);
+    drive::tap(gm, g, l, drive::at(l.board, "d4"), 1.1);
+    drive::idle(gm, g, l, 1.2);
     show(gm, "c3-d4 moving");
-    idle(gm, g, l, 1.4);
+    drive::idle(gm, g, l, 1.4);
     show(gm, "landed");
     print("  ", answer(gm, e));
     let a = 1.4 + gm.wait;
     print("  it takes ", seconds(gm.wait), " s, against 0.45 without a clock");
-    idle(gm, g, l, 1.7);
+    drive::idle(gm, g, l, 1.7);
     show(gm, "thinking");
     print("  animating ", game::animating(gm, g, 1.7));
-    tap(gm, g, l, square(l, "f6"), 1.8);
+    drive::tap(gm, g, l, drive::at(l.board, "f6"), 1.8);
     print("  a tap on f6: selected ", gm.b.selected);
-    idle(gm, g, l, 2.6);
+    drive::idle(gm, g, l, 2.6);
     show(gm, "the pulse over");
     print("  animating ", game::animating(gm, g, 2.6), ", its move due in ", seconds(game::due(gm, 2.6)), " s");
-    idle(gm, g, l, a - 0.01);
+    drive::idle(gm, g, l, a - 0.01);
     show(gm, "its time not over");
-    idle(gm, g, l, a);
+    drive::idle(gm, g, l, a);
     print("  move ", move_text(gm.b.variant, gm.b.move));
     show(gm, "its time over, the reply moving");
-    idle(gm, g, l, a + 0.3);
+    drive::idle(gm, g, l, a + 0.3);
     show(gm, "landed");
     print("  animating ", game::animating(gm, g, a + 0.3));
 
     // Take back: the reply and the child's move; at the start no clock runs.
-    tap(gm, g, l, tile(g, UNDO), a + 0.8);
+    drive::tap(gm, g, l, drive::control(g, UNDO), a + 0.8);
     show(gm, "take back");
 
     // Take back while the computer thinks: its ask is dropped and the child's move taken
     // back; its answer, coming late, is ignored.
-    tap(gm, g, l, square(l, "c3"), a + 1.8);
-    tap(gm, g, l, square(l, "d4"), a + 1.9);
-    idle(gm, g, l, a + 2.2);
+    drive::tap(gm, g, l, drive::at(l.board, "c3"), a + 1.8);
+    drive::tap(gm, g, l, drive::at(l.board, "d4"), a + 1.9);
+    drive::idle(gm, g, l, a + 2.2);
     let dropped = game::asking(gm);
-    tap(gm, g, l, tile(g, UNDO), a + 2.3);
+    drive::tap(gm, g, l, drive::control(g, UNDO), a + 2.3);
     show(gm, "take back while it thinks");
     game::answer(gm, dropped.id, ai::think(e, dropped.pos, dropped.skill, dropped.seed), 1);
     print("  the dropped ask's answer taken: ", gm.answered);
-    tap(gm, g, l, square(l, "c3"), a + 2.8);
-    tap(gm, g, l, square(l, "b4"), a + 2.9);
-    idle(gm, g, l, a + 3.2);
+    drive::tap(gm, g, l, drive::at(l.board, "c3"), a + 2.8);
+    drive::tap(gm, g, l, drive::at(l.board, "b4"), a + 2.9);
+    drive::idle(gm, g, l, a + 3.2);
     game::answer(gm, dropped.id, ai::think(e, dropped.pos, dropped.skill, dropped.seed), 1);
     print("  after c3-b4, ask ", gm.asking, "; the old answer taken: ", gm.answered);
 
     // Leaving the game drops the ask; the game asks again when it shows.
     game::pause(gm);
     show(gm, "left the game");
-    idle(gm, g, l, a + 3.8);
+    drive::idle(gm, g, l, a + 3.8);
     show(gm, "back");
     print("  ", answer(gm, e));
     let b = a + 3.8 + gm.wait;
-    idle(gm, g, l, b - 0.01);
+    drive::idle(gm, g, l, b - 0.01);
     print("  moving before its ", seconds(gm.wait), " s: ", gm.b.moving);
-    idle(gm, g, l, b);
+    drive::idle(gm, g, l, b);
     print("  played after them: ", move_text(gm.b.variant, gm.b.move));
 
     // Take back while the reply still moves: the child's turn again.
-    idle(gm, g, l, b + 0.1);
-    tap(gm, g, l, tile(g, UNDO), b + 0.1);
+    drive::idle(gm, g, l, b + 0.1);
+    drive::tap(gm, g, l, drive::control(g, UNDO), b + 0.1);
     show(gm, "take back while the reply moves");
 
     // The child plays black: the computer, white, moves first, at once asked; take back
@@ -190,22 +157,22 @@ fn main() {
     var turned = l;
     turned.board.flip = true;
     game::start(gm, rules::RUSSIAN, clock::NONE, rules::WHITE, game::MEDIUM, 45, 3);
-    idle(gm, g, turned, 10.0);
+    drive::idle(gm, g, turned, 10.0);
     show(gm, "the child plays black");
     let first = gm.asking;
-    tap(gm, g, turned, tile(g, UNDO), 10.1);
+    drive::tap(gm, g, turned, drive::control(g, UNDO), 10.1);
     print("  take back: plies ", gm.b.history.len, ", the same ask ", gm.asking == first);
     print("  ", answer(gm, e));
-    idle(gm, g, turned, 10.59);
+    drive::idle(gm, g, turned, 10.59);
     show(gm, "0.6 s on medium, not over");
-    idle(gm, g, turned, 10.6);
-    idle(gm, g, turned, 11.2);
+    drive::idle(gm, g, turned, 10.6);
+    drive::idle(gm, g, turned, 11.2);
     show(gm, "its first move");
-    tap(gm, g, turned, tile(g, UNDO), 11.3);
+    drive::tap(gm, g, turned, drive::control(g, UNDO), 11.3);
     show(gm, "take back");
     // Start over while it thinks: a new ask, from the start.
-    tap(gm, g, turned, tile(g, RESTART), 11.5);
-    idle(gm, g, turned, 11.6);
+    drive::tap(gm, g, turned, drive::control(g, RESTART), 11.5);
+    drive::idle(gm, g, turned, 11.6);
     show(gm, "start over");
 
     // Each level's reply in a middlegame is legal, and comes after its pause: 0.8 s on
@@ -217,26 +184,26 @@ fn main() {
         game::start(gm, rules::RUSSIAN, clock::NONE, rules::BLACK, level, ai::level_skill(level), 5);
         board::set(gm.b, mid);
         let t = 20.0 * (level + 1);
-        idle(gm, g, l, t);
+        drive::idle(gm, g, l, t);
         print(["easy", "medium", "hard"][level], ": ", answer(gm, e));
         let pause = game::PAUSE[level];
-        idle(gm, g, l, t + pause - 0.01);
+        drive::idle(gm, g, l, t + pause - 0.01);
         let before = gm.b.moving;
-        idle(gm, g, l, t + pause);
+        drive::idle(gm, g, l, t + pause);
         print("  moving 0.01 s before the pause ends ", before, ", when it ends ", gm.b.moving);
     }
 
     // Against the clock the computer's first move as white is untimed, so it comes after
     // the pause; so does a single move, here a forced capture with its clock running.
     game::start(gm, rules::RUSSIAN, clock::BLITZ, rules::WHITE, game::HARD, 90, 7);
-    idle(gm, g, turned, 90.0);
+    drive::idle(gm, g, turned, 90.0);
     print("hard as white on 5+3, no clock running yet: ", answer(gm, e), ", it takes ", seconds(gm.wait), " s");
     let forced, ok_forced = rules::parse_fen("B:Wd4,a1:Bc5,h8", rules::RUSSIAN);
     assert(ok_forced);
     game::start(gm, rules::RUSSIAN, clock::BLITZ, rules::BLACK, game::HARD, 90, 8);
     board::set(gm.b, forced);
     gm.clock.running = rules::BLACK;
-    idle(gm, g, l, 95.0);
+    drive::idle(gm, g, l, 95.0);
     print("hard's one move on 5+3, its clock running: ", answer(gm, e), ", it takes ", seconds(gm.wait), " s");
 
     // A game the child wins reports it once: taken back and won again, it reports
@@ -245,23 +212,23 @@ fn main() {
     assert(ok_won);
     game::start(gm, rules::RUSSIAN, clock::NONE, rules::BLACK, game::EASY, 10, 9);
     board::set(gm.b, won);
-    tap(gm, g, l, square(l, "c3"), 100.0);
-    tap(gm, g, l, square(l, "e5"), 100.1);
-    idle(gm, g, l, 101.0);
+    drive::tap(gm, g, l, drive::at(l.board, "c3"), 100.0);
+    drive::tap(gm, g, l, drive::at(l.board, "e5"), 100.1);
+    drive::idle(gm, g, l, 101.0);
     print("the child takes the last piece: winner ", game::winner(gm), ", result ", gm.result);
     gm.result = 0;
-    tap(gm, g, l, tile(g, UNDO), 102.0);
-    tap(gm, g, l, square(l, "c3"), 103.0);
-    tap(gm, g, l, square(l, "e5"), 103.1);
-    idle(gm, g, l, 104.0);
+    drive::tap(gm, g, l, drive::control(g, UNDO), 102.0);
+    drive::tap(gm, g, l, drive::at(l.board, "c3"), 103.0);
+    drive::tap(gm, g, l, drive::at(l.board, "e5"), 103.1);
+    drive::idle(gm, g, l, 104.0);
     print("  taken back and won again: winner ", game::winner(gm), ", result ", gm.result);
     let lost, ok_lost = rules::parse_fen("B:Wd4:Bc5", rules::RUSSIAN);
     assert(ok_lost);
     game::start(gm, rules::RUSSIAN, clock::NONE, rules::BLACK, game::EASY, 10, 10);
     board::set(gm.b, lost);
-    idle(gm, g, l, 110.0);
+    drive::idle(gm, g, l, 110.0);
     print("the computer can take the last piece: ", answer(gm, e));
-    idle(gm, g, l, 111.0);
-    idle(gm, g, l, 112.0);
+    drive::idle(gm, g, l, 111.0);
+    drive::idle(gm, g, l, 112.0);
     print("  winner ", game::winner(gm), ", result ", gm.result);
 }

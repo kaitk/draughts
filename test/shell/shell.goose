@@ -16,51 +16,21 @@ import vec;
 import rules from "../../rules";
 import board from "../../board";
 import gui from "../../gui";
-import game from "../../game";
-import shell from "../../shell";
-import ai from "../../ai";
 import strings from "../../strings";
+import game from "../../game";
+import ai from "../../ai";
+import shell from "../../shell";
+import drive from "../drive";
 
 let W = 1280.0;
 let H = 800.0;
-
-fn frame(sh: shell::Shell&, g: gui::Gui&, at: float2, down: bool, pressed: bool, released: bool, now: f64) {
-    gui::begin(g, gui::Input { at: at, down: down, pressed: pressed, released: released }, 1.0, now);
-    shell::frame(sh, g, W, H, now);
-}
-
-fn tap(sh: shell::Shell&, g: gui::Gui&, p: float2, now: f64) {
-    frame(sh, g, p, true, true, false, now);
-    frame(sh, g, p, false, false, true, now + 0.02);
-    frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, now + 0.04);
-}
-
-// The center of the n-th tile or row the last frame declared. Home in landscape:
-// continue, a friend, the computer, puzzles, settings. The game: home, settings, start
-// over, take back. Settings: back first. A setup: back, the three draughts, against the
-// computer the three levels and two colors, the three clocks, play.
-fn tile(g: gui::Gui&, n: i64) -> float2 {
-    let r = rect(g, n);
-    return float2 { r.x + 0.5 * r.z, r.y + 0.5 * r.w };
-}
-
-fn rect(g: gui::Gui&, n: i64) -> float4 {
-    var k = 0;
-    for q in g.quads {
-        guard q.look.x == gui::BUTTON else { continue; }
-        if k == n { return q.rect; }
-        k++;
-    }
-    assert(false);
-    return float4 { 0.0, 0.0, 0.0, 0.0 };
-}
 
 // A setup's three draughts tiles' widths, rounded, and whether the first's name has its
 // face's room (gui::pick).
 fn draughts_widths(g: gui::Gui&) -> u8[>..] {
     let name = gui::text_width(g, gui::BODY, strings::get(strings::VARIANT_INTERNATIONAL));
-    return str(round(rect(g, 1).z), " ", round(rect(g, 2).z), " ", round(rect(g, 3).z),
-               ", the first's name in the body face ", name <= rect(g, 1).z - 8.0);
+    return str(round(drive::rect(g, 1).z), " ", round(drive::rect(g, 2).z), " ", round(drive::rect(g, 3).z),
+               ", the first's name in the body face ", name <= drive::rect(g, 1).z - 8.0);
 }
 
 fn screen(sh: shell::Shell&) -> const u8[:] {
@@ -95,73 +65,73 @@ fn main() {
     strings::use(strings::EN);
     var sh = shell::new(rules::RUSSIAN);
     let off = float2 { -1.0, -1.0 };
-    frame(sh, g, off, false, false, false, 0.0);
+    drive::frame(sh, g, off, false, false, false, 0.0);
     show(sh, g, "start");
     print("the wordmark's piece: ", sh.over.len, ", crowned ", sh.over[0].look.y,
           ", no ring ", sh.over[0].ring.y == 0.0);
 
-    tap(sh, g, tile(g, 0), 1.0);            // continue
+    drive::tap(sh, g, drive::tile(g, 0), 1.0);            // continue
     show(sh, g, "continue");
     let c3 = board::center(sh.layout, v, rules::bit_at(v, 2, 2));
     let d4 = board::center(sh.layout, v, rules::bit_at(v, 3, 3));
-    tap(sh, g, c3, 1.1);
-    tap(sh, g, d4, 1.2);
-    frame(sh, g, off, false, false, false, 2.0);
-    tap(sh, g, tile(g, 0), 2.0);            // home
+    drive::tap(sh, g, c3, 1.1);
+    drive::tap(sh, g, d4, 1.2);
+    drive::frame(sh, g, off, false, false, false, 2.0);
+    drive::tap(sh, g, drive::tile(g, 0), 2.0);            // home
     show(sh, g, "home");
-    tap(sh, g, tile(g, 3), 2.2);            // puzzles
+    drive::tap(sh, g, drive::tile(g, 3), 2.2);            // puzzles
     show(sh, g, "puzzles");
     // Settings, and an idle frame long after the tap: the new screen's first frame is
     // drawn, the next one isn't.
-    let at = tile(g, 4);
-    frame(sh, g, at, true, true, false, 2.3);
-    frame(sh, g, at, false, false, true, 2.32);
+    let at = drive::tile(g, 4);
+    drive::frame(sh, g, at, true, true, false, 2.3);
+    drive::frame(sh, g, at, false, false, true, 2.32);
     gui::begin(g, gui::Input { at: off, .. }, 1.0, 3.0);
     let first = shell::frame(sh, g, W, H, 3.0);
     gui::begin(g, gui::Input { at: off, .. }, 1.0, 3.1);
     print("settings: ", screen(sh), ", board at ", sh.layout.board, ", sharp ", sh.sharp, ", its first frame drawn ", first,
           ", the next ", shell::frame(sh, g, W, H, 3.1));
-    tap(sh, g, tile(g, 0), 3.2);            // back
+    drive::tap(sh, g, drive::tile(g, 0), 3.2);            // back
     print("back from settings: ", screen(sh));
-    tap(sh, g, tile(g, 0), 3.3);            // continue
-    tap(sh, g, tile(g, 1), 3.4);            // the game's settings
+    drive::tap(sh, g, drive::tile(g, 0), 3.3);            // continue
+    drive::tap(sh, g, drive::tile(g, 1), 3.4);            // the game's settings
     print("settings from the game: ", screen(sh));
-    tap(sh, g, tile(g, 0), 3.5);            // back
+    drive::tap(sh, g, drive::tile(g, 0), 3.5);            // back
     show(sh, g, "back from settings");
-    tap(sh, g, tile(g, 0), 3.6);            // home
+    drive::tap(sh, g, drive::tile(g, 0), 3.6);            // home
 
     // A friend's setup: back, the three draughts, the clock, play. Russian and 5+3 are
     // kept in the settings; play starts that game over the one there was.
-    tap(sh, g, tile(g, 1), 4.0);
+    drive::tap(sh, g, drive::tile(g, 1), 4.0);
     var tiles = 0;
     for q in g.quads { if q.look.x == gui::BUTTON { tiles++; } }
     var minis = 0;
     for q in g.quads { if q.look.x == gui::MINI { minis++; } }
     print("a friend's setup: ", screen(sh), ", tiles ", tiles, ", small boards ", minis, ", ", prefs(sh));
-    tap(sh, g, tile(g, 3), 4.1);            // Russian
-    tap(sh, g, tile(g, 5), 4.2);            // 5+3
+    drive::tap(sh, g, drive::tile(g, 3), 4.1);            // Russian
+    drive::tap(sh, g, drive::tile(g, 5), 4.2);            // 5+3
     print("Russian, 5+3: changed ", sh.changed, ", ", prefs(sh));
     sh.changed = false;
-    tap(sh, g, tile(g, 0), 4.3);            // back
+    drive::tap(sh, g, drive::tile(g, 0), 4.3);            // back
     print("back: setup ", sh.setup, ", ", screen(sh));
-    tap(sh, g, tile(g, 1), 4.4);            // a friend
-    tap(sh, g, tile(g, 7), 4.5);            // play
+    drive::tap(sh, g, drive::tile(g, 1), 4.4);            // a friend
+    drive::tap(sh, g, drive::tile(g, 7), 4.5);            // play
     print("play: ", screen(sh), ", ", game_of(sh));
 
     // The computer's setup adds the level and the child's color. Black, hard, 10+5:
     // the computer plays white and the board is turned.
-    tap(sh, g, tile(g, 0), 5.0);            // home
-    tap(sh, g, tile(g, 2), 5.1);            // the computer
+    drive::tap(sh, g, drive::tile(g, 0), 5.0);            // home
+    drive::tap(sh, g, drive::tile(g, 2), 5.1);            // the computer
     tiles = 0;
     for q in g.quads { if q.look.x == gui::BUTTON { tiles++; } }
     print("the computer's setup: tiles ", tiles, ", pieces over the UI ", sh.over.len);
     print("draughts tiles: ", draughts_widths(g));
-    tap(sh, g, tile(g, 6), 5.2);            // hard
-    tap(sh, g, tile(g, 8), 5.3);            // black
-    tap(sh, g, tile(g, 11), 5.4);           // 10+5
-    tap(sh, g, tile(g, 12), 5.5);           // play
+    drive::tap(sh, g, drive::tile(g, 6), 5.2);            // hard
+    drive::tap(sh, g, drive::tile(g, 8), 5.3);            // black
+    drive::tap(sh, g, drive::tile(g, 11), 5.4);           // 10+5
+    drive::tap(sh, g, drive::tile(g, 12), 5.5);           // play
     print("play: ", screen(sh), ", ", game_of(sh), "; ", prefs(sh));
-    tap(sh, g, tile(g, 0), 6.0);            // home
+    drive::tap(sh, g, drive::tile(g, 0), 6.0);            // home
     var note = 0;
     for q in g.quads { if q.look.x == gui::TEXT { note++; } }
     print("home: the computer's row notes hard; glyphs ", note, ", turned ", sh.layout.flip);

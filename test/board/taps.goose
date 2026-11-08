@@ -11,38 +11,17 @@ import board from "../../board";
 import gui from "../../gui";
 import strings from "../../strings";
 import game from "../../game";
-
-fn name(v: rules::Variant&, sq: i64) -> u8[>..] {
-    if sq < 0 { return str("-"); }
-    var s: u8[>..] = [];
-    s.push(97 + v.x_of[sq]);
-    format(s, v.y_of[sq] as i64 + 1);
-    return s;
-}
-
-fn square(v: rules::Variant&, text: const u8[:]) -> i64 {
-    return rules::bit_at(v, text[0] - 97, text[1] - 49);
-}
-
-// The squares a mark set holds, by name.
-fn marked(v: rules::Variant&, bits: u32[4]&) -> u8[>..] {
-    var s: u8[>..] = [];
-    for y in v.size {
-        for x in v.size {
-            let n = y * v.size + x;
-            if (bits[n / 32] >> (n % 32)) & 1 != 0 { s.append(name(v, rules::bit_at(v, x, y))); s.append(" "); }
-        }
-    }
-    return s;
-}
+import ai from "../../ai";
+import shell from "../../shell";
+import drive from "../drive";
 
 fn tap(b: board::Board&, l: board::Layout, text: const u8[:], now: f64) {
     let v .= rules::VARIANTS[b.variant];
-    let p = board::center(l, v, square(v, text));
+    let p = board::center(l, v, drive::square(v, text));
     board::update(b, now);
     board::press(b, l, p, now);
     board::release(b, l, p, now);
-    print("tap ", text, ": selected ", name(v, b.selected), ", moving ", b.moving,
+    print("tap ", text, ": selected ", drive::name(v, b.selected), ", moving ", b.moving,
           ", pulse ", b.pulse_end > now);
 }
 
@@ -54,15 +33,15 @@ fn main() {
     let p = panel::layout(800.0, 1280.0, 8);
     print("portrait board ", p.board.board, " panels ", p.left, " ", p.right);
     // The corners of the squares: a1 bottom left, h8 top right; just off the board is no square.
-    print("hits: ", name(v, board::hit(l, v, float2 { l.inner.x + 1.0, l.inner.y + l.inner.z - 1.0 })),
-          " ", name(v, board::hit(l, v, float2 { l.inner.x + l.inner.z - 1.0, l.inner.y + 1.0 })),
-          " ", name(v, board::hit(l, v, float2 { l.board.x - 2.0, l.board.y + l.board.z - 2.0 })));
+    print("hits: ", drive::name(v, board::hit(l, v, float2 { l.inner.x + 1.0, l.inner.y + l.inner.z - 1.0 })),
+          " ", drive::name(v, board::hit(l, v, float2 { l.inner.x + l.inner.z - 1.0, l.inner.y + 1.0 })),
+          " ", drive::name(v, board::hit(l, v, float2 { l.board.x - 2.0, l.board.y + l.board.z - 2.0 })));
 
     var b = board::new(rules::RUSSIAN);
     b.hints = board::MOVES;     // to see the targets; test/board/hints.goose has the default
     tap(b, l, "c3", 0.0);       // selects
     board::fill(b, l, 0.0);
-    print("targets ", marked(v, b.marks.target), ", pieces ", b.pieces.len);
+    print("targets ", drive::marked(v, b.marks.target), ", pieces ", b.pieces.len);
     tap(b, l, "d4", 0.1);       // plays c3-d4
     board::update(b, 0.2);
     print("at 0.2 s: moving ", b.moving);
@@ -70,8 +49,8 @@ fn main() {
     print("after ", board::duration(b.move), " s: moving ", b.moving, ", ", rules::fen(b.pos));
 
     // Black to move: drag f6 to e5 by way of a point past the drag threshold.
-    let from = board::center(l, v, square(v, "f6"));
-    let to = board::center(l, v, square(v, "e5"));
+    let from = board::center(l, v, drive::square(v, "f6"));
+    let to = board::center(l, v, drive::square(v, "e5"));
     board::update(b, 1.0);
     board::press(b, l, from, 1.0);
     print("drag starts: ", board::drag(b, l, from + float2 { 30.0, 30.0 }), ", dragging ", b.dragging);

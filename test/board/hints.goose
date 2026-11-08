@@ -10,18 +10,9 @@ import board from "../../board";
 import gui from "../../gui";
 import strings from "../../strings";
 import game from "../../game";
-
-fn name(v: rules::Variant&, sq: i64) -> u8[>..] {
-    if sq < 0 { return str("-"); }
-    var s: u8[>..] = [];
-    s.push(97 + v.x_of[sq]);
-    format(s, v.y_of[sq] as i64 + 1);
-    return s;
-}
-
-fn at(l: board::Layout, v: rules::Variant&, text: const u8[:]) -> float2 {
-    return board::center(l, v, rules::bit_at(v, text[0] - 97, text[1] - 49));
-}
+import ai from "../../ai";
+import shell from "../../shell";
+import drive from "../drive";
 
 fn targets(b: board::Board&) -> i64 {
     var n = 0;
@@ -34,12 +25,12 @@ fn show(b: board::Board&, l: board::Layout, what: const u8[:], now: f64) {
     board::fill(b, l, now);
     var rings = 0;
     for i in b.pieces.len { if b.pieces[i].ring.x > 0.0 { rings++; } }
-    print(what, ": selected ", name(v, b.selected), ", targets ", targets(b), ", wrong ",
-          name(v, b.wrong), " flash ", b.flash.x, " at ", b.flash.y, ", pulsing ", rings);
+    print(what, ": selected ", drive::name(v, b.selected), ", targets ", targets(b), ", wrong ",
+          drive::name(v, b.wrong), " flash ", b.flash.x, " at ", b.flash.y, ", pulsing ", rings);
 }
 
 fn tap(b: board::Board&, l: board::Layout, text: const u8[:], now: f64) {
-    let p = at(l, rules::VARIANTS[b.variant], text);
+    let p = drive::at(l, text);
     board::update(b, now);
     board::press(b, l, p, now);
     board::release(b, l, p, now);
@@ -62,9 +53,9 @@ fn main() {
     show(b, l, "tap b6", 1.5);
 
     // A drag dropped on an empty square that isn't a move.
-    board::press(b, l, at(l, v, "e3"), 2.0);
-    board::drag(b, l, at(l, v, "e3") + float2 { 40.0, -40.0 });
-    board::release(b, l, at(l, v, "e5"), 2.1);
+    board::press(b, l, drive::at(l, "e3"), 2.0);
+    board::drag(b, l, drive::at(l, "e3") + float2 { 40.0, -40.0 });
+    board::release(b, l, drive::at(l, "e5"), 2.1);
     show(b, l, "drop e3 on e5", 2.1);
 
     // White must take d4xf6: a quiet move by another piece is a mistake, and d4 pulses.

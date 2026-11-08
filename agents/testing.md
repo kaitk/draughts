@@ -28,7 +28,13 @@ which would overwrite the main checkout's while another session uses them.
   test that lays out text calls `gui::test_faces` for glyph sizes without an atlas, and
   `strings::use` before reading a string. Shared helpers are in
   `test/check.goose` (`check::show`, `check::play_only`), imported as
-  `import check from "../";`.
+  `import check from "../";`, and, for the UI tests, in the package `test/drive/`
+  (`import drive from "../drive";`): squares by name (`drive::at`, `name`, `marked`),
+  the tiles a frame declared (`tile`, `rect`, `control` leaving out the clocks), and the
+  pointer driving the game screen or the shell (`frame`, `tap`, `idle`, with the game's
+  pieces over the UI in `drive::over` and the shell's screen size in `drive::size`).
+  Importing it means declaring every package it reaches (`rules` through `shell`, `ai`);
+  `test/run_tests.py` skips the directories in its `PACKAGES`.
 - `test/perft.py`: an independent generator sharing no code or layout with `rules/`.
   Use `test/perft.py moves VARIANT FEN` to get the expected moves of a new test position
   before blessing it, and `compare` to sweep random games after any change to move
