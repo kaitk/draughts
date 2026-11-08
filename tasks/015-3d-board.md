@@ -35,6 +35,10 @@ look good, not merely work.
   - Shadows: a soft shadow map (PCF or PCSS) for the pieces, drawn only when the position
     changes, since the scene is static between moves.
   - Few full-screen passes: mobile GPUs pay for bandwidth, not math.
+  - Surface detail: normal and roughness maps for the wood (grain, pores, the late wood
+    catching the highlight differently) and the pieces' satin. Real depth (the seams,
+    the inlay, the pieces' recess and lip, the crown's deboss) as geometry or parallax
+    occlusion mapping; tessellated displacement wouldn't show at this distance.
 - **Code and methods reference:** Spartan Engine (github.com/PanosK92/SpartanEngine, open
   source, C++) for clear rendering code and current methods; a desktop engine with
   global effects, so its ideas, not its frame structure. The bar: Carmack should be
