@@ -265,6 +265,11 @@ measuring there:
   and the game) with `adb uninstall com.kaitk.draughts` and a fresh install.
 - A button's press shows in a screenshot taken during a long press:
   `adb shell input swipe X Y X Y 2500 &`, then `adb exec-out screencap -p` a second later.
+- Which sensors the app holds: `adb shell dumpsys sensorservice`, its "Active sensors"
+  (connections per sensor) and the open connections, each naming its uid and Java class;
+  the log under them keeps old pids' registrations, so match the current pid. To split
+  idle CPU by thread, read every `/proc/<pid>/task/*/stat` (fields 14 and 15) and `comm`
+  before and after; the Java main thread is named `SDLActivity` (2026-11-08).
 - The batterystats estimate reads 0 while the tablet charges over USB, so it says
   nothing; CPU time is the measure.
 - A launch is checked frame by frame with `adb shell screenrecord` started before

@@ -154,14 +154,27 @@ such as an `embed_file`. A photograph-like background is about 5 MB as PNG and 0
 ## SDL: the Java side keeps the accelerometer on at 50 Hz (2026-11-07)
 
 `SDLSurface.handleResume` (and `SDLActivity` at start) registers the accelerometer at
-`SENSOR_DELAY_GAME` whenever the app is resumed, whether or not the program opens a
+`SENSOR_DELAY_GAME` (20 ms) whenever the app is resumed, whether or not the program opens a
 sensor or joystick. SDL uses it for an accelerometer joystick and to notice display
-rotation. With the idle board drawing nothing, it is what remains: 1.9% of a core on
-the Java main thread and 50 wakeups a second, plus the sensor's power. SDL 3.4.16
-(`fa2c02b`).
+rotation. With the idle board drawing nothing, it is what remains: on the tablet the Java
+main thread woke 52 times a second for 1.1 to 1.3 s of CPU a minute, the program's thread
+0.02 s, plus the sensor's power. SDL 3.4.16 (`fa2c02b`).
 
-- Here: not yet; task 011 plans a patch to SDL's Java in `patches/SDL/`.
-- Upstream: for the user only, as with the other SDL entries.
+- Here (2026-11-08): no patch. SDL's Java has a hook: `DraughtsActivity` overrides
+  `createSDLSurface` to return a subclass of `SDLSurface` whose `enableSensor` ignores
+  `TYPE_ACCELEROMETER`, which covers both the start and every resume. Nothing in the app
+  needs it: the program opens only video (and audio), no joystick, so the accelerometer
+  joystick never exists; and the screen turns because Android rotates the activity
+  (SDL requests `FULL_USER`) and the surface's new size reaches the program as a resize.
+  What is lost is SDL's display orientation (`SDL_GetCurrentDisplayOrientation`,
+  `SDL_EVENT_DISPLAY_ORIENTATION`), which then stays at the launch's; neither gfx nor the
+  app reads it. On the tablet our process has no sensor connection while resumed
+  (`dumpsys sensorservice`), the main thread does no work at idle, and the whole process
+  takes 0.05 to 0.06 s a minute; portrait, landscape, and the flipped landscape still lay
+  out right.
+- Upstream: for the user only, as with the other SDL entries. Register the accelerometer
+  only while a sensor or the accelerometer joystick is open, and learn the rotation from a
+  `DisplayManager.DisplayListener` instead.
 
 ## SDL: `SDL_WaitEventTimeout` busy-waits on Android (2026-11-07)
 

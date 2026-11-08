@@ -412,3 +412,34 @@ landscape (home in both languages, a clocked game, the puzzle), are byte-identic
 `ea1faef`'s apart from settings' preview flash, whose box is the one two runs of
 `ea1faef` differ in. The tablet's home, clocked game, and the game after a rotation are
 byte-identical before and after.
+
+### Cut 4: SDL's accelerometer off (task 011, 2026-11-08)
+
+Not memory: the idle CPU found above, and the rise from 1.25 to 1.5 s a minute listed under
+"Also seen". `DraughtsActivity` gives SDL a surface whose `enableSensor` ignores the
+accelerometer ([findings](../docs/goose-findings.md)); no SDL patch. Per thread, 60 s
+untouched, before `9530afe`, after the same with the change:
+
+| CPU in 60 s (voluntary switches) | Home before | Home after | Game before | Game after |
+| --- | --- | --- | --- | --- |
+| `SDLActivity` (the Java main thread) | 1.14 s (3123) | 0.00 s (0) | 1.25 s (3132) | 0.00 s (0) |
+| `SDLThread` (the program) | 0.03 s (62) | 0.03 s (63) | 0.03 s (62) | 0.02 s (63) |
+| Process | 1.19 s | 0.05 s | 1.29 s | 0.06 s |
+
+The game's extra 0.1 s a minute before was the same thread, so the rise was the sensor's
+callbacks costing more there, not the computer's worker or the launch cover. Rotation,
+the sensor check, and the 300 s run are in task 011's file.
+
+### The scripts after cuts 1 to 4 (2026-11-08)
+
+Galaxy tablet, the build of cut 4, `pm clear`, a fresh launch to home in landscape.
+
+- `scripts/idle_cpu.sh 60`: the program's thread 0.03 s, the process 0.06 s, 60 voluntary
+  switches (at the start: 0.03, 1.26 s, 60). Over 300 s: 0.14 s and 0.14 s, 299.
+- `scripts/lifecycle_memory.sh 20`: the same process throughout, no errors in logcat.
+  Before the first cycle PSS 177 MB, native heap 43.5, graphics 117.7; over the cycles
+  PSS 162 to 166 MB, native heap 37.4 to 37.6, graphics 106.3 to 110.4 (at the start:
+  PSS 259 to 264, native heap 27, graphics 211 to 215). Graphics rose in two steps of
+  2 MB (after cycles 3 and 9) and was flat between them, as the start's 4 MB spread; the
+  native heap crept 0.2 MB over 20 cycles. PSS is about 96 MB lower, graphics about 104;
+  the native heap, though, sits about 10 MB above the start's 27, not yet looked into.

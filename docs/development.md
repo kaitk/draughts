@@ -209,7 +209,9 @@ after changing `android/CMakeLists.txt`.
 
 On Android the program opens with `gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE`,
 which SDL turns into an immersive window with the system bars hidden. Resizable makes
-SDL request `FULL_USER`, so the screen turns as the system's rotation lock allows;
+SDL request `FULL_USER`, so the screen turns as the system's rotation lock allows
+(Android turns the activity; SDL's own accelerometer, which `DraughtsActivity` keeps
+off, plays no part);
 without it SDL locks the activity to the orientation it started in, which phones obey
 and large tablets ignore (found on the Pixel 7a, 2026-11-08). From Android 11 SDL lays
 the window out under the camera's cutout too (`LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS`), so

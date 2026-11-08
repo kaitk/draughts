@@ -677,8 +677,10 @@ depth target, a shadow map, albedo, normal, and roughness atlases with mips):
 The app draws only when something changed: input, a running animation, the AI's reply, or
 a new screen size, safe area, or scale. Otherwise it draws nothing in that frame, and goose_gfx's `frame()`
 then neither presents nor spins: it waits for the next event, up to a second. An idle
-board costs about one wakeup a second and no GPU work. The loop is the same on every
-platform:
+board costs about one wakeup a second and no GPU work. On Android `DraughtsActivity`
+also keeps SDL's Java from listening to the accelerometer at 50 Hz, which nothing here
+uses and which woke the activity's thread 52 times a second
+([findings](../goose-findings.md)). The loop is the same on every platform:
 
 ```goose
 while gfx::frame() {

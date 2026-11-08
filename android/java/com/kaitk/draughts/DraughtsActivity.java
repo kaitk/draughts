@@ -1,6 +1,8 @@
 package com.kaitk.draughts;
 
+import android.content.Context;
 import android.content.res.TypedArray;
+import android.hardware.Sensor;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.KeyEvent;
@@ -13,6 +15,7 @@ import android.window.SplashScreen;
 import android.window.SplashScreenView;
 
 import org.libsdl.app.SDLActivity;
+import org.libsdl.app.SDLSurface;
 
 // SDL's activity, with development flags for the program: the intent's "args" extra,
 // split at spaces, as the Mac's command line would give them (docs/development.md).
@@ -35,6 +38,13 @@ import org.libsdl.app.SDLActivity;
 // From Android 13 the manifest opts into back callbacks, which Android 16 does anyway for
 // an app targeting it, and the key is no longer dispatched; the callback below hands
 // it to SDL instead. On home's menu the program gives it back through leaveApp().
+//
+// Its surface never turns on the accelerometer (task 011). SDL's registers it at 50 Hz
+// whenever the app is resumed, for an accelerometer joystick the program doesn't open and
+// for SDL's display orientation, which nothing here reads; at idle that woke this thread
+// 52 times a second, nearly all the app's CPU. The screen still turns with the device:
+// Android rotates the activity (SDL asks for FULL_USER) and the surface's new size
+// reaches the program as a resize.
 public class DraughtsActivity extends SDLActivity {
     // Lifts them anyway if the program never reports a frame, rather than stay covered.
     private static final long COVER_MAX_MS = 3000;
@@ -64,6 +74,25 @@ public class DraughtsActivity extends SDLActivity {
             return new String[0];
         }
         return args.trim().split("\\s+");
+    }
+
+    // SDL's surface, with its accelerometer left off.
+    static class QuietSurface extends SDLSurface {
+        QuietSurface(Context context) {
+            super(context);
+        }
+
+        @Override
+        protected void enableSensor(int type, boolean enabled) {
+            if (type != Sensor.TYPE_ACCELEROMETER) {
+                super.enableSensor(type, enabled);
+            }
+        }
+    }
+
+    @Override
+    protected SDLSurface createSDLSurface(Context context) {
+        return new QuietSurface(context);
     }
 
     @Override

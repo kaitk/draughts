@@ -15,7 +15,7 @@ out, and the rules every part of it keeps. The rest is by area:
 | Language | [Goose](https://github.com/aardappel/goose), compiled to C (`goose -o game.c`, `goose --emit-runtime`) |
 | Graphics, input, window | `gfx` from [goose_gfx](https://github.com/aardappel/goose_gfx): SDL3's GPU API, with GLSL compiled to SPIR-V, MSL, and HLSL at compile time |
 | GPU backend | Vulkan on Android; Metal on macOS; D3D12 or Vulkan on Windows |
-| Android build | NDK clang for `aarch64-linux-android29`; SDL shared (`libSDL3.so`) with SDL's stock SDLActivity Java and one small subclass of it (`DraughtsActivity`: development flags, the launch cover, closing the app); APK built by `scripts/android.py` without Gradle ([development](../development.md)) |
+| Android build | NDK clang for `aarch64-linux-android29`; SDL shared (`libSDL3.so`) with SDL's stock SDLActivity Java and one small subclass of it (`DraughtsActivity`: development flags, the launch cover, closing the app, SDL's accelerometer kept off); APK built by `scripts/android.py` without Gradle ([development](../development.md)) |
 | Desktop iteration | `goose game.goose` runs in the compiler's process (TinyCC), with no build step |
 | UI | Our own immediate-mode layer in Goose ([rendering.md](rendering.md)); Nuklear (`ui`) for developer tools only |
 | Text | TrueType fonts baked by `ui`'s font atlas |
