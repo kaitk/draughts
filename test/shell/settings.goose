@@ -97,7 +97,12 @@ fn main() {
     settings::write(odd, out);
     print("unknown values and a line without one:\n", out);
 
+    // With the Board row the look group has three rows, which in landscape need more than
+    // the tablet's 800 dp tall beside the game's: one group would show at a time, as on a
+    // phone. A layout 900 dp across its shorter side keeps both on screen for these taps.
+    gui::short_dp = 900.0;
     var g = gui::Gui {};
+    g.scale = gui::scale_of(drive::size.x, drive::size.y);
     gui::test_faces(g);
     strings::use(strings::EN);
     var sh = shell::new(rules::RUSSIAN);

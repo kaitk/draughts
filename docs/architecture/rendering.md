@@ -332,6 +332,9 @@ the prototype tried, kept for 3D:
   (`Settings.show_board_row`, `shell/settings.goose`). Each
   setting is a dim 18 px name at the left of its tiles (above them in portrait); a tile
   has radius 16 px and is lit in the glow color at 22% with a 2 px glow border when on.
+  Every tile, the language's too, is 88 px tall and wide at least (56 to 72 tall, the
+  language's 48 and the seasons' 74 wide, until 2026-11-08); the title row is 100 px,
+  the language's glass round its 88 px tiles.
   The preview is the board as the choices make it: its size, the kings,
   and what the move hints show (all moves: the selected piece's capture; mistakes only:
   a wrong move's red ring and the piece that must capture pulsing), over the season's
@@ -346,7 +349,17 @@ the prototype tried, kept for 3D:
   sets the preview up again. The choices take the width their words want, at most 55% of
   the page, and wrap beyond it; near square (4:3, a foldable), where the wrapped rows
   would run past the page's foot, each setting's name goes above its tiles, as in
-  portrait, and the column narrows to its widest row (2026-11-08); their notes and the thumbnails' labels are in the 17 px
+  portrait, and the column narrows to its widest row (2026-11-08); where that runs past
+  the foot too, the names go back to the left and the rows take the width they want,
+  unwrapped (a foldable). Where even that doesn't fit (a phone), one group shows at a time:
+  two tiles, the game's and the look's icon and title, the shown one lit, choose which,
+  in the title row in place of the title in landscape and in a row under it in portrait
+  (where the groups side by side would leave the board under 45% of the width), and the
+  group's glass, without its title row, is as tall as the taller of the two so the board
+  stays put. A board under 96 px isn't shown (a 9:16 phone at 480 dp, landscape). In
+  portrait the title takes a smaller face, or none, where it doesn't fit beside the
+  language (2026-11-08). The Board row (`--3d`) makes the look group too tall for a
+  landscape 800 px tall, so with it the tablet shows one group at a time too; their notes and the thumbnails' labels are in the 17 px
   face, which makes them a little wider than the prototype's 13 px, so the landscape
   board is about 550 px where the prototype's is 590. The tutorial's tile (and the raised
   board's with `--3d`) is dimmed and takes no tap until it exists.
