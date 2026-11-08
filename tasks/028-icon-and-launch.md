@@ -1,6 +1,7 @@
 # 028: The app icon and the launch screen
 
-Status: in-progress (built; the tablet checks are left)
+Status: in-progress (the icon is done; launch flashes before the first frame, see "On the
+tablet")
 
 The app had no icon and no resources: the APK's manifest had a literal label and the
 platform's theme, so the launcher showed Android's default, and launch showed a blank
@@ -69,12 +70,34 @@ needs redrawing if the scene changes shape.
 | The foreground PNGs, mdpi to xxxhdpi | 11, 22, 35, 71, 125 KB: 266 KB of it |
 | The monochrome vector, the adaptive XML, resources.arsc | 1.5, 0.5, 2.1 KB |
 
+## On the tablet (2026-11-08, Android 16, One UI, 240 dpi)
+
+- **The launcher:** the icon shows in the app drawer at about 80 px in One UI's squircle,
+  the scene filling about 85% of its width, its edges clean. One UI has no round mask; the
+  round one was checked in the browser preview only. With themed icons on (One UI's
+  "apply palette to app icons", `settings put system colortheme_app_icon 1` and a
+  launcher restart), the launcher draws the monochrome layer: board, pieces, and arc read,
+  though the drawing is lighter and finer than the bold glyphs of the apps beside it.
+- **Launch** (cold start with `am start -W`, `screenrecord`, two runs): `TotalTime` 208
+  and 232 ms. The splash, the icon on navy, shows for about 150 ms; then it fades out
+  over 150 to 200 ms, onto black in one run and onto the home screen and then black in
+  the other; black holds 150 to 260 ms; then the app's first frame. Android removes the
+  splash at the window's first draw, but the window is SDL's `SurfaceView`, whose hole
+  shows what is behind it (black, or nothing yet) until SDL presents; the theme's navy
+  `windowBackground` is never seen there. The theme can't fix it. A fix needs a signal
+  from the program's first presented frame: hold the splash until then
+  (`getSplashScreen().setOnExitAnimationListener`, API 31) or cover the surface with a navy
+  view and remove it then. `SurfaceView.setResizeBackgroundColor`, which would colour the
+  layer behind, is not public. Recorded in [findings](../docs/goose-findings.md).
+
 ## Acceptance criteria
 
-- [ ] The launcher shows the icon on the tablet, round and squircle masks both clean,
-      and the themed (monochrome) icon when Android's themed icons are on
+- [x] The launcher shows the icon on the tablet, round and squircle masks both clean,
+      and the themed (monochrome) icon when Android's themed icons are on (round in the
+      browser preview; One UI has only the squircle)
 - [ ] Launch shows the icon on its background color, then the app, with no white or
-      black flash between them
+      black flash between them: black for 150 to 260 ms after the splash, from SDL's
+      surface (above); needs the first-frame signal
 - [x] Recognizable at 48 px (a browser preview of the 72 dp view at 48 and 82 px, circle
       and squircle, and the monochrome at both)
 - [x] The APK's size recorded before and after

@@ -3,6 +3,21 @@
 Gaps found in Goose, goose_gfx, and the SDL it pins, while building for Android, with what
 we do about each here and what could go upstream. Newest first.
 
+## SDL: launch flashes black between Android's splash and the first frame (2026-11-08)
+
+Android 12+ removes its splash at the activity window's first draw. SDLActivity's
+window is a `SurfaceView`, whose hole shows what is behind it, black or the launcher,
+until SDL presents its first frame, so the theme's `windowBackground` never shows there.
+On the tablet the splash fades onto 150 to 260 ms of black before the app. SDLActivity
+has no hook for "first frame presented", and the colour behind a `SurfaceView`
+(`setResizeBackgroundColor`) is not public API. SDL 3.4.16 (`fa2c02b`).
+
+- Here: not yet. Our own `DraughtsActivity` can hold the splash
+  (`getSplashScreen().setOnExitAnimationListener`) or cover the surface with a view of the
+  splash colour, until the program reports its first presented frame over JNI.
+- Upstream: for the user only, as with the other SDL entries. SDL could offer the hold
+  itself, keeping the splash until the first `SDL_GPU` or EGL present.
+
 ## goose_gfx: `load_texture` reads only PNG and BMP, and only from a file (2026-11-07)
 
 `gs_gfx_load_texture` picks `SDL_LoadBMP` for `.bmp` and `SDL_LoadPNG` for anything
