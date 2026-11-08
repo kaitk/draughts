@@ -41,6 +41,8 @@ let HEAD_H = 56.0;          // back and the title
 let HEAD_GAP = 18.0;
 let GROUP_H = 34.0;         // a choice's dim name over its tiles
 let BOARD_TILE_H = 128.0;   // a draughts tile: its board at the start, name, and size
+let MINI_SIZE = 64.0;       // that board
+let WORD_PAD = 16.0;        // the room a draughts tile's name wants either side
 let TILE_H = 76.0;          // the other tiles
 let TILE_GAP = 10.0;
 let PLAY_GAP = 18.0;
@@ -142,6 +144,31 @@ fn across(row: float4, count: i64, i: i64, u: f32) -> float4 {
     return float4 { row.x + i * (w + TILE_GAP * u), row.y, w, row.w };
 }
 
+// How wide draughts k's tile must be: its name or its board, whichever is wider.
+fn draughts_width(g: gui::Gui&, k: i64) -> f32 {
+    return max(gui::text_width(g, gui::BODY, strings::get(settings::DRAUGHTS_KEYS[k])), MINI_SIZE * g.scale);
+}
+
+// Draughts i's tile in the row: a third of it when every name fits a third with room
+// either side; else each tile its name's width and an even share of the rest, so a long
+// name keeps the body face ("Rahvusvaheline", 130 dp, beside a landscape third of 113).
+fn draughts_tile(g: gui::Gui&, row: float4, i: i64) -> float4 {
+    let u = g.scale;
+    let count = settings::DRAUGHTS.len;
+    let third = across(row, count, i, u);
+    var spare = row.z - (count - 1) * TILE_GAP * u;
+    var widest: f32 = 0.0;
+    for k in count {
+        spare -= draughts_width(g, k);
+        widest = max(widest, draughts_width(g, k));
+    }
+    guard widest + 2.0 * WORD_PAD * u > third.z else { return third; }
+    let share = spare / count;
+    var x = row.x;
+    for k in i { x += draughts_width(g, k) + share + TILE_GAP * u; }
+    return float4 { x, row.y, draughts_width(g, i) + share, row.w };
+}
+
 // The setup in c: back and the title, the choices, play.
 fn choose(gm: game::Game&, g: gui::Gui&, c: float4, computer: bool, s: settings::Settings&) -> i64 {
     let u = g.scale;
@@ -160,10 +187,11 @@ fn choose(gm: game::Game&, g: gui::Gui&, c: float4, computer: bool, s: settings:
     let kinds = group(g, c, strings::SETUP_DRAUGHTS, BOARD_TILE_H);
     for v, i in settings::DRAUGHTS {
         let on = settings::DRAUGHTS_ON[i];
-        let tapped, pic = gui::pick(g, 330 + i, across(kinds, 3, i, u), 64.0, strings::get(settings::DRAUGHTS_KEYS[i]),
-                                    strings::get(settings::DRAUGHTS_SIZES[i]), s.variant == v, on);
+        let tapped, pic = gui::pick(g, 330 + i, draughts_tile(g, kinds, i), MINI_SIZE,
+                                    strings::get(settings::DRAUGHTS_KEYS[i]), strings::get(settings::DRAUGHTS_SIZES[i]),
+                                    s.variant == v, on);
         let n = rules::VARIANTS[v].size;
-        gui::mini(g, pic, 64.0 * u, n, n / 2 - 1, if on { 1.0 } else { 0.4 });
+        gui::mini(g, pic, MINI_SIZE * u, n, n / 2 - 1, if on { 1.0 } else { 0.4 });
         if tapped {
             s.variant = v;
             ask = CHANGED;

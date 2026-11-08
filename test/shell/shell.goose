@@ -8,6 +8,9 @@
 // for its level and the number of games against the computer so far, which goes up, and
 // home notes the level.
 // Home and the setup lay out in landscape and portrait, the board clear of the column.
+// The setup's draughts tiles are thirds of their row in portrait; in landscape, where a
+// third is too narrow for "International" in the body face, each takes its name's width
+// and a share of the rest.
 import std;
 import vec;
 import rules from "../../rules";
@@ -37,14 +40,27 @@ fn tap(sh: shell::Shell&, g: gui::Gui&, p: float2, now: f64) {
 // over, take back. Settings: back first. A setup: back, the three draughts, against the
 // computer the three levels and two colors, the three clocks, play.
 fn tile(g: gui::Gui&, n: i64) -> float2 {
+    let r = rect(g, n);
+    return float2 { r.x + 0.5 * r.z, r.y + 0.5 * r.w };
+}
+
+fn rect(g: gui::Gui&, n: i64) -> float4 {
     var k = 0;
     for q in g.quads {
         guard q.look.x == gui::BUTTON else { continue; }
-        if k == n { return float2 { q.rect.x + 0.5 * q.rect.z, q.rect.y + 0.5 * q.rect.w }; }
+        if k == n { return q.rect; }
         k++;
     }
     assert(false);
-    return float2 { 0.0, 0.0 };
+    return float4 { 0.0, 0.0, 0.0, 0.0 };
+}
+
+// A setup's three draughts tiles' widths, rounded, and whether the first's name has its
+// face's room (gui::pick).
+fn draughts_widths(g: gui::Gui&) -> u8[>..] {
+    let name = gui::text_width(g, gui::BODY, strings::get(strings::VARIANT_INTERNATIONAL));
+    return str(round(rect(g, 1).z), " ", round(rect(g, 2).z), " ", round(rect(g, 3).z),
+               ", the first's name in the body face ", name <= rect(g, 1).z - 8.0);
 }
 
 fn screen(sh: shell::Shell&) -> const u8[:] {
@@ -139,6 +155,7 @@ fn main() {
     tiles = 0;
     for q in g.quads { if q.look.x == gui::BUTTON { tiles++; } }
     print("the computer's setup: tiles ", tiles, ", pieces over the UI ", sh.game.overlay.len);
+    print("draughts tiles: ", draughts_widths(g));
     tap(sh, g, tile(g, 6), 5.2);            // hard
     tap(sh, g, tile(g, 8), 5.3);            // black
     tap(sh, g, tile(g, 11), 5.4);           // 10+5
@@ -163,4 +180,5 @@ fn main() {
     for q in g.quads { if q.look.x == gui::GLASS { sheet = q.rect; } }
     print("portrait setup: board ", sh.layout.board, ", sheet from ", sheet.y, ", clear ",
           sh.layout.board.y + sh.layout.board.z < sheet.y);
+    print("draughts tiles: ", draughts_widths(g));
 }

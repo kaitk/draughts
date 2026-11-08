@@ -251,8 +251,10 @@ the prototype tried, kept for 3D:
   or black, each tile showing its piece; 2026-11-08), and the clock (none with a
   stopwatch, 5 min +3 s a move, 10 min +5 s a move); then play, a primary row. The
   choices are kept for next time in `settings.txt`, and play replaces a saved game
-  without asking. A tile's word too wide for it, as a translation's may be, takes the
-  small face. Home's computer row notes the kept level. The language is
+  without asking. The draughts' tiles are thirds of their row while each name fits a
+  third with 16 dp either side; else, as in landscape, each takes its name's width and
+  an even share of the rest (2026-11-08). A tile's word still too wide for it, as a
+  translation's may be, takes the small face. Home's computer row notes the kept level. The language is
   only in settings (2026-11-07): kids who can't read yet don't need it on home, and a
   tablet set to one language can still play in another. In portrait the column is a sheet below the
   board. **Settings** (`prototypes/settings.html`, regrouped 2026-11-07): back and the

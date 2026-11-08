@@ -64,7 +64,7 @@ Widths (Libertinus advances at the face's size, as `gui::text_width` sums them; 
 
 | String | Face | Width | Room |
 | --- | --- | --- | --- |
-| Rahvusvaheline | 20 px, falls back to 17 | 130, 110 | 105 (setup tile, 113 wide) |
+| Rahvusvaheline | 20 px (fell back to 17) | 130 (110) | 148 (setup tile, 156 wide; was 105 in 113) |
 | Alusta uuesti | 24 px | 130 | 140 (game panel, landscape) |
 | Mustad võitsid | 24 px | 148 | 200 |
 | +3 s käigule (was käigu eest) | 17 px | 83 (103) | 113 |
@@ -79,8 +79,16 @@ setup, the game, a clocked game, a win, and settings. Every string shows whole.
   user's pick on 2026-11-08 over "Automaatne".
 - `clock.*_note`: "käigule" or "käigu eest"? Both are used for an increment; "käigule"
   was taken for the room. Argon would keep "käigu eest".
-- `variant.international`: "Rahvusvaheline" is the right term and has no shorter form,
-  but in the setup's 113 dp tile it takes the small face and still runs edge to edge
-  (110 dp). A layout fix (a smaller fallback, or that row's tiles sized by their words)
-  would help more than a different word.
+- `variant.international`: "Rahvusvaheline" is the right term and has no shorter form.
+  It took the small face in the setup's 113 dp landscape third and still ran edge to
+  edge (110 dp), so the layout changed instead of the word (2026-11-08): when a name
+  doesn't fit a third with 16 dp either side, the draughts' tiles each take their name's
+  width (or the 64 dp board's) and an even share of the rest (`home::draughts_tile`). In
+  landscape the row is 360 dp: Estonian 156, 94, 90 dp, "Rahvusvaheline" at 20 dp
+  (130) with 13 dp a side; English 139, 105, 96, "International" (107, which also had
+  taken the small face in its third) with 16 a side. Portrait keeps thirds of 239.
+  Settings already sized its tiles by their words: "Rahvusvaheline" is in the 20 dp face
+  there in both orientations. Checked on the Mac at 960 × 600 and 600 × 960, both
+  languages. No label at the tablet's size takes the 17 dp fallback now; `gui::pick`
+  keeps it for narrower windows and longer translations.
 - The tablet check in both orientations, once it is unlocked.

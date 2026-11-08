@@ -12,7 +12,9 @@ Russian, 5+3: changed true, season = by-date;board = 2d;hints = mistakes;kings =
 back: setup 0, home
 play: game, 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, clock 1, computer -1, level 1, skill 45, number 0, turned false
 the computer's setup: tiles 13, pieces over the UI 2
+draughts tiles: 147.0 107.0 87.0, the first's name in the body face true
 play: game, 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, clock 2, computer 0, level 2, skill 90, number 0, turned true; season = by-date;board = 2d;hints = mistakes;kings = auto;language = system;draughts = russian;level = hard;color = black;clock = 10+5;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 1;
 home: the computer's row notes hard; glyphs 55, turned true
 portrait: board vec4<f32> { 80.0, 66.0, 640.0, 10.240001 }, sheet from 772.0, clear true
 portrait setup: board vec4<f32> { 164.0, 40.0, 472.0, 7.5520005 }, sheet from 552.0, clear true
+draughts tiles: 239.0 239.0 239.0, the first's name in the body face true

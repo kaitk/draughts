@@ -106,6 +106,6 @@ home for a friend and the computer.
   run for it as for a friend.
 - The tiles' words are in the 24 dp face where the prototype has 26 for the turn and
   take back, and the setup's tile words in 20 where it has 18; no new atlas sizes.
-  "Rahvusvaheline" is wider than its tile in landscape and takes the 17 dp face
-  (`gui::pick`); the Estonian review (task 024) may prefer another word.
+  "Rahvusvaheline" was wider than its third in landscape and took the 17 dp face;
+  the draughts' tiles now size by their names there (task 024, 2026-11-08).
 - "Your pieces" ("Sinu nupud") names the color row; the Estonian strings are a draft.
