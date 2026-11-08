@@ -211,7 +211,8 @@ the prototype tried, kept for 3D:
   the game began; home goes home; settings opens settings, whose back returns to the
   game. Against the computer the child's pieces are at the bottom: when the child plays
   black the board is turned, black playing up the screen (2026-11-08). While the
-  computer thinks its piece's glow ring pulses, and its move comes after a short pause;
+  computer thinks its piece's glow ring pulses once, and its move comes after a short
+  pause, or against the clock after the time a player of its level would take;
   take back then takes back the child's move and the computer's reply
   ([computer player](ai.md#in-the-game)).
   The words are 24 px; the turn's words say who has won once a side has.
@@ -407,7 +408,9 @@ type and ends the wait; the second is then drawn within 5 ms. The Mac's gfx does
 wait, so the timer is Android's only.
 
 Work that finishes on another thread, such as the computer's reply, would be seen only
-when the wait ends; so while the computer thinks its piece on the panel pulses, which
-keeps frames coming, and the reply is seen the next frame. Once its move has landed
-nothing animates and the app draws nothing. While Android has the app paused, SDL blocks
+when the wait ends; so as the computer begins to think its piece on the panel pulses,
+which keeps frames coming until the reply has come, and it is seen the next frame. A
+longer think against the clock draws only the clock's seconds after the pulse: the
+timer is also set for when the computer's move is due (`game::due`). Once its move has
+landed nothing animates and the app draws nothing. While Android has the app paused, SDL blocks
 the loop: it draws nothing and submits no GPU work.

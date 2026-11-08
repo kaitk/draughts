@@ -17,6 +17,7 @@ struct Thought {
     id:      i64,
     move:    rules::Move,
     found:   bool,          // false when the position had no move
+    close:   i64,           // moves about as good as the best, for the time it takes (ai::close)
     nodes:   i64,
     seconds: f64,
 }
@@ -46,7 +47,8 @@ thread_fn worker() {
         }
         let found = ai::has_reply(e);
         let m = if found { ai::reply(e) } else { rules::Move { .. } };
-        qput(Thought { id: ask.id, move: m, found: found, nodes: e.total_nodes, seconds: clock() - began });
+        qput(Thought { id: ask.id, move: m, found: found, close: ai::close(e, pace::CLOSE), nodes: e.total_nodes,
+                       seconds: clock() - began });
         ask = qget<game::Ask>();
     }
 }
@@ -68,5 +70,5 @@ fn frame(t: Thinker&, gm: game::Game&) {
     }
     guard t.worker >= 0 else { return; }
     let th, got = qpoll<Thought>();
-    if got && th.found { game::answer(gm, th.id, th.move); }
+    if got && th.found { game::answer(gm, th.id, th.move, th.close); }
 }

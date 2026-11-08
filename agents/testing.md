@@ -17,7 +17,8 @@ which would overwrite the main checkout's while another session uses them.
   package), `gui`, `game` (the game screen driven through the pointer: take back, start
   over, home and settings, presses kept apart, the celebration, a clocked game with its
   frames, pause, and flag, the turned board; the computer's turn, answered at once with
-  `ai::think` as the app's worker would; and the clock value on its own), `shell`
+  `ai::think` as the app's worker would; the clock value on its own; and the computer's
+  time a move on the clock, over whole games with simulated time, in `pace`), `shell`
   (home, the switch to the game and back, settings and their file, their taps and the
   board beside them, home's setup and play, the saved game of any variant and damaged images of it, the computer's skill
   moving across games), `strings` (every language file has every key), and `ai` (the computer player:
@@ -40,6 +41,10 @@ which would overwrite the main checkout's while another session uses them.
 - The search counts nodes, so a test's moves change with `Engine.node_limit`. Tests that
   call hard lower it to stay quick through TinyCC (`test/ai/blunders.goose`, the seeds
   in `test/ai/levels.goose`); the whole `ai` area takes about 10 s that way.
+- `test/game/pace.goose` plays twelve whole games on the clock (each level against
+  itself, both clocks, Russian and International) with hard at 20,000 nodes: about 12 s
+  through TinyCC. For numbers at full strength, build a copy with `NODES` at
+  `ai::NODE_LIMIT` and more `GAMES` (the task 027 numbers came that way).
 - Positions come from the computer's own games (`build/aimatch ... --fens PLY`) and from
   scanning them for moves a deep search rates far above the rest. A shot's line goes in
   the test's comment only after each move is checked with `test/perft.py moves`; a

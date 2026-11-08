@@ -1,24 +1,28 @@
-the child's turn: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 0, moving false, asking 0, clocks 300.00 300.00 running -1, ring 0.00
-c3-d4 moving: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 1, moving true, asking 0, clocks 300.00 299.90 running 1, ring 1.00
-landed: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 1, moving false, asking 1, clocks 300.00 299.70 running 1, ring 1.00
-  ask 1 at skill 10 seed 3001: f6-e5, legal true
-thinking: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 1, moving false, asking 1, clocks 300.00 299.40 running 1, ring 0.65
+the child's turn: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 0, moving false, asking 0, clocks 600.00 600.00 running -1, ring 0.00
+c3-d4 moving: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 1, moving true, asking 0, clocks 600.00 599.90 running 1, ring 1.00
+landed: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 1, moving false, asking 1, clocks 600.00 599.70 running 1, ring 1.00
+  ask 1 at skill 90 seed 3001: d6-c5, legal true
+  it takes 3.12 s, against 0.45 without a clock
+thinking: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 1, moving false, asking 1, clocks 600.00 599.40 running 1, ring 0.65
   animating true
   a tap on f6: selected -1
-the pause, 0.8 s on easy, not over: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 1, moving false, asking 1, clocks 300.00 298.91 running 1, ring 0.46
-  move f6-e5
-the pause over, the reply moving: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Be5,b6,d6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 2, moving true, asking 0, clocks 300.00 301.90 running 0, ring 0.47
-landed: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Be5,b6,d6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 2, moving false, asking 0, clocks 299.70 301.90 running 0, ring 1.00
+the pulse over: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 1, moving false, asking 1, clocks 600.00 598.50 running 1, ring 1.00
+  animating false, its move due in 1.92 s
+its time not over: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 1, moving false, asking 1, clocks 600.00 596.59 running 1, ring 1.00
+  move d6-c5
+its time over, the reply moving: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bc5,b6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 2, moving true, asking 0, clocks 600.00 601.58 running 0, ring 1.00
+landed: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bc5,b6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 2, moving false, asking 0, clocks 599.70 601.58 running 0, ring 1.00
   animating false
-take back: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 0, moving false, asking 0, clocks 299.18 301.90 running -1, ring 1.00
-take back while it thinks: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 0, moving false, asking 0, clocks 299.18 301.48 running -1, ring 0.93
+take back: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 0, moving false, asking 0, clocks 599.18 601.58 running -1, ring 1.00
+take back while it thinks: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 0, moving false, asking 0, clocks 599.18 601.16 running -1, ring 0.93
   the dropped ask's answer taken: false
   after c3-b4, ask 3; the old answer taken: false
-left the game: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,b4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 1, moving false, asking 0, clocks 299.18 301.18 running 1, ring 1.00
-back: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,b4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 1, moving false, asking 4, clocks 299.18 301.18 running 1, ring 1.00
-  ask 4 at skill 10 seed 3001: b6-c5, legal true
-  played after 0.8 s: b6-c5
-take back while the reply moves: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 0, moving false, asking 0, clocks 299.06 303.38 running -1, ring 1.00
+left the game: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,b4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 1, moving false, asking 0, clocks 599.18 600.86 running 1, ring 1.00
+back: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,b4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 1, moving false, asking 4, clocks 599.18 600.86 running 1, ring 1.00
+  ask 4 at skill 90 seed 3001: d6-c5, legal true
+  moving before its 2.50 s: false
+  played after them: d6-c5
+take back while the reply moves: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 0, moving false, asking 0, clocks 599.06 603.85 running -1, ring 1.00
 the child plays black: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 0, moving false, asking 5, ring 1.00
   take back: plies 0, the same ask true
   ask 5 at skill 45 seed 3000: c3-b4, legal true
@@ -32,7 +36,9 @@ medium: ask 8 at skill 45 seed 5000: d6-c5, legal true
   moving 0.01 s before the pause ends false, when it ends true
 hard: ask 9 at skill 90 seed 5000: d6-e5, legal true
   moving 0.01 s before the pause ends false, when it ends true
+hard as white on 5+3, no clock running yet: ask 10 at skill 90 seed 7000: g3-h4, legal true, it takes 0.45 s
+hard's one move on 5+3, its clock running: ask 11 at skill 90 seed 8000: c5:e3, legal true, it takes 0.45 s
 the child takes the last piece: winner 0, result 1
   taken back and won again: winner 0, result 0
-the computer can take the last piece: ask 10 at skill 10 seed 10000: c5:e3, legal true
+the computer can take the last piece: ask 12 at skill 10 seed 10000: c5:e3, legal true
   winner 1, result -1

@@ -61,17 +61,32 @@ On a worker the frame loop draws as it would without the computer.
   search ends if that is later; then it plays through the board's move animation. Easy
   answers in under a millisecond, and a reply at once feels like a machine. Medium and
   hard pause less, as they take time of their own on the tablet.
-- **While it thinks**, its piece on the panel pulses: the glow ring fades from full to a
-  third and back every 1.2 s, on its clock's piece when there are clocks, even before
-  they start. That keeps frames coming, so the answer is seen the next frame; an idle
-  frame waits up to a second for an event ([rendering](rendering.md#frames-and-battery)).
-  Once its move has landed nothing animates and the app draws nothing. The child can't
-  move the computer's pieces; home, settings, start over, and take back still work.
+- **Against the clock** it takes as long as a player of its level would
+  (`game/pace.goose`): a share of what it could spend each move and keep its clock (the
+  time left over 30 moves, plus the increment), 0.15 of it on easy, 0.3 on medium, 0.45
+  on hard, for a choice among three close moves. Its search's root scores say how close
+  (`ai::close`: the moves within 0.15 of a man of the best, as far as its margin scores
+  them exactly): one move standing out takes a third of that, five or more close ones
+  five thirds, a choice among captures half; a single move only the pause. The first
+  moves of a game come quickly, as a player knows them: the time grows over the first
+  12 plies. It never takes more than 4, 8, or 15 s by level, nor more than a tenth of its
+  clock, so with the increment it can't lose on time. The time only decides when the
+  move is played: the search still stops at its own depth, so its strength is the same.
+  White's first move is untimed, so the computer playing white makes it after the pause.
+- **While it thinks**, its piece on the panel pulses once: the glow ring fades from full
+  to a third and back over 1.2 s, on its clock's piece when there are clocks, even before
+  they start, then stays full. That keeps frames coming while the answer is on its way,
+  so it is seen the next frame; an idle frame waits up to a second for an event
+  ([rendering](rendering.md#frames-and-battery)). A longer think against the clock shows
+  on its clock, which counts each second, and the app sets a timer for when the move is
+  due rather than draw every frame for many seconds. Once its move has landed nothing
+  animates and the app draws nothing. The child can't move the computer's pieces; home,
+  settings, start over, and take back still work.
 - **Take back** takes back the child's last move and the computer's reply, so it is the
   child's turn again; while the computer thinks, it drops the search and takes back the
   child's move. Before the child's first move it does nothing.
-- **Clocks**: the computer's clock runs while it thinks and pauses, and its move adds the
-  increment, as any move does.
+- **Clocks**: the computer's clock runs while it thinks and pauses, from the start of the
+  child's move as for any player, and its move adds the increment, as any move does.
 - **The seed** of a move is the game's number times 1000 plus the ply: replies vary from
   one game to the next, and the same game replays the same. The number counts the games
   begun against the computer, kept in `settings.txt` (`games`).

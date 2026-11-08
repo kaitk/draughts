@@ -9,10 +9,11 @@
 //
 // Against the computer the game knows which side it plays, its level, and the skill it
 // plays the whole game at. On its turn the game asks for a move (asking()) and plays the
-// answer (answer()) through the board's animation once a short pause, as a person
-// takes, is over; the app thinks on a worker thread, tests call ai::think. Meanwhile the
-// computer's piece on the panel pulses, its clock runs, and the child can't move its
-// pieces. Take back then takes back the child's last move and the computer's reply.
+// answer (answer()) through the board's animation once it has taken the time a person
+// would (a short pause, or against the clock pace::seconds); the app thinks on a worker
+// thread, tests call ai::think. Meanwhile the computer's piece on the panel pulses
+// once, its clock runs, and the child can't move its pieces. Take back then takes back
+// the child's last move and the computer's reply.
 namespace game;
 import std;
 import math;
@@ -24,14 +25,15 @@ import gui from "../gui";
 import strings from "../strings";
 import .panel;
 import .clock;
+import .pace;
 
 let POP = 0.6;              // seconds the winner's piece takes to pop in
 let SPARKS = 14;
 let SPARK_CYCLE = 2.4;      // seconds a spark takes to drift up and fade
 let SPARK_CYCLES = 2;       // each spark drifts this many times, then the screen is still
 let STEP = 2.0;             // seconds: the longest gap between two frames the clock counts
-let PAUSE = [0.8, 0.6, 0.45];   // seconds from the computer's turn to its move, by level
-let PULSE = 1.2;            // seconds: a cycle of the computer's ring while it thinks
+let PAUSE = [0.8, 0.6, 0.45];   // seconds from the computer's turn to its move without a clock, by level
+let PULSE = 1.2;            // seconds: the computer's ring pulses once as it begins to think
 
 // What the screen asks the shell for.
 let STAY = 0;
@@ -62,6 +64,7 @@ struct Game {
     asking:   i64         = 0,                      // the one waited for, or 0
     asked_at: f64         = 0.0,                    // when the computer's turn began
     answered: bool        = false,                  // whether its answer has come
+    wait:     f64         = 0.0,                    // seconds from its turn to its move, once answered
     reply:    rules::Move = rules::Move { .. },
     // Against the computer, the result as the game ends, for the shell: 1 the child won,
     // -1 lost; and whether it was given, for a game counts once.
@@ -140,11 +143,19 @@ fn asking(gm: Game&) -> Ask {
     return Ask { id: gm.asking, pos: gm.b.pos, skill: gm.skill, seed: seed };
 }
 
-// The computer's move for the ask `id`; one for an ask no longer open is ignored.
-fn answer(gm: Game&, id: i64, m: rules::Move) {
+// The computer's move for the ask `id`, `close` of the moves about as good as it
+// (ai::close); one for an ask no longer open is ignored. Its move comes after the
+// level's pause, or, while its clock runs, after the time a player of its level would
+// take (pace::seconds).
+fn answer(gm: Game&, id: i64, m: rules::Move, close: i64) {
     guard id != 0 && id == gm.asking else { return; }
     gm.reply = m;
     gm.answered = true;
+    let level = clamp(gm.level, EASY, HARD);
+    gm.wait = PAUSE[level];
+    guard gm.clock.running == gm.computer else { return; }
+    gm.wait = pace::seconds(PAUSE[level], level, gm.clock.left[gm.computer], clock::INCREMENTS[gm.clock.kind],
+                            gm.b.history.len, gm.b.moves.len, board::must_capture(gm.b), close);
 }
 
 // Takes back a move, also one still animating: against the computer, the child's last
@@ -176,7 +187,7 @@ fn think(gm: Game&, now: f64) -> bool {
         gm.asked_at = now;
         gm.answered = false;
     }
-    guard gm.answered && now >= gm.asked_at + PAUSE[clamp(gm.level, EASY, HARD)] else { return false; }
+    guard gm.answered && now >= gm.asked_at + gm.wait else { return false; }
     let b .= gm.b;
     gm.asking = 0;
     for k in b.moves.len {
@@ -188,10 +199,18 @@ fn think(gm: Game&, now: f64) -> bool {
     return false;
 }
 
-// The computer's ring while it thinks: full, fading to a third and back.
+// The computer's ring as it begins to think: full, fading to a third and back once,
+// then still. A longer think shows on its clock, which counts each second, so the app
+// draws nothing more until the move (due()).
 fn pulse(gm: Game&, now: f64) -> f32 {
-    guard gm.asking != 0 else { return 1.0; }
+    guard gm.asking != 0 && now < gm.asked_at + PULSE else { return 1.0; }
     return (0.65 + 0.35 * cos(2.0 * PI * (now - gm.asked_at) / PULSE)) as f32;
+}
+
+// Seconds until the computer's move is due, for the app to wake then, or -1.
+fn due(gm: Game&, now: f64) -> f64 {
+    guard gm.asking != 0 && gm.answered else { return -1.0; }
+    return max(gm.asked_at + gm.wait - now, 0.0);
 }
 
 // One frame, after gui::begin, its pieces over the UI put in `over`. Returns what the
@@ -267,7 +286,8 @@ fn frame(gm: Game&, g: gui::Gui&, l: board::Layout, now: f64, over: Overlay&) ->
 // Whether anything is still moving at `now`; the app draws while it is.
 fn animating(gm: Game&, g: gui::Gui&, now: f64) -> bool {
     let celebrating = gm.won_at >= 0.0 && now < gm.won_at + SPARK_CYCLE * (SPARK_CYCLES + 1);
-    return board::animating(gm.b, now) || gui::animating(g) || celebrating || gm.asking != 0;
+    let pulsing = gm.asking != 0 && (!gm.answered || now < gm.asked_at + PULSE);
+    return board::animating(gm.b, now) || gui::animating(g) || celebrating || pulsing;
 }
 
 // A piece of `side` over the UI centered in `spot` with radius r, at opacity a, a man (0)

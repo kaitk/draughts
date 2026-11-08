@@ -243,15 +243,18 @@ fn main() {
             gfx::end_pass();
             dirty = false;
         }
-        // A running clock is drawn when the time it shows changes; a timer wakes the loop
-        // then, rather than whenever the idle wait ends (wake.c).
-        let ck .= sh.game.clock;
-        if sh.screen == shell::GAME && ck.running >= 0 {
-            let next = clock::until_next(ck);
-            if wake_at < now || now + next < wake_at - 0.005 {
-                draughts_wake_in((1000.0 * next) as i64 + 2);
-                wake_at = now + next;
-            }
+        // A running clock is drawn when the time it shows changes, and the computer's move
+        // played when it is due; a timer wakes the loop then, rather than whenever the
+        // idle wait ends (wake.c).
+        var next = -1.0;
+        if sh.screen == shell::GAME {
+            next = clock::until_next(sh.game.clock);
+            let due = game::due(sh.game, now);
+            if due >= 0.0 && (next < 0.0 || due < next) { next = due; }
+        }
+        if next >= 0.0 && (wake_at < now || now + next < wake_at - 0.005) {
+            draughts_wake_in((1000.0 * next) as i64 + 2);
+            wake_at = now + next;
         }
         // A widget declared this frame before a click changed what it shows (a choice
         // lit, a toggle), so the next frame draws again; this one drew, so the next

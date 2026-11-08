@@ -49,7 +49,7 @@ fn start_over(g: gui::Gui&) -> float2 {
 // Answers the game's ask at once, as the app's worker does later.
 fn answer(sh: shell::Shell&, e: ai::Engine&) {
     let ask = game::asking(sh.game);
-    if ask.id != 0 { game::answer(sh.game, ask.id, ai::think(e, ask.pos, ask.skill, ask.seed)); }
+    if ask.id != 0 { game::answer(sh.game, ask.id, ai::think(e, ask.pos, ask.skill, ask.seed), ai::close(e, pace::CLOSE)); }
 }
 
 fn skills(sh: shell::Shell&) -> u8[>..] {

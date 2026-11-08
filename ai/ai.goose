@@ -306,3 +306,15 @@ fn weight(e: Engine&, i: i64, pr: Params) -> i64 {
     let k = worse * 16 / pr.temper;
     return if k < 128 { FALLOFF[k] } else { 0 };
 }
+
+// How many moves the main search saw within `window` of the best: 1 when one move stands
+// out, more when several are about as good. A forced move counts as itself. Only after
+// step returned true.
+fn close(e: Engine&, window: i64) -> i64 {
+    guard e.moves.len > 1 else { return e.moves.len; }
+    var n = 0;
+    for i in e.moves.len {
+        if e.main_exact[i] && e.best - e.main_score[i] <= window { n += 1; }
+    }
+    return n;
+}
