@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The app runs SDL's stock SDLActivity, which loads libSDL3.so and libmain.so and enters
-     the Goose program at SDL_main, through DraughtsActivity (android/java/), which only adds
-     development flags from the intent. The icon and the theme are in res/ (task 028); the
-     label is still a literal. scripts/android.py builds the APK. -->
+     the Goose program at SDL_main, through DraughtsActivity (android/java/), which adds
+     development flags from the intent and keeps the launch navy until the first frame. The
+     icon and the theme are in res/ (task 028); the label is still a literal.
+     scripts/android.py builds the APK. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.kaitk.draughts"
     android:versionCode="1"

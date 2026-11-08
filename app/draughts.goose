@@ -43,6 +43,8 @@ extern fn draughts_locales(out: u8[:]) -> i64;
 extern fn draughts_storage(out: u8[:]) -> i64;
 // Wakes the loop in ms milliseconds, where frame() waits for events (wake.c).
 extern fn draughts_wake_in(ms: i64);
+// Tells Android the first frame is on screen, to lift the splash and the cover (launch.c).
+extern fn draughts_first_frame();
 
 // The theme a season setting picks: its own, or by the date.
 fn theme_for(season: i64) -> i64 {
@@ -179,6 +181,8 @@ fn main() {
     var wake_at = -1.0;
     var thinker = think::Thinker {};
     while gfx::frame() {
+        // frame() presents what the pass before it drew, and the first pass draws.
+        if gfx::frame_count() == 2 { draughts_first_frame(); }
         if gfx::key_pressed("Escape") { break; }
         // Android may kill the app once it is paused; it loses focus then, and SDL lets
         // the loop run once more before blocking, so the game is written here: one small
