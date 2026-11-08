@@ -55,9 +55,9 @@ desktop; placeholders do until then. 024 reviews the Estonian translation once t
 The MVP's features are in (puzzles, the computer with its clock, three variants, the
 icon and launch). The order for what is left:
 
-1. The `--tap` development flag stalls on the tablet after a tap that only selects a
-   piece (task 007, "On the tablet"): a small fix first, so the tablet checks after it
-   can play with `--tap`.
+1. Done (2026-11-08): `--tap` seemed to stall on the tablet; the cause was `am start`
+   bringing back a running app with its old flags, so tablet runs start with `-S`
+   (task 007).
 2. 031, the win: take a, the pieces answer.
 3. The launcher's name follows the phone's language ("Kabe" in Estonian):
    `scripts/android.py` writes `res/values*/strings.xml` from `strings/<lang>.txt`, and
