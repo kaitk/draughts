@@ -19,7 +19,7 @@ before then: the flows should exist first, so the review is of real code (asked
 
 ## Acceptance criteria
 
-- [ ] A written review with the changes proposed, agreed with the user
+- [x] A written review with the changes proposed, agreed with the user
 - [ ] The agreed changes made, tests passing, the app unchanged on the Mac and tablet
 
 ## Settled (2026-11-08)
@@ -72,6 +72,12 @@ where they differ, both setups, `--clock 5+3 --tap c3 --tap d4`, and `--computer
 before and after: seven byte-identical; the computer's game and both settings differ
 only by the computer's ring's pulse and the preview's flash, as two runs before any
 change did. The APK builds (5624 KB). The tablet is not checked: it was locked.
+
+## Agreed (2026-11-08)
+
+The user took the recommendations: 6, 8, and 1 now; 2 and 5 at the start of the puzzle
+screen (task 007), which would otherwise add a third panel layout to `board` and another
+copy of each test helper; 3 maybe, later; 4, 7, and 9 left as they are.
 
 ## Review: left for the user
 

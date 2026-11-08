@@ -25,6 +25,13 @@ ghost of the piece, with "try again" and a star going out.
   next is the big tile, dim until solved, then lit, with the stars filling in the panel
   and no card over the board.
 
+## First, from task 020's review
+
+- Move the game panel's layout from `board::layout` to `game` (review item 2), so the
+  puzzle screen's panels are laid out where the game's are.
+- A `test/drive/` package for the UI tests' shared helpers (item 5) before the puzzle
+  tests add another copy.
+
 ## Acceptance criteria
 
 - [ ] Format documented, loaded at startup, validated by the rules engine (every solution legal)
