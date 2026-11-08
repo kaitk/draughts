@@ -83,3 +83,11 @@ goal.take = Capture {}
 goal.crown = Become a king
 goal.win = Win the game
 goal.safe = Stay safe
+
+players.who = Who's playing?
+players.new = New player
+players.picture = Picture
+players.name = Name
+players.start_again = Start again
+players.remove = Remove
+players.hold = Hold

@@ -28,10 +28,11 @@ let VERT = """
         vec4 rect = q[i];
         vec4 look = q[i + 2];
         vec4 extra = q[i + 3];
-        // Room round the rect for the shadow: glass casts one 30 dp down, a tile 12 dp.
+        // Room round the rect for the shadow: glass casts one 30 dp down, a tile 12 dp, a
+        // face 12 dp and its glow 26 dp round it.
         int kind = int(look.x);
         // A glyph is drawn exactly over its rect, a texel to a pixel.
-        float m = (kind == 0 ? 48.0 : kind == 1 ? 20.0 : kind == 4 ? 0.0 : 1.0) * extra.x;
+        float m = (kind == 0 ? 48.0 : kind == 1 ? 20.0 : kind == 8 ? 28.0 : kind == 4 ? 0.0 : 1.0) * extra.x;
         vec2 px = mix(rect.xy - m, rect.xy + rect.zw + m, CORNERS[gl_VertexIndex]);
         gl_Position = vec4(px.x / screen.x * 2.0 - 1.0, 1.0 - px.y / screen.y * 2.0, 0.0, 1.0);
         v_px = px;
@@ -213,7 +214,63 @@ let FRAG = """
         if (k == 21) {          // home's way out: an X
             return min(seg(p, vec2(6.0, 6.0), vec2(18.0, 18.0)), seg(p, vec2(18.0, 6.0), vec2(6.0, 18.0)));
         }
+        if (k == 22) {          // a new player: +
+            return min(seg(p, vec2(12.0, 5.0), vec2(12.0, 19.0)), seg(p, vec2(5.0, 12.0), vec2(19.0, 12.0)));
+        }
+        if (k == 23) {          // editing: a pencil
+            float d = min(seg(p, vec2(4.0, 20.0), vec2(5.0, 15.5)), seg(p, vec2(5.0, 15.5), vec2(15.5, 5.0)));
+            d = min(d, arc(p, vec2(17.0, 6.5), 2.12, -2.3561945, 3.1415927));
+            d = min(d, min(seg(p, vec2(18.5, 8.0), vec2(8.0, 18.5)), seg(p, vec2(8.0, 18.5), vec2(4.0, 20.0))));
+            return min(d, seg(p, vec2(13.5, 7.0), vec2(16.5, 10.0)));
+        }
+        if (k == 24) {          // done: a check
+            return min(seg(p, vec2(4.5, 12.5), vec2(9.5, 17.5)), seg(p, vec2(9.5, 17.5), vec2(19.5, 6.5)));
+        }
+        if (k == 25) {          // removing: a bin
+            float d = seg(p, vec2(4.0, 7.0), vec2(20.0, 7.0));
+            d = min(d, min(seg(p, vec2(9.5, 7.0), vec2(9.5, 4.5)), seg(p, vec2(9.5, 4.5), vec2(14.5, 4.5))));
+            d = min(d, seg(p, vec2(14.5, 4.5), vec2(14.5, 7.0)));
+            d = min(d, min(seg(p, vec2(6.0, 7.0), vec2(7.0, 20.0)), seg(p, vec2(7.0, 20.0), vec2(17.0, 20.0))));
+            return min(d, seg(p, vec2(17.0, 20.0), vec2(18.0, 7.0)));
+        }
         return 1e9;
+    }
+    // A player's badge (players::ANIMALS gives each its colour), on a disc d away (negative
+    // inside) of radius rad: a placeholder until the badge art is drawn (task 038), the
+    // colour with a piece's turned rim, a groove a fifth in from the edge and a light
+    // shoulder inside it. The one place the picture is drawn; replace it here.
+    vec3 badge(int k, vec2 p, vec2 c, float rad, float u, float d) {
+        const vec3 COLOURS[6] = vec3[](vec3(0.851, 0.475, 0.227), vec3(0.435, 0.624, 0.812),
+                                       vec3(0.549, 0.380, 0.259), vec3(0.541, 0.455, 0.769),
+                                       vec3(0.369, 0.620, 0.353), vec3(0.769, 0.435, 0.525));
+        vec3 col = COLOURS[clamp(k, 0, 5)];
+        float t = clamp(length((p - c) / (2.0 * rad) - vec2(0.0, -0.2)) / 0.62, 0.0, 1.0);
+        vec3 face = mix(tint(col, 0.14), col, t);
+        float groove = abs(d + 0.2 * rad) - 0.8 * u;
+        face = mix(face, tint(col, -0.35), cover(groove));
+        face = mix(face, tint(col, 0.22), 0.6 * cover(abs(d + 0.2 * rad + 2.0 * u) - 0.7 * u));
+        return face;
+    }
+    // How far along a rounded rect's outline the point nearest q is, clockwise from its
+    // top's middle (y down), the rect's inner half size a (its half size less r) and its
+    // corners' radius r.
+    float along(vec2 q, vec2 a, float r) {
+        float qa = 1.5707963 * r;
+        float total = 4.0 * (a.x + a.y + qa);
+        vec2 d = q - clamp(q, -a, a);
+        if (d.x == 0.0 && d.y == 0.0) {
+            vec2 m = a - abs(q);
+            if (m.y < m.x) d.y = q.y < 0.0 ? -1.0 : 1.0;
+            else d.x = q.x < 0.0 ? -1.0 : 1.0;
+        }
+        if (d.x == 0.0 && d.y < 0.0) return q.x >= 0.0 ? q.x : total + q.x;
+        if (d.x > 0.0 && d.y < 0.0) return a.x + r * atan(d.x, -d.y);
+        if (d.x > 0.0 && d.y == 0.0) return a.x + qa + q.y + a.y;
+        if (d.x > 0.0) return a.x + qa + 2.0 * a.y + r * atan(d.y, d.x);
+        if (d.x == 0.0) return 2.0 * a.x + 2.0 * qa + 2.0 * a.y - q.x;
+        if (d.y > 0.0) return 3.0 * a.x + 2.0 * qa + 2.0 * a.y + r * atan(-d.x, d.y);
+        if (d.y == 0.0) return 3.0 * a.x + 3.0 * qa + 3.0 * a.y - q.y;
+        return 3.0 * a.x + 3.0 * qa + 4.0 * a.y + r * atan(-d.y, -d.x);
     }
     void shade() {
         int kind = int(v_look.x);
@@ -287,7 +344,8 @@ let FRAG = """
             float px = 24.0 / v_rect.z;         // one pixel in grid units
             float d = icon(int(v_look.z), q) - 1.2;
             float a = clamp(0.5 - d / px, 0.0, 1.0) * (style == 3 ? 0.45 : 1.0) * v_color.a;
-            vec3 ic = style == 2 ? glow.rgb : text.rgb;
+            // CLOCK_LOW: the forced-capture red toward the text color (removing a player).
+            vec3 ic = style == 2 ? glow.rgb : style == 11 ? mix(vec3(1.0, 0.353, 0.29), text.rgb, 0.45) : text.rgb;
             result = vec4(ic * a, a);
             return;
         }
@@ -308,6 +366,46 @@ let FRAG = """
             vec2 t = (p - v_rect.xy) / v_rect.zw;
             float a = texture(atlas, mix(v_look.yz, vec2(v_look.w, v_extra.y), t)).r * v_color.a;
             result = vec4((mod(v_extra.z, 2.0) > 0.5 ? v_color.rgb : text.rgb) * a, a);
+            return;
+        }
+        if (kind == 7) {
+            // A hold's ring: a 4 dp outline 2 dp inside the tile, filled clockwise from its
+            // top's middle as far as look.z, in the glow color or the forced-capture red.
+            float w = 4.0 * u;
+            vec2 hh = h - 2.0 * u;
+            float rr = max(r - 2.0 * u, 0.0);
+            vec2 a = max(hh - rr, 0.0);
+            float total = 4.0 * (a.x + a.y) + 6.2831853 * rr;
+            float on = clamp((v_look.z * total - along(p - c, a, rr)) / u + 0.5, 0.0, 1.0);
+            float al = cover(abs(box(p, c, hh, rr)) - 0.5 * w) * on;
+            vec3 rc = v_extra.y > 0.5 ? vec3(1.0, 0.353, 0.29) : glow.rgb;
+            result = vec4(rc * al, al);
+            return;
+        }
+        if (kind == 8) {
+            // A player's face (prototypes/profiles.html): the badge (badge()) on a disc
+            // with a 1 dp light inner border and a soft shadow. Lit, a 4 dp glow ring and a
+            // 22 dp glow at 50% round it. The face for + is a faint disc with a 2 dp border. color.a
+            // dims it (a picture another player has).
+            float rad = 0.5 * min(v_rect.z, v_rect.w);
+            float d = length(p - c) - rad;
+            float fa = v_color.a;
+            int k = int(v_look.z);
+            if (v_look.w > 0.5) {
+                over(glow.rgb, 0.5 * shadow(p, c, vec2(rad), rad, 0.0, 22.0 * u, 0.0) * fa);
+                over(glow.rgb, cover(d - 4.0 * u) * fa);
+            }
+            if (k < 0) {
+                over(vec3(1.0), 0.08 * cover(d) * fa);
+                over(vec3(1.0), 0.35 * (cover(d) - cover(d + 2.0 * u)) * fa);
+                result = acc;
+                return;
+            }
+            over(vec3(0.0), 0.55 * shadow(p, c, vec2(rad), rad, 6.0 * u, 14.0 * u, -8.0 * u) * (1.0 - cover(d)) * fa);
+            float in_disc = cover(d) * fa;
+            over(badge(k, p, c, rad, u, d), in_disc);
+            over(vec3(1.0), 0.22 * (cover(d) - cover(d + u)) * fa);
+            result = acc;
             return;
         }
         if (kind == 6) {

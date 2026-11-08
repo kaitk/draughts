@@ -41,6 +41,7 @@ import .settings;
 import .picker;
 import .puzzle;
 import .players;
+import .who;
 
 let HOME = 0;
 let GAME = 1;
@@ -58,6 +59,7 @@ struct Shell {
     next:    board::Board,                    // the board beside home's setup: the game its play starts
     prefs:   settings::Settings = settings::Settings {},  // the playing player's, and the device's language
     players: players::Players   = players::Players {},
+    who:     who::Who           = who::Who {},        // who's playing, over home's menu
     changed: bool               = false,      // prefs changed since the app last wrote them
     quit:    bool               = false,      // home's way out was tapped: the app stops
     drawn:   i64                = -1,         // the screen the last frame declared
@@ -151,7 +153,9 @@ fn play_puzzle(sh: Shell&, index: i64, now: f64 = 0.0) {
 // leaves the app as the system's does, and Escape closes the window. In a transition it
 // acts on the screen come to, as a tap does.
 fn back(sh: Shell&, now: f64) -> bool {
-    if sh.screen == HOME {
+    if sh.screen == HOME && sh.who.state != who::CLOSED {
+        who::back(sh.who);
+    } else if sh.screen == HOME {
         guard sh.setup != home::NOTHING else { return false; }
         sh.setup = home::NOTHING;
     } else if sh.screen == SETTINGS {
@@ -402,8 +406,15 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     let b .= board_of(sh, HOME);
     if board::update(b, now) { changed = true; }
     let flip = turned(sh, sh.setup);
+    // Who's playing, over the menu: home under it takes no pointer.
+    let card = sh.who.state != who::CLOSED && sh.setup == home::NOTHING;
+    if card { gui::listen(g, false); }
     let pick = home::frame(sh.over, g, sh.layout, rules::VARIANTS[b.variant].size, area, sh.setup, sh.prefs);
     sh.layout.flip = flip;
+    if card {
+        gui::listen(g, true);
+        if who_card(sh, g, area) { changed = true; }
+    }
     if pick != home::NOTHING { changed = true; }
     match pick {
         home::SETTINGS => {
@@ -417,10 +428,28 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
         home::BACK => { sh.setup = home::NOTHING; },
         home::CHANGED => { sh.changed = true; },
         home::EXIT => { sh.quit = true; },
+        home::PLAYERS => { who::open(sh.who); },
         home::PLAY => { play(sh, now); },
         _ => {},
     }
     return changed;
+}
+
+// Who's playing over home for this frame, doing what it asks: switching to a player,
+// adding one, saving one's picture and name, starting one again, removing one. Returns
+// whether anything on screen changed.
+fn who_card(sh: Shell&, g: gui::Gui&, area: float4) -> bool {
+    let ask, index = who::frame(sh.who, sh.players, g, area, gui::bleed(g, area, area));
+    let w .= sh.who;
+    match ask {
+        who::SWITCH => { switch_player(sh, index); },
+        who::CREATE => { add_player(sh, w.picture, w.name); },
+        who::SAVE => { edit_player(sh, index, w.picture, w.name); },
+        who::AGAIN => { start_again(sh, index); },
+        who::REMOVE => { remove_player(sh, index); },
+        _ => {},
+    }
+    return ask != who::NOTHING;
 }
 
 // Declares `screen`, the one a transition leaves, as it stands, its pieces over the UI

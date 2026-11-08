@@ -17,8 +17,9 @@ import std;
 import os;
 
 let MAX_PLAYERS = 4;
-// The pictures, each an animal on its own colour (app/widgets.goose draws them), as the
-// file names them.
+// The pictures (badges), as the file names them, each with its own colour; one a player
+// has is not offered to another. app/widgets.goose's badge() draws them, for now a
+// placeholder in the badge's colour: the art is still open (task 038).
 let ANIMALS = ["fox", "hare", "bear", "owl", "frog", "hedgehog"];
 let NAME_CHARS = 12;
 let NAME_BYTES = 36;        // 12 characters of at most 3 bytes: the faces hold none longer
@@ -44,6 +45,9 @@ struct Players {
     // changes.
     language: i64 = -2,
     player:   i64 = -1,
+    // Whether this start found no player and no settings.txt before them: a fresh install,
+    // whose child picks their badge first.
+    fresh: bool = false,
 }
 
 // Whether character c may be in a name: one the faces draw, and no control character.
@@ -195,7 +199,9 @@ fn load(ps: Players&, dir: const u8[:], games: bool) -> settings::Settings {
     var text: u8[>..] = [];
     if files(ps) { read_file(device_path(ps), text); }
     var id = named_player(text);
+    ps.fresh = false;
     if files(ps) && id == 0 {
+        ps.fresh = text.len == 0;
         migrate(ps, text);
         id = 1;
     } else {

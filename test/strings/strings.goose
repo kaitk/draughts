@@ -14,7 +14,8 @@ let NAMED = [
     "season.summer", "season.autumn", "hints.mistakes", "hints.moves", "board.flat",
     "board.raised", "settings.game", "settings.look", "settings.tutorial", "board.flat_note",
     "board.raised_note", "kings.auto", "kings.crown", "kings.stack",
-    "tutorial.learn",
+    "tutorial.learn", "players.who", "players.new", "players.picture", "players.name", "players.start_again",
+    "players.remove", "players.hold",
 ];
 
 fn main() {
@@ -54,7 +55,8 @@ fn main() {
               strings::SETTINGS_GAME, strings::SETTINGS_LOOK, strings::SETTINGS_TUTORIAL,
               strings::BOARD_FLAT_NOTE, strings::BOARD_RAISED_NOTE, strings::KINGS_AUTO,
               strings::KINGS_CROWN, strings::KINGS_STACK,
-              strings::TUTORIAL_LEARN];
+              strings::TUTORIAL_LEARN, strings::PLAYERS_WHO, strings::PLAYERS_NEW, strings::PLAYERS_PICTURE,
+              strings::PLAYERS_NAME, strings::PLAYERS_START_AGAIN, strings::PLAYERS_REMOVE, strings::PLAYERS_HOLD];
     var wrong = 0;
     for k, i in ks {
         if strings::KEYS[k] != NAMED[i] {

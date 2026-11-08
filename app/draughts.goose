@@ -262,6 +262,8 @@ fn main() {
     }
     // The playing player's game, with the screen it was on.
     shell::read_game(sh);
+    // A fresh install's first run opens on the sheet of its one player, to pick a badge.
+    if keep && sh.players.fresh { who::first_run(sh.who, sh.players); }
     var d = draw::new(kind);
     var w = widgets::new();
     var g = gui::Gui {};
@@ -276,6 +278,13 @@ fn main() {
     var wake_at = -1.0;
     var released = false;
     var thinker = think::Thinker {};
+    // A player's name, typed: the keyboard is up while the shell asks (shell::who), and its
+    // characters, Backspace, and Return go to the UI with the pointer.
+    var events: gfx::Event[64] = [default<gfx::Event>(); 64];
+    let erase_key = gfx::scancode("Backspace");
+    let enter_key = gfx::scancode("Return");
+    var text_on = false;
+    var keyboard = 0;
     while gfx::frame() {
         // frame() presents what the pass before it drew, and the first pass draws.
         if gfx::frame_count() == 2 { draughts_first_frame(); }
@@ -325,9 +334,18 @@ fn main() {
         // A quick tap can press and release within one frame, which mouse_down never
         // sees; pressed and released catch it. The screens give the pointer to the UI
         // first; a press that lands on it never reaches the board.
-        let input = gui::Input { at: gfx::mouse_pos(), down: gfx::mouse_down(gfx::MOUSE_LEFT),
+        var input = gui::Input { at: gfx::mouse_pos(), down: gfx::mouse_down(gfx::MOUSE_LEFT),
                                  pressed: gfx::mouse_pressed(gfx::MOUSE_LEFT),
                                  released: gfx::mouse_released(gfx::MOUSE_LEFT) };
+        if text_on {
+            let n = min(gfx::events_into(events), events.len);
+            for e in events[..n] {
+                guard input.typed.len < gui::MAX_TYPED else { break; }
+                if e.kind == gfx::EVENT_TEXT { input.typed.push(e.codepoint); }
+                if e.kind == gfx::EVENT_KEY && e.down && e.scancode == erase_key { input.typed.push(gui::ERASE); }
+                if e.kind == gfx::EVENT_KEY && e.down && e.scancode == enter_key { input.typed.push(gui::ENTER); }
+            }
+        }
         gui::begin(g, input, scale, now);
         // A switch the flags ask for waits for their taps to have played out, and for the
         // win they lead to, if any, held at --win's moment (which must be past: the
@@ -356,6 +374,14 @@ fn main() {
         if hold >= 0.0 && sh.from >= 0 { sh.since = now - hold * shell::DURATION; }
         if win_at >= 0.0 && sh.game.won_at >= 0.0 { sh.game.won_at = now - win_at; }
         if shell::frame(sh, g, size.x, size.y, now) { dirty = true; }
+        // The keyboard: up while a name is typed, brought up again by each tap on the name.
+        let typing = sh.who.typing && sh.screen == shell::HOME;
+        if typing != text_on || (typing && sh.who.keyboard != keyboard) {
+            gfx::text_input(false);
+            if typing { gfx::text_input(true); }
+            text_on = typing;
+            keyboard = sh.who.keyboard;
+        }
         // Home's way out ends the loop; the game is written below.
         if sh.quit { break; }
         // The computer's move: the worker gets what the game asks, and the game the answer.

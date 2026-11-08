@@ -1,8 +1,8 @@
-home 0.0: home, board 580.0,120.0 560.0 8x8, mix 100.0%, quads 77 faded 0 mostly 0, pieces 24 faint 0, over the UI 1, hole none, drawn true, animating false
+home 0.0: home, board 580.0,120.0 560.0 8x8, mix 100.0%, quads 80 faded 0 mostly 0, pieces 24 faint 0, over the UI 1, hole none, drawn true, animating false
 tapped settings: settings, from home true, drawn true with home's board true at 0.0%, its pieces 24, hole none
-   1.0825: settings, board 603.0,124.0 552.0 8x8, mix 16.0%, quads 306 faded 306 mostly 229, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
-   1.145: settings, board 653.0,134.0 533.0 8x8, mix 50.0%, quads 306 faded 306 mostly 0, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
-   1.2075: settings, board 703.0,143.0 514.0 8x8, mix 84.0%, quads 306 faded 306 mostly 77, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
+   1.0825: settings, board 603.0,124.0 552.0 8x8, mix 16.0%, quads 309 faded 309 mostly 229, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
+   1.145: settings, board 653.0,134.0 533.0 8x8, mix 50.0%, quads 309 faded 309 mostly 0, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
+   1.2075: settings, board 703.0,143.0 514.0 8x8, mix 84.0%, quads 309 faded 309 mostly 80, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
    1.27: settings, board 726.0,147.0 506.0 10x10, mix 100.0%, quads 229 faded 0 mostly 0, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn true, animating true
 ended 1.3: settings, board 726.0,147.0 506.0 10x10, mix 100.0%, quads 229 faded 0 mostly 0, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn false, animating true
    1.4: settings, board 726.0,147.0 506.0 10x10, mix 100.0%, quads 229 faded 0 mostly 0, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn false, animating true
@@ -11,22 +11,22 @@ idle 5.4: settings, board 726.0,147.0 506.0 10x10, mix 100.0%, quads 229 faded 0
 the board went right all the way true
 settings at rest as opened straight: board true, quads true
 tapped back: home, settings' board true, the preview's pieces 19, hole none
-   6.04: home, board 723.0,147.0 507.0 8x8, mix 2.0%, quads 306 faded 306 mostly 77, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
-   6.145: home, board 653.0,134.0 533.0 8x8, mix 50.0%, quads 306 faded 306 mostly 0, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
+   6.04: home, board 723.0,147.0 507.0 8x8, mix 2.0%, quads 309 faded 309 mostly 80, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
+   6.145: home, board 653.0,134.0 533.0 8x8, mix 50.0%, quads 309 faded 309 mostly 0, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
 back: home, board true, animating false
-again 7.1: settings, board 615.0,127.0 547.0 8x8, mix 24.0%, quads 306 faded 306 mostly 229, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
+again 7.1: settings, board 615.0,127.0 547.0 8x8, mix 24.0%, quads 309 faded 309 mostly 229, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
 a tap where home's continue was: settings, a setting changed true
-before back 7.16: settings, board 666.0,136.0 528.0 8x8, mix 59.0%, quads 306 faded 306 mostly 77, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
+before back 7.16: settings, board 666.0,136.0 528.0 8x8, mix 59.0%, quads 309 faded 309 mostly 80, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
 back during it: home, from settings true, the board on the frames 675.0,138.0 525.0, 683.0,139.0 522.0, 675.0,138.0 525.0
-   7.24: home, board 631.0,130.0 541.0 8x8, mix 65.0%, quads 306 faded 306 mostly 229, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
-   7.32: home, board 583.0,120.0 559.0 8x8, mix 98.0%, quads 306 faded 306 mostly 229, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
-ended 7.36: home, board 580.0,120.0 560.0 8x8, mix 100.0%, quads 77 faded 0 mostly 0, pieces 24 faint 0, over the UI 1, hole none, drawn true, animating false
-idle 7.5: home, board 580.0,120.0 560.0 8x8, mix 100.0%, quads 77 faded 0 mostly 0, pieces 24 faint 0, over the UI 1, hole none, drawn false, animating false
+   7.24: home, board 631.0,130.0 541.0 8x8, mix 65.0%, quads 309 faded 309 mostly 229, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
+   7.32: home, board 583.0,120.0 559.0 8x8, mix 98.0%, quads 309 faded 309 mostly 229, pieces 24 faint 0, over the UI 3, hole the board, drawn true, animating true
+ended 7.36: home, board 580.0,120.0 560.0 8x8, mix 100.0%, quads 80 faded 0 mostly 0, pieces 24 faint 0, over the UI 1, hole none, drawn true, animating false
+idle 7.5: home, board 580.0,120.0 560.0 8x8, mix 100.0%, quads 80 faded 0 mostly 0, pieces 24 faint 0, over the UI 1, hole none, drawn false, animating false
 at home's place true
-portrait home 0.0: home, board 90.0,128.0 620.0 10x10, mix 100.0%, quads 69 faded 0 mostly 0, pieces 40 faint 0, over the UI 1, hole none, drawn true, animating false
-   1.0825: settings, board 97.0,133.0 606.0 10x10, mix 16.0%, quads 298 faded 298 mostly 229, pieces 40 faint 0, over the UI 3, hole the board, drawn true, animating true
-   1.145: settings, board 112.0,142.0 575.0 10x10, mix 50.0%, quads 298 faded 298 mostly 0, pieces 40 faint 0, over the UI 3, hole the board, drawn true, animating true
-   1.2075: settings, board 128.0,152.0 544.0 10x10, mix 84.0%, quads 298 faded 298 mostly 69, pieces 40 faint 0, over the UI 3, hole the board, drawn true, animating true
+portrait home 0.0: home, board 90.0,128.0 620.0 10x10, mix 100.0%, quads 72 faded 0 mostly 0, pieces 40 faint 0, over the UI 1, hole none, drawn true, animating false
+   1.0825: settings, board 97.0,133.0 606.0 10x10, mix 16.0%, quads 301 faded 301 mostly 229, pieces 40 faint 0, over the UI 3, hole the board, drawn true, animating true
+   1.145: settings, board 112.0,142.0 575.0 10x10, mix 50.0%, quads 301 faded 301 mostly 0, pieces 40 faint 0, over the UI 3, hole the board, drawn true, animating true
+   1.2075: settings, board 128.0,152.0 544.0 10x10, mix 84.0%, quads 301 faded 301 mostly 72, pieces 40 faint 0, over the UI 3, hole the board, drawn true, animating true
    1.27: settings, board 135.0,157.0 530.0 10x10, mix 100.0%, quads 229 faded 0 mostly 0, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn true, animating true
 ended 1.3: settings, board 135.0,157.0 530.0 10x10, mix 100.0%, quads 229 faded 0 mostly 0, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn false, animating true
 after the flash and the pulse 5.3: settings, board 135.0,157.0 530.0 10x10, mix 100.0%, quads 229 faded 0 mostly 0, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn true, animating false

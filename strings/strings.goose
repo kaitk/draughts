@@ -32,6 +32,8 @@ let KEYS = [
     "clock.none", "clock.blitz", "clock.blitz_note", "clock.rapid", "clock.rapid_note",
     "puzzles.stars", "puzzle.next", "puzzle.try_again", "puzzle.solved",
     "goal.take", "goal.crown", "goal.win", "goal.safe",
+    "players.who", "players.new", "players.picture", "players.name", "players.start_again", "players.remove",
+    "players.hold",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -100,7 +102,14 @@ let GOAL_TAKE = 63;         // "{}", the pieces to capture
 let GOAL_CROWN = 64;
 let GOAL_WIN = 65;
 let GOAL_SAFE = 66;
-let COUNT = 67;
+let PLAYERS_WHO = 67;
+let PLAYERS_NEW = 68;
+let PLAYERS_PICTURE = 69;
+let PLAYERS_NAME = 70;
+let PLAYERS_START_AGAIN = 71;
+let PLAYERS_REMOVE = 72;
+let PLAYERS_HOLD = 73;      // under start again and remove: how they are done
+let COUNT = 74;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

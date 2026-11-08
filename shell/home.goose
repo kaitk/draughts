@@ -13,6 +13,10 @@
 //
 // A round glass X in the screen's top right closes the app, at once: the game is kept in
 // any case. In portrait the board moves down and shrinks to clear it.
+//
+// On the menu, a round glass chip with the player's face and name opens who's playing
+// (who.goose): mirroring the X in the top left in portrait, beside the X in landscape,
+// where the column takes the left (player_spot, one place to move it).
 namespace home;
 import std;
 import vec;
@@ -35,6 +39,7 @@ let PLAY = 6;               // a new game as the setup stands
 let CHANGED = 7;            // a choice in the setup
 let PUZZLES = 8;
 let EXIT = 9;               // close the app
+let PLAYERS = 10;           // who's playing
 
 let ROWS = 4;               // and settings, a fifth in landscape
 let ROW_H = 88.0;           // dp, the floor for small hands
@@ -47,6 +52,7 @@ let MARGIN = 16.0;          // dp the menu keeps from the screen's top and foot 
 let CORNER = 88.0;          // the way out, round, in the top right,
 let EDGE = 24.0;            // this far from both edges,
 let CROSS = 32.0;           // its X
+let CHIP_FACE = 56.0;       // the player's chip: their face, and their name beside it
 
 // The setup's parts, in dp.
 let HEAD_H = 88.0;          // back and the title
@@ -130,6 +136,9 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
     let content_h = content_height(setup, landscape, height, u);
     let pair = paired(setup, landscape, height, u);
     let clear = (EDGE + CORNER + 16.0) * u;
+    // The player's chip on the menu, which the board keeps clear of as of the way out.
+    let spot = if setup == NOTHING { player_spot(g, area, landscape, s) } else { float4 { 0.0, 0.0, 0.0, 0.0 } };
+    let reach = if landscape && spot.z > 0.0 { clear + spot.z + 16.0 * u } else { clear };
     // Two columns, each 330 dp, narrower where the second would reach the way out (a
     // 16:9 phone with its camera's cutout at a side), in dp; 0 for one column.
     let pair_w = if pair { clamp((width - clear) / u * 0.5 - 0.5 * (40.0 + PAIR_GAP), PAIR_LEAST, PAIR_W) } else { 0.0 };
@@ -158,16 +167,16 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
         var x = stage.x + 0.5 * (stage.z - size);
         var y = 0.5 * (height - size);
         let below = (EDGE + CORNER + 8.0) * u;
-        if y < below && x + size > width - clear {
+        if y < below && x + size > width - reach {
             let down = min(size, height - 24.0 * u - below);
-            let left = min(size, width - clear - stage.x - 40.0 * u);
+            let left = min(size, width - reach - stage.x - 40.0 * u);
             if down >= left {
                 size = down;
                 x = stage.x + 0.5 * (stage.z - size);
                 y = below;
             } else {
                 size = left;
-                x = width - clear - size;
+                x = width - reach - size;
                 y = 0.5 * (height - size);
             }
         }
@@ -200,7 +209,8 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
         let room = max(stage_h - 80.0 * u, min(stage_h - 48.0 * u, 0.4 * width));
         var size = min(min(0.8 * width, 0.6 * height), room);
         var y = 0.5 * (stage_h - size);
-        if 0.5 * (width + size) > width - clear && y < clear {
+        let side = if spot.z > 0.0 { max(clear, (EDGE + 16.0) * u + spot.z) } else { clear };
+        if 0.5 * (width + size) > width - side && y < clear {
             y = clear;
             size = min(size, stage_h - 24.0 * u - y);
         }
@@ -213,9 +223,51 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
     let gear = gear_beside(landscape, height, u);
     var pick = if setup != NOTHING { choose(over, g, content, setup == COMPUTER, pair_w, head, s) }
                else { menu(over, g, content, gear, mark_gap(gear, height, u), s) };
-    // The way out, declared last so the tiles before it keep their order.
+    // The player and the way out, declared last so the tiles before them keep their order.
+    if spot.z > 0.0 && player_chip(g, spot, s) { pick = PLAYERS; }
     if gui::round_button(g, 309, way, gui::CLOSE, CROSS) { pick = EXIT; }
     return pick;
+}
+
+// How wide the player's chip is: round, 88 dp, without a name; with one, the face and
+// the name beside it.
+fn chip_width(g: gui::Gui&, s: settings::Settings&) -> f32 {
+    let u = g.scale;
+    guard s.name.len > 0 else { return CORNER * u; }
+    return (16.0 + CHIP_FACE + 12.0 + 24.0) * u + gui::text_width(g, gui::BODY, s.name[..]);
+}
+
+// Where the player's chip goes in the safe area `area`, 88 dp tall: mirroring the way out
+// in the top left in portrait; in landscape, where the column takes the left, 16 dp left
+// of the way out. The one place that places it (2026-11-09: where the player shows on
+// home is still to be chosen).
+fn player_spot(g: gui::Gui&, area: float4, landscape: bool, s: settings::Settings&) -> float4 {
+    let u = g.scale;
+    let w = chip_width(g, s);
+    guard landscape else { return float4 { area.x + EDGE * u, area.y + EDGE * u, w, CORNER * u }; }
+    return float4 { area.x + area.z - (EDGE + CORNER + 16.0) * u - w, area.y + EDGE * u, w, CORNER * u };
+}
+
+// The player's chip in r: round glass under a quiet tile, as the way out, with the
+// player's face and their name. True when it is tapped.
+fn player_chip(g: gui::Gui&, r: float4, s: settings::Settings&) -> bool {
+    let u = g.scale;
+    let clicked, p = gui::hold(g, 308, r);
+    let k = 1.0 - 0.04 * p;
+    let half = 0.5 * r.w;
+    gui::glass(g, gui::center(r, r.z * k, r.w * k), half * k / u);
+    gui::add(g, gui::Quad { rect: r, look: float4 { gui::BUTTON, half, 0.0, p }, extra: float4 { u, gui::QUIET, 0.0, 0.0 } });
+    var c = r;
+    let f = CHIP_FACE * u * k;
+    if s.name.len == 0 {
+        gui::face(g, gui::center(c, f, f), s.picture, 1.0, false);
+        return clicked;
+    }
+    gui::cut_left(c, 16.0 * u);
+    gui::face(g, gui::center(gui::cut_left(c, CHIP_FACE * u), f, f), s.picture, 1.0, false);
+    gui::cut_left(c, 12.0 * u);
+    gui::text(g, gui::BODY, c, s.name[..], 1.0, 0.0, gui::LEFT);
+    return clicked;
 }
 
 // The menu in c: the wordmark, `below` dp under it, the rows, and settings, a row of its

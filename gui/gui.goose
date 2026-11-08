@@ -39,6 +39,8 @@ let FILL = 3;               // a plain rounded rect in `color`
 let TEXT = 4;               // a glyph from the font atlas in the text color; look.yzw, extra.y: its uv
 let PICTURE = 5;            // a season's thumbnail (look.z: its theme), or the glow's tint for -1
 let MINI = 6;               // a small board at the start; look.z: squares per side, look.w: rows of men
+let RING = 7;               // a hold's ring round a tile, filled clockwise from the top; look.z: how far, 0..1
+let FACE = 8;               // a player's badge on a disc; look.z: which, -1 for +; look.w: lit
 
 // How a tile and its icon look (extra.y), in the theme's colors.
 let PLAIN = 0;              // white at 10%
@@ -77,6 +79,10 @@ let LOCK = 18;              // a tier not yet open
 let CROWN = 19;             // the puzzles' goals: become a king,
 let SHIELD = 20;            // and the only safe move (TARGET for a capture)
 let CLOSE = 21;             // home's way out: an X
+let PLUS = 22;              // a new player
+let PENCIL = 23;            // editing the players
+let CHECK = 24;             // done
+let TRASH = 25;             // removing a player
 
 // Text faces (rendering.md, "Fonts"): one size each, in dp, baked by the app at the
 // screen's pixel size.
@@ -158,12 +164,17 @@ struct Quad {
     extra: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: pixels per dp; y: PLAIN..CLOCK_LOW; z: text in `color` (1), + ON_BOARD; w: faded out, 0..1
 }
 
-// The pointer this frame. A quick tap can be pressed and released in one frame.
+// The pointer this frame, and what was typed while text input is on. A quick tap can be
+// pressed and released in one frame.
+let MAX_TYPED = 16;
+let ERASE = 8;              // in typed: Backspace
+let ENTER = 13;             // and Return
 struct Input {
-    at:       float2 = float2 { 0.0, 0.0 },
-    down:     bool   = false,
-    pressed:  bool   = false,
-    released: bool   = false,
+    at:       float2           = float2 { 0.0, 0.0 },
+    down:     bool             = false,
+    pressed:  bool             = false,
+    released: bool             = false,
+    typed:    u32[..MAX_TYPED] = [],    // characters in order, ERASE and ENTER among them
 }
 
 // A widget's state across frames: whether it is down and when that last changed.
@@ -180,6 +191,7 @@ struct Gui {
     active:  i64               = 0,     // the widget the pointer went down on, or 0
     took:    bool              = false, // whether this press landed on the UI, not the board
     acted:   bool              = false, // whether a widget was clicked this frame
+    holding: bool              = false, // whether a hold (hold_tile) is filling this frame
     quads:   Quad[..MAX_QUADS] = [],
     slots:   Slot[MAX_IDS]     = [Slot {}; MAX_IDS],
     faces:   Face[FACES]       = [Face {}; FACES],
@@ -257,6 +269,7 @@ fn begin(g: Gui&, input: Input, scale: f32, now: f64) {
     if !g.pointer.down && !g.pointer.pressed { g.active = 0; }
     if input.pressed { g.took = false; }
     g.acted = false;
+    g.holding = false;
     g.input = input;
     g.pointer = input;
     g.scale = scale;
@@ -319,8 +332,10 @@ fn set_down(g: Gui&, id: i64, down: bool) {
     }
 }
 
-// Whether any widget is still going down or up; the app draws while one is.
+// Whether any widget is still going down or up, or a hold filling; the app draws while
+// one is.
 fn animating(g: Gui&) -> bool {
+    if g.holding { return true; }
     for s in g.slots { if s.id != 0 && s.since >= 0.0 && g.now < s.since + PRESS { return true; } }
     return false;
 }
@@ -411,6 +426,47 @@ fn icon_button(g: Gui&, id: i64, r: float4, icon: i64, size: f32) -> bool {
     let s = size * g.scale * (1.0 - 0.04 * p);
     glyph_icon(g, center(r, s, s), icon, ROW, p, 0.85);
     return clicked;
+}
+
+// A player's face in r (their badge, players.goose's ANIMALS by index, drawn by
+// app/widgets.goose's badge(); or -1 for +, a faint disc), at opacity a, with the glow
+// ring when `lit`.
+fn face(g: Gui&, r: float4, animal: i64, a: f32, lit: bool) {
+    add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { FACE, 0.0, animal, if lit { 1.0 } else { 0.0 } },
+                  extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
+    if animal < 0 {
+        let s = 0.44 * min(r.z, r.w);
+        glyph_icon(g, center(r, s, s), PLUS, PLAIN, 0.0, a);
+    }
+}
+
+// A tile that does its thing when held `seconds` (rendering.md, "Controls"): a ring fills
+// round it while it is held, in the glow color or, `red`, the forced-capture red; let
+// go early and nothing happens, a release being no tap. Returns true on the frame the
+// ring is full, after which the press does nothing more until the pointer is lifted, and
+// how far the ring is, 0..1. The caller draws the tile's face over it.
+fn hold_tile(g: Gui&, id: i64, r: float4, radius: f32, seconds: f64, red: bool) -> bool, f32 {
+    let unused, p = hold(g, id, r);
+    let s .= g.slots[slot(g, id)];
+    let held = g.active == id && g.input.down && inside(r, g.input.at) && s.down;
+    let k = if held { clamp((g.now - s.since) / seconds, 0.0, 1.0) as f32 } else { 0.0 };
+    add(g, Quad { rect: r, look: float4 { BUTTON, radius * g.scale, 0.0, p }, extra: float4 { g.scale, PLAIN, 0.0, 0.0 } });
+    guard held else { return false, 0.0; }
+    if k >= 1.0 {
+        g.active = 0;
+        g.acted = true;
+        set_down(g, id, false);
+        return true, 1.0;
+    }
+    g.holding = true;
+    add(g, Quad { rect: r, look: float4 { RING, radius * g.scale, k, 0.0 },
+                  extra: float4 { g.scale, if red { 1.0 } else { 0.0 }, 0.0, 0.0 } });
+    return false, k;
+}
+
+// Text s in face `face` in `color`, lined up in r and centered down it.
+fn colored(g: Gui&, face: i64, r: float4, s: const u8[:], color: float4, align: i64) {
+    write(g, face, r, s, color, true, 0.0, align, false);
 }
 
 // A line or filled icon in r, in the text color at opacity a (the glow color for ON).

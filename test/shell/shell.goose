@@ -81,6 +81,10 @@ fn main() {
     show(sh, g, "start");
     print("the wordmark's piece: ", sh.over.len, ", crowned ", sh.over[0].look.y,
           ", no ring ", sh.over[0].ring.y == 0.0);
+    // The player's chip, mirroring the way out: the last tile but one, and their face.
+    var faces = 0;
+    for q in g.quads { if q.look.x == gui::FACE { faces++; } }
+    print("the player's chip at ", drive::rect(g, drive::tiles(g) - 2), ", faces ", faces);
 
     switch(sh, g, drive::tile(g, 0), 1.0);                // continue
     show(sh, g, "continue");

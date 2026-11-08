@@ -82,3 +82,11 @@ goal.take = Võta {}
 goal.crown = Saa tammiks
 goal.win = Võida mäng
 goal.safe = Päästa nupp
+
+players.who = Kes mängib?
+players.new = Uus mängija
+players.picture = Pilt
+players.name = Nimi
+players.start_again = Alusta otsast
+players.remove = Eemalda
+players.hold = Hoia all
