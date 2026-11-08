@@ -142,9 +142,8 @@ are in "Numbers to gather" below.
   to SPIR-V and MSL at compile time and embedded (`embed_shader`). No engine.
 - **No Gradle.** `scripts/android.py` (about 200 lines of Python) builds the APK: Goose
   writes C, the NDK's clang and CMake build `libSDL3.so` and `libmain.so`, `javac` and
-  `d8` compile the Java, `aapt2`, `zipalign -P 16`, `apksigner` (`docs/development.md`).
-- **Java is SDL's, not ours** (say it in one line at most): SDL's stock Android glue,
-  plus a ~100-line subclass that holds the splash until the first frame.
+  `d8` compile the Java (SDL's, plus a tiny splash class of ours), `aapt2`,
+  `zipalign -P 16`, `apksigner` (`docs/development.md`).
 - **Draws only when something changed.** goose_gfx's `frame()` patched to skip the
   present when nothing drew and to wait for an event up to 1 s; idle is one wakeup a
   second and no GPU work. A running clock sets an SDL timer for its next second instead
