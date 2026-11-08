@@ -95,7 +95,7 @@ fruit. A holistic look, measuring before cutting.
 - [x] Each change with its before and after (PSS and graphics), the look unchanged
 - [x] Memory measured at the smallest and largest screen sizes, everything still drawn right
   (on the Mac, with Android's graphics worked out from the inventory: no device at those
-  sizes, and the Pixel 7a wasn't attached for the closing run)
+  sizes; the largest phone, the Pixel 7a's 1080 × 2400, measured on it after the cuts)
 - [x] Idle CPU and lifecycle memory scripts run at the end, numbers recorded
 
 ## Result (2026-11-08)
@@ -159,6 +159,28 @@ The start's worked-out column is the same sum before the cuts: one 64 MiB block 
 photograph and atlas), the 16 MiB block, the driver, and the swapchain. What is left
 at every size is mostly the swapchain, the driver's minimum (candidate 5, out of the
 app's reach), then the screen; everything else fits the one 16 MiB block.
+
+### The Pixel 7a after the cuts
+
+Main `73b3211`, built in a worktree; Pixel 7a (1080 × 2400, density floor on), portrait,
+rotation locked, `pm clear` before each launch, `dumpsys meminfo -d` 8 s after a fresh
+launch (the start was taken 5 s in).
+
+| Pixel 7a | Start | End |
+| --- | --- | --- |
+| PSS: home, game (International) | 291, 292 MB | 146.4, 161.2 MB |
+| Graphics (GL + EGL mtrack): home, game | 252 (180 + 73), 252 MB | 115.7 (43.2 + 72.5), 115.7 MB |
+| Native heap PSS (Heap Alloc): home, game | not measured | 11.4 (22.5), 13.0 (24.0) MB |
+| `dumpsys gpu --gpumem`, home | not measured | 113.0 MiB |
+| Idle at home, 60 s: program thread, process, switches | not measured | 0.04 s, 0.06 s, 60 |
+
+PSS is half the start, graphics 54% lower: GL from 180 to 43 MB, the screen (10.1 MB)
+in its own allocation, the one 16 MiB block, and the driver's. EGL, the swapchain, is
+unchanged at about seven screen-sized images, the driver's. The game's extra 15 MB
+over home is `.so` mmap (22.8 against 12.1 MB, clean pages of the code it runs) and
+1.7 MB of native heap. The shots (home, puzzle 21) draw right; the ASTC photograph at
+the Pixel's density, cropped at 1:1 and 2×, shows no blocking or banding in the leaves
+or the bokeh.
 
 ## Measured (2026-11-08)
 
