@@ -4,7 +4,8 @@ import android.content.res.TypedArray;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.RelativeLayout;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.window.SplashScreen;
 import android.window.SplashScreenView;
 
@@ -18,8 +19,8 @@ import org.libsdl.app.SDLActivity;
 // It also keeps the launch on the theme's navy until the program's first frame is on
 // screen (task 028). SDL draws into a SurfaceView, whose hole in the window shows black
 // until SDL presents, and Android removes its splash at the window's first draw, before
-// that. So a navy view covers the surface, and on Android 12+ the splash, the icon on
-// navy, is held too; both go when the program calls firstFrame() (app/launch.c).
+// that. So a navy view covers the whole window, and on Android 12+ the splash, the icon
+// on navy, is held too; both go when the program calls firstFrame() (app/launch.c).
 public class DraughtsActivity extends SDLActivity {
     // Lifts them anyway if the program never reports a frame, rather than stay navy.
     private static final long COVER_MAX_MS = 3000;
@@ -62,8 +63,10 @@ public class DraughtsActivity extends SDLActivity {
                 new int[] { android.R.attr.windowBackground });
         cover.setBackground(a.getDrawable(0));
         a.recycle();
-        int fill = RelativeLayout.LayoutParams.MATCH_PARENT;
-        mLayout.addView(cover, new RelativeLayout.LayoutParams(fill, fill));
+        // On the decor rather than SDL's layout, so it spans the bars' area as well.
+        ViewGroup decor = (ViewGroup) getWindow().getDecorView();
+        int fill = FrameLayout.LayoutParams.MATCH_PARENT;
+        decor.addView(cover, new FrameLayout.LayoutParams(fill, fill));
         if (Build.VERSION.SDK_INT >= 31) {
             // Android hands its splash over at the window's first draw instead of fading
             // it out; it stays until shown.

@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Android 12+ shows its own splash, the app icon on this colour, until the first
-         frame: the same navy, so no image of our own and no flash between them. -->
+         frame: the same navy, so no image of our own and no flash between them. The bars'
+         backgrounds are navy too (values/themes.xml). -->
     <style name="Theme.Draughts" parent="@android:style/Theme.NoTitleBar.Fullscreen">
         <item name="android:windowBackground">@color/navy</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:navigationBarColor">@color/navy</item>
         <item name="android:windowSplashScreenBackground">@color/navy</item>
     </style>
 </resources>
