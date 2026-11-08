@@ -47,3 +47,12 @@ and the commit that last has it.
   settings, the game, the setups' play, and the picker and a puzzle; the photograph
   crossfading sharp to blurred; the leaving screen's UI hidden where the board passes;
   90 Hz on the tablet, idle after. `022-transitions.md`, `6050dd6`
+- 030: Phones and other screen sizes. Done: every screen fits from 9:20 phones to near
+  square in both orientations with every tap 88 dp, a density floor (F = 0.75, the Pixel
+  7a 549 dp across), the safe area with `patches/SDL/0002`, Android's back going back a
+  screen, phones turning; checked on the Pixel 7a and the tablet, larger tablets on the
+  Mac. `030-screen-sizes.md`, `27b2c23`
+- 035: A way to close the app from home. Done: take b, a round 88 dp glass X in the top
+  right on home's menu and setups that closes at once, the game kept; on Android
+  `finishAndRemoveTask()` takes the card out of recents and the next start restores the
+  game. `035-exit-button.md`, `7f998da`

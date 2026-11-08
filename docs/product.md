@@ -32,7 +32,7 @@ Chess may follow on the same base.
 | Puzzles | About 30 in 3 tiers, International 10×10 first (2026-11-08): find the capture; multi-jumps and crowning; shots and "the only safe move" |
 | Controls | Take back, start over, home, settings; on home, an X that closes the app |
 | Language | English by default, from a string table picked by the system's locale; Estonian as a translation if it stays cheap, finished after the core gameplay (2026-11-07) |
-| Platforms | Android APK sideloaded onto the tablet; macOS for development |
+| Platforms | Android APK sideloaded onto the tablet; macOS for development. Every screen fits phones and tablets of any proportions, 9:20 to near square, in both orientations, with taps no smaller on the hand than about 10 mm (2026-11-08: phones fit rather than the app being listed for tablets only; [rendering](architecture/rendering.md#screen-sizes-and-the-safe-area)) |
 
 ## After the MVP, in order
 

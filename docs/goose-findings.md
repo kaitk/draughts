@@ -46,7 +46,7 @@ Samsung tablet (the Galaxy Tab A11+) that strip is reported as `tappableElement`
   `systemBars`. `scripts/android.py` compiles SDL's Java from the patched copy, as it
   does its C. Checked on the Pixel 7a (0, 118, 0, 84 px in portrait, 118, 0, 0, 84 and
   0, 0, 118, 84 in landscape; a tap in the old top strip reaches the app, a swipe there
-  still shows the bars); the tablet's 0, 0, 0, 72 waits for it to be attached (task 030).
+  still shows the bars) and on the Galaxy Tab A11+ (0, 0, 0, 72, nothing held at the top).
 - Upstream: for the user only, as with the other SDL entries. Possibly a hint choosing
   which insets make the safe area.
 

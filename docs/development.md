@@ -51,8 +51,8 @@ app; its development flags pick the board theme (`wood`, `stone`, `birch`, `suns
 season's by default, with its photograph), the window size, a starting position,
 squares to tap on the first frames, move hints (`--hints moves` shows the targets;
 mistakes only by default), the language (`--lang et`; the system's by default), the
-layout's shorter side in dp (`--dp 540`; 800 by default, for trying phone scales, task
-030; `gui::scale_of`), a phone's insets (`--inset L,T,R,B`, in dp of the layout, left,
+layout's shorter side in dp (`--dp 540`; 800 by default, for trying phone scales;
+`gui::scale_of`), a phone's insets (`--inset L,T,R,B`, in dp of the layout, left,
 top, right, bottom; the window's own safe area by default, all of it on the Mac), the
 scale's floor in physical size (`--density-floor F` with `--display-scale S`: the scale
 becomes `max(short side / 800, F × S)`; off by default, and `--dp` turns it off unless
@@ -220,6 +220,13 @@ mode) and SDL reports no insets. It knows it's on Android from
 `ANDROID_ROOT` in the environment ([findings](goose-findings.md)). Act on taps with
 `gfx::mouse_pressed` and `gfx::mouse_released`: a tap can press and release within one
 frame, which `gfx::mouse_down` never sees. `adb shell input tap X Y` checks it.
+
+Screens are checked at other sizes first on the Mac (`--size` at a device's proportions,
+`--dp` and `--inset` for a phone, `test/shell/sizes` headless), then on two devices over
+USB: the Galaxy Tab A11+ (1920 × 1200, three-button navigation) and a Pixel 7a (1080 ×
+2400, Android 17, gesture navigation, a punch-hole camera), one attached at a time.
+Larger tablets (2560 × 1600, 2880 × 1920, 4:3, a foldable's inner screen) are checked
+only on the Mac (2026-11-08), as there is no such device.
 
 ## Check idle CPU
 

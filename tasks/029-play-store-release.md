@@ -21,7 +21,7 @@ documentation when doing this, not this list.
   native libraries (the APK already aligns to 16 KB), and the target SDK Play asks for
   then.
 - **Screens:** the listing's screenshots must show the app as it runs on that class of
-  device; phones are listed too once task 030 fits the layout to them.
+  device; phones are listed too, as the layouts fit them (task 030, done).
 - **Play Console:** the developer account (a new personal account must run a closed
   test with at least 12 testers for 14 days before production; check the current
   rule), the app's entry, the store listing in English and Estonian (title, short and
@@ -39,7 +39,7 @@ documentation when doing this, not this list.
 ## Acceptance criteria
 
 - [ ] Final application id, upload key outside the repo, release AAB built by the script
-- [ ] Task 030 done, so phones and larger tablets are listed
+- [x] Task 030 done, so phones and larger tablets are listed
 - [ ] Store listing in English and Estonian, with icon, feature graphic, and screenshots
 - [ ] Target audience, content rating, Data safety, and privacy policy filled in
 - [ ] Closed test run as Play requires, then the app published

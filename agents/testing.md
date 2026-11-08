@@ -96,7 +96,7 @@ which would overwrite the main checkout's while another session uses them.
   b.png -compose difference -composite -threshold 0 -format '%@' info:` gives their box,
   which for settings is the same box as between two runs of one build. The win's
   `--win 3 --frames 3000` shot varies over the whole board from run to run: compare it
-  against a second run of the old build (task 030, "Fixes").
+  against a second run of the old build.
 - A `--frames` run with taps needs a few thousand frames for a move and what follows to
   play out (`--win`, `docs/development.md`): it doesn't wait for the display, so 90
   frames end before the second tap's move has shown.
@@ -112,12 +112,14 @@ which would overwrite the main checkout's while another session uses them.
   tall fits, so phones in landscape and most tablets shoot at their real pixels. Portrait
   phones too tall for that, at the same proportions: 9:19.5 as `450x975`, 9:20 as
   `450x1000`, the foldable's 1768 × 2208 as `868x1084`; 9:16 fits as `540x960`. Check
-  the PNG with `sips -g pixelWidth -g pixelHeight`. The full table, and where the survey
-  script is, are in task 030's "Survey".
+  the PNG with `sips -g pixelWidth -g pixelHeight`. Larger tablets: landscape at real
+  pixels (`1280x800` for 2560 × 1600, `1440x960`, `1024x768`, `1104x884`), portrait 4:3
+  as `768x1024`, and 16:10 and 3:2 portrait as `600x960` and `640x960`.
 - The layout depends only on the proportions (the shorter side is 800 dp, or `--dp N`),
   so a phone shot shows the tablet's layout in dp; how small it is on the hand is
-  arithmetic from the device's size, not something a screenshot shows (task 030,
-  "Survey" and "Phone scale prototype").
+  arithmetic from the device's size, not something a screenshot shows: a dp is 0.185 mm
+  on the tablet (11", 1200 px across), and on the Pixel 7a 0.080 mm without the density
+  floor, 0.118 with it.
 - A layout that fits a word needs the word's real width, which the headless tests don't
   have: their faces make each character half the face wide, about a fifth wider than
   Libertinus Sans, so a test may stack or shrink a word the app fits. The real widths
@@ -125,16 +127,16 @@ which would overwrite the main checkout's while another session uses them.
   through `cmap`, times the face's dp over `unitsPerEm`; fontTools isn't installed, a
   30-line Python reader does it). The widest so far, at the 24 dp heading face: "Alusta
   uuesti" 130 dp, "Mustad võitsid" 148 (2026-11-08).
-- Phone layouts are shot with `--dp N` at the phones' proportions; task 030's "Phone
-  layouts" says where the scripts are (`shoot.sh` takes a set of sizes and dps, `all.sh`
-  runs each screen in parallel in its own work folder, `cmp.sh` counts differing
-  pixels). Run in parallel, the win's `--win 3` needs `--frames 9000`, not 3000, or the
+- Phone layouts are shot with `--dp N` at the phones' proportions. Task 030 (archived)
+  did it with local scripts, never committed: one taking a set of sizes and dps, one
+  running each screen in parallel in its own work folder, one counting differing
+  pixels. Run in parallel, the win's `--win 3` needs `--frames 9000`, not 3000, or the
   shot ends before the card (2026-11-08).
 - Insets are shot with `--inset L,T,R,B` in dp of the layout: at `--dp 540` a 1080 px
   phone is 2 px a dp, so the Pixel 7a's 118 px cutout is 59 dp and its 84 px gesture
-  bar 42 (at 480, 52 and 37). Task 030's "Insets" says where the scripts are; their
-  `sheets.py` tints the insets red over each shot, which shows at a glance whether
-  anything sits under them (2026-11-08). A headless test sets `g.insets` (pixels) on its
+  bar 42 (at 480, 52 and 37). Tinting the insets red over each shot (a small Python
+  script) shows at a glance whether anything sits under them, on the Mac and on a
+  device's screenshots alike (2026-11-08). A headless test sets `g.insets` (pixels) on its
   `gui::Gui`; `gui::begin` keeps it, so put it back to zero after.
 - A headless test can lay out at another `gui::short_dp` (`test/shell/sizes`,
   `test/shell/settings`): set it, then `g.scale = gui::scale_of(...)` before
@@ -190,17 +192,24 @@ measuring there:
   read both settings first and put them back after.
 - On the Pixel 7a (2026-11-08): `user_rotation 1` is landscape with the camera on the
   left, `3` on the right. `accelerometer_rotation` can turn itself back on during a run,
-  so a script sets it to 0 before each start. Its insets with the bars hidden, measured
-  before the top swipe-down strip was left to taps: portrait 0, 150, 0, 84 px; landscape
-  118 (camera side), 74 top, 84 bottom. Expected since: portrait 0, 118, 0, 84; landscape
-  118, 0, 0, 84 and 0, 0, 118, 84; so `--inset` for it in dp at its 1.969 px a dp is
-  about `0,60,0,43` and `60,0,0,43`. `adb shell input
+  so a script sets it to 0 before each start. Its insets with the bars hidden: portrait
+  0, 118, 0, 84 px; landscape 118, 0, 0, 84 and 0, 0, 118, 84 (before
+  `patches/SDL/0002` left the top swipe-down strip to taps: 150 px at the top in
+  portrait, 74 in landscape); so `--inset` for it in dp at its 1.969 px a dp is about
+  `0,60,0,43` and `60,0,0,43`. The tablet's: 0, 0, 0, 72 in both orientations (45 px at
+  the top before the patch left out Samsung's `tappableElement` strip); turning it, one
+  frame has the new insets against the old size. To see what the program gets, `print`
+  `draughts_display`'s insets and the layout scale from the loop for a run (and remove
+  it); `adb shell dumpsys window` lists each inset type's frame, and
+  `mShowingTransientTypes` whether a swipe showed the bars. `adb shell input
   swipe 5 1200 500 1200 150` is a back swipe in portrait, but the first only shows the
   hidden bars and a second one goes back; `input keyevent KEYCODE_BACK` goes back at
   once. A swipe landing outside the app (on the launcher) opens apps, so check where a
   swipe test starts. Whether the activity was finished or kept shows in
   `adb logcat -b events | grep wm_` (`wm_finish_activity`, `wm_task_removed`) and in
-  `pidof com.kaitk.draughts` before and after. To log from the program, `print` in the
+  `pidof com.kaitk.draughts` before and after; whether a card is in recents, in `adb
+  shell dumpsys activity recents`. `adb shell monkey -p com.kaitk.draughts -c
+  android.intent.category.LAUNCHER 1` starts the app as the launcher's icon does. To log from the program, `print` in the
   loop shows under `goose`; the APK's libraries are `lib/arm64-v8a/libmain.so` and
   `libSDL3.so`.
 - During a transition (home and settings, home and the game, the puzzles and a puzzle)

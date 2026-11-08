@@ -117,17 +117,21 @@ the screen's own back or home control does (`shell::back`): a setup to home's me
 game, settings, and the puzzles to pick from where their tile goes, a puzzle to the
 puzzles. On home's menu, which has no way back, back leaves the app as the system's back
 does, putting it in the background with the activity kept (`draughts_leave`,
-`DraughtsActivity.leaveApp`, `moveTaskToBack`), and Escape ends the loop. Back reaches the program as SDL's
+`DraughtsActivity.leaveApp`, `moveTaskToBack`), and Escape ends the loop. SDL's own
+way, `SDL_SendAndroidBackButton` and the activity's `onBackPressed`, finished the
+activity on Android 17 instead, taking the card out of recents as home's X does. Back reaches the program as SDL's
 "AC Back" key: up to Android 12 through SDL's own key handling, from Android 13 through
 an `OnBackInvokedCallback` in `DraughtsActivity` that hands it to SDL, the manifest
 opting into back callbacks (`enableOnBackInvokedCallback`), as Android 16 does for an app
-targeting it, where the key is no longer dispatched.
+targeting it, where the key is no longer dispatched. SDL's sample manifest opts out
+instead, which Android calls temporary. No SDL patch is needed.
 
 The loop ends on Escape on home's menu or when home's X asks the shell to stop
 (`Shell.quit`). The game is then written as at any loop's end; after home's X, on Android the program
 calls `DraughtsActivity.closeApp()` over JNI (`app/launch.c`), which finishes the
 activity with `finishAndRemoveTask()`, so no card is left in recents, before the
-program returns. SDL then finds the activity finishing and leaves it; the next start
+program returns. Plain `finish()`, what SDL does when the program returns, would leave a
+card with a picture of home, as if the app still ran. SDL then finds the activity finishing and leaves it; the next start
 is a fresh process that restores the game. On the Mac the window closes as the program
 returns.
 

@@ -46,7 +46,17 @@ floor in physical size, `max(short side / 800, F × display scale)`, the display
 being Android's density / 160 (2.625 on the Pixel 7a, 1.5 on the tablet), so a phone's
 dp stays at least F of Android's; F is 0.75 (`gui::DENSITY_FLOOR`, picked by the user on
 2026-11-08), so the Pixel 7a lays out about 549 dp across and the tablet, whose 1.125
-floor is under its 1.5, is unchanged. The Mac's display scale (2 on Retina, its
+floor is under its 1.5, is unchanged. Without the floor a phone draws the tablet's
+layout into its 64 mm short side: an 88 dp tap is 7.0 mm on the Pixel 7a against 16.3
+on the tablet, the 17 dp notes 1.4 mm. At 0.75 an 88 dp tap is about 10.5 mm on any
+phone, near a child's fingertip and over Android's 48 dp (7.6 mm), and the notes 2 mm.
+Going further buys nothing on the board, whose size the phone's width fixes whatever the
+scale, and at 1 every layout would have to work 360 dp across; going less (0.69) leaves
+taps at 9.3 mm and still needs most of the same layout work. So the layouts are made for
+a short side down to 480 dp (a 360 dp phone at 0.75). A larger tablet lays out
+the same dp as a smaller screen of its proportions, only scaled; the photograph is
+then stretched by long side / 2048 (1.25× at 2560 px, 1.41× at 2880), soft but fine
+behind home. The Mac's display scale (2 on Retina, its
 windows being in points) is left out: a Mac window stands for a screen of its size in
 pixels, and the floor there would make shots depend on the Mac's screen.
 
@@ -68,14 +78,17 @@ top, and on a Samsung tablet `tappableElement`'s top too), though taps in both s
 reach the window; `patches/SDL/0002` keeps them in, so the safe area is the cutout, the
 bars while shown, the system's tappable elements at the sides and the bottom (a
 navigation bar, shown or hidden), and the gesture bar at the bottom (on the Pixel 7a 0,
-118, 0, 84 px in portrait; on the Galaxy Tab A11+ 0, 0, 0, 72 expected, its hidden
+118, 0, 84 px in portrait; on the Galaxy Tab A11+ 0, 0, 0, 72, its hidden
 navigation bar). Settings in landscape lets its two groups run over a bottom inset: the
 fit counts up to 38 dp of it (the page's foot and the look group's bottom pad), the
 look's glass then running on to the screen's bottom edge, its tiles still above the
 inset and as far from the screen's edge as with none; so the tablet keeps both groups
 beside the board rather than the Game and Look tabs. A
 change of the insets or the scale counts as a change, as a new size does, and the screen
-is laid out and drawn again (see "Frames and battery").
+is laid out and drawn again (see "Frames and battery"). When the screen turns, the new
+insets and the new size arrive a frame or two apart, the insets first; the layout
+follows each, so a screen left open while turning shows the new orientation's layout at
+once.
 
 Nuklear (`ui`) is only for developer tools, such as a puzzle editor, because restyling
 its desktop widgets into the kid UI would fight it. If layout outgrows rect-cutting
@@ -314,7 +327,11 @@ the prototype tried, kept for 3D:
   screen's top right, 24 dp from both edges of its safe area, a round glass button 88 dp across with a
   32 dp X closes the app at once, asking nothing, since the game is kept anyway; on the
   menu and in a setup, in both orientations (`prototypes/exit.html?take=b`, chosen
-  2026-11-08 over a quiet last row and a door). It is glass under a quiet tile, both
+  2026-11-08 over a quiet last row and a door). One place in both orientations, it
+  costs the menu nothing (a last row would take the portrait board's room and lengthen
+  the sheet phones can't fit), it is far from where children tap and hold a tablet, and
+  an X is what closes things in the apps children know; a door reads less surely at
+  32 dp, and a power sign suggests turning the tablet off. It is glass under a quiet tile, both
   going down as a tile does while pressed. In landscape it sits above the photograph,
   clear of the board (28 dp right of its edge, 8 dp above its top; on a phone, where the
   board would reach it, the board moves down to 8 dp under it or narrows to 16 dp left of it,

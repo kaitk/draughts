@@ -47,8 +47,8 @@ fruit. A holistic look, measuring before cutting.
   tablet's and a phone's size. Keep the one that wins on memory without a visible
   change, and record the numbers.
 - **Every screen size:** whatever is cut must keep working on every tablet and phone
-  (task 030's sizes: phones from 720 × 1280 to 1080 × 2400, tablets up to 2560 × 1600
-  and 2880 × 1920). Size what follows the screen (render targets, the photograph and its
+  (phones from 720 × 1280 to 1080 × 2400, tablets up to 2560 × 1600 and 2880 × 1920,
+  the sizes task 030 laid out for). Size what follows the screen (render targets, the photograph and its
   blurred copies, the text atlas) from the screen it runs on, not the Galaxy tablet's
   1920 × 1200, and measure memory at the smallest and largest of those sizes too (the
   user, 2026-11-08: don't waste memory, but it must work everywhere).
@@ -63,6 +63,23 @@ fruit. A holistic look, measuring before cutting.
   a compressed blur means blurring offline and shipping it, or keeping the GPU blur small.
 - **Cut what is cheap and safe**, one change at a time, each with its before and after
   on the tablet and a look that it still renders the same.
+
+## Starting numbers (from task 030, 2026-11-08)
+
+- **The tablet**, everything up to `d7dbccc`: 20 lifecycle cycles of home, resume, and
+  rotation, PSS 273 MB at the start, then 259 to 264 MB, native heap 27 MB, graphics 211
+  to 215 MB; idle at home in landscape, 60 s, the program thread 0.03 s, the process
+  1.26 s, 60 voluntary switches.
+- **The Pixel 7a** (1080 × 2400, the density floor on), 5 s after arriving, portrait:
+  home PSS 291 MB, graphics 252 (180 GL, 73 EGL); the game (International) 292 MB,
+  graphics 252. A cold start's home, before the floor: 289 MB, graphics 244.
+- **Larger screens, on the Mac only** (no such device): the sharp photograph is
+  cover-cropped by the long side from its 2048 px texture, so stretched long side /
+  2048: 2560 px 1.25×, 2880 px 1.41×, 2208 px 1.08×, 2048 px 1.0×. Mac footprint 6 s in:
+  2560 × 1600 215 MB on home and in a game, 1920 × 1200 160 and 159 MB; the 55 MB is
+  graphics (100 MB against 65, the screen-sized buffers). The Mac's allocator and driver
+  differ, so this shows only that the cost grows with the pixels; a device's PSS at
+  2560 × 1600 is not measured.
 
 ## Also seen, for the same pass
 
