@@ -194,8 +194,11 @@ The POC's APK is 2.8 MB: `libSDL3.so` 1.9 MB and `libmain.so` 0.9 MB stripped, S
 The CMake build directory is configured once. Delete `build/android/<program>/native`
 after changing `android/CMakeLists.txt`.
 
-On Android the program opens with `gfx::WINDOW_FULLSCREEN`, which SDL turns into an
-immersive window with the system bars hidden. It knows it's on Android from
+On Android the program opens with `gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE`,
+which SDL turns into an immersive window with the system bars hidden. Resizable makes
+SDL request `FULL_USER`, so the screen turns as the system's rotation lock allows;
+without it SDL locks the activity to the orientation it started in, which phones obey
+and large tablets ignore (found on the Pixel 7a, 2026-11-08). It knows it's on Android from
 `ANDROID_ROOT` in the environment ([findings](goose-findings.md)). Act on taps with
 `gfx::mouse_pressed` and `gfx::mouse_released`: a tap can press and release within one
 frame, which `gfx::mouse_down` never sees. `adb shell input tap X Y` checks it.

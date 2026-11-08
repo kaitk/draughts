@@ -37,6 +37,15 @@ user on 2026-11-08: fix the layout rather than list the app for tablets only.
 - **Insets:** notches, rounded corners, and gesture bars on phones (Android's display
   cutout and system bar insets); nothing that takes a tap under them.
 
+## On the Pixel 7a (smoke test, 2026-11-08)
+
+1080 × 2400 at 420 dpi (2.625 px a dp), gesture navigation, a punch-hole camera 118 px
+(45 dp) deep at the portrait top. The APK installs and runs. It didn't turn: SDL locked
+the activity to the orientation it started in (`SENSOR_PORTRAIT`) because the window
+wasn't resizable; the tablet turned anyway, as large screens ignore that lock. Fixed by
+opening the window resizable too (`docs/development.md`); both orientations then drew
+home and a clocked game.
+
 ## Acceptance criteria
 
 - [ ] A survey of every screen at each size above, with what broke (screenshots local)
