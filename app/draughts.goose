@@ -288,8 +288,11 @@ fn main() {
         // The computer's move: the worker gets what the game asks, and the game the answer.
         think::frame(thinker, sh.game);
         // A tap in settings applies at once and is written; a new season reloads the
-        // photograph and its blurred copies, once the tile shows lit.
-        if sh.changed {
+        // photograph and its blurred copies, once the tile shows lit. A change made by the
+        // tap that starts a transition (the computer's play counting a game) is written
+        // once it is over: the write flushes to disk, 13 to 17 ms on the tablet, too long
+        // for the frame that starts it moving.
+        if sh.changed && sh.from < 0 {
             sh.changed = false;
             var out: u8[>..] = [];
             settings::write(sh.prefs, out);
@@ -299,6 +302,8 @@ fn main() {
             if theme_for(sh.prefs.season) != d.kind { season_in = 2; }
             dirty = true;
         }
+        // Settings' thumbnails, if settings show before the first idle frame loaded them
+        // (below): opened at launch.
         if sh.screen == shell::SETTINGS && w.thumbs.id == 0 {
             w.thumbs = scene::thumbs();
             trim_memory();
@@ -322,7 +327,8 @@ fn main() {
             tapped++;
             dirty = true;
         }
-        if dirty || shell::animating(sh, g, now) {
+        let drew = dirty || shell::animating(sh, g, now);
+        if drew {
             let shown .= shell::fill(sh, now);
             widgets::upload(w, g);
             draw::frame(d, shown, sh.over, l, sh.blur, now, size.x, size.y);
@@ -330,6 +336,13 @@ fn main() {
             draw::overlay(d, now);
             gfx::end_pass();
             dirty = false;
+        }
+        // Settings' thumbnails load in the first frame that draws nothing once the launch's
+        // first frame is on screen, so settings' first opening doesn't wait for them; the
+        // next frame shows the screen again unchanged, then the app is idle.
+        if !drew && w.thumbs.id == 0 && gfx::frame_count() >= 2 {
+            w.thumbs = scene::thumbs();
+            trim_memory();
         }
         // A running clock is drawn when the time it shows changes, and the computer's move
         // played when it is due; a timer wakes the loop then, rather than whenever the
