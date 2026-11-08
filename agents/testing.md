@@ -157,7 +157,7 @@ measuring there:
 - A recording's frame times say little of what is slow inside: a recorded 20 ms frame
   may be the program's 1 ms and the rest presenting.
 - `dumpsys meminfo` at home right after launch counts about 24 MB more graphics than
-  once a later frame has submitted GPU work (184 MB, and 160 MB with the thumbnails'
+  once a later frame has submitted GPU work (184 MB, and 160 MB with the
   thumbnails loaded in the first idle frame), likely the launch's uploads not yet let
   go: compare memory at the same point of a run, after the same frames (2026-11-08).
 - To see when something happens on the tablet, log from the program's C with
