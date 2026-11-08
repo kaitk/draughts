@@ -52,6 +52,12 @@ fruit. A holistic look, measuring before cutting.
   blurred copies, the text atlas) from the screen it runs on, not the Galaxy tablet's
   1920 × 1200, and measure memory at the smallest and largest of those sizes too (the
   user, 2026-11-08: don't waste memory, but it must work everywhere).
+- **Density, not only pixels** (the user, 2026-11-08): a phone's long side can exceed the
+  tablet's (the Pixel 7a's 2400 against 1920, the photograph shown about 1.17× up), but
+  at about twice the tablet's pixel density a smaller sharp image (1024 to 1536) may look
+  the same. Size it from the screen's density as well as its size, and compare side by
+  side on the Pixel 7a. On a 20:9 screen more than half the square is cropped away, but
+  turning the screen shows another slice, so the square stays unless a rotation reloads.
 - **Cut what is cheap and safe**, one change at a time, each with its before and after
   on the tablet and a look that it still renders the same.
 
