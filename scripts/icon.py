@@ -30,7 +30,7 @@ ICON = ROOT / "design/icon"
 RES = ROOT / "android/res"
 STORE = Path.home() / "Downloads/draughts-store/icon"
 
-SHIPPED = "autumn"     # the season in android/res; design/icon/README.md says how to switch
+SHIPPED = "winter"     # the season in android/res; design/icon/README.md says how to switch
 SCENE_DP = 64          # inside the 66 dp safe zone, with a dp spare for the arc's glow
 CANVAS_DP = 108        # the adaptive icon's layers
 VISIBLE_DP = 72        # what a launcher shows of them, and what the store icons show

@@ -1,7 +1,7 @@
 # The app icon
 
-Two seasons of one icon. The shipped one is autumn (2026-11-08), for the autumn months;
-winter goes back in for the winter months, before the release. An icon that follows the
+Two seasons of one icon. The shipped one is winter, for the winter months and the
+release; autumn shipped for the autumn months (2026-11-08). An icon that follows the
 season by itself costs the child its place on the home screen (task 033).
 
 The winter jump (chosen 2026-11-08, task 028): a 3×3 stone board at three-quarters, a
@@ -26,7 +26,7 @@ are in `../prompts.md`).
 ```sh
 cp ~/Downloads/draughts-store/icon/master-winter-jump-1254.png design/icon/master-winter.png
 cp ~/Downloads/draughts-store/icon/master-autumn-jump-1254.png design/icon/master-autumn.png
-scripts/icon.py            # the shipped season (SHIPPED, autumn) into android/res/mipmap-*, in git
+scripts/icon.py            # the shipped season (SHIPPED, winter) into android/res/mipmap-*, in git
 scripts/icon.py --store    # also play-512.png and apple-1024.png, into ~/Downloads/draughts-store/icon/
 scripts/icon.py autumn --res /tmp/autumn-res --store
                            # another season: its foreground PNGs where --res says (never
@@ -52,7 +52,7 @@ In one commit:
 
 1. Set `SHIPPED` in `scripts/icon.py` and run it: it rewrites the five foreground PNGs in
    `android/res/mipmap-*`. With `--store` it also rewrites `play-512.png` and
-   `apple-1024.png` in `~/Downloads/draughts-store/icon/`; those are winter's now, and
+   `apple-1024.png` in `~/Downloads/draughts-store/icon/`; those are winter's, and
    autumn's are in its `autumn/` folder.
 2. Set `icon_background` in `android/res/values/colors.xml` to the season's corner colour
    (#06172b for winter, #140c09 for autumn). It is the adaptive icon's background, the

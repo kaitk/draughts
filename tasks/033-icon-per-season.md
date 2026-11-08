@@ -1,7 +1,8 @@
 # 033: An icon per season
 
 Status: todo (after the MVP; until then one icon, switched by hand: autumn shipped
-2026-11-08 for the autumn months, winter back in for the winter months and the release)
+2026-11-08 for the autumn months, and winter is back in for the winter months and the
+release)
 
 The app's look follows the season, picked from the date (`docs/architecture/rendering.md`,
 "Seasons and themes"); the launcher icon is one season, the winter jump (task 028). An
