@@ -90,7 +90,10 @@ display, so a screenshot of the computer's reply, which comes after a pause of u
 second, takes some thousands of frames: `--variant russian --computer black --tap c3
 --tap d4 --frames 5000`. The settings file is `settings.txt` in the app's storage folder (on the Mac
 `~/Library/Application Support/kaitk/draughts/`); `--theme`, `--hints`, and `--lang`
-override it for a run without changing it. The game is kept in `game.bin` beside it; a
+override it for a run without changing it. Settings' Board row (flat or 3D) is hidden
+until the 3D board exists; `--3d`, a flag with no value, shows it for working on task 015
+(the file's `board` key is read and written either way, and the board is flat while the
+row is hidden). The game is kept in `game.bin` beside it; a
 run with `--fen`, `--tap`, `--screen`, `--frames`, `--variant`, `--clock`, or
 `--computer` neither reads nor writes it, so
 screenshots don't depend on the last session. On the tablet, check a resume with

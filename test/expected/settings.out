@@ -74,3 +74,6 @@ English: season = by-date;board = 2d;hints = mistakes;kings = auto;language = en
 portrait: board at vec4<f32> { 128.34, 145.34, 543.32, 8.693121 }, the groups from 806.0, clear true, look beside game true, tiles 19
 portrait stack: season = by-date;board = 2d;hints = mistakes;kings = stack;language = en;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 40;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 2
 back: true
+Board row hidden by default: true, tiles 17 of 17, kings' tiles at 14..16
+kings stack taps: true; board key kept in the file: true
+with the field set: tiles 19 of 19

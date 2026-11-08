@@ -77,6 +77,7 @@ fn main() {
     // --hold T (keeps a transition at T of the way, 0..1, for a screenshot),
     // --win T (keeps a win at T seconds into its celebration, for a screenshot). --theme,
     // --hints, and --lang override the settings for the run without changing them.
+    // --3d (alone) shows settings' Board row, hidden until the 3D board exists (task 015).
     var width = 1280;
     var height = 800;
     var kind = -1;
@@ -93,11 +94,14 @@ fn main() {
     var go = -1;
     var hold = -1.0;
     var win_at = -1.0;
+    var show_3d = false;
     var fen:  u8[>..]       = [];
     var taps: u8[..3][..16] = [];
     let argv = args();
     var i = 1;
+    for a in argv { if a == "--3d" { show_3d = true; } }
     while i + 1 < argv.len {
+        if argv[i] == "--3d" { i += 1; continue; }   // no value: the pairs shift by one
         if argv[i] == "--theme" && theme::by_name(argv[i + 1]) >= 0 { kind = theme::by_name(argv[i + 1]); }
         if argv[i] == "--frames" {
             let n, ok = parse_int(argv[i + 1]);
@@ -176,6 +180,7 @@ fn main() {
         game::start(sh.game, sh.game.b.variant, max(clock_kind, 0), computer, lv, prefs.skill[lv], prefs.games);
     }
     sh.prefs = prefs;
+    sh.prefs.show_board_row = show_3d;
     let gm .= sh.game;
     let b .= gm.b;
     b.hints = hints;

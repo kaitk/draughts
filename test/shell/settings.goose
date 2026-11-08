@@ -102,6 +102,7 @@ fn main() {
     strings::use(strings::EN);
     var sh = shell::new(rules::RUSSIAN);
     sh.screen = shell::SETTINGS;
+    sh.prefs.show_board_row = true;     // the Board row, hidden by default (below)
     drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 0.0);
     print("tiles ", drive::tiles(g), " of ", TILES, ", the kings' tiles' pieces ", sh.over.len, ": ",
           sh.over[0].look.y, " and ", sh.over[1].look.y);
@@ -163,4 +164,22 @@ fn main() {
     show(sh, "portrait stack");
     drive::tap(sh, g, drive::tile(g, BACK), 10.2);
     print("back: ", sh.screen == shell::HOME);
+
+    // The Board row is hidden by default, the tiles after it each one place sooner, and
+    // the file's board key is kept as read; the flag's field shows the row again.
+    drive::size = float2 { 1280.0, 800.0 };
+    var hidden = shell::new(rules::RUSSIAN);
+    hidden.screen = shell::SETTINGS;
+    hidden.prefs = settings::parse("board = 3d\n");
+    drive::frame(hidden, g, float2 { -1.0, -1.0 }, false, false, false, 0.0);
+    print("Board row hidden by default: ", !hidden.prefs.show_board_row, ", tiles ", drive::tiles(g), " of ", TILES - 2,
+          ", kings' tiles at ", AUTO - 2, "..", STACK - 2);
+    drive::tap(hidden, g, drive::tile(g, STACK - 2), 1.0);
+    var kept: u8[>..] = [];
+    settings::write(hidden.prefs, kept);
+    print("kings stack taps: ", hidden.prefs.kings == board::STACK, "; board key kept in the file: ",
+          settings::parse(kept).board == settings::RAISED);
+    hidden.prefs.show_board_row = true;
+    drive::frame(hidden, g, float2 { -1.0, -1.0 }, false, false, false, 2.0);
+    print("with the field set: tiles ", drive::tiles(g), " of ", TILES);
 }

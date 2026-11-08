@@ -299,11 +299,14 @@ the prototype tried, kept for 3D:
   **Game**: the draughts a new game starts on (international, Brazilian, Russian; the
   setup can still change it), move hints, and the tutorial (one tile, learn the moves).
   **Look**: the background as thumbnails of the four photographs (62 × 40 px) after a
-  tile for by the date, the board (flat or raised, 3D dimmed until task 015), and kings
-  (auto, crown, or stack, the last two each with its king drawn on the tile). Each
+  tile for by the date, and kings (auto, crown, or stack, the last two each with its
+  king drawn on the tile). The prototype's Board row (flat or raised) is hidden until the
+  3D board exists (task 015): the board is always flat, the file's `board = 2d|3d` key is
+  still read and written, and the app's `--3d` flag shows the row, its 3D tile dimmed
+  (`Settings.show_board_row`, `shell/settings.goose`). Each
   setting is a dim 18 px name at the left of its tiles (above them in portrait); a tile
   has radius 16 px and is lit in the glow color at 22% with a 2 px glow border when on.
-  The preview is the board as the choices make it: its size, flat or raised, the kings,
+  The preview is the board as the choices make it: its size, the kings,
   and what the move hints show (all moves: the selected piece's capture; mistakes only:
   a wrong move's red ring and the piece that must capture pulsing), over the season's
   photograph. It is home's board: opening settings moves it aside, and back moves it
@@ -317,8 +320,8 @@ the prototype tried, kept for 3D:
   sets the preview up again. The choices take the width their words want, at most 55% of
   the page, and wrap beyond it; their notes and the thumbnails' labels are in the 17 px
   face, which makes them a little wider than the prototype's 13 px, so the landscape
-  board is about 550 px where the prototype's is 590. The tutorial's tile and the raised
-  board are dimmed and take no tap until they exist.
+  board is about 550 px where the prototype's is 590. The tutorial's tile (and the raised
+  board's with `--3d`) is dimmed and takes no tap until it exists.
   **Puzzle picker** (`prototypes/puzzles.html`): back, and one glass row per tier,
   its mark (a target for captures, a crown for many jumps and crowning, a shield for
   shots and the safe move) and its ten tiles, each with 0 to 3 stars in the glow color,

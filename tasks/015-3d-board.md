@@ -78,3 +78,10 @@ look good, not merely work.
       with a soft shadow, with the theme's colors and the key light
 - [ ] Taps hit the right squares through the perspective
 - [ ] Draws nothing while idle, as the 2D board
+
+## When 3D lands
+
+Show settings' Board row again: remove `Settings.show_board_row` (`shell/settings.goose`)
+and the `--3d` flag (`app/draughts.goose`, `docs/development.md`), make the board follow
+`Settings.board`, and update `docs/architecture/rendering.md`' Settings paragraph and
+`test/shell/settings.goose`.

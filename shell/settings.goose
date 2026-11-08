@@ -2,7 +2,7 @@
 // the language at the title row's right end, and the choices as words in two glass
 // groups by what they change. Game: the draughts a new game starts on (the setup's
 // choice too), move hints, and the tutorial. Look: the background (by the date, or one
-// season), the board (flat; raised once the 3D board exists), and the kings (auto,
+// season), the board (flat or raised, a row hidden until the 3D board exists), and the kings (auto,
 // crown, or stack). Beside them is home's board as the choices make it: its size, the
 // kings, and what the move hints show, on a fixed position. In landscape the choices
 // take the width they need at the left and the board the rest; in portrait the board is
@@ -56,7 +56,7 @@ let CLOCK_NAMES = ["none", "5+3", "10+5"];
 
 struct Settings {
     season:   i64 = BY_DATE,    // a theme (app/theme.goose), or BY_DATE
-    board:    i64 = FLAT,
+    board:    i64 = FLAT,       // kept in the file; the flat board is drawn until show_board_row
     hints:    i64 = board::MISTAKES,
     kings:    i64 = AUTO,
     language: i64 = SYSTEM,     // strings::EN.., or SYSTEM
@@ -70,6 +70,11 @@ struct Settings {
     games: i64    = 0,
     // The stars won in each puzzle, 1 to 3, by its id; 0 for one not solved.
     stars: u8[puzzles::MAX_PUZZLES + 1] = [0; puzzles::MAX_PUZZLES + 1],
+    // Whether the Board row shows. The 3D board doesn't exist yet (task 015), so the row
+    // is hidden and the board always flat, whatever the file's `board` says; the app's
+    // `--3d` flag turns it on for working on that task. Not in the file; remove it, and
+    // this switch, when 3D lands.
+    show_board_row: bool = false,
 }
 
 // What the screen asks for.
@@ -77,7 +82,8 @@ let NOTHING = 0;
 let BACK = 1;
 let CHANGED = 2;
 
-// How the board draws kings: auto is a crown, the board being flat.
+// How the board draws kings: auto is a crown, the board being flat (the only board
+// drawn while the Board row is hidden, and none other exists yet).
 fn king_look(s: Settings) -> i64 { if s.kings == board::STACK { board::STACK } else { board::CROWN } }
 
 // The settings a file holds; what it lacks or doesn't know stays at the default.
@@ -231,13 +237,24 @@ let TUTORIAL_ROW = 2;
 let BACKGROUND_ROW = 3;
 let BOARD_ROW = 4;
 let KINGS_ROW = 5;
-let GROUP_ROWS = 3;
+let GAME_ROWS = 3;
 let ROW_NAMES = [strings::SETUP_DRAUGHTS, strings::SETTINGS_HINTS, strings::SETTINGS_TUTORIAL,
                  strings::SETTINGS_BACKGROUND, strings::SETTINGS_BOARD, strings::SETTINGS_KINGS];
 let ROW_TILES = [3, 2, 1, 5, 2, 3];
 let ROW_H = [56.0, 56.0, 56.0, 70.0, 56.0, 72.0];
 let GROUP_ICONS = [gui::TARGET, gui::SUN];
 let GROUP_TITLES = [strings::SETTINGS_GAME, strings::SETTINGS_LOOK];
+
+// The rows a group shows: the game's three, and the look's background, board (only with
+// the switch on), and kings. Row k of a group is `group_row`.
+fn group_rows(s: Settings&, group: i64) -> i64 {
+    return if group == 0 || s.show_board_row { 3 } else { 2 };
+}
+
+fn group_row(s: Settings&, group: i64, k: i64) -> i64 {
+    let row = GAME_ROWS * group + k;
+    return if row >= BOARD_ROW && !s.show_board_row { row + 1 } else { row };
+}
 
 // Tile i of a row's word.
 fn word(row: i64, i: i64) -> i64 {
@@ -332,8 +349,8 @@ fn rows(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4,
     let u = g.scale;
     var y = r.y;
     var changed = false;
-    for k in GROUP_ROWS {
-        let row = GROUP_ROWS * group + k;
+    for k in group_rows(s, group) {
+        let row = group_row(s, group, k);
         if k > 0 { y += ROW_GAP * u; }
         let aside = (NAME_W + 14.0) * u;
         let tiles = if landscape { float4 { r.x + aside, y, r.z - aside, 0.0 } }
@@ -358,11 +375,11 @@ fn group_height(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, w:
 }
 
 // How wide a group's glass wants to be in landscape, its rows unwrapped.
-fn group_width(g: gui::Gui&, group: i64) -> f32 {
+fn group_width(s: Settings&, g: gui::Gui&, group: i64) -> f32 {
     let u = g.scale;
     var widest: f32 = 0.0;
-    for k in GROUP_ROWS {
-        let row = GROUP_ROWS * group + k;
+    for k in group_rows(s, group) {
+        let row = group_row(s, group, k);
         var w = -TILE_GAP * u;
         for i in ROW_TILES[row] { w += tile_width(g, row, i) + TILE_GAP * u; }
         widest = max(widest, w);
@@ -440,7 +457,7 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, wi
     if landscape {
         // The choices as wide as they want, at most 55% of the page, wrapping beyond; the
         // board in the rest, centered.
-        let want = max(max(group_width(g, 0), group_width(g, 1)), (HEAD_H + 40.0) * u + languages_width(g)
+        let want = max(max(group_width(s, g, 0), group_width(s, g, 1)), (HEAD_H + 40.0) * u + languages_width(g)
                        + gui::text_width(g, gui::LABEL, strings::get(strings::HOME_SETTINGS)));
         var side = gui::cut_left(page, min(want, 0.55 * page.z));
         gui::cut_left(page, SIDE_GAP * u);
