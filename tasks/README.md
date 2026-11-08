@@ -52,42 +52,45 @@ memory down, and 011 stopped SDL's accelerometer, the last idle CPU, all archive
 
 ## Next (agreed 2026-11-08, updated at the session's end)
 
-The MVP's features are in: puzzles, the computer with its clock, three variants, the
-icon and launch, the win (031), the setup's board (034), the transitions (022), and
-home's X (035, archived). Done on 2026-11-08 and recorded in their tasks: the
-`--tap` stall, the launcher's name per language, the autumn icon, a multi-capture tapped
-stop by stop (007), medium's skill (006), settings' Board row hidden until 3D (015), and
-030 (phones and other screen sizes, archived): the survey, near-square fixes, phone
-layouts down to 480 dp with every tap at 88 dp, the density floor at F = 0.75 (the Pixel
-7a lays out about 549 dp across), the safe area (cutout and gesture bar; the top
-swipe-down strip and SDL's side strips left out, `patches/SDL/0002`), Android's back
-going back a screen, phones turning with the screen, larger tablets on the Mac, and the
-Pixel 7a and the tablet checked. The user liked the phone layouts' design choices
-(tabs on phones, two setup columns, play at the bottom of the second); Estonian kings
-are "Tammi kuju" with "Laua järgi".
+The MVP's features are in, and on 2026-11-08 also: 030 (phones and other sizes), 035
+(home's X), 032 (memory: the tablet's PSS at home 216 → 130 MB, the Pixel 7a's 291 →
+146) and 011 (idle 1.2 → 0.05 s a minute), all archived; puzzles' multi-captures by hand
+(a capture left partway and next pressed is a miss), drops that snap to the nearest
+legal square within 0.9 of one, home's gear as a bare icon in portrait, the date-based
+season tile after the four seasons, and the second Estonian review taken (Võta, Päästa
+nupp, Proovi veel, Tänane, Tammid; `tasks/024-estonian-review/proposals-2.md`).
 
-The order for what is left:
+The next session is lean: the main session delegates to subagents (the default model for
+judgment, Sonnet for mechanical work), one device agent at a time, stay-awake turned on
+first. The order:
 
-1. Done: 030 and 035 archived, what the docs need moved into them (2026-11-08).
-2. Done: 032, memory (PSS at home on the tablet 216 → 130 MB, the Pixel 7a 291 → 146),
-   with 011 (the accelerometer, its cut 4), both archived and what the docs need moved
-   into them (2026-11-08).
-3. 029, the Play release (start the developer account early: a new personal account
-   needs a 14-day closed test with 12 testers). Switch the icon back to winter before it
-   ships.
-4. Children play it (task 006's last criterion; medium's strength, the
+1. 029, the Play release: everything that needs neither the user nor the Play account,
+   so the package is ready for upload: the AAB, release signing with an upload key kept
+   outside the repo (the user backs it up), a version below 1 (0.x), the target SDK
+   and 16 KB alignment, the listing's text in English and Estonian, the privacy policy,
+   the Data safety and content rating answers drafted. Switch the icon back to winter
+   before it ships. The user starts the developer account (a new personal account needs
+   a 14-day closed test with 12 testers).
+2. 037, the puzzle set by theme: the user decides the themes and their counts, what
+   replaces "Capture 2", and which picker take to prototype; then build the set and the
+   picker. Black to move in about a third.
+3. 038, players (one per child): the user picks a take in `prototypes/profiles.html`
+   (a proposed) and answers the task's open questions.
+4. Small checks: on the Pixel 7a, a drop about 0.6 of a square off a target in puzzle 4
+   lands on it (`board::snap`, not yet seen on a device); the tablet's stay-awake was
+   left on when it was unplugged, turn it off when it is next attached.
+5. Archive the done tasks still in the folder: 007, 008, 019, 020, 021, 023, 024, 025,
+   027, 028 (and 016, cancelled).
+6. Children play it (task 006's last criterion; medium's strength, the
    computer's time on the clock).
-5. 036, the announcement (a tweet, the Goose Discord, a video, a thread on the methods),
-   after the release, its numbers measured after 032 and 030.
+7. 036, the announcement, after the release.
+
+To decide (the user, 2026-11-08): sound (none yet; a few quiet effects would help
+children who don't read), a puzzle rating like GoDraughts' and the computer's level
+shown as a rating (both per player, after 037 and 038), 026's first start.
 
 Alongside, when the user wants it: 015's 3D prototype (`poc/3d/`, its plan and sources in
 the task; the user has more to add first).
-
-Puzzles: 037 audits task 007's set and proposes a better one, grouped by theme with the
-picker redesigned around it (a prototype first), its Learn theme from today's best; it
-follows the puzzle input work under way (2026-11-08). 038 adds players, one per child on
-the family's tablet, each with their own look, stars, level, and game; its takes are in
-`prototypes/profiles.html`, and it follows 037's library, whose stars it keeps per player.
 
 After the MVP: 026 (first start and tutorial; its prototype awaits the user's review), 038
 (players, a take to choose),
