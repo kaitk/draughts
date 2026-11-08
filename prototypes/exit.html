@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draughts: exit</title>
+<link rel="stylesheet" href="draughts.css">
+<script src="draughts.js"></script>
+<style>
+  /* Takes on a way to close the app from home (task 035): ?take=a, b, or c, &lang=et for
+     Estonian, &glyph=power for c's other glyph. Home is laid out as shell/home.goose lays
+     it out, in dp (1 px here): the sharp photograph, the board as the game stands in 2D,
+     and the glass column (landscape) or sheet (portrait) with the wordmark and the menu.
+
+     a: a quiet last row. Exit under the menu, set apart by a wider gap, its icon and word
+        dimmer than the rows above and on no fill; in portrait too, under puzzles.
+     b: an X in the corner. A round glass button, 88 dp, in the screen's top right, 24 dp
+        from both edges, its X 32 dp; the menu keeps its rows. In portrait the board moves
+        down and shrinks to clear it.
+     c: a door in the corner. As b, with a door and an arrow leaving it (or a power sign,
+        &glyph=power) for the X. */
+  .menu { position: fixed; display: grid; align-content: center; }
+  .menu.glass { --r: 32px; }
+  .content { position: absolute; display: grid; align-content: start; gap: 10px; }
+  .mark { display: flex; align-items: center; gap: 14px; height: 72px; }
+  .mark .piece { position: relative; inset: auto; width: 56px; height: 56px; --u: 5px; flex: none; }
+  .mark h1 { margin: 0; font-size: 64px; font-weight: 400; letter-spacing: 0.06em; }
+  .item { display: flex; align-items: center; gap: 18px; height: 80px; padding: 0 18px; border-radius: 20px;
+    color: var(--fg); text-decoration: none; font-size: 30px; }
+  .item > [data-icon] { display: grid; }
+  .item .icon { width: 34px; height: 34px; stroke-width: 2.2; opacity: 0.85; }
+  .item.primary { background: color-mix(in srgb, var(--glow) 24%, transparent); }
+  .item small { margin-left: auto; font-size: 17px; color: var(--fg-dim); }
+  /* a: the way out, quieter than the ways in. */
+  .item.exit { color: var(--fg-dim); margin-top: 14px; }
+  .item.exit .icon { opacity: 0.6; }
+  .gear { display: none; width: 48px; height: 48px; margin-left: auto; border-radius: 16px; place-items: center;
+    color: var(--fg); background: rgb(255 255 255 / 0.08); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18); }
+  .gear svg { width: 26px; height: 26px; stroke-width: 2; }
+  .portrait .gear { display: grid; }
+  .portrait .item.settings { display: none; }
+  #board { position: fixed; isolation: isolate; }
+  /* b and c: one round control on glass in the corner, the quiet look of home's gear at
+     the size a small hand needs. */
+  .corner { --r: 44px; position: fixed; display: grid; place-items: center; width: 88px; height: 88px;
+    border-radius: 50%; color: var(--fg); }
+  .corner::after { background: color-mix(in srgb, var(--glass-tint), rgb(255 255 255 / 0.08)); }
+  .corner svg { width: 32px; height: 32px; stroke-width: 2.4; opacity: 0.9; }
+  /* The tap target's edge and the safe margins, shown with &guides. */
+  .guide { position: fixed; outline: 1px dashed rgb(255 120 120 / 0.8); pointer-events: none; z-index: 9; }
+</style>
+</head>
+<body>
+<nav class="menu glass"><div class="content">
+  <div class="mark"><div class="piece white king"></div><h1 data-s="app"></h1>
+    <a class="gear" href="settings.html" data-icon="gear" aria-label="Settings"></a></div>
+  <a class="item primary" href="game.html"><span data-icon="next"></span><span data-s="continue"></span></a>
+  <a class="item" href="home.html?pick=friend"><span data-icon="friend"></span><span data-s="friend"></span></a>
+  <a class="item" href="home.html?pick=computer"><span data-icon="computer"></span><span data-s="computer"></span><small data-s="medium"></small></a>
+  <a class="item" href="puzzles.html"><span data-icon="puzzle"></span><span data-s="puzzles"></span><small>23 / 90</small></a>
+  <a class="item settings" href="settings.html"><span data-icon="gear"></span><span data-s="settings"></span></a>
+</div></nav>
+<div id="board"></div>
+<script>
+  const params = new URLSearchParams(location.search);
+  const take = ['a', 'b', 'c'].includes(params.get('take')) ? params.get('take') : 'a';
+  const lang = params.get('lang') === 'et' ? 'et' : 'en';
+  // The words, as strings/en.txt and strings/et.txt have them; home.exit is new.
+  const S = {
+    en: { app: 'Draughts', continue: 'Continue', friend: 'A friend', computer: 'The computer', medium: 'medium',
+      puzzles: 'Puzzles', settings: 'Settings', exit: 'Exit' },
+    et: { app: 'Kabe', continue: 'Jätka', friend: 'Sõbraga', computer: 'Arvutiga', medium: 'keskmine',
+      puzzles: 'Ülesanded', settings: 'Seaded', exit: 'Välju' },
+  }[lang];
+  document.documentElement.lang = lang;
+
+  // The glyphs this adds, on the icons' 24-unit grid: an X, a door left by an arrow, and
+  // the power sign.
+  Draughts.ICONS.close = '<path d="M6 6l12 12"/><path d="M18 6 6 18"/>';
+  Draughts.ICONS.exit = '<path d="M10 3.5H6a1.5 1.5 0 0 0-1.5 1.5v14A1.5 1.5 0 0 0 6 20.5h4"/><path d="M15 7.5l4.5 4.5-4.5 4.5"/><path d="M19.5 12H9.5"/>';
+  Draughts.ICONS.power = '<path d="M12 3v8.5"/><path d="M17.7 6.6a8 8 0 1 1-11.4 0"/>';
+
+  const content = document.querySelector('.content');
+  if (take === 'a') {
+    content.insertAdjacentHTML('beforeend',
+      '<a class="item exit" href="#" data-close><span data-icon="exit"></span><span data-s="exit"></span></a>');
+  } else {
+    const glyph = take === 'b' ? 'close' : params.get('glyph') === 'power' ? 'power' : 'exit';
+    document.body.insertAdjacentHTML('beforeend',
+      `<a class="corner glass" href="#" data-close data-icon="${glyph}" aria-label="${S.exit}"></a>`);
+  }
+  for (const el of document.querySelectorAll('[data-s]')) el.textContent = S[el.dataset.s];
+
+  // Lays home out as shell/home.goose does, in dp.
+  const ROW = 80, GAP = 10, MARK = 72, CORNER = 88, EDGE = 24;
+  function layout() {
+    const W = innerWidth, H = innerHeight, landscape = W >= H;
+    document.body.classList.toggle('portrait', !landscape);
+    const rows = 4 + (landscape ? 1 : 0) + (take === 'a' ? 1 : 0);
+    const extra = take === 'a' ? 14 : 0;
+    const contentH = MARK + (landscape ? 28 : 12) + GAP + rows * ROW + (rows - 1) * GAP + extra;
+    const menu = document.querySelector('.menu'), board = document.getElementById('board');
+    const put = (el, x, y, w, h) => Object.assign(el.style, { left: `${x}px`, top: `${y}px`, width: `${w}px`, height: `${h}px` });
+    let size, bx, by;
+    if (landscape) {
+      put(menu, -32, 0, 472, H);
+      put(content, 72, (H - contentH) / 2, 360, contentH);
+      size = Math.min(0.7 * H, W - 440 - 80);
+      bx = 440 + (W - 440 - size) / 2; by = (H - size) / 2;
+    } else {
+      const sheetH = contentH + 64;
+      put(menu, 0, H - sheetH, W, sheetH + 32);
+      put(content, 32, 32, W - 64, contentH);
+      const stageH = H - sheetH;
+      size = Math.min(0.8 * W, 0.6 * H, stageH - 80);
+      bx = (W - size) / 2; by = (stageH - size) / 2;
+      // b and c: the board clears the corner, moving down within the stage and then
+      // shrinking, 16 dp under the button and 24 above the sheet.
+      if (take !== 'a' && bx + size > W - EDGE - CORNER - 16 && by < EDGE + CORNER + 16) {
+        by = EDGE + CORNER + 16;
+        size = Math.min(size, stageH - 24 - by);
+        bx = (W - size) / 2;
+      }
+    }
+    put(board, bx, by, size, size);
+    document.querySelector('.mark').style.marginBottom = `${landscape ? 28 : 12}px`;
+    const corner = document.querySelector('.corner');
+    if (corner) put(corner, W - EDGE - CORNER, EDGE, CORNER, CORNER);
+    Draughts.syncGlass();
+    Draughts.paint();
+    document.title = `Draughts: exit, take ${take}: board ${Math.round(size)} dp`;
+  }
+
+  // The title screen always shows the photograph.
+  Draughts.settings.bg = 'photo';
+  Draughts.init();
+  // Tapping the way out: the app closes at once, with nothing to confirm.
+  for (const el of document.querySelectorAll('[data-close]')) {
+    el.addEventListener('click', (e) => { e.preventDefault(); document.body.style.opacity = 0.2; });
+  }
+  // The take, from the switcher.
+  const bar = document.querySelector('.proto-bar');
+  bar.insertAdjacentHTML('afterbegin', `<select aria-label="take">${['a', 'b', 'c'].map((k) =>
+    `<option${k === take ? ' selected' : ''}>${k}</option>`).join('')}</select>` +
+    `<select aria-label="lang">${['en', 'et'].map((k) => `<option${k === lang ? ' selected' : ''}>${k}</option>`).join('')}</select>`);
+  for (const [i, key] of [[0, 'take'], [1, 'lang']]) {
+    bar.querySelectorAll('select')[i].onchange = (e) => {
+      e.stopPropagation();
+      params.set(key, e.target.value);
+      location.search = params.toString();
+    };
+  }
+  // The game as it stands: International, from the start, as the app shows a new game.
+  Draughts.board(document.getElementById('board'), { ...Draughts.start(10), view: '2d' });
+  layout();
+  addEventListener('resize', layout);
+</script>
+</body>
+</html>
