@@ -63,6 +63,11 @@ look good, not merely work.
     dig through his posts on X and elsewhere, his blog, and talks for what applies here:
     a small static scene, single-frame quality, mobile first. Record what was taken and
     from where.
+  - The user's own digging into his work, mostly unpushed: the local repos
+    `~/projects/goose/goose-ngfx` and `~/projects/goose/goose-nogfx` (their notes), and
+    the Claude Code sessions about them from about October 2026, under
+    `~/.claude-work/projects/-Users-kaitkasak-projects-goose-goose-{ngfx,nogfx,nogfx-prototype}/`
+    (some may be on the user's personal account instead; ask). Read these first.
   - Arm's Mali best practices for MSAA resolved in tile memory.
 - The user has more to add before it starts.
 
