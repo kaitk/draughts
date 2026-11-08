@@ -324,7 +324,9 @@ the prototype tried, kept for 3D:
   is 88 dp tall at least (2026-11-08). In a
   landscape too short for the column (a phone), it becomes two columns of 330 dp side by
   side: back, the title, the draughts, and the level in the first; the child's pieces,
-  the clock, and play in the second, the title in a smaller face if it needs it; down to
+  the clock, and play in the second, the title in a smaller face if it needs it, play at
+  the second's bottom, level with the first's last tile so both columns end on one line
+  (2026-11-08); down to
   290 dp each where the second would reach the X (a 16:9 phone less its cutout at a
   side). In portrait, where the sheet would reach the X (the computer's on a 9:16 phone
   at 480 dp), the sheet takes the height, 8 dp under its top at least, its margins above

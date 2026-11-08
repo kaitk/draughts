@@ -390,7 +390,10 @@ fn choose(over: game::Overlay&, g: gui::Gui&, content: float4, computer: bool, p
         }
     }
     gui::cut_top(c, PLAY_GAP * u);
-    let play = gui::cut_top(c, ROW_H * u);
+    var play = gui::cut_top(c, ROW_H * u);
+    // Two columns end on one line: play at the bottom of the second, level with the
+    // first's last tile, where the first is the taller.
+    if pair { play.y = max(play.y, content.y + content.w - ROW_H * u); }
     let word = strings::get(strings::SETUP_PLAY);
     // Play: the row's icon and word centered.
     let w = 34.0 * u + 18.0 * u + gui::text_width(g, gui::LABEL, word) + 36.0 * u;
