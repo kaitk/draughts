@@ -40,7 +40,7 @@ let ROWS = 4;               // and settings, a fifth in landscape
 let ROW_H = 88.0;           // dp, the floor for small hands
 let ROW_GAP = 2.0;
 let MARK_H = 72.0;          // the wordmark's row
-let MARK_GAP = 34.0;        // under it in landscape; 14 beside settings' gear
+let MARK_GAP = 34.0;        // under it in landscape; 14 beside settings' gear, down to 4
 let GEAR = 88.0;            // settings beside the wordmark, over its row's height
 let MARGIN = 16.0;          // dp the menu keeps from the screen's top and foot at least
 let CORNER = 88.0;          // the way out, round, in the top right,
@@ -71,17 +71,25 @@ fn corner(area: float4, u: f32) -> float4 {
     float4 { area.x + area.z - (EDGE + CORNER) * u, area.y + EDGE * u, CORNER * u, CORNER * u }
 }
 
-// How tall the menu is, with settings a row of its own or the gear beside the wordmark.
-fn menu_height(gear: bool, u: f32) -> f32 {
+// The gap under the wordmark in dp: MARK_GAP with settings a row of its own; 14 beside
+// the gear, less, down to 4, where the area's `height` would leave the gear's 8 dp over
+// the wordmark's row off the screen (a landscape phone at 480 dp less its gesture bar).
+fn mark_gap(gear: bool, height: f32, u: f32) -> f32 {
+    guard gear else { return MARK_GAP; }
+    return clamp(height / u - 8.0 - (MARK_H + ROWS * ROW_H + (ROWS - 1) * ROW_GAP), 4.0, 14.0);
+}
+
+// How tall the menu is in an area `height` tall, with settings a row of its own or the
+// gear beside the wordmark.
+fn menu_height(gear: bool, height: f32, u: f32) -> f32 {
     let rows = if gear { ROWS } else { ROWS + 1 };
-    let gap = if gear { 14.0 } else { MARK_GAP };
-    return (MARK_H + gap + rows * ROW_H + (rows - 1) * ROW_GAP) * u;
+    return (MARK_H + mark_gap(gear, height, u) + rows * ROW_H + (rows - 1) * ROW_GAP) * u;
 }
 
 // Whether settings is the gear beside the wordmark: in portrait, and in a landscape too
 // short for the menu with it as a row (a phone).
 fn gear_beside(landscape: bool, height: f32, u: f32) -> bool {
-    return !landscape || menu_height(false, u) > height - 2.0 * MARGIN * u;
+    return !landscape || menu_height(false, height, u) > height - 2.0 * MARGIN * u;
 }
 
 // How tall a setup's column is (FRIEND or COMPUTER): its groups, back and the title before
@@ -105,7 +113,7 @@ fn paired(setup: i64, landscape: bool, height: f32, u: f32) -> bool {
 
 // How tall the column's content is: the menu, or a setup (FRIEND or COMPUTER).
 fn content_height(setup: i64, landscape: bool, height: f32, u: f32) -> f32 {
-    if setup == NOTHING { return menu_height(gear_beside(landscape, height, u), u); }
+    if setup == NOTHING { return menu_height(gear_beside(landscape, height, u), height, u); }
     return setup_height(setup, paired(setup, landscape, height, u), u);
 }
 
@@ -201,16 +209,17 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
     // The column or sheet runs on past the safe area to the screen's edges.
     gui::glass(g, gui::bleed(g, col, area), 32.0);
     over.clear();
+    let gear = gear_beside(landscape, height, u);
     var pick = if setup != NOTHING { choose(over, g, content, setup == COMPUTER, pair_w, head, s) }
-               else { menu(over, g, content, gear_beside(landscape, height, u), s) };
+               else { menu(over, g, content, gear, mark_gap(gear, height, u), s) };
     // The way out, declared last so the tiles before it keep their order.
     if gui::round_button(g, 309, way, gui::CLOSE, CROSS) { pick = EXIT; }
     return pick;
 }
 
-// The menu in c: the wordmark, the rows, and settings, a row of its own or, `gear`, a
-// quiet tile at the wordmark's right (portrait, and a short landscape).
-fn menu(over: game::Overlay&, g: gui::Gui&, c: float4, gear: bool, s: settings::Settings&) -> i64 {
+// The menu in c: the wordmark, `below` dp under it, the rows, and settings, a row of its
+// own or, `gear`, a quiet tile at the wordmark's right (portrait, and a short landscape).
+fn menu(over: game::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, s: settings::Settings&) -> i64 {
     let u = g.scale;
     var content = c;
 
@@ -232,7 +241,7 @@ fn menu(over: game::Overlay&, g: gui::Gui&, c: float4, gear: bool, s: settings::
     let spaced = 0.06 * gui::FACE_DP[gui::TITLE] as f32 * u;
     let room = (mark.z - gap - gui::text_width(g, gui::TITLE, name)) / max(1, name.len - 1);
     gui::text(g, gui::TITLE, mark, name, 1.0, clamp(room, 0.0, spaced), gui::LEFT);
-    gui::cut_top(content, (if gear { 14.0 } else { MARK_GAP }) * u);
+    gui::cut_top(content, below * u);
 
     // The menu.
     let rows = [CONTINUE, FRIEND, COMPUTER, PUZZLES];
