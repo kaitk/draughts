@@ -36,7 +36,8 @@ which would overwrite the main checkout's while another session uses them.
   and 480 dp (`gui::short_dp`, with a 9:16 phone at 480), its tiles on the screen and
   apart, every tap 88 dp at least, the phones again with the Pixel 7a's insets in both
   orientations (the cutout at either side in landscape), every tile and the board inside
-  the safe area, and a phone's tabs in settings and the puzzles:
+  the safe area, the 16:10 tablet with its 72 px hidden navigation bar (settings keeps
+  both groups in landscape), and a phone's tabs in settings and the puzzles:
   `sizes`), `strings` (every language
   file has every key), `ai` (the computer player:
   its search against a plain minimax, the table changing no score, keys, what each level

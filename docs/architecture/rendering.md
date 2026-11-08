@@ -55,8 +55,8 @@ its insets, a phone's camera cutout and its gesture bar at the bottom. SDL repor
 (`SDL_GetWindowSafeArea`; the program's own C, `app/display.c`, reads them each frame with
 the display scale, since goose_gfx has neither). The app draws behind the cutout (SDL
 sets `LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS`), so the photograph, the blurred page, and
-glass that runs off the screen's edge (home's column and sheet, `gui::bleed`) reach the
-screen's edges; everything else is placed in the safe rect as it would be in a whole
+glass that runs off the screen's edge (home's column and sheet, `gui::bleed`; settings'
+look group in landscape over a bottom inset, below) reach the screen's edges; everything else is placed in the safe rect as it would be in a whole
 window of that size (`gui::safe`, `shell::frame`). The scale stays the whole short
 side's: the same in both orientations, where the cutout falls on the long side in one and
 the short side in the other, so turning the screen doesn't rebake the text or change the
@@ -64,9 +64,16 @@ size of a tap. The layouts hold down to a safe area 443 × 801 dp (a 9:16 phone 
 less its cutout at a side and an 84 px gesture bar). SDL would also take out of the safe
 area the back gesture's strips down both sides (`systemGestures`) and, with the system
 bars hidden, the strip at the top a swipe pulls them down from (`mandatorySystemGestures`'
-top), though taps in both still reach the window; `patches/SDL/0002` keeps them in, so
-the safe area is the cutout, the bars while shown, the system's tappable elements, and
-the gesture bar at the bottom (on the Pixel 7a 0, 118, 0, 84 px in portrait). A
+top, and on a Samsung tablet `tappableElement`'s top too), though taps in both still
+reach the window; `patches/SDL/0002` keeps them in, so the safe area is the cutout, the
+bars while shown, the system's tappable elements at the sides and the bottom (a
+navigation bar, shown or hidden), and the gesture bar at the bottom (on the Pixel 7a 0,
+118, 0, 84 px in portrait; on the Galaxy Tab A11+ 0, 0, 0, 72 expected, its hidden
+navigation bar). Settings in landscape lets its two groups run over a bottom inset: the
+fit counts up to 38 dp of it (the page's foot and the look group's bottom pad), the
+look's glass then running on to the screen's bottom edge, its tiles still above the
+inset and as far from the screen's edge as with none; so the tablet keeps both groups
+beside the board rather than the Game and Look tabs. A
 change of the insets or the scale counts as a change, as a new size does, and the screen
 is laid out and drawn again (see "Frames and battery").
 

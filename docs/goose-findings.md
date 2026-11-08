@@ -34,14 +34,19 @@ mandatorySystemGestures | tappableElement | displayCutout`. With gesture navigat
 say still pass taps to the window, so a portrait phone's safe area loses tens of dp of
 its width for no tap's sake. With the bars hidden, `mandatorySystemGestures` still holds
 the strip at the top a swipe pulls them down from, where taps reach the window too (on
-the Pixel 7a 150 px in portrait, 32 more than its camera, and 74 px in landscape). SDL
-3.4.16 (`fa2c02b`).
+the Pixel 7a 150 px in portrait, 32 more than its camera, and 74 px in landscape). On a
+Samsung tablet (the Galaxy Tab A11+) that strip is reported as `tappableElement` too
+(45 px), so it stays out of the safe area through that type as well. SDL 3.4.16
+(`fa2c02b`).
 
 - Here: `patches/SDL/0002-safe-area-without-system-gestures.patch` leaves
-  `systemGestures` out and takes only the bottom of `mandatorySystemGestures` (the
-  gesture bar); the cutout, the bars while shown, and `tappableElement` still count.
-  `scripts/android.py` compiles SDL's Java from the patched copy, as it does its C. The
-  side strips' part checked on the Pixel 7a; the top strip's waits for it (task 030).
+  `systemGestures` out, and takes `tappableElement` and `mandatorySystemGestures` only
+  at the sides and the bottom: `max(systemBars | displayCutout, (tap.left, 0, tap.right,
+  max(tap.bottom, gestures.bottom)))`. A status bar while shown counts through
+  `systemBars`. `scripts/android.py` compiles SDL's Java from the patched copy, as it
+  does its C. Checked on the Pixel 7a (0, 118, 0, 84 px in portrait, 118, 0, 0, 84 and
+  0, 0, 118, 84 in landscape; a tap in the old top strip reaches the app, a swipe there
+  still shows the bars); the tablet's 0, 0, 0, 72 waits for it to be attached (task 030).
 - Upstream: for the user only, as with the other SDL entries. Possibly a hint choosing
   which insets make the safe area.
 

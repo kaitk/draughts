@@ -2,8 +2,8 @@
 
 Status: in-progress (the survey, the layout fixes, the phone layouts down to 480 dp, the
 insets, the density floor at F = 0.75, the Pixel 7a, larger tablets on the Mac, and the
-tablet done; left: the top strip on the Pixel, and the user's choice on the tablet's
-landscape settings going to tabs)
+tablet done, the top strip checked on the Pixel, and settings' bleed over the tablet's
+navigation bar on the Mac; left: the tablet's own re-check of both when next attached)
 
 The layouts were built and checked on one screen, the Galaxy tablet (1920 × 1200, 16:10)
 and its Mac stand-in. Play lists the app for phones and tablets alike, so every screen
@@ -613,10 +613,18 @@ off the top: the gap under the wordmark shrinks from 14 dp down to 4 there
 portrait shows the computer's setup with no board (its sheet takes the height), and the
 9:16 at 480 the game's board 352 → 336 dp, its bar's tiles 96 → 91 dp wide.
 
-**Left for the Pixel 7a:** log `draughts_display` once in each orientation for the
-insets above; a tap in the top strip reaches the app (home's X in portrait, under the
-old 150 px line) and a swipe there still pulls the bars down; every screen in landscape
-with nothing under the camera or the gesture bar.
+**On the Pixel 7a**, after the Samsung fix below (`dd98bb2`, the same combination for
+the Pixel): `draughts_display` gave 0, 118, 0, 84 px in portrait, 118, 0, 0, 84 with the
+camera at the left and 0, 0, 118, 84 at the right, display scale 2.625, layout 1.969 px
+a dp, as expected. Home's X closes the app from a tap at its centre in portrait and from
+one 62 px from the screen's top in landscape (inside the old 74 px strip:
+`wm_finish_activity ... finish-activity`); a swipe down from the top still shows the
+bars (`mShowingTransientTypes=statusBars navigationBars`). Home, the game, settings, and
+the computer's setup in English, portrait and landscape (camera left): nothing that
+takes a tap or reads lies under the camera or the gesture bar, and the title rows sit
+24 dp from the screen's top in landscape. Shots, sheets with the insets tinted red, and
+the scripts in
+`/private/tmp/claude-501/-Users-kaitkasak-projects-personal-draughts/babe58e8-1877-410c-bc48-f7f8f48b403f/scratchpad/phone-topstrip/`.
 
 ## On the tablet (2026-11-08)
 
@@ -651,9 +659,8 @@ is cut off or overlapping, and the 88 dp floor's changes look as on the Mac.
   a time with the Game and Look tabs (on the Mac, `--size 960x600 --screen settings`
   shows both groups with `--inset 0,0,0,8` and tabs with `0,0,0,48` or `0,30,0,0`). On
   the tablet the bottom bar alone does it, in both languages, so the tabs show there on
-  any tablet with a navigation bar. Portrait keeps both groups. Not changed: whether the
-  tablet should keep both groups (tighter rows or gaps where the height is short of
-  them by little) is for the user to choose.
+  any tablet with a navigation bar. Portrait keeps both groups. The user chose to keep
+  both groups: see "The Samsung strip and settings' bleed" below.
 - **Back** (`input keyevent KEYCODE_BACK`, landscape): the computer's and the friend's
   setup, the game, and settings opened from home go to home's menu; puzzle 21 goes to
   the puzzles. On home's menu the launcher shows, the process stays (the same pid), the
@@ -665,6 +672,36 @@ is cut off or overlapping, and the 88 dp floor's changes look as on the Mac.
 - **Lifecycle memory**, 20 cycles of home, resume, and rotation: PSS 273 MB at the start,
   then 259 to 264 MB, native heap 27 MB, graphics 211 to 215 MB with the same two 2 MB
   steps as before; one process, no errors.
+
+## The Samsung strip and settings' bleed (2026-11-08)
+
+The user's two decisions after the tablet check:
+
+- **The top strip on Samsung:** `patches/SDL/0002` now takes `tappableElement` only at
+  the sides and the bottom, as it does `mandatorySystemGestures`: the safe area is
+  `max(systemBars | displayCutout, (tap.left, 0, tap.right, max(tap.bottom,
+  gestures.bottom)))`. A status bar while shown still counts, through `systemBars`.
+  Expected on the tablet 0, 0, 0, 72 px in both orientations; the Pixel's are
+  unchanged (above).
+- **Settings in a tablet's landscape:** the two groups' fit counts up to 38 dp of a
+  bottom inset (the page's 24 dp foot and the look group's 14 dp bottom pad), so the
+  tiles end above the inset and at least as far from the screen's edge as with none.
+  Where the groups then run past the page, they lay out from its top and the look's
+  glass runs on to the screen's bottom edge (`gui::bleed`, which every group's glass
+  now goes through, a no-op elsewhere). With no inset nothing moves: every
+  `test/expected` line stayed, and the Mac's 960 × 600 settings shot without an inset
+  matches the build before but for the preview's flash (6 px). On the Mac at 960 × 600
+  with `--inset 0,0,0,36` and `0,0,0,48` (the tablet's 48 dp), the build before showed
+  the tabs and this one both groups, the Kings row's tiles above the inset. The Pixel's
+  landscape, 506 dp tall, keeps the tabs. `test/shell/sizes` runs the 16:10 tablet at
+  1920 × 1200 and 1200 × 1920 with a 72 px bottom inset in both languages: every tile
+  inside the safe area, settings with its 17 tiles (both groups) in both orientations;
+  without the change, landscape had 11 (one group and the tabs). Mac shots in
+  `/private/tmp/claude-501/-Users-kaitkasak-projects-personal-draughts/babe58e8-1877-410c-bc48-f7f8f48b403f/scratchpad/phone-topstrip/mac/`.
+
+**Left for the tablet**, the next time it is attached: log `draughts_display` for 0, 0,
+0, 72 px in both orientations, and look at settings in landscape (both groups, the
+Kings row above the hidden bar) in both languages.
 
 ## Acceptance criteria
 
