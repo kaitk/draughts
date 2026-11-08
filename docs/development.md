@@ -53,11 +53,16 @@ squares to tap on the first frames, move hints (`--hints moves` shows the target
 mistakes only by default), the language (`--lang et`; the system's by default), the
 layout's shorter side in dp (`--dp 540`; 800 by default, for trying phone scales, task
 030; `gui::scale_of`), a phone's insets (`--inset L,T,R,B`, in dp of the layout, left,
-top, right, bottom; the window's own safe area by default, all of it on the Mac), and a
-frame to stop at and save as `draughts.png`. The Pixel 7a in portrait at 540 dp, its 118 px cutout and a gesture bar
+top, right, bottom; the window's own safe area by default, all of it on the Mac), the
+scale's floor in physical size (`--density-floor F` with `--display-scale S`: the scale
+becomes `max(short side / 800, F × S)`; off by default, and `--dp` turns it off unless
+`--density-floor` is given too; the Mac's own display scale is left out, so without
+`--display-scale` the floor does nothing there), and a frame to stop at and save as
+`draughts.png`. The Pixel 7a in portrait at 540 dp, its 118 px cutout and a gesture bar
 of about 48 px, 2 px a dp at that scale: `--size 450x1000 --dp 540 --inset 0,59,0,24`,
 and in landscape `--size 1200x540 --dp 540 --inset 59,0,0,24` (or `0,0,59,24`, turned
-the other way).
+the other way). What the Pixel would show at a floor of 0.75: `--size 1200x540
+--density-floor 0.75 --display-scale 2.625` (1.97 px a dp, 548 dp across).
 `app/draughts.build` adds the program's own C (`app/background.c`, the photographs and their JPEG decoder;
 `app/locale.c`, the system's locales; `app/display.c`, the window's safe area and the
 display's scale; `app/wake.c`, the timer a running clock wakes the

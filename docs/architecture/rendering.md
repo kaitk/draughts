@@ -41,7 +41,13 @@ draws its HUD:
 ### Screen sizes and the safe area
 
 Layouts are in dp: the screen's shorter side is 800 dp (`gui::scale_of`, the one place the
-scale is computed), so the tablet's 1200 px are 1.5 px a dp.
+scale is computed), so the tablet's 1200 px are 1.5 px a dp. The scale has room for a
+floor in physical size, `max(short side / 800, F × display scale)`, the display scale
+being Android's density / 160 (2.625 on the Pixel 7a, 1.5 on the tablet), so a phone's
+dp stays at least F of Android's; F is not yet picked (about 0.75), and until it is the
+floor is off (`gui::DENSITY_FLOOR` is 0). The Mac's display scale (2 on Retina, its
+windows being in points) is left out: a Mac window stands for a screen of its size in
+pixels, and the floor there would make shots depend on the Mac's screen.
 
 Each screen lays out its taps and words inside the window's **safe area**: the window less
 its insets, a phone's camera cutout and its gesture bar at the bottom. SDL reports them
@@ -553,7 +559,7 @@ in the UI's one draw. Baked again only when the layout's scale changes.
 ## Frames and battery
 
 The app draws only when something changed: input, a running animation, the AI's reply, or
-a new screen size or safe area. Otherwise it draws nothing in that frame, and goose_gfx's `frame()`
+a new screen size, safe area, or scale. Otherwise it draws nothing in that frame, and goose_gfx's `frame()`
 then neither presents nor spins: it waits for the next event, up to a second. An idle
 board costs about one wakeup a second and no GPU work. The loop is the same on every
 platform:

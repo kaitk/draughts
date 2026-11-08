@@ -18,9 +18,18 @@ let PRESS = 0.12;           // seconds a button takes to go down or up
 // how a phone looks with fewer dp across (task 030).
 var short_dp: f32 = 800.0;
 
+// A floor on the scale in physical size, F × the display's scale (Android's density /
+// 160): a phone's dp then stays at least F of Android's, where the short side / 800
+// would make them smaller. F is still to be picked (about 0.75); 0 keeps the scale the
+// short side's alone. The app sets display_scale on Android, and the development flags
+// --density-floor F and --display-scale S try them (docs/development.md).
+let DENSITY_FLOOR = 0.0;
+var density_floor: f32 = DENSITY_FLOOR;
+var display_scale: f32 = 0.0;
+
 // The layout's scale, pixels a dp, on a screen width × height pixels: from the whole
 // screen's shorter side, its insets included, so it is the same in both orientations.
-fn scale_of(width: f32, height: f32) -> f32 { min(width, height) / short_dp }
+fn scale_of(width: f32, height: f32) -> f32 { max(min(width, height) / short_dp, density_floor * display_scale) }
 
 // What a quad is, as the UI shader draws it.
 let GLASS = 0;              // a glass panel, with its shadow

@@ -1,7 +1,7 @@
 # 030: Phones and other screen sizes
 
-Status: in-progress (the survey, the layout fixes, and the phone layouts down to 480 dp done; the
-scale with density and the Pixel 7a next)
+Status: in-progress (the survey, the layout fixes, the phone layouts down to 480 dp, and the
+insets on the Mac done; the density floor plumbed but off, its F and the Pixel 7a next)
 
 The layouts were built and checked on one screen, the Galaxy tablet (1920 × 1200, 16:10)
 and its Mac stand-in. Play lists the app for phones and tablets alike, so every screen
@@ -425,7 +425,97 @@ landscape keeps both groups with the names beside unwrapped and a small board (3
 
 Left open: the scale itself (`max(short / 800, f × density)`) and its check on the
 Pixel 7a; the near-square settings' small board (242 to 305 dp) may want its own look;
-the phones' insets.
+the phones' insets (done on the Mac below).
+
+## Insets (2026-11-08)
+
+Every screen lays out its taps and words in the window's safe area, the photograph and
+glass that runs off the screen reaching its edges
+([rendering](../docs/architecture/rendering.md#screen-sizes-and-the-safe-area)).
+
+- **Where they come from:** goose_gfx exposes neither the safe area nor the display
+  scale, and a gfx patch can't add a function the program calls (the program compiles
+  against the release's `gfx.goose`, and a Mac run uses the gfx built into goose), so
+  the program's own C asks SDL (`app/display.c`, every frame; [findings](../docs/goose-findings.md)).
+  On this Mac, a 960 × 540 window: `SDL_GetWindowSafeArea` all of it (insets 0),
+  `SDL_GetWindowDisplayScale` 2.0 (`SDL_GetWindowPixelDensity` 2.0 ×
+  `SDL_GetDisplayContentScale` 1.0). On Android, from SDL's source: the display scale is
+  `densityDpi / 160` (2.625 expected on the Pixel 7a, 1.5 on the tablet), the safe
+  area the window's insets in pixels; SDL sets `LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS`
+  from Android 11, so the app draws behind the cutout and the window is the whole display.
+  SDL counts the back gesture's side strips (`systemGestures`) in the insets too, which
+  would take tens of dp from a portrait phone's width for no tap's sake;
+  `patches/SDL/0002` leaves them out, and `scripts/android.py` now compiles SDL's Java
+  from the patched copy (it compiled the submodule's before, so a Java patch did
+  nothing). The APK builds; not yet run on a phone.
+- **Layout:** `gui::Gui.insets` holds them in pixels; `shell::frame` hands each screen
+  `gui::safe` (home, the setups, settings, the puzzles, the game and a puzzle through
+  `panel::layout_in`), so transitions, which ease the board between two layouts made in
+  the same rect, line up as before; home's column and sheet bleed to the screen's edges
+  (`gui::bleed`). The scale stays the whole short side's, so it is the same in both
+  orientations: the cutout falls on the long side in portrait and the short side in
+  landscape, and a scale from the safe rect would rebake the text and resize every tap
+  on turning. With the density floor on, a phone's scale is the floor's anyway. A
+  change of insets or scale is a change, like a resize: the loop draws again (SDL's
+  `SDL_EVENT_WINDOW_SAFE_AREA_CHANGED` wakes it).
+- **What the safe area broke:** a 9:16 phone at 480 dp less a 52 dp cutout at a side
+  and a 21 dp gesture bar leaves 801 × 459 dp, under the 480 the phone layouts were made
+  for. The game's and a puzzle's panels, as tall as the board, which the width held to
+  321 dp, had tiles over each other and the stars over next: they stay 372 dp tall at
+  least (`panel::PANEL_LEAST`), centered beside the board. The setups' two columns met
+  the X: they narrow from 330 dp down to 290 where the second would reach it. Home's
+  gear, reaching 8 dp over the wordmark's row, poked 3 dp over the top in landscape: the
+  menu keeps 8 dp from the top there.
+- **`--inset L,T,R,B`** (dp of the layout) stands for a phone's insets on the Mac
+  (`docs/development.md`). `test/shell/sizes` runs the 20:9 phone at 540 and 480 dp and
+  the 9:16 at 480 with the Pixel's 118 px cutout (top in portrait, either side in
+  landscape) and a 48 px gesture bar, both languages: every tile and the board inside
+  the safe area, every tap 88 dp. Boards, English, against the same phone without
+  insets: 20:9 at 540 landscape, home 378 → 361, the setups 378 / 356 → 297, the game
+  492 → 468, settings 431 → 375; portrait home 432 (the same), the computer's setup 244 →
+  233, settings 271 → 418 (one group at a time now, the board larger), the game 492 (the
+  same); 9:16 at 480 portrait, the game's bar 352 dp wide, its words in the smaller face.
+
+Shots of every screen and three transitions (home ↔ settings, home → the game, the
+puzzles → a puzzle) at 540 dp, 20:9, portrait (top 59 dp, bottom 24 dp: the Pixel's 118
+and 48 px at 2 px a dp) and landscape (59 dp at the left, then at the right, bottom 24),
+and at 480 dp on 20:9 and 9:16 (52 and 21 dp), both languages, out of git, in
+`/private/tmp/claude-501/-Users-kaitkasak-projects-personal-draughts/babe58e8-1877-410c-bc48-f7f8f48b403f/scratchpad/insets/`
+(`inset-shots/`, `sheets/` with the insets tinted red, `shoot.sh`, `all.sh`, `sheets.py`,
+`cmp.sh`). Nothing that takes a tap or reads sits under an inset in any of them. The
+tablet's 960 × 600 and 600 × 960 shots (all the screens and the three transitions, both
+languages) are byte-identical to the build before, but settings' preview flash, and so
+are the phones' without insets but for the two defects below.
+
+**Two defects from the phone layouts:**
+
+- The computer's setup, portrait, 9:16 at 480 dp: back and the title sat over the
+  photograph beside the X, the title running into it; with insets the sheet's top ran
+  under them too. Now, where the sheet would reach the X, the sheet takes the height, 8
+  dp under its top at least, its margins shrinking from 32 dp to fit, and back, the
+  title (smaller where it must be), and the X share its first row. No board, as before.
+- Settings, 9:16 at 480 dp: a board about 105 dp beside the Game tab's group in landscape
+  (and about 110 in portrait, English only, from the real font's narrower words). One
+  rule for every board beside controls now, `board::SMALLEST`: under 128 dp it isn't
+  shown (squares under 13 dp on 10 × 10, too small to read), so both go, as Estonian's
+  already had; the foldable's portrait computer setup keeps its 147.
+
+**The density floor:** `gui::scale_of` is `max(short / short_dp, F × display scale)`
+with `gui::DENSITY_FLOOR` (F) 0, so nothing changes until F is picked. The app sets the
+display scale on Android only; on the Mac it stays out, since Retina's 2.0 with F = 0.75
+would floor the scale at 1.5 px a dp, so any window under 600 points tall would lay out
+fewer than 800 dp (960 × 540: 720 dp) and the shots would depend on the Mac's screen.
+`--density-floor F --display-scale S` tries it on either (`--size 1200x540
+--density-floor 0.75 --display-scale 2.625` is what the Pixel would show in landscape,
+548 dp across), and `--dp N` turns the floor off unless `--density-floor` is given too,
+so `--dp` shots stay what they say. To turn it on: set `DENSITY_FLOOR`.
+
+**Left for the Pixel 7a:** log once what `draughts_display` returns in both orientations
+(the insets, and the display scale, expected 2.625) and check that the patched safe area
+has no side strips in portrait with gesture navigation; then every screen in both
+orientations with nothing under the camera or the gesture bar, turning the phone with a
+screen open (the layout must follow the insets at once), and the tablet's own insets
+(none expected but perhaps a bottom gesture bar, which would lift its layouts a little).
 
 ## Acceptance criteria
 

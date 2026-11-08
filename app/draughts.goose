@@ -13,6 +13,7 @@
 //   ../build/draughts --lang et                   another language than the system's
 //   ../build/draughts --dp 540                    the layout 540 dp across its shorter side, not 800
 //   ../build/draughts --inset 0,59,0,24           a phone's insets, in dp: left, top, right, bottom
+//   ../build/draughts --density-floor 0.75 --display-scale 2.625   the scale's floor, as on a phone
 //   ../build/draughts --variant russian           a new game of another draughts
 //   ../build/draughts --clock 5+3                 with a clock
 //   ../build/draughts --computer white --level hard   against the computer playing white
@@ -83,8 +84,10 @@ fn main() {
     // --win T (keeps a win at T seconds into its celebration, for a screenshot). --theme,
     // --hints, and --lang override the settings for the run without changing them.
     // --3d (alone) shows settings' Board row, hidden until the 3D board exists (task 015).
-    // --dp N lays out N dp across the shorter side; --inset L,T,R,B in dp stands for a
-    // phone's safe area.
+    // --dp N lays out N dp across the shorter side (and leaves the density floor off);
+    // --inset L,T,R,B in dp stands for a phone's safe area; --density-floor F and
+    // --display-scale S try the scale's floor (gui::scale_of), S standing for the
+    // display's (the Mac's is left out: its windows are in points, not a phone's dp).
     var width = 1280;
     var height = 800;
     var kind = -1;
@@ -102,6 +105,9 @@ fn main() {
     var hold = -1.0;
     var win_at = -1.0;
     var show_3d = false;
+    var dp_given = false;
+    var floor_given = false;
+    var display_given = false;
     var inset_dp = float4 { -1.0, 0.0, 0.0, 0.0 };     // x < 0: the window's own
     var fen:  u8[>..]       = [];
     var taps: u8[..3][..16] = [];
@@ -123,7 +129,10 @@ fn main() {
         }
         if argv[i] == "--dp" {
             let n, ok = parse_int(argv[i + 1]);
-            if ok && n >= 200 { gui::short_dp = n; }
+            if ok && n >= 200 {
+                gui::short_dp = n;
+                dp_given = true;
+            }
         }
         if argv[i] == "--inset" {
             var rest: const u8[:] = argv[i + 1];
@@ -137,6 +146,20 @@ fn main() {
                 rest = after;
             }
             if good { inset_dp = float4 { max(d[0], 0.0), max(d[1], 0.0), max(d[2], 0.0), max(d[3], 0.0) }; }
+        }
+        if argv[i] == "--density-floor" {
+            let x, ok = parse_flt(argv[i + 1]);
+            if ok {
+                gui::density_floor = x as f32;
+                floor_given = true;
+            }
+        }
+        if argv[i] == "--display-scale" {
+            let x, ok = parse_flt(argv[i + 1]);
+            if ok {
+                gui::display_scale = x as f32;
+                display_given = true;
+            }
         }
         if argv[i] == "--fen" { fen.append(argv[i + 1]); }
         if argv[i] == "--hints" && argv[i + 1] == "moves" { hints = board::MOVES; }
@@ -175,6 +198,8 @@ fn main() {
         }
         i += 2;
     }
+    // --dp says how many dp the shorter side has, so the floor stays off unless asked.
+    if dp_given && !floor_given { gui::density_floor = 0.0; }
     // The settings and the game, kept in the app's storage folder (shell/settings.goose,
     // shell::save).
     var folder: u8[512] = [0; 512];
@@ -282,10 +307,12 @@ fn main() {
             size = s;
             dirty = true;
         }
-        // The safe area, read each frame (a few fields in SDL): turning the screen moves
-        // the camera's cutout and the gesture bar, and a change of it is a change of the
-        // screen, as a new size is.
+        // The safe area and the display's scale, read each frame (a few fields in SDL):
+        // turning the screen moves the camera's cutout and the gesture bar, and a change
+        // of either is a change of the screen, as a new size is. The Mac's display scale
+        // is left out (gui::scale_of).
         draughts_display(display);
+        if on_android && !display_given { gui::display_scale = display[4]; }
         let scale = gui::scale_of(size.x, size.y);
         let e = if inset_dp.x < 0.0 { float4 { display[0], display[1], display[2], display[3] } }
                 else { float4 { floor(inset_dp.x * scale + 0.5), floor(inset_dp.y * scale + 0.5),
