@@ -369,7 +369,7 @@ let FRAG = """
             bool lit = style == 1 || style == 2 || style == 6 || style == 7 || style == 9;
             vec3 fc = style == 11 ? red : lit ? glow.rgb : vec3(1.0);
             bool bare = v_look.z > 0.5;         // a bare icon's press: white at 10%, a faint ring
-            float fa = bare ? 0.10 * pr : (style == 1 ? 0.22 : style == 2 ? 0.26 : style == 3 || style == 4 ? 0.08
+            float fa = bare ? 0.10 * pr : ((style == 1 ? 0.22 : style == 2 ? 0.26 : style == 3 || style == 4 ? 0.08
                         : style == 5 ? 0.0 : style == 6 ? 0.24 : style == 7 ? 0.22 : style == 9 ? 0.18
                         : style == 10 ? 0.06 : style == 11 ? 0.16 : 0.10) + 0.14 * pr);
             vec4 tile = vec4(fc * fa, fa);
