@@ -1,8 +1,8 @@
 // Settings (prototypes/settings.html; rendering.md, "Settings"): back and the title,
 // the language at the title row's right end, and the choices as words in two glass
 // groups by what they change. Game: the draughts a new game starts on (the setup's
-// choice too), move hints, and the tutorial. Look: the background (by the date, or one
-// season), the board (flat or raised, a row hidden until the 3D board exists), and the kings (auto,
+// choice too), move hints, and the tutorial. Look: the background (one season, or by
+// the date), the board (flat or raised, a row hidden until the 3D board exists), and the kings (auto,
 // crown, or stack). Beside them is home's board as the choices make it: its size, the
 // kings, and what the move hints show, on a fixed position. In landscape the choices
 // take the width they need at the left and the board the rest (near square, each
@@ -34,6 +34,10 @@ let SEASON_KINDS = [1, 2, 3, 0];
 let SEASON_KEYS = [strings::SEASON_WINTER, strings::SEASON_SPRING, strings::SEASON_SUMMER, strings::SEASON_AUTUMN];
 let SEASON_NAMES = ["winter", "spring", "summer", "autumn"];
 let BY_DATE = -1;
+// By the date is the background row's last tile, after the four seasons: wrapped on a
+// phone in portrait the seasons keep one row and by the date goes under them, and the
+// order is the same at every size, turned or not (2026-11-08).
+let BY_DATE_TILE = 4;
 let FLAT = 0;                   // the 2D board
 let RAISED = 1;                 // the 3D board (task 015)
 let SYSTEM = -1;                // the language the system's locales pick
@@ -269,7 +273,7 @@ fn word(row: i64, i: i64) -> i64 {
     if row == DRAUGHTS_ROW { return DRAUGHTS_KEYS[i]; }
     if row == HINTS_ROW { return [strings::HINTS_MISTAKES, strings::HINTS_MOVES][i]; }
     if row == TUTORIAL_ROW { return strings::TUTORIAL_LEARN; }
-    if row == BACKGROUND_ROW { return if i == 0 { strings::SETTINGS_BY_DATE } else { SEASON_KEYS[i - 1] }; }
+    if row == BACKGROUND_ROW { return if i == BY_DATE_TILE { strings::SETTINGS_BY_DATE } else { SEASON_KEYS[i] }; }
     if row == BOARD_ROW { return [strings::BOARD_FLAT, strings::BOARD_RAISED][i]; }
     return KING_KEYS[i];
 }
@@ -299,7 +303,7 @@ fn tile(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, i: i64, r: f
     let id = 410 + 10 * row + i;
     let label = strings::get(word(row, i));
     if row == BACKGROUND_ROW {
-        let kind = if i == 0 { BY_DATE } else { SEASON_KINDS[i - 1] };
+        let kind = if i == BY_DATE_TILE { BY_DATE } else { SEASON_KINDS[i] };
         guard gui::choice(g, id, r, kind, float2 { THUMB_W * u, THUMB_H * u }, label, s.season == kind, true)
         else { return false; }
         s.season = kind;

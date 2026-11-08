@@ -432,8 +432,10 @@ the prototype tried, kept for 3D:
   on top, as large as the rest leaves, and the two groups stand side by side under it.
   **Game**: the draughts a new game starts on (international, Brazilian, Russian; the
   setup can still change it), move hints, and the tutorial (one tile, learn the moves).
-  **Look**: the background as thumbnails of the four photographs (62 × 40 px) after a
-  tile for by the date, and kings (auto, crown, or stack, the last two each with its
+  **Look**: the background as thumbnails of the four photographs (62 × 40 px) and,
+  last, a tile for by the date, so on a phone in portrait, where the row wraps, the four
+  seasons keep one row and by the date goes under them, in the same order at every size
+  (2026-11-08); and kings (auto, crown, or stack, the last two each with its
   king drawn on the tile). The prototype's Board row (flat or raised) is hidden until the
   3D board exists (task 015): the board is always flat, the file's `board = 2d|3d` key is
   still read and written, and the app's `--3d` flag shows the row, its 3D tile dimmed

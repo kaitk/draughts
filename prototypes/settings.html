@@ -109,8 +109,8 @@
         `<a class="tile action" href="first-start.html?page=1&v=${v}">${Draughts.icon('hint')}Learn the moves</a>`)) +
     group('sun', 'Look',
       setting('Background',
-        tile(now, 'season', '', `<span class="thumb" style="background: color-mix(in srgb, var(--glow) 18%, rgb(255 255 255 / 0.06))">${Draughts.icon('sun')}</span>By the date`, 'pic') +
-        seasons.map(([s, name]) => tile(!now && S.season === s, 'season', s, `<span class="thumb" style="background-image: url(${photo(s)})"></span>${name}`, 'pic')).join('')) +
+        seasons.map(([s, name]) => tile(!now && S.season === s, 'season', s, `<span class="thumb" style="background-image: url(${photo(s)})"></span>${name}`, 'pic')).join('') +
+        tile(now, 'season', '', `<span class="thumb" style="background: color-mix(in srgb, var(--glow) 18%, rgb(255 255 255 / 0.06))">${Draughts.icon('sun')}</span>By the date`, 'pic'))) +
       setting('Board',
         tile(S.view === '2d', 'view', '2d', 'Flat<small>2D</small>') +
         tile(S.view === '3d', 'view', '3d', 'Raised<small>3D</small>')) +
