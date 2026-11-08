@@ -15,12 +15,13 @@ It runs off the main thread or in small slices, so the UI never stalls.
 - [x] Hard replies in under 1 s on the tablet: 207 ms at most on its big cores, 631 ms
   pinned to its little ones, over ten middlegames of both variants (below). The app's
   worker, run on the tablet as the app runs it, takes at most 200 ms (2026-11-08), under
-  hard's 0.45 s pause, so the pause decides when its move comes.
+  hard's 0.45 s pause, so the pause decides when its move comes. In the app on the
+  tablet hard's move starts 454 ms after the child's lands, in Russian and in International
+  middlegames (2026-11-08, below).
 - [x] Works for both variants from task 002: every `test/ai/` test and the benchmark use
   Russian and International positions.
 - [x] Wired into home ("The computer") and the game screen (2026-11-08, below): checked
-  in the app on the Mac and headless; on the tablet only the worker headless, the tablet
-  being PIN-locked (open below).
+  in the app on the Mac, headless, and in the app on the tablet.
 
 ## Notes (2026-11-07)
 
@@ -237,12 +238,60 @@ the worker's own time per ask over four middlegames (black to move, from
   (`test/game/computer.goose`), so the app draws nothing more (a running clock still
   draws once a second).
 
+## In the app on the tablet (2026-11-08)
+
+The app built from `564931d`, run on the tablet with flags (`--computer black --level
+...`, so `game.bin` was never read or written), landscape, the screen recorded with
+`adb shell screenrecord` while `adb shell input tap` played the child's move. The time
+is from the frame the child's piece lands (its last-move marks appear) to the frame the
+computer's move starts, read from the recording's frame times; the display runs at 90 Hz,
+so a frame is 11 ms.
+
+| From landing to the move | Easy (0.8 s) | Medium (0.6 s) | Hard (0.45 s) |
+| --- | --- | --- | --- |
+| Russian, after c3-d4, 3 runs each | 804 to 805 ms | 606 to 607 ms | 454 ms |
+| International, hard, 4 middlegames from `tools/aibench.goose`, 6 runs | | | 453 to 454 ms, once 465 |
+
+- The worker finished inside every pause: each move started at the pause plus at most a
+  frame (the 465 ms is one frame late). The worker thread's CPU time per process, its
+  engine's init and one hard search, was 0.21 to 0.24 s, and it last ran on a big core
+  (CPU 4 to 7) every time.
+- While the computer thinks the app draws every vsync (the pulse): about 89 frames in
+  easy's 0.8 s. Once its move lands the recording gets no more frames: nothing is drawn.
+- Idle after a hard reply in an International middlegame, 60 s untouched: no clock, the
+  program's thread 0.01 s (0.02% of a core), the process 1.25 s, 60 voluntary switches;
+  the child's clock running (5+3), 0.31 s (0.52%), the process 1.60 s, 60 switches, the
+  clock showing 3:57 after the minute. Task 021 had 0.03% and 0.53%. The worker meanwhile
+  sleeps in `qget` (state `S`): its CPU time (0.20 s) and voluntary switches (2) didn't
+  change over the minute.
+- `scripts/lifecycle_memory.sh 10` in a 5+3 International game against hard, after its
+  reply: one process, no errors. The first run held PSS at 333 to 335 MB and graphics at
+  272 to 274 MB from the first cycle on (269 and 205 before it); a second run, in a fresh
+  process, 269 to 271 MB, graphics 206 to 208, and a friend's 5+3 game 267 to 269,
+  graphics 211 to 213. Native heap 27 to 28 MB in all. Each run was flat over its cycles,
+  so nothing leaks; the first run's extra 65 MB of graphics was the driver's (at rest a
+  minute later the same process was at 241 MB, graphics 180) and didn't repeat. Task 021
+  had 261 to 263 MB, graphics 211 to 213. The worker adds about 5.6 MB of anonymous
+  memory (`Unknown` in `dumpsys meminfo`, 1.1 MB before the first ask, 6.7 after).
+- The pulse: the computer's ring on the panel fades from full gold to dim and back, as
+  described; within easy's 0.8 s pause it goes from full to about a third
+  (`006-pulse-strip.png`, three frames 0.3 s apart).
+- Take back after the reply returns the start position with white (the child) to move.
+  Take back 0.2 s into the pause takes back the child's move, and the computer plays
+  nothing in the 3 s after.
+- The computer's pieces don't move: a 0.5 s drag of a black man from b6 to a5 during the
+  pause, and a tap on d6 then c5 on the child's turn, left them where they were; the
+  computer then played its own move.
+
+Screenshots and recordings are in the session's scratchpad, not in git.
+
 ## Open for the user
 
-- The tablet was PIN-locked: the app with its worker thread hasn't run in the
-  foreground on the tablet yet. Still to check there: the reply time from landing to the
-  move per level, the worker waiting while the app is idle, `scripts/idle_cpu.sh` after a
-  reply, and the pulse's look.
+- `scripts/idle_cpu.sh` fails once the computer has been asked: the worker is a second
+  thread named `SDLThread`, so the script's thread lookup finds two and prints nonsense
+  (negative times). The program's thread is the first, the lower id; the numbers below
+  came from a copy that takes it (`head -1`). The script should take the first, or the
+  worker could name itself.
 - Taken as defaults (2026-11-08), each easy to change:
   - The pauses: 0.8 s on easy, 0.6 on medium, 0.45 on hard, counted from the child's
     move landing; the pulse: the ring from full to a third and back every 1.2 s.
