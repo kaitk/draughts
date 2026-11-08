@@ -35,6 +35,13 @@ documentation when doing this, not this list.
 - **Checks before upload:** the release build on the tablet from a clean install, and
   `scripts/idle_cpu.sh` and `scripts/lifecycle_memory.sh` on it; task 011 (SDL's
   accelerometer, the last idle CPU) done.
+- **The pre-launch report:** Play may run the app on virtual devices, whose software GPU
+  (SwiftShader) can lack ASTC; the Android build ships the photographs only as ASTC, so
+  there the app shows the page color without a photograph, the expected fallback, not a
+  bug (`docs/architecture/rendering.md`). Real devices with Vulkan all have ASTC.
+- **The photographs:** the APK embeds only what is in `design/backgrounds/masters/`
+  locally; build the release where the `-6x6.astc` files are present, or it ships
+  without photographs.
 
 ## Acceptance criteria
 
