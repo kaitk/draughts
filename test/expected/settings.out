@@ -71,7 +71,7 @@ International: season = summer;board = 2d;hints = mistakes;kings = auto;language
 Eesti: season = summer;board = 2d;hints = mistakes;kings = auto;language = et;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 40;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 1
 by the date: season = by-date;board = 2d;hints = mistakes;kings = auto;language = et;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 40;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 1
 English: season = by-date;board = 2d;hints = mistakes;kings = auto;language = en;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 40;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 1
-portrait: board at vec4<f32> { 138.47105, 141.13779, 523.05786, 8.368926 }, the groups from 769.77795, clear true, look beside game true, tiles 19
+portrait: board at vec4<f32> { 97.528854, 143.75113, 604.94226, 9.679076 }, the groups from 856.88904, clear true, look beside game true, tiles 19
 portrait stack: season = by-date;board = 2d;hints = mistakes;kings = stack;language = en;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 40;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 2
 back: true
 Board row hidden by default: true, tiles 17 of 17, kings' tiles at 14..16

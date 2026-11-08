@@ -21,7 +21,7 @@ let KEYS = [
     "season.winter", "season.spring", "season.summer", "season.autumn",
     "hints.mistakes", "hints.moves",
     "board.flat", "board.flat_note", "board.raised", "board.raised_note",
-    "kings.auto", "kings.auto_note", "kings.crown", "kings.stack",
+    "kings.auto", "kings.crown", "kings.stack",
     "tutorial.learn",
     "game.home", "game.start_over", "game.take_back",
     "turn.white", "turn.black", "won.white", "won.black",
@@ -62,46 +62,45 @@ let BOARD_FLAT_NOTE = 25;
 let BOARD_RAISED = 26;
 let BOARD_RAISED_NOTE = 27;
 let KINGS_AUTO = 28;
-let KINGS_AUTO_NOTE = 29;
-let KINGS_CROWN = 30;
-let KINGS_STACK = 31;
-let TUTORIAL_LEARN = 32;
-let GAME_HOME = 33;
-let GAME_START_OVER = 34;
-let GAME_TAKE_BACK = 35;
-let TURN_WHITE = 36;
-let TURN_BLACK = 37;
-let WON_WHITE = 38;
-let WON_BLACK = 39;
-let SETUP_DRAUGHTS = 40;
-let SETUP_LEVEL = 41;
-let SETUP_COLOR = 42;
-let SETUP_CLOCK = 43;
-let SETUP_PLAY = 44;
-let VARIANT_INTERNATIONAL = 45;
-let VARIANT_BRAZILIAN = 46;
-let VARIANT_RUSSIAN = 47;
-let SIZE_10 = 48;
-let SIZE_8 = 49;
-let PICK_EASY = 50;
-let PICK_MEDIUM = 51;
-let PICK_HARD = 52;
-let COLOR_WHITE = 53;
-let COLOR_BLACK = 54;
-let CLOCK_NONE = 55;
-let CLOCK_BLITZ = 56;
-let CLOCK_BLITZ_NOTE = 57;
-let CLOCK_RAPID = 58;
-let CLOCK_RAPID_NOTE = 59;
-let PUZZLES_STARS = 60;     // stars won of those there are: "{} / {}"
-let PUZZLE_NEXT = 61;
-let PUZZLE_TRY_AGAIN = 62;
-let PUZZLE_SOLVED = 63;
-let GOAL_TAKE = 64;         // "{}", the pieces to capture
-let GOAL_CROWN = 65;
-let GOAL_WIN = 66;
-let GOAL_SAFE = 67;
-let COUNT = 68;
+let KINGS_CROWN = 29;
+let KINGS_STACK = 30;
+let TUTORIAL_LEARN = 31;
+let GAME_HOME = 32;
+let GAME_START_OVER = 33;
+let GAME_TAKE_BACK = 34;
+let TURN_WHITE = 35;
+let TURN_BLACK = 36;
+let WON_WHITE = 37;
+let WON_BLACK = 38;
+let SETUP_DRAUGHTS = 39;
+let SETUP_LEVEL = 40;
+let SETUP_COLOR = 41;
+let SETUP_CLOCK = 42;
+let SETUP_PLAY = 43;
+let VARIANT_INTERNATIONAL = 44;
+let VARIANT_BRAZILIAN = 45;
+let VARIANT_RUSSIAN = 46;
+let SIZE_10 = 47;
+let SIZE_8 = 48;
+let PICK_EASY = 49;
+let PICK_MEDIUM = 50;
+let PICK_HARD = 51;
+let COLOR_WHITE = 52;
+let COLOR_BLACK = 53;
+let CLOCK_NONE = 54;
+let CLOCK_BLITZ = 55;
+let CLOCK_BLITZ_NOTE = 56;
+let CLOCK_RAPID = 57;
+let CLOCK_RAPID_NOTE = 58;
+let PUZZLES_STARS = 59;     // stars won of those there are: "{} / {}"
+let PUZZLE_NEXT = 60;
+let PUZZLE_TRY_AGAIN = 61;
+let PUZZLE_SOLVED = 62;
+let GOAL_TAKE = 63;         // "{}", the pieces to capture
+let GOAL_CROWN = 64;
+let GOAL_WIN = 65;
+let GOAL_SAFE = 66;
+let COUNT = 67;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

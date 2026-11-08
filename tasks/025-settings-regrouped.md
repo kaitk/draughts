@@ -121,7 +121,9 @@ Screenshots and recordings are in the session's scratchpad, not in git.
 - The winner's piece on the win card follows the kings setting; home's wordmark keeps its
   crown.
 - The choices' side may take up to 55% of the page in landscape; beyond that its tiles
-  wrap. Estonian's auto note was shortened to "2D kroon, 3D virn" to fit. Estonian
+  wrap. Estonian's auto note was shortened to "2D kroon, 3D virn" to fit.
+  Removed 2026-11-08: the kings' Auto tile shows just "Auto" (the 3D board it
+  referred to doesn't exist yet), so the three kings tiles fit on one line. Estonian
   drafts for task 024's review: Mäng, Välimus, Õpetus, Õpi käike, Tammid, Kroon, Virn,
   Automaatne, Lame, Ruumiline.
 

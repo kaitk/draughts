@@ -37,7 +37,6 @@ board.raised = Raised
 board.raised_note = 3D
 
 kings.auto = Auto
-kings.auto_note = crown flat, stack raised
 kings.crown = Crown
 kings.stack = Stack
 

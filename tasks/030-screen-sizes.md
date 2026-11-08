@@ -276,7 +276,7 @@ What breaks, worst first (both languages unless named; today's 800 has none of i
 6. **Settings, portrait: the title row and, at 411, the preview.** The title runs under
    the language glass from 480 ("Seaded" and "Settings"); at 411 the groups take the
    whole height, the preview board is gone (its size negative) with the kings' pieces on
-   their tiles, and "crown flat, stack raised" and "Learn the moves" spill out of tiles
+   their tiles, and "Learn the moves" spill out of tiles
    capped at the group's width. `shell/settings.goose`, `head`, `frame`, `lay`.
 7. **The win card hides the winning piece.** 356 × 300 dp on a portrait board of 552, 492,
    432, 363 dp: 64% to 98% of its width, the piece beside it covered from 600 on (beside

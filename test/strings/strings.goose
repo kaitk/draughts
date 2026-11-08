@@ -13,7 +13,7 @@ let NAMED = [
     "settings.hints", "settings.kings", "season.winter", "season.spring",
     "season.summer", "season.autumn", "hints.mistakes", "hints.moves", "board.flat",
     "board.raised", "settings.game", "settings.look", "settings.tutorial", "board.flat_note",
-    "board.raised_note", "kings.auto", "kings.auto_note", "kings.crown", "kings.stack",
+    "board.raised_note", "kings.auto", "kings.crown", "kings.stack",
     "tutorial.learn",
 ];
 
@@ -53,7 +53,7 @@ fn main() {
               strings::HINTS_MOVES, strings::BOARD_FLAT, strings::BOARD_RAISED,
               strings::SETTINGS_GAME, strings::SETTINGS_LOOK, strings::SETTINGS_TUTORIAL,
               strings::BOARD_FLAT_NOTE, strings::BOARD_RAISED_NOTE, strings::KINGS_AUTO,
-              strings::KINGS_AUTO_NOTE, strings::KINGS_CROWN, strings::KINGS_STACK,
+              strings::KINGS_CROWN, strings::KINGS_STACK,
               strings::TUTORIAL_LEARN];
     var wrong = 0;
     for k, i in ks {

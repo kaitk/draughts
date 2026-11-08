@@ -1,12 +1,12 @@
-en: 68 keys, 0 problems
-et: 68 keys, 0 problems
+en: 67 keys, 0 problems
+et: 67 keys, 0 problems
 a broken file: 4 problems
   unknown key: home.puzzle
   given twice: app.name
   not key = text: no text here
   missing: home.puzzles
 
-constants: 33 checked, 0 wrong
+constants: 32 checked, 0 wrong
 the languages' own names: English, Eesti
 en: Draughts / Continue / All moves
 et: Kabe / Jätka / Kõik käigud

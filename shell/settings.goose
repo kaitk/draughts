@@ -278,7 +278,6 @@ fn word(row: i64, i: i64) -> i64 {
 fn note(row: i64, i: i64) -> const u8[:] {
     if row == DRAUGHTS_ROW { return strings::get(DRAUGHTS_SIZES[i]); }
     if row == BOARD_ROW { return strings::get([strings::BOARD_FLAT_NOTE, strings::BOARD_RAISED_NOTE][i]); }
-    if row == KINGS_ROW && i == AUTO { return strings::get(strings::KINGS_AUTO_NOTE); }
     return "";
 }
 

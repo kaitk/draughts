@@ -115,7 +115,7 @@
         tile(S.view === '2d', 'view', '2d', 'Flat<small>2D</small>') +
         tile(S.view === '3d', 'view', '3d', 'Raised<small>3D</small>')) +
       setting('Kings',
-        tile(S.king === 'auto', 'king', 'auto', 'Auto<small>crown flat, stack raised</small>') +
+        tile(S.king === 'auto', 'king', 'auto', 'Auto') +
         tile(S.king === 'crown', 'king', 'crown', `${king(false)}Crown`) +
         tile(S.king === 'stack', 'king', 'stack', `${king(true)}Stack`)));
   document.getElementById('lang').innerHTML = Draughts.icon('globe') +
