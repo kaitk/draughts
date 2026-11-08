@@ -53,10 +53,24 @@ Checked against goose_gfx's source on 2026-11-07:
 ## Code layout
 
 The code is packages with no graphics, each run headless by its tests, and an app that
-feeds them the pointer and the time and draws what they leave (2026-11-08). Only `app/`
-imports `gfx`, so a second renderer (the NoGraphicsAPI version) rewrites `app/` and
-keeps the rest, and another platform on SDL (iOS: UIKit and SDL_GPU's Metal) adds its
-build and shims beside `app/`'s Android ones. Keep it so.
+feeds them the pointer and the time and draws what they leave (2026-11-08).
+
+**The rule: only `app/` imports `gfx` or calls SDL or the platform** (2026-11-08). The
+packages hand it flat, fixed-size data and take back the pointer and the time; nothing
+outside `app/` (and `android/`, the build scripts) knows what draws or what it runs on.
+The targets this keeps open, each replacing or adding to `app/` alone:
+
+- **The 3D board** (task 015, a prototype soon): drawn in `app/`; what the board needs
+  of it, the camera's tilt eased into the layout and a tap turned into a square by a ray
+  onto the board's plane, stays plain math in `board/`, tested headless.
+- **Other platforms on SDL:** iOS (UIKit, SDL_GPU on Metal), and desktop Windows and
+  Linux (SDL_GPU on D3D12 or Vulkan): a build script and shims beside the Android ones
+  (storage, locales, the launch cover, closing; iOS hides home's X).
+- **A second renderer**, the NoGraphicsAPI version through goose-ngfx on desktop and
+  Apple devices that support it ([product](../product.md)): `app/`'s drawing rewritten
+  against it, the packages unchanged.
+- **Chess** ([product](../product.md)): new rules and board packages beside these,
+  reusing `gui/`, `shell/`'s screens, and `app/` as they are.
 
 | Directory | What it holds |
 | --- | --- |
