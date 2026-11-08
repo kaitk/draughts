@@ -67,7 +67,7 @@ and in landscape `--size 1200x540 --dp 540 --inset 59,0,0,42` (or `0,0,59,42`, t
 the other way). What the Pixel would show at a floor of 0.75: `--size 1200x540
 --density-floor 0.75 --display-scale 2.625` (1.97 px a dp, 548 dp across).
 `app/draughts.build` adds the program's own C (`app/background.c`, the photographs, made
-into textures through gfx's C API, and their JPEG decoder;
+into textures through gfx's C API, and, on the Mac only, their JPEG decoder;
 `app/locale.c`, the system's locales; `app/display.c`, the window's safe area and the
 display's scale; `app/wake.c`, the timer a running clock wakes the
 loop with; `app/launch.c`, which tells the activity the first frame is on screen, and
@@ -77,8 +77,8 @@ files `design/backgrounds/README.md` says how to make with astcenc); without the
 board sits on the page color. goose caches the program's C by its source, so after
 adding or changing a master, touch `app/background.c`. The Mac's `goose build` links the
 release's prebuilt gfx, which has no compressed formats, so the Mac decodes the JPEGs;
-the Android build's gfx is patched and takes the ASTC files
-([rendering](architecture/rendering.md#scene-and-glass)). To see the ASTC path on the
+the Android build's gfx is patched and takes the ASTC files, and embeds only those, not
+the JPEGs ([rendering](architecture/rendering.md#scene-and-glass)). To see the ASTC path on the
 Mac, compile goose_gfx's `src/gfx/*.c` with `patches/goose_gfx/0004-*.patch` applied
 (`clang -c -O2 -DNDEBUG -I third_party/goose_gfx/third_party/SDL/include`), archive them
 as `pkg/gfx/lib/libgoose_gfx.a` in a copy of the release (the rest linked), and build

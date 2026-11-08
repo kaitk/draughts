@@ -221,9 +221,12 @@ but its olive sits nearer spring's greens than the sunset does.
   at a time. Until the images are checked in, `app/background.c`
   embeds the local masters with C23 `#embed` under `__has_embed`, so a checkout without
   them builds and shows the page color, and one without the ASTC files decodes the
-  JPEGs everywhere. The ASTC files add 7.5 MB to `libmain.so` (the JPEGs 2.2), which
-  the APK stores uncompressed (13.4 MB, 6.0 without the ASTC; deflated as a store sends
-  it, 11.3 and 4.1): ASTC hardly compresses (3 to 5%). PNG was rejected at about 5 MB a season; AVIF
+  JPEGs everywhere. Android embeds only the ASTC files and compiles no stb_image
+  (`#ifndef __ANDROID__` in `background.c`): every Vulkan GPU the app targets samples ASTC
+  LDR, and an Android GPU without it would show the page color, no photograph, as a
+  checkout without the images does. The ASTC files add 7.5 MB to `libmain.so` (the JPEGs
+  2.2, the Mac's only), which the APK stores uncompressed (11.4 MB with the ASTC alone;
+  13.7 with the JPEGs too, 6.0 without the ASTC): ASTC hardly compresses (3 to 5%). PNG was rejected at about 5 MB a season; AVIF
   needs libavif and an AV1 decoder on both platforms to save about 1 MB.
 - **One size for every screen** (task 032, cut 5): at 1.87 MB as ASTC, the sharp image
   sits in SDL's shared 16 MiB block; sizing it by the screen's density (1024 to 1536 on

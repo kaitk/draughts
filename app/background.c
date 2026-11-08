@@ -5,10 +5,15 @@
 // and reads only PNG and BMP, from a file (docs/goose-findings.md); its C API is called
 // from here so the embedded bytes upload with no copy on the program's data stack.
 //
+// Android embeds only the ASTC files and has no JPEG decoder: every Vulkan GPU the app
+// targets samples ASTC LDR, and the JPEGs would add 2.2 MB to the APK. A GPU without it
+// gets no photograph, the page color, as a checkout without the images does.
+//
 // The images are not in git yet, so each is embedded only if its file is there: a fresh
 // checkout builds, with no photograph, and the app shows the page color. Until they are
 // checked in, the build takes the local masters (design/backgrounds/README.md).
 
+#ifndef __ANDROID__
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_JPEG
 #define STBI_NO_STDIO
@@ -21,6 +26,7 @@
 #define STBI_NEON
 #endif
 #include "stb_image.h"
+#endif
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -44,6 +50,7 @@ __attribute__((weak)) uint8_t gs_gfx_format_supported(int32_t format, int32_t us
 // Each image's bytes and then one 0, so the array is never empty. #embed is C23, which
 // clang takes in C11 too.
 #pragma clang diagnostic ignored "-Wc23-extensions"
+#ifndef __ANDROID__
 #if __has_embed("../design/backgrounds/masters/autumn-01-2048.jpg")
 static const unsigned char autumn[] = {
 #embed "../design/backgrounds/masters/autumn-01-2048.jpg"
@@ -71,6 +78,7 @@ static const unsigned char summer[] = {
     , 0 };
 #else
 static const unsigned char summer[] = { 0 };
+#endif
 #endif
 #if __has_embed("../design/backgrounds/masters/autumn-01-2048-6x6.astc")
 static const unsigned char autumn_astc[] = {
@@ -102,9 +110,11 @@ static const unsigned char summer_astc[] = { 0 };
 #endif
 
 // By theme: wood (autumn), stone (winter), birch (spring), sunset (summer).
+#ifndef __ANDROID__
 static const unsigned char *const jpegs[4] = { autumn, winter, spring, summer };
 static const int64_t jpeg_lengths[4] = { sizeof autumn - 1, sizeof winter - 1,
                                          sizeof spring - 1, sizeof summer - 1 };
+#endif
 static const unsigned char *const astcs[4] = { autumn_astc, winter_astc, spring_astc,
                                                summer_astc };
 static const int64_t astc_lengths[4] = { sizeof autumn_astc - 1, sizeof winter_astc - 1,
@@ -154,6 +164,7 @@ static gs_gfx_texture astc(int64_t kind) {
     return t;
 }
 
+#ifndef __ANDROID__
 // The middle square of an RGBA image, `side` × `side` from (x0, y0), scaled down to
 // size × size by averaging into `out`. A box's sum is divided by one reciprocal multiply.
 static void shrink(const unsigned char *px, int w, int x0, int y0, int side, int size,
@@ -206,6 +217,13 @@ static gs_gfx_texture jpeg(int64_t kind, int size) {
     stbi_image_free(px);
     return t;
 }
+#else
+static gs_gfx_texture jpeg(int64_t kind, int size) {
+    (void)kind;
+    (void)size;
+    return (gs_gfx_texture){ 0 };
+}
+#endif
 
 // Theme `kind`'s photograph as a texture, or 0 when it isn't built in: the ASTC image as
 // stored where the GPU samples ASTC, else the JPEG's middle square decoded and scaled

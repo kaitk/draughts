@@ -461,8 +461,10 @@ and glass".
 masters with astcenc 5.7.0 (`design/backgrounds/README.md`; installed from ARM's release
 zip into `build/`, as `docs/development.md` says: Homebrew has no formula), and like the
 JPEGs stay local in `design/backgrounds/masters/`, out of git, embedded with
-`__has_embed`: a checkout without them decodes the JPEGs everywhere. The JPEGs stay in
-the APK as the fallback.
+`__has_embed`: a checkout without them decodes the JPEGs everywhere. The Android build embeds
+only the ASTC files (no JPEGs, no stb_image: `#ifndef __ANDROID__` in `background.c`), which
+took the APK from 13.69 MB (13,690,076 bytes) to 11.41 MB (11,412,700); a GPU without ASTC
+would show the page color. The Mac keeps the JPEG path.
 
 **Which path each platform takes.** Android: gfx is built from patched sources, so the
 ASTC path (the tablet's shots differ from the JPEG's as the Mac's ASTC ones do). The Mac:
