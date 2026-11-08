@@ -35,7 +35,7 @@ board.flat_note = 2D
 board.raised = Ruumiline
 board.raised_note = 3D
 
-kings.auto = Automaatne
+kings.auto = Laua järgi
 kings.auto_note = 2D kroon, 3D virn
 kings.crown = Kroon
 kings.stack = Virn

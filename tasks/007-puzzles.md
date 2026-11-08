@@ -8,7 +8,7 @@ different line counts too. About 30 for Russian 8×8, in three tiers.
 
 ## Puzzle screen takes (2026-11-08)
 
-`prototypes/puzzle.html`, waiting for the user's pick; `?take=` and `&state=play`,
+`prototypes/puzzle.html`; the user picked take c on 2026-11-08; `?take=` and `&state=play`,
 `wrong`, `hint`, or `solved`. All keep the game screen's layout (puzzles, settings, and
 start over on the left; the goal, three stars at stake, and one big tile on the right),
 and a wrong move slides back by itself, its square flashing the red ring over a fading

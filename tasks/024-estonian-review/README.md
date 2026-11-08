@@ -75,8 +75,8 @@ setup, the game, a clocked game, a win, and settings. Every string shows whole.
 
 ## Open for the user
 
-- `kings.auto`: "Automaatne" stays. Argon offered "Laua järgi" ("by the board", like
-  "Kuupäeva järgi" two rows up) and 3.8 "Valib ise": plainer for a child; your call.
+- `kings.auto`: "Laua järgi" ("by the board", like "Kuupäeva järgi" two rows up), the
+  user's pick on 2026-11-08 over "Automaatne".
 - `clock.*_note`: "käigule" or "käigu eest"? Both are used for an increment; "käigule"
   was taken for the room. Argon would keep "käigu eest".
 - `variant.international`: "Rahvusvaheline" is the right term and has no shorter form,
