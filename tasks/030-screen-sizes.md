@@ -1,7 +1,9 @@
 # 030: Phones and other screen sizes
 
 Status: in-progress (the survey, the layout fixes, the phone layouts down to 480 dp, the
-insets, the density floor at F = 0.75, and the Pixel 7a done; larger tablets left)
+insets, the density floor at F = 0.75, the Pixel 7a, larger tablets on the Mac, and the
+tablet done; left: the top strip on the Pixel, and the user's choice on the tablet's
+landscape settings going to tabs)
 
 The layouts were built and checked on one screen, the Galaxy tablet (1920 × 1200, 16:10)
 and its Mac stand-in. Play lists the app for phones and tablets alike, so every screen
@@ -615,6 +617,54 @@ portrait shows the computer's setup with no board (its sheet takes the height), 
 insets above; a tap in the top strip reaches the app (home's X in portrait, under the
 old 150 px line) and a swipe there still pulls the bars down; every screen in landscape
 with nothing under the camera or the gesture bar.
+
+## On the tablet (2026-11-08)
+
+The Galaxy Tab A11+ with everything up to `d7dbccc` (the top strip left out). It uses
+three-button navigation, hidden while the app runs. A temporary log of
+`draughts_display` and the layout scale (removed after), the same before and after
+`d7dbccc`:
+
+| Orientation | Insets L, T, R, B (px) | Display scale | Layout scale |
+|---|---|---|---|
+| Landscape (`user_rotation 1`) | 0, 45, 0, 72 | 1.5 | 1.5 px a dp (800 dp) |
+| Portrait (0) | 0, 45, 0, 72 | 1.5 | 1.5 |
+
+The floor's 1.125 is below 1.5, so the layout is 800 dp as before. The 72 px (48 dp)
+bottom is the hidden navigation bar. The top 45 px (30 dp) stays after `d7dbccc`: on this
+Samsung the hidden status bar's strip is reported as `tappableElement` as well as
+`mandatorySystemGestures` (`dumpsys window`: `tappableElement frame=[0,0][1920,45]
+visible=true`), and the patch keeps `tappableElement`. So the safe area is 1280 × 722 dp
+in landscape and 800 × 1202 in portrait. On turning, one frame has the new insets
+against the old size (insets 0, 45, -720, 792), then both agree, as on the Pixel.
+
+Shots of home, both setups, the game (International, and Russian with `--clock 5+3`),
+settings, and puzzle 21 in both orientations in English, and the computer's setup and
+settings in Estonian, kept locally in
+`/private/tmp/claude-501/-Users-kaitkasak-projects-personal-draughts/babe58e8-1877-410c-bc48-f7f8f48b403f/scratchpad/tablet-final/`
+(`shots/`, `tinted/` and `sheets/` with the insets tinted red, `shoot.sh`, `all.sh`,
+`sheet.sh`, `bands.sh`). Nothing that takes a tap or reads lies under an inset, nothing
+is cut off or overlapping, and the 88 dp floor's changes look as on the Mac.
+
+- **What changed: landscape settings shows tabs.** Its two groups side by side fill the
+  800 dp height with about 10 dp to spare; any inset beyond that tips it to one group at
+  a time with the Game and Look tabs (on the Mac, `--size 960x600 --screen settings`
+  shows both groups with `--inset 0,0,0,8` and tabs with `0,0,0,48` or `0,30,0,0`). On
+  the tablet the bottom bar alone does it, in both languages, so the tabs show there on
+  any tablet with a navigation bar. Portrait keeps both groups. Not changed: whether the
+  tablet should keep both groups (tighter rows or gaps where the height is short of
+  them by little) is for the user to choose.
+- **Back** (`input keyevent KEYCODE_BACK`, landscape): the computer's and the friend's
+  setup, the game, and settings opened from home go to home's menu; puzzle 21 goes to
+  the puzzles. On home's menu the launcher shows, the process stays (the same pid), the
+  activity isn't finished, and starting the app again brings the task back with home
+  pixel-identical to before. Home's X finishes the activity and removes the task
+  (`wm_finish_activity`, `wm_task_removed`), the process cached as task 035 says.
+- **Idle**, home in landscape, 60 s untouched: the program thread 0.03 s, the process
+  1.26 s, 60 voluntary switches (1.25 to 1.5 s before).
+- **Lifecycle memory**, 20 cycles of home, resume, and rotation: PSS 273 MB at the start,
+  then 259 to 264 MB, native heap 27 MB, graphics 211 to 215 MB with the same two 2 MB
+  steps as before; one process, no errors.
 
 ## Acceptance criteria
 
