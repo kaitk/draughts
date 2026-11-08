@@ -8,7 +8,8 @@
 // before. Puzzle 14's king takes three by 33 and 17, ending on 8 or 3; a tap off the
 // way (28) is a miss. Puzzle 10 has two doubles, 38 by 29 to 20 and by 27 to 16; the
 // first ends where it is taken back: a miss, and it slides back. Puzzle 4's man takes two
-// by 28 to 19. Puzzles never show a selected piece's targets, even with move hints on in
+// by 28 to 19; dropped on 28, the frame the finger lifts on asks for the one after,
+// which shows next awake, the man it jumped still there. Puzzles never show a selected piece's targets, even with move hints on in
 // settings and in the first tier.
 import std;
 import vec;
@@ -35,14 +36,20 @@ fn named(bit: i64) -> u8[>..] { drive::name(rules::VARIANTS[rules::INTERNATIONAL
 
 fn tap(sh: shell::Shell&, g: gui::Gui&, n: i64, now: f64) { drive::tap(sh, g, drive::at(sh.layout, sq(n)), now); }
 
-// A drag from square number `from` dropped on `to`, frame by frame as a finger makes it.
-fn drag(sh: shell::Shell&, g: gui::Gui&, from: i64, to: i64, now: f64) {
+// A drag from square number `from` dropped on `to`, frame by frame as a finger makes it,
+// up to the frame the finger lifts.
+fn drop(sh: shell::Shell&, g: gui::Gui&, from: i64, to: i64, now: f64) {
     let a = drive::at(sh.layout, sq(from));
     let c = drive::at(sh.layout, sq(to));
     drive::frame(sh, g, a, true, true, false, now);
     drive::frame(sh, g, a + (c - a) * 0.5, true, false, false, now + 0.02);
     drive::frame(sh, g, c, true, false, false, now + 0.04);
     drive::frame(sh, g, c, false, false, true, now + 0.06);
+}
+
+// The same, then a frame with nothing happening.
+fn drag(sh: shell::Shell&, g: gui::Gui&, from: i64, to: i64, now: f64) {
+    drop(sh, g, from, to, now);
     drive::idle(sh, g, now + 0.08);
 }
 
@@ -156,4 +163,18 @@ fn main() {
     drive::idle(sh, g, 45.0);
     show(sh, g, "37, 28, 19", 45.0);
     print("  kept stars ", sh.prefs.stars[4]);
+
+    // A drop is the last event a finger makes, so the app draws the frame it lands on and
+    // then waits: that frame or one it asks for must show next awake. The man jumped (32)
+    // stays on the board while the man waits.
+    shell::play_puzzle(sh, 3, 50.0);
+    drive::idle(sh, g, 50.0);
+    drop(sh, g, 37, 28, 50.1);
+    let b .= shell::fill(sh, 50.2);
+    var black = 0;
+    for p in b.pieces { if p.look.x == 1.0 { black++; } }
+    print("dropped on 28, as the app sees it: next ", next(g), ", another frame asked ",
+          g.acted || shell::animating(sh, g, 50.2), ", black men drawn ", black, ", ", rules::fen(b.pos));
+    drive::idle(sh, g, 50.2);
+    show(sh, g, "  the frame after", 50.2);
 }

@@ -223,10 +223,15 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: game::Overla
     if !g.took && ready(pl) && b.pos.side == side {
         let history = b.history.len;
         let wrong_at = b.wrong_at;
+        let waited = board::waiting(b);
         if input.pressed { board::press(b, l.board, input.at, now); }
         if input.down && board::drag(b, l.board, input.at) { changed = true; }
         if input.released { board::release(b, l.board, input.at, now); }
         judge(pl, history, wrong_at, now);
+        // Next was declared above, before the board took the pointer: a press or a drop
+        // that starts or ends a piece's wait changes how next looks, and a drop is the
+        // finger's last event, so the frame after is drawn too, as after a click.
+        if board::waiting(b) != waited { g.acted = true; }
     }
     return go, changed;
 }

@@ -785,6 +785,12 @@ An animation's last frame is not the resting state: the frame after a move or a 
 ends is drawn too (`board::update` reports it), or the board would keep the move's last
 in-between frame without its marks.
 
+A screen declares its tiles before the board takes the pointer, so a tile whose look
+follows the board is a frame behind it. When the board's input changes such a look, the
+frame after is drawn too (`gui::Gui.acted`, as after a click): a puzzle's next wakes when a
+drop leaves a piece waiting partway through a capture, and a drop is a finger's last
+event, after which nothing would be drawn (seen on the Pixel 7a, 2026-11-08).
+
 A running clock must show its next second on time, which the wait doesn't: after a drawn
 frame the next wait ends a second and a frame later, so the clock was drawn 6 ms later
 each second, up to a second late, and skipped a second every two and a half minutes

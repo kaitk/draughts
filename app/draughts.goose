@@ -402,6 +402,8 @@ fn main() {
             if ok { puzzle::tap(sh.puzzle, l, board::center(l, v, sq), now); }
             tapped++;
             dirty = true;
+            // Next was declared before this tap, which may have left a piece waiting.
+            g.acted = true;
         }
         let drew = dirty || shell::animating(sh, g, now);
         if drew {

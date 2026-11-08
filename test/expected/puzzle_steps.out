@@ -20,3 +20,5 @@ next: puzzle 4 tier 1, playing, misses 1, stars 2, selected - drawn on -, waits 
   slid back: puzzle 4 tier 1, playing, misses 1, stars 2, selected - drawn on -, waits on -, ringed targets wrong -, next dim
 37, 28, 19: puzzle 4 tier 1, solved, misses 1, stars 2, selected - drawn on -, waits on -, ringed targets wrong -, next awake lit
   kept stars 3
+dropped on 28, as the app sees it: next dim, another frame asked true, black men drawn 3, W:W37,39,43,46:B23,32,34
+  the frame after: puzzle 4 tier 1, playing, misses 0, stars 3, selected c3 drawn on e5, waits on e5, ringed targets wrong -, next awake
