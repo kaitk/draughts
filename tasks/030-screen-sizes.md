@@ -518,12 +518,48 @@ orientations with nothing under the camera or the gesture bar, turning the phone
 screen open (the layout must follow the insets at once), and the tablet's own insets
 (none expected but perhaps a bottom gesture bar, which would lift its layouts a little).
 
+## Larger tablets on the Mac (2026-11-08)
+
+The user has no larger device, so this is the Mac's check (decided 2026-11-08). Every screen
+(home, both setups, the game without a clock, with `--clock 5+3`, against the computer,
+settings, the win card, puzzles, puzzle 21) in both orientations, English and Estonian, at
+16:10 (2560 x 1600), 3:2 (2880 x 1920), 4:3 (2048 x 1536) and the foldable (2208 x 1768):
+160 shots, local, in
+`/private/tmp/claude-501/-Users-kaitkasak-projects-personal-draughts/babe58e8-1877-410c-bc48-f7f8f48b403f/scratchpad/large-tablets/`.
+Real pixels (`--size` is in points, the PNG 2x): all landscape sizes (1280x800, 1440x960,
+1024x768, 1104x884) and portrait 4:3 (768x1024). Portrait 16:10, 3:2 and the foldable at
+the same proportions, smaller (600x960 = 1200 x 1920, 640x960 = 1280 x 1920, 868x1084 =
+1736 x 2168), as the layout depends only on them.
+
+- **What broke: nothing new.** The earlier survey's near-square findings (settings' look
+  group, puzzles' tiles and last tier, the small board, the top bar's "Alusta uuesti", the
+  win card) show fixed at 4:3, 3:2 and the foldable in both orientations and both
+  languages. At 16:10 and 3:2 the layouts are the tablet's, scaled: nothing cut off,
+  overlapping, or wasted, and no tile needlessly huge (the scale is the shorter side /
+  800, so the layout is the same in dp at every size). Judged from the shots; tap sizes in
+  dp are the tablet's. No code changed.
+- **Crispness** at real 2560 x 1600 (settings, a 900 x 500 crop): the baked text and the
+  glass edges are sharp.
+- **The photograph** is cover-cropped by the long side from a 2048 px texture, so it is
+  stretched by long side / 2048: 2560 px 1.25 x, 2880 px 1.41 x, 2208 px 1.08 x, 2048 px
+  1.0 x. Behind home, settings and the puzzles it is the sharp one and reads as soft
+  foliage at 1.25 x; behind the game it is blurred anyway.
+- **Mac memory** (footprint, 6 s in, `--size` in points): 1280x800 (2560 x 1600 px) 215 MB
+  on home and in a game (rss about 133 MB); 960x600 (1920 x 1200) 160 MB on home, 159 MB
+  in a game (rss about 135 MB). The 55 MB difference is graphics (100 MB against 65 MB,
+  the screen-sized buffers). This is the Mac's, not Android's (other allocator, drivers,
+  unified memory): it shows only that the cost grows with the pixels, not what the
+  tablet's PSS would be.
+- **Open:** a device's PSS at 2560 x 1600 waits for a device; the tablet's 261 to 263 MB at
+  1920 x 1200 is the number to compare with.
+
 ## Acceptance criteria
 
 - [x] A survey of every screen at each size above, with what broke (screenshots local)
 - [ ] Every screen fits and stays tappable on phones in both orientations, in English
       and Estonian
-- [ ] Larger tablets checked and anything broken fixed; memory at 2560 × 1600 recorded
+- [x] Larger tablets checked and anything broken fixed, on the Mac (a device's memory at
+      2560 × 1600 waits for one)
 - [ ] Nothing under a cutout or the gesture bar
 - [ ] Checked on the Pixel 7a in both orientations, with its numbers
 - [x] Tests cover the layouts at a phone size in both orientations
