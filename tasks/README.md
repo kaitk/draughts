@@ -80,5 +80,7 @@ icon and launch). The order for what is left:
     after the release, its numbers measured after 032 and 030.
 
 After the MVP: 026 (first start and tutorial; its prototype awaits the user's review),
-Russian puzzles from the International ones, 015, 013, 014, 033's seasonal icons, and
+Russian puzzles from the International ones, each level's adapted skill shown as a
+rating (a number or stars on the computer's tile, like a chess rating; the user,
+2026-11-08), 015, 013, 014, 033's seasonal icons, and
 010 alongside.

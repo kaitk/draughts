@@ -37,3 +37,9 @@ and the commit that last has it.
   constant per key, lookups as views into the embedded files, the language from SDL's
   preferred locales; `test/strings/` fails on a key missing from any file.
   `009-strings.md`, `ecfe920`
+- 031: A better win. Done: take a, the pieces answer (the winning piece lifts, a glow
+  passes the winner's pieces, the board dims, the card slides up), still by about 1.7 s;
+  90 Hz on the tablet, no frames after. `031-win-animation.md`, `4a206e6`
+- 034: The setup's board shows the game being set up. Done: the chosen variant's start,
+  turned for black against the computer, switching at once; play starts the game shown.
+  `034-setup-board.md`, `4609d2c`

@@ -13,7 +13,7 @@ jsDelivr CDN, so they need internet access. Start at [index.html](index.html).
 | `puzzles.html` | The puzzle picker: three theme rows of ten, with 0 to 3 stars |
 | `puzzle.html` | Takes on playing one puzzle (`?take=a` to `c`, `&state=play`, `wrong`, `hint`, `solved`), waiting for a pick (task 007) |
 | `solved.html` | A solved puzzle: stars over the dimmed board |
-| `win.html` | Takes on a win (`?take=a` to `c`, `&t=` seconds to hold a moment; a click plays it again), waiting for a pick (task 031) |
+| `win.html` | Takes on a win (`?take=a` to `c`, `&t=` seconds to hold a moment; a click plays it again), take a built (task 031, archived) |
 | `exit.html` | Takes on a way to close the app from home (`?take=a` to `c`, `&lang=et`), waiting for a pick (task 035) |
 | `boards.html` | The four season boards in 2D and 3D, crowned and stacked kings, and 10×10 |
 

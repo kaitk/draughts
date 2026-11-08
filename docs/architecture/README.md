@@ -55,7 +55,8 @@ Checked against goose_gfx's source on 2026-11-07:
 The code is packages with no graphics, each run headless by its tests, and an app that
 feeds them the pointer and the time and draws what they leave (2026-11-08). Only `app/`
 imports `gfx`, so a second renderer (the NoGraphicsAPI version) rewrites `app/` and
-keeps the rest.
+keeps the rest, and another platform on SDL (iOS: UIKit and SDL_GPU's Metal) adds its
+build and shims beside `app/`'s Android ones. Keep it so.
 
 | Directory | What it holds |
 | --- | --- |
