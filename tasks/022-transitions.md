@@ -1,8 +1,9 @@
 # 022: Transitions between screens
 
-Status: in-progress (home to settings, home to the game, the photograph's crossfade, and
-the puzzles to a puzzle built and checked on the Mac, 2026-11-08; the tablet check is
-open)
+Status: in-progress (all built and checked on the Mac; checked on the tablet 2026-11-08:
+smooth at 90 Hz and idle after, but settings' first opening in a run skips half its
+frames, and three kinds read busy where the board passes under the fading panels; see
+"On the tablet")
 
 Optional, after the MVP (2026-11-07): quick, not instant, changes between screens for
 feel: home's menu fading or sliding away on continue while the board grows into its
@@ -75,7 +76,7 @@ Checked:
 - On the Mac, at 960 × 600 and 600 × 960: frames at 25, 50, and 75% both ways. Home,
   settings, and the game at rest are byte-identical before and after the change. Settings
   and home reached through the transition are byte-identical to them.
-- Not yet on the tablet.
+- On the tablet: "On the tablet" below.
 
 ## The rest on this base
 
@@ -178,12 +179,82 @@ Checked:
   settings vary run to run by their flash as before; the game against the computer
   playing white changed (turned, above). The game, home, a puzzle, and the picker reached
   through a transition are byte-identical to them opened straight.
-- Not yet on the tablet.
+- On the tablet: "On the tablet" below.
+
+## On the tablet (2026-11-08)
+
+The APK built from `8dadb5c`, both orientations (1920 × 1200 and 1200 × 1920, 90 Hz).
+Each switch was a real tap (`adb shell input tap`) in a run started with flags, so
+`game.bin` was neither read nor written, and recorded with `adb shell screenrecord`,
+which writes only changed frames. Span is from the frame showing the button pressed to
+the last frame that moves: the 0.25 s plus the pressed frame and the switch frame.
+
+| Transition | Landscape: span, frames, median / max interval | Portrait |
+| --- | --- | --- |
+| Home to settings, first in a run | 300 ms, 17, 11.0 / **129 ms** | 286 ms, 15, 11.0 / **132 ms** |
+| Home to settings, later | 298 ms, 28, 11.0 / 12 ms | 297 ms, 27, 11.0 / 16 ms |
+| Settings to home | 264 ms, 25, 11.0 / 12 ms | 308 ms, 28, 11.0 / 16 ms |
+| Home to the game (continue) | 291 ms, 26, 11.0 / 17 ms | 281 ms, 26, 11.0 / 17 ms |
+| The game to home | 308 ms, 28, 11.0 / 17 ms | 298 ms, 28, 11.0 / 12 ms |
+| A friend's setup to play | 303 ms, 28, 11.0 / 16 ms | 283 ms, 27, 11.0 / 13 ms |
+| The computer's setup to play (child on black, turned) | 310 ms, 28, 11.0 / 18 ms | 307 ms, 26, 11.0 / 35 ms |
+| A won game to home (the card's arrow) | 300 ms, 27, 11.0 / 19 ms | 276 ms, 25, 11.0 / 17 ms |
+| The picker to puzzle 1 | 300 ms, 27, 11.0 / 17 ms | 301 ms, 27, 11.0 / 19 ms |
+| Puzzle 1 to the picker | 297 ms, 28, 11.0 / 12 ms | 297 ms, 26, 11.0 / 29 ms |
+
+- **Frame times:** apart from settings' first opening, every frame of every transition
+  came within 20 ms but two: 35 ms (the computer's play) and 29 ms (puzzle to picker),
+  both portrait, both on the switch frame, where smoothstep has barely moved; repeated,
+  the same two had at most 21 and 18 ms. The switch frame and the one after are the slow
+  ones in all of them (13 to 19 ms); the rest run at the display's 11 ms.
+- **Settings' first opening skips half:** the frame that switches to settings stalls
+  129 to 132 ms, and the next frame shows the transition about 60% through: settings
+  nearly opaque, the board already 10 × 10 and moved (frames 3 and 4 of the landscape
+  recording). The stall is `scene::thumbs()` (`app/draughts.goose`, loaded on the first
+  frame settings is the screen): with settings opened at launch (`--screen settings`)
+  and left, the next home to settings ran smoothly at most 17 ms a frame, as does every
+  later opening. Every other transition, the first in a run included, has no such stall.
+- **Frames stop:** after each transition the recordings hold no new frame until the
+  next tap (gaps of 2.2 to 3.0 s, and 14.8 s after a continue left untouched). Settings
+  draws about 2.8 s more for the preview's flash and pulse, then stops; against the
+  computer, frames run on for its turn and stop after its move.
+- **Idle on the game reached through continue,** `scripts/idle_cpu.sh 60`: landscape
+  the program thread 0.01 s (0.02% of a core), the process 1.10 s, 60 voluntary
+  switches; portrait 0.02 s (0.03%), 1.17 s, 60. As task 021's game screen.
+
+How it reads, from frames at 25, 50, and 75% of each:
+
+- **Calm:** landscape continue and the game's home, a friend's play, the computer's
+  play, and a won game's way home. The board's motion carries them; the panel it
+  passes under (the game's right panel at 50%, home's column at 75%) tints one column
+  of squares at the board's edge for about 0.1 s, and home's column and the game's
+  panels cross-fade text over text in the left column at 50%, which reads as a fade.
+- **Busy: home and settings when the sizes differ** (home's game 8 × 8 and the preview
+  10 × 10, or the reverse), both orientations. Around 50% both piece sets show at once,
+  about 40 pieces in two sizes off each other's squares, with two red rings, and the
+  squares switch at the halfway frame (the one large change in the recording). With the
+  same size it is calm.
+- **Busy: the picker and a puzzle,** both orientations. The board slides under the
+  picker's three glass rows, so at 50% it is striped by three translucent bands
+  carrying the tiles' outlines, stars, and locks, with a bright seam between rows.
+- **Busy: portrait into the game,** worst from the computer's setup. The setup's sheet
+  is tall, so at 50% the board's bottom two rows lie under it with its title and back
+  button over the pieces, and the game's top bar over its top row; at 75% the bottom
+  three rows are still tinted. From a friend's setup at 75% "A friend" lies over the
+  bottom row; continue at 50% cuts the bottom row with home's sheet's edge, and the
+  game's home at 25% prints the wordmark over it.
+
+Frames and recordings are kept locally, not in git. The notes above already name the
+changes for the busy ones: fade the incoming panels in later (on e² rather than e), or
+drop the drift for the panel the board passes; slide the game's pieces into settings and
+show the preview's on arrival. The stall needs the thumbnails loaded before settings
+first opens.
 
 ## Acceptance criteria
 
-- [x] Continue, a friend, settings, and back animate in both orientations (on the Mac)
+- [ ] Continue, a friend, settings, and back animate in both orientations (on the Mac; on
+  the tablet open: settings' first opening skips half, and three kinds read busy)
 - [x] A tap during a transition lands on the new screen
 - [x] Headless tests: a transition ends and stops asking for frames
 - [x] The game counts no time and the computer doesn't think during a transition
-- [ ] The tablet draws no frames once a transition has ended
+- [x] The tablet draws no frames once a transition has ended
