@@ -44,7 +44,8 @@ user on 2026-11-08: fix the layout rather than list the app for tablets only.
 the activity to the orientation it started in (`SENSOR_PORTRAIT`) because the window
 wasn't resizable; the tablet turned anyway, as large screens ignore that lock. Fixed by
 opening the window resizable too (`docs/development.md`); both orientations then drew
-home and a clocked game.
+home and a clocked game. Home 4 s after a cold start: PSS 289 MB, of it 244 MB graphics
+(172 GL, 73 EGL), against the tablet's 261 to 263 MB.
 
 ## Acceptance criteria
 
