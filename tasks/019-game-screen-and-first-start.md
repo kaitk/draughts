@@ -1,6 +1,6 @@
 # 019: Prototype the game screen's controls, a clock, and the first start
 
-Status: in-progress
+Status: done (built by tasks 021 and 025; the first start goes to task 026)
 
 Prototypes only (`prototypes/`, checked with agent-browser), to settle before building:
 the user finds home very readable but the game screen's four icon buttons confusing,
