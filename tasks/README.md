@@ -47,5 +47,5 @@ follow. Together they make the MVP in `docs/product.md`. 019 prototypes the game
 layout once the MVP's flows work. 010 runs alongside: goose_gfx changes
 to propose upstream. 011, the last idle CPU (SDL's accelerometer), can come any time
 before release. 013 adds season effects later. 014 upscales the backgrounds on the
-desktop; placeholders do until then. 024 reviews the Estonian translation once the MVP's text is in. 015 (the 3D board) and 022 (transitions between screens, optional) come after the MVP; 016
+desktop; placeholders do until then. 024 reviews the Estonian translation once the MVP's text is in. 015 (the 3D board) and 022 (transitions between screens, optional) come after the MVP, and so does 033 (an icon per season; shipping autumn instead of winter is a smaller call before it); 016
 (tabletop pictures) was cancelled. 031 makes the win calmer, and 032 brings memory down last. 027 has the computer spend its clock as a player of its level would. 028 (the icon and launch screen), 030 (phones and other screen sizes), and 029 (release on Google Play) make the release.
