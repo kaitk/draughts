@@ -405,7 +405,7 @@ the prototype tried, kept for 3D:
   at 480 dp), the sheet takes the height, 8 dp under its top at least, its margins above
   and below the content shrinking from 32 dp to fit, and back, the title (in a smaller
   face where it needs one), and the X share its first row; no board shows. The
-  choices are kept for next time in `settings.txt`, and play replaces a saved game
+  choices are kept for next time in the player's file, and play replaces a saved game
   without asking. Beside a setup the board is the game play will start: the chosen
   draughts at its start, 10 × 10 or 8 × 8, turned when the child plays black against
   the computer, changing as the choices change; back to the menu shows the game in
@@ -508,6 +508,39 @@ the prototype tried, kept for 3D:
   after another (56 px, 0.6 s each, 0.15 s apart), and next lights; nothing covers the
   board. In portrait the goal and the stars share a row under the board, over next
   across the width.
+
+- **Players** (`prototypes/profiles.html`, take a, chosen 2026-11-09; what a player
+  holds and the files: [players](README.md#players)). On home's menu a round glass chip
+  with the player's badge (56 dp) and name, 88 dp tall, as the X is, opens who's playing:
+  mirroring the X in the top left in portrait, 16 dp left of it in landscape, where the
+  column takes the left, the board keeping clear of it as of the X. Where the player
+  shows on home is still being prototyped (2026-11-09): the wordmark keeps its king, and
+  `home::player_spot` alone places the chip. Who's playing is a glass card over the home
+  dimmed by black at 42%: back, the title, and a pencil; then a tile per player, 156 dp
+  wide (120 on a phone, under 600 dp across), the badge 72% of it over the name, the
+  player playing lit with the glow ring (4 dp, and a 22 dp glow at 50%); then + while
+  there are under four. Four that don't fit a row go two and two. A badge switches to
+  that player and closes the card; a tap outside the card closes it. The pencil, lit
+  while on, puts a pencil badge on each tile, and a tile then opens its sheet, three
+  taps from home and out of a child's way; + opens the sheet for a new player with the
+  first free badge. The sheet: back (to the card), the badge and name or "New player",
+  and done (a primary tile, a check); the six badges 88 to 112 dp in a row of six where
+  they fit, else three by two, those other players have at 30%; the name in a field
+  88 dp tall that brings up the keyboard (SDL's text input) and takes up to 12
+  characters the faces draw, a steady caret while typing; and for a player already
+  there, start again and, while there is another player, remove. On a phone in
+  landscape the badges stand at the left, three by two, and the name and the holds at
+  the right. While the name is typed the card stands 16 dp from the top, clear of the
+  keyboard. Done adds a new player and switches to them, every setting at its default,
+  or saves the badge and name. Start again and remove are **holds** of 1.5 s: a 4 dp
+  ring 2 dp inside the tile fills clockwise from its top's middle (the glow color for
+  start again, the forced-capture red for remove, whose icon and word are that red
+  toward the text color), frames running only while it is held; let go early and
+  nothing happens, and no dialog asks, since a dialog needs reading and a hold is what a
+  child doesn't do in passing. Back goes from the sheet to the card and closes the card.
+  The badges' art is still open (2026-11-09): each is drawn by one function,
+  `badge()` in `app/widgets.goose`, for now a placeholder, the badge's colour as a disc
+  with a piece's turned rim.
 
 ### Transitions
 

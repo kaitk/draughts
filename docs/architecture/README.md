@@ -83,7 +83,7 @@ The targets this keeps open, each replacing or adding to `app/` alone:
 | `gui/` | The UI layer ([rendering.md](rendering.md#ui-layer)): rect cuts, widgets with their press state, text laid out from glyph tables the app bakes; every call appends quads to one fixed array |
 | `board/` | The board on screen: the position, the legal moves, and the undo history; where the board goes and which square a point is on; taps and drags; a move's animation; and each frame's draw lists (pieces, the squares' marks, a wrong move's flash) |
 | `game/` | The game screen: its panels and where they and the board go (`panel::layout`), the clocks, the computer's turn (asking for a move and playing the answer), the celebration, and the pieces it puts over the UI |
-| `shell/` | The screens and which one shows: home and a new game's setup with the board of the game it starts, the game, settings with their preview board, the puzzles to pick from and the puzzle playing ([puzzles.md](puzzles.md#the-screen)); the pieces the screen showing puts over the UI (`Shell.over`, which the app draws); the settings file and the saved game |
+| `shell/` | The screens and which one shows: home and a new game's setup with the board of the game it starts, the game, settings with their preview board, the puzzles to pick from and the puzzle playing ([puzzles.md](puzzles.md#the-screen)); the pieces the screen showing puts over the UI (`Shell.over`, which the app draws); who's playing over home and a player's sheet; the players, their settings files, and their saved games |
 | `app/` | The program: the main loop, the GPU drawing of the board, the pieces, and the UI's quads, the season's photograph and its blurs, the font atlas, the themes, the computer's worker thread, and its C (storage folder, locales, the clock's wake timer, the JPEG decoder) |
 | `tools/` | Programs for development: perft, the computer's benchmark and matches, a terminal game against it, and the puzzles' checks |
 
@@ -156,11 +156,12 @@ returns.
   English. A language is a new file plus its code in `strings::LANGUAGES`;
   `test/strings/` fails on a key missing from any file. Kids who can't read get icons,
   and later voice clips keyed the same way.
-- **Kept in the app's storage folder** (SDL's pref path, through `app/storage.c`): the
-  settings as a small `key = value` file (`settings.txt`, `shell/settings.goose`),
-  written whole and atomically after a change; and the game as it stands, `game.bin`,
-  written when the app is paused or quits, since Android may kill a paused app. Both
-  are read at start. Nothing is written while idle.
+- **Kept in the app's storage folder** (SDL's pref path, through `app/storage.c`), per
+  player ([players](#players)): the settings as a small `key = value` file
+  (`player-N.txt`, `shell/settings.goose`), written whole and atomically after a change;
+  and the game as it stands, `game-N.bin`, written when the app is paused or quits,
+  since Android may kill a paused app, and before another player plays. The device's
+  own keys are in `settings.txt`. All are read at start. Nothing is written while idle.
 - **The saved game is one flat value** (`shell::Saved`): the screen, the variant, the
   position, where the game began, the last move, the undo history (a limited array),
   the clocks, and the computer's side, level, and skill, if it plays, with the game's
@@ -171,3 +172,53 @@ returns.
   after Android pauses the app before it blocks.
 - **Assets are embedded** in the binary (shaders by `embed_shader`, fonts and puzzles as
   data), so no code reads Android's asset manager.
+
+## Players
+
+Up to four players share one tablet, local only: no accounts, no network, no passwords
+(decided 2026-11-09). A player is a badge, an optional name of up to 12 characters, and
+what a child makes their own; the rest belongs to the device.
+
+| Kept | Per player | Per device |
+| --- | --- | --- |
+| Badge (one of six, each its own colour; one a player has isn't offered to another) and name | yes | |
+| Look: background, kings, board; move hints | yes | |
+| A new game's setup: draughts, level, colour, clock | yes | |
+| The computer's skill per level and the games against it | yes | |
+| Puzzle stars | yes | |
+| The game in progress | yes | |
+| The first start done (task 026's, not built yet: only the flag) | yes | |
+| Language, and which player is playing | | yes |
+
+The game in progress is the player's so continue means "my game": switching to a
+sibling never replaces a game against the computer. The computer's skill is the
+player's, or `ai::adapt` would follow neither child. Language is the device's: the
+parent sets it once.
+
+**The files** (`shell/players.goose`), one per player rather than sections in one file,
+so a change rewrites only that player's and no section parser is needed:
+
+- `settings.txt`: the device's keys, `language` and `player = N`, the playing player's id.
+- `player-N.txt`, N the id from 1 to 4: `picture = fox` (the badge's name), `name = Mia`
+  if there is one, `first_start = done` once had, then the keys `shell/settings.goose`
+  writes. Players show in the order of their ids; a new player takes the lowest free id.
+- `game-N.bin`: the player's saved game, as `shell::save` writes it.
+
+Each is written whole and atomically. Starting a player again deletes their game and
+clears their stars, the computer's skill, and the games against it, keeping the badge,
+the name, the look, and the setup. Removing deletes their game, then their settings, so
+one killed halfway is left as one started again. The last player can't be removed;
+removing the one playing makes the first left play.
+
+In memory the shell holds the playing player's settings and, for every player, only the
+id, badge, and name, in a fixed table of four read at start. Switching writes the
+leaving player's settings and game and reads the other's: one small file and one game on
+a tap, never while idle; the photograph loads two frames later as for a season's tile.
+
+**Migration**, at start, when `settings.txt` has no `player` key: its keys become
+`player-1.txt` with the fox and no name (the first start marked done), `game.bin` is
+renamed `game-1.bin`, then `settings.txt` is rewritten with `language` and `player = 1`.
+Until that last write the next start migrates again from the same keys, and each step
+done again does the same, so a kill at any point loses nothing (`test/shell/players`).
+A fresh install, with no `settings.txt`, starts the same way, and its first run opens on
+its one player's sheet, so the child picks a badge; later starts never do.

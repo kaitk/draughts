@@ -1,6 +1,7 @@
 # 038: Players on one tablet
 
-Status: todo (prototyped 2026-11-08 in `prototypes/profiles.html`; a take to choose)
+Status: in progress (take a chosen 2026-11-09 and built; the badges' art and where the
+player shows on home are open; to check on the Mac and the tablet)
 
 A family shares one tablet: children of different ages and a parent. Each child wants their
 own look (season and board) and their own puzzle stars, and a way to start them again
@@ -123,6 +124,65 @@ same way, with one player and the first start.
   `strings/en.txt` and `et.txt` (the prototype has "Kes mängib?", "Uus mängija", "Pilt",
   "Nimi", "Alusta otsast", "Eemalda", "Hoia all", for review with the rest).
 
+## Decisions (2026-11-09)
+
+The user's answers to the open questions below:
+
+1. Take a: who's playing on a card over home, the sheet behind its pencil.
+2. Names are in the first version: optional, up to 12 characters, through SDL's text
+   input (Android's keyboard).
+3. The language is the device's.
+4. The game in progress is the player's.
+5. Start again clears the stars, the computer's skill and games, and the saved game.
+6. Every new player gets the first start (task 026, not built yet): only a per-player
+   flag for now, `first_start = done` in their file.
+7. Four players and six badges; start again and remove are holds of 1.5 s.
+
+Changed while building (2026-11-09):
+
+- **The badges' art is open.** The animal pictures from the prototype broke the look and
+  are being redesigned apart from this task. A player's file keeps the badge as a name
+  (`picture = fox`, the six names standing for six badges and their colours), and
+  `app/widgets.goose` draws every badge through one function, `badge()`, for now a
+  placeholder: the badge's colour as a disc with a piece's turned rim. Replace that
+  function, and the names if they change, when the art is chosen.
+- **Home keeps its king beside the wordmark**; where the player shows on home is being
+  prototyped. Until it is chosen the entry is a chip of its own, the player's badge and
+  name in a round glass 88 dp tall, as the X is: mirroring the X in the top left in
+  portrait, and 16 dp left of the X in landscape, where the column takes the left. The
+  board keeps clear of it as of the X (on a 20:9 phone in landscape it gives up 11 dp,
+  310 to 299). `home::player_spot` alone places it, so moving it is one function.
+- **Who's playing opens by itself only on a fresh install's first run**, at the sheet of
+  its one player, so the child picks a badge and perhaps a name; done or back goes home.
+  Later starts never ask. An install from before players becomes player 1 silently.
+
+## What was built
+
+- `shell/players.goose`: the files, the migration, and a player's keys; `shell.goose`
+  switches, adds, edits, starts again, and removes (`switch_player`..); the app reads the
+  players at start and writes the playing player's file and game.
+- `shell/who.goose`: the card and the sheet; `gui::hold_tile` (the hold and its ring),
+  `gui::face`, typed characters in `gui::Input`; the shader's ring, faces, and the plus,
+  pencil, check, and bin icons; the app turns the keyboard on and off and feeds it in.
+- Strings in English and Estonian (`players.*`).
+- Tests: `test/shell/players` (files, migration killed after each step, add, switch,
+  start again, remove), `test/shell/who` (the card and sheet driven by the pointer, the
+  holds, typing, back, the first run, the layouts at the tablet's and a phone's sizes in
+  both orientations, in both languages: every tap 88 dp, inside the safe area, none
+  overlapping); `test/shell/sizes` counts the chip among home's tiles.
+
+What to look at on screen, at the tablet's size (`--size 960x600`, `600x960`) and a
+phone's (`--dp 480 --size 1066x480`, `--size 450x1000 --dp 480`): home with the chip
+(no name, then a name); the card with one and with four players, pencil on; a new
+player's sheet; a player's sheet with both holds, one held partway (a long press on the
+tablet); the sheet while typing, with Android's keyboard up (does the card clear it in
+landscape?); the first run on a fresh install (`adb uninstall`, then install).
+
+Unsure: whether Android's keyboard covers the name field in the tablet's landscape (the
+card moves to the top while typing, but SDL's text input area isn't set: gfx has no call
+for it); whether a hidden keyboard comes back on a second tap of the field (the app stops
+and starts text input again on each tap).
+
 ## Open questions
 
 1. Which take: a (proposed), b, or c?
@@ -137,21 +197,23 @@ same way, with one player and the first start.
 
 ## Acceptance criteria
 
-- [ ] A take chosen, and its home, picker, and sheet recorded in
+- [x] A take chosen, and its home, picker, and sheet recorded in
       `docs/architecture/rendering.md` ("Controls"); what a player holds and the files in
       `docs/architecture/README.md`; `docs/architecture/puzzles.md`'s stars in the
       player's file
-- [ ] Up to four players, each with a picture, an optional name, and their own look, move
+- [x] Up to four players, each with a picture, an optional name, and their own look, move
       hints, setup, computer skill and games, stars, and saved game; the language per
       device
-- [ ] Switching takes at most two taps from home and shows the player's game, look,
+- [x] Switching takes at most two taps from home and shows the player's game, look,
       stars, and level at once; nothing allocates in the frame loop
-- [ ] Adding takes a picture and an optional name; start again and remove are 1.5 s
+- [x] Adding takes a picture and an optional name; start again and remove are 1.5 s
       holds that a shorter press doesn't trigger; the last player can't be removed
-- [ ] An install with today's `settings.txt` and `game.bin` comes up as player 1 with
+- [x] An install with today's `settings.txt` and `game.bin` comes up as player 1 with
       nothing lost, also when killed during the migration
-- [ ] Headless tests: a player's file read and written back, the migration, start again
+- [x] Headless tests: a player's file read and written back, the migration, start again
       and remove, the picker's layout at the tablet's and a phone's size
-- [ ] Every tap 88 dp; strings in English and Estonian, `test/strings/` passing
+- [x] Every tap 88 dp; strings in English and Estonian, `test/strings/` passing
 - [ ] Checked on the Mac at the tablet's and a phone's sizes in both orientations, then on
       the tablet over USB
+- [ ] The badges' art chosen and drawn in `badge()`
+- [ ] Where the player shows on home chosen, and `home::player_spot` moved there

@@ -140,6 +140,13 @@ find out by compiling, so the next session doesn't.
   f64 as f32" at the piece's radius). An untyped integer constant adapts to a float
   expression too: `x / STAKE` with `x: f32`, where `as f32` is a redundant-cast
   warning (2026-11-08).
+- An `if` choosing between two results can't be returned or bound with another value:
+  `return if a { X } else { Y }, i;` and `let a, b = if c { f() } else { g() };` don't
+  parse. Use two `return`s, or `var a = ...; var b = ...;` and then `a, b = f();`, which
+  works. An assignment isn't an expression: `f(now += 1.0)` doesn't parse (2026-11-09).
+- File functions (`read_file`, `write_file_atomic`, `file_exists`, `delete_file`,
+  `rename_file`, `list_dir`) need `import os;` in every file that calls them, packages
+  included (`shell/players.goose`) (2026-11-09).
 - `float4` has no swizzles (`.xy`); build the `float2` from `.x` and `.y`.
 - `gfx::uniforms` takes its block by value: a struct bound with `.=` doesn't compile
   ("bytes_of cannot write theme::Theme&[1] out"); bind it with `=`.

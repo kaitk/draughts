@@ -33,7 +33,11 @@ which would overwrite the main checkout's while another session uses them.
   reply, and stars, a capture made by hand in a puzzle (tapped and dragged stop by stop,
   dropped on its last square, left partway and next pressed: a miss) and no targets in
   any tier,
-  the saved game of any variant and damaged images of it, the computer's skill moving
+  the saved game of any variant and damaged images of it, the players' files read and
+  written back, their migration (killed after each step too), adding, switching,
+  starting again, and removing (`players`), who's playing and a player's sheet, the
+  holds let go early and held, the name typed, the first run, and their layout at the
+  tablet's and a phone's size (`who`), the computer's skill moving
   across games, home's X closing the app and where it sits, Android's back and Escape
   on each screen against its own back tile (`back`), and every screen at a
   foldable, 4:3, and a 20:9 phone in both orientations, and the phone's layout at 540
@@ -84,11 +88,12 @@ which would overwrite the main checkout's while another session uses them.
 ## Screenshots on the Mac
 
 - A `--frames` run reads the Mac's settings from `~/Library/Application
-  Support/kaitk/draughts/settings.txt` (`app/storage.c`), and there is no flag for most
+  Support/kaitk/draughts/` (`app/storage.c`): the playing player's `player-N.txt`
+  (`settings.txt` names N and the language), and there is no flag for most
   of them (the kings, the draughts settings show). To shoot settings as chosen, copy the
   file aside, write the keys wanted (`kings = stack`, `draughts = russian`, `hints =
   moves`), run, and put the copy back.
-- A setup is shot with its choices from flags, leaving `settings.txt` alone:
+- A setup is shot with its choices from flags, leaving the player's file alone:
   `--screen friend --variant brazilian`, or `--screen computer --variant russian
   --computer white` for the child on black (`docs/development.md`). Add `--lang en`
   when the Mac's settings name another language (2026-11-08).
@@ -106,7 +111,7 @@ which would overwrite the main checkout's while another session uses them.
   play out (`--win`, `docs/development.md`): it doesn't wait for the display, so 90
   frames end before the second tap's move has shown.
 - A run against the computer (`--computer`) that ends moves the computer's skill and
-  writes it to `settings.txt`, flags or not: put the skill back after shooting one, on
+  writes it to the player's file, flags or not: put the skill back after shooting one, on
   the Mac and the tablet (2026-11-08).
 - A window taller than the Mac's screen is shrunk to fit: `--size 800x1280` comes out
   800 × 1098 here, a shorter portrait. Shoot the tablet's portrait proportions at
@@ -153,8 +158,9 @@ which would overwrite the main checkout's while another session uses them.
   accessibility (`AXIsProcessTrusted()` is false), so CGEvent clicks are dropped. To run
   a UI path in the real app (home's X closing the window, 2026-11-08), build a local
   copy, never committed, that feeds `gui::begin` a press and a release at the control
-  on chosen frames. A run without flags reads and writes the Mac's `game.bin`: copy it
-  aside first and put it back after.
+  on chosen frames. A run without flags reads and writes the Mac's `game-N.bin`: copy it
+  aside first and put it back after. Any run migrates a `settings.txt` from before
+  players to `player-1.txt` and renames `game.bin` (2026-11-09).
 - The prototypes' painter (`Paint` in `prototypes/draughts.js`) is a port of the piece
   shader, so a native crop beside the prototype's at the same scale shows a shader
   change exactly (the stacked king was checked that way).
@@ -277,7 +283,7 @@ measuring there:
   `adb shell am start -S -n io.github.kaitk.draughts/.DraughtsActivity --es args "'--clock 5+3'"`.
   Without `-S` a start that finds the app running only brings it back with its old
   flags: new `--tap`s never arrive and the screen keeps the last run's state.
-  A run with flags neither reads nor writes `game.bin`. Clean the app's data (settings
+  A run with flags neither reads nor writes the player's `game-N.bin`. Clean the app's data (settings
   and the game) with `adb uninstall io.github.kaitk.draughts` and a fresh install.
 - A button's press shows in a screenshot taken during a long press:
   `adb shell input swipe X Y X Y 2500 &`, then `adb exec-out screencap -p` a second later.

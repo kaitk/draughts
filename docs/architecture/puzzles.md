@@ -104,8 +104,9 @@ game, so a game in progress is kept. Their look is in
 - **Next** opens the puzzle after it in the file, and after the last the picker. Until
   the puzzle is solved it is dim and takes no tap, except while a capture waits
   partway, above.
-- **Kept**: the stars in `settings.txt`, `stars = 1:3 4:2` by puzzle id, written when a
-  puzzle is solved. A puzzle under way isn't saved with the game: when the app is
+- **Kept**: the stars in the player's file (`player-N.txt`,
+  [players](README.md#players)), `stars = 1:3 4:2` by puzzle id, written when a
+  puzzle is solved; each player has their own. A puzzle under way isn't saved with the game: when the app is
   paused on one, it comes back on the picker.
 
 ## Checks

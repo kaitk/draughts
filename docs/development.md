@@ -96,7 +96,7 @@ board (`--puzzle 21 --tap f4 --tap e5`). `--go settings` (or `home`, `game`, `pl
 any `--tap`s have played out, and `--hold 0.4` keeps a transition at 40% of the way, for
 a screenshot: `--go settings --hold 0.5 --frames 12`, or `--screen settings --go home
 --hold 0.5 --frames 12` for the way back. `game` goes as continue does, `play` as the
-setup's play (`--screen friend --variant russian --go play`; it leaves `settings.txt`
+setup's play (`--screen friend --variant russian --go play`; it leaves the player's file
 alone), `puzzle` from the puzzles to pick from (`--screen puzzles --go puzzle --puzzle
 21`), and `puzzles` back to them (`--puzzle 21 --go puzzles`). `--hold 1` ends the
 transition at once, to shoot the screen reached through it. A won game's way home:
@@ -109,17 +109,18 @@ last choice), `--clock 5+3|10+5` with a clock, and `--computer white|black` agai
 the computer playing that side (the board turned when it plays white), at `--level
 easy|medium|hard` (else the setup's last choice). With `--screen friend` or
 `computer` those three set the setup's choices instead, the child playing the side
-`--computer` doesn't, and leave `settings.txt` alone unless a tap in the setup writes
+`--computer` doesn't, and leave the player's file alone unless a tap in the setup writes
 it: `--screen computer --variant russian --computer white --frames 12` shows the
 computer's setup for Russian with the child on black. A `--frames` run doesn't wait for the
 display, so a screenshot of the computer's reply, which comes after a pause of under a
 second, takes some thousands of frames: `--variant russian --computer black --tap c3
---tap d4 --frames 5000`. The settings file is `settings.txt` in the app's storage folder (on the Mac
-`~/Library/Application Support/kaitk/draughts/`); `--theme`, `--hints`, and `--lang`
-override it for a run without changing it. Settings' Board row (flat or 3D) is hidden
+--tap d4 --frames 5000`. The settings are in the app's storage folder (on the Mac
+`~/Library/Application Support/kaitk/draughts/`): `settings.txt` the device's (the
+language, who plays), `player-N.txt` each player's ([players](architecture/README.md#players));
+`--theme`, `--hints`, and `--lang` override them for a run without changing them. Settings' Board row (flat or 3D) is hidden
 until the 3D board exists; `--3d`, a flag with no value, shows it for working on task 015
 (the file's `board` key is read and written either way, and the board is flat while the
-row is hidden). The game is kept in `game.bin` beside it; a
+row is hidden). Each player's game is kept in `game-N.bin` beside them; a
 run with `--fen`, `--tap`, `--screen`, `--frames`, `--variant`, `--clock`, or
 `--computer` neither reads nor writes it, so
 screenshots don't depend on the last session. On the tablet, check a resume with

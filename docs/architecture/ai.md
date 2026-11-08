@@ -89,8 +89,8 @@ On a worker the frame loop draws as it would without the computer.
   child's move as for any player, and its move adds the increment, as any move does.
 - **The seed** of a move is the game's number times 1000 plus the ply: replies vary from
   one game to the next, and the same game replays the same. The number counts the games
-  begun against the computer, kept in `settings.txt` (`games`).
-- **Skill**: `settings.txt` keeps one skill per level (`skill_easy`, `skill_medium`,
+  begun against the computer, kept per player in `player-N.txt` (`games`).
+- **Skill**: each player's file keeps one skill per level (`skill_easy`, `skill_medium`,
   `skill_hard`, from the level's starting skill), and a game plays at its level's skill
   as it began, kept with the saved game. A game that ends moves its level's skill with
   `ai::adapt`: up when the child won, down when the computer did, by the clock too. It
