@@ -98,8 +98,8 @@ Screenshots are in the session's scratchpad, not in git.
 
 - `kings.auto`: "Laua järgi" ("by the board", like "Kuupäeva järgi" two rows up), the
   user's pick on 2026-11-08 over "Automaatne".
-- `clock.*_note`: "käigule" or "käigu eest"? Both are used for an increment; "käigule"
-  was taken for the room. Argon would keep "käigu eest".
+- `clock.*_note`: "käigule" stays, the usual way to write an increment (the user,
+  2026-11-08).
 - `variant.international`: "Rahvusvaheline" is the right term and has no shorter form.
   It took the small face in the setup's 113 dp landscape third and still ran edge to
   edge (110 dp), so the layout changed instead of the word (2026-11-08): when a name
