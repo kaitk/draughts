@@ -332,8 +332,8 @@ fn main() {
             let shown .= shell::fill(sh, now);
             widgets::upload(w, g);
             draw::frame(d, shown, sh.over, l, sh.blur, now, size.x, size.y);
-            widgets::frame(w, g, d.scene, d.colors, size.x, size.y);
-            draw::overlay(d, now);
+            widgets::frame(w, g, d.scene, d.colors, size.x, size.y, sh.hole);
+            draw::overlay(d, now, sh.hole);
             gfx::end_pass();
             dirty = false;
         }

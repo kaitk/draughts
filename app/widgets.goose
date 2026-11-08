@@ -11,11 +11,13 @@ import .scene;
 import .theme;
 import .draw;
 
-struct View { screen: float4 }     // width, height in pixels; x: 1 when there is a photograph
+// width, height in pixels, z: 1 when there is a photograph; and the board's rect (x, y,
+// size, corner radius) where a transition hides the UI, size 0 at rest.
+struct View { screen: float4, hole: float4 }
 
 let VERT = """
     layout(std430, set = 0, binding = 0) readonly buffer Quads { vec4 q[]; };
-    layout(set = 1, binding = 0) uniform View { vec4 screen; };
+    layout(set = 1, binding = 0) uniform View { vec4 screen; vec4 hole; };
     layout(location = 0) out vec2 v_px;
     layout(location = 1) flat out vec4 v_rect;
     layout(location = 2) flat out vec4 v_color;
@@ -50,7 +52,7 @@ let FRAG = """
     layout(set = 2, binding = 0) uniform sampler2D glass_copy;
     layout(set = 2, binding = 1) uniform sampler2D atlas;
     layout(set = 2, binding = 2) uniform sampler2D thumbs;   // four seasons, stacked
-    layout(set = 3, binding = 1) uniform View { vec4 screen; };
+    layout(set = 3, binding = 1) uniform View { vec4 screen; vec4 hole; };
     float cover(float d) { return clamp(0.5 - d, 0.0, 1.0); }
     // A CSS box-shadow under a rounded rect: offset y, blur, spread, all in pixels.
     float shadow(vec2 p, vec2 c, vec2 h, float r, float y, float blur, float spread) {
@@ -305,7 +307,7 @@ let FRAG = """
             // A glyph: the atlas's coverage over the quad, in the text color.
             vec2 t = (p - v_rect.xy) / v_rect.zw;
             float a = texture(atlas, mix(v_look.yz, vec2(v_look.w, v_extra.y), t)).a * v_color.a;
-            result = vec4((v_extra.z > 0.5 ? v_color.rgb : text.rgb) * a, a);
+            result = vec4((mod(v_extra.z, 2.0) > 0.5 ? v_color.rgb : text.rgb) * a, a);
             return;
         }
         if (kind == 6) {
@@ -329,10 +331,16 @@ let FRAG = """
         float a = cover(box(p, c, h, r)) * v_color.a;
         result = vec4(v_color.rgb * a, a);
     }
-    // Each quad as its kind draws it, faded with its layer (a screen in a transition).
+    // Each quad as its kind draws it, faded with its layer (a screen in a transition), and
+    // in a transition hidden where the board passes, unless it lies on the board (a win's
+    // card, extra.z from 2).
     void main() {
         shade();
         result *= 1.0 - v_extra.w;
+        if (hole.z > 0.0 && v_extra.z < 1.5) {
+            float h = 0.5 * hole.z;
+            result *= 1.0 - cover(box(v_px, hole.xy + h, vec2(h), hole.w));
+        }
     }
     """;
 
@@ -364,10 +372,11 @@ fn upload(w: Widgets&, g: gui::Gui&) {
     gfx::update_buffer(w.quads, bytes_of(w.upload));
 }
 
-// Draws the frame's quads in the open pass, over what is there.
-fn frame(w: Widgets&, g: gui::Gui&, s: scene::Scene&, t: theme::Theme, width: f32, height: f32) {
+// Draws the frame's quads in the open pass, over what is there, none inside `hole` but
+// those on the board (gui::on_board).
+fn frame(w: Widgets&, g: gui::Gui&, s: scene::Scene&, t: theme::Theme, width: f32, height: f32, hole: float4) {
     guard g.quads.len > 0 else { return; }
-    let view = View { screen: float4 { width, height, if s.has { 1.0 } else { 0.0 }, 0.0 } };
+    let view = View { screen: float4 { width, height, if s.has { 1.0 } else { 0.0 }, 0.0 }, hole: hole };
     gfx::bind(w.pipeline);
     gfx::bind_storage_buffer(gfx::VERTEX, 0, w.quads);
     gfx::uniforms(gfx::VERTEX, 0, view);

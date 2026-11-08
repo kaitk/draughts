@@ -22,7 +22,9 @@ struct BoardUniforms {
 
 struct View { screen: float4 }     // width, height, the disc's side depth in radii
 
-struct Clock { time: float4 }      // seconds
+// Seconds; and for the pieces over the UI, the board's rect where a transition hides
+// them, as it does the UI (widgets.goose), size 0 at rest and for the board's own.
+struct Clock { time: float4, hole: float4 }
 
 let THEME_BLOCK = """
     layout(set = 3, binding = 0) uniform Theme {
@@ -219,9 +221,9 @@ let PIECE_FRAG = """
     layout(location = 1) flat in vec4 v_look;     // black, king (0, 1 crown, 2 stack), selected, opacity
     layout(location = 2) flat in vec4 v_extra;    // must capture (1 pulsing, 2 still), lift, side, one pixel
     layout(location = 3) flat in vec4 v_ring;     // y: a glow ring tight round it, 0 to 1
-    layout(location = 4) flat in vec4 v_win;      // a win: x dimmed by; y its square lit; z the square's half side
+    layout(location = 4) flat in vec4 v_win;      // a win: x dimmed by; y its square lit; z the square's half side; w 1 on the board
     layout(location = 0) out vec4 result;
-    layout(set = 3, binding = 1) uniform Clock { vec4 time; };
+    layout(set = 3, binding = 1) uniform Clock { vec4 time; vec4 hole; };
     float fill(float d, float w) { return clamp(0.5 - d / w, 0.0, 1.0); }
     // The crown: five points over a band, in units where it spans -1..1.
     const vec2 CROWN[7] = vec2[](vec2(-0.72, 0.30), vec2(-0.88, -0.42), vec2(-0.40, 0.02),
@@ -350,6 +352,11 @@ let PIECE_FRAG = """
         }
         // Dimmed with the board under a win, as a black fill over both would.
         result = vec4(acc.rgb * (1.0 - v_win.x), acc.a) * v_look.w;
+        // Over the UI in a transition, hidden where the board passes unless it lies on it.
+        if (hole.z > 0.0 && v_win.w < 0.5) {
+            float h = 0.5 * hole.z;
+            result *= clamp(0.5 + box(gl_FragCoord.xy, hole.xy + h, vec2(h), hole.w), 0.0, 1.0);
+        }
     }
     """;
 
@@ -426,7 +433,7 @@ fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::La
     gfx::bind_storage_buffer(gfx::VERTEX, 0, d.pieces);
     gfx::uniforms(gfx::VERTEX, 0, d.view);
     gfx::uniforms(gfx::FRAGMENT, 0, t);
-    gfx::uniforms(gfx::FRAGMENT, 1, Clock { time: float4 { now as f32, 0.0, 0.0, 0.0 } });
+    gfx::uniforms(gfx::FRAGMENT, 1, Clock { time: float4 { now as f32, 0.0, 0.0, 0.0 }, hole: float4 { 0.0, 0.0, 0.0, 0.0 } });
     gfx::draw_instanced(6, b.pieces.len);
 }
 
@@ -438,14 +445,15 @@ fn reload(d: Drawer&, kind: i64) {
     d.colors = theme::get(kind);
 }
 
-// Draws the pieces frame() was given for over the UI, in the open pass.
-fn overlay(d: Drawer&, now: f64) {
+// Draws the pieces frame() was given for over the UI, in the open pass, none inside
+// `hole` but those on the board.
+fn overlay(d: Drawer&, now: f64, hole: float4) {
     guard d.over_count > 0 else { return; }
     let t = d.colors;
     gfx::bind(d.piece_pipeline);
     gfx::bind_storage_buffer(gfx::VERTEX, 0, d.overlay);
     gfx::uniforms(gfx::VERTEX, 0, d.view);
     gfx::uniforms(gfx::FRAGMENT, 0, t);
-    gfx::uniforms(gfx::FRAGMENT, 1, Clock { time: float4 { now as f32, 0.0, 0.0, 0.0 } });
+    gfx::uniforms(gfx::FRAGMENT, 1, Clock { time: float4 { now as f32, 0.0, 0.0, 0.0 }, hole: hole });
     gfx::draw_instanced(6, d.over_count);
 }

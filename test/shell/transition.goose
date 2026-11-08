@@ -2,7 +2,11 @@
 // from home starts it, and while it runs the shell asks for frames, home fading out
 // under settings, both drifting the way the board goes, which eases from home's place
 // to the preview's: right in landscape; in portrait, where settings' title row comes
-// above it, down a little as it shrinks. The preview's pieces fade in over the game's.
+// above it, down a little as it shrinks. The board is home's all the way, the game's
+// pieces on its squares, and settings show their preview once it is there: one set of
+// pieces, never faint, ever on screen. Back shows home's board from its first frame.
+// Both screens' UI and their pieces over it are hidden where the board passes (the
+// hole, the board's rect while the transition runs, none at rest).
 // The frame of the tap still shows home as it stands. The frame after it ends is drawn
 // at rest, as settings at rest are; the preview's wrong move flashes then, and once it
 // and the pulse are over nothing more is drawn. A tap during it lands on settings: their
@@ -28,6 +32,11 @@ fn screen(sh: shell::Shell&) -> const u8[:] {
 
 fn rect(r: float4) -> u8[>..] { str(round(r.x), ",", round(r.y), " ", round(r.z)) }
 
+// Where the UI is hidden this frame: nowhere at rest, else the board's rect.
+fn hole(sh: shell::Shell&) -> const u8[:] {
+    if sh.hole.z <= 0.0 { "none" } else if sh.hole == sh.layout.board { "the board" } else { "elsewhere" }
+}
+
 // One idle frame at `now`: what the shell says of it and what it declared.
 fn look(sh: shell::Shell&, g: gui::Gui&, now: f64, what: const u8[:]) {
     let drawn = drive::idle(sh, g, now);
@@ -42,8 +51,8 @@ fn look(sh: shell::Shell&, g: gui::Gui&, now: f64, what: const u8[:]) {
     for p in b.pieces { if p.look.w < 1.0 { faint++; } }
     print(what, " ", now, ": ", screen(sh), ", board ", rect(sh.layout.board), " ", sh.layout.n, "x", sh.layout.n,
           ", mix ", round(100.0 * sh.mix), "%, quads ", g.quads.len, " faded ", faded, " mostly ", gone, ", pieces ",
-          b.pieces.len, " faint ", faint, ", over the UI ", sh.over.len, ", drawn ", drawn, ", animating ",
-          shell::animating(sh, g, now));
+          b.pieces.len, " faint ", faint, if b.flash.x >= 0.0 { ", a wrong move" } else { "" }, ", over the UI ",
+          sh.over.len, ", hole ", hole(sh), ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
 }
 
 fn main() {
@@ -62,7 +71,8 @@ fn main() {
     drive::frame(sh, g, settings_row, true, true, false, 1.0);
     let first = drive::frame(sh, g, settings_row, false, false, true, 1.02);
     print("tapped settings: ", screen(sh), ", from home ", sh.from == shell::HOME, ", drawn ", first, " with home's board ",
-          sh.layout.board == home_at, " at ", round(100.0 * sh.mix), "%");
+          sh.layout.board == home_at, " at ", round(100.0 * sh.mix), "%, its pieces ", shell::fill(sh, 1.02).pieces.len,
+          ", hole ", hole(sh));
     var x = home_at.x;
     var right = true;
     for i in 1..5 {
@@ -89,7 +99,12 @@ fn main() {
 
     // Back to home, and once more to settings; halfway, a tap where home's continue was
     // lands on settings, not home.
-    drive::tap(sh, g, back_at, 6.0);
+    drive::frame(sh, g, back_at, true, true, false, 6.0);
+    drive::frame(sh, g, back_at, false, false, true, 6.02);
+    print("tapped back: ", screen(sh), ", settings' board ", sh.layout.board == settings_at, ", the preview's pieces ",
+          shell::fill(sh, 6.02).pieces.len, ", hole ", hole(sh));
+    look(sh, g, 6.04, "  ");
+    look(sh, g, 6.145, "  ");
     drive::idle(sh, g, 6.5);
     print("back: ", screen(sh), ", board ", sh.layout.board == home_at, ", animating ", shell::animating(sh, g, 6.5));
     drive::frame(sh, g, settings_row, true, true, false, 7.0);

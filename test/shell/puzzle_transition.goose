@@ -4,7 +4,8 @@
 // the puzzles on the panel shrink it back into its tile. At rest on the picker the board
 // lies off the screen. The frame after the end is drawn, at rest, as the puzzle opened
 // straight is, and then nothing more. A tap during it lands on the puzzle: its way out
-// turns the transition round where it is.
+// turns the transition round where it is. The picker's rows, tiles, and the panels are
+// hidden where the board passes (the hole) while it runs.
 import std;
 import vec;
 import rules from "../../rules";
@@ -24,6 +25,11 @@ fn screen(sh: shell::Shell&) -> const u8[:] {
 fn rect(r: float4) -> u8[>..] { str(round(r.x), ",", round(r.y), " ", round(r.z)) }
 fn pc(x: f32) -> f64 { round(100.0 * x) }
 
+// Where the UI is hidden this frame: nowhere at rest, else the board's rect.
+fn hole(sh: shell::Shell&) -> const u8[:] {
+    if sh.hole.z <= 0.0 { "none" } else if sh.hole == sh.layout.board { "the board" } else { "elsewhere" }
+}
+
 fn look(sh: shell::Shell&, g: gui::Gui&, now: f64, what: const u8[:]) {
     let drawn = drive::idle(sh, g, now);
     var faded = 0;
@@ -33,7 +39,7 @@ fn look(sh: shell::Shell&, g: gui::Gui&, now: f64, what: const u8[:]) {
     for p in b.pieces { if p.look.w < 1.0 { faint++; } }
     print(what, " ", now, ": ", screen(sh), ", board ", rect(sh.layout.board), " ", sh.layout.n, "x", sh.layout.n,
           ", mix ", pc(sh.mix), "%, blur ", pc(sh.blur), "%, quads ", g.quads.len, " faded ", faded, ", pieces ",
-          b.pieces.len, " faint ", faint, ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
+          b.pieces.len, " faint ", faint, ", hole ", hole(sh), ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
 }
 
 fn main() {

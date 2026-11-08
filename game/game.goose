@@ -438,8 +438,11 @@ fn celebrate(gm: Game&, g: gui::Gui&, l: board::Layout, won: i64, now: f64, over
     let k = ease_out(span(t, CARD_AT, CARD_AT + 0.7));
     let drop = floor((1.0 - k) * SLIDE * u + 0.5) as f32;
     gui::fade(g, first, g.quads.len, k as f32, float2 { 0.0, drop });
+    gui::on_board(g, first, g.quads.len);
     spot.y += drop;
     let a = smooth(span(t, CROWN_AT, STILL)) as f32;
+    let n = over.len;
     panel::piece(over, spot, 44.0 * u, won, gm.b.king_look, a, a);
+    if over.len > n { over[n].win.w = 1.0; }   // on the board, as the card is
     return ask;
 }

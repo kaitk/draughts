@@ -113,7 +113,7 @@ struct Quad {
     rect:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x, y, width, height in pixels
     color: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // straight alpha
     look:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // kind, corner radius in pixels, icon, pressed 0..1
-    extra: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: pixels per dp; y: PLAIN..CLOCK_LOW; z: text in `color`; w: faded out, 0..1
+    extra: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: pixels per dp; y: PLAIN..CLOCK_LOW; z: text in `color` (1), + ON_BOARD; w: faded out, 0..1
 }
 
 // The pointer this frame. A quick tap can be pressed and released in one frame.
@@ -211,6 +211,11 @@ fn fade(g: Gui&, first: i64, last: i64, opacity: f32, offset: float2) {
         q.extra.w = 1.0 - (1.0 - q.extra.w) * opacity;
     }
 }
+
+// Marks quads first..last as lying on the board, as a win's card does: the hole a
+// transition makes in the UI where the board passes leaves them (app/widgets.goose).
+let ON_BOARD = 2.0;         // added to a quad's extra.z
+fn on_board(g: Gui&, first: i64, last: i64) { for i in first..last { g.quads[i].extra.z += ON_BOARD; } }
 
 fn add(g: Gui&, q: Quad) {
     guard g.quads.len < MAX_QUADS else { return; }

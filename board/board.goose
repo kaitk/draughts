@@ -11,7 +11,7 @@ import math;
 import vec;
 import rules from "../rules";
 
-let MAX_PIECES = 96;        // 40 pieces on 10×10, the moving one, and margin; two boards' in a transition
+let MAX_PIECES = 48;        // 40 pieces on 10×10, the moving one, and margin
 let HOP = 0.2;              // seconds per square of a quiet move, per stop of a capture
 let FADE = 0.18;            // captured pieces fade out after the move
 let PULSE = 2.8;            // must-capture rings pulse for two of their 1.4 s cycles
@@ -81,7 +81,7 @@ struct Piece {
     at:   float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x, y center in pixels, radius, lift in pixels
     look: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // black (0 or 1), 0 or CROWN or STACK, selected glow 0..1, opacity
     ring: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: must-capture ring, 1 pulsing, 2 still; y: a glow ring tight round it, 0 to 1
-    win:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // a win (game::cheer): x dimmed by, 0..1; y its square lit, 0..1; z the square's half side in radii
+    win:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // a win (game::cheer): x dimmed by, 0..1; y its square lit, 0..1; z the square's half side in radii; w: over the UI, 1 on the board (a win's card's piece)
 }
 
 // What the board shader marks, one bit per square numbered y * size + x.
@@ -528,28 +528,5 @@ fn fill(b: Board&, l: Layout, now: f64) {
             mark(b, b.marks.target, m.to);
             for j in b.steps.len + 1..m.path.len - 1 { mark(b, b.marks.via, m.path[j]); }
         }
-    }
-}
-
-// Two boards in one place while a transition crossfades them (shell::fill): after both
-// are filled, b's pieces at opacity a over the other's at 1 - a, and the marks of the one
-// that shows more.
-fn under(b: Board&, other: Board&, a: f32) {
-    let n = b.pieces.len;
-    let k = min(other.pieces.len, MAX_PIECES - n);
-    for i in k { b.pieces.push(Piece {}); }
-    var i = n;
-    while i > 0 {
-        i--;
-        b.pieces[i + k] = b.pieces[i];
-        b.pieces[i + k].look.w *= a;
-    }
-    for j in k {
-        b.pieces[j] = other.pieces[j];
-        b.pieces[j].look.w *= 1.0 - a;
-    }
-    if a < 0.5 {
-        b.marks = other.marks;
-        b.flash = other.flash;
     }
 }

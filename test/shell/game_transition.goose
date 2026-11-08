@@ -9,7 +9,9 @@
 // small boards fading, its board the game's start on squares of its size all the way.
 // While the transition runs the game counts no time on the clock and asks the computer
 // for nothing, both ways; once it is over the clock counts and the computer is asked.
-// Leaving a won game, its dim, lifts, and card fade out with the game's panels.
+// Leaving a won game, its dim, lifts, and card fade out with the game's panels. Both
+// screens' UI is hidden where the board passes (the hole), but for the card and its
+// piece, which lie on the board.
 import std;
 import vec;
 import rules from "../../rules";
@@ -27,6 +29,21 @@ fn screen(sh: shell::Shell&) -> const u8[:] {
 }
 
 fn rect(r: float4) -> u8[>..] { str(round(r.x), ",", round(r.y), " ", round(r.z)) }
+
+// Where the UI is hidden this frame: nowhere at rest, else the board's rect.
+fn hole(sh: shell::Shell&) -> const u8[:] {
+    if sh.hole.z <= 0.0 { "none" } else if sh.hole == sh.layout.board { "the board" } else { "elsewhere" }
+}
+
+// The quads and pieces over the UI that lie on the board, which the hole leaves: a win's
+// card.
+fn on_board(sh: shell::Shell&, g: gui::Gui&) -> u8[>..] {
+    var quads = 0;
+    var pieces = 0;
+    for q in g.quads { if q.extra.z >= gui::ON_BOARD { quads++; } }
+    for p in sh.over { if p.win.w > 0.5 { pieces++; } }
+    return str(quads, " quads and ", pieces, " piece");
+}
 fn pc(x: f32) -> f64 { round(100.0 * x) }
 
 // One idle frame at `now`: what the shell says of it and what it declared.
@@ -46,7 +63,7 @@ fn look(sh: shell::Shell&, g: gui::Gui&, now: f64, what: const u8[:]) {
     print(what, " ", now, ": ", screen(sh), ", board ", rect(sh.layout.board), " ", sh.layout.n, "x", sh.layout.n,
           ", mix ", pc(sh.mix), "%, blur ", pc(sh.blur), "%, quads ", g.quads.len, " faded ", faded, " mostly ", gone,
           if minis > 0 { str(", small boards ", minis) } else { str("") }, ", pieces ", b.pieces.len, " faint ", faint,
-          ", over the UI ", sh.over.len, ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
+          ", over the UI ", sh.over.len, ", hole ", hole(sh), ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
 }
 
 // The game's clocks and the computer's ask.
@@ -222,7 +239,8 @@ fn main() {
     drive::tap(sh, g, drive::at(sh.layout, "g5"), 20.2);
     drive::idle(sh, g, 21.0);
     drive::idle(sh, g, 25.0);
-    print("won: ", ok, ", winner ", game::winner(sh.game), ", the card's back ", opacity(g, 4));
+    print("won: ", ok, ", winner ", game::winner(sh.game), ", the card's back ", opacity(g, 4), ", on the board ",
+          on_board(sh, g));
     let gone .= shell::fill(sh, 25.0);
     print("  at rest: the board dimmed ", pc(gone.dim), "%, lifted ", round(lift(gone)), " px");
     drive::tap(sh, g, drive::control(g, 0), 26.0);
@@ -231,7 +249,8 @@ fn main() {
         drive::idle(sh, g, t);
         let b .= shell::fill(sh, t);
         print("  ", t, ": ", screen(sh), ", the board dimmed ", pc(b.dim), "%, lifted ", round(lift(b)),
-              " px, the card's back ", if sh.from >= 0 { opacity(g, 4) } else { -1.0 }, ", over the UI ", sh.over.len);
+              " px, the card's back ", if sh.from >= 0 { opacity(g, 4) } else { -1.0 }, ", over the UI ", sh.over.len,
+              ", on the board ", on_board(sh, g), ", hole ", hole(sh));
     }
 
     // Portrait: continue; the board goes down and grows.

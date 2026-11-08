@@ -14,10 +14,11 @@
 // against the computer, which play then starts as it shows.
 // Home and settings, home and the game, and the puzzles to pick from and a puzzle switch
 // through a transition: the board slides and grows from one's place to the other's
-// (settings crossfading into their own board; a puzzle's board growing out of its tile),
-// while the screen left fades out and the one come to fades in, both drifting a little
-// with the board, and the photograph goes from sharp to blurred or back. A tap during it
-// lands on the screen come to. The game counts no time and asks the computer for nothing
+// (home's board sliding to settings', which shows their own once it is there; a
+// puzzle's board growing out of its tile), while the screen left fades out and the one
+// come to fades in, both drifting a little with the board and hidden where the board
+// passes, and the photograph goes from sharp to blurred or back. A tap during it lands
+// on the screen come to. The game counts no time and asks the computer for nothing
 // until its transition is over.
 // Home's way out asks the app to stop (quit), which ends its loop as Escape does.
 // A game against the computer plays at the skill kept for its level, which each
@@ -75,6 +76,10 @@ struct Shell {
     went:  board::Layout,
     came:  board::Layout,
     left:  i64 = home::NOTHING,
+    // This frame: the screen whose board shows, and where the UI is hidden for the board
+    // passing in a transition (x, y, size, corner radius; size 0 at rest).
+    shows: i64    = HOME,
+    hole:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
 }
 
 fn new(variant: u8) -> Shell {
@@ -174,22 +179,17 @@ fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, fresh: b
     else { asked = home_screen(sh, g, width, height, now); }
     sh.came = sh.layout;
     sh.mix = 1.0;
-    if crossing { blend(sh, g, first, middle, gone, e); }
+    // Between home and settings the board is home's all the way: settings show their
+    // preview once the board is there, and home's board as soon as they are left, so one
+    // set of pieces is ever on screen.
+    sh.shows = if crossing && was == SETTINGS { from } else { was };
+    if crossing { blend(sh, g, first, middle, gone, e, if sh.shows == was { sh.came } else { sh.went }); }
+    sh.hole = if crossing { sh.layout.board } else { float4 { 0.0, 0.0, 0.0, 0.0 } };
     sh.blur = if crossing { blurred(from) + (blurred(was) - blurred(from)) * e } else { blurred(was) };
     // A switch this frame shows what was declared, and what the app fills and draws
     // agrees with it: the start of a transition, the screen left as it stands; one turned
     // round, the same moment of it the other way.
-    if sh.screen != was && sh.from >= 0 {
-        if crossing {
-            let l = sh.went;
-            sh.went = sh.came;
-            sh.came = l;
-            sh.mix = 1.0 - sh.mix;
-        } else {
-            sh.went = sh.came;
-            sh.mix = 0.0;
-        }
-    }
+    if sh.screen != was && sh.from >= 0 { sh.mix = if crossing { 1.0 - sh.mix } else { 0.0 }; }
     return changed || asked || ended || crossing;
 }
 
@@ -291,8 +291,8 @@ fn picker_screen(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) ->
 // A transition's frame, both screens declared, the one left's quads first..middle and
 // its pieces over the UI in `gone`, at e of the way, eased: the first fades out and the
 // second in, both drifting the way the board moves, and the board eases from the one's
-// place to the other's, with the squares and turn of whichever shows more.
-fn blend(sh: Shell&, g: gui::Gui&, first: i64, middle: i64, gone: game::Overlay&, e: f32) {
+// place to the other's, with the squares and turn of `own`, the end whose board shows.
+fn blend(sh: Shell&, g: gui::Gui&, first: i64, middle: i64, gone: game::Overlay&, e: f32, own: board::Layout) {
     sh.mix = e;
     let a = sh.went;
     let b = sh.came;
@@ -305,8 +305,8 @@ fn blend(sh: Shell&, g: gui::Gui&, first: i64, middle: i64, gone: game::Overlay&
     gui::fade(g, first, middle, 1.0 - e, out);
     gui::fade(g, middle, g.quads.len, e, into);
     sh.layout = board::layout_at(a.board.x + (b.board.x - a.board.x) * e, a.board.y + (b.board.y - a.board.y) * e,
-                                 a.board.z + (b.board.z - a.board.z) * e, g.scale, if e < 0.5 { a.n } else { b.n });
-    sh.layout.flip = if e < 0.5 { a.flip } else { b.flip };
+                                 a.board.z + (b.board.z - a.board.z) * e, g.scale, own.n);
+    sh.layout.flip = own.flip;
     // The pieces over the UI likewise, the screen left's first.
     var both: game::Overlay = [];
     for p in gone { put(both, p, 1.0 - e, out); }
@@ -502,31 +502,18 @@ fn which(screen: i64) -> i64 {
     if screen == SETTINGS { SETTINGS } else if screen == PUZZLE || screen == PICKER { PUZZLE } else { GAME }
 }
 
-// The board on screen.
+// The board on screen at rest.
 fn shown(sh: Shell&) -> board::Board& { board_of(sh, sh.screen) }
 
-// Fills the board on screen for the frame at `now`, where sh.layout puts it, and returns
-// it for the app to draw; the game's with its win (game::cheer), which fades with the
-// game screen in a transition. In a transition between screens with boards of their own,
-// the board left is filled too and fades out under it (board::under).
+// Fills the board this frame shows (sh.shows) for the frame at `now`, where sh.layout
+// puts it, and returns it for the app to draw; the game's with its win (game::cheer),
+// which fades with the game screen in a transition.
 fn fill(sh: Shell&, now: f64) -> board::Board& {
-    let b .= shown(sh);
-    let l = along(sh.layout, sh.came);
-    board::fill(b, l, now);
+    let b .= board_of(sh, sh.shows);
+    board::fill(b, sh.layout, now);
     let share = if sh.screen == GAME { sh.mix } else if sh.from == GAME { 1.0 - sh.mix } else { 0.0 };
-    if share > 0.0 && which(sh.screen) == GAME { game::cheer(sh.game, l, now, share); }
-    guard sh.from >= 0 && which(sh.from) != which(sh.screen) else { return b; }
-    let old .= board_of(sh, sh.from);
-    board::fill(old, along(sh.layout, sh.went), now);
-    board::under(b, old, sh.mix);
+    if share > 0.0 && which(sh.shows) == GAME { game::cheer(sh.game, sh.layout, now, share); }
     return b;
-}
-
-// Where l puts the board, with the squares and the turn of `own`.
-fn along(l: board::Layout, own: board::Layout) -> board::Layout {
-    var k = board::layout_at(l.board.x, l.board.y, l.board.z, l.scale, own.n);
-    k.flip = own.flip;
-    return k;
 }
 
 // Whether anything is still moving at `now`; the app draws while it is.
