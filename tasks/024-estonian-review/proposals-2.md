@@ -2,8 +2,9 @@
 
 Gemini's answers to `brief-2.md`, run headless with no tools (`agy --sandbox -p`, the
 brief's prompt as the argument, the answer as text on stdout), 2026-11-08, and the
-verdict on each proposal. Nothing here is in `strings/et.txt` yet: the user decides. A
-key both models kept has no verdict, unless this session found something they missed.
+verdict on each proposal. The user took four changes into `strings/et.txt` on
+2026-11-08 (the summary's last column). A key both models kept has no verdict, unless
+this session found something they missed.
 
 Two runs of the same brief: agy's default, which this config resolves to Gemini 4 Argon
 (Medium), in 49 s, and Gemini 4 Argon (High) (`--model gemini-4-argon-high`) in 172 s.
@@ -17,12 +18,12 @@ Both models keep 66 of 68 keys and propose the same two changes, `goal.safe` and
 `settings.by_date`; Medium adds `settings.kings`. This session recommends one of them and
 adds one of its own:
 
-| Key | English | Now | Proposed | Verdict |
-| --- | --- | --- | --- | --- |
-| `goal.safe` | Stay safe | Ära anna nuppu | Päästa nupp | **Recommend** (both models) |
-| `puzzle.try_again` | Try again | Proovi uuesti | Proovi veel | **Recommend, Claude's own**; both models keep |
-| `settings.by_date` | By date | Kuupäev | Praegune | Decline; the user's choice, with "Tänane" as an option |
-| `settings.kings` | Kings | Tammi kuju | Tammid | Decline (Medium only); renamed on purpose that day |
+| Key | English | Was | Proposed | Verdict | Taken (2026-11-08) |
+| --- | --- | --- | --- | --- | --- |
+| `goal.safe` | Stay safe | Ära anna nuppu | Päästa nupp | **Recommend** (both models) | Päästa nupp |
+| `puzzle.try_again` | Try again | Proovi uuesti | Proovi veel | **Recommend, Claude's own**; both models keep | Proovi veel, for now |
+| `settings.by_date` | By date | Kuupäev | Praegune | Decline; the user's choice, with "Tänane" as an option | Tänane |
+| `settings.kings` | Kings | Tammi kuju | Tammid | Decline (Medium only); renamed on purpose that day | Tammid |
 
 The capture verb: Eesti Kabeliit's official rules (EKL100 Osa 1, 2021, the international
 game) write *lööma*, *löömine*, *löömiskäik*, and call the pieces *kabend*, a man *kivi*,
@@ -36,12 +37,20 @@ pieces off the board ("kabendite võtmisel", 4.12). The models were told this an
 
 ## Verdicts
 
-| Key | Now | Proposal | Verdict |
+| Key | Was | Proposal | Verdict |
 | --- | --- | --- | --- |
 | `goal.safe` | Ära anna nuppu | Päästa nupp | **Recommend.** Both models, independently. "Ära anna nuppu" is a prohibition, and *nuppu andma* is how a player says giving a man on purpose, which tier 3's other puzzles ask for; to a child it reads "don't hand over a piece". "Päästa nupp" ("save the piece") says what to do, as the other goals do, and is exactly what each of the three safe puzzles is (the file's comment on each: "the man on … is in danger", one move saves it). Nothing added: the goal is that one move after which nothing is lost, and the piece at risk is the reason. 153 dp at 30 px in about 200 (the old was 200, at the edge of dropping a face). "Kaitse nuppu" (164 dp) matches the shield icon but reads as guarding in place; left in the notes. |
 | `puzzle.try_again` | Proovi uuesti | Proovi veel | **Recommend, Claude's own.** The pill leaves the words 128 dp in landscape (the 200 dp goal less 72); "Proovi uuesti" is 130 dp at 24 px, so it drops to 20 px (108), while English "Try again" stays at 24 px (94). "Proovi veel" is 108 dp at 24 px, fits, and is what a parent says at the board ("proovi veel!"), same meaning. Both models keep "Proovi uuesti" and accept the drop; it isn't wrong, so this is a small fix for the user to weigh. |
 | `settings.by_date` | Kuupäev | Praegune | **Decline, left to the user.** Both models say bare "Kuupäev" reads "Date", not "By date", which is fair: it names the input without saying it picks. But the user chose "Kuupäev" for this tile on 2026-11-08 after trying "Kuupäeva järgi" (124 dp) and others there, and "Praegune" ("current", 78 dp) says no more about how the season is picked. If the user wants a change, "Tänane" ("today's", 61 dp) says it best, read with the season photographs beside it. |
 | `settings.kings` | Tammi kuju | Tammid | **Decline.** Argon (Medium) only; Argon (High) keeps "Tammi kuju". "Tammid" was the string until it was renamed "Tammi kuju" on purpose (2026-11-08, 17:59): "Tammid" beside "Kroon" and "Virn" names the pieces, "Tammi kuju" what the tiles choose. Both fit the 120 dp column (58 and 85 dp). |
+
+Taken by the user, 2026-11-08: "Päästa nupp", "Proovi veel" (fine for now), "Tänane"
+for by the date, and "Tammid" for the kings' setting. "Tammid" names the pieces the
+setting's tiles change (Laua järgi, Kroon, Virn), as "Vihjed" and "Taust" name theirs;
+no clearly better name was found ("Tamm", the singular, reads as one piece; "Tammi kuju"
+is the one replaced). On the Mac at the Pixel 7a's 540 dp and the tablet's sizes, all
+four show whole: "Päästa nupp" and the "Proovi veel" pill in both orientations, "Tänane"
+inside its 88 dp tile, "Tammid" in the setting's name column.
 
 The models' notes, and what came of them:
 

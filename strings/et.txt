@@ -17,10 +17,10 @@ settings.game = Mäng
 settings.look = Välimus
 settings.tutorial = Õpetus
 settings.background = Taust
-settings.by_date = Kuupäev
+settings.by_date = Tänane
 settings.board = Kabelaud
 settings.hints = Vihjed
-settings.kings = Tammi kuju
+settings.kings = Tammid
 
 season.winter = Talv
 season.spring = Kevad
@@ -76,9 +76,9 @@ clock.rapid_note = +5 s käigule
 
 puzzles.stars = {} / {}
 puzzle.next = Edasi
-puzzle.try_again = Proovi uuesti
+puzzle.try_again = Proovi veel
 puzzle.solved = Lahendatud
 goal.take = Võta {}
 goal.crown = Saa tammiks
 goal.win = Võida mäng
-goal.safe = Ära anna nuppu
+goal.safe = Päästa nupp
