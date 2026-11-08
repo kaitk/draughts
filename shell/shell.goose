@@ -72,7 +72,7 @@ struct Shell {
     blur:   f32           = 0.0,
     over:   game::Overlay = [],               // the screen's pieces over the UI this frame
     puzzle: puzzle::Play,                     // the puzzle playing, or last played
-    tier:   i64 = 0,                          // the tier a phone's picker shows once a mark is tapped
+    theme:  i64 = -1,                         // the theme the picker shows, -1 its library
     // A transition: the screen it leaves, or -1, and when it began; and this frame, how
     // far it has gone, eased, 0..1, and where the screen left and the one come to put the
     // board. `left` is home's column as home had it when left, a setup whose play
@@ -142,14 +142,14 @@ fn go_to(sh: Shell&, to: i64, now: f64) {
 // a transition, from another puzzle at once.
 fn play_puzzle(sh: Shell&, index: i64, now: f64 = 0.0) {
     puzzle::open(sh.puzzle, index);
-    sh.tier = 0;
+    sh.theme = puzzles::all.list[index].theme;
     go_to(sh, PUZZLE, now);
 }
 
 // Android's back, or Escape on the Mac, at `now`: what the screen's own back or home
 // control does. A setup goes back to home's menu, the game, settings, and the puzzles to
-// pick from where their tiles go (home, or where settings came from), a puzzle to the
-// puzzles. False, changing nothing, on home's menu, which has no way back: there back
+// pick from where their tiles go (home, or where settings came from), a puzzle to its
+// theme's page, a theme's page to the library. False, changing nothing, on home's menu, which has no way back: there back
 // leaves the app as the system's does, and Escape closes the window. In a transition it
 // acts on the screen come to, as a tap does.
 fn back(sh: Shell&, now: f64) -> bool {
@@ -162,6 +162,8 @@ fn back(sh: Shell&, now: f64) -> bool {
         go_to(sh, sh.back, now);
     } else if sh.screen == PUZZLE {
         go_to(sh, PICKER, now);
+    } else if sh.screen == PICKER && sh.theme >= 0 {
+        sh.theme = -1;
     } else {
         go_to(sh, HOME, now);
         sh.setup = home::NOTHING;
@@ -307,7 +309,13 @@ fn puzzle_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
         sh.back = PUZZLE;
     }
     if go == puzzle::NEXT {
-        if pl.index + 1 < puzzles::all.list.len { play_puzzle(sh, pl.index + 1, now); } else { go_to(sh, PICKER, now); }
+        // On inside the theme, and after its last back to the library.
+        let i = pl.index + 1;
+        if i < puzzles::all.list.len && puzzles::all.list[i].theme == sh.theme { play_puzzle(sh, i, now); }
+        else {
+            sh.theme = -1;
+            go_to(sh, PICKER, now);
+        }
     }
     return changed || go != puzzle::STAY;
 }
@@ -325,7 +333,7 @@ fn in_tile(sh: Shell&, spot: float4, scale: f32) -> board::Layout {
 fn picker_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     sh.over.clear();
     var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
-    let pick = picker::frame(g, area, sh.prefs.stars, sh.puzzle.index, sh.tier, spot);
+    let pick = picker::frame(g, area, sh.prefs.stars, sh.puzzle.index, sh.theme, spot);
     if pick == picker::BACK {
         go_to(sh, HOME, now);
         sh.setup = home::NOTHING;
@@ -469,7 +477,7 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: ga
         l = p.board;
     } else if screen == PICKER {
         var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
-        picker::frame(g, area, sh.prefs.stars, sh.puzzle.index, sh.tier, spot);
+        picker::frame(g, area, sh.prefs.stars, sh.puzzle.index, sh.theme, spot);
         l = in_tile(sh, spot, g.scale);
     } else {
         home::frame(over, g, l, rules::VARIANTS[board_of(sh, HOME).variant].size, area, sh.left, sh.prefs);
@@ -605,7 +613,7 @@ fn enter(sh: Shell&, index: i64, s: settings::Settings) {
     sh.screen = screen;
     sh.game.b.hints = sh.prefs.hints;
     sh.puzzle = puzzle::new();
-    sh.tier = 0;
+    sh.theme = -1;
     sh.setup = home::NOTHING;
     sh.changed = true;
 }
@@ -669,7 +677,7 @@ fn start_again(sh: Shell&, index: i64) {
         sh.game = game::new(sh.prefs.variant as u8);
         sh.game.b.hints = sh.prefs.hints;
         sh.puzzle = puzzle::new();
-        sh.tier = 0;
+        sh.theme = -1;
         sh.changed = true;
         return;
     }

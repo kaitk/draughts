@@ -1,9 +1,11 @@
 // What makes a puzzle sound, for test/puzzles/ and tools/puzzles.goose
 // (docs/architecture/puzzles.md, "Checks"): each line is legal and reaches the goal
 // with its last move and not before; the goal can be reached within the puzzle's moves
-// whatever the replies, and not in fewer; every first move that solves it starts one of
-// its lines, so the file lists every way in; no move along a line shares its squares with
-// another legal move, which a tap couldn't tell apart; and it says where it came from.
+// whatever the replies, and not in fewer; every move that is right where a line has the
+// solver to move is a line's move there, so the file lists every way in and on; each
+// line ends quiet, no capture due for either side against any reply, a take's line
+// wins its count exactly, and a crown's line ends with the king made; no move along a line shares its squares with another legal
+// move, which a tap couldn't tell apart; and it says where it came from.
 namespace puzzles;
 import std;
 import rules from "../rules";
@@ -34,7 +36,7 @@ fn ambiguous(p: rules::Position, moves: rules::Moves&) -> bool {
     return false;
 }
 
-// Checks pz, appending what is wrong to out, and the moves that solve it to `ways`.
+// Checks pz, appending what is wrong to out, and the first moves that solve it to `ways`.
 // Returns how many problems.
 fn check(s: Solver&, pz: Puzzle&, out: u8[>..]&, ways: u8[>..]&) -> i64 {
     var moves: rules::Moves = [];
@@ -77,27 +79,77 @@ fn check(s: Solver&, pz: Puzzle&, out: u8[>..]&, ways: u8[>..]&) -> i64 {
         format(out, "  solvable in ", pz.moves - 1, "\n");
         n++;
     }
-    // Every first move that solves it, each of which must start a line.
-    rules::generate(pz.start, s.moves);
-    var firsts: Short[..rules::MAX_MOVES] = [];
-    for m in s.moves { firsts.push(short(m)); }
-    for m in firsts {
-        guard judge(s, pz.start, m, pz.moves) != WRONG else { continue; }
-        if ways.len > 0 { ways.append(" "); }
-        move_text(ways, pz.start, m, moves);
-        var listed = false;
-        for line in pz.lines {
-            let f = line.plies[0];
-            if f.from == m.from && f.to == m.to && f.captured == m.captured { listed = true; }
+    // Every move that is right where a line has the solver to move must be a line's
+    // move there: the file lists every way on, not only every way in. Lines sharing
+    // the moves so far are checked once, at the first of them.
+    for line, li in pz.lines {
+        var p = pz.start;
+        for ply, i in line.plies {
+            var first = true;
+            for k in li { if same_start(pz.lines[k], line, i) { first = false; } }
+            if i % 2 == 0 && first {
+                rules::generate(p, moves);
+                var all: Short[..rules::MAX_MOVES] = [];
+                for m in moves { all.push(short(m)); }
+                for m in all {
+                    guard judge(s, p, m, pz.moves - i / 2) != WRONG else { continue; }
+                    if i == 0 {
+                        if ways.len > 0 { ways.append(" "); }
+                        move_text(ways, p, m, moves);
+                    }
+                    var listed = false;
+                    for other in pz.lines {
+                        guard same_start(other, line, i) && other.plies.len > i else { continue; }
+                        let f = other.plies[i];
+                        if f.from == m.from && f.to == m.to && f.captured == m.captured { listed = true; }
+                    }
+                    if !listed {
+                        var t: u8[>..] = [];
+                        move_text(t, p, m, moves);
+                        format(out, "  line ", li + 1, " move ", i + 1, ": solved too by ", t, ", which no line lists\n");
+                        n++;
+                    }
+                }
+            }
+            let m = as_played(p, ply, moves);
+            if pz.goal == CROWN && i == line.plies.len - 1 && !m.crowned {
+                format(out, "  line ", li + 1, " ends without a king made\n");
+                n++;
+            }
+            p = after(p, m);
         }
-        if !listed {
-            var t: u8[>..] = [];
-            move_text(t, pz.start, m, moves);
-            format(out, "  solved too by ", t, ", which starts no line\n");
+        // The end is quiet: no capture due for either side, against any reply.
+        if !quiet(p, moves) {
+            format(out, "  line ", li + 1, " ends with a capture due\n");
+            n++;
+        }
+        if pz.goal == TAKE && net(s, p) != pz.count {
+            format(out, "  line ", li + 1, " wins ", net(s, p), ", not ", pz.count, "\n");
             n++;
         }
     }
     return n;
+}
+
+// Whether two lines have the same first n moves.
+fn same_start(a: Line&, b: Line&, n: i64) -> bool {
+    guard a.plies.len >= n && b.plies.len >= n else { return false; }
+    for i in n { if a.plies[i] != b.plies[i] { return false; } }
+    return true;
+}
+
+// Whether p is quiet: its side to move has no capture, and none of its moves gives the
+// other side one. A side with no move at all is quiet.
+fn quiet(p: rules::Position, moves: rules::Moves&) -> bool {
+    rules::generate(p, moves);
+    guard moves.len == 0 || moves[0].captured == 0 else { return false; }
+    var all: Short[..rules::MAX_MOVES] = [];
+    for m in moves { all.push(short(m)); }
+    for m in all {
+        rules::generate(after(p, m), moves);
+        if moves.len > 0 && moves[0].captured != 0 { return false; }
+    }
+    return true;
 }
 
 // The pieces on the board.

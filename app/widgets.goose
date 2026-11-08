@@ -191,7 +191,7 @@ let FRAG = """
             float s = star(p);
             return k == 16 ? s + 1.2 : abs(s);
         }
-        if (k == 18) {          // a locked tier: a padlock
+        if (k == 18) {          // a shut theme: a padlock
             float d = abs(box(p, vec2(12.0, 16.0), vec2(7.0, 5.0), 2.0));
             d = min(d, min(seg(p, vec2(8.0, 11.0), vec2(8.0, 7.0)), seg(p, vec2(16.0, 7.0), vec2(16.0, 11.0))));
             return min(d, arc(p, vec2(12.0, 7.0), 4.0, 3.1415927, 3.1415927));
@@ -232,6 +232,38 @@ let FRAG = """
             d = min(d, seg(p, vec2(14.5, 4.5), vec2(14.5, 7.0)));
             d = min(d, min(seg(p, vec2(6.0, 7.0), vec2(7.0, 20.0)), seg(p, vec2(7.0, 20.0), vec2(17.0, 20.0))));
             return min(d, seg(p, vec2(17.0, 20.0), vec2(18.0, 7.0)));
+        }
+        if (k == 26) {          // Learn: an open book, its pages' curves as two segments each
+            const vec2 c[11] = vec2[](vec2(12.0, 6.5), vec2(7.5, 4.5), vec2(3.0, 4.8), vec2(3.0, 18.2),
+                                      vec2(7.5, 18.2), vec2(12.0, 19.8), vec2(16.5, 18.2), vec2(21.0, 18.2),
+                                      vec2(21.0, 4.8), vec2(16.5, 4.5), vec2(12.0, 6.5));
+            float d = seg(p, vec2(12.0, 6.5), vec2(12.0, 19.8));
+            for (int i = 0; i < 10; i++) d = min(d, seg(p, c[i], c[i + 1]));
+            return d;
+        }
+        if (k == 27) {          // captures: two men, a double jump over them, and its arrowhead
+            const vec2 c[9] = vec2[](vec2(2.5, 15.5), vec2(4.0, 11.0), vec2(7.2, 9.4), vec2(10.5, 11.0),
+                                     vec2(12.0, 14.5), vec2(13.5, 11.0), vec2(16.8, 9.4), vec2(20.0, 11.0),
+                                     vec2(21.5, 15.5));
+            float d = min(abs(length(p - vec2(7.5, 18.0)) - 2.8), abs(length(p - vec2(16.5, 18.0)) - 2.8));
+            for (int i = 0; i < 8; i++) d = min(d, seg(p, c[i], c[i + 1]));
+            return min(d, min(seg(p, vec2(19.0, 14.2), vec2(21.5, 15.8)), seg(p, vec2(21.5, 15.8), vec2(22.8, 13.1))));
+        }
+        if (k == 28) {          // king shots: a crown in a ring
+            const vec2 c[7] = vec2[](vec2(7.0, 16.2), vec2(6.3, 9.6), vec2(9.4, 12.1), vec2(12.0, 8.0),
+                                     vec2(14.6, 12.1), vec2(17.7, 9.6), vec2(17.0, 16.2));
+            float d = min(abs(length(p - 12.0) - 9.5), seg(p, c[6], c[0]));
+            for (int i = 0; i < 6; i++) d = min(d, seg(p, c[i], c[i + 1]));
+            return d;
+        }
+        if (k >= 29 && k <= 31) {   // a level: three rising bars, the first k - 28 filled
+            float d = 1e9;
+            for (int i = 0; i < 3; i++) {
+                float top = 14.0 - 5.0 * float(i);
+                float b = box(p, vec2(5.3 + 6.7 * float(i), 0.5 * (top + 21.0)), vec2(2.3, 0.5 * (21.0 - top)), 1.0);
+                d = min(d, i < k - 28 ? b + 1.2 : abs(b));
+            }
+            return d;
         }
         return 1e9;
     }
@@ -425,9 +457,9 @@ let FRAG = """
             result = vec4(s * a, a);
             return;
         }
-        // A plain rounded rect.
+        // A plain rounded rect, in its color or (look.z 1) the glow color.
         float a = cover(box(p, c, h, r)) * v_color.a;
-        result = vec4(v_color.rgb * a, a);
+        result = vec4((v_look.z > 0.5 ? glow.rgb : v_color.rgb) * a, a);
     }
     // Each quad as its kind draws it, faded with its layer (a screen in a transition), and
     // in a transition hidden where the board passes, unless it lies on the board (a win's

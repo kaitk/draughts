@@ -128,6 +128,13 @@ fn screens(g: gui::Gui&) {
     var picker = showing(shell::PICKER, home::NOTHING);
     at_rest(picker, g);
     report("the puzzles", g, picker, false, false);
+    // Learn's page, three levels of four, and Shots', the longest: two levels of ten.
+    for t in [puzzles::LEARN, puzzles::SHOTS] {
+        var page = showing(shell::PICKER, home::NOTHING);
+        page.theme = t;
+        at_rest(page, g);
+        report(if t == puzzles::LEARN { "the puzzles' Learn" } else { "the puzzles' Shots" }, g, page, false, false);
+    }
     var one = showing(shell::PUZZLE, home::NOTHING);
     puzzle::open(one.puzzle, 0);
     at_rest(one, g);
@@ -145,7 +152,7 @@ fn screens(g: gui::Gui&) {
 }
 
 // A phone's tabs, at 480 dp: settings' Look tab shows the look's tiles in place of the
-// game's, and the puzzles' crown shows the second tier, locked.
+// game's, and the puzzles' Learn row opens Learn's page.
 fn tabs(g: gui::Gui&) {
     var settings = showing(shell::SETTINGS, home::NOTHING);
     at_rest(settings, g);
@@ -157,11 +164,10 @@ fn tabs(g: gui::Gui&) {
           ", changed ", settings.changed);
     var picker = showing(shell::PICKER, home::NOTHING);
     at_rest(picker, g);
-    var locks = 0;
-    drive::tap(picker, g, drive::tile(g, 2), 2.0);
+    let rows = drive::tiles(g);
+    drive::tap(picker, g, drive::tile(g, 1), 2.0);
     drive::idle(picker, g, 2.1);
-    for q in g.quads { if q.look.x == gui::ICON && q.look.z == gui::LOCK { locks++; } }
-    print("the puzzles' crown: tier ", picker.tier, ", tiles ", drive::tiles(g), ", locks ", locks);
+    print("the puzzles' Learn row: theme ", picker.theme, ", tiles ", rows, " then ", drive::tiles(g));
 }
 
 fn main() {

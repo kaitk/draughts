@@ -1,24 +1,24 @@
-47, 33: puzzle 14 tier 2, playing, misses 0, stars 3, selected c1 drawn on f4, waits on f4, ringed targets wrong -, next awake
-then 17: puzzle 14 tier 2, playing, misses 0, stars 3, selected c1 drawn on c7, waits on c7, ringed f4 targets wrong -, next awake
+47, 33: puzzle 14 learn 3, playing, misses 0, stars 3, selected c1 drawn on f4, waits on f4, ringed targets wrong -, next awake
+then 17: puzzle 14 learn 3, playing, misses 0, stars 3, selected c1 drawn on c7, waits on c7, ringed f4 targets wrong -, next awake
   the way shown from c7, landing 0.38 s after the tap
-then 8: puzzle 14 tier 2, solved, misses 0, stars 3, selected - drawn on -, waits on -, ringed targets wrong -, next awake lit
+then 8: puzzle 14 learn 3, solved, misses 0, stars 3, selected - drawn on -, waits on -, ringed targets wrong -, next awake lit
   B:WK8,46:B5, kept stars 3
-again: 47, 33, 28: puzzle 14 tier 2, playing, misses 1, stars 2, selected c1 drawn on c1, waits on -, ringed targets wrong e5, next dim
-38, then 29: puzzle 10 tier 1, playing, misses 0, stars 3, selected e3 drawn on g5, waits on g5, ringed targets wrong -, next awake
+again: 47, 33, 28: puzzle 14 learn 3, playing, misses 1, stars 2, selected c1 drawn on c1, waits on -, ringed targets wrong e5, next dim
+38, then 29: puzzle 10 learn 2, playing, misses 0, stars 3, selected e3 drawn on g5, waits on g5, ringed targets wrong -, next awake
   then 20: back, playing e3xi7
-  slid back: puzzle 10 tier 1, playing, misses 1, stars 2, selected - drawn on -, waits on -, ringed targets wrong i7, next dim
-38 dropped on 27: puzzle 10 tier 1, playing, misses 1, stars 2, selected e3 drawn on c5, waits on c5, ringed targets wrong -, next awake
-then 27 dropped on 16: puzzle 10 tier 1, solved, misses 1, stars 2, selected - drawn on -, waits on -, ringed targets wrong -, next awake lit
+  slid back: puzzle 10 learn 2, playing, misses 1, stars 2, selected - drawn on -, waits on -, ringed targets wrong i7, next dim
+38 dropped on 27: puzzle 10 learn 2, playing, misses 1, stars 2, selected e3 drawn on c5, waits on c5, ringed targets wrong -, next awake
+then 27 dropped on 16: puzzle 10 learn 2, solved, misses 1, stars 2, selected - drawn on -, waits on -, ringed targets wrong -, next awake lit
   playing e3xa7, kept stars 2
-37 selected, hints on moves in settings: puzzle 4 tier 1, playing, misses 0, stars 3, selected c3 drawn on c3, waits on -, ringed targets wrong -, next dim
-37 dropped on 19: puzzle 4 tier 1, solved, misses 0, stars 3, selected - drawn on -, waits on -, ringed targets wrong -, next awake lit
-puzzle 4 again: puzzle 4 tier 1, playing, misses 0, stars 3, selected - drawn on -, waits on -, ringed targets wrong -, next dim
-next, nothing moved: puzzle 4 tier 1, playing, misses 0, stars 3, selected - drawn on -, waits on -, ringed targets wrong -, next dim
-37 dropped on 28: puzzle 4 tier 1, playing, misses 0, stars 3, selected c3 drawn on e5, waits on e5, ringed targets wrong -, next awake
-next: puzzle 4 tier 1, playing, misses 1, stars 2, selected - drawn on -, waits on -, ringed targets wrong e5, next dim
-  sliding back true, W:W37,39,43,46:B23,32,34, try again true
-  slid back: puzzle 4 tier 1, playing, misses 1, stars 2, selected - drawn on -, waits on -, ringed targets wrong -, next dim
-37, 28, 19: puzzle 4 tier 1, solved, misses 1, stars 2, selected - drawn on -, waits on -, ringed targets wrong -, next awake lit
+26 selected, hints on moves in settings: puzzle 31 captures 1, playing, misses 0, stars 3, selected a5 drawn on a5, waits on -, ringed targets wrong -, next dim
+26 dropped on 6: puzzle 31 captures 1, solved, misses 0, stars 3, selected - drawn on -, waits on -, ringed targets wrong -, next awake lit
+puzzle 31 again: puzzle 31 captures 1, playing, misses 0, stars 3, selected - drawn on -, waits on -, ringed targets wrong -, next dim
+next, nothing moved: puzzle 31 captures 1, playing, misses 0, stars 3, selected - drawn on -, waits on -, ringed targets wrong -, next dim
+26 dropped on 17: puzzle 31 captures 1, playing, misses 0, stars 3, selected a5 drawn on c7, waits on c7, ringed targets wrong -, next awake
+next: puzzle 31 captures 1, playing, misses 1, stars 2, selected - drawn on -, waits on -, ringed targets wrong c7, next dim
+  sliding back true, W:W26,27,28,32,33,48:B1,3,9,11,13,21, try again true
+  slid back: puzzle 31 captures 1, playing, misses 1, stars 2, selected - drawn on -, waits on -, ringed targets wrong -, next dim
+26, 17, 6: puzzle 31 captures 1, solved, misses 1, stars 2, selected - drawn on -, waits on -, ringed targets wrong -, next awake lit
   kept stars 3
-dropped on 28, as the app sees it: next dim, another frame asked true, black men drawn 3, W:W37,39,43,46:B23,32,34
-  the frame after: puzzle 4 tier 1, playing, misses 0, stars 3, selected c3 drawn on e5, waits on e5, ringed targets wrong -, next awake
+dropped on 17, as the app sees it: next dim, another frame asked true, black men drawn 6, W:W26,27,28,32,33,48:B1,3,9,11,13,21
+  the frame after: puzzle 31 captures 1, playing, misses 0, stars 3, selected a5 drawn on c7, waits on c7, ringed targets wrong -, next awake

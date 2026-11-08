@@ -83,6 +83,10 @@ let PLUS = 22;              // a new player
 let PENCIL = 23;            // editing the players
 let CHECK = 24;             // done
 let TRASH = 25;             // removing a player
+let BOOK = 26;              // the puzzles' themes: Learn, an open book,
+let JUMPS = 27;             // captures, two men and a double jump,
+let KING = 28;              // king shots, a crown in a ring (crowning is CROWN, shots TARGET)
+let LEVEL = 29;             // a theme's levels, 29 to 31: three rising bars, 1 to 3 of them filled
 
 // Text faces (rendering.md, "Fonts"): one size each, in dp, baked by the app at the
 // screen's pixel size.
@@ -353,9 +357,15 @@ fn glass(g: Gui&, r: float4, radius: f32) {
                   extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
 }
 
-// A plain rounded rect, such as a rule.
+// A plain rounded rect, such as a rule; `radius` in pixels.
 fn fill(g: Gui&, r: float4, color: float4, radius: f32) {
     add(g, Quad { rect: r, color: color, look: float4 { FILL, radius, 0.0, 0.0 },
+                  extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
+}
+
+// A rounded rect in the theme's glow color at opacity a, such as a progress bar.
+fn glow_fill(g: Gui&, r: float4, a: f32, radius: f32) {
+    add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { FILL, radius, 1.0, 0.0 },
                   extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
 }
 

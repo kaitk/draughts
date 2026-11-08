@@ -1,35 +1,71 @@
 loaded: true
-1: tier 1, take 1 in 1, 4 pieces, 1 line; solved by 32x23
-2: tier 1, take 1 in 1, 4 pieces, 1 line; solved by 39x28
-3: tier 1, take 1 in 1, 4 pieces, 1 line; solved by 28x37
-4: tier 1, take 2 in 1, 7 pieces, 1 line; solved by 37x28x19
-5: tier 1, take 2 in 1, 5 pieces, 1 line; solved by 28x37x26
-6: tier 1, take 1 in 1, 4 pieces, 2 lines; solved by 47x33 47x29
-7: tier 1, take 1 in 1, 5 pieces, 1 line; solved by 38x27
-8: tier 1, take 1 in 1, 7 pieces, 1 line; solved by 39x30
-9: tier 1, take 1 in 1, 5 pieces, 1 line; solved by 46x23
-10: tier 1, take 2 in 1, 7 pieces, 1 line; solved by 38x27x16
-11: tier 2, take 3 in 1, 7 pieces, 1 line; solved by 38x27x18x9
-12: tier 2, take 3 in 1, 6 pieces, 1 line; solved by 37x28x17x6
-13: tier 2, crown in 1, 6 pieces, 1 line; solved by 13x2
-14: tier 2, take 3 in 1, 6 pieces, 2 lines; solved by 47x33x17x8 47x33x17x3
-15: tier 2, take 4 in 1, 7 pieces, 1 line; solved by 48x37x28x19x10
-16: tier 2, crown in 1, 8 pieces, 1 line; solved by 24x13x2
-17: tier 2, take 3 in 1, 6 pieces, 1 line; solved by 11x2x13x24
-18: tier 2, take 3 in 1, 8 pieces, 1 line; solved by 37x28x17x6
-19: tier 2, take 2 in 1, 6 pieces, 1 line; solved by 46x19x35
-20: tier 2, crown in 2, 6 pieces, 1 line; solved by 13-8
-21: tier 3, take 2 in 2, 12 pieces, 1 line; solved by 33-28
-22: tier 3, safe in 1, 10 pieces, 1 line; solved by 22-17
-23: tier 3, take 2 in 2, 12 pieces, 1 line; solved by 33-29
-24: tier 3, safe in 1, 10 pieces, 1 line; solved by 31-27
-25: tier 3, take 2 in 2, 12 pieces, 1 line; solved by 34-30
-26: tier 3, take 3 in 2, 14 pieces, 1 line; solved by 29-24
-27: tier 3, safe in 1, 14 pieces, 1 line; solved by 21-17
-28: tier 3, take 3 in 2, 14 pieces, 1 line; solved by 36-31
-29: tier 3, take 3 in 2, 14 pieces, 1 line; solved by 24-20
-30: tier 3, take 4 in 2, 12 pieces, 1 line; solved by 40-34
-tier 1: 10 puzzles
-tier 2: 10 puzzles
-tier 3: 10 puzzles
-0 problems
+1: learn 1, white, take 1 in 1, 4 pieces, 1 line; solved by 32x23
+3: learn 1, white, take 1 in 1, 4 pieces, 1 line; solved by 28x37
+7: learn 1, white, take 1 in 1, 5 pieces, 1 line; solved by 38x27
+8: learn 1, white, take 1 in 1, 6 pieces, 1 line; solved by 39x28
+6: learn 2, white, take 1 in 1, 4 pieces, 2 lines; solved by 47x33 47x29
+9: learn 2, white, take 1 in 1, 5 pieces, 1 line; solved by 47x15
+10: learn 2, white, take 2 in 1, 9 pieces, 1 line; solved by 38x27x16
+18: learn 2, white, take 3 in 1, 8 pieces, 1 line; solved by 37x28x17x6
+14: learn 3, white, take 3 in 1, 6 pieces, 2 lines; solved by 47x33x17x8 47x33x17x3
+17: learn 3, white, take 3 in 1, 6 pieces, 1 line; solved by 11x2x13x24
+19: learn 3, white, take 2 in 1, 6 pieces, 1 line; solved by 45x23x5
+20: learn 3, white, crown in 2, 4 pieces, 1 line; solved by 17x6
+31: captures 1, white, take 2 in 1, 12 pieces, 1 line; solved by 26x17x6
+32: captures 1, white, take 2 in 1, 12 pieces, 1 line; solved by 27x38x29
+33: captures 1, black, take 2 in 1, 12 pieces, 1 line; solved by 21x32x23
+34: captures 1, white, take 2 in 1, 12 pieces, 1 line; solved by 20x29x40
+35: captures 2, white, take 3 in 1, 13 pieces, 1 line; solved by 39x28x19x10
+36: captures 2, black, take 3 in 1, 14 pieces, 1 line; solved by 31x42x33x24
+37: captures 2, white, take 3 in 1, 13 pieces, 1 line; solved by 39x28x17x26
+38: captures 3, white, take 4 in 1, 16 pieces, 1 line; solved by 35x24x13x4x15
+39: captures 3, white, take 3 in 1, 11 pieces, 1 line; solved by 27x18x29x15
+40: captures 3, black, take 3 in 1, 11 pieces, 1 line; solved by 6x39x48x37
+41: crowning 1, white, crown in 1, 8 pieces, 1 line; solved by 23x12x1
+42: crowning 1, black, crown in 1, 8 pieces, 1 line; solved by 26x37x48
+43: crowning 1, white, crown in 1, 8 pieces, 1 line; solved by 32x23x14x5
+44: crowning 1, white, crown in 1, 8 pieces, 1 line; solved by 22x13x4
+45: crowning 2, white, crown in 2, 10 pieces, 1 line; solved by 18-13
+46: crowning 2, black, crown in 2, 10 pieces, 1 line; solved by 32-38
+47: crowning 2, white, crown in 2, 10 pieces, 1 line; solved by 20-15
+48: crowning 2, black, crown in 2, 10 pieces, 1 line; solved by 28-33
+49: crowning 3, white, crown in 3, 10 pieces, 1 line; solved by 32-28
+50: crowning 3, black, crown in 3, 10 pieces, 1 line; solved by 19-24
+51: crowning 3, white, crown in 3, 10 pieces, 1 line; solved by 17-11
+52: crowning 3, black, crown in 3, 10 pieces, 1 line; solved by 32-37
+53: shots 1, white, take 2 in 2, 18 pieces, 1 line; solved by 21-17
+54: shots 1, white, take 2 in 2, 18 pieces, 1 line; solved by 24-19
+55: shots 1, black, take 2 in 2, 18 pieces, 1 line; solved by 26-31
+56: shots 1, white, take 2 in 2, 18 pieces, 1 line; solved by 28-22
+57: shots 1, white, take 2 in 2, 18 pieces, 1 line; solved by 34-29
+58: shots 1, black, take 2 in 2, 18 pieces, 1 line; solved by 29-34
+59: shots 1, white, take 3 in 2, 18 pieces, 1 line; solved by 27-21
+60: shots 1, black, take 2 in 2, 18 pieces, 1 line; solved by 30-34
+61: shots 1, white, take 3 in 2, 18 pieces, 1 line; solved by 23-19
+62: shots 1, white, take 3 in 2, 18 pieces, 1 line; solved by 44-40
+63: shots 2, white, take 2 in 3, 18 pieces, 1 line; solved by 33-28
+64: shots 2, black, take 2 in 3, 18 pieces, 1 line; solved by 24-29
+65: shots 2, white, take 2 in 3, 18 pieces, 1 line; solved by 27-22
+66: shots 2, white, take 2 in 3, 18 pieces, 1 line; solved by 32-27
+67: shots 2, black, take 2 in 3, 18 pieces, 1 line; solved by 24-30
+68: shots 2, white, take 2 in 3, 18 pieces, 1 line; solved by 18-13
+69: shots 2, black, take 2 in 3, 18 pieces, 1 line; solved by 22-28
+70: shots 2, white, take 3 in 3, 18 pieces, 1 line; solved by 19-13
+71: shots 2, black, take 2 in 3, 18 pieces, 1 line; solved by 27-31
+72: shots 2, white, take 3 in 3, 18 pieces, 1 line; solved by 28-23
+73: king-shots 1, white, take 4 in 1, 12 pieces, 1 line; solved by 32x14x25x39x6
+74: king-shots 1, white, take 4 in 1, 12 pieces, 1 line; solved by 22x11x2x19x5
+75: king-shots 1, black, take 3 in 1, 11 pieces, 1 line; solved by 35x49x38x27
+76: king-shots 1, white, take 4 in 1, 12 pieces, 1 line; solved by 36x9x20x33x6
+77: king-shots 2, white, take 2 in 2, 13 pieces, 1 line; solved by 34-30
+78: king-shots 2, black, take 2 in 2, 13 pieces, 1 line; solved by 7-12
+79: king-shots 2, white, take 3 in 2, 14 pieces, 1 line; solved by 33-28
+80: king-shots 3, white, take 2 in 3, 13 pieces, 1 line; solved by 28-23
+81: king-shots 3, white, take 2 in 3, 13 pieces, 1 line; solved by 34-29
+82: king-shots 3, black, take 2 in 3, 13 pieces, 1 line; solved by 24-29
+learn: 12 puzzles, by level 4 4 4
+captures: 10 puzzles, by level 4 3 3
+crowning: 12 puzzles, by level 4 4 4
+shots: 20 puzzles, by level 10 10 0
+king-shots: 10 puzzles, by level 4 3 3
+64 puzzles, 18 black to move; at most 415 positions a check; 0 problems

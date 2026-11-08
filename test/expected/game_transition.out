@@ -1,23 +1,23 @@
-home 1.0: home, board 580.0,120.0 560.0 8x8, mix 100.0%, blur 0.0%, quads 80 faded 0 mostly 0, pieces 24 faint 0, over the UI 1, hole none, drawn true, animating false
+home 1.0: home, board 580.0,120.0 560.0 8x8, mix 100.0%, blur 0.0%, quads 81 faded 0 mostly 0, pieces 24 faint 0, over the UI 1, hole none, drawn true, animating false
 tapped continue: game, from home true, drawn true with home's board true at 0.0%, blur 0.0%
-   2.0825: game, board 533.0,108.0 585.0 8x8, mix 16.0%, blur 16.0%, quads 133 faded 133 mostly 53, pieces 24 faint 0, over the UI 2, hole the board, drawn true, animating true
-   2.145: game, board 430.0,80.0 640.0 8x8, mix 50.0%, blur 50.0%, quads 133 faded 133 mostly 0, pieces 24 faint 0, over the UI 2, hole the board, drawn true, animating true
-   2.2075: game, board 327.0,53.0 695.0 8x8, mix 84.0%, blur 84.0%, quads 133 faded 133 mostly 80, pieces 24 faint 0, over the UI 2, hole the board, drawn true, animating true
+   2.0825: game, board 533.0,108.0 585.0 8x8, mix 16.0%, blur 16.0%, quads 134 faded 134 mostly 53, pieces 24 faint 0, over the UI 2, hole the board, drawn true, animating true
+   2.145: game, board 430.0,80.0 640.0 8x8, mix 50.0%, blur 50.0%, quads 134 faded 134 mostly 0, pieces 24 faint 0, over the UI 2, hole the board, drawn true, animating true
+   2.2075: game, board 327.0,53.0 695.0 8x8, mix 84.0%, blur 84.0%, quads 134 faded 134 mostly 81, pieces 24 faint 0, over the UI 2, hole the board, drawn true, animating true
    2.27: game, board 280.0,40.0 720.0 8x8, mix 100.0%, blur 100.0%, quads 53 faded 0 mostly 0, pieces 24 faint 0, over the UI 1, hole none, drawn true, animating false
    2.4: game, board 280.0,40.0 720.0 8x8, mix 100.0%, blur 100.0%, quads 53 faded 0 mostly 0, pieces 24 faint 0, over the UI 1, hole none, drawn false, animating false
 idle 2.5: game, board 280.0,40.0 720.0 8x8, mix 100.0%, blur 100.0%, quads 53 faded 0 mostly 0, pieces 24 faint 0, over the UI 1, hole none, drawn false, animating false
 the board went left and grew all the way true
 the game as opened straight true: 280.0,40.0 720.0 false, quads 53, over the UI 1, blur 100.0
-home again 3.1: home, board 352.0,59.0 681.0 8x8, mix 24.0%, blur 76.0%, quads 133 faded 133 mostly 80, pieces 24 faint 0, over the UI 2, hole the board, drawn true, animating true
+home again 3.1: home, board 352.0,59.0 681.0 8x8, mix 24.0%, blur 76.0%, quads 134 faded 134 mostly 81, pieces 24 faint 0, over the UI 2, hole the board, drawn true, animating true
 home: home, board true, blur 0.0%, animating false
-continue again 4.1: game, board 508.0,101.0 599.0 8x8, mix 24.0%, blur 24.0%, quads 133 faded 133 mostly 53, pieces 24 faint 0, over the UI 2, hole the board, drawn true, animating true
+continue again 4.1: game, board 508.0,101.0 599.0 8x8, mix 24.0%, blur 24.0%, quads 134 faded 134 mostly 53, pieces 24 faint 0, over the UI 2, hole the board, drawn true, animating true
 take back where the game has it: game, moves made 0
-before home 5.26: game, board 403.0,73.0 654.0 8x8, mix 59.0%, blur 59.0%, quads 133 faded 133 mostly 80, pieces 24 faint 0, over the UI 2, hole the board, drawn true, animating true
+before home 5.26: game, board 403.0,73.0 654.0 8x8, mix 59.0%, blur 59.0%, quads 134 faded 134 mostly 81, pieces 24 faint 0, over the UI 2, hole the board, drawn true, animating true
 home during it: home, from the game true, the board on the frames 386.0,68.0 664.0, 369.0,64.0 673.0, 386.0,68.0 664.0
-   5.34: home, board 474.0,92.0 616.0 8x8, mix 65.0%, blur 35.0%, quads 133 faded 133 mostly 53, pieces 24 faint 0, over the UI 2, hole the board, drawn true, animating true
-   5.42: home, board 575.0,119.0 563.0 8x8, mix 98.0%, blur 2.0%, quads 133 faded 133 mostly 53, pieces 24 faint 0, over the UI 2, hole the board, drawn true, animating true
-ended 5.46: home, board 580.0,120.0 560.0 8x8, mix 100.0%, blur 0.0%, quads 80 faded 0 mostly 0, pieces 24 faint 0, over the UI 1, hole none, drawn true, animating false
-idle 5.6: home, board 580.0,120.0 560.0 8x8, mix 100.0%, blur 0.0%, quads 80 faded 0 mostly 0, pieces 24 faint 0, over the UI 1, hole none, drawn false, animating false
+   5.34: home, board 474.0,92.0 616.0 8x8, mix 65.0%, blur 35.0%, quads 134 faded 134 mostly 53, pieces 24 faint 0, over the UI 2, hole the board, drawn true, animating true
+   5.42: home, board 575.0,119.0 563.0 8x8, mix 98.0%, blur 2.0%, quads 134 faded 134 mostly 53, pieces 24 faint 0, over the UI 2, hole the board, drawn true, animating true
+ended 5.46: home, board 580.0,120.0 560.0 8x8, mix 100.0%, blur 0.0%, quads 81 faded 0 mostly 0, pieces 24 faint 0, over the UI 1, hole none, drawn true, animating false
+idle 5.6: home, board 580.0,120.0 560.0 8x8, mix 100.0%, blur 0.0%, quads 81 faded 0 mostly 0, pieces 24 faint 0, over the UI 1, hole none, drawn false, animating false
 at home's place true
 a friend's setup 6.5: home, board 580.0,120.0 560.0 8x8, mix 100.0%, blur 0.0%, quads 132 faded 0 mostly 0, small boards 3, pieces 24 faint 0, over the UI 0, hole none, drawn false, animating false
 tapped play: game, the setup's board true, a new game true, setup 0
@@ -46,10 +46,10 @@ won: true, winner 0, the card's back 100.0, on the board 5 quads and 1 piece
   26.2075: home, the board dimmed 7.0%, lifted 1.0 px, the card's back 16.0, over the UI 3, on the board 5 quads and 1 piece, hole the board
   26.27: home, the board dimmed 0.0%, lifted 0.0 px, the card's back -1.0, over the UI 1, on the board 0 quads and 0 piece, hole none
   26.3325: home, the board dimmed 0.0%, lifted 0.0 px, the card's back -1.0, over the UI 1, on the board 0 quads and 0 piece, hole none
-portrait home 0.0: home, board 90.0,128.0 620.0 10x10, mix 100.0%, blur 0.0%, quads 72 faded 0 mostly 0, pieces 40 faint 0, over the UI 1, hole none, drawn true, animating false
-   1.0825: game, board 80.0,143.0 641.0 10x10, mix 16.0%, blur 16.0%, quads 125 faded 125 mostly 53, pieces 40 faint 0, over the UI 2, hole the board, drawn true, animating true
-   1.145: game, board 57.0,175.0 686.0 10x10, mix 50.0%, blur 50.0%, quads 125 faded 125 mostly 0, pieces 40 faint 0, over the UI 2, hole the board, drawn true, animating true
-   1.2075: game, board 34.0,207.0 731.0 10x10, mix 84.0%, blur 84.0%, quads 125 faded 125 mostly 72, pieces 40 faint 0, over the UI 2, hole the board, drawn true, animating true
+portrait home 0.0: home, board 90.0,128.0 620.0 10x10, mix 100.0%, blur 0.0%, quads 73 faded 0 mostly 0, pieces 40 faint 0, over the UI 1, hole none, drawn true, animating false
+   1.0825: game, board 80.0,143.0 641.0 10x10, mix 16.0%, blur 16.0%, quads 126 faded 126 mostly 53, pieces 40 faint 0, over the UI 2, hole the board, drawn true, animating true
+   1.145: game, board 57.0,175.0 686.0 10x10, mix 50.0%, blur 50.0%, quads 126 faded 126 mostly 0, pieces 40 faint 0, over the UI 2, hole the board, drawn true, animating true
+   1.2075: game, board 34.0,207.0 731.0 10x10, mix 84.0%, blur 84.0%, quads 126 faded 126 mostly 73, pieces 40 faint 0, over the UI 2, hole the board, drawn true, animating true
    1.27: game, board 24.0,222.0 752.0 10x10, mix 100.0%, blur 100.0%, quads 53 faded 0 mostly 0, pieces 40 faint 0, over the UI 1, hole none, drawn true, animating false
 idle 1.4: game, board 24.0,222.0 752.0 10x10, mix 100.0%, blur 100.0%, quads 53 faded 0 mostly 0, pieces 40 faint 0, over the UI 1, hole none, drawn false, animating false
 the board went down and grew all the way true, from 90.0,128.0 620.0 to 24.0,222.0 752.0

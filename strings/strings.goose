@@ -34,6 +34,9 @@ let KEYS = [
     "goal.take", "goal.crown", "goal.win", "goal.safe",
     "players.who", "players.new", "players.picture", "players.name", "players.start_again", "players.remove",
     "players.hold",
+    "goal.take_one", "puzzle.white_to_move", "puzzle.black_to_move",
+    "theme.learn", "theme.captures", "theme.crowning", "theme.shots", "theme.king_shots",
+    "puzzles.level1", "puzzles.level2", "puzzles.level3", "puzzles.locked",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -98,7 +101,7 @@ let PUZZLES_STARS = 59;     // stars won of those there are: "{} / {}"
 let PUZZLE_NEXT = 60;
 let PUZZLE_TRY_AGAIN = 61;
 let PUZZLE_SOLVED = 62;
-let GOAL_TAKE = 63;         // "{}", the pieces to capture
+let GOAL_TAKE = 63;         // "{}", the men to win, more than one
 let GOAL_CROWN = 64;
 let GOAL_WIN = 65;
 let GOAL_SAFE = 66;
@@ -109,7 +112,19 @@ let PLAYERS_NAME = 70;
 let PLAYERS_START_AGAIN = 71;
 let PLAYERS_REMOVE = 72;
 let PLAYERS_HOLD = 73;      // under start again and remove: how they are done
-let COUNT = 74;
+let GOAL_TAKE_ONE = 74;     // one man to win
+let PUZZLE_WHITE_TO_MOVE = 75;
+let PUZZLE_BLACK_TO_MOVE = 76;
+let THEME_LEARN = 77;       // the themes' names, in puzzles::THEME_NAMES' order
+let THEME_CAPTURES = 78;
+let THEME_CROWNING = 79;
+let THEME_SHOTS = 80;
+let THEME_KING_SHOTS = 81;
+let PUZZLES_LEVEL1 = 82;    // a theme's levels: easy, harder, hardest
+let PUZZLES_LEVEL2 = 83;
+let PUZZLES_LEVEL3 = 84;
+let PUZZLES_LOCKED = 85;    // "{}", the puzzles still to solve in Learn to open a theme
+let COUNT = 86;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

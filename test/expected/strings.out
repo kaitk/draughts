@@ -1,5 +1,5 @@
-en: 74 keys, 0 problems
-et: 74 keys, 0 problems
+en: 86 keys, 0 problems
+et: 86 keys, 0 problems
 a broken file: 4 problems
   unknown key: home.puzzle
   given twice: app.name
@@ -10,8 +10,8 @@ constants: 39 checked, 0 wrong
 the languages' own names: English, Eesti
 en: Draughts / Continue / All moves
 et: Kabe / Jätka / Kõik käigud
-en: Capture 2 / 23 / 90
-et: Võta 2 / 23 / 90
+en: Win 2 men / 23 / 90
+et: Võida 2 nuppu / 23 / 90
 locales "et-EE,en-US": et
 locales "en-GB": en
 locales "de-DE,et": et

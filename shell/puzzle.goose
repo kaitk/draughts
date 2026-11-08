@@ -250,9 +250,16 @@ fn goal_icon(pz: puzzles::Puzzle&) -> i64 {
     return if pz.goal == puzzles::CROWN { gui::CROWN } else if pz.goal == puzzles::SAFE { gui::SHIELD } else { gui::TARGET };
 }
 fn goal_words(pz: puzzles::Puzzle&, out: u8[..64]&) {
-    let key = if pz.goal == puzzles::TAKE { strings::GOAL_TAKE } else if pz.goal == puzzles::CROWN { strings::GOAL_CROWN }
+    let take = if pz.count == 1 { strings::GOAL_TAKE_ONE } else { strings::GOAL_TAKE };
+    let key = if pz.goal == puzzles::TAKE { take } else if pz.goal == puzzles::CROWN { strings::GOAL_CROWN }
               else if pz.goal == puzzles::WIN { strings::GOAL_WIN } else { strings::GOAL_SAFE };
     strings::fill_in(out, key, [pz.count]);
+}
+
+// Whose puzzle it is: "White to move" or "Black to move".
+fn to_move(pz: puzzles::Puzzle&) -> const u8[:] {
+    return strings::get(if pz.start.side == rules::BLACK { strings::PUZZLE_BLACK_TO_MOVE }
+                        else { strings::PUZZLE_WHITE_TO_MOVE });
 }
 
 // The stars in r, centered, `size` dp each and `gap` apart: lit for those at stake or
@@ -315,10 +322,18 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
         gui::text(g, face, inner, said, 1.0, 0.0, gui::LEFT);
         return;
     }
+    // The goal, and under it in the small face whose puzzle it is.
     let face = gui::fitting(g, gui::LABEL, text, c.z);
     let f .= g.faces[face];
-    let line = if stacked { gui::cut_top(c, f.ascent - f.descent) } else { c };
-    gui::text(g, face, line, text, 1.0, 0.0, if stacked { gui::CENTER } else { gui::LEFT });
+    let small .= g.faces[gui::SMALL];
+    let lh = f.ascent - f.descent;
+    let sh = small.ascent - small.descent;
+    let side = to_move(pz);
+    let align = if stacked { gui::CENTER } else { gui::LEFT };
+    var both = if stacked { gui::cut_top(c, lh + 4.0 * u + sh) } else { gui::center(c, c.z, lh + 4.0 * u + sh) };
+    gui::text(g, face, gui::cut_top(both, lh), text, 1.0, 0.0, align);
+    gui::cut_top(both, 4.0 * u);
+    gui::text(g, gui::fitting(g, gui::SMALL, side, both.z), both, side, 0.66, 0.0, align);
 }
 
 // Declares the panels: the left one as the game's with the puzzles for home; on the right
@@ -345,7 +360,9 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64) -> i64 {
         let next = gui::cut_bottom(right, panel::tall(l, u));
         gui::cut_top(right, 14.0 * u);
         let f .= g.faces[gui::LABEL];
-        goal(pl, g, gui::cut_top(right, 72.0 * u + 8.0 * u + max(48.0 * u, f.ascent - f.descent)), 72.0, true, now);
+        let s .= g.faces[gui::SMALL];
+        let words = f.ascent - f.descent + 4.0 * u + s.ascent - s.descent;
+        goal(pl, g, gui::cut_top(right, 72.0 * u + 8.0 * u + max(48.0 * u, words)), 72.0, true, now);
         gui::cut_top(right, 16.0 * u);
         // Smaller where the panel is narrowed near square.
         let most = (right.z / u - 2.0 * 8.0) / STAKE;

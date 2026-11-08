@@ -17,7 +17,8 @@
 // player's picture and name, whether they have had the first start, the choices here
 // but the language, which is the device's, a new game's setup, the computer's skill at
 // each level, which moves after each game against it, how many such games began, and
-// the stars won in each puzzle (`stars = 1:3 4:2`, by puzzle id).
+// the stars won in each puzzle (`stars.international = 1:3 4:2`, by puzzle id, the ids
+// being International's; an older file's `stars` is read as it).
 namespace settings;
 import std;
 import vec;
@@ -144,7 +145,7 @@ fn parse(text: const u8[:]) -> Settings {
         let n, number = parse_int(value);
         for name, i in SKILL_KEYS { if key == name && number { s.skill[i] = ai::adapt(n, i, 0); } }
         if key == "games" && number && n >= 0 { s.games = n; }
-        if key == "stars" {
+        if key == "stars.international" || key == "stars" {
             for one in split(value, ' ') {
                 let a, b, pair = split_once(one, ':');
                 let id, ok_id = parse_int(a);
@@ -187,7 +188,7 @@ fn write(s: Settings, out: u8[>..]&) {
     var first = true;
     for won, id in s.stars {
         guard won > 0 else { continue; }
-        out.append(if first { "\nstars = " } else { " " });
+        out.append(if first { "\nstars.international = " } else { " " });
         format(out, id, ":", won);
         first = false;
     }

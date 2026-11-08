@@ -1,6 +1,6 @@
 // Puzzles, with no graphics (docs/architecture/puzzles.md): the plain text they are
 // written in, read into a fixed table, and whether a move solves one (solve.goose). A
-// puzzle is a position, a goal (capture so many, become a king, win, or find the only
+// puzzle is a position, a goal (win so many men, become a king, win, or find the only
 // safe move), and the lines that solve it; any line that reaches the goal counts.
 // The puzzles are built into the program and read once at start (load()); tests and
 // tools/puzzles.goose read and check them the same way.
@@ -13,10 +13,19 @@ import rules from "../rules";
 import .solve;
 import .check;
 
-let MAX_PUZZLES = 60;
+let MAX_PUZZLES = 150;      // ids a variant's set may use, 1 to this
 let MAX_LINES = 4;          // lines a puzzle lists
 let MAX_PLIES = 8;          // moves in a line, the solver's and the replies
-let TIERS = 3;
+let LEVELS = 3;             // a theme's levels: easy, harder, hardest
+
+// The themes, in the library's order; the file names them as THEME_NAMES does.
+let LEARN = 0;              // the rules in action
+let CAPTURES = 1;           // finding the multi-capture
+let CROWNING = 2;           // to the far row
+let SHOTS = 3;              // combinations: give men, then take more
+let KING_SHOTS = 4;         // the king as a weapon
+let THEMES = 5;
+let THEME_NAMES = ["learn", "captures", "crowning", "shots", "king-shots"];
 
 // The goals.
 let TAKE = 0;               // capture `count` more pieces than are lost, kept through the replies
@@ -32,7 +41,8 @@ struct Line { plies: Ply[..MAX_PLIES] }
 
 struct Puzzle {
     id:    i64,             // stable, 1..MAX_PUZZLES: progress is kept by it
-    tier:  i64,             // 1..TIERS
+    theme: i64,             // LEARN..
+    level: i64,             // 1..LEVELS
     goal:  i64,
     count: i64,             // TAKE's pieces
     start: rules::Position, // the side to move is the side that solves it
@@ -125,7 +135,8 @@ fn fail(err: u8[>..]&, line: i64, what: const u8[:], text: const u8[:]) -> bool 
 //
 //   variant international          the variant of the puzzles after it
 //   id 4                           a puzzle: its number, kept with the progress
-//   tier 1
+//   theme captures                 one of THEME_NAMES
+//   level 1                        1 to LEVELS, easy to hardest
 //   goal take 2                    take N, crown, win, or safe
 //   position W:W32,38:B27,28       as PDN's FEN; the side to move solves it
 //   line 32x23x34                  a line: the solver's move, the reply, and so on
@@ -149,7 +160,7 @@ fn parse(text: const u8[:], set: Set&, err: u8[>..]&) -> bool {
                 guard has_position && set.list[set.list.len - 1].lines.len > 0
                 else { return fail(err, number, "a puzzle needs a position and a line", ""); }
                 let pz .= set.list[set.list.len - 1];
-                guard pz.tier >= 1 && pz.tier <= TIERS else { return fail(err, number, "no tier", ""); }
+                guard pz.theme >= 0 && pz.level >= 1 else { return fail(err, number, "no theme or level", ""); }
                 open = false;
             }
             if rest.len == 0 && !found { break; }
@@ -169,7 +180,7 @@ fn parse(text: const u8[:], set: Set&, err: u8[>..]&) -> bool {
             let id, ok = parse_int(value);
             guard ok && id >= 1 && id <= MAX_PUZZLES && !open && find(set, id) < 0 && set.list.len < MAX_PUZZLES
             else { return fail(err, number, "not a new id", value); }
-            set.list.push(Puzzle { id: id, tier: 0, goal: TAKE, count: 1, start: rules::start(variant), moves: 0,
+            set.list.push(Puzzle { id: id, theme: -1, level: 0, goal: TAKE, count: 1, start: rules::start(variant), moves: 0,
                                    lines: [], told: false });
             open = true;
             has_position = false;
@@ -177,10 +188,15 @@ fn parse(text: const u8[:], set: Set&, err: u8[>..]&) -> bool {
         }
         guard open else { return fail(err, number, "outside a puzzle", l); }
         let pz .= set.list[set.list.len - 1];
-        if key == "tier" {
-            let t, ok = parse_int(value);
-            guard ok && t >= 1 && t <= TIERS else { return fail(err, number, "not a tier", value); }
-            pz.tier = t;
+        if key == "theme" {
+            var theme = -1;
+            for name, i in THEME_NAMES { if value == name { theme = i; } }
+            guard theme >= 0 else { return fail(err, number, "not a theme", value); }
+            pz.theme = theme;
+        } else if key == "level" {
+            let n, ok = parse_int(value);
+            guard ok && n >= 1 && n <= LEVELS else { return fail(err, number, "not a level", value); }
+            pz.level = n;
         } else if key == "goal" {
             let goal, count, ok = parse_goal(value);
             guard ok else { return fail(err, number, "not a goal", value); }
@@ -214,16 +230,16 @@ fn parse(text: const u8[:], set: Set&, err: u8[>..]&) -> bool {
     return true;
 }
 
-// How many puzzles of a tier there are, and the index in set of its n-th.
-fn tier_count(set: Set&, tier: i64) -> i64 {
+// How many puzzles of a theme there are, and the index in set of its n-th.
+fn theme_count(set: Set&, theme: i64) -> i64 {
     var n = 0;
-    for p in set.list { if p.tier == tier { n++; } }
+    for p in set.list { if p.theme == theme { n++; } }
     return n;
 }
-fn nth(set: Set&, tier: i64, n: i64) -> i64 {
+fn nth(set: Set&, theme: i64, n: i64) -> i64 {
     var k = 0;
     for p, i in set.list {
-        guard p.tier == tier else { continue; }
+        guard p.theme == theme else { continue; }
         if k == n { return i; }
         k++;
     }

@@ -1,7 +1,11 @@
 // The puzzle format and its goals (docs/architecture/puzzles.md). A file that breaks
 // the format is refused at its first mistake, with the line and what is wrong: an
 // unknown key, a goal that isn't one, a move that isn't legal, a capture's stops off its
-// path, a puzzle with no line, an id given twice, a line outside a puzzle.
+// path, a puzzle with no line, an id given twice, a line outside a puzzle, the old `tier`
+// in place of a theme and level, a theme that isn't one. Then what puzzles::check
+// refuses that the format allows: a line ending with a capture due, a right move along
+// a line that no line lists, a take winning more than its count, and a crown that makes
+// no king.
 // Then what a move does to each goal: a capture taken back doesn't keep the pieces
 // (take); a capture that doesn't end on the far row doesn't crown; leaving the other
 // side no move wins; a man left in danger isn't safe; a shot's quiet first move keeps
@@ -24,10 +28,23 @@ fn puzzle(fen: const u8[:], goal: const u8[:], moves: i64) -> puzzles::Puzzle {
     assert(ok);
     let g, count, good = puzzles::parse_goal(goal);
     assert(good);
-    return puzzles::Puzzle { id: 1, tier: 1, goal: g, count: count, start: p, moves: moves, lines: [], told: true };
+    return puzzles::Puzzle { id: 1, theme: 0, level: 1, goal: g, count: count, start: p, moves: moves, lines: [], told: true };
 }
 
 let WHAT = ["wrong", "on", "solved"];
+
+// What puzzles::check says of a puzzle, given its goal, position, and lines.
+fn checked(body: const u8[:]) {
+    var set = puzzles::Set { list: [] };
+    var err: u8[>..] = [];
+    let ok = puzzles::parse(str("id 1\ntheme learn\nlevel 1\n", body, "source own\n"), set, err);
+    assert(ok);
+    var s = puzzles::Solver { moves: [], stack: [] };
+    var out:  u8[>..] = [];
+    var ways: u8[>..] = [];
+    let n = puzzles::check(s, set.list[0], out, ways);
+    print("checked ", rules::fen(set.list[0].start), ": ", n, " problems", if n > 0 { str("\n", out.trim()) } else { str("") });
+}
 
 // What each named move does at the start of a puzzle.
 fn judge(s: puzzles::Solver&, pz: puzzles::Puzzle&, words: const u8[:]) {
@@ -44,18 +61,32 @@ fn judge(s: puzzles::Solver&, pz: puzzles::Puzzle&, words: const u8[:]) {
 }
 
 fn main() {
-    let good = "variant international\n\nid 1\ntier 1\ngoal take 1\nposition W:W32:B28\nline 32x23\nsource own\n";
+    let good = "variant international\n\nid 1\ntheme learn\nlevel 1\ngoal take 1\nposition W:W32:B28\nline 32x23\nsource own\n";
     read(good);
-    read("id 1\ntier 1\ngoal take 1\nposition W:W32:B28\nline 32x23\ncolour white\n");
-    read("id 1\ntier 1\ngoal take\nposition W:W32:B28\nline 32x23\n");
-    read("id 1\ntier 1\ngoal take 1\nposition W:W32:B28\nline 32-27\n");
+    read("id 1\ntheme learn\nlevel 1\ngoal take 1\nposition W:W32:B28\nline 32x23\ncolour white\n");
+    read("id 1\ntheme learn\nlevel 1\ngoal take\nposition W:W32:B28\nline 32x23\n");
+    read("id 1\ntheme learn\nlevel 1\ngoal take 1\nposition W:W32:B28\nline 32-27\n");
     // The king on c3 takes d4 and lands on e5 or beyond: its end names the move, and
     // stops off its path name none.
-    read("id 1\ntier 1\ngoal take 1\nposition W:WK37:B32\nline 37x28\n");
-    read("id 1\ntier 1\ngoal take 1\nposition W:WK37:B32\nline 37x32x28\n");
-    read("id 1\ntier 1\ngoal take 1\nposition W:W32:B28\n\n");
-    read(str(good, "\nid 1\ntier 2\ngoal crown\nposition W:W32:B28\nline 32x23\n"));
+    read("id 1\ntheme learn\nlevel 1\ngoal take 1\nposition W:WK37:B32\nline 37x28\n");
+    read("id 1\ntheme learn\nlevel 1\ngoal take 1\nposition W:WK37:B32\nline 37x32x28\n");
+    read("id 1\ntheme learn\nlevel 1\ngoal take 1\nposition W:W32:B28\n\n");
+    read(str(good, "\nid 1\ntheme learn\nlevel 2\ngoal crown\nposition W:W32:B28\nline 32x23\n"));
     read("line 32x23\n");
+    read("id 1\ntier 1\ngoal take 1\nposition W:W32:B28\nline 32x23\n");
+    read("id 1\ntheme tactics\nlevel 1\ngoal take 1\nposition W:W32:B28\nline 32x23\n");
+
+    // What puzzles::check refuses beyond the format. The king lands on 33 or 29, and
+    // either way black's one move, 6-11, gives it 11: a capture due after the line.
+    checked("goal take 1\nposition W:W24,K47:B6,38\nline 47x33\nline 47x29\n");
+    // f8 walks past the guard and crowns on c9; d10 crowns as well, and no line lists it.
+    checked("goal crown\nposition W:W13,46,47:B4,21,22\nline 13-8 21-26 8-2\n");
+    // The king takes two where the goal says one.
+    checked("goal take 1\nposition W:W27,K45:B14,15,20,34\nline 45x23x5\n");
+    // a3-b4 leaves black no move, which reaches any goal but makes no king.
+    checked("goal crown\nposition W:W36,37,42:B26\nline 36-31\n");
+    // And one that passes: the king lands on 15, where 25 can't take it.
+    checked("goal take 1\nposition W:W31,K47:B8,24,25\nline 47x15\n");
 
     var s = puzzles::Solver { moves: [], stack: [] };
     // c3 or e3 takes d4; from e5 the man is taken back by f6, from c5 it isn't.

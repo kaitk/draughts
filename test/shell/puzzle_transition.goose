@@ -49,6 +49,7 @@ fn main() {
     puzzles::load();
     var sh = shell::new(rules::INTERNATIONAL);
     sh.screen = shell::PICKER;
+    sh.theme = puzzles::LEARN;              // Learn's page, its tiles
     look(sh, g, 0.0, "picker");
     let first_tile = drive::rect(g, 1);
 

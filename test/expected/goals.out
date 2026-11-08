@@ -1,12 +1,24 @@
 read: 1 puzzles
-refused, line 6: unknown key: colour
-refused, line 3: not a goal: take
-refused, line 5: not a legal move here: 32-27
+refused, line 7: unknown key: colour
+refused, line 4: not a goal: take
+refused, line 6: not a legal move here: 32-27
 read: 1 puzzles
-refused, line 5: not a legal move here: 37x32x28
-refused, line 5: a puzzle needs a position and a line
-refused, line 10: not a new id: 1
+refused, line 6: not a legal move here: 37x32x28
+refused, line 6: a puzzle needs a position and a line
+refused, line 11: not a new id: 1
 refused, line 1: outside a puzzle: line 32x23
+refused, line 2: unknown key: tier
+refused, line 2: not a theme: tactics
+checked W:W24,K47:B6,38: 1 problems
+line 1 ends with a capture due
+checked W:W13,46,47:B4,21,22: 1 problems
+line 1 move 3: solved too by 8-3, which no line lists
+checked W:W27,K45:B14,15,20,34: 2 problems
+line 1 move 1: solved too by 45x23x10, which no line lists
+  line 1 wins 2, not 1
+checked W:W36,37,42:B26: 1 problems
+line 1 ends without a king made
+checked W:W31,K47:B8,24,25: 0 problems
 take W:W37,38:B19,23,32: 37x28 wrong; 38x27 solved; 
 crown W:W13,37,48:B6,8,32: 13x2 solved; 37x28 wrong; 
 win W:W36,37,42:B26: 36-31 solved; 37-31 wrong; 42-38 wrong; 

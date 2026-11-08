@@ -1,248 +1,594 @@
-# International draughts puzzles (docs/architecture/puzzles.md), in three tiers:
-# 1, find the capture; 2, many jumps and crowning; 3, shots and the only safe move.
-# A puzzle is a block of `key value` lines; the side to move solves it. Checked by
-# test/puzzles/ and tools/puzzles.goose.
+# International draughts puzzles (docs/architecture/puzzles.md), by theme, each theme in
+# its levels from easy to hardest. A puzzle is a block of `key value` lines; the side to
+# move solves it. Ids are kept with the stars won, so a puzzle keeps its id and a new
+# one takes the next unused. Checked by test/puzzles/ and tools/puzzles.goose.
 
 variant international
 
+# Learn: the rules in action, white to move.
+
 # one capture, one piece that can make it
 id 1
-tier 1
+theme learn
+level 1
 goal take 1
 position W:W32,41:B6,28
 line 32x23
 source own, verified by the engine
 
-# which of two men can capture
-id 2
-tier 1
-goal take 1
-position W:W37,39:B11,33
-line 39x28
-source own, verified by the engine
-
 # men capture backward too
 id 3
-tier 1
+theme learn
+level 1
 goal take 1
 position W:W28,46:B14,32
 line 28x37
 source own, verified by the engine
 
-# the most pieces must be taken: the double, not the single
-id 4
-tier 1
-goal take 2
-position W:W37,39,43,46:B23,32,34
-line 37x28x19
-source own, verified by the engine
-
-# a double that starts backward
-id 5
-tier 1
-goal take 2
-position W:W28,49:B14,31,32
-line 28x37x26
-source own, verified by the engine
-
-# a king takes from afar, and lands where it likes
-id 6
-tier 1
-goal take 1
-position W:W24,K47:B6,38
-line 47x33
-line 47x29
-source own, verified by the engine
-
 # two men can take d4; one would be taken back
 id 7
-tier 1
+theme learn
+level 1
 goal take 1
 position W:W37,38:B19,23,32
 line 38x27
 source own, verified by the engine
 
-# two captures; one would be taken back
+# two captures that land on one square; one would be taken back
 id 8
-tier 1
+theme learn
+level 1
 goal take 1
-position W:W37,39,41:B19,23,32,34
-line 39x30
+position W:W23,37,39,41:B32,33
+line 39x28
+source own, verified by the engine
+
+# a king takes from afar, and lands where it likes
+id 6
+theme learn
+level 2
+goal take 1
+position W:W24,K47:B5,38
+line 47x33
+line 47x29
 source own, verified by the engine
 
 # the king lands where it cannot be taken
 id 9
-tier 1
+theme learn
+level 2
 goal take 1
-position W:WK46,47:B10,14,28
-line 46x23
+position W:W31,K47:B8,24,25
+line 47x15
 source own, verified by the engine
 
 # two doubles; one ends where it would be taken
 id 10
-tier 1
+theme learn
+level 2
 goal take 2
-position W:W38,46:B15,21,24,32,33
+position W:W38,46,48,49:B15,21,24,32,33
 line 38x27x16
 source own, verified by the engine
 
-# three in a row of jumps
-id 11
-tier 2
+# two ways to take three; one ends where it would be taken
+id 18
+theme learn
+level 2
 goal take 3
-position W:W38,46,50:B5,13,22,32
-line 38x27x18x9
-source own, verified by the engine
-
-# the way that takes three, not two
-id 12
-tier 2
-goal take 3
-position W:W37,49:B11,22,23,32
+position W:W37,49:B11,22,23,24,25,32
 line 37x28x17x6
-source own, verified by the engine
-
-# the capture that ends on the far row crowns
-id 13
-tier 2
-goal crown
-position W:W13,37,48:B6,8,32
-line 13x2
 source own, verified by the engine
 
 # a king zigzags for three
 id 14
-tier 2
+theme learn
+level 3
 goal take 3
 position W:W46,K47:B5,12,22,38
 line 47x33x17x8
 line 47x33x17x3
 source own, verified by the engine
 
-# four jumps, there and back
-id 15
-tier 2
-goal take 4
-position W:W48,50:B6,14,23,32,42
-line 48x37x28x19x10
-source own, verified by the engine
-
-# two jumps that end on the far row
-id 16
-tier 2
-goal crown
-position W:W24,36,49:B5,8,19,22,31
-line 24x13x2
-source own, verified by the engine
-
 # a man passing the far row in a capture goes on, not crowned
 id 17
-tier 2
+theme learn
+level 3
 goal take 3
 position W:W11,46:B7,8,19,26
 line 11x2x13x24
 source own, verified by the engine
 
-# two ways to take three; one ends where it would be taken
-id 18
-tier 2
-goal take 3
-position W:W37,49:B11,22,23,24,25,32
-line 37x28x17x6
-source own, verified by the engine
-
 # the king takes two and lands safe
 id 19
-tier 2
+theme learn
+level 3
 goal take 2
-position W:WK46,47:B6,24,25,28
-line 46x19x35
+position W:W27,K45:B14,15,20,34
+line 45x23x5
 source own, verified by the engine
 
-# to the far row past the guard
+# take the guard, then on to the far row
 id 20
-tier 2
+theme learn
+level 3
 goal crown
-position W:W13,46,47:B4,21,22
-line 13-8 21-26 8-2
+position W:W17,47:B11,22
+line 17x6 22-27 6-1
 source own, verified by the engine
 
-# give one, take three
-id 21
-tier 3
+# Captures: finding the multi-capture, the route that takes most and lands safe.
+
+# two doubles; one is taken back
+id 31
+theme captures
+level 1
 goal take 2
-position W:W33,38,43,45,47,48:B3,11,21,23,24,29
-line 33-28 23x32 38x27x16x7
-source own, found by tools/puzzles.goose find and verified by the engine
+position W:W26,27,28,32,33,48:B1,3,9,11,13,21
+line 26x17x6
+source own, motif: the double whose last stop is safe; found by tools/puzzles.goose find from game-like camps, verified by the engine
 
-# the man on d6 is in danger
-id 22
-tier 3
-goal safe
-position W:W22,26,29,34,44:B3,7,13,15,18
-line 22-17
-source own, found by tools/puzzles.goose find and verified by the engine
-
-# give one, take three
-id 23
-tier 3
+# a double that starts backward
+id 32
+theme captures
+level 1
 goal take 2
-position W:W33,37,39,44,49,50:B4,16,19,21,22,24
-line 33-29 24x33 39x28x17x26
-source own, found by tools/puzzles.goose find and verified by the engine
+position W:W25,27,39,43,44,50:B3,4,21,26,32,33
+line 27x38x29
+source own, motif: the double whose last stop is safe; found by tools/puzzles.goose find from game-like camps, verified by the engine
 
-# the man on b4 is in danger
-id 24
-tier 3
-goal safe
-position W:W31,33,36,47,50:B5,6,23,24,26
-line 31-27
-source own, found by tools/puzzles.goose find and verified by the engine
-
-# give one, take three
-id 25
-tier 3
+# black's double; one way is taken back
+id 33
+theme captures
+level 1
 goal take 2
-position W:W26,34,40,43,45,49:B3,12,17,23,25,27
-line 34-30 25x34 40x29x18x7
-source own, found by tools/puzzles.goose find and verified by the engine
+position B:W27,28,31,37,42,47:B1,8,13,16,17,21
+line 21x32x23
+source own, motif: the double whose last stop is safe; found by tools/puzzles.goose find from game-like camps, verified by the engine
 
-# give one, take four
-id 26
-tier 3
+# a double down the board
+id 34
+theme captures
+level 1
+goal take 2
+position W:W20,22,38,39,43,46:B7,8,10,15,24,34
+line 20x29x40
+source own, motif: the double whose last stop is safe; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# three in a row of jumps, the route that lands safe
+id 35
+theme captures
+level 2
 goal take 3
-position W:W29,30,33,35,38,42,44:B7,8,9,18,19,20,27
-line 29-24 20x29 33x24x13x2x11
-source own, found by tools/puzzles.goose find and verified by the engine
+position W:W39,40,44,45,49,50:B8,14,17,23,24,33,35
+line 39x28x19x10
+source own, motif: the route that takes most and lands safe; found by tools/puzzles.goose find from game-like camps, verified by the engine
 
-# the man on b6 is in danger
-id 27
-tier 3
-goal safe
-position W:W21,24,33,34,38,43,49:B2,3,5,14,16,18,25
-line 21-17
-source own, found by tools/puzzles.goose find and verified by the engine
-
-# give one, take four, and crown
-id 28
-tier 3
+# black takes three, round and back up
+id 36
+theme captures
+level 2
 goal take 3
-position W:W35,36,40,41,44,46,49:B8,10,19,22,24,26,28
-line 36-31 26x37 41x32x23x14x5
-source own, found by tools/puzzles.goose find and verified by the engine
+position B:W29,37,38,39,41,43,49:B2,8,12,21,26,27,31
+line 31x42x33x24
+source own, motif: the route that takes most and lands safe; found by tools/puzzles.goose find from game-like camps, verified by the engine
 
-# give one, take four
-id 29
-tier 3
+# three jumps that turn back
+id 37
+theme captures
+level 2
 goal take 3
-position W:W21,24,30,34,35,37,38:B11,12,13,14,15,22,25
-line 24-20 15x24 30x19x8x17x6
-source own, found by tools/puzzles.goose find and verified by the engine
+position W:W32,34,37,39,42,44:B3,12,14,18,21,22,33
+line 39x28x17x26
+source own, motif: the route that takes most and lands safe; found by tools/puzzles.goose find from game-like camps, verified by the engine
 
-# give one, take five
-id 30
-tier 3
+# four jumps up and back down
+id 38
+theme captures
+level 3
 goal take 4
-position W:W37,39,40,45,48,49:B18,19,20,21,29,30
-line 40-34 29x40 45x34x25x14x23x12
-source own, found by tools/puzzles.goose find and verified by the engine
+position W:W28,32,35,38,39,42,44,45:B7,8,9,10,16,19,25,30
+line 35x24x13x4x15
+source own, motif: the route that takes most and lands safe; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# the king's three, and where it lands
+id 39
+theme captures
+level 3
+goal take 3
+position W:W21,K27,31,36,37:B3,22,23,24,25,30
+line 27x18x29x15
+source own, motif: the landing a king picks; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# black's king takes three and picks its landing
+id 40
+theme captures
+level 3
+goal take 3
+position B:W17,26,42,43,45,49:B1,4,K6,14,19
+line 6x39x48x37
+source own, motif: the landing a king picks; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# Crowning: to the far row, by a capture, a sacrifice, or a race.
+
+# a double that ends on the far row
+id 41
+theme crowning
+level 1
+goal crown
+position W:W23,29,36,41:B4,7,17,18
+line 23x12x1
+source own, motif: crowning by a capture that ends there; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# black crowns by a double
+id 42
+theme crowning
+level 1
+goal crown
+position B:W31,32,38,42:B15,19,20,26
+line 26x37x48
+source own, motif: crowning by a capture that ends there; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# three jumps to the corner
+id 43
+theme crowning
+level 1
+goal crown
+position W:W31,32,37,49:B10,19,20,28
+line 32x23x14x5
+source own, motif: crowning by a capture that ends there; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# the double that crowns, not the one that doesn't
+id 44
+theme crowning
+level 1
+goal crown
+position W:W22,27,43,48:B9,18,19,23
+line 22x13x4
+source own, motif: crowning by a capture that ends there; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# give one, crown with the next
+id 45
+theme crowning
+level 2
+goal crown
+position W:W18,23,29,33,50:B4,7,9,11,14
+line 18-13 9x18 23x12x1
+source own, motif: the breakthrough sacrifice; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# black gives one and crowns
+id 46
+theme crowning
+level 2
+goal crown
+position B:W21,41,43,48,50:B4,5,23,28,32
+line 32-38 43x32 28x37x46
+source own, motif: the breakthrough sacrifice; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# give one on the edge, crown in the corner
+id 47
+theme crowning
+level 2
+goal crown
+position W:W20,24,25,46,49:B6,7,10,29,33
+line 20-15 29x20 25x14x5
+source own, motif: the breakthrough sacrifice; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# black gives one, white takes two, black crowns
+id 48
+theme crowning
+level 2
+goal crown
+position B:W34,39,41,44,46:B5,23,25,28,30
+line 28-33 39x28x19 30x39x50
+source own, motif: the breakthrough sacrifice; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# give two, take back, and break through
+id 49
+theme crowning
+level 3
+goal crown
+position W:W18,19,23,24,32:B1,6,10,14,33
+line 32-28 33x22x13 19x8 14-19 23x14x5
+source own, motif: the breakthrough by exchange; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# black gives one, takes two, and runs to the far row
+id 50
+theme crowning
+level 3
+goal crown
+position B:W20,25,26,40,48:B7,18,19,23,28
+line 19-24 20x29 23x34x45 48-42 45-50
+source own, motif: the breakthrough, then the race; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# two men given for a crown
+id 51
+theme crowning
+level 3
+goal crown
+position W:W17,21,26,27,41:B3,10,15,16,28
+line 17-11 16x7 27-22 28x17 21x12x1
+source own, motif: the double breakthrough; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# black gives two and crowns
+id 52
+theme crowning
+level 3
+goal crown
+position B:W20,21,25,26,31:B6,22,23,28,32
+line 32-37 31x42 22-27 21x32 28x37x48
+source own, motif: the double breakthrough; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# Shots: give men, then take more. Level 1 gives one, level 2 gives two.
+
+# give one, take three
+id 53
+theme shots
+level 1
+goal take 2
+position W:W21,27,30,31,35,41,45,46,47:B1,4,6,7,11,13,16,23,33
+line 21-17 11x22 27x18x29x38
+source own, motif: give one, take three; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# give one, take three
+id 54
+theme shots
+level 1
+goal take 2
+position W:W24,25,29,30,33,34,35,44,45:B4,6,9,10,11,14,17,22,32
+line 24-19 14x23 29x18x27x38
+source own, motif: give one, take three; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# black gives one, takes three
+id 55
+theme shots
+level 1
+goal take 2
+position B:W19,28,29,36,38,39,42,43,47:B3,4,7,11,15,16,17,21,26
+line 26-31 36x27 21x32x23x14
+source own, motif: give one, take three; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# give one, take three, and crown
+id 56
+theme shots
+level 1
+goal take 2
+position W:W28,31,32,36,37,38,42,45,47:B3,5,7,9,14,17,18,20,26
+line 28-22 17x28 32x23x12x1
+source own, motif: give one, take three; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# give one, take three
+id 57
+theme shots
+level 1
+goal take 2
+position W:W21,26,34,35,39,42,44,45,50:B2,4,5,9,11,15,20,22,24
+line 34-29 24x33 39x28x17x6
+source own, motif: give one, take three; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# black gives one, takes three
+id 58
+theme shots
+level 1
+goal take 2
+position B:W18,28,36,37,40,42,45,47,50:B4,9,11,14,15,19,20,24,29
+line 29-34 40x29 24x33x22x13
+source own, motif: give one, take three; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# give one, take four
+id 59
+theme shots
+level 1
+goal take 3
+position W:W27,31,36,38,41,42,45,47,50:B4,5,7,8,10,16,18,20,23
+line 27-21 16x27 31x22x13x2x11
+source own, motif: give one, take four; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# black gives one, takes three
+id 60
+theme shots
+level 1
+goal take 2
+position B:W19,29,33,38,39,40,43,45,48:B5,7,11,16,17,21,25,26,30
+line 30-34 39x30 25x34x23x14
+source own, motif: give one, take three; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# give one, take four
+id 61
+theme shots
+level 1
+goal take 3
+position W:W23,24,28,29,32,34,35,39,44:B3,4,9,10,11,12,13,14,16
+line 23-19 14x23 28x19x8x17x6
+source own, motif: give one, take four; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# give one, take four
+id 62
+theme shots
+level 1
+goal take 3
+position W:W26,37,38,41,44,45,46,49,50:B5,13,15,19,23,25,30,34,35
+line 44-40 35x44 49x40x29x18x9
+source own, motif: give one, take four; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# give two, take four
+id 63
+theme shots
+level 2
+goal take 2
+position W:W30,33,40,42,44,45,47,49,50:B10,11,14,15,17,18,21,23,31
+line 33-28 23x32 42-37 31x42 47x38x27x16x7
+source own, motif: the double sacrifice; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# black gives two, takes four, and crowns
+id 64
+theme shots
+level 2
+goal take 2
+position B:W22,28,31,32,33,36,37,41,42:B1,4,6,9,10,13,14,24,34
+line 24-29 33x24 13-19 24x13 9x18x27x38x47
+source own, motif: the double sacrifice; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# give two, take four
+id 65
+theme shots
+level 2
+goal take 2
+position W:W26,27,31,36,37,41,42,45,46:B2,7,11,13,16,17,23,29,30
+line 27-22 17x28 26-21 16x27 31x22x33x24x35
+source own, motif: the double sacrifice; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# give two, take four
+id 66
+theme shots
+level 2
+goal take 2
+position W:W20,25,30,32,35,40,43,48,49:B5,13,18,21,22,23,26,31,33
+line 32-27 21x32 43-38 32x43 48x39x28x19x8
+source own, motif: the double sacrifice; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# black gives two, takes four
+id 67
+theme shots
+level 2
+goal take 2
+position B:W28,32,33,34,36,38,39,40,41:B1,3,7,13,18,19,21,23,24
+line 24-30 34x25 21-27 32x21 23x32x43x34x45
+source own, motif: the double sacrifice; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# give two, take four, and crown
+id 68
+theme shots
+level 2
+goal take 2
+position W:W18,38,39,40,43,44,45,49,50:B7,9,20,21,25,26,28,29,31
+line 18-13 9x18 38-33 29x38 43x32x23x12x1
+source own, motif: the double sacrifice; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# black gives two, takes four, and crowns
+id 69
+theme shots
+level 2
+goal take 2
+position B:W29,30,33,34,35,42,43,44,46:B4,7,9,13,21,22,25,26,32
+line 22-28 33x22 21-27 22x31 26x37x48x39x50
+source own, motif: the double sacrifice; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# give two, take five
+id 70
+theme shots
+level 2
+goal take 3
+position W:W19,24,29,30,33,34,39,47,49:B3,6,11,12,18,21,25,31,32
+line 19-13 18x9 33-28 32x23 29x18x7x16x27x36
+source own, motif: the double sacrifice; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# black gives two, takes four
+id 71
+theme shots
+level 2
+goal take 2
+position B:W20,29,30,35,36,42,47,48,50:B6,7,8,11,12,16,17,26,27
+line 27-31 36x27 17-22 27x18 12x23x34x25x14
+source own, motif: the double sacrifice; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# give two, take five, and crown
+id 72
+theme shots
+level 2
+goal take 3
+position W:W26,27,28,31,32,37,41,46,48:B2,10,12,15,17,18,20,24,30
+line 28-23 18x29 27-22 17x28 32x23x34x25x14x5
+source own, motif: the double sacrifice; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# King shots: the king as a weapon.
+
+# the king zigzags for four
+id 73
+theme king-shots
+level 1
+goal take 4
+position W:W18,K32,38,45,50:B16,17,19,20,21,26,30
+line 32x14x25x39x6
+source own, motif: the king's zigzag; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# the king takes four to the corner
+id 74
+theme king-shots
+level 1
+goal take 4
+position W:WK22,27,28,32,37:B7,8,14,15,17,20,25
+line 22x11x2x19x5
+source own, motif: the king's zigzag; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# black's king takes three
+id 75
+theme king-shots
+level 1
+goal take 3
+position B:W26,32,40,41,43,46:B2,16,24,30,K35
+line 35x49x38x27
+source own, motif: the king's zigzag; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# the king takes four round the board
+id 76
+theme king-shots
+level 1
+goal take 4
+position W:WK36,41,42,48,50:B14,16,17,19,21,24,31
+line 36x9x20x33x6
+source own, motif: the king's zigzag; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# give one, the king takes three
+id 77
+theme king-shots
+level 2
+goal take 2
+position W:W23,29,34,35,37,K48:B1,3,8,10,15,20,25
+line 34-30 25x34 48x25x14x5
+source own, motif: a shot for the king on the long diagonal; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# black gives one, its king takes three
+id 78
+theme king-shots
+level 2
+goal take 2
+position B:W18,22,26,27,32,37,42:BK2,3,4,7,10,24
+line 7-12 18x7 2x11x33x47
+source own, motif: a shot for the king; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# give one, the king takes four
+id 79
+theme king-shots
+level 2
+goal take 3
+position W:W32,33,36,K38,42,43:B2,3,5,8,9,10,11,22
+line 33-28 22x33 38x15x4x22x6
+source own, motif: a shot for the king; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# give two, the king takes four
+id 80
+theme king-shots
+level 3
+goal take 2
+position W:W28,38,40,42,45,K48:B4,8,9,10,11,13,19
+line 28-23 19x28 38-33 28x39 48x25x3x17x6
+source own, motif: the double sacrifice for the king; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# give two, the king takes four
+id 81
+theme king-shots
+level 3
+goal take 2
+position W:W18,26,34,43,K48,49:B6,10,11,19,24,25,28
+line 34-29 24x33 43-38 33x42 48x37x23x14x5
+source own, motif: the double sacrifice for the king; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# black gives two, its king takes four
+id 82
+theme king-shots
+level 3
+goal take 2
+position B:W31,33,38,44,45,48,50:B1,2,4,K8,13,24
+line 24-29 33x24 13-19 24x13 8x35x49x27x36
+source own, motif: the double sacrifice for the king; found by tools/puzzles.goose find from game-like camps, verified by the engine

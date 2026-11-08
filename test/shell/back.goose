@@ -1,8 +1,8 @@
 // Android's back, and Escape on the Mac (shell::back), headless: on each screen it does
 // what the screen's own back or home control does, the first tile each declares. A setup
 // goes back to home's menu, the game, settings opened from home, and the puzzles to pick
-// from go home, settings opened from the game or a puzzle go back to it, and a puzzle to
-// the puzzles. Each screen is reached twice by the same taps, left once by back and once
+// from go home, settings opened from the game or a puzzle go back to it, a puzzle to its
+// theme's page, and a theme's page to the library of themes. Each screen is reached twice by the same taps, left once by back and once
 // by its tile, and the two must end alike: the screen, home's column, and where the
 // board rests. On home's menu back changes nothing and says so (false), for the app to
 // hand it to the system. In a transition it turns round, as a tap on the screen come to
@@ -19,13 +19,15 @@ import shell from "../../shell";
 import puzzles from "../../puzzles";
 import drive from "../drive";
 
-fn name(screen: i64) -> const u8[:] {
+fn name(sh: shell::Shell&) -> const u8[:] {
+    let screen = sh.screen;
     if screen == shell::HOME { "home" } else if screen == shell::GAME { "the game" }
-    else if screen == shell::SETTINGS { "settings" } else if screen == shell::PICKER { "the puzzles" } else { "a puzzle" }
+    else if screen == shell::SETTINGS { "settings" }
+    else if screen == shell::PICKER { if sh.theme >= 0 { "a theme" } else { "the puzzles" } } else { "a puzzle" }
 }
 
 fn state(sh: shell::Shell&) -> u8[>..] {
-    return str(name(sh.screen), ", setup ", sh.setup, ", in a transition ", sh.from >= 0, ", the board at ",
+    return str(name(sh), ", setup ", sh.setup, ", in a transition ", sh.from >= 0, ", the board at ",
                sh.layout.board, ", the game ", rules::fen(sh.game.b.pos));
 }
 
@@ -50,7 +52,7 @@ fn check(what: const u8[:], path: i64[:]) {
     gui::test_faces(g);
     var sh = shell::new(rules::RUSSIAN);
     var now = open(sh, g, path);
-    let was = str(name(sh.screen), ", setup ", sh.setup);
+    let was = str(name(sh), ", setup ", sh.setup);
     let went = shell::back(sh, now + 0.1);
     drive::idle(sh, g, now + 0.6);
     let by_back = state(sh);
@@ -87,8 +89,9 @@ fn main() {
     check("settings from home", [4]);
     check("settings from the game", [0, 1]);
     check("the puzzles", [3]);
-    check("a puzzle", [3, 1]);
-    check("settings from a puzzle", [3, 1, 1]);
+    check("a theme", [3, 1]);
+    check("a puzzle", [3, 1, 1]);
+    check("settings from a puzzle", [3, 1, 1, 1]);
 
     // Continue tapped, and back a tenth of a second into the transition: it turns round
     // where it is and ends at home, the game kept.
@@ -98,9 +101,9 @@ fn main() {
     drive::idle(other, h, 0.0);
     drive::tap(other, h, drive::tile(h, 0), 0.1);
     drive::idle(other, h, 0.2);
-    print("in the transition to ", name(other.screen), ": back ", shell::back(other, 0.2));
+    print("in the transition to ", name(other), ": back ", shell::back(other, 0.2));
     drive::idle(other, h, 0.25);
-    print("  then ", name(other.screen), ", in a transition ", other.from >= 0);
+    print("  then ", name(other), ", in a transition ", other.from >= 0);
     drive::idle(other, h, 0.6);
     print("  at rest ", state(other));
 }

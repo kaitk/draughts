@@ -1,31 +1,42 @@
-loaded: true, 30 puzzles
-puzzles: picker
-  tiles 31, locks 20, lit 1, stars out 30, marks 1 1 1
+loaded: true, 64 puzzles
+puzzles: picker library
+  tiles 6, locks 4, lit 0, stars won 0, out 0, marks 1 1 1 1 1
+captures tapped: picker library
+learn tapped: picker learn
+  tiles 13, locks 0, lit 1, stars won 0, out 36, levels 1 1 1
 the first puzzle: puzzle 1, W:W32,41:B6,28, playing, misses 0, stars 3, moves left 1
 b2 tapped: puzzle 1, W:W32,41:B6,28, playing, misses 1, stars 2, moves left 1, red ring on b2, ghost false
-  try again true, animating at 3.0 s true, at 3.2 s false
-  after: try again false
+  try again true, animating at 3.5 s true, at 3.7 s false
+  after: try again false, it says White to move
 d4 takes e5: puzzle 1, B:W23,41:B6, solved, misses 1, stars 2, moves left 1
-  kept: stars = 1:2, changed true, animating while the stars pop true, after false
+  kept: stars.international = 1:2, changed true, animating while the stars pop true, after false
   next lit 1, stars 2 won 1 not
-next: puzzle 2, W:W37,39:B11,33, playing, misses 0, stars 3, moves left 1
+next: puzzle 3, W:W28,46:B14,32, playing, misses 0, stars 3, moves left 1
 puzzle 7: puzzle 7, W:W37,38:B19,23,32, playing, misses 0, stars 3, moves left 1
 c3 takes d4: puzzle 7, B:W28,38:B19,23, back, misses 0, stars 3, moves left 1
   sliding back: puzzle 7, W:W37,38:B19,23,32, playing, misses 1, stars 2, moves left 1, red ring on e5, ghost true
   after: puzzle 7, W:W37,38:B19,23,32, playing, misses 1, stars 2, moves left 1
 a second time: puzzle 7, W:W37,38:B19,23,32, playing, misses 2, stars 1, moves left 1, glow on e3, red ring on e5, ghost true
 e3 takes d4: puzzle 7, B:W27,37:B19,23, solved, misses 2, stars 1, moves left 1
-  kept: stars = 1:2 7:1, changed true
+  kept: stars.international = 1:2 7:1, changed true
 settings: settings
 back: puzzle 7, B:W27,37:B19,23, solved, misses 2, stars 1, moves left 1
-f4-e5: puzzle 21, B:W28,38,43,45,47,48:B3,11,21,23,24,29, answer, misses 0, stars 3, moves left 1
-  the reply, 0.5 s after it landed: puzzle 21, W:W38,43,45,47,48:B3,11,21,24,29,32, playing, misses 0, stars 3, moves left 1
-e3 takes three: puzzle 21, B:W7,43,45,47,48:B3,24,29, solved, misses 0, stars 3, moves left 1
-  kept: stars = 1:2 7:1 21:3, changed true
-start over: puzzle 21, W:W33,38,43,45,47,48:B3,11,21,23,24,29, playing, misses 0, stars 3, moves left 2
-read back: 2 1 3; odd ones ignored: 3 0 0
-puzzles: picker
-  locks 10, lit 1, stars won 12
+21-17: puzzle 53, B:W17,27,30,31,35,41,45,46,47:B1,4,6,7,11,13,16,23,33, answer, misses 0, stars 3, moves left 1
+  the reply, 0.5 s after it landed: puzzle 53, W:W27,30,31,35,41,45,46,47:B1,4,6,7,13,16,22,23,33, playing, misses 0, stars 3, moves left 1
+27 takes three: puzzle 53, B:W30,31,35,38,41,45,46,47:B1,4,6,7,13,16, solved, misses 0, stars 3, moves left 1
+  kept: stars.international = 1:2 7:1 53:3, changed true
+start over: puzzle 53, W:W21,27,30,31,35,41,45,46,47:B1,4,6,7,11,13,16,23,33, playing, misses 0, stars 3, moves left 2
+puzzle 33: puzzle 33, B:W27,28,31,37,42,47:B1,8,13,16,17,21, playing, misses 0, stars 3, moves left 1
+  turned true, it says Black to move, 21 at vec2<f32> { 604.792, 435.208 }, 23 at vec2<f32> { 745.624, 435.208 }
+21 takes two: puzzle 33, W:W31,37,42,47:B1,8,13,16,17,23, solved, misses 0, stars 3, moves left 1
+read back: 2 1 3; the older key 3, odd ones ignored: 0 0
+puzzles: picker captures
+back: picker library
+  tiles 6, locks 4, lit 0, stars won 0, out 0
+six of Learn solved: tiles 6, locks 0, lit 0, stars won 0, out 0
+  17 took 11, the reply: puzzle 20, W:W6,47:B27, playing, misses 0, stars 3, moves left 1
+Learn's last solved: puzzle 20, B:WK1,47:B27, solved, misses 0, stars 3, moves left 1
+next: picker library
 restored: true, picker
 portrait: board vec4<f32> { 24.0, 222.0, 752.0, 12.032001 }, next at vec4<f32> { 44.0, 1098.0, 712.0, 88.0 }
-portrait picker: title glyphs 7, tiles 31, the first vec4<f32> { 108.0, 259.80002, 122.4, 122.4 }, the sixth vec4<f32> { 108.0, 392.2, 122.4, 122.4 }, at least 88 dp true, the last tier ends at 1128.2
+portrait Learn: tiles 13, the first vec4<f32> { 260.0, 140.0, 96.0, 96.0 }, the fifth vec4<f32> { 260.0, 278.0, 96.0, 96.0 }, at least 88 dp true, the last ends at 512.0
