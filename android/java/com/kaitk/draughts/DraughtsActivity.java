@@ -14,7 +14,10 @@ import org.libsdl.app.SDLActivity;
 // SDL's activity, with development flags for the program: the intent's "args" extra,
 // split at spaces, as the Mac's command line would give them (docs/development.md).
 //
-//   adb shell am start -n com.kaitk.draughts/.DraughtsActivity --es args "'--clock 5+3'"
+//   adb shell am start -S -n com.kaitk.draughts/.DraughtsActivity --es args "'--clock 5+3'"
+//
+// -S stops it first: a start that finds it running (singleInstance) only brings it back,
+// with the flags it started with.
 //
 // It also keeps the launch on the theme's navy until the program's first frame is on
 // screen (task 028). SDL draws into a SurfaceView, whose hole in the window shows black

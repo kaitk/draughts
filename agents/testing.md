@@ -127,7 +127,9 @@ measuring there:
   `scripts/android.py` SDL's revision); link `build/android/SDL_src` to the main
   checkout's to skip copying SDL. The first Android build then takes about 35 s.
 - Flags reach the app on the tablet through the intent, quoted twice:
-  `adb shell am start -n com.kaitk.draughts/.DraughtsActivity --es args "'--clock 5+3'"`.
+  `adb shell am start -S -n com.kaitk.draughts/.DraughtsActivity --es args "'--clock 5+3'"`.
+  Without `-S` a start that finds the app running only brings it back with its old
+  flags: new `--tap`s never arrive and the screen keeps the last run's state.
   A run with flags neither reads nor writes `game.bin`. Clean the app's data (settings
   and the game) with `adb uninstall com.kaitk.draughts` and a fresh install.
 - A button's press shows in a screenshot taken during a long press:

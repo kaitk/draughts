@@ -118,9 +118,15 @@ again.
   272 MB (298 before the first cycle), native heap 27.6 to 28 MB, graphics 211 to 215
   MB; the puzzle was still on screen after. Task 006 had 267 to 271 MB in a game,
   task 025 272 to 274 on settings.
-- `--tap` on the tablet stops at a tap that only selects a piece when nothing animates:
-  the loop waits for an event, so the next tap waits too (on the Mac the loop never
-  waits). A development flag only; these shots were played with `input tap`.
+- `--tap` seemed to stop on the tablet at a tap that only selected a piece; these shots
+  were played with `input tap`. The loop wasn't the cause (2026-11-08): a recorded launch
+  with six taps showed one landing per 11 ms frame, since a frame that draws is never
+  followed by a wait. The stop came from `am start` finding the app still running: the
+  activity is `singleInstance`, so it came back with the last run's flags, its last tap
+  a selection, and the new taps never arrived. `am start -S` stops it first
+  (`docs/development.md`); started that way over a running app, `--variant russian` with
+  nine taps (four moves, then a selection) landed every one, and a cold start of puzzle
+  21 with `f4 e5 e3` played the move, got the reply, and selected e3.
 
 Screenshots and the recording are in the session's scratchpad, not in git.
 

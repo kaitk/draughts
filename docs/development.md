@@ -82,7 +82,9 @@ run with `--fen`, `--tap`, `--screen`, `--frames`, `--variant`, `--clock`, or
 screenshots don't depend on the last session. On the tablet, check a resume with
 `adb shell input keyevent HOME`, `adb shell am kill com.kaitk.draughts`, and starting
 the app again. The flags reach the tablet through the intent:
-`adb shell am start -n com.kaitk.draughts/.DraughtsActivity --es args "'--clock 5+3'"`.
+`adb shell am start -S -n com.kaitk.draughts/.DraughtsActivity --es args "'--clock 5+3'"`.
+`-S` stops the app first: the activity is `singleInstance`, so a start that finds it
+running only brings it back, with the flags it started with.
 On Android a clock counts only while the app has focus; on the Mac, where a window
 started from a terminal never has it, the clocks run while the window shows. `poc/` keeps
 task 001's and task 005's small programs.
