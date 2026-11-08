@@ -182,6 +182,39 @@ let BOARD_FRAG = """
     }
     """;
 
+// A man's top, which the pieces and the players' badges (widgets.goose) share: its
+// color at f (in radii, r from the center, dir the direction), the face `face`.
+let MAN_BLOCK = """
+    // Light toward white, shade toward a deeper tone of the same color, which keeps a
+    // cream warm where black would turn it grey.
+    vec3 lit(vec3 c, float a) { return a > 0.0 ? mix(c, vec3(1.0), a) : mix(c, c * c * 0.85, -a); }
+    // A rounded outer edge across radii a..b, flat at a and turning down to the side at
+    // b, under a soft light from above the board and toward its top: lit on its upper
+    // side, most halfway round, and in shade on its lower side, most at the bottom.
+    // 0 on the flat top; `dy` is the point's direction's y (down is +).
+    float shoulder(float r, float a, float b, float dy) {
+        float th = 1.45 * clamp((r - a) / (b - a), 0.0, 1.0);
+        return 0.7071 * (-dy * sin(th) + cos(th) - 1.0);
+    }
+    // A groove cut into a flat top across radii a..b: concave, so lit the other way
+    // round from a bead, and smooth to nothing at both of its edges.
+    float groove(float r, float a, float b, float dy) {
+        float t = (r - a) / (b - a);
+        if (t <= 0.0 || t >= 1.0) return 0.0;
+        return -dy * sin(6.2831853 * t);
+    }
+    // The top is flat and matte, as a turned disc's is: one color and one height, with a
+    // narrow groove cut into it at 70% of the radius and only the outer edge rounded.
+    vec3 man_top(vec3 face, vec2 f, float r, vec2 dir, bool black) {
+        vec3 col = tint(face, -0.02 * f.y);
+        float l = shoulder(r, 0.86, 1.0, dir.y);
+        col = lit(col, l > 0.0 ? (black ? 1.0 : 1.2) * l : (black ? 0.28 : 0.4) * l);
+        float g = groove(r, 0.63, 0.76, dir.y);
+        col = lit(col, g > 0.0 ? (black ? 0.4 : 0.5) * g : (black ? 0.6 : 1.2) * g);
+        return lit(col, -(black ? 0.3 : 0.45) * (1.0 - smoothstep(0.0, 0.05, abs(r - 0.695))));
+    }
+    """;
+
 // A stacked king's upper disc sits 1.3% of the board above the lower one, as deep as
 // that: the side's 0.55% times this.
 let STACK_BLOCK = """
@@ -244,24 +277,6 @@ let PIECE_FRAG = """
         vec2 q = abs(p - vec2(0.0, 0.47)) - vec2(0.72, 0.09);
         float band = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0);
         return min(poly, band);
-    }
-    // Light toward white, shade toward a deeper tone of the same color, which keeps a
-    // cream warm where black would turn it grey.
-    vec3 lit(vec3 c, float a) { return a > 0.0 ? mix(c, vec3(1.0), a) : mix(c, c * c * 0.85, -a); }
-    // A rounded outer edge across radii a..b, flat at a and turning down to the side at
-    // b, under a soft light from above the board and toward its top: lit on its upper
-    // side, most halfway round, and in shade on its lower side, most at the bottom.
-    // 0 on the flat top; `dy` is the point's direction's y (down is +).
-    float shoulder(float r, float a, float b, float dy) {
-        float th = 1.45 * clamp((r - a) / (b - a), 0.0, 1.0);
-        return 0.7071 * (-dy * sin(th) + cos(th) - 1.0);
-    }
-    // A groove cut into a flat top across radii a..b: concave, so lit the other way
-    // round from a bead, and smooth to nothing at both of its edges.
-    float groove(float r, float a, float b, float dy) {
-        float t = (r - a) / (b - a);
-        if (t <= 0.0 || t >= 1.0) return 0.0;
-        return -dy * sin(6.2831853 * t);
     }
     // Selected: a ring in the glow color a little out from the piece. Must capture: a red
     // ring that pulses every 1.4 s, or stays at its brightest. Both round the piece's
@@ -337,12 +352,7 @@ let PIECE_FRAG = """
             // edge rounded. The light from above catches the outer edge's upper side
             // softly; in the groove, which is concave, it catches the wall that faces it,
             // nearer the center on the top half, and leaves the far wall in shade.
-            vec3 col = tint(face, -0.02 * f.y);
-            float l = shoulder(r, 0.86, 1.0, dir.y);
-            col = lit(col, l > 0.0 ? (black ? 1.0 : 1.2) * l : (black ? 0.28 : 0.4) * l);
-            float g = groove(r, 0.63, 0.76, dir.y);
-            col = lit(col, g > 0.0 ? (black ? 0.4 : 0.5) * g : (black ? 0.6 : 1.2) * g);
-            col = lit(col, -(black ? 0.3 : 0.45) * (1.0 - smoothstep(0.0, 0.05, abs(r - 0.695))));
+            vec3 col = man_top(face, f, r, dir, black);
             if (v_look.y > 0.5 && !stack) {
                 vec3 cc = black ? vec3(0.914, 0.769, 0.416) : crown_w.rgb;
                 col = mix(col, cc, fill(0.56 * crown(f / 0.56), w));
@@ -380,7 +390,7 @@ fn new(kind: i64) -> Drawer {
     let full = embed_shader("vert", FULL_VERT);
     let board_fs = embed_shader("frag", THEME_BLOCK, SHARED_BLOCK, BOARD_FRAG);
     let piece_vs = embed_shader("vert", SHARED_BLOCK, STACK_BLOCK, PIECE_VERT);
-    let piece_fs = embed_shader("frag", THEME_BLOCK, SHARED_BLOCK, STACK_BLOCK, PIECE_FRAG);
+    let piece_fs = embed_shader("frag", THEME_BLOCK, SHARED_BLOCK, MAN_BLOCK, STACK_BLOCK, PIECE_FRAG);
     var d = Drawer {
         full:           full,
         board_pipeline: gfx::pipeline(full, board_fs, gfx::PipelineDesc {}),

@@ -40,6 +40,7 @@ import game from "../game";
 import shell from "../shell";
 import ai from "../ai";
 import puzzles from "../puzzles";
+import badges from "../badges";
 import .text;
 import .think;
 

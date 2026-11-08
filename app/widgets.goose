@@ -10,6 +10,7 @@ import gui from "../gui";
 import .scene;
 import .theme;
 import .draw;
+import badges from "../badges";
 
 // width, height in pixels, z: 1 when there is a photograph; and the board's rect (x, y,
 // size, corner radius) where a transition hides the UI, size 0 at rest.
@@ -53,6 +54,7 @@ let FRAG = """
     layout(set = 2, binding = 0) uniform sampler2D glass_copy;
     layout(set = 2, binding = 1) uniform sampler2D atlas;
     layout(set = 2, binding = 2) uniform sampler2D thumbs;   // four seasons, stacked
+    layout(set = 2, binding = 3) uniform sampler2D badges;   // the animals' distances, stacked
     layout(set = 3, binding = 1) uniform View { vec4 screen; vec4 hole; };
     float cover(float d) { return clamp(0.5 - d, 0.0, 1.0); }
     // A CSS box-shadow under a rounded rect: offset y, blur, spread, all in pixels.
@@ -267,21 +269,34 @@ let FRAG = """
         }
         return 1e9;
     }
-    // A player's badge (players::ANIMALS gives each its colour), on a disc d away (negative
-    // inside) of radius rad: a placeholder until the badge art is drawn (task 038), the
-    // colour with a piece's turned rim, a groove a fifth in from the edge and a light
-    // shoulder inside it. The one place the picture is drawn; replace it here.
-    vec3 badge(int k, vec2 p, vec2 c, float rad, float u, float d) {
-        const vec3 COLOURS[6] = vec3[](vec3(0.851, 0.475, 0.227), vec3(0.435, 0.624, 0.812),
-                                       vec3(0.549, 0.380, 0.259), vec3(0.541, 0.455, 0.769),
-                                       vec3(0.369, 0.620, 0.353), vec3(0.769, 0.435, 0.525));
-        vec3 col = COLOURS[clamp(k, 0, 5)];
-        float t = clamp(length((p - c) / (2.0 * rad) - vec2(0.0, -0.2)) / 0.62, 0.0, 1.0);
-        vec3 face = mix(tint(col, 0.14), col, t);
-        float groove = abs(d + 0.2 * rad) - 0.8 * u;
-        face = mix(face, tint(col, -0.35), cover(groove));
-        face = mix(face, tint(col, 0.22), 0.6 * cover(abs(d + 0.2 * rad + 2.0 * u) - 0.7 * u));
-        return face;
+    // A player's badge's animal (badges/badges.goose): its signed distance at f, in a
+    // piece's radii, negative inside, 1 outside its cell. The cell (badges::CELL texels a
+    // side, badges::SPREAD texels of distance either side of the edge, badges::COUNT
+    // cells stacked) spans 2 BADGE_HALF radii, the crown's room on home's king.
+    const float BADGE_CELL = 96.0;
+    const float BADGE_SPREAD = 12.0;
+    const float BADGE_COUNT = 6.0;
+    const float BADGE_HALF = 0.56;
+    float animal(int k, vec2 f) {
+        vec2 t = f / (2.0 * BADGE_HALF) + 0.5;
+        if (t.x < 0.0 || t.y < 0.0 || t.x > 1.0 || t.y > 1.0) return 1.0;
+        t.y = clamp(t.y, 0.5 / BADGE_CELL, 1.0 - 0.5 / BADGE_CELL);
+        float v = textureLod(badges, vec2(t.x, (float(k) + t.y) / BADGE_COUNT), 0.0).r;
+        return (v * 255.0 - 128.0) / 127.0 * BADGE_SPREAD * 2.0 * BADGE_HALF / BADGE_CELL;
+    }
+    // A player's badge (task 038): home's king as the light pieces are now (draw's
+    // man_top), the animal in the crown's place and colour, flat and bold as the crown is,
+    // with only a faint shadow inside its upper edge, as if set a hair into the top. f in
+    // the piece's radii, w a pixel in them. The one place the badge is drawn.
+    vec3 badge(int k, vec2 f, float w) {
+        float r = length(f);
+        vec3 col = man_top(w_face.rgb, f, r, f / max(r, 0.001), false);
+        float a = animal(k, f);
+        if (a > 0.5) return col;
+        float up = animal(k, f - vec2(0.0, 0.035));
+        float lip = clamp(up / 0.035 + 1.0, 0.0, 1.0);
+        vec3 mark = mix(crown_w.rgb, crown_w.rgb * crown_w.rgb * 0.85, 0.3 * lip);
+        return mix(col, mark, clamp(0.5 - a / w, 0.0, 1.0));
     }
     // How far along a rounded rect's outline the point nearest q is, clockwise from its
     // top's middle (y down), the rect's inner half size a (its half size less r) and its
@@ -415,10 +430,10 @@ let FRAG = """
             return;
         }
         if (kind == 8) {
-            // A player's face (prototypes/profiles.html): the badge (badge()) on a disc
-            // with a 1 dp light inner border and a soft shadow. Lit, a 4 dp glow ring and a
-            // 22 dp glow at 50% round it. The face for + is a faint disc with a 2 dp border. color.a
-            // dims it (a picture another player has).
+            // A player's face: the badge (badge()), a man as on the board with its side
+            // and short shadow, its top and side filling the disc. Lit, a 4 dp glow ring
+            // and a 22 dp glow at 50% round the disc. The face for + is a faint disc with a
+            // 2 dp border. color.a dims it (a picture another player has).
             float rad = 0.5 * min(v_rect.z, v_rect.w);
             float d = length(p - c) - rad;
             float fa = v_color.a;
@@ -433,10 +448,23 @@ let FRAG = """
                 result = acc;
                 return;
             }
-            over(vec3(0.0), 0.55 * shadow(p, c, vec2(rad), rad, 6.0 * u, 14.0 * u, -8.0 * u) * (1.0 - cover(d)) * fa);
-            float in_disc = cover(d) * fa;
-            over(badge(k, p, c, rad, u, d), in_disc);
-            over(vec3(1.0), 0.22 * (cover(d) - cover(d + u)) * fa);
+            // The man's side 0.12 of its radius deep, about a board piece's; its top
+            // and side together the disc's height.
+            float side = 0.12;
+            float pr = rad / (1.0 + 0.5 * side);
+            vec2 f = (p - c + vec2(0.0, 0.5 * side * pr)) / pr;
+            float w = 1.0 / pr;
+            float d0 = length(f - vec2(0.04, 0.25)) - 1.0;
+            over(vec3(0.0), 0.4 * (1.0 - smoothstep(-0.32, 0.32, d0)) * fa);
+            float d1 = length(f - vec2(0.0, 0.06 + side)) - 1.0;
+            over(vec3(0.0), 0.3 * (1.0 - smoothstep(-0.08, 0.06, d1)) * fa);
+            vec3 face = w_face.rgb;
+            float sy = f.y - clamp(f.y, 0.0, side);
+            float rim = sqrt(max(1.0 - f.x * f.x, 0.0));
+            float foot = clamp((f.y - rim) / side, 0.0, 1.0);
+            vec3 sc = face * face * 0.92 * (0.8 + 0.25 * rim) * (1.0 - 0.25 * foot);
+            over(sc, clamp(0.5 - (length(vec2(f.x, sy)) - 1.0) / w, 0.0, 1.0) * fa);
+            over(badge(k, f, w), clamp(0.5 - (length(f) - 1.0) / w, 0.0, 1.0) * fa);
             result = acc;
             return;
         }
@@ -480,20 +508,45 @@ struct Widgets {
     upload:   gui::Quad[gui::MAX_QUADS],
     atlas:    gfx::Texture,     // the text's glyphs (text.goose), or 0 before they're baked
     thumbs:   gfx::Texture,     // the seasons' thumbnails (scene.goose), or 0 until loaded
+    badges:   gfx::Texture,     // the badges' animals' distances, baked at start
 }
 
 fn new() -> Widgets {
     var w = Widgets {
         pipeline: gfx::pipeline(embed_shader("vert", draw::SHARED_BLOCK, VERT),
-                                embed_shader("frag", draw::THEME_BLOCK, draw::SHARED_BLOCK, FRAG),
+                                embed_shader("frag", draw::THEME_BLOCK, draw::SHARED_BLOCK, draw::MAN_BLOCK, FRAG),
                                 gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED }),
         quads:  gfx::Buffer { 0 },
         upload: [gui::Quad {}; gui::MAX_QUADS],
         atlas:  gfx::Texture { 0 },
         thumbs: gfx::Texture { 0 },
+        badges: gfx::Texture { 0 },
     };
     w.quads = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(w.upload));
+    w.badges = bake_badges();
     return w;
+}
+
+// The badges' animals from their SVG files (badges.goose), each baked into its cell of a
+// distance texture the shader carves from, once at start (about 54 KB, a few ms). A file
+// that can't be read leaves its cell empty, so that badge is a plain man, and says so.
+fn bake_badges() -> gfx::Texture {
+    let n = badges::CELL * badges::CELL;
+    var px: u8[>..] = [];
+    for i in badges::COUNT * n { px.push(255); }
+    var shapes: badges::Shape[>..] = [];
+    let sh .= shapes.push(badges::Shape {});
+    for k in badges::COUNT {
+        guard badges::read(badges::svg(k), sh) else {
+            print("badges: ", badges::NAMES[k], ".svg can't be read");
+            continue;
+        }
+        if sh.full { print("badges: ", badges::NAMES[k], ".svg has more than ", badges::MAX_SEGS, " pieces"); }
+        badges::bake(sh, px[k * n..(k + 1) * n]);
+    }
+    let t = gfx::texture2d(badges::CELL, badges::COUNT * badges::CELL, gfx::R8, gfx::SAMPLED);
+    gfx::update_texture(t, px[..]);
+    return t;
 }
 
 // Copies the frame's quads to the GPU: before the pass, as copies happen between passes.
@@ -515,5 +568,6 @@ fn frame(w: Widgets&, g: gui::Gui&, s: scene::Scene&, t: theme::Theme, width: f3
     gfx::bind_texture(gfx::FRAGMENT, 0, s.glass, s.sampler);
     gfx::bind_texture(gfx::FRAGMENT, 1, if w.atlas.id != 0 { w.atlas } else { s.glass }, s.sampler);
     gfx::bind_texture(gfx::FRAGMENT, 2, if w.thumbs.id != 0 { w.thumbs } else { s.glass }, s.sampler);
+    gfx::bind_texture(gfx::FRAGMENT, 3, w.badges, s.sampler);
     gfx::draw_instanced(6, g.quads.len);
 }
