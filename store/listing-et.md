@@ -14,13 +14,13 @@ Kabe lastele
 The launcher's name stays "Kabe" (`strings/et.txt`). Alternatives: "Kabe: mängi ja õpi"
 (18), "Kabe" (4).
 
-## Short description (76 of 80)
+## Short description (64 of 80)
 
 ```text
-Mängi kabet sõbra või arvutiga ja lahenda ülesandeid, et mäng selgeks saada.
+Mängi kabet sõbra või arvutiga ja õpi see 64 ülesandega selgeks.
 ```
 
-## Full description (1,645 of 4,000)
+## Full description (2,284 of 4,000)
 
 ```text
 Kabe lastele ja peredele: rahulik lauamäng mängimiseks ja õppimiseks. Suured nupud, selge laud ja mitte midagi, mis tähelepanu mängult kõrvale juhiks.
@@ -33,8 +33,18 @@ MÄNGI
 • Võta käik tagasi või alusta uuesti.
 • Mängi kellata või kellaga, kummalgi 5 või 10 minutit.
 
-ÕPI
-• Ülesanded väikeste sammudena: löö vastase nuppe, saa tammiks, päästa nupp, võida mäng.
+ÜLESANDED
+• 64 ülesannet 10 × 10 laual viies teemas: Õpi, Löömine, Tammiks, Kombinatsioonid ja Tammi löögid.
+• Iga teema läheb kergest raskemaks ja mõnes ülesandes mängid mustadega.
+• Esimesena tuleb Õpi, mis näitab reegleid mängus; teised teemad avanevad, kui pooled selle ülesannetest on lahendatud.
+• Iga ülesande eest kuni kolm tähte, iga vea eest üks vähem; lahendatud ülesannet saab uuesti mängida, et võita kõik kolm.
+
+MÄNGIJAD
+• Ühes tahvelarvutis kuni neli mängijat, igaühel oma loomapilt ja soovi korral nimi.
+• Igal mängijal on oma välimus, vihjed, tähed, arvuti tase ja salvestatud mäng, nii et ühe lapse mäng või tähed ei asenda kunagi teise omi.
+• Mängijat saab avalehelt vahetada kahe puudutusega.
+
+ÕPI MÄNGIDES
 • Vihjed, mis aitavad, kuid ei mõtle lapse eest: vaikimisi ei näita mäng midagi enne, kui käik on vale; siis näitab see ruutu ja põhjust. Esimesteks mängudeks saab sisse lülitada ka kõigi võimalike käikude näitamise.
 • Löömine on kohustuslik ja nupp, mis peab lööma, on märgitud.
 
@@ -49,7 +59,7 @@ MITTE MIDAGI LIIGSET
 • Rakendusesiseste ostudeta.
 • Kontode ja sisselogimiseta.
 • Internetita: rakendus töötab võrguühenduseta ega loo kunagi ühendust internetiga.
-• Andmeid ei koguta: seaded ja pooleli olev mäng jäävad seadmesse.
+• Andmeid ei koguta: mängijad, nende seaded ja mängud jäävad seadmesse.
 
 Kabe töötab telefonis ja tahvelarvutis, nii püst- kui ka rõhtpaigutuses.
 ```
@@ -58,9 +68,12 @@ Kabe töötab telefonis ja tahvelarvutis, nii püst- kui ka rõhtpaigutuses.
 
 - "Nupp" is both a draughts piece and a button, so the text says "nupud" only of pieces
   and "ikoonid" of the controls.
-- "Löö vastase nuppe" for the app's "Võta {}": in prose a capture is "lööma", as
-  Estonian draughts says it; the puzzle's own short goal keeps "Võta".
-- "Päästa nupp" is the app's `goal.safe`, word for word.
+- The themes are named as the library names them (`theme.*` in `strings/et.txt`): Õpi,
+  Löömine, Tammiks, Kombinatsioonid, Tammi löögid. The section on hints is "Õpi
+  mängides" (learn while playing), apart from the theme Õpi.
+- "Mõnes ülesandes mängid mustadega": a side in the plural, as `color.black` (Mustad).
+- "Loomapilt" (animal picture) for the badge, after `players.picture` (Pilt); "mängija"
+  as in `players.new` (Uus mängija).
 - "Mitte midagi liigset" ("nothing superfluous") heads the list of what the app leaves
   out, where English has "Nothing else".
 - "Tasavägine" (evenly matched) for "a fair match".

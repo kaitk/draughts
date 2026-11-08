@@ -13,13 +13,13 @@ Draughts for kids
 The launcher's name stays "Draughts" (`strings/en.txt`). Alternatives: "Draughts: play and
 learn" (24), "Draughts" (8).
 
-## Short description (78 of 80)
+## Short description (74 of 80)
 
 ```text
-Draughts to play with a friend or the computer, and puzzles to learn the game.
+Play draughts with a friend or the computer, and learn it with 64 puzzles.
 ```
 
-## Full description (1,586 of 4,000)
+## Full description (2,218 of 4,000)
 
 ```text
 Draughts for children and their families: a calm board game to play and learn, with big pieces, a clear board, and nothing to distract from the game.
@@ -32,8 +32,18 @@ PLAY
 • Take back a move, or start over.
 • Play without a clock, or with 5 or 10 minutes each.
 
-LEARN
-• Puzzles in small steps: capture pieces, become a king, stay safe, win the game.
+PUZZLES
+• 64 puzzles on the 10 × 10 board, in five themes: Learn, Captures, Crowning, Shots, and King shots.
+• Each theme goes from easy to harder, and some puzzles are played with black.
+• Learn comes first and shows the rules in action; the other themes open once half of it is solved.
+• Up to three stars a puzzle, one fewer for each mistake; a solved puzzle can be played again for all three.
+
+PLAYERS
+• Up to four players on one tablet, each with an animal badge and a name if they want one.
+• Each player keeps their own look, move hints, stars, computer level, and saved game, so one child's game or stars never replace another's.
+• Switching player takes two taps from the home screen.
+
+LEARN AS YOU PLAY
 • Move hints that help without doing the thinking: by default the game says nothing until a move is wrong, then shows the square and why. Showing every possible move can be turned on for the very first games.
 • Capturing is compulsory, and the piece that must capture is marked.
 
@@ -48,19 +58,24 @@ NOTHING ELSE
 • No in-app purchases.
 • No accounts or sign-in.
 • No internet: the app works offline and never connects to the network.
-• No data collected: the settings and the game in progress stay on the device.
+• No data collected: the players, their settings, and their games stay on the device.
 
 Draughts runs on phones and tablets, in portrait and landscape.
 ```
 
 ## What the text leans on
 
-Each claim is a fact of the app as built (2026-11-08); check again before an upload:
+Each claim is a fact of the app as built (2026-11-09); check again before an upload:
 
 - Variants, levels, clocks, take back, start over: `docs/product.md`, `strings/en.txt`.
-- "It adjusts after each game": `ai::adapt` (`docs/architecture/ai.md`).
-- Puzzle goals: `goal.*` in `strings/en.txt`. Task 037 is replacing the set; reword
-  "Puzzles in small steps" if the new set is grouped by theme.
-- Hints: `docs/product.md`, "Principles".
+- "It adjusts after each game": `ai::adapt` (`docs/architecture/ai.md`), per player.
+- Puzzles: `puzzles/international.txt`, 64 in the five themes, 18 of the 52 outside Learn
+  black to move; the themes opening at half of Learn, and the stars (three at stake, a
+  miss puts one out down to one, the best kept): `docs/architecture/puzzles.md`. Shots
+  has two levels so far, the others three, so the text says "from easy to harder".
+- Players: four at most, six badges, an optional name of up to 12 characters, and what
+  each keeps: `docs/architecture/README.md`, "Players", and task 038. Switching is home's
+  chip, then a face on the card: two taps.
+- Hints: `docs/product.md`, "Principles"; puzzles never show a piece's targets.
 - No internet: the manifest asks for no permission at all (`aapt2 dump permissions`).
 - "The one you choose": settings' Background row (a season, or by date).
