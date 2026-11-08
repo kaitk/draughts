@@ -44,8 +44,9 @@ Layouts are in dp: the screen's shorter side is 800 dp (`gui::scale_of`, the one
 scale is computed), so the tablet's 1200 px are 1.5 px a dp. The scale has room for a
 floor in physical size, `max(short side / 800, F × display scale)`, the display scale
 being Android's density / 160 (2.625 on the Pixel 7a, 1.5 on the tablet), so a phone's
-dp stays at least F of Android's; F is not yet picked (about 0.75), and until it is the
-floor is off (`gui::DENSITY_FLOOR` is 0). The Mac's display scale (2 on Retina, its
+dp stays at least F of Android's; F is 0.75 (`gui::DENSITY_FLOOR`, picked by the user on
+2026-11-08), so the Pixel 7a lays out about 549 dp across and the tablet, whose 1.125
+floor is under its 1.5, is unchanged. The Mac's display scale (2 on Retina, its
 windows being in points) is left out: a Mac window stands for a screen of its size in
 pixels, and the floor there would make shots depend on the Mac's screen.
 

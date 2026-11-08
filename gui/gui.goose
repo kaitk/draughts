@@ -20,10 +20,10 @@ var short_dp: f32 = 800.0;
 
 // A floor on the scale in physical size, F × the display's scale (Android's density /
 // 160): a phone's dp then stays at least F of Android's, where the short side / 800
-// would make them smaller. F is still to be picked (about 0.75); 0 keeps the scale the
-// short side's alone. The app sets display_scale on Android, and the development flags
+// would make them smaller. F is 0.75 (picked 2026-11-08): the Pixel 7a lays out about 549
+// dp across; 0 would keep the scale the short side's alone. The app sets display_scale on Android, and the development flags
 // --density-floor F and --display-scale S try them (docs/development.md).
-let DENSITY_FLOOR = 0.0;
+let DENSITY_FLOOR = 0.75;
 var density_floor: f32 = DENSITY_FLOOR;
 var display_scale: f32 = 0.0;
 

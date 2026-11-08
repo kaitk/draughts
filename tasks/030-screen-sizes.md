@@ -508,7 +508,8 @@ fewer than 800 dp (960 × 540: 720 dp) and the shots would depend on the Mac's s
 `--density-floor F --display-scale S` tries it on either (`--size 1200x540
 --density-floor 0.75 --display-scale 2.625` is what the Pixel would show in landscape,
 548 dp across), and `--dp N` turns the floor off unless `--density-floor` is given too,
-so `--dp` shots stay what they say. To turn it on: set `DENSITY_FLOOR`.
+so `--dp` shots stay what they say. The user picked F = 0.75 on 2026-11-08, and
+`DENSITY_FLOOR` is set to it.
 
 **Left for the Pixel 7a:** log once what `draughts_display` returns in both orientations
 (the insets, and the display scale, expected 2.625) and check that the patched safe area
