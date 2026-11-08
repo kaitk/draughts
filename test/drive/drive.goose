@@ -95,7 +95,7 @@ fn frame(gm: game::Game&, g: gui::Gui&, l: panel::Layout, at: float2, down: bool
 
 // One frame of the shell on a screen of `size`; returns whether anything changed.
 fn frame(sh: shell::Shell&, g: gui::Gui&, at: float2, down: bool, pressed: bool, released: bool, now: f64) -> bool {
-    gui::begin(g, gui::Input { at: at, down: down, pressed: pressed, released: released }, min(size.x, size.y) / 800.0,
+    gui::begin(g, gui::Input { at: at, down: down, pressed: pressed, released: released }, gui::scale_of(size.x, size.y),
                now);
     return shell::frame(sh, g, size.x, size.y, now);
 }
