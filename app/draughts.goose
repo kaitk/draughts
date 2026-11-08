@@ -11,6 +11,7 @@
 //   ../build/draughts --fen W:Wc3,Kh6:Be5         starts from a position
 //   ../build/draughts --hints moves               shows the selected piece's targets
 //   ../build/draughts --lang et                   another language than the system's
+//   ../build/draughts --dp 540                    the layout 540 dp across its shorter side, not 800
 //   ../build/draughts --variant russian           a new game of another draughts
 //   ../build/draughts --clock 5+3                 with a clock
 //   ../build/draughts --computer white --level hard   against the computer playing white
@@ -112,6 +113,10 @@ fn main() {
             let a, ok_a = parse_int(w);
             let c, ok_c = parse_int(h);
             if found && ok_a && ok_c { width = a; height = c; }
+        }
+        if argv[i] == "--dp" {
+            let n, ok = parse_int(argv[i + 1]);
+            if ok && n >= 200 { gui::short_dp = n; }
         }
         if argv[i] == "--fen" { fen.append(argv[i + 1]); }
         if argv[i] == "--hints" && argv[i + 1] == "moves" { hints = board::MOVES; }
@@ -255,7 +260,7 @@ fn main() {
             size = s;
             dirty = true;
         }
-        let scale = min(size.x, size.y) / 800.0;
+        let scale = gui::scale_of(size.x, size.y);
         if text::bake(t, g, scale) { trim_memory(); }
         w.atlas = t.texture;
         // A quick tap can press and release within one frame, which mouse_down never

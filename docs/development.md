@@ -50,9 +50,10 @@ about 3 s, and the flags follow the executable with no `--`. `app/draughts.goose
 app; its development flags pick the board theme (`wood`, `stone`, `birch`, `sunset`; the
 season's by default, with its photograph), the window size, a starting position,
 squares to tap on the first frames, move hints (`--hints moves` shows the targets;
-mistakes only by default), the language (`--lang et`; the system's by default), and a
-frame to stop at and save as `draughts.png`. `app/draughts.build` adds the
-program's own C (`app/background.c`, the photographs and their JPEG decoder;
+mistakes only by default), the language (`--lang et`; the system's by default), the
+layout's shorter side in dp (`--dp 540`; 800 by default, for trying phone scales, task
+030; `gui::scale_of`), and a frame to stop at and save as `draughts.png`.
+`app/draughts.build` adds the program's own C (`app/background.c`, the photographs and their JPEG decoder;
 `app/locale.c`, the system's locales; `app/wake.c`, the timer a running clock wakes the
 loop with; `app/launch.c`, which tells the activity the first frame is on screen, and
 to close and leave recents after home's X), which `scripts/android.py` builds into the APK too. The photographs are

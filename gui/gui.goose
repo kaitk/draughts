@@ -14,6 +14,13 @@ let MAX_QUADS = 512;
 let MAX_IDS = 32;
 let PRESS = 0.12;           // seconds a button takes to go down or up
 
+// The layout's shorter side in dp: 800, or what the development flag --dp sets, to try
+// how a phone looks with fewer dp across (task 030).
+var short_dp: f32 = 800.0;
+
+// The layout's scale, pixels a dp, on a screen width × height pixels.
+fn scale_of(width: f32, height: f32) -> f32 { min(width, height) / short_dp }
+
 // What a quad is, as the UI shader draws it.
 let GLASS = 0;              // a glass panel, with its shadow
 let BUTTON = 1;             // a glass tile, with its shadow; look.w: how far it is pressed

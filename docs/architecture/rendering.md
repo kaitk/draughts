@@ -187,8 +187,9 @@ the prototype tried, kept for 3D:
 
 - **Buttons** are glass tiles: white at 10%, 16% when hovered, 24% while pressed (and
   scaled to 0.96), with an inset 1 px border of white at 20% and a top highlight; radius
-  22 px; at least 88 × 88 px (dp) for small hands, icons half the tile with strokes 2.4
-  units of their 24-unit grid. A primary button is the glow color at 22%.
+  22 px; at least 88 × 88 px (dp: the screen's shorter side is 800, `gui::scale_of`) for
+  small hands, icons half the tile with strokes 2.4 units of their 24-unit grid. A
+  primary button is the glow color at 22%.
 - **Icons** are line icons on a 24-unit grid with round strokes, in the Lucide style:
   undo, hint (a bulb), restart, back (an arrow left), next, star, crown, lock, and the
   puzzle themes' target, crown, and shield. The home tiles' icons are filled shapes,

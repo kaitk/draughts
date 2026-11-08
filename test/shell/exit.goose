@@ -35,7 +35,7 @@ fn fresh(setup: i64) -> shell::Shell {
 fn check(what: const u8[:], setup: i64) {
     var g = gui::Gui {};
     gui::test_faces(g);
-    let u = min(drive::size.x, drive::size.y) / 800.0;
+    let u = gui::scale_of(drive::size.x, drive::size.y);
     var sh = fresh(setup);
     drive::idle(sh, g, 0.0);
     let r = way_out(g);

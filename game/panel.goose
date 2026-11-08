@@ -44,7 +44,7 @@ struct Layout {
 // board fills the width less the margin, with a 104 dp bar above it and the 196 dp play
 // below it, both as wide as the board.
 fn layout(width: f32, height: f32, n: i64) -> Layout {
-    let s = min(width, height) / 800.0;
+    let s = gui::scale_of(width, height);
     let gap = GAP * s;
     if width >= height {
         let side = SIDE * s;
