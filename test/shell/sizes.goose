@@ -36,7 +36,7 @@ fn whole(x: f32) -> i64 { floor(x + 0.5) as i64 }
 fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool, card: bool, picks: i64) {
     let w = drive::size.x;
     let h = drive::size.y;
-    let u = min(w, h) / 800.0;
+    let u = gui::scale_of(w, h);
     let n = drive::tiles(g);
     var line = str("  ", what, ": ", n, " tiles");
     var narrow: f32     = 1.0e9;
@@ -134,7 +134,7 @@ fn main() {
         print(strings::LANGUAGES[lang], ":");
         for size, i in sizes {
             drive::size = size;
-            g.scale = min(size.x, size.y) / 800.0;
+            g.scale = gui::scale_of(size.x, size.y);
             gui::test_faces(g);
             print(names[i], ", ", size.x as i64, " x ", size.y as i64, ":");
             screens(g);
