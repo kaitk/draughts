@@ -140,8 +140,13 @@ Screenshots and the recording are in the session's scratchpad, not in git.
 - **A miss** is a wrong move or a tap the board flashes as a mistake (a piece that can't
   move, an empty square); the must-capture pulse is held back in puzzles, as it shows
   the answer. Stars never go below one, and start over keeps the misses until solved.
-- **Tier 1 shows the targets** of a selected piece whatever the move hints setting, as
-  `docs/product.md` has moves on in the first puzzles; tiers 2 and 3 follow the setting.
+  Since 2026-11-08 the stops of a capture of many jumps tapped one by one aren't misses
+  (each took a star before): the board keeps them, ringed, and plays the capture at its
+  last square or once only one capture goes on that way, the same in a game; a tap off
+  every way is still a miss, and so is a different legal capture.
+- **No targets in puzzles** (2026-11-08, the user): no tier shows a selected piece's
+  targets, whatever the move hints setting, since the point of a puzzle is that the child
+  thinks. Until then tier 1 showed them always and tiers 2 and 3 followed the setting.
 - **Tiers open** at half the previous tier solved; every puzzle in an open tier can be
   played in any order.
 - **The safe move** looks two plies past the move (a reply and an answer), captures

@@ -79,12 +79,15 @@ game, so a game in progress is kept. Their look is in
 [rendering](rendering.md#controls).
 
 - **Stars**: three are at stake. Each miss puts one out, down to one: a wrong move, which
-  plays and then slides back by itself, or a tap the board flashes as a mistake. A
-  puzzle solved keeps the most stars it has won. Start over begins the puzzle again with
-  the misses kept, or afresh once it is solved.
+  plays and then slides back by itself, or a tap the board flashes as a mistake. The
+  stops of a capture of many jumps tapped one by one aren't misses: the board keeps
+  them until the capture is played ([rendering](rendering.md#board-and-pieces)), and
+  the capture is judged. A puzzle solved keeps the most stars it has won. Start over
+  begins the puzzle again with the misses kept, or afresh once it is solved.
 - **Help**: after two misses the piece of the next right move glows; there is no hint
-  tile. The first tier shows a selected piece's targets whatever the move hints
-  setting, since it teaches the basics ([product](../product.md)); the others follow it.
+  tile. No tier shows a selected piece's targets, whatever the move hints setting: the
+  child is to find the move ([product](../product.md), 2026-11-08). The selection, the
+  glow, and a wrong move's flash still show.
 - **Tiers**: the first is open; each other opens once half the one before it is solved.
   The picker lights the first puzzle without stars in an open tier.
 - **Next** opens the puzzle after it in the file, and after the last the picker.

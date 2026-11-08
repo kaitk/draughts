@@ -305,7 +305,8 @@ the prototype tried, kept for 3D:
   in, while its square flashes the red ring over a ghost of the piece fading from 80%;
   the goal gives way for 2 s to "try again" in a pill of the forced-capture red at 16%,
   and a star goes out. A tap the board flashes as a mistake is a miss too, without the
-  must-capture pulse, which would show the answer. After two misses the piece to move
+  must-capture pulse, which would show the answer. A selected piece's targets never
+  show, whatever the move hints (2026-11-08). After two misses the piece to move
   has the glow ring, pulsing twice, then still. A right move that leaves the goal ahead
   is answered 0.5 s after it lands. Solved, the words say so, the stars won pop in one
   after another (56 px, 0.6 s each, 0.15 s apart), and next lights; nothing covers the
@@ -380,7 +381,12 @@ ends is drawn at rest, and then nothing more.
   only (the default, `docs/product.md`), there are no dots: a wrong move flashes a red
   ring on its square twice (0.6 s each), and the piece that must capture pulses; the
 piece stays selected. A tap or a drop on an empty square that isn't a move is wrong, as
-is touching a piece that can't move because another must capture. A piece that must capture pulses a red ring
+is touching a piece that can't move because another must capture. A capture of many
+jumps is tapped by its last square or stop by stop (`board::follow`): a tap on the next
+stop of the selected piece's captures rings it, whatever the hints, and narrows the
+targets shown to the ways through it; once only one capture goes on that way it is
+played, and a tap off every way is wrong and forgets the stops. A piece that must
+capture pulses a red ring
   `#ff5a4a` with a soft red glow every 1.4 s, in every theme. The last move's squares are
   tinted with the glow color at 16%.
 

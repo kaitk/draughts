@@ -13,15 +13,15 @@ which would overwrite the main checkout's while another session uses them.
 - `test/<area>/<name>.goose` with `test/expected/<name>.out`: one program per behavior,
   printing what a reader can check by eye (positions as FEN, moves sorted, how many
   pieces each takes). A test explains in a comment what rule it shows and why the
-  position shows it. Areas so far: `rules`, `board` (taps and hints through the board
-  package), `gui`, `game` (the game screen driven through the pointer: take back, start
+  position shows it. Areas so far: `rules`, `board` (taps, hints, and a capture tapped
+  stop by stop through the board package), `gui`, `game` (the game screen driven through the pointer: take back, start
   over, home and settings, presses kept apart, the celebration, a clocked game with its
   frames, pause, and flag, the turned board; the computer's turn, answered at once with
   `ai::think` as the app's worker would; the clock value on its own; and the computer's
   time a move on the clock, over whole games with simulated time, in `pace`), `shell`
   (home, the switch to the game and back, settings and their file, their taps and the
   board beside them, the transition between home and settings (its frames, its end, a
-  tap during it, turning it round), home's setup and play, the puzzles' picker and a puzzle played through its misses, hint, reply, and stars, the saved game of any variant and damaged images of it, the computer's skill
+  tap during it, turning it round), home's setup and play, the puzzles' picker and a puzzle played through its misses, hint, reply, and stars, a capture tapped stop by stop in a puzzle and no targets in any tier, the saved game of any variant and damaged images of it, the computer's skill
   moving across games), `strings` (every language file has every key), `ai` (the computer player:
   its search against a plain minimax, the table changing no score, keys, what each level
   plays in known shots, the same move in steps as at once, and that no level hangs a
