@@ -33,6 +33,19 @@ fruit. A holistic look, measuring before cutting.
   decoding to RGBA8 where it's missing (an Intel Mac, a desktop GPU with only BC), so
   nothing stops working. Worth it only if the measured table shows these textures are a
   real part of the total; compare the look on the tablet at 4×4 and 6×6.
+- **The blur, against the alternatives** (the user, 2026-11-08: measure them and take
+  the best, as Carmack or Sweeney would). Now (`docs/architecture/rendering.md`): the
+  photograph scaled to 512 × 512 and blurred once per season on the GPU (two Gaussian
+  passes, 1 MB), and that blurred again into 256 × 256 for the glass (0.25 MB); the
+  sharp 2048 × 2048 RGBA (16 MB) stays resident behind home. Measure against: smaller
+  copies (a blur of sigma 5.6 at 512 keeps its look at 256 or 128 with bilinear
+  sampling, a quarter or a sixteenth of the memory); a dual-filter (Kawase) down and up
+  chain, the usual mobile blur; sampling a mip of the photograph instead of a copy;
+  copies blurred offline and shipped compressed, with no GPU pass at all; and for the
+  sharp image, sizing it to the screen's long side and ASTC. For each: memory, the time
+  a season change takes on the tablet, and whether the look holds side by side at the
+  tablet's and a phone's size. Keep the one that wins on memory without a visible
+  change, and record the numbers.
 - **Every screen size:** whatever is cut must keep working on every tablet and phone
   (task 030's sizes: phones from 720 × 1280 to 1080 × 2400, tablets up to 2560 × 1600
   and 2880 × 1920). Size what follows the screen (render targets, the photograph and its
