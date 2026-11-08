@@ -1,9 +1,7 @@
 # 022: Transitions between screens
 
-Status: in-progress (all built and checked on the Mac; checked on the tablet 2026-11-08:
-smooth at 90 Hz and idle after, but settings' first opening in a run skips half its
-frames, and three kinds read busy where the board passes under the fading panels; see
-"On the tablet")
+Status: done (built and checked on the Mac and the tablet, 2026-11-08; the tablet
+check's four findings fixed, "The tablet check's fixes")
 
 Optional, after the MVP (2026-11-07): quick, not instant, changes between screens for
 feel: home's menu fading or sliding away on continue while the board grows into its
@@ -250,10 +248,102 @@ drop the drift for the panel the board passes; slide the game's pieces into sett
 show the preview's on arrival. The stall needs the thumbnails loaded before settings
 first opens.
 
+## The tablet check's fixes (2026-11-08)
+
+The four things "On the tablet" found, fixed in one pass, with one mechanism each.
+
+- **Settings' first opening:** the season thumbnails now load in the first frame after
+  the launch's first that draws nothing (`app/draughts.goose`), not on the first frame
+  settings is the screen. That is frame 2 on the tablet, right after the first frame is
+  on screen: 124 to 133 ms over six launches (55 ms on the Mac); the frame after it
+  presents the unchanged screen once more, then the app is idle (`scripts/idle_cpu.sh
+  30` at home afterwards: the program thread 0.01 s, 0.03% of a core, 30 voluntary
+  switches). A tap in that window waits for it. Settings opened at launch still load
+  them before their first frame. Memory at home after launch, three launches each:
+  without the preload (a local build) PSS 244 MB, native heap 41 MB, graphics 184 MB;
+  with it PSS 222 MB, native heap 41 to 44 MB, graphics 160 MB. The thumbnails are a
+  160 × 392 texture (251 KB) and a 16 MB decode freed at once; graphics falls,
+  likely because the frame that loads them submits GPU work again and the driver then
+  lets go of about 24 MB the launch's uploads held (without the preload, only once
+  something draws). After settings first open both builds hold 192 MB of graphics.
+  The first opening now runs 27 to 28 frames like any later one, at most 20 ms a frame
+  (was 129 to 132 ms).
+- **Home and settings, one board:** between them the board is home's all the way, its
+  squares and the game's pieces; settings show their preview once it has arrived, its
+  wrong move flashing then, and home's board shows from the first frame back
+  (`shell.shows`, the screen whose board is filled; `board::under` and the crossfade
+  are gone, and `board::MAX_PIECES` is back at 48, 2.3 KB less upload a frame). One set
+  of pieces and one red ring are ever on screen. The board changes once, at settings'
+  place, at rest: in the recordings that frame is the transition's one large change
+  (17 on the timeline's scale, where the old halfway switch of the squares under two
+  half-faded sets was 15), and it reads as the board arriving and becoming the preview.
+  A calmer variant was weighed and set aside: the game's pieces fading out over the
+  first half and the preview's in over the second, the squares switching on an empty
+  board halfway, has no change at rest but an empty board at 50% and the preview's marks
+  (targets, the wrong move's ring) showing on empty squares before its pieces, which
+  the board pass can't fade without another uniform.
+- **The UI over the moving board:** while a transition runs, the shell gives the board's
+  rect as `shell.hole`, and the UI shader and the piece shader's pieces over the UI hide
+  everything inside it but what is marked as lying on the board, the win's card and its
+  piece (`gui::on_board`, `extra.z` from 2; `win.w` on a piece). One rect uniform and a
+  per-quad flag, nothing allocated; at rest the hole has size 0 and the shaders skip
+  it, so every screen at rest is byte-identical. The board now passes over the picker's
+  rows, home's sheet and wordmark, the setup's sheet, and the game's bars, both screens
+  still cross-fading around it.
+- **The portrait switch frames:** with a log of each frame's time in the loop on the
+  tablet (removed after), the switch frames themselves take 0.2 to 0.8 ms of the
+  program's time; the frame after a switch takes 9 to 19 ms in drawing, as the check
+  found. The one obvious thing was the computer's play: its switch frame wrote
+  `settings.txt` (the game counted for the computer's seeds), and the write flushes to
+  disk, 13 to 17 ms. A settings change made by the tap that starts a transition is now
+  written once it is over: its frames now come at most 17 to 20 ms apart (were 35 ms
+  once in portrait). The portrait 29 ms of puzzle to picker didn't come back (at most
+  14 ms in two runs); the 22 and 24 ms switch frames left in landscape between the
+  picker and a puzzle took under 1 ms of the program's time, so they wait elsewhere
+  (presenting), and weren't chased.
+
+Checked:
+
+- Tests: `transition` (the board 8 × 8 with the game's 24 pieces, none faint, all the way
+  to settings and back, the preview's 19 with its wrong move on arrival, back showing
+  the game's from its first frame; the hole the board's rect while it runs and none at
+  rest or on a switch frame), `game_transition` (the hole in each frame; leaving a won
+  game, its card's 5 quads and its piece marked on the board), and `puzzle_transition`
+  (the hole). Re-blessed: `transition.out` for the one board (pieces and squares, the
+  hole, the wrong move) and `game_transition.out` and `puzzle_transition.out` for the
+  hole and on-board counts only, no other value changed. All 36 tests pass through
+  TinyCC and built at -O2.
+- On the Mac, at 960 × 600 and 600 × 960, frames at 25, 50, and 75% of home to settings
+  and back (the game Russian, the preview International), the picker to a puzzle and
+  back, the computer's setup to play, continue, the game's home, and a won game's home.
+  Home, the game, the setups, a clocked game, the game against the computer, the
+  picker, a puzzle, and a won game at rest, and home, a puzzle, and home from a won game
+  reached through a transition, are byte-identical before and after; settings differ
+  only inside the preview's flash and pulse, as from run to run.
+- On the tablet, the APK built from this change, both orientations, a real tap each
+  (`adb shell input tap`) in a run started with flags, recorded with `adb shell
+  screenrecord`:
+
+| Transition | Landscape: span, frames, median / max interval | Portrait |
+| --- | --- | --- |
+| Home to settings, first in a run (the game 8 × 8, the preview 10 × 10) | 301 ms, 27, 11.0 / 20 ms | 304 ms, 28, 11.0 / 21 ms |
+| Settings to home | 283 ms, 26, 11.0 / 15 ms | 298 ms, 28, 11.0 / 12 ms |
+| Home to settings, again | 312 ms, 28, 11.0 / 17 ms | 293 ms, 27, 11.0 / 17 ms |
+| The picker to puzzle 1, two runs | 310 and 297 ms, 28 twice, 11.0 / 22 and 14 ms | 289 and 303 ms, 27 and 28, 11.0 / 18 and 16 ms |
+| Puzzle 1 to the picker, two runs | 293 and 316 ms, 27 and 28, 11.0 / 18 and 24 ms | 309 and 287 ms, 29 and 27, 11.0 / 14 and 12 ms |
+| The computer's setup to play (child on black), the write deferred, two runs | 278 and 302 ms, 25 and 27, 11.0 / 17 and 20 ms | 297 ms twice, 27 and 28, 11.0 / 19 and 18 ms |
+
+  How it reads, from frames at 25, 50, and 75% of each: **calm** in all of them. Home
+  and settings slide one board with one set of pieces and one ring; the preview comes
+  in at rest with its flash. The puzzle's board grows out of its tile over the picker's
+  rows, which show round it but never on it. Into the game in portrait the board lies
+  over the setup's sheet and the game's top bar, with no title, button, or wordmark on
+  its rows. Frames and recordings are kept locally, not in git.
+
 ## Acceptance criteria
 
-- [ ] Continue, a friend, settings, and back animate in both orientations (on the Mac; on
-  the tablet open: settings' first opening skips half, and three kinds read busy)
+- [x] Continue, a friend, settings, and back animate in both orientations (on the Mac and
+  on the tablet)
 - [x] A tap during a transition lands on the new screen
 - [x] Headless tests: a transition ends and stops asking for frames
 - [x] The game counts no time and the computer doesn't think during a transition

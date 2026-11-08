@@ -150,6 +150,16 @@ measuring there:
   beforehand, its taps being where it rests.
 - Tests that tap tiles find them by the order of `gui::BUTTON` quads; the clocks are
   `BUTTON` quads too, so the game's helpers skip styles from `gui::CLOCK_RUN` on.
+- To see where a frame's time goes on the tablet, `print` from the app's loop with
+  `gfx::time()` deltas around its parts, only for frames over a few ms or a switch: the
+  program's output shows in `adb logcat` under the tag `goose`. Remove it after (task
+  022's switch frames took under 1 ms; the frames after them 9 to 19 ms in drawing).
+- A recording's frame times say little of what is slow inside: a recorded 20 ms frame
+  may be the program's 1 ms and the rest presenting.
+- `dumpsys meminfo` at home right after launch counts about 24 MB more graphics than
+  once a later frame has submitted GPU work (184 MB, and 160 MB with task 022's
+  thumbnails loaded in the first idle frame), likely the launch's uploads not yet let
+  go: compare memory at the same point of a run, after the same frames (2026-11-08).
 - To see when something happens on the tablet, log from the program's C with
   `extern void SDL_Log(const char *, ...)` (Android only; it shows in `adb logcat` as
   `SDL/APP`) and remove it after. The clock's lag was measured that way.

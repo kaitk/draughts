@@ -349,7 +349,7 @@ struct Widgets {
     quads:    gfx::Buffer,
     upload:   gui::Quad[gui::MAX_QUADS],
     atlas:    gfx::Texture,     // the text's glyphs (text.goose), or 0 before they're baked
-    thumbs:   gfx::Texture,     // the seasons' thumbnails (scene.goose), or 0 before settings
+    thumbs:   gfx::Texture,     // the seasons' thumbnails (scene.goose), or 0 until loaded
 }
 
 fn new() -> Widgets {

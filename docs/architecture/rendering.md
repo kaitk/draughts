@@ -357,13 +357,19 @@ little as it shrinks under settings' title row. Into the game it grows into the 
 place, left in landscape and down in portrait. A puzzle's board grows out of its tile on
 the puzzles to pick from, and shrinks back into it; at rest there the board isn't shown.
 The screen left fades out and the one come to fades in, both drifting 40 dp the way the
-board moves. The photograph goes from sharp to blurred and dimmed on the way into the game
-or a puzzle, and back on the way out; between home and settings it stays sharp.
+board moves. Neither shows where the board is while it moves: it passes over the panels,
+rows, titles, and their pieces rather than under them, so nothing of either screen lies
+on its squares. A won game's card lies on the board and keeps showing as it fades. The
+photograph goes from sharp to blurred and dimmed on the way into the game or a puzzle,
+and back on the way out; between home and settings it stays sharp.
 
-Since settings' preview is its own fixed position, the game's pieces fade out under the
-preview's as the board slides; the marks, and the squares when the two sizes differ,
-switch halfway. Home and the game show one board, so nothing crossfades: a setup already
-shows the game its play starts, and the column leaving is the setup as it was. On the way
+Between home and settings the board is home's all the way. Settings' preview is its own
+fixed position, so it shows once the board has arrived, its wrong move flashing then,
+and home's board shows from the first frame back: one set of pieces is ever on screen,
+and when the game and the preview differ (in size too, 8 × 8 and 10 × 10) the board
+changes once, at settings' place, at rest. Home and the game show one board, so nothing
+changes on it: a setup already shows the game its play starts, and the column leaving
+is the setup as it was. On the way
 home from a won game, its dim, the winning piece's lift, and the card fade out with the
 game's panels. A tap during a transition lands on the screen come to. Back, during one,
 turns it round where it is. The game's clock counts no time and the computer is asked for
@@ -374,14 +380,18 @@ Natively the shell keeps one transition: the screen left and when it began
 (`gui::listen`; the game through `game::still`, which counts nothing), then the screen
 come to, the game with its clock and the computer frozen. It fades and moves each one's
 quads (`gui::fade`; a quad's `extra.w`, which the UI shader multiplies its result by, so
-a win's card fading in fades further) and its pieces over the UI. It eases the board's
+a win's card fading in fades further) and its pieces over the UI, and gives the board's
+rect this frame as `shell.hole` (size 0 at rest): the UI shader and the piece shader's
+pieces over the UI multiply by the outside coverage of the board's rounded rect there,
+but for what is marked as lying on the board (`gui::on_board`, a quad's `extra.z` from
+2; a piece's `win.w`), the win's card and its piece. It eases the board's
 rect between the two layouts, and the photograph's blur between the two screens': the
 board pass takes it in one uniform (`scene.x`, 0 sharp to 1 blurred, the brightness 1.0 to
 0.8 in `scene.y`) and mixes the sharp texture and the blurred one, both bound; at either
 end it samples only one, so a screen at rest draws as it did before. The glass copy is
-the same throughout. The app fills the board through `shell::fill`, which lays the other
-board's pieces under it at the other opacity (`board::under`), and scales the game's win
-by how much of the game shows (`game::cheer`). While a transition runs, `shell::animating`
+the same throughout. The app fills the board of the screen `shell.shows` names (home's
+between home and settings) through `shell::fill`, which scales the game's win by how much
+of the game shows (`game::cheer`). While a transition runs, `shell::animating`
 is true. The frame after it ends is drawn at rest, and then nothing more. A landscape
 frame between home and the game declares about 130 of the 512 quads (home 77, the game
 53), between home and settings about 350.
@@ -512,3 +522,11 @@ longer think against the clock draws only the clock's seconds after the pulse: t
 timer is also set for when the computer's move is due (`game::due`). Once its move has
 landed nothing animates and the app draws nothing. While Android has the app paused, SDL blocks
 the loop: it draws nothing and submits no GPU work.
+
+Work too long for a frame stays off the frames that move. Settings' season thumbnails
+decode all four photographs (about 125 ms on the tablet, 55 ms on the Mac), so they load
+in the first frame after the launch's first that draws nothing; that frame presents the
+unchanged screen once more, and settings opening for the first time moves as smoothly as
+later. Settings opened at launch load them before their first frame. A settings change
+the tap starting a transition made (the computer's play counting a game) is written once
+the transition is over, since the write flushes to disk, 13 to 17 ms on the tablet.

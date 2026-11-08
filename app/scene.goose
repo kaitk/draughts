@@ -120,8 +120,9 @@ fn release(s: Scene&) {
 }
 
 // The four seasons' thumbnails stacked, by theme, top to bottom, in one texture; a
-// season without a photograph is black. Each decodes its photograph, so this is made
-// only when settings first opens.
+// season without a photograph is black. Each decodes its photograph (about 125 ms for
+// the four on the tablet), so the app makes this in the first frame after the launch's
+// first that draws nothing, rather than when settings first open.
 fn thumbs() -> gfx::Texture {
     var px: u8[>..] = [];
     px.resize(THUMB_W * THUMB_H * 4 * 4, 0);
