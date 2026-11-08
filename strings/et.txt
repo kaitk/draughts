@@ -20,7 +20,7 @@ settings.background = Taust
 settings.by_date = Kuupäev
 settings.board = Kabelaud
 settings.hints = Vihjed
-settings.kings = Tammid
+settings.kings = Tammi kuju
 
 season.winter = Talv
 season.spring = Kevad
