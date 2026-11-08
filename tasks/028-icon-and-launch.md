@@ -1,7 +1,6 @@
 # 028: The app icon and the launch screen
 
-Status: in-progress (the icon is done; launch flashes before the first frame, see "On the
-tablet")
+Status: done
 
 The app had no icon and no resources: the APK's manifest had a literal label and the
 platform's theme, so the launcher showed Android's default, and launch showed a blank
@@ -53,7 +52,20 @@ needs redrawing if the scene changes shape.
 - **Launch:** `Theme.Draughts` (`res/values/themes.xml`), parented on
   `Theme.NoTitleBar.Fullscreen` so the window stays fullscreen, with `windowBackground`
   navy; `res/values-v31` adds `windowSplashScreenBackground` navy, so Android 12+'s splash
-  is the icon on navy and hands over to the app on the same colour. No splash image.
+  is the icon on navy and hands over to the app on the same colour. No splash image. The
+  window draws its bars' backgrounds itself (`windowDrawsSystemBarBackgrounds`), with
+  `navigationBarColor` navy.
+- **The first frame's signal** (2026-11-08): `DraughtsActivity` puts a view of the theme's
+  `windowBackground` over the whole window (on the decor view, so it spans the bars' area
+  too) and, on API 31+, takes Android's splash with
+  `getSplashScreen().setOnExitAnimationListener` instead of letting it fade, so it stays.
+  The program calls `draughts_first_frame()` (`app/launch.c`) at the top of the loop when
+  `gfx::frame_count()` is 2, the first `frame()` after the one whose pass drew the first
+  frame, since `frame()` presents what the pass before it drew; the C gets the activity
+  with `SDL_GetAndroidJNIEnv` and `SDL_GetAndroidActivity` and calls its `firstFrame()`,
+  which removes the splash and hides the view on the UI thread. On the Mac the C is an
+  empty function. If the signal never comes, both go after 3 s. On API 29 and 30 there is
+  no system splash; the starting window is the theme's navy, and the view keeps it.
 - **The build:** `scripts/android.py` runs `aapt2 compile --dir android/res` and passes the
   compiled zip to `aapt2 link` as an input (with `-R`, the overlay flag, aapt2 refuses new
   resources unless `--auto-add-overlay` is added too).
@@ -69,6 +81,14 @@ needs redrawing if the scene changes shape.
 | APK after | 6,055,132 bytes (5913 KB), +279 KB |
 | The foreground PNGs, mdpi to xxxhdpi | 11, 22, 35, 71, 125 KB: 266 KB of it |
 | The monochrome vector, the adaptive XML, resources.arsc | 1.5, 0.5, 2.1 KB |
+
+`am start -W`'s `TotalTime`, cold, `--screen game`, on the tablet (2026-11-08; Android
+counts to the window's first draw, which the view makes, not to the program's frame):
+
+| | TotalTime (ms) |
+| --- | --- |
+| Before the first frame's signal, 4 runs | 201, 203, 212, 217 (mean 208) |
+| With it, final build, 9 runs | 197 to 241 (mean 217) |
 
 ## On the tablet (2026-11-08, Android 16, One UI, 240 dpi)
 
@@ -89,15 +109,28 @@ needs redrawing if the scene changes shape.
   (`getSplashScreen().setOnExitAnimationListener`, API 31) or cover the surface with a navy
   view and remove it then. `SurfaceView.setResizeBackgroundColor`, which would colour the
   layer behind, is not public. Recorded in [findings](../docs/goose-findings.md).
+- **Launch with the signal** (`--screen game`, recorded with `screenrecord` and checked
+  frame by frame, 2026-11-08): the splash, the icon on navy, shows from the launcher's
+  zoom until the app's first frame, 400 to 460 ms in each of 30 cold starts, and the
+  frame after it is the whole game screen. No frame is black or white in any run. One
+  smaller flash was fixed on the way: as Android handed its splash over, the navigation
+  bar's area showed the launcher's dark taskbar for one to three frames (11 to 35 ms),
+  in 3 of 5 runs with the view inside SDL's layout. The old `Theme.NoTitleBar` doesn't
+  let the window draw behind the bars, so that area showed what was behind the window.
+  Moving the view to the decor (1 of 5) or a navy `navigationBarColor` alone (4 of 5;
+  with the decor, 2 of 6) didn't end it; `windowDrawsSystemBarBackgrounds` with the navy
+  `navigationBarColor` did, 9 of 9 runs clean. Without the signal, the same day's build
+  showed the icon for 35 to 150 ms, its fade, then black for 250 to 370 ms in each of
+  four runs. Going home and back still shows the game. Android 10 and 11 (API 29, 30),
+  which get only the view, weren't tried; no device here runs them.
 
 ## Acceptance criteria
 
 - [x] The launcher shows the icon on the tablet, round and squircle masks both clean,
       and the themed (monochrome) icon when Android's themed icons are on (round in the
       browser preview; One UI has only the squircle)
-- [ ] Launch shows the icon on its background color, then the app, with no white or
-      black flash between them: black for 150 to 260 ms after the splash, from SDL's
-      surface (above); needs the first-frame signal
+- [x] Launch shows the icon on its background color, then the app, with no white or
+      black flash between them (on the tablet, Android 16; above)
 - [x] Recognizable at 48 px (a browser preview of the 72 dp view at 48 and 82 px, circle
       and squircle, and the monochrome at both)
 - [x] The APK's size recorded before and after

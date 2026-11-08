@@ -85,6 +85,12 @@ find out by compiling, so the next session doesn't.
   can't call SDL directly though the goose binary carries SDL: look the function up with
   `dlsym(RTLD_DEFAULT, ...)` there; on Android the program links libSDL3.so and calls
   it directly (`app/locale.c`).
+- The program's C reaches the Java activity with `SDL_GetAndroidJNIEnv()` and
+  `SDL_GetAndroidActivity()` (a local reference to delete), then `GetObjectClass` on the
+  activity: `FindClass` from the program's thread searches the system's class loader and
+  doesn't find the app's classes (`app/launch.c`).
+- `gfx::frame()` presents what the pass before it drew, so the first frame is on screen
+  once the second `frame()` returns (`gfx::frame_count()` is 2).
 
 ## Traps
 

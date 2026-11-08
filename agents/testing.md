@@ -129,6 +129,13 @@ measuring there:
   `adb shell input swipe X Y X Y 2500 &`, then `adb exec-out screencap -p` a second later.
 - The batterystats estimate reads 0 while the tablet charges over USB, so it says
   nothing; CPU time is the measure.
+- A launch is checked frame by frame with `adb shell screenrecord` started before
+  `am start -W` (it needs about 1.4 s to begin) and stopped with
+  `pkill -INT screenrecord`. It writes only changed frames: read their times with
+  `ffprobe -show_entries frame=pts_time` and decode with `ffmpeg -fps_mode passthrough`
+  (this ffmpeg has no `-vsync`). Behind the lock screen it records only the lock screen. Task 028 classed
+  frames by the share of navy pixels, apart from the centre (the icon) and the bottom 6%
+  (the navigation bar, where a short flash hid from whole-frame averages).
 - When the lock screen asks for a PIN (`adb shell dumpsys window | grep
   isKeyguardShowing` stays true after `wm dismiss-keyguard`), the app is paused at
   once and never draws; ask the user to unlock. Headless programs still run through

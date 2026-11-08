@@ -12,9 +12,13 @@ On the tablet the splash fades onto 150 to 260 ms of black before the app. SDLAc
 has no hook for "first frame presented", and the colour behind a `SurfaceView`
 (`setResizeBackgroundColor`) is not public API. SDL 3.4.16 (`fa2c02b`).
 
-- Here: not yet. Our own `DraughtsActivity` can hold the splash
-  (`getSplashScreen().setOnExitAnimationListener`) or cover the surface with a view of the
-  splash colour, until the program reports its first presented frame over JNI.
+- Here: `DraughtsActivity` covers the window with a view of the theme's navy and, on
+  Android 12+, holds the splash with `getSplashScreen().setOnExitAnimationListener`. The
+  program reports its first presented frame over JNI (`app/launch.c`, through
+  `SDL_GetAndroidActivity`), and the activity removes both then. The theme also sets
+  `windowDrawsSystemBarBackgrounds` with a navy `navigationBarColor`, or the navigation
+  bar's area shows the launcher's taskbar during the hand-over. On the tablet the icon on
+  navy now goes straight to the first frame.
 - Upstream: for the user only, as with the other SDL entries. SDL could offer the hold
   itself, keeping the splash until the first `SDL_GPU` or EGL present.
 
