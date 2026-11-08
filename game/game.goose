@@ -27,10 +27,20 @@ import .panel;
 import .clock;
 import .pace;
 
-let POP = 0.6;              // seconds the winner's piece takes to pop in
-let SPARKS = 14;
-let SPARK_CYCLE = 2.4;      // seconds a spark takes to drift up and fade
-let SPARK_CYCLES = 2;       // each spark drifts this many times, then the screen is still
+// A win (prototypes/win.html, take a), in seconds since it: the winning piece lifts
+// with its ring; a ring of glow passes across the winner's other pieces outward from it,
+// each lifting a little with its square lit; the board dims under the winning piece; the
+// card slides up as it fades in, and the crowned piece fades in on it. Then it is still.
+let LIFT = 0.35;            // the winning piece lifts, easing out
+let WAVE_AT = 0.15;         // the glow reaches a piece on the next square then,
+let WAVE_STEP = 0.08;       // one a square farther this much later,
+let WAVE = 0.6;             // and takes this long to pass it
+let DIM_AT = 0.9;           // the board dims to DIM over 0.6 s
+let DIM = 0.45;
+let CARD_AT = 1.0;          // the card slides up SLIDE dp as it fades in over 0.7 s
+let SLIDE = 28.0;
+let CROWN_AT = 1.2;         // the crowned piece fades in over 0.5 s
+let STILL = 1.7;            // still from here, or once the glow has passed the farthest piece
 let STEP = 2.0;             // seconds: the longest gap between two frames the clock counts
 let PAUSE = [0.8, 0.6, 0.45];   // seconds from the computer's turn to its move without a clock, by level
 let PULSE = 1.2;            // seconds: the computer's ring pulses once as it begins to think
@@ -59,6 +69,9 @@ struct Game {
     seen:     f64          = -1.0,                  // when the clock last counted, or -1 to count nothing next
     shown:    i64          = -1,                    // the running clock's whole seconds as last drawn
     won_at:   f64          = -1.0,                  // when the celebration began, or -1
+    won_on:   i64          = -1,                    // the winning piece's square, or -1 for none to lift
+    still:    f64          = STILL,                 // the celebration's moment from which it is still
+    stilled:  bool         = false,                 // whether its still frame has been drawn
     // The computer's turn: the move asked for, and its answer.
     asks:     i64         = 0,                      // moves asked for so far, to number them
     asking:   i64         = 0,                      // the one waited for, or 0
@@ -244,6 +257,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&) ->
         gm.won_at = -1.0;
     } else if gm.won_at < 0.0 {
         gm.won_at = now;
+        aim(gm, won);
         changed = true;
         // A game against the computer counts once, when it first ends: the result
         // moves the computer's skill (ai::adapt). A draw would count 0; the rules have
@@ -254,6 +268,11 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&) ->
         }
     }
     if gm.won_at >= 0.0 {
+        // The frame from which the celebration is still is drawn too, at rest.
+        if !gm.stilled && moment(gm, now) >= gm.still {
+            gm.stilled = true;
+            changed = true;
+        }
         let ask = celebrate(gm, g, l.board, won, now, over);
         if ask == panel::RESTART {
             restart(gm);
@@ -285,7 +304,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&) ->
 
 // Whether anything is still moving at `now`; the app draws while it is.
 fn animating(gm: Game&, g: gui::Gui&, now: f64) -> bool {
-    let celebrating = gm.won_at >= 0.0 && now < gm.won_at + SPARK_CYCLE * (SPARK_CYCLES + 1);
+    let celebrating = gm.won_at >= 0.0 && moment(gm, now) < gm.still;
     let pulsing = gm.asking != 0 && (!gm.answered || now < gm.asked_at + PULSE);
     return board::animating(gm.b, now) || gui::animating(g) || celebrating || pulsing;
 }
@@ -297,26 +316,103 @@ fn put(over: Overlay&, spot: float4, r: f32, side: i64, king: i64, a: f32, ring:
     panel::piece(over, spot, r, side, king, a, if ring { 1.0 } else { 0.0 });
 }
 
-fn hash(i: i64, k: i64) -> f32 {
-    let x = sin(i * 12.9898 + k * 78.233) * 43758.5453;
-    return (x - floor(x)) as f32;
+// The celebration's moment at `now`: seconds since the win, or with no winning piece to
+// lift (a flag during a move, a position set up already won) from where the board
+// dims, so the dim and the card come at once.
+fn moment(gm: Game&, now: f64) -> f64 {
+    let skip = if gm.won_on < 0 { DIM_AT } else { 0.0 };
+    return now - gm.won_at + skip;
 }
 
-// The celebration (prototypes/solved.html): the board dimmed, a glass card over it with
-// the winner's piece popping in, crowned, then restart or back; a few sparks drift up
-// and fade.
-// Returns panel::RESTART, panel::HOME, or panel::NOTHING.
+// The win begins: the winning piece is the last move's, the winner's whichever way the
+// game ended (the side that ran out of moves or time was to move after it), unless the
+// move is still showing or there was none. The celebration is still once the card is in
+// and the glow has passed the winner's farthest piece.
+fn aim(gm: Game&, won: i64) {
+    let b .= gm.b;
+    let v .= rules::VARIANTS[b.variant];
+    gm.won_on = -1;
+    gm.still = STILL;
+    gm.stilled = false;
+    guard b.has_last && !b.moving && b.pos.pieces[won] & rules::bit(b.last.to) != 0 else { return; }
+    gm.won_on = b.last.to;
+    var left = b.pos.pieces[won];
+    while left != 0 {
+        let sq = ctz(left);
+        left &= left - 1;
+        gm.still = max(gm.still, WAVE_AT + WAVE_STEP * apart(v, sq, gm.won_on) + WAVE);
+    }
+}
+
+// How many squares apart two squares are, straight across the board.
+fn apart(v: rules::Variant&, a: i64, b: i64) -> f64 {
+    let dx = v.x_of[a] as f64 - v.x_of[b];
+    let dy = v.y_of[a] as f64 - v.y_of[b];
+    return sqrt(dx * dx + dy * dy);
+}
+
+// Where t is from a to b, 0..1; eased in and out; eased out; up and back down.
+fn span(t: f64, a: f64, b: f64) -> f64 { clamp((t - a) / (b - a), 0.0, 1.0) }
+fn smooth(x: f64) -> f64 { x * x * (3.0 - 2.0 * x) }
+fn ease_out(x: f64) -> f64 { 1.0 - (1.0 - x) * (1.0 - x) * (1.0 - x) }
+fn bump(x: f64) -> f64 { if x <= 0.0 || x >= 1.0 { 0.0 } else { sin(PI * x) } }
+
+// The win on the board, after board::fill (shell::fill): the board dims under the winning
+// piece, which lifts with its ring and is drawn last, over the others; the glow passes
+// the winner's other pieces, each lifting a little with its ring and its square lit. A
+// piece lifts 6% of its size and grows 5%. The pieces are on their squares: the win
+// waits for the move to show.
+fn cheer(gm: Game&, l: board::Layout, now: f64) {
+    guard gm.won_at >= 0.0 else { return; }
+    let b .= gm.b;
+    let v .= rules::VARIANTS[b.variant];
+    let t = moment(gm, now);
+    let won = winner(gm);
+    b.dim = (DIM * smooth(span(t, DIM_AT, DIM_AT + 0.6))) as f32;
+    var top = -1;
+    for i in b.pieces.len {
+        let p .= b.pieces[i];
+        p.win.x = b.dim;
+        let sq = board::hit(l, v, float2 { p.at.x, p.at.y });
+        guard gm.won_on >= 0 && won >= 0 && sq >= 0 && b.pos.pieces[won] & rules::bit(sq) != 0 else { continue; }
+        var k = 0.0;
+        if sq == gm.won_on {
+            k = ease_out(span(t, 0.0, LIFT));
+            p.win.x = 0.0;
+            top = i;
+        } else {
+            let at = WAVE_AT + WAVE_STEP * apart(v, sq, gm.won_on);
+            k = bump(span(t, at, at + WAVE));
+            p.win.y = k as f32;
+        }
+        let f = k as f32;
+        let r = p.at.z;
+        p.at.z = r * (1.0 + 0.05 * f);
+        p.at.w += 0.12 * r * f;
+        p.ring.y = max(p.ring.y, f);
+        p.win.z = 0.5 * l.inner.w / p.at.z;
+    }
+    guard top >= 0 else { return; }
+    let p = b.pieces[top];
+    for i in top..b.pieces.len - 1 { b.pieces[i] = b.pieces[i + 1]; }
+    b.pieces[b.pieces.len - 1] = p;
+}
+
+// The card over the dimmed board once the pieces have answered: the winner's piece,
+// crowned, fading in over restart or back; it slides up as it fades in, its taps where
+// it is at rest. Returns panel::RESTART, panel::HOME, or panel::NOTHING.
 fn celebrate(gm: Game&, g: gui::Gui&, l: board::Layout, won: i64, now: f64, over: Overlay&) -> i64 {
+    let t = moment(gm, now);
+    guard t >= CARD_AT else { return panel::NOTHING; }
     let u = l.scale;
-    let t = now - gm.won_at;
     let area = float4 { l.board.x, l.board.y, l.board.z, l.board.z };
-    gui::fill(g, area, float4 { 0.0, 0.0, 0.0, 0.45 }, l.board.w);
     // The card: 40 dp above and below, 56 dp at the sides; the piece, a 28 dp gap, the
     // buttons.
+    let first = g.quads.len;
     let card = gui::center(area, 356.0 * u, 300.0 * u);
     gui::panel(g, card);
     var c = gui::inset(card, 40.0 * u);
-    let spot = gui::cut_top(c, 104.0 * u);
+    var spot = gui::cut_top(c, 104.0 * u);
     gui::cut_top(c, 28.0 * u);
     let row = gui::cut_top(c, 88.0 * u);
     var ask = panel::NOTHING;
@@ -324,23 +420,11 @@ fn celebrate(gm: Game&, g: gui::Gui&, l: board::Layout, won: i64, now: f64, over
     if gui::tile(g, 201, gui::cell(row, 2, 1, 112.0 * u, 88.0 * u, 20.0 * u, 1), gui::RESTART, gui::PRIMARY, 22.0) {
         ask = panel::RESTART;
     }
-    // The winner pops in: grows from 0.3 past its size and settles, as CSS
-    // cubic-bezier(.2, 1.6, .4, 1) does.
-    let k = clamp(t / POP, 0.0, 1.0);
-    let s = 1.0 + 2.70158 * pow(k - 1.0, 3.0) + 1.70158 * pow(k - 1.0, 2.0);
-    let grow = 0.3 + 0.7 * s;
-    put(over, spot, 44.0 * u * grow as f32, won, gm.b.king_look, clamp(2.0 * k, 0.0, 1.0) as f32, true);
-    // Sparks over the board: each starts at its own time and place, drifts 160 dp up
-    // easing out, fading in over the first fifth and out over the rest.
-    for i in SPARKS {
-        let local = t - SPARK_CYCLE * hash(i, 3);
-        guard local >= 0.0 && local < SPARK_CYCLE * SPARK_CYCLES else { continue; }
-        let f = local / SPARK_CYCLE - floor(local / SPARK_CYCLE);
-        let rise = 160.0 * u * (1.0 - (1.0 - f) * (1.0 - f));
-        let a = if f < 0.2 { f / 0.2 } else { 1.0 - (f - 0.2) / 0.8 };
-        let at = float2 { area.x + area.z * (0.1 + 0.8 * hash(i, 1)),
-                          area.y + area.z * (0.4 + 0.5 * hash(i, 2)) - rise as f32 };
-        gui::spark(g, at, 10.0 * u, a as f32);
-    }
+    let k = ease_out(span(t, CARD_AT, CARD_AT + 0.7));
+    let drop = floor((1.0 - k) * SLIDE * u + 0.5) as f32;
+    gui::fade(g, first, g.quads.len, k as f32, float2 { 0.0, drop });
+    spot.y += drop;
+    let a = smooth(span(t, CROWN_AT, STILL)) as f32;
+    panel::piece(over, spot, 44.0 * u, won, gm.b.king_look, a, a);
     return ask;
 }

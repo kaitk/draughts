@@ -19,10 +19,9 @@ let GLASS = 0;              // a glass panel, with its shadow
 let BUTTON = 1;             // a glass tile, with its shadow; look.w: how far it is pressed
 let ICON = 2;               // a line icon on a 24-unit grid; look.z: which
 let FILL = 3;               // a plain rounded rect in `color`
-let SPARK = 4;              // a glowing disc in the glow color; color.a: its opacity
-let TEXT = 5;               // a glyph from the font atlas in the text color; look.yzw, extra.y: its uv
-let PICTURE = 6;            // a season's thumbnail (look.z: its theme), or the glow's tint for -1
-let MINI = 7;               // a small board at the start; look.z: squares per side, look.w: rows of men
+let TEXT = 4;               // a glyph from the font atlas in the text color; look.yzw, extra.y: its uv
+let PICTURE = 5;            // a season's thumbnail (look.z: its theme), or the glow's tint for -1
+let MINI = 6;               // a small board at the start; look.z: squares per side, look.w: rows of men
 
 // How a tile and its icon look (extra.y), in the theme's colors.
 let PLAIN = 0;              // white at 10%
@@ -558,11 +557,4 @@ fn test_faces(g: Gui&) {
             f.glyphs[i] = Glyph { box: float4 { 0.0, 0.1 * size, 0.5 * size, 0.9 * size }, advance: 0.5 * size, .. };
         }
     }
-}
-
-// A spark: a disc of diameter d centered at c, in the glow color at opacity a, with a
-// soft glow round it.
-fn spark(g: Gui&, c: float2, d: f32, a: f32) {
-    add(g, Quad { rect: float4 { c.x - 0.5 * d, c.y - 0.5 * d, d, d }, color: float4 { 1.0, 1.0, 1.0, a },
-                  look: float4 { SPARK, 0.5 * d, 0.0, 0.0 }, extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
 }

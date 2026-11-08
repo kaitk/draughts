@@ -17,6 +17,7 @@
 //   ../build/draughts --screen puzzles            the puzzles to pick from
 //   ../build/draughts --puzzle 21 --tap f4 --tap e5   puzzle 21, taps on its board
 //   ../build/draughts --go settings --hold 0.4 --frames 10   home going to settings, held at 40%
+//   ../build/draughts --fen W:Wa1,e3:Bf4 --tap e3 --tap g5 --win 1.2 --frames 60   a win held 1.2 s in
 //   scripts/android.py app/draughts.goose --run   on the tablet (docs/development.md)
 
 import std;
@@ -63,7 +64,8 @@ fn main() {
     // international|brazilian|russian, --clock none|5+3|10+5, --computer white|black (a
     // new game; --level easy|medium|hard, the setup's last by default), --go home|settings
     // (switches there on the second frame, through its transition), --hold T (keeps a
-    // transition at T of the way, 0..1, for a screenshot). --theme, --hints, and --lang
+    // transition at T of the way, 0..1, for a screenshot), --win T (keeps a win at T
+    // seconds into its celebration, for a screenshot). --theme, --hints, and --lang
     // override the settings for the run without changing them.
     var width = 1280;
     var height = 800;
@@ -80,6 +82,7 @@ fn main() {
     var puzzle_id = -1;
     var go = -1;
     var hold = -1.0;
+    var win_at = -1.0;
     var fen:  u8[>..]       = [];
     var taps: u8[..3][..16] = [];
     let argv = args();
@@ -113,6 +116,10 @@ fn main() {
         if argv[i] == "--hold" {
             let n, ok = parse_flt(argv[i + 1]);
             if ok { hold = clamp(n, 0.0, 1.0); }
+        }
+        if argv[i] == "--win" {
+            let n, ok = parse_flt(argv[i + 1]);
+            if ok { win_at = max(n, 0.0); }
         }
         if argv[i] == "--puzzle" {
             let n, ok = parse_int(argv[i + 1]);
@@ -171,7 +178,7 @@ fn main() {
     // The game as it was when the app was last paused (shell::restore; nothing changes
     // for a missing or damaged file). A run with flags that set up a game or take a
     // screenshot neither reads nor writes it.
-    let keep = screen < 0 && go < 0 && fen.len == 0 && taps.len == 0 && frames < 0 && variant < 0 && clock_kind < 0 && computer < 0;
+    let keep = screen < 0 && go < 0 && win_at < 0.0 && fen.len == 0 && taps.len == 0 && frames < 0 && variant < 0 && clock_kind < 0 && computer < 0;
     if keep {
         var saved: u8[>..] = [];
         if read_file(save_path, saved) { shell::restore(sh, saved); }
@@ -236,6 +243,7 @@ fn main() {
             go = -1;
         }
         if hold >= 0.0 && sh.from >= 0 { sh.since = now - hold * shell::DURATION; }
+        if win_at >= 0.0 && sh.game.won_at >= 0.0 { sh.game.won_at = now - win_at; }
         if shell::frame(sh, g, size.x, size.y, now) { dirty = true; }
         // The computer's move: the worker gets what the game asks, and the game the answer.
         think::frame(thinker, sh.game);

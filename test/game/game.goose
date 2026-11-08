@@ -3,8 +3,8 @@
 // last move's marks; start over goes back to where the game began, a FEN start too; home
 // and settings ask the shell for them; a press that starts on a panel never moves a
 // piece and one that starts on the board never presses a tile; a win starts the
-// celebration once the move has shown, stops asking for frames when its sparks are done,
-// and its restart starts over. With a 5+3 clock: no clock runs before the first move,
+// celebration once the move has shown, its card comes after the pieces have answered,
+// and its restart starts over (the celebration's moments: test/game/win.goose). With a 5+3 clock: no clock runs before the first move,
 // the running one counts the time between frames but not a pause, adds the increment,
 // asks for a frame only when its shown time changes, turns red under ten seconds, and
 // ends the game on a flag. Against the computer playing white the board is turned, the
@@ -137,15 +137,10 @@ fn main() {
     drive::frame(gm, g, l, away, false, false, false, 10.2);
     print("while the capture shows: celebrating ", gm.won_at >= 0.0);
     drive::frame(gm, g, l, away, false, false, false, 11.0);
-    print("after: celebrating since ", gm.won_at, ", over the UI ", pieces(), "the winner crowned ",
-          drive::over[1].look.y);
-    var sparks = 0;
-    for q in g.quads { if q.look.x == gui::SPARK { sparks++; } }
-    print("sparks at 0.0 s ", sparks, ", animating ", game::animating(gm, g, 11.0));
+    print("after: celebrating since ", gm.won_at, ", over the UI ", pieces(), "tiles ", drive::tiles(g));
     drive::frame(gm, g, l, away, false, false, false, 13.0);
-    sparks = 0;
-    for q in g.quads { if q.look.x == gui::SPARK { sparks++; } }
-    print("sparks at 2.0 s ", sparks, ", animating at 8 s ", game::animating(gm, g, 19.0));
+    print("at 2.0 s: over the UI ", pieces(), "the winner crowned ", drive::over[1].look.y, ", tiles ",
+          drive::tiles(g), ", animating at 8 s ", game::animating(gm, g, 19.0));
     print("back on the card asks for home: ", drive::tap(gm, g, l, drive::control(g, CARD_BACK), 19.1) == game::HOME);
     drive::tap(gm, g, l, drive::control(g, CARD_RESTART), 19.2);
     show(gm, "restart on the card");

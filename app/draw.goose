@@ -15,7 +15,7 @@ struct BoardUniforms {
     screen: float4,     // width, height in pixels, time, squares per side
     rect:   float4,     // the board: x, y, size, corner radius
     inner:  float4,     // the squares: x, y, size, one square
-    scene:  float4,     // x: 1 when there is a photograph; y: how bright it is shown; w: 1 turned
+    scene:  float4,     // x: 1 when there is a photograph; y: how bright it is shown; z: the board dimmed by; w: 1 turned
     wrong:  float4,     // a wrong move's square (y * size + x, or -1), and how far its flash is, 0..1
     marks:  board::Marks,
 }
@@ -170,6 +170,8 @@ let BOARD_FRAG = """
             }
             c = mix(c, s, clamp(0.5 - id, 0.0, 1.0));
         }
+        // A win dims the board, as a black fill over it would.
+        c *= 1.0 - scene.z * clamp(0.5 - fd, 0.0, 1.0);
         result = vec4(c, 1.0);
     }
     """;
@@ -187,8 +189,9 @@ let PIECE_VERT = """
     layout(location = 1) flat out vec4 v_look;
     layout(location = 2) flat out vec4 v_extra;
     layout(location = 3) flat out vec4 v_ring;
+    layout(location = 4) flat out vec4 v_win;
     void main() {
-        int i = gl_InstanceIndex * 3;
+        int i = gl_InstanceIndex * 4;
         vec4 at = p[i];
         float r = at.z;
         float lift = at.w / r;
@@ -203,6 +206,7 @@ let PIECE_VERT = """
         v_look = p[i + 1];
         v_extra = vec4(p[i + 2].x, lift, side, 1.0 / r);
         v_ring = p[i + 2];
+        v_win = p[i + 3];
     }
     """;
 
@@ -211,6 +215,7 @@ let PIECE_FRAG = """
     layout(location = 1) flat in vec4 v_look;     // black, king (0, 1 crown, 2 stack), selected, opacity
     layout(location = 2) flat in vec4 v_extra;    // must capture (1 pulsing, 2 still), lift, side, one pixel
     layout(location = 3) flat in vec4 v_ring;     // y: a glow ring tight round it, 0 to 1
+    layout(location = 4) flat in vec4 v_win;      // a win: x dimmed by; y its square lit; z the square's half side
     layout(location = 0) out vec4 result;
     layout(set = 3, binding = 1) uniform Clock { vec4 time; };
     float fill(float d, float w) { return clamp(0.5 - d / w, 0.0, 1.0); }
@@ -281,6 +286,12 @@ let PIECE_FRAG = """
         float w = v_extra.w / scale;            // one pixel in the face's units
         vec3 face = black ? b_face.rgb : w_face.rgb;
         vec3 sidec = black ? mix(face, vec3(0.0), 0.5) : face * face * 0.92;
+        // A win's glow passing: its square lit in the glow color at 40%, as the last
+        // move's squares are at 16%, under everything of the piece.
+        if (v_win.y > 0.0) {
+            vec2 q = abs(p) - v_win.z;
+            over(glow.rgb, 0.4 * v_win.y * fill(max(q.x, q.y), w));
+        }
         // The side to move: a ring an eighth of the radius wide in the glow color at 80%
         // right round the disc, and a soft glow, under the piece and its shadow (CSS
         // `0 0 0 4px` and `0 0 22px 4px` on a 64 px disc); fainter as y falls, which
@@ -333,7 +344,8 @@ let PIECE_FRAG = """
             over(col, fill(r - 1.0, w));
             if (k == 0) rings(r, sel, v_extra.x, w);
         }
-        result = acc * v_look.w;
+        // Dimmed with the board under a win, as a black fill over both would.
+        result = vec4(acc.rgb * (1.0 - v_win.x), acc.a) * v_look.w;
     }
     """;
 
@@ -398,7 +410,7 @@ fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::La
     gfx::uniforms(gfx::FRAGMENT, 1, BoardUniforms {
         screen: float4 { width, height, now as f32, l.n },
         rect:   l.board, inner: l.inner,
-        scene:  float4 { if d.scene.has { 1.0 } else { 0.0 }, if sharp { 1.0 } else { 0.8 }, 0.0, if l.flip { 1.0 } else { 0.0 } },
+        scene:  float4 { if d.scene.has { 1.0 } else { 0.0 }, if sharp { 1.0 } else { 0.8 }, b.dim, if l.flip { 1.0 } else { 0.0 } },
         wrong: b.flash, marks: b.marks });
     gfx::bind_texture(gfx::FRAGMENT, 0, if sharp { d.scene.sharp } else { d.scene.photo }, d.scene.sampler);
     gfx::draw(3);

@@ -26,11 +26,10 @@ let VERT = """
         vec4 rect = q[i];
         vec4 look = q[i + 2];
         vec4 extra = q[i + 3];
-        // Room round the rect for the shadow: glass casts one 30 dp down, a tile 12 dp;
-        // a spark's glow reaches 12 dp.
+        // Room round the rect for the shadow: glass casts one 30 dp down, a tile 12 dp.
         int kind = int(look.x);
         // A glyph is drawn exactly over its rect, a texel to a pixel.
-        float m = (kind == 0 ? 48.0 : kind == 1 ? 20.0 : kind == 4 ? 16.0 : kind == 5 ? 0.0 : 1.0) * extra.x;
+        float m = (kind == 0 ? 48.0 : kind == 1 ? 20.0 : kind == 4 ? 0.0 : 1.0) * extra.x;
         vec2 px = mix(rect.xy - m, rect.xy + rect.zw + m, CORNERS[gl_VertexIndex]);
         gl_Position = vec4(px.x / screen.x * 2.0 - 1.0, 1.0 - px.y / screen.y * 2.0, 0.0, 1.0);
         v_px = px;
@@ -287,7 +286,7 @@ let FRAG = """
             result = vec4(ic * a, a);
             return;
         }
-        if (kind == 6) {
+        if (kind == 5) {
             // A picture: a season's thumbnail, cover-cropped; or for -1 the glow at 18%
             // mixed into white at 6% (CSS color-mix), which leaves it 23% opaque.
             float a = cover(box(p, c, h, r)) * v_color.a;
@@ -299,14 +298,14 @@ let FRAG = """
             result = vec4(pc * a, a);
             return;
         }
-        if (kind == 5) {
+        if (kind == 4) {
             // A glyph: the atlas's coverage over the quad, in the text color.
             vec2 t = (p - v_rect.xy) / v_rect.zw;
             float a = texture(atlas, mix(v_look.yz, vec2(v_look.w, v_extra.y), t)).a * v_color.a;
             result = vec4((v_extra.z > 0.5 ? v_color.rgb : text.rgb) * a, a);
             return;
         }
-        if (kind == 7) {
+        if (kind == 6) {
             // A small board at the start: the theme's squares, rounded corners, and
             // men on the first rows of each side, discs 76% of a square.
             float a = cover(box(p, c, h, r)) * v_color.a;
@@ -321,14 +320,6 @@ let FRAG = """
                 s = mix(s, row < v_look.w ? w_face.rgb : b_face.rgb, cover(d));
             }
             result = vec4(s * a, a);
-            return;
-        }
-        if (kind == 4) {
-            // A spark: a disc in the glow color with a 12 dp glow round it.
-            float d = length(p - c) - r;
-            over(glow.rgb, 0.8 * (1.0 - smoothstep(-12.0 * u, 12.0 * u, d)));
-            over(glow.rgb, cover(d));
-            result = acc * v_color.a;
             return;
         }
         // A plain rounded rect.

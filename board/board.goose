@@ -81,6 +81,7 @@ struct Piece {
     at:   float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x, y center in pixels, radius, lift in pixels
     look: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // black (0 or 1), 0 or CROWN or STACK, selected glow 0..1, opacity
     ring: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: must-capture ring, 1 pulsing, 2 still; y: a glow ring tight round it, 0 to 1
+    win:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // a win (game::cheer): x dimmed by, 0..1; y its square lit, 0..1; z the square's half side in radii
 }
 
 // What the board shader marks, one bit per square numbered y * size + x.
@@ -140,6 +141,7 @@ struct Board {
     pieces: Piece[..MAX_PIECES],
     marks:  Marks,
     flash:  float4,             // x: the wrong move's square (y * size + x) or -1; y: its flash, 0..1
+    dim:    f32,                // the board dimmed by, 0..1, under a win (game::cheer)
 }
 
 fn new(variant: u8) -> Board {
@@ -434,6 +436,7 @@ fn add(b: Board&, at: float2, r: f32, lift: f32, black: bool, king: bool, glow: 
 fn fill(b: Board&, l: Layout, now: f64) {
     b.pieces.clear();
     b.marks = Marks {};
+    b.dim = 0.0;
     let v .= rules::VARIANTS[b.variant];
     let r = 0.39 * l.inner.w;           // a disc fills 78% of its square
     let unit = 0.01 * l.board.z;        // 1% of the board

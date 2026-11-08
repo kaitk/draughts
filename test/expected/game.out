@@ -15,9 +15,8 @@ settings asks for settings: true
 press on take back, released on d4: moving false, selected c3
 press on f6, released on take back: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1, last c3-d4
 while the capture shows: celebrating false
-after: celebrating since 11.0, over the UI white 1.0 1.0; white 0.0 1.0; the winner crowned 1.0
-sparks at 0.0 s 0, animating true
-sparks at 2.0 s 11, animating at 8 s false
+after: celebrating since 11.0, over the UI white 1.0 1.0; tiles 4
+at 2.0 s: over the UI white 1.0 1.0; white 1.0 1.0; the winner crowned 1.0, tiles 6, animating at 8 s false
 back on the card asks for home: true
 restart on the card: W:Wa1,c3:Bd4, history 0, last none
 celebrating false
@@ -28,7 +27,7 @@ after a pause of 469 s: white 5:00, black 4:59, running 1, tiles top to bottom r
 f6-e5 after 2 s more: white 5:00, black 5:01, running 0, tiles top to bottom wait run 
 take back: white 5:00, black 5:01, running 1, tiles top to bottom wait run , B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8
 under ten seconds: white 5:00, black 0:08, running 1, tiles top to bottom low wait 
-black's flag: white 5:00, black 0:00, running -1, tiles top to bottom wait wait ; winner 0, celebrating true, over the UI black 0.7 0.0; white 0.7 0.0; white 1.0 1.0; 
+black's flag: white 5:00, black 0:00, running -1, tiles top to bottom wait wait ; winner 0, celebrating true, over the UI black 0.7 0.0; white 0.7 0.0; white 0.0 0.0; 
 take back after the flag: white 5:00, black 0:00, running -1, tiles top to bottom wait wait , flag 1
 start over: white 5:00, black 5:00, running -1, tiles top to bottom wait wait , flag -1, celebrating false
 the computer to move: true

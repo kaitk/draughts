@@ -409,11 +409,14 @@ fn which(screen: i64) -> i64 { if screen == SETTINGS { SETTINGS } else if screen
 fn shown(sh: Shell&) -> board::Board& { board_of(sh, sh.screen) }
 
 // Fills the board on screen for the frame at `now`, where sh.layout puts it, and returns
-// it for the app to draw. In a transition between screens with boards of their own, the
-// board left is filled too and fades out under it (board::under).
+// it for the app to draw; the game's with its win (game::cheer). In a transition between
+// screens with boards of their own, the board left is filled too and fades out under it
+// (board::under).
 fn fill(sh: Shell&, now: f64) -> board::Board& {
     let b .= shown(sh);
-    board::fill(b, along(sh.layout, sh.came), now);
+    let l = along(sh.layout, sh.came);
+    board::fill(b, l, now);
+    if sh.screen == GAME { game::cheer(sh.game, l, now); }
     guard sh.from >= 0 && which(sh.from) != which(sh.screen) else { return b; }
     let old .= board_of(sh, sh.from);
     board::fill(old, along(sh.layout, sh.went), now);
