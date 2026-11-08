@@ -43,3 +43,7 @@ and the commit that last has it.
 - 034: The setup's board shows the game being set up. Done: the chosen variant's start,
   turned for black against the computer, switching at once; play starts the game shown.
   `034-setup-board.md`, `4609d2c`
+- 022: Transitions between screens. Done: 0.25 s with one board easing between home,
+  settings, the game, the setups' play, and the picker and a puzzle; the photograph
+  crossfading sharp to blurred; the leaving screen's UI hidden where the board passes;
+  90 Hz on the tablet, idle after. `022-transitions.md`, `6050dd6`

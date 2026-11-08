@@ -50,34 +50,36 @@ before release. 013 adds season effects later. 014 upscales the backgrounds on t
 desktop; placeholders do until then. 024 reviews the Estonian translation once the MVP's text is in. 015 (the 3D board) and 022 (transitions between screens, optional) come after the MVP, and so does 033 (an icon per season; until then one icon, switched by hand); 016
 (tabletop pictures) was cancelled. 031 makes the win calmer, and 032 brings memory down last. 027 has the computer spend its clock as a player of its level would. 028 (the icon and launch screen), 030 (phones and other screen sizes), and 029 (release on Google Play) make the release.
 
-## Next (agreed 2026-11-08)
+## Next (agreed 2026-11-08, updated at the session's end)
 
-The MVP's features are in (puzzles, the computer with its clock, three variants, the
-icon and launch). The order for what is left:
+The MVP's features are in: puzzles, the computer with its clock, three variants, the
+icon and launch, the win (031), the setup's board (034), the transitions (022), and
+home's X (035, all but its phone check). Done on 2026-11-08 and archived or recorded in
+their tasks: the `--tap` stall (tablet runs start with `am start -S`), the launcher's
+name per language ("Kabe" in Estonian), the autumn icon (winter again for the winter
+months and the release, task 033), a multi-capture tapped stop by stop and puzzles with
+no targets (task 007), medium starting at skill 40 and never under 25 (task 006), and
+settings' Board row hidden until the 3D board exists (`--3d`, task 015).
 
-1. Done (2026-11-08): `--tap` seemed to stall on the tablet; the cause was `am start`
-   bringing back a running app with its old flags, so tablet runs start with `-S`
-   (task 007).
-2. Done (2026-11-08): 031, the win: take a, the pieces answer.
-3. Done (2026-11-08): the launcher's name follows the phone's language ("Kabe" in Estonian):
-   `scripts/android.py` writes `res/values*/strings.xml` from `strings/<lang>.txt`, and
-   the manifest takes `@string/app_name`. The icon is autumn for now (2026-11-08),
-   winter again for the winter months and the release (task 033).
-4. 034, the setup's board shows the game being set up: built and checked on the Mac
-   (2026-11-08); the tablet check is open.
-5. 022, transitions: continue and a new game with the sharp-to-blurred crossfade, the
-   game back to home, and a puzzle opened from the picker: built and checked on the Mac
-   (2026-11-08); the tablet check is open. Not the setups.
-6. 030, phones and other screen sizes, before memory, so memory is sized and measured on
-   the final layouts.
-7. 032, memory: measure first, then the blur against its alternatives, ASTC with a
-   fallback, sizing to each screen; and the idle CPU rise.
-8. 011 before release, then 029, the Play release (start the developer account early:
-   a new personal account needs a 14-day closed test with 12 testers).
-9. Children play it (task 006's last criterion; medium's strength, the
+The order for what is left:
+
+1. 030, phones and other screen sizes: the survey, the fixes (home's portrait menu runs
+   off phones; home's portrait settings button is 48 dp, under the 88 dp floor), insets,
+   then the user's Pixel 7a. It closes 035's last criterion. Before memory, so memory is
+   sized and measured on the final layouts.
+2. 032, memory: measure first, then the blur against its alternatives, ASTC with a
+   fallback, sizing by each screen's size and density; the idle CPU rise; PSS was 277 to
+   278 MB on puzzle 21 after the lifecycle cycles (task 007 had 268 to 272).
+3. 011 before release, then 029, the Play release (start the developer account early:
+   a new personal account needs a 14-day closed test with 12 testers). Switch the icon
+   back to winter before it ships.
+4. Children play it (task 006's last criterion; medium's strength, the
    computer's time on the clock).
-10. 036, the announcement (a tweet, the Goose Discord, a video, a thread on the methods),
-    after the release, its numbers measured after 032 and 030.
+5. 036, the announcement (a tweet, the Goose Discord, a video, a thread on the methods),
+   after the release, its numbers measured after 032 and 030.
+
+Alongside, when the user wants it: 015's 3D prototype (`poc/3d/`, its plan and sources in
+the task; the user has more to add first).
 
 After the MVP: 026 (first start and tutorial; its prototype awaits the user's review),
 Russian puzzles from the International ones, each level's adapted skill shown as a
