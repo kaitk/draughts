@@ -121,7 +121,10 @@ fn count_of(stars: const u8[:], theme: i64, out: u8[..64]&) {
 fn theme_row(g: gui::Gui&, r: float4, theme: i64, stars: const u8[:], phone: bool) -> bool {
     let u = g.scale;
     let opened = open(stars, theme);
-    let tapped = gui::tile(g, 600 + theme, r, gui::NO_ICON, gui::PLAIN, 22.0);
+    // A glass card as a level's on a theme's page, lit only while pressed: a plain tile
+    // (white at 10%) barely shows over the sharp photograph.
+    gui::glass(g, r, 22.0);
+    let tapped = gui::tile(g, 600 + theme, r, gui::NO_ICON, gui::ROW, 22.0);
     var c = r;
     gui::cut_left(c, (if phone { 12.0 } else { 20.0 }) * u);
     gui::cut_right(c, (if phone { 18.0 } else { 26.0 }) * u);

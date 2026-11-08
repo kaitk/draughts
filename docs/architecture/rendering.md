@@ -479,7 +479,8 @@ the prototype tried, kept for 3D:
   2026-11-09; rejected: b's large theme tiles, which shrink long Estonian names and hold
   the fewest themes a screen, and c's library beside the theme, which needs two
   scrolling panes): two views, a library of the themes and a theme's page. The library
-  is back and one glass row per theme, 124 dp tall on the tablet and 96 on a phone: its
+  is back and one glass row per theme (the glass panel a level's row on a theme's page is,
+  lit only while pressed: a plain tile barely showed over the photograph, 2026-11-09), 124 dp tall on the tablet and 96 on a phone: its
   mark (the theme's icon, a book, two men and a jump, a crown, a target, a crowned ring,
   on a disc of the glow color at 20%), its name, "n / total" solved, and a bar in the
   glow color over a faint track. Learn is open; the others open once half of Learn is
