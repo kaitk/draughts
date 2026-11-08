@@ -92,6 +92,39 @@ fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool,
     print(line);
 }
 
+// Home's chip (the last tile but one), with no name and with twelve characters: off the
+// column (the first glass the frame declares) and the way out, and anchored to the
+// board's top left corner: its left edge at the board's and its foot 16 dp above it, or,
+// where that would leave no board, its top at the board's and 16 dp left of it
+// (home::player_spot).
+fn chip(g: gui::Gui&, sh: shell::Shell&) {
+    let u = g.scale;
+    for named in [false, true] {
+        sh.prefs.name.clear();
+        if named { sh.prefs.name.append("Wwwwwwwwwwww"); }
+        at_rest(sh, g);
+        let n = drive::tiles(g);
+        let c = drive::rect(g, n - 2);
+        let way = drive::rect(g, n - 1);
+        var col = float4 { 0.0, 0.0, 0.0, 0.0 };
+        for q in g.quads { if q.look.x == gui::GLASS { col = q.rect; break; } }
+        let b = sh.layout.board;
+        var line = str("  home's chip", if named { ", named" } else { "" }, ": ", whole(c.z / u), " dp wide, board ", whole(b.z / u), " dp");
+        var wrong: u8[>..] = [];
+        if overlaps(c, col) { wrong.append(" on the column;"); }
+        if overlaps(c, way) { wrong.append(" on the way out;"); }
+        if b.z <= 0.0 { wrong.append(" no board;"); }
+        let above = abs(c.x - b.x) <= 0.5 && abs(c.y + c.w + 16.0 * u - b.y) <= 0.5;
+        let left = abs(c.x + c.z + 16.0 * u - b.x) <= 0.5 && abs(c.y - b.y) <= 0.5;
+        if b.z > 0.0 && !above && !left { wrong.append(" not at the board's top left;"); }
+        line.append(if wrong.len > 0 { ";" } else if above { ", above the board's top left, off the column" }
+                    else { ", left of the board's top, off the column" });
+        line.append(wrong);
+        print(line);
+    }
+    sh.prefs.name.clear();
+}
+
 // A shell showing `screen` at rest, home's column showing `setup`.
 fn showing(screen: i64, setup: i64) -> shell::Shell {
     var sh = shell::new(rules::INTERNATIONAL);
@@ -109,6 +142,7 @@ fn screens(g: gui::Gui&) {
     var home = showing(shell::HOME, home::NOTHING);
     at_rest(home, g);
     report("home", g, home, true, false);
+    chip(g, home);
     var friend = showing(shell::HOME, home::FRIEND);
     at_rest(friend, g);
     report("a friend's setup", g, friend, true, false);

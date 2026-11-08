@@ -521,11 +521,19 @@ the prototype tried, kept for 3D:
 
 - **Players** (`prototypes/profiles.html`, take a, chosen 2026-11-09; what a player
   holds and the files: [players](README.md#players)). On home's menu a round glass chip
-  with the player's badge (56 dp) and name, 88 dp tall, as the X is, opens who's playing:
-  mirroring the X in the top left in portrait, 16 dp left of it in landscape, where the
-  column takes the left, the board keeping clear of it as of the X. Where the player
-  shows on home is still being prototyped (2026-11-09): the wordmark keeps its king, and
-  `home::player_spot` alone places the chip. Who's playing is a glass card over the home
+  with the player's badge (56 dp) and name, 88 dp tall, as the X is, opens who's playing.
+  It keeps one place against the board in both orientations (chosen 2026-11-09,
+  `prototypes/badges.html?home=2`): above the board's top left corner, its left edge at
+  the board's and its foot 16 dp above it, so it is always on the board's side of the
+  screen, never on the column. The board keeps its top 128 dp down (the chip's top level
+  with the X's at least), moving down and shrinking only to keep 24 dp under it: the
+  tablet's landscape board moves 8 dp down at 560 dp; portrait boards that sat higher
+  shrink (the foldable's 411 to 339 dp, 4:3's 479 to 407), and a 20:9 phone's landscape
+  at 480 dp 336 to 328 (299 to 291 with the Pixel 7a's insets). A name that would come
+  within 16 dp of the X leaves the chip round, the badge alone; where the board above
+  would vanish (a 9:16 phone at 480 dp less its insets), the round chip stands 16 dp left
+  of the board's top instead. The wordmark keeps its king; `home::player_spot` alone
+  places the chip, and `test/shell/sizes` checks it at every size. Who's playing is a glass card over the home
   dimmed by black at 42%: back, the title, and a pencil; then a tile per player, 156 dp
   wide (120 on a phone, under 600 dp across), the badge 72% of it over the name, the
   player playing lit with the glow ring (4 dp, and a 22 dp glow at 50%); then + while

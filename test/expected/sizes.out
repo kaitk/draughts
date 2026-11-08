@@ -1,6 +1,8 @@
 en:
 a foldable, landscape, 2208 x 1768:
   home: 7 tiles, smallest 88 x 88 dp, board 479 dp, all in place
+  home's chip: 88 dp wide, board 479 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 479 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 479 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 479 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 519 dp, all in place
@@ -12,7 +14,9 @@ a foldable, landscape, 2208 x 1768:
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 519 dp, all in place
   the win: 6 tiles, smallest 88 x 88 dp, board 519 dp, card buttons 88 x 88 dp, all in place
 a foldable, portrait, 1768 x 2208:
-  home: 7 tiles, smallest 88 x 88 dp, board 411 dp, all in place
+  home: 7 tiles, smallest 88 x 88 dp, board 339 dp, all in place
+  home's chip: 88 dp wide, board 339 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 339 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 359 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 147 dp, all in place
   the game: 4 tiles, smallest 129 x 88 dp, board 579 dp, all in place
@@ -25,6 +29,8 @@ a foldable, portrait, 1768 x 2208:
   the win: 6 tiles, smallest 90 x 88 dp, board 579 dp, card buttons 90 x 88 dp, all in place
 4:3, landscape, 2048 x 1536:
   home: 7 tiles, smallest 88 x 88 dp, board 547 dp, all in place
+  home's chip: 88 dp wide, board 547 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 547 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 547 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 547 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 587 dp, all in place
@@ -36,7 +42,9 @@ a foldable, portrait, 1768 x 2208:
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 587 dp, all in place
   the win: 6 tiles, smallest 91 x 88 dp, board 587 dp, card buttons 91 x 88 dp, all in place
 4:3, portrait, 1536 x 2048:
-  home: 7 tiles, smallest 88 x 88 dp, board 479 dp, all in place
+  home: 7 tiles, smallest 88 x 88 dp, board 407 dp, all in place
+  home's chip: 88 dp wide, board 407 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 407 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 427 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 215 dp, all in place
   the game: 4 tiles, smallest 192 x 88 dp, board 647 dp, all in place
@@ -49,6 +57,8 @@ a foldable, portrait, 1768 x 2208:
   the win: 6 tiles, smallest 101 x 88 dp, board 647 dp, card buttons 101 x 88 dp, all in place
 a 20:9 phone, landscape, 2400 x 1080:
   home: 7 tiles, smallest 88 x 88 dp, board 560 dp, all in place
+  home's chip: 88 dp wide, board 560 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 560 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 560 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 560 dp, all in place
   the game: 4 tiles, smallest 200 x 88 dp, board 752 dp, all in place
@@ -61,6 +71,8 @@ a 20:9 phone, landscape, 2400 x 1080:
   the win: 6 tiles, smallest 112 x 88 dp, board 752 dp, card buttons 112 x 88 dp, all in place
 a 20:9 phone, portrait, 1080 x 2400:
   home: 7 tiles, smallest 88 x 88 dp, board 640 dp, all in place
+  home's chip: 88 dp wide, board 640 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 640 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 640 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 640 dp, all in place
   the game: 4 tiles, smallest 227 x 88 dp, board 752 dp, all in place
@@ -73,6 +85,8 @@ a 20:9 phone, portrait, 1080 x 2400:
   the win: 6 tiles, smallest 112 x 88 dp, board 752 dp, card buttons 112 x 88 dp, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 540 dp:
   home: 7 tiles, smallest 88 x 88 dp, board 378 dp, all in place
+  home's chip: 88 dp wide, board 378 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 378 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 378 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 356 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 492 dp, all in place
@@ -85,6 +99,8 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp:
   the win: 6 tiles, smallest 88 x 88 dp, board 492 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, portrait, 1080 x 2400 at 540 dp:
   home: 7 tiles, smallest 88 x 88 dp, board 432 dp, all in place
+  home's chip: 88 dp wide, board 432 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 432 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 432 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 244 dp, all in place
   the game: 4 tiles, smallest 143 x 88 dp, board 492 dp, all in place
@@ -96,7 +112,9 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp:
   a puzzle: 4 tiles, smallest 143 x 88 dp, board 492 dp, all in place
   the win: 6 tiles, smallest 88 x 88 dp, board 492 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 480 dp:
-  home: 7 tiles, smallest 88 x 88 dp, board 336 dp, all in place
+  home: 7 tiles, smallest 88 x 88 dp, board 328 dp, all in place
+  home's chip: 88 dp wide, board 328 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 328 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 223 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 223 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 432 dp, all in place
@@ -109,6 +127,8 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp:
   the win: 6 tiles, smallest 88 x 88 dp, board 432 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, portrait, 1080 x 2400 at 480 dp:
   home: 7 tiles, smallest 88 x 88 dp, board 384 dp, all in place
+  home's chip: 88 dp wide, board 384 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 384 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 355 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 192 dp, all in place
   the game: 4 tiles, smallest 99 x 88 dp, board 432 dp, all in place
@@ -121,6 +141,8 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp:
   the win: 6 tiles, smallest 88 x 88 dp, board 432 dp, card buttons 88 x 88 dp, all in place
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp:
   home: 7 tiles, smallest 88 x 88 dp, board 253 dp, all in place
+  home's chip: 88 dp wide, board 253 dp, above the board's top left, off the column
+  home's chip, named: 88 dp wide, board 253 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 373 dp, all in place
@@ -133,6 +155,8 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp:
   the win: 6 tiles, smallest 88 x 88 dp, board 373 dp, card buttons 88 x 88 dp, all in place
 a 9:16 phone, portrait, 1080 x 1920 at 480 dp:
   home: 7 tiles, smallest 88 x 88 dp, board 193 dp, all in place
+  home's chip: 88 dp wide, board 193 dp, above the board's top left, off the column
+  home's chip, named: 88 dp wide, board 193 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 213 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 4 tiles, smallest 96 x 88 dp, board 425 dp, all in place
@@ -146,6 +170,8 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp:
 et:
 a foldable, landscape, 2208 x 1768:
   home: 7 tiles, smallest 88 x 88 dp, board 479 dp, all in place
+  home's chip: 88 dp wide, board 479 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 479 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 479 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 479 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 519 dp, all in place
@@ -157,7 +183,9 @@ a foldable, landscape, 2208 x 1768:
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 519 dp, all in place
   the win: 6 tiles, smallest 88 x 88 dp, board 519 dp, card buttons 88 x 88 dp, all in place
 a foldable, portrait, 1768 x 2208:
-  home: 7 tiles, smallest 88 x 88 dp, board 411 dp, all in place
+  home: 7 tiles, smallest 88 x 88 dp, board 339 dp, all in place
+  home's chip: 88 dp wide, board 339 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 339 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 359 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 147 dp, all in place
   the game: 4 tiles, smallest 125 x 88 dp, board 579 dp, all in place
@@ -170,6 +198,8 @@ a foldable, portrait, 1768 x 2208:
   the win: 6 tiles, smallest 90 x 88 dp, board 579 dp, card buttons 90 x 88 dp, all in place
 4:3, landscape, 2048 x 1536:
   home: 7 tiles, smallest 88 x 88 dp, board 547 dp, all in place
+  home's chip: 88 dp wide, board 547 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 547 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 547 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 547 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 587 dp, all in place
@@ -181,7 +211,9 @@ a foldable, portrait, 1768 x 2208:
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 587 dp, all in place
   the win: 6 tiles, smallest 91 x 88 dp, board 587 dp, card buttons 91 x 88 dp, all in place
 4:3, portrait, 1536 x 2048:
-  home: 7 tiles, smallest 88 x 88 dp, board 479 dp, all in place
+  home: 7 tiles, smallest 88 x 88 dp, board 407 dp, all in place
+  home's chip: 88 dp wide, board 407 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 407 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 427 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 215 dp, all in place
   the game: 4 tiles, smallest 148 x 88 dp, board 647 dp, all in place
@@ -194,6 +226,8 @@ a foldable, portrait, 1768 x 2208:
   the win: 6 tiles, smallest 101 x 88 dp, board 647 dp, card buttons 101 x 88 dp, all in place
 a 20:9 phone, landscape, 2400 x 1080:
   home: 7 tiles, smallest 88 x 88 dp, board 560 dp, all in place
+  home's chip: 88 dp wide, board 560 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 560 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 560 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 560 dp, all in place
   the game: 4 tiles, smallest 200 x 96 dp, board 752 dp, all in place
@@ -206,6 +240,8 @@ a 20:9 phone, landscape, 2400 x 1080:
   the win: 6 tiles, smallest 112 x 88 dp, board 752 dp, card buttons 112 x 88 dp, all in place
 a 20:9 phone, portrait, 1080 x 2400:
   home: 7 tiles, smallest 88 x 88 dp, board 640 dp, all in place
+  home's chip: 88 dp wide, board 640 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 640 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 640 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 640 dp, all in place
   the game: 4 tiles, smallest 227 x 88 dp, board 752 dp, all in place
@@ -218,6 +254,8 @@ a 20:9 phone, portrait, 1080 x 2400:
   the win: 6 tiles, smallest 112 x 88 dp, board 752 dp, card buttons 112 x 88 dp, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 540 dp:
   home: 7 tiles, smallest 88 x 88 dp, board 378 dp, all in place
+  home's chip: 88 dp wide, board 378 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 378 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 378 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 356 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 492 dp, all in place
@@ -230,6 +268,8 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp:
   the win: 6 tiles, smallest 88 x 88 dp, board 492 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, portrait, 1080 x 2400 at 540 dp:
   home: 7 tiles, smallest 88 x 88 dp, board 432 dp, all in place
+  home's chip: 88 dp wide, board 432 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 432 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 432 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 244 dp, all in place
   the game: 4 tiles, smallest 115 x 88 dp, board 492 dp, all in place
@@ -241,7 +281,9 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp:
   a puzzle: 4 tiles, smallest 103 x 88 dp, board 492 dp, all in place
   the win: 6 tiles, smallest 88 x 88 dp, board 492 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 480 dp:
-  home: 7 tiles, smallest 88 x 88 dp, board 336 dp, all in place
+  home: 7 tiles, smallest 88 x 88 dp, board 328 dp, all in place
+  home's chip: 88 dp wide, board 328 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 328 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 223 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 223 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 432 dp, all in place
@@ -254,6 +296,8 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp:
   the win: 6 tiles, smallest 88 x 88 dp, board 432 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, portrait, 1080 x 2400 at 480 dp:
   home: 7 tiles, smallest 88 x 88 dp, board 384 dp, all in place
+  home's chip: 88 dp wide, board 384 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 384 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 355 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 192 dp, all in place
   the game: 4 tiles, smallest 95 x 88 dp, board 432 dp, all in place
@@ -266,6 +310,8 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp:
   the win: 6 tiles, smallest 88 x 88 dp, board 432 dp, card buttons 88 x 88 dp, all in place
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp:
   home: 7 tiles, smallest 88 x 88 dp, board 253 dp, all in place
+  home's chip: 88 dp wide, board 253 dp, above the board's top left, off the column
+  home's chip, named: 88 dp wide, board 253 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 373 dp, all in place
@@ -278,6 +324,8 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp:
   the win: 6 tiles, smallest 88 x 88 dp, board 373 dp, card buttons 88 x 88 dp, all in place
 a 9:16 phone, portrait, 1080 x 1920 at 480 dp:
   home: 7 tiles, smallest 88 x 88 dp, board 193 dp, all in place
+  home's chip: 88 dp wide, board 193 dp, above the board's top left, off the column
+  home's chip, named: 88 dp wide, board 193 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 213 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 4 tiles, smallest 92 x 88 dp, board 425 dp, all in place
@@ -290,7 +338,9 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp:
   the win: 6 tiles, smallest 88 x 88 dp, board 425 dp, card buttons 88 x 88 dp, all in place
 en, with insets:
 a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 118, 0, 0, 84 px:
-  home: 7 tiles, smallest 88 x 88 dp, board 349 dp, all in place
+  home: 7 tiles, smallest 88 x 88 dp, board 346 dp, all in place
+  home's chip: 88 dp wide, board 346 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 346 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 297 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 297 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 450 dp, all in place
@@ -302,7 +352,9 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 118, 0, 0, 84 px:
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 450 dp, all in place
   the win: 6 tiles, smallest 88 x 88 dp, board 450 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 0, 0, 118, 84 px:
-  home: 7 tiles, smallest 88 x 88 dp, board 349 dp, all in place
+  home: 7 tiles, smallest 88 x 88 dp, board 346 dp, all in place
+  home's chip: 88 dp wide, board 346 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 346 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 297 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 297 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 450 dp, all in place
@@ -315,6 +367,8 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 0, 0, 118, 84 px:
   the win: 6 tiles, smallest 88 x 88 dp, board 450 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, portrait, 1080 x 2400 at 540 dp, insets 0, 118, 0, 84 px:
   home: 7 tiles, smallest 88 x 88 dp, board 432 dp, all in place
+  home's chip: 88 dp wide, board 432 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 432 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 387 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 216 dp, all in place
   the game: 4 tiles, smallest 143 x 88 dp, board 492 dp, all in place
@@ -326,7 +380,9 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp, insets 0, 118, 0, 84 px:
   a puzzle: 4 tiles, smallest 143 x 88 dp, board 492 dp, all in place
   the win: 6 tiles, smallest 88 x 88 dp, board 492 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
-  home: 7 tiles, smallest 88 x 88 dp, board 299 dp; tiles 0 and 1 overlap;
+  home: 7 tiles, smallest 88 x 88 dp, board 291 dp; tiles 0 and 1 overlap;
+  home's chip: 88 dp wide, board 291 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 291 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 170 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 170 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 395 dp, all in place
@@ -338,7 +394,9 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 395 dp, all in place
   the win: 6 tiles, smallest 88 x 88 dp, board 395 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
-  home: 7 tiles, smallest 88 x 88 dp, board 299 dp; tiles 0 and 1 overlap;
+  home: 7 tiles, smallest 88 x 88 dp, board 291 dp; tiles 0 and 1 overlap;
+  home's chip: 88 dp wide, board 291 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 291 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 170 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 170 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 395 dp, all in place
@@ -351,6 +409,8 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   the win: 6 tiles, smallest 88 x 88 dp, board 395 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, portrait, 1080 x 2400 at 480 dp, insets 0, 118, 0, 84 px:
   home: 7 tiles, smallest 88 x 88 dp, board 317 dp, all in place
+  home's chip: 88 dp wide, board 317 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 317 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 265 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 4 tiles, smallest 99 x 88 dp, board 432 dp, all in place
@@ -363,6 +423,8 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp, insets 0, 118, 0, 84 px:
   the win: 6 tiles, smallest 88 x 88 dp, board 432 dp, card buttons 88 x 88 dp, all in place
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   home: 7 tiles, smallest 88 x 88 dp, board 201 dp; tiles 0 and 1 overlap;
+  home's chip: 88 dp wide, board 201 dp, above the board's top left, off the column
+  home's chip, named: 88 dp wide, board 201 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 321 dp, all in place
@@ -375,6 +437,8 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   the win: 6 tiles, smallest 88 x 88 dp, board 321 dp, card buttons 88 x 88 dp, all in place
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   home: 7 tiles, smallest 88 x 88 dp, board 201 dp; tiles 0 and 1 overlap;
+  home's chip: 88 dp wide, board 201 dp, above the board's top left, off the column
+  home's chip, named: 88 dp wide, board 201 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 321 dp, all in place
@@ -387,6 +451,8 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   the win: 6 tiles, smallest 88 x 88 dp, board 321 dp, card buttons 88 x 88 dp, all in place
 a 9:16 phone, portrait, 1080 x 1920 at 480 dp, insets 0, 118, 0, 84 px:
   home: 7 tiles, smallest 88 x 88 dp, board 192 dp, all in place
+  home's chip: 88 dp wide, board 192 dp, left of the board's top, off the column
+  home's chip, named: 88 dp wide, board 192 dp, left of the board's top, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 156 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 4 tiles, smallest 91 x 88 dp, board 336 dp, all in place
@@ -399,7 +465,9 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp, insets 0, 118, 0, 84 px:
   the win: 6 tiles, smallest 88 x 88 dp, board 336 dp, card buttons 88 x 88 dp, all in place
 et, with insets:
 a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 118, 0, 0, 84 px:
-  home: 7 tiles, smallest 88 x 88 dp, board 349 dp, all in place
+  home: 7 tiles, smallest 88 x 88 dp, board 346 dp, all in place
+  home's chip: 88 dp wide, board 346 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 346 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 297 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 297 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 450 dp, all in place
@@ -411,7 +479,9 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 118, 0, 0, 84 px:
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 450 dp, all in place
   the win: 6 tiles, smallest 88 x 88 dp, board 450 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 0, 0, 118, 84 px:
-  home: 7 tiles, smallest 88 x 88 dp, board 349 dp, all in place
+  home: 7 tiles, smallest 88 x 88 dp, board 346 dp, all in place
+  home's chip: 88 dp wide, board 346 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 346 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 297 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 297 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 450 dp, all in place
@@ -424,6 +494,8 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 0, 0, 118, 84 px:
   the win: 6 tiles, smallest 88 x 88 dp, board 450 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, portrait, 1080 x 2400 at 540 dp, insets 0, 118, 0, 84 px:
   home: 7 tiles, smallest 88 x 88 dp, board 432 dp, all in place
+  home's chip: 88 dp wide, board 432 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 432 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 387 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 216 dp, all in place
   the game: 4 tiles, smallest 115 x 88 dp, board 492 dp, all in place
@@ -435,7 +507,9 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp, insets 0, 118, 0, 84 px:
   a puzzle: 4 tiles, smallest 103 x 88 dp, board 492 dp, all in place
   the win: 6 tiles, smallest 88 x 88 dp, board 492 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
-  home: 7 tiles, smallest 88 x 88 dp, board 299 dp; tiles 0 and 1 overlap;
+  home: 7 tiles, smallest 88 x 88 dp, board 291 dp; tiles 0 and 1 overlap;
+  home's chip: 88 dp wide, board 291 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 291 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 170 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 170 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 395 dp, all in place
@@ -447,7 +521,9 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 395 dp, all in place
   the win: 6 tiles, smallest 88 x 88 dp, board 395 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
-  home: 7 tiles, smallest 88 x 88 dp, board 299 dp; tiles 0 and 1 overlap;
+  home: 7 tiles, smallest 88 x 88 dp, board 291 dp; tiles 0 and 1 overlap;
+  home's chip: 88 dp wide, board 291 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 291 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 170 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 170 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 395 dp, all in place
@@ -460,6 +536,8 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   the win: 6 tiles, smallest 88 x 88 dp, board 395 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, portrait, 1080 x 2400 at 480 dp, insets 0, 118, 0, 84 px:
   home: 7 tiles, smallest 88 x 88 dp, board 317 dp, all in place
+  home's chip: 88 dp wide, board 317 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 317 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 265 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 4 tiles, smallest 95 x 88 dp, board 432 dp, all in place
@@ -472,6 +550,8 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp, insets 0, 118, 0, 84 px:
   the win: 6 tiles, smallest 88 x 88 dp, board 432 dp, card buttons 88 x 88 dp, all in place
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   home: 7 tiles, smallest 88 x 88 dp, board 201 dp; tiles 0 and 1 overlap;
+  home's chip: 88 dp wide, board 201 dp, above the board's top left, off the column
+  home's chip, named: 88 dp wide, board 201 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 321 dp, all in place
@@ -484,6 +564,8 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   the win: 6 tiles, smallest 88 x 88 dp, board 321 dp, card buttons 88 x 88 dp, all in place
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   home: 7 tiles, smallest 88 x 88 dp, board 201 dp; tiles 0 and 1 overlap;
+  home's chip: 88 dp wide, board 201 dp, above the board's top left, off the column
+  home's chip, named: 88 dp wide, board 201 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 4 tiles, smallest 160 x 96 dp, board 321 dp, all in place
@@ -496,6 +578,8 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   the win: 6 tiles, smallest 88 x 88 dp, board 321 dp, card buttons 88 x 88 dp, all in place
 a 9:16 phone, portrait, 1080 x 1920 at 480 dp, insets 0, 118, 0, 84 px:
   home: 7 tiles, smallest 88 x 88 dp, board 192 dp, all in place
+  home's chip: 88 dp wide, board 192 dp, left of the board's top, off the column
+  home's chip, named: 88 dp wide, board 192 dp, left of the board's top, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 156 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 4 tiles, smallest 91 x 88 dp, board 336 dp, all in place
@@ -509,6 +593,8 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp, insets 0, 118, 0, 84 px:
 en, the tablet with its navigation bar:
 1920 x 1200, insets 0, 0, 0, 72 px:
   home: 7 tiles, smallest 88 x 88 dp, board 526 dp, all in place
+  home's chip: 88 dp wide, board 526 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 526 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 526 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 436 dp, all in place
   the game: 4 tiles, smallest 200 x 88 dp, board 704 dp, all in place
@@ -522,6 +608,8 @@ en, the tablet with its navigation bar:
   settings: 17 tiles, 17 with no inset: both groups
 1200 x 1920, insets 0, 0, 0, 72 px:
   home: 7 tiles, smallest 88 x 88 dp, board 572 dp, all in place
+  home's chip: 88 dp wide, board 572 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 572 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 520 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 348 dp, all in place
   the game: 4 tiles, smallest 227 x 88 dp, board 752 dp, all in place
@@ -536,6 +624,8 @@ en, the tablet with its navigation bar:
 et, the tablet with its navigation bar:
 1920 x 1200, insets 0, 0, 0, 72 px:
   home: 7 tiles, smallest 88 x 88 dp, board 526 dp, all in place
+  home's chip: 88 dp wide, board 526 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 526 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 526 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 436 dp, all in place
   the game: 4 tiles, smallest 200 x 96 dp, board 704 dp, all in place
@@ -549,6 +639,8 @@ et, the tablet with its navigation bar:
   settings: 17 tiles, 17 with no inset: both groups
 1200 x 1920, insets 0, 0, 0, 72 px:
   home: 7 tiles, smallest 88 x 88 dp, board 572 dp, all in place
+  home's chip: 88 dp wide, board 572 dp, above the board's top left, off the column
+  home's chip, named: 228 dp wide, board 572 dp, above the board's top left, off the column
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 520 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 348 dp, all in place
   the game: 4 tiles, smallest 227 x 88 dp, board 752 dp, all in place

@@ -1,7 +1,7 @@
 # 038: Players on one tablet
 
-Status: in progress (take a chosen 2026-11-09 and built; the badges' art and where the
-player shows on home are open; to check on the Mac and the tablet)
+Status: in progress (take a chosen 2026-11-09 and built; the chip's place chosen and
+built; the badges as carved pieces being built; to check on the Mac and the tablet)
 
 A family shares one tablet: children of different ages and a parent. Each child wants their
 own look (season and board) and their own puzzle stars, and a way to start them again
@@ -146,12 +146,20 @@ Changed while building (2026-11-09):
   `app/widgets.goose` draws every badge through one function, `badge()`, for now a
   placeholder: the badge's colour as a disc with a piece's turned rim. Replace that
   function, and the names if they change, when the art is chosen.
-- **Home keeps its king beside the wordmark**; where the player shows on home is being
-  prototyped. Until it is chosen the entry is a chip of its own, the player's badge and
-  name in a round glass 88 dp tall, as the X is: mirroring the X in the top left in
-  portrait, and 16 dp left of the X in landscape, where the column takes the left. The
-  board keeps clear of it as of the X (on a 20:9 phone in landscape it gives up 11 dp,
-  310 to 299). `home::player_spot` alone places it, so moving it is one function.
+- **Home keeps its king beside the wordmark**, and the player is a chip of their own,
+  the badge and name in a round glass 88 dp tall, as the X is (`badges.html?home=2`).
+- **The chip's place (chosen 2026-11-09):** the same against the board in every
+  orientation, above the board's top left corner (left edges level, 16 dp between), so
+  it is always on the board's side, never on the column. Not beside the X in landscape,
+  as it first stood. The board keeps its top 128 dp down, moving down and shrinking only
+  to keep 24 dp under it: at the tablet's landscape it moves 8 dp down at 560 dp; the
+  foldable's portrait 411 to 339 dp, 4:3's portrait 479 to 407, a 20:9 phone's landscape
+  at 480 dp 336 to 328 (299 to 291 with the Pixel 7a's insets, 349 to 346 at 540 dp).
+  A name that would reach within 16 dp of the X leaves the chip round; where the board
+  above would vanish (a 9:16 phone at 480 dp less its insets, 192 dp), the round chip
+  stands 16 dp left of the board's top. `home::player_spot` places it;
+  `test/shell/sizes` checks at every size, with no name and twelve characters, that it
+  is off the column and the X and at the board's top left.
 - **Who's playing opens by itself only on a fresh install's first run**, at the sheet of
   its one player, so the child picks a badge and perhaps a name; done or back goes home.
   Later starts never ask. An install from before players becomes player 1 silently.
@@ -216,4 +224,5 @@ and starts text input again on each tap).
 - [ ] Checked on the Mac at the tablet's and a phone's sizes in both orientations, then on
       the tablet over USB
 - [ ] The badges' art chosen and drawn in `badge()`
-- [ ] Where the player shows on home chosen, and `home::player_spot` moved there
+- [x] Where the player shows on home chosen, and `home::player_spot` moved there: above
+      the board's top left in both orientations, checked off the column at every size
