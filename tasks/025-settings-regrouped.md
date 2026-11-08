@@ -124,3 +124,13 @@ Screenshots and recordings are in the session's scratchpad, not in git.
   wrap. Estonian's auto note was shortened to "2D kroon, 3D virn" to fit. Estonian
   drafts for task 024's review: Mäng, Välimus, Õpetus, Õpi käike, Tammid, Kroon, Virn,
   Automaatne, Lame, Ruumiline.
+
+## The same layout in every language (2026-11-08)
+
+The user asked that switching language never moves settings' layout. The choices' width
+is set by the background row (five thumbnails of fixed width), so every word must fit
+its tile without widening it: "By date" (was "By the date") and "Kuupäev" now do.
+Checked on the Mac at 960 × 600 and 600 × 960: English and Estonian put the board and
+the panels in the same place (the board's area differs by under 3 pixels in landscape).
+The headless tests measure text with stand-in metrics, so this is checked by comparing
+screenshots, not by a test; recheck it whenever a settings string changes.
