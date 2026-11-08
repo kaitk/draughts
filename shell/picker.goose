@@ -6,7 +6,10 @@
 // portrait the title stands beside back, and each tier's ten are two rows of five, at
 // least 88 dp, as in landscape where ten in a row would be under that (4:3, 3:2, a
 // foldable). The tiles take what the width and the height leave, and the glass hugs
-// them. The sharp photograph shows behind it, and no board.
+// them. Where that would leave them under 88 dp (a phone), one tier shows at a time: the
+// three marks as tiles, the shown one lit, at the left in landscape and in a row under
+// back in portrait, and that tier's ten beside or under them, in rows of five, or of four
+// where five don't fit across. The sharp photograph shows behind it, and no board.
 namespace picker;
 import std;
 import vec;
@@ -69,11 +72,42 @@ fn tile(g: gui::Gui&, id: i64, r: float4, won: i64, lit: bool, opened: bool, sta
     return tapped;
 }
 
+// The tier a phone's picker shows: `tier` once a mark was tapped, else the tier of puzzle
+// `at` (the one last played), else of the next to solve.
+fn shown(stars: const u8[:], at: i64, tier: i64) -> i64 {
+    if tier >= 1 { return tier; }
+    let i = if at >= 0 { at } else { next(stars) };
+    return if i >= 0 { puzzles::all.list[i].tier } else { 1 };
+}
+
+// Declares tier t's tiles in c, `per` to a row of tiles `side` across, `gap` apart, a
+// short last row centered. Sets `spot` and `pick` as frame does.
+fn tier_tiles(g: gui::Gui&, c: float4, t: i64, per: i64, side: f32, gap: f32, stars: const u8[:], at: i64,
+              landscape: bool, spot: float4&, pick: i64&) {
+    let opened = open(stars, t);
+    let now_next = next(stars);
+    let count = min(puzzles::tier_count(puzzles::all, t), PER_ROW);
+    for k in count {
+        let i = puzzles::nth(puzzles::all, t, k);
+        let row = k / per;
+        let in_row = min(per, count - row * per);
+        let left = c.x + 0.5 * (per - in_row) * (side + gap);
+        let r = float4 { left + (k % per) * (side + gap), c.y + row * (side + gap), side, side };
+        let won = stars[puzzles::all.list[i].id] as i64;
+        if i == at && pick < 0 { spot = r; }
+        if tile(g, 501 + i, r, won, i == now_next, opened, if landscape { 18.0 } else { 22.0 }) {
+            pick = i;
+            spot = r;
+        }
+    }
+}
+
 // Declares the screen on a screen width × height pixels with the stars won so far, and
 // sets `spot` to the tile of the puzzle tapped, or else of puzzle `at` (an index in
 // puzzles::all, or -1 for none), which a puzzle's board grows out of and shrinks back
-// into. Returns BACK, the index in puzzles::all of a puzzle tapped, or NOTHING.
-fn frame(g: gui::Gui&, width: f32, height: f32, stars: const u8[:], at: i64, spot: float4&) -> i64 {
+// into. `tier` is the tier a phone's picker shows, 0 until a mark is tapped. Returns
+// BACK, the index in puzzles::all of a puzzle tapped, or NOTHING.
+fn frame(g: gui::Gui&, width: f32, height: f32, stars: const u8[:], at: i64, tier: i64&, spot: float4&) -> i64 {
     let u = g.scale;
     let landscape = width >= height;
     var page = float4 { 24.0 * u, 24.0 * u, width - 48.0 * u, height - 48.0 * u };
@@ -105,6 +139,7 @@ fn frame(g: gui::Gui&, width: f32, height: f32, stars: const u8[:], at: i64, spo
     let tall = ((page.w - (puzzles::TIERS - 1) * TIER_GAP * u) / puzzles::TIERS - 2.0 * margin - (rows - 1) * gap) / rows;
     let side = min(min((row_w - (per - 1) * gap) / per, tall), (if landscape { 96.0 } else { 128.0 }) * u);
     let tier_h = rows * side + (rows - 1) * gap + 2.0 * margin;
+    guard side >= 88.0 * u - 0.5 else { return one_tier(g, page, landscape, stars, at, tier, spot, pick); }
     let all_h = puzzles::TIERS * tier_h + (puzzles::TIERS - 1) * TIER_GAP * u;
     // The glass as wide as its tiles, centered where they leave room.
     let inside = page.z - (2.0 * margin + mark + mark_gap + per * side + (per - 1) * gap);
@@ -133,4 +168,51 @@ fn frame(g: gui::Gui&, width: f32, height: f32, stars: const u8[:], at: i64, spo
         }
     }
     return pick;
+}
+
+// A phone's picker below back (frame): the three marks as tiles, the shown tier's lit,
+// and that tier's ten. Returns as frame does.
+fn one_tier(g: gui::Gui&, page: float4, landscape: bool, stars: const u8[:], at: i64, tier: i64&, spot: float4&,
+            pick: i64) -> i64 {
+    let u = g.scale;
+    var asked = pick;
+    let t = shown(stars, at, tier);
+    let gap = 10.0 * u;
+    let margin = (if landscape { 18.0 } else { 16.0 }) * u;
+    // The marks on glass: a column at the left in landscape, a row across in portrait.
+    let rim = 10.0 * u;
+    let mark = 88.0 * u;
+    let across = mark + 2.0 * rim;
+    let span = puzzles::TIERS * mark + (puzzles::TIERS - 1) * gap + 2.0 * rim;
+    let apart = 24.0 * u;
+    var c = page;
+    if landscape { gui::cut_left(c, across + apart); } else { gui::cut_top(c, across + 20.0 * u); }
+    // The tier's ten in rows of five, or of four where five don't fit 88 dp across.
+    let room = c.z - 2.0 * margin;
+    let per = if (room - 4.0 * gap) / 5.0 >= 88.0 * u { 5 } else { 4 };
+    let rows = (PER_ROW + per - 1) / per;
+    let most = (if landscape { 96.0 } else { 128.0 }) * u;
+    let side = min(min((room - (per - 1) * gap) / per, (c.w - 2.0 * margin - (rows - 1) * gap) / rows), most);
+    let w = per * side + (per - 1) * gap + 2.0 * margin;
+    let h = rows * side + (rows - 1) * gap + 2.0 * margin;
+    // In landscape the marks and the tier side by side, centered together.
+    let off = if landscape { max(0.0, floor(0.5 * (page.z - across - apart - w) + 0.5)) } else { 0.0 };
+    let marks = if landscape { float4 { page.x + off, page.y + 0.5 * (page.w - span), across, span } }
+                else { float4 { page.x, page.y, page.z, across } };
+    let glass = if landscape { float4 { marks.x + across + apart, page.y + 0.5 * (page.w - h), w, h } }
+                else { float4 { c.x + 0.5 * (c.z - w), c.y, w, h } };
+    gui::glass(g, marks, 28.0);
+    let m = gui::inset(marks, rim);
+    for k in puzzles::TIERS {
+        let wide = if landscape { mark } else { (m.z - (puzzles::TIERS - 1) * gap) / puzzles::TIERS };
+        let r = if landscape { float4 { m.x, m.y + k * (mark + gap), mark, mark } }
+                else { float4 { m.x + k * (wide + gap), m.y, wide, mark } };
+        let tapped, pic = gui::pick(g, 540 + k, r, 0.0, "", "", k + 1 == t, true);
+        let s = (if landscape { 52.0 } else { 44.0 }) * u;
+        gui::glyph_icon(g, gui::center(r, s, s), MARKS[k], gui::PLAIN, 0.0, 1.0);
+        if tapped { tier = k + 1; }
+    }
+    gui::glass(g, glass, 28.0);
+    tier_tiles(g, gui::inset(glass, margin), t, per, side, gap, stars, at, landscape, spot, asked);
+    return asked;
 }

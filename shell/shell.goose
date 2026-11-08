@@ -66,6 +66,7 @@ struct Shell {
     blur:   f32           = 0.0,
     over:   game::Overlay = [],               // the screen's pieces over the UI this frame
     puzzle: puzzle::Play,                     // the puzzle playing, or last played
+    tier:   i64 = 0,                          // the tier a phone's picker shows once a mark is tapped
     // A transition: the screen it leaves, or -1, and when it began; and this frame, how
     // far it has gone, eased, 0..1, and where the screen left and the one come to put the
     // board. `left` is home's column as home had it when left, a setup whose play
@@ -116,6 +117,7 @@ fn go_to(sh: Shell&, to: i64, now: f64) {
 // a transition, from another puzzle at once.
 fn play_puzzle(sh: Shell&, index: i64, now: f64 = 0.0) {
     puzzle::open(sh.puzzle, index);
+    sh.tier = 0;
     go_to(sh, PUZZLE, now);
 }
 
@@ -274,7 +276,7 @@ fn in_tile(sh: Shell&, spot: float4, scale: f32) -> board::Layout {
 fn picker_screen(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> bool {
     sh.over.clear();
     var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
-    let pick = picker::frame(g, width, height, sh.prefs.stars, sh.puzzle.index, spot);
+    let pick = picker::frame(g, width, height, sh.prefs.stars, sh.puzzle.index, sh.tier, spot);
     if pick == picker::BACK {
         go_to(sh, HOME, now);
         sh.setup = home::NOTHING;
@@ -393,7 +395,7 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, width: f32, height: f32, now: f6
         l = p.board;
     } else if screen == PICKER {
         var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
-        picker::frame(g, width, height, sh.prefs.stars, sh.puzzle.index, spot);
+        picker::frame(g, width, height, sh.prefs.stars, sh.puzzle.index, sh.tier, spot);
         l = in_tile(sh, spot, g.scale);
     } else {
         home::frame(over, g, l, rules::VARIANTS[board_of(sh, HOME).variant].size, width, height, sh.left, sh.prefs);

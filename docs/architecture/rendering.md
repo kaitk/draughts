@@ -359,7 +359,13 @@ the prototype tried, kept for 3D:
   ten in a row would be 66 dp, under the 88 dp a small hand needs; in landscape too
   where ten in a row would be under 88 dp (4:3, 3:2, a foldable). The tiles take what
   the width and the height leave (at most 96 dp in landscape, 128 in portrait), and each
-  tier's glass is as wide as its tiles, centered (2026-11-08). Behind it the sharp
+  tier's glass is as wide as its tiles, centered (2026-11-08). Where even that leaves
+  the tiles under 88 dp (every phone: portrait under about 630 dp across, landscape under
+  about 750 dp tall), one tier shows at a time: the three marks as 88 dp tiles on glass,
+  the shown tier's lit, in a column left of the tier in landscape and in a row under back
+  in portrait, and that tier's ten in rows of five, or of four (4, 4, 2, centered) where
+  five don't fit 88 dp across. It shows the tier of the puzzle last played, else of the
+  next to solve, until a mark is tapped (2026-11-08). Behind it the sharp
   photograph and no board. **A puzzle** (`prototypes/puzzle.html`, take c, chosen
   2026-11-08): the game screen's layout, the left panel the game's with the puzzles in
   home's place; on the right the goal's icon in the glow color over its words
