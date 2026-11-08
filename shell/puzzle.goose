@@ -56,8 +56,12 @@ struct Play {
     fresh:     bool = false,  // solved this frame, for the shell to keep the stars
 }
 
+// A puzzle never shows a selected piece's targets, whatever the move hints setting: the
+// child is to find the move (docs/product.md).
 fn new() -> Play {
-    return Play { b: board::new(rules::INTERNATIONAL), s: puzzles::Solver { moves: [], stack: [] }, path: [], .. };
+    var pl = Play { b: board::new(rules::INTERNATIONAL), s: puzzles::Solver { moves: [], stack: [] }, path: [], .. };
+    pl.b.hints = board::MISTAKES;
+    return pl;
 }
 
 fn current(pl: Play&) -> puzzles::Puzzle& { return puzzles::all.list[pl.index]; }

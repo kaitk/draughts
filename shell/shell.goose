@@ -138,9 +138,6 @@ fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, fresh: b
     if sh.screen == PUZZLE {
         let pl .= sh.puzzle;
         pl.b.king_look = settings::king_look(sh.prefs);
-        // The first tier teaches the basics, so it shows a selected piece's targets
-        // (docs/product.md); the others take the setting.
-        pl.b.hints = if puzzle::current(pl).tier == 1 { board::MOVES } else { sh.prefs.hints };
         var l = panel::layout(width, height, rules::VARIANTS[pl.b.variant].size);
         l.board.flip = puzzle::current(pl).start.side == rules::BLACK;
         sh.layout = l.board;
