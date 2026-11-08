@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draughts: a win</title>
+<link rel="stylesheet" href="draughts.css">
+<script src="draughts.js"></script>
+<style>
+  /* Takes on a win (task 031), in place of the drifting sparks: ?take=a, b, or c, and
+     &t=SECONDS to hold one moment. Each plays about 2 s after the winning move has
+     shown, then is still. Everything is a function of the time since the win, as
+     game::celebrate draws it: rounded rects, SDF discs and rings, one radial gradient.
+     Click the background to play it again.
+
+     a: the pieces answer. No particles: a ring of glow passes across the winner's pieces
+        from the piece that won, which lifts and keeps its ring; then the board dims under
+        it and the card slides up.
+     b: light behind the card. The board dims and the card slides up; a warm glow
+        blooms behind it, and a few sparks rise from behind its top edge, once.
+     c: the winning piece comes to the card. It lifts on its square, glides up to the
+        card's spot as the board dims and the card forms round it, then takes its crown
+        with one soft ring of glow going out. */
+
+  /* The game's layout (game.html), the play panel saying who won. */
+  .game { --gap: 24px; --side: 232px; display: flex; align-items: center; justify-content: center;
+    gap: var(--gap); height: 100%; padding: var(--gap); }
+  #board { flex: none; width: min(100vh - 2 * var(--gap), 100vw - 2 * var(--side) - 4 * var(--gap)); isolation: isolate; }
+  .panel { display: flex; flex-direction: column; gap: 12px; flex: none; width: var(--side);
+    height: min(100vh - 2 * var(--gap), 100vw - 2 * var(--side) - 4 * var(--gap)); padding: 20px 16px; }
+  .panel .space { flex: 1; }
+  .left { order: -1; }
+  .row { display: flex; align-items: center; justify-content: flex-start; gap: 12px; min-height: 72px;
+    padding: 0 14px; font-size: 24px; text-align: left; white-space: nowrap; }
+  .row.button svg { flex: none; width: 34px; height: 34px; stroke-width: 2.2; }
+  .row.big { flex-direction: column; justify-content: center; gap: 8px; min-height: 132px; font-size: 26px; }
+  .row.big svg { width: 48px; height: 48px; }
+  .turn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    padding: 18px 0 10px; text-align: center; font-size: 26px; }
+  .turn .piece { --u: 7px; position: relative; inset: auto; flex: none; width: 72px; height: 72px; }
+  @media (orientation: portrait) {
+    .game { --top: 104px; --bottom: 200px; flex-direction: column; }
+    #board { width: min(100vw - 2 * var(--gap), 100vh - var(--top) - var(--bottom) - 4 * var(--gap)); }
+    .panel { display: grid; gap: 12px 16px; align-content: start; height: auto; padding: 16px 20px;
+      width: min(100vw - 2 * var(--gap), 100vh - var(--top) - var(--bottom) - 4 * var(--gap)); }
+    .panel .space { display: none; }
+    .left { grid-template-columns: repeat(3, 1fr); }
+    .left .row { justify-content: center; }
+    .turn { flex-direction: row; padding: 0 6px; }
+    .turn .piece { width: 52px; height: 52px; --u: 5px; }
+    .row.big { flex-direction: row; min-height: 80px; }
+    .row.big svg { width: 36px; height: 36px; }
+  }
+
+  /* A glow ring right round a piece, its strength --ring (0 to 1); the selected piece's
+     look, as an SDF ring natively. */
+  .piece { --ring: 0; }
+  .piece.ringed { box-shadow:
+    0 0 0 calc(0.6 * var(--u)) color-mix(in srgb, var(--glow) calc(var(--ring) * 90%), transparent),
+    0 0 calc(3 * var(--u)) calc(0.8 * var(--u)) color-mix(in srgb, var(--glow) calc(var(--ring) * 55%), transparent); }
+  /* a: a square lit under a piece as the ripple passes, as the last move's squares are. */
+  .sq.lit { box-shadow: inset 0 0 0 100cqw color-mix(in srgb, var(--glow) calc(var(--lit) * 40%), transparent); }
+  .piece.up { z-index: 3; }
+
+  /* The board dimmed: a black fill over it, 0.45 at most, as now. */
+  .dim { position: absolute; inset: 0; z-index: 2; border-radius: 1%; background: #000; opacity: 0; pointer-events: none; }
+
+  /* The card: 40 dp above and below, 56 at the sides; the piece, a 28 dp gap, the
+     buttons; 356 × 300 in all, centred on the board. */
+  .card { position: fixed; z-index: 5; display: grid; justify-items: center; gap: 28px; padding: 40px 56px;
+    width: 356px; translate: -50% -50%; opacity: 0; }
+  .spot { display: grid; place-items: center; width: 104px; height: 104px; }
+  .card .piece { --u: 8.5px; position: relative; inset: auto; width: 88px; height: 88px; }
+  .actions { display: flex; gap: 20px; }
+  .actions .button { width: 112px; }
+
+  /* b: the warm light behind the card, and sparks that rise from behind its top edge. */
+  .halo { position: fixed; z-index: 4; width: 720px; height: 640px; translate: -50% -50%; opacity: 0;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--glow) 70%, transparent),
+      color-mix(in srgb, var(--glow) 34%, transparent) 50%, transparent); pointer-events: none; }
+  .mote { position: fixed; z-index: 4; width: 8px; height: 8px; margin: -4px; border-radius: 50%;
+    background: var(--glow); box-shadow: 0 0 10px 1px var(--glow); opacity: 0; pointer-events: none; }
+
+  /* c: the winning piece in flight, a man that takes its crown, and the ring that goes
+     out from it. */
+  .flyer { position: fixed; z-index: 6; visibility: hidden; width: 88px; height: 88px; margin: -44px; --u: 8.5px; inset: auto; pointer-events: none; }
+  .flyer .piece { --u: 8.5px; position: absolute; inset: 0; }
+  .wave { position: fixed; z-index: 6; width: 88px; height: 88px; margin: -44px; border-radius: 50%; opacity: 0;
+    border: 3px solid var(--glow); box-shadow: 0 0 14px color-mix(in srgb, var(--glow) 60%, transparent),
+      inset 0 0 10px color-mix(in srgb, var(--glow) 40%, transparent); pointer-events: none; }
+</style>
+</head>
+<body data-screen="board">
+<main class="game">
+  <div id="board"></div>
+  <aside class="panel glass left">
+    <button class="row button"><span data-icon="home"></span>Home</button>
+    <button class="row button"><span data-icon="gear"></span>Settings</button>
+    <div class="space"></div>
+    <button class="row button"><span data-icon="restart"></span>Start over</button>
+  </aside>
+  <aside class="panel glass right">
+    <div class="turn"><div class="piece white ringed" style="--ring: 1"></div>White wins</div>
+    <div class="space"></div>
+    <button class="row button big"><span data-icon="undo"></span>Take back</button>
+  </aside>
+</main>
+<div class="halo"></div>
+<div class="card glass">
+  <div class="spot"><div class="piece white king ringed" id="crowned"></div></div>
+  <div class="actions">
+    <a class="button" data-icon="back" aria-label="Back"></a>
+    <a class="button primary" data-icon="restart" aria-label="Again"></a>
+  </div>
+</div>
+<div class="flyer"><div class="piece white ringed" id="man"></div><div class="piece white king ringed" id="king"></div></div>
+<div class="wave"></div>
+<script>
+  const params = new URLSearchParams(location.search);
+  const take = ['a', 'b', 'c'].includes(params.get('take')) ? params.get('take') : 'a';
+  const hold = params.has('t') ? +params.get('t') : null;
+  Draughts.init();
+
+  // The take, from the switcher.
+  const bar = document.querySelector('.proto-bar');
+  bar.insertAdjacentHTML('afterbegin', `<select aria-label="take">${['a', 'b', 'c'].map((k) =>
+    `<option${k === take ? ' selected' : ''}>${k}</option>`).join('')}</select>`);
+  bar.querySelector('select').onchange = (e) => {
+    e.stopPropagation();
+    params.set('take', e.target.value);
+    params.delete('t');
+    location.search = params.toString();
+  };
+
+  // Russian, white has just taken black's last piece: e3 over f4 to g5.
+  const WHITE = ['a1', 'c1', 'g1', 'b2', 'h2', 'g5'], WON = 'g5';
+  const boardEl = document.getElementById('board');
+  Draughts.board(boardEl, { white: WHITE, black: [], last: ['e3', 'g5'] });
+  const dim = document.createElement('div');
+  dim.className = 'dim';
+  boardEl.appendChild(dim);
+  const at = (sq) => { const x = sq.charCodeAt(0) - 97, y = +sq.slice(1) - 1; return { x, y }; };
+  const pieceOn = (sq) => { const { x, y } = at(sq); return boardEl.querySelectorAll('.sq')[(7 - y) * 8 + x].querySelector('.piece'); };
+  const won = pieceOn(WON);
+  const winners = WHITE.map((sq) => {
+    const p = at(sq), w = at(WON);
+    return { el: pieceOn(sq), d: Math.hypot(p.x - w.x, p.y - w.y) };
+  });
+  winners.forEach((p) => p.el.classList.add('ringed'));
+
+  const card = document.querySelector('.card'), crowned = document.getElementById('crowned');
+  const halo = document.querySelector('.halo'), flyer = document.querySelector('.flyer');
+  const man = document.getElementById('man'), king = document.getElementById('king');
+  const wave = document.querySelector('.wave');
+  const MOTES = 7;
+  const motes = Array.from({ length: MOTES }, () => {
+    const m = document.createElement('div');
+    m.className = 'mote';
+    document.body.appendChild(m);
+    return m;
+  });
+  const hash = (i, k) => { const x = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return x - Math.floor(x); };
+
+  const clamp = (x) => Math.max(0, Math.min(1, x));
+  const span = (t, a, b) => clamp((t - a) / (b - a));
+  const smooth = (x) => x * x * (3 - 2 * x);
+  const out = (x) => 1 - (1 - x) ** 3;
+  const bump = (x) => (x <= 0 || x >= 1 ? 0 : Math.sin(Math.PI * x));
+
+  // Where things are with the card at rest: the board's centre, the card's spot, the
+  // winning piece's square.
+  let L;
+  function layout() {
+    card.style.translate = '';
+    const b = boardEl.getBoundingClientRect();
+    L = { cx: b.left + b.width / 2, cy: b.top + b.height / 2, sq: b.width * 0.978 / 8 };
+    card.style.left = `${L.cx}px`;
+    card.style.top = `${L.cy}px`;
+    halo.style.left = `${L.cx}px`;
+    halo.style.top = `${L.cy - 20}px`;
+    const s = card.querySelector('.spot').getBoundingClientRect();
+    L.spot = { x: s.left + s.width / 2, y: s.top + s.height / 2 };
+    const w = won.getBoundingClientRect();
+    L.from = { x: w.left + w.width / 2, y: w.top + w.height / 2, r: w.width / 2 };
+    L.top = L.cy - 150;
+  }
+
+  // The card slides up 28 px and fades in over [a, b], easing out.
+  function cardIn(t, a, b) {
+    const k = out(span(t, a, b));
+    card.style.opacity = k;
+    card.style.translate = `-50% calc(-50% + ${(1 - k) * 28}px)`;
+    return k;
+  }
+  const lift = (el, k, ring) => {
+    el.style.transform = k ? `translateY(${-6 * k}%) scale(${1 + 0.05 * k})` : '';
+    el.style.setProperty('--ring', ring);
+  };
+
+  const TAKES = {
+    // a: ripple, lift, dim, card. Still from 1.7 s.
+    a(t) {
+      for (const p of winners) {
+        if (p.el === won) continue;
+        const k = bump(span(t, 0.15 + 0.08 * p.d, 0.75 + 0.08 * p.d));
+        lift(p.el, k, k);
+        p.el.parentNode.classList.add('lit');
+        p.el.parentNode.style.setProperty('--lit', k);
+      }
+      const k = out(span(t, 0, 0.35));
+      lift(won, k, k);
+      won.classList.add('up');
+      dim.style.opacity = 0.45 * smooth(span(t, 0.9, 1.5));
+      cardIn(t, 1.0, 1.7);
+      crowned.style.opacity = smooth(span(t, 1.2, 1.7));
+      crowned.style.setProperty('--ring', smooth(span(t, 1.2, 1.7)));
+    },
+    // b: dim, card, light behind it, a few sparks from behind its top. Still from 2.2 s.
+    b(t) {
+      dim.style.opacity = 0.45 * smooth(span(t, 0, 0.6));
+      cardIn(t, 0.1, 0.8);
+      const g = span(t, 0.3, 1.1), settle = smooth(span(t, 1.1, 2.0));
+      halo.style.opacity = smooth(g) * (1 - 0.35 * settle);
+      halo.style.scale = 0.7 + 0.3 * out(g);
+      const p = span(t, 0.35, 0.95);
+      const s = 1 + 0.08 * Math.sin(Math.PI * p) * (1 - p);
+      crowned.style.scale = (0.85 + 0.15 * out(p)) * s;
+      crowned.style.opacity = smooth(span(t, 0.35, 0.6));
+      crowned.style.setProperty('--ring', smooth(p));
+      motes.forEach((m, i) => {
+        const f = span(t, 0.5 + 0.1 * i, 1.9 + 0.1 * i);
+        const x = L.cx + (hash(i, 1) - 0.5) * 240;
+        const y = L.top + 30 - (60 + 70 * hash(i, 2)) * out(f);
+        m.style.left = `${x + 10 * Math.sin(3 * f + i)}px`;
+        m.style.top = `${y}px`;
+        m.style.opacity = f <= 0 || f >= 1 ? 0 : (f < 0.25 ? f / 0.25 : 1 - (f - 0.25) / 0.75) * 0.9;
+      });
+    },
+    // c: lift, glide to the card, crown and one ring. Still from 1.75 s.
+    c(t) {
+      const up = out(span(t, 0, 0.35));
+      const f = smooth(span(t, 0.45, 1.25));
+      dim.style.opacity = 0.45 * smooth(span(t, 0.35, 0.95));
+      cardIn(t, 0.6, 1.2);
+      crowned.style.opacity = 0;
+      won.style.opacity = 0;
+      // From the square (lifted) to the spot, on an arc bowing up, growing to 88 px.
+      const r0 = L.from.r * (1 + 0.05 * up), y0 = L.from.y - 0.12 * L.from.r * up;
+      const x = L.from.x + (L.spot.x - L.from.x) * f;
+      const y = y0 + (L.spot.y - y0) * f - Math.sin(Math.PI * f) * 40;
+      const r = r0 + (44 - r0) * f;
+      flyer.style.left = `${x}px`;
+      flyer.style.top = `${y}px`;
+      flyer.style.scale = r / 44;
+      const ring = Math.max(up, 0);
+      const c = smooth(span(t, 1.2, 1.5));
+      man.style.opacity = 1 - c;
+      king.style.opacity = c;
+      man.style.setProperty('--ring', ring);
+      king.style.setProperty('--ring', ring);
+      const w = span(t, 1.25, 1.75);
+      wave.style.left = `${L.spot.x}px`;
+      wave.style.top = `${L.spot.y}px`;
+      wave.style.scale = 1 + 0.9 * out(w);
+      wave.style.opacity = w <= 0 || w >= 1 ? 0 : 0.8 * (1 - w);
+    },
+  };
+  const END = { a: 1.7, b: 2.2, c: 1.75 };
+  if (take !== 'c') flyer.style.display = 'none';
+
+  function show(t) {
+    TAKES[take](t);
+    Draughts.syncGlass();
+  }
+
+  // Paint the pieces at rest and full size, then play (or hold one moment).
+  let t0 = 0;
+  function frame(now) {
+    const t = (now - t0) / 1000;
+    show(t);
+    if (t < END[take] + 0.2) requestAnimationFrame(frame);
+  }
+  function play() { t0 = performance.now(); requestAnimationFrame(frame); }
+  addEventListener('load', () => document.fonts.ready.then(() => {
+    Draughts.paint();
+    layout();
+    flyer.style.visibility = 'visible';
+    if (hold !== null) show(hold); else setTimeout(play, 400);
+    document.addEventListener('click', (e) => { if (!e.target.closest('button, a, select, .proto-bar')) play(); });
+  }));
+  addEventListener('resize', () => setTimeout(() => { layout(); show(hold ?? 99); }, 200));
+</script>
+</body>
+</html>
