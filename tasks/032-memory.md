@@ -23,6 +23,12 @@ fruit. A holistic look, measuring before cutting.
   stack the photograph's load takes (`trim_memory`); the AI's transposition table and
   the worker's own engine; struct layout and padding in large arrays (Goose's field
   order, `i64` where `i32` or `u8` would do in per-square or per-entry tables).
+- **Every screen size:** whatever is cut must keep working on every tablet and phone
+  (task 030's sizes: phones from 720 × 1280 to 1080 × 2400, tablets up to 2560 × 1600
+  and 2880 × 1920). Size what follows the screen (render targets, the photograph and its
+  blurred copies, the text atlas) from the screen it runs on, not the Galaxy tablet's
+  1920 × 1200, and measure memory at the smallest and largest of those sizes too (the
+  user, 2026-11-08: don't waste memory, but it must work everywhere).
 - **Cut what is cheap and safe**, one change at a time, each with its before and after
   on the tablet and a look that it still renders the same.
 
@@ -30,4 +36,5 @@ fruit. A holistic look, measuring before cutting.
 
 - [ ] A table of where the memory goes, CPU and GPU, measured on the tablet
 - [ ] Each change with its before and after (PSS and graphics), the look unchanged
+- [ ] Memory measured at the smallest and largest screen sizes, everything still drawn right
 - [ ] Idle CPU and lifecycle memory scripts run at the end, numbers recorded
