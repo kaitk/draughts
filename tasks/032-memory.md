@@ -94,3 +94,123 @@ fruit. A holistic look, measuring before cutting.
 - [ ] Each change with its before and after (PSS and graphics), the look unchanged
 - [ ] Memory measured at the smallest and largest screen sizes, everything still drawn right
 - [ ] Idle CPU and lifecycle memory scripts run at the end, numbers recorded
+
+## Measured (2026-11-08)
+
+Step one: measured, nothing cut. On the Galaxy tablet (1920 × 1200, UI scale 1.5), the
+build of `27b2c23`; the Pixel 7a wasn't attached, so phone numbers below are worked out,
+not measured. `/proc/<pid>/smaps` is closed (the APK isn't debuggable), so the GPU side
+comes from a temporary build that logged SDL's `vkAllocateMemory`, its binds, and the
+swapchain (an SDL patch and an `app/` copy, neither kept), and `dumpsys gpu --gpumem`.
+
+### `dumpsys meminfo`, fresh launch (PSS, MB)
+
+| | Home | Game | Settings | Puzzle 21 | After 3 lifecycle cycles |
+| --- | --- | --- | --- | --- | --- |
+| Native heap | 41.0 | 41.6 | 42.0 | 41.0 | 27.3 |
+| GL mtrack (Vulkan memory) | 100.7 | 100.6 | 160.3 | 100.6 | |
+| EGL mtrack (swapchain) | 59.7 | 59.7 | 32.2 | 59.7 | |
+| Graphics | 160.3 | 160.3 | 192.5 | 160.3 | 208.6 to 211.1 |
+| Code (.so, .apk, .jar, .oat) | 9.6 | 9.6 | 9.6 | 9.4 | |
+| Dalvik, stack, other, unknown | 4.9 | 4.9 | 4.9 | 4.9 | |
+| **Total PSS** | **216.3** | **216.9** | **249.5** | **216.1** | **252 to 255** |
+
+`dumpsys gpu --gpumem` gives the process 197.2 MB at home and 258.3 MB in settings. Settings
+opened at launch draws frames for a while, and that is enough to need a second 64 MiB
+block (below). The lifecycle's 211 MB is the same two blocks plus the swapchain.
+
+### Where the graphics memory goes
+
+The Mali-G615 has one memory type (device-local and host-visible), so everything shares
+SDL's allocator: a resource up to 2 MiB goes into 16 MiB blocks, and a larger one gets a
+block **rounded up to 64 MiB** (`LARGE_ALLOCATION_INCREMENT` in `SDL_gpu_vulkan.c`). It
+then also takes later large resources into the free space. Transfer buffers are
+dedicated allocations of their exact size.
+
+| What | Size, format | Bytes (Mali) | Lifetime |
+| --- | --- | --- | --- |
+| Swapchain | 6 × 1920 × 1200 RGBA8 (driver's `minImageCount` is 6; SDL asks for 2) | 6 × 9.7 MiB = 58 MiB | resident, EGL mtrack |
+| gfx's screen | 1920 × 1200 RGBA8 | 9.6 MiB | resident; a second one while cycled or resized |
+| gfx's screen depth | 1920 × 1200 D32F, never used by a 2D app | 9.5 MiB | as the screen |
+| Sharp photograph | 2048² RGBA8, 1 mip | 16.3 MiB | resident, current season |
+| Text atlas | 1024 × 2048 RGBA8 (1846 rows used), 6 faces × 376 glyphs | 8.1 MiB | resident |
+| Blurred copy, glass copy | 512² and 256² RGBA8 | 1.0 + 0.26 MiB | resident |
+| Blur intermediates | 512² ×2 (one a texture), 256² | 2.3 MiB | released after the blur |
+| Thumbnails | 160 × 392 RGBA8 | 0.5 MiB | resident |
+| Storage buffers | quads 32 KB, pieces 3 KB, overlay 256 B | 35 KB | resident |
+| Upload transfers | photo 16 MiB, blur source 1 MiB, atlas 8 MiB, thumbs 0.25 MiB | | freed after the next completed submit; the atlas's and thumbs' stay until a frame is drawn |
+| Per-frame transfers | 32 KB + 3 KB + 256 B | | `vkAllocateMemory` and `vkFreeMemory` each, every drawn frame |
+
+No MSAA, no mips, one season and one atlas resident. Live `VkDeviceMemory` at home after
+launch: one 64 MiB block (screen, depth, sharp, atlas: 45.6 MB, plus a second screen and depth
+from a resize at launch), one 16 MiB small block, and the atlas's unfreed 8 MiB transfer:
+88.3 MiB of GL mtrack's 98.3. The other **10 MiB is the driver** (pipelines, pools). Once
+the screen is cycled (frames drawn while the last is still on the GPU) or recreated
+(rotation), a **second 64 MiB block** comes for about 20 MB of screen and depth. After
+lifecycle cycles: 2 × 64 + 16 MiB + driver + swapchain = the 211 MB.
+
+### CPU side
+
+- Native heap: 23 MB before `gfx::open` (ART and the JNI, as the POC's 25), +6 MB opening
+  Vulkan, +6 MB loading the scene (pipelines; stb's 16 MB decode is freed), +1.7 baking
+  text, +1.6 thumbnails: 39 MB malloc'd. After lifecycle cycles it settles at 27 MB.
+- Data stacks: the photograph's 16 MiB `px` and the atlas's 8 MiB copy are transient and
+  trimmed (anonymous RSS 75 → 58 MB after the scene's `trim_memory`, 69 → 61 after the
+  bake). The load's peak is about 33 MB above rest (data stack + stb's decode).
+- Goose packs structs (`ai::Entry` is 15 bytes), so no padding. The computer's worker has a
+  transposition table of 2^18 × 15 B = 3.75 MiB and 64 plies × 25.7 KB = 1.6 MiB, committed only
+  once the computer first plays. The main thread's state is under 1 MB: `Shell` 237 KB,
+  `Gui` 115 KB (glyph tables 81 KB), the puzzle's `Play` 111 KB.
+
+### Idle CPU per thread (60 s, untouched)
+
+| Thread | Home | Game |
+| --- | --- | --- |
+| `SDLActivity` (the Java main thread) | 1.12 s, 3128 wakeups | 1.30 s, 3126 wakeups |
+| `SDLThread` (the program) | 0.02 s, 62 | 0.03 s, 62 |
+| Process | 1.15 s | 1.34 s |
+
+The idle cost and its rise sit in the Java main thread, waking 52 times a second: SDL's
+`SDLSurface` keeps the accelerometer registered at `SENSOR_DELAY_GAME` (20 ms) while
+resumed (`dumpsys sensorservice`: our process's only sensor connection), for its rotation
+check and accelerometer-as-joystick. The program thread wakes once a second as designed.
+
+### Candidates, ranked (tablet; smallest phone 720 × 1280, largest tablet 2880 × 1920)
+
+1. **SDL's 64 MiB rounding** (an SDL patch: allocate large resources at their size or a few
+   MiB): steady state after any animation or rotation from 2 × 64 MiB to the ~45 to 66 MB
+   used, **~60 MB** (fresh home ~18); at 720 × 1280 ~40, at 2880 × 1920 ~60. Low risk, a
+   constant; small effort. A note for the user, SDL being upstream.
+2. **The screen not cycled and no depth target** (a gfx patch: create the depth target
+   lazily, and clear the screen without cycling; the app begins its pass without depth):
+   9.5 MiB depth always, and with no cycled pair the second 64 MiB block goes even
+   without 1, **~10 to 64 MB**; 3.5 / 21 MiB depth at the small and large sizes. Low risk
+   (the GPU waits on the last frame's blit instead of taking new memory); small effort.
+3. **The text atlas as R8, cut to its used rows, and the title and clock faces baked with
+   only their glyphs**: 8 MiB to about 0.6 to 1.8, **~6.5 to 7.5 MB**, and the 8 MiB
+   transfer and 10 MB bake buffers with it; 4 → 0.2 at 720 × 1280, **32 → 1.5 MiB at
+   2880 × 1920** (scale 2.4; 16 MiB at scale 2.0, the Pixel's 1.97). Low risk; medium
+   effort (app-only: R8 upload, `.r` in the shader, v rescaled, a glyph set per face).
+4. **The sharp photograph as ASTC, sized by the screen and density**: 16 → 4 MiB (4×4)
+   or 1.8 (6×6), **~12 to 14 MB**, and the 33 MB load spike and 16 MiB transfer gone;
+   phones at 1536 px 9 → 2.25. Medium risk (the look, the RGBA8 fallback, gfx has no
+   compressed formats, so a gfx patch); high effort. Sizing alone saves nothing on the
+   tablet (2048 against a 1920 long side), ~7 MB on a phone.
+5. **Drawing straight into the swapchain** (a gfx patch dropping the screen copy): 9.6 MiB
+   and its cycled copy; high effort. The swapchain's 6 images (58 MiB; 21 at 720 × 1280,
+   127 at 2880 × 1920) are the driver's minimum and can't be cut from the app.
+6. **The computer's tables**: 2^17 entries and 128 moves a ply would save ~3 MB in the
+   worker, only once it plays; strength and time to check with `tools/aibench.goose`. Low.
+7. **Blur copies smaller, Kawase, a mip, offline**: 1.25 MiB resident inside a 16 MiB
+   block, so nothing measurable; not worth it. Thumbnails as ASTC: 0.4 MB, not worth it.
+8. Nothing to cut: MSAA (none), unused mips (none), several seasons or sizes (one of
+   each), struct padding (packed), the data-stack spike (already trimmed).
+
+Not memory, but seen: every drawn frame allocates and frees three `VkDeviceMemory`
+transfers (`update_buffer`); a persistent upload buffer in gfx would end that. Idle CPU:
+keep `SDLSurface` from registering the accelerometer (`DraughtsActivity` overriding
+`createSDLSurface` with a surface whose `enableSensor` does nothing, or an SDL patch), about
+1.1 to 1.3 s a minute, nearly all of it; check that turning the screen still relays out.
+
+With 1 to 3 the tablet's graphics would go from ~211 to ~135 MB and PSS from ~260 to
+~185 MB.
