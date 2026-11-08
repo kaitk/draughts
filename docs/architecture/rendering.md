@@ -206,7 +206,7 @@ the prototype tried, kept for 3D:
   all three icons over their words in 96 px rows); on the right whose turn it is (a 72 px piece of its color with
   the glow ring, 4 px of the glow color at 80% and a 22 px glow, over "White's turn"),
   or the two clocks, and at the bottom take back, a tall 132 px tile with a 48 px icon
-  over its word. In portrait the left side is a bar above the board, its three tiles in
+  over its word (96 px in a panel under 420 px tall, a phone's, as a puzzle's next). In portrait the left side is a bar above the board, its three tiles in
   a row, 88 px tall, thirds of it while each word fits, else each as wide as its word and
   an even share of the rest (2026-11-08); where a third would be under 170 px (a phone),
   the bar is 8 px taller and each icon stands over its word, which needs less width. The

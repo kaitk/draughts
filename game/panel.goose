@@ -22,7 +22,8 @@ let HOME = 3;
 let SETTINGS = 4;
 
 let ROW_H = 88.0;           // dp: a control's row, the 88 dp a small hand needs
-let TALL_H = 132.0;         // take back in landscape
+let TALL_H = 132.0;         // take back in landscape, STACK_H in a panel under SHORT
+let SHORT = 420.0;          // dp: a panel this short (a phone) has the shorter tile
 let WIDE_H = 88.0;          // take back in portrait
 let CLOCK_H = 72.0;
 let OVER = 4;               // pieces over the UI: two clocks and the winner, at most
@@ -163,6 +164,10 @@ fn leave(g: gui::Gui&, l: Layout, icon: i64, word: i64) -> i64 {
     return chosen;
 }
 
+// How tall the right panel's bottom tile is in landscape: TALL_H, or STACK_H in a panel
+// too short for it beside what is above it (a phone).
+fn tall(l: Layout, u: f32) -> f32 { (if l.right.w < SHORT * u { STACK_H } else { TALL_H }) * u }
+
 // The right panel's room inside its glass, where a screen plays.
 fn play_area(g: gui::Gui&, l: Layout) -> float4 {
     let u = g.scale;
@@ -193,7 +198,7 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, thinkin
     var chosen = leave(g, l, gui::HOME, strings::GAME_HOME);
     var right = play_area(g, l);
     if landscape {
-        let back = gui::cut_bottom(right, TALL_H * u);
+        let back = gui::cut_bottom(right, tall(l, u));
         if clock::on(c) {
             clock_of(g, gui::cut_top(right, CLOCK_H * u), c, first, rings[first], over);
             gui::cut_top(right, 10.0 * u);

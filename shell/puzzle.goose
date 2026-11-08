@@ -324,7 +324,7 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64) -> i64 {
     let style = if solved { gui::CHOSEN } else { gui::PLAIN };
     let word = strings::get(strings::PUZZLE_NEXT);
     if landscape {
-        let next = gui::cut_bottom(right, panel::TALL_H * u);
+        let next = gui::cut_bottom(right, panel::tall(l, u));
         gui::cut_top(right, 14.0 * u);
         let f .= g.faces[gui::LABEL];
         goal(pl, g, gui::cut_top(right, 72.0 * u + 8.0 * u + max(48.0 * u, f.ascent - f.descent)), 72.0, true, now);
