@@ -76,6 +76,15 @@ pages loaded for two apps. Check the notable ones by hand on Play before quoting
 - **For children**: no checkers app on Play made for young children (Teacher Approved
   or Designed for Families) turned up; a roundup found 7 of 8 offline checkers apps on
   Play marked "Contains ads".
+- **GoDraughts** (`net.devdad.internationaldraughts`,
+  https://play.google.com/store/apps/details?id=net.devdad.internationaldraughts, and a
+  free website, https://godraughts.com/en; pointed out by the user 2026-11-08): "free",
+  International only, accounts synced across web, Android and iOS, online play, tactics
+  puzzles, an interactive rules tutorial, training courses, coaching from the player's
+  own mistakes, six computer levels. A good, modern app; ads and data collection not
+  stated on its site, so check Play's Data safety. Its catch for this claim: an online,
+  account-based trainer for adult players, International only, not made for young
+  children. Worth naming as a good one alongside lidraughts.
 - **Estonian**: no draughts app with Estonian text found (a search absence, not proof;
   Play's own search for "kabe" wasn't possible from here).
 
@@ -85,7 +94,7 @@ pages loaded for two apps. Check the notable ones by hand on Play before quoting
   tracking, offline, made for young children, modern-looking, and has International,
   Russian, and Brazilian, let alone Estonian. Apps with the variants offline carry ads
   or share data (foo Game, Dawikk, Magic Board, Draughts 10x10).
-- The real counterexample is lidraughts: free, open source, no ads or tracking, every
+- The closest counterexamples are lidraughts and GoDraughts. lidraughts: free, open source, no ads or tracking, every
   variant, offline play against Scan. It is not "nothing like it exists"; it is an
   adult online club app, not one for a young child.
 - So don't say "no such app exists". Plain phrasings to start from:

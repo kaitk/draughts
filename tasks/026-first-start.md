@@ -17,6 +17,13 @@ tutorial tile opens the tutorial again.
   it is played. Positions checked with `test/perft.py moves`.
 - Strings for every title and line.
 
+## References
+
+- GoDraughts (https://godraughts.com/en, its Android app `net.devdad.internationaldraughts`;
+  the user, 2026-11-08): a good modern draughts app with an interactive rules tutorial,
+  training courses, and coaching from the player's own mistakes. For adults, but worth
+  studying for how it teaches.
+
 ## Acceptance criteria
 
 - [ ] A fresh install opens on the variant cards; later launches open home
