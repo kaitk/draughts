@@ -1,0 +1,3 @@
+# Russian draughts puzzles
+
+variant russian

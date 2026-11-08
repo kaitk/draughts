@@ -340,7 +340,7 @@ fn menu(over: game::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, s
         let r = gui::cut_top(content, ROW_H * u);
         gui::cut_top(content, ROW_GAP * u);
         var stars: u8[..64] = [];
-        let won, all = picker::totals(s.stars);
+        let won, all = picker::totals(s.stars[puzzles::loaded]);
         strings::fill_in(stars, strings::PUZZLES_STARS, [won, all]);
         let note = if i == 2 { strings::get(LEVEL_NOTES[s.level]) } else if i == 3 && all > 0 { stars[..] } else { "" };
         if gui::row(g, 301 + i, r, icons[i], strings::get(keys[i]), note, i == 0, rows[i] != 0) { pick = rows[i]; }

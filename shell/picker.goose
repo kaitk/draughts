@@ -175,10 +175,13 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     }
     let gap = 12.0 * u;
     let row_h = (if phone { 96.0 } else { 124.0 }) * u;
-    let one = puzzles::THEMES * row_h + (puzzles::THEMES - 1) * gap;
+    // A variant's set may leave a theme out (Russian's has no king shots): its row too.
+    var rows = 0;
+    for t in puzzles::THEMES { if puzzles::theme_count(puzzles::all, t) > 0 { rows++; } }
+    let one = rows * row_h + (rows - 1) * gap;
     let head = if short { 0.0 } else { 88.0 * u + gap };
     let cols = if landscape && head + one > page.w { 2 } else { 1 };
-    let per = (puzzles::THEMES + cols - 1) / cols;
+    let per = (rows + cols - 1) / cols;
     let col_w = min((page.z - (cols - 1) * gap) / cols, COLUMN * u);
     let w = cols * col_w + (cols - 1) * gap;
     let h = head + per * row_h + (per - 1) * gap;
@@ -192,8 +195,11 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
         }
         gui::text(g, gui::fitting(g, gui::LABEL, title, top.z), top, title, 1.0, 0.0, gui::LEFT);
     }
+    var k = 0;
     for t in puzzles::THEMES {
-        let r = float4 { x + (t / per) * (col_w + gap), y + head + (t % per) * (row_h + gap), col_w, row_h };
+        guard puzzles::theme_count(puzzles::all, t) > 0 else { continue; }
+        let r = float4 { x + (k / per) * (col_w + gap), y + head + (k % per) * (row_h + gap), col_w, row_h };
+        k++;
         if at >= 0 && puzzles::all.list[at].theme == t { spot = float4 { r.x, r.y, r.w, r.w }; }
         if theme_row(g, r, t, stars, phone) {
             theme = t;

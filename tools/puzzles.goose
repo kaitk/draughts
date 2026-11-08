@@ -1,13 +1,17 @@
 // Checks the puzzles (docs/architecture/puzzles.md, "Checks"), and helps compose them.
 //
 //   goose build -o build/puzzles tools/puzzles.goose
-//   build/puzzles [FILE]                     every puzzle in FILE (puzzles/international.txt)
+//   build/puzzles [FILE]                     every puzzle in FILE (the variant's built-in set)
 //   build/puzzles try FEN GOAL MOVES         the moves that reach GOAL (take N, crown, win,
 //                                            safe) within MOVES moves, how many, the line
 //                                            the screen would play, and what the checks
 //                                            say of a puzzle made of that line
 //   build/puzzles find SIDE GOAL MOVES MINE THEIRS COUNT [SEED [KINGS]]
 //                                            game-like positions that make a puzzle: see find
+//
+// try and find take `--variant NAME` (international by default; russian, brazilian) for
+// the rules and the board, and find `--rows N`, the rows from its own back row a side's
+// camp spans (the board's size less 3 by default: 7 of 10, 5 of 8).
 //
 // For each puzzle it prints its theme, level, goal, pieces, the moves that solve it, and
 // what the checks found (puzzles::check); then the computer player at full skill: its
@@ -22,6 +26,10 @@ import ai from "../ai";
 import puzzles from "../puzzles";
 
 let LOSING = -50;           // a root score this far under even loses material (a man is about 100)
+
+// The variant try and find work in, and the rows a camp spans (0: the board's size less 3).
+var variant: u8 = rules::INTERNATIONAL;
+var camp_rows = 0;
 
 // The computer's view of pz: its best move, and every move it scores within 50 of that,
 // appended to out, each marked if it doesn't solve the puzzle; then any right first
@@ -75,7 +83,7 @@ fn check_file(path: const u8[:]) {
     if path.len > 0 {
         guard read_file(path, text) else { abort(str("can't read ", path)); }
     } else {
-        text.append(puzzles::file());
+        text.append(puzzles::file(variant));
     }
     var set = puzzles::Set { list: [] };
     var err: u8[>..] = [];
@@ -180,7 +188,7 @@ fn screen_line(s: puzzles::Solver&, pz: puzzles::Puzzle&, out: u8[>..]&) -> bool
 fn try_position(fen: const u8[:], goal: const u8[:], moves: const u8[:]) {
     let k, ok = parse_int(moves);
     guard ok && k >= 1 else { abort("MOVES is a number"); }
-    let p, fen_ok = rules::parse_fen(fen, rules::INTERNATIONAL);
+    let p, fen_ok = rules::parse_fen(fen, variant);
     guard fen_ok else { abort("not a position"); }
     var pz = puzzle_of(p, goal, k);
     var s = puzzles::Solver { moves: [], stack: [] };
@@ -212,17 +220,18 @@ fn try_position(fen: const u8[:], goal: const u8[:], moves: const u8[:]) {
 
 // Places `n` men of `side` in a camp, as in a game: the first on its half's front rows,
 // each next one beside or behind one already placed (a diagonal neighbor on its own side
-// of it), on rows 3 to 9 from the other side's back row. Kings are made of the first
-// `kings` placed.
+// of it), within `camp_rows` of its own back row (7 of 10, 5 of 8 by default). Kings are
+// made of the first `kings` placed.
 fn camp(p: rules::Position&, r: rng&, side: i64, n: i64, kings: i64) {
-    let v .= rules::VARIANTS[rules::INTERNATIONAL];
+    let v .= rules::VARIANTS[variant];
+    let rows = if camp_rows > 0 { min(camp_rows, v.size) } else { v.size - 3 };
     var placed = 0;
     var tries = 0;
     while placed < n && tries < 10000 {
         tries++;
-        let x = rand_int(r, 10);
-        // Rows from white's side: white on rows 0 to 6, black on 3 to 9.
-        let y = if side == rules::WHITE { rand_int(r, 7) } else { 3 + rand_int(r, 7) };
+        let x = rand_int(r, v.size);
+        // Rows from white's side: white's from its back row up, black's down from the top.
+        let y = if side == rules::WHITE { rand_int(r, rows) } else { v.size - rows + rand_int(r, rows) };
         let b = rules::bit_at(v, x, y);
         guard b >= 0 && (p.pieces[0] | p.pieces[1]) & rules::bit(b) == 0 else { continue; }
         if placed > 0 {
@@ -246,11 +255,12 @@ fn camp(p: rules::Position&, r: rng&, side: i64, n: i64, kings: i64) {
 // The position turned round: each square to its opposite, the colors swapped, so a
 // puzzle found for white is one for black.
 fn turned(p: rules::Position) -> rules::Position {
-    let v .= rules::VARIANTS[rules::INTERNATIONAL];
+    let v .= rules::VARIANTS[p.variant];
+    let last = v.size * v.h;
     var q = rules::Position { pieces: [0, 0], kings: 0, side: 1 - p.side, variant: p.variant };
-    for n in 1..51 {
+    for n in 1..last + 1 {
         let b = rules::bit(v.bit_of[n]);
-        let to = rules::bit(v.bit_of[51 - n]);
+        let to = rules::bit(v.bit_of[last + 1 - n]);
         for side in 2 { if p.pieces[side] & b != 0 { q.pieces[1 - side] |= to; } }
         if p.kings & b != 0 { q.kings |= to; }
     }
@@ -273,12 +283,12 @@ fn find(side: i64, goal: const u8[:], k: i64, mine: i64, theirs: i64, count: i64
     var tries = 0;
     while found < count && tries < 2000000 {
         tries++;
-        var p = rules::Position { pieces: [0, 0], kings: 0, side: rules::WHITE, variant: rules::INTERNATIONAL };
+        var p = rules::Position { pieces: [0, 0], kings: 0, side: rules::WHITE, variant: variant };
         camp(p, r, rules::WHITE, mine, kings);
         camp(p, r, rules::BLACK, theirs, 0);
         guard popcount(p.pieces[0]) == mine && popcount(p.pieces[1]) == theirs else { continue; }
         // No white man on black's back row, which would have crowned.
-        guard p.pieces[0] & ~p.kings & rules::VARIANTS[rules::INTERNATIONAL].promotion[0] == 0 else { continue; }
+        guard p.pieces[0] & ~p.kings & rules::VARIANTS[variant].promotion[0] == 0 else { continue; }
         rules::generate(p, legal);
         var pz = puzzle_of(p, goal, k);
         let take = pz.goal == puzzles::TAKE;
@@ -325,7 +335,28 @@ fn find(side: i64, goal: const u8[:], k: i64, mine: i64, theirs: i64, count: i64
 }
 
 fn main() {
-    let argv = args();
+    // The flags first, wherever they are; the words left are the command.
+    let all = args();
+    var argv: u8[..256][>..] = [];
+    var i = 0;
+    while i < all.len {
+        if i + 1 < all.len && all[i] == "--variant" {
+            var known = false;
+            for name, k in puzzles::VARIANT_NAMES { if all[i + 1] == name { variant = k as u8; known = true; } }
+            guard known else { abort(str("not a variant: ", all[i + 1])); }
+            i += 2;
+            continue;
+        }
+        if i + 1 < all.len && all[i] == "--rows" {
+            let n, ok = parse_int(all[i + 1]);
+            guard ok && n >= 1 else { abort("--rows takes a number"); }
+            camp_rows = n;
+            i += 2;
+            continue;
+        }
+        argv.push(all[i]);
+        i++;
+    }
     if argv.len >= 5 && argv[1] == "try" {
         try_position(argv[2], argv[3], argv[4]);
         return;

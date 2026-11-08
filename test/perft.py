@@ -282,12 +282,15 @@ def same_moves(v, board, side):
 
 def puzzles(v, path):
     """Plays each `line` of a puzzle file (docs/architecture/puzzles.md) from its
-    `position`: a move is its squares apart by - or x, the stops of a capture or only
+    `position`: a move is its squares apart by -, x, or :, the stops of a capture or only
     its ends, and must be exactly one legal move here."""
     bad = count = 0
     board = side = None
     for raw in open(path):
         key, _, value = raw.split("#")[0].strip().partition(" ")
+        if key == "variant" and value.strip() != v.name:
+            print(f"the file is {value.strip()}'s, not {v.name}'s")
+            return False
         if key == "position":
             board, side = parse_fen(v, value)
             count += 1
@@ -297,7 +300,7 @@ def puzzles(v, path):
         for word in value.split():
             if not same_moves(v, b, s):
                 bad += 1
-            stops = [parse_square(v, t) for t in word.replace("x", "-").split("-")]
+            stops = [parse_square(v, t) for t in word.replace("x", "-").replace(":", "-").split("-")]
             found = [m for m in moves(v, b, s) if m[0][0] == stops[0] and m[0][-1] == stops[-1]
                      and (len(stops) == 2 or m[0] == stops)]
             if len(found) != 1:

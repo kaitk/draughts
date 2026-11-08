@@ -18,7 +18,8 @@
 // but the language, which is the device's, a new game's setup, the computer's skill at
 // each level, which moves after each game against it, how many such games began, and
 // the stars won in each puzzle (`stars.international = 1:3 4:2`, by puzzle id, the ids
-// being International's; an older file's `stars` is read as it).
+// being a set's own, so each set's stars are under its variant's name; an older file's
+// `stars` is read as International's).
 namespace settings;
 import std;
 import vec;
@@ -83,8 +84,9 @@ struct Settings {
     // The computer's skill at each level (ai::adapt), and the games against it so far.
     skill: i64[3] = ai::LEVEL_SKILL,
     games: i64    = 0,
-    // The stars won in each puzzle, 1 to 3, by its id; 0 for one not solved.
-    stars: u8[puzzles::MAX_PUZZLES + 1] = [0; puzzles::MAX_PUZZLES + 1],
+    // The stars won in each puzzle, 1 to 3, by its set's variant (puzzles::set_of) and
+    // its id; 0 for one not solved.
+    stars: u8[puzzles::MAX_PUZZLES + 1][rules::VARIANT_COUNT] = [[0; puzzles::MAX_PUZZLES + 1]; rules::VARIANT_COUNT],
     // Whether the Board row shows. The 3D board doesn't exist yet (task 015), so the row
     // is hidden and the board always flat, whatever the file's `board` says; the app's
     // `--3d` flag turns it on for working on that task. Not in the file; remove it, and
@@ -145,13 +147,19 @@ fn parse(text: const u8[:]) -> Settings {
         let n, number = parse_int(value);
         for name, i in SKILL_KEYS { if key == name && number { s.skill[i] = ai::adapt(n, i, 0); } }
         if key == "games" && number && n >= 0 { s.games = n; }
-        if key == "stars.international" || key == "stars" {
+        var set = -1;
+        if key == "stars" { set = rules::INTERNATIONAL; }
+        for name, i in puzzles::VARIANT_NAMES {
+            let dot, rest, has_dot = split_once(key, '.');
+            if has_dot && dot == "stars" && rest == name { set = i; }
+        }
+        if set >= 0 {
             for one in split(value, ' ') {
                 let a, b, pair = split_once(one, ':');
                 let id, ok_id = parse_int(a);
                 let won, ok_won = parse_int(b);
                 if pair && ok_id && ok_won && id >= 1 && id <= puzzles::MAX_PUZZLES && won >= 1 && won <= 3 {
-                    s.stars[id] = won as u8;
+                    s.stars[set][id] = won as u8;
                 }
             }
         }
@@ -185,12 +193,15 @@ fn write(s: Settings, out: u8[>..]&) {
     out.append(CLOCK_NAMES[s.clock]);
     for name, i in SKILL_KEYS { format(out, "\n", name, " = ", s.skill[i]); }
     format(out, "\ngames = ", s.games);
-    var first = true;
-    for won, id in s.stars {
-        guard won > 0 else { continue; }
-        out.append(if first { "\nstars.international = " } else { " " });
-        format(out, id, ":", won);
-        first = false;
+    for set, v in s.stars {
+        var first = true;
+        for won, id in set {
+            guard won > 0 else { continue; }
+            if first { format(out, "\nstars.", puzzles::VARIANT_NAMES[v], " = "); }
+            else { out.append(" "); }
+            format(out, id, ":", won);
+            first = false;
+        }
     }
     out.append("\n");
 }

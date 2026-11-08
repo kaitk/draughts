@@ -66,7 +66,7 @@ fn listed(sh: shell::Shell&) -> u8[>..] {
 // season, and the game's draughts and moves so far.
 fn state(sh: shell::Shell&) -> u8[>..] {
     var won = 0;
-    for x in sh.prefs.stars { won += x; }
+    for x in sh.prefs.stars[rules::INTERNATIONAL] { won += x; }
     return str("stars ", won, ", skill ", sh.prefs.skill[0], " ", sh.prefs.skill[1], " ", sh.prefs.skill[2], ", games ",
                sh.prefs.games, ", season ", sh.prefs.season, ", hints ", sh.prefs.hints, ", game ",
                rules::VARIANTS[sh.game.b.variant].size, "x", rules::VARIANTS[sh.game.b.variant].size, " after ",
@@ -104,7 +104,7 @@ fn main() {
     players::trimmed(s.name);
     s.first_start_done = true;
     s.season = 1;
-    s.stars[2] = 3;
+    s.stars[rules::INTERNATIONAL][2] = 3;
     var out: u8[>..] = [];
     settings::write(s, out);
     print("a player's file:\n", out);
@@ -166,7 +166,7 @@ fn main() {
     print("added: ", listed(sh), "; ", state(sh), ", first start done ", sh.prefs.first_start_done);
     play_one(sh);
     play_one(sh);
-    sh.prefs.stars[5] = 2;
+    sh.prefs.stars[rules::INTERNATIONAL][5] = 2;
     sh.prefs.season = 3;
     written(sh);
     shell::switch_player(sh, 0);

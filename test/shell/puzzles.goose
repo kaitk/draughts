@@ -192,15 +192,15 @@ fn main() {
     settings::write(sh.prefs, out);
     let back = settings::parse(out);
     let odd = settings::parse("stars = 1:3 2:9 199:1 x 4:0\n");
-    print("read back: ", back.stars[1], " ", back.stars[7], " ", back.stars[53], "; the older key ", odd.stars[1],
-          ", odd ones ignored: ", odd.stars[2], " ", odd.stars[4]);
+    print("read back: ", back.stars[rules::INTERNATIONAL][1], " ", back.stars[rules::INTERNATIONAL][7], " ", back.stars[rules::INTERNATIONAL][53], "; the older key ", odd.stars[rules::INTERNATIONAL][1],
+          ", odd ones ignored: ", odd.stars[rules::INTERNATIONAL][2], " ", odd.stars[rules::INTERNATIONAL][4]);
     drive::tap(sh, g, drive::tile(g, 0), 30.0);             // the puzzles: the theme's page
     drive::idle(sh, g, 30.4);
     show(sh, "puzzles");
     drive::tap(sh, g, drive::tile(g, 0), 30.5);             // back to the library
     show(sh, "back");
     print("  ", picker(g));
-    for id in [3, 8, 6, 9] { sh.prefs.stars[id] = 3; }
+    for id in [3, 8, 6, 9] { sh.prefs.stars[rules::INTERNATIONAL][id] = 3; }
     drive::idle(sh, g, 30.6);
     print("six of Learn solved: ", picker(g));
 

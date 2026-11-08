@@ -81,8 +81,9 @@ fn main() {
     // home|game|settings|friend|computer (home unless a position, taps, a clock, or the
     // computer are given; the last two open home's setup; puzzles the puzzles to pick
     // from), --puzzle ID (that puzzle, its taps on its board), --variant
-    // international|brazilian|russian, --clock none|5+3|10+5, --computer white|black (a
-    // new game; --level easy|medium|hard, the setup's last by default; with --screen
+    // international|brazilian|russian (the puzzles' set too), --clock none|5+3|10+5,
+    // --computer white|black (a new game; --level easy|medium|hard, the setup's last
+    // by default; with --screen
     // friend or computer, the setup's choices instead, the child playing the other
     // color), --go home|settings|game|play|puzzles|puzzle (switches there on the second
     // frame, through its transition: game as continue does, play as the setup's play,
@@ -223,7 +224,7 @@ fn main() {
     let system_lang = strings::pick(locales[..draughts_locales(locales)]);
     if lang < 0 { lang = if prefs.language >= 0 { prefs.language } else { system_lang }; }
     strings::use(lang);
-    puzzles::load();
+    puzzles::load((if variant >= 0 { variant } else { prefs.variant }) as u8);
 
     var android_root: u8[>..] = [];
     let on_android = env("ANDROID_ROOT", android_root);

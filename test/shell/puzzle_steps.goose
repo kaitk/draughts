@@ -103,7 +103,7 @@ fn main() {
           sh.puzzle.b.since + board::duration(sh.puzzle.b.move) - 0.5, " s after the tap");
     drive::idle(sh, g, 2.0);
     show(sh, g, "then 8", 2.0);
-    print("  ", rules::fen(sh.puzzle.b.pos), ", kept stars ", sh.prefs.stars[14]);
+    print("  ", rules::fen(sh.puzzle.b.pos), ", kept stars ", sh.prefs.stars[rules::INTERNATIONAL][14]);
 
     shell::play_puzzle(sh, 8, 10.0);
     drive::idle(sh, g, 10.0);
@@ -131,7 +131,7 @@ fn main() {
     drag(sh, g, 27, 16, 23.2);
     show(sh, g, "then 27 dropped on 16", 23.3);
     print("  playing ", named(sh.puzzle.b.move.from), "x", named(sh.puzzle.b.move.to), ", kept stars ",
-          sh.prefs.stars[10]);
+          sh.prefs.stars[rules::INTERNATIONAL][10]);
 
     // Dropped on the capture's last square: one way goes there, so it is played.
     shell::play_puzzle(sh, 12, 30.0);
@@ -162,7 +162,7 @@ fn main() {
     tap(sh, g, 6, 43.3);
     drive::idle(sh, g, 45.0);
     show(sh, g, "26, 17, 6", 45.0);
-    print("  kept stars ", sh.prefs.stars[31]);
+    print("  kept stars ", sh.prefs.stars[rules::INTERNATIONAL][31]);
 
     // A drop is the last event a finger makes, so the app draws the frame it lands on and
     // then waits: that frame or one it asks for must show next awake. The man jumped (21)

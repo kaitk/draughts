@@ -68,7 +68,7 @@ fn report(what: const u8[:], g: gui::Gui&) {
 
 fn screens(g: gui::Gui&, stars: i64[:]) {
     var sh = shell::new(rules::INTERNATIONAL);
-    for id in stars { sh.prefs.stars[id] = 3; }
+    for id in stars { sh.prefs.stars[rules::INTERNATIONAL][id] = 3; }
     sh.screen = shell::PICKER;
     drive::idle(sh, g, 0.0);
     report("the library", g);

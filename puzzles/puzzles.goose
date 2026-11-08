@@ -53,18 +53,32 @@ struct Puzzle {
 
 struct Set { list: Puzzle[..MAX_PUZZLES] }
 
-// The puzzles built into the program, once load() has read them.
-var all: Set;
+// The variants as a file names them (`variant russian`, `stars.russian`), in
+// rules::RUSSIAN.. order.
+let VARIANT_NAMES = ["russian", "international", "english", "brazilian"];
 
-// A puzzle file, as built into the program.
-fn file() -> const u8[:] { embed_file("international.txt") }
+// The puzzles built into the program, once load() has read them, and the variant whose
+// set they are.
+var all:    Set;
+var loaded: u8 = rules::INTERNATIONAL;
 
-// Reads the built-in puzzles into `all`; false if the file has a mistake, which
-// test/puzzles/ rules out.
-fn load() -> bool {
+// The variant whose set a player of `variant` is shown: Russian has its own, the others
+// International's for now.
+fn set_of(variant: u8) -> u8 { if variant == rules::RUSSIAN { rules::RUSSIAN } else { rules::INTERNATIONAL } }
+
+// A variant's puzzle file, as built into the program.
+fn file(variant: u8 = rules::INTERNATIONAL) -> const u8[:] {
+    if set_of(variant) == rules::RUSSIAN { return embed_file("russian.txt"); }
+    return embed_file("international.txt");
+}
+
+// Reads the built-in puzzles of the set a player of `variant` is shown (set_of) into
+// `all`; false if the file has a mistake, which test/puzzles/ rules out.
+fn load(variant: u8 = rules::INTERNATIONAL) -> bool {
     all.list.clear();
+    loaded = set_of(variant);
     var err: u8[>..] = [];
-    return parse(file(), all, err);
+    return parse(file(loaded), all, err);
 }
 
 // The index in set of the puzzle with `id`, or -1.
@@ -170,7 +184,7 @@ fn parse(text: const u8[:], set: Set&, err: u8[>..]&) -> bool {
         let value = trim(value_raw);
         if key == "variant" {
             var known = false;
-            for name, i in ["russian", "international", "english", "brazilian"] {
+            for name, i in VARIANT_NAMES {
                 if value == name { variant = i as u8; known = true; }
             }
             guard known && !open else { return fail(err, number, "not a variant here", value); }

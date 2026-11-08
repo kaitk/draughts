@@ -7,6 +7,8 @@
 #    test/perft.py's (Russian).
 # 3. test/perft.py compare: random games, every position's moves against the
 #    independent Python generator.
+# 4. test/perft.py puzzles: every puzzle's lines played by it, each position's moves
+#    checked against build/perft, for each variant's set.
 #
 # GOOSE names the compiler (default: the pinned release under build/).
 set -e
@@ -35,3 +37,6 @@ python3 test/perft.py compare russian 40 120
 python3 test/perft.py compare international 20 150
 python3 test/perft.py compare english 40 120
 python3 test/perft.py compare brazilian 40 120
+
+python3 test/perft.py puzzles international puzzles/international.txt
+python3 test/perft.py puzzles russian puzzles/russian.txt
