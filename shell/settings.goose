@@ -86,6 +86,7 @@ struct Settings {
 let NOTHING = 0;
 let BACK = 1;
 let CHANGED = 2;
+let SHOWN = 3;              // the other group shown (a phone's tabs): drawn again, nothing kept
 
 // How the board draws kings: auto is a crown, the board being flat (the only board
 // drawn while the Board row is hidden, and none other exists yet).
@@ -456,8 +457,8 @@ fn tabs(s: Settings&, g: gui::Gui&, r: float4) -> bool {
 // The title row in r: back, the title, and at its right end the language on glass, each
 // named in itself, with `shown` lit. With `tabbed`, the tabs instead of the title (a
 // phone's landscape); without, the title in a smaller face where it is too wide for its
-// room, or none where even that is (a phone's portrait). Returns BACK, CHANGED, or
-// NOTHING.
+// room, or none where even that is (a phone's portrait). Returns BACK, CHANGED, SHOWN,
+// or NOTHING.
 fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, tabbed: bool = false) -> i64 {
     let u = g.scale;
     var row = r;
@@ -484,7 +485,7 @@ fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, tabbed: bool = false)
     }
     gui::cut_right(row, 20.0 * u);
     if tabbed {
-        if tabs(s, g, gui::center(row, row.z, BACK_W * u)) { ask = CHANGED; }
+        if tabs(s, g, gui::center(row, row.z, BACK_W * u)) { ask = SHOWN; }
         return ask;
     }
     let title = strings::get(strings::HOME_SETTINGS);
@@ -495,7 +496,8 @@ fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, tabbed: bool = false)
 
 // Declares the screen for this frame on a screen width × height pixels, with `shown`
 // the language showing, and sets l to where the preview goes. The kings' tiles put their
-// pieces in `over`. Returns BACK, CHANGED after a tap changed s, or NOTHING.
+// pieces in `over`. Returns BACK, CHANGED after a tap changed s, SHOWN after a tab, or
+// NOTHING.
 fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, width: f32, height: f32, shown: i64) -> i64 {
     let u = g.scale;
     let landscape = width >= height;
@@ -565,7 +567,7 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, wi
         ask = head(s, g, gui::cut_top(page, HEAD_H * u), shown);
         gui::cut_top(page, 16.0 * u);
         if tabbed {
-            if tabs(s, g, gui::cut_top(page, BACK_W * u)) { ask = CHANGED; }
+            if tabs(s, g, gui::cut_top(page, BACK_W * u)) { ask = SHOWN; }
             gui::cut_top(page, GROUP_GAP * u);
             let one = max(group_height(s, over, g, 0, page.z, false, false), group_height(s, over, g, 1, page.z, false, false));
             let glass = gui::cut_bottom(page, one);

@@ -31,8 +31,10 @@ which would overwrite the main checkout's while another session uses them.
   reply, and stars, a capture tapped stop by stop in a puzzle and no targets in any tier,
   the saved game of any variant and damaged images of it, the computer's skill moving
   across games, home's X closing the app and where it sits, and every screen at a
-  foldable, 4:3, and a 20:9 phone in both orientations, its tiles on the screen and
-  apart: `sizes`), `strings` (every language
+  foldable, 4:3, and a 20:9 phone in both orientations, and the phone's layout at 540
+  and 480 dp (`gui::short_dp`, with a 9:16 phone at 480), its tiles on the screen and
+  apart, every tap 88 dp at least, and a phone's tabs in settings and the puzzles:
+  `sizes`), `strings` (every language
   file has every key), `ai` (the computer player:
   its search against a plain minimax, the table changing no score, keys, what each level
   plays in known shots, the same move in steps as at once, and that no level hangs a
