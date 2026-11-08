@@ -93,6 +93,17 @@ which would overwrite the main checkout's while another session uses them.
 - A window taller than the Mac's screen is shrunk to fit: `--size 800x1280` comes out
   800 × 1098 here, a shorter portrait. Shoot the tablet's portrait proportions at
   `--size 600x960` (the same layout at 0.75 scale) and landscape at 960x600.
+- On the Mac's Retina screen `--size` is in points and `draughts.png` comes out at twice
+  it (2026-11-08): `--size 960x540` is a real 1920 × 1080 shot, `1200x540` a real
+  2400 × 1080, and `600x960` above the tablet's real 1200 × 1920. Up to about 1098 points
+  tall fits, so phones in landscape and most tablets shoot at their real pixels. Portrait
+  phones too tall for that, at the same proportions: 9:19.5 as `450x975`, 9:20 as
+  `450x1000`, the foldable's 1768 × 2208 as `868x1084`; 9:16 fits as `540x960`. Check
+  the PNG with `sips -g pixelWidth -g pixelHeight`. The full table, and where the survey
+  script is, are in task 030's "Survey".
+- The layout depends only on the proportions (the shorter side is 800 dp), so a phone
+  shot shows the tablet's layout in dp; how small it is on the hand is arithmetic from
+  the device's size, not something a screenshot shows (task 030, "Survey").
 - In a working tree, copy `design/backgrounds/masters/*.jpg` from the main checkout
   (local and ignored) and touch `app/background.c`, or shots show the page color where
   the photograph should be.
