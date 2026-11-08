@@ -15,7 +15,8 @@ which would overwrite the main checkout's while another session uses them.
   pieces each takes). A test explains in a comment what rule it shows and why the
   position shows it. Areas so far: `rules`, `board` (taps, hints, and a capture tapped
   stop by stop through the board package, as a game does and by hand as a puzzle
-  does), `gui`, `game` (the game screen driven through
+  does, and a press or drop off the dark squares snapping to the nearest it could mean:
+  `snap`), `gui`, `game` (the game screen driven through
   the pointer: take back, start over, home and settings, presses kept apart, the
   celebration and its moments to the still frame (`win`), a clocked game with its
   frames, pause, and flag, the turned board; the computer's turn, answered at once with

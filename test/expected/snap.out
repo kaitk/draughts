@@ -1,0 +1,6 @@
+press half a square below 32, on a light square: selected d4, playing -, wrong -
+  a whole square below: selected -, playing -, wrong -
+32 dropped 0.6 right of 23, on a light square: selected -, playing d4xf6, wrong -
+  a whole square right: selected d4, playing -, wrong -
+  0.6 above 23: selected -, playing d4xf6, wrong -
+  on 24, next to 23, a dark square: selected d4, playing -, wrong h6

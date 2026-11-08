@@ -16,6 +16,7 @@ let HOP = 0.2;              // seconds per square of a quiet move, per stop of a
 let FADE = 0.18;            // captured pieces fade out after the move
 let PULSE = 2.8;            // must-capture rings pulse for two of their 1.4 s cycles
 let DRAG_START = 10.0;      // dp a press moves before it becomes a drag
+let SNAP = 0.9;             // squares from a square's center a press or drop off the dark squares still reaches
 let FLASH = 1.2;            // a wrong move's red ring flashes twice, 0.6 s each
 let MAX_HISTORY = 512;      // moves undo can take back; the oldest go first
 
@@ -292,6 +293,34 @@ fn follow(b: Board&, sq: i64) -> i64, bool {
     return -1, vias > 1;
 }
 
+// The squares the selected piece can go to next: a move's target or a capture's next stop.
+fn reachable(b: Board&) -> u64 {
+    var r: u64 = 0;
+    for m in b.moves { if on_steps(b, m) { r |= rules::bit(m.path[b.steps.len + 1]); } }
+    return r;
+}
+
+// The square p is on or, when it is on a light square or just off the board, which is
+// no square to play, the nearest of `want` within SNAP squares: a finger on a small
+// board often lands a little off. A press or drop on a dark square is never moved.
+fn snap(l: Layout, v: rules::Variant&, p: float2, want: u64) -> i64 {
+    let sq = hit(l, v, p);
+    guard sq < 0 else { return sq; }
+    var best = -1;
+    var near = SNAP * l.inner.w;
+    var w = want;
+    while w != 0 {
+        let s = ctz(w);
+        w &= w - 1;
+        let d = length(center(l, v, s) - p);
+        if d < near {
+            near = d;
+            best = s;
+        }
+    }
+    return best;
+}
+
 // The square the selected piece waits on, partway through a capture made by hand, or -1.
 fn waiting(b: Board&) -> i64 {
     guard b.by_hand && b.selected >= 0 && b.steps.len > 0 else { return -1; }
@@ -380,11 +409,15 @@ fn empty(b: Board&, sq: i64) -> bool {
 // its captures, keep it (`follow`). On the stop a piece waits on, partway through a
 // capture made by hand: that piece, which may be dragged on. On another empty square
 // while a piece is selected, or on a piece that can't move because another must capture:
-// a mistake. Elsewhere: deselect.
+// a mistake. Elsewhere: deselect. A press off the dark squares goes to the nearest of
+// those it could mean, within SNAP (`snap`).
 fn press(b: Board&, l: Layout, p: float2, now: f64) {
     guard !b.moving else { return; }
     let v .= rules::VARIANTS[b.variant];
-    let sq = hit(l, v, p);
+    var want = reachable(b);
+    for m in b.moves { want |= rules::bit(m.from); }
+    if waiting(b) >= 0 { want |= rules::bit(waiting(b)); }
+    let sq = snap(l, v, p, want);
     if sq >= 0 && sq == waiting(b) {
         b.pressed = b.selected;
         b.press_at = p;
@@ -430,12 +463,13 @@ fn drag(b: Board&, l: Layout, p: float2) -> bool {
 // The pointer goes up at p. A drag dropped on a target plays the move from there, on a
 // capture's next stop keeps it, and on another empty square is a mistake. Either way but
 // a move, the piece goes back, still selected: to its square, or to the stop it waits on.
+// A drop off the dark squares goes to the nearest target or stop within SNAP (`snap`).
 fn release(b: Board&, l: Layout, p: float2, now: f64) {
     let was = b.dragging;
     b.pressed = -1;
     b.dragging = false;
     guard was else { return; }
-    let sq = hit(l, rules::VARIANTS[b.variant], p);
+    let sq = snap(l, rules::VARIANTS[b.variant], p, reachable(b));
     guard sq < 0 || sq != waiting(b) else { return; }
     let i, kept = follow(b, sq);
     if i >= 0 {
