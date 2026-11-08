@@ -14,8 +14,9 @@ which would overwrite the main checkout's while another session uses them.
   printing what a reader can check by eye (positions as FEN, moves sorted, how many
   pieces each takes). A test explains in a comment what rule it shows and why the
   position shows it. Areas so far: `rules`, `board` (taps, hints, and a capture tapped
-  stop by stop through the board package), `gui`, `game` (the game screen driven through the pointer: take back, start
-  over, home and settings, presses kept apart, the celebration, a clocked game with its
+  stop by stop through the board package), `gui`, `game` (the game screen driven through
+  the pointer: take back, start over, home and settings, presses kept apart, the
+  celebration and its moments to the still frame (`win`), a clocked game with its
   frames, pause, and flag, the turned board; the computer's turn, answered at once with
   `ai::think` as the app's worker would; the clock value on its own; and the computer's
   time a move on the clock, over whole games with simulated time, in `pace`), `shell`
@@ -71,6 +72,12 @@ which would overwrite the main checkout's while another session uses them.
   with taps, and one against the computer. Two runs of a shot are byte-identical except
   where something moves at the last frame: the computer's pulsing ring and settings'
   preview flash; compare those by eye (2026-11-08).
+- A `--frames` run with taps needs a few thousand frames for a move and what follows to
+  play out (`--win`, `docs/development.md`): it doesn't wait for the display, so 90
+  frames end before the second tap's move has shown.
+- A run against the computer (`--computer`) that ends moves the computer's skill and
+  writes it to `settings.txt`, flags or not: put the skill back after shooting one, on
+  the Mac and the tablet (2026-11-08).
 - The prototypes' painter (`Paint` in `prototypes/draughts.js`) is a port of the piece
   shader, so a native crop beside the prototype's at the same scale shows a shader
   change exactly (the stacked king was checked that way).

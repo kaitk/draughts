@@ -31,7 +31,7 @@ draws its HUD:
   radius, icon, pressed, dp, look}` from one storage buffer, and its fragment shader works
   it out as a signed-distance shape: glass with its shadow, a tile with its shadow (plain,
   primary, or a toggle on or off), a line icon as distances to its strokes' segments and
-  arcs, a spark. `game/` is the game screen with no graphics, tested headless in
+  arcs. `game/` is the game screen with no graphics, tested headless in
   `test/game/`: it declares the panel (`game/panel.goose`) and the celebration, does what
   their buttons ask, and hands the pointer to the board only when a press didn't land on
   the UI. Pieces shown on the UI (the side to move, the winner) are drawn after it by the
@@ -234,11 +234,24 @@ the prototype tried, kept for 3D:
   with the game. The choices are no clock, 5+3, and
   10+5 (five minutes plus three seconds a move, ten plus five): 5+3 is FMJD's usual
   blitz and both are in IDF's 8×8 rapid list, gentle enough for children.
-- **A win**: once the winning move has shown, the board dims to 55% and a glass card
-  over it shows the winner's piece, crowned, popping in (0.6 s, from 0.3 past its size),
-  over back and restart (primary), 112 × 88 px; fourteen sparks, 10 px discs of the glow
-  color with a 12 px glow, drift 160 px up over the board twice each (2.4 s, fading in
-  over the first fifth), then the screen is still. The panel's piece shows the winner.
+- **A win** (`prototypes/win.html`, take a): once the winning move has shown, the
+  winner's pieces answer, with no particles. Every moment is a function of the time
+  since the win. The winning piece, the last move's, lifts on its square with its glow
+  ring (0.35 s, easing out), and stays so. A ring of glow passes across the winner's
+  other pieces outward from it: each lifts with its ring and its square lit in the glow
+  color at 40% for 0.6 s, from 0.15 s plus 0.08 s per square of distance (straight
+  across the board). A lifted piece rises 6% of its size and grows 5%. From 0.9 s the
+  board and its pieces dim to 55% over 0.6 s, under the winning piece, which is drawn
+  last and stays lit above the dim; from 1.0 s a glass card over the board (356 × 300
+  px) slides up 28 px as it fades in (0.7 s, easing out), back and restart (primary,
+  112 × 88 px) on it, and from 1.2 s the winner's piece, crowned, with its ring fades in
+  above them (0.5 s). The screen is still from 1.7 s, or once the glow has passed the
+  winner's farthest piece (up to 1.77 s on 10 × 10); the frame then is drawn at rest,
+  and none after. A win with no winning piece to lift (a flag while the last move still
+  shows, a position set up already won) starts at the dim, still from 0.8 s. The dim is
+  the board pass's and the piece shader's, not a fill over them, so the winning piece
+  can stay out of it while the card, in the UI's draw, is over it; the lit square is the
+  piece shader's too, drawn under the piece. The panel's piece shows the winner.
 - **Home** is a title menu (`prototypes/home.html`, chosen 2026-11-07 over the
   icon tiles and two other takes): the scene and the 3D board, and one glass column
   with the wordmark, then continue, a friend, the computer with its level, and puzzles

@@ -58,7 +58,7 @@ icon and launch). The order for what is left:
 1. Done (2026-11-08): `--tap` seemed to stall on the tablet; the cause was `am start`
    bringing back a running app with its old flags, so tablet runs start with `-S`
    (task 007).
-2. 031, the win: take a, the pieces answer.
+2. Done (2026-11-08): 031, the win: take a, the pieces answer.
 3. Done (2026-11-08): the launcher's name follows the phone's language ("Kabe" in Estonian):
    `scripts/android.py` writes `res/values*/strings.xml` from `strings/<lang>.txt`, and
    the manifest takes `@string/app_name`. The icon is autumn for now (2026-11-08),

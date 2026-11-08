@@ -67,7 +67,9 @@ puzzles` the puzzles to pick from, and `--puzzle ID` that puzzle, whose taps go 
 board (`--puzzle 21 --tap f4 --tap e5`). `--go settings` (or `home`) switches there
 on the second frame through its transition, and `--hold 0.4` keeps a transition at 40%
 of the way, for a screenshot: `--go settings --hold 0.5 --frames 12`, or `--screen
-settings --go home --hold 0.5 --frames 12` for the way back. `--variant
+settings --go home --hold 0.5 --frames 12` for the way back. `--win 1.2` keeps a win
+at 1.2 s into its celebration: `--variant russian --fen W:Wa1,c1,g1,b2,h2,e3:Bf4 --tap
+e3 --tap g5 --win 1.2 --frames 3000`. `--variant
 international|brazilian|russian` starts a new game of that draughts (else the setup's
 last choice), `--clock 5+3|10+5` with a clock, and `--computer white|black` against
 the computer playing that side (the board turned when it plays white), at `--level
