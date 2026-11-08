@@ -47,7 +47,7 @@ fn square(l: board::Layout, text: const u8[:]) -> float2 {
 fn frame(gm: game::Game&, g: gui::Gui&, l: board::Layout, at: float2, down: bool, pressed: bool,
          released: bool, now: f64) -> i64 {
     gui::begin(g, gui::Input { at: at, down: down, pressed: pressed, released: released }, l.scale, now);
-    let go, changed = game::frame(gm, g, l, now);
+    let go, changed = game::frame(gm, g, l, now, over);
     return go;
 }
 
@@ -84,10 +84,12 @@ let UNDO = 3;
 let CARD_BACK = 4;
 let CARD_RESTART = 5;
 
+var over: game::Overlay;     // the pieces over the UI, which the shell holds in the app
+
 // The overlay's pieces: side, opacity, ring.
-fn pieces(gm: game::Game&) -> u8[>..] {
+fn pieces() -> u8[>..] {
     var s: u8[>..] = [];
-    for p in gm.overlay { format(s, if p.look.x > 0.5 { "black" } else { "white" }, " ", p.look.w, " ", p.ring.y, "; "); }
+    for p in over { format(s, if p.look.x > 0.5 { "black" } else { "white" }, " ", p.look.w, " ", p.ring.y, "; "); }
     return s;
 }
 
@@ -115,13 +117,13 @@ fn main() {
     let away = float2 { 0.0, 0.0 };
     frame(gm, g, l, away, false, false, false, 0.0);
     print("panels ", l.left, " ", l.right, ", board ", l.board);
-    print("over the UI: ", pieces(gm));
+    print("over the UI: ", pieces());
 
     // Two moves, then undo each; undo at the start does nothing.
     tap(gm, g, l, square(l, "c3"), 0.0);
     tap(gm, g, l, square(l, "d4"), 0.1);
     frame(gm, g, l, away, false, false, false, 1.0);
-    print("turn after c3-d4: ", pieces(gm));
+    print("turn after c3-d4: ", pieces());
     tap(gm, g, l, square(l, "f6"), 1.0);
     tap(gm, g, l, square(l, "e5"), 1.1);
     frame(gm, g, l, away, false, false, false, 2.0);
@@ -184,8 +186,8 @@ fn main() {
     frame(gm, g, l, away, false, false, false, 10.2);
     print("while the capture shows: celebrating ", gm.won_at >= 0.0);
     frame(gm, g, l, away, false, false, false, 11.0);
-    print("after: celebrating since ", gm.won_at, ", over the UI ", pieces(gm), "the winner crowned ",
-          gm.overlay[1].look.y);
+    print("after: celebrating since ", gm.won_at, ", over the UI ", pieces(), "the winner crowned ",
+          over[1].look.y);
     var sparks = 0;
     for q in g.quads { if q.look.x == gui::SPARK { sparks++; } }
     print("sparks at 0.0 s ", sparks, ", animating ", game::animating(gm, g, 11.0));
@@ -204,16 +206,16 @@ fn main() {
     game::start(gm, rules::RUSSIAN, clock::BLITZ, -1, game::MEDIUM, 45, 0);
     frame(gm, g, l, away, false, false, false, 20.0);
     frame(gm, g, l, away, false, false, false, 30.0);
-    print("5+3, 10 s before a move: ", clocks(gm, g), "; over the UI ", pieces(gm));
+    print("5+3, 10 s before a move: ", clocks(gm, g), "; over the UI ", pieces());
     tap(gm, g, l, square(l, "c3"), 30.0);
     tap(gm, g, l, square(l, "d4"), 30.1);
     gui::begin(g, gui::Input {}, l.scale, 30.6);
-    let a, drawn_a = game::frame(gm, g, l, 30.6);
-    print("c3-d4: ", clocks(gm, g), "; over the UI ", pieces(gm));
+    let a, drawn_a = game::frame(gm, g, l, 30.6, over);
+    print("c3-d4: ", clocks(gm, g), "; over the UI ", pieces());
     gui::begin(g, gui::Input {}, l.scale, 30.9);
-    let b, drawn_b = game::frame(gm, g, l, 30.9);
+    let b, drawn_b = game::frame(gm, g, l, 30.9, over);
     gui::begin(g, gui::Input {}, l.scale, 31.15);
-    let c, drawn_c = game::frame(gm, g, l, 31.15);
+    let c, drawn_c = game::frame(gm, g, l, 31.15, over);
     print("frames at 0.5, 0.8, 1.05 s on black's clock: drawn ", drawn_a, " ", drawn_b, " ", drawn_c, "; ",
           clocks(gm, g));
     // A pause: the frame after it counts nothing, however long it was.
@@ -242,7 +244,7 @@ fn main() {
     }
     frame(gm, g, l, away, false, false, false, t);
     print("black's flag: ", clocks(gm, g), "; winner ", game::winner(gm), ", celebrating ", gm.won_at >= 0.0,
-          ", over the UI ", pieces(gm));
+          ", over the UI ", pieces());
     tap(gm, g, l, tile(g, UNDO), t + 0.1);
     print("take back after the flag: ", clocks(gm, g), ", flag ", gm.clock.flag);
     tap(gm, g, l, tile(g, RESTART), t + 0.2);
@@ -261,7 +263,7 @@ fn main() {
     frame(gm, g, turned, away, false, false, false, 601.0);
     print("c3 at ", square(turned, "c3"), ", f6 at ", square(turned, "f6"), "; a tap on c3 and d4 leaves ",
           rules::fen(gm.b.pos), "; the computer to move: ", game::computer_to_move(gm), "; ", clocks(gm, g),
-          "; over the UI ", pieces(gm));
+          "; over the UI ", pieces());
 
     // Portrait: the bar of three above the board, the play below it.
     let pl = board::layout(800.0, 1280.0, 8);

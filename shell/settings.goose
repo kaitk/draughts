@@ -248,7 +248,7 @@ fn tile_width(g: gui::Gui&, row: i64, i: i64) -> f32 {
 }
 
 // Declares tile i of a row in r. True when a tap changed s.
-fn tile(s: Settings&, gm: game::Game&, g: gui::Gui&, row: i64, i: i64, r: float4) -> bool {
+fn tile(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, i: i64, r: float4) -> bool {
     let u = g.scale;
     let id = 410 + 10 * row + i;
     let label = strings::get(word(row, i));
@@ -274,7 +274,7 @@ fn tile(s: Settings&, gm: game::Game&, g: gui::Gui&, row: i64, i: i64, r: float4
     // The crown's and the stack's tiles each show their king.
     let king = row == KINGS_ROW && i != AUTO;
     let tapped, pic = gui::pick(g, id, r, if king { 34.0 } else { 0.0 }, label, note(row, i), on, enabled);
-    if king { game::put(gm, pic, 15.0 * u, rules::WHITE, i, 1.0, false); }
+    if king { game::put(over, pic, 15.0 * u, rules::WHITE, i, 1.0, false); }
     guard tapped else { return false; }
     if row == DRAUGHTS_ROW { s.variant = DRAUGHTS[i]; }
     if row == HINTS_ROW { s.hints = i; }
@@ -285,7 +285,7 @@ fn tile(s: Settings&, gm: game::Game&, g: gui::Gui&, row: i64, i: i64, r: float4
 
 // Lays out a row's tiles from r's top left, wrapping at its width, and declares them
 // when `declare`. Returns how tall they are, and whether a tap changed s.
-fn lay(s: Settings&, gm: game::Game&, g: gui::Gui&, row: i64, r: float4, declare: bool) -> f32, bool {
+fn lay(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, r: float4, declare: bool) -> f32, bool {
     let u = g.scale;
     let h = (ROW_H[row] as f32) * u;
     var x: f32 = 0.0;
@@ -297,7 +297,7 @@ fn lay(s: Settings&, gm: game::Game&, g: gui::Gui&, row: i64, r: float4, declare
             x = 0.0;
             y += h + TILE_GAP * u;
         }
-        if declare && tile(s, gm, g, row, i, float4 { r.x + x, r.y + y, w, h }) { changed = true; }
+        if declare && tile(s, over, g, row, i, float4 { r.x + x, r.y + y, w, h }) { changed = true; }
         x += w + TILE_GAP * u;
     }
     return y + h, changed;
@@ -306,7 +306,7 @@ fn lay(s: Settings&, gm: game::Game&, g: gui::Gui&, row: i64, r: float4, declare
 // A group's settings from r's top left, as wide as r, each its dim name and its tiles:
 // the name at the left in landscape, above them in portrait. Declares them when
 // `declare`. Returns how tall they are, and whether a tap changed s.
-fn rows(s: Settings&, gm: game::Game&, g: gui::Gui&, group: i64, r: float4, landscape: bool,
+fn rows(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4, landscape: bool,
         declare: bool) -> f32, bool {
     let u = g.scale;
     var y = r.y;
@@ -317,7 +317,7 @@ fn rows(s: Settings&, gm: game::Game&, g: gui::Gui&, group: i64, r: float4, land
         let aside = (NAME_W + 14.0) * u;
         let tiles = if landscape { float4 { r.x + aside, y, r.z - aside, 0.0 } }
                     else { float4 { r.x, y + NAME_H * u, r.z, 0.0 } };
-        let h, tapped = lay(s, gm, g, row, tiles, declare);
+        let h, tapped = lay(s, over, g, row, tiles, declare);
         if declare {
             let name = float4 { r.x, y, NAME_W * u, if landscape { h } else { NAME_H * u - 6.0 * u } };
             gui::text(g, gui::SMALL, name, strings::get(ROW_NAMES[row]), 0.66, 0.03 * gui::FACE_DP[gui::SMALL] as f32 * u,
@@ -330,9 +330,9 @@ fn rows(s: Settings&, gm: game::Game&, g: gui::Gui&, group: i64, r: float4, land
 }
 
 // How tall a group's glass is at width w.
-fn group_height(s: Settings&, gm: game::Game&, g: gui::Gui&, group: i64, w: f32, landscape: bool) -> f32 {
+fn group_height(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, w: f32, landscape: bool) -> f32 {
     let u = g.scale;
-    let h, unused = rows(s, gm, g, group, float4 { 0.0, 0.0, w - 2.0 * GROUP_PAD * u, 0.0 }, landscape, false);
+    let h, unused = rows(s, over, g, group, float4 { 0.0, 0.0, w - 2.0 * GROUP_PAD * u, 0.0 }, landscape, false);
     return (12.0 + TITLE_H + ROW_GAP + 14.0) * u + h;
 }
 
@@ -350,7 +350,7 @@ fn group_width(g: gui::Gui&, group: i64) -> f32 {
 }
 
 // A group's glass in r: its icon and title, then its settings. True when a tap changed s.
-fn group(s: Settings&, gm: game::Game&, g: gui::Gui&, group: i64, r: float4, landscape: bool) -> bool {
+fn group(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4, landscape: bool) -> bool {
     let u = g.scale;
     gui::glass(g, r, 24.0);
     var c = float4 { r.x + GROUP_PAD * u, r.y + 12.0 * u, r.z - 2.0 * GROUP_PAD * u, r.w - 26.0 * u };
@@ -360,7 +360,7 @@ fn group(s: Settings&, gm: game::Game&, g: gui::Gui&, group: i64, r: float4, lan
                     0.0, 0.85);
     gui::cut_left(title, 12.0 * u);
     gui::text(g, gui::HEADING, title, strings::get(GROUP_TITLES[group]), 1.0, 0.0, gui::LEFT);
-    let h, changed = rows(s, gm, g, group, c, landscape, true);
+    let h, changed = rows(s, over, g, group, c, landscape, true);
     return changed;
 }
 
@@ -408,13 +408,13 @@ fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64) -> i64 {
 
 // Declares the screen for this frame on a screen width × height pixels, with `shown`
 // the language showing, and sets l to where the preview goes. The kings' tiles put their
-// pieces in gm's overlay. Returns BACK, CHANGED after a tap changed s, or NOTHING.
-fn frame(s: Settings&, gm: game::Game&, g: gui::Gui&, l: board::Layout&, width: f32, height: f32, shown: i64) -> i64 {
+// pieces in `over`. Returns BACK, CHANGED after a tap changed s, or NOTHING.
+fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, width: f32, height: f32, shown: i64) -> i64 {
     let u = g.scale;
     let landscape = width >= height;
     let n = rules::VARIANTS[s.variant].size;
     var page = float4 { PAD_X * u, PAD_Y * u, width - 2.0 * PAD_X * u, height - 2.0 * PAD_Y * u };
-    gm.overlay.clear();
+    over.clear();
     var ask = NOTHING;
     if landscape {
         // The choices as wide as they want, at most 55% of the page, wrapping beyond; the
@@ -427,28 +427,28 @@ fn frame(s: Settings&, gm: game::Game&, g: gui::Gui&, l: board::Layout&, width: 
         l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
         ask = head(s, g, gui::cut_top(side, HEAD_H * u), shown);
         gui::cut_top(side, HEAD_GAP * u);
-        let game_h = group_height(s, gm, g, 0, side.z, true);
-        let look_h = group_height(s, gm, g, 1, side.z, true);
+        let game_h = group_height(s, over, g, 0, side.z, true);
+        let look_h = group_height(s, over, g, 1, side.z, true);
         // Centered down the rest, or from its top if they are taller.
         gui::cut_top(side, max(0.0, 0.5 * (side.w - game_h - GROUP_GAP * u - look_h)));
         var list = side;
-        if group(s, gm, g, 0, gui::cut_top(list, game_h), true) { ask = CHANGED; }
+        if group(s, over, g, 0, gui::cut_top(list, game_h), true) { ask = CHANGED; }
         gui::cut_top(list, GROUP_GAP * u);
-        if group(s, gm, g, 1, gui::cut_top(list, look_h), true) { ask = CHANGED; }
+        if group(s, over, g, 1, gui::cut_top(list, look_h), true) { ask = CHANGED; }
     } else {
         // The title row, the board as large as the rest leaves, and the groups side by
         // side along the bottom, as tall as the taller.
         ask = head(s, g, gui::cut_top(page, HEAD_H * u), shown);
         gui::cut_top(page, 16.0 * u);
         let w = 0.5 * (page.z - GROUP_GAP * u);
-        let h = max(group_height(s, gm, g, 0, w, false), group_height(s, gm, g, 1, w, false));
+        let h = max(group_height(s, over, g, 0, w, false), group_height(s, over, g, 1, w, false));
         var groups = gui::cut_bottom(page, h);
         gui::cut_bottom(page, 16.0 * u);
         let size = 0.94 * min(page.z, page.w);
         l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
-        if group(s, gm, g, 0, gui::cut_left(groups, w), false) { ask = CHANGED; }
+        if group(s, over, g, 0, gui::cut_left(groups, w), false) { ask = CHANGED; }
         gui::cut_left(groups, GROUP_GAP * u);
-        if group(s, gm, g, 1, groups, false) { ask = CHANGED; }
+        if group(s, over, g, 1, groups, false) { ask = CHANGED; }
     }
     return ask;
 }

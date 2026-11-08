@@ -138,8 +138,8 @@ fn main() {
     var sh = shell::new(rules::RUSSIAN);
     sh.screen = shell::SETTINGS;
     frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 0.0);
-    print("tiles ", tiles(g), " of ", TILES, ", the kings' tiles' pieces ", sh.game.overlay.len, ": ",
-          sh.game.overlay[0].look.y, " and ", sh.game.overlay[1].look.y);
+    print("tiles ", tiles(g), " of ", TILES, ", the kings' tiles' pieces ", sh.over.len, ": ",
+          sh.over[0].look.y, " and ", sh.over[1].look.y);
     // The board is right of the choices: every tile and the groups end left of it.
     var right: f32 = 0.0;
     for q in g.quads { right = max(right, q.rect.x + q.rect.z); }

@@ -22,6 +22,8 @@ import ai from "../../ai";
 let UNDO = 3;
 let RESTART = 2;
 
+var over: game::Overlay;     // the pieces over the UI, which the shell holds in the app
+
 fn square(l: board::Layout, text: const u8[:]) -> float2 {
     let v .= rules::VARIANTS[rules::RUSSIAN];
     return board::center(l, v, rules::bit_at(v, text[0] - 97, text[1] - 49));
@@ -30,7 +32,7 @@ fn square(l: board::Layout, text: const u8[:]) -> float2 {
 fn frame(gm: game::Game&, g: gui::Gui&, l: board::Layout, at: float2, down: bool, pressed: bool,
          released: bool, now: f64) {
     gui::begin(g, gui::Input { at: at, down: down, pressed: pressed, released: released }, l.scale, now);
-    game::frame(gm, g, l, now);
+    game::frame(gm, g, l, now, over);
 }
 
 fn idle(gm: game::Game&, g: gui::Gui&, l: board::Layout, now: f64) {
@@ -79,7 +81,7 @@ fn answer(gm: game::Game&, e: ai::Engine&) -> u8[>..] {
 // panel (the side to move's piece over the UI).
 fn show(gm: game::Game&, what: const u8[:]) {
     var ring = 0.0;
-    for p in gm.overlay { ring = max(ring, p.ring.y); }
+    for p in over { ring = max(ring, p.ring.y); }
     var left: u8[>..] = [];
     if clock::on(gm.clock) {
         format(left, ", clocks ");

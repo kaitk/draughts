@@ -6,7 +6,8 @@
 // It holds the settings, keeps the game's move hints and kings in step with them, and
 // says when they changed, for the app to write and apply; and where the board goes this
 // frame, turned when the child plays black, and whether the photograph behind it is
-// sharp, for the app to draw. Settings show their own board, the preview, beside them.
+// sharp, and the pieces the screen shows over the UI, for the app to draw. Settings show
+// their own board, the preview, beside them.
 // A game against the computer plays at the skill kept for its level, which each
 // finished game moves (ai::adapt). Tests run it headless.
 namespace shell;
@@ -36,7 +37,8 @@ struct Shell {
     back:    i64                = HOME,       // where settings goes back to
     setup:   i64                = home::NOTHING, // home's column: the menu, or a setup
     layout:  board::Layout,                   // where the board is this frame
-    sharp:   bool = true,                     // the photograph as it is (home, settings), or blurred (the game)
+    sharp:   bool          = true,            // the photograph as it is (home, settings), or blurred (the game)
+    over:    game::Overlay = [],              // the screen's pieces over the UI this frame
 }
 
 fn new(variant: u8) -> Shell {
@@ -63,7 +65,7 @@ fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, fresh: b
         sh.layout = board::layout(width, height, n);
         sh.layout.flip = sh.game.computer == rules::WHITE;
         sh.sharp = false;
-        let go, changed = game::frame(sh.game, g, sh.layout, now);
+        let go, changed = game::frame(sh.game, g, sh.layout, now, sh.over);
         // A game against the computer ended: the child meets a stronger or weaker one next.
         let gm .= sh.game;
         if gm.result != 0 {
@@ -92,7 +94,7 @@ fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, fresh: b
         // The preview shows the settings as they are on opening and after each change.
         if fresh { settings::stage(sh.preview, sh.prefs, now); }
         changed = board::update(sh.preview, now) || changed;
-        let ask = settings::frame(sh.prefs, sh.game, g, sh.layout, width, height, strings::current);
+        let ask = settings::frame(sh.prefs, sh.over, g, sh.layout, width, height, strings::current);
         if ask == settings::CHANGED {
             sh.game.b.hints = sh.prefs.hints;
             settings::stage(sh.preview, sh.prefs, now);
@@ -102,7 +104,7 @@ fn declare(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, fresh: b
         return changed || ask != settings::NOTHING;
     }
     changed = board::update(sh.game.b, now) || changed;
-    let pick = home::frame(sh.game, g, sh.layout, width, height, sh.setup, sh.prefs);
+    let pick = home::frame(sh.over, g, sh.layout, n, width, height, sh.setup, sh.prefs);
     // The board is turned for a child playing black against the computer.
     sh.layout.flip = sh.game.computer == rules::WHITE;
     if pick != home::NOTHING { changed = true; }

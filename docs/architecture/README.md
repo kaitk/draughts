@@ -63,8 +63,8 @@ keeps the rest.
 | `strings/` | The user-facing text by key, from `strings/<lang>.txt` |
 | `gui/` | The UI layer ([rendering.md](rendering.md#ui-layer)): rect cuts, widgets with their press state, text laid out from glyph tables the app bakes; every call appends quads to one fixed array |
 | `board/` | The board on screen: the position, the legal moves, and the undo history; where the board goes and which square a point is on; taps and drags; a move's animation; and each frame's draw lists (pieces, the squares' marks, a wrong move's flash) |
-| `game/` | The game screen: its panels, the clocks, the computer's turn (asking for a move and playing the answer), the celebration, and the pieces drawn over the UI |
-| `shell/` | The screens and which one shows: home and a new game's setup, the game, settings with their preview board; the settings file and the saved game |
+| `game/` | The game screen: its panels, the clocks, the computer's turn (asking for a move and playing the answer), the celebration, and the pieces it puts over the UI |
+| `shell/` | The screens and which one shows: home and a new game's setup, the game, settings with their preview board; the pieces the screen showing puts over the UI (`Shell.over`, which the app draws); the settings file and the saved game |
 | `app/` | The program: the main loop, the GPU drawing of the board, the pieces, and the UI's quads, the season's photograph and its blurs, the font atlas, the themes, the computer's worker thread, and its C (storage folder, locales, the clock's wake timer, the JPEG decoder) |
 | `tools/` | Programs for development: perft, the computer's benchmark and matches, and a terminal game against it |
 
@@ -82,9 +82,10 @@ fixed-size, laid out as the shaders read it: `board::Piece`, `board::Marks`, the
    and on Android the clocks pause; a new season's photograph loads two frames after its
    tile was tapped; the text is baked again if the scale changed.
 2. `gui::begin` takes the pointer and the time, and `shell::frame` declares the screen
-   showing. Its widgets append quads; a press that lands on the UI is the UI's, and only
-   otherwise does the game screen hand the pointer to `board`. The screen reports what
-   it asks for (another screen, a new game) and whether anything on it changed.
+   showing. Its widgets append quads and its pieces over the UI go into the shell's
+   list; a press that lands on the UI is the UI's, and only otherwise does the game
+   screen hand the pointer to `board`. The screen reports what it asks for (another
+   screen, a new game) and whether anything on it changed.
 3. `think::frame` hands the computer's worker the game's ask, and the game its answer.
 4. After a change in settings: the file is written, the language switched, and a new
    season's photograph scheduled.

@@ -237,7 +237,7 @@ fn main() {
             let shown .= shell::shown(sh);
             board::fill(shown, l, now);
             widgets::upload(w, g);
-            draw::frame(d, shown, gm.overlay, l, sh.sharp, now, size.x, size.y);
+            draw::frame(d, shown, sh.over, l, sh.sharp, now, size.x, size.y);
             widgets::frame(w, g, d.scene, d.colors, size.x, size.y);
             draw::overlay(d, now);
             gfx::end_pass();

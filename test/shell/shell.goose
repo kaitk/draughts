@@ -97,8 +97,8 @@ fn main() {
     let off = float2 { -1.0, -1.0 };
     frame(sh, g, off, false, false, false, 0.0);
     show(sh, g, "start");
-    print("the wordmark's piece: ", sh.game.overlay.len, ", crowned ", sh.game.overlay[0].look.y,
-          ", no ring ", sh.game.overlay[0].ring.y == 0.0);
+    print("the wordmark's piece: ", sh.over.len, ", crowned ", sh.over[0].look.y,
+          ", no ring ", sh.over[0].ring.y == 0.0);
 
     tap(sh, g, tile(g, 0), 1.0);            // continue
     show(sh, g, "continue");
@@ -154,7 +154,7 @@ fn main() {
     tap(sh, g, tile(g, 2), 5.1);            // the computer
     tiles = 0;
     for q in g.quads { if q.look.x == gui::BUTTON { tiles++; } }
-    print("the computer's setup: tiles ", tiles, ", pieces over the UI ", sh.game.overlay.len);
+    print("the computer's setup: tiles ", tiles, ", pieces over the UI ", sh.over.len);
     print("draughts tiles: ", draughts_widths(g));
     tap(sh, g, tile(g, 6), 5.2);            // hard
     tap(sh, g, tile(g, 8), 5.3);            // black

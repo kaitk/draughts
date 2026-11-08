@@ -4,8 +4,8 @@
 // panels, does what their tiles ask, and gives the pointer to the board only when a
 // press didn't land on the UI, so a press that starts on a panel never moves a piece and
 // one that starts on the board never presses a tile. The app draws what it leaves: the
-// board's draw lists, the UI's quads, and a few pieces over the UI. Tests run it
-// headless.
+// board's draw lists, the UI's quads, and a few pieces over the UI, in a list the shell
+// holds for every screen (Overlay). Tests run it headless.
 //
 // Against the computer the game knows which side it plays, its level, and the skill it
 // plays the whole game at. On its turn the game asks for a move (asking()) and plays the
@@ -43,18 +43,20 @@ let EASY = 0;
 let MEDIUM = 1;
 let HARD = 2;
 
+// The pieces a screen shows over the UI this frame (put()), drawn after it.
+type Overlay = board::Piece[..panel::OVER];
+
 struct Game {
     b:        board::Board,
-    clock:    clock::Clock                = clock::Clock {},
-    computer: i64                         = -1,     // the side the computer plays, or -1 for a friend
-    level:    i64                         = MEDIUM, // the computer's
-    skill:    i64                         = 45,     // the computer's for the whole game (ai::level_skill)
-    number:   i64                         = 0,      // the game's number, for the computer's seeds
-    turn:     u8                          = 0,      // the side to move as last seen, to tell a move was made
-    seen:     f64                         = -1.0,   // when the clock last counted, or -1 to count nothing next
-    shown:    i64                         = -1,     // the running clock's whole seconds as last drawn
-    won_at:   f64                         = -1.0,   // when the celebration began, or -1
-    overlay:  board::Piece[..panel::OVER] = [],     // filled each frame, drawn over the UI
+    clock:    clock::Clock = clock::Clock {},
+    computer: i64          = -1,                    // the side the computer plays, or -1 for a friend
+    level:    i64          = MEDIUM,                // the computer's
+    skill:    i64          = 45,                    // the computer's for the whole game (ai::level_skill)
+    number:   i64          = 0,                     // the game's number, for the computer's seeds
+    turn:     u8           = 0,                     // the side to move as last seen, to tell a move was made
+    seen:     f64          = -1.0,                  // when the clock last counted, or -1 to count nothing next
+    shown:    i64          = -1,                    // the running clock's whole seconds as last drawn
+    won_at:   f64          = -1.0,                  // when the celebration began, or -1
     // The computer's turn: the move asked for, and its answer.
     asks:     i64         = 0,                      // moves asked for so far, to number them
     asking:   i64         = 0,                      // the one waited for, or 0
@@ -192,21 +194,21 @@ fn pulse(gm: Game&, now: f64) -> f32 {
     return (0.65 + 0.35 * cos(2.0 * PI * (now - gm.asked_at) / PULSE)) as f32;
 }
 
-// One frame, after gui::begin. Returns what the shell should do and whether anything on
-// screen changed.
-fn frame(gm: Game&, g: gui::Gui&, l: board::Layout, now: f64) -> i64, bool {
+// One frame, after gui::begin, its pieces over the UI put in `over`. Returns what the
+// shell should do and whether anything on screen changed.
+fn frame(gm: Game&, g: gui::Gui&, l: board::Layout, now: f64, over: Overlay&) -> i64, bool {
     let b .= gm.b;
     let input = g.input;
     var changed = board::update(b, now) || input.pressed || input.released;
     var go = STAY;
-    gm.overlay.clear();
+    over.clear();
     if gm.seen >= 0.0 && clock::tick(gm.clock, min(now - gm.seen, STEP)) { changed = true; }
     gm.seen = now;
 
     // The side to move, or the winner once there is one.
     var won = winner(gm);
     let side = if won >= 0 { won } else { b.pos.side as i64 };
-    let pick = panel::game(g, l, gm.clock, side, won >= 0, gm.asking != 0, pulse(gm, now), gm.overlay);
+    let pick = panel::game(g, l, gm.clock, side, won >= 0, gm.asking != 0, pulse(gm, now), over);
     var undone = false;
     match pick {
         panel::UNDO => { if gm.clock.flag < 0 { undone = take_back(gm); } },
@@ -233,7 +235,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: board::Layout, now: f64) -> i64, bool {
         }
     }
     if gm.won_at >= 0.0 {
-        let ask = celebrate(gm, g, l, won, now);
+        let ask = celebrate(gm, g, l, won, now, over);
         if ask == panel::RESTART {
             restart(gm);
             changed = true;
@@ -271,8 +273,8 @@ fn animating(gm: Game&, g: gui::Gui&, now: f64) -> bool {
 // A piece of `side` over the UI centered in `spot` with radius r, at opacity a, a man (0)
 // or a king as board::CROWN or board::STACK draws it, with a glow ring right round it or
 // not.
-fn put(gm: Game&, spot: float4, r: f32, side: i64, king: i64, a: f32, ring: bool) {
-    panel::piece(gm.overlay, spot, r, side, king, a, if ring { 1.0 } else { 0.0 });
+fn put(over: Overlay&, spot: float4, r: f32, side: i64, king: i64, a: f32, ring: bool) {
+    panel::piece(over, spot, r, side, king, a, if ring { 1.0 } else { 0.0 });
 }
 
 fn hash(i: i64, k: i64) -> f32 {
@@ -284,7 +286,7 @@ fn hash(i: i64, k: i64) -> f32 {
 // the winner's piece popping in, crowned, then restart or back; a few sparks drift up
 // and fade.
 // Returns panel::RESTART, panel::HOME, or panel::NOTHING.
-fn celebrate(gm: Game&, g: gui::Gui&, l: board::Layout, won: i64, now: f64) -> i64 {
+fn celebrate(gm: Game&, g: gui::Gui&, l: board::Layout, won: i64, now: f64, over: Overlay&) -> i64 {
     let u = l.scale;
     let t = now - gm.won_at;
     let area = float4 { l.board.x, l.board.y, l.board.z, l.board.z };
@@ -307,7 +309,7 @@ fn celebrate(gm: Game&, g: gui::Gui&, l: board::Layout, won: i64, now: f64) -> i
     let k = clamp(t / POP, 0.0, 1.0);
     let s = 1.0 + 2.70158 * pow(k - 1.0, 3.0) + 1.70158 * pow(k - 1.0, 2.0);
     let grow = 0.3 + 0.7 * s;
-    put(gm, spot, 44.0 * u * grow as f32, won, gm.b.king_look, clamp(2.0 * k, 0.0, 1.0) as f32, true);
+    put(over, spot, 44.0 * u * grow as f32, won, gm.b.king_look, clamp(2.0 * k, 0.0, 1.0) as f32, true);
     // Sparks over the board: each starts at its own time and place, drifts 160 dp up
     // easing out, fading in over the first fifth and out over the rest.
     for i in SPARKS {

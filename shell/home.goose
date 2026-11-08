@@ -62,13 +62,12 @@ fn content_height(setup: i64, landscape: bool, u: f32) -> f32 {
     return (HEAD_H + HEAD_GAP + groups * GROUP_H + tiles + PLAY_GAP + ROW_H) * u;
 }
 
-// Declares home for this frame on a screen width × height pixels, and sets l to where
-// the board goes: the menu, or the setup `setup` (FRIEND or COMPUTER) with the choices
-// in s. Returns what was tapped.
-fn frame(gm: game::Game&, g: gui::Gui&, l: board::Layout&, width: f32, height: f32, setup: i64,
+// Declares home for this frame on a screen width × height pixels, its pieces over the UI
+// put in `over`, and sets l to where the board of n × n squares goes: the menu, or the
+// setup `setup` (FRIEND or COMPUTER) with the choices in s. Returns what was tapped.
+fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, width: f32, height: f32, setup: i64,
          s: settings::Settings&) -> i64 {
     let u = g.scale;
-    let n = rules::VARIANTS[gm.b.variant].size;
     let landscape = width >= height;
     let content_h = content_height(setup, landscape, u);
     var col = float4 { 0.0, 0.0, 0.0, 0.0 };
@@ -91,14 +90,14 @@ fn frame(gm: game::Game&, g: gui::Gui&, l: board::Layout&, width: f32, height: f
         l = board::layout_at(0.5 * (width - size), 0.5 * (stage_h - size), size, u, n);
     }
     gui::glass(g, col, 32.0);
-    gm.overlay.clear();
-    if setup != NOTHING { return choose(gm, g, content, setup == COMPUTER, s); }
+    over.clear();
+    if setup != NOTHING { return choose(over, g, content, setup == COMPUTER, s); }
 
     // The wordmark: a crowned light piece and the app's name; in portrait, settings at
     // the right.
     var mark = gui::cut_top(content, MARK_H * u);
     let piece = gui::cut_left(mark, 56.0 * u);
-    game::put(gm, piece, 28.0 * u, rules::WHITE, board::CROWN,
+    game::put(over, piece, 28.0 * u, rules::WHITE, board::CROWN,
               1.0, false);
     gui::cut_left(mark, 14.0 * u);
     var pick = NOTHING;
@@ -170,7 +169,7 @@ fn draughts_tile(g: gui::Gui&, row: float4, i: i64) -> float4 {
 }
 
 // The setup in c: back and the title, the choices, play.
-fn choose(gm: game::Game&, g: gui::Gui&, c: float4, computer: bool, s: settings::Settings&) -> i64 {
+fn choose(over: game::Overlay&, g: gui::Gui&, c: float4, computer: bool, s: settings::Settings&) -> i64 {
     let u = g.scale;
     var ask = NOTHING;
     var head = gui::cut_top(c, HEAD_H * u);
@@ -215,7 +214,7 @@ fn choose(gm: game::Game&, g: gui::Gui&, c: float4, computer: bool, s: settings:
             let tapped, pic = gui::pick(g, 350 + i, across(colors, 2, i, u), 30.0,
                                         strings::get(if i == 0 { strings::COLOR_WHITE } else { strings::COLOR_BLACK }), "",
                                         s.color == i, true);
-            game::put(gm, pic, 15.0 * u, i, 0, 1.0, false);
+            game::put(over, pic, 15.0 * u, i, 0, 1.0, false);
             if tapped {
                 s.color = i;
                 ask = CHANGED;
