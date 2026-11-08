@@ -177,37 +177,59 @@ but its olive sits nearer spring's greens than the sunset does.
   board.
 - **Behind the 2D game the scene is blurred** (a 14 px blur at 1280 px wide, dimmed to
   0.8), as on the design boards, so the flat board reads cleanly. Natively
-  (`app/scene.goose`) the decoded image is scaled down to 512 × 512 and blurred once on
-  the GPU when the season is picked, two passes of a Gaussian of sigma 5.6 texels: since
-  a square image is cover-cropped by the screen's long side, that is the same blur at
-  every screen size and orientation, so a new screen size needs no new blur. The board
-  pass samples it, a 1 MB texture. Tried and set aside
-  on 2026-11-07: the sharp photograph (busy behind the board), a plain painted tabletop,
+  (`app/scene.goose`) the sharp texture is averaged down to 512 × 512 on the GPU (a box of
+  4 × 4 texels from 2 × 2 bilinear taps) and blurred once when the season is picked, two
+  passes of a Gaussian of sigma 5.6 texels: since a square image is cover-cropped by the
+  screen's long side, that is the same blur at every screen size and orientation, so a
+  new screen size needs no new blur. The board pass samples it, a 1 MB texture. Tried and
+  set aside on 2026-11-07: the sharp photograph (busy behind the board), a plain painted tabletop,
   and generated tabletop pictures with a crafted board (task 016).
 - **The 3D board floats in front of the scene**, with a soft shadow under it: no room or
   table to model. A painted backdrop with a real table comes later only if this falls
   short (task 015).
-- **Stored** as one JPEG per season, 2048 × 2048 at quality 85 (0.46 to 0.70 MB each),
-  in `assets/backgrounds/<season>.jpg` and built into the program with `embed_file`, as
-  the font is: nothing to package in the APK's assets, and the same path on the Mac and
-  Android. goose_gfx's `load_texture` reads only PNG and BMP from a file (through SDL),
-  so the program decodes the JPEG itself: stb_image, JPEG only, in the program's own C
-  (a `c_sources` entry in its `.build` sidecar), from the embedded bytes to RGBA, then
-  `gfx::texture2d` and `update_texture`. stb_image's NEON loops are switched on for ARM
-  (`STBI_NEON`; on x86 it uses SSE2 by itself, elsewhere its plain C), and it decodes to
-  four channels, the only case its NEON color conversion handles. A season is picked
-  by a settings tile, which lights in the frame after the tap; the photograph loads in
-  the frame after that, once the lit tile is on screen. No goose_gfx patch is needed
-  ([findings](../goose-findings.md)). Only the current season is decoded, once: into
-  the sharp texture behind home, 2048 × 2048 as stored (16 MB of graphics memory), and
-  the 512 px copy that is blurred. The pixels' data-stack pages are given back with
-  `trim_memory()` after loading. Until the
-  images are checked in, `app/background.c` embeds the local masters with C23 `#embed`
-  under `__has_embed`, so a checkout without them builds and shows the page color; the
-  four add 2.3 MB to the APK (5.0 MB). PNG was
-  rejected at about 5 MB a season; AVIF needs libavif and an AV1 decoder on both
-  platforms to save about 1 MB. If graphics memory gets tight, ASTC at build time cuts
-  a 2048² image from 16 MB to about 2 MB.
+- **Stored** twice per season, 2048 × 2048, built into the program (C23 `#embed` in its
+  C): nothing to package in the APK's assets, and the same path on the Mac and Android.
+  As **ASTC in 6 × 6 blocks** (1.87 MB each, from the lossless masters with
+  `astcenc`, `design/backgrounds/README.md`), which the GPU samples as it is stored, with
+  nothing decoded; and as **JPEG at quality 85** (0.46 to 0.70 MB each), the fallback for
+  a GPU without ASTC: an Intel Mac, a desktop GPU with only BC, and the Mac's `goose`,
+  whose built-in gfx lacks compressed formats (below). Chosen in task 032, cut 5: 6 × 6
+  looks the same as the JPEG and 4 × 4 side by side at the tablet's and a phone's size,
+  sharp behind home and blurred, and is nearer the master than the JPEG (44 to 45 dB
+  against 40 to 41, summer 40 against 37.5); 4 × 4 (4 MB) buys nothing visible.
+- **Loading** (`app/background.c`, the program's own C, a `c_sources` entry in its
+  `.build` sidecar): gfx has no compressed formats, so
+  `patches/goose_gfx/0004-compressed-textures.patch` adds them and
+  `gs_gfx_format_supported` ([findings](../goose-findings.md)); the Goose side compiles
+  against the built-in `gfx.goose`, so the C calls gfx's C API itself (`gfx_api.h`), which
+  also uploads the embedded bytes with no copy on the data stack. Where gfx and the GPU
+  take ASTC 6 × 6 (Android, whose gfx is patched at build time), the texture is made from
+  the embedded blocks; elsewhere, or where a weak stand-in answers for an unpatched gfx
+  (the Mac's `goose build`, which links the release's prebuilt `libgoose_gfx.a`), the
+  JPEG is decoded with stb_image to RGBA (its NEON loops on for ARM, `STBI_NEON`; SSE2 on
+  x86 by itself), into a texture of 16 MB. goose_gfx's `load_texture` reads only PNG and
+  BMP from a file. A season is picked by a settings tile, which lights in the frame after
+  the tap; the photograph loads in the frame after that, once the lit tile is on screen,
+  after a `gfx::flush()` that lets the GPU finish with the old scene so the new one takes
+  its place in SDL's shared block. On the tablet a season change's longest frame went
+  from 54 to 66 ms to 22 ms (one frame late at 90 Hz). Only the current season is
+  resident: the sharp texture behind home and the blurred copies; nothing passes through
+  the data stack, and the embedded file's pages are given back once read
+  (`madvise(MADV_DONTNEED)`: clean pages of the APK, but counted while resident).
+  Settings' thumbnails shrink each season's photograph on the GPU in turn (the JPEG path
+  decodes and scales to 512 first), waiting for the GPU after each so only one is alive
+  at a time. Until the images are checked in, `app/background.c`
+  embeds the local masters with C23 `#embed` under `__has_embed`, so a checkout without
+  them builds and shows the page color, and one without the ASTC files decodes the
+  JPEGs everywhere. The ASTC files add 7.5 MB to `libmain.so` (the JPEGs 2.2), which
+  the APK stores uncompressed (13.4 MB, 6.0 without the ASTC; deflated as a store sends
+  it, 11.3 and 4.1): ASTC hardly compresses (3 to 5%). PNG was rejected at about 5 MB a season; AVIF
+  needs libavif and an AV1 decoder on both platforms to save about 1 MB.
+- **One size for every screen** (task 032, cut 5): at 1.87 MB as ASTC, the sharp image
+  sits in SDL's shared 16 MiB block; sizing it by the screen's density (1024 to 1536 on
+  a dense phone) would save at most 1 MB there and needs several encodings or a choice
+  at load, so it stays 2048 everywhere. Larger tablets stretch it 1.25 to 1.41×, as
+  before.
 - **Glass is a pre-blurred copy, not a live blur.** Snowtime measured live backdrop blur
   costing more than its weather animation, and switched to a copy of the background
   blurred once (its `docs/architecture/scene.md`). Here the scene is blurred on the GPU
@@ -634,8 +656,8 @@ the driver. How the patched allocator works:
 
 - **Up to 2 MiB** (`SMALL_ALLOCATION_THRESHOLD`, by the driver's memory requirements, not
   the pixels): shared 16 MiB blocks, as upstream. The storage buffers, the text atlas,
-  the blurred copies, the thumbnails, and SDL's uniform buffers live there, one block on
-  the tablet.
+  the photograph as ASTC, the blurred copies, the thumbnails, and SDL's uniform buffers
+  live there, one block on the tablet.
   A block that empties goes back to the driver.
 - **Over 2 MiB**: a `VkDeviceMemory` of the resource's own size, nothing else ever placed
   in it, given back to the driver at a submit soon after the resource is released.
@@ -644,9 +666,16 @@ the driver. How the patched allocator works:
 - **Transfer buffers** are their own exact allocations at any size, upstream too. Each
   drawn frame allocates and frees three small ones (gfx's `update_buffer`: 32 KB, 3 KB,
   256 B); a persistent upload buffer in gfx would end that.
-- **When:** on the tablet large allocations happen at launch, on a season change (the
-  new photograph and its 16 MiB transfer, then the old one freed), and on a resize or
+- **When:** on the tablet large allocations happen at launch and on a resize or
   rotation (the new screen, then the old one freed); never in a frame that only draws.
+  The photograph as ASTC (1.87 MB) and its transfer are small; where the JPEG is decoded
+  instead, a season change makes the new photograph (16 MiB) and its transfer.
+- **Short-lived small resources** wait for the GPU: a released texture is freed only
+  after the submit that used it completes, so making several in a row (settings'
+  thumbnails, four photographs) or a new scene beside the old one fills the shared block
+  and opens another, which a later resident resource can keep alive. The app calls
+  `gfx::flush()` between them (task 032, cut 5: GL mtrack at home 60.7 → 36.4 MB, after
+  three season changes 57.3 → 40.9).
 - **Exact, not rounded to 4 or 8 MiB** (task 032, cut 2): the count of allocations is
   the same either way, one per large resource, and rounding wastes half a step each on
   average (about 10 or 22 MiB on the tablet). It would pay only if a freed block were
@@ -725,8 +754,9 @@ landed nothing animates and the app draws nothing. While Android has the app pau
 the loop: it draws nothing and submits no GPU work.
 
 Work too long for a frame stays off the frames that move. Settings' season thumbnails
-decode all four photographs (about 125 ms on the tablet, 55 ms on the Mac), so they load
-in the first frame after the launch's first that draws nothing; that frame presents the
+make all four photographs, one after another with a wait for the GPU after each (where
+the JPEGs are decoded, about 125 ms on the tablet and 55 ms on the Mac), so they load in
+the first frame after the launch's first that draws nothing; that frame presents the
 unchanged screen once more, and settings opening for the first time moves as smoothly as
 later. Settings opened at launch load them before their first frame. A settings change
 the tap starting a transition made (the computer's play counting a game) is written once

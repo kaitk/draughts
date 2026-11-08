@@ -1,10 +1,11 @@
 // The season's photograph (docs/architecture/rendering.md, "Scene and glass"): sharp
 // behind home, and blurred once on the GPU when the season is picked behind the 2D game.
-// The program's C (background.c) decodes the built-in JPEG once and scales it to each
-// size; two passes of a Gaussian, across and then down, blur the small copy into the
-// texture the board pass samples behind the game. A season whose image isn't built in
-// has no photograph, and the board pass shows the page color. Glass panels sample a
-// copy blurred further, made at the same time.
+// The program's C (background.c) makes the sharp texture: the built-in ASTC image where
+// the GPU samples it, else the JPEG decoded. A shrinking pass averages it down to a small
+// copy, and two passes of a Gaussian, across and then down, blur that into the texture
+// the board pass samples behind the game. A season whose image isn't built in has no
+// photograph, and the board pass shows the page color. Glass panels sample a copy
+// blurred further, made at the same time.
 namespace scene;
 import std;
 import vec;
@@ -16,8 +17,9 @@ import gfx;
 // no texels.
 let SIZE = 512;
 
-// The sharp photograph's side: as the JPEG is stored, about a texel to a pixel across a
-// 1920 px screen. 16 MB of graphics memory.
+// The sharp photograph's side where the JPEG is decoded: as it is stored, about a texel
+// to a pixel across a 1920 px screen. 16 MB of graphics memory as RGBA8, 1.8 MB as the
+// ASTC image (6 × 6 blocks), which keeps the size it is stored at.
 let SHARP_SIZE = 2048;
 
 // The glass copy's side, and its blur: the one a 24 px blur is at 1280 px (rendering.md,
@@ -25,14 +27,14 @@ let SHARP_SIZE = 2048;
 let GLASS_SIZE = 256;
 let GLASS_SIGMA = 3.9;
 
-extern fn draughts_background(kind: i64, size: i64, out: u8[:]) -> bool;
-extern fn draughts_background_crop(kind: i64, width: i64, height: i64, out: u8[:]) -> bool;
+// Theme `kind`'s photograph, or 0 when it isn't built in: the ASTC image as stored, or
+// the JPEG decoded and scaled down to `decoded` square (background.c).
+extern fn draughts_photo(kind: i64, decoded: i64) -> gfx::Texture;
 
 // A season's thumbnail in settings: the photograph's middle at the picture's 104 × 64
 // shape, about a texel to a pixel at 1.5 pixels per dp; the four stacked in one texture.
 let THUMB_W = 160;
 let THUMB_H = 98;
-extern fn draughts_background_done();
 
 let BLUR_FRAG = """
     layout(location = 0) in vec2 v_uv;
@@ -55,6 +57,32 @@ let BLUR_FRAG = """
 
 struct Blur { dir: float4 }
 
+// Averages a part of the source into a part of the target. Each target pixel takes taps
+// spread evenly across its footprint, about two source texels apart, each a bilinear
+// average of four texels: shrinking 4×, 2 × 2 taps on the texels' corners are an exact
+// box of 4 × 4 texels.
+let SHRINK_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D src;
+    // The source's part in uv (origin, size), the target's in pixels (origin, size).
+    layout(set = 3, binding = 0) uniform Shrink { vec4 from; vec4 to; };
+    void main() {
+        vec2 pixel = from.zw / to.zw;
+        vec2 uv = from.xy + (gl_FragCoord.xy - to.xy) * pixel;
+        ivec2 n = max(ivec2(ceil(pixel * vec2(textureSize(src, 0)) * 0.5)), ivec2(1));
+        vec3 sum = vec3(0.0);
+        for (int y = 0; y < n.y; y++) {
+            for (int x = 0; x < n.x; x++) {
+                sum += texture(src, uv + ((vec2(x, y) + 0.5) / vec2(n) - 0.5) * pixel).rgb;
+            }
+        }
+        result = vec4(sum / float(n.x * n.y), 1.0);
+    }
+    """;
+
+struct Shrink { from: float4, to: float4 }
+
 struct Scene {
     photo:   gfx::Texture,     // the blurred copy, or a 1×1 stand-in when there is none
     sharp:   gfx::Texture,     // the photograph as it is, or the stand-in
@@ -63,22 +91,23 @@ struct Scene {
     has:     bool,             // whether there is a photograph
 }
 
-// The photograph of theme `kind` (theme::WOOD..SUNSET), decoded and blurred.
+// The photograph of theme `kind` (theme::WOOD..SUNSET), and its blurred copies.
 fn load(kind: i64, full_vert: const u8[:]) -> Scene {
     let sampler = gfx::sampler(gfx::LINEAR, gfx::CLAMP);
-    var px: u8[>..] = [];
-    px.resize(SHARP_SIZE * SHARP_SIZE * 4, 0);
-    if !draughts_background(kind, SHARP_SIZE, px) {
+    let sharp = draughts_photo(kind, SHARP_SIZE);
+    if sharp.id == 0 {
         let none = gfx::texture2d(1, 1);
-        gfx::update_texture(none, px[0..4]);
+        var black: u8[4] = [0; 4];
+        gfx::update_texture(none, black);
         return Scene { photo: none, sharp: none, glass: none, sampler: sampler, has: false };
     }
-    let sharp = gfx::texture2d(SHARP_SIZE, SHARP_SIZE);
-    gfx::update_texture(sharp, px);
-    draughts_background(kind, SIZE, px);
-    draughts_background_done();
-    let src = gfx::texture2d(SIZE, SIZE);
-    gfx::update_texture(src, px[..SIZE * SIZE * 4]);
+    let src = gfx::render_target(SIZE, SIZE, gfx::RGBA8);
+    let shrink = gfx::pipeline(full_vert, embed_shader("frag", SHRINK_FRAG), gfx::PipelineDesc {});
+    gfx::begin_pass(src, gfx::Texture { 0 }, float4 { 0.0, 0.0, 0.0, 1.0 });
+    draw_shrink(shrink, sampler, sharp, float4 { 0.0, 0.0, 1.0, 1.0 },
+                float4 { 0.0, 0.0, SIZE, SIZE });
+    gfx::end_pass();
+    gfx::release(shrink);
     let across = gfx::render_target(SIZE, SIZE, gfx::RGBA8);
     let blurred = gfx::render_target(SIZE, SIZE, gfx::RGBA8);
     let glass_across = gfx::render_target(GLASS_SIZE, GLASS_SIZE, gfx::RGBA8);
@@ -96,6 +125,17 @@ fn load(kind: i64, full_vert: const u8[:]) -> Scene {
     gfx::release(glass_across);
     gfx::release(src);
     return Scene { photo: blurred, sharp: sharp, glass: glass, sampler: sampler, has: true };
+}
+
+// Draws src's part `from` (uv origin and size) shrunk into the part `to` (pixels) of the
+// pass's target, in a pass the caller begins.
+fn draw_shrink(shrink: gfx::Pipeline, sampler: gfx::Sampler, src: gfx::Texture, from: float4,
+               to: float4) {
+    gfx::viewport(to.x, to.y, to.z, to.w);
+    gfx::bind(shrink);
+    gfx::bind_texture(gfx::FRAGMENT, 0, src, sampler);
+    gfx::uniforms(gfx::FRAGMENT, 0, Shrink { from: from, to: to });
+    gfx::draw(3);
 }
 
 // One blur pass from src into dst, in direction dir (Blur's fields).
@@ -119,17 +159,35 @@ fn release(s: Scene&) {
     gfx::release(s.sampler);
 }
 
-// The four seasons' thumbnails stacked, by theme, top to bottom, in one texture; a
-// season without a photograph is black. Each decodes its photograph (about 125 ms for
-// the four on the tablet), so the app makes this in the first frame after the launch's
-// first that draws nothing, rather than when settings first open.
-fn thumbs() -> gfx::Texture {
-    var px: u8[>..] = [];
-    px.resize(THUMB_W * THUMB_H * 4 * 4, 0);
-    let one = THUMB_W * THUMB_H * 4;
-    for kind in 4 { draughts_background_crop(kind, THUMB_W, THUMB_H, px[kind * one..(kind + 1) * one]); }
-    draughts_background_done();
-    let t = gfx::texture2d(THUMB_W, 4 * THUMB_H);
-    gfx::update_texture(t, px);
+// The four seasons' thumbnails stacked, by theme, top to bottom, in one texture: each
+// photograph's middle at the thumbnail's shape, shrunk on the GPU, one at a time; a
+// season without a photograph is black. A decoded JPEG (about 125 ms for the four on the
+// tablet) is scaled to SIZE on the way, so its texture is small. The app makes this in
+// the first frame after the launch's first that draws nothing, rather than when settings
+// first open.
+fn thumbs(full_vert: const u8[:]) -> gfx::Texture {
+    let t = gfx::render_target(THUMB_W, 4 * THUMB_H, gfx::RGBA8);
+    let sampler = gfx::sampler(gfx::LINEAR, gfx::CLAMP);
+    let shrink = gfx::pipeline(full_vert, embed_shader("frag", SHRINK_FRAG), gfx::PipelineDesc {});
+    let crop: f32 = THUMB_H as f32 / THUMB_W;
+    for kind in 4 {
+        let photo = draughts_photo(kind, SIZE);
+        // The first pass clears the whole texture; the others keep what is drawn.
+        var desc = gfx::PassDesc { clear_color: kind == 0, .. };
+        desc.color[0] = t;
+        gfx::begin_pass(desc);
+        if photo.id != 0 {
+            draw_shrink(shrink, sampler, photo, float4 { 0.0, (1.0 - crop) * 0.5, 1.0, crop },
+                        float4 { 0.0, kind * THUMB_H, THUMB_W, THUMB_H });
+        }
+        gfx::end_pass();
+        if photo.id != 0 { gfx::release(photo); }
+        // A released texture is freed once the GPU is done with it: waiting here keeps
+        // one photograph at a time, which as ASTC (1.8 MB) sits in SDL's shared 16 MiB
+        // block; four at once took a second block that stayed (task 032, cut 5).
+        gfx::flush();
+    }
+    gfx::release(shrink);
+    gfx::release(sampler);
     return t;
 }

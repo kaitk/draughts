@@ -3,6 +3,39 @@
 Gaps found in Goose, goose_gfx, and the SDL it pins, while building for Android, with what
 we do about each here and what could go upstream. Newest first.
 
+## goose_gfx: no compressed texture formats (2026-11-08)
+
+gfx's formats are uncompressed only: `gfx_texture_format` maps none of SDL_GPU's BC or
+ASTC formats, `update_texture` counts bytes as texels × `SDL_GPUTextureFormatTexelBlockSize`
+(a block's bytes, wrong for a block of 4 × 4 or 6 × 6 texels), it uploads with
+`pixels_per_row` set to the region's width (Vulkan wants a row length that is a
+multiple of the block's width: 2048 isn't one of 6), and there is no way to ask whether
+the GPU samples a format before making a texture of it (`create_texture` fails, the
+cause in `error()`). A 2048² photograph is 16 MiB as RGBA8 against 1.8 MiB as ASTC 6 × 6,
+which the tablet's Mali, phones, and Apple silicon sample. goose_gfx `6cfa3de`,
+Goose v2026.4.
+
+- Here: `patches/goose_gfx/0004-compressed-textures.patch` adds the formats `BC1`, `BC3`,
+  `BC7`, `ASTC_4x4`, `ASTC_5x5`, `ASTC_6x6`, `ASTC_8x8` (21 to 27, UNORM; sampled only,
+  no mips generated, not read back), counts bytes in whole blocks
+  (`SDL_CalculateGPUTextureFormatSize`), uploads tightly packed (`pixels_per_row` 0,
+  which every backend takes as tight and in whole blocks), and adds
+  `gs_gfx_format_supported(format, usage)` (`SDL_GPUTextureSupportsFormat`). Vulkan
+  needs no device feature for it: with `textureCompressionASTC_LDR` not enabled, the
+  spec still lets a device report and use single formats through
+  `vkGetPhysicalDeviceFormatProperties`, which is what SDL checks. The Goose side
+  compiles against the built-in `gfx.goose`, which lacks both, so the program's C calls
+  gfx's C API itself (`app/background.c`), with a weak stand-in for
+  `gs_gfx_format_supported` that answers no where gfx lacks the patch: the Mac's
+  `goose build` links the release's prebuilt `libgoose_gfx.a`, so the Mac decodes the
+  JPEG, as an Intel Mac or a BC-only GPU would. Linking a `libgoose_gfx.a` built from
+  the patched sources into a copy of the release gave the Mac the ASTC path for task
+  032's comparison (its file says how).
+- Upstream: the formats and `format_supported` in `gfx.goose` and the header, the byte
+  count and upload in blocks, and `texel_size` (Goose side) returning a block's bytes
+  for a block format, or a `format_bytes(format, w, h)`. Perhaps loading a `.astc` or
+  `.ktx2` from bytes.
+
 ## goose_gfx: `ui`'s font atlas is RGBA32 only, its height a power of two (2026-11-08)
 
 `gs_ui_bake_font_atlas` always asks Nuklear for `NK_FONT_ATLAS_RGBA32` (white, the
@@ -145,9 +178,10 @@ such as an `embed_file`. A photograph-like background is about 5 MB as PNG and 0
 0.7 MB as JPEG. goose_gfx `6cfa3de`, Goose v2026.4.
 
 - Here: no patch. The program decodes its JPEGs with stb_image in its own C (a
-  `c_sources` entry in its sidecar) and uploads the pixels with `gfx::texture2d` and
-  `update_texture`, which works with the built-in gfx on the Mac too
-  ([rendering](architecture/rendering.md#scene-and-glass)).
+  `c_sources` entry in its sidecar) and uploads the pixels through gfx's C API, which
+  works with the built-in gfx on the Mac too; where the GPU samples ASTC it uploads a
+  compressed copy instead (above, and
+  [rendering](architecture/rendering.md#scene-and-glass)).
 - Upstream: possibly `load_texture_from_memory(bytes, flags)` and JPEG through
   stb_image, which goose_gfx's Nuklear demos already carry. Small and optional.
 

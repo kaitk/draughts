@@ -16,6 +16,7 @@ Tested 2026-11-07 on macOS 26.3.1:
 | JDK | `javac` on `PATH` | OpenJDK 21 |
 | CMake, Ninja | Homebrew | CMake 4.4.4 |
 | Python | `python3` | 3.x |
+| astcenc | `build/astcenc-5.7.0/bin/astcenc`, from the [release](https://github.com/ARM-software/astc-encoder/releases/tag/5.7.0) (Apache 2.0; not in Homebrew) | 5.7.0, macOS universal |
 
 Set up from a fresh clone:
 
@@ -24,6 +25,8 @@ git submodule update --init --recursive --depth 1
 mkdir -p build && cd build
 gh release download v2026.4 -R aardappel/goose -p 'goose-v2026.4-macos-arm64.tar.gz'
 tar -xzf goose-v2026.4-macos-arm64.tar.gz && rm goose-v2026.4-macos-arm64.tar.gz
+gh release download 5.7.0 -R ARM-software/astc-encoder -p 'astcenc-5.7.0-macos-universal.zip'
+unzip -q astcenc-5.7.0-macos-universal.zip -d astcenc-5.7.0 && rm astcenc-5.7.0-macos-universal.zip
 cd ..
 $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install \
     "ndk;29.0.14206865" "platforms;android-36" "build-tools;36.0.0" "platform-tools"
@@ -63,14 +66,23 @@ gesture bar, 2 px a dp at that scale: `--size 450x1000 --dp 540 --inset 0,59,0,4
 and in landscape `--size 1200x540 --dp 540 --inset 59,0,0,42` (or `0,0,59,42`, turned
 the other way). What the Pixel would show at a floor of 0.75: `--size 1200x540
 --density-floor 0.75 --display-scale 2.625` (1.97 px a dp, 548 dp across).
-`app/draughts.build` adds the program's own C (`app/background.c`, the photographs and their JPEG decoder;
+`app/draughts.build` adds the program's own C (`app/background.c`, the photographs, made
+into textures through gfx's C API, and their JPEG decoder;
 `app/locale.c`, the system's locales; `app/display.c`, the window's safe area and the
 display's scale; `app/wake.c`, the timer a running clock wakes the
 loop with; `app/launch.c`, which tells the activity the first frame is on screen, and
 to close and leave recents after home's X), which `scripts/android.py` builds into the APK too. The photographs are
-embedded from `design/backgrounds/masters/` when they are there; without them the board
-sits on the page color. goose caches the program's C by its source, so after adding or
-changing a master, touch `app/background.c`. The
+embedded from `design/backgrounds/masters/` when they are there (the JPEGs, and the ASTC
+files `design/backgrounds/README.md` says how to make with astcenc); without them the
+board sits on the page color. goose caches the program's C by its source, so after
+adding or changing a master, touch `app/background.c`. The Mac's `goose build` links the
+release's prebuilt gfx, which has no compressed formats, so the Mac decodes the JPEGs;
+the Android build's gfx is patched and takes the ASTC files
+([rendering](architecture/rendering.md#scene-and-glass)). To see the ASTC path on the
+Mac, compile goose_gfx's `src/gfx/*.c` with `patches/goose_gfx/0004-*.patch` applied
+(`clang -c -O2 -DNDEBUG -I third_party/goose_gfx/third_party/SDL/include`), archive them
+as `pkg/gfx/lib/libgoose_gfx.a` in a copy of the release (the rest linked), and build
+with that copy's `goose` (task 032, cut 5). The
 board's logic is the `board/` package, the UI layer `gui/`, the game screen `game/`, and
 the screens around it `shell/` (home, and which screen shows), each tested headless
 (`test/board/`, `test/gui/`, `test/game/`, `test/shell/`). The app opens at home; `--fen`,

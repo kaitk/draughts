@@ -8,12 +8,15 @@ the season: autumn wood, winter stone, spring birch, summer sunset
 | --- | --- |
 | `<season>-01.png` | The originals from ChatGPT, 1254 × 1254 px. Kept as they are. |
 | `masters/<season>-01-2048.png` | Placeholder masters, 2048 × 2048, Lanczos and a light sharpen. |
-| `masters/<season>-01-2048.jpg` | The same at JPEG quality 85, 0.46 to 0.70 MB. |
+| `masters/<season>-01-2048.jpg` | The same at JPEG quality 85, 0.46 to 0.70 MB: the fallback where the GPU lacks ASTC. |
+| `masters/<season>-01-2048-6x6.astc` | The PNG master as ASTC in 6 × 6 blocks, 1.87 MB: what Android's GPU samples. |
 
 Originals and masters stay local and out of git (`.gitignore`): they're temporary, and
-this README says how to make them again. The app ships the final JPEGs as
-`assets/backgrounds/<season>.jpg`, built into the program
-([rendering](../../docs/architecture/rendering.md#scene-and-glass)).
+this README says how to make them again. The app builds each season's JPEG and ASTC
+file into the program from `masters/` (`app/background.c`,
+[rendering](../../docs/architecture/rendering.md#scene-and-glass)). Both are made from the
+lossless PNG master, never one from the other; the final images (task 014) take the
+same steps.
 
 ## The originals (2026-11-07)
 
@@ -62,6 +65,16 @@ magick <season>-01.png -alpha off -colorspace RGB -filter Lanczos -resize 2048x2
 magick masters/<season>-01-2048.png -quality 85 -sampling-factor 4:2:0 -strip \
   masters/<season>-01-2048.jpg
 ```
+
+```sh
+../../build/astcenc-5.7.0/bin/astcenc -cl masters/<season>-01-2048.png \
+  masters/<season>-01-2048-6x6.astc 6x6 -thorough -esw rgb1
+```
+
+The ASTC file (astcenc, `docs/development.md`) is LDR and linear (`-cl`), since the app
+samples the JPEG's bytes as they are too; `-esw rgb1` spends no bits on the opaque
+alpha. About a second a season. Against the PNG master, the JPEG is 37.5 to 41.5 dB,
+the ASTC 40 to 45 (4 × 4: 45.6 to 50, at 4 MB; task 032, cut 5).
 
 Resizing in linear light avoids dark fringes; the sharpen is light enough to leave no
 halos at 1:1. They add no detail: fine behind the board and glass, soft up close. Task

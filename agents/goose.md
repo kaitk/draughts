@@ -96,6 +96,17 @@ find out by compiling, so the next session doesn't.
   `var d: f32[5]` passes as `f32[:]` (2026-11-08).
 - `split_once` on a `const u8[:]` returns read-only slices: a variable that takes them
   in a loop is `var rest: const u8[:] = ...` (2026-11-08).
+- The program's C can call goose_gfx's C API (`gfx_api.h`, on the sidecar's `c_include`
+  as `../third_party/goose_gfx/src/gfx`) and return a `gs_gfx_texture` to Goose, which
+  an `extern fn ... -> gfx::Texture` takes (a flat struct by value): `app/background.c`
+  uploads embedded bytes that way, with no copy on a data stack. A function only a gfx
+  patch adds gets a `__attribute__((weak))` stand-in in the program's C, so the Mac,
+  whose `goose build` links the release's prebuilt gfx, still links; on Android the
+  patched gfx's definition wins (2026-11-08).
+- A released texture is freed once the GPU is done with it, after the submit that used
+  it. Making several small ones in a row, or a new set beside the one just released,
+  can open another 16 MiB block in SDL's allocator that then stays; `gfx::flush()` (a
+  submit and a wait) between them keeps one block (`scene::thumbs`, `draw::reload`).
 - `gfx::frame()` presents what the pass before it drew, so the first frame is on screen
   once the second `frame()` returns (`gfx::frame_count()` is 2).
 

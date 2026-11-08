@@ -443,3 +443,88 @@ Galaxy tablet, the build of cut 4, `pm clear`, a fresh launch to home in landsca
   2 MB (after cycles 3 and 9) and was flat between them, as the start's 4 MB spread; the
   native heap crept 0.2 MB over 20 cycles. PSS is about 96 MB lower, graphics about 104;
   the native heap, though, sits about 10 MB above the start's 27, not yet looked into.
+
+### Cut 5: the season photographs as ASTC (2026-11-08)
+
+The sharp photograph is uploaded as ASTC in 6 × 6 blocks (2048², 1.87 MB) where gfx and
+the GPU take it, with nothing decoded; elsewhere the JPEG is decoded to RGBA8 as before.
+`patches/goose_gfx/0004-compressed-textures.patch` gives gfx BC and ASTC formats and
+`gs_gfx_format_supported` ([findings](../docs/goose-findings.md)); `app/background.c`
+calls gfx's C API to make the texture from the embedded bytes, so nothing goes through
+the data stack on either path (the `trim_memory()` calls after loads are gone). The
+512 px blur source and settings' thumbnails are now shrunk from the sharp texture on the
+GPU (`scene.goose`'s `SHRINK_FRAG`, a 4 × 4 box from 2 × 2 bilinear taps) rather than on
+the CPU. How it works, what ships, and the APK: `docs/architecture/rendering.md`, "Scene
+and glass".
+
+**What ships and what is generated.** The `.astc` files are made from the lossless PNG
+masters with astcenc 5.7.0 (`design/backgrounds/README.md`; installed from ARM's release
+zip into `build/`, as `docs/development.md` says: Homebrew has no formula), and like the
+JPEGs stay local in `design/backgrounds/masters/`, out of git, embedded with
+`__has_embed`: a checkout without them decodes the JPEGs everywhere. The JPEGs stay in
+the APK as the fallback.
+
+**Which path each platform takes.** Android: gfx is built from patched sources, so the
+ASTC path (the tablet's shots differ from the JPEG's as the Mac's ASTC ones do). The Mac:
+`goose build` links the release's prebuilt `pkg/gfx/lib/libgoose_gfx.a` (and `goose run`
+the binary's built-in gfx), which lack the patch, so a weak stand-in in `background.c`
+answers that ASTC isn't supported and the JPEG is decoded, as on an Intel Mac or a
+BC-only GPU. For the comparison below the Mac got the ASTC path from a copy of the
+release whose `libgoose_gfx.a` was compiled from goose_gfx's `src/gfx` with patch 0004
+(`docs/development.md`); Metal sampled it.
+
+**4 × 4 against 6 × 6.** Against the PNG master (astcenc `-thorough`, `-esw rgb1`): JPEG
+q85 37.5 to 41.5 dB, 6 × 6 40.0 to 45.1, 4 × 4 45.6 to 50.0, so both are nearer the
+master than what shipped. Mac shots (1920 × 1200 and a Pixel 7a's 900 × 2000 at 540 dp,
+home in all four seasons, a game, settings) against the JPEG build's: home 45 to 50 dB
+for either block size, the blurred game 61 to 63 dB, settings' thumbnails alike. Crops
+enlarged 3× of the sharp photograph behind home (summer's birch, tree line and rocks,
+autumn's and winter's edges, the phone's) show no difference between the JPEG, 6 × 6,
+and 4 × 4; the blur hides any. **6 × 6 kept**: it looks the same at 1.87 MB against
+4 MB. The build with this change on the built-in gfx (the JPEG path) matches the old
+build at 72 to 82 dB, the GPU shrink standing in for the CPU's box.
+
+**Density** (the Work item above): not done, and not worth it now. As ASTC the sharp
+image is 1.87 MB and sits in SDL's shared 16 MiB block; a dense phone's 1024 to 1536 px
+copy would save at most 1 MB there, and needs a second encoding per size or a choice at
+load. It stays 2048 everywhere; larger tablets' 1.25 to 1.41× stretch is left as is.
+
+**Two waits for the GPU and the embedded pages.** A first build used 6.9 MB *more*
+graphics at home (GL mtrack 53.9 → 60.7 MB): the thumbnails made the four seasons'
+textures in a row, each freed only after the GPU finished, so they spilled out of the
+shared 16 MiB block into another, which a later resident resource kept. A
+`gfx::flush()` after each thumbnail took GL at home to 36.4; one between releasing the
+old scene and loading the new took GL after the season changes from 57.3 to 40.9, for a
+season change one frame longer (11 → 22 ms; it was 54 to 66). And the thumbnails read
+all four embedded images, whose clean pages from the APK stayed resident and counted in
+PSS (`.apk mmap` 9.2 MB against 4.1 before); `madvise(MADV_DONTNEED)` after each upload
+or decode leaves 2.0, PSS at home 160.1 → 152.6.
+
+Galaxy tablet, landscape, rotation locked, `pm clear` before each launch; before is main
+`bde1841`'s APK, after the same with the cut, built in one worktree. Home 8 s after a
+fresh launch; a game (Russian, `--screen game`) 8 s after its own launch; settings
+(`--screen settings`) through four season changes (winter, spring, summer, autumn tiles).
+Peak RSS is `/proc/<pid>/status`'s `VmHWM`, the load's peak included.
+
+| PSS / graphics (GL + EGL mtrack), MB | Before | After |
+| --- | --- | --- |
+| Home, fresh | 173.0 / 113.6 (53.9 + 59.7) | 152.6 / 96.2 (36.5 + 59.7) |
+| Game, fresh | 173.0 / 113.6 (53.9 + 59.7) | 152.4 / 96.1 (36.4 + 59.7) |
+| Settings after four season changes | 154.9 / 105.2 (73.0 + 32.2) | 118.6 / 73.3 (41.0 + 32.2) |
+| Native heap: home, game, after the seasons | 43.8, 43.6, 33.7 | 42.8, 42.7, 31.5 |
+| `dumpsys gpu --gpumem`: home, game, after the seasons | 142.4, 142.4, 161.0 MiB | 125.4, 125.3, 129.8 MiB |
+| Peak RSS: home, game, after the seasons | 258.8, 259.1, 283.4 | 213.2, 210.1, 214.0 |
+| A season change's longest frame (90 Hz, four changes) | 66, 58, 58, 54 ms | 22, 22, 22, 22 ms |
+
+GL mtrack is 17.4 MB lower fresh, the RGBA8 photograph's 16.3 MiB less the ASTC's place
+in the shared block; after the season changes 32 MB lower, the second shared block
+gone too (before, a season change's new scene beside the old one opened it). Peak RSS is
+46 MB lower fresh and 69 lower through the season changes: no 16 MiB decode and data
+stack. Native heap is about 1 MB lower fresh. The APK is 13.4 MB against 6.0 (deflated,
+as a store would send it, 11.3 against 4.1): the ASTC files add 7.5 MB to `libmain.so`,
+which is stored uncompressed, and compress by only 3 to 5%. The look: the tablet's home
+in landscape and portrait and the game differ from before by 46 to 47 dB and 61 dB, as
+on the Mac, and crops of the photograph show no difference; the final build's tablet
+shots are byte-identical to the one before the `madvise`. The Mac's own build, which
+decodes the JPEG, shows settings within 2% of the JPEG-path build's but for the
+preview's flash.

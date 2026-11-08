@@ -264,9 +264,6 @@ fn main() {
         if read_file(save_path, saved) { shell::restore(sh, saved); }
     }
     var d = draw::new(kind);
-    // Loading the photograph took 16 MB of data stack for its pixels; give the pages back
-    // rather than keep them resident. The same after baking the text.
-    trim_memory();
     var w = widgets::new();
     var g = gui::Gui {};
     var t = text::Text {};
@@ -299,7 +296,6 @@ fn main() {
             season_in--;
             if season_in == 0 && theme_for(sh.prefs.season) != d.kind {
                 draw::reload(d, theme_for(sh.prefs.season));
-                trim_memory();
                 dirty = true;
             }
         }
@@ -382,8 +378,7 @@ fn main() {
         // Settings' thumbnails, if settings show before the first idle frame loaded them
         // (below): opened at launch.
         if sh.screen == shell::SETTINGS && w.thumbs.id == 0 {
-            w.thumbs = scene::thumbs();
-            trim_memory();
+            w.thumbs = scene::thumbs(d.full);
         }
         let l = sh.layout;
         if tapped < taps.len && !b.moving && sh.screen == shell::GAME && b.pos.side != gm.computer {
@@ -418,8 +413,7 @@ fn main() {
         // first frame is on screen, so settings' first opening doesn't wait for them; the
         // next frame shows the screen again unchanged, then the app is idle.
         if !drew && w.thumbs.id == 0 && gfx::frame_count() >= 2 {
-            w.thumbs = scene::thumbs();
-            trim_memory();
+            w.thumbs = scene::thumbs(d.full);
         }
         // A running clock is drawn when the time it shows changes, and the computer's move
         // played when it is due; a timer wakes the loop then, rather than whenever the

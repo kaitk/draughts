@@ -444,6 +444,9 @@ fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::La
 // Swaps the theme and its scene for theme `kind`'s.
 fn reload(d: Drawer&, kind: i64) {
     scene::release(d.scene);
+    // The old scene is freed once the GPU is done with it; waiting (about a frame) lets
+    // the new one take its place in SDL's shared block rather than open another.
+    gfx::flush();
     d.scene = scene::load(kind, d.full);
     d.kind = kind;
     d.colors = theme::get(kind);
