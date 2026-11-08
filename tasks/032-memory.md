@@ -55,6 +55,13 @@ fruit. A holistic look, measuring before cutting.
 - **Cut what is cheap and safe**, one change at a time, each with its before and after
   on the tablet and a look that it still renders the same.
 
+## Also seen, for the same pass
+
+- Idle CPU of the whole process rose from 1.25 s a minute (task 025) to about 1.5 s
+  (task 007, game and puzzles alike) while the program's thread stayed at 0.02 s: find
+  which thread (the computer's worker, SDL, the launch cover) and why.
+- The first puzzle opened after launch had a 31 ms frame gap in its opening (task 007).
+
 ## Acceptance criteria
 
 - [ ] A table of where the memory goes, CPU and GPU, measured on the tablet

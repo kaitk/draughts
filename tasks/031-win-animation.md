@@ -21,6 +21,11 @@ look odd. They float over the card and the pieces as loose dots, unrelated to th
 
 ## Takes (2026-11-08), waiting for a pick
 
+The main session recommends c: the child's own winning piece becomes the card's piece,
+so the win comes from the game rather than effects laid over it; a is the calmest
+second.
+
+
 `prototypes/win.html`, in the game's layout with a Russian game white has just won (e3
 over f4 to g5). Every moment is a function of the time since the win, as
 `game::celebrate` draws it; `&t=` holds one, a click plays it again. Each uses only what

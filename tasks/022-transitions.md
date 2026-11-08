@@ -78,6 +78,16 @@ Checked:
 
 ## The rest on this base
 
+Reviewed by the main session (2026-11-08): worth it. The mechanism is generic (every
+switch goes through `shell::go_to`, gui's `listen` and `fade`, `board::under`), about
+half of the shell's change is home and settings split into functions, and the rest of
+the screens would add roughly 150 to 250 lines. Recommended next: continue and a new
+game (the board growing into the game) with the sharp-to-blurred crossfade, the ones
+seen most; the picker and puzzles optional; the setups' column fade not worth it. Watch
+on the tablet: home's game and the preview in different variants switch square size
+halfway through the slide.
+
+
 - **Continue (the board growing into the game):** easy, about an hour. Add the pair to
   `shell::animates`. Teach `shell::still` to declare the game with no pointer. It must not
   run the clock or the computer: call the panel's drawing without `game::frame`'s logic,
