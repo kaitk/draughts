@@ -1,11 +1,14 @@
 # 022: Transitions between screens
 
-Status: todo
+Status: in-progress (home to settings first, 2026-11-08)
 
 Optional, after the MVP (2026-11-07): quick, not instant, changes between screens for
 feel: home's menu fading or sliding away on continue while the board grows into its
 place in the game, settings fading in, the background going from sharp to blurred.
 About 0.2 to 0.3 s each.
+
+The user (2026-11-08): wanted if they are easy, starting with home to settings and back;
+the rest follow if that one is cheap and keeps the app idle afterwards.
 
 ## Notes
 
