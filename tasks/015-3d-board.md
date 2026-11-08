@@ -55,8 +55,15 @@ look good, not merely work.
   - Specular antialiasing: Kaplanyan and Tokuyoshi's normal-variance roughness.
   - Karis 2013, "Real Shading in Unreal Engine 4": split-sum lighting from an
     environment (the season's photograph).
-  - Sebastian Aaltonen on mobile GPUs (bandwidth, tile memory, few passes), and Arm's
-    Mali best practices for MSAA resolved in tile memory.
+  - Sebastian Aaltonen (sebbbi), a primary source (the user, 2026-11-08): his years on
+    HypeHype's renderer for low-end Android phones (what potato GPUs have and need:
+    bandwidth, tile memory, few passes, which features to rely on), his writing on a
+    graphics API without the API (the idea behind goose-ngfx), and Petafab, his SDF game
+    on it (high-end, so its ideas, not its requirements). Before the prototype starts,
+    dig through his posts on X and elsewhere, his blog, and talks for what applies here:
+    a small static scene, single-frame quality, mobile first. Record what was taken and
+    from where.
+  - Arm's Mali best practices for MSAA resolved in tile memory.
 - The user has more to add before it starts.
 
 ## Later, only if the floating board falls short
