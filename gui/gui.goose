@@ -125,6 +125,31 @@ fn glyph_index(c: i64) -> i64 {
 // The character glyph i is, for the app filling a face.
 fn glyph_char(i: i64) -> i64 { if i < LATIN_END - 0x20 { i + 0x20 } else { i - (LATIN_END - 0x20) + PUNCT } }
 
+// The characters a face holds when it is baked with only those it draws (the title and
+// the clock's figures, shell::face_chars), each once, in order. Characters the faces
+// never hold aren't added: they are drawn as '?', which a set always holds.
+let MAX_CHARS = 64;
+type Chars = u32[..MAX_CHARS];
+
+fn holds(set: Chars&, c: i64) -> bool {
+    for x in set { if x == c { return true; } }
+    return false;
+}
+
+// Adds s's characters to set.
+fn add_chars(set: Chars&, s: const u8[:]) {
+    if !holds(set, '?') { set.push('?'); }
+    var i = 0;
+    while i < s.len {
+        let c, next = next_char(s, i);
+        i = next;
+        guard glyph_index(c) >= 0 && !holds(set, c) else { continue; }
+        assert(set.len < MAX_CHARS);
+        set.push(c as u32);
+    }
+    sort(set) { a, b => a < b };
+}
+
 // One quad for the UI shader.
 struct Quad {
     rect:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x, y, width, height in pixels

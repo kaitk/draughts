@@ -174,16 +174,23 @@ fn fill_in(out: u8[..64]&, k: i64, numbers: const i64[:]) {
     }
 }
 
-// A language's own name, as its file gives it, whichever language is current.
-fn name_of(lang: i64) -> const u8[:] {
+// A key's text in a language, as its file gives it, whichever language is current; ""
+// when the file lacks the key.
+fn text_of(lang: i64, k: i64) -> const u8[:] {
     var text = file(lang);
     while text.len > 0 {
         let line, rest = next_line(text);
         text = rest;
         let name, value, ok = entry(line);
-        if ok && name == KEYS[LANGUAGE_NAME] { return value; }
+        if ok && name == KEYS[k] { return value; }
     }
-    return LANGUAGES[lang];
+    return "";
+}
+
+// A language's own name, as its file gives it, whichever language is current.
+fn name_of(lang: i64) -> const u8[:] {
+    let name = text_of(lang, LANGUAGE_NAME);
+    return if name.len > 0 { name } else { LANGUAGES[lang] };
 }
 
 // The language to use, from the system's preferred locales in order, separated by

@@ -91,6 +91,22 @@ fn new(variant: u8) -> Shell {
                    went: l, came: l, .. };
 }
 
+// The characters a face draws, for the faces baked with only those (rendering.md,
+// "Fonts"): the title, the app's name in every language (home's wordmark), and the
+// figures, a clock's time. False for a face that holds every glyph.
+fn face_chars(face: i64, set: gui::Chars&) -> bool {
+    set.clear();
+    if face == gui::TITLE {
+        for code, lang in strings::LANGUAGES { gui::add_chars(set, strings::text_of(lang, strings::APP_NAME)); }
+        return true;
+    }
+    if face == gui::FIGURES {
+        gui::add_chars(set, clock::CHARS);
+        return true;
+    }
+    return false;
+}
+
 // Whether a switch between screens a and b is drawn as a transition.
 fn animates(a: i64, b: i64) -> bool { pair(a, b, HOME, SETTINGS) || pair(a, b, HOME, GAME) || pair(a, b, PICKER, PUZZLE) }
 fn pair(a: i64, b: i64, x: i64, y: i64) -> bool { (a == x && b == y) || (a == y && b == x) }

@@ -596,6 +596,35 @@ boxes and atlas places are copied into `gui`'s fixed tables, which lay text out 
 the image into a texture, and the atlas is then destroyed. A glyph is one more quad kind
 in the UI's one draw. Baked again only when the layout's scale changes.
 
+The texture holds only what is drawn:
+
+- **The title and the figures hold only their characters** (`shell::face_chars`): the
+  64 dp title the app's name in every language in `strings/` (home's wordmark), the 36
+  dp figures the clock's digits and colon, and both '?', the glyph a missing character
+  is drawn as. Those two faces were 71% of the atlas's area with every glyph. A
+  translation's name is taken from its file at the bake, so nothing else changes for
+  a new language; `test/shell/faces` fails if a string drawn in either face has a
+  character outside its set. The other four faces keep every glyph, as any string may
+  use them.
+- **One byte a texel, only the rows used.** `ui` bakes RGBA (white, coverage in alpha)
+  with its height rounded up to a power of two ([findings](../goose-findings.md)); the
+  app moves the alpha to the front of the same buffer and uploads the rows down to the
+  lowest glyph and one empty row as an R8 texture, its v remapped from whole rows, and
+  the UI shader reads `.r`. The text is drawn byte for byte as from the whole RGBA atlas.
+
+At 1024 texels wide, the texture's size by scale:
+
+| Screen (scale) | Before: every glyph, RGBA, power of two | R8, the rows used |
+| --- | --- | --- |
+| A 720 × 1280 phone at low density (0.9) | 1024 rows, 4 MiB | 261 rows, 0.25 MiB |
+| The Galaxy tablet; a 720 × 1280 phone at xhdpi (1.5) | 2048 rows, 8 MiB | 630 rows, 0.62 MiB |
+| The Pixel 7a (1.97) | 4096 rows, 16 MiB | 1023 rows, 1.0 MiB |
+| 2880 × 1920 (2.4) | 8192 rows, 32 MiB | 1482 rows, 1.45 MiB |
+
+Under 2 MiB at every size, so it lives in SDL's shared small blocks ([GPU
+memory](#gpu-memory)), and its upload's transfer buffer is as small. Nuklear's own bake
+buffers are still power-of-two RGBA, but of the smaller atlas, and freed with it.
+
 ## GPU memory
 
 On Android all of the app's GPU memory comes from SDL_GPU's Vulkan allocator, as patched
@@ -604,14 +633,14 @@ by `patches/SDL/0003-large-allocations-at-their-size.patch`
 the driver. How the patched allocator works:
 
 - **Up to 2 MiB** (`SMALL_ALLOCATION_THRESHOLD`, by the driver's memory requirements, not
-  the pixels): shared 16 MiB blocks, as upstream. The storage buffers, the blurred
-  copies, the thumbnails, and SDL's uniform buffers live there, one block on the tablet.
+  the pixels): shared 16 MiB blocks, as upstream. The storage buffers, the text atlas,
+  the blurred copies, the thumbnails, and SDL's uniform buffers live there, one block on
+  the tablet.
   A block that empties goes back to the driver.
 - **Over 2 MiB**: a `VkDeviceMemory` of the resource's own size, nothing else ever placed
   in it, given back to the driver at a submit soon after the resource is released.
   Upstream rounds these up to 64 MiB blocks that later large resources share: on the
-  tablet the screen (9.6 MiB), the photograph (16.3), and the text atlas (8.1) took a
-  whole 64 MiB block, and on the largest tablet (2880 × 1920) they would take two.
+  tablet the screen (9.6 MiB) and the photograph (16.3) would take a whole 64 MiB block.
 - **Transfer buffers** are their own exact allocations at any size, upstream too. Each
   drawn frame allocates and frees three small ones (gfx's `update_buffer`: 32 KB, 3 KB,
   256 B); a persistent upload buffer in gfx would end that.

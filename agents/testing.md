@@ -38,7 +38,8 @@ which would overwrite the main checkout's while another session uses them.
   orientations (the cutout at either side in landscape), every tile and the board inside
   the safe area, the 16:10 tablet with its 72 px hidden navigation bar (settings keeps
   both groups in landscape), and a phone's tabs in settings and the puzzles:
-  `sizes`), `strings` (every language
+  `sizes`; the title's and the clock's faces holding every character drawn in them, the
+  app's name in every language and every clock time: `faces`), `strings` (every language
   file has every key), `ai` (the computer player:
   its search against a plain minimax, the table changing no score, keys, what each level
   plays in known shots, the same move in steps as at once, and that no level hangs a

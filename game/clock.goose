@@ -15,6 +15,7 @@ let KINDS = 3;
 let MINUTES = [0.0, 5.0, 10.0];
 let INCREMENTS = [0.0, 3.0, 5.0];
 let LOW = 10;               // under this many seconds shown, the running clock turns red
+let CHARS = "0123456789:";  // what text() writes
 
 struct Clock {
     kind:    i64    = NONE,

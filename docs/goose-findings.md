@@ -3,6 +3,22 @@
 Gaps found in Goose, goose_gfx, and the SDL it pins, while building for Android, with what
 we do about each here and what could go upstream. Newest first.
 
+## goose_gfx: `ui`'s font atlas is RGBA32 only, its height a power of two (2026-11-08)
+
+`gs_ui_bake_font_atlas` always asks Nuklear for `NK_FONT_ATLAS_RGBA32` (white, the
+coverage in alpha) and keeps a copy, which `atlas_pixels` copies out again; Nuklear rounds
+the height up to a power of two. A program that uploads the image itself, as Draughts
+does, gets four bytes a texel where one would do and up to twice the rows the glyphs use:
+on the tablet 1024 × 2048 RGBA, 8 MiB, for 1846 rows of coverage, and three such buffers
+(Nuklear's, `ui`'s copy, the program's) while baking.
+
+- Here, no patch (the Mac's `goose` has its own `ui` built in): the app moves the alpha to
+  the front of the buffer `atlas_pixels` returned, in place, and uploads only the rows
+  the glyphs reach as an R8 texture, its v remapped from whole rows (`app/text.goose`).
+- Upstream: a format choice on `bake` (`NK_FONT_ATLAS_ALPHA8`, which Nuklear has) and the
+  used height beside `atlas_size`; `ui`'s own renderer would then need a coverage-only
+  texture path.
+
 ## SDL: SDL_GPU's Vulkan allocator rounds large resources up to 64 MiB blocks (2026-11-08)
 
 `VULKAN_INTERNAL_BindResourceMemory` puts a resource up to 2 MiB

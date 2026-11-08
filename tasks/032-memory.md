@@ -357,3 +357,58 @@ large resource can no longer slip into a block's spare room, so memory pressure 
 a little sooner than with an oversized block already held. An SDL upgrade that changes
 `VULKAN_INTERNAL_BindResourceMemory` stops the patch applying and fails the build,
 loudly.
+
+### Cut 3: the text atlas in one byte a texel, the rows used, and two faces' glyphs (2026-11-08)
+
+`app/text.goose`: the title (64 dp) and the figures (36 dp) are baked with only the
+characters they draw (`shell::face_chars`: the app's name in every language file, read at
+the bake; the clock's `0123456789:`; and '?', the fallback), the other four faces with
+every glyph as before. The texture is R8, the alpha moved to the front of the buffer
+`ui::atlas_pixels` returns (in place, no second copy), and only the rows down to the
+lowest glyph and one empty row are uploaded, v remapped from whole rows; the UI shader
+reads `.r`. No gfx patch: gfx has `R8`, and `ui`'s bake stays RGBA32 since the Mac's
+built-in `ui` couldn't take one ([findings](../docs/goose-findings.md)).
+`test/shell/faces` checks both sets against every language's name and every clock time
+to 100 minutes.
+
+The texture, 1024 wide, from debug prints of the bake on the Mac at each scale:
+
+| Screen (scale) | Before: RGBA, power of two (rows used) | After: R8, rows used |
+| --- | --- | --- |
+| 720 × 1280 at low density (0.9) | 1024 rows, 4 MiB (709) | 261 rows, 0.25 MiB |
+| The Galaxy tablet, or 720 × 1280 at xhdpi (1.5) | 2048, 8 MiB (1846) | 630, 0.62 MiB |
+| The Pixel 7a (1.97) | 4096, 16 MiB (3082) | 1023, 1.0 MiB |
+| 2880 × 1920 (2.4) | 8192, 32 MiB (4573) | 1482, 1.45 MiB |
+
+On the tablet the two faces' glyph sets took the rows used from 1846 to 630, R8 is a
+factor of four, and dropping the power of two up to another two. Under 2 MiB at every size, the
+atlas now sits in SDL's shared 16 MiB block, and its transfer buffer shrinks with it. The
+bake's transients shrink in proportion (Nuklear's alpha and RGBA images and `ui`'s copy
+at the next power of two of the smaller atlas, 4 MiB each on the tablet against 8, and
+the program's copy likewise), worked out, not measured.
+
+Galaxy tablet, landscape, rotation locked, `pm clear` before each launch; before is
+`ea1faef` (cuts 1 and 2), after the same with the cut. Home 8 s after a fresh launch; a
+game (Russian, 5+3, `--screen game`) 8 s after its own launch; that game after a turn to
+portrait and back.
+
+| PSS / graphics (GL + EGL mtrack), MB | Before | After |
+| --- | --- | --- |
+| Home, fresh | 189.0 / 129.5 (69.8 + 59.7) | 173.4 / 113.6 (53.9 + 59.7) |
+| Game, fresh | 189.5 / 129.5 (69.8 + 59.7) | 173.3 / 113.6 (53.9 + 59.7) |
+| Game after a rotation | 175.7 / 114.0 (61.3 + 52.6) | 166.7 / 105.5 (52.9 + 52.6) |
+| `dumpsys gpu --gpumem`: home, game, after a rotation | 157.9, 157.9, 122.5 MiB | 142.4, 142.4, 114.3 MiB |
+
+After a rotation GL mtrack is 8.4 MB lower, the atlas's 8 MiB less its 0.6 now in the
+small block. Fresh it is 15.9 MB lower: the atlas's 8 MiB transfer buffer, which lived
+until the next drawn frame, is 0.6 MiB too. Native heap is the same (43.4 to 44.1 MB
+before, 43.5 to 43.6 after): Nuklear's bake buffers are freed before the measurement
+either way. Worked out at the other sizes: 3.8 MiB saved at 720 × 1280 at low density,
+15 at the Pixel 7a, 30.5 at 2880 × 1920, each twice that at a fresh launch.
+
+The look: the Mac's shots of home, a clocked game, settings, puzzle 21, and the friend
+setup, in English and Estonian, landscape and portrait, and the Pixel 7a's scale in
+landscape (home in both languages, a clocked game, the puzzle), are byte-identical to
+`ea1faef`'s apart from settings' preview flash, whose box is the one two runs of
+`ea1faef` differ in. The tablet's home, clocked game, and the game after a rotation are
+byte-identical before and after.
