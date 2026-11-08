@@ -19,11 +19,9 @@ look odd. They float over the card and the pieces as loose dots, unrelated to th
 - Build the pick in `game::celebrate` and the drawer, keeping it short (about 2 s) and
   then still, so the app goes idle.
 
-## Takes (2026-11-08), waiting for a pick
+## Takes (2026-11-08): a picked
 
-The main session recommends c: the child's own winning piece becomes the card's piece,
-so the win comes from the game rather than effects laid over it; a is the calmest
-second.
+The user picked a, the pieces answer (2026-11-08). The main session had recommended c.
 
 
 `prototypes/win.html`, in the game's layout with a Russian game white has just won (e3
@@ -60,7 +58,7 @@ and 800 × 1280).
 
 ## Acceptance criteria
 
-- [ ] Takes prototyped (a, b, c above) and one picked by the user
+- [x] Takes prototyped (a, b, c above) and one picked by the user (a)
 - [ ] Built on the Mac and the tablet, in both orientations
 - [ ] Ends still: no frames once it has played (the tablet's `scripts/idle_cpu.sh`)
 - [ ] Headless test: the celebration ends and stops asking for frames

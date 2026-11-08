@@ -1,7 +1,7 @@
 # 033: An icon per season
 
-Status: todo (after the MVP; shipping autumn instead of winter is a smaller, separate
-call, below)
+Status: todo (after the MVP; for the MVP the icon stays winter, decided 2026-11-08: the
+release lands around winter, when the app's own look is winter too)
 
 The app's look follows the season, picked from the date (`docs/architecture/rendering.md`,
 "Seasons and themes"); the launcher icon is one season, the winter jump (task 028). An

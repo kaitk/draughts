@@ -50,19 +50,22 @@ before release. 013 adds season effects later. 014 upscales the backgrounds on t
 desktop; placeholders do until then. 024 reviews the Estonian translation once the MVP's text is in. 015 (the 3D board) and 022 (transitions between screens, optional) come after the MVP, and so does 033 (an icon per season; shipping autumn instead of winter is a smaller call before it); 016
 (tabletop pictures) was cancelled. 031 makes the win calmer, and 032 brings memory down last. 027 has the computer spend its clock as a player of its level would. 028 (the icon and launch screen), 030 (phones and other screen sizes), and 029 (release on Google Play) make the release.
 
-## Next (proposed 2026-11-08, to confirm with the user)
+## Next (agreed 2026-11-08)
 
 The MVP's features are in (puzzles, the computer with its clock, three variants, the
-icon and launch). Proposed order for what is left:
+icon and launch). The order for what is left:
 
-1. 031, the win: build the take the user picks (c recommended).
-2. The autumn icon as the default, if the user wants it (task 033's "Defaulting to
-   autumn now"; one commit). Seasonal icons stay after the MVP.
-3. The `--tap` development flag stalls on the tablet after a tap that only selects a
-   piece (task 007, "On the tablet"): a small fix.
+1. The `--tap` development flag stalls on the tablet after a tap that only selects a
+   piece (task 007, "On the tablet"): a small fix first, so the tablet checks after it
+   can play with `--tap`.
+2. 031, the win: take a, the pieces answer.
+3. The launcher's name follows the phone's language ("Kabe" in Estonian):
+   `scripts/android.py` writes `res/values*/strings.xml` from `strings/<lang>.txt`, and
+   the manifest takes `@string/app_name`. The icon stays winter (task 033).
 4. 034, the setup's board shows the game being set up.
-5. 022, transitions: continue and a new game with the sharp-to-blurred crossfade; the
-   picker and puzzles optional; not the setups.
+5. 022, transitions: continue and a new game with the sharp-to-blurred crossfade, the
+   game back to home, and a puzzle opened from the picker if it stays as cheap; not the
+   setups.
 6. 030, phones and other screen sizes, before memory, so memory is sized and measured on
    the final layouts.
 7. 032, memory: measure first, then the blur against its alternatives, ASTC with a
@@ -71,10 +74,6 @@ icon and launch). Proposed order for what is left:
    a new personal account needs a 14-day closed test with 12 testers).
 9. Children play it (task 006's last criterion; medium's strength, the
    computer's time on the clock).
-
-Open for the user before starting: the win take; autumn as the default icon; the
-transitions' scope; this order; and whether the launcher's name is translated ("Kabe"
-in Estonian) or "Draughts" everywhere (the manifest's label is a literal now).
 
 After the MVP: 026 (first start and tutorial; its prototype awaits the user's review),
 Russian puzzles from the International ones, 015, 013, 014, 033's seasonal icons, and
