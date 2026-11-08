@@ -122,8 +122,8 @@ Strength by skill, the higher skill's wins, draws, and losses over 20 or 30 game
 
 | | Russian | International |
 | --- | --- | --- |
-| Hard (90) against medium (45) | 20, 0, 0 | 20, 0, 0 |
-| Medium (45) against easy (10) | 20, 0, 0 | 20, 0, 0 |
+| Hard (90) against medium (45, as above) | 20, 0, 0 | 20, 0, 0 |
+| Medium (45, measured before medium moved to 40) against easy (10) | 20, 0, 0 | 20, 0, 0 |
 | 15 against 0 | 25, 2, 3 | 16, 3, 1 |
 | 30 against 15 | 19, 7, 4 | 20, 0, 0 |
 | 45 against 30 | 18, 7, 5 | |
@@ -204,7 +204,7 @@ in four.
   thinking, dropped and stale answers ignored, leaving and returning, the child playing
   black, start over, the result once; nothing animates once the reply has landed) and
   `test/shell/adapt.goose` (a win on easy raises its skill to 14, a loss on medium
-  lowers it to 41, start over counts nothing, the file keeps the skills and clamps them
+  lowers it to 36 (medium starts at 40), more losses stop at its floor 25, start over counts nothing, the file keeps the skills and clamps them
   to the band, a restored game asks at its own skill); `resume`, `settings`, and `shell`
   show the skill and count.
 
@@ -294,7 +294,11 @@ process 1.16 s, 60 voluntary switches.
 
 - The levels' skills stay as they are for now (the user, 2026-11-08: medium looks fine,
   adapting is bounded to 20 either side of each level's start); retune after children
-  have played.
+  have played. Revised 2026-11-08, below.
+- 2026-11-08, the user: medium now starts at 40 (it was 45), to be tuned once children
+  have played it, and its adapted skill never falls under 25 (`LEVEL_FLOOR` in
+  `ai/ai.goose`; it still rises to 60). Easy and hard keep within 20 of their start. The
+  strength tables above were measured with medium at 45 and are not re-measured.
 - Taken as defaults (2026-11-08), each easy to change:
   - The pauses: 0.8 s on easy, 0.6 on medium, 0.45 on hard, counted from the child's
     move landing; the pulse: the ring from full to a third and back every 1.2 s.

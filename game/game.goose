@@ -63,7 +63,7 @@ struct Game {
     clock:    clock::Clock = clock::Clock {},
     computer: i64          = -1,                    // the side the computer plays, or -1 for a friend
     level:    i64          = MEDIUM,                // the computer's
-    skill:    i64          = 45,                    // the computer's for the whole game (ai::level_skill)
+    skill:    i64          = 40,                    // the computer's for the whole game (ai::level_skill)
     number:   i64          = 0,                     // the game's number, for the computer's seeds
     turn:     u8           = 0,                     // the side to move as last seen, to tell a move was made
     seen:     f64          = -1.0,                  // when the clock last counted, or -1 to count nothing next

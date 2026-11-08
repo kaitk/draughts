@@ -137,14 +137,14 @@ and the table are made once, about 6 MB in all.
 
 ## Levels
 
-Skill runs from 0 to 100; easy starts at 10, medium at 45, hard at 90. One skill holds for
+Skill runs from 0 to 100; easy starts at 10, medium at 40 (the user's call, 2026-11-08, to be tuned once children have played it), hard at 90. One skill holds for
 a whole game. It sets:
 
-| | Formula | Easy (10) | Medium (45) | Hard (90) |
+| | Formula | Easy (10) | Medium (40) | Hard (90) |
 | --- | --- | --- | --- | --- |
 | Plies of free moves it sees | `1 + s / 12 + max(s − 60, 0) / 6` | 1 | 4 | 13 |
 | Plies of forced captures past them | `2 + s / 8` | 3 | 7 | 13 |
-| Temper: how much worse makes a move e times less likely | `2 + 60 (100 − s)² / 10000` | 50 | 20 | 2 |
+| Temper: how much worse makes a move e times less likely | `2 + 60 (100 − s)² / 10000` | 50 | 23 | 2 |
 | Margin: never a move this much worse than the best it sees | `min(60, 3 × temper)` | 60 | 60 | 6 |
 | Chances left for the child, per thousand moves | `5 × max(25 − s, 0)` | 75 | 0 | 0 |
 
@@ -165,7 +165,8 @@ How each part plays like a person:
    skill, so 15 points more wins about three games in four against itself, and the
    small steps of adapting are felt.
 4. **It adapts.** `ai::adapt` moves the skill 4 up after the child wins and 4 down after
-   the child loses, within 20 of the level's start, so a child meets an opponent they
+   the child loses, within 20 of the level's start (easy 0 to 30, medium 25 to 60, hard 70 to 100; medium
+   never under 25, `LEVEL_FLOOR`), so a child meets an opponent they
    beat about half the time ([in the game](#in-the-game)).
 5. **It leaves chances to learn.** Below skill 25, now and then (the table's last row),
    it looks among moves that cost it at most 1.2 men for one that leaves the child a

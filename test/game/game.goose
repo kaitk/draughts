@@ -149,7 +149,7 @@ fn main() {
     // A 5+3 game: no clock runs until white's first move, then black's counts the time
     // between frames; a frame is drawn when the time shown changes, not between.
     gm = game::new(rules::RUSSIAN);
-    game::start(gm, rules::RUSSIAN, clock::BLITZ, -1, game::MEDIUM, 45, 0);
+    game::start(gm, rules::RUSSIAN, clock::BLITZ, -1, game::MEDIUM, 40, 0);
     drive::frame(gm, g, l, away, false, false, false, 20.0);
     drive::frame(gm, g, l, away, false, false, false, 30.0);
     print("5+3, 10 s before a move: ", clocks(gm, g), "; over the UI ", pieces());

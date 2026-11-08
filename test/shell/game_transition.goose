@@ -188,7 +188,7 @@ fn main() {
     // A clocked game against the computer, which plays black: white moves, black's clock
     // runs and the computer is to move. Home and back: neither transition counts time or
     // asks the computer for a move.
-    game::start(sh.game, rules::RUSSIAN, clock::BLITZ, rules::BLACK, game::MEDIUM, 45, 0);
+    game::start(sh.game, rules::RUSSIAN, clock::BLITZ, rules::BLACK, game::MEDIUM, 40, 0);
     drive::idle(sh, g, 10.0);
     drive::tap(sh, g, drive::at(sh.layout, "c3"), 10.1);
     drive::tap(sh, g, drive::at(sh.layout, "d4"), 10.2);
@@ -214,7 +214,7 @@ fn main() {
     // A won game: white takes the last black piece; once its celebration is still, home.
     // The dim, the winning piece's lift, and the card fade with the game's panels.
     let p, ok = rules::parse_fen("W:Wa1,c1,g1,b2,h2,e3:Bf4", rules::RUSSIAN);
-    game::start(sh.game, rules::RUSSIAN, clock::NONE, -1, game::MEDIUM, 45, 0);
+    game::start(sh.game, rules::RUSSIAN, clock::NONE, -1, game::MEDIUM, 40, 0);
     board::set(sh.game.b, p);
     sh.game.turn = sh.game.b.pos.side;
     drive::idle(sh, g, 20.0);

@@ -66,6 +66,16 @@ fn main() {
     drive::idle(sh, g, 12.0);
     print("the computer won on medium: winner ", game::winner(sh.game), ", ", skills(sh));
 
+    // Medium again: losses stop at its floor, 25, short of 20 below its start.
+    for _ in 6 {
+        play(sh, game::MEDIUM, "B:Wd4:Bc5");
+        drive::idle(sh, g, 10.0);
+        answer(sh, e);
+        drive::idle(sh, g, 11.0);
+        drive::idle(sh, g, 12.0);
+    }
+    print("six more losses on medium: ", skills(sh));
+
     // Hard: started over before the end, a game counts nothing.
     play(sh, game::HARD, "W:Wc3:Bd4");
     drive::idle(sh, g, 20.0);

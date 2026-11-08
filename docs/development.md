@@ -123,7 +123,7 @@ the native perft runs at 12 to 16 million positions a second.
 ```sh
 goose build -o build/aibench tools/aibench.goose && build/aibench   # each level's reply time
 goose build -o build/aimatch tools/aimatch.goose
-build/aimatch russian 90 45 20      # skill 90 against 45, 20 games, colors swapped
+build/aimatch russian 90 40 20      # skill 90 against 40, 20 games, colors swapped
 goose build -o build/play tools/play.goose
 build/play russian easy white       # play it yourself in the terminal
 scripts/android_cli.sh tools/aibench.goose                          # the same on the tablet

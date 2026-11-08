@@ -157,7 +157,7 @@ fn main() {
     // does nothing before the child's first move, nor right after the computer's.
     var turned = l;
     turned.board.flip = true;
-    game::start(gm, rules::RUSSIAN, clock::NONE, rules::WHITE, game::MEDIUM, 45, 3);
+    game::start(gm, rules::RUSSIAN, clock::NONE, rules::WHITE, game::MEDIUM, 40, 3);
     drive::idle(gm, g, turned, 10.0);
     show(gm, "the child plays black");
     let first = gm.asking;

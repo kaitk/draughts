@@ -9,7 +9,7 @@ level = medium
 color = white
 clock = none
 skill_easy = 10
-skill_medium = 45
+skill_medium = 40
 skill_hard = 90
 games = 0
 
@@ -24,7 +24,7 @@ level = easy
 color = black
 clock = 10+5
 skill_easy = 10
-skill_medium = 45
+skill_medium = 40
 skill_hard = 90
 games = 0
 
@@ -41,7 +41,7 @@ level = medium
 color = white
 clock = none
 skill_easy = 10
-skill_medium = 45
+skill_medium = 40
 skill_hard = 90
 games = 0
 
@@ -54,23 +54,23 @@ after the flash:
   preview 10x10, W:WK20,28,32,33,37,39,40,41,42,43,44:B7,8,10,11,12,17,23,24, targets 0, stops 0, wrong ring at 53.0 flash 0.2, rings pulsing 2 still 0, kings drawn 1.0, animating true
 after the pulse:
   preview 10x10, W:WK20,28,32,33,37,39,40,41,42,43,44:B7,8,10,11,12,17,23,24, targets 0, stops 0, wrong ring at 53.0 flash 0.2, rings pulsing 0 still 2, kings drawn 1.0, animating false
-summer: season = summer;board = 2d;hints = mistakes;kings = auto;language = system;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 1
-3D: season = summer;board = 2d;hints = mistakes;kings = auto;language = system;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0; changed false, game's board hints moves false, kings 1
-the tutorial: season = summer;board = 2d;hints = mistakes;kings = auto;language = system;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0; changed false, game's board hints moves false, kings 1
-all moves: season = summer;board = 2d;hints = moves;kings = auto;language = system;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0; changed true, game's board hints moves true, kings 1
+summer: season = summer;board = 2d;hints = mistakes;kings = auto;language = system;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 40;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 1
+3D: season = summer;board = 2d;hints = mistakes;kings = auto;language = system;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 40;skill_hard = 90;games = 0; changed false, game's board hints moves false, kings 1
+the tutorial: season = summer;board = 2d;hints = mistakes;kings = auto;language = system;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 40;skill_hard = 90;games = 0; changed false, game's board hints moves false, kings 1
+all moves: season = summer;board = 2d;hints = moves;kings = auto;language = system;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 40;skill_hard = 90;games = 0; changed true, game's board hints moves true, kings 1
   preview 10x10, W:WK20,28,32,33,37,39,40,41,42,43,44:B7,8,10,11,12,17,23,24, selected 4,4, targets 1, stops 1, rings pulsing 0 still 0, kings drawn 1.0, animating false
-Russian: season = summer;board = 2d;hints = moves;kings = auto;language = system;draughts = russian;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0; changed true, game's board hints moves true, kings 1
+Russian: season = summer;board = 2d;hints = moves;kings = auto;language = system;draughts = russian;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 40;skill_hard = 90;games = 0; changed true, game's board hints moves true, kings 1
   preview 8x8, W:Wa1,c1,e1,g1,b2,f2,h2,c3,e3,d4,Kh6:Be5,g5,b6,a7,c7,b8,d8,h8, selected 3,3, targets 1, stops 1, rings pulsing 0 still 0, kings drawn 1.0, animating false
-stack: season = summer;board = 2d;hints = moves;kings = stack;language = system;draughts = russian;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0; changed true, game's board hints moves true, kings 2
+stack: season = summer;board = 2d;hints = moves;kings = stack;language = system;draughts = russian;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 40;skill_hard = 90;games = 0; changed true, game's board hints moves true, kings 2
   preview 8x8, W:Wa1,c1,e1,g1,b2,f2,h2,c3,e3,d4,Kh6:Be5,g5,b6,a7,c7,b8,d8,h8, selected 3,3, targets 1, stops 1, rings pulsing 0 still 0, kings drawn 2.0, animating false
-mistakes only: season = summer;board = 2d;hints = mistakes;kings = stack;language = system;draughts = russian;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 2
+mistakes only: season = summer;board = 2d;hints = mistakes;kings = stack;language = system;draughts = russian;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 40;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 2
   preview 8x8, W:Wa1,c1,e1,g1,b2,f2,h2,c3,e3,d4,Kh6:Be5,g5,b6,a7,c7,b8,d8,h8, targets 0, stops 0, wrong ring at 34.0 flash 0.06666667, rings pulsing 2 still 0, kings drawn 2.0, animating true
-Brazilian: season = summer;board = 2d;hints = mistakes;kings = stack;language = system;draughts = brazilian;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 2
-auto: season = summer;board = 2d;hints = mistakes;kings = auto;language = system;draughts = brazilian;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 1
-International: season = summer;board = 2d;hints = mistakes;kings = auto;language = system;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 1
-Eesti: season = summer;board = 2d;hints = mistakes;kings = auto;language = et;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 1
-by the date: season = by-date;board = 2d;hints = mistakes;kings = auto;language = et;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 1
-English: season = by-date;board = 2d;hints = mistakes;kings = auto;language = en;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 1
+Brazilian: season = summer;board = 2d;hints = mistakes;kings = stack;language = system;draughts = brazilian;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 40;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 2
+auto: season = summer;board = 2d;hints = mistakes;kings = auto;language = system;draughts = brazilian;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 40;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 1
+International: season = summer;board = 2d;hints = mistakes;kings = auto;language = system;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 40;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 1
+Eesti: season = summer;board = 2d;hints = mistakes;kings = auto;language = et;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 40;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 1
+by the date: season = by-date;board = 2d;hints = mistakes;kings = auto;language = et;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 40;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 1
+English: season = by-date;board = 2d;hints = mistakes;kings = auto;language = en;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 40;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 1
 portrait: board at vec4<f32> { 128.34, 145.34, 543.32, 8.693121 }, the groups from 806.0, clear true, look beside game true, tiles 19
-portrait stack: season = by-date;board = 2d;hints = mistakes;kings = stack;language = en;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 45;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 2
+portrait stack: season = by-date;board = 2d;hints = mistakes;kings = stack;language = en;draughts = international;level = medium;color = white;clock = none;skill_easy = 10;skill_medium = 40;skill_hard = 90;games = 0; changed true, game's board hints moves false, kings 2
 back: true

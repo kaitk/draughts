@@ -26,9 +26,10 @@ let MEDIUM = 1;
 let HARD = 2;
 let LEVELS = 3;
 
-// Skill runs 0 to 100. Each level starts at its own and moves within BAND of it.
-let LEVEL_SKILL: i64[LEVELS] = [10, 45, 90];
+// Skill runs 0 to 100. Each level starts at its own and moves within BAND of it, never under its floor.
+let LEVEL_SKILL: i64[LEVELS] = [10, 40, 90];
 let BAND = 20;
+let LEVEL_FLOOR: i64[LEVELS] = [0, 25, 70];   // the lowest a level adapts to (medium never under 25)
 let STEP = 4;               // how far one win or loss moves the skill
 
 // The most nodes a search begins a new iteration after. It bounds hard's reply time:
@@ -85,7 +86,7 @@ fn level_skill(level: i64) -> i64 { LEVEL_SKILL[clamp(level, 0, LEVELS - 1)] }
 fn adapt(skill: i64, level: i64, child_won: i64) -> i64 {
     let base = level_skill(level);
     let s = skill + STEP * clamp(child_won, -1, 1);
-    return clamp(s, max(base - BAND, 0), min(base + BAND, 100));
+    return clamp(s, LEVEL_FLOOR[clamp(level, 0, LEVELS - 1)], min(base + BAND, 100));
 }
 
 root struct Engine {
