@@ -198,13 +198,17 @@ the prototype tried, kept for 3D:
   the board in the middle, leaving the game on its left and playing it on its right,
   each control a glass tile with an icon and a word, as on home, since icons alone (three
   arrows for undo, restart, and back) confused. In landscape the board fills the height
-  less a 24 px margin, between two glass panels 232 px wide and as tall as it: on the
+  less a 24 px margin, between two glass panels 232 px wide and as tall as it (where
+  that leaves the board under 720 px, the tablet's at 16:10, the panels narrow down to
+  192 px for it: 587 px at 4:3, 520 on a foldable; 2026-11-08): on the
   left home (a house), settings, and at the bottom start over, 72 px rows with 34 px
-  icons and 24 px words; on the right whose turn it is (a 72 px piece of its color with
+  icons and 24 px words (in a narrowed panel, where a word doesn't fit beside its icon,
+  all three icons over their words in 96 px rows); on the right whose turn it is (a 72 px piece of its color with
   the glow ring, 4 px of the glow color at 80% and a 22 px glow, over "White's turn"),
   or the two clocks, and at the bottom take back, a tall 132 px tile with a 48 px icon
   over its word. In portrait the left side is a bar above the board, its three tiles in
-  a row, and the right side is below it: whose turn, or the clocks side by side, over
+  a row, thirds of it while each word fits, else each as wide as its word and an even
+  share of the rest (2026-11-08), and the right side is below it: whose turn, or the clocks side by side, over
   take back across the width. Start over sits far from take back so it isn't hit for
   it. There is no hint button and no move-hints toggle: help that does the thinking
   doesn't belong a tap away, and move hints are a setting, reached through settings.
@@ -244,7 +248,8 @@ the prototype tried, kept for 3D:
   across the board). A lifted piece rises 6% of its size and grows 5%. From 0.9 s the
   board and its pieces dim to 55% over 0.6 s, under the winning piece, which is drawn
   last and stays lit above the dim; from 1.0 s a glass card over the board (356 × 300
-  px) slides up 28 px as it fades in (0.7 s, easing out), back and restart (primary,
+  px; on a board under 720 px all but the buttons' height shrink with it, the buttons
+  no narrower than 88 px, so it stays near half the board) slides up 28 px as it fades in (0.7 s, easing out), back and restart (primary,
   112 × 88 px) on it, and from 1.2 s the winner's piece, crowned, with its ring fades in
   above them (0.5 s). The screen is still from 1.7 s, or once the glow has passed the
   winner's farthest piece (up to 1.77 s on 10 × 10); the frame then is drawn at rest,
@@ -265,7 +270,9 @@ the prototype tried, kept for 3D:
   going down as a tile does while pressed. In landscape it sits above the photograph,
   clear of the board (28 dp right of its edge, 8 dp above its top); in portrait, where
   it would reach the board, the board moves down to 16 dp under it and shrinks to keep
-  24 dp above the sheet (640 to 620 dp on the tablet). A friend
+  24 dp above the sheet (640 to 620 dp on the tablet). The board keeps 40 dp above and
+  below it, down to 24 where a setup's tall sheet near square would leave it under 40%
+  of the width (2026-11-08). A friend
   and the computer open a new game's setup in the same column: back and the title, then
   a row of tiles per choice, lit as in settings, each with its dim name above it: which
   draughts (international 10 × 10, the default, Brazilian 8 × 8, or Russian 8 × 8, each
@@ -319,7 +326,9 @@ the prototype tried, kept for 3D:
   c5 flashes and both capturing pieces pulse as in a game, then the ring and the pulse
   stay lit and still, so the screen draws nothing more until the next tap. Each tap
   sets the preview up again. The choices take the width their words want, at most 55% of
-  the page, and wrap beyond it; their notes and the thumbnails' labels are in the 17 px
+  the page, and wrap beyond it; near square (4:3, a foldable), where the wrapped rows
+  would run past the page's foot, each setting's name goes above its tiles, as in
+  portrait, and the column narrows to its widest row (2026-11-08); their notes and the thumbnails' labels are in the 17 px
   face, which makes them a little wider than the prototype's 13 px, so the landscape
   board is about 550 px where the prototype's is 590. The tutorial's tile (and the raised
   board's with `--3d`) is dimmed and takes no tap until it exists.
@@ -329,7 +338,10 @@ the prototype tried, kept for 3D:
   outlined for those not won; the next unsolved puzzle is lit; a tier not yet open shows
   a lock on each tile. In portrait the title stands beside back, as in settings, and
   each tier is its mark beside two rows of five tiles, about 120 dp on the tablet, where
-  ten in a row would be 66 dp, under the 88 dp a small hand needs. Behind it the sharp
+  ten in a row would be 66 dp, under the 88 dp a small hand needs; in landscape too
+  where ten in a row would be under 88 dp (4:3, 3:2, a foldable). The tiles take what
+  the width and the height leave (at most 96 dp in landscape, 128 in portrait), and each
+  tier's glass is as wide as its tiles, centered (2026-11-08). Behind it the sharp
   photograph and no board. **A puzzle** (`prototypes/puzzle.html`, take c, chosen
   2026-11-08): the game screen's layout, the left panel the game's with the puzzles in
   home's place; on the right the goal's icon in the glow color over its words

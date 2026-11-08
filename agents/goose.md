@@ -116,6 +116,12 @@ find out by compiling, so the next session doesn't.
 - A type on a `for` binder is only for an integer count or range: `for v: u8 in 3` works,
   `for v: u8 in [a, b]` doesn't.
 - There is no `size_of`; work a struct's size out from its fields.
+- A `let` may reuse a name already bound earlier in the same function: uses after it
+  see the new one, of whatever type, and the error then lands far from the cause
+  (`game::celebrate`'s card size `k` and its ease `k`, an f64, gave "cannot pass
+  f64 as f32" at the piece's radius). An untyped integer constant adapts to a float
+  expression too: `x / STAKE` with `x: f32`, where `as f32` is a redundant-cast
+  warning (2026-11-08).
 - `float4` has no swizzles (`.xy`); build the `float2` from `.x` and `.y`.
 - `gfx::uniforms` takes its block by value: a struct bound with `.=` doesn't compile
   ("bytes_of cannot write theme::Theme&[1] out"); bind it with `=`.

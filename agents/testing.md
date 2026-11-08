@@ -30,7 +30,9 @@ which would overwrite the main checkout's while another session uses them.
   starts, `setup`), the puzzles' picker and a puzzle played through its misses, hint,
   reply, and stars, a capture tapped stop by stop in a puzzle and no targets in any tier,
   the saved game of any variant and damaged images of it, the computer's skill moving
-  across games, home's X closing the app and where it sits), `strings` (every language
+  across games, home's X closing the app and where it sits, and every screen at a
+  foldable, 4:3, and a 20:9 phone in both orientations, its tiles on the screen and
+  apart: `sizes`), `strings` (every language
   file has every key), `ai` (the computer player:
   its search against a plain minimax, the table changing no score, keys, what each level
   plays in known shots, the same move in steps as at once, and that no level hangs a
@@ -83,7 +85,12 @@ which would overwrite the main checkout's while another session uses them.
   and `cmp` them: home, the game, settings, both orientations, a setup, a clocked game
   with taps, and one against the computer. Two runs of a shot are byte-identical except
   where something moves at the last frame: the computer's pulsing ring and settings'
-  preview flash; compare those by eye (2026-11-08).
+  preview flash; compare those by eye (2026-11-08), or by where they differ:
+  `magick compare -metric AE a.png b.png null:` counts the pixels, and `magick a.png
+  b.png -compose difference -composite -threshold 0 -format '%@' info:` gives their box,
+  which for settings is the same box as between two runs of one build. The win's
+  `--win 3 --frames 3000` shot varies over the whole board from run to run: compare it
+  against a second run of the old build (task 030, "Fixes").
 - A `--frames` run with taps needs a few thousand frames for a move and what follows to
   play out (`--win`, `docs/development.md`): it doesn't wait for the display, so 90
   frames end before the second tap's move has shown.
@@ -105,6 +112,13 @@ which would overwrite the main checkout's while another session uses them.
   so a phone shot shows the tablet's layout in dp; how small it is on the hand is
   arithmetic from the device's size, not something a screenshot shows (task 030,
   "Survey" and "Phone scale prototype").
+- A layout that fits a word needs the word's real width, which the headless tests don't
+  have: their faces make each character half the face wide, about a fifth wider than
+  Libertinus Sans, so a test may stack or shrink a word the app fits. The real widths
+  come from the font's advances (`assets/fonts/LibertinusSans-Regular.ttf`: `hmtx`
+  through `cmap`, times the face's dp over `unitsPerEm`; fontTools isn't installed, a
+  30-line Python reader does it). The widest so far, at the 24 dp heading face: "Alusta
+  uuesti" 130 dp, "Mustad võitsid" 148 (2026-11-08).
 - In a working tree, copy `design/backgrounds/masters/*.jpg` from the main checkout
   (local and ignored) and touch `app/background.c`, or shots show the page color where
   the photograph should be.

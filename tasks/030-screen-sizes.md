@@ -1,6 +1,6 @@
 # 030: Phones and other screen sizes
 
-Status: in-progress (the survey done; the fixes next)
+Status: in-progress (the survey and the layout fixes done; the density decision next)
 
 The layouts were built and checked on one screen, the Galaxy tablet (1920 × 1200, 16:10)
 and its Mac stand-in. Play lists the app for phones and tablets alike, so every screen
@@ -152,6 +152,57 @@ The fixes this suggests, most important first:
 - `labelled` keeps room at its sides and stacks icon over word, or drops to a smaller
   face, when a word doesn't fit.
 - The small controls (10) up to 88 dp, once the density decision says how big a dp is.
+
+## Fixes (2026-11-08)
+
+The survey's layout faults that don't wait on the density decision, numbered as there,
+in dp, on the Mac. Before and after shots of every screen at every size, out of git, in
+`/private/tmp/claude-501/-Users-kaitkasak-projects-personal-draughts/babe58e8-1877-410c-bc48-f7f8f48b403f/scratchpad/fixes/`
+(`before/`, `after/`, `shoot.sh`). `test/shell/sizes` checks every screen at the
+foldable, 4:3, and a 20:9 phone in both orientations and languages: every tile on the
+screen, none overlapping another or the board, the puzzles' tiles at least 88 dp; run
+on the code before these fixes it reports settings' last tile off the screen and the
+puzzles' tiles cut or small.
+
+- (2) **Settings, landscape near square:** where the wrapped rows would run past the
+  page's foot, each setting's name goes above its tiles, as in portrait, and the column
+  narrows to its widest row (`shell/settings.goose`, `frame`). Foldable: Stack's tile
+  30 dp off the screen → everything on it, the board 373 → 420 dp (431 in Estonian);
+  4:3: 402 → 484 dp.
+- (3) **The puzzles, portrait near square:** the tiles take the height into account too
+  (`shell/picker.goose`). Foldable: the last tier cut by about 55 dp → all in, tiles
+  122 → 113 dp; 4:3 and the tablet unchanged (122).
+- (4) **The puzzles, landscape:** two rows of five where ten in a row would be under 88
+  dp, and each tier's glass as wide as its tiles, centered. Tiles 68 (4:3), 81 (3:2), 61
+  (foldable) → 96 dp; the phones' glass now ends with their tiles instead of halfway
+  past them; 16:10 unchanged (ten of 89).
+- (5) **The game and a puzzle, landscape near square:** where 232 dp panels leave the
+  board under 720 dp (the tablet's at 16:10), they narrow, down to 192 dp, and the left
+  panel's tiles put their icon over their word in 96 dp rows when a word doesn't fit
+  beside it (`game/panel.goose`, `layout`, `leave`). Board 507 → 587 dp at 4:3, 440 →
+  520 on the foldable, 640 → 720 at 3:2. The turn's words and a puzzle's stars fit the
+  narrower panel (`gui::fitting`, moved from `shell/puzzle.goose`).
+- (6) **The portrait game bar:** thirds while each word fits, else each tile as wide as
+  its word and an even share of the rest; `gui::labelled` keeps 8 dp at least at the
+  sides and takes a smaller face for a word still too wide. Foldable, Estonian: "Alusta
+  uuesti" in a 177 dp tile edge to edge → 224 dp, 24 dp either side (Koju 141, Seaded
+  166); English and the tablet unchanged.
+- (7) **The win card:** on a board under 720 dp it shrinks with the board, all but its
+  buttons' height, the buttons no narrower than 88 dp (`game/game.goose`, `celebrate`).
+  Foldable landscape: 81% of the board's width (356 of 440) → 52% (271 of 520); 4:3
+  landscape 49%, foldable portrait 49% (299 of 603).
+- (8) **Settings at 1280 × 720:** a row may pass its width by half a pixel without
+  wrapping (`lay`, `SLACK`): the fifth season back on its row.
+- (9) **The setups, portrait near square:** the board's margins above and below go from
+  40 dp down to 24 where the sheet would leave it under 40% of the width
+  (`shell/home.goose`): 259 → 291 dp at 4:3, 191 → 223 on the foldable.
+
+The tablet's 16:10 shots (960 × 600 and 600 × 960, all ten screens, both languages)
+are unchanged: byte-identical but for settings, whose pixels differ only in the
+preview's flash, in the same box as between two runs of the old build, and the win,
+whose shots differ between two runs of the old build too and match the second one
+exactly. The win's `--frames` shots vary from run to run over the whole board; compare
+them against a second run, not the first (`agents/testing.md`).
 
 ## On the Pixel 7a (smoke test, 2026-11-08)
 
