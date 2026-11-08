@@ -96,12 +96,14 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, width: f
         // A sheet along the bottom, its lower corners off the screen; the board above it,
         // moving down to 16 dp under the way out where it would reach it, and shrinking to
         // keep 24 dp above the sheet. (In landscape the board's top is 120 dp down at
-        // least, clear of it.)
+        // least, clear of it.) It keeps 40 dp above and below, less, down to 24, where a
+        // tall setup's sheet near square would leave it under 40% of the width.
         let sheet_h = content_h + 64.0 * u;
         col = float4 { 0.0, height - sheet_h, width, sheet_h + 32.0 * u };
         content = float4 { 32.0 * u, height - sheet_h + 32.0 * u, width - 64.0 * u, content_h };
         let stage_h = height - sheet_h;
-        var size = min(min(0.8 * width, 0.6 * height), stage_h - 80.0 * u);
+        let room = max(stage_h - 80.0 * u, min(stage_h - 48.0 * u, 0.4 * width));
+        var size = min(min(0.8 * width, 0.6 * height), room);
         var y = 0.5 * (stage_h - size);
         let clear = (EDGE + CORNER + 16.0) * u;
         if 0.5 * (width + size) > width - clear && y < clear {
