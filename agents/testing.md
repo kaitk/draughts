@@ -243,6 +243,18 @@ measuring there:
   once a later frame has submitted GPU work (184 MB, and 160 MB with the
   thumbnails loaded in the first idle frame), likely the launch's uploads not yet let
   go: compare memory at the same point of a run, after the same frames (2026-11-08).
+- Native heap: `dumpsys meminfo -d`'s Native Heap row has Pss and, further right, Heap
+  Alloc (malloc's live bytes): Pss well above Alloc is memory Scudo keeps for freed
+  blocks, not growth. `/proc/self/smaps` is readable from the program's own C even in
+  the non-debuggable APK: summed by name, `[anon:scudo:primary]` is small blocks and
+  `[anon:scudo:secondary]` large ones (each its own mapping, freed ones kept cached);
+  `mallopt(M_PURGE_ALL, 0)` before a second read shows what is only kept. Android's own
+  purge as the app goes to the background empties the primary's free pages, not the
+  secondary cache (task 032, leftovers).
+- A transition's frames from the program's side: `gfx::time()` around `gfx::frame()` and
+  each draw call, printed for drawn frames; the wait in `frame()` is where presenting
+  shows (task 032, leftovers). `gfx::frame_count()` counts presented frames, not loops,
+  so a trigger on it never fires while the app is idle.
 - To see when something happens on the tablet, log from the program's C with
   `extern void SDL_Log(const char *, ...)` (Android only; it shows in `adb logcat` as
   `SDL/APP`) and remove it after. The clock's lag was measured that way.

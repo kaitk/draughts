@@ -60,6 +60,9 @@ extern fn draughts_close();
 // Android's back where the app has no way back (home's menu): the system's back, which
 // puts the app in the background; nothing on the Mac (launch.c).
 extern fn draughts_leave();
+// Gives back to the system the memory malloc keeps for freed blocks; Android only
+// (memory.c).
+extern fn draughts_release_memory();
 
 // --go play: a new game from home's setup, as its play starts one.
 let GO_PLAY = 99;
@@ -275,6 +278,7 @@ fn main() {
     var focused = true;
     var season_in = 0;
     var wake_at = -1.0;
+    var released = false;
     var thinker = think::Thinker {};
     while gfx::frame() {
         // frame() presents what the pass before it drew, and the first pass draws.
@@ -411,9 +415,12 @@ fn main() {
         }
         // Settings' thumbnails load in the first frame that draws nothing once the launch's
         // first frame is on screen, so settings' first opening doesn't wait for them; the
-        // next frame shows the screen again unchanged, then the app is idle.
-        if !drew && w.thumbs.id == 0 && gfx::frame_count() >= 2 {
-            w.thumbs = scene::thumbs(d.full);
+        // next frame shows the screen again unchanged, then the app is idle. The launch's
+        // loads are done then, and what they freed goes back to the system (memory.c).
+        if !drew && !released && gfx::frame_count() >= 2 {
+            if w.thumbs.id == 0 { w.thumbs = scene::thumbs(d.full); }
+            draughts_release_memory();
+            released = true;
         }
         // A running clock is drawn when the time it shows changes, and the computer's move
         // played when it is due; a timer wakes the loop then, rather than whenever the

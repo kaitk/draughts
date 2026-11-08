@@ -86,7 +86,8 @@ fruit. A holistic look, measuring before cutting.
 - Idle CPU of the whole process rose from 1.25 s a minute (task 025) to about 1.5 s
   (task 007, game and puzzles alike) while the program's thread stayed at 0.02 s: find
   which thread (the computer's worker, SDL, the launch cover) and why.
-- The first puzzle opened after launch had a 31 ms frame gap in its opening (task 007).
+- The first puzzle opened after launch had a 31 ms frame gap in its opening (task 007). Not
+  seen any more (Leftovers, below).
 
 ## Acceptance criteria
 
@@ -530,3 +531,65 @@ on the Mac, and crops of the photograph show no difference; the final build's ta
 shots are byte-identical to the one before the `madvise`. The Mac's own build, which
 decodes the JPEG, shows settings within 2% of the JPEG-path build's but for the
 preview's flash.
+
+### Leftovers (2026-11-08)
+
+Galaxy tablet, landscape, rotation locked, `pm clear` before each launch; main is
+`a473baf` (cut 5), built in a worktree. The user used the tablet by hand partway
+through; every run that overlapped was taken again.
+
+**The first puzzle's 31 ms gap (task 007): no longer seen.** Fresh launch, home, the
+puzzles, then the first puzzle; then back and the same puzzle again. SurfaceFlinger's
+`--timestats` present-to-present (90 Hz) over each opening, one window each:
+
+| Openings | 10 to 11 ms | One 21 to 22 ms gap | Two | A 33 or 44 ms gap |
+| --- | --- | --- | --- | --- |
+| First after launch, main (15) | 20 to 22 each | 14 | 0 | one 44 |
+| Second, main (15) | 18 to 22 each | 7 | 7 | one 44 |
+| First, with the change below (3) | 21 to 23 | 2 | 0 | one with two 33 |
+| Second, with the change below (3) | 21 to 22 | 0 | 2 | one 44 |
+
+The first opening is no worse than the second: each has one or two missed refreshes, as
+moves do (cut 1's and 2's tables), and a rare longer gap in either. From the program's
+side (a temporary build timing each part of the loop, not kept) no frame of the first
+opening took over 1.5 ms of work outside `gfx::frame()`; nothing is made on first use
+there (the puzzles are read at start, and the pipelines are made in the launch's first
+frame: 93 + 111 ms of it). Task 007's gap was measured with `screenrecord` running, on
+the RGBA8 photograph and its 64 MiB blocks; which cut took it away isn't known.
+
+**The native heap's extra 10 MB: memory malloc kept, not growth.** `dumpsys meminfo -d`'s
+Heap Alloc (malloc's live bytes) stays at 40.2 to 40.7 MB at launch and through 20
+lifecycle cycles, in main and in `d3c2714` (41.1 to 41.2) alike; the native PSS above it
+or below it is pages Scudo keeps. A temporary build reading `/proc/self/smaps` from the
+program's C (not kept), main at home 8 s after launch:
+
+| Native heap, MB resident | Fresh | After `M_PURGE_ALL` | After going home and back |
+| --- | --- | --- | --- |
+| Scudo primary (small blocks) | 27.0 | 18.2 | 20.7 |
+| Scudo secondary (large blocks, one mapping each) | 16.7 | 9.7 | 16.7 |
+
+Going to the background, Android purges the primary's free pages (6 MB), which is the
+drop the lifecycle script sees after its first cycle, but not Scudo's secondary cache,
+which kept about 7 MB of large blocks (100 KB to 1 MB each) the launch had freed. In
+`d3c2714` the first rotation's large allocations and frees turned that cache over and its
+pages went back (secondary 17.7 → 10.1 MB), so the lifecycle settled at 30 MB there
+(27 at the task's start); main's rotations no longer free anything large on the CPU
+side, so the cache stayed. Live bytes grow about 20 KB a cycle in both builds (0.3 to
+0.4 MB over 20), within the driver's per-swapchain bookkeeping; not looked into.
+
+**Fix:** `app/memory.c`'s `draughts_release_memory` calls `mallopt(M_PURGE_ALL, 0)` once,
+in the first frame that draws nothing after the launch (where settings' thumbnails
+load). It takes 2.0 ms there (three launches: 2.08, 1.97, 2.03). Main against the
+change, three fresh launches each, then `scripts/lifecycle_memory.sh 20`:
+
+| | Main | With the release |
+| --- | --- | --- |
+| Native heap PSS at home, fresh | 42.5 to 42.7 MB | 26.6 to 26.8 MB |
+| Heap Alloc, fresh | 40.2 to 40.3 MB | 40.2 to 40.3 MB |
+| Total PSS at home, fresh | 147.8 to 152.0 MB | 130.7 to 136.7 MB |
+| Native heap over 20 cycles | 37.0 → 36.6 MB | 27.5 → 27.7 MB |
+| PSS over 20 cycles | 143.8 to 147.5 MB | 134.8 to 139.2 MB |
+| Graphics over 20 cycles | 89.6 to 93.7 MB | 89.6 to 93.7 MB |
+
+The native heap is back to about the task's starting 27 MB through the lifecycle, and
+16 MB lower at a fresh launch.

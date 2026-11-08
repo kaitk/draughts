@@ -761,6 +761,8 @@ make all four photographs, one after another with a wait for the GPU after each 
 the JPEGs are decoded, about 125 ms on the tablet and 55 ms on the Mac), so they load in
 the first frame after the launch's first that draws nothing; that frame presents the
 unchanged screen once more, and settings opening for the first time moves as smoothly as
-later. Settings opened at launch load them before their first frame. A settings change
+later. Settings opened at launch load them before their first frame. That idle frame also gives back to
+the system the memory malloc keeps for what the launch freed (`app/memory.c`, about 16
+MB of native heap on the tablet, 2 ms). A settings change
 the tap starting a transition made (the computer's play counting a game) is written once
 the transition is over, since the write flushes to disk, 13 to 17 ms on the tablet.
