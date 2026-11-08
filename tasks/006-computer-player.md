@@ -286,7 +286,9 @@ so a frame is 11 ms.
 Screenshots and recordings are in the session's scratchpad, not in git.
 `scripts/idle_cpu.sh` found two `SDLThread`s once the worker existed and printed
 negative times; it now takes the first, the program's (these numbers came from a copy
-that did the same).
+that did the same). Checked on the tablet with `36c1143`: after hard answered c3-d4 with
+d6-c5 in Russian, two `SDLThread`s running, it printed 0.02 s (0.03% of a core), the
+process 1.16 s, 60 voluntary switches.
 
 ## Open for the user
 
