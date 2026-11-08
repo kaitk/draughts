@@ -65,11 +65,12 @@ fn main() {
     // computer are given; the last two open home's setup; puzzles the puzzles to pick
     // from), --puzzle ID (that puzzle, its taps on its board), --variant
     // international|brazilian|russian, --clock none|5+3|10+5, --computer white|black (a
-    // new game; --level easy|medium|hard, the setup's last by default), --go home|settings
-    // (switches there on the second frame, through its transition), --hold T (keeps a
-    // transition at T of the way, 0..1, for a screenshot), --win T (keeps a win at T
-    // seconds into its celebration, for a screenshot). --theme, --hints, and --lang
-    // override the settings for the run without changing them.
+    // new game; --level easy|medium|hard, the setup's last by default; with --screen
+    // friend or computer, the setup's choices instead, the child playing the other
+    // color), --go home|settings (switches there on the second frame, through its
+    // transition), --hold T (keeps a transition at T of the way, 0..1, for a screenshot),
+    // --win T (keeps a win at T seconds into its celebration, for a screenshot). --theme,
+    // --hints, and --lang override the settings for the run without changing them.
     var width = 1280;
     var height = 800;
     var kind = -1;
@@ -174,6 +175,13 @@ fn main() {
     }
     sh.screen = if screen >= 0 { screen } else if fen.len > 0 || taps.len > 0 || clock_kind >= 0 || computer >= 0 { shell::GAME } else { shell::HOME };
     sh.setup = setup;
+    // A setup the flags open shows the draughts, the child's color, and the level they
+    // give, with the settings file left as it is unless a tap in the setup writes it.
+    if setup != home::NOTHING {
+        if variant >= 0 { sh.prefs.variant = variant; }
+        if computer >= 0 { sh.prefs.color = 1 - computer; }
+        if level >= 0 { sh.prefs.level = level; }
+    }
     if puzzle_id >= 0 && puzzles::find(puzzles::all, puzzle_id) >= 0 {
         shell::play_puzzle(sh, puzzles::find(puzzles::all, puzzle_id));
         screen = shell::PUZZLE;
