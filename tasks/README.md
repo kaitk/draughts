@@ -76,6 +76,8 @@ icon and launch). The order for what is left:
    a new personal account needs a 14-day closed test with 12 testers).
 9. Children play it (task 006's last criterion; medium's strength, the
    computer's time on the clock).
+10. 036, the announcement (a tweet, the Goose Discord, a video, a thread on the methods),
+    after the release, its numbers measured after 032 and 030.
 
 After the MVP: 026 (first start and tutorial; its prototype awaits the user's review),
 Russian puzzles from the International ones, 015, 013, 014, 033's seasonal icons, and
