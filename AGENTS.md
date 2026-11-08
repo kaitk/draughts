@@ -13,6 +13,8 @@ work.
   Goose the way the release's `samples/` and `stdlib/` do. goose-http (another Goose
   project by the same user) is a model for layout and tests.
 - Toolchain, building, and running on the Mac and the tablet: `docs/development.md`
+- Google Play: the listing, privacy policy, and Play Console answers in `store/`; release
+  builds and the upload key in `docs/development.md`
 - UI prototypes: `prototypes/` (see `prototypes/README.md`), checked in a browser with the
   `agent-browser` CLI
 - Gaps found in Goose or goose_gfx: `docs/goose-findings.md`. A gap that blocks us gets a
