@@ -57,6 +57,9 @@ extern fn draughts_first_frame();
 // Closes the app on Android and takes it out of recents, as home's way out asks; on the
 // Mac the window closes as the program returns (launch.c).
 extern fn draughts_close();
+// Android's back where the app has no way back (home's menu): the system's back, which
+// puts the app in the background; nothing on the Mac (launch.c).
+extern fn draughts_leave();
 
 // --go play: a new game from home's setup, as its play starts one.
 let GO_PLAY = 99;
@@ -279,7 +282,6 @@ fn main() {
     while gfx::frame() {
         // frame() presents what the pass before it drew, and the first pass draws.
         if gfx::frame_count() == 2 { draughts_first_frame(); }
-        if gfx::key_pressed("Escape") { break; }
         // Android may kill the app once it is paused; it loses focus then, and SDL lets
         // the loop run once more before blocking, so the game is written here: one small
         // write per pause, none while idle.
@@ -346,10 +348,19 @@ fn main() {
             else { shell::go_to(sh, go, now); }
             go = -1;
         }
+        // Android's back (SDL's "AC Back"; DraughtsActivity hands the system's back to SDL
+        // as that key) and Escape go back a screen, as the screen's own back or home control
+        // does. On home's menu back leaves the app as the system's back would, putting it in
+        // the background; Escape there ends the loop, closing the Mac's window.
+        if gfx::key_pressed("AC Back") || gfx::key_pressed("Escape") {
+            if shell::back(sh, now) { dirty = true; }
+            else if on_android { draughts_leave(); }
+            else { break; }
+        }
         if hold >= 0.0 && sh.from >= 0 { sh.since = now - hold * shell::DURATION; }
         if win_at >= 0.0 && sh.game.won_at >= 0.0 { sh.game.won_at = now - win_at; }
         if shell::frame(sh, g, size.x, size.y, now) { dirty = true; }
-        // Home's way out ends the loop as Escape does; the game is written below.
+        // Home's way out ends the loop; the game is written below.
         if sh.quit { break; }
         // The computer's move: the worker gets what the game asks, and the game the answer.
         think::frame(thinker, sh.game);

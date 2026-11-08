@@ -3,9 +3,12 @@ package com.kaitk.draughts;
 import android.content.res.TypedArray;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 import android.window.SplashScreen;
 import android.window.SplashScreenView;
 
@@ -26,6 +29,14 @@ import org.libsdl.app.SDLActivity;
 // splash, the icon on that colour, is held too; both go when the program calls
 // firstFrame() (app/launch.c). Home's way out closes it, card and all, through
 // closeApp().
+//
+// The system's back reaches the program as SDL's back key (AC Back), which goes back a
+// screen (shell::back). Up to Android 12 the key comes through SDL's own key handling.
+// From Android 13 the manifest opts into back callbacks, which Android 16 does anyway for
+// an app targeting it, and the key is no longer dispatched; the callback below hands
+// it to SDL instead. On home's menu the program gives it back: SDL's
+// SDL_SendAndroidBackButton runs onBackPressed, and the system puts the app in the
+// background.
 public class DraughtsActivity extends SDLActivity {
     // Lifts them anyway if the program never reports a frame, rather than stay covered.
     private static final long COVER_MAX_MS = 3000;
@@ -87,6 +98,16 @@ public class DraughtsActivity extends SDLActivity {
             });
         }
         mLayout.postDelayed(show, COVER_MAX_MS);
+        if (Build.VERSION.SDK_INT >= 33) {
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                    OnBackInvokedDispatcher.PRIORITY_DEFAULT, new OnBackInvokedCallback() {
+                        @Override
+                        public void onBackInvoked() {
+                            SDLActivity.onNativeKeyDown(KeyEvent.KEYCODE_BACK);
+                            SDLActivity.onNativeKeyUp(KeyEvent.KEYCODE_BACK);
+                        }
+                    });
+        }
     }
 
     // From the program's thread, once, after its first frame is presented.

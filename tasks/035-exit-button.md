@@ -80,7 +80,8 @@ for small hands, beside an 88 dp X; task 030 can bring it up to size.
   `SDLActivity.onCreate` finds its main finished and calls `System.exit(0)`, so the app
   starts in a fresh process and restores `game.bin`; check that this start works from the
   launcher and from recents. Android's own back gesture is unchanged: SDL passes it to
-  the system, which puts the app in the background.
+  the system, which puts the app in the background. (Since 2026-11-08 back goes back a
+  screen, and only on home's menu to the system: below.)
 
 ## Built (2026-11-08): b
 
@@ -153,6 +154,31 @@ check made was then removed.
 
 Screenshots and recordings, out of git:
 `/private/tmp/claude-501/-Users-kaitkasak-projects-personal-draughts/d9f11ac9-ef2c-4a62-bf58-8c3587116c29/scratchpad/tabletround/`.
+
+## Back goes back (2026-11-08)
+
+The user found on the Pixel 7a that the back gesture left the app from every screen.
+Now Android's back, the gesture or the button, does what the screen's own back or home
+control does (`shell::back`): a setup goes to home's menu, the game, settings opened from
+home, and the puzzles to pick from go home, settings opened from the game or a puzzle go
+back to it, and a puzzle to the puzzles; in a transition it turns round, as a tap would.
+On home's menu back leaves the app as before, the system putting it in the background
+(the activity is kept, unlike home's X): the program hands it back through
+`draughts_leave()` (`app/launch.c`), SDL's `SDL_SendAndroidBackButton`, which runs the
+activity's `onBackPressed`. Escape on the Mac does the same, and closes the window only
+from home's menu; nothing scripted used Escape. `test/shell/back.goose` checks each
+screen against its tile.
+
+How back reaches the program: SDL turns Android's `KEYCODE_BACK` into its "AC Back" key
+(`gfx::key_pressed("AC Back")`) whatever `SDL_HINT_ANDROID_TRAP_BACK_BUTTON` says (the
+hint only stops `onBackPressed` passing it on). But an app targeting Android 16 (API 36)
+gets predictive back on Android 16 and later: the key is no longer dispatched and
+`onBackPressed` not called, and the system's default moved the app to the background.
+SDL's own sample manifest opts out (`enableOnBackInvokedCallback="false"`), which Android
+calls temporary; instead the manifest opts in from Android 13 and `DraughtsActivity`
+registers an `OnBackInvokedCallback` that hands the back to SDL as the key down and up
+(`SDLActivity.onNativeKeyDown`). Up to Android 12 the key comes through SDL's surface as
+before. No SDL patch is needed.
 
 ## Acceptance criteria
 

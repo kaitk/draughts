@@ -20,7 +20,8 @@
 // passes, and the photograph goes from sharp to blurred or back. A tap during it lands
 // on the screen come to. The game counts no time and asks the computer for nothing
 // until its transition is over.
-// Home's way out asks the app to stop (quit), which ends its loop as Escape does.
+// Home's way out asks the app to stop (quit), which ends its loop. Android's back, and
+// Escape on the Mac, go back a screen as its own back or home control does (back).
 // A game against the computer plays at the skill kept for its level, which each
 // finished game moves (ai::adapt). Tests run it headless.
 namespace shell;
@@ -119,6 +120,27 @@ fn play_puzzle(sh: Shell&, index: i64, now: f64 = 0.0) {
     puzzle::open(sh.puzzle, index);
     sh.tier = 0;
     go_to(sh, PUZZLE, now);
+}
+
+// Android's back, or Escape on the Mac, at `now`: what the screen's own back or home
+// control does. A setup goes back to home's menu, the game, settings, and the puzzles to
+// pick from where their tiles go (home, or where settings came from), a puzzle to the
+// puzzles. False, changing nothing, on home's menu, which has no way back: there back
+// leaves the app as the system's does, and Escape closes the window. In a transition it
+// acts on the screen come to, as a tap does.
+fn back(sh: Shell&, now: f64) -> bool {
+    if sh.screen == HOME {
+        guard sh.setup != home::NOTHING else { return false; }
+        sh.setup = home::NOTHING;
+    } else if sh.screen == SETTINGS {
+        go_to(sh, sh.back, now);
+    } else if sh.screen == PUZZLE {
+        go_to(sh, PICKER, now);
+    } else {
+        go_to(sh, HOME, now);
+        sh.setup = home::NOTHING;
+    }
+    return true;
 }
 
 // Starts a new game as home's setup stands, replacing the one there was, and goes to it.
