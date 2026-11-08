@@ -1,0 +1,15 @@
+--- a/android-project/app/src/main/java/org/libsdl/app/SDLSurface.java	2026-11-08 14:53:26
++++ b/android-project/app/src/main/java/org/libsdl/app/SDLSurface.java	2026-11-08 14:53:32
+@@ -204,8 +204,11 @@
+     @Override
+     public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+         if (Build.VERSION.SDK_INT >= 30 /* Android 11 (R) */) {
++            // Not systemGestures(): with gesture navigation it holds the back gesture's
++            // strips down both sides, where taps still reach the window, and would take
++            // them from a portrait phone's width. The cutout and the bottom gesture bar
++            // (mandatorySystemGestures) stay out of the safe area.
+             Insets combined = insets.getInsets(WindowInsets.Type.systemBars() |
+-                                               WindowInsets.Type.systemGestures() |
+                                                WindowInsets.Type.mandatorySystemGestures() |
+                                                WindowInsets.Type.tappableElement() |
+                                                WindowInsets.Type.displayCutout());

@@ -3,6 +3,44 @@
 Gaps found in Goose, goose_gfx, and the SDL it pins, while building for Android, with what
 we do about each here and what could go upstream. Newest first.
 
+## goose_gfx: no safe area and no display scale (2026-11-08)
+
+A phone's camera cutout and gesture bar take part of the window, and its density says
+how large a pixel is; goose_gfx exposes neither, so a program can't keep its taps out
+of the cutout or size them in millimetres. SDL has both: `SDL_GetWindowSafeArea` (on
+Android from the window's insets: cutout, system bars and gestures) and
+`SDL_GetWindowDisplayScale` (Android's density / 160, 2.625 on the Pixel 7a; on a Mac's
+Retina screen 2.0, the pixel density 2 times a content scale of 1.0; a Mac window's safe
+area is all of it). goose_gfx `6cfa3de`, Goose v2026.4.
+
+- Here: no patch. A gfx patch can't add a function the program calls: the program's Goose
+  is compiled against the release's own `pkg/gfx/gfx.goose` on both platforms, and a
+  desktop run uses the gfx built into the goose binary (`agents/goose.md`). So the
+  program's own C (`app/display.c`) finds the window with `SDL_GetWindows` once and reads
+  both each frame, through `dlsym` on the Mac as `app/locale.c` does. A safe-area change
+  wakes the loop with SDL's `SDL_EVENT_WINDOW_SAFE_AREA_CHANGED`, and the program, seeing
+  new insets, draws again.
+- Upstream: `gfx::safe_area() -> float4` (the insets in pixels: left, top, right,
+  bottom, from `SDL_GetWindowSafeArea` scaled by the pixel density) and
+  `gfx::display_scale() -> f32` (`SDL_GetWindowDisplayScale`), declared in
+  `src/gfx/gfx_api.h` and `gfx.goose` as the other window queries are; and a safe-area
+  change counted as a resize where `frame()` reports one. Small.
+
+## SDL: the Android safe area includes the back gesture's side strips (2026-11-08)
+
+`SDLSurface.onApplyWindowInsets` makes the safe area from `systemBars | systemGestures |
+mandatorySystemGestures | tappableElement | displayCutout`. With gesture navigation,
+`systemGestures` holds the back gesture's strips down both sides, which Android's docs
+say still pass taps to the window, so a portrait phone's safe area loses tens of dp of
+its width for no tap's sake. SDL 3.4.16 (`fa2c02b`).
+
+- Here: `patches/SDL/0002-safe-area-without-back-gesture.patch` leaves `systemGestures`
+  out; the cutout and the bottom gesture bar (`mandatorySystemGestures`) still count.
+  `scripts/android.py` now compiles SDL's Java from the patched copy, as it does its C.
+  Not yet checked on a phone (task 030).
+- Upstream: for the user only, as with the other SDL entries. Possibly a hint choosing
+  which insets make the safe area.
+
 ## SDL: launch flashes black between Android's splash and the first frame (2026-11-08)
 
 Android 12+ removes its splash at the activity window's first draw. SDLActivity's

@@ -89,6 +89,13 @@ find out by compiling, so the next session doesn't.
   `SDL_GetAndroidActivity()` (a local reference to delete), then `GetObjectClass` on the
   activity: `FindClass` from the program's thread searches the system's class loader and
   doesn't find the app's classes (`app/launch.c`).
+- The program's C finds goose_gfx's window with `SDL_GetWindows` (one, cached) and asks
+  SDL what gfx doesn't expose: the safe area and the display scale (`app/display.c`). The
+  safe area is in window coordinates, points on the Mac: scale it by pixels over window
+  size. A slice of floats arrives as `struct { float *data; int64_t len; }`; a local
+  `var d: f32[5]` passes as `f32[:]` (2026-11-08).
+- `split_once` on a `const u8[:]` returns read-only slices: a variable that takes them
+  in a loop is `var rest: const u8[:] = ...` (2026-11-08).
 - `gfx::frame()` presents what the pass before it drew, so the first frame is on screen
   once the second `frame()` returns (`gfx::frame_count()` is 2).
 
