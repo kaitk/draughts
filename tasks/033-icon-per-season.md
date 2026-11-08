@@ -1,7 +1,7 @@
 # 033: An icon per season
 
-Status: todo (after the MVP; for the MVP the icon stays winter, decided 2026-11-08: the
-release lands around winter, when the app's own look is winter too)
+Status: todo (after the MVP; until then one icon, switched by hand: autumn shipped
+2026-11-08 for the autumn months, winter back in for the winter months and the release)
 
 The app's look follows the season, picked from the date (`docs/architecture/rendering.md`,
 "Seasons and themes"); the launcher icon is one season, the winter jump (task 028). An
@@ -88,8 +88,8 @@ wallpaper, was made in a scratch folder (2026-11-08); make it again from the for
 
 ## Acceptance criteria
 
-- [ ] The user decides: winter stays, autumn becomes the one icon, or the icon follows
-      the season
+- [x] The user decides: winter stays, autumn becomes the one icon, or the icon follows
+      the season (2026-11-08: one icon, autumn now and winter for the winter months)
 - [ ] If one icon: shipped as `design/icon/README.md` says, checked on the tablet's home
       screen and splash
 - [ ] If per season: a master per season with the same geometry; one alias per season in

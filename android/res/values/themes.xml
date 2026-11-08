@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Fullscreen as before, on the icon's navy until SDL draws the first frame. The window
-         draws the bars' backgrounds itself, navy: otherwise, while Android hands over from
-         its starting window, the navigation bar's area shows the launcher's dark taskbar. -->
+    <!-- Fullscreen as before, on the icon's background until SDL draws the first frame. The
+         window draws the bars' backgrounds itself, in that colour: otherwise, while Android
+         hands over from its starting window, the navigation bar's area shows the launcher's
+         dark taskbar. -->
     <style name="Theme.Draughts" parent="@android:style/Theme.NoTitleBar.Fullscreen">
-        <item name="android:windowBackground">@color/navy</item>
+        <item name="android:windowBackground">@color/icon_background</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-        <item name="android:navigationBarColor">@color/navy</item>
+        <item name="android:navigationBarColor">@color/icon_background</item>
     </style>
 </resources>

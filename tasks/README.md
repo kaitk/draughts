@@ -47,7 +47,7 @@ follow. Together they make the MVP in `docs/product.md`. 019 prototypes the game
 layout once the MVP's flows work. 010 runs alongside: goose_gfx changes
 to propose upstream. 011, the last idle CPU (SDL's accelerometer), can come any time
 before release. 013 adds season effects later. 014 upscales the backgrounds on the
-desktop; placeholders do until then. 024 reviews the Estonian translation once the MVP's text is in. 015 (the 3D board) and 022 (transitions between screens, optional) come after the MVP, and so does 033 (an icon per season; shipping autumn instead of winter is a smaller call before it); 016
+desktop; placeholders do until then. 024 reviews the Estonian translation once the MVP's text is in. 015 (the 3D board) and 022 (transitions between screens, optional) come after the MVP, and so does 033 (an icon per season; until then one icon, switched by hand); 016
 (tabletop pictures) was cancelled. 031 makes the win calmer, and 032 brings memory down last. 027 has the computer spend its clock as a player of its level would. 028 (the icon and launch screen), 030 (phones and other screen sizes), and 029 (release on Google Play) make the release.
 
 ## Next (agreed 2026-11-08)
@@ -61,7 +61,8 @@ icon and launch). The order for what is left:
 2. 031, the win: take a, the pieces answer.
 3. Done (2026-11-08): the launcher's name follows the phone's language ("Kabe" in Estonian):
    `scripts/android.py` writes `res/values*/strings.xml` from `strings/<lang>.txt`, and
-   the manifest takes `@string/app_name`. The icon stays winter (task 033).
+   the manifest takes `@string/app_name`. The icon is autumn for now (2026-11-08),
+   winter again for the winter months and the release (task 033).
 4. 034, the setup's board shows the game being set up.
 5. 022, transitions: continue and a new game with the sharp-to-blurred crossfade, the
    game back to home, and a puzzle opened from the picker if it stays as cheap; not the

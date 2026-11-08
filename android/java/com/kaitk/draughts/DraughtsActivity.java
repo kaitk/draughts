@@ -19,13 +19,13 @@ import org.libsdl.app.SDLActivity;
 // -S stops it first: a start that finds it running (singleInstance) only brings it back,
 // with the flags it started with.
 //
-// It also keeps the launch on the theme's navy until the program's first frame is on
+// It also keeps the launch on the theme's background until the program's first frame is on
 // screen (task 028). SDL draws into a SurfaceView, whose hole in the window shows black
 // until SDL presents, and Android removes its splash at the window's first draw, before
-// that. So a navy view covers the whole window, and on Android 12+ the splash, the icon
-// on navy, is held too; both go when the program calls firstFrame() (app/launch.c).
+// that. So a view in that colour covers the whole window, and on Android 12+ the splash, the icon
+// on that colour, is held too; both go when the program calls firstFrame() (app/launch.c).
 public class DraughtsActivity extends SDLActivity {
-    // Lifts them anyway if the program never reports a frame, rather than stay navy.
+    // Lifts them anyway if the program never reports a frame, rather than stay covered.
     private static final long COVER_MAX_MS = 3000;
 
     private View cover;

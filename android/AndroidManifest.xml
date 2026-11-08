@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The app runs SDL's stock SDLActivity, which loads libSDL3.so and libmain.so and enters
      the Goose program at SDL_main, through DraughtsActivity (android/java/), which adds
-     development flags from the intent and keeps the launch navy until the first frame. The
+     development flags from the intent and keeps the launch on the icon's background until the first frame. The
      icon and the theme are in res/ (task 028); the label is @string/app_name, which
      scripts/android.py writes per language from strings/<lang>.txt.
      scripts/android.py builds the APK. -->

@@ -1,14 +1,16 @@
 # The app icon
 
+Two seasons of one icon. The shipped one is autumn (2026-11-08), for the autumn months;
+winter goes back in for the winter months, before the release. An icon that follows the
+season by itself costs the child its place on the home screen (task 033).
+
 The winter jump (chosen 2026-11-08, task 028): a 3×3 stone board at three-quarters, a
 dark slate piece on the centre square, and the ivory king, two stacked discs of one colour
 with plain tops, jumping over it along a pale blue arc, on navy (#06172b at the corners,
 #0d2139 at the top). Kings are stacked in Estonia; no piece has a crown or a symbol.
 
 The autumn jump is the same scene in wood: light and dark wood squares, a dark brown
-piece, the cream king, a golden arc, on dark brown (#140c09 at the corners). It is ready
-to ship but not shipped: whether it replaces winter, or the icon follows the season, is
-task 033.
+piece, the cream king, a golden arc, on dark brown (#140c09 at the corners).
 
 | File | What it is |
 | --- | --- |
@@ -24,7 +26,7 @@ are in `../prompts.md`).
 ```sh
 cp ~/Downloads/draughts-store/icon/master-winter-jump-1254.png design/icon/master-winter.png
 cp ~/Downloads/draughts-store/icon/master-autumn-jump-1254.png design/icon/master-autumn.png
-scripts/icon.py            # the shipped season (SHIPPED, winter) into android/res/mipmap-*, in git
+scripts/icon.py            # the shipped season (SHIPPED, autumn) into android/res/mipmap-*, in git
 scripts/icon.py --store    # also play-512.png and apple-1024.png, into ~/Downloads/draughts-store/icon/
 scripts/icon.py autumn --res /tmp/autumn-res --store
                            # another season: its foreground PNGs where --res says (never
@@ -37,22 +39,24 @@ scene. It scales the scene to 64 dp of the adaptive icon's 108 dp, inside the 66
 mask keeps, and centres it. A refined master with the scene larger or moved needs no
 change to the script. With a `foreground-SEASON.png`, that layer becomes the adaptive
 foreground; without it, the opaque master is the foreground, its corners matching the
-background colour (`navy` in `android/res/values/colors.xml`). The script prints the
-corners' colour: #07182c for winter, #140c09 for autumn.
+background colour (`icon_background` in `android/res/values/colors.xml`). The script
+prints the corners' colour: #07182c for winter, #140c09 for autumn.
 
 The store icons are framed as the launcher shows the icon: the scene fills 64 of 72 dp.
 From the 1254 px master, Apple's 1024 px is upscaled about 15%: a larger master should
 replace it before an iOS release.
 
-## Shipping another season
+## Switching the shipped season
 
-To ship autumn instead of winter, in one commit:
+In one commit:
 
-1. Set `SHIPPED = "autumn"` in `scripts/icon.py` and run `scripts/icon.py --store`: it
-   rewrites the five foreground PNGs in `android/res/mipmap-*` and the store icons.
-2. In `android/res/values/colors.xml`, rename `navy` to a name that fits (it is the
-   adaptive icon's background, the window's, and Android 12's splash, through
-   `mipmap-anydpi-v26/ic_launcher.xml` and both `themes.xml`) and set it to #140c09.
+1. Set `SHIPPED` in `scripts/icon.py` and run it: it rewrites the five foreground PNGs in
+   `android/res/mipmap-*`. With `--store` it also rewrites `play-512.png` and
+   `apple-1024.png` in `~/Downloads/draughts-store/icon/`; those are winter's now, and
+   autumn's are in its `autumn/` folder.
+2. Set `icon_background` in `android/res/values/colors.xml` to the season's corner colour
+   (#06172b for winter, #140c09 for autumn). It is the adaptive icon's background, the
+   window's, and Android 12's splash.
 3. The monochrome layer stays: the autumn scene matches winter's geometry within 0.25 dp
    (the arc's left foot 0.75 dp lower), finer than the layer's 1.3 dp lines.
 
