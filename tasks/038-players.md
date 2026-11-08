@@ -1,8 +1,8 @@
 # 038: Players on one tablet
 
-Status: in progress (take a chosen 2026-11-09 and built; the chip's place and the
-badges' look chosen and built, the badges' final silhouettes to come; to check on the
-Mac and the tablet)
+Status: in progress (take a chosen 2026-11-09 and built; the chip, bare and mirroring
+the X, and the badges' look chosen and built, the badges' final silhouettes to come; to
+check on the Mac and the tablet)
 
 A family shares one tablet: children of different ages and a parent. Each child wants their
 own look (season and board) and their own puzzle stars, and a way to start them again
@@ -170,19 +170,48 @@ Changed while building (2026-11-09):
   a shadowed upper one, from the distance field). First briefed for this task and set
   aside before it was built, for the crown's flat look (2026-11-09).
 - **Home keeps its king beside the wordmark**, and the player is a chip of their own,
-  the badge and name in a round glass 88 dp tall, as the X is (`badges.html?home=2`).
-- **The chip's place (chosen 2026-11-09):** the same against the board in every
-  orientation, above the board's top left corner (left edges level, 16 dp between), so
-  it is always on the board's side, never on the column. Not beside the X in landscape,
-  as it first stood. The board keeps its top 128 dp down, moving down and shrinking only
-  to keep 24 dp under it: at the tablet's landscape it moves 8 dp down at 560 dp; the
-  foldable's portrait 411 to 339 dp, 4:3's portrait 479 to 407, a 20:9 phone's landscape
-  at 480 dp 336 to 328 (299 to 291 with the Pixel 7a's insets, 349 to 346 at 540 dp).
-  A name that would reach within 16 dp of the X leaves the chip round; where the board
-  above would vanish (a 9:16 phone at 480 dp less its insets, 192 dp), the round chip
-  stands 16 dp left of the board's top. `home::player_spot` places it;
-  `test/shell/sizes` checks at every size, with no name and twelve characters, that it
-  is off the column and the X and at the board's top left.
+  first the badge and name in a round glass 88 dp tall, as the X was
+  (`badges.html?home=2`).
+- **The chip's place, first (chosen 2026-11-09, replaced the same day):** above the
+  board's top left corner (left edges level, 16 dp between), the board keeping its top
+  128 dp down for it.
+- **The chip bare, mirroring the X (the user, 2026-11-09, after seeing it on the
+  tablet):** no glass or disc, just the badge (64 dp, centred in the first 88 dp of the
+  tap) and the name beside it in the row labels' face (`gui::LABEL`, 30 dp, was the
+  20 dp body face), bare as the X and the gear; pressed, the X's press (`gui::bare`:
+  white at 10% and a faint ring, a pill over badge and name, 88 dp tall). It sits in the
+  X's row: 24 dp from the top and from the left of the board's side of the screen (the
+  safe area's left in portrait, the column's right edge in landscape), as the X is
+  24 dp from the right and the top; no longer anchored to the board. The board clears
+  the badge as it clears the X (in landscape, moving down to 8 dp under the row or
+  narrowing; in portrait the centred board's room from the X covers it). A board still
+  in the row under the name steps down below it where that costs it no size (the
+  tablet with its navigation bar in landscape, whose board sits 113 dp down, and the
+  20:9 phone's landscape at 540 dp); a name that would still come within 16 dp of the X
+  or of the board leaves the chip round, the badge alone. A twelve-character name (the
+  tests' faces, wider than the font) fits at the tablet's sizes, with its navigation bar
+  too, the foldable's and 4:3's landscape, and the 20:9 phone at every tested scale and
+  inset; it falls back to the badge at the foldable's and 4:3's portrait, a 9:16 phone's
+  landscape at 480 dp, and its portrait with the Pixel 7a's insets. `home::player_spot` places
+  it; `test/shell/sizes` checks at every size, with no name and twelve characters, that
+  it is level with the X, as far from the board's side's left as the X from the right,
+  and off the column, the X, and the board.
+
+  The room kept above the board for the first place is given back. Board sizes in dp,
+  before (the chip above the board) and after, from `test/shell/sizes` and the shell
+  tests:
+
+  | Screen | Before | After |
+  | --- | --- | --- |
+  | The tablet, landscape (1280 × 800 dp) | 560, top at 128 dp | 560, top at 120 dp |
+  | The tablet, portrait | 620 | 620 |
+  | The tablet with its navigation bar, landscape | 526, top at 128 dp | 526, top at 113 dp (120 with a name) |
+  | Foldable, portrait | 339 | 411 |
+  | 4:3, portrait | 407 | 479 |
+  | 20:9 phone, landscape, 480 dp | 328 | 336 |
+  | 20:9 phone, landscape, 480 dp, the Pixel 7a's insets | 291 | 299 |
+  | 20:9 phone, landscape, 540 dp, the Pixel 7a's insets | 346 | 349 |
+  | Every other tested size | unchanged | unchanged |
 - **Who's playing opens by itself only on a fresh install's first run**, at the sheet of
   its one player, so the child picks a badge and perhaps a name; done or back goes home.
   Later starts never ask. An install from before players becomes player 1 silently.
@@ -202,7 +231,7 @@ Changed while building (2026-11-09):
   start again, remove), `test/shell/who` (the card and sheet driven by the pointer, the
   holds, typing, back, the first run, the layouts at the tablet's and a phone's sizes in
   both orientations, in both languages: every tap 88 dp, inside the safe area, none
-  overlapping); `test/shell/sizes` counts the chip among home's tiles.
+  overlapping); `test/shell/sizes` counts the chip among home's tiles and checks its place.
 
 What to look at on screen, at the tablet's size (`--size 960x600`, `600x960`) and a
 phone's (`--dp 480 --size 1066x480`, `--size 450x1000 --dp 480`): home with the chip
@@ -251,5 +280,6 @@ and starts text input again on each tap).
 - [x] The badges' look chosen and drawn in `badge()`: home's man with the animal in the
       crown's place, from SVG files baked at start (placeholder silhouettes)
 - [ ] The final silhouettes from the user in `assets/badges/`
-- [x] Where the player shows on home chosen, and `home::player_spot` moved there: above
-      the board's top left in both orientations, checked off the column at every size
+- [x] Where the player shows on home chosen, and `home::player_spot` moved there: bare,
+      mirroring the X at the board's side's top left (2026-11-09), checked off the
+      column, the X, and the board at every size

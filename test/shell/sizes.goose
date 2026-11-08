@@ -92,13 +92,14 @@ fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool,
     print(line);
 }
 
-// Home's chip (the last tile but one), with no name and with twelve characters: off the
-// column (the first glass the frame declares) and the way out, and anchored to the
-// board's top left corner: its left edge at the board's and its foot 16 dp above it, or,
-// where that would leave no board, its top at the board's and 16 dp left of it
-// (home::player_spot).
+// Home's chip (the last tile but one), with no name and with twelve characters, mirrors
+// the way out (the last tile): its top level with the X's, and as far from the left of
+// the board's side of the screen as the X is from the screen's right (the safe area's
+// left in portrait, the column's right edge in landscape: the first glass the frame
+// declares); off the column, the way out, and the board (home::player_spot).
 fn chip(g: gui::Gui&, sh: shell::Shell&) {
     let u = g.scale;
+    let safe = gui::safe(g, drive::size.x, drive::size.y);
     for named in [false, true] {
         sh.prefs.name.clear();
         if named { sh.prefs.name.append("Wwwwwwwwwwww"); }
@@ -109,16 +110,19 @@ fn chip(g: gui::Gui&, sh: shell::Shell&) {
         var col = float4 { 0.0, 0.0, 0.0, 0.0 };
         for q in g.quads { if q.look.x == gui::GLASS { col = q.rect; break; } }
         let b = sh.layout.board;
+        let sq = float4 { b.x, b.y, b.z, b.z };
         var line = str("  home's chip", if named { ", named" } else { "" }, ": ", whole(c.z / u), " dp wide, board ", whole(b.z / u), " dp");
         var wrong: u8[>..] = [];
         if overlaps(c, col) { wrong.append(" on the column;"); }
         if overlaps(c, way) { wrong.append(" on the way out;"); }
-        if b.z <= 0.0 { wrong.append(" no board;"); }
-        let above = abs(c.x - b.x) <= 0.5 && abs(c.y + c.w + 16.0 * u - b.y) <= 0.5;
-        let left = abs(c.x + c.z + 16.0 * u - b.x) <= 0.5 && abs(c.y - b.y) <= 0.5;
-        if b.z > 0.0 && !above && !left { wrong.append(" not at the board's top left;"); }
-        line.append(if wrong.len > 0 { ";" } else if above { ", above the board's top left, off the column" }
-                    else { ", left of the board's top, off the column" });
+        if b.z > 0.0 && overlaps(c, sq) { wrong.append(" on the board;"); }
+        let landscape = drive::size.x >= drive::size.y;
+        let side = if landscape { col.x + col.z } else { safe.x };
+        let inset = safe.x + safe.z - (way.x + way.z);
+        if abs(c.y - way.y) > 0.5 { wrong.append(" not level with the X;"); }
+        if abs(c.x - side - inset) > 0.5 { wrong.append(" not mirroring the X;"); }
+        if b.z > 0.0 && b.x + 0.5 < side { wrong.append(" the board not on its side;"); }
+        line.append(if wrong.len > 0 { ";" } else { ", mirroring the X on the board's side, off the column and the board" });
         line.append(wrong);
         print(line);
     }

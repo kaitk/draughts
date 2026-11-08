@@ -464,15 +464,23 @@ fn colored(g: Gui&, face: i64, r: float4, s: const u8[:], color: float4, align: 
     write(g, face, r, s, color, true, 0.0, align, false);
 }
 
-// An X alone in its round tap r (home's way out, rendering.md, "Home"), `size` dp across
-// at 80% with strokes of 2.8 grid units: nothing drawn round it until pressed, then white
-// at 10% and a faint 1 px ring. True when it is tapped.
-fn bare_x(g: Gui&, id: i64, r: float4, icon: i64, size: f32) -> bool {
+// A bare tap r, round or a pill (rendering.md, "Home"): nothing drawn until pressed, then
+// white at 10% and a faint 1 px ring round it, shrinking 4% with the press. True when it
+// is tapped, and how far it is pressed, 0..1. The caller draws what is in it.
+fn bare(g: Gui&, id: i64, r: float4) -> bool, f32 {
     let clicked, p = hold(g, id, r);
     let k = 1.0 - 0.04 * p;
     let d = 0.5 * min(r.z, r.w);
     add(g, Quad { rect: center(r, r.z * k, r.w * k), look: float4 { BUTTON, d * k, 1.0, p },
                   extra: float4 { g.scale, ROW, 0.0, 0.0 } });
+    return clicked, p;
+}
+
+// An X alone in its round tap r (home's way out, rendering.md, "Home"), `size` dp across
+// at 80% with strokes of 2.8 grid units, bare. True when it is tapped.
+fn bare_x(g: Gui&, id: i64, r: float4, icon: i64, size: f32) -> bool {
+    let clicked, p = bare(g, id, r);
+    let k = 1.0 - 0.04 * p;
     let s = size * g.scale * k;
     glyph_icon(g, center(r, s, s), icon, ROW, p, 0.8, 2.8);
     return clicked;

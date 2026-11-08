@@ -14,9 +14,10 @@
 // A bare X in the screen's top right, with no disc until pressed, closes the app, at
 // once: the game is kept in any case. In portrait the board moves down and shrinks to clear it.
 //
-// On the menu, a round glass chip with the player's badge and name opens who's playing
-// (who.goose): just above the board's top left corner in either orientation, so it is
-// always on the board's side of the screen, never on the column (player_spot).
+// On the menu, the player's chip, their badge and name bare as the X is, opens who's
+// playing (who.goose): it mirrors the X, at the top left of the board's side of the
+// screen (the whole width in portrait, right of the column in landscape), so it is never
+// on the column (player_spot).
 namespace home;
 import std;
 import vec;
@@ -52,8 +53,8 @@ let MARGIN = 16.0;          // dp the menu keeps from the screen's top and foot 
 let CORNER = 88.0;          // the way out, round, in the top right,
 let EDGE = 24.0;            // this far from both edges,
 let CROSS = 34.0;           // its X, bare (clear until pressed)
-let CHIP_FACE = 56.0;       // the player's chip: their face, and their name beside it,
-let CHIP_GAP = 16.0;        // this far above the board
+let CHIP_FACE = 64.0;       // the player's chip: their badge in an 88 dp tap, the name
+let CHIP_PAD = 24.0;        // beside it in the row labels' face, the tap this past its end
 
 // The setup's parts, in dp.
 let HEAD_H = 88.0;          // back and the title
@@ -137,11 +138,9 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
     let content_h = content_height(setup, landscape, height, u);
     let pair = paired(setup, landscape, height, u);
     let clear = (EDGE + CORNER + 16.0) * u;
-    // The player's chip on the menu stands above the board's top left corner, its top
-    // level with the way out's at least: the board keeps its top this far down.
+    // The player's chip on the menu, in the way out's row at the board's side's left.
     let chip = setup == NOTHING;
-    let top = (EDGE + CORNER + CHIP_GAP) * u;
-    var beside = false;         // the chip at the board's left instead, where above leaves no board
+    var side = area.x;          // where the board's side of the screen starts
     // Two columns, each 330 dp, narrower where the second would reach the way out (a
     // 16:9 phone with its camera's cutout at a side), in dp; 0 for one column.
     let pair_w = if pair { clamp((width - clear) / u * 0.5 - 0.5 * (40.0 + PAIR_GAP), PAIR_LEAST, PAIR_W) } else { 0.0 };
@@ -166,20 +165,17 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
             content.y = min(max(content.y, area.y + 8.0 * u), area.y + height - content_h);
         }
         let stage = float4 { w + 80.0 * u, 0.0, width - w - 80.0 * u, height };
+        side = area.x + stage.x;
         var size = min(0.7 * height, stage.z - 80.0 * u);
         var x = stage.x + 0.5 * (stage.z - size);
         var y = 0.5 * (height - size);
-        // Room for the chip above the board: it moves down, shrinking only to keep 24 dp
-        // under it (a phone).
-        if chip && y < top {
-            y = top;
-            size = min(size, height - 24.0 * u - y);
-            x = stage.x + 0.5 * (stage.z - size);
-        }
+        // Where the board would reach the way out's row at the X or, on the menu, at the
+        // player's badge (16 dp from either), the same choice.
         let below = (EDGE + CORNER + 8.0) * u;
-        if y < below && x + size > width - clear {
+        let start: f32 = if chip { EDGE + CORNER + 16.0 } else { 40.0 };
+        if y < below && (x + size > width - clear || x < stage.x + start * u) {
             let down = min(size, height - 24.0 * u - below);
-            let left = min(size, width - clear - stage.x - 40.0 * u);
+            let left = min(size, width - clear - stage.x - start * u);
             if down >= left {
                 size = down;
                 x = stage.x + 0.5 * (stage.z - size);
@@ -189,6 +185,9 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
                 x = width - clear - size;
                 y = 0.5 * (height - size);
             }
+        }
+        if chip && y < below && x < stage.x + named_end(g, s, stage.z) && height - 24.0 * u - below >= size {
+            y = below;
         }
         if size < board::SMALLEST * u { size = 0.0; }
         l = board::layout_at(area.x + x, area.y + y, size, u, n);
@@ -219,18 +218,13 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
         let room = max(stage_h - 80.0 * u, min(stage_h - 48.0 * u, 0.4 * width));
         var size = min(min(0.8 * width, 0.6 * height), room);
         var y = 0.5 * (stage_h - size);
-        // Room for the chip above the board, as in landscape; where that would leave no
-        // board (a 9:16 phone at 480 dp less its insets), the chip stands round at the
-        // board's left, its top level with the board's.
-        beside = chip && y < top && min(size, stage_h - 24.0 * u - top) < board::SMALLEST * u
-                 && 0.5 * (width - size) >= (EDGE + CORNER + CHIP_GAP) * u;
-        if chip && y < top && !beside {
-            y = top;
-            size = min(size, stage_h - 24.0 * u - y);
-        }
+        // The board, centered, clears the player's badge at the left as it clears the X.
         if 0.5 * (width + size) > width - clear && y < clear {
             y = clear;
             size = min(size, stage_h - 24.0 * u - y);
+        }
+        if chip && y < clear && 0.5 * (width - size) < named_end(g, s, width) && stage_h - 24.0 * u - clear >= size {
+            y = clear;
         }
         if full || size < board::SMALLEST * u { size = 0.0; }
         l = board::layout_at(area.x + 0.5 * (width - size), area.y + y, size, u, n);
@@ -242,55 +236,56 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
     var pick = if setup != NOTHING { choose(over, g, content, setup == COMPUTER, pair_w, head, s) }
                else { menu(over, g, content, gear, mark_gap(gear, height, u), s) };
     // The player and the way out, declared last so the tiles before them keep their order.
-    if chip && player_chip(g, player_spot(g, area, l.board, way, beside, s), s) { pick = PLAYERS; }
+    if chip && player_chip(g, player_spot(g, area, side, l.board, way, s), s) { pick = PLAYERS; }
     if gui::bare_x(g, 309, way, gui::CLOSE, CROSS) { pick = EXIT; }
     return pick;
 }
 
 // How wide the player's chip is: round, 88 dp, without a name (or `named` false); with
-// one, the face and the name beside it.
+// one, the badge's 88 dp, the name, and CHIP_PAD.
 fn chip_width(g: gui::Gui&, s: settings::Settings&, named: bool = true) -> f32 {
     let u = g.scale;
     guard named && s.name.len > 0 else { return CORNER * u; }
-    return (16.0 + CHIP_FACE + 12.0 + 24.0) * u + gui::text_width(g, gui::BODY, s.name[..]);
+    return (CORNER + CHIP_PAD) * u + gui::text_width(g, gui::LABEL, s.name[..]);
 }
 
-// Where the player's chip goes, 88 dp tall, at the board `b`'s (x, y, size) top left
-// corner, so it keeps one place against the board in either orientation and is always on
-// the board's side, never on the column (2026-11-09): its left edge at the board's,
-// CHIP_GAP dp above it; or, `beside`, round, its top level with the board's and CHIP_GAP
-// dp left of it. With a name too wide to keep 16 dp from the way out `way`, it is round, the badge
-// alone. Without a board (none fits), the safe area's top left. The one place that
-// places it.
-fn player_spot(g: gui::Gui&, area: float4, b: float4, way: float4, beside: bool, s: settings::Settings&) -> float4 {
+// Where a board in the way out's row must start, from the left of the board's side of
+// the screen, `across` wide, to keep 16 dp from the player's chip with their name: 0
+// with no name or one that wouldn't keep 16 dp from the way out anyway. A board there
+// steps down below the row where that costs it no size, so the name shows (the tablet
+// with its navigation bar in landscape); otherwise the chip is round (player_spot).
+fn named_end(g: gui::Gui&, s: settings::Settings&, across: f32) -> f32 {
     let u = g.scale;
-    guard b.z > 0.0 else { return float4 { area.x + EDGE * u, area.y + EDGE * u, chip_width(g, s), CORNER * u }; }
-    if beside { return float4 { b.x - (CHIP_GAP + CORNER) * u, b.y, CORNER * u, CORNER * u }; }
-    let y = b.y - (CHIP_GAP + CORNER) * u;
-    var w = chip_width(g, s);
-    if b.x + w > way.x - 16.0 * u && y < way.y + way.w { w = chip_width(g, s, false); }
-    return float4 { b.x, y, w, CORNER * u };
+    let end = (EDGE + 16.0) * u + chip_width(g, s);
+    guard s.name.len > 0 && end <= across - (EDGE + CORNER) * u else { return 0.0; }
+    return end;
 }
 
-// The player's chip in r: round glass under a quiet tile, as the way out, with the
-// player's face and their name. True when it is tapped.
+// Where the player's chip goes, 88 dp tall: mirroring the way out `way` (2026-11-09), EDGE
+// dp from the top and from `side`, the left of the board's side of the screen (the safe
+// area's left in portrait, the column's right edge in landscape), so it is never on the
+// column. With a name that would come within 16 dp of the way out or of the board `b`
+// (x, y, size) in the same row, it is round, the badge alone; frame keeps the board
+// clear of that. The one place that places it.
+fn player_spot(g: gui::Gui&, area: float4, side: f32, b: float4, way: float4, s: settings::Settings&) -> float4 {
+    let u = g.scale;
+    var r = float4 { side + EDGE * u, area.y + EDGE * u, chip_width(g, s), CORNER * u };
+    let end = r.x + r.z + 16.0 * u;
+    let board = b.z > 0.0 && end > b.x && b.y < r.y + r.w + 8.0 * u;
+    if end > way.x || board { r.z = chip_width(g, s, false); }
+    return r;
+}
+
+// The player's chip in r, bare as the way out: their badge in its first 88 dp and their
+// name beside it, nothing round them until pressed. True when it is tapped.
 fn player_chip(g: gui::Gui&, r: float4, s: settings::Settings&) -> bool {
     let u = g.scale;
-    let clicked, p = gui::hold(g, 308, r);
+    let clicked, p = gui::bare(g, 308, r);
     let k = 1.0 - 0.04 * p;
-    let half = 0.5 * r.w;
-    gui::glass(g, gui::center(r, r.z * k, r.w * k), half * k / u);
-    gui::add(g, gui::Quad { rect: r, look: float4 { gui::BUTTON, half, 0.0, p }, extra: float4 { u, gui::QUIET, 0.0, 0.0 } });
     var c = r;
     let f = CHIP_FACE * u * k;
-    if s.name.len == 0 {
-        gui::face(g, gui::center(c, f, f), s.picture, 1.0, false);
-        return clicked;
-    }
-    gui::cut_left(c, 16.0 * u);
-    gui::face(g, gui::center(gui::cut_left(c, CHIP_FACE * u), f, f), s.picture, 1.0, false);
-    gui::cut_left(c, 12.0 * u);
-    gui::text(g, gui::BODY, c, s.name[..], 1.0, 0.0, gui::LEFT);
+    gui::face(g, gui::center(gui::cut_left(c, CORNER * u), f, f), s.picture, 1.0, false);
+    if r.z > CORNER * u + 0.5 { gui::text(g, gui::LABEL, c, s.name[..], 1.0, 0.0, gui::LEFT); }
     return clicked;
 }
 
