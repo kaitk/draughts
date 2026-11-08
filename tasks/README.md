@@ -60,6 +60,11 @@ legal square within 0.9 of one, home's gear as a bare icon in portrait, the date
 season tile after the four seasons, and the second Estonian review taken (Võta, Päästa
 nupp, Proovi veel, Tänane, Tammid; `tasks/024-estonian-review/proposals-2.md`).
 
+The goal for the morning (2026-11-09): a working, good build on the tablet, which the
+user reconnects. Turn its stay-awake on first and leave it on until the session is done.
+Screenshots: keep them to a minimum, no portrait-and-landscape sweeps of every screen;
+shoot only at the very end, or where something concrete is or may be off.
+
 The next session is lean: the main session delegates to subagents (the default model for
 judgment, Sonnet for mechanical work), one device agent at a time, stay-awake turned on
 first. The order:
@@ -79,14 +84,13 @@ first. The order:
 4. Small checks: on the Pixel 7a, a drop about 0.6 of a square off a target in puzzle 4
    lands on it (`board::snap`, not yet seen on a device); the tablet's stay-awake was
    left on when it was unplugged, turn it off when it is next attached.
-5. Archive the done tasks still in the folder: 007, 008, 019, 020, 021, 023, 024, 025,
-   027, 028 (and 016, cancelled).
-6. Children play it (task 006's last criterion; medium's strength, the
-   computer's time on the clock).
-7. 036, the announcement, after the release.
+5. Archive the done tasks still in the folder: 006 (the user judged the computer good
+   enough to ship, 2026-11-08), 007, 008, 019, 020, 021, 023, 024, 025, 027, 028 (and
+   016, cancelled).
+6. 036, the announcement, after the release.
 
-To decide (the user, 2026-11-08): sound (none yet; a few quiet effects would help
-children who don't read), a puzzle rating like GoDraughts' and the computer's level
+Not in the MVP (the user, 2026-11-08): sound; the visual feedback is clear, and sound
+may come soon after, kept from being bling. To decide later: a puzzle rating like GoDraughts' and the computer's level
 shown as a rating (both per player, after 037 and 038), 026's first start.
 
 Alongside, when the user wants it: 015's 3D prototype (`poc/3d/`, its plan and sources in

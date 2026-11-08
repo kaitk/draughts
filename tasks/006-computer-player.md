@@ -1,6 +1,6 @@
 # 006: Computer player
 
-Status: in-progress
+Status: done
 
 Alpha-beta search with a fixed transposition table allocated once. Three levels made
 weaker by shallower depth and deliberate, plausible mistakes, never by obvious blunders.
@@ -8,7 +8,8 @@ It runs off the main thread or in small slices, so the UI never stalls.
 
 ## Acceptance criteria
 
-- [ ] Levels easy, medium, hard; an older child beats easy, and hard beats a casual adult.
+- [x] Levels easy, medium, hard; an older child beats easy, and hard beats a casual adult.
+  The user judged it good enough to ship (2026-11-08); it can always improve later.
   Built and ordered (`ai/`, [design](../docs/architecture/ai.md)): against itself each
   level beats the one below nearly every game (measurements below). Whether children
   beat easy and hard beats an adult needs the screens wired and people playing.
