@@ -368,13 +368,15 @@ let FRAG = """
             vec3 red = vec3(1.0, 0.353, 0.29);
             bool lit = style == 1 || style == 2 || style == 6 || style == 7 || style == 9;
             vec3 fc = style == 11 ? red : lit ? glow.rgb : vec3(1.0);
-            float fa = (style == 1 ? 0.22 : style == 2 ? 0.26 : style == 3 || style == 4 ? 0.08
+            bool bare = v_look.z > 0.5;         // a bare icon's press: white at 10%, a faint ring
+            float fa = bare ? 0.10 * pr : (style == 1 ? 0.22 : style == 2 ? 0.26 : style == 3 || style == 4 ? 0.08
                         : style == 5 ? 0.0 : style == 6 ? 0.24 : style == 7 ? 0.22 : style == 9 ? 0.18
-                        : style == 10 ? 0.06 : style == 11 ? 0.16 : 0.10) + 0.14 * pr;
+                        : style == 10 ? 0.06 : style == 11 ? 0.16 : 0.10) + 0.14 * pr);
             vec4 tile = vec4(fc * fa, fa);
             bool wide = style == 7 || style == 9 || style == 11;
             float ea = style == 5 || style == 6 ? 0.0 : style == 2 || wide ? 1.0 : style == 8 || style == 10 ? 0.12
                        : style >= 3 ? 0.18 : 0.2;
+            if (bare) ea = 0.22 * pr;
             float edge = ea * (1.0 - cover(d + (wide ? 2.0 : 1.0) * u));
             vec3 ec = style == 11 ? red : style == 2 || style == 7 || style == 9 ? glow.rgb : vec3(1.0);
             tile = vec4(ec * edge, edge) + tile * (1.0 - edge);
@@ -385,11 +387,11 @@ let FRAG = """
             return;
         }
         if (kind == 2) {
-            // A line icon: strokes 2.4 units of its 24-unit grid wide, as the prototypes'
+            // A line icon: strokes 2.4 units (look.y sets another) of its 24-unit grid wide, as the prototypes'
             // SVGs draw them, round caps, in the text color.
             vec2 q = (p - v_rect.xy) / v_rect.zw * 24.0;
             float px = 24.0 / v_rect.z;         // one pixel in grid units
-            float d = icon(int(v_look.z), q) - 1.2;
+            float d = icon(int(v_look.z), q) - (r > 0.0 ? 0.5 * r : 1.2);     // look.y: the stroke, if set
             float a = clamp(0.5 - d / px, 0.0, 1.0) * (style == 3 ? 0.45 : 1.0) * v_color.a;
             // CLOCK_LOW: the forced-capture red toward the text color (removing a player).
             vec3 ic = style == 2 ? glow.rgb : style == 11 ? mix(vec3(1.0, 0.353, 0.29), text.rgb, 0.45) : text.rgb;

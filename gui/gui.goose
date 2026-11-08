@@ -412,21 +412,6 @@ fn tile(g: Gui&, id: i64, r: float4, icon: i64, style: i64, radius: f32) -> bool
     return clicked;
 }
 
-// A round glass button `r` across (home's way out, rendering.md, "Home"): a glass panel
-// under a quiet tile, both going down as a tile does, and an icon `size` dp across at
-// 90%. True when it is tapped.
-fn round_button(g: Gui&, id: i64, r: float4, icon: i64, size: f32) -> bool {
-    let clicked, p = hold(g, id, r);
-    let k = 1.0 - 0.04 * p;
-    let d = 0.5 * min(r.z, r.w);
-    add(g, Quad { rect: center(r, r.z * k, r.w * k), look: float4 { GLASS, d * k, 0.0, 0.0 },
-                  extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
-    add(g, Quad { rect: r, look: float4 { BUTTON, d, 0.0, p }, extra: float4 { g.scale, QUIET, 0.0, 0.0 } });
-    let s = size * g.scale * k;
-    glyph_icon(g, center(r, s, s), icon, QUIET, p, 0.9);
-    return clicked;
-}
-
 // An icon alone, `size` dp across at 85% as a row's, centered in its tap r (home's gear
 // in portrait, rendering.md, "Home"): clear until pressed, then lit round as a pressed
 // row is. True when it is tapped.
@@ -479,9 +464,23 @@ fn colored(g: Gui&, face: i64, r: float4, s: const u8[:], color: float4, align: 
     write(g, face, r, s, color, true, 0.0, align, false);
 }
 
+// An X alone in its round tap r (home's way out, rendering.md, "Home"), `size` dp across
+// at 80% with strokes of 2.8 grid units: nothing drawn round it until pressed, then white
+// at 10% and a faint 1 px ring. True when it is tapped.
+fn bare_x(g: Gui&, id: i64, r: float4, icon: i64, size: f32) -> bool {
+    let clicked, p = hold(g, id, r);
+    let k = 1.0 - 0.04 * p;
+    let d = 0.5 * min(r.z, r.w);
+    add(g, Quad { rect: center(r, r.z * k, r.w * k), look: float4 { BUTTON, d * k, 1.0, p },
+                  extra: float4 { g.scale, ROW, 0.0, 0.0 } });
+    let s = size * g.scale * k;
+    glyph_icon(g, center(r, s, s), icon, ROW, p, 0.8, 2.8);
+    return clicked;
+}
+
 // A line or filled icon in r, in the text color at opacity a (the glow color for ON).
-fn glyph_icon(g: Gui&, r: float4, icon: i64, style: i64, p: f32, a: f32) {
-    add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { ICON, 0.0, icon, p },
+fn glyph_icon(g: Gui&, r: float4, icon: i64, style: i64, p: f32, a: f32, stroke: f32 = 0.0) {
+    add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { ICON, stroke, icon, p },
                   extra: float4 { g.scale, style, 0.0, 0.0 } });
 }
 

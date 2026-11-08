@@ -364,20 +364,22 @@ the prototype tried, kept for 3D:
   its room: the gear alone, 40 dp at 85%, with no tile, in an 88 dp tap reaching 8 dp over
   and under the row, clear until pressed and then lit round as a pressed row is
   (`prototypes/gear.html?take=a`, chosen 2026-11-08 over the 88 dp quiet tile, which
-  looked too big beside the wordmark, and the X's round glass button); the name may run
+  looked too big beside the wordmark, and the X's round glass button, which the X itself later left); the name may run
   under the tap's clear side, up to 12 dp from the gear; so too in a landscape too
   short for the menu with settings as a row (a phone under about 590 dp tall), where the
   column widens to 440 dp for the wordmark and the gear. The wordmark's letters close up
   where the gear leaves them too little room (2026-11-08). In the
-  screen's top right, 24 dp from both edges of its safe area, a round glass button 88 dp across with a
-  32 dp X closes the app at once, asking nothing, since the game is kept anyway; on the
+  screen's top right, 24 dp from both edges of its safe area, a bare X, 34 dp with strokes of 2.8 grid units at
+  80%, in a round 88 dp tap, closes the app at once, asking nothing, since the game is kept anyway; on the
   menu and in a setup, in both orientations (`prototypes/exit.html?take=b`, chosen
-  2026-11-08 over a quiet last row and a door). One place in both orientations, it
+  2026-11-08 over a quiet last row and a door, as a round glass button; made a bare X,
+  `prototypes/gear.html?x=d`, the user, 2026-11-09, to match the bare gear). One place in both orientations, it
   costs the menu nothing (a last row would take the portrait board's room and lengthen
   the sheet phones can't fit), it is far from where children tap and hold a tablet, and
   an X is what closes things in the apps children know; a door reads less surely at
-  32 dp, and a power sign suggests turning the tablet off. It is glass under a quiet tile, both
-  going down as a tile does while pressed. In landscape it sits above the photograph,
+  34 dp, and a power sign suggests turning the tablet off. At rest it is the X alone, no
+  disc, sized to the bare gear's weight; pressed, it lights round in its tap (white at 10%
+  and a faint 1 px ring) and goes down to 0.96 (`gui::bare_x`). In landscape it sits above the photograph,
   clear of the board (28 dp right of its edge, 8 dp above its top; on a phone, where the
   board would reach it, the board moves down to 8 dp under it or narrows to 16 dp left of it,
   whichever leaves it larger); in portrait, where

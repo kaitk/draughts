@@ -11,8 +11,8 @@
 // the child's color against the computer, the clock; then play. The choices are kept in
 // the settings.
 //
-// A round glass X in the screen's top right closes the app, at once: the game is kept in
-// any case. In portrait the board moves down and shrinks to clear it.
+// A bare X in the screen's top right, with no disc until pressed, closes the app, at
+// once: the game is kept in any case. In portrait the board moves down and shrinks to clear it.
 //
 // On the menu, a round glass chip with the player's badge and name opens who's playing
 // (who.goose): just above the board's top left corner in either orientation, so it is
@@ -51,7 +51,7 @@ let GEAR_ICON = 40.0;       // its gear alone, with no tile
 let MARGIN = 16.0;          // dp the menu keeps from the screen's top and foot at least
 let CORNER = 88.0;          // the way out, round, in the top right,
 let EDGE = 24.0;            // this far from both edges,
-let CROSS = 32.0;           // its X
+let CROSS = 34.0;           // its X, bare (clear until pressed)
 let CHIP_FACE = 56.0;       // the player's chip: their face, and their name beside it,
 let CHIP_GAP = 16.0;        // this far above the board
 
@@ -243,7 +243,7 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
                else { menu(over, g, content, gear, mark_gap(gear, height, u), s) };
     // The player and the way out, declared last so the tiles before them keep their order.
     if chip && player_chip(g, player_spot(g, area, l.board, way, beside, s), s) { pick = PLAYERS; }
-    if gui::round_button(g, 309, way, gui::CLOSE, CROSS) { pick = EXIT; }
+    if gui::bare_x(g, 309, way, gui::CLOSE, CROSS) { pick = EXIT; }
     return pick;
 }
 
