@@ -8,6 +8,15 @@ symlink to the main checkout's `build/goose-v2026.4-macos-arm64`, not a symlink 
 whole `build/`: the tests and tools write `build/perft`, `build/test/`, and the like,
 which would overwrite the main checkout's while another session uses them.
 
+The tests never compile the app's shaders: after any change to a shader (`app/*.goose`'s
+embedded GLSL), build the app itself (`docs/development.md`, "Run on the Mac") and check
+it succeeds. A shader with a stray parenthesis passed both test runs and kept the app
+from building (2026-11-09).
+
+Badge art: `tools/badge_trace.py <animal> <png>` traces a black-on-white silhouette into
+`assets/badges/<animal>.svg`, its viewBox fitted round the shape's enclosing circle so it
+sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
+
 ## What each kind of test is for
 
 - `test/<area>/<name>.goose` with `test/expected/<name>.out`: one program per behavior,
