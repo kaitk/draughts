@@ -102,10 +102,10 @@ tablet is not checked.
 
 Made at the start of task 007, one commit each:
 
-- `ff46dfe` (2) `panel::layout` (`game/panel.goose`) places the board and the game's two
+- `d92ea3c` (2) `panel::layout` (`game/panel.goose`) places the board and the game's two
   panels in a `panel::Layout`; `board::Layout` is the board alone, from
   `board::layout_at`. The shell keeps the board's part for the app to draw.
-- `45a54e8` (5) `test/drive/` holds the UI tests' squares by name, tiles, and pointer
+- `cba2a04` (5) `test/drive/` holds the UI tests' squares by name, tiles, and pointer
   frames for the game screen and the shell; `test/run_tests.py` skips it as a package.
   The shell's tap now always ends with a frame with the pointer away, as two of its
   three copies did; no expected output changed.
@@ -132,7 +132,7 @@ Each with its reason and rough cost; none is needed for the MVP.
    `right`, while `game/panel.goose` is what fills them. Move `layout` and the panel
    rects to `game`, leaving `board::layout_at` for the board alone. About 1.5 h; five
    test files call `board::layout`. Worth it before task 019's further screens or other
-   screen sizes, not before. Done: `ff46dfe`.
+   screen sizes, not before. Done: `d92ea3c`.
 3. **Themes as a package.** `app/theme.goose` has no graphics, but because it is in
    `app/`, `settings` numbers the seasons by hand (`SEASON_KINDS = [1, 2, 3, 0]`) and
    the app holds `theme_for`. A `theme/` package would let settings name them and pick
