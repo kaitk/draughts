@@ -4,8 +4,8 @@ game, waiting: raised true, marks in the board's middle 1, animating false
 game, ready: marks 0
   c3 tapped: selected c3
 game, a new theme getting ready: marks 0, c3 tapped: selected -1
-home, waiting: raised true, marks in the board's middle 1, saying "Preparing 3D…"
-settings, waiting: raised true, marks in the board's middle 1, saying "Preparing 3D…"
-home, waiting: raised true, marks in the board's middle 1, saying "Valmistan 3D-d ette…"
-settings, waiting: raised true, marks in the board's middle 1, saying "Valmistan 3D-d ette…"
+home, waiting: raised true, marks in the board's middle 1, saying "Setting up the board…"
+settings, waiting: raised true, marks in the board's middle 1, saying "Setting up the board…"
+home, waiting: raised true, marks in the board's middle 1, saying "Panen kabelauda paika…"
+settings, waiting: raised true, marks in the board's middle 1, saying "Panen kabelauda paika…"
 flat: marks 0

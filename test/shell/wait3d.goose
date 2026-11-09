@@ -18,17 +18,23 @@ import shell from "../../src/shell";
 import puzzles from "../../src/puzzles";
 import drive from "../drive";
 
-// Whether quad q's middle is the 3D board's bounds' middle, within half a pixel.
-fn centred(sh: shell::Shell&, q: gui::Quad) -> bool {
-    let r = sh.place;
-    return abs(q.rect.x + 0.5 * q.rect.z - (r.x + 0.5 * r.z)) < 0.5 && abs(q.rect.y + 0.5 * q.rect.w - (r.y + 0.5 * r.w)) < 0.5;
-}
-
-// The waiting marks the last frame declared: glass in the middle of the board's bounds.
+// The waiting mark the last frame declared: 1 when the words' glyphs on the 3D board's
+// bounds' middle line (a glyph's middle within 40 px of it; the panels' words lie farther)
+// are centred there, within 2 px (a glyph's own bearings), else 0.
 fn marks(sh: shell::Shell&, g: gui::Gui&) -> i64 {
-    var n = 0;
-    for q in g.quads { if q.look.x == gui::GLASS && centred(sh, q) { n++; } }
-    return n;
+    let r = sh.place;
+    var lo = float2 { 1e9, 1e9 };
+    var hi = float2 { -1e9, -1e9 };
+    for q in g.quads {
+        guard q.look.x == gui::TEXT && q.rect.x >= r.x && q.rect.y >= r.y && q.rect.x + q.rect.z <= r.x + r.z
+              && q.rect.y + q.rect.w <= r.y + r.w && abs(q.rect.y + 0.5 * q.rect.w - (r.y + 0.5 * r.w)) < 40.0
+              else { continue; }
+        lo = float2 { min(lo.x, q.rect.x), min(lo.y, q.rect.y) };
+        hi = float2 { max(hi.x, q.rect.x + q.rect.z), max(hi.y, q.rect.y + q.rect.w) };
+    }
+    guard hi.x > lo.x else { return 0; }
+    let mid = 0.5 * (lo + hi);
+    return if abs(mid.x - (r.x + 0.5 * r.z)) < 2.0 && abs(mid.y - (r.y + 0.5 * r.w)) < 2.0 { 1 } else { 0 };
 }
 
 fn on_screen(sh: shell::Shell&, v: rules::Variant&, name: const u8[:], h: f32) -> float2 {

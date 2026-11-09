@@ -443,13 +443,13 @@ fn floating(g: Gui&, id: i64, r: float4, disc: f32, icon: i64, on: bool, dot: bo
     return clicked;
 }
 
-// A still mark in the middle of r saying something is getting ready (the 3D board): a
-// quiet glass pill round the words s. Nothing in it moves, so it needs no frames of its own.
+// A still mark in the middle of r saying something is getting ready (the 3D board): the
+// words s alone, with no glass, as it shows only a moment. Nothing in it moves, so it
+// needs no frames of its own.
 fn waiting(g: Gui&, r: float4, s: const u8[:]) {
     let u = g.scale;
     let m = center(r, text_width(g, BODY, s) + 48.0 * u, 52.0 * u);
-    glass(g, m, 26.0);
-    text(g, BODY, m, s, 0.8, 0.0, CENTER);
+    text(g, BODY, m, s, 0.9, 0.0, CENTER);
 }
 
 // A player's face in r (their badge, players.goose's ANIMALS by index, drawn by

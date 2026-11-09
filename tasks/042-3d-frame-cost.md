@@ -170,8 +170,9 @@ change, on the Mac (1920 × 1200, Russian, autumn) the switch's first 3D frame t
 needed, and nothing kept for a flat player. Wherever it is needed and not ready (3D
 chosen in settings, a launch with 3D saved, home, the game, a puzzle), `draw3d::frame`
 takes one step of getting ready a frame instead of drawing (`draw3d::prepare`), the
-shell shows a still mark in the board's place (`gui::waiting`: a quiet glass pill round
-"Preparing 3D…", `strings::BOARD_PREPARING`; `sh.ready3d` and `sh.shown3d` set by the
+shell shows a still mark in the board's place (`gui::waiting`: the words alone,
+"Setting up the board…", "Panen kabelauda paika…" in Estonian, no glass, as it shows only a
+moment, 2026-11-09; `strings::BOARD_PREPARING`; `sh.ready3d` and `sh.shown3d` set by the
 app) and leaves taps on the board alone (the panels answer), and once ready the board
 fades in over 0.3 s (the renderer's backdrop with it). Settings' 3D tile is lit at once.
 A new season or board size on 3D takes the theme's steps again with the old image shown
