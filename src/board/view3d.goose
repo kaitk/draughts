@@ -427,7 +427,8 @@ fn pick(v: View, b: board::Board&, l: board::Layout, p: float2) -> float2 {
 // (2), z the must-capture ring, 1 pulsing or 2 still, w 0 on a wrong move's flashing
 // square, else -1. `lit` runs beside it, a float4 a square too: x the glow ring tight
 // round the piece standing there (a puzzle's hint, a win's wave), 0 to 1; y the square
-// lit by a win's glow passing, 0 to 1. Under a win's dim the winning piece alone stays
+// lit by a win's glow passing, 0 to 1; z how many pieces the piece standing there takes,
+// shown as pips on the field (board::Piece.ring.z), 0 for none. Under a win's dim the winning piece alone stays
 // lit: its seed (kind's w) is SEED_LIT more, which the shaders take off again for its
 // figure.
 //
@@ -550,6 +551,7 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
             o.x = max(o.x, p.ring.y * p.look.w);
             o.y = max(o.y, p.win.y);
         }
+        if p.ring.z > 0.5 && col >= 0 && row >= 0 && col < n && row < n { s.lit[row * n + col].z = p.ring.z; }
     }
     mark_world(l, b.marks.last, s.marks.last);
     mark_world(l, b.marks.target, s.marks.target);

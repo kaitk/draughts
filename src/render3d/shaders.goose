@@ -1695,7 +1695,8 @@ let BLUR_FRAG = """
 // 0 where a wrong move's flash is (else -1); and the selected piece's glow ring round
 // Frame.selected, wherever the piece is (a drag). Beside them `lit`, per square: x the
 // glow ring tight round the piece there (a hint, a win's wave), y the square lit by a
-// win's glow passing. A win's dim (screen.z) dims them all but the glow rings. draw.y:
+// win's glow passing, z how many pieces the piece there takes, as pips (`count_pips`).
+// A win's dim (screen.z) dims them all but the glow rings. draw.y:
 // squares per side. As the flat board draws them (src/app/draw.goose).
 //
 // Two shaders: without PULSE, in the board's pass, everything that holds still; with
@@ -1724,6 +1725,60 @@ let MARKS_FRAG = """
     #endif
     layout(set = 3, binding = 1) uniform Draw { vec4 draw; };
     float line(float d, float w) { return exp(-pow(d / (0.6 * w + 0.008), 2.0)); }
+    #ifndef PULSE
+    float seg(vec2 p, vec2 a, vec2 b) {
+        vec2 pa = p - a, ba = b - a;
+        return length(pa - ba * clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0));
+    }
+    // A digit's strokes' distance at p, the digit spanning x -0.5..0.5 and y -1..1 (down),
+    // as src/app/draw.goose's.
+    float digit(vec2 p, int d) {
+        const int SEGS[10] = int[](0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F);
+        int m = SEGS[clamp(d, 0, 9)];
+        float r = 1e5;
+        if ((m & 1) != 0) r = min(r, seg(p, vec2(-0.5, -1.0), vec2(0.5, -1.0)));
+        if ((m & 2) != 0) r = min(r, seg(p, vec2(0.5, -1.0), vec2(0.5, 0.0)));
+        if ((m & 4) != 0) r = min(r, seg(p, vec2(0.5, 0.0), vec2(0.5, 1.0)));
+        if ((m & 8) != 0) r = min(r, seg(p, vec2(-0.5, 1.0), vec2(0.5, 1.0)));
+        if ((m & 16) != 0) r = min(r, seg(p, vec2(-0.5, 0.0), vec2(-0.5, 1.0)));
+        if ((m & 32) != 0) r = min(r, seg(p, vec2(-0.5, -1.0), vec2(-0.5, 0.0)));
+        if ((m & 64) != 0) r = min(r, seg(p, vec2(-0.5, 0.0), vec2(0.5, 0.0)));
+        return r;
+    }
+    // Paints col at coverage a over acc, premultiplied.
+    void over(inout vec4 acc, vec3 col, float a) { acc = vec4(col * a, a) + acc * (1.0 - a); }
+    // How many pieces a piece takes (lit.z), as the flat board's pips: one per piece, light
+    // with a red rim, 22 degrees apart round the piece at 0.6 of a square, on the must-
+    // capture ring, centred on the side toward the eye, which the piece doesn't hide (its
+    // far side it does); past five, one larger red pip with the number. f is the pixel
+    // from the piece's middle and t the way toward the eye, both on the field in squares;
+    // w a pixel in squares. Painted over acc, premultiplied: added light alone would wash
+    // out on a light square.
+    void count_pips(inout vec4 acc, vec2 f, vec2 t, int n, float w) {
+        vec3 red = vec3(1.0, 0.353, 0.29);
+        vec3 light = vec3(1.0, 0.957, 0.925);
+        vec2 p = vec2(dot(f, vec2(t.y, -t.x)), dot(f, t));    // x right, y toward the eye
+        if (n <= 5) {
+            for (int i = 0; i < n; i++) {
+                float a = radians((float(i) - 0.5 * float(n - 1)) * 22.0);
+                float d = length(p - 0.6 * vec2(sin(a), cos(a)));
+                over(acc, red, 0.4 * exp(-max(d - 0.085, 0.0) / 0.03));
+                over(acc, red, 1.0 - smoothstep(0.115 - w, 0.115 + w, d));
+                over(acc, light, 1.0 - smoothstep(0.085 - w, 0.085 + w, d));
+            }
+            return;
+        }
+        vec2 q = p - vec2(0.0, 0.66);
+        float d = length(q);
+        over(acc, red, 0.4 * exp(-max(d - 0.156, 0.0) / 0.03));
+        over(acc, light, 1.0 - smoothstep(0.18 - w, 0.18 + w, d));
+        over(acc, red, 1.0 - smoothstep(0.156 - w, 0.156 + w, d));
+        float s = 0.066;        // a digit's half height, its stroke 0.014
+        float k = n < 10 ? digit(q / s, n) : min(digit((q - vec2(-0.047, 0.0)) / s, n / 10 % 10),
+                                                 digit((q - vec2(0.047, 0.0)) / s, n % 10));
+        over(acc, light, 1.0 - smoothstep(0.014 - w, 0.014 + w, k * s));
+    }
+    #endif
     #ifdef PULSE
     // Whether the board's depth leaves the quad here: its kept texel under the pixel.
     bool seen() {
@@ -1767,6 +1822,7 @@ let MARKS_FRAG = """
         // edge, so each pixel looks at the squares round it too.
         vec3 red = vec3(1.0, 0.353, 0.29);
         vec3 reds = vec3(0.0);
+        vec4 pips = vec4(0.0);
         for (int dy = -1; dy <= 1; dy++) {
             for (int dx = -1; dx <= 1; dx++) {
                 ivec2 k = q + ivec2(dx, dy);
@@ -1796,6 +1852,13 @@ let MARKS_FRAG = """
                     float rr = 0.52;
                     reds += red * strength * (0.9 * line(r - rr, w) + 0.35 * exp(-abs(r - rr) / 0.04));
                 }
+    #ifndef PULSE
+                if (lit[at].z > 0.5) {
+                    vec2 mid = vec2(k) + 0.5;
+                    vec2 toward = normalize(eye.xz - (mid * u - FIELD));
+                    count_pips(pips, g - mid, toward, int(lit[at].z + 0.5), w);
+                }
+    #endif
     #ifdef PULSE
                 if (m.w >= 0.0 && pulse.y < 1.0) {
                     float t = fract(pulse.y * 2.0);
@@ -1812,7 +1875,8 @@ let MARKS_FRAG = """
         // The depth is read only where there is something to add.
         result = c.r + c.g + c.b > 0.0 && seen() ? vec4(c, place.w) : vec4(0.0);
     #else
-        result = vec4(c, 1.0);
+        // Blended premultiplied: the marks add, alpha 0, and the pips cover what is under.
+        result = vec4(pips.rgb + c * (1.0 - pips.a), pips.a);
     #endif
     }
     """;

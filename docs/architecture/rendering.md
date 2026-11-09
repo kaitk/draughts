@@ -913,7 +913,7 @@ board's does and the backdrop over it as opaque as the blur.
   a 1x depth of the board the pass keeps with the image while marks pulse (a 16-bit
   target the screen's size, made the first time), so a pulse runs the 3D pass once, not
   on every frame. The marks are the flat board's: the last move tinted, targets' dots, stops' rings,
-  the must-capture ring pulsing, a wrong move's red flash, the selected piece's glow
+  the must-capture ring pulsing, a capture's count as pips, a wrong move's red flash, the selected piece's glow
   ring, the glow ring tight round a hint's piece or a win's, a win's lit squares
   (`view3d::Scene.lit`). A captured piece and a wrong move's ghost fade, drawn blended
   one by one after the opaque pieces, casting no shadow. The four seasons have looks as
@@ -939,15 +939,25 @@ side's capturers, so after a child's capture on the turned board the computer's 
 beside the child's pieces pulsed red as if it were the child's to move (reported
 2026-11-09, two pieces each taking one; the rings, taps, and moves agree under the turn,
 `test/board/several`). A piece that must capture shows how many pieces its
-capture takes, at most, whatever the hints and whether or not its ring pulses
-(`board::takes`, `Piece.ring.z`): one pip per piece on its ring, 28° apart and centred
+capture takes, at most (`board::takes`, `Piece.ring.z`), when `board::counting`: with
+move hints always; on mistakes only from a mistake while a capture is due (`mistake`
+sets `Board.counted`) to the next right move or jump (`start_move`, `kept`), so a
+second mistake partway through shows what is left (2026-11-09, `test/game/pips`; it
+showed whatever the hints before, which gave the capture away). One pip per piece on its ring, 28° apart and centred
 over the top, light with a red rim (22% and 30% of the radius, on the ring at 1.24
 radii), and past five one larger red pip with the number (`prototypes/game.html?count=a`;
 take b, a badge with the number, needs a child who reads digits; the pips are counted).
 It counts pieces, not stops or the squares a flying king could land on; under the
 majority rule every piece that takes the most shows it, and in Russian each piece its own
 most. Partway through a capture only the piece making it shows what is left; the
-computer's pieces on its turn show none (`Board.quiet`), and a puzzle none. Before
+computer's pieces on its turn show none (`Board.quiet`), and a puzzle none. The 3D
+board shows the same pips (`view3d::Scene.lit`'s z, the square's count), drawn on the
+field by the still marks' pass (`shaders::MARKS_FRAG`'s `count_pips`), 22° apart at 0.6
+of a square round the piece on the side toward the eye, as the piece hides its far side;
+painted over the field (that pass blends premultiplied, the other marks adding with alpha
+0), as added light washed out on a light square. They change only with the count, so they
+cost a draw of the board then and nothing per frame. Until 2026-11-09 the 3D board drew
+no pips: its scene never read `ring.z`. Before
 (reported 2026-11-09, a child's lone king on the turned board with a capture of four),
 nothing said how far a capture went. A capture of many jumps is tapped or dropped by its
 last square, when one capture alone goes there, or stop by stop (`board::follow`): a tap

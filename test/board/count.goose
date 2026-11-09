@@ -4,11 +4,13 @@
 // played the first jump, the game played the rest, so he never learned the way.
 //
 // - The count: a piece that must capture shows how many pieces it takes, at most, as
-//   pips on its ring (Piece.ring.z), whatever the hints: pieces, not stops or squares a
-//   flying king could land on. A man's double shows 2; the child's king 4. Under the
+//   pips on its ring (Piece.ring.z), shown here with move hints: pieces, not stops or
+//   squares a flying king could land on. A man's double shows 2; the child's king 4. Under the
 //   majority rule only the pieces taking the most show it, each of them; in Russian each
 //   piece shows its own most. The computer's pieces show none, a friend's do. Partway
-//   through a capture only the piece making it shows what is left.
+//   through a capture only the piece making it shows what is left. On mistakes only, the
+//   rest of this test's hints, the count shows only from a wrong square to the next
+//   right jump (test/game/pips has it in full).
 // - No autocomplete: after a jump, tapped or dropped, the piece waits on its stop and
 //   each next jump is the child's, to the last.
 // - The last square tapped straight away plays the capture, the one capture going there.
@@ -108,6 +110,7 @@ fn named(gm: game::Game&, sq: i64) -> u8[>..] { drive::name(rules::VARIANTS[gm.b
 fn shows(variant: u8, fen: const u8[:], computer: i64, what: const u8[:]) {
     var gm = game::new(variant);
     begin(gm, variant, fen, computer);
+    gm.b.hints = board::MOVES;
     print(what, ": counts ", counts(gm));
 }
 

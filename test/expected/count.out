@@ -31,30 +31,30 @@ W:WK46:B17,18,27,29,37,39
 a king's capture of six, past five pips: counts a1 6 
 the child's king, its way j4 e9 a5 d2 g5 
 tapped stop by stop
-  j4: waits on -, counts j4 4 , wrong -, pulsing next playing -
-  e9: waits on e9, counts e9 3 , wrong -, pulsing next playing -
-  a5: waits on a5, counts a5 2 , wrong -, pulsing next playing -
-  d2: waits on d2, counts d2 1 , wrong -, pulsing next playing -
+  j4: waits on -, counts , wrong -, pulsing next playing -
+  e9: waits on e9, counts , wrong -, pulsing next playing -
+  a5: waits on a5, counts , wrong -, pulsing next playing -
+  d2: waits on d2, counts , wrong -, pulsing next playing -
   g5: waits on -, counts , wrong -, pulsing next playing 35x8x26x42x29
   W:WK1,28,32,45:BK29
 dropped stop by stop
-  j4 to e9: waits on e9, counts e9 3 , wrong -, pulsing next playing -
-  e9 to a5: waits on a5, counts a5 2 , wrong -, pulsing next playing -
-  a5 to d2: waits on d2, counts d2 1 , wrong -, pulsing next playing -
+  j4 to e9: waits on e9, counts , wrong -, pulsing next playing -
+  e9 to a5: waits on a5, counts , wrong -, pulsing next playing -
+  a5 to d2: waits on d2, counts , wrong -, pulsing next playing -
   d2 to g5: waits on -, counts , wrong -, pulsing next playing 35x8x26x42x29
 straight to the last square
   g5: waits on -, counts , wrong -, pulsing next playing 35x8x26x42x29
   j4 to g5: waits on -, counts , wrong -, pulsing next playing 35x8x26x42x29
 two wrong squares
-  e9: waits on e9, counts e9 3 , wrong -, pulsing next playing -
+  e9: waits on e9, counts , wrong -, pulsing next playing -
   i1, wrong: waits on e9, counts e9 3 , wrong i1, pulsing b4 f4 b6 next playing -
   i1 again: waits on e9, counts e9 3 , wrong i1, pulsing next a5 (pulsing) playing -
-  a5: waits on a5, counts a5 2 , wrong i1, pulsing next d2 (pulsing) playing -
-  a moment later: waits on a5, counts a5 2 , wrong -, pulsing next d2 (lit) playing -
+  a5: waits on a5, counts , wrong i1, pulsing next d2 (pulsing) playing -
+  a moment later: waits on a5, counts , wrong -, pulsing next d2 (lit) playing -
   with move hints, from the first stop
   e9: waits on e9, counts e9 3 , wrong -, pulsing next a5 (pulsing) playing -
 take back mid-capture
-  a5: waits on a5, counts a5 2 , wrong -, pulsing next playing -
-  take back: waits on -, counts j4 4 , wrong -, pulsing next playing -
+  a5: waits on a5, counts , wrong -, pulsing next playing -
+  take back: waits on -, counts , wrong -, pulsing next playing -
   B:WK1,K21,24,28,31,32,33,45:BK35, history 0, selected -
-  j4, e9 again: waits on e9, counts e9 3 , wrong -, pulsing next playing -
+  j4, e9 again: waits on e9, counts , wrong -, pulsing next playing -

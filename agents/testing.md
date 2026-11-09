@@ -40,7 +40,9 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   one piece each, black against the computer on 10×10, every capture and each landing of a
   king's chosen by taps and by a drag, on the flat and the 3D board, nothing played unchosen:
   `choice`; a draw by a count tapped to its last move, its countdown, card, frames, undo,
-  against the computer, kept in a saved game, and by repetition: `draw`), `shell`
+  against the computer, kept in a saved game, and by repetition: `draw`; when a capture's
+  count shows, on mistakes only from a mistake to the next right jump and with move
+  hints at once, on the flat and the 3D board: `pips`), `shell`
   (home, the switch to the game and back, settings and their file, their taps and the
   board beside them, the transitions between home and settings, home and the game, and
   the puzzles to pick from and a puzzle (their frames, the end, a tap during them, turning

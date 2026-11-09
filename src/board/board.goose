@@ -129,6 +129,9 @@ struct Board {
     misses: i64,
     // No count on the pieces that must capture: the computer is to move (game::frame).
     quiet: bool,
+    // On mistakes only, the count shows from a mistake while a capture is due until the
+    // next right move or jump (`counting`); with move hints it always shows.
+    counted: bool,
     // The move being shown: the position before it, when it started, and where the
     // piece starts from if it was dropped there; `back`, a move shown sliding back.
     moving:    bool,
@@ -194,6 +197,7 @@ fn show(b: Board&, p: rules::Position) {
     b.glow = -1;
     b.kept_at = -1.0;
     b.misses = 0;
+    b.counted = false;
 }
 
 // Starts a new game from position p.
@@ -391,6 +395,7 @@ fn start_move(b: Board&, i: i64, now: f64) {
     b.glow = -1;
     b.kept_at = -1.0;
     b.misses = 0;
+    b.counted = false;
     // The must-capture pulse belongs to the position the mistake was made in: left on, it
     // would ring the next side's capturers, the computer's pieces after the child's move.
     b.pulse_end = 0.0;
@@ -442,14 +447,18 @@ fn abandon(b: Board&, now: f64) -> bool {
 fn must_capture(b: Board&) -> bool { b.moves.len > 0 && b.moves[0].captured != 0 }
 
 // A wrong move ending on square `sq`: its ring flashes, and if a capture was due, the
-// pieces that must capture pulse.
+// pieces that must capture pulse and, on mistakes only, show their count until the next
+// right move or jump (`counting`).
 fn mistake(b: Board&, sq: i64, now: f64) {
     b.steps.clear();
     b.wrong = sq;
     b.wrong_at = now;
     b.held = false;
     b.outtaken = 0;
-    if must_capture(b) { b.pulse_end = now + PULSE; }
+    if must_capture(b) {
+        b.pulse_end = now + PULSE;
+        b.counted = true;
+    }
 }
 
 // The pieces the selected piece has jumped on its way to the stop it waits on: the one
@@ -497,9 +506,22 @@ fn missed(b: Board&, sq: i64, now: f64) {
     if b.misses == 2 { b.kept_at = now; }
 }
 
-// A piece came to wait on a stop (`follow`): what it goes on to pulses from now.
+// A piece came to wait on a stop (`follow`): what it goes on to pulses from now. A right
+// jump hides the count a mistake showed (`counting`).
 fn kept(b: Board&, before: i64, now: f64) {
-    if b.steps.len > before { b.kept_at = now; }
+    if b.steps.len > before {
+        b.kept_at = now;
+        b.counted = false;
+    }
+}
+
+// Whether the pieces that must capture show how many pieces they take (2026-11-09,
+// docs/product.md): with move hints always; on mistakes only from a mistake to the next
+// right move or jump, as showing the count up front gives the capture away. Never in a
+// puzzle, on the computer's turn, or while a move is shown.
+fn counting(b: Board&) -> bool {
+    guard !b.by_hand && !b.quiet && !b.moving && must_capture(b) else { return false; }
+    return b.hints == MOVES || b.counted;
 }
 
 // Take back while a piece waits partway through a capture: the capture goes back to its
@@ -717,9 +739,9 @@ fn fill(b: Board&, l: Layout, now: f64) {
     }
     if pulsing { must |= b.outtaken; }
     // How many pieces each piece that must capture takes, at most, as pips round its
-    // ring (`takes`), whatever the hints: a long capture's length shows before it is
-    // found (2026-11-09). Partway through a capture, only on the piece making it.
-    let counting = !b.by_hand && !b.quiet && !b.moving && must_capture(b);
+    // ring (`takes`), when `counting`. Partway through a capture, only on the piece
+    // making it.
+    let count_on = counting(b);
     let fade_at = hops(b.move) as f64 * HOP;
     // A piece waiting partway through a capture made by hand is drawn on its stop; the
     // pieces it has jumped stay until the capture ends, as the rules take them.
@@ -744,7 +766,7 @@ fn fill(b: Board&, l: Layout, now: f64) {
             add(b, center(l, v, sq), r, if selected { 1.1 * unit } else { 0.0 }, black,
                 shown.kings & m != 0, if selected { 1.0 } else { 0.0 }, alpha, if must & m != 0 { ring } else { 0.0 });
             if sq == b.glow && !b.moving && b.pieces.len > 0 { b.pieces[b.pieces.len - 1].ring.y = glowing; }
-            if counting && b.steps.len == 0 { show_takes(b, sq); }
+            if count_on && b.steps.len == 0 { show_takes(b, sq); }
         }
     }
     if b.ghost && b.wrong >= 0 {
@@ -780,7 +802,7 @@ fn fill(b: Board&, l: Layout, now: f64) {
     } else if b.dragging && b.selected >= 0 {
         add(b, b.drag_at, r * 1.06, 1.6 * unit, b.pos.side == rules::BLACK,
             b.pos.kings & rules::bit(b.selected) != 0, 1.0, 1.0, 0.0);
-        if counting { show_takes(b, b.selected); }
+        if count_on { show_takes(b, b.selected); }
     } else if waits >= 0 {
         // A man that has passed the far row is crowned on it only where crowning goes on
         // mid-capture (Russian); in International it stays a man (rules.md).
@@ -790,7 +812,7 @@ fn fill(b: Board&, l: Layout, now: f64) {
         }
         add(b, center(l, v, waits), r, 1.1 * unit, b.pos.side == rules::BLACK, king, 1.0, 1.0, 0.0);
         if b.glow == b.selected && b.pieces.len > 0 { b.pieces[b.pieces.len - 1].ring.y = glowing; }
-        if counting { show_takes(b, b.selected); }
+        if count_on { show_takes(b, b.selected); }
     }
     if b.has_last && !b.moving {
         mark(b, b.marks.last, b.last.from);
