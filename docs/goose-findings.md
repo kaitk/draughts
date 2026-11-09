@@ -78,6 +78,31 @@ two. SDL 3.4.16 (`fa2c02b`).
   a discrete GPU with many large resources; a threshold over which allocations are
   dedicated (as VMA does for resources over half a block) would serve both.
 
+## goose_gfx: an MSAA pass stores its samples and depth, and cycles them (2026-11-09)
+
+`begin_pass` gives a color target with a resolve texture `RESOLVE_AND_STORE`, every depth
+and stencil target `STORE`, and cycles whatever it clears. On a tiler (Mali) the tile
+memory holds the samples, so storing them writes them all out: a 4x target at 1920 x 1200
+is about 74 MB of samples and depth to memory every drawn frame. Arm's Mali best practice
+for MSAA is a transient multisampled target, `DONT_CARE` stores, and the resolve in the
+same pass, at about 1-2% of the cost of rendering without it. Cycling a clear can also keep
+a second copy of the 4x target for good. goose_gfx `6cfa3de`, Goose v2026.4.
+
+- Here: `patches/goose_gfx/0005-msaa-resolve-without-store.patch`, inside `begin_pass`
+  only, so Goose code compiles against the release's `gfx.goose` unchanged. A color target
+  with a resolve texture stores `RESOLVE` (samples discarded); a depth target of more than
+  one sample stores `DONT_CARE` for depth and stencil (SDL asserts that a multisampled
+  texture has no SAMPLER usage, so nothing can read it later; gfx's own check says the
+  same); neither is cycled on clear. Single-sampled depth keeps `STORE`, for shadow maps.
+  A program that loads a multisampled depth in a later pass (`clear_depth` off) now gets
+  undefined contents. Not yet measured on the tablet.
+- Upstream: the same defaults in goose_gfx, or fields in `PassDesc` for the store ops and
+  `cycle`.
+- Note for the user (SDL, your call): at the pinned commit SDL resolves in the pass, but its
+  Vulkan backend never uses transient or lazily allocated memory for a target, and adds
+  transfer usage to every texture, so the 4x target still costs its real bytes; the patch
+  saves the bandwidth, not the memory.
+
 ## goose_gfx: the screen always has a depth target, and is cycled every frame (2026-11-08)
 
 `gfx_create_screen` makes a window-sized depth target (D32F where supported) beside the

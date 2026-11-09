@@ -876,6 +876,9 @@ depth target, a shadow map, albedo, normal, and roughness atlases with mips):
   16 MiB small block, plus about 10 MB that is the driver's own; EGL mtrack is the
   swapchain. A 4× MSAA target costs four times the screen's bytes, since SDL doesn't use
   Mali's lazily allocated (tile-only) memory for transient targets.
+  `patches/goose_gfx/0005-msaa-resolve-without-store.patch` keeps the samples and the
+  multisampled depth from being written out each frame, which saves bandwidth, not
+  memory ([findings](../goose-findings.md)).
 
 ## Frames and battery
 
