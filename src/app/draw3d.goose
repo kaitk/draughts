@@ -1,4 +1,4 @@
-// The game's 3D board (task 015), behind the `--3d` flag with the Board row's 3D chosen
+// The game's 3D board (task 015), drawn when the Board row's 3D is chosen
 // (settings::raised): drawn by the renderer the prototype shares (src/render3d/) from the
 // scene the flat board's draw lists fill (view3d::fill), so selection, targets, a move's
 // hop, a capture's fade, and the must-capture ring follow the same state and timing as

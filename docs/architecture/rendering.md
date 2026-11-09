@@ -439,10 +439,8 @@ the prototype tried, kept for 3D:
   last, a tile for by the date, so on a phone in portrait, where the row wraps, the four
   seasons keep one row and by the date goes under them, in the same order at every size
   (2026-11-08); and kings (auto, crown, or stack, the last two each with its
-  king drawn on the tile). The prototype's Board row (flat or raised) is hidden until the
-  3D board exists (task 015): the board is always flat, the file's `board = 2d|3d` key is
-  still read and written, and the app's `--3d` flag shows the row, whose 3D tile then
-  plays the game on the 3D board (`Settings.show_board_row`, `settings::raised`,
+  king drawn on the tile). Between them the Board row, flat or raised (the file's
+  `board = 2d|3d`): its 3D tile plays the game on the 3D board (`settings::raised`,
   `src/shell/settings.goose`; the game screen round it is under "Board and pieces"), and
   shows it on every screen with a board: home, the preview here (its kings' auto a
   stack), and a puzzle. Each
@@ -474,8 +472,8 @@ the prototype tried, kept for 3D:
   group's glass, without its title row, is as tall as the taller of the two so the board
   stays put. A board under 128 dp isn't shown, as on home (a 9:16 phone at 480 dp). In
   portrait the title takes a smaller face, or none, where it doesn't fit beside the
-  language (2026-11-08). The Board row (`--3d`) makes the look group too tall for a
-  landscape 800 px tall, so with it the tablet shows one group at a time too; their notes and the thumbnails' labels are in the 17 px
+  language (2026-11-08). The Board row makes the look group too tall for a
+  landscape 800 px tall, so the tablet shows one group at a time too; their notes and the thumbnails' labels are in the 17 px
   face, which makes them a little wider than the prototype's 13 px, so the landscape
   board is about 550 px where the prototype's is 590. The tutorial's tile is dimmed and
   takes no tap until it exists.

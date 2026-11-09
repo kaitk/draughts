@@ -65,8 +65,7 @@ stale must-capture ring after a move, a dropped capture that couldn't go on from
 stop, easy as the default starting at skill 0 with overlooks below 15, play again at the
 adapted skill, the puzzles' turn piece, a wrong puzzle move answered before it slides
 back, seven puzzles made unique, `--reset-skill`, and task 040 (a hint in the game, for
-later). The 3D board (015) lives on the `3d-board` branch until it is complete
-(`docs`, task 015's "When 3D lands").
+later). The 3D board (015) landed in main on 2026-11-09.
 
 What needs the user:
 
@@ -84,7 +83,7 @@ What needs the user:
 6. The child's next games: whether easy at skill 0 feels right (`docs/architecture/ai.md`'s
    tuning notes), and whether multi-jump captures are clear with the capture count.
 
-Then: 015 on `3d-board` (its "When 3D lands"), 041's carved looks, 036 after the release.
+Then: 015's device checks, 041's carved looks, 036 after the release.
 
 Not in the MVP (the user, 2026-11-08): sound; the visual feedback is clear, and sound
 may come soon after, kept from being bling. To decide later: a puzzle rating like

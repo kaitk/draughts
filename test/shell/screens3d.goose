@@ -33,7 +33,6 @@ fn inside(r: float4, a: float4) -> bool {
 
 fn raised(variant: u8) -> shell::Shell {
     var sh = shell::new(variant);
-    sh.prefs.show_board_row = true;
     sh.prefs.board = settings::RAISED;
     return sh;
 }

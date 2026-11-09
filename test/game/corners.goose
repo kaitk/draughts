@@ -183,7 +183,6 @@ fn main() {
     g.scale = gui::scale_of(1280.0, 800.0);
     gui::test_faces(g);
     var sh = shell::new(rules::RUSSIAN);
-    sh.prefs.show_board_row = true;
     sh.prefs.board = settings::RAISED;
     sh.screen = shell::GAME;
     drive::idle(sh, g, 0.0);

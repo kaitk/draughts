@@ -731,13 +731,11 @@ fn read_game(sh: Shell&) -> bool {
 fn enter(sh: Shell&, index: i64, s: settings::Settings) {
     let ps .= sh.players;
     let language = sh.prefs.language;
-    let row = sh.prefs.show_board_row;
     ps.playing = index;
     sh.prefs = s;
     sh.prefs.picture = ps.list[index].picture;
     sh.prefs.name = ps.list[index].name;
     sh.prefs.language = language;
-    sh.prefs.show_board_row = row;
     sh.game = game::new(sh.prefs.variant as u8);
     let screen = sh.screen;
     read_game(sh);

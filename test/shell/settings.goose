@@ -4,8 +4,8 @@
 // On the regrouped screen a tap applies at once and marks the settings changed for the
 // app to write: the language in the title row; the draughts a new game starts on, move
 // hints (which the game's board takes), a season, and the kings (which the game's board
-// draws too); the tutorial does nothing until it exists, and the 3D board, shown with the
-// `--3d` flag, plays the game on the 3D board, whose kings are stacks for auto. Each choice
+// draws too); the tutorial does nothing until it exists, and the Board row's 3D plays the
+// game on the 3D board, whose kings are stacks for auto. Each choice
 // restages the board beside them: its size, its kings, and what the move hints show on
 // a fixed position, where white must capture with the man on d4 or the king on h6.
 // With mistakes only, a wrong move's ring flashes and both capturing pieces pulse, then
@@ -109,7 +109,6 @@ fn main() {
     strings::use(strings::EN);
     var sh = shell::new(rules::RUSSIAN);
     sh.screen = shell::SETTINGS;
-    sh.prefs.show_board_row = true;     // the Board row, hidden by default (below)
     drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 0.0);
     print("tiles ", drive::tiles(g), " of ", TILES, ", the kings' tiles' pieces ", sh.over.len, ": ",
           sh.over[0].look.y, " and ", sh.over[1].look.y);
@@ -172,21 +171,17 @@ fn main() {
     drive::tap(sh, g, drive::tile(g, BACK), 10.2);
     print("back: ", sh.screen == shell::HOME);
 
-    // The Board row is hidden by default, the tiles after it each one place sooner, and
-    // the file's board key is kept as read; the flag's field shows the row again.
+    // A file's `board = 3d` plays on the 3D board, the Board row showing with every tile,
+    // and the key is kept when another choice is written.
     drive::size = float2 { 1280.0, 800.0 };
-    var hidden = shell::new(rules::RUSSIAN);
-    hidden.screen = shell::SETTINGS;
-    hidden.prefs = settings::parse("board = 3d\n");
-    drive::frame(hidden, g, float2 { -1.0, -1.0 }, false, false, false, 0.0);
-    print("Board row hidden by default: ", !hidden.prefs.show_board_row, ", tiles ", drive::tiles(g), " of ", TILES - 2,
-          ", kings' tiles at ", AUTO - 2, "..", STACK - 2);
-    drive::tap(hidden, g, drive::tile(g, STACK - 2), 1.0);
+    var raised = shell::new(rules::RUSSIAN);
+    raised.screen = shell::SETTINGS;
+    raised.prefs = settings::parse("board = 3d\n");
+    drive::frame(raised, g, float2 { -1.0, -1.0 }, false, false, false, 0.0);
+    print("a file's board = 3d: raised ", settings::raised(raised.prefs), ", tiles ", drive::tiles(g), " of ", TILES);
+    drive::tap(raised, g, drive::tile(g, STACK), 1.0);
     var kept: u8[>..] = [];
-    settings::write(hidden.prefs, kept);
-    print("kings stack taps: ", hidden.prefs.kings == board::STACK, "; board key kept in the file: ",
+    settings::write(raised.prefs, kept);
+    print("kings stack taps: ", raised.prefs.kings == board::STACK, "; board key kept in the file: ",
           settings::parse(kept).board == settings::RAISED);
-    hidden.prefs.show_board_row = true;
-    drive::frame(hidden, g, float2 { -1.0, -1.0 }, false, false, false, 2.0);
-    print("with the field set: tiles ", drive::tiles(g), " of ", TILES);
 }

@@ -83,6 +83,5 @@ English: picture = fox;season = by-date;board = 3d;hints = mistakes;kings = auto
 portrait: board at vec4<f32> { 160.52158, 206.74384, 478.95682, 7.6633096 }, the groups from 856.88904, clear true, look beside game true, tiles 19
 portrait stack: picture = fox;season = by-date;board = 3d;hints = mistakes;kings = stack;draughts = international;level = easy;color = white;clock = none;skill_easy = 0;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0; language 0, changed true, game's board hints moves false, kings 2
 back: true
-Board row hidden by default: true, tiles 17 of 17, kings' tiles at 14..16
+a file's board = 3d: raised true, tiles 19 of 19
 kings stack taps: true; board key kept in the file: true
-with the field set: tiles 19 of 19

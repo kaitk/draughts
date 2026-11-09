@@ -117,11 +117,8 @@ second, takes some thousands of frames: `--variant russian --computer black --ta
 --tap d4 --frames 5000`. The settings are in the app's storage folder (on the Mac
 `~/Library/Application Support/kaitk/draughts/`): `settings.txt` the device's (the
 language, who plays), `player-N.txt` each player's ([players](architecture/README.md#players));
-`--theme`, `--hints`, and `--lang` override them for a run without changing them. Settings' Board row (flat or 3D) is hidden
-until the 3D board exists; `--3d`, a flag with no value, shows it for working on task 015,
-its 3D tile playing the game on the 3D board, and `--3d --board 3d` plays a run there at once
-(the file's `board` key is read and written either way, and the board is flat while the
-row is hidden); `--wood N` (0 to 3) and `--marble N` (0 the slate, 1 to 4) pick the 3D
+`--theme`, `--hints`, and `--lang` override them for a run without changing them. `--board 3d` plays a run
+on the 3D board at once, as settings' Board row's 3D does; `--wood N` (0 to 3) and `--marble N` (0 the slate, 1 to 4) pick the 3D
 board's wood and winter frame's marble for the run (task 039). Each player's game is kept in `game-N.bin` beside them; a
 run with `--fen`, `--tap`, `--screen`, `--frames`, `--variant`, `--clock`, or
 `--computer` neither reads nor writes it, so
@@ -337,7 +334,7 @@ and the properties file written beside it with the same password, both `chmod 60
 
 ```sh
 adb shell am start -S -n io.github.kaitk.draughts/.DraughtsActivity \
-    --es args "'--3d --board 3d --screen game --theme wood --variant russian --bench 300'"
+    --es args "'--board 3d --screen game --theme wood --variant russian --bench 300'"
 adb logcat -d | grep bench3d
 ```
 

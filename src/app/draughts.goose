@@ -93,7 +93,6 @@ fn main() {
     // --hold T (keeps a transition at T of the way, 0..1, for a screenshot),
     // --win T (keeps a win at T seconds into its celebration, for a screenshot). --theme,
     // --hints, and --lang override the settings for the run without changing them.
-    // --3d (alone) shows settings' Board row, hidden until the 3D board exists (task 015);
     // --wood N and --marble N choose the 3D board's wood (0..3) and winter frame's marble
     // (0 the slate, 1..4), to try them in the game (task 039); --summer N summer's 3D look
     // (0..5, looks::SUMMERS; 4 and 5 amber stone, task 041); --spring N spring's look (0
@@ -118,7 +117,6 @@ fn main() {
     var go = -1;
     var hold = -1.0;
     var win_at = -1.0;
-    var show_3d = false;
     var raised = false;
     var bench = 0;
     var wood_3d = -1;
@@ -133,13 +131,12 @@ fn main() {
     var taps: u8[..3][..16] = [];
     let argv = args();
     var i = 1;
-    for a in argv { if a == "--3d" { show_3d = true; } }
     // --reset-skill: the playing player back to easy, the computer's skill at every level
     // at its start with the first steps to come, kept in their file; stars and games stay.
     var reset_skill = false;
     for a in argv { if a == "--reset-skill" { reset_skill = true; } }
     while i + 1 < argv.len {
-        if argv[i] == "--3d" || argv[i] == "--reset-skill" { i += 1; continue; }   // no value: the pairs shift by one
+        if argv[i] == "--reset-skill" { i += 1; continue; }   // no value: the pairs shift by one
         if argv[i] == "--theme" && theme::by_name(argv[i + 1]) >= 0 { kind = theme::by_name(argv[i + 1]); }
         if argv[i] == "--frames" {
             let n, ok = parse_int(argv[i + 1]);
@@ -267,7 +264,6 @@ fn main() {
         game::start(sh.game, sh.game.b.variant, max(clock_kind, 0), computer, lv, prefs.skill[lv], prefs.games);
     }
     sh.prefs = prefs;
-    sh.prefs.show_board_row = show_3d;
     if reset_skill {
         sh.prefs.level = game::EASY;
         sh.prefs.skill = ai::LEVEL_SKILL;

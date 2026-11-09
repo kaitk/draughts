@@ -106,7 +106,6 @@ fn main() {
     g.scale = gui::scale_of(1280.0, 800.0);
     gui::test_faces(g);
     var sh = shell::new(rules::RUSSIAN);
-    sh.prefs.show_board_row = true;
     sh.prefs.board = settings::RAISED;
     game::start(sh.game, rules::RUSSIAN, clock::NONE, -1, game::MEDIUM, 40, 0);
     sh.screen = shell::GAME;

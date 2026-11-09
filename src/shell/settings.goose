@@ -2,7 +2,7 @@
 // the language at the title row's right end, and the choices as words in two glass
 // groups by what they change. Game: the draughts a new game starts on (the setup's
 // choice too), move hints, and the tutorial. Look: the background (one season, or by
-// the date), the board (flat or raised, a row hidden until the 3D board exists), and the kings (auto,
+// the date), the board (flat or raised), and the kings (auto,
 // crown, or stack). Beside them is home's board as the choices make it: its size, the
 // kings, and what the move hints show, on a fixed position. In landscape the choices
 // take the width they need at the left and the board the rest (near square, each
@@ -78,7 +78,7 @@ struct Settings {
     name:             players::Name = [],
     first_start_done: bool          = false,
     season:           i64           = BY_DATE, // a theme (app/theme.goose), or BY_DATE
-    board:            i64           = FLAT,    // kept in the file; the flat board is drawn until show_board_row
+    board:            i64           = FLAT,    // the Board row's: flat, or raised (the 3D board)
     hints:            i64           = board::MISTAKES,
     kings:            i64           = AUTO,
     language:         i64           = SYSTEM, // strings::EN.., or SYSTEM; the device's, in settings.txt
@@ -95,11 +95,6 @@ struct Settings {
     // The stars won in each puzzle, 1 to 3, by its set's variant (puzzles::set_of) and
     // its id; 0 for one not solved.
     stars: u8[puzzles::MAX_PUZZLES + 1][rules::VARIANT_COUNT] = [[0; puzzles::MAX_PUZZLES + 1]; rules::VARIANT_COUNT],
-    // Whether the Board row shows. The 3D board doesn't exist yet (task 015), so the row
-    // is hidden and the board always flat, whatever the file's `board` says; the app's
-    // `--3d` flag turns it on for working on that task. Not in the file; remove it, and
-    // this switch, when 3D lands.
-    show_board_row: bool = false,
     // The group a phone's settings show, 0 the game's or 1 the look's. Not in the file.
     group: i64 = 0,
 }
@@ -110,14 +105,11 @@ let BACK = 1;
 let CHANGED = 2;
 let SHOWN = 3;              // the other group shown (a phone's tabs): drawn again, nothing kept
 
-// How the board draws kings: auto is a crown, the board being flat (the only board
-// drawn while the Board row is hidden, and none other exists yet).
+// How the flat board draws kings: auto is a crown there.
 fn king_look(s: Settings) -> i64 { if s.kings == board::STACK { board::STACK } else { board::CROWN } }
 
-// Whether the game is played on the 3D board: chosen in the Board row, which shows only
-// with the app's `--3d` flag until 3D lands (task 015); without it a file's `board = 3d`
-// still plays flat.
-fn raised(s: Settings) -> bool { s.show_board_row && s.board == RAISED }
+// Whether the game is played on the 3D board, chosen in the Board row.
+fn raised(s: Settings) -> bool { s.board == RAISED }
 
 // How the 3D board draws kings: auto is a stack of two plain discs there.
 fn raised_king_look(s: Settings) -> i64 { if s.kings == board::CROWN { board::CROWN } else { board::STACK } }
@@ -324,16 +316,11 @@ let ROW_H = [88.0, 88.0, 88.0, 88.0, 88.0, 88.0]; // the floor for small hands (
 let GROUP_ICONS = [gui::TARGET, gui::SUN];
 let GROUP_TITLES = [strings::SETTINGS_GAME, strings::SETTINGS_LOOK];
 
-// The rows a group shows: the game's three, and the look's background, board (only with
-// the switch on), and kings. Row k of a group is `group_row`.
-fn group_rows(s: Settings&, group: i64) -> i64 {
-    return if group == 0 || s.show_board_row { 3 } else { 2 };
-}
+// The rows a group shows: the game's three, and the look's background, board, and kings.
+// Row k of a group is `group_row`.
+fn group_rows(group: i64) -> i64 { return 3; }
 
-fn group_row(s: Settings&, group: i64, k: i64) -> i64 {
-    let row = GAME_ROWS * group + k;
-    return if row >= BOARD_ROW && !s.show_board_row { row + 1 } else { row };
-}
+fn group_row(group: i64, k: i64) -> i64 { return GAME_ROWS * group + k; }
 
 // Tile i of a row's word.
 fn word(row: i64, i: i64) -> i64 {
@@ -429,8 +416,8 @@ fn rows(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4,
     let u = g.scale;
     var y = r.y;
     var changed = false;
-    for k in group_rows(s, group) {
-        let row = group_row(s, group, k);
+    for k in group_rows(group) {
+        let row = group_row(group, k);
         if k > 0 { y += ROW_GAP * u; }
         let left = (NAME_W + 14.0) * u;
         let tiles = if aside { float4 { r.x + left, y, r.z - left, 0.0 } }
@@ -461,8 +448,8 @@ fn group_height(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, w:
 fn group_width(s: Settings&, g: gui::Gui&, group: i64, aside: bool) -> f32 {
     let u = g.scale;
     var widest: f32 = 0.0;
-    for k in group_rows(s, group) {
-        let row = group_row(s, group, k);
+    for k in group_rows(group) {
+        let row = group_row(group, k);
         var w = -TILE_GAP * u;
         for i in ROW_TILES[row] { w += tile_width(g, row, i) + TILE_GAP * u; }
         widest = max(widest, w);

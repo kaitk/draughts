@@ -49,8 +49,8 @@ Chess may follow on the same base.
    100+ puzzles; endgame drills (2 kings vs 1, Petrov's triangle); child profiles with
    stars; sound.
 3. **Looks.** A 3D board from the same game state, and the glass UI from the prototypes
-   and design boards. Settings' Board row (flat or 3D) stays hidden until the 3D board
-   exists.
+   and design boards. Settings' Board row chooses flat or 3D, and every screen with a
+   board follows it.
 4. **Release.** Play Store under Google's Families Policy: no ads or tracking, a privacy
    policy. English checkers as a rules toggle. The application id is
    `io.github.kaitk.draughts` (2026-11-08); the build signs an app bundle (AAB) for Play

@@ -1,6 +1,6 @@
 # 015: The 3D board
 
-Status: todo
+Status: in-progress
 
 A 3D board from the same game state (`docs/product.md`, after the MVP: Looks), on the
 title menu first and as a setting for play. Start simple: the board floats in front of
@@ -422,13 +422,12 @@ portrait; the light stays put on screen through the hot-seat turn.
   edge 69% → 74% → 77%), the screen used 888 → 942 → 976 of 1280 dp; on a 20:9 phone at
   540 dp 337 → 373 → 395 dp tall. Width still holds the board; a steeper camera only
   fills more of the empty height. Now 65° (the camera controls, below).
-- **Wiring:** `settings::raised` (the Board row's 3D with `--3d`; the 3D tile now takes
-  the tap) makes the game screen use `corners_in` and `view3d::pick`
+- **Wiring:** `settings::raised` (the Board row's 3D; the 3D tile now takes the tap) makes the game screen use `corners_in` and `view3d::pick`
   (`shell::game_layout`, `game::frame`); kings' auto is a stack there
-  (`settings::raised_king_look`). `--3d --board 3d` plays a run on it. In phase 1
+  (`settings::raised_king_look`). `--board 3d` plays a run on it. In phase 1
   `src/app/draw3d.goose` was a stub drawing the flat board in the flat square.
   `test/game/corners` plays c3–d4 by projected taps and drags f6 to e5 through the
-  shell. `--3d` and `show_board_row` stay.
+  shell. `--3d` and `show_board_row` stayed until 3D landed (below).
 - **Draw on demand:** `view3d::changes` against the last scene drawn: DRAW when anything
   the 3D board shows differs (view, instances, state, marks, flash, occlusion, dim),
   SHADOW too when the instances do (a piece moved, lifted, appeared or went). The app
@@ -462,11 +461,11 @@ portrait; the light stays put on screen through the hot-seat turn.
   not the ring's distance, which jumps at the squares' edges and drew bright seams there.
   The prototype's GLOW_FRAG gave way to it.
 - **Choosing the wood in the game** (2026-11-09): the app's `--wood N` (0 to 3) and
-  `--marble N` (0 the slate, 1 to 4), beside `--3d`, pick the 3D board's wood with its
+  `--marble N` (0 the slate, 1 to 4) pick the 3D board's wood with its
   finish and the winter frame's marble, to try 2 and 3 on the real board:
-  `../../build/draughts --3d --board 3d --wood 3`. `--spring N` likewise picks spring's
+  `../../build/draughts --board 3d --wood 3`. `--spring N` likewise picks spring's
   look (0 the birch, 1 the elven carved stone, task 041):
-  `../../build/draughts --3d --board 3d --theme birch --spring 1`.
+  `../../build/draughts --board 3d --theme birch --spring 1`.
 - **In the game** (`src/app/draw3d.goose`): set up the first time the 3D board shows,
   its look from the app's theme (stone the winter stone, the rest autumn wood for now)
   and the photograph the theme's own, baked again on a theme or board size change. Each
@@ -482,7 +481,7 @@ portrait; the light stays put on screen through the hot-seat turn.
   never committed; `agents/testing.md`): the selection and targets at 1280 × 800, a
   must-capture ring and a wrong tap's flash, 10 × 10 in winter stone and in portrait at
   800 × 1280, round the corners panels. Not on the tablet yet.
-- **Memory** behind `--3d`: the renderer's targets come on top of the flat board's, made
+- **Memory** on the 3D board: the renderer's targets come on top of the flat board's, made
   once (the four baked surfaces with mips, about 85 MB, now 70, the shadow map, the
   4× target and its depth, and the kept image the screen's size), and the photograph is
   decoded a second time for its blur and harmonics. Measured on the Pixel 7a below.
@@ -491,7 +490,7 @@ portrait; the light stays put on screen through the hot-seat turn.
 
 Pixel 7a (Tensor G2, Mali-G710 MC7, Vulkan, Android 17), 2400 × 1080 landscape, the
 display at 60 Hz (its setting; 90 Hz is off), the game on the 3D board in autumn
-(`--3d --board 3d --screen game --theme wood`), International and Russian. Each frame
+(`--board 3d --screen game --theme wood`), International and Russian. Each frame
 figure the median of three launches, each launch's the median of 300 frames (the app's
 `--bench 300`, docs/development.md, "Time the 3D board"); memory two launches each, 8 s
 after the launch, `dumpsys meminfo`. Before is `e279c86` with only the bench added.
@@ -787,29 +786,9 @@ the most expensive thing the app does on a tiler.
 
 ## When 3D lands
 
-Every screen shows the 3D board behind `--3d` (phase 3). Still needed before merging: the
-tablet's frame times and memory on each screen with the 3D board (and the performance
-branch's bake and MSAA changes rebased in), draw-on-demand checked there with
-`scripts/idle_cpu.sh`, the camera controls tried on the tablet (the hot-seat turn's frames
-draw the shadow map each), the open points above as the user decides them, and the
-user's look at spring and summer.
-
-Then, once the user says merge, flip exactly this:
-
-1. **Show the Board row:** remove `Settings.show_board_row` (`src/shell/settings.goose`:
-   the field, `group_rows`' and `group_row`'s checks, so the look always has three rows)
-   and its copies in `src/shell/shell.goose` (`enter` keeps it across players) and
-   `src/app/draughts.goose` (`sh.prefs.show_board_row = show_3d`).
-2. **Follow `Settings.board`:** `settings::raised` becomes `s.board == RAISED`; its comment
-   and `king_look`'s ("the only board drawn while the Board row is hidden") change with it.
-3. **Remove the `--3d` flag:** its parse and the pairs' shift in `src/app/draughts.goose`
-   (`show_3d`, the `--3d` skip), its line in the flags comment, and `docs/development.md`.
-   `--board 3d` stays, to open on the 3D board.
-4. **Docs:** `docs/architecture/rendering.md`'s Settings paragraph ("hidden until the 3D
-   board exists ... the app's `--3d` flag shows the row") says the row shows flat or raised
-   and every screen follows it; this task's references to `--3d`; `docs/product.md`'s
-   Looks, if it still calls the 3D board later.
-5. **Tests:** `test/shell/settings.goose` (its "Board row hidden by default" line and the
-   cases that set `show_board_row`; the look's tile count with the row always there), then
-   `test/game/corners` and `test/shell/screens3d`, which set it, and
-   every expected output that counts the settings' tiles; `scripts/test.sh` passing.
+Landed in main on 2026-11-09, once the user said merge: settings always shows the Board
+row and every screen follows `Settings.board` (`settings::raised` is `s.board ==
+RAISED`); `Settings.show_board_row` and the `--3d` flag are gone, `--board 3d` opens a
+run on the 3D board; the docs and the settings tests count the Board row's tiles.
+`poc/3d/` (its keys W, M, S, G, T, K, P, V and panel), the looks' flags, and the HTML
+prototypes stay.
