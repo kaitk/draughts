@@ -792,3 +792,21 @@ RAISED`); `Settings.show_board_row` and the `--3d` flag are gone, `--board 3d` o
 run on the 3D board; the docs and the settings tests count the Board row's tiles.
 `poc/3d/` (its keys W, M, S, G, T, K, P, V and panel), the looks' flags, and the HTML
 prototypes stay.
+
+### The release on the tablet (2026-11-09)
+
+The release (`--release`, the upload key) installed over the tablet's
+`io.github.kaitk.draughts`, its player's profile kept and on the flat board; the test
+builds `.threed` and `.board3d` uninstalled. A game (Russian, c3–d4, the camera turned to
+black's side) and a puzzle (21) drew on the 3D board with `--board 3d`, which leaves the
+profile's files alone. Idle 30 s with `scripts/idle_cpu.sh`, memory with `dumpsys
+meminfo` at rest:
+
+| SM-X230, 1920 × 1200 | Idle program thread | Wakeups | GL mtrack | EGL mtrack | Total PSS |
+| --- | --- | --- | --- | --- | --- |
+| 2D, home | 0.03% | 30 | 37 MB | 60 MB | 145 MB |
+| 3D, a game | 0.27 to 0.30% | 30 | 193 MB | 32 MB | 287 MB |
+| 3D, a puzzle | 0.27% | 30 | 179 MB | 46 MB | 286 MB |
+
+The 3D board's idle wakeup, once a second as the flat board's, costs about 2.7 ms of CPU
+against 0.3: not yet looked into (perhaps the scene filled and compared each wakeup).
