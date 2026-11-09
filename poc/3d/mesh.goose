@@ -19,12 +19,13 @@ let INLAY:     f32 = 0.1;
 let INNER:     f32 = 4.1;
 let FRAME_W:   f32 = 0.5;
 let FRAME_TOP: f32 = 0.05;
-let BULLNOSE:  f32 = 0.2;
-let BOTTOM:    f32 = -0.5;
+let BULLNOSE:  f32 = 0.09;
+let BOTTOM:    f32 = -0.7;
 
-// A piece: 82% of a square across (the 3D reference's; the 2D board's are 78%), its height 22% of its diameter.
-let RADIUS: f32 = 0.41;
-let HEIGHT: f32 = 0.172;
+// A piece: 88% of a square across and its height 27% of its diameter, as measured on
+// the 3D reference at the same framing (the 2D board's are 78%).
+let RADIUS: f32 = 0.44;
+let HEIGHT: f32 = 0.24;
 
 // What a fragment is made of, the vertex's material.
 let MAT_FIELD: f32 = 0.0;
@@ -67,34 +68,44 @@ fn arc(p: Profile&, co: f32, cy: f32, r: f32, a0: f32, a1: f32, steps: i64, conv
     }
 }
 
+// The piece's top, a smooth function of the distance from the axis over the radius:
+// a recessed inner disc, a soft cove rising to a low crest at 70%, a flat ring out to
+// where the edge rounds at 86%. The mesh samples it and the shader repeats it
+// (shaders::LIT_FRAG's top_height and top_ao) for the normal and the occlusion at each
+// pixel, so the cove shades the same however the triangles fall.
+let EDGE_AT: f32 = 0.86;
+fn top_height(u: f32) -> f32 {
+    let c = (u - 0.705) / 0.028;
+    let lo: f32 = 0.6;
+    let hi: f32 = 0.67;
+    return -0.022 * (1.0 - smoothstep(lo, hi, u)) + 0.006 * exp(-c * c);
+}
+fn top_ao(u: f32) -> f32 {
+    let c = (u - 0.63) / 0.04;
+    return 1.0 - 0.06 * (1.0 - u) - 0.35 * exp(-c * c);
+}
+
 // The piece's profile from its axis out over the face and down the side, in world units
-// at scale 1: a recessed inner disc to 62% of the radius, a groove at 66% with its
-// floor in shade, a raised lip at 71%, a flat ring, the outer edge rounded from 86%,
-// the side, a small round at the foot, and the underside.
+// at scale 1: the top sampled from top_height, finely over the cove and the crest, the
+// outer edge rounded from 86% of the radius into the side, the side, a small round at
+// the foot, and the underside.
 fn piece_profile(p: Profile&) {
     let r = RADIUS;
     let h = HEIGHT;
-    let face = h - 0.004;        // the flat ring between the lip and the edge
-    let inner = h - 0.010;       // the inner disc, recessed
-    // The groove: a concave half round, its floor in shade.
-    let gc = 0.635 * r;
-    let gr = 0.06 * r;
-    p.line(0.0, inner, gc - gr, inner, 1.0, 0.9);
-    p.arc(gc, inner, gr, PI, PI * 2.0, 10, false, 0.85, 0.75);
-    // The lip: its inner wall up from the groove, a convex half round crest, down to
-    // the flat ring.
-    let lw = gc + gr;
-    let cr = 0.03 * r;
-    p.line(lw, inner, lw, h - cr, 0.75, 0.85);
-    p.arc(lw + cr, h - cr, cr, PI, 0.0, 8, true, 0.85, 1.0);
-    p.line(lw + 2.0 * cr, h - cr, 0.78 * r, face, 1.0, 1.0);
-    p.line(0.78 * r, face, 0.86 * r, face, 1.0, 1.0);
+    // Three steps over the flat inner disc, then 36 to the edge.
+    for i in 39 {
+        let u = if i < 3 { i as f32 * 0.25 } else { 0.5 + (i - 2) as f32 * 0.01 };
+        let e: f32 = 0.002;
+        let slope = (top_height(u + e) - top_height(u - e)) / (2.0 * e * r);
+        let n = normalize(float2 { -slope, 1.0 });
+        p.point(u * r, h + top_height(u), n.x, n.y, top_ao(u));
+    }
     // The outer edge, rounded from 86% of the radius into the side.
-    let er = r - 0.86 * r;
-    p.arc(0.86 * r, face - er, er, PI * 0.5, 0.0, 10, true, 1.0, 1.0);
-    p.line(r, face - er, r, 0.018, 1.0, 0.9);
-    p.arc(r - 0.018, 0.018, 0.018, 0.0, -PI * 0.5, 4, true, 0.9, 0.7);
-    p.line(r - 0.018, 0.0, 0.0, 0.0, 0.6, 0.5);
+    let er = r - EDGE_AT * r;
+    p.arc(EDGE_AT * r, h - er, er, PI * 0.5, 0.0, 12, true, 1.0, 1.0);
+    p.line(r, h - er, r, 0.025, 1.0, 0.92);
+    p.arc(r - 0.025, 0.025, 0.025, 0.0, -PI * 0.5, 5, true, 0.92, 0.75);
+    p.line(r - 0.025, 0.0, 0.0, 0.0, 0.6, 0.5);
 }
 
 // The frame's profile from the field's edge outward: the inlay's short inner wall up to

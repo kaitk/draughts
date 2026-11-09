@@ -1,12 +1,14 @@
-// Task 015's 3D board prototype: the autumn board and a fixed position, drawn natively
-// with goose_gfx, floating in front of the season's photograph. A drag turns the camera;
-// Tab or a double click switches between inspecting round the default view and turning
-// freely round the board; R resets the view. Nothing of the app's shell.
+// Task 015's 3D board prototype: the board in autumn wood or winter stone (theme.goose)
+// and a fixed position, drawn natively with goose_gfx, floating in front of the season's
+// photograph. A drag turns the camera; Tab or a double click switches between inspecting
+// round the default view and turning freely round the board; R resets the view; T, or a
+// long press for touch, switches the theme. Nothing of the app's shell.
 //
 //   cd poc/3d
 //   ../../build/goose-v2026.4-macos-arm64/goose build -o ../../build/board3d board3d.goose
 //   ../../build/board3d
 //   ../../build/board3d --shot out.png --size 1920x1200 [--yaw 20 --pitch 40]
+//   ../../build/board3d --theme winter
 //   ../../build/board3d --bench 200
 //
 // --shot draws one frame headless (no window) into a PNG; --bench times frames.
@@ -24,6 +26,7 @@ import os;
 import gfx;
 import mesh;
 import shaders;
+import theme;
 
 // The season's photograph (src/app/background.c, compiled from there): theme 0 is
 // autumn's, decoded to `decoded` square where the GPU has no ASTC.
@@ -41,16 +44,37 @@ struct Frame {
     screen:          float4,
     glow:            float4,
     selected:        float4,
+    light_piece:     float4,
+    dark_piece:      float4,
+    piece_fig:       float4,
+    crown:           float4,
+    edge:            float4,
+    line:            float4,
+    bounce:          float4,
+    grade:           float4,
+    tint:            float4,
+    frame_build:     float4,
 }
 struct Draw { draw: float4 }
-struct Bake { mode: float4, size: float4 }
+struct Bake {
+    mode:      float4,
+    size:      float4,
+    light_sq:  float4,
+    light_fig: float4,
+    dark_sq:   float4,
+    dark_fig:  float4,
+    inlay:     float4,
+    inlay_fig: float4,
+    frame:     float4,
+    frame_fig: float4,
+    surface:   float4,
+}
 struct Shrink { to: float4 }
 struct Blur { dir: float4 }
 
 let SHADOW_SIZE = 2048;
 let PLAN_SIZE = 2048;
-let STRIP_W = 4096;
-let STRIP_H = 256;
+let FRAME_MAP = 2048;
 let PHOTO_SIZE = 512;
 let SAMPLES = 4;
 // Measuring (--samples, --shadow-every): the multisampled target's samples, 1 drawing
@@ -59,17 +83,21 @@ var samples: i32 = SAMPLES;
 var shadow_every = false;
 let MAX_INSTANCES = 32;
 
-// The camera: about 50° down, a 32° field of view. Inspecting keeps it near the default
-// view; free turns it all round the board.
-let FOV:              f32 = 32.0;
-let DISTANCE:         f32 = 15.0;
-let PITCH:            f32 = 50.0;
+// The camera: 52.5° down, a 31° field of view, framed as the 3D reference (fitted to its
+// field corners). Inspecting keeps it near the default view; free turns it all round the
+// board.
+let FOV:              f32 = 31.0;
+let DISTANCE:         f32 = 14.75;
+let PITCH:            f32 = 52.5;
 let INSPECT_YAW:      f32 = 35.0;
 let INSPECT_PITCH_LO: f32 = 35.0;
 let INSPECT_PITCH_HI: f32 = 75.0;
 let FREE_PITCH_LO:    f32 = 20.0;
 let FREE_PITCH_HI:    f32 = 85.0;
 let DRAG:             f32 = 0.25; // degrees per pixel
+// A press held this long (seconds) within this many pixels switches the theme on touch.
+let LONG_PRESS:      f64 = 0.6;
+let LONG_PRESS_SLOP: f32 = 12.0;
 
 struct Camera { yaw: f32, pitch: f32, free: bool }
 
@@ -86,8 +114,8 @@ struct Gpu {
     squares:        gfx::Buffer,
     plan_albedo:    gfx::Texture,
     plan_normal:    gfx::Texture,
-    strip_albedo:   gfx::Texture,
-    strip_normal:   gfx::Texture,
+    frame_albedo:   gfx::Texture,
+    frame_normal:   gfx::Texture,
     photo:          gfx::Texture,
     shadow_map:     gfx::Texture,
     color:          gfx::Texture,    // the multisampled target and its depth
@@ -101,6 +129,11 @@ struct Gpu {
     backdrop:       gfx::Pipeline,
     catcher:        gfx::Pipeline,
     glow:           gfx::Pipeline,
+    bake:           gfx::Pipeline,  // kept for a theme's rebake, with the photograph's
+    shrink:         gfx::Pipeline,
+    blur:           gfx::Pipeline,
+    small:          gfx::Texture,
+    across:         gfx::Texture,
     frame:          Frame,
     shadow_dirty:   bool,
 }
@@ -165,7 +198,7 @@ fn position(inst: float4[..64]&, squares: float4[64]&) -> float4 {
 // pi, so the shader's sum is the irradiance a white Lambert surface sends back. The
 // photograph is laid over the sphere as a latitude-longitude map, its middle straight
 // behind the board (-z), its top up.
-fn harmonics(px: const u8[:], size: i64) -> float4[9] {
+fn harmonics(px: const u8[:], size: i64, toward_grey: f32) -> float4[9] {
     var sh: float3[9] = [float3_0; 9];
     let step = 8;
     var total: f32 = 0.0;
@@ -194,86 +227,80 @@ fn harmonics(px: const u8[:], size: i64) -> float4[9] {
     // pi, 2 pi / 3 and pi / 4, and the result is over pi.
     let band: f32[3] = [1.0, 2.0 / 3.0, 0.25];
     var out: float4[9] = [float4_0; 9];
-    // Half toward grey: the forest is orange, and its full color tinted everything.
+    // Part way to grey (the theme's): autumn's forest is orange, and its full color
+    // tinted everything.
     for k in 9 {
         let l = if k == 0 { 0 } else { if k < 4 { 1 } else { 2 } };
         let c = sh[k] * (4.0 * PI / total * band[l]);
         let grey = (c.x + c.y + c.z) / 3.0;
-        out[k] = f4(lerp(c, float3 { grey, grey, grey }, 0.5), 0.0);
+        out[k] = f4(lerp(c, float3 { grey, grey, grey }, toward_grey), 0.0);
     }
     return out;
 }
 
-// The blurred photograph (src/app/scene.goose's way: shrunk to 512 on the GPU, two
-// passes of a Gaussian of sigma 5.6 texels), and its harmonics.
-fn photograph(full: const u8[:], sh: float4[9]&) -> gfx::Texture {
-    let sharp = draughts_photo(0, 2048);
-    let out = gfx::render_target(PHOTO_SIZE, PHOTO_SIZE, gfx::RGBA8);
+// The theme's photograph blurred into g.photo (src/app/scene.goose's way: shrunk to 512
+// on the GPU, two passes of a Gaussian of sigma 5.6 texels), and its harmonics, taken
+// `grey` of the way to grey. Decodes the photograph, so only at startup and on a theme
+// change, never in the frame loop.
+fn photograph(g: Gpu&, kind: i64, grey: f32, sh: float4[9]&) {
+    let sharp = draughts_photo(kind, 2048);
     if sharp.id == 0 {
-        // No photograph built in: the page under the scene, and a warm dim ambient.
-        gfx::begin_pass(out, gfx::Texture { 0 }, float4 { 0.11, 0.078, 0.063, 1.0 });
+        // No photograph built in: the page under the scene, and a dim ambient.
+        gfx::begin_pass(g.photo, gfx::Texture { 0 }, float4 { 0.11, 0.078, 0.063, 1.0 });
         gfx::end_pass();
         for k in 9 { sh[k] = float4_0; }
         sh[0] = float4 { 0.25, 0.17, 0.1, 0.0 };
-        return out;
+        return;
     }
-    let sampler = gfx::sampler(gfx::LINEAR, gfx::CLAMP);
-    let small = gfx::render_target(PHOTO_SIZE, PHOTO_SIZE, gfx::RGBA8);
-    let across = gfx::render_target(PHOTO_SIZE, PHOTO_SIZE, gfx::RGBA8);
-    let shrink = gfx::pipeline(full, embed_shader("frag", shaders::SHRINK_FRAG));
-    let blur = gfx::pipeline(full, embed_shader("frag", shaders::BLUR_FRAG));
-    gfx::begin_pass(small, gfx::Texture { 0 }, float4_0);
-    gfx::bind(shrink);
-    gfx::bind_texture(gfx::FRAGMENT, 0, sharp, sampler);
+    gfx::begin_pass(g.small, gfx::Texture { 0 }, float4_0);
+    gfx::bind(g.shrink);
+    gfx::bind_texture(gfx::FRAGMENT, 0, sharp, g.linear);
     gfx::uniforms(gfx::FRAGMENT, 0, Shrink { float4 { PHOTO_SIZE, PHOTO_SIZE, 0.0, 0.0 } });
     gfx::draw(3);
     gfx::end_pass();
     let s: f32 = 1.0 / PHOTO_SIZE;
-    gfx::begin_pass(across, gfx::Texture { 0 }, float4_0);
-    gfx::bind(blur);
-    gfx::bind_texture(gfx::FRAGMENT, 0, small, sampler);
+    gfx::begin_pass(g.across, gfx::Texture { 0 }, float4_0);
+    gfx::bind(g.blur);
+    gfx::bind_texture(gfx::FRAGMENT, 0, g.small, g.linear);
     gfx::uniforms(gfx::FRAGMENT, 0, Blur { float4 { s, 0.0, 5.6, s } });
     gfx::draw(3);
     gfx::end_pass();
-    gfx::begin_pass(out, gfx::Texture { 0 }, float4_0);
-    gfx::bind(blur);
-    gfx::bind_texture(gfx::FRAGMENT, 0, across, sampler);
+    gfx::begin_pass(g.photo, gfx::Texture { 0 }, float4_0);
+    gfx::bind(g.blur);
+    gfx::bind_texture(gfx::FRAGMENT, 0, g.across, g.linear);
     gfx::uniforms(gfx::FRAGMENT, 0, Blur { float4 { 0.0, s, 5.6, s } });
     gfx::draw(3);
     gfx::end_pass();
-    let px = gfx::read_pixels(out);
-    sh = harmonics(px, PHOTO_SIZE);
-    gfx::release(shrink);
-    gfx::release(blur);
-    gfx::release(sampler);
-    gfx::release(small);
-    gfx::release(across);
+    let px = gfx::read_pixels(g.photo);
+    sh = harmonics(px, PHOTO_SIZE, grey);
     gfx::release(sharp);
-    return out;
 }
 
-// Bakes one wood surface into an albedo-and-roughness target and a normal target, both
-// with their mips.
-fn bake(pipe: gfx::Pipeline, w: i64, h: i64, mode: f32, extent: float2) -> gfx::Texture,
-                                                                           gfx::Texture {
-    let albedo = gfx::texture(gfx::TextureDesc { format: gfx::RGBA8_SRGB,
-                                                 usage: gfx::COLOR_TARGET | gfx::SAMPLED,
-                                                 width: w as i32, height: h as i32, mips: 0 });
-    let normal = gfx::texture(gfx::TextureDesc { format: gfx::RGBA8,
-                                                 usage: gfx::COLOR_TARGET | gfx::SAMPLED,
-                                                 width: w as i32, height: h as i32, mips: 0 });
+// Bakes one surface of the theme into its albedo-and-roughness and normal targets, and
+// their mips.
+fn bake(g: Gpu&, albedo: gfx::Texture, normal: gfx::Texture, w: i64, h: i64, mode: f32,
+        extent: float2, t: theme::Theme&) {
     var pass = gfx::PassDesc {};
     pass.color[0] = albedo;
     pass.color[1] = normal;
     gfx::begin_pass(pass);
-    gfx::bind(pipe);
+    gfx::bind(g.bake);
     gfx::uniforms(gfx::FRAGMENT, 0, Bake { float4 { mode, 0.0, 0.0, 0.0 },
-                                           float4 { w, h, extent.x, extent.y } });
+                                           float4 { w, h, extent.x, extent.y },
+                                           t.light_sq, t.light_fig, t.dark_sq, t.dark_fig,
+                                           t.inlay, t.inlay_fig, t.frame, t.frame_fig,
+                                           t.surface });
     gfx::draw(3);
     gfx::end_pass();
     gfx::generate_mips(albedo);
     gfx::generate_mips(normal);
-    return albedo, normal;
+}
+
+// A target with its mips for a baked surface.
+fn baked(w: i64, h: i64, format: i32) -> gfx::Texture {
+    return gfx::texture(gfx::TextureDesc { format: format,
+                                           usage: gfx::COLOR_TARGET | gfx::SAMPLED,
+                                           width: w as i32, height: h as i32, mips: 0 });
 }
 
 fn targets(g: Gpu&, size: int2) {
@@ -312,23 +339,16 @@ fn setup(g: Gpu&) {
     g.squares = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(squares));
 
     let full = embed_shader("vert", shaders::FULL_VERT);
-    gfx::flush();
-    var t = clock();
-    let bake_pipe = gfx::pipeline(full, embed_shader("frag", shaders::BAKE_FRAG));
-    let span = 2.0 * mesh::INNER;
-    g.plan_albedo, g.plan_normal = bake(bake_pipe, PLAN_SIZE, PLAN_SIZE, 0.0,
-                                        float2 { span, span });
-    g.strip_albedo, g.strip_normal = bake(bake_pipe, STRIP_W, STRIP_H, 1.0,
-                                          float2 { 36.0, 1.4 });
-    gfx::release(bake_pipe);
-    gfx::flush();
-    print("setup: bake ", ((clock() - t) * 1000.0) as i64, " ms");
-    t = clock();
-
-    var sh: float4[9] = [float4_0; 9];
-    g.photo = photograph(full, sh);
-    gfx::flush();
-    print("setup: photograph ", ((clock() - t) * 1000.0) as i64, " ms");
+    g.bake = gfx::pipeline(full, embed_shader("frag", shaders::BAKE_FRAG));
+    g.shrink = gfx::pipeline(full, embed_shader("frag", shaders::SHRINK_FRAG));
+    g.blur = gfx::pipeline(full, embed_shader("frag", shaders::BLUR_FRAG));
+    g.plan_albedo = baked(PLAN_SIZE, PLAN_SIZE, gfx::RGBA8_SRGB);
+    g.plan_normal = baked(PLAN_SIZE, PLAN_SIZE, gfx::RGBA8);
+    g.frame_albedo = baked(FRAME_MAP, FRAME_MAP, gfx::RGBA8_SRGB);
+    g.frame_normal = baked(FRAME_MAP, FRAME_MAP, gfx::RGBA8);
+    g.photo = gfx::render_target(PHOTO_SIZE, PHOTO_SIZE, gfx::RGBA8);
+    g.small = gfx::render_target(PHOTO_SIZE, PHOTO_SIZE, gfx::RGBA8);
+    g.across = gfx::render_target(PHOTO_SIZE, PHOTO_SIZE, gfx::RGBA8);
 
     g.shadow_map = gfx::texture2d(SHADOW_SIZE, SHADOW_SIZE, gfx::DEPTH16,
                                   gfx::DEPTH_TARGET | gfx::SAMPLED);
@@ -353,25 +373,56 @@ fn setup(g: Gpu&) {
     g.glow = gfx::pipeline(quad_vs, embed_shader("frag", shaders::FS_SET, shaders::FRAME,
                                                  shaders::GLOW_FRAG),
                            gfx::PipelineDesc { depth_test: true, blend: gfx::BLEND_ADD });
+    g.frame = default<Frame>();
+    g.frame.view_proj = gfx::mat4_identity;
+    g.frame.selected = selected;
+}
 
-    // The key light: warm, from the upper left and behind; the photograph's ambient.
-    let l = normalize(float3 { -0.5, 0.95, -0.55 });
+// sRGB to linear for a color with its fourth value kept.
+fn linear4(c: float4) -> float4 { float4 { linear(c.x), linear(c.y), linear(c.z), c.w } }
+
+// Puts a theme on the board: bakes its surfaces into the same targets, blurs its
+// photograph and takes its ambient, and fills the frame's block with its light and
+// colors. Outside the frame loop's steady state: at startup and on a theme change.
+fn apply(g: Gpu&, which: i64) {
+    let t = theme::get(which);
+    let span = 2.0 * mesh::INNER;
+    var c = clock();
+    bake(g, g.plan_albedo, g.plan_normal, PLAN_SIZE, PLAN_SIZE, 0.0, float2 { span, span }, t);
+    bake(g, g.frame_albedo, g.frame_normal, FRAME_MAP, FRAME_MAP, 1.0, float2 { 10.4, 10.4 },
+         t);
+    gfx::flush();
+    print("setup: bake ", ((clock() - c) * 1000.0) as i64, " ms");
+    c = clock();
+    var sh: float4[9] = [float4_0; 9];
+    photograph(g, t.photo, t.ambient.z, sh);
+    gfx::flush();
+    print("setup: photograph ", ((clock() - c) * 1000.0) as i64, " ms");
+
+    // The key light, from the upper left; the photograph's ambient.
+    let l = normalize(float3 { t.key.x, t.key.y, t.key.z });
     let light_view = gfx::look_at(l * 20.0, float3_0, float3 { 0.0, 1.0, 0.0 });
     let reach: f32 = 6.6;
     let light_proj = gfx::ortho(-reach, reach, -reach, reach, 5.0, 35.0);
-    g.frame = Frame {
-        view_proj:       gfx::mat4_identity,
-        light_view_proj: gfx::mul(light_proj, light_view),
-        eye:             float4_0,
-        light_dir:       f4(l, 3.4),
-        light_color:     float4 { linear(1.0), linear(0.92), linear(0.8), 0.0 },
-        sh:              sh,
-        params:          float4 { 1.35, 1.0 / SHADOW_SIZE, 1.6, 0.0 },
-        screen:          float4_0,
-        glow:            float4 { 1.0, 0.843, 0.353, 0.0 },
-        selected:        selected,
-    };
+    let f .= g.frame;
+    f.light_view_proj = gfx::mul(light_proj, light_view);
+    f.light_dir = f4(l, t.key.w);
+    f.light_color = linear4(t.key_color);
+    f.sh = sh;
+    f.params = float4 { t.ambient.x, 1.0 / SHADOW_SIZE, t.ambient.y, 0.0 };
+    f.glow = t.glow;
+    f.light_piece = linear4(t.light_piece);
+    f.dark_piece = linear4(t.dark_piece);
+    f.piece_fig = t.piece_fig;
+    f.crown = linear4(t.crown);
+    f.edge = linear4(t.edge);
+    f.line = linear4(t.line);
+    f.bounce = linear4(t.bounce);
+    f.grade = t.grade;
+    f.tint = linear4(t.tint);
+    f.frame_build = t.build;
     g.shadow_dirty = true;
+    gfx::flush();
 }
 
 fn radians32(d: f32) -> f32 { d * PI / 180.0 }
@@ -382,7 +433,7 @@ fn draw(g: Gpu&, cam: Camera) {
     if size.x != g.size.x || size.y != g.size.y { targets(g, size); }
     let yaw = radians32(cam.yaw);
     let pitch = radians32(cam.pitch);
-    let target = float3 { 0.0, -0.15, 0.25 };
+    let target = float3 { 0.0, -0.15, 1.1 };
     let eye = target + float3 { sin(yaw) * cos(pitch), sin(pitch), cos(yaw) * cos(pitch) } *
                        DISTANCE;
     let aspect = size.x as f32 / size.y;
@@ -425,8 +476,8 @@ fn draw(g: Gpu&, cam: Camera) {
     gfx::bind_storage_buffer(gfx::VERTEX, 0, g.instances);
     gfx::bind_texture(gfx::FRAGMENT, 0, g.plan_albedo, g.wood);
     gfx::bind_texture(gfx::FRAGMENT, 1, g.plan_normal, g.wood);
-    gfx::bind_texture(gfx::FRAGMENT, 2, g.strip_albedo, g.wood);
-    gfx::bind_texture(gfx::FRAGMENT, 3, g.strip_normal, g.wood);
+    gfx::bind_texture(gfx::FRAGMENT, 2, g.frame_albedo, g.wood);
+    gfx::bind_texture(gfx::FRAGMENT, 3, g.frame_normal, g.wood);
     gfx::bind_texture(gfx::FRAGMENT, 4, g.shadow_map, g.compare);
     gfx::bind_storage_buffer(gfx::FRAGMENT, 0, g.squares);
     gfx::uniforms(gfx::VERTEX, 0, f);
@@ -502,9 +553,9 @@ fn main() {
     }
     let shot = flag_str(argv, "--shot");
     let bench = flag_str(argv, "--bench");
-    // --frames N runs the window's loop hidden for N frames, with a drag injected, and
-    // saves the last frame to --shot's path if given: the loop checked without a window
-    // in the way.
+    // --frames N runs the window's loop hidden for N frames, with a drag, T and a long
+    // press injected (the press needs N of about 200 to last), and saves the last frame
+    // to --shot's path if given: the loop checked without a window in the way.
     let frames_at = flag_str(argv, "--frames");
     var frames = -1;
     if frames_at > 0 {
@@ -524,10 +575,15 @@ fn main() {
     guard opened else { abort(str("gfx: ", gfx::error())); }
     defer gfx::close();
 
+    // --theme autumn|winter; T, or a long press (for touch), switches.
+    var which = theme::AUTUMN;
+    let ti = flag_str(argv, "--theme");
+    if ti > 0 && argv[ti] == "winter" { which = theme::WINTER; }
+
     let t0 = clock();
     var g = default<Gpu>();
     setup(g);
-    gfx::flush();
+    apply(g, which);
     print("setup ", ((clock() - t0) * 1000.0) as i64, " ms");
 
     var cam = Camera { flag_f32(argv, "--yaw", 0.0), flag_f32(argv, "--pitch", PITCH), false };
@@ -549,6 +605,8 @@ fn main() {
     var drawn = 0;
     var cpu: f64 = 0.0;
     var frame = 0;
+    var press_at:    f64 = -1.0;   // when the held button went down; -1 once it is used
+    var press_moved: f32 = 0.0;
     while gfx::frame() {
         if frames > 0 {
             // A drag across the first frames: press, move left and up, release.
@@ -558,6 +616,11 @@ fn main() {
                 gfx::inject_mouse(400.0 - (frame - 2) * 8.0, 400.0 - (frame - 2) * 4.0, 0, true);
             }
             if frame == 12 { gfx::inject_mouse(328.0, 364.0, gfx::MOUSE_LEFT, false); }
+            // Then T, and a long press held still: the theme switches twice.
+            if frame == 14 { gfx::inject_key("T", true); }
+            if frame == 15 { gfx::inject_key("T", false); }
+            if frame == 20 { gfx::inject_mouse(328.0, 364.0, gfx::MOUSE_LEFT, true); }
+            if frame == frames - 1 { gfx::inject_mouse(328.0, 364.0, gfx::MOUSE_LEFT, false); }
             if frame == frames { break; }
             frame++;
         }
@@ -568,6 +631,27 @@ fn main() {
                 cam.free = !cam.free;
                 dirty = true;
             }
+            if e.kind == gfx::EVENT_MOUSE_BUTTON && e.button == gfx::MOUSE_LEFT {
+                press_at = if e.down { clock() } else { -1.0 };
+                press_moved = 0.0;
+            }
+        }
+        var switch = gfx::key_pressed("T");
+        if press_at >= 0.0 && gfx::mouse_down(gfx::MOUSE_LEFT) {
+            let d = gfx::mouse_delta();
+            press_moved += abs(d.x) + abs(d.y);
+            if press_moved > LONG_PRESS_SLOP { press_at = -1.0; }
+            else if clock() - press_at > LONG_PRESS {
+                switch = true;
+                press_at = -1.0;
+            }
+        }
+        if switch {
+            which = (which + 1) % theme::COUNT;
+            let c = clock();
+            apply(g, which);
+            print("theme ", which, " in ", ((clock() - c) * 1000.0) as i64, " ms");
+            dirty = true;
         }
         if gfx::key_pressed("Escape") { break; }
         if gfx::key_pressed("Tab") {
