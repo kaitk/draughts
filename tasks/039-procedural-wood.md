@@ -148,6 +148,9 @@ frame, as expected of a texture.
 3 stay selectable with `--wood` and W for the user to compare. It costs about 4 ms more
 bake than 0 on the Mac (37 against 33 ms) and nothing a frame.
 
+The user (2026-11-09): 2 and 3 both look great. 2 stays the default; 3 is kept as the
+alternative, and the choice can be made once they're seen in the game.
+
 Next, if the frame should come closer still: the reference's front shows more broad
 tonal mottling and more pronounced cross-grain flecks; finished wood's moving sheen
 (Marschner et al.) would need a fibre-direction map and a second specular lobe.
