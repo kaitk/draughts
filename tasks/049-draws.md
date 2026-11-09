@@ -142,7 +142,10 @@ piece's move (3.2). The Brazilian confederation's (CBD) own text wasn't found on
   game's draw check).
 - Strings, Estonian to review: `draw.balance` "{} käiku ilma löögi ja uue tammita" (the
   English "{} moves without a capture or a new king"), and the rest as the prototype
-  proposed.
+  proposed. Reviewed with Gemini (`agents/writing.md`, 2026-11-09): the Estonian kept as
+  it is; `draw.kings` in English became "{} moves by kings only", since "with only kings"
+  read as only kings on the board (191 dp at the body face, two lines on the smallest
+  card).
 - Not built: the countdown in a portrait panel with clocks and in the 3D corner panel with
   clocks (no room); 6.1.8.7 and the winning-position exceptions (as decided).
 

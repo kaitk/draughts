@@ -109,7 +109,7 @@ board.preparing = Setting up the board…
 
 draw = Draw
 draw.repeat = Same position three times
-draw.kings = {} moves with only kings
+draw.kings = {} moves by kings only
 draw.balance = {} moves without a capture or a new king
 draw.lone = The lone king held out
 count.draw = Draw in {} moves
