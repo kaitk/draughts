@@ -277,8 +277,8 @@ scripts/ios.py src/app/draughts.goose --device --run            # on an attached
    can't map Goose's default 2 GB for each of the app's 26 data stacks) and the runtime's
    C.
 2. goose_gfx's `src/` is copied with `patches/goose_gfx/` applied, and SDL to
-   `build/ios/SDL_src/` with `patches/SDL/` applied (`0004` lets SDL_GPU take the
-   simulator's Metal device).
+   `build/ios/SDL_src/` with `patches/SDL/` applied (`0005` lets SDL_GPU take the
+   simulator's Metal device, `0006` keeps a rotation from stretching the picture).
 3. CMake with Ninja and Xcode's clang builds `ios/CMakeLists.txt` for the simulator's or
    the device's SDK: one executable with the program, the runtime, goose_gfx's layers,
    and SDL, linked statically. `ios/main.c` hands the main thread to UIKit through

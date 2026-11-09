@@ -100,6 +100,24 @@ SDL 3.4.16 (goose_gfx `6cfa3de`'s pin), Xcode 26.4, the iOS 18.3 simulator.
   property to skip the check, as `SDL_PROP_GPU_DEVICE_CREATE_METAL_ALLOW_MACFAMILY1_BOOLEAN`
   does for old Macs.
 
+## SDL: a rotation on iOS stretches the picture (2026-11-09)
+
+When an iPhone turns, UIKit animates the root view's bounds from the old size to the new
+alongside its rotation. SDL's view is that root view and its layer a `CAMetalLayer`,
+whose `contentsGravity` is the default `kCAGravityResize`: the program draws once at the
+new size (`layoutSubviews` sets the drawable size and SDL sends the resize), and that
+frame is scaled to every size the animation passes through, so the board is squeezed to
+a column and widens back. Filmed in the simulator (`simctl io recordVideo`, the turn asked
+by `requestGeometryUpdateWithPreferences` from a throwaway file). SDL 3.4.16.
+
+- Here: `patches/SDL/0006-metal-contents-unstretched-while-rotating.patch` sets the
+  layer's gravity to `kCAGravityCenter` in `viewWillTransitionToSize` and back to resize
+  in the transition's completion: the frame turns whole at its own size, as UIKit apps
+  turn, with black corners showing meanwhile. Outside a transition nothing changes.
+- Upstream (a note for the user, who decides): the same in SDL's UIKit view controller,
+  or `kCAGravityCenter` for good on the Metal view, whose drawable always matches its
+  bounds outside an animation.
+
 ## goose_gfx: no compressed texture formats (2026-11-08)
 
 gfx's formats are uncompressed only: `gfx_texture_format` maps none of SDL_GPU's BC or

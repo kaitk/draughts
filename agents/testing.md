@@ -367,3 +367,19 @@ measuring there:
   once and never draws; ask the user to unlock. Headless programs still run through
   `scripts/android_cli.sh`: the computer's worker was timed that way, with its threads'
   state read from `/proc/<pid>/task/*/stat` while the program waited (2026-11-08).
+
+## In the iOS simulator
+
+- A rotation, filmed: `simctl` can't turn the simulator and Simulator.app's window would
+  be in the user's way, so a throwaway `ios/rotate_debug.m` (added to `main.c`'s line in
+  `ios/CMakeLists.txt`, neither committed) runs a `__attribute__((constructor))` that
+  `dispatch_after`s `-[UIWindowScene requestGeometryUpdateWithPreferences:]` with
+  `UIWindowSceneGeometryPreferencesIOS` for landscape, then portrait, after
+  `setNeedsUpdateOfSupportedInterfaceOrientations` on the root view controller. Record
+  with `xcrun simctl io booted recordVideo --codec h264 --force out.mp4` (stop it with
+  SIGINT) and lay the turn out with `ffmpeg -ss 5.5 -t 1.2 -i out.mp4 -vf
+  "fps=15,scale=180:-1,tile=9x2" -frames:v 1 sheet.png`; the video stays in the device's
+  portrait frame (2026-11-09).
+- A worktree's own `build/`: `build/ios/` holds CMake caches tied to one checkout's path,
+  so a worktree links only the toolchains (`build/goose-v2026.4-macos-arm64`, ...) into a
+  `build/` of its own rather than linking the whole of the main checkout's.

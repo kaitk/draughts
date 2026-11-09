@@ -1,0 +1,21 @@
+--- a/src/video/uikit/SDL_uikitviewcontroller.m	2026-11-09 15:35:25
++++ b/src/video/uikit/SDL_uikitviewcontroller.m	2026-11-09 15:35:31
+@@ -360,11 +360,18 @@
+ {
+     [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
+     rotatingOrientation = YES;
++    /* UIKit animates the view's bounds from the old size to the new, and a Metal
++       layer's contents (resized to fill by default) would be squeezed and stretched to
++       every size between, though the program draws at the new size only. Through the
++       transition show them centred at their own size, so the picture turns whole. */
++    CALayer *layer = self.view.tag == SDL_METALVIEW_TAG ? self.view.layer : nil;
++    layer.contentsGravity = kCAGravityCenter;
+     [coordinator
+         animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+         }
+         completion:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+           self->rotatingOrientation = NO;
++          layer.contentsGravity = kCAGravityResize;
+         }];
+ }
+ 
