@@ -124,7 +124,7 @@
   .piece.ghost { opacity: 0.35; animation: fade 1.2s ease-in both; }
   @keyframes fade { from { opacity: 0.8; } to { opacity: 0.35; } }
 
-  /* Solved (takes a and b): stars over the dimmed board, as solved.html, with again and
+  /* Solved (takes a and b): stars over the dimmed board, with again and
      next as icons and words. */
   .solved #board { filter: brightness(0.55); }
   .card { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2;
@@ -214,7 +214,7 @@
   const left = { a: { play: 3, wrong: 2, hint: 2, solved: 3 }, b: { play: 3, wrong: 2, hint: 2, solved: 3 },
     c: { play: 3, wrong: 2, hint: 1, solved: 3 } }[take][state];
 
-  let out = row('puzzle', W.puzzles, '', 'puzzles.html') + row('gear', W.settings, '', 'settings.html');
+  let out = row('puzzle', W.puzzles, '', 'puzzle-set.html') + row('gear', W.settings, '', 'settings.html');
   let play = '';
   if (take === 'a') {
     out += '<div class="space"></div>' + row('restart', W.restart);
@@ -240,7 +240,7 @@
     const top = beside ? `<div class="what big"><div class="lead">${disc}${I('target')}</div>${words}</div>`
       : `${disc}<div class="what big">${I('target')}${words}</div>`;
     play = `<div class="goal">${top}</div>${stake(left, state === 'solved' ? 'won' : '')}` +
-      '<div class="space"></div>' + row('next', W.next, `big ${state === 'solved' ? 'lit' : 'off'}`, 'puzzles.html');
+      '<div class="space"></div>' + row('next', W.next, `big ${state === 'solved' ? 'lit' : 'off'}`, 'puzzle-set.html');
   }
   document.getElementById('out').innerHTML = out;
   document.getElementById('play').innerHTML = play;
@@ -250,7 +250,7 @@
   if (state === 'solved' && take !== 'c') {
     game.classList.add('solved');
     game.insertAdjacentHTML('beforeend', `<div class="card glass"><div class="stars">${I('star').repeat(3)}</div>` +
-      `<div class="actions">${row('restart', W.again)}${row('next', W.next, 'primary', 'puzzles.html')}</div></div>`);
+      `<div class="actions">${row('restart', W.again)}${row('next', W.next, 'primary', 'puzzle-set.html')}</div></div>`);
   }
 
   Draughts.init();

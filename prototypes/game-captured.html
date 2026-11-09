@@ -8,8 +8,8 @@
 <script src="draughts.js"></script>
 <style>
   /* What each side has captured (task 052), on the game screen as built, flat and raised,
-     at every size; and the flat screen in the raised one's look (task 054), which
-     game-unified.html sets side by side.
+     at every size; and the flat screen in the raised one's look (task 054),
+     which game-unified.html (removed 2026-11-10) set side by side.
        ?cap=a   in the left side: a third row in the left panel (landscape), a row under
                 the bar's tiles (portrait), the bar's middle (compact);
        ?cap=b   on the table at the board's left: a slim tray down the board's left edge
@@ -32,7 +32,7 @@
   .at { position: absolute; }
   .bare .proto-bar { display: none; }
 
-  /* Tiles, as built (back.html's take b). */
+  /* Tiles, as built (the back take b, built). */
   .panel { display: flex; flex-direction: column; gap: 12px; padding: 20px 16px; }
   .panel .space { flex: 1; }
   .row { display: flex; align-items: center; justify-content: flex-start; gap: 12px; min-height: 88px;
@@ -182,7 +182,7 @@
     }
     app.innerHTML = `<header><h1>Captured pieces</h1>${sel('cap', ['a', 'b', 'off'], cap)}${sel('look', ['row', 'pile', 'count'], look)}` +
       `${sel('state', ['early', 'late'], state)}${sel('flat', ['now', 'a', 'b'], flat)}${sel('season', ['autumn', 'winter', 'spring', 'summer'], season)}` +
-      `<a href="game-unified.html" style="color:#9cf">2D and 3D unified →</a></header><div class="shots">${shots}</div>`;
+      `</header><div class="shots">${shots}</div>`;
     app.querySelectorAll('select').forEach((s) => s.onchange = () => { P.set(s.dataset.k, s.value); location.search = P.toString(); });
   }
 

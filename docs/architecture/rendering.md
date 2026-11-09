@@ -422,7 +422,7 @@ the prototype tried, kept for 3D:
   undo move then takes back the child's move and the computer's reply
   ([computer player](ai.md#in-the-game)).
   The words are 24 px; the turn's words say who has won once a side has.
-- **The way back** (`prototypes/back.html`, take b, chosen 2026-11-09 over a, the arrow
+- **The way back** (prototype `back.html` (removed 2026-11-10, in the history), take b, chosen 2026-11-09 over a, the arrow
   alone): one control on every screen that leaves, a glass tile with the arrow and
   "Back" side by side (34 px icon, 24 px word, 20 px either side, 88 px tall and at least
   as wide), in the top-left corner: over the left panel on the game and a puzzle in
@@ -461,7 +461,7 @@ the prototype tried, kept for 3D:
   with the game. The choices are no clock, 5+3, and
   10+5 (five minutes plus three seconds a move, ten plus five): 5+3 is FMJD's usual
   blitz and both are in IDF's 8×8 rapid list, gentle enough for children.
-- **A win** (`prototypes/win.html`, take a): once the winning move has shown, the
+- **A win** (prototype `win.html` (removed 2026-11-10, in the history), take a): once the winning move has shown, the
   winner's pieces answer, with no particles. Every moment is a function of the time
   since the win. The winning piece, the last move's, lifts on its square with its glow
   ring (0.35 s, easing out), and stays so. A ring of glow passes across the winner's
@@ -481,7 +481,7 @@ the prototype tried, kept for 3D:
   the board pass's and the piece shader's, not a fill over them, so the winning piece
   can stay out of it while the card, in the UI's draw, is over it; the lit square is the
   piece shader's too, drawn under the piece. The panel's piece shows the winner.
-- **A draw** (`prototypes/draw.html`, take a, chosen 2026-11-09; the rules in
+- **A draw** (prototype `draw.html` (removed 2026-11-10, in the history), take a, chosen 2026-11-09; the rules in
   [rules](rules.md#draws)) is calm: once the drawing move has shown, the clock stops,
   the board and its pieces dim to 55% over 0.6 s, nothing lifts or glows, and a card
   like the win's slides up 28 px as it fades in from 0.1 s to 0.8 s, still from then:
@@ -503,7 +503,7 @@ the prototype tried, kept for 3D:
   under the turn's words beside the piece, with no dots. In landscape with clocks it
   goes under the clocks. A 3D board's short corner panel closes the gaps round the
   piece, leaves the dots out, and takes the small face. Where clocks leave no room for
-  the line (`prototypes/draw.html`, `fit=b`), a short form stands between them: "Draw in
+  the line (prototype `draw.html` (removed 2026-11-10, in the history), `fit=b`), a short form stands between them: "Draw in
   3", or "Repeat 2/3" for the position come twice, whichever side's count it is. In a
   portrait panel the word in the small face is over the figure in the label face, the
   clocks narrowing for it with 12 px either side; in the corner panel it is one line in
@@ -518,7 +518,7 @@ the prototype tried, kept for 3D:
   portrait settings is instead a gear beside the wordmark, so the sheet leaves the board
   its room: the gear alone, 40 dp at 85%, with no tile, in an 88 dp tap reaching 8 dp over
   and under the row, clear until pressed and then lit round as a pressed row is
-  (`prototypes/gear.html?take=a`, chosen 2026-11-08 over the 88 dp quiet tile, which
+  (prototype `gear.html` (removed 2026-11-10, in the history), chosen 2026-11-08 over the 88 dp quiet tile, which
   looked too big beside the wordmark, and the X's round glass button, which the X itself later left); the name may run
   under the tap's clear side, up to 12 dp from the gear; so too in a landscape too
   short for the menu with settings as a row (a phone under about 590 dp tall), where the
@@ -526,9 +526,9 @@ the prototype tried, kept for 3D:
   where the gear leaves them too little room (2026-11-08). In the
   screen's top right, 24 dp from both edges of its safe area, a bare X, 34 dp with strokes of 2.8 grid units at
   80%, in a round 88 dp tap, closes the app at once, asking nothing, since the game is kept anyway; on the
-  menu and in a setup, in both orientations (`prototypes/exit.html?take=b`, chosen
+  menu and in a setup, in both orientations (prototype `exit.html` (removed 2026-11-10, in the history), chosen
   2026-11-08 over a quiet last row and a door, as a round glass button; made a bare X,
-  `prototypes/gear.html?x=d`, the user, 2026-11-09, to match the bare gear). One place in both orientations, it
+  prototype `gear.html` (removed 2026-11-10, in the history), the user, 2026-11-09, to match the bare gear). One place in both orientations, it
   costs the menu nothing (a last row would take the portrait board's room and lengthen
   the sheet phones can't fit), it is far from where children tap and hold a tablet, and
   an X is what closes things in the apps children know; a door reads less surely at
@@ -670,7 +670,7 @@ the prototype tried, kept for 3D:
   wide takes a smaller face, or none (2026-11-08, 2026-11-09). The tiles' notes and the thumbnails' labels are in the 17 px
   face, which makes them a little wider than the prototype's 13 px, so the landscape
   board is about 550 px where the prototype's is 590.
-  **Puzzle picker** (`prototypes/puzzles.html`, take a, a library list, chosen
+  **Puzzle picker** (prototype `puzzles.html` (removed 2026-11-10, in the history), take a, a library list, chosen
   2026-11-09; rejected: b's large theme tiles, which shrink long Estonian names and hold
   the fewest themes a screen, and c's library beside the theme, which needs two
   scrolling panes): two views, a library of the themes and a theme's page. The library
@@ -763,7 +763,7 @@ the prototype tried, kept for 3D:
   opens who's playing: their badge (64 dp, centred in the first 88 dp) and their name
   beside it in the row labels' 30 dp face on a small glass pill (`gui::glass`, 22 dp
   corners, 16 dp either side of the name, 49 dp tall, the name 12 dp past the badge's
-  88 dp; the user, 2026-11-09, `prototypes/chip.html?take=d`, so the name reads on a
+  88 dp; the user, 2026-11-09, prototype `chip.html` (removed 2026-11-10, in the history), so the name reads on a
   bright photograph), the badge bare as the X and the gear are; no name, no pill; the tap
   ends 40 dp past the name and covers both; pressed, the tap lights as the X's does (white at 10% and a faint 1 px ring,
   a pill round badge and name, 88 dp tall; `gui::bare`). It mirrors the X (the user,

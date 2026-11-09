@@ -6,12 +6,6 @@
 <title>Draughts: lookout and hint</title>
 <link rel="stylesheet" href="draughts.css">
 <script src="draughts.js"></script>
-<script>
-  // Round 2 is coach-2.html (?round=2), round 1 coach-1.html (?round=1).
-  { const r = new URLSearchParams(location.search).get('round');
-    if (r === '1') location.replace('coach-1.html');
-    if (r === '2') location.replace('coach-2.html'); }
-</script>
 <style>
   /* Round 3 of the coach and the hint (task 040, 2026-11-09). Two controls, not one: the
      lookout, a toggle that while on shows the danger by itself, and the hint, its own
@@ -451,11 +445,11 @@
   }));
   addEventListener('resize', () => setTimeout(() => location.reload(), 200));
 
-  // Every option from the switcher; the round goes back to rounds 2 and 1.
+  // Every option from the switcher.
   const bar = document.querySelector('.proto-bar');
   const sel = (key, values, current) => `<select data-k="${key}" aria-label="${key}">${values.map((v) =>
     `<option${v === current ? ' selected' : ''}>${v}</option>`).join('')}</select>`;
-  bar.insertAdjacentHTML('afterbegin', sel('round', ['3', '2', '1'], '3') + sel('take', TAKES, take) +
+  bar.insertAdjacentHTML('afterbegin', sel('take', TAKES, take) +
     sel('mark', MARKS, mark) + sel('king', KINGS, kingMark) + sel('state', STATES, state) +
     sel('lookout', ['on', 'off'], lookoutOn ? 'on' : 'off') + sel('name', NAMES, name) + sel('lang', ['en', 'et'], lang) +
     sel('you', ['white', 'black'], you) + sel('view', ['game', 'sheet'], sheet ? 'sheet' : 'game'));

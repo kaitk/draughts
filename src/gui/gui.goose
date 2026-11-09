@@ -746,7 +746,7 @@ fn labelled_width(g: Gui&, size: f32, label: const u8[:], face: i64, arrange: i6
     return (lead + size + 12.0 + LABEL_PAD) * g.scale + text_width(g, face, label);
 }
 
-// The way back (rendering.md, "Controls"; prototypes/back.html, take b): one control on
+// The way back (rendering.md, "Controls"; removed prototype back.html, take b): one control on
 // every screen, the arrow and the word `label` ("Back") side by side on a glass tile,
 // 88 dp tall. back_width is how wide it is: its icon and word with BACK_PAD at either
 // side, 88 dp at least.
@@ -882,7 +882,7 @@ fn text(g: Gui&, face: i64, r: float4, s: const u8[:], a: f32, spacing: f32, ali
 
 // Text as text() draws it at full opacity, over a soft dark halo, for a title bare on the
 // photograph (the library's): the coverage atlas has no blur, so the halo is eight dark
-// copies in a ring 2 dp out at 20% each and one 2 dp down at 35% (prototypes/chip.html,
+// copies in a ring 2 dp out at 20% each and one 2 dp down at 35% (removed prototype chip.html,
 // takes b and e; 3 dp at 10% left spring's birch bark too bright round the letters). Nine
 // more quads a glyph.
 fn shadowed(g: Gui&, face: i64, r: float4, s: const u8[:], align: i64) {

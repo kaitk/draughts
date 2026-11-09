@@ -14,7 +14,7 @@
      none; &view=library or home (home's menu, its Puzzles count following the choice);
      &open=1 (b's picker open); &lang=et; &guides outlines each tap.
 
-     now: today's library (puzzles.html?take=a, built), no choice: the set follows settings.
+     now: today's library (built), no choice: the set follows settings.
      a:   today's rows, a three-way switch (name and size) in the title row.
      b:   the draughts' name under the title, a tap opens a small picker of the three with
           their boards and counts; the rows show stars and what's next, a Continue row on
@@ -37,7 +37,7 @@
   .head .title { display: grid; gap: 2px; min-width: 0; }
   .note { font-size: 17px; color: var(--fg-dim); }
 
-  /* A theme's mark (as puzzles.html). */
+  /* A theme's mark. */
   .mark { position: relative; flex: none; display: grid; place-items: center; border-radius: 50%;
     background: color-mix(in srgb, var(--glow) 20%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--glow) 45%, transparent); }
@@ -278,7 +278,7 @@
   const nextLine = (t) => (t.nextLevel < 0 ? S.allDone : S.next(`${S.levels[t.nextLevel]} ${t.done + 1}`));
   const forNow = v === 'brazilian' ? `<span class="note">${S.forNow}</span>` : '';
 
-  // Today's row (puzzles.html, take a).
+  // Today's row (as built).
   const rowNow = (t) => `<a class="theme glass${t.locked ? ' locked' : ''}" href="#" data-theme="${t.id}">${mark(t)}<h2>${S.names[t.id]}</h2>` +
     `${t.locked ? '<span></span>' : plain(t)}${t.locked ? `<span class="hint">${S.more(OPEN_AT - learnDone)}</span>` : bar(t)}</a>`;
   // b's row: stars, the bar, and what's next; a locked theme's path to it.
@@ -334,8 +334,7 @@
   }
 
   (view === 'home' ? home : library)();
-  // A name too long for its place gets smaller, down to two thirds, before it is cut
-  // (as puzzles.html).
+  // A name too long for its place gets smaller, down to two thirds, before it is cut.
   for (const el of app.querySelectorAll('h1, h2, .pick .label')) {
     const px = parseFloat(getComputedStyle(el).fontSize);
     if (el.scrollWidth <= el.clientWidth + 1) continue;
@@ -353,7 +352,7 @@
   });
   for (const el of app.querySelectorAll('[data-theme]')) el.addEventListener('click', (e) => {
     e.preventDefault();
-    if (!el.classList.contains('locked')) location.href = `puzzles.html?take=a&view=theme&theme=${el.dataset.theme === 'kings' ? 'kings' : el.dataset.theme}`;
+    if (!el.classList.contains('locked')) location.href = `puzzle.html`;
   });
   addEventListener('resize', () => location.reload());
 
