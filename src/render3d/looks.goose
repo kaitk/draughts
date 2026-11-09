@@ -11,6 +11,14 @@ let WINTER = 1;
 let SPRING = 2;
 let SUMMER = 3;
 let COUNT = 4;
+// Summer's variants (the user, 2026-11-09: summer clearly apart from autumn, the coast at
+// sunset), looks after the seasons': 0 summer() itself, 1 SUMMER_OAK wood 3's crisp grain
+// in summer's palette, 2 SUMMER_PICKLED limewashed oak, 3 SUMMER_TEAK a teak deck frame
+// round sand and terracotta. T cycles the seasons; --summer N and S pick the variant.
+let SUMMERS = 4;
+let SUMMER_OAK = 4;
+let SUMMER_PICKLED = 5;
+let SUMMER_TEAK = 6;
 
 struct Theme {
     photo: i64,             // the season's photograph, src/app/background.c's kind
@@ -59,13 +67,42 @@ struct Theme {
     // running one way over the whole board; 0 four pieces mitred at 45°, the grain along
     // each side. y: the mitre joint's strength; z: 1 for stone (shaders::LIT_FRAG).
     build: float4,
+    // The frame's caulked seams, as a teak deck's (shaders::BAKE_FRAG's frame_map): x a
+    // plank's width across the frame's top (world units; 0 none), y a seam's half width,
+    // z how dark it is.
+    seam: float4,
 }
 
 fn get(which: i64) -> Theme {
     if which == WINTER { return winter(); }
     if which == SPRING { return spring(); }
     if which == SUMMER { return summer(); }
+    if which == SUMMER_OAK { return summer_oak(); }
+    if which == SUMMER_PICKLED { return summer_pickled(); }
+    if which == SUMMER_TEAK { return summer_teak(); }
     return autumn();
+}
+
+// The look for summer's variant n (0 to SUMMERS - 1).
+fn summer_look(n: i64) -> i64 {
+    if n <= 0 { return SUMMER; }
+    return COUNT + min(n, SUMMERS - 1) - 1;
+}
+
+// The wood's model a look is made with, -1 for any (the one chosen).
+fn wood_for(look: i64) -> i64 {
+    if look == SUMMER_OAK { return 3; }
+    if look == SUMMER_PICKLED || look == SUMMER_TEAK { return 2; }
+    return -1;
+}
+
+// The finish of the wood's model `wood` on look `look`: a summer variant's own on its
+// model, else the model's (finish()).
+fn finish_for(look: i64, wood: i64) -> Finish {
+    guard wood == wood_for(look) else { return finish(wood); }
+    if look == SUMMER_PICKLED { return PICKLED; }
+    if look == SUMMER_TEAK { return OILED; }
+    return VARNISHED;
 }
 
 // Maple and walnut veneer in a fairly rough open-grained cherry frame whose polished
@@ -103,6 +140,7 @@ fn autumn() -> Theme {
         grade:         float4 { 2.6, 1.0, 1.5, 0.85 },
         tint:          float4 { 0.72, 0.5, 0.34, 0.45 },
         build:         float4 { 0.0, 1.0, 0.0, 0.0 },
+        seam:          float4_0,
     };
 }
 
@@ -142,6 +180,7 @@ fn winter() -> Theme {
         grade:         float4 { 2.2, 1.0, 1.0, 0.85 },
         tint:          float4 { 0.72, 0.76, 0.86, 0.35 },
         build:         float4 { 1.0, 0.0, 1.0, 0.0 },
+        seam:          float4_0,
     };
 }
 
@@ -182,6 +221,7 @@ fn spring() -> Theme {
         grade:         float4 { 2.3, 1.0, 1.2, 0.85 },
         tint:          float4 { 0.7, 0.74, 0.62, 0.4 },
         build:         float4 { 0.0, 1.0, 0.0, 0.0 },
+        seam:          float4_0,
     };
 }
 
@@ -220,7 +260,80 @@ fn summer() -> Theme {
         grade:         float4 { 2.4, 1.0, 1.4, 0.85 },
         tint:          float4 { 0.78, 0.56, 0.48, 0.42 },
         build:         float4 { 0.0, 1.0, 0.0, 0.0 },
+        seam:          float4_0,
     };
+}
+
+// Summer 1: wood 3's crisper grain, its thin lines and pores over the noise, in peach and
+// dusky rose, in a deeper rose-brown frame with open pores and furrows, varnished.
+fn summer_oak() -> Theme {
+    var t = summer();
+    t.light_sq = float4 { 0.97, 0.8, 0.66, 0.42 };
+    t.light_fig = float4 { 0.3, 0.3, 0.4, 1.0 };
+    t.dark_sq = float4 { 0.62, 0.38, 0.36, 0.4 };
+    t.dark_fig = float4 { 0.35, 0.35, 0.45, 1.0 };
+    t.inlay = float4 { 0.3, 0.15, 0.14, 0.45 };
+    t.inlay_fig = float4 { 0.25, 0.25, 0.3, 1.0 };
+    t.frame = float4 { 0.56, 0.34, 0.31, 0.55 };
+    t.frame_fig = float4 { 0.2, 0.25, 0.45, 1.0 };
+    t.surface = float4 { 0.06, 0.6, 0.45, 0.8 };
+    t.frame_surface = float4 { 0.8, 3.0, 1.0, 0.3 };
+    t.light_ring = float4 { 0.06, 0.3, 0.3, 0.3 };
+    t.dark_ring = float4 { 0.06, 0.3, 0.3, 0.35 };
+    t.frame_ring = float4 { 0.05, 0.3, 0.5, 0.5 };
+    t.dark_piece = float4 { 0.27, 0.16, 0.19, 0.32 };
+    t.crown = float4 { 0.27, 0.16, 0.19, 0.0 };
+    return t;
+}
+
+// Summer 2: pickled (limewashed) oak, sun-bleached and coastal. Ring-porous oak whose open
+// pores and grain are filled with white (Finish.pickle), so the grain reads paler than
+// the wood round it: bleached oak light squares, the dark ones oak under a soft rose wash
+// (the theme's dark tone), a weathered grey-beige driftwood frame pickled the same, all
+// a satin matte. Off-white and dusky plum pieces.
+fn summer_pickled() -> Theme {
+    var t = summer();
+    t.light_sq = float4 { 0.86, 0.81, 0.75, 0.52 };
+    t.light_fig = float4 { 0.3, 0.35, 0.4, 1.0 };
+    t.dark_sq = float4 { 0.6, 0.4, 0.36, 0.52 };
+    t.dark_fig = float4 { 0.3, 0.35, 0.4, 1.0 };
+    t.inlay = float4 { 0.4, 0.33, 0.3, 0.55 };
+    t.inlay_fig = float4 { 0.3, 0.3, 0.3, 1.0 };
+    t.frame = float4 { 0.6, 0.56, 0.5, 0.6 };
+    t.frame_fig = float4 { 0.3, 0.35, 0.5, 1.0 };
+    t.surface = float4 { 0.06, 1.0, 0.4, 0.9 };
+    t.frame_surface = float4 { 1.0, 3.0, 1.0, 0.05 };
+    t.light_ring = float4 { 0.07, 0.4, 0.6, 0.5 };
+    t.dark_ring = float4 { 0.07, 0.4, 0.5, 0.4 };
+    t.frame_ring = float4 { 0.07, 0.4, 0.7, 0.9 };
+    t.light_piece = float4 { 0.97, 0.95, 0.91, 0.5 };
+    t.dark_piece = float4 { 0.32, 0.2, 0.23, 0.34 };
+    t.crown = float4 { 0.32, 0.2, 0.23, 0.0 };
+    return t;
+}
+
+// Summer 3: teak and sand. An oiled teak frame, straight-grained and golden like a boat's
+// deck, its planks parted by fine dark caulking seams along it, round pale sand and
+// terracotta squares of a calm close grain; all satin.
+fn summer_teak() -> Theme {
+    var t = summer();
+    t.light_sq = float4 { 0.93, 0.84, 0.69, 0.42 };
+    t.light_fig = float4 { 0.15, 0.15, 0.2, 1.0 };
+    t.dark_sq = float4 { 0.72, 0.42, 0.33, 0.42 };
+    t.dark_fig = float4 { 0.15, 0.2, 0.25, 1.0 };
+    t.inlay = float4 { 0.28, 0.17, 0.1, 0.45 };
+    t.inlay_fig = float4 { 0.2, 0.25, 0.3, 1.0 };
+    t.frame = float4 { 0.56, 0.35, 0.18, 0.45 };
+    t.frame_fig = float4 { 0.15, 0.2, 0.4, 1.0 };
+    t.surface = float4 { 0.05, 0.3, 0.4, 0.4 };
+    t.frame_surface = float4 { 0.6, 2.0, 0.8, 0.3 };
+    t.light_ring = float4 { 0.07, 0.2, 0.15, 0.08 };
+    t.dark_ring = float4 { 0.07, 0.2, 0.18, 0.08 };
+    t.frame_ring = float4 { 0.045, 0.1, 0.45, 0.45 };
+    t.dark_piece = float4 { 0.27, 0.17, 0.16, 0.32 };
+    t.crown = float4 { 0.27, 0.17, 0.16, 0.0 };
+    t.seam = float4 { 0.17, 0.005, 0.9, 0.0 };
+    return t;
 }
 
 // The wood's finish, per model of the wood (render3d::WOOD_MODEL..): what the prototype's
@@ -232,16 +345,28 @@ struct Finish {
     grain:   f32,   // the figure's contrast round the base color, 1 as baked
     rings:   f32,   // the rings' and the grain's spacing across, 1 as baked
     warmth:  f32,   // -1..1: the color toward grey-yellow (-) or red-orange (+)
+    // 0..1: limewashed: white fills the pores and grooves and the grain turns paler than
+    // the wood round it, the fill matte (summer's pickled oak)
+    pickle: f32,
+    caulk:  f32,    // the frame's caulked seams' strength (Theme.seam), 1 as made
 }
 
-let PLAIN = Finish { varnish: 0.0, sanding: 0.0, grain: 1.0, rings: 1.0, warmth: 0.0 };
+let PLAIN = Finish { varnish: 0.0, sanding: 0.0, grain: 1.0, rings: 1.0, warmth: 0.0, pickle: 0.0, caulk: 1.0 };
 
 // "The same wood, very slightly more varnish and sanded a tiny bit more" (the user,
 // 2026-11-09), on the two woods kept for the game.
-let VARNISHED = Finish { varnish: 0.2, sanding: 0.15, grain: 1.0, rings: 1.0, warmth: 0.0 };
+let VARNISHED = Finish { varnish: 0.2, sanding: 0.15, grain: 1.0, rings: 1.0, warmth: 0.0, pickle: 0.0,
+                         caulk: 1.0 };
 
 // Wood 2's finish as the user tuned it in the panel (2026-11-09), the default wood's.
-let TUNED = Finish { varnish: 0.68, sanding: 0.835, grain: 1.01, rings: 1.002, warmth: 0.36 };
+let TUNED = Finish { varnish: 0.68, sanding: 0.835, grain: 1.01, rings: 1.002, warmth: 0.36, pickle: 0.0,
+                     caulk: 1.0 };
+
+// Summer's pickled oak: limewashed, lightly sanded, a satin matte with no varnish.
+let PICKLED = Finish { varnish: 0.0, sanding: 0.25, grain: 1.0, rings: 1.0, warmth: 0.0, pickle: 0.8, caulk: 1.0 };
+
+// Summer's teak: oiled, a satin sheen, the relief a little softened.
+let OILED = Finish { varnish: 0.3, sanding: 0.3, grain: 1.0, rings: 1.0, warmth: 0.1, pickle: 0.0, caulk: 1.0 };
 
 fn finish(wood: i64) -> Finish {
     if wood == 2 { return TUNED; }

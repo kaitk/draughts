@@ -71,11 +71,12 @@ struct Bake {
     dark_ring:     float4,
     frame_ring:    float4,
     finish:        float4,  // looks::Finish: varnish, sanding, grain, rings
-    tone:          float4,  // x: its warmth
+    tone:          float4,  // x: its warmth, y: pickle, z: caulk
     marble:        float4,  // looks::Marble: veins, wave, polish, tint
     marble_base:   float4,
     marble_vein:   float4,
     marble_form:   float4,
+    seam:          float4,  // looks::Theme.seam
 }
 struct Shrink { to: float4 }
 struct Show { from: float4, to: float4, screen: float4 }
@@ -259,9 +260,9 @@ fn bake(g: Gpu&, albedo: gfx::Texture, normal: gfx::Texture, w: i64, h: i64, mod
                                            t.surface, t.frame_surface, t.stone,
                                            t.light_ring, t.dark_ring, t.frame_ring,
                                            float4 { fi.varnish, fi.sanding, fi.grain, fi.rings },
-                                           float4 { fi.warmth, 0.0, 0.0, 0.0 },
+                                           float4 { fi.warmth, fi.pickle, fi.caulk, 0.0 },
                                            float4 { m.veins, m.wave, m.polish, m.tint },
-                                           m.base, m.vein, m.form });
+                                           m.base, m.vein, m.form, t.seam });
     gfx::draw(3);
     gfx::end_pass();
     gfx::generate_mips(albedo);

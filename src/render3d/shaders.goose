@@ -613,11 +613,12 @@ let BAKE_FRAG = """
         vec4 dark_ring;
         vec4 frame_ring;
         vec4 finish;     // the wood's (looks::Finish): varnish, sanding, grain, rings
-        vec4 tone;       // x: its warmth
+        vec4 tone;       // x: its warmth, y: pickle, z: caulk
         vec4 marble;     // looks::Marble: veins, wave, polish, tint; mode.w the variant
         vec4 marble_base;
         vec4 marble_vein;
         vec4 marble_form;
+        vec4 seam;       // the frame's caulked seams: x a plank's width, y half width, z dark
     };
     const float FIELD = 4.0;
     vec3 srgb(vec3 c) { return pow(c, vec3(2.2)); }
@@ -829,12 +830,21 @@ let BAKE_FRAG = """
     // The wood's finish (looks::Finish), on wood only: grain scales the figure's
     // contrast round the base color (in the exponent, as Beer's law has it), warmth
     // shifts the color, varnish lowers the roughness and fills the pores a little,
-    // sanding makes the relief shallower.
+    // sanding makes the relief shallower. Pickling (tone.y, limewash) turns the grain
+    // round, paler than the wood where it was darker, and fills the pores and grooves
+    // (the cavity) with matte white, level with the surface.
     Wood wood(vec2 q, float seed, vec4 base, vec4 k, vec3 f, vec4 ring) {
         Wood w = figure(q, seed, base, k, f, ring);
         if (k.w < 0.5) return w;
         vec3 b = srgb(base.rgb);
-        w.albedo = b * pow(max(w.albedo / b, vec3(1e-3)), vec3(finish.z));
+        w.albedo = b * pow(max(w.albedo / b, vec3(1e-3)), vec3(finish.z * (1.0 - 1.6 * tone.y)));
+        if (tone.y > 0.0) {
+            float fill = tone.y * clamp((1.0 - w.cavity) * 2.5, 0.0, 1.0);
+            w.albedo = mix(w.albedo, vec3(0.8, 0.79, 0.75), fill);
+            w.rough += 0.12 * fill;
+            w.height += 0.8 * fill;
+            w.cavity = mix(w.cavity, 1.0, fill);
+        }
         w.albedo *= vec3(1.0 + 0.1 * tone.x, 1.0 + 0.02 * tone.x, 1.0 - 0.14 * tone.x);
         w.rough = mix(w.rough, 0.55 * w.rough, finish.x);
         w.cavity = mix(w.cavity, 1.0, 0.3 * finish.x + 0.5 * finish.y);
@@ -1007,7 +1017,22 @@ let BAKE_FRAG = """
             q.x -= band * 1.4;
             seed = 7.0 + 5.0 * band;
         }
-        return wood(q, seed, frame, frame_fig, f, frame_ring);
+        Wood w = wood(q, seed, frame, frame_fig, f, frame_ring);
+        if (seam.x > 0.0 && frame_fig.w > 0.5) {
+            // Caulked seams along each mitred piece (LIT_FRAG's bands of 1.4, the top's
+            // inner edge 0.2 into its band), a plank's width apart over the top only.
+            float across = p.y - floor(p.y / 1.4) * 1.4 - 0.2;
+            float k = across / seam.x;
+            float d = abs(k - floor(k + 0.5)) * seam.x;
+            float texel = size.z / size.x;
+            float line = (1.0 - smoothstep(seam.y, seam.y + texel, d))
+                       * step(0.5 * seam.x, across) * step(across, 0.47) * min(tone.z, 1.0);
+            w.albedo = mix(w.albedo, srgb(vec3(0.07, 0.06, 0.055)), clamp(line * seam.z * max(tone.z, 1.0), 0.0, 1.0));
+            w.rough = mix(w.rough, 0.6, line);
+            w.height -= 0.6 * line;
+            w.cavity -= 0.3 * line;
+        }
+        return w;
     }
 
     Wood at(vec2 p) { return mode.x < 0.5 ? plan(p) : frame_map(p); }
