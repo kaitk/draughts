@@ -3,44 +3,58 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Draughts: coach and hint</title>
+<title>Draughts: lookout and hint</title>
 <link rel="stylesheet" href="draughts.css">
 <script src="draughts.js"></script>
 <script>
-  // Round 1 (three takes in violet) is coach-1.html; ?round=1 goes there.
-  if (new URLSearchParams(location.search).get('round') === '1') location.replace('coach-1.html' + location.search);
+  // Round 2 is coach-2.html (?round=2), round 1 coach-1.html (?round=1).
+  { const r = new URLSearchParams(location.search).get('round');
+    if (r === '1') location.replace('coach-1.html');
+    if (r === '2') location.replace('coach-2.html'); }
 </script>
 <style>
-  /* Round 2 of the coach and the hint (task 040, 2026-11-09). One feature, not two: one
-     control in the play, its word the next step (Help shows the danger, Which piece
-     lights the piece to move and spends a hint, Where to shows its square), and one
-     language of marks on the board for the danger and the hint alike. No new hue: the
-     coach's marks come from the app's own red, cream, and shade, or from the pieces
-     themselves. The danger is still; the hint breathes in the glow, as the puzzles' does.
+  /* Round 3 of the coach and the hint (task 040, 2026-11-09). Two controls, not one: the
+     lookout, a toggle that while on shows the danger by itself, and the hint, its own
+     button that lights the piece to move and then where it goes, a pip spent a hint.
+     The danger is marked on the pieces themselves, dark and still; the hint is light and
+     breathes in the glow, so the two never read alike.
 
-       a: corners. The control is a tile beside undo move (portrait) or over it (the
-          right column), built as the left panel's rows are. The marks are four corner
-          brackets on a square: the danger's in the coach's color (&mark=red, cream, or
-          shade, a darkened square with dark corners), the hint's in the glow, round the
-          piece to move and then round its square with a move dot.
-       b: the pieces. No new tile: whose turn becomes the control, the piece and the
-          words over a line with the bulb, the next step, and the hints left; undo move
-          stays as built. The marks are on the pieces: a piece in danger is cracked,
-          dimmed, or tipped over (&mark=crack, dim, tilt); a crowning shows the
-          computer's king as a ghost on its square; the hint rings the piece to move as
-          the puzzles do and puts its ghost where it goes.
+       a: a round toggle. The lookout is a disc like the 3D board's camera buttons, on
+          whose turn's line: at its right end in portrait, under the words with its word
+          in the right column. The hint is a tile beside undo (halves of the row in
+          portrait, over undo in the right column, between them in compact).
+       b: a tile. The lookout is a tile among the way-out ones: the bar's second in
+          portrait, under settings in the left panel, an icon tile in compact's bar. The
+          hint is as in a.
 
-     ?take=a|b, &mark= (a: red|cream|shade; b: crack|dim|tilt),
-     &state=ask|calm|held|king|hint1|hint2|control (ask: the coach when asked, nothing
-     shown yet; control: settings' row), &view=sheet for every take, mark, and state.
-     ?round=1 is round 1. Compact (a small window in portrait, under 760 px tall) as
-     built in task 050: icon tiles above the board, whose turn beside undo below it. */
+     Marks (&mark=): shade, the piece darkened; drain, its color drained and a little
+     darker; shadow, the threatening piece's shadow falling across it from where the jump
+     comes. A crowning (&king=): square, the crowning square shaded with a dark, still
+     ghost of the king; piece, the man that would crown shaded, a crown line on it. The
+     hint: the piece to move pulses the glow ring, then a light, translucent ghost of it
+     breathes on its square.
+
+     ?take=a|b, &mark=shade|drain|shadow, &king=square|piece,
+     &state=calm|held|king|hint1|hint2|control (control: every state of both controls
+     and the names), &lookout=on|off, &name=lookout|guard|danger|eagle, &lang=en|et,
+     &you=white|black (the same positions from black's side), &view=game|sheet. Layouts
+     as built: landscape, a phone's portrait, and compact (portrait under 760 px tall). */
   main { position: fixed; inset: 0; }
+  .proto-bar { flex-wrap: wrap; justify-content: flex-end; max-width: calc(100vw - 24px); }
+  /* In portrait the switcher would cover the play: it folds into a small Options button
+     at the bottom left, and opens over the page when pressed. */
+  .proto-fold { display: none; position: fixed; left: 6px; bottom: 6px; z-index: 11; padding: 4px 8px; border: 0;
+    border-radius: 8px; background: rgb(0 0 0 / 0.55); color: #ddd; font: 12px system-ui, sans-serif; opacity: 0.6; }
+  @media (orientation: portrait) {
+    .proto-fold { display: block; }
+    body:not(.bar-open) .proto-bar { display: none; }
+    .proto-bar { left: 6px; right: 6px; bottom: 36px; opacity: 1; justify-content: flex-start; }
+  }
 
   .game { --gap: 24px; --side: 232px; --b: min(100vh - 2 * var(--gap), 100vw - 2 * var(--side) - 4 * var(--gap));
     display: flex; align-items: center; justify-content: center; gap: var(--gap); height: 100%; padding: var(--gap); }
   #board { flex: none; width: var(--b); isolation: isolate; }
-  .panel { display: flex; flex-direction: column; gap: 12px; flex: none; width: var(--side); height: var(--b); padding: 20px 16px; }
+  .panel { position: relative; display: flex; flex-direction: column; gap: 12px; flex: none; width: var(--side); height: var(--b); padding: 20px 16px; }
   .panel .space { flex: 1; }
   .out { order: -1; display: flex; flex-direction: column; gap: 12px; width: var(--side); height: var(--b); flex: none; }
   .out .panel { flex: 1; height: auto; }
@@ -57,8 +71,8 @@
   .turn .piece { --u: 7px; position: relative; inset: auto; flex: none; width: 72px; height: 72px;
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--glow) 80%, transparent), 0 0 22px 4px color-mix(in srgb, var(--glow) 45%, transparent); }
 
-  /* The control's parts: the word (the next step) and a pip a hint left. Lit while the
-     hint shows, as a running clock is. */
+  /* The hint: the bulb, its word, and a pip a hint left; lit while it shows, as a
+     running clock is. */
   .pips { display: flex; gap: 7px; }
   .pips i { width: 12px; height: 12px; border-radius: 50%; background: var(--glow);
     box-shadow: 0 0 7px color-mix(in srgb, var(--glow) 50%, transparent); }
@@ -67,136 +81,102 @@
   .lit { background: color-mix(in srgb, var(--glow) 18%, transparent);
     box-shadow: inset 0 0 0 2px var(--glow), 0 6px 14px -8px rgb(0 0 0 / 0.5); }
   .lit:hover { background: color-mix(in srgb, var(--glow) 24%, transparent); }
+  .spent { color: var(--fg-dim); }
+  .spent svg { opacity: 0.55; }
 
-  /* b: whose turn as the control, a glass tile: the piece and the words over the help
-     line (the bulb, the next step, the pips), a hairline between. */
-  .turnhelp { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 20px 12px 16px;
-    font-size: 26px; text-align: center; }
-  .turnhelp .turn { padding: 0; }
-  .ask { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; padding-top: 14px;
-    border-top: 1px solid rgb(255 255 255 / 0.14); font-size: 21px; color: var(--fg-dim); white-space: nowrap; }
-  .ask .say { display: flex; align-items: center; gap: 9px; }
-  .ask svg { flex: none; width: 28px; height: 28px; stroke-width: 2.2; color: var(--fg); }
-  .ask .pips { gap: 6px; }
-  .play > .turnhelp .ask { flex-direction: column; gap: 8px; }
-  .ask .pips i { width: 10px; height: 10px; }
-  .lit .ask { color: var(--fg); border-top-color: color-mix(in srgb, var(--glow) 50%, transparent); }
+  /* The lookout. a: a disc, a 56 dp target round a 48 dp disc of shade with a hairline,
+     as the camera buttons are; on, lit in the glow with the open eye; off, the eye struck
+     through and dim. b: a tile, lit as a pressed row is while on. */
+  .eye { position: relative; flex: none; display: grid; place-items: center; width: 56px; height: 56px; padding: 0;
+    border: 0; background: none; color: var(--fg-dim); cursor: pointer; }
+  .eye::before { content: ''; position: absolute; inset: 4px; border-radius: 50%; background: rgb(0 0 0 / 0.3);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.22), 0 2px 8px -3px rgb(0 0 0 / 0.5); }
+  .eye.on { color: var(--fg); }
+  .eye.on::before { background: color-mix(in srgb, var(--glow) 30%, rgb(0 0 0 / 0.3));
+    box-shadow: inset 0 0 0 2px var(--glow), 0 0 12px -2px color-mix(in srgb, var(--glow) 60%, transparent); }
+  .eye svg { position: relative; width: 30px; height: 30px; stroke-width: 2.4; }
+  .eyeline { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 20px; color: var(--fg-dim); }
+  .eyeline.on { color: var(--fg); }
+  .turnline { display: flex; align-items: center; gap: 12px; }
+  .turnline .turn { flex: 1; min-width: 0; }
+  .row.look:not(.lit) { color: var(--fg-dim); }
+  .row.look:not(.lit) svg { opacity: 0.75; }
 
-  /* a: the corners, on a square. The danger's are still, in the coach's color; the
-     hint's breathe in the glow. A dark underlay keeps them on light squares. */
-  .corners { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-  .corners path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
-  .corners .u { stroke: rgb(0 0 0 / 0.4); stroke-width: 12; }
-  .corners .l { stroke: var(--mark); stroke-width: 6.5; }
-  .corners.hint { --mark: var(--glow); animation: breathe 1.4s ease-in-out infinite; }
-  .corners.hint .l { filter: drop-shadow(0 0 3px color-mix(in srgb, var(--glow) 70%, transparent)); }
-  @keyframes breathe { 0%, 100% { scale: 1; opacity: 1; } 50% { scale: 0.9; opacity: 0.55; } }
-  .ccrown { position: absolute; inset: 27%; z-index: 2; color: var(--mark); pointer-events: none;
-    filter: drop-shadow(0 0 calc(0.5 * var(--u)) rgb(0 0 0 / 0.7)); }
-  .ccrown svg { width: 100%; height: 100%; stroke-width: 2.4; }
-  .mark-red { --mark: var(--forced); }
-  .mark-cream { --mark: color-mix(in srgb, var(--w-face), #fff 40%); }
-  .mark-shade { --mark: rgb(14 8 4 / 0.85); }
-  .mark-shade .corners:not(.hint) .u { stroke: rgb(255 255 255 / 0.3); stroke-width: 11; }
-  .mark-shade .sq.shaded { box-shadow: inset 0 0 calc(2.6 * var(--u)) calc(1.2 * var(--u)) rgb(0 0 0 / 0.62); }
+  /* The danger, on the piece and still. */
+  .piece.d-shade, .p3.d-shade > .layer, .p3.d-shade > .face { filter: brightness(0.46); }
+  .piece.d-drain, .p3.d-drain > .layer, .p3.d-drain > .face { filter: grayscale(1) brightness(0.66) contrast(0.85); }
+  .piece.d-shadow::after, .p3.d-shadow > .face::after { content: ''; position: absolute; inset: -3%; border-radius: 50%;
+    background: linear-gradient(var(--ang), rgb(8 4 2 / 0.82) 0 30%, rgb(8 4 2 / 0.45) 58%, rgb(8 4 2 / 0.08) 92%);
+    pointer-events: none; }
+  .piece.d-shadow { filter: brightness(0.85); }
+  /* The crowning: the square shaded and a dark, still king on it; or a crown line on
+     the man that would crown. */
+  .sq.kshade { box-shadow: inset 0 0 calc(2.6 * var(--u)) calc(1.2 * var(--u)) rgb(0 0 0 / 0.62); }
+  .piece.kghost { opacity: 0.62; filter: brightness(0.5) saturate(0.6); }
+  .kline { position: absolute; inset: 22%; z-index: 2; color: rgb(255 248 236 / 0.85); pointer-events: none;
+    filter: drop-shadow(0 0 calc(0.4 * var(--u)) rgb(0 0 0 / 0.8)); }
+  .kline svg { width: 100%; height: 100%; stroke-width: 2.6; }
 
-  /* b: the piece itself. crack: a line across its face in the piece's own shade, with
-     a lit edge; dim: half gone, its color drained; tilt: tipped toward where it would be
-     taken to, after one shake. */
-  .crack { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-  .crack path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
-  .crack .hi { stroke: rgb(255 255 255 / 0.55); stroke-width: 3.2; transform: translate(0, 2.2px); }
-  .crack .lo { stroke: rgb(58 28 12 / 0.9); stroke-width: 3.6; }
-  .piece.black .crack .hi { stroke: rgb(255 255 255 / 0.35); }
-  .piece.black .crack .lo { stroke: rgb(0 0 0 / 0.85); }
-  .piece.dim { opacity: 0.42; filter: saturate(0.2); }
-  .piece.tilt { transform: perspective(calc(40 * var(--u))) rotate3d(var(--ax), var(--ay), 0, 38deg)
-      translate(calc(var(--dx) * 7%), calc(var(--dy) * 7%));
-    animation: shake 0.7s ease-out 1; }
-  @keyframes shake {
-    0% { transform: none; }
-    20% { transform: rotate(-9deg); } 40% { transform: rotate(8deg); } 60% { transform: rotate(-5deg); }
-    80% { transform: rotate(2deg); }
-  }
-  .piece.ghostk { opacity: 0.5; }
-  .piece.ghostk::after { content: ''; position: absolute; inset: -8%; border-radius: 50%;
-    border: calc(0.4 * var(--u)) dashed rgb(255 255 255 / 0.7); }
-
-  /* The hint in b, as the puzzles' (and round 1's): the piece to move pulses a glow
-     ring; where it goes, a ghost of it ringed in the glow. */
-  .piece.hinted::after { content: ''; position: absolute; inset: -14%; border-radius: 50%;
+  /* The hint, light and breathing: the piece to move pulses the puzzles' glow ring;
+     where it goes, a light, translucent ghost of it in the glow. */
+  .piece.hinted::after, .p3.hinted::after { content: ''; position: absolute; inset: -14%; border-radius: 50%;
     border: calc(0.9 * var(--u)) solid var(--glow);
     box-shadow: 0 0 calc(3 * var(--u)) color-mix(in srgb, var(--glow) 70%, transparent),
       inset 0 0 calc(1.2 * var(--u)) color-mix(in srgb, var(--glow) 40%, transparent);
     animation: pulse 1.4s ease-in-out infinite; }
-  .piece.ghost { opacity: 0.5; }
+  .piece.ghost { filter: brightness(1.25) saturate(0.8); animation: breathe 1.4s ease-in-out infinite; }
   .piece.ghost::after { content: ''; position: absolute; inset: -6%; border-radius: 50%;
-    box-shadow: 0 0 0 calc(0.45 * var(--u)) color-mix(in srgb, var(--glow) 80%, transparent),
-      0 0 calc(2.4 * var(--u)) color-mix(in srgb, var(--glow) 60%, transparent); }
+    box-shadow: 0 0 0 calc(0.45 * var(--u)) color-mix(in srgb, var(--glow) 85%, transparent),
+      0 0 calc(2.4 * var(--u)) color-mix(in srgb, var(--glow) 65%, transparent); }
+  @keyframes breathe { 0%, 100% { opacity: 0.6; } 50% { opacity: 0.32; } }
 
-  /* Settings (state=control): the Game group with the coach's row under move hints, and
-     the board as the choice makes it. */
-  .set { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; height: 100%; padding: 24px 32px; }
-  .set .side { display: grid; grid-template-rows: auto 1fr; gap: 14px; min-height: 0; }
-  .set .top { display: flex; align-items: center; gap: 20px; }
-  .set .top h1 { margin: 0; font-size: 34px; font-weight: 400; }
-  .set .top .button { display: flex; gap: 10px; padding: 0 26px 0 18px; font-size: 24px; text-decoration: none; }
-  .set .top .button svg { width: 34px; height: 34px; }
-  .group { --r: 24px; display: grid; gap: 12px; padding: 14px 20px 16px; align-self: center; }
-  .group h2 { margin: 0 0 2px; display: flex; align-items: center; gap: 12px; font-size: 24px; font-weight: 400; }
-  .group h2 .icon { width: 30px; height: 30px; opacity: 0.85; }
-  .setting { display: grid; grid-template-columns: 120px 1fr; align-items: center; gap: 14px; }
-  .setting h3 { margin: 0; font-size: 18px; font-weight: 400; color: var(--fg-dim); letter-spacing: 0.03em; }
-  .setting.new h3 { color: var(--fg); }
-  .tiles { display: flex; gap: 10px; flex-wrap: wrap; }
-  .tile { display: grid; place-items: center; min-width: 88px; min-height: 56px; padding: 4px 16px 6px; border: 0;
-    border-radius: 16px; color: var(--fg); font: inherit; font-size: 19px; background: var(--button);
-    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12); }
-  .tile.on { background: color-mix(in srgb, var(--glow) 22%, transparent); box-shadow: inset 0 0 0 2px var(--glow); }
-  .preview { container-type: size; display: grid; place-items: center; min-height: 0; }
-  .preview #board { width: calc(min(100cqw, 100cqh) * 0.94); }
+  /* Every state of both controls, and the names. */
+  .ctlsheet { display: grid; place-items: safe center; height: 100%; padding: 16px 16px 72px; overflow: auto; }
+  .card { display: grid; gap: 14px; padding: 20px 22px; max-width: 980px; }
+  .card h2 { margin: 6px 0 0; font-size: 20px; font-weight: 400; color: var(--fg-dim); }
+  .card .line { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }
+  .card figure { display: grid; justify-items: center; gap: 6px; margin: 0; }
+  .card figcaption { font-size: 14px; color: var(--fg-dim); text-align: center; }
+  .card .row { min-width: 168px; }
+  .names { display: grid; grid-template-columns: auto auto auto auto; gap: 8px 16px; align-items: center; font-size: 20px; }
+  .names svg { width: 28px; height: 28px; stroke-width: 2.2; }
+  .names .cur { color: var(--glow); }
+  .names .note { font-size: 14px; color: var(--fg-dim); }
 
-  /* Every take, mark, and state at once. */
-  .sheet { display: grid; grid-template-columns: auto repeat(5, 1fr); gap: 6px 12px; align-content: center;
-    height: 100%; padding: 12px 24px 40px; overflow: auto; }
+  /* Every mark and state at once. */
+  .sheet { display: grid; grid-template-columns: auto repeat(6, 1fr); gap: 6px 12px; align-content: center;
+    height: 100%; padding: 12px 24px 48px; overflow: auto; }
   .sheet h3 { margin: 0; font-size: 16px; font-weight: 400; color: var(--fg-dim); text-align: center; }
   .sheet .take { align-self: center; font-size: 18px; white-space: nowrap; }
   .sheet .cell { display: grid; place-items: center; }
-  .sheet .cell .board { width: min(100%, (100vh - 90px) / 6 - 8px); }
+  .sheet .cell .board { width: min(100%, (100vh - 110px) / 3 - 8px); }
 
   @media (orientation: portrait) {
     .game { flex-direction: column; }
     .panel { display: grid; gap: 12px 16px; align-content: start; height: auto; width: var(--b); padding: 16px 20px; }
     .panel .space { display: none; }
     .out { flex-direction: row; height: auto; width: var(--b); }
-    .out .panel { grid-template-columns: repeat(3, 1fr); }
+    .out .panel { grid-template-columns: repeat(var(--tiles, 3), 1fr); }
     .out .row { justify-content: center; }
     .out .panel .back { width: auto; justify-self: stretch; padding: 0 10px; }
     .turn { flex-direction: row; justify-content: flex-start; gap: 18px; padding: 0 6px; min-height: 72px; text-align: left; }
     .turn .piece { width: 52px; height: 52px; --u: 5px; }
     .row.big { flex-direction: row; min-height: 88px; }
     .row.big svg { width: 36px; height: 36px; }
-    /* a: the help tile beside undo, halves of the row. */
     .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .duo .row { justify-content: center; }
-    /* b: whose turn, a tile across the width: the piece at the left, the words over the
-       help line. */
-    .turnhelp { flex-direction: row; justify-content: flex-start; gap: 18px; min-height: 96px; padding: 10px 18px; text-align: left; }
-    .turnhelp .turn { min-height: 0; }
-    .turnhelp .words { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
-    .play > .turnhelp .ask { flex-direction: row; justify-content: flex-start; gap: 12px; width: auto; padding: 0; border: 0; }
-    .set { grid-template-columns: 1fr; grid-template-rows: auto auto minmax(0, 1fr); gap: 16px; padding: 20px 16px; }
-    .set .side { display: contents; }
-    .set .preview { order: 3; }
-    .setting { grid-template-columns: 1fr; gap: 6px; }
-    .sheet { grid-template-columns: repeat(6, 1fr); grid-auto-flow: column; grid-template-rows: auto repeat(5, auto); gap: 6px; padding: 12px 8px 48px; }
-    .sheet .label { display: none; }
-    .sheet .take { display: block; font-size: 12px; text-align: center; }
+    .sheet { grid-template-columns: auto repeat(3, 1fr); padding: 12px 8px 64px; gap: 6px 8px; align-content: start; }
+    .sheet .take { font-size: 13px; white-space: normal; }
+    .sheet h3 { font-size: 13px; }
     .sheet .cell .board { width: 100%; }
   }
   /* A phone in portrait: the bar's tiles each an icon over its word, as built. */
   .phone .out .row, .phone .out .back { flex-direction: column; justify-content: center; gap: 2px; min-height: 96px;
-    padding: 0 10px; font-size: 20px; }
+    padding: 0 6px; font-size: 20px; }
+  /* b's four tiles on a phone: narrower, a long word on two lines. */
+  .phone.four .out .panel { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 10px; }
+  .phone.four .out .row, .phone.four .out .back { padding: 0 4px; font-size: 17px; line-height: 1.1;
+    white-space: normal; text-align: center; }
   .phone .out .row svg, .phone .out .back svg { width: 32px; height: 32px; }
   .phone .out .panel { padding: 12px; gap: 10px; }
   .phone .game { --gap: 16px; }
@@ -205,38 +185,30 @@
   .phone .row.big svg, .phone .duo .row svg { width: 28px; height: 28px; }
   .phone .duo { gap: 10px; }
   .phone .turn { font-size: 22px; gap: 12px; }
-  .phone .turnhelp { gap: 14px; padding: 10px 14px; font-size: 22px; }
-  .phone .ask { font-size: 18px; }
-  .phone .ask svg { width: 24px; height: 24px; }
-  .phone .set .top h1 { font-size: 28px; }
-  .phone .tile { min-width: 0; padding: 4px 12px 6px; font-size: 17px; }
 
-  /* Compact, a small window in portrait (task 050): three icon tiles 72 × 64 in an
-     88 bar (back at the left, settings and start over at the right), the play one
-     112 row (whose turn at the left, undo at the right), margins 16. */
+  /* Compact, a small window in portrait (task 050): icon tiles 72 × 64 in an 88 bar
+     (back at the left, the rest at the right), the play one 112 row. */
   .compact .game { --gap: 16px; gap: 16px; }
   .compact .out, .compact .panel.play { width: calc(100vw - 32px); }
   .compact .out .panel { grid-template-columns: 72px 1fr 72px 72px; gap: 8px; padding: 12px; align-items: center; }
+  .compact.four .out .panel { grid-template-columns: 72px 1fr 72px 72px 72px; }
   .compact .out .row, .compact .out .back { min-width: 0; min-height: 64px; height: 64px; padding: 0; justify-content: center; }
   .compact .out .back { grid-column: 1; }
   .compact .out .panel > :nth-child(2) { grid-column: 3; }
-  .compact .out .panel > :nth-child(3) { grid-column: 4; }
   .compact .out span { display: none; }
   .compact .out svg { width: 32px; height: 32px; }
   .compact .panel.play { display: flex; flex-direction: row; align-items: center; gap: 10px; min-height: 112px; padding: 12px; }
-  .compact .play .turn { flex: 1; min-width: 0; gap: 12px; font-size: 21px; white-space: nowrap; }
+  .compact .play .turnline, .compact .play > .turn { flex: 1; min-width: 0; }
+  .compact .play .turn { gap: 12px; padding: 0; font-size: 21px; white-space: nowrap; }
   .compact .play .turn .piece { width: 44px; height: 44px; --u: 4px; }
+  .compact .play .turnline { gap: 6px; }
   .compact .play .row { flex-direction: column; justify-content: center; gap: 4px; min-height: 88px; padding: 0 10px;
     font-size: 18px; }
   .compact .play .row svg { width: 28px; height: 28px; }
   .compact .play .row .lbl { align-items: center; gap: 5px; }
   .compact .play .row .pips i { width: 9px; height: 9px; }
   .compact .play .row.big { min-width: 104px; }
-  .compact .turnhelp { flex: 1; min-width: 0; min-height: 88px; gap: 12px; padding: 8px 12px; font-size: 20px; }
-  .compact .turnhelp .turn .piece { width: 44px; height: 44px; --u: 4px; }
-  .compact .ask { font-size: 16px; gap: 6px; }
-  .compact .ask svg { width: 22px; height: 22px; }
-  .compact .ask .pips i { width: 8px; height: 8px; }
+  .compact .play .turn span.word { overflow: hidden; text-overflow: ellipsis; }
 </style>
 </head>
 <body data-screen="board">
@@ -245,28 +217,52 @@
   const params = new URLSearchParams(location.search);
   const pick = (k, list) => (list.includes(params.get(k)) ? params.get(k) : list[0]);
   const TAKES = ['a', 'b'];
-  const MARKS = { a: ['red', 'cream', 'shade'], b: ['crack', 'dim', 'tilt'] };
-  const STATES = ['calm', 'ask', 'held', 'king', 'hint1', 'hint2', 'control'];
+  const MARKS = ['shade', 'drain', 'shadow'];
+  const KINGS = ['square', 'piece'];
+  const STATES = ['calm', 'held', 'king', 'hint1', 'hint2', 'control'];
+  const NAMES = ['lookout', 'guard', 'danger', 'eagle'];
   const take = pick('take', TAKES);
-  const mark = pick('mark', MARKS[take]);
+  const mark = pick('mark', MARKS);
+  const kingMark = pick('king', KINGS);
   const state = pick('state', STATES);
+  const lookoutOn = pick('lookout', ['on', 'off']) === 'on';
+  const name = pick('name', NAMES);
+  const lang = pick('lang', ['en', 'et']);
+  const you = pick('you', ['white', 'black']);
   const sheet = params.get('view') === 'sheet';
+  document.documentElement.lang = lang;
 
-  // The proposed strings (task 040).
+  // The proposed strings (task 040), with the Estonian beside them in strings/et.txt's
+  // tone: one short noun, as Vihjed and Tammid are.
   const S = {
-    back: 'Back', settings: 'Settings', restart: 'Start over', undo: 'Undo move', turn: "White's turn",
-    help: 'Help', piece: 'Which piece', where: 'Where to',
-    game: 'Game', moveHints: 'Move hints', mistakes: 'Mistakes only', moves: 'All moves',
-    coach: 'Coach', always: 'Always', asked: 'When asked',
+    en: { back: 'Back', settings: 'Settings', restart: 'Start over', undo: 'Undo move',
+      turn: { white: "White's turn", black: "Black's turn" }, hint: 'Hint', where: 'Where to?',
+      lookout: 'Lookout', guard: 'Guard', danger: 'Dangers', eagle: 'Eagle eye' },
+    et: { back: 'Tagasi', settings: 'Seaded', restart: 'Alusta uuesti', undo: 'Võta käik tagasi',
+      turn: { white: 'Valgete käik', black: 'Mustade käik' }, hint: 'Vihje', where: 'Kuhu?',
+      lookout: 'Valvur', guard: 'Kaitse', danger: 'Ohud', eagle: 'Kotkasilm' },
   };
+  const T = S[lang];
   const HINTS = 3;  // a game's hints
 
-  // The positions of round 1, Russian 8 × 8, white (the player) to move, no capture.
+  // The lookout's icons by name, and the slash across them while off.
+  Object.assign(Draughts.ICONS, {
+    eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    warn: '<path d="M12 3 2 20.5h20z"/><path d="M12 10v4.5"/><circle class="solid" cx="12" cy="17.4" r="1.1"/>',
+    slash: '<path d="M3.5 3.5l17 17"/>',
+  });
+  const NAME_ICON = { lookout: 'eye', guard: 'shield', danger: 'warn', eagle: 'eye' };
+  const lookIcon = (on, n = name) => `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">` +
+    `${Draughts.ICONS[NAME_ICON[n]]}${on ? '' : Draughts.ICONS.slash}</svg>`;
+
+  // The positions of rounds 1 and 2, Russian 8 × 8, white (the player) to move, no capture.
   //   calm: black would take d4 (e5 to c3) and g3 (h4 to f2) if it were its turn. The
   //         hint's move is d2 to c3, which covers d4.
   //   held: b4 held over a5, its only move. It would open c5 and c3 to d6's double jump
   //         (d6, b4, d2); b4 is what keeps them safe now.
   //   king: black's man on d2 crowns on e1 next move, and nothing of white's can stop it.
+  // &you=black turns each round: the same position from black's side, black's pieces
+  // where white's were.
   const POS = {
     calm: { white: ['a1', 'c1', 'e1', 'g1', 'b2', 'd2', 'h2', 'a3', 'e3', 'g3', 'd4'],
       black: ['b8', 'd8', 'f8', 'h8', 'a7', 'c7', 'e7', 'g7', 'b6', 'f6', 'e5', 'h4'], last: ['g5', 'h4'] },
@@ -275,124 +271,118 @@
     king: { white: ['c1', 'g1', 'h2', 'a3', 'g3', 'b4', 'c5'],
       black: ['d2', 'e3', 'd6', 'a7', 'c7', 'e7', 'f8', 'h8'], last: ['c3', 'd2'] },
   };
-  // What the coach sees: each piece in danger with the jump that takes it (from, to),
+  // What the lookout sees: each piece in danger with the jump that takes it (from, to),
   // or the crowning (the man and its square).
   const COACH = {
     calm: { danger: { d4: ['e5', 'c3'], g3: ['h4', 'f2'] } },
     held: { danger: { c5: ['d6', 'b4'], c3: ['b4', 'd2'] } },
     king: { crown: ['d2', 'e1'] },
   };
+  const HINT = ['d2', 'c3'];
   const posOf = (st) => (st === 'held' || st === 'king' ? st : 'calm');
-  // The coach shows in every state but ask (when asked, not yet asked).
-  const coachShows = (st) => st !== 'ask';
+  const other = you === 'white' ? 'black' : 'white';
+  // A square as the player sees it: turned round when the player has black.
+  const R = (sq) => (you === 'white' ? sq : String.fromCharCode(97 + 104 - sq.charCodeAt(0)) + (9 - +sq.slice(1)));
 
   const W = innerWidth, H = innerHeight, landscape = W >= H, phone = Math.min(W, H) < 600;
   const compact = !landscape && H < 760;
   document.body.classList.toggle('phone', phone && !compact);
   document.body.classList.toggle('compact', compact);
+  document.body.classList.toggle('four', take === 'b');
   const icon = Draughts.icon;
   Draughts.init();
 
   const sqIndex = (sq, n = 8) => { const x = sq.charCodeAt(0) - 97, y = +sq.slice(1) - 1; return (n - 1 - y) * n + x; };
-  const xy = (sq) => [sq.charCodeAt(0) - 97, -(+sq.slice(1))];  // x right, y down
+  const xy = (sq) => [sq.charCodeAt(0) - 97, -(+sq.slice(1))];  // x right, y down on screen
 
-  const CORNERS = 'M6 27V6h21M73 6h21v21M94 73v21H73M27 94H6V73';
-  const corners = (cls = '') => `<svg class="corners ${cls}" viewBox="0 0 100 100">` +
-    `<path class="u" d="${CORNERS}"/><path class="l" d="${CORNERS}"/></svg>`;
-  const CRACK = 'M9 38 L27 43 L33 33 L47 47 L44 58 L60 62 L66 76 L80 82';
-  const CRACK2 = 'M47 47 L58 39 L64 25';
-  const crack = () => `<svg class="crack" viewBox="0 0 100 100"><path class="hi" d="${CRACK} M${CRACK2.slice(1)}"/>` +
-    `<path class="lo" d="${CRACK} M${CRACK2.slice(1)}"/></svg>`;
-
-  // Draws a state's board into el with the take's marks.
-  function draw(el, t, m, st) {
-    const pos = POS[posOf(st)];
-    Draughts.board(el, { ...pos, assist: 'mistakes' });
-    el.classList.add(`mark-${m}`);
-    const sq = (s) => el.querySelectorAll('.sq')[sqIndex(s)];
-    const pieceAt = (s) => sq(s).querySelector('.piece');
+  // Draws a state's board into el with the marks: the danger while the lookout is on,
+  // the hint in hint1 and hint2.
+  function draw(el, m, km, st, on = lookoutOn) {
+    const p = POS[posOf(st)];
+    const map = (l) => (l || []).map(R);
+    Draughts.board(el, { [you]: map(p.white), [other]: map(p.black), selected: p.selected && R(p.selected),
+      last: map(p.last), assist: 'mistakes' });
+    const sq = (s) => el.querySelectorAll('.sq')[sqIndex(R(s))];
+    const pieceAt = (s) => sq(s).querySelector('.piece, .p3');
     const c = COACH[posOf(st)];
-    if (coachShows(st)) {
-      for (const [s, [from, to]] of Object.entries(c.danger || {})) {
-        if (t === 'a') {
-          sq(s).insertAdjacentHTML('beforeend', corners());
-          sq(s).classList.add('shaded');
-        } else if (m === 'crack') {
-          pieceAt(s).insertAdjacentHTML('beforeend', crack());
-        } else if (m === 'dim') {
-          pieceAt(s).classList.add('dim');
-        } else {
-          // Tipped toward where the jump lands: the axis across the jump.
-          const [x0, y0] = xy(from), [x1, y1] = xy(to), dx = Math.sign(x1 - x0), dy = Math.sign(y1 - y0);
-          const p = pieceAt(s);
-          p.classList.add('tilt');
-          Object.entries({ '--ax': -dy, '--ay': dx, '--dx': dx, '--dy': dy }).forEach(([k, v]) => p.style.setProperty(k, v));
-        }
+    if (on) {
+      for (const [s, [from]] of Object.entries(c.danger || {})) {
+        const pc = pieceAt(s);
+        pc.classList.add(`d-${m}`);
+        // The shadow falls from the threatening piece's side.
+        const [x0, y0] = xy(R(from)), [x1, y1] = xy(R(s));
+        pc.style.setProperty('--ang', `${Math.round(Math.atan2(x1 - x0, -(y1 - y0)) * 180 / Math.PI)}deg`);
       }
       if (c.crown) {
-        const s = sq(c.crown[1]);
-        if (t === 'a') s.insertAdjacentHTML('beforeend', corners() + `<div class="ccrown">${icon('crownLine')}</div>`);
-        else s.insertAdjacentHTML('beforeend', '<div class="piece black king ghostk"></div>');
+        const [man, to] = c.crown;
+        if (km === 'square') {
+          sq(to).classList.add('kshade');
+          sq(to).insertAdjacentHTML('beforeend', `<div class="piece ${other} king kghost"></div>`);
+        } else {
+          const pc = pieceAt(man);
+          pc.classList.add(`d-${m}`);
+          pc.style.setProperty('--ang', you === 'white' ? '180deg' : '0deg');
+          pc.insertAdjacentHTML('beforeend', `<div class="kline">${icon('crownLine')}</div>`);
+        }
       }
     }
-    // The hint: the piece to move, then where it goes.
-    if (st === 'hint1' || st === 'hint2') {
-      if (t === 'a') sq('d2').insertAdjacentHTML('beforeend', corners('hint'));
-      else pieceAt('d2').classList.add('hinted');
-    }
-    if (st === 'hint2') {
-      if (t === 'a') sq('c3').insertAdjacentHTML('beforeend', corners('hint') + '<div class="target"></div>');
-      else sq('c3').insertAdjacentHTML('beforeend', '<div class="piece white ghost"></div>');
-    }
+    if (st === 'hint1' || st === 'hint2') pieceAt(HINT[0]).classList.add('hinted');
+    if (st === 'hint2') sq(HINT[1]).insertAdjacentHTML('beforeend', `<div class="piece ${you} ghost"></div>`);
+    Draughts.paint();
   }
 
-  const row = (name, word, cls = '') =>
-    `<button class="row button ${cls}">${icon(name)}<span>${word}</span></button>`;
+  const row = (ic, word, cls = '') =>
+    `<button class="row button ${cls}">${icon(ic)}<span>${word}</span></button>`;
   const pips = (left) => `<span class="pips">${Array.from({ length: HINTS }, (_, i) => `<i class="${i < left ? '' : 'out'}"></i>`).join('')}</span>`;
 
-  // The one control's word is its next step: Help (the danger, free, when asked), Which
-  // piece (spends a hint), Where to. After Where to it stays lit until the move.
-  function step(st) {
+  // The hint button: Hint; pressed once, it lights the piece, spends a hint, and asks
+  // Where to?; pressed again, it shows the square and stays lit until the move. With no
+  // hints left it is dim.
+  function hintButton(st, extra = '') {
     const lit = st === 'hint1' || st === 'hint2';
-    const word = st === 'ask' ? S.help : st === 'hint1' || st === 'hint2' ? S.where : S.piece;
-    return { lit, word, left: lit ? HINTS - 1 : HINTS };
+    const left = st === 'spent' ? 0 : lit ? HINTS - 1 : HINTS;
+    const word = st === 'hint1' ? T.where : T.hint;
+    return `<button class="row button hint ${lit ? 'lit' : ''} ${st === 'spent' ? 'spent' : ''} ${extra}">${icon('hint')}` +
+      `<span class="lbl"><span>${word}</span>${pips(left)}</span></button>`;
   }
+  const eyeDisc = (on) => `<button class="eye ${on ? 'on' : ''}" aria-label="${T[name]}">${lookIcon(on)}</button>`;
+  const lookTile = (on) => `<button class="row button look ${on ? 'lit' : ''}">${lookIcon(on)}<span>${T[name]}</span></button>`;
 
-  // The play panel by take.
+  // The play panel by take and layout.
   function play() {
-    const { lit, word, left } = step(state);
-    const turnPiece = '<div class="piece white"></div>';
-    const undo = row('undo', S.undo, 'big');
+    const turnPiece = `<div class="piece ${you}"></div>`;
+    const turnWord = `<span class="word">${T.turn[you]}</span>`;
+    const undo = row('undo', T.undo, 'big');
+    const hint = hintButton(state);
+    const turn = `<div class="turn">${turnPiece}${turnWord}</div>`;
     if (take === 'a') {
-      const turn = `<div class="turn">${turnPiece}<span>${S.turn}</span></div>`;
-      const help = `<button class="row button help ${lit ? 'lit' : ''}">${icon('hint')}` +
-        `<span class="lbl"><span>${word}</span>${pips(left)}</span></button>`;
-      if (landscape) return `${turn}<div class="space"></div>${help}${undo}`;
-      if (compact) return `${turn}${help}${undo}`;
-      return `${turn}<div class="duo">${help}${undo}</div>`;
+      if (landscape) {
+        return `${turn}<div class="eyeline ${lookoutOn ? 'on' : ''}">${eyeDisc(lookoutOn)}<span>${T[name]}</span></div>` +
+          `<div class="space"></div>${hint}${undo}`;
+      }
+      const line = `<div class="turnline">${turn}${eyeDisc(lookoutOn)}</div>`;
+      if (compact) return `${line}${hint}${undo}`;
+      return `${line}<div class="duo">${hint}${undo}</div>`;
     }
-    const ask = `<span class="ask"><span class="say">${icon('hint')}<span>${word}</span></span>${pips(left)}</span>`;
-    if (landscape) {
-      return `<button class="button turnhelp ${lit ? 'lit' : ''}"><div class="turn">${turnPiece}<span>${S.turn}</span></div>${ask}</button>` +
-        `<div class="space"></div>${undo}`;
-    }
-    const tile = `<button class="button turnhelp ${lit ? 'lit' : ''}"><div class="turn">${turnPiece}</div>` +
-      `<span class="words"><span>${S.turn}</span>${ask}</span></button>`;
-    return `${tile}${undo}`;
+    if (landscape || compact) return `${turn}${landscape ? '<div class="space"></div>' : ''}${hint}${undo}`;
+    return `${turn}<div class="duo">${hint}${undo}</div>`;
   }
 
   function gameScreen() {
-    const out = `<div class="out"><a class="button glass back" href="home.html">${icon('back')}<span>${S.back}</span></a>` +
-      `<aside class="panel glass">${row('gear', S.settings)}<div class="space"></div>${row('restart', S.restart)}</aside></div>`;
+    const look = take === 'b' ? lookTile(lookoutOn) : '';
+    const out = `<div class="out"><a class="button glass back" href="home.html">${icon('back')}<span>${T.back}</span></a>` +
+      `<aside class="panel glass">${landscape ? row('gear', T.settings) + look : look + row('gear', T.settings)}` +
+      `<div class="space"></div>${row('restart', T.restart)}</aside></div>`;
     document.getElementById('app').innerHTML = `<div class="game">${out}<div id="board"></div>` +
       `<aside class="panel glass play">${play()}</aside></div>`;
+    document.querySelector('.game').style.setProperty('--tiles', take === 'b' ? 4 : 3);
     if (!landscape) {
       const b = document.querySelector('.out > .back');
       b.classList.remove('glass');
       document.querySelector('.out .panel').prepend(b);
       if (compact) document.querySelectorAll('.out .row, .out .back').forEach((e) => e.setAttribute('aria-label', e.textContent));
     }
-    draw(document.getElementById('board'), take, mark, state);
+    draw(document.getElementById('board'), mark, kingMark, state);
     if (!landscape) fitPortrait();
   }
 
@@ -407,33 +397,50 @@
     }
   }
 
-  // Settings' Game group with the coach's row under move hints: always, or when asked
-  // (then the danger waits for Help); the preview shows the calm position.
-  function settingsScreen() {
-    const tile = (on, word) => `<button class="tile${on ? ' on' : ''}">${word}</button>`;
-    document.getElementById('app').innerHTML = `<div class="set"><div class="side">
-      <div class="top"><a class="button glass" href="#">${icon('back')}<span>${S.back}</span></a><h1>${S.settings}</h1></div>
-      <section class="group glass"><h2>${icon('target')}${S.game}</h2>
-        <div class="setting"><h3>${S.moveHints}</h3><div class="tiles">${tile(true, S.mistakes)}${tile(false, S.moves)}</div></div>
-        <div class="setting new"><h3>${S.coach}</h3><div class="tiles">${tile(true, S.always)}${tile(false, S.asked)}</div></div>
-      </section></div>
-      <div class="preview"><div id="board"></div></div></div>`;
-    draw(document.getElementById('board'), take, mark, 'calm');
+  // Both controls in every state, in both takes' forms, and the names offered.
+  function controlScreen() {
+    const fig = (html, cap) => `<figure>${html}<figcaption>${cap}</figcaption></figure>`;
+    const names = NAMES.map((n) => `<span class="${n === name ? 'cur' : ''}">${lookIcon(true, n)}</span>` +
+      `<span class="${n === name ? 'cur' : ''}">${S.en[n]}</span><span class="${n === name ? 'cur' : ''}">${S.et[n]}</span>` +
+      `<span class="note">${{ lookout: 'eye', guard: 'shield', danger: 'warning', eagle: 'eye' }[n]}</span>`).join('');
+    document.getElementById('app').innerHTML = `<div class="ctlsheet"><section class="card glass">
+      <h2>Lookout, a: a round toggle</h2>
+      <div class="line">${fig(eyeDisc(false), 'off')}${fig(eyeDisc(true), 'on')}
+        ${fig(`<div class="eyeline">${eyeDisc(false)}<span>${T[name]}</span></div>`, 'off, right column')}
+        ${fig(`<div class="eyeline on">${eyeDisc(true)}<span>${T[name]}</span></div>`, 'on, right column')}</div>
+      <h2>Lookout, b: a tile</h2>
+      <div class="line">${fig(lookTile(false), 'off')}${fig(lookTile(true), 'on')}</div>
+      <h2>Hint</h2>
+      <div class="line">${fig(hintButton('calm'), 'ready')}${fig(hintButton('hint1'), 'first press: the piece')}
+        ${fig(hintButton('hint2'), 'second press: where to')}${fig(hintButton('spent'), 'none left')}</div>
+      <h2>Names</h2>
+      <div class="names">${names}</div></section></div>`;
   }
 
+  // Every mark in every state, the crowning both ways.
   function sheetScreen() {
-    const cols = ['calm', 'held', 'king', 'hint1', 'hint2'];
-    let html = `<span class="label"></span>${cols.map((c) => `<h3 class="label">${c}</h3>`).join('')}`;
-    for (const t of TAKES) for (const m of MARKS[t]) {
-      html += `<span class="take">${t} ${m}</span>`;
-      for (const c of cols) html += `<div class="cell"><div class="board" data-t="${t}" data-m="${m}" data-s="${c}"></div></div>`;
+    const cols = [['calm', 'calm', 'square'], ['held', 'held', 'square'], ['king', 'king square', 'square'],
+      ['king', 'king piece', 'piece'], ['hint1', 'hint1', 'square'], ['hint2', 'hint2', 'square']];
+    let html = '';
+    if (landscape) {
+      html = `<span></span>${cols.map((c) => `<h3>${c[1]}</h3>`).join('')}`;
+      for (const m of MARKS) {
+        html += `<span class="take">${m}</span>`;
+        for (const [st, , km] of cols) html += `<div class="cell"><div class="board" data-m="${m}" data-k="${km}" data-s="${st}"></div></div>`;
+      }
+    } else {
+      html = `<span></span>${MARKS.map((m) => `<h3>${m}</h3>`).join('')}`;
+      for (const [st, label, km] of cols) {
+        html += `<span class="take">${label}</span>`;
+        for (const m of MARKS) html += `<div class="cell"><div class="board" data-m="${m}" data-k="${km}" data-s="${st}"></div></div>`;
+      }
     }
     document.getElementById('app').innerHTML = `<div class="sheet">${html}</div>`;
-    document.querySelectorAll('.sheet .board').forEach((el) => draw(el, el.dataset.t, el.dataset.m, el.dataset.s));
+    document.querySelectorAll('.sheet .board').forEach((el) => draw(el, el.dataset.m, el.dataset.k, el.dataset.s, true));
   }
 
   if (sheet) sheetScreen();
-  else if (state === 'control') settingsScreen();
+  else if (state === 'control') controlScreen();
   else gameScreen();
 
   Draughts.paint();
@@ -444,16 +451,19 @@
   }));
   addEventListener('resize', () => setTimeout(() => location.reload(), 200));
 
-  // The take, mark, state, and view, from the switcher; the round goes back to round 1.
+  // Every option from the switcher; the round goes back to rounds 2 and 1.
   const bar = document.querySelector('.proto-bar');
   const sel = (key, values, current) => `<select data-k="${key}" aria-label="${key}">${values.map((v) =>
     `<option${v === current ? ' selected' : ''}>${v}</option>`).join('')}</select>`;
-  bar.insertAdjacentHTML('afterbegin', sel('round', ['2', '1'], '2') + sel('take', TAKES, take) +
-    sel('mark', MARKS[take], mark) + sel('state', STATES, state) + sel('view', ['game', 'sheet'], sheet ? 'sheet' : 'game'));
+  bar.insertAdjacentHTML('afterbegin', sel('round', ['3', '2', '1'], '3') + sel('take', TAKES, take) +
+    sel('mark', MARKS, mark) + sel('king', KINGS, kingMark) + sel('state', STATES, state) +
+    sel('lookout', ['on', 'off'], lookoutOn ? 'on' : 'off') + sel('name', NAMES, name) + sel('lang', ['en', 'et'], lang) +
+    sel('you', ['white', 'black'], you) + sel('view', ['game', 'sheet'], sheet ? 'sheet' : 'game'));
+  document.body.insertAdjacentHTML('beforeend', '<button class="proto-fold">Options</button>');
+  document.querySelector('.proto-fold').onclick = () => document.body.classList.toggle('bar-open');
   bar.querySelectorAll('select[data-k]').forEach((s) => s.onchange = (e) => {
     e.stopPropagation();
     params.set(s.dataset.k, s.value);
-    if (s.dataset.k === 'take') params.delete('mark');
     location.search = params.toString();
   });
 </script>
