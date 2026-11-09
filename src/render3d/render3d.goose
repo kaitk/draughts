@@ -90,6 +90,9 @@ let SHADOW_SIZE = 1024;
 let SHADOW_TAP: f32 = 2.5 / 2048.0;
 let PLAN_SIZE = 2048;
 let FRAME_MAP = 2048;
+// A mitred frame's map holds only its four bands (LIT_FRAG: 0.2 to 5.65 of the map's 10.4
+// world units across), its rows at the same density: 44% less memory and bake.
+let FRAME_MITRED_ROWS = 1152;
 let PHOTO_SIZE = 512;
 let SAMPLES = 4;
 let MAX_INSTANCES = 96;     // view3d::MAX_INSTANCES: two for each of board::MAX_PIECES
@@ -129,6 +132,7 @@ struct Gpu {
     plan_normal:    gfx::Texture,
     frame_albedo:   gfx::Texture,
     frame_normal:   gfx::Texture,
+    frame_rows:     i64,            // the frame map's rows: FRAME_MAP, or the mitred bands'
     photo:          gfx::Texture,
     shadow_map:     gfx::Texture,
     color:          gfx::Texture,   // the multisampled target and its depth
@@ -291,7 +295,10 @@ fn bake_surfaces(g: Gpu&, plan: bool = true, frame: bool = true) {
     let t = look(g, g.look);
     let span = 2.0 * mesh::INNER;
     if plan { bake(g, g.plan_albedo, g.plan_normal, PLAN_SIZE, PLAN_SIZE, 0.0, float2 { span, span }, t); }
-    if frame { bake(g, g.frame_albedo, g.frame_normal, FRAME_MAP, FRAME_MAP, 1.0, float2 { 10.4, 10.4 }, t); }
+    if frame {
+        let rows = g.frame_rows;
+        bake(g, g.frame_albedo, g.frame_normal, FRAME_MAP, rows, 1.0, float2 { 10.4, 10.4 * rows / FRAME_MAP }, t);
+    }
     gfx::flush();
 }
 
@@ -369,8 +376,7 @@ fn setup(g: Gpu&, samples: i32 = SAMPLES) {
                            gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED });
     g.plan_albedo = baked(PLAN_SIZE, PLAN_SIZE, gfx::RGBA8_SRGB);
     g.plan_normal = baked(PLAN_SIZE, PLAN_SIZE, gfx::RGBA8);
-    g.frame_albedo = baked(FRAME_MAP, FRAME_MAP, gfx::RGBA8_SRGB);
-    g.frame_normal = baked(FRAME_MAP, FRAME_MAP, gfx::RGBA8);
+    g.frame_rows = 0;   // made by apply(), as the look's frame wants
     g.photo = gfx::render_target(PHOTO_SIZE, PHOTO_SIZE, gfx::RGBA8);
     g.small = gfx::render_target(PHOTO_SIZE, PHOTO_SIZE, gfx::RGBA8);
     g.across = gfx::render_target(PHOTO_SIZE, PHOTO_SIZE, gfx::RGBA8);
@@ -416,6 +422,17 @@ fn apply(g: Gpu&, which: i64, n: i64, photo: i64 = -1) {
     if which != g.look || n != g.n {
         g.look = which;
         g.n = n;
+        let rows = if t.build.x < 0.5 { FRAME_MITRED_ROWS } else { FRAME_MAP };
+        if rows != g.frame_rows {
+            if g.frame_rows != 0 {
+                gfx::release(g.frame_albedo);
+                gfx::release(g.frame_normal);
+                gfx::flush();
+            }
+            g.frame_albedo = baked(FRAME_MAP, rows, gfx::RGBA8_SRGB);
+            g.frame_normal = baked(FRAME_MAP, rows, gfx::RGBA8);
+            g.frame_rows = rows;
+        }
         let t0 = clock();
         bake_surfaces(g);
         g.bake_ms = (clock() - t0) * 1000.0;
@@ -445,7 +462,7 @@ fn apply(g: Gpu&, which: i64, n: i64, photo: i64 = -1) {
     f.bounce = linear4(t.bounce);
     f.grade = t.grade;
     f.tint = linear4(t.tint);
-    f.frame_build = t.build;
+    f.frame_build = float4 { t.build.x, t.build.y, t.build.z, (g.frame_rows as f32) / FRAME_MAP };
     f.frame_surface = t.frame_surface;
     g.shadow_dirty = true;
 }
