@@ -123,3 +123,9 @@ and the commit that last has it.
   (a short form between the clocks where the line has no room); checked headless on the
   Mac, not on a device, by the user's choice.
   `049-draws.md`, `fb29d63`
+- 051: Polish found while preparing the stores. Done: the 3D board shows a capture's
+  next stops; the library's title has a soft dark halo over bright bark; settings' top
+  padding gives up to 12 dp under a top inset so both groups fit an iPad's landscape;
+  the Game/Look tabs sit on glass as Back does; in portrait the shown group is its own
+  height and the board takes the rest (the user, 2026-11-09).
+  `051-polish/`, `5066f4f`

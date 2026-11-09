@@ -49,13 +49,13 @@ Estonian, 025 regrouped the settings, 027 had the computer spend its clock as a 
 its level would, 028 made the icon and launch screen, 030 fitted the layouts to phones and
 other screen sizes, 031 made the win calmer, 032 brought memory down, 034 made the setup's
 board show the game, 035 added home's X, 015 the 3D board (in main 2026-11-09), 047
-reviewed the structure, and 049 added the draws; 016 (tabletop pictures) and 033 (an icon per season) were
+reviewed the structure, 049 added the draws, and 051 polished what preparing the stores found; 016 (tabletop pictures) and 033 (an icon per season) were
 cancelled. All are archived. The MVP in `docs/product.md` is built.
 
 Open:
 
 - Release: 029 Google Play, 046 the App Store (after 043, iOS), 050 small iPad windows,
-  051 polish found preparing the stores (subtasks), 036 the announcement after the Play
+  036 the announcement after the Play
   release.
 - Content and play: 037 the puzzle set by theme, 038 players, 040 a hint in the game
   (later), 048 a reported forced capture with a king.
