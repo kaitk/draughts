@@ -434,7 +434,9 @@ the prototype tried, kept for 3D:
   rest, about two thirds, so from home the board only moves a little; in portrait the board is
   on top, as large as the rest leaves, and the two groups stand side by side under it.
   **Game**: the draughts a new game starts on (international, Brazilian, Russian; the
-  setup can still change it), move hints, and the tutorial (one tile, learn the moves).
+  setup can still change it) and move hints; the tutorial's row (one tile, learn the
+  moves) comes with the tutorial (task 026), taken out until then so the tablet's
+  landscape shows both groups (the user, 2026-11-09).
   **Look**: the background as thumbnails of the four photographs (62 × 40 px) and,
   last, a tile for by the date, so on a phone in portrait, where the row wraps, the four
   seasons keep one row and by the date goes under them, in the same order at every size
@@ -472,11 +474,9 @@ the prototype tried, kept for 3D:
   group's glass, without its title row, is as tall as the taller of the two so the board
   stays put. A board under 128 dp isn't shown, as on home (a 9:16 phone at 480 dp). In
   portrait the title takes a smaller face, or none, where it doesn't fit beside the
-  language (2026-11-08). The Board row makes the look group too tall for a
-  landscape 800 px tall, so the tablet shows one group at a time too; their notes and the thumbnails' labels are in the 17 px
+  language (2026-11-08). The tiles' notes and the thumbnails' labels are in the 17 px
   face, which makes them a little wider than the prototype's 13 px, so the landscape
-  board is about 550 px where the prototype's is 590. The tutorial's tile is dimmed and
-  takes no tap until it exists.
+  board is about 550 px where the prototype's is 590.
   **Puzzle picker** (`prototypes/puzzles.html`, take a, a library list, chosen
   2026-11-09; rejected: b's large theme tiles, which shrink long Estonian names and hold
   the fewest themes a screen, and c's library beside the theme, which needs two

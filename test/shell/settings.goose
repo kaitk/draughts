@@ -4,9 +4,8 @@
 // On the regrouped screen a tap applies at once and marks the settings changed for the
 // app to write: the language in the title row; the draughts a new game starts on, move
 // hints (which the game's board takes), a season, and the kings (which the game's board
-// draws too); the tutorial does nothing until it exists, and the Board row's 3D plays the
-// game on the 3D board, whose kings are stacks for auto. Each choice
-// restages the board beside them: its size, its kings, and what the move hints show on
+// draws too); the Board row's 3D plays the game on the 3D board, whose kings are stacks
+// for auto. Each choice restages the board beside them: its size, its kings, and what the move hints show on
 // a fixed position, where white must capture with the man on d4 or the king on h6.
 // With mistakes only, a wrong move's ring flashes and both capturing pieces pulse, then
 // both stay lit and still, so nothing animates after. In landscape the board is right of
@@ -32,13 +31,12 @@ let BRAZILIAN = 4;
 let RUSSIAN = 5;
 let MISTAKES = 6;
 let MOVES = 7;
-let TUTORIAL = 8;
-let SUMMER = 11;
-let BY_DATE = 13;
-let RAISED = 15;
-let AUTO = 16;
-let STACK = 18;
-let TILES = 19;
+let SUMMER = 10;
+let BY_DATE = 12;
+let RAISED = 14;
+let AUTO = 15;
+let STACK = 17;
+let TILES = 18;
 
 fn show(sh: shell::Shell&, what: const u8[:]) {
     var out: u8[>..] = [];
@@ -131,8 +129,6 @@ fn main() {
     show(sh, "summer");
     drive::tap(sh, g, drive::tile(g, RAISED), 4.1);
     show(sh, "3D");
-    drive::tap(sh, g, drive::tile(g, TUTORIAL), 4.2);
-    show(sh, "the tutorial");
     drive::tap(sh, g, drive::tile(g, MOVES), 4.3);
     show(sh, "all moves");
     preview(sh, 4.4);

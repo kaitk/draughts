@@ -1,9 +1,9 @@
 // Settings (prototypes/settings.html; rendering.md, "Settings"): back and the title,
 // the language at the title row's right end, and the choices as words in two glass
 // groups by what they change. Game: the draughts a new game starts on (the setup's
-// choice too), move hints, and the tutorial. Look: the background (one season, or by
-// the date), the board (flat or raised), and the kings (auto,
-// crown, or stack). Beside them is home's board as the choices make it: its size, the
+// choice too) and move hints; the tutorial's row comes with the tutorial (task 026).
+// Look: the background (one season, or by the date), the board (flat or raised), and
+// the kings (auto, crown, or stack). Beside them is home's board as the choices make it: its size, the
 // kings, and what the move hints show, on a fixed position. In landscape the choices
 // take the width they need at the left and the board the rest (near square, each
 // setting's name above its tiles, so the rows fit the height); in portrait the board is
@@ -300,25 +300,24 @@ let THUMB_W = 62.0;         // a season's thumbnail
 let THUMB_H = 40.0;
 let SLACK = 0.5;            // px a row may pass its width by without wrapping
 
-// The settings in order, the first three in the game's group, the rest in the look's:
+// The settings in order, the first two in the game's group, the rest in the look's:
 // each one's name, how many tiles, and how tall they are.
 let DRAUGHTS_ROW = 0;
 let HINTS_ROW = 1;
-let TUTORIAL_ROW = 2;
-let BACKGROUND_ROW = 3;
-let BOARD_ROW = 4;
-let KINGS_ROW = 5;
-let GAME_ROWS = 3;
-let ROW_NAMES = [strings::SETUP_DRAUGHTS, strings::SETTINGS_HINTS, strings::SETTINGS_TUTORIAL,
+let BACKGROUND_ROW = 2;
+let BOARD_ROW = 3;
+let KINGS_ROW = 4;
+let GAME_ROWS = 2;
+let ROW_NAMES = [strings::SETUP_DRAUGHTS, strings::SETTINGS_HINTS,
                  strings::SETTINGS_BACKGROUND, strings::SETTINGS_BOARD, strings::SETTINGS_KINGS];
-let ROW_TILES = [3, 2, 1, 5, 2, 3];
-let ROW_H = [88.0, 88.0, 88.0, 88.0, 88.0, 88.0]; // the floor for small hands (56 to 72 until 2026-11-08)
+let ROW_TILES = [3, 2, 5, 2, 3];
+let ROW_H = [88.0, 88.0, 88.0, 88.0, 88.0]; // the floor for small hands (56 to 72 until 2026-11-08)
 let GROUP_ICONS = [gui::TARGET, gui::SUN];
 let GROUP_TITLES = [strings::SETTINGS_GAME, strings::SETTINGS_LOOK];
 
-// The rows a group shows: the game's three, and the look's background, board, and kings.
+// The rows a group shows: the game's two, and the look's background, board, and kings.
 // Row k of a group is `group_row`.
-fn group_rows(group: i64) -> i64 { return 3; }
+fn group_rows(group: i64) -> i64 { return if group == 0 { GAME_ROWS } else { ROW_TILES.len - GAME_ROWS }; }
 
 fn group_row(group: i64, k: i64) -> i64 { return GAME_ROWS * group + k; }
 
@@ -326,7 +325,6 @@ fn group_row(group: i64, k: i64) -> i64 { return GAME_ROWS * group + k; }
 fn word(row: i64, i: i64) -> i64 {
     if row == DRAUGHTS_ROW { return DRAUGHTS_KEYS[i]; }
     if row == HINTS_ROW { return [strings::HINTS_MISTAKES, strings::HINTS_MOVES][i]; }
-    if row == TUTORIAL_ROW { return strings::TUTORIAL_LEARN; }
     if row == BACKGROUND_ROW { return if i == BY_DATE_TILE { strings::SETTINGS_BY_DATE } else { SEASON_KEYS[i] }; }
     if row == BOARD_ROW { return [strings::BOARD_FLAT, strings::BOARD_RAISED][i]; }
     return KING_KEYS[i];
@@ -340,14 +338,12 @@ fn note(row: i64, i: i64) -> const u8[:] {
 }
 
 // How wide tile i of a row is: its words with 16 dp either side, at least 88 dp; a
-// season's, its thumbnail or label and 6 dp either side, at least 88 dp too; the
-// tutorial's, its icon too.
+// season's, its thumbnail or label and 6 dp either side, at least 88 dp too.
 fn tile_width(g: gui::Gui&, row: i64, i: i64) -> f32 {
     let u = g.scale;
     let label = strings::get(word(row, i));
     if row == BACKGROUND_ROW { return max(88.0 * u, max(THUMB_W * u, gui::text_width(g, gui::SMALL, label)) + 12.0 * u); }
     let w = gui::text_width(g, gui::BODY, label);
-    if row == TUTORIAL_ROW { return (16.0 + 26.0 + 10.0 + 16.0) * u + w; }
     return max(88.0 * u, max(w, gui::text_width(g, gui::SMALL, note(row, i))) + 32.0 * u);
 }
 
@@ -362,15 +358,6 @@ fn tile(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, i: i64, r: f
         else { return false; }
         s.season = kind;
         return true;
-    }
-    if row == TUTORIAL_ROW {
-        // A bulb and the words, dimmed and taking no tap until the tutorial exists.
-        let unused, at = gui::pick(g, id, r, 0.0, "", "", false, false);
-        var c = gui::center(r, 36.0 * u + gui::text_width(g, gui::BODY, label), r.w);
-        gui::glyph_icon(g, gui::center(gui::cut_left(c, 26.0 * u), 26.0 * u, 26.0 * u), gui::HINT, gui::PLAIN, 0.0, 0.4);
-        gui::cut_left(c, 10.0 * u);
-        gui::text(g, gui::BODY, c, label, 0.4, 0.0, gui::LEFT);
-        return false;
     }
     let on = if row == DRAUGHTS_ROW { s.variant == DRAUGHTS[i] } else if row == HINTS_ROW { s.hints == i }
              else if row == BOARD_ROW { s.board == i } else { s.kings == i };
