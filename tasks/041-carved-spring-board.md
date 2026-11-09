@@ -163,6 +163,9 @@ scale 3, lichen 0.085. `--spring 0` stays the birch. Details in task 015. Later 
 day, seen on the tablet, the elven stone became spring's default instead, the Baltic oak
 `--spring 2`.
 
+Left open by task 015: spring's and summer's looks were judged headless only, against
+the prototype's 3D boards, not beside the user's reference images or on the tablet.
+
 ## Acceptance criteria
 
 - [x] The carved look selectable beside the birch in the prototype and the game

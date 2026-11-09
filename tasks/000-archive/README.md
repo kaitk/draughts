@@ -104,3 +104,12 @@ and the commit that last has it.
 - 028: The app icon and the launch screen. Done: the winter jump icon, the launcher's
   name in the phone's language, and a launch theme with no blank frame; the icon is
   `design/icon/`. `028-icon-and-launch.md`, `8987f26`
+- 015: The 3D board. Done: a 3D board from the same game state on every screen with a
+  board, chosen in settings' Board row, floating on the season's blurred photograph,
+  taps through the perspective, the camera buttons and the showcase, drawn only on
+  change; the decisions are in `docs/architecture/rendering.md` ("Board and pieces"), the
+  device numbers in its "The 3D board on devices", the frame cost in task 042.
+  `015-3d-board.md`, `f2b9acc`
+- 033: An icon per season. Cancelled (2026-11-09): one icon, autumn, shipped for the
+  release; a seasonal icon costs its place on the home screen four times a year.
+  `033-icon-per-season.md`, `a9d4cd6`

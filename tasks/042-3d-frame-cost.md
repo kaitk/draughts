@@ -4,7 +4,7 @@ Status: in-progress
 
 A moving 3D board (the camera turning, a hop, a capture) takes about 14 ms on the Pixel 7a
 (Mali-G710) and on the tablet (Mali-G615 MC2, MSAA 4×), over the tablet's 11 ms at
-90 Hz; at rest the app draws nothing (task 015's measurements). A read-only review of
+90 Hz; at rest the app draws nothing ([rendering](../docs/architecture/rendering.md#the-3d-board-on-devices)). A read-only review of
 `src/render3d/` and `src/app/draw3d.goose` (2026-11-09) found these, ranked by the
 expected win, which comes from task 015's Pixel ablations (the pass 14.3 ms waited, an
 empty pass 5.1, the pieces about 2.3, the board about 5.6). None is measured yet.
@@ -136,7 +136,7 @@ Two runs of one build are byte-identical.
 ## The idle wakeup
 
 The tablet's 3D board at rest wakes once a second, as the flat board does, but spends
-about 2.7 ms CPU against 0.3 (task 015, "The release on the tablet"). `view3d::fill` and
+about 2.7 ms CPU against 0.3 ([rendering](../docs/architecture/rendering.md#the-3d-board-on-devices)). `view3d::fill` and
 `changes` compare about 13 KB, microseconds. Read draw3d's frame, draw, and pulse
 counts over an idle 30 s: if draws climb, something in the scene differs each wakeup (a
 time-dependent value, or the view's floats) and the whole pass runs once a second; if
@@ -238,6 +238,15 @@ lit), in English and Estonian.
 **To check on the device:** each step's time (a `--frames` run prints `3D board prepared
 in 41 steps, each waited, ms: ...`; `--bench` prints their count, sum, and the longest),
 the mark's look and the fade, and GL mtrack on 3D and after going back to flat.
+
+## Left open by task 015
+
+- The pulsing marks' frame time on a device: only the Mac's numbers are in (they moved
+  out of the 3D pass while the Pixel 7a wasn't attached).
+- Between screens the switches that aren't transitions (settings and the game or a
+  puzzle) draw the board again through the other view, once.
+- The drag threshold is measured on the flat layout, near the screen's pixels in the
+  board's middle only.
 
 ## Acceptance criteria
 

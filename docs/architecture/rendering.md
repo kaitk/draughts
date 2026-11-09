@@ -1051,6 +1051,37 @@ depth target, a shadow map, albedo, normal, and roughness atlases with mips):
   multisampled depth from being written out each frame, which saves bandwidth, not
   memory ([findings](../goose-findings.md)).
 
+## The 3D board on devices
+
+Measured with the app's `--bench 300` ([development](../development.md#time-the-3d-board)),
+idle with `scripts/idle_cpu.sh`, memory with `dumpsys meminfo` at rest (2026-11-09).
+
+The release at rest, idle 20 to 30 s:
+
+| Device | Board | Idle program thread | GL mtrack | EGL mtrack | Total PSS |
+| --- | --- | --- | --- | --- | --- |
+| Galaxy Tab A11+, 1920 × 1200 | 2D, home | 0.03% | 37 MB | 60 MB | 145 MB |
+| Galaxy Tab A11+ | 3D, a game / a puzzle | 0.27 to 0.30% | 193 / 179 MB | 32 / 46 MB | 287 / 286 MB |
+| Pixel 7a, 2400 × 1080 | 3D, a game | 0.05% | 227 MB | 73 MB | 345 MB |
+| Galaxy A33 5G, 2400 × 1080 | 2D | 0.00% | 35 MB | 38 MB | 107 MB |
+| Galaxy A33 5G | 3D | 0.00% | 224 MB | | 309 MB |
+
+- **The tablet's frame** while the board moves (the first baseline, 1920 × 1200 at 90 Hz):
+  the forward pass alone 10.9 ms at 1×, the whole budget; MSAA 4× adds 3.2 ms (6.3 ms
+  and 72 MB more without `patches/goose_gfx/0005`, which keeps the samples and the depth
+  from being stored); the shadow map 2 ms on the frames that draw it; the CPU's part
+  about 0.4 ms. It renders as the Mac does.
+- **The Pixel 7a** (60 Hz): the pass 14.0 ms waited for International, 13.0 for Russian,
+  presented every 16.6 ms; the theme applied at launch in 0.76 s (the bake, its
+  pipeline made), the first frame 0.31 s.
+- **The Galaxy A33** (90 Hz, thermal status 3): the pass 36 ms waited at first, about
+  28 fps while the board moves; after the frame cost's first cuts the pass 19.3 ms and
+  about 39 fps (25.7 ms frame to frame); the theme applied in 1.66 s, the first frame 0.35 s. Its Mali-G68 lost the device
+  on a texture's mip level 0 pixels high ([findings](../goose-findings.md)); the bake's
+  mips now end at the shorter side's 1 pixel (`render3d::baked`).
+- **Open:** at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the
+  flat board's 0.3, outside the app's own work, as the Mac shows no draw at rest.
+
 ## Frames and battery
 
 The app draws only when something changed: input, a running animation, the AI's reply, or

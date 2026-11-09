@@ -418,7 +418,7 @@ sum, the setup, and the longest), the first frame, and the bake again warm (`src
 A waited frame includes the submit and the wait, about 5 ms on the Pixel 7a for an empty
 pass, so it is an upper bound; the frame to frame time is held at the display's rate.
 Let the device cool between series (`adb shell dumpsys thermalservice`, status 0):
-warm, the Pixel 7a's frames slowed from 16.7 to 19.8 ms. Task 015 has the numbers.
+warm, the Pixel 7a's frames slowed from 16.7 to 19.8 ms. [Rendering](architecture/rendering.md#the-3d-board-on-devices) has the numbers.
 
 ## Check idle CPU
 

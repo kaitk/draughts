@@ -21,7 +21,7 @@ missing: ask the user for them rather than guessing from memory.
 | `kabe_theme_design_boards/kabe_winter_sea_comparison.png` | Winter and summer (sea) screens | The sea theme |
 | `Kabe Winter Stone UI Board.png` | A winter UI board, 1536 px | Glass panels and buttons |
 | `draughts-store/icon/master-winter-jump-1254.png` | The chosen app icon (2026-11-08), the winter jump: a 3×3 stone board at three-quarters, a dark slate piece in the centre, the ivory stacked king jumping it along a pale blue arc, on navy (#06172b corners, #0d2139 top) | The icon's master: copy it to `design/icon/master-winter.png` and run `scripts/icon.py` (`design/icon/README.md`); the monochrome layer is drawn from its geometry |
-| `draughts-store/icon/master-autumn-jump-1254.png` | The autumn jump (2026-11-08): the same scene in wood, a dark brown piece, the cream king, a golden arc, on dark brown (#140c09 corners); not shipped (task 033) | The autumn master: `design/icon/master-autumn.png`, built with `scripts/icon.py autumn --res DIR`; its geometry matches winter's within 0.25 dp |
+| `draughts-store/icon/master-autumn-jump-1254.png` | The autumn jump (2026-11-08): the same scene in wood, a dark brown piece, the cream king, a golden arc, on dark brown (#140c09 corners); the shipped icon since 2026-11-09 | The autumn master: `design/icon/master-autumn.png`, built with `scripts/icon.py autumn --res DIR`; its geometry matches winter's within 0.25 dp |
 | `draughts-store/tablet-home-with-icons.png` | The icon candidates mocked up on the tablet's real home screen, 82 px | How an icon reads at the launcher's size |
 
 Where the close-ups and the design boards differ, the close-ups win for the board and

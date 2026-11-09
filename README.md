@@ -32,9 +32,9 @@ iOS 16 or later with Metal.
 | iPhone 13 mini | Apple A15 Bionic | Apple GPU, Metal | iOS 26 | Runs, a development build (task 043) |
 | Mac with Apple silicon (M1 Pro) | Apple M1 Pro | Apple GPU, Metal | macOS | Development and headless tests |
 
-Measured numbers per device are in [task 015](tasks/015-3d-board.md) and
-[task 042](tasks/042-3d-frame-cost.md); [development](docs/development.md) has the
-details.
+Measured numbers per device are in
+[rendering](docs/architecture/rendering.md#the-3d-board-on-devices);
+[development](docs/development.md) says how they are taken.
 
 ## Implementation
 
