@@ -57,7 +57,7 @@ later. 014 upscales the backgrounds on the desktop; placeholders do until then. 
 switched by hand). 026 (the first start and tutorial) comes after the MVP's menus. 029
 (release on Google Play) makes the release, 036 announces it, 037 builds the puzzle set by
 theme, 038 adds players, 039 compares procedural wood for 015's prototype, and 042
-brings the 3D board's frame cost down.
+brings the 3D board's frame cost down. 046 prepares the App Store release after task 043's iOS build.
 
 ## Next (updated 2026-11-09, at the day session's end)
 
