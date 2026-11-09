@@ -20,10 +20,11 @@ or harmonics to make, so its first switch is shorter.
 - [x] A gradient per season's board, checked beside each board flat and 3D, in a
       prototype first (`prototypes/`): fade b, checked on the Mac flat and 3D
 - [x] With Plain chosen, no photograph is decoded or held (memory measured on the Mac)
-- [ ] On the tablet: `dumpsys meminfo` at home with the photograph and with the fade,
-      after the same frames (`agents/testing.md`)
-- [ ] On the tablet: the frame a switch between them takes (a theme change's 22 ms
-      before), and the 3D board's switch, which runs only the photograph's steps
+- [x] On the tablet: `dumpsys meminfo` at home with the photograph and with the fade,
+      after the same frames (`agents/testing.md`): about 1 MB apart ("On the tablet")
+- [x] On the tablet: the frame a switch between them takes (a theme change's 22 ms
+      before), and the 3D board's switch, which runs only the photograph's steps: 22 ms,
+      and one of 58 ms on some switches ("On the tablet")
 - [ ] On the tablet and the A33: the fade's look, banding in the dark fade, and the
       switch's 58 × 68 dp halves under a child's finger
 
@@ -65,3 +66,20 @@ glass").
   The 3D game: 833 → 813 MB. Settings and the 3D game read far higher headless (600 MB
   and more of graphics, falling over seconds) with either background, so only their
   difference means anything.
+
+## On the tablet (2026-11-09)
+
+A build beside the app (`--id-suffix bench`), main's head with the photographs embedded.
+
+- **Memory at home, flat** (`--background photo|plain --board flat`, `dumpsys meminfo`
+  12 s after the launch, three launches each, alternated): with the photograph total PSS
+  140.6 to 141.0 MB, GL mtrack 36.6, the native heap's live bytes 39.5; with the fade
+  139.7 MB (one launch 144.0, its EGL mtrack 2.4 MB higher), GL 36.2, the heap 36.7.
+  About 1 MB of PSS apart: on Android the photograph is ASTC, 1.9 MB, not the Mac's
+  16 MB RGBA, so the fade saves little memory here.
+- **The switch's frames** (settings, `--screen settings`, SurfaceFlinger's
+  present2present over each tap alone, three taps each way). Flat: to the fade one or
+  two frames of 22 ms (one late at 90 Hz, as a theme change); to the photograph one of
+  22 ms and, on two of three, one of 58 ms (the photograph's upload). On the 3D board:
+  each way one frame of 22 ms or one of 58 to 66 ms, the rest at 90 Hz, so the
+  photograph's steps keep the board moving.

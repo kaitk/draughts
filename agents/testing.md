@@ -400,7 +400,11 @@ measuring there:
   `android/`: from a worktree sharing `build/android`, build a copy of the program under
   another name (`src/app/x.goose` and `src/app/x.build`, deleted after) so it gets its own
   `build/android/x/`, and remove that after. A new or changed `patches/SDL` patch makes
-  the shared `SDL_src` be copied again, for the main checkout too (2026-11-08).
+  the shared `SDL_src` be copied again, for the main checkout too (2026-11-08). Copy
+  the main checkout's `design/backgrounds/masters/*.astc` and `*.jpg` in too (ignored by
+  git), or the build has no photographs; copied in after a build, they need
+  `background.c`'s object deleted from `build/android/<program>/native`, as CMake doesn't
+  track `#embed` (2026-11-09).
 - Flags reach the app on the tablet through the intent, quoted twice:
   `adb shell am start -S -n io.github.kaitk.draughts/.DraughtsActivity --es args "'--clock 5+3'"`.
   Without `-S` a start that finds the app running only brings it back with its old
