@@ -1,6 +1,6 @@
 # 049: Draws
 
-Status: todo
+Status: in-progress
 
 The rules have no draw (`src/game/game.goose`: "the rules have none yet"), so a game ends
 only in a win: two kings can chase each other forever. Raised by the user, 2026-11-09.

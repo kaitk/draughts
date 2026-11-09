@@ -1,0 +1,144 @@
+W:WKc1,Ke1:BKd8,Kf8
+  20 a7-c5  draw in 5
+  21 b2-a1  draw in 5
+  22 c5-a3  draw in 4
+  23 a1-c3  draw in 4
+  24 a3-c1  draw in 3
+  25 c3-a1  draw in 3
+  26 c1-e3  draw in 2
+  27 a1-b2  draw in 2
+  28 e3-a7  draw in 1
+  29 b2-a1  draw in 1
+  30 a7-b8  DRAWN: only kings
+W:WKc1,Ke1,Kg1:BKb8,Kd8,Kf8
+  40 b8-a7  draw in 5
+  41 b2-a3  draw in 5
+  42 a7-b8  draw in 4
+  43 a3-c1  draw in 4
+  44 b8-a7  draw in 3
+  45 c1-b2  draw in 3
+  46 a7-b8  draw in 2
+  47 b2-a1  draw in 2
+  48 b8-a7  draw in 1
+  49 a1-c3  draw in 1
+  50 a7-b8  DRAWN: only kings
+W:WKa1,Kc1,Ke1,Kg1:BKb8,Kd8,Kf8,Kh8
+  no draw in 130 plies
+W:WKc1:BKf8
+  1 c1-a3  draw in 5
+  2 f8-g7  draw in 4
+  3 a3-b4  draw in 4
+  4 g7-a1  draw in 3
+  5 b4-a3  draw in 3
+  6 a1-c3  draw in 2
+  7 a3-c1  draw in 2
+  8 c3-a1  draw in 1
+  9 c1-d2  draw in 1
+  10 a1-b2  DRAWN: balance
+W:WKc1,Ke1:BKf8
+  1 c1-a3  draw in 5
+  2 f8-g7  draw in 4
+  3 a3-b4  draw in 4
+  4 g7-a1  draw in 3
+  5 b4-a3  draw in 3
+  6 a1-d4  draw in 2
+  7 a3-b4  draw in 2
+  8 d4-a7  draw in 1
+  9 b4-a3  draw in 1
+  10 a7-b6  DRAWN: balance
+W:WKc1,g3:BKf8,b6
+  20 b4-c5  draw in 5
+  41 a1-b2  draw in 5
+  50 a7-b6  draw in 5
+  51 b2-a1  draw in 5
+  52 b6-c5  draw in 4
+  53 a1-b2  draw in 4
+  54 c5-a7  draw in 3
+  55 b2-a1  draw in 3
+  56 a7-b6  draw in 2
+  57 a1-b2  draw in 2
+  58 b6-c5  draw in 1
+  59 b2-c1  draw in 1
+  60 c5-a3  DRAWN: balance
+W:WKc1,Ke1,Kg1:BKb8
+  19 b4-a3  white must win in 5
+  20 c1-f4  white must win in 5
+  21 a3-c5  white must win in 4
+  22 f4-b8  white must win in 4
+  23 c5-a7  white must win in 3
+  24 b8-c7  white must win in 3
+  25 a7-c5  white must win in 2
+  26 c7-a5  white must win in 2
+  27 c5-a3  white must win in 1
+  28 a5-c7  white must win in 1
+  29 a3-b4  DRAWN: lone king
+W:WKc1,Ke1,Kg1,h2:BKb8
+  19 b2-a3  white must win in 5
+  20 a7-b8  white must win in 5
+  21 a3-b4  white must win in 4
+  22 b8-a7  white must win in 4
+  23 b4-a5  white must win in 3
+  24 a7-b8  white must win in 3
+  25 a5-b6  white must win in 2
+  26 b8-d6  white must win in 2
+  27 b6-a5  white must win in 1
+  28 d6-a3  white must win in 1
+  29 a5-b6  DRAWN: lone king
+B:WKa5,Kc5,Kg5:Bb2
+  1 b2-c1
+  20 a5-b4  white must win in 5
+  21 g3-f4  white must win in 5
+  22 b4-a3  white must win in 4
+  23 f4-b8  white must win in 4
+  24 a3-b4  white must win in 3
+  25 b8-g3  white must win in 3
+  26 b4-a3  white must win in 2
+  27 g3-e1  white must win in 2
+  28 a3-c1  white must win in 1
+  29 e1-a5  white must win in 1
+  30 c1-a3  DRAWN: lone king
+W:WKa3,Kc1,Kh4:BKd4
+  1 a3-b4  white must win in 4
+  2 d4-a1  white must win in 4
+  3 b4-a3  white must win in 3
+  4 a1-b2  white must win in 3
+  5 h4-d8  white must win in 2
+  6 b2-a1  white must win in 2
+  7 a3-b4  white must win in 1
+  8 a1-d4  white must win in 1
+  9 b4-a3  DRAWN: lone king
+W:Wa3,c1,e1:BKf6
+  1 a3-b4  white must win in 4
+  2 f6-a1  white must win in 4
+  3 b4-a5  white must win in 3
+  4 a1-c3  white must win in 3
+  5 a5-b6  white must win in 2
+  6 c3-a1  white must win in 2
+  7 b6-a7  white must win in 1
+  8 a1-c3  white must win in 1
+  9 a7-b8  DRAWN: lone king
+W:WKa3,Kc1,Kh4:BKd4
+  1 h4-e1  white must win in 4
+  2 d4-e5  white must win in 4
+  3 e1-d2  white must win in 3
+  4 e5-h2
+  19 b4-a3  white must win in 5
+  20 a7-b8  white must win in 5
+  21 a3-b4  white must win in 4
+  22 b8-c7  white must win in 4
+  23 b4-a3  white must win in 3
+  24 c7-d8  white must win in 3
+  25 a3-b4  white must win in 2
+  26 d8-h4  white must win in 2
+  27 b4-a3  white must win in 1
+  28 h4-f2  white must win in 1
+  29 a3-b4  DRAWN: lone king
+W:WKa1,Kc1,Ke1,Kg1:BKb8,Kd8,Kf8,Kh8
+  1 c1-d2
+  2 d8-c7
+  3 d2-c1
+  4 c7-d8  same position twice
+  5 e1-f2
+  6 f8-e7
+  7 f2-e1
+  8 e7-f8  DRAWN: repetition

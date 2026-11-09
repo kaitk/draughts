@@ -64,6 +64,49 @@ computer player, and the tests share it.
   fills a `rules::Moves` buffer the caller owns (512 moves), so generating allocates
   nothing.
 
+## Draws
+
+A game is drawn at once when a rule's count ends; nobody claims it, since an app has no
+arbiter. A *move* is one side's move, a ply. Every count runs side by side and the first to
+end draws; a win on that move (the last piece taken, or the opponent left without a move)
+is a win.
+
+| | International (FMJD Annex 1) | Russian (sport rules, 2022) | Brazilian (FMJD-64) |
+| --- | --- | --- | --- |
+| The same position a third time, not necessarily in a row | 6.1 | 5.4.13 | 7.2.3 |
+| Only kings moved, nothing taken | 25 moves each (6.2) | 15 each with 4–5 pieces, 25 with 6–7 (6.1.8.8) | 15 each (7.2.5) |
+| Both sides with kings, nothing taken or crowned | | 5 each with 2–3 pieces, 30 with 4–5, 60 with 6–7 (6.1.8.6) | 30 each with 4–5, 60 with 6–7 (7.2.6) |
+| Three or more kings against a lone king | | the strong side's 15th move (6.1.8.3–4, men beside them allowed) | the strong side's 15th move (7.2.4; men beside them allowed, as in Russian) |
+| Three pieces with a king against a lone king | 16 moves each (6.3) | | |
+| Two pieces or one, with a king, against a lone king | 5 moves each (6.4) | | the strong side's 5th move (7.2.8) |
+| A lone king on the long diagonal a1–h8 against three pieces | | any three, none on it: the strong side's 5th move (6.1.8.5) | three with a king: the strong side's 5th move (7.2.7) |
+
+- A lone-king count runs from the move that made the material, which doesn't count; a
+  crowning inside the same material doesn't restart it, a capture that changes it does.
+  The strong side needs a king: two men against a king count nothing until one is crowned.
+- The long diagonal's count runs from when the position first arises with that material.
+  When the lone king leaves the diagonal (or, in Russian, a strong piece steps on it), it
+  stops and nothing restarts it; the other counts run on from their own starts.
+- A count ends only when the lone king is taken. The federations' exceptions ("unless
+  either side can win", "a winning position") need judgment and aren't built, nor is
+  Russian 6.1.8.7 (an arbiter's call) or 6.1.10.4 (competition clocks).
+- Repetition compares only the positions since the last man's move or capture: none
+  before can recur.
+- English has repetition only.
+
+The sources and how they differ (lidraughts follows IDF's text for Russian; Brazilian
+leaflets give other numbers): Russian is the 2022 sport rules
+(<https://pravo.ppt.ru/pravila/264594>), International FMJD's Annex 1, Brazilian FMJD's
+draughts-64 text (<https://fmjd64.org/rules-of-the-game/>).
+
+In code (`rules/draw.goose`) a `rules::Draw` holds the counts beside a position:
+`draw_start` makes it, `draw_after` (from a move) or `draw_between` (from two positions)
+carries it through a move, `draw_reason` says whether and why the game is drawn, and
+`countdown` gives the count nearest its end within five moves, for the game to show.
+Counts are plies, so a test checks each at its edge (`test/rules/draws_*`). The game
+keeps no counts of its own: it folds them over its undo history whenever the position
+changes, so undo and a saved game bring them back with no new state.
+
 ## Text
 
 Positions read and write as in PDN: `W:W31,32,K46:B1,2`, the side to move, then each

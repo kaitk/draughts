@@ -14,6 +14,7 @@
 namespace rules;
 import std;
 import .fen;
+import .draw;
 
 let WHITE = 0;
 let BLACK = 1;

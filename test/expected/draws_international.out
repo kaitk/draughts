@@ -1,0 +1,82 @@
+W:WK47,K49:BK2,K4
+  40 10-19  draw in 5
+  41 20-15  draw in 5
+  42 16-11  draw in 4
+  43 15-20  draw in 4
+  44 11-17  draw in 3
+  45 20-15  draw in 3
+  46 17-12  draw in 2
+  47 15-20  draw in 2
+  48 12-1  draw in 1
+  49 20-15  draw in 1
+  50 1-18  DRAWN: only kings
+W:WK47,K49,36:BK2,K4,15
+  60 10-14  draw in 5
+  61 13-18  draw in 5
+  62 14-10  draw in 4
+  63 18-1  draw in 4
+  64 10-14  draw in 3
+  65 1-12  draw in 3
+  66 14-10  draw in 2
+  67 12-17  draw in 2
+  68 10-14  draw in 1
+  69 17-22  draw in 1
+  70 14-10  DRAWN: only kings
+W:WK47,K49:BK4
+  1 47-15  white must win in 4
+  2 4-13  white must win in 4
+  3 15-10  white must win in 3
+  4 13-18  white must win in 3
+  5 10-14  white must win in 2
+  6 18-1  white must win in 2
+  7 14-10  white must win in 1
+  8 1-12  white must win in 1
+  9 10-14  draw in 1
+  10 12-17  DRAWN: lone king
+W:W7,38:BK45
+  1 7-2  white must win in 5
+  2 45-1  white must win in 5
+  3 2-11  white must win in 4
+  4 1-12  white must win in 4
+  5 11-16  white must win in 3
+  6 12-1  white must win in 3
+  7 16-2  white must win in 2
+  8 1-12  white must win in 2
+  9 2-11  white must win in 1
+  10 12-1  white must win in 1
+  11 11-16  DRAWN: lone king
+W:WK46,K47,K49:BK4
+  21 10-14  white must win in 5
+  22 16-2  white must win in 5
+  23 14-10  white must win in 4
+  24 2-13  white must win in 4
+  25 10-14  white must win in 3
+  26 13-18  white must win in 3
+  27 14-10  white must win in 2
+  28 18-1  white must win in 2
+  29 10-14  white must win in 1
+  30 1-12  white must win in 1
+  31 14-10  draw in 1
+  32 12-17  DRAWN: lone king
+W:WK47,K49,K50:BK4,28
+  1 50x17
+  23 12-17  white must win in 5
+  24 10-14  white must win in 5
+  25 17-21  white must win in 4
+  26 14-10  white must win in 4
+  27 21-12  white must win in 3
+  28 10-14  white must win in 3
+  29 12-1  white must win in 2
+  30 14-10  white must win in 2
+  31 1-18  white must win in 1
+  32 10-14  white must win in 1
+  33 18-13  DRAWN: lone king
+W:WK47,K49:BK2,K4
+  1 47-42
+  2 2-8
+  3 42-47
+  4 8-2  same position twice
+  5 49-44
+  6 4-9
+  7 44-49
+  8 9-4  DRAWN: repetition
