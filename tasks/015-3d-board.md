@@ -87,7 +87,8 @@ look good, not merely work.
   play.)
 - **Budget:** about 11 ms a frame at native resolution, and a 4× MSAA target's memory
   is acceptable. Visuals first, tuned afterwards; a rough baseline on the device early.
-  Built and judged on the Mac first; measured on the Pixel 7a (the tablet is gone).
+  Built and judged on the Mac first; measured on the tablet (the Pixel 7a was
+  briefly in its place).
 - **MSAA needs a gfx patch to be cheap:** goose_gfx stores all of a multisampled target's
   samples and its depth when a pass resolves (`gfx_draw.c`), about 74 MB written per
   frame at 1920 × 1200. A patch resolves without storing the samples and discards the
