@@ -80,7 +80,7 @@ tagasi" where they show "Take back"/"Võta tagasi" (02, 03, 05); settings' Backg
 is now the Theme row with the photo/plain switch (06); home, the library, and the setup
 may have their arrow moved (01, 04, 07; check). A scene on the plain background would show
 task 044. One Mac batch (`shoot.sh`, with `draughts` and `draughts-look` rebuilt) and one
-simulator run (`ios-shoot*.sh`, then `island.sh`).
+simulator run (`ios-shoot*.sh`, then `island_fill.py`).
 
 The player is made up (Mia the fox, with some stars): `play-0.1/player-1.txt` and
 `settings.txt`, written into the Mac's app data (copied aside first and put back after)
@@ -88,8 +88,10 @@ and into each simulator's container. The Mac's shots come from one batch of 28 r
 (about 4 minutes of windows); the phone's Look tab needs a second, local build with
 `group: i64 = 1` in `src/shell/settings.goose`'s `Settings`, never committed: no flag
 picks the tab. The simulator draws the Dynamic Island into its framebuffer, so the iPhone
-shots have it painted over with the background just below it, mirrored
-(`iphone-6.9-raw/` keeps them as taken). The scripts that took them are kept beside the
+shots have it painted over with what the app draws there, the season's photograph alone:
+`island_fill.py` takes the same cover crop from `design/backgrounds/masters/` and fits its
+blur and colour to the pixels around the island (`iphone-6.9-raw/` keeps them as taken,
+`iphone-6.9-mirrored/` the first, mirrored fill). The scripts that took them are kept beside the
 sets.
 
 `play-0.1/feature-graphic-draft.png` (1024 × 500, no alpha) is the only feature graphic, a
