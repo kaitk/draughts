@@ -43,6 +43,7 @@ A33, each submitting work; the Mali driver's per-submit records filled the nativ
   loss brought back the app ended 1 s after it, idle. Recreating the device was left out.
 - Upstream: the same in goose_gfx, or a `gfx::lost()` a program can check to rebuild its
   resources on a new device.
+
 ## goose_gfx and SDL: no pipeline cache, and pipelines made only on first use (2026-11-09)
 
 goose_gfx makes a pipeline's SDL_GPU pipeline when it is first bound in a pass, one per set
