@@ -165,8 +165,9 @@ fn finish(wood: i64) -> Finish {
 
 // The winter frame's marble (task 039), one solid block, its figure running one way:
 // 0 the slate as before (Theme.frame and its clouding), the others polished marbles.
+// Winter's frame is 2, as the user tuned it in the panel (2026-11-09).
 let MARBLES = 5;
-let MARBLE = 0;
+let MARBLE = 2;
 
 struct Marble {
     base: float4,   // the stone (sRGB), w: its clouding
@@ -187,11 +188,12 @@ fn marble(which: i64) -> Marble {
                         form: float4 { 0.012, 0.15, 0.8, 0.15 },
                         veins: 1.0, wave: 1.0, polish: 0.8, tint: 0.0 };
     }
-    // Dark grey with soft, wavy, cloudy veining.
+    // Dark grey with soft, wavy, cloudy veining, toward the board's steel blue: the user's
+    // values from the panel (2026-11-09).
     if which == 2 {
         return Marble { base: float4 { 0.2, 0.205, 0.215, 0.5 }, vein: float4 { 0.46, 0.47, 0.48, 0.3 },
                         form: float4 { 0.04, 1.0, 0.3, 0.0 },
-                        veins: 1.0, wave: 1.3, polish: 0.6, tint: 0.0 };
+                        veins: 0.94, wave: 2.5, polish: 0.84, tint: 0.88 };
     }
     // Blue-black with steel-blue veins, the board's palette.
     if which == 3 {
