@@ -5,8 +5,9 @@
 // tap. A tap that isn't a move is a miss: a star goes out and "try again" shows for two
 // seconds, after which nothing animates. Solved, the stars won are kept in the player's
 // settings (the most a puzzle has won), next lights and opens the next puzzle. A wrong
-// move plays, then slides back by itself with the red ring and a ghost on its square;
-// after two misses the piece to move glows. In a shot, a right move is answered by the
+// move plays; the other side's answer that takes it back plays, holds, and slides back,
+// then the move slides back with the red ring and a ghost on its square; after two
+// misses the piece to move glows. In a shot, a right move is answered by the
 // line's reply after a pause, and the capture after it solves the puzzle. A black-to-move
 // puzzle shows on the turned board, its panel saying "Black to move" beside a black turn
 // piece lit until it is solved, and is solved by taps there. Settings opened from a puzzle go back to it as it was; a puzzle isn't saved
@@ -27,7 +28,7 @@ import puzzles from "../../src/puzzles";
 import drive from "../drive";
 
 let SCREENS = ["home", "game", "settings", "picker", "puzzle"];
-let STATES = ["playing", "answer", "back", "solved"];
+let STATES = ["playing", "answer", "back", "solved", "show", "shown", "unshow"];
 
 fn show(sh: shell::Shell&, what: const u8[:]) {
     let pl .= sh.puzzle;
@@ -128,7 +129,9 @@ fn main() {
     drive::tap(sh, g, drive::tile(g, 3), 6.1);              // next
     show(sh, "next");
 
-    // Puzzle 7: c3 takes d4 into f6's reach, a wrong move; it slides back, twice.
+    // Puzzle 7: c3 takes d4 into f6's reach, a wrong move. Black's answer, 23x32x43,
+    // plays 0.4 s after it lands and holds 0.8 s; then it slides back, and the move after
+    // it with the red ring, a miss. Twice, and the piece to move glows.
     shell::play_puzzle(sh, index(7));
     drive::idle(sh, g, 10.0);
     show(sh, "puzzle 7");
@@ -136,25 +139,33 @@ fn main() {
     tap_square(sh, g, "e5", 10.2);
     show(sh, "c3 takes d4");
     drive::idle(sh, g, 10.7);
+    show(sh, "  landed");
     drive::idle(sh, g, 11.0);
-    show(sh, "  sliding back");
-    drive::idle(sh, g, 12.5);
+    show(sh, "  the answer");
+    print("  playing ", drive::name(rules::VARIANTS[rules::INTERNATIONAL], sh.puzzle.b.move.from), "x",
+          drive::name(rules::VARIANTS[rules::INTERNATIONAL], sh.puzzle.b.move.to), ", animating ",
+          shell::animating(sh, g, 11.0));
+    drive::idle(sh, g, 12.0);
+    show(sh, "  held");
+    drive::idle(sh, g, 12.4);
+    show(sh, "  the answer sliding back");
+    drive::idle(sh, g, 13.0);
+    show(sh, "  then the move");
+    drive::idle(sh, g, 14.5);
     show(sh, "  after");
-    tap_square(sh, g, "c3", 13.0);
-    tap_square(sh, g, "e5", 13.1);
-    drive::idle(sh, g, 13.6);
-    drive::idle(sh, g, 13.9);
-    drive::idle(sh, g, 15.0);
+    tap_square(sh, g, "c3", 14.6);
+    tap_square(sh, g, "e5", 14.7);
+    for t in [15.2, 15.5, 16.2, 17.0, 17.6, 18.0] { drive::idle(sh, g, t); }
     show(sh, "a second time");
-    tap_square(sh, g, "e3", 15.1);
-    tap_square(sh, g, "c5", 15.2);
+    tap_square(sh, g, "e3", 19.0);
+    tap_square(sh, g, "c5", 19.1);
     show(sh, "e3 takes d4");
     print("  kept: ", kept(sh));
 
     // Settings from the puzzle, and back to it as it was.
-    drive::tap(sh, g, drive::tile(g, 1), 16.0);
+    drive::tap(sh, g, drive::tile(g, 1), 19.3);
     show(sh, "settings");
-    drive::tap(sh, g, drive::tile(g, 0), 16.1);
+    drive::tap(sh, g, drive::tile(g, 0), 19.4);
     show(sh, "back");
 
     // Puzzle 53, a shot: 21-17 gives a man, black takes it, and 27 takes three.

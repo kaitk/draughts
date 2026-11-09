@@ -7,8 +7,10 @@
 // The child plays the side to move. A right move that leaves the goal ahead is answered
 // after a short pause; a wrong one plays, then slides back by itself, its square
 // flashing the red ring over a fading ghost of the piece, while the goal gives way to
-// "try again" for a moment and a star goes out. A tap that isn't a move, which the board
-// flashes as a mistake, is a miss too. A capture of many jumps is made by hand: a tap or
+// "try again" for a moment and a star goes out. A wrong move the other side answers by
+// taking something back (a capture back, a shot) shows that answer first, played as a
+// reply is and held a moment, then both slide back. A tap that isn't a move, which the
+// board flashes as a mistake, is a miss too. A capture of many jumps is made by hand: a tap or
 // a drop on a stop leaves the piece waiting there for the next jump, and next wakes;
 // pressed then, it leaves the capture unfinished, no move under the rules, so the piece
 // slides back as a wrong move does and it is a miss. After two misses the piece to move
@@ -32,9 +34,14 @@ let PLAYING = 0;
 let ANSWER = 1;             // a right move shows, then the reply comes
 let BACK = 2;               // a wrong move shows, then it slides back
 let SOLVED = 3;
+let SHOW = 4;               // a wrong move shows, then the answer that shows why comes
+let SHOWN = 5;              // the answer shows, then it slides back
+let UNSHOW = 6;             // the answer slides back, then the wrong move does
 
 let REPLY_PAUSE = 0.5;      // seconds from a right move landing to the reply
 let BACK_PAUSE = 0.35;      // from a wrong move landing to its sliding back
+let SHOW_PAUSE = 0.4;       // from a wrong move landing to the answer that shows why
+let SHOW_HOLD = 0.8;        // from the answer landing to its sliding back, the wrong move after it
 let TRY_AGAIN = 2.0;        // "try again" shows this long after a miss
 let POP = 0.6;              // a star won pops in
 let POP_GAP = 0.15;         // and the next a little after
@@ -55,7 +62,9 @@ struct Play {
     misses:    i64 = 0,
     state:     i64 = PLAYING,
     path:      puzzles::Ply[..puzzles::MAX_PLIES],  // the moves played since the start
-    at:        f64  = 0.0,    // when the move shown lands (ANSWER, BACK, SOLVED)
+    at:        f64 = 0.0,     // when the move shown lands (ANSWER, BACK, SHOW, SHOWN, SOLVED)
+    tried:     rules::Move,   // the wrong move, to slide back after its answer
+    answer:    i64  = -1,     // the answer to it that shows why, in the board's moves (SHOW)
     missed_at: f64  = -100.0,
     won:       i64  = 0,      // stars won, once solved
     fresh:     bool = false,  // solved this frame, for the shell to keep the stars
@@ -64,7 +73,8 @@ struct Play {
 // A puzzle never shows a selected piece's targets, whatever the move hints setting: the
 // child is to find the move (docs/product.md).
 fn new() -> Play {
-    var pl = Play { b: board::new(rules::INTERNATIONAL), s: puzzles::Solver { moves: [], stack: [] }, path: [], .. };
+    var pl = Play { b: board::new(rules::INTERNATIONAL), s: puzzles::Solver { moves: [], stack: [] }, path: [],
+                    tried: rules::Move { .. }, .. };
     pl.b.hints = board::MISTAKES;
     pl.b.by_hand = true;
     return pl;
@@ -153,7 +163,11 @@ fn judge(pl: Play&, history: i64, wrong_at: f64, now: f64) {
             pl.state = ANSWER;
             pl.left--;
         } else {
-            pl.state = BACK;
+            // A wrong move the other side answers by taking something back shows that
+            // answer first.
+            pl.tried = m;
+            pl.answer = puzzles::answer(pl.s, b.pos);
+            pl.state = if pl.answer >= 0 { SHOW } else { BACK };
         }
         return;
     }
@@ -193,8 +207,22 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: game::Overla
         pl.state = PLAYING;
         changed = true;
     }
-    if pl.state == BACK && !b.moving && now >= pl.at + BACK_PAUSE {
-        board::slide_back(b, now);
+    // A wrong move's answer, its hold, and its sliding back before the move's own.
+    if pl.state == SHOW && !b.moving && now >= pl.at + SHOW_PAUSE {
+        board::start_move(b, pl.answer, now);
+        pl.at = now + board::duration(b.move);
+        pl.state = SHOWN;
+        changed = true;
+    }
+    if pl.state == SHOWN && !b.moving && now >= pl.at + SHOW_HOLD {
+        let m = b.move;
+        board::slide_back(b, m, now, false);
+        pl.state = UNSHOW;
+        changed = true;
+    }
+    let unshown = pl.state == UNSHOW && !b.moving;
+    if unshown || (pl.state == BACK && !b.moving && now >= pl.at + BACK_PAUSE) {
+        board::slide_back(b, pl.tried, now);
         pl.path.pop();
         missed(pl, now);
         pl.state = PLAYING;
@@ -240,7 +268,8 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: game::Overla
 // Whether anything is still moving at `now`; the app draws while it is.
 fn animating(pl: Play&, g: gui::Gui&, now: f64) -> bool {
     let popping = pl.state == SOLVED && now < pl.at + POP + (STAKE - 1) * POP_GAP;
-    return board::animating(pl.b, now) || gui::animating(g) || pl.state == ANSWER || pl.state == BACK || popping
+    let wrong = pl.state == BACK || pl.state == SHOW || pl.state == SHOWN || pl.state == UNSHOW;
+    return board::animating(pl.b, now) || gui::animating(g) || pl.state == ANSWER || wrong || popping
            || now < pl.missed_at + TRY_AGAIN;
 }
 

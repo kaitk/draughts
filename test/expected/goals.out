@@ -19,10 +19,11 @@ line 1 move 1: solved too by 45x23x10, which no line lists
 checked W:W36,37,42:B26: 1 problems
 line 1 ends without a king made
 checked W:W31,K47:B8,24,25: 0 problems
-take W:W37,38:B19,23,32: 37x28 wrong; 38x27 solved; 
-crown W:W13,37,48:B6,8,32: 13x2 solved; 37x28 wrong; 
-win W:W36,37,42:B26: 36-31 solved; 37-31 wrong; 42-38 wrong; 
-safe W:W22,26,29,34,44:B3,7,13,15,18: 22-17 solved; 26-21 wrong; 44-39 wrong; 
-take W:W33,38,43,45,47,48:B3,11,21,23,24,29: 33-28 on; 48-42 wrong; 
+take W:W37,38:B19,23,32: 37x28 wrong, answered by 23x32x43; 38x27 solved; 
+crown W:W13,37,48:B6,8,32: 13x2 solved; 37x28 wrong, answered by 8x19; 
+win W:W36,37,42:B26: 36-31 solved; 37-31 wrong, answered by 26x37x48; 42-38 wrong, no answer; 
+safe W:W22,26,29,34,44:B3,7,13,15,18: 22-17 solved; 26-21 wrong, answered by 18x27x16; 44-39 wrong, answered by 18x27; 
+take W:W33,38,43,45,47,48:B3,11,21,23,24,29: 33-28 on; 48-42 wrong, no answer; 
 the shot: reply 23x32, then 38x27x16x7 solved; needs 2 moves from the start; the hint's piece on 33
-crown W:W13,46,47:B4,21,22: 13-8 on; 13-9 wrong; 
+crown W:W13,46,47:B4,21,22: 13-8 on; 13-9 wrong, answered by 4x13; 
+take W:W25,27,39,43,44,50:B3,4,21,26,32,33: 27x38x29 solved; 39x28x37 wrong, answered by 21x32x41; 

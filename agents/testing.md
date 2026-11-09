@@ -40,7 +40,9 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   draughts' start, turned for black, the game in progress back on the menu, the game play
   starts, `setup`), the puzzles' library and a theme's page and a puzzle played through
   its misses, hint, reply, and stars, a black puzzle on the turned board, next after a
-  theme's last (`puzzles`), the library and every theme's page laid out at the tablet's
+  theme's last (`puzzles`), a wrong move's answer shown before it slides back, and a
+  wrong move with none sliding back as before (`puzzle_answer`, which reads its own
+  puzzles into `puzzles::all`), the library and every theme's page laid out at the tablet's
   and a phone's size (`picker`), a capture made by hand in a puzzle (tapped and dragged
   stop by stop, dropped on its last square, left partway and next pressed: a miss) and
   no targets in any puzzle, a Russian player's set read on home, its library, a puzzle

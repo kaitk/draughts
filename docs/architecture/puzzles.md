@@ -131,6 +131,16 @@ whose puzzle it is. Their look is in [rendering](rendering.md#controls).
   plays and then slides back by itself, a tap the board flashes as a mistake, or a
   capture left partway (below). A puzzle solved keeps the most stars it has won. Start
   over begins the puzzle again with the misses kept, or afresh once it is solved.
+- **A wrong move shows why** (2026-11-09, the user): when the other side answers it by
+  taking something back, a capture back or a shot's first move, that answer plays on
+  the board as a reply does, holds, and slides back, and then the wrong move slides back
+  as any does; the child sees why it was wrong. A move that is wrong without such an
+  answer (one that wins too little, or a quiet move that doesn't lead on) slides back
+  0.35 s after it lands, as before. The answer is `puzzles::answer`, the solver's
+  search, not the computer player's, which lives on its worker: of the other side's
+  replies, the one after which the solver ends worst over three plies and the captures
+  due beyond, if that is less than the solver has after its move. It is a miss once, as
+  any wrong move; the stars and the hint's glow are as for any miss.
 - **Captures of many jumps** are made by hand (2026-11-08, the user: children often
   make them jump by jump). A tap or a drop on a stop leaves the piece waiting there for
   the next jump; it never plays the rest of the way by itself, which would solve the

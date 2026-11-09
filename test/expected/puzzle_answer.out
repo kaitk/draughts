@@ -1,0 +1,19 @@
+read: true
+Captures 32 as it was: W:W25,27,39,43,44,50:B3,4,21,26,32,33, playing, misses 0, moving false
+39x28x37: B:W25,27,37,43,44,50:B3,4,21,26, show, misses 0, moving true 39x37
+  at 1.5 s, the move showing: B:W25,27,37,43,44,50:B3,4,21,26, show, misses 0, moving true 39x37
+  at 1.9 s, landed at 1.78 s: B:W25,27,37,43,44,50:B3,4,21,26, show, misses 0, moving false
+  at 2.3 s, the answer, due 0.4 s after the landing: W:W25,43,44,50:B3,4,26,41, shown, misses 0, moving true 21x41
+  animating while it holds: true
+  at 2.8 s: W:W25,43,44,50:B3,4,26,41, shown, misses 0, moving true 21x41
+  at 3.3 s, the answer landed at 2.88 s, held: W:W25,43,44,50:B3,4,26,41, shown, misses 0, moving false
+  at 3.6 s, still held: W:W25,43,44,50:B3,4,26,41, shown, misses 0, moving false
+  at 3.9 s, the answer sliding back, due 0.8 s after its landing: B:W25,27,37,43,44,50:B3,4,21,26, unshow, misses 0, moving true 21x41 backward
+  at 4.5 s, then the move, its answer back at 4.48 s: W:W25,27,39,43,44,50:B3,4,21,26,32,33, playing, misses 1, moving true 39x37 backward, red ring on 37
+  back at the start: true, animating at 6.4 s true, at 6.6 s false
+then 27x38x29: B:W25,29,39,43,44,50:B3,4,21,26, solved, misses 1, moving true 27x29
+the shot: W:W33,38,43,45,47,48:B3,11,21,23,24,29, playing, misses 0, moving false
+48-42: B:W33,38,42,43,45,47:B3,11,21,23,24,29, back, misses 0, moving true 48-42
+  at 11.5 s, landed at 11.4 s: B:W33,38,42,43,45,47:B3,11,21,23,24,29, back, misses 0, moving false
+  at 11.6 s: B:W33,38,42,43,45,47:B3,11,21,23,24,29, back, misses 0, moving false
+  at 12.0 s, sliding back, due 0.35 s after the landing: W:W33,38,43,45,47,48:B3,11,21,23,24,29, playing, misses 1, moving true 48-42 backward, red ring on 42

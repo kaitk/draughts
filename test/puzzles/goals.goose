@@ -11,7 +11,10 @@
 // side no move wins; a man left in danger isn't safe; a shot's quiet first move keeps
 // the goal in reach and its capture reaches it, while another quiet move doesn't. The
 // reply the screen plays is the one that resists longest, and the hint is the first
-// right move's piece.
+// right move's piece. A wrong move is shown its answer when the other side takes
+// something back with it (puzzles::answer): a capture back, a shot's first move; a
+// wrong move nothing answers so has none. International's Captures puzzle 32 as it was,
+// its man on 39, had a second double, 39x28x37, which 21x32x41 takes back.
 import std;
 import rules from "../../src/rules";
 import puzzles from "../../src/puzzles";
@@ -46,7 +49,7 @@ fn checked(body: const u8[:]) {
     print("checked ", rules::fen(set.list[0].start), ": ", n, " problems", if n > 0 { str("\n", out.trim()) } else { str("") });
 }
 
-// What each named move does at the start of a puzzle.
+// What each named move does at the start of a puzzle, and the answer a wrong one is shown.
 fn judge(s: puzzles::Solver&, pz: puzzles::Puzzle&, words: const u8[:]) {
     var moves: rules::Moves = [];
     puzzles::begin(s, pz);
@@ -55,7 +58,16 @@ fn judge(s: puzzles::Solver&, pz: puzzles::Puzzle&, words: const u8[:]) {
         let ply, ok = puzzles::parse_move(pz.start, w, moves);
         assert(ok);
         let i = puzzles::index_of(pz.start, ply, moves);
-        format(text, w, " ", WHAT[puzzles::judge(s, pz.start, puzzles::short(moves[i]), pz.moves)], "; ");
+        let what = puzzles::judge(s, pz.start, puzzles::short(moves[i]), pz.moves);
+        format(text, w, " ", WHAT[what]);
+        if what == puzzles::WRONG {
+            let r = rules::play(pz.start, moves[i]);
+            let a = puzzles::answer(s, r);
+            rules::generate(r, moves);
+            text.append(if a >= 0 { ", answered by " } else { ", no answer" });
+            if a >= 0 { rules::format_move(text, rules::INTERNATIONAL, moves[a]); }
+        }
+        text.append("; ");
     }
     print(puzzles::GOAL_NAMES[pz.goal], " ", rules::fen(pz.start), ": ", text);
 }
@@ -124,4 +136,7 @@ fn main() {
     // A position whose quiet moves lose the man to a reply: f8-g9 is taken by h10.
     var guard_ = puzzle("W:W13,46,47:B4,21,22", "crown", 2);
     judge(s, guard_, "13-8 13-9");
+    // Captures 32 as it was: the second double is taken back by a double.
+    var double = puzzle("W:W25,27,39,43,44,50:B3,4,21,26,32,33", "take 2", 1);
+    judge(s, double, "27x38x29 39x28x37");
 }

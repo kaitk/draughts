@@ -7,7 +7,7 @@
 // to its square with the red ring on the stop, and a star goes out; next does nothing
 // before. Puzzle 14's king takes three by 33 and 17, ending on 8 or 3; a tap off the
 // way (28) is a miss. Puzzle 10 has two doubles, 38 by 29 to 20 and by 27 to 16; the
-// first ends where it is taken back: a miss, and it slides back. Puzzle 31's man takes
+// first ends where it is taken back: a miss, and after the answer has shown, it slides back. Puzzle 31's man takes
 // two by 17 to 6; dropped on 17, the frame the finger lifts on asks for the one after,
 // which shows next awake, the man it jumped still there. Puzzles never show a selected
 // piece's targets, even with move hints on in settings and in Learn.
@@ -23,7 +23,7 @@ import shell from "../../src/shell";
 import puzzles from "../../src/puzzles";
 import drive from "../drive";
 
-let STATES = ["playing", "answer", "back", "solved"];
+let STATES = ["playing", "answer", "back", "solved", "show", "shown", "unshow"];
 
 // The name of square number n.
 fn sq(n: i64) -> u8[>..] {
@@ -122,14 +122,13 @@ fn main() {
     tap(sh, g, 20, 20.3);
     print("  then 20: ", STATES[sh.puzzle.state], ", playing ", named(sh.puzzle.b.move.from), "x",
           named(sh.puzzle.b.move.to));
-    drive::idle(sh, g, 21.0);
-    drive::idle(sh, g, 21.5);
-    drive::idle(sh, g, 22.5);
-    show(sh, g, "  slid back", 22.5);
-    drag(sh, g, 38, 27, 23.0);
-    show(sh, g, "38 dropped on 27", 23.1);
-    drag(sh, g, 27, 16, 23.2);
-    show(sh, g, "then 27 dropped on 16", 23.3);
+    // Taken back by 21x32: the answer shows, then both slide back.
+    for t in [21.0, 21.5, 22.0, 23.0, 23.5, 24.0, 24.5] { drive::idle(sh, g, t); }
+    show(sh, g, "  slid back", 24.5);
+    drag(sh, g, 38, 27, 25.5);
+    show(sh, g, "38 dropped on 27", 25.6);
+    drag(sh, g, 27, 16, 25.7);
+    show(sh, g, "then 27 dropped on 16", 25.8);
     print("  playing ", named(sh.puzzle.b.move.from), "x", named(sh.puzzle.b.move.to), ", kept stars ",
           sh.prefs.stars[rules::INTERNATIONAL][10]);
 

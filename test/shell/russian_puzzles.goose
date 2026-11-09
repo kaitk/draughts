@@ -21,7 +21,7 @@ import puzzles from "../../src/puzzles";
 import drive from "../drive";
 
 let SCREENS = ["home", "game", "settings", "picker", "puzzle"];
-let STATES = ["playing", "answer", "back", "solved"];
+let STATES = ["playing", "answer", "back", "solved", "show", "shown", "unshow"];
 
 fn show(sh: shell::Shell&, what: const u8[:]) {
     let pl .= sh.puzzle;

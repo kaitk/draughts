@@ -12,6 +12,7 @@ import rules from "../rules";
 
 let STACK = 4096;           // moves on the search's stack at once
 let SAFE_DEPTH = 3;         // plies a safe move is looked past, captures beyond: a double sacrifice's
+let SHOW_DEPTH = 3;         // plies a wrong move's answer is looked past (answer), captures beyond
 let WON = 1000;             // the value of a position whose side to move has no move
 
 // What a move does to a puzzle.
@@ -213,4 +214,27 @@ fn right_move(s: Solver&, q: rules::Position, left: i64) -> i64 {
     }
     s.stack.resize(base);
     return found;
+}
+
+// The other side's answer to a wrong move, which shows the child why it was wrong
+// (docs/architecture/puzzles.md, "The screen"): at r, after the solver's move, the
+// other side to move, the reply after which the solver ends worst with best play over
+// SHOW_DEPTH plies from r and the captures due beyond, when that is less than the solver
+// has at r: a capture back, or a shot's first move. Returns its index in r's legal
+// moves (rules::generate's order), or -1 when no reply takes anything back.
+fn answer(s: Solver&, r: rules::Position) -> i64 {
+    let has = net(s, r);
+    let base = push_moves(s, r);
+    let end = s.stack.len;
+    var best = -1;
+    var worst = has;
+    for i in base..end {
+        let v = value(s, after(r, s.stack[i]), SHOW_DEPTH - 1, -WON - 1, WON + 1);
+        if v < worst {
+            best = i - base;
+            worst = v;
+        }
+    }
+    s.stack.resize(base);
+    return best;
 }

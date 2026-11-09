@@ -221,12 +221,14 @@ fn glow_on(b: Board&, sq: i64, now: f64) {
     b.glow_at = now;
 }
 
-// Takes back the last move as a mistake: the piece slides back along its way and the
-// pieces it took fade back in, while its square flashes the red ring over a fading ghost
-// of it. False when there is no move to take back.
-fn slide_back(b: Board&, now: f64) -> bool {
+// Takes back the last move, m, as a mistake: the piece slides back along its way and
+// the pieces it took fade back in, while its square flashes the red ring over a fading
+// ghost of it. Not a `mistake`, it slides back without them: a puzzle's answer that
+// showed why a move was wrong, before the move itself. The board keeps only the last
+// move it played, so the caller passes m: after one move is taken back, the move under
+// it is the caller's to know. False when there is no move to take back.
+fn slide_back(b: Board&, m: rules::Move, now: f64, mistake: bool = true) -> bool {
     guard b.history.len > 0 else { return false; }
-    let m = b.move;
     let side = 1 - b.pos.side;
     let king = b.pos.kings & rules::bit(m.to) != 0;
     undo(b);
@@ -237,6 +239,7 @@ fn slide_back(b: Board&, now: f64) -> bool {
     b.since = now;
     b.dropped = false;
     b.skip = 0;
+    guard mistake else { return true; }
     b.wrong = m.to;
     b.wrong_at = now;
     b.ghost = true;

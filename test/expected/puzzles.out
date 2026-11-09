@@ -13,8 +13,13 @@ d4 takes e5: puzzle 1, B:W23,41:B6, solved, misses 1, stars 2, moves left 1
   next lit 1, stars 2 won 1 not
 next: puzzle 3, W:W28,46:B14,32, playing, misses 0, stars 3, moves left 1
 puzzle 7: puzzle 7, W:W37,38:B19,23,32, playing, misses 0, stars 3, moves left 1
-c3 takes d4: puzzle 7, B:W28,38:B19,23, back, misses 0, stars 3, moves left 1
-  sliding back: puzzle 7, W:W37,38:B19,23,32, playing, misses 1, stars 2, moves left 1, red ring on e5, ghost true
+c3 takes d4: puzzle 7, B:W28,38:B19,23, show, misses 0, stars 3, moves left 1
+  landed: puzzle 7, B:W28,38:B19,23, show, misses 0, stars 3, moves left 1
+  the answer: puzzle 7, W:W:B19,43, shown, misses 0, stars 3, moves left 1
+  playing f6xf2, animating true
+  held: puzzle 7, W:W:B19,43, shown, misses 0, stars 3, moves left 1
+  the answer sliding back: puzzle 7, B:W28,38:B19,23, unshow, misses 0, stars 3, moves left 1
+  then the move: puzzle 7, W:W37,38:B19,23,32, playing, misses 1, stars 2, moves left 1, red ring on e5, ghost true
   after: puzzle 7, W:W37,38:B19,23,32, playing, misses 1, stars 2, moves left 1
 a second time: puzzle 7, W:W37,38:B19,23,32, playing, misses 2, stars 1, moves left 1, glow on e3, red ring on e5, ghost true
 e3 takes d4: puzzle 7, B:W27,37:B19,23, solved, misses 2, stars 1, moves left 1

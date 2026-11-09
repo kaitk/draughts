@@ -5,7 +5,7 @@ then 8: puzzle 14 learn 3, solved, misses 0, stars 3, selected - drawn on -, wai
   B:WK8,46:B5, kept stars 3
 again: 47, 33, 28: puzzle 14 learn 3, playing, misses 1, stars 2, selected c1 drawn on c1, waits on -, ringed targets wrong e5, next dim
 38, then 29: puzzle 10 learn 2, playing, misses 0, stars 3, selected e3 drawn on g5, waits on g5, ringed targets wrong -, next awake
-  then 20: back, playing e3xi7
+  then 20: show, playing e3xi7
   slid back: puzzle 10 learn 2, playing, misses 1, stars 2, selected - drawn on -, waits on -, ringed targets wrong i7, next dim
 38 dropped on 27: puzzle 10 learn 2, playing, misses 1, stars 2, selected e3 drawn on c5, waits on c5, ringed targets wrong -, next awake
 then 27 dropped on 16: puzzle 10 learn 2, solved, misses 1, stars 2, selected - drawn on -, waits on -, ringed targets wrong -, next awake lit
