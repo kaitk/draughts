@@ -8,8 +8,8 @@
 // title in portrait; Brazilian, shown International's set, says so under the title.
 // Learn is open; the other themes open once
 // half of Learn is solved, and until then each shows its mark plain with a lock and how
-// many more Learn wants. The rows are one column, or two in landscape where one doesn't
-// fit the height. A row opens the theme's page: back, the theme's mark, name, and count
+// many more Learn wants. The rows are two columns in landscape where two fit the width or
+// one doesn't fit the height, else one column. A row opens the theme's page: back, the theme's mark, name, and count
 // over its levels, each a glass row of the level's mark and name beside its tiles, or
 // over them where the two don't fit side by side; a level's tiles split into rows as even
 // as they go. Each tile shows the stars won, the first without stars lit. Every tap is
@@ -33,6 +33,7 @@ let NAMES = [strings::THEME_LEARN, strings::THEME_CAPTURES, strings::THEME_CROWN
              strings::THEME_KING_SHOTS, strings::THEME_SAFE_MOVE];
 let LEVEL_NAMES = [strings::PUZZLES_LEVEL1, strings::PUZZLES_LEVEL2, strings::PUZZLES_LEVEL3];
 let COLUMN = 600.0;         // dp a column of the library takes at most
+let NARROWEST = 420.0;      // and at least where it goes to two in landscape for the width
 let LIBRARY_LIST = 700;     // the scrolling lists' ids (gui::scroll_begin): the library,
 let PAGE_LIST = 710;        // and a theme's page, plus the theme
 let PHONE = 600.0;          // dp across the shorter side under which the layout is a phone's
@@ -298,7 +299,10 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let fit = floor((page.w - head - (rows - 1) * gap) / rows);
     if !landscape && fit >= 88.0 * u { row_h = min(row_h, fit); }
     let one = rows * row_h + (rows - 1) * gap;
-    let cols = if landscape && head + one > page.w { 2 } else { 1 };
+    // Two columns in landscape where two fit the width (a tablet, a wide window) or one
+    // doesn't fit the height (a phone); one in portrait, scrolling where it must.
+    let wide = page.z >= 2.0 * NARROWEST * u + gap;
+    let cols = if landscape && rows > 1 && (wide || head + one > page.w) { 2 } else { 1 };
     let per = (rows + cols - 1) / cols;
     let h = head + per * row_h + (per - 1) * gap;
     let y = if landscape { page.y + max(0.0, floor(0.5 * (page.w - h) + 0.5)) } else { page.y };

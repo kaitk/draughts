@@ -10,7 +10,7 @@ Russian tapped: 0 dp down, the first row at 16,224 467x92
 the tablet, landscape:
   international: 10 tiles, back 24,24 134x88, the switch 848,152 394x88 (162 122 102), the first row 34,256 600x124, 1 lines of title and note, 319 quads, all in place
   brazilian: 10 tiles, back 24,24 134x88, the switch 848,152 394x88 (162 122 102), the first row 34,256 600x124, 2 lines of title and note, 381 quads, all in place
-  russian: 8 tiles, back 24,24 134x88, the switch 542,84 394x88 (162 122 102), the first row 340,188 600x124, 1 lines of title and note, 246 quads, all in place
+  russian: 8 tiles, back 24,24 134x88, the switch 848,220 394x88 (162 122 102), the first row 34,324 600x124, 1 lines of title and note, 246 quads, all in place
 the tablet, portrait:
   international: 10 tiles, back 100,24 134x88, the switch 104,128 592x88 (245 185 154), the first row 100,232 600x124, 1 lines of title and note, 319 quads, all in place
   brazilian: 10 tiles, back 100,24 134x88, the switch 104,128 592x88 (245 185 154), the first row 100,232 600x124, 2 lines of title and note, 381 quads, all in place
