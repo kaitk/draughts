@@ -651,14 +651,16 @@ fn tab_width(g: gui::Gui&, group: i64) -> f32 {
     return gui::labelled_width(g, 30.0, strings::get(GROUP_TITLES[group]), gui::HEADING, gui::MIDDLE) + 16.0 * g.scale;
 }
 
-// The two tabs, Game and Look, side by side in r, the shown group's lit. True when a tap
-// changed the group shown.
+// The two tabs, Game and Look, side by side in r, the shown group's lit. Each on glass,
+// as back is: a plain tile alone (white at 10%) was hard to read over a bright photograph
+// (autumn's sunlit trees on a phone, 2026-11-09). True when a tap changed the group shown.
 fn tabs(s: Settings&, g: gui::Gui&, r: float4) -> bool {
     let u = g.scale;
     var changed = false;
     let w = 0.5 * (r.z - TILE_GAP * u);
     for k in 2 {
         let t = float4 { r.x + k * (w + TILE_GAP * u), r.y, w, r.w };
+        gui::glass(g, t, 22.0);
         if gui::labelled(g, 398 + k, t, GROUP_ICONS[k], 30.0, strings::get(GROUP_TITLES[k]), gui::HEADING, gui::MIDDLE,
                          if s.group == k { gui::CHOSEN } else { gui::PLAIN }) {
             changed = s.group != k;

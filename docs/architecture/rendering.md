@@ -569,7 +569,8 @@ the prototype tried, kept for 3D:
   portrait, and the column narrows to its widest row (2026-11-08); where that runs past
   the foot too, the names go back to the left and the rows take the width they want,
   unwrapped (a foldable). Where even that doesn't fit (a phone), one group shows at a time:
-  two tiles, the game's and the look's icon and title, the shown one lit, choose which,
+  two tiles, the game's and the look's icon and title, each on glass as back is (a plain
+  tile alone was hard to read over a bright photograph, 2026-11-09), the shown one lit, choose which,
   in the title row in place of the title in landscape and in a row under it in portrait
   (where the groups side by side would leave the board under 45% of the width, or under
   220 dp, 45% of a 553 dp phone's: a tablet's 736 dp page keeps both groups down to the
