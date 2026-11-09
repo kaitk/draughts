@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- The shipped icon's background, at its corners (winter's navy; autumn's dark brown is
-         #140c09): its background layer, and the window and splash behind the app until its
+    <!-- The shipped icon's background, at its corners (autumn's dark brown; winter's navy is
+         #06172b): its background layer, and the window and splash behind the app until its
          first frame. -->
-    <color name="icon_background">#06172b</color>
+    <color name="icon_background">#140c09</color>
 </resources>
