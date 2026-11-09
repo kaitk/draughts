@@ -137,7 +137,7 @@ tools/        perft, computer-player benchmarks, a terminal player, the puzzle c
 test/         headless tests with expected output
 patches/      patches to goose_gfx and SDL, applied to a copy at build time
 third_party/  goose_gfx, as a submodule, with SDL and Nuklear
-store/        the Play listing and the privacy policy
+store/        the Play and App Store listings, their previews, and the privacy policy
 docs/         product scope, architecture decisions, development
 ```
 
