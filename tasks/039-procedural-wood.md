@@ -1,6 +1,6 @@
 # 039: Procedural wood for the 3D board
 
-Status: in-progress
+Status: done
 
 The 3D prototype's wood (task 015) was noise drawn out along the grain: next to the 3D
 reference (`ChatGPT Image Nov 7, 2026, 08_19_31 PM.png`) and its swatch sheet (`Four-Way
@@ -251,6 +251,17 @@ The user's values (2026-11-09): `wood_for` now gives summer (3, 7) wood 2 with `
 spring's carved looks (9, 10) wood 3 with `SPRING_FINISH`; `--wood` overrides a look's own;
 `OILED_OAK` is gone. Details in task 015.
 
+## The bake on the tablet (2026-11-09)
+
+The Galaxy Tab A11+ (Mali-G615 MC2), autumn, wood 2, `--bench 300`'s warm bake at its
+end (each map, its mips, waited for), three launches: the plan 170 to 194 ms, the frame
+map 99 to 103 ms, about 0.27 to 0.30 s in all against the M1 Pro's 37 to 38. The first
+bake's pipeline compile is the longest step of getting the board ready, 0.96 to 1.05 s;
+the bake itself runs in bands a frame each (task 042), so no frame waits for all of it.
+
+The user (2026-11-09): done for now. Spring's and summer's boards may change some day,
+but they are fine as they are.
+
 ## Acceptance criteria
 
 - [x] `--wood N` and W switch the wood's model, rebaking only on a switch
@@ -258,10 +269,14 @@ spring's carved looks (9, 10) wood 3 with `SPRING_FINISH`; `--wood` overrides a 
       (c) beside the old bake, measured against the reference and the swatch
 - [x] The bake's and a frame's cost per variant on the Mac
 - [x] The recommended variant the default
-- [ ] The user's look at the four on the Mac, and the bake's time on the tablet
+- [x] The user's look at the four on the Mac, and the bake's time on the tablet: the
+      look settled as is, the defaults kept (the user, 2026-11-09); the bake on the
+      tablet below
 - [x] Marbles for winter's frame beside the slate, `--marble N` and M, and the finish
       (varnish, sanding) with the user's preset on 2 and 3
-- [ ] The user's pick of the marble and the finish, tuned with the panel
+- [x] The user's pick of the marble and the finish, tuned with the panel: settled as
+      is, the defaults kept (the user, 2026-11-09)
 - [x] Summer's three variants beside the summer look, `--summer N` and S, pickle and
       caulk in the panel
-- [ ] The user's pick of summer's variant
+- [x] The user's pick of summer's variant: settled as is, the defaults kept (the user,
+      2026-11-09)
