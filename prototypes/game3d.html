@@ -27,12 +27,15 @@
      &controls=a   the corners take's floating camera buttons (the default there): a column
                    at the right edge under the play panel, in portrait above it; b, beside
                    the board's near corners, in portrait under them; off. View: 52.5° or 74°
-                   down. Zoom (landscape only): the whole playing field, pieces and all,
+                   down, and the reset: off the rest angle a tap eases back to it, a gold
+                   dot on the button showing that. Zoom (landscape only): the whole playing field, pieces and all,
                    grown to the largest size clear of the panels and the buttons. Showcase
                    (the hand): a mode, lit while on, in which a drag anywhere on the board
                    turns it (±35°) and tips it (35° to 80° down); it stays where it is let
-                   go, and the button again (or a move) eases back in 0.6 s. The board
-                   refits as the camera moves.
+                   go, and the button again only stops the dragging (play goes on at that
+                   angle; View resets it; a hot-seat turn does too). The board refits as
+                   the camera moves. Buttons: 56 dp (44 disc) on a tablet, 48 (40) on a
+                   phone in landscape, 52 (42) in portrait.
      &pp=          portrait's camera angle on the corners take: 52.5, 60 or 65 (the default)
      The switcher's Move plays a move and turns the board 180° for the other player, as a
      hot-seat game against a friend would (0.7 s, eased).
@@ -75,15 +78,19 @@
   .tile .row.tall { min-height: calc(80px * var(--k)); min-width: calc(80px * var(--k)); font-size: calc(17px * var(--k)); }
   /* A floating camera button: a 48 dp target, a 40 dp disc of shade with a hairline, no
      panel; an SDF circle and a line icon natively. */
-  .ctl { width: calc(48px * var(--k)); height: calc(48px * var(--k)); padding: 0; border: 0;
+  .ctl { width: calc(var(--cb) * 1px * var(--k)); height: calc(var(--cb) * 1px * var(--k)); padding: 0; border: 0;
     background: none; display: grid; place-items: center; color: var(--fg); cursor: pointer;
     touch-action: none; -webkit-tap-highlight-color: transparent; }
-  .ctl::before { content: ''; position: absolute; inset: calc(4px * var(--k)); border-radius: 50%;
+  .ctl::before { content: ''; position: absolute; inset: calc((var(--cb) - var(--cd)) * 0.5px * var(--k)); border-radius: 50%;
     background: rgb(0 0 0 / 0.3); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.22), 0 2px 8px -3px rgb(0 0 0 / 0.5);
     transition: transform 120ms, background 120ms; }
   .ctl:active::before { transform: scale(0.92); background: rgb(0 0 0 / 0.42); }
   .ctl.on::before { background: color-mix(in srgb, var(--glow) 30%, rgb(0 0 0 / 0.3)); }
-  .ctl svg { position: relative; width: calc(26px * var(--k)); height: calc(26px * var(--k)); stroke-width: 2.4; }
+  .ctl svg { position: relative; width: calc(var(--cd) * 0.62px * var(--k)); height: calc(var(--cd) * 0.62px * var(--k)); stroke-width: 2.4; }
+  /* The dot: the board is off its rest angle; View brings it back. */
+  .ctl.dot::after { content: ''; position: absolute; width: calc(7px * var(--k)); height: calc(7px * var(--k));
+    top: calc((var(--cb) - var(--cd)) * 0.5px * var(--k)); right: calc((var(--cb) - var(--cd)) * 0.5px * var(--k));
+    border-radius: 50%; background: var(--glow); box-shadow: 0 0 0 calc(1.5px * var(--k)) rgb(0 0 0 / 0.55); }
   /* The switcher at the top middle here, off the corners' camera buttons. */
   .proto-bar { top: 4px; bottom: auto; right: auto; left: 50%; transform: translateX(-50%);
     flex-wrap: wrap; justify-content: center; max-width: calc(100vw - 24px); }
@@ -511,6 +518,10 @@ function layout() {
   const phone = short < 600;
   const k = Math.max(short / 800, 0.75);
   document.body.style.setProperty('--k', k);
+  // The camera buttons by device: the touch area and its disc, in dp.
+  const cb = phone ? (land ? 48 : 52) : 56, cd = phone ? (land ? 40 : 42) : 44;
+  document.body.style.setProperty('--cb', cb);
+  document.body.style.setProperty('--cd', cd);
   ui.innerHTML = '';
   corners = null;
   // Portrait's camera on the corners take is the open one (&pp).
@@ -564,7 +575,7 @@ function layout() {
   } else {
     // The corners take. Its fit is a function of the board's bounds, so the board refits
     // as the camera moves (the view, the zoom, the turn); `keep` are the rects it clears.
-    const B = 48 * k, gB = 8 * k, M = 12 * k, keep = [];
+    const B = (phone ? (land ? 48 : 52) : 56) * k, gB = 8 * k, M = 12 * k, keep = [];
     const clear = (g) => keep.every((r) => !touches(g, r, G / 2));
     const zkeep = []; // what the zoomed field must also clear: buttons off the rest board's way
     let place, zoom = null, zright = W - G;
@@ -669,6 +680,7 @@ function layout() {
   Draughts.syncGlass();
   // How much of the screen the board takes, for comparing takes (console and title).
   document.body.dataset.board = `${Math.round(f.w)}x${Math.round(f.h)}`;
+  dotOn = null;
   syncControls();
   frame();
 }
@@ -688,6 +700,7 @@ function frame() {
     useFit(b, f, W, H);
   } else viewPitch = PITCH;
   render();
+  syncDot();
 }
 
 // ---- Tweens, eased in and out, drawn only while one runs.
@@ -741,7 +754,11 @@ function syncControls() {
 ui.addEventListener('click', (e) => {
   const el = e.target.closest('.ctl');
   if (!el) return;
-  if (el.dataset.ctl === 'view') { want.top = !want.top; tween('top', want.top ? 1 : 0, 600); }
+  if (el.dataset.ctl === 'view') {
+    // Off the rest angle: back to rest; at rest: the top view, then rest again.
+    if (!showcaseOff()) resetView();
+    else { want.top = !want.top; tween('top', want.top ? 1 : 0, 600); }
+  }
   if (el.dataset.ctl === 'zoom') { want.zoom = !want.zoom; tween('zoom', want.zoom ? 1 : 0, 450); }
   if (el.dataset.ctl === 'orbit') {
     if (want.orbit) endShowcase();
@@ -751,13 +768,30 @@ ui.addEventListener('click', (e) => {
 });
 // Showcase: a mode in which a drag anywhere on the board turns and tips it within the
 // range (yaw ±35°, 35° to 80° down). It stays where it is let go; ending the mode (the
-// button, a move) eases back to the resting view.
+// button) only stops the dragging: the board stays at the angle it was left at, and play
+// goes on there. The View button is the reset (a dot on it shows the board is off rest).
 function endShowcase() {
   if (!want.orbit) return;
   want.orbit = false;
-  tween('yaw', 0, 600); tween('pitch', 0, 600);
   canvas.style.touchAction = '';
   syncControls();
+}
+const showcaseOff = () => Math.abs(v.yaw) < 0.5 && Math.abs(v.pitch) < 0.5;
+const offRest = () => !showcaseOff() || v.top > 0.02 || want.top;
+// Ease everything back to the rest view (52.5°, or 65° in portrait).
+function resetView() {
+  want.top = false; want.orbit = false;
+  canvas.style.touchAction = '';
+  tween('top', 0, 600); tween('yaw', 0, 600); tween('pitch', 0, 600);
+  syncControls();
+}
+// The dot on View, kept in step with the camera each frame.
+let dotOn = null;
+function syncDot() {
+  const on = offRest();
+  if (on === dotOn) return;
+  dotOn = on;
+  for (const el of ui.querySelectorAll('.ctl[data-ctl=view]')) el.classList.toggle('dot', on);
 }
 
 // ---- The hot-seat turn: a move, then the board turns to face the next player.
@@ -780,7 +814,7 @@ function makeMove() {
     t.querySelector('span').textContent = side === 'white' ? "White's turn" : "Black's turn";
   }
   Draughts.paint();
-  endShowcase();
+  resetView();
   frame();
   turnTo += 180;
   setTimeout(() => tween('turn', turnTo, 700), 250);
@@ -791,6 +825,7 @@ function makeMove() {
 let drag = null;
 canvas.addEventListener('pointerdown', (e) => {
   if (CONTROLS !== 'off' && !want.orbit) return;
+  delete tweens.yaw; delete tweens.pitch;
   drag = [e.clientX, e.clientY];
   canvas.setPointerCapture(e.pointerId);
 });

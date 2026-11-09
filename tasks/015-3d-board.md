@@ -351,6 +351,8 @@ the third button is a showcase mode, not a tilt: while on it is lit and a drag a
 the board turns it (±35°) and tips it (35° to 80° down) instead of moving pieces, with no
 spring back; pressing it again, or a move, eases back to rest in 0.6 s.
 
+**Decided** (the user, 2026-11-09): Showcase only toggles dragging and keeps the angle; View is the reset (off rest a tap eases back, then top, then rest) with a gold dot on it while off rest; a new game or hot-seat turn resets the angle; buttons 56 dp touch / 44 disc on a tablet, 48 / 40 on a phone in landscape, 52 / 42 in portrait.
+
 ## Integration (on the `integrate3d` branch, off `main` until the game is solid)
 
 ### Phase 1: what doesn't depend on the renderer (2026-11-09)
