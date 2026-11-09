@@ -810,3 +810,9 @@ meminfo` at rest:
 
 The 3D board's idle wakeup, once a second as the flat board's, costs about 2.7 ms of CPU
 against 0.3: not yet looked into (perhaps the scene filled and compared each wakeup).
+
+The same release on the Pixel 7a (after uninstalling its debug-signed build and the old
+`com.kaitk.draughts`, the user's call), a Russian game on the 3D board after c3–d4,
+idle 20 s and memory at rest: landscape 0.05% with 20 wakeups, GL mtrack 227 MB, EGL
+73 MB, Total PSS 345 MB; portrait the same, 347 MB. Portrait shows the view and
+showcase buttons, landscape zoom as well.
