@@ -20,6 +20,8 @@ struct Drawer {
     ready:   bool                                  = false,
     kind:    i64                                   = -1, // the app's theme the board was set up with
     n:       i64                                   = 0,
+    wood:    i64                                   = -1, // --wood, --marble: -1 the renderer's own
+    marble:  i64                                   = -1,
     size:    int2                                  = int2 { 0, 0 },
     scene:   view3d::Scene                         = view3d::Scene {}, // this frame's
     drawn:   view3d::Scene                         = view3d::Scene {}, // the last one drawn
@@ -41,6 +43,7 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
     var force = false;
     if !d.ready {
         render3d::setup(d.gpu);
+        render3d::choose(d.gpu, d.wood, d.marble);
         d.ready = true;
         force = true;
     }

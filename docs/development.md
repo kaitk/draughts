@@ -121,7 +121,8 @@ language, who plays), `player-N.txt` each player's ([players](architecture/READM
 until the 3D board exists; `--3d`, a flag with no value, shows it for working on task 015,
 its 3D tile playing the game on the 3D board, and `--3d --board 3d` plays a run there at once
 (the file's `board` key is read and written either way, and the board is flat while the
-row is hidden). Each player's game is kept in `game-N.bin` beside them; a
+row is hidden); `--wood N` (0 to 3) and `--marble N` (0 the slate, 1 to 4) pick the 3D
+board's wood and winter frame's marble for the run (task 039). Each player's game is kept in `game-N.bin` beside them; a
 run with `--fen`, `--tap`, `--screen`, `--frames`, `--variant`, `--clock`, or
 `--computer` neither reads nor writes it, so
 screenshots don't depend on the last session. On the tablet, check a resume with
