@@ -99,6 +99,7 @@ theme.captures = Löömine
 theme.crowning = Tammiks
 theme.shots = Kombinatsioonid
 theme.king_shots = Tammi löögid
+theme.safe_move = Ohutu käik
 puzzles.level1 = Kerge
 puzzles.level2 = Raskem
 puzzles.level3 = Kõige raskem

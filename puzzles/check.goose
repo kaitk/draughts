@@ -3,9 +3,11 @@
 // with its last move and not before; the goal can be reached within the puzzle's moves
 // whatever the replies, and not in fewer; every move that is right where a line has the
 // solver to move is a line's move there, so the file lists every way in and on; each
-// line ends quiet, no capture due for either side against any reply, a take's line
-// wins its count exactly, and a crown's line ends with the king made; no move along a line shares its squares with another legal
-// move, which a tap couldn't tell apart; and it says where it came from.
+// line ends quiet, no capture due for either side against any reply (a safe move's
+// replies aside), a take's line wins its count exactly, and a crown's line ends with
+// the king made; a safe puzzle's every other move loses to a shot; no move along a line
+// shares its squares with another legal move, which a tap couldn't tell apart; and it
+// says where it came from.
 namespace puzzles;
 import std;
 import rules from "../rules";
@@ -79,6 +81,7 @@ fn check(s: Solver&, pz: Puzzle&, out: u8[>..]&, ways: u8[>..]&) -> i64 {
         format(out, "  solvable in ", pz.moves - 1, "\n");
         n++;
     }
+    if pz.goal == SAFE { n += safe_check(s, pz, out); }
     // Every move that is right where a line has the solver to move must be a line's
     // move there: the file lists every way on, not only every way in. Lines sharing
     // the moves so far are checked once, at the first of them.
@@ -118,8 +121,10 @@ fn check(s: Solver&, pz: Puzzle&, out: u8[>..]&, ways: u8[>..]&) -> i64 {
             }
             p = after(p, m);
         }
-        // The end is quiet: no capture due for either side, against any reply.
-        if !quiet(p, moves) {
+        // The end is quiet: no capture due for either side, against any reply. A safe
+        // move's replies may still give men, offers its threat no longer makes good:
+        // that none wins anything is the move's being right.
+        if !quiet(p, moves, pz.goal != SAFE) {
             format(out, "  line ", li + 1, " ends with a capture due\n");
             n++;
         }
@@ -131,6 +136,34 @@ fn check(s: Solver&, pz: Puzzle&, out: u8[>..]&, ways: u8[>..]&) -> i64 {
     return n;
 }
 
+// What a safe puzzle needs beyond the rest: one move, no capture due at the start, and
+// every move but the right one losing to a shot (solve.goose, shot), not to a capture
+// at once or a quiet threat. That the right move leaves no shot is its being right:
+// nothing is lost over SAFE_DEPTH plies. Returns how many problems, appended to out.
+fn safe_check(s: Solver&, pz: Puzzle&, out: u8[>..]&) -> i64 {
+    var moves: rules::Moves = [];
+    var n = 0;
+    if pz.moves != 1 {
+        format(out, "  a safe move is one move, not ", pz.moves, "\n");
+        n++;
+    }
+    rules::generate(pz.start, moves);
+    if moves.len > 0 && moves[0].captured != 0 {
+        format(out, "  a capture is due at the start\n");
+        n++;
+    }
+    var all: Short[..rules::MAX_MOVES] = [];
+    for m in moves { all.push(short(m)); }
+    for m in all {
+        guard judge(s, pz.start, m, 1) == WRONG && !shot(s, after(pz.start, m), SAFE_DEPTH) else { continue; }
+        var t: u8[>..] = [];
+        move_text(t, pz.start, m, moves);
+        format(out, "  ", t, " loses material, but not to a shot\n");
+        n++;
+    }
+    return n;
+}
+
 // Whether two lines have the same first n moves.
 fn same_start(a: Line&, b: Line&, n: i64) -> bool {
     guard a.plies.len >= n && b.plies.len >= n else { return false; }
@@ -138,11 +171,12 @@ fn same_start(a: Line&, b: Line&, n: i64) -> bool {
     return true;
 }
 
-// Whether p is quiet: its side to move has no capture, and none of its moves gives the
-// other side one. A side with no move at all is quiet.
-fn quiet(p: rules::Position, moves: rules::Moves&) -> bool {
+// Whether p is quiet: its side to move has no capture, and, if `replies`, none of its
+// moves gives the other side one. A side with no move at all is quiet.
+fn quiet(p: rules::Position, moves: rules::Moves&, replies: bool = true) -> bool {
     rules::generate(p, moves);
     guard moves.len == 0 || moves[0].captured == 0 else { return false; }
+    guard replies else { return true; }
     var all: Short[..rules::MAX_MOVES] = [];
     for m in moves { all.push(short(m)); }
     for m in all {

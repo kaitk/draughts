@@ -100,6 +100,7 @@ theme.captures = Captures
 theme.crowning = Crowning
 theme.shots = Shots
 theme.king_shots = King shots
+theme.safe_move = Safe move
 puzzles.level1 = Easy
 puzzles.level2 = Harder
 puzzles.level3 = Hardest

@@ -35,7 +35,7 @@ let KEYS = [
     "players.who", "players.new", "players.picture", "players.name", "players.start_again", "players.remove",
     "players.hold",
     "goal.take_one", "puzzle.white_to_move", "puzzle.black_to_move",
-    "theme.learn", "theme.captures", "theme.crowning", "theme.shots", "theme.king_shots",
+    "theme.learn", "theme.captures", "theme.crowning", "theme.shots", "theme.king_shots", "theme.safe_move",
     "puzzles.level1", "puzzles.level2", "puzzles.level3", "puzzles.locked",
 ];
 let LANGUAGE_NAME = 0;
@@ -120,11 +120,12 @@ let THEME_CAPTURES = 78;
 let THEME_CROWNING = 79;
 let THEME_SHOTS = 80;
 let THEME_KING_SHOTS = 81;
-let PUZZLES_LEVEL1 = 82;    // a theme's levels: easy, harder, hardest
-let PUZZLES_LEVEL2 = 83;
-let PUZZLES_LEVEL3 = 84;
-let PUZZLES_LOCKED = 85;    // "{}", the puzzles still to solve in Learn to open a theme
-let COUNT = 86;
+let THEME_SAFE_MOVE = 82;
+let PUZZLES_LEVEL1 = 83;    // a theme's levels: easy, harder, hardest
+let PUZZLES_LEVEL2 = 84;
+let PUZZLES_LEVEL3 = 85;
+let PUZZLES_LOCKED = 86;    // "{}", the puzzles still to solve in Learn to open a theme
+let COUNT = 87;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

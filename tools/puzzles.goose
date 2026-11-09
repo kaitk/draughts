@@ -6,7 +6,7 @@
 //                                            safe) within MOVES moves, how many, the line
 //                                            the screen would play, and what the checks
 //                                            say of a puzzle made of that line
-//   build/puzzles find SIDE GOAL MOVES MINE THEIRS COUNT [SEED [KINGS]]
+//   build/puzzles find SIDE GOAL MOVES MINE THEIRS COUNT [SEED [KINGS [CORE]]]
 //                                            game-like positions that make a puzzle: see find
 //
 // try and find take `--variant NAME` (international by default; russian, brazilian) for
@@ -276,9 +276,12 @@ fn turned(p: rules::Position) -> rules::Position {
 // asks; printed `count` of them with their line, for SIDE to move. A take in more moves
 // is a shot: it starts with no capture due and every reply to its first move is a
 // capture; a one-move take has a capture due. Each has two moves at least to choose
-// from. The other side has no capture were it to move, except for the safe move, where
-// it has.
-fn find(side: i64, goal: const u8[:], k: i64, mine: i64, theirs: i64, count: i64, seed: u64, kings: i64) {
+// from. The other side has no capture were it to move; for the safe move it has a shot
+// (puzzles::shot), the threat the move answers, and the solver has no capture due. The
+// men of `core`, a motif's skeleton written for white, stand in every position, the
+// camps filled round them.
+fn find(side: i64, goal: const u8[:], k: i64, mine: i64, theirs: i64, count: i64, seed: u64, kings: i64,
+        core: rules::Position) {
     var r = rng { seed };
     var s = puzzles::Solver { moves: [], stack: [] };
     var legal: rules::Moves = [];
@@ -286,21 +289,27 @@ fn find(side: i64, goal: const u8[:], k: i64, mine: i64, theirs: i64, count: i64
     var tries = 0;
     while found < count && tries < 2000000 {
         tries++;
-        var p = rules::Position { pieces: [0, 0], kings: 0, side: rules::WHITE, variant: variant };
-        camp(p, r, rules::WHITE, mine, kings);
-        camp(p, r, rules::BLACK, theirs, 0);
+        var p = core;
+        p.side = rules::WHITE;
+        p.variant = variant;
+        camp(p, r, rules::WHITE, mine - popcount(core.pieces[0]), kings);
+        camp(p, r, rules::BLACK, theirs - popcount(core.pieces[1]), 0);
         guard popcount(p.pieces[0]) == mine && popcount(p.pieces[1]) == theirs else { continue; }
         // No white man on black's back row, which would have crowned.
         guard p.pieces[0] & ~p.kings & rules::VARIANTS[variant].promotion[0] == 0 else { continue; }
         rules::generate(p, legal);
         var pz = puzzle_of(p, goal, k);
         let take = pz.goal == puzzles::TAKE;
-        guard legal.len >= 2 && (!take || (legal[0].captured != 0) == (k == 1)) else { continue; }
+        let safe = pz.goal == puzzles::SAFE;
+        guard legal.len >= 2 && (!take || (legal[0].captured != 0) == (k == 1)) && (!safe || legal[0].captured == 0)
+        else { continue; }
         var q = p;
         q.side = rules::BLACK;
         rules::generate(q, legal);
-        guard legal.len > 0 && (legal[0].captured != 0) == (pz.goal == puzzles::SAFE) else { continue; }
+        guard legal.len > 0 && legal[0].captured == 0 else { continue; }
         puzzles::begin(s, pz);
+        // The threat a safe move answers: were the other side to move, it would have a shot.
+        guard !safe || puzzles::shot(s, q, puzzles::SAFE_DEPTH) else { continue; }
         guard puzzles::wins(s, p, k) && (k == 1 || !puzzles::wins(s, p, k - 1)) else { continue; }
         var line: u8[>..] = [];
         guard screen_line(s, pz, line) else { continue; }
@@ -378,9 +387,10 @@ fn main() {
         let seed, ok_s = parse_int(if argv.len >= 9 { argv[8] } else { "1" });
         let kings, ok_kings = parse_int(if argv.len >= 10 { argv[9] } else { "0" });
         let side = if argv[2] == "black" { rules::BLACK } else { rules::WHITE };
-        guard ok_k && ok_w && ok_b && ok_n && ok_s && ok_kings && (argv[2] == "white" || argv[2] == "black")
-        else { abort("find SIDE GOAL MOVES MINE THEIRS COUNT [SEED [KINGS]]"); }
-        find(side, argv[3], k, w, b, n, seed as u64, kings);
+        let core, ok_core = rules::parse_fen(if argv.len >= 11 { argv[10] } else { "W:W:B" }, variant);
+        guard ok_k && ok_w && ok_b && ok_n && ok_s && ok_kings && ok_core && (argv[2] == "white" || argv[2] == "black")
+        else { abort("find SIDE GOAL MOVES MINE THEIRS COUNT [SEED [KINGS [CORE]]]"); }
+        find(side, argv[3], k, w, b, n, seed as u64, kings, core);
         return;
     }
     check_file(if argv.len >= 2 { argv[1] } else { "" });

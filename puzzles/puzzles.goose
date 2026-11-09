@@ -24,8 +24,9 @@ let CAPTURES = 1;           // finding the multi-capture
 let CROWNING = 2;           // to the far row
 let SHOTS = 3;              // combinations: give men, then take more
 let KING_SHOTS = 4;         // the king as a weapon
-let THEMES = 5;
-let THEME_NAMES = ["learn", "captures", "crowning", "shots", "king-shots"];
+let SAFE_MOVE = 5;          // the one move that doesn't lose to a shot
+let THEMES = 6;
+let THEME_NAMES = ["learn", "captures", "crowning", "shots", "king-shots", "safe-move"];
 
 // The goals.
 let TAKE = 0;               // capture `count` more pieces than are lost, kept through the replies

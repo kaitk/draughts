@@ -11,7 +11,7 @@ import std;
 import rules from "../rules";
 
 let STACK = 4096;           // moves on the search's stack at once
-let SAFE_DEPTH = 2;         // plies a safe move is looked past: a reply and an answer, captures beyond
+let SAFE_DEPTH = 3;         // plies a safe move is looked past, captures beyond: a double sacrifice's
 let WON = 1000;             // the value of a position whose side to move has no move
 
 // What a move does to a puzzle.
@@ -93,6 +93,28 @@ recursive fn value(s: Solver&, q: rules::Position, depth: i64, alpha: i64, beta:
     }
     s.stack.resize(base);
     return best;
+}
+
+// Whether the other side, to move at r, has a shot: no capture is due, and it has a
+// move that gives the solver a capture after which the solver ends down, with best play
+// over `depth` plies from r and the captures due beyond.
+fn shot(s: Solver&, r: rules::Position, depth: i64) -> bool {
+    let base = push_moves(s, r);
+    let end = s.stack.len;
+    var found = false;
+    if end > base && s.stack[base].captured == 0 {
+        for i in base..end {
+            let t = after(r, s.stack[i]);
+            rules::generate(t, s.moves);
+            guard s.moves.len > 0 && s.moves[0].captured != 0 else { continue; }
+            if value(s, t, depth - 1, -WON - 1, WON + 1) < 0 {
+                found = true;
+                break;
+            }
+        }
+    }
+    s.stack.resize(base);
+    return found;
 }
 
 // Whether the solver's move m, which led to q, reaches the goal: the other side has no

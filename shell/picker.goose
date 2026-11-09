@@ -24,9 +24,9 @@ let BACK = -2;              // home
 let NOTHING = -1;
 let SHOWN = -3;             // a theme's page opened or left: drawn again
 
-let MARKS = [gui::BOOK, gui::JUMPS, gui::CROWN, gui::TARGET, gui::KING];
+let MARKS = [gui::BOOK, gui::JUMPS, gui::CROWN, gui::TARGET, gui::KING, gui::SHIELD];
 let NAMES = [strings::THEME_LEARN, strings::THEME_CAPTURES, strings::THEME_CROWNING, strings::THEME_SHOTS,
-             strings::THEME_KING_SHOTS];
+             strings::THEME_KING_SHOTS, strings::THEME_SAFE_MOVE];
 let LEVEL_NAMES = [strings::PUZZLES_LEVEL1, strings::PUZZLES_LEVEL2, strings::PUZZLES_LEVEL3];
 let COLUMN = 600.0;         // dp a column of the library takes at most
 let PHONE = 600.0;          // dp across the shorter side under which the layout is a phone's
