@@ -240,8 +240,12 @@ let PLAIN = Finish { varnish: 0.0, sanding: 0.0, grain: 1.0, rings: 1.0, warmth:
 // 2026-11-09), on the two woods kept for the game.
 let VARNISHED = Finish { varnish: 0.2, sanding: 0.15, grain: 1.0, rings: 1.0, warmth: 0.0 };
 
+// Wood 2's finish as the user tuned it in the panel (2026-11-09), the default wood's.
+let TUNED = Finish { varnish: 0.68, sanding: 0.835, grain: 1.01, rings: 1.002, warmth: 0.36 };
+
 fn finish(wood: i64) -> Finish {
-    if wood == 2 || wood == 3 { return VARNISHED; }
+    if wood == 2 { return TUNED; }
+    if wood == 3 { return VARNISHED; }
     return PLAIN;
 }
 
