@@ -1,0 +1,17 @@
+idle: offset 0.0, tapped -1, dragging false, animating false, clipped 20 of 21
+down on row 1: offset 0.0, tapped -1, dragging false, animating true, clipped 20 of 21
+moved 6 px, under the slop: offset 0.0, tapped -1, dragging false, animating true, clipped 20 of 21
+up: a tap: offset 0.0, tapped 1, dragging false, animating true, clipped 20 of 21
+down on row 2: offset 0.0, tapped -1, dragging false, animating true, clipped 20 of 21
+moved 15 px: a drag: offset 15.0, tapped -1, dragging true, animating true, clipped 20 of 21
+dragged 150 px: offset 150.0, tapped -1, dragging true, animating true, clipped 20 of 21
+up over row 2: no tap: offset 150.0, tapped -1, dragging false, animating false, clipped 20 of 21
+after: offset 150.0, tapped -1, dragging false, animating false, clipped 20 of 21
+down: offset 150.0, tapped -1, dragging false, animating true, clipped 20 of 21
+dragged far up: offset 580.0, tapped -1, dragging true, animating true, clipped 20 of 21
+up: offset 580.0, tapped -1, dragging false, animating true, clipped 20 of 21
+wheel over the list: offset 500.0, tapped -1, dragging false, animating false, clipped 20 of 21
+wheel over the panel: offset 500.0, tapped -1, dragging false, animating false, clipped 20 of 21
+down above the view: offset 500.0, tapped -1, dragging false, animating false, clipped 20 of 21
+up above the view: offset 500.0, tapped -1, dragging false, animating false, clipped 20 of 21
+list 2: offset 0.0, tapped -1, dragging false, animating false, clipped 20 of 21

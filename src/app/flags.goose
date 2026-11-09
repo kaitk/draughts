@@ -15,25 +15,28 @@ let GO_PLAY = 99;
 let MAX_TAPS = 256;
 
 struct Flags {
-    width:  i64 = 1280,     // --size WxH: the window, in points on the Mac
-    height: i64 = 800,
-    theme:  i64 = -1,       // --theme wood|stone|birch|sunset: the board, else the season's
+    width:      i64 = 1280, // --size WxH: the window, in points on the Mac
+    height:     i64 = 800,
+    theme:      i64 = -1,   // --theme wood|stone|birch|sunset: the board, else the season's
     background: i64 = -1,   // --background photo|plain: 0 the photograph, 1 the plain fade
-    board:  i64 = -1,       // --board 3d|flat: settings::RAISED or settings::FLAT
-    hints:  i64 = -1,       // --hints moves: the selected piece's targets (board::MOVES);
-                            // mistakes only by default
-    lang:   i64 = -1,       // --lang CODE: a language with a file in strings/, else the
-                            // system's
+    board:      i64 = -1,   // --board 3d|flat: settings::RAISED or settings::FLAT
+    hints:      i64 = -1,   // --hints moves: the selected piece's targets (board::MOVES);
+    // mistakes only by default
+    lang: i64 = -1,         // --lang CODE: a language with a file in strings/, else the
+    // system's
     // --dp N: the layout N dp across its shorter side, not 800 (and the density floor
     // off unless --density-floor is given too)
-    dp:     i64 = -1,
+    dp: i64 = -1,
     // --inset L,T,R,B: a phone's safe area in dp of the layout; x < 0 the window's own
-    inset:  float4 = float4 { -1.0, 0.0, 0.0, 0.0 },
+    inset: float4 = float4 { -1.0, 0.0, 0.0, 0.0 },
+    // --corner W,H: a window's control in the top left corner (iPadOS's), W x H dp of the
+    // layout from the screen's corner; the platform's own by default (none on the Mac)
+    corner: float2 = float2 { -1.0, 0.0 },
     // --density-floor F with --display-scale S: the scale's floor (gui::scale_of), S
     // standing for the display's (the Mac's is left out: its windows are in points)
     density_floor: f32 = -1.0,
     display_scale: f32 = -1.0,
-    fen:    u8[..256],      // --fen POSITION: a game from there
+    fen:           u8[..256], // --fen POSITION: a game from there
     // --tap SQUARE (c3, d10), up to MAX_TAPS: played in order on the first frames, on the
     // game's board or the puzzle's
     taps:   u8[..3][..MAX_TAPS],
@@ -47,18 +50,18 @@ struct Flags {
     // --variant international|brazilian|russian: a new game of that draughts, and the
     // puzzles' set; with a setup open, its choice
     variant: i64 = -1,
-    clock:  i64 = -1,       // --clock none|5+3|10+5: a new game with that clock
+    clock:   i64 = -1,      // --clock none|5+3|10+5: a new game with that clock
     // --computer white|black: a new game against the computer playing that side; with a
     // setup open, the child playing the other
     computer: i64 = -1,
-    level:  i64 = -1,       // --level easy|medium|hard: the computer's, else the setup's last
+    level:    i64 = -1,     // --level easy|medium|hard: the computer's, else the setup's last
     // --go home|settings|game|play|puzzles|puzzle: switches there on the second frame,
     // through its transition, once any taps have played out: game as continue does, play
     // as the setup's play (GO_PLAY), puzzle from the puzzles to pick from to --puzzle ID
     // or the first
-    go:     i64 = -1,
-    hold:   f64 = -1.0,     // --hold T: keeps a transition at T of the way, 0..1
-    win:    f64 = -1.0,     // --win T: keeps a win at T seconds into its celebration
+    go:   i64 = -1,
+    hold: f64 = -1.0,       // --hold T: keeps a transition at T of the way, 0..1
+    win:  f64 = -1.0,       // --win T: keeps a win at T seconds into its celebration
     // --wood N and --marble N: the 3D board's wood (0..3) and winter frame's marble (0 the
     // slate, 1..4); --summer N summer's 3D look (0..5, looks::SUMMERS; 4 and 5 amber
     // stone); --spring N spring's (0 the birch, 1 the elven carved stone, 2 the Baltic
@@ -68,7 +71,7 @@ struct Flags {
     summer: i64 = 0,
     spring: i64 = -1,
     bench:  i64 = 0,        // --bench N: times N of the 3D board's frames, then quits
-                            // (draw3d.goose)
+    // (draw3d.goose)
     // --reset-skill: the playing player back to easy, the computer's skill at every level
     // at its start with the first steps to come, kept in their file; stars and games stay
     reset_skill: bool,
@@ -118,6 +121,12 @@ fn parse(argv: u8[:][>..]) -> Flags {
                 rest = after;
             }
             if good { f.inset = float4 { max(d[0], 0.0), max(d[1], 0.0), max(d[2], 0.0), max(d[3], 0.0) }; }
+        }
+        if a == "--corner" {
+            let w, h, found = split_once(v, ",");
+            let x, ok_x = parse_flt(w);
+            let y, ok_y = parse_flt(h);
+            if found && ok_x && ok_y { f.corner = float2 { max(x as f32, 0.0), max(y as f32, 0.0) }; }
         }
         if a == "--density-floor" {
             let x, ok = parse_flt(v);

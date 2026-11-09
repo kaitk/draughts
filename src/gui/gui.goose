@@ -188,6 +188,7 @@ struct Input {
     pressed:  bool             = false,
     released: bool             = false,
     typed:    u32[..MAX_TYPED] = [],    // characters in order, ERASE and ENTER among them
+    wheel:    f32              = 0.0,   // a mouse wheel's or trackpad's turn this frame, up positive
 }
 
 // A widget's state across frames: whether it is down and when that last changed.
@@ -213,7 +214,104 @@ struct Gui {
     // phone's camera cutout and gesture bar). Taps and words stay inside (safe); the
     // photograph, and glass that runs off the screen (bleed), reach the edges.
     insets: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
+    // The window's control in its top left corner (iPadOS's three dots, in a window
+    // only): how far it reaches right and down from the screen's top left, in pixels; 0
+    // with none. A screen's top left control keeps clear of it (corner_shift, corner_drop).
+    corner: float2 = float2 { 0.0, 0.0 },
+    // The screen's one vertical scroll (scroll_begin): which list, its offset in pixels,
+    // the press it may become a drag from, and whether it has.
+    scroll: Scroll = Scroll {},
 }
+
+// One scrolling list a frame (task 050; rendering.md, "Scrolling"): what scroll_begin
+// keeps across frames. A plain drag and the wheel, no fling.
+let SCROLL_ID = 9000;       // the drag's id while it holds the pointer
+let SLOP = 10.0;            // dp a press moves before it is a drag, not a tap
+let CLIP = 4.0;             // added to a quad's extra.z: drawn only inside the list's view
+let WHEEL = 40.0;           // dp a wheel's step scrolls
+struct Scroll {
+    id:       i64    = 0,     // the list the offset is of; another list starts at its top
+    offset:   f32    = 0.0,
+    max:      f32    = 0.0,
+    view:     float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
+    from:     float2 = float2 { 0.0, 0.0 },
+    start:    f32    = 0.0,
+    armed:    bool   = false,
+    dragging: bool   = false,
+    first:    i64    = 0,
+    saved:    Input  = Input {},
+}
+
+// List `id` (any nonzero number, unique to the list), `content` pixels tall, shown in
+// `view` and scrolled by a drag that starts in it or by the wheel over it: returns the
+// offset to lay it out by (its rows at y - offset), whole pixels. A press becomes a drag
+// once it moves SLOP dp up or down; until then it is a tap on what is under it, and once it
+// is, the widget it went down on lets go without clicking. What is declared up to
+// scroll_end is drawn only inside `view` and takes the pointer only there. A list other
+// than the last one declared starts at its top.
+fn scroll_begin(g: Gui&, id: i64, view: float4, content: f32) -> f32 {
+    let s .= g.scroll;
+    let i = g.input;
+    if s.id != id {
+        s.id = id;
+        s.offset = 0.0;
+        s.armed = false;
+        s.dragging = false;
+    }
+    s.view = view;
+    s.max = max(0.0, content - view.w);
+    if i.pressed && inside(view, i.at) {
+        s.armed = true;
+        s.from = i.at;
+        s.start = s.offset;
+    }
+    if s.armed && i.down && !s.dragging && abs(i.at.y - s.from.y) > SLOP * g.scale && s.max > 0.0 {
+        s.dragging = true;
+        g.active = SCROLL_ID;
+        g.took = true;
+    }
+    if s.dragging && i.down { s.offset = s.start - (i.at.y - s.from.y); }
+    if !i.down {
+        s.armed = false;
+        s.dragging = false;
+    }
+    if inside(view, i.at) { s.offset -= i.wheel * WHEEL * g.scale; }
+    s.offset = clamp(s.offset, 0.0, s.max);
+    s.first = g.quads.len;
+    s.saved = g.input;
+    if s.dragging || !inside(view, i.at) { g.input = Input { at: float2 { -1.0e9, -1.0e9 }, .. }; }
+    return floor(s.offset + 0.5);
+}
+
+// Ends the list scroll_begin started: its quads clipped to its view, the pointer back.
+fn scroll_end(g: Gui&) {
+    let s .= g.scroll;
+    for k in s.first..g.quads.len { g.quads[k].extra.z += CLIP; }
+    g.input = s.saved;
+}
+
+// Sets the offset of list `id` (a screenshot's), clamped as it is declared.
+fn scroll_set(g: Gui&, id: i64, px: f32) {
+    g.scroll.id = id;
+    g.scroll.offset = px;
+}
+
+// How far r must move right to keep clear of the window's control: 0 where it is clear.
+fn corner_shift(g: Gui&, r: float4) -> f32 {
+    guard g.corner.x > 0.0 && r.y < g.corner.y && r.x < g.corner.x else { return 0.0; }
+    return g.corner.x - r.x;
+}
+
+// How far r must move down to keep clear of it.
+fn corner_drop(g: Gui&, r: float4) -> f32 {
+    guard g.corner.x > 0.0 && r.y < g.corner.y && r.x < g.corner.x else { return 0.0; }
+    return g.corner.y - r.y;
+}
+
+// Whether a portrait safe area is short enough for the compact layouts (a small iPad
+// window, about 499 x 645 dp): under COMPACT dp tall, where every phone is taller.
+let COMPACT = 760.0;
+fn compact(g: Gui&, area: float4) -> bool { area.z < area.w && area.w < COMPACT * g.scale }
 
 // The safe area of a screen width × height pixels: where the screens lay out.
 fn safe(g: Gui&, width: f32, height: f32) -> float4 {
@@ -348,7 +446,7 @@ fn set_down(g: Gui&, id: i64, down: bool) {
 // Whether any widget is still going down or up, or a hold filling; the app draws while
 // one is.
 fn animating(g: Gui&) -> bool {
-    if g.holding { return true; }
+    if g.holding || g.scroll.dragging { return true; }
     for s in g.slots { if s.id != 0 && s.since >= 0.0 && g.now < s.since + PRESS { return true; } }
     return false;
 }

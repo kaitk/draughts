@@ -216,6 +216,14 @@ fn main() {
             g.insets = e;
             dirty = true;
         }
+        // The window's control (iPadOS's three dots) where the app runs in a window: from
+        // the flag for now; on iOS the build reads it from UIKit (task 050's proposal).
+        let corner = if f.corner.x >= 0.0 { float2 { floor(f.corner.x * scale + 0.5), floor(f.corner.y * scale + 0.5) } }
+                     else { float2 { 0.0, 0.0 } };
+        if corner.x != g.corner.x || corner.y != g.corner.y {
+            g.corner = corner;
+            dirty = true;
+        }
         if text::bake(t, g, scale) { trim_memory(); }
         w.atlas = t.texture;
         // A quick tap can press and release within one frame, which mouse_down never
@@ -223,7 +231,7 @@ fn main() {
         // first; a press that lands on it never reaches the board.
         var input = gui::Input { at: gfx::mouse_pos(), down: gfx::mouse_down(gfx::MOUSE_LEFT),
                                  pressed: gfx::mouse_pressed(gfx::MOUSE_LEFT),
-                                 released: gfx::mouse_released(gfx::MOUSE_LEFT) };
+                                 released: gfx::mouse_released(gfx::MOUSE_LEFT), wheel: gfx::mouse_wheel() };
         if text_on {
             let n = min(gfx::events_into(events), events.len);
             for e in events[..n] {
@@ -234,6 +242,8 @@ fn main() {
             }
         }
         gui::begin(g, input, scale, now);
+        // A wheel's turn scrolls a list (gui::scroll_begin), a change to draw.
+        if input.wheel != 0.0 { dirty = true; }
         // A switch the flags ask for waits for their taps to have played out, and for the
         // win they lead to, if any, held at --win's moment (which must be past: the
         // celebration's start is kept as a time, never before 0).

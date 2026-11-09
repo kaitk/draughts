@@ -15,11 +15,12 @@ import badges from "../badges";
 // width, height in pixels, z: 1 when there is a photograph, w: the hole's height (0 as
 // tall as wide); and the board's rect (x, y, size, corner radius) where a transition
 // hides the UI, size 0 at rest.
-struct View { screen: float4, hole: float4 }
+// clip: the scrolling list's view (gui::scroll_begin), where quads marked gui::CLIP show.
+struct View { screen: float4, hole: float4, clip: float4 }
 
 let VERT = """
     layout(std430, set = 0, binding = 0) readonly buffer Quads { vec4 q[]; };
-    layout(set = 1, binding = 0) uniform View { vec4 screen; vec4 hole; };
+    layout(set = 1, binding = 0) uniform View { vec4 screen; vec4 hole; vec4 clip; };
     layout(location = 0) out vec2 v_px;
     layout(location = 1) flat out vec4 v_rect;
     layout(location = 2) flat out vec4 v_color;
@@ -56,7 +57,7 @@ let FRAG = """
     layout(set = 2, binding = 1) uniform sampler2D atlas;
     layout(set = 2, binding = 2) uniform sampler2D thumbs;   // four seasons, stacked
     layout(set = 2, binding = 3) uniform sampler2D badges;   // the animals' distances, stacked
-    layout(set = 3, binding = 1) uniform View { vec4 screen; vec4 hole; };
+    layout(set = 3, binding = 1) uniform View { vec4 screen; vec4 hole; vec4 clip; };
     float cover(float d) { return clamp(0.5 - d, 0.0, 1.0); }
     // A CSS box-shadow under a rounded rect: offset y, blur, spread, all in pixels.
     float shadow(vec2 p, vec2 c, vec2 h, float r, float y, float blur, float spread) {
@@ -555,7 +556,11 @@ let FRAG = """
     void main() {
         shade();
         result *= 1.0 - v_extra.w;
-        if (hole.z > 0.0 && v_extra.z < 1.5) {
+        if (v_extra.z > 3.5) {
+            vec2 ch = 0.5 * clip.zw;
+            result *= cover(box(v_px, clip.xy + ch, ch, 0.0));
+        }
+        if (hole.z > 0.0 && mod(v_extra.z, 4.0) < 1.5) {
             vec2 h = 0.5 * vec2(hole.z, screen.w > 0.0 ? screen.w : hole.z);
             result *= 1.0 - cover(box(v_px, hole.xy + h, h, hole.w));
         }
@@ -621,7 +626,7 @@ fn frame(w: Widgets&, g: gui::Gui&, s: scene::Scene&, t: theme::Theme, width: f3
          tall: f32 = 0.0) {
     guard g.quads.len > 0 else { return; }
     let behind: f32 = if s.plain { 2.0 } else if s.has { 1.0 } else { 0.0 };
-    let view = View { screen: float4 { width, height, behind, tall }, hole: hole };
+    let view = View { screen: float4 { width, height, behind, tall }, hole: hole, clip: g.scroll.view };
     gfx::bind(w.pipeline);
     gfx::bind_storage_buffer(gfx::VERTEX, 0, w.quads);
     gfx::uniforms(gfx::VERTEX, 0, view);
