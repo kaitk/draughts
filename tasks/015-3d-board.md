@@ -114,6 +114,9 @@ cd poc/3d
 ../../build/board3d --shot out.png --size 1920x1200 [--yaw 20 --pitch 40]   # one frame, headless
 ../../build/board3d --bench 1000 --size 1920x1200   # frame timing, headless
 ../../build/board3d --frames 30                     # the window's loop hidden, a drag injected
+../../build/board3d --bench 300 --samples 1 --shadow-every   # 1× MSAA, the shadow map every frame
+cd ../.. && scripts/android.py poc/3d/board3d.goose --run       # on the tablet, as the app's id
+adb shell am start -S -n io.github.kaitk.draughts/.DraughtsActivity --es args "'--bench 300'"
 ```
 
 It compiles `src/app/background.c` from where it is (`board3d.build`) for the photograph.
@@ -148,9 +151,56 @@ It compiles `src/app/background.c` from where it is (`board3d.build`) for the ph
 - **Measured** on an M1 Pro, 1920 × 1200, headless: about 0.2 ms of CPU a frame, about 7
   ms a frame with a wait for the GPU after each (an upper bound, submission and wait
   included); setup 50 ms warm, 0.3 to 0.8 s cold.
-- **Not yet:** the gfx store-op patch (the multisampled target is still stored and
-  resolved with `RESOLVE_AND_STORE`, depth stored), SSAO, SMAA and analytic edges to
-  compare, taps hitting squares, the tablet. The backdrop doesn't turn with the camera.
+- **Not yet:** the store-op patch on the Mac (its prebuilt gfx still stores the samples
+  and the depth; Android's gfx has `patches/goose_gfx/0005`), SSAO, SMAA and analytic
+  edges to compare, taps hitting squares. The backdrop doesn't turn with the camera.
+
+### Measured on the tablet (2026-11-09)
+
+Galaxy Tab A11+ (SM-X230, Mali-G615 MC2, Vulkan), 1920 × 1200 landscape at 90 Hz, the
+default view, autumn. A first rough baseline before any tuning; each figure the median
+of three launches (one for 1× without the patch), each launch's own figure the median
+of 300 frames.
+
+| Frame, the camera turning | CPU | CPU + GPU, waited | Presented, frame to frame |
+| --- | --- | --- | --- |
+| MSAA 4× (as built) | 0.42 ms | 14.0 ms | 13.9 ms |
+| MSAA 1×, into the screen | 0.39 ms | 10.9 ms | 11.0 ms (the 90 Hz vsync) |
+| 4×, the shadow map every frame | 0.56 ms | 16.0 ms | 15.8 ms |
+| 4× without `0005` | 0.42 ms | 17.2 ms | 17.1 ms |
+| 1× without `0005` | 0.40 ms | 11.1 ms | 11.0 ms |
+
+| At rest, after launch (`dumpsys meminfo`) | GL mtrack | EGL mtrack | Total PSS |
+| --- | --- | --- | --- |
+| MSAA 4× | 234 MB | 67 MB | 392 MB |
+| MSAA 1× | 182 MB | 67 MB | 341 MB |
+| 4× without `0005` | 306 MB | 67 MB | 466 MB |
+
+Startup: the wood's bake 0.68 s (making its pipeline included), the photograph 42 ms
+(the ASTC upload, the shrink and two blurs, the read back and the harmonics), setup 0.73
+s in all; the first frame 0.21 s, nearly all of it making the pipelines; the shadow map
+about 2 ms.
+
+- **How:** `--bench 300` on Android opens the full-screen window, draws 30 frames to let
+  it settle, then times 300 frames with the yaw stepping each frame: `clock()` round
+  `draw` (the CPU's recording) and round `draw` plus `gfx::flush()` (a submit and a wait
+  on its fence: the GPU's time plus the submission's, since the GPU idles while the CPU
+  records), then 300 frames through `gfx::frame()` as the loop draws while dragged.
+  `--samples 1` draws straight into gfx's screen with a single-sampled depth;
+  `--shadow-every` redraws the shadow map each frame. Without `0005`: the APK built once
+  with the patch set aside in a copy of the build's patches. GPU counters weren't read:
+  `gfxinfo` sees only Java views (`agents/testing.md`).
+- **What costs:** the forward pass itself, 10.9 ms at 1×, already the whole budget of
+  about 11 ms; MSAA 4× adds 3.2 ms, the shadow map 2 ms on the frames that draw it.
+- **`0005` measurably helps on this Mali:** without it MSAA 4× costs 6.3 ms instead of
+  3.2 (the samples and the depth written out, about 74 MB a frame), and it holds 72 MB
+  more, the multisampled targets cycled into a second copy. 1× is the same with or
+  without it.
+- **Renders as on the Mac:** a screenshot of the default view matches the Mac's 4× shot
+  (shadows, the crown's deboss, the glow, no banding or artefacts); nothing failed only
+  on Android.
+- A debug APK of it replaces a release build of the app only after `adb uninstall`
+  (their signatures differ), which deletes the app's data.
 
 ## Later, only if the floating board falls short
 
