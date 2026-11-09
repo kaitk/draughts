@@ -150,3 +150,10 @@ and the commit that last has it.
   relief the default wood, a black marble for winter's frame, summer's variants kept
   beside its look; the bake 0.27 to 0.30 s warm on the tablet; the defaults kept by the
   user (2026-11-09). `039-procedural-wood.md`, `6c3ae96`
+- 040: The coach and the hint. Done: the lookout (*Valvur*), a round eye toggle on whose
+  turn's line, off by default and kept per player, drains the pieces in danger and shades
+  a crowning square under a ghost king, while dragging what the move would leave, and
+  the computer's traps (on the worker), filtered by skill to nothing at hard; the hint, a
+  tile with three pips, lights the piece and then its square, from a search at 15 above
+  the opponent's skill on the worker. Three rounds of prototypes (`prototypes/coach*.html`).
+  `040-coach-and-hint.md`, `08e55e1`
