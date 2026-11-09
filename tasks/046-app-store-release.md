@@ -62,18 +62,22 @@ Each is a store rule the app doesn't meet yet:
       and a tinted variant are optional and left out.
 - [x] **The launch screen's colour**, 2026-11-09: `UILaunchScreen`'s `UIColorName` is
       the catalog's `LaunchBackground`, #140c09, read from Android's `icon_background`.
-- [ ] **iPad windows** (iPhone and iPad kept, 2026-11-09): `UIRequiresFullScreen` is
+- [x] **iPad windows** (iPhone and iPad kept, 2026-11-09): `UIRequiresFullScreen` is
       deprecated in iPadOS 26 and will be ignored, so `scripts/ios.py` drops it (done
       2026-11-09; with it the window kept a large minimum) and the app follows a resized
       window. Tried 2026-11-09 on an iPad Pro 11-inch (M5)
       simulator, iOS 26.4, in Windowed Apps, with a copy of the bundle without the key:
       resizing, the 3D board while resized, both orientations in a window and full screen,
       taps after a resize, and leaving and coming back all work. Small windows waste or
-      lose room on three screens and the puzzles: task 050.
+      lose room on three screens and the puzzles: task 050, done 2026-11-09 (archived),
+      checked by the user in the simulator at the smallest window.
 - [ ] **A distribution build:** an `.ipa` signed with an App Store distribution
       certificate and profile, uploaded with Transporter or `xcrun altool --upload-app`;
       built with Xcode 26 and the iOS 26 SDK (required since 2026-04-28).
-- [ ] **No links out stays true:** no `SDL_OpenURL`, no rating prompt, no share sheet.
+- [x] **No links out stays true:** no `SDL_OpenURL`, no rating prompt, no share sheet
+      (checked 2026-11-09: none of `OpenURL`, `openURL`, `SKStoreReview`, `requestReview`,
+      `UIActivityViewController`, `ACTION_SEND`, `ACTION_VIEW` in `src/`, `ios/`, `android/`,
+      `scripts/`; check again before the submission, task 040's build included).
 
 ## Decided (2026-11-09)
 
@@ -113,6 +117,6 @@ Once the account is active:
 - [x] The privacy text in the app, the privacy manifest, the icon, and the launch screen
       (2026-11-09; the bundle built for the simulator and the device and checked, not yet
       run with them)
-- [ ] The iPad layout in a resized window, or the app offered for iPhone only
+- [x] The iPad layout in a resized window, or the app offered for iPhone only (task 050)
 - [ ] A distribution build uploaded and tried through TestFlight on a device
 - [ ] Submitted and approved, in Games → Puzzle at 4+
