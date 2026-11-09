@@ -218,6 +218,11 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   B:...` shows the 3D board turned for black in a friend's game). State with no flag,
   such as the 3D camera's (`rig::put` on `sh.game.cam`), is set from a temporary flag
   pair parsed in the copy only (2026-11-09).
+- A season changed mid-run in the headless copy (2026-11-09): a clock from the loop's
+  count (`now` = loops / 60; the headless loop doesn't block when nothing draws, so it
+  counts on, and `--frames` ends by it) and a temporary flag pair that at loop N sets
+  `sh.prefs.season` and `season_in = 2`, never `sh.changed`, which writes the player's
+  file. The theme's steps then run one a loop, so a shot at N + k shows step k − 2.
 - Memory on the Mac: run the headless copy with a flag that keeps the player's game
   file alone (`--screen home`), wait a few seconds, then `footprint PID` (its
   "graphics" rows are the GPU's) and kill it. Headless, settings and the 3D game read

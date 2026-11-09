@@ -248,6 +248,45 @@ the mark's look and the fade, and GL mtrack on 3D and after going back to flat.
 - The drag threshold is measured on the flat layout, near the screen's pixels in the
   board's middle only.
 
+## A season changed on the 3D board (2026-11-09)
+
+The user, on an iPhone 13 mini: a new season's photograph shows within two frames, but
+the board keeps the old season's image for a second or two, until the theme's steps are
+done. **What it does now:** while they run, the old image eases over 0.2 s towards grey
+and dimmer (saturation 0.15, brightness 0.8, a uniform of the shader that lays the
+image, `shaders::SHOW_FRAG`), and the new theme's first image eases back to full color
+over 0.3 s (`draw3d::grey`; `docs/architecture/rendering.md`, "Getting ready"). Saturation
+0.35 and brightness 0.88 still read as the old wood, washed out; 0 and 0.7 as switched off.
+Checked headless on the settings preview (autumn to winter, summer to spring on the plain
+fade) and the game: a first appearance mid-fade, at rest, and the end of a change are
+byte-identical to the build before. Found on the way: the frame after the last step
+wasn't drawn unless something else was changing (a pulsing ring), so on the game the old
+board stayed until a tap; `draw3d::Drawer.fresh` now keeps the app drawing for it.
+
+**The steps a season change takes** (a temporary build printing past `prep_ms`'s 48;
+headless, M1 Pro, 1920 × 1200, the game; four changes, autumn to winter, winter to spring,
+spring to summer, summer to autumn): **28 steps, one a frame, 66 to 95 ms of work in
+all.** The photograph decoded and shrunk is the largest step (17 to 22 ms, the Mac
+decoding the JPEG); the bake's pipeline 0.8 to 2.2 (compiled already); the plan's and the
+frame map's bands 1.3 to 6.7 each, most about 2; the rest under 2.6. So on a fast device
+the wait is the frame count, not the work: 28 frames are 0.47 s at 60 Hz however quick
+each step is, and the Mac's work would fit in about 5 frames.
+
+**An idea for later, not built:** fewer, larger steps on fast devices. Run steps back to
+back within a frame while the frame's time spent stays under a budget (say 8 ms, each step
+still waited for, so a slow device keeps one a frame), the bake's compile and the
+photograph's decode still a frame each. On the Mac's numbers above an 8 ms budget takes
+the 28 frames to 9 to 15 (0.15 to 0.25 s at 60 Hz). The iPhone 13 mini's and the Pixel's
+step times are unmeasured: print them there (`3D board prepared in ... steps`) before
+choosing the budget. A first preparing (41 steps with the setup and the 12 pipelines)
+would gain likewise.
+
+**Unexplained, noted:** a theme prepared again over another differs from the same theme
+prepared at launch by up to 11 levels of 255 over the whole screen, the renderer's
+backdrop included (PSNR 38 dB, autumn after summer on the game); the same before this
+change. Something of the old theme's state (its harmonics, its look's choice) may carry
+over.
+
 ## Acceptance criteria
 
 - [ ] Each candidate tried is measured on the tablet with `--bench 300` (task 015's
