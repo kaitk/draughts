@@ -314,6 +314,16 @@ fn closer(c: Countdown&, kind: i64, moves: i64, side: i64) {
 // capture; the oldest go when there are PAST.
 fn pass(past: Past&, p: Position&, m: Move&, q: Position&) {
     past.draw = draw_after(past.draw, p, m, q);
+    keep(past, p, q);
+}
+
+// The same from the positions alone, for a game's history.
+fn pass_between(past: Past&, p: Position&, q: Position&) {
+    past.draw = draw_between(past.draw, p, q);
+    keep(past, p, q);
+}
+
+fn keep(past: Past&, p: Position&, q: Position&) {
     if past.draw.quiet == 0 { past.before.clear(); } else {
         if past.before.len == PAST {
             for i in PAST - 1 { past.before[i] = past.before[i + 1]; }

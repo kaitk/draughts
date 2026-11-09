@@ -223,6 +223,22 @@ fn undo(b: Board&) -> bool {
     return true;
 }
 
+// The game's past for draws at its position (rules/draw.goose): the counts and the
+// positions since the last man's move or capture, folded over the undo history, so undo
+// and a saved game bring them back with nothing kept beside it. A game longer than the
+// history counts from its oldest position kept, MAX_HISTORY plies back, farther than any
+// count runs.
+fn past(b: Board&, out: rules::Past&) {
+    let n = b.history.len;
+    let first = if n > 0 { b.history[0].pos } else { b.pos };
+    out.draw = rules::draw_start(first);
+    out.before.clear();
+    for i in 1..n + 1 {
+        let q = if i < n { b.history[i].pos } else { b.pos };
+        rules::pass_between(out, b.history[i - 1].pos, q);
+    }
+}
+
 // The side that has won, the other having no move left, or -1 while the game goes on
 // or a move is still showing.
 fn winner(b: Board&) -> i64 {

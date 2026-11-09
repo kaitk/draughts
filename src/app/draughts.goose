@@ -238,7 +238,7 @@ fn main() {
         // win they lead to, if any, held at --win's moment (which must be past: the
         // celebration's start is kept as a time, never before 0).
         if go >= 0 && gfx::frame_count() >= 2 && tapped >= taps.len && !b.moving
-           && (f.win < 0.0 || (sh.game.won_at >= 0.0 && now > f.win)) {
+           && (f.win < 0.0 || ((sh.game.won_at >= 0.0 || sh.game.drawn_at >= 0.0) && now > f.win)) {
             if go == flags::GO_PLAY {
                 // As the setup's play, leaving settings.txt as it is: the count of games
                 // against the computer and the choices the flags gave aren't written.
@@ -260,6 +260,7 @@ fn main() {
         }
         if f.hold >= 0.0 && sh.from >= 0 { sh.since = now - f.hold * shell::DURATION; }
         if f.win >= 0.0 && sh.game.won_at >= 0.0 { sh.game.won_at = now - f.win; }
+        if f.win >= 0.0 && sh.game.drawn_at >= 0.0 { sh.game.drawn_at = now - f.win; }
         // The 3D board chosen but not ready (it gets ready a step a frame as it is drawn,
         // draw3d::prepare): the shell shows a still mark in its place, or the old image while
         // a new theme bakes, and leaves taps on it alone; the frames go on until it shows

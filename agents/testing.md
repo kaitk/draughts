@@ -39,7 +39,8 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   time a move on the clock, over whole games with simulated time, in `pace`; several captures of
   one piece each, black against the computer on 10×10, every capture and each landing of a
   king's chosen by taps and by a drag, on the flat and the 3D board, nothing played unchosen:
-  `choice`), `shell`
+  `choice`; a draw by a count tapped to its last move, its countdown, card, frames, undo,
+  against the computer, kept in a saved game, and by repetition: `draw`), `shell`
   (home, the switch to the game and back, settings and their file, their taps and the
   board beside them, the transitions between home and settings, home and the game, and
   the puzzles to pick from and a puzzle (their frames, the end, a tap during them, turning
@@ -81,7 +82,7 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   coarsely, and the path syntax a tracer writes: bless it after replacing an animal), `ai` (the computer player:
   its search against a plain minimax, the table changing no score, keys, what each level
   plays in known shots, the same move in steps as at once, that no skill from 15 on
-  hangs a piece (`blunders`), and easy's overlooks below 15 (`overlook`)), and `puzzles` (the puzzle file's format and refusals, what `puzzles::check`
+  hangs a piece (`blunders`), easy's overlooks below 15 (`overlook`), and draws scored 0, steered into when behind and clear of when ahead (`draws`)), and `puzzles` (the puzzle file's format and refusals, what `puzzles::check`
   refuses beyond the format, what a move does to each goal, and every built-in puzzle
   passing `puzzles::check`, with its counts by theme and level: `set` International's,
   `russian_set` Russian's). A new puzzle is checked with `build/puzzles FILE` (the
@@ -149,6 +150,9 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   which for settings is the same box as between two runs of one build. The win's
   `--win 3 --frames 3000` shot varies over the whole board from run to run: compare it
   against a second run of the old build.
+- `--tap` takes at most 16 taps (`flags::Flags.taps`): a draw by repetition of four kings
+  each fits, a count's last move doesn't; `--win T` holds a draw's ending at T too
+  (2026-11-09).
 - A `--frames` run with taps needs a few thousand frames for a move and what follows to
   play out (`--win`, `docs/development.md`): it doesn't wait for the display, so 90
   frames end before the second tap's move has shown.

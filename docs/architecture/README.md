@@ -163,7 +163,9 @@ returns.
   turn, never per frame.
 - **Draw only on change.** See [rendering.md](rendering.md#frames-and-battery).
 - **Game state is a value.** A position is a few `u64`s plus side to move. Undo is a stack
-  of positions; saving is writing the value.
+  of positions; saving is writing the value. The draw counts are folded over that stack
+  when the position changes, so undo and a saved game bring them back with nothing more
+  kept.
 - **Strings by key.** Every user-facing string comes from `strings/<lang>.txt`
   (`key = text` per line), built into the program with `embed_file`. Code names a string
   by its constant (`strings::HOME_CONTINUE`) and `strings::get` returns a view into the

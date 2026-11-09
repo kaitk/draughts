@@ -406,6 +406,31 @@ the prototype tried, kept for 3D:
   the board pass's and the piece shader's, not a fill over them, so the winning piece
   can stay out of it while the card, in the UI's draw, is over it; the lit square is the
   piece shader's too, drawn under the piece. The panel's piece shows the winner.
+- **A draw** (`prototypes/draw.html`, take a, chosen 2026-11-09; the rules in
+  [rules](rules.md#draws)) is calm: once the drawing move has shown, the clock stops,
+  the board and its pieces dim to 55% over 0.6 s, nothing lifts or glows, and a card
+  like the win's slides up 28 px as it fades in from 0.1 s to 0.8 s, still from then:
+  both pieces side by side, just touching (88 px, overlapping 8), "Draw" in the label
+  face, and why in the body face at 66% (broken into two lines where it doesn't fit),
+  over back and play again. It is sized as the win's card (taller by the words) and
+  keeps off the piece that made the last move as the win's keeps off the winning piece;
+  on a board under 540 px the pieces are left out and the words say it. The play panel
+  shows both pieces and "Draw" where the winner's piece and words go. Undo move takes
+  the draw back. Against the computer a draw counts as 0 (computer player, "In the
+  game").
+- **The countdown** before a draw (take a): once a count is in its last five moves, a
+  line under whose turn says it, "Draw in 3 moves", or for a count only the strong side
+  can end, "White must win in 3 moves", naming the side; a position come twice says
+  "Same position twice" over "A third time is a draw", dimmer. In landscape a row of
+  dots (14 px, 9 apart, in the glow color) stands between them, five with one going out
+  a move, or three with two lit for the repetition, and the line is in the body face,
+  broken in two where the panel is narrow; in portrait the line, in the small face, goes
+  under the turn's words beside the piece, with no dots. In landscape with clocks it
+  goes under the clocks. A 3D board's short corner panel closes the gaps round the
+  piece, leaves the dots out, and takes the small face; with clocks it has no room, nor
+  has a portrait panel with clocks, and those show none. Two lines are made as even as
+  they can be, as the prototypes' balanced wrap. The strong side's count shows on a tie with another, so the words don't swap
+  from one move to the next.
 - **Home** is a title menu (`prototypes/home.html`, chosen 2026-11-07 over the
   icon tiles and two other takes): the scene and the 3D board, and one glass column
   with the wordmark, then continue, a friend, the computer with its level, and puzzles

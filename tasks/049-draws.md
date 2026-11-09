@@ -127,11 +127,33 @@ piece's move (3.2). The Brazilian confederation's (CBD) own text wasn't found on
 - For children: show the count running down where a draw approaches (e.g. "5 moves
   left"), so it doesn't arrive as a surprise; in strings for both languages.
 
+## Built (2026-11-09)
+
+- Rules: `rules/draw.goose` (rules.md, "Draws"). Brazilian 7.2.4 counts three kings or
+  more with men beside them, as Russian 6.1.8.4 says outright; the FMJD-64 text names
+  only kings, and lidraughts needs all kings: to confirm. The main road stops for good
+  when the lone king leaves it, and in Russian also when a strong piece steps on it
+  (the condition no longer holds). A lone king against a lone king counts each side's
+  moves in the countdown ("Draw in"), with no side named.
+- The search scores draws as 0 (ai.md, "Search"); the game hands it its past.
+- The game: take a's card and countdown (rendering.md). A move that draws also stops the
+  clock; undo takes the draw back; a saved game's counts come back from its undo
+  history, so the save format didn't change. Puzzles never draw (they don't run the
+  game's draw check).
+- Strings, Estonian to review: `draw.balance` "{} käiku ilma löögi ja uue tammita" (the
+  English "{} moves without a capture or a new king"), and the rest as the prototype
+  proposed.
+- Not built: the countdown in a portrait panel with clocks and in the 3D corner panel with
+  clocks (no room); 6.1.8.7 and the winning-position exceptions (as decided).
+
 ## Acceptance criteria
 
-- [ ] Each variant's draw rules confirmed against an official text, with the link
-- [ ] Repetition and each move count drawing at exactly the right move, tested
-- [ ] The game shows a draw and counts it; the countdown shown before it
+- [x] Each variant's draw rules confirmed against an official text, with the link
+- [x] Repetition and each move count drawing at exactly the right move, tested
+  (`test/rules/draws_*`, the search in `test/ai/draws.goose`, the game in
+  `test/game/draw.goose`)
+- [x] The game shows a draw and counts it; the countdown shown before it (checked
+  headless on the Mac; the tablet not yet)
 
 ## Measured
 

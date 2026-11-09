@@ -106,3 +106,17 @@ puzzles.level2 = Harder
 puzzles.level3 = Hardest
 puzzles.locked = Solve {} more in Learn
 board.preparing = Setting up the board…
+
+draw = Draw
+draw.repeat = Same position three times
+draw.kings = {} moves with only kings
+draw.balance = {} moves without a capture or a new king
+draw.lone = The lone king held out
+count.draw = Draw in {} moves
+count.draw_one = Draw in 1 move
+count.white = White must win in {} moves
+count.white_one = White must win in 1 move
+count.black = Black must win in {} moves
+count.black_one = Black must win in 1 move
+count.twice = Same position twice
+count.third = A third time is a draw

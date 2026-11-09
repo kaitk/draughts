@@ -28,7 +28,7 @@ let TALL_H = 132.0;         // undo move in landscape, STACK_H in a panel under 
 let SHORT = 420.0;          // dp: a panel this short (a phone) has the shorter tile
 let WIDE_H = 88.0;          // undo move in portrait
 let CLOCK_H = 72.0;
-let OVER = 4;               // pieces over the UI: two clocks and the winner, at most
+let OVER = 4;               // pieces over the UI: two clocks and the winner, or both pieces twice for a draw, at most
 
 let SIDE = 232.0;           // dp: each panel's width in landscape,
 let NARROW = 192.0;         // narrowing to this near square
@@ -310,6 +310,102 @@ fn layout_in(area: float4, n: i64, s: f32) -> Layout {
                     right: float4 { x, y + top + gap + size + gap, size, bottom } };
 }
 
+// The countdown before a draw under whose turn (prototypes/draw.html, take a): a line
+// of words, and in landscape a row of `of` dots, `lit` of them lit, the rest going out
+// one a move; `more` adds "A third time is a draw" under the line. Empty for none.
+struct Note {
+    line: u8[..64] = [],
+    more: bool     = false,
+    lit:  i64      = 0,
+    of:   i64      = 0,
+}
+
+// Both pieces side by side, just touching, white on the left: a draw's mark where a
+// winner's piece goes. Each of radius r, overlapping by `overlap` pixels, at opacity a.
+fn pair(over: board::Piece[..OVER]&, spot: float4, r: f32, overlap: f32, a: f32) {
+    let w = 4.0 * r - overlap;
+    let x = spot.x + 0.5 * (spot.z - w);
+    piece(over, float4 { x, spot.y, 2.0 * r, spot.w }, r, 0, 0, a, 0.0);
+    piece(over, float4 { x + 2.0 * r - overlap, spot.y, 2.0 * r, spot.w }, r, 1, 0, a, 0.0);
+}
+
+// Words in w pixels of face `face`: where they break in two, the lines as even as they
+// can be (the prototypes' balanced wrap), or -1 for one line.
+fn note_break(g: gui::Gui&, face: i64, s: const u8[:], w: f32) -> i64 {
+    guard gui::text_width(g, face, s) > w else { return -1; }
+    var best = -1;
+    var widest = w;
+    for c, i in s {
+        guard c == 32 else { continue; }
+        let longer = max(gui::text_width(g, face, s[..i]), gui::text_width(g, face, s[i + 1..]));
+        if longer <= widest {
+            widest = longer;
+            best = i;
+        }
+    }
+    return best;
+}
+
+// The countdown under whose turn in landscape, at the top of r: the dots, then the line,
+// broken in two where it doesn't fit, and the second line, dimmer. Where r is too short
+// for all of it (a 3D board's corner panel), the dots go, then the words take the small
+// face; where even that doesn't fit (the corner panel with clocks), it shows nothing.
+fn countdown(g: gui::Gui&, r: float4&, note: Note&) {
+    guard note.of > 0 else { return; }
+    let u = g.scale;
+    let line = note.line[..note.line.len];
+    let more = if note.more { strings::get(strings::COUNT_THIRD) } else { strings::get(strings::DRAW) };
+    var face = gui::BODY;
+    var dots = true;
+    var fits = false;
+    for k in 3 {
+        face = if k < 2 { gui::BODY } else { gui::SMALL };
+        dots = k == 0;
+        let gaps: f32 = if dots { 40.0 } else { 10.0 };
+        if words_height(g, face, line, more, note.more, r.z) + gaps * u <= r.w {
+            fits = true;
+            break;
+        }
+    }
+    guard fits else { return; }
+    if dots {
+        gui::cut_top(r, 14.0 * u);
+        let row = gui::cut_top(r, 14.0 * u);
+        for i in note.of {
+            let d = gui::cell(row, note.of, 1, 14.0 * u, 14.0 * u, 9.0 * u, i);
+            if i < note.lit { gui::glow_fill(g, d, 1.0, 7.0 * u); }
+            else { gui::fill(g, d, float4 { 1.0, 1.0, 1.0, 0.18 }, 7.0 * u); }
+        }
+        gui::cut_top(r, 12.0 * u);
+    } else {
+        gui::cut_top(r, 10.0 * u);
+    }
+    words(g, face, r, line, 1.0);
+    if note.more { words(g, face, r, more, 0.66); }
+}
+
+// How tall the countdown's words are in w pixels of face `face`.
+fn words_height(g: gui::Gui&, face: i64, line: const u8[:], more: const u8[:], has_more: bool, w: f32) -> f32 {
+    let f .= g.faces[face];
+    let h = f.ascent - f.descent;
+    var n: f32 = if note_break(g, face, line, w) >= 0 { 2.0 } else { 1.0 };
+    if has_more { n += if note_break(g, face, more, w) >= 0 { 2.0 } else { 1.0 }; }
+    return n * h;
+}
+
+// Words centered at the top of r in face `face`, broken in two where they don't fit.
+fn words(g: gui::Gui&, face: i64, r: float4&, s: const u8[:], a: f32) {
+    let f .= g.faces[face];
+    let h = f.ascent - f.descent;
+    let cut = note_break(g, face, s, r.z);
+    if cut >= 0 {
+        gui::text(g, face, gui::cut_top(r, h), s[..cut], a, 0.0, gui::CENTER);
+        gui::text(g, face, gui::cut_top(r, h), s[cut + 1..], a, 0.0, gui::CENTER);
+    } else {
+        gui::text(g, face, gui::cut_top(r, h), s, a, 0.0, gui::CENTER);
+    }
+}
+
 // A piece of `side` over the UI centered in `spot` with radius r, at opacity a, a man (0)
 // or a king (board::CROWN, board::STACK), with a glow ring right round it as strong as
 // `ring`, 0 to 1.
@@ -423,15 +519,18 @@ fn play_area(g: gui::Gui&, l: Layout) -> float4 {
 }
 
 // Declares the panels for this frame, with the clocks `c`, and `side` the side to move,
-// or the winner when `won`. The side to move's piece has a ring as strong as `glow`; it
-// pulses while the computer thinks, when its clock's piece has it even before the
-// clocks start. Pieces shown on the panels go into `over`. Returns the tile tapped this
-// frame, if any.
-fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, thinking: bool, glow: f32,
-        over: board::Piece[..OVER]&) -> i64 {
+// or the winner when `won`; when `drawn`, both pieces and "Draw" instead. The side to
+// move's piece has a ring as strong as `glow`; it pulses while the computer thinks, when
+// its clock's piece has it even before the clocks start. The countdown before a draw,
+// `note`, goes under whose turn (or under the clocks in landscape; a portrait panel with
+// clocks has no room for it). Pieces shown on the panels go into `over`. Returns the
+// tile tapped this frame, if any.
+fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: bool, note: Note&, thinking: bool,
+        glow: f32, over: board::Piece[..OVER]&) -> i64 {
     let u = g.scale;
     let landscape = l.left.z < l.left.w;
-    let turn_key = if won { if side == 0 { strings::WON_WHITE } else { strings::WON_BLACK } }
+    let turn_key = if drawn { strings::DRAW }
+                   else if won { if side == 0 { strings::WON_WHITE } else { strings::WON_BLACK } }
                    else if side == 0 { strings::TURN_WHITE } else { strings::TURN_BLACK };
     // The clock nearer the player whose pieces are at the bottom goes second: under the
     // other in landscape, right of it in portrait.
@@ -448,16 +547,20 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, thinkin
             gui::cut_top(right, 10.0 * u);
             clock_of(g, gui::cut_top(right, CLOCK_H * u), c, 1 - first, rings[1 - first], over);
         } else {
-            // The piece, its glow ring, and the words under it.
-            gui::cut_top(right, 18.0 * u);
+            // The piece, its glow ring, and the words under it; both pieces for a draw. A
+            // countdown in a 3D board's short corner panel closes the gaps up.
+            let close = l.three && note.of > 0;
+            gui::cut_top(right, (if close { 8.0 } else { 18.0 }) * u);
             let spot = gui::cut_top(right, 72.0 * u);
-            piece(over, spot, 36.0 * u, side, 0, 1.0, glow);
-            gui::cut_top(right, 18.0 * u);
+            if drawn { pair(over, spot, 36.0 * u, 6.0 * u, 1.0); }
+            else { piece(over, spot, 36.0 * u, side, 0, 1.0, glow); }
+            gui::cut_top(right, (if close { 10.0 } else { 18.0 }) * u);
             let f .= g.faces[gui::HEADING];
             let words = strings::get(turn_key);
             gui::text(g, gui::fitting(g, gui::HEADING, words, right.z), gui::cut_top(right, f.ascent - f.descent), words,
                       1.0, 0.0, gui::CENTER);
         }
+        countdown(g, right, note);
         if gui::labelled(g, 113, back, gui::UNDO, 48.0, strings::get(strings::GAME_UNDO_MOVE), gui::HEADING,
                          gui::STACKED) {
             chosen = UNDO;
@@ -472,14 +575,28 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, thinkin
         clock_of(g, gui::cut_left(top, half), c, first, rings[first], over);
         clock_of(g, gui::cut_right(top, half), c, 1 - first, rings[1 - first], over);
     } else {
-        // The piece beside the words, centered.
+        // The piece beside the words, centered; both pieces for a draw. The countdown's
+        // line goes under the words, in the small face.
         let label = strings::get(turn_key);
-        let span = 52.0 * u + 18.0 * u + gui::text_width(g, gui::HEADING, label);
+        let mark = (if drawn { 100.0 } else { 52.0 }) * u;
+        let line = note.line[..note.line.len];
+        let wide = max(gui::text_width(g, gui::HEADING, label), gui::text_width(g, gui::SMALL, line));
+        let span = mark + 18.0 * u + wide;
         var row = gui::center(top, span, top.w);
-        let spot = gui::cut_left(row, 52.0 * u);
-        piece(over, spot, 26.0 * u, side, 0, 1.0, glow);
+        let spot = gui::cut_left(row, mark);
+        if drawn { pair(over, spot, 26.0 * u, 4.0 * u, 1.0); }
+        else { piece(over, spot, 26.0 * u, side, 0, 1.0, glow); }
         gui::cut_left(row, 18.0 * u);
-        gui::text(g, gui::HEADING, row, label, 1.0, 0.0, gui::LEFT);
+        if note.of > 0 {
+            let head = g.faces[gui::HEADING].ascent - g.faces[gui::HEADING].descent;
+            let small = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
+            var words = gui::center(row, row.z, head + 2.0 * u + small);
+            gui::text(g, gui::HEADING, gui::cut_top(words, head), label, 1.0, 0.0, gui::LEFT);
+            gui::cut_top(words, 2.0 * u);
+            gui::text(g, gui::SMALL, gui::cut_top(words, small), line, 1.0, 0.0, gui::LEFT);
+        } else {
+            gui::text(g, gui::HEADING, row, label, 1.0, 0.0, gui::LEFT);
+        }
     }
     if gui::labelled(g, 113, gui::cut_top(right, WIDE_H * u), gui::UNDO, 36.0, strings::get(strings::GAME_UNDO_MOVE),
                      gui::HEADING, gui::MIDDLE) {

@@ -33,7 +33,7 @@ thread_fn worker() {
             continue;
         }
         let began = clock();
-        ai::start(e, ask.pos, ask.skill, ask.seed);
+        ai::start_after(e, ask.past, ask.pos, ask.skill, ask.seed);
         var newer = false;
         var next = ask;
         while !newer && !ai::step(e, NODES) {
@@ -62,8 +62,8 @@ struct Thinker {
 // Each frame: gives the worker the game's ask when it changed, and the game the answer
 // when one has come.
 fn frame(t: Thinker&, gm: game::Game&) {
-    let ask = game::asking(gm);
-    if ask.id != t.sent {
+    if gm.asking != t.sent {
+        let ask = game::asking(gm);
         if t.worker < 0 && ask.id != 0 { t.worker = thread_spawn(worker); }
         if t.worker >= 0 { qput(ask); }
         t.sent = ask.id;

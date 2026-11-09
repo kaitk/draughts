@@ -41,6 +41,12 @@ let CARD_AT = 1.0;          // the card slides up SLIDE dp as it fades in over 0
 let SLIDE = 28.0;
 let CROWN_AT = 1.2;         // the crowned piece fades in over 0.5 s
 let STILL = 1.7;            // still from here, or once the glow has passed the farthest piece
+// A draw (prototypes/draw.html, take a), calm: the board dims as the win's does over
+// 0.6 s, and the card with both pieces, "Draw", and why slides up as it fades in from
+// DRAW_CARD; still from DRAW_STILL. Nothing lifts or glows.
+let DRAW_DIM = 0.6;
+let DRAW_CARD = 0.1;
+let DRAW_STILL = 0.8;
 let STEP = 2.0;             // seconds: the longest gap between two frames the clock counts
 let PAUSE = [0.8, 0.6, 0.45];   // seconds from the computer's turn to its move without a clock, by level
 let PULSE = 1.2;            // seconds: the computer's ring pulses once as it begins to think
@@ -72,6 +78,14 @@ struct Game {
     won_on:   i64          = -1,                    // the winning piece's square, or -1 for none to lift
     still:    f64          = STILL,                 // the celebration's moment from which it is still
     stilled:  bool         = false,                 // whether its still frame has been drawn
+    // A draw (rules/draw.goose): the game's past for it at the position as last folded
+    // over the board's history (`seen_len` plies, at `seen_pos`), why the game is drawn
+    // (rules::DRAW_*, NO_DRAW while it goes on), and when its ending began, or -1.
+    past:        rules::Past     = rules::Past { draw: rules::Draw {}, before: [] },
+    seen_len:    i64             = -1,
+    seen_pos:    rules::Position = rules::Position { pieces: [0, 0], kings: 0, side: 0, variant: 0 },
+    drawn_at:    f64             = -1.0,
+    drawn_still: bool            = false,
     // The computer's turn: the move asked for, and its answer.
     asks:     i64         = 0,                      // moves asked for so far, to number them
     asking:   i64         = 0,                      // the one waited for, or 0
@@ -111,6 +125,8 @@ fn start(gm: Game&, variant: u8, kind: i64, computer: i64, level: i64, skill: i6
     gm.turn = gm.b.pos.side;
     gm.seen = -1.0;
     gm.won_at = -1.0;
+    gm.drawn_at = -1.0;
+    gm.seen_len = -1;
     gm.counted = false;
     gm.result = 0;
     gm.asking = 0;
@@ -127,6 +143,7 @@ fn restart(gm: Game&, now: f64 = 0.0) {
     gm.clock = clock::new(gm.clock.kind);
     gm.turn = gm.b.pos.side;
     gm.won_at = -1.0;
+    gm.drawn_at = -1.0;
     gm.counted = false;
     gm.asking = 0;
     rig::settle(gm.cam, now);
@@ -139,9 +156,31 @@ fn winner(gm: Game&) -> i64 {
     return board::winner(gm.b);
 }
 
+// The game's past for draws at the board's position, folded again when the position
+// changed: a move, undo, start over, a saved game brought back.
+fn past(gm: Game&) -> rules::Past& {
+    let b .= gm.b;
+    if gm.seen_len != b.history.len || !rules::same(gm.seen_pos, b.pos) {
+        board::past(b, gm.past);
+        gm.seen_len = b.history.len;
+        gm.seen_pos = b.pos;
+    }
+    return gm.past;
+}
+
+// Why the game is drawn (rules::DRAW_*), or rules::NO_DRAW while it goes on: once the
+// drawing move has shown, unless it won (the other side has no move, or no time).
+fn drawn(gm: Game&) -> i64 {
+    guard winner(gm) < 0 && !gm.b.moving else { return rules::NO_DRAW; }
+    return rules::draw_reason(past(gm).draw, gm.b.pos);
+}
+
+// Whether the game is over, won or drawn.
+fn ended(gm: Game&) -> bool { winner(gm) >= 0 || drawn(gm) != rules::NO_DRAW }
+
 // Whether the computer is to move, for the app to ask it for a move.
 fn computer_to_move(gm: Game&) -> bool {
-    return gm.computer >= 0 && winner(gm) < 0 && !gm.b.moving && gm.b.pos.side == gm.computer;
+    return gm.computer >= 0 && !gm.b.moving && gm.b.pos.side == gm.computer && !ended(gm);
 }
 
 // The clock counts nothing until the frame after the next: the app was paused or lost
@@ -157,6 +196,7 @@ fn pause(gm: Game&) {
 struct Ask {
     id:    i64,
     pos:   rules::Position,
+    past:  rules::Past,     // the game before pos, for the draws (ai::start_after)
     skill: i64,
     seed:  u64,
 }
@@ -165,7 +205,7 @@ fn asking(gm: Game&) -> Ask {
     // The seed: the game's number and the ply, so moves vary between games yet the same
     // game replays the same.
     let seed = (gm.number as u64) * 1000 + gm.b.history.len as u64;
-    return Ask { id: gm.asking, pos: gm.b.pos, skill: gm.skill, seed: seed };
+    return Ask { id: gm.asking, pos: gm.b.pos, past: past(gm), skill: gm.skill, seed: seed };
 }
 
 // The computer's move for the ask `id`, `close` of the moves about as good as it
@@ -254,7 +294,10 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
     // The side to move, or the winner once there is one.
     var won = winner(gm);
     let side = if won >= 0 { won } else { b.pos.side as i64 };
-    let pick = panel::game(g, l, gm.clock, side, won >= 0, gm.asking != 0, pulse(gm, now), over);
+    var note = panel::Note {};
+    countdown(gm, note);
+    let pick = panel::game(g, l, gm.clock, side, won >= 0, drawn(gm) != rules::NO_DRAW, note, gm.asking != 0,
+                           pulse(gm, now), over);
     var undone = false;
     match pick {
         // Partway through a capture, take back only takes the capture back to its start.
@@ -269,6 +312,19 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
 
     if !frozen && think(gm, now) { changed = true; }
     won = winner(gm);
+    let draw = drawn(gm);
+    if draw == rules::NO_DRAW {
+        gm.drawn_at = -1.0;
+    } else if gm.drawn_at < 0.0 {
+        gm.drawn_at = now;
+        gm.drawn_still = false;
+        changed = true;
+        // A draw counts too, as 0: the computer's skill stays (ai::adapt).
+        if gm.computer >= 0 && !gm.counted {
+            gm.counted = true;
+            gm.result = 0;
+        }
+    }
     if won < 0 {
         gm.won_at = -1.0;
     } else if gm.won_at < 0.0 {
@@ -276,8 +332,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
         aim(gm, won);
         changed = true;
         // A game against the computer counts once, when it first ends: the result
-        // moves the computer's skill (ai::adapt). A draw would count 0; the rules have
-        // none yet.
+        // moves the computer's skill (ai::adapt).
         if gm.computer >= 0 && !gm.counted {
             gm.counted = true;
             gm.result = if won == gm.computer { -1 } else { 1 };
@@ -295,6 +350,17 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
             changed = true;
         }
         if ask == panel::BACK { go = HOME; }
+    } else if gm.drawn_at >= 0.0 {
+        if !gm.drawn_still && now - gm.drawn_at >= DRAW_STILL {
+            gm.drawn_still = true;
+            changed = true;
+        }
+        let ask = settle(gm, g, l, draw, now, over);
+        if ask == panel::RESTART {
+            restart(gm, now);
+            changed = true;
+        }
+        if ask == panel::BACK { go = HOME; }
     } else if !g.took && l.three && gm.cam.showcase {
         // The showcase: a drag anywhere off the UI turns and tips the board, not a piece.
         if rig::drive(gm.cam, input.at, input.down, input.pressed, input.released, g.scale, l.pitch, now) {
@@ -305,7 +371,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
     }
     // Against a friend the 3D board turns to face the side to move once a move has shown,
     // unless the game is over; against the computer it stays turned to the child.
-    if l.three && !frozen && gm.computer < 0 && winner(gm) < 0 && !b.moving && b.pressed < 0 {
+    if l.three && !frozen && gm.computer < 0 && !ended(gm) && !b.moving && b.pressed < 0 {
         if rig::face(gm.cam, b.pos.side, now) { changed = true; }
     }
     // A move made or taken back, whichever way: the clocks follow it, and stop once the
@@ -318,7 +384,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
     gm.turn = b.pos.side;
     // The computer's pieces show no count of what they must take: the child can't move them.
     b.quiet = gm.computer >= 0 && b.pos.side == gm.computer;
-    if b.moves.len == 0 { clock::stop(gm.clock); }
+    if b.moves.len == 0 || drawn(gm) != rules::NO_DRAW { clock::stop(gm.clock); }
     // A running clock draws once a second, when the time it shows changes.
     let shown = if gm.clock.running >= 0 { clock::shown(gm.clock, gm.clock.running) } else { -1 };
     if shown != gm.shown {
@@ -353,14 +419,18 @@ fn still(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&) {
     over.clear();
     let won = winner(gm);
     let side = if won >= 0 { won } else { gm.b.pos.side as i64 };
-    panel::game(g, l, gm.clock, side, won >= 0, gm.asking != 0, pulse(gm, now), over);
+    var note = panel::Note {};
+    countdown(gm, note);
+    let draw = drawn(gm);
+    panel::game(g, l, gm.clock, side, won >= 0, draw != rules::NO_DRAW, note, gm.asking != 0, pulse(gm, now), over);
     panel::camera(g, l, gm.cam, now);
     if gm.won_at >= 0.0 { celebrate(gm, g, l, won, now, over); }
+    if gm.drawn_at >= 0.0 { settle(gm, g, l, draw, now, over); }
 }
 
 // Whether anything is still moving at `now`; the app draws while it is.
 fn animating(gm: Game&, g: gui::Gui&, now: f64) -> bool {
-    let celebrating = gm.won_at >= 0.0 && moment(gm, now) < gm.still;
+    let celebrating = (gm.won_at >= 0.0 && moment(gm, now) < gm.still) || (gm.drawn_at >= 0.0 && now - gm.drawn_at < DRAW_STILL);
     let pulsing = gm.asking != 0 && (!gm.answered || now < gm.asked_at + PULSE);
     return board::animating(gm.b, now) || gui::animating(g) || celebrating || pulsing || rig::moving(gm.cam, now);
 }
@@ -420,6 +490,12 @@ fn bump(x: f64) -> f64 { if x <= 0.0 || x >= 1.0 { 0.0 } else { sin(PI * x) } }
 // waits for the move to show. `share` scales it all, the dim, the lifts, and the glow,
 // as the game screen fades out or in through a transition.
 fn cheer(gm: Game&, l: board::Layout, now: f64, share: f32 = 1.0) {
+    if gm.drawn_at >= 0.0 {
+        let b .= gm.b;
+        b.dim = (DIM * smooth(span(now - gm.drawn_at, 0.0, DRAW_DIM))) as f32 * share;
+        for &p in b.pieces { p.win.x = b.dim; }
+        return;
+    }
     guard gm.won_at >= 0.0 else { return; }
     let b .= gm.b;
     let v .= rules::VARIANTS[b.variant];
@@ -466,9 +542,12 @@ fn card_area(pl: panel::Layout) -> float4 {
 // The winning piece on screen, its middle and its radius in pixels, for the card to keep
 // clear of: on the flat board the disc as board::fill draws it, on the 3D board its top
 // as the perspective shows it.
-fn winning_spot(gm: Game&, pl: panel::Layout) -> float2, f32 {
+fn winning_spot(gm: Game&, pl: panel::Layout) -> float2, f32 { return spot_of(gm, pl, gm.won_on); }
+
+// The piece on square `sq` on screen, its middle and its radius in pixels.
+fn spot_of(gm: Game&, pl: panel::Layout, sq: i64) -> float2, f32 {
     let l = pl.board;
-    let at = board::center(l, rules::VARIANTS[gm.b.variant], gm.won_on);
+    let at = board::center(l, rules::VARIANTS[gm.b.variant], sq);
     guard pl.three else { return at, 0.39 * l.inner.w; }
     let s = view3d::on_screen(pl.view, l, at);
     return float2 { s.x, s.y }, s.z;
@@ -525,5 +604,110 @@ fn celebrate(gm: Game&, g: gui::Gui&, pl: panel::Layout, won: i64, now: f64, ove
     let n = over.len;
     panel::piece(over, spot, 44.0 * fit * u, won, gm.b.king_look, a, a);
     if over.len > n { over[n].win.w = 1.0; }   // on the board, as the card is
+    return ask;
+}
+
+// The countdown before a draw (rules::countdown), as the play panel words it: the moves
+// left out of the last five, or the position come twice out of three.
+fn countdown(gm: Game&, note: panel::Note&) {
+    guard !ended(gm) && !gm.b.moving else { return; }
+    let c = rules::countdown(past(gm).draw, gm.b.pos);
+    guard c.kind != rules::COUNT_NONE else { return; }
+    note.of = rules::SOON;
+    note.lit = c.moves;
+    let one = c.moves == 1;
+    if c.kind == rules::COUNT_DRAW {
+        strings::fill_in(note.line, if one { strings::COUNT_DRAW_ONE } else { strings::COUNT_DRAW }, [c.moves]);
+    } else if c.kind == rules::COUNT_WIN {
+        let key = if c.side == rules::WHITE { if one { strings::COUNT_WHITE_ONE } else { strings::COUNT_WHITE } }
+                  else if one { strings::COUNT_BLACK_ONE } else { strings::COUNT_BLACK };
+        strings::fill_in(note.line, key, [c.moves]);
+    } else {
+        strings::fill_in(note.line, strings::COUNT_TWICE, []);
+        note.more = true;
+        note.of = 3;
+        note.lit = 2;
+    }
+}
+
+// Why the game was drawn, in words, into out.
+fn reason(gm: Game&, draw: i64, out: u8[..64]&) {
+    let key = match draw {
+        rules::DRAW_REPEAT => strings::DRAW_REPEAT,
+        rules::DRAW_KINGS => strings::DRAW_KINGS,
+        rules::DRAW_BALANCE => strings::DRAW_BALANCE,
+        _ => strings::DRAW_LONE,
+    };
+    strings::fill_in(out, key, [rules::draw_moves(gm.b.pos, draw)]);
+}
+
+// The draw's card over the dimmed board (prototypes/draw.html, take a): both pieces side
+// by side, "Draw", and why, over back and play again, sliding up as it fades in, its
+// taps where it is at rest. Sized and placed as the win's card, kept off the piece that
+// made the last move; on a board under 540 dp the words say it, and the pieces are left
+// out. Returns panel::RESTART, panel::BACK, or panel::NOTHING.
+fn settle(gm: Game&, g: gui::Gui&, pl: panel::Layout, draw: i64, now: f64, over: Overlay&) -> i64 {
+    let t = now - gm.drawn_at;
+    guard t >= DRAW_CARD else { return panel::NOTHING; }
+    let l = pl.board;
+    let u = l.scale;
+    let area = card_area(pl);
+    let fit: f32 = min(1.0, l.board.z / (panel::BOARD * u));
+    let button = max(88.0, 112.0 * fit);
+    let pieces = l.board.z >= 540.0 * u;
+    let width = (112.0 * fit + 2.0 * button + 20.0 * fit) * u;
+    let room = width - 112.0 * fit * u;
+    var why: u8[..64] = [];
+    reason(gm, draw, why);
+    let head .= g.faces[gui::LABEL];
+    let small .= g.faces[gui::BODY];
+    let line = small.ascent - small.descent;
+    let cut = panel::note_break(g, gui::BODY, why, room);
+    let lines: f32 = if cut >= 0 { 2.0 } else { 1.0 };
+    let say = head.ascent - head.descent + 6.0 * u + lines * line;
+    let spot_h: f32 = if pieces { (104.0 + 28.0 - 10.0) * fit * u } else { 0.0 };
+    let first = g.quads.len;
+    var card = gui::center(area, width, (80.0 + 28.0) * fit * u + spot_h + say + 88.0 * u);
+    if gm.b.has_last {
+        let at, r = spot_of(gm, pl, gm.b.last.to);
+        if at.x + r > card.x && at.x - r < card.x + card.z && at.y + r > card.y && at.y - r < card.y + card.w {
+            let middle = area.y + 0.5 * area.w;
+            card.y = if at.y >= middle { max(area.y, min(middle, at.y - r) - card.w) }
+                     else { min(area.y + area.w - card.w, max(middle, at.y + r)) };
+        }
+    }
+    gui::panel(g, card);
+    var c = gui::inset(card, 40.0 * fit * u);
+    var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
+    if pieces {
+        spot = gui::cut_top(c, 104.0 * fit * u);
+        gui::cut_top(c, (28.0 - 10.0) * fit * u);
+    }
+    let words = strings::get(strings::DRAW);
+    gui::text(g, gui::LABEL, gui::cut_top(c, head.ascent - head.descent), words, 1.0, 0.0, gui::CENTER);
+    gui::cut_top(c, 6.0 * u);
+    if cut >= 0 {
+        gui::text(g, gui::BODY, gui::cut_top(c, line), why[..cut], 0.66, 0.0, gui::CENTER);
+        gui::text(g, gui::BODY, gui::cut_top(c, line), why[cut + 1..], 0.66, 0.0, gui::CENTER);
+    } else {
+        gui::text(g, gui::BODY, gui::cut_top(c, line), why, 0.66, 0.0, gui::CENTER);
+    }
+    gui::cut_top(c, 28.0 * fit * u);
+    let row = gui::cut_top(c, 88.0 * u);
+    var ask = panel::NOTHING;
+    let gap = 20.0 * fit * u;
+    if gui::button(g, 200, gui::cell(row, 2, 1, button * u, 88.0 * u, gap, 0), gui::BACK) { ask = panel::BACK; }
+    if gui::tile(g, 201, gui::cell(row, 2, 1, button * u, 88.0 * u, gap, 1), gui::RESTART, gui::PRIMARY, 22.0) {
+        ask = panel::RESTART;
+    }
+    let k = ease_out(span(t, DRAW_CARD, DRAW_STILL));
+    let drop = floor((1.0 - k) * SLIDE * u + 0.5) as f32;
+    gui::fade(g, first, g.quads.len, k as f32, float2 { 0.0, drop });
+    gui::on_board(g, first, g.quads.len);
+    guard pieces else { return ask; }
+    spot.y += drop;
+    let n = over.len;
+    panel::pair(over, spot, 44.0 * fit * u, 4.0 * fit * u, k as f32);
+    for i in n..over.len { over[i].win.w = 1.0; }   // on the board, as the card is
     return ask;
 }

@@ -96,8 +96,7 @@ On a worker the frame loop draws as it would without the computer.
   saved game. A game that ends moves its level's skill with `ai::adapt`: up when the
   child won, down when the computer did, by the clock too. It counts once, when it first
   ends; taken back and ended again, it doesn't count again. A game started over or
-  replaced before it ends doesn't count. The rules have no draw yet; a draw would leave
-  the skill. Play again on the end's card and start over during a game begin a new game
+  replaced before it ends doesn't count. A draw counts as 0 and leaves the skill. Play again on the end's card and start over during a game begin a new game
   at the level's skill as it is then, adapted by the game just ended, and count it for
   the seeds as home's play does (2026-11-09: they had replayed at the old skill).
 - **The default level** for a new player, and for settings read fresh, is easy (the

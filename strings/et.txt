@@ -105,3 +105,17 @@ puzzles.level2 = Raskem
 puzzles.level3 = Kõige raskem
 puzzles.locked = Lahenda Õpis veel {}
 board.preparing = Panen kabelauda paika…
+
+draw = Viik
+draw.repeat = Sama seis kolm korda
+draw.kings = {} käiku ainult tammidega
+draw.balance = {} käiku ilma löögi ja uue tammita
+draw.lone = Üksik tamm pidas vastu
+count.draw = Viigini {} käiku
+count.draw_one = Viigini 1 käik
+count.white = Valged peavad võitma {} käiguga
+count.white_one = Valged peavad võitma 1 käiguga
+count.black = Mustad peavad võitma {} käiguga
+count.black_one = Mustad peavad võitma 1 käiguga
+count.twice = Sama seis teist korda
+count.third = Kolmas kord on viik

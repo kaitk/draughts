@@ -38,6 +38,9 @@ let KEYS = [
     "theme.learn", "theme.captures", "theme.crowning", "theme.shots", "theme.king_shots", "theme.safe_move",
     "puzzles.level1", "puzzles.level2", "puzzles.level3", "puzzles.locked",
     "board.preparing",
+    "draw", "draw.repeat", "draw.kings", "draw.balance", "draw.lone",
+    "count.draw", "count.draw_one", "count.white", "count.white_one", "count.black", "count.black_one",
+    "count.twice", "count.third",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -127,7 +130,20 @@ let PUZZLES_LEVEL2 = 84;
 let PUZZLES_LEVEL3 = 85;
 let PUZZLES_LOCKED = 86;    // "{}", the puzzles still to solve in Learn to open a theme
 let BOARD_PREPARING = 87;   // where the 3D board goes while it gets ready
-let COUNT = 88;
+let DRAW = 88;              // a drawn game's word, where "White wins" goes
+let DRAW_REPEAT = 89;       // why, on the draw's card
+let DRAW_KINGS = 90;        // "{}", each side's moves the count was of
+let DRAW_BALANCE = 91;      // "{}", likewise
+let DRAW_LONE = 92;
+let COUNT_DRAW = 93;        // the countdown under whose turn: "{}" moves, more than one
+let COUNT_DRAW_ONE = 94;
+let COUNT_WHITE = 95;       // the strong side must take the lone king within "{}" of its moves
+let COUNT_WHITE_ONE = 96;
+let COUNT_BLACK = 97;
+let COUNT_BLACK_ONE = 98;
+let COUNT_TWICE = 99;       // the position has come twice
+let COUNT_THIRD = 100;      // under it: a third time draws
+let COUNT = 101;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];
