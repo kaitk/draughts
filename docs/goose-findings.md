@@ -56,7 +56,7 @@ its 0.71 s cold bake (0.15 s warm), and its pass's pipelines most of its 0.31 s 
 them. goose_gfx `6cfa3de`, SDL as goose_gfx pins it, Goose v2026.4.
 
 - Here: when the 3D board is needed the app makes it ready a step a frame, each pipeline
-  bound alone in a pass on 4 × 4 targets of its formats (`render3d::warm`), a spinner in
+  bound alone in a pass on 4 × 4 targets of its formats (`render3d::warm`), a still mark in
   the board's place meanwhile (`draw3d::prepare`, task 042). The bake's pipeline is one
   compile and stays one step: about 0.55 s on the Pixel 7a.
 - Upstream, for goose_gfx: `gfx::prepare(pipeline, formats...)` to make one ahead of a

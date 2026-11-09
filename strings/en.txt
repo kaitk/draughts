@@ -105,3 +105,4 @@ puzzles.level1 = Easy
 puzzles.level2 = Harder
 puzzles.level3 = Hardest
 puzzles.locked = Solve {} more in Learn
+board.preparing = Preparing 3D…

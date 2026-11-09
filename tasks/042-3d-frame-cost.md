@@ -170,13 +170,27 @@ change, on the Mac (1920 × 1200, Russian, autumn) the switch's first 3D frame t
 needed, and nothing kept for a flat player. Wherever it is needed and not ready (3D
 chosen in settings, a launch with 3D saved, home, the game, a puzzle), `draw3d::frame`
 takes one step of getting ready a frame instead of drawing (`draw3d::prepare`), the
-shell shows a spinner in the board's place (`gui::spinner`, `sh.ready3d` and
-`sh.shown3d` set by the app) and leaves taps on the board alone (the panels answer), and
-once ready the board fades in over 0.3 s (the renderer's backdrop with it). Settings'
-3D tile is lit at once. A new season or board size on 3D takes the theme's steps again
-with the old image shown and no spinner, taps waiting. Back to flat, everything is given
-back (`render3d::release`). `test/shell/wait3d` checks the spinner, the taps left alone,
-a panel tile still answering, and the tap selecting once ready.
+shell shows a still mark in the board's place (`gui::waiting`: a quiet glass pill round
+"Preparing 3D…", `strings::BOARD_PREPARING`; `sh.ready3d` and `sh.shown3d` set by the
+app) and leaves taps on the board alone (the panels answer), and once ready the board
+fades in over 0.3 s (the renderer's backdrop with it). Settings' 3D tile is lit at once.
+A new season or board size on 3D takes the theme's steps again with the old image shown
+and no mark, taps waiting. Back to flat, everything is given back (`render3d::release`).
+`test/shell/wait3d` checks the mark in both languages, nothing animating for it, the taps
+left alone, a panel tile still answering, and the tap selecting once ready.
+
+The mark was a spinner first; on the Galaxy A33 it stood still for about 1 s (the bake's
+compile, one driver call) and again about 0.5 s (the lit pipelines'), which looked
+broken, so the user chose a mark that doesn't move. A thin bar filled by the steps done
+was shot beside it (it moves only as a step completes); the words were kept, as the
+user's first choice and at home in the glass the screens are made of, in English and
+Estonian alike.
+
+**Measured on the Galaxy A33 5G** (Mali-G68 MP4, 1080 × 2400, by the main session with
+this branch, 2026-11-09): the moving 3D frame with the shadow map 38.6 → 25.5 ms waited,
+the pass alone 35.9 → 19.3 ms, presented 25.7 ms frame to frame (about 39 fps); getting
+ready about 3.0 s in all over its steps, the setup 84 ms; the first frame once ready
+64 ms (350 before); no device lost on any transition; idle 0% at rest.
 
 **The steps** (41), each waited for (`gfx::flush`) so its GPU work stays in its frame. The
 budget: about 16 ms of the Pixel 7a's and 35 of a Galaxy A33's (whose bake takes 1.6 s
@@ -198,7 +212,7 @@ On the Mac headless, two runs:
 
 The Mac's driver keeps compiled shaders across runs, so its compile steps look cheap;
 the Pixel's largest step stays the bake's compile (about 0.55 s, the A33's about 1.3 s),
-during which the spinner stops. Nothing splits a single compile without a pipeline cache
+during which nothing on screen can change. Nothing splits a single compile without a pipeline cache
 (`docs/goose-findings.md`).
 
 **What each part holds** (by arithmetic; the device's GL mtrack to check): the plan's
@@ -217,11 +231,12 @@ would buy anything measurable.
 spring 73, winter 58, summer 41 to 45, turned and low 64 to 65, nothing off by more than
 4 levels when shot one at a time. Four runs at once on the GPU, or the old build shot at
 its very first frame, gave lower figures from timing. Shots of the waiting state: the
-spinner in the board's place on the game, home, and settings (the 3D tile lit).
+mark in the board's place on the game, home (spring), and settings (winter, the 3D tile
+lit), in English and Estonian.
 
 **To check on the device:** each step's time (a `--frames` run prints `3D board prepared
-in 41 steps, each waited, ms: ...`), the bake's compile step, the spinner's look and the
-fade, and GL mtrack on 3D and after going back to flat.
+in 41 steps, each waited, ms: ...`; `--bench` prints their count, sum, and the longest),
+the mark's look and the fade, and GL mtrack on 3D and after going back to flat.
 
 ## Acceptance criteria
 

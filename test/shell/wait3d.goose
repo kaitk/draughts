@@ -1,9 +1,10 @@
 // The 3D board chosen but not ready yet (the app gets it ready a step a frame and says so
-// in sh.ready3d, task 042), headless. With no image of it yet (sh.shown3d false) a spinner
-// shows where the board goes, on the game, home, and settings alike, and the shell keeps
-// drawing; a tap on a piece is left alone while the UI's tiles still answer. Once it is
-// ready the spinner is gone and the same tap selects the piece. While a new theme gets
-// ready over an image already shown, there is no spinner, and taps still wait.
+// in sh.ready3d, task 042), headless. With no image of it yet (sh.shown3d false) a still
+// mark, glass round the words "Preparing 3D…", shows in the middle of where the board goes,
+// on the game, home, and settings alike, and nothing in the shell animates for it (the
+// app draws its steps); a tap on a piece is left alone while the UI's tiles still answer.
+// Once it is ready the mark is gone and the same tap selects the piece. While a new theme
+// gets ready over an image already shown, there is no mark, and taps still wait.
 import std;
 import vec;
 import math;
@@ -17,21 +18,17 @@ import shell from "../../src/shell";
 import puzzles from "../../src/puzzles";
 import drive from "../drive";
 
-fn spinners(g: gui::Gui&) -> i64 {
-    var n = 0;
-    for q in g.quads { if q.look.x == gui::SPINNER { n++; } }
-    return n;
+// Whether quad q's middle is the 3D board's bounds' middle, within half a pixel.
+fn centred(sh: shell::Shell&, q: gui::Quad) -> bool {
+    let r = sh.place;
+    return abs(q.rect.x + 0.5 * q.rect.z - (r.x + 0.5 * r.z)) < 0.5 && abs(q.rect.y + 0.5 * q.rect.w - (r.y + 0.5 * r.w)) < 0.5;
 }
 
-// The spinner's middle against the 3D board's bounds' middle, in whole pixels.
-fn centred(sh: shell::Shell&, g: gui::Gui&) -> bool {
-    for q in g.quads {
-        guard q.look.x == gui::SPINNER else { continue; }
-        let r = sh.place;
-        return abs(q.rect.x + 0.5 * q.rect.z - (r.x + 0.5 * r.z)) < 0.5
-               && abs(q.rect.y + 0.5 * q.rect.w - (r.y + 0.5 * r.w)) < 0.5;
-    }
-    return false;
+// The waiting marks the last frame declared: glass in the middle of the board's bounds.
+fn marks(sh: shell::Shell&, g: gui::Gui&) -> i64 {
+    var n = 0;
+    for q in g.quads { if q.look.x == gui::GLASS && centred(sh, q) { n++; } }
+    return n;
 }
 
 fn on_screen(sh: shell::Shell&, v: rules::Variant&, name: const u8[:], h: f32) -> float2 {
@@ -50,21 +47,22 @@ fn main() {
     let v .= rules::VARIANTS[rules::RUSSIAN];
     let top = view3d::HEIGHT * view3d::unit(8);
 
-    // The game, waiting with nothing shown.
+    // The game, waiting with nothing shown: the mark, and nothing animating for it once
+    // the game's own start has settled.
     var sh = shell::new(rules::RUSSIAN);
     sh.prefs.board = settings::RAISED;
     sh.screen = shell::GAME;
     sh.ready3d = false;
     sh.shown3d = false;
     drive::idle(sh, g, 0.0);
-    print("game, waiting: raised ", sh.raised, ", spinners ", spinners(g), " in the board's middle ", centred(sh, g),
-          ", drawing on ", shell::animating(sh, g, 0.5));
-    drive::tap(sh, g, on_screen(sh, v, "c3", top), 1.0);
+    drive::idle(sh, g, 5.0);
+    print("game, waiting: raised ", sh.raised, ", marks in the board's middle ", marks(sh, g), ", animating ",
+          shell::animating(sh, g, 5.5));
+    drive::tap(sh, g, on_screen(sh, v, "c3", top), 6.0);
     print("  c3 tapped: selected ", sh.game.b.selected, " (none is -1)");
-    // The panels answer meanwhile: the settings tile.
-    var tiles = drive::tiles(g);
+    // The panels answer meanwhile: some tile leaves the game.
     var went = false;
-    for i in tiles {
+    for i in drive::tiles(g) {
         var s = shell::new(rules::RUSSIAN);
         s.prefs.board = settings::RAISED;
         s.screen = shell::GAME;
@@ -76,15 +74,15 @@ fn main() {
     }
     print("  a panel tile still leaves the game: ", went);
 
-    // Ready: no spinner, and the tap selects.
+    // Ready: no mark, and the tap selects.
     sh.ready3d = true;
     sh.shown3d = true;
-    drive::idle(sh, g, 2.0);
-    print("game, ready: spinners ", spinners(g), ", drawing on ", shell::animating(sh, g, 2.5));
-    drive::tap(sh, g, on_screen(sh, v, "c3", top), 3.0);
+    drive::idle(sh, g, 7.0);
+    print("game, ready: marks ", marks(sh, g));
+    drive::tap(sh, g, on_screen(sh, v, "c3", top), 8.0);
     print("  c3 tapped: selected ", drive::name(v, sh.game.b.selected));
 
-    // A new theme getting ready over the image shown: no spinner, taps wait.
+    // A new theme getting ready over the image shown: no mark, taps wait.
     var th = shell::new(rules::RUSSIAN);
     th.prefs.board = settings::RAISED;
     th.screen = shell::GAME;
@@ -92,26 +90,30 @@ fn main() {
     th.shown3d = true;
     drive::idle(th, g, 0.0);
     drive::tap(th, g, on_screen(th, v, "c3", top), 1.0);
-    print("game, a new theme getting ready: spinners ", spinners(g), ", c3 tapped: selected ", th.game.b.selected);
+    print("game, a new theme getting ready: marks ", marks(th, g), ", c3 tapped: selected ", th.game.b.selected);
 
-    // Home and settings, waiting: the spinner where their board goes.
-    for screen in [shell::HOME, shell::SETTINGS] {
-        var s = shell::new(rules::RUSSIAN);
-        s.prefs.board = settings::RAISED;
-        s.screen = screen;
-        s.ready3d = false;
-        s.shown3d = false;
-        drive::idle(s, g, 0.0);
-        drive::idle(s, g, 1.0);
-        print(if screen == shell::HOME { "home" } else { "settings" }, ", waiting: raised ", s.raised, ", spinners ",
-              spinners(g), " in the board's middle ", centred(s, g));
+    // Home and settings, waiting: the mark where their board goes, in both languages.
+    for lang in [strings::EN, strings::ET] {
+        strings::use(lang);
+        for screen in [shell::HOME, shell::SETTINGS] {
+            var s = shell::new(rules::RUSSIAN);
+            s.prefs.board = settings::RAISED;
+            s.screen = screen;
+            s.ready3d = false;
+            s.shown3d = false;
+            drive::idle(s, g, 0.0);
+            drive::idle(s, g, 1.0);
+            print(if screen == shell::HOME { "home" } else { "settings" }, ", waiting: raised ", s.raised,
+                  ", marks in the board's middle ", marks(s, g), ", saying \"", strings::get(strings::BOARD_PREPARING), "\"");
+        }
     }
+    strings::use(strings::EN);
 
-    // Flat: never a spinner, whatever the app says of the 3D board.
+    // Flat: never a mark, whatever the app says of the 3D board.
     var flat = shell::new(rules::RUSSIAN);
     flat.screen = shell::GAME;
     flat.ready3d = false;
     flat.shown3d = false;
     drive::idle(flat, g, 0.0);
-    print("flat: spinners ", spinners(g));
+    print("flat: marks ", marks(flat, g));
 }

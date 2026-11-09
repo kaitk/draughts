@@ -80,7 +80,7 @@ struct Shell {
     raised: bool = false,
     // Set by the app each frame: whether the 3D board, when chosen, is ready to draw
     // (else it gets ready a step a frame, taps on it left alone), and whether an image of
-    // it shows meanwhile (else a spinner in its place).
+    // it shows meanwhile (else a still mark in its place: gui::waiting's words).
     ready3d:   bool         = true,
     shown3d:   bool         = true,
     view:      view3d::View = view3d::View {},
@@ -280,8 +280,8 @@ fn declare(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> boo
     sh.hole = if crossing { sh.layout.board } else { float4 { 0.0, 0.0, 0.0, 0.0 } };
     sh.tall = 0.0;
     raise(sh, g, crossing, e);
-    // With no image of it yet, a spinner where the 3D board goes until it shows.
-    if sh.raised && waiting3d(sh) && !sh.shown3d { gui::spinner(g, sh.place); }
+    // With no image of it yet, a still mark where the 3D board goes until it shows.
+    if sh.raised && waiting3d(sh) && !sh.shown3d { gui::waiting(g, sh.place, strings::get(strings::BOARD_PREPARING)); }
     sh.blur = if crossing { blurred(from) + (blurred(was) - blurred(from)) * e } else { blurred(was) };
     // A switch this frame shows what was declared, and what the app fills and draws
     // agrees with it: the start of a transition, the screen left as it stands; one turned
@@ -876,7 +876,7 @@ fn fill(sh: Shell&, now: f64) -> board::Board& {
 fn waiting3d(sh: Shell&) -> bool { settings::raised(sh.prefs) && !sh.ready3d }
 
 fn animating(sh: Shell&, g: gui::Gui&, now: f64) -> bool {
-    if sh.from >= 0 || waiting3d(sh) { return true; }
+    if sh.from >= 0 { return true; }
     return if sh.screen == GAME { game::animating(sh.game, g, now) }
            else if sh.screen == PUZZLE { puzzle::animating(sh.puzzle, g, now) }
            else { board::animating(shown(sh), now) || gui::animating(g) };

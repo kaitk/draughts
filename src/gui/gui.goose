@@ -42,7 +42,6 @@ let MINI = 6;               // a small board at the start; look.z: squares per s
 let RING = 7;               // a hold's ring round a tile, filled clockwise from the top; look.z: how far, 0..1
 let FACE = 8;               // a player's badge on a disc; look.z: which, -1 for +; look.w: lit
 let FLOAT = 9;              // a floating button's disc (the 3D board's camera); look.z: 1 lit, + 2 a dot; look.w: pressed
-let SPINNER = 10;           // something getting ready (the 3D board): a turning arc; look.z: its turn, 0..1
 
 // How a tile and its icon look (extra.y), in the theme's colors.
 let PLAIN = 0;              // white at 10%
@@ -444,13 +443,13 @@ fn floating(g: Gui&, id: i64, r: float4, disc: f32, icon: i64, on: bool, dot: bo
     return clicked;
 }
 
-// A spinner in the middle of r, 56 dp across, turning once a second: where the 3D board
-// goes while it gets ready. It shows only while declared, and the shell draws on while it
-// waits (shell::animating).
-fn spinner(g: Gui&, r: float4) {
-    let d = 56.0 * g.scale;
-    let turn = (g.now - floor(g.now)) as f32;
-    add(g, Quad { rect: center(r, d, d), look: float4 { SPINNER, 0.5 * d, turn, 0.0 }, extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
+// A still mark in the middle of r saying something is getting ready (the 3D board): a
+// quiet glass pill round the words s. Nothing in it moves, so it needs no frames of its own.
+fn waiting(g: Gui&, r: float4, s: const u8[:]) {
+    let u = g.scale;
+    let m = center(r, text_width(g, BODY, s) + 48.0 * u, 52.0 * u);
+    glass(g, m, 26.0);
+    text(g, BODY, m, s, 0.8, 0.0, CENTER);
 }
 
 // A player's face in r (their badge, players.goose's ANIMALS by index, drawn by

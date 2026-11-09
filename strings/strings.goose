@@ -37,6 +37,7 @@ let KEYS = [
     "goal.take_one", "puzzle.white_to_move", "puzzle.black_to_move",
     "theme.learn", "theme.captures", "theme.crowning", "theme.shots", "theme.king_shots", "theme.safe_move",
     "puzzles.level1", "puzzles.level2", "puzzles.level3", "puzzles.locked",
+    "board.preparing",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -125,7 +126,8 @@ let PUZZLES_LEVEL1 = 83;    // a theme's levels: easy, harder, hardest
 let PUZZLES_LEVEL2 = 84;
 let PUZZLES_LEVEL3 = 85;
 let PUZZLES_LOCKED = 86;    // "{}", the puzzles still to solve in Learn to open a theme
-let COUNT = 87;
+let BOARD_PREPARING = 87;   // where the 3D board goes while it gets ready
+let COUNT = 88;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

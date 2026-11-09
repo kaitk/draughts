@@ -21,7 +21,7 @@
 // settings the app's sharp photograph, and a transition between them crossfades the two.
 // The renderer is made ready only when the 3D board is needed, a step a frame (prepare:
 // its setup, the theme's bake in bands and its photograph, its pipelines), so the screen
-// keeps drawing and answering; meanwhile the shell shows a spinner in the board's place
+// keeps drawing and answering; meanwhile the shell shows a still mark in the board's place
 // and leaves taps on it alone (shell's ready3d), and once ready the board fades in. A new
 // theme or board size takes the theme's steps again, the old image shown until they are
 // done. The board back to flat gives all of it back (drop).
@@ -52,7 +52,7 @@ struct Drawer {
     shadows:   i64                                   = 0,     // and the shadow map;
     pulses:    i64                                   = 0,     // those that changed only the pulsing marks
     setup_ms:  f64                                   = 0.0,   // the renderer's setup,
-    apply_ms:  f64                                   = 0.0,   // and the theme's bake and photograph
+    apply_ms:  f64                                   = 0.0,   // and prepare()'s steps in all, waited
     first_ms:  f64                                   = 0.0,   // the first frame drawn, waited for
     timed:     bool                                  = false, // --bench: the first frame waited for and timed
     themed:    i64                                   = 0,     // prepare()'s next theme step (THEME_STEPS: done)
@@ -100,8 +100,10 @@ fn bench_done(d: Drawer&) -> bool {
         render3d::bake_surfaces(d.gpu, k == 0, k == 1);
         print("bench3d: bake warm, ", if k == 0 { "plan" } else { "frame map" }, " ", (clock() - t0) * 1000.0, " ms");
     }
-    print("bench3d: setup ", d.setup_ms, " ms, theme applied ", d.apply_ms, " ms (bake ", d.gpu.bake_ms,
-          " ms, photograph ", d.gpu.photo_ms, " ms), first frame ", d.first_ms, " ms");
+    var longest = 0.0;
+    for ms in d.prep_ms { longest = max(longest, ms); }
+    print("bench3d: prepared in ", d.prep_ms.len, " steps, ", d.apply_ms, " ms in all (setup ", d.setup_ms,
+          " ms, the longest step ", longest, " ms), first frame ", d.first_ms, " ms");
     print("bench3d: ", d.size.x, "x", d.size.y, " with the shadow map: cpu ", median(b.cpu),
           " ms, cpu+gpu waited ", median(b.all), " ms; the pass alone waited ", median(b.pass),
           " ms; presented frame to frame ", median(b.gap), " ms (", b.n, " frames each)");
@@ -148,7 +150,7 @@ fn ready(d: Drawer&, kind: i64, n: i64) -> bool {
 }
 
 // Whether an image of the board shows (drawn since it was set up): while a new theme is
-// prepared it stays; with none, the board's place shows the shell's spinner.
+// prepared it stays; with none, the board's place shows the shell's still mark.
 fn shows(d: Drawer&) -> bool { d.appear_at >= 0.0 }
 
 // Whether the board is fading in at `now`, so the app draws on.
@@ -208,7 +210,7 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
     d.shadow = false;
     if !ready(d, kind, l.n) {
         // A step of getting ready instead; the image already shown (a theme changing)
-        // stays, else the shell's spinner shows.
+        // stays, else the shell's still mark shows.
         prepare(d, kind, l.n);
         d.frames++;
         return;

@@ -411,13 +411,12 @@ fn main() {
         if hold >= 0.0 && sh.from >= 0 { sh.since = now - hold * shell::DURATION; }
         if win_at >= 0.0 && sh.game.won_at >= 0.0 { sh.game.won_at = now - win_at; }
         // The 3D board chosen but not ready (it gets ready a step a frame as it is drawn,
-        // draw3d::prepare): the shell shows a spinner in its place, or the old image while
+        // draw3d::prepare): the shell shows a still mark in its place, or the old image while
         // a new theme bakes, and leaves taps on it alone; the frames go on until it shows
         // and has faded in. Back to flat, it is all given back.
         let n_was = if sh.layout.n > 0 { sh.layout.n } else { rules::VARIANTS[sh.prefs.variant].size };
         sh.ready3d = !settings::raised(sh.prefs) || draw3d::ready(d3, d.kind, n_was);
-        sh.shown3d = draw3d::shows(d3);
-        if settings::raised(sh.prefs) && (!sh.ready3d || !sh.shown3d || draw3d::appearing(d3, now)) { dirty = true; }
+        sh.shown3d = draw3d::shows(d3);        if settings::raised(sh.prefs) && (!sh.ready3d || !sh.shown3d || draw3d::appearing(d3, now)) { dirty = true; }
         if !settings::raised(sh.prefs) && sh.from < 0 { draw3d::drop(d3); }
         if shell::frame(sh, g, size.x, size.y, now) { dirty = true; }
         // The keyboard: up while a name is typed, brought up again by each tap on the name.
