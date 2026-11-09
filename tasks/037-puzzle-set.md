@@ -275,6 +275,58 @@ Learn above all, rechecked under its rules.
 - [ ] The set on the Mac and the tablet, and its levels' order tried by players (the user)
 - [ ] Brazilian's own set
 
+### Choosing the set on the puzzles screen (prototype, 2026-11-09)
+
+Today the library shows `puzzles::set_of` the variant in settings, so changing the set is
+a trip to settings. `prototypes/puzzle-set.html` draws the choice on the library itself,
+and the library reworked with it. The count is stars throughout, as home's ("0 / 222" is
+International's 74 × 3; Russian's 46 make 138); Brazilian shows International's set and
+stars. Checked with agent-browser at 1280×800, 390×844, and 499×645: nothing past the
+edge; on a phone and in the compact window the six themes scroll, as today's do.
+
+- **now**, today's library, no choice, for comparison:
+  file:///Users/kaitkasak/projects/personal/draughts/prototypes/puzzle-set.html?take=now
+- **a, a switch in the title row**: three joined tiles (name, size) at the title row's
+  right, a row of their own under the title in portrait; today's rows otherwise.
+  file:///Users/kaitkasak/projects/personal/draughts/prototypes/puzzle-set.html?take=a
+- **b, the name under the title, a picker**: "International · 10 × 10 ⌄" under
+  "Puzzles"; a tap opens a glass list of the three with a small board, the size, and each
+  set's stars (`&open=1`), and, when shared, "New games too" under it. Ideas: a Continue
+  row on top (the next puzzle without stars in the theme last played), stars and "Next:
+  Harder 6" per theme, locked themes as a path (pips for Learn's six, "Opens with 3 more
+  in Learn"), two columns in landscape.
+  file:///Users/kaitkasak/projects/personal/draughts/prototypes/puzzle-set.html?take=b
+  and file:///Users/kaitkasak/projects/personal/draughts/prototypes/puzzle-set.html?take=b&v=russian&open=1
+- **c, a grid with the setup's tiles**: the new game's draughts tiles (a small board,
+  name, size) in the title row (under it in portrait), the themes as cards, four across in
+  landscape with Continue as the first card, two across in portrait under a Continue row.
+  Ideas: the grid, Continue, stars, locked themes as a path; no "next" line.
+  file:///Users/kaitkasak/projects/personal/draughts/prototypes/puzzle-set.html?take=c
+- **Home's Puzzles row** following the choice (`&view=home`): the count only when
+  shared; the set's name over the count when the puzzles' own, or Brazilian.
+  file:///Users/kaitkasak/projects/personal/draughts/prototypes/puzzle-set.html?take=b&view=home&tie=own&v=russian
+
+Every take takes `&tie=shared` or `own`, `&br=shown` or `hidden`, `&v=`, `&stars=none`,
+and `&lang=et`. New strings, English and Estonian: `puzzles.for_now` "International's
+puzzles for now" / "Esialgu rahvusvahelise kabe ülesanded", `puzzles.continue` "Continue"
+/ "Jätka", `puzzles.next` "Next: {}" / "Järgmine: {}", `puzzles.all_done` "All solved" /
+"Kõik lahendatud", `puzzles.opens` "Opens with {} more in Learn" / "Avaneb, kui Õpis veel
+{}", `puzzles.also_games` "New games too" / "Ka uued mängud".
+
+Proposed: **b, shared**. The choice is the player's draughts, one fact settings and the
+new game's tiles already write; a second, puzzles-only variant would need its own key,
+home's row naming its set, and a rule for which wins after settings change. b keeps the
+title row calm on a phone (a's and c's three tiles take a row of their own there, and
+"Rahvusvaheline" is the tightest label), says the choice is rare (most players play one
+draughts), and its picker has room for each set's count and Brazilian's "International's
+puzzles for now". Brazilian shown, not hidden: hidden leaves a Brazilian player's draughts
+with no lit choice, and the set it plays is a real one. Of the ideas, Continue, stars with
+the next level, and the path are cheap (home's rows and today's tiles); c's grid uses the
+landscape room best but holds the fewest themes on a phone.
+
+Open: shared or own; b's picker or a's switch; which of the library ideas to take, and
+whether the grid (c) replaces the rows in landscape only; Brazilian shown or hidden.
+
 
 ## Decisions (2026-11-09)
 
