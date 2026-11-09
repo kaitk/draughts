@@ -3,9 +3,10 @@
 //
 // The library is back, the title, the draughts switch (prototypes/puzzle-set.html, take
 // a: settings' draughts, one setting), and a glass row per theme: its mark (the theme's
-// icon on a disc in the glow color), its name, "n / total" solved, and a bar. The switch
-// stands at the title row's right in landscape and in a row under the title in portrait;
-// Brazilian, shown International's set, says so under the title. Learn is open; the other themes open once
+// icon on a disc in the glow color), its name, its stars ("★ n / total"), and a bar of
+// them. The switch stands at the title row's right in landscape and in a row under the
+// title in portrait; Brazilian, shown International's set, says so under the title.
+// Learn is open; the other themes open once
 // half of Learn is solved, and until then each shows its mark plain with a lock and how
 // many more Learn wants. The rows are one column, or two in landscape where one doesn't
 // fit the height. A row opens the theme's page: back, the theme's mark, name, and count
@@ -120,12 +121,20 @@ fn mark(g: gui::Gui&, r: float4, theme: i64, size: f32, opened: bool) {
     gui::glyph_icon(g, gui::center(badge, 18.0 * u, 18.0 * u), gui::LOCK, gui::PLAIN, 0.0, 1.0);
 }
 
+// The stars won in a theme's puzzles.
+fn stars_won(stars: const u8[:], theme: i64) -> i64 {
+    var n = 0;
+    for p in puzzles::all.list { if p.theme == theme { n += stars[p.id]; } }
+    return n;
+}
+
 // "n / total" of a theme, into out.
 fn count_of(stars: const u8[:], theme: i64, out: u8[..64]&) {
     strings::fill_in(out, strings::PUZZLES_STARS, [solved(stars, theme), puzzles::theme_count(puzzles::all, theme)]);
 }
 
-// A theme's row in the library: its mark, name, count, and bar, or for a shut theme how
+// A theme's row in the library: its mark, name, stars won (a star, "n / total"), and a bar
+// of them, or for a shut theme how
 // many more Learn wants. True when tapped while open.
 fn theme_row(g: gui::Gui&, r: float4, theme: i64, stars: const u8[:], phone: bool) -> bool {
     let u = g.scale;
@@ -148,15 +157,21 @@ fn theme_row(g: gui::Gui&, r: float4, theme: i64, stars: const u8[:], phone: boo
     gui::cut_top(b, 10.0 * u);
     let name = strings::get(NAMES[theme]);
     if opened {
+        // The stars won of those there are, a star before them (prototypes/puzzle-set.html,
+        // take b), and the bar under the name as far as the stars go.
+        let won = stars_won(stars, theme);
+        let all = 3 * puzzles::theme_count(puzzles::all, theme);
         var n: u8[..64] = [];
-        count_of(stars, theme, n);
+        strings::fill_in(n, strings::PUZZLES_STARS, [won, all]);
         let w = gui::text_width(g, gui::BODY, n[..]);
         gui::text(g, gui::BODY, gui::cut_right(top, w), n[..], 0.66, 0.0, gui::RIGHT);
+        gui::cut_right(top, 6.0 * u);
+        let star = 22.0 * u;
+        gui::glyph_icon(g, gui::center(gui::cut_right(top, star), star, star), gui::STAR, gui::ON, 0.0, 1.0);
         gui::cut_right(top, 12.0 * u);
         let bar = gui::cut_top(b, 8.0 * u);
         gui::fill(g, bar, float4 { 1.0, 1.0, 1.0, 0.14 }, 4.0 * u);
-        let all = puzzles::theme_count(puzzles::all, theme);
-        let k = (solved(stars, theme) as f32) / max(1, all);
+        let k = (won as f32) / max(1, all);
         if k > 0.0 { gui::glow_fill(g, float4 { bar.x, bar.y, bar.z * k, bar.w }, 1.0, 4.0 * u); }
     } else {
         var more: u8[..64] = [];
