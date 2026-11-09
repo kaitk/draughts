@@ -18,7 +18,7 @@ let FRAME = """
         vec4 light_dir;      // toward the light; w: its intensity
         vec4 light_color;
         vec4 sh[9];          // the photograph's irradiance over pi, rgb
-        vec4 params;         // x: exposure, y: a shadow texel in uv, z: ambient scale,
+        vec4 params;         // x: exposure, y: the shadow taps' spacing in uv, z: ambient scale,
                              // w: squares per side (a square is 8 / w)
         vec4 screen;         // xy: the target's size in pixels, z: the board dimmed by (a win)
         vec4 glow;           // rgb: the theme's glow color, w: its strength
@@ -179,7 +179,7 @@ let LIT_FRAG = """
         vec4 s = light_view_proj * vec4(q, 1.0);
         vec2 uv = vec2(s.x * 0.5 + 0.5, 0.5 - s.y * 0.5);
         float z = s.z - 0.0005;
-        float t = params.y * 2.5;
+        float t = params.y;
         float sum = 0.0;
         for (int y = 0; y < 4; y++) {
             for (int x = 0; x < 4; x++) {

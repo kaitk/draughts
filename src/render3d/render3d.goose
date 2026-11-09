@@ -10,7 +10,7 @@
 // instances and the field's occlusion and marks (view3d::Scene, laid out as the shaders
 // read them).
 //
-// Frame structure: the shadow map (2048², 16-bit, from the key light) only when the
+// Frame structure: the shadow map (1024², 16-bit, from the key light) only when the
 // pieces stand differently; then one pass: the blurred photograph as a backdrop, the
 // board's soft shadow on nothing, the board and the pieces lit, the field's marks added.
 // No post pass, no discard, nothing temporal. Nothing is made or released while drawing
@@ -84,7 +84,10 @@ struct Shrink { to: float4 }
 struct Show { from: float4, to: float4, screen: float4 }
 struct Blur { dir: float4 }
 
-let SHADOW_SIZE = 2048;
+// The shadow map: 1024² keeps the soft shadows as they were at 2048² (the taps spread
+// as far in the world, SHADOW_TAP of the map apart), at a quarter of the memory.
+let SHADOW_SIZE = 1024;
+let SHADOW_TAP: f32 = 2.5 / 2048.0;
 let PLAN_SIZE = 2048;
 let FRAME_MAP = 2048;
 let PHOTO_SIZE = 512;
@@ -253,7 +256,10 @@ fn photograph(g: Gpu&, kind: i64, grey: f32, sh: float4[9]&) {
 // z the squares per side, w the marble (a stone frame's only).
 fn bake(g: Gpu&, albedo: gfx::Texture, normal: gfx::Texture, w: i64, h: i64, mode: f32,
         extent: float2, t: looks::Theme&) {
-    var pass = gfx::PassDesc {};
+    // Not cleared: the bake writes every texel, and a cleared target SDL finds still
+    // referenced (as a new one is) it cycles into a second copy kept for good, 85 MB for
+    // the four surfaces on the Pixel 7a.
+    var pass = gfx::PassDesc { clear_color: false };
     pass.color[0] = albedo;
     pass.color[1] = normal;
     gfx::begin_pass(pass);
@@ -308,7 +314,10 @@ fn targets(g: Gpu&, size: int2) {
                                                   width: size.x, height: size.y,
                                                   samples: g.samples });
     }
-    g.depth = gfx::texture(gfx::TextureDesc { format: gfx::DEPTH, usage: gfx::DEPTH_TARGET,
+    // 16-bit depth is plenty between NEAR 2 and FAR 40 for a scene 10 to 20 away (a step
+    // about 0.003 at 20, under the marks' 0.004 lift), and half of 32-bit's memory, which
+    // SDL can't keep in tile memory: 20 MB less at 4× on the Pixel 7a.
+    g.depth = gfx::texture(gfx::TextureDesc { format: gfx::DEPTH16, usage: gfx::DEPTH_TARGET,
                                               width: size.x, height: size.y,
                                               samples: g.samples });
     g.image = gfx::render_target(size.x, size.y, gfx::RGBA8);
@@ -424,7 +433,7 @@ fn apply(g: Gpu&, which: i64, n: i64, photo: i64 = -1) {
     light(g);
     let f .= g.frame;
     f.light_color = linear4(t.key_color);
-    f.params = float4 { t.ambient.x, 1.0 / SHADOW_SIZE, t.ambient.y, n };
+    f.params = float4 { t.ambient.x, SHADOW_TAP, t.ambient.y, n };
     f.glow = t.glow;
     f.light_piece = linear4(t.light_piece);
     f.dark_piece = linear4(t.dark_piece);
