@@ -50,6 +50,13 @@ let PLAYERS = 10;           // who's playing
 let ROWS = 4;               // and settings, a fifth in landscape
 let ROW_H = 88.0;           // dp, the floor for small hands
 let ROW_GAP = 2.0;
+// A small window (gui::compact, task 050): the menu's rows and the wordmark's row lower,
+// the sheet's rim thinner, so the board keeps a room above it.
+let ROW_COMPACT = 72.0;
+let MARK_COMPACT = 64.0;
+let RIM_COMPACT = 20.0;
+fn row_h(small: bool) -> f32 { if small { ROW_COMPACT } else { ROW_H } }
+fn mark_h(small: bool) -> f32 { if small { MARK_COMPACT } else { MARK_H } }
 let MARK_H = 72.0;          // the wordmark's row
 let MARK_GAP = 34.0;        // under it in landscape; 14 beside settings' gear, down to 4
 let GEAR = 88.0;            // settings' tap beside the wordmark, over its row's height,
@@ -92,16 +99,17 @@ fn corner(area: float4, u: f32) -> float4 {
 // The gap under the wordmark in dp: MARK_GAP with settings a row of its own; 14 beside
 // the gear, less, down to 4, where the area's `height` would leave the gear's 8 dp over
 // the wordmark's row off the screen (a landscape phone at 480 dp less its gesture bar).
-fn mark_gap(gear: bool, height: f32, u: f32) -> f32 {
+fn mark_gap(gear: bool, height: f32, u: f32, small: bool = false) -> f32 {
     guard gear else { return MARK_GAP; }
+    guard !small else { return 8.0; }
     return clamp(height / u - 8.0 - (MARK_H + ROWS * ROW_H + (ROWS - 1) * ROW_GAP), 4.0, 14.0);
 }
 
 // How tall the menu is in an area `height` tall, with settings a row of its own or the
 // gear beside the wordmark.
-fn menu_height(gear: bool, height: f32, u: f32) -> f32 {
+fn menu_height(gear: bool, height: f32, u: f32, small: bool = false) -> f32 {
     let rows = if gear { ROWS } else { ROWS + 1 };
-    return (MARK_H + mark_gap(gear, height, u) + rows * ROW_H + (rows - 1) * ROW_GAP) * u;
+    return (mark_h(small) + mark_gap(gear, height, u, small) + rows * row_h(small) + (rows - 1) * ROW_GAP) * u;
 }
 
 // Whether settings is the gear beside the wordmark: in portrait, and in a landscape too
@@ -130,8 +138,8 @@ fn paired(setup: i64, landscape: bool, height: f32, u: f32) -> bool {
 }
 
 // How tall the column's content is: the menu, or a setup (FRIEND or COMPUTER).
-fn content_height(setup: i64, landscape: bool, height: f32, u: f32) -> f32 {
-    if setup == NOTHING { return menu_height(gear_beside(landscape, height, u), height, u); }
+fn content_height(setup: i64, landscape: bool, height: f32, u: f32, small: bool = false) -> f32 {
+    if setup == NOTHING { return menu_height(gear_beside(landscape, height, u), height, u, small); }
     return setup_height(setup, paired(setup, landscape, height, u), u);
 }
 
@@ -148,7 +156,8 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
     let width = area.z;
     let height = area.w;
     let landscape = width >= height;
-    let content_h = content_height(setup, landscape, height, u);
+    let small = setup == NOTHING && gui::compact(g, area);
+    let content_h = content_height(setup, landscape, height, u, small);
     let pair = paired(setup, landscape, height, u);
     let clear = (EDGE + CORNER + 16.0) * u;
     // The player's chip on the menu, in the way out's row at the board's side's left.
@@ -177,6 +186,9 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
         if setup == NOTHING && gear_beside(true, height, u) {
             content.y = min(max(content.y, area.y + 8.0 * u), area.y + height - content_h);
         }
+        // Below the window's control (iPadOS's three dots) in a window, where it fits.
+        let drop = gui::corner_drop(g, content);
+        if content.y + drop + content_h <= area.y + height { content.y += drop; }
         let stage = float4 { w + 80.0 * u, 0.0, width - w - 80.0 * u, height };
         side = area.x + stage.x;
         var size = min(0.7 * height, stage.z - 80.0 * u);
@@ -219,8 +231,8 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
         // the sheet takes the height, 8 dp under its top at least, its margins above and
         // below shrinking to 8 dp to fit; back, the title, and the way out share its first
         // row, and the board, with no room left, isn't shown.
-        var sheet_h = content_h + 64.0 * u;
-        var rim = 32.0 * u;
+        var rim = (if small { RIM_COMPACT } else { 32.0 }) * u;
+        var sheet_h = content_h + 2.0 * rim;
         let full = setup != NOTHING && height - sheet_h < clear;
         if full {
             rim = clamp(0.5 * (height - 8.0 * u - content_h), 8.0 * u, 32.0 * u);
@@ -257,7 +269,7 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
     over.clear();
     let gear = gear_beside(landscape, height, u);
     var pick = if setup != NOTHING { choose(over, g, content, setup == COMPUTER, pair_w, head, s) }
-               else { menu(over, g, content, gear, mark_gap(gear, height, u), s) };
+               else { menu(over, g, content, gear, mark_gap(gear, height, u, small), s, small) };
     // The player and the way out, declared last so the tiles before them keep their order.
     if chip && player_chip(g, player_spot(g, area, side, l.board, way, s), s) { pick = PLAYERS; }
     if closable && gui::bare_x(g, 309, way, gui::CLOSE, CROSS) { pick = EXIT; }
@@ -293,6 +305,8 @@ fn named_end(g: gui::Gui&, s: settings::Settings&, across: f32) -> f32 {
 fn player_spot(g: gui::Gui&, area: float4, side: f32, b: float4, way: float4, s: settings::Settings&) -> float4 {
     let u = g.scale;
     var r = float4 { side + EDGE * u, area.y + EDGE * u, chip_width(g, s), CORNER * u };
+    // Below the window's control (iPadOS's three dots) in a window.
+    r.y += gui::corner_drop(g, r);
     let end = r.x + r.z + 16.0 * u;
     let board = b.z > 0.0 && end > b.x && b.y < r.y + r.w + 8.0 * u;
     if end > way.x || board { r.z = chip_width(g, s, false); }
@@ -324,14 +338,15 @@ fn player_chip(g: gui::Gui&, r: float4, s: settings::Settings&) -> bool {
 
 // The menu in c: the wordmark, `below` dp under it, the rows, and settings, a row of its
 // own or, `gear`, a gear at the wordmark's right (portrait, and a short landscape).
-fn menu(over: game::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, s: settings::Settings&) -> i64 {
+fn menu(over: game::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, s: settings::Settings&,
+        small: bool = false) -> i64 {
     let u = g.scale;
     var content = c;
 
     // The wordmark: a crowned light piece and the app's name; settings at the right, a
     // gear with no tile in an 88 dp tap reaching 8 dp over and under the row. The name may
     // run under the tap's clear left side, up to 12 dp from the gear.
-    var mark = gui::cut_top(content, MARK_H * u);
+    var mark = gui::cut_top(content, mark_h(small) * u);
     let piece = gui::cut_left(mark, 56.0 * u);
     game::put(over, piece, 28.0 * u, rules::WHITE, board::CROWN,
               1.0, false);
@@ -355,7 +370,7 @@ fn menu(over: game::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, s
     let icons = [gui::NEXT, gui::FRIEND, gui::COMPUTER, gui::PUZZLE];
     let keys = [strings::HOME_CONTINUE, strings::HOME_FRIEND, strings::HOME_COMPUTER, strings::HOME_PUZZLES];
     for i in ROWS {
-        let r = gui::cut_top(content, ROW_H * u);
+        let r = gui::cut_top(content, row_h(small) * u);
         gui::cut_top(content, ROW_GAP * u);
         var stars: u8[..64] = [];
         let won, all = picker::totals(s.stars[puzzles::loaded]);
