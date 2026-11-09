@@ -14,7 +14,8 @@ let RAPID = 2;
 let KINDS = 3;
 let MINUTES = [0.0, 5.0, 10.0];
 let INCREMENTS = [0.0, 3.0, 5.0];
-let LOW = 10;               // under this many seconds shown, the running clock turns red
+let WARN = 60;              // under this many seconds shown, the running clock turns gold
+let LOW = 20;               // at this many seconds shown or under, it turns red
 let CHARS = "0123456789:";  // what text() writes
 
 struct Clock {
@@ -64,8 +65,9 @@ fn stop(c: Clock&) { c.running = -1; }
 // time is out.
 fn shown(c: Clock&, side: i64) -> i64 { ceil(c.left[side]) as i64 }
 
-// Whether the running clock is under ten seconds.
-fn low(c: Clock&, side: i64) -> bool { c.running == side && shown(c, side) < LOW }
+// Whether `side`'s clock runs under a minute, and whether at 20 seconds or under.
+fn warn(c: Clock&, side: i64) -> bool { c.running == side && shown(c, side) < WARN }
+fn low(c: Clock&, side: i64) -> bool { c.running == side && shown(c, side) <= LOW }
 
 // Seconds until the running clock shows another time, or -1 when none runs.
 fn until_next(c: Clock&) -> f64 {

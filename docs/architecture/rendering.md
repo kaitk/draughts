@@ -375,9 +375,12 @@ the prototype tried, kept for 3D:
   of radius 20 px; black's on top, as black's side of the board is (white's on a turned
   board, so the child's clock is the nearer one). The running clock is
   the glow color at 18% with a 2 px glow border and its piece has the glow ring; the
-  other is white at 6% with its text and piece dimmed. Under ten seconds the running
-  clock turns the forced-capture red. A running clock redraws once a second, when the
-  time it shows changes; a stopped one draws nothing. The time shown is rounded up, so
+  other is white at 6% with its text and piece dimmed. Under a minute shown (0:59) the
+  running clock turns autumn's glow gold (#ffd75a) in every season, and at 0:20 and under
+  the forced-capture red: the tile at 16% with a 2 px border and the figures in that
+  color (2026-11-09). The waiting clock and a stopped one never do. The hue changes
+  with the second shown, so it adds no frame. A running clock redraws once a second,
+  when the time it shows changes; a stopped one draws nothing. The time shown is rounded up, so
   0:00 shows only once the time is out. The player whose time runs out loses, as FMJD's
   rules say, and the win card shows the other. The clocks start with the first move:
   white's first move is untimed, then black's clock runs (2026-11-08), so a child can

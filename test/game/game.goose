@@ -6,7 +6,8 @@
 // celebration once the move has shown, its card comes after the pieces have answered,
 // and its restart starts over (the celebration's moments: test/game/win.goose). With a 5+3 clock: no clock runs before the first move,
 // the running one counts the time between frames but not a pause, adds the increment,
-// asks for a frame only when its shown time changes, turns red under ten seconds, and
+// asks for a frame only when its shown time changes, turns gold under a minute and red at
+// 20 seconds or under (the waiting clock never), and
 // ends the game on a flag. Against the computer playing white the board is turned, the
 // game says when the computer is to move, and the child can't move its pieces (the
 // computer's moves: test/game/computer.goose). In portrait the panels are above and
@@ -53,7 +54,8 @@ fn clocks(gm: game::Game&, g: gui::Gui&) -> u8[>..] {
     var styles: u8[>..] = [];
     for q in g.quads {
         guard q.look.x == gui::BUTTON && q.extra.y >= gui::CLOCK_RUN else { continue; }
-        format(styles, if q.extra.y == gui::CLOCK_RUN { "run " } else if q.extra.y == gui::CLOCK_LOW { "low " } else { "wait " });
+        format(styles, if q.extra.y == gui::CLOCK_RUN { "run " } else if q.extra.y == gui::CLOCK_WARN { "gold " }
+                       else if q.extra.y == gui::CLOCK_LOW { "low " } else { "wait " });
     }
     return str("white ", w, ", black ", b, ", running ", gm.clock.running, ", tiles top to bottom ", styles);
 }
@@ -174,16 +176,17 @@ fn main() {
     print("f6-e5 after 2 s more: ", clocks(gm, g));
     drive::tap(gm, g, l, drive::control(g, UNDO), 502.0);
     print("take back: ", clocks(gm, g), ", ", rules::fen(gm.b.pos));
-    // Frames a second apart until black's time runs out: the clock turns red under ten
-    // seconds, and the flag ends the game as a win for white.
+    // Frames a second apart until black's time runs out: black's running clock turns gold
+    // under a minute (61 s none, 59 s gold) and red at 20 seconds or under, white's
+    // waiting one never; the flag ends the game as a win for white.
     var t = 503.0;
-    while gm.clock.left[1] > 10.5 {
-        drive::frame(gm, g, l, away, false, false, false, t);
-        t += 1.0;
+    for stop in [61, 59, 20, 19] {
+        while clock::shown(gm.clock, 1) > stop {
+            drive::frame(gm, g, l, away, false, false, false, t);
+            t += 1.0;
+        }
+        print("black at ", stop, " s: ", clocks(gm, g));
     }
-    drive::frame(gm, g, l, away, false, false, false, t + 1.0);
-    print("under ten seconds: ", clocks(gm, g));
-    t += 2.0;
     while gm.clock.flag < 0 {
         drive::frame(gm, g, l, away, false, false, false, t);
         t += 1.0;

@@ -55,7 +55,8 @@ let CHOSEN = 7;             // a choice that is on: the glow color at 22%, a 2 d
 let CHOICE = 8;             // a choice that is off: white at 10%, a border at 12%
 let CLOCK_RUN = 9;          // the running clock: the glow color at 18%, a 2 dp glow border
 let CLOCK_IDLE = 10;        // a clock that waits: white at 6%, a border at 12%
-let CLOCK_LOW = 11;         // the running clock under ten seconds: the forced-capture red
+let CLOCK_LOW = 11;         // the running clock at 20 seconds or under: the forced-capture red
+let CLOCK_WARN = 12;        // the running clock under a minute: autumn's gold
 
 // The line icons the shader knows (rendering.md, "Controls").
 let NO_ICON = 0;
@@ -105,8 +106,10 @@ let FIGURES = 5;            // a clock's time
 let FACES = 6;
 let FACE_DP = [64.0, 30.0, 24.0, 20.0, 17.0, 36.0];
 
-// The forced-capture red (rendering.md, "States"), for a clock under ten seconds.
+// The forced-capture red (rendering.md, "States"), for a clock at 20 seconds or under,
+// and autumn's glow gold (0xffd75a), for one under a minute.
 let RED = float4 { 1.0, 0.353, 0.29, 1.0 };
+let GOLD = float4 { 1.0, 0.843, 0.353, 1.0 };
 
 // The characters the faces hold (the atlas's ranges): Latin-1 and Latin Extended-A from
 // the space on, and general punctuation. Others are drawn as '?'.
@@ -171,7 +174,7 @@ struct Quad {
     rect:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x, y, width, height in pixels
     color: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // straight alpha
     look:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // kind, corner radius in pixels, icon, pressed 0..1
-    extra: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: pixels per dp; y: PLAIN..CLOCK_LOW; z: text in `color` (1), + ON_BOARD; w: faded out, 0..1
+    extra: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: pixels per dp; y: PLAIN..CLOCK_WARN; z: text in `color` (1), + ON_BOARD; w: faded out, 0..1
 }
 
 // The pointer this frame, and what was typed while text input is on. A quick tap can be
@@ -724,8 +727,8 @@ fn pips(g: Gui&, r: float4, full: i64, a: f32) {
 }
 
 // A clock's tile (rendering.md, "Clocks"): radius 20 dp, lit in the glow color while it
-// runs, red when low, faint while it waits. It takes a press, so a press on it never
-// reaches the board.
+// runs, gold under a minute, red when low, faint while it waits. It takes a press, so a
+// press on it never reaches the board.
 fn clock_tile(g: Gui&, r: float4, style: i64) {
     take(g, r);
     add(g, Quad { rect: r, look: float4 { BUTTON, 20.0 * g.scale, 0.0, 0.0 }, extra: float4 { g.scale, style, 0.0, 0.0 } });
@@ -798,10 +801,11 @@ fn figure_width(g: Gui&, face: i64) -> f32 {
 
 // Figures, such as a clock's m:ss, in tabular form: each digit centered in a cell as
 // wide as the widest, so the time doesn't shift as it counts. In the text color at
-// opacity a, or in the forced-capture red.
-fn figures(g: Gui&, face: i64, r: float4, s: const u8[:], a: f32, red: bool, align: i64) {
-    let color = if red { float4 { RED.x, RED.y, RED.z, a } } else { float4 { 1.0, 1.0, 1.0, a } };
-    write(g, face, r, s, color, red, 0.0, align, true);
+// opacity a, or in a low clock's red or gold (`style`, CLOCK_LOW or CLOCK_WARN).
+fn figures(g: Gui&, face: i64, r: float4, s: const u8[:], a: f32, style: i64, align: i64) {
+    let c = if style == CLOCK_LOW { RED } else if style == CLOCK_WARN { GOLD } else { float4 { 1.0, 1.0, 1.0, 1.0 } };
+    let own = style == CLOCK_LOW || style == CLOCK_WARN;
+    write(g, face, r, s, float4 { c.x, c.y, c.z, a }, own, 0.0, align, true);
 }
 
 fn write(g: Gui&, face: i64, r: float4, s: const u8[:], color: float4, own: bool, spacing: f32, align: i64,

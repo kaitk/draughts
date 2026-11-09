@@ -441,13 +441,15 @@ fn piece(over: board::Piece[..OVER]&, spot: float4, r: f32, side: i64, king: i64
                              ring: float4 { 0.0, ring, 0.0, 0.0 } });
 }
 
-// One side's clock in r: its piece and its time, lit while it runs (red under ten
-// seconds), faint while it waits; its piece's ring as strong as `ring`.
+// One side's clock in r: its piece and its time, lit while it runs (gold under a
+// minute, red at 20 seconds or under), faint while it waits; its piece's ring as strong
+// as `ring`.
 fn clock_of(g: gui::Gui&, r: float4, c: clock::Clock&, side: i64, ring: f32, over: board::Piece[..OVER]&) {
     let u = g.scale;
     let runs = c.running == side;
-    let low = clock::low(c, side);
-    gui::clock_tile(g, r, if low { gui::CLOCK_LOW } else if runs { gui::CLOCK_RUN } else { gui::CLOCK_IDLE });
+    let style = if clock::low(c, side) { gui::CLOCK_LOW } else if clock::warn(c, side) { gui::CLOCK_WARN }
+                else if runs { gui::CLOCK_RUN } else { gui::CLOCK_IDLE };
+    gui::clock_tile(g, r, style);
     var room = r;
     gui::cut_left(room, 14.0 * u);
     gui::cut_right(room, 14.0 * u);
@@ -456,7 +458,7 @@ fn clock_of(g: gui::Gui&, r: float4, c: clock::Clock&, side: i64, ring: f32, ove
           if runs { 1.0 } else { 0.7 }, ring);
     var t: u8[..8] = [];
     clock::text(clock::shown(c, side), t);
-    gui::figures(g, gui::FIGURES, room, t, if runs { 1.0 } else { 0.66 }, low, gui::RIGHT);
+    gui::figures(g, gui::FIGURES, room, t, if runs { 1.0 } else { 0.66 }, style, gui::RIGHT);
 }
 
 // The way out: back, settings, and start over at the bottom, far from what plays. In

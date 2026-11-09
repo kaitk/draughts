@@ -385,8 +385,9 @@ let FRAG = """
             // choice has no shadow either: on, the glow color at 22% with a 2 dp glow
             // border; off, white at 10% with a border at 12%. A clock has no shadow either:
             // running, the glow color at 18% with a 2 dp glow border; waiting, white at 6%
-            // with a border at 12%; low, the forced-capture red at 16% with a 2 dp red
-            // border. color.a dims a tile.
+            // with a border at 12%; under a minute, autumn's gold at 16% with a 2 dp gold
+            // border; low, the forced-capture red at 16% with a 2 dp red border. color.a
+            // dims a tile.
             float pr = v_look.w;
             bool flat = style >= 5;
             if (!flat) h *= 1.0 - 0.04 * pr;
@@ -394,19 +395,20 @@ let FRAG = """
             if (!flat) over(vec3(0.0), 0.5 * shadow(p, c, h, r, 6.0 * u, 14.0 * u, -8.0 * u) * (1.0 - cover(d)));
             float a = cover(d) * (v_color.a > 0.0 ? v_color.a : 1.0);
             vec3 red = vec3(1.0, 0.353, 0.29);
+            vec3 gold = vec3(1.0, 0.843, 0.353);
             bool lit = style == 1 || style == 2 || style == 6 || style == 7 || style == 9;
-            vec3 fc = style == 11 ? red : lit ? glow.rgb : vec3(1.0);
+            vec3 fc = style == 11 ? red : style == 12 ? gold : lit ? glow.rgb : vec3(1.0);
             bool bare = v_look.z > 0.5;         // a bare icon's press: white at 10%, a faint ring
             float fa = bare ? 0.10 * pr : ((style == 1 ? 0.22 : style == 2 ? 0.26 : style == 3 || style == 4 ? 0.08
                         : style == 5 ? 0.0 : style == 6 ? 0.24 : style == 7 ? 0.22 : style == 9 ? 0.18
-                        : style == 10 ? 0.06 : style == 11 ? 0.16 : 0.10) + 0.14 * pr);
+                        : style == 10 ? 0.06 : style == 11 || style == 12 ? 0.16 : 0.10) + 0.14 * pr);
             vec4 tile = vec4(fc * fa, fa);
-            bool wide = style == 7 || style == 9 || style == 11;
+            bool wide = style == 7 || style == 9 || style == 11 || style == 12;
             float ea = style == 5 || style == 6 ? 0.0 : style == 2 || wide ? 1.0 : style == 8 || style == 10 ? 0.12
                        : style >= 3 ? 0.18 : 0.2;
             if (bare) ea = 0.22 * pr;
             float edge = ea * (1.0 - cover(d + (wide ? 2.0 : 1.0) * u));
-            vec3 ec = style == 11 ? red : style == 2 || style == 7 || style == 9 ? glow.rgb : vec3(1.0);
+            vec3 ec = style == 11 ? red : style == 12 ? gold : style == 2 || style == 7 || style == 9 ? glow.rgb : vec3(1.0);
             tile = vec4(ec * edge, edge) + tile * (1.0 - edge);
             float hl = style >= 2 ? 0.0 : 0.18 * top_line(p, c, h, r, u);
             tile = vec4(vec3(hl), hl) + tile * (1.0 - hl);
