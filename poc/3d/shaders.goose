@@ -171,7 +171,7 @@ let LIT_FRAG = """
         vec4 s = light_view_proj * vec4(q, 1.0);
         vec2 uv = vec2(s.x * 0.5 + 0.5, 0.5 - s.y * 0.5);
         float z = s.z - 0.0005;
-        float t = params.y * 1.5;
+        float t = params.y * 2.5;
         float sum = 0.0;
         for (int y = 0; y < 4; y++) {
             for (int x = 0; x < 4; x++) {
@@ -355,6 +355,9 @@ let LIT_FRAG = """
                 float w = noise3(vec3(g.x * 5.0, g.y * 5.0, g.z * 5.0 * st)) * 0.65
                         + noise3(vec3(g.x * 13.0, g.y * 13.0, g.z * 13.0 * st)) * 0.35;
                 albedo = m.rgb * (1.0 + piece_fig.y * (w - 0.5));
+                // The turned side, across the grain, takes the finish darker than the face:
+                // the references' dark pieces have near-black sides under a lit top.
+                albedo *= mix(piece_fig.w, 1.0, smoothstep(0.2, 0.6, abs(n.y)));
             } else {
                 float w = noise3(lp * 24.0 + v_kind.w * 3.17);
                 albedo = m.rgb * (1.0 + piece_fig.x * (w - 0.5));
@@ -455,7 +458,7 @@ let FULL_VERT = """
 // The backdrop: the blurred photograph cover-cropped by the screen's long side, graded
 // to sit as the 3D reference's background does: lighter, a little more saturated, its
 // bright patches lifted into warm bokeh, and lifted toward the theme's tint low down,
-// where the reference has a surface under the board.
+// where the reference has a surface under the board, darkened toward the edges.
 let BACKDROP_FRAG = """
     layout(location = 0) in vec2 v_uv;
     layout(location = 0) out vec4 result;
@@ -469,6 +472,10 @@ let BACKDROP_FRAG = """
         c *= 1.0 + grade.z * smoothstep(0.08, 0.5, luma);
         float low = smoothstep(0.45, 1.0, gl_FragCoord.y / s.y);
         c = c / (1.0 + 0.15 * c * c);
+        // A soft vignette (tint.w), so the lit board stands out from the scene round it,
+        // under the lift low down.
+        vec2 q = gl_FragCoord.xy / s - 0.5;
+        c *= 1.0 - tint.w * smoothstep(0.1, 0.55, dot(q, q));
         c = mix(c, tint.rgb, low * grade.w);
         result = vec4(pow(c, vec3(1.0 / 2.2)), 1.0);
     }

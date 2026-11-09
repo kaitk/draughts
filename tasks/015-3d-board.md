@@ -172,6 +172,12 @@ It compiles `src/app/background.c` from where it is (`board3d.build`) for the ph
 - **Backdrop:** the blurred photograph graded per theme (gain, saturation, bright
   patches lifted into bokeh, a lift toward a tint low down, where the reference has a
   surface under the board).
+- **The whole picture** (a pass on the reference's overall look): the dark pieces' turned
+  sides take the finish darker than their faces, near black as in both references; the
+  shadow taps spread wider for softer shadows; the frame a satin sheen (roughness 0.52)
+  and less saturated; less ambient against the key for more contrast; a soft vignette
+  on the backdrop so the board stands out, under the lift low down. The board's contrast
+  is still under the reference's (a luma spread of 45 against 60).
 - **Camera:** 52.5° down, a 31° field of view, 14.75 away, fitted to the reference's
   field corners, so the board fills the height of the frame as there.
 - **Tuned** against the references with patch means at the same framing (`--size

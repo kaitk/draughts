@@ -167,6 +167,8 @@ find out by compiling, so the next session doesn't.
   keep terms that blow up on wild values off such meshes, or shade fine detail from a
   function of the object-space position, as the pieces' tops do (`poc/3d/shaders.goose`,
   `mesh::top_height`).
+- GLSL's `smoothstep(a, b, x)` with `a > b` is undefined and on Metal silently does
+  nothing useful; write `1.0 - smoothstep(b, a, x)` (2026-11-09).
 - A storage buffer block must hold one runtime-sized array (`vec4 squares[];`), not a
   sized one, or embed_shader refuses it for HLSL.
 - `gfx::BLEND_ADD` weights the source by its alpha: an additive glow writes alpha 1.
