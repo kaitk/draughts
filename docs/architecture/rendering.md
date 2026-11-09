@@ -394,8 +394,9 @@ the prototype tried, kept for 3D:
   the bar is 8 px taller and each icon stands over its word, which needs less width. The
   right side is below it: whose turn, or the clocks side by side, over undo move across
   the width, 88 px tall. Start over sits far from undo move so it isn't hit for
-  it. There is no hint button and no move-hints toggle: help that does the thinking
-  doesn't belong a tap away, and move hints are a setting, reached through settings.
+  it. There is no move-hints toggle: help that does the thinking doesn't belong a tap
+  away, and move hints are a setting, reached through settings. The lookout's eye and the
+  hint's tile are on the play panel ("The lookout and the hint", below).
   Undo move takes back one move, also one still animating; start over goes back to where
   the game began; back goes home; settings opens settings, whose back returns to the
   game. Against the computer the child's pieces are at the bottom: when the child plays
@@ -787,6 +788,51 @@ the prototype tried, kept for 3D:
   applied, as potrace writes them; fills and strokes are ignored, and no other element
   is read. A file that can't be read leaves a plain man and a line on stdout.
   `test/badges` bakes each file and draws it coarsely.
+
+### The lookout and the hint
+
+`prototypes/coach.html`, round 3, take a, chosen 2026-11-09; what they show is in
+`docs/product.md` and [ai](ai.md#the-lookout).
+
+- **The eye** (`panel::eye`): the lookout's toggle, a floating disc as the 3D board's
+  camera buttons are (`gui::floating`, a 48 dp disc in a 56 dp target), lit in the glow
+  with the open eye while on, the eye struck through and its icon at 55% while off (icons
+  37 and 38, Lucide's eye as two arcs and a circle). It sits at the end of whose turn's
+  line: in landscape's column under "White's turn" with its name (Lookout, *Valvur*) beside
+  it, dim while off; in portrait, compact, and the short landscape panels (a phone's, a 3D
+  board's corner) at the right end of the turn's row, the piece kept centered over the
+  words where the panel is wide enough, or beside the clocks, which then take a smaller
+  face for their time where it doesn't fit (`panel::clock_of`).
+- **The hint's tile** (`panel::hint_tile`): the bulb, its word (Hint, or Where to? once the
+  piece is lit; *Vihje*, *Kuhu?*), and three 12 dp pips 7 dp apart, lit in the glow for
+  each hint left, faint for each spent. Lit as a chosen tile while a hint shows, dim at
+  35% and taking no tap with none left or none to give (the computer's turn, a capture
+  due, the game over). Landscape's column puts it over undo move, its icon beside its word;
+  the 3D tablet's corner panel beside undo move, each half the width, icon over word; the
+  phone's narrow panels over undo move (two halves would be under 88 dp; the 3D phone's
+  corner play panel is 368 dp tall for it, `panel::CORNER_PLAY`, the gaps round the piece
+  closed up where the panel is short); portrait halves of the row under whose turn, hint
+  at the left; compact between the eye and undo move, each icon over its word, or icons
+  alone with clocks. It is declared after undo move, so the controls' order in tests is
+  back, settings, start over, undo move, the hint.
+- **The marks**, on the board (`board::fill`): a piece in danger is drained, its color
+  greyed and a little darker, solid and still (`Piece.ring.w`, `board::DRAINED`: CSS
+  `grayscale(1) brightness(0.66) contrast(0.85)` on its face and side in the piece shader,
+  `draw.goose`'s `marked`); a crowning square is shaded, darkest along its edges as an
+  inset shadow (`Marks.shade` in the board pass), under the other side's king as a dark,
+  still ghost (drained, at 62%). The hint's piece takes the puzzles' glow ring
+  (`board::glow_on`); its square, a light ghost of the piece at 50%, lightened 20%, with
+  the same ring (`board::ghost_on`, `Board.hint_to`). Only the hint pulses, two cycles of
+  1.4 s as the puzzles' hint does, then holds; one ring pulses at a time (the ghost's
+  stops the piece's), `Board.pulsed` saying which. A move clears them all
+  (`start_move`, `show`); the game sets them again once the board is at rest.
+- **On the 3D board** the same state: a drained piece's seed is below 0 (`view3d::fill`),
+  which the lit shader takes as the mark and drains its color after tone mapping; the
+  ghost king and the hint's ghost are fading instances, blended, casting no shadow; the
+  shaded square is the field's `w` 1 in the still marks' pass (`shaders::MARKS_FRAG`,
+  painted over the field as the pips are); the pulsing ring goes over the kept image as a
+  puzzle hint's does (`Scene.pulse`). The drained pieces and the shade are part of the
+  scene, so they draw the board once when they change and nothing per frame.
 
 ### Transitions
 
@@ -1280,6 +1326,11 @@ on home's board, draws only on the frames the finger moves. A pulse, a flash, or
 each frame copies the kept image and adds the marks over it from their phases, and the 3D
 pass runs only where it starts and ends (`view3d::changes`' MARKS, `test/board/scene3d`;
 "Board and pieces").
+
+The hint's answer comes from the worker with no animation waiting on it: while the ask is
+open the loop sets its wake timer 20 ms ahead (`HINT_POLL`) and looks, drawing nothing;
+the answer marks the frame and the one after it to be drawn (`think::frame`). The
+lookout's traps come the same way. The lookout's marks are still, so they add no frames.
 
 An animation's last frame is not the resting state: the frame after a move or a pulse
 ends is drawn too (`board::update` reports it), or the board would keep the move's last

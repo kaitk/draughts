@@ -161,6 +161,7 @@ the native perft runs at 12 to 16 million positions a second.
 
 ```sh
 goose build -o build/aibench tools/aibench.goose && build/aibench   # each level's reply time
+goose build -o build/lookbench tools/lookbench.goose && build/lookbench   # the lookout's threats and traps
 goose build -o build/aimatch tools/aimatch.goose
 build/aimatch russian 90 40 20      # skill 90 against 40, 20 games, colors swapped
 goose build -o build/play tools/play.goose

@@ -146,7 +146,8 @@ find out by compiling, so the next session doesn't.
 - A `T&` parameter takes no temporary: `f(Settings {})` doesn't compile against
   `fn f(s: Settings&)`. Bind it to a `var` first, or take a small struct by value.
 - An `if` expression can't be an operand: `x + if c { 1 } else { 0 }` and
-  `t[(a + if k { 1 } else { 0 }) * 64]` don't parse. Bind it to a `let` first.
+  `t[(a + if k { 1 } else { 0 }) * 64]` don't parse. Bind it to a `let` first. In
+  parentheses it is one: `a & b | (if c { x } else { 0 })` compiles (2026-11-09).
 - A type on a `for` binder is only for an integer count or range: `for v: u8 in 3` works,
   `for v: u8 in [a, b]` doesn't.
 - There is no `size_of`; work a struct's size out from its fields.

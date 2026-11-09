@@ -1,6 +1,6 @@
 # 040: The coach and the hint
 
-Status: todo (round 3 drawn, a choice pending)
+Status: done (2026-11-09)
 
 One feature for help in a game against the computer: a coach that shows the player's
 danger, and a hint that shows a move. A hint alone makes a player lazy, though lighting
@@ -8,6 +8,54 @@ the piece to move helps; the coach teaches to look, as help shouldn't do the thi
 (`docs/product.md`). Asked for 2026-11-09 after a young player tried the game, widened
 the same day from a hint button into the coach and the hint together. When it is built,
 `docs/product.md` loses "A game has no hint button" and says what the help is.
+
+## As built (2026-11-09)
+
+The user's choices on round 3: take a, the lookout a round eye toggle at the end of whose
+turn's line (also in landscape's right column and compact's row); named Lookout,
+*Valvur*; off until the player turns it on, remembered per player (`lookout = on` in their
+file); the danger's mark `drain`, on the flat and the 3D board, solid and still; a
+crowning the shaded square with a dark, still ghost king, for a computer man that crowns
+on its next move, through a capture too; the hint its own tile beside undo move with
+three pips, the first press lighting the piece (the puzzles' pulsing ring, a pip spent),
+the second showing the square with a light, see-through ghost for nothing more, dim with
+none left; traps as the last stage, a 3-ply look on the worker.
+
+What the lookout shows, when on: the player's pieces the computer could capture if it
+moved now, every piece of a chain; while a piece is dragged over a target (or the mouse
+is over a target of a piece selected by a tap), what that move would leave capturable,
+nothing extra for a tap alone; the crowning threat; traps. Filtered by skill, the table
+in `docs/architecture/ai.md` ("The lookout"): everything below 15; from 15 not a
+one-piece capture next to its attacker nor a step to the far row; from 25 no two-piece
+capture nor a flying king's from afar; from 40 no crowning through a capture; nothing
+from 70, hard's floor.
+
+Defaults this task chose (2026-11-09):
+
+- A game against a friend: the lookout for whoever's turn it is, when on, filtered at the
+  player's skill on their level; the hint for the side to move, three each.
+- Games with hints count toward the skill as usual.
+- The hint's move: the worker's search at 15 above the skill of the side it plays against
+  (capped at 100), nothing overlooked, no chance left for the other side, and the best
+  move its search scored (not one chosen by the temper, which at low skills may pick a
+  move half a man worse).
+- Neither shows while a capture is due (the must-capture ring says what to do), nor on the
+  computer's turn, nor in puzzles.
+- Hints left aren't kept with a saved game: a game brought back has three again (keeping
+  them would change the saved game's layout and drop the games saved before).
+- The 3D phone's corner play panel is 368 dp tall, 16 more, for the hint over undo move
+  (beside it each would be under 88 dp); the board fits as before, a few dp smaller on the
+  9:16 and 20:9 phones at 480 dp (`test/game/corners`).
+
+Numbers (`tools/lookbench.goose`, built at -O2 on the Mac, over the quiet positions 10 to
+40 plies into a game in each variant): `now` 0.02 µs (International 0.03), `after` a move
+0.03 µs (0.04), traps 1.9 µs in Russian and Brazilian, 2.1 to 2.3 in International, at
+most 2.5. The worker answers a hint in at most hard's time (about 0.2 s on the tablet's big
+cores, `docs/architecture/ai.md`).
+
+Checked headless at the tablet's landscape (1920 × 1200) and a 20:9 phone's portrait
+(1080 × 2400 at 540 dp), flat and 3D: calm, held, king, trap, and the hint's two presses;
+the hint's first press in Estonian.
 
 ## What it shows
 
@@ -200,11 +248,13 @@ on the drawing thread, and an answer for a position no longer on the board is dr
 
 ## Acceptance criteria
 
-- [ ] A take chosen and this file updated with it
-- [ ] The coach's marks and the hint on the game screen in every layout, 2D and 3D, their
+- [x] A take chosen and this file updated with it
+- [x] The coach's marks and the hint on the game screen in every layout, 2D and 3D, their
   strings in `strings/`
-- [ ] The coach shows the threats past the player's depth and less as the skill climbs;
-  tested headless on fixed positions
-- [ ] The hint: first press the piece, second the move, the hints left shown
-- [ ] Both searches run off the drawing thread
-- [ ] `docs/product.md` and `docs/architecture/ai.md` say what is built
+- [x] The coach shows the threats past the player's depth and less as the skill climbs;
+  tested headless on fixed positions (`test/ai/lookout`, `test/game/watch`)
+- [x] The hint: first press the piece, second the move, the hints left shown
+  (`test/game/hint`)
+- [x] Both searches run off the drawing thread (the hint's and the traps' on the worker;
+  the one-ply threats once a position, under a tenth of a microsecond)
+- [x] `docs/product.md` and `docs/architecture/ai.md` say what is built

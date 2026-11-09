@@ -43,7 +43,10 @@ for the search:
   take back never waits for a stale reply. The answer carries the move, the nodes, and
   the time it took.
 - The worker starts at the first ask, so a game against a friend costs no thread and
-  none of the engine's 6 MB.
+  none of the engine's 6 MB; with the lookout on, its traps start the thread but not the
+  engine, which is made at the first search. The hint and the lookout's traps are asks
+  too (`game::open_ask`: the computer's move first, then the hint's, then the traps), and
+  the answer says which it is for (`think::Thought.kind`).
 
 Threads stay in `app/`: `game/`, `shell/`, and the tests run headless through TinyCC,
 which can't start a thread, and tests answer an ask with `ai::think` at once. The app is
@@ -471,3 +474,61 @@ The history of the overlooks, the user's calls of 2026-11-09:
 - Task 053: by tension, size, and distance, `MISS` 25, 160, 300, 450.
 - Easy a touch weaker: the two-piece 160 → 300.
 - Easy a hair stronger ("a little too much"): the two-piece 300 → 240.
+
+## The lookout
+
+The game's lookout (`docs/product.md`) marks the threats past the player's sight:
+`src/ai/lookout.goose` (namespace `lookout`), pure functions over `rules`, tested
+headless in `test/ai/lookout.goose`, and the game's `watch` (`src/game/game.goose`,
+`test/game/watch.goose`).
+
+- **What it sees.** `now`: the other side's legal moves were it its turn, each capture's
+  whole chain and each crowning. `after`: the same once the side to move plays a move,
+  the moved piece marked on the square it was taken from, as the player holds it there.
+  Each threat is sorted by how plain it is: one piece taken by a piece next to it
+  (`NEAR`), one taken from afar by a flying king (`FAR`), two pieces (`TWO`), three or
+  more (`MANY`), a man crowning by a step (`STEP`) or through a capture (`JUMP`), a trap
+  (`TRAP`).
+- **Traps** (`traps`): a quiet move of the other side after which the player must
+  capture, and whatever the player takes, the other side's best capture then takes more
+  pieces than it gave. Three plies: its moves, the forced replies, its captures; none
+  while it has a capture of its own. The pieces it would win are marked.
+- **When.** Only on the side to move's turn, the board at rest, the game going on, no
+  capture due (the must-capture ring says what to do then): the position's threats, or
+  while a piece is dragged over a target (a finger's drag, or the mouse over a target of a
+  piece selected by a tap) that move's. Against a friend it watches for whoever's turn it
+  is. It works the threats out once a position or held target, never a frame: `now` and
+  `after` are one move generation each, about 0.02 to 0.04 µs built on the Mac; traps go
+  to the worker as an ask of their own (`game::TRAPS`), about 2 µs (2.5 at most) on the Mac
+  (`tools/lookbench.goose`, Russian, International, and Brazilian middlegames,
+  2026-11-09).
+- **The skill filter** (`lookout::UNTIL`, `shown`): a kind shows below its skill, the
+  game's skill against the computer (adapted to the child, so the child's own) and the
+  player's at their level against a friend:
+
+  | Threat | Shown below skill | Why |
+  | --- | --- | --- |
+  | One piece, the attacker next to it | 15 | From 15 the computer sees every one-piece capture; a player matched to it does too |
+  | A man crowning by a step | 15 | As plain: the man is one step from the far row |
+  | One piece from afar (a flying king) | 25 | A capture at a distance is missed longer, as a two-piece one is |
+  | Two pieces | 25 | From 25 the computer sees every two-piece capture |
+  | Crowning through a capture | 40 | A small combination: left from medium's start |
+  | Three pieces or more | 70 | Long captures are missed through medium (the computer sees them all from 65) |
+  | Traps | 70 | The deepest: through medium |
+
+  So easy at 0 to 14 shows everything; 15 to 24 drops the plain ones; medium (25 to 60)
+  keeps long captures, crowning through a capture until 40, and traps; hard (70 and up)
+  shows nothing. The thresholds follow the computer's own horizon by skill
+  ([levels](#levels)), as the game matches the computer to the child.
+
+## The hint
+
+The hint's move is the computer's search for the side to move, asked of the worker as
+the computer's moves are (`game::HINT`): at 15 above the skill of the side it plays
+against (the computer's, or the player's at their level against a friend), at most 100,
+with nothing overlooked and no chance left for the other side (`ai::helping`), and the
+best move its main search scored rather than one the temper chooses (`ai::best`). It is
+asked on the first press, answered in at most hard's time (a fifth of a second on the
+tablet's big cores), and dropped if the position changes first; the loop looks for the
+answer every 20 ms while it is on its way, drawing nothing meanwhile. Games with hints
+count toward the skill as any other.

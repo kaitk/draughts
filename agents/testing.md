@@ -27,6 +27,8 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   by itself: `steps`; a press or drop off the dark squares snapping to the nearest it
   could mean: `snap`, and several pieces that can capture under each draughts' rule:
   `several`; a capture to or past the far row, dropped on the turned board: `stuck`;
+  the lookout's drained pieces, shaded crowning square, and the hint's ghost on the flat
+  and 3D scenes: `lookmarks`;
   the count of pieces a capture takes, a capture played jump by jump by taps and by
   drops through the game's frames, straight to its last square, the hints after one
   and two wrong squares, and take back mid-capture, on a child's position read from a
@@ -47,7 +49,9 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   against the computer, kept in a saved game, and by repetition: `draw`; when a capture's
   count shows, on mistakes only from a mistake to the next right jump and with move
   hints at once, and the next stops lit after a second wrong square, on the flat and the
-  3D board: `pips`), `shell`
+  3D board: `pips`; the lookout's eye and marks, held targets, the filter by skill, and
+  traps answered as the worker would: `watch`; the hint's two presses, its ask and pips,
+  and each side's against a friend: `hint`), `shell`
   (home, the switch to the game and back, settings and their file, their taps and the
   board beside them, the transitions between home and settings, home and the game, and
   the puzzles to pick from and a puzzle (their frames, the end, a tap during them, turning
@@ -90,6 +94,8 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   its search against a plain minimax, the table changing no score, keys, what each level
   plays in known shots, the same move in steps as at once, that no skill from 15 on
   hangs a piece but to a capture it overlooked, of two pieces or more (`blunders`), the
+  lookout's threats now and after each move, traps, and what each skill is shown
+  (`lookout`), the
   overlooks by tension, a capture's size, and its distance from the moved piece, with
   each one's rate over 4000 seeds through `ai::notice` and `ai::overlooked`, no search
   needed (`overlook`), and draws scored 0, steered into when behind and clear of when ahead (`draws`)), and `puzzles` (the puzzle file's format and refusals, what `puzzles::check`
@@ -254,6 +260,15 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   --tap j4 --tap i1 --tap e9 --tap a5 --tap i1 --frames 400` (task 051), which leaves the
   player's files alone. The run must still be drawing at frame N: `--frames` counts drawn
   frames, so a shot past the last animation never comes; 400 lands in the dots' pulse.
+- The lookout and the hint headless (task 040, 2026-11-09): in the copy, replace
+  `draughts_storage`'s folder with a scratch one holding a `player-1.txt` with `lookout =
+  on`, so the Mac's players are left alone; set `dirty = true` each loop, so `--frames`
+  counts loops and a still screen is still shot (the 3D board is ready and faded in by
+  about 500); a temporary `--xheld FROM,TO,LOOP` feeds a press on FROM at that loop and a
+  held pointer over TO after (on the 3D board the press at the piece's top through
+  `view3d::project`, the drag on the lifted piece's plane, as `view3d::pick` reads it),
+  and `--xhint A,B` calls `game::press_hint` at loops A and B; the worker answers as in
+  the app. Shots of each state in a few seconds each.
 - An iPad's window headless (task 050, 2026-11-09): its real pixels with its density
   floor, `--size 748x968 --display-scale 2 --density-floor 0.75` for the 11" iPad's
   smallest window (499 × 645 dp), `760x2380` the tallest, `2420x960` the widest. A Mac
@@ -345,6 +360,10 @@ measuring there:
   android.intent.category.LAUNCHER 1` starts the app as the launcher's icon does. To log from the program, `print` in the
   loop shows under `goose`; the APK's libraries are `lib/arm64-v8a/libmain.so` and
   `libSDL3.so`.
+- The game screen's controls in tests (`drive::control`) are back, settings, start over,
+  undo move, then the hint's tile (4), then a card's back and play again (5, 6). The
+  lookout's eye is a floating disc, not a tile: `drive::eye` finds it, and
+  `drive::camera_disc` tells the 3D board's camera buttons from it (2026-11-09).
 - During a transition (home and settings, home and the game, the puzzles and a puzzle)
   both screens' quads are declared, the one left first, so `drive::tile(g, n)` counts the
   wrong screen's tiles and `drive::at(sh.layout, ...)` finds squares on a moving board. A
