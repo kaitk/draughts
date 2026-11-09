@@ -20,10 +20,10 @@ struct Flags {
     theme:      i64 = -1,   // --theme wood|stone|birch|sunset: the board, else the season's
     background: i64 = -1,   // --background photo|plain: 0 the photograph, 1 the plain fade
     board:      i64 = -1,   // --board 3d|flat: settings::RAISED or settings::FLAT
-    hints:      i64 = -1,   // --hints moves: the selected piece's targets (board::MOVES);
-    // mistakes only by default
-    lang: i64 = -1,         // --lang CODE: a language with a file in strings/, else the
-    // system's
+    // --hints moves: the selected piece's targets (board::MOVES); mistakes only by default
+    hints: i64 = -1,
+    // --lang CODE: a language with a file in strings/, else the system's
+    lang: i64 = -1,
     // --dp N: the layout N dp across its shorter side, not 800 (and the density floor
     // off unless --density-floor is given too)
     dp: i64 = -1,
@@ -67,8 +67,8 @@ struct Flags {
     marble: i64 = -1,
     summer: i64 = 0,
     spring: i64 = -1,
-    bench:  i64 = 0,        // --bench N: times N of the 3D board's frames, then quits
-    // (draw3d.goose)
+    // --bench N: times N of the 3D board's frames, then quits (draw3d.goose)
+    bench: i64 = 0,
     // --reset-skill: the playing player back to easy, the computer's skill at every level
     // at its start with the first steps to come, kept in their file; stars and games stay
     reset_skill: bool,
