@@ -186,11 +186,15 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let head = if short { 0.0 } else { 88.0 * u + gap };
     let cols = if landscape && head + one > page.w { 2 } else { 1 };
     let per = (rows + cols - 1) / cols;
-    let col_w = min((page.z - (cols - 1) * gap) / cols, COLUMN * u);
-    let w = cols * col_w + (cols - 1) * gap;
     let h = head + per * row_h + (per - 1) * gap;
-    let x = max(page.x, whole.x + floor(0.5 * (whole.z - w) + 0.5));
     let y = if landscape { page.y + max(0.0, floor(0.5 * (page.w - h) + 0.5)) } else { page.y };
+    // Where the title and the rows start below back (a tablet's landscape), they take the
+    // whole width and center on it; else they keep clear of back's column, centered on
+    // the screen as far as that allows (a phone's landscape, back beside the rows).
+    let room = if landscape && !short && y >= whole.y + 88.0 * u + gap { whole } else { page };
+    let col_w = min((room.z - (cols - 1) * gap) / cols, COLUMN * u);
+    let w = cols * col_w + (cols - 1) * gap;
+    let x = max(room.x, whole.x + floor(0.5 * (whole.z - w) + 0.5));
     if !short {
         var top = float4 { x, y, w, 88.0 * u };
         if !landscape {

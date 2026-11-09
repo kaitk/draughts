@@ -596,7 +596,11 @@ the prototype tried, kept for 3D:
   n more in Learn" in place of the bar, and a tap on it does nothing. The title
   "Puzzles" stands over the rows (beside back in portrait) except in landscape under
   600 dp tall; the rows are one column at most 600 dp wide, or two where one doesn't fit
-  the height (the tablet in landscape, phones in landscape). A row opens the theme's
+  the height (the tablet in landscape, phones in landscape). They center on the screen:
+  in a tablet's landscape the title and the rows start below back, so they take the
+  whole width (until 2026-11-09 they kept clear of back's column too, which pushed them
+  against the right edge: 183 dp left of them, 27 right at 16:9); in a phone's, where
+  the rows reach back's height, they center as far as clearing back allows. A row opens the theme's
   page: back (at the left in landscape, in the head in portrait), the theme's mark,
   name, and count, over its levels as glass rows, each its level's mark (three rising
   bars, one to three filled) and name beside its tiles, 96 dp on the tablet and 88 on a
