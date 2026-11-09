@@ -5,8 +5,13 @@ mistakes only
   e9, right: pips | 3D | wrong i1
   a5, right: pips | 3D | wrong i1
   i1, wrong again: pips a5 2 | 3D 4.9 2 | wrong i1
+    next d2 | 3D 1.6 pulsing | lit 73% and 73%
+    a frame on: changes 4, lit 57%
   after the pulse: pips a5 2 | 3D 4.9 2 | wrong -
+    next d2 | 3D 1.6 | lit 100% and 100%
   d2, right: pips | 3D | wrong -
+    next g5 | 3D 4.3 pulsing | lit 73% and 73%
+    a frame on: changes 4, lit 57%
   g5, the last: pips | 3D | wrong -
 a touch on a piece that can't move, then a new turn
   white to move: pips | 3D | wrong -
@@ -17,5 +22,11 @@ a touch on a piece that can't move, then a new turn
 all moves
   the start: pips j4 4 | 3D 3.0 4 | wrong -
   e9: pips e9 3 | 3D 8.5 3 | wrong -
+    next a5 | 3D 4.9 pulsing | lit 73% and 73%
+    a frame on: changes 4, lit 57%
   a5: pips a5 2 | 3D 4.9 2 | wrong -
+    next d2 | 3D 1.6 pulsing | lit 73% and 73%
+    a frame on: changes 4, lit 57%
   d2: pips d2 1 | 3D 1.6 1 | wrong -
+    next g5 | 3D 4.3 pulsing | lit 73% and 73%
+    a frame on: changes 4, lit 57%

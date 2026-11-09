@@ -92,7 +92,7 @@ struct Bake {
     lichen:        float4,  // looks::LICHEN
 }
 struct Shrink { to: float4 }
-struct Pulse { pulse: float4, place: float4 }
+struct Pulse { pulse: float4, place: float4, more: float4 }
 struct Show { from: float4, to: float4, screen: float4 }
 struct Blur { dir: float4 }
 
@@ -973,8 +973,9 @@ fn draw_depth(g: Gpu&) {
 // The pulsing marks (shaders::MARKS_FRAG with PULSE) over the open pass's target of
 // `size`, where show() laid the kept image: drawn with it (draw() with keep_depth) into
 // its rect `to` (as show()'s, the whole image), as opaque as `alpha`. `pulse` their
-// phases (view3d::Scene.pulse). The field's marks are the ones place() gave the image.
-fn marks_over(g: Gpu&, pulse: float4, to: float4, alpha: f32, size: int2) {
+// phases (view3d::Scene.pulse), `next` how lit a capture's next stops are (Scene.next).
+// The field's marks are the ones place() gave the image.
+fn marks_over(g: Gpu&, pulse: float4, next: f32, to: float4, alpha: f32, size: int2) {
     guard g.kept_depth.id != 0 && to.z > 0.0 else { return; }
     // The image's clip space moved and scaled into `to`, depth left as it was.
     let k = to.z / g.size.x;
@@ -994,7 +995,7 @@ fn marks_over(g: Gpu&, pulse: float4, to: float4, alpha: f32, size: int2) {
     gfx::uniforms(gfx::VERTEX, 1, Draw { float4 { 2.0, g.n, 0.0, 0.0 } });
     gfx::uniforms(gfx::FRAGMENT, 0, f);
     gfx::uniforms(gfx::FRAGMENT, 1, Draw { float4 { 2.0, g.n, 0.0, 0.0 } });
-    gfx::uniforms(gfx::FRAGMENT, 2, Pulse { pulse, float4 { to.x, to.y, 1.0 / k, alpha } });
+    gfx::uniforms(gfx::FRAGMENT, 2, Pulse { pulse, float4 { to.x, to.y, 1.0 / k, alpha }, float4 { next, 0.0, 0.0, 0.0 } });
     gfx::draw(6);
 }
 

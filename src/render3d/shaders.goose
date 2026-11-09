@@ -1717,14 +1717,19 @@ let MARKS_FRAG = """
     layout(std430, set = 2, binding = 2) readonly buffer Lit { vec4 lit[]; };
     // pulse: x the must-capture rings' phase, y the flash (0 to 1), z the hint ring's
     // square (-1 none), w its strength; place: the kept image's top left on the target,
-    // its texels per pixel, and how opaque it is laid.
-    layout(set = 3, binding = 2) uniform Pulse { vec4 pulse; vec4 place; };
+    // its texels per pixel, and how opaque it is laid; more: x how lit a capture's next
+    // stops' dots are while they pulse.
+    layout(set = 3, binding = 2) uniform Pulse { vec4 pulse; vec4 place; vec4 more; };
     #else
     layout(std430, set = 2, binding = 0) readonly buffer Marks { vec4 marks[]; };
     layout(std430, set = 2, binding = 1) readonly buffer Lit { vec4 lit[]; };
     #endif
     layout(set = 3, binding = 1) uniform Draw { vec4 draw; };
     float line(float d, float w) { return exp(-pow(d / (0.6 * w + 0.008), 2.0)); }
+    // A legal target's glowing dot, r from its square's middle and w a pixel, in squares.
+    float dot_at(float r, float w) {
+        return 0.9 * (1.0 - smoothstep(0.15 - w, 0.15 + w, r)) + 0.35 * exp(-max(r - 0.15, 0.0) / 0.05);
+    }
     #ifndef PULSE
     float seg(vec2 p, vec2 a, vec2 b) {
         vec2 pa = p - a, ba = b - a;
@@ -1808,13 +1813,18 @@ let MARKS_FRAG = """
             float r = length(fract(g) - 0.5);       // in squares from its middle
             float w = wg;
             if (m.x > 0.5) c += glow.rgb * 0.10;
-            if (m.y > 0.5 && m.y < 1.5) {
-                c += glow.rgb * (0.9 * (1.0 - smoothstep(0.15 - w, 0.15 + w, r))
-                                 + 0.35 * exp(-max(r - 0.15, 0.0) / 0.05));
-            }
+            if (m.y > 0.5 && m.y < 1.5) c += glow.rgb * dot_at(r, w);
             if (m.y > 1.5) c += glow.rgb * 0.9 * line(r - 0.18, w);
+            // Where a piece waiting on a capture's stop goes on: the target's dot, lit
+            // still here once its pulse is over (lit.w 1), over the image while it pulses.
+            if (lit[q.y * int(n) + q.x].w > 0.5 && lit[q.y * int(n) + q.x].w < 1.5) c += glow.rgb * dot_at(r, w);
             // A win's glow passing lights the square, as the last move's tint does more.
             c += glow.rgb * 0.3 * lit[q.y * int(n) + q.x].y;
+        }
+    #endif
+    #ifdef PULSE
+        if (q.x >= 0 && q.y >= 0 && q.x < int(n) && q.y < int(n) && lit[q.y * int(n) + q.x].w > 1.5) {
+            c += glow.rgb * more.x * dot_at(length(fract(g) - 0.5), wg);
         }
     #endif
         vec3 rings = vec3(0.0);

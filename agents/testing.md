@@ -42,7 +42,8 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   `choice`; a draw by a count tapped to its last move, its countdown, card, frames, undo,
   against the computer, kept in a saved game, and by repetition: `draw`; when a capture's
   count shows, on mistakes only from a mistake to the next right jump and with move
-  hints at once, on the flat and the 3D board: `pips`), `shell`
+  hints at once, and the next stops lit after a second wrong square, on the flat and the
+  3D board: `pips`), `shell`
   (home, the switch to the game and back, settings and their file, their taps and the
   board beside them, the transitions between home and settings, home and the game, and
   the puzzles to pick from and a puzzle (their frames, the end, a tap during them, turning
@@ -219,7 +220,11 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   --tap d4`) may not all play before the shot; a position from `--fen` is surer (`--fen
   B:...` shows the 3D board turned for black in a friend's game). State with no flag,
   such as the 3D camera's (`rig::put` on `sh.game.cam`), is set from a temporary flag
-  pair parsed in the copy only (2026-11-09).
+  pair parsed in the copy only (2026-11-09). A capture's next stops on the 3D board, lit after a
+  second wrong square: `--board 3d --computer white --fen B:WK1,K21,24,28,31,32,33,45:BK35
+  --tap j4 --tap i1 --tap e9 --tap a5 --tap i1 --frames 400` (task 051), which leaves the
+  player's files alone. The run must still be drawing at frame N: `--frames` counts drawn
+  frames, so a shot past the last animation never comes; 400 lands in the dots' pulse.
 - A season changed mid-run in the headless copy (2026-11-09): a clock from the loop's
   count (`now` = loops / 60; the headless loop doesn't block when nothing draws, so it
   counts on, and `--frames` ends by it) and a temporary flag pair that at loop N sets

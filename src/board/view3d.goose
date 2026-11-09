@@ -428,16 +428,19 @@ fn pick(v: View, b: board::Board&, l: board::Layout, p: float2) -> float2 {
 // square, else -1. `lit` runs beside it, a float4 a square too: x the glow ring tight
 // round the piece standing there (a puzzle's hint, a win's wave), 0 to 1; y the square
 // lit by a win's glow passing, 0 to 1; z how many pieces the piece standing there takes,
-// shown as pips on the field (board::Piece.ring.z), 0 for none. Under a win's dim the winning piece alone stays
-// lit: its seed (kind's w) is SEED_LIT more, which the shaders take off again for its
-// figure.
+// shown as pips on the field (board::Piece.ring.z), 0 for none; w a capture's next stop
+// (board::Marks.next), 1 lit still, 2 while it pulses, 0 none. Under a win's dim the
+// winning piece alone stays lit: its seed (kind's w) is SEED_LIT more, which the shaders
+// take off again for its figure.
 //
 // What moves while nothing else does, `pulse`, is drawn over the kept image each frame
 // rather than with the board (render3d::marks_over): x the must-capture rings' phase at
 // `now` (0 brightest, 1 dimmest; they pulse every 1.4 s, as the flat board's do), y the
 // wrong move's flash, 0 to 1 (1 none), z the square of the hint's glow ring while it
-// pulses (-1 none) and w its strength. `pulsing` says whether any of them shows; the
-// scene's other parts then stay the same from frame to frame (`changes` gives MARKS).
+// pulses (-1 none) and w its strength. `next` is how lit the next stops' dots are while
+// they pulse (board::Board.flash.z), drawn over the image too. `pulsing` says whether any
+// of them shows; the scene's other parts then stay the same from frame to frame
+// (`changes` gives MARKS).
 let MAX_INSTANCES = 96;     // two for each of board::MAX_PIECES, as a stack takes
 let SEED_LIT: f32 = 1000.0;
 
@@ -453,6 +456,7 @@ struct Scene {
     field:    float4[100]                 = [float4 { 0.0, 0.0, 0.0, -1.0 }; 100],
     lit:      float4[100]                 = [float4 { 0.0, 0.0, 0.0, 0.0 }; 100],
     pulse:    float4                      = float4 { 0.0, 1.0, -1.0, 0.0 },
+    next:     f32                         = 1.0,
     pulsing:  bool                        = false,
 }
 
@@ -556,15 +560,25 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
     mark_world(l, b.marks.last, s.marks.last);
     mark_world(l, b.marks.target, s.marks.target);
     mark_world(l, b.marks.via, s.marks.via);
+    mark_world(l, b.marks.next, s.marks.next);
     s.flash = b.flash;
     if b.flash.x >= 0.0 { s.flash.x = world_square(l, b.flash.x as i64); }
     s.dim = b.dim;
+    // The next stops' dots pulse as the flat board's do, over the image, then stay lit
+    // with the field's still marks.
+    let has_next = (s.marks.next[0] | s.marks.next[1] | s.marks.next[2] | s.marks.next[3]) != 0;
+    let next_pulses = has_next && b.flash.z < 1.0;
+    s.next = if next_pulses { b.flash.z } else { 1.0 };
     for i in n * n {
         let w = i / 32;
         let bit = (1 as u32) << (i % 32);
         if s.marks.last[w] & bit != 0 { s.field[i].x = 1.0; }
         if s.marks.target[w] & bit != 0 { s.field[i].y = 1.0; }
         if s.marks.via[w] & bit != 0 { s.field[i].y = 2.0; }
+        if s.marks.next[w] & bit != 0 {
+            s.lit[i].w = if next_pulses { 2.0 } else { 1.0 };
+            if next_pulses { s.pulsing = true; }
+        }
     }
     if s.flash.x >= 0.0 && s.flash.y < 1.0 {
         s.field[s.flash.x as i64].w = 0.0;
@@ -605,12 +619,13 @@ fn changes(was: Scene&, now: Scene&) -> i64 {
     guard same_list(was.inst, now.inst) else { return DRAW | SHADOW; }
     var rest = same_view(was.view, now.view) && same_list(was.state, now.state)
                && same(was.selected, now.selected) && was.dim == now.dim && same_bits(was.marks.last, now.marks.last)
-               && same_bits(was.marks.target, now.marks.target) && same_bits(was.marks.via, now.marks.via);
+               && same_bits(was.marks.target, now.marks.target) && same_bits(was.marks.via, now.marks.via)
+               && same_bits(was.marks.next, now.marks.next);
     for i in 100 {
         if rest && (!same(was.squares[i], now.squares[i]) || !same(was.field[i], now.field[i]) || !same(was.lit[i], now.lit[i])) {
             rest = false;
         }
     }
     guard rest else { return DRAW; }
-    return if same(was.pulse, now.pulse) { 0 } else { MARKS };
+    return if same(was.pulse, now.pulse) && was.next == now.next { 0 } else { MARKS };
 }

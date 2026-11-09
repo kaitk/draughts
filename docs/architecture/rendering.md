@@ -977,7 +977,11 @@ pulses the pieces its captures have still to take, so a far-row square that a sh
 capture would crown on, which the majority rule forbids, shows what to take instead
 (`test/board/stuck`); the second lights the next stops with the target's dot, pulsing
 as the hint's ring does for two cycles and then lit, and so on to the capture's end
-(`test/board/count`). With move hints, the next stops of a waiting piece show from the
+(`test/board/count`). The 3D board lights the same stops with its target's dot
+(`view3d::Scene.lit`'s w): while they pulse they are drawn over the kept image at
+`Scene.next`, a uniform of `render3d::marks_over`, and once lit by the still marks' pass,
+so a pulse costs the marks' quad a frame and a draw of the board at its start and end.
+Until 2026-11-09 the 3D board never showed them (`test/game/pips`). With move hints, the next stops of a waiting piece show from the
 first jump. Undo move while a piece waits takes the capture back to its start, the
 piece on its square, and takes back no move (`board::unwind`). A puzzle
 (`Board.by_hand`, 2026-11-08) shows none of these: a wrong square there forgets the

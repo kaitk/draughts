@@ -290,6 +290,7 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
         // Only the pulsing marks moved: show() draws them at their new phase.
         if c & view3d::MARKS != 0 {
             d.drawn.pulse = d.scene.pulse;
+            d.drawn.next = d.scene.next;
             d.pulses++;
         }
         return;
@@ -356,7 +357,7 @@ fn show(d: Drawer&, blur: f32, place: float4, fade0: f32, size: int2, now: f64) 
     let k = place.z / r.z;
     let whole = float4 { place.x - r.x * k, place.y - r.y * k, size.x * k, size.y * k };
     render3d::show(d.gpu, float4 { 0.0, 0.0, size.x, size.y }, whole, min(fade, 1.0), size, grey);
-    if d.drawn.pulsing { render3d::marks_over(d.gpu, d.drawn.pulse, whole, min(fade, 1.0), size); }
+    if d.drawn.pulsing { render3d::marks_over(d.gpu, d.drawn.pulse, d.drawn.next, whole, min(fade, 1.0), size); }
 }
 
 // The bench's last phase: its first frame draws the board with a pulsing ring round every
@@ -391,7 +392,7 @@ fn bench_pulse(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, 
         render3d::backdrop(d.gpu, 1.0, size);
         render3d::show(d.gpu, float4 { 0.0, 0.0, size.x, size.y }, float4 { 0.0, 0.0, size.x, size.y }, 1.0, size);
         if rings == 0 {
-            render3d::marks_over(d.gpu, d.scene.pulse, float4 { 0.0, 0.0, size.x, size.y }, 1.0, size);
+            render3d::marks_over(d.gpu, d.scene.pulse, d.scene.next, float4 { 0.0, 0.0, size.x, size.y }, 1.0, size);
         }
         gfx::end_pass();
         gfx::flush();

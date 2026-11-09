@@ -7,6 +7,12 @@
 // A new turn starts with none. With move hints they show at once and count down. The 3D
 // board shows the same pips, from the same draw lists (view3d::Scene.lit's z).
 //
+// After a second wrong square in the same capture, the flat board lights where the
+// waiting piece goes on to (board::Marks.next), pulsing (Board.flash.z) and then still;
+// the 3D board lights the same squares (Scene.lit's w: 2 pulsing over the image at
+// Scene.next, 1 still), shown after the pips as `next`; while they pulse, a frame on
+// draws only the marks over the kept image again.
+//
 // The capture is a child's lone king on the turned board taking four, j4 e9 a5 d2 g5
 // (test/board/count's photo); the new turn, a white man's capture after which black's
 // man on 22 must take it back, in a friend's game.
@@ -27,9 +33,9 @@ let PHOTO = "B:WK1,K21,24,28,31,32,33,45:BK35";
 let TURNS = "W:W37,46:B17,22,32";
 let I: u8 = rules::INTERNATIONAL;
 
-var l: panel::Layout;
+var l:  panel::Layout;
 var l3: panel::Layout;
-var g: gui::Gui;
+var g:  gui::Gui;
 var now = 0.0;
 
 // A new game from fen, against the computer on `computer` (-1 a friend), with `hints`.
@@ -64,7 +70,28 @@ fn state(gm: game::Game&, what: const u8[:]) {
     for i in 100 {
         if s.lit[i].z > 0.0 { format(deep, i / 10, ".", i % 10, " ", s.lit[i].z as i64, " "); }
     }
+    var next: u8[>..] = [];
+    for sq in v.size * v.size {
+        guard (b.marks.next[sq / 32] >> (sq % 32)) & 1 != 0 else { continue; }
+        let at = rules::bit_at(v, sq % v.size, sq / v.size);
+        format(next, drive::name(v, at), " ");
+    }
+    var next3: u8[>..] = [];
+    for i in 100 {
+        if s.lit[i].w > 0.0 { format(next3, i / 10, ".", i % 10, if s.lit[i].w > 1.5 { " pulsing " } else { " " }); }
+    }
     print("  ", what, ": pips ", flat, "| 3D ", deep, "| wrong ", drive::name(v, b.wrong));
+    if next.len > 0 || next3.len > 0 {
+        print("    next ", next, "| 3D ", next3, "| lit ", (b.flash.z * 100.0 + 0.5) as i64, "% and ",
+              (s.next * 100.0 + 0.5) as i64, "%");
+    }
+    if s.next < 1.0 {
+        // A frame on, only the marks over the kept image are drawn again (MARKS, 4).
+        board::fill(b, l3.board, now + 0.4);
+        var on = view3d::Scene {};
+        view3d::fill(on, b, l3.board, l3.view, now + 0.4);
+        print("    a frame on: changes ", view3d::changes(s, on), ", lit ", (on.next * 100.0 + 0.5) as i64, "%");
+    }
 }
 
 fn tap(gm: game::Game&, sq: i64) {
