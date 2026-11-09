@@ -58,16 +58,15 @@ switched by hand). 026 (the first start and tutorial) comes after the MVP's menu
 (release on Google Play) makes the release, 036 announces it, 037 builds the puzzle set by
 theme, and 038 adds players.
 
-## Next (updated 2026-11-09, at the night session's end)
+## Next (updated 2026-11-09, at the day session's end)
 
-Done on 2026-11-08 and 9: 029's package (the AAB and APK signed with the upload key,
-version 0.1.0, app id `io.github.kaitk.draughts`, the listing drafts in English and
-Estonian, the privacy page, the Play Console answers drafted; nothing submitted); 037's
-set by theme with the picker on glass rows, a first Russian set of 46, and stars per
-variant; 038's players, with the chip (the badge bare, the name on a glass pill) at the
-board's side, the first-run pick on a fresh install only, and the traced animal badges;
-the public repo `kaitk/draughts` under MIT OR Apache-2.0. Idle CPU on the tablet,
-untouched: 0.05%.
+Done on 2026-11-09 (day): the README rewritten for visitors; from the child's play, the
+stale must-capture ring after a move, a dropped capture that couldn't go on from its
+stop, easy as the default starting at skill 0 with overlooks below 15, play again at the
+adapted skill, the puzzles' turn piece, a wrong puzzle move answered before it slides
+back, seven puzzles made unique, `--reset-skill`, and task 040 (a hint in the game, for
+later). The 3D board (015) lives on the `3d-board` branch until it is complete
+(`docs`, task 015's "When 3D lands").
 
 What needs the user:
 
@@ -82,8 +81,10 @@ What needs the user:
 5. On the Pixel 7a: a drop about 0.6 of a square off a target in puzzle 4 lands on it
    (`board::snap`, not yet seen on a device).
 
-Then: 015's 3D prototype (`poc/3d/`), the user's next session; 036, the announcement,
-after the release.
+6. The child's next games: whether easy at skill 0 feels right (`docs/architecture/ai.md`'s
+   tuning notes), and whether multi-jump captures are clear with the capture count.
+
+Then: 015 on `3d-board` (its "When 3D lands"), 041's carved looks, 036 after the release.
 
 Not in the MVP (the user, 2026-11-08): sound; the visual feedback is clear, and sound
 may come soon after, kept from being bling. To decide later: a puzzle rating like
