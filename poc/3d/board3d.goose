@@ -53,6 +53,10 @@ let STRIP_W = 4096;
 let STRIP_H = 256;
 let PHOTO_SIZE = 512;
 let SAMPLES = 4;
+// Measuring (--samples, --shadow-every): the multisampled target's samples, 1 drawing
+// straight into the screen; and the shadow map redrawn every frame, not only on change.
+var samples: i32 = SAMPLES;
+var shadow_every = false;
 let MAX_INSTANCES = 32;
 
 // The camera: about 50° down, a 32° field of view. Inspecting keeps it near the default
@@ -273,16 +277,16 @@ fn bake(pipe: gfx::Pipeline, w: i64, h: i64, mode: f32, extent: float2) -> gfx::
 }
 
 fn targets(g: Gpu&, size: int2) {
-    if g.color.id != 0 {
-        gfx::release(g.color);
-        gfx::release(g.depth);
+    if g.color.id != 0 { gfx::release(g.color); }
+    if g.depth.id != 0 { gfx::release(g.depth); }
+    if samples > 1 {
+        g.color = gfx::texture(gfx::TextureDesc { format: gfx::RGBA8, usage: gfx::COLOR_TARGET,
+                                                  width: size.x, height: size.y,
+                                                  samples: samples });
     }
-    g.color = gfx::texture(gfx::TextureDesc { format: gfx::RGBA8, usage: gfx::COLOR_TARGET,
-                                              width: size.x, height: size.y,
-                                              samples: SAMPLES });
     g.depth = gfx::texture(gfx::TextureDesc { format: gfx::DEPTH, usage: gfx::DEPTH_TARGET,
                                               width: size.x, height: size.y,
-                                              samples: SAMPLES });
+                                              samples: samples });
     g.size = size;
 }
 
@@ -308,6 +312,8 @@ fn setup(g: Gpu&) {
     g.squares = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(squares));
 
     let full = embed_shader("vert", shaders::FULL_VERT);
+    gfx::flush();
+    var t = clock();
     let bake_pipe = gfx::pipeline(full, embed_shader("frag", shaders::BAKE_FRAG));
     let span = 2.0 * mesh::INNER;
     g.plan_albedo, g.plan_normal = bake(bake_pipe, PLAN_SIZE, PLAN_SIZE, 0.0,
@@ -315,9 +321,14 @@ fn setup(g: Gpu&) {
     g.strip_albedo, g.strip_normal = bake(bake_pipe, STRIP_W, STRIP_H, 1.0,
                                           float2 { 36.0, 1.4 });
     gfx::release(bake_pipe);
+    gfx::flush();
+    print("setup: bake ", ((clock() - t) * 1000.0) as i64, " ms");
+    t = clock();
 
     var sh: float4[9] = [float4_0; 9];
     g.photo = photograph(full, sh);
+    gfx::flush();
+    print("setup: photograph ", ((clock() - t) * 1000.0) as i64, " ms");
 
     g.shadow_map = gfx::texture2d(SHADOW_SIZE, SHADOW_SIZE, gfx::DEPTH16,
                                   gfx::DEPTH_TARGET | gfx::SAMPLED);
@@ -381,7 +392,7 @@ fn draw(g: Gpu&, cam: Camera) {
     g.frame.screen = float4 { size.x, size.y, 0.0, 0.0 };
     let f = g.frame;
 
-    if g.shadow_dirty {
+    if g.shadow_dirty || shadow_every {
         var sp = gfx::PassDesc { depth: g.shadow_map };
         gfx::begin_pass(sp);
         gfx::bind(g.shadow);
@@ -393,8 +404,12 @@ fn draw(g: Gpu&, cam: Camera) {
     }
 
     var pass = gfx::PassDesc { depth: g.depth, color_value: float4 { 0.11, 0.078, 0.063, 1.0 } };
-    pass.color[0] = g.color;
-    pass.resolve[0] = gfx::screen();
+    if samples > 1 {
+        pass.color[0] = g.color;
+        pass.resolve[0] = gfx::screen();
+    } else {
+        pass.color[0] = gfx::screen();
+    }
     gfx::begin_pass(pass);
     gfx::bind(g.backdrop);
     gfx::bind_texture(gfx::FRAGMENT, 0, g.photo, g.linear);
@@ -496,8 +511,15 @@ fn main() {
         let n, ok = parse_int(argv[frames_at]);
         if ok { frames = n; }
     }
-    let flags = if frames > 0 { gfx::WINDOW_HIDDEN } else { gfx::WINDOW_RESIZABLE };
-    let opened = if frames < 0 && (shot > 0 || bench > 0) { gfx::open_headless(w, h) }
+    samples = clamp(flag_f32(argv, "--samples", SAMPLES) as i32, 1, 8);
+    for a in argv { if a == "--shadow-every" { shadow_every = true; } }
+    // On Android the window is the whole screen, and --bench times frames in it.
+    var android_root: u8[>..] = [];
+    let on_android = env("ANDROID_ROOT", android_root);
+    var flags = if frames > 0 { gfx::WINDOW_HIDDEN } else { gfx::WINDOW_RESIZABLE };
+    if on_android { flags = gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE; }
+    let headless = frames < 0 && (shot > 0 || (bench > 0 && !on_android));
+    let opened = if headless { gfx::open_headless(w, h) }
                  else { gfx::open("Draughts 3D", w, h, flags) };
     guard opened else { abort(str("gfx: ", gfx::error())); }
     defer gfx::close();
@@ -516,22 +538,9 @@ fn main() {
         return;
     }
     if bench > 0 {
-        let n, ok = parse_int(argv[bench]);
+        let n0, ok = parse_int(argv[bench]);
         guard ok else { return; }
-        draw(g, cam);
-        gfx::flush();
-        var cpu: f64 = 0.0;
-        let start = clock();
-        for i in n {
-            cam.yaw = (i % 40) - 20.0;
-            let c = clock();
-            draw(g, cam);
-            cpu += clock() - c;
-            gfx::flush();
-        }
-        let total = clock() - start;
-        print("frames ", n, ": cpu ", cpu * 1000.0 / n, " ms, cpu+gpu ",
-              total * 1000.0 / n, " ms a frame");
+        bench_frames(g, cam, min(n0, 1024), headless);
         return;
     }
 
@@ -593,4 +602,61 @@ fn main() {
         if shot > 0 { print("saved ", argv[shot], ": ", gfx::screenshot(argv[shot])); }
     }
     if drawn > 0 { print(drawn, " frames drawn, cpu ", cpu * 1000.0 / drawn, " ms each"); }
+}
+
+fn median(xs: f64[..1024]&) -> f64 {
+    sort(xs[..xs.len]);
+    return xs[xs.len / 2] * 1000.0;
+}
+
+// --bench N: the first frame (with the shadow map), then N frames turning the camera, each
+// waited for: the CPU's part (recording) and with the submit and the wait for the GPU. In
+// a window (Android) also N frames presented as the loop does, frame to frame.
+fn bench_frames(g: Gpu&, cam_in: Camera, n: i64, headless: bool) {
+    var cam = cam_in;
+    if !headless {
+        // Let the window reach its size and the swapchain settle.
+        for i in 30 {
+            guard gfx::frame() else { return; }
+            let c = clock();
+            draw(g, cam);
+            if i == 0 {
+                gfx::flush();
+                print("bench: first frame, pipelines made ", (clock() - c) * 1000.0, " ms");
+            }
+        }
+        gfx::flush();
+        g.shadow_dirty = true;
+    }
+    let size = gfx::screen_size();
+    var c0 = clock();
+    draw(g, cam);
+    gfx::flush();
+    print("bench ", size.x, "x", size.y, " samples ", samples, " shadow-every ", shadow_every,
+          ": first frame ", (clock() - c0) * 1000.0, " ms");
+    var cpu: f64[..1024] = [];
+    var all: f64[..1024] = [];
+    for i in n {
+        cam.yaw = (i % 40) - 20.0;
+        let c = clock();
+        draw(g, cam);
+        let d = clock();
+        gfx::flush();
+        cpu.push(d - c);
+        all.push(clock() - c);
+    }
+    print("bench: median cpu ", median(cpu), " ms, cpu+gpu waited ", median(all),
+          " ms a frame (", n, " frames)");
+    if headless { return; }
+    var gap: f64[..1024] = [];
+    var last = clock();
+    for i in n {
+        guard gfx::frame() else { return; }
+        let now = clock();
+        if i > 0 { gap.push(now - last); }
+        last = now;
+        cam.yaw = (i % 40) - 20.0;
+        draw(g, cam);
+    }
+    print("bench: median presented frame to frame ", median(gap), " ms");
 }
