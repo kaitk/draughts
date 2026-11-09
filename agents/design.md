@@ -45,6 +45,14 @@ pieces (chosen 2026-11-07); the design boards still set the layout, glass, and c
   1920 × 1200.
 - Measure colors instead of judging them: `magick ref.png -crop 100x100+X+Y +repage
   -scale 1x1! -format '%[pixel:p{0,0}]' info:` gives a patch's mean.
+- Text bare on the photograph that a bright patch (birch bark, snow) washes out:
+  `gui::shadowed` draws it over a dark halo with no shader change (the text shader takes
+  a dark color from `gui::write` with `own` true). The library's title uses it; the
+  player's chip took a glass pill instead (2026-11-09). Spring's birch is the brightest
+  patch behind the left edge at the tablet's landscape, autumn's lichen next.
+- To show that a change touched only one thing, take the same headless shot before and
+  after and box the differing pixels: `magick a.png b.png -compose difference -composite
+  -threshold 0 -format '%@' info:` prints the box (WxH+X+Y).
 - Preview SVG (an icon's vector layer, say) in a browser page shot with `agent-browser`:
   ImageMagick's built-in SVG renderer drops stroked paths, and the Mac has no `rsvg`.
   For an icon, show the central 72 of its 108 dp in circle and squircle masks at 48 and
