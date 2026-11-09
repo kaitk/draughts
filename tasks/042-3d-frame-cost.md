@@ -82,7 +82,7 @@ Two runs of one build are byte-identical.
 | 4. No marks quad with nothing marked | 1.44 ms | 1.50 ms | identical |
 | 5. `CULL_FRONT` in the shadow pass | left | | peter-pans |
 | 6. 9 shadow taps instead of 16 | 1.41 ms | 1.48 ms | 50 to 56 dB, 80 to 310 pixels |
-| 7. The field's light baked, a shader per material | 1.12 ms | 1.43 ms | 67 to 74 dB, 0 to 5 pixels |
+| 7. The field's light baked, a shader per material | 1.12 ms | 1.43 ms | 67 to 74 dB, 0 to 5 pixels; dropped |
 
 1. **The piece mesh:** the top's 42 rows down to 9 (`mesh::TOP_ROWS`, dense only round
    the step), the edge's arc 12 steps to 6, the foot's 5 to 3, and the lathe's 72
@@ -132,6 +132,30 @@ Two runs of one build are byte-identical.
    the bake's 1M texels paying for what the field saves. Four pipelines instead of one
    (three lit and the bake) are made at the first frame: on the Mac 6.5 ms against 5.8;
    the Pixel's first frame (0.3 s, mostly pipelines) is worth reading again.
+   **Dropped** (the user, 2026-11-09): on the tablet it saved 1.5 ms on a frame that
+   only turns the camera but cost 0.9 ms on every frame that draws the shadow map,
+   which is every frame while a piece moves (below). Undone whole, the bake and the
+   three lit shaders alike: one LIT_FRAG again, and 9 pipelines to warm, not 12.
+
+**On the tablet** (Galaxy Tab A11+, SM-X230, Mali-G615 MC2, 1920 × 1200, MSAA 4×;
+2026-11-10): `--bench 300`, Russian, autumn, the 3D game, the median of three launches
+each at thermal status 0, both builds installed beside the app (`--id-suffix bench`).
+Main's head with step 7 against step 7 undone, steps 1 to 6 kept in both:
+
+| | With step 7 | Step 7 dropped |
+| --- | --- | --- |
+| With the shadow map, waited (a piece moving) | 11.45 ms | 10.53 ms |
+| The pass alone, waited (the camera turning) | 8.41 ms | 9.92 ms |
+| Presented, frame to frame | 13.39 ms | 12.81 ms |
+| The CPU's part | 0.61 ms | 0.39 ms |
+| Getting ready | 41 steps, 1.95 s | 38 steps, 1.96 s |
+
+90 Hz stays as it is (the user, 2026-11-09): the moving frame still misses 11.1 ms
+frame to frame. Headless shots at 1280 × 800 (autumn at the start and with a piece
+selected, winter turned, spring, summer, and after a capture's win): the shots at rest
+differ by at most 3 levels of 255 over the whole screen, as two runs of one build do
+(autumn's start 5 levels on about 10,000 field pixels, 45 dB); after the capture 7,000
+pixels round the pieces, 105 of them by more than 4 levels (at most 12), 70 dB.
 
 ## On the tablet (2026-11-09)
 
@@ -233,7 +257,7 @@ the pass alone 35.9 → 19.3 ms, presented 25.7 ms frame to frame (about 39 fps)
 ready about 3.0 s in all over its steps, the setup 84 ms; the first frame once ready
 64 ms (350 before); no device lost on any transition; idle 0% at rest.
 
-**The steps** (41), each waited for (`gfx::flush`) so its GPU work stays in its frame. The
+**The steps** (41; 38 since step 7 was dropped), each waited for (`gfx::flush`) so its GPU work stays in its frame. The
 budget: about 16 ms of the Pixel 7a's and 35 of a Galaxy A33's (whose bake takes 1.6 s
 cold against the Pixel's 0.7), which by task 015's ratios is about 2.5 ms of the M1 Pro's.
 On the Mac headless, two runs:
@@ -248,7 +272,7 @@ On the Mac headless, two runs:
 | The photograph's pipelines | 0.5 | a compile each, small |
 | The photograph decoded and shrunk | 17 (the Mac decodes the JPEG) | the ASTC upload, a part of task 015's 42 ms |
 | Blurred across; blurred down, read back, harmonics, the theme's end | 0.4; 0.8 to 2.1 | a part of the 42 ms |
-| 12 pipelines, each bound alone in a pass on 4 × 4 targets | 0.3 to 1.6 each | the first frame's 0.31 s over 12 frames |
+| 12 pipelines (9 since step 7 was dropped), each bound alone in a pass on 4 × 4 targets | 0.3 to 1.6 each | the first frame's 0.31 s over 12 frames |
 | The first 3D frame once ready (the targets the screen's size, the draw) | 3.3 to 3.8 | |
 
 The Mac's driver keeps compiled shaders across runs, so its compile steps look cheap;
@@ -259,7 +283,7 @@ during which nothing on screen can change. Nothing splits a single compile witho
 **What each part holds** (by arithmetic; the device's GL mtrack to check): the plan's
 two 2048² RGBA8 maps with mips 43 MB; the frame map 24 MB mitred (2048 × 1152) or 43 MB
 solid; the photograph and its two blur targets 3 MB; the shadow map 2 MB; the field's
-light 2 MB; at 2400 × 1080 the 4× color 40 MB, its 16-bit depth 20 MB, the kept image
+light 2 MB (gone with step 7); at 2400 × 1080 the 4× color 40 MB, its 16-bit depth 20 MB, the kept image
 10 MB, the kept depth (once marks pulse) 5 MB; the meshes and buffers under 1 MB. About
 150 to 170 MB in all, none of it held on the flat board.
 

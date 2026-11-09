@@ -1041,7 +1041,7 @@ board's does and the backdrop over it as opaque as the blur.
   too dark to light it (`render3d::fade_harmonics`). Switching between the photograph
   and the fade takes only the theme's photograph steps again, not its bake. **Getting
   ready** (`draw3d::prepare`, task 042) takes a step a frame: the setup, the theme's 28
-  steps (the bake in bands, the photograph), the pass's 12 pipelines; meanwhile a still
+  steps (the bake in bands, the photograph), the pass's 9 pipelines; meanwhile a still
   mark shows in the board's place, and once ready the board fades in over 0.3 s. A new
   season or board size takes the theme's steps again with the old image still shown:
   while they run it eases over 0.2 s towards grey and dimmer (saturation 0.15 of its own,
@@ -1300,7 +1300,12 @@ The release at rest, idle 20 to 30 s:
   the forward pass alone 10.9 ms at 1×, the whole budget; MSAA 4× adds 3.2 ms (6.3 ms
   and 72 MB more without `patches/goose_gfx/0005`, which keeps the samples and the depth
   from being stored); the shadow map 2 ms on the frames that draw it; the CPU's part
-  about 0.4 ms. It renders as the Mac does.
+  about 0.4 ms. It renders as the Mac does. After task 042's cuts (2026-11-10): the
+  frame with the shadow map, as while a piece moves, 10.5 ms waited, the pass alone
+  (the camera turning) 9.9, presented 12.8 ms frame to frame; 90 Hz kept. Baking the
+  field's shadow and occlusion into a map with the shadow map was dropped (the user,
+  2026-11-09): it took the camera's turn to 8.4 ms but every frame that draws the
+  shadow map to 11.5.
 - **The Pixel 7a** (60 Hz): the pass 14.0 ms waited for International, 13.0 for Russian,
   presented every 16.6 ms; the theme applied at launch in 0.76 s (the bake, its
   pipeline made), the first frame 0.31 s.

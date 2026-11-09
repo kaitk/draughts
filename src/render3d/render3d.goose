@@ -11,8 +11,7 @@
 // read them).
 //
 // Frame structure: the shadow map (1024², 16-bit, from the key light) only when the
-// pieces stand differently, and with it the field's light (its shadow and occlusion,
-// baked into a 1024² RG8 map the field reads); then one pass: the blurred photograph as a backdrop, the
+// pieces stand differently; then one pass: the blurred photograph as a backdrop, the
 // pieces and the board lit (front to back), the board's soft shadow on nothing round
 // it, the field's marks that hold still added. The marks that pulse (a must-capture ring, a wrong move's flash, a
 // hint's ring) are drawn apart, over the kept image in the screen's pass each frame
@@ -99,9 +98,6 @@ struct Blur { dir: float4 }
 // The shadow map: 1024² keeps the soft shadows as they were at 2048² (the lit shader's
 // filter spreads over 5 of its texels), at a quarter of the memory.
 let SHADOW_SIZE = 1024;
-// The field's baked light: 1024² over its 8.2 units, finer than the shadow map's texels
-// over it, about 1.3 pixels a texel on the Pixel 7a's landscape board.
-let FIELD_LIGHT_SIZE = 1024;
 let PLAN_SIZE = 2048;
 let FRAME_MAP = 2048;
 // A mitred frame's map holds only its four bands (LIT_FRAG: 0.2 to 5.65 of the map's 10.4
@@ -165,14 +161,8 @@ struct Gpu {
     linear:         gfx::Sampler,
     aniso:          gfx::Sampler,
     compare:        gfx::Sampler,
-    lit_field:      gfx::Pipeline,  // the lit pass, one shader per material
-    lit_frame:      gfx::Pipeline,
-    lit_piece:      gfx::Pipeline,
+    lit:            gfx::Pipeline,
     fading:         gfx::Pipeline,  // the lit pass for a fading piece, blended
-    field_bake:     gfx::Pipeline,  // the field's light (shaders::FIELD_LIGHT_FRAG)
-    field_light:    gfx::Texture,   // its shadow and occlusion, RG8 over the plan's extent
-    field_dirty:    bool,           // to be baked again with the next frame
-    occlusion:      float4[SQUARES], // the squares it was baked with
     shadow:         gfx::Pipeline,
     backdrop:       gfx::Pipeline,
     catcher:        gfx::Pipeline,
@@ -520,20 +510,10 @@ fn setup(g: Gpu&, samples: i32 = SAMPLES) {
 
     let lit_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::LIT_VERT);
     let quad_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::QUAD_VERT);
-    let opaque = gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true };
-    g.lit_field = gfx::pipeline(lit_vs, embed_shader("frag", shaders::LIT_FIELD, shaders::FS_SET, shaders::FRAME,
-                                                     shaders::LIT_DECL, shaders::SHADOW_FN, shaders::LIT_FRAG), opaque);
-    g.lit_frame = gfx::pipeline(lit_vs, embed_shader("frag", shaders::LIT_FRAME, shaders::FS_SET, shaders::FRAME,
-                                                     shaders::LIT_DECL, shaders::SHADOW_FN, shaders::LIT_FRAG), opaque);
-    let piece_fs = embed_shader("frag", shaders::LIT_PIECE, shaders::FS_SET, shaders::FRAME, shaders::LIT_DECL,
-                                shaders::SHADOW_FN, shaders::LIT_FRAG);
-    g.lit_piece = gfx::pipeline(lit_vs, piece_fs, opaque);
-    g.fading = gfx::pipeline(lit_vs, piece_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true,
-                                                                   blend: gfx::BLEND_ALPHA });
-    g.field_bake = gfx::pipeline(full, embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::FIELD_LIGHT_FRAG,
-                                                    shaders::SHADOW_FN, shaders::FIELD_LIGHT_MAIN));
-    g.field_light = gfx::render_target(FIELD_LIGHT_SIZE, FIELD_LIGHT_SIZE, gfx::RG8);
-    g.field_dirty = true;
+    let lit_fs = embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG);
+    g.lit = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true });
+    g.fading = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true,
+                                                                 blend: gfx::BLEND_ALPHA });
     g.shadow = gfx::pipeline(lit_vs, embed_shader("frag", shaders::EMPTY_FRAG),
                              gfx::PipelineDesc { depth_test: true, depth_write: true,
                                                  depth_bias: 1.0, depth_bias_slope: 1.5 });
@@ -814,16 +794,6 @@ fn place(g: Gpu&, inst: const float4[:], alphas: const f32[:], squares: const fl
     g.solid = g.instance_count - fading;
     for i in fading { g.alphas[i] = alphas[i]; }
     gfx::update_buffer(g.squares, bytes_of(squares[..min(squares.len, SQUARES)]));
-    // The field's light is baked again when what stands on it changes, as the shadow
-    // map is drawn again when pieces move (a piece fading out changes its occlusion
-    // without moving).
-    for s, i in squares[..min(squares.len, SQUARES)] {
-        let o = g.occlusion[i];
-        if s.x != o.x || s.y != o.y || s.z != o.z || s.w != o.w {
-            g.occlusion[i] = s;
-            g.field_dirty = true;
-        }
-    }
     gfx::update_buffer(g.marks, bytes_of(marks[..min(marks.len, SQUARES)]));
     if lit.len > 0 { gfx::update_buffer(g.glows, bytes_of(lit[..min(lit.len, SQUARES)])); }
     // What MARKS_FRAG without PULSE draws: the selected piece's ring, a last move's tint,
@@ -866,21 +836,6 @@ fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int
         draw_meshes(g, 1.0);
         gfx::end_pass();
         g.shadow_dirty = false;
-        g.field_dirty = true;
-    }
-    if g.field_dirty {
-        // Not cleared: the bake writes every texel (as bake() has it).
-        var fp = gfx::PassDesc { clear_color: false };
-        fp.color[0] = g.field_light;
-        gfx::begin_pass(fp);
-        gfx::bind(g.field_bake);
-        gfx::bind_texture(gfx::FRAGMENT, 0, g.shadow_map, g.compare);
-        gfx::bind_storage_buffer(gfx::FRAGMENT, 0, g.squares);
-        gfx::uniforms(gfx::FRAGMENT, 0, f);
-        gfx::uniforms(gfx::FRAGMENT, 1, Draw { float4 { 1.0 / FIELD_LIGHT_SIZE, 0.0, 0.0, 0.0 } });
-        gfx::draw(3);
-        gfx::end_pass();
-        g.field_dirty = false;
     }
 
     let clear = if backdrop { float4 { 0.11, 0.078, 0.063, 1.0 } } else { float4_0 };
@@ -894,37 +849,20 @@ fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int
     gfx::begin_pass(pass);
     if backdrop { draw_backdrop(g, 1.0); }
 
-    // Front to back, each material with its own shader: the opaque pieces, the frame,
-    // and the field last, so the field under the pieces fails the depth test before it
-    // is shaded.
-    gfx::bind(g.lit_piece);
+    gfx::bind(g.lit);
     gfx::bind_storage_buffer(gfx::VERTEX, 0, g.instances);
-    gfx::bind_texture(gfx::FRAGMENT, 0, g.shadow_map, g.compare);
-    gfx::uniforms(gfx::VERTEX, 0, f);
-    gfx::uniforms(gfx::FRAGMENT, 0, f);
-    if g.solid > 0 {
-        gfx::uniforms(gfx::VERTEX, 1, Draw { float4 { 1.0, 0.0, 1.0, 0.0 } });
-        gfx::bind_vertex_buffer(g.piece_vb);
-        gfx::bind_index_buffer(g.piece_ib, 4);
-        gfx::draw_indexed_instanced(g.piece_count, g.solid);
-    }
-    gfx::uniforms(gfx::VERTEX, 1, Draw { float4 { 0.0, 0.0, 1.0, 0.0 } });
-    gfx::bind_vertex_buffer(g.board_vb);
-    gfx::bind_index_buffer(g.board_ib, 4);
-    gfx::bind(g.lit_frame);
-    gfx::bind_texture(gfx::FRAGMENT, 0, g.frame_albedo, g.aniso);
-    gfx::bind_texture(gfx::FRAGMENT, 1, g.frame_normal, g.aniso);
-    gfx::bind_texture(gfx::FRAGMENT, 2, g.shadow_map, g.compare);
-    gfx::draw_indexed(g.board_count - mesh::FIELD_INDICES, 1, mesh::FIELD_INDICES, 0, 0);
-    gfx::bind(g.lit_field);
     gfx::bind_texture(gfx::FRAGMENT, 0, g.plan_albedo, g.aniso);
     gfx::bind_texture(gfx::FRAGMENT, 1, g.plan_normal, g.aniso);
-    gfx::bind_texture(gfx::FRAGMENT, 2, g.field_light, g.linear);
-    gfx::draw_indexed(mesh::FIELD_INDICES, 1, 0, 0, 0);
+    gfx::bind_texture(gfx::FRAGMENT, 2, g.frame_albedo, g.aniso);
+    gfx::bind_texture(gfx::FRAGMENT, 3, g.frame_normal, g.aniso);
+    gfx::bind_texture(gfx::FRAGMENT, 4, g.shadow_map, g.compare);
+    gfx::bind_storage_buffer(gfx::FRAGMENT, 0, g.squares);
+    gfx::uniforms(gfx::VERTEX, 0, f);
+    gfx::uniforms(gfx::FRAGMENT, 0, f);
+    draw_meshes(g, 0.0);
     // The fading pieces, each alone at its opacity, over what stands behind them.
     if g.solid < g.instance_count {
         gfx::bind(g.fading);
-        gfx::bind_texture(gfx::FRAGMENT, 0, g.shadow_map, g.compare);
         gfx::bind_vertex_buffer(g.piece_vb);
         gfx::bind_index_buffer(g.piece_ib, 4);
         for i in g.solid..g.instance_count {
@@ -1060,7 +998,7 @@ fn show(g: Gpu&, from: float4, to: float4, alpha: f32, size: int2, grey: f32 = 0
 // pass's target formats (docs/goose-findings.md). Bound in a pass on 4 × 4 targets of the
 // pass's formats (made by the first step, given back by the last), or on the target
 // itself where it is small or held anyway, with nothing drawn.
-let WARM_STEPS = 12;
+let WARM_STEPS = 9;
 fn warm(g: Gpu&, k: i64) {
     if k == 0 {
         g.warm_color = gfx::texture(gfx::TextureDesc { format: gfx::RGBA8, usage: gfx::COLOR_TARGET, width: 4,
@@ -1070,23 +1008,19 @@ fn warm(g: Gpu&, k: i64) {
         g.warm_kept = depth_target(int2 { 4, 4 });
     }
     var pass = gfx::PassDesc {};
-    if k < 6 {
+    if k < 4 {
         pass.color[0] = g.warm_color;
         pass.depth = g.warm_depth;
-    } else if k == 6 {
+    } else if k == 4 {
         pass.depth = g.shadow_map;
-    } else if k == 7 {
-        pass.color[0] = g.field_light;
-        pass.clear_color = false;
-    } else if k == 8 {
+    } else if k == 5 {
         pass.depth = g.warm_kept;
     } else {
         pass.color[0] = gfx::screen();
         pass.clear_color = false;
     }
     gfx::begin_pass(pass);
-    let p = [g.lit_piece, g.lit_frame, g.lit_field, g.fading, g.catcher, g.glow, g.shadow, g.field_bake,
-             g.depth_only, g.backdrop, g.show, g.pulse][k];
+    let p = [g.lit, g.fading, g.catcher, g.glow, g.shadow, g.depth_only, g.backdrop, g.show, g.pulse][k];
     gfx::bind(p);
     gfx::end_pass();
     if k == WARM_STEPS - 1 {
@@ -1103,15 +1037,15 @@ fn warm(g: Gpu&, k: i64) {
 // targets, surfaces, buffers, samplers, and pipelines. g is set up again from scratch.
 fn release(g: Gpu&) {
     let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.photo, g.shadow_map, g.color,
-                    g.depth, g.image, g.kept_depth, g.field_light, g.small, g.across, g.warm_color, g.warm_depth,
+                    g.depth, g.image, g.kept_depth, g.small, g.across, g.warm_color, g.warm_depth,
                     g.warm_kept];
     for t in textures { if t.id != 0 { gfx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.instances, g.squares, g.marks, g.glows];
     for b in buffers { if b.id != 0 { gfx::release(b); } }
     let samplers = [g.linear, g.aniso, g.compare];
     for s in samplers { if s.id != 0 { gfx::release(s); } }
-    let pipelines = [g.lit_field, g.lit_frame, g.lit_piece, g.fading, g.field_bake, g.shadow, g.backdrop, g.catcher,
-                     g.glow, g.pulse, g.depth_only, g.copy, g.show, g.bake, g.shrink, g.blur];
+    let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
+                     g.bake, g.shrink, g.blur];
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
     gfx::flush();
     g = default<Gpu>();
