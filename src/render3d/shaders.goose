@@ -980,49 +980,50 @@ let BAKE_FRAG = """
         return m;
     }
 
+    // What wood() is given for a point, and what is laid over its result: the albedo
+    // scaled, the height lowered, the roughness toward a seam's.
+    struct Cut { vec2 q; float seed; vec4 base; vec4 k; vec3 f; vec4 ring;
+                 float shade; float dip; float seam; };
+
     // The field: light and dark squares, each its own stretch of the surface and its own
     // tone, thin dark seams between them; round them a dark inlay, its grain along each
     // side, a fine dark line where it meets the squares.
-    Wood plan(vec2 p) {
+    Cut plan(vec2 p) {
+        Cut c;
         vec2 a = abs(p);
         float m = max(a.x, a.y);
+        c.f = vec3(surface.y, 0.0, 0.0);
+        c.seam = 0.0;
         if (m > FIELD) {
             bool along_x = a.y > a.x;
-            vec2 q = along_x ? p.yx : p;
+            c.q = along_x ? p.yx : p;
             // The growth rings give each of the four sides its own piece.
-            float iseed = along_x ? 71.0 : 83.0;
-            if (mode.y > 0.5 && inlay_fig.w > 0.5) iseed += (along_x ? p.y : p.x) > 0.0 ? 0.0 : 2.0;
-            Wood w = wood(q, iseed, inlay, inlay_fig, vec3(surface.y, 0.0, 0.0), dark_ring);
+            c.seed = along_x ? 71.0 : 83.0;
+            if (mode.y > 0.5 && inlay_fig.w > 0.5) c.seed += (along_x ? p.y : p.x) > 0.0 ? 0.0 : 2.0;
+            c.base = inlay;
+            c.k = inlay_fig;
+            c.ring = dark_ring;
             float line = 1.0 - smoothstep(0.004, 0.010, m - FIELD);
-            w.albedo *= 1.0 - 0.6 * line;
-            w.height -= line;
-            if (carve.w > 0.5) {
-                // The carved look's fine engraved line round the field, down the inlay's
-                // middle, a texel soft.
-                float texel = size.z / size.x;
-                float cut = 1.0 - smoothstep(0.003, 0.006 + texel, abs(m - FIELD - 0.05));
-                w.albedo *= 1.0 - 0.35 * cut;
-                w.height -= 3.0 * cut;
-            }
-            return w;
+            c.shade = 1.0 - 0.6 * line;
+            c.dip = line;
+            return c;
         }
         // mode.z squares per side (8 or 10), each 8 / mode.z across.
         float n = mode.z;
         vec2 g = (p + FIELD) * (n / (2.0 * FIELD));
         ivec2 sq = clamp(ivec2(floor(g)), ivec2(0), ivec2(int(n) - 1));
         bool dark = ((sq.x + sq.y) & 1) == 1;
-        float seed = float(sq.y * int(n) + sq.x) + 1.0;
-        vec3 f = vec3(surface.y, 0.0, 0.0);
-        Wood w = dark ? wood(p, seed, dark_sq, dark_fig, f, dark_ring)
-                      : wood(p, seed, light_sq, light_fig, f, light_ring);
-        w.albedo *= 1.0 + surface.x * (h12(vec2(seed, 4.2)) - 0.5);
+        c.q = p;
+        c.seed = float(sq.y * int(n) + sq.x) + 1.0;
+        c.base = dark ? dark_sq : light_sq;
+        c.k = dark ? dark_fig : light_fig;
+        c.ring = dark ? dark_ring : light_ring;
         vec2 fr = fract(g);
         float edge = min(min(fr.x, 1.0 - fr.x), min(fr.y, 1.0 - fr.y)) * (2.0 * FIELD / n);
-        float seam = 1.0 - smoothstep(0.002, 0.007, edge);
-        w.albedo *= 1.0 - surface.z * seam;
-        w.rough = mix(w.rough, 0.8, seam);
-        w.height -= seam;
-        return w;
+        c.seam = 1.0 - smoothstep(0.002, 0.007, edge);
+        c.shade = (1.0 + surface.x * (h12(vec2(c.seed, 4.2)) - 0.5)) * (1.0 - surface.z * c.seam);
+        c.dip = c.seam;
+        return c;
     }
 
     // The carved frame (task 041, carve.w): a band of two vines on the frame's top and
@@ -1158,16 +1159,30 @@ let BAKE_FRAG = """
     // The frame map: the frame's wood or stone over a square, its grain along u.
     // The growth rings give each band of the map (each mitred piece, LIT_FRAG) its own
     // log and cut, across measured from the band's start.
-    Wood frame_map(vec2 p) {
-        vec3 f = frame_surface.xxz * vec3(0.3, 1.0, 1.0);
-        vec2 q = p.yx;
-        float seed = 7.0;
+    Cut frame_map(vec2 p) {
+        Cut c;
+        c.f = frame_surface.xxz * vec3(0.3, 1.0, 1.0);
+        c.q = p.yx;
+        c.seed = 7.0;
         if ((mode.y > 0.5 && mode.y < 2.5 && frame_fig.w > 0.5) || carve.w > 0.5) {
-            float band = floor(q.x / 1.4);
-            q.x -= band * 1.4;
-            seed = 7.0 + 5.0 * band;
+            float band = floor(c.q.x / 1.4);
+            c.q.x -= band * 1.4;
+            c.seed = 7.0 + 5.0 * band;
         }
-        Wood w = wood(q, seed, frame, frame_fig, f, frame_ring);
+        c.base = frame;
+        c.k = frame_fig;
+        c.ring = frame_ring;
+        c.shade = 1.0;
+        c.dip = 0.0;
+        c.seam = 0.0;
+        return c;
+    }
+
+    // What the frame map lays over its wood: summer's caulked seams, the carving and its
+    // moss.
+    Wood frame_over(Wood w, Cut c, vec2 p) {
+        vec2 q = c.q;
+        float seed = c.seed;
         if (seam.x > 0.0 && frame_fig.w > 0.5) {
             // Caulked seams along each mitred piece (LIT_FRAG's bands of 1.4, the top's
             // inner edge 0.2 into its band), a plank's width apart over the top only.
@@ -1185,20 +1200,44 @@ let BAKE_FRAG = """
         if (carve.w > 0.5) {
             // The cut ground a little darker and rougher, moss settling in it in patches,
             // most at the motifs' feet.
-            vec3 c = carving(q);
+            vec3 cv = carving(q);
             float patch = smoothstep(0.35, 0.75, mix(0.5, fbm(q * vec2(3.0, 1.2) + seed), moss.w));
-            float m = clamp(carve.z * (1.2 * c.y + 1.2 * c.z) * patch, 0.0, 1.0);
+            float m = clamp(carve.z * (1.2 * cv.y + 1.2 * cv.z) * patch, 0.0, 1.0);
             float shade = 0.85 + 0.3 * vnoise(q * 40.0);
-            w.albedo *= 1.0 - 0.25 * c.y;
+            w.albedo *= 1.0 - 0.25 * cv.y;
             w.albedo = mix(w.albedo, srgb(moss.rgb) * shade, m);
-            w.rough = mix(w.rough + 0.15 * c.y, 0.75, m);
-            w.height += c.x / (0.0015 * max(frame_surface.y, 1e-3));
-            w.cavity *= 1.0 - 0.25 * c.y - 0.2 * c.z;
+            w.rough = mix(w.rough + 0.15 * cv.y, 0.75, m);
+            w.height += cv.x / (0.0015 * max(frame_surface.y, 1e-3));
+            w.cavity *= 1.0 - 0.25 * cv.y - 0.2 * cv.z;
         }
         return w;
     }
 
-    Wood at(vec2 p) { return mode.x < 0.5 ? plan(p) : frame_map(p); }
+    // What the plan lays over its wood: the inlay's line and the squares' tone and seams
+    // (the Cut's), and the carved look's engraved line round the field.
+    Wood plan_over(Wood w, Cut c, vec2 p) {
+        w.albedo *= c.shade;
+        w.rough = mix(w.rough, 0.8, c.seam);
+        w.height -= c.dip;
+        float m = max(abs(p.x), abs(p.y));
+        if (carve.w > 0.5 && m > FIELD) {
+            // The carved look's fine engraved line round the field, down the inlay's
+            // middle, a texel soft.
+            float texel = size.z / size.x;
+            float cut = 1.0 - smoothstep(0.003, 0.006 + texel, abs(m - FIELD - 0.05));
+            w.albedo *= 1.0 - 0.35 * cut;
+            w.height -= 3.0 * cut;
+        }
+        return w;
+    }
+
+    // One call of wood() for every surface: each call site was compiled in full, and
+    // the pipeline took seconds to make on a phone.
+    Wood at(vec2 p) {
+        Cut c = mode.x < 0.5 ? plan(p) : frame_map(p);
+        Wood w = wood(c.q, c.seed, c.base, c.k, c.f, c.ring);
+        return mode.x < 0.5 ? plan_over(w, c, p) : frame_over(w, c, p);
+    }
 
     void main() {
         vec2 texel = size.zw / size.xy;
@@ -1210,10 +1249,21 @@ let BAKE_FRAG = """
             out_normal = vec4(0.5, 0.5, 1.0, 1.0);
             return;
         }
-        Wood w = at(p);
-        Wood wx = at(p + vec2(texel.x, 0.0));
-        Wood wy = at(p + vec2(0.0, texel.y));
-        vec2 grad = vec2(wx.height - w.height, wy.height - w.height) / texel;
+        // The texel and its neighbours along x and y, for the normal, in a loop the
+        // compiler can't unroll (its count comes from the block): unrolled, the whole
+        // wood was compiled three times over, and the pipeline took 2.5 s to make on the
+        // Pixel 7a.
+        Wood w;
+        vec2 hn = vec2(0.0);
+        int taps = mode.x > 9.0 ? 4 : 3;
+        for (int k = 0; k < taps; k++) {
+            vec2 o = k == 1 ? vec2(texel.x, 0.0) : (k == 2 ? vec2(0.0, texel.y) : vec2(0.0));
+            Wood s = at(p + o);
+            if (k == 0) w = s;
+            else if (k == 1) hn.x = s.height;
+            else hn.y = s.height;
+        }
+        vec2 grad = (hn - w.height) / texel;
         float relief = 0.0015 * (mode.x < 0.5 ? surface.w : frame_surface.y);
         vec3 n = normalize(vec3(-grad.x * relief, 1.0, -grad.y * relief));
         out_albedo = vec4(w.albedo, w.rough);

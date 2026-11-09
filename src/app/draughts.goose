@@ -120,6 +120,7 @@ fn main() {
     var win_at = -1.0;
     var show_3d = false;
     var raised = false;
+    var bench = 0;
     var wood_3d = -1;
     var marble_3d = -1;
     var summer_3d = 0;
@@ -193,6 +194,10 @@ fn main() {
             if ok && argv[i] == "--spring" { spring_3d = n; }
         }
         if argv[i] == "--board" && argv[i + 1] == "3d" { raised = true; }
+        if argv[i] == "--bench" {
+            let n, ok = parse_int(argv[i + 1]);
+            if ok { bench = clamp(n, 1, 1000); }
+        }
         if argv[i] == "--hints" && argv[i + 1] == "moves" { hints = board::MOVES; }
         if argv[i] == "--lang" { lang = strings::pick(argv[i + 1]); }
         for name, k in settings::DRAUGHTS_NAMES { if argv[i] == "--variant" && argv[i + 1] == name { variant = settings::DRAUGHTS[k]; } }
@@ -297,7 +302,7 @@ fn main() {
     // A fresh install's first run opens on the sheet of its one player, to pick a badge.
     if keep && sh.players.fresh { who::first_run(sh.who, sh.players); }
     var d = draw::new(kind);
-    var d3 = draw3d::Drawer { wood: wood_3d, marble: marble_3d, summer: summer_3d, spring: spring_3d, .. };
+    var d3 = draw3d::Drawer { wood: wood_3d, marble: marble_3d, summer: summer_3d, spring: spring_3d, timed: bench > 0, .. };
     var w = widgets::new();
     var g = gui::Gui {};
     var t = text::Text {};
@@ -458,6 +463,9 @@ fn main() {
             // Next was declared before this tap, which may have left a piece waiting.
             g.acted = true;
         }
+        // --bench N times the 3D board's frames 2 s after the launch, settled (draw3d.goose).
+        if bench > 0 && sh.raised && gfx::frame_count() >= 2 && now > 2.0 && d3.bench.n == 0 { d3.bench.n = bench; }
+        if d3.bench.n > 0 { dirty = true; }
         let drew = dirty || shell::animating(sh, g, now);
         if drew {
             let shown .= shell::fill(sh, now);
@@ -505,6 +513,7 @@ fn main() {
         // doesn't wait for an event.
         if g.acted { dirty = true; }
         if frames > 0 && gfx::frame_count() >= frames { break; }
+        if draw3d::bench_done(d3) { break; }
     }
     if frames > 0 { gfx::screenshot("draughts.png"); }
     if frames > 0 && d3.frames > 0 { print("3D board: ", d3.frames, " frames showed it, ", d3.draws, " drew it, ", d3.shadows, " its shadow map"); }

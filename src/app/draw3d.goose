@@ -23,25 +23,67 @@ import vec;
 import gfx;
 
 struct Drawer {
-    gpu:     render3d::Gpu                         = default<render3d::Gpu>(),
-    ready:   bool                                  = false,
-    kind:    i64                                   = -1, // the app's theme the board was set up with
-    which:   i64                                   = -1, // the board drawn (the shell's which())
-    n:       i64                                   = 0,
-    wood:    i64                                   = -1, // --wood, --marble: -1 the renderer's own
-    marble:  i64                                   = -1,
-    summer:  i64                                   = 0,  // --summer: summer's variant (looks::SUMMERS)
-    spring:  i64                                   = -1, // --spring: spring's look, -1 the renderer's own
-    size:    int2                                  = int2 { 0, 0 },
-    scene:   view3d::Scene                         = view3d::Scene {}, // this frame's
-    drawn:   view3d::Scene                         = view3d::Scene {}, // the last one drawn
-    upload:  float4[..2 * render3d::MAX_INSTANCES] = [],
-    alphas:  f32[..render3d::MAX_INSTANCES]        = [],    // the fading instances' opacity, last in upload
-    redraw:  bool                                  = false, // this frame drew the 3D board,
-    shadow:  bool                                  = false, // and the shadow map first
-    frames:  i64                                   = 0,     // frames that showed the 3D board,
-    draws:   i64                                   = 0,     // those that drew it,
-    shadows: i64                                   = 0,     // and the shadow map
+    gpu:      render3d::Gpu                         = default<render3d::Gpu>(),
+    ready:    bool                                  = false,
+    kind:     i64                                   = -1, // the app's theme the board was set up with
+    which:    i64                                   = -1, // the board drawn (the shell's which())
+    n:        i64                                   = 0,
+    wood:     i64                                   = -1, // --wood, --marble: -1 the renderer's own
+    marble:   i64                                   = -1,
+    summer:   i64                                   = 0,  // --summer: summer's variant (looks::SUMMERS)
+    spring:   i64                                   = -1, // --spring: spring's look, -1 the renderer's own
+    size:     int2                                  = int2 { 0, 0 },
+    scene:    view3d::Scene                         = view3d::Scene {}, // this frame's
+    drawn:    view3d::Scene                         = view3d::Scene {}, // the last one drawn
+    upload:   float4[..2 * render3d::MAX_INSTANCES] = [],
+    alphas:   f32[..render3d::MAX_INSTANCES]        = [],    // the fading instances' opacity, last in upload
+    redraw:   bool                                  = false, // this frame drew the 3D board,
+    shadow:   bool                                  = false, // and the shadow map first
+    frames:   i64                                   = 0,     // frames that showed the 3D board,
+    draws:    i64                                   = 0,     // those that drew it,
+    shadows:  i64                                   = 0,     // and the shadow map
+    setup_ms: f64                                   = 0.0,   // the renderer's setup,
+    apply_ms: f64                                   = 0.0,   // and the theme's bake and photograph
+    first_ms: f64                                   = 0.0,   // the first frame drawn, waited for
+    timed:    bool                                  = false, // --bench: the first frame waited for and timed
+    bench:    Bench                                 = Bench {},
+}
+
+// --bench N (measuring, task 015): N frames drawing the 3D board and its shadow map, as
+// while a piece moves, each submitted and waited for; N drawing the board alone, waited
+// for; then N as the loop draws them, frame to frame. Times in seconds.
+struct Bench {
+    n:    i64         = 0,
+    i:    i64         = 0,
+    cpu:  f64[..1024] = [],
+    all:  f64[..1024] = [],
+    pass: f64[..1024] = [],
+    gap:  f64[..1024] = [],
+    last: f64         = 0.0,
+}
+
+fn median(xs: f64[..1024]&) -> f64 {
+    guard xs.len > 0 else { return 0.0; }
+    sort(xs[..xs.len]);
+    return xs[xs.len / 2] * 1000.0;
+}
+
+// Whether the bench has timed all its frames; it prints them then.
+fn bench_done(d: Drawer&) -> bool {
+    let b .= d.bench;
+    guard b.n > 0 && b.i >= 3 * b.n else { return false; }
+    // The bake again, warm: its pipeline made.
+    for k in 2 {
+        let t0 = clock();
+        render3d::bake_surfaces(d.gpu, k == 0, k == 1);
+        print("bench3d: bake warm, ", if k == 0 { "plan" } else { "frame map" }, " ", (clock() - t0) * 1000.0, " ms");
+    }
+    print("bench3d: setup ", d.setup_ms, " ms, theme applied ", d.apply_ms, " ms (bake ", d.gpu.bake_ms,
+          " ms, photograph ", d.gpu.photo_ms, " ms), first frame ", d.first_ms, " ms");
+    print("bench3d: ", d.size.x, "x", d.size.y, " with the shadow map: cpu ", median(b.cpu),
+          " ms, cpu+gpu waited ", median(b.all), " ms; the pass alone waited ", median(b.pass),
+          " ms; presented frame to frame ", median(b.gap), " ms (", b.n, " frames each)");
+    return true;
 }
 
 // The look for the app's theme, the season's: autumn's wood, winter's stone, spring's
@@ -58,13 +100,16 @@ fn look_of(kind: i64, summer: i64) -> i64 {
 fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f64, size: int2, kind: i64,
          which: i64 = 0, hold: bool = false) {
     var force = false;
+    let t0 = clock();
     if !d.ready {
         render3d::setup(d.gpu);
         render3d::choose(d.gpu, d.wood, d.marble, d.spring);
         d.ready = true;
         force = true;
+        d.setup_ms = (clock() - t0) * 1000.0;
     }
     if kind != d.kind || l.n != d.n {
+        let t1 = clock();
         d.kind = kind;
         d.n = l.n;
         let look = look_of(kind, d.summer);
@@ -75,6 +120,13 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
         d.gpu.finish = looks::finish_for(look, d.gpu.wood);
         render3d::apply(d.gpu, look, l.n, kind);
         force = true;
+        d.apply_ms = (clock() - t1) * 1000.0;
+    }
+    let bn .= d.bench;
+    let phase = if bn.n > 0 && bn.i < 3 * bn.n { bn.i / bn.n } else { -1 };
+    if phase == 2 {
+        if bn.i > 2 * bn.n { bn.gap.push(t0 - bn.last); }
+        bn.last = t0;
     }
     if size.x != d.size.x || size.y != d.size.y {
         d.size = size;
@@ -83,15 +135,15 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
     d.frames++;
     d.redraw = false;
     d.shadow = false;
-    guard force || !hold || which != d.which || !view3d::same_view(d.drawn.view, v) else { return; }
+    guard force || phase >= 0 || !hold || which != d.which || !view3d::same_view(d.drawn.view, v) else { return; }
     d.which = which;
     view3d::fill(d.scene, b, l, v, now);
     let c = view3d::changes(d.drawn, d.scene);
     // The board turned under the light (a hot-seat turn): the light turns with it, so it
     // keeps its place on screen, and the shadows are drawn again.
     let turned = v.turn != d.gpu.turn;
-    d.redraw = force || c & view3d::DRAW != 0 || turned;
-    d.shadow = force || c & view3d::SHADOW != 0 || turned;
+    d.redraw = force || phase >= 0 || c & view3d::DRAW != 0 || turned;
+    d.shadow = force || phase == 0 || phase == 2 || c & view3d::SHADOW != 0 || turned;
     guard d.redraw else { return; }
     d.draws++;
     if d.shadow { d.shadows++; }
@@ -119,6 +171,17 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
     let vp = gfx::mat4 { c0: m.c0, c1: m.c1, c2: m.c2, c3: m.c3 };
     render3d::draw(d.gpu, vp, v.eye, gfx::Texture { 0 }, size, false, false);
     d.drawn = d.scene;
+    if phase == 0 || phase == 1 {
+        let t2 = clock();
+        gfx::flush();
+        if phase == 0 { bn.cpu.push(t2 - t0); bn.all.push(clock() - t0); }
+        else { bn.pass.push(clock() - t0); }
+    }
+    if phase >= 0 { bn.i++; }
+    if d.draws == 1 && d.timed {
+        gfx::flush();
+        d.first_ms = (clock() - t0) * 1000.0 - d.setup_ms - d.apply_ms;
+    }
 }
 
 // Lays the kept image over the screen's open pass (the app's photograph drawn in it, or

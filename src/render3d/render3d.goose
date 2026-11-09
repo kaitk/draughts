@@ -151,6 +151,8 @@ struct Gpu {
     frame:          Frame,
     shadow_dirty:   bool,
     turn:           f32,            // the board's turn (view3d::View.turn), the light turned with it
+    bake_ms:        f64,            // the last bake's time and the photograph's (measuring)
+    photo_ms:       f64,
 }
 
 fn f4(v: float3, w: f32) -> float4 { float4 { v.x, v.y, v.z, w } }
@@ -405,14 +407,18 @@ fn apply(g: Gpu&, which: i64, n: i64, photo: i64 = -1) {
     if which != g.look || n != g.n {
         g.look = which;
         g.n = n;
+        let t0 = clock();
         bake_surfaces(g);
+        g.bake_ms = (clock() - t0) * 1000.0;
     }
     if kind != g.photo_kind || g.frame.light_dir.w == 0.0 {
         g.photo_kind = kind;
+        let t0 = clock();
         var sh: float4[9] = [float4_0; 9];
         photograph(g, kind, t.ambient.z, sh);
         g.frame.sh = sh;
         gfx::flush();
+        g.photo_ms = (clock() - t0) * 1000.0;
     }
     // The key light, from the upper left; the photograph's ambient.
     light(g);
