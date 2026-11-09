@@ -38,8 +38,12 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   `ai::think` as the app's worker would; the clock value on its own; and the computer's
   time a move on the clock, over whole games with simulated time, in `pace`; several captures of
   one piece each, black against the computer on 10×10, every capture and each landing of a
-  king's chosen by taps and by a drag, on the flat and the 3D board, nothing played unchosen:
-  `choice`; a draw by a count tapped to its last move, its countdown, card, frames, undo,
+  king's chosen by taps and by a drag, on the flat and the 3D board, nothing played unchosen,
+  and the must-capture rings and counts before and after a mistake: `choice`; anywhere on
+  a landing square, 25 points, tapped and dropped on the turned flat and 3D boards in
+  both orientations, plays that capture: `aim` (a 3D drop is aimed with the held piece
+  over the point, as `game::touch` keeps it where the finger took it, a stacked king two
+  discs high); a draw by a count tapped to its last move, its countdown, card, frames, undo,
   against the computer, kept in a saved game, and by repetition: `draw`; when a capture's
   count shows, on mistakes only from a mistake to the next right jump and with move
   hints at once, and the next stops lit after a second wrong square, on the flat and the
