@@ -67,7 +67,7 @@ let BOARD_FRAG = """
     layout(location = 0) out vec4 result;
     layout(set = 3, binding = 1) uniform BoardUniforms {
         vec4 screen; vec4 rect; vec4 inner; vec4 scene; vec4 wrong;
-        uvec4 last; uvec4 target; uvec4 via; uvec4 next;
+        uvec4 last; uvec4 target; uvec4 via; uvec4 next; uvec4 shade;
     };
     layout(set = 2, binding = 0) uniform sampler2D photo;       // blurred
     layout(set = 2, binding = 1) uniform sampler2D sharp_photo;
@@ -164,6 +164,12 @@ let BOARD_FRAG = """
             s = tint(s, a);
             int sq = y * n + x;
             if (has(last, sq)) s = mix(s, glow.rgb, 0.16);
+            // The lookout's crowning square: shaded, darkest along its edges, as an inset
+            // shadow, under the dark ghost king on it.
+            if (has(shade, sq)) {
+                vec2 e2 = min(fq, 1.0 - fq);
+                s *= 1.0 - (0.3 + 0.32 * (1.0 - smoothstep(0.0, 0.25, min(e2.x, e2.y))));
+            }
             // A legal target: a glowing dot; a capture's stop: a ring.
             float r = length(fq - 0.5) * inner.w;
             if (has(target, sq)) {
@@ -264,7 +270,7 @@ let PIECE_FRAG = """
     layout(location = 0) in vec2 v_local;
     layout(location = 1) flat in vec4 v_look;     // black, king (0, 1 crown, 2 stack), selected, opacity
     layout(location = 2) flat in vec4 v_extra;    // must capture (1 pulsing, 2 still), lift, side, one pixel
-    layout(location = 3) flat in vec4 v_ring;     // y: a glow ring tight round it, 0 to 1
+    layout(location = 3) flat in vec4 v_ring;     // y: a glow ring tight round it, 0 to 1; w: 1 drained, -1 light
     layout(location = 4) flat in vec4 v_win;      // a win: x dimmed by; y its square lit; z the square's half side; w 1 on the board
     layout(location = 0) out vec4 result;
     layout(set = 3, binding = 1) uniform Clock { vec4 time; vec4 hole; };
@@ -353,6 +359,17 @@ let PIECE_FRAG = """
                                                  digit((c - vec2(0.12, 0.0)) / s, n % 10));
         over(light, fill(t * s - 0.035, w));
     }
+    // The lookout's piece in danger, or its crowning ghost king (board::DRAINED): the color
+    // drained and a little darker, solid (CSS grayscale(1) brightness(0.66)
+    // contrast(0.85), prototypes/coach.html's `drain`); a hint's ghost (board::LIGHT)
+    // lighter.
+    vec3 marked(vec3 c, float k) {
+        if (k > 0.5) {
+            float grey = dot(c, vec3(0.2126, 0.7152, 0.0722)) * 0.66;
+            return vec3((grey - 0.5) * 0.85 + 0.5);
+        }
+        return k < -0.5 ? mix(c, vec3(1.0), 0.2) : c;
+    }
     void main() {
         vec2 p = v_local;
         bool black = v_look.x > 0.5;
@@ -402,7 +419,7 @@ let PIECE_FRAG = """
             float sy = f.y - clamp(f.y, 0.0, depth);
             float foot = clamp((f.y - sqrt(max(1.0 - f.x * f.x, 0.0))) / depth, 0.0, 1.0);
             vec3 sc = sidec * (0.8 + 0.25 * sqrt(max(1.0 - f.x * f.x, 0.0))) * (1.0 - 0.25 * foot);
-            over(sc, fill(length(vec2(f.x, sy)) - 1.0, w));
+            over(marked(sc, v_ring.w), fill(length(vec2(f.x, sy)) - 1.0, w));
             // The top is flat and matte, as a turned disc's is: one color and one height,
             // with a narrow groove cut into it at 70% of the radius and only the outer
             // edge rounded. The light from above catches the outer edge's upper side
@@ -413,7 +430,7 @@ let PIECE_FRAG = """
                 vec3 cc = black ? vec3(0.914, 0.769, 0.416) : crown_w.rgb;
                 col = mix(col, cc, fill(0.56 * crown(f / 0.56), w));
             }
-            over(col, fill(r - 1.0, w));
+            over(marked(col, v_ring.w), fill(r - 1.0, w));
             if (k == 0) rings(r, sel, v_extra.x, w);
         }
         if (v_ring.z > 0.5) pips((p + vec2(0.0, lift)) / scale, int(v_ring.z + 0.5), w);

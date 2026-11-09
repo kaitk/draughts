@@ -1,0 +1,26 @@
+the lookout: c5 in danger, e1 a crowning square
+  c5 white, opacity 1.00, drained, ring 0.00
+  e1 black king, opacity 0.62, drained, ring 0.00
+  shaded: e1 
+  3D: 2 drained instances, 1 shaded squares, pulse square -1.0, pulsing false
+  animating: false
+the hint's first step, at 0.5 s
+  c5 white, opacity 1.00, drained, ring 0.43 pulsing
+  e1 black king, opacity 0.62, drained, ring 0.00
+  shaded: e1 
+  3D: 2 drained instances, 1 shaded squares, pulse square 18.0, pulsing true
+its second step, 0.5 s on
+  c5 white, opacity 1.00, drained, ring 1.00
+  e1 black king, opacity 0.62, drained, ring 0.00
+  b6 white, opacity 0.50, light, ring 0.43 pulsing
+  shaded: e1 
+  3D: 2 drained instances, 1 shaded squares, pulse square 9.0, pulsing true
+  animating: true; at 5 s: true, false
+still
+  c5 white, opacity 1.00, drained, ring 1.00
+  e1 black king, opacity 0.62, drained, ring 0.00
+  b6 white, opacity 0.50, light, ring 1.00
+  shaded: e1 
+  3D: 2 drained instances, 1 shaded squares, pulse square -1.0, pulsing false
+after c5-b6
+  shaded: 

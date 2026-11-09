@@ -425,7 +425,8 @@ fn pick(v: View, b: board::Board&, l: board::Layout, p: float2) -> float2 {
 // marks as the renderer's field pass reads them (shaders::MARKS_FRAG), a float4 a square
 // of the world's grid: x the last move's tint (1), y a target's dot (1) or a stop's ring
 // (2), z the must-capture ring, 1 pulsing or 2 still, w 0 on a wrong move's flashing
-// square, else -1. `lit` runs beside it, a float4 a square too: x the glow ring tight
+// square, 1 on a lookout's crowning square (shaded), else -1. A drained piece (the
+// lookout's danger, the crowning ghost king) has a seed below 0, -1 less its seed. `lit` runs beside it, a float4 a square too: x the glow ring tight
 // round the piece standing there (a puzzle's hint, a win's wave), 0 to 1; y the square
 // lit by a win's glow passing, 0 to 1; z how many pieces the piece standing there takes,
 // shown as pips on the field (board::Piece.ring.z), 0 for none; w a capture's next stop
@@ -496,8 +497,8 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
     let phase = (0.5 - 0.5 * cos(2.0 * PI * now / 1.4)) as f32;
     s.pulse = float4 { phase, 1.0, -1.0, 0.0 };
     s.pulsing = false;
-    // The hint's glow ring pulses for its first PULSE, round the one piece it lights.
-    let hint = b.glow >= 0 && b.glow_at >= 0.0 && now < b.glow_at + board::PULSE;
+    // A hint's glow ring pulses for its first PULSE, round the one piece board::fill
+    // says (Board.pulsed): the piece to move, or the game's hint's ghost.
     s.selected = float4 { 0.0, 0.0, 0.0, 0.0 };
     let n = l.n;
     let u = unit(n);
@@ -509,7 +510,12 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
         let scale = u * (p.at.z / r0) * (1.0 + (GROW - 1.0) * glow);
         let lift = lift_of(l, p.at.w);
         let dark = p.look.x;
-        let seed = i + (if b.dim > 0.0 && p.win.x <= 0.0 { SEED_LIT } else { 0.0 });
+        let hint = i == b.pulsed;
+        // A drained piece (the lookout's, board::DRAINED) has its seed below 0, which the
+        // shaders take as the mark, its figure from the seed's size.
+        let lit_seed = i + (if b.dim > 0.0 && p.win.x <= 0.0 { SEED_LIT } else { 0.0 });
+        let seed = if p.ring.w > 0.5 { -1.0 - lit_seed } else { lit_seed };
+        let upper = if p.ring.w > 0.5 { seed - 0.5 } else { seed + 0.5 };
         // The hint's pulsing ring is left out of the state, so its pulse alone draws only
         // the marks over the image.
         let ring_y = if hint && p.ring.y > 0.0 { 1.0 } else { p.ring.y };
@@ -520,7 +526,7 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
             s.inst.push(float4 { xz.x, lift, xz.y, scale });
             s.inst.push(float4 { dark, 0.0, 2.0, seed });
             s.inst.push(float4 { xz.x, top, xz.y, scale });
-            s.inst.push(float4 { dark, 0.5, 0.0, seed + 0.5 });
+            s.inst.push(float4 { dark, 0.5, 0.0, upper });
             for k in 2 {
                 s.state.push(fx);
                 s.state.push(p.win);
@@ -561,6 +567,7 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
     mark_world(l, b.marks.target, s.marks.target);
     mark_world(l, b.marks.via, s.marks.via);
     mark_world(l, b.marks.next, s.marks.next);
+    mark_world(l, b.marks.shade, s.marks.shade);
     s.flash = b.flash;
     if b.flash.x >= 0.0 { s.flash.x = world_square(l, b.flash.x as i64); }
     s.dim = b.dim;
@@ -575,6 +582,8 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
         if s.marks.last[w] & bit != 0 { s.field[i].x = 1.0; }
         if s.marks.target[w] & bit != 0 { s.field[i].y = 1.0; }
         if s.marks.via[w] & bit != 0 { s.field[i].y = 2.0; }
+        // The lookout's crowning square, shaded (field.w 1; 0 is a wrong move's flash).
+        if s.marks.shade[w] & bit != 0 { s.field[i].w = 1.0; }
         if s.marks.next[w] & bit != 0 {
             s.lit[i].w = if next_pulses { 2.0 } else { 1.0 };
             if next_pulses { s.pulsing = true; }
@@ -620,7 +629,7 @@ fn changes(was: Scene&, now: Scene&) -> i64 {
     var rest = same_view(was.view, now.view) && same_list(was.state, now.state)
                && same(was.selected, now.selected) && was.dim == now.dim && same_bits(was.marks.last, now.marks.last)
                && same_bits(was.marks.target, now.marks.target) && same_bits(was.marks.via, now.marks.via)
-               && same_bits(was.marks.next, now.marks.next);
+               && same_bits(was.marks.next, now.marks.next) && same_bits(was.marks.shade, now.marks.shade);
     for i in 100 {
         if rest && (!same(was.squares[i], now.squares[i]) || !same(was.field[i], now.field[i]) || !same(was.lit[i], now.lit[i])) {
             rest = false;

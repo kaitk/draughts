@@ -827,11 +827,11 @@ fn place(g: Gpu&, inst: const float4[:], alphas: const f32[:], squares: const fl
     gfx::update_buffer(g.marks, bytes_of(marks[..min(marks.len, SQUARES)]));
     if lit.len > 0 { gfx::update_buffer(g.glows, bytes_of(lit[..min(lit.len, SQUARES)])); }
     // What MARKS_FRAG without PULSE draws: the selected piece's ring, a last move's tint,
-    // a target or a stop, a still must-capture ring, a glow ring, a lit square, or a
-    // count's pips. With none, the board's pass leaves its quad out.
+    // a target or a stop, a still must-capture ring, a glow ring, a lit square, a
+    // count's pips, or a crowning square's shade. With none, the board's pass leaves its quad out.
     g.marked = selected.w > 0.0;
     for m in marks[..min(marks.len, SQUARES)] {
-        if m.x > 0.5 || m.y > 0.5 || m.z > 1.5 { g.marked = true; }
+        if m.x > 0.5 || m.y > 0.5 || m.z > 1.5 || m.w > 0.5 { g.marked = true; }
     }
     for m in lit[..min(lit.len, SQUARES)] {
         if m.x > 0.0 || m.y > 0.0 || m.z > 0.0 { g.marked = true; }

@@ -63,7 +63,8 @@ let FS_SET = "#define FRAME_SET 3\n";
 // The board (one mesh) and the pieces (one lathe mesh, per instance from a storage
 // buffer of two vec4s: the foot and scale; dark, crown, selected or stacked, seed).
 // draw.z: how opaque (a fading piece is drawn alone, blended); draw.w: the first
-// instance it draws. A seed of 1000 or more is a piece a win's dim leaves lit.
+// instance it draws. A seed of 1000 or more is a piece a win's dim leaves lit; one below
+// 0 a piece the lookout drains (view3d::fill), its figure from the seed's size.
 let LIT_VERT = """
     layout(location = 0) in vec3 a_pos;
     layout(location = 1) in vec3 a_normal;
@@ -456,7 +457,7 @@ let LIT_FRAG = """
             rough = m.a;
             if (dark) {
                 // Smooth satin with a faint figure, drawn out a little across the disc.
-                vec3 g = lp + mod(v_kind.w, 1000.0) * 3.17;
+                vec3 g = lp + mod(abs(v_kind.w), 1000.0) * 3.17;
                 float st = 1.0 + 6.0 * piece_fig.z;
                 float w = noise3(vec3(g.x * 5.0, g.y * 5.0, g.z * 5.0 * st)) * 0.65
                         + noise3(vec3(g.x * 13.0, g.y * 13.0, g.z * 13.0 * st)) * 0.35;
@@ -465,7 +466,7 @@ let LIT_FRAG = """
                 // the references' dark pieces have near-black sides under a lit top.
                 albedo *= mix(piece_fig.w, 1.0, smoothstep(0.2, 0.6, abs(n.y)));
             } else {
-                float w = noise3(lp * 24.0 + mod(v_kind.w, 1000.0) * 3.17);
+                float w = noise3(lp * 24.0 + mod(abs(v_kind.w), 1000.0) * 3.17);
                 albedo = m.rgb * (1.0 + piece_fig.x * (w - 0.5));
             }
             // The top, from its height function at this point's distance from the axis
@@ -584,8 +585,14 @@ let LIT_FRAG = """
         color = tonemap(color) * vec3(1.02, 1.0, 0.97);
         // A win dims the board and the pieces but the winning one, as the flat board's
         // black fill over them does.
-        float dim = v_kind.w >= 1000.0 ? 0.0 : screen.z;
+        float dim = abs(v_kind.w) >= 1000.0 ? 0.0 : screen.z;
         result = vec4(to_srgb(color) * (1.0 - dim), v_alpha);
+        // The lookout's drained piece (a seed below 0): its color drained and a little
+        // darker, as the flat board's (src/app/draw.goose's `drained`).
+        if (v_kind.w < 0.0) {
+            float grey = dot(result.rgb, vec3(0.2126, 0.7152, 0.0722)) * 0.66;
+            result.rgb = vec3((grey - 0.5) * 0.85 + 0.5);
+        }
     }
     """;
 
@@ -1696,6 +1703,7 @@ let BLUR_FRAG = """
 // Frame.selected, wherever the piece is (a drag). Beside them `lit`, per square: x the
 // glow ring tight round the piece there (a hint, a win's wave), y the square lit by a
 // win's glow passing, z how many pieces the piece there takes, as pips (`count_pips`).
+// marks' w 1 shades a lookout's crowning square.
 // A win's dim (screen.z) dims them all but the glow rings. draw.y:
 // squares per side. As the flat board draws them (src/app/draw.goose).
 //
@@ -1793,6 +1801,7 @@ let MARKS_FRAG = """
     #endif
     void main() {
         vec3 c = vec3(0.0);
+        vec4 shade = vec4(0.0);
         float n = draw.y;
         float u = 2.0 * FIELD / n;
         vec2 g = (v_pos.xz + FIELD) / u;
@@ -1813,6 +1822,12 @@ let MARKS_FRAG = """
             float r = length(fract(g) - 0.5);       // in squares from its middle
             float w = wg;
             if (m.x > 0.5) c += glow.rgb * 0.10;
+            // The lookout's crowning square (w 1): shaded, darkest along its edges, as an
+            // inset shadow, under the dark ghost king standing on it.
+            if (m.w > 0.5) {
+                vec2 e2 = min(fract(g), 1.0 - fract(g));
+                over(shade, vec3(0.0), 0.3 + 0.32 * (1.0 - smoothstep(0.0, 0.25, min(e2.x, e2.y))));
+            }
             if (m.y > 0.5 && m.y < 1.5) c += glow.rgb * dot_at(r, w);
             if (m.y > 1.5) c += glow.rgb * 0.9 * line(r - 0.18, w);
             // Where a piece waiting on a capture's stop goes on: the target's dot, lit
@@ -1870,7 +1885,7 @@ let MARKS_FRAG = """
                 }
     #endif
     #ifdef PULSE
-                if (m.w >= 0.0 && pulse.y < 1.0) {
+                if (m.w > -0.5 && m.w < 0.5 && pulse.y < 1.0) {
                     float t = fract(pulse.y * 2.0);
                     float op = t < 0.4 ? t / 0.4 : 1.0 - 0.4 * (t - 0.4) / 0.6;
                     float rr = 0.5 * (0.8 + 0.2 * min(t / 0.4, 1.0));
@@ -1885,7 +1900,9 @@ let MARKS_FRAG = """
         // The depth is read only where there is something to add.
         result = c.r + c.g + c.b > 0.0 && seen() ? vec4(c, place.w) : vec4(0.0);
     #else
-        // Blended premultiplied: the marks add, alpha 0, and the pips cover what is under.
+        // Blended premultiplied: the marks add, alpha 0, and the pips and the shade cover
+        // what is under.
+        pips = pips + shade * (1.0 - pips.a);
         result = vec4(pips.rgb + c * (1.0 - pips.a), pips.a);
     #endif
     }

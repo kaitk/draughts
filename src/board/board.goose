@@ -89,7 +89,7 @@ fn center(l: Layout, v: rules::Variant&, b: i64) -> float2 {
 struct Piece {
     at:   float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x, y center in pixels, radius, lift in pixels
     look: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // black (0 or 1), 0 or CROWN or STACK, selected glow 0..1, opacity
-    ring: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: must-capture ring, 1 pulsing, 2 still; y: a glow ring tight round it, 0 to 1; z: pieces it takes, as pips
+    ring: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: must-capture ring, 1 pulsing, 2 still; y: a glow ring tight round it, 0 to 1; z: pieces it takes, as pips; w: DRAINED, or LIGHT a hint's ghost
     win:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // a win (game::cheer): x dimmed by, 0..1; y its square lit, 0..1; z the square's half side in radii; w: over the UI, 1 on the board (a win's card's piece)
 }
 
@@ -99,7 +99,17 @@ struct Marks {
     target: u32[4] = [0; 4],
     via:    u32[4] = [0; 4],
     next:   u32[4] = [0; 4],    // where a piece waiting on a stop goes on to, pulsing (flash.z)
+    shade:  u32[4] = [0; 4],    // the lookout's crowning squares, shaded under a dark ghost king
 }
+
+// The lookout's and the hint's looks of a piece (Piece.ring.w): a piece in danger, or the
+// ghost king on a crowning square, drained of color and a little darker, solid and still;
+// the hint's ghost on its square, light (docs/architecture/rendering.md, "The lookout and
+// the hint").
+let DRAINED = 1.0;
+let LIGHT = -1.0;
+let GHOST_KING = 0.62;      // the crowning ghost king's opacity
+let GHOST_HINT = 0.5;       // the hint's ghost's
 
 // A position the game was in, for undo, with the move that led to it.
 struct Step {
@@ -147,14 +157,26 @@ struct Board {
     pulse_end: f64,
     // The pieces the legal captures take, pulsing beside the pieces that must take them,
     // after a tap on a piece that could take but fewer (the majority rule): the reason.
-    outtaken:  u64,
-    hints:     i64,             // MISTAKES or MOVES
-    wrong:     i64,             // the square of the last wrong move, a bit, or -1
-    wrong_at:  f64,
-    ghost:     bool,            // a ghost of the piece that slid back fades on the wrong square
-    ghost_of:  float2,          // its side (0 or 1) and whether it is a king
-    glow:      i64,             // the piece a hint shows with a glow ring, a bit, or -1
-    glow_at:   f64,
+    outtaken: u64,
+    hints:    i64,              // MISTAKES or MOVES
+    wrong:    i64,              // the square of the last wrong move, a bit, or -1
+    wrong_at: f64,
+    ghost:    bool,             // a ghost of the piece that slid back fades on the wrong square
+    ghost_of: float2,           // its side (0 or 1) and whether it is a king
+    glow:     i64,              // the piece a hint shows with a glow ring, a bit, or -1
+    glow_at:  f64,
+    // A game's hint, its second step: a light ghost of the piece on the square it goes to,
+    // a bit, or -1; its ring pulses from `ghost_at` as the glow's does.
+    hint_to:  i64,
+    ghost_at: f64,
+    // The lookout (game::watch): the side to move's pieces in danger, drained (a held
+    // piece's on the square it was taken from), and the other side's crowning squares,
+    // shaded under a dark ghost king. Cleared by a move, set again once it has shown.
+    danger: u64,
+    crowns: u64,
+    // The piece whose glow ring pulses this frame (fill), or -1: the 3D board draws its
+    // pulse over the kept image.
+    pulsed:    i64,
     king_look: i64,             // CROWN or STACK
     // A picture rather than a game (settings' preview): once a wrong move's ring has
     // flashed, it stays, and once the pieces that must capture have pulsed, their rings
@@ -174,7 +196,8 @@ struct Board {
 }
 
 fn new(variant: u8) -> Board {
-    var b = Board { variant: variant, selected: -1, wrong: -1, glow: -1, king_look: CROWN, pressed: -1, .. };
+    var b = Board { variant: variant, selected: -1, wrong: -1, glow: -1, hint_to: -1, pulsed: -1, king_look: CROWN,
+                    pressed: -1, .. };
     set(b, rules::start(variant));
     return b;
 }
@@ -195,6 +218,9 @@ fn show(b: Board&, p: rules::Position) {
     b.back = false;
     b.ghost = false;
     b.glow = -1;
+    b.hint_to = -1;
+    b.danger = 0;
+    b.crowns = 0;
     b.kept_at = -1.0;
     b.misses = 0;
     b.counted = false;
@@ -254,6 +280,15 @@ fn winner(b: Board&) -> i64 {
 fn glow_on(b: Board&, sq: i64, now: f64) {
     b.glow = sq;
     b.glow_at = now;
+}
+
+// A game's hint, its second step: a light ghost of the glowing piece on square `to`, its
+// ring pulsing for two cycles as the glow's does, then lit and still; the piece's own ring
+// stops pulsing, so one ring pulses at a time.
+fn ghost_on(b: Board&, to: i64, now: f64) {
+    b.hint_to = to;
+    b.ghost_at = now;
+    b.glow_at = -1.0;
 }
 
 // Takes back the last move, m, as a mistake: the piece slides back along its way and
@@ -393,6 +428,9 @@ fn start_move(b: Board&, i: i64, now: f64) {
     b.selected = -1;
     b.steps.clear();
     b.glow = -1;
+    b.hint_to = -1;
+    b.danger = 0;
+    b.crowns = 0;
     b.kept_at = -1.0;
     b.misses = 0;
     b.counted = false;
@@ -647,6 +685,7 @@ fn duration(m: rules::Move&) -> f64 {
 fn animating(b: Board&, now: f64) -> bool {
     b.moving || now < b.pulse_end || (b.wrong >= 0 && now < b.wrong_at + FLASH)
     || (b.glow >= 0 && b.glow_at >= 0.0 && now < b.glow_at + PULSE)
+    || (b.hint_to >= 0 && b.ghost_at >= 0.0 && now < b.ghost_at + PULSE)
     || (b.kept_at >= 0.0 && now < b.kept_at + PULSE && next_shown(b))
 }
 
@@ -669,6 +708,10 @@ fn update(b: Board&, now: f64) -> bool {
     }
     if b.glow >= 0 && b.glow_at >= 0.0 && now >= b.glow_at + PULSE {
         b.glow_at = -1.0;
+        ended = true;
+    }
+    if b.hint_to >= 0 && b.ghost_at >= 0.0 && now >= b.ghost_at + PULSE {
+        b.ghost_at = -1.0;
         ended = true;
     }
     if b.kept_at >= 0.0 && now >= b.kept_at + PULSE {
@@ -696,6 +739,25 @@ fn set_bit(bits: u32[4]&, n: i64) { bits[n / 32] |= (1 as u32) << (n % 32); }
 fn mark(b: Board&, bits: u32[4]&, sq: i64) {
     let v .= rules::VARIANTS[b.variant];
     set_bit(bits, v.y_of[sq] * v.size + v.x_of[sq]);
+}
+
+// A hint's ring at `now` that began pulsing `at` (-1 still): full, fading to a third and
+// back every 1.4 s for PULSE, then full and still.
+fn ring_at(at: f64, now: f64) -> f32 {
+    guard at >= 0.0 && now < at + PULSE else { return 1.0; }
+    return (0.65 + 0.35 * cos(2.0 * PI * (now - at) / (0.5 * PULSE))) as f32;
+}
+
+// The last piece added gets a hint's glow ring as strong as k, pulsing while `at` is.
+fn glow_ring(b: Board&, k: f32, at: f64, now: f64) {
+    b.pieces[b.pieces.len - 1].ring.y = k;
+    if at >= 0.0 && now < at + PULSE { b.pulsed = b.pieces.len - 1; }
+}
+
+// The last piece added is drained: in danger, or the crowning ghost king.
+fn drain(b: Board&) {
+    guard b.pieces.len > 0 else { return; }
+    b.pieces[b.pieces.len - 1].ring.w = DRAINED;
 }
 
 // A piece to draw; `ring` is its must-capture ring: 0 none, 1 pulsing, 2 still.
@@ -729,9 +791,11 @@ fn fill(b: Board&, l: Layout, now: f64) {
     let t = if b.back { max(duration(b.move) - (now - b.since), 0.0) } else { now - b.since };
     let pulsing = now < b.pulse_end;
     // The hint's ring: full, fading to a third and back every 1.4 s, then full and still.
-    let glowing = if b.glow_at >= 0.0 && now < b.glow_at + PULSE {
-        (0.65 + 0.35 * cos(2.0 * PI * (now - b.glow_at) / (0.5 * PULSE))) as f32
-    } else { 1.0 };
+    let glowing = ring_at(b.glow_at, now);
+    b.pulsed = -1;
+    // The lookout's marks show on a board at rest.
+    let danger = if b.moving { 0 } else { b.danger };
+    let crowns = if b.moving { 0 } else { b.crowns };
     let ring: f32 = if pulsing { 1.0 } else { 2.0 };
     var must: u64 = 0;
     if (pulsing || b.held) && must_capture(b) {
@@ -754,6 +818,12 @@ fn fill(b: Board&, l: Layout, now: f64) {
             let m = rules::bit(sq);
             let white = shown.pieces[rules::WHITE] & m != 0;
             let black = shown.pieces[rules::BLACK] & m != 0;
+            if crowns & m != 0 && !white && !black {
+                // The other side's man would crown here: a dark, still ghost of its king.
+                add(b, center(l, v, sq), r, 0.0, b.pos.side == rules::WHITE, true, 0.0, GHOST_KING, 0.0);
+                drain(b);
+                mark(b, b.marks.shade, sq);
+            }
             guard white || black else { continue; }
             if b.moving && sq == b.move.from { continue; }
             if b.dragging && sq == b.selected { continue; }
@@ -765,8 +835,18 @@ fn fill(b: Board&, l: Layout, now: f64) {
             let selected = sq == b.selected;
             add(b, center(l, v, sq), r, if selected { 1.1 * unit } else { 0.0 }, black,
                 shown.kings & m != 0, if selected { 1.0 } else { 0.0 }, alpha, if must & m != 0 { ring } else { 0.0 });
-            if sq == b.glow && !b.moving && b.pieces.len > 0 { b.pieces[b.pieces.len - 1].ring.y = glowing; }
+            if sq == b.glow && !b.moving && b.pieces.len > 0 { glow_ring(b, glowing, b.glow_at, now); }
             if count_on && b.steps.len == 0 { show_takes(b, sq); }
+            if danger & m != 0 { drain(b); }
+        }
+    }
+    if b.hint_to >= 0 && !b.moving && b.glow >= 0 {
+        // The hint's second step: a light, see-through ghost of the piece where it goes.
+        add(b, center(l, v, b.hint_to), r, 0.0, b.pos.side == rules::BLACK, b.pos.kings & rules::bit(b.glow) != 0, 0.0,
+            GHOST_HINT, 0.0);
+        if b.pieces.len > 0 {
+            b.pieces[b.pieces.len - 1].ring.w = LIGHT;
+            glow_ring(b, ring_at(b.ghost_at, now), b.ghost_at, now);
         }
     }
     if b.ghost && b.wrong >= 0 {
@@ -803,6 +883,7 @@ fn fill(b: Board&, l: Layout, now: f64) {
         add(b, b.drag_at, r * 1.06, 1.6 * unit, b.pos.side == rules::BLACK,
             b.pos.kings & rules::bit(b.selected) != 0, 1.0, 1.0, 0.0);
         if count_on { show_takes(b, b.selected); }
+        if danger & rules::bit(b.selected) != 0 { drain(b); }
     } else if waits >= 0 {
         // A man that has passed the far row is crowned on it only where crowning goes on
         // mid-capture (Russian); in International it stays a man (rules.md).
@@ -811,7 +892,7 @@ fn fill(b: Board&, l: Layout, now: f64) {
             for st in b.steps { if v.promotion[b.pos.side] & rules::bit(st) != 0 { king = true; } }
         }
         add(b, center(l, v, waits), r, 1.1 * unit, b.pos.side == rules::BLACK, king, 1.0, 1.0, 0.0);
-        if b.glow == b.selected && b.pieces.len > 0 { b.pieces[b.pieces.len - 1].ring.y = glowing; }
+        if b.glow == b.selected && b.pieces.len > 0 { glow_ring(b, glowing, b.glow_at, now); }
         if count_on { show_takes(b, b.selected); }
     }
     if b.has_last && !b.moving {
