@@ -450,6 +450,22 @@ fn lay(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, r: float4, de
     var x: f32 = 0.0;
     var y: f32 = 0.0;
     var changed = false;
+    // The theme's five where they don't fit one line (a small window): a grid of equal
+    // tiles three across (two where three don't fit), not a ragged wrap (task 050).
+    if row == THEME_ROW {
+        var all = -TILE_GAP * u;
+        for i in ROW_TILES[row] { all += tile_width(g, row, i) + TILE_GAP * u; }
+        if all > r.z + SLACK {
+            let cols = if 3.0 * 88.0 * u + 2.0 * TILE_GAP * u <= r.z { 3 } else { 2 };
+            let w = (r.z - (cols - 1) * TILE_GAP * u) / cols;
+            let lines = (ROW_TILES[row] + cols - 1) / cols;
+            for i in ROW_TILES[row] {
+                let at = float4 { r.x + (i % cols) * (w + TILE_GAP * u), r.y + (i / cols) * (h + TILE_GAP * u), w, h };
+                if declare && tile(s, over, g, row, i, at) { changed = true; }
+            }
+            return lines * h + (lines - 1) * TILE_GAP * u, changed;
+        }
+    }
     for i in ROW_TILES[row] {
         let w = min(tile_width(g, row, i), r.z);
         if x > 0.0 && x + w > r.z + SLACK {
@@ -601,12 +617,21 @@ fn group_width(s: Settings&, g: gui::Gui&, group: i64, aside: bool) -> f32 {
 
 // A group's glass in r: its icon and title (unless a tab names it), then its settings.
 // Where r reaches the edge of `area`, the safe area, the glass runs on to the screen's.
-// True when a tap changed s.
+// Where its content, `content` pixels tall, is taller than r (a small window), the
+// glass stays and the rows scroll inside it (task 050). True when a tap changed s.
+let LIST = 800;             // the group's scrolling list's id (gui::scroll_begin), plus the group
 fn group(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4, area: float4, aside: bool,
-         titled: bool = true) -> bool {
+         titled: bool = true, content: f32 = 0.0) -> bool {
     let u = g.scale;
-    gui::glass(g, gui::bleed(g, r, area), 24.0);
+    let glass = gui::bleed(g, r, area);
+    gui::glass(g, glass, 24.0);
     var c = float4 { r.x + GROUP_PAD * u, r.y + 12.0 * u, r.z - 2.0 * GROUP_PAD * u, r.w - 26.0 * u };
+    let scrolls = content > r.w + 0.5;
+    if scrolls {
+        let top = r.y + 2.0 * u;
+        c.y -= gui::scroll_begin(g, LIST + group, float4 { glass.x, top, glass.z, glass.y + glass.w - top }, content);
+        c.w = content - 26.0 * u;
+    }
     if titled {
         var title = gui::cut_top(c, title_height(g, group, r.z));
         gui::cut_top(c, ROW_GAP * u);
@@ -630,6 +655,7 @@ fn group(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4
         let n = note_lines(g, c, false);
         note_lines(g, float4 { c.x, c.y + c.w - n * line, c.z, 0.0 }, true);
     }
+    if scrolls { gui::scroll_end(g); }
     return changed;
 }
 
@@ -681,6 +707,8 @@ fn tabs(s: Settings&, g: gui::Gui&, r: float4) -> bool {
 fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, tabbed: bool = false) -> i64 {
     let u = g.scale;
     var row = r;
+    // Clear of the window's control (iPadOS's three dots) in a window (task 050).
+    gui::cut_left(row, gui::corner_shift(g, row));
     var ask = NOTHING;
     let title = strings::get(strings::HOME_SETTINGS);
     let wide = gui::back_width(g, strings::get(strings::NAV_BACK));
@@ -823,15 +851,18 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
             if tabs(s, g, gui::cut_top(page, BACK_W * u)) { ask = SHOWN; }
             gui::cut_top(page, GROUP_GAP * u);
             // The shown group's own height, the board taking the rest: the game's glass as
-            // tall as the look's ended in empty glass under its rows (2026-11-09).
+            // tall as the look's ended in empty glass under its rows (2026-11-09). Taller
+            // than the room (a small window), it takes the room, the board none, and its
+            // rows scroll.
             let one = group_height(s, over, g, s.group, page.z, false, false);
+            let fits = one <= page.w;
             let glass = gui::cut_bottom(page, one);
             gui::cut_bottom(page, 16.0 * u);
             var size = 0.94 * min(page.z, page.w);
-            if size < board::SMALLEST * u { size = 0.0; }
+            if !fits || size < board::SMALLEST * u { size = 0.0; }
             l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
             room3d = preview_room(page, size);
-            if group(s, over, g, s.group, glass, area, false, false) { ask = CHANGED; }
+            if group(s, over, g, s.group, glass, area, false, false, one) { ask = CHANGED; }
             return ask;
         }
         var groups = gui::cut_bottom(page, h);
