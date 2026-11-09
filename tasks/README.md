@@ -66,7 +66,7 @@ Estonian, the privacy page, the Play Console answers drafted; nothing submitted)
 set by theme with the picker on glass rows, a first Russian set of 46, and stars per
 variant; 038's players, with the chip (the badge bare, the name on a glass pill) at the
 board's side, the first-run pick on a fresh install only, and the traced animal badges;
-the public repo `kaitk/draughts` under MIT OR Apache-2.0. Idle CPU on the release build,
+the public repo `kaitk/draughts` under MIT OR Apache-2.0. Idle CPU on the tablet,
 untouched: 0.05%.
 
 What needs the user:
