@@ -156,6 +156,48 @@ a build copy, `SDL_Log` in `frame()` whether `drew` held and whether a command b
 was submitted, and per-thread CPU (`agents/testing.md`) for 3D against 2D; simpleperf
 can't sample there.
 
+## The first switch to 3D (2026-11-09)
+
+The user, on the Pixel 7a: the first tap on the Board row's 3D shows nothing happening for
+2 s or more; later switches are at once. It is the one-time setup: on the Pixel by task
+015's numbers the theme 0.76 s (the bake 0.71, most of it making its pipeline, which the
+driver compiles on first use; warm it is 0.15), the first frame 0.31 s (its pipelines),
+and the setup and targets; about 1.1 s, the rest of the 2 s unaccounted for.
+
+On the Mac headless (1920 × 1200, Russian, autumn, `--board flat --screen settings` and a
+local flag choosing 3D at a set time):
+
+| Stage | Chosen with nothing ready | Made ready in settings first |
+| --- | --- | --- |
+| Setup (meshes, buffers, pipelines' objects, the surfaces' targets) | 2.7 ms | 5 to 9 ms, a frame of its own |
+| The theme (the bake with its pipeline made, the photograph) | 88 ms | 72 to 94 ms, a frame of its own |
+| A first draw (the targets and the pass's pipelines) | | 0.9 ms, a frame of its own |
+| The tap's first 3D frame, waited | 99 ms | 6 to 8 ms |
+
+- **What it does now** (`draw3d::prepare`, the app's loop): while settings show with the
+  board flat, once their transition is over and the launch's loads done, one step a
+  frame: the setup, the theme, then a draw of the bare board into the kept image at the
+  screen's size, which makes the pass's targets and binds its pipelines. Choosing 3D then
+  only draws. Leaving settings with the board still flat gives it all back
+  (`render3d::release`): a flat player holds none of the 3D board's 160 to 175 MB outside
+  settings, and pays the steps again on the next visit (on the Pixel about 1.1 s of work
+  over three frames, one of them about 0.7 s). Kept instead, it would sit in memory for
+  every flat player who once opened settings.
+- **Not on a thread:** the work is the GPU's (compiles on first use, the bake), on the
+  thread that owns it; goose_gfx's tables aren't thread-safe, and the CPU's part (the
+  meshes, the harmonics' 4,096 samples, the photograph's read back) is microseconds to a
+  few ms, so neither a worker nor NEON would buy anything measurable. No pipeline cache
+  exists to keep the compiles across launches (`docs/goose-findings.md`).
+- **No cue yet:** a tap on 3D within about the first second of settings (on the Pixel)
+  still finds steps left and does them at once, silent as before. A working state on the
+  tile with the preview held until ready is the next step if the device shows it matters.
+- **A season change on 3D** bakes again warm: on the Mac the plan 18 ms, the frame map
+  10, the photograph 18; on the Pixel by task 015's numbers about 0.1 + 0.04 + 0.04 s,
+  a pause of about 0.2 s, short next to the first switch.
+- To check on the Pixel: the step times (a `--frames` run prints them: `3D board prepared
+  in settings: ...`), how long after opening settings it is ready, and whether the 0.7 s
+  step stutters settings (a tap during it waits for it).
+
 ## Acceptance criteria
 
 - [ ] Each candidate tried is measured on the tablet with `--bench 300` (task 015's

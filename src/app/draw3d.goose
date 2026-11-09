@@ -19,7 +19,9 @@
 // docs/architecture/rendering.md, "Transitions"). The image holds the board alone on
 // clear: behind it the game and a puzzle show the renderer's graded backdrop, home and
 // settings the app's sharp photograph, and a transition between them crossfades the two.
-// The renderer is set up the first time the 3D board shows, its surfaces baked again on
+// The renderer is made ready while settings show with the board flat (prepare, a step a
+// frame, given back on leaving them flat: drop), else the first time the 3D board
+// shows; its surfaces baked again on
 // a theme or a board size change, never while drawing.
 namespace draw3d;
 import std;
@@ -51,6 +53,8 @@ struct Drawer {
     apply_ms: f64                                   = 0.0,   // and the theme's bake and photograph
     first_ms: f64                                   = 0.0,   // the first frame drawn, waited for
     timed:    bool                                  = false, // --bench: the first frame waited for and timed
+    warm:     int2                                  = int2 { 0, 0 }, // the size prepare() drew at
+    prep_ms:  f64[3]                                = [0.0; 3],      // prepare()'s steps: setup, theme, draw
     bench:    Bench                                 = Bench {},
 }
 
@@ -109,6 +113,72 @@ fn look_of(kind: i64, summer: i64) -> i64 {
            else if kind == theme::SUNSET { looks::summer_look(summer) } else { looks::AUTUMN };
 }
 
+// The renderer set up: its meshes, buffers, pipelines, and the baked surfaces' targets.
+fn set_up(d: Drawer&) {
+    let t0 = clock();
+    render3d::setup(d.gpu);
+    render3d::choose(d.gpu, d.wood, d.marble, d.spring);
+    d.ready = true;
+    d.setup_ms = (clock() - t0) * 1000.0;
+}
+
+// The look for the app's theme `kind` put on the board of n squares a side: its
+// surfaces baked (their pipeline made the first time), its photograph blurred.
+fn put_theme(d: Drawer&, kind: i64, n: i64) {
+    let t0 = clock();
+    d.kind = kind;
+    d.n = n;
+    let look = look_of(kind, d.summer);
+    // --wood's model if given, else the look's own, else the renderer's; each look's
+    // finish for its model (looks::finish_for).
+    let shown = looks::shown(look, d.gpu.spring);
+    let own = looks::wood_for(shown);
+    let wood = if d.wood >= 0 { d.wood } else if own >= 0 { own } else { render3d::WOOD_MODEL };
+    render3d::choose(d.gpu, wood, -1);
+    d.gpu.finish = looks::finish_for(shown, d.gpu.wood);
+    render3d::apply(d.gpu, look, n, kind);
+    d.apply_ms = (clock() - t0) * 1000.0;
+}
+
+// Whether the 3D board is ready to draw for the app's theme `kind` on n squares a side
+// at `size`, with nothing left to set up, bake, or make.
+fn prepared(d: Drawer&, kind: i64, n: i64, size: int2) -> bool {
+    let drawn = (d.warm.x == size.x && d.warm.y == size.y) || (d.size.x == size.x && d.size.y == size.y);
+    return d.ready && d.kind == kind && d.n == n && drawn;
+}
+
+// One step of getting the 3D board ready before it is chosen (settings, where the Board
+// row is): the setup, then the theme (the bake, its pipeline made, and the photograph),
+// then a draw of the bare board into the kept image at `size`, which makes the pass's
+// targets and pipelines. Each a frame of its own, so the screen keeps drawing between
+// them; what the first frame on the 3D board would otherwise do at once (about 1.1 s on
+// the Pixel 7a by task 015's numbers). Times each step (prep_ms).
+fn prepare(d: Drawer&, kind: i64, n: i64, size: int2) {
+    guard !prepared(d, kind, n, size) else { return; }
+    if !d.ready {
+        set_up(d);
+        d.prep_ms[0] = d.setup_ms;
+        return;
+    }
+    if d.kind != kind || d.n != n {
+        put_theme(d, kind, n);
+        d.prep_ms[1] = d.apply_ms;
+        return;
+    }
+    let t0 = clock();
+    render3d::draw(d.gpu, gfx::mat4_identity, float3 { 0.0, 1.0, 0.0 }, gfx::Texture { 0 }, size, false, false);
+    d.warm = size;
+    d.prep_ms[2] = (clock() - t0) * 1000.0;
+}
+
+// Everything the 3D board holds on the GPU given back (leaving settings with the board
+// still flat), the flags kept; prepare() or frame() sets it up again.
+fn drop(d: Drawer&) {
+    guard d.ready else { return; }
+    render3d::release(d.gpu);
+    d = Drawer { wood: d.wood, marble: d.marble, summer: d.summer, spring: d.spring, timed: d.timed, .. };
+}
+
 // Draws the frame board::fill left in b, on the flat layout l, seen through v, into the
 // kept image if anything it shows changed; the app's theme `kind`, the screen `size`.
 // `which` tells the boards apart (the game's, a puzzle's, settings' preview). While
@@ -118,27 +188,12 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
     var force = false;
     let t0 = clock();
     if !d.ready {
-        render3d::setup(d.gpu);
-        render3d::choose(d.gpu, d.wood, d.marble, d.spring);
-        d.ready = true;
+        set_up(d);
         force = true;
-        d.setup_ms = (clock() - t0) * 1000.0;
     }
     if kind != d.kind || l.n != d.n {
-        let t1 = clock();
-        d.kind = kind;
-        d.n = l.n;
-        let look = look_of(kind, d.summer);
-        // --wood's model if given, else the look's own, else the renderer's; each look's
-        // finish for its model (looks::finish_for).
-        let shown = looks::shown(look, d.gpu.spring);
-        let own = looks::wood_for(shown);
-        let wood = if d.wood >= 0 { d.wood } else if own >= 0 { own } else { render3d::WOOD_MODEL };
-        render3d::choose(d.gpu, wood, -1);
-        d.gpu.finish = looks::finish_for(shown, d.gpu.wood);
-        render3d::apply(d.gpu, look, l.n, kind);
+        put_theme(d, kind, l.n);
         force = true;
-        d.apply_ms = (clock() - t1) * 1000.0;
     }
     let bn .= d.bench;
     let phase = if bn.n > 0 && bn.i < BENCH_PHASES * bn.n { bn.i / bn.n } else { -1 };

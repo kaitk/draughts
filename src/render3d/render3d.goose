@@ -887,3 +887,20 @@ fn show(g: Gpu&, from: float4, to: float4, alpha: f32, size: int2) {
     gfx::uniforms(gfx::FRAGMENT, 0, u);
     gfx::draw(6);
 }
+
+// Everything setup() and the frames made given back (the app's 3D board left unchosen):
+// the targets, surfaces, buffers, samplers, and pipelines. g is set up again from scratch.
+fn release(g: Gpu&) {
+    let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.photo, g.shadow_map, g.color,
+                    g.depth, g.image, g.kept_depth, g.field_light, g.small, g.across];
+    for t in textures { if t.id != 0 { gfx::release(t); } }
+    let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.instances, g.squares, g.marks, g.glows];
+    for b in buffers { if b.id != 0 { gfx::release(b); } }
+    let samplers = [g.linear, g.aniso, g.compare];
+    for s in samplers { if s.id != 0 { gfx::release(s); } }
+    let pipelines = [g.lit_field, g.lit_frame, g.lit_piece, g.fading, g.field_bake, g.shadow, g.backdrop, g.catcher,
+                     g.glow, g.pulse, g.depth_only, g.copy, g.show, g.bake, g.shrink, g.blur];
+    for p in pipelines { if p.id != 0 { gfx::release(p); } }
+    gfx::flush();
+    g = default<Gpu>();
+}

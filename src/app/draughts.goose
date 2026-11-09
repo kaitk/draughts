@@ -118,6 +118,7 @@ fn main() {
     var hold = -1.0;
     var win_at = -1.0;
     var raised = false;
+    var flat = false;
     var bench = 0;
     var wood_3d = -1;
     var marble_3d = -1;
@@ -191,6 +192,7 @@ fn main() {
             if ok && argv[i] == "--spring" { spring_3d = n; }
         }
         if argv[i] == "--board" && argv[i + 1] == "3d" { raised = true; }
+        if argv[i] == "--board" && argv[i + 1] == "flat" { flat = true; }
         if argv[i] == "--bench" {
             let n, ok = parse_int(argv[i + 1]);
             if ok { bench = clamp(n, 1, 1000); }
@@ -271,6 +273,7 @@ fn main() {
         sh.changed = true;
     }
     if raised { sh.prefs.board = settings::RAISED; }
+    if flat { sh.prefs.board = settings::FLAT; }
     sh.players = players_read;
     let gm .= sh.game;
     let b .= gm.b;
@@ -439,6 +442,15 @@ fn main() {
             w.thumbs = scene::thumbs(d.full);
         }
         let l = sh.layout;
+        // The 3D board made ready while settings show, where its Board row is: a step a
+        // frame once their transition is over and the launch's loads are done, so choosing
+        // 3D finds it set up, baked, and its pipelines made (draw3d::prepare). Given back
+        // on leaving settings with the board still flat: a flat board holds none of it.
+        if !sh.raised && sh.screen == shell::SETTINGS && sh.from < 0 && released {
+            draw3d::prepare(d3, d.kind, l.n, size);
+        } else if !settings::raised(sh.prefs) && sh.screen != shell::SETTINGS && sh.from < 0 {
+            draw3d::drop(d3);
+        }
         if tapped < taps.len && !b.moving && sh.screen == shell::GAME && b.pos.side != gm.computer {
             let v .= rules::VARIANTS[b.variant];
             let sq, ok = rules::parse_square(v, taps[tapped]);
@@ -512,6 +524,10 @@ fn main() {
         if draw3d::bench_done(d3) { break; }
     }
     if frames > 0 { gfx::screenshot("draughts.png"); }
+    if frames > 0 && d3.prep_ms[0] > 0.0 {
+        print("3D board prepared in settings: setup ", d3.prep_ms[0], " ms, theme ", d3.prep_ms[1], " ms (bake ",
+              d3.gpu.bake_ms, " ms, photograph ", d3.gpu.photo_ms, " ms), first draw ", d3.prep_ms[2], " ms");
+    }
     if frames > 0 && d3.frames > 0 { print("3D board: ", d3.frames, " frames showed it, ", d3.draws, " drew it, ", d3.shadows, " its shadow map, ", d3.pulses, " only its pulsing marks"); }
     shell::write_game(sh);
     if sh.quit { draughts_close(); }

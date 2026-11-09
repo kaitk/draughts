@@ -118,7 +118,7 @@ second, takes some thousands of frames: `--variant russian --computer black --ta
 `~/Library/Application Support/kaitk/draughts/`): `settings.txt` the device's (the
 language, who plays), `player-N.txt` each player's ([players](architecture/README.md#players));
 `--theme`, `--hints`, and `--lang` override them for a run without changing them. `--board 3d` plays a run
-on the 3D board at once, as settings' Board row's 3D does; `--wood N` (0 to 3) and `--marble N` (0 the slate, 1 to 4) pick the 3D
+on the 3D board at once, as settings' Board row's 3D does, and `--board flat` on the flat one; `--wood N` (0 to 3) and `--marble N` (0 the slate, 1 to 4) pick the 3D
 board's wood and winter frame's marble for the run (task 039). Each player's game is kept in `game-N.bin` beside them; a
 run with `--fen`, `--tap`, `--screen`, `--frames`, `--variant`, `--clock`, or
 `--computer` neither reads nor writes it, so

@@ -43,6 +43,23 @@ A33, each submitting work; the Mali driver's per-submit records filled the nativ
   loss brought back the app ended 1 s after it, idle. Recreating the device was left out.
 - Upstream: the same in goose_gfx, or a `gfx::lost()` a program can check to rebuild its
   resources on a new device.
+## goose_gfx and SDL: no pipeline cache, and pipelines made only on first use (2026-11-09)
+
+goose_gfx makes a pipeline's SDL_GPU pipeline when it is first bound in a pass, one per set
+of target formats, and SDL_GPU's Vulkan backend calls `vkCreateGraphicsPipelines` with
+`VK_NULL_HANDLE` for its cache: there is no `VkPipelineCache`, nothing kept on disk, and
+no call to make a pipeline ahead of a pass. So each launch pays every compile again on the
+frame that first draws with it: on the Pixel 7a the 3D board's bake pipeline is most of
+its 0.71 s cold bake (0.15 s warm), and its pass's pipelines most of its 0.31 s first frame
+(task 015). goose_gfx's tables aren't thread-safe either, so a Goose worker can't make
+them. goose_gfx `6cfa3de`, SDL as goose_gfx pins it, Goose v2026.4.
+
+- Here: the app makes the 3D board ready while settings show, a step a frame, by drawing
+  with its pipelines before the board is chosen (`draw3d::prepare`, task 042).
+- Upstream, for goose_gfx: `gfx::prepare(pipeline, formats...)` to make one ahead of a
+  pass. For SDL (the user decides): a pipeline cache in SDL_GPU (a `VkPipelineCache`
+  saved and loaded with its data blob, Metal's binary archives), which would take the
+  compiles off every launch after the first.
 
 ## goose_gfx: no compressed texture formats (2026-11-08)
 
