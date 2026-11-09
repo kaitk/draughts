@@ -64,6 +64,21 @@
       0 0 18px 3px color-mix(in srgb, var(--glow) 45%, transparent); }
   .clock.low { color: var(--forced); background: color-mix(in srgb, var(--forced) 16%, transparent); box-shadow: inset 0 0 0 2px var(--forced); }
 
+  /* How many pieces the must-capture piece takes, at most (?count=a or b, &n= for
+     another count; 2026-11-09). a: one pip per piece round the ring's top, a number in
+     a pip past five; b: a small badge with the number at the ring's upper right. The
+     pieces are 78% of a square; a pip is 22% of a radius, on the ring. */
+  .count { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+  .count .pip { position: absolute; width: 22%; height: 22%; margin: -11% 0 0 -11%; border-radius: 50%;
+    background: #fff4ec; box-shadow: 0 0 0 calc(0.32 * var(--u)) var(--forced),
+      0 0 calc(1.2 * var(--u)) color-mix(in srgb, var(--forced) 70%, transparent); }
+  .count .pip.num, .count .badge { display: grid; place-items: center; color: #fff; font-weight: 700;
+    background: var(--forced); line-height: 1; }
+  .count .pip.num { width: 40%; height: 40%; margin: -20% 0 0 -20%; font-size: calc(1.9 * var(--u)); }
+  .count .badge { position: absolute; width: 46%; height: 46%; margin: -23% 0 0 -23%; border-radius: 50%;
+    font-size: calc(2.2 * var(--u)); box-shadow: 0 0 0 calc(0.3 * var(--u)) #fff4ec,
+      0 0 calc(1.2 * var(--u)) color-mix(in srgb, var(--forced) 70%, transparent); }
+
   @media (orientation: portrait) {
     .game { --top: 104px; --bottom: 200px; flex-direction: column; }
     #board { width: min(100vw - 2 * var(--gap), 100vh - var(--top) - var(--bottom) - 4 * var(--gap)); }
@@ -121,21 +136,54 @@
     if (e.target.value === 'off') params.delete('clock'); else params.set('clock', e.target.value);
     location.search = params.toString();
   };
-  // White to move must capture: d4 (two pieces, via f6 to h4) and the king on h6 (two,
-  // via f4 to d6). d4 is selected. With mistakes only, d4 was moved toward c5, which
-  // isn't legal: c5 flashes and the pieces that must capture pulse.
+  const count = params.get('count');
   const mistakes = Draughts.settings.assist === 'mistakes';
-  Draughts.board(document.getElementById('board'), {
-    error: mistakes ? ['c5'] : [],
-    white: ['a1', 'c1', 'e1', 'g1', 'b2', 'f2', 'h2', 'c3', 'e3', 'd4', 'h6'],
-    black: ['b8', 'd8', 'f8', 'h8', 'a7', 'c7', 'b6', 'e5', 'g5'],
-    kings: ['h6'],
-    selected: 'd4',
-    forced: ['h6'],
-    via: ['f6'],
-    targets: ['h4'],
-    last: ['h4', 'g5'],
-  });
+  if (!count) {
+    // White to move must capture: d4 (two pieces, via f6 to h4) and the king on h6 (two,
+    // via f4 to d6). d4 is selected. With mistakes only, d4 was moved toward c5, which
+    // isn't legal: c5 flashes and the pieces that must capture pulse.
+    Draughts.board(document.getElementById('board'), {
+      error: mistakes ? ['c5'] : [],
+      white: ['a1', 'c1', 'e1', 'g1', 'b2', 'f2', 'h2', 'c3', 'e3', 'd4', 'h6'],
+      black: ['b8', 'd8', 'f8', 'h8', 'a7', 'c7', 'b6', 'e5', 'g5'],
+      kings: ['h6'],
+      selected: 'd4',
+      forced: ['h6'],
+      via: ['f6'],
+      targets: ['h4'],
+      last: ['h4', 'g5'],
+    });
+  } else {
+    // The child's game of 2026-11-09 (International, B:WK1,K21,24,28,31,32,33,45:BK35):
+    // black's king on j4 must take four, by h6, b6, b4, and f4 to g5, and nothing said
+    // how far it goes. The count says how many, not which.
+    const turn = document.querySelector('.turn');
+    if (turn) {
+      turn.lastChild.textContent = "Black's turn";
+      turn.querySelector('.piece').className = 'piece black';
+    }
+    Draughts.board(document.getElementById('board'), {
+      n: 10,
+      white: ['b10', 'b6', 'h6', 'e5', 'b4', 'd4', 'f4', 'j2'],
+      black: ['j4'],
+      kings: ['b10', 'b6', 'j4'],
+      forced: ['j4'],
+    });
+    const n = +(params.get('n') || 4);
+    const piece = document.querySelectorAll('#board .sq')[(10 - 4) * 10 + 9].querySelector('.piece');
+    const at = (deg, rad) => `left:${50 + 50 * rad * Math.sin(deg * Math.PI / 180)}%;` +
+      `top:${50 - 50 * rad * Math.cos(deg * Math.PI / 180)}%`;
+    let html = '';
+    if (count === 'a' && n <= 5) {
+      // On the ring (1.24 radii), 28 degrees apart, centred over the top.
+      for (let i = 0; i < n; i++) html += `<i class="pip" style="${at((i - (n - 1) / 2) * 28, 1.24)}"></i>`;
+    } else if (count === 'a') {
+      html = `<i class="pip num" style="${at(0, 1.24)}">${n}</i>`;
+    } else {
+      html = `<i class="badge" style="${at(45, 1.2)}">${n}</i>`;
+    }
+    piece.insertAdjacentHTML('beforeend', `<div class="count">${html}</div>`);
+  }
 </script>
 </body>
 </html>
