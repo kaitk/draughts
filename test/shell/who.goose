@@ -7,7 +7,8 @@
 // nothing happens; held 1.5 s the ring fills and they act, the frames running only while
 // held. The last player has no remove. Back goes from the sheet to the card and closes
 // the card; a tap outside the card closes it. A fresh install's first run opens on the
-// sheet of its one player, whose done and back both go home.
+// sheet of its one player, whose done and back both go home, with none of home's pieces
+// (the wordmark's crown) drawn over it.
 //
 // Then the card and the sheet laid out at the tablet's and a 20:9 phone's proportions,
 // both orientations, the phone at 480 dp, with one and four players and in English and
@@ -218,6 +219,8 @@ fn main() {
     drive::idle(fresh, g, tick());
     let at = home_tiles(fresh, g, t);
     print("first run: ", state(fresh), ", tiles ", drive::tiles(g) - at);
+    // Home's pieces over its UI (the wordmark's crown) would draw on the sheet: none.
+    print("home's pieces over the sheet: ", fresh.over.len);
     drive::tap(fresh, g, card_tile(g, at, 2 + 4), tick());
     drive::tap(fresh, g, card_tile(g, at, 1), tick());
     print("a frog, done: ", state(fresh), ", changed ", fresh.changed);

@@ -546,6 +546,10 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     sh.layout.flip = flip;
     sh.came_view = raise_in(sh, room, sh.layout.n, g.scale, sh.layout);
     if card {
+        // Home's pieces over its UI (the wordmark's crown, the player's picture) draw
+        // after all the UI, so they would sit on the card: under it, home shows without
+        // them.
+        sh.over.clear();
         gui::listen(g, true);
         if who_card(sh, g, area) { changed = true; }
     }

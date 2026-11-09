@@ -25,6 +25,7 @@ back: who's playing (editing); *1 fox; season -1, game 10 after 0
 back: closed (editing); *1 fox; season -1, game 10 after 0
 a tap outside the card: closed; *1 fox; season -1, game 10 after 0
 first run: the sheet; *1 fox; season -1, game 10 after 0, tiles 9
+home's pieces over the sheet: 0
 a frog, done: closed; *1 frog; season -1, game 10 after 0, changed true
 en:
   tablet landscape, 1 players, who's playing: 4 tiles, smallest 88 x 88 dp, card at 242 dp, 466 x 316 dp, all in place
