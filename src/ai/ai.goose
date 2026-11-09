@@ -61,7 +61,7 @@ let MAX_PROBES = 12;
 // 4 or more) at skill 0 in a tense position, next to the moved piece, fading with the
 // square of the way left to SURE, where it is none; times FAR by how far it starts from
 // that piece, in quarters; times QUIET in percent where no capture is around.
-let MISS: i64[4] = [25, 160, 300, 450];
+let MISS: i64[4] = [25, 300, 300, 450];
 let SURE: i64[4] = [15, 25, 65, 65];   // from these skills on it sees every such capture
 let FAR:  i64[4] = [4, 5, 6, 8];       // a step away (as a capture of the moved piece starts), 2, 3, 4 or more
 let QUIET = 10;

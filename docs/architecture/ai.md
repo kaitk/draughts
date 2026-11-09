@@ -192,7 +192,7 @@ for a whole game. It sets:
 | Temper: how much worse makes a move e times less likely | `2 + 60 (100 − s)² / 10000` | 62 | 23 | 2 |
 | Margin: never a move this much worse than the best it sees | `min(60, 3 × temper)` | 60 | 60 | 6 |
 | Chances left for the child, per thousand moves | `5 × max(25 − s, 0)` | 125 | 0 | 0 |
-| Overlooks a capture of 1; 2; 3; 4+ pieces, per thousand, tense, next to the moved piece | `MISS × (max(SURE − s, 0) / SURE)²`, MISS 25; 160; 300; 450, SURE 15; 25; 65; 65 | 25; 160; 300; 450 | 0; 0; 44; 66 | 0 |
+| Overlooks a capture of 1; 2; 3; 4+ pieces, per thousand, tense, next to the moved piece | `MISS × (max(SURE − s, 0) / SURE)²`, MISS 25; 300; 300; 450, SURE 15; 25; 65; 65 | 25; 300; 300; 450 | 0; 0; 44; 66 | 0 |
 
 How each part plays like a person:
 
@@ -233,6 +233,12 @@ How each part plays like a person:
    came in quiet positions. Now they come where captures are around, and easy hangs
    about as many pieces as before, so its strength stays (the numbers below).
 
+   Easy a touch weaker still (the user, 2026-11-09): a two-piece capture is overlooked
+   at 0 as often as a three-piece one, 300 per thousand where it was 160, fading to none
+   by 25 as before, so medium and hard are unchanged. It is a mistake of a tense
+   position, a double capture missed, and of the easy-only knobs it weakens easy most
+   for the fewest quiet hangs ([easy a touch weaker](#easy-a-touch-weaker-2026-11-09)).
+
 3. **Consistent strength.** It chooses among the moves within the margin with chances
    that fall off as e^(−δ / temper), δ being how much worse each is than the best it sees:
    Regan and Haworth's model of how players of a given strength choose. So there are no
@@ -263,14 +269,14 @@ and Brazilian (`build/aimatch ... --overlooks`), wins, draws, losses for the fir
 
 | Pair | Russian | International | Brazilian |
 | --- | --- | --- | --- |
-| Easy at 0 against skill 10 without overlooks | 100, 76, 224 | 69, 89, 242 | 95, 82, 223 |
-| Easy at 0 against skill 0 without overlooks | 133, 76, 191 | 92, 89, 219 | 117, 91, 192 |
-| Skill 15 against easy at 0 | 320, 45, 35 | 335, 34, 31 | 328, 35, 37 |
-| Medium (40) against easy at 0 | 391, 6, 3 | 398, 1, 1 | 389, 9, 2 |
+| Easy at 0 against skill 10 without overlooks | 91, 76, 233 | 53, 69, 278 | 89, 82, 229 |
+| Easy at 0 against skill 0 without overlooks | 122, 70, 208 | 77, 82, 241 | 112, 78, 210 |
+| Skill 15 against easy at 0 | 322, 44, 34 | 350, 24, 26 | 327, 33, 40 |
+| Medium (40) against easy at 0 | 388, 8, 4 | 397, 1, 2 | 385, 11, 4 |
 | Medium (40) against easy at its top (30) | 255, 84, 61 | 301, 57, 42 | 255, 93, 52 |
 
 A simple child model, skill 0 overlooking three times as often (`--overlooks 300`),
-loses to skill 0 without overlooks in 58 to 70% of games and to 15 in 85 to 90%. Easy's
+loses to skill 0 without overlooks in 64 to 71% of games and to 15 in 87 to 91%. Easy's
 top and medium's start are closer than the levels' starts: medium wins about 64 to 75%
 there and loses 10 to 15%.
 
@@ -314,3 +320,41 @@ little worse in International, where long captures are common. Fifteen points st
 International's 10 to 25 now hang more in tense positions than the other variants'
 (its majority rule makes multi-captures the only replies more often); their win rates
 moved little.
+
+### Easy a touch weaker (2026-11-09)
+
+The user asked for easy a touch weaker still after task 053, about 3 to 5 points less
+for easy at 0 against skill 10 without overlooks, mistakes still where the position is
+tense. Easy at 0's score (a win 1, a draw a half) against that yardstick, over 2000
+games a variant, for each easy-only knob tried:
+
+| Change at skill 0 | Russian | International | Brazilian | Hangs per 100 games, quiet (Russian) |
+| --- | --- | --- | --- | --- |
+| None (task 053) | 0.339 | 0.283 | 0.347 | 6 |
+| One-piece overlook 25 → 75 | 0.329 | 0.273 | 0.332 | 10 |
+| Two-piece overlook 160 → 240 | 0.326 | 0.266 | 0.335 | 7 |
+| Two-piece overlook 160 → 300 (chosen) | 0.310 | 0.249 | 0.318 | 9 |
+| Chances left 125 → 200 a thousand | 0.344 | 0.286 | 0.336 | 6 |
+| Temper 62 → 102 | 0.358 | 0.295 | 0.346 | 6 |
+
+The two-piece overlook takes the most from easy for the fewest hangs in quiet
+positions; one-piece captures are mostly of the piece just moved, which shows in quiet
+positions too. The chances left change nothing measurable, as skill 10 doesn't look for the
+combinations left, and the hotter temper makes easy no weaker, as within the margin it
+already chooses nearly evenly. One value fits every variant, International's drop within the range
+too, so it gets no adjustment of its own.
+
+Before → after, 400 games a pair (the score's noise at 400 games is about 2 points
+either way: the 2000 games above are the surer measure of easy's drop):
+
+| | Russian | International | Brazilian |
+| --- | --- | --- | --- |
+| Easy at 0 against 10 without overlooks | 100, 76, 224 → 91, 76, 233 | 69, 89, 242 → 53, 69, 278 | 95, 82, 223 → 89, 82, 229 |
+| Its score | 0.345 → 0.323 | 0.284 → 0.219 | 0.340 → 0.325 |
+| 15 against 0 | 320, 45, 35 → 322, 44, 34 | 335, 34, 31 → 350, 24, 26 | 328, 35, 37 → 327, 33, 40 |
+| 25 against 10 | 363, 23, 14 → 368, 20, 12 | 386, 12, 2 → 388, 9, 3 | 360, 22, 18 → 362, 23, 15 |
+| Hangs at 0 (against 10), quiet, tense | 6, 32 → 9, 41 | 11, 71 → 14, 90 | 8, 30 → 10, 36 |
+| Hangs at 10 (against 25), quiet, tense | 3, 16 → 4, 21 | 8, 78 → 9, 89 | 3, 31 → 5, 39 |
+
+Fifteen points still win 80 to 97% of games at the bottom of the scale; medium and hard
+play as before.

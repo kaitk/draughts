@@ -14,9 +14,9 @@ easy on its own positions, by clock (5+3, 10+5, 10+5 with 120 s left):
   quiet: 9 moves, 9 close, capture false, tense false: 4.33 8.33 3.00
   threatened: 8 moves, 3 close, capture false, tense true: 9.10 12.00 6.30
   captures: 2 moves, 2 close, capture true, tense true: 6.07 11.67 4.20
-5+3 easy: 2 games, 71 plies a game, 140 timed moves; a move 3.54 s on average, 12.00 at most; a side's most in a game 147.88 s; its clock never under 255.22 s; lost on time false; within the range true
+5+3 easy: 2 games, 75 plies a game, 148 timed moves; a move 3.56 s on average, 12.00 at most; a side's most in a game 164.66 s; its clock never under 251.99 s; lost on time false; within the range true
 5+3 medium: 2 games, 110 plies a game, 218 timed moves; a move 3.33 s on average, 6.63 at most; a side's most in a game 237.01 s; its clock never under 236.22 s; lost on time false; within the range true
 5+3 hard: 2 games, 110 plies a game, 219 timed moves; a move 4.01 s on average, 9.83 at most; a side's most in a game 352.66 s; its clock never under 169.47 s; lost on time false; within the range true
-10+5 easy: 2 games, 71 plies a game, 140 timed moves; a move 5.79 s on average, 12.00 at most; a side's most in a game 252.12 s; its clock never under 540.03 s; lost on time false; within the range true
+10+5 easy: 2 games, 75 plies a game, 148 timed moves; a move 5.91 s on average, 12.00 at most; a side's most in a game 280.83 s; its clock never under 520.60 s; lost on time false; within the range true
 10+5 medium: 2 games, 110 plies a game, 218 timed moves; a move 5.07 s on average, 8.00 at most; a side's most in a game 365.80 s; its clock never under 543.42 s; lost on time false; within the range true
 10+5 hard: 2 games, 110 plies a game, 219 timed moves; a move 7.32 s on average, 15.00 at most; a side's most in a game 649.17 s; its clock never under 334.61 s; lost on time false; within the range true
