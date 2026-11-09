@@ -782,6 +782,8 @@ board's does and the backdrop over it as opaque as the blur.
   data (`src/render3d/looks.goose`): autumn's maple and walnut in cherry, winter's stone,
   spring's pale birch with sage-stained squares in a green-stained frame, and summer's
   peach and dusky rose under a satin lacquer in a red-brown frame, from the theme table.
+  Spring has a second look being tried, ivory stone with a carved vine band on the frame
+  and jade dark squares (`looks::elven`, chosen with `--spring 1`).
 - **States**, in the theme's glow color: the selected piece lifts by 0.8% of the board
   and grows to 1.05 with a glow ring a little out from it (at 1.13 of the radius); with move hints on, a legal target is a glowing
   dot 30% of a square and a capture's stop on the way is a ring. With hints on mistakes

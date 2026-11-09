@@ -116,6 +116,7 @@ cd poc/3d
 ../../build/board3d                                 # a drag turns; Tab or a double click switches mode; R resets
 ../../build/board3d --theme winter --king crown     # T or a long press switches the theme, K the king
 ../../build/board3d --wood 3 --theme winter --marble 1   # W cycles the wood, M the winter frame's marble
+../../build/board3d --theme spring --spring 1       # G switches spring's look: 0 the birch, 1 the carved stone
 ../../build/board3d --panel                         # the tuning panel shown (P toggles it, V prints)
 ../../build/board3d --summer 2 --panel              # summer's variant, 0 to 3 (S cycles; task 039); the app takes --summer N too
 ../../build/board3d --shot out.png --size 1920x1200 [--yaw 20 --pitch 40]   # one frame, headless
@@ -232,11 +233,14 @@ the pass); it keeps the camera, the input, the fixed position, and the bench. It
   against 5.0 to 5.1, interleaved; the bake about 30 ms either way.
 - **Wood models:** growth rings with pores replaced the noise drawn out along the grain;
   task 039 compares four, switched with `--wood N` and W. Winter's frame can be one of
-  four marbles instead of the slate, `--marble N` and M (task 039).
+  four marbles instead of the slate, `--marble N` and M (task 039). Spring has a second
+  look, elven carved stone, `--spring N` and G (task 041).
 - **Tuning panel** (2026-11-09; `poc/3d/panel.goose`, Mac only, a tool): P shows gfx
   ui's sliders over the board: the wood's model, varnish, sanding, grain contrast, ring
   scale and warmth (`looks::Finish`), and the marble, its veins' contrast, waviness,
-  polish and tint (`looks::Marble`). The values live in the look data
+  polish and tint (`looks::Marble`), and spring's look with its carving's depth, scale
+  (repeats per side), moss, stone warmth and jade depth (`looks::Carving`, task 041,
+  baked again through `render3d::carve`). The values live in the look data
   (`src/render3d/looks.goose`), per wood model and per marble, so the app bakes the
   same; `render3d::tune` bakes again only what they show on (the wood's surfaces where
   the look has wood, the frame map where its frame is stone), when they settle: on the
@@ -457,7 +461,9 @@ portrait; the light stays put on screen through the hot-seat turn.
 - **Choosing the wood in the game** (2026-11-09): the app's `--wood N` (0 to 3) and
   `--marble N` (0 the slate, 1 to 4), beside `--3d`, pick the 3D board's wood with its
   finish and the winter frame's marble, to try 2 and 3 on the real board:
-  `../../build/draughts --3d --board 3d --wood 3`.
+  `../../build/draughts --3d --board 3d --wood 3`. `--spring N` likewise picks spring's
+  look (0 the birch, 1 the elven carved stone, task 041):
+  `../../build/draughts --3d --board 3d --theme birch --spring 1`.
 - **In the game** (`src/app/draw3d.goose`): set up the first time the 3D board shows,
   its look from the app's theme (stone the winter stone, the rest autumn wood for now)
   and the photograph the theme's own, baked again on a theme or board size change. Each
