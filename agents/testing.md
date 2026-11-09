@@ -77,8 +77,8 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   and 480 dp (`gui::short_dp`, with a 9:16 phone at 480), its tiles on the screen and
   apart, every tap 88 dp at least, the phones again with the Pixel 7a's insets in both
   orientations (the cutout at either side in landscape), every tile and the board inside
-  the safe area, the 16:10 tablet with its 72 px hidden navigation bar (settings keeps
-  both groups in landscape), and a phone's tabs in settings and the puzzles:
+  the safe area, the 16:10 tablet with its 72 px hidden navigation bar and the 13" and 11" iPad's
+  landscape with their bars (settings keeps both groups on each), and a phone's tabs in settings and the puzzles:
   `sizes`; the title's and the clock's faces holding every character drawn in them, the
   app's name in every language and every clock time: `faces`), `strings` (every language
   file has every key), `badges` (each badge's SVG baked into its distance field, drawn

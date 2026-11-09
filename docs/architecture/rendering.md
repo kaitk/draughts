@@ -94,7 +94,10 @@ fit counts up to 38 dp of it (the page's foot and the look group's bottom pad), 
 look's glass ending below its tiles there (not running on to the screen's bottom edge,
 which left it mostly empty below, the user 2026-11-09), its tiles still above the inset
 and as far from the screen's edge as with none; so the tablet keeps both groups
-beside the board rather than the Game and Look tabs. A
+beside the board rather than the Game and Look tabs. Under a top inset in landscape (an
+iPad's status bar) the page's top padding gives up to 12 dp of its 24, the bar already
+keeping the head from the edge, so the 13" and 11" iPad keep both groups too, 1 and 5 dp
+short with the full padding (2026-11-09). A
 change of the insets or the scale counts as a change, as a new size does, and the screen
 is laid out and drawn again (see "Frames and battery"). When the screen turns, the new
 insets and the new size arrive a frame or two apart, the insets first; the layout

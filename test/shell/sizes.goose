@@ -14,7 +14,9 @@
 // that fits here fits on screen. The phones again with the Pixel 7a's insets (its
 // camera's cutout at the top in portrait and at a side in landscape, either side, and
 // its gesture bar at the bottom): every tile and the board inside the safe area; and
-// the 16:10 tablet with its hidden navigation bar at the bottom. Then a phone's tabs:
+// the 16:10 tablet with its hidden navigation bar at the bottom, and the 13" and 11"
+// iPad's landscape with their status bar and home indicator, settings keeping both
+// groups on each. Then a phone's tabs:
 // settings' Look tab and the puzzles' crown each show their own tiles. A puzzle's turn
 // piece lies in its panel clear of the tiles, icons, and words, over the goal where the
 // panel has the room and beside its icon where not.
@@ -340,6 +342,29 @@ fn main() {
             let both = drive::tiles(g);
             g.insets = float4 { 0.0, 0.0, 0.0, 72.0 };
             print(size.x as i64, " x ", size.y as i64, ", insets 0, 0, 0, 72 px:");
+            screens(g);
+            var inset = showing(shell::SETTINGS, home::NOTHING);
+            at_rest(inset, g);
+            let shown = drive::tiles(g);
+            print("  settings: ", shown, " tiles, ", both, " with no inset: ",
+                  if shown == both { "both groups" } else { "one group" });
+        }
+    }
+    // The 13" and 11" iPad in landscape with the status bar and the home indicator, in
+    // pixels at 2 a point (24 and 20 points): settings shows both groups there too.
+    for lang in [strings::EN, strings::ET] {
+        strings::use(lang);
+        print(strings::LANGUAGES[lang], ", the iPads in landscape with their bars:");
+        for size in [float2 { 2752.0, 2064.0 }, float2 { 2420.0, 1668.0 }] {
+            drive::size = size;
+            g.scale = gui::scale_of(size.x, size.y);
+            gui::test_faces(g);
+            g.insets = float4 { 0.0, 0.0, 0.0, 0.0 };
+            var bare = showing(shell::SETTINGS, home::NOTHING);
+            at_rest(bare, g);
+            let both = drive::tiles(g);
+            g.insets = float4 { 0.0, 48.0, 0.0, 40.0 };
+            print(size.x as i64, " x ", size.y as i64, ", insets 0, 48, 0, 40 px:");
             screens(g);
             var inset = showing(shell::SETTINGS, home::NOTHING);
             at_rest(inset, g);

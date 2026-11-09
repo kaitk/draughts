@@ -299,6 +299,11 @@ fn stage(b: board::Board&, s: Settings&, now: f64) {
 // The screen's parts, in dp.
 let PAD_X = 32.0;
 let PAD_Y = 24.0;
+// In landscape under a top inset (an iPad's status bar), the page's top padding gives up
+// to 12 dp, the bar already keeping the head from the screen's edge: with it both groups
+// fit in the 13" and 11" iPad's landscape, 1 and 5 dp short with the full padding
+// (2026-11-09).
+let TOP_RISE = 12.0;
 let HEAD_H = 100.0;         // back (88), the title, and the language's glass round 88 dp tiles
 let BACK_W = 88.0;          // back's height, and the tabs'
 let HEAD_GAP = 14.0;        // under them in landscape; 16 in portrait, as round the board
@@ -573,7 +578,7 @@ fn group_height(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, w:
     let u = g.scale;
     let h, unused = rows(s, over, g, group, float4 { 0.0, 0.0, w - 2.0 * GROUP_PAD * u, 0.0 }, aside, false);
     let title: f32 = if titled { title_height(g, group, w) + ROW_GAP * u } else { 0.0 };
-    let note: f32 = if group == 0 { note_height(g, w, titled) } else { 0.0 };
+    let note:  f32 = if group == 0 { note_height(g, w, titled) } else { 0.0 };
     return (12.0 + 14.0) * u + title + h + note;
 }
 
@@ -748,6 +753,9 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
         // above the inset and as far from the screen's edge as they would with none: `room` gains up to that foot, 38 dp.
         let head_w = gui::back_width(g, strings::get(strings::NAV_BACK)) + 40.0 * u + languages_width(g)
                      + gui::text_width(g, gui::LABEL, strings::get(strings::HOME_SETTINGS));
+        let rise = min(g.insets.y, TOP_RISE * u);
+        page.y -= rise;
+        page.w += rise;
         let foot = min(g.insets.w, (PAD_Y + 14.0) * u);
         let room = page.w - (HEAD_H + HEAD_GAP) * u + foot;
         var aside = true;
