@@ -105,6 +105,9 @@ struct Settings {
     // How wide the settings' names are at the left of their tiles: NAME_W, or WIDE_NAME_W
     // where the landscape has the width (`frame` sets it each frame). Not in the file.
     name_w: f32 = NAME_W,
+    // Whether the theme's tiles are slim (a small window, gui::compact; `frame` sets it
+    // each frame). Not in the file.
+    slim: bool = false,
 }
 
 // What the screen asks for.
@@ -317,6 +320,13 @@ let ROW_GAP = 10.0;
 let TILE_GAP = 10.0;
 let THUMB_W = 62.0;         // a season's thumbnail
 let THUMB_H = 40.0;
+// The theme's tiles in a small window (gui::compact, task 050): 48 dp tall, a smaller
+// thumbnail with its word beside it, and the switch's halves as low, so Theme, Board, and
+// Kings show in the smallest window without scrolling. Under the 88 dp floor, as the
+// game's compact tiles are.
+let SLIM_H = 48.0;
+let SLIM_THUMB_W = 40.0;
+let SLIM_THUMB_H = 26.0;
 // The theme's switch, photograph or plain (prototypes/plain.html, take b): two halves
 // side by side. Where the name is above the tiles, beside it at the line's right end,
 // each half 88 dp square. Where the name is at the left of the tiles (most landscapes),
@@ -358,6 +368,9 @@ fn group_rows(group: i64) -> i64 { return if group == 0 { GAME_ROWS } else { ROW
 
 fn group_row(group: i64, k: i64) -> i64 { return GAME_ROWS * group + k; }
 
+// How tall a row's tiles are: SLIM_H for the theme's in a small window.
+fn row_h(s: Settings&, row: i64) -> f32 { if s.slim && row == THEME_ROW { SLIM_H } else { ROW_H[row] as f32 } }
+
 // The switch's tap ids, photograph and plain, after the rows' (410 + 10 × row + i).
 let SWITCH_ID = 460;
 
@@ -372,7 +385,7 @@ fn switch_line(g: gui::Gui&) -> f32 {
 fn switch(s: Settings&, g: gui::Gui&, r: float4) -> bool {
     let u = g.scale;
     let w = 0.5 * (r.z - SWITCH_GAP * u);
-    let pic = min(THUMB_W * u, w - 12.0 * u);
+    let pic = min((if s.slim { SLIM_THUMB_W } else { THUMB_W }) * u, w - 12.0 * u);
     var changed = false;
     for k in 2 {
         let half = float4 { r.x + k * (w + SWITCH_GAP * u), r.y, w, r.w };
@@ -405,9 +418,12 @@ fn note(row: i64, i: i64) -> const u8[:] {
 
 // How wide tile i of a row is: its words with 16 dp either side, at least 88 dp; a
 // season's, its thumbnail or label and 6 dp either side, at least 88 dp too.
-fn tile_width(g: gui::Gui&, row: i64, i: i64) -> f32 {
+fn tile_width(s: Settings&, g: gui::Gui&, row: i64, i: i64) -> f32 {
     let u = g.scale;
     let label = strings::get(word(row, i));
+    if row == THEME_ROW && s.slim {
+        return max(88.0 * u, gui::choice_beside_width(g, float2 { SLIM_THUMB_W * u, SLIM_THUMB_H * u }, label));
+    }
     if row == THEME_ROW { return max(88.0 * u, max(THUMB_W * u, gui::text_width(g, gui::SMALL, label)) + 12.0 * u); }
     let w = gui::text_width(g, gui::BODY, label);
     return max(88.0 * u, max(w, gui::text_width(g, gui::SMALL, note(row, i))) + 32.0 * u);
@@ -422,8 +438,8 @@ fn tile(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, i: i64, r: f
         let kind = if i == BY_DATE_TILE { BY_DATE } else { SEASON_KINDS[i] };
         // A season's thumbnail: its photograph, or with plain its fade (the widgets' 4 on).
         let pic = if kind >= 0 && s.plain { kind + 4 } else { kind };
-        guard gui::choice(g, id, r, pic, float2 { THUMB_W * u, THUMB_H * u }, label, s.season == kind, true)
-        else { return false; }
+        let size = if s.slim { float2 { SLIM_THUMB_W * u, SLIM_THUMB_H * u } } else { float2 { THUMB_W * u, THUMB_H * u } };
+        guard gui::choice(g, id, r, pic, size, label, s.season == kind, true, s.slim) else { return false; }
         s.season = kind;
         return true;
     }
@@ -447,7 +463,7 @@ fn tile(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, i: i64, r: f
 // as r, as group_width makes it, doesn't wrap for a rounding difference: SLACK.
 fn lay(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, r: float4, declare: bool) -> f32, bool {
     let u = g.scale;
-    let h = (ROW_H[row] as f32) * u;
+    let h = row_h(s, row) * u;
     var x: f32 = 0.0;
     var y: f32 = 0.0;
     var changed = false;
@@ -455,7 +471,7 @@ fn lay(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, r: float4, de
     // tiles three across (two where three don't fit), not a ragged wrap (task 050).
     if row == THEME_ROW {
         var all = -TILE_GAP * u;
-        for i in ROW_TILES[row] { all += tile_width(g, row, i) + TILE_GAP * u; }
+        for i in ROW_TILES[row] { all += tile_width(s, g, row, i) + TILE_GAP * u; }
         if all > r.z + SLACK {
             let cols = if 3.0 * 88.0 * u + 2.0 * TILE_GAP * u <= r.z { 3 } else { 2 };
             let w = (r.z - (cols - 1) * TILE_GAP * u) / cols;
@@ -468,7 +484,7 @@ fn lay(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, r: float4, de
         }
     }
     for i in ROW_TILES[row] {
-        let w = min(tile_width(g, row, i), r.z);
+        let w = min(tile_width(s, g, row, i), r.z);
         if x > 0.0 && x + w > r.z + SLACK {
             x = 0.0;
             y += h + TILE_GAP * u;
@@ -495,7 +511,8 @@ fn rows(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4,
         // left of the tiles; or where the name is above the tiles, beside it at the
         // line's right end, the line as tall as the switch.
         let switched = row == THEME_ROW;
-        let line: f32 = if switched { (88.0 + SWITCH_GAP) * u } else { NAME_H * u };
+        let sh = row_h(s, row);   // the switch as tall as the theme's tiles
+        let line: f32 = if switched { (sh + SWITCH_GAP) * u } else { NAME_H * u };
         let tiles = if aside { float4 { r.x + left, y, r.z - left, 0.0 } }
                     else { float4 { r.x, y + line, r.z, 0.0 } };
         let h, tapped = lay(s, over, g, row, tiles, declare);
@@ -504,8 +521,8 @@ fn rows(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4,
             var sw = float4 { r.x, y + SWITCH_NAME * u, s.name_w * u, (ROW_H[row] as f32 - SWITCH_NAME) * u };
             if switched && aside { name.w = SWITCH_NAME * u; }
             if switched && !aside {
-                name = float4 { r.x, y, r.z, 88.0 * u };
-                sw = float4 { r.x + r.z - (2.0 * 88.0 + SWITCH_GAP) * u, y, (2.0 * 88.0 + SWITCH_GAP) * u, 88.0 * u };
+                name = float4 { r.x, y, r.z, sh * u };
+                sw = float4 { r.x + r.z - (2.0 * 88.0 + SWITCH_GAP) * u, y, (2.0 * 88.0 + SWITCH_GAP) * u, sh * u };
             }
             gui::text(g, gui::SMALL, name, strings::get(ROW_NAMES[row]), 0.66, 0.03 * gui::FACE_DP[gui::SMALL] as f32 * u,
                       gui::LEFT);
@@ -607,7 +624,7 @@ fn group_width(s: Settings&, g: gui::Gui&, group: i64, aside: bool) -> f32 {
     for k in group_rows(group) {
         let row = group_row(group, k);
         var w = -TILE_GAP * u;
-        for i in ROW_TILES[row] { w += tile_width(g, row, i) + TILE_GAP * u; }
+        for i in ROW_TILES[row] { w += tile_width(s, g, row, i) + TILE_GAP * u; }
         widest = max(widest, w);
         // The theme's name and its switch beside it, where the name is above the tiles.
         if row == THEME_ROW && !aside { widest = max(widest, switch_line(g)); }
@@ -768,6 +785,7 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
     over.clear();
     s.switch_at = float4 { 0.0, 0.0, 0.0, 0.0 };
     s.name_w = NAME_W;
+    s.slim = gui::compact(g, area);
     var ask = NOTHING;
     // Three layouts, each taken where the one before doesn't fit, so a window that widens
     // goes through them in order (task 050): the groups stacked at the left of the board

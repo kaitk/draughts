@@ -629,20 +629,41 @@ fn row(g: Gui&, id: i64, r: float4, icon: i64, label: const u8[:], note: const u
 // A choice tile (prototypes/settings.html): a picture of size `pic` (centered across)
 // with a label under it, lit in the glow color when on. The picture is a season's
 // thumbnail (kind, a theme; 4 more its plain fade), or for -1 the glow's tint with a sun. A choice that isn't
-// `enabled` is dimmed and takes no tap. True when it is tapped.
-fn choice(g: Gui&, id: i64, r: float4, kind: i64, pic: float2, label: const u8[:], on: bool, enabled: bool) -> bool {
+// `enabled` is dimmed and takes no tap. With `beside`, a slim tile: the picture at the
+// left and the label after it, centered down the tile (settings' theme in a small window,
+// task 050). True when it is tapped.
+let BESIDE_GAP = 8.0;       // dp between a slim choice's picture and its label
+fn choice(g: Gui&, id: i64, r: float4, kind: i64, pic: float2, label: const u8[:], on: bool, enabled: bool,
+          beside: bool = false) -> bool {
     let u = g.scale;
     let clicked, unused = hold_if(g, id, r, enabled);
     let a: f32 = if enabled { 1.0 } else { 0.4 };
-    add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { BUTTON, 16.0 * u, 0.0, 0.0 },
+    add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { BUTTON, (if beside { 14.0 } else { 16.0 }) * u, 0.0, 0.0 },
                   extra: float4 { u, if on { CHOSEN } else { CHOICE }, 0.0, 0.0 } });
     var c = inset(r, 6.0 * u);
-    let picture = center(cut_top(c, pic.y), pic.x, pic.y);
-    add(g, Quad { rect: picture, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { PICTURE, 11.0 * u, kind, 0.0 },
+    if beside {
+        // The pair centered across the tile.
+        let w = min(c.z, pic.x + BESIDE_GAP * u + text_width(g, SMALL, label));
+        c = center(c, w, c.w);
+    }
+    let picture = if beside { center(cut_left(c, pic.x), pic.x, pic.y) } else { center(cut_top(c, pic.y), pic.x, pic.y) };
+    add(g, Quad { rect: picture, color: float4 { 1.0, 1.0, 1.0, a },
+                  look: float4 { PICTURE, (if beside { 7.0 } else { 11.0 }) * u, kind, 0.0 },
                   extra: float4 { u, 0.0, 0.0, 0.0 } });
-    if kind == -1 { glyph_icon(g, center(picture, 30.0 * u, 30.0 * u), SUN, PLAIN, 0.0, a); }
+    let sun = min(30.0 * u, pic.y - 4.0 * u);
+    if kind == -1 { glyph_icon(g, center(picture, sun, sun), SUN, PLAIN, 0.0, a); }
+    if beside {
+        cut_left(c, BESIDE_GAP * u);
+        text(g, SMALL, c, label, a, 0.0, LEFT);
+        return clicked;
+    }
     text(g, SMALL, c, label, a, 0.0, CENTER);
     return clicked;
+}
+
+// How wide a slim choice (`beside`) wants to be for its picture and label.
+fn choice_beside_width(g: Gui&, pic: float2, label: const u8[:]) -> f32 {
+    return pic.x + (BESIDE_GAP + 12.0) * g.scale + text_width(g, SMALL, label);
 }
 
 // A choice that is a picture alone, `pic` in dp's pixels in its middle (look.z `kind`,

@@ -242,6 +242,35 @@ fn screens(g: gui::Gui&) {
     report("the win", g, won, true, true);
 }
 
+// The 11" iPad's smallest window (task 050), 374 x 484 pt at 2 px a point with the
+// density floor, a 499 x 645 dp compact layout: settings' Look tab, its theme's tiles
+// slim, and how far above the glass's foot the Board and Kings rows end (negative: below
+// it, reached by scrolling).
+fn small_window(g: gui::Gui&) {
+    drive::size = float2 { 748.0, 968.0 };
+    gui::display_scale = 2.0;
+    g.scale = gui::scale_of(drive::size.x, drive::size.y);
+    gui::test_faces(g);
+    let u = g.scale;
+    var settings = showing(shell::SETTINGS, home::NOTHING);
+    settings.prefs.group = 1;
+    at_rest(settings, g);
+    var glass = float4 { 0.0, 0.0, 0.0, 0.0 };
+    for q in g.quads { if q.look.x == gui::GLASS { glass = q.rect; } }
+    // Back, the two languages, the tabs, the theme's five, the switch's halves, the
+    // board's two, the kings' three.
+    let season = drive::rect(g, 5);
+    let half = drive::rect(g, 10);
+    let foot = glass.y + glass.w;
+    let board = drive::rect(g, 12);
+    let kings = drive::rect(g, 14);
+    print("the iPad's smallest window, ", whole(drive::size.x / u), " x ", whole(drive::size.y / u), " dp: Look's ",
+          drive::tiles(g), " tiles, the switch ", whole(half.z / u), " x ", whole(half.w / u), " dp a half, a season ",
+          whole(season.z / u), " x ", whole(season.w / u), " dp, Board ending ", whole((foot - board.y - board.w) / u),
+          " dp above the glass's foot, Kings ", whole((foot - kings.y - kings.w) / u));
+    gui::display_scale = 0.0;
+}
+
 // A phone's tabs, at 480 dp: settings' Look tab shows the look's tiles in place of the
 // game's, and the puzzles' Learn row opens Learn's page.
 fn tabs(g: gui::Gui&) {
@@ -381,4 +410,5 @@ fn main() {
     gui::test_faces(g);
     tabs(g);
     gui::short_dp = 800.0;
+    small_window(g);
 }

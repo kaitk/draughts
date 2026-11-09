@@ -125,8 +125,13 @@ extremes aren't polished.
   the countdown's short form between, at the left; undo move at the right), the margins
   16 dp: the board goes from about a third of the width to nearly all of it. Home's menu
   rows are 72 dp, the wordmark's row 64 with 8 under it, the sheet's rim 20, which leaves
-  the board about 240 dp above the sheet. Both under the 88 dp floor, accepted for compact
-  only (the user, 2026-11-09). A single puzzle keeps its layout (`small: false`) for now.
+  the board about 240 dp above the sheet. Settings' theme tiles are slim
+  (`settings::SLIM_H`, `gui::choice`'s `beside`): 48 dp tall, a 40 × 26 dp thumbnail with
+  its word beside it, the switch's halves 88 × 48 beside the name, so the Look tab shows
+  Theme and Board whole and the top of Kings without scrolling (Board's foot had been 33 dp
+  under the glass's; `test/shell/sizes`' last line). All under the 88 dp floor, accepted
+  for compact only (the user, 2026-11-09). A single puzzle keeps its layout
+  (`small: false`) for now.
 - **Scrolling** (`gui::scroll_begin`, `scroll_end`): one vertical list a frame, its offset
   kept in `gui::Gui` by the list's id, so another list starts at its top. A press in the
   list's view is a tap until it moves 10 dp up or down (`gui::SLOP`); then it is a drag
@@ -629,7 +634,7 @@ the prototype tried, kept for 3D:
   it ("Small windows"). Side by side, each group is as wide as it wants unwrapped where
   both fit the page, centered, else they share the width in proportion to what each
   wants. Where the theme's five wrap, they are an even grid three across (two where three
-  don't fit), not a ragged wrap. A board under 128 dp isn't shown, as on home (a 9:16 phone at 480 dp). In
+  don't fit), not a ragged wrap; in a small window slim tiles ("Small windows"). A board under 128 dp isn't shown, as on home (a 9:16 phone at 480 dp). In
   portrait, where the title doesn't fit beside the worded back and the language in the
   row labels' 30 dp face (a phone: at 548 dp "Settings" had 61 dp, "Seaded" 45 and was
   left out), back is the arrow over the word in an 88 dp square, which leaves 107 dp; at

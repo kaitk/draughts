@@ -66,6 +66,21 @@ From a proposal with headless before and after shots of a prototype:
   `shell::puzzle_layout`).
 - The window control in a full-screen app: to check in the simulator.
 
+After trying it in the iPad simulator (the user, 2026-11-09): "very strong result", with
+these changes.
+
+- **The window control may sit over a control's corner.** The margin that moved back,
+  the chip, and the game's tiles clear of iPadOS's three dots is taken out, with
+  `gui::Gui`'s corner, `--corner`, and `ios/corner.m`: a control that moves away only in a
+  window bothered the user more than the dots over its corner, and back is large and
+  still easy to tap where it was. Settings' title shows again in the small window.
+- **Settings' theme tiles slim in a small window:** in the Look tab the theme's tiles
+  were tall and Board fell below the fold. In compact only they are 48 dp tall, a smaller
+  thumbnail with its word beside it, and the switch as low; Board's foot now ends 87 dp
+  above the glass's, where it was 33 under it, and Kings shows its top 49 dp
+  (`test/shell/sizes`' new last line). Phones and larger windows are unchanged
+  (`sizes.out`'s other lines).
+
 ## What was built
 
 How it works is in `docs/architecture/rendering.md`, "Small windows" and "Settings".
@@ -74,8 +89,8 @@ Numbers, headless at the iPad's 2 px a point with its density floor (1.5 px a dp
 | Window | Layout, dp | What changed |
 | --- | --- | --- |
 | Smallest, 374 × 484 pt | 499 × 645, compact | Game: the 3D board about 350 dp wide, from about 200; home: a board about 160 dp wide above the menu, from none; settings: one tab, its rows scrolling, Board and Kings reachable; the library and a theme's levels scroll |
-| Tallest, 380 × 1190 pt | 507 × 1587 | As before but for the window control |
-| Widest, 1210 × 480 pt | 1613 × 640 | As before but for the window control: the game's and the puzzles' back and home's column drop below it |
+| Tallest, 380 × 1190 pt | 507 × 1587 | As before |
+| Widest, 1210 × 480 pt | 1613 × 640 | As before |
 
 Settings at the Mac sizes the user widened through (800 dp across the shorter side):
 800 × 1457, 1033, and 925 dp keep the groups side by side under the board, the board
@@ -92,10 +107,6 @@ The final headless shots, not kept in the repo:
 
 ## Left
 
-- The window control in the iPad simulator: resizing a window there needs Simulator.app's
-  window, so it wasn't done headless. Check that the dots clear back, the chip, and the
-  game's tiles at the smallest window, and whether a full-screen app in Windowed Apps
-  shows the dots (then `ios/corner.m`'s reading covers it too, if UIKit reports it).
 - A single puzzle's compact layout (later, above).
 
 ## Acceptance criteria
@@ -104,6 +115,7 @@ The final headless shots, not kept in the repo:
       and home, checked on the Mac at about 374 × 484 pt (headless, 748 × 968 px)
 - [x] The puzzle library, a theme's puzzles, and settings scroll by drag where they
       don't fit, a tap still a tap (`test/gui/scroll`)
-- [ ] No screen's control under the iPad's window control, checked in the iPad simulator
-      (headless with `--corner 88,60` only; see "Left")
+- [x] The iPad's window control may sit over a control's corner (the user's decision,
+      2026-11-09: back is large and easy to tap beside the dots, and a control that moves
+      only in a window is worse), checked in the iPad simulator
 - [x] The tallest and widest windows still work
