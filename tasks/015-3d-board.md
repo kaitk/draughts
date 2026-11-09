@@ -827,3 +827,20 @@ about 28 fps while the board moves, CPU 0.53 ms; the kept depth 12.1 ms, the scr
 part with rings 6.9; the theme applied in 1.66 s (bake 1.59 s, warm plan 290 ms and
 frame map 157), the first frame 0.35 s; at rest idle 0.00%, GL mtrack 224 MB, Total PSS
 309 MB. It works; moving is slow (task 042).
+
+On the A33 every 3D transition (home to the game, settings, the puzzles; the game to
+settings; held or not) and a piece moving froze the app on its first frames, while the
+board at rest looked fine (2026-11-09). The cause was at launch: the bake's mips of the
+mitred frame map (2048 × 1152) end in a 1 × 0 level, and SDL blits it at zero height,
+which the Mali-G68 faults on, losing the device; only the first frames drawn back to back
+waited for a fence and saw it, and goose_gfx then spun at about 12,000 frames a second
+until the native heap ran out ([findings](../docs/goose-findings.md)). `render3d::baked`
+now ends the chain at the shorter side's 1 pixel (the Mac's shots byte for byte the same),
+and a lost device ends the app instead of spinning
+(`patches/goose_gfx/0006-end-on-device-lost.patch`). Checked on the A33 with a debug
+build: home to the game, settings, and the puzzles, the game to settings and home,
+settings to the game, the puzzles to home, held at 0, 0.5, and 1 and not, and a move
+(c3–d4), none losing the device. `--bench 300` again, with nothing lost: the pass 35.7 ms
+waited, 38.3 with the shadow map, 26.9 ms frame to frame; the bake 1.58 s (warm 234 and
+134 ms), the first frame 0.34 s; the kept depth 10.2 ms, the rings' part 6.4: the same as
+before, so those numbers stand.

@@ -3,6 +3,47 @@
 Gaps found in Goose, goose_gfx, and the SDL it pins, while building for Android, with what
 we do about each here and what could go upstream. Newest first.
 
+## SDL: a non-square texture's last mip is blitted at zero size, which loses the device on a Mali-G68 (2026-11-09)
+
+`VULKAN_GenerateMipmaps` blits each level from the one above at `width >> level` by
+`height >> level`, never less than 1. The full chain runs to the longer side's 1 pixel, so
+a texture wider than tall ends in levels of height 0: the 3D board's mitred frame map,
+2048 × 1152 with 12 mips, ends in a 1 × 0 blit (the validation layer:
+`VUID-vkCmdBlitImage-dstOffsets-12519`, a zero-extent region). The Pixel 7a's Mali-G710 and
+the tablet's G615 skip it; the Galaxy A33's Mali-G68 (driver on Android 16) faults, and
+the device is lost in the 3D board's first bake at launch. Nothing waited for a fence
+after it while the board stood still, so the board showed and the app looked fine; the
+first frames drawn back to back (any transition, a piece moving) failed their swapchain
+acquire with `VK_ERROR_DEVICE_LOST`, and the app froze, spinning (the next entry).
+SDL 3.4.16 (`fa2c02b`).
+
+- Found on the A33 with the Khronos validation layer (the Android release's
+  `libVkLayer_khronos_validation.so` added to a test APK's `lib/arm64-v8a/`, gfx's debug
+  mode on), and a log of each `gfx::flush`'s wait: the first, in the bake, already
+  returned the loss.
+- Here: `render3d::baked` asks for the chain down to the shorter side's 1 pixel (11 mips
+  for the frame map, ending 2 × 1), so no level is empty. Nothing samples that far down;
+  the Mac's shots are byte for byte the same.
+- Upstream: for the user only, as with the other SDL entries: `SDL_max(1, ... >> level)`
+  for both offsets' x and y (and depth for 3D) in `VULKAN_GenerateMipmaps`.
+
+## goose_gfx: a lost device makes `frame()` spin, submitting work that never runs (2026-11-09)
+
+Once the GPU device is lost every fence wait and submit fails at once. With draw on
+demand (`0002`) a frame whose present fails while it drew tries again next frame without
+waiting, so a program drawing each frame ran about 12,000 frames a second on the Galaxy
+A33, each submitting work; the Mali driver's per-submit records filled the native heap
+(550 MB) until malloc failed, while the screen stayed frozen. goose_gfx `6cfa3de`.
+
+- Here: `patches/goose_gfx/0006-end-on-device-lost.patch`: `gfx_sdl_fail`, which every
+  failed SDL call goes through, notes an error naming `DEVICE_LOST`, prints it once, and
+  sets quit; `frame()` then returns false before presenting or submitting anything, as
+  for a closed window. The app's loop ends, it writes the game, and SDL finishes the
+  activity: the app closes, and the next start restores the game. On the A33 with the
+  loss brought back the app ended 1 s after it, idle. Recreating the device was left out.
+- Upstream: the same in goose_gfx, or a `gfx::lost()` a program can check to rebuild its
+  resources on a new device.
+
 ## goose_gfx: no compressed texture formats (2026-11-08)
 
 gfx's formats are uncompressed only: `gfx_texture_format` maps none of SDL_GPU's BC or
