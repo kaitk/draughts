@@ -148,7 +148,7 @@ fn taken(b: board::Board&) -> panel::Taken {
         var kings: i64 = 0;
         for st, i in b.history {
             let a = st.pos;
-            guard a.side as i64 != c else { continue; }
+            guard a.side != c else { continue; }
             let next = if i + 1 < b.history.len { b.history[i + 1].pos } else { b.pos };
             kings += popcount(a.pieces[c] & a.kings & ~next.pieces[c]);
         }

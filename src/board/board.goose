@@ -469,7 +469,7 @@ fn play_chosen(b: Board&, i: i64, now: f64) {
     let skip = if waiting(b) >= 0 { b.steps.len } else { 0 };
     start_move(b, i, now);
     b.skip = skip;
-    b.since = now - (skip as f64) * HOP;
+    b.since = now - skip * HOP;
 }
 
 // Leaves a capture made by hand unfinished, which is no move (a capture takes every
@@ -493,7 +493,7 @@ fn abandon(b: Board&, now: f64) -> bool {
     b.wrong = at;
     b.wrong_at = now;
     b.ghost = true;
-    b.ghost_of = float2 { b.pos.side as f32, if king { 1.0 } else { 0.0 } };
+    b.ghost_of = float2 { b.pos.side, if king { 1.0 } else { 0.0 } };
     b.selected = -1;
     b.steps.clear();
     b.pressed = -1;
