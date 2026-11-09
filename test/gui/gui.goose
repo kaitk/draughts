@@ -7,7 +7,7 @@
 // quads one frame makes.
 import std;
 import vec;
-import gui from "../../gui";
+import gui from "../../src/gui";
 
 fn show(name: const u8[:], r: float4) { print(name, ": ", r.x, " ", r.y, " ", r.z, " ", r.w); }
 

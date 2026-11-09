@@ -1,7 +1,7 @@
 // Russian: a man reaching the far row in the middle of a capture is crowned
 // at once and goes on capturing as a king, here along the d8-h4 diagonal that
 // a man couldn't take on.
-import rules from "../../rules";
+import rules from "../../src/rules";
 import check from "../";
 
 fn main() {

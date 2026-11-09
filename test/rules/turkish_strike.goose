@@ -1,6 +1,6 @@
 // Captured pieces stay on the board until the whole move ends, so no piece is
 // jumped twice and a taken piece blocks the way (the Turkish strike rule).
-import rules from "../../rules";
+import rules from "../../src/rules";
 import check from "../";
 
 fn main() {

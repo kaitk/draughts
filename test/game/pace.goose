@@ -15,12 +15,12 @@
 // replay the same on any machine; hard's node limit is lowered to stay quick through
 // TinyCC.
 import std;
-import rules from "../../rules";
-import board from "../../board";
-import gui from "../../gui";
+import rules from "../../src/rules";
+import board from "../../src/board";
+import gui from "../../src/gui";
 import strings from "../../strings";
-import game from "../../game";
-import ai from "../../ai";
+import game from "../../src/game";
+import ai from "../../src/ai";
 
 let PLIES = 240;            // a game longer than this stops, drawn
 let QUIET = 50;             // or after this many plies with no capture and no man moved

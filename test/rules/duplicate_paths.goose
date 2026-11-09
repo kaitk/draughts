@@ -1,6 +1,6 @@
 // The same start, end, and pieces taken make one move, however many ways lead
 // there: the king goes round d2, d4, b4, b2 either way and is back on c1.
-import rules from "../../rules";
+import rules from "../../src/rules";
 import check from "../";
 
 fn main() {

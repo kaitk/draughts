@@ -37,12 +37,12 @@ draws its HUD:
 - Calls append quads (`panel`, `button`, `icon`, `fill`; `text` with home) to one fixed
   array, reset each frame, and one pipeline draws them in one instanced draw.
 - **Native form**: `gui/` holds the layer with no graphics (tested headless in
-  `test/gui/`), and `app/widgets.goose` draws it: each quad pulls `{rect, color, kind,
+  `test/gui/`), and `src/app/widgets.goose` draws it: each quad pulls `{rect, color, kind,
   radius, icon, pressed, dp, look}` from one storage buffer, and its fragment shader works
   it out as a signed-distance shape: glass with its shadow, a tile with its shadow (plain,
   primary, or a toggle on or off), a line icon as distances to its strokes' segments and
   arcs. `game/` is the game screen with no graphics, tested headless in
-  `test/game/`: it declares the panel (`game/panel.goose`) and the celebration, does what
+  `test/game/`: it declares the panel (`src/game/panel.goose`) and the celebration, does what
   their buttons ask, and hands the pointer to the board only when a press didn't land on
   the UI. Pieces shown on the UI (the side to move, the winner) are drawn after it by the
   piece pipeline from a second small storage buffer, so they look exactly like the
@@ -72,7 +72,7 @@ pixels, and the floor there would make shots depend on the Mac's screen.
 
 Each screen lays out its taps and words inside the window's **safe area**: the window less
 its insets, a phone's camera cutout and its gesture bar at the bottom. SDL reports them
-(`SDL_GetWindowSafeArea`; the program's own C, `app/display.c`, reads them each frame with
+(`SDL_GetWindowSafeArea`; the program's own C, `src/app/display.c`, reads them each frame with
 the display scale, since goose_gfx has neither). The app draws behind the cutout (SDL
 sets `LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS`), so the photograph, the blurred page, and
 glass that runs off the screen's edge (home's column and sheet, `gui::bleed`; settings'
@@ -177,7 +177,7 @@ but its olive sits nearer spring's greens than the sunset does.
   board.
 - **Behind the 2D game the scene is blurred** (a 14 px blur at 1280 px wide, dimmed to
   0.8), as on the design boards, so the flat board reads cleanly. Natively
-  (`app/scene.goose`) the sharp texture is averaged down to 512 × 512 on the GPU (a box of
+  (`src/app/scene.goose`) the sharp texture is averaged down to 512 × 512 on the GPU (a box of
   4 × 4 texels from 2 × 2 bilinear taps) and blurred once when the season is picked, two
   passes of a Gaussian of sigma 5.6 texels: since a square image is cover-cropped by the
   screen's long side, that is the same blur at every screen size and orientation, so a
@@ -197,7 +197,7 @@ but its olive sits nearer spring's greens than the sunset does.
   looks the same as the JPEG and 4 × 4 side by side at the tablet's and a phone's size,
   sharp behind home and blurred, and is nearer the master than the JPEG (44 to 45 dB
   against 40 to 41, summer 40 against 37.5); 4 × 4 (4 MB) buys nothing visible.
-- **Loading** (`app/background.c`, the program's own C, a `c_sources` entry in its
+- **Loading** (`src/app/background.c`, the program's own C, a `c_sources` entry in its
   `.build` sidecar): gfx has no compressed formats, so
   `patches/goose_gfx/0004-compressed-textures.patch` adds them and
   `gs_gfx_format_supported` ([findings](../goose-findings.md)); the Goose side compiles
@@ -218,7 +218,7 @@ but its olive sits nearer spring's greens than the sunset does.
   (`madvise(MADV_DONTNEED)`: clean pages of the APK, but counted while resident).
   Settings' thumbnails shrink each season's photograph on the GPU in turn (the JPEG path
   decodes and scales to 512 first), waiting for the GPU after each so only one is alive
-  at a time. Until the images are checked in, `app/background.c`
+  at a time. Until the images are checked in, `src/app/background.c`
   embeds the local masters with C23 `#embed` under `__has_embed`, so a checkout without
   them builds and shows the page color, and one without the ASTC files decodes the
   JPEGs everywhere. Android embeds only the ASTC files and compiles no stb_image
@@ -238,7 +238,7 @@ but its olive sits nearer spring's greens than the sunset does.
   blurred once (its `docs/architecture/scene.md`). Here the scene is blurred on the GPU
   when the season is picked, into a small texture (the blur a 24 px one would be at
   1280 px wide, saturation 1.3), so nothing pre-blurred is stored. Natively
-  (`app/scene.goose`) two more passes blur the 512 px copy into a 256 × 256 one (sigma
+  (`src/app/scene.goose`) two more passes blur the 512 px copy into a 256 × 256 one (sigma
   3.9 texels, on the copy's 2.8), the same at every screen size for the same reason as
   the board's copy. A glass panel samples it at its screen position: one texture fetch
   per pixel, no blur per frame.
@@ -332,7 +332,7 @@ the prototype tried, kept for 3D:
   back runs the clock of the side to move again, the time taken staying taken, and none
   back at the start; start over sets both full again. Only time with the game on screen
   counts: not while Android has the app paused or it is in the background, nor while
-  home or settings shows. A clock is the value `game/clock.goose`, no graphics, saved
+  home or settings shows. A clock is the value `src/game/clock.goose`, no graphics, saved
   with the game. The choices are no clock, 5+3, and
   10+5 (five minutes plus three seconds a move, ten plus five): 5+3 is FMJD's usual
   blitz and both are in IDF's 8×8 rapid list, gentle enough for children.
@@ -441,7 +441,7 @@ the prototype tried, kept for 3D:
   king drawn on the tile). The prototype's Board row (flat or raised) is hidden until the
   3D board exists (task 015): the board is always flat, the file's `board = 2d|3d` key is
   still read and written, and the app's `--3d` flag shows the row, its 3D tile dimmed
-  (`Settings.show_board_row`, `shell/settings.goose`). Each
+  (`Settings.show_board_row`, `src/shell/settings.goose`). Each
   setting is a dim 18 px name at the left of its tiles (above them in portrait); a tile
   has radius 16 px and is lit in the glow color at 22% with a 2 px glow border when on.
   Every tile, the language's and the seasons' too, is 88 px tall and wide at least
@@ -452,7 +452,7 @@ the prototype tried, kept for 3D:
   a wrong move's red ring and the piece that must capture pulsing), over the season's
   photograph. It is home's board: opening settings moves it aside, and back moves it
   home (see "Transitions").
-  Natively (`shell/settings.goose`) the preview is a board of its own on one fixed
+  Natively (`src/shell/settings.goose`) the preview is a board of its own on one fixed
   position, the same on every board size and a square in from the corner on 10 × 10:
   white must capture two, with the man on d4 or the king on h6. With all moves d4 is
   selected and its capture shown, target and stop; with mistakes only, a wrong move to
@@ -576,10 +576,10 @@ the prototype tried, kept for 3D:
   (the board's pieces share it, so a new piece style reaches the badges with it), the
   animal flat and bold as the crown is, with only a faint shadow inside its upper edge
   (the distance 0.035 radii above, darkening the mark by up to 30%). `badge()` in
-  `app/widgets.goose` draws every badge. The animals are data: one SVG per animal,
+  `src/app/widgets.goose` draws every badge. The animals are data: one SVG per animal,
   `assets/badges/<animal>.svg` (fox, hare, bear, owl, frog, hedgehog, in
   `players::ANIMALS`'s order), embedded when the app is built and baked at start by
-  `badges/badges.goose` into a signed distance field, a 96 × 96 cell per animal (an R8
+  `src/badges/badges.goose` into a signed distance field, a 96 × 96 cell per animal (an R8
   texture of 96 × 576, 54 KB; the distance in texels, ±12 over the byte's range), in
   well under a millisecond on the Mac. The bake flattens the outline into straight
   pieces, each reaching only the texels within 12 of it, and takes inside and out from
@@ -671,7 +671,7 @@ frame between home and the game declares about 130 of the 512 quads (home 77, th
   shows under it. A selected or must-capture ring goes round the lower disc, the stack's
   foot, with the upper disc hiding its back (2026-11-08). The setting applies to the game's board, the winner's piece,
   and the preview; home's wordmark keeps its crown.
-- **Native form** (`app/draw.goose`): the blurred photograph, the board's shadow, lip,
+- **Native form** (`src/app/draw.goose`): the blurred photograph, the board's shadow, lip,
   squares, and marks are one full-screen fragment pass, worked out at `gl_FragCoord`
   (interpolated coordinates put a square's edge a pixel off on some rows); the pieces
   are one instanced draw of quads, each pulling `{center, radius, lift; black, king (none,
@@ -716,7 +716,7 @@ only. Marcellus has small serifs, further from Optima. The atlas bakes Latin-1, 
 Extended-A, and general punctuation. If titles want more character, Tenor Sans could set
 them and Libertinus the rest; one face is the default, for one atlas.
 
-Natively (`app/text.goose`) the regular weight (`assets/fonts/`, from the v7.051
+Natively (`src/app/text.goose`) the regular weight (`assets/fonts/`, from the v7.051
 release) is baked by `ui`'s atlas once per size the UI uses, at the screen's pixel size,
 so a glyph is drawn a texel to a pixel: 64 dp for the wordmark, 30 for labels, 17 for
 notes. The atlas sizes a font by its ascent less its descent, 1.14 em for Libertinus,
@@ -811,7 +811,7 @@ On the CPU side, Android's malloc (Scudo) keeps freed pages resident: small bloc
 Android purges them as the app goes to the background, freed large blocks (100 KB to
 1 MB) in a secondary cache that purge leaves. The launch frees about 16 MB of both, so
 the app calls `mallopt(M_PURGE_ALL, 0)` once, in the first idle frame after the launch
-(`app/memory.c`, 2 ms; [Frames and battery](#frames-and-battery)): native heap at home
+(`src/app/memory.c`, 2 ms; [Frames and battery](#frames-and-battery)): native heap at home
 42.6 → 26.7 MB. Goose packs structs, so large tables carry no padding. The computer's
 worker's tables (about 5 MB, [ai](ai.md)) take memory only once it first plays; halving
 them would save about 3 MB, not worth checking what it costs in strength.
@@ -879,7 +879,7 @@ A running clock must show its next second on time, which the wait doesn't: after
 frame the next wait ends a second and a frame later, so the clock was drawn 6 ms later
 each second, up to a second late, and skipped a second every two and a half minutes
 (measured on the tablet, 2026-11-08). So while a clock runs the app sets an SDL timer for
-when the time shown changes (`app/wake.c`), which pushes an event of the program's own
+when the time shown changes (`src/app/wake.c`), which pushes an event of the program's own
 type and ends the wait; the second is then drawn within 5 ms. The Mac's gfx doesn't
 wait, so the timer is Android's only.
 
@@ -897,7 +897,7 @@ the JPEGs are decoded, about 125 ms on the tablet and 55 ms on the Mac), so they
 the first frame after the launch's first that draws nothing; that frame presents the
 unchanged screen once more, and settings opening for the first time moves as smoothly as
 later. Settings opened at launch load them before their first frame. That idle frame also gives back to
-the system the memory malloc keeps for what the launch freed (`app/memory.c`, about 16
+the system the memory malloc keeps for what the launch freed (`src/app/memory.c`, about 16
 MB of native heap on the tablet, 2 ms). A settings change
 the tap starting a transition made (the computer's play counting a game) is written once
 the transition is over, since the write flushes to disk, 13 to 17 ms on the tablet.

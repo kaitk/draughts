@@ -7,12 +7,12 @@ is in `shell/` ([rendering](rendering.md#controls)).
 
 ## The file
 
-Each variant with puzzles has a file of its own: `puzzles/international.txt` holds the
-International puzzles (International is the default game), and `puzzles/russian.txt`
+Each variant with puzzles has a file of its own: `src/puzzles/international.txt` holds the
+International puzzles (International is the default game), and `src/puzzles/russian.txt`
 the Russian ones ([Russian's set](#russians-set)). They are grouped by theme, each theme
 a short curve of its own in three levels, easy to hardest (chosen 2026-11-09). The
 themes are a fixed list in code (`puzzles::THEME_NAMES`, their icons and names in
-`shell/picker.goose` and `strings/`), in the library's order, International's:
+`src/shell/picker.goose` and `strings/`), in the library's order, International's:
 
 | Theme | What it teaches | Levels 1, 2, 3 |
 |---|---|---|
@@ -65,7 +65,7 @@ or allocated while puzzles are shown.
 
 ## Russian's set
 
-`puzzles/russian.txt` is composed for Russian's own rules, not ported from
+`src/puzzles/russian.txt` is composed for Russian's own rules, not ported from
 International's ([rules](rules.md#variants)): men capture backward, no capture has to
 take the most, so the child picks among captures, and a man crowned mid-capture goes on
 capturing as a king, which makes the Russian school's shots through the crowning square.
@@ -120,9 +120,9 @@ the longest line is five plies, within `MAX_PLIES` (8). Russian's 46 cost at mos
 
 ## The screen
 
-Home's puzzles opens the picker (`shell/picker.goose`): a library of the themes, a row
+Home's puzzles opens the picker (`src/shell/picker.goose`): a library of the themes, a row
 each with its count solved, and a row opens the theme's page, its puzzles as tiles in
-its levels. A tile there opens the puzzle (`shell/puzzle.goose`), which the shell holds
+its levels. A tile there opens the puzzle (`src/shell/puzzle.goose`), which the shell holds
 with its own board and solver beside the game, so a game in progress is kept. A puzzle
 for black is played on the turned board, as against the computer, and its panel says
 whose puzzle it is. Their look is in [rendering](rendering.md#controls).
@@ -198,8 +198,8 @@ puzzle, and by `tools/puzzles.goose`) refuses a puzzle when:
 whether the moves it rates best solve the puzzle, a second engine sharing only the
 rules with the solver, and whether it scores a right first move as losing material
 (under −50, half a man). It plays for material, so it is not asked about crowning.
-`test/perft.py puzzles international puzzles/international.txt` (and `russian
-puzzles/russian.txt`) plays every line with the independent generator, checking each
+`test/perft.py puzzles international src/puzzles/international.txt` (and `russian
+src/puzzles/russian.txt`) plays every line with the independent generator, checking each
 move and each position's moves against `build/perft`; for Russian, which has no
 published perft table, it is the only independent check. `scripts/test.sh` runs it on
 both files.

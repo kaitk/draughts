@@ -1,7 +1,7 @@
 // Move counts from the start position: International, English, and Brazilian
 // against published values, Russian against test/perft.py. tools/perft.goose goes
 // deeper, natively.
-import rules from "../../rules";
+import rules from "../../src/rules";
 
 fn main() {
     for v: u8 in 0..rules::VARIANT_COUNT {

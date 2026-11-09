@@ -10,8 +10,8 @@
 // reply's seed is its ply, so the same game replays the same way.
 import std;
 import os;
-import rules from "../rules";
-import ai from "../ai";
+import rules from "../src/rules";
+import ai from "../src/ai";
 
 let MAX_PLIES = 600;
 

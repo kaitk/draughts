@@ -51,59 +51,59 @@ __attribute__((weak)) uint8_t gs_gfx_format_supported(int32_t format, int32_t us
 // clang takes in C11 too.
 #pragma clang diagnostic ignored "-Wc23-extensions"
 #ifndef __ANDROID__
-#if __has_embed("../design/backgrounds/masters/autumn-01-2048.jpg")
+#if __has_embed("../../design/backgrounds/masters/autumn-01-2048.jpg")
 static const unsigned char autumn[] = {
-#embed "../design/backgrounds/masters/autumn-01-2048.jpg"
+#embed "../../design/backgrounds/masters/autumn-01-2048.jpg"
     , 0 };
 #else
 static const unsigned char autumn[] = { 0 };
 #endif
-#if __has_embed("../design/backgrounds/masters/winter-01-2048.jpg")
+#if __has_embed("../../design/backgrounds/masters/winter-01-2048.jpg")
 static const unsigned char winter[] = {
-#embed "../design/backgrounds/masters/winter-01-2048.jpg"
+#embed "../../design/backgrounds/masters/winter-01-2048.jpg"
     , 0 };
 #else
 static const unsigned char winter[] = { 0 };
 #endif
-#if __has_embed("../design/backgrounds/masters/spring-01-2048.jpg")
+#if __has_embed("../../design/backgrounds/masters/spring-01-2048.jpg")
 static const unsigned char spring[] = {
-#embed "../design/backgrounds/masters/spring-01-2048.jpg"
+#embed "../../design/backgrounds/masters/spring-01-2048.jpg"
     , 0 };
 #else
 static const unsigned char spring[] = { 0 };
 #endif
-#if __has_embed("../design/backgrounds/masters/summer-01-2048.jpg")
+#if __has_embed("../../design/backgrounds/masters/summer-01-2048.jpg")
 static const unsigned char summer[] = {
-#embed "../design/backgrounds/masters/summer-01-2048.jpg"
+#embed "../../design/backgrounds/masters/summer-01-2048.jpg"
     , 0 };
 #else
 static const unsigned char summer[] = { 0 };
 #endif
 #endif
-#if __has_embed("../design/backgrounds/masters/autumn-01-2048-6x6.astc")
+#if __has_embed("../../design/backgrounds/masters/autumn-01-2048-6x6.astc")
 static const unsigned char autumn_astc[] = {
-#embed "../design/backgrounds/masters/autumn-01-2048-6x6.astc"
+#embed "../../design/backgrounds/masters/autumn-01-2048-6x6.astc"
     , 0 };
 #else
 static const unsigned char autumn_astc[] = { 0 };
 #endif
-#if __has_embed("../design/backgrounds/masters/winter-01-2048-6x6.astc")
+#if __has_embed("../../design/backgrounds/masters/winter-01-2048-6x6.astc")
 static const unsigned char winter_astc[] = {
-#embed "../design/backgrounds/masters/winter-01-2048-6x6.astc"
+#embed "../../design/backgrounds/masters/winter-01-2048-6x6.astc"
     , 0 };
 #else
 static const unsigned char winter_astc[] = { 0 };
 #endif
-#if __has_embed("../design/backgrounds/masters/spring-01-2048-6x6.astc")
+#if __has_embed("../../design/backgrounds/masters/spring-01-2048-6x6.astc")
 static const unsigned char spring_astc[] = {
-#embed "../design/backgrounds/masters/spring-01-2048-6x6.astc"
+#embed "../../design/backgrounds/masters/spring-01-2048-6x6.astc"
     , 0 };
 #else
 static const unsigned char spring_astc[] = { 0 };
 #endif
-#if __has_embed("../design/backgrounds/masters/summer-01-2048-6x6.astc")
+#if __has_embed("../../design/backgrounds/masters/summer-01-2048-6x6.astc")
 static const unsigned char summer_astc[] = {
-#embed "../design/backgrounds/masters/summer-01-2048-6x6.astc"
+#embed "../../design/backgrounds/masters/summer-01-2048-6x6.astc"
     , 0 };
 #else
 static const unsigned char summer_astc[] = { 0 };

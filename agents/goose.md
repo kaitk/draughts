@@ -58,7 +58,7 @@ find out by compiling, so the next session doesn't.
   flipped byte in a value's middle still loads. Add a checksum (`shell::save` appends
   FNV-1a). A limited array in a struct is saved at its full capacity.
 - A package's other files' namespaces come with it: after `import shell from
-  "../shell";` the app calls `settings::parse` from `shell/settings.goose`. Importing
+  "../shell";` the app calls `settings::parse` from `src/shell/settings.goose`. Importing
   the same directory again under another name is an error.
 - A package's files see each other's namespaces without importing them: `panel.goose`
   uses `clock::` because `game.goose` imports `.clock`. From outside, a file's namespace
@@ -70,27 +70,27 @@ find out by compiling, so the next session doesn't.
   intent's `args` extra (`android/java/.../DraughtsActivity.java`).
 - State with several large buffers (the computer player's 4 MB table and its frames) is
   a `root struct` owned by a local, each buffer a resizable field filled once; functions
-  take `Engine&` (`ai/ai.goose`). A root can't be copied, passed by value, or held in
+  take `Engine&` (`src/ai/ai.goose`). A root can't be copied, passed by value, or held in
   another struct, and a worker can't receive one, only build its own.
 - A deep recursion that must stop and resume (a search sliced across frames) is a loop
   over an explicit array of frames, one per level, with ENTER/RETURN modes
-  (`ai/search.goose`); no coroutines are needed.
-- A program's own C goes in `c_sources` in its `.build` sidecar (`app/draughts.build`).
+  (`src/ai/search.goose`); no coroutines are needed.
+- A program's own C goes in `c_sources` in its `.build` sidecar (`src/app/draughts.build`).
   `goose run` and `goose build` both compile it with the system clang, so C23 `#embed`
   and `__has_embed` work (with `-Wc23-extensions` silenced); a slice arrives in C as
-  `struct { uint8_t *data; int64_t len; }` by value (`app/background.c`). The compiled C
+  `struct { uint8_t *data; int64_t len; }` by value (`src/app/background.c`). The compiled C
   is cached by its source: touch the `.c` after a file it embeds appears or changes.
 - A missing `embed_file` path is a compile error; embed optional files from the C side.
 - The program's C is linked on the Mac as its own dylib with no undefined symbols, so it
   can't call SDL directly though the goose binary carries SDL: look the function up with
   `dlsym(RTLD_DEFAULT, ...)` there; on Android the program links libSDL3.so and calls
-  it directly (`app/locale.c`).
+  it directly (`src/app/locale.c`).
 - The program's C reaches the Java activity with `SDL_GetAndroidJNIEnv()` and
   `SDL_GetAndroidActivity()` (a local reference to delete), then `GetObjectClass` on the
   activity: `FindClass` from the program's thread searches the system's class loader and
-  doesn't find the app's classes (`app/launch.c`).
+  doesn't find the app's classes (`src/app/launch.c`).
 - The program's C finds goose_gfx's window with `SDL_GetWindows` (one, cached) and asks
-  SDL what gfx doesn't expose: the safe area and the display scale (`app/display.c`). The
+  SDL what gfx doesn't expose: the safe area and the display scale (`src/app/display.c`). The
   safe area is in window coordinates, points on the Mac: scale it by pixels over window
   size. A slice of floats arrives as `struct { float *data; int64_t len; }`; a local
   `var d: f32[5]` passes as `f32[:]` (2026-11-08).
@@ -98,7 +98,7 @@ find out by compiling, so the next session doesn't.
   in a loop is `var rest: const u8[:] = ...` (2026-11-08).
 - The program's C can call goose_gfx's C API (`gfx_api.h`, on the sidecar's `c_include`
   as `../third_party/goose_gfx/src/gfx`) and return a `gs_gfx_texture` to Goose, which
-  an `extern fn ... -> gfx::Texture` takes (a flat struct by value): `app/background.c`
+  an `extern fn ... -> gfx::Texture` takes (a flat struct by value): `src/app/background.c`
   uploads embedded bytes that way, with no copy on a data stack. A function only a gfx
   patch adds gets a `__attribute__((weak))` stand-in in the program's C, so the Mac,
   whose `goose build` links the release's prebuilt gfx, still links; on Android the
@@ -113,7 +113,7 @@ find out by compiling, so the next session doesn't.
 ## Traps
 
 - Shifts mask the count to the width: `x >> 64` is `x`, not 0. Never shift by a computed
-  count that can reach the width (`rules/rules.goose` keeps every count under 64).
+  count that can reach the width (`src/rules/rules.goose` keeps every count under 64).
 - `1 << n` takes its destination's type; in a `u64` context write `(1 as u64) << n` or
   return it from a `-> u64` function, or it is an `i64` shift.
 - Arithmetic is at the operands' width: `u8 + u8` wraps at 256. `u32 + i32` is an error;
@@ -146,7 +146,7 @@ find out by compiling, so the next session doesn't.
   works. An assignment isn't an expression: `f(now += 1.0)` doesn't parse (2026-11-09).
 - File functions (`read_file`, `write_file_atomic`, `file_exists`, `delete_file`,
   `rename_file`, `list_dir`) need `import os;` in every file that calls them, packages
-  included (`shell/players.goose`) (2026-11-09).
+  included (`src/shell/players.goose`) (2026-11-09).
 - `float4` has no swizzles (`.xy`); build the `float2` from `.x` and `.y`.
 - `gfx::uniforms` takes its block by value: a struct bound with `.=` doesn't compile
   ("bytes_of cannot write theme::Theme&[1] out"); bind it with `=`.
@@ -162,7 +162,7 @@ find out by compiling, so the next session doesn't.
 - `gl_InstanceIndex` doesn't count a draw's `first_instance`, so a second group of
   instances drawn at another time (pieces over the UI) gets its own storage buffer.
 - `goose run` refuses a program that starts a thread at all, so the app is built on the
-  Mac too (`docs/development.md`), and its one thread stays in `app/think.goose`: the
+  Mac too (`docs/development.md`), and its one thread stays in `src/app/think.goose`: the
   packages and tests stay thread-free and run through TinyCC.
 - Packages are declared by the root file only. A file of the app can't `import ai from
   "../ai"`; the root declares it and the file uses `ai::`. When a package starts
@@ -178,7 +178,7 @@ find out by compiling, so the next session doesn't.
 
 ## Threads
 
-What `app/think.goose` needed, from `reference.md` section 22 and spec 11.2:
+What `src/app/think.goose` needed, from `reference.md` section 22 and spec 11.2:
 
 - A `thread_fn` and all it calls compile as a separate program with its own data stacks
   and its own copies of the globals it reaches, taken at `thread_spawn`. Nothing is

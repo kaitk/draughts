@@ -41,16 +41,16 @@ gfx layer.
 ## Run on the Mac
 
 ```sh
-cd app
-../build/goose-v2026.4-macos-arm64/goose build -o ../build/draughts draughts.goose
-../build/draughts
-../build/draughts --theme sunset --size 800x1280
-../build/draughts --fen W:Wc3,e3,Kh2:Bd4,f6 --tap c3 --frames 30
+cd src/app
+../../build/goose-v2026.4-macos-arm64/goose build -o ../../build/draughts draughts.goose
+../../build/draughts
+../../build/draughts --theme sunset --size 800x1280
+../../build/draughts --fen W:Wc3,e3,Kh2:Bd4,f6 --tap c3 --frames 30
 ```
 
 The app is built, not run through `goose run`: the computer thinks on a worker thread
-(`app/think.goose`), and `goose run` refuses a program that starts one. The build takes
-about 3 s, and the flags follow the executable with no `--`. `app/draughts.goose` is the
+(`src/app/think.goose`), and `goose run` refuses a program that starts one. The build takes
+about 3 s, and the flags follow the executable with no `--`. `src/app/draughts.goose` is the
 app; its development flags pick the board theme (`wood`, `stone`, `birch`, `sunset`; the
 season's by default, with its photograph), the window size, a starting position,
 squares to tap on the first frames, move hints (`--hints moves` shows the targets;
@@ -67,17 +67,17 @@ gesture bar, 2 px a dp at that scale: `--size 450x1000 --dp 540 --inset 0,59,0,4
 and in landscape `--size 1200x540 --dp 540 --inset 59,0,0,42` (or `0,0,59,42`, turned
 the other way). What the Pixel would show at a floor of 0.75: `--size 1200x540
 --density-floor 0.75 --display-scale 2.625` (1.97 px a dp, 548 dp across).
-`app/draughts.build` adds the program's own C (`app/background.c`, the photographs, made
+`src/app/draughts.build` adds the program's own C (`src/app/background.c`, the photographs, made
 into textures through gfx's C API, and, on the Mac only, their JPEG decoder;
-`app/locale.c`, the system's locales; `app/display.c`, the window's safe area and the
-display's scale; `app/wake.c`, the timer a running clock wakes the
-loop with; `app/memory.c`, which gives back on Android the memory malloc keeps for
-what the launch freed; `app/launch.c`, which tells the activity the first frame is on screen, and
+`src/app/locale.c`, the system's locales; `src/app/display.c`, the window's safe area and the
+display's scale; `src/app/wake.c`, the timer a running clock wakes the
+loop with; `src/app/memory.c`, which gives back on Android the memory malloc keeps for
+what the launch freed; `src/app/launch.c`, which tells the activity the first frame is on screen, and
 to close and leave recents after home's X), which `scripts/android.py` builds into the APK too. The photographs are
 embedded from `design/backgrounds/masters/` when they are there (the JPEGs, and the ASTC
 files `design/backgrounds/README.md` says how to make with astcenc); without them the
 board sits on the page color. goose caches the program's C by its source, so after
-adding or changing a master, touch `app/background.c`. The Mac's `goose build` links the
+adding or changing a master, touch `src/app/background.c`. The Mac's `goose build` links the
 release's prebuilt gfx, which has no compressed formats, so the Mac decodes the JPEGs;
 the Android build's gfx is patched and takes the ASTC files, and embeds only those, not
 the JPEGs ([rendering](architecture/rendering.md#scene-and-glass)). To see the ASTC path on the
@@ -177,11 +177,11 @@ cores (`f0`, the big ones).
 goose build -o build/puzzles tools/puzzles.goose && build/puzzles    # every puzzle, and the engine's view
 build/puzzles try 'W:W33,38,43,45,47,48:B3,11,21,23,24,29' 'take 2' 2  # what solves a position
 build/puzzles find 'take 3' 2 7 7 6                                  # random shots to compose from
-test/perft.py puzzles international puzzles/international.txt       # the lines, by the independent generator
+test/perft.py puzzles international src/puzzles/international.txt       # the lines, by the independent generator
 build/puzzles --variant russian                                       # Russian's set, and the engine's view
 build/puzzles try --variant russian 'W:Wh4,a5:Bg5,c7,e7,g7' 'take 3' 1
 build/puzzles find black 'take 2' 2 7 7 6 --variant russian          # flags anywhere; --rows N, --tempo
-test/perft.py puzzles russian puzzles/russian.txt                    # Russian's only independent check
+test/perft.py puzzles russian src/puzzles/russian.txt                    # Russian's only independent check
 ```
 
 The app shows the set of the player's draughts; `--variant russian` picks Russian's for
@@ -198,7 +198,7 @@ and sideloading. Use USB mode **Transferring files** and allow the Mac's key.
 `adb devices` should list it.
 
 ```sh
-scripts/android.py app/draughts.goose --run     # build, install, start
+scripts/android.py src/app/draughts.goose --run     # build, install, start
 adb logcat -s goose:* SDL:*                 # the program's output and SDL's log
 ```
 
@@ -259,7 +259,7 @@ only on the Mac (2026-11-08), as there is no such device.
 ## Release builds
 
 ```sh
-scripts/android.py app/draughts.goose --release   # draughts-release.apk and .aab
+scripts/android.py src/app/draughts.goose --release   # draughts-release.apk and .aab
 ```
 
 A release build is signed with the upload key instead of the debug key, and also makes

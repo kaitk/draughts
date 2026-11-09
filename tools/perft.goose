@@ -10,7 +10,7 @@
 // number, the form test/perft.py compares.
 import std;
 import os;
-import rules from "../rules";
+import rules from "../src/rules";
 
 fn variant_named(name: const u8[:]) -> u8, bool {
     if name == "russian" { return rules::RUSSIAN, true; }

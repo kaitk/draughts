@@ -27,7 +27,7 @@ game can be replayed.
 
 ## Thinking on a worker
 
-The app thinks on one worker thread (`app/think.goose`), so the frame loop never waits
+The app thinks on one worker thread (`src/app/think.goose`), so the frame loop never waits
 for the search:
 
 - The game says what it wants: on the computer's turn it opens an ask, `game::Ask`, a
@@ -62,7 +62,7 @@ On a worker the frame loop draws as it would without the computer.
   answers in under a millisecond, and a reply at once feels like a machine. Medium and
   hard pause less, as they take time of their own on the tablet.
 - **Against the clock** it takes as long as a player of its level would
-  (`game/pace.goose`): a share of what it could spend each move and keep its clock (the
+  (`src/game/pace.goose`): a share of what it could spend each move and keep its clock (the
   time left over 30 moves, plus the increment), 0.15 of it on easy, 0.3 on medium, 0.45
   on hard, for a choice among three close moves. Its search's root scores say how close
   (`ai::close`: the moves within 0.15 of a man of the best, as far as its margin scores

@@ -10,8 +10,8 @@
 // player's view of them is tools/puzzles.goose's, too slow for TinyCC, and
 // `test/perft.py puzzles russian puzzles/russian.txt` replays every line independently.
 import std;
-import rules from "../../rules";
-import puzzles from "../../puzzles";
+import rules from "../../src/rules";
+import puzzles from "../../src/puzzles";
 
 fn main() {
     print("loaded: ", puzzles::load(rules::RUSSIAN), ", the set ", puzzles::VARIANT_NAMES[puzzles::loaded]);

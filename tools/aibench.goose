@@ -8,8 +8,8 @@
 // nodes, milliseconds; then each level's slowest reply and the nodes a second overall.
 import std;
 import os;
-import rules from "../rules";
-import ai from "../ai";
+import rules from "../src/rules";
+import ai from "../src/ai";
 
 // The start, then middlegames reached by the medium level playing itself
 // (tools/aimatch.goose --fens).

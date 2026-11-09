@@ -27,7 +27,7 @@ import rules from "../rules";
 import board from "../board";
 import gui from "../gui";
 import game from "../game";
-import strings from "../strings";
+import strings from "../../strings";
 import puzzles from "../puzzles";
 
 // What home asks for.

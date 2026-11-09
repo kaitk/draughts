@@ -5,11 +5,11 @@
 namespace drive;
 import std;
 import vec;
-import rules from "../../rules";
-import board from "../../board";
-import gui from "../../gui";
-import game from "../../game";
-import shell from "../../shell";
+import rules from "../../src/rules";
+import board from "../../src/board";
+import gui from "../../src/gui";
+import game from "../../src/game";
+import shell from "../../src/shell";
 
 // The pieces the game screen puts over the UI, which the shell holds in the app.
 var over: game::Overlay;

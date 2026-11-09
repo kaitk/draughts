@@ -1,6 +1,6 @@
 // Reading and writing positions: numbers, a1..h8, ranges, kings, and what is
 // refused.
-import rules from "../../rules";
+import rules from "../../src/rules";
 import check from "../";
 
 fn round_trip(variant: u8, text: const u8[:]) {

@@ -8,14 +8,14 @@
 // its board's pieces on squares of its size.
 import std;
 import vec;
-import rules from "../../rules";
-import board from "../../board";
-import gui from "../../gui";
+import rules from "../../src/rules";
+import board from "../../src/board";
+import gui from "../../src/gui";
 import strings from "../../strings";
-import game from "../../game";
-import ai from "../../ai";
-import shell from "../../shell";
-import puzzles from "../../puzzles";
+import game from "../../src/game";
+import ai from "../../src/ai";
+import shell from "../../src/shell";
+import puzzles from "../../src/puzzles";
 import drive from "../drive";
 
 // Whether the board filled for `now` lies whole on squares of its size where the layout

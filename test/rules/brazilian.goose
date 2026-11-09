@@ -1,7 +1,7 @@
 // Brazilian: International's rules on 8×8. A capture must take the most
 // pieces, and a man is crowned only if its move ends on the far row; one that
 // passes it in the middle of a capture stays a man and goes on as one.
-import rules from "../../rules";
+import rules from "../../src/rules";
 import check from "../";
 
 fn main() {

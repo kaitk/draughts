@@ -12,7 +12,7 @@ P=$(sed -n 's/^APP_ID = "\(.*\)"/\1/p' "$(dirname "$0")/android.py")   # the app
 S=${1:-60}
 pid=$(adb shell pidof $P | tr -d '\r')
 [ -n "$pid" ] || { echo "$P is not running" >&2; exit 1; }
-# The computer's worker (app/think.goose) is an SDLThread too, started later: take the
+# The computer's worker (src/app/think.goose) is an SDLThread too, started later: take the
 # first, the program's.
 tid=$(adb shell "grep -l SDLThread /proc/$pid/task/*/comm" | tr -d '\r' | cut -d/ -f5 | sort -n | head -1)
 sample() {

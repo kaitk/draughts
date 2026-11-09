@@ -8,7 +8,7 @@
 // with the share of texels inside, which a wrong reading moves.
 import std;
 import vec;
-import badges from "../../badges";
+import badges from "../../src/badges";
 
 fn inside_share(out: u8[:]) -> f32 {
     var n = 0;

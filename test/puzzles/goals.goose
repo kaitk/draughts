@@ -13,8 +13,8 @@
 // reply the screen plays is the one that resists longest, and the hint is the first
 // right move's piece.
 import std;
-import rules from "../../rules";
-import puzzles from "../../puzzles";
+import rules from "../../src/rules";
+import puzzles from "../../src/puzzles";
 
 fn read(text: const u8[:]) {
     var set = puzzles::Set { list: [] };

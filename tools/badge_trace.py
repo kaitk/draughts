@@ -5,7 +5,7 @@
 
 Thresholds the image, traces it with potrace, and sets the SVG's viewBox to the square
 around the shape's smallest enclosing circle, with a margin, so the badge drawing
-(app/widgets.goose, BADGE_HALF) keeps every animal inside the piece's inner ring at the
+(src/app/widgets.goose, BADGE_HALF) keeps every animal inside the piece's inner ring at the
 same optical size. Needs ImageMagick (magick) and potrace.
 """
 import math, os, re, subprocess, sys, tempfile

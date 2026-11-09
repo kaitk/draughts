@@ -9,7 +9,7 @@
 <style>
   /* Takes on home's settings in portrait, the gear beside the wordmark: ?take=now, a, or
      b, &lang=et for Estonian, &guides to outline each tap's 88 dp. Home is laid out as
-     shell/home.goose lays it out in portrait, in dp (1 px here): the sharp photograph,
+     src/shell/home.goose lays it out in portrait, in dp (1 px here): the sharp photograph,
      the board, the X in the top right, and the sheet with the wordmark and four rows.
 
      now: as built, a quiet tile 88 dp square (radius 16) with a 44 dp gear, reaching 8 dp
@@ -96,7 +96,7 @@
   Draughts.ICONS.close = '<path d="M6 6l12 12"/><path d="M18 6 6 18"/>';
   for (const el of document.querySelectorAll('[data-s]')) el.textContent = S[el.dataset.s];
 
-  // Lays home out in portrait as shell/home.goose does, in dp.
+  // Lays home out in portrait as src/shell/home.goose does, in dp.
   const MARK = 72, GAP = 14, ROW = 88, ROW_GAP = 2, CORNER = 88, EDGE = 24;
   function layout() {
     const W = innerWidth, H = innerHeight;

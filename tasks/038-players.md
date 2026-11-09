@@ -96,7 +96,7 @@ One file per player rather than sections in `settings.txt`:
 - `game-N.bin`, the player's saved game, as `game.bin` is today.
 
 Each file is written whole and atomically as today (`write_file_atomic`), starting again
-or removing is deleting files, and `shell/settings.goose`'s `parse` and `write` keep
+or removing is deleting files, and `src/shell/settings.goose`'s `parse` and `write` keep
 working on a player's keys. One file with sections would rewrite every player on any
 change and need a section parser.
 
@@ -151,9 +151,9 @@ Changed while building (2026-11-09):
 - **The art pipeline.** Each animal is a single-colour silhouette in
   `assets/badges/<animal>.svg`; the final ones come later from the user (generated
   images traced to SVG), and until then the files hold the prototype's hand-drawn
-  silhouettes. The app embeds the files when built and `badges/badges.goose` bakes them
+  silhouettes. The app embeds the files when built and `src/badges/badges.goose` bakes them
   at start into a signed distance texture (96 texels a side per animal), which
-  `badge()` in `app/widgets.goose` samples; nothing is evaluated per frame on the CPU.
+  `badge()` in `src/app/widgets.goose` samples; nothing is evaluated per frame on the CPU.
   Replacing a file and building again is all a swap takes; check it with
   `test/badges` (bless its coarse drawing) and a look on screen. What a file must be:
   a viewBox on the svg element, square best (the longer side spans the badge's square,
@@ -230,14 +230,14 @@ Changed while building (2026-11-09):
 
 ## What was built
 
-- `shell/players.goose`: the files, the migration, and a player's keys; `shell.goose`
+- `src/shell/players.goose`: the files, the migration, and a player's keys; `shell.goose`
   switches, adds, edits, starts again, and removes (`switch_player`..); the app reads the
   players at start and writes the playing player's file and game.
-- `shell/who.goose`: the card and the sheet; `gui::hold_tile` (the hold and its ring),
+- `src/shell/who.goose`: the card and the sheet; `gui::hold_tile` (the hold and its ring),
   `gui::face`, typed characters in `gui::Input`; the shader's ring, faces, and the plus,
   pencil, check, and bin icons; the app turns the keyboard on and off and feeds it in.
 - Strings in English and Estonian (`players.*`).
-- `badges/badges.goose` and `assets/badges/`: the animals' SVG files read and baked;
+- `src/badges/badges.goose` and `assets/badges/`: the animals' SVG files read and baked;
   `draw::MAN_BLOCK` shared by the pieces and `badge()`.
 - Tests: `test/shell/players` (files, migration killed after each step, add, switch,
   start again, remove), `test/shell/who` (the card and sheet driven by the pointer, the

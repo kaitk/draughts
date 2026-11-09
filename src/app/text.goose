@@ -29,7 +29,7 @@ fn bake(t: Text&, g: gui::Gui&, scale: f32) -> bool {
     if t.texture.id != 0 { gfx::release(t.texture); }
     t.scale = scale;
     let atlas = ui::create_font_atlas();
-    let ttf = embed_file("../assets/fonts/LibertinusSans-Regular.ttf");
+    let ttf = embed_file("../../assets/fonts/LibertinusSans-Regular.ttf");
     let all: u32[4] = [0x20, gui::LATIN_END - 1, gui::PUNCT, gui::PUNCT_END - 1];
     var fonts: ui::Font[gui::FACES] = [ui::Font { 0 }; gui::FACES];
     for face in gui::FACES {

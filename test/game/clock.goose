@@ -5,11 +5,11 @@
 // seconds rounded up, turns low under ten, and its time running out flags that side and
 // stops it; no clock never runs.
 import std;
-import rules from "../../rules";
-import board from "../../board";
-import gui from "../../gui";
+import rules from "../../src/rules";
+import board from "../../src/board";
+import gui from "../../src/gui";
 import strings from "../../strings";
-import game from "../../game";
+import game from "../../src/game";
 
 fn show(c: clock::Clock&, what: const u8[:]) {
     var w: u8[..8] = [];

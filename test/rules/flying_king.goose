@@ -1,7 +1,7 @@
 // Flying kings take from a distance and may land on any empty square behind
 // the piece, unless some landing square lets the capture go on: then they
 // must land on one of those.
-import rules from "../../rules";
+import rules from "../../src/rules";
 import check from "../";
 
 fn main() {

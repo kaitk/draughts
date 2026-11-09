@@ -38,5 +38,5 @@ python3 test/perft.py compare international 20 150
 python3 test/perft.py compare english 40 120
 python3 test/perft.py compare brazilian 40 120
 
-python3 test/perft.py puzzles international puzzles/international.txt
-python3 test/perft.py puzzles russian puzzles/russian.txt
+python3 test/perft.py puzzles international src/puzzles/international.txt
+python3 test/perft.py puzzles russian src/puzzles/russian.txt

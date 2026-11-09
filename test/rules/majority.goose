@@ -1,6 +1,6 @@
 // International: a capture must take the most pieces, and a king counts as
 // one piece like a man. Russian lets the player choose.
-import rules from "../../rules";
+import rules from "../../src/rules";
 import check from "../";
 
 fn main() {

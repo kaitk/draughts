@@ -3,7 +3,7 @@
 
     scripts/android.py poc/poc.goose             build build/android/<name>/<name>.apk
     scripts/android.py poc/poc.goose --run       build, install over adb, and start it
-    scripts/android.py app/draughts.goose --release
+    scripts/android.py src/app/draughts.goose --release
                                                  <name>-release.apk and <name>-release.aab
                                                  beside it, signed with the upload key, for Play
 

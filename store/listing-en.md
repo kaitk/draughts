@@ -69,7 +69,7 @@ Each claim is a fact of the app as built (2026-11-09); check again before an upl
 
 - Variants, levels, clocks, take back, start over: `docs/product.md`, `strings/en.txt`.
 - "It adjusts after each game": `ai::adapt` (`docs/architecture/ai.md`), per player.
-- Puzzles: `puzzles/international.txt`, 74 in the six themes, 18 of the 62 outside Learn
+- Puzzles: `src/puzzles/international.txt`, 74 in the six themes, 18 of the 62 outside Learn
   black to move; the themes opening at half of Learn, and the stars (three at stake, a
   miss puts one out down to one, the best kept): `docs/architecture/puzzles.md`. Shots
   has two levels so far, the others three, so the text says "from easy to harder".

@@ -7,8 +7,8 @@
 // moves that solve it; then the count per theme and level, and how many are black's.
 // The computer player's view of them is tools/puzzles.goose's, too slow for TinyCC.
 import std;
-import rules from "../../rules";
-import puzzles from "../../puzzles";
+import rules from "../../src/rules";
+import puzzles from "../../src/puzzles";
 
 fn main() {
     print("loaded: ", puzzles::load());

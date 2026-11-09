@@ -5,8 +5,8 @@
 // depth, only the number of nodes. Positions: the starts and middlegames of each variant,
 // and one with kings.
 import std;
-import rules from "../../rules";
-import ai from "../../ai";
+import rules from "../../src/rules";
+import ai from "../../src/ai";
 import check from "../";
 
 // The value of p to the side to move, searched as the machine searches: d plies of free

@@ -25,7 +25,7 @@ Goose v2026.4.
   spec still lets a device report and use single formats through
   `vkGetPhysicalDeviceFormatProperties`, which is what SDL checks. The Goose side
   compiles against the built-in `gfx.goose`, which lacks both, so the program's C calls
-  gfx's C API itself (`app/background.c`), with a weak stand-in for
+  gfx's C API itself (`src/app/background.c`), with a weak stand-in for
   `gs_gfx_format_supported` that answers no where gfx lacks the patch: the Mac's
   `goose build` links the release's prebuilt `libgoose_gfx.a`, so the Mac decodes the
   JPEG, as an Intel Mac or a BC-only GPU would. Linking a `libgoose_gfx.a` built from
@@ -47,7 +47,7 @@ on the tablet 1024 × 2048 RGBA, 8 MiB, for 1846 rows of coverage, and three suc
 
 - Here, no patch (the Mac's `goose` has its own `ui` built in): the app moves the alpha to
   the front of the buffer `atlas_pixels` returned, in place, and uploads only the rows
-  the glyphs reach as an R8 texture, its v remapped from whole rows (`app/text.goose`).
+  the glyphs reach as an R8 texture, its v remapped from whole rows (`src/app/text.goose`).
 - Upstream: a format choice on `bake` (`NK_FONT_ATLAS_ALPHA8`, which Nuklear has) and the
   used height beside `atlas_size`; `ui`'s own renderer would then need a coverage-only
   texture path.
@@ -116,8 +116,8 @@ area is all of it). goose_gfx `6cfa3de`, Goose v2026.4.
 - Here: no patch. A gfx patch can't add a function the program calls: the program's Goose
   is compiled against the release's own `pkg/gfx/gfx.goose` on both platforms, and a
   desktop run uses the gfx built into the goose binary (`agents/goose.md`). So the
-  program's own C (`app/display.c`) finds the window with `SDL_GetWindows` once and reads
-  both each frame, through `dlsym` on the Mac as `app/locale.c` does. A safe-area change
+  program's own C (`src/app/display.c`) finds the window with `SDL_GetWindows` once and reads
+  both each frame, through `dlsym` on the Mac as `src/app/locale.c` does. A safe-area change
   wakes the loop with SDL's `SDL_EVENT_WINDOW_SAFE_AREA_CHANGED`, and the program, seeing
   new insets, draws again.
 - Upstream: `gfx::safe_area() -> float4` (the insets in pixels: left, top, right,
@@ -161,7 +161,7 @@ has no hook for "first frame presented", and the colour behind a `SurfaceView`
 
 - Here: `DraughtsActivity` covers the window with a view of the theme's navy and, on
   Android 12+, holds the splash with `getSplashScreen().setOnExitAnimationListener`. The
-  program reports its first presented frame over JNI (`app/launch.c`, through
+  program reports its first presented frame over JNI (`src/app/launch.c`, through
   `SDL_GetAndroidActivity`), and the activity removes both then. The theme also sets
   `windowDrawsSystemBarBackgrounds` with a navy `navigationBarColor`, or the navigation
   bar's area shows the launcher's taskbar during the hand-over. On the tablet the icon on

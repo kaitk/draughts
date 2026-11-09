@@ -10,8 +10,8 @@
 // search matching minimax (test/ai/search.goose). A move that leaves the child a
 // combination on the easiest level is counted apart: it never leaves a capture.
 import std;
-import rules from "../../rules";
-import ai from "../../ai";
+import rules from "../../src/rules";
+import ai from "../../src/ai";
 
 let SEEDS = 2;
 let NAMES = ["russian", "international", "english", "brazilian"];

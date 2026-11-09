@@ -24,15 +24,15 @@ On a Mac with Apple silicon, from a clone with its submodule and the pinned Goos
 in `build/` ([docs/development.md](docs/development.md#toolchain) sets these up):
 
 ```sh
-cd app
-../build/goose-v2026.4-macos-arm64/goose build -o ../build/draughts draughts.goose
-../build/draughts
+cd src/app
+../../build/goose-v2026.4-macos-arm64/goose build -o ../../build/draughts draughts.goose
+../../build/draughts
 ```
 
 On an Android device with USB debugging on, with the Android SDK, NDK r29, and a JDK:
 
 ```sh
-scripts/android.py app/draughts.goose --run     # build the APK, install it, start it
+scripts/android.py src/app/draughts.goose --run     # build the APK, install it, start it
 ```
 
 The build uses no Gradle. Tests run headless:

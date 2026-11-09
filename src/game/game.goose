@@ -22,7 +22,7 @@ import vec;
 import rules from "../rules";
 import board from "../board";
 import gui from "../gui";
-import strings from "../strings";
+import strings from "../../strings";
 import .panel;
 import .clock;
 import .pace;

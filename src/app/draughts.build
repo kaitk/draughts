@@ -5,5 +5,5 @@
 // Android (its first frame, and closing), and the freed memory malloc keeps, given back
 // after the launch. scripts/android.py reads c_sources and c_include from here too.
 c_sources = ["background.c", "display.c", "launch.c", "locale.c", "memory.c", "storage.c", "wake.c"];
-c_include = ["../third_party/goose_gfx/third_party/nuklear/demo/common/filebrowser",
-             "../third_party/goose_gfx/src/gfx"];
+c_include = ["../../third_party/goose_gfx/third_party/nuklear/demo/common/filebrowser",
+             "../../third_party/goose_gfx/src/gfx"];

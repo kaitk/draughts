@@ -57,6 +57,12 @@ Checked against goose_gfx's source on 2026-11-07:
 The code is packages with no graphics, each run headless by its tests, and an app that
 feeds them the pointer and the time and draws what they leave (2026-11-08).
 
+**The program's code is under `src/`** (the user, 2026-11-09), as the tests are under
+`test/`: `src/` holds the packages and the app, one directory each, and the top level
+keeps what isn't the program's Goose: `test/`, `tools/`, `strings/` (the text and its
+loader, shared with the build scripts), `assets/`, `android/`, `scripts/`, `docs/`, and
+the rest. Below, `app/` means `src/app/`, and so on.
+
 **The rule: only `app/` imports `gfx` or calls SDL or the platform** (2026-11-08). The
 packages hand it flat, fixed-size data and take back the pointer and the time; nothing
 outside `app/` (and `android/`, the build scripts) knows what draws or what it runs on.
@@ -76,15 +82,16 @@ The targets this keeps open, each replacing or adding to `app/` alone:
 
 | Directory | What it holds |
 | --- | --- |
-| `rules/` | The rules as pure functions over values: variants as data, positions, legal moves, playing a move, FEN, and the square at a column and row ([rules.md](rules.md)) |
-| `ai/` | The computer player over `rules`: a search sliced into steps, and its levels and skill ([ai.md](ai.md)) |
-| `puzzles/` | The puzzles as plain text read into a fixed table, and the exact search that says whether a move solves one ([puzzles.md](puzzles.md)) |
+| `src/rules/` | The rules as pure functions over values: variants as data, positions, legal moves, playing a move, FEN, and the square at a column and row ([rules.md](rules.md)) |
+| `src/ai/` | The computer player over `rules`: a search sliced into steps, and its levels and skill ([ai.md](ai.md)) |
+| `src/puzzles/` | The puzzles as plain text read into a fixed table, and the exact search that says whether a move solves one ([puzzles.md](puzzles.md)) |
 | `strings/` | The user-facing text by key, from `strings/<lang>.txt` |
-| `gui/` | The UI layer ([rendering.md](rendering.md#ui-layer)): rect cuts, widgets with their press state, text laid out from glyph tables the app bakes; every call appends quads to one fixed array |
-| `board/` | The board on screen: the position, the legal moves, and the undo history; where the board goes and which square a point is on; taps and drags; a move's animation; and each frame's draw lists (pieces, the squares' marks, a wrong move's flash) |
-| `game/` | The game screen: its panels and where they and the board go (`panel::layout`), the clocks, the computer's turn (asking for a move and playing the answer), the celebration, and the pieces it puts over the UI |
-| `shell/` | The screens and which one shows: home and a new game's setup with the board of the game it starts, the game, settings with their preview board, the puzzles to pick from and the puzzle playing ([puzzles.md](puzzles.md#the-screen)); the pieces the screen showing puts over the UI (`Shell.over`, which the app draws); who's playing over home and a player's sheet; the players, their settings files, and their saved games |
-| `app/` | The program: the main loop, the GPU drawing of the board, the pieces, and the UI's quads, the season's photograph and its blurs, the font atlas, the themes, the computer's worker thread, and its C (storage folder, locales, the clock's wake timer, the JPEG decoder) |
+| `src/gui/` | The UI layer ([rendering.md](rendering.md#ui-layer)): rect cuts, widgets with their press state, text laid out from glyph tables the app bakes; every call appends quads to one fixed array |
+| `src/board/` | The board on screen: the position, the legal moves, and the undo history; where the board goes and which square a point is on; taps and drags; a move's animation; and each frame's draw lists (pieces, the squares' marks, a wrong move's flash) |
+| `src/game/` | The game screen: its panels and where they and the board go (`panel::layout`), the clocks, the computer's turn (asking for a move and playing the answer), the celebration, and the pieces it puts over the UI |
+| `src/shell/` | The screens and which one shows: home and a new game's setup with the board of the game it starts, the game, settings with their preview board, the puzzles to pick from and the puzzle playing ([puzzles.md](puzzles.md#the-screen)); the pieces the screen showing puts over the UI (`Shell.over`, which the app draws); who's playing over home and a player's sheet; the players, their settings files, and their saved games |
+| `src/badges/` | The players' animal badges: their SVGs from `assets/badges/` baked at startup into a distance-field atlas |
+| `src/app/` | The program: the main loop, the GPU drawing of the board, the pieces, and the UI's quads, the season's photograph and its blurs, the font atlas, the themes, the computer's worker thread, and its C (storage folder, locales, the clock's wake timer, the JPEG decoder) |
 | `tools/` | Programs for development: perft, the computer's benchmark and matches, a terminal game against it, and the puzzles' checks |
 
 `ai`, `board`, and `puzzles` build on `rules`; `game` on `board`, `gui`, and `strings`; `shell` on
@@ -94,7 +101,7 @@ fixed-size, laid out as the shaders read it: `board::Piece`, `board::Marks`, the
 
 ### A frame
 
-`app/draughts.goose` runs one loop on every platform
+`src/app/draughts.goose` runs one loop on every platform
 ([rendering.md](rendering.md#frames-and-battery)):
 
 1. The window: when it loses focus the game is written (Android may kill a paused app),
@@ -130,7 +137,7 @@ instead, which Android calls temporary. No SDL patch is needed.
 
 The loop ends on Escape on home's menu or when home's X asks the shell to stop
 (`Shell.quit`). The game is then written as at any loop's end; after home's X, on Android the program
-calls `DraughtsActivity.closeApp()` over JNI (`app/launch.c`), which finishes the
+calls `DraughtsActivity.closeApp()` over JNI (`src/app/launch.c`), which finishes the
 activity with `finishAndRemoveTask()`, so no card is left in recents, before the
 program returns. Plain `finish()`, what SDL does when the program returns, would leave a
 card with a picture of home, as if the app still ran. SDL then finds the activity finishing and leaves it; the next start
@@ -152,13 +159,13 @@ returns.
   by its constant (`strings::HOME_CONTINUE`) and `strings::get` returns a view into the
   embedded file, so looking one up allocates nothing. English is the default and fills in
   any key a translation lacks; Estonian is `et.txt`. The language is the first of the
-  system's preferred locales (SDL's, through `app/locale.c`) that has a file, else
+  system's preferred locales (SDL's, through `src/app/locale.c`) that has a file, else
   English. A language is a new file plus its code in `strings::LANGUAGES`;
   `test/strings/` fails on a key missing from any file. Kids who can't read get icons,
   and later voice clips keyed the same way.
-- **Kept in the app's storage folder** (SDL's pref path, through `app/storage.c`), per
+- **Kept in the app's storage folder** (SDL's pref path, through `src/app/storage.c`), per
   player ([players](#players)): the settings as a small `key = value` file
-  (`player-N.txt`, `shell/settings.goose`), written whole and atomically after a change;
+  (`player-N.txt`, `src/shell/settings.goose`), written whole and atomically after a change;
   and the game as it stands, `game-N.bin`, written when the app is paused or quits,
   since Android may kill a paused app, and before another player plays. The device's
   own keys are in `settings.txt`. All are read at start. Nothing is written while idle.
@@ -195,12 +202,12 @@ sibling never replaces a game against the computer. The computer's skill is the
 player's, or `ai::adapt` would follow neither child. Language is the device's: the
 parent sets it once.
 
-**The files** (`shell/players.goose`), one per player rather than sections in one file,
+**The files** (`src/shell/players.goose`), one per player rather than sections in one file,
 so a change rewrites only that player's and no section parser is needed:
 
 - `settings.txt`: the device's keys, `language` and `player = N`, the playing player's id.
 - `player-N.txt`, N the id from 1 to 4: `picture = fox` (the badge's name), `name = Mia`
-  if there is one, `first_start = done` once had, then the keys `shell/settings.goose`
+  if there is one, `first_start = done` once had, then the keys `src/shell/settings.goose`
   writes. Players show in the order of their ids; a new player takes the lowest free id.
 - `game-N.bin`: the player's saved game, as `shell::save` writes it.
 

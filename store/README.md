@@ -59,7 +59,7 @@ The folder keeps what made them. `shoot.sh tablet phone tablet-16x10`, run from 
 after building, writes a made-up player (Mia the fox, with some stars) from its
 `player-1.txt` and `settings.txt` into the Mac's app data, so copy that folder aside
 first and put it back after. The phone's settings on the Look tab need a second, local
-build, `../build/draughts-look`, with `group: i64 = 1` in `shell/settings.goose`'s
+build, `../../build/draughts-look`, with `group: i64 = 1` in `src/shell/settings.goose`'s
 `Settings`, never committed: no flag picks the tab. `feature.sh` makes the feature
 graphic with ImageMagick.
 

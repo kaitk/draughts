@@ -23,9 +23,9 @@
 // screen's checks.
 import std;
 import os;
-import rules from "../rules";
-import ai from "../ai";
-import puzzles from "../puzzles";
+import rules from "../src/rules";
+import ai from "../src/ai";
+import puzzles from "../src/puzzles";
 
 let LOSING = -50;           // a root score this far under even loses material (a man is about 100)
 

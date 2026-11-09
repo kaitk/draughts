@@ -8,7 +8,7 @@
 <script src="draughts.js"></script>
 <style>
   /* Takes on a way to close the app from home (task 035): ?take=a, b, or c, &lang=et for
-     Estonian, &glyph=power for c's other glyph. Home is laid out as shell/home.goose lays
+     Estonian, &glyph=power for c's other glyph. Home is laid out as src/shell/home.goose lays
      it out, in dp (1 px here): the sharp photograph, the board as the game stands in 2D,
      and the glass column (landscape) or sheet (portrait) with the wordmark and the menu.
 
@@ -91,7 +91,7 @@
   }
   for (const el of document.querySelectorAll('[data-s]')) el.textContent = S[el.dataset.s];
 
-  // Lays home out as shell/home.goose does, in dp.
+  // Lays home out as src/shell/home.goose does, in dp.
   const ROW = 80, GAP = 10, MARK = 72, CORNER = 88, EDGE = 24;
   function layout() {
     const W = innerWidth, H = innerHeight, landscape = W >= H;

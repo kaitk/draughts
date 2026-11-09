@@ -3,7 +3,7 @@
 // root file's directory.
 namespace check;
 import std;
-import rules from "../rules";
+import rules from "../src/rules";
 
 // The position fen gives, which must be well formed.
 fn position(variant: u8, fen: const u8[:]) -> rules::Position {

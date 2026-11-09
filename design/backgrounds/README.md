@@ -13,7 +13,7 @@ the season: autumn wood, winter stone, spring birch, summer sunset
 
 Originals and masters stay local and out of git (`.gitignore`): they're temporary, and
 this README says how to make them again. The app builds each season's JPEG and ASTC
-file into the program from `masters/` (`app/background.c`,
+file into the program from `masters/` (`src/app/background.c`,
 [rendering](../../docs/architecture/rendering.md#scene-and-glass)). Both are made from the
 lossless PNG master, never one from the other; the final images (task 014) take the
 same steps.

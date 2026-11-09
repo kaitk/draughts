@@ -12,7 +12,7 @@ import vec;
 
 import gui from "../gui";
 import board from "../board";
-import strings from "../strings";
+import strings from "../../strings";
 
 // What the panels' tiles ask for.
 let NOTHING = 0;

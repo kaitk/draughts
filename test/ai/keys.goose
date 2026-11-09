@@ -2,8 +2,8 @@
 // every kind of move: quiet, capturing men and kings, crowning, a king returning to
 // its square. Plays seeded random games in each variant and checks every move.
 import std;
-import rules from "../../rules";
-import ai from "../../ai";
+import rules from "../../src/rules";
+import ai from "../../src/ai";
 
 fn main() {
     var r = rng { 7 };

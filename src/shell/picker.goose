@@ -16,7 +16,7 @@ import std;
 import vec;
 
 import gui from "../gui";
-import strings from "../strings";
+import strings from "../../strings";
 import puzzles from "../puzzles";
 
 // What the screen asks for: these, or the index in puzzles::all of a puzzle tapped.

@@ -11,7 +11,7 @@
      hold; &lang=et; &n=1 to 4 players; &guides outlines each tap. A player is a picture (an
      animal on its own colour, which a child knows without reading), a name if wanted, and
      their own look, puzzle stars, computer levels, and game. Home is laid out as
-     shell/home.goose lays it out, in dp (1 px here).
+     src/shell/home.goose lays it out, in dp (1 px here).
 
      a: the player beside the name. Home's king beside the wordmark becomes the player's
         face, 64 dp in an 88 dp tap; a tap opens "who's playing" on a card over home.
@@ -386,7 +386,7 @@
     if (launch) launch.querySelector('.mark').style.display = H < 600 && W > H ? 'none' : '';
   }
 
-  // Lays home out as shell/home.goose does, in dp: a column at the left in landscape,
+  // Lays home out as src/shell/home.goose does, in dp: a column at the left in landscape,
   // a sheet under the board in portrait, the X in the top right.
   const MARK = 72, ROW = 88, ROW_GAP = 2, CORNER = 88, EDGE = 24, FACES = 88 + 16;
   function layout() {

@@ -6,7 +6,7 @@ design/backgrounds/*.png
 design/backgrounds/masters
 # The icon's masters stay local; design/icon/README.md says where they come from
 design/icon/*.png
-app/draughts.png
+src/app/draughts.png
 # Generated tabletops stay local until the user agrees (task 016)
 design/tabletops/*.png
 # Release signing stays outside the repo

@@ -8,7 +8,7 @@ symlink to the main checkout's `build/goose-v2026.4-macos-arm64`, not a symlink 
 whole `build/`: the tests and tools write `build/perft`, `build/test/`, and the like,
 which would overwrite the main checkout's while another session uses them.
 
-The tests never compile the app's shaders: after any change to a shader (`app/*.goose`'s
+The tests never compile the app's shaders: after any change to a shader (`src/app/*.goose`'s
 embedded GLSL), build the app itself (`docs/development.md`, "Run on the Mac") and check
 it succeeds. A shader with a stray parenthesis passed both test runs and kept the app
 from building (2026-11-09).
@@ -109,7 +109,7 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
 ## Screenshots on the Mac
 
 - A `--frames` run reads the Mac's settings from `~/Library/Application
-  Support/kaitk/draughts/` (`app/storage.c`): the playing player's `player-N.txt`
+  Support/kaitk/draughts/` (`src/app/storage.c`): the playing player's `player-N.txt`
   (`settings.txt` names N and the language), and there is no flag for most
   of them (the kings, the draughts settings show). To shoot settings as chosen, copy the
   file aside, write the keys wanted (`kings = stack`, `draughts = russian`, `hints =
@@ -173,7 +173,7 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   `test/shell/settings`): set it, then `g.scale = gui::scale_of(...)` before
   `gui::test_faces`, which sizes the faces at the scale; put it back to 800 after.
 - In a working tree, copy `design/backgrounds/masters/*.jpg` from the main checkout
-  (local and ignored) and touch `app/background.c`, or shots show the page color where
+  (local and ignored) and touch `src/app/background.c`, or shots show the page color where
   the photograph should be.
 - Clicks can't be posted to the window from a script: the terminal isn't trusted for
   accessibility (`AXIsProcessTrusted()` is false), so CGEvent clicks are dropped. To run
@@ -297,7 +297,7 @@ measuring there:
   checkout's to skip copying SDL. The first Android build then takes about 35 s.
   `build/android/draughts/native` is a CMake cache bound to the main checkout's
   `android/`: from a worktree sharing `build/android`, build a copy of the program under
-  another name (`app/x.goose` and `app/x.build`, deleted after) so it gets its own
+  another name (`src/app/x.goose` and `src/app/x.build`, deleted after) so it gets its own
   `build/android/x/`, and remove that after. A new or changed `patches/SDL` patch makes
   the shared `SDL_src` be copied again, for the main checkout too (2026-11-08).
 - Flags reach the app on the tablet through the intent, quoted twice:

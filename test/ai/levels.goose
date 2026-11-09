@@ -6,8 +6,8 @@
 // thinking is cut into steps, while seeds vary the choice among good moves; then how
 // wins and losses move the skill.
 import std;
-import rules from "../../rules";
-import ai from "../../ai";
+import rules from "../../src/rules";
+import ai from "../../src/ai";
 import check from "../";
 
 fn move_text(variant: u8, m: rules::Move) -> u8[>..] {

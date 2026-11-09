@@ -169,7 +169,7 @@ but holds the fewest themes per screen.
 
 ### The file and the variants
 
-One file per variant (`puzzles/international.txt`, later `russian.txt`,
+One file per variant (`src/puzzles/international.txt`, later `russian.txt`,
 `brazilian.txt`), its `variant` line as now, each puzzle with `theme NAME` and `level
 1..3` in place of `tier`; a theme's puzzles are in the file's order. One file per variant
 keeps a variant's set together and the themes a fixed list in code (their icons and
@@ -207,7 +207,7 @@ needs the variant and its camps as parameters.
 
 ### Built (2026-11-09)
 
-**Plumbing.** `puzzles/russian.txt` (`variant russian`) is the set a Russian player
+**Plumbing.** `src/puzzles/russian.txt` (`variant russian`) is the set a Russian player
 sees: `puzzles::set_of` names the set of a variant (Russian's own; International's for
 International and, until it has one, Brazilian), `puzzles::load(variant)` reads it, and
 `puzzles::loaded` says which is in `all`. The shell reads the other set on home when the
@@ -252,7 +252,7 @@ wasn't pinned down here, so no position claims it.
 `build/puzzles --variant russian`: 0 problems, the engine's best solves every take, and
 no right first move scores under −50; of the crowns, Crowning 24's other double from the
 same square (`f4:d6:b4`) scores as high, and in Crowning 30 the engine wins the ending
-by quiet moves as well. `test/perft.py puzzles russian puzzles/russian.txt`: 46 puzzles,
+by quiet moves as well. `test/perft.py puzzles russian src/puzzles/russian.txt`: 46 puzzles,
 0 problems. The longest lines are five plies, within `MAX_PLIES`; the most a check takes
 is 161 positions (Shots 46). Headless: `test/puzzles/russian_set.goose` (every puzzle's
 checks and the counts) and `test/shell/russian_puzzles.goose` (a Russian player's set
@@ -265,7 +265,7 @@ capture is illegal where the most must be taken), and Learn and every choice-of-
 puzzle teach what Brazilian forbids, so a Brazilian set wants its own selection, its
 Learn above all, rechecked under its rules.
 
-- [x] `puzzles/russian.txt` loaded for a Russian player, the library showing its set,
+- [x] `src/puzzles/russian.txt` loaded for a Russian player, the library showing its set,
       stars per variant (`stars.russian`)
 - [x] `tools/puzzles.goose find` and `try` taking the variant and its camps
 - [x] Learn, Captures, Crowning, and Shots in levels, 46, a third black outside Learn,
@@ -337,7 +337,7 @@ puzzles`: 64 puzzles, 0 problems.
 Captures 8, Crowning 1, 17, and 129 by level, Shots 45 and 294, King shots 8, 81, and
 415 (0.2 ms), the most of the set (task 007's 30 took at most 387).
 
-**The picker** is take a, built natively (`shell/picker.goose`, its look in
+**The picker** is take a, built natively (`src/shell/picker.goose`, its look in
 `docs/architecture/rendering.md`): a library of the five themes, and a theme's page of
 its levels. Two cases the prototype didn't reach needed a fallback, both Shots' page on a
 phone at 480 dp with the Pixel's insets: in landscape under the gesture bar the theme's

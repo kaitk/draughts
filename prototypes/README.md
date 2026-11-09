@@ -24,7 +24,7 @@ jsDelivr CDN, so they need internet access. Start at [index.html](index.html).
 Shared parts: `draughts.css` (theme tokens, glass, buttons, board, pieces, light) and
 `draughts.js` (the season's background and the glass over it, the board in 2D and 3D,
 icons). The 2D board and its pieces are painted by a port of the native shaders
-(`app/draw.goose`) in `draughts.js`, into images at their size on screen, so they look as
+(`src/app/draw.goose`) in `draughts.js`, into images at their size on screen, so they look as
 the app does: the lip, the squares' faint surface, the pieces' groove and rounded edge.
 Change that port with the shaders. The background is the season's master from `design/backgrounds/masters/`,
 blurred behind the 2D board and sharp elsewhere (`?bg=blur` or `photo`), which is local and out of git

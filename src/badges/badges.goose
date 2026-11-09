@@ -28,12 +28,12 @@ let NAMES = ["fox", "hare", "bear", "owl", "frog", "hedgehog"];
 
 // Animal k's SVG file, as it was when the app was built.
 fn svg(k: i64) -> const u8[:] {
-    if k == 0 { return embed_file("../assets/badges/fox.svg"); }
-    if k == 1 { return embed_file("../assets/badges/hare.svg"); }
-    if k == 2 { return embed_file("../assets/badges/bear.svg"); }
-    if k == 3 { return embed_file("../assets/badges/owl.svg"); }
-    if k == 4 { return embed_file("../assets/badges/frog.svg"); }
-    return embed_file("../assets/badges/hedgehog.svg");
+    if k == 0 { return embed_file("../../assets/badges/fox.svg"); }
+    if k == 1 { return embed_file("../../assets/badges/hare.svg"); }
+    if k == 2 { return embed_file("../../assets/badges/bear.svg"); }
+    if k == 3 { return embed_file("../../assets/badges/owl.svg"); }
+    if k == 4 { return embed_file("../../assets/badges/frog.svg"); }
+    return embed_file("../../assets/badges/hedgehog.svg");
 }
 
 // An affine map: x' = a x + c y + e, y' = b x + d y + f, as SVG's matrix().

@@ -205,7 +205,7 @@ are in "Numbers to gather" below.
   among moves (`docs/architecture/ai.md`).
 - **Pacing its clock**: a share of what it could spend each move, more when several
   moves are close, less for a lone capture, quick in the opening; capped at 4, 8, 15 s
-  by level and a tenth of its clock (`game/pace.goose`, task 027).
+  by level and a tenth of its clock (`src/game/pace.goose`, task 027).
 - **Animations as pure functions of time**: the win (the winning piece lifts, a ring of
   glow passes outward across the winner's pieces, the board dims, a card slides up)
   and the home-to-settings transition are each computed from the time since they began,
@@ -271,7 +271,7 @@ For the demos channel, where people know Goose:
   - `embed_shader` and `embed_file`: GLSL compiled to SPIR-V and MSL at compile time;
     shaders, fonts, photographs, strings, and puzzles inside the binary.
   - Threads with typed queues: the computer's worker is about 75 lines
-    (`app/think.goose`); nothing shared, no locks.
+    (`src/app/think.goose`); nothing shared, no locks.
   - `to_bytes` / `from_bytes` for the saved game, with a shape check.
   - Goose ran on Android through Vulkan with no change to the compiler or runtime
     (task 001); it took one goose_gfx patch, one SDL patch, a logcat shim,

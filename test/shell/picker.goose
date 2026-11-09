@@ -8,14 +8,14 @@
 // without stars is lit, one per page.
 import std;
 import vec;
-import rules from "../../rules";
-import board from "../../board";
-import gui from "../../gui";
-import game from "../../game";
+import rules from "../../src/rules";
+import board from "../../src/board";
+import gui from "../../src/gui";
+import game from "../../src/game";
 import strings from "../../strings";
-import ai from "../../ai";
-import shell from "../../shell";
-import puzzles from "../../puzzles";
+import ai from "../../src/ai";
+import shell from "../../src/shell";
+import puzzles from "../../src/puzzles";
 import drive from "../drive";
 
 fn overlaps(a: float4, b: float4) -> bool {

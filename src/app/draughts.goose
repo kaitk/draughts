@@ -30,7 +30,7 @@ import gfx;
 import os;
 import rules from "../rules";
 import board from "../board";
-import strings from "../strings";
+import strings from "../../strings";
 import gui from "../gui";
 import .theme;
 import .draw;

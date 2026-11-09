@@ -34,7 +34,7 @@ documentation when doing this, not this list.
   `~/.config/draughts/upload-key.properties` (mode 600, the folder 700). Neither is in
   git. `scripts/android.py --release` signs with it, debug builds with the debug key.
   How to back it up is in `docs/development.md`, "The upload key".
-- **The bundle:** `scripts/android.py app/draughts.goose --release` builds
+- **The bundle:** `scripts/android.py src/app/draughts.goose --release` builds
   `build/android/draughts/draughts-release.apk` and `draughts-release.aab` beside the
   debug `draughts.apk`. bundletool 1.18.3 (pinned by version and SHA-256, downloaded into
   `build/` if missing) builds the AAB from a base module of aapt2's `--proto-format`

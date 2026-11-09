@@ -10,8 +10,8 @@
 // instead, for benchmarks. --nodes gives each side its own node limit.
 import std;
 import os;
-import rules from "../rules";
-import ai from "../ai";
+import rules from "../src/rules";
+import ai from "../src/ai";
 
 fn main() {
     let a = args();
