@@ -375,7 +375,21 @@ the prototype tried, kept for 3D:
   portrait layout, the bar above the board and the play below it, as does the 3D board
   (the user, 2026-11-09: a near-square window's landscape had a small board between
   square-ish panels). At 800 dp tall the hand-over is at about 981 dp across; every
-  device's landscape passes, the foldable's closest at 69%. In landscape the board fills the height
+  device's landscape passes, the foldable's closest at 69%. **The game's controls are the
+  3D screen's** (task 054, the user 2026-11-09: the UI round the board only, the boards
+  untouched): in landscape the flat board between the 3D screen's short corner panels
+  (`panel::flat_corners`; "Board and pieces", 3D board, the game screen round it), back
+  and a panel of settings and start over in the top left, whose turn, the eye, the hint
+  beside undo move, or the clocks, in the top right, 232 × 352 dp (192 on a phone), the
+  same tiles in the same places as round the 3D board; the board as it was, a square of
+  the height less the margins centered across, which the corner panels leave the same
+  room (they free none it could grow into). Near square (4:3, a foldable) the flat
+  screen's corner panels are no wider than the old ones, 192 dp, and the play panel 368
+  dp tall as a phone's, so the board keeps its 587 and 519 dp; the 3D screen's stay 232
+  there. The flat screen has no round buttons (the 3D board's view, zoom, and showcase).
+  In portrait the game's bar and play are as wide as the 3D screen's, the screen less the
+  margins, where the board is narrower (4:3 and a foldable in portrait). A puzzle keeps
+  the panels below. In landscape the board fills the height
   less a 24 px margin, between two glass panels 232 px wide and as tall as it (where
   that leaves the board under 720 px, the tablet's at 16:10, the panels narrow down to
   192 px for it: 587 px at 4:3, 520 on a foldable; 2026-11-08; where the width holds the
@@ -979,7 +993,8 @@ board's does and the backdrop over it as opaque as the blur.
   wide on a phone, under 600 dp), on the left back on its own tile over a panel of
   settings and start over (the column's bounds the panel's were, so the board's fit is
   unchanged), the turn or the clocks and undo move on the right; the board as large as clears them by 12 dp, its
-  near edge on the bottom margin (898 × 616 dp on the tablet). In portrait the flat
+  near edge on the bottom margin (898 × 616 dp on the tablet). The flat game screen takes
+  the same panels (task 054, "Game screen"); `Layout.corners` marks them, flat or 3D. In portrait the flat
   board's order, the bar, the board as wide as the screen less the margins, the camera
   buttons, the play; its camera 65° down (`panel::PITCH_PORTRAIT`, the user, 2026-11-09),
   which fills more of the height (752 × 604 dp on the tablet).

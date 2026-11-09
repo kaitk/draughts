@@ -1,85 +1,85 @@
-# 054: The flat game screen in the raised one's look
+# 054: The flat game screen's controls as the 3D one's
 
-Status: todo
+Status: done
 
-The flat (2D) game screen looks needlessly different from the raised (3D) one and could
-look more like it (the user, 2026-11-09), keeping the flat board's clarity.
+The flat (2D) game screen looked needlessly different from the raised (3D) one (the user,
+2026-11-09). The task's first takes (`prototypes/game-unified.html`: a frame, the 3D
+board's shadow and lighter blur, the corners layout with a floating button) went further
+than asked. The user corrected them: the task is the UI **around** the board only. The
+flat screen's controls become the 3D screen's: the same short corner panels, the same
+buttons, in the same places. The boards themselves are not touched: no frame, shadow,
+blur, size, or turning changes on either.
 
-## Differences
+## What was asked
 
-Compared headless on 2026-11-09 (the app's copy with `gfx::open_headless`, `--fen` of a
-late game, the tablet's landscape at 1280 × 800 and a phone's portrait at `--size
-1080x2400 --dp 540 --inset 0,59,0,42`):
+- Landscape: top left back, then settings and start over; top right whose turn, the
+  lookout's eye, the hint and undo move; the clocks where the 3D screen has them. The
+  3D-only round buttons (view, zoom, showcase) stay 3D-only; the flat screen has no
+  round button of its own to keep.
+- The flat board keeps its own size and place, unless the corner panels free room it can
+  grow into.
+- Portrait and compact already share the bar and the play panel: check they still match
+  between flat and 3D, and change nothing that already matches.
+- Phones' and tablets' landscape both.
 
-- **The board's frame.** Flat: a thin lip 1.1% of the board in the dark square's color,
-  a light line on its outer edge. Raised: a frame of the look's material (winter's veined
-  slate) 2.4% of the board, which reads about 4% at the near edge, rounded corners, a
-  front edge with depth.
-- **Its shadow.** Flat: short and soft under the board (down 1.4%, 3.6% soft). Raised: a
-  long soft shadow on the photograph, and the pieces' shadows cast by the light.
-- **The light.** Flat: even colors, cream pieces. Raised: a pool of light on the board,
-  the squares and pieces shaded, the light pieces cooler.
-- **Size and place.** Landscape, flat: the board fills the height less the margins
-  (720 dp), centered, 40 dp from the top. Raised: the bounds about 890 × 615 dp, the near
-  edge on the 24 dp bottom margin, the far edge between the panels. Portrait: both as wide
-  as the screen less the margins; the raised one is shorter and has the buttons' row under
-  it, so its bar sits higher.
-- **The panels.** Landscape, flat: both as tall as the board, settings at the top and
-  start over at the bottom of the left one, whose turn at the top and undo move at the
-  bottom of the right one. Raised: short panels in the top corners (232 × 352 dp), the
-  tiles packed together. Portrait: the same bar and play panel in both.
-- **The side buttons.** Raised: round floating buttons (view, zoom, showcase in
-  landscape; view and showcase in portrait) under the play panel or above it. Flat: none.
-- **The background's blur.** Flat: the app's blur (14 px at 1280 px, dimmed to 0.8),
-  which in the shots leaves no shapes. Raised: the renderer's blurred and graded
-  backdrop, lighter, the trees' shapes showing.
-- **Turning.** Against a friend the raised board turns to face the side to move; the
-  flat one stays.
+## Built (2026-11-10)
 
-## Takes (2026-11-09)
+- **Landscape** (`panel::flat_corners`, taken by `layout_in` for the game, `game: true`):
+  the 3D screen's short corner panels, 232 × 352 dp (192 on a phone), the play panel 368
+  dp tall where it is narrow, as the 3D phone's. `Layout.corners` now marks the corner
+  panels flat or 3D, and the play panel's choices that were the 3D board's
+  (`l.three`: the shorter tile, the countdown between the clocks, the closed-up gaps)
+  follow it, so the flat screen lays out whose turn, the eye, the hint beside undo move,
+  and the clocks exactly as the 3D one does.
+- **The board**: the same size and place at every size. The corner panels free no room
+  it can grow into: it is a square of the height less the margins, so it must clear the
+  panels across whatever their height, and the corner panels at the screen's edges leave
+  it the same width the old panels beside it did. On the tablet it is still 720 dp, 280
+  dp from the left.
+- **Portrait**: the bar and the play were as wide as the flat board, the 3D screen's as
+  wide as the screen less the margins. They differed where the board is narrower than the
+  screen (4:3 and the foldable in portrait, and near-square windows kept in portrait); the
+  game's are now as wide as the 3D screen's there, and the bar's stacked words follow
+  the bar's width as the 3D screen's do. On phones and the tablet they already matched
+  and are unchanged. Compact already matched.
 
-`prototypes/game-unified.html` sets the raised screen, the flat one as built, and the
-flat one after side by side, in landscape and portrait; each frame is
-`prototypes/game-captured.html` with `&cap=off`, which opens full size.
+## Decisions
 
-- **a, framed in place.** The flat board in a frame like the raised one's, seen straight
-  from above (the look's frame color with a sheen and a light outer line, rounded
-  corners, the squares set in it by the flat board's own lip), the raised board's long
-  shadow, on the raised screen's lighter blur; the panels and their places as built. The
-  squares lose the frame's width: 704 dp across now, 662 at a 4% frame, 685 at 2.4%.
-- **b, the raised screen's layout too.** a, with the corners layout: short panels in
-  the top corners, the board as tall as the screen less the margins between them
-  (744 dp with its frame, the squares 684 at 4%), one floating button under the play
-  panel that raises the board to 3D (`&btns=none` drops it); in portrait the raised
-  order, the bar, the board, the button's row at the right, the play.
-- The pieces and squares keep the flat board's even light, for clarity; the raised
-  board's pool of light was left out.
+- **Near square, the panels narrow on the flat screen only.** The 3D screen's corner
+  panels are 232 dp on any tablet. At 4:3 and the foldable that would leave the flat board
+  507 and 439 dp where it has 587 and 519, so the flat screen's corner panels are no wider
+  than its old ones (`side_of`): 192 dp there, the play panel then 368 dp tall as a
+  phone's for the hint over undo move. The boards keep their size; the panels differ from
+  the 3D screen's by 40 dp across there. `test/shell/sizes` says so on those lines.
+- **A puzzle keeps its flat layout** (panels as tall as the board). The task is the game
+  screen; a puzzle's goal and stars were laid out for the tall panels and the 3D corner
+  panel alike, so it could follow, but that is a change of its own (`layout_in`'s `game`
+  flag, `shell::puzzle_layout`).
+- **The win's card** and everything on the board are as they were.
 
-Every view (the main checkout's path):
+## Numbers (headless)
 
-- `file:///Users/kaitkasak/projects/personal/draughts/prototypes/game-unified.html?take=b`
-  (its header changes take, frame, btns, port, and season)
-- `file:///Users/kaitkasak/projects/personal/draughts/prototypes/game-unified.html?take=a`
-- `file:///Users/kaitkasak/projects/personal/draughts/prototypes/game-unified.html?take=b&port=tablet`
-- `file:///Users/kaitkasak/projects/personal/draughts/prototypes/game-captured.html?cap=off&flat=b`
-  (one screen at the window's size; the switcher changes flat, frame, btns)
-- `file:///Users/kaitkasak/projects/personal/draughts/prototypes/game-captured.html?cap=off&flat=a&frame=a`
+- Landscape boards unchanged: tablet 720 dp, 4:3 587, foldable 519, the 20:9 phone at 540
+  dp 492 (`test/game/game`, `test/shell/sizes`). The smallest tap on the flat tablet's
+  landscape is now the 3D screen's: hint and undo move side by side in the play panel,
+  94 dp across (from 200).
+- Portrait, the bar and the play 752 dp wide at 4:3 (from 647, the board's) and on the
+  foldable (from 579).
 
-Open choices for the user:
+## Shots
 
-1. a or b, or the flat screen as it is.
-2. The frame's width: 2.4% (as the raised board's is) or 4% (as it reads there).
-3. The background: the raised screen's lighter blur for both, or keep the flat one's
-   heavier one behind the flat board.
-4. A floating button on the flat screen (raise the board), or none.
-5. Whether the flat board turns to face the side to move against a friend, as the raised
-   one does.
+Headless, before and after, in the session's scratchpad
+(`/private/tmp/claude-501/-Users-kaitkasak-projects-personal-draughts/b7477f16-67e8-47ad-8c8d-5690c6660fd1/scratchpad/054-052/`,
+`before/` and `after/`): flat and 3D at 1280 × 800 and 1920 × 1200, a phone's portrait
+(1080 × 2400 at 540 dp with the Pixel 7a's insets), and the iPad's smallest window,
+each early and late in a game. Not yet seen on the tablet.
 
 ## Acceptance criteria
 
 - [x] The differences listed, from headless shots of both screens
-- [x] Takes drawn side by side with the raised screen, before and after, in landscape and
-  portrait
-- [ ] A decision with the user on the take and the open choices
-- [ ] If taken: the flat screen built to it at every size, compact included, checked on
-  the Mac and the tablet, and `docs/architecture/rendering.md` updated
+- [x] Takes drawn side by side with the raised screen (set aside: the user asked for the
+  controls only)
+- [x] A decision with the user: the controls round the board as the 3D screen's, the
+  boards untouched (2026-11-09)
+- [x] The flat screen built to it at every size, compact included, checked headless, and
+  `docs/architecture/rendering.md` updated
