@@ -288,5 +288,6 @@ fn clear_progress(s: settings::Settings&) {
     let fresh = settings::Settings {};
     s.stars = fresh.stars;
     s.skill = fresh.skill;
+    s.played = fresh.played;
     s.games = fresh.games;
 }

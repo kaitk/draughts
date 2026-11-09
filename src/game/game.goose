@@ -83,6 +83,9 @@ struct Game {
     // -1 lost; and whether it was given, for a game counts once.
     result:  i64  = 0,
     counted: bool = false,
+    // Whether the game was started over (play again, or start over), for the shell to
+    // give the new game its level's skill as adapting left it and a new number.
+    restarted: bool = false,
 }
 
 fn new(variant: u8) -> Game {
@@ -107,11 +110,13 @@ fn start(gm: Game&, variant: u8, kind: i64, computer: i64, level: i64, skill: i6
     gm.counted = false;
     gm.result = 0;
     gm.asking = 0;
+    gm.restarted = false;
 }
 
 // Starts the game over from where it began, the clocks full again: a new game, whose
-// result counts again.
+// result counts again. The shell sees `restarted` and gives it its skill and number.
 fn restart(gm: Game&) {
+    gm.restarted = true;
     board::restart(gm.b);
     gm.clock = clock::new(gm.clock.kind);
     gm.turn = gm.b.pos.side;

@@ -91,12 +91,18 @@ On a worker the frame loop draws as it would without the computer.
   one game to the next, and the same game replays the same. The number counts the games
   begun against the computer, kept per player in `player-N.txt` (`games`).
 - **Skill**: each player's file keeps one skill per level (`skill_easy`, `skill_medium`,
-  `skill_hard`, from the level's starting skill), and a game plays at its level's skill
-  as it began, kept with the saved game. A game that ends moves its level's skill with
-  `ai::adapt`: up when the child won, down when the computer did, by the clock too. It
-  counts once, when it first ends; taken back and ended again, it doesn't count again. A
-  game started over or replaced before it ends doesn't count. The rules have no draw
-  yet; a draw would leave the skill.
+  `skill_hard`, from the level's starting skill) and how many games ended on each
+  (`played_easy`, ...), and a game plays at its level's skill as it began, kept with the
+  saved game. A game that ends moves its level's skill with `ai::adapt`: up when the
+  child won, down when the computer did, by the clock too. It counts once, when it first
+  ends; taken back and ended again, it doesn't count again. A game started over or
+  replaced before it ends doesn't count. The rules have no draw yet; a draw would leave
+  the skill. Play again on the end's card and start over during a game begin a new game
+  at the level's skill as it is then, adapted by the game just ended, and count it for
+  the seeds as home's play does (2026-11-09: they had replayed at the old skill).
+- **The default level** for a new player, and for settings read fresh, is easy (the
+  user's call, 2026-11-09, after a young player found easy hard); a player's saved
+  level stays.
 
 ## Search
 
@@ -137,42 +143,79 @@ and the table are made once, about 6 MB in all.
 
 ## Levels
 
-Skill runs from 0 to 100; easy starts at 10, medium at 40 (the user's call, 2026-11-08, to be tuned once children have played it), hard at 90. One skill holds for
-a whole game. It sets:
+Skill runs from 0 to 100; easy starts at 0 (the user's call, 2026-11-09; it started at
+10 until then), medium at 40 (the user's call, 2026-11-08), hard at 90. Easy's start
+and its overlooks are to be tuned once the child has played them more. One skill holds
+for a whole game. It sets:
 
-| | Formula | Easy (10) | Medium (40) | Hard (90) |
+| | Formula | Easy (0) | Medium (40) | Hard (90) |
 | --- | --- | --- | --- | --- |
 | Plies of free moves it sees | `1 + s / 12 + max(s − 60, 0) / 6` | 1 | 4 | 13 |
-| Plies of forced captures past them | `2 + s / 8` | 3 | 7 | 13 |
-| Temper: how much worse makes a move e times less likely | `2 + 60 (100 − s)² / 10000` | 50 | 23 | 2 |
+| Plies of forced captures past them | `2 + s / 8` | 2 | 7 | 13 |
+| Temper: how much worse makes a move e times less likely | `2 + 60 (100 − s)² / 10000` | 62 | 23 | 2 |
 | Margin: never a move this much worse than the best it sees | `min(60, 3 × temper)` | 60 | 60 | 6 |
-| Chances left for the child, per thousand moves | `5 × max(25 − s, 0)` | 75 | 0 | 0 |
+| Chances left for the child, per thousand moves | `5 × max(25 − s, 0)` | 125 | 0 | 0 |
+| Overlooks, per thousand moves: where its piece lands; a capture it opens | `4 × max(15 − s, 0)`; `6 × max(15 − s, 0)` | 60; 90 | 0 | 0 |
 
 How each part plays like a person:
 
-1. **It misses only what shows deep.** A level never searches past what it sees, so it
-   misses a shot or a threat only when the point lies beyond. Every level sees its own
-   move and every capture it allows, so none hangs a piece to the reply that just takes
-   it (`test/ai/blunders.goose`). Easy plays a sacrifice that fails only further on, as
-   a child does.
-2. **Consistent strength.** It chooses among the moves within the margin with chances
+1. **It misses only what shows deep, or what a young child overlooks.** A level never
+   searches past what it sees, so it misses a shot or a threat only when the point lies
+   beyond. From skill 15 on it sees its own move and every capture it allows, so it
+   never hangs a piece to the reply that just takes it (`test/ai/blunders.goose`). Easy
+   plays a sacrifice that fails only further on, as a child does.
+2. **Below 15 it sometimes overlooks a capture** (the table's last row, the user's
+   call, 2026-11-09: a young player found that easy never missed a capture nor hung a
+   piece, so every mistake was punished). A young child checks their move only some of
+   the time, and misses most often what isn't the piece in hand. So on a move drawn
+   with the first chance it doesn't look where the piece it moves lands: it doesn't see
+   the child's captures that take that piece. With the second, it doesn't see what its
+   move opens: the child's captures of its other pieces, such as one behind the square
+   it left. Each is drawn once a move from its own seeded stream, with integer chances,
+   and both can come together. It still chooses as always among what it does see, so
+   an overlooking move is a sensible move but for the one capture, and it hangs a piece
+   only where its best-looking move does: at 0 about 14% of moves overlook something
+   and about one in seven of those hangs a man, about one a game. Its own captures stay
+   compulsory, as the rules make them. The chances fade to none by 15
+   (`test/ai/overlook.goose`).
+3. **Consistent strength.** It chooses among the moves within the margin with chances
    that fall off as e^(−δ / temper), δ being how much worse each is than the best it sees:
    Regan and Haworth's model of how players of a given strength choose. So there are no
    genius moves among random blunders. The margin, under 0.6 of a man, keeps positional
    terms from passing off a move that loses one. The chances use integer weights, so
    every machine agrees.
-3. **No long combinations on easy**: it sees four plies in all. Depth rises evenly with
+4. **No long combinations on easy**: it sees four plies in all. Depth rises evenly with
    skill, so 15 points more wins about three games in four against itself, and the
    small steps of adapting are felt.
-4. **It adapts.** `ai::adapt` moves the skill 4 up after the child wins and 4 down after
-   the child loses, within 20 of the level's start (easy 0 to 30, medium 25 to 60, hard 70 to 100; medium
-   never under 25, `LEVEL_FLOOR`), so a child meets an opponent they
-   beat about half the time ([in the game](#in-the-game)).
-5. **It leaves chances to learn.** Below skill 25, now and then (the table's last row),
+5. **It adapts.** `ai::adapt` moves the skill 4 up after the child wins and 4 down after
+   the child loses, within the level's band (easy 0 to 30, medium 25 to 60, hard 70 to
+   100: `LEVEL_FLOOR`, `LEVEL_TOP`), so a child meets an opponent they beat about half
+   the time ([in the game](#in-the-game)). Over a player's first three games on a level
+   the steps are 8, so the skill finds the child sooner (the user's call, 2026-11-09);
+   the file counts the games that ended on each level. Easy starts at its floor and
+   only climbs from there. A file from before that count keeps its skills; one still at
+   its level's old start (easy at 10) has had no game that moved it, and starts afresh at
+   the new start with its first steps to come, while one moved from it has had them.
+6. **It leaves chances to learn.** Below skill 25, now and then (the chances row),
    it looks among moves that cost it at most 1.2 men for one that leaves the child a
    combination: no capture to make, but a quiet move that wins at least 0.8 of a man on
    the position as it stands, which few of the child's other moves do. Captures are
    compulsory, so leaving a capture would only hang a piece, not leave something to find.
 
 Played against itself, each level beats the one below it nearly every game, in each
-variant.
+variant. Self-play of 2026-11-09, 400 games a pair in each of Russian, International,
+and Brazilian (`build/aimatch ... --overlooks`), wins, draws, losses for the first:
+
+| Pair | Russian | International | Brazilian |
+| --- | --- | --- | --- |
+| Easy at 0 against skill 10 as it was (no overlooks) | 115, 42, 243 | 91, 40, 269 | 109, 46, 245 |
+| Skill 0 without overlooks against skill 10 without | 142, 65, 193 | 136, 80, 184 | 142, 75, 183 |
+| Skill 15 against skill 10 as it was | 314, 48, 38 | 340, 42, 18 | 313, 51, 36 |
+| Medium (40) against easy at 0 | 391, 5, 4 | 398, 2, 0 | 391, 8, 1 |
+| Medium (40) against easy at its top (30) | 270, 76, 54 | 303, 69, 28 | 263, 82, 55 |
+
+A simple child model, skill 0 overlooking three times as often (about 43% of its moves
+check nothing of one kind or the other), loses to easy at 0 in 64 to 74% of games, at 8
+in 76 to 82%, at 15 in 95 to 99%, at 30 in 99%. Easy's top and medium's start are
+closer than the levels' starts: medium wins about 70% there and loses about 10%, as
+before this change, which left skills from 15 on as they were.

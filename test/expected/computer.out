@@ -30,7 +30,7 @@ the child plays black: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7
 its first move: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 1, moving false, asking 0, ring 1.00
 take back: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 1, moving false, asking 0, ring 1.00
 start over: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, plies 0, moving false, asking 6, ring 0.97
-easy: ask 7 at skill 10 seed 5000: b6-c5, legal true
+easy: ask 7 at skill 0 seed 5000: d6-e5, legal true
   moving 0.01 s before the pause ends false, when it ends true
 medium: ask 8 at skill 40 seed 5000: d6-c5, legal true
   moving 0.01 s before the pause ends false, when it ends true

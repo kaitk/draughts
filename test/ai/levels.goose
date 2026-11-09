@@ -74,7 +74,8 @@ fn main() {
         let s = ai::level_skill(level);
         let pr = ai::params(s);
         print("level ", level, ": skill ", s, ", sees ", pr.depth, "+", pr.extra, " plies, margin ",
-              pr.margin, ", temper ", pr.temper, ", gift ", pr.gift, " per 1000");
+              pr.margin, ", temper ", pr.temper, ", gift ", pr.gift, " per 1000, overlooks ", pr.land, " and ",
+              pr.open, " per 1000");
     }
     var e = ai::Engine { .. };
     ai::init(e);
@@ -97,12 +98,24 @@ fn main() {
     seeds(e, rules::INTERNATIONAL, "W:W31,35,36,38,39,40,41,43,44,45,46,47,48,49:B1,2,3,4,5,6,7,10,11,12,13,14,17,22");
     seeds(e, rules::BRAZILIAN, "W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8");
     seeds(e, rules::BRAZILIAN, "W:Wa1,c1,e1,g1,f2,h2,a3,e3,g3,b4,f4,a5:Bh4,c5,e5,d6,f6,a7,c7,e7,g7,b8,f8,h8");
-    // Wins raise the skill a step and losses lower it, within the level's band.
+    // Wins raise the skill a step and losses lower it, within the level's band; the first
+    // three games' steps are twice the rest.
     var text: u8[>..] = [];
     var s = ai::level_skill(ai::EASY);
+    var played = 0;
     for r in [1, 1, 1, 1, 1, 1, 1, -1, -1, 0, -1, -1, -1, -1, -1, -1, -1] {
-        s = ai::adapt(s, ai::EASY, r);
+        s = ai::adapt(s, ai::EASY, r, played);
+        played += 1;
         format(text, " ", s);
     }
     print("easy, after wins, then losses:", text);
+    text.clear();
+    s = ai::level_skill(ai::MEDIUM);
+    played = 0;
+    for r in [-1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1] {
+        s = ai::adapt(s, ai::MEDIUM, r, played);
+        played += 1;
+        format(text, " ", s);
+    }
+    print("medium, after losses, then wins:", text);
 }

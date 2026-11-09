@@ -1,10 +1,17 @@
-at first: skills 10 40 90, changed false
-the child won on easy: winner 0, skills 14 40 90, changed true
-  a frame later: skills 14 40 90, changed false
-the computer won on medium: winner 1, skills 14 36 90, changed true
-six more losses on medium: skills 14 25 90, changed true
-started over on hard: skills 14 25 90, changed false
-read back: skills 14 25 90
+at first: skills 0 40 90, played 0 0 0, changed false
+the child won on easy: winner 0, skills 8 40 90, played 1 0 0, changed true
+  a frame later: skills 8 40 90, played 1 0 0, changed false
+played again: winner -1, the game at skill 8, number 5; games 6, changed true
+won again: skills 16 40 90, played 2 0 0, changed true
+played again: the game at skill 16, number 6; games 7
+started over: the game at skill 16, number 7; games 8
+two more wins, the third game a large step and the fourth a small one: skills 28 40 90, played 4 0 0, changed true
+the computer won on medium: winner 1, skills 28 32 90, played 4 1 0, changed true
+six more losses on medium: skills 28 25 90, played 4 7 0, changed true
+started over on hard: skills 28 25 90, played 4 7 0, changed true
+read back: skills 28 25 90
 out of the band: skills 30 25 90
+a file from before: skills 0 44 90, played 0 3 0
+  and another: skills 6 40 90, played 3 0 0
 restored: true
-  against 1 at level 0, asks true at skill 14
+  against 1 at level 0, asks true at skill 28

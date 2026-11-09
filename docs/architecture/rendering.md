@@ -392,8 +392,8 @@ the prototype tried, kept for 3D:
   and the computer open a new game's setup in the same column: back (88 dp) and the title, then
   a row of tiles per choice, lit as in settings, each with its dim name above it: which
   draughts (international 10 × 10, the default, Brazilian 8 × 8, or Russian 8 × 8, each
-  with a small board at the start), the level against the computer (easy, medium, hard,
-  with one to three pips), the child's pieces against the computer (white, the default,
+  with a small board at the start), the level against the computer (easy, the default for a new player, the user's call
+  of 2026-11-09, medium, hard, with one to three pips), the child's pieces against the computer (white, the default,
   or black, each tile showing its piece; 2026-11-08), and the clock (none with a
   stopwatch, 5 min +3 s a move, 10 min +5 s a move); then play, a primary row. Every tile
   is 88 dp tall at least (2026-11-08). In a

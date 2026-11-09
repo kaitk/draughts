@@ -16,7 +16,8 @@
 // per line, which the app reads at start and writes after a change (players.goose): the
 // player's picture and name, whether they have had the first start, the choices here
 // but the language, which is the device's, a new game's setup, the computer's skill at
-// each level, which moves after each game against it, how many such games began, and
+// each level, which moves after each game against it, how many games ended on each
+// level, how many games against it began, and
 // the stars won in each puzzle (`stars.international = 1:3 4:2`, by puzzle id, the ids
 // being a set's own, so each set's stars are under its variant's name; an older file's
 // `stars` is read as International's).
@@ -63,6 +64,11 @@ let DEFAULT_DRAUGHTS = rules::INTERNATIONAL;
 // The computer's levels (game::EASY..) and the clocks (clock::NONE..), in the file.
 let LEVEL_NAMES = ["easy", "medium", "hard"];
 let SKILL_KEYS = ["skill_easy", "skill_medium", "skill_hard"];
+let PLAYED_KEYS = ["played_easy", "played_medium", "played_hard"];
+// Where each level started before easy started at 0 (2026-11-09), for a file from
+// before `played`: a skill still there has had no games that moved it, and starts
+// afresh; one moved from it has had its first games.
+let OLD_SKILL = [10, 40, 90];
 let CLOCK_NAMES = ["none", "5+3", "10+5"];
 
 struct Settings {
@@ -78,12 +84,14 @@ struct Settings {
     language:         i64           = SYSTEM, // strings::EN.., or SYSTEM; the device's, in settings.txt
     // A new game's setup, kept for the next one.
     variant: i64 = DEFAULT_DRAUGHTS,
-    level:   i64 = 1,           // medium
+    level:   i64 = 0,           // easy (the user's call, 2026-11-09)
     color:   i64 = rules::WHITE, // the child's pieces against the computer
     clock:   i64 = 0,           // none
-    // The computer's skill at each level (ai::adapt), and the games against it so far.
-    skill: i64[3] = ai::LEVEL_SKILL,
-    games: i64    = 0,
+    // The computer's skill at each level (ai::adapt), the games that ended on each, and
+    // the games against it so far.
+    skill:  i64[3] = ai::LEVEL_SKILL,
+    played: i64[3] = [0; 3],
+    games:  i64    = 0,
     // The stars won in each puzzle, 1 to 3, by its set's variant (puzzles::set_of) and
     // its id; 0 for one not solved.
     stars: u8[puzzles::MAX_PUZZLES + 1][rules::VARIANT_COUNT] = [[0; puzzles::MAX_PUZZLES + 1]; rules::VARIANT_COUNT],
@@ -109,6 +117,8 @@ fn king_look(s: Settings) -> i64 { if s.kings == board::STACK { board::STACK } e
 // The settings a file holds; what it lacks or doesn't know stays at the default.
 fn parse(text: const u8[:]) -> Settings {
     var s = Settings {};
+    var skill_read = [false; 3];
+    var played_read = [false; 3];
     var rest = text;
     while rest.len > 0 {
         let line, after, found = split_once(rest, '\n');
@@ -145,7 +155,18 @@ fn parse(text: const u8[:]) -> Settings {
         }
         // A skill stays within its level's band, as adapting keeps it.
         let n, number = parse_int(value);
-        for name, i in SKILL_KEYS { if key == name && number { s.skill[i] = ai::adapt(n, i, 0); } }
+        for name, i in SKILL_KEYS {
+            if key == name && number {
+                s.skill[i] = ai::within(n, i);
+                skill_read[i] = true;
+            }
+        }
+        for name, i in PLAYED_KEYS {
+            if key == name && number && n >= 0 {
+                s.played[i] = n;
+                played_read[i] = true;
+            }
+        }
         if key == "games" && number && n >= 0 { s.games = n; }
         var set = -1;
         if key == "stars" { set = rules::INTERNATIONAL; }
@@ -162,6 +183,14 @@ fn parse(text: const u8[:]) -> Settings {
                     s.stars[set][id] = won as u8;
                 }
             }
+        }
+    }
+    for i in 3 {
+        guard skill_read[i] && !played_read[i] else { continue; }
+        if s.skill[i] == OLD_SKILL[i] {
+            s.skill[i] = ai::level_skill(i);
+        } else {
+            s.played[i] = ai::FIRST_GAMES;
         }
     }
     return s;
@@ -192,6 +221,7 @@ fn write(s: Settings, out: u8[>..]&) {
     out.append("\nclock = ");
     out.append(CLOCK_NAMES[s.clock]);
     for name, i in SKILL_KEYS { format(out, "\n", name, " = ", s.skill[i]); }
+    for name, i in PLAYED_KEYS { format(out, "\n", name, " = ", s.played[i]); }
     format(out, "\ngames = ", s.games);
     for set, v in s.stars {
         var first = true;

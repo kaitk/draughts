@@ -1,0 +1,11 @@
+skill 0: per 1000 moves, misses where its piece lands 60, a capture it opens 90
+skill 5: per 1000 moves, misses where its piece lands 40, a capture it opens 60
+skill 10: per 1000 moves, misses where its piece lands 20, a capture it opens 30
+skill 14: per 1000 moves, misses where its piece lands 4, a capture it opens 6
+skill 15: per 1000 moves, misses where its piece lands 0, a capture it opens 0
+skill 30: per 1000 moves, misses where its piece lands 0, a capture it opens 0
+skill 0 over 2000 moves: misses where its piece lands 115, a capture it opens 192
+W:Wc3,h2,g1:Be5,h8,a7: c3-d4 moves a man where it is taken
+  skill 0, overlooks off 0, as in play 1, every move 10; skill 15, every move 0 of 40
+W:Wc1,c3,d2,f4,h2:Ba5,b4,h8: d2-e3 opens a capture behind it
+  skill 0, overlooks off 0, as in play 1, every move 8; skill 15, every move 0 of 40

@@ -1,3 +1,3 @@
-russian: 95 positions; moves checked per level 190, 190, 190; hangs 0, 0, 0; sacrifices 22; combinations left 4
-international: 93 positions; moves checked per level 186, 186, 186; hangs 0, 0, 0; sacrifices 18; combinations left 7
-brazilian: 91 positions; moves checked per level 182, 182, 182; hangs 0, 0, 0; sacrifices 13; combinations left 0
+russian: 95 positions; moves checked per skill 0, 15, 40, 90: 190, 190, 190, 190; hangs 0, 0, 0, 0; sacrifices 25; combinations left 8; at skill 0, moves overlooking a capture 27, of them hanging a piece 3
+international: 93 positions; moves checked per skill 0, 15, 40, 90: 186, 186, 186, 186; hangs 0, 0, 0, 0; sacrifices 27; combinations left 19; at skill 0, moves overlooking a capture 27, of them hanging a piece 3
+brazilian: 91 positions; moves checked per skill 0, 15, 40, 90: 182, 182, 182, 182; hangs 0, 0, 0, 0; sacrifices 16; combinations left 3; at skill 0, moves overlooking a capture 26, of them hanging a piece 6

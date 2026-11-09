@@ -80,6 +80,7 @@ fn begin(e: Engine&, p: rules::Position, depth: i64, extra: i64, margin: i64, li
     for &x in e.history { x = 0; }
     for &x in e.killer { x = 0; }
     e.root = p;
+    e.blind = 0;
     e.depth = min(depth, MAX_PLY - 1);
     e.extra = extra;
     e.margin = margin;
@@ -196,12 +197,34 @@ fn enter(e: Engine&) {
         leave(e, evaluate(f.pos));
         return;
     }
-    rank(e, ply);
+    // Overlooking: right after its own move it doesn't see the child's captures of the
+    // kinds it missed this move (Engine.blind), and takes the position as quiet when it
+    // sees none of them.
+    if ply == 1 && e.blind != 0 && capture {
+        let moved = rules::bit(e.plies[0].moves[e.plies[0].f.move].to);
+        var seen = 0;
+        for i in n { if !overlooked(e.blind, pl.moves[i].captured, moved) { seen += 1; } }
+        if seen == 0 {
+            leave(e, evaluate(f.pos));
+            return;
+        }
+        rank(e, ply);
+        for i in n { if overlooked(e.blind, pl.moves[i].captured, moved) { pl.rank[i] = -1; } }
+    } else {
+        rank(e, ply);
+    }
     f.first = f.alpha;
     f.best = -INF;
     f.best_i = -1;
     f.count = 0;
     next_child(e);
+}
+
+// Whether a capture of `captured` goes unseen when the search is blind to `blind`
+// (LAND, OPEN), `moved` being the square its piece moved to, as a bit.
+fn overlooked(blind: i64, captured: u64, moved: u64) -> bool {
+    let kind = if captured & moved != 0 { LAND } else { OPEN };
+    return blind & kind != 0;
 }
 
 // The order to try a node's moves in: the table's move, then captures by what they

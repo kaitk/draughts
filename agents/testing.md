@@ -63,8 +63,8 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   file has every key), `badges` (each badge's SVG baked into its distance field, drawn
   coarsely, and the path syntax a tracer writes: bless it after replacing an animal), `ai` (the computer player:
   its search against a plain minimax, the table changing no score, keys, what each level
-  plays in known shots, the same move in steps as at once, and that no level hangs a
-  piece), and `puzzles` (the puzzle file's format and refusals, what `puzzles::check`
+  plays in known shots, the same move in steps as at once, that no skill from 15 on
+  hangs a piece (`blunders`), and easy's overlooks below 15 (`overlook`)), and `puzzles` (the puzzle file's format and refusals, what `puzzles::check`
   refuses beyond the format, what a move does to each goal, and every built-in puzzle
   passing `puzzles::check`, with its counts by theme and level: `set` International's,
   `russian_set` Russian's). A new puzzle is checked with `build/puzzles FILE` (the
@@ -96,6 +96,10 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
 - The search counts nodes, so a test's moves change with `Engine.node_limit`. Tests that
   call hard lower it to stay quick through TinyCC (`test/ai/blunders.goose`, the seeds
   in `test/ai/levels.goose`); the whole `ai` area takes about 10 s that way.
+- Self-play below skill 15 against a skill as it played before the overlooks (task
+  of 2026-11-09): `build/aimatch VARIANT 0 10 400 --overlooks 100 0`. A simple child
+  model is skill 0 overlooking three times as often, `--overlooks 100 300` (or `300` on
+  its side). 400 games of easy take seconds; anything with hard, many minutes.
 - `test/game/pace.goose` plays twelve whole games on the clock (each level against
   itself, both clocks, Russian and International) with hard at 20,000 nodes: about 12 s
   through TinyCC. For numbers at full strength, build a copy with `NODES` at

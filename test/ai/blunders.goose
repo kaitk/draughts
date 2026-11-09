@@ -1,6 +1,9 @@
-// No level hangs a piece: in positions from games the computer played against itself,
-// no level, under any of several seeds, plays a move after which the opponent's
-// captures win a man or more, when another move loses less that way. The check is a
+// No skill from 15 on hangs a piece: in positions from games the computer played
+// against itself, neither easy's skill 15 nor medium's or hard's start, under any of
+// several seeds, plays a move after which the opponent's captures win a man or more,
+// when another move loses less that way. Below 15 easy now and then overlooks a capture
+// the child can make (ai::start's overlook), as a young child does: easy's start, skill
+// 0, hangs a piece only on a move that overlooked one, and those are counted apart. The check is a
 // plain recursive minimax over material written here: the move, then only captures,
 // four plies of them at most. A move it flags passes as a sacrifice only when the
 // level's own search shows the material coming back within what it sees: a combination
@@ -8,13 +11,16 @@
 // (ai::choose and the chances left for the child); that every level sees a plain hang
 // at all follows from each seeing two plies and the captures they force, and from the
 // search matching minimax (test/ai/search.goose). A move that leaves the child a
-// combination on the easiest level is counted apart: it never leaves a capture.
+// combination on the easiest skills is counted apart: it never leaves a capture.
 import std;
 import rules from "../../src/rules";
 import ai from "../../src/ai";
 
 let SEEDS = 2;
 let NAMES = ["russian", "international", "english", "brazilian"];
+// The skills checked: easy's start, the lowest that never overlooks, medium's, hard's.
+let SKILLS = [0, 15, 40, 90];
+let COUNT = 4;
 
 fn material(p: rules::Position) -> i64 {
     var s = 0;
@@ -48,8 +54,10 @@ fn main() {
     let tested: u8[3] = [rules::RUSSIAN, rules::INTERNATIONAL, rules::BRAZILIAN];
     for variant in tested {
         var positions = 0;
-        var checked: i64[ai::LEVELS] = [0; ai::LEVELS];
-        var hangs:   i64[ai::LEVELS] = [0; ai::LEVELS];
+        var checked: i64[COUNT] = [0; COUNT];
+        var hangs:   i64[COUNT] = [0; COUNT];
+        var overlooks = 0;          // moves at skill 0 that overlooked something
+        var overlooked = 0;         // and of them, those that hung a piece
         var sacrifices = 0;
         var gifts = 0;
         for game in 3 {
@@ -65,28 +73,32 @@ fn main() {
                         value[i] = -minimax(rules::play(p, moves[i]), 0, 4);
                         best = max(best, value[i]);
                     }
-                    for level in ai::LEVELS {
+                    for skill, level in SKILLS {
                         for k in SEEDS {
                             let seed = (positions * SEEDS + k) as u64;
-                            let m = ai::think(e, p, ai::level_skill(level), seed);
+                            let m = ai::think(e, p, skill, seed);
                             checked[level] += 1;
                             if e.gifted { gifts += 1; }
+                            let missed = e.overlook != 0;
+                            if missed { overlooks += 1; }
                             var i = 0;
                             while !same(moves[i], m) { i += 1; }
                             guard value[i] <= best - 100 else { continue; }
                             // A sacrifice the level sees win it back is no hang.
-                            let pr = ai::params(ai::level_skill(level));
+                            let pr = ai::params(skill);
                             ai::begin(e, p, pr.depth, pr.extra, pr.margin, e.node_limit);
                             while e.searching { ai::run(e, 1 << 30); }
                             var deep = -ai::INF;
                             for j in moves.len { if e.exact[j] { deep = max(deep, e.score[j]); } }
                             if e.exact[i] && e.score[i] > deep - 100 {
                                 sacrifices += 1;
+                            } else if missed {
+                                overlooked += 1;
                             } else {
                                 hangs[level] += 1;
                                 var t: u8[>..] = [];
                                 rules::format_move(t, variant, m);
-                                print("  level ", level, " seed ", seed, " hangs in ", rules::fen(p), ": ", t);
+                                print("  skill ", skill, " seed ", seed, " hangs in ", rules::fen(p), ": ", t);
                             }
                         }
                     }
@@ -96,8 +108,9 @@ fn main() {
             }
         }
         print(NAMES[variant], ": ", positions,
-              " positions; moves checked per level ", checked[0], ", ", checked[1], ", ", checked[2],
-              "; hangs ", hangs[0], ", ", hangs[1], ", ", hangs[2], "; sacrifices ", sacrifices,
-              "; combinations left ", gifts);
+              " positions; moves checked per skill 0, 15, 40, 90: ", checked[0], ", ", checked[1], ", ", checked[2],
+              ", ", checked[3], "; hangs ", hangs[0], ", ", hangs[1], ", ", hangs[2], ", ", hangs[3], "; sacrifices ",
+              sacrifices, "; combinations left ", gifts, "; at skill 0, moves overlooking a capture ", overlooks,
+              ", of them hanging a piece ", overlooked);
     }
 }

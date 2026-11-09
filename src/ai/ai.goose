@@ -26,12 +26,15 @@ let MEDIUM = 1;
 let HARD = 2;
 let LEVELS = 3;
 
-// Skill runs 0 to 100. Each level starts at its own and moves within BAND of it, never
-// under its floor.
-let LEVEL_SKILL: i64[LEVELS] = [10, 40, 90];
-let BAND = 20;
+// Skill runs 0 to 100. Each level starts at its own and adapts between its floor and
+// its top: easy starts at its floor, so it can only climb from where a young child
+// begins (the user's call, 2026-11-09).
+let LEVEL_SKILL: i64[LEVELS] = [0, 40, 90];
 let LEVEL_FLOOR: i64[LEVELS] = [0, 25, 70];   // the lowest a level adapts to (medium never under 25)
+let LEVEL_TOP:   i64[LEVELS] = [30, 60, 100]; // the highest
 let STEP = 4;               // how far one win or loss moves the skill
+let FIRST_STEP = 8;         // how far it moves over a player's first games against a level
+let FIRST_GAMES = 3;        // how many games that is
 
 // The most nodes a search begins a new iteration after. It bounds hard's reply time:
 // see tasks and docs/architecture/ai.md for the speed on the tablet.
@@ -51,6 +54,14 @@ let PROBE_EXTRA = 4;
 let PROBE_LIMIT = 20000;
 let MAX_PROBES = 12;
 
+// Overlooking the child's captures (the easiest skills only): now and then it doesn't
+// look where the piece it moves lands, or what its move opens behind it.
+let SURE_SKILL = 15;        // from this skill on it never overlooks a capture
+let LAND_CHANCE = 4;        // per thousand moves, per skill point below SURE_SKILL
+let OPEN_CHANCE = 6;
+let LAND = 1;               // it misses captures that take the piece it moved
+let OPEN = 2;               // it misses the child's other captures
+
 // What the engine is doing.
 let IDLE = 0;
 let MAIN = 1;               // searching the position
@@ -64,6 +75,8 @@ struct Params {
     margin: i64,            // it never plays a move this much worse than the best it sees
     temper: i64,            // how much worse a move is for its chance to fall by e
     gift:   i64,            // per thousand moves, how often it leaves the child a chance
+    land:   i64,            // per thousand moves, how often it misses where its piece lands
+    open:   i64,            // per thousand moves, how often it misses a capture it opens
 }
 
 fn params(skill: i64) -> Params {
@@ -75,19 +88,28 @@ fn params(skill: i64) -> Params {
         margin: min(MAX_MARGIN, 3 * temper),
         temper: temper,
         gift:   max(GIFT_SKILL - s, 0) * GIFT_CHANCE,
+        land:   max(SURE_SKILL - s, 0) * LAND_CHANCE,
+        open:   max(SURE_SKILL - s, 0) * OPEN_CHANCE,
     };
 }
 
 // The starting skill of a level.
 fn level_skill(level: i64) -> i64 { LEVEL_SKILL[clamp(level, 0, LEVELS - 1)] }
 
-// The skill for the next game after one at `skill` on `level`: up a step when the
-// person won, down a step when the computer did (child_won 1, -1, or 0 for a draw), so
-// a child meets an opponent they beat about half the time.
-fn adapt(skill: i64, level: i64, child_won: i64) -> i64 {
-    let base = level_skill(level);
-    let s = skill + STEP * clamp(child_won, -1, 1);
-    return clamp(s, LEVEL_FLOOR[clamp(level, 0, LEVELS - 1)], min(base + BAND, 100));
+// A skill kept within its level's floor and top.
+fn within(skill: i64, level: i64) -> i64 {
+    let l = clamp(level, 0, LEVELS - 1);
+    return clamp(skill, LEVEL_FLOOR[l], LEVEL_TOP[l]);
+}
+
+// The skill for the next game after one at `skill` on `level`, the player having
+// finished `played` games on it before this one: up a step when the person won, down a
+// step when the computer did (child_won 1, -1, or 0 for a draw), so a child meets an
+// opponent they beat about half the time. Over the first games the steps are larger,
+// so the skill finds the child quickly.
+fn adapt(skill: i64, level: i64, child_won: i64, played: i64) -> i64 {
+    let step = if played < FIRST_GAMES { FIRST_STEP } else { STEP };
+    return within(skill + step * clamp(child_won, -1, 1), level);
 }
 
 root struct Engine {
@@ -98,6 +120,8 @@ root struct Engine {
     killer:     u16[MAX_PLY * 2] = [0; MAX_PLY * 2],
     use_tt:     bool             = true, // off only to test that the table changes no result
     node_limit: i64              = NODE_LIMIT,
+    overlooks:  i64              = 100,  // percent of the overlook chances: 0 to measure without
+    blind:      i64,            // what the search under way doesn't see (LAND, OPEN), only in the main search
     // The search under way (search.goose).
     root:       rules::Position,
     depth:      i64,
@@ -133,6 +157,7 @@ root struct Engine {
     gift_score: i64,
     chosen:     i64,            // the reply, an index into moves, or -1
     gifted:     bool,           // whether the reply leaves the child a chance
+    overlook:   i64,            // what this move overlooks: LAND, OPEN, both, or 0
     budget:     i64,
     // What the last search did, for benchmarks.
     total_nodes: i64,
@@ -157,8 +182,15 @@ fn start(e: Engine&, p: rules::Position, skill: i64, seed: u64) {
         return;
     }
     e.gift = rand_int(e.random, 1000) < e.params.gift;
+    // Its own stream, so the choices among moves stay as they were where nothing is
+    // overlooked.
+    var r = rng { seed ^ 0x9E3779B97F4A7C15 };
+    e.overlook = 0;
+    if rand_int(r, 100000) < e.params.land * e.overlooks { e.overlook |= LAND; }
+    if rand_int(r, 100000) < e.params.open * e.overlooks { e.overlook |= OPEN; }
     let margin = if e.gift { max(e.params.margin, GIFT_COST) } else { e.params.margin };
     begin(e, p, e.params.depth, e.params.extra, margin, e.node_limit);
+    e.blind = e.overlook;
     e.phase = MAIN;
 }
 

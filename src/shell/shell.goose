@@ -274,9 +274,23 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
     let gm .= sh.game;
     if gm.result != 0 {
         let k = clamp(gm.level, game::EASY, game::HARD);
-        sh.prefs.skill[k] = ai::adapt(sh.prefs.skill[k], k, gm.result);
+        sh.prefs.skill[k] = ai::adapt(sh.prefs.skill[k], k, gm.result, sh.prefs.played[k]);
+        sh.prefs.played[k] += 1;
         gm.result = 0;
         sh.changed = true;
+    }
+    // Played again or started over: a new game, at its level's skill as it is now, and
+    // counted as home's play counts one. The computer is asked only after this frame, so
+    // it thinks at the new skill from the first move.
+    if gm.restarted {
+        gm.restarted = false;
+        if gm.computer >= 0 {
+            let p .= sh.prefs;
+            gm.skill = p.skill[clamp(gm.level, game::EASY, game::HARD)];
+            gm.number = p.games;
+            p.games += 1;
+            sh.changed = true;
+        }
     }
     if go == game::HOME {
         go_to(sh, HOME, now);
