@@ -137,6 +137,7 @@ struct Gpu {
     squares:        gfx::Buffer,
     marks:          gfx::Buffer,
     glows:          gfx::Buffer,      // the field's glow rings and lit squares
+    marked:         bool,             // whether the board's pass has marks to draw
     plan_albedo:    gfx::Texture,
     plan_normal:    gfx::Texture,
     frame_albedo:   gfx::Texture,
@@ -634,6 +635,16 @@ fn place(g: Gpu&, inst: const float4[:], alphas: const f32[:], squares: const fl
     gfx::update_buffer(g.squares, bytes_of(squares[..min(squares.len, SQUARES)]));
     gfx::update_buffer(g.marks, bytes_of(marks[..min(marks.len, SQUARES)]));
     if lit.len > 0 { gfx::update_buffer(g.glows, bytes_of(lit[..min(lit.len, SQUARES)])); }
+    // What MARKS_FRAG without PULSE draws: the selected piece's ring, a last move's tint,
+    // a target or a stop, a still must-capture ring, a glow ring or a lit square. With
+    // none, the board's pass leaves its quad out.
+    g.marked = selected.w > 0.0;
+    for m in marks[..min(marks.len, SQUARES)] {
+        if m.x > 0.5 || m.y > 0.5 || m.z > 1.5 { g.marked = true; }
+    }
+    for m in lit[..min(lit.len, SQUARES)] {
+        if m.x > 0.0 || m.y > 0.0 { g.marked = true; }
+    }
     g.frame.selected = selected;
     g.frame.screen.z = dim;
     if moved { g.shadow_dirty = true; }
@@ -707,15 +718,18 @@ fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int
     gfx::uniforms(gfx::VERTEX, 1, Draw { float4_0 });
     gfx::draw(6);
 
-    // The field's marks and the selected piece's ring, added where nothing stands over.
-    gfx::bind(g.glow);
-    gfx::bind_storage_buffer(gfx::FRAGMENT, 0, g.marks);
-    gfx::bind_storage_buffer(gfx::FRAGMENT, 1, g.glows);
-    gfx::uniforms(gfx::VERTEX, 0, f);
-    gfx::uniforms(gfx::VERTEX, 1, Draw { float4 { 2.0, g.n, 0.0, 0.0 } });
-    gfx::uniforms(gfx::FRAGMENT, 0, f);
-    gfx::uniforms(gfx::FRAGMENT, 1, Draw { float4 { 2.0, g.n, 0.0, 0.0 } });
-    gfx::draw(6);
+    // The field's marks and the selected piece's ring, added where nothing stands over;
+    // none, nothing drawn.
+    if g.marked {
+        gfx::bind(g.glow);
+        gfx::bind_storage_buffer(gfx::FRAGMENT, 0, g.marks);
+        gfx::bind_storage_buffer(gfx::FRAGMENT, 1, g.glows);
+        gfx::uniforms(gfx::VERTEX, 0, f);
+        gfx::uniforms(gfx::VERTEX, 1, Draw { float4 { 2.0, g.n, 0.0, 0.0 } });
+        gfx::uniforms(gfx::FRAGMENT, 0, f);
+        gfx::uniforms(gfx::FRAGMENT, 1, Draw { float4 { 2.0, g.n, 0.0, 0.0 } });
+        gfx::draw(6);
+    }
     gfx::end_pass();
     if keep_depth { draw_depth(g); }
 }
