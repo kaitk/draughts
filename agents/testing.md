@@ -51,7 +51,9 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   hints at once, and the next stops lit after a second wrong square, on the flat and the
   3D board: `pips`; the lookout's eye and marks, held targets, the filter by skill, and
   traps answered as the worker would: `watch`; the hint's two presses, its ask and pips,
-  and each side's against a friend: `hint`), `shell`
+  and each side's against a friend: `hint`; what each side has taken, men and kings apart,
+  a king taken counting as a king, after captures by men and kings, undo, and its rows on
+  the screen: `taken`), `shell`
   (home, the switch to the game and back, settings and their file, their taps and the
   board beside them, the transitions between home and settings, home and the game, and
   the puzzles to pick from and a puzzle (their frames, the end, a tap during them, turning

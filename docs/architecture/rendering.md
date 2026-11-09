@@ -127,7 +127,8 @@ dp (from none).
   icon-only tiles 72 × 64 dp (back at the left, settings and start over at the right) in
   an 88 dp bar, the play one 112 dp row (the piece and whose turn, or the two clocks with
   the countdown's short form between, at the left; undo move at the right), the margins
-  16 dp: the board goes from about a third of the width to nearly all of it. Home's menu
+  16 dp: the board goes from about a third of the width to nearly all of it. The bar's
+  middle holds what each side has taken ("What each side has taken"). Home's menu
   rows are 72 dp, the wordmark's row 64 with 8 under it, the sheet's rim 20, which leaves
   the board about 240 dp above the sheet. Settings' theme tiles are slim
   (`settings::SLIM_H`, `gui::choice`'s `beside`): 48 dp tall, a 40 × 26 dp thumbnail with
@@ -872,6 +873,31 @@ the prototype tried, kept for 3D:
   painted over the field as the pips are); the pulsing ring goes over the kept image as a
   puzzle hint's does (`Scene.pulse`). The drained pieces and the shade are part of the
   scene, so they draw the board once when they change and nothing per frame.
+
+### What each side has taken
+
+Task 052, `prototypes/game-captured.html`'s take a in its `row` look, chosen 2026-11-09.
+
+- **Counts** (`game::taken`): the variant's start pieces of each color less those on the
+  board, men and kings apart; a piece of the side not moving that was a king before a
+  move and gone after it counts as a king taken, from the undo history (saved with the
+  game, `board::MAX_HISTORY` moves back). Counted once a move has shown, and after undo
+  and start over (`game::count_taken`), never per frame.
+- **Drawn** as more instances of the pieces' quad over the UI (`panel::taken`, into the
+  overlay, `panel::OVER` 96): the app's men and crowned kings, 32 dp on a tablet, 26 on a
+  phone, 22 compact, each a step of 0.52 of a piece after the one before, the kings after
+  a gap of 0.3; a row too long for its room takes smaller pieces, to 70%, then closes up.
+- **Placed** by the game's layouts (`Layout.taken`, `taken_as`): flat landscape, on
+  glass under the left corner panel, black's catch (the white pieces) over white's, the
+  other way on a turned board, one line where a short phone has no height for two; 3D
+  landscape, one line on glass as wide as it holds above the board, at the top between
+  the corner panels, white's catch at the left, black's at the right, where the board at
+  rest clears it (it then clears it too in the top view and the zoom, which are a few %
+  smaller on the tablet), else under the left panel as on the flat screen (a phone, whose
+  board reaches the top margin), the board never smaller at rest; portrait, a row under
+  the bar's tiles, the bar 52 dp taller (`panel::TAKEN_BAR_ROW`), white's catch at the
+  left, black's at the right; compact, the bar's middle between back and settings, two
+  rows. A catch's own glass shows once something is taken. A puzzle shows none.
 
 ### Transitions
 
