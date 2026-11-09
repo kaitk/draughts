@@ -82,7 +82,7 @@ Choosing an age group under 13 puts the app under the **Families Policy**. What 
 and where the app stands:
 
 - **Privacy policy** at a public URL, linked in the listing and reachable from the app's
-  store page: `store/privacy/index.html`, published at `{PRIVACY_URL}`.
+  store page: `store/privacy/index.html`, published at `https://kaitk.github.io/draughts/privacy/`.
 - **Ads:** none, so the Families Self-Certified Ads SDK rule doesn't apply.
 - **No collection of personal or device identifiers** from children, no `AD_ID`, no
   location: met, as above.
@@ -108,7 +108,7 @@ and where the app stands:
 
 | Form | Answer |
 | --- | --- |
-| Privacy policy | `{PRIVACY_URL}` |
+| Privacy policy | `https://kaitk.github.io/draughts/privacy/` |
 | App access | All functionality is available without special access (no login) |
 | Government app | No |
 | Financial features | None |

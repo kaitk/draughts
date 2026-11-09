@@ -107,8 +107,8 @@ and the contact email are filled in):
 | --- | --- |
 | `{DEVELOPER}` | Gideonic: the developer name on Play (the user, 2026-11-09); on the App Store an individual's legal name is shown instead |
 | `{CONTACT_EMAIL}` | kaitkasak@gmail.com: the contact address both stores show or ask for (the user, 2026-11-09) |
-| `{PRIVACY_URL}` | `https://kaitk.github.io/draughts/privacy` (to confirm) |
-| `{SUPPORT_URL}` | The App Store's required support page, a page with the contact address; `https://kaitk.github.io/draughts/` (to confirm) |
+| `{PRIVACY_URL}` | https://kaitk.github.io/draughts/privacy/ (live 2026-11-09, from the `gh-pages` branch) |
+| `{SUPPORT_URL}` | https://kaitk.github.io/draughts/ (the App Store's support page, live 2026-11-09, `gh-pages`) |
 
 ```sh
 grep -rn '{DEVELOPER}\|{CONTACT_EMAIL}\|{PRIVACY_URL}\|{SUPPORT_URL}' store/   # what is left

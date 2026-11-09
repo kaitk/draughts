@@ -31,8 +31,8 @@ The counts are Python's `len`, and bytes for the keywords, as Apple counts them;
 | Age rating | | 4+ (below) |
 | Content rights | | No third-party content: the photographs and fonts are the app's own or under the OFL |
 | Copyright | | `2026 Gideonic` (Apple adds the ©); for an individual account the seller shown is the legal name |
-| Privacy Policy URL | required | `{PRIVACY_URL}` |
-| Support URL | required | `{SUPPORT_URL}`: a page with a way to reach the developer; the privacy page's site, `https://kaitk.github.io/draughts/`, with the contact email, would do |
+| Privacy Policy URL | required | `https://kaitk.github.io/draughts/privacy/` |
+| Support URL | required | `https://kaitk.github.io/draughts/` (a support page with the contact email, live 2026-11-09) |
 | Marketing URL | optional | None, or the same site |
 
 Fields and limits: [App information](https://developer.apple.com/help/app-store-connect/reference/app-information/app-information)
@@ -148,7 +148,7 @@ the app stands:
 | One age band: 5 and under, 6–8, or 9–11 | **6–8** (proposed: the app's 5 to 8 straddles two bands, and 6–8 holds most of it; the user decides) |
 | No links out, purchases, or other distractions unless behind a parental gate | None: the app opens no URL (no `SDL_OpenURL` or `http` in `src/` or `ios/`, 2026-11-09), has no purchases, no rating prompt, no share sheet. No gate is needed while that holds |
 | No third-party analytics or advertising; no personal or device information sent to third parties | None: no SDK besides SDL and goose_gfx, compiled in, and no network |
-| A privacy policy | `{PRIVACY_URL}` |
+| A privacy policy | `https://kaitk.github.io/draughts/privacy/` |
 | Stays under these rules even if the category is later dropped | Accepted: the app means to keep them anyway |
 
 A parental gate, if one is ever needed, is an adult task (Apple's examples: a sum, a
