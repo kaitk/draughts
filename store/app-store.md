@@ -30,7 +30,7 @@ The counts are Python's `len`, and bytes for the keywords, as Apple counts them;
 | Secondary category | | Kids (age band below); or Education, if Kids is left out |
 | Age rating | | 4+ (below) |
 | Content rights | | No third-party content: the photographs and fonts are the app's own or under the OFL |
-| Copyright | | `2026 {DEVELOPER}` (Apple adds the ©); for an individual account the seller shown is the legal name |
+| Copyright | | `2026 Gideonic` (Apple adds the ©); for an individual account the seller shown is the legal name |
 | Privacy Policy URL | required | `{PRIVACY_URL}` |
 | Support URL | required | `{SUPPORT_URL}`: a page with a way to reach the developer; the privacy page's site, `https://kaitk.github.io/draughts/`, with the contact email, would do |
 | Marketing URL | optional | None, or the same site |
@@ -196,7 +196,7 @@ release build.
 | Field | Answer |
 | --- | --- |
 | Sign-in required | No |
-| Contact | The user's name, `{CONTACT_EMAIL}`, and a phone with its country code (required, not shown publicly) |
+| Contact | The user's name, `kaitkasak@gmail.com`, and a phone with its country code (required, not shown publicly) |
 | Notes | Below |
 
 ```text

@@ -106,12 +106,13 @@ The icons: `icon/play-512.png` and `icon/apple-1024.png`, from `scripts/icon.py 
 
 ## Placeholders
 
-Replace these everywhere in this folder before anything is published:
+Replace these everywhere in this folder before anything is published (the developer name
+and the contact email are filled in):
 
 | Placeholder | Value |
 | --- | --- |
-| `{DEVELOPER}` | The developer name on Play, a personal games identity; on the App Store an individual's legal name is shown instead; open |
-| `{CONTACT_EMAIL}` | The contact address both stores show or ask for; open |
+| `{DEVELOPER}` | Gideonic: the developer name on Play (the user, 2026-11-09); on the App Store an individual's legal name is shown instead |
+| `{CONTACT_EMAIL}` | kaitkasak@gmail.com: the contact address both stores show or ask for (the user, 2026-11-09) |
 | `{PRIVACY_URL}` | `https://kaitk.github.io/draughts/privacy` (to confirm) |
 | `{SUPPORT_URL}` | The App Store's required support page, a page with the contact address; `https://kaitk.github.io/draughts/` (to confirm) |
 

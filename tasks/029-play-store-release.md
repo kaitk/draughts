@@ -73,15 +73,18 @@ masters present):
 
 ## What remains for the user
 
-- **Identity:** the developer name (`{DEVELOPER}`, likely "Gideonic") and contact email
-  (`{CONTACT_EMAIL}`) for Play and the drafts; confirm the privacy policy's URL,
+- **Identity:** the developer name Gideonic and the contact email kaitkasak@gmail.com
+  (the user, 2026-11-09; filled into `store/`); the account opened on that address. Confirm
+  the privacy policy's URL,
   `https://kaitk.github.io/draughts/privacy`, and publish `store/privacy/index.html` there
   (`store/README.md`). Never the Snowhound name, domain, or email.
 - **Back up the upload key** before the first upload: both files in
   `~/.config/draughts/`, as `docs/development.md` says.
-- **Decide `allowBackup`:** on now, so Android's own backup may carry a child's progress
-  to a new tablet; the Data safety answers count that as not collected
-  (`store/play-console.md`). Off removes the question.
+- **`allowBackup` stays on** (the user, 2026-11-09), so Android's own backup may carry a
+  child's progress to a new tablet; the Data safety answers count that as not collected
+  (`store/play-console.md`).
+- **A new feature graphic** (the user, 2026-11-09): a close-up of the autumn 3D board,
+  rendered headless at a large size, in place of the first draft.
 - **Play Console:** the developer account (a personal account: identity check, then the
   closed test above), the app's entry, the listing pasted from `store/`, the 512 px icon
   (`~/Downloads/draughts-store/icon/play-512.png`, autumn), the 1024 × 500 feature

@@ -27,7 +27,7 @@ the answers rest on".
   third party, and says nothing of Android's backup; it does say data a user uploads to
   their own Drive, which the developer never reaches, needs no declaring. Setting
   `allowBackup="false"` would remove the question at the cost of a child's progress
-  surviving a new tablet (open).
+  surviving a new tablet (kept on: the user, 2026-11-09).
 
 ## Data safety
 
@@ -51,7 +51,7 @@ collected".
 
 ## Content rating (IARC questionnaire)
 
-Email for the certificate: `{CONTACT_EMAIL}`. Category: **Game** (not "Reference, news, or
+Email for the certificate: `kaitkasak@gmail.com`. Category: **Game** (not "Reference, news, or
 educational": the app is played, and its puzzles are part of the game).
 
 | Topic | Answer |
@@ -130,12 +130,12 @@ read 2026-11-09).
 | App or game | Game |
 | Category | Board |
 | Tags | Up to five of Play's list, in Store settings → App category → Manage tags ([9859673](https://support.google.com/googleplay/android-developer/answer/9859673), read 2026-11-09; the list shows only in the Console): pick Board, Casual, Offline, Single player, Family, if offered |
-| Contact email | `{CONTACT_EMAIL}` (required, shown on the listing) |
+| Contact email | `kaitkasak@gmail.com` (required, shown on the listing) |
 | Website | `https://kaitk.github.io/draughts/` (optional; to confirm) |
 | Phone | None |
 | Price | Free (a free app can never become paid) |
 | Countries | All, or Estonia and the EU first; the user decides |
-| Developer name | `{DEVELOPER}` (the Play developer account's name) |
+| Developer name | `Gideonic` (the Play developer account's name) |
 | Trader status (EU) | **Non-trader**, if the user agrees: free, no ads, no purchases, made as a hobby. A non-trader's listing shows only the email and the country, and EEA and UK users are told consumer law doesn't apply; a trader's shows a name, address, and phone, a personal trader's address included. New accounts declare it at creation ([17594752](https://support.google.com/googleplay/android-developer/answer/17594752), read 2026-11-09) |
 
 ## The account
