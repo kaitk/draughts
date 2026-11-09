@@ -1050,7 +1050,10 @@ which keeps frames coming until the reply has come, and it is seen the next fram
 longer think against the clock draws only the clock's seconds after the pulse: the
 timer is also set for when the computer's move is due (`game::due`). Once its move has
 landed nothing animates and the app draws nothing. While Android has the app paused, SDL blocks
-the loop: it draws nothing and submits no GPU work.
+the loop: it draws nothing and submits no GPU work. iOS doesn't block it, and ends an app
+that submits GPU work in the background, so there the loop draws nothing while the app
+hasn't focus, which it loses before it goes to the background, and draws the screen
+again when focus returns.
 
 Work too long for a frame stays off the frames that move. Settings' season thumbnails
 make all four photographs, one after another with a wait for the GPU after each (where

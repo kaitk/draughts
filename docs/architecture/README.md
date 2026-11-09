@@ -75,9 +75,13 @@ The targets this keeps open, each replacing or adding to `app/` alone:
   of it, the camera and its fit into the layout, a tap turned into a square by a ray
   through the perspective, and each frame's instances, stays plain math in `board/`
   (`view3d`), tested headless.
-- **Other platforms on SDL:** iOS (UIKit, SDL_GPU on Metal), and desktop Windows and
-  Linux (SDL_GPU on D3D12 or Vulkan): a build script and shims beside the Android ones
-  (storage, locales, the launch cover, closing; iOS hides home's X).
+- **Other platforms on SDL:** iOS (UIKit, SDL_GPU on Metal; `ios/` and
+  `scripts/ios.py`, task 043), and desktop Windows and Linux (SDL_GPU on D3D12 or
+  Vulkan): a build script and shims beside the Android ones (storage, locales, the
+  launch cover, closing). On iOS the program's C calls SDL directly as on Android
+  (`src/app/platform.h`), `draughts_platform` tells the app where it runs, home has no
+  way out (`home::closable`), and nothing is drawn while the app hasn't focus: iOS ends
+  an app that uses the GPU in the background, and SDL doesn't block the loop there.
 - **A second renderer**, the NoGraphicsAPI version through goose-ngfx on desktop and
   Apple devices that support it ([product](../product.md)): `app/`'s drawing rewritten
   against it, the packages unchanged.

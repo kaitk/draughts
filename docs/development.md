@@ -17,6 +17,7 @@ Tested 2026-11-07 on macOS 26.3.1:
 | CMake, Ninja | Homebrew | CMake 4.4.4 |
 | Python | `python3` | 3.x |
 | bundletool | `build/bundletool-1.18.3/`, from the [release](https://github.com/google/bundletool/releases/tag/1.18.3), fetched by `scripts/android.py --release` | 1.18.3 |
+| Xcode | `/Applications/Xcode.app`, for the iOS SDKs, clang, `simctl`, and `devicectl` | 26.4, an iOS 18.3 simulator runtime |
 | astcenc | `build/astcenc-5.7.0/bin/astcenc`, from the [release](https://github.com/ARM-software/astc-encoder/releases/tag/5.7.0) (Apache 2.0; not in Homebrew) | 5.7.0, macOS universal |
 
 Set up from a fresh clone:
@@ -244,7 +245,7 @@ the window is the whole display and the layout keeps its taps and words in the s
 area ([rendering](architecture/rendering.md#screen-sizes-and-the-safe-area)); on
 Android 10, the app's lowest, the window keeps out of the cutout instead (the default
 mode) and SDL reports no insets. It knows it's on Android from
-`ANDROID_ROOT` in the environment ([findings](goose-findings.md)). Act on taps with
+`draughts_platform` (`src/app/launch.c`, [findings](goose-findings.md)). Act on taps with
 `gfx::mouse_pressed` and `gfx::mouse_released`: a tap can press and release within one
 frame, which `gfx::mouse_down` never sees. `adb shell input tap X Y` checks it.
 
@@ -257,6 +258,59 @@ MP4, Vulkan 1.3, 5.5 GB) is the weakest phone tried (2026-11-09): 2D holds 90 Hz
 board runs at about 28 fps while it moves (task 015).
 Larger tablets (2560 × 1600, 2880 × 1920, 4:3, a foldable's inner screen) are checked
 only on the Mac (2026-11-08), as there is no such device.
+
+## Run on iOS
+
+```sh
+scripts/ios.py src/app/draughts.goose --run                     # build, and run in the simulator
+scripts/ios.py src/app/draughts.goose --shot build/ios/home.png # run, wait 3 s, save the screen
+scripts/ios.py src/app/draughts.goose --console --args "--screen game --lang et"
+scripts/ios.py src/app/draughts.goose --device --run            # on an attached iPhone or iPad
+```
+
+`scripts/ios.py` builds without an Xcode project, into `build/ios/<program>/sim/` or
+`device/`, as `scripts/android.py` does for Android:
+
+1. Goose writes the program's C (`goose -o`, with `--stack-reserve 128M`: an iOS process
+   can't map Goose's default 2 GB for each of the app's 26 data stacks) and the runtime's
+   C.
+2. goose_gfx's `src/` is copied with `patches/goose_gfx/` applied, and SDL to
+   `build/ios/SDL_src/` with `patches/SDL/` applied (`0004` lets SDL_GPU take the
+   simulator's Metal device).
+3. CMake with Ninja and Xcode's clang builds `ios/CMakeLists.txt` for the simulator's or
+   the device's SDK: one executable with the program, the runtime, goose_gfx's layers,
+   and SDL, linked statically. `ios/main.c` hands the main thread to UIKit through
+   `SDL_RunApp`, which calls the program's main back as `SDL_main`.
+4. The bundle is the executable, an `Info.plist` the script writes (the id
+   `io.github.kaitk.draughts`, the version from `VERSION_NAME` and `BUILD_NUMBER`, full
+   screen, an empty `UILaunchScreen`, without which iOS letterboxes the app), and the
+   launcher's name per language (`<lang>.lproj/InfoPlist.strings` from each
+   `strings/<lang>.txt`'s `app.name`).
+
+The simulator is an iPhone 13 mini the script creates once (`Draughts iPhone 13 mini`;
+`DRAUGHTS_IOS_SIM` names another), booted headless with `simctl`: no Simulator.app
+window opens. `simctl` can't tap, so touch is checked on a device; the flags (`--screen`,
+`--tap`, `--go`) reach the rest. `--console` prints the program's output until it ends.
+To send the app to the background, start another (`xcrun simctl launch booted
+com.apple.Preferences`), and `xcrun simctl launch booted io.github.kaitk.draughts` brings
+it back. Its storage folder is `Library/Application Support/kaitk/draughts/` in `xcrun
+simctl get_app_container booted io.github.kaitk.draughts data`. The simulator build embeds
+the JPEGs beside the ASTC files, as the simulator's GPU may take no ASTC; a device build
+embeds the ASTC files only, as Android does (11.7 MB).
+
+A device build needs, once, on the device: pairing with the Mac (trust it) and
+Developer Mode (Settings → Privacy & Security); on the Mac: an Apple ID in Xcode
+(Settings → Accounts; a free one gives a personal team) and an Apple Development
+certificate (Manage Certificates → +). The script then signs with that identity and a
+development provisioning profile for the app's id on the device; when it finds none it
+has Xcode make one, building an empty app of that id once
+(`build/ios/provision/`, `xcodebuild -allowProvisioningUpdates`), which also registers
+the device. A free team's profile lasts 7 days, after which the script makes another.
+The team, the identity, and the device are read on the Mac at each build and never
+written into the repo; `DRAUGHTS_IOS_DEVICE` picks a device when several are attached.
+The first launch of an app from a free team waits for the phone to trust its developer
+(Settings → General → VPN & Device Management). `devicectl` installs and starts it;
+`--console` shows its output.
 
 ## Release builds
 

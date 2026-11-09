@@ -15,14 +15,16 @@ goose_gfx's sources are copied and patches/goose_gfx applied, and SDL is copied 
 patches/SDL applied; CMake with Ninja and Xcode's clang builds ios/CMakeLists.txt, one
 executable with SDL linked statically; the bundle is the executable, an Info.plist written
 here (the id, the version, full screen, the launch screen's colour), the launcher's name
-per language (<lang>.lproj/InfoPlist.strings from strings/<lang>.txt's app.name), and the
-icon. A simulator build is signed ad hoc; a device build with the Mac's development
-identity and a provisioning profile for the app's id (docs/development.md, "Run on an
-iPhone"), neither of which is ever in the repo.
+per language (<lang>.lproj/InfoPlist.strings from strings/<lang>.txt's app.name); no icon
+yet (task 043). A simulator build is signed ad hoc; a device build with the Mac's development
+identity and a provisioning profile for the app's id (docs/development.md, "Run on
+iOS"), made once through Xcode when missing; no team, identity, or device id is ever
+written into the repo.
 
 The simulator is one this script creates once, named SIM_NAME, of SIM_TYPE, and boots
 headless: no Simulator.app window opens. Tools come from Xcode (xcrun) and the
-environment: GOOSE, DRAUGHTS_IOS_SIM (another simulator's name or UDID).
+environment: GOOSE, DRAUGHTS_IOS_SIM (another simulator's name or UDID),
+DRAUGHTS_IOS_DEVICE (a device's name, identifier, or UDID).
 """
 import argparse
 import hashlib
@@ -213,16 +215,111 @@ def simulator():
     return found["udid"]
 
 
+def device():
+    """The attached iPhone or iPad to install on: devicectl's identifier and the device's
+    UDID, the first paired one in Developer Mode, or the one DRAUGHTS_IOS_DEVICE names."""
+    listing = ROOT / "build/ios/devices.json"
+    listing.parent.mkdir(parents=True, exist_ok=True)
+    run("xcrun", "devicectl", "list", "devices", "--quiet", "--json-output", listing)
+    want = os.environ.get("DRAUGHTS_IOS_DEVICE")
+    for d in json.loads(listing.read_text())["result"]["devices"]:
+        hw, conn = d["hardwareProperties"], d["connectionProperties"]
+        if want and want not in (d["identifier"], hw.get("udid"), d["deviceProperties"].get("name")):
+            continue
+        if hw.get("platform") != "iOS" or hw.get("reality") != "physical":
+            continue
+        if conn.get("pairingState") != "paired":
+            sys.exit("the device isn't paired: unlock it and trust this Mac")
+        if d["deviceProperties"].get("developerModeStatus") != "enabled":
+            sys.exit("the device's Developer Mode is off: Settings → Privacy & Security")
+        return d["identifier"], hw["udid"]
+    sys.exit("no iPhone or iPad attached")
+
+
+def identity():
+    """The Mac's Apple Development signing identity: its SHA-1 and its team, the
+    certificate's organizational unit. Neither is ever written into the repo."""
+    out = run("security", "find-identity", "-v", "-p", "codesigning", capture=True)
+    m = re.search(r'([0-9A-F]{40}) "(Apple Development: [^"]+)"', out)
+    if not m:
+        sys.exit("no Apple Development identity: sign in to Xcode with an Apple ID "
+                 "(Settings → Accounts) and make one under Manage Certificates")
+    pem = run("security", "find-certificate", "-a", "-Z", "-p", "-c", m.group(2), capture=True)
+    # The certificate whose SHA-1 is the identity's.
+    block = pem[pem.index(f"SHA-1 hash: {m.group(1)}"):]
+    cert = block[block.index("-----BEGIN"):block.index("-----END CERTIFICATE-----") + 25]
+    subject = subprocess.run(["openssl", "x509", "-noout", "-subject", "-nameopt",
+                              "sep_multiline"], input=cert, text=True, capture_output=True,
+                             check=True).stdout
+    team = re.search(r"OU=(\w+)", subject)
+    if not team:
+        sys.exit("the identity's certificate names no team")
+    return m.group(1), team.group(1)
+
+
+PROFILES = [Path.home() / "Library/Developer/Xcode/UserData/Provisioning Profiles",
+            Path.home() / "Library/MobileDevice/Provisioning Profiles"]
+
+
+def profile(team, app_id, udid):
+    """The newest provisioning profile that signs app_id for the team on the device, still
+    valid, decoded: (path, plist), or None."""
+    best = None
+    for folder in PROFILES:
+        for path in sorted(folder.glob("*.mobileprovision")) if folder.exists() else []:
+            r = subprocess.run(["security", "cms", "-D", "-i", path], capture_output=True)
+            if r.returncode != 0:
+                continue
+            p = plistlib.loads(r.stdout)
+            ident = p.get("Entitlements", {}).get("application-identifier", "")
+            if ident not in (f"{team}.{app_id}", f"{team}.*"):
+                continue
+            if udid not in p.get("ProvisionedDevices", []) and not p.get("ProvisionsAllDevices"):
+                continue
+            if p["ExpirationDate"].timestamp() < time.time():
+                continue
+            if not best or p["CreationDate"] > best[1]["CreationDate"]:
+                best = (path, p)
+    return best
+
+
+def provision(team, app_id, target):
+    """Has Xcode make a development profile for app_id on the device, as automatic signing
+    does: an empty app of that id, generated by CMake as an Xcode project under
+    build/ios/provision/ and built once with -allowProvisioningUpdates, which also
+    registers the device with the team."""
+    work = ROOT / "build/ios/provision"
+    if work.exists():
+        shutil.rmtree(work)
+    work.mkdir(parents=True)
+    (work / "stub.c").write_text("int main(void) { return 0; }\n")
+    (work / "CMakeLists.txt").write_text(
+        "cmake_minimum_required(VERSION 3.20)\nproject(stub C)\n"
+        "add_executable(stub MACOSX_BUNDLE stub.c)\n")
+    run("cmake", "-S", work, "-B", work / "xcode", "-G", "Xcode", "-DCMAKE_SYSTEM_NAME=iOS",
+        f"-DCMAKE_OSX_DEPLOYMENT_TARGET={MIN_IOS}", "-DCMAKE_XCODE_GENERATE_SCHEME=ON",
+        f"-DCMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM={team}",
+        "-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE=Automatic",
+        "-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY=Apple Development",
+        f"-DCMAKE_XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER={app_id}",
+        f"-DMACOSX_BUNDLE_GUI_IDENTIFIER={app_id}")
+    run("xcodebuild", "-project", work / "xcode/stub.xcodeproj", "-scheme", "stub",
+        "-destination", f"id={target}", "-allowProvisioningUpdates",
+        "-allowProvisioningDeviceRegistration", "-derivedDataPath", work / "derived",
+        "-quiet", "build")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("program", type=Path)
     ap.add_argument("--device", action="store_true", help="build for an iPhone, not the simulator")
     ap.add_argument("--run", action="store_true", help="install and start it")
     ap.add_argument("--args", default="", help="the program's flags, as one string")
-    ap.add_argument("--shot", type=Path, help="run, wait --wait seconds, save the screen there")
+    ap.add_argument("--shot", type=Path,
+                    help="run in the simulator, wait --wait seconds, save the screen there")
     ap.add_argument("--wait", type=float, default=3.0)
     ap.add_argument("--console", action="store_true",
-                    help="stay attached to the program's output until it ends (simulator)")
+                    help="run, and stay attached to the program's output until it ends")
     args = ap.parse_args()
     program = args.program.resolve()
     name = program.stem
@@ -258,16 +355,40 @@ def main():
     app = out / plat / f"{title}.app"
     write_bundle(app, native / "main", app_id, title, args.device)
     if args.device:
-        sys.exit("device builds: not yet")
-    run("codesign", "--force", "--sign", "-", "--timestamp=none", app)
+        # The development identity, its team's profile for the app on this device (made
+        # once through Xcode if missing), embedded, and its entitlements signed in.
+        sha1, team = identity()
+        target, udid = device()
+        found = profile(team, app_id, udid)
+        if not found:
+            provision(team, app_id, udid)
+            found = profile(team, app_id, udid)
+            if not found:
+                sys.exit(f"Xcode made no profile for {app_id} on the device")
+        path, prof = found
+        shutil.copy(path, app / "embedded.mobileprovision")
+        entitlements = out / plat / "entitlements.plist"
+        with open(entitlements, "wb") as f:
+            plistlib.dump(prof["Entitlements"], f)
+        run("codesign", "--force", "--sign", sha1, "--entitlements", entitlements,
+            "--timestamp=none", app)
+    else:
+        run("codesign", "--force", "--sign", "-", "--timestamp=none", app)
     print(f"{app} ({sum(f.stat().st_size for f in app.rglob('*') if f.is_file()) // 1024} KB)")
+
+    # 4. Install and start it on the device.
+    flags = args.args.split()
+    if args.device and (args.run or args.console):
+        run("xcrun", "devicectl", "device", "install", "app", "--device", target, app)
+        run("xcrun", "devicectl", "device", "process", "launch", "--device", target,
+            "--terminate-existing", *(["--console"] if args.console else []), app_id, *flags,
+            check=not args.console)
+        return
 
     # 4. Install and start it in the simulator.
     if args.run or args.shot or args.console:
         udid = simulator()
-        run("xcrun", "simctl", "terminate", udid, app_id, check=False)
         run("xcrun", "simctl", "install", udid, app)
-        flags = args.args.split()
         if args.console:
             run("xcrun", "simctl", "launch", "--console-pty", "--terminate-running-process",
                 udid, app_id, *flags, check=False)

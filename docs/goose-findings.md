@@ -393,7 +393,9 @@ didn't leak. SDL 3.4.16 (`fa2c02b`, goose_gfx's pin).
 The program needs to know it's on Android to open full screen (SDL then hides the system
 bars) while keeping a resizable window on the Mac.
 
-- Here: `env("ANDROID_ROOT", ...)` is true in every Android app process.
+- Here: the program's C answers, from the compiler's own macros (`draughts_platform` in
+  `src/app/launch.c`: `__ANDROID__`, and `TARGET_OS_IPHONE` for iOS, 2026-11-09). The
+  POCs still read `env("ANDROID_ROOT", ...)`, true in every Android app process.
 - Upstream: possibly an `os` function naming the platform, if more than one program needs it.
 
 ## goose_gfx: SDL_GPU requires `shaderClipDistance`, which Mali GPUs lack (2026-11-07)
