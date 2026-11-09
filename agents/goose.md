@@ -152,6 +152,9 @@ find out by compiling, so the next session doesn't.
   ("bytes_of cannot write theme::Theme&[1] out"); bind it with `=`.
 - An `i64` converts to `f32` by itself where an `f32` is wanted (a `float4 { ... }`
   field, an `f32` parameter): `as f32` there is a redundant-cast warning (2026-11-09).
+- An integer over an integer is an integer division even where an `f32` is wanted:
+  `float4 { ..., rows / FRAME_MAP }` with `rows: i64` gives 0 (the 3D frame map turned
+  flat); write `(rows as f32) / FRAME_MAP` (2026-11-09).
 - `as` binds looser than `&`: write `(x as i64) & 0x3F`; `x as i64 & 0x3F` doesn't parse.
 - An array of untyped float literals (`let FACE_DP = [64.0, 30.0]`) holds `f64`s; cast an
   element `as f32` to use it with `f32`s. So is a `let` of untyped float constants
@@ -163,6 +166,11 @@ find out by compiling, so the next session doesn't.
   back. Inside the scope it frees nothing, since the value is still live.
 - `gl_InstanceIndex` doesn't count a draw's `first_instance`, so a second group of
   instances drawn at another time (pieces over the UI) gets its own storage buffer.
+- A shader's big function called from several places, or from a loop the compiler
+  unrolls, is compiled once per call site: the 3D bake called the wood four times (one
+  per surface) and three times per texel (its neighbours for the normal), and Mali took
+  2.5 s to make its pipeline. One call site, in a loop whose count comes from a uniform,
+  took it to 0.6 s (`src/render3d/shaders.goose`'s BAKE_FRAG, 2026-11-09).
 - embed_shader's GLSL parser takes no `centroid` (in any position), so with MSAA a
   pixel a small triangle covers in part shades with attributes extrapolated outside it.
   On the 3D prototype's grooves that made specks through Filament's micro-shadowing;

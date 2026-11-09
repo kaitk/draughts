@@ -333,6 +333,24 @@ keytool -genkeypair -keystore ~/.config/draughts/upload-key.jks -storetype PKCS1
 
 and the properties file written beside it with the same password, both `chmod 600`.
 
+## Time the 3D board
+
+```sh
+adb shell am start -S -n io.github.kaitk.draughts/.DraughtsActivity \
+    --es args "'--3d --board 3d --screen game --theme wood --variant russian --bench 300'"
+adb logcat -d | grep bench3d
+```
+
+Two seconds after the launch the app times 300 frames drawing the 3D board and its
+shadow map, as while a piece moves, each submitted and waited for (`gfx::flush`); 300
+drawing the board alone, waited for; then 300 as the loop draws them, frame to frame,
+and quits. It prints those medians, the renderer's setup, the bake and the photograph,
+the first frame (its pipelines made), and the bake again warm (`src/app/draw3d.goose`).
+A waited frame includes the submit and the wait, about 5 ms on the Pixel 7a for an empty
+pass, so it is an upper bound; the frame to frame time is held at the display's rate.
+Let the device cool between series (`adb shell dumpsys thermalservice`, status 0):
+warm, the Pixel 7a's frames slowed from 16.7 to 19.8 ms. Task 015 has the numbers.
+
 ## Check idle CPU
 
 ```sh

@@ -959,6 +959,12 @@ depth target, a shadow map, albedo, normal, and roughness atlases with mips):
 - A large target SDL cycles (cleared or written with `cycle` while the GPU still reads
   it) keeps a second or third copy for good, each its own allocation, as the screen did
   before gfx stopped cycling it. Clear without cycling where the GPU can wait instead.
+  A target cleared by its first pass right after it is made is cycled too: the 3D
+  board's four baked surfaces each kept a second copy, 85 MB on the Pixel 7a, until the
+  bake stopped clearing (it writes every texel anyway; task 015, 2026-11-09).
+- A pipeline is made once per set of target formats it draws into, each a full compile
+  of its shaders: on the Pixel 7a the 3D bake's takes about 0.4 s, so the plan's normal
+  map stays RGBA8 like the frame's (RG8 would save 11 MB and cost a second compile).
 - Uploading a large buffer each frame through a new transfer buffer would allocate and
   free that much each frame; keep one transfer buffer and reuse it.
 - Graphics memory now follows the resources' bytes: GL mtrack is their sum, plus the

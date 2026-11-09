@@ -481,9 +481,74 @@ portrait; the light stays put on screen through the hot-seat turn.
   must-capture ring and a wrong tap's flash, 10 × 10 in winter stone and in portrait at
   800 × 1280, round the corners panels. Not on the tablet yet.
 - **Memory** behind `--3d`: the renderer's targets come on top of the flat board's, made
-  once (the four 2048² baked surfaces with mips, about 85 MB, the 2048² shadow map, the
+  once (the four baked surfaces with mips, about 85 MB, now 70, the shadow map, the
   4× target and its depth, and the kept image the screen's size), and the photograph is
-  decoded a second time for its blur and harmonics. To measure on the tablet.
+  decoded a second time for its blur and harmonics. Measured on the Pixel 7a below.
+
+### Measured on the Pixel 7a (2026-11-09)
+
+Pixel 7a (Tensor G2, Mali-G710 MC7, Vulkan, Android 17), 2400 × 1080 landscape, the
+display at 60 Hz (its setting; 90 Hz is off), the game on the 3D board in autumn
+(`--3d --board 3d --screen game --theme wood`), International and Russian. Each frame
+figure the median of three launches, each launch's the median of 300 frames (the app's
+`--bench 300`, docs/development.md, "Time the 3D board"); memory two launches each, 8 s
+after the launch, `dumpsys meminfo`. Before is `e279c86` with only the bench added.
+
+| | Before | After |
+| --- | --- | --- |
+| GL mtrack, 3D, International | 348 MB | 202 to 218 MB |
+| GL mtrack, 3D, Russian | 340 MB | 210 MB |
+| GL mtrack, the 2D board | 42 MB | 42 MB |
+| EGL mtrack (the swapchain), both | 71 MB | 71 MB |
+| Total PSS, 3D, International / Russian | 466 / 457 MB | 313 to 328 / 321 MB |
+| Total PSS, the 2D board | 147 MB | 143 MB |
+| The theme applied at launch (bake, photograph) | 2.57 s | 0.76 s |
+| of which the bake, its pipeline made | 2.53 s | 0.71 s |
+| The first frame, its pipelines made | 0.30 s | 0.31 s |
+| Frame with the shadow map, waited: International / Russian | 16.3 / 14.0 ms | 15.8 / 14.0 ms |
+| The pass alone, waited: International / Russian | 14.0 / 13.1 ms | 14.0 / 13.0 ms |
+| Frame's CPU (scene and recording) | 0.3 to 0.5 ms | 0.3 to 0.5 ms |
+| Presented, frame to frame | 16.6 ms | 16.6 ms |
+| Idle at rest, 30 s (`scripts/idle_cpu.sh`) | | 0.03% CPU, 30 wakeups |
+
+- **What changed**, International's GL mtrack after each step: the bake no longer clears
+  its targets: SDL cycled each new, cleared surface into a second copy kept for good
+  (348 → 262 MB). The 3D pass's depth 16-bit instead of 32 (enough between NEAR 2 and
+  FAR 40, the marks still drawn), and the shadow map 1024² with its taps as far apart in
+  the world as at 2048² (262 → 236). A mitred frame's map baked only over its four
+  bands, 2048 × 1152 (236 → 218; its bake 75 → 43 ms warm). Bake time: the wood was
+  compiled once per call site, four surfaces and three taps a texel for the normal;
+  one call in a loop the compiler doesn't unroll took making the bake's pipeline from
+  about 2.4 s to 0.6 s (warm bakes: the plan 100 ms, the frame map 43). Headless shots
+  at 2400 × 1080 (autumn, winter, turned) against `e279c86`'s: the bake's change and the
+  depth's identical (PSNR 87 to 97 dB, the maps texel for texel), the shadow map's 54
+  dB with no difference visible in crops at 200%, the frame map's 84 dB.
+- **The frame isn't faster**, and nothing glaring was found: what the pass costs, waited,
+  International, each part left out once: all 14.3 ms; an empty pass (the clear and the
+  resolve, the submit and the wait) 5.1; the backdrop alone 8.5; the board and pieces
+  alone 13.8; without the pieces 12.0; without the shadow catcher 13.9; without the marks
+  13.9. The lit meshes are the cost; the full-screen backdrop is mostly hidden under them
+  (Mali's forward pixel kill). The waited figures carry about 5 ms of submit and wait, so
+  the GPU's own time is under them; at 60 Hz the frame holds the vsync when the phone is
+  cool. Warm (thermal status 2), presented frames rose to 18 to 25 ms before and after
+  alike.
+- **MSAA 4× against 1×**: 1× (`samples` 1, straight into the kept image) saved 47 MB at
+  32-bit depth and no measurable time (the pass 14.3 ms either way). 4× stays: it is
+  affordable here. SMAA wasn't tried.
+- **Tried and left:** the plan's normal map in RG8 saved 11 MB but cost a second compile
+  of the bake's pipeline (gfx makes one per set of target formats), 0.37 s at launch. The
+  photograph's two blur intermediates freed after use changed nothing measurable (they
+  sit in SDL's shared 16 MiB block). Specializing the bake per wood model saved 30 ms.
+  Only the mips used: the levels below 256² hold under 2% of the memory.
+- **Map sizes by screen:** not changed. The Pixel 7a's landscape board is about 1290 px
+  across (656 dp at 1.97 px a dp), its field's near edge about 1120 px, so the 2048² plan
+  is 1.8 texels a pixel there and 1024² would magnify it. A 720p phone would take 1024²
+  (about 60 MB less); not measured, as there is no such device.
+- **After moves:** GL mtrack at rest after c3–d4 on Russian 219 MB against 210 at launch.
+- **What's left:** the 3D board on top of the flat board's memory is still about 160 to
+  175 MB: the surfaces 70 MB, the 4× target and its 16-bit depth about 60, the kept
+  image 10, the rest the driver's and the photograph's. The lit shader's cost (16 shadow
+  taps, the field's occlusion over 3 × 3 squares) is where frame time would come from.
 
 ### Phase 3: every screen (the `screens3d` branch off `3d-board`, 2026-11-09)
 
