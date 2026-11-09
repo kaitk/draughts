@@ -822,7 +822,9 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
         if tabbed {
             if tabs(s, g, gui::cut_top(page, BACK_W * u)) { ask = SHOWN; }
             gui::cut_top(page, GROUP_GAP * u);
-            let one = max(group_height(s, over, g, 0, page.z, false, false), group_height(s, over, g, 1, page.z, false, false));
+            // The shown group's own height, the board taking the rest: the game's glass as
+            // tall as the look's ended in empty glass under its rows (2026-11-09).
+            let one = group_height(s, over, g, s.group, page.z, false, false);
             let glass = gui::cut_bottom(page, one);
             gui::cut_bottom(page, 16.0 * u);
             var size = 0.94 * min(page.z, page.w);

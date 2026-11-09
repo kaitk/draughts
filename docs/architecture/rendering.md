@@ -577,7 +577,9 @@ the prototype tried, kept for 3D:
   13" iPad's 3:4 with its bars, a 237 dp board where the tabs gave 277, the look's group
   setting their 600 dp height; a foldable's 206 dp keeps the tabs, 2026-11-09), and the
   group's glass, without its title row, is as tall as the taller of the two so the board
-  stays put. A board under 128 dp isn't shown, as on home (a 9:16 phone at 480 dp). In
+  stays put; in portrait it is its own group's height and the board takes the rest, larger
+  on the game's tab (the game's glass as tall as the look's ended in empty glass under its
+  rows, 2026-11-09). A board under 128 dp isn't shown, as on home (a 9:16 phone at 480 dp). In
   portrait, where the title doesn't fit beside the worded back and the language in the
   row labels' 30 dp face (a phone: at 548 dp "Settings" had 61 dp, "Seaded" 45 and was
   left out), back is the arrow over the word in an 88 dp square, which leaves 107 dp; at
