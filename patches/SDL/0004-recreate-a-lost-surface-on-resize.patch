@@ -1,0 +1,22 @@
+--- a/src/gpu/vulkan/SDL_gpu_vulkan.c	2026-11-09 14:45:16
++++ b/src/gpu/vulkan/SDL_gpu_vulkan.c	2026-11-09 14:45:22
+@@ -4655,6 +4655,19 @@
+             renderer->physicalDevice,
+             windowData->surface,
+             &swapchainSupportDetails)) {
++        /* The surface is gone: Android destroyed it while the app was in the background,
++           and a size change then asked for a new swapchain before an acquire could find
++           the surface lost. Make a new surface and swapchain on the next acquire, as an
++           acquire that finds it lost does, rather than fail every frame from now on. */
++        VkSurfaceCapabilitiesKHR capabilities;
++        if (renderer->vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
++                renderer->physicalDevice,
++                windowData->surface,
++                &capabilities) == VK_ERROR_SURFACE_LOST_KHR) {
++            windowData->needsSurfaceRecreate = true;
++            windowData->needsSwapchainRecreate = true;
++            return VULKAN_INTERNAL_TRY_AGAIN;
++        }
+         return false;
+     }
+ 

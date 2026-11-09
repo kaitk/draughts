@@ -3,6 +3,26 @@
 Gaps found in Goose, goose_gfx, and the SDL it pins, while building for Android, with what
 we do about each here and what could go upstream. Newest first.
 
+## SDL: a size change while in the background leaves the window black on return (2026-11-09)
+
+Turned in the background (another app open, the screen rotated there), the app came back
+black and spun at a core and a half, on the Galaxy A33 and the Pixel 7a, flat board or
+3D. Android destroys the app's surface when it leaves; the size change then marks SDL's
+swapchain for recreating, and on return the first acquire recreates it before anything
+has found the surface lost. `VULKAN_INTERNAL_CreateSwapchain` queries the old surface,
+gets `VK_ERROR_SURFACE_LOST_KHR` from `vkGetPhysicalDeviceSurfaceCapabilitiesKHR`, and
+fails, without asking for a new surface; every acquire after it fails the same way, and
+gfx keeps trying each frame (`0002`). A resume with no size change works, because there
+the acquire itself gets `SURFACE_LOST` and recreates both. SDL 3.4.16 (`fa2c02b`).
+
+- Here: `patches/SDL/0004-recreate-a-lost-surface-on-resize.patch`: when the swapchain's
+  surface query fails and the surface reports lost, `CreateSwapchain` marks the surface
+  and swapchain for recreating and returns `TRY_AGAIN` (no image this frame), as the
+  acquire does on `SURFACE_LOST`. On the A33 the frame after the return gets no image,
+  the next presents at the new size, and the app is idle after: turned either way, home
+  and the game, flat and 3D.
+- Upstream: for the user only, as with the other SDL entries.
+
 ## SDL: a non-square texture's last mip is blitted at zero size, which loses the device on a Mali-G68 (2026-11-09)
 
 `VULKAN_GenerateMipmaps` blits each level from the one above at `width >> level` by
