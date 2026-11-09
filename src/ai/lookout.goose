@@ -15,6 +15,15 @@ let STEP = 4;       // a man crowning by a step
 let JUMP = 5;       // a man crowning through a capture
 let KINDS = 6;
 
+// The skill from which each kind is left to the player (docs/architecture/ai.md, "The
+// lookout"): the computer's own horizon at that skill, as the game matches it to the
+// player. From 15 it sees every one-piece capture next to its piece, and a man one step
+// from crowning is as plain; from 25 every two-piece capture, and a flying king's from
+// afar is as easy to miss; a crowning through a capture is a small combination, left
+// from medium's start; three pieces or more show through medium. Hard's skills, 70 and
+// up, show nothing.
+let UNTIL: i64[KINDS] = [15, 25, 25, 70, 15, 40];
+
 // The pieces or squares of each kind (pieces for the captures, the crowning squares for
 // STEP and JUMP), as rules bits.
 struct Seen { of: u64[KINDS] = [0; KINDS] }
@@ -67,4 +76,16 @@ fn after(p: rules::Position, m: rules::Move, out: Seen&, buf: rules::Moves&) {
 // The pieces in danger and the crowning squares in s, of every kind.
 fn all(s: Seen&) -> u64, u64 {
     return s.of[NEAR] | s.of[FAR] | s.of[TWO] | s.of[MANY], s.of[STEP] | s.of[JUMP];
+}
+
+// The pieces in danger and the crowning squares of s that a player of `skill` is shown:
+// the kinds they would miss (UNTIL).
+fn shown(s: Seen&, skill: i64) -> u64, u64 {
+    var danger: u64 = 0;
+    var crowns: u64 = 0;
+    for k in KINDS {
+        guard skill < UNTIL[k] else { continue; }
+        if k == STEP || k == JUMP { crowns |= s.of[k]; } else { danger |= s.of[k]; }
+    }
+    return danger, crowns;
 }

@@ -6,12 +6,18 @@
 // flying king taking from afar (International, 5 over 28), a man's triple jump that
 // crowns on its way (Russian, a7 over b6, d4, f2 to g1), and every move of calm with
 // what it would leave open: a man moved next to an attacker is marked on its square.
+// Last, what each skill is shown of the triple, calm after d4-c5, the flying king, and
+// king after g1-f2: everything at easy's start, the plain kinds dropping out from 15 and
+// 25, the crowning through a capture from 40, and nothing at hard's 70 and up.
 import std;
 import rules from "../../src/rules";
 import ai from "../../src/ai";
 import check from "../";
 
 let NAMES = ["near", "far", "two", "many", "step", "jump"];
+// The triple, calm after d4-c5, the flying king, and king after g1-f2, for the skills.
+let SKILLED = ["W:Wa1,b6,d4,f2:Ba7", "W:Wa1,c1,e1,g1,b2,d2,h2,a3,e3,g3,c5:Bb8,d8,f8,h8,a7,c7,e7,g7,b6,f6,e5,h4",
+               "W:W28,48:BK5,3", "W:Wc1,f2,h2,a3,g3,b4,c5:Bd2,e3,d6,a7,c7,e7,f8,h8"];
 
 // The squares of bits, in the variant's notation, sorted.
 fn squares(variant: u8, bits: u64) -> u8[>..] {
@@ -83,5 +89,19 @@ fn main() {
         }
         sort(lines) { a, b => compare(a, b) < 0 };
         for l in lines { print(l); }
+    }
+
+    for skill in [0, 14, 15, 24, 25, 39, 40, 60, 69, 70, 100] {
+        var line: u8[>..] = [];
+        format(line, "skill ", skill, ":");
+        for i in 4 {
+            let variant: u8 = if i == 2 { rules::INTERNATIONAL } else { rules::RUSSIAN };
+            let p = check::position(variant, SKILLED[i]);
+            var s = lookout::Seen {};
+            lookout::now(p, s, buf);
+            let danger, crowns = lookout::shown(s, skill);
+            format(line, if i == 0 { " " } else { "; " }, squares(variant, danger), " / ", squares(variant, crowns));
+        }
+        print(line);
     }
 }
