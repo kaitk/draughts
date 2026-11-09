@@ -4,8 +4,8 @@ A calm draughts game for Android tablets and phones. Play a friend or the comput
 solve puzzles. No ads, no accounts, no tracking, and no network.
 
 <p align="center">
-  <img src="docs/images/home-winter.webp" alt="Home on a tablet over the winter photograph: continue, a friend, the computer, puzzles, and settings beside the board" width="49%" />
-  <img src="docs/images/game-autumn.webp" alt="A game in progress on a tablet over the autumn photograph, a selected piece and the square it can move to" width="49%" />
+  <img src="docs/images/home-winter.webp" alt="Home on a tablet over the winter photograph: continue, a friend, the computer, puzzles, and settings beside the 3D stone board" width="49%" />
+  <img src="docs/images/game-autumn.webp" alt="A game on the flat board over the autumn photograph: a selected piece that must capture two, and the squares of its capture" width="49%" />
 </p>
 
 ## Features
@@ -40,18 +40,24 @@ Measured numbers per device are in
 
 ### Performance
 
-**Galaxy Tab A11+** (1920 × 1200, release build, 2026-11-09):
+The release at rest, idle 20 to 30 s (2026-11-09):
 
-- Idle at home: 0.05% of one CPU core
-- Memory at home: 134 MB (PSS)
-- Of that, 58 MB is the GPU driver's swapchain (six screen-sized images, its minimum)
-  and 36 MB the app's own GPU memory
+| Device | Board | Idle CPU (one core) | Memory (PSS) |
+| --- | --- | --- | --- |
+| Galaxy Tab A11+, 1920 × 1200 | 2D, home | 0.03% | 145 MB |
+| Galaxy Tab A11+ | 3D, a game | 0.3% | 287 MB |
+| Pixel 7a, 2400 × 1080 | 3D, a game | 0.05% | 345 MB |
+| Galaxy A33 5G, 2400 × 1080 | 2D | 0.00% | 107 MB |
+| Galaxy A33 5G | 3D | 0.00% | 309 MB |
 
-**Pixel 7a** (1080 × 2400, development build, 2026-11-08):
+The 2D board draws in one full-screen pass and keeps up with a 90 Hz display even on the
+Galaxy A33. The 3D board, while it moves:
 
-- Idle at home: 0.1% of one CPU core
-- Memory: 146 MB at home, 161 MB in a game (PSS)
-- Graphics memory: 116 MB
+- **Galaxy Tab A11+** (90 Hz): the pass about 11 ms, with 4× MSAA 3 ms more
+- **Pixel 7a** (60 Hz): the pass 13 to 14 ms, presented every 16.6 ms
+- **Galaxy A33 5G** (90 Hz): the pass 19 ms, about 39 fps; the weakest tried
+
+The 3D board's extra memory is GPU memory: 180 to 230 MB against about 36 MB in 2D.
 
 The app draws a frame only when something changes (a touch, a moving piece, a clock's
 change). Otherwise it draws nothing and waits for input, waking about once a second on
