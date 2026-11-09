@@ -77,6 +77,8 @@ struct Bake {
     marble_vein:   float4,
     marble_form:   float4,
     seam:          float4,  // looks::Theme.seam
+    carve:         float4, // looks::Carving: depth, repeats per side, moss; w 1 carved
+    moss:          float4,  // looks::MOSS
 }
 struct Shrink { to: float4 }
 struct Show { from: float4, to: float4, screen: float4 }
@@ -102,6 +104,8 @@ struct Gpu {
     finish:         looks::Finish,  // and its finish
     marble:         i64,            // the stone frame's marble (looks::MARBLE..), 0 slate
     stone:          looks::Marble,  // and its look
+    spring:         i64,            // spring's look (looks::SPRING_LOOK..), 1 the carved
+    carving:        looks::Carving, // and its carving
     n:              i64,            // squares per side the plan is baked for
     look:           i64,            // looks::AUTUMN.., and the photograph's kind
     photo_kind:     i64,
@@ -263,7 +267,9 @@ fn bake(g: Gpu&, albedo: gfx::Texture, normal: gfx::Texture, w: i64, h: i64, mod
                                            float4 { fi.varnish, fi.sanding, fi.grain, fi.rings },
                                            float4 { fi.warmth, fi.pickle, fi.caulk, 0.0 },
                                            float4 { m.veins, m.wave, m.polish, m.tint },
-                                           m.base, m.vein, m.form, t.seam });
+                                           m.base, m.vein, m.form, t.seam,
+                                           float4 { g.carving.depth, g.carving.scale, g.carving.moss, t.build.w },
+                                           looks::MOSS });
     gfx::draw(3);
     gfx::end_pass();
     gfx::generate_mips(albedo);
@@ -274,7 +280,7 @@ fn bake(g: Gpu&, albedo: gfx::Texture, normal: gfx::Texture, w: i64, h: i64, mod
 // theme change, a new board size, and when the wood's model, its finish or the marble
 // switches.
 fn bake_surfaces(g: Gpu&, plan: bool = true, frame: bool = true) {
-    let t = looks::get(g.look);
+    let t = look(g, g.look);
     let span = 2.0 * mesh::INNER;
     if plan { bake(g, g.plan_albedo, g.plan_normal, PLAN_SIZE, PLAN_SIZE, 0.0, float2 { span, span }, t); }
     if frame { bake(g, g.frame_albedo, g.frame_normal, FRAME_MAP, FRAME_MAP, 1.0, float2 { 10.4, 10.4 }, t); }
@@ -316,6 +322,8 @@ fn setup(g: Gpu&, samples: i32 = SAMPLES) {
     g.finish = looks::finish(WOOD_MODEL);
     g.marble = looks::MARBLE;
     g.stone = looks::marble(looks::MARBLE);
+    g.spring = looks::SPRING_LOOK;
+    g.carving = looks::ELVEN;
     g.n = 8;
     g.look = -1;
     g.photo_kind = -1;
@@ -392,7 +400,7 @@ fn setup(g: Gpu&, samples: i32 = SAMPLES) {
 // is done again; outside the frame loop's steady state: at setup, on a theme change, a
 // new board size.
 fn apply(g: Gpu&, which: i64, n: i64, photo: i64 = -1) {
-    let t = looks::get(which);
+    let t = look(g, which);
     let kind = if photo >= 0 { photo } else { t.photo };
     if which != g.look || n != g.n {
         g.look = which;
@@ -431,7 +439,7 @@ fn apply(g: Gpu&, which: i64, n: i64, photo: i64 = -1) {
 // keeps its place on screen while the board turns under it: its direction and the shadow
 // map's projection.
 fn light(g: Gpu&) {
-    let t = looks::get(g.look);
+    let t = look(g, g.look);
     let l = spin(normalize(float3 { t.key.x, t.key.y, t.key.z }), g.turn);
     let light_view = gfx::look_at(l * 20.0, float3_0, float3 { 0.0, 1.0, 0.0 });
     let reach: f32 = 6.6;
@@ -459,11 +467,16 @@ fn spin(p: float3, degrees: f32) -> float3 {
 
 // Whether the frame is marble: a stone frame with a marble chosen. Its rounded edge
 // then keeps the marble, not the slate's steel-blue round.
-fn marbled(g: Gpu&, t: looks::Theme&) -> bool { g.marble > 0 && t.frame_fig.w < 0.5 }
+fn marbled(g: Gpu&, t: looks::Theme&) -> bool { g.marble > 0 && t.frame_fig.w < 0.5 && t.build.w < 0.5 }
 
-// Chooses the wood's model and the marble, each with its own finish or look, before
-// apply() bakes them (-1 keeps what is chosen): the app's --wood and --marble.
-fn choose(g: Gpu&, wood: i64, marble: i64) {
+// The look `which` as g shows it: spring's chosen look with its carving.
+fn look(g: Gpu&, which: i64) -> looks::Theme { looks::variant(which, g.spring, g.carving) }
+
+// Chooses the wood's model and the marble, each with its own finish or look, and
+// spring's look, before apply() bakes them (-1 keeps what is chosen): the app's --wood,
+// --marble and --spring.
+fn choose(g: Gpu&, wood: i64, marble: i64, spring: i64 = -1) {
+    if spring >= 0 { g.spring = clamp(spring, 0, looks::SPRINGS - 1); }
     if wood >= 0 {
         g.wood = clamp(wood, 0, WOOD_MODELS - 1);
         g.finish = looks::finish(g.wood);
@@ -484,7 +497,7 @@ fn set_wood(g: Gpu&, model: i64) {
 // panel), baking again only the surfaces they show on: the wood's where the look has
 // wood, the frame map where its frame is stone.
 fn tune(g: Gpu&, wood: i64, finish: looks::Finish, marble: i64, stone: looks::Marble) {
-    let t = looks::get(g.look);
+    let t = look(g, g.look);
     let wood_changed = wood != g.wood || finish != g.finish;
     let marble_changed = marble != g.marble || stone != g.stone;
     g.wood = clamp(wood, 0, WOOD_MODELS - 1);
@@ -492,10 +505,22 @@ fn tune(g: Gpu&, wood: i64, finish: looks::Finish, marble: i64, stone: looks::Ma
     g.marble = clamp(marble, 0, looks::MARBLES - 1);
     g.stone = stone;
     let plan = wood_changed && t.light_fig.w > 0.5;
-    let frame = (wood_changed && t.frame_fig.w > 0.5) || (marble_changed && t.frame_fig.w < 0.5);
+    let frame = (wood_changed && t.frame_fig.w > 0.5) || (marble_changed && t.frame_fig.w < 0.5 && t.build.w < 0.5);
     if plan || frame { bake_surfaces(g, plan, frame); }
     g.frame.edge = linear4(t.edge);
     if marbled(g, t) { g.frame.edge.w = 0.0; }
+}
+
+// Sets spring's look and the carving (the prototype's G and tuning panel), putting the
+// look on again, its surfaces baked, when spring shows and either changed.
+fn carve(g: Gpu&, spring: i64, c: looks::Carving) {
+    let s = clamp(spring, 0, looks::SPRINGS - 1);
+    guard s != g.spring || c != g.carving else { return; }
+    g.spring = s;
+    g.carving = c;
+    guard g.look == looks::SPRING else { return; }
+    g.look = -1;
+    apply(g, looks::SPRING, g.n);
 }
 
 // Puts the pieces on the GPU: `inst` two float4s an instance (view3d::Scene.inst), the

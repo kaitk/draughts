@@ -325,8 +325,11 @@ let LIT_FRAG = """
                 // Both pieces' mappings and their derivatives, so the filter's footprint
                 // follows the piece's own axes (the sides' grain runs along z) and a pixel
                 // quad straddling a mitre doesn't see the jump between them.
-                vec2 on_x = vec2(p.x, a2.y - INNER + down);
-                vec2 on_z = vec2(p.z, a2.x - INNER + down);
+                // A carved frame (frame_build.w) takes across along the profile, so its
+                // band keeps its place over the rounded corners (BAKE_FRAG's carving).
+                bool carved = frame_build.w > 0.5;
+                vec2 on_x = vec2(p.x, carved ? v_uv.y : a2.y - INNER + down);
+                vec2 on_z = vec2(p.z, carved ? v_uv.y : a2.x - INNER + down);
                 vec2 own = along_x ? on_x : on_z;
                 fuv = vec2(own.x, own.y + band * 1.4 - 5.0);
                 gx = (along_x ? dFdx(on_x) : dFdx(on_z)) / FRAME_SPAN;
@@ -347,6 +350,13 @@ let LIT_FRAG = """
             vec3 tan = grain - n * dot(n, grain);
             tan = dot(tan, tan) > 0.01 ? normalize(tan) : normalize(cross(n, vec3(0.0, 0.0, 1.0)));
             vec3 bit = cross(n, tan);
+            // The carving's relief wants bit along the map's across as the bake has it:
+            // cross(n, tan) turns it the other way on the -z and +x pieces (raised vines
+            // shaded as if cut in, against the key light).
+            if (frame_build.w > 0.5 && frame_build.x < 0.5) {
+                bool along_x = a2.y > a2.x;
+                if ((along_x && p.z < 0.0) || (!along_x && p.x > 0.0)) bit = -bit;
+            }
             n = normalize(n * sqrt(max(1.0 - dot(t, t), 0.0)) + tan * t.x + bit * t.y);
             if (frame_build.x < 0.5) {
                 // The glued mitre: a thin dark joint on the diagonal, through the top,
@@ -619,6 +629,8 @@ let BAKE_FRAG = """
         vec4 marble_vein;
         vec4 marble_form;
         vec4 seam;       // the frame's caulked seams: x a plank's width, y half width, z dark
+        vec4 carve;      // looks::Carving: depth, repeats per side, moss; w 1 carved
+        vec4 moss;       // the moss's color (sRGB), w: how patchy
     };
     const float FIELD = 4.0;
     vec3 srgb(vec3 c) { return pow(c, vec3(2.2)); }
@@ -984,6 +996,14 @@ let BAKE_FRAG = """
             float line = 1.0 - smoothstep(0.004, 0.010, m - FIELD);
             w.albedo *= 1.0 - 0.6 * line;
             w.height -= line;
+            if (carve.w > 0.5) {
+                // The carved look's fine engraved line round the field, down the inlay's
+                // middle, a texel soft.
+                float texel = size.z / size.x;
+                float cut = 1.0 - smoothstep(0.003, 0.006 + texel, abs(m - FIELD - 0.05));
+                w.albedo *= 1.0 - 0.35 * cut;
+                w.height -= 3.0 * cut;
+            }
             return w;
         }
         // mode.z squares per side (8 or 10), each 8 / mode.z across.
@@ -1005,6 +1025,136 @@ let BAKE_FRAG = """
         return w;
     }
 
+    // The carved frame (task 041, carve.w): a band of two vines on the frame's top and
+    // one on its outer face, interlaced over and under, slender leaves in the eyes
+    // between their crossings and a pair at each crossing, a leaf knot (a boss, a ring,
+    // four leaves) on each corner's diagonal; the ground round them cut in, the motifs
+    // domed back up to the surface. A height field the bake's normal takes, the hollows
+    // a cavity for the occlusion and the moss. Every edge at least a texel soft, so the
+    // mips average it and the frame's Toksvig term widens the roughness where they do.
+    // Signed distances in world units: the stems as offset curves, the leaves vesicas.
+    // The map is the mitred frame's (LIT_FRAG): each piece its own band of the map,
+    // along it the world's x or z, across the length along the profile (v_uv.y). Two
+    // pieces meet on each corner's diagonal, the one at +along and the other at -along
+    // in its own band, so the pattern is laid out by |along| near the corners: the
+    // knot centred on the diagonal, symmetric, hides the mirror's seam. Along the corners'
+    // quarter round the vines run on an arc, at a length along of the band's middle.
+    const float PI = 3.14159265;
+    const float C_INNER = 4.1;
+    const float TOP_AT = 0.0449;     // v_uv.y less the distance out on the frame's top
+    const float TOP_MID = 0.256;     // the top band's middle across (v_uv.y)
+    const float SIDE_MID = 0.86;     // the outer face's band's
+    const float BAND = 0.14;         // a band's half width
+    const float STRAND_W = 0.017;    // a vine's half width
+    const float SWAY = 0.078;        // how far a vine sways from the band's middle
+    float vesica(vec2 p, float r, float d) {
+        p = abs(p);
+        float b = sqrt(r * r - d * d);
+        return ((p.y - b) * d > p.x * b) ? length(p - vec2(0.0, b)) : length(p - vec2(-d, 0.0)) - r;
+    }
+    // A slender leaf from its base `at` along `dir`, `len` long and 0.28 of that wide, its
+    // tip bent sideways by `bend` (a share of its length): the Art Nouveau curl.
+    float leaf(vec2 p, vec2 at, vec2 dir, float len, float bend) {
+        vec2 q = p - at;
+        q = vec2(dot(q, vec2(dir.y, -dir.x)), dot(q, dir));
+        q.x -= bend * q.y * q.y / len;
+        q.y -= 0.5 * len;
+        float b = 0.5 * len;
+        float h = 0.16 * len;
+        float s = b * b / h;
+        return vesica(q, 0.5 * (s + h), 0.5 * (s - h));
+    }
+    // A motif's dome from its signed distance: 0 outside, rounding up to 1 over `round`.
+    float dome(float d, float round) {
+        float texel = size.z / size.x;
+        float m = clamp((-d + 0.5 * texel) / (round + texel), 0.0, 1.0);
+        return m * (2.0 - m);
+    }
+    // The band at x along (signed, by its middle's length), y across from its middle, its
+    // corner's arc of radius rc: the motifs' height (0..1) and the ground's mask.
+    vec2 vines(float x, float y, float rc) {
+        float texel = size.z / size.x;
+        float ground = 1.0 - smoothstep(BAND - 0.004, BAND + 0.004 + texel, abs(y));
+        if (ground <= 0.0) return vec2(0.0);
+        float xc = C_INNER + rc * 0.25 * PI;
+        float m = max(floor((carve.y - 1.0) * 0.5 + 0.5), 1.0);
+        float k = PI * (m + 0.5) / xc;
+        // Two vines crossing at each kx = (j + 0.5) pi and at the knot: the j-th
+        // crossing's over vine alternates along each.
+        float c = cos(k * x);
+        float slope = SWAY * k * sin(k * x);
+        float norm = inversesqrt(1.0 + slope * slope);
+        float d1 = abs(y - SWAY * c) * norm - STRAND_W;
+        float d2 = abs(y + SWAY * c) * norm - STRAND_W;
+        float j = floor(k * x / PI);
+        float xj = (j + 0.5) * PI / k;
+        float near = 1.0 - smoothstep(0.02, 0.09, abs(x - xj));
+        bool first = mod(j, 2.0) < 0.5;
+        float d_over = first ? d1 : d2;
+        float d_under = first ? d2 : d1;
+        float under = dome(d_under, 0.6 * STRAND_W) * (1.0 - 0.45 * near)
+                    * mix(1.0, smoothstep(0.004, 0.011 + texel, d_over), near);
+        float h = max(dome(d_over, STRAND_W), under);
+        // Leaves: one from each vine into each eye, the two turned half round each other
+        // (the upper one from right of the middle reaching down and on, the lower from
+        // left of it reaching up and back), curling; a pair at each crossing reaching
+        // out, leaning one way at even crossings and the other at odd ones.
+        float e = floor(k * x / PI + 0.5);
+        float xe = e * PI / k;
+        float half_eye = 0.5 * PI / k;
+        float lf = 1e3;
+        for (int s = -1; s <= 1; s += 2) {
+            float side = float(s) * (mod(e, 2.0) < 0.5 ? 1.0 : -1.0);   // +1: on the eye's +y
+            float xb = xe + side * 0.42 * half_eye;
+            float yb = float(s) * SWAY * cos(k * xb);
+            vec2 dir = normalize(vec2(-side * 0.88, -side * 0.48));
+            lf = min(lf, leaf(vec2(x, y), vec2(xb, yb) - dir * 0.04, dir, 0.25, 0.25));
+        }
+        float lean = mod(j, 2.0) < 0.5 ? 1.0 : -1.0;
+        for (int s = -1; s <= 1; s += 2) {
+            vec2 dir = normalize(vec2(0.5 * lean, float(s)));
+            lf = min(lf, leaf(vec2(x, y), vec2(xj, 0.0) + dir * 0.022, dir, 0.1, -0.25 * lean * float(s)));
+        }
+        h = max(h, 0.85 * dome(lf, 0.02) * (1.0 - dome(min(d1, d2) - 0.003, 0.004)));
+        // The knot on the corner's diagonal: the vines pass under a ring, a boss over
+        // their crossing, four leaves out from the ring.
+        vec2 kp = vec2(abs(x) - xc, y);
+        float kr = length(kp);
+        if (kr < 0.25) {
+            float ring = abs(kr - 0.082) - 0.014;
+            h *= smoothstep(0.003, 0.010 + texel, ring);
+            h = max(h, dome(ring, 0.014));
+            float boss = kr - 0.04;
+            h = max(h, dome(boss, 0.035));
+            float kl = 1e3;
+            for (int i = 0; i < 4; i++) {
+                float a = radians(i < 2 ? 40.0 : 140.0) * (i % 2 == 0 ? 1.0 : -1.0);
+                vec2 dir = vec2(cos(a), sin(a));
+                kl = min(kl, leaf(kp, dir * 0.085, dir, 0.1, 0.2 * (i % 2 == 0 ? 1.0 : -1.0)));
+            }
+            h = max(h, 0.9 * dome(kl, 0.02) * smoothstep(0.0, 0.006, ring));
+        }
+        return vec2(h, ground);
+    }
+    // The carving at the frame map's q (x across from the band's start, y along): its
+    // height (world units, 0 the surface), its hollow (0..1: the cut ground the motifs
+    // leave), and how near a motif's foot (where moss gathers).
+    vec3 carving(vec2 q) {
+        float across = q.x - 0.2;
+        float along = q.y - 5.2;
+        bool top = across < 0.55;
+        float mid = top ? TOP_MID : SIDE_MID;
+        float rc = top ? TOP_MID - TOP_AT : 0.5;
+        float r = top ? max(across - TOP_AT, 0.01) : 0.5;
+        float a = abs(along);
+        float x = a;
+        if (a > C_INNER) x = C_INNER + rc * (0.5 * PI - acos(clamp((a - C_INNER) / r, 0.0, 1.0)));
+        vec2 v = vines(sign(along) * x, across - mid, rc);
+        float hollow = v.y * (1.0 - v.x);
+        float foot = v.y * (1.0 - smoothstep(0.0, 0.5, v.x)) * smoothstep(0.0, 0.15, v.x + 0.02);
+        return vec3(-carve.x * hollow, hollow, foot);
+    }
+
     // The frame map: the frame's wood or stone over a square, its grain along u.
     // The growth rings give each band of the map (each mitred piece, LIT_FRAG) its own
     // log and cut, across measured from the band's start.
@@ -1012,7 +1162,7 @@ let BAKE_FRAG = """
         vec3 f = frame_surface.xxz * vec3(0.3, 1.0, 1.0);
         vec2 q = p.yx;
         float seed = 7.0;
-        if (mode.y > 0.5 && mode.y < 2.5 && frame_fig.w > 0.5) {
+        if ((mode.y > 0.5 && mode.y < 2.5 && frame_fig.w > 0.5) || carve.w > 0.5) {
             float band = floor(q.x / 1.4);
             q.x -= band * 1.4;
             seed = 7.0 + 5.0 * band;
@@ -1032,6 +1182,19 @@ let BAKE_FRAG = """
             w.height -= 0.6 * line;
             w.cavity -= 0.3 * line;
         }
+        if (carve.w > 0.5) {
+            // The cut ground a little darker and rougher, moss settling in it in patches,
+            // most at the motifs' feet.
+            vec3 c = carving(q);
+            float patch = smoothstep(0.35, 0.75, mix(0.5, fbm(q * vec2(3.0, 1.2) + seed), moss.w));
+            float m = clamp(carve.z * (1.2 * c.y + 1.2 * c.z) * patch, 0.0, 1.0);
+            float shade = 0.85 + 0.3 * vnoise(q * 40.0);
+            w.albedo *= 1.0 - 0.25 * c.y;
+            w.albedo = mix(w.albedo, srgb(moss.rgb) * shade, m);
+            w.rough = mix(w.rough + 0.15 * c.y, 0.75, m);
+            w.height += c.x / (0.0015 * max(frame_surface.y, 1e-3));
+            w.cavity *= 1.0 - 0.25 * c.y - 0.2 * c.z;
+        }
         return w;
     }
 
@@ -1040,7 +1203,7 @@ let BAKE_FRAG = """
     void main() {
         vec2 texel = size.zw / size.xy;
         vec2 p = gl_FragCoord.xy * texel - (mode.x < 0.5 ? 0.5 * size.zw : vec2(0.0));
-        if (mode.x > 0.5 && mode.w > 0.5 && frame_fig.w < 0.5) {
+        if (mode.x > 0.5 && mode.w > 0.5 && frame_fig.w < 0.5 && carve.w < 0.5) {
             // A marble frame, flat: once a texel, no relief to take the normal from.
             Wood m = marble_at(p.yx);
             out_albedo = vec4(m.albedo, m.rough);

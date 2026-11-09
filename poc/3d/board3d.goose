@@ -5,7 +5,8 @@
 // freely round the board; R resets the view; T, or a long press for touch, switches the
 // theme; K switches the king between a stack of two discs and one crowned disc; W cycles
 // the wood's model and M the winter frame's marble (task 039); S cycles summer's variants;
-// P shows the tuning panel (panel.goose), V prints its values. Nothing of the app's shell.
+// G spring's look, the birch or the elven carved stone (task 041); P shows the tuning
+// panel (panel.goose), V prints its values. Nothing of the app's shell.
 //
 //   cd poc/3d
 //   ../../build/goose-v2026.4-macos-arm64/goose build -o ../../build/board3d board3d.goose
@@ -15,6 +16,7 @@
 //   ../../build/board3d --wood 0                  # the wood's model: 0 to 3, 2 the default
 //   ../../build/board3d --theme winter --marble 1 # the frame's marble: 0 the slate, 1 to 4
 //   ../../build/board3d --summer 2                # summer's variant: 0 to 3 (looks::SUMMERS)
+//   ../../build/board3d --theme spring --spring 1 # spring's look: 0 the birch, 1 carved stone
 //   ../../build/board3d --panel                   # the tuning panel shown; --plain no finish
 //   ../../build/board3d --bench 200
 //
@@ -154,7 +156,7 @@ fn apply(g: render3d::Gpu&, which: i64) {
     }
     render3d::apply(g, which, 8);
     print("theme ", which, " applied in ", ((clock() - c) * 1000.0) as i64, " ms (wood ", g.wood,
-          ", marble ", g.marble, ")");
+          ", marble ", g.marble, ", spring ", g.spring, ")");
 }
 
 // Keeps the camera in its mode's range.
@@ -252,7 +254,8 @@ fn main() {
     // --wood N, --marble N: the wood's model with its finish, and the winter frame's
     // marble (0 the slate); --plain takes the finish off (looks::PLAIN), to compare.
     wood_chosen = clamp(flag_f32(argv, "--wood", render3d::WOOD_MODEL) as i64, 0, render3d::WOOD_MODELS - 1);
-    render3d::choose(g, wood_chosen, flag_f32(argv, "--marble", looks::MARBLE) as i64);
+    render3d::choose(g, wood_chosen, flag_f32(argv, "--marble", looks::MARBLE) as i64,
+                     flag_f32(argv, "--spring", looks::SPRING_LOOK) as i64);
     apply(g, look_of(which));
     for a in argv {
         if a == "--plain" {
@@ -271,6 +274,13 @@ fn main() {
         gfx::save_png(g.plan_albedo, str(argv[maps], "-plan.png"));
     }
     var cam = Camera { flag_f32(argv, "--yaw", 0.0), flag_f32(argv, "--pitch", PITCH), false };
+    // --turn D (with --shot): the board turned D degrees under the light, as the game's
+    // hot-seat turn does (render3d::turn_light), the camera with it.
+    let turn = flag_f32(argv, "--turn", 0.0);
+    if turn != 0.0 {
+        render3d::turn_light(g, turn);
+        cam.yaw += turn;
+    }
     if shot > 0 && frames < 0 {
         draw(g, cam);
         let ok = gfx::screenshot(argv[shot]);
@@ -405,6 +415,18 @@ fn main() {
             panel::sync(tuning, g);
             dirty = true;
         }
+        if gfx::key_pressed("G") {
+            // Spring's look (task 041): the birch or the carved stone, on spring.
+            if which != looks::SPRING {
+                which = looks::SPRING;
+                apply(g, which);
+            }
+            let c = clock();
+            render3d::carve(g, (g.spring + 1) % looks::SPRINGS, g.carving);
+            print("spring ", g.spring, " baked in ", (clock() - c) * 1000.0, " ms");
+            panel::sync(tuning, g);
+            dirty = true;
+        }
         if gfx::key_pressed("M") {
             let next = (g.marble + 1) % looks::MARBLES;
             let c = clock();
@@ -497,6 +519,22 @@ fn bench_frames(g: render3d::Gpu&, cam_in: Camera, n: i64, headless: bool) {
         }
         summer = kept;
         apply(g, look_of(looks::SUMMER));
+    }
+    // On spring, each of its looks' bakes (the plan and the frame map, waited for; task
+    // 041), twice, the second timed; then the chosen one again.
+    if g.look == looks::SPRING {
+        let look = g.spring;
+        for s in looks::SPRINGS {
+            var ms: f64 = 0.0;
+            for k in 2 {
+                render3d::carve(g, (s + 1) % looks::SPRINGS, g.carving);
+                let c = clock();
+                render3d::carve(g, s, g.carving);
+                ms = (clock() - c) * 1000.0;
+            }
+            print("bench: spring ", s, " baked in ", ms, " ms");
+        }
+        render3d::carve(g, look, g.carving);
     }
     if !headless {
         // Let the window reach its size and the swapchain settle.

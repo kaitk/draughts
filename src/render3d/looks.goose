@@ -65,7 +65,8 @@ struct Theme {
     tint:        float4,    // the backdrop's lift color, w: its vignette
     // How the frame is made: x 1 one solid block with the field carved out, the figure
     // running one way over the whole board; 0 four pieces mitred at 45°, the grain along
-    // each side. y: the mitre joint's strength; z: 1 for stone (shaders::LIT_FRAG).
+    // each side. y: the mitre joint's strength; z: 1 for stone (shaders::LIT_FRAG); w: 1
+    // the frame carved (Carving, task 041), its map's across along the profile.
     build: float4,
     // The frame's caulked seams, as a teak deck's (shaders::BAKE_FRAG's frame_map): x a
     // plank's width across the frame's top (world units; 0 none), y a seam's half width,
@@ -422,3 +423,84 @@ fn marble(which: i64) -> Marble {
     return Marble { base: float4_0, vein: float4_0, form: float4_0, veins: 1.0, wave: 1.0, polish: 0.5,
                     tint: 0.0 };
 }
+
+// Spring's looks (task 041, the app's and the prototype's --spring): 0 the birch, 1 the
+// elven carved stone.
+let SPRINGS = 2;
+let SPRING_LOOK = 0;
+
+// Pale stone carved with flowing vines and slender leaves, as in overgrown elven ruins
+// (the user's idea, 2026-11-09; our own motifs): an ivory-white frame of soft polish
+// with a carved band of two interlaced vines on its top and outer face, a leaf knot at
+// each corner, faint moss in the hollows; ivory stone light squares and polished jade
+// dark ones with a cloudy figure, a fine engraved line round the field; ivory and deep
+// jade pieces. The carving's own values are Carving's; spring's light.
+fn elven() -> Theme {
+    return Theme {
+        photo:         2,
+        light_sq:      float4 { 0.9, 0.87, 0.79, 0.3 },
+        light_fig:     float4 { 0.6, 0.1, 0.05, 0.0 },
+        dark_sq:       float4 { 0.42, 0.52, 0.44, 0.2 },
+        dark_fig:      float4 { 0.6, 0.22, 0.06, 0.0 },
+        inlay:         float4 { 0.3, 0.38, 0.32, 0.25 },
+        inlay_fig:     float4 { 0.6, 0.15, 0.06, 0.0 },
+        frame:         float4 { 0.88, 0.85, 0.77, 0.32 },
+        frame_fig:     float4 { 0.6, 0.08, 0.06, 0.0 },
+        surface:       float4 { 0.03, 0.0, 0.35, 0.5 },
+        frame_surface: float4 { 0.0, 1.0, 0.0, 0.1 },
+        stone:         float4 { 0.04, 0.1, 0.1, 0.0 },
+        light_ring:    float4_0,
+        dark_ring:     float4_0,
+        frame_ring:    float4_0,
+        light_piece:   float4 { 0.93, 0.9, 0.82, 0.4 },
+        dark_piece:    float4 { 0.2, 0.3, 0.25, 0.25 },
+        piece_fig:     float4 { 0.04, 0.16, 0.0, 0.55 },
+        crown:         float4 { 0.2, 0.3, 0.25, 0.0 },
+        edge:          float4 { 0.0, 0.0, 0.0, 0.0 },
+        line:          float4 { 0.0, 0.0, 0.0, 0.0 },
+        key:           float4 { -0.5, 0.85, -0.45, 3.3 },
+        key_color:     float4 { 1.0, 0.97, 0.92, 0.0 },
+        bounce:        float4 { 0.8, 0.8, 0.72, 0.8 },
+        ambient:       float4 { 1.4, 1.3, 0.55, 0.0 },
+        glow:          float4 { 0.56, 0.83, 1.0, 0.55 },
+        grade:         float4 { 2.3, 1.0, 1.2, 0.85 },
+        tint:          float4 { 0.7, 0.74, 0.62, 0.4 },
+        build:         float4 { 0.0, 0.0, 0.0, 1.0 },
+        seam:          float4_0,
+    };
+}
+
+// The carving and the stone's colors (the prototype's tuning panel, P): what the elven
+// look bakes into its frame and how it tints its surfaces.
+struct Carving {
+    depth:  f32,    // how deep the ground is cut round the vines, world units (a square is 1)
+    scale:  f32,    // the vines' repeats per side (the eyes between crossings), made odd
+    moss:   f32,    // 0..1: how much moss settles in the hollows
+    warmth: f32,    // -1..1: the ivory stone toward grey-white (-) or warm bone (+)
+    jade:   f32,    // 0..1: the jade pale celadon (0) to deep (1), 0.5 as the look has it
+}
+
+let ELVEN = Carving { depth: 0.018, scale: 7.0, moss: 0.6, warmth: 0.0, jade: 0.5 };
+
+// The moss in the carving's hollows (sRGB), w: how patchy.
+let MOSS = float4 { 0.34, 0.42, 0.21, 0.6 };
+
+// The theme for `which` with spring's look `spring` (SPRING_LOOK..) and, for the carved
+// one, its carving's tints: what the renderer bakes and lights.
+fn variant(which: i64, spring: i64, c: Carving) -> Theme {
+    guard which == SPRING && spring == 1 else { return get(which); }
+    var t = elven();
+    let warm = float4 { 1.0 + 0.05 * c.warmth, 1.0 + 0.005 * c.warmth, 1.0 - 0.07 * c.warmth, 1.0 };
+    t.light_sq *= warm;
+    t.frame *= warm;
+    t.light_piece *= warm;
+    let e: f32 = 0.5 + c.jade;
+    t.dark_sq = deepen(t.dark_sq, e);
+    t.inlay = deepen(t.inlay, e);
+    t.dark_piece = deepen(t.dark_piece, e);
+    t.crown = deepen(t.crown, e);
+    return t;
+}
+
+// A color to the power e, its w kept: deeper is also more saturated, as Beer's law has it.
+fn deepen(c: float4, e: f32) -> float4 { float4 { pow(c.x, e), pow(c.y, e), pow(c.z, e), c.w } }

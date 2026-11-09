@@ -1,6 +1,6 @@
-// The prototype's tuning panel (P): gfx ui sliders over the board for the wood's finish
-// and the winter frame's marble, the parameters in the look data (looks::Finish,
-// looks::Marble) the app reads too. A tool on the Mac, not the app's UI: it allocates
+// The prototype's tuning panel (P): gfx ui sliders over the board for the wood's finish,
+// the winter frame's marble and spring's carving, the parameters in the look data
+// (looks::Finish, looks::Marble, looks::Carving) the app reads too. A tool on the Mac, not the app's UI: it allocates
 // while shown (ui's input and drawing), nothing while hidden. The values are baked only
 // when they settle: on the slider's release, or after it has been held still a moment.
 // "Print" (or V) writes them to stdout as Goose literals, to paste into looks.goose as
@@ -14,7 +14,7 @@ import ui;
 let X:      f32 = 12.0;
 let Y:      f32 = 12.0;
 let WIDTH:  f32 = 300.0;
-let HEIGHT: f32 = 504.0;
+let HEIGHT: f32 = 664.0;
 let ROW:    f32 = 22.0;
 let SETTLE: f64 = 0.35;  // seconds a held slider waits before baking
 
@@ -28,6 +28,9 @@ struct Panel {
     stone:      looks::Marble,
     seen_f:     looks::Finish,  // last frame's, to tell when they last changed
     seen_m:     looks::Marble,
+    spring:     i64,            // spring's look and its carving (task 041)
+    carving:    looks::Carving,
+    seen_c:     looks::Carving,
     changed_at: f64,
     // Where the varnish slider and the Print button are, in pixels (for --frames).
     varnish_at: ui::Rect,
@@ -39,6 +42,7 @@ struct Panel {
 fn new(g: render3d::Gpu&) -> Panel {
     var p = Panel { shown: false, ctx: default<ui::Context>(), look: g.look, wood: g.wood, finish: g.finish,
                     marble: g.marble, stone: g.stone, seen_f: g.finish, seen_m: g.stone,
+                    spring: g.spring, carving: g.carving, seen_c: g.carving,
                     changed_at: 0.0, varnish_at: ui::rect(0, 0, 0, 0), print_at: ui::rect(0, 0, 0, 0) };
     return p;
 }
@@ -59,6 +63,8 @@ fn sync(p: Panel&, g: render3d::Gpu&) {
     p.finish = g.finish;
     p.marble = g.marble;
     p.stone = g.stone;
+    p.spring = g.spring;
+    p.carving = g.carving;
 }
 
 // A label with its value, and a slider; returns the slider's bounds.
@@ -111,21 +117,30 @@ fn frame(p: Panel&, now: f64, input: bool) -> bool {
         slider(c, "waviness", p.stone.wave, 0.0, 2.5);
         slider(c, "polish", p.stone.polish, 0.0, 1.0);
         slider(c, "tint", p.stone.tint, 0.0, 1.0);
+        heading(c, "Carving (spring 1)");
+        variant(c, "spring", p.spring, looks::SPRINGS - 1);
+        slider(c, "depth", p.carving.depth, 0.0, 0.04);
+        slider(c, "scale", p.carving.scale, 3.0, 15.0);
+        slider(c, "moss", p.carving.moss, 0.0, 1.0);
+        slider(c, "warmth", p.carving.warmth, -1.0, 1.0);
+        slider(c, "jade", p.carving.jade, 0.0, 1.0);
         ui::layout_row_dynamic(c, ROW + 4.0, 3);
         p.print_at = scaled(ui::widget_bounds(c), s);
         if ui::button_label(c, "Print") { printed = true; }
         if ui::button_label(c, "Defaults") {
             p.finish = looks::finish_for(p.look, p.wood);
             p.stone = looks::marble(p.marble);
+            p.carving = looks::ELVEN;
         }
         if ui::button_label(c, "Plain") { p.finish = looks::PLAIN; }
     }
     ui::end(c);
     if printed || gfx::key_pressed("V") { print_values(p); }
     var changed = false;
-    if p.finish != p.seen_f || p.stone != p.seen_m {
+    if p.finish != p.seen_f || p.stone != p.seen_m || p.carving != p.seen_c {
         p.seen_f = p.finish;
         p.seen_m = p.stone;
+        p.seen_c = p.carving;
         p.changed_at = now;
         changed = true;
     }
@@ -140,12 +155,15 @@ fn wants_mouse(p: Panel&) -> bool { p.shown && ui::wants_mouse(p.ctx) }
 // Bakes the panel's values into g once they settle: the mouse released, or a slider
 // held still SETTLE seconds. Returns whether it baked.
 fn settle(p: Panel&, g: render3d::Gpu&, now: f64) -> bool {
-    let same = p.wood == g.wood && p.finish == g.finish && p.marble == g.marble && p.stone == g.stone;
+    let same = p.wood == g.wood && p.finish == g.finish && p.marble == g.marble && p.stone == g.stone
+               && p.spring == g.spring && p.carving == g.carving;
     guard !same else { return false; }
     guard !gfx::mouse_down(gfx::MOUSE_LEFT) || now - p.changed_at > SETTLE else { return false; }
     let c = clock();
     render3d::tune(g, p.wood, p.finish, p.marble, p.stone);
-    print("tuned: wood ", g.wood, ", marble ", g.marble, ", baked in ", (clock() - c) * 1000.0, " ms");
+    render3d::carve(g, p.spring, p.carving);
+    print("tuned: wood ", g.wood, ", marble ", g.marble, ", spring ", g.spring, ", baked in ",
+          (clock() - c) * 1000.0, " ms");
     return true;
 }
 
@@ -176,7 +194,7 @@ fn num4(out: u8[>..]&, v: float4) {
 }
 
 // The values as Goose literals, for looks::finish (or a summer variant's in
-// looks::finish_for) and looks::marble.
+// looks::finish_for), looks::marble and looks::ELVEN.
 fn print_values(p: Panel&) {
     let f = p.finish;
     var a: u8[>..] = [];
@@ -214,4 +232,18 @@ fn print_values(p: Panel&) {
     num(b, m.tint);
     b.append(" }");
     print(b);
+    let k = p.carving;
+    var e: u8[>..] = [];
+    e.append("// spring carving\nlooks::Carving { depth: ");
+    num(e, k.depth);
+    e.append(", scale: ");
+    num(e, k.scale);
+    e.append(", moss: ");
+    num(e, k.moss);
+    e.append(", warmth: ");
+    num(e, k.warmth);
+    e.append(", jade: ");
+    num(e, k.jade);
+    e.append(" }");
+    print(e);
 }
