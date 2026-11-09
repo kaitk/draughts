@@ -173,7 +173,7 @@ but its olive sits nearer spring's greens than the sunset does.
 
 - **The scene** is a calm Estonian landscape for the season: autumn forest, winter
   spruces, spring birches, summer coast. Each is a photograph-like picture
-  (`design/backgrounds/`, placeholders until task 014), shown as it is, cover-cropped to
+  (`design/backgrounds/`, placeholders until they are upscaled with real detail), shown as it is, cover-cropped to
   the screen by its long side, sharp behind the title menu, the puzzle picker, settings, and the 3D
   board.
 - **Behind the 2D game the scene is blurred** (a 14 px blur at 1280 px wide, dimmed to
@@ -184,10 +184,10 @@ but its olive sits nearer spring's greens than the sunset does.
   screen's long side, that is the same blur at every screen size and orientation, so a
   new screen size needs no new blur. The board pass samples it, a 1 MB texture. Tried and
   set aside on 2026-11-07: the sharp photograph (busy behind the board), a plain painted tabletop,
-  and generated tabletop pictures with a crafted board (task 016).
+  and generated tabletop pictures with a crafted board.
 - **The 3D board floats in front of the scene**, with a soft shadow under it: no room or
   table to model. A painted backdrop with a real table comes later only if this falls
-  short (task 015).
+  short.
 - **Stored** twice per season, 2048 × 2048, built into the program (C23 `#embed` in its
   C): nothing to package in the APK's assets, and the same path on the Mac and Android.
   As **ASTC in 6 × 6 blocks** (1.87 MB each, from the lossless masters with
@@ -260,7 +260,7 @@ but its olive sits nearer spring's greens than the sunset does.
   drawn under them in the same texture. Where the photograph is decoded (the Mac) the
   fade saves its 16 MB texture and copies; where it is ASTC (Android) they sit in SDL's
   shared block, so the fade saves about 3 MB inside that block and the photograph's
-  upload and blur on a theme change (task 044 has the numbers).
+  upload and blur on a theme change (on the Mac, home's graphics 52 → 34 MB).
 - **Glass is a pre-blurred copy, not a live blur.** Snowtime measured live backdrop blur
   costing more than its weather animation, and switched to a copy of the background
   blurred once (its `docs/architecture/scene.md`). Here the scene is blurred on the GPU
@@ -484,7 +484,7 @@ the prototype tried, kept for 3D:
   on top, as large as the rest leaves, and the two groups stand side by side under it.
   **Game**: the draughts a new game starts on (international, Brazilian, Russian; the
   setup can still change it) and move hints; the tutorial's row (one tile, learn the
-  moves) comes with the tutorial (task 026), taken out until then so the tablet's
+  moves) comes with the tutorial, taken out until then so the tablet's
   landscape shows both groups (the user, 2026-11-09).
   **Look**: the theme (the row's name, "Theme") as
   thumbnails of the four photographs (62 × 40 px), or of their plain fades when the
@@ -713,7 +713,7 @@ is true. The frame after it ends is drawn at rest, and then nothing more. A land
 frame between home and the game declares about 130 of the 512 quads (home 77, the game
 53), between home and settings about 350.
 
-With the 3D board (task 015) the same three transitions move one image instead of a
+With the 3D board the same three transitions move one image instead of a
 board drawn each frame. The 3D board is drawn once, through the view of the end that
 shows it larger (the game's against home's; the board of the screen `shell.shows`
 names, as above), into its kept image with nothing but the board and its shadow on clear;
@@ -769,7 +769,7 @@ board's does and the backdrop over it as opaque as the blur.
   piece covers the shadow above it. The crown is a signed-distance polygon in that shader. The panel's line icons are
   to be drawn the same way, as distances to their strokes' segments and arcs, rather than
   baked into the font atlas: crisp at any size, no texture.
-- **3D board** (task 015, `poc/3d/`): the board in perspective, 52.5° down with a 31°
+- **3D board** (prototyped in `poc/3d/`): the board in perspective, 52.5° down with a 31°
   field of view, its image fitted into a rectangle of the screen by a scale and a shift
   in clip space, so the perspective is the native one at every size. Its bounds are
   about 1.46 times as wide as tall, the far edge 69% of the near one. Natively
@@ -1025,7 +1025,7 @@ the app calls `mallopt(M_PURGE_ALL, 0)` once, in the first idle frame after the 
 worker's tables (about 5 MB, [ai](ai.md)) take memory only once it first plays; halving
 them would save about 3 MB, not worth checking what it costs in strength.
 
-What to watch when adding large resources (the 3D board, task 015: an MSAA target, a
+What to watch when adding large resources (the 3D board: an MSAA target, a
 depth target, a shadow map, albedo, normal, and roughness atlases with mips):
 
 - Each one over 2 MiB costs one `vkAllocateMemory` when made and one `vkFreeMemory` after
@@ -1037,7 +1037,7 @@ depth target, a shadow map, albedo, normal, and roughness atlases with mips):
   before gfx stopped cycling it. Clear without cycling where the GPU can wait instead.
   A target cleared by its first pass right after it is made is cycled too: the 3D
   board's four baked surfaces each kept a second copy, 85 MB on the Pixel 7a, until the
-  bake stopped clearing (it writes every texel anyway; task 015, 2026-11-09).
+  bake stopped clearing (it writes every texel anyway; 2026-11-09).
 - A pipeline is made once per set of target formats it draws into, each a full compile
   of its shaders: on the Pixel 7a the 3D bake's takes about 0.4 s, so the plan's normal
   map stays RGBA8 like the frame's (RG8 would save 11 MB and cost a second compile).

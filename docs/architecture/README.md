@@ -20,7 +20,7 @@ out, and the rules every part of it keeps. The rest is by area:
 | UI | Our own immediate-mode layer in Goose ([rendering.md](rendering.md)); Nuklear (`ui`) for developer tools only |
 | Text | TrueType fonts baked by `ui`'s font atlas |
 
-**Decided 2026-11-07 (task 001): Goose.** The proof of concept runs on the Galaxy Tab
+**Decided 2026-11-07: Goose.** The proof of concept runs on the Galaxy Tab
 A11+ through Vulkan with no change to the Goose compiler or runtime. It needed one
 goose_gfx patch, one SDL patch (a swapchain leak on resume), one C shim, and a shared SDL
 build, all listed in [goose-findings](../goose-findings.md).
@@ -67,16 +67,16 @@ the rest. Below, `app/` means `src/app/`, and so on.
 packages hand it flat, fixed-size data and take back the pointer and the time; nothing
 outside `app/` (and `android/`, the build scripts) knows what draws or what it runs on.
 One package is drawing code outside `app/`: `render3d/`, the 3D board's renderer, which
-the app and the 3D prototype (`poc/3d/`) share (task 015, 2026-11-09). It imports gfx,
+the app and the 3D prototype (`poc/3d/`) share (2026-11-09). It imports gfx,
 and only those two programs import it; no package of the game does.
 The targets this keeps open, each replacing or adding to `app/` alone:
 
-- **The 3D board** (task 015): drawn by `render3d/` from `app/`; what the board needs
+- **The 3D board** ([rendering](rendering.md#board-and-pieces)): drawn by `render3d/` from `app/`; what the board needs
   of it, the camera and its fit into the layout, a tap turned into a square by a ray
   through the perspective, and each frame's instances, stays plain math in `board/`
   (`view3d`), tested headless.
 - **Other platforms on SDL:** iOS (UIKit, SDL_GPU on Metal; `ios/` and
-  `scripts/ios.py`, task 043), and desktop Windows and Linux (SDL_GPU on D3D12 or
+  `scripts/ios.py`, [development](../development.md#run-on-ios)), and desktop Windows and Linux (SDL_GPU on D3D12 or
   Vulkan): a build script and shims beside the Android ones (storage, locales, the
   launch cover, closing). On iOS the program's C calls SDL directly as on Android
   (`src/app/platform.h`), `draughts_platform` tells the app where it runs, home has no
@@ -204,7 +204,7 @@ what a child makes their own; the rest belongs to the device.
 | The computer's skill per level and the games against it | yes | |
 | Puzzle stars | yes | |
 | The game in progress | yes | |
-| The first start done (task 026's, not built yet: only the flag) | yes | |
+| The first start done (not built yet: only the flag) | yes | |
 | Language, and which player is playing | | yes |
 
 The game in progress is the player's so continue means "my game": switching to a

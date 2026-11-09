@@ -124,7 +124,7 @@ without changing them. `--board 3d` plays a run on the 3D board at once, as sett
 Board row's 3D does, and `--board flat` on the flat one; `--background plain` shows the
 plain fade in place of the photograph, and `--background photo` the photograph. `--wood N`
 (0 to 3) and `--marble N` (0 the slate, 1 to 4) pick the 3D board's wood and winter
-frame's marble for the run (task 039), and `--summer N` (0 to 5) and `--spring N` (0 the
+frame's marble for the run, and `--summer N` (0 to 5) and `--spring N` (0 the
 birch, 1 the carved stone, 2 the carved oak) summer's and spring's 3D looks.
 `--reset-skill`, which takes no value, puts the playing player back to easy with the
 computer's skill at every level at its start, and writes that to their file; stars and
@@ -139,7 +139,8 @@ the app again. The flags reach the tablet through the intent:
 running only brings it back, with the flags it started with.
 On Android a clock counts only while the app has focus; on the Mac, where a window
 started from a terminal never has it, the clocks run while the window shows. `poc/` keeps
-task 001's and task 005's small programs.
+the first proofs of concept (Goose on Android, an idle frame that draws nothing) and the
+3D board's prototype.
 
 ## Test the rules
 
@@ -266,9 +267,9 @@ USB: the Galaxy Tab A11+ (1920 × 1200, three-button navigation) and a Pixel 7a 
 2400, Android 17, gesture navigation, a punch-hole camera), one attached at a time. A
 Galaxy A33 5G (SM-A336B, 1080 × 2400 at 90 Hz, Android 16, Exynos 1280 with a Mali-G68
 MP4, Vulkan 1.3, 5.5 GB) is the weakest phone tried (2026-11-09): 2D holds 90 Hz, the 3D
-board ran at about 28 fps while it moved, about 39 since task 042 (task 015). On iOS an
-iPhone 13 mini (A15 Bionic, iOS 26) runs the development build (task 043, "Run on iOS"
-below). The README's "Tested on" lists them all.
+board ran at about 28 fps while it moved, about 39 since its frame cost's first cuts
+([numbers](architecture/rendering.md#the-3d-board-on-devices)). On iOS an iPhone 13 mini
+(A15 Bionic, iOS 26) runs the development build ("Run on iOS" below). The README's "Tested on" lists them all.
 Larger tablets (2560 × 1600, 2880 × 1920, 4:3, a foldable's inner screen) are checked
 only on the Mac (2026-11-08), as there is no such device.
 
