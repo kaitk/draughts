@@ -498,6 +498,21 @@ let FRAG = """
             result = acc;
             return;
         }
+        if (kind == 10) {
+            // Something getting ready (gui::spinner): a disc of black at 30%, a 4 dp ring of
+            // white at 15% inside it, and a third of the ring in the glow color, brightest
+            // at its head, turning clockwise from the top by look.z.
+            float rad = h.x;
+            vec2 q = p - c;
+            over(vec3(0.0), 0.3 * cover(length(q) - rad));
+            float a = cover(abs(length(q) - (rad - 10.0 * u)) - 2.0 * u);
+            over(vec3(1.0), 0.15 * a);
+            float t = fract(atan(q.x, -q.y) / 6.2831853 - v_look.z);
+            float arc = smoothstep(0.0, 0.33, t) * (1.0 - smoothstep(0.32, 0.34, t));
+            over(glow.rgb, a * arc);
+            result = acc;
+            return;
+        }
         if (kind == 9) {
             // A floating button (the 3D board's camera, prototypes/game3d.html's `.ctl`): a
             // disc of black at 30% with an inset 1 px hairline of white at 22% and a soft

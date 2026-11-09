@@ -19,43 +19,48 @@
 // docs/architecture/rendering.md, "Transitions"). The image holds the board alone on
 // clear: behind it the game and a puzzle show the renderer's graded backdrop, home and
 // settings the app's sharp photograph, and a transition between them crossfades the two.
-// The renderer is made ready while settings show with the board flat (prepare, a step a
-// frame, given back on leaving them flat: drop), else the first time the 3D board
-// shows; its surfaces baked again on
-// a theme or a board size change, never while drawing.
+// The renderer is made ready only when the 3D board is needed, a step a frame (prepare:
+// its setup, the theme's bake in bands and its photograph, its pipelines), so the screen
+// keeps drawing and answering; meanwhile the shell shows a spinner in the board's place
+// and leaves taps on it alone (shell's ready3d), and once ready the board fades in. A new
+// theme or board size takes the theme's steps again, the old image shown until they are
+// done. The board back to flat gives all of it back (drop).
 namespace draw3d;
 import std;
 import vec;
 import gfx;
 
 struct Drawer {
-    gpu:      render3d::Gpu                         = default<render3d::Gpu>(),
-    ready:    bool                                  = false,
-    kind:     i64                                   = -1, // the app's theme the board was set up with
-    which:    i64                                   = -1, // the board drawn (the shell's which())
-    n:        i64                                   = 0,
-    wood:     i64                                   = -1, // --wood, --marble: -1 the renderer's own
-    marble:   i64                                   = -1,
-    summer:   i64                                   = 0,  // --summer: summer's variant (looks::SUMMERS)
-    spring:   i64                                   = -1, // --spring: spring's look, -1 the renderer's own
-    size:     int2                                  = int2 { 0, 0 },
-    scene:    view3d::Scene                         = view3d::Scene {}, // this frame's
-    drawn:    view3d::Scene                         = view3d::Scene {}, // the last one drawn
-    upload:   float4[..2 * render3d::MAX_INSTANCES] = [],
-    alphas:   f32[..render3d::MAX_INSTANCES]        = [],    // the fading instances' opacity, last in upload
-    redraw:   bool                                  = false, // this frame drew the 3D board,
-    shadow:   bool                                  = false, // and the shadow map first
-    frames:   i64                                   = 0,     // frames that showed the 3D board,
-    draws:    i64                                   = 0,     // those that drew it,
-    shadows:  i64                                   = 0,     // and the shadow map;
-    pulses:   i64                                   = 0,     // those that changed only the pulsing marks
-    setup_ms: f64                                   = 0.0,   // the renderer's setup,
-    apply_ms: f64                                   = 0.0,   // and the theme's bake and photograph
-    first_ms: f64                                   = 0.0,   // the first frame drawn, waited for
-    timed:    bool                                  = false, // --bench: the first frame waited for and timed
-    warm:     int2                                  = int2 { 0, 0 }, // the size prepare() drew at
-    prep_ms:  f64[3]                                = [0.0; 3],      // prepare()'s steps: setup, theme, draw
-    bench:    Bench                                 = Bench {},
+    gpu:       render3d::Gpu                         = default<render3d::Gpu>(),
+    ready:     bool                                  = false,
+    kind:      i64                                   = -1, // the app's theme the board was set up with
+    which:     i64                                   = -1, // the board drawn (the shell's which())
+    n:         i64                                   = 0,
+    wood:      i64                                   = -1, // --wood, --marble: -1 the renderer's own
+    marble:    i64                                   = -1,
+    summer:    i64                                   = 0,  // --summer: summer's variant (looks::SUMMERS)
+    spring:    i64                                   = -1, // --spring: spring's look, -1 the renderer's own
+    size:      int2                                  = int2 { 0, 0 },
+    scene:     view3d::Scene                         = view3d::Scene {}, // this frame's
+    drawn:     view3d::Scene                         = view3d::Scene {}, // the last one drawn
+    upload:    float4[..2 * render3d::MAX_INSTANCES] = [],
+    alphas:    f32[..render3d::MAX_INSTANCES]        = [],    // the fading instances' opacity, last in upload
+    redraw:    bool                                  = false, // this frame drew the 3D board,
+    shadow:    bool                                  = false, // and the shadow map first
+    frames:    i64                                   = 0,     // frames that showed the 3D board,
+    draws:     i64                                   = 0,     // those that drew it,
+    shadows:   i64                                   = 0,     // and the shadow map;
+    pulses:    i64                                   = 0,     // those that changed only the pulsing marks
+    setup_ms:  f64                                   = 0.0,   // the renderer's setup,
+    apply_ms:  f64                                   = 0.0,   // and the theme's bake and photograph
+    first_ms:  f64                                   = 0.0,   // the first frame drawn, waited for
+    timed:     bool                                  = false, // --bench: the first frame waited for and timed
+    themed:    i64                                   = 0,     // prepare()'s next theme step (THEME_STEPS: done)
+    warmed:    i64                                   = 0,     // and its next pipeline (WARM_STEPS: done)
+    prep_ms:   f64[..48]                             = [],    // each prepare() step's time
+    fresh:     bool                                  = false, // just made ready: draw all again
+    appear_at: f64                                   = -1.0,  // when its first image showed, -1 none yet
+    bench:     Bench                                 = Bench {},
 }
 
 // --bench N (measuring, task 015): N frames drawing the 3D board and its shadow map, as
@@ -122,57 +127,70 @@ fn set_up(d: Drawer&) {
     d.setup_ms = (clock() - t0) * 1000.0;
 }
 
-// The look for the app's theme `kind` put on the board of n squares a side: its
-// surfaces baked (their pipeline made the first time), its photograph blurred.
-fn put_theme(d: Drawer&, kind: i64, n: i64) {
-    let t0 = clock();
-    d.kind = kind;
-    d.n = n;
+// The look for the app's theme `kind`, with its wood: --wood's model if given, else the
+// look's own, else the renderer's; each look's finish for its model (looks::finish_for).
+fn choose_look(d: Drawer&, kind: i64) -> i64 {
     let look = look_of(kind, d.summer);
-    // --wood's model if given, else the look's own, else the renderer's; each look's
-    // finish for its model (looks::finish_for).
     let shown = looks::shown(look, d.gpu.spring);
     let own = looks::wood_for(shown);
     let wood = if d.wood >= 0 { d.wood } else if own >= 0 { own } else { render3d::WOOD_MODEL };
     render3d::choose(d.gpu, wood, -1);
     d.gpu.finish = looks::finish_for(shown, d.gpu.wood);
-    render3d::apply(d.gpu, look, n, kind);
-    d.apply_ms = (clock() - t0) * 1000.0;
+    return look;
 }
 
-// Whether the 3D board is ready to draw for the app's theme `kind` on n squares a side
-// at `size`, with nothing left to set up, bake, or make.
-fn prepared(d: Drawer&, kind: i64, n: i64, size: int2) -> bool {
-    let drawn = (d.warm.x == size.x && d.warm.y == size.y) || (d.size.x == size.x && d.size.y == size.y);
-    return d.ready && d.kind == kind && d.n == n && drawn;
+// Whether the 3D board is ready to draw for the app's theme `kind` on n squares a side:
+// set up, baked for them, its pipelines made. Only the targets the size of the screen
+// are left for its first frame (render3d::targets).
+fn ready(d: Drawer&, kind: i64, n: i64) -> bool {
+    return d.ready && d.kind == kind && d.n == n && d.themed == render3d::THEME_STEPS
+           && d.warmed == render3d::WARM_STEPS;
 }
 
-// One step of getting the 3D board ready before it is chosen (settings, where the Board
-// row is): the setup, then the theme (the bake, its pipeline made, and the photograph),
-// then a draw of the bare board into the kept image at `size`, which makes the pass's
-// targets and pipelines. Each a frame of its own, so the screen keeps drawing between
-// them; what the first frame on the 3D board would otherwise do at once (about 1.1 s on
-// the Pixel 7a by task 015's numbers). Times each step (prep_ms).
-fn prepare(d: Drawer&, kind: i64, n: i64, size: int2) {
-    guard !prepared(d, kind, n, size) else { return; }
+// Whether an image of the board shows (drawn since it was set up): while a new theme is
+// prepared it stays; with none, the board's place shows the shell's spinner.
+fn shows(d: Drawer&) -> bool { d.appear_at >= 0.0 }
+
+// Whether the board is fading in at `now`, so the app draws on.
+let APPEAR = 0.3;
+fn appearing(d: Drawer&, now: f64) -> bool { d.appear_at >= 0.0 && now < d.appear_at + APPEAR }
+
+// One step of getting the 3D board ready, each a frame of its own so the screen keeps
+// drawing and answering: the setup; the theme in render3d::THEME_STEPS (the bake's
+// pipeline made, the bake in bands, the photograph's pipelines, the photograph in three
+// parts); the pass's pipelines in render3d::WARM_STEPS. What the first frame on the 3D
+// board did at once before (about 1.1 s on the Pixel 7a by task 015's numbers). A new
+// theme or size takes the theme's steps again. Each step is waited for (gfx::flush), so
+// its GPU work stays in its own frame, and timed (prep_ms).
+fn prepare(d: Drawer&, kind: i64, n: i64) {
+    guard !ready(d, kind, n) else { return; }
+    let t0 = clock();
     if !d.ready {
         set_up(d);
-        d.prep_ms[0] = d.setup_ms;
-        return;
+    } else if d.kind != kind || d.n != n || d.themed < render3d::THEME_STEPS {
+        if d.kind != kind || d.n != n {
+            // A new theme (or one changed partway) starts its steps again.
+            d.kind = kind;
+            d.n = n;
+            d.themed = 0;
+        }
+        let look = if d.themed == 0 { choose_look(d, kind) } else { d.gpu.look };
+        render3d::theme_step(d.gpu, look, n, kind, d.themed);
+        d.themed++;
+    } else {
+        render3d::warm(d.gpu, d.warmed);
+        d.warmed++;
     }
-    if d.kind != kind || d.n != n {
-        put_theme(d, kind, n);
-        d.prep_ms[1] = d.apply_ms;
-        return;
-    }
-    let t0 = clock();
-    render3d::draw(d.gpu, gfx::mat4_identity, float3 { 0.0, 1.0, 0.0 }, gfx::Texture { 0 }, size, false, false);
-    d.warm = size;
-    d.prep_ms[2] = (clock() - t0) * 1000.0;
+    gfx::flush();
+    let ms = (clock() - t0) * 1000.0;
+    d.apply_ms += ms;
+    if d.prep_ms.len < 48 { d.prep_ms.push(ms); }
+    // Done: the next frame draws the board, its shadow map too.
+    if ready(d, kind, n) { d.fresh = true; }
 }
 
-// Everything the 3D board holds on the GPU given back (leaving settings with the board
-// still flat), the flags kept; prepare() or frame() sets it up again.
+// Everything the 3D board holds on the GPU given back (the board back to flat), the
+// flags kept; the next frame that needs it prepares it again.
 fn drop(d: Drawer&) {
     guard d.ready else { return; }
     render3d::release(d.gpu);
@@ -185,16 +203,18 @@ fn drop(d: Drawer&) {
 // `hold` (a transition) the image is drawn again only for another view or board.
 fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f64, size: int2, kind: i64,
          which: i64 = 0, hold: bool = false) {
-    var force = false;
     let t0 = clock();
-    if !d.ready {
-        set_up(d);
-        force = true;
+    d.redraw = false;
+    d.shadow = false;
+    if !ready(d, kind, l.n) {
+        // A step of getting ready instead; the image already shown (a theme changing)
+        // stays, else the shell's spinner shows.
+        prepare(d, kind, l.n);
+        d.frames++;
+        return;
     }
-    if kind != d.kind || l.n != d.n {
-        put_theme(d, kind, l.n);
-        force = true;
-    }
+    var force = d.fresh;
+    d.fresh = false;
     let bn .= d.bench;
     let phase = if bn.n > 0 && bn.i < BENCH_PHASES * bn.n { bn.i / bn.n } else { -1 };
     if phase == 2 {
@@ -255,6 +275,7 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
     let vp = gfx::mat4 { c0: m.c0, c1: m.c1, c2: m.c2, c3: m.c3 };
     render3d::draw(d.gpu, vp, v.eye, gfx::Texture { 0 }, size, false, false, s.pulsing);
     d.drawn = d.scene;
+    if d.appear_at < 0.0 { d.appear_at = now; }
     if phase == 0 || phase == 1 {
         let t2 = clock();
         gfx::flush();
@@ -264,16 +285,20 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
     if phase >= 0 { bn.i++; }
     if d.draws == 1 && d.timed {
         gfx::flush();
-        d.first_ms = (clock() - t0) * 1000.0 - d.setup_ms - d.apply_ms;
+        d.first_ms = (clock() - t0) * 1000.0;
     }
 }
 
 // Lays the kept image over the screen's open pass (the app's photograph drawn in it, or
 // cleared): the renderer's backdrop first, as opaque as `blur` (1 behind the game and a
 // puzzle, 0 behind home and settings, between in a transition), then the board, the
-// bounds it was drawn at (the view's rect) put at `place`, as opaque as `fade`.
-fn show(d: Drawer&, blur: f32, place: float4, fade: f32, size: int2) {
-    if blur > 0.0 { render3d::backdrop(d.gpu, min(blur, 1.0), size); }
+// bounds it was drawn at (the view's rect) put at `place`, as opaque as `fade`. Both
+// fade in over APPEAR from the board's first image at `now`; with none yet, nothing.
+fn show(d: Drawer&, blur: f32, place: float4, fade0: f32, size: int2, now: f64) {
+    guard shows(d) else { return; }
+    let k0 = clamp((now - d.appear_at) / APPEAR, 0.0, 1.0) as f32;
+    let fade = fade0 * k0;
+    if blur > 0.0 { render3d::backdrop(d.gpu, min(blur, 1.0) * k0, size); }
     guard fade > 0.0 else { return; }
     // The whole image, the board's soft shadow round it too, moved and scaled as its
     // bounds are: at rest exactly as drawn.

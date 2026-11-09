@@ -1,0 +1,9 @@
+game, waiting: raised true, spinners 1 in the board's middle true, drawing on true
+  c3 tapped: selected -1 (none is -1)
+  a panel tile still leaves the game: true
+game, ready: spinners 0, drawing on false
+  c3 tapped: selected c3
+game, a new theme getting ready: spinners 0, c3 tapped: selected -1
+home, waiting: raised true, spinners 1 in the board's middle true
+settings, waiting: raised true, spinners 1 in the board's middle true
+flat: spinners 0

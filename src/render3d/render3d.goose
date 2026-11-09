@@ -152,6 +152,10 @@ struct Gpu {
     depth:          gfx::Texture,
     image:          gfx::Texture,   // what draw() resolves into when asked to keep it
     kept_depth:     gfx::Texture,   // its depth at 1x, for the pulsing marks (marks_over)
+    warm_color:     gfx::Texture,   // 4 × 4 targets warm() makes the pipelines on
+    warm_depth:     gfx::Texture,
+    warm_kept:      gfx::Texture,
+    no_photo:       bool,           // no photograph built in for the theme (photo_part)
     size:           int2,
     linear:         gfx::Sampler,
     aniso:          gfx::Sampler,
@@ -244,28 +248,44 @@ fn harmonics(px: const u8[:], size: i64, toward_grey: f32) -> float4[9] {
 // `grey` of the way to grey. Decodes the photograph, so only at setup and on a theme
 // change, never in the frame loop.
 fn photograph(g: Gpu&, kind: i64, grey: f32, sh: float4[9]&) {
-    let sharp = draughts_photo(kind, 2048);
-    if sharp.id == 0 {
-        // No photograph built in: the page under the scene, and a dim ambient.
-        gfx::begin_pass(g.photo, gfx::Texture { 0 }, float4 { 0.11, 0.078, 0.063, 1.0 });
+    for k in 3 { photo_part(g, kind, grey, sh, k); }
+}
+
+// Part k of photograph(), each short enough for a frame (theme_step): 0 the photograph
+// decoded or uploaded and shrunk, 1 blurred across, 2 blurred down, read back, and its
+// harmonics taken into sh.
+fn photo_part(g: Gpu&, kind: i64, grey: f32, sh: float4[9]&, k: i64) {
+    let s: f32 = 1.0 / PHOTO_SIZE;
+    if k == 0 {
+        let sharp = draughts_photo(kind, 2048);
+        g.no_photo = sharp.id == 0;
+        if g.no_photo {
+            // No photograph built in: the page under the scene, and a dim ambient.
+            gfx::begin_pass(g.photo, gfx::Texture { 0 }, float4 { 0.11, 0.078, 0.063, 1.0 });
+            gfx::end_pass();
+            for i in 9 { sh[i] = float4_0; }
+            sh[0] = float4 { 0.25, 0.17, 0.1, 0.0 };
+            return;
+        }
+        gfx::begin_pass(g.small, gfx::Texture { 0 }, float4_0);
+        gfx::bind(g.shrink);
+        gfx::bind_texture(gfx::FRAGMENT, 0, sharp, g.linear);
+        gfx::uniforms(gfx::FRAGMENT, 0, Shrink { float4 { PHOTO_SIZE, PHOTO_SIZE, 0.0, 0.0 } });
+        gfx::draw(3);
         gfx::end_pass();
-        for k in 9 { sh[k] = float4_0; }
-        sh[0] = float4 { 0.25, 0.17, 0.1, 0.0 };
+        gfx::release(sharp);
         return;
     }
-    gfx::begin_pass(g.small, gfx::Texture { 0 }, float4_0);
-    gfx::bind(g.shrink);
-    gfx::bind_texture(gfx::FRAGMENT, 0, sharp, g.linear);
-    gfx::uniforms(gfx::FRAGMENT, 0, Shrink { float4 { PHOTO_SIZE, PHOTO_SIZE, 0.0, 0.0 } });
-    gfx::draw(3);
-    gfx::end_pass();
-    let s: f32 = 1.0 / PHOTO_SIZE;
-    gfx::begin_pass(g.across, gfx::Texture { 0 }, float4_0);
-    gfx::bind(g.blur);
-    gfx::bind_texture(gfx::FRAGMENT, 0, g.small, g.linear);
-    gfx::uniforms(gfx::FRAGMENT, 0, Blur { float4 { s, 0.0, 5.6, s } });
-    gfx::draw(3);
-    gfx::end_pass();
+    guard !g.no_photo else { return; }
+    if k == 1 {
+        gfx::begin_pass(g.across, gfx::Texture { 0 }, float4_0);
+        gfx::bind(g.blur);
+        gfx::bind_texture(gfx::FRAGMENT, 0, g.small, g.linear);
+        gfx::uniforms(gfx::FRAGMENT, 0, Blur { float4 { s, 0.0, 5.6, s } });
+        gfx::draw(3);
+        gfx::end_pass();
+        return;
+    }
     gfx::begin_pass(g.photo, gfx::Texture { 0 }, float4_0);
     gfx::bind(g.blur);
     gfx::bind_texture(gfx::FRAGMENT, 0, g.across, g.linear);
@@ -274,21 +294,22 @@ fn photograph(g: Gpu&, kind: i64, grey: f32, sh: float4[9]&) {
     gfx::end_pass();
     let px = gfx::read_pixels(g.photo);
     sh = harmonics(px, PHOTO_SIZE, grey);
-    gfx::release(sharp);
 }
 
 // Bakes one surface of the theme into its albedo-and-roughness and normal targets, and
 // their mips. Bake.mode: x the surface (0 the plan, 1 the frame map), y the wood's model,
 // z the squares per side, w the marble (a stone frame's only).
 fn bake(g: Gpu&, albedo: gfx::Texture, normal: gfx::Texture, w: i64, h: i64, mode: f32,
-        extent: float2, t: looks::Theme&) {
+        extent: float2, t: looks::Theme&, y0: i64 = 0, y1: i64 = -1, mips: bool = true) {
     // Not cleared: the bake writes every texel, and a cleared target SDL finds still
     // referenced (as a new one is) it cycles into a second copy kept for good, 85 MB for
-    // the four surfaces on the Pixel 7a.
+    // the four surfaces on the Pixel 7a. Only rows y0 to y1 when given (theme_step's
+    // bands), the mips after the last.
     var pass = gfx::PassDesc { clear_color: false };
     pass.color[0] = albedo;
     pass.color[1] = normal;
     gfx::begin_pass(pass);
+    if y1 >= 0 { gfx::scissor(0, y0, w, y1 - y0); }
     gfx::bind(g.bake);
     let fi = g.finish;
     let m = g.stone;
@@ -308,6 +329,7 @@ fn bake(g: Gpu&, albedo: gfx::Texture, normal: gfx::Texture, w: i64, h: i64, mod
                                            t.fill, looks::LICHEN });
     gfx::draw(3);
     gfx::end_pass();
+    guard mips else { return; }
     gfx::generate_mips(albedo);
     gfx::generate_mips(normal);
 }
@@ -472,36 +494,107 @@ fn setup(g: Gpu&, samples: i32 = SAMPLES) {
 // is done again; outside the frame loop's steady state: at setup, on a theme change, a
 // new board size.
 fn apply(g: Gpu&, which: i64, n: i64, photo: i64 = -1) {
-    own_carving(g, looks::shown(which, g.spring));
-    let t = look(g, which);
-    let kind = if photo >= 0 { photo } else { t.photo };
-    if which != g.look || n != g.n {
-        g.look = which;
-        g.n = n;
-        let rows = if t.build.x < 0.5 { FRAME_MITRED_ROWS } else { FRAME_MAP };
-        if rows != g.frame_rows {
-            if g.frame_rows != 0 {
-                gfx::release(g.frame_albedo);
-                gfx::release(g.frame_normal);
-                gfx::flush();
-            }
-            g.frame_albedo = baked(FRAME_MAP, rows, gfx::RGBA8_SRGB);
-            g.frame_normal = baked(FRAME_MAP, rows, gfx::RGBA8);
-            g.frame_rows = rows;
-        }
+    if theme_begin(g, which, n) {
         let t0 = clock();
         bake_surfaces(g);
         g.bake_ms = (clock() - t0) * 1000.0;
     }
-    if kind != g.photo_kind || g.frame.light_dir.w == 0.0 {
-        g.photo_kind = kind;
-        let t0 = clock();
-        var sh: float4[9] = [float4_0; 9];
-        photograph(g, kind, t.ambient.z, sh);
-        g.frame.sh = sh;
-        gfx::flush();
-        g.photo_ms = (clock() - t0) * 1000.0;
+    theme_photo(g, which, photo);
+    theme_end(g, which, n);
+}
+
+// apply()'s start: the look's carving taken, and for a new look or board size the frame
+// map's targets as its frame wants. Whether the surfaces are to be baked.
+fn theme_begin(g: Gpu&, which: i64, n: i64) -> bool {
+    own_carving(g, looks::shown(which, g.spring));
+    guard which != g.look || n != g.n else { return false; }
+    let t = look(g, which);
+    g.look = which;
+    g.n = n;
+    let rows = if t.build.x < 0.5 { FRAME_MITRED_ROWS } else { FRAME_MAP };
+    if rows != g.frame_rows {
+        if g.frame_rows != 0 {
+            gfx::release(g.frame_albedo);
+            gfx::release(g.frame_normal);
+            gfx::flush();
+        }
+        g.frame_albedo = baked(FRAME_MAP, rows, gfx::RGBA8_SRGB);
+        g.frame_normal = baked(FRAME_MAP, rows, gfx::RGBA8);
+        g.frame_rows = rows;
     }
+    return true;
+}
+
+// apply()'s photograph (`photo`, -1 the look's own) blurred and its ambient taken, when
+// it is another than the one shown.
+fn theme_photo(g: Gpu&, which: i64, photo: i64) {
+    let t = look(g, which);
+    let kind = if photo >= 0 { photo } else { t.photo };
+    guard kind != g.photo_kind || g.frame.light_dir.w == 0.0 else { return; }
+    g.photo_kind = kind;
+    let t0 = clock();
+    var sh: float4[9] = [float4_0; 9];
+    photograph(g, kind, t.ambient.z, sh);
+    g.frame.sh = sh;
+    gfx::flush();
+    g.photo_ms = (clock() - t0) * 1000.0;
+}
+
+// The steps theme_step() takes apply() in, each about 2.5 ms of the M1 Pro's, about 16 ms
+// of the Pixel 7a's and 35 of a Galaxy A33's by task 015's ratios (task 042): the start;
+// the bake's pipeline made, drawing one row (its compile can't be split: the largest
+// step); the plan in PLAN_BANDS bands and the frame map in FRAME_BANDS, each surface's
+// mips with its last; the photograph's two pipelines made; the photograph in its three
+// parts (photo_part), the end with the last.
+let PLAN_BANDS = 16;
+let FRAME_BANDS = 6;
+let THEME_STEPS = 6 + PLAN_BANDS + FRAME_BANDS;
+
+// Step k (0 to THEME_STEPS - 1) of putting a theme on, as apply(which, n, photo) does at
+// once. Recording only; the frame's submit runs it.
+fn theme_step(g: Gpu&, which: i64, n: i64, photo: i64, k: i64) {
+    let t = look(g, g.look);
+    let span = 2.0 * mesh::INNER;
+    let plan = float2 { span, span };
+    let rows = g.frame_rows;
+    let frame = float2 { 10.4, 10.4 * rows / FRAME_MAP };
+    if k == 0 {
+        // A new look or size is baked whatever theme_begin finds: the steps bake in turn.
+        theme_begin(g, which, n);
+    } else if k == 1 {
+        bake(g, g.plan_albedo, g.plan_normal, PLAN_SIZE, PLAN_SIZE, 0.0, plan, t, 0, 1, false);
+    } else if k < 2 + PLAN_BANDS {
+        let b = k - 2;
+        bake(g, g.plan_albedo, g.plan_normal, PLAN_SIZE, PLAN_SIZE, 0.0, plan, t, PLAN_SIZE * b / PLAN_BANDS,
+             PLAN_SIZE * (b + 1) / PLAN_BANDS, b == PLAN_BANDS - 1);
+    } else if k < 2 + PLAN_BANDS + FRAME_BANDS {
+        let b = k - 2 - PLAN_BANDS;
+        bake(g, g.frame_albedo, g.frame_normal, FRAME_MAP, rows, 1.0, frame, t, rows * b / FRAME_BANDS,
+             rows * (b + 1) / FRAME_BANDS, b == FRAME_BANDS - 1);
+    } else if k == 2 + PLAN_BANDS + FRAME_BANDS {
+        var pass = gfx::PassDesc { clear_color: false };
+        pass.color[0] = g.small;
+        gfx::begin_pass(pass);
+        gfx::bind(g.shrink);
+        gfx::bind(g.blur);
+        gfx::end_pass();
+    } else {
+        let part = k - 3 - PLAN_BANDS - FRAME_BANDS;
+        let lk = look(g, which);
+        let kind = if photo >= 0 { photo } else { lk.photo };
+        var sh = g.frame.sh;
+        photo_part(g, kind, lk.ambient.z, sh, part);
+        g.frame.sh = sh;
+        if part == 2 {
+            g.photo_kind = kind;
+            theme_end(g, which, n);
+        }
+    }
+}
+
+// apply()'s end: the key light, and the look's colors in the frame's block.
+fn theme_end(g: Gpu&, which: i64, n: i64) {
+    let t = look(g, which);
     // The key light, from the upper left; the photograph's ambient.
     light(g);
     let f .= g.frame;
@@ -888,11 +981,57 @@ fn show(g: Gpu&, from: float4, to: float4, alpha: f32, size: int2) {
     gfx::draw(6);
 }
 
-// Everything setup() and the frames made given back (the app's 3D board left unchosen):
-// the targets, surfaces, buffers, samplers, and pipelines. g is set up again from scratch.
+// The pipelines the 3D pass and the screen's part draw with, each made one step at a
+// time (0 to WARM_STEPS - 1) before the board is first drawn, so that frame doesn't make
+// them all at once: goose_gfx makes a pipeline when it is first bound in a pass, for that
+// pass's target formats (docs/goose-findings.md). Bound in a pass on 4 × 4 targets of the
+// pass's formats (made by the first step, given back by the last), or on the target
+// itself where it is small or held anyway, with nothing drawn.
+let WARM_STEPS = 12;
+fn warm(g: Gpu&, k: i64) {
+    if k == 0 {
+        g.warm_color = gfx::texture(gfx::TextureDesc { format: gfx::RGBA8, usage: gfx::COLOR_TARGET, width: 4,
+                                                       height: 4, samples: g.samples });
+        g.warm_depth = gfx::texture(gfx::TextureDesc { format: gfx::DEPTH16, usage: gfx::DEPTH_TARGET, width: 4,
+                                                       height: 4, samples: g.samples });
+        g.warm_kept = depth_target(int2 { 4, 4 });
+    }
+    var pass = gfx::PassDesc {};
+    if k < 6 {
+        pass.color[0] = g.warm_color;
+        pass.depth = g.warm_depth;
+    } else if k == 6 {
+        pass.depth = g.shadow_map;
+    } else if k == 7 {
+        pass.color[0] = g.field_light;
+        pass.clear_color = false;
+    } else if k == 8 {
+        pass.depth = g.warm_kept;
+    } else {
+        pass.color[0] = gfx::screen();
+        pass.clear_color = false;
+    }
+    gfx::begin_pass(pass);
+    let p = [g.lit_piece, g.lit_frame, g.lit_field, g.fading, g.catcher, g.glow, g.shadow, g.field_bake,
+             g.depth_only, g.backdrop, g.show, g.pulse][k];
+    gfx::bind(p);
+    gfx::end_pass();
+    if k == WARM_STEPS - 1 {
+        gfx::release(g.warm_color);
+        gfx::release(g.warm_depth);
+        gfx::release(g.warm_kept);
+        g.warm_color = gfx::Texture { 0 };
+        g.warm_depth = gfx::Texture { 0 };
+        g.warm_kept = gfx::Texture { 0 };
+    }
+}
+
+// Everything setup() and the frames made given back (the app's board back to flat): the
+// targets, surfaces, buffers, samplers, and pipelines. g is set up again from scratch.
 fn release(g: Gpu&) {
     let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.photo, g.shadow_map, g.color,
-                    g.depth, g.image, g.kept_depth, g.field_light, g.small, g.across];
+                    g.depth, g.image, g.kept_depth, g.field_light, g.small, g.across, g.warm_color, g.warm_depth,
+                    g.warm_kept];
     for t in textures { if t.id != 0 { gfx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.instances, g.squares, g.marks, g.glows];
     for b in buffers { if b.id != 0 { gfx::release(b); } }

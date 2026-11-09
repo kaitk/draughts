@@ -410,6 +410,15 @@ fn main() {
         }
         if hold >= 0.0 && sh.from >= 0 { sh.since = now - hold * shell::DURATION; }
         if win_at >= 0.0 && sh.game.won_at >= 0.0 { sh.game.won_at = now - win_at; }
+        // The 3D board chosen but not ready (it gets ready a step a frame as it is drawn,
+        // draw3d::prepare): the shell shows a spinner in its place, or the old image while
+        // a new theme bakes, and leaves taps on it alone; the frames go on until it shows
+        // and has faded in. Back to flat, it is all given back.
+        let n_was = if sh.layout.n > 0 { sh.layout.n } else { rules::VARIANTS[sh.prefs.variant].size };
+        sh.ready3d = !settings::raised(sh.prefs) || draw3d::ready(d3, d.kind, n_was);
+        sh.shown3d = draw3d::shows(d3);
+        if settings::raised(sh.prefs) && (!sh.ready3d || !sh.shown3d || draw3d::appearing(d3, now)) { dirty = true; }
+        if !settings::raised(sh.prefs) && sh.from < 0 { draw3d::drop(d3); }
         if shell::frame(sh, g, size.x, size.y, now) { dirty = true; }
         // The keyboard: up while a name is typed, brought up again by each tap on the name.
         let typing = sh.who.typing && sh.screen == shell::HOME;
@@ -442,15 +451,6 @@ fn main() {
             w.thumbs = scene::thumbs(d.full);
         }
         let l = sh.layout;
-        // The 3D board made ready while settings show, where its Board row is: a step a
-        // frame once their transition is over and the launch's loads are done, so choosing
-        // 3D finds it set up, baked, and its pipelines made (draw3d::prepare). Given back
-        // on leaving settings with the board still flat: a flat board holds none of it.
-        if !sh.raised && sh.screen == shell::SETTINGS && sh.from < 0 && released {
-            draw3d::prepare(d3, d.kind, l.n, size);
-        } else if !settings::raised(sh.prefs) && sh.screen != shell::SETTINGS && sh.from < 0 {
-            draw3d::drop(d3);
-        }
         if tapped < taps.len && !b.moving && sh.screen == shell::GAME && b.pos.side != gm.computer {
             let v .= rules::VARIANTS[b.variant];
             let sq, ok = rules::parse_square(v, taps[tapped]);
@@ -472,7 +472,7 @@ fn main() {
             g.acted = true;
         }
         // --bench N times the 3D board's frames 2 s after the launch, settled (draw3d.goose).
-        if bench > 0 && sh.raised && gfx::frame_count() >= 2 && now > 2.0 && d3.bench.n == 0 { d3.bench.n = bench; }
+        if bench > 0 && sh.raised && d3.draws > 0 && now > 2.0 && d3.bench.n == 0 { d3.bench.n = bench; }
         if d3.bench.n > 0 { dirty = true; }
         let drew = dirty || shell::animating(sh, g, now);
         if drew {
@@ -485,7 +485,7 @@ fn main() {
                 draw3d::frame(d3, shown, l, sh.view, now, size, d.kind, shell::which(sh.shows), sh.hold);
                 draw::pieces_over(d, sh.over, l, size.x, size.y);
                 draw::photo(d, sh.blur, now, size.x, size.y);
-                draw3d::show(d3, sh.blur, sh.place, sh.fade, size);
+                draw3d::show(d3, sh.blur, sh.place, sh.fade, size, now);
             } else {
                 draw::frame(d, shown, sh.over, l, sh.blur, now, size.x, size.y);
             }
@@ -524,9 +524,10 @@ fn main() {
         if draw3d::bench_done(d3) { break; }
     }
     if frames > 0 { gfx::screenshot("draughts.png"); }
-    if frames > 0 && d3.prep_ms[0] > 0.0 {
-        print("3D board prepared in settings: setup ", d3.prep_ms[0], " ms, theme ", d3.prep_ms[1], " ms (bake ",
-              d3.gpu.bake_ms, " ms, photograph ", d3.gpu.photo_ms, " ms), first draw ", d3.prep_ms[2], " ms");
+    if frames > 0 && d3.prep_ms.len > 0 {
+        var line: u8[>..] = [];
+        for ms in d3.prep_ms { format(line, " ", floor(ms * 100.0 + 0.5) / 100.0); }
+        print("3D board prepared in ", d3.prep_ms.len, " steps, each waited, ms:", line);
     }
     if frames > 0 && d3.frames > 0 { print("3D board: ", d3.frames, " frames showed it, ", d3.draws, " drew it, ", d3.shadows, " its shadow map, ", d3.pulses, " only its pulsing marks"); }
     shell::write_game(sh);

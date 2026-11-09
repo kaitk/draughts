@@ -162,41 +162,66 @@ The user, on the Pixel 7a: the first tap on the Board row's 3D shows nothing hap
 2 s or more; later switches are at once. It is the one-time setup: on the Pixel by task
 015's numbers the theme 0.76 s (the bake 0.71, most of it making its pipeline, which the
 driver compiles on first use; warm it is 0.15), the first frame 0.31 s (its pipelines),
-and the setup and targets; about 1.1 s, the rest of the 2 s unaccounted for.
+and the setup and targets; about 1.1 s, the rest of the 2 s unaccounted for. Before the
+change, on the Mac (1920 × 1200, Russian, autumn) the switch's first 3D frame took 99 ms
+(setup 2.7, the theme 88 with its bake's pipeline made, the draw).
 
-On the Mac headless (1920 × 1200, Russian, autumn, `--board flat --screen settings` and a
-local flag choosing 3D at a set time):
+**What it does now (the user's plan, 2026-11-09):** nothing is made before the 3D board is
+needed, and nothing kept for a flat player. Wherever it is needed and not ready (3D
+chosen in settings, a launch with 3D saved, home, the game, a puzzle), `draw3d::frame`
+takes one step of getting ready a frame instead of drawing (`draw3d::prepare`), the
+shell shows a spinner in the board's place (`gui::spinner`, `sh.ready3d` and
+`sh.shown3d` set by the app) and leaves taps on the board alone (the panels answer), and
+once ready the board fades in over 0.3 s (the renderer's backdrop with it). Settings'
+3D tile is lit at once. A new season or board size on 3D takes the theme's steps again
+with the old image shown and no spinner, taps waiting. Back to flat, everything is given
+back (`render3d::release`). `test/shell/wait3d` checks the spinner, the taps left alone,
+a panel tile still answering, and the tap selecting once ready.
 
-| Stage | Chosen with nothing ready | Made ready in settings first |
+**The steps** (41), each waited for (`gfx::flush`) so its GPU work stays in its frame. The
+budget: about 16 ms of the Pixel 7a's and 35 of a Galaxy A33's (whose bake takes 1.6 s
+cold against the Pixel's 0.7), which by task 015's ratios is about 2.5 ms of the M1 Pro's.
+On the Mac headless, two runs:
+
+| Step | M1 Pro, ms | The Pixel's, scaled or from task 015 |
 | --- | --- | --- |
-| Setup (meshes, buffers, pipelines' objects, the surfaces' targets) | 2.7 ms | 5 to 9 ms, a frame of its own |
-| The theme (the bake with its pipeline made, the photograph) | 88 ms | 72 to 94 ms, a frame of its own |
-| A first draw (the targets and the pass's pipelines) | | 0.9 ms, a frame of its own |
-| The tap's first 3D frame, waited | 99 ms | 6 to 8 ms |
+| Setup (meshes, buffers, pipeline objects, the surfaces' targets) | 3 to 5 | unmeasured |
+| The theme's start (the frame map's targets) | 0.3 to 0.5 | small |
+| The bake's pipeline made, drawing one row | 2.6 to 3 | about 0.55 s: one compile, can't be split |
+| The plan, 16 bands | 1.2 to 3.1 each | about 10 to 20 each |
+| The frame map, 6 bands | 1.6 to 3.9 each | about 10 to 25 each |
+| The photograph's pipelines | 0.5 | a compile each, small |
+| The photograph decoded and shrunk | 17 (the Mac decodes the JPEG) | the ASTC upload, a part of task 015's 42 ms |
+| Blurred across; blurred down, read back, harmonics, the theme's end | 0.4; 0.8 to 2.1 | a part of the 42 ms |
+| 12 pipelines, each bound alone in a pass on 4 × 4 targets | 0.3 to 1.6 each | the first frame's 0.31 s over 12 frames |
+| The first 3D frame once ready (the targets the screen's size, the draw) | 3.3 to 3.8 | |
 
-- **What it does now** (`draw3d::prepare`, the app's loop): while settings show with the
-  board flat, once their transition is over and the launch's loads done, one step a
-  frame: the setup, the theme, then a draw of the bare board into the kept image at the
-  screen's size, which makes the pass's targets and binds its pipelines. Choosing 3D then
-  only draws. Leaving settings with the board still flat gives it all back
-  (`render3d::release`): a flat player holds none of the 3D board's 160 to 175 MB outside
-  settings, and pays the steps again on the next visit (on the Pixel about 1.1 s of work
-  over three frames, one of them about 0.7 s). Kept instead, it would sit in memory for
-  every flat player who once opened settings.
-- **Not on a thread:** the work is the GPU's (compiles on first use, the bake), on the
-  thread that owns it; goose_gfx's tables aren't thread-safe, and the CPU's part (the
-  meshes, the harmonics' 4,096 samples, the photograph's read back) is microseconds to a
-  few ms, so neither a worker nor NEON would buy anything measurable. No pipeline cache
-  exists to keep the compiles across launches (`docs/goose-findings.md`).
-- **No cue yet:** a tap on 3D within about the first second of settings (on the Pixel)
-  still finds steps left and does them at once, silent as before. A working state on the
-  tile with the preview held until ready is the next step if the device shows it matters.
-- **A season change on 3D** bakes again warm: on the Mac the plan 18 ms, the frame map
-  10, the photograph 18; on the Pixel by task 015's numbers about 0.1 + 0.04 + 0.04 s,
-  a pause of about 0.2 s, short next to the first switch.
-- To check on the Pixel: the step times (a `--frames` run prints them: `3D board prepared
-  in settings: ...`), how long after opening settings it is ready, and whether the 0.7 s
-  step stutters settings (a tap during it waits for it).
+The Mac's driver keeps compiled shaders across runs, so its compile steps look cheap;
+the Pixel's largest step stays the bake's compile (about 0.55 s, the A33's about 1.3 s),
+during which the spinner stops. Nothing splits a single compile without a pipeline cache
+(`docs/goose-findings.md`).
+
+**What each part holds** (by arithmetic; the device's GL mtrack to check): the plan's
+two 2048² RGBA8 maps with mips 43 MB; the frame map 24 MB mitred (2048 × 1152) or 43 MB
+solid; the photograph and its two blur targets 3 MB; the shadow map 2 MB; the field's
+light 2 MB; at 2400 × 1080 the 4× color 40 MB, its 16-bit depth 20 MB, the kept image
+10 MB, the kept depth (once marks pulse) 5 MB; the meshes and buffers under 1 MB. About
+150 to 170 MB in all, none of it held on the flat board.
+
+**Not on a thread:** the work is the GPU's (compiles on first use, the bake), on the
+thread that owns it; goose_gfx's tables aren't thread-safe, and the CPU's part (the
+meshes, the harmonics' 4,096 samples) is microseconds, so neither a worker nor NEON
+would buy anything measurable.
+
+**Checked headless:** the 3D board once ready against `ea2c726`'s: zoomed autumn 76 dB,
+spring 73, winter 58, summer 41 to 45, turned and low 64 to 65, nothing off by more than
+4 levels when shot one at a time. Four runs at once on the GPU, or the old build shot at
+its very first frame, gave lower figures from timing. Shots of the waiting state: the
+spinner in the board's place on the game, home, and settings (the 3D tile lit).
+
+**To check on the device:** each step's time (a `--frames` run prints `3D board prepared
+in 41 steps, each waited, ms: ...`), the bake's compile step, the spinner's look and the
+fade, and GL mtrack on 3D and after going back to flat.
 
 ## Acceptance criteria
 

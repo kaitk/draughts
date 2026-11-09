@@ -60,7 +60,8 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   tablet's and a phone's size (`who`), every screen with a board on the 3D board (home's and
   settings' bounds at eight sizes, a puzzle tapped through the perspective with its ghost
   and hint ring, the win's card on the 3D bounds, the transitions moving one image:
-  `screens3d`), the computer's skill moving
+  `screens3d`), the 3D board getting ready: a spinner in its place, taps on it left
+  alone while the panels answer, then ready (`wait3d`), the computer's skill moving
   across games, home's X closing the app and where it sits, Android's back and Escape
   on each screen against its own back tile (`back`), and every screen at a
   foldable, 4:3, and a 20:9 phone in both orientations, and the phone's layout at 540

@@ -54,8 +54,10 @@ its 0.71 s cold bake (0.15 s warm), and its pass's pipelines most of its 0.31 s 
 (task 015). goose_gfx's tables aren't thread-safe either, so a Goose worker can't make
 them. goose_gfx `6cfa3de`, SDL as goose_gfx pins it, Goose v2026.4.
 
-- Here: the app makes the 3D board ready while settings show, a step a frame, by drawing
-  with its pipelines before the board is chosen (`draw3d::prepare`, task 042).
+- Here: when the 3D board is needed the app makes it ready a step a frame, each pipeline
+  bound alone in a pass on 4 × 4 targets of its formats (`render3d::warm`), a spinner in
+  the board's place meanwhile (`draw3d::prepare`, task 042). The bake's pipeline is one
+  compile and stays one step: about 0.55 s on the Pixel 7a.
 - Upstream, for goose_gfx: `gfx::prepare(pipeline, formats...)` to make one ahead of a
   pass. For SDL (the user decides): a pipeline cache in SDL_GPU (a `VkPipelineCache`
   saved and loaded with its data blob, Metal's binary archives), which would take the
