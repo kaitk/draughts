@@ -139,18 +139,14 @@ extremes aren't polished.
   settings' shown group scrolls inside its glass where the tabs leave it too little room.
   `test/gui/scroll` checks a tap, a wobble under the slop, a drag, the ends, the wheel, and
   a press outside the view.
-- **The window control** (iPadOS 26's three dots at a window's top left): `g.corner`, how
-  far it reaches right and down from the screen's corner in pixels, 0 with none. Each
-  screen's top-left control alone keeps clear of it, so no height is lost: in a row it
-  steps right (`gui::corner_shift`: the game's compact bar, settings' head, the puzzles'
-  back in portrait), in a column down (`gui::corner_drop`: the game's back in landscape,
-  home's player chip and its landscape column, the puzzles' back in landscape). On iOS
-  `ios/corner.m` reads it each frame through `display.c` from UIKit's corner-adapted safe
-  area (`edgeInsetsForLayoutRegion:` with `safeAreaLayoutRegionWithCornerAdaptation:`,
-  across for the reach right and down for the reach down); the difference from the plain
-  safe area says whether there is a control, none before iOS 26, full screen without
-  windowing, or on an iPhone. The simulator's shots put the dots about 22 to 60 pt across
-  and 22 to 42 pt down; `--corner 88,60` (dp) tries it on the Mac.
+- **The window control** (iPadOS 26's three dots at a window's top left, about 22 to 60
+  pt across and 22 to 42 pt down) may sit over the corner of whatever control is there:
+  back, the player's chip, the game's back tile. No screen moves out of its way (the user,
+  2026-11-09): back and the chip are large and still easy to tap beside the dots, and a
+  control that steps aside in a window only is one that moves. A margin clear of the dots
+  was built and taken out (task 050); UIKit's corner-adapted safe area
+  (`edgeInsetsForLayoutRegion:` with `safeAreaLayoutRegionWithCornerAdaptation:`) is what
+  reports the dots' reach, should a screen ever need it.
 
 ## Look
 

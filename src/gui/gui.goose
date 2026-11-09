@@ -214,10 +214,6 @@ struct Gui {
     // phone's camera cutout and gesture bar). Taps and words stay inside (safe); the
     // photograph, and glass that runs off the screen (bleed), reach the edges.
     insets: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
-    // The window's control in its top left corner (iPadOS's three dots, in a window
-    // only): how far it reaches right and down from the screen's top left, in pixels; 0
-    // with none. A screen's top left control keeps clear of it (corner_shift, corner_drop).
-    corner: float2 = float2 { 0.0, 0.0 },
     // The screen's one vertical scroll (scroll_begin): which list, its offset in pixels,
     // the press it may become a drag from, and whether it has.
     scroll: Scroll = Scroll {},
@@ -294,18 +290,6 @@ fn scroll_end(g: Gui&) {
 fn scroll_set(g: Gui&, id: i64, px: f32) {
     g.scroll.id = id;
     g.scroll.offset = px;
-}
-
-// How far r must move right to keep clear of the window's control: 0 where it is clear.
-fn corner_shift(g: Gui&, r: float4) -> f32 {
-    guard g.corner.x > 0.0 && r.y < g.corner.y && r.x < g.corner.x else { return 0.0; }
-    return g.corner.x - r.x;
-}
-
-// How far r must move down to keep clear of it.
-fn corner_drop(g: Gui&, r: float4) -> f32 {
-    guard g.corner.x > 0.0 && r.y < g.corner.y && r.x < g.corner.x else { return 0.0; }
-    return g.corner.y - r.y;
 }
 
 // Whether a portrait safe area is short enough for the compact layouts (a small iPad

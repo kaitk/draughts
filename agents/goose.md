@@ -90,9 +90,9 @@ find out by compiling, so the next session doesn't.
   `dlsym(RTLD_DEFAULT, ...)` there; on Android the program links libSDL3.so and calls
   it directly (`src/app/locale.c`).
 - Objective-C for iOS alone (UIKit) goes in `ios/` and on `ios/CMakeLists.txt`'s
-  executable (`ios/corner.m`), not in the sidecar's `c_sources`, which the Mac's
-  `goose build` compiles too; the program's C calls it under `#if DRAUGHTS_IOS`
-  (`src/app/display.c`). It finds SDL's `UIWindow` through the window's
+  executable (task 050's `corner.m`, since removed), not in the sidecar's `c_sources`,
+  which the Mac's `goose build` compiles too; the program's C calls it under
+  `#if DRAUGHTS_IOS` (`src/app/display.c`). It finds SDL's `UIWindow` through the window's
   `SDL_PROP_WINDOW_UIKIT_WINDOW_POINTER` (2026-11-09).
 - The program's C reaches the Java activity with `SDL_GetAndroidJNIEnv()` and
   `SDL_GetAndroidActivity()` (a local reference to delete), then `GetObjectClass` on the

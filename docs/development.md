@@ -60,9 +60,6 @@ mistakes only by default), the language (`--lang et`; the system's by default), 
 layout's shorter side in dp (`--dp 540`; 800 by default, for trying phone scales;
 `gui::scale_of`), a phone's insets (`--inset L,T,R,B`, in dp of the layout, left,
 top, right, bottom; the window's own safe area by default, all of it on the Mac), the
-window control's corner (`--corner W,H`, in dp of the layout, iPadOS 26's three dots in a
-window; UIKit's on iOS by default, none on the Mac; `--corner 88,60` for the 11" iPad's
-smallest window), the
 scale's floor in physical size (`--density-floor F` with `--display-scale S`: the scale
 becomes `max(short side / 800, F × S)`; off by default, and `--dp` turns it off unless
 `--density-floor` is given too; the Mac's own display scale is left out, so without

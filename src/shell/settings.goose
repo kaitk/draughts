@@ -708,8 +708,6 @@ fn tabs(s: Settings&, g: gui::Gui&, r: float4) -> bool {
 fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, tabbed: bool = false) -> i64 {
     let u = g.scale;
     var row = r;
-    // Clear of the window's control (iPadOS's three dots) in a window (task 050).
-    gui::cut_left(row, gui::corner_shift(g, row));
     var ask = NOTHING;
     let title = strings::get(strings::HOME_SETTINGS);
     let wide = gui::back_width(g, strings::get(strings::NAV_BACK));

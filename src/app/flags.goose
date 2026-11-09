@@ -29,9 +29,6 @@ struct Flags {
     dp: i64 = -1,
     // --inset L,T,R,B: a phone's safe area in dp of the layout; x < 0 the window's own
     inset: float4 = float4 { -1.0, 0.0, 0.0, 0.0 },
-    // --corner W,H: a window's control in the top left corner (iPadOS's), W x H dp of the
-    // layout from the screen's corner; the platform's own by default (none on the Mac)
-    corner: float2 = float2 { -1.0, 0.0 },
     // --density-floor F with --display-scale S: the scale's floor (gui::scale_of), S
     // standing for the display's (the Mac's is left out: its windows are in points)
     density_floor: f32 = -1.0,
@@ -121,12 +118,6 @@ fn parse(argv: u8[:][>..]) -> Flags {
                 rest = after;
             }
             if good { f.inset = float4 { max(d[0], 0.0), max(d[1], 0.0), max(d[2], 0.0), max(d[3], 0.0) }; }
-        }
-        if a == "--corner" {
-            let w, h, found = split_once(v, ",");
-            let x, ok_x = parse_flt(w);
-            let y, ok_y = parse_flt(h);
-            if found && ok_x && ok_y { f.corner = float2 { max(x as f32, 0.0), max(y as f32, 0.0) }; }
         }
         if a == "--density-floor" {
             let x, ok = parse_flt(v);

@@ -186,9 +186,6 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
         if setup == NOTHING && gear_beside(true, height, u) {
             content.y = min(max(content.y, area.y + 8.0 * u), area.y + height - content_h);
         }
-        // Below the window's control (iPadOS's three dots) in a window, where it fits.
-        let drop = gui::corner_drop(g, content);
-        if content.y + drop + content_h <= area.y + height { content.y += drop; }
         let stage = float4 { w + 80.0 * u, 0.0, width - w - 80.0 * u, height };
         side = area.x + stage.x;
         var size = min(0.7 * height, stage.z - 80.0 * u);
@@ -305,8 +302,6 @@ fn named_end(g: gui::Gui&, s: settings::Settings&, across: f32) -> f32 {
 fn player_spot(g: gui::Gui&, area: float4, side: f32, b: float4, way: float4, s: settings::Settings&) -> float4 {
     let u = g.scale;
     var r = float4 { side + EDGE * u, area.y + EDGE * u, chip_width(g, s), CORNER * u };
-    // Below the window's control (iPadOS's three dots) in a window.
-    r.y += gui::corner_drop(g, r);
     let end = r.x + r.z + 16.0 * u;
     let board = b.z > 0.0 && end > b.x && b.y < r.y + r.w + 8.0 * u;
     if end > way.x || board { r.z = chip_width(g, s, false); }

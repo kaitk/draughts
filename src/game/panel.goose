@@ -489,8 +489,6 @@ fn leave(g: gui::Gui&, l: Layout) -> i64 {
     let asks = [BACK, SETTINGS, RESTART];
     if l.left.z < l.left.w {
         var column = l.left;
-        // Below the window's control (iPadOS's three dots) in a window (task 050).
-        gui::cut_top(column, gui::corner_drop(g, column));
         if gui::back(g, 110, gui::cut_top(column, ROW_H * u), strings::get(words[0])) { chosen = BACK; }
         gui::cut_top(column, BACK_GAP * u);
         gui::panel(g, column);
@@ -514,13 +512,11 @@ fn leave(g: gui::Gui&, l: Layout) -> i64 {
     }
     gui::panel(g, l.left);
     if l.compact {
-        // Icons alone: back at the left, clear of the window's control, settings and start
-        // over at the right, the board between start over and undo move.
+        // Icons alone: back at the left, settings and start over at the right, the board
+        // between start over and undo move.
         var bar = gui::inset(l.left, 12.0 * u);
         let tw = ICON_W * u;
-        let first = float4 { bar.x, bar.y, tw, bar.w };
-        let back_r = float4 { first.x + gui::corner_shift(g, first), bar.y, tw, bar.w };
-        if gui::button(g, 110, back_r, icons[0]) { chosen = BACK; }
+        if gui::button(g, 110, gui::cut_left(bar, tw), icons[0]) { chosen = BACK; }
         let restart = gui::cut_right(bar, tw);
         gui::cut_right(bar, 12.0 * u);
         let gear = gui::cut_right(bar, tw);

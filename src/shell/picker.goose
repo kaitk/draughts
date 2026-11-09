@@ -176,7 +176,6 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let whole = page;           // the rows center on the screen, not on what back leaves
     if landscape {
         var column = gui::cut_left(page, back_w(g));
-        gui::cut_top(column, gui::corner_drop(g, column));
         if back(g, gui::cut_top(column, 88.0 * u)) { pick = BACK; }
         gui::cut_left(page, 24.0 * u);
     }
@@ -201,8 +200,6 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     if !short {
         var top = float4 { x, y, w, 88.0 * u };
         if !landscape {
-            // Clear of the window's control (iPadOS's three dots) in a window.
-            gui::cut_left(top, gui::corner_shift(g, top));
             if back(g, gui::cut_left(top, back_w(g))) { pick = BACK; }
             gui::cut_left(top, 20.0 * u);
         }
@@ -304,7 +301,6 @@ fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, sp
         // levels wouldn't fit the height beside that (Shots on a phone with its insets).
         let stacked = tightest(t, room.z - back_w(g) - 24.0 * u, short, phone, u) > room.w;
         column = gui::cut_left(room, if stacked { 88.0 * u } else { back_w(g) });
-        gui::cut_top(column, gui::corner_drop(g, column));
         if back(g, gui::cut_top(column, 88.0 * u), stacked) { pick = SHOWN; }
         gui::cut_left(room, 24.0 * u);
     }
@@ -356,7 +352,6 @@ fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, sp
         var head = float4 { x, y, w, head_h };
         y += head_h;
         if !landscape {
-            gui::cut_left(head, gui::corner_shift(g, head));
             if back(g, gui::cut_left(head, back_w(g))) { pick = SHOWN; }
             gui::cut_left(head, 16.0 * u);
         }
