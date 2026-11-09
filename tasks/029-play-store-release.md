@@ -28,7 +28,8 @@ documentation when doing this, not this list.
   read 2026-11-08). Closed testing: a personal account created after 2023-11-13 needs at
   least 12 testers opted in for the 14 days before applying for production
   ([Play Console Help 14151465](https://support.google.com/googleplay/android-developer/answer/14151465),
-  read 2026-11-08).
+  read 2026-11-08). The testers' list is local, out of git:
+  `~/Downloads/draughts-store/testers.md`.
 - **Signing:** an upload key at `~/.config/draughts/upload-key.jks` (PKCS12, alias
   `upload`, RSA 4096, `CN=Draughts`, valid to 2054-03-26, certificate SHA-256
   `C4:F6:7B:CD:…:1D:6F:4B`), its random password in
