@@ -48,48 +48,49 @@ first start, 020 reviewed the code's layout, 021 built the game screen, clocks, 
 Estonian, 025 regrouped the settings, 027 had the computer spend its clock as a player of
 its level would, 028 made the icon and launch screen, 030 fitted the layouts to phones and
 other screen sizes, 031 made the win calmer, 032 brought memory down, 034 made the setup's
-board show the game, and 035 added home's X; 016 (tabletop pictures) was cancelled. All
-are archived. Together they make the MVP in `docs/product.md`.
+board show the game, 035 added home's X, 015 the 3D board (in main 2026-11-09), and 047
+reviewed the structure; 016 (tabletop pictures) and 033 (an icon per season) were
+cancelled. All are archived. The MVP in `docs/product.md` is built.
 
-Open: 010 runs alongside: goose_gfx changes to propose upstream. 013 adds season effects
-later. 014 upscales the backgrounds on the desktop; placeholders do until then. 015 (the
-3D board) comes after the MVP, and so does 033 (an icon per season; until then one icon,
-switched by hand). 026 (the first start and tutorial) comes after the MVP's menus. 029
-(release on Google Play) makes the release, 036 announces it, 037 builds the puzzle set by
-theme, 038 adds players, 039 compares procedural wood for 015's prototype, and 042
-brings the 3D board's frame cost down. 046 prepares the App Store release after task 043's iOS build.
+Open:
 
-## Next (updated 2026-11-09, at the day session's end)
+- Release: 029 Google Play, 046 the App Store (after 043, iOS), 036 the announcement
+  after the Play release.
+- Content and play: 037 the puzzle set by theme, 038 players, 040 a hint in the game
+  (later), 048 a reported forced capture with a king, 049 draws.
+- The 3D board: 039 procedural wood, 041 a carved spring board, 042 its frame cost, 044
+  a plain background, 045 board styles to choose from.
+- Later: 010 goose_gfx changes to propose upstream (alongside), 013 season effects, 014
+  upscaled backgrounds, 026 the first start and tutorial.
 
-Done on 2026-11-09 (day): the README rewritten for visitors; from the child's play, the
-stale must-capture ring after a move, a dropped capture that couldn't go on from its
-stop, easy as the default starting at skill 0 with overlooks below 15, play again at the
-adapted skill, the puzzles' turn piece, a wrong puzzle move answered before it slides
-back, seven puzzles made unique, `--reset-skill`, and task 040 (a hint in the game, for
-later). The 3D board (015) landed in main on 2026-11-09.
+## Next (updated 2026-11-09, evening)
+
+Done on 2026-11-09: the 3D board (015) in main; the store listings revised and approved
+(029, 046); the autumn icon shipped as the one icon (033 cancelled); each variant's draw
+rules confirmed against the federations' texts and the user's answers recorded (049),
+with the draw's screen prototyped in three takes; the structure review (047): shared
+build steps in `scripts/native.py`, the app's flags in `src/app/flags.goose`, one
+variant-name table, stale comments and docs.
 
 What needs the user:
 
 1. Back up the upload key (`~/.config/draughts/upload-key.jks` and its properties).
-2. 029: the developer name (likely "Gideonic") and the contact email in `store/`'s
-   placeholders; publish `store/privacy/` on GitHub Pages; open the personal Play
-   account and find the 12 testers for the 14-day closed test; review the listing
-   drafts, the Estonian especially. Nothing goes to Play until the user says so.
-3. 037: play the set and its levels' order on the tablet; the Russian set's open terms
-   (the sieve, free tempo); Brazilian's own set.
-4. 038: the final badge silhouettes, if the traced ones are to be replaced.
-5. On the Pixel 7a: a drop about 0.6 of a square off a target in puzzle 4 lands on it
+2. 029: the developer name and the contact email in `store/`'s placeholders; publish
+   `store/privacy/` on GitHub Pages; open the personal Play account and find the 12
+   testers for the 14-day closed test; the retake of scenes 02, 03, 05, and 06. Nothing
+   goes to Play until the user says so.
+3. 049: pick a take of the draw's screen (`prototypes/draw.html`).
+4. 037: play the set and its levels' order on the tablet; the Russian set's open terms;
+   Brazilian's own set.
+5. 038: the final badge silhouettes, if the traced ones are to be replaced.
+6. On the Pixel 7a: a drop about 0.6 of a square off a target in puzzle 4 lands on it
    (`board::snap`, not yet seen on a device).
-
-6. The child's next games: whether easy at skill 0 feels right (`docs/architecture/ai.md`'s
+7. The child's next games: whether easy at skill 0 feels right (`docs/architecture/ai.md`'s
    tuning notes), and whether multi-jump captures are clear with the capture count.
 
-Then: 015's device checks, 042's quick wins, 041's carved looks, 036 after the release.
+Then: 049's draws, the device checks in 042 and 044, 048, 041's carved looks, 036 after
+the release.
 
 Not in the MVP (the user, 2026-11-08): sound; the visual feedback is clear, and sound
 may come soon after, kept from being bling. To decide later: a puzzle rating like
 GoDraughts' and the computer's level shown as a rating (per player), 026's first start.
-
-After the MVP: 026 (first start and tutorial; its prototype awaits the user's review),
-more Russian puzzles and Brazilian's, 015, 013, 014, 033's seasonal icons, and 010
-alongside.
