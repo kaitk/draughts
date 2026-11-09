@@ -21,10 +21,11 @@ themes are a fixed list in code (`puzzles::THEME_NAMES`, their icons and names i
 | Crowning | To the far row: a capture that ends there, the breakthrough sacrifice, the breakthrough then the race, two men given for a crown. | 4, 4, 4 |
 | Shots | Give men, then take more: give one, take three or four (level 1, two moves); the double sacrifice, give two, take four or five (level 2, three moves). | 10, 10, 0 |
 | King shots | The king as a weapon: its zigzag for three or four, a shot that opens the long diagonal for it, the double sacrifice for the king. | 4, 3, 3 |
+| Safe move | The one move that doesn't lose to a shot: each threat a give-one-take-two the other side would play, every other move allowing it; levels by how many moves there are to weigh (three, five to seven, eight to twelve). White to move. | 2, 4, 4 |
 
-That is 64. 18 of them are black to move: none in Learn, where the child learns on
-white, and between a quarter and a third of each other theme. Safe move, Endgame, and
-Opening traps come later, as do Shots' level 3 (named shots and game finishes).
+That is 74. 18 of them are black to move: none in Learn or Safe move, and between a
+quarter and a third of each other theme. Endgame and Opening traps come later, as do
+Shots' level 3 (named shots and game finishes).
 
 A puzzle is a block of `key value` lines, a blank line ending it; `#` starts a comment.
 
@@ -33,7 +34,7 @@ variant international           the variant of the puzzles after it
 
 # give one, take three
 id 53                           stable, 1 to MAX_PUZZLES (150): stars are kept by it
-theme shots                     learn, captures, crowning, shots, king-shots
+theme shots                     learn, captures, crowning, shots, king-shots, safe-move
 level 1                         1 to 3, easy to hardest
 goal take 2                     take N, crown, win, or safe
 position W:W21,27,30,31,35,41,45,46,47:B1,4,6,7,11,13,16,23,33
@@ -100,8 +101,10 @@ captures are forced.
 - **crown**: the move makes a king that the reply doesn't take.
 - **win**: the other side is left with no move: everything taken or blocked. Leaving it
   no move reaches any goal.
-- **safe**: nothing is lost over the next two plies (a reply and an answer), the
-  captures due after them played out. A safe puzzle has one such move.
+- **safe**: nothing is lost over the next three plies (a reply, an answer, and the
+  reply after it), the captures due after them played out: deep enough to see the
+  other side's double sacrifice. A safe puzzle has one such move, and every other move
+  loses to a shot (Checks).
 
 The other side's reply, when the puzzle goes on, is the line's when the child has played
 the line so far, and otherwise the reply after which the solver needs the most moves.
@@ -109,8 +112,9 @@ The piece the hint shows is the line's next move's, or the first right move's of
 lines.
 
 The search keeps each position's moves on one fixed stack in a `puzzles::Solver` the
-caller owns, so it allocates nothing and needs little native stack. The 64 puzzles cost
-at most 415 positions to check (a king shot of three moves), 0.2 ms built;
+caller owns, so it allocates nothing and needs little native stack. The 74 puzzles cost
+at most 3,545 positions to check (a safe move among eight, whose every other move is
+searched for the shot it allows), 0.2 ms built;
 the longest line is five plies, within `MAX_PLIES` (8). Russian's 46 cost at most 161
 (a shot of three moves), their longest line five plies too.
 
@@ -176,7 +180,14 @@ puzzle, and by `tools/puzzles.goose`) refuses a puzzle when:
   replies follow a line whichever right move the child finds;
 - a line doesn't end quiet: the other side has a capture due after it, or one of its
   replies gives the solver a capture. A puzzle that stops with a capture on the board
-  shows the child more to play than it let them (2026-11-08);
+  shows the child more to play than it let them (2026-11-08). A safe move's replies may
+  still give men, since the threat it answers starts with one: the sacrifice is still
+  there to make, only no longer wins (2026-11-09);
+- a safe puzzle isn't one move, has a capture due at the start, or has a move other
+  than the right one that loses without a shot: each wrong move must leave the other
+  side no capture due and a sacrifice after which the solver ends down
+  (`puzzles::shot`), so the puzzle is a threat to see, not a man left hanging; the
+  right move leaving no shot is its being right (above);
 - a take's line wins more or fewer than its count, or a crown's line ends without a
   king made (a goal reached only by leaving the other side no move);
 - along a line, another legal move goes from and to the same squares, which a tap
@@ -195,12 +206,14 @@ both files.
 
 `tools/puzzles.goose try FEN GOAL MOVES` shows the moves that are right, the line the
 screen would play, and what the checks say of it. `find SIDE GOAL MOVES MINE THEIRS
-COUNT [SEED [KINGS]]` turns up positions to compose from: the solver's and the other
+COUNT [SEED [KINGS [CORE]]]` turns up positions to compose from: the solver's and the other
 side's men placed in camps as in a game (each next man beside or behind one of its own,
 on its own side of the board), some of the solver's made kings, with exactly one right
 move at each of the solver's turns, every check passed, and the game going on after the
-line; a take in more moves must be a shot, its first move answered by a capture. For
-black it finds the puzzle for white and turns the board round, checking it again. Both
+line; a take in more moves must be a shot, its first move answered by a capture, and a
+safe move must answer a threat, a shot the other side would have were it to move. CORE
+is a motif's skeleton for white, its men in every position and the camps filled round
+them; the named shots were found that way. For black it finds the puzzle for white and turns the board round, checking it again. Both
 take `--variant NAME` (International by default), and find `--rows N`, the rows from its
 own back row a camp spans (the board's size less 3 by default), and `--tempo`, which
 asks a take in more moves to start with a free tempo instead: a quiet move that no reply

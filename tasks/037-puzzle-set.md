@@ -348,11 +348,38 @@ is its mark alone beside its tiles. Headless: `test/shell/picker.goose` (the tab
 library, a page, a black puzzle on the turned board, half of Learn opening the rest,
 and next after a theme's last.
 
+## Safe move (2026-11-09)
+
+Safe move is a sixth International theme (the shield), opening with the others at half
+of Learn: 10 puzzles, levels 2, 4, 4 by the moves to weigh (three; five to seven; eight
+to twelve), ids 85 to 94, all white to move. `SAFE_DEPTH` is 3 plies (was 2), deep
+enough for a double sacrifice. `puzzles::check` adds for a safe puzzle: one move, no
+capture due at the start, and every move but the right one losing to a shot
+(`puzzles::shot`: no capture due, and a sacrifice after which the solver ends down); the
+right move's being safe is that it leaves no shot. Quiet for a safe line is only "no
+capture due after it": the threat's sacrifice is still there to offer, so the strict
+rule refused every candidate. `find` requires the threat at the start (the other side
+to move has a shot) and takes a CORE, a motif's skeleton for white, its men placed
+first. Found over 2M tries a seed at 5 to 8 men a side: 122 candidates, of which the
+engine disagreed on 12 and scored the right move as losing deeper on 30; the ten were
+picked from the rest for different shapes, preferring a safe move worth 0 (not one
+that also wins). Every threat is a give one, take two; none of the ten is a double
+sacrifice. The most positions a check takes: 801, 1,869, 3,545 by level (0.2 ms built),
+the most of the set. `build/puzzles`: 74, 0 problems, the engine agreeing on all.
+
 ## Open
 
-- **The safe move** looks two plies past the move; its puzzles want a threat that is a
-  shot, three or more plies deep.
-- **Shots level 3** (named shots, game finishes) and the later themes.
+- **Safe move**: black to move in a third (turn some with `find black safe`), and level
+  3 threats that are double sacrifices.
+- **Shots level 3** (named shots, game finishes) and the later themes. Skeletons that
+  play the course lines were written for the Haarlem shot (`W:W28,32,34,37:B10,17,19,23`,
+  28-22 17x28 34-29 23x34 32x5), the bomb (`W:W27,28,32,37,38,43:B16,17,18,19,23,29`,
+  27-21 16x27 32x12 23x41 12x34), the heel shot (`W:W30,34,38,40,45:B21,22,23,25,28`,
+  38-33 28x39 34x43 25x34 40x16), coup Philippe (`W:W27,32,34,38,40,45:B11,12,16,18,23,25`,
+  27-22 18x27 32x21 16x27 34-30 25x34 40x16), and the royal shot
+  (`W:W27,28,32,38,39,40,45:B12,13,14,18,19,23,24`, 27-22 18x27 32x21 23x34 40x7). `find`
+  round the Haarlem core gave candidates, but the two checked (a Haarlem shot and a
+  Napoleon's shot) had the engine preferring a quiet move, so neither is in.
 - **The look on devices**: the new icons (book, jumps, king, the level bars) and the
   glow-colored bar and marks are shader work the headless tests don't see.
 

@@ -17,7 +17,7 @@ The launcher's name stays "Kabe" (`strings/et.txt`). Alternatives: "Kabe: mängi
 ## Short description (64 of 80)
 
 ```text
-Mängi kabet sõbra või arvutiga ja õpi see 64 ülesandega selgeks.
+Mängi kabet sõbra või arvutiga ja õpi see 74 ülesandega selgeks.
 ```
 
 ## Full description (2,284 of 4,000)
@@ -34,7 +34,7 @@ MÄNGI
 • Mängi kellata või kellaga, kummalgi 5 või 10 minutit.
 
 ÜLESANDED
-• 64 ülesannet 10 × 10 laual viies teemas: Õpi, Löömine, Tammiks, Kombinatsioonid ja Tammi löögid.
+• 74 ülesannet 10 × 10 laual kuues teemas: Õpi, Löömine, Tammiks, Kombinatsioonid, Tammi löögid ja Ohutu käik.
 • Iga teema läheb kergest raskemaks ja mõnes ülesandes mängid mustadega.
 • Esimesena tuleb Õpi, mis näitab reegleid mängus; teised teemad avanevad, kui pooled selle ülesannetest on lahendatud.
 • Iga ülesande eest kuni kolm tähte, iga vea eest üks vähem; lahendatud ülesannet saab uuesti mängida, et võita kõik kolm.

@@ -3,7 +3,7 @@ the wordmark's piece: 1, crowned 1.0, no ring true
 the player's chip at vec4<f32> { 464.0, 24.0, 88.0, 88.0 }, faces 1
 continue: game, sharp false, board at vec4<f32> { 280.0, 40.0, 720.0, 11.52 }, glyphs 43, W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 0
 home: home, sharp true, board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, glyphs 64, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
-puzzles: puzzles, sharp true, board at vec4<f32> { -2560.0, 0.0, 640.0, 10.240001 }, glyphs 133, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
+puzzles: puzzles, sharp true, board at vec4<f32> { -2560.0, 0.0, 640.0, 10.240001 }, glyphs 163, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
 back from the puzzles: home, sharp true, board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, glyphs 64, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
 settings: settings, board at vec4<f32> { 726.14, 147.14, 505.72, 8.09152 }, sharp true, its first frame drawn true, the next false
 back from settings: home

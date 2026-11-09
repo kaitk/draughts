@@ -592,3 +592,95 @@ goal take 2
 position B:W31,33,38,44,45,48,50:B1,2,4,K8,13,24
 line 24-29 33x24 13-19 24x13 8x35x49x27x36
 source own, motif: the double sacrifice for the king; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# Safe move: the one move that doesn't lose to the shot the other side threatens.
+
+# every other move allows a shot
+id 85
+theme safe-move
+level 1
+goal safe
+position W:W21,26,27,31,34:B11,16,18,22,28
+line 21-17
+source own, motif: the safe move against a shot; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# every other move allows a shot
+id 86
+theme safe-move
+level 1
+goal safe
+position W:W20,24,25,30,47:B10,13,15,19,21,23
+line 20-14
+source own, motif: the safe move against a shot; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# every other move allows a shot
+id 87
+theme safe-move
+level 2
+goal safe
+position W:W23,28,29,33,40,45,48:B12,13,17,18,20,22,24
+line 23-19
+source own, motif: the safe move against a shot; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# every other move allows a shot
+id 88
+theme safe-move
+level 2
+goal safe
+position W:W30,34,35,37,40,41,46,47:B8,13,15,20,23,25,29,33
+line 30-24
+source own, motif: the safe move against a shot; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# every other move allows a shot
+id 89
+theme safe-move
+level 2
+goal safe
+position W:W24,29,30,34,40,42,46,47:B14,15,18,20,21,23,25,27
+line 24-19
+source own, motif: the safe move against a shot; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# every other move allows a shot
+id 90
+theme safe-move
+level 2
+goal safe
+position W:W20,21,24,25,30,31,39,44:B6,9,13,14,15,18,19,23
+line 39-34
+source own, motif: the safe move against a shot; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# every other move allows a shot
+id 91
+theme safe-move
+level 3
+goal safe
+position W:W16,21,22,25,27,32,41,45:B2,9,14,19,20,24,29,33
+line 32-28
+source own, motif: the safe move against a shot; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# every other move allows a shot
+id 92
+theme safe-move
+level 3
+goal safe
+position W:W22,23,28,30,35,39,42,45:B10,11,14,17,19,21,24,26
+line 22-18
+source own, motif: the safe move against a shot; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# every other move allows a shot
+id 93
+theme safe-move
+level 3
+goal safe
+position W:W21,25,27,37,42,44,48:B13,14,19,20,23,24,29
+line 44-40
+source own, motif: the safe move against a shot; found by tools/puzzles.goose find from game-like camps, verified by the engine
+
+# every other move allows a shot
+id 94
+theme safe-move
+level 3
+goal safe
+position W:W21,22,25,32,41,43,45,47:B5,10,14,15,19,20,24,29
+line 32-28
+source own, motif: the safe move against a shot; found by tools/puzzles.goose find from game-like camps, verified by the engine

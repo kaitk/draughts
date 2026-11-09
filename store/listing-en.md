@@ -16,7 +16,7 @@ learn" (24), "Draughts" (8).
 ## Short description (74 of 80)
 
 ```text
-Play draughts with a friend or the computer, and learn it with 64 puzzles.
+Play draughts with a friend or the computer, and learn it with 74 puzzles.
 ```
 
 ## Full description (2,218 of 4,000)
@@ -33,7 +33,7 @@ PLAY
 • Play without a clock, or with 5 or 10 minutes each.
 
 PUZZLES
-• 64 puzzles on the 10 × 10 board, in five themes: Learn, Captures, Crowning, Shots, and King shots.
+• 74 puzzles on the 10 × 10 board, in six themes: Learn, Captures, Crowning, Shots, King shots, and Safe move.
 • Each theme goes from easy to harder, and some puzzles are played with black.
 • Learn comes first and shows the rules in action; the other themes open once half of it is solved.
 • Up to three stars a puzzle, one fewer for each mistake; a solved puzzle can be played again for all three.
@@ -69,7 +69,7 @@ Each claim is a fact of the app as built (2026-11-09); check again before an upl
 
 - Variants, levels, clocks, take back, start over: `docs/product.md`, `strings/en.txt`.
 - "It adjusts after each game": `ai::adapt` (`docs/architecture/ai.md`), per player.
-- Puzzles: `puzzles/international.txt`, 64 in the five themes, 18 of the 52 outside Learn
+- Puzzles: `puzzles/international.txt`, 74 in the six themes, 18 of the 62 outside Learn
   black to move; the themes opening at half of Learn, and the stars (three at stake, a
   miss puts one out down to one, the best kept): `docs/architecture/puzzles.md`. Shots
   has two levels so far, the others three, so the text says "from easy to harder".

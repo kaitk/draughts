@@ -63,9 +63,20 @@ loaded: true
 80: king-shots 3, white, take 2 in 3, 13 pieces, 1 line; solved by 28-23
 81: king-shots 3, white, take 2 in 3, 13 pieces, 1 line; solved by 34-29
 82: king-shots 3, black, take 2 in 3, 13 pieces, 1 line; solved by 24-29
+85: safe-move 1, white, safe in 1, 10 pieces, 1 line; solved by 21-17
+86: safe-move 1, white, safe in 1, 11 pieces, 1 line; solved by 20-14
+87: safe-move 2, white, safe in 1, 14 pieces, 1 line; solved by 23-19
+88: safe-move 2, white, safe in 1, 16 pieces, 1 line; solved by 30-24
+89: safe-move 2, white, safe in 1, 16 pieces, 1 line; solved by 24-19
+90: safe-move 2, white, safe in 1, 16 pieces, 1 line; solved by 39-34
+91: safe-move 3, white, safe in 1, 16 pieces, 1 line; solved by 32-28
+92: safe-move 3, white, safe in 1, 16 pieces, 1 line; solved by 22-18
+93: safe-move 3, white, safe in 1, 14 pieces, 1 line; solved by 44-40
+94: safe-move 3, white, safe in 1, 16 pieces, 1 line; solved by 32-28
 learn: 12 puzzles, by level 4 4 4
 captures: 10 puzzles, by level 4 3 3
 crowning: 12 puzzles, by level 4 4 4
 shots: 20 puzzles, by level 10 10 0
 king-shots: 10 puzzles, by level 4 3 3
-64 puzzles, 18 black to move; at most 415 positions a check; 0 problems
+safe-move: 10 puzzles, by level 2 4 4
+74 puzzles, 18 black to move; at most 3545 positions a check; 0 problems

@@ -8,7 +8,7 @@ a foldable, landscape, 2208 x 1768:
   the game: 4 tiles, smallest 160 x 96 dp, board 519 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 519 dp, all in place
   settings: 17 tiles, smallest 88 x 88 dp, board 242 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 519 dp, all in place
@@ -22,7 +22,7 @@ a foldable, portrait, 1768 x 2208:
   the game: 4 tiles, smallest 129 x 88 dp, board 579 dp, all in place
   the game on the clock: 6 tiles, smallest 129 x 88 dp, board 579 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 307 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 153 x 88 dp, board 579 dp, all in place
@@ -36,7 +36,7 @@ a foldable, portrait, 1768 x 2208:
   the game: 4 tiles, smallest 160 x 96 dp, board 587 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 587 dp, all in place
   settings: 17 tiles, smallest 88 x 88 dp, board 305 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 587 dp, all in place
@@ -50,7 +50,7 @@ a foldable, portrait, 1768 x 2208:
   the game: 4 tiles, smallest 192 x 88 dp, board 647 dp, all in place
   the game on the clock: 6 tiles, smallest 192 x 88 dp, board 647 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 371 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 192 x 88 dp, board 647 dp, all in place
@@ -64,7 +64,7 @@ a 20:9 phone, landscape, 2400 x 1080:
   the game: 4 tiles, smallest 200 x 88 dp, board 752 dp, all in place
   the game on the clock: 6 tiles, smallest 200 x 88 dp, board 752 dp, all in place
   settings: 17 tiles, smallest 88 x 88 dp, board 707 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 200 x 88 dp, board 752 dp, all in place
@@ -78,7 +78,7 @@ a 20:9 phone, portrait, 1080 x 2400:
   the game: 4 tiles, smallest 227 x 88 dp, board 752 dp, all in place
   the game on the clock: 6 tiles, smallest 227 x 88 dp, board 752 dp, all in place
   settings: 17 tiles, smallest 88 x 88 dp, board 692 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 227 x 88 dp, board 752 dp, all in place
@@ -92,7 +92,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp:
   the game: 4 tiles, smallest 160 x 96 dp, board 492 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 492 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 431 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 492 dp, all in place
@@ -106,7 +106,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp:
   the game: 4 tiles, smallest 143 x 88 dp, board 492 dp, all in place
   the game on the clock: 6 tiles, smallest 143 x 88 dp, board 492 dp, all in place
   settings: 17 tiles, smallest 88 x 88 dp, board 271 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 143 x 88 dp, board 492 dp, all in place
@@ -120,7 +120,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp:
   the game: 4 tiles, smallest 160 x 96 dp, board 432 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 432 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 305 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 432 dp, all in place
@@ -134,7 +134,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp:
   the game: 4 tiles, smallest 99 x 88 dp, board 432 dp, all in place
   the game on the clock: 6 tiles, smallest 99 x 88 dp, board 432 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 279 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 107 x 88 dp, board 432 dp, all in place
@@ -148,7 +148,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp:
   the game: 4 tiles, smallest 160 x 96 dp, board 373 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 373 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 0 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 373 dp, all in place
@@ -162,7 +162,7 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp:
   the game: 4 tiles, smallest 96 x 88 dp, board 425 dp, all in place
   the game on the clock: 6 tiles, smallest 96 x 88 dp, board 425 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 0 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 104 x 88 dp, board 425 dp, all in place
@@ -177,7 +177,7 @@ a foldable, landscape, 2208 x 1768:
   the game: 4 tiles, smallest 160 x 96 dp, board 519 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 519 dp, all in place
   settings: 17 tiles, smallest 88 x 88 dp, board 242 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 519 dp, all in place
@@ -191,7 +191,7 @@ a foldable, portrait, 1768 x 2208:
   the game: 4 tiles, smallest 125 x 88 dp, board 579 dp, all in place
   the game on the clock: 6 tiles, smallest 125 x 88 dp, board 579 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 307 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 169 x 88 dp, board 579 dp, all in place
@@ -205,7 +205,7 @@ a foldable, portrait, 1768 x 2208:
   the game: 4 tiles, smallest 160 x 96 dp, board 587 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 587 dp, all in place
   settings: 17 tiles, smallest 88 x 88 dp, board 305 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 587 dp, all in place
@@ -219,7 +219,7 @@ a foldable, portrait, 1768 x 2208:
   the game: 4 tiles, smallest 148 x 88 dp, board 647 dp, all in place
   the game on the clock: 6 tiles, smallest 148 x 88 dp, board 647 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 371 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 152 x 88 dp, board 647 dp, all in place
@@ -233,7 +233,7 @@ a 20:9 phone, landscape, 2400 x 1080:
   the game: 4 tiles, smallest 200 x 96 dp, board 752 dp, all in place
   the game on the clock: 6 tiles, smallest 200 x 96 dp, board 752 dp, all in place
   settings: 17 tiles, smallest 88 x 88 dp, board 707 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 200 x 96 dp, board 752 dp, all in place
@@ -247,7 +247,7 @@ a 20:9 phone, portrait, 1080 x 2400:
   the game: 4 tiles, smallest 227 x 88 dp, board 752 dp, all in place
   the game on the clock: 6 tiles, smallest 227 x 88 dp, board 752 dp, all in place
   settings: 17 tiles, smallest 88 x 88 dp, board 692 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 227 x 88 dp, board 752 dp, all in place
@@ -261,7 +261,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp:
   the game: 4 tiles, smallest 160 x 96 dp, board 492 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 492 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 410 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 492 dp, all in place
@@ -275,7 +275,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp:
   the game: 4 tiles, smallest 115 x 88 dp, board 492 dp, all in place
   the game on the clock: 6 tiles, smallest 115 x 88 dp, board 492 dp, all in place
   settings: 17 tiles, smallest 88 x 88 dp, board 271 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 103 x 88 dp, board 492 dp, all in place
@@ -289,7 +289,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp:
   the game: 4 tiles, smallest 160 x 96 dp, board 432 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 432 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 285 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 432 dp, all in place
@@ -303,7 +303,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp:
   the game: 4 tiles, smallest 95 x 88 dp, board 432 dp, all in place
   the game on the clock: 6 tiles, smallest 95 x 88 dp, board 432 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 279 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 123 x 88 dp, board 432 dp, all in place
@@ -317,7 +317,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp:
   the game: 4 tiles, smallest 160 x 96 dp, board 373 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 373 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 0 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 373 dp, all in place
@@ -331,7 +331,7 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp:
   the game: 4 tiles, smallest 92 x 88 dp, board 425 dp, all in place
   the game on the clock: 6 tiles, smallest 92 x 88 dp, board 425 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 0 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 120 x 88 dp, board 425 dp, all in place
@@ -346,7 +346,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 118, 0, 0, 84 px:
   the game: 4 tiles, smallest 160 x 96 dp, board 450 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 450 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 375 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 450 dp, all in place
@@ -360,7 +360,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 0, 0, 118, 84 px:
   the game: 4 tiles, smallest 160 x 96 dp, board 450 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 450 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 375 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 450 dp, all in place
@@ -374,7 +374,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp, insets 0, 118, 0, 84 px:
   the game: 4 tiles, smallest 143 x 88 dp, board 492 dp, all in place
   the game on the clock: 6 tiles, smallest 143 x 88 dp, board 492 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 401 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 143 x 88 dp, board 492 dp, all in place
@@ -388,7 +388,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   the game: 4 tiles, smallest 160 x 96 dp, board 395 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 395 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 256 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 395 dp, all in place
@@ -402,7 +402,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   the game: 4 tiles, smallest 160 x 96 dp, board 395 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 395 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 256 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 395 dp, all in place
@@ -416,7 +416,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp, insets 0, 118, 0, 84 px:
   the game: 4 tiles, smallest 99 x 88 dp, board 432 dp, all in place
   the game on the clock: 6 tiles, smallest 99 x 88 dp, board 432 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 194 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 107 x 88 dp, board 432 dp, all in place
@@ -430,7 +430,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   the game: 4 tiles, smallest 160 x 96 dp, board 321 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 321 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 0 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 321 dp, all in place
@@ -444,7 +444,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   the game: 4 tiles, smallest 160 x 96 dp, board 321 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 321 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 0 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 321 dp, all in place
@@ -458,7 +458,7 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp, insets 0, 118, 0, 84 px:
   the game: 4 tiles, smallest 91 x 88 dp, board 336 dp, all in place
   the game on the clock: 6 tiles, smallest 91 x 88 dp, board 336 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 0 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 91 x 88 dp, board 336 dp, all in place
@@ -473,7 +473,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 118, 0, 0, 84 px:
   the game: 4 tiles, smallest 160 x 96 dp, board 450 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 450 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 354 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 450 dp, all in place
@@ -487,7 +487,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 0, 0, 118, 84 px:
   the game: 4 tiles, smallest 160 x 96 dp, board 450 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 450 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 354 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 450 dp, all in place
@@ -501,7 +501,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp, insets 0, 118, 0, 84 px:
   the game: 4 tiles, smallest 115 x 88 dp, board 492 dp, all in place
   the game on the clock: 6 tiles, smallest 115 x 88 dp, board 492 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 401 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 103 x 88 dp, board 492 dp, all in place
@@ -515,7 +515,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   the game: 4 tiles, smallest 160 x 96 dp, board 395 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 395 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 235 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 395 dp, all in place
@@ -529,7 +529,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   the game: 4 tiles, smallest 160 x 96 dp, board 395 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 395 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 235 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 395 dp, all in place
@@ -543,7 +543,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp, insets 0, 118, 0, 84 px:
   the game: 4 tiles, smallest 95 x 88 dp, board 432 dp, all in place
   the game on the clock: 6 tiles, smallest 95 x 88 dp, board 432 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 194 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 123 x 88 dp, board 432 dp, all in place
@@ -557,7 +557,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   the game: 4 tiles, smallest 160 x 96 dp, board 321 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 321 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 0 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 321 dp, all in place
@@ -571,7 +571,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   the game: 4 tiles, smallest 160 x 96 dp, board 321 dp, all in place
   the game on the clock: 6 tiles, smallest 160 x 96 dp, board 321 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 0 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 160 x 96 dp, board 321 dp, all in place
@@ -585,7 +585,7 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp, insets 0, 118, 0, 84 px:
   the game: 4 tiles, smallest 91 x 88 dp, board 336 dp, all in place
   the game on the clock: 6 tiles, smallest 91 x 88 dp, board 336 dp, all in place
   settings: 11 tiles, smallest 88 x 88 dp, board 0 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 91 x 88 dp, board 336 dp, all in place
@@ -600,7 +600,7 @@ en, the tablet with its navigation bar:
   the game: 4 tiles, smallest 200 x 88 dp, board 704 dp, all in place
   the game on the clock: 6 tiles, smallest 200 x 88 dp, board 704 dp, all in place
   settings: 17 tiles, smallest 88 x 88 dp, board 506 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 200 x 88 dp, board 704 dp, all in place
@@ -615,7 +615,7 @@ en, the tablet with its navigation bar:
   the game: 4 tiles, smallest 227 x 88 dp, board 752 dp, all in place
   the game on the clock: 6 tiles, smallest 227 x 88 dp, board 752 dp, all in place
   settings: 17 tiles, smallest 88 x 88 dp, board 485 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 227 x 88 dp, board 752 dp, all in place
@@ -631,7 +631,7 @@ et, the tablet with its navigation bar:
   the game: 4 tiles, smallest 200 x 96 dp, board 704 dp, all in place
   the game on the clock: 6 tiles, smallest 200 x 96 dp, board 704 dp, all in place
   settings: 17 tiles, smallest 88 x 88 dp, board 506 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 200 x 96 dp, board 704 dp, all in place
@@ -646,11 +646,11 @@ et, the tablet with its navigation bar:
   the game: 4 tiles, smallest 227 x 88 dp, board 752 dp, all in place
   the game on the clock: 6 tiles, smallest 227 x 88 dp, board 752 dp, all in place
   settings: 17 tiles, smallest 88 x 88 dp, board 485 dp, all in place
-  the puzzles: 6 tiles, smallest 88 x 88 dp, all in place
+  the puzzles: 7 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
   a puzzle: 4 tiles, smallest 227 x 88 dp, board 752 dp, all in place
   the win: 6 tiles, smallest 112 x 88 dp, board 752 dp, card buttons 112 x 88 dp, all in place
   settings: 17 tiles, 17 with no inset: both groups
 settings' Look tab: group 1, tiles 11 then 13, changed false
-the puzzles' Learn row: theme 0, tiles 6 then 13
+the puzzles' Learn row: theme 0, tiles 7 then 13
