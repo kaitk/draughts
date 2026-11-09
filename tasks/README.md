@@ -58,7 +58,7 @@ Open:
   036 the announcement after the Play
   release.
 - Content and play: 037 the puzzle set by theme, 038 players, 040 a hint in the game
-  (later), 048 a reported forced capture with a king.
+  (later), 052 what each side has captured (a decision first), 048 a reported forced capture with a king.
 - The 3D board: 039 procedural wood, 041 a carved spring board, 042 its frame cost, 044
   a plain background, 045 board styles to choose from.
 - Later: 010 goose_gfx changes to propose upstream (alongside), 013 season effects, 014
