@@ -49,7 +49,8 @@ Estonian, 025 regrouped the settings, 027 had the computer spend its clock as a 
 its level would, 028 made the icon and launch screen, 030 fitted the layouts to phones and
 other screen sizes, 031 made the win calmer, 032 brought memory down, 034 made the setup's
 board show the game, 035 added home's X, 015 the 3D board (in main 2026-11-09), 047
-reviewed the structure, 049 added the draws, and 051 polished what preparing the stores found; 016 (tabletop pictures) and 033 (an icon per season) were
+reviewed the structure, 049 added the draws, 051 polished what preparing the stores found, and 053 made the computer's
+mistakes follow how tense the position is; 016 (tabletop pictures) and 033 (an icon per season) were
 cancelled. All are archived. The MVP in `docs/product.md` is built.
 
 Open:
