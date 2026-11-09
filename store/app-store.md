@@ -158,10 +158,10 @@ read.
 ## Privacy policy inside the app
 
 Guideline 5.1.1(i) asks for the policy's link in the metadata **and** inside the app,
-easy to reach (read 2026-11-09). The app has none. In the Kids category a link out needs a
-parental gate, so the simplest is the policy's text inside the app (settings, behind a
-quiet "Privacy" row: "Draughts collects nothing; everything stays on this device"), or a
-link behind a gate. To build before submitting (task 046).
+easy to reach (read 2026-11-09). In the Kids category a link out needs a parental gate, so
+the app shows the policy in one sentence instead, with no link: in settings' Game group
+(beside its title, or at its foot on a phone and in portrait), "Privacy: Draughts collects
+nothing. Everything stays on this device." (`settings.privacy` in `strings/<lang>.txt`).
 
 ## Export compliance
 
@@ -188,8 +188,9 @@ read 2026-11-09):
 | `NSPrivacyAccessedAPICategorySystemBootTime` | `35F9.1` | Time elapsed between events in the app: frames, animations, clocks |
 
 and `NSPrivacyTracking` false, `NSPrivacyTrackingDomains` and `NSPrivacyCollectedDataTypes`
-empty. `scripts/ios.py` doesn't write it yet (task 046). Check `nm -u` again on the
-release build.
+empty. `scripts/ios.py` writes it into the bundle (`PRIVACY_APIS`); `nm -u` on the
+simulator and device builds of 2026-11-09 found the same three APIs. Check again on the
+release build (`docs/development.md`, "Run on iOS").
 
 ## App Review information
 

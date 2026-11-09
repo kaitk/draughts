@@ -1,6 +1,7 @@
 # 046: Release on the App Store
 
-Status: todo (the listing and answers prepared, 2026-11-09; nothing submitted, no account)
+Status: todo (the listing and answers prepared, and the app meets the bundle's rules,
+2026-11-09; nothing submitted, no account)
 
 Everything between task 043's development build and Draughts on the App Store for iPhone
 and iPad, in the Kids category: no ads, no tracking, no accounts, no network, as on Play
@@ -32,20 +33,35 @@ Apple's pages when doing this, as `store/app-store.md` was on 2026-11-09.
 
 Each is a store rule the app doesn't meet yet:
 
-- [ ] **The privacy policy inside the app** (Guideline 5.1.1(i)): a link or the text,
-      easy to reach. In Kids a link out needs a parental gate, so the simplest is a short
-      text in settings ("Draughts collects nothing; everything stays on this device"),
-      its strings in `strings/<lang>.txt`.
-- [ ] **A privacy manifest:** `scripts/ios.py` writes `PrivacyInfo.xcprivacy` into the
-      bundle, declaring `NSPrivacyAccessedAPICategoryFileTimestamp` (`C617.1`) for
-      `stat`/`fstat` and `NSPrivacyAccessedAPICategorySystemBootTime` (`35F9.1`) for
-      `mach_absolute_time`, which SDL and Goose's runtime import (`nm -u`, 2026-11-09);
-      tracking false, no domains, no collected data. Apple refuses an upload without it.
-- [ ] **The icon:** an asset catalog with the 1024 px icon (`scripts/icon.py --store`
-      makes `apple-1024.png`), compiled with `actool` into `Assets.car` and
-      `CFBundleIcons` (task 043); a dark and a tinted variant optional.
-- [ ] **The launch screen's colour:** `UILaunchScreen` with the icon's background
-      (task 043).
+- [x] **The privacy policy inside the app** (Guideline 5.1.1(i)), 2026-11-09: one
+      sentence in settings' Game group, no link (`settings.privacy`): "Privacy: Draughts
+      collects nothing. Everything stays on this device." / "Privaatsus: Kabe ei kogu
+      midagi. Kõik jääb sellesse seadmesse." Beside the group's title where it fits in two
+      lines at most (the stacked landscapes, one line on the Android tablet and the 13"
+      iPad), else at the glass's foot (portrait, a phone's tabs), so no layout moved
+      (`test/shell/sizes`, `screens3d`, `shell` unchanged; `transition` only counts the
+      note's glyphs). Shot headless on the Mac at an iPhone 13 mini portrait, an iPhone 16
+      Pro Max landscape, the 13" iPad in both, and the tablet's landscape, both languages.
+- [x] **A privacy manifest**, 2026-11-09: `scripts/ios.py` writes `PrivacyInfo.xcprivacy`
+      (`PRIVACY_APIS`): `NSPrivacyAccessedAPICategoryFileTimestamp` (`C617.1`) for
+      `stat`/`fstat`, `NSPrivacyAccessedAPICategorySystemBootTime` (`35F9.1`) for
+      `mach_absolute_time`; tracking false, no domains, no collected data. `nm -u` and the
+      selectors' strings on the simulator and device builds found no other API in Apple's
+      list (no `statfs`, `getattrlist`, `NSUserDefaults`, `systemUptime`,
+      `activeInputModes`).
+- [x] **No Bluetooth**, found 2026-11-09: SDL's HIDAPI linked CoreBluetooth
+      (`CBCentralManager`), which App Store Connect rejects without
+      `NSBluetoothAlwaysUsageDescription` (ITMS-90683, secondhand). The app opens no
+      joystick; `ios/CMakeLists.txt` sets `SDL_HIDAPI OFF`, and the binary links no
+      CoreBluetooth. CoreMotion and GameController stay (SDL's joystick and sensors,
+      never started), which need no purpose string.
+- [x] **The icon**, 2026-11-09: an asset catalog with autumn's 1024 px icon (no alpha),
+      compiled by `actool` into `Assets.car` with `CFBundleIconName` and `CFBundleIcons`
+      (`assetutil --info` lists `AppIcon` at 1024 and the colour). `ios.py` makes the PNG
+      with `icon.py`'s `apple_icon` into `build/ios/icon/` from the local master. A dark
+      and a tinted variant are optional and left out.
+- [x] **The launch screen's colour**, 2026-11-09: `UILaunchScreen`'s `UIColorName` is
+      the catalog's `LaunchBackground`, #140c09, read from Android's `icon_background`.
 - [ ] **iPad windows:** `UIRequiresFullScreen` is deprecated in iPadOS 26 and will be
       ignored, so the layout must follow a resized window on iPad (secondhand; read
       TN3192 first). Or offer iPhone only, which drops the iPad screenshots too.
@@ -72,7 +88,9 @@ Each is a store rule the app doesn't meet yet:
 
 - [x] The listing, the answers, and the screenshots prepared, and a preview of the page
       (2026-11-09)
-- [ ] The privacy text in the app, the privacy manifest, the icon, and the launch screen
+- [x] The privacy text in the app, the privacy manifest, the icon, and the launch screen
+      (2026-11-09; the bundle built for the simulator and the device and checked, not yet
+      run with them)
 - [ ] The iPad layout in a resized window, or the app offered for iPhone only
 - [ ] A distribution build uploaded and tried through TestFlight on a device
 - [ ] Submitted and approved, in the Kids category

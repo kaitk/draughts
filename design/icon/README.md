@@ -28,6 +28,7 @@ cp ~/Downloads/draughts-store/icon/master-winter-jump-1254.png design/icon/maste
 cp ~/Downloads/draughts-store/icon/master-autumn-jump-1254.png design/icon/master-autumn.png
 scripts/icon.py            # the shipped season (SHIPPED, autumn) into android/res/mipmap-*, in git
 scripts/icon.py --store    # also play-512.png and apple-1024.png, into ~/Downloads/draughts-store/icon/
+scripts/ios.py ...         # makes its own apple-1024.png into build/ios/icon/ for the bundle
 scripts/icon.py winter --res /tmp/winter-res --store
                            # another season: its foreground PNGs where --res says (never
                            # android/res), its store icons into ~/Downloads/draughts-store/icon/winter/

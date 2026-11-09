@@ -294,13 +294,38 @@ scripts/ios.py src/app/draughts.goose --device --run            # on an attached
 3. CMake with Ninja and Xcode's clang builds `ios/CMakeLists.txt` for the simulator's or
    the device's SDK: one executable with the program, the runtime, goose_gfx's layers,
    and SDL, linked statically. `ios/main.c` hands the main thread to UIKit through
-   `SDL_RunApp`, which calls the program's main back as `SDL_main`.
+   `SDL_RunApp`, which calls the program's main back as `SDL_main`. SDL is built without
+   HIDAPI (`SDL_HIDAPI OFF`): on iOS it links CoreBluetooth, and App Store Connect
+   refuses a binary that references Bluetooth without a purpose string.
 4. The bundle is the executable, an `Info.plist` the script writes (the id
    `io.github.kaitk.draughts`, the version from `native.py`'s `VERSION_NAME` and the
-   script's `BUILD_NUMBER`, full screen, an empty `UILaunchScreen`, without which iOS
+   script's `BUILD_NUMBER`, full screen, a `UILaunchScreen`, without which iOS
    letterboxes the app), and the
    launcher's name per language (`<lang>.lproj/InfoPlist.strings` from each
    `strings/<lang>.txt`'s `app.name`).
+5. An asset catalog, written into `build/ios/<program>/<sim|device>/Assets.xcassets` and
+   compiled by `actool` into the bundle's `Assets.car`: the icon (`AppIcon`, one 1024 px
+   image; `CFBundleIconName` and actool's `CFBundleIcons` in the `Info.plist`) and the
+   launch screen's colour (`LaunchBackground`, the launch screen's `UIColorName`), the
+   icon's background read from `android/res/values/colors.xml`'s `icon_background`. The
+   icon is `scripts/icon.py`'s Apple icon of the shipped season, made into
+   `build/ios/icon/apple-1024.png` from `design/icon/master-<season>.png` (local,
+   `design/icon/README.md`) when missing or older than the master.
+6. The privacy manifest, `PrivacyInfo.xcprivacy`: no tracking, no tracking domains, no
+   data collected, and a reason for each "required reason" API the binary imports
+   (`ios.py`'s `PRIVACY_APIS`): `C617.1` for `stat` and `fstat`, `35F9.1` for
+   `mach_absolute_time`. Check the list again after an SDL or Goose update:
+
+   ```sh
+   nm -u build/ios/draughts/device/Draughts.app/Draughts | grep -E \
+     '^_(f?stat(at)?|lstat|f?getattrlist(bulk|at)?|f?statv?fs|mach_absolute_time)$'
+   strings -a build/ios/draughts/device/Draughts.app/Draughts | grep -iE \
+     'userdefaults|systemuptime|activeinputmodes|volumeavailable|filesystemfree'
+   ```
+
+   Any other API in Apple's list needs its category and reason added. To check a bundle:
+   `xcrun assetutil --info .../Draughts.app/Assets.car` (the icon and the colour),
+   `plutil -p .../Info.plist`, `plutil -lint .../PrivacyInfo.xcprivacy`.
 
 The simulator is an iPhone 13 mini the script creates once (`Draughts iPhone 13 mini`;
 `DRAUGHTS_IOS_SIM` names another), booted headless with `simctl`: no Simulator.app
