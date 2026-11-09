@@ -84,9 +84,10 @@ Kabe töötab telefonis ja tahvelarvutis, nii püst- kui ka rõhtpaigutuses.
 - The short description says "lahenda 120 ülesannet": "õpi see 120 ülesandega selgeks"
   read as learning the rules, which takes minutes, and "see" for "kabet" was clumsy.
 - Revised 2026-11-09 with a Gemini review (`agents/writing.md`): taken were "partii",
-  "kergest" kept over its "kergemast", "mängu käigus" for "in action", "kui sellest on pool
+  "mängu käigus" for "in action", "kui sellest on pool
   lahendatud", the stars "kõigi kolme tähe nimel" (not "võita"), "mängija eest" (not
   "lapse eest"), the pips as "märgitud täpiga iga löödava nupu kohta", and the seasons as
-  adjectives (sügisene puit, …). Not taken: "lauavaade" for "välimus" (the app's tab is
+  adjectives (sügisene puit, …). Not taken: "kergemast raskemaks" for "kergest raskemaks" (both are used; the user
+  decides), "lauavaade" for "välimus" (the app's tab is
   Välimus), and dropping "3D" beside "ruumiline" (the app's Board row shows both). The
   user reads the new lines before an upload.
