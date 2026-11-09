@@ -141,3 +141,8 @@ and the commit that last has it.
   margin was built and taken out, the dots may sit over back's corner (the user,
   2026-11-09). A single puzzle's compact layout is left for later.
   `050-small-windows.md`, `4cfc89b`
+- 048: A report of a forced capture with a king. Done, not reproduced: the engine, the
+  game screen's taps, drags, rings, and hints, and every point of each landing on the
+  turned flat and 3D boards play the capture chosen (`test/game/choice`, `aim`). If it is
+  seen again: a screenshot or the position, the taps, and which side's king.
+  `048-equal-capture-choice.md`, `5a01306`
