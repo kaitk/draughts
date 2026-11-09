@@ -1,4 +1,5 @@
 /build
+.DS_Store
 poc/poc.png
 __pycache__/
 # Background originals and masters stay local; design/backgrounds/README.md says how to make them
