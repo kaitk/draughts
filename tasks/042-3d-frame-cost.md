@@ -136,6 +136,20 @@ counts over an idle 30 s: if draws climb, something in the scene differs each wa
 time-dependent value, or the view's floats) and the whole pass runs once a second; if
 not, profile the screen pass and the driver with simpleperf.
 
+**On the Mac (2026-11-09): the app's loop doesn't draw at rest.** A headless copy of the
+app logging every loop iteration that draws, after the first 3 s, with draw3d's frame,
+draw, shadow, and pulse counts: none in 10 to 15 s, on the 3D board's default game,
+after c3–d4 in a friend's game (the board turned for black), and on puzzle 21, nor on
+the flat board. Headless the loop doesn't wait for events (the release's gfx, without
+`0002`), so it spins, and an iteration that draws nothing costs the same on both boards:
+about 16,500 a second, about 60 µs, nearly all in `gfx::frame()`. So the tablet's extra
+2.4 ms a wakeup is outside the app's own work: in the patched `frame()` (a wakeup
+presents and submits if anything called `gfx_cmd` since the last frame, `gpu_work`) or
+in SDL's and the driver's Vulkan work on the program thread. To check on the tablet: in
+a build copy, `SDL_Log` in `frame()` whether `drew` held and whether a command buffer
+was submitted, and per-thread CPU (`agents/testing.md`) for 3D against 2D; simpleperf
+can't sample there.
+
 ## Acceptance criteria
 
 - [ ] Each candidate tried is measured on the tablet with `--bench 300` (task 015's
