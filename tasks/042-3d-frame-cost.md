@@ -133,6 +133,46 @@ Two runs of one build are byte-identical.
    (three lit and the bake) are made at the first frame: on the Mac 6.5 ms against 5.8;
    the Pixel's first frame (0.3 s, mostly pipelines) is worth reading again.
 
+## On the tablet (2026-11-09)
+
+Each step's commit built beside the app (`--id-suffix bench`) and run with `--board 3d
+--screen game --theme wood --variant russian --bench 300`, three launches each at thermal
+status 0, the median of the three (each launch's own the median of 300 frames). These
+builds had no photograph embedded (the worktree lacked `design/backgrounds/masters/`);
+main's head gave the same with them and without (11.1 to 11.3, 8.3 to 9.4, 13.2 to
+13.5).
+
+| Step | With the shadow map, waited | The pass alone, waited | Presented frame to frame |
+| --- | --- | --- | --- |
+| Before (`72ae97b`) | 21.25 ms | 19.94 ms | 23.01 ms |
+| 1. The piece mesh (`d7fd8c3`) | 12.86 | 12.09 | 14.80 |
+| 2. Pieces before the board (`d583ef7`) | 12.52 | 11.83 | 14.52 |
+| 3. The shadow catcher (`f3b5e91`) | 12.22 | 11.51 | 14.25 |
+| 4. No marks quad with nothing marked (`3b087b1`) | 10.63 | 10.00 | 12.85 |
+| 6. 9 shadow taps (`e0ab42d`) | 10.54 | 10.02 | 12.71 |
+| 7. The field's light baked, a shader per material (`4e852f3`) | 11.29 | 8.61 | 13.16 |
+| Main's head (`3bbda1b`, with the photographs) | 11.23 | 9.17 | 13.41 |
+
+- **The piece mesh** is the tablet's largest win by far, 8.4 ms with the shadow map (the
+  Mac's 0.8): its 221k triangles were most of the frame. Before it the tablet read 21 ms
+  waited, against the first baseline's 14 (the rendering doc); the looks added since
+  (the wood and stone bakes, task 039 and 041) may be part of that, unmeasured.
+- **Pieces before the board** 0.3 ms, **the shadow catcher** 0.3, **the marks quad**
+  1.6 (the bench's start position has nothing marked), **9 taps** 0.1: each a win, if
+  the last within the runs' spread.
+- **Step 7 is mixed:** the pass alone (the camera swinging, no shadow map) 10.0 → 8.6 ms,
+  but a frame that draws the shadow map (a piece moving, the bench's presented frames)
+  10.5 → 11.3 ms, the field's light bake costing more than the field saves, as on the
+  Mac (even there). Kept for now; whether a swing's 1.4 ms is worth a move's 0.75 is
+  for the user.
+- **90 Hz still missed while pieces move:** presented frame to frame 13.4 ms, between
+  90 Hz's 11.1 and 60 Hz's 16.7, so frames alternate. The pass alone is within 11 ms.
+- The first preparing on the tablet: 41 steps, 1.93 to 2.02 s in all, the setup 14 to
+  37 ms, the longest step the bake's compile (0.96 to 1.05 s), the first frame once
+  ready 29 to 51 ms (`72ae97b`'s eager setup: the theme 1.29 s, the first frame 0.30 s).
+- The pulsing rings: the kept depth 3.3 to 3.5 ms waited, the screen's part 4.0 to 4.2
+  with the rings and 2.2 to 2.5 without.
+
 ## The idle wakeup
 
 The tablet's 3D board at rest wakes once a second, as the flat board does, but spends
@@ -290,8 +330,11 @@ over.
 ## Acceptance criteria
 
 - [ ] Each candidate tried is measured on the tablet with `--bench 300` (task 015's
-      method) and kept only for a measured win, with headless shots matching the look
-- [ ] The tablet's moving 3D board within 11 ms, or 60 Hz chosen there while it moves
+      method) and kept only for a measured win, with headless shots matching the look:
+      all measured (2026-11-09, "On the tablet"); steps 1 to 6 win, step 7 wins only
+      without the shadow map, for the user to keep or drop
+- [ ] The tablet's moving 3D board within 11 ms, or 60 Hz chosen there while it moves:
+      the pass alone 8.6 to 9.2 ms, with the shadow map 11.2, presented 13.4 (2026-11-09)
 - [ ] The idle wakeup's cost explained, and fixed if it draws
 
 **On the Pixel 7a (2026-11-09, a screen recording at 20 fps):** autumn to winter in
