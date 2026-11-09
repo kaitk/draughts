@@ -31,7 +31,10 @@ child sees it can take; `rules::can_take_from` tells such a piece from one with 
 capture, for the board to say why (rendering.md, "States"). Checked on the board with
 several capturing pieces, equal and unequal, a king and a man, and captures through a
 shared first stop, in International, Brazilian, and Russian (`test/board/several`,
-2026-11-09).
+2026-11-09). A man's capture that reaches or passes the far row, tapped and dropped on the
+turned board, alone, going on past it, and beside a longer capture, is checked in
+`test/board/stuck`; the board shows a far-row square passed as a stop the piece waits on
+(rendering.md, "States").
 
 Flying kings must land, after a capture, on a square from which the capture goes on, if
 any such square exists. Russian states this rule; in International and Brazilian the

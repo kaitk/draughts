@@ -1,7 +1,7 @@
 // Several pieces that can capture, tapped on the board as a game does. Under the
 // majority rule (International, Brazilian) only the captures taking the most pieces are
 // legal: every piece that has one may be selected and played, and after a mistake all of
-// them pulse, never just one. A piece that could take, but fewer, is a mistake: its square
+// them pulse, never just one, with the pieces the selected one must take. A piece that could take, but fewer, is a mistake: its square
 // flashes, and the pieces that take more pulse with the pieces they take, so a child sees
 // why (rules::can_take_from tells it from a piece with no capture at all). In Russian any
 // capture may be chosen. Each position's moves were checked with test/perft.py moves.

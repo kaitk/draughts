@@ -25,7 +25,7 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   position shows it. Areas so far: `rules`, `board` (taps, hints, and a capture tapped
   stop by stop through the board package, as a game does and by hand as a puzzle
   does, a press or drop off the dark squares snapping to the nearest it could mean:
-  `snap`, and several pieces that can capture under each draughts' rule: `several`), `gui`, `game` (the game screen driven through
+  `snap`, and several pieces that can capture under each draughts' rule: `several`; a capture to or past the far row, dropped on the turned board: `stuck`), `gui`, `game` (the game screen driven through
   the pointer: take back, start over, home and settings, presses kept apart, the
   celebration and its moments to the still frame (`win`), a clocked game with its
   frames, pause, and flag, the turned board; the computer's turn, answered at once with

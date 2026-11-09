@@ -1,0 +1,86 @@
+alone: e3 takes d2, crowned on c1
+B:W15,42:B6,38
+  38x47  takes 1  crowned
+1 move
+ t e3 c1
+  e3: selected e3 drawn on e3, ringed goes on to , wrong -, pulsing playing -
+  c1: selected - drawn on -, ringed goes on to , wrong -, pulsing playing 38x47
+ d e3 c1
+  e3 to c1: selected - drawn on -, ringed goes on to , wrong -, pulsing playing 38x47
+on past the far row, one way: e3 by c1 to a3
+B:W15,41,42:B6,38
+  38x47x36  takes 2
+1 move
+ t e3 c1
+  e3: selected e3 drawn on e3, ringed goes on to , wrong -, pulsing playing -
+  c1: selected - drawn on -, ringed goes on to , wrong -, pulsing playing 38x47x36
+ d e3 c1
+  e3 to c1: selected - drawn on -, ringed goes on to , wrong -, pulsing playing 38x47x36
+ d e3 a3
+  e3 to a3: selected - drawn on -, ringed goes on to , wrong -, pulsing playing 38x47x36
+on past the far row, two ways: c3 by e1 and g3 to e5 or i5
+B:W15,33,34,42,43:B6,37
+  37x48x39x28  takes 3
+  37x48x39x30  takes 3
+2 moves
+ t c3 e1 g3 e5
+  c3: selected c3 drawn on c3, ringed goes on to , wrong -, pulsing playing -
+  e1: selected c3 drawn on e1, ringed goes on to g3 (pulsing) , wrong -, pulsing playing -
+  g3: selected c3 drawn on g3, ringed e1 goes on to e5 i5 (pulsing) , wrong -, pulsing playing -
+  e5: selected - drawn on -, ringed goes on to , wrong -, pulsing playing 37x48x39x28
+ d c3 e1 g3 i5
+  c3 to e1: selected c3 drawn on e1, ringed goes on to g3 (pulsing) , wrong -, pulsing playing -
+  e1 to g3: selected c3 drawn on g3, ringed e1 goes on to e5 i5 (pulsing) , wrong -, pulsing playing -
+  g3 to i5: selected - drawn on -, ringed goes on to , wrong -, pulsing playing 37x48x39x30
+ d c3 e1 e1
+  c3 to e1: selected c3 drawn on e1, ringed goes on to g3 (pulsing) , wrong -, pulsing playing -
+  e1 to e1: selected c3 drawn on e1, ringed goes on to g3 (pulsing) , wrong -, pulsing playing -
+ d c3 e5
+  c3 to e5: selected - drawn on -, ringed goes on to , wrong -, pulsing playing 37x48x39x28
+ d c3 e1 c3
+  c3 to e1: selected c3 drawn on e1, ringed goes on to g3 (pulsing) , wrong -, pulsing playing -
+  e1 to c3: selected c3 drawn on e1, ringed goes on to g3 (pulsing) , wrong -, pulsing playing -
+majority: e3 to c1 takes one, by g5 to e7 two
+B:W15,23,33,42:B6,38
+  38x29x18  takes 2
+1 move
+ t e3 c1
+  e3: selected e3 drawn on e3, ringed goes on to , wrong -, pulsing playing -
+  c1: selected e3 drawn on e3, ringed goes on to , wrong c1, pulsing e3 f4 f6 playing -
+ d e3 c1
+  e3 to c1: selected e3 drawn on e3, ringed goes on to , wrong c1, pulsing e3 f4 f6 playing -
+ d e3 e7
+  e3 to e7: selected - drawn on -, ringed goes on to , wrong -, pulsing playing 38x29x18
+a king takes to the far row
+B:W15,42:B6,K29
+  29x47  takes 1
+1 move
+ d g5 c1
+  g5 to c1: selected - drawn on -, ringed goes on to , wrong -, pulsing playing 29x47
+russian: crowned on e1, the king goes on over f2
+B:Wd2,f2,h6:Bc3,a7
+  c3:e1:g3  takes 2  crowned
+  c3:e1:h4  takes 2  crowned
+2 moves
+ d c3 e1
+  c3 to e1: selected c3 drawn on e1 a king, ringed goes on to g3 h4 (pulsing) , wrong -, pulsing playing -
+ d c3 e1 h4
+  c3 to e1: selected c3 drawn on e1 a king, ringed goes on to g3 h4 (pulsing) , wrong -, pulsing playing -
+  e1 to h4: selected - drawn on -, ringed goes on to , wrong -, pulsing playing c3:e1:h4
+the pulse of where it goes on
+ d c3 e1
+  c3 to e1: selected c3 drawn on e1, ringed goes on to g3 (pulsing) , wrong -, pulsing playing -
+  at 2.0 s: animating true, an end drawn false
+  at 3.0 s: animating true, an end drawn false
+  at 4.0 s: animating false, an end drawn true
+  at 5.0 s: animating false, an end drawn false
+  after: selected c3 drawn on e1, ringed goes on to g3 (lit) , wrong -, pulsing playing -
+after a puzzle and settings, through the shell
+  the puzzle's man waits on c7
+  the game: turned true, by hand false
+  c3 to e1: selected c3 drawn on e1, ringed g3 goes on to g3 (pulsing) , wrong -, pulsing playing -
+    targets e5 i5 
+  e1 to g3: selected c3 drawn on g3, ringed e1 goes on to e5 i5 (pulsing) , wrong -, pulsing playing -
+    targets e5 i5 
+  g3 to e5: selected - drawn on -, ringed goes on to , wrong -, pulsing playing 37x48x39x28
+    targets 

@@ -711,10 +711,20 @@ side's capturers, so after a child's capture on the turned board the computer's 
 beside the child's pieces pulsed red as if it were the child's to move (reported
 2026-11-09, two pieces each taking one; the rings, taps, and moves agree under the turn,
 `test/board/several`). A capture of many
-jumps is tapped by its last square or stop by stop (`board::follow`): a tap on the next
-stop of the selected piece's captures rings it, whatever the hints, and narrows the
-targets shown to the ways through it; once only one capture goes on that way it is
-played, and a tap off every way is wrong and forgets the stops. In a puzzle a capture
+jumps is tapped or dropped by its last square or stop by stop (`board::follow`): a tap
+or a drop on the next stop of the selected piece's captures leaves the piece waiting
+there, lifted and selected, as in a puzzle, the stops behind it ringed whatever the
+hints, and narrows the targets shown to the ways through it; once only one capture goes
+on that way it is played, and a tap off every way is wrong and forgets the stops. In a
+game the squares a waiting piece goes on to show the target's dot whatever the hints,
+pulsing as the hint's ring does for two cycles and then lit, so a child sees the capture
+isn't over. Before (reported 2026-11-09, International, a black man's capture over a
+far-row square it only passes, the board turned), the piece went back to its square with
+the stop ringed, and picked up again it forgot the stop: dropped, such a capture was made
+only by its last square, the far-row square did nothing and the next stop was wrong. A
+wrong square for a piece that must capture also pulses the pieces its captures take
+(`board::missed`), so a far-row square that a shorter capture would crown on, which the
+majority rule forbids, shows what to take instead (`test/board/stuck`). In a puzzle a capture
 is made by hand (`Board.by_hand`, 2026-11-08): a tap or a drop on a stop leaves the
 piece there, lifted and selected, the pieces it jumped still on the board as the rules
 leave them until the capture ends, and never plays the rest; the piece is pressed or

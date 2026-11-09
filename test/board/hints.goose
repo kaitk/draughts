@@ -2,7 +2,8 @@
 // marks no targets, and a tap or a drop on an empty square that isn't a move flashes a
 // red ring there for 1.2 s, with the piece kept selected. When a capture is due, the
 // mistake also pulses the pieces that must capture, as touching a piece that can't move
-// does. With hints on moves, the targets are marked as well.
+// does, and with them the pieces the selected one must take (board::missed). With hints
+// on moves, the targets are marked as well.
 import std;
 import vec;
 import rules from "../../src/rules";

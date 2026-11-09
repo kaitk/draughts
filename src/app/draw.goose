@@ -16,7 +16,7 @@ struct BoardUniforms {
     rect:   float4,     // the board: x, y, size, corner radius
     inner:  float4,     // the squares: x, y, size, one square
     scene:  float4,     // x: the photograph's blur, 0 sharp..1, or -1 with none; y: how bright it is shown; z: the board dimmed by; w: 1 turned
-    wrong:  float4,     // a wrong move's square (y * size + x, or -1), and how far its flash is, 0..1
+    wrong:  float4,     // a wrong move's square (y * size + x, or -1), how far its flash is, 0..1, and how lit marks.next's dots are
     marks:  board::Marks,
 }
 
@@ -63,7 +63,7 @@ let BOARD_FRAG = """
     layout(location = 0) out vec4 result;
     layout(set = 3, binding = 1) uniform BoardUniforms {
         vec4 screen; vec4 rect; vec4 inner; vec4 scene; vec4 wrong;
-        uvec4 last; uvec4 target; uvec4 via;
+        uvec4 last; uvec4 target; uvec4 via; uvec4 next;
     };
     layout(set = 2, binding = 0) uniform sampler2D photo;       // blurred
     layout(set = 2, binding = 1) uniform sampler2D sharp_photo;
@@ -165,6 +165,11 @@ let BOARD_FRAG = """
                 s = mix(s, glow.rgb, 0.9 * clamp(0.15 * inner.w - r + 0.5, 0.0, 1.0));
             }
             if (has(via, sq)) s = ring(s, glow.rgb, r, 0.18 * inner.w, 0.25 * u, u, 1.0);
+            // Where a piece waiting on a capture's stop goes on: the target's dot, pulsing.
+            if (has(next, sq)) {
+                s += glow.rgb * 0.5 * wrong.z * exp(-max(r - 0.15 * inner.w, 0.0) / (1.2 * u));
+                s = mix(s, glow.rgb, 0.9 * wrong.z * clamp(0.15 * inner.w - r + 0.5, 0.0, 1.0));
+            }
             // A wrong move: a red ring on its square that flashes twice.
             if (int(wrong.x) == sq && wrong.y < 1.0) {
                 float t = fract(wrong.y * 2.0);

@@ -1,6 +1,7 @@
 // A capture of many jumps tapped stop by stop, as in a game (board::follow): a tap on
-// the next stop of the selected piece's captures is kept and ringed, whatever the hints,
-// and narrows the targets shown with hints on moves; once only one capture goes on that
+// the next stop of the selected piece's captures is kept, the piece waiting on it and
+// the stops behind it ringed, whatever the hints, and narrows the targets shown with
+// hints on moves; once only one capture goes on that
 // way, or a tap lands on a capture's last square, the capture is played. A tap off every
 // way is a mistake and forgets the stops; selecting the piece again does too, and a drag
 // dropped on a stop keeps it. The king of puzzle 14 (W:W46,K47:B5,12,22,38) takes 38, 22,

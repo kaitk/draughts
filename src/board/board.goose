@@ -95,6 +95,7 @@ struct Marks {
     last:   u32[4] = [0; 4],
     target: u32[4] = [0; 4],
     via:    u32[4] = [0; 4],
+    next:   u32[4] = [0; 4],    // where a piece waiting on a stop goes on to, pulsing (flash.z)
 }
 
 // A position the game was in, for undo, with the move that led to it.
@@ -116,6 +117,9 @@ struct Board {
     // A capture is made by hand, stop by stop (a puzzle's): a tap or a drop on a stop
     // leaves the piece waiting there, never playing the rest of the way by itself.
     by_hand: bool,
+    // When the piece last came to wait on a stop: in a game the squares it goes on to
+    // pulse from then, so a child sees the capture isn't over.
+    kept_at: f64,
     // The move being shown: the position before it, when it started, and where the
     // piece starts from if it was dropped there; `back`, a move shown sliding back.
     moving:    bool,
@@ -153,7 +157,7 @@ struct Board {
     // Filled by fill() for the app to draw.
     pieces: Piece[..MAX_PIECES],
     marks:  Marks,
-    flash:  float4,             // x: the wrong move's square (y * size + x) or -1; y: its flash, 0..1
+    flash:  float4,             // x: the wrong move's square (y * size + x) or -1; y: its flash, 0..1; z: marks.next's dots, 0..1
     dim:    f32,                // the board dimmed by, 0..1, under a win (game::cheer)
 }
 
@@ -179,6 +183,7 @@ fn show(b: Board&, p: rules::Position) {
     b.back = false;
     b.ghost = false;
     b.glow = -1;
+    b.kept_at = -1.0;
 }
 
 // Starts a new game from position p.
@@ -262,9 +267,10 @@ fn on_steps(b: Board&, m: rules::Move&) -> bool {
 
 // What a tap on `sq` does for the selected piece, among its moves that make the stops
 // tapped so far: one ending on sq is played (one with exactly those stops before it
-// first). Else, if sq is the next stop of several of them, it is kept as a stop, and if
-// of only one, that one is played: a capture of many jumps can be tapped stop by stop
-// or by its last square alone. By hand (`by_hand`), a next stop is always kept, the
+// first). Else, if sq is the next stop of several of them, it is kept as a stop, the
+// piece waiting there to be tapped or dragged on, and if of only one, that one is
+// played: a capture of many jumps can be tapped or dropped stop by stop or by its last
+// square alone. By hand (`by_hand`), a next stop is always kept, the
 // piece waiting there, and a last square is played only when it ends just after the
 // stops or one capture alone goes there; one several reach waits for the stops. Returns
 // the move to play or -1, and whether sq was taken as part of a way, so not a mistake.
@@ -328,9 +334,9 @@ fn snap(l: Layout, v: rules::Variant&, p: float2, want: u64) -> i64 {
     return best;
 }
 
-// The square the selected piece waits on, partway through a capture made by hand, or -1.
+// The square the selected piece waits on, partway through a capture, or -1.
 fn waiting(b: Board&) -> i64 {
-    guard b.by_hand && b.selected >= 0 && b.steps.len > 0 else { return -1; }
+    guard b.selected >= 0 && b.steps.len > 0 else { return -1; }
     return b.steps[b.steps.len - 1];
 }
 
@@ -351,6 +357,7 @@ fn start_move(b: Board&, i: i64, now: f64) {
     b.selected = -1;
     b.steps.clear();
     b.glow = -1;
+    b.kept_at = -1.0;
     // The must-capture pulse belongs to the position the mistake was made in: left on, it
     // would ring the next side's capturers, the computer's pieces after the child's move.
     b.pulse_end = 0.0;
@@ -412,6 +419,21 @@ fn mistake(b: Board&, sq: i64, now: f64) {
     if must_capture(b) { b.pulse_end = now + PULSE; }
 }
 
+// A tap or a drop on `sq`, an empty square that is no move for the selected piece: a
+// mistake. If the piece must capture, in a game the pieces its captures take pulse too,
+// so a child sees what it must take: a far-row square a capture only passes, or one a
+// shorter capture ends on that the majority rule forbids, looks like a move.
+fn missed(b: Board&, sq: i64, now: f64) {
+    mistake(b, sq, now);
+    guard !b.by_hand && must_capture(b) else { return; }
+    for m in b.moves { if m.from == b.selected { b.outtaken |= m.captured; } }
+}
+
+// A piece came to wait on a stop (`follow`): what it goes on to pulses from now.
+fn kept(b: Board&, before: i64, now: f64) {
+    if b.steps.len > before { b.kept_at = now; }
+}
+
 // A tap on the piece on `sq`, which could take but fewer than the pieces that must
 // capture (the majority rule): a mistake, and the pieces their captures take pulse too,
 // so the child sees the other piece takes more.
@@ -444,13 +466,17 @@ fn press(b: Board&, l: Layout, p: float2, now: f64) {
         b.dragging = false;
         return;
     }
-    let i, kept = follow(b, sq);
+    let before = b.steps.len;
+    let i, on_way = follow(b, sq);
     if i >= 0 {
         b.dropped = false;
         play_chosen(b, i, now);
         return;
     }
-    if kept { return; }
+    if on_way {
+        kept(b, before, now);
+        return;
+    }
     if sq >= 0 && (b.pos.pieces[b.pos.side] >> sq) & 1 != 0 {
         if has_move_from(b, sq) {
             b.selected = sq;
@@ -465,7 +491,7 @@ fn press(b: Board&, l: Layout, p: float2, now: f64) {
         }
     }
     if b.selected >= 0 && empty(b, sq) {
-        mistake(b, sq, now);
+        missed(b, sq, now);
         return;
     }
     b.selected = -1;
@@ -493,13 +519,16 @@ fn release(b: Board&, l: Layout, p: float2, now: f64) {
     guard was else { return; }
     let sq = snap(l, rules::VARIANTS[b.variant], p, reachable(b));
     guard sq < 0 || sq != waiting(b) else { return; }
-    let i, kept = follow(b, sq);
+    let before = b.steps.len;
+    let i, on_way = follow(b, sq);
     if i >= 0 {
         play_chosen(b, i, now);
         b.drop = p;
         b.dropped = true;
-    } else if !kept && empty(b, sq) {
-        mistake(b, sq, now);
+    } else if on_way {
+        kept(b, before, now);
+    } else if empty(b, sq) {
+        missed(b, sq, now);
     }
 }
 
@@ -515,7 +544,12 @@ fn duration(m: rules::Move&) -> f64 {
 fn animating(b: Board&, now: f64) -> bool {
     b.moving || now < b.pulse_end || (b.wrong >= 0 && now < b.wrong_at + FLASH)
     || (b.glow >= 0 && b.glow_at >= 0.0 && now < b.glow_at + PULSE)
+    || (b.kept_at >= 0.0 && now < b.kept_at + PULSE && next_shown(b))
 }
+
+// Whether the squares a waiting piece goes on to are shown: in a game, not a puzzle,
+// which leaves the way to the child.
+fn next_shown(b: Board&) -> bool { !b.by_hand && !b.moving && waiting(b) >= 0 }
 
 // Ends the move, or the pulse, once its time is up. Call before input each frame; true
 // when something ended, so the frame after an animation is drawn too.
@@ -528,6 +562,10 @@ fn update(b: Board&, now: f64) -> bool {
     }
     if b.glow >= 0 && b.glow_at >= 0.0 && now >= b.glow_at + PULSE {
         b.glow_at = -1.0;
+        ended = true;
+    }
+    if b.kept_at >= 0.0 && now >= b.kept_at + PULSE {
+        b.kept_at = -1.0;
         ended = true;
     }
     if b.pulse_end > 0.0 && now >= b.pulse_end {
@@ -647,8 +685,13 @@ fn fill(b: Board&, l: Layout, now: f64) {
         add(b, b.drag_at, r * 1.06, 1.6 * unit, b.pos.side == rules::BLACK,
             b.pos.kings & rules::bit(b.selected) != 0, 1.0, 1.0, 0.0);
     } else if waits >= 0 {
-        add(b, center(l, v, waits), r, 1.1 * unit, b.pos.side == rules::BLACK, b.pos.kings & rules::bit(b.selected) != 0,
-            1.0, 1.0, 0.0);
+        // A man that has passed the far row is crowned on it only where crowning goes on
+        // mid-capture (Russian); in International it stays a man (rules.md).
+        var king = b.pos.kings & rules::bit(b.selected) != 0;
+        if v.crowning == rules::CROWN_CONTINUES {
+            for st in b.steps { if v.promotion[b.pos.side] & rules::bit(st) != 0 { king = true; } }
+        }
+        add(b, center(l, v, waits), r, 1.1 * unit, b.pos.side == rules::BLACK, king, 1.0, 1.0, 0.0);
         if b.glow == b.selected && b.pieces.len > 0 { b.pieces[b.pieces.len - 1].ring.y = glowing; }
     }
     if b.has_last && !b.moving {
@@ -656,6 +699,18 @@ fn fill(b: Board&, l: Layout, now: f64) {
         mark(b, b.marks.last, b.last.to);
     }
     b.flash = float4 { -1.0, 1.0, 0.0, 0.0 };
+    if next_shown(b) {
+        // Where the waiting piece goes on to: dots that pulse as the hint's ring does,
+        // then stay lit, whatever the hints, so a child sees the capture goes on.
+        var r = reachable(b);
+        while r != 0 {
+            mark(b, b.marks.next, ctz(r));
+            r &= r - 1;
+        }
+        b.flash.z = if b.kept_at >= 0.0 && now < b.kept_at + PULSE {
+            (0.65 + 0.35 * cos(2.0 * PI * (now - b.kept_at) / (0.5 * PULSE))) as f32
+        } else { 1.0 };
+    }
     if b.wrong >= 0 {
         // Held, the ring stays as bright as its flash gets.
         let t = if b.held { 0.2 } else { clamp((now - b.wrong_at) / FLASH, 0.0, 1.0) };

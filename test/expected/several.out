@@ -8,7 +8,7 @@ W:W34,37:B29,32
   h4: selected h4, wrong -, pulsing , playing -
   f6: selected -, wrong -, pulsing , playing 34x23
   c3: selected c3, wrong -, pulsing , playing -
-  c5: selected c3, wrong c5, pulsing h4 c3 , playing -
+  c5: selected c3, wrong c5, pulsing d4 h4 c3 , playing -
 more
 W:W37,44:B23,32,39
   37x28x19  takes 2
@@ -29,7 +29,7 @@ W:WK26,44:B17,39
   h2: selected h2, wrong -, pulsing , playing -
   f4: selected -, wrong -, pulsing , playing 44x33
   h2: selected h2, wrong -, pulsing , playing -
-  h4: selected h2, wrong h4, pulsing a5 h2 , playing -
+  h4: selected h2, wrong h4, pulsing a5 g3 h2 , playing -
 king more
 W:WK26,44:B17,18,39
   26x12x34x43  takes 3
