@@ -535,7 +535,11 @@ the prototype tried, kept for 3D:
   landscapes), under the name in its 120 dp column, within the row's 88 dp: each half
   58 × 68 dp, under the 88 dp floor. Two 88 dp halves need 180 dp across, and a taller
   row leaves the tablet's landscape, which has 8 dp to spare over its navigation bar,
-  one group at a time (`test/shell/sizes` gives the halves on their own); and kings (auto, crown, or stack, the last two each with its
+  one group at a time (`test/shell/sizes` gives the halves on their own). Where the
+  choices' 55% of the page has 60 dp more than they want (16:9 and wider: the Play
+  tablet shot at 2560 × 1440), every name's column widens to the switch's 180 dp, so
+  each half is 88 × 68 dp; the rows keep their height, and the board beside them is 56
+  dp smaller there (639 to 583 dp) (2026-11-09); and kings (auto, crown, or stack, the last two each with its
   king drawn on the tile). Between them the Board row, flat or raised (the file's
   `board = 2d|3d`): its 3D tile plays the game on the 3D board (`settings::raised`,
   `src/shell/settings.goose`; the game screen round it is under "Board and pieces"), and

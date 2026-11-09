@@ -67,7 +67,7 @@ a 20:9 phone, landscape, 2400 x 1080:
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 560 dp, all in place
   the game: 4 tiles, smallest 200 x 88 dp, board 752 dp, all in place
   the game on the clock: 6 tiles, smallest 200 x 88 dp, board 752 dp, all in place
-  settings: 20 tiles, smallest 88 x 88 dp, the theme's switch 58 x 68 dp a half, board 707 dp, all in place
+  settings: 20 tiles, smallest 88 x 88 dp, the theme's switch 88 x 68 dp a half, board 707 dp, all in place
   the puzzles: 7 tiles, smallest 134 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
@@ -248,7 +248,7 @@ a 20:9 phone, landscape, 2400 x 1080:
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 560 dp, all in place
   the game: 4 tiles, smallest 200 x 88 dp, board 752 dp, all in place
   the game on the clock: 6 tiles, smallest 200 x 88 dp, board 752 dp, all in place
-  settings: 20 tiles, smallest 88 x 88 dp, the theme's switch 58 x 68 dp a half, board 707 dp, all in place
+  settings: 20 tiles, smallest 88 x 88 dp, the theme's switch 88 x 68 dp a half, board 707 dp, all in place
   the puzzles: 7 tiles, smallest 158 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place

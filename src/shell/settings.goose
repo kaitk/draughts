@@ -102,6 +102,9 @@ struct Settings {
     // Where the theme's switch was declared last (both halves), for the tests. Not in the
     // file.
     switch_at: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
+    // How wide the settings' names are at the left of their tiles: NAME_W, or WIDE_NAME_W
+    // where the landscape has the width (`frame` sets it each frame). Not in the file.
+    name_w: f32 = NAME_W,
 }
 
 // What the screen asks for.
@@ -314,9 +317,12 @@ let THUMB_H = 40.0;
 // each half 88 dp square. Where the name is at the left of the tiles (most landscapes),
 // under it in the name's column, in the row's 88 dp: two 88 dp halves need 180 dp across
 // where the column has 120, and a taller row would leave the tablet's landscape, which
-// has 8 dp to spare over its navigation bar, one group at a time (2026-11-09).
+// has 8 dp to spare over its navigation bar, one group at a time (2026-11-09). Where the
+// choices' 55% of the page has the width (16:9 and wider), the names' column widens to
+// the switch's 180 dp, so each half is 88 dp wide; the rows keep their height.
 let SWITCH_GAP = 4.0;
 let SWITCH_NAME = 20.0;     // the name's line above the switch in the name's column
+let WIDE_NAME_W = 2.0 * 88.0 + SWITCH_GAP; // the names' column as wide as the switch
 let SLACK = 0.5;            // px a row may pass its width by without wrapping
 
 // The settings in order, the first two in the game's group, the rest in the look's:
@@ -456,7 +462,7 @@ fn rows(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4,
     for k in group_rows(group) {
         let row = group_row(group, k);
         if k > 0 { y += ROW_GAP * u; }
-        let left = (NAME_W + 14.0) * u;
+        let left = (s.name_w + 14.0) * u;
         // The theme's row: its name on a line of its own, the switch under it at the
         // left of the tiles; or where the name is above the tiles, beside it at the
         // line's right end, the line as tall as the switch.
@@ -466,8 +472,8 @@ fn rows(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4,
                     else { float4 { r.x, y + line, r.z, 0.0 } };
         let h, tapped = lay(s, over, g, row, tiles, declare);
         if declare {
-            var name = float4 { r.x, y, NAME_W * u, if aside { h } else { NAME_H * u - 6.0 * u } };
-            var sw = float4 { r.x, y + SWITCH_NAME * u, NAME_W * u, (ROW_H[row] as f32 - SWITCH_NAME) * u };
+            var name = float4 { r.x, y, s.name_w * u, if aside { h } else { NAME_H * u - 6.0 * u } };
+            var sw = float4 { r.x, y + SWITCH_NAME * u, s.name_w * u, (ROW_H[row] as f32 - SWITCH_NAME) * u };
             if switched && aside { name.w = SWITCH_NAME * u; }
             if switched && !aside {
                 name = float4 { r.x, y, r.z, 88.0 * u };
@@ -579,7 +585,7 @@ fn group_width(s: Settings&, g: gui::Gui&, group: i64, aside: bool) -> f32 {
         // The theme's name and its switch beside it, where the name is above the tiles.
         if row == THEME_ROW && !aside { widest = max(widest, switch_line(g)); }
     }
-    let names = if aside { NAME_W + 14.0 } else { 0.0 };
+    let names = if aside { s.name_w + 14.0 } else { 0.0 };
     return widest + (names + 2.0 * GROUP_PAD) * u;
 }
 
@@ -722,6 +728,7 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
     var page = float4 { area.x + PAD_X * u, area.y + PAD_Y * u, area.z - 2.0 * PAD_X * u, area.w - 2.0 * PAD_Y * u };
     over.clear();
     s.switch_at = float4 { 0.0, 0.0, 0.0, 0.0 };
+    s.name_w = NAME_W;
     var ask = NOTHING;
     if landscape {
         // The choices as wide as they want, at most 55% of the page, wrapping beyond, each
@@ -750,6 +757,10 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
         }
         let tabbed = group_height(s, over, g, 0, w, aside) + GROUP_GAP * u + group_height(s, over, g, 1, w, aside) > room
                      || w > 0.7 * page.z;
+        if !tabbed && aside && w + (WIDE_NAME_W - NAME_W) * u <= 0.55 * page.z {
+            w += (WIDE_NAME_W - NAME_W) * u;
+            s.name_w = WIDE_NAME_W;
+        }
         if tabbed {
             aside = true;
             let tabs_w = gui::back_width(g, strings::get(strings::NAV_BACK)) + 40.0 * u + languages_width(g)
