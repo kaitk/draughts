@@ -1,7 +1,8 @@
 // Shared parts of the draughts prototypes: the season's background and the glass that shows
 // its blurred copy, the board in 2D (painted by a port of the native shaders) and 3D,
 // icons, and a switcher for the season, board theme, view, king style, background, and
-// move hints (?season=, ?theme=, ?view=3d, ?king=, ?bg=, ?assist=).
+// move hints (?season=, ?theme=, ?view=3d, ?king=, ?bg=, ?assist=), and the plain
+// background in place of the photograph (?plain=on, ?grad=a or b).
 // Plain script, no build step.
 'use strict';
 
@@ -32,6 +33,10 @@ const Draughts = (() => {
     // Move hints: "mistakes" (the default) only marks a wrong move; "moves" shows the
     // selected piece's targets, on by default only in the first lessons (docs/product.md).
     assist: pick('assist', ['moves', 'mistakes'], 'mistakes'),
+    // The plain background (task 044): no photograph, a soft fade matched to the board
+    // the season picks. grad: which take on the fade (PLAIN below).
+    plain: pick('plain', ['off', 'on'], 'off'),
+    grad: pick('grad', ['a', 'b'], 'a'),
   };
 
   // Auto: a crown on the face top down, where a stack reads as a shadow; a stack of two
@@ -97,6 +102,69 @@ const Draughts = (() => {
     return c.toDataURL('image/jpeg', 0.85);
   }
 
+  // The plain background, by board theme, in two takes. a: what the 3D board's backdrop
+  // makes of the page color with no photograph (render3d's BACKDROP_FRAG with the look's
+  // grade and tint, src/render3d/looks.goose): the page lifted by the gain, a soft
+  // vignette, and the look's warm or cool lift low down, the dark-to-brown fade a build
+  // without photographs showed on the Galaxy A33. b: calmer and darker, the page at the
+  // top to a deep tone of the board's frame low down, with a faint light of its dark
+  // square behind the middle, so the glass's text reads everywhere.
+  const PLAIN = {
+    wood:   { page: '#1c1410', gain: 2.6, bokeh: 1.5, lift: 0.85, tint: [0.72, 0.5, 0.34], vignette: 0.45,
+      top: '#1e1510', bottom: '#4a2c1a', light: '#7a4626' },
+    stone:  { page: '#0b1622', gain: 2.2, bokeh: 1.0, lift: 0.85, tint: [0.72, 0.76, 0.86], vignette: 0.35,
+      top: '#0c1724', bottom: '#2c3a4c', light: '#5a6777' },
+    birch:  { page: '#101a14', gain: 2.3, bokeh: 1.2, lift: 0.85, tint: [0.7, 0.74, 0.62], vignette: 0.4,
+      top: '#101b15', bottom: '#2f3d30', light: '#6b7f6a' },
+    sunset: { page: '#20140f', gain: 2.4, bokeh: 1.4, lift: 0.85, tint: [0.78, 0.56, 0.48], vignette: 0.42,
+      top: '#21150f', bottom: '#4f2e28', light: '#9a6655' },
+  };
+  const toLinear = (v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+  const rgbOf = (s) => [1, 3, 5].map((i) => parseInt(s.slice(i, i + 2), 16) / 255);
+  const step = (a, b, x) => { const t = Math.min(Math.max((x - a) / (b - a), 0), 1); return t * t * (3 - 2 * t); };
+
+  // The plain background for board theme t, w × h, as a data URL. Painted per pixel at
+  // most 480 px on the long side; it is smooth, so the page scales it up.
+  function paintPlain(t, w, h, take = settings.grad) {
+    const p = PLAIN[t], k = Math.min(1, 480 / Math.max(w, h));
+    const W = Math.max(2, Math.round(w * k)), H = Math.max(2, Math.round(h * k));
+    const c = document.createElement('canvas');
+    c.width = W;
+    c.height = H;
+    const g = c.getContext('2d'), img = g.createImageData(W, H);
+    const page = rgbOf(p.page).map(toLinear);
+    const top = rgbOf(p.top).map(toLinear), bottom = rgbOf(p.bottom).map(toLinear), light = rgbOf(p.light).map(toLinear);
+    for (let j = 0; j < H; j++) {
+      for (let i = 0; i < W; i++) {
+        const x = (i + 0.5) / W, y = (j + 0.5) / H;
+        const qx = x - 0.5, qy = y - 0.5;
+        let col;
+        if (take === 'a') {
+          col = page.map((v) => v * p.gain);
+          const luma = 0.2126 * col[0] + 0.7152 * col[1] + 0.0722 * col[2];
+          col = col.map((v) => v * (1 + p.bokeh * step(0.08, 0.5, luma)));
+          col = col.map((v) => v / (1 + 0.15 * v * v));
+          const vig = 1 - p.vignette * step(0.1, 0.55, qx * qx + qy * qy);
+          const low = step(0.45, 1, y) * p.lift;
+          col = col.map((v, n) => v * vig + (p.tint[n] - v * vig) * low);
+        } else {
+          const f = step(0, 1, y);
+          col = top.map((v, n) => v + (bottom[n] - v) * f);
+          // A faint light behind the middle, wider than tall, as the board sits there.
+          const r = Math.hypot(qx * (w / Math.max(w, h)) / 0.62, (qy - 0.04) * (h / Math.max(w, h)) / 0.5);
+          const a = 0.22 * (1 - step(0, 1, r));
+          col = col.map((v, n) => v + (light[n] - v) * a);
+          col = col.map((v) => v * (1 - 0.3 * step(0.15, 0.6, qx * qx + qy * qy)));
+        }
+        const o = (j * W + i) * 4;
+        for (let n = 0; n < 3; n++) img.data[o + n] = Math.round(255 * Math.min(1, col[n]) ** (1 / 2.2));
+        img.data[o + 3] = 255;
+      }
+    }
+    g.putImageData(img, 0, 0);
+    return c.toDataURL('image/png');
+  }
+
   function setScene(url, aspect) {
     sceneAspect = aspect;
     document.body.style.setProperty('--scene', `url("${url}")`);
@@ -106,6 +174,11 @@ const Draughts = (() => {
   function loadScene() {
     // Blurred in CSS (draughts.css, .scene-blur), since a canvas can't read a file:// image.
     document.body.classList.toggle('scene-blur', useBlur());
+    if (settings.plain === 'on') {
+      // Painted at the screen's proportions, so cover-cropping keeps all of the fade.
+      setScene(paintPlain(settings.theme, innerWidth, innerHeight), innerWidth / innerHeight);
+      return;
+    }
     const img = new Image();
     img.onload = () => setScene(img.src, img.naturalWidth / img.naturalHeight);
     img.onerror = () => setScene(paintScene(settings.season, 1280, 1280), 1);
@@ -504,7 +577,8 @@ const Draughts = (() => {
       select('theme', ['auto', ...THEMES], params.has('theme') ? settings.theme : 'auto') +
       select('view', ['2d', '3d'], settings.view) + select('king', KINGS, settings.king) +
       select('bg', ['auto', 'blur', 'photo'], settings.bg) +
-      select('assist', ['moves', 'mistakes'], settings.assist);
+      select('assist', ['moves', 'mistakes'], settings.assist) +
+      select('plain', ['off', 'on'], settings.plain) + select('grad', ['a', 'b'], settings.grad);
     el.addEventListener('change', (e) => {
       const { key } = e.target.dataset;
       if (key === 'theme' && e.target.value === 'auto') params.delete('theme');
@@ -520,7 +594,7 @@ const Draughts = (() => {
     loadScene();
     let repaint = 0;
     addEventListener('resize', () => {
-      syncGlass();
+      if (settings.plain === 'on') loadScene(); else syncGlass();
       clearTimeout(repaint);
       repaint = setTimeout(() => Paint.all(), 150);
     });
@@ -535,5 +609,6 @@ const Draughts = (() => {
     });
   }
 
-  return { settings, start, THEMES, SEASON_THEME, icon, board, init, loadFont, syncGlass, kingStyle, ICONS, paint: () => Paint.all() };
+  return { settings, start, THEMES, SEASON_THEME, icon, board, init, loadFont, syncGlass, kingStyle, ICONS, paintPlain,
+    paint: () => Paint.all() };
 })();

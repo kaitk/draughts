@@ -19,3 +19,13 @@ or harmonics to make, so its first switch is shorter.
 - [ ] A gradient per season's board, checked beside each board flat and 3D, in a
       prototype first (`prototypes/`)
 - [ ] With Plain chosen, no photograph is decoded or held (memory measured)
+
+## Prototype
+
+`prototypes/plain.html` (2026-11-09). The season still picks the board, so plain is an
+on/off of its own beside the Background row rather than a sixth tile: a, a Picture row
+(photo or plain); b, a two-part switch under the row's name; c, one Plain tile at the
+row's end. Two takes on the fade per board (`&grad=`): a, what the 3D backdrop's grade
+makes of the page color with no photograph (the A33 build's look), pale low down; b,
+darker, the page to a deep tone of the frame with a faint light of the dark square in
+the middle. Awaiting the choice of place and fade.

@@ -9,6 +9,7 @@ jsDelivr CDN, so they need internet access. Start at [index.html](index.html).
 | `home.html` | Home: a title menu over the photograph and a 3D board; `?pick=friend` or `computer` shows a new game's setup |
 | `first-start.html` | The first start, pages in order (`?page=variant`, `learn`, `1` to `7`, `done`; `&v=russian`) |
 | `settings.html` | Settings: background, board, move hints, language |
+| `plain.html` | Takes on a plain background in place of the photograph, its fade matched to the season's board (task 044): where its on/off sits in settings (`?place=a`, a Picture row of its own; `b`, a switch under the Background row's name; `c`, one tile at the row's end; `&plain=on`, `&lang=et`), and the four seasons' fades behind home, the flat game, and the 3D game (`?view=grid`); `&grad=a`, the 3D backdrop's grade of the page color, or `b`, darker and calmer |
 | `game.html` | The game: the board between the way out and the play, a selected piece and its capture, a forced capture; `?clock=on` or `low` for the clocks; `?count=a` or `b` (`&n=`) for takes on how many pieces a must-capture piece takes, on a child's position of 2026-11-09 (a, pips on the ring, built) |
 | `game3d.html` | Takes on the game's UI round a WebGL 3D board with the native camera (`?take=now`, `steep`, `top`, `corners`, `bleed`, `&pitch=`, `&guides`): the current layout, a steeper camera, the board pushed up, the panels in the top corners beside the narrower far edge, the frame running off the screen; a drag turns the board. On `corners`, floating camera buttons (`&controls=a`, the default, a column at the right edge under the play panel; `b`, beside the board's near corners; `off`): the view (52.5° or 74° down), zoom (landscape only; the whole field fitted clear of the panels and buttons), and the showcase mode (a lit button; drags anywhere on the board turn and tip it, no spring back, the button or a move eases back in 0.6 s), the board refitting as it moves; `&pp=52.5`, `60`, `65` (default) for portrait's camera; the switcher's Move turns the board for the other player (task 015) |
 | `puzzles.html` | Takes on the puzzle picker by theme (`?take=a` to `c`, `now` for the tiers of ten, `&view=library`, `theme`, `&theme=`, `&themes=first`, `all`, `&solved=0` to `12`, `&lang=et`): a library of themes and a theme's three levels (task 037) |
@@ -32,7 +33,7 @@ blurred behind the 2D board and sharp elsewhere (`?bg=blur` or `photo`), which i
 ([its README](../design/backgrounds/README.md) says how to make it); without it the
 pages paint a stand-in. A switcher at the bottom right of every page
 changes the season, board theme (auto follows the season), view, king style, background,
-and move hints, also as URL parameters:
+move hints, and the plain background (`plain=on`, `grad=a` or `b`), also as URL parameters:
 `game.html?season=winter&theme=sunset&view=3d&king=stack&bg=photo`.
 
 Prototypes only use what the native renderer can draw cheaply: rounded rects, SDF
