@@ -1,6 +1,6 @@
 # 049: Draws
 
-Status: in-progress
+Status: done
 
 The rules have no draw (`src/game/game.goose`: "the rules have none yet"), so a game ends
 only in a win: two kings can chase each other forever. Raised by the user, 2026-11-09.
@@ -166,7 +166,9 @@ piece's move (3.2). The Brazilian confederation's (CBD) own text wasn't found on
   (`test/rules/draws_*`, the search in `test/ai/draws.goose`, the game in
   `test/game/draw.goose`)
 - [x] The game shows a draw and counts it; the countdown shown before it (checked
-  headless on the Mac; the tablet not yet)
+  headless on the Mac at the tablet's real pixels, 1200 × 1920 and 1920 × 1200, with its
+  72 px bar as `--inset 0,0,0,48`; the user chose that over the device, 2026-11-09, as the
+  last step changed only panels' layout and text)
 
 ## Measured
 

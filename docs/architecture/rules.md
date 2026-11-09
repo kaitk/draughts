@@ -96,7 +96,8 @@ is a win.
 
 The sources and how they differ (lidraughts follows IDF's text for Russian; Brazilian
 leaflets give other numbers): Russian is the 2022 sport rules
-(<https://pravo.ppt.ru/pravila/264594>), International FMJD's Annex 1, Brazilian FMJD's
+(<https://pravo.ppt.ru/pravila/264594>), International FMJD's Annex 1 (fmjd.org's own copy is gone; read from
+<https://studfile.net/preview/9635026/page:3/>), Brazilian FMJD's
 draughts-64 text (<https://fmjd64.org/rules-of-the-game/>).
 
 In code (`rules/draw.goose`) a `rules::Draw` holds the counts beside a position:
