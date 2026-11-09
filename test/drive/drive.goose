@@ -71,6 +71,24 @@ fn tiles(g: gui::Gui&) -> i64 {
     return k;
 }
 
+// Whether quad i is a floating button's disc other than the lookout's eye (the 3D board's
+// camera buttons): the eye's disc is followed by its eye icon.
+fn camera_disc(g: gui::Gui&, i: i64) -> bool {
+    guard g.quads[i].look.x == gui::FLOAT else { return false; }
+    guard i + 1 < g.quads.len && g.quads[i + 1].look.x == gui::ICON else { return true; }
+    let icon = g.quads[i + 1].look.z;
+    return icon != gui::EYE && icon != gui::EYE_OFF;
+}
+
+// The lookout's eye: its disc's rect and whether it is lit, or a zero rect for none.
+fn eye(g: gui::Gui&) -> float4, bool {
+    for q, i in g.quads {
+        guard q.look.x == gui::FLOAT && !camera_disc(g, i) else { continue; }
+        return q.rect, (q.look.z as i64) % 2 == 1;
+    }
+    return float4 { 0.0, 0.0, 0.0, 0.0 }, false;
+}
+
 // The center of the n-th tile leaving out the clocks, which are tiles too: on the game
 // screen home, settings, start over, take back; then the celebration's back and restart.
 fn control(g: gui::Gui&, n: i64) -> float2 {

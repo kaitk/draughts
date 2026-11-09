@@ -10,6 +10,7 @@ import board from "../../src/board";
 import gui from "../../src/gui";
 import strings from "../../strings";
 import game from "../../src/game";
+import ai from "../../src/ai";
 
 fn show(c: clock::Clock&, what: const u8[:]) {
     var w: u8[..8] = [];

@@ -69,8 +69,8 @@ fn report(what: const u8[:], g: gui::Gui&, size: float2) {
     if overlaps(bt, l.left) || overlaps(bt, l.right) { format(wrong, " the buttons on a panel;"); }
     if view3d::touches(l.view, bt, 0.0) { format(wrong, " the board on the buttons;"); }
     var discs = 0;
-    for q in g.quads {
-        guard q.look.x == gui::FLOAT else { continue; }
+    for q, n in g.quads {
+        guard drive::camera_disc(g, n) else { continue; }
         discs++;
         if !inside(q.rect, bt) { format(wrong, " a disc off the buttons;"); }
     }

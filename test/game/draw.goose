@@ -46,14 +46,15 @@ fn play(gm: game::Game&, g: gui::Gui&, l: panel::Layout, a: const u8[:], b: cons
     return t;
 }
 
-// The draw's card: its tiles beyond the panels' and their opacity, and the pieces on it.
+// The draw's card: its tiles beyond the panels' (back, settings, start over, undo move,
+// the hint) and their opacity, and the pieces on it.
 fn card(g: gui::Gui&) -> u8[>..] {
     var s: u8[>..] = [];
     var k = 0;
     for q in g.quads {
         guard q.look.x == gui::BUTTON && q.extra.y < gui::CLOCK_RUN else { continue; }
         k++;
-        if k > 4 { format(s, "tile at y ", r2(q.rect.y), " opacity ", r2(1.0 - q.extra.w), "; "); }
+        if k > 5 { format(s, "tile at y ", r2(q.rect.y), " opacity ", r2(1.0 - q.extra.w), "; "); }
     }
     var on = 0;
     for p in drive::over { if p.win.w > 0.5 { on++; } }

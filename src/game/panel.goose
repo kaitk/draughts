@@ -21,6 +21,30 @@ let UNDO = 1;
 let RESTART = 2;
 let BACK = 3;
 let SETTINGS = 4;
+let LOOKOUT = 5;            // the lookout's eye, turned on or off
+let HINT = 6;               // the hint's tile
+
+// The lookout and the hint on the play panel (prototypes/coach.html, round 3, take a):
+// the lookout a round toggle at the end of whose turn's line, a 56 dp target round a
+// 48 dp disc as the 3D board's camera buttons are, with its name under whose turn in the
+// landscape column; the hint a tile beside undo move, its word over a pip a hint left.
+let EYE_TOUCH = 56.0;
+let EYE_DISC = 48.0;
+let HINT_H = 88.0;          // dp: the hint's tile over undo move in the landscape column
+let PIP = 12.0;             // dp: a hint's pip, and the gap between two
+let PIP_GAP = 7.0;
+let EYE_ID = 114;
+let HINT_ID = 115;
+
+// What the panel shows of the lookout and the hint: the lookout on; the hints left; how
+// far the hint has gone (0 none shown, 1 the piece lit, 2 its square too); whether the
+// hint can be pressed now (the side to move's turn, nothing to capture).
+struct Help {
+    look:  bool = false,
+    left:  i64  = 0,
+    stage: i64  = 0,
+    can:   bool = false,
+}
 
 let ROW_H = 88.0;           // dp: a control's row, the 88 dp a small hand needs
 let BACK_GAP = 12.0;        // dp: back over the left panel in landscape
@@ -90,6 +114,7 @@ struct Layout {
 // PITCH_PORTRAIT makes it, steeper than landscape's to fill more of the height. A puzzle
 // shares it.
 let CORNER_H = 352.0;       // dp: a corner panel, room for three tiles with their icons over their words (back and a panel of two on the left)
+let CORNER_PLAY = 368.0;    // dp: a phone's narrow play panel, room for whose turn and the eye, the hint over undo move
 let PHONE_DP = 600.0;       // dp: a screen whose shorter side is under this (a phone) has NARROW panels
 let PITCH_LANDSCAPE: f32 = 52.5;
 let PITCH_PORTRAIT:  f32 = 65.0;
@@ -120,7 +145,8 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
         let side = (if phone { NARROW } else { SIDE }) * s;
         let tall = min(CORNER_H * s, height - 2.0 * gap);
         let left = float4 { area.x + gap, area.y + gap, side, tall };
-        let right = float4 { area.x + width - gap - side, area.y + gap, side, tall };
+        let play_tall = if phone { min(CORNER_PLAY * s, height - 2.0 * gap) } else { tall };
+        let right = float4 { area.x + width - gap - side, area.y + gap, side, play_tall };
         // The buttons under the play panel at the right edge: a column where it fits above
         // the bottom margin, else a row, as low as the safe area lets it.
         let touch = (if phone { TOUCH_PHONE } else { TOUCH_TABLET }) * s;
@@ -502,7 +528,10 @@ fn clock_of(g: gui::Gui&, r: float4, c: clock::Clock&, side: i64, ring: f32, ove
           if runs { 1.0 } else { 0.7 }, ring);
     var t: u8[..8] = [];
     clock::text(clock::shown(c, side), t);
-    gui::figures(g, gui::FIGURES, room, t, if runs { 1.0 } else { 0.66 }, style, gui::RIGHT);
+    // A clock narrowed for the lookout's eye beside it takes a smaller face where its
+    // time doesn't fit.
+    let face = if gui::text_width(g, gui::FIGURES, t) <= room.z { gui::FIGURES } else { gui::fitting(g, gui::LABEL, t, room.z) };
+    gui::figures(g, face, room, t, if runs { 1.0 } else { 0.66 }, style, gui::RIGHT);
 }
 
 // The way out: back, settings, and start over at the bottom, far from what plays. In
@@ -607,10 +636,11 @@ fn play_area(g: gui::Gui&, l: Layout) -> float4 {
 // its clock's piece has it even before the clocks start. The countdown before a draw,
 // `note`, goes under whose turn (or under the clocks in landscape); between the clocks
 // in its short form where they leave no room for the line, a portrait panel and a 3D
-// board's corner panel. Pieces shown on the panels go into `over`. Returns the tile
-// tapped this frame, if any.
+// board's corner panel. Pieces shown on the panels go into `over`. The lookout's eye and
+// the hint's tile (`help`) go on the play panel. Returns the tile tapped this frame, if
+// any.
 fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: bool, note: Note&, thinking: bool,
-        glow: f32, over: board::Piece[..OVER]&) -> i64 {
+        glow: f32, over: board::Piece[..OVER]&, help: Help = Help {}) -> i64 {
     let u = g.scale;
     let landscape = l.left.z < l.left.w;
     let turn_key = if drawn { strings::DRAW }
@@ -629,40 +659,96 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: 
         // panel lacks, and leaves a gap above it.
         let squeezed = l.three && clock::on(c) && note.of > 0 && !drawn;
         let wanted = tall(l, u);
-        let back = gui::cut_bottom(right, if squeezed { min(wanted, right.w - (2.0 * CLOCK_H + SHORT_GAP + 12.0) * u) } else { wanted });
+        let low = if squeezed { min(wanted, right.w - (2.0 * CLOCK_H + SHORT_GAP + 12.0) * u) } else { wanted };
+        // The column as the prototype has it where the panel is tall enough: whose turn or
+        // the clocks, the lookout's eye and name, the hint over undo move. Else (a phone's,
+        // a 3D board's corner panel) the eye at the end of whose turn's line, or beside the
+        // clocks, and the hint beside undo move where both keep 88 dp across, or over it,
+        // the gaps round the piece closed up where the panel is short.
+        let f .= g.faces[gui::HEADING];
+        let words_h = f.ascent - f.descent;
+        let head = if clock::on(c) { (2.0 * CLOCK_H + 10.0) * u } else { (18.0 + 72.0 + 18.0) * u + words_h };
+        let column = right.w >= head + (EYE_TOUCH + 12.0 + HINT_H + 12.0) * u + low;
+        let beside = !column && right.z >= (2.0 * 88.0 + 12.0) * u;
+        let tight = !column && !beside && right.w < head + (12.0 + HINT_H + 12.0) * u + low;
+        var back = gui::cut_bottom(right, low);
+        var hint_r = float4 { 0.0, 0.0, 0.0, 0.0 };
+        if beside {
+            hint_r = gui::cut_left(back, 0.5 * (back.z - 12.0 * u));
+            gui::cut_left(back, 12.0 * u);
+        } else {
+            gui::cut_bottom(right, 12.0 * u);
+            hint_r = gui::cut_bottom(right, HINT_H * u);
+        }
+        var eye_r = float4 { 0.0, 0.0, 0.0, 0.0 };
         if clock::on(c) {
-            clock_of(g, gui::cut_top(right, CLOCK_H * u), c, first, rings[first], over);
-            if squeezed { short_line(g, gui::cut_top(right, SHORT_GAP * u), note); }
-            else { gui::cut_top(right, 10.0 * u); }
-            clock_of(g, gui::cut_top(right, CLOCK_H * u), c, 1 - first, rings[1 - first], over);
+            let extra = if squeezed { (SHORT_GAP - 10.0) * u } else { 0.0 };
+            var clocks = gui::cut_top(right, head + extra);
+            if !column {
+                eye_r = gui::center(gui::cut_right(clocks, EYE_TOUCH * u), EYE_TOUCH * u, EYE_TOUCH * u);
+                gui::cut_right(clocks, 6.0 * u);
+            }
+            clock_of(g, gui::cut_top(clocks, CLOCK_H * u), c, first, rings[first], over);
+            if squeezed { short_line(g, gui::cut_top(clocks, SHORT_GAP * u), note); }
+            else { gui::cut_top(clocks, 10.0 * u); }
+            clock_of(g, gui::cut_top(clocks, CLOCK_H * u), c, 1 - first, rings[1 - first], over);
         } else {
             // The piece, its glow ring, and the words under it; both pieces for a draw. A
             // countdown in a 3D board's short corner panel closes the gaps up.
-            let close = l.three && note.of > 0;
+            let close = (l.three && note.of > 0) || tight;
             gui::cut_top(right, (if close { 8.0 } else { 18.0 }) * u);
-            let spot = gui::cut_top(right, 72.0 * u);
+            var spot = gui::cut_top(right, 72.0 * u);
+            if !column {
+                // The piece stays centered over the words where the panel is wide enough.
+                eye_r = gui::center(gui::cut_right(spot, EYE_TOUCH * u), EYE_TOUCH * u, EYE_TOUCH * u);
+                if spot.z - EYE_TOUCH * u >= 72.0 * u { gui::cut_left(spot, EYE_TOUCH * u); }
+            }
             if drawn { pair(over, spot, 36.0 * u, 6.0 * u, 1.0); }
             else { piece(over, spot, 36.0 * u, side, 0, 1.0, glow); }
             gui::cut_top(right, (if close { 10.0 } else { 18.0 }) * u);
-            let f .= g.faces[gui::HEADING];
             let words = strings::get(turn_key);
             gui::text(g, gui::fitting(g, gui::HEADING, words, right.z), gui::cut_top(right, f.ascent - f.descent), words,
                       1.0, 0.0, gui::CENTER);
         }
+        if column {
+            // The eye and its name under whose turn, dim while off.
+            let line = gui::cut_top(right, EYE_TOUCH * u);
+            let name = strings::get(strings::GAME_LOOKOUT);
+            let w = EYE_TOUCH * u + 4.0 * u + gui::text_width(g, gui::BODY, name);
+            var pair_r = gui::center(line, min(w, line.z), line.w);
+            eye_r = gui::cut_left(pair_r, EYE_TOUCH * u);
+            gui::cut_left(pair_r, 4.0 * u);
+            let dim: f32 = if help.look { 1.0 } else { 0.66 };
+            gui::text(g, gui::fitting(g, gui::BODY, name, pair_r.z), pair_r, name, dim, 0.0, gui::LEFT);
+        }
         if !(l.three && clock::on(c)) { countdown(g, right, note); }
-        if gui::labelled(g, 113, back, gui::UNDO, 48.0, strings::get(strings::GAME_UNDO_MOVE), gui::HEADING,
+        let undo_icon: f32 = if beside { 36.0 } else { 48.0 };
+        if gui::labelled(g, 113, back, gui::UNDO, undo_icon, strings::get(strings::GAME_UNDO_MOVE), gui::HEADING,
                          gui::STACKED) {
             chosen = UNDO;
         }
+        let arrange = if beside { gui::STACKED } else { gui::BESIDE };
+        let hint_icon: f32 = if beside { 36.0 } else { 34.0 };
+        if hint_tile(g, hint_r, arrange, help, hint_icon) { chosen = HINT; }
+        if eye(g, eye_r, help.look) { chosen = LOOKOUT; }
         return chosen;
     }
     if l.compact {
         // One row: whose turn (or the two clocks) at the left, undo move at the right.
+        // The eye at the end of whose turn's line, the hint between it and undo move, each
+        // its icon over its word, or with clocks icons alone.
         var row = float4 { l.right.x + 12.0 * u, l.right.y + 12.0 * u, l.right.z - 24.0 * u, l.right.w - 24.0 * u };
-        let undo_w = if clock::on(c) { 88.0 * u }
-                     else { gui::labelled_width(g, 36.0, strings::get(strings::GAME_UNDO_MOVE), gui::HEADING, gui::MIDDLE) };
+        let undo_word = strings::get(strings::GAME_UNDO_MOVE);
+        let hint_word = strings::get(if help.stage == 1 { strings::GAME_WHERE_TO } else { strings::GAME_HINT });
+        let sides = 2.0 * gui::LABEL_PAD * u;
+        let undo_w = if clock::on(c) { ICON_W * u } else { max(88.0 * u, gui::text_width(g, gui::HEADING, undo_word) + sides) };
+        let hint_w = if clock::on(c) { ICON_W * u } else { max(88.0 * u, gui::text_width(g, gui::HEADING, hint_word) + sides) };
         let undo = gui::cut_right(row, undo_w);
-        gui::cut_right(row, 12.0 * u);
+        gui::cut_right(row, 8.0 * u);
+        let hint_r = gui::cut_right(row, hint_w);
+        gui::cut_right(row, 4.0 * u);
+        let eye_r = gui::center(gui::cut_right(row, EYE_TOUCH * u), EYE_TOUCH * u, EYE_TOUCH * u);
+        gui::cut_right(row, 4.0 * u);
         if clock::on(c) {
             // The countdown's short form between them, as in portrait.
             let between = note.of > 0 && !drawn;
@@ -675,6 +761,8 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: 
             clock_of(g, float4 { mid.x + half + gap, mid.y, half, mid.w }, c, 1 - first, rings[1 - first], over);
             if between { short_stacked(g, float4 { mid.x + half, mid.y, gap, mid.w }, note); }
             if gui::button(g, 113, undo, gui::UNDO) { chosen = UNDO; }
+            if hint_tile(g, hint_r, ICON, help, 28.0) { chosen = HINT; }
+            if eye(g, eye_r, help.look) { chosen = LOOKOUT; }
             return chosen;
         }
         let label = strings::get(turn_key);
@@ -696,14 +784,17 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: 
         } else {
             gui::text(g, face, row, label, 1.0, 0.0, gui::LEFT);
         }
-        if gui::labelled(g, 113, undo, gui::UNDO, 36.0, strings::get(strings::GAME_UNDO_MOVE), gui::HEADING, gui::MIDDLE) {
-            chosen = UNDO;
-        }
+        if gui::labelled(g, 113, undo, gui::UNDO, 28.0, undo_word, gui::HEADING, gui::STACKED) { chosen = UNDO; }
+        if hint_tile(g, hint_r, gui::STACKED, help, 28.0) { chosen = HINT; }
+        if eye(g, eye_r, help.look) { chosen = LOOKOUT; }
         return chosen;
     }
-    // Portrait: the play below the board.
+    // Portrait: the play below the board, the eye at the end of whose turn's line, the
+    // hint and undo move halves of the row under it.
     var top = gui::cut_top(right, CLOCK_H * u);
     gui::cut_top(right, 12.0 * u);
+    let eye_r = gui::center(gui::cut_right(top, EYE_TOUCH * u), EYE_TOUCH * u, EYE_TOUCH * u);
+    gui::cut_right(top, 8.0 * u);
     if clock::on(c) {
         let between = note.of > 0 && !drawn;
         let mid = if between { max(gui::text_width(g, gui::SMALL, note.word[..note.word.len]),
@@ -737,9 +828,80 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: 
             gui::text(g, gui::HEADING, row, label, 1.0, 0.0, gui::LEFT);
         }
     }
-    if gui::labelled(g, 113, gui::cut_top(right, WIDE_H * u), gui::UNDO, 36.0, strings::get(strings::GAME_UNDO_MOVE),
-                     gui::HEADING, gui::MIDDLE) {
+    var row = gui::cut_top(right, WIDE_H * u);
+    let undo = gui::cut_right(row, 0.5 * (row.z - 16.0 * u));
+    gui::cut_right(row, 16.0 * u);
+    if gui::labelled(g, 113, undo, gui::UNDO, 36.0, strings::get(strings::GAME_UNDO_MOVE), gui::HEADING, gui::MIDDLE) {
         chosen = UNDO;
     }
+    if hint_tile(g, row, gui::MIDDLE, help, 36.0) { chosen = HINT; }
+    if eye(g, eye_r, help.look) { chosen = LOOKOUT; }
     return chosen;
+}
+
+// The lookout's eye in its touch area r: a floating disc, lit in the glow with the open
+// eye while on, the eye struck through and dim while off. True when it is tapped.
+fn eye(g: gui::Gui&, r: float4, on: bool) -> bool {
+    let u = g.scale;
+    let icon = if on { gui::EYE } else { gui::EYE_OFF };
+    let a: f32 = if on { 1.0 } else { 0.55 };
+    return gui::floating(g, EYE_ID, gui::center(r, EYE_TOUCH * u, EYE_TOUCH * u), EYE_DISC * u, icon, on, false, a);
+}
+
+// The hint's tile in r (prototypes/coach.html's `hint`): the bulb and its word over a pip
+// for each hint, a pip lit for each left, laid out as `arrange` has it (gui::BESIDE,
+// MIDDLE, STACKED, or ICON, the bulb over the pips alone), the bulb `size` dp. Its word is
+// Hint, or Where to? once it has lit the piece; it is lit in the glow while it shows, as a
+// chosen tile is; dim, taking no tap, with no hint left or none to give. True when tapped.
+let ICON = 3;
+let HINTS = 3;              // the pips: a game's hints
+fn hint_tile(g: gui::Gui&, r: float4, arrange: i64, help: Help, size: f32) -> bool {
+    let u = g.scale;
+    let on = help.can && (help.stage > 0 || help.left > 0);
+    let clicked, p = gui::hold_if(g, HINT_ID, r, on);
+    let a: f32 = if on { 1.0 } else { 0.35 };
+    let style = if help.stage > 0 { gui::CHOSEN } else { gui::PLAIN };
+    gui::add(g, gui::Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { gui::BUTTON, 22.0 * u, 0.0, p },
+                            extra: float4 { u, style, 0.0, 0.0 } });
+    let word = strings::get(if help.stage == 1 { strings::GAME_WHERE_TO } else { strings::GAME_HINT });
+    let s = size * u;
+    let f .= g.faces[gui::HEADING];
+    let line = f.ascent - f.descent;
+    let pips_w = (HINTS * PIP + (HINTS - 1) * PIP_GAP) * u;
+    if arrange == ICON || arrange == gui::STACKED {
+        let words: f32 = if arrange == ICON { 0.0 } else { line + 6.0 * u };
+        var c = gui::center(r, r.z, s + 6.0 * u + words + PIP * u);
+        gui::glyph_icon(g, gui::center(gui::cut_top(c, s), s, s), gui::HINT, gui::PLAIN, p, a);
+        gui::cut_top(c, 6.0 * u);
+        if arrange != ICON {
+            let room = r.z - 2.0 * gui::LABEL_PAD * u;
+            gui::text(g, gui::fitting(g, gui::HEADING, word, room), gui::cut_top(c, line), word, a, 0.0, gui::CENTER);
+            gui::cut_top(c, 6.0 * u);
+        }
+        pips(g, gui::center(gui::cut_top(c, PIP * u), pips_w, PIP * u), help.left, a);
+        return clicked;
+    }
+    let gap = 12.0 * u;
+    let room = r.z - s - gap - (gui::INDENT + gui::LABEL_PAD) * u;
+    let face = gui::fitting(g, gui::HEADING, word, room);
+    let w = s + gap + max(gui::text_width(g, face, word), pips_w);
+    var c = if arrange == gui::BESIDE { float4 { r.x + gui::INDENT * u, r.y, r.z - gui::INDENT * u, r.w } }
+            else { gui::center(r, min(w, r.z), r.w) };
+    gui::glyph_icon(g, gui::center(gui::cut_left(c, s), s, s), gui::HINT, gui::PLAIN, p, a);
+    gui::cut_left(c, gap);
+    var lbl = gui::center(c, c.z, line + PIP_GAP * u + PIP * u);
+    gui::text(g, face, gui::cut_top(lbl, line), word, a, 0.0, gui::LEFT);
+    gui::cut_top(lbl, PIP_GAP * u);
+    pips(g, float4 { lbl.x, lbl.y, pips_w, PIP * u }, help.left, a);
+    return clicked;
+}
+
+// A pip for each of a game's hints in r, `left` of them lit in the glow, the rest faint.
+fn pips(g: gui::Gui&, r: float4, left: i64, a: f32) {
+    let u = g.scale;
+    for i in HINTS {
+        let d = float4 { r.x + i * (PIP + PIP_GAP) * u, r.y, PIP * u, PIP * u };
+        if i < left { gui::glow_fill(g, d, a, 0.5 * PIP * u); }
+        else { gui::fill(g, d, float4 { 1.0, 1.0, 1.0, 0.2 * a }, 0.5 * PIP * u); }
+    }
 }

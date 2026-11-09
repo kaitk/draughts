@@ -42,6 +42,7 @@ let KEYS = [
     "count.draw", "count.draw_one", "count.white", "count.white_one", "count.black", "count.black_one",
     "count.twice", "count.third", "count.short", "count.repeated",
     "settings.privacy",
+    "game.lookout", "game.hint", "game.where_to",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -147,7 +148,10 @@ let COUNT_THIRD = 100;      // under it: a third time draws
 let COUNT_SHORT = 101;      // the short form between the clocks: over or before the moves left
 let COUNT_REPEATED = 102;   // and before "2/3" for the position come twice
 let SETTINGS_PRIVACY = 103; // the privacy note at the end of settings' game group
-let COUNT = 104;
+let GAME_LOOKOUT = 104;     // the lookout's toggle: the threats past the player's sight
+let GAME_HINT = 105;        // the hint's tile
+let GAME_WHERE_TO = 106;    // and its word once it has lit the piece to move
+let COUNT = 107;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

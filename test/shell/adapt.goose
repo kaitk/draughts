@@ -88,20 +88,20 @@ fn main() {
     sh.prefs.games = 5;
     sh.game.number = 4;
     drive::idle(sh, g, 4.0);
-    drive::tap(sh, g, drive::control(g, 5), 4.1);
+    drive::tap(sh, g, drive::control(g, 6), 4.1);
     print("played again: winner ", game::winner(sh.game), ", ", current(sh), ", changed ", sh.changed);
     // Won again: the second of the first games, a large step.
     win_easy(sh, g, 5.0);
     print("won again: ", skills(sh));
     // Started over during the game: the new game at the skill now, counted.
     drive::idle(sh, g, 9.0);
-    drive::tap(sh, g, drive::control(g, 5), 9.1);
+    drive::tap(sh, g, drive::control(g, 6), 9.1);
     print("played again: ", current(sh));
     drive::tap(sh, g, drive::control(g, 2), 9.5);
     print("started over: ", current(sh));
     win_easy(sh, g, 10.0);
     drive::idle(sh, g, 13.0);
-    drive::tap(sh, g, drive::control(g, 5), 13.1);
+    drive::tap(sh, g, drive::control(g, 6), 13.1);
     win_easy(sh, g, 14.0);
     print("two more wins, the third game a large step and the fourth a small one: ", skills(sh));
     sh.changed = false;

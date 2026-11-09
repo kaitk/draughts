@@ -1,0 +1,20 @@
+calm, the lookout off: danger -, crowns -, eye lit false
+its eye tapped: danger g3 d4, crowns -, eye lit true
+  an idle frame changes nothing: true
+d2 selected by a tap: danger g3 d4, crowns -, eye lit true
+the mouse over c3: danger g3, crowns -, eye lit true
+d2 dragged over c3: danger g3, crowns -, eye lit true
+over e3, no move: danger g3 d4, crowns -, eye lit true
+let go on e3: danger g3 d4, crowns -, eye lit true
+a3 dragged over b4: danger a3 g3 d4, crowns -, eye lit true
+dropped on b4, the move showing: danger -, crowns -, eye lit true
+the computer's turn: danger -, crowns -, eye lit true
+held, at rest: danger -, crowns -, eye lit true
+b4 dragged over a5: danger c3 c5, crowns -, eye lit true
+the same at skill 25, a double jump left to the player: danger -, crowns -, eye lit true
+king: danger -, crowns e1, eye lit true
+king at skill 15: danger -, crowns -, eye lit true
+calm at hard's 70: danger -, crowns -, eye lit true
+a capture due: danger -, crowns -, eye lit true
+a friend's game, black to move: danger e5, crowns -, eye lit true
+the eye tapped again: danger -, crowns -, eye lit false

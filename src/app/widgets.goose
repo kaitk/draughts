@@ -296,6 +296,11 @@ let FRAG = """
             d = min(d, min(seg(p, vec2(20.7, 18.2), vec2(20.5, 14.5)), seg(p, vec2(20.5, 14.5), vec2(16.9, 15.3))));
             return min(d, min(seg(p, vec2(3.3, 18.2), vec2(3.5, 14.5)), seg(p, vec2(3.5, 14.5), vec2(7.1, 15.3))));
         }
+        if (k == 37 || k == 38) {   // the lookout: Lucide's eye, its lids two arcs, its pupil; off, struck through
+            float d = min(arc(p, vec2(12.0, 15.64), 10.64, -2.7925, 2.4435), arc(p, vec2(12.0, 8.36), 10.64, 0.3491, 2.4435));
+            d = min(d, abs(length(p - 12.0) - 3.0));
+            return k == 38 ? min(d, seg(p, vec2(3.5, 3.5), vec2(20.5, 20.5))) : d;
+        }
         return 1e9;
     }
     // A player's badge's animal (badges/badges.goose): its signed distance at f, in a

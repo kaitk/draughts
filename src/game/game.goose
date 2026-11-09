@@ -22,6 +22,7 @@ import vec;
 import rules from "../rules";
 import board from "../board";
 import gui from "../gui";
+import ai from "../ai";
 import strings from "../../strings";
 import .panel;
 import .clock;
@@ -104,6 +105,24 @@ struct Game {
     // the camera its buttons move (board/rig.goose).
     grab: float2   = float2 { 0.0, 0.0 },
     cam:  rig::Rig = rig::Rig {},
+    // The lookout (docs/architecture/ai.md, "The lookout"): on as the player's setting has
+    // it (the shell keeps them in step), the skill whose plain threats it leaves to the
+    // player (the shell's: the game's against the computer, the player's level's against
+    // a friend), and what it last worked the threats out for, so it does once a position
+    // or held target, never a frame.
+    look:       bool  = false,
+    look_skill: i64   = 0,
+    watched:    Watch = Watch {},
+}
+
+// What the lookout last worked its threats out for (watch): whether it showed, the
+// position, and the held piece and the square under it.
+struct Watch {
+    on:       bool            = false,
+    pos:      rules::Position = rules::Position { pieces: [0, 0], kings: 0, side: 0, variant: 0 },
+    selected: i64             = -1,
+    over:     i64             = -1,
+    shows:    i64             = -1,     // board::Board.shows: a position shown again clears the marks
 }
 
 fn new(variant: u8) -> Game {
@@ -131,6 +150,7 @@ fn start(gm: Game&, variant: u8, kind: i64, computer: i64, level: i64, skill: i6
     gm.result = 0;
     gm.asking = 0;
     gm.restarted = false;
+    gm.watched = Watch {};
     rig::reset(gm.cam);
 }
 
@@ -298,7 +318,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
     var note = panel::Note {};
     countdown(gm, note);
     let pick = panel::game(g, l, gm.clock, side, won >= 0, drawn(gm) != rules::NO_DRAW, note, gm.asking != 0,
-                           pulse(gm, now), over);
+                           pulse(gm, now), over, help(gm));
     var undone = false;
     match pick {
         // Partway through a capture, take back only takes the capture back to its start.
@@ -306,6 +326,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
         panel::RESTART => { restart(gm, now); },
         panel::BACK => { go = HOME; },
         panel::SETTINGS => { go = SETTINGS; },
+        panel::LOOKOUT => { gm.look = !gm.look; },
         _ => {},
     }
     if pick != panel::NOTHING { changed = true; }
@@ -383,6 +404,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
         clock::moved(gm.clock, gm.turn);
     }
     gm.turn = b.pos.side;
+    if watch(gm) { changed = true; }
     // The computer's pieces show no count of what they must take: the child can't move them.
     b.quiet = gm.computer >= 0 && b.pos.side == gm.computer;
     if b.moves.len == 0 || drawn(gm) != rules::NO_DRAW { clock::stop(gm.clock); }
@@ -410,7 +432,56 @@ fn touch(b: board::Board&, l: panel::Layout, input: gui::Input, grab: float2&, n
     var moved = false;
     if input.down && board::drag(b, l.board, held) { moved = true; }
     if input.released { board::release(b, l.board, held, now); }
+    // The square under a held piece, or under the mouse over a piece selected by a tap, for
+    // the lookout: a finger lifted from a tap rests on the piece, so on touch it is only
+    // while a drag goes.
+    b.over = if b.dragging { board::target_at(b, l.board, held) }
+             else if !input.down && b.pressed < 0 { board::target_at(b, l.board, at) } else { -1 };
     return moved;
+}
+
+// Whether the lookout shows now: on, the side to move's turn and the board at rest, the
+// game going on, no capture due (the must-capture ring says what to do then). Against a
+// friend it watches for whoever's turn it is.
+fn watching(gm: Game&) -> bool {
+    let b .= gm.b;
+    return gm.look && !b.moving && b.pos.side != gm.computer && !ended(gm) && !board::must_capture(b);
+}
+
+// The lookout's marks on the board (Board.danger, crowns), worked out again only when
+// what they depend on changed: the position, whether it shows, the held piece and the
+// square under it. Then the side to move's threats now, or the ones the held piece's move
+// would leave, of the kinds the skill leaves out (ai's lookout::shown). Two move
+// generations into a buffer on the stack. True when the marks changed.
+fn watch(gm: Game&) -> bool {
+    let b .= gm.b;
+    let on = watching(gm);
+    let over = if on { b.over } else { -1 };
+    let selected = if over >= 0 { b.selected } else { -1 };
+    let w .= gm.watched;
+    guard on != w.on || over != w.over || selected != w.selected || (on && (!rules::same(b.pos, w.pos) || b.shows != w.shows))
+    else { return false; }
+    gm.watched = Watch { on: on, pos: b.pos, selected: selected, over: over, shows: b.shows };
+    let danger = b.danger;
+    let crowns = b.crowns;
+    b.danger = 0;
+    b.crowns = 0;
+    if on {
+        var buf: rules::Moves = [];
+        var seen = lookout::Seen {};
+        var k = -1;
+        if over >= 0 { for m, i in b.moves { if m.from == selected && m.to == over { k = i; } } }
+        if k >= 0 { lookout::after(b.pos, b.moves[k], seen, buf); } else { lookout::now(b.pos, seen, buf); }
+        let d, c = lookout::shown(seen, gm.look_skill);
+        b.danger = d;
+        b.crowns = c;
+    }
+    return b.danger != danger || b.crowns != crowns;
+}
+
+// What the play panel shows of the lookout and the hint.
+fn help(gm: Game&) -> panel::Help {
+    return panel::Help { look: gm.look, left: 0, stage: 0, can: false };
 }
 
 // Declares the screen as it stands, its pieces over the UI put in `over`, doing nothing:
@@ -423,7 +494,8 @@ fn still(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&) {
     var note = panel::Note {};
     countdown(gm, note);
     let draw = drawn(gm);
-    panel::game(g, l, gm.clock, side, won >= 0, draw != rules::NO_DRAW, note, gm.asking != 0, pulse(gm, now), over);
+    panel::game(g, l, gm.clock, side, won >= 0, draw != rules::NO_DRAW, note, gm.asking != 0, pulse(gm, now), over,
+                help(gm));
     panel::camera(g, l, gm.cam, now);
     if gm.won_at >= 0.0 { celebrate(gm, g, l, won, now, over); }
     if gm.drawn_at >= 0.0 { settle(gm, g, l, draw, now, over); }

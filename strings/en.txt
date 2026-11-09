@@ -123,3 +123,7 @@ count.twice = Same position twice
 count.third = A third time is a draw
 count.short = Draw in
 count.repeated = Repeat
+
+game.lookout = Lookout
+game.hint = Hint
+game.where_to = Where to?

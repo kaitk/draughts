@@ -12,6 +12,7 @@
 // (Teema): its switch, photograph or plain, is kept in the file as `background`, and with
 // plain no photograph is shown (the app then loads none) and the seasons' thumbnails are
 // their fades. In landscape the board is right of the choices; in portrait above them.
+// The game's lookout, off for a new player, is kept in the file too.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -215,4 +216,11 @@ fn main() {
     settings::write(raised.prefs, kept);
     print("kings stack taps: ", raised.prefs.kings == board::STACK, "; board key kept in the file: ",
           settings::parse(kept).board == settings::RAISED);
+    // The lookout's eye (game screen): off for a new player, kept as `lookout`.
+    var on: u8[>..] = [];
+    var lookout = settings::Settings {};
+    lookout.lookout = true;
+    settings::write(lookout, on);
+    print("the lookout: off by default ", !settings::Settings {}.lookout, ", on read back ", settings::parse(on).lookout,
+          ", off read back ", !settings::parse("lookout = off\n").lookout);
 }

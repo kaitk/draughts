@@ -122,3 +122,7 @@ count.twice = Sama seis teist korda
 count.third = Kolmas kord on viik
 count.short = Viigini
 count.repeated = Kordus
+
+game.lookout = Valvur
+game.hint = Vihje
+game.where_to = Kuhu?

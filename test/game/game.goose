@@ -35,8 +35,8 @@ let HOME = 0;
 let SETTINGS = 1;
 let RESTART = 2;
 let UNDO = 3;
-let CARD_BACK = 4;
-let CARD_RESTART = 5;
+let CARD_BACK = 5;         // after the hint's tile
+let CARD_RESTART = 6;
 
 // The overlay's pieces: side, opacity, ring.
 fn pieces() -> u8[>..] {

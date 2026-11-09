@@ -1,52 +1,52 @@
-  the tablet, landscape: board 191 160 898 x 616 dp, 1.46:1, far edge 69%; panels 24 24 232 x 352, 1024 24 232 x 352; 4 tiles; 3 buttons 56/44 dp in a column 1200 388 56 x 184, all in place
+  the tablet, landscape: board 191 160 898 x 616 dp, 1.46:1, far edge 69%; panels 24 24 232 x 352, 1024 24 232 x 352; 5 tiles; 3 buttons 56/44 dp in a column 1200 388 56 x 184, all in place
     zoomed, at rest: the field 917 x 613 dp, 1.15 times the scale unzoomed, in its room
     zoomed, the top view: the field 820 x 718 dp, 1.13 times the scale unzoomed, in its room
-  the tablet, portrait: board 24 236 752 x 604 dp, 1.24:1, far edge 77%; panels 24 92 752 x 120, 24 984 752 x 204; 4 tiles; 2 buttons 56/44 dp in a column 720 852 56 x 120, all in place
-  a foldable, landscape: board 186 346 628 x 430 dp, 1.46:1, far edge 69%; panels 24 24 232 x 352, 743 24 232 x 352; 4 tiles; 3 buttons 56/44 dp in a column 919 388 56 x 184, all in place
+  the tablet, portrait: board 24 236 752 x 604 dp, 1.24:1, far edge 77%; panels 24 92 752 x 120, 24 984 752 x 204; 5 tiles; 2 buttons 56/44 dp in a column 720 852 56 x 120, all in place
+  a foldable, landscape: board 186 346 628 x 430 dp, 1.46:1, far edge 69%; panels 24 24 232 x 352, 743 24 232 x 352; 5 tiles; 3 buttons 56/44 dp in a column 919 388 56 x 184, all in place
     zoomed, at rest: the field 640 x 428 dp, 1.14 times the scale unzoomed, in its room
     zoomed, the top view: the field 539 x 472 dp, 1.14 times the scale unzoomed, in its room
-  a foldable, portrait: board 75 168 651 x 523 dp, 1.24:1, far edge 77%; panels 24 24 752 x 120, 24 771 752 x 204; 4 tiles; 2 buttons 56/44 dp in a row 656 703 120 x 56, all in place
-  4:3, landscape: board 187 301 693 x 475 dp, 1.46:1, far edge 69%; panels 24 24 232 x 352, 811 24 232 x 352; 4 tiles; 3 buttons 56/44 dp in a column 987 388 56 x 184, all in place
+  a foldable, portrait: board 75 168 651 x 523 dp, 1.24:1, far edge 77%; panels 24 24 752 x 120, 24 771 752 x 204; 5 tiles; 2 buttons 56/44 dp in a row 656 703 120 x 56, all in place
+  4:3, landscape: board 187 301 693 x 475 dp, 1.46:1, far edge 69%; panels 24 24 232 x 352, 811 24 232 x 352; 5 tiles; 3 buttons 56/44 dp in a column 987 388 56 x 184, all in place
     zoomed, at rest: the field 707 x 473 dp, 1.15 times the scale unzoomed, in its room
     zoomed, the top view: the field 607 x 532 dp, 1.13 times the scale unzoomed, in its room
-  4:3, portrait: board 33 168 735 x 591 dp, 1.24:1, far edge 77%; panels 24 24 752 x 120, 24 839 752 x 204; 4 tiles; 2 buttons 56/44 dp in a row 656 771 120 x 56, all in place
-  the tablet, landscape, its 72 px navigation bar: board 202 128 876 x 600 dp, 1.46:1, far edge 69%; panels 24 24 232 x 352, 1024 24 232 x 352; 4 tiles; 3 buttons 56/44 dp in a column 1200 388 56 x 184, all in place
+  4:3, portrait: board 33 168 735 x 591 dp, 1.24:1, far edge 77%; panels 24 24 752 x 120, 24 839 752 x 204; 5 tiles; 2 buttons 56/44 dp in a row 656 771 120 x 56, all in place
+  the tablet, landscape, its 72 px navigation bar: board 202 128 876 x 600 dp, 1.46:1, far edge 69%; panels 24 24 232 x 352, 1024 24 232 x 352; 5 tiles; 3 buttons 56/44 dp in a column 1200 388 56 x 184, all in place
     zoomed, at rest: the field 896 x 599 dp, 1.15 times the scale unzoomed, in its room
     zoomed, the top view: the field 803 x 704 dp, 1.12 times the scale unzoomed, in its room
-  the tablet, portrait, its 72 px navigation bar: board 24 212 752 x 604 dp, 1.24:1, far edge 77%; panels 24 68 752 x 120, 24 960 752 x 204; 4 tiles; 2 buttons 56/44 dp in a column 720 828 56 x 120, all in place
-  a 20:9 phone, landscape at 540 dp: board 241 24 718 x 492 dp, 1.46:1, far edge 69%; panels 24 24 192 x 352, 984 24 192 x 352; 4 tiles; 3 buttons 48/40 dp in a row 1016 388 160 x 48, all in place
+  the tablet, portrait, its 72 px navigation bar: board 24 212 752 x 604 dp, 1.24:1, far edge 77%; panels 24 68 752 x 120, 24 960 752 x 204; 5 tiles; 2 buttons 56/44 dp in a column 720 828 56 x 120, all in place
+  a 20:9 phone, landscape at 540 dp: board 241 24 718 x 492 dp, 1.46:1, far edge 69%; panels 24 24 192 x 352, 984 24 192 x 368; 5 tiles; 3 buttons 48/40 dp in a row 1016 404 160 x 48, all in place
     zoomed, at rest: the field 736 x 492 dp, 1.15 times the scale unzoomed, in its room
     zoomed, the top view: the field 561 x 492 dp, 1.11 times the scale unzoomed, in its room
-  a 20:9 phone, landscape at 540 dp, insets 118 0 0 84: board 301 24 656 x 450 dp, 1.46:1, far edge 69%; panels 83 24 192 x 352, 984 24 192 x 352; 4 tiles; 3 buttons 48/40 dp in a row 1016 388 160 x 48, all in place
+  a 20:9 phone, landscape at 540 dp, insets 118 0 0 84: board 301 24 656 x 450 dp, 1.46:1, far edge 69%; panels 83 24 192 x 352, 984 24 192 x 368; 5 tiles; 3 buttons 48/40 dp in a row 1016 404 160 x 48, all in place
     zoomed, at rest: the field 673 x 450 dp, 1.15 times the scale unzoomed, in its room
     zoomed, the top view: the field 513 x 450 dp, 1.11 times the scale unzoomed, in its room
-  a 20:9 phone, landscape at 540 dp, insets 0 0 118 84: board 242 24 656 x 450 dp, 1.46:1, far edge 69%; panels 24 24 192 x 352, 925 24 192 x 352; 4 tiles; 3 buttons 48/40 dp in a row 957 388 160 x 48, all in place
+  a 20:9 phone, landscape at 540 dp, insets 0 0 118 84: board 242 24 656 x 450 dp, 1.46:1, far edge 69%; panels 24 24 192 x 352, 925 24 192 x 368; 5 tiles; 3 buttons 48/40 dp in a row 957 404 160 x 48, all in place
     zoomed, at rest: the field 673 x 450 dp, 1.15 times the scale unzoomed, in its room
     zoomed, the top view: the field 513 x 450 dp, 1.11 times the scale unzoomed, in its room
-  a 20:9 phone, portrait at 540 dp: board 24 308 492 x 395 dp, 1.24:1, far edge 77%; panels 24 156 492 x 128, 24 840 492 x 204; 4 tiles; 2 buttons 52/42 dp in a column 464 716 52 x 112, all in place
-  a 20:9 phone, portrait at 540 dp, insets 0 118 0 84: board 24 317 492 x 395 dp, 1.24:1, far edge 77%; panels 24 165 492 x 128, 24 848 492 x 204; 4 tiles; 2 buttons 52/42 dp in a column 464 724 52 x 112, all in place
-  a 20:9 phone, landscape at 480 dp: board 223 31 620 x 425 dp, 1.46:1, far edge 69%; panels 24 24 192 x 352, 851 24 192 x 352; 4 tiles; 3 buttons 48/40 dp in a row 883 388 160 x 48, all in place
-    zoomed, at rest: the field 646 x 432 dp, 1.17 times the scale unzoomed, in its room
+  a 20:9 phone, portrait at 540 dp: board 24 308 492 x 395 dp, 1.24:1, far edge 77%; panels 24 156 492 x 128, 24 840 492 x 204; 5 tiles; 2 buttons 52/42 dp in a column 464 716 52 x 112, all in place
+  a 20:9 phone, portrait at 540 dp, insets 0 118 0 84: board 24 317 492 x 395 dp, 1.24:1, far edge 77%; panels 24 165 492 x 128, 24 848 492 x 204; 5 tiles; 2 buttons 52/42 dp in a column 464 724 52 x 112, all in place
+  a 20:9 phone, landscape at 480 dp: board 227 36 612 x 420 dp, 1.46:1, far edge 69%; panels 24 24 192 x 352, 851 24 192 x 368; 5 tiles; 3 buttons 48/40 dp in a row 883 404 160 x 48, all in place
+    zoomed, at rest: the field 639 x 427 dp, 1.17 times the scale unzoomed, in its room
     zoomed, the top view: the field 493 x 432 dp, 1.11 times the scale unzoomed, in its room
-  a 20:9 phone, landscape at 480 dp, insets 118 0 0 84: board 280 36 558 x 383 dp, 1.46:1, far edge 69%; panels 76 24 192 x 352, 851 24 192 x 352; 4 tiles; 3 buttons 48/40 dp in a row 883 388 160 x 48, all in place
-    zoomed, at rest: the field 578 x 387 dp, 1.16 times the scale unzoomed, in its room
+  a 20:9 phone, landscape at 480 dp, insets 118 0 0 84: board 280 36 558 x 383 dp, 1.46:1, far edge 69%; panels 76 24 192 x 352, 851 24 192 x 368; 5 tiles; 3 buttons 48/40 dp in a row 883 395 160 x 48, all in place
+    zoomed, at rest: the field 571 x 382 dp, 1.15 times the scale unzoomed, in its room
     zoomed, the top view: the field 450 x 395 dp, 1.11 times the scale unzoomed, in its room
-  a 20:9 phone, landscape at 480 dp, insets 0 0 118 84: board 228 36 558 x 383 dp, 1.46:1, far edge 69%; panels 24 24 192 x 352, 798 24 192 x 352; 4 tiles; 3 buttons 48/40 dp in a row 830 388 160 x 48, all in place
-    zoomed, at rest: the field 578 x 387 dp, 1.16 times the scale unzoomed, in its room
+  a 20:9 phone, landscape at 480 dp, insets 0 0 118 84: board 228 36 558 x 383 dp, 1.46:1, far edge 69%; panels 24 24 192 x 352, 798 24 192 x 368; 5 tiles; 3 buttons 48/40 dp in a row 830 395 160 x 48, all in place
+    zoomed, at rest: the field 571 x 382 dp, 1.15 times the scale unzoomed, in its room
     zoomed, the top view: the field 450 x 395 dp, 1.11 times the scale unzoomed, in its room
-  a 20:9 phone, portrait at 480 dp: board 24 266 432 x 347 dp, 1.24:1, far edge 77%; panels 24 114 432 x 128, 24 749 432 x 204; 4 tiles; 2 buttons 52/42 dp in a column 404 625 52 x 112, all in place
-  a 20:9 phone, portrait at 480 dp, insets 0 118 0 84: board 24 273 432 x 347 dp, 1.24:1, far edge 77%; panels 24 121 432 x 128, 24 757 432 x 204; 4 tiles; 2 buttons 52/42 dp in a column 404 633 52 x 112, all in place
-  a 9:16 phone, landscape at 480 dp: board 219 172 414 x 284 dp, 1.46:1, far edge 69%; panels 24 24 192 x 352, 637 24 192 x 352; 4 tiles; 3 buttons 48/40 dp in a row 669 388 160 x 48, all in place
-    zoomed, at rest: the field 436 x 291 dp, 1.18 times the scale unzoomed, in its room
-    zoomed, the top view: the field 421 x 369 dp, 1.15 times the scale unzoomed, in its room
-  a 9:16 phone, landscape at 480 dp, insets 118 0 0 84: board 280 181 346 x 237 dp, 1.46:1, far edge 69%; panels 76 24 192 x 352, 637 24 192 x 352; 4 tiles; 3 buttons 48/40 dp in a row 669 388 160 x 48, all in place
-    zoomed, at rest: the field 368 x 246 dp, 1.19 times the scale unzoomed, in its room
-    zoomed, the top view: the field 363 x 318 dp, 1.16 times the scale unzoomed, in its room
-  a 9:16 phone, landscape at 480 dp, insets 0 0 118 84: board 227 181 346 x 237 dp, 1.46:1, far edge 69%; panels 24 24 192 x 352, 585 24 192 x 352; 4 tiles; 3 buttons 48/40 dp in a row 617 388 160 x 48, all in place
-    zoomed, at rest: the field 368 x 246 dp, 1.19 times the scale unzoomed, in its room
-    zoomed, the top view: the field 363 x 318 dp, 1.16 times the scale unzoomed, in its room
-  a 9:16 phone, portrait at 480 dp: board 24 189 432 x 347 dp, 1.24:1, far edge 77%; panels 24 37 432 x 128, 24 612 432 x 204; 4 tiles; 2 buttons 52/42 dp in a row 344 548 112 x 52, all in place
-  a 9:16 phone, portrait at 480 dp, insets 0 118 0 84: board 64 228 353 x 284 dp, 1.24:1, far edge 77%; panels 24 76 432 x 128, 24 588 432 x 204; 4 tiles; 2 buttons 52/42 dp in a row 344 524 112 x 52, all in place
+  a 20:9 phone, portrait at 480 dp: board 24 266 432 x 347 dp, 1.24:1, far edge 77%; panels 24 114 432 x 128, 24 749 432 x 204; 5 tiles; 2 buttons 52/42 dp in a column 404 625 52 x 112, all in place
+  a 20:9 phone, portrait at 480 dp, insets 0 118 0 84: board 24 273 432 x 347 dp, 1.24:1, far edge 77%; panels 24 121 432 x 128, 24 757 432 x 204; 5 tiles; 2 buttons 52/42 dp in a column 404 633 52 x 112, all in place
+  a 9:16 phone, landscape at 480 dp: board 223 177 407 x 279 dp, 1.46:1, far edge 69%; panels 24 24 192 x 352, 637 24 192 x 368; 5 tiles; 3 buttons 48/40 dp in a row 669 404 160 x 48, all in place
+    zoomed, at rest: the field 429 x 287 dp, 1.18 times the scale unzoomed, in its room
+    zoomed, the top view: the field 418 x 367 dp, 1.16 times the scale unzoomed, in its room
+  a 9:16 phone, landscape at 480 dp, insets 118 0 0 84: board 280 182 345 x 236 dp, 1.46:1, far edge 69%; panels 76 24 192 x 352, 637 24 192 x 368; 5 tiles; 3 buttons 48/40 dp in a row 669 395 160 x 48, all in place
+    zoomed, at rest: the field 361 x 241 dp, 1.17 times the scale unzoomed, in its room
+    zoomed, the top view: the field 360 x 315 dp, 1.16 times the scale unzoomed, in its room
+  a 9:16 phone, landscape at 480 dp, insets 0 0 118 84: board 228 182 345 x 236 dp, 1.46:1, far edge 69%; panels 24 24 192 x 352, 585 24 192 x 368; 5 tiles; 3 buttons 48/40 dp in a row 617 395 160 x 48, all in place
+    zoomed, at rest: the field 361 x 241 dp, 1.17 times the scale unzoomed, in its room
+    zoomed, the top view: the field 360 x 315 dp, 1.16 times the scale unzoomed, in its room
+  a 9:16 phone, portrait at 480 dp: board 24 189 432 x 347 dp, 1.24:1, far edge 77%; panels 24 37 432 x 128, 24 612 432 x 204; 5 tiles; 2 buttons 52/42 dp in a row 344 548 112 x 52, all in place
+  a 9:16 phone, portrait at 480 dp, insets 0 118 0 84: board 64 228 353 x 284 dp, 1.24:1, far edge 77%; panels 24 76 432 x 128, 24 588 432 x 204; 5 tiles; 2 buttons 52/42 dp in a row 344 524 112 x 52, all in place
 portrait 1200 x 1920 at 52.5° down: board 752 x 516 dp, far edge 69%, 1008 of 1280 dp tall used
 portrait 1200 x 1920 at 60.0° down: board 752 x 570 dp, far edge 74%, 1062 of 1280 dp tall used
 portrait 1200 x 1920 at 65.0° down: board 752 x 604 dp, far edge 77%, 1096 of 1280 dp tall used

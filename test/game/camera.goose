@@ -28,8 +28,8 @@ fn dp(r: float4) -> u8[>..] { str(whole(r.x), " ", whole(r.y), " ", whole(r.z), 
 // The k-th floating button the last frame declared: its disc, and how many there were.
 fn button(g: gui::Gui&, k: i64) -> float4 {
     var i = 0;
-    for q in g.quads {
-        guard q.look.x == gui::FLOAT else { continue; }
+    for q, n in g.quads {
+        guard drive::camera_disc(g, n) else { continue; }
         if i == k { return q.rect; }
         i++;
     }
@@ -37,15 +37,15 @@ fn button(g: gui::Gui&, k: i64) -> float4 {
 }
 fn buttons(g: gui::Gui&) -> i64 {
     var i = 0;
-    for q in g.quads { if q.look.x == gui::FLOAT { i++; } }
+    for q, n in g.quads { if drive::camera_disc(g, n) { i++; } }
     return i;
 }
 fn middle(r: float4) -> float2 { float2 { r.x + 0.5 * r.z, r.y + 0.5 * r.w } }
 // Whether the k-th button is lit, and shows its dot.
 fn lit(g: gui::Gui&, k: i64) -> bool {
     var i = 0;
-    for q in g.quads {
-        guard q.look.x == gui::FLOAT else { continue; }
+    for q, n in g.quads {
+        guard drive::camera_disc(g, n) else { continue; }
         if i == k { return (q.look.z as i64) % 2 == 1; }
         i++;
     }
@@ -53,8 +53,8 @@ fn lit(g: gui::Gui&, k: i64) -> bool {
 }
 fn dot(g: gui::Gui&, k: i64) -> bool {
     var i = 0;
-    for q in g.quads {
-        guard q.look.x == gui::FLOAT else { continue; }
+    for q, n in g.quads {
+        guard drive::camera_disc(g, n) else { continue; }
         if i == k { return q.look.z >= 2.0; }
         i++;
     }

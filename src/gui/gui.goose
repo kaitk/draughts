@@ -94,6 +94,8 @@ let VIEW_LOW = 33;          // the rest angle, a board in perspective,
 let ZOOM_IN = 34;           // the zoom, a magnifier with + or -,
 let ZOOM_OUT = 35;
 let SHOWCASE = 36;          // and the showcase, a board on an orbit
+let EYE = 37;               // the lookout on: an open eye
+let EYE_OFF = 38;           // and off: the eye struck through
 
 // Text faces (rendering.md, "Fonts"): one size each, in dp, baked by the app at the
 // screen's pixel size.
@@ -517,14 +519,15 @@ fn icon_button(g: Gui&, id: i64, r: float4, icon: i64, size: f32) -> bool {
 // A floating button (rendering.md, "Controls"; the 3D board's camera): its touch area r
 // holding a shaded disc `disc` pixels across with a hairline and a line icon, no panel
 // behind; lit in the glow color while `on`, a small gold dot on its rim with `dot`,
-// shrinking 8% and darkening with the press. True when it is tapped.
-fn floating(g: Gui&, id: i64, r: float4, disc: f32, icon: i64, on: bool, dot: bool) -> bool {
+// shrinking 8% and darkening with the press; its icon at `a` (the lookout's struck-through
+// eye, dim while off). True when it is tapped.
+fn floating(g: Gui&, id: i64, r: float4, disc: f32, icon: i64, on: bool, dot: bool, a: f32 = 1.0) -> bool {
     let clicked, p = hold(g, id, r);
     let d = disc * (1.0 - 0.08 * p);
     let flags = (if on { 1.0 } else { 0.0 }) + (if dot { 2.0 } else { 0.0 });
     add(g, Quad { rect: center(r, d, d), look: float4 { FLOAT, 0.5 * d, flags, p }, extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
     let s = 26.0 / 40.0 * d;
-    glyph_icon(g, center(r, s, s), icon, PLAIN, p, 1.0);
+    glyph_icon(g, center(r, s, s), icon, PLAIN, p, a);
     return clicked;
 }
 

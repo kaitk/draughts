@@ -52,7 +52,7 @@ fn card(g: gui::Gui&) -> u8[>..] {
     for q in g.quads {
         guard q.look.x == gui::BUTTON && q.extra.y < gui::CLOCK_RUN else { continue; }
         k++;
-        if k > 4 { format(s, "tile at y ", r2(q.rect.y), " opacity ", r2(1.0 - q.extra.w), "; "); }
+        if k > 5 { format(s, "tile at y ", r2(q.rect.y), " opacity ", r2(1.0 - q.extra.w), "; "); }
     }
     for p in drive::over { if p.look.y > 0.5 { format(s, "crowned ", r2(p.look.w), " ring ", r2(p.ring.y)); } }
     return if s.len > 0 { s } else { str("none") };

@@ -174,6 +174,7 @@ struct Board {
     // shaded under a dark ghost king. Cleared by a move, set again once it has shown.
     danger: u64,
     crowns: u64,
+    shows:  i64,                // counts the positions shown (show, start_move): the marks were cleared
     // The piece whose glow ring pulses this frame (fill), or -1: the 3D board draws its
     // pulse over the kept image.
     pulsed:    i64,
@@ -183,6 +184,10 @@ struct Board {
     // stay, lit and still (`held`), so the picture needs no frames after.
     still: bool,
     held:  bool,
+    // The square of the selected piece's move under the finger while it drags the piece,
+    // or under the mouse with the piece selected by a tap, or -1: what the lookout shows
+    // the move would leave open (`target_at`, set by game::touch).
+    over: i64,
     // A press on a piece, and whether it became a drag.
     pressed:  i64,
     press_at: float2,
@@ -197,7 +202,7 @@ struct Board {
 
 fn new(variant: u8) -> Board {
     var b = Board { variant: variant, selected: -1, wrong: -1, glow: -1, hint_to: -1, pulsed: -1, king_look: CROWN,
-                    pressed: -1, .. };
+                    over: -1, pressed: -1, .. };
     set(b, rules::start(variant));
     return b;
 }
@@ -221,6 +226,8 @@ fn show(b: Board&, p: rules::Position) {
     b.hint_to = -1;
     b.danger = 0;
     b.crowns = 0;
+    b.over = -1;
+    b.shows++;
     b.kept_at = -1.0;
     b.misses = 0;
     b.counted = false;
@@ -405,6 +412,16 @@ fn snap(l: Layout, v: rules::Variant&, p: float2, want: u64) -> i64 {
     return best;
 }
 
+// The square of a move of the selected piece under point p, a quiet move's target (snap
+// leaves a point just off it there), or -1: where a held piece would go.
+fn target_at(b: Board&, l: Layout, p: float2) -> i64 {
+    guard b.selected >= 0 && !b.moving && b.steps.len == 0 else { return -1; }
+    let sq = snap(l, rules::VARIANTS[b.variant], p, reachable(b));
+    guard sq >= 0 else { return -1; }
+    for m in b.moves { if m.from == b.selected && m.to == sq && m.captured == 0 { return sq; } }
+    return -1;
+}
+
 // The square the selected piece waits on, partway through a capture, or -1.
 fn waiting(b: Board&) -> i64 {
     guard b.selected >= 0 && b.steps.len > 0 else { return -1; }
@@ -431,6 +448,8 @@ fn start_move(b: Board&, i: i64, now: f64) {
     b.hint_to = -1;
     b.danger = 0;
     b.crowns = 0;
+    b.over = -1;
+    b.shows++;
     b.kept_at = -1.0;
     b.misses = 0;
     b.counted = false;

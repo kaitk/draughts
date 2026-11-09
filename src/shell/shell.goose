@@ -373,7 +373,17 @@ fn game_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
 fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -> bool {
     var l = game_layout(sh, area, g.scale, now);
     sh.layout = l.board;
+    // The lookout as the player's setting has it, against the computer at the game's
+    // skill, against a friend at the player's on their level.
+    let p .= sh.prefs;
+    sh.game.look = p.lookout;
+    sh.game.look_skill = if sh.game.computer >= 0 { sh.game.skill } else { p.skill[clamp(p.level, game::EASY, game::HARD)] };
     let go, changed = game::frame(sh.game, g, l, now, sh.over, frozen);
+    // Its eye turned on or off: kept in the player's file.
+    if sh.game.look != p.lookout {
+        p.lookout = sh.game.look;
+        sh.changed = true;
+    }
     // Drawn through the camera as this frame left it: a button tapped, a showcase drag, or
     // the board facing the side to move shows at once.
     panel::aim(l, sh.game.cam, now);
@@ -393,7 +403,6 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
     if gm.restarted {
         gm.restarted = false;
         if gm.computer >= 0 {
-            let p .= sh.prefs;
             gm.skill = p.skill[clamp(gm.level, game::EASY, game::HARD)];
             gm.number = p.games;
             p.games += 1;
