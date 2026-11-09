@@ -64,7 +64,9 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   theme's last (`puzzles`), a wrong move's answer shown before it slides back, and a
   wrong move with none sliding back as before (`puzzle_answer`, which reads its own
   puzzles into `puzzles::all`), the library and every theme's page laid out at the tablet's
-  and a phone's size (`picker`), a capture made by hand in a puzzle (tapped and dragged
+  and a phone's size (`picker`), the draughts switch on the library (each draughts' set,
+  Brazilian's note, the file, home's count, a scrolled list back at its top, and the
+  layouts: `puzzle_set`), a capture made by hand in a puzzle (tapped and dragged
   stop by stop, dropped on its last square, left partway and next pressed: a miss) and
   no targets in any puzzle, a Russian player's set read on home, its library, a puzzle
   crowned mid-capture made by hand, and its stars kept apart (`russian_puzzles`),
@@ -208,6 +210,10 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   arithmetic from the device's size, not something a screenshot shows: a dp is 0.185 mm
   on the tablet (11", 1200 px across), and on the Pixel 7a 0.080 mm without the density
   floor, 0.118 with it.
+- A frame holds `gui::MAX_QUADS` (512) quads and drops the rest silently: a long line
+  drawn with `gui::shadowed` (nine quads a glyph) pushed the puzzles' library past it,
+  and its last rows were never declared. A layout test can print `g.quads.len`
+  (2026-11-09).
 - A layout that fits a word needs the word's real width, which the headless tests don't
   have: their faces make each character half the face wide, about a fifth wider than
   Libertinus Sans, so a test may stack or shrink a word the app fits. The real widths

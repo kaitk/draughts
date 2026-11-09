@@ -143,8 +143,9 @@ dp (from none).
   nothing. The wheel (`gfx::mouse_wheel`, 40 dp a step) scrolls it on the Mac and a
   trackpad. No fling (the user, 2026-11-09). The list's quads are marked (`gui::CLIP` in
   extra.z) and the UI shader keeps them inside the view, one more uniform and still one
-  draw; the pointer reaches the list only inside it. The puzzle library's rows and a
-  theme's levels scroll under the title row in portrait, down to the screen's foot;
+  draw; the pointer reaches the list only inside it. The puzzle library's rows scroll under
+  the switch, in either orientation, and a theme's levels under the title row in
+  portrait, down to the screen's foot; a switch of draughts puts the library at its top;
   settings' shown group scrolls inside its glass where the tabs leave it too little room.
   `test/gui/scroll` checks a tap, a wobble under the slop, a drag, the ends, the wheel, and
   a press outside the view.
@@ -658,18 +659,42 @@ the prototype tried, kept for 3D:
   2026-11-09; rejected: b's large theme tiles, which shrink long Estonian names and hold
   the fewest themes a screen, and c's library beside the theme, which needs two
   scrolling panes): two views, a library of the themes and a theme's page. The library
-  is back and one glass row per theme (the glass panel a level's row on a theme's page is,
-  lit only while pressed: a plain tile barely showed over the photograph, 2026-11-09), 124 dp tall on the tablet and 96 on a phone: its
+  is back, the title, the draughts switch, and one glass row per theme (the glass panel a
+  level's row on a theme's page is, lit only while pressed: a plain tile barely showed
+  over the photograph, 2026-11-09), 124 dp tall on the tablet and 96 on a phone: its
   mark (the theme's icon, a book, two men and a jump, a crown, a target, a crowned ring,
-  on a disc of the glow color at 20%), its name, "n / total" solved, and a bar in the
-  glow color over a faint track. Learn is open; the others open once half of Learn is
-  solved, and until then each mark is plain with a lock badge, the name dim, and "Solve
-  n more in Learn" in place of the bar, and a tap on it does nothing. The title
-  "Puzzles" stands over the rows (beside back in portrait) except in landscape under
-  600 dp tall, bare on the photograph over a soft dark halo (`gui::shadowed`: eight dark
-  copies 2 dp round it at 20% and one 2 dp down at 35%), as it sat partly over spring's
-  and autumn's birch bark at the tablet's and iPad's sizes (2026-11-09); the rows are one column at most 600 dp wide, or two where one doesn't fit
-  the height (the tablet in landscape, phones in landscape). They center on the screen:
+  on a disc of the glow color at 20%), its name, its stars as home counts them, a star in
+  the glow color before "n / total" (three a puzzle), and a bar of them in the glow color
+  over a faint track (`prototypes/puzzle-set.html`'s take b, the user 2026-11-09; its
+  Continue row and "Next: Easy 3" were left out). Learn is open; the others open once
+  half of Learn is solved, and until then each mark is plain with a lock badge, the name
+  dim, and "Solve n more in Learn" in place of the bar, and a tap on it does nothing.
+  **The draughts switch** (`prototypes/puzzle-set.html`, take a, the user 2026-11-09;
+  rejected: b's name under the title opening a list, and c's setup tiles with the themes
+  as a grid) is settings' draughts tiles, International 10 × 10, Brazilian 8 × 8, Russian
+  8 × 8 (each its name over its size, 88 dp tall, as wide as settings' tile would be,
+  widened in proportion to fill a row), joined on one glass 4 dp round them and between,
+  the player's draughts lit. It is settings' draughts choice, one setting: a tap sets
+  new games' draughts too, saved as settings saves them, reads that draughts' set at
+  once (`shell::load_set`), puts the list back at its top, and home's count follows; the
+  lit tile takes a tap and changes nothing. It stands at the title row's right in
+  landscape where the title, its note, and the switch fit the width beside back, else
+  (portrait, the compact window) in a row of its own under the title. Brazilian, until
+  it has its own set, shows International's with "International's puzzles for now"
+  ("Esialgu rahvusvahelise kabe ülesanded") under the title in the small face, over one
+  dark copy 1.5 dp down (`gui::shaded`: the halo's nine quads a glyph would take the
+  frame past `gui::MAX_QUADS`, 512), broken onto two lines where one doesn't fit (the
+  test faces at 480 dp; the real font's 271 dp fits the 278 left beside back). The title
+  "Puzzles" stands in the title row (beside back in portrait), bare on the photograph
+  over a soft dark halo (`gui::shadowed`: eight dark copies 2 dp round it at 20% and one
+  2 dp down at 35%), as it sat partly over spring's and autumn's birch bark at the
+  tablet's and iPad's sizes (2026-11-09); until the switch it was left out in landscape
+  under 600 dp tall. The rows are one column at most 600 dp wide in portrait, and two in
+  landscape where two columns of 420 dp fit beside back (the tablet, a wide window) or
+  one doesn't fit the height (phones); in portrait under the switch's row they give up
+  height to fit the page (a foldable, a 9:16 phone), down to 88 dp, and where even that
+  doesn't fit (a small window, a 9:16 phone with its insets) they keep it and scroll, in
+  either orientation. They center on the screen:
   in a tablet's landscape the title and the rows start below back, so they take the
   whole width (until 2026-11-09 they kept clear of back's column too, which pushed them
   against the right edge: 183 dp left of them, 27 right at 16:9); in a phone's, where

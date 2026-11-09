@@ -324,8 +324,53 @@ with no lit choice, and the set it plays is a real one. Of the ideas, Continue, 
 the next level, and the path are cheap (home's rows and today's tiles); c's grid uses the
 landscape room best but holds the fewest themes on a phone.
 
-Open: shared or own; b's picker or a's switch; which of the library ideas to take, and
-whether the grid (c) replaces the rows in landscape only; Brazilian shown or hidden.
+**Decided (the user, 2026-11-09):** a's switch, shared, Brazilian shown. The switch is
+settings' draughts choice, one setting: switching on the library changes new games'
+draughts too, saved the same way, and home's Puzzles count follows it. In portrait and
+the compact window it takes its own row under the title; the theme rows stay as built.
+Of b's library ideas, each theme's stars with a thin bar, and two columns in landscape
+where the width allows; not the Continue row or "Next: Easy 3".
+
+**Built (2026-11-09).** `picker::switch` draws settings' three draughts tiles
+(`settings::DRAUGHTS`, its names and sizes, `gui::pick`) joined on one glass; a tap on
+other draughts returns `picker::SWITCHED`, and the shell sets `prefs.variant`, reads that
+draughts' set at once (`shell::load_set`, which `sync_puzzles` now calls on home), and
+marks the player's file to be written. The list goes back to its top
+(`gui::scroll_set`); a tap on the lit tile changes nothing, so nothing is drawn but the
+press. Brazilian's note is `puzzles.for_now`, "International's puzzles for now" /
+"Esialgu rahvusvahelise kabe ülesanded". Each row's count is its stars, "★ n / total"
+over three a puzzle, its bar their share. Headless: `test/shell/puzzle_set` (each tap's
+draughts, set, themes, note, file, and home's count; a scrolled small window back at its
+top; the library with each draughts at the tablet's and a 20:9 phone's size in both
+orientations, Estonian on the phone, and the smallest iPad window, every tap 88 dp and
+apart, the title and note clear of the tiles); the library's rows are tapped as
+`drive::LEARN_ROW` on in the other shell tests. Shots (headless, in the session's
+scratchpad, not kept): before and after at the tablet's landscape, a phone's portrait in
+English and Estonian, and the compact window, Russian and Brazilian once each, and the
+stars and columns after.
+
+Choices made while building, none of them the user's:
+
+- **The tiles' size**: 88 dp tall, the tap floor, each as wide as settings' tile wants
+  (its words and 16 dp a side, 88 at least), widened or narrowed in proportion to fill a
+  row; the glass 4 dp round them and between, as the prototype's. So the switch is 96 dp
+  tall, and the landscape title row with it. A row of 64 dp tiles, as the prototype's,
+  would be under the 88 dp every tap keeps.
+- **Where the switch goes**: in landscape beside the title wherever the title, its note,
+  and the switch fit beside back, else in its own row as in portrait. The title now shows
+  in a phone's landscape too (it was left out there under 600 dp tall), since the row it
+  stands in is the switch's anyway.
+- **The note** stands under the title in the small face, in one line where it fits and
+  else two; it has one dark copy under it (`gui::shaded`) rather than the title's halo,
+  whose nine quads a glyph took the library past the frame's 512 quads, which dropped the
+  last rows. At 480 dp the real font's Estonian note (271 dp) fits the 278 beside back.
+- **Rows in portrait** give up height under the switch's row to fit the page (a foldable's
+  800 × 999 dp and a 9:16 phone, which fit before the switch), down to the 88 dp tap
+  floor; where even that doesn't fit (the smallest iPad window, a 9:16 phone with the
+  Pixel's insets) they keep their height and scroll, as the prototype's phone did.
+  `test/shell/sizes` lets a scrolling list's rows run past the safe area's foot.
+- **Two columns** in landscape where two of at least 420 dp fit beside back, which
+  changes only Russian's four themes on the tablet (they were one column).
 
 
 ## Decisions (2026-11-09)
