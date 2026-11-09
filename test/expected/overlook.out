@@ -1,9 +1,9 @@
-skill 0: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 25, 300, 300, 450
-skill 5: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 11, 192, 255, 383
-skill 10: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 2, 108, 214, 322
-skill 14: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 0, 58, 184, 277
-skill 15: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 0, 48, 177, 266
-skill 20: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 0, 12, 143, 215
+skill 0: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 25, 240, 300, 450
+skill 5: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 11, 153, 255, 383
+skill 10: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 2, 86, 214, 322
+skill 14: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 0, 46, 184, 277
+skill 15: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 0, 38, 177, 266
+skill 20: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 0, 9, 143, 215
 skill 25: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 0, 0, 113, 170
 skill 40: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 0, 0, 44, 66
 skill 60: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 0, 0, 1, 2
