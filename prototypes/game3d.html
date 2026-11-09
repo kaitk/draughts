@@ -24,6 +24,15 @@
                    screen: off the sides at the near corners in portrait, off the bottom
                    in landscape (the corners take's panels)
      &pitch=       any take's camera angle
+     &controls=a   the corners take's floating camera buttons (the default there): a column
+                   at the right edge under the play panel, in portrait above it; b, beside
+                   the board's near corners, in portrait under them; off. View: 52.5° or 74°
+                   down. Zoom: the board grown until its field fills the width, the near edge
+                   kept. Tilt: drag it to look round the board, which springs back on release;
+                   a tap shows what it does. The board refits as the camera moves.
+     &pp=          portrait's camera angle on the corners take: 52.5, 60 or 65 (open)
+     The switcher's Move plays a move and turns the board 180° for the other player, as a
+     hot-seat game against a friend would (0.7 s, eased).
 
      Sizes are dp times --k: 1 on the tablet (800 dp on the short side), 0.75 CSS px on a
      phone (gui::DENSITY_FLOOR), so 412 px across is the app's 549 dp. */
@@ -61,6 +70,21 @@
   .pair { display: grid; grid-template-columns: auto 1fr; gap: calc(12px * var(--k)); align-items: center; }
   .tile { padding: calc(8px * var(--k)); }
   .tile .row.tall { min-height: calc(80px * var(--k)); min-width: calc(80px * var(--k)); font-size: calc(17px * var(--k)); }
+  /* A floating camera button: a 48 dp target, a 40 dp disc of shade with a hairline, no
+     panel; an SDF circle and a line icon natively. */
+  .ctl { width: calc(48px * var(--k)); height: calc(48px * var(--k)); padding: 0; border: 0;
+    background: none; display: grid; place-items: center; color: var(--fg); cursor: pointer;
+    touch-action: none; -webkit-tap-highlight-color: transparent; }
+  .ctl::before { content: ''; position: absolute; inset: calc(4px * var(--k)); border-radius: 50%;
+    background: rgb(0 0 0 / 0.3); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.22), 0 2px 8px -3px rgb(0 0 0 / 0.5);
+    transition: transform 120ms, background 120ms; }
+  .ctl:active::before { transform: scale(0.92); background: rgb(0 0 0 / 0.42); }
+  .ctl.on::before { background: color-mix(in srgb, var(--glow) 30%, rgb(0 0 0 / 0.3)); }
+  .ctl svg { position: relative; width: calc(26px * var(--k)); height: calc(26px * var(--k)); stroke-width: 2.4; }
+  /* The switcher at the top middle here, off the corners' camera buttons. */
+  .proto-bar { top: 4px; bottom: auto; right: auto; left: 50%; transform: translateX(-50%);
+    flex-wrap: wrap; justify-content: center; max-width: calc(100vw - 24px); }
+  @media (orientation: portrait) { .proto-bar { top: auto; bottom: 4px; } }
   .guides .box { position: fixed; outline: 1px dashed rgb(255 255 255 / 0.5); pointer-events: none; }
 </style>
 </head>
@@ -85,6 +109,23 @@ bar.querySelector('select').onchange = (e) => {
   params.set('take', e.target.value);
   location.search = params.toString();
 };
+// The corners take's camera controls, portrait's angle, and a move for the hot-seat turn.
+const CONTROLS = take === 'corners' ? (['a', 'b', 'off'].includes(params.get('controls')) ? params.get('controls') : 'a') : 'off';
+const PORTRAIT = ['52.5', '60', '65'];
+const PP = PORTRAIT.includes(params.get('pp')) ? +params.get('pp') : 52.5;
+if (take === 'corners') {
+  const opt = (key, values, cur, label) => `<select data-proto="${key}" aria-label="${key}">${values.map((x) =>
+    `<option value="${x}"${String(cur) === x ? ' selected' : ''}>${label(x)}</option>`).join('')}</select>`;
+  bar.querySelector('select').insertAdjacentHTML('afterend',
+    opt('controls', ['a', 'b', 'off'], CONTROLS, (x) => `controls ${x}`) +
+    opt('pp', PORTRAIT, PP, (x) => `portrait ${x}°`) + '<button data-proto="move">Move</button>');
+  bar.querySelectorAll('select[data-proto]').forEach((s) => s.onchange = (e) => {
+    e.stopPropagation();
+    params.set(s.dataset.proto, s.value);
+    location.search = params.toString();
+  });
+  bar.querySelector('[data-proto=move]').onclick = () => makeMove();
+}
 
 // ---- The position: game.html's.
 const POS = {
@@ -97,8 +138,14 @@ const at = (sq) => [sq.charCodeAt(0) - 97 - 3.5, 0, 3.5 - (+sq.slice(1) - 1)];
 
 // ---- The camera (poc/3d/board3d.goose).
 const FOV = 31, DISTANCE = 14.75, TARGET = [0, -0.15, 1.1];
-const PITCH = +params.get('pitch') || (take === 'steep' ? 65 : 52.5);
-const cam = { yaw: 0, pitch: PITCH };
+const PITCH_ASKED = +params.get('pitch');
+// The rest pitch, set per orientation in layout(); the top view's, picked by eye.
+let PITCH = PITCH_ASKED || (take === 'steep' ? 65 : 52.5);
+const TOP_PITCH = 74;
+// The camera now: the view (0 at rest, 1 the top view), the zoom (0 to 1), the board's
+// turn in degrees (the hot-seat turn), and a look round's yaw and pitch on top.
+const v = { top: 0, zoom: 0, turn: 0, yaw: 0, pitch: 0 };
+let viewPitch = PITCH;
 
 // ---- Small matrix helpers, column-major.
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -129,6 +176,9 @@ function eyeOf(yaw, pitch) {
     TARGET[2] + Math.cos(a) * Math.cos(p) * DISTANCE];
 }
 const viewProj = (W, H, yaw, pitch) => mul(perspective(FOV * Math.PI / 180, W / H, 2, 40), lookAt(eyeOf(yaw, pitch), TARGET));
+// The board turned about its center by d degrees, and a vector turned the same way.
+const rotY = (d) => { const a = d * Math.PI / 180, c = Math.cos(a), s = Math.sin(a); return [c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, 0, 0, 0, 1]; };
+const rotV = (p, d) => { const a = d * Math.PI / 180, c = Math.cos(a), s = Math.sin(a); return [c * p[0] + s * p[2], p[1], -s * p[0] + c * p[2]]; };
 
 // ---- Geometry (poc/3d/mesh.goose's sizes): the field -4.1..4.1 with its inlay, the frame
 // 0.5 wide, its top 0.05 up, a 0.09 bullnose, the underside at -0.7; pieces 0.44 in
@@ -210,7 +260,8 @@ function build() {
   ranges.opaque = verts.length / 9;
   // Over the field: each piece's soft shadow, the selection's glow ring, the forced ring.
   for (const p of pieces) {
-    const s = [p.c[0] + 0.07, p.c[2] + 0.1], e = 0.8;
+    // Centred on the piece; the shader shifts it away from the light, which stays on screen.
+    const s = [p.c[0], p.c[2]], e = 0.92;
     quad(s[0] - e, s[1] - e, s[0] + e, s[1] + e, 0.002, p.sel ? 14 : 11, s);
     if (p.sel) quad(p.c[0] - 0.7, p.c[2] - 0.7, p.c[0] + 0.7, p.c[2] + 0.7, 0.003, 12, [p.c[0], p.c[2]]);
     if (POS.forced.includes(sqOf(p.c))) quad(p.c[0] - 0.7, p.c[2] - 0.7, p.c[0] + 0.7, p.c[2] + 0.7, 0.004, 13, [p.c[0], p.c[2]]);
@@ -221,15 +272,17 @@ function sqOf(c) { return String.fromCharCode(97 + Math.round(c[0] + 3.5)) + Mat
 
 // What bounds the board on screen: the frame's outline at its top and its foot, and the
 // pieces' tops; for the bleed take, the field with a sliver of the frame (0.12 of 0.5).
-// pieces' tops.
-const outline = [];
-for (const s of framePath) for (const y of [TOP, BOTTOM]) outline.push([s.c[0] + s.d[0] * FRAME_W, y, s.c[1] + s.d[1] * FRAME_W]);
-const field = [];
-for (const s of framePath) field.push([s.c[0] + s.d[0] * 0.12, TOP, s.c[1] + s.d[1] * 0.12]);
-for (const side of ['white', 'black']) for (const sq of POS[side]) {
-  const c = at(sq), top = [c[0], 2 * HT + 0.12, c[2]];
-  outline.push(top); field.push(top);
+const outline = [], field = [];
+function outlines() {
+  outline.length = 0; field.length = 0;
+  for (const s of framePath) for (const y of [TOP, BOTTOM]) outline.push([s.c[0] + s.d[0] * FRAME_W, y, s.c[1] + s.d[1] * FRAME_W]);
+  for (const s of framePath) field.push([s.c[0] + s.d[0] * 0.12, TOP, s.c[1] + s.d[1] * 0.12]);
+  for (const side of ['white', 'black']) for (const sq of POS[side]) {
+    const c = at(sq), top = [c[0], 2 * HT + 0.12, c[2]];
+    outline.push(top); field.push(top);
+  }
 }
+outlines();
 
 // ---- WebGL.
 const canvas = document.getElementById('gl');
@@ -241,7 +294,9 @@ void main() { vPos = pos; vN = nrm; vMat = int(mat + 0.5); vAux = aux; gl_Positi
 const FS = `#version 300 es
 precision highp float;
 in vec3 vPos; in vec3 vN; flat in int vMat; in vec2 vAux; out vec4 o;
-uniform vec3 eye, cLight, cDark, cFrame, cW, cB, cGlow; uniform vec4 last; uniform float stone;
+uniform vec3 eye, cLight, cDark, cFrame, cW, cB, cGlow, lightDir; uniform vec4 last; uniform float stone;
+// The shadows' offsets away from the light, in the board's frame (the light stays on screen).
+uniform vec2 floorOff, pieceOff;
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float noise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
@@ -255,9 +310,9 @@ void main() {
   vec2 p = vPos.xz;
   if (vMat >= 10) {
     float a; vec3 c = vec3(0);
-    float d = length(p - vAux);
+    float d = length(p - vAux - (vMat == 11 || vMat == 14 ? pieceOff : vec2(0)));
     if (vMat == 10) {
-      vec2 q = abs(p - vec2(0.25, 0.45)) - vec2(4.6 - 0.6);
+      vec2 q = abs(p - floorOff) - vec2(4.6 - 0.6);
       float sd = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - 0.6;
       a = 0.6 * (1.0 - smoothstep(-0.5, 1.2, sd));
     } else if (vMat == 11) a = 0.55 * (1.0 - smoothstep(0.30, 0.62, d));
@@ -271,7 +326,7 @@ void main() {
     }
     o = vec4(0, 0, 0, a); return;
   }
-  vec3 n = normalize(vN), L = normalize(vec3(-0.45, 1.0, -0.55)), V = normalize(eye - vPos), H = normalize(L + V);
+  vec3 n = normalize(vN), L = normalize(lightDir), V = normalize(eye - vPos), H = normalize(L + V);
   vec3 alb; float spec = 0.05, gloss = 30.0, ao = 1.0;
   if (vMat == 0) {
     bool inlay = max(abs(p.x), abs(p.y)) > 4.0;
@@ -322,11 +377,15 @@ gl.attachShader(prog, shader(gl.FRAGMENT_SHADER, FS));
 gl.linkProgram(prog);
 if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
 const U = {};
-for (const n of ['vp', 'eye', 'cLight', 'cDark', 'cFrame', 'cW', 'cB', 'cGlow', 'last', 'stone']) U[n] = gl.getUniformLocation(prog, n);
-build();
+for (const n of ['vp', 'eye', 'cLight', 'cDark', 'cFrame', 'cW', 'cB', 'cGlow', 'last', 'stone', 'lightDir', 'floorOff', 'pieceOff']) U[n] = gl.getUniformLocation(prog, n);
 const vb = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, vb);
-gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW);
+function upload() {
+  build();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW);
+}
+upload();
 const vao = gl.createVertexArray();
 gl.bindVertexArray(vao);
 [[0, 3, 0], [1, 3, 12], [2, 1, 24], [3, 2, 28]].forEach(([l, n, off]) => {
@@ -347,8 +406,8 @@ function colors() {
 // The fit: the board's default view (yaw 0, the take's pitch) scaled by s and shifted in
 // clip space so its bounds land at (left, top) in CSS px.
 let fitM = null;
-function bounds(W, H, points = outline) {
-  const m = viewProj(W, H, 0, PITCH);
+function bounds(W, H, points = outline, pitch = PITCH, turn = 0) {
+  const m = mul(viewProj(W, H, 0, pitch), rotY(turn));
   let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
   const pts = points.map((p) => {
     const q = project(m, p), px = [(q[0] + 1) / 2 * W, (1 - q[1]) / 2 * H];
@@ -382,8 +441,13 @@ function render() {
   if (!fitM) return;
   gl.useProgram(prog);
   gl.bindVertexArray(vao);
-  gl.uniformMatrix4fv(U.vp, false, new Float32Array(mul(fitM, viewProj(W, H, cam.yaw, cam.pitch))));
-  gl.uniform3fv(U.eye, eyeOf(cam.yaw, cam.pitch));
+  const pitch = viewPitch + v.pitch, back = (p) => rotV(p, -v.turn);
+  gl.uniformMatrix4fv(U.vp, false, new Float32Array(mul(fitM, mul(viewProj(W, H, v.yaw, pitch), rotY(v.turn)))));
+  gl.uniform3fv(U.eye, back(eyeOf(v.yaw, pitch)));
+  gl.uniform3fv(U.lightDir, back([-0.45, 1, -0.55]));
+  const fo = back([0.25, 0, 0.45]), po = back([0.07, 0, 0.1]);
+  gl.uniform2f(U.floorOff, fo[0], fo[2]);
+  gl.uniform2f(U.pieceOff, po[0], po[2]);
   const c = colors();
   for (const k in c) gl.uniform3fv(U[k], c[k]);
   const l0 = at(POS.last[0]), l1 = at(POS.last[1]);
@@ -406,7 +470,8 @@ const I = (n) => Draughts.icon(n);
 const btn = (icon, word, cls = '') => `<button class="row button ${cls}">${I(icon)}<span>${word}</span></button>`;
 const HOME = (c) => btn('home', 'Home', c), SET = (c) => btn('gear', 'Settings', c), RESTART = (c) => btn('restart', 'Start over', c);
 const UNDO = (c) => btn('undo', 'Take back', c);
-const TURN = (c = '') => `<div class="turn ${c}"><div class="piece white"></div><span>White's turn</span></div>`;
+let corners = null; // the corners take's fit, as functions of the board's bounds
+const TURN = (c = '') => `<div class="turn ${c}"><div class="piece ${side}"></div><span>${side === 'white' ? 'White' : 'Black'}'s turn</span></div>`;
 const ui = document.getElementById('ui');
 function panel(html, r, cls = '') {
   const el = document.createElement('aside');
@@ -444,6 +509,9 @@ function layout() {
   const k = Math.max(short / 800, 0.75);
   document.body.style.setProperty('--k', k);
   ui.innerHTML = '';
+  corners = null;
+  // Portrait's camera on the corners take is the open one (&pp).
+  PITCH = PITCH_ASKED || (take === 'steep' ? 65 : take === 'corners' && !land ? PP : 52.5);
   const G = 24 * k, b = bounds(W, H, take === 'bleed' ? field : outline);
   let f;
   if (take === 'now' || take === 'steep') {
@@ -491,31 +559,94 @@ function layout() {
       play.style.top = `${H - G - play.offsetHeight}px`;
     }
   } else {
+    // The corners take. Its fit is a function of the board's bounds, so the board refits
+    // as the camera moves (the view, the zoom, the turn); `keep` are the rects it clears.
+    const B = 48 * k, gB = 8 * k, M = 12 * k, keep = [];
+    const clear = (g) => keep.every((r) => !touches(g, r, G / 2));
+    const zmax = (bb, g, pitch, turn) => Math.max(1, Math.min(1.3, (W - 16 * k) / (bounds(W, H, field, pitch, turn).w * g.s)));
+    let place, zoom;
     if (land) {
       // The panels in the top corners, the board as large as clears them, its near edge
-      // on the bottom margin.
+      // on the bottom margin; zoomed, it grows up from the near edge, under the panels.
       const P = (phone ? 192 : 232) * k, tall = phone ? 'tall' : '';
       const a = panel(HOME(tall) + SET(tall) + RESTART(tall), { x: G, y: G, w: P });
       const z = panel(TURN() + UNDO(phone ? 'big short' : 'big'), { x: W - G - P, y: G, w: P });
       const ra = rectOf(a), rz = rectOf(z);
+      keep.push(ra, rz);
       const box = { x: G, y: G, w: W - 2 * G, h: H - 2 * G };
-      for (let s = 1; s > 0.3; s -= 0.01) {
-        f = fitBox(b, { ...box, w: box.w * s, h: box.h * s, x: box.x + box.w * (1 - s) / 2, y: box.y + box.h * (1 - s) }, 'bottom');
-        if (!touches(f, ra, G / 2) && !touches(f, rz, G / 2)) break;
+      place = (bb) => {
+        let g;
+        for (let s = 1; s > 0.3; s -= 0.01) {
+          g = fitBox(bb, { ...box, w: box.w * s, h: box.h * s, x: box.x + box.w * (1 - s) / 2, y: box.y + box.h * (1 - s) }, 'bottom');
+          if (clear(g)) break;
+        }
+        return g;
+      };
+      zoom = (bb, g, zf) => placed(bb, g.s * zf, g.l + g.w * (1 - zf) / 2, g.t + g.h * (1 - zf));
+      if (CONTROLS === 'a') {
+        // A column under the play panel at the right edge, a row where it doesn't fit.
+        const len = 3 * B + 2 * gB, y = rz.y + rz.h + M, col = y + len <= H - G;
+        const r = col ? { x: W - G - B, y, w: B, h: len } : { x: W - G - len, y, w: len, h: B };
+        keep.push(r);
+        controls(['view', 'zoom', 'tilt'], r, !col);
+      } else if (CONTROLS === 'b') {
+        // Beside the near corners: as low as clears the board at rest. Zoomed, the
+        // board's frame runs under them (clearing it too put them halfway up).
+        const g0 = place(b), gz = g0;
+        const top = Math.max(ra.y + ra.h, rz.y + rz.h) + M;
+        const lowest = (x, n) => {
+          const h = n * B + (n - 1) * gB;
+          for (let y = H - G - h; y >= top; y -= 2) {
+            const q = { x, y, w: B, h };
+            if (!touches(g0, q, gB) && !touches(gz, q, gB)) return q;
+          }
+          return { x, y: top, w: B, h };
+        };
+        controls(['view', 'zoom'], lowest(G, 2), false);
+        controls(['tilt'], lowest(W - G - B, 1), false);
       }
+      f = place(b);
     } else {
       // Home and settings as tiles in the top corners beside the far edge; the board
-      // pulled up as far as clears them; start over and the play below.
+      // pulled up as far as clears them; start over and the play below. Zoomed, the
+      // board grows down into the band below it, its far edge clear of the tiles.
       const a = panel(HOME('tall'), { x: G, y: G }, 'tile'), z = panel(SET('tall'), { x: 0, y: G }, 'tile');
       z.style.left = `${W - G - z.offsetWidth}px`;
-      const ra = rectOf(a), rz = rectOf(z), w = W - 2 * G;
-      for (let y = G; y < H; y += 2) {
-        f = fitBox(b, { x: G, y, w, h: H }, 'top');
-        if (!touches(f, ra, G / 2) && !touches(f, rz, G / 2)) break;
-      }
+      keep.push(rectOf(a), rectOf(z));
+      const w = W - 2 * G;
+      place = (bb) => {
+        let g;
+        for (let y = G; y < H; y += 2) {
+          g = fitBox(bb, { x: G, y, w, h: H }, 'top');
+          if (clear(g)) break;
+        }
+        return g;
+      };
+      zoom = (bb, g, zf) => {
+        let q;
+        for (let y = g.t; y < H; y += 2) {
+          q = placed(bb, g.s * zf, g.l + g.w * (1 - zf) / 2, y);
+          if (clear(q)) break;
+        }
+        return q;
+      };
+      f = place(b);
       const play = panel(`<div class="pair">${RESTART(phone ? 'tall' : '')}${TURN('line')}</div>` + UNDO('big wide'), { x: G, y: 0, w });
-      play.style.top = `${Math.max(f.t + f.h + G, H - G - play.offsetHeight)}px`;
+      const playTop = Math.max(f.t + f.h + G, H - G - play.offsetHeight);
+      play.style.top = `${playTop}px`;
+      if (CONTROLS === 'a') {
+        // A column at the right edge, on the play panel.
+        const len = 3 * B + 2 * gB;
+        controls(['view', 'zoom', 'tilt'], { x: W - G - B, y: playTop - M - len, w: B, h: len }, false);
+      } else if (CONTROLS === 'b') {
+        // Under the near corners, below where the zoomed board reaches.
+        const gz = zoom(b, f, zmax(b, f, PITCH, 0));
+        const y = Math.min(gz.t + gz.h + M, playTop - M - B);
+        controls(['view', 'zoom'], { x: G, y, w: 2 * B + gB, h: B }, true);
+        controls(['tilt'], { x: W - G - B, y, w: B, h: B }, false);
+      }
     }
+    corners = { place, zoom, zmax };
   }
   useFit(b, f, W, H);
   if (params.has('guides')) {
@@ -528,21 +659,151 @@ function layout() {
   Draughts.syncGlass();
   // How much of the screen the board takes, for comparing takes (console and title).
   document.body.dataset.board = `${Math.round(f.w)}x${Math.round(f.h)}`;
+  syncControls();
+  frame();
+}
+
+// Each frame of the corners take: the camera's pitch from the view, the board's bounds at
+// that pitch and turn, fitted (and zoomed), then drawn. Other takes keep their fit.
+function frame() {
+  if (corners) {
+    const W = innerWidth, H = innerHeight;
+    viewPitch = PITCH + (TOP_PITCH - PITCH) * v.top;
+    const b = bounds(W, H, outline, viewPitch, v.turn);
+    let f = corners.place(b);
+    if (v.zoom > 0) f = corners.zoom(b, f, 1 + (corners.zmax(b, f, viewPitch, v.turn) - 1) * v.zoom);
+    useFit(b, f, W, H);
+  } else viewPitch = PITCH;
+  const tilt = ui.querySelector('[data-ctl=tilt] svg');
+  if (tilt) tilt.style.transform = `rotate(${-v.yaw * 0.8}deg)`;
   render();
 }
 
-// A drag turns the board within the inspection range; a double click resets.
+// ---- Tweens, eased in and out, drawn only while one runs.
+const tweens = {};
+const ease = (u) => u < 0.5 ? 4 * u * u * u : 1 - (-2 * u + 2) ** 3 / 2;
+let raf = 0;
+function tween(key, to, ms, done) {
+  tweens[key] = { from: v[key], to, t0: performance.now(), ms, done };
+  if (!raf) raf = requestAnimationFrame(step);
+}
+function step(now) {
+  raf = 0;
+  for (const key of Object.keys(tweens)) {
+    const t = tweens[key], u = Math.max(0, Math.min(1, (now - t.t0) / t.ms));
+    v[key] = t.from + (t.to - t.from) * ease(u);
+    if (u >= 1) { delete tweens[key]; if (t.done) t.done(); }
+  }
+  frame();
+  if (Object.keys(tweens).length && !raf) raf = requestAnimationFrame(step);
+}
+
+// ---- The floating camera buttons.
+const CTL_ICONS = {
+  // The view each would go to: the board from above, or in perspective.
+  top: '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 4v16M4 12h16"/>',
+  low: '<path d="M7.5 5h9L21 19H3z"/><path d="M12 5v14M5.25 12h13.5"/>',
+  zoomIn: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/><path d="M7.5 10.5h6M10.5 7.5v6"/>',
+  zoomOut: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/><path d="M7.5 10.5h6"/>',
+  // A board in perspective over an arc turning both ways.
+  tilt: '<path d="M8.5 4.5h7l2.5 6H6z"/><path d="M4 15c2 2.7 4.8 4 8 4s6-1.3 8-4"/><path d="M3.6 18.8 4 15l3.8.4"/><path d="M20.4 18.8 20 15l-3.8.4"/>',
+};
+const want = { top: false, zoom: false };
+function controls(names, r, row) {
+  const B = Math.min(r.w, r.h), step = names.length > 1 ? ((row ? r.w : r.h) - B) / (names.length - 1) : 0;
+  names.forEach((n, i) => {
+    const el = document.createElement('button');
+    el.className = 'ctl';
+    el.dataset.ctl = n;
+    Object.assign(el.style, { left: `${r.x + (row ? i * step : 0)}px`, top: `${r.y + (row ? 0 : i * step)}px` });
+    ui.appendChild(el);
+  });
+}
+function syncControls() {
+  const svg = (d) => `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+  for (const el of ui.querySelectorAll('.ctl')) {
+    const n = el.dataset.ctl;
+    el.innerHTML = svg(CTL_ICONS[n === 'view' ? (want.top ? 'low' : 'top') : n === 'zoom' ? (want.zoom ? 'zoomOut' : 'zoomIn') : n]);
+    el.classList.toggle('on', (n === 'view' && want.top) || (n === 'zoom' && want.zoom));
+  }
+}
+ui.addEventListener('click', (e) => {
+  const el = e.target.closest('.ctl');
+  if (!el) return;
+  if (el.dataset.ctl === 'view') { want.top = !want.top; tween('top', want.top ? 1 : 0, 600); }
+  if (el.dataset.ctl === 'zoom') { want.zoom = !want.zoom; tween('zoom', want.zoom ? 1 : 0, 450); }
+  syncControls();
+});
+// Tilt: a drag on the button looks round the board within the inspection range (yaw ±35°,
+// pitch 35° to 80°); on release it springs back. A tap looks a little to one side and back.
+let peek = null;
+ui.addEventListener('pointerdown', (e) => {
+  const el = e.target.closest('[data-ctl=tilt]');
+  if (!el) return;
+  delete tweens.yaw; delete tweens.pitch;
+  peek = { x: e.clientX, y: e.clientY, yaw: v.yaw, pitch: v.pitch, moved: false };
+  el.setPointerCapture(e.pointerId);
+});
+ui.addEventListener('pointermove', (e) => {
+  if (!peek) return;
+  const dx = e.clientX - peek.x, dy = e.clientY - peek.y;
+  if (Math.hypot(dx, dy) > 6) peek.moved = true;
+  v.yaw = Math.max(-35, Math.min(35, peek.yaw - dx * 0.35));
+  v.pitch = Math.max(35 - viewPitch, Math.min(80 - viewPitch, peek.pitch + dy * 0.3));
+  frame();
+});
+const peekEnd = () => {
+  if (!peek) return;
+  const tap = !peek.moved;
+  peek = null;
+  if (tap) tween('yaw', 22, 450, () => tween('yaw', 0, 650));
+  else { tween('yaw', 0, 450); tween('pitch', 0, 450); }
+};
+ui.addEventListener('pointerup', peekEnd);
+ui.addEventListener('pointercancel', peekEnd);
+
+// ---- The hot-seat turn: a move, then the board turns to face the next player.
+const START = structuredClone(POS);
+const MOVES = [['c3', 'b4'], ['b6', 'a5'], ['e3', 'f4'], ['g5', 'h4']];
+let ply = 0, side = 'white', turnTo = 0;
+function makeMove() {
+  if (ply % MOVES.length === 0) Object.assign(POS, structuredClone(START));
+  const [from, to] = MOVES[ply % MOVES.length], list = POS[side];
+  list[list.indexOf(from)] = to;
+  Object.assign(POS, { last: [from, to], selected: null, forced: [] });
+  ply++;
+  side = side === 'white' ? 'black' : 'white';
+  upload();
+  outlines();
+  for (const t of document.querySelectorAll('.turn')) {
+    const p = t.querySelector('.piece');
+    p.className = `piece ${side}`;
+    delete p.dataset.painted;
+    t.querySelector('span').textContent = side === 'white' ? "White's turn" : "Black's turn";
+  }
+  Draughts.paint();
+  frame();
+  turnTo += 180;
+  setTimeout(() => tween('turn', turnTo, 700), 250);
+}
+
+// A drag on the board turns it within the inspection range; a double click resets. With
+// the camera buttons on, a drag on the board is the game's, so only the tilt button turns it.
 let drag = null;
-canvas.addEventListener('pointerdown', (e) => { drag = [e.clientX, e.clientY]; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointerdown', (e) => {
+  if (CONTROLS !== 'off') return;
+  drag = [e.clientX, e.clientY];
+  canvas.setPointerCapture(e.pointerId);
+});
 canvas.addEventListener('pointermove', (e) => {
   if (!drag) return;
-  cam.yaw = Math.max(-35, Math.min(35, cam.yaw - (e.clientX - drag[0]) * 0.25));
-  cam.pitch = Math.max(35, Math.min(75, cam.pitch + (e.clientY - drag[1]) * 0.25));
+  v.yaw = Math.max(-35, Math.min(35, v.yaw - (e.clientX - drag[0]) * 0.25));
+  v.pitch = Math.max(35 - viewPitch, Math.min(75 - viewPitch, v.pitch + (e.clientY - drag[1]) * 0.25));
   drag = [e.clientX, e.clientY];
-  render();
+  frame();
 });
 canvas.addEventListener('pointerup', () => { drag = null; });
-canvas.addEventListener('dblclick', () => { cam.yaw = 0; cam.pitch = PITCH; render(); });
+canvas.addEventListener('dblclick', () => { v.yaw = 0; v.pitch = 0; frame(); });
 let resizing = 0;
 addEventListener('resize', () => { clearTimeout(resizing); resizing = setTimeout(layout, 60); });
 document.fonts.ready.then(layout);

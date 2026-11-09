@@ -336,6 +336,12 @@ board, though it is fine on the other screens, where nobody touches the pieces. 
 screen takes `corners` in landscape. Portrait is still open; the steeper camera is the
 proposal.
 
+**Camera controls** (asked 2026-11-09, prototyped on `game3d.html?take=corners`): round
+48 dp buttons with no panel for the view (52.5° or 74° down), zoom (to 1.3×, the far rows
+under the panels) and tilt (a drag on the button, springing back), the board refitting
+each frame, placed two ways (`&controls=a`, `b`), with `&pp=` for portrait's angle and a
+hot-seat turn of 180° in 0.7 s; for the user to choose.
+
 ## Integration (on the `integrate3d` branch, off `main` until the game is solid)
 
 ### Phase 1: what doesn't depend on the renderer (2026-11-09)
