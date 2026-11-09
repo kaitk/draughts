@@ -105,10 +105,7 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
 fn clear(v: view3d::View, a: float4, b: float4, gap: f32) -> bool { !view3d::touches(v, a, gap) && !view3d::touches(v, b, gap) }
 
 fn corner_layout(v: view3d::View, left: float4, right: float4, s: f32, n: i64) -> Layout {
-    let r = v.rect;
-    let size = min(r.z, r.w);
-    return Layout { board: board::layout_at(r.x + 0.5 * (r.z - size), r.y + 0.5 * (r.w - size), size, s, n), left: left,
-                    right: right, three: true, view: v };
+    return Layout { board: view3d::square(v, s), left: left, right: right, three: true, view: v };
 }
 
 // The game screen (rendering.md, "Game screen"). Landscape: the board fills the height

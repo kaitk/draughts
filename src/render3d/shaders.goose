@@ -20,7 +20,7 @@ let FRAME = """
         vec4 sh[9];          // the photograph's irradiance over pi, rgb
         vec4 params;         // x: exposure, y: a shadow texel in uv, z: ambient scale,
                              // w: squares per side (a square is 8 / w)
-        vec4 screen;         // xy: the target's size in pixels
+        vec4 screen;         // xy: the target's size in pixels, z: the board dimmed by (a win)
         vec4 glow;           // rgb: the theme's glow color, w: its strength
         vec4 selected;       // xyz: the selected piece's foot, w: its radius (0: none)
         // The theme (looks::Theme), colors linear: the pieces' colors and roughness, their
@@ -59,6 +59,8 @@ let FS_SET = "#define FRAME_SET 3\n";
 
 // The board (one mesh) and the pieces (one lathe mesh, per instance from a storage
 // buffer of two vec4s: the foot and scale; dark, crown, selected or stacked, seed).
+// draw.z: how opaque (a fading piece is drawn alone, blended); draw.w: the first
+// instance it draws. A seed of 1000 or more is a piece a win's dim leaves lit.
 let LIT_VERT = """
     layout(location = 0) in vec3 a_pos;
     layout(location = 1) in vec3 a_normal;
@@ -67,6 +69,7 @@ let LIT_VERT = """
     layout(std430, set = 0, binding = 0) readonly buffer Instances { vec4 inst[]; };
     layout(set = 1, binding = 1) uniform Draw { vec4 draw; };   // x: 1 for instances
     layout(location = 0) out vec3 v_world;
+    layout(location = 6) flat out float v_alpha;
     layout(location = 1) out vec3 v_normal;
     layout(location = 2) out vec2 v_uv;
     layout(location = 3) out vec2 v_extra;
@@ -76,8 +79,9 @@ let LIT_VERT = """
         vec3 world = a_pos;
         vec4 kind = vec4(0.0);
         if (draw.x > 0.5) {
-            vec4 a = inst[gl_InstanceIndex * 2];
-            kind = inst[gl_InstanceIndex * 2 + 1];
+            int i = gl_InstanceIndex + int(draw.w);
+            vec4 a = inst[i * 2];
+            kind = inst[i * 2 + 1];
             world = a.xyz + a_pos * a.w;
         }
         v_world = world;
@@ -86,6 +90,7 @@ let LIT_VERT = """
         v_extra = a_extra;
         v_local = a_pos;
         v_kind = kind;
+        v_alpha = draw.z;
         gl_Position = (draw.y > 0.5 ? light_view_proj : view_proj) * vec4(world, 1.0);
     }
     """;
@@ -102,6 +107,7 @@ let LIT_FRAG = """
     layout(location = 3) in vec2 v_extra;
     layout(location = 4) in vec3 v_local;
     layout(location = 5) flat in vec4 v_kind;
+    layout(location = 6) flat in float v_alpha;
     layout(location = 0) out vec4 result;
     layout(set = 2, binding = 0) uniform sampler2D plan_albedo;
     layout(set = 2, binding = 1) uniform sampler2D plan_normal;
@@ -374,7 +380,7 @@ let LIT_FRAG = """
             rough = m.a;
             if (dark) {
                 // Smooth satin with a faint figure, drawn out a little across the disc.
-                vec3 g = lp + v_kind.w * 3.17;
+                vec3 g = lp + mod(v_kind.w, 1000.0) * 3.17;
                 float st = 1.0 + 6.0 * piece_fig.z;
                 float w = noise3(vec3(g.x * 5.0, g.y * 5.0, g.z * 5.0 * st)) * 0.65
                         + noise3(vec3(g.x * 13.0, g.y * 13.0, g.z * 13.0 * st)) * 0.35;
@@ -383,7 +389,7 @@ let LIT_FRAG = """
                 // the references' dark pieces have near-black sides under a lit top.
                 albedo *= mix(piece_fig.w, 1.0, smoothstep(0.2, 0.6, abs(n.y)));
             } else {
-                float w = noise3(lp * 24.0 + v_kind.w * 3.17);
+                float w = noise3(lp * 24.0 + mod(v_kind.w, 1000.0) * 3.17);
                 albedo = m.rgb * (1.0 + piece_fig.x * (w - 0.5));
             }
             // The top, from its height function at this point's distance from the axis
@@ -492,7 +498,10 @@ let LIT_FRAG = """
         }
         vec3 color = (direct + ambient) * params.x;
         color = tonemap(color) * vec3(1.02, 1.0, 0.97);
-        result = vec4(to_srgb(color), 1.0);
+        // A win dims the board and the pieces but the winning one, as the flat board's
+        // black fill over them does.
+        float dim = v_kind.w >= 1000.0 ? 0.0 : screen.z;
+        result = vec4(to_srgb(color) * (1.0 - dim), v_alpha);
     }
     """;
 
@@ -514,6 +523,7 @@ let BACKDROP_FRAG = """
     layout(location = 0) in vec2 v_uv;
     layout(location = 0) out vec4 result;
     layout(set = 2, binding = 0) uniform sampler2D photo;
+    layout(set = 3, binding = 1) uniform Draw { vec4 draw; };    // x: how opaque
     void main() {
         vec2 s = screen.xy;
         vec2 uv = (gl_FragCoord.xy - 0.5 * s) / max(s.x, s.y) + 0.5;
@@ -528,7 +538,7 @@ let BACKDROP_FRAG = """
         vec2 q = gl_FragCoord.xy / s - 0.5;
         c *= 1.0 - tint.w * smoothstep(0.1, 0.55, dot(q, q));
         c = mix(c, tint.rgb, low * grade.w);
-        result = vec4(pow(c, vec3(1.0 / 2.2)), 1.0);
+        result = vec4(pow(c, vec3(1.0 / 2.2)), draw.x);
     }
     """;
 
@@ -1070,11 +1080,15 @@ let BLUR_FRAG = """
 // dot (1) or a capture's stop's ring (2), z the must-capture ring's strength (0 to 1,
 // pulsing on the CPU), w a wrong move's flash, 0 to 1 over its two flashes (or -1); and
 // the selected piece's glow ring round Frame.selected, wherever the piece is (a drag).
-// draw.y: squares per side. As the flat board draws them (src/app/draw.goose).
+// Beside them `lit`, per square: x the glow ring tight round the piece there (a hint, a
+// win's wave), y the square lit by a win's glow. A win's dim (screen.z) dims them all but
+// the glow rings. draw.y: squares per side. As the flat board draws them
+// (src/app/draw.goose).
 let MARKS_FRAG = """
     layout(location = 0) in vec3 v_pos;
     layout(location = 0) out vec4 result;
     layout(std430, set = 2, binding = 0) readonly buffer Marks { vec4 marks[]; };
+    layout(std430, set = 2, binding = 1) readonly buffer Lit { vec4 lit[]; };
     layout(set = 3, binding = 1) uniform Draw { vec4 draw; };
     float line(float d, float w) { return exp(-pow(d / (0.6 * w + 0.008), 2.0)); }
     void main() {
@@ -1103,7 +1117,11 @@ let MARKS_FRAG = """
                                  + 0.35 * exp(-max(r - 0.15, 0.0) / 0.05));
             }
             if (m.y > 1.5) c += glow.rgb * 0.9 * line(r - 0.18, w);
+            // A win's glow passing lights the square, as the last move's tint does more.
+            c += glow.rgb * 0.3 * lit[q.y * int(n) + q.x].y;
         }
+        c *= 1.0 - screen.z;
+        vec3 rings = vec3(0.0);
         // The red rings go a little out from a piece (0.44 of a square), past its square's
         // edge, so each pixel looks at the squares round it too.
         vec3 red = vec3(1.0, 0.353, 0.29);
@@ -1114,6 +1132,13 @@ let MARKS_FRAG = """
                 vec4 m = marks[k.y * int(n) + k.x];
                 float r = length(g - (vec2(k) + 0.5));
                 float w = wg;
+                // The glow ring tight round a piece (0.44 of a square), with a soft halo.
+                float k_ring = lit[k.y * int(n) + k.x].x;
+                if (k_ring > 0.0) {
+                    float rr = 0.47;
+                    float halo = exp(-max(r - rr, 0.0) / 0.06) * smoothstep(rr - 0.04, rr, r);
+                    rings += glow.rgb * glow.w * k_ring * (1.1 * line(r - rr, w) + 0.45 * halo);
+                }
                 if (m.z > 0.0) {
                     float rr = 0.52;
                     c += red * m.z * (0.9 * line(r - rr, w) + 0.35 * exp(-abs(r - rr) / 0.04));
@@ -1126,7 +1151,7 @@ let MARKS_FRAG = """
                 }
             }
         }
-        result = vec4(c, 1.0);
+        result = vec4(c + rings, 1.0);
     }
     """;
 
@@ -1137,4 +1162,30 @@ let COPY_FRAG = """
     layout(location = 0) out vec4 result;
     layout(set = 2, binding = 0) uniform sampler2D src;
     void main() { result = vec4(texelFetch(src, ivec2(gl_FragCoord.xy), 0).rgb, 1.0); }
+    """;
+
+// The kept image (premultiplied, clear where no board is) drawn over what is there: its
+// rect `from` (pixels of the image) into the rect `to` (pixels of the target), at
+// opacity screen.z; the same rect texel for texel at rest, moved and scaled in a
+// transition.
+let SHOW_VS = "#define SHOW_SET 1\n";
+let SHOW_FS = "#define SHOW_SET 3\n";
+let SHOW_BLOCK = """
+    layout(set = SHOW_SET, binding = 0) uniform Show { vec4 from_rect; vec4 to_rect; vec4 screen; };
+    """;
+let SHOW_VERT = """
+    layout(location = 0) out vec2 v_uv;
+    void main() {
+        const vec2 corners[6] = vec2[6](vec2(0, 0), vec2(1, 0), vec2(1, 1), vec2(0, 0), vec2(1, 1), vec2(0, 1));
+        vec2 c = corners[gl_VertexIndex];
+        vec2 px = to_rect.xy + c * to_rect.zw;
+        v_uv = (from_rect.xy + c * from_rect.zw) / screen.xy;
+        gl_Position = vec4(px.x / screen.x * 2.0 - 1.0, 1.0 - px.y / screen.y * 2.0, 0.0, 1.0);
+    }
+    """;
+let SHOW_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D src;
+    void main() { result = texture(src, v_uv) * screen.z; }
     """;

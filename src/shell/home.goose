@@ -133,9 +133,13 @@ fn content_height(setup: i64, landscape: bool, height: f32, u: f32) -> f32 {
 
 // Declares home for this frame in `area`, the screen's safe area, its pieces over the UI
 // put in `over`, and sets l to where the board of n × n squares goes: the menu, or the
-// setup `setup` (FRIEND or COMPUTER) with the choices in s. Returns what was tapped.
+// setup `setup` (FRIEND or COMPUTER) with the choices in s. `room3d` is where a 3D board
+// may go instead (wider than tall, it fits there as large as it can): across the stage
+// less 40 dp each side (24 in portrait), as tall as the flat board below the row of the
+// player's chip and the way out, or the flat board's square where that leaves under half
+// of it. Returns what was tapped.
 fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: float4, setup: i64,
-         s: settings::Settings&) -> i64 {
+         s: settings::Settings&, room3d: float4&) -> i64 {
     let u = g.scale;
     let width = area.z;
     let height = area.w;
@@ -196,6 +200,12 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
         }
         if size < board::SMALLEST * u { size = 0.0; }
         l = board::layout_at(area.x + x, area.y + y, size, u, n);
+        room3d = float4 { area.x + x, area.y + y, size, size };
+        let top = max(y, below);
+        if size > 0.0 && y + size - top >= 0.5 * size {
+            let half = max(0.5 * size, min(x + 0.5 * size - stage.x - 40.0 * u, stage.x + stage.z - 40.0 * u - x - 0.5 * size));
+            room3d = float4 { area.x + x + 0.5 * size - half, area.y + top, 2.0 * half, y + size - top };
+        }
     } else {
         // A sheet along the bottom, its lower corners off the screen; the board above it,
         // moving down to 16 dp under the way out where it would reach it, and shrinking to
@@ -233,6 +243,10 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
         }
         if full || size < board::SMALLEST * u { size = 0.0; }
         l = board::layout_at(area.x + 0.5 * (width - size), area.y + y, size, u, n);
+        let top = max(y, clear);
+        room3d = if size > 0.0 && y + size - top >= 0.5 * size {
+            float4 { area.x + 24.0 * u, area.y + top, width - 48.0 * u, y + size - top }
+        } else { float4 { area.x + 0.5 * (width - size), area.y + y, size, size } };
     }
     // The column or sheet runs on past the safe area to the screen's edges.
     gui::glass(g, gui::bleed(g, col, area), 32.0);

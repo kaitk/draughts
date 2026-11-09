@@ -281,7 +281,7 @@ fn stage(b: board::Board&, s: Settings&, now: f64) {
     b.last = rules::Move { from: square(v, "d6", k) as u8, to: square(v, "e5", k) as u8, .. };
     b.has_last = true;
     b.hints = s.hints;
-    b.king_look = king_look(s);
+    b.king_look = if raised(s) { raised_king_look(s) } else { king_look(s) };
     b.still = true;
     if s.hints == board::MOVES {
         b.selected = square(v, "d4", k);
@@ -565,11 +565,21 @@ fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, tabbed: bool = false)
     return ask;
 }
 
+// Where a 3D preview may go on the page left beside the choices: 94% of it each way, as
+// the flat square takes 94% of its shorter side; nothing where the flat preview isn't
+// shown (`size` 0).
+fn preview_room(page: float4, size: f32) -> float4 {
+    guard size > 0.0 else { return float4 { page.x + 0.5 * page.z, page.y + 0.5 * page.w, 0.0, 0.0 }; }
+    return float4 { page.x + 0.03 * page.z, page.y + 0.03 * page.w, 0.94 * page.z, 0.94 * page.w };
+}
+
 // Declares the screen for this frame in `area`, the screen's safe area, with `shown`
-// the language showing, and sets l to where the preview goes. The kings' tiles put their
-// pieces in `over`. Returns BACK, CHANGED after a tap changed s, SHOWN after a tab, or
-// NOTHING.
-fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, area: float4, shown: i64) -> i64 {
+// the language showing, and sets l to where the preview goes, and `room3d` to where a 3D
+// preview goes instead, as large as it fits (the same share of the page beside the
+// choices as the flat square's). The kings' tiles put their pieces in `over`. Returns
+// BACK, CHANGED after a tap changed s, SHOWN after a tab, or NOTHING.
+fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, area: float4, shown: i64,
+         room3d: float4&) -> i64 {
     let u = g.scale;
     let landscape = area.z >= area.w;
     let n = rules::VARIANTS[s.variant].size;
@@ -614,6 +624,7 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
         var size = 0.94 * min(page.z, page.w);
         if size < board::SMALLEST * u { size = 0.0; }
         l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
+        room3d = preview_room(page, size);
         ask = head(s, g, gui::cut_top(side, HEAD_H * u), shown, tabbed);
         gui::cut_top(side, HEAD_GAP * u);
         if tabbed {
@@ -653,6 +664,7 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
             var size = 0.94 * min(page.z, page.w);
             if size < board::SMALLEST * u { size = 0.0; }
             l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
+            room3d = preview_room(page, size);
             if group(s, over, g, s.group, glass, area, false, false) { ask = CHANGED; }
             return ask;
         }
@@ -660,6 +672,7 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
         gui::cut_bottom(page, 16.0 * u);
         let size = 0.94 * min(page.z, page.w);
         l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
+        room3d = preview_room(page, size);
         if group(s, over, g, 0, gui::cut_left(groups, w), area, false) { ask = CHANGED; }
         gui::cut_left(groups, GROUP_GAP * u);
         if group(s, over, g, 1, groups, area, false) { ask = CHANGED; }

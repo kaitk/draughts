@@ -86,6 +86,8 @@ fn place(g: render3d::Gpu&) {
     var inst:    float4[..64] = [];
     var squares: float4[100]  = [float4_0; 100];
     var marks:   float4[100]  = [float4 { 0.0, 0.0, 0.0, -1.0 }; 100];
+    var lit:     float4[100]  = [float4_0; 100];
+    var fades:   f32[1]       = [0.0];
     var selected = float4_0;
     for p, i in PIECES {
         let x = p[1] as f32 - 3.5;
@@ -112,7 +114,7 @@ fn place(g: render3d::Gpu&) {
         squares[p[0] * 8 + p[1]] = float4 { top, lift, RADIUS * scale, 1.0 };
         if sel { selected = float4 { x, lift, z, RADIUS * scale }; }
     }
-    render3d::place(g, inst[..inst.len], squares[..], marks[..], selected, true);
+    render3d::place(g, inst[..inst.len], fades[..0], squares[..], marks[..], lit[..], selected, 0.0, true);
 }
 
 fn radians32(d: f32) -> f32 { d * PI / 180.0 }
@@ -213,10 +215,12 @@ fn main() {
     guard opened else { abort(str("gfx: ", gfx::error())); }
     defer gfx::close();
 
-    // --theme autumn|winter; T, or a long press (for touch), switches.
+    // --theme autumn|winter|spring|summer; T, or a long press (for touch), switches.
     var which = looks::AUTUMN;
     let ti = flag_str(argv, "--theme");
     if ti > 0 && argv[ti] == "winter" { which = looks::WINTER; }
+    if ti > 0 && argv[ti] == "spring" { which = looks::SPRING; }
+    if ti > 0 && argv[ti] == "summer" { which = looks::SUMMER; }
     let ki = flag_str(argv, "--king");
     if ki > 0 && argv[ki] == "crown" { king_crown = true; }
 
@@ -400,7 +404,7 @@ fn main() {
         }
         if tuning.shown && (dirty || ui_dirty) {
             gfx::begin_pass(gfx::screen(), gfx::Texture { 0 }, float4 { 0.0, 0.0, 0.0, 1.0 });
-            render3d::show(g);
+            render3d::copy(g);
             gfx::end_pass();
             panel::draw(tuning);
         }

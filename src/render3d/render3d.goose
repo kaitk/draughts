@@ -78,6 +78,7 @@ struct Bake {
     marble_form:   float4,
 }
 struct Shrink { to: float4 }
+struct Show { from: float4, to: float4, screen: float4 }
 struct Blur { dir: float4 }
 
 let SHADOW_SIZE = 2048;
@@ -111,8 +112,11 @@ struct Gpu {
     piece_count:    i64,
     instances:      gfx::Buffer,
     instance_count: i64,
+    solid:          i64,                    // the instances drawn opaque, first; the rest fade
+    alphas:         f32[MAX_INSTANCES],     // how opaque each fading one is
     squares:        gfx::Buffer,
     marks:          gfx::Buffer,
+    glows:          gfx::Buffer,      // the field's glow rings and lit squares
     plan_albedo:    gfx::Texture,
     plan_normal:    gfx::Texture,
     frame_albedo:   gfx::Texture,
@@ -127,11 +131,13 @@ struct Gpu {
     aniso:          gfx::Sampler,
     compare:        gfx::Sampler,
     lit:            gfx::Pipeline,
+    fading:         gfx::Pipeline,  // the lit pass for a fading piece, blended
     shadow:         gfx::Pipeline,
     backdrop:       gfx::Pipeline,
     catcher:        gfx::Pipeline,
     glow:           gfx::Pipeline,
     copy:           gfx::Pipeline,
+    show:           gfx::Pipeline,  // the kept image over what is there, anywhere (show())
     bake:           gfx::Pipeline,  // kept for a theme's rebake, with the photograph's
     shrink:         gfx::Pipeline,
     blur:           gfx::Pipeline,
@@ -330,12 +336,16 @@ fn setup(g: Gpu&, samples: i32 = SAMPLES) {
     g.instance_count = 0;
     g.squares = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(empty));
     g.marks = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(none));
+    g.glows = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(empty));
 
     let full = embed_shader("vert", shaders::FULL_VERT);
     g.bake = gfx::pipeline(full, embed_shader("frag", shaders::BAKE_FRAG));
     g.shrink = gfx::pipeline(full, embed_shader("frag", shaders::SHRINK_FRAG));
     g.blur = gfx::pipeline(full, embed_shader("frag", shaders::BLUR_FRAG));
     g.copy = gfx::pipeline(full, embed_shader("frag", shaders::COPY_FRAG));
+    g.show = gfx::pipeline(embed_shader("vert", shaders::SHOW_VS, shaders::SHOW_BLOCK, shaders::SHOW_VERT),
+                           embed_shader("frag", shaders::SHOW_FS, shaders::SHOW_BLOCK, shaders::SHOW_FRAG),
+                           gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED });
     g.plan_albedo = baked(PLAN_SIZE, PLAN_SIZE, gfx::RGBA8_SRGB);
     g.plan_normal = baked(PLAN_SIZE, PLAN_SIZE, gfx::RGBA8);
     g.frame_albedo = baked(FRAME_MAP, FRAME_MAP, gfx::RGBA8_SRGB);
@@ -352,15 +362,16 @@ fn setup(g: Gpu&, samples: i32 = SAMPLES) {
 
     let lit_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::LIT_VERT);
     let quad_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::QUAD_VERT);
-    g.lit = gfx::pipeline(lit_vs, embed_shader("frag", shaders::FS_SET, shaders::FRAME,
-                                               shaders::LIT_FRAG),
-                          gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true,
-                                              depth_write: true });
+    let lit_fs = embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG);
+    g.lit = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true });
+    g.fading = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true,
+                                                                 blend: gfx::BLEND_ALPHA });
     g.shadow = gfx::pipeline(lit_vs, embed_shader("frag", shaders::EMPTY_FRAG),
                              gfx::PipelineDesc { depth_test: true, depth_write: true,
                                                  depth_bias: 1.0, depth_bias_slope: 1.5 });
     g.backdrop = gfx::pipeline(full, embed_shader("frag", shaders::FS_SET, shaders::FRAME,
-                                                  shaders::BACKDROP_FRAG));
+                                                  shaders::BACKDROP_FRAG),
+                               gfx::PipelineDesc { blend: gfx::BLEND_ALPHA });
     g.catcher = gfx::pipeline(quad_vs, embed_shader("frag", shaders::FS_SET, shaders::FRAME,
                                                     shaders::SHADOW_CATCHER_FRAG),
                               gfx::PipelineDesc { blend: gfx::BLEND_ALPHA });
@@ -460,30 +471,42 @@ fn tune(g: Gpu&, wood: i64, finish: looks::Finish, marble: i64, stone: looks::Ma
     if marbled(g, t) { g.frame.edge.w = 0.0; }
 }
 
-// Puts the pieces on the GPU: `inst` two float4s an instance (view3d::Scene.inst),
-// `squares` the field's occlusion and `marks` its marks (view3d::Scene's, row * n +
-// column), `selected` the selected piece's foot and radius (w 0 for none). The shadow map
-// is drawn again with the next frame when `moved`.
-fn place(g: Gpu&, inst: const float4[:], squares: const float4[:], marks: const float4[:], selected: float4, moved: bool) {
+// Puts the pieces on the GPU: `inst` two float4s an instance (view3d::Scene.inst), the
+// last alphas.len of them fading (a captured piece, a wrong move's ghost), each as
+// opaque as its alpha, drawn blended after the rest and casting no shadow; `squares` the
+// field's occlusion, `marks` its marks and `lit` its glow rings and lit squares
+// (view3d::Scene's, row * n + column); `selected` the selected piece's foot and radius
+// (w 0 for none); `dim` the board's under a win. The shadow map is drawn again with the
+// next frame when `moved`.
+fn place(g: Gpu&, inst: const float4[:], alphas: const f32[:], squares: const float4[:], marks: const float4[:],
+         lit: const float4[:], selected: float4, dim: f32, moved: bool) {
     let count = min(inst.len, 2 * MAX_INSTANCES);
     if count > 0 { gfx::update_buffer(g.instances, bytes_of(inst[..count])); }
     g.instance_count = count / 2;
+    let fading = min(alphas.len, g.instance_count);
+    g.solid = g.instance_count - fading;
+    for i in fading { g.alphas[i] = alphas[i]; }
     gfx::update_buffer(g.squares, bytes_of(squares[..min(squares.len, SQUARES)]));
     gfx::update_buffer(g.marks, bytes_of(marks[..min(marks.len, SQUARES)]));
+    if lit.len > 0 { gfx::update_buffer(g.glows, bytes_of(lit[..min(lit.len, SQUARES)])); }
     g.frame.selected = selected;
+    g.frame.screen.z = dim;
     if moved { g.shadow_dirty = true; }
 }
 
 // Draws a frame seen through view_proj from `eye` into `out`, a color target of `size`
 // (gfx's screen; or for Texture { 0 } g.image, kept for show()): the shadow map first if
-// the pieces moved, then the one pass. Recording only; the caller's gfx::frame() submits
-// it.
-fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int2, shadow_every: bool = false) {
+// the pieces moved, then the one pass. Without the `backdrop` the target is clear but for
+// the board, its shadow, and the pieces (premultiplied), for show() to lay over a
+// backdrop drawn apart (backdrop(), or the app's photograph). Recording only; the
+// caller's gfx::frame() submits it.
+fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int2, shadow_every: bool = false,
+        backdrop: bool = true) {
     if size.x != g.size.x || size.y != g.size.y { targets(g, size); }
     let target = if out.id == 0 { g.image } else { out };
     g.frame.view_proj = view_proj;
     g.frame.eye = f4(eye, 1.0);
-    g.frame.screen = float4 { size.x, size.y, 0.0, 0.0 };
+    g.frame.screen = float4 { size.x, size.y, g.frame.screen.z, 0.0 };
     let f = g.frame;
 
     if g.shadow_dirty || shadow_every {
@@ -497,7 +520,8 @@ fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int
         g.shadow_dirty = false;
     }
 
-    var pass = gfx::PassDesc { depth: g.depth, color_value: float4 { 0.11, 0.078, 0.063, 1.0 } };
+    let clear = if backdrop { float4 { 0.11, 0.078, 0.063, 1.0 } } else { float4_0 };
+    var pass = gfx::PassDesc { depth: g.depth, color_value: clear };
     if g.samples > 1 {
         pass.color[0] = g.color;
         pass.resolve[0] = target;
@@ -505,12 +529,10 @@ fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int
         pass.color[0] = target;
     }
     gfx::begin_pass(pass);
-    gfx::bind(g.backdrop);
-    gfx::bind_texture(gfx::FRAGMENT, 0, g.photo, g.linear);
-    gfx::uniforms(gfx::FRAGMENT, 0, f);
-    gfx::draw(3);
+    if backdrop { draw_backdrop(g, 1.0); }
 
     gfx::bind(g.catcher);
+    gfx::uniforms(gfx::FRAGMENT, 0, f);
     gfx::uniforms(gfx::VERTEX, 0, f);
     gfx::uniforms(gfx::VERTEX, 1, Draw { float4_0 });
     gfx::draw(6);
@@ -526,10 +548,21 @@ fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int
     gfx::uniforms(gfx::VERTEX, 0, f);
     gfx::uniforms(gfx::FRAGMENT, 0, f);
     draw_meshes(g, 0.0);
+    // The fading pieces, each alone at its opacity, over what stands behind them.
+    if g.solid < g.instance_count {
+        gfx::bind(g.fading);
+        gfx::bind_vertex_buffer(g.piece_vb);
+        gfx::bind_index_buffer(g.piece_ib, 4);
+        for i in g.solid..g.instance_count {
+            gfx::uniforms(gfx::VERTEX, 1, Draw { float4 { 1.0, 0.0, g.alphas[i - g.solid], i } });
+            gfx::draw_indexed(g.piece_count);
+        }
+    }
 
     // The field's marks and the selected piece's ring, added where nothing stands over.
     gfx::bind(g.glow);
     gfx::bind_storage_buffer(gfx::FRAGMENT, 0, g.marks);
+    gfx::bind_storage_buffer(gfx::FRAGMENT, 1, g.glows);
     gfx::uniforms(gfx::VERTEX, 0, f);
     gfx::uniforms(gfx::VERTEX, 1, Draw { float4 { 2.0, g.n, 0.0, 0.0 } });
     gfx::uniforms(gfx::FRAGMENT, 0, f);
@@ -538,22 +571,52 @@ fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int
     gfx::end_pass();
 }
 
-// The board, then the pieces as instances; from the light when `light` is 1.
+// The board, then the opaque pieces as instances; from the light when `light` is 1.
 fn draw_meshes(g: Gpu&, light: f32) {
-    gfx::uniforms(gfx::VERTEX, 1, Draw { float4 { 0.0, light, 0.0, 0.0 } });
+    gfx::uniforms(gfx::VERTEX, 1, Draw { float4 { 0.0, light, 1.0, 0.0 } });
     gfx::bind_vertex_buffer(g.board_vb);
     gfx::bind_index_buffer(g.board_ib, 4);
     gfx::draw_indexed(g.board_count);
-    guard g.instance_count > 0 else { return; }
-    gfx::uniforms(gfx::VERTEX, 1, Draw { float4 { 1.0, light, 0.0, 0.0 } });
+    guard g.solid > 0 else { return; }
+    gfx::uniforms(gfx::VERTEX, 1, Draw { float4 { 1.0, light, 1.0, 0.0 } });
     gfx::bind_vertex_buffer(g.piece_vb);
     gfx::bind_index_buffer(g.piece_ib, 4);
-    gfx::draw_indexed_instanced(g.piece_count, g.instance_count);
+    gfx::draw_indexed_instanced(g.piece_count, g.solid);
 }
 
-// Draws the kept image (draw() into g.image) over the open pass's target, as it is.
-fn show(g: Gpu&) {
+// The blurred photograph, graded, at opacity `alpha` over the open pass's target.
+fn draw_backdrop(g: Gpu&, alpha: f32) {
+    gfx::bind(g.backdrop);
+    gfx::bind_texture(gfx::FRAGMENT, 0, g.photo, g.linear);
+    gfx::uniforms(gfx::FRAGMENT, 0, g.frame);
+    gfx::uniforms(gfx::FRAGMENT, 1, Draw { float4 { alpha, 0.0, 0.0, 0.0 } });
+    gfx::draw(3);
+}
+
+// The backdrop draw() leaves out without one, over the open pass's target of `size`
+// (gfx's screen) at opacity `alpha`: under show()'s image, or fading in over the app's
+// own photograph in a transition.
+fn backdrop(g: Gpu&, alpha: f32, size: int2) {
+    g.frame.screen = float4 { size.x, size.y, g.frame.screen.z, 0.0 };
+    draw_backdrop(g, alpha);
+}
+
+// Draws the kept image (draw() into g.image with its backdrop) over the open pass's
+// target as it is: the prototype, under its tuning panel.
+fn copy(g: Gpu&) {
     gfx::bind(g.copy);
     gfx::bind_texture(gfx::FRAGMENT, 0, g.image, g.linear);
     gfx::draw(3);
+}
+
+// Draws the kept image (draw() into g.image without the backdrop) over the open pass's
+// target of `size`: its rect `from` into the rect `to`, both x, y, width, height in
+// pixels, at opacity `alpha`. The same rect is the image as drawn, texel for texel.
+fn show(g: Gpu&, from: float4, to: float4, alpha: f32, size: int2) {
+    gfx::bind(g.show);
+    gfx::bind_texture(gfx::FRAGMENT, 0, g.image, g.linear);
+    let u = Show { from: from, to: to, screen: float4 { size.x, size.y, alpha, 0.0 } };
+    gfx::uniforms(gfx::VERTEX, 0, u);
+    gfx::uniforms(gfx::FRAGMENT, 0, u);
+    gfx::draw(6);
 }

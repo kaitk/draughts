@@ -202,6 +202,25 @@ fn fit(cam: Camera, n: i64, box: float4, align: i64) -> View {
     return v;
 }
 
+// The flat layout the board package plays on under a 3D board seen through v: a square of
+// the bounds' height in their middle, at s pixels a dp (the game screen's, home's,
+// settings', and a puzzle's), which taps reach through the perspective (pick) and which
+// the world follows (to_world).
+fn square(v: View, s: f32) -> board::Layout {
+    let r = v.rect;
+    let size = min(r.z, r.w);
+    return board::layout_at(r.x + 0.5 * (r.z - size), r.y + 0.5 * (r.w - size), size, s, v.n);
+}
+
+// Where the top of a piece standing at flat point p (on l) lands on screen: x, y in
+// pixels, and the disc's radius there, in pixels across.
+fn on_screen(v: View, l: board::Layout, p: float2) -> float3 {
+    let xz = to_world(l, p);
+    let u = unit(l.n);
+    let q = project(v, float3 { xz.x, HEIGHT * u, xz.y });
+    return float3 { q.x, q.y, v.k * RADIUS * u / q.z };
+}
+
 // The board's outline on screen as a convex polygon, counterclockwise on screen.
 type Hull = float2[..80];
 
@@ -360,8 +379,13 @@ fn pick(v: View, b: board::Board&, l: board::Layout, p: float2) -> float2 {
 // marks as the renderer's field pass reads them (shaders::MARKS_FRAG), a float4 a square
 // of the world's grid: x the last move's tint (1), y a target's dot (1) or a stop's ring
 // (2), z the must-capture ring's strength at `now` (it pulses every 1.4 s, as the flat
-// board's does), w a wrong move's flash, 0 to 1, or -1.
+// board's does), w a wrong move's flash, 0 to 1, or -1. `lit` runs beside it, a float4 a
+// square too: x the glow ring tight round the piece standing there (a puzzle's hint, a
+// win's wave), 0 to 1; y the square lit by a win's glow passing, 0 to 1. Under a win's
+// dim the winning piece alone stays lit: its seed (kind's w) is SEED_LIT more, which the
+// shaders take off again for its figure.
 let MAX_INSTANCES = 96;     // two for each of board::MAX_PIECES, as a stack takes
+let SEED_LIT: f32 = 1000.0;
 
 struct Scene {
     view:     View                        = View {},
@@ -373,6 +397,7 @@ struct Scene {
     selected: float4                      = float4 { 0.0, 0.0, 0.0, 0.0 },
     dim:      f32                         = 0.0,
     field:    float4[100]                 = [float4 { 0.0, 0.0, 0.0, -1.0 }; 100],
+    lit:      float4[100]                 = [float4 { 0.0, 0.0, 0.0, 0.0 }; 100],
 }
 
 // A board square's number (y * size + x, as board::Marks numbers it) in the world's grid
@@ -405,6 +430,7 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
     for i in 100 {
         s.squares[i] = float4 { 0.0, 0.0, 0.0, 0.0 };
         s.field[i] = float4 { 0.0, 0.0, 0.0, -1.0 };
+        s.lit[i] = float4 { 0.0, 0.0, 0.0, 0.0 };
     }
     // The must-capture ring: brightest still, fading to 0.4 and back while it pulses.
     let phase = (0.5 - 0.5 * cos(2.0 * PI * now / 1.4)) as f32;
@@ -419,7 +445,7 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
         let scale = u * (p.at.z / r0) * (1.0 + (GROW - 1.0) * glow);
         let lift = lift_of(l, p.at.w);
         let dark = p.look.x;
-        let seed = i as f32;
+        let seed = i + (if b.dim > 0.0 && p.win.x <= 0.0 { SEED_LIT } else { 0.0 });
         let fx = float4 { p.look.w, p.ring.x, p.ring.y, glow };
         var top = lift + HEIGHT * scale;
         let king = p.look.y;
@@ -450,6 +476,11 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
         if glow > 0.0 { s.selected = float4 { xz.x, lift, xz.y, RADIUS * scale }; }
         if p.ring.x > 0.5 && col >= 0 && row >= 0 && col < n && row < n {
             s.field[row * n + col].z = if p.ring.x > 1.5 { 0.95 } else { 0.95 - 0.55 * phase };
+        }
+        if (p.ring.y > 0.0 || p.win.y > 0.0) && col >= 0 && row >= 0 && col < n && row < n {
+            let o .= s.lit[row * n + col];
+            o.x = max(o.x, p.ring.y * p.look.w);
+            o.y = max(o.y, p.win.y);
         }
     }
     mark_world(l, b.marks.last, s.marks.last);
@@ -486,14 +517,20 @@ fn same_list(a: float4[..2 * MAX_INSTANCES]&, b: float4[..2 * MAX_INSTANCES]&) -
 
 fn same_bits(a: u32[4]&, b: u32[4]&) -> bool { a[0] == b[0] && a[1] == b[1] && a[2] == b[2] && a[3] == b[3] }
 
+// Whether two views draw the board alike: the same eye, direction, and fit.
+fn same_view(a: View, b: View) -> bool {
+    return same3(a.eye, b.eye) && same3(a.ahead, b.ahead) && a.k == b.k && a.c.x == b.c.x && a.c.y == b.c.y && a.n == b.n;
+}
+
 fn changes(was: Scene&, now: Scene&) -> i64 {
     guard same_list(was.inst, now.inst) else { return DRAW | SHADOW; }
-    let a .= was.view;
-    let b .= now.view;
-    var same_view = same3(a.eye, b.eye) && same3(a.ahead, b.ahead) && a.k == b.k && a.c.x == b.c.x && a.c.y == b.c.y;
-    var rest = same_view && same_list(was.state, now.state) && same(was.flash, now.flash)
+    var rest = same_view(was.view, now.view) && same_list(was.state, now.state) && same(was.flash, now.flash)
                && same(was.selected, now.selected) && was.dim == now.dim && same_bits(was.marks.last, now.marks.last)
                && same_bits(was.marks.target, now.marks.target) && same_bits(was.marks.via, now.marks.via);
-    for i in 100 { if rest && (!same(was.squares[i], now.squares[i]) || !same(was.field[i], now.field[i])) { rest = false; } }
+    for i in 100 {
+        if rest && (!same(was.squares[i], now.squares[i]) || !same(was.field[i], now.field[i]) || !same(was.lit[i], now.lit[i])) {
+            rest = false;
+        }
+    }
     return if rest { 0 } else { DRAW };
 }

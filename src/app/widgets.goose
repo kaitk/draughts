@@ -12,8 +12,9 @@ import .theme;
 import .draw;
 import badges from "../badges";
 
-// width, height in pixels, z: 1 when there is a photograph; and the board's rect (x, y,
-// size, corner radius) where a transition hides the UI, size 0 at rest.
+// width, height in pixels, z: 1 when there is a photograph, w: the hole's height (0 as
+// tall as wide); and the board's rect (x, y, size, corner radius) where a transition
+// hides the UI, size 0 at rest.
 struct View { screen: float4, hole: float4 }
 
 let VERT = """
@@ -498,8 +499,8 @@ let FRAG = """
         shade();
         result *= 1.0 - v_extra.w;
         if (hole.z > 0.0 && v_extra.z < 1.5) {
-            float h = 0.5 * hole.z;
-            result *= 1.0 - cover(box(v_px, hole.xy + h, vec2(h), hole.w));
+            vec2 h = 0.5 * vec2(hole.z, screen.w > 0.0 ? screen.w : hole.z);
+            result *= 1.0 - cover(box(v_px, hole.xy + h, h, hole.w));
         }
     }
     """;
@@ -558,10 +559,11 @@ fn upload(w: Widgets&, g: gui::Gui&) {
 }
 
 // Draws the frame's quads in the open pass, over what is there, none inside `hole` but
-// those on the board (gui::on_board).
-fn frame(w: Widgets&, g: gui::Gui&, s: scene::Scene&, t: theme::Theme, width: f32, height: f32, hole: float4) {
+// those on the board (gui::on_board), `tall` pixels tall (0: as tall as wide).
+fn frame(w: Widgets&, g: gui::Gui&, s: scene::Scene&, t: theme::Theme, width: f32, height: f32, hole: float4,
+         tall: f32 = 0.0) {
     guard g.quads.len > 0 else { return; }
-    let view = View { screen: float4 { width, height, if s.has { 1.0 } else { 0.0 }, 0.0 }, hole: hole };
+    let view = View { screen: float4 { width, height, if s.has { 1.0 } else { 0.0 }, tall }, hole: hole };
     gfx::bind(w.pipeline);
     gfx::bind_storage_buffer(gfx::VERTEX, 0, w.quads);
     gfx::uniforms(gfx::VERTEX, 0, view);

@@ -20,6 +20,11 @@
 // passes, and the photograph goes from sharp to blurred or back. A tap during it lands
 // on the screen come to. The game counts no time and asks the computer for nothing
 // until its transition is over.
+// With the 3D board chosen (settings::raised) every screen with a board shows it: home's
+// and settings' fitted into the room they give it, the game and a puzzle round it in the
+// corners layout (panel::corners_in). A transition then moves and scales the one image
+// of it, drawn once through the larger end's view, from one end's bounds to the other's
+// (a puzzle's tile, which has no 3D board, crossfading it in or out).
 // Home's way out asks the app to stop (quit), which ends its loop. Android's back, and
 // Escape on the Mac, go back a screen as its own back or home control does (back).
 // A game against the computer plays at the skill kept for its level, which each
@@ -67,10 +72,18 @@ struct Shell {
     setup:   i64                = home::NOTHING, // home's column: the menu, or a setup
     staged:  bool               = false,      // home shows `next`, having declared a setup this frame
     layout:  board::Layout,                   // where the board is this frame
-    // The game's 3D board this frame, at rest on the game screen (settings::raised), and
-    // the view the app draws it through; sh.layout is then its flat layout.
-    raised: bool         = false,
-    view:   view3d::View = view3d::View {},
+    // The 3D board this frame (settings::raised, on a screen showing a board), and the
+    // view the app draws it through, sh.layout then the flat square it plays on
+    // (view3d::square); where on screen the view's bounds (view.rect) go and how opaque:
+    // the bounds and 1 at rest, moving between the ends' in a transition, which `hold`s
+    // the image as drawn once. Each end's view this frame, rect.z 0 for none.
+    raised:    bool         = false,
+    view:      view3d::View = view3d::View {},
+    place:     float4       = float4 { 0.0, 0.0, 0.0, 0.0 },
+    fade:      f32          = 1.0,
+    hold:      bool         = false,
+    went_view: view3d::View = view3d::View {},
+    came_view: view3d::View = view3d::View {},
     // How blurred the photograph is this frame: 0 as it is (home, settings, the puzzles to
     // pick from), 1 blurred and dimmed (the game, a puzzle), between in a transition.
     blur:   f32           = 0.0,
@@ -88,9 +101,11 @@ struct Shell {
     came:  board::Layout,
     left:  i64 = home::NOTHING,
     // This frame: the screen whose board shows, and where the UI is hidden for the board
-    // passing in a transition (x, y, size, corner radius; size 0 at rest).
+    // passing in a transition (x, y, size, corner radius; size 0 at rest), `tall` pixels
+    // tall (0 as tall as wide; the 3D board's bounds are wider).
     shows: i64    = HOME,
     hole:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
+    tall:  f32    = 0.0,
 }
 
 fn new(variant: u8) -> Shell {
@@ -216,8 +231,9 @@ fn sync_puzzles(sh: Shell&) {
 
 fn declare(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> bool {
     sync_puzzles(sh);
-    sh.game.b.king_look = if settings::raised(sh.prefs) { settings::raised_king_look(sh.prefs) } else { settings::king_look(sh.prefs) };
-    sh.raised = false;
+    sh.game.b.king_look = king_look(sh);
+    sh.went_view = view3d::View {};
+    sh.came_view = view3d::View {};
     // Time away from the game screen isn't on the clock.
     if sh.screen != GAME { game::pause(sh.game); }
     // In a transition the screen left is declared first, with no pointer, then the screen
@@ -254,12 +270,73 @@ fn declare(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> boo
     sh.shows = if crossing && was == SETTINGS { from } else { was };
     if crossing { blend(sh, g, first, middle, gone, e, if sh.shows == was { sh.came } else { sh.went }); }
     sh.hole = if crossing { sh.layout.board } else { float4 { 0.0, 0.0, 0.0, 0.0 } };
+    sh.tall = 0.0;
+    raise(sh, g, crossing, e);
     sh.blur = if crossing { blurred(from) + (blurred(was) - blurred(from)) * e } else { blurred(was) };
     // A switch this frame shows what was declared, and what the app fills and draws
     // agrees with it: the start of a transition, the screen left as it stands; one turned
     // round, the same moment of it the other way.
     if sh.screen != was && sh.from >= 0 { sh.mix = if crossing { 1.0 - sh.mix } else { 0.0 }; }
     return changed || asked || ended || crossing;
+}
+
+// How the boards draw kings: the 3D board's auto is a stack.
+fn king_look(sh: Shell&) -> i64 {
+    return if settings::raised(sh.prefs) { settings::raised_king_look(sh.prefs) } else { settings::king_look(sh.prefs) };
+}
+
+// The 3D board this frame, once both ends of a transition are declared: at rest the
+// screen's view; in a transition the image drawn once through the larger end's view and
+// moved from the bounds at one end to the other's, `e` of the way. An end with no 3D
+// board (a puzzle's tile) gives the bounds fitted into its flat square, the image fading
+// in or out there. sh.layout follows the drawn view, so the scene stays the same while
+// the image moves.
+fn raise(sh: Shell&, g: gui::Gui&, crossing: bool, e: f32) {
+    sh.raised = false;
+    sh.hold = crossing;
+    sh.fade = 1.0;
+    let a = if crossing { sh.went_view } else { view3d::View {} };
+    let b = sh.came_view;
+    let has_a = a.rect.z > 0.0;
+    let has_b = b.rect.z > 0.0;
+    guard has_a || has_b else { return; }
+    sh.raised = true;
+    sh.view = if has_a && has_b { if a.k > b.k { a } else { b } } else if has_a { a } else { b };
+    let flip = sh.layout.flip;
+    sh.layout = view3d::square(sh.view, g.scale);
+    sh.layout.flip = flip;
+    guard crossing else {
+        sh.place = sh.view.rect;
+        return;
+    }
+    let ra = if has_a { a.rect } else { tile_rect(sh.view.rect, sh.went.board) };
+    let rb = if has_b { b.rect } else { tile_rect(sh.view.rect, sh.came.board) };
+    sh.place = float4 { ra.x + (rb.x - ra.x) * e, ra.y + (rb.y - ra.y) * e, ra.z + (rb.z - ra.z) * e,
+                        ra.w + (rb.w - ra.w) * e };
+    let fa: f32 = if has_a { 1.0 } else { 0.0 };
+    let fb: f32 = if has_b { 1.0 } else { 0.0 };
+    sh.fade = fa + (fb - fa) * e;
+    sh.hole = float4 { sh.place.x, sh.place.y, sh.place.z, 0.0 };
+    sh.tall = sh.place.w;
+}
+
+// Bounds of r's shape fitted into the flat square sq (x, y, size), centered.
+fn tile_rect(r: float4, sq: float4) -> float4 {
+    guard r.z > 0.0 else { return float4 { sq.x, sq.y, sq.z, sq.z }; }
+    let h = sq.z * r.w / r.z;
+    return float4 { sq.x, sq.y + 0.5 * (sq.z - h), sq.z, h };
+}
+
+// The 3D board fitted into `room`, as large as it fits and in its middle, when it is
+// chosen (else a view with no bounds), and l set to the flat square it plays on, keeping
+// l's turn: home's board and settings' preview.
+fn raise_in(sh: Shell&, room: float4, n: i64, u: f32, l: board::Layout&) -> view3d::View {
+    guard settings::raised(sh.prefs) && room.z > 0.0 && room.w > 0.0 else { return view3d::View {}; }
+    let v = view3d::fit(view3d::Camera {}, n, room, view3d::MIDDLE);
+    let flip = l.flip;
+    l = view3d::square(v, u);
+    l.flip = flip;
+    return v;
 }
 
 // Where the game puts the board and its panels, turned when the computer plays white:
@@ -276,8 +353,7 @@ fn game_layout(sh: Shell&, area: float4, u: f32) -> panel::Layout {
 fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -> bool {
     let l = game_layout(sh, area, g.scale);
     sh.layout = l.board;
-    sh.raised = l.three && !frozen;
-    sh.view = l.view;
+    if l.three { sh.came_view = l.view; }
     let go, changed = game::frame(sh.game, g, l, now, sh.over, frozen);
     // A game against the computer ended: the child meets a stronger or weaker one next.
     let gm .= sh.game;
@@ -314,10 +390,12 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
     return changed;
 }
 
-// Where a puzzle puts the board and its panels, turned when black is to move.
+// Where a puzzle puts the board and its panels, turned when black is to move, so the side
+// to move plays from the bottom: round the 3D board when it is chosen, as the game's.
 fn puzzle_layout(sh: Shell&, area: float4, u: f32) -> panel::Layout {
     let pl .= sh.puzzle;
-    var l = panel::layout_in(area, rules::VARIANTS[pl.b.variant].size, u);
+    let n = rules::VARIANTS[pl.b.variant].size;
+    var l = if settings::raised(sh.prefs) { panel::corners_in(area, n, u) } else { panel::layout_in(area, n, u) };
     l.board.flip = puzzle::current(pl).start.side == rules::BLACK;
     return l;
 }
@@ -325,9 +403,10 @@ fn puzzle_layout(sh: Shell&, area: float4, u: f32) -> panel::Layout {
 // The puzzle for this frame. Returns whether anything on screen changed.
 fn puzzle_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     let pl .= sh.puzzle;
-    pl.b.king_look = settings::king_look(sh.prefs);
+    pl.b.king_look = king_look(sh);
     let l = puzzle_layout(sh, area, g.scale);
     sh.layout = l.board;
+    if l.three { sh.came_view = l.view; }
     let go, changed = puzzle::frame(pl, g, l, now, sh.over);
     // Solved: the stars kept are the most it has won.
     if pl.fresh {
@@ -423,7 +502,9 @@ fn settings_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool
     // opening, its wrong move flashes once the board has arrived.
     if fresh { settings::stage(sh.preview, sh.prefs, now + (1.0 - progress(sh, now)) * DURATION); }
     let changed = board::update(sh.preview, now);
-    let ask = settings::frame(sh.prefs, sh.over, g, sh.layout, area, strings::current);
+    var room = float4 { 0.0, 0.0, 0.0, 0.0 };
+    let ask = settings::frame(sh.prefs, sh.over, g, sh.layout, area, strings::current, room);
+    sh.came_view = raise_in(sh, room, sh.layout.n, g.scale, sh.layout);
     if ask == settings::CHANGED {
         sh.game.b.hints = sh.prefs.hints;
         settings::stage(sh.preview, sh.prefs, now);
@@ -451,8 +532,10 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     // Who's playing, over the menu: home under it takes no pointer.
     let card = sh.who.state != who::CLOSED && sh.setup == home::NOTHING;
     if card { gui::listen(g, false); }
-    let pick = home::frame(sh.over, g, sh.layout, rules::VARIANTS[b.variant].size, area, sh.setup, sh.prefs);
+    var room = float4 { 0.0, 0.0, 0.0, 0.0 };
+    let pick = home::frame(sh.over, g, sh.layout, rules::VARIANTS[b.variant].size, area, sh.setup, sh.prefs, room);
     sh.layout.flip = flip;
+    sh.came_view = raise_in(sh, room, sh.layout.n, g.scale, sh.layout);
     if card {
         gui::listen(g, true);
         if who_card(sh, g, area) { changed = true; }
@@ -499,23 +582,28 @@ fn who_card(sh: Shell&, g: gui::Gui&, area: float4) -> bool {
 // has taken the pointer away, and the game's clocks are paused.
 fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: game::Overlay&,
          l: board::Layout&) {
+    var room = float4 { 0.0, 0.0, 0.0, 0.0 };
     if screen == SETTINGS {
-        settings::frame(sh.prefs, over, g, l, area, strings::current);
+        settings::frame(sh.prefs, over, g, l, area, strings::current, room);
+        sh.went_view = raise_in(sh, room, l.n, g.scale, l);
     } else if screen == GAME {
         let p = game_layout(sh, area, g.scale);
         game::still(sh.game, g, p, now, over);
         l = p.board;
+        if p.three { sh.went_view = p.view; }
     } else if screen == PUZZLE {
         let p = puzzle_layout(sh, area, g.scale);
         puzzle::panel_frame(sh.puzzle, g, p, now, over);
         l = p.board;
+        if p.three { sh.went_view = p.view; }
     } else if screen == PICKER {
         var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
         picker::frame(g, area, sh.prefs.stars[puzzles::loaded], sh.puzzle.index, sh.theme, spot);
         l = in_tile(sh, spot, g.scale);
     } else {
-        home::frame(over, g, l, rules::VARIANTS[board_of(sh, HOME).variant].size, area, sh.left, sh.prefs);
+        home::frame(over, g, l, rules::VARIANTS[board_of(sh, HOME).variant].size, area, sh.left, sh.prefs, room);
         l.flip = turned(sh, sh.left);
+        sh.went_view = raise_in(sh, room, l.n, g.scale, l);
     }
 }
 

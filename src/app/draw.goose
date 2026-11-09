@@ -22,8 +22,9 @@ struct BoardUniforms {
 
 struct View { screen: float4 }     // width, height, the disc's side depth in radii
 
-// Seconds; and for the pieces over the UI, the board's rect where a transition hides
-// them, as it does the UI (widgets.goose), size 0 at rest and for the board's own.
+// Seconds, and y the hole's height (0 as tall as wide); and for the pieces over the UI,
+// the board's rect where a transition hides them, as it does the UI (widgets.goose), size
+// 0 at rest and for the board's own.
 struct Clock { time: float4, hole: float4 }
 
 let THEME_BLOCK = """
@@ -415,8 +416,8 @@ let PIECE_FRAG = """
         result = vec4(acc.rgb * (1.0 - v_win.x), acc.a) * v_look.w;
         // Over the UI in a transition, hidden where the board passes unless it lies on it.
         if (hole.z > 0.0 && v_win.w < 0.5) {
-            float h = 0.5 * hole.z;
-            result *= clamp(0.5 + box(gl_FragCoord.xy, hole.xy + h, vec2(h), hole.w), 0.0, 1.0);
+            vec2 h = 0.5 * vec2(hole.z, time.y > 0.0 ? time.y : hole.z);
+            result *= clamp(0.5 + box(gl_FragCoord.xy, hole.xy + h, h, hole.w), 0.0, 1.0);
         }
     }
     """;
@@ -508,6 +509,29 @@ fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::La
     gfx::draw_instanced(6, b.pieces.len);
 }
 
+// Opens the screen's pass with the photograph alone behind a 3D board (draw3d.goose),
+// `blur` as frame() takes it; with blur 1 the renderer's own backdrop covers it, and the
+// pass is only cleared.
+fn photo(d: Drawer&, blur: f32, now: f64, width: f32, height: f32) {
+    let t = d.colors;
+    gfx::begin_pass(gfx::screen(), gfx::Texture { 0 }, t.page);
+    guard blur < 1.0 else { return; }
+    gfx::bind(d.board_pipeline);
+    gfx::uniforms(gfx::FRAGMENT, 0, t);
+    let k = clamp(blur, 0.0, 1.0);
+    let bright: f32 = 1.0 - 0.2 * k;
+    // The board far off the screen: only the photograph shows.
+    let away = float4 { -4.0 * width, -4.0 * height, width, 0.0 };
+    var none = board::Marks {};
+    gfx::uniforms(gfx::FRAGMENT, 1, BoardUniforms {
+        screen: float4 { width, height, now as f32, 8.0 }, rect: away, inner: away,
+        scene:  float4 { if d.scene.has { k } else { -1.0 }, bright, 0.0, 0.0 }, wrong: float4 { -1.0, 0.0, 0.0, 0.0 },
+        marks: none });
+    gfx::bind_texture(gfx::FRAGMENT, 0, d.scene.photo, d.scene.sampler);
+    gfx::bind_texture(gfx::FRAGMENT, 1, d.scene.sharp, d.scene.sampler);
+    gfx::draw(3);
+}
+
 // Swaps the theme and its scene for theme `kind`'s.
 fn reload(d: Drawer&, kind: i64) {
     scene::release(d.scene);
@@ -520,14 +544,14 @@ fn reload(d: Drawer&, kind: i64) {
 }
 
 // Draws the pieces frame() was given for over the UI, in the open pass, none inside
-// `hole` but those on the board.
-fn overlay(d: Drawer&, now: f64, hole: float4) {
+// `hole` (`tall` pixels tall, 0 as tall as wide) but those on the board.
+fn overlay(d: Drawer&, now: f64, hole: float4, tall: f32 = 0.0) {
     guard d.over_count > 0 else { return; }
     let t = d.colors;
     gfx::bind(d.piece_pipeline);
     gfx::bind_storage_buffer(gfx::VERTEX, 0, d.overlay);
     gfx::uniforms(gfx::VERTEX, 0, d.view);
     gfx::uniforms(gfx::FRAGMENT, 0, t);
-    gfx::uniforms(gfx::FRAGMENT, 1, Clock { time: float4 { now as f32, 0.0, 0.0, 0.0 }, hole: hole });
+    gfx::uniforms(gfx::FRAGMENT, 1, Clock { time: float4 { now as f32, tall, 0.0, 0.0 }, hole: hole });
     gfx::draw_instanced(6, d.over_count);
 }

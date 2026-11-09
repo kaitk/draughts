@@ -8,7 +8,9 @@ import vec;
 
 let AUTUMN = 0;
 let WINTER = 1;
-let COUNT = 2;
+let SPRING = 2;
+let SUMMER = 3;
+let COUNT = 4;
 
 struct Theme {
     photo: i64,             // the season's photograph, src/app/background.c's kind
@@ -61,6 +63,8 @@ struct Theme {
 
 fn get(which: i64) -> Theme {
     if which == WINTER { return winter(); }
+    if which == SPRING { return spring(); }
+    if which == SUMMER { return summer(); }
     return autumn();
 }
 
@@ -138,6 +142,84 @@ fn winter() -> Theme {
         grade:         float4 { 2.2, 1.0, 1.0, 0.85 },
         tint:          float4 { 0.72, 0.76, 0.86, 0.35 },
         build:         float4 { 1.0, 0.0, 1.0, 0.0 },
+    };
+}
+
+// Birch, pale and fine, its dark squares the same birch stained sage, in a deep green
+// stained frame, cream and dark green pieces: the theme table's spring (rendering.md,
+// "Seasons and themes") and prototypes/boards.html's 3D board. Birch is diffuse-porous:
+// its rings barely show, its pores are fine and few, its figure a soft silky shimmer,
+// so the faint fibre the flat board has is most of what reads. The key light is cooler
+// than autumn's, a spring morning's.
+fn spring() -> Theme {
+    return Theme {
+        photo:         2,
+        light_sq:      float4 { 0.9, 0.85, 0.74, 0.46 },
+        light_fig:     float4 { 0.15, 0.35, 0.4, 1.0 },
+        dark_sq:       float4 { 0.42, 0.5, 0.41, 0.44 },
+        dark_fig:      float4 { 0.15, 0.3, 0.35, 1.0 },
+        inlay:         float4 { 0.18, 0.22, 0.17, 0.5 },
+        inlay_fig:     float4 { 0.2, 0.25, 0.2, 1.0 },
+        frame:         float4 { 0.27, 0.33, 0.26, 0.6 },
+        frame_fig:     float4 { 0.2, 0.25, 0.35, 1.0 },
+        surface:       float4 { 0.06, 0.4, 0.45, 0.6 },
+        frame_surface: float4 { 0.4, 1.5, 0.4, 0.3 },
+        stone:         float4 { 0.0, 0.0, 0.0, 0.0 },
+        light_ring:    float4 { 0.09, 0.35, 0.18, 0.08 },
+        dark_ring:     float4 { 0.09, 0.35, 0.22, 0.08 },
+        frame_ring:    float4 { 0.08, 0.35, 0.3, 0.15 },
+        light_piece:   float4 { 0.96, 0.94, 0.88, 0.55 },
+        dark_piece:    float4 { 0.23, 0.29, 0.25, 0.36 },
+        piece_fig:     float4 { 0.03, 0.15, 0.3, 0.4 },
+        crown:         float4 { 0.23, 0.29, 0.25, 0.0 },
+        edge:          float4 { 0.0, 0.0, 0.0, 0.0 },
+        line:          float4 { 0.0, 0.0, 0.0, 0.0 },
+        key:           float4 { -0.5, 0.85, -0.45, 3.3 },
+        key_color:     float4 { 1.0, 0.97, 0.92, 0.0 },
+        bounce:        float4 { 0.8, 0.8, 0.72, 0.8 },
+        ambient:       float4 { 1.4, 1.3, 0.55, 0.0 },
+        glow:          float4 { 0.56, 0.83, 1.0, 0.55 },
+        grade:         float4 { 2.3, 1.0, 1.2, 0.85 },
+        tint:          float4 { 0.7, 0.74, 0.62, 0.4 },
+        build:         float4 { 0.0, 1.0, 0.0, 0.0 },
+    };
+}
+
+// Summer's sunset: peach and dusky rose squares under a satin lacquer, almost flat as
+// the flat board's plain sheen is, in a deep red-brown frame, cream and plum pieces: the
+// theme table's summer and prototypes/boards.html's 3D board. Close-grained wood whose
+// figure the colour mostly hides; a warm low evening key.
+fn summer() -> Theme {
+    return Theme {
+        photo:         3,
+        light_sq:      float4 { 0.96, 0.85, 0.74, 0.36 },
+        light_fig:     float4 { 0.1, 0.12, 0.15, 1.0 },
+        dark_sq:       float4 { 0.58, 0.36, 0.3, 0.34 },
+        dark_fig:      float4 { 0.1, 0.15, 0.18, 1.0 },
+        inlay:         float4 { 0.24, 0.13, 0.11, 0.45 },
+        inlay_fig:     float4 { 0.15, 0.2, 0.15, 1.0 },
+        frame:         float4 { 0.33, 0.18, 0.15, 0.5 },
+        frame_fig:     float4 { 0.15, 0.2, 0.3, 1.0 },
+        surface:       float4 { 0.05, 0.2, 0.4, 0.35 },
+        frame_surface: float4 { 0.3, 1.0, 0.3, 0.3 },
+        stone:         float4 { 0.0, 0.0, 0.0, 0.0 },
+        light_ring:    float4 { 0.07, 0.3, 0.12, 0.05 },
+        dark_ring:     float4 { 0.07, 0.3, 0.14, 0.05 },
+        frame_ring:    float4 { 0.06, 0.3, 0.25, 0.1 },
+        light_piece:   float4 { 0.98, 0.95, 0.9, 0.5 },
+        dark_piece:    float4 { 0.29, 0.18, 0.21, 0.32 },
+        piece_fig:     float4 { 0.03, 0.12, 0.3, 0.4 },
+        crown:         float4 { 0.29, 0.18, 0.21, 0.0 },
+        edge:          float4 { 0.0, 0.0, 0.0, 0.0 },
+        line:          float4 { 0.0, 0.0, 0.0, 0.0 },
+        key:           float4 { -0.6, 0.7, -0.4, 3.3 },
+        key_color:     float4 { 1.0, 0.88, 0.76, 0.0 },
+        bounce:        float4 { 0.85, 0.7, 0.62, 0.8 },
+        ambient:       float4 { 1.4, 1.25, 0.5, 0.0 },
+        glow:          float4 { 1.0, 0.69, 0.54, 0.55 },
+        grade:         float4 { 2.4, 1.0, 1.4, 0.85 },
+        tint:          float4 { 0.78, 0.56, 0.48, 0.42 },
+        build:         float4 { 0.0, 1.0, 0.0, 0.0 },
     };
 }
 

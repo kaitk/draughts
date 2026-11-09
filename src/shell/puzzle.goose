@@ -68,6 +68,7 @@ struct Play {
     missed_at: f64  = -100.0,
     won:       i64  = 0,      // stars won, once solved
     fresh:     bool = false,  // solved this frame, for the shell to keep the stars
+    grab:      float2 = float2 { 0.0, 0.0 },  // on the 3D board, a held piece against the finger (game::touch)
 }
 
 // A puzzle never shows a selected piece's targets, whatever the move hints setting: the
@@ -253,9 +254,8 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: game::Overla
         let history = b.history.len;
         let wrong_at = b.wrong_at;
         let waited = board::waiting(b);
-        if input.pressed { board::press(b, l.board, input.at, now); }
-        if input.down && board::drag(b, l.board, input.at) { changed = true; }
-        if input.released { board::release(b, l.board, input.at, now); }
+        // Through the perspective on the 3D board, as the game's.
+        if game::touch(b, l, input, pl.grab, now) { changed = true; }
         judge(pl, history, wrong_at, now);
         // Next was declared above, before the board took the pointer: a press or a drop
         // that starts or ends a piece's wait changes how next looks, and a drop is the
@@ -411,7 +411,10 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: game::
     let on = solved || (pl.state == PLAYING && board::waiting(pl.b) >= 0);
     let word = strings::get(strings::PUZZLE_NEXT);
     if landscape {
-        let next = gui::cut_bottom(right, panel::tall(l, u));
+        // Round the 3D board the panel is a short corner one (panel::corners_in): next
+        // takes the shorter tile there.
+        let next = gui::cut_bottom(right, if l.three { panel::STACK_H * u } else { panel::tall(l, u) });
+        if l.three { gui::cut_top(right, 8.0 * u); }
         let f .= g.faces[gui::LABEL];
         let s .= g.faces[gui::SMALL];
         let words = f.ascent - f.descent + 4.0 * u + s.ascent - s.descent;

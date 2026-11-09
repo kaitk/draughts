@@ -283,24 +283,14 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
             gm.stilled = true;
             changed = true;
         }
-        let ask = celebrate(gm, g, l.board, won, now, over);
+        let ask = celebrate(gm, g, l, won, now, over);
         if ask == panel::RESTART {
             restart(gm);
             changed = true;
         }
         if ask == panel::HOME { go = HOME; }
     } else if !g.took && b.pos.side != gm.computer {
-        // On the 3D board a tap reaches the flat layout through the perspective.
-        // A piece held moves on the plane of its lifted top, kept where the finger took
-        // it (`grab`), so a press doesn't drag it before the finger moves.
-        let at = if l.three { view3d::pick(l.view, b, l.board, input.at) } else { input.at };
-        if input.pressed {
-            board::press(b, l.board, at, now);
-            if l.three && b.pressed >= 0 { gm.grab = b.press_at - view3d::pick(l.view, b, l.board, input.at); }
-        }
-        let held = if l.three && b.pressed >= 0 { view3d::pick(l.view, b, l.board, input.at) + gm.grab } else { at };
-        if input.down && board::drag(b, l.board, held) { changed = true; }
-        if input.released { board::release(b, l.board, held, now); }
+        if touch(b, l, input, gm.grab, now) { changed = true; }
     }
     // A move made or taken back, whichever way: the clocks follow it, and stop once the
     // side to move has none.
@@ -322,6 +312,24 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
     return go, changed;
 }
 
+// The pointer on the board this frame: a press, a drag, a release, as board::press and
+// the rest take them. On the 3D board (l.three) a tap reaches the flat layout through the
+// perspective (view3d::pick); a piece held moves on the plane of its lifted top, kept
+// where the finger took it (`grab`, the screen's own), so a press doesn't drag it before
+// the finger moves. The game and a puzzle share it. Returns whether a drag moved a piece.
+fn touch(b: board::Board&, l: panel::Layout, input: gui::Input, grab: float2&, now: f64) -> bool {
+    let at = if l.three { view3d::pick(l.view, b, l.board, input.at) } else { input.at };
+    if input.pressed {
+        board::press(b, l.board, at, now);
+        if l.three && b.pressed >= 0 { grab = b.press_at - view3d::pick(l.view, b, l.board, input.at); }
+    }
+    let held = if l.three && b.pressed >= 0 { view3d::pick(l.view, b, l.board, input.at) + grab } else { at };
+    var moved = false;
+    if input.down && board::drag(b, l.board, held) { moved = true; }
+    if input.released { board::release(b, l.board, held, now); }
+    return moved;
+}
+
 // Declares the screen as it stands, its pieces over the UI put in `over`, doing nothing:
 // the shell's transition away from the game, with the pointer taken away and the clocks
 // paused. A win's card is declared as it is, to fade with the panels.
@@ -330,7 +338,7 @@ fn still(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&) {
     let won = winner(gm);
     let side = if won >= 0 { won } else { gm.b.pos.side as i64 };
     panel::game(g, l, gm.clock, side, won >= 0, gm.asking != 0, pulse(gm, now), over);
-    if gm.won_at >= 0.0 { celebrate(gm, g, l.board, won, now, over); }
+    if gm.won_at >= 0.0 { celebrate(gm, g, l, won, now, over); }
 }
 
 // Whether anything is still moving at `now`; the app draws while it is.
@@ -431,14 +439,35 @@ fn cheer(gm: Game&, l: board::Layout, now: f64, share: f32 = 1.0) {
     b.pieces[b.pieces.len - 1] = p;
 }
 
+// Where the win's card is centered, and which it keeps inside: the flat board, or the 3D
+// board's bounds on screen.
+fn card_area(pl: panel::Layout) -> float4 {
+    let l = pl.board;
+    return if pl.three { pl.view.rect } else { float4 { l.board.x, l.board.y, l.board.z, l.board.z } };
+}
+
+// The winning piece on screen, its middle and its radius in pixels, for the card to keep
+// clear of: on the flat board the disc as board::fill draws it, on the 3D board its top
+// as the perspective shows it.
+fn winning_spot(gm: Game&, pl: panel::Layout) -> float2, f32 {
+    let l = pl.board;
+    let at = board::center(l, rules::VARIANTS[gm.b.variant], gm.won_on);
+    guard pl.three else { return at, 0.39 * l.inner.w; }
+    let s = view3d::on_screen(pl.view, l, at);
+    return float2 { s.x, s.y }, s.z;
+}
+
 // The card over the dimmed board once the pieces have answered: the winner's piece,
 // crowned, fading in over restart or back; it slides up as it fades in, its taps where
-// it is at rest. Returns panel::RESTART, panel::HOME, or panel::NOTHING.
-fn celebrate(gm: Game&, g: gui::Gui&, l: board::Layout, won: i64, now: f64, over: Overlay&) -> i64 {
+// it is at rest. On the 3D board it is placed by the board's bounds on screen and the
+// winning piece where the perspective shows it. Returns panel::RESTART, panel::HOME, or
+// panel::NOTHING.
+fn celebrate(gm: Game&, g: gui::Gui&, pl: panel::Layout, won: i64, now: f64, over: Overlay&) -> i64 {
     let t = moment(gm, now);
     guard t >= CARD_AT else { return panel::NOTHING; }
+    let l = pl.board;
     let u = l.scale;
-    let area = float4 { l.board.x, l.board.y, l.board.z, l.board.z };
+    let area = card_area(pl);
     // The card: 40 dp above and below, 56 dp at the sides; the piece, a 28 dp gap, the
     // buttons, 112 × 88 dp. On a board under panel::BOARD all but the buttons' height
     // shrink with it, the buttons' width down to 88 dp: 356 × 300 dp, 49% of the
@@ -452,9 +481,7 @@ fn celebrate(gm: Game&, g: gui::Gui&, l: board::Layout, won: i64, now: f64, over
     // Centered on the board, unless it would cover the winning piece (a phone's board):
     // then in the half away from it, as near the middle as clears the piece.
     if gm.won_on >= 0 {
-        let v .= rules::VARIANTS[gm.b.variant];
-        let at = board::center(l, v, gm.won_on);
-        let r = 0.39 * l.inner.w;           // the disc, as board::fill draws it
+        let at, r = winning_spot(gm, pl);
         if at.x + r > card.x && at.x - r < card.x + card.z && at.y + r > card.y && at.y - r < card.y + card.w {
             let middle = area.y + 0.5 * area.w;
             card.y = if at.y >= middle { max(area.y, min(middle, at.y - r) - card.w) }

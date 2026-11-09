@@ -457,16 +457,18 @@ fn main() {
             let shown .= shell::fill(sh, now);
             widgets::upload(w, g);
             if sh.raised {
-                // The 3D board (draw3d.goose), the UI and its pieces drawn over it as on
-                // the flat board.
-                draw3d::frame(d3, shown, l, sh.view, now, size, d.kind);
+                // The 3D board (draw3d.goose) over the photograph, the UI and its pieces
+                // drawn over it as on the flat board; in a transition its image moves,
+                // drawn once.
+                draw3d::frame(d3, shown, l, sh.view, now, size, d.kind, shell::which(sh.shows), sh.hold);
                 draw::pieces_over(d, sh.over, l, size.x, size.y);
-                draw3d::begin(d3);
+                draw::photo(d, sh.blur, now, size.x, size.y);
+                draw3d::show(d3, sh.blur, sh.place, sh.fade, size);
             } else {
                 draw::frame(d, shown, sh.over, l, sh.blur, now, size.x, size.y);
             }
-            widgets::frame(w, g, d.scene, d.colors, size.x, size.y, sh.hole);
-            draw::overlay(d, now, sh.hole);
+            widgets::frame(w, g, d.scene, d.colors, size.x, size.y, sh.hole, sh.tall);
+            draw::overlay(d, now, sh.hole, sh.tall);
             gfx::end_pass();
             dirty = false;
         }
