@@ -114,10 +114,12 @@ fn summer_look(n: i64) -> i64 {
     return COUNT + min(n, SUMMERS - 1) - 1;
 }
 
-// The wood's model a look is made with, -1 for any (the one chosen).
+// The wood's model a look is made with by default, -1 for any (the one chosen). The app's
+// and the prototype's --wood overrides it. The user's values (2026-11-09): summer and its
+// amber stone wood 2, spring's two carved looks wood 3.
 fn wood_for(look: i64) -> i64 {
-    if look == SUMMER_OAK { return 3; }
-    if look == SUMMER_PICKLED || look == SUMMER_TEAK || look == SPRING_BALTIC { return 2; }
+    if look == SUMMER_OAK || look == SPRING_ELVEN || look == SPRING_BALTIC { return 3; }
+    if look == SUMMER || look == SUMMER_AMBER || look == SUMMER_PICKLED || look == SUMMER_TEAK { return 2; }
     return -1;
 }
 
@@ -127,7 +129,8 @@ fn finish_for(look: i64, wood: i64) -> Finish {
     guard wood == wood_for(look) else { return finish(wood); }
     if look == SUMMER_PICKLED { return PICKLED; }
     if look == SUMMER_TEAK { return OILED; }
-    if look == SPRING_BALTIC { return OILED_OAK; }
+    if look == SUMMER || look == SUMMER_AMBER { return TUNED; }
+    if look == SPRING_ELVEN || look == SPRING_BALTIC { return SPRING_FINISH; }
     return VARNISHED;
 }
 
@@ -398,9 +401,9 @@ let PICKLED = Finish { varnish: 0.0, sanding: 0.25, grain: 1.0, rings: 1.0, warm
 // Summer's teak: oiled, a satin sheen, the relief a little softened.
 let OILED = Finish { varnish: 0.3, sanding: 0.3, grain: 1.0, rings: 1.0, warmth: 0.1, pickle: 0.0, caulk: 1.0 };
 
-// Spring's Baltic oak: oiled, a soft satin, the grain kept.
-let OILED_OAK = Finish { varnish: 0.35, sanding: 0.2, grain: 1.1, rings: 1.0, warmth: 0.0, pickle: 0.0,
-                         caulk: 1.0 };
+// Spring's two carved looks, wood 3 as the user tuned it in the panel (2026-11-09).
+let SPRING_FINISH = Finish { varnish: 0.335, sanding: 1.0, grain: 1.0, rings: 1.0, warmth: 0.0, pickle: 0.0,
+                             caulk: 1.0 };
 
 fn finish(wood: i64) -> Finish {
     if wood == 2 { return TUNED; }
@@ -460,7 +463,9 @@ fn marble(which: i64) -> Marble {
 // Spring's looks (task 041, the app's and the prototype's --spring): 0 the birch, 1 the
 // elven carved stone, 2 the Baltic folk carved oak.
 let SPRINGS = 3;
-let SPRING_LOOK = 0;
+// The look spring shows by default is the Baltic oak (the user, 2026-11-09); --spring 0 is
+// still the birch.
+let SPRING_LOOK = 2;
 
 // Pale stone with a fine vine line carved along the frame, as in overgrown elven ruins
 // (the user's idea, 2026-11-09, toned down to their image `Mossy Elven Checkers in
@@ -601,17 +606,22 @@ struct Carving {
     jade:   f32,    // 0..1: the dark squares pale (0) to deep (1), 0.5 as the look has it
 }
 
-let ELVEN = Carving { motif: 0, depth: 0.015, scale: 7.0, moss: 0.85, amber: 0.0, lichen: 0.0, warmth: 0.0,
-                      jade: 0.5 };
-let BALTIC = Carving { motif: 1, depth: 0.012, scale: 12.0, moss: 0.0, amber: 0.0, lichen: 0.0, warmth: 0.0,
-                       jade: 0.5 };
+// The user's values for the carved looks (2026-11-09): spring's elven stone and Baltic oak,
+// summer's amber stone.
+let ELVEN = Carving { motif: 0, depth: 0.023, scale: 23.685, moss: 0.49, amber: 0.0, lichen: 0.0, warmth: 0.52,
+                      jade: 0.64 };
+let BALTIC = Carving { motif: 2, depth: 0.015, scale: 3.0, moss: 0.0, amber: 0.655, lichen: 0.0, warmth: 0.0,
+                       jade: 0.62 };
+let AMBER_TUNED = Carving { motif: 2, depth: 0.02, scale: 3.0, moss: 0.5, amber: 0.55, lichen: 0.085, warmth: 0.0,
+                            jade: 0.5 };
 let AMBER = Carving { motif: 2, depth: 0.02, scale: 12.0, moss: 0.5, amber: 0.55, lichen: 0.5, warmth: 0.0,
                       jade: 0.5 };
 
 // A carved look's own carving (shown()'s look), ELVEN for one that isn't carved.
 fn carving_for(look: i64) -> Carving {
     if look == SPRING_BALTIC { return BALTIC; }
-    if look == SUMMER_AMBER || look == SUMMER_SERPENTINE { return AMBER; }
+    if look == SUMMER_AMBER { return AMBER_TUNED; }
+    if look == SUMMER_SERPENTINE { return AMBER; }
     return ELVEN;
 }
 

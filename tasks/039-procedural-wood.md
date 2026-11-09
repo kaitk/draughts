@@ -247,6 +247,10 @@ by stone before) and the frame granite's speckle (`Theme.stone.w`). The mitred b
 split moved into the gap between them, so the foot of each mitred piece's face keeps its
 own seed (task 041): autumn's and summer's mitred frames change in that strip only.
 
+The user's values (2026-11-09): `wood_for` now gives summer (3, 7) wood 2 with `TUNED` and
+spring's carved looks (9, 10) wood 3 with `SPRING_FINISH`; `--wood` overrides a look's own;
+`OILED_OAK` is gone. Details in task 015.
+
 ## Acceptance criteria
 
 - [x] `--wood N` and W switch the wood's model, rebaking only on a switch

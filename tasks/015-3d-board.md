@@ -557,6 +557,16 @@ after the launch, `dumpsys meminfo`. Before is `e279c86` with only the bench add
 - **The carved looks** (task 041, 2026-11-09): the Mac's warm bake for elven and amber
   about 54 ms against the birch's 24, Baltic 35; the Pixel's not measured (not
   connected). The bake's pipeline is larger by the folk band's and the signs' SDFs.
+- **The user's values (2026-11-09)**, now the looks' defaults (`src/render3d/looks.goose`):
+  each look has its own wood model and finish, `--wood` and W still override. Summer
+  (look 3) and its amber stone (`--summer 4`, look 7) wood 2 with `TUNED`; the amber's
+  carving `AMBER_TUNED` (motif 2, scale 3, lichen 0.085); spring's default is now the
+  Baltic oak (look 10, `SPRING_LOOK` 2, motif 2 amber signs) and the elven stone
+  (look 9) the alternative, both wood 3 with `SPRING_FINISH` (varnish 0.335, sanding 1).
+  Spring's flags: `--spring 0` the birch, 1 elven, 2 Baltic (the default); G cycles them.
+  Winter (marble 2) and autumn (wood 2, `TUNED`) unchanged. Only winter's frame reads the
+  marble (carved and wood frames don't), so the panel's marble lines don't matter for
+  summer or spring.
 - **After moves:** GL mtrack at rest after c3–d4 on Russian 219 MB against 210 at launch.
 - **What's left:** the 3D board on top of the flat board's memory is still about 160 to
   175 MB: the surfaces 70 MB, the 4× target and its 16-bit depth about 60, the kept

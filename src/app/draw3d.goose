@@ -129,10 +129,11 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
         d.kind = kind;
         d.n = l.n;
         let look = look_of(kind, d.summer);
-        // A summer variant's own wood and finish; else --wood's, or the renderer's own.
+        // --wood's model if given, else the look's own, else the renderer's; each look's
+        // finish for its model (looks::finish_for).
         let shown = looks::shown(look, d.gpu.spring);
         let own = looks::wood_for(shown);
-        let wood = if own >= 0 { own } else if d.wood >= 0 { d.wood } else { render3d::WOOD_MODEL };
+        let wood = if d.wood >= 0 { d.wood } else if own >= 0 { own } else { render3d::WOOD_MODEL };
         render3d::choose(d.gpu, wood, -1);
         d.gpu.finish = looks::finish_for(shown, d.gpu.wood);
         render3d::apply(d.gpu, look, l.n, kind);

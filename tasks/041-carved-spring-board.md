@@ -156,6 +156,11 @@ Open: the amber reads as an inlay more than a deep cut beside the image; the ima
 frames are wider than ours, so its motifs are larger against the squares; the folk
 band's meander is a plain step line, not a key.
 
+The user's values (2026-11-09): Baltic (look 10) is now spring's default, `--spring 2`,
+with motif 2 (the amber signs, scale 3, amber 0.655, jade 0.62) on wood 3; the elven stone
+(`--spring 1`) scale 23.685 with warmth 0.52, jade 0.64; summer's amber (`--summer 4`)
+scale 3, lichen 0.085. `--spring 0` stays the birch. Details in task 015.
+
 ## Acceptance criteria
 
 - [x] The carved look selectable beside the birch in the prototype and the game

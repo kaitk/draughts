@@ -602,6 +602,7 @@ fn carve(g: Gpu&, spring: i64, c: looks::Carving) {
             g.wood = own;
             g.finish = looks::finish_for(id, own);
         } else if looks::wood_for(was) >= 0 {
+            g.wood = WOOD_MODEL;
             g.finish = looks::finish(g.wood);
         }
     }

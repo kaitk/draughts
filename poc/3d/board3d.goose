@@ -13,10 +13,10 @@
 //   ../../build/board3d
 //   ../../build/board3d --shot out.png --size 1920x1200 [--yaw 20 --pitch 40]
 //   ../../build/board3d --theme winter --king crown
-//   ../../build/board3d --wood 0                  # the wood's model: 0 to 3, 2 the default
+//   ../../build/board3d --wood 0                  # the wood's model: 0 to 3 (each look has its own)
 //   ../../build/board3d --theme winter --marble 1 # the frame's marble: 0 the slate, 1 to 4
 //   ../../build/board3d --summer 2                # summer's variant: 0 to 5 (looks::SUMMERS), 4 and 5 amber
-//   ../../build/board3d --theme spring --spring 1 # spring's look: 0 the birch, 1 elven, 2 Baltic
+//   ../../build/board3d --theme spring --spring 1 # spring's look: 0 the birch, 1 elven, 2 Baltic (the default)
 //   ../../build/board3d --panel                   # the tuning panel shown; --plain no finish
 //   ../../build/board3d --bench 200
 //
@@ -136,9 +136,9 @@ fn draw(g: render3d::Gpu&, cam: Camera, out: gfx::Texture = gfx::screen()) {
     render3d::draw(g, view_proj, eye, out, size, shadow_every);
 }
 
-// The wood's model the looks without their own take (--wood, then W), and summer's
-// variant (--summer, S).
-var wood_chosen: i64 = render3d::WOOD_MODEL;
+// The wood's model --wood or W chose, -1 for each look's own (looks::wood_for), and
+// summer's variant (--summer, S).
+var wood_chosen: i64 = -1;
 var summer:      i64 = 0;
 
 // The look for a season: summer's its variant's.
@@ -150,7 +150,7 @@ fn apply(g: render3d::Gpu&, which: i64) {
     let c = clock();
     let shown = looks::shown(which, g.spring);
     let own = looks::wood_for(shown);
-    let wood = if own >= 0 { own } else { wood_chosen };
+    let wood = if wood_chosen >= 0 { wood_chosen } else if own >= 0 { own } else { render3d::WOOD_MODEL };
     if wood != g.wood || own >= 0 || looks::wood_for(looks::shown(g.look, g.spring)) >= 0 {
         render3d::choose(g, wood, -1);
         g.finish = looks::finish_for(shown, g.wood);
@@ -254,7 +254,9 @@ fn main() {
     render3d::setup(g, samples);
     // --wood N, --marble N: the wood's model with its finish, and the winter frame's
     // marble (0 the slate); --plain takes the finish off (looks::PLAIN), to compare.
-    wood_chosen = clamp(flag_f32(argv, "--wood", render3d::WOOD_MODEL) as i64, 0, render3d::WOOD_MODELS - 1);
+    if flag_str(argv, "--wood") > 0 {
+        wood_chosen = clamp(flag_f32(argv, "--wood", 0.0) as i64, 0, render3d::WOOD_MODELS - 1);
+    }
     render3d::choose(g, wood_chosen, flag_f32(argv, "--marble", looks::MARBLE) as i64,
                      flag_f32(argv, "--spring", looks::SPRING_LOOK) as i64);
     apply(g, look_of(which));

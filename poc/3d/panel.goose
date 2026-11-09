@@ -103,7 +103,7 @@ fn frame(p: Panel&, now: f64, input: bool) -> bool {
     let s = ui::scale(c);
     if ui::begin(c, "Tuning (P)", ui::rect(X, Y, WIDTH, HEIGHT), flags) {
         heading(c, "Wood");
-        if variant(c, "variant", p.wood, render3d::WOOD_MODELS - 1) { p.finish = looks::finish_for(p.look, p.wood); }
+        if variant(c, "variant", p.wood, render3d::WOOD_MODELS - 1) { p.finish = looks::finish_for(looks::shown(p.look, p.spring), p.wood); }
         p.varnish_at = scaled(slider(c, "varnish", p.finish.varnish, 0.0, 1.0), s);
         slider(c, "sanding", p.finish.sanding, 0.0, 1.0);
         slider(c, "grain", p.finish.grain, 0.0, 2.0);
@@ -131,7 +131,7 @@ fn frame(p: Panel&, now: f64, input: bool) -> bool {
         p.print_at = scaled(ui::widget_bounds(c), s);
         if ui::button_label(c, "Print") { printed = true; }
         if ui::button_label(c, "Defaults") {
-            p.finish = looks::finish_for(p.look, p.wood);
+            p.finish = looks::finish_for(looks::shown(p.look, p.spring), p.wood);
             p.stone = looks::marble(p.marble);
             p.carving = looks::carving_for(looks::shown(p.look, p.spring));
         }
@@ -202,7 +202,7 @@ fn num4(out: u8[>..]&, v: float4) {
 fn print_values(p: Panel&) {
     let f = p.finish;
     var a: u8[>..] = [];
-    format(a, "// wood ", p.wood, ", look ", p.look, "\nlooks::Finish { varnish: ");
+    format(a, "// wood ", p.wood, ", look ", looks::shown(p.look, p.spring), "\nlooks::Finish { varnish: ");
     num(a, f.varnish);
     a.append(", sanding: ");
     num(a, f.sanding);
