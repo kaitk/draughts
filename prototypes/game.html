@@ -51,8 +51,9 @@
       0 0 22px 4px color-mix(in srgb, var(--glow) 45%, transparent); }
 
   /* The clocks: each side's piece and time, black's on top as black's side of the board
-     is. The running one is lit in the glow color and its piece has the glow ring; under
-     ten seconds it turns red. */
+     is. The running one is lit in the glow color and its piece has the glow ring; this take
+     turns it red under ten seconds (the app: gold under a minute, red at 20 s,
+     docs/architecture/rendering.md). */
   .clocks { display: grid; gap: 10px; }
   .clock { display: flex; align-items: center; gap: 16px; min-height: 72px; padding: 0 14px; border-radius: 20px;
     font-size: 36px; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; color: var(--fg-dim);
