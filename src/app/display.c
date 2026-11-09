@@ -10,7 +10,8 @@
 // on iOS from the view's safeAreaInsets (the notch and the home indicator), in points;
 // on the Mac a window's safe area is all of it. The display scale: on Android
 // densityDpi / 160 (2.625 on the Pixel 7a, 1.5 on the Tab A11+), on iOS the screen's
-// pixels a point, on a Mac's Retina screen 2.
+// pixels a point, on a Mac's Retina screen 2. The window control's corner (iPadOS 26's three
+// dots in a window): from UIKit's corner-adapted safe area (ios/corner.m), none elsewhere.
 
 #include "platform.h"
 #include <stdbool.h>
@@ -18,6 +19,10 @@
 
 typedef struct SDL_Window SDL_Window;
 typedef struct { int x, y, w, h; } SDL_Rect;
+
+#if DRAUGHTS_IOS
+extern void draughts_ios_corner(SDL_Window *window, float *out);
+#endif
 
 #if DRAUGHTS_SDL_LINKED
 extern SDL_Window **SDL_GetWindows(int *count);
@@ -67,10 +72,12 @@ static SDL_Window *the_window(void) {
 
 typedef struct { float *data; int64_t len; } draughts_floats;
 
-// Writes the insets around the safe area, in pixels (left, top, right, bottom), and the
-// display scale into out[0..5]; returns 0, leaving out as it is, without a window.
+// Writes the insets around the safe area, in pixels (left, top, right, bottom), the
+// display scale, and how far the window control reaches right and down from the top left,
+// in pixels (0 and 0 with none), into out[0..7]; returns 0, leaving out as it is, without
+// a window.
 int64_t draughts_display(draughts_floats out) {
-    if (out.len < 5 || !the_window()) return 0;
+    if (out.len < 7 || !the_window()) return 0;
     SDL_Rect r;
     int w = 0, h = 0, pw = 0, ph = 0;
     if (!safe_area(window, &r) || !window_size(window, &w, &h) || !pixel_size(window, &pw, &ph) || w <= 0 || h <= 0)
@@ -82,5 +89,11 @@ int64_t draughts_display(draughts_floats out) {
     out.data[2] = (w - r.x - r.w) * sx;
     out.data[3] = (h - r.y - r.h) * sy;
     out.data[4] = display_scale(window);
+    float corner[2] = {0.0f, 0.0f};
+#if DRAUGHTS_IOS
+    draughts_ios_corner(window, corner);
+#endif
+    out.data[5] = corner[0] * sx;
+    out.data[6] = corner[1] * sy;
     return 1;
 }

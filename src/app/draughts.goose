@@ -39,8 +39,10 @@ import .flags;
 extern fn draughts_locales(out: u8[:]) -> i64;
 // The app's storage folder, ending in a separator (storage.c); returns how many bytes.
 extern fn draughts_storage(out: u8[:]) -> i64;
-// The insets around the window's safe area in pixels (left, top, right, bottom) and the
-// display's scale, into out[0..5] (display.c); 0, leaving out as it is, without a window.
+// The insets around the window's safe area in pixels (left, top, right, bottom), the
+// display's scale, and the window control's reach right and down in pixels (iPadOS 26's
+// three dots in a window; 0 and 0 with none), into out[0..7] (display.c); 0, leaving out
+// as it is, without a window.
 extern fn draughts_display(out: f32[:]) -> i64;
 // Wakes the loop in ms milliseconds, where frame() waits for events (wake.c).
 extern fn draughts_wake_in(ms: i64);
@@ -156,7 +158,7 @@ fn main() {
     var g = gui::Gui {};
     var t = text::Text {};
     var size = int2 { 0, 0 };
-    var display:   f32[5] = [0.0; 5];
+    var display:   f32[7] = [0.0; 7];
     var was_scale: f32    = 0.0;
     var dirty = true;
     var tapped = 0;
@@ -216,10 +218,10 @@ fn main() {
             g.insets = e;
             dirty = true;
         }
-        // The window's control (iPadOS's three dots) where the app runs in a window: from
-        // the flag for now; on iOS the build reads it from UIKit (task 050's proposal).
+        // The window's control (iPadOS 26's three dots) where the app runs in a window, as
+        // UIKit's corner-adapted safe area has it (ios/corner.m), or --corner's.
         let corner = if f.corner.x >= 0.0 { float2 { floor(f.corner.x * scale + 0.5), floor(f.corner.y * scale + 0.5) } }
-                     else { float2 { 0.0, 0.0 } };
+                     else { float2 { display[5], display[6] } };
         if corner.x != g.corner.x || corner.y != g.corner.y {
             g.corner = corner;
             dirty = true;

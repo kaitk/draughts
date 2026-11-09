@@ -38,6 +38,7 @@ add_executable(main
     ${GOOSE_RUNTIME_C}
     ${GOOSE_PROGRAM_SOURCES}
     main.c
+    corner.m
     ${GOOSE_GFX_SRC}/gfx/gfx_device.c
     ${GOOSE_GFX_SRC}/gfx/gfx_resources.c
     ${GOOSE_GFX_SRC}/gfx/gfx_pipeline.c
