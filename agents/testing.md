@@ -125,6 +125,12 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   itself, both clocks, Russian and International) with hard at 20,000 nodes: about 12 s
   through TinyCC. For numbers at full strength, build a copy with `NODES` at
   `ai::NODE_LIMIT` and more `GAMES` (the task 027 numbers came that way).
+  It first prints easy's planned time on three positions (quiet, a man threatened, a
+  choice of captures) with its own search's close moves, the before/after table in
+  `docs/architecture/ai.md`. A change to `pace.goose` moves the game means: widen a
+  level's `LOW`/`HIGH` only with a reason in the doc. `pace::tense` is what makes easy
+  slow, and the caller computes it from the reply (`game::answer`), so a new caller
+  must pass it too.
 - Positions come from the computer's own games (`build/aimatch ... --fens PLY`) and from
   scanning them for moves a deep search rates far above the rest. A shot's line goes in
   the test's comment only after each move is checked with `test/perft.py moves`; a

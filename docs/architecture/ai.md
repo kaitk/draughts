@@ -63,16 +63,42 @@ On a worker the frame loop draws as it would without the computer.
   hard pause less, as they take time of their own on the tablet.
 - **Against the clock** it takes as long as a player of its level would
   (`src/game/pace.goose`): a share of what it could spend each move and keep its clock (the
-  time left over 30 moves, plus the increment), 0.15 of it on easy, 0.3 on medium, 0.45
-  on hard, for a choice among three close moves. Its search's root scores say how close
-  (`ai::close`: the moves within 0.15 of a man of the best, as far as its margin scores
-  them exactly): one move standing out takes a third of that, five or more close ones
-  five thirds, a choice among captures half; a single move only the pause. The first
-  moves of a game come quickly, as a player knows them: the time grows over the first
-  12 plies. It never takes more than 4, 8, or 15 s by level, nor more than a tenth of its
-  clock, so with the increment it can't lose on time. The time only decides when the
-  move is played: the search still stops at its own depth, so its strength is the same.
-  White's first move is untimed, so the computer playing white makes it after the pause.
+  time left over 30 moves, plus the increment), 0.2 of it on easy, 0.3 on medium, 0.45
+  on hard, for a quiet choice among three close moves. Its search's root scores say how
+  close (`ai::close`: the moves within 0.15 of a man of the best, as far as its margin
+  scores them exactly): one move standing out takes a third of that, five or more close
+  ones five thirds; a single move only the pause. Medium and hard see a choice among
+  captures at once and take half. Easy, like a weak player who has to look, takes 3.5
+  times as long whenever a piece can be taken around its move (`pace::tense`): it must
+  capture, the other side could capture were it its turn, or could once its move is
+  played. That is two move generations into stack buffers, once a move, and catches the
+  positions where a child's move most often goes wrong; the close moves already measure
+  how hard the choice is. The first moves of a game come quickly, as a player knows them:
+  the time grows over the first 12 plies. It never takes more than 12, 8, or 15 s by
+  level, nor more than a tenth of its clock, so with the increment it can't lose on time.
+  Easy's cap sits above medium's: a sharp position on a long clock is where easy looks
+  longest. The time only decides when the move is played: the search still stops at its
+  own depth, so its strength is the same. White's first move is untimed, so the computer
+  playing white makes it after the pause.
+
+  Easy was made much slower on 2026-11-09 (the user: easy should play much slower,
+  especially in positions where something can be taken); it had spent 0.15, capped at
+  4 s, and taken half on a choice among captures. Its planned seconds past the opening
+  with its clock full (5+3 and 10+5) and on 10+5 with 2 minutes left, from
+  `test/game/pace.goose`, its own search giving the close moves:
+
+  | Position | Before: 5+3, 10+5, 10+5 at 2 min | After |
+  | --- | --- | --- |
+  | Quiet (10×10 start, 9 close) | 3.25, 4.00, 2.25 | 4.33, 8.33, 3.00 |
+  | A man threatened, 3 close | 1.95, 3.75, 1.35 | 9.10, 12.00, 6.30 |
+  | A choice of 2 captures | 0.97, 1.88, 0.80 | 6.07, 11.67, 4.20 |
+  | Quiet, one move standing out | 0.80, 1.25, 0.80 | 0.87, 1.67, 0.80 |
+  | Tense, one move standing out | 0.80, 1.25, 0.80 | 3.03, 5.83, 2.10 |
+
+  Over whole games of easy against itself (the test's 2 games a clock) a move took
+  2.22 s on 5+3 and 2.83 s on 10+5 on average; now 3.38 s and 5.86 s, at most 12, its
+  clock never under 244 s and 507 s. The test's ranges for easy's mean are 2.5–5 s and
+  4–8 s; medium's and hard's are unchanged.
 - **While it thinks**, its piece on the panel pulses once: the glow ring fades from full
   to a third and back over 1.2 s, on its clock's piece when there are clocks, even before
   they start, then stays full. That keeps frames coming while the answer is on its way,

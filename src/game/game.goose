@@ -220,7 +220,8 @@ fn answer(gm: Game&, id: i64, m: rules::Move, close: i64) {
     gm.wait = PAUSE[level];
     guard gm.clock.running == gm.computer else { return; }
     gm.wait = pace::seconds(PAUSE[level], level, gm.clock.left[gm.computer], clock::INCREMENTS[gm.clock.kind],
-                            gm.b.history.len, gm.b.moves.len, board::must_capture(gm.b), close);
+                            gm.b.history.len, gm.b.moves.len, board::must_capture(gm.b), pace::tense(gm.b.pos, m),
+                            close);
 }
 
 // Takes back a move, also one still animating: against the computer, the child's last
