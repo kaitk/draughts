@@ -28,7 +28,7 @@ import .panel;
 import .clock;
 import .pace;
 
-// A win (removed prototype win.html, take a), in seconds since it: the winning piece lifts
+// A win (rendering.md, "Controls", A win), in seconds since it: the winning piece lifts
 // with its ring; a ring of glow passes across the winner's other pieces outward from it,
 // each lifting a little with its square lit; the board dims under the winning piece; the
 // card slides up as it fades in, and the crowned piece fades in on it. Then it is still.
@@ -42,7 +42,7 @@ let CARD_AT = 1.0;          // the card slides up SLIDE dp as it fades in over 0
 let SLIDE = 28.0;
 let CROWN_AT = 1.2;         // the crowned piece fades in over 0.5 s
 let STILL = 1.7;            // still from here, or once the glow has passed the farthest piece
-// A draw (removed prototype draw.html, take a), calm: the board dims as the win's does over
+// A draw (rendering.md, "Controls", A draw), calm: the board dims as the win's does over
 // 0.6 s, and the card with both pieces, "Draw", and why slides up as it fades in from
 // DRAW_CARD; still from DRAW_STILL. Nothing lifts or glows.
 let DRAW_DIM = 0.6;
@@ -903,7 +903,7 @@ fn reason(gm: Game&, draw: i64, out: u8[..64]&) {
     strings::fill_in(out, key, [rules::draw_moves(gm.b.pos, draw)]);
 }
 
-// The draw's card over the dimmed board (removed prototype draw.html, take a): both pieces side
+// The draw's card over the dimmed board (rendering.md, "Controls", A draw): both pieces side
 // by side, "Draw", and why, over back and play again, sliding up as it fades in, its
 // taps where it is at rest. Sized and placed as the win's card, kept off the piece that
 // made the last move; on a board under 540 dp the words say it, and the pieces are left

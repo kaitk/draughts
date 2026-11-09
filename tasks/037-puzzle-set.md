@@ -135,11 +135,12 @@ half of Learn is solved; inside a theme, everything is open and the picker light
 first puzzle without stars, as now. Next goes on inside the theme, then back to the
 library.
 
-Work before building it: a prototype `puzzles.html` (removed 2026-11-10, in the history) take with the library
+Work before building it: a prototype `prototypes/puzzles.html` take with the library
 and a theme's page, in both orientations and on a phone, checked with agent-browser,
 for the user to pick from, as task 007's screens were.
 
-The prototype (2026-11-08) is the prototype `puzzles.html` (removed 2026-11-10, in the history), `b`, or `c` (`now` keeps
+The prototype (2026-11-08; removed 2026-11-10, in git history) is
+`prototypes/puzzles.html?take=a`, `b`, or `c` (`now` keeps
 task 007's tiers), with `&view=library` or `theme`, `&theme=learn`, `captures`, ...,
 `&themes=first` (Learn 12, Captures 10, Crowning 12, Shots 20) or `all` (the later four
 too, Shots 30), `&solved=0` to `12` for Learn's solved puzzles (the rest open at 6, below

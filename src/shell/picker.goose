@@ -1,4 +1,4 @@
-// The puzzles to pick from (removed prototype puzzles.html, take a; docs/architecture/puzzles.md,
+// The puzzles to pick from (rendering.md, "Controls", Puzzle picker; docs/architecture/puzzles.md,
 // "The screen"): a library of the themes, and a theme's page.
 //
 // The library is back, the title, the draughts switch (prototypes/puzzle-set.html, take

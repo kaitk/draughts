@@ -15,7 +15,7 @@
 // once: the game is kept in any case. In portrait the board moves down and shrinks to clear it.
 //
 // On the menu, the player's chip, their badge bare as the X is and their name on a small
-// glass pill (removed prototype chip.html, take d, so it reads on any photograph), opens who's
+// glass pill (rendering.md, "Controls", Players; so it reads on any photograph), opens who's
 // playing (who.goose): it mirrors the X, at the top left of the board's side of the
 // screen (the whole width in portrait, right of the column in landscape), so it is never
 // on the column (player_spot).
@@ -67,7 +67,7 @@ let EDGE = 24.0;            // this far from both edges,
 let CROSS = 34.0;           // its X, bare (clear until pressed)
 let CHIP_FACE = 64.0;       // the player's chip: their badge in an 88 dp tap, the name
 let CHIP_GAP = 12.0;        // beside it in the row labels' face, this past the badge's 88 dp, on a glass pill
-let CHIP_PILL = 16.0;       // the pill's room either side of the name (removed prototype chip.html),
+let CHIP_PILL = 16.0;       // the pill's room either side of the name,
 let CHIP_PILL_H = 49.0;     // its height (the face's 30 dp, 9 above and 10 below),
 let CHIP_RADIUS = 22.0;     // its corners,
 let CHIP_PAD = 40.0;        // and the tap's end, this past the name's

@@ -198,7 +198,7 @@ Changed while building (2026-11-09):
   and off the column, the X, and the board.
 
 - **The name on a glass pill (the user, 2026-11-09, take d of
-  prototype `chip.html` (removed 2026-11-10, in the history), after the bare name was hard to read on bright
+  `prototypes/chip.html`, removed 2026-11-10 and in git history, after the bare name was hard to read on bright
   photographs):** the badge stays bare; the name sits on a small glass pill
   (`gui::glass`, the theme's own panel, no new shader): 22 dp corners, 16 dp either side
   of the name, 49 dp tall (the 30 dp face, 9 above and 10 below), the name 12 dp past the

@@ -1,5 +1,5 @@
 // The game screen's panels (docs/architecture/rendering.md, "Game screen";
-// prototypes/game.html, and removed prototype back.html's take b for back): the board between
+// prototypes/game.html, and "The way back" there for back): the board between
 // them, leaving the game on the left (back on its own glass tile over a panel of
 // settings and start over at the bottom) and playing it on the right (whose turn, or the
 // two clocks, and undo move at the bottom, a tall tile). Each control is a glass tile
@@ -543,7 +543,7 @@ fn taken_in_bar(l: Layout&, phone: bool, s: f32) {
     l.taken_d = (if phone { TAKEN_PHONE } else { TAKEN_D }) * s;
 }
 
-// The countdown before a draw under whose turn (removed prototype draw.html, take a): a line
+// The countdown before a draw under whose turn (rendering.md, "Controls", The countdown): a line
 // of words, and in landscape a row of `of` dots, `lit` of them lit, the rest going out
 // one a move; `more` adds "A third time is a draw" under the line. Between clocks with
 // no room for the line (fit b) the short form instead: `word` and `fig`, "Draw in" and
@@ -696,8 +696,8 @@ fn clock_of(g: gui::Gui&, r: float4, c: clock::Clock&, side: i64, ring: f32, ove
 }
 
 // The way out: back, settings, and start over at the bottom, far from what plays. In
-// landscape back is its own glass tile at the top of `left` (removed prototype back.html, take
-// b) and the panel under it holds the other two; in portrait the three are a bar above
+// landscape back is its own glass tile at the top of `left` (rendering.md, "Controls", The
+// way back) and the panel under it holds the other two; in portrait the three are a bar above
 // the board, back first. Back goes where the screen's way out goes (home from the game,
 // the theme's page from a puzzle). Returns BACK, SETTINGS, RESTART, or NOTHING.
 fn leave(g: gui::Gui&, l: Layout) -> i64 {
