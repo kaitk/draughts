@@ -703,25 +703,32 @@ fn labelled(g: Gui&, id: i64, r: float4, icon: i64, size: f32, label: const u8[:
     // The word keeps LABEL_PAD from the tile's sides, in a smaller face where it is too
     // wide for its own.
     if arrange == STACKED {
-        let f .= g.faces[face];
-        let line = f.ascent - f.descent;
         let gap = 8.0 * u;
         let room = r.z - 2.0 * LABEL_PAD * u;
         // A word too wide for one line goes on two where the tile is tall enough for them,
-        // broken at a space ("Undo move" in a narrow tile); else it takes a smaller face.
-        let cut = if text_width(g, face, label) > room && r.w >= s + gap + 2.0 * line + 16.0 * u {
-            break_at(g, face, label, room)
-        } else { -1 };
+        // broken at a space ("Undo move" in a narrow tile); else it takes a smaller face;
+        // where none holds it on one line, two in the largest smaller face that holds
+        // them ("Võta käik tagasi" in half a corner panel).
+        var two = face;
+        var cut = if text_width(g, face, label) > room { lines_at(g, face, label, room, r.w - s - gap) } else { -1 };
+        if cut < 0 && text_width(g, fitting(g, face, label, room), label) > room {
+            while two < SMALL && cut < 0 {
+                two++;
+                cut = lines_at(g, two, label, room, r.w - s - gap);
+            }
+        }
+        let shown = if cut >= 0 { two } else { fitting(g, face, label, room) };
+        let line = g.faces[shown].ascent - g.faces[shown].descent;
         let lines: f32 = if cut >= 0 { 2.0 } else { 1.0 };
         var c = center(r, r.z, s + gap + lines * line);
         glyph_icon(g, center(cut_top(c, s), s, s), icon, PLAIN, p, a);
         cut_top(c, gap);
         if cut >= 0 {
-            text(g, face, cut_top(c, line), label[..cut], a, 0.0, CENTER);
-            text(g, face, c, label[cut + 1..], a, 0.0, CENTER);
+            text(g, shown, cut_top(c, line), label[..cut], a, 0.0, CENTER);
+            text(g, shown, c, label[cut + 1..], a, 0.0, CENTER);
             return clicked;
         }
-        text(g, fitting(g, face, label, room), c, label, a, 0.0, CENTER);
+        text(g, shown, c, label, a, 0.0, CENTER);
         return clicked;
     }
     let gap = 12.0 * u;
@@ -772,6 +779,14 @@ fn break_at(g: Gui&, face: i64, text: const u8[:], w: f32) -> i64 {
         if text_width(g, face, text[..i]) <= w && text_width(g, face, text[i + 1..]) <= w { best = i; }
     }
     return best;
+}
+
+// Where `text` breaks onto two lines of `face` each fitting w pixels, with h pixels high
+// enough for both and 16 dp round them, or -1.
+fn lines_at(g: Gui&, face: i64, text: const u8[:], w: f32, h: f32) -> i64 {
+    let f .= g.faces[face];
+    guard h >= 2.0 * (f.ascent - f.descent) + 16.0 * g.scale else { return -1; }
+    return break_at(g, face, text, w);
 }
 
 // The largest of the faces from `face` down to SMALL that fits `text` in w pixels.

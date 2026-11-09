@@ -148,4 +148,32 @@ fn main() {
     answer(gm, e);
     drive::idle(gm, g, l, 50.2);
     state(gm, g, "a friend's game, black's own hint");
+
+    // The words of undo move and the hint inside their tiles, side by side in the tablet's
+    // landscape corner panel, flat and 3D, in both languages: Estonian's undo move ("Võta
+    // käik tagasi") goes on two lines in a smaller face where one line has no room.
+    for lang in [strings::EN, strings::ET] {
+        strings::use(lang);
+        for raised in [false, true] {
+            let k = if raised { panel::corners_in(float4 { 0.0, 0.0, 1280.0, 800.0 }, 8, 1.0, panel::PITCH_PORTRAIT, true, true) }
+                    else { l };
+            start(gm, calm, -1, 0);
+            drive::idle(gm, g, k, 60.0);
+            var past = 0;
+            for i in drive::tiles(g) {
+                let r = drive::rect(g, i);
+                for q in g.quads {
+                    guard q.look.x == gui::TEXT && overlaps(q.rect, r) else { continue; }
+                    if q.rect.x < r.x || q.rect.x + q.rect.z > r.x + r.z || q.rect.y < r.y || q.rect.y + q.rect.w > r.y + r.w { past++; }
+                }
+            }
+            print(strings::LANGUAGES[lang], if raised { ", 3D" } else { ", flat" }, ": undo move ",
+                  whole(drive::control(g, HINT - 1).x), ", the hint ", whole(drive::control(g, HINT).x),
+                  ", glyphs past their tile ", past);
+        }
+    }
 }
+
+fn whole(x: f32) -> i64 { floor(x + 0.5) as i64 }
+
+fn overlaps(a: float4, b: float4) -> bool { a.x < b.x + b.z && b.x < a.x + a.z && a.y < b.y + b.w && b.y < a.y + a.w }

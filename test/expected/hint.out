@@ -16,3 +16,7 @@ pressed with none left: stage 0, asking false, left 0 3, move -, glow -, ghost -
 a capture due: stage 0, asking false, left 3 3, move -, glow -, ghost -, tile dim
   asked at skill 40, answered b6-c5
 a friend's game, black's own hint: stage 1, asking false, left 0 2, move b6-c5, glow b6, ghost -, tile lit
+en, flat: undo move 1193, the hint 1087, glyphs past their tile 0
+en, 3D: undo move 1193, the hint 1087, glyphs past their tile 0
+et, flat: undo move 1193, the hint 1087, glyphs past their tile 0
+et, 3D: undo move 1193, the hint 1087, glyphs past their tile 0
