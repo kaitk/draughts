@@ -308,9 +308,8 @@ scripts/ios.py src/app/draughts.goose --device --run            # on an attached
    image; `CFBundleIconName` and actool's `CFBundleIcons` in the `Info.plist`) and the
    launch screen's colour (`LaunchBackground`, the launch screen's `UIColorName`), the
    icon's background read from `android/res/values/colors.xml`'s `icon_background`. The
-   icon is `scripts/icon.py`'s Apple icon of the shipped season, made into
-   `build/ios/icon/apple-1024.png` from `design/icon/master-<season>.png` (local,
-   `design/icon/README.md`) when missing or older than the master.
+   icon is `ios/icon-1024.png`, in git as Android's foregrounds are: `scripts/icon.py`
+   writes it with them from the shipped season's master (`design/icon/README.md`).
 6. The privacy manifest, `PrivacyInfo.xcprivacy`: no tracking, no tracking domains, no
    data collected, and a reason for each "required reason" API the binary imports
    (`ios.py`'s `PRIVACY_APIS`): `C617.1` for `stat` and `fstat`, `35F9.1` for

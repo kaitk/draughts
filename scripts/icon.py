@@ -29,6 +29,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 ICON = ROOT / "design/icon"
 RES = ROOT / "android/res"
+IOS_ICON = ROOT / "ios/icon-1024.png"     # the shipped season's iOS icon, in git as android/res is
 STORE = Path.home() / "Downloads/draughts-store/icon"
 
 SHIPPED = "autumn"     # the season in android/res; design/icon/README.md says how to switch
@@ -110,6 +111,8 @@ def main():
     for density, size in DENSITIES.items():
         render(fg, fg == master, box, size, size * SCENE_DP / CANVAS_DP,
                (args.res or RES) / f"mipmap-{density}/ic_launcher_foreground.png", png)
+    if args.res is None:
+        apple_icon(IOS_ICON)        # the iOS bundle's icon (scripts/ios.py), in git
     if args.store:
         store = args.store if args.store is not True else \
             STORE if args.season == SHIPPED else STORE / args.season

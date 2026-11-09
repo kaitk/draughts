@@ -17,7 +17,7 @@ executable with SDL linked statically; the bundle is the executable, an Info.pli
 here (the id, the version, full screen, the launch screen in the icon's background),
 the launcher's name per language (<lang>.lproj/InfoPlist.strings from strings/<lang>.txt's
 app.name), the icon and the launch screen's colour in an asset catalog compiled by
-actool into Assets.car (the icon made from the shipped season's master by
+actool into Assets.car (the shipped season's icon, ios/icon-1024.png, made by
 scripts/icon.py), and the privacy manifest, PrivacyInfo.xcprivacy. A simulator build is
 signed ad hoc; a device build with the Mac's development
 identity and a provisioning profile for the app's id (docs/development.md, "Run on
@@ -75,13 +75,9 @@ def icon_background():
 
 
 def apple_icon():
-    """The shipped season's 1024 px icon, made by scripts/icon.py into build/ios/icon/
-    from its master (local, design/icon/README.md), again when the master is newer."""
-    png = ROOT / "build/ios/icon/apple-1024.png"
-    master = icon.ICON / f"master-{icon.SHIPPED}.png"
-    if not png.exists() or (master.exists() and master.stat().st_mtime > png.stat().st_mtime):
-        icon.apple_icon(png)
-    return png
+    """The shipped season's 1024 px icon, in git (ios/icon-1024.png), as scripts/icon.py
+    writes it with android/res's foregrounds when the shipped season changes."""
+    return icon.IOS_ICON
 
 
 def asset_catalog(work, app, device):

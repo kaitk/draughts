@@ -57,8 +57,8 @@ Each is a store rule the app doesn't meet yet:
       never started), which need no purpose string.
 - [x] **The icon**, 2026-11-09: an asset catalog with autumn's 1024 px icon (no alpha),
       compiled by `actool` into `Assets.car` with `CFBundleIconName` and `CFBundleIcons`
-      (`assetutil --info` lists `AppIcon` at 1024 and the colour). `ios.py` makes the PNG
-      with `icon.py`'s `apple_icon` into `build/ios/icon/` from the local master. A dark
+      (`assetutil --info` lists `AppIcon` at 1024 and the colour). The PNG is
+      `ios/icon-1024.png`, in git, written by `icon.py` with Android's foregrounds. A dark
       and a tinted variant are optional and left out.
 - [x] **The launch screen's colour**, 2026-11-09: `UILaunchScreen`'s `UIColorName` is
       the catalog's `LaunchBackground`, #140c09, read from Android's `icon_background`.
