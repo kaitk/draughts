@@ -114,6 +114,10 @@ struct Game {
     look:       bool  = false,
     look_skill: i64   = 0,
     watched:    Watch = Watch {},
+    // Its traps, searched on the worker (ai's lookout::traps): the ask's id, or 0, and the
+    // position it is for, the other side to move.
+    trapping: i64             = 0,
+    trap_pos: rules::Position = rules::Position { pieces: [0, 0], kings: 0, side: 0, variant: 0 },
     // The hint (docs/product.md): hints left a game, each side's against a friend; how far
     // the one shown has gone (panel::Help.stage: 1 the piece lit, 2 its square too); the ask
     // for its move, the position it is for (board::Board.shows), and the move once
@@ -243,9 +247,11 @@ struct Ask {
     kind:  i64 = THINK,
 }
 
-// What an ask is for: the computer's move, or the hint's (ai::helping).
+// What an ask is for: the computer's move, the hint's (ai::helping), or the lookout's
+// traps (ai's lookout::traps, no search).
 let THINK = 0;
 let HINT = 1;
+let TRAPS = 2;
 
 fn asking(gm: Game&) -> Ask {
     // The seed: the game's number and the ply, so moves vary between games yet the same
@@ -257,18 +263,36 @@ fn asking(gm: Game&) -> Ask {
 // The ask the worker should have, by its id: the computer's move, else the hint's, else
 // none (0). One at a time: the hint is asked on the side to move's turn, the computer's
 // move on its own.
-fn open_ask(gm: Game&) -> i64 { if gm.asking != 0 { gm.asking } else { gm.hinting } }
+fn open_ask(gm: Game&) -> i64 { if gm.asking != 0 { gm.asking } else if gm.hinting != 0 { gm.hinting } else { gm.trapping } }
 
 // That ask in full: the hint's searched at HINT_UP above the skill of the side it plays
 // against (the computer's, or against a friend the player's on their level), capped.
 fn ask_for(gm: Game&) -> Ask {
-    guard gm.asking == 0 && gm.hinting != 0 else { return asking(gm); }
     var a = asking(gm);
-    let against = if gm.computer >= 0 { gm.skill } else { gm.look_skill };
-    a.id = gm.hinting;
-    a.skill = min(against + HINT_UP, 100);
-    a.kind = HINT;
+    guard gm.asking == 0 else { return a; }
+    if gm.hinting != 0 {
+        let against = if gm.computer >= 0 { gm.skill } else { gm.look_skill };
+        a.id = gm.hinting;
+        a.skill = min(against + HINT_UP, 100);
+        a.kind = HINT;
+    } else if gm.trapping != 0 {
+        a.id = gm.trapping;
+        a.pos = gm.trap_pos;
+        a.kind = TRAPS;
+    }
     return a;
+}
+
+// The lookout's traps for the ask `id`, from the worker (or a test), as they stand in the
+// position it was asked for: marked with the other threats, the held piece's on the
+// square it was taken from. One for an ask no longer open is ignored. True when shown.
+fn trapped(gm: Game&, id: i64, pieces: u64) -> bool {
+    guard id != 0 && id == gm.trapping else { return false; }
+    gm.trapping = 0;
+    let w .= gm.watched;
+    var p = pieces & gm.b.pos.pieces[gm.b.pos.side] | (if w.over >= 0 && pieces & rules::bit(w.over) != 0 { rules::bit(w.selected) } else { 0 });
+    gm.b.danger |= p;
+    return p != 0;
 }
 
 // Whether the hint can be asked for or shown on: the side to move's turn, the board at
@@ -294,7 +318,7 @@ fn hinted(gm: Game&, id: i64, m: rules::Move) {
 
 // Whether an ask the app waits on for no frame of its own is open (the hint's), for the
 // loop to wake soon and take its answer.
-fn awaiting(gm: Game&) -> bool { gm.hinting != 0 }
+fn awaiting(gm: Game&) -> bool { gm.hinting != 0 || gm.trapping != 0 }
 
 // The hint's tile pressed: the first press asks for the move (answered, it lights the
 // piece and spends a hint), the second shows the square with a light ghost of the piece,
@@ -564,6 +588,7 @@ fn watch(gm: Game&) -> bool {
     let crowns = b.crowns;
     b.danger = 0;
     b.crowns = 0;
+    gm.trapping = 0;
     if on {
         var buf: rules::Moves = [];
         var seen = lookout::Seen {};
@@ -573,6 +598,16 @@ fn watch(gm: Game&) -> bool {
         let d, c = lookout::shown(seen, gm.look_skill);
         b.danger = d;
         b.crowns = c;
+        // The traps, three plies, on the worker: the other side to move, as now or after
+        // the held piece's move.
+        if gm.look_skill < lookout::UNTIL[lookout::TRAP] {
+            var q = b.pos;
+            q.side = 1 - q.side;
+            if k >= 0 { q = rules::play(b.pos, b.moves[k]); }
+            gm.asks += 1;
+            gm.trapping = gm.asks;
+            gm.trap_pos = q;
+        }
     }
     return b.danger != danger || b.crowns != crowns;
 }

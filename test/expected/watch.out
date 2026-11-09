@@ -17,4 +17,10 @@ king at skill 15: danger -, crowns -, eye lit true
 calm at hard's 70: danger -, crowns -, eye lit true
 a capture due: danger -, crowns -, eye lit true
 a friend's game, black to move: danger e5, crowns -, eye lit true
+the shot: asked for traps true, the computer to move in it true
+  answered: shown true
+  marked: danger c3 e3, crowns -, eye lit true
+  a1 held over b2: the old answer ignored true, the new one shown false
+  a1 dragged over b2: danger -, crowns -, eye lit true
+at hard's 70: asked false
 the eye tapped again: danger -, crowns -, eye lit false

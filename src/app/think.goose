@@ -20,13 +20,16 @@ struct Thought {
     close:   i64,           // moves about as good as the best, for the time it takes (ai::close)
     nodes:   i64,
     seconds: f64,
-    kind:    i64,           // game::THINK or game::HINT, as asked
+    kind:    i64,           // game::THINK, HINT, or TRAPS, as asked
+    pieces:  u64,           // the lookout's traps: the pieces they would win
 }
 
-// The engine is the worker's own, made once: a root can't cross to a thread.
+// The engine is the worker's own, made once, at the first search: a root can't cross to a
+// thread. The lookout's traps need none, so a game against a friend with the lookout on
+// has the thread but not the engine's 6 MB.
 thread_fn worker() {
     var e = ai::Engine { .. };
-    ai::init(e);
+    var made = false;
     var ask = qget<game::Ask>();
     loop {
         guard ask.id != 0 else {
@@ -34,6 +37,16 @@ thread_fn worker() {
             continue;
         }
         let began = clock();
+        if ask.kind == game::TRAPS {
+            qput(Thought { id: ask.id, move: rules::Move { .. }, found: true, close: 0, nodes: 0, seconds: clock() - began,
+                           kind: ask.kind, pieces: lookout::traps(ask.pos) });
+            ask = qget<game::Ask>();
+            continue;
+        }
+        if !made {
+            ai::init(e);
+            made = true;
+        }
         // The hint's search sees all and leaves nothing, and gives the best it sees.
         let hint = ask.kind == game::HINT;
         ai::helping(e, hint);
@@ -53,7 +66,7 @@ thread_fn worker() {
         var m = rules::Move { .. };
         if found { m = if hint { ai::best(e) } else { ai::reply(e) }; }
         qput(Thought { id: ask.id, move: m, found: found, close: ai::close(e, pace::CLOSE), nodes: e.total_nodes,
-                       seconds: clock() - began, kind: ask.kind });
+                       seconds: clock() - began, kind: ask.kind, pieces: 0 });
         ask = qget<game::Ask>();
     }
 }
@@ -65,8 +78,9 @@ struct Thinker {
 }
 
 // Each frame: gives the worker the game's ask when it changed (the computer's move or the
-// hint's, game::open_ask), and the game the answer when one has come. True when a hint's
-// answer came, which nothing else draws: the app draws it, and the frame after.
+// hint's, or the lookout's traps, game::open_ask), and the game the answer when one has
+// come. True when a hint's answer came, or traps to mark, which nothing else draws: the
+// app draws it, and the frame after.
 fn frame(t: Thinker&, gm: game::Game&) -> bool {
     if game::open_ask(gm) != t.sent {
         let ask = game::ask_for(gm);
@@ -77,6 +91,7 @@ fn frame(t: Thinker&, gm: game::Game&) -> bool {
     guard t.worker >= 0 else { return false; }
     let th, got = qpoll<Thought>();
     guard got && th.found else { return false; }
+    if th.kind == game::TRAPS { return game::trapped(gm, th.id, th.pieces); }
     if th.kind == game::HINT {
         game::hinted(gm, th.id, th.move);
         return true;

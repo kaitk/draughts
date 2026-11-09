@@ -14,7 +14,7 @@ import rules from "../../src/rules";
 import ai from "../../src/ai";
 import check from "../";
 
-let NAMES = ["near", "far", "two", "many", "step", "jump"];
+let NAMES = ["near", "far", "two", "many", "step", "jump", "trap"];
 // The triple, calm after d4-c5, the flying king, and king after g1-f2, for the skills.
 let SKILLED = ["W:Wa1,b6,d4,f2:Ba7", "W:Wa1,c1,e1,g1,b2,d2,h2,a3,e3,g3,c5:Bb8,d8,f8,h8,a7,c7,e7,g7,b6,f6,e5,h4",
                "W:W28,48:BK5,3", "W:Wc1,f2,h2,a3,g3,b4,c5:Bd2,e3,d6,a7,c7,e7,f8,h8"];
@@ -89,6 +89,31 @@ fn main() {
         }
         sort(lines) { a, b => compare(a, b) < 0 };
         for l in lines { print(l); }
+    }
+
+    // Traps: black's c5-d4 forces white's capture, either way, and black takes two back:
+    // c3 and the man that took (from e3 over to c5, or from c3 over to e5; a7 and g7 keep
+    // the capture from going on). c5-b4 is no trap: b6 can't take back from the edge. The flying king offers nothing; the triple
+    // must capture, so its threats are the capture's; the opening has no trap.
+    let shot = "W:Wa1,c3,e3:Ba7,b6,c5,f6,g7,h8";
+    for name, i in ["the shot", "flying king", "triple", "start"] {
+        let variant: u8 = if i == 1 { rules::INTERNATIONAL } else { rules::RUSSIAN };
+        let fen = if i == 0 { shot } else if i == 1 { "W:W28,48:BK5,3" } else if i == 2 { "W:Wa1,b6,d4,f2:Ba7" }
+                  else { "W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8" };
+        var q = check::position(variant, fen);
+        q.side = 1 - q.side;
+        print(name, ", the traps black could set: ", squares(variant, lookout::traps(q)));
+    }
+    // With a3 and h2 beside them, white's moves against it: a1-b2 guards b2, where the
+    // double jump would land; c3-b4 and e3 moved leave one man to take; a3-b4, c3-d4, and
+    // e3-d4 give black a capture now; h2-g3 leaves the shot, its double jump then going on
+    // over g3.
+    let sp = check::position(rules::RUSSIAN, "W:Wa1,a3,c3,e3,h2:Ba7,b6,c5,f6,g7,h8");
+    rules::generate(sp, moves);
+    for &m in moves {
+        var t: u8[>..] = [];
+        rules::format_move(t, rules::RUSSIAN, m);
+        print("  after ", t, ": ", squares(rules::RUSSIAN, lookout::traps(rules::play(sp, m))));
     }
 
     for skill in [0, 14, 15, 24, 25, 39, 40, 60, 69, 70, 100] {

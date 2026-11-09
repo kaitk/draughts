@@ -7,6 +7,9 @@
 // over a target shows that move's (on touch a finger lifted rests on the piece). Nothing
 // shows on the computer's turn, while a capture is due, or once the game has ended; at
 // hard's skills nothing at all. The prototype's positions (Russian, white the child).
+// Traps are asked of the app's worker (game::ask_for, kind TRAPS), answered here at once
+// as it would, and marked with the rest; an answer for a position left is ignored, and
+// from hard's skills none is asked.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -126,6 +129,28 @@ fn main() {
     start(gm, "B:Wa1,c3,d4:Be5,h8", -1);
     drive::idle(gm, g0, l, 7.1);
     show(gm, "a friend's game, black to move");
+
+    // A trap: black's c5-d4 would win c3 and e3 back for one. Asked, then answered.
+    let shot = "W:Wa1,c3,e3:Ba7,b6,c5,f6,g7,h8";
+    start(gm, shot, rules::BLACK);
+    drive::idle(gm, g0, l, 9.0);
+    var ask = game::ask_for(gm);
+    print("the shot: asked for traps ", ask.kind == game::TRAPS, ", the computer to move in it ", ask.pos.side == 1);
+    print("  answered: shown ", game::trapped(gm, ask.id, lookout::traps(ask.pos)));
+    show(gm, "  marked");
+    // a1 held over b2 guards b2: the trap is gone; the old answer is ignored.
+    drive::frame(gm, g0, l, drive::at(l.board, "a1"), true, true, false, 9.1);
+    drive::frame(gm, g0, l, drive::at(l.board, "b2"), true, false, false, 9.2);
+    let old = ask;
+    ask = game::ask_for(gm);
+    print("  a1 held over b2: the old answer ignored ", !game::trapped(gm, old.id, lookout::traps(old.pos)),
+          ", the new one shown ", game::trapped(gm, ask.id, lookout::traps(ask.pos)));
+    show(gm, "  a1 dragged over b2");
+    drive::frame(gm, g0, l, drive::at(l.board, "a1"), false, false, true, 9.3);
+    start(gm, shot, rules::BLACK);
+    gm.look_skill = 70;
+    drive::idle(gm, g0, l, 9.4);
+    print("at hard's 70: asked ", game::ask_for(gm).id != 0);
 
     // The eye turned off clears the marks.
     start(gm, calm, rules::BLACK);
