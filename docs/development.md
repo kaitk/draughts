@@ -251,7 +251,10 @@ frame, which `gfx::mouse_down` never sees. `adb shell input tap X Y` checks it.
 Screens are checked at other sizes first on the Mac (`--size` at a device's proportions,
 `--dp` and `--inset` for a phone, `test/shell/sizes` headless), then on two devices over
 USB: the Galaxy Tab A11+ (1920 × 1200, three-button navigation) and a Pixel 7a (1080 ×
-2400, Android 17, gesture navigation, a punch-hole camera), one attached at a time.
+2400, Android 17, gesture navigation, a punch-hole camera), one attached at a time. A
+Galaxy A33 5G (SM-A336B, 1080 × 2400 at 90 Hz, Android 16, Exynos 1280 with a Mali-G68
+MP4, Vulkan 1.3, 5.5 GB) is the weakest phone tried (2026-11-09): 2D holds 90 Hz, the 3D
+board runs at about 28 fps while it moves (task 015).
 Larger tablets (2560 × 1600, 2880 × 1920, 4:3, a foldable's inner screen) are checked
 only on the Mac (2026-11-08), as there is no such device.
 

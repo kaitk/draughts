@@ -816,3 +816,14 @@ The same release on the Pixel 7a (after uninstalling its debug-signed build and 
 idle 20 s and memory at rest: landscape 0.05% with 20 wakeups, GL mtrack 227 MB, EGL
 73 MB, Total PSS 345 MB; portrait the same, 347 MB. Portrait shows the view and
 showcase buttons, landscape zoom as well.
+
+The release on a Galaxy A33 5G (SM-A336B, Exynos 1280, Mali-G68 MP4, Vulkan 1.3, Android
+16, 1080 × 2400 portrait at 90 Hz), ten minutes after a system update and at thermal
+status 3, so the worst case: it installs and runs (minSdk 29, ASTC on Mali). 2D: a
+capture's pulse drew 196 frames at 89.99 fps with none dropped or janky
+(SurfaceFlinger's timestats); idle 0.00%, GL mtrack 35 MB, EGL 38, Total PSS 107 MB.
+3D (`--bench 300`, autumn, Russian): the pass 36 ms waited, 38.6 with the shadow map,
+about 28 fps while the board moves, CPU 0.53 ms; the kept depth 12.1 ms, the screen's
+part with rings 6.9; the theme applied in 1.66 s (bake 1.59 s, warm plan 290 ms and
+frame map 157), the first frame 0.35 s; at rest idle 0.00%, GL mtrack 224 MB, Total PSS
+309 MB. It works; moving is slow (task 042).
