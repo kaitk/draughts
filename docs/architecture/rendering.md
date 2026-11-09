@@ -364,7 +364,13 @@ the prototype tried, kept for 3D:
 - **Game screen** (`prototypes/game.html`, chosen 2026-11-07 over three other takes):
   the board in the middle, leaving the game on its left and playing it on its right,
   each control a glass tile with an icon and a word, as on home, since icons alone (three
-  arrows for undo, restart, and back) confused. In landscape the board fills the height
+  arrows for undo, restart, and back) confused. The landscape layout is taken only where
+  its flat board fills at least about 2/3 of the height less the margins
+  (`panel::landscape`); a wider-than-tall window short of that, near square, keeps the
+  portrait layout, the bar above the board and the play below it, as does the 3D board
+  (the user, 2026-11-09: a near-square window's landscape had a small board between
+  square-ish panels). At 800 dp tall the hand-over is at about 981 dp across; every
+  device's landscape passes, the foldable's closest at 69%. In landscape the board fills the height
   less a 24 px margin, between two glass panels 232 px wide and as tall as it (where
   that leaves the board under 720 px, the tablet's at 16:10, the panels narrow down to
   192 px for it: 587 px at 4:3, 520 on a foldable; 2026-11-08; where the width holds the

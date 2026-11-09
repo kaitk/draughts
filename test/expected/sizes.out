@@ -767,3 +767,8 @@ et, the iPads in landscape with their bars:
 settings' Look tab: group 1, tiles 10 then 17, changed false
 the puzzles' Learn row: theme 0, tiles 7 then 13
 the iPad's smallest window, 499 x 645 dp: Look's 17 tiles, the switch 88 x 48 dp a half, a season 125 x 48 dp, Board ending 87 dp above the glass's foot, Kings -39
+the game at 892 x 800 dp: portrait, board 372 dp; 3D portrait, 403 x 324 dp
+the game at 960 x 800 dp: portrait, board 372 dp; 3D portrait, 403 x 324 dp
+the game at 980 x 800 dp: portrait, board 372 dp; 3D portrait, 403 x 324 dp
+the game at 1000 x 800 dp: landscape, board 520 dp; 3D landscape, 629 x 431 dp
+the game at 1066 x 800 dp: landscape, board 586 dp; 3D landscape, 692 x 475 dp

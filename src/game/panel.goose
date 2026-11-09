@@ -116,7 +116,7 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
     let gap = GAP * s;
     let m = BUTTON_MARGIN * s;
     let phone = min(width, height) / s < PHONE_DP;
-    if width >= height {
+    if landscape(area, s) {
         let side = (if phone { NARROW } else { SIDE }) * s;
         let tall = min(CORNER_H * s, height - 2.0 * gap);
         let left = float4 { area.x + gap, area.y + gap, side, tall };
@@ -293,16 +293,40 @@ fn layout(width: f32, height: f32, n: i64) -> Layout {
     return layout_in(float4 { 0.0, 0.0, width, height }, n, gui::scale_of(width, height));
 }
 
+// The landscape layout's panels' width in `area`: SIDE, narrowing to NARROW for the board.
+fn side_of(area: float4, s: f32) -> f32 {
+    let room = area.z - 4.0 * GAP * s;
+    guard room - 2.0 * SIDE * s < BOARD * s else { return SIDE * s; }
+    return max(NARROW * s, 0.5 * (room - BOARD * s));
+}
+
+// The landscape layout's flat board in `area`: the height less the margins, or what the
+// panels leave across.
+fn landscape_board(area: float4, s: f32) -> f32 {
+    let gap = GAP * s;
+    return min(area.w - 2.0 * gap, area.z - 2.0 * side_of(area, s) - 4.0 * gap);
+}
+
+// Whether the game takes its landscape layout in `area`: wider than tall, and its flat
+// board at least HANDOVER of the height less the margins; else, near square, the portrait
+// one, the bar above the board and the play below it (task 050, the user 2026-11-09: a
+// near-square window's landscape had a small board between square-ish panels). The 3D
+// board takes the same choice, so switching boards keeps the layout. Every device's
+// landscape passes: the 16:10 tablet's board is 96% of that height, the 4:3 and 13" iPad's
+// 78 and 82%, the foldable's 69%, a 9:16 phone's 81 to 86%, the 20:9 ones' all of it.
+let HANDOVER = 0.667;
+fn landscape(area: float4, s: f32) -> bool {
+    return area.z >= area.w && landscape_board(area, s) >= HANDOVER * (area.w - 2.0 * GAP * s);
+}
+
 // The same in `area`, a screen's safe area, at s pixels a dp.
 fn layout_in(area: float4, n: i64, s: f32, small: bool = true) -> Layout {
     let width = area.z;
     let height = area.w;
     let gap = GAP * s;
-    if width >= height {
-        let room = width - 4.0 * gap;
-        var side = SIDE * s;
-        if room - 2.0 * side < BOARD * s { side = max(NARROW * s, 0.5 * (room - BOARD * s)); }
-        let size = min(height - 2.0 * gap, width - 2.0 * side - 4.0 * gap);
+    if landscape(area, s) {
+        let side = side_of(area, s);
+        let size = landscape_board(area, s);
         let x = area.x + (width - (size + 2.0 * side + 2.0 * gap)) / 2.0;
         let y = area.y + (height - size) / 2.0;
         // The panels as tall as the board, or PANEL_LEAST where the width keeps the board
@@ -314,9 +338,14 @@ fn layout_in(area: float4, n: i64, s: f32, small: bool = true) -> Layout {
     }
     let compact = small && height < gui::COMPACT * s;
     let gap = (if compact { GAP_COMPACT } else { GAP }) * s;
-    let narrow = (width - 2.0 * gap - 72.0 * s) / 3.0 < STACK_W * s;
-    let top = (if compact { TOP_COMPACT } else if narrow { TOP_STACKED } else { TOP }) * s;
     let bottom = (if compact { BOTTOM_COMPACT } else { BOTTOM }) * s;
+    // Narrow where a third of the bar is under STACK_W: the width's, or in a window
+    // wider than tall that keeps this layout (panel::landscape) the board's, which the
+    // height holds under the width.
+    let across = if width > height { min(width - 2.0 * gap, height - TOP * s - bottom - 4.0 * gap) }
+                 else { width - 2.0 * gap };
+    let narrow = (across - 72.0 * s) / 3.0 < STACK_W * s;
+    let top = (if compact { TOP_COMPACT } else if narrow { TOP_STACKED } else { TOP }) * s;
     let size = min(width - 2.0 * gap, height - top - bottom - 4.0 * gap);
     let x = area.x + (width - size) / 2.0;
     let y = area.y + (height - (top + size + bottom + 2.0 * gap)) / 2.0;

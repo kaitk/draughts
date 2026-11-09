@@ -271,6 +271,23 @@ fn small_window(g: gui::Gui&) {
     gui::display_scale = 0.0;
 }
 
+// The game's hand-over from portrait to landscape as a window widens at 800 dp tall
+// (panel::landscape): landscape once its flat board takes 2/3 of the height less the
+// margins, about 981 dp across; the 3D board takes the same choice. Each width's layout
+// and its flat and 3D boards in dp.
+fn handover() {
+    for w in [892.0, 960.0, 980.0, 1000.0, 1066.0] {
+        let area = float4 { 0.0, 0.0, w as f32, 800.0 };
+        let fl = panel::layout_in(area, 10, 1.0);
+        let c3 = panel::corners_in(area, 10, 1.0);
+        let wide = fl.left.z < fl.left.w;
+        let wide3 = c3.left.z < c3.left.w;
+        print("the game at ", whole(w as f32), " x 800 dp: ", if wide { "landscape" } else { "portrait" }, ", board ",
+              whole(fl.board.board.z), " dp; 3D ", if wide3 { "landscape" } else { "portrait" }, ", ", whole(c3.view.rect.z),
+              " x ", whole(c3.view.rect.w), " dp");
+    }
+}
+
 // A phone's tabs, at 480 dp: settings' Look tab shows the look's tiles in place of the
 // game's, and the puzzles' Learn row opens Learn's page.
 fn tabs(g: gui::Gui&) {
@@ -411,4 +428,5 @@ fn main() {
     tabs(g);
     gui::short_dp = 800.0;
     small_window(g);
+    handover();
 }

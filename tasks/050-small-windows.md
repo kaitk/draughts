@@ -1,6 +1,6 @@
 # 050: Small windows
 
-Status: in-progress
+Status: done
 
 On iPad, iPadOS 26 lets every app's window be resized (task 046 drops
 `UIRequiresFullScreen`), down to about 374 × 484 pt on an iPad Pro 11-inch. Every size
@@ -80,6 +80,15 @@ these changes.
   above the glass's, where it was 33 under it, and Kings shows its top 49 dp
   (`test/shell/sizes`' new last line). Phones and larger windows are unchanged
   (`sizes.out`'s other lines).
+- **The game keeps its portrait layout longer as a window widens.** A near-square window
+  (about 1070 × 960 pt) took the landscape layout, a small board between square-ish
+  panels. Landscape now needs its flat board to take at least about 2/3 of the height
+  less the margins (the user's rule), else the bar above the board and the play below it,
+  for the 3D board too. At 800 dp tall the hand-over is at about 981 dp across, aspect
+  1.23. Every device's landscape passes: the 16:10 tablet 96%, the 13" iPad 82%, 4:3 78%,
+  a 9:16 phone at 480 dp 81 to 86%, the foldable 69%, the closest. No device's line in
+  `sizes.out`, `corners.out`, or the other tests moved; `sizes.out` gained the hand-over's
+  lines.
 
 ## What was built
 
