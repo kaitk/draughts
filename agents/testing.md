@@ -150,8 +150,8 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   which for settings is the same box as between two runs of one build. The win's
   `--win 3 --frames 3000` shot varies over the whole board from run to run: compare it
   against a second run of the old build.
-- `--tap` takes at most 16 taps (`flags::Flags.taps`): a draw by repetition of four kings
-  each fits, a count's last move doesn't; `--win T` holds a draw's ending at T too
+- `--tap` takes up to 256 taps (`flags::MAX_TAPS`), two a move, so a draw by any count can
+  be played to its last move from a `--fen`; `--win T` holds a draw's ending at T too
   (2026-11-09).
 - A `--frames` run with taps needs a few thousand frames for a move and what follows to
   play out (`--win`, `docs/development.md`): it doesn't wait for the display, so 90

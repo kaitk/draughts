@@ -10,6 +10,10 @@ import vec;
 // --go play: a new game from home's setup, as its play starts one.
 let GO_PLAY = 99;
 
+// The most --tap flags kept: two taps a move, room for the longest count a shot plays
+// to its end from a position (Russian's 60 moves each, 120 plies, takes 240).
+let MAX_TAPS = 256;
+
 struct Flags {
     width:  i64 = 1280,     // --size WxH: the window, in points on the Mac
     height: i64 = 800,
@@ -30,9 +34,9 @@ struct Flags {
     density_floor: f32 = -1.0,
     display_scale: f32 = -1.0,
     fen:    u8[..256],      // --fen POSITION: a game from there
-    // --tap SQUARE (c3, d10), any number: played in order on the first frames, on the
+    // --tap SQUARE (c3, d10), up to MAX_TAPS: played in order on the first frames, on the
     // game's board or the puzzle's
-    taps:   u8[..3][..16],
+    taps:   u8[..3][..MAX_TAPS],
     frames: i64 = -1,       // --frames N: stop after N frames and save draughts.png
     // --screen home|game|settings|puzzles: where the run opens (home unless a position,
     // taps, a clock, or the computer are given)
@@ -127,7 +131,7 @@ fn parse(argv: u8[:][>..]) -> Flags {
             f.fen.clear();
             f.fen.append(v);
         }
-        if a == "--tap" && v.len >= 2 && v.len <= 3 && f.taps.len < 16 {
+        if a == "--tap" && v.len >= 2 && v.len <= 3 && f.taps.len < MAX_TAPS {
             let t .= f.taps.push([]);
             t.append(v);
         }
