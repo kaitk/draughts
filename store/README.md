@@ -51,7 +51,9 @@ Store's rules are in `app-store.md`, "Screenshots".
 ## Screenshots and the feature graphic
 
 The current sets, outside git, taken 2026-11-09 from `main` at `78c7029`, each scene in
-English and Estonian (the 0.2 sets, from `1824780`, kept beside them):
+English and Estonian, with 04 and 06 retaken from `503e27a` for settings' new layout and
+privacy note and the library's centring (the old ones in each set's `replaced/`; the 0.2
+sets, from `1824780`, kept beside them):
 
 | Folder | Size | For | Made with |
 | --- | --- | --- | --- |
