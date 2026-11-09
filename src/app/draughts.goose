@@ -122,8 +122,12 @@ fn main() {
     let argv = args();
     var i = 1;
     for a in argv { if a == "--3d" { show_3d = true; } }
+    // --reset-skill: the playing player back to easy, the computer's skill at every level
+    // at its start with the first steps to come, kept in their file; stars and games stay.
+    var reset_skill = false;
+    for a in argv { if a == "--reset-skill" { reset_skill = true; } }
     while i + 1 < argv.len {
-        if argv[i] == "--3d" { i += 1; continue; }   // no value: the pairs shift by one
+        if argv[i] == "--3d" || argv[i] == "--reset-skill" { i += 1; continue; }   // no value: the pairs shift by one
         if argv[i] == "--theme" && theme::by_name(argv[i + 1]) >= 0 { kind = theme::by_name(argv[i + 1]); }
         if argv[i] == "--frames" {
             let n, ok = parse_int(argv[i + 1]);
@@ -240,6 +244,12 @@ fn main() {
     }
     sh.prefs = prefs;
     sh.prefs.show_board_row = show_3d;
+    if reset_skill {
+        sh.prefs.level = game::EASY;
+        sh.prefs.skill = ai::LEVEL_SKILL;
+        sh.prefs.played = [0; 3];
+        sh.changed = true;
+    }
     sh.players = players_read;
     let gm .= sh.game;
     let b .= gm.b;
