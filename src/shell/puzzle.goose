@@ -1,6 +1,7 @@
 // One puzzle on screen (prototypes/puzzle.html, take c; docs/architecture/puzzles.md,
 // "The screen"): the board between the game's panels, leaving it on the left (the
-// puzzles, settings, start over) and playing it on the right: the goal under its icon,
+// puzzles, settings, start over) and playing it on the right: whose puzzle it is as the
+// game's turn piece, the goal under its icon,
 // the three stars at stake, and next, a big tile dim until the puzzle is solved.
 //
 // The child plays the side to move. A right move that leaves the goal ahead is answered
@@ -206,7 +207,7 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: game::Overla
     pl.fresh = false;
 
     var go = STAY;
-    let ask = panel_frame(pl, g, l, now);
+    let ask = panel_frame(pl, g, l, now, over);
     if ask != STAY {
         changed = true;
         go = ask;
@@ -286,11 +287,20 @@ fn stake(pl: Play&, g: gui::Gui&, r: float4, size: f32, gap: f32, now: f64) {
     }
 }
 
+// The glow ring on whose puzzle it is, while it is the child's turn.
+fn turn_ring(pl: Play&) -> f32 {
+    return if pl.state != SOLVED && pl.b.pos.side == current(pl).start.side { 1.0 } else { 0.0 };
+}
+
 // The goal, or "try again" for a moment after a miss, or "solved": the icon over the
-// words in landscape, beside them in portrait.
-fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: f64) {
+// words in landscape, beside them in portrait. With `disc` dp, whose puzzle it is goes
+// before the icon as the game's turn piece that wide, beside it in landscape (the
+// two over the words) and leading the row in portrait.
+fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: f64, disc: f32,
+        over: game::Overlay&) {
     let u = g.scale;
     let pz .= current(pl);
+    let d = disc * u;
     var words: u8[..64] = [];
     goal_words(pz, words);
     let again = pl.state != SOLVED && now < pl.missed_at + TRY_AGAIN;
@@ -299,9 +309,21 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
     var c = r;
     var icon = c;
     if stacked {
-        icon = gui::center(gui::cut_top(c, s), s, s);
+        var row = gui::cut_top(c, max(s, d));
+        if d > 0.0 {
+            // As far apart as the panel lets them, 20 dp at most.
+            let gap = clamp(row.z - d - s, 0.0, 20.0 * u);
+            row = gui::center(row, d + gap + s, row.w);
+            panel::piece(over, gui::cut_left(row, d), 0.5 * d, pz.start.side, 0, 1.0, turn_ring(pl));
+            gui::cut_left(row, gap);
+        }
+        icon = gui::center(row, s, s);
         gui::cut_top(c, 8.0 * u);
     } else {
+        if d > 0.0 {
+            panel::piece(over, gui::center(gui::cut_left(c, d), d, d), 0.5 * d, pz.start.side, 0, 1.0, turn_ring(pl));
+            gui::cut_left(c, 12.0 * u);
+        }
         icon = gui::center(gui::cut_left(c, s), s, s);
         gui::cut_left(c, 12.0 * u);
     }
@@ -337,11 +359,14 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
 }
 
 // Declares the panels: the left one as the game's with the puzzles for home; on the right
-// the goal, the stars, and next, a tall tile in landscape, a wide one in portrait. Next
+// whose puzzle it is as the game's turn piece (72 dp over the goal in landscape, beside
+// its icon where the panel is too short for that, a phone's; 52 dp leading the goal's row
+// in portrait), the goal, the stars, and next, a tall tile in landscape, a wide one in
+// portrait. The piece goes into `over`. Next
 // is lit once the puzzle is solved; before, it is dim and takes no tap, but while a piece
 // waits partway through a capture it wakes, unlit, to say the move is done, which a
 // capture left partway isn't. Returns PUZZLES, SETTINGS, NEXT, RESTART_ASK, or STAY.
-fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64) -> i64 {
+fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: game::Overlay&) -> i64 {
     let u = g.scale;
     let landscape = l.left.z < l.left.w;
     gui::panel(g, l.left);
@@ -358,11 +383,21 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64) -> i64 {
     let word = strings::get(strings::PUZZLE_NEXT);
     if landscape {
         let next = gui::cut_bottom(right, panel::tall(l, u));
-        gui::cut_top(right, 14.0 * u);
         let f .= g.faces[gui::LABEL];
         let s .= g.faces[gui::SMALL];
         let words = f.ascent - f.descent + 4.0 * u + s.ascent - s.descent;
-        goal(pl, g, gui::cut_top(right, 72.0 * u + 8.0 * u + max(48.0 * u, words)), 72.0, true, now);
+        let goal_h = 72.0 * u + 8.0 * u + max(48.0 * u, words);
+        // The piece over the goal as over the game's turn words, where it fits above the
+        // goal and the stars; else beside the goal's icon.
+        let above = right.w >= (18.0 + 72.0 + 18.0 + 16.0 + 56.0) * u + goal_h;
+        if above {
+            gui::cut_top(right, 18.0 * u);
+            panel::piece(over, gui::cut_top(right, 72.0 * u), 36.0 * u, current(pl).start.side, 0, 1.0, turn_ring(pl));
+            gui::cut_top(right, 18.0 * u);
+        } else {
+            gui::cut_top(right, 14.0 * u);
+        }
+        goal(pl, g, gui::cut_top(right, goal_h), 72.0, true, now, if above { 0.0 } else { 72.0 }, over);
         gui::cut_top(right, 16.0 * u);
         // Smaller where the panel is narrowed near square.
         let most = (right.z / u - 2.0 * 8.0) / STAKE;
@@ -376,7 +411,7 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64) -> i64 {
     let star_room = 3.0 * 44.0 * u + 2.0 * 8.0 * u;
     let stars_at = gui::cut_right(top, star_room);
     gui::cut_left(top, 6.0 * u);
-    goal(pl, g, top, 48.0, false, now);
+    goal(pl, g, top, 48.0, false, now, 52.0, over);
     stake(pl, g, stars_at, if solved { 48.0 } else { 40.0 }, 6.0, now);
     if gui::labelled(g, 114, gui::cut_top(right, panel::WIDE_H * u), gui::NEXT, 36.0, word, gui::HEADING, gui::MIDDLE,
                      style, on) {

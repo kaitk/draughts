@@ -8,8 +8,8 @@
 // move plays, then slides back by itself with the red ring and a ghost on its square;
 // after two misses the piece to move glows. In a shot, a right move is answered by the
 // line's reply after a pause, and the capture after it solves the puzzle. A black-to-move
-// puzzle shows on the turned board, its panel saying "Black to move", and is solved by
-// taps there. Settings opened from a puzzle go back to it as it was; a puzzle isn't saved
+// puzzle shows on the turned board, its panel saying "Black to move" beside a black turn
+// piece lit until it is solved, and is solved by taps there. Settings opened from a puzzle go back to it as it was; a puzzle isn't saved
 // with the game, which brings back the picker instead. Stars are kept under
 // `stars.international`, and an older file's `stars` is read as it. Half of Learn solved
 // opens the other themes. Next after a theme's last puzzle goes back to the library. In
@@ -180,11 +180,13 @@ fn main() {
     shell::play_puzzle(sh, index(33));
     drive::idle(sh, g, 24.0);
     show(sh, "puzzle 33");
-    print("  turned ", sh.layout.flip, ", it says ", puzzle::to_move(puzzle::current(sh.puzzle)), ", 21 at ",
+    print("  turned ", sh.layout.flip, ", it says ", puzzle::to_move(puzzle::current(sh.puzzle)), ", its turn piece ",
+          sh.over[0].look.x, " lit ", sh.over[0].ring.y, ", 21 at ",
           drive::at(sh.layout, "f6"), ", 23 at ", drive::at(sh.layout, "d6"));
     tap_number(sh, g, 21, 24.1);
     tap_number(sh, g, 23, 24.2);
     show(sh, "21 takes two");
+    print("  the turn piece unlit once solved: ", sh.over[0].ring.y == 0.0);
 
     // The stars read back from the file, and an older file's key; half of Learn solved
     // opens the other themes.

@@ -498,7 +498,7 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: ga
         l = p.board;
     } else if screen == PUZZLE {
         let p = puzzle_layout(sh, area, g.scale);
-        puzzle::panel_frame(sh.puzzle, g, p, now);
+        puzzle::panel_frame(sh.puzzle, g, p, now, over);
         l = p.board;
     } else if screen == PICKER {
         var spot = float4 { 0.0, 0.0, 0.0, 0.0 };

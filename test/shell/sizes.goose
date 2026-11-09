@@ -12,7 +12,9 @@
 // camera's cutout at the top in portrait and at a side in landscape, either side, and
 // its gesture bar at the bottom): every tile and the board inside the safe area; and
 // the 16:10 tablet with its hidden navigation bar at the bottom. Then a phone's tabs:
-// settings' Look tab and the puzzles' crown each show their own tiles.
+// settings' Look tab and the puzzles' crown each show their own tiles. A puzzle's turn
+// piece lies in its panel clear of the tiles, icons, and words, over the goal where the
+// panel has the room and beside its icon where not.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -137,6 +139,38 @@ fn chip(g: gui::Gui&, sh: shell::Shell&) {
     sh.prefs.name.clear();
 }
 
+// A puzzle's turn piece, the side to move as the game's: its size in dp, over the goal's
+// icon or beside it, inside the safe area and the play's panel (the last glass), and clear
+// of every tile, icon, and word the frame declared.
+fn turn_piece(g: gui::Gui&, sh: shell::Shell&) {
+    let u = g.scale;
+    guard sh.over.len == 1 else {
+        print("  the turn piece: ", sh.over.len, " pieces over the UI");
+        return;
+    }
+    let p = sh.over[0];
+    let r = p.at.z;
+    let disc = float4 { p.at.x - r, p.at.y - r, 2.0 * r, 2.0 * r };
+    var panel = float4 { 0.0, 0.0, 0.0, 0.0 };
+    var goal = float4 { 0.0, 0.0, 0.0, 0.0 };
+    var wrong: u8[>..] = [];
+    for q in g.quads {
+        if q.look.x == gui::GLASS { panel = q.rect; }
+        if q.look.x == gui::ICON && (q.look.z == gui::TARGET || q.look.z == gui::CROWN || q.look.z == gui::SHIELD) {
+            goal = q.rect;
+        }
+        let kind = q.look.x;
+        if (kind == gui::BUTTON || kind == gui::ICON || kind == gui::TEXT) && overlaps(disc, q.rect) {
+            format(wrong, " on a ", if kind == gui::BUTTON { "tile" } else if kind == gui::ICON { "icon" } else { "word" }, ";");
+        }
+    }
+    if !inside(disc, gui::safe(g, drive::size.x, drive::size.y)) { wrong.append(" off the safe area;"); }
+    if !inside(disc, panel) { wrong.append(" off the panel;"); }
+    let where = if disc.y + disc.w <= goal.y + 0.5 { "over" } else { "beside" };
+    print("  the turn piece: ", whole(2.0 * r / u), " dp, ", where, " the goal's icon, side ", p.look.x, ", ring ",
+          p.ring.y, if wrong.len > 0 { ";" } else { ", in place" }, wrong);
+}
+
 // A shell showing `screen` at rest, home's column showing `setup`.
 fn showing(screen: i64, setup: i64) -> shell::Shell {
     var sh = shell::new(rules::INTERNATIONAL);
@@ -185,6 +219,7 @@ fn screens(g: gui::Gui&) {
     puzzle::open(one.puzzle, 0);
     at_rest(one, g);
     report("a puzzle", g, one, true, false);
+    turn_piece(g, one);
     // Black to move with no move left: white has won, and the card comes at once.
     var won = showing(shell::GAME, home::NOTHING);
     won.game = game::new(rules::RUSSIAN);

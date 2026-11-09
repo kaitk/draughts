@@ -503,7 +503,10 @@ the prototype tried, kept for 3D:
   puzzle goes on inside its theme and after its last back to the library. Behind it the
   sharp photograph and no board. **A puzzle** (`prototypes/puzzle.html`, take c, chosen
   2026-11-08): the game screen's layout, the left panel the game's with the puzzles in
-  home's place; on the right the goal's icon in the glow color over its words ("Win 2
+  home's place; on the right whose puzzle it is as the game's turn piece (72 px, its
+  side's color, the glow ring while it is the child's turn, none once solved), so a child
+  who can't read knows the side they play, then the goal's icon in the glow color over its
+  words ("Win 2
   men", "Win a man", "Become a king", "Stay safe") and under them, in the small face,
   whose puzzle it is ("White to move", "Black to move"), the three stars at stake, 44 px, and at
   the bottom next, the tall tile, at 35% and taking no tap until the puzzle is solved,
@@ -520,7 +523,11 @@ the prototype tried, kept for 3D:
   is answered 0.5 s after it lands. Solved, the words say so, the stars won pop in one
   after another (56 px, 0.6 s each, 0.15 s apart), and next lights; nothing covers the
   board. In portrait the goal and the stars share a row under the board, over next
-  across the width.
+  across the width, the turn piece at 52 px leading the goal. Where a landscape panel is
+  too short for the piece over the goal (a phone's), it stands beside the goal's icon, up
+  to 20 px apart, the words under both (`prototypes/puzzle.html?take=c&turn=a`, chosen
+  2026-11-09 over `turn=b`, beside everywhere, since over the goal the tablet shows it as
+  the game does).
 
 - **Players** (`prototypes/profiles.html`, take a, chosen 2026-11-09; what a player
   holds and the files: [players](README.md#players)). On home's menu the player's chip
