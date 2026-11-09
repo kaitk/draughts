@@ -168,6 +168,7 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     var page = gui::inset(area, (if phone { 16.0 } else { 24.0 }) * u);
     var pick = NOTHING;
     let title = strings::get(strings::HOME_PUZZLES);
+    let whole = page;           // the rows center on the screen, not on what back leaves
     if landscape {
         var column = gui::cut_left(page, 88.0 * u);
         if back(g, gui::cut_top(column, 88.0 * u)) { pick = BACK; }
@@ -185,7 +186,7 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let col_w = min((page.z - (cols - 1) * gap) / cols, COLUMN * u);
     let w = cols * col_w + (cols - 1) * gap;
     let h = head + per * row_h + (per - 1) * gap;
-    let x = page.x + floor(0.5 * (page.z - w) + 0.5);
+    let x = max(page.x, whole.x + floor(0.5 * (whole.z - w) + 0.5));
     let y = if landscape { page.y + max(0.0, floor(0.5 * (page.w - h) + 0.5)) } else { page.y };
     if !short {
         var top = float4 { x, y, w, 88.0 * u };
