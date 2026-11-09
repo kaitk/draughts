@@ -49,7 +49,7 @@ characters, What's New 4000 (from the second version), review notes 4000 bytes.
 ### Promotional text (160 of 170)
 
 ```text
-Play draughts on a 2D or 3D board against the computer or a friend on one device, and solve 120 puzzles. International, Brazilian, and Russian. No ads, offline.
+Play draughts on a 2D or 3D board against the computer or a friend on one device, and solve 166 puzzles. International, Brazilian, and Russian. No ads, offline.
 ```
 
 ### Keywords (88 of 100 bytes)
@@ -62,7 +62,7 @@ Not repeated: the name's word (draughts), which Apple indexes anyway. No "kids",
 outside the Kids category would imply the audience (5.1.4(b)). No other app's name.
 "kabe" for people in Estonia searching the English storefront.
 
-### Description (2,380 of 4,000)
+### Description (2,354 of 4,000)
 
 ```text
 A calm draughts game to play and learn: big pieces, a flat 2D or a 3D board, and nothing to distract from the game.
@@ -75,7 +75,7 @@ PLAY
 • Play without a clock, or with 5 or 10 minutes each, plus 3 or 5 seconds a move.
 
 PUZZLES
-• 120 puzzles: 74 for International draughts in six themes (Learn, Captures, Crowning, Shots, King shots, and Safe move), and 46 for Russian draughts in four. Brazilian players get the International set.
+• 166 puzzles: 74 for International draughts in six themes (Learn, Captures, Crowning, Shots, King shots, and Safe move), and 46 each for Russian and Brazilian draughts in four.
 • Each theme goes from easy to harder, and some puzzles are played with black.
 • Learn comes first and shows the rules in action; the other themes open once half of it is solved.
 • Up to three stars a puzzle, one fewer for each mistake; a solved puzzle can be played again for all three.
@@ -237,11 +237,13 @@ size is scaled down for the smaller ones, as is the 13" iPad's.
 Taken 2026-11-09 from headless simulators (`simctl`, no Simulator.app window), iOS 26.4,
 the status bar hidden by the app, into
 `~/Downloads/draughts-store/screenshots/app-store-0.2/iphone-6.9/` and `ipad-13/`, outside
-git; each in English and Estonian, though the listing takes only the English:
+git (retaken into `app-store-0.3/`, then 2026-11-10 into `2026-11-10/app-store/`; see
+`README.md`); each in English and Estonian, though the listing takes only the English:
 
 1. `01-home-3d-winter`: home on the 3D board, winter, with the player's chip (Mia the fox)
 2. `02-game-autumn`: International on the flat board, a capture of two shown, move hints on
-3. `03-game-3d-summer`: the same position on the 3D board, summer
+3. `03-game-3d-summer`: the same position on the 3D board, summer (in 2026-11-10's set,
+   awaiting approval, a quiet position: the lookout's piece greyed, the hint ready)
 4. `04-puzzles-spring`: the library of six themes, some solved
 5. `05-puzzle-winter`: a Shots puzzle, black to move, mid-solve
 6. `06-settings-autumn`: settings (on the iPhone the Game tab, as no flag opens Look)
@@ -256,5 +258,5 @@ Landscape needs the simulator turned, which `simctl` can't do headless; portrait
 | --- | --- |
 | Name | `Kabe` |
 | Subtitle | `Mängi ja lahenda ülesandeid` (27) |
-| Promotional text | `Mängi kabet 2D- või 3D-laual arvuti või sõbraga ühes seadmes ja lahenda 120 ülesannet. Rahvusvaheline, Brasiilia ja vene kabe. Reklaamideta, töötab internetita.` (160) |
+| Promotional text | `Mängi kabet 2D- või 3D-laual arvuti või sõbraga ühes seadmes ja lahenda 166 ülesannet. Rahvusvaheline, Brasiilia ja vene kabe. Reklaamideta, töötab internetita.` (160) |
 | Description | `listing-et.md`'s, with "tahvelarvutis või telefonis" as "iPhone'is või iPadis", the section "Mitte midagi liigset" replaced by a last bullet under "Kõigile", "Reklaamide ja ostudeta, töötab internetita.", and the last line "Kabe töötab iPhone'is ja iPadis, nii püst- kui ka rõhtpaigutuses." |

@@ -17,10 +17,10 @@ The same as the launcher's name (`strings/et.txt`), as the English is "Draughts"
 ## Short description (73 of 80)
 
 ```text
-Kabe 2D- või 3D-laual: mängi arvuti või sõbraga ja lahenda 120 ülesannet.
+Kabe 2D- või 3D-laual: mängi arvuti või sõbraga ja lahenda 166 ülesannet.
 ```
 
-## Full description (2,538 of 4,000)
+## Full description (2,497 of 4,000)
 
 ```text
 Rahulik kabemäng mängimiseks ja õppimiseks: suured nupud, lame 2D- või ruumiline 3D-laud ja mitte midagi, mis tähelepanu mängult kõrvale juhiks.
@@ -33,7 +33,7 @@ MÄNGI
 • Mängi kellata või ajakontrolliga: kummalgi 5 või 10 minutit, lisaks 3 või 5 sekundit käigule.
 
 ÜLESANDED
-• 120 ülesannet: 74 rahvusvahelises kabes kuues teemas (Õpi, Löömine, Tammiks, Kombinatsioonid, Tammi löögid ja Ohutu käik) ning 46 vene kabes neljas teemas. Brasiilia kabe mängijad saavad rahvusvahelise kabe ülesanded.
+• 166 ülesannet: 74 rahvusvahelises kabes kuues teemas (Õpi, Löömine, Tammiks, Kombinatsioonid, Tammi löögid ja Ohutu käik) ning 46 nii vene kui ka Brasiilia kabes neljas teemas.
 • Iga teema läheb kergest raskemaks ja mõnes ülesandes mängid mustadega.
 • Esimesena tuleb Õpi, mis näitab reegleid mängu käigus; teised teemad avanevad, kui sellest on pool lahendatud.
 • Iga ülesande eest kuni kolm tähte, iga vea eest üks vähem; lahendatud ülesannet saab kõigi kolme tähe nimel uuesti proovida.
@@ -81,7 +81,7 @@ Kabe töötab telefonis ja tahvelarvutis, nii püst- kui ka rõhtpaigutuses.
   "Mitte midagi liigset" ("nothing superfluous") for what the app leaves out.
 - "Tasavägine" (evenly matched) for "a fair match"; "partii" for a game played, so "mäng"
   isn't said twice; "ajakontroll" for the clock; "pooleliolev mäng" for the saved game.
-- The short description says "lahenda 120 ülesannet": "õpi see 120 ülesandega selgeks"
+- The short description says "lahenda 166 ülesannet": "õpi see 166 ülesandega selgeks"
   read as learning the rules, which takes minutes, and "see" for "kabet" was clumsy.
 - Revised 2026-11-09 with a Gemini review (`agents/writing.md`): taken were "partii",
   "mängu käigus" for "in action", "kui sellest on pool

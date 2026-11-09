@@ -22,10 +22,10 @@ text names no age, since the hard level and puzzles are hard for grown-ups too
 ## Short description (79 of 80)
 
 ```text
-Draughts on a 2D or 3D board: play the computer or a friend, solve 120 puzzles.
+Draughts on a 2D or 3D board: play the computer or a friend, solve 166 puzzles.
 ```
 
-## Full description (2,444 of 4,000)
+## Full description (2,418 of 4,000)
 
 ```text
 A calm draughts game to play and learn: big pieces, a flat 2D or a 3D board, and nothing to distract from the game.
@@ -38,7 +38,7 @@ PLAY
 • Play without a clock, or with 5 or 10 minutes each, plus 3 or 5 seconds a move.
 
 PUZZLES
-• 120 puzzles: 74 for International draughts in six themes (Learn, Captures, Crowning, Shots, King shots, and Safe move), and 46 for Russian draughts in four. Brazilian players get the International set.
+• 166 puzzles: 74 for International draughts in six themes (Learn, Captures, Crowning, Shots, King shots, and Safe move), and 46 each for Russian and Brazilian draughts in four.
 • Each theme goes from easy to harder, and some puzzles are played with black.
 • Learn comes first and shows the rules in action; the other themes open once half of it is solved.
 • Up to three stars a puzzle, one fewer for each mistake; a solved puzzle can be played again for all three.
@@ -79,8 +79,9 @@ before an upload:
 - "It adjusts after each game": `ai::adapt` (`docs/architecture/ai.md`), per player.
 - Puzzles: `src/puzzles/international.txt`, 74 in six themes (Learn 12, Captures 10,
   Crowning 12, Shots 20, King shots 10, Safe move 10), and `src/puzzles/russian.txt`, 46
-  in four (Learn 12, Captures 10, Crowning 10, Shots 14), counted 2026-11-09; the app
-  shows the set of the player's draughts, Brazilian players International's
+  in four (Learn 12, Captures 10, Crowning 10, Shots 14), counted 2026-11-09, and
+  `src/puzzles/brazilian.txt`, 46 in the same four (Learn 12, Captures 10, Crowning 10,
+  Shots 14; task 037, 2026-11-10); the app shows the set of the player's draughts
   (`puzzles::set_of`). The themes opening at half of
   Learn, and the stars (three at stake, a miss puts one out down to one, the best kept):
   `docs/architecture/puzzles.md`. Shots has two levels so far, the others three, so the

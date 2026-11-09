@@ -50,6 +50,16 @@ Store's rules are in `app-store.md`, "Screenshots".
 
 ## Screenshots and the feature graphic
 
+A new set, taken 2026-11-10 from `main` at `cc18fec` for the lookout and the hint, the
+captured pieces, the library's switch, and settings' glass tabs, waits for the user's
+approval in `2026-11-10/`: `play/phone/`, `play/tablet/`, `app-store/iphone-6.9/` (and
+`-raw/`), and `app-store/ipad-13/`, with the names and sizes below; its own `upload/` of
+flattened copies; a contact sheet per device type (`contact-*.png`); `check.txt`, each
+image against the rules; and the `scripts/` that made them. Its Play shots ran the
+headless copy with each run's own folder as the storage folder, so the made-up player
+never touched the Mac's files, and the phone's Look tab from `--xlook 1`, a flag in the
+copy only, in place of a second build. Until it is approved, the sets below stay current.
+
 The current sets, outside git, taken 2026-11-09 from `main` at `78c7029`, each scene in
 English and Estonian, with 04 and 06 retaken from `503e27a` for settings' new layout and
 privacy note and the library's centring, and 03 from `96d70e0` for the 3D board's capture
@@ -72,7 +82,10 @@ The seven scenes, in the order to upload, each a season so all four show:
 1. `01-home-3d-winter`: home on the 3D board, winter, with the player's chip
 2. `02-game-autumn`: International on the flat board, a selected man's capture of two
    shown with move hints on, autumn
-3. `03-game-3d-summer`: the same position on the 3D board, summer
+3. `03-game-3d-summer`: the same position on the 3D board, summer; in the 2026-11-10
+   set, that position without black's 22, so no capture is due: the lookout on (the
+   player at easy), white's man on 30 drained grey as black's 24 could take it, the hint
+   ready with its three pips, and the captured pieces in the bar
 4. `04-puzzles-spring`: the library of six themes, some solved, spring
 5. `05-puzzle-winter`: a Shots puzzle (55), black to move, after the first move and the
    reply, the capturing man selected, winter
