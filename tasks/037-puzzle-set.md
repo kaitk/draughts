@@ -260,10 +260,10 @@ read on home, its four-row library, Learn 9 crowned on d8 mid-capture and made b
 stop by stop, `stars.russian = 9:3`, home's count over Russian's set, and International's
 library back with its stars apart).
 
-**Brazilian** is left: Russian's file read as Brazilian fails at once (Learn 6's single
-capture is illegal where the most must be taken), and Learn and every choice-of-capture
-puzzle teach what Brazilian forbids, so a Brazilian set wants its own selection, its
-Learn above all, rechecked under its rules.
+**Brazilian** was left then: Russian's file read as Brazilian fails at once (Learn 6's
+single capture is illegal where the most must be taken), and Learn and every
+choice-of-capture puzzle teach what Brazilian forbids, so a Brazilian set wanted its own
+selection, its Learn above all, rechecked under its rules (below, "Brazilian (8×8)").
 
 - [x] `src/puzzles/russian.txt` loaded for a Russian player, the library showing its set,
       stars per variant (`stars.russian`)
@@ -273,7 +273,75 @@ Learn above all, rechecked under its rules.
 - [x] Every puzzle passing the checks, the engine, and `test/perft.py puzzles` under
       Russian rules; headless tests of the set and of a mid-capture crowning solved
 - [ ] The set on the Mac and the tablet, and its levels' order tried by players (the user)
-- [ ] Brazilian's own set
+- [x] Brazilian's own set (2026-11-10, below)
+
+## Brazilian (8×8)
+
+### Built (2026-11-10)
+
+**Plumbing.** `src/puzzles/brazilian.txt` (`variant brazilian`): `puzzles::set_of` names
+each of the three draughts' own set, and only a variant with none (English, not offered)
+is shown International's. The library's note, `puzzles.for_now` (`picker::note_of`),
+stays for such a variant and no longer shows for Brazilian; its layout is still tested,
+with English standing in. Stars are `stars.brazilian`, and home's count is over
+Brazilian's 46 (138 stars). `tools/puzzles.goose` and `test/perft.py` already took
+`--variant brazilian` and `brazilian`; nothing was added to either.
+
+**How it was made.** Each of Russian's 46 was rechecked under Brazilian rules with
+`build/puzzles try --variant brazilian` (what solves it there, its line, the checks), and
+then by eye for whether it still teaches what it did, since the majority rule removes
+choices. 11 fail outright: the free choice (Learn 6, the single the majority rule
+forbids) and a man crowned mid-capture going on as a king (Learn 10, Captures 20, 21,
+Crowning 25, Shots 39 to 41 and 44 to 46: there the man goes on uncrowned or the capture
+is another, so the shot needs a move more or is gone). Of the 35 that pass, the 8 Captures and Learn 11
+are kept out because the majority rule leaves each a single legal move (no choice to
+make), while Learn 1 (the very first capture), 5 (the majority rule itself, the double
+the only capture allowed), and 9 (a man passing the far row uncrowned, a rule to see once)
+are kept though forced. So 26 are Russian's positions: Learn 9, Crowning 9, Shots 8, each
+`source` naming the Russian puzzle it came from. The other 20 are from `find --variant
+brazilian` pools (about 1,800 candidates: small camps for Learn, 6 to 8 men a side for
+captures of 2, 3, and 4 and a king's, crowns, and shots of take 2 or 3 in 2 and 3, white
+and black), described by a scratch script over `test/perft.py` (the legal moves, the
+lesser captures the majority rule cuts, a man passing the far row, a king's capture, each
+capture's size along the line), then run through `build/puzzles` for the engine's view,
+which 87% passed; picked by motif and by eye. Brazilian's own motifs: the majority
+capture (Learn 5, 6, and Captures 13 to 19, two captures of the most where a lesser one
+is there too), passing the far row uncrowned (Learn 9, Captures 20, 21, Shots 39, 40, 45,
+46, where 46 passes e1 and is crowned on a1), and the double sacrifice (Shots 41, two given
+in one capture and five taken; 44 to 46).
+
+| Theme | Levels 1, 2, 3 | Black to move | From Russian's | Most positions a check, by level |
+|---|---|---|---|---|
+| Learn | 4, 4, 4 | 0 | 9 (1 to 5, 7 to 9, 12) | 8, 8, 11 |
+| Captures | 4, 3, 3 | 3 | 0 | 8, 8, 8 |
+| Crowning | 4, 3, 3 | 5 | 9 (all but 25) | 1, 17, 100 |
+| Shots | 6, 5, 3 | 5 | 8 (33 to 38, 42, 43) | 49, 30, 131 |
+
+46 puzzles, ids 1 to 46, in the same themes and levels as Russian's; 13 of the 34
+outside Learn are black's (38%). `build/puzzles src/puzzles/brazilian.txt`: 0 problems,
+the engine's best solves every take, no right first move scores under −50, and no move
+turned down wins as much a move later; as in Russian's, of the crowns, Crowning 24's other
+double from the same square scores as high, and in Crowning 30 the engine wins the ending
+by quiet moves. `test/perft.py puzzles brazilian src/puzzles/brazilian.txt` (in
+`scripts/test.sh`): 46 puzzles, 0 problems. The longest lines are five plies; the most a
+check takes is 131 positions (Shots 46). Headless: `test/puzzles/brazilian_set.goose`,
+and `test/shell/puzzle_set` (Brazilian tapped: its own set, four themes, no note, home's
+count 1 / 138 from its own stars). Shot headless at 1280 × 800 with a Brazilian player:
+the library's four rows, Brazilian lit, no note.
+
+Dropped and why: Russian's Learn 6 (the free choice), 10 (crowned mid-capture), and 11
+(the zigzag, forced here, swapped for a king's zigzag with a landing to choose), every Russian Captures puzzle (forced under
+the majority rule), Crowning 25 and Shots 39 to 41 and 44 to 46 (crowned mid-capture going
+on as a king). No Brazilian motif was left without puzzles; King shots and Safe move,
+which Russian has none of either, are not in Brazilian's set.
+
+- [x] `src/puzzles/brazilian.txt` loaded for a Brazilian player, `stars.brazilian`, the
+      note kept for a variant without a set
+- [x] Learn, Captures, Crowning, and Shots in levels, 46, a third black outside Learn,
+      each `source` naming its motif and, for Russian's, the puzzle it came from
+- [x] Every puzzle passing the checks, the engine, and `test/perft.py puzzles` under
+      Brazilian rules; headless tests of the set and of the switch
+- [ ] The set on the Mac and the tablet, and its levels' order tried by players (the user)
 
 ### Choosing the set on the puzzles screen (prototype, 2026-11-09)
 
