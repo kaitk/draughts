@@ -98,7 +98,7 @@ On a worker the frame loop draws as it would without the computer.
   Over whole games of easy against itself (the test's 2 games a clock) a move took
   2.22 s on 5+3 and 2.83 s on 10+5 on average; now 3.38 s and 5.86 s, at most 12, its
   clock never under 244 s and 507 s (3.54 s and 5.79 s once task 053's overlooks changed
-  the test's games). The test's ranges for easy's mean are 2.5–5 s and
+  the test's games, 3.61 s and 6.00 s with the two-piece overlook at 240). The test's ranges for easy's mean are 2.5–5 s and
   4–8 s; medium's and hard's are unchanged.
 - **While it thinks**, its piece on the panel pulses once: the glow ring fades from full
   to a third and back over 1.2 s, on its clock's piece when there are clocks, even before
@@ -182,7 +182,8 @@ and the table are made once, about 6 MB in all.
 
 Skill runs from 0 to 100; easy starts at 0 (the user's call, 2026-11-09; it started at
 10 until then), medium at 40 (the user's call, 2026-11-08), hard at 90. Easy's start
-and its overlooks are to be tuned once the child has played them more. One skill holds
+and its overlooks are to be tuned once the child has played them more
+([tuning the levels](#tuning-the-levels)). One skill holds
 for a whole game. It sets:
 
 | | Formula | Easy (0) | Medium (40) | Hard (90) |
@@ -192,7 +193,7 @@ for a whole game. It sets:
 | Temper: how much worse makes a move e times less likely | `2 + 60 (100 − s)² / 10000` | 62 | 23 | 2 |
 | Margin: never a move this much worse than the best it sees | `min(60, 3 × temper)` | 60 | 60 | 6 |
 | Chances left for the child, per thousand moves | `5 × max(25 − s, 0)` | 125 | 0 | 0 |
-| Overlooks a capture of 1; 2; 3; 4+ pieces, per thousand, tense, next to the moved piece | `MISS × (max(SURE − s, 0) / SURE)²`, MISS 25; 300; 300; 450, SURE 15; 25; 65; 65 | 25; 300; 300; 450 | 0; 0; 44; 66 | 0 |
+| Overlooks a capture of 1; 2; 3; 4+ pieces, per thousand, tense, next to the moved piece | `MISS × (max(SURE − s, 0) / SURE)²`, MISS 25; 240; 300; 450, SURE 15; 25; 65; 65 | 25; 240; 300; 450 | 0; 0; 44; 66 | 0 |
 
 How each part plays like a person:
 
@@ -238,6 +239,8 @@ How each part plays like a person:
    by 25 as before, so medium and hard are unchanged. It is a mistake of a tense
    position, a double capture missed, and of the easy-only knobs it weakens easy most
    for the fewest quiet hangs ([easy a touch weaker](#easy-a-touch-weaker-2026-11-09)).
+   Then a hair stronger again (the user, 2026-11-09: "a little too much"): 240, halfway
+   back ([easy a hair stronger](#easy-a-hair-stronger-2026-11-09)).
 
 3. **Consistent strength.** It chooses among the moves within the margin with chances
    that fall off as e^(−δ / temper), δ being how much worse each is than the best it sees:
@@ -269,14 +272,14 @@ and Brazilian (`build/aimatch ... --overlooks`), wins, draws, losses for the fir
 
 | Pair | Russian | International | Brazilian |
 | --- | --- | --- | --- |
-| Easy at 0 against skill 10 without overlooks | 91, 76, 233 | 53, 69, 278 | 89, 82, 229 |
-| Easy at 0 against skill 0 without overlooks | 122, 70, 208 | 77, 82, 241 | 112, 78, 210 |
-| Skill 15 against easy at 0 | 322, 44, 34 | 350, 24, 26 | 327, 33, 40 |
-| Medium (40) against easy at 0 | 388, 8, 4 | 397, 1, 2 | 385, 11, 4 |
+| Easy at 0 against skill 10 without overlooks | 92, 79, 229 | 61, 83, 256 | 96, 82, 222 |
+| Easy at 0 against skill 0 without overlooks | 124, 73, 203 | 87, 85, 228 | 112, 86, 202 |
+| Skill 15 against easy at 0 | 323, 46, 31 | 344, 27, 29 | 337, 27, 36 |
+| Medium (40) against easy at 0 | 391, 5, 4 | 398, 1, 1 | 387, 11, 2 |
 | Medium (40) against easy at its top (30) | 255, 84, 61 | 301, 57, 42 | 255, 93, 52 |
 
 A simple child model, skill 0 overlooking three times as often (`--overlooks 300`),
-loses to skill 0 without overlooks in 64 to 71% of games and to 15 in 87 to 91%. Easy's
+loses to skill 0 without overlooks in 60 to 73% of games and to 15 in 87 to 92%. Easy's
 top and medium's start are closer than the levels' starts: medium wins about 64 to 75%
 there and loses 10 to 15%.
 
@@ -358,3 +361,113 @@ either way: the 2000 games above are the surer measure of easy's drop):
 
 Fifteen points still win 80 to 97% of games at the bottom of the scale; medium and hard
 play as before.
+
+### Easy a hair stronger (2026-11-09)
+
+The touch weaker was "a little too much" (the user): the two-piece overlook at 0 is 240
+per thousand, halfway back toward task 053's 160. Over 2000 games a variant (the table
+above) 240 scores 1.6 to 1.7 points better than 300 against skill 10 without overlooks.
+Before → after, 400 games a pair (noise about 2 points either way):
+
+| | Russian | International | Brazilian |
+| --- | --- | --- | --- |
+| Easy at 0 against 10 without overlooks | 91, 76, 233 → 92, 79, 229 | 53, 69, 278 → 61, 83, 256 | 89, 82, 229 → 96, 82, 222 |
+| Its score | 0.323 → 0.329 | 0.219 → 0.256 | 0.325 → 0.343 |
+| 15 against 0 | 322, 44, 34 → 323, 46, 31 | 350, 24, 26 → 344, 27, 29 | 327, 33, 40 → 337, 27, 36 |
+| 25 against 10 | 368, 20, 12 → 363, 23, 14 | 388, 9, 3 → 387, 10, 3 | 362, 23, 15 → 360, 24, 16 |
+
+Skills from 25 on, medium and hard included, play as before.
+
+## Tuning the levels
+
+For when stronger or older players find easy (or medium) too easy or too hard. Every
+knob below is in `src/ai/ai.goose` but pace, and each is one constant or formula. The
+score is a side's wins plus half its draws over the games; "a point" is 1% of it.
+
+**First, if experienced players find easy too easy**: let easy climb to them faster
+before touching the overlooks. Larger first steps (`FIRST_STEP`, `FIRST_GAMES`) reach
+a strong player within a few games and still start a young child at 0; a higher floor
+(`LEVEL_FLOOR[0]`, with `LEVEL_SKILL[0]`, as easy starts at its floor) starts everyone
+higher. The overlooks set how easy plays at the bottom, which is where young children
+meet it.
+
+The knobs:
+
+- **`MISS`**, per thousand by the capture's size (1, 2, 3, 4+ pieces): how often skill 0
+  overlooks one of the person's captures in a tense position, next to the piece it
+  moved. Lower is stronger. 60 per thousand on the two-piece capture moves easy at 0 by
+  1.5 to 2 points against skill 10 (160 → 240 → 300 at 2000 games: 0.339, 0.326, 0.310
+  in Russian, the other variants alike); the one-piece capture 25 → 75 by about 1 point,
+  but it adds hangs in quiet positions, which look like a machine.
+- **`SURE`**, by size: the skill from which each size is always seen (15, 25, 65, 65);
+  the chance fades as the square of the way left to it. Lower is stronger for the
+  skills below it. The two-piece's 25 is medium's floor, so above 25 medium starts
+  missing double captures; the 65s are what medium overlooks (44 and 66 per thousand at
+  40): lower them to make medium stronger, raise them to make it weaker. Not measured
+  on its own: measure as for `MISS`, with the pairs below 65.
+- **`FAR`**, in quarters by distance from the moved piece (4, 5, 6, 8: a step, 2, 3, 4+
+  squares): a capture further from the piece just moved is missed more. Smaller is
+  stronger. Not measured on its own; it moves where the misses fall more than how many.
+- **`QUIET`**, percent (10, a tenth): the chance in a quiet position, one where neither
+  side could capture before the move. Lower is stronger. Task 053's move to a tenth
+  took easy at 0's quiet hangs from 36 to 6 per 100 games in Russian at about the same
+  score; raising it brings back the machine-like blunders, so prefer `MISS`.
+- **`LEVEL_FLOOR`, `LEVEL_TOP`, `LEVEL_SKILL`**: each level's band (easy 0–30, medium
+  25–60, hard 70–100) and start (0, 40, 90). Higher is stronger. Ten points of skill
+  win about half and lose about a third against the lower (10 against 0: 0.59 to 0.6);
+  fifteen win 80 to 97% at the bottom of the scale and 63 to 75% from 25 to 40. Medium
+  at 40 scores about 0.74 to 0.82 against easy's top, 30.
+- **`STEP`, `FIRST_STEP`, `FIRST_GAMES`**: how far a win or loss moves the skill (4;
+  8 over a player's first 3 games on a level). Strength doesn't change, only how fast
+  the skill finds the player: easy reaches 24 after three first wins. 4 is about a third
+  of a ply, small enough to be felt as a step and not a wall.
+- **Depth**, in `params`: `1 + s / 12 + max(s − 60, 0) / 6` plies of free moves and
+  `2 + s / 8` of captures past them. More is stronger: one ply every 12 skill points
+  (every 4 above 60) is most of what 15 points buy. It moves every level and the rule
+  adapting relies on (15 points winning about three in four), so change a level's band
+  before the formula.
+- **Temper**, in `params`: `2 + 60 (100 − s)² / 10000`, with `MAX_MARGIN` 60. Lower is
+  stronger (fewer second-best moves). At easy it is flat: 62 → 102 at 0 scored no
+  weaker (about 1 point better, within noise), as within the margin it already chooses
+  nearly evenly. It matters from medium up, where the margin follows it (3 × temper).
+- **`GIFT_CHANCE`** (5 per thousand moves per point below `GIFT_SKILL`, 25: 125 at 0;
+  `GIFT_COST` 120): how often easy leaves the person a combination. More is weaker only
+  against a player who finds them: 125 → 200 measured nothing against skill 10, which
+  doesn't look for them. Judge it by play, not aimatch.
+- **Pace**, `src/game/pace.goose`: easy's share of its clock (`SHARE`, 0.2), its tension
+  factor (`TENSE`, 3.5), the caps (`MOST` 12, 8, 15 s; `SPARE`, a tenth of the clock).
+  It changes the feel, not the strength: the search stops at its own depth however long
+  the move takes.
+
+**What to measure** after a change, 400 games a pair in each of Russian, International,
+and Brazilian (seconds for easy, many minutes with hard):
+
+- Easy's strength against fixed yardsticks the overlooks don't touch:
+  `build/aimatch VARIANT 0 10 400 --overlooks 100 0` (and `0 0 400 --overlooks 100 0`).
+  At 400 games the score's noise is about 2 points either way: for a smaller step,
+  2000 games.
+- The ladder: `build/aimatch VARIANT 15 0 400` and `25 10 400`; for medium, `40 25`,
+  `55 40`, and `40 30` (medium's start against easy's top).
+- Where the mistakes fall: `--hangs` (quiet and tense hangs per side).
+- A young child: `build/aimatch VARIANT 0 0 400 --overlooks 300 0` and
+  `0 15 400 --overlooks 300 100`.
+
+Put the before → after in a section here, as the ones above.
+
+**Tests to re-bless** (`test/run_tests.py --bless NAME ...`, after reading each diff):
+
+- The overlooks (`MISS`, `SURE`, `FAR`, `QUIET`): `overlook`, `levels`, `blunders`, and
+  `pace`, which every overlook change so far has moved.
+- Bands, starts, and adapt steps: `levels`, and the tests that show the skill kept or
+  moving (`adapt`, `players`, `settings`, `shell`, `computer`), and `pace` if a start
+  moved.
+- Depth, temper, and the chances: the whole `ai` area, `pace`, and the tests that play
+  the computer (`computer`, `adapt`, `wait3d`). Run `scripts/test.sh` to see.
+- Pace: `pace` only; widen a level's `LOW`/`HIGH` there only with a reason here.
+
+The history of the overlooks, the user's calls of 2026-11-09:
+
+- Before task 053: a flat chance a move below 15, 60 and 90 per thousand at 0.
+- Task 053: by tension, size, and distance, `MISS` 25, 160, 300, 450.
+- Easy a touch weaker: the two-piece 160 → 300.
+- Easy a hair stronger ("a little too much"): the two-piece 300 → 240.

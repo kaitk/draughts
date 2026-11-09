@@ -135,6 +135,9 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   change to the overlooks moves the self-play games in `test/game/pace.goose` (its
   plies and times), `test/ai/levels.goose`'s easy moves, and `blunders`' counts: bless
   them with the reason.
+- To make a level stronger or weaker, `docs/architecture/ai.md`, "Tuning the levels":
+  each knob, which way is stronger, how much a step moves the score, the aimatch runs
+  to measure, and the tests to re-bless.
 - `test/game/pace.goose` plays twelve whole games on the clock (each level against
   itself, both clocks, Russian and International) with hard at 20,000 nodes: about 12 s
   through TinyCC. For numbers at full strength, build a copy with `NODES` at
