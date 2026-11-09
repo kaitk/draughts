@@ -51,6 +51,7 @@ struct Frame {
     tint:            float4,
     frame_build:     float4,
     frame_surface:   float4,
+    frame_map:       float4,
 }
 struct Draw { draw: float4 }
 struct Bake {
@@ -462,7 +463,8 @@ fn apply(g: Gpu&, which: i64, n: i64, photo: i64 = -1) {
     f.bounce = linear4(t.bounce);
     f.grade = t.grade;
     f.tint = linear4(t.tint);
-    f.frame_build = float4 { t.build.x, t.build.y, t.build.z, (g.frame_rows as f32) / FRAME_MAP };
+    f.frame_build = t.build;
+    f.frame_map = float4 { (g.frame_rows as f32) / FRAME_MAP, 0.0, 0.0, 0.0 };
     f.frame_surface = t.frame_surface;
     g.shadow_dirty = true;
 }

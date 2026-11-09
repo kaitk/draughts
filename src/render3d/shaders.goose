@@ -37,8 +37,9 @@ let FRAME = """
         vec4 tint;
         vec4 frame_build;    // x: 1 one solid block, 0 four mitred pieces; y: the joint
                              // line's strength; z: 1 for stone, its u leaning at the ends;
-                             // w: the frame map's height over its width
+                             // w: 1 carved
         vec4 frame_surface;  // w: how much smoother the frame's rounded edge is
+        vec4 frame_map;      // x: the frame map's height over its width
     };
     const float PI = 3.14159265;
     const float FIELD = 4.0;
@@ -338,10 +339,10 @@ let LIT_FRAG = """
                 grain = along_x ? vec3(1.0, 0.0, 0.0) : vec3(0.0, 0.0, 1.0);
             }
             fuv = fuv / FRAME_SPAN + 0.5;
-            // A mitred frame's map holds only its bands, the lower frame_build.w of it.
-            fuv.y /= frame_build.w;
-            gx.y /= frame_build.w;
-            gy.y /= frame_build.w;
+            // A mitred frame's map holds only its bands, the lower frame_map.x of it.
+            fuv.y /= frame_map.x;
+            gx.y /= frame_map.x;
+            gy.y /= frame_map.x;
             vec4 a = textureGrad(frame_albedo, fuv, gx, gy);
             vec4 tn = textureGrad(frame_normal, fuv, gx, gy);
             vec2 t = tn.xy * 2.0 - 1.0;
