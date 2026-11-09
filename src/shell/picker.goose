@@ -201,7 +201,8 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
             if back(g, gui::cut_left(top, back_w(g))) { pick = BACK; }
             gui::cut_left(top, 20.0 * u);
         }
-        gui::text(g, gui::fitting(g, gui::LABEL, title, top.z), top, title, 1.0, 0.0, gui::LEFT);
+        // Bare on the photograph, over bright bark or snow at some sizes: a soft shadow.
+        gui::shadowed(g, gui::fitting(g, gui::LABEL, title, top.z), top, title, gui::LEFT);
     }
     var k = 0;
     for t in puzzles::THEMES {

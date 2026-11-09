@@ -771,6 +771,23 @@ fn text(g: Gui&, face: i64, r: float4, s: const u8[:], a: f32, spacing: f32, ali
     write(g, face, r, s, float4 { 1.0, 1.0, 1.0, a }, false, spacing, align, false);
 }
 
+// Text as text() draws it at full opacity, over a soft dark halo, for a title bare on the
+// photograph (the library's): the coverage atlas has no blur, so the halo is eight dark
+// copies in a ring 2 dp out at 20% each and one 2 dp down at 35% (prototypes/chip.html,
+// takes b and e; 3 dp at 10% left spring's birch bark too bright round the letters). Nine
+// more quads a glyph.
+fn shadowed(g: Gui&, face: i64, r: float4, s: const u8[:], align: i64) {
+    let d = 2.0 * g.scale;
+    let ring = float4 { 0.0, 0.0, 0.0, 0.2 };
+    for k in 8 {
+        let t = k as f32 * 0.785398;
+        write(g, face, float4 { r.x + d * cos(t), r.y + d * sin(t), r.z, r.w }, s, ring, true, 0.0, align, false);
+    }
+    write(g, face, float4 { r.x, r.y + 2.0 * g.scale, r.z, r.w }, s, float4 { 0.0, 0.0, 0.0, 0.35 }, true, 0.0, align,
+          false);
+    text(g, face, r, s, 1.0, 0.0, align);
+}
+
 // The widest digit's advance in a face, the cell each digit takes in tabular figures.
 fn figure_width(g: Gui&, face: i64) -> f32 {
     let f .= g.faces[face];

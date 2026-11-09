@@ -594,7 +594,9 @@ the prototype tried, kept for 3D:
   solved, and until then each mark is plain with a lock badge, the name dim, and "Solve
   n more in Learn" in place of the bar, and a tap on it does nothing. The title
   "Puzzles" stands over the rows (beside back in portrait) except in landscape under
-  600 dp tall; the rows are one column at most 600 dp wide, or two where one doesn't fit
+  600 dp tall, bare on the photograph over a soft dark halo (`gui::shadowed`: eight dark
+  copies 2 dp round it at 20% and one 2 dp down at 35%), as it sat partly over spring's
+  and autumn's birch bark at the tablet's and iPad's sizes (2026-11-09); the rows are one column at most 600 dp wide, or two where one doesn't fit
   the height (the tablet in landscape, phones in landscape). They center on the screen:
   in a tablet's landscape the title and the rows start below back, so they take the
   whole width (until 2026-11-09 they kept clear of back's column too, which pushed them
