@@ -205,7 +205,13 @@ beyond. The set tests and `tools/puzzles.goose` print them under their puzzle; t
 a report, not a refusal, until each is decided: a move that wins as much listed as a
 line in its own right, or the position changed. A move whose capture is taken back, or
 that wins less, is no rival: that is the lesson of Captures' first level, the double
-whose last stop is safe.
+whose last stop is safe. Both sets report none since the six of the next check
+(2026-11-09): International's King shots 78 and Russian's 6, 9, 13, 20, and 45 each had a
+rival that needed two more of the solver's moves, not one, its line then winning more
+than the count or ending with a capture due, so none could be listed cleanly; each
+position had a man added or moved instead, named in its source, which kept its line
+and its lesson (Russian's 6 still the double answered by a double, its 13's single now
+taken back).
 
 `tools/puzzles.goose` adds the computer player's view at full skill: its root scores,
 whether the moves it rates best solve the puzzle, a second engine sharing only the
@@ -217,8 +223,9 @@ move and each position's moves against `build/perft`; for Russian, which has no
 published perft table, it is the only independent check. `scripts/test.sh` runs it on
 both files.
 
-`tools/puzzles.goose try FEN GOAL MOVES` shows the moves that are right, the line the
-screen would play, and what the checks say of it. `find SIDE GOAL MOVES MINE THEIRS
+`tools/puzzles.goose try FEN GOAL MOVES [LINE]` shows the moves that are right, the line
+the screen would play (after LINE's moves, when given, which shows where a rival leads),
+and what the checks say of it. `find SIDE GOAL MOVES MINE THEIRS
 COUNT [SEED [KINGS [CORE]]]` turns up positions to compose from: the solver's and the other
 side's men placed in camps as in a game (each next man beside or behind one of its own,
 on its own side of the board), some of the solver's made kings, with exactly one right

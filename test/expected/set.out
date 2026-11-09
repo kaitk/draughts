@@ -58,8 +58,7 @@ loaded: true
 75: king-shots 1, black, take 3 in 1, 11 pieces, 1 line; solved by 35x49x38x27
 76: king-shots 1, white, take 4 in 1, 12 pieces, 1 line; solved by 36x9x20x33x6
 77: king-shots 2, white, take 2 in 2, 13 pieces, 1 line; solved by 34-30
-78: king-shots 2, black, take 2 in 2, 13 pieces, 1 line; solved by 7-12
-  wins as much a move later: move 1 24-30
+78: king-shots 2, black, take 2 in 2, 14 pieces, 1 line; solved by 7-12
 79: king-shots 2, white, take 3 in 2, 14 pieces, 1 line; solved by 33-28
 80: king-shots 3, white, take 2 in 3, 13 pieces, 1 line; solved by 28-23
 81: king-shots 3, white, take 2 in 3, 13 pieces, 1 line; solved by 34-29
@@ -80,4 +79,4 @@ crowning: 12 puzzles, by level 4 4 4
 shots: 20 puzzles, by level 10 10 0
 king-shots: 10 puzzles, by level 4 3 3
 safe-move: 10 puzzles, by level 2 4 4
-74 puzzles, 18 black to move; at most 3545 positions a check; 0 problems; moves turned down that win as much a move later: 1
+74 puzzles, 18 black to move; at most 3545 positions a check; 0 problems; moves turned down that win as much a move later: 0

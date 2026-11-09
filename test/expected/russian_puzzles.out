@@ -5,10 +5,10 @@ puzzles: picker, the set russian of 46, library
   tiles 5, locks 3, marks 1 1 1 1 0
 learn tapped: picker, the set russian of 46, learn
   tiles 13
-the ninth: puzzle, the set russian of 46, puzzle 9, W:Wh4,a5:Bg5,c7,e7,g7, playing, stars 3, waits on -
-h4, f6: puzzle, the set russian of 46, puzzle 9, W:Wh4,a5:Bg5,c7,e7,g7, playing, stars 3, waits on f6
-then d8, crowned: puzzle, the set russian of 46, puzzle 9, W:Wh4,a5:Bg5,c7,e7,g7, playing, stars 3, waits on d8
-then b6: puzzle, the set russian of 46, puzzle 9, B:Wa5,Kb6:Bg7, solved, stars 3, waits on -
+the ninth: puzzle, the set russian of 46, puzzle 9, W:Wh4,a5:Bg5,h6,c7,e7,g7, playing, stars 3, waits on -
+h4, f6: puzzle, the set russian of 46, puzzle 9, W:Wh4,a5:Bg5,h6,c7,e7,g7, playing, stars 3, waits on f6
+then d8, crowned: puzzle, the set russian of 46, puzzle 9, W:Wh4,a5:Bg5,h6,c7,e7,g7, playing, stars 3, waits on d8
+then b6: puzzle, the set russian of 46, puzzle 9, B:Wa5,Kb6:Bh6,g7, solved, stars 3, waits on -
   kept: stars.russian = 9:3
 home again: home, the set russian of 46
   home's count: 3 / 138

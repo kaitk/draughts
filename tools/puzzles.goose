@@ -2,10 +2,11 @@
 //
 //   goose build -o build/puzzles tools/puzzles.goose
 //   build/puzzles [FILE]                     every puzzle in FILE (the variant's built-in set)
-//   build/puzzles try FEN GOAL MOVES         the moves that reach GOAL (take N, crown, win,
+//   build/puzzles try FEN GOAL MOVES [LINE]  the moves that reach GOAL (take N, crown, win,
 //                                            safe) within MOVES moves, how many, the line
-//                                            the screen would play, and what the checks
-//                                            say of a puzzle made of that line
+//                                            the screen would play, after LINE's moves
+//                                            ("a5:c7 h6-g5") if given, and what the
+//                                            checks say of a puzzle made of that line
 //   build/puzzles find SIDE GOAL MOVES MINE THEIRS COUNT [SEED [KINGS [CORE]]]
 //                                            game-like positions that make a puzzle: see find
 //
@@ -165,16 +166,26 @@ fn right_moves(s: puzzles::Solver&, p: rules::Position, k: i64, out: u8[>..]&) -
 }
 
 // The line the screen would play in pz, the first right move and the hardest reply each
-// time, written to out and set as pz's one line; whether it reaches the goal.
-fn screen_line(s: puzzles::Solver&, pz: puzzles::Puzzle&, out: u8[>..]&) -> bool {
+// time, written to out and set as pz's one line; whether it reaches the goal. The moves
+// in `given` (PDN, the solver's and the replies, from the start) are played first.
+fn screen_line(s: puzzles::Solver&, pz: puzzles::Puzzle&, out: u8[>..]&, given: const u8[:] = "") -> bool {
     let k = pz.moves;
     var legal: rules::Moves = [];
     var q = pz.start;
     pz.lines.clear();
     let line .= pz.lines.push(puzzles::Line { plies: [] });
     puzzles::begin(s, pz);
+    var words: u8[..16][..2 * puzzles::MAX_PLIES] = [];
+    for w in split(given, ' ') { if w.len > 0 && w.len <= 16 && words.len < 2 * puzzles::MAX_PLIES { words.push(w); } }
+    var next = 0;
     for left in 0..k {
-        let i = puzzles::right_move(s, q, k - left);
+        var i = puzzles::right_move(s, q, k - left);
+        if next < words.len {
+            let ply, ok = puzzles::parse_move(q, words[next], legal);
+            guard ok else { abort(str("not a legal move here: ", words[next])); }
+            i = puzzles::index_of(q, ply, legal);
+            next++;
+        }
         guard i >= 0 else { return false; }
         rules::generate(q, legal);
         let m = legal[i];
@@ -184,7 +195,13 @@ fn screen_line(s: puzzles::Solver&, pz: puzzles::Puzzle&, out: u8[>..]&) -> bool
         line.plies.push(puzzles::Ply { from: m.from, to: m.to, captured: m.captured });
         q = rules::play(q, m);
         guard !solved else { return true; }
-        let j = puzzles::reply(s, q, k - left - 1);
+        var j = puzzles::reply(s, q, k - left - 1);
+        if next < words.len {
+            let ply, ok = puzzles::parse_move(q, words[next], legal);
+            guard ok else { abort(str("not a legal move here: ", words[next])); }
+            j = puzzles::index_of(q, ply, legal);
+            next++;
+        }
         guard j >= 0 else { return false; }
         rules::generate(q, legal);
         out.append(" ");
@@ -195,7 +212,7 @@ fn screen_line(s: puzzles::Solver&, pz: puzzles::Puzzle&, out: u8[>..]&) -> bool
     return false;
 }
 
-fn try_position(fen: const u8[:], goal: const u8[:], moves: const u8[:]) {
+fn try_position(fen: const u8[:], goal: const u8[:], moves: const u8[:], given: const u8[:]) {
     let k, ok = parse_int(moves);
     guard ok && k >= 1 else { abort("MOVES is a number"); }
     let p, fen_ok = rules::parse_fen(fen, variant);
@@ -218,7 +235,7 @@ fn try_position(fen: const u8[:], goal: const u8[:], moves: const u8[:]) {
         print("each: ", each);
     }
     var line: u8[>..] = [];
-    let reached = screen_line(s, pz, line);
+    let reached = screen_line(s, pz, line, given);
     print("line ", line);
     guard reached else { return; }
     var out:  u8[>..] = [];
@@ -383,7 +400,7 @@ fn main() {
         i++;
     }
     if argv.len >= 5 && argv[1] == "try" {
-        try_position(argv[2], argv[3], argv[4]);
+        try_position(argv[2], argv[3], argv[4], if argv.len >= 6 { argv[5] } else { "" });
         return;
     }
     if argv.len >= 8 && argv[1] == "find" {

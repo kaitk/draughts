@@ -553,9 +553,9 @@ id 78
 theme king-shots
 level 2
 goal take 2
-position B:W18,22,26,27,32,37,42:BK2,3,4,7,10,24
+position B:W18,22,26,27,32,37,42:BK2,3,4,7,10,19,24
 line 7-12 18x7 2x11x33x47
-source own, motif: a shot for the king; found by tools/puzzles.goose find from game-like camps, verified by the engine
+source own, motif: a shot for the king; found by tools/puzzles.goose find from game-like camps, verified by the engine; 19 added by hand so 24-30 wins less (2026-11-09)
 
 # give one, the king takes four
 id 79
