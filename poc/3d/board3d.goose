@@ -3,13 +3,15 @@
 // photograph. A drag turns the camera; Tab or a double click switches between inspecting
 // round the default view and turning freely round the board; R resets the view; T, or a
 // long press for touch, switches the theme; K switches the king between a stack of two
-// discs and one crowned disc. Nothing of the app's shell.
+// discs and one crowned disc; W cycles the wood's model (task 039). Nothing of the app's
+// shell.
 //
 //   cd poc/3d
 //   ../../build/goose-v2026.4-macos-arm64/goose build -o ../../build/board3d board3d.goose
 //   ../../build/board3d
 //   ../../build/board3d --shot out.png --size 1920x1200 [--yaw 20 --pitch 40]
 //   ../../build/board3d --theme winter --king crown
+//   ../../build/board3d --wood 0                  # the wood's model: 0 to 3, 2 the default
 //   ../../build/board3d --bench 200
 //
 // --shot draws one frame headless (no window) into a PNG; --bench times frames.
@@ -72,6 +74,9 @@ struct Bake {
     surface:       float4,
     frame_surface: float4,
     stone:         float4,
+    light_ring:    float4,
+    dark_ring:     float4,
+    frame_ring:    float4,
 }
 struct Shrink { to: float4 }
 struct Blur { dir: float4 }
@@ -85,6 +90,11 @@ let SAMPLES = 4;
 // straight into the screen; and the shadow map redrawn every frame, not only on change.
 var samples: i32 = SAMPLES;
 var shadow_every = false;
+// The wood's model (--wood N, W cycles; task 039): 0 noise drawn out along the grain,
+// 1 growth rings, 2 growth rings with pores and a fibre relief, 3 the first with thin
+// lines and pores laid over it. A switch rebakes the surfaces, nothing else.
+let WOOD_MODELS = 4;
+var wood_model = 2;
 let MAX_INSTANCES = 32;
 
 // The camera: 52.5° down, a 31° field of view, framed as the 3D reference (fitted to its
@@ -297,15 +307,28 @@ fn bake(g: Gpu&, albedo: gfx::Texture, normal: gfx::Texture, w: i64, h: i64, mod
     pass.color[1] = normal;
     gfx::begin_pass(pass);
     gfx::bind(g.bake);
-    gfx::uniforms(gfx::FRAGMENT, 0, Bake { float4 { mode, 0.0, 0.0, 0.0 },
+    gfx::uniforms(gfx::FRAGMENT, 0, Bake { float4 { mode, wood_model, 0.0, 0.0 },
                                            float4 { w, h, extent.x, extent.y },
                                            t.light_sq, t.light_fig, t.dark_sq, t.dark_fig,
                                            t.inlay, t.inlay_fig, t.frame, t.frame_fig,
-                                           t.surface, t.frame_surface, t.stone });
+                                           t.surface, t.frame_surface, t.stone,
+                                           t.light_ring, t.dark_ring, t.frame_ring });
     gfx::draw(3);
     gfx::end_pass();
     gfx::generate_mips(albedo);
     gfx::generate_mips(normal);
+}
+
+// Bakes the plan and the frame map, and waits for them: at startup, on a theme change
+// and when the wood's model switches.
+fn bake_surfaces(g: Gpu&, t: theme::Theme&) {
+    let span = 2.0 * mesh::INNER;
+    let c = clock();
+    bake(g, g.plan_albedo, g.plan_normal, PLAN_SIZE, PLAN_SIZE, 0.0, float2 { span, span }, t);
+    bake(g, g.frame_albedo, g.frame_normal, FRAME_MAP, FRAME_MAP, 1.0, float2 { 10.4, 10.4 },
+         t);
+    gfx::flush();
+    print("setup: bake ", ((clock() - c) * 1000.0) as i64, " ms (wood ", wood_model, ")");
 }
 
 // A target with its mips for a baked surface.
@@ -410,14 +433,8 @@ fn linear4(c: float4) -> float4 { float4 { linear(c.x), linear(c.y), linear(c.z)
 // colors. Outside the frame loop's steady state: at startup and on a theme change.
 fn apply(g: Gpu&, which: i64) {
     let t = theme::get(which);
-    let span = 2.0 * mesh::INNER;
+    bake_surfaces(g, t);
     var c = clock();
-    bake(g, g.plan_albedo, g.plan_normal, PLAN_SIZE, PLAN_SIZE, 0.0, float2 { span, span }, t);
-    bake(g, g.frame_albedo, g.frame_normal, FRAME_MAP, FRAME_MAP, 1.0, float2 { 10.4, 10.4 },
-         t);
-    gfx::flush();
-    print("setup: bake ", ((clock() - c) * 1000.0) as i64, " ms");
-    c = clock();
     var sh: float4[9] = [float4_0; 9];
     photograph(g, t.photo, t.ambient.z, sh);
     gfx::flush();
@@ -606,6 +623,7 @@ fn main() {
     if ti > 0 && argv[ti] == "winter" { which = theme::WINTER; }
     let ki = flag_str(argv, "--king");
     if ki > 0 && argv[ki] == "crown" { king_crown = true; }
+    wood_model = clamp(flag_f32(argv, "--wood", wood_model) as i64, 0, WOOD_MODELS - 1);
 
     let t0 = clock();
     var g = default<Gpu>();
@@ -691,6 +709,12 @@ fn main() {
         if gfx::key_pressed("K") {
             king_crown = !king_crown;
             place(g);
+            dirty = true;
+        }
+        if gfx::key_pressed("W") {
+            wood_model = (wood_model + 1) % WOOD_MODELS;
+            var t = theme::get(which);
+            bake_surfaces(g, t);
             dirty = true;
         }
         if gfx::key_pressed("R") {

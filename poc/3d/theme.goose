@@ -30,6 +30,13 @@ struct Theme {
     // Stone (a figure drawn out 0): x its veins' contrast, y its clouding's, z how far the
     // roughness follows the figure.
     stone: float4,
+    // The wood's growth rings (shaders::BAKE_FRAG's rings, board3d's --wood), per
+    // surface, the inlay taking the dark squares': x a ring's width in world units (a
+    // square is 1), y how flat-sawn the pieces are (0 quarter-sawn, straight lines; 1
+    // flat-sawn, arches), z the late wood's darkening, w the pores' density.
+    light_ring: float4,
+    dark_ring:  float4,
+    frame_ring: float4,
     // The shaders: the pieces' colors and roughness, the light piece's mottling (x),
     // the dark piece's figure (y) and how far it is drawn out (z), how dark its turned
     // side is against its face (w), the crown's color.
@@ -75,6 +82,9 @@ fn autumn() -> Theme {
         surface:       float4 { 0.1, 1.0, 0.5, 1.0 },
         frame_surface: float4 { 1.0, 3.5, 1.2, 0.3 },
         stone:         float4 { 0.0, 0.0, 0.0, 0.0 },
+        light_ring:    float4 { 0.05, 0.2, 0.5, 0.3 },
+        dark_ring:     float4 { 0.06, 0.5, 0.4, 0.35 },
+        frame_ring:    float4 { 0.05, 0.3, 0.6, 0.6 },
         light_piece:   float4 { 0.97, 0.89, 0.76, 0.55 },
         dark_piece:    float4 { 0.34, 0.235, 0.2, 0.36 },
         piece_fig:     float4 { 0.04, 0.18, 0.3, 0.35 },
@@ -111,6 +121,9 @@ fn winter() -> Theme {
         surface:       float4 { 0.04, 0.3, 0.45, 0.5 },
         frame_surface: float4 { 0.0, 0.5, 0.0, 0.1 },
         stone:         float4 { 0.05, 0.08, 0.12, 0.0 },
+        light_ring:    float4_0,
+        dark_ring:     float4_0,
+        frame_ring:    float4_0,
         light_piece:   float4 { 0.86, 0.82, 0.76, 0.52 },
         dark_piece:    float4 { 0.205, 0.225, 0.255, 0.3 },
         piece_fig:     float4 { 0.03, 0.05, 0.0, 0.4 },

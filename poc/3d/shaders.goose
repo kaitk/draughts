@@ -584,9 +584,11 @@ let GLOW_FRAG = """
 
 // The board's surfaces, baked once per theme into two targets: albedo and roughness
 // (sRGB), and the normal's x and z. mode.x 0 bakes the plan of the field and its inlay,
-// seen from above; 1 the frame map, its grain along u. size: the target in texels,
-// then in world units. The rest is the theme's (theme::Theme): each surface's color and
-// roughness and its figure.
+// seen from above; 1 the frame map, its grain along u. mode.y: the wood's model (task
+// 039, board3d's --wood): 0 noise drawn out along the grain, 1 growth rings, 2 growth
+// rings with pores and a fibre relief, 3 the first with thin lines and pores laid over
+// it. size: the target in texels, then in world units. The rest is the theme's
+// (theme::Theme): each surface's color and roughness and its figure.
 let BAKE_FRAG = """
     layout(location = 0) in vec2 v_uv;
     layout(location = 0) out vec4 out_albedo;
@@ -605,6 +607,12 @@ let BAKE_FRAG = """
         vec4 surface;    // x: each square's own tone, y: pores, z: seams, w: relief
         vec4 frame_surface;  // the frame's wood: x pores, y relief, z late-wood furrows
         vec4 stone;      // x: veins, y: clouding, z: the roughness following the figure
+        // The growth rings (wood::rings), per surface: x a ring's width in world units,
+        // y how flat-sawn the pieces are (0 quarter-sawn, 1 flat), z the late wood's
+        // darkening, w the pores' density.
+        vec4 light_ring;
+        vec4 dark_ring;
+        vec4 frame_ring;
     };
     const float FIELD = 4.0;
     vec3 srgb(vec3 c) { return pow(c, vec3(2.2)); }
@@ -650,6 +658,108 @@ let BAKE_FRAG = """
 
     struct Wood { vec3 albedo; float rough; float height; float cavity; };
 
+    float h1(float seed, float k) { return h12(vec2(seed, k)); }
+
+    // Vessels cut along their length: short dark dashes along the grain, scattered in
+    // columns across it (the column's rows shifted at random so they never line up),
+    // their width tapering to the ends, the edges a texel soft. x across, y along, in
+    // world units; dens the share of cells holding one, early 0 to 1 (bigger in the
+    // early wood); the cell's hash, for its roughness and depth.
+    float vessels(float x, float y, float seed, float dens, float early) {
+        const float ACROSS = 0.012;
+        const float ALONG = 0.032;
+        float texel = size.z / size.x;
+        float col = floor(x / ACROSS);
+        float yy = y / ALONG + h1(col, seed + 3.3) * 17.0;
+        vec2 id = vec2(col, floor(yy));
+        if (h12(id + seed * 0.37) >= dens) return 0.0;
+        float cx = (col + 0.3 + 0.4 * h12(id + 1.3)) * ACROSS;
+        float sy = (yy - id.y - 0.5) / (0.25 + 0.2 * h12(id + 2.1));
+        float hw = (0.0012 + 0.0014 * h12(id + 5.7)) * mix(0.75, 1.25, early)
+                 * sqrt(max(1.0 - sy * sy, 0.0));
+        return 1.0 - smoothstep(-0.5 * texel, 0.6 * texel, abs(x - cx) - hw);
+    }
+
+    // Rays seen on a face near the radial plane: thin dark flecks across the grain, a
+    // texel or so wide, 0.04 to 0.15 long, far apart, leaning a little. x across, y
+    // along; dens scales how many.
+    float flecks(float x, float y, float seed, float dens) {
+        const float STEP = 0.18;
+        const float ACROSS = 0.25;
+        float texel = size.z / size.x;
+        vec2 id = floor(vec2(x / ACROSS, y / STEP));
+        if (h12(id + seed * 0.71 + 3.1) >= 0.5 * dens) return 0.0;
+        vec2 c = (id + vec2(0.2, 0.2) + 0.6 * vec2(h12(id + 4.4), h12(id + 6.6)))
+               * vec2(ACROSS, STEP);
+        float half_len = 0.02 + 0.055 * h12(id + 7.7);
+        vec2 d = vec2(x, y) - c;
+        float tilt = (h12(id + 8.8) - 0.5) * 0.4;
+        float along = d.x;
+        float off = abs(d.y - tilt * d.x);
+        float taper = max(1.0 - (along / half_len) * (along / half_len), 0.0);
+        return taper * (1.0 - smoothstep(0.3 * texel, 1.0 * texel, off));
+    }
+
+    // Growth rings: each piece sawn from a log whose pith runs roughly along its grain,
+    // the rings the distance from that axis (Liu et al.'s time volume, the classic
+    // solid-texture wood). q.x across the face, q.y along the grain, in world units. The
+    // piece's cut is its own: quarter-sawn faces pass near the pith with it far to one
+    // side, so the rings show as nearly straight lines; flat-sawn ones lie above it, and
+    // the axis leaning out of the face and wandering draws arches where they cut the
+    // rings. The rings' radius wobbles, the years are uneven, each year's late wood its
+    // own strength: an asymmetric profile, the early wood light, darkening through the
+    // year to a sharp edge where the next year's early wood starts. Fibres are fine
+    // streaks along the grain, which crosses the ring lines at a slant where the axis
+    // leans. The color darkens by Beer's law (base^(1 + a)), so the late wood and the
+    // stained pores are deeper and more saturated, as stained wood is. detail adds the
+    // pores and a fibre relief into the normal.
+    Wood rings(vec2 q, float seed, vec4 base, vec4 k, vec4 ring, bool detail) {
+        float rw = ring.x;
+        float texel = size.z / size.x;
+        vec2 o = vec2(h1(seed, 1.7), h1(seed, 9.3)) * 97.0;
+        float flatness = clamp(ring.y + (h1(seed, 2.1) - 0.5) * 0.6, 0.0, 1.0);
+        float side = h1(seed, 3.7) > 0.5 ? 1.0 : -1.0;
+        float d = mix(0.1, 1.6, flatness) * (0.6 + 0.8 * h1(seed, 5.3));
+        float c = side * mix(3.0 + 3.0 * h1(seed, 6.1), 0.8 * (h1(seed, 6.1) - 0.5), flatness);
+        float axis = fbm(vec2(q.y * 0.12, 0.5) + o) - 0.5;
+        float lean = (h1(seed, 8.8) - 0.5) * 0.12 * flatness;
+        float dd = max(d + lean * q.y + axis * 0.5 * flatness, 0.02);
+        float r = length(vec2(q.x - c - axis * 0.8, dd));
+        r += rw * k.x * 3.0 * (fbm(vec2(q.x * 1.1, q.y * 0.18) + o) - 0.5);
+        r += rw * k.x * 0.8 * (vnoise(vec2(q.x * 6.0, q.y * 0.9) + o) - 0.5);
+        r += rw * k.x * 0.7 * (vnoise(vec2(q.x * 14.0, q.y * 4.0) + o) - 0.5);
+        float t = r / rw;
+        t += 1.2 * (vnoise(vec2(t * 0.3, seed)) - 0.5);
+        float year = floor(t);
+        float ph = t - year;
+        float e = max(0.06, 1.5 * texel / rw);
+        float late = smoothstep(0.72, 1.0 - e, ph);
+        late *= late * (1.0 - smoothstep(1.0 - e, 1.0, ph));
+        late *= 0.5 + h1(year + seed * 13.0, 4.4);
+        float early = 1.0 - smoothstep(0.0, 0.5, ph);
+        // Fibres along the grain, a little wandering.
+        float x = q.x + 0.004 * (vnoise(vec2(q.x * 20.0, q.y * 3.0) + o) - 0.5);
+        float fibre = 0.45 * vnoise(vec2(x * 150.0, q.y * 2.0) + o)
+                    + 0.3 * vnoise(vec2(x * 55.0, q.y * 0.7) + o)
+                    + 0.25 * vnoise(vec2(x * 380.0, q.y * 30.0) + o);
+        float broad = fbm(vec2(q.x * 1.2, q.y * 0.25) + o);
+        float pore = 0.0;
+        if (detail && ring.w > 0.0) {
+            // Semi-ring-porous: more and bigger vessels in the early wood.
+            pore = vessels(x + o.x, q.y, seed, ring.w * mix(0.6, 1.4, early), early);
+            // Rays cut across: sparse thin flecks across the grain, as on the frame.
+            pore = max(pore, 0.6 * flecks(x, q.y + o.y, seed, ring.w));
+        }
+        float a = ring.z * (late - 0.08) + k.z * (fibre - 0.5) * 1.2 + k.y * (broad - 0.5) * 1.5
+                + 0.4 * pore;
+        Wood w;
+        w.albedo = pow(srgb(base.rgb), vec3(1.0 + a));
+        w.rough = base.a + 0.06 * (1.0 - late) - 0.04 + 0.25 * pore;
+        w.height = 0.15 * late + (detail ? 0.5 : 0.1) * (fibre - 0.5) - 1.2 * pore;
+        w.cavity = 1.0 - 0.4 * pore;
+        return w;
+    }
+
     // A surface with its grain along y, from noise drawn out along the grain, never a
     // regular stripe: a broad soft figure, fine streaks, pores. k: how far the grain
     // wanders, the broad figure's contrast, the fine streaks' contrast, and how far the
@@ -657,8 +767,9 @@ let BAKE_FRAG = """
     // faint veins). base: the color (sRGB) and roughness. f: the pores' strength, the
     // open pores' (dense fine dashes), the fine dark late-wood lines', all following the
     // grain, roughest in them; the late wood as furrows.
-    Wood wood(vec2 q, float seed, vec4 base, vec4 k, vec3 f) {
+    Wood wood(vec2 q, float seed, vec4 base, vec4 k, vec3 f, vec4 ring) {
         float s = k.w;
+        if (s > 0.5 && mode.y > 0.5 && mode.y < 2.5) return rings(q, seed, base, k, ring, mode.y > 1.5);
         q += vec2(h12(vec2(seed, 1.7)), h12(vec2(seed, 9.3))) * 97.0;
         float wander = (fbm(q * vec2(0.45, mix(0.45, 0.16, s))) - 0.5) * k.x;
         float x = q.x + wander;
@@ -683,6 +794,19 @@ let BAKE_FRAG = """
         w.rough = base.a + 0.16 * pores + 0.22 * furrow - 0.08 * (fine - 0.5);
         w.height = (fine - 0.5) * 0.5 - pores * 0.5 - furrow * 2.0;
         w.cavity = 1.0 - 0.15 * open - 0.5 * furrow;
+        if (mode.y > 2.5 && s > 0.5) {
+            // Laid over the noise: thin straight dark lines, a texel or two across,
+            // broken into lengths, and a scatter of pores.
+            float texel = size.z / size.x;
+            float lines = furrows(x + 0.11, q.y, 40.0, 0.7 * texel, 1.5)
+                        + 0.6 * furrows(x + 0.53, q.y, 75.0, 0.5 * texel, 3.0);
+            float pore = ring.w > 0.0 ? vessels(x, q.y, seed, 0.6 * ring.w, 0.5) : 0.0;
+            float m = min(lines, 1.0);
+            w.albedo *= (1.0 - 0.35 * m) * (1.0 - 0.45 * pore);
+            w.rough += 0.12 * m + 0.25 * pore;
+            w.height -= 0.6 * m + 1.2 * pore;
+            w.cavity -= 0.4 * pore;
+        }
         if (s < 0.5) {
             // Stone: a soft clouding and a few thin, faint veins, the roughness lowest in
             // the clear stone between them; veins lighter in dark stone, darker in pale.
@@ -705,7 +829,10 @@ let BAKE_FRAG = """
         if (m > FIELD) {
             bool along_x = a.y > a.x;
             vec2 q = along_x ? p.yx : p;
-            Wood w = wood(q, along_x ? 71.0 : 83.0, inlay, inlay_fig, vec3(surface.y, 0.0, 0.0));
+            // The growth rings give each of the four sides its own piece.
+            float iseed = along_x ? 71.0 : 83.0;
+            if (mode.y > 0.5 && inlay_fig.w > 0.5) iseed += (along_x ? p.y : p.x) > 0.0 ? 0.0 : 2.0;
+            Wood w = wood(q, iseed, inlay, inlay_fig, vec3(surface.y, 0.0, 0.0), dark_ring);
             float line = 1.0 - smoothstep(0.004, 0.010, m - FIELD);
             w.albedo *= 1.0 - 0.6 * line;
             w.height -= line;
@@ -716,7 +843,8 @@ let BAKE_FRAG = """
         bool dark = ((sq.x + sq.y) & 1) == 1;
         float seed = float(sq.y * 8 + sq.x) + 1.0;
         vec3 f = vec3(surface.y, 0.0, 0.0);
-        Wood w = dark ? wood(p, seed, dark_sq, dark_fig, f) : wood(p, seed, light_sq, light_fig, f);
+        Wood w = dark ? wood(p, seed, dark_sq, dark_fig, f, dark_ring)
+                      : wood(p, seed, light_sq, light_fig, f, light_ring);
         w.albedo *= 1.0 + surface.x * (h12(vec2(seed, 4.2)) - 0.5);
         vec2 fr = fract(g);
         float edge = min(min(fr.x, 1.0 - fr.x), min(fr.y, 1.0 - fr.y));
@@ -728,7 +856,19 @@ let BAKE_FRAG = """
     }
 
     // The frame map: the frame's wood or stone over a square, its grain along u.
-    Wood frame_map(vec2 p) { return wood(p.yx, 7.0, frame, frame_fig, frame_surface.xxz * vec3(0.3, 1.0, 1.0)); }
+    // The growth rings give each band of the map (each mitred piece, LIT_FRAG) its own
+    // log and cut, across measured from the band's start.
+    Wood frame_map(vec2 p) {
+        vec3 f = frame_surface.xxz * vec3(0.3, 1.0, 1.0);
+        vec2 q = p.yx;
+        float seed = 7.0;
+        if (mode.y > 0.5 && mode.y < 2.5 && frame_fig.w > 0.5) {
+            float band = floor(q.x / 1.4);
+            q.x -= band * 1.4;
+            seed = 7.0 + 5.0 * band;
+        }
+        return wood(q, seed, frame, frame_fig, f, frame_ring);
+    }
 
     Wood at(vec2 p) { return mode.x < 0.5 ? plan(p) : frame_map(p); }
 
