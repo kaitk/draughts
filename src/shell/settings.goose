@@ -569,9 +569,8 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
         // they want unwrapped (a foldable). Where even that runs past it (a phone), one
         // group shows at a time, tabs for the two in the title row in place of the title,
         // the names at the left. Over a bottom inset (a gesture or hidden navigation bar)
-        // the groups may run on through the page's foot, the look's glass to the screen's
-        // edge, as long as its tiles end above the inset and as far from the screen's
-        // edge as they would with none: `room` gains up to that foot, 38 dp.
+        // the groups may run on through the page's foot, as long as the look's tiles end
+        // above the inset and as far from the screen's edge as they would with none: `room` gains up to that foot, 38 dp.
         let head_w = (HEAD_H + 40.0) * u + languages_width(g)
                      + gui::text_width(g, gui::LABEL, strings::get(strings::HOME_SETTINGS));
         let foot = min(g.insets.w, (PAD_Y + 14.0) * u);
@@ -609,15 +608,16 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
         }
         let game_h = group_height(s, over, g, 0, side.z, aside);
         let look_h = group_height(s, over, g, 1, side.z, aside);
-        // Centered down the rest, or from its top if they are taller; then the look's glass
-        // runs on through the foot to the screen's bottom edge.
+        // Centered down the rest, or from its top if they are taller, running on into the
+        // foot; the look's glass ends below its kings there rather than running on to the
+        // screen's bottom edge, which left it mostly empty below (the user, 2026-11-09).
         gui::cut_top(side, max(0.0, 0.5 * (side.w - game_h - GROUP_GAP * u - look_h)));
         var list = side;
         if group(s, over, g, 0, gui::cut_top(list, game_h), area, aside) { ask = CHANGED; }
         gui::cut_top(list, GROUP_GAP * u);
-        let past = look_h > list.w + 0.5;
-        let look = float4 { list.x, list.y, list.z, if past { area.y + area.w - list.y } else { look_h } };
-        if group(s, over, g, 1, look, area, aside) { ask = CHANGED; }
+        let look = float4 { list.x, list.y, list.z, look_h };
+        let unbled = float4 { area.x, area.y, area.z, area.w + g.insets.w };   // no bleed at the foot
+        if group(s, over, g, 1, look, unbled, aside) { ask = CHANGED; }
     } else {
         // The title row, the board as large as the rest leaves, and the groups side by
         // side along the bottom, as tall as the taller. Where that leaves the board under

@@ -75,8 +75,8 @@ its insets, a phone's camera cutout and its gesture bar at the bottom. SDL repor
 (`SDL_GetWindowSafeArea`; the program's own C, `src/app/display.c`, reads them each frame with
 the display scale, since goose_gfx has neither). The app draws behind the cutout (SDL
 sets `LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS`), so the photograph, the blurred page, and
-glass that runs off the screen's edge (home's column and sheet, `gui::bleed`; settings'
-look group in landscape over a bottom inset, below) reach the screen's edges; everything else is placed in the safe rect as it would be in a whole
+glass that runs off the screen's edge (home's column and sheet, `gui::bleed`) reach the
+screen's edges; everything else is placed in the safe rect as it would be in a whole
 window of that size (`gui::safe`, `shell::frame`). The scale stays the whole short
 side's: the same in both orientations, where the cutout falls on the long side in one and
 the short side in the other, so turning the screen doesn't rebake the text or change the
@@ -91,8 +91,9 @@ navigation bar, shown or hidden), and the gesture bar at the bottom (on the Pixe
 118, 0, 84 px in portrait; on the Galaxy Tab A11+ 0, 0, 0, 72, its hidden
 navigation bar). Settings in landscape lets its two groups run over a bottom inset: the
 fit counts up to 38 dp of it (the page's foot and the look group's bottom pad), the
-look's glass then running on to the screen's bottom edge, its tiles still above the
-inset and as far from the screen's edge as with none; so the tablet keeps both groups
+look's glass ending below its tiles there (not running on to the screen's bottom edge,
+which left it mostly empty below, the user 2026-11-09), its tiles still above the inset
+and as far from the screen's edge as with none; so the tablet keeps both groups
 beside the board rather than the Game and Look tabs. A
 change of the insets or the scale counts as a change, as a new size does, and the screen
 is laid out and drawn again (see "Frames and battery"). When the screen turns, the new
