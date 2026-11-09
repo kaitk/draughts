@@ -298,28 +298,49 @@ the prototype tried, kept for 3D:
   192 px for it: 587 px at 4:3, 520 on a foldable; 2026-11-08; where the width holds the
   board under 372 dp, a 16:9 phone less its cutout at a side, the panels stay 372 dp tall,
   centered beside it): on the
-  left home (a house), settings, and at the bottom start over, 88 px rows (the floor for
+  left back (see "The way back" below) on its own glass tile, 88 px tall, over a panel
+  12 px under it holding settings and at the bottom start over, the column as tall as
+  the right panel; 88 px rows (the floor for
   small hands, 2026-11-08) with 34 px icons and 24 px words (in a narrowed panel, where a word doesn't fit beside its icon,
-  all three icons over their words in 96 px rows); on the right whose turn it is (a 72 px piece of its color with
+  both icons over their words in 96 px rows); on the right whose turn it is (a 72 px piece of its color with
   the glow ring, 4 px of the glow color at 80% and a 22 px glow, over "White's turn"),
-  or the two clocks, and at the bottom take back, a tall 132 px tile with a 48 px icon
-  over its word (96 px in a panel under 420 px tall, a phone's, as a puzzle's next). In portrait the left side is a bar above the board, its three tiles in
-  a row, 88 px tall, thirds of it while each word fits, else each as wide as its word and
+  or the two clocks, and at the bottom undo move, a tall 132 px tile with a 48 px icon
+  over its word, on two lines where one is too wide ("Võta käik / tagasi" in a narrowed
+  panel), else in a smaller face (96 px in a panel under 420 px tall, a phone's, as a puzzle's next). In portrait the left side is a bar above the board, its three tiles in
+  a row, back first, 88 px tall, thirds of it while each word fits, else each as wide as its word and
   an even share of the rest (2026-11-08); where a third would be under 170 px (a phone),
   the bar is 8 px taller and each icon stands over its word, which needs less width. The
-  right side is below it: whose turn, or the clocks side by side, over take back across
-  the width, 88 px tall. Start over sits far from take back so it isn't hit for
+  right side is below it: whose turn, or the clocks side by side, over undo move across
+  the width, 88 px tall. Start over sits far from undo move so it isn't hit for
   it. There is no hint button and no move-hints toggle: help that does the thinking
   doesn't belong a tap away, and move hints are a setting, reached through settings.
-  Take back takes back one move, also one still animating; start over goes back to where
-  the game began; home goes home; settings opens settings, whose back returns to the
+  Undo move takes back one move, also one still animating; start over goes back to where
+  the game began; back goes home; settings opens settings, whose back returns to the
   game. Against the computer the child's pieces are at the bottom: when the child plays
   black the board is turned, black playing up the screen (2026-11-08). While the
   computer thinks its piece's glow ring pulses once, and its move comes after a short
   pause, or against the clock after the time a player of its level would take;
-  take back then takes back the child's move and the computer's reply
+  undo move then takes back the child's move and the computer's reply
   ([computer player](ai.md#in-the-game)).
   The words are 24 px; the turn's words say who has won once a side has.
+- **The way back** (`prototypes/back.html`, take b, chosen 2026-11-09 over a, the arrow
+  alone): one control on every screen that leaves, a glass tile with the arrow and
+  "Back" side by side (34 px icon, 24 px word, 20 px either side, 88 px tall and at least
+  as wide), in the top-left corner: over the left panel on the game and a puzzle in
+  landscape, first in the bar above the board in portrait, beside the title on the
+  puzzles' library and a theme's page (at the left in landscape, in the head in
+  portrait), and at the start of settings' title row. It goes where the screen's way out
+  goes: the game home, a puzzle to its theme's page, a theme's page to the library, the
+  library home, and settings where it was opened from; Android's back and Escape do the
+  same. It replaced buttons named for where they went ("Home" on the game, "Puzzles" on
+  a puzzle), which children read as different controls, and a bare arrow on the
+  puzzles and settings; take back became "Undo move" ("Võta käik tagasi") so it says
+  it is about the move, not the screen. On a theme's page in landscape where the levels
+  wouldn't fit the height beside a worded back (Shots on a phone with its insets), back
+  is 88 px square with the arrow over the word. On a phone in landscape settings' title
+  row (back, the tabs, the language) is wider for it, so the preview board beside it is
+  smaller (431 to 400 dp at 540 dp; 285 to 219 in Estonian at 480 with the Pixel's
+  insets). Home's setups and who's playing keep their square arrow.
 - **Clocks**: each side's piece and its time, m:ss in 36 px tabular figures, in a tile
   of radius 20 px; black's on top, as black's side of the board is (white's on a turned
   board, so the child's clock is the nearer one). The running clock is
@@ -505,8 +526,8 @@ the prototype tried, kept for 3D:
   page (and Android's back) goes to the library, and from the library home; next on a
   puzzle goes on inside its theme and after its last back to the library. Behind it the
   sharp photograph and no board. **A puzzle** (`prototypes/puzzle.html`, take c, chosen
-  2026-11-08): the game screen's layout, the left panel the game's with the puzzles in
-  home's place; on the right whose puzzle it is as the game's turn piece (72 px, its
+  2026-11-08): the game screen's layout, the left side the game's, its back going to the
+  theme's page; on the right whose puzzle it is as the game's turn piece (72 px, its
   side's color, the glow ring while it is the child's turn, none once solved), so a child
   who can't read knows the side they play, then the goal's icon in the glow color over its
   words ("Win 2
@@ -724,8 +745,9 @@ board's does and the backdrop over it as opaque as the blur.
   package plays on, so a turned board turns the 3D one. **The game screen round it**
   (`panel::corners_in`, `prototypes/game3d.html`'s `corners`, chosen 2026-11-09): in
   landscape the two panels are short glass panels in the top corners, 232 × 352 dp (192
-  wide on a phone, under 600 dp), home, settings, and start over on the left, the turn or
-  the clocks and take back on the right; the board as large as clears them by 12 dp, its
+  wide on a phone, under 600 dp), on the left back on its own tile over a panel of
+  settings and start over (the column's bounds the panel's were, so the board's fit is
+  unchanged), the turn or the clocks and undo move on the right; the board as large as clears them by 12 dp, its
   near edge on the bottom margin (898 × 616 dp on the tablet). In portrait the flat
   board's order, the bar, the board as wide as the screen less the margins, the camera
   buttons, the play; its camera 65° down (`panel::PITCH_PORTRAIT`, the user, 2026-11-09),
@@ -841,7 +863,7 @@ capture would crown on, which the majority rule forbids, shows what to take inst
 (`test/board/stuck`); the second lights the next stops with the target's dot, pulsing
 as the hint's ring does for two cycles and then lit, and so on to the capture's end
 (`test/board/count`). With move hints, the next stops of a waiting piece show from the
-first jump. Take back while a piece waits takes the capture back to its start, the
+first jump. Undo move while a piece waits takes the capture back to its start, the
 piece on its square, and takes back no move (`board::unwind`). A puzzle
 (`Board.by_hand`, 2026-11-08) shows none of these: a wrong square there forgets the
 stops, and its own hint is a glow after two misses. A piece that must

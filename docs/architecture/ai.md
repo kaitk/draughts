@@ -32,7 +32,7 @@ for the search:
 
 - The game says what it wants: on the computer's turn it opens an ask, `game::Ask`, a
   flat value holding an id, the position, the skill, and the seed; `game::answer` takes
-  the move for an id and ignores one for an ask no longer open. Take back, start over,
+  the move for an id and ignores one for an ask no longer open. Undo move, start over,
   leaving the game, or the app pausing closes the ask; the next turn opens a new one.
 - Each frame the app puts the game's ask on the typed queue for `game::Ask` when it
   changed (id 0 for none) and polls the queue for `think::Thought`, the answer.
@@ -82,7 +82,7 @@ On a worker the frame loop draws as it would without the computer.
   due rather than draw every frame for many seconds. Once its move has landed nothing
   animates and the app draws nothing. The child can't move the computer's pieces; home,
   settings, start over, and take back still work.
-- **Take back** takes back the child's last move and the computer's reply, so it is the
+- **Undo move** takes back the child's last move and the computer's reply, so it is the
   child's turn again; while the computer thinks, it drops the search and takes back the
   child's move. Before the child's first move it does nothing.
 - **Clocks**: the computer's clock runs while it thinks and pauses, from the start of the
