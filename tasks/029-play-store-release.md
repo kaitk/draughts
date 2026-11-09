@@ -83,7 +83,7 @@ masters present):
   (`store/play-console.md`). Off removes the question.
 - **Play Console:** the developer account (a personal account: identity check, then the
   closed test above), the app's entry, the listing pasted from `store/`, the 512 px icon
-  (`~/Downloads/draughts-store/icon/play-512.png`, winter), the 1024 × 500 feature
+  (`~/Downloads/draughts-store/icon/play-512.png`, autumn), the 1024 × 500 feature
   graphic, and the screenshots (both below), then the App content forms from
   `store/play-console.md`, and Play App Signing (Google-generated app key) at the first
   upload of `draughts-release.aab`.
