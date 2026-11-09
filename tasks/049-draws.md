@@ -113,7 +113,8 @@ piece's move (3.2). The Brazilian confederation's (CBD) own text wasn't found on
 - When the lone king leaves the main road, the 5-move count stops and nothing restarts;
   6.1.8.3 or 6.1.8.6 run from their own start.
 - Brazilian keeps the FMJD-64 text; the CBD's isn't looked for further.
-- The draw's screen is prototyped in `prototypes/` before it is built.
+- The draw's screen: take a of `prototypes/draw.html` (a card with words, like the win's,
+  and the countdown as a line under whose turn), chosen 2026-11-09.
 
 ## Work
 
