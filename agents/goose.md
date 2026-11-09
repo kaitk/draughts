@@ -150,6 +150,8 @@ find out by compiling, so the next session doesn't.
 - `float4` has no swizzles (`.xy`); build the `float2` from `.x` and `.y`.
 - `gfx::uniforms` takes its block by value: a struct bound with `.=` doesn't compile
   ("bytes_of cannot write theme::Theme&[1] out"); bind it with `=`.
+- An `i64` converts to `f32` by itself where an `f32` is wanted (a `float4 { ... }`
+  field, an `f32` parameter): `as f32` there is a redundant-cast warning (2026-11-09).
 - `as` binds looser than `&`: write `(x as i64) & 0x3F`; `x as i64 & 0x3F` doesn't parse.
 - An array of untyped float literals (`let FACE_DP = [64.0, 30.0]`) holds `f64`s; cast an
   element `as f32` to use it with `f32`s. So is a `let` of untyped float constants

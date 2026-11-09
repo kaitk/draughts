@@ -59,6 +59,10 @@ pieces (chosen 2026-11-07); the design boards still set the layout, glass, and c
   The 2D board stays simple; rich materials and lighting belong to the 3D board (task 015).
 - Visible wood grain, and any regular stripe in it (sines), which bands when the board
   is seen from afar: the close-up's grain is smooth, irregular, and barely there.
+- On the 3D board, grain as noise drawn out along it read as soft streaks beside the 3D
+  reference; growth rings from a pith axis per piece, with pores, read as wood and don't
+  band from afar (task 039, 2026-11-09). Crop the frame's front and a square of each at
+  300% beside the reference and measure the patches, as that task did.
 - Two rings on the pieces (an inner ring at half the radius as well as the rim), then a
   wide rounded rim like a tyre, and gloss: the pieces are flat, matte turned discs. The
   close-ups' rims are wider and rounder than ours; ours follow the 3D reference, with a

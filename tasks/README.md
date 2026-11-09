@@ -56,7 +56,7 @@ later. 014 upscales the backgrounds on the desktop; placeholders do until then. 
 3D board) comes after the MVP, and so does 033 (an icon per season; until then one icon,
 switched by hand). 026 (the first start and tutorial) comes after the MVP's menus. 029
 (release on Google Play) makes the release, 036 announces it, 037 builds the puzzle set by
-theme, and 038 adds players.
+theme, 038 adds players, and 039 compares procedural wood for 015's prototype.
 
 ## Next (updated 2026-11-09, at the day session's end)
 

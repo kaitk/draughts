@@ -223,6 +223,8 @@ It compiles `src/app/background.c` from where it is (`board3d.build`) for the ph
   roughness at a distance. The mitred pieces' texture gradients now follow each piece's
   own axes (the sides' were taken along the wrong one). Cost: 5.0 to 5.2 ms a frame
   against 5.0 to 5.1, interleaved; the bake about 30 ms either way.
+- **Wood models:** growth rings with pores replaced the noise drawn out along the grain;
+  task 039 compares four, switched with `--wood N` and W.
 - **Camera:** 52.5° down, a 31° field of view, 14.75 away, fitted to the reference's
   field corners, so the board fills the height of the frame as there.
 - **Tuned** against the references with patch means at the same framing (`--size
