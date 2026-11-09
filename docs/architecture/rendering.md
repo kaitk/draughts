@@ -694,8 +694,12 @@ is touching a piece that can't move because another must capture. Every piece wi
 legal capture pulses, never one of several. Under the majority rule a piece that could
 take, but fewer than another, can't move: touching it is wrong, and the pieces the legal
 captures take pulse too, beside the piece that takes them, so a child sees the other piece
-takes more (`board::outnumbered`; a report from 2026-11-09 of "the wrong piece made to
-capture" was this rule, the board having given no reason). A capture of many
+takes more (`board::outnumbered`). The pulse belongs to the position the mistake was made
+in and ends once a move is played: it used to run on through the move and ring the next
+side's capturers, so after a child's capture on the turned board the computer's man
+beside the child's pieces pulsed red as if it were the child's to move (reported
+2026-11-09, two pieces each taking one; the rings, taps, and moves agree under the turn,
+`test/board/several`). A capture of many
 jumps is tapped by its last square or stop by stop (`board::follow`): a tap on the next
 stop of the selected piece's captures rings it, whatever the hints, and narrows the
 targets shown to the ways through it; once only one capture goes on that way it is

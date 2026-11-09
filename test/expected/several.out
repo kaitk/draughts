@@ -68,3 +68,21 @@ W:Wh2,c3:Bg3,d4,f6
   c3: selected c3, wrong -, pulsing , playing -
   g7: selected -, wrong -, pulsing , playing c3:e5:g7
   a3: selected -, wrong -, pulsing , playing -
+turned, the child on black: i9 takes h8, c5 takes d4, a9 can't move
+B:W14,32,46:B6,10,27
+  10x19  takes 1
+  27x38  takes 1
+2 moves
+  a9: selected -, wrong a9, pulsing black c5 (middle right, legal) black i9 (lower left, legal) , playing -
+  i9: selected i9 (lower left), wrong a9, pulsing black c5 (middle right, legal) black i9 (lower left, legal) , playing -
+  g7: selected -, wrong a9, pulsing , playing 10x19
+  a9: selected -, wrong a9, pulsing black c5 (middle right, legal) black i9 (lower left, legal) , playing -
+  c5: selected c5 (middle right), wrong a9, pulsing black c5 (middle right, legal) black i9 (lower left, legal) , playing -
+  e3: selected -, wrong a9, pulsing , playing 27x38
+  i9: selected i9 (lower left), wrong -, pulsing , playing -
+  g7: selected -, wrong -, pulsing , playing 10x19
+  c5: selected c5 (middle right), wrong -, pulsing , playing -
+  e3: selected -, wrong -, pulsing , playing 27x38
+  c5: selected c5 (middle right), wrong -, pulsing , playing -
+  i9: selected i9 (lower left), wrong -, pulsing , playing -
+  g7: selected -, wrong -, pulsing , playing 10x19

@@ -348,6 +348,9 @@ fn start_move(b: Board&, i: i64, now: f64) {
     b.selected = -1;
     b.steps.clear();
     b.glow = -1;
+    // The must-capture pulse belongs to the position the mistake was made in: left on, it
+    // would ring the next side's capturers, the computer's pieces after the child's move.
+    b.pulse_end = 0.0;
     b.outtaken = 0;
     // A move starts from its square unless release says it was dropped elsewhere; a
     // move played by code (the computer's) must not start from the last drop.
