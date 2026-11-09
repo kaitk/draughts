@@ -104,17 +104,18 @@ look good, not merely work.
 
 ## Prototype
 
-`poc/3d/` (2026-11-09), first step: the autumn board and the 3D reference's position
-(one light king as a stack of two discs with the crown debossed on the upper, one light
+`poc/3d/` (2026-11-09), a first step and a second look pass: the autumn and winter
+boards and the 3D reference's position (one light king as a stack of two discs with the crown debossed on the upper, one light
 piece selected), with the pipeline the method comparisons will hang off.
 
 ```sh
 cd poc/3d
 ../../build/goose-v2026.4-macos-arm64/goose build -o ../../build/board3d board3d.goose
 ../../build/board3d                                 # a drag turns; Tab or a double click switches mode; R resets
+../../build/board3d --theme winter                  # T or a long press switches the theme
 ../../build/board3d --shot out.png --size 1920x1200 [--yaw 20 --pitch 40]   # one frame, headless
 ../../build/board3d --bench 1000 --size 1920x1200   # frame timing, headless
-../../build/board3d --frames 30                     # the window's loop hidden, a drag injected
+../../build/board3d --frames 200                    # the window's loop hidden, a drag, T and a long press injected
 ../../build/board3d --bench 300 --samples 1 --shadow-every   # 1× MSAA, the shadow map every frame
 cd ../.. && scripts/android.py poc/3d/board3d.goose --run       # on the tablet, beside the game (its own id)
 adb shell am start -S -n io.github.kaitk.draughts.board3d/io.github.kaitk.draughts.DraughtsActivity --es args "'--bench 300'"
@@ -129,29 +130,58 @@ It compiles `src/app/background.c` from where it is (`board3d.build`) for the ph
   outline), the board and the pieces lit, the selection's glow ring added. No post pass,
   no discard, nothing temporal. Drawn only when the camera or the window changes.
 - **Geometry**, built once at startup: a piece is a profile turned on a lathe (72 steps:
-  a recessed inner disc, a groove at 63% of the radius, a raised lip, a flat ring, the
-  edge rounded from 86%, the side, a round at the foot), with occlusion baked into the
-  profile; the frame is a profile swept round the field (an inner wall, the top, a
-  bullnose of 0.2 squares, the side). Pieces are 82% of a square (the reference's; the 2D
-  board's are 78%), 22% of their diameter high. The pieces are one instanced draw from a
-  storage buffer.
-- **Wood**, baked once on the GPU at startup into albedo-and-roughness (sRGB) and normal
-  textures with mips: a plan of the field (2048², maple and walnut squares each its own
-  stretch of grain and tone, seams, the dark inlay) and a strip for the frame (4096 ×
-  256, cherry, its grain along each side, mitred on the diagonals). Grain is noise
-  stretched along it, no sines. Tuned to the user's swatch (maple, walnut, cherry, cream:
-  `~/Downloads/Four-Way Wood and Cream Texture Swatch.png`): lit means and grain contrast
-  at screen size close to the swatch's. The pieces' wood and cream are noise in the
-  shader, not baked.
+  a top sampled from one smooth height function, a recessed inner disc, a soft cove at
+  60 to 67% of the radius rising to a low crest at 70%, a flat ring, the edge rounded
+  from 86%, the side, a round at the foot); the frame is a profile swept round the field
+  (an inner wall, the top, a bullnose of 0.09 squares, the side down to 0.7 under the
+  field). Pieces are 88% of a square across and 27% of their diameter high, measured on
+  the 3D reference at the same framing (the 2D board's are 78%). The pieces are one
+  instanced draw from a storage buffer.
+- **Surfaces**, baked on the GPU into albedo-and-roughness (sRGB) and normal textures
+  with mips, at startup and again on a theme change: a plan of the field (2048², the
+  light and dark squares each its own stretch of grain and tone, seams, the dark inlay)
+  and a frame map (2048² over 10.4 world units). Grain is noise drawn out along it, no
+  sines; stone is the same noise round (a mottling, no veins). The pieces' figure is
+  noise in the shader, not baked.
+- **The frame's two constructions**, per theme (the user, 2026-11-09): mitred, four
+  pieces glued at 45°, each with the grain along its side and its own band of the map,
+  a thin joint on each diagonal through the top, the edge and the side; or one solid
+  block with the field carved out, the figure running along x over the whole board.
+  Either is mapped from the world position (along, and how far out plus how far down),
+  so the figure runs on unbroken over the top, the rounded edge and the side and round
+  the corners. v1 took the sweep's UVs, whose length along the path shrinks to nothing at
+  the inner wall: at the corners the grain fanned into arcs and broke at the side
+  switch, the artefacts on the right front corner. Autumn is mitred (the reference reads
+  like mitred cherry), winter one block of stone.
+- **Themes** are data (`poc/3d/theme.goose`): a flat struct of colors, roughness, figure,
+  the frame's construction and edge, the key light, the pieces' bounce, the ambient and
+  the backdrop's grade, read by the one bake and shaders. `--theme autumn|winter`; T, or
+  a press held 0.6 s within 12 pixels for touch (gfx has no multi-touch events), switches:
+  the surfaces rebaked into the same targets, the other photograph decoded, blurred into
+  the same target and its harmonics taken, about 40 ms, nothing allocated per frame.
 - **Shading:** GGX with Filament's correlated Smith and Schlick, wrap diffuse, Filament's
   specular antialiasing on every material, 16 hardware-compared shadow taps on a fixed
   grid, nine spherical harmonics of the blurred photograph for the ambient (computed on
-  the CPU at load, half desaturated, specular through Karis's DFG fit), analytic
-  occlusion (each piece in the 3 × 3 squares round as a cylinder, the frame's inner
-  wall), micro-shadowing on the field only, the Khronos PBR Neutral tonemap.
+  the CPU at load, part way to grey by theme, specular through Karis's DFG fit),
+  analytic occlusion (each piece in the 3 × 3 squares round as a cylinder, the frame's
+  inner wall), micro-shadowing on the field only, the lit board's light on the pieces'
+  sides, the Khronos PBR Neutral tonemap with its toe halved (it crushed the darks'
+  blue). A piece's top takes its normal and occlusion from its height function at the
+  object-space radius, not from interpolants: with MSAA and no `centroid`, those
+  extrapolated past small triangles and left specks in the old groove.
+- **Backdrop:** the blurred photograph graded per theme (gain, saturation, bright
+  patches lifted into bokeh, a lift toward a tint low down, where the reference has a
+  surface under the board).
+- **Camera:** 52.5° down, a 31° field of view, 14.75 away, fitted to the reference's
+  field corners, so the board fills the height of the frame as there.
+- **Tuned** against the references with patch means at the same framing (`--size
+  1448x1086`, the references' size): squares, frame, pieces and backdrop within about
+  10 of the references' sRGB means in autumn and winter, except the backdrops, which
+  are other photographs.
 - **Measured** on an M1 Pro, 1920 × 1200, headless: about 0.2 ms of CPU a frame, about 7
   ms a frame with a wait for the GPU after each (an upper bound, submission and wait
-  included); setup 50 ms warm, 0.3 to 0.8 s cold.
+  included); setup 50 ms warm, 0.3 to 0.8 s cold. After the second pass (the frame
+  map, the themes): about 7.3 ms against v1's 6.7 on the same measure, setup 50 ms.
 - **Not yet:** the store-op patch on the Mac (its prebuilt gfx still stores the samples
   and the depth; Android's gfx has `patches/goose_gfx/0005`), SSAO, SMAA and analytic
   edges to compare, taps hitting squares. The backdrop doesn't turn with the camera.
@@ -159,7 +189,7 @@ It compiles `src/app/background.c` from where it is (`board3d.build`) for the ph
 ### Measured on the tablet (2026-11-09)
 
 Galaxy Tab A11+ (SM-X230, Mali-G615 MC2, Vulkan), 1920 × 1200 landscape at 90 Hz, the
-default view, autumn. A first rough baseline before any tuning; each figure the median
+default view, autumn, the first pass. A first rough baseline before any tuning; each figure the median
 of three launches (one for 1× without the patch), each launch's own figure the median
 of 300 frames.
 
@@ -200,8 +230,8 @@ about 2 ms.
 - **Renders as on the Mac:** a screenshot of the default view matches the Mac's 4× shot
   (shadows, the crown's deboss, the glow, no banding or artefacts); nothing failed only
   on Android.
-- A debug APK of it replaces a release build of the app only after `adb uninstall`
-  (their signatures differ), which deletes the app's data.
+- It installs as `io.github.kaitk.draughts.board3d`, beside the game (`scripts/android.py`
+  gives a program other than the app its own id).
 
 ## Later, only if the floating board falls short
 
