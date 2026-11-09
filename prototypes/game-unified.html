@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draughts: 2D and 3D unified</title>
+<link rel="stylesheet" href="draughts.css">
+<script src="draughts.js"></script>
+<style>
+  /* The flat game screen beside the raised one, before and after (task 054). Each frame is
+     game-captured.html at a device's size with no captured pieces: the 3D screen as built,
+     the 2D screen as built, and the 2D screen after, take a or b (?take=), its frame
+     (&frame=a, 2.4% of the board; b, 4%), its floating button (&btns=raise or none), in
+     landscape (the tablet, 1280 × 800) and portrait (&port=phone, about 548 × 1218 dp at
+     the density floor; tablet, 800 × 1280). */
+  body { overflow: auto; background: #0d1219; color: #dde; font: 15px/1.4 system-ui, sans-serif; }
+  main { padding: 16px 20px 60px; }
+  header { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 10px; }
+  h1 { font: 400 22px var(--font); margin: 0 12px 0 0; }
+  h2 { font: 400 18px var(--font); margin: 18px 0 8px; color: #bcd; }
+  p { margin: 0 0 6px; max-width: 900px; color: #9ab; }
+  select { font: inherit; background: #1d2733; color: #ddd; border: 0; border-radius: 6px; padding: 4px; }
+  a { color: #9cf; }
+  .shots { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+  .shot { display: grid; gap: 6px; }
+  .shot .fr { overflow: hidden; border-radius: 10px; box-shadow: 0 0 0 1px #2a3442; }
+  .shot iframe { border: 0; transform-origin: 0 0; display: block; }
+  .proto-bar { display: none; }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+  const P = new URLSearchParams(location.search);
+  const get = (k, vals, def) => (vals.includes(P.get(k)) ? P.get(k) : def);
+  const take = get('take', ['a', 'b'], 'b');
+  const frame = get('frame', ['a', 'b'], 'b');
+  const btns = get('btns', ['raise', 'none'], 'raise');
+  const port = get('port', ['phone', 'tablet'], 'phone');
+  const season = get('season', ['autumn', 'winter', 'spring', 'summer'], 'winter');
+  Draughts.init();
+  const TAKES = {
+    a: 'a: the flat board in a frame like the 3D board\'s, seen from above, with its shadow, on the 3D screen\'s lighter blur; the panels and their places as built.',
+    b: 'b: a, in the 3D screen\'s layout too: short panels in the top corners in landscape, a floating button under the play panel (raise the board to 3D), the same order in portrait.',
+  };
+  const sel = (k, vals, cur) => `<label>${k} <select data-k="${k}">${vals.map((v) => `<option${v === cur ? ' selected' : ''}>${v}</option>`).join('')}</select></label>`;
+  const page = (view, flat) => {
+    const q = new URLSearchParams({ cap: 'off', view, flat, frame, btns, season });
+    return `game-captured.html?${q}`;
+  };
+  const shot = (label, u, w, h, s) => `<div class="shot"><div>${label} · <a href="${u}" target="_blank">open</a></div>` +
+    `<div class="fr" style="width:${Math.round(w * s)}px;height:${Math.round(h * s)}px"><iframe src="${u}&bare=1" width="${w}" height="${h}" style="transform:scale(${s})"></iframe></div></div>`;
+  const avail = innerWidth - 40 - 32;
+  const row = (w, h) => {
+    // Three abreast where they fit at a readable size, else one under another.
+    const s = Math.min(0.5, (innerWidth < 900 ? (innerWidth - 40) / w : avail / (3 * w))) * 0.98;
+    return shot('3D, as built', page('3d', 'now'), w, h, s) + shot('2D, as built', page('2d', 'now'), w, h, s) +
+      shot(`2D, take ${take}`, page('2d', take), w, h, s);
+  };
+  const [pw, ph] = port === 'phone' ? [548, 1218] : [800, 1280];
+  document.getElementById('app').innerHTML =
+    `<header><h1>2D and 3D unified</h1>${sel('take', ['a', 'b'], take)}${sel('frame', ['a', 'b'], frame)}` +
+    `${sel('btns', ['raise', 'none'], btns)}${sel('port', ['phone', 'tablet'], port)}${sel('season', ['autumn', 'winter', 'spring', 'summer'], season)}` +
+    `<a href="game-captured.html?grid=1">Captured pieces →</a></header><p>${TAKES[take]}</p>` +
+    `<h2>Landscape, the tablet</h2><div class="shots">${row(1280, 800)}</div>` +
+    `<h2>Portrait, ${port === 'phone' ? 'a phone' : 'the tablet'}</h2><div class="shots">${row(pw, ph)}</div>`;
+  document.querySelectorAll('select').forEach((s) => s.onchange = () => { P.set(s.dataset.k, s.value); location.search = P.toString(); });
+</script>
+</body>
+</html>

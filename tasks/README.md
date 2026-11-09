@@ -60,9 +60,11 @@ Open:
 - Release: 029 Google Play, 046 the App Store (after 043, iOS), 036 the announcement
   after the Play release.
 - Content and play: 037 the puzzle set by theme, 038 players, 040 the coach and the hint
-  (takes drawn, a choice pending), 052 what each side has captured (a decision first).
+  (takes drawn, a choice pending), 052 what each side has captured (takes drawn, a
+  choice pending).
 - The 3D board: 039 procedural wood, 041 a carved spring board, 042 its frame cost, 044
-  a plain background, 045 board styles to choose from.
+  a plain background, 045 board styles to choose from, 054 the flat game screen in the
+  3D one's look (takes drawn, a choice pending).
 - Later: 010 goose_gfx changes to propose upstream (alongside), 013 season effects, 014
   upscaled backgrounds, 026 the first start and tutorial.
 
