@@ -329,12 +329,13 @@ let SWITCH_GAP = 4.0;
 let SWITCH_NAME = 20.0;     // the name's line above the switch in the name's column
 let WIDE_NAME_W = 2.0 * 88.0 + SWITCH_GAP; // the names' column as wide as the switch
 let SLACK = 0.5;            // px a row may pass its width by without wrapping
-// The smallest board the groups side by side may leave in portrait: 45% of the page, as
-// on a phone, but no more than 220 dp, 45% of a 553 dp phone's, so a tablet keeps both
-// groups down to the 13" iPad's 3:4 with its bars (a 237 dp board; the look's group, 600
-// dp tall at half the page, sets the height, the game's with its privacy note being 459).
-// A foldable's 206 dp keeps the tabs.
+// The smallest board the groups side by side may leave on a phone (its shorter side under
+// PHONE_DP): 45% of the page, but no more than 220 dp, 45% of a 553 dp phone's. A larger
+// screen keeps both groups side by side as long as they fit, the board as large as the
+// rest leaves and none under board::SMALLEST (a foldable's is 206 dp, a near-square
+// window's none; task 050, the user 2026-11-09).
 let BOTH_BOARD = 220.0;
+let PHONE_DP = 600.0;
 
 // The settings in order, the first two in the game's group, the rest in the look's:
 // each one's name, how many tiles, and how tall they are.
@@ -770,17 +771,25 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
     s.switch_at = float4 { 0.0, 0.0, 0.0, 0.0 };
     s.name_w = NAME_W;
     var ask = NOTHING;
+    // Three layouts, each taken where the one before doesn't fit, so a window that widens
+    // goes through them in order (task 050): the groups stacked at the left of the board
+    // (landscape); the board on top and the groups side by side under it (portrait, and a
+    // near-square landscape); one group at a time with tabs (a phone, a small window).
+    let phone = min(area.z, area.w) < PHONE_DP * u;
+    var aside = true;
+    var w: f32 = 0.0;
+    var tabbed = true;
     if landscape {
         // The choices as wide as they want, at most 55% of the page, wrapping beyond, each
         // setting's name at the left of its tiles; the board in the rest, centered. Near
         // square, where the wrapped rows would run past the page's foot, the names go
         // above the tiles instead, as in portrait, and the rows need less width; where
         // that runs past it too, the names go back to the left and the rows take the width
-        // they want unwrapped (a foldable). Where even that runs past it (a phone), one
-        // group shows at a time, tabs for the two in the title row in place of the title,
-        // the names at the left. Over a bottom inset (a gesture or hidden navigation bar)
-        // the groups may run on through the page's foot, as long as the look's tiles end
-        // above the inset and as far from the screen's edge as they would with none: `room` gains up to that foot, 38 dp.
+        // they want unwrapped (a foldable), as long as the board keeps its least beside
+        // them (a phone: the choices at most 70% of the page). Over a bottom inset (a
+        // gesture or hidden navigation bar) the groups may run on through the page's foot,
+        // as long as the look's tiles end above the inset and as far from the screen's
+        // edge as they would with none: `room` gains up to that foot, 38 dp.
         let head_w = gui::back_width(g, strings::get(strings::NAV_BACK)) + 40.0 * u + languages_width(g)
                      + gui::text_width(g, gui::LABEL, strings::get(strings::HOME_SETTINGS));
         let rise = min(g.insets.y, TOP_RISE * u);
@@ -788,8 +797,7 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
         page.w += rise;
         let foot = min(g.insets.w, (PAD_Y + 14.0) * u);
         let room = page.w - (HEAD_H + HEAD_GAP) * u + foot;
-        var aside = true;
-        var w = min(max(max(group_width(s, g, 0, true), group_width(s, g, 1, true)), head_w), 0.55 * page.z);
+        w = min(max(max(group_width(s, g, 0, true), group_width(s, g, 1, true)), head_w), 0.55 * page.z);
         if group_height(s, over, g, 0, w, true) + GROUP_GAP * u + group_height(s, over, g, 1, w, true) > room {
             aside = false;
             w = min(max(max(group_width(s, g, 0, false), group_width(s, g, 1, false)), head_w), 0.55 * page.z);
@@ -798,32 +806,23 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
             aside = true;
             w = max(max(group_width(s, g, 0, true), group_width(s, g, 1, true)), head_w);
         }
-        let tabbed = group_height(s, over, g, 0, w, aside) + GROUP_GAP * u + group_height(s, over, g, 1, w, aside) > room
-                     || w > 0.7 * page.z;
+        let widest = if phone { 0.7 * page.z } else { page.z - (SIDE_GAP + board::SMALLEST) * u };
+        tabbed = group_height(s, over, g, 0, w, aside) + GROUP_GAP * u + group_height(s, over, g, 1, w, aside) > room
+                 || w > widest;
         if !tabbed && aside && w + (WIDE_NAME_W - NAME_W) * u <= 0.55 * page.z {
             w += (WIDE_NAME_W - NAME_W) * u;
             s.name_w = WIDE_NAME_W;
         }
-        if tabbed {
-            aside = true;
-            let tabs_w = gui::back_width(g, strings::get(strings::NAV_BACK)) + 40.0 * u + languages_width(g)
-                         + tab_width(g, 0) + tab_width(g, 1) + TILE_GAP * u;
-            w = max(max(group_width(s, g, 0, true), group_width(s, g, 1, true)), tabs_w);
-        }
+    }
+    if landscape && !tabbed {
         var side = gui::cut_left(page, w);
         gui::cut_left(page, SIDE_GAP * u);
         var size = 0.94 * min(page.z, page.w);
         if size < board::SMALLEST * u { size = 0.0; }
         l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
         room3d = preview_room(page, size);
-        ask = head(s, g, gui::cut_top(side, HEAD_H * u), shown, tabbed);
+        ask = head(s, g, gui::cut_top(side, HEAD_H * u), shown);
         gui::cut_top(side, HEAD_GAP * u);
-        if tabbed {
-            // The shown group, as tall as the taller, centered down the rest.
-            let h = max(group_height(s, over, g, 0, side.z, true, false), group_height(s, over, g, 1, side.z, true, false));
-            if group(s, over, g, s.group, gui::center(side, side.z, h), area, true, false) { ask = CHANGED; }
-            return ask;
-        }
         let game_h = group_height(s, over, g, 0, side.z, aside);
         let look_h = group_height(s, over, g, 1, side.z, aside);
         // Centered down the rest, or from its top if they are taller, running on into the
@@ -836,43 +835,73 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
         let look = float4 { list.x, list.y, list.z, look_h };
         let unbled = float4 { area.x, area.y, area.z, area.w + g.insets.w };   // no bleed at the foot
         if group(s, over, g, 1, look, unbled, aside) { ask = CHANGED; }
-    } else {
-        // The title row, the board as large as the rest leaves, and the groups side by
-        // side along the bottom, as tall as the taller. Where that leaves the board under
-        // 45% of the width, or under BOTH_BOARD (a phone), one group shows at a time,
-        // across the width, tabs for the two under the title row.
-        let w = 0.5 * (page.z - GROUP_GAP * u);
-        let h = max(group_height(s, over, g, 0, w, false), group_height(s, over, g, 1, w, false));
-        let left = page.w - (HEAD_H + 32.0) * u - h;
-        let tabbed = 0.94 * min(page.z, left) < min(0.45 * page.z, BOTH_BOARD * u);
+        return ask;
+    }
+    // The title row, the board as large as the rest leaves, and the groups side by side
+    // along the bottom, as tall as the taller: each as wide as it wants unwrapped where
+    // both fit the width, centered, else sharing it in proportion to what each wants. A
+    // phone keeps them while the board has 45% of the width, or BOTH_BOARD; a larger
+    // screen as long as they fit under the title row, the board left out under its least
+    // (near square, the user 2026-11-09). Else one group at a time.
+    s.name_w = NAME_W;
+    let want0 = group_width(s, g, 0, false);
+    let want1 = group_width(s, g, 1, false);
+    let across = page.z - GROUP_GAP * u;
+    let unwrapped = want0 + want1 <= across;
+    let w0 = if unwrapped { want0 } else { across * want0 / (want0 + want1) };
+    let w1 = if unwrapped { want1 } else { across - w0 };
+    let h = max(group_height(s, over, g, 0, w0, false), group_height(s, over, g, 1, w1, false));
+    let left = page.w - (HEAD_H + 32.0) * u - h;
+    let both = if phone { 0.94 * min(page.z, left) >= min(0.45 * page.z, BOTH_BOARD * u) } else { left >= 0.0 };
+    if both {
         ask = head(s, g, gui::cut_top(page, HEAD_H * u), shown);
         gui::cut_top(page, 16.0 * u);
-        if tabbed {
-            if tabs(s, g, gui::cut_top(page, BACK_W * u)) { ask = SHOWN; }
-            gui::cut_top(page, GROUP_GAP * u);
-            // The shown group's own height, the board taking the rest: the game's glass as
-            // tall as the look's ended in empty glass under its rows (2026-11-09). Taller
-            // than the room (a small window), it takes the room, the board none, and its
-            // rows scroll.
-            let one = group_height(s, over, g, s.group, page.z, false, false);
-            let fits = one <= page.w;
-            let glass = gui::cut_bottom(page, one);
-            gui::cut_bottom(page, 16.0 * u);
-            var size = 0.94 * min(page.z, page.w);
-            if !fits || size < board::SMALLEST * u { size = 0.0; }
-            l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
-            room3d = preview_room(page, size);
-            if group(s, over, g, s.group, glass, area, false, false, one) { ask = CHANGED; }
-            return ask;
-        }
-        var groups = gui::cut_bottom(page, h);
+        let groups = gui::cut_bottom(page, h);
         gui::cut_bottom(page, 16.0 * u);
-        let size = 0.94 * min(page.z, page.w);
+        var size = 0.94 * min(page.z, page.w);
+        if size < board::SMALLEST * u { size = 0.0; }
         l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
         room3d = preview_room(page, size);
-        if group(s, over, g, 0, gui::cut_left(groups, w), area, false) { ask = CHANGED; }
-        gui::cut_left(groups, GROUP_GAP * u);
-        if group(s, over, g, 1, groups, area, false) { ask = CHANGED; }
+        let x = groups.x + floor(0.5 * (groups.z - w0 - w1 - GROUP_GAP * u) + 0.5);
+        if group(s, over, g, 0, float4 { x, groups.y, w0, h }, area, false) { ask = CHANGED; }
+        if group(s, over, g, 1, float4 { x + w0 + GROUP_GAP * u, groups.y, w1, h }, area, false) { ask = CHANGED; }
+        return ask;
     }
+    if landscape {
+        // One group at a time, tabs for the two in the title row in place of the title,
+        // the names at the left (a phone's landscape): the shown group as tall as the
+        // taller, centered down the rest.
+        let tabs_w = gui::back_width(g, strings::get(strings::NAV_BACK)) + 40.0 * u + languages_width(g)
+                     + tab_width(g, 0) + tab_width(g, 1) + TILE_GAP * u;
+        w = max(max(group_width(s, g, 0, true), group_width(s, g, 1, true)), tabs_w);
+        var side = gui::cut_left(page, w);
+        gui::cut_left(page, SIDE_GAP * u);
+        var size = 0.94 * min(page.z, page.w);
+        if size < board::SMALLEST * u { size = 0.0; }
+        l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
+        room3d = preview_room(page, size);
+        ask = head(s, g, gui::cut_top(side, HEAD_H * u), shown, true);
+        gui::cut_top(side, HEAD_GAP * u);
+        let gh = max(group_height(s, over, g, 0, side.z, true, false), group_height(s, over, g, 1, side.z, true, false));
+        if group(s, over, g, s.group, gui::center(side, side.z, gh), area, true, false) { ask = CHANGED; }
+        return ask;
+    }
+    // One group at a time across the width, tabs for the two under the title row; the
+    // shown group's own height, the board taking the rest: the game's glass as tall as the
+    // look's ended in empty glass under its rows (2026-11-09). Taller than the room (a
+    // small window), it takes the room, the board none, and its rows scroll.
+    ask = head(s, g, gui::cut_top(page, HEAD_H * u), shown);
+    gui::cut_top(page, 16.0 * u);
+    if tabs(s, g, gui::cut_top(page, BACK_W * u)) { ask = SHOWN; }
+    gui::cut_top(page, GROUP_GAP * u);
+    let one = group_height(s, over, g, s.group, page.z, false, false);
+    let fits = one <= page.w;
+    let glass = gui::cut_bottom(page, one);
+    gui::cut_bottom(page, 16.0 * u);
+    var size = 0.94 * min(page.z, page.w);
+    if !fits || size < board::SMALLEST * u { size = 0.0; }
+    l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
+    room3d = preview_room(page, size);
+    if group(s, over, g, s.group, glass, area, false, false, one) { ask = CHANGED; }
     return ask;
 }

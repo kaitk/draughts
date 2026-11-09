@@ -24,11 +24,11 @@ ended 7.36: home, board 580.0,120.0 560.0 8x8, mix 100.0%, quads 77 faded 0 most
 idle 7.5: home, board 580.0,120.0 560.0 8x8, mix 100.0%, quads 77 faded 0 mostly 0, pieces 24 faint 0, over the UI 1, hole none, drawn false, animating false
 at home's place true
 portrait home 0.0: home, board 90.0,128.0 620.0 10x10, mix 100.0%, quads 69 faded 0 mostly 0, pieces 40 faint 0, over the UI 1, hole none, drawn true, animating false
-   1.0825: settings, board 102.0,132.0 597.0 10x10, mix 16.0%, quads 364 faded 364 mostly 295, pieces 40 faint 0, over the UI 3, hole the board, drawn true, animating true
-   1.145: settings, board 128.0,142.0 545.0 10x10, mix 50.0%, quads 364 faded 364 mostly 0, pieces 40 faint 0, over the UI 3, hole the board, drawn true, animating true
-   1.2075: settings, board 153.0,151.0 493.0 10x10, mix 84.0%, quads 364 faded 364 mostly 69, pieces 40 faint 0, over the UI 3, hole the board, drawn true, animating true
-   1.27: settings, board 165.0,155.0 470.0 10x10, mix 100.0%, quads 295 faded 0 mostly 0, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn true, animating true
-ended 1.3: settings, board 165.0,155.0 470.0 10x10, mix 100.0%, quads 295 faded 0 mostly 0, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn false, animating true
-after the flash and the pulse 5.3: settings, board 165.0,155.0 470.0 10x10, mix 100.0%, quads 295 faded 0 mostly 0, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn true, animating false
-idle 5.4: settings, board 165.0,155.0 470.0 10x10, mix 100.0%, quads 295 faded 0 mostly 0, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn false, animating false
+   1.0825: settings, board 102.0,132.0 597.0 10x10, mix 16.0%, quads 363 faded 363 mostly 294, pieces 40 faint 0, over the UI 3, hole the board, drawn true, animating true
+   1.145: settings, board 128.0,142.0 545.0 10x10, mix 50.0%, quads 363 faded 363 mostly 0, pieces 40 faint 0, over the UI 3, hole the board, drawn true, animating true
+   1.2075: settings, board 153.0,151.0 493.0 10x10, mix 84.0%, quads 363 faded 363 mostly 69, pieces 40 faint 0, over the UI 3, hole the board, drawn true, animating true
+   1.27: settings, board 165.0,155.0 470.0 10x10, mix 100.0%, quads 294 faded 0 mostly 0, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn true, animating true
+ended 1.3: settings, board 165.0,155.0 470.0 10x10, mix 100.0%, quads 294 faded 0 mostly 0, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn false, animating true
+after the flash and the pulse 5.3: settings, board 165.0,155.0 470.0 10x10, mix 100.0%, quads 294 faded 0 mostly 0, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn true, animating false
+idle 5.4: settings, board 165.0,155.0 470.0 10x10, mix 100.0%, quads 294 faded 0 mostly 0, pieces 19 faint 0, a wrong move, over the UI 2, hole none, drawn false, animating false
 the board went down all the way true, from 128.0 to 155.0

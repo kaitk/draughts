@@ -22,7 +22,7 @@ a foldable, portrait, 1768 x 2208:
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 147 dp, all in place
   the game: 4 tiles, smallest 129 x 88 dp, board 579 dp, all in place
   the game on the clock: 6 tiles, smallest 129 x 88 dp, board 579 dp, all in place
-  settings: 10 tiles, smallest 88 x 88 dp, board 401 dp, all in place
+  settings: 20 tiles, smallest 88 x 88 dp, the theme's switch 88 x 88 dp a half, board 206 dp, all in place
   the puzzles: 7 tiles, smallest 134 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
@@ -203,7 +203,7 @@ a foldable, portrait, 1768 x 2208:
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 147 dp, all in place
   the game: 4 tiles, smallest 141 x 88 dp, board 579 dp, all in place
   the game on the clock: 6 tiles, smallest 141 x 88 dp, board 579 dp, all in place
-  settings: 10 tiles, smallest 88 x 88 dp, board 401 dp, all in place
+  settings: 20 tiles, smallest 88 x 88 dp, the theme's switch 88 x 88 dp a half, board 206 dp, all in place
   the puzzles: 7 tiles, smallest 158 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
@@ -233,7 +233,7 @@ a foldable, portrait, 1768 x 2208:
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 215 dp, all in place
   the game: 4 tiles, smallest 164 x 88 dp, board 647 dp, all in place
   the game on the clock: 6 tiles, smallest 164 x 88 dp, board 647 dp, all in place
-  settings: 10 tiles, smallest 88 x 88 dp, board 464 dp, all in place
+  settings: 20 tiles, smallest 88 x 88 dp, the theme's switch 88 x 88 dp a half, board 269 dp, all in place
   the puzzles: 7 tiles, smallest 158 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
@@ -690,7 +690,7 @@ et, the tablet with its navigation bar:
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 348 dp, all in place
   the game: 4 tiles, smallest 227 x 88 dp, board 752 dp, all in place
   the game on the clock: 6 tiles, smallest 227 x 88 dp, board 752 dp, all in place
-  settings: 20 tiles, smallest 88 x 88 dp, the theme's switch 88 x 88 dp a half, board 333 dp, all in place
+  settings: 20 tiles, smallest 88 x 88 dp, the theme's switch 88 x 88 dp a half, board 425 dp, all in place
   the puzzles: 7 tiles, smallest 158 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
