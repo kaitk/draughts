@@ -63,8 +63,9 @@ Each is a store rule the app doesn't meet yet:
 - [x] **The launch screen's colour**, 2026-11-09: `UILaunchScreen`'s `UIColorName` is
       the catalog's `LaunchBackground`, #140c09, read from Android's `icon_background`.
 - [ ] **iPad windows** (iPhone and iPad kept, 2026-11-09): `UIRequiresFullScreen` is
-      deprecated in iPadOS 26 and will be ignored, so `scripts/ios.py` drops it and the
-      app follows a resized window. Tried 2026-11-09 on an iPad Pro 11-inch (M5)
+      deprecated in iPadOS 26 and will be ignored, so `scripts/ios.py` drops it (done
+      2026-11-09; with it the window kept a large minimum) and the app follows a resized
+      window. Tried 2026-11-09 on an iPad Pro 11-inch (M5)
       simulator, iOS 26.4, in Windowed Apps, with a copy of the bundle without the key:
       resizing, the 3D board while resized, both orientations in a window and full screen,
       taps after a resize, and leaving and coming back all work. Small windows waste or

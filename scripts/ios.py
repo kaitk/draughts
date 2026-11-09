@@ -168,7 +168,6 @@ def write_bundle(app, exe, app_id, title, device):
         # SDL asks for it to take a pointer (an iPad's trackpad, the simulator's mouse).
         "UIApplicationSupportsIndirectInputEvents": True,
         "UIViewControllerBasedStatusBarAppearance": True,
-        "UIRequiresFullScreen": True,
         "UISupportedInterfaceOrientations": [
             "UIInterfaceOrientationPortrait", "UIInterfaceOrientationLandscapeLeft",
             "UIInterfaceOrientationLandscapeRight"],
