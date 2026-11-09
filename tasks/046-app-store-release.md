@@ -1,11 +1,11 @@
 # 046: Release on the App Store
 
-Status: todo (the listing and answers prepared, and the app meets the bundle's rules,
-2026-11-09; nothing submitted, no account)
+Status: in-progress (the listing and answers prepared, and the app meets the bundle's
+rules, 2026-11-09; the account's enrolment waits on Apple's check; nothing submitted)
 
 Everything between task 043's development build and Draughts on the App Store for iPhone
-and iPad, in the Kids category: no ads, no tracking, no accounts, no network, as on Play
-(task 029). The listing and App Store Connect's answers are in `store/app-store.md`, the
+and iPad, in Games → Puzzle at 4+ (not the Kids category): no ads, no tracking, no
+accounts, no network, as on Play (task 029). The listing and App Store Connect's answers are in `store/app-store.md`, the
 page's preview in `store/preview/app-store.html`. Apple's rules change; check each against
 Apple's pages when doing this, as `store/app-store.md` was on 2026-11-09.
 
@@ -19,8 +19,8 @@ Apple's pages when doing this, as `store/app-store.md` was on 2026-11-09.
 - **No Estonian listing:** Estonian is not an App Store localization, and Estonia's
   storefront shows English (U.K.). The Estonian text is in `store/app-store.md` for when
   it is.
-- **The answers:** App Privacy "Data Not Collected"; the age questionnaire all None, 4+;
-  Kids, age band 6–8 proposed; export compliance already answered by the Info.plist's
+- **The answers:** App Privacy "Data Not Collected"; the age questionnaire all None, 4+,
+  Made for Kids No; export compliance already answered by the Info.plist's
   `ITSAppUsesNonExemptEncryption` false; review notes.
 - **The privacy policy** covers iPhone and iPad and their backup (`store/privacy/`).
 - **Screenshots** from headless simulators (iOS 26.4, no Simulator.app window), seven
@@ -62,27 +62,48 @@ Each is a store rule the app doesn't meet yet:
       and a tinted variant are optional and left out.
 - [x] **The launch screen's colour**, 2026-11-09: `UILaunchScreen`'s `UIColorName` is
       the catalog's `LaunchBackground`, #140c09, read from Android's `icon_background`.
-- [ ] **iPad windows:** `UIRequiresFullScreen` is deprecated in iPadOS 26 and will be
-      ignored, so the layout must follow a resized window on iPad (secondhand; read
-      TN3192 first). Or offer iPhone only, which drops the iPad screenshots too.
+- [ ] **iPad windows** (iPhone and iPad kept, 2026-11-09): `UIRequiresFullScreen` is
+      deprecated in iPadOS 26 and will be ignored, so `scripts/ios.py` drops it and the
+      app follows a resized window. Tried 2026-11-09 on an iPad Pro 11-inch (M5)
+      simulator, iOS 26.4, in Windowed Apps, with a copy of the bundle without the key:
+      resizing, the 3D board while resized, both orientations in a window and full screen,
+      taps after a resize, and leaving and coming back all work. Small windows waste or
+      lose room on three screens and the puzzles: task 050.
 - [ ] **A distribution build:** an `.ipa` signed with an App Store distribution
       certificate and profile, uploaded with Transporter or `xcrun altool --upload-app`;
       built with Xcode 26 and the iOS 26 SDK (required since 2026-04-28).
-- [ ] **No links out stays true:** no `SDL_OpenURL`, no rating prompt, no share sheet; a
-      future one needs a parental gate.
+- [ ] **No links out stays true:** no `SDL_OpenURL`, no rating prompt, no share sheet.
+
+## Decided (2026-11-09)
+
+- **Not the Kids category:** Games → Puzzle, rated 4+, Made for Kids No, no age band. The
+  listing speaks to all ages, as Guideline 5.1.4(b) requires outside Kids
+  (`store/app-store.md`).
+- **iPhone and iPad.**
+- **The account:** the Apple Developer Program as an individual on the Apple ID the
+  development builds already use, enrolled on the web and paid by card there. Apple
+  locked the account while it checks the email and phone; waiting on its reply. Once
+  active, that Apple ID has two teams, the free Personal Team and the paid one:
+  `scripts/ios.py` must pick the paid one, whose development profiles last a year, not 7
+  days (`docs/development.md` then says so).
+- **EU trader status:** non-trader, for the account and the app.
+- **The support URL** `https://kaitk.github.io/draughts/`, the privacy URL
+  `https://kaitk.github.io/draughts/privacy/`.
 
 ## What remains for the user
 
-- **The Apple Developer Program,** 99 USD a year, as an individual: the legal name is the
-  seller shown on the App Store (`{DEVELOPER}` there is that name), and the EU trader
-  status (non-trader proposed, as on Play).
-- **Decide:** the Kids age band (5 and under, 6–8, or 9–11: one only, and Made for Kids
-  can't be undone after approval), iPad or iPhone only, and the support URL
-  (`{SUPPORT_URL}`).
-- **App Store Connect:** the app record (bundle id `io.github.kaitk.draughts`), the
-  listing and answers pasted from `store/app-store.md`, the screenshots, the review
-  contact (a phone, not shown publicly).
-- **TestFlight** on the iPhone 13 mini before review.
+Once the account is active:
+
+- **App Store Connect:** register the bundle id `io.github.kaitk.draughts` (Certificates,
+  Identifiers & Profiles), then the app record: name "Draughts" (or the fallback),
+  English (U.K.), a SKU; App Information (category, URLs, content rights, the trader
+  status); the listing and answers pasted from `store/app-store.md`; the screenshots; the
+  review contact (a phone, not shown publicly).
+- **Signing:** an Apple Distribution certificate (Xcode → Settings → Accounts → Manage
+  Certificates) and an App Store provisioning profile for the bundle id, both on the Mac,
+  never in git.
+- **TestFlight** on the iPhone 13 mini (an internal tester, no beta review) before
+  submitting.
 
 ## Acceptance criteria
 
@@ -93,4 +114,4 @@ Each is a store rule the app doesn't meet yet:
       run with them)
 - [ ] The iPad layout in a resized window, or the app offered for iPhone only
 - [ ] A distribution build uploaded and tried through TestFlight on a device
-- [ ] Submitted and approved, in the Kids category
+- [ ] Submitted and approved, in Games → Puzzle at 4+

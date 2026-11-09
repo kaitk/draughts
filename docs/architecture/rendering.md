@@ -517,8 +517,7 @@ the prototype tried, kept for 3D:
   moves) comes with the tutorial, taken out until then so the tablet's
   landscape shows both groups (the user, 2026-11-09). Last, the privacy note
   (`settings.privacy`, App Review Guideline 5.1.1(i)): the policy in one sentence, dim
-  in the small face, with no link out, as a link in the Kids category needs a parental
-  gate. It sits at the group's title row's right end where it fits there in two lines
+  in the small face, with no link out, as the app has none. It sits at the group's title row's right end where it fits there in two lines
   at most (the stacked landscapes, which have no height to spare: one line in both
   languages on the tablet and the iPad), else at the glass's foot, wrapped, where the
   game's group is as tall as the look's (portrait, a phone's tabs), so it moves no

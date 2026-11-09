@@ -9,7 +9,7 @@ be pasted in. Images (the icons, the feature graphic, screenshots) stay local in
 | `listing-en.md` | Play's listing in English: title, short and full description |
 | `listing-et.md` | The same in Estonian, with notes on the wording |
 | `play-console.md` | Play's App content answers: Data safety, ads, content rating (IARC), target audience and the Families Policy, the other declarations, the store settings, and the account |
-| `app-store.md` | The App Store's listing (English only) and App Store Connect's answers: App Privacy, age rating, the Kids category, export compliance, the privacy manifest, review notes, and what the iOS build still needs |
+| `app-store.md` | The App Store's listing (English only) and App Store Connect's answers: App Privacy, age rating, the category, export compliance, the privacy manifest, review notes, and what the iOS build still needs |
 | `privacy/index.html` | The privacy policy, English and Estonian on one standalone page, for both stores |
 | `preview/` | `play.html` and `app-store.html`: the two stores' pages as they would look, on a phone and on the web, in English and Estonian |
 

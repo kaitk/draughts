@@ -504,8 +504,7 @@ fn rows(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4,
 // landscapes, where both groups stack and the height is short; one line in English and
 // Estonian on the tablet and the iPad), the row as tall as they are; otherwise at the
 // glass's foot, wrapped to its width, where the game's group, as tall as the look's
-// (portrait, a phone's tabs), has room to spare. No link out: in the Kids category one
-// needs a parental gate.
+// (portrait, a phone's tabs), has room to spare. No link out: the app opens none.
 let NOTE_A = 0.66;
 let NOTE_GAP = 24.0;        // between the group's title and the note beside it
 let NOTE_BESIDE = 2;        // the most lines the note takes beside the title

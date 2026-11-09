@@ -54,8 +54,8 @@ cancelled. All are archived. The MVP in `docs/product.md` is built.
 
 Open:
 
-- Release: 029 Google Play, 046 the App Store (after 043, iOS), 036 the announcement
-  after the Play release.
+- Release: 029 Google Play, 046 the App Store (after 043, iOS), 050 small iPad windows,
+  036 the announcement after the Play release.
 - Content and play: 037 the puzzle set by theme, 038 players, 040 a hint in the game
   (later), 048 a reported forced capture with a king.
 - The 3D board: 039 procedural wood, 041 a carved spring board, 042 its frame cost, 044

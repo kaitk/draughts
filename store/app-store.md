@@ -16,7 +16,12 @@ The counts are Python's `len`, and bytes for the keywords, as Apple counts them;
   and for the user's own pages.
 - **No other platform named** (Review Guideline 2.3.10), so the text says iPhone and iPad,
   never Android, and the screenshots come from the simulator.
-- **The name is "Draughts"**, as on Play, with no "for Kids" (2026-11-09). App Store names
+- **Not in the Kids category** (2026-11-09): Games → Puzzle at 4+, Made for Kids No.
+  Made for Kids can't be undone and binds every later version to its rules (Guideline
+  1.3). Outside Kids, the name, subtitle, icon, screenshots, and description may not imply
+  that children are the main audience (5.1.4(b)), and "For Kids" in metadata is reserved
+  for Kids (2.3.8), so the text speaks to all ages.
+- **The name is "Draughts"**, as on Play (2026-11-09). App Store names
   are unique: if "Draughts" is taken, App Store Connect refuses it at the app record, and a
   fallback such as "Draughts: Play and Learn" is needed.
 
@@ -26,8 +31,8 @@ The counts are Python's `len`, and bytes for the keywords, as Apple counts them;
 | --- | --- | --- |
 | Name | 30 | `Draughts` (8), the launcher's name; unique on the store, so check it's free |
 | Subtitle | 30 | `Play, learn, and solve puzzles` (30) |
-| Primary category | | Games, subcategory Board |
-| Secondary category | | Kids (age band below); or Education, if Kids is left out |
+| Primary category | | Games, subcategory Puzzle (Board as the second subcategory, if offered) |
+| Secondary category | | None |
 | Age rating | | 4+ (below) |
 | Content rights | | No third-party content: the photographs and fonts are the app's own or under the OFL |
 | Copyright | | `2026 Gideonic` (Apple adds the ©); for an individual account the seller shown is the legal name |
@@ -47,17 +52,17 @@ characters, What's New 4000 (from the second version), review notes 4000 bytes.
 Play draughts on a 2D or 3D board against the computer or a friend on one device, and solve 120 puzzles. International, Brazilian, and Russian. No ads, offline.
 ```
 
-### Keywords (93 of 100 bytes)
+### Keywords (88 of 100 bytes)
 
 ```text
-checkers,board game,international,russian,brazilian,puzzles,kids,offline,family,strategy,kabe
+checkers,board game,international,russian,brazilian,puzzles,offline,family,strategy,kabe
 ```
 
-Not repeated: the name's word (draughts), which Apple indexes anyway. "kids" stands for
-the audience the name no longer names. No other app's name. "kabe" for people in Estonia
-searching the English storefront.
+Not repeated: the name's word (draughts), which Apple indexes anyway. No "kids", which
+outside the Kids category would imply the audience (5.1.4(b)). No other app's name.
+"kabe" for people in Estonia searching the English storefront.
 
-### Description (2,381 of 4,000)
+### Description (2,380 of 4,000)
 
 ```text
 A calm draughts game to play and learn: big pieces, a flat 2D or a 3D board, and nothing to distract from the game.
@@ -90,7 +95,7 @@ THE BOARD
 • The season follows the date, or stays on the one you choose; or a plain background in the colours of the board.
 
 FOR EVERYONE
-• Large buttons and pictures, so even a child who can't read yet finds their way.
+• Large buttons and pictures, so even players who can't read yet find their way.
 • Simple enough for a first game, while the hard level and the hardest puzzles test grown-ups too.
 • In English and Estonian, following the device's language.
 • No ads, no purchases, and no internet needed.
@@ -131,35 +136,19 @@ read 2026-11-09). Answer each as it stands; the facts:
 | Sexual content, nudity | None |
 | Cartoon, fantasy, or realistic violence; guns or weapons | None |
 | Simulated gambling, contests, gambling, loot boxes | None / No |
-| Made for Kids | Yes (below) |
+| Made for Kids | No |
 
-Expected: **4+**. Made for Kids is offered only at 4+ or 9+, and is locked once the app is
-approved.
+Expected: **4+**.
 
-## Kids category
-
-The app is for children of about 5 to 8, so it goes in Kids. What Apple asks
-([Guidelines](https://developer.apple.com/app-store/review/guidelines/) 1.3 and 5.1.4,
-[Kids apps](https://developer.apple.com/app-store/kids-apps/), read 2026-11-09), and where
-the app stands:
-
-| Rule | The app |
-| --- | --- |
-| One age band: 5 and under, 6–8, or 9–11 | **6–8** (proposed: the app's 5 to 8 straddles two bands, and 6–8 holds most of it; the user decides) |
-| No links out, purchases, or other distractions unless behind a parental gate | None: the app opens no URL (no `SDL_OpenURL` or `http` in `src/` or `ios/`, 2026-11-09), has no purchases, no rating prompt, no share sheet. No gate is needed while that holds |
-| No third-party analytics or advertising; no personal or device information sent to third parties | None: no SDK besides SDL and goose_gfx, compiled in, and no network |
-| A privacy policy | `https://kaitk.github.io/draughts/privacy/` |
-| Stays under these rules even if the category is later dropped | Accepted: the app means to keep them anyway |
-
-A parental gate, if one is ever needed, is an adult task (Apple's examples: a sum, a
-question) in front of the link or purchase, with a spoken prompt for a child who can't
-read.
+**No links out** stays a rule though the app isn't in Kids: it opens no URL (no
+`SDL_OpenURL` or `http` in `src/` or `ios/`, 2026-11-09), and has no purchases, rating
+prompt, or share sheet.
 
 ## Privacy policy inside the app
 
 Guideline 5.1.1(i) asks for the policy's link in the metadata **and** inside the app,
-easy to reach (read 2026-11-09). In the Kids category a link out needs a parental gate, so
-the app shows the policy in one sentence instead, with no link: in settings' Game group
+easy to reach (read 2026-11-09). The app has no links out, so it shows the policy in one
+sentence instead: in settings' Game group
 (beside its title, or at its foot on a phone and in portrait), "Privacy: Draughts collects
 nothing. Everything stays on this device." (`settings.privacy` in `strings/<lang>.txt`).
 
@@ -201,7 +190,7 @@ release build (`docs/development.md`, "Run on iOS").
 | Notes | Below |
 
 ```text
-Draughts is a board game for children of about 5 to 8. It has no network code, no accounts, no ads, no purchases, no links out of the app, and no third-party SDKs; everything a player makes (an optional name, settings, stars, a saved game) stays in the app's container. The 3D board is chosen in Settings → Board. Puzzles open from the home screen; solving half of Learn opens the other themes.
+Draughts is a board game for all ages, simple enough for young children. It has no network code, no accounts, no ads, no purchases, no links out of the app, and no third-party SDKs; everything a player makes (an optional name, settings, stars, a saved game) stays in the app's container. The 3D board is chosen in Settings → Board. Puzzles open from the home screen; solving half of Learn opens the other themes.
 ```
 
 ## Builds and the account
@@ -220,10 +209,19 @@ Draughts is a board game for children of about 5 to 8. It has no network code, n
   app with no income is "unlikely" a trader, and a non-trader shows no contact details
   ([DSA trader requirements](https://developer.apple.com/help/app-store-connect/manage-compliance-information/manage-european-union-digital-services-act-trader-requirements),
   read 2026-11-09).
-- **iPad:** the Info.plist offers iPhone and iPad (`UIDeviceFamily` 1, 2), so iPad
-  screenshots are required. `UIRequiresFullScreen`, which it sets, is deprecated in
-  iPadOS 26 and will be ignored, so the app must also draw right in a resized window
-  (secondhand, from WWDC25; check TN3192 before submitting).
+- **iPhone and iPad** (2026-11-09): the Info.plist offers both (`UIDeviceFamily` 1, 2),
+  so iPad screenshots are required. `UIRequiresFullScreen` is deprecated in iPadOS 26
+  and will be ignored, so the app follows a resized window instead.
+- **The account's enrolment** (read 2026-11-09): an Apple Account with two-factor
+  authentication and the legal name as first and last name; enrolled on the web, as the
+  Apple Developer app bills the phone's own Apple Account. A free app needs no Paid Apps
+  Agreement, so no tax or banking forms. The trader status is set in App Store Connect →
+  Business → Agreements → Compliance → Digital Services Act, and per app under App
+  Information → App Store Regulations and Permits.
+- **Signing stays out of git:** the team, the distribution certificate (in the Mac's
+  Keychain), and the App Store profile are read on the Mac at build time, as for
+  development builds; an upload's app-specific password or API key stays in the
+  Keychain.
 
 ## Screenshots
 
