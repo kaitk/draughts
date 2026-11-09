@@ -1,8 +1,10 @@
 # Play Console answers
 
 The answers for Play Console's App content forms (Policy and programs → App content), and
-the store settings. Drafted 2026-11-08 from the app as built, players added 2026-11-09; the forms' questions change,
-so read each one as it stands and answer from the facts in "What the answers rest on".
+the store settings. Drafted 2026-11-08 from the app as built, players added 2026-11-09, and
+checked against Play Console Help on 2026-11-09 (each article linked where it is used); the
+forms' questions change, so read each one as it stands and answer from the facts in "What
+the answers rest on".
 
 ## What the answers rest on
 
@@ -18,9 +20,14 @@ so read each one as it stands and answer from the facts in "What the answers res
   data as collected only when it is sent off the device).
 - **Android's backup:** `android:allowBackup="true"`, so Android's own Auto Backup may
   copy those files to the user's Google account if the user turned backup on. The
-  answers below count that as not collected, since the developer never receives it;
-  confirm it against Play's Data safety help when filling the form in. Setting `allowBackup="false"` would remove the question at
-  the cost of a child's progress surviving a new tablet (open).
+  answers below count that as not collected, since the developer never receives it.
+  Play's Data safety help
+  ([10787469](https://support.google.com/googleplay/android-developer/answer/10787469),
+  read 2026-11-09) counts as collected only what leaves the device to the developer or a
+  third party, and says nothing of Android's backup; it does say data a user uploads to
+  their own Drive, which the developer never reaches, needs no declaring. Setting
+  `allowBackup="false"` would remove the question at the cost of a child's progress
+  surviving a new tablet (open).
 
 ## Data safety
 
@@ -84,8 +91,18 @@ and where the app stands:
 - **Target API level** current: 36.
 - **Sign-in:** none.
 - **Augmented reality, camera, microphone:** none.
-- **Teacher Approved:** Play's teachers review apps for children by their own choice; it
-  can't be applied for. Nothing to do.
+- **Teacher Approved:** still running; an app that meets the Families Policy can opt in to
+  be rated by Play's teachers, with no promise of inclusion, and an approved app gets a
+  badge and may show on the Kids tab
+  ([9867159](https://support.google.com/googleplay/android-developer/answer/9867159), read
+  2026-11-09). "Designed for Families" no longer exists as a program of its own; it is
+  the Families Policy. Opt in once the app is published.
+- **Several age groups** only if the app is made and fit for each; Google reviews the
+  target audience, which can take 7 days or more
+  ([9893335](https://support.google.com/googleplay/android-developer/answer/9893335), read
+  2026-11-09).
+- **Parental gate:** Play's Families pages ask for none (2026-11-09); the app has no links
+  out and no purchases anyway.
 
 ## Other App content declarations
 
@@ -100,16 +117,41 @@ and where the app stands:
 | Data deletion (accounts) | Not applicable: no accounts |
 | Photo and video permissions, full-screen intent, foreground services, exact alarms | Not used |
 
+Even with nothing collected, the Data safety form must be filled in and the privacy
+policy linked ([10787469](https://support.google.com/googleplay/android-developer/answer/10787469)),
+and the IARC questionnaire is mandatory: an unrated app isn't published
+([9859655](https://support.google.com/googleplay/android-developer/answer/9859655), both
+read 2026-11-09).
+
 ## Store settings
 
 | Setting | Value |
 | --- | --- |
 | App or game | Game |
 | Category | Board |
-| Tags | Up to five of Play's list; pick Board, Casual, Offline, Single player, Family, if offered |
+| Tags | Up to five of Play's list, in Store settings → App category → Manage tags ([9859673](https://support.google.com/googleplay/android-developer/answer/9859673), read 2026-11-09; the list shows only in the Console): pick Board, Casual, Offline, Single player, Family, if offered |
 | Contact email | `{CONTACT_EMAIL}` (required, shown on the listing) |
 | Website | `https://kaitk.github.io/draughts/` (optional; to confirm) |
 | Phone | None |
 | Price | Free (a free app can never become paid) |
 | Countries | All, or Estonia and the EU first; the user decides |
 | Developer name | `{DEVELOPER}` (the Play developer account's name) |
+| Trader status (EU) | **Non-trader**, if the user agrees: free, no ads, no purchases, made as a hobby. A non-trader's listing shows only the email and the country, and EEA and UK users are told consumer law doesn't apply; a trader's shows a name, address, and phone, a personal trader's address included. New accounts declare it at creation ([17594752](https://support.google.com/googleplay/android-developer/answer/17594752), read 2026-11-09) |
+
+## The account
+
+What a personal developer account asks, from Play Console Help, read 2026-11-09:
+
+- The legal name and address, a verified email and phone, and a developer website
+  ([10840893](https://support.google.com/googleplay/android-developer/answer/10840893)). The
+  developer email shows on the public profile; the phone shows only for organisations.
+  No D-U-N-S number for a personal account.
+- A closed test with at least 12 testers opted in for 14 days before production, for a
+  personal account made after 2023-11-13
+  ([14151465](https://support.google.com/googleplay/android-developer/answer/14151465)).
+- Target API 36 for new apps and updates from 2026-08-31
+  ([11926878](https://support.google.com/googleplay/android-developer/answer/11926878)); the
+  app targets 36.
+- The package name registered under Android developer verification; Play Console's home
+  page says whether anything is left to do (secondhand, from Google's 2026 announcements;
+  check in the Console).
