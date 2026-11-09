@@ -93,7 +93,7 @@ SDL_GPU Metal" and nothing can be tried in the simulator. Its device draws on th
 GPU, and with the check passed it draws `poc/poc.goose` and the app as the Mac does.
 SDL 3.4.16 (goose_gfx `6cfa3de`'s pin), Xcode 26.4, the iOS 18.3 simulator.
 
-- Here: `patches/SDL/0004-metal-on-the-ios-simulator.patch` accepts the device under
+- Here: `patches/SDL/0005-metal-on-the-ios-simulator.patch` accepts the device under
   `TARGET_OS_SIMULATOR`, which only the simulator's build compiles; a device build is
   unchanged.
 - Upstream (a note for the user, who decides): the same under `TARGET_OS_SIMULATOR`, or a
