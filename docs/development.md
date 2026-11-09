@@ -202,7 +202,9 @@ scripts/android.py src/app/draughts.goose --run     # build, install, start
 adb logcat -s goose:* SDL:*                 # the program's output and SDL's log
 ```
 
-`scripts/android.py` builds without Gradle, into `build/android/<program>/`:
+`scripts/android.py` builds without Gradle, into `build/android/<program>/`, with
+`scripts/native.py`, which holds what it shares with `scripts/ios.py` (the app's id and
+version, the Goose-to-C step, the patched copies, and the launcher's names):
 
 1. Goose writes the program's C (`goose -o`) and the runtime's C (`goose --emit-runtime`).
 2. goose_gfx's `src/` is copied, and `patches/goose_gfx/*.patch` applied to the copy.
@@ -215,8 +217,9 @@ adb logcat -s goose:* SDL:*                 # the program's output and SDL's log
    (`SDL_src/android-project/.../org/libsdl/app`) and `android/java/`.
 5. `aapt2` compiles `android/res` (the icon and the launch theme; `scripts/icon.py` makes
    the icon, `design/icon/README.md`) and links it with `android/AndroidManifest.xml`,
-   giving the app its id, `versionCode`, and `versionName` from `APP_ID`, `VERSION_CODE`,
-   and `VERSION_NAME` at the top of the script, the one place they are set. The id is
+   giving the app its id, `versionCode`, and `versionName` from `APP_ID` and
+   `VERSION_NAME` at the top of `scripts/native.py` (which iOS's build reads too) and
+   `VERSION_CODE` at the top of the script, the one place each is set. The id is
    `io.github.kaitk.draughts`, the Java code's package too.
    The launcher's name follows the phone's language: the script writes
    `res/values/strings.xml` and `res/values-<lang>/strings.xml` into the build directory
@@ -284,8 +287,9 @@ scripts/ios.py src/app/draughts.goose --device --run            # on an attached
    and SDL, linked statically. `ios/main.c` hands the main thread to UIKit through
    `SDL_RunApp`, which calls the program's main back as `SDL_main`.
 4. The bundle is the executable, an `Info.plist` the script writes (the id
-   `io.github.kaitk.draughts`, the version from `VERSION_NAME` and `BUILD_NUMBER`, full
-   screen, an empty `UILaunchScreen`, without which iOS letterboxes the app), and the
+   `io.github.kaitk.draughts`, the version from `native.py`'s `VERSION_NAME` and the
+   script's `BUILD_NUMBER`, full screen, an empty `UILaunchScreen`, without which iOS
+   letterboxes the app), and the
    launcher's name per language (`<lang>.lproj/InfoPlist.strings` from each
    `strings/<lang>.txt`'s `app.name`).
 

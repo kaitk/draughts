@@ -34,7 +34,6 @@ ANDROID_BUILD_TOOLS, ANDROID_PLATFORM. docs/development.md lists the versions.
 import argparse
 import hashlib
 import os
-import re
 import shutil
 import subprocess
 import struct
@@ -44,21 +43,18 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+from native import APP_ID, ROOT, VERSION_NAME, app_names, copy_sources, goose_to_c, run, sidecar
+
 SDK = Path(os.environ.get("ANDROID_HOME", Path.home() / "Library/Android/sdk"))
 NDK = Path(os.environ.get("ANDROID_NDK", SDK / "ndk/29.0.14206865"))
 BUILD_TOOLS = Path(os.environ.get("ANDROID_BUILD_TOOLS", SDK / "build-tools/36.0.0"))
 PLATFORM = Path(os.environ.get("ANDROID_PLATFORM", SDK / "platforms/android-36"))
-GOOSE = Path(os.environ.get("GOOSE", ROOT / "build/goose-v2026.4-macos-arm64/goose"))
-SDL = ROOT / "third_party/goose_gfx/third_party/SDL"
-# The application id (2026-11-08): Play fixes it for good at the first upload. aapt2's
-# --rename-manifest-package gives it to the app, so this line alone sets it; the Java code's
-# package (android/java/) is the same name, which lets `adb shell am start -n ID/.DraughtsActivity`
-# work, and needs no change if the id ever does before the first upload.
-APP_ID = "io.github.kaitk.draughts"
+# The application id is native.APP_ID. aapt2's --rename-manifest-package gives it to the
+# app, so that line alone sets it; the Java code's package (android/java/) is the same name,
+# which lets `adb shell am start -n ID/.DraughtsActivity` work, and needs no change if the
+# id ever does before the first upload. The versionName is native.VERSION_NAME.
 ACTIVITY = "io.github.kaitk.draughts.DraughtsActivity"
 VERSION_CODE = 1          # raised for every upload to Play
-VERSION_NAME = "0.1.0"
 MIN_SDK = "29"
 TARGET_SDK = "36"         # what Play requires of new apps and updates from 2026-08-31
 UPLOAD_KEY = Path(os.environ.get("DRAUGHTS_UPLOAD_KEY",
@@ -66,12 +62,6 @@ UPLOAD_KEY = Path(os.environ.get("DRAUGHTS_UPLOAD_KEY",
 BUNDLETOOL_VERSION = "1.18.3"
 BUNDLETOOL_SHA256 = "a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29"
 PAGE = 16384              # the page size Play requires native libraries to be aligned to
-
-
-def run(*cmd, cwd=None, env=None):
-    print("+", " ".join(str(c) for c in cmd), flush=True)
-    subprocess.run([str(c) for c in cmd], cwd=cwd, check=True,
-                   env=None if env is None else dict(os.environ, **env))
 
 
 def upload_key():
@@ -128,17 +118,6 @@ def llvm_bin(name):
     return hosts[0] / "bin" / name
 
 
-def sidecar(program, key):
-    """The paths a list in the program's .build sidecar names, made absolute."""
-    build = program.with_suffix(".build")
-    if not build.exists():
-        return []
-    text = re.sub(r"//[^\n]*", "", build.read_text())
-    m = re.search(rf"\b{key}\s*=\s*\[([^\]]*)\]", text)
-    names = re.findall(r'"([^"]*)"', m.group(1)) if m else []
-    return [(program.parent / n).resolve() for n in names]
-
-
 def android_text(text):
     """A string for strings.xml: XML escaped, and Android's own escapes for \\, quotes, and
     a leading @ or ?."""
@@ -154,16 +133,12 @@ def write_app_names(res_dir):
     every other strings/<lang>.txt, each holding app_name, the file's app.name."""
     if res_dir.exists():
         shutil.rmtree(res_dir)
-    for path in sorted((ROOT / "strings").glob("*.txt")):
-        lang = path.stem
-        m = re.search(r"^app\.name\s*=\s*(.+?)\s*$", path.read_text(encoding="utf-8"), re.M)
-        if not m:
-            sys.exit(f"{path}: no app.name")
+    for lang, name in app_names().items():
         folder = res_dir / ("values" if lang == "en" else f"values-{lang}")
         folder.mkdir(parents=True)
         (folder / "strings.xml").write_text(
             '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n'
-            f'    <string name="app_name">{android_text(m.group(1))}</string>\n'
+            f'    <string name="app_name">{android_text(name)}</string>\n'
             '</resources>\n', encoding="utf-8")
 
 
@@ -183,44 +158,13 @@ def main():
     if args.id_suffix: app_id += "." + args.id_suffix
     out = ROOT / "build/android" / name
     gen, native, apk_dir = out / "gen", out / "native", out / "apk"
-    gen.mkdir(parents=True, exist_ok=True)
 
     # 1. Goose to C.
-    run(GOOSE, "-o", gen / "program.c", program, cwd=program.parent)
-    run(GOOSE, "--emit-runtime", gen / "goose_runtime.c")
+    goose_to_c(program, gen)
 
-    # 2. goose_gfx's C layers with patches/goose_gfx applied, then libSDL3.so and libmain.so.
-    gfx_src = out / "goose_gfx_src"
-    fresh = out / "goose_gfx_src.new"
-    if fresh.exists():
-        shutil.rmtree(fresh)
-    # Fresh timestamps (shutil.copy), so ninja rebuilds what a removed patch restores.
-    shutil.copytree(ROOT / "third_party/goose_gfx/src", fresh / "src", copy_function=shutil.copy)
-    for patch in sorted((ROOT / "patches/goose_gfx").glob("*.patch")):
-        run("patch", "-s", "-p1", "-i", patch, cwd=fresh)
-    if gfx_src.exists():
-        shutil.rmtree(gfx_src)
-    fresh.rename(gfx_src)
-    # SDL is large, so its patched copy is remade only when the pin or a patch changes.
-    sdl_src = ROOT / "build/android/SDL_src"
-    sdl_patches = sorted((ROOT / "patches/SDL").glob("*.patch"))
-    stamp = hashlib.sha256(subprocess.run(
-        ["git", "-C", SDL, "rev-parse", "HEAD"], check=True, capture_output=True).stdout)
-    for patch in sdl_patches:
-        stamp.update(patch.read_bytes())
-    stamp_file = sdl_src / ".draughts-stamp"
-    if not stamp_file.exists() or stamp_file.read_text() != stamp.hexdigest():
-        fresh = sdl_src.with_name("SDL_src.new")
-        if fresh.exists():
-            shutil.rmtree(fresh)
-        shutil.copytree(SDL, fresh, ignore=shutil.ignore_patterns(".git"),
-                        copy_function=shutil.copy)
-        for patch in sdl_patches:
-            run("patch", "-s", "-p1", "-i", patch, cwd=fresh)
-        (fresh / ".draughts-stamp").write_text(stamp.hexdigest())
-        if sdl_src.exists():
-            shutil.rmtree(sdl_src)
-        fresh.rename(sdl_src)
+    # 2. goose_gfx's C layers and SDL, patched copies (native.py), then libSDL3.so and
+    # libmain.so.
+    gfx_src, sdl_src = copy_sources(out, ROOT / "build/android/SDL_src")
     # Configured every time, so a change to the sidecar is seen; it is quick once done.
     run("cmake", "-S", ROOT / "android", "-B", native, "-G", "Ninja",
         f"-DCMAKE_TOOLCHAIN_FILE={NDK / 'build/cmake/android.toolchain.cmake'}",
@@ -228,7 +172,7 @@ def main():
         "-DCMAKE_BUILD_TYPE=Release",
         f"-DGOOSE_PROGRAM_C={gen / 'program.c'}",
         f"-DGOOSE_RUNTIME_C={gen / 'goose_runtime.c'}",
-        f"-DGOOSE_GFX_SRC={gfx_src / 'src'}",
+        f"-DGOOSE_GFX_SRC={gfx_src}",
         f"-DSDL_SRC={sdl_src}",
         "-DGOOSE_PROGRAM_SOURCES=" + ";".join(map(str, sidecar(program, "c_sources"))),
         "-DGOOSE_PROGRAM_INCLUDE=" + ";".join(map(str, sidecar(program, "c_include"))))

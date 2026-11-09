@@ -27,7 +27,6 @@ environment: GOOSE, DRAUGHTS_IOS_SIM (another simulator's name or UDID),
 DRAUGHTS_IOS_DEVICE (a device's name, identifier, or UDID).
 """
 import argparse
-import hashlib
 import json
 import os
 import plistlib
@@ -38,12 +37,9 @@ import sys
 import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-GOOSE = Path(os.environ.get("GOOSE", ROOT / "build/goose-v2026.4-macos-arm64/goose"))
-SDL = ROOT / "third_party/goose_gfx/third_party/SDL"
-# The bundle id, as Android's application id (scripts/android.py's APP_ID).
-APP_ID = "io.github.kaitk.draughts"
-VERSION_NAME = "0.1.0"    # CFBundleShortVersionString, as Android's versionName
+from native import APP_ID, ROOT, VERSION_NAME, app_names, copy_sources, goose_to_c, run, sidecar
+
+# The bundle id is native.APP_ID and CFBundleShortVersionString native.VERSION_NAME.
 BUILD_NUMBER = "1"        # CFBundleVersion, raised for every upload
 MIN_IOS = "16.0"
 # Each data stack's address space. Goose reserves 2 GB a stack by default, and the app
@@ -54,80 +50,6 @@ STACK_RESERVE = "128M"
 SIM_NAME = "Draughts iPhone 13 mini"
 SIM_TYPE = "com.apple.CoreSimulator.SimDeviceType.iPhone-13-mini"
 LAUNCH_COLOR = (0x06 / 255, 0x17 / 255, 0x2b / 255)   # the icon's background (android/res)
-
-
-def run(*cmd, cwd=None, capture=False, check=True):
-    print("+", " ".join(str(c) for c in cmd), flush=True)
-    r = subprocess.run([str(c) for c in cmd], cwd=cwd, check=check, text=True,
-                       capture_output=capture)
-    return r.stdout if capture else r
-
-
-def sidecar(program, key):
-    """The paths a list in the program's .build sidecar names, made absolute."""
-    build = program.with_suffix(".build")
-    if not build.exists():
-        return []
-    text = re.sub(r"//[^\n]*", "", build.read_text())
-    m = re.search(rf"\b{key}\s*=\s*\[([^\]]*)\]", text)
-    names = re.findall(r'"([^"]*)"', m.group(1)) if m else []
-    return [(program.parent / n).resolve() for n in names]
-
-
-def sdl_stamp():
-    """What SDL's patched copy is made from: the submodule's commit (or, in a copy without
-    git, its version and CMakeLists) and every patch."""
-    stamp = hashlib.sha256()
-    r = subprocess.run(["git", "rev-parse", "HEAD"], cwd=SDL, capture_output=True)
-    if r.returncode == 0 and (SDL / ".git").exists():
-        stamp.update(r.stdout)
-    else:
-        stamp.update((SDL / "include/SDL3/SDL_version.h").read_bytes())
-        stamp.update((SDL / "CMakeLists.txt").read_bytes())
-    for patch in sorted((ROOT / "patches/SDL").glob("*.patch")):
-        stamp.update(patch.read_bytes())
-    return stamp.hexdigest()
-
-
-def copy_sources(out):
-    """goose_gfx's src/ under out with patches/goose_gfx applied, and SDL in build/ios/SDL_src
-    with patches/SDL applied, remade only when its commit or a patch changes."""
-    gfx_src, fresh = out / "goose_gfx_src", out / "goose_gfx_src.new"
-    if fresh.exists():
-        shutil.rmtree(fresh)
-    # Fresh timestamps (shutil.copy), so ninja rebuilds what a removed patch restores.
-    shutil.copytree(ROOT / "third_party/goose_gfx/src", fresh / "src", copy_function=shutil.copy)
-    for patch in sorted((ROOT / "patches/goose_gfx").glob("*.patch")):
-        run("patch", "-s", "-p1", "-i", patch, cwd=fresh)
-    if gfx_src.exists():
-        shutil.rmtree(gfx_src)
-    fresh.rename(gfx_src)
-    sdl_src = ROOT / "build/ios/SDL_src"
-    stamp, stamp_file = sdl_stamp(), sdl_src / ".draughts-stamp"
-    if not stamp_file.exists() or stamp_file.read_text() != stamp:
-        fresh = sdl_src.with_name("SDL_src.new")
-        if fresh.exists():
-            shutil.rmtree(fresh)
-        shutil.copytree(SDL, fresh, ignore=shutil.ignore_patterns(".git"),
-                        copy_function=shutil.copy)
-        for patch in sorted((ROOT / "patches/SDL").glob("*.patch")):
-            run("patch", "-s", "-p1", "-i", patch, cwd=fresh)
-        (fresh / ".draughts-stamp").write_text(stamp)
-        if sdl_src.exists():
-            shutil.rmtree(sdl_src)
-        fresh.rename(sdl_src)
-    return gfx_src / "src", sdl_src
-
-
-def app_names():
-    """Each strings/<lang>.txt's app.name, by language."""
-    names = {}
-    for path in sorted((ROOT / "strings").glob("*.txt")):
-        m = re.search(r"^app\.name\s*=\s*(.+?)\s*$", path.read_text(encoding="utf-8"), re.M)
-        if not m:
-            sys.exit(f"{path}: no app.name")
-        names[path.stem] = m.group(1)
-    return names
 
 
 def write_bundle(app, exe, app_id, title, device):
@@ -328,15 +250,12 @@ def main():
     out = ROOT / "build/ios" / name
     plat = "device" if args.device else "sim"
     gen, native = out / "gen", out / plat / "native"
-    gen.mkdir(parents=True, exist_ok=True)
 
     # 1. Goose to C.
-    run(GOOSE, "-o", gen / "program.c", "--stack-reserve", STACK_RESERVE, program,
-        cwd=program.parent)
-    run(GOOSE, "--emit-runtime", gen / "goose_runtime.c")
+    goose_to_c(program, gen, "--stack-reserve", STACK_RESERVE)
 
-    # 2. goose_gfx's C layers and SDL, patched copies, then the executable.
-    gfx_src, sdl_src = copy_sources(out)
+    # 2. goose_gfx's C layers and SDL, patched copies (native.py), then the executable.
+    gfx_src, sdl_src = copy_sources(out, ROOT / "build/ios/SDL_src")
     run("cmake", "-S", ROOT / "ios", "-B", native, "-G", "Ninja",
         "-DCMAKE_SYSTEM_NAME=iOS",
         f"-DCMAKE_OSX_SYSROOT={'iphoneos' if args.device else 'iphonesimulator'}",

@@ -130,6 +130,7 @@ opens logged out before giving it to a store.
 ## The app's identity
 
 The application id and bundle id are `io.github.kaitk.draughts` (2026-11-08), set as
-`APP_ID` in `scripts/android.py` and `scripts/ios.py`, and the version as `VERSION_CODE`
-and `VERSION_NAME` (Android) and `VERSION_NAME` and `BUILD_NUMBER` (iOS) beside it.
+`APP_ID` in `scripts/native.py`, and the version as `VERSION_NAME` beside it, shared by
+both platforms, with the build numbers `VERSION_CODE` in `scripts/android.py` and
+`BUILD_NUMBER` in `scripts/ios.py`.
 `docs/development.md`, "Release builds", says how the AAB is built and signed.

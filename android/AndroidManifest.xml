@@ -6,7 +6,7 @@
      scripts/android.py writes per language from strings/<lang>.txt. Back callbacks are on
      (as Android 16 has them for an app targeting it) from Android 13, so the system's back
      reaches DraughtsActivity's callback, which hands it to the program.
-     scripts/android.py builds the APK and gives it the application id (APP_ID, through
+     scripts/android.py builds the APK and gives it the application id (scripts/native.py's APP_ID, through
      aapt2's rename-manifest-package), versionCode, and versionName, so they are set there
      alone; the package here is the Java code's. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
