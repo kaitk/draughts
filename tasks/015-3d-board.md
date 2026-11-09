@@ -239,6 +239,29 @@ about 2 ms.
 - It installs as `io.github.kaitk.draughts.board3d`, beside the game (`scripts/android.py`
   gives a program other than the app its own id).
 
+### The game screen round the 3D board (2026-11-09)
+
+`prototypes/game3d.html` draws the board in WebGL2 with the native camera under the
+game's UI, its image scaled and shifted in clip space so the perspective stays the
+native one at every size. In perspective the board's bounds are about 1.45 times as wide
+as tall and its far edge about 70% of its near edge, so game.html's square, made for the
+2D board, leaves a band above and below it. The board's bounds per take, in CSS px:
+
+| Take | 1280 × 800 | 800 × 1280 | 412 × 915 | 915 × 412 |
+| --- | --- | --- | --- | --- |
+| `now`, game.html's layout | 720 × 495 | 752 × 517 | 376 × 258 | 376 × 258 |
+| `steep`, the camera 65° down | 720 × 580 | | 376 × 303 | |
+| `top`, one column in landscape, the board up in portrait | 944 × 649 | 752 × 517 | 376 × 258 | 547 × 376 |
+| `corners`, the panels beside the far edge | 985 × 677 | 752 × 517 | 376 × 258 | 547 × 376 |
+| `bleed`, sized by the field, the frame off screen | 914 × 594 | | 400 × 260 | 579 × 376 |
+
+In landscape the corners take nearly doubles the board's area (1.9× on the tablet, 2.1×
+on a phone) and keeps the two panels, home and start over on the left and the play on
+the right, now short glass panels in the top corners. In portrait the width holds the
+board in every take, so pushing it up only moves the empty band below it; a steeper
+camera (about 60 to 65°) is what fills the height there. Not yet: a phone's cutout in the
+safe area, the clocks, and the board's glass under a panel.
+
 ## Later, only if the floating board falls short
 
 - **A painted backdrop and a real table.** The camera barely moves (about 50° down), so a

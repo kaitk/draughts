@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draughts: game around the 3D board</title>
+<link rel="stylesheet" href="draughts.css">
+<script src="draughts.js"></script>
+<style>
+  /* The game screen's UI around a 3D board (task 015). A WebGL canvas under the UI draws
+     the board with poc/3d's camera (52.5° down, a 31° field of view, 14.75 away), only
+     placed and sized: its image is scaled and shifted in clip space to fit the take's
+     box, so the board's perspective is the native one at every size. Good enough for
+     layout, not the native look. A drag turns it within the inspection range (yaw ±35°,
+     pitch 35° to 75°); a double click resets.
+
+     ?take=now     game.html's layout with the 3D board in its square
+     ?take=steep   the same, the camera 65° down, so the board is taller in the square
+     ?take=top     the board pushed to the top: one column beside it in landscape, the
+                   way out and the play below it in portrait
+     ?take=corners the far edge's narrowing used: the panels in the top corners beside
+                   it, the board's wide near edge running under them
+     ?take=bleed   the board sized by its playing field, its frame running off the
+                   screen: off the sides at the near corners in portrait, off the bottom
+                   in landscape (the corners take's panels)
+     &pitch=       any take's camera angle
+
+     Sizes are dp times --k: 1 on the tablet (800 dp on the short side), 0.75 CSS px on a
+     phone (gui::DENSITY_FLOOR), so 412 px across is the app's 549 dp. */
+  #gl { position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; }
+  .ui { position: fixed; inset: 0; pointer-events: none; }
+  .ui > * { position: absolute; pointer-events: auto; }
+  .k { --k: 1; }
+  .panel { display: flex; flex-direction: column; gap: calc(12px * var(--k)); padding: calc(16px * var(--k)); }
+  .panel .space { flex: 1; }
+  .row { display: flex; align-items: center; justify-content: flex-start; gap: calc(12px * var(--k));
+    min-width: 0; min-height: calc(88px * var(--k)); padding: 0 calc(14px * var(--k));
+    font-size: calc(24px * var(--k)); text-align: left; white-space: nowrap; }
+  .row.button svg { flex: none; width: calc(34px * var(--k)); height: calc(34px * var(--k)); stroke-width: 2.2; }
+  /* An icon over its word, where the word doesn't fit beside it. */
+  .row.tall { flex-direction: column; justify-content: center; gap: calc(4px * var(--k));
+    min-height: calc(96px * var(--k)); padding: 0 calc(6px * var(--k)); font-size: calc(20px * var(--k)); }
+  .row.big { flex-direction: column; justify-content: center; gap: calc(8px * var(--k));
+    min-height: calc(132px * var(--k)); font-size: calc(26px * var(--k)); }
+  .row.big svg { width: calc(48px * var(--k)); height: calc(48px * var(--k)); }
+  .row.big.short { min-height: calc(96px * var(--k)); }
+  .row.wide { flex-direction: row; justify-content: center; min-height: calc(88px * var(--k)); }
+  .row.wide svg { width: calc(36px * var(--k)); height: calc(36px * var(--k)); }
+  .turn { display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: calc(18px * var(--k)); padding: calc(18px * var(--k)) 0 calc(10px * var(--k));
+    text-align: center; font-size: calc(26px * var(--k)); white-space: nowrap; }
+  .turn .piece { --u: calc(7px * var(--k)); position: relative; inset: auto; flex: none;
+    width: calc(72px * var(--k)); height: calc(72px * var(--k));
+    box-shadow: 0 0 0 calc(4px * var(--k)) color-mix(in srgb, var(--glow) 80%, transparent),
+      0 0 calc(22px * var(--k)) calc(4px * var(--k)) color-mix(in srgb, var(--glow) 45%, transparent); }
+  .turn.line { flex-direction: row; padding: 0 calc(6px * var(--k)); gap: calc(14px * var(--k)); }
+  .turn.line .piece { width: calc(52px * var(--k)); height: calc(52px * var(--k)); --u: calc(5px * var(--k)); }
+  .bar { display: grid; grid-template-columns: repeat(3, 1fr); flex-direction: row; }
+  .bar .row { justify-content: center; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: calc(12px * var(--k)); }
+  .pair { display: grid; grid-template-columns: auto 1fr; gap: calc(12px * var(--k)); align-items: center; }
+  .tile { padding: calc(8px * var(--k)); }
+  .tile .row.tall { min-height: calc(80px * var(--k)); min-width: calc(80px * var(--k)); font-size: calc(17px * var(--k)); }
+  .guides .box { position: fixed; outline: 1px dashed rgb(255 255 255 / 0.5); pointer-events: none; }
+</style>
+</head>
+<body data-screen="board" class="k">
+<canvas id="gl"></canvas>
+<div class="ui" id="ui"></div>
+<script>
+'use strict';
+const params = new URLSearchParams(location.search);
+const TAKES = ['now', 'steep', 'top', 'corners', 'bleed'];
+const take = TAKES.includes(params.get('take')) ? params.get('take') : 'now';
+Draughts.init();
+// The 3D board stands on the season's photograph blurred (task 015), whatever the view.
+document.body.classList.add('scene-blur');
+
+// The take, from the switcher.
+const bar = document.querySelector('.proto-bar');
+bar.insertAdjacentHTML('afterbegin', `<select aria-label="take">${TAKES.map((t) =>
+  `<option${t === take ? ' selected' : ''}>${t}</option>`).join('')}</select>`);
+bar.querySelector('select').onchange = (e) => {
+  e.stopPropagation();
+  params.set('take', e.target.value);
+  location.search = params.toString();
+};
+
+// ---- The position: game.html's.
+const POS = {
+  white: ['a1', 'c1', 'e1', 'g1', 'b2', 'f2', 'h2', 'c3', 'e3', 'd4', 'h6'],
+  black: ['b8', 'd8', 'f8', 'h8', 'a7', 'c7', 'b6', 'e5', 'g5'],
+  kings: ['h6'], selected: 'd4', forced: ['h6'], last: ['h4', 'g5'],
+};
+// A square's center in poc/3d's world: a square is 1, the field -4..4, +z the near (white) side.
+const at = (sq) => [sq.charCodeAt(0) - 97 - 3.5, 0, 3.5 - (+sq.slice(1) - 1)];
+
+// ---- The camera (poc/3d/board3d.goose).
+const FOV = 31, DISTANCE = 14.75, TARGET = [0, -0.15, 1.1];
+const PITCH = +params.get('pitch') || (take === 'steep' ? 65 : 52.5);
+const cam = { yaw: 0, pitch: PITCH };
+
+// ---- Small matrix helpers, column-major.
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const norm = (a) => { const l = Math.hypot(...a); return [a[0] / l, a[1] / l, a[2] / l]; };
+function perspective(fovy, aspect, n, f) {
+  const t = 1 / Math.tan(fovy / 2);
+  return [t / aspect, 0, 0, 0, 0, t, 0, 0, 0, 0, (f + n) / (n - f), -1, 0, 0, 2 * f * n / (n - f), 0];
+}
+function lookAt(eye, target) {
+  const z = norm(sub(eye, target)), x = norm(cross([0, 1, 0], z)), y = cross(z, x);
+  return [x[0], y[0], z[0], 0, x[1], y[1], z[1], 0, x[2], y[2], z[2], 0, -dot(x, eye), -dot(y, eye), -dot(z, eye), 1];
+}
+function mul(a, b) {
+  const o = new Array(16).fill(0);
+  for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) o[c * 4 + r] += a[k * 4 + r] * b[c * 4 + k];
+  return o;
+}
+const project = (m, p) => {
+  const x = m[0] * p[0] + m[4] * p[1] + m[8] * p[2] + m[12], y = m[1] * p[0] + m[5] * p[1] + m[9] * p[2] + m[13];
+  const w = m[3] * p[0] + m[7] * p[1] + m[11] * p[2] + m[15];
+  return [x / w, y / w];
+};
+function eyeOf(yaw, pitch) {
+  const a = yaw * Math.PI / 180, p = pitch * Math.PI / 180;
+  return [TARGET[0] + Math.sin(a) * Math.cos(p) * DISTANCE, TARGET[1] + Math.sin(p) * DISTANCE,
+    TARGET[2] + Math.cos(a) * Math.cos(p) * DISTANCE];
+}
+const viewProj = (W, H, yaw, pitch) => mul(perspective(FOV * Math.PI / 180, W / H, 2, 40), lookAt(eyeOf(yaw, pitch), TARGET));
+
+// ---- Geometry (poc/3d/mesh.goose's sizes): the field -4.1..4.1 with its inlay, the frame
+// 0.5 wide, its top 0.05 up, a 0.09 bullnose, the underside at -0.7; pieces 0.44 in
+// radius and 0.24 high, a king a stack of two.
+const INNER = 4.1, FRAME_W = 0.5, TOP = 0.05, BOTTOM = -0.7, RC = 0.05, R = 0.44, HT = 0.24;
+const verts = [];
+const vtx = (p, n, m, a) => verts.push(p[0], p[1], p[2], n[0], n[1], n[2], m, a[0], a[1]);
+// A profile (strips of {o, y, no, ny}) swept along a path of {c, d} samples (closed).
+function sweep(strips, path, mat, aux, closed) {
+  const np = path.length, segs = closed ? np : np - 1;
+  for (const s of strips) for (let i = 0; i + 1 < s.length; i++) for (let j = 0; j < segs; j++) {
+    const A = path[j], B = path[(j + 1) % np];
+    const P = (q, S) => [S.c[0] + S.d[0] * q.o, q.y, S.c[1] + S.d[1] * q.o];
+    const N = (q, S) => [S.d[0] * q.no, q.ny, S.d[1] * q.no];
+    const a = s[i], b = s[i + 1], ax = aux || [0, 0];
+    vtx(P(a, A), N(a, A), mat, ax); vtx(P(b, A), N(b, A), mat, ax); vtx(P(b, B), N(b, B), mat, ax);
+    vtx(P(a, A), N(a, A), mat, ax); vtx(P(b, B), N(b, B), mat, ax); vtx(P(a, B), N(a, B), mat, ax);
+  }
+}
+const line = (o0, y0, o1, y1) => { const t = norm([o1 - o0, y1 - y0, 0]); return [{ o: o0, y: y0, no: t[1], ny: -t[0] }, { o: o1, y: y1, no: t[1], ny: -t[0] }]; };
+function arc(co, cy, r, a0, a1, steps) {
+  const out = [];
+  for (let i = 0; i <= steps; i++) {
+    const a = a0 + (a1 - a0) * i / steps;
+    out.push({ o: co + r * Math.cos(a), y: cy + r * Math.sin(a), no: Math.cos(a), ny: Math.sin(a) });
+  }
+  return out;
+}
+function quad(x0, z0, x1, z1, y, mat, aux) {
+  const n = [0, 1, 0];
+  vtx([x0, y, z0], n, mat, aux); vtx([x1, y, z0], n, mat, aux); vtx([x1, y, z1], n, mat, aux);
+  vtx([x0, y, z0], n, mat, aux); vtx([x1, y, z1], n, mat, aux); vtx([x0, y, z1], n, mat, aux);
+}
+// The frame's path: the field's outline with corners of radius RC, outward directions.
+const framePath = [];
+for (const [sx, sz, a0] of [[1, 1, 0], [-1, 1, 90], [-1, -1, 180], [1, -1, 270]]) {
+  for (let i = 0; i <= 8; i++) {
+    const a = (a0 + i * 90 / 8) * Math.PI / 180, d = [Math.cos(a), Math.sin(a)];
+    framePath.push({ c: [sx * (INNER - RC) + d[0] * RC, sz * (INNER - RC) + d[1] * RC], d });
+  }
+}
+const frameProfile = [
+  [{ o: 0, y: 0, no: -1, ny: 0 }, { o: 0, y: TOP, no: -1, ny: 0 }],
+  line(0, TOP, FRAME_W - 0.09, TOP).map((q) => ({ ...q, no: 0, ny: 1 })),
+  arc(FRAME_W - 0.09, TOP - 0.09, 0.09, Math.PI / 2, 0, 6),
+  [{ o: FRAME_W, y: TOP - 0.09, no: 1, ny: 0 }, { o: FRAME_W, y: BOTTOM, no: 1, ny: 0 }],
+];
+const pieceProfile = [
+  arc(R - 0.04, 0.04, 0.04, -Math.PI / 2, 0, 3),
+  [{ o: R, y: 0.04, no: 1, ny: 0 }, { o: R, y: HT - 0.07, no: 1, ny: 0 }],
+  arc(R - 0.07, HT - 0.07, 0.07, 0, Math.PI / 2, 6),
+  [{ o: R - 0.07, y: HT, no: 0, ny: 1 }, { o: 0, y: HT, no: 0, ny: 1 }],
+];
+const ring = (cx, cz) => {
+  const p = [];
+  for (let i = 0; i < 48; i++) { const a = i / 48 * 2 * Math.PI, d = [Math.cos(a), Math.sin(a)]; p.push({ c: [cx, cz], d }); }
+  return p;
+};
+const ranges = {};
+function build() {
+  verts.length = 0;
+  // The board's shadow on nothing, drawn first.
+  quad(-7, -7, 7, 7.5, BOTTOM, 10, [0, 0]);
+  ranges.floor = verts.length / 9;
+  // Opaque: the field, the frame, the pieces.
+  quad(-INNER, -INNER, INNER, INNER, 0, 0, [0, 0]);
+  sweep(frameProfile, framePath, 1, null, true);
+  const pieces = [];
+  for (const side of ['white', 'black']) for (const sq of POS[side]) {
+    const c = at(sq), sel = sq === POS.selected, king = POS.kings.includes(sq);
+    const lift = sel ? 0.12 : 0;
+    pieces.push({ c, sel, king, side });
+    for (let d = 0; d < (king ? 2 : 1); d++) {
+      const y0 = lift + d * (HT + 0.01);
+      const strips = pieceProfile.map((s) => s.map((q) => ({ ...q, y: q.y + y0 })));
+      sweep(strips, ring(c[0], c[2]), side === 'white' ? 2 : 3, [c[0], c[2]], true);
+    }
+  }
+  ranges.opaque = verts.length / 9;
+  // Over the field: each piece's soft shadow, the selection's glow ring, the forced ring.
+  for (const p of pieces) {
+    const s = [p.c[0] + 0.07, p.c[2] + 0.1], e = 0.8;
+    quad(s[0] - e, s[1] - e, s[0] + e, s[1] + e, 0.002, p.sel ? 14 : 11, s);
+    if (p.sel) quad(p.c[0] - 0.7, p.c[2] - 0.7, p.c[0] + 0.7, p.c[2] + 0.7, 0.003, 12, [p.c[0], p.c[2]]);
+    if (POS.forced.includes(sqOf(p.c))) quad(p.c[0] - 0.7, p.c[2] - 0.7, p.c[0] + 0.7, p.c[2] + 0.7, 0.004, 13, [p.c[0], p.c[2]]);
+  }
+  ranges.all = verts.length / 9;
+}
+function sqOf(c) { return String.fromCharCode(97 + Math.round(c[0] + 3.5)) + Math.round(4.5 - c[2]); }
+
+// What bounds the board on screen: the frame's outline at its top and its foot, and the
+// pieces' tops; for the bleed take, the field with a sliver of the frame (0.12 of 0.5).
+// pieces' tops.
+const outline = [];
+for (const s of framePath) for (const y of [TOP, BOTTOM]) outline.push([s.c[0] + s.d[0] * FRAME_W, y, s.c[1] + s.d[1] * FRAME_W]);
+const field = [];
+for (const s of framePath) field.push([s.c[0] + s.d[0] * 0.12, TOP, s.c[1] + s.d[1] * 0.12]);
+for (const side of ['white', 'black']) for (const sq of POS[side]) {
+  const c = at(sq), top = [c[0], 2 * HT + 0.12, c[2]];
+  outline.push(top); field.push(top);
+}
+
+// ---- WebGL.
+const canvas = document.getElementById('gl');
+const gl = canvas.getContext('webgl2', { antialias: true, alpha: true, premultipliedAlpha: true, preserveDrawingBuffer: true });
+const VS = `#version 300 es
+layout(location=0) in vec3 pos; layout(location=1) in vec3 nrm; layout(location=2) in float mat; layout(location=3) in vec2 aux;
+uniform mat4 vp; out vec3 vPos; out vec3 vN; flat out int vMat; out vec2 vAux;
+void main() { vPos = pos; vN = nrm; vMat = int(mat + 0.5); vAux = aux; gl_Position = vp * vec4(pos, 1.0); }`;
+const FS = `#version 300 es
+precision highp float;
+in vec3 vPos; in vec3 vN; flat in int vMat; in vec2 vAux; out vec4 o;
+uniform vec3 eye, cLight, cDark, cFrame, cW, cB, cGlow; uniform vec4 last; uniform float stone;
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float noise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
+vec3 lin(vec3 c) { return pow(c, vec3(2.2)); }
+// Figure: wood drawn out along its grain, stone round.
+float figure(vec2 along, float seed) {
+  if (stone > 0.5) return 0.6 * noise(along * 2.2 + seed) + 0.4 * noise(along * 7.0) - 0.5;
+  return 0.6 * (noise(vec2(along.x * 0.7 + seed, along.y * 22.0)) - 0.5) + 0.4 * (noise(vec2(along.x * 0.2, along.y * 3.0 + seed)) - 0.5);
+}
+void main() {
+  vec2 p = vPos.xz;
+  if (vMat >= 10) {
+    float a; vec3 c = vec3(0);
+    float d = length(p - vAux);
+    if (vMat == 10) {
+      vec2 q = abs(p - vec2(0.25, 0.45)) - vec2(4.6 - 0.6);
+      float sd = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - 0.6;
+      a = 0.6 * (1.0 - smoothstep(-0.5, 1.2, sd));
+    } else if (vMat == 11) a = 0.55 * (1.0 - smoothstep(0.30, 0.62, d));
+    else if (vMat == 14) a = 0.35 * (1.0 - smoothstep(0.25, 0.8, d));
+    else {
+      float r0 = vMat == 12 ? 0.5 : 0.54;
+      float rd = abs(d - r0) - 0.025;
+      a = 0.95 * exp(-max(rd, 0.0) * 28.0);
+      c = vMat == 12 ? lin(cGlow) : lin(vec3(1.0, 0.353, 0.29));
+      o = vec4(pow(c, vec3(1.0 / 2.2)) * a, a * 0.7); return;
+    }
+    o = vec4(0, 0, 0, a); return;
+  }
+  vec3 n = normalize(vN), L = normalize(vec3(-0.45, 1.0, -0.55)), V = normalize(eye - vPos), H = normalize(L + V);
+  vec3 alb; float spec = 0.05, gloss = 30.0, ao = 1.0;
+  if (vMat == 0) {
+    bool inlay = max(abs(p.x), abs(p.y)) > 4.0;
+    vec2 s = floor(vec2(p.x + 4.0, 4.0 - p.y));
+    bool dark = mod(s.x + s.y, 2.0) < 0.5;
+    float h = hash(s);
+    alb = inlay ? cDark * 0.55 : (dark ? cDark : cLight);
+    alb *= 1.0 + 0.16 * figure(p + h * 20.0, h * 13.0) + 0.05 * (h - 0.5);
+    vec2 f = abs(fract(p) - 0.5);
+    if (!inlay) alb *= 1.0 - 0.12 * (1.0 - smoothstep(0.0, 0.015, 0.5 - max(f.x, f.y)));
+    vec2 lc = floor(p + vec2(4.0, 4.0));
+    if (!inlay && (all(equal(lc, floor(last.xy + 4.0))) || all(equal(lc, floor(last.zw + 4.0))))) alb = mix(alb, cGlow, 0.16);
+    ao = mix(0.62, 1.0, smoothstep(0.0, 0.22, 4.1 - max(abs(p.x), abs(p.y))));
+  } else if (vMat == 1) {
+    // Mitred: the grain runs along each side.
+    vec2 along = abs(p.y) > abs(p.x) ? vec2(p.x, p.y + vPos.y) : vec2(p.y, p.x + vPos.y);
+    alb = cFrame * (1.0 + 0.3 * figure(along, abs(p.y) > abs(p.x) ? 3.0 : 7.0));
+    spec = 0.12; gloss = 50.0;
+  } else {
+    alb = vMat == 2 ? cW : cB;
+    float r = length(p - vAux) / 0.44;
+    if (n.y > 0.95) {
+      // The groove at 70% of the radius, in soft shade, a hair of light on its outer side.
+      alb *= 1.0 - 0.28 * (1.0 - smoothstep(0.0, 0.05, abs(r - 0.68)));
+      alb *= 1.0 + 0.12 * (1.0 - smoothstep(0.0, 0.03, abs(r - 0.74)));
+    }
+    alb *= 1.0 + 0.05 * (noise(p * 9.0) - 0.5);
+    ao = mix(0.75, 1.0, smoothstep(0.0, 0.08, vPos.y - floor(vPos.y / 0.25) * 0.25));
+    spec = vMat == 2 ? 0.1 : 0.14; gloss = 40.0;
+  }
+  vec3 a = lin(alb);
+  float diff = max(dot(n, L), 0.0) * 0.85 + 0.15 * max(dot(n, L) * 0.5 + 0.5, 0.0);
+  vec3 amb = mix(vec3(0.16, 0.14, 0.13), vec3(0.42, 0.42, 0.45), n.y * 0.5 + 0.5);
+  vec3 c = a * (amb * ao + vec3(1.05, 1.0, 0.92) * diff * mix(1.0, ao, 0.5)) + spec * pow(max(dot(n, H), 0.0), gloss) * ao;
+  c = c / (1.0 + 0.15 * c);
+  o = vec4(pow(c, vec3(1.0 / 2.2)), 1.0);
+}`;
+function shader(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+  return s;
+}
+const prog = gl.createProgram();
+gl.attachShader(prog, shader(gl.VERTEX_SHADER, VS));
+gl.attachShader(prog, shader(gl.FRAGMENT_SHADER, FS));
+gl.linkProgram(prog);
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+const U = {};
+for (const n of ['vp', 'eye', 'cLight', 'cDark', 'cFrame', 'cW', 'cB', 'cGlow', 'last', 'stone']) U[n] = gl.getUniformLocation(prog, n);
+build();
+const vb = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW);
+const vao = gl.createVertexArray();
+gl.bindVertexArray(vao);
+[[0, 3, 0], [1, 3, 12], [2, 1, 24], [3, 2, 28]].forEach(([l, n, off]) => {
+  gl.enableVertexAttribArray(l);
+  gl.vertexAttribPointer(l, n, gl.FLOAT, false, 36, off);
+});
+
+// Theme colors: the squares and pieces from draughts.css; the 3D frame, as poc/3d's
+// themes have it (mitred cherry in autumn, slate in winter).
+const FRAME = { wood: '#8a4826', stone: '#4f5d70', birch: '#9c8a6e', sunset: '#7d4a3e' };
+const rgb = (s) => [1, 3, 5].map((i) => parseInt(s.trim().slice(i, i + 2), 16) / 255);
+function colors() {
+  const cs = getComputedStyle(document.body), v = (k) => rgb(cs.getPropertyValue(k));
+  return { cLight: v('--light'), cDark: v('--dark'), cW: v('--w-face'), cB: v('--b-face'), cGlow: v('--glow'),
+    cFrame: rgb(FRAME[Draughts.settings.theme]) };
+}
+
+// The fit: the board's default view (yaw 0, the take's pitch) scaled by s and shifted in
+// clip space so its bounds land at (left, top) in CSS px.
+let fitM = null;
+function bounds(W, H, points = outline) {
+  const m = viewProj(W, H, 0, PITCH);
+  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+  const pts = points.map((p) => {
+    const q = project(m, p), px = [(q[0] + 1) / 2 * W, (1 - q[1]) / 2 * H];
+    x0 = Math.min(x0, px[0]); x1 = Math.max(x1, px[0]); y0 = Math.min(y0, px[1]); y1 = Math.max(y1, px[1]);
+    return px;
+  });
+  return { x0, x1, y0, y1, w: x1 - x0, h: y1 - y0, pts };
+}
+// Placed: the bounds and outline points at scale s with the bounds' top left at (l, t).
+function placed(b, s, l, t) {
+  return { s, l, t, w: b.w * s, h: b.h * s, pts: b.pts.map((p) => [l + (p[0] - b.x0) * s, t + (p[1] - b.y0) * s]) };
+}
+function fitBox(b, box, align = 'center') {
+  const s = Math.min(box.w / b.w, box.h / b.h), w = b.w * s, h = b.h * s;
+  const t = align === 'top' ? box.y : align === 'bottom' ? box.y + box.h - h : box.y + (box.h - h) / 2;
+  return placed(b, s, box.x + (box.w - w) / 2, t);
+}
+function useFit(b, f, W, H) {
+  // ndc' = s ndc + t, with the bounds' left/top edges at f.l, f.t.
+  const nx0 = b.x0 / W * 2 - 1, ny1 = 1 - b.y0 / H * 2;
+  const tx = (2 * f.l / W - 1) - f.s * nx0, ty = (1 - 2 * f.t / H) - f.s * ny1;
+  fitM = [f.s, 0, 0, 0, 0, f.s, 0, 0, 0, 0, 1, 0, tx, ty, 0, 1];
+}
+
+function render() {
+  const dpr = Math.min(devicePixelRatio || 1, 2), W = innerWidth, H = innerHeight;
+  canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.clearColor(0, 0, 0, 0);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  if (!fitM) return;
+  gl.useProgram(prog);
+  gl.bindVertexArray(vao);
+  gl.uniformMatrix4fv(U.vp, false, new Float32Array(mul(fitM, viewProj(W, H, cam.yaw, cam.pitch))));
+  gl.uniform3fv(U.eye, eyeOf(cam.yaw, cam.pitch));
+  const c = colors();
+  for (const k in c) gl.uniform3fv(U[k], c[k]);
+  const l0 = at(POS.last[0]), l1 = at(POS.last[1]);
+  gl.uniform4f(U.last, l0[0], l0[2], l1[0], l1[2]);
+  gl.uniform1f(U.stone, Draughts.settings.theme === 'stone' ? 1 : 0);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+  gl.disable(gl.DEPTH_TEST);
+  gl.drawArrays(gl.TRIANGLES, 0, ranges.floor);
+  gl.enable(gl.DEPTH_TEST);
+  gl.depthMask(true);
+  gl.drawArrays(gl.TRIANGLES, ranges.floor, ranges.opaque - ranges.floor);
+  gl.depthMask(false);
+  gl.drawArrays(gl.TRIANGLES, ranges.opaque, ranges.all - ranges.opaque);
+  gl.depthMask(true);
+}
+
+// ---- The UI: panels built per take and orientation, placed in CSS px.
+const I = (n) => Draughts.icon(n);
+const btn = (icon, word, cls = '') => `<button class="row button ${cls}">${I(icon)}<span>${word}</span></button>`;
+const HOME = (c) => btn('home', 'Home', c), SET = (c) => btn('gear', 'Settings', c), RESTART = (c) => btn('restart', 'Start over', c);
+const UNDO = (c) => btn('undo', 'Take back', c);
+const TURN = (c = '') => `<div class="turn ${c}"><div class="piece white"></div><span>White's turn</span></div>`;
+const ui = document.getElementById('ui');
+function panel(html, r, cls = '') {
+  const el = document.createElement('aside');
+  el.className = `panel glass ${cls}`;
+  el.innerHTML = html;
+  Object.assign(el.style, { left: `${r.x}px`, top: `${r.y}px`, width: `${r.w}px` });
+  if (r.h) el.style.height = `${r.h}px`;
+  ui.appendChild(el);
+  return el;
+}
+const rectOf = (el) => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; };
+// Convex hull (monotone chain), and whether a rect, grown by g, touches the placed board.
+function hull(pts) {
+  const p = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], up = [];
+  for (const q of p) { while (lo.length > 1 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+  for (const q of p.reverse()) { while (up.length > 1 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+function touches(f, r, g) {
+  const x0 = r.x - g, y0 = r.y - g, x1 = r.x + r.w + g, y1 = r.y + r.h + g;
+  if (f.pts.some((p) => p[0] > x0 && p[0] < x1 && p[1] > y0 && p[1] < y1)) return true;
+  const h = hull(f.pts);
+  const inside = (q) => h.every((a, i) => {
+    const b = h[(i + 1) % h.length];
+    return (b[0] - a[0]) * (q[1] - a[1]) - (b[1] - a[1]) * (q[0] - a[0]) >= 0;
+  });
+  return [[x0, y0], [x1, y0], [x0, y1], [x1, y1]].some(inside);
+}
+
+function layout() {
+  const W = innerWidth, H = innerHeight, land = W >= H, short = Math.min(W, H);
+  const phone = short < 600;
+  const k = Math.max(short / 800, 0.75);
+  document.body.style.setProperty('--k', k);
+  ui.innerHTML = '';
+  const G = 24 * k, b = bounds(W, H, take === 'bleed' ? field : outline);
+  let f;
+  if (take === 'now' || take === 'steep') {
+    if (land) {
+      // game.html: two panels 232 dp wide, narrowed to 192 where the board would be under 720.
+      let side = 232 * k;
+      if (W - 2 * side - 4 * G < Math.min(720 * k, H - 2 * G)) side = 192 * k;
+      const B = Math.min(H - 2 * G, W - 2 * side - 4 * G), PH = Math.max(B, 372 * k);
+      const x = W / 2 - B / 2, y = (H - PH) / 2, narrow = side < 200 * k;
+      panel(narrow ? HOME('tall') + SET('tall') + '<div class="space"></div>' + RESTART('tall')
+        : HOME() + SET() + '<div class="space"></div>' + RESTART(), { x: x - G - side, y, w: side, h: PH });
+      panel(TURN() + '<div class="space"></div>' + UNDO(PH < 420 * k ? 'big short' : 'big'), { x: x + B + G, y, w: side, h: PH });
+      f = fitBox(b, { x, y: (H - B) / 2, w: B, h: B });
+    } else {
+      const top = (phone ? 112 : 104) * k, bottom = 200 * k;
+      const B = Math.min(W - 2 * G, H - top - bottom - 4 * G), x = (W - B) / 2;
+      const y0 = (H - (top + B + bottom + 2 * G)) / 2;
+      const c = phone ? 'tall' : '';
+      panel(HOME(c) + SET(c) + RESTART(c), { x, y: y0, w: B, h: top }, 'bar');
+      f = fitBox(b, { x, y: y0 + top + G, w: B, h: B });
+      panel(TURN('line') + UNDO('big wide'), { x, y: y0 + top + B + 2 * G, w: B, h: bottom });
+    }
+  } else if (take === 'bleed' && !land) {
+    // The way out above, the play below, the field across the width less 8 dp.
+    const top = (phone ? 112 : 104) * k, w = W - 2 * G, c = phone ? 'tall' : '';
+    const out = panel(HOME(c) + SET(c) + RESTART(c), { x: G, y: G, w, h: top }, 'bar');
+    const play = panel(TURN('line') + UNDO('big wide'), { x: G, y: 0, w });
+    play.style.top = `${H - G - play.offsetHeight}px`;
+    const y0 = G + top + G, y1 = H - 2 * G - play.offsetHeight;
+    f = fitBox(b, { x: 8 * k, y: y0, w: W - 16 * k, h: y1 - y0 });
+    out.style.top = `${Math.max(G, f.t - G - top)}px`;
+  } else if (take === 'top') {
+    if (land) {
+      // One column at the right: the way out on top, the play at the bottom.
+      const C = 264 * k, PH = H - 2 * G;
+      panel(`<div class="split">${HOME('tall')}${SET('tall')}</div>` + RESTART() + '<div class="space"></div>' +
+        TURN(PH < 560 * k ? 'line' : '') + UNDO(PH < 420 * k ? 'big short' : 'big'), { x: W - G - C, y: G, w: C, h: PH });
+      f = fitBox(b, { x: G, y: G, w: W - C - 3 * G, h: H - 2 * G });
+    } else {
+      // The board at the top, the way out under it, the play at the bottom for the thumb.
+      const w = W - 2 * G, c = phone ? 'tall' : '';
+      f = fitBox(b, { x: G, y: G, w, h: H }, 'top');
+      panel(HOME(c) + SET(c) + RESTART(c), { x: G, y: f.t + f.h + G, w }, 'bar');
+      const play = panel(TURN('line') + UNDO('big wide'), { x: G, y: 0, w });
+      play.style.top = `${H - G - play.offsetHeight}px`;
+    }
+  } else {
+    if (land) {
+      // The panels in the top corners, the board as large as clears them, its near edge
+      // on the bottom margin.
+      const P = (phone ? 192 : 232) * k, tall = phone ? 'tall' : '';
+      const a = panel(HOME(tall) + SET(tall) + RESTART(tall), { x: G, y: G, w: P });
+      const z = panel(TURN() + UNDO(phone ? 'big short' : 'big'), { x: W - G - P, y: G, w: P });
+      const ra = rectOf(a), rz = rectOf(z);
+      const box = { x: G, y: G, w: W - 2 * G, h: H - 2 * G };
+      for (let s = 1; s > 0.3; s -= 0.01) {
+        f = fitBox(b, { ...box, w: box.w * s, h: box.h * s, x: box.x + box.w * (1 - s) / 2, y: box.y + box.h * (1 - s) }, 'bottom');
+        if (!touches(f, ra, G / 2) && !touches(f, rz, G / 2)) break;
+      }
+    } else {
+      // Home and settings as tiles in the top corners beside the far edge; the board
+      // pulled up as far as clears them; start over and the play below.
+      const a = panel(HOME('tall'), { x: G, y: G }, 'tile'), z = panel(SET('tall'), { x: 0, y: G }, 'tile');
+      z.style.left = `${W - G - z.offsetWidth}px`;
+      const ra = rectOf(a), rz = rectOf(z), w = W - 2 * G;
+      for (let y = G; y < H; y += 2) {
+        f = fitBox(b, { x: G, y, w, h: H }, 'top');
+        if (!touches(f, ra, G / 2) && !touches(f, rz, G / 2)) break;
+      }
+      const play = panel(`<div class="pair">${RESTART(phone ? 'tall' : '')}${TURN('line')}</div>` + UNDO('big wide'), { x: G, y: 0, w });
+      play.style.top = `${Math.max(f.t + f.h + G, H - G - play.offsetHeight)}px`;
+    }
+  }
+  useFit(b, f, W, H);
+  if (params.has('guides')) {
+    const g = document.createElement('div');
+    g.className = 'guides';
+    g.innerHTML = `<div class="box" style="left:${f.l}px;top:${f.t}px;width:${f.w}px;height:${f.h}px"></div>`;
+    ui.appendChild(g);
+  }
+  Draughts.paint();
+  Draughts.syncGlass();
+  // How much of the screen the board takes, for comparing takes (console and title).
+  document.body.dataset.board = `${Math.round(f.w)}x${Math.round(f.h)}`;
+  render();
+}
+
+// A drag turns the board within the inspection range; a double click resets.
+let drag = null;
+canvas.addEventListener('pointerdown', (e) => { drag = [e.clientX, e.clientY]; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointermove', (e) => {
+  if (!drag) return;
+  cam.yaw = Math.max(-35, Math.min(35, cam.yaw - (e.clientX - drag[0]) * 0.25));
+  cam.pitch = Math.max(35, Math.min(75, cam.pitch + (e.clientY - drag[1]) * 0.25));
+  drag = [e.clientX, e.clientY];
+  render();
+});
+canvas.addEventListener('pointerup', () => { drag = null; });
+canvas.addEventListener('dblclick', () => { cam.yaw = 0; cam.pitch = PITCH; render(); });
+let resizing = 0;
+addEventListener('resize', () => { clearTimeout(resizing); resizing = setTimeout(layout, 60); });
+document.fonts.ready.then(layout);
+layout();
+</script>
+</body>
+</html>

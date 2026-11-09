@@ -10,6 +10,7 @@ jsDelivr CDN, so they need internet access. Start at [index.html](index.html).
 | `first-start.html` | The first start, pages in order (`?page=variant`, `learn`, `1` to `7`, `done`; `&v=russian`) |
 | `settings.html` | Settings: background, board, move hints, language |
 | `game.html` | The game: the board between the way out and the play, a selected piece and its capture, a forced capture; `?clock=on` or `low` for the clocks; `?count=a` or `b` (`&n=`) for takes on how many pieces a must-capture piece takes, on a child's position of 2026-11-09 (a, pips on the ring, built) |
+| `game3d.html` | Takes on the game's UI round a WebGL 3D board with the native camera (`?take=now`, `steep`, `top`, `corners`, `bleed`, `&pitch=`, `&guides`): the current layout, a steeper camera, the board pushed up, the panels in the top corners beside the narrower far edge, the frame running off the screen; a drag turns the board (task 015) |
 | `puzzles.html` | Takes on the puzzle picker by theme (`?take=a` to `c`, `now` for the tiers of ten, `&view=library`, `theme`, `&theme=`, `&themes=first`, `all`, `&solved=0` to `12`, `&lang=et`): a library of themes and a theme's three levels (task 037) |
 | `puzzle.html` | Takes on playing one puzzle (`?take=a` to `c`, `&state=play`, `wrong`, `hint`, `solved`), waiting for a pick (task 007) |
 | `solved.html` | A solved puzzle: stars over the dimmed board |
@@ -39,7 +40,7 @@ circles, gradients, one pre-blurred background for glass (see
 [rendering](../docs/architecture/rendering.md#look)), and baked text. No live
 `backdrop-filter` blur: glass shows a blurred copy of the scene placed at the panel's
 screen position, as the shader will sample it. The 3D board is CSS 3D standing in for
-lit meshes. The chosen values (colors, radii, opacities, sizes) are in
+lit meshes, except in `game3d.html`, where plain WebGL2 draws it for layout work. The chosen values (colors, radii, opacities, sizes) are in
 `docs/architecture/rendering.md`.
 
 Check a prototype with the `agent-browser` CLI at tablet sizes, 1280×800 landscape and
