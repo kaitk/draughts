@@ -66,15 +66,20 @@ fn main() {
     var nodes:   i64[] = [0, 0, 0];
     var seconds: f64[] = [0.0, 0.0, 0.0];
     let both = a.len < 2;
-    if both || a[1] == "russian" {
+    var only = -1;          // the one variant asked for, by name
+    if !both {
+        let named, known = rules::variant_named(a[1]);
+        if known { only = named; }
+    }
+    if both || only == rules::RUSSIAN {
         if a.len >= 3 { bench(e, rules::RUSSIAN, a[2], slowest, nodes, seconds); }
         else { for f in RUSSIAN_FENS { bench(e, rules::RUSSIAN, f, slowest, nodes, seconds); } }
     }
-    if both || a[1] == "international" {
+    if both || only == rules::INTERNATIONAL {
         if a.len >= 3 { bench(e, rules::INTERNATIONAL, a[2], slowest, nodes, seconds); }
         else { for f in INTERNATIONAL_FENS { bench(e, rules::INTERNATIONAL, f, slowest, nodes, seconds); } }
     }
-    if both || a[1] == "brazilian" {
+    if both || only == rules::BRAZILIAN {
         if a.len >= 3 { bench(e, rules::BRAZILIAN, a[2], slowest, nodes, seconds); }
         else { for f in BRAZILIAN_FENS { bench(e, rules::BRAZILIAN, f, slowest, nodes, seconds); } }
     }

@@ -23,6 +23,15 @@ let INTERNATIONAL = 1;
 let ENGLISH = 2;
 let BRAZILIAN = 3;
 let VARIANT_COUNT = 4;
+// The variants' names, in RUSSIAN.. order: as the files name them (settings' `draughts`,
+// the puzzles' `variant` and `stars.NAME`), the --variant flag, and the tools.
+let VARIANT_NAMES = ["russian", "international", "english", "brazilian"];
+
+// The variant a name in VARIANT_NAMES stands for; false for any other name.
+fn variant_named(name: const u8[:]) -> u8, bool {
+    for n, v in VARIANT_NAMES { if name == n { return v as u8, true; } }
+    return 0, false;
+}
 
 // What happens when a man reaches the far row in the middle of a capture.
 let CROWN_CONTINUES = 0;    // Russian: crowned at once, keeps capturing as a king

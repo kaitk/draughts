@@ -26,7 +26,7 @@ let STATES = ["playing", "answer", "back", "solved", "show", "shown", "unshow"];
 fn show(sh: shell::Shell&, what: const u8[:]) {
     let pl .= sh.puzzle;
     var text: u8[>..] = [];
-    format(text, what, ": ", SCREENS[sh.screen], ", the set ", puzzles::VARIANT_NAMES[puzzles::loaded], " of ",
+    format(text, what, ": ", SCREENS[sh.screen], ", the set ", rules::VARIANT_NAMES[puzzles::loaded], " of ",
            puzzles::all.list.len);
     if sh.screen == shell::PICKER {
         format(text, ", ", if sh.theme >= 0 { puzzles::THEME_NAMES[sh.theme] } else { "library" });
@@ -72,10 +72,10 @@ fn tap_square(sh: shell::Shell&, g: gui::Gui&, name: const u8[:], now: f64) {
 
 fn main() {
     strings::use(strings::EN);
-    print("loaded: ", puzzles::load(), ", the set ", puzzles::VARIANT_NAMES[puzzles::loaded], " of ",
+    print("loaded: ", puzzles::load(), ", the set ", rules::VARIANT_NAMES[puzzles::loaded], " of ",
           puzzles::all.list.len);
-    print("a Brazilian player's set: ", puzzles::VARIANT_NAMES[puzzles::set_of(rules::BRAZILIAN)],
-          ", a Russian's: ", puzzles::VARIANT_NAMES[puzzles::set_of(rules::RUSSIAN)]);
+    print("a Brazilian player's set: ", rules::VARIANT_NAMES[puzzles::set_of(rules::BRAZILIAN)],
+          ", a Russian's: ", rules::VARIANT_NAMES[puzzles::set_of(rules::RUSSIAN)]);
     var g = gui::Gui {};
     gui::test_faces(g);
     var sh = shell::new(rules::RUSSIAN);

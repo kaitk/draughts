@@ -22,9 +22,8 @@ fn main() {
         write_stderr("usage: aimatch russian|international|brazilian SKILL_A SKILL_B GAMES [--fens PLY] [--nodes A B] [--overlooks A B]\n");
         exit(2);
     }
-    let variant: u8 = if a[1] == "russian" { rules::RUSSIAN }
-                      else if a[1] == "brazilian" { rules::BRAZILIAN }
-                      else { rules::INTERNATIONAL };
+    let named, known = rules::variant_named(a[1]);
+    let variant: u8 = if known { named } else { rules::INTERNATIONAL };
     let sa, oka = parse_int(a[2]);
     let sb, okb = parse_int(a[3]);
     let games, okg = parse_int(a[4]);

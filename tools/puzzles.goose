@@ -378,8 +378,8 @@ fn main() {
     var i = 0;
     while i < all.len {
         if i + 1 < all.len && all[i] == "--variant" {
-            var known = false;
-            for name, k in puzzles::VARIANT_NAMES { if all[i + 1] == name { variant = k as u8; known = true; } }
+            let named, known = rules::variant_named(all[i + 1]);
+            if known { variant = named; }
             guard known else { abort(str("not a variant: ", all[i + 1])); }
             i += 2;
             continue;

@@ -71,9 +71,8 @@ fn main() {
     var human: u8 = rules::WHITE;
     for k in 1..a.len {
         let s = a[k];
-        if s == "russian" { variant = rules::RUSSIAN; }
-        else if s == "international" { variant = rules::INTERNATIONAL; }
-        else if s == "brazilian" { variant = rules::BRAZILIAN; }
+        let named, known = rules::variant_named(s);
+        if known { variant = named; }
         else if s == "easy" { skill = ai::level_skill(ai::EASY); }
         else if s == "medium" { skill = ai::level_skill(ai::MEDIUM); }
         else if s == "hard" { skill = ai::level_skill(ai::HARD); }

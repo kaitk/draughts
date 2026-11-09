@@ -145,7 +145,10 @@ fn parse(argv: u8[:][>..]) -> Flags {
             let n, ok = parse_int(v);
             if ok { f.puzzle = n; }
         }
-        if a == "--variant" { for name, k in settings::DRAUGHTS_NAMES { if v == name { f.variant = settings::DRAUGHTS[k]; } } }
+        if a == "--variant" {
+            let named, known = rules::variant_named(v);
+            for d in settings::DRAUGHTS { if known && named == d { f.variant = d; } }
+        }
         if a == "--clock" { for name, k in settings::CLOCK_NAMES { if v == name { f.clock = k; } } }
         if a == "--computer" { f.computer = if v == "white" { rules::WHITE } else { rules::BLACK }; }
         if a == "--level" { for name, k in settings::LEVEL_NAMES { if v == name { f.level = k; } } }

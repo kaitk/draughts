@@ -54,13 +54,12 @@ let KING_NAMES = ["auto", "crown", "stack"];
 let KING_KEYS = [strings::KINGS_AUTO, strings::KINGS_CROWN, strings::KINGS_STACK];
 
 // The draughts a new game can be, in the order the setup shows them: the variant, its
-// name and board, whether it is offered, and its name in the file. International is the
-// default.
+// name and board, and whether it is offered; the file names it as rules::VARIANT_NAMES
+// does. International is the default.
 let DRAUGHTS = [rules::INTERNATIONAL, rules::BRAZILIAN, rules::RUSSIAN];
 let DRAUGHTS_KEYS = [strings::VARIANT_INTERNATIONAL, strings::VARIANT_BRAZILIAN, strings::VARIANT_RUSSIAN];
 let DRAUGHTS_SIZES = [strings::SIZE_10, strings::SIZE_8, strings::SIZE_8];
 let DRAUGHTS_ON = [true, true, true];
-let DRAUGHTS_NAMES = ["international", "brazilian", "russian"];
 let DEFAULT_DRAUGHTS = rules::INTERNATIONAL;
 // The computer's levels (game::EASY..) and the clocks (clock::NONE..), in the file.
 let LEVEL_NAMES = ["easy", "medium", "hard"];
@@ -154,7 +153,8 @@ fn parse(text: const u8[:]) -> Settings {
             for name, i in strings::LANGUAGES { if value == name { s.language = i; } }
         }
         if key == "draughts" {
-            for name, i in DRAUGHTS_NAMES { if value == name && DRAUGHTS_ON[i] { s.variant = DRAUGHTS[i]; } }
+            let v, known = rules::variant_named(value);
+            for d, i in DRAUGHTS { if known && v == d && DRAUGHTS_ON[i] { s.variant = d; } }
         }
         if key == "level" {
             for name, i in LEVEL_NAMES { if value == name { s.level = i; } }
@@ -180,10 +180,9 @@ fn parse(text: const u8[:]) -> Settings {
         if key == "games" && number && n >= 0 { s.games = n; }
         var set = -1;
         if key == "stars" { set = rules::INTERNATIONAL; }
-        for name, i in puzzles::VARIANT_NAMES {
-            let dot, rest, has_dot = split_once(key, '.');
-            if has_dot && dot == "stars" && rest == name { set = i; }
-        }
+        let dot, rest, has_dot = split_once(key, '.');
+        let named, known = rules::variant_named(rest);
+        if has_dot && dot == "stars" && known { set = named; }
         if set >= 0 {
             for one in split(value, ' ') {
                 let a, b, pair = split_once(one, ':');
@@ -225,7 +224,7 @@ fn write(s: Settings, out: u8[>..]&) {
     out.append("\nkings = ");
     out.append(KING_NAMES[s.kings]);
     out.append("\ndraughts = ");
-    for v, i in DRAUGHTS { if s.variant == v { out.append(DRAUGHTS_NAMES[i]); } }
+    for v in DRAUGHTS { if s.variant == v { out.append(rules::VARIANT_NAMES[v]); } }
     out.append("\nlevel = ");
     out.append(LEVEL_NAMES[s.level]);
     out.append(if s.color == rules::BLACK { "\ncolor = black" } else { "\ncolor = white" });
@@ -238,7 +237,7 @@ fn write(s: Settings, out: u8[>..]&) {
         var first = true;
         for won, id in set {
             guard won > 0 else { continue; }
-            if first { format(out, "\nstars.", puzzles::VARIANT_NAMES[v], " = "); }
+            if first { format(out, "\nstars.", rules::VARIANT_NAMES[v], " = "); }
             else { out.append(" "); }
             format(out, id, ":", won);
             first = false;

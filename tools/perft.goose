@@ -12,14 +12,6 @@ import std;
 import os;
 import rules from "../src/rules";
 
-fn variant_named(name: const u8[:]) -> u8, bool {
-    if name == "russian" { return rules::RUSSIAN, true; }
-    if name == "international" { return rules::INTERNATIONAL, true; }
-    if name == "english" { return rules::ENGLISH, true; }
-    if name == "brazilian" { return rules::BRAZILIAN, true; }
-    return 0, false;
-}
-
 fn usage() {
     write_stderr("usage: perft russian|international|english|brazilian DEPTH [FEN] [--divide | --moves]\n");
     exit(2);
@@ -28,7 +20,7 @@ fn usage() {
 fn main() {
     let a = args();
     if a.len < 3 { usage(); }
-    let variant, vok = variant_named(a[1]);
+    let variant, vok = rules::variant_named(a[1]);
     let depth, dok = parse_int(a[2]);
     if !vok || !dok || depth < 1 { usage(); }
     var p = rules::start(variant);

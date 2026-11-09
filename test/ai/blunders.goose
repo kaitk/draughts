@@ -17,7 +17,6 @@ import rules from "../../src/rules";
 import ai from "../../src/ai";
 
 let SEEDS = 2;
-let NAMES = ["russian", "international", "english", "brazilian"];
 // The skills checked: easy's start, the lowest that never overlooks, medium's, hard's.
 let SKILLS = [0, 15, 40, 90];
 let COUNT = 4;
@@ -107,7 +106,7 @@ fn main() {
                 p = rules::play(p, ai::think(e, p, ai::level_skill(ai::MEDIUM), (game * 100 + ply + 7) as u64));
             }
         }
-        print(NAMES[variant], ": ", positions,
+        print(rules::VARIANT_NAMES[variant], ": ", positions,
               " positions; moves checked per skill 0, 15, 40, 90: ", checked[0], ", ", checked[1], ", ", checked[2],
               ", ", checked[3], "; hangs ", hangs[0], ", ", hangs[1], ", ", hangs[2], ", ", hangs[3], "; sacrifices ",
               sacrifices, "; combinations left ", gifts, "; at skill 0, moves overlooking a capture ", overlooks,

@@ -54,10 +54,6 @@ struct Puzzle {
 
 struct Set { list: Puzzle[..MAX_PUZZLES] }
 
-// The variants as a file names them (`variant russian`, `stars.russian`), in
-// rules::RUSSIAN.. order.
-let VARIANT_NAMES = ["russian", "international", "english", "brazilian"];
-
 // The puzzles built into the program, once load() has read them, and the variant whose
 // set they are.
 var all:    Set;
@@ -184,10 +180,8 @@ fn parse(text: const u8[:], set: Set&, err: u8[>..]&) -> bool {
         let key, value_raw, spaced = split_once(l, ' ');
         let value = trim(value_raw);
         if key == "variant" {
-            var known = false;
-            for name, i in VARIANT_NAMES {
-                if value == name { variant = i as u8; known = true; }
-            }
+            let named, known = rules::variant_named(value);
+            if known { variant = named; }
             guard known && !open else { return fail(err, number, "not a variant here", value); }
             continue;
         }

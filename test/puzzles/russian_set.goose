@@ -15,7 +15,7 @@ import rules from "../../src/rules";
 import puzzles from "../../src/puzzles";
 
 fn main() {
-    print("loaded: ", puzzles::load(rules::RUSSIAN), ", the set ", puzzles::VARIANT_NAMES[puzzles::loaded]);
+    print("loaded: ", puzzles::load(rules::RUSSIAN), ", the set ", rules::VARIANT_NAMES[puzzles::loaded]);
     let set .= puzzles::all;
     var s = puzzles::Solver { moves: [], stack: [] };
     var problems = 0;
