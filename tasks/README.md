@@ -56,7 +56,8 @@ later. 014 upscales the backgrounds on the desktop; placeholders do until then. 
 3D board) comes after the MVP, and so does 033 (an icon per season; until then one icon,
 switched by hand). 026 (the first start and tutorial) comes after the MVP's menus. 029
 (release on Google Play) makes the release, 036 announces it, 037 builds the puzzle set by
-theme, 038 adds players, and 039 compares procedural wood for 015's prototype.
+theme, 038 adds players, 039 compares procedural wood for 015's prototype, and 042
+brings the 3D board's frame cost down.
 
 ## Next (updated 2026-11-09, at the day session's end)
 
@@ -83,7 +84,7 @@ What needs the user:
 6. The child's next games: whether easy at skill 0 feels right (`docs/architecture/ai.md`'s
    tuning notes), and whether multi-jump captures are clear with the capture count.
 
-Then: 015's device checks, 041's carved looks, 036 after the release.
+Then: 015's device checks, 042's quick wins, 041's carved looks, 036 after the release.
 
 Not in the MVP (the user, 2026-11-08): sound; the visual feedback is clear, and sound
 may come soon after, kept from being bling. To decide later: a puzzle rating like
