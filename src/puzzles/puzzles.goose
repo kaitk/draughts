@@ -239,18 +239,9 @@ fn parse(text: const u8[:], set: Set&, err: u8[>..]&) -> bool {
     return true;
 }
 
-// How many puzzles of a theme there are, and the index in set of its n-th.
+// How many puzzles of a theme there are.
 fn theme_count(set: Set&, theme: i64) -> i64 {
     var n = 0;
     for p in set.list { if p.theme == theme { n++; } }
     return n;
-}
-fn nth(set: Set&, theme: i64, n: i64) -> i64 {
-    var k = 0;
-    for p, i in set.list {
-        guard p.theme == theme else { continue; }
-        if k == n { return i; }
-        k++;
-    }
-    return -1;
 }
