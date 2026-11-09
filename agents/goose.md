@@ -161,6 +161,22 @@ find out by compiling, so the next session doesn't.
   back. Inside the scope it frees nothing, since the value is still live.
 - `gl_InstanceIndex` doesn't count a draw's `first_instance`, so a second group of
   instances drawn at another time (pieces over the UI) gets its own storage buffer.
+- embed_shader's GLSL parser takes no `centroid` (in any position), so with MSAA a
+  pixel a small triangle covers in part shades with attributes extrapolated outside it.
+  On the 3D prototype's grooves that made specks through Filament's micro-shadowing;
+  keep terms that blow up on wild values off such meshes (`poc/3d/shaders.goose`).
+- A storage buffer block must hold one runtime-sized array (`vec4 squares[];`), not a
+  sized one, or embed_shader refuses it for HLSL.
+- `gfx::BLEND_ADD` weights the source by its alpha: an additive glow writes alpha 1.
+- A struct of handles with no defaults is made with `var g = default<Gpu>();`; `var g:
+  Gpu;` is "used before assigned" when passed by reference. A fixed array likewise:
+  `var e: gfx::Event[64] = [default<gfx::Event>(); 64];`. Read events into it with
+  `gfx::events_into`, which doesn't allocate as `gfx::events()` does.
+- `pow(x, 2.4)` with `x: f32` is ambiguous between the f32 and f64 overloads; bind the
+  exponent to an `f32` first. `PI` and `TAU` adapt to `f32` by themselves.
+- A hidden window (`gfx::WINDOW_HIDDEN`) ignores injected mouse input until
+  `gfx::inject_focus(true)`; `gfx::open_headless` draws and saves screenshots with no
+  window at all, which is how to check a look without a window in the user's way.
 - `goose run` refuses a program that starts a thread at all, so the app is built on the
   Mac too (`docs/development.md`), and its one thread stays in `src/app/think.goose`: the
   packages and tests stay thread-free and run through TinyCC.

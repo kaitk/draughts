@@ -101,6 +101,57 @@ look good, not merely work.
   compared, use HypeHype's: half resolution, 12 samples, a 4 × 4 bilateral blur and
   upscale.
 
+## Prototype
+
+`poc/3d/` (2026-11-09), first step: the autumn board and the 3D reference's position
+(one light king as a stack of two discs with the crown debossed on the upper, one light
+piece selected), with the pipeline the method comparisons will hang off.
+
+```sh
+cd poc/3d
+../../build/goose-v2026.4-macos-arm64/goose build -o ../../build/board3d board3d.goose
+../../build/board3d                                 # a drag turns; Tab or a double click switches mode; R resets
+../../build/board3d --shot out.png --size 1920x1200 [--yaw 20 --pitch 40]   # one frame, headless
+../../build/board3d --bench 1000 --size 1920x1200   # frame timing, headless
+../../build/board3d --frames 30                     # the window's loop hidden, a drag injected
+```
+
+It compiles `src/app/background.c` from where it is (`board3d.build`) for the photograph.
+
+- **Frames:** the shadow map (2048², 16-bit, the board and pieces from the key light) only
+  when the position changes; then one forward pass into a 4× multisampled RGBA8 target
+  with depth, resolved into gfx's screen: the blurred photograph as a backdrop, the
+  board's soft shadow on nothing (a catcher plane under it, distances to its rounded
+  outline), the board and the pieces lit, the selection's glow ring added. No post pass,
+  no discard, nothing temporal. Drawn only when the camera or the window changes.
+- **Geometry**, built once at startup: a piece is a profile turned on a lathe (72 steps:
+  a recessed inner disc, a groove at 63% of the radius, a raised lip, a flat ring, the
+  edge rounded from 86%, the side, a round at the foot), with occlusion baked into the
+  profile; the frame is a profile swept round the field (an inner wall, the top, a
+  bullnose of 0.2 squares, the side). Pieces are 82% of a square (the reference's; the 2D
+  board's are 78%), 22% of their diameter high. The pieces are one instanced draw from a
+  storage buffer.
+- **Wood**, baked once on the GPU at startup into albedo-and-roughness (sRGB) and normal
+  textures with mips: a plan of the field (2048², maple and walnut squares each its own
+  stretch of grain and tone, seams, the dark inlay) and a strip for the frame (4096 ×
+  256, cherry, its grain along each side, mitred on the diagonals). Grain is noise
+  stretched along it, no sines. Tuned to the user's swatch (maple, walnut, cherry, cream:
+  `~/Downloads/Four-Way Wood and Cream Texture Swatch.png`): lit means and grain contrast
+  at screen size close to the swatch's. The pieces' wood and cream are noise in the
+  shader, not baked.
+- **Shading:** GGX with Filament's correlated Smith and Schlick, wrap diffuse, Filament's
+  specular antialiasing on every material, 16 hardware-compared shadow taps on a fixed
+  grid, nine spherical harmonics of the blurred photograph for the ambient (computed on
+  the CPU at load, half desaturated, specular through Karis's DFG fit), analytic
+  occlusion (each piece in the 3 × 3 squares round as a cylinder, the frame's inner
+  wall), micro-shadowing on the field only, the Khronos PBR Neutral tonemap.
+- **Measured** on an M1 Pro, 1920 × 1200, headless: about 0.2 ms of CPU a frame, about 7
+  ms a frame with a wait for the GPU after each (an upper bound, submission and wait
+  included); setup 50 ms warm, 0.3 to 0.8 s cold.
+- **Not yet:** the gfx store-op patch (the multisampled target is still stored and
+  resolved with `RESOLVE_AND_STORE`, depth stored), SSAO, SMAA and analytic edges to
+  compare, taps hitting squares, the tablet. The backdrop doesn't turn with the camera.
+
 ## Later, only if the floating board falls short
 
 - **A painted backdrop and a real table.** The camera barely moves (about 50° down), so a
