@@ -79,6 +79,21 @@ fn stray(b: board::Board&, opts: rules::Moves&) -> i64 {
     return -1;
 }
 
+// The pieces ringed as they must capture and the count each shows, as the frame at `now`
+// draws them: "46(1)" a ring and a count of one, "23" a ring alone (a piece to take).
+fn rings(gm: game::Game&, l: panel::Layout, now: f64) -> u8[>..] {
+    let v .= rules::VARIANTS[V];
+    board::fill(gm.b, l.board, now);
+    var t: u8[>..] = [];
+    for p in gm.b.pieces {
+        guard p.ring.x > 0.0 || p.ring.z > 0.0 else { continue; }
+        format(t, " ", number(board::hit(l.board, v, float2 { p.at.x, p.at.y })));
+        if p.ring.z > 0.0 { format(t, "(", p.ring.z as i64, ")"); }
+    }
+    if t.len == 0 { format(t, " none"); }
+    return t;
+}
+
 fn same(a: rules::Move, b: rules::Move) -> bool { a.from == b.from && a.to == b.to && a.captured == b.captured }
 
 // A press at p, a drag to q over a few frames, and a release there.
@@ -103,6 +118,18 @@ fn position(gm: game::Game&, g: gui::Gui&, l: panel::Layout, fen: const u8[:], w
             for m in opts { format(all, " ", move_text(m)); }
             print("captures:", all);
         }
+        // The must-capture rings and counts: none up front on mistakes only, a count of
+        // one on the king and on the man with move hints; after a square no capture ends
+        // on, tapped with the king selected, both ring with their count, and what the
+        // king takes rings beside them; the king stays selected and nothing is played.
+        var king_sq = -1;
+        for m in opts { if gm.b.pos.kings & rules::bit(m.from) != 0 { king_sq = m.from; } }
+        let before = rings(gm, l, t + 0.05);
+        drive::tap(gm, g, l, at(l, number(king_sq)), t + 0.1);
+        drive::tap(gm, g, l, at(l, stray(gm.b, opts)), t + 0.2);
+        print(if hints == board::MISTAKES { "mistakes only" } else { "move hints" }, ", rings:", before,
+              "; after ", stray(gm.b, opts), " tapped with ", number(king_sq), " selected:", rings(gm, l, t + 0.3),
+              "; wrong ", number(gm.b.wrong), ", selected ", number(gm.b.selected), ", played ", gm.b.history.len);
         for m, i in opts {
             for by_drag in [false, true] {
                 begin(gm, g, l, fen, hints, t);

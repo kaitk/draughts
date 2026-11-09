@@ -1,26 +1,32 @@
 == a king and a man each take one: B:W23,44:B18,K46
 captures: 46x19 46x14 46x10 46x5 18x29
+mistakes only, rings: none; after 1 tapped with 46 selected: 46(1) 23 18(1); wrong 1, selected 46, played 0
   46x19 by taps: 46x19, white takes none
   46x14 by taps: 46x14, white takes none
   46x10 by taps: 46x10, white takes none
   46x5 by taps: 46x5, white takes none
   18x29 by taps: 18x29, white takes none
+move hints, rings: 46(1) 18(1); after 1 tapped with 46 selected: 46(1) 23 18(1); wrong 1, selected 46, played 0
 every capture by taps and by a drag, hints on mistakes and on all moves, each the one chosen: true
 == the king's nearest landing lost: B:W12,23,31:B18,K46
 captures: 46x19 46x14 46x10 46x5 18x7 18x29
+mistakes only, rings: none; after 1 tapped with 46 selected: 46(1) 23 18(1); wrong 1, selected 46, played 0
   46x19 by taps: 46x19, white takes 12x23x14 (the piece is lost)
   46x14 by taps: 46x14, white takes 12x23
   46x10 by taps: 46x10, white takes 12x23
   46x5 by taps: 46x5, white takes 12x23
   18x7 by taps: 18x7, white takes none
   18x29 by taps: 18x29, white takes none
+move hints, rings: 46(1) 18(1); after 1 tapped with 46 selected: 46(1) 23 18(1); wrong 1, selected 46, played 0
 every capture by taps and by a drag, hints on mistakes and on all moves, each the one chosen: true
 == the king's furthest landing lost: B:W19,23,41:B18,K46
 captures: 46x37 46x32 46x28 18x29
+mistakes only, rings: none; after 1 tapped with 46 selected: 46(1) 41 18(1); wrong 1, selected 46, played 0
   46x37 by taps: 46x37, white takes 23x12
   46x32 by taps: 46x32, white takes 23x12
   46x28 by taps: 46x28, white takes 23x12 23x32 (the piece is lost)
   18x29 by taps: 18x29, white takes none
+move hints, rings: 46(1) 18(1); after 1 tapped with 46 selected: 46(1) 41 18(1); wrong 1, selected 46, played 0
 every capture by taps and by a drag, hints on mistakes and on all moves, each the one chosen: true
 the 3D board (raised true, turned true): 12 captures by taps and drags, each the one chosen: true
 the 3D board (raised true, turned true): 8 captures by taps and drags, each the one chosen: true
