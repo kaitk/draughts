@@ -111,6 +111,9 @@ struct Shell {
     shows: i64    = HOME,
     hole:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
     tall:  f32    = 0.0,
+    // Home's 3D board as a drag on it left it: the showcase's swing and tilt (rig::drive),
+    // kept while home stays open, eased back to rest as home is left.
+    cam: rig::Rig = rig::Rig {},
 }
 
 fn new(variant: u8) -> Shell {
@@ -156,7 +159,10 @@ fn progress(sh: Shell&, now: f64) -> f64 {
 fn go_to(sh: Shell&, to: i64, now: f64) {
     let p = progress(sh, now);
     let back = sh.from == to && p < 1.0;
-    if sh.screen == HOME { sh.left = sh.setup; }
+    if sh.screen == HOME {
+        sh.left = sh.setup;
+        rig::settle(sh.cam, now, DURATION);
+    }
     sh.from = if animates(sh.screen, to) { sh.screen } else { -1 };
     sh.since = if back { now - (1.0 - p) * DURATION } else { now };
     sh.screen = to;
@@ -554,7 +560,9 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     var room = float4 { 0.0, 0.0, 0.0, 0.0 };
     let pick = home::frame(sh.over, g, sh.layout, rules::VARIANTS[b.variant].size, area, sh.setup, sh.prefs, room);
     sh.layout.flip = flip;
-    sh.came_view = raise_in(sh, room, sh.layout.n, g.scale, sh.layout);
+    let v = raise_in(sh, room, sh.layout.n, g.scale, sh.layout);
+    if !card && turn_home(sh, g, v, room, now) { changed = true; }
+    sh.came_view = home_view(sh, v, room, now);
     if card {
         // Home's pieces over its UI (the wordmark's crown, the player's picture) draw
         // after all the UI, so they would sit on the card: under it, home shows without
@@ -581,6 +589,29 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
         _ => {},
     }
     return changed;
+}
+
+// Home's 3D board v (raise_in, fitted into `room`) seen as the drags on it left it,
+// turned and tipped by the showcase's camera (rig::camera): no larger than at rest, and
+// smaller where its bounds at that angle would leave the room, in its middle.
+fn home_view(sh: Shell&, v: view3d::View, room: float4, now: f64) -> view3d::View {
+    let cam = rig::camera(sh.cam, view3d::PITCH, now);
+    guard v.rect.z > 0.0 && (cam.yaw != 0.0 || cam.pitch != view3d::PITCH) else { return v; }
+    return view3d::fit(cam, v.n, room, view3d::MIDDLE, v.k);
+}
+
+// A drag that starts on home's 3D board v, inside its outline as drawn and off the UI,
+// turns and tips it as the game's showcase does (rig::drive, its range and rate); a press
+// anywhere else does nothing new. Not in a transition, nor before the 3D board is ready.
+// Returns whether it moved.
+fn turn_home(sh: Shell&, g: gui::Gui&, v: view3d::View, room: float4, now: f64) -> bool {
+    let r .= sh.cam;
+    let input .= g.input;
+    if input.pressed || v.rect.z <= 0.0 || sh.from >= 0 || waiting3d(sh) { r.held = false; }
+    guard v.rect.z > 0.0 && sh.from < 0 && !waiting3d(sh) else { return false; }
+    let on = input.pressed && !g.took && view3d::on_board(home_view(sh, v, room, now), input.at);
+    guard on || r.held else { return false; }
+    return rig::drive(r, input.at, input.down, on, input.released, g.scale, view3d::PITCH, now);
 }
 
 // Who's playing over home for this frame, doing what it asks: switching to a player,
@@ -626,7 +657,7 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: ga
     } else {
         home::frame(over, g, l, rules::VARIANTS[board_of(sh, HOME).variant].size, area, sh.left, sh.prefs, room);
         l.flip = turned(sh, sh.left);
-        sh.went_view = raise_in(sh, room, l.n, g.scale, l);
+        sh.went_view = home_view(sh, raise_in(sh, room, l.n, g.scale, l), room, now);
     }
 }
 
@@ -879,5 +910,5 @@ fn animating(sh: Shell&, g: gui::Gui&, now: f64) -> bool {
     if sh.from >= 0 { return true; }
     return if sh.screen == GAME { game::animating(sh.game, g, now) }
            else if sh.screen == PUZZLE { puzzle::animating(sh.puzzle, g, now) }
-           else { board::animating(shown(sh), now) || gui::animating(g) };
+           else { board::animating(shown(sh), now) || gui::animating(g) || rig::moving(sh.cam, now) };
 }

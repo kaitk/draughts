@@ -759,7 +759,13 @@ board's does and the backdrop over it as opaque as the blur.
   across its stage less 40 dp each side, 24 in portrait, as tall as the flat board below
   the chip's and the way out's row, 760 × 521 dp on the tablet; settings: 94% of the page
   beside the choices), with the flat square the board package plays on in the middle of
-  the bounds (`view3d::square`). A puzzle takes the game's corners layout, next the shorter
+  the bounds (`view3d::square`). **On home** a drag that starts on the board (inside its
+  outline on screen, `view3d::on_board`, off the UI) moves the showcase's camera, its rate
+  and range (`rig::drive`: 0.3° a dp, ±35° round, 35° to 80° down), no button needed; the
+  board stays in the middle of its room, shrinking where its bounds at that angle would
+  leave it (to about 64% at the top end), the light fixed to the world as in the showcase.
+  Let go, the angle stays while home is open; leaving home eases it back to rest over the
+  transition (`shell::home_view`, `test/shell/home_turn`). A puzzle takes the game's corners layout, next the shorter
   tile in a corner panel, turned so the side to move plays from the bottom, its taps and
   drags through the perspective as the game's (`game::touch`). **The win** dims the board
   and the pieces but the winning one (its seed `view3d::SEED_LIT` more, the dim in the
@@ -1014,8 +1020,8 @@ the display's rate, which costs nothing that matters there. The patched `frame()
 
 The 3D board's camera (the view, the zoom, the showcase's way back, a hot-seat turn) is an
 animation like a move: the 3D pass runs on each of its frames, about 36 for a 0.6 s ease
-at 60 Hz, and on none once it has settled (`test/game/camera`); a showcase drag draws only
-on the frames the finger moves. A pulse, a flash, or a hint's ring is not: while one runs
+at 60 Hz, and on none once it has settled (`test/game/camera`); a showcase drag, and a drag
+on home's board, draws only on the frames the finger moves. A pulse, a flash, or a hint's ring is not: while one runs
 each frame copies the kept image and adds the marks over it from their phases, and the 3D
 pass runs only where it starts and ends (`view3d::changes`' MARKS, `test/board/scene3d`;
 "Board and pieces").

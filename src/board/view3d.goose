@@ -220,11 +220,11 @@ let TOP = 0;
 let MIDDLE = 1;
 let BOTTOM_EDGE = 2;
 
-// `cam`'s view fitted into `box` (x, y, width, height in pixels): as large as fits,
-// centered across, placed down the box by `align`.
-fn fit(cam: Camera, n: i64, box: float4, align: i64) -> View {
+// `cam`'s view fitted into `box` (x, y, width, height in pixels): as large as fits, k
+// `most` at most, centered across, placed down the box by `align`.
+fn fit(cam: Camera, n: i64, box: float4, align: i64, most: f32 = 1.0e9) -> View {
     let b = bounds(cam, n);
-    let k = min(box.z / b.z, box.w / b.w);
+    let k = min(min(box.z / b.z, box.w / b.w), most);
     let w = b.z * k;
     let h = b.w * k;
     let x = box.x + 0.5 * (box.z - w);
@@ -284,6 +284,16 @@ fn hull(v: View, out: Hull&, field: bool = false) {
 }
 
 fn turn(o: float2, a: float2, b: float2) -> f32 { (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x) }
+
+// Whether pixel p is on the board v places: inside its outline on screen (hull), the
+// frame and a lifted king's top over the corners included.
+fn on_board(v: View, p: float2) -> bool {
+    var h: Hull = [];
+    hull(v, h);
+    guard h.len >= 3 else { return false; }
+    for a, i in h { if turn(a, h[(i + 1) % h.len], p) < 0.0 { return false; } }
+    return true;
+}
 
 // Whether the board v places comes within `gap` pixels of rect r (x, y, width, height):
 // the polygon and the grown rect overlap unless one of their edges separates them. With

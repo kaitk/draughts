@@ -1,0 +1,11 @@
+home at rest: yaw 0.0, pitch 52.5, its middle on the board true, the screen's corner false, the bounds' corner false
+dragged on the board: yaw 30.0, pitch 67.5, frames drawn 7 of 7, the view drawn turned true, in its room true at 70.5% of its size
+let go: frames drawn at rest 0, yaw 30.0, pitch 67.5
+beside the board on it false, under it false
+drags off the board and a menu row tapped: the angle kept true, the setup opened true and closed true
+dragged far: yaw -35.0, pitch 80.0, in its room true at 64.4%
+dragged far back: yaw 35.0, pitch 35.0, in its room true at 89.3%, frames drawn at rest 0
+in the setup: yaw 26.0, pitch 35.0
+continue: screen game true, halfway yaw 13.0, pitch 43.8, at its end yaw 0.0, pitch 52.5, the showcase off true, the game's camera at rest true
+home again: yaw 0.0, pitch 52.5, the view as at first true, drawn at rest 0
+flat: yaw 0.0, pitch 52.5, raised false
