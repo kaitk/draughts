@@ -510,12 +510,13 @@ fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::La
 }
 
 // Opens the screen's pass with the photograph alone behind a 3D board (draw3d.goose),
-// `blur` as frame() takes it; with blur 1 the renderer's own backdrop covers it, and the
-// pass is only cleared.
-fn photo(d: Drawer&, blur: f32, now: f64, width: f32, height: f32) {
+// `blur` as frame() takes it; with blur 1 and `covered` (the renderer's own backdrop
+// fully shown over it) the pass is only cleared. While the 3D board gets ready or fades
+// in, the photograph shows as on the flat board, so only the board appears.
+fn photo(d: Drawer&, blur: f32, now: f64, width: f32, height: f32, covered: bool = true) {
     let t = d.colors;
     gfx::begin_pass(gfx::screen(), gfx::Texture { 0 }, t.page);
-    guard blur < 1.0 else { return; }
+    guard blur < 1.0 || !covered else { return; }
     gfx::bind(d.board_pipeline);
     gfx::uniforms(gfx::FRAGMENT, 0, t);
     let k = clamp(blur, 0.0, 1.0);

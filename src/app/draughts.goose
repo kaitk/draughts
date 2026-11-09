@@ -416,7 +416,8 @@ fn main() {
         // and has faded in. Back to flat, it is all given back.
         let n_was = if sh.layout.n > 0 { sh.layout.n } else { rules::VARIANTS[sh.prefs.variant].size };
         sh.ready3d = !settings::raised(sh.prefs) || draw3d::ready(d3, d.kind, n_was);
-        sh.shown3d = draw3d::shows(d3);        if settings::raised(sh.prefs) && (!sh.ready3d || !sh.shown3d || draw3d::appearing(d3, now)) { dirty = true; }
+        sh.shown3d = draw3d::shows(d3);
+        if settings::raised(sh.prefs) && (!sh.ready3d || !sh.shown3d || draw3d::appearing(d3, now)) { dirty = true; }
         if !settings::raised(sh.prefs) && sh.from < 0 { draw3d::drop(d3); }
         if shell::frame(sh, g, size.x, size.y, now) { dirty = true; }
         // The keyboard: up while a name is typed, brought up again by each tap on the name.
@@ -483,7 +484,7 @@ fn main() {
                 // drawn once.
                 draw3d::frame(d3, shown, l, sh.view, now, size, d.kind, shell::which(sh.shows), sh.hold);
                 draw::pieces_over(d, sh.over, l, size.x, size.y);
-                draw::photo(d, sh.blur, now, size.x, size.y);
+                draw::photo(d, sh.blur, now, size.x, size.y, draw3d::shows(d3) && !draw3d::appearing(d3, now));
                 draw3d::show(d3, sh.blur, sh.place, sh.fade, size, now);
             } else {
                 draw::frame(d, shown, sh.over, l, sh.blur, now, size.x, size.y);
