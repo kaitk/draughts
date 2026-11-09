@@ -308,22 +308,33 @@ let LIT_FRAG = """
                                  p.z - down);
             vec2 fuv = solid_uv;
             vec3 grain = vec3(1.0, 0.0, 0.0);
+            vec2 gx = dFdx(solid_uv) / FRAME_SPAN;
+            vec2 gy = dFdy(solid_uv) / FRAME_SPAN;
             if (frame_build.x < 0.5) {
                 bool along_x = a2.y > a2.x;
                 float band = along_x ? (p.z > 0.0 ? 0.0 : 1.0) : (p.x > 0.0 ? 2.0 : 3.0);
-                float out_by = (along_x ? a2.y : a2.x) - INNER + down;
-                fuv = vec2(along_x ? p.x : p.z, out_by + band * 1.4 - 5.0);
+                // Both pieces' mappings and their derivatives, so the filter's footprint
+                // follows the piece's own axes (the sides' grain runs along z) and a pixel
+                // quad straddling a mitre doesn't see the jump between them.
+                vec2 on_x = vec2(p.x, a2.y - INNER + down);
+                vec2 on_z = vec2(p.z, a2.x - INNER + down);
+                vec2 own = along_x ? on_x : on_z;
+                fuv = vec2(own.x, own.y + band * 1.4 - 5.0);
+                gx = (along_x ? dFdx(on_x) : dFdx(on_z)) / FRAME_SPAN;
+                gy = (along_x ? dFdy(on_x) : dFdy(on_z)) / FRAME_SPAN;
                 grain = along_x ? vec3(1.0, 0.0, 0.0) : vec3(0.0, 0.0, 1.0);
             }
             fuv = fuv / FRAME_SPAN + 0.5;
-            // The mip from the solid mapping, which has the same scale and no break at
-            // the mitres.
-            vec2 gx = dFdx(solid_uv) / FRAME_SPAN;
-            vec2 gy = dFdy(solid_uv) / FRAME_SPAN;
             vec4 a = textureGrad(frame_albedo, fuv, gx, gy);
-            vec2 t = textureGrad(frame_normal, fuv, gx, gy).xy * 2.0 - 1.0;
+            vec4 tn = textureGrad(frame_normal, fuv, gx, gy);
+            vec2 t = tn.xy * 2.0 - 1.0;
             albedo = a.rgb;
             rough = a.a;
+            ao *= tn.z;
+            // The mips' averaged normal is shorter where the grooves blur: Toksvig's
+            // 1 - r over r widens the roughness there, so far furrows don't sparkle.
+            float r = length(vec3(t, tn.w));
+            top_var = max((1.0 - r) / max(r, 1e-3), 0.0);
             vec3 tan = grain - n * dot(n, grain);
             tan = dot(tan, tan) > 0.01 ? normalize(tan) : normalize(cross(n, vec3(0.0, 0.0, 1.0)));
             vec3 bit = cross(n, tan);
@@ -592,7 +603,7 @@ let BAKE_FRAG = """
         vec4 frame;
         vec4 frame_fig;
         vec4 surface;    // x: each square's own tone, y: pores, z: seams, w: relief
-        vec4 frame_surface;  // the frame's wood: x pores, y relief, z late-wood streaks
+        vec4 frame_surface;  // the frame's wood: x pores, y relief, z late-wood furrows
         vec4 stone;      // x: veins, y: clouding, z: the roughness following the figure
     };
     const float FIELD = 4.0;
@@ -621,7 +632,23 @@ let BAKE_FRAG = """
         return s / 0.97;
     }
 
-    struct Wood { vec3 albedo; float rough; float height; };
+    // Grooves along the grain at y: two contours of a noise drawn out along it,
+    // irregularly spaced and ending where it flattens, each a groove of about half_w
+    // either side, its distance from the contour by the noise's slope, broken into
+    // lengths of about 1 / pieces.
+    float furrows(float x, float y, float freq, float half_w, float pieces) {
+        vec2 lq = vec2(x * freq + 3.1, y * 0.3);
+        float e = 0.002 * freq;
+        float slope = abs(vnoise(lq + vec2(e, 0.0)) - vnoise(lq - vec2(e, 0.0))) / 0.004;
+        float dist = abs(fract(vnoise(lq) * 2.0) - 0.5) / max(2.0 * slope, 1e-3);
+        float w = half_w * (0.75 + 0.5 * vnoise(vec2(x * 4.0, y * 0.9)));
+        // Its edges a texel soft at least, so the bake doesn't alias them.
+        float texel = size.z / size.x;
+        float groove = 1.0 - smoothstep(0.3 * w, w + 0.7 * texel, dist);
+        return groove * smoothstep(0.25, 0.45, vnoise(vec2(x * 20.0, y * pieces)));
+    }
+
+    struct Wood { vec3 albedo; float rough; float height; float cavity; };
 
     // A surface with its grain along y, from noise drawn out along the grain, never a
     // regular stripe: a broad soft figure, fine streaks, pores. k: how far the grain
@@ -629,7 +656,7 @@ let BAKE_FRAG = """
     // noise is drawn out along y (1 wood; 0 stone: the same noise round, a clouding with
     // faint veins). base: the color (sRGB) and roughness. f: the pores' strength, the
     // open pores' (dense fine dashes), the fine dark late-wood lines', all following the
-    // grain, roughest in them.
+    // grain, roughest in them; the late wood as furrows.
     Wood wood(vec2 q, float seed, vec4 base, vec4 k, vec3 f) {
         float s = k.w;
         q += vec2(h12(vec2(seed, 1.7)), h12(vec2(seed, 9.3))) * 97.0;
@@ -640,18 +667,22 @@ let BAKE_FRAG = """
         float pores = smoothstep(0.6, 0.9, vnoise(vec2(x * 70.0, q.y * mix(70.0, 1.6, s))));
         // Open pores, dense fine dashes along the grain, and late wood: thin darker lines,
         // both near the screen's pixel at the default view, so the wood reads rough.
-        float dash = smoothstep(0.48, 0.82, vnoise(vec2(x * 55.0, q.y * 4.5)))
+        float dash = smoothstep(0.55, 0.8, vnoise(vec2(x * 55.0, q.y * 5.0)))
                    * (0.6 + 0.4 * vnoise(vec2(x * 6.0, q.y * 0.8)));
-        float late = smoothstep(0.55, 0.8, vnoise(vec2(x * 24.0 + 3.1, q.y * 0.5)));
+        // Late wood as furrows, coarser grooves that catch the light, about 0.012 to
+        // 0.022 across (2 to 4 pixels at the default view), and finer, shallower ones
+        // between them.
+        float furrow = (furrows(x, q.y, 16.0, 0.008, 2.5)
+                      + 0.6 * furrows(x + 0.37, q.y, 30.0, 0.005, 5.0)) * f.z * s;
         float open = dash * f.y * s;
         pores *= f.x;
-        float streak = late * f.z * s;
         Wood w;
         w.albedo = srgb(base.rgb) * (1.0 + k.y * (broad - 0.5)) * (1.0 + k.z * (fine - 0.5))
-                 * (1.0 - 0.12 * pores) * (1.0 - 0.3 * open) * (1.0 - 0.25 * streak);
+                 * (1.0 - 0.12 * pores) * (1.0 - 0.15 * open) * (1.0 - 0.45 * min(furrow, 1.0));
         pores = max(pores, open);
-        w.rough = base.a + 0.16 * pores + 0.1 * streak - 0.08 * (fine - 0.5);
-        w.height = (fine - 0.5) * 0.4 - pores * 0.5 - streak * 0.35;
+        w.rough = base.a + 0.16 * pores + 0.22 * furrow - 0.08 * (fine - 0.5);
+        w.height = (fine - 0.5) * 0.5 - pores * 0.5 - furrow * 2.0;
+        w.cavity = 1.0 - 0.15 * open - 0.5 * furrow;
         if (s < 0.5) {
             // Stone: a soft clouding and a few thin, faint veins, the roughness lowest in
             // the clear stone between them; veins lighter in dark stone, darker in pale.
@@ -711,7 +742,9 @@ let BAKE_FRAG = """
         float relief = 0.0015 * (mode.x < 0.5 ? surface.w : frame_surface.y);
         vec3 n = normalize(vec3(-grad.x * relief, 1.0, -grad.y * relief));
         out_albedo = vec4(w.albedo, w.rough);
-        out_normal = vec4(n.x * 0.5 + 0.5, n.z * 0.5 + 0.5, 0.5, 1.0);
+        // The normal's x and z, the cavity's occlusion, the normal's y: what the mips
+        // average shortens the normal, which widens the roughness where they blur.
+        out_normal = vec4(n.x * 0.5 + 0.5, n.z * 0.5 + 0.5, w.cavity, n.y);
     }
     """;
 

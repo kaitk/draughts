@@ -24,7 +24,7 @@ struct Theme {
     frame:     float4,
     frame_fig: float4,
     surface:   float4,      // x: each square's own tone, y: pores, z: seams, w: relief
-    // The frame's wood: x its pores, y its relief, z the fine dark late-wood streaks along
+    // The frame's wood: x its pores, y its relief, z the late wood's furrows along
     // the grain, w how much smoother (polished) its rounded edge is than its top.
     frame_surface: float4,
     // Stone (a figure drawn out 0): x its veins' contrast, y its clouding's, z how far the
