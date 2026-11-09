@@ -129,6 +129,9 @@ struct Board {
     last:      rules::Move,
     has_last:  bool,
     pulse_end: f64,
+    // The pieces the legal captures take, pulsing beside the pieces that must take them,
+    // after a tap on a piece that could take but fewer (the majority rule): the reason.
+    outtaken:  u64,
     hints:     i64,             // MISTAKES or MOVES
     wrong:     i64,             // the square of the last wrong move, a bit, or -1
     wrong_at:  f64,
@@ -170,6 +173,7 @@ fn show(b: Board&, p: rules::Position) {
     b.wrong = -1;
     b.held = false;
     b.pulse_end = 0.0;
+    b.outtaken = 0;
     b.pressed = -1;
     b.dragging = false;
     b.back = false;
@@ -344,6 +348,7 @@ fn start_move(b: Board&, i: i64, now: f64) {
     b.selected = -1;
     b.steps.clear();
     b.glow = -1;
+    b.outtaken = 0;
     // A move starts from its square unless release says it was dropped elsewhere; a
     // move played by code (the computer's) must not start from the last drop.
     b.dropped = false;
@@ -397,7 +402,16 @@ fn mistake(b: Board&, sq: i64, now: f64) {
     b.wrong = sq;
     b.wrong_at = now;
     b.held = false;
+    b.outtaken = 0;
     if must_capture(b) { b.pulse_end = now + PULSE; }
+}
+
+// A tap on the piece on `sq`, which could take but fewer than the pieces that must
+// capture (the majority rule): a mistake, and the pieces their captures take pulse too,
+// so the child sees the other piece takes more.
+fn outnumbered(b: Board&, sq: i64, now: f64) {
+    mistake(b, sq, now);
+    for m in b.moves { b.outtaken |= m.captured; }
 }
 
 fn empty(b: Board&, sq: i64) -> bool {
@@ -440,7 +454,9 @@ fn press(b: Board&, l: Layout, p: float2, now: f64) {
             b.dragging = false;
             return;
         }
-        if must_capture(b) { mistake(b, sq, now); }
+        if must_capture(b) {
+            if rules::can_take_from(b.pos, sq) { outnumbered(b, sq, now); } else { mistake(b, sq, now); }
+        }
     }
     if b.selected >= 0 && empty(b, sq) {
         mistake(b, sq, now);
@@ -564,6 +580,7 @@ fn fill(b: Board&, l: Layout, now: f64) {
     if (pulsing || b.held) && must_capture(b) {
         for i in b.moves.len { must |= rules::bit(b.moves[i].from); }
     }
+    if pulsing { must |= b.outtaken; }
     let fade_at = hops(b.move) as f64 * HOP;
     // A piece waiting partway through a capture made by hand is drawn on its stop; the
     // pieces it has jumped stay until the capture ends, as the rules take them.

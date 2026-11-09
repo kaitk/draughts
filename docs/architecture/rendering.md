@@ -690,7 +690,12 @@ frame between home and the game declares about 130 of the 512 quads (home 77, th
   only (the default, `docs/product.md`), there are no dots: a wrong move flashes a red
   ring on its square twice (0.6 s each), and the piece that must capture pulses; the
 piece stays selected. A tap or a drop on an empty square that isn't a move is wrong, as
-is touching a piece that can't move because another must capture. A capture of many
+is touching a piece that can't move because another must capture. Every piece with a
+legal capture pulses, never one of several. Under the majority rule a piece that could
+take, but fewer than another, can't move: touching it is wrong, and the pieces the legal
+captures take pulse too, beside the piece that takes them, so a child sees the other piece
+takes more (`board::outnumbered`; a report from 2026-11-09 of "the wrong piece made to
+capture" was this rule, the board having given no reason). A capture of many
 jumps is tapped by its last square or stop by stop (`board::follow`): a tap on the next
 stop of the selected piece's captures rings it, whatever the hints, and narrows the
 targets shown to the ways through it; once only one capture goes on that way it is

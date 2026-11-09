@@ -14,7 +14,8 @@ Chess may follow on the same base.
   tap the glowing dot instead of looking at the board. So move hints are a setting, in
   settings, which the game reaches in one tap: **moves** shows the selected piece's targets
   (for learning the basics), **mistakes** shows nothing until a move is wrong, then
-  marks the square and why (the piece that must capture pulses). Mistakes is the
+  marks the square and why (the piece that must capture pulses, and when another piece
+  takes more, the pieces it takes). Mistakes is the
   default; moves is on by default only in the first lessons that teach the basic ideas,
   and in the tutorial at the first start. A game has no hint button (2026-11-07).
   Puzzles never show a selected piece's targets, whatever the setting: the point of a

@@ -26,6 +26,13 @@ Common to all four: capturing is compulsory, a capture continues while it can, a
 captured pieces come off after the whole move, so no piece is jumped twice (the Turkish
 strike rule).
 
+Under the majority rule a piece that can take fewer than another has no move, though a
+child sees it can take; `rules::can_take_from` tells such a piece from one with no
+capture, for the board to say why (rendering.md, "States"). Checked on the board with
+several capturing pieces, equal and unequal, a king and a man, and captures through a
+shared first stop, in International, Brazilian, and Russian (`test/board/several`,
+2026-11-09).
+
 Flying kings must land, after a capture, on a square from which the capture goes on, if
 any such square exists. Russian states this rule; in International and Brazilian the
 majority rule already gives it. A capture is one move per start square, end square, and

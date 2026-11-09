@@ -251,6 +251,17 @@ fn captures(p: Position, v: Variant&, out: Moves&) {
     }
 }
 
+// Whether the side to move's piece on sq could take anything, legal or not: under the
+// majority rule a piece that takes fewer than another has no move, yet a child sees it
+// can take (the board says why it may not).
+fn can_take_from(p: Position, sq: i64) -> bool {
+    let v .= VARIANTS[p.variant];
+    guard sq >= 0 && p.pieces[p.side] & bit(sq) != 0 else { return false; }
+    let s = Search { side: p.side, from: sq as u8, opp: p.pieces[1 - p.side],
+                     occ: occupied(p) & ~bit(sq), first: 0, best: 1 };
+    return can_take(v, s, sq, p.kings & bit(sq) != 0, 0);
+}
+
 fn quiet(p: Position, v: Variant&, out: Moves&) {
     let side = p.side;
     let own = p.pieces[side];

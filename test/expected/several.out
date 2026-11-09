@@ -1,0 +1,70 @@
+equal
+W:W34,37:B29,32
+  34x23  takes 1
+  37x28  takes 1
+2 moves
+  c3: selected c3, wrong -, pulsing , playing -
+  e5: selected -, wrong -, pulsing , playing 37x28
+  h4: selected h4, wrong -, pulsing , playing -
+  f6: selected -, wrong -, pulsing , playing 34x23
+  c3: selected c3, wrong -, pulsing , playing -
+  c5: selected c3, wrong c5, pulsing h4 c3 , playing -
+more
+W:W37,44:B23,32,39
+  37x28x19  takes 2
+1 move
+  c3: selected c3, wrong -, pulsing , playing -
+  g7: selected -, wrong -, pulsing , playing 37x28x19
+  h2: selected -, wrong h2, pulsing f6 d4 c3 , playing -
+  f4: selected -, wrong h2, pulsing f6 d4 c3 , playing -
+king and man
+W:WK26,44:B17,39
+  26x12  takes 1
+  26x3  takes 1
+  26x8  takes 1
+  44x33  takes 1
+4 moves
+  a5: selected a5, wrong -, pulsing , playing -
+  e9: selected -, wrong -, pulsing , playing 26x8
+  h2: selected h2, wrong -, pulsing , playing -
+  f4: selected -, wrong -, pulsing , playing 44x33
+  h2: selected h2, wrong -, pulsing , playing -
+  h4: selected h2, wrong h4, pulsing a5 h2 , playing -
+king more
+W:WK26,44:B17,18,39
+  26x12x34x43  takes 3
+  26x12x34x48  takes 3
+2 moves
+  h2: selected -, wrong h2, pulsing c7 e7 a5 g3 , playing -
+  a5: selected a5, wrong -, pulsing , playing -
+  d8: selected a5, wrong -, pulsing , playing -
+  h4: selected a5, wrong -, pulsing , playing -
+  e1: selected -, wrong -, pulsing , playing 26x12x34x48
+shared stop
+W:W37,39:B23,32,33
+  37x28x19  takes 2
+  39x28x19  takes 2
+2 moves
+  c3: selected c3, wrong -, pulsing , playing -
+  e5: selected -, wrong -, pulsing , playing 37x28x19
+  g7: selected -, wrong -, pulsing , playing 37x28x19
+  g3: selected g3, wrong -, pulsing , playing -
+  g7: selected -, wrong -, pulsing , playing 39x28x19
+  e5: selected -, wrong -, pulsing , playing -
+brazilian, more
+W:Wh2,c3:Bg3,d4,f6
+  c3:e5:g7  takes 2
+1 move
+  h2: selected -, wrong h2, pulsing f6 d4 c3 , playing -
+  c3: selected c3, wrong -, pulsing , playing -
+  g7: selected -, wrong -, pulsing , playing c3:e5:g7
+russian, more
+W:Wh2,c3:Bg3,d4,f6
+  c3:e5:g7  takes 2
+  h2:f4  takes 1
+2 moves
+  h2: selected h2, wrong -, pulsing , playing -
+  f4: selected -, wrong -, pulsing , playing h2:f4
+  c3: selected c3, wrong -, pulsing , playing -
+  g7: selected -, wrong -, pulsing , playing c3:e5:g7
+  a3: selected -, wrong -, pulsing , playing -
