@@ -42,6 +42,13 @@ let TOP_STACKED = 128.0;    // with its icons over their words where the bar is 
 let STACK_W = 170.0;        // dp: a third of the bar under which it is
 let BOTTOM = 204.0;         // dp: the play below it
 let GAP = 24.0;
+// A small window in portrait (gui::compact, task 050): the bar a row of icons alone, the
+// play one row, whose turn beside undo move, and the margins smaller, for the board.
+let TOP_COMPACT = 88.0;     // dp: the bar, its 64 dp tiles and 12 dp round them
+let BOTTOM_COMPACT = 112.0; // dp: the play, its 88 dp row and 12 dp round it
+let ICON_W = 72.0;          // dp: an icon's tile in the bar, 64 dp tall (accepted under the
+// 88 dp floor in compact only, the user 2026-11-09)
+let GAP_COMPACT = 16.0;
 
 // Where the board and the panels beside it go, in pixels. A 3D board (`three`) is drawn
 // through `view`, its bounds on screen view.rect; `board` is then the flat layout the
@@ -70,6 +77,7 @@ struct Layout {
     room:    float4       = float4 { 0.0, 0.0, 0.0, 0.0 },
     keep:    float4[3]    = [float4 { 0.0, 0.0, 0.0, 0.0 }; 3],
     gap:     f32          = 0.0,
+    compact: bool         = false,   // a small window's portrait (TOP_COMPACT)
 }
 
 // The game screen round the 3D board (task 015, prototypes/game3d.html's `corners` with
@@ -102,7 +110,7 @@ let VIEW = 0;
 let ZOOM = 1;
 let SHOWCASE = 2;
 
-fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT) -> Layout {
+fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT, small: bool = true) -> Layout {
     let width = area.z;
     let height = area.w;
     let gap = GAP * s;
@@ -132,9 +140,11 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
         return l;
     }
     let cam = view3d::Camera { pitch: portrait_pitch, yaw: 0.0 };
+    let compact = small && height < gui::COMPACT * s;
+    let gap = (if compact { GAP_COMPACT } else { GAP }) * s;
     let narrow = (width - 2.0 * gap - 72.0 * s) / 3.0 < STACK_W * s;
-    let top = (if narrow { TOP_STACKED } else { TOP }) * s;
-    let bottom = BOTTOM * s;
+    let top = (if compact { TOP_COMPACT } else if narrow { TOP_STACKED } else { TOP }) * s;
+    let bottom = (if compact { BOTTOM_COMPACT } else { BOTTOM }) * s;
     let touch = (if phone { TOUCH_PHONE_PORTRAIT } else { TOUCH_TABLET }) * s;
     let disc = (if phone { DISC_PHONE_PORTRAIT } else { DISC_TABLET }) * s;
     let len = 2.0 * touch + BUTTON_GAP * s;
@@ -155,7 +165,7 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
     let play = float4 { x, buttons.y + tall + m, w, bottom };
     var l = Layout { board: board::layout_at(0.0, 0.0, 1.0, s, n), left: float4 { x, y, w, top }, right: play,
                      three: true, pitch: portrait_pitch, buttons: buttons, count: 2, row: !col, touch: touch,
-                     disc: disc, box: box, gap: gap, .. };
+                     disc: disc, box: box, gap: gap, compact: compact, .. };
     l.keep = [l.left, play, buttons];
     rest(l, view3d::fit(cam, n, box, view3d::MIDDLE), s);
     return l;
@@ -284,7 +294,7 @@ fn layout(width: f32, height: f32, n: i64) -> Layout {
 }
 
 // The same in `area`, a screen's safe area, at s pixels a dp.
-fn layout_in(area: float4, n: i64, s: f32) -> Layout {
+fn layout_in(area: float4, n: i64, s: f32, small: bool = true) -> Layout {
     let width = area.z;
     let height = area.w;
     let gap = GAP * s;
@@ -302,14 +312,19 @@ fn layout_in(area: float4, n: i64, s: f32) -> Layout {
         return Layout { board: board::layout_at(x + side + gap, y, size, s, n), left: float4 { x, py, side, tall },
                         right: float4 { x + side + gap + size + gap, py, side, tall } };
     }
+    let compact = small && height < gui::COMPACT * s;
+    let gap = (if compact { GAP_COMPACT } else { GAP }) * s;
     let narrow = (width - 2.0 * gap - 72.0 * s) / 3.0 < STACK_W * s;
-    let top = (if narrow { TOP_STACKED } else { TOP }) * s;
-    let bottom = BOTTOM * s;
+    let top = (if compact { TOP_COMPACT } else if narrow { TOP_STACKED } else { TOP }) * s;
+    let bottom = (if compact { BOTTOM_COMPACT } else { BOTTOM }) * s;
     let size = min(width - 2.0 * gap, height - top - bottom - 4.0 * gap);
     let x = area.x + (width - size) / 2.0;
     let y = area.y + (height - (top + size + bottom + 2.0 * gap)) / 2.0;
-    return Layout { board: board::layout_at(x, y + top + gap, size, s, n), left: float4 { x, y, size, top },
-                    right: float4 { x, y + top + gap + size + gap, size, bottom } };
+    // Compact, the panels keep the width where the board is narrower.
+    let px = if compact { area.x + gap } else { x };
+    let pw = if compact { width - 2.0 * gap } else { size };
+    return Layout { board: board::layout_at(x, y + top + gap, size, s, n), left: float4 { px, y, pw, top },
+                    right: float4 { px, y + top + gap + size + gap, pw, bottom }, compact: compact };
 }
 
 // The countdown before a draw under whose turn (prototypes/draw.html, take a): a line
@@ -474,6 +489,8 @@ fn leave(g: gui::Gui&, l: Layout) -> i64 {
     let asks = [BACK, SETTINGS, RESTART];
     if l.left.z < l.left.w {
         var column = l.left;
+        // Below the window's control (iPadOS's three dots) in a window (task 050).
+        gui::cut_top(column, gui::corner_drop(g, column));
         if gui::back(g, 110, gui::cut_top(column, ROW_H * u), strings::get(words[0])) { chosen = BACK; }
         gui::cut_top(column, BACK_GAP * u);
         gui::panel(g, column);
@@ -496,6 +513,21 @@ fn leave(g: gui::Gui&, l: Layout) -> i64 {
         return chosen;
     }
     gui::panel(g, l.left);
+    if l.compact {
+        // Icons alone: back at the left, clear of the window's control, settings and start
+        // over at the right, the board between start over and undo move.
+        var bar = gui::inset(l.left, 12.0 * u);
+        let tw = ICON_W * u;
+        let first = float4 { bar.x, bar.y, tw, bar.w };
+        let back_r = float4 { first.x + gui::corner_shift(g, first), bar.y, tw, bar.w };
+        if gui::button(g, 110, back_r, icons[0]) { chosen = BACK; }
+        let restart = gui::cut_right(bar, tw);
+        gui::cut_right(bar, 12.0 * u);
+        let gear = gui::cut_right(bar, tw);
+        if gui::button(g, 111, gear, icons[1]) { chosen = SETTINGS; }
+        if gui::button(g, 112, restart, icons[2]) { chosen = RESTART; }
+        return chosen;
+    }
     // Thirds of the bar while each word fits its third; else each tile as wide as its
     // word wants and an even share of the rest, as the setup's draughts are. A bar made
     // taller for it (TOP_STACKED) puts each icon over its word, which needs less width.
@@ -595,6 +627,51 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: 
         if !(l.three && clock::on(c)) { countdown(g, right, note); }
         if gui::labelled(g, 113, back, gui::UNDO, 48.0, strings::get(strings::GAME_UNDO_MOVE), gui::HEADING,
                          gui::STACKED) {
+            chosen = UNDO;
+        }
+        return chosen;
+    }
+    if l.compact {
+        // One row: whose turn (or the two clocks) at the left, undo move at the right.
+        var row = float4 { l.right.x + 12.0 * u, l.right.y + 12.0 * u, l.right.z - 24.0 * u, l.right.w - 24.0 * u };
+        let undo_w = if clock::on(c) { 88.0 * u }
+                     else { gui::labelled_width(g, 36.0, strings::get(strings::GAME_UNDO_MOVE), gui::HEADING, gui::MIDDLE) };
+        let undo = gui::cut_right(row, undo_w);
+        gui::cut_right(row, 12.0 * u);
+        if clock::on(c) {
+            // The countdown's short form between them, as in portrait.
+            let between = note.of > 0 && !drawn;
+            let gap = if between { max(gui::text_width(g, gui::SMALL, note.word[..note.word.len]),
+                                       gui::text_width(g, gui::LABEL, note.fig[..note.fig.len])) + 2.0 * MID_GAP * u }
+                      else { 8.0 * u };
+            let half = 0.5 * (row.z - gap);
+            let mid = gui::center(row, row.z, CLOCK_H * u);
+            clock_of(g, float4 { mid.x, mid.y, half, mid.w }, c, first, rings[first], over);
+            clock_of(g, float4 { mid.x + half + gap, mid.y, half, mid.w }, c, 1 - first, rings[1 - first], over);
+            if between { short_stacked(g, float4 { mid.x + half, mid.y, gap, mid.w }, note); }
+            if gui::button(g, 113, undo, gui::UNDO) { chosen = UNDO; }
+            return chosen;
+        }
+        let label = strings::get(turn_key);
+        let mark = (if drawn { 84.0 } else { 44.0 }) * u;
+        let spot = gui::cut_left(row, mark);
+        if drawn { pair(over, spot, 22.0 * u, 4.0 * u, 1.0); }
+        else { piece(over, spot, 22.0 * u, side, 0, 1.0, glow); }
+        gui::cut_left(row, 12.0 * u);
+        let face = gui::fitting(g, gui::HEADING, label, row.z);
+        if note.of > 0 {
+            // The countdown's line under the words, in the small face, as in portrait.
+            let head = g.faces[face].ascent - g.faces[face].descent;
+            let small = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
+            var words = gui::center(row, row.z, head + 2.0 * u + small);
+            gui::text(g, face, gui::cut_top(words, head), label, 1.0, 0.0, gui::LEFT);
+            gui::cut_top(words, 2.0 * u);
+            let line = note.line[..note.line.len];
+            gui::text(g, gui::fitting(g, gui::SMALL, line, words.z), gui::cut_top(words, small), line, 1.0, 0.0, gui::LEFT);
+        } else {
+            gui::text(g, face, row, label, 1.0, 0.0, gui::LEFT);
+        }
+        if gui::labelled(g, 113, undo, gui::UNDO, 36.0, strings::get(strings::GAME_UNDO_MOVE), gui::HEADING, gui::MIDDLE) {
             chosen = UNDO;
         }
         return chosen;

@@ -418,7 +418,9 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
 fn puzzle_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
     let pl .= sh.puzzle;
     let n = rules::VARIANTS[pl.b.variant].size;
-    var l = if settings::raised(sh.prefs) { panel::corners_in(area, n, u) } else { panel::layout_in(area, n, u) };
+    // A puzzle keeps its own play panel's height in a small window for now (task 050).
+    var l = if settings::raised(sh.prefs) { panel::corners_in(area, n, u, panel::PITCH_PORTRAIT, false) }
+            else { panel::layout_in(area, n, u, false) };
     l.board.flip = puzzle::current(pl).start.side == rules::BLACK;
     panel::aim(l, pl.cam, now);
     return l;
