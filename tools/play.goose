@@ -7,7 +7,8 @@
 // Type a move as the list shows it ("c3-d4", "c3:e5:c7") or its number, "u" to take
 // back your last move and the reply, "q" to quit. The board has your side at the
 // bottom: w and b are men, W and B kings, * marks the computer's last move. Each
-// reply's seed is its ply, so the same game replays the same way.
+// reply's seed is its ply, so the same game replays the same way. The search sees the
+// game's past as the app's does (rules::Past), and a game ends in the rules' draws.
 import std;
 import os;
 import rules from "../src/rules";
@@ -64,6 +65,14 @@ fn show(p: rules::Position, human: u8, last: rules::Move, has_last: bool) {
     print(foot);
 }
 
+// The past at the last of `history` then p, folded again after a take back.
+fn refold(past: rules::Past&, history: rules::Position[..MAX_PLIES]&, p: rules::Position) {
+    past = rules::Past { draw: rules::draw_start(if history.len > 0 { history[0] } else { p }), before: [] };
+    for q, i in history {
+        rules::pass_between(past, q, if i + 1 < history.len { history[i + 1] } else { p });
+    }
+}
+
 fn main() {
     let a = args();
     var variant: u8 = rules::RUSSIAN;
@@ -95,6 +104,7 @@ fn main() {
     var moves:   rules::Moves                 = [];
     var history: rules::Position[..MAX_PLIES] = [];
     var p = rules::start(variant);
+    var past = rules::Past { draw: rules::draw_start(p), before: [] };
     var last = rules::Move { .. };
     var has_last = false;
     var line: u8[>..] = [];
@@ -106,17 +116,24 @@ fn main() {
             print(if p.side == human { "You lose." } else { "You win." });
             break;
         }
+        if rules::draw_reason(past.draw, p) != rules::NO_DRAW {
+            show(p, human, last, has_last);
+            print("A draw.");
+            break;
+        }
         guard history.len < MAX_PLIES else { print("Too long; a draw."); break; }
         if p.side != human {
             let t0 = clock();
-            let m = ai::think(e, p, skill, history.len as u64);
+            let m = ai::think_after(e, past, p, skill, history.len as u64);
             let ms = ((clock() - t0) * 1000.0) as i64;
             text.clear();
             rules::format_move(text, variant, m);
             print("computer: ", text, "   (", ms, " ms, depth ", e.seen, ", ", e.total_nodes,
                   " nodes)");
             history.push(p);
-            p = rules::play(p, m);
+            let q = rules::play(p, m);
+            rules::pass(past, p, m, q);
+            p = q;
             last = m;
             has_last = true;
             continue;
@@ -144,6 +161,7 @@ fn main() {
                 p = history.pop();
                 back += 1;
             }
+            refold(past, history, p);
             has_last = false;
             continue;
         }
@@ -158,6 +176,8 @@ fn main() {
         }
         guard chosen >= 0 else { print("Not a legal move here."); continue; }
         history.push(p);
-        p = rules::play(p, moves[chosen]);
+        let q = rules::play(p, moves[chosen]);
+        rules::pass(past, p, moves[chosen], q);
+        p = q;
     }
 }
