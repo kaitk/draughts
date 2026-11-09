@@ -115,9 +115,12 @@ cd poc/3d
 ../../build/goose-v2026.4-macos-arm64/goose build -o ../../build/board3d board3d.goose
 ../../build/board3d                                 # a drag turns; Tab or a double click switches mode; R resets
 ../../build/board3d --theme winter --king crown     # T or a long press switches the theme, K the king
+../../build/board3d --wood 3 --theme winter --marble 1   # W cycles the wood, M the winter frame's marble
+../../build/board3d --panel                         # the tuning panel shown (P toggles it, V prints)
 ../../build/board3d --shot out.png --size 1920x1200 [--yaw 20 --pitch 40]   # one frame, headless
 ../../build/board3d --bench 1000 --size 1920x1200   # frame timing, headless
 ../../build/board3d --frames 200                    # the window's loop hidden, a drag, T, K and a long press injected
+../../build/board3d --frames 40 --panel --theme winter   # the panel worked by injected input instead
 ../../build/board3d --bench 300 --samples 1 --shadow-every   # 1× MSAA, the shadow map every frame
 cd ../.. && scripts/android.py poc/3d/board3d.goose --run       # on the tablet, beside the game (its own id)
 adb shell am start -S -n io.github.kaitk.draughts.board3d/io.github.kaitk.draughts.DraughtsActivity --es args "'--bench 300'"
@@ -227,7 +230,23 @@ the pass); it keeps the camera, the input, the fixed position, and the bench. It
   own axes (the sides' were taken along the wrong one). Cost: 5.0 to 5.2 ms a frame
   against 5.0 to 5.1, interleaved; the bake about 30 ms either way.
 - **Wood models:** growth rings with pores replaced the noise drawn out along the grain;
-  task 039 compares four, switched with `--wood N` and W.
+  task 039 compares four, switched with `--wood N` and W. Winter's frame can be one of
+  four marbles instead of the slate, `--marble N` and M (task 039).
+- **Tuning panel** (2026-11-09; `poc/3d/panel.goose`, Mac only, a tool): P shows gfx
+  ui's sliders over the board: the wood's model, varnish, sanding, grain contrast, ring
+  scale and warmth (`looks::Finish`), and the marble, its veins' contrast, waviness,
+  polish and tint (`looks::Marble`). The values live in the look data
+  (`src/render3d/looks.goose`), per wood model and per marble, so the app bakes the
+  same; `render3d::tune` bakes again only what they show on (the wood's surfaces where
+  the look has wood, the frame map where its frame is stone), when they settle: on the
+  slider's release, or after 0.35 s held still. Drawn only while shown and only on
+  input or a change: the board goes into the kept image, and the panel's frames cost
+  its copy and the ui. Print (or V) writes the values as Goose literals to stdout, to
+  paste into `looks::finish` and `looks::marble`; Defaults takes the model's own again,
+  Plain the finish off. `--panel` opens with it shown; `--plain` starts without the
+  finish; `--save-maps PREFIX` writes the baked frame map and plan to PNGs, to see a
+  figure flat. Checked through `--frames 40 --panel` (P twice, a drag on varnish and its
+  release, one bake, Print, M); `panel_frames.png` in the session's shots.
 - **Camera:** 52.5° down, a 31° field of view, 14.75 away, fitted to the reference's
   field corners, so the board fills the height of the frame as there.
 - **Tuned** against the references with patch means at the same framing (`--size
@@ -412,6 +431,10 @@ proposal.
   pixel looks at the squares round it; their width comes from the grid's own derivative,
   not the ring's distance, which jumps at the squares' edges and drew bright seams there.
   The prototype's GLOW_FRAG gave way to it.
+- **Choosing the wood in the game** (2026-11-09): the app's `--wood N` (0 to 3) and
+  `--marble N` (0 the slate, 1 to 4), beside `--3d`, pick the 3D board's wood with its
+  finish and the winter frame's marble, to try 2 and 3 on the real board:
+  `../../build/draughts --3d --board 3d --wood 3`.
 - **In the game** (`src/app/draw3d.goose`): set up the first time the 3D board shows,
   its look from the app's theme (stone the winter stone, the rest autumn wood for now)
   and the photograph the theme's own, baked again on a theme or board size change. Each

@@ -4,7 +4,8 @@
 // Tab or a double click switches between inspecting round the default view and turning
 // freely round the board; R resets the view; T, or a long press for touch, switches the
 // theme; K switches the king between a stack of two discs and one crowned disc; W cycles
-// the wood's model (task 039). Nothing of the app's shell.
+// the wood's model and M the winter frame's marble (task 039); P shows the tuning panel
+// (panel.goose), V prints its values. Nothing of the app's shell.
 //
 //   cd poc/3d
 //   ../../build/goose-v2026.4-macos-arm64/goose build -o ../../build/board3d board3d.goose
@@ -12,6 +13,8 @@
 //   ../../build/board3d --shot out.png --size 1920x1200 [--yaw 20 --pitch 40]
 //   ../../build/board3d --theme winter --king crown
 //   ../../build/board3d --wood 0                  # the wood's model: 0 to 3, 2 the default
+//   ../../build/board3d --theme winter --marble 1 # the frame's marble: 0 the slate, 1 to 4
+//   ../../build/board3d --panel                   # the tuning panel shown; --plain no finish
 //   ../../build/board3d --bench 200
 //
 // --shot draws one frame headless (no window) into a PNG; --bench times frames.
@@ -25,7 +28,9 @@ import vec;
 import math;
 import os;
 import gfx;
+import ui;
 import render3d from "../../src/render3d";
+import .panel;
 
 // Measuring (--samples, --shadow-every): the multisampled target's samples, 1 drawing
 // straight into the screen; and the shadow map redrawn every frame, not only on change.
@@ -112,8 +117,9 @@ fn place(g: render3d::Gpu&) {
 
 fn radians32(d: f32) -> f32 { d * PI / 180.0 }
 
-// Draws a frame from the camera into gfx's screen.
-fn draw(g: render3d::Gpu&, cam: Camera) {
+// Draws a frame from the camera into gfx's screen (or for Texture { 0 } the kept image,
+// under the tuning panel).
+fn draw(g: render3d::Gpu&, cam: Camera, out: gfx::Texture = gfx::screen()) {
     let size = gfx::screen_size();
     let yaw = radians32(cam.yaw);
     let pitch = radians32(cam.pitch);
@@ -122,14 +128,15 @@ fn draw(g: render3d::Gpu&, cam: Camera) {
     let aspect = size.x as f32 / size.y;
     let proj = gfx::perspective(radians32(FOV), aspect, 2.0, 40.0);
     let view_proj = gfx::mul(proj, gfx::look_at(eye, target, float3 { 0.0, 1.0, 0.0 }));
-    render3d::draw(g, view_proj, eye, gfx::screen(), size, shadow_every);
+    render3d::draw(g, view_proj, eye, out, size, shadow_every);
 }
 
 // Puts theme `which` on the board, timed.
 fn apply(g: render3d::Gpu&, which: i64) {
     let c = clock();
     render3d::apply(g, which, 8);
-    print("theme ", which, " applied in ", ((clock() - c) * 1000.0) as i64, " ms (wood ", g.wood, ")");
+    print("theme ", which, " applied in ", ((clock() - c) * 1000.0) as i64, " ms (wood ", g.wood,
+          ", marble ", g.marble, ")");
 }
 
 // Keeps the camera in its mode's range.
@@ -182,7 +189,12 @@ fn main() {
     // --frames N runs the window's loop hidden for N frames, with a drag, T, K and a long
     // press injected (the press needs N of about 200 to last), and saves the last frame
     // to --shot's path if given: the loop checked without a window in the way.
+    // With --panel the panel shows from the start; with --frames too, the injected
+    // input works the panel instead: P twice (hidden, shown), a drag along the varnish
+    // slider and its release (one bake), Print, M (the marble, in winter).
     let frames_at = flag_str(argv, "--frames");
+    var with_panel = false;
+    for a in argv { if a == "--panel" { with_panel = true; } }
     var frames = -1;
     if frames_at > 0 {
         let n, ok = parse_int(argv[frames_at]);
@@ -211,11 +223,22 @@ fn main() {
     let t0 = clock();
     var g = default<render3d::Gpu>();
     render3d::setup(g, samples);
-    g.wood = clamp(flag_f32(argv, "--wood", render3d::WOOD_MODEL) as i64, 0, render3d::WOOD_MODELS - 1);
+    // --wood N, --marble N: the wood's model with its finish, and the winter frame's
+    // marble (0 the slate); --plain takes the finish off (looks::PLAIN), to compare.
+    render3d::choose(g, flag_f32(argv, "--wood", render3d::WOOD_MODEL) as i64,
+                     flag_f32(argv, "--marble", looks::MARBLE) as i64);
+    for a in argv { if a == "--plain" { g.finish = looks::PLAIN; } }
     apply(g, which);
     place(g);
     print("setup ", ((clock() - t0) * 1000.0) as i64, " ms");
 
+    // --save-maps PREFIX: the baked frame map and plan as they are (PREFIX-frame.png,
+    // PREFIX-plan.png), to see a figure flat.
+    let maps = flag_str(argv, "--save-maps");
+    if maps > 0 {
+        gfx::save_png(g.frame_albedo, str(argv[maps], "-frame.png"));
+        gfx::save_png(g.plan_albedo, str(argv[maps], "-plan.png"));
+    }
     var cam = Camera { flag_f32(argv, "--yaw", 0.0), flag_f32(argv, "--pitch", PITCH), false };
     if shot > 0 && frames < 0 {
         draw(g, cam);
@@ -231,6 +254,11 @@ fn main() {
     }
 
     var events: gfx::Event[64] = [default<gfx::Event>(); 64];
+    var tuning = panel::new(g);
+    let ui_scale = max(gfx::screen_size().x as f32 / w, 1.0);
+    if with_panel { panel::toggle(tuning, ui_scale); }
+    var ui_dirty = false;
+    var knob: f32 = 0.0;   // where --frames --panel grabs the varnish slider
     var dirty = true;
     var drawn = 0;
     var cpu: f64 = 0.0;
@@ -239,7 +267,30 @@ fn main() {
     var press_at:    f64 = -1.0;   // when the held button went down; -1 once it is used
     var press_moved: f32 = 0.0;
     while gfx::frame() {
-        if frames > 0 {
+        if frames > 0 && with_panel {
+            // The panel's script: P hides and shows it, a drag on varnish, Print, M.
+            let va = tuning.varnish_at;
+            let pa = tuning.print_at;
+            let vy = va.y + va.h * 0.5;
+            if frame == 1 { gfx::inject_focus(true); }
+            if frame == 2 { gfx::inject_key("P", true); }
+            if frame == 3 { gfx::inject_key("P", false); }
+            if frame == 4 { gfx::inject_key("P", true); }
+            if frame == 5 { gfx::inject_key("P", false); }
+            // Nuklear's slider drags from its knob, which stands at the value (0..1).
+            if frame == 8 { knob = va.x + va.w * tuning.finish.varnish; }
+            if frame == 8 { gfx::inject_mouse(knob, vy, 0, false); }
+            if frame == 9 { gfx::inject_mouse(knob, vy, gfx::MOUSE_LEFT, true); }
+            if frame > 9 && frame < 16 { gfx::inject_mouse(knob + va.w * (frame - 9) * 0.04, vy, 0, true); }
+            if frame == 16 { gfx::inject_mouse(knob + va.w * 0.24, vy, gfx::MOUSE_LEFT, false); }
+            if frame == 20 { gfx::inject_mouse(pa.x + pa.w * 0.5, pa.y + pa.h * 0.5, 0, false); }
+            if frame == 21 { gfx::inject_mouse(pa.x + pa.w * 0.5, pa.y + pa.h * 0.5, gfx::MOUSE_LEFT, true); }
+            if frame == 22 { gfx::inject_mouse(pa.x + pa.w * 0.5, pa.y + pa.h * 0.5, gfx::MOUSE_LEFT, false); }
+            if frame == 25 { gfx::inject_key("M", true); }
+            if frame == 26 { gfx::inject_key("M", false); }
+            if frame == frames { break; }
+            frame++;
+        } else if frames > 0 {
             // A drag across the first frames: press, move left and up, release.
             if frame == 1 { gfx::inject_focus(true); }
             if frame == 2 { gfx::inject_mouse(400.0, 400.0, gfx::MOUSE_LEFT, true); }
@@ -259,14 +310,25 @@ fn main() {
             frame++;
         }
         let n = min(gfx::events_into(events), 64);
+        let now = clock();
+        if gfx::key_pressed("P") {
+            panel::toggle(tuning, ui_scale);
+            dirty = true;
+        }
+        if tuning.shown {
+            if panel::frame(tuning, now, n > 0) { ui_dirty = true; }
+            if panel::settle(tuning, g, now) { dirty = true; }
+        }
+        // The mouse over the panel, or dragging on it, is the panel's.
+        let mine = !panel::wants_mouse(tuning);
         for i in n {
             let e = events[i];
-            if e.kind == gfx::EVENT_MOUSE_BUTTON && e.down && e.clicks == 2 {
+            if e.kind == gfx::EVENT_MOUSE_BUTTON && e.down && e.clicks == 2 && mine {
                 cam.free = !cam.free;
                 dirty = true;
             }
             if e.kind == gfx::EVENT_MOUSE_BUTTON && e.button == gfx::MOUSE_LEFT {
-                press_at = if e.down { clock() } else { -1.0 };
+                press_at = if e.down && mine { clock() } else { -1.0 };
                 press_moved = 0.0;
             }
         }
@@ -296,15 +358,25 @@ fn main() {
             dirty = true;
         }
         if gfx::key_pressed("W") {
+            let c = clock();
             render3d::set_wood(g, (g.wood + 1) % render3d::WOOD_MODELS);
-            print("wood ", g.wood);
+            print("wood ", g.wood, " baked in ", (clock() - c) * 1000.0, " ms");
+            panel::sync(tuning, g);
+            dirty = true;
+        }
+        if gfx::key_pressed("M") {
+            let next = (g.marble + 1) % looks::MARBLES;
+            let c = clock();
+            render3d::tune(g, g.wood, g.finish, next, looks::marble(next));
+            print("marble ", g.marble, " baked in ", (clock() - c) * 1000.0, " ms");
+            panel::sync(tuning, g);
             dirty = true;
         }
         if gfx::key_pressed("R") {
             cam = Camera { 0.0, PITCH, cam.free };
             dirty = true;
         }
-        if gfx::mouse_down(gfx::MOUSE_LEFT) {
+        if gfx::mouse_down(gfx::MOUSE_LEFT) && mine {
             let d = gfx::mouse_delta();
             if d.x != 0.0 || d.y != 0.0 {
                 cam.yaw -= d.x * DRAG;
@@ -320,11 +392,20 @@ fn main() {
         if dirty {
             clamp_camera(cam);
             let c = clock();
-            draw(g, cam);
+            // Under the panel the board goes into the kept image, so that the panel's
+            // own changes cost only the copy.
+            draw(g, cam, if tuning.shown { gfx::Texture { 0 } } else { gfx::screen() });
             cpu += clock() - c;
             drawn++;
-            dirty = false;
         }
+        if tuning.shown && (dirty || ui_dirty) {
+            gfx::begin_pass(gfx::screen(), gfx::Texture { 0 }, float4 { 0.0, 0.0, 0.0, 1.0 });
+            render3d::show(g);
+            gfx::end_pass();
+            panel::draw(tuning);
+        }
+        dirty = false;
+        ui_dirty = false;
     }
     if frames > 0 {
         print("camera yaw ", cam.yaw, " pitch ", cam.pitch);
@@ -343,6 +424,20 @@ fn median(xs: f64[..1024]&) -> f64 {
 // a window (Android) also N frames presented as the loop does, frame to frame.
 fn bench_frames(g: render3d::Gpu&, cam_in: Camera, n: i64, headless: bool) {
     var cam = cam_in;
+    // Each marble's bake (the frame map and its mips, waited for), twice, the second
+    // timed; then the chosen one again.
+    let chosen = g.marble;
+    for m in looks::MARBLES {
+        var ms: f64 = 0.0;
+        for k in 2 {
+            let c = clock();
+            render3d::tune(g, g.wood, g.finish, m, looks::marble(m));
+            ms = (clock() - c) * 1000.0;
+            render3d::tune(g, g.wood, g.finish, (m + 1) % looks::MARBLES, looks::marble((m + 1) % looks::MARBLES));
+        }
+        print("bench: marble ", m, " baked in ", ms, " ms");
+    }
+    render3d::tune(g, g.wood, g.finish, chosen, looks::marble(chosen));
     if !headless {
         // Let the window reach its size and the swapchain settle.
         for i in 30 {
