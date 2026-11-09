@@ -72,7 +72,34 @@ look good, not merely work.
     project folders for `goose-ngfx`, `goose-nogfx`, and `goose-nogfx-prototype` (some
     may be under another Claude account; ask). Read these first.
   - Arm's Mali best practices for MSAA resolved in tile memory.
-- The user has more to add before it starts.
+- The user has more to add later; the prototype starts with these (2026-11-09).
+
+### Settled before building (the user, 2026-11-09)
+
+- **Kings:** a stack whose upper disc carries the debossed crown; a plain stack and a
+  crowned single disc become options later. The prototype starts with whichever is
+  easier.
+- **Background:** the season's photograph blurred, as behind the 2D game now.
+- **Scope:** autumn wood, 8 × 8, first; winter stone in the same prototype once autumn
+  looks half decent.
+- **Camera:** two modes to try: an inspection range around the default view, and a free
+  turn round the board. (In the game later, the board may turn by itself for hot seat
+  play.)
+- **Budget:** about 11 ms a frame at native resolution, and a 4× MSAA target's memory
+  is acceptable. Visuals first, tuned afterwards; a rough baseline on the device early.
+  Built and judged on the Mac first; measured on the Pixel 7a (the tablet is gone).
+- **MSAA needs a gfx patch to be cheap:** goose_gfx stores all of a multisampled target's
+  samples and its depth when a pass resolves (`gfx_draw.c`), about 74 MB written per
+  frame at 1920 × 1200. A patch resolves without storing the samples and discards the
+  depth. SDL already resolves inside the render pass, but its targets take real memory
+  (no transient attachments).
+- **Research** (sebbbi's HypeHype talks, Arm, Filament, the user's goose-ngfx notes):
+  analytic occlusion first; MSAA 4× with shader-side edges for the seams and the crown;
+  Filament's specular antialiasing; one 16-bit shadow map with hardware PCF, drawn on
+  change; one forward pass with the tonemap in it, no depth prepass and no post pass;
+  SH9 and a prefiltered octahedral map from the photograph; no `discard`. If GTAO is
+  compared, use HypeHype's: half resolution, 12 samples, a 4 × 4 bilateral blur and
+  upscale.
 
 ## Later, only if the floating board falls short
 
