@@ -52,7 +52,8 @@ cd src/app
 The app is built, not run through `goose run`: the computer thinks on a worker thread
 (`src/app/think.goose`), and `goose run` refuses a program that starts one. The build takes
 about 3 s, and the flags follow the executable with no `--`. `src/app/draughts.goose` is the
-app; its development flags pick the board theme (`wood`, `stone`, `birch`, `sunset`; the
+app; its development flags (each a field of `Flags` in `src/app/flags.goose`, the one list
+of them) pick the board theme (`wood`, `stone`, `birch`, `sunset`; the
 season's by default, with its photograph), the window size, a starting position,
 squares to tap on the first frames, move hints (`--hints moves` shows the targets;
 mistakes only by default), the language (`--lang et`; the system's by default), the
@@ -118,9 +119,16 @@ second, takes some thousands of frames: `--variant russian --computer black --ta
 --tap d4 --frames 5000`. The settings are in the app's storage folder (on the Mac
 `~/Library/Application Support/kaitk/draughts/`): `settings.txt` the device's (the
 language, who plays), `player-N.txt` each player's ([players](architecture/README.md#players));
-`--theme`, `--hints`, and `--lang` override them for a run without changing them. `--board 3d` plays a run
-on the 3D board at once, as settings' Board row's 3D does, and `--board flat` on the flat one; `--wood N` (0 to 3) and `--marble N` (0 the slate, 1 to 4) pick the 3D
-board's wood and winter frame's marble for the run (task 039). Each player's game is kept in `game-N.bin` beside them; a
+`--theme`, `--hints`, `--lang`, `--background`, and `--board` override them for a run
+without changing them. `--board 3d` plays a run on the 3D board at once, as settings'
+Board row's 3D does, and `--board flat` on the flat one; `--background plain` shows the
+plain fade in place of the photograph, and `--background photo` the photograph. `--wood N`
+(0 to 3) and `--marble N` (0 the slate, 1 to 4) pick the 3D board's wood and winter
+frame's marble for the run (task 039), and `--summer N` (0 to 5) and `--spring N` (0 the
+birch, 1 the carved stone, 2 the carved oak) summer's and spring's 3D looks.
+`--reset-skill`, which takes no value, puts the playing player back to easy with the
+computer's skill at every level at its start, and writes that to their file; stars and
+games stay. Each player's game is kept in `game-N.bin` beside them; a
 run with `--fen`, `--tap`, `--screen`, `--frames`, `--variant`, `--clock`, or
 `--computer` neither reads nor writes it, so
 screenshots don't depend on the last session. On the tablet, check a resume with
