@@ -676,6 +676,8 @@ fn still(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&) {
     let draw = drawn(gm);
     panel::game(g, l, gm.clock, side, won >= 0, draw != rules::NO_DRAW, note, gm.asking != 0, pulse(gm, now), over,
                 help(gm));
+    // Counted here too: a transition declares a game before its first frame of its own.
+    count_taken(gm);
     panel::taken(g, l, gm.taken, over);
     panel::camera(g, l, gm.cam, now);
     if gm.won_at >= 0.0 { celebrate(gm, g, l, won, now, over); }

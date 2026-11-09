@@ -10,3 +10,4 @@ the game, before: white pieces taken 11 + 0 kings, black 10 + 0 kings, 21 small 
 as the capture shows: moving true, white pieces taken 11 + 0 kings, black 10 + 0 kings
 once shown: white pieces taken 11 + 0 kings, black 10 + 1 kings; shown white 11 (0 kings) at 418.0; black 11 (1 kings) at 460.0; inside true under the left panel true
 on a turned board: black 11 (1 kings) at 418.0; white 11 (0 kings) at 460.0; inside true
+a new game in its transition: white pieces taken 0 + 0 kings, black 0 + 0 kings, 0 small pieces shown

@@ -104,6 +104,12 @@ fn main() {
     turned.board.flip = true;
     drive::idle(gm, g, turned, 4.0);
     print("on a turned board: ", rows(g, turned));
+    // A new game started over this one, as the transition into it declares it (still,
+    // before any frame of its own): nothing taken, not the last game's catch.
+    game::start(gm, rules::RUSSIAN, 0, -1, 0, 0, 0);
+    gui::begin(g, gui::Input { at: drive::AWAY }, l.board.scale, 5.0);
+    game::still(gm, g, l, 5.0, drive::over);
+    print("a new game in its transition: ", caught(gm.taken), ", ", small(g), " small pieces shown");
 }
 
 fn caught(t: panel::Taken) -> u8[>..] {
