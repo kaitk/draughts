@@ -52,7 +52,7 @@ the tablet while the 3D board moves, where 90 Hz misses and alternates.
 **Fine as is:** back-face culling (counter-clockwise front faces) on the lit, fading, and
 depth-only pipelines; 16-bit depth, the multisampled color resolved and neither it nor
 its depth stored (`0005`); the shadow map drawn only when pieces move or the board
-turns (the shadow pass culls nothing: `CULL_FRONT` would halve it and cut acne); fading
+turns (the shadow pass culls nothing: `CULL_FRONT` peter-pans, step 5 below); fading
 pieces blended after the opaque ones without depth writes; the crown's SDF only on
 kings.
 
@@ -95,6 +95,12 @@ Two runs of one build are byte-identical.
    ring, glow rings, lit squares). The bench's start position has none, so its frames
    leave the quad out; a frame with a selection draws it as before (the four seasons'
    shots, pixel for pixel).
+5. **The shadow pass with `CULL_FRONT`: left.** It peter-pans: a lit sliver opens under
+   every piece's foot on the side away from the light, and along a stacked king's seam
+   (35 to 44 dB, 500 to 2,100 pixels; plain at 200%). The pieces' undersides lie in the
+   field's plane, so with only back faces in the map nothing occludes the field right at
+   the foot. Not measured, as the look didn't hold; the map is drawn only when pieces
+   move anyway.
 
 ## The idle wakeup
 
