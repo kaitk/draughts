@@ -1,7 +1,8 @@
 # 033: An icon per season
 
-Status: todo (after the MVP; until then one icon, switched by hand: autumn is the
-shipped one and the release's, chosen 2026-11-09)
+Status: cancelled (by the user, 2026-11-09: one icon, autumn, shipped for the release;
+an icon that follows the season costs its place on the home screen four times a year for
+a small delight. Changing the shipped icon in an update stays possible.)
 
 The app's look follows the season, picked from the date (`docs/architecture/rendering.md`,
 "Seasons and themes"); the launcher icon is one season, the winter jump (task 028). An

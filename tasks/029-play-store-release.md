@@ -178,8 +178,9 @@ masters present):
       (2026-11-08; the key's backup is the user's)
 - [x] Task 030 done, so phones and larger tablets are listed
 - [ ] Store listing in English and Estonian, with icon, feature graphic, and screenshots
-      (texts, the 0.2 screenshots, and a preview 2026-11-09; the developer name, the
-      contact email, the user's review, and the final feature graphic remain)
+      (texts, the 0.2 screenshots, and a preview 2026-11-09; the texts approved by the
+      user 2026-11-09; the developer name, the contact email, the final feature graphic,
+      and the retake of scenes 02, 03, 05, and 06 remain)
 - [ ] Target audience, content rating, Data safety, and privacy policy filled in (the
       answers and the policy drafted in `store/`)
 - [ ] Closed test run as Play requires, then the app published
