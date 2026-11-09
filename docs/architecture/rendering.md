@@ -285,7 +285,8 @@ the prototype tried, kept for 3D:
   primary button is the glow color at 22%.
 - **Icons** are line icons on a 24-unit grid with round strokes, in the Lucide style:
   undo, hint (a bulb), restart, back (an arrow left), next, star, crown, lock, and the
-  puzzle themes' target, crown, and shield. The home tiles' icons are filled shapes,
+  puzzle themes' target, crown, and shield; the 3D camera's buttons' board from above, board
+  in perspective, magnifier with + or -, and board on an orbit. The home tiles' icons are filled shapes,
   which read better large: two figures, a robot head, a jigsaw piece.
 - **Game screen** (`prototypes/game.html`, chosen 2026-11-07 over three other takes):
   the board in the middle, leaving the game on its left and playing it on its right,
@@ -727,9 +728,33 @@ board's does and the backdrop over it as opaque as the blur.
   wide on a phone, under 600 dp), home, settings, and start over on the left, the turn or
   the clocks and take back on the right; the board as large as clears them by 12 dp, its
   near edge on the bottom margin (898 × 616 dp on the tablet). In portrait the flat
-  board's order, the bar, the board as wide as the screen less the margins, the play;
-  its camera is a constant of its own (`panel::PITCH_PORTRAIT`, 52.5°; a steeper one is
-  open with the user).
+  board's order, the bar, the board as wide as the screen less the margins, the camera
+  buttons, the play; its camera 65° down (`panel::PITCH_PORTRAIT`, the user, 2026-11-09),
+  which fills more of the height (752 × 604 dp on the tablet).
+  **The camera buttons** (the user, 2026-11-09; `prototypes/game3d.html`'s placement `a`):
+  round floating buttons at the right edge, a column under the play panel in landscape
+  (a row on a phone, where a column runs past the bottom margin) and above it in
+  portrait (a row where a column would shrink the board): a shaded disc with a hairline
+  and a line icon at the 2.4-unit stroke, no panel (`gui::floating`, the UI shader's
+  `FLOAT` quad and its icons). A 56 dp touch area and a 44 dp disc on a tablet (its
+  shorter side 600 dp or more), 48/40 on a phone in landscape, 52/42 in portrait. The
+  board at rest clears them as it clears the panels. **View** cycles the rest angle and
+  the top view (74°), eased over 0.6 s; off the rest angle (a showcase drag left it so) a
+  small gold dot sits on it and its tap eases back to rest first. **Zoom** (landscape
+  only) frames the playing field, every square and the pieces' tops, as large as fits
+  the area clear of the panels and the buttons by a quarter gap (about 1.15 times the
+  board's scale; in the top view too), eased 0.6 s. **Showcase** toggles a mode, lit
+  while on, in which a drag anywhere off the UI turns the board ±35° and tips it 35° to
+  80° down instead of moving pieces; off keeps the angle, and play goes on through it.
+  **Against a friend** the board turns 180° after each move to face the side to move
+  (0.7 s, eased, once the move has shown), the light keeping its place on screen (the
+  renderer turns it with the board, `render3d::turn_light`, and draws the shadow map
+  again) and the board shrinking a little mid-turn to clear the panels; against the
+  computer it stays turned to the child. A new game or a hot-seat turn puts the showcase's
+  angle back. The camera is plain data with its eases in `board/rig.goose` (`rig::Rig`);
+  `panel::aim` fits it each frame (at rest, the rest view as it is), while the flat square
+  the board package plays on stays the rest view's, and picking goes through whatever
+  camera is drawn. A puzzle has the same buttons.
   **Every screen with a board** shows it when it is chosen: home's board and settings'
   preview are fitted, as large as they fit, into the room each screen gives them (home:
   across its stage less 40 dp each side, 24 in portrait, as tall as the flat board below
@@ -973,6 +998,11 @@ the display's rate, which costs nothing that matters there. The patched `frame()
   jump.
 - on Android, turns off SDL's poll sentinel, without which SDL's wait spins instead of
   blocking there.
+
+The 3D board's camera (the view, the zoom, the showcase's way back, a hot-seat turn) is an
+animation like a move: the 3D pass runs on each of its frames, about 36 for a 0.6 s ease
+at 60 Hz, and on none once it has settled (`test/game/camera`); a showcase drag draws only
+on the frames the finger moves.
 
 An animation's last frame is not the resting state: the frame after a move or a pulse
 ends is drawn too (`board::update` reports it), or the board would keep the move's last

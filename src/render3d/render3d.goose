@@ -146,6 +146,7 @@ struct Gpu {
     across:         gfx::Texture,
     frame:          Frame,
     shadow_dirty:   bool,
+    turn:           f32,            // the board's turn (view3d::View.turn), the light turned with it
 }
 
 fn f4(v: float3, w: f32) -> float4 { float4 { v.x, v.y, v.z, w } }
@@ -406,13 +407,8 @@ fn apply(g: Gpu&, which: i64, n: i64, photo: i64 = -1) {
         gfx::flush();
     }
     // The key light, from the upper left; the photograph's ambient.
-    let l = normalize(float3 { t.key.x, t.key.y, t.key.z });
-    let light_view = gfx::look_at(l * 20.0, float3_0, float3 { 0.0, 1.0, 0.0 });
-    let reach: f32 = 6.6;
-    let light_proj = gfx::ortho(-reach, reach, -reach, reach, 5.0, 35.0);
+    light(g);
     let f .= g.frame;
-    f.light_view_proj = gfx::mul(light_proj, light_view);
-    f.light_dir = f4(l, t.key.w);
     f.light_color = linear4(t.key_color);
     f.params = float4 { t.ambient.x, 1.0 / SHADOW_SIZE, t.ambient.y, n };
     f.glow = t.glow;
@@ -429,6 +425,36 @@ fn apply(g: Gpu&, which: i64, n: i64, photo: i64 = -1) {
     f.frame_build = t.build;
     f.frame_surface = t.frame_surface;
     g.shadow_dirty = true;
+}
+
+// The key light, from the upper left of the screen, turned with the board (g.turn) so it
+// keeps its place on screen while the board turns under it: its direction and the shadow
+// map's projection.
+fn light(g: Gpu&) {
+    let t = looks::get(g.look);
+    let l = spin(normalize(float3 { t.key.x, t.key.y, t.key.z }), g.turn);
+    let light_view = gfx::look_at(l * 20.0, float3_0, float3 { 0.0, 1.0, 0.0 });
+    let reach: f32 = 6.6;
+    let light_proj = gfx::ortho(-reach, reach, -reach, reach, 5.0, 35.0);
+    g.frame.light_view_proj = gfx::mul(light_proj, light_view);
+    g.frame.light_dir = f4(l, t.key.w);
+}
+
+// The board turned `turn` degrees under the light (a hot-seat turn, view3d::Camera.turn):
+// the light turned the same way, and the shadow map drawn again with the next frame.
+fn turn_light(g: Gpu&, turn: f32) {
+    guard turn != g.turn else { return; }
+    g.turn = turn;
+    light(g);
+    g.shadow_dirty = true;
+}
+
+// p turned `degrees` about the y axis, as view3d::spin turns the camera.
+fn spin(p: float3, degrees: f32) -> float3 {
+    let a = radians(degrees);
+    let c = cos(a);
+    let s = sin(a);
+    return float3 { c * p.x + s * p.z, p.y, c * p.z - s * p.x };
 }
 
 // Whether the frame is marble: a stone frame with a marble chosen. Its rounded edge

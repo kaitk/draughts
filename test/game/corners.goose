@@ -6,10 +6,13 @@
 // their insets: every tile the game screen declares lies inside its panel and the safe
 // area and keeps 88 dp, and the board's outline on screen lies inside the safe area and
 // clear of the panels. A line per screen gives the board's bounds in dp, their
-// proportions, and the far edge against the near one. Then what a steeper portrait camera
-// (60 and 65°, a proposal) gives. Then the shell on the 3D board (settings::raised): a
-// game tapped through the perspective, a piece dragged, and the flat layout's board
-// untouched.
+// proportions, and the far edge against the near one, and the camera buttons: their
+// size, a column or a row, inside the safe area, off the panels and the board; then in
+// landscape the zoom, at rest and in the top view, its field inside its room and clear of
+// the panels and the buttons, and how much it grows. Portrait's camera is 65° down; then
+// what it gave at 52.5° and 60°. Then the shell on the 3D board (settings::raised): a
+// game against a friend tapped through the perspective, the board turned for black and a
+// piece dragged through it, and the flat layout's board untouched.
 import std;
 import vec;
 import math;
@@ -59,11 +62,58 @@ fn report(what: const u8[:], g: gui::Gui&, size: float2) {
     view3d::hull(l.view, h);
     for q in h { if !inside(float4 { q.x, q.y, 0.0, 0.0 }, safe) { format(wrong, " the board off the safe area;"); break; } }
     if view3d::touches(l.view, l.left, 0.0) || view3d::touches(l.view, l.right, 0.0) { format(wrong, " the board on a panel;"); }
+    // The camera buttons: inside the safe area, off both panels and the board, each disc
+    // in its touch area.
+    let bt = l.buttons;
+    if !inside(bt, safe) { format(wrong, " the buttons off the safe area;"); }
+    if overlaps(bt, l.left) || overlaps(bt, l.right) { format(wrong, " the buttons on a panel;"); }
+    if view3d::touches(l.view, bt, 0.0) { format(wrong, " the board on the buttons;"); }
+    var discs = 0;
+    for q in g.quads {
+        guard q.look.x == gui::FLOAT else { continue; }
+        discs++;
+        if !inside(q.rect, bt) { format(wrong, " a disc off the buttons;"); }
+    }
+    if discs != l.count { format(wrong, " ", discs, " discs;"); }
     let r = l.view.rect;
     print("  ", what, ": board ", dp(r, u), " dp, ", floor(r.z / r.w * 100.0 + 0.5) / 100.0, ":1, far edge ",
           whole(100.0 * edges(l.view)), "%; panels ", dp(l.left, u), ", ", dp(l.right, u), "; ", drive::tiles(g),
-          " tiles", if wrong.len == 0 { ", all in place" } else { "" }, wrong);
+          " tiles; ", l.count, " buttons ", whole(l.touch / u), "/", whole(l.disc / u), " dp in a ",
+          if l.row { "row " } else { "column " }, dp(bt, u), if wrong.len == 0 { ", all in place" } else { "" }, wrong);
+    // Zoomed (landscape only), at rest and in the top view: the field's outline inside
+    // the zoom's room and the safe area, clear of the panels and the buttons.
+    guard l.room.z > 0.0 else { return; }
+    for top in [false, true] {
+        var cam = rig::Rig {};
+        if top { rig::put(cam.top, 1.0); }
+        var flat = l;
+        if top { rig::put(cam.zoom, 0.0); }
+        panel::aim(flat, cam, 0.0);
+        rig::put(cam.zoom, 1.0);
+        var z = l;
+        panel::aim(z, cam, 0.0);
+        var off: u8[>..]      = [];
+        var h:   view3d::Hull = [];
+        view3d::hull(z.view, h, true);
+        var lo = float2 { 1.0e9, 1.0e9 };
+        var hi = float2 { -1.0e9, -1.0e9 };
+        for q in h {
+            let p = float4 { q.x, q.y, 0.0, 0.0 };
+            if !inside(p, z.room) || !inside(p, safe) { off.append(" off its room;"); break; }
+        }
+        for q in h {
+            lo = float2 { min(lo.x, q.x), min(lo.y, q.y) };
+            hi = float2 { max(hi.x, q.x), max(hi.y, q.y) };
+        }
+        for k in z.keep { if view3d::touches(z.view, k, 0.0, true) { off.append(" on a panel or the buttons;"); } }
+        let rest = if top { "the top view" } else { "at rest" };
+        print("    zoomed, ", rest, ": the field ", whole((hi.x - lo.x) / u), " x ", whole((hi.y - lo.y) / u), " dp, ",
+              floor(z.view.k / flat.view.k * 100.0 + 0.5) / 100.0, " times the scale unzoomed",
+              if off.len == 0 { ", in its room" } else { "" }, off);
+    }
 }
+
+fn overlaps(a: float4, b: float4) -> bool { a.x < b.x + b.z && b.x < a.x + a.z && a.y < b.y + b.w && b.y < a.y + a.w }
 
 fn main() {
     strings::use(strings::EN);
@@ -152,7 +202,11 @@ fn main() {
     now += 1.0;
     drive::idle(sh, g, now);
     print("after: ", rules::fen(sh.game.b.pos));
-    // A drag: press on f6's top, move it over e5, let go.
+    // The board turns to face black (a friend's game), then a drag: press on f6's top,
+    // move it over e5, let go.
+    now += 1.0;
+    drive::idle(sh, g, now);
+    print("turned ", sh.view.turn, "°");
     let u = view3d::unit(8);
     let f6 = view3d::to_world(sh.layout, board::center(sh.layout, vr, drive::square(vr, "f6")));
     let e5 = view3d::to_world(sh.layout, board::center(sh.layout, vr, drive::square(vr, "e5")));

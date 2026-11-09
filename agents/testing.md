@@ -203,7 +203,15 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   `build/xshot` and run it with the usual flags and `--frames N` in a folder of its own
   (it writes `draughts.png` there and never exits by itself: end it after the shot).
   Delete both copies after; never commit them. Its sizes are real pixels, so 800 × 1280
-  works. The 3D board was checked that way (task 015).
+  works. The 3D board was checked that way (task 015). Taps in such a run (`--tap c3
+  --tap d4`) may not all play before the shot; a position from `--fen` is surer (`--fen
+  B:...` shows the 3D board turned for black in a friend's game). State with no flag,
+  such as the 3D camera's (`rig::put` on `sh.game.cam`), is set from a temporary flag
+  pair parsed in the copy only (2026-11-09).
+- A state change made inside a screen's frame shows only when that frame is drawn with
+  it: the 3D board's view is aimed again after the game's frame (`shell::game_screen`),
+  or a change with no animation behind it (the hot-seat turn put at once) showed a frame
+  late, and draw on demand then never drew it (2026-11-09).
 - The prototypes' painter (`Paint` in `prototypes/draughts.js`) is a port of the piece
   shader, so a native crop beside the prototype's at the same scale shows a shader
   change exactly (the stacked king was checked that way).

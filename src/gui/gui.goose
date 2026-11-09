@@ -41,6 +41,7 @@ let PICTURE = 5;            // a season's thumbnail (look.z: its theme), or the 
 let MINI = 6;               // a small board at the start; look.z: squares per side, look.w: rows of men
 let RING = 7;               // a hold's ring round a tile, filled clockwise from the top; look.z: how far, 0..1
 let FACE = 8;               // a player's badge on a disc; look.z: which, -1 for +; look.w: lit
+let FLOAT = 9;              // a floating button's disc (the 3D board's camera); look.z: 1 lit, + 2 a dot; look.w: pressed
 
 // How a tile and its icon look (extra.y), in the theme's colors.
 let PLAIN = 0;              // white at 10%
@@ -87,6 +88,11 @@ let BOOK = 26;              // the puzzles' themes: Learn, an open book,
 let JUMPS = 27;             // captures, two men and a double jump,
 let KING = 28;              // king shots, a crown in a ring (crowning is CROWN, shots TARGET)
 let LEVEL = 29;             // a theme's levels, 29 to 31: three rising bars, 1 to 3 of them filled
+let VIEW_TOP = 32;          // the 3D board's camera: the top view, a board from above,
+let VIEW_LOW = 33;          // the rest angle, a board in perspective,
+let ZOOM_IN = 34;           // the zoom, a magnifier with + or -,
+let ZOOM_OUT = 35;
+let SHOWCASE = 36;          // and the showcase, a board on an orbit
 
 // Text faces (rendering.md, "Fonts"): one size each, in dp, baked by the app at the
 // screen's pixel size.
@@ -420,6 +426,20 @@ fn icon_button(g: Gui&, id: i64, r: float4, icon: i64, size: f32) -> bool {
     add(g, Quad { rect: r, look: float4 { BUTTON, 0.5 * min(r.z, r.w), 0.0, p }, extra: float4 { g.scale, ROW, 0.0, 0.0 } });
     let s = size * g.scale * (1.0 - 0.04 * p);
     glyph_icon(g, center(r, s, s), icon, ROW, p, 0.85);
+    return clicked;
+}
+
+// A floating button (rendering.md, "Controls"; the 3D board's camera): its touch area r
+// holding a shaded disc `disc` pixels across with a hairline and a line icon, no panel
+// behind; lit in the glow color while `on`, a small gold dot on its rim with `dot`,
+// shrinking 8% and darkening with the press. True when it is tapped.
+fn floating(g: Gui&, id: i64, r: float4, disc: f32, icon: i64, on: bool, dot: bool) -> bool {
+    let clicked, p = hold(g, id, r);
+    let d = disc * (1.0 - 0.08 * p);
+    let flags = (if on { 1.0 } else { 0.0 }) + (if dot { 2.0 } else { 0.0 });
+    add(g, Quad { rect: center(r, d, d), look: float4 { FLOAT, 0.5 * d, flags, p }, extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
+    let s = 26.0 / 40.0 * d;
+    glyph_icon(g, center(r, s, s), icon, PLAIN, p, 1.0);
     return clicked;
 }
 

@@ -31,10 +31,10 @@ let VERT = """
         vec4 look = q[i + 2];
         vec4 extra = q[i + 3];
         // Room round the rect for the shadow: glass casts one 30 dp down, a tile 12 dp, a
-        // face 12 dp and its glow 26 dp round it.
+        // face 12 dp and its glow 26 dp round it, a floating disc 6 dp and its dot.
         int kind = int(look.x);
         // A glyph is drawn exactly over its rect, a texel to a pixel.
-        float m = (kind == 0 ? 48.0 : kind == 1 ? 20.0 : kind == 8 ? 28.0 : kind == 4 ? 0.0 : 1.0) * extra.x;
+        float m = (kind == 0 ? 48.0 : kind == 1 ? 20.0 : kind == 8 ? 28.0 : kind == 9 ? 12.0 : kind == 4 ? 0.0 : 1.0) * extra.x;
         vec2 px = mix(rect.xy - m, rect.xy + rect.zw + m, CORNERS[gl_VertexIndex]);
         gl_Position = vec4(px.x / screen.x * 2.0 - 1.0, 1.0 - px.y / screen.y * 2.0, 0.0, 1.0);
         v_px = px;
@@ -268,6 +268,33 @@ let FRAG = """
             }
             return d;
         }
+        if (k == 32) {          // the top view: a board from above, quartered
+            float d = abs(box(p, vec2(12.0), vec2(8.0), 2.5));
+            return min(d, min(seg(p, vec2(12.0, 4.0), vec2(12.0, 20.0)), seg(p, vec2(4.0, 12.0), vec2(20.0, 12.0))));
+        }
+        if (k == 33) {          // the rest angle: a board in perspective, quartered
+            const vec2 c[5] = vec2[](vec2(7.5, 5.0), vec2(16.5, 5.0), vec2(21.0, 19.0), vec2(3.0, 19.0), vec2(7.5, 5.0));
+            float d = min(seg(p, vec2(12.0, 5.0), vec2(12.0, 19.0)), seg(p, vec2(5.25, 12.0), vec2(18.75, 12.0)));
+            for (int i = 0; i < 4; i++) d = min(d, seg(p, c[i], c[i + 1]));
+            return d;
+        }
+        if (k == 34 || k == 35) {   // the zoom: a magnifier with + (in) or - (out)
+            float d = min(abs(length(p - vec2(10.5)) - 6.5), seg(p, vec2(15.5), vec2(20.5)));
+            d = min(d, seg(p, vec2(7.5, 10.5), vec2(13.5, 10.5)));
+            return k == 34 ? min(d, seg(p, vec2(10.5, 7.5), vec2(10.5, 13.5))) : d;
+        }
+        if (k == 36) {          // the showcase: a board in perspective on an orbit, its arrowheads
+            const vec2 c[5] = vec2[](vec2(8.5, 6.5), vec2(15.5, 6.5), vec2(17.5, 11.5), vec2(6.5, 11.5), vec2(8.5, 6.5));
+            float d = 1e9;
+            for (int i = 0; i < 4; i++) d = min(d, seg(p, c[i], c[i + 1]));
+            // The orbit: the lower half of an ellipse 17 by 10 round (12, 14.5).
+            vec2 q = p - vec2(12.0, 14.5);
+            float e = q.y >= 0.0 ? abs(length(q / vec2(8.5, 5.0)) - 1.0) * 5.0
+                                 : min(length(p - vec2(3.5, 14.5)), length(p - vec2(20.5, 14.5)));
+            d = min(d, e);
+            d = min(d, min(seg(p, vec2(20.7, 18.2), vec2(20.5, 14.5)), seg(p, vec2(20.5, 14.5), vec2(16.9, 15.3))));
+            return min(d, min(seg(p, vec2(3.3, 18.2), vec2(3.5, 14.5)), seg(p, vec2(3.5, 14.5), vec2(7.1, 15.3))));
+        }
         return 1e9;
     }
     // A player's badge's animal (badges/badges.goose): its signed distance at f, in a
@@ -468,6 +495,30 @@ let FRAG = """
             vec3 sc = face * face * 0.92 * (0.8 + 0.25 * rim) * (1.0 - 0.25 * foot);
             over(sc, clamp(0.5 - (length(vec2(f.x, sy)) - 1.0) / w, 0.0, 1.0) * fa);
             over(badge(k, f, w), clamp(0.5 - (length(f) - 1.0) / w, 0.0, 1.0) * fa);
+            result = acc;
+            return;
+        }
+        if (kind == 9) {
+            // A floating button (the 3D board's camera, prototypes/game3d.html's `.ctl`): a
+            // disc of black at 30% with an inset 1 px hairline of white at 22% and a soft
+            // shadow 2 dp down, no panel; pressed, black at 42%; lit, the glow color at 30%
+            // over it. A gold dot (the glow color) on its rim at the upper right with look.z
+            // from 2.
+            float rad = h.x;
+            float d = length(p - c) - rad;
+            float pr = v_look.w;
+            int flags = int(v_look.z + 0.5);
+            float sd = length(p - c - vec2(0.0, 2.0 * u)) - (rad - 3.0 * u);
+            over(vec3(0.0), 0.5 * (1.0 - smoothstep(-8.0 * u, 8.0 * u, sd)) * (1.0 - cover(d)));
+            float a = cover(d);
+            over(vec3(0.0), (0.3 + 0.12 * pr) * a);
+            if (flags % 2 == 1) over(glow.rgb, 0.3 * a);
+            over(vec3(1.0), 0.22 * (a - cover(d + 1.0)));
+            if (flags >= 2) {
+                float dd = length(p - c - vec2(0.7071, -0.7071) * (rad - 2.0 * u)) - 4.0 * u;
+                over(vec3(0.0), 0.35 * cover(dd - u));
+                over(glow.rgb, cover(dd));
+            }
             result = acc;
             return;
         }

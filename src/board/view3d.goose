@@ -53,15 +53,20 @@ let FLAT_DRAG: f32 = 0.016;   // and a dragged piece's (board::fill)
 let FLAT_DISC: f32 = 0.39;    // the 2D disc's radius, of a square
 
 // The camera's angles, in degrees: pitch down from level, yaw round the board (0 seen
-// from the near side, 180 from the far one).
+// from the near side, 180 from the far one), both about TARGET; and the board's turn
+// about its own middle under a camera and a light that keep their place on screen (a
+// hot-seat game's, 180 facing the far side), which turns the camera the other way round
+// the field's middle (`spin`).
 struct Camera {
     pitch: f32 = PITCH,
     yaw:   f32 = 0.0,
+    turn:  f32 = 0.0,
 }
 
 // The camera fitted into the screen: its eye and axes, k pixels per unit of x / depth,
 // and c, the pixel the view's axis goes through. `rect` is the board's bounds on screen
-// at the camera's angles before any turn; `n` its squares per side.
+// at the camera's angles before any turn; `n` its squares per side; `turn` the board's
+// (Camera.turn), by which the renderer turns its light too.
 struct View {
     eye:   float3 = float3 { 0.0, 0.0, 0.0 },
     right: float3 = float3 { 1.0, 0.0, 0.0 },
@@ -71,6 +76,7 @@ struct View {
     c:     float2 = float2 { 0.0, 0.0 },
     rect:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
     n:     i64    = 8,
+    turn:  f32    = 0.0,
 }
 
 // A column-major 4 × 4 matrix, laid out as gfx::mat4 and GLSL's mat4.
@@ -83,10 +89,24 @@ fn unit(n: i64) -> f32 { 2.0 * FIELD / n }
 fn place(v: View&, cam: Camera) {
     let yaw = radians(cam.yaw);
     let pitch = radians(cam.pitch);
-    v.eye = TARGET + float3 { sin(yaw) * cos(pitch), sin(pitch), cos(yaw) * cos(pitch) } * DISTANCE;
-    v.ahead = normalize(TARGET - v.eye);
-    v.right = normalize(cross(v.ahead, float3 { 0.0, 1.0, 0.0 }));
+    let eye = TARGET + float3 { sin(yaw) * cos(pitch), sin(pitch), cos(yaw) * cos(pitch) } * DISTANCE;
+    let ahead = normalize(TARGET - eye);
+    let right = normalize(cross(ahead, float3 { 0.0, 1.0, 0.0 }));
+    v.eye = spin(eye, cam.turn);
+    v.ahead = spin(ahead, cam.turn);
+    v.right = spin(right, cam.turn);
     v.up = cross(v.right, v.ahead);
+    v.turn = cam.turn;
+}
+
+// p turned `degrees` about the y axis through the field's middle: the camera's part of
+// the board's turn (Camera.turn), and the light's in the renderer (render3d::light). At
+// 0 it is p exactly.
+fn spin(p: float3, degrees: f32) -> float3 {
+    let a = radians(degrees);
+    let c = cos(a);
+    let s = sin(a);
+    return float3 { c * p.x + s * p.z, p.y, c * p.z - s * p.x };
 }
 
 // The view of `cam` with the fit k, c (as fit() made it for the camera's angles at rest;
@@ -144,11 +164,22 @@ fn mul(a: Mat, b: Mat) -> Mat { Mat { c0: mul(a, b.c0), c1: mul(a, b.c1), c2: mu
 
 // What bounds the board on screen: the frame's outline at its top and its foot, round
 // its corners (a quarter circle of FRAME_W each), and a lifted king's top over each
-// corner square, so a piece on the far row never pokes past the bounds.
+// corner square, so a piece on the far row never pokes past the bounds. With `field`,
+// the playing field alone, what the zoom frames: its corners, and a lifted king's top
+// over each of them, so every square and every piece's top is inside.
 type Outline = float3[..80];
 
-fn outline(n: i64, pts: Outline&) {
+fn outline(n: i64, pts: Outline&, field: bool = false) {
     pts.clear();
+    if field {
+        let top = LIFT + 2.0 * HEIGHT * unit(n) * GROW;
+        for y in [0.0, top] {
+            for s in [float2 { FIELD, FIELD }, float2 { -FIELD, FIELD }, float2 { -FIELD, -FIELD }, float2 { FIELD, -FIELD }] {
+                pts.push(float3 { s.x, y as f32, s.y });
+            }
+        }
+        return;
+    }
     let corners: float2[4] = [float2 { INNER, INNER }, float2 { -INNER, INNER }, float2 { -INNER, -INNER },
                               float2 { INNER, -INNER }];
     for c, k in corners {
@@ -167,12 +198,13 @@ fn outline(n: i64, pts: Outline&) {
     }
 }
 
-// The board's bounds seen by `cam` with k 1 and c 0: x, y of the top left, width, height.
-fn bounds(cam: Camera, n: i64) -> float4 {
+// The board's bounds seen by `cam` with k 1 and c 0: x, y of the top left, width, height;
+// with `field` the playing field's (outline).
+fn bounds(cam: Camera, n: i64, field: bool = false) -> float4 {
     var v = View { n: n, .. };
     place(v, cam);
     var pts: Outline = [];
-    outline(n, pts);
+    outline(n, pts, field);
     var lo = float2 { 1.0e9, 1.0e9 };
     var hi = float2 { -1.0e9, -1.0e9 };
     for p in pts {
@@ -221,12 +253,13 @@ fn on_screen(v: View, l: board::Layout, p: float2) -> float3 {
     return float3 { q.x, q.y, v.k * RADIUS * u / q.z };
 }
 
-// The board's outline on screen as a convex polygon, counterclockwise on screen.
+// The board's outline on screen as a convex polygon, counterclockwise on screen; with
+// `field` the playing field's (outline).
 type Hull = float2[..80];
 
-fn hull(v: View, out: Hull&) {
+fn hull(v: View, out: Hull&, field: bool = false) {
     var pts: Outline = [];
-    outline(v.n, pts);
+    outline(v.n, pts, field);
     var p: Hull = [];
     for q in pts {
         let s = project(v, q);
@@ -253,10 +286,12 @@ fn hull(v: View, out: Hull&) {
 fn turn(o: float2, a: float2, b: float2) -> f32 { (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x) }
 
 // Whether the board v places comes within `gap` pixels of rect r (x, y, width, height):
-// the polygon and the grown rect overlap unless one of their edges separates them.
-fn touches(v: View, r: float4, gap: f32) -> bool {
+// the polygon and the grown rect overlap unless one of their edges separates them. With
+// `field`, the playing field alone.
+fn touches(v: View, r: float4, gap: f32, field: bool = false) -> bool {
+    guard r.z > 0.0 && r.w > 0.0 else { return false; }
     var h: Hull = [];
-    hull(v, h);
+    hull(v, h, field);
     let x0 = r.x - gap;
     let y0 = r.y - gap;
     let x1 = r.x + r.z + gap;
@@ -519,7 +554,8 @@ fn same_bits(a: u32[4]&, b: u32[4]&) -> bool { a[0] == b[0] && a[1] == b[1] && a
 
 // Whether two views draw the board alike: the same eye, direction, and fit.
 fn same_view(a: View, b: View) -> bool {
-    return same3(a.eye, b.eye) && same3(a.ahead, b.ahead) && a.k == b.k && a.c.x == b.c.x && a.c.y == b.c.y && a.n == b.n;
+    return same3(a.eye, b.eye) && same3(a.ahead, b.ahead) && a.k == b.k && a.c.x == b.c.x && a.c.y == b.c.y && a.n == b.n
+           && a.turn == b.turn;
 }
 
 fn changes(was: Scene&, now: Scene&) -> i64 {

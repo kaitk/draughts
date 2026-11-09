@@ -86,8 +86,10 @@ struct Game {
     // Whether the game was started over (play again, or start over), for the shell to
     // give the new game its level's skill as adapting left it and a new number.
     restarted: bool = false,
-    // On the 3D board, a held piece's place against the finger on its plane (frame).
-    grab: float2 = float2 { 0.0, 0.0 },
+    // On the 3D board, a held piece's place against the finger on its plane (frame), and
+    // the camera its buttons move (board/rig.goose).
+    grab: float2   = float2 { 0.0, 0.0 },
+    cam:  rig::Rig = rig::Rig {},
 }
 
 fn new(variant: u8) -> Game {
@@ -113,11 +115,13 @@ fn start(gm: Game&, variant: u8, kind: i64, computer: i64, level: i64, skill: i6
     gm.result = 0;
     gm.asking = 0;
     gm.restarted = false;
+    rig::reset(gm.cam);
 }
 
 // Starts the game over from where it began, the clocks full again: a new game, whose
-// result counts again. The shell sees `restarted` and gives it its skill and number.
-fn restart(gm: Game&) {
+// result counts again, the 3D board's showcase angle easing back from `now`. The shell
+// sees `restarted` and gives it its skill and number.
+fn restart(gm: Game&, now: f64 = 0.0) {
     gm.restarted = true;
     board::restart(gm.b);
     gm.clock = clock::new(gm.clock.kind);
@@ -125,6 +129,7 @@ fn restart(gm: Game&) {
     gm.won_at = -1.0;
     gm.counted = false;
     gm.asking = 0;
+    rig::settle(gm.cam, now);
 }
 
 // The side that has won, or -1 while the game goes on: the other side has no move left
@@ -254,12 +259,13 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
     match pick {
         // Partway through a capture, take back only takes the capture back to its start.
         panel::UNDO => { if !board::unwind(b) && gm.clock.flag < 0 { undone = take_back(gm); } },
-        panel::RESTART => { restart(gm); },
+        panel::RESTART => { restart(gm, now); },
         panel::HOME => { go = HOME; },
         panel::SETTINGS => { go = SETTINGS; },
         _ => {},
     }
     if pick != panel::NOTHING { changed = true; }
+    if panel::camera(g, l, gm.cam, now) { changed = true; }
 
     if !frozen && think(gm, now) { changed = true; }
     won = winner(gm);
@@ -285,12 +291,22 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
         }
         let ask = celebrate(gm, g, l, won, now, over);
         if ask == panel::RESTART {
-            restart(gm);
+            restart(gm, now);
             changed = true;
         }
         if ask == panel::HOME { go = HOME; }
+    } else if !g.took && l.three && gm.cam.showcase {
+        // The showcase: a drag anywhere off the UI turns and tips the board, not a piece.
+        if rig::drive(gm.cam, input.at, input.down, input.pressed, input.released, g.scale, l.pitch, now) {
+            changed = true;
+        }
     } else if !g.took && b.pos.side != gm.computer {
         if touch(b, l, input, gm.grab, now) { changed = true; }
+    }
+    // Against a friend the 3D board turns to face the side to move once a move has shown,
+    // unless the game is over; against the computer it stays turned to the child.
+    if l.three && !frozen && gm.computer < 0 && winner(gm) < 0 && !b.moving && b.pressed < 0 {
+        if rig::face(gm.cam, b.pos.side, now) { changed = true; }
     }
     // A move made or taken back, whichever way: the clocks follow it, and stop once the
     // side to move has none.
@@ -338,6 +354,7 @@ fn still(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&) {
     let won = winner(gm);
     let side = if won >= 0 { won } else { gm.b.pos.side as i64 };
     panel::game(g, l, gm.clock, side, won >= 0, gm.asking != 0, pulse(gm, now), over);
+    panel::camera(g, l, gm.cam, now);
     if gm.won_at >= 0.0 { celebrate(gm, g, l, won, now, over); }
 }
 
@@ -345,7 +362,7 @@ fn still(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&) {
 fn animating(gm: Game&, g: gui::Gui&, now: f64) -> bool {
     let celebrating = gm.won_at >= 0.0 && moment(gm, now) < gm.still;
     let pulsing = gm.asking != 0 && (!gm.answered || now < gm.asked_at + PULSE);
-    return board::animating(gm.b, now) || gui::animating(g) || celebrating || pulsing;
+    return board::animating(gm.b, now) || gui::animating(g) || celebrating || pulsing || rig::moving(gm.cam, now);
 }
 
 // A piece of `side` over the UI centered in `spot` with radius r, at opacity a, a man (0)

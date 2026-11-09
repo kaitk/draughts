@@ -69,6 +69,7 @@ struct Play {
     won:       i64  = 0,      // stars won, once solved
     fresh:     bool = false,  // solved this frame, for the shell to keep the stars
     grab:      float2 = float2 { 0.0, 0.0 },  // on the 3D board, a held piece against the finger (game::touch)
+    cam:       rig::Rig = rig::Rig {},          // and the camera its buttons move (board/rig.goose)
 }
 
 // A puzzle never shows a selected piece's targets, whatever the move hints setting: the
@@ -86,6 +87,7 @@ fn current(pl: Play&) -> puzzles::Puzzle& { return puzzles::all.list[pl.index]; 
 // Opens puzzle `index` of puzzles::all, from its start with three stars at stake.
 fn open(pl: Play&, index: i64) {
     pl.index = index;
+    rig::reset(pl.cam);
     pl.misses = 0;
     restart(pl);
 }
@@ -243,14 +245,21 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: game::Overla
     }
     if ask == RESTART_ASK {
         restart(pl);
+        rig::settle(pl.cam, now);
         go = STAY;
     }
+    if ask == CAMERA { go = STAY; }
     if ask == NEXT && pl.state != SOLVED {
         // A capture left partway: the piece slides back, and it is a miss.
         if board::abandon(b, now) { missed(pl, now); }
         go = STAY;
     }
-    if !g.took && ready(pl) && b.pos.side == side {
+    if !g.took && l.three && pl.cam.showcase {
+        // The showcase: a drag anywhere off the UI turns and tips the board, not a piece.
+        if rig::drive(pl.cam, input.at, input.down, input.pressed, input.released, g.scale, l.pitch, now) {
+            changed = true;
+        }
+    } else if !g.took && ready(pl) && b.pos.side == side {
         let history = b.history.len;
         let wrong_at = b.wrong_at;
         let waited = board::waiting(b);
@@ -270,10 +279,11 @@ fn animating(pl: Play&, g: gui::Gui&, now: f64) -> bool {
     let popping = pl.state == SOLVED && now < pl.at + POP + (STAKE - 1) * POP_GAP;
     let wrong = pl.state == BACK || pl.state == SHOW || pl.state == SHOWN || pl.state == UNSHOW;
     return board::animating(pl.b, now) || gui::animating(g) || pl.state == ANSWER || wrong || popping
-           || now < pl.missed_at + TRY_AGAIN;
+           || now < pl.missed_at + TRY_AGAIN || rig::moving(pl.cam, now);
 }
 
 let RESTART_ASK = -1;
+let CAMERA = -2;            // a camera button was tapped (panel_frame)
 
 // The goal's icon and words.
 fn goal_icon(pz: puzzles::Puzzle&) -> i64 {
@@ -394,13 +404,16 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
 // portrait. The piece goes into `over`. Next
 // is lit once the puzzle is solved; before, it is dim and takes no tap, but while a piece
 // waits partway through a capture it wakes, unlit, to say the move is done, which a
-// capture left partway isn't. Returns PUZZLES, SETTINGS, NEXT, RESTART_ASK, or STAY.
+// capture left partway isn't. Round the 3D board, the camera buttons (panel::camera).
+// Returns PUZZLES, SETTINGS, NEXT, RESTART_ASK, CAMERA, or STAY.
 fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: game::Overlay&) -> i64 {
     let u = g.scale;
     let landscape = l.left.z < l.left.w;
     gui::panel(g, l.left);
     gui::panel(g, l.right);
     var ask = STAY;
+    // The camera buttons round the 3D board, as the game's.
+    if panel::camera(g, l, pl.cam, now) { ask = CAMERA; }
     let out = panel::leave(g, l, gui::PUZZLE, strings::HOME_PUZZLES);
     if out == panel::HOME { ask = PUZZLES; }
     if out == panel::SETTINGS { ask = SETTINGS; }

@@ -11,6 +11,7 @@ import math;
 import vec;
 import rules from "../rules";
 import .view3d;
+import .rig;
 
 let MAX_PIECES = 48;        // 40 pieces on 10×10, the moving one, and margin
 let HOP = 0.2;              // seconds per square of a quiet move, per stop of a capture

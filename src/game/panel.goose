@@ -41,71 +41,232 @@ let GAP = 24.0;
 
 // Where the board and the panels beside it go, in pixels. A 3D board (`three`) is drawn
 // through `view`, its bounds on screen view.rect; `board` is then the flat layout the
-// board package plays on, a square of the bounds' height in their middle, which taps
-// reach through the perspective (view3d::pick) and which the 3D board's world follows
-// (view3d::to_world).
+// board package plays on, a square of the bounds' height in their middle at rest
+// (`rest`), which taps reach through the perspective (view3d::pick) and which the 3D
+// board's world follows (view3d::to_world). Round the 3D board the camera buttons stand
+// in `buttons` (a column, or a row where a column doesn't fit), `count` of them, each a
+// touch area `touch` pixels square holding a disc `disc` across; `view` is the camera as
+// they have put it (aim), fitted into `box` clear of `keep` (the panels and the
+// buttons), and zoomed into `room` (room.z 0 for no zoom: portrait); `pitch` the
+// camera's angle at rest.
 struct Layout {
-    board: board::Layout,
-    left:  float4,      // x, y, width, height of the panel that leaves the game (above in portrait)
-    right: float4,      // and of the one that plays it (below in portrait)
-    three: bool         = false,
-    view:  view3d::View = view3d::View {},
+    board:   board::Layout,
+    left:    float4,      // x, y, width, height of the panel that leaves the game (above in portrait)
+    right:   float4,      // and of the one that plays it (below in portrait)
+    three:   bool         = false,
+    view:    view3d::View = view3d::View {},
+    rest:    view3d::View = view3d::View {},
+    pitch:   f32          = 0.0,
+    buttons: float4       = float4 { 0.0, 0.0, 0.0, 0.0 },
+    count:   i64          = 0,
+    row:     bool         = false,
+    touch:   f32          = 0.0,
+    disc:    f32          = 0.0,
+    box:     float4       = float4 { 0.0, 0.0, 0.0, 0.0 },
+    room:    float4       = float4 { 0.0, 0.0, 0.0, 0.0 },
+    keep:    float4[3]    = [float4 { 0.0, 0.0, 0.0, 0.0 }; 3],
+    gap:     f32          = 0.0,
 }
 
-// The game screen round the 3D board (task 015, prototypes/game3d.html's `corners`): in
-// landscape short glass panels in the top corners, the board's far edge narrowing between
-// them and its wide near edge running under them, as large as clears them by half a gap;
-// in portrait the order of the flat board's, the bar, the board, the play, with the board
-// as wide as the screen less the gaps and as tall as its perspective makes it. The
-// portrait camera's pitch is its own constant, so a steeper one (60 to 65°, a proposal
-// open with the user) is one change.
+// The game screen round the 3D board (task 015, prototypes/game3d.html's `corners` with
+// its camera buttons at `a`): in landscape short glass panels in the top corners, the
+// board's far edge narrowing between them and its wide near edge running under them, as
+// large as clears them and the camera buttons by half a gap, the buttons a column under
+// the play panel (a row where a column doesn't fit: a phone); in portrait the order of
+// the flat board's, the bar, the board, the buttons at the right edge, the play,
+// with the board as wide as the screen less the gaps and as tall as its perspective at
+// PITCH_PORTRAIT makes it, steeper than landscape's to fill more of the height. A puzzle
+// shares it.
 let CORNER_H = 352.0;       // dp: a corner panel, room for three tiles with their icons over their words
 let PHONE_DP = 600.0;       // dp: a screen whose shorter side is under this (a phone) has NARROW panels
 let PITCH_LANDSCAPE: f32 = 52.5;
-let PITCH_PORTRAIT:  f32 = 52.5;
+let PITCH_PORTRAIT:  f32 = 65.0;
+// The camera buttons (the user, 2026-11-09): a touch area and the disc in it, in dp, on a
+// tablet (its shorter side PHONE_DP or more), a phone in landscape, and in portrait;
+// BUTTON_GAP between two touch areas, BUTTON_MARGIN from the panel or board beside them.
+let TOUCH_TABLET = 56.0;
+let DISC_TABLET = 44.0;
+let TOUCH_PHONE = 48.0;
+let DISC_PHONE = 40.0;
+let TOUCH_PHONE_PORTRAIT = 52.0;
+let DISC_PHONE_PORTRAIT = 42.0;
+let BUTTON_GAP = 8.0;
+let BUTTON_MARGIN = 12.0;
+// Which button is which, top to bottom (left to right in a row): the view, the zoom
+// (landscape only), the showcase.
+let VIEW = 0;
+let ZOOM = 1;
+let SHOWCASE = 2;
 
 fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT) -> Layout {
     let width = area.z;
     let height = area.w;
     let gap = GAP * s;
+    let m = BUTTON_MARGIN * s;
+    let phone = min(width, height) / s < PHONE_DP;
     if width >= height {
-        let side = (if min(width, height) / s < PHONE_DP { NARROW } else { SIDE }) * s;
+        let side = (if phone { NARROW } else { SIDE }) * s;
         let tall = min(CORNER_H * s, height - 2.0 * gap);
         let left = float4 { area.x + gap, area.y + gap, side, tall };
         let right = float4 { area.x + width - gap - side, area.y + gap, side, tall };
-        let cam = view3d::Camera { pitch: PITCH_LANDSCAPE, yaw: 0.0 };
+        // The buttons under the play panel at the right edge: a column where it fits above
+        // the bottom margin, else a row, as low as the safe area lets it.
+        let touch = (if phone { TOUCH_PHONE } else { TOUCH_TABLET }) * s;
+        let disc = (if phone { DISC_PHONE } else { DISC_TABLET }) * s;
+        let len = 3.0 * touch + 2.0 * BUTTON_GAP * s;
+        let x1 = right.x + right.z;
+        let y = right.y + right.w + m;
+        let col = y + len <= area.y + height - gap;
+        let buttons = if col { float4 { x1 - touch, y, touch, len } }
+                      else { float4 { x1 - len, min(y, area.y + height - touch), len, touch } };
         let box = float4 { area.x + gap, area.y + gap, width - 2.0 * gap, height - 2.0 * gap };
-        // The largest share of the box, kept at its bottom and centered across, whose board
-        // clears both panels: found by halving, the board shrinking as the share does.
-        var v = view3d::fit(cam, n, box, view3d::BOTTOM_EDGE);
-        if clear(v, left, right, 0.5 * gap) { return corner_layout(v, left, right, s, n); }
-        var lo: f32 = 0.2;
-        var hi: f32 = 1.0;
-        for i in 20 {
-            let k = 0.5 * (lo + hi);
-            let b = float4 { box.x + 0.5 * box.z * (1.0 - k), box.y + box.w * (1.0 - k), box.z * k, box.w * k };
-            if clear(view3d::fit(cam, n, b, view3d::BOTTOM_EDGE), left, right, 0.5 * gap) { lo = k; } else { hi = k; }
-        }
-        let b = float4 { box.x + 0.5 * box.z * (1.0 - lo), box.y + box.w * (1.0 - lo), box.z * lo, box.w * lo };
-        return corner_layout(view3d::fit(cam, n, b, view3d::BOTTOM_EDGE), left, right, s, n);
+        var l = Layout { board: board::layout_at(0.0, 0.0, 1.0, s, n), left: left, right: right, three: true,
+                         pitch: PITCH_LANDSCAPE, buttons: buttons, count: 3, row: !col, touch: touch, disc: disc,
+                         box: box, room: box, gap: gap, .. };
+        l.keep = [left, right, buttons];
+        rest(l, settle(l, view3d::Camera { pitch: PITCH_LANDSCAPE, yaw: 0.0 }, n), s);
+        return l;
     }
     let cam = view3d::Camera { pitch: portrait_pitch, yaw: 0.0 };
     let narrow = (width - 2.0 * gap - 72.0 * s) / 3.0 < STACK_W * s;
     let top = (if narrow { TOP_STACKED } else { TOP }) * s;
     let bottom = BOTTOM * s;
+    let touch = (if phone { TOUCH_PHONE_PORTRAIT } else { TOUCH_TABLET }) * s;
+    let disc = (if phone { DISC_PHONE_PORTRAIT } else { DISC_TABLET }) * s;
+    let len = 2.0 * touch + BUTTON_GAP * s;
+    // The bar, the board, the buttons between the board and the play at the right edge,
+    // the play, centered down the safe area: the buttons a column where the board keeps
+    // the width beside it, else a row, which takes less of the height.
     let b = view3d::bounds(cam, n);
     let w = width - 2.0 * gap;
-    let h = min(w * b.w / b.z, height - top - bottom - 4.0 * gap);
+    let room = height - top - bottom - 3.0 * gap - 2.0 * m;
+    let col = w * b.w / b.z <= room - len;
+    let tall = if col { len } else { touch };
+    let h = min(w * b.w / b.z, room - tall);
     let x = area.x + gap;
-    let y = area.y + (height - (top + h + bottom + 2.0 * gap)) / 2.0;
-    let v = view3d::fit(cam, n, float4 { x, y + top + gap, w, h }, view3d::MIDDLE);
-    return corner_layout(v, float4 { x, y, w, top }, float4 { x, y + top + gap + h + gap, w, bottom }, s, n);
+    let y = area.y + (height - (top + gap + h + 2.0 * m + tall + bottom)) / 2.0;
+    let box = float4 { x, y + top + gap, w, h };
+    let buttons = if col { float4 { x + w - touch, box.y + h + m, touch, len } }
+                  else { float4 { x + w - len, box.y + h + m, len, touch } };
+    let play = float4 { x, buttons.y + tall + m, w, bottom };
+    var l = Layout { board: board::layout_at(0.0, 0.0, 1.0, s, n), left: float4 { x, y, w, top }, right: play,
+                     three: true, pitch: portrait_pitch, buttons: buttons, count: 2, row: !col, touch: touch,
+                     disc: disc, box: box, gap: gap, .. };
+    l.keep = [l.left, play, buttons];
+    rest(l, view3d::fit(cam, n, box, view3d::MIDDLE), s);
+    return l;
 }
 
-fn clear(v: view3d::View, a: float4, b: float4, gap: f32) -> bool { !view3d::touches(v, a, gap) && !view3d::touches(v, b, gap) }
+// The view at rest, and the flat square the board package plays on, which stays while the
+// camera moves.
+fn rest(l: Layout&, v: view3d::View, s: f32) {
+    l.rest = v;
+    l.view = v;
+    l.board = view3d::square(v, s);
+}
 
-fn corner_layout(v: view3d::View, left: float4, right: float4, s: f32, n: i64) -> Layout {
-    return Layout { board: view3d::square(v, s), left: left, right: right, three: true, view: v };
+// Whether the board v places (with `field`, its playing field) is clear of what the
+// layout keeps clear, by `gap` pixels.
+fn clear(v: view3d::View, keep: float4[3]&, gap: f32, field: bool = false) -> bool {
+    for r in keep { if view3d::touches(v, r, gap, field) { return false; } }
+    return true;
+}
+
+// The board seen by `cam` fitted as the layout places it: in landscape the largest share
+// of the box, kept at its bottom and centered across, whose board clears the panels and
+// the buttons by half a gap, found by halving, the board shrinking as the share does; in
+// portrait as large as fits the box, in its middle.
+fn settle(l: Layout&, cam: view3d::Camera, n: i64) -> view3d::View {
+    let box = l.box;
+    guard l.count == 3 else { return view3d::fit(cam, n, box, view3d::MIDDLE); }
+    let g = 0.5 * l.gap;
+    let v = view3d::fit(cam, n, box, view3d::BOTTOM_EDGE);
+    if clear(v, l.keep, g) { return v; }
+    var lo: f32 = 0.2;
+    var hi: f32 = 1.0;
+    for i in 20 {
+        let k = 0.5 * (lo + hi);
+        let b = float4 { box.x + 0.5 * box.z * (1.0 - k), box.y + box.w * (1.0 - k), box.z * k, box.w * k };
+        if clear(view3d::fit(cam, n, b, view3d::BOTTOM_EDGE), l.keep, g) { lo = k; } else { hi = k; }
+    }
+    let b = float4 { box.x + 0.5 * box.z * (1.0 - lo), box.y + box.w * (1.0 - lo), box.z * lo, box.w * lo };
+    return view3d::fit(cam, n, b, view3d::BOTTOM_EDGE);
+}
+
+// The zoom (landscape): the playing field seen by `cam`, every square and the pieces'
+// tops (view3d::outline's field), as large as fits the room, at its bottom and centered
+// across it, its outline clear of the panels and the buttons by a quarter gap, found by
+// halving. The view's rect is the whole board's bounds, larger than the room.
+fn zoomed(l: Layout&, cam: view3d::Camera, n: i64) -> view3d::View {
+    let room = l.room;
+    let f = view3d::bounds(cam, n, true);
+    let b = view3d::bounds(cam, n);
+    var lo: f32 = 0.0;
+    var hi = min(room.z / f.z, room.w / f.w);
+    let v = field_at(cam, n, room, f, b, hi);
+    if clear(v, l.keep, 0.25 * l.gap, true) { return v; }
+    for i in 20 {
+        let k = 0.5 * (lo + hi);
+        if clear(field_at(cam, n, room, f, b, k), l.keep, 0.25 * l.gap, true) { lo = k; } else { hi = k; }
+    }
+    return field_at(cam, n, room, f, b, lo);
+}
+
+// cam's view at k pixels a unit with the field's bounds f (at k 1) at the room's bottom,
+// centered across; b the board's bounds, for the rect.
+fn field_at(cam: view3d::Camera, n: i64, room: float4, f: float4, b: float4, k: f32) -> view3d::View {
+    let x = room.x + 0.5 * (room.z - f.z * k);
+    let y = room.y + room.w - f.w * k;
+    let c = float2 { x - f.x * k, y - f.y * k };
+    var v = view3d::View { k: k, c: c, rect: float4 { c.x + b.x * k, c.y + b.y * k, b.z * k, b.w * k }, n: n, .. };
+    view3d::place(v, cam);
+    return v;
+}
+
+// The camera as the rig has it at `now` (board/rig.goose): fitted at the view's angle and
+// the board's turn as the layout places the board (so it shrinks mid-turn to keep clear
+// of the panels), zoomed by the zoom's share, then turned and tipped by the showcase,
+// which keeps the fit. At rest it is the rest view, turned. The flat layout stays.
+fn aim(l: Layout&, r: rig::Rig&, now: f64) {
+    guard l.three else { return; }
+    let n = l.rest.n;
+    let fit = rig::base(r, l.pitch, now);
+    let half = fit.turn - 180.0 * floor(fit.turn / 180.0);
+    var v = if fit.pitch == l.pitch && half == 0.0 { l.rest } else { settle(l, fit, n) };
+    let z = if l.room.z > 0.0 { rig::value(r.zoom, now) } else { 0.0 };
+    if z > 0.0 {
+        let q = zoomed(l, fit, n);
+        v.k += (q.k - v.k) * z;
+        v.c = v.c + (q.c - v.c) * z;
+        v.rect = v.rect + (q.rect - v.rect) * z;
+    }
+    l.view = view3d::turned(v, rig::camera(r, l.pitch, now));
+}
+
+// The camera buttons round the 3D board (prototypes/game3d.html's `.ctl`, placement a):
+// the view (the top view's icon, or the rest angle's while in the top view; a gold dot
+// while the showcase has left the board off its rest angle), the zoom in landscape, and
+// the showcase, lit while on. A tap changes the rig at `now`. Returns whether one was
+// tapped.
+fn camera(g: gui::Gui&, l: Layout, r: rig::Rig&, now: f64) -> bool {
+    guard l.three && l.count > 0 else { return false; }
+    let step = l.touch + BUTTON_GAP * g.scale;
+    var tapped = false;
+    for i in l.count {
+        let what = if l.count == 2 && i == 1 { SHOWCASE } else { i };
+        let at = if l.row { float4 { l.buttons.x + i * step, l.buttons.y, l.touch, l.touch } }
+                 else { float4 { l.buttons.x, l.buttons.y + i * step, l.touch, l.touch } };
+        let icon = if what == VIEW { if rig::top(r) && !rig::off_rest(r) { gui::VIEW_LOW } else { gui::VIEW_TOP } }
+                   else if what == ZOOM { if rig::zoomed(r) { gui::ZOOM_OUT } else { gui::ZOOM_IN } }
+                   else { gui::SHOWCASE };
+        guard gui::floating(g, 120 + what, at, l.disc, icon, what == SHOWCASE && r.showcase,
+                            what == VIEW && rig::off_rest(r)) else { continue; }
+        tapped = true;
+        if what == VIEW { rig::view_tap(r, now); }
+        else if what == ZOOM { rig::zoom_tap(r, now); }
+        else { rig::showcase_tap(r); }
+    }
+    return tapped;
 }
 
 // The game screen (rendering.md, "Game screen"). Landscape: the board fills the height

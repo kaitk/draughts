@@ -302,13 +302,15 @@ fn raise(sh: Shell&, g: gui::Gui&, crossing: bool, e: f32) {
     guard has_a || has_b else { return; }
     sh.raised = true;
     sh.view = if has_a && has_b { if a.k > b.k { a } else { b } } else if has_a { a } else { b };
-    let flip = sh.layout.flip;
-    sh.layout = view3d::square(sh.view, g.scale);
-    sh.layout.flip = flip;
+    // At rest the screen's flat layout stays, which its camera's view may have moved away
+    // from (panel::aim); in a transition the drawn view's square.
     guard crossing else {
         sh.place = sh.view.rect;
         return;
     }
+    let flip = sh.layout.flip;
+    sh.layout = view3d::square(sh.view, g.scale);
+    sh.layout.flip = flip;
     let ra = if has_a { a.rect } else { tile_rect(sh.view.rect, sh.went.board) };
     let rb = if has_b { b.rect } else { tile_rect(sh.view.rect, sh.came.board) };
     sh.place = float4 { ra.x + (rb.x - ra.x) * e, ra.y + (rb.y - ra.y) * e, ra.z + (rb.z - ra.z) * e,
@@ -340,21 +342,26 @@ fn raise_in(sh: Shell&, room: float4, n: i64, u: f32, l: board::Layout&) -> view
 }
 
 // Where the game puts the board and its panels, turned when the computer plays white:
-// round the 3D board when it is chosen (settings::raised), else the flat board's.
-fn game_layout(sh: Shell&, area: float4, u: f32) -> panel::Layout {
+// round the 3D board when it is chosen (settings::raised), seen as its camera has it at
+// `now` (panel::aim), else the flat board's.
+fn game_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
     let n = rules::VARIANTS[sh.game.b.variant].size;
     var l = if settings::raised(sh.prefs) { panel::corners_in(area, n, u) } else { panel::layout_in(area, n, u) };
     l.board.flip = sh.game.computer == rules::WHITE;
+    panel::aim(l, sh.game.cam, now);
     return l;
 }
 
 // The game for this frame, `frozen` while its transition runs. Returns whether anything
 // on screen changed.
 fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -> bool {
-    let l = game_layout(sh, area, g.scale);
+    var l = game_layout(sh, area, g.scale, now);
     sh.layout = l.board;
-    if l.three { sh.came_view = l.view; }
     let go, changed = game::frame(sh.game, g, l, now, sh.over, frozen);
+    // Drawn through the camera as this frame left it: a button tapped, a showcase drag, or
+    // the board facing the side to move shows at once.
+    panel::aim(l, sh.game.cam, now);
+    if l.three { sh.came_view = l.view; }
     // A game against the computer ended: the child meets a stronger or weaker one next.
     let gm .= sh.game;
     if gm.result != 0 {
@@ -392,11 +399,12 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
 
 // Where a puzzle puts the board and its panels, turned when black is to move, so the side
 // to move plays from the bottom: round the 3D board when it is chosen, as the game's.
-fn puzzle_layout(sh: Shell&, area: float4, u: f32) -> panel::Layout {
+fn puzzle_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
     let pl .= sh.puzzle;
     let n = rules::VARIANTS[pl.b.variant].size;
     var l = if settings::raised(sh.prefs) { panel::corners_in(area, n, u) } else { panel::layout_in(area, n, u) };
     l.board.flip = puzzle::current(pl).start.side == rules::BLACK;
+    panel::aim(l, pl.cam, now);
     return l;
 }
 
@@ -404,10 +412,11 @@ fn puzzle_layout(sh: Shell&, area: float4, u: f32) -> panel::Layout {
 fn puzzle_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     let pl .= sh.puzzle;
     pl.b.king_look = king_look(sh);
-    let l = puzzle_layout(sh, area, g.scale);
+    var l = puzzle_layout(sh, area, g.scale, now);
     sh.layout = l.board;
-    if l.three { sh.came_view = l.view; }
     let go, changed = puzzle::frame(pl, g, l, now, sh.over);
+    panel::aim(l, pl.cam, now);
+    if l.three { sh.came_view = l.view; }
     // Solved: the stars kept are the most it has won.
     if pl.fresh {
         let id = puzzle::current(pl).id;
@@ -587,12 +596,12 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: ga
         settings::frame(sh.prefs, over, g, l, area, strings::current, room);
         sh.went_view = raise_in(sh, room, l.n, g.scale, l);
     } else if screen == GAME {
-        let p = game_layout(sh, area, g.scale);
+        let p = game_layout(sh, area, g.scale, now);
         game::still(sh.game, g, p, now, over);
         l = p.board;
         if p.three { sh.went_view = p.view; }
     } else if screen == PUZZLE {
-        let p = puzzle_layout(sh, area, g.scale);
+        let p = puzzle_layout(sh, area, g.scale, now);
         puzzle::panel_frame(sh.puzzle, g, p, now, over);
         l = p.board;
         if p.three { sh.went_view = p.view; }

@@ -350,7 +350,12 @@ after that: zoom frames the whole playing field, every square and the pieces' to
 large as fits the area clear of the panels and the button column (in the top view too);
 the third button is a showcase mode, not a tilt: while on it is lit and a drag anywhere on
 the board turns it (±35°) and tips it (35° to 80° down) instead of moving pieces, with no
-spring back; pressing it again, or a move, eases back to rest in 0.6 s.
+spring back; pressing it again, or a move, eases back to rest in 0.6 s. Settled for the
+app (the user, 2026-11-09): turning the showcase off keeps the angle and play goes on
+through it; a new game or a hot-seat turn puts it back; while the board is off its rest
+angle the view button wears a small gold dot and its tap eases back to rest first; the
+buttons 56 dp with a 44 dp disc on a tablet, 48/40 on a phone in landscape, 52/42 in
+portrait; the light stays put on screen through the hot-seat turn.
 
 **Decided** (the user, 2026-11-09): Showcase only toggles dragging and keeps the angle; View is the reset (off rest a tap eases back, then top, then rest) with a gold dot on it while off rest; a new game or hot-seat turn resets the angle; buttons 56 dp touch / 44 disc on a tablet, 48 / 40 on a phone in landscape, 52 / 42 in portrait.
 
@@ -405,11 +410,11 @@ spring back; pressing it again, or a move, eases back to rest in 0.6 s.
   492, 656 × 450 with the Pixel 7a's cutout; at 480 dp 620 × 425; a 9:16 phone at 480 dp
   414 × 284 (346 × 237 with insets), all 1.46:1, the far edge 69%, every tile in its
   panel and the safe area at 88 dp, the board inside the safe area off the panels.
-- **Portrait's camera** is `panel::PITCH_PORTRAIT`, 52.5°. Steeper (same test): on the
+- **Portrait's camera** was `panel::PITCH_PORTRAIT`, 52.5°. Steeper (same test): on the
   tablet the board goes from 752 × 516 to 752 × 570 at 60° and 752 × 604 at 65° (the far
   edge 69% → 74% → 77%), the screen used 888 → 942 → 976 of 1280 dp; on a 20:9 phone at
   540 dp 337 → 373 → 395 dp tall. Width still holds the board; a steeper camera only
-  fills more of the empty height. Open with the user.
+  fills more of the empty height. Now 65° (the camera controls, below).
 - **Wiring:** `settings::raised` (the Board row's 3D with `--3d`; the 3D tile now takes
   the tap) makes the game screen use `corners_in` and `view3d::pick`
   (`shell::game_layout`, `game::frame`); kings' auto is a stack there
@@ -517,8 +522,8 @@ spring back; pressing it again, or a move, eases back to rest in 0.6 s.
   lacquer (roughness 0.35, almost no figure, as the flat board's plain sheen), a red-brown
   frame, cream and plum pieces, a warmer, lower key. The app picks each season's look
   (`draw3d::look_of`); the prototype takes `--theme spring|summer`.
-- **Hot seat** against a friend keeps today's board (the user is prototyping a 180° turn in
-  the web page).
+- **Hot seat** against a friend kept today's board then; the 180° turn came with the camera
+  controls (below).
 - **Tests:** `test/shell/screens3d` (home's board and settings' preview at eight sizes,
   inside the screen and clear of every tile; a puzzle's right move tapped through the
   perspective, a wrong move's ghost and flash, the hint's ring after two misses, a black
@@ -530,9 +535,70 @@ spring back; pressing it again, or a move, eases back to rest in 0.6 s.
   never committed): home, settings in portrait, a puzzle in portrait, the win, the game in
   the four seasons. Not on the tablet.
 
+### The camera controls (the `camera3d` branch off `3d-board`, 2026-11-09)
+
+The user's decisions of 2026-11-09 (above, "Chosen"), built natively on the game screen
+and a puzzle:
+
+- **The camera as data** (`src/board/rig.goose`, `rig::Rig`): five eases (the view 0 to
+  1, the zoom 0 to 1, the board's turn in degrees, the showcase's swing and tilt), each a
+  value easing from one end to the other, cubic in and out, read at any moment; the
+  buttons' taps, the showcase's drags (0.3° a dp, ±35°, 35° to 80° down), and the
+  hot-seat turn (`rig::face`, 180° more each time over 0.7 s, put at once the first
+  time) only set them. `view3d::Camera.turn` turns the board about the field's middle
+  under a camera and a light fixed on screen (the camera spun the other way round,
+  `view3d::spin`, exact at 0), apart from the showcase's yaw about the target.
+- **Fitting it** (`panel::aim`, each frame from the shell's `game_layout` and
+  `puzzle_layout`, and again after the screen's frame so a tap shows at once): at rest
+  the rest view as `corners_in` made it; else the board at the view's angle and the turn
+  placed as `corners_in` places it (the halving in landscape, so it shrinks mid-turn to
+  clear the panels: 744 × 609 dp at 113° on the tablet against 898 × 616), the zoom
+  blended in (k, c, and the rect, linearly), then the showcase's angle on top, keeping
+  the fit. The flat square the board package plays on stays the rest view's: the shell
+  keeps the screen's own layout at rest (`shell::raise`), the drawn view's square only in
+  a transition. Picking goes through the drawn camera, as `test/board/view3d` checked at
+  any angle.
+- **The buttons** (`panel::camera`, `gui::floating`, the UI shader's `FLOAT` quad and
+  icons 32 to 36): landscape a column of three under the play panel, 12 dp below it at
+  the right edge, or a row where the column runs past the bottom margin (every phone in
+  landscape); portrait two (view, showcase) between the board and the play at the right
+  edge, a row where a column would shrink the board (the foldable, 4:3, the 9:16 phone).
+  `corners_in` keeps the board clear of them; the tablet's landscape board is unchanged
+  (898 × 616 dp), portrait's is now 752 × 604. A dot on the view button while off the
+  rest angle, the showcase button lit while on. No accessible labels yet: the app has no
+  accessibility layer to give them to, so none went into `strings/`.
+- **Zoom**: the field's outline (`view3d::outline`'s `field`: its corners and a lifted
+  king's top over each) as large as fits the box, bottom aligned, clear of the panels and
+  the buttons by a quarter gap, found by halving (`panel::zoomed`); the column's strip
+  isn't cut out of the room, or in the top view the zoom came out smaller than no zoom on
+  the foldable. 1.15 times the scale on the tablet (the field 917 × 613 dp), 1.11 to
+  1.19 elsewhere, in the top view 1.11 to 1.16.
+- **Showcase**: while on, a press off the UI goes to the camera (`rig::drive`), never to
+  the board; off keeps the angle; a move tapped through it plays (`test/game/camera`). A
+  new game (`game::start`, `game::restart`) or a hot-seat turn eases it back.
+- **Hot seat**: once a friend's move has shown (`!b.moving`, no piece held, no winner),
+  `game::frame` faces the board to the side to move; the light turns with the board
+  (`render3d::turn_light`, `light`), so it stays at the upper left of the screen, and the
+  shadow map is drawn again on each frame of the turn. Against the computer `rig::face`
+  is never called; the flat layout's turn keeps the child at the bottom.
+- **Draw on demand**: the camera moving changes the view, so the 3D pass runs only while
+  an ease runs (`game::animating`, `puzzle::animating` include `rig::moving`): the view
+  button's 0.6 s drew 35 frames and then none, the move and the turn together 41.
+- **Tests**: `test/board/rig` (the view cycle, the dot, the showcase's range and the angle
+  kept, the zoom, the hot-seat turn and its put), `test/game/camera` (through the shell:
+  the buttons, the view and its redraws, the zoom at rest and in the top view, a showcase
+  drag moving no piece, the angle kept and a move through it, the turn for black and
+  black's move tapped through it, a new game turning back, no turn against the computer,
+  a puzzle's buttons), `test/game/corners` (the buttons at every size and inset inside
+  the safe area and off the panels and the board, the zoom's field inside its room and
+  clear, portrait at 65°, a drag through the turned board).
+- **Checked** headless on the Mac (the local copy, never committed, with a temporary flag
+  setting the rig): the tablet's landscape at rest, turned for black (`--fen B:...` faces
+  it at once), the top view zoomed, a showcase angle with the dot, and portrait. Not on the
+  tablet.
+
 ### Open
 
-- Portrait's camera (above).
 - The rule that only `app/` imports `gfx`: the shared renderer is a package that does.
 - The drag threshold is measured on the flat layout, near the screen's pixels in the
   board's middle only.
@@ -587,8 +653,9 @@ spring back; pressing it again, or a move, eases back to rest in 0.6 s.
 Every screen shows the 3D board behind `--3d` (phase 3). Still needed before merging: the
 tablet's frame times and memory on each screen with the 3D board (and the performance
 branch's bake and MSAA changes rebased in), draw-on-demand checked there with
-`scripts/idle_cpu.sh`, the open points above as the user decides them (portrait's camera,
-hot seat's turn), and the user's look at spring and summer.
+`scripts/idle_cpu.sh`, the camera controls tried on the tablet (the hot-seat turn's frames
+draw the shadow map each), the open points above as the user decides them, and the
+user's look at spring and summer.
 
 Then, once the user says merge, flip exactly this:
 

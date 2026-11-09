@@ -5,9 +5,10 @@
 // the flat board's.
 //
 // Draw on demand: the board is drawn into a kept image only when its scene changed
-// (view3d::changes: the board, and the shadow map when the pieces stand differently), or
-// the screen's size or the theme did; each drawn frame then lays the image over the
-// backdrop, under the UI. A frame that changes only the UI (a clock's second, a pressed
+// (view3d::changes: the board, and the shadow map when the pieces stand differently or
+// the board turns under the light), or the screen's size or the theme did; the camera
+// moving (game/panel.goose's aim) changes the view, so it is drawn only while it moves.
+// Each drawn frame then lays the image over the backdrop, under the UI. A frame that changes only the UI (a clock's second, a pressed
 // tile) costs that copy, not the 3D pass. In a transition between screens the image is
 // drawn once, through the larger end's view, and only moved and scaled from one end's
 // place to the other's (`hold`; docs/architecture/rendering.md, "Transitions"). The
@@ -85,8 +86,11 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
     d.which = which;
     view3d::fill(d.scene, b, l, v, now);
     let c = view3d::changes(d.drawn, d.scene);
-    d.redraw = force || c & view3d::DRAW != 0;
-    d.shadow = force || c & view3d::SHADOW != 0;
+    // The board turned under the light (a hot-seat turn): the light turns with it, so it
+    // keeps its place on screen, and the shadows are drawn again.
+    let turned = v.turn != d.gpu.turn;
+    d.redraw = force || c & view3d::DRAW != 0 || turned;
+    d.shadow = force || c & view3d::SHADOW != 0 || turned;
     guard d.redraw else { return; }
     d.draws++;
     if d.shadow { d.shadows++; }
@@ -107,6 +111,7 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
             i += 2;
         }
     }
+    render3d::turn_light(d.gpu, v.turn);
     render3d::place(d.gpu, d.upload[..d.upload.len], d.alphas[..d.alphas.len], s.squares[..], s.field[..], s.lit[..],
                     s.selected, s.dim, d.shadow);
     let m = view3d::matrix(v, size.x, size.y);
