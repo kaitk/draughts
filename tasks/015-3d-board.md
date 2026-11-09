@@ -290,6 +290,11 @@ board in every take, so pushing it up only moves the empty band below it; a stee
 camera (about 60 to 65°) is what fills the height there. Not yet: a phone's cutout in the
 safe area, the clocks, and the board's glass under a panel.
 
+**Chosen** (the user, 2026-11-09): the current UI doesn't suit the game screen round a 3D
+board, though it is fine on the other screens, where nobody touches the pieces. The game
+screen takes `corners` in landscape. Portrait is still open; the steeper camera is the
+proposal.
+
 ## Later, only if the floating board falls short
 
 - **A painted backdrop and a real table.** The camera barely moves (about 50° down), so a
