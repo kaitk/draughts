@@ -6,7 +6,8 @@
 //                 [--overlooks A B]
 //
 // Each pair of games starts from the same position with colors swapped. A game is
-// drawn after 300 plies, or after 50 plies with no capture and no man moved. Prints
+// drawn by the variant's rules (rules/draw.goose), which the engine sees, or after 300
+// plies. Prints
 // A's wins, draws, and losses. --fens prints the position at ply PLY of each game
 // instead, for benchmarks. --nodes gives each side its own node limit. --overlooks gives
 // each side its percent of the overlook chances (ai::Engine.overlooks): 0 plays a skill
@@ -63,7 +64,7 @@ fn main() {
         // A plays white in even games.
         let a_side: u8 = if g % 2 == 0 { rules::WHITE } else { rules::BLACK };
         var p = rules::start(variant);
-        var quiet = 0;
+        var past = rules::Past { draw: rules::draw_start(p), before: [] };
         var result = 0;
         for ply in 300 {
             if ply == fens_at { print(rules::fen(p)); }
@@ -72,16 +73,16 @@ fn main() {
                 result = if p.side == a_side { -1 } else { 1 };
                 break;
             }
-            guard quiet < 50 else { break; }
+            guard rules::draw_reason(past.draw, p) == rules::NO_DRAW else { break; }
             let skill = if p.side == a_side { sa } else { sb };
             e.node_limit = if p.side == a_side { limit_a } else { limit_b };
             e.overlooks = if p.side == a_side { overlooks_a } else { overlooks_b };
             // Pairs of games share seeds, so both colors meet the same choices.
             let seed = ((g / 2) * 1000 + ply) as u64;
-            let m = ai::think(e, p, skill, seed);
-            let man = p.kings & rules::bit(m.from) == 0;
-            quiet = if m.captured != 0 || man { 0 } else { quiet + 1 };
-            p = rules::play(p, m);
+            let m = ai::think_after(e, past, p, skill, seed);
+            let q = rules::play(p, m);
+            rules::pass(past, p, m, q);
+            p = q;
             plies += 1;
         }
         if result > 0 { wins += 1; } else if result < 0 { losses += 1; } else { draws += 1; }

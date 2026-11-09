@@ -23,7 +23,7 @@ import game from "../../src/game";
 import ai from "../../src/ai";
 
 let PLIES = 240;            // a game longer than this stops, drawn
-let QUIET = 50;             // or after this many plies with no capture and no man moved
+// or once drawn by the variant's rules (rules/draw.goose), which the computer sees
 let GAMES = 1;              // games of each variant, at each level and clock
 let NODES = 20000;          // hard's node limit, so it stays quick through TinyCC
 
@@ -96,12 +96,12 @@ fn play(e: ai::Engine&, variant: u8, level: i64, kind: i64, seed: i64, spent: Sp
     var p = rules::start(variant);
     var moves: rules::Moves = [];
     var shown = 0.0;        // the last move's animation, on the clock of the side to move
-    var quiet = 0;
+    var past = rules::Past { draw: rules::draw_start(p), before: [] };
     for ply in PLIES {
         rules::generate(p, moves);
-        guard moves.len > 0 && quiet < QUIET else { return ply; }
+        guard moves.len > 0 && rules::draw_reason(past.draw, p) == rules::NO_DRAW else { return ply; }
         let side = p.side as i64;
-        let m = ai::think(e, p, skill, (seed * 1000 + ply) as u64);
+        let m = ai::think_after(e, past, p, skill, (seed * 1000 + ply) as u64);
         let close = ai::close(e, pace::CLOSE);
         if c.running == side {
             let s .= spent[side];
@@ -117,9 +117,9 @@ fn play(e: ai::Engine&, variant: u8, level: i64, kind: i64, seed: i64, spent: Sp
         guard c.flag < 0 else { return ply; }
         clock::moved(c, side);
         shown = board::duration(m);
-        let man = p.kings & rules::bit(m.from) == 0;
-        quiet = if m.captured != 0 || man { 0 } else { quiet + 1 };
-        p = rules::play(p, m);
+        let q = rules::play(p, m);
+        rules::pass(past, p, m, q);
+        p = q;
     }
     return PLIES;
 }

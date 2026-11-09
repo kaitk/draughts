@@ -131,6 +131,17 @@ On a worker the frame loop draws as it would without the computer.
   of a second on the tablet's big cores and 0.65 s on its little ones, and more nodes
   still made hard stronger on 10×10. Easy and medium finish their depth in a few thousand
   nodes.
+- **Draws** score 0 (rules.md, "Draws"). Each frame carries the draw counts
+  (`rules::draw_after` per move), and a node whose counts have ended is a draw unless its
+  side to move has no move, which is a loss as in the game. A position met earlier on
+  the way from the root is a draw, as the side that came back can come back again; one
+  met at the root or in the game before it is a draw when that makes three times. The
+  game hands the search its counts and its positions since the last man's move or
+  capture (`rules::Past`, `ai::start_after`), whose keys the search compares only that
+  far back. So the side behind steers into a draw and the side ahead clear of it
+  (`test/ai/draws.goose`). A table entry may carry a draw from another way to the
+  position; draughts engines accept that. The checks cost nothing measurable in
+  middlegames and about 5–10% of the nodes a second in king endings.
 - **Evaluation**, in hundredths of a man, for the side to move: a man 100, a king 300
   (150 in English, whose kings don't fly); a man gains as it advances, most near the far
   row; a man on its own back row 3 to 4, for keeping kings out; a man on a central square 3.

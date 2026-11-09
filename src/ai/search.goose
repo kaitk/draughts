@@ -46,6 +46,7 @@ struct Entry {
 struct Frame {
     pos:    rules::Position,
     key:    u64,
+    draw:   rules::Draw,    // the draw counts on the way here
     alpha:  i64,
     beta:   i64,
     first:  i64,            // alpha as the node was entered, for the table's bound
@@ -75,6 +76,8 @@ fn init(e: Engine&) {
 // Sets up a search of p, which has at least two moves: `depth` plies of free moves and
 // `extra` more of forced captures, root moves within `margin` of the best scored
 // exactly, and no new iteration begun after `limit` nodes.
+// The game's draw counts at p (e.root_draw) and the keys of its positions before p
+// (e.past) are the caller's: ai::start sets them.
 fn begin(e: Engine&, p: rules::Position, depth: i64, extra: i64, margin: i64, limit: i64) {
     for &t in e.tt { t = Entry { .. }; }
     for &x in e.history { x = 0; }
@@ -102,6 +105,7 @@ fn next_iteration(e: Engine&) {
     let f .= e.plies[0].f;
     f.pos = e.root;
     f.key = key(e.root);
+    f.draw = e.root_draw;
     f.alpha = -INF;
     f.beta = INF;
     f.d = e.iteration;
@@ -174,6 +178,13 @@ fn enter(e: Engine&) {
     f.tt = -1;
     // The table's entry answers the node only when it was searched as far: a value
     // from another depth would make the result depend on what was searched before.
+    // A draw on the way here scores 0, unless the side to move has no move: a win on
+    // the drawing move is a win.
+    if ply > 0 && drawn(e, ply) {
+        rules::generate(f.pos, pl.moves);
+        leave(e, if pl.moves.len == 0 { -(WIN - ply) } else { 0 });
+        return;
+    }
     let slot = (f.key & TT_MASK) as i64;
     if ply > 0 && e.use_tt && e.tt[slot].key == f.key {
         let t = e.tt[slot];
@@ -218,6 +229,33 @@ fn enter(e: Engine&) {
     f.best_i = -1;
     f.count = 0;
     next_child(e);
+}
+
+// Whether the node at `ply` is drawn: by a count, or by repetition. A position met
+// before on the way from the root (after it) is a draw, as the side that came back can
+// come back again; one met at the root or in the game before it is a draw when that
+// makes three times. Positions are compared only `quiet` plies back, where the line
+// last had a man's move or a capture.
+fn drawn(e: Engine&, ply: i64) -> bool {
+    let f .= e.plies[ply].f;
+    guard f.draw.quiet >= 4 || f.draw.calm >= 9 || f.draw.lone_kind != rules::LONE_NONE
+          || f.draw.road_state == rules::ROAD_RUNNING else { return false; }
+    if rules::draw_reason(f.draw, f.pos) != rules::NO_DRAW { return true; }
+    var times = 1;
+    var back = 2;
+    while back <= f.draw.quiet {
+        if back < ply {
+            if e.plies[ply - back].f.key == f.key { return true; }
+        } else if back == ply {
+            if e.plies[0].f.key == f.key { times += 1; }
+        } else {
+            let i = e.past.len - (back - ply);
+            guard i >= 0 else { break; }
+            if e.past[i] == f.key { times += 1; }
+        }
+        back += 2;
+    }
+    return times >= 3;
 }
 
 // Whether a capture of `captured` goes unseen when the search is blind to `blind`
@@ -290,6 +328,7 @@ fn next_child(e: Engine&) {
     let c .= e.plies[ply + 1].f;
     c.pos = rules::play(f.pos, m);
     c.key = key_after(f.key, f.pos, m);
+    c.draw = rules::draw_after(f.draw, f.pos, m, c.pos);
     c.alpha = -f.beta;
     c.beta = -a;
     // A forced move costs no depth: a person sees it at once.

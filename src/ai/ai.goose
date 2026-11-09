@@ -124,6 +124,9 @@ root struct Engine {
     blind:      i64,            // what the search under way doesn't see (LAND, OPEN), only in the main search
     // The search under way (search.goose).
     root:       rules::Position,
+    root_draw:  rules::Draw,                // the draw counts at the search's root
+    draw_at:    rules::Draw,                // the game's, at the position a move is found for
+    past:       u64[..rules::PAST],          // the keys of the game's positions before the root, oldest first
     depth:      i64,
     extra:      i64,
     margin:     i64,
@@ -164,9 +167,26 @@ root struct Engine {
     seen:        i64,           // the deepest iteration the main search finished
 }
 
-// Begins finding a move for p at `skill`, with `seed` for the choices among good moves.
+// Begins finding a move for p at `skill`, with `seed` for the choices among good moves,
+// as a game begins at p: no position before it.
 fn start(e: Engine&, p: rules::Position, skill: i64, seed: u64) {
+    e.past.clear();
+    e.draw_at = rules::draw_start(p);
+    begin_move(e, p, skill, seed);
+}
+
+// The same in a game that went through `past` to p: the search sees its draws by
+// repetition and by the counts (rules/draw.goose).
+fn start_after(e: Engine&, past: rules::Past&, p: rules::Position, skill: i64, seed: u64) {
+    e.past.clear();
+    for &q in past.before { e.past.push(key(q)); }
+    e.draw_at = past.draw;
+    begin_move(e, p, skill, seed);
+}
+
+fn begin_move(e: Engine&, p: rules::Position, skill: i64, seed: u64) {
     init(e);
+    e.root_draw = e.draw_at;
     e.position = p;
     e.params = params(skill);
     e.random = rng { seed };
@@ -228,6 +248,13 @@ fn think(e: Engine&, p: rules::Position, skill: i64, seed: u64) -> rules::Move {
     return reply(e);
 }
 
+// The same in a game that went through `past` to p.
+fn think_after(e: Engine&, past: rules::Past&, p: rules::Position, skill: i64, seed: u64) -> rules::Move {
+    start_after(e, past, p, skill, seed);
+    while !step(e, 1 << 30) {}
+    return reply(e);
+}
+
 fn main_done(e: Engine&) {
     e.best = -INF;
     for i in e.moves.len {
@@ -250,6 +277,12 @@ fn main_done(e: Engine&) {
         }
         e.cand_count = min(e.cand_count, MAX_PROBES);
         e.probe = -1;
+        // The probes search the child's replies: the position is then the game's last.
+        if e.past.len == rules::PAST {
+            for i in rules::PAST - 1 { e.past[i] = e.past[i + 1]; }
+            e.past.pop();
+        }
+        e.past.push(key(e.position));
         next_probe(e);
         return;
     }
@@ -261,9 +294,11 @@ fn main_done(e: Engine&) {
 fn next_probe(e: Engine&) {
     e.probe += 1;
     while e.probe < e.cand_count {
-        let q = rules::play(e.position, e.moves[e.cands[e.probe]]);
+        let m = e.moves[e.cands[e.probe]];
+        let q = rules::play(e.position, m);
         rules::generate(q, e.plies[0].moves);
         if e.plies[0].moves.len >= 2 && e.plies[0].moves[0].captured == 0 {
+            e.root_draw = rules::draw_after(e.draw_at, e.position, m, q);
             begin(e, q, PROBE_DEPTH, PROBE_EXTRA, FIND, PROBE_LIMIT);
             e.phase = PROBE;
             return;

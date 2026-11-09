@@ -132,3 +132,26 @@ piece's move (3.2). The Brazilian confederation's (CBD) own text wasn't found on
 - [ ] Each variant's draw rules confirmed against an official text, with the link
 - [ ] Repetition and each move count drawing at exactly the right move, tested
 - [ ] The game shows a draw and counts it; the countdown shown before it
+
+## Measured
+
+The search's speed, built on the Mac (M-series), before and after it saw draws
+(2026-11-09). `build/aibench`, the built-in middlegames, three runs each: hard 8.7–9.1
+million nodes a second before, 8.75–8.98 after, its slowest reply 102–120 ms against
+105–111; every level's move and depth the same. King endings, hard (800,000 nodes):
+
+| Position | Before, nodes/s | After |
+| --- | --- | --- |
+| Russian `W:WKc1,Ke1,Kg1,e3:BKb8,Kh8,a7` | 6.70 M | 6.45 M |
+| International `W:WK47,K49,30,35:BK2,K4,16` | 6.91 M | 6.60 M |
+| Russian `W:WKc1,Ke1:BKd8,Kf8` | 7.55 M | 6.84 M |
+
+`build/aimatch` (after: the rules' draws end a game and the engine sees them; before: its
+own 50 plies without a capture or a man's move):
+
+| Match | Before | After |
+| --- | --- | --- |
+| Russian 40 against 0, 200 games | 197–1–2, 52 plies, 0.92 s | 196–2–2, 52 plies, 0.85 s |
+| International 40 against 0, 100 | 99–1–0, 94 plies, 1.99 s | 97–3–0, 94 plies, 1.90 s |
+| Brazilian 60 against 40, 100 | 72–25–3, 90 plies, 5.70 s | 71–25–4, 75 plies, 4.18 s |
+| Russian 90 against 60, 10 | 10–0–0, 55 plies, 15.1 s | 10–0–0, 55 plies, 14.5 s |

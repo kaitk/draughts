@@ -309,6 +309,27 @@ fn closer(c: Countdown&, kind: i64, moves: i64, side: i64) {
     c.side = side;
 }
 
+// Carries a game's past through m, one of p's legal moves, which leads to q: the counts,
+// and p kept among the positions before, which start again after a man's move or a
+// capture; the oldest go when there are PAST.
+fn pass(past: Past&, p: Position&, m: Move&, q: Position&) {
+    past.draw = draw_after(past.draw, p, m, q);
+    if past.draw.quiet == 0 { past.before.clear(); } else {
+        if past.before.len == PAST {
+            for i in PAST - 1 { past.before[i] = past.before[i + 1]; }
+            past.before.pop();
+        }
+        past.before.push(p);
+    }
+    var seen = 1;
+    var back = 2;
+    while back <= past.before.len {
+        if same(past.before[past.before.len - back], q) { seen += 1; }
+        back += 2;
+    }
+    past.draw.seen = seen;
+}
+
 // The counts and the times the last position has come, for a game that went through
 // `line`, oldest first, each the position after a legal move from the one before.
 fn draw_of(line: Position[:]) -> Draw {
