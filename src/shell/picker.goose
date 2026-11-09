@@ -29,6 +29,8 @@ let NAMES = [strings::THEME_LEARN, strings::THEME_CAPTURES, strings::THEME_CROWN
              strings::THEME_KING_SHOTS, strings::THEME_SAFE_MOVE];
 let LEVEL_NAMES = [strings::PUZZLES_LEVEL1, strings::PUZZLES_LEVEL2, strings::PUZZLES_LEVEL3];
 let COLUMN = 600.0;         // dp a column of the library takes at most
+let LIBRARY_LIST = 700;     // the scrolling lists' ids (gui::scroll_begin): the library,
+let PAGE_LIST = 710;        // and a theme's page, plus the theme
 let PHONE = 600.0;          // dp across the shorter side under which the layout is a phone's
 
 // How many of a theme's puzzles have stars.
@@ -174,6 +176,7 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let whole = page;           // the rows center on the screen, not on what back leaves
     if landscape {
         var column = gui::cut_left(page, back_w(g));
+        gui::cut_top(column, gui::corner_drop(g, column));
         if back(g, gui::cut_top(column, 88.0 * u)) { pick = BACK; }
         gui::cut_left(page, 24.0 * u);
     }
@@ -198,16 +201,24 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     if !short {
         var top = float4 { x, y, w, 88.0 * u };
         if !landscape {
+            // Clear of the window's control (iPadOS's three dots) in a window.
+            gui::cut_left(top, gui::corner_shift(g, top));
             if back(g, gui::cut_left(top, back_w(g))) { pick = BACK; }
             gui::cut_left(top, 20.0 * u);
         }
         // Bare on the photograph, over bright bark or snow at some sizes: a soft shadow.
         gui::shadowed(g, gui::fitting(g, gui::LABEL, title, top.z), top, title, gui::LEFT);
     }
+    // Rows that run past the page's foot (a small window) scroll under the title row,
+    // shown down to the screen's foot.
+    let list_top = y + head;
+    let view = float4 { area.x, list_top, area.z, g.insets.w + area.y + area.w - list_top };
+    let off = if !landscape { gui::scroll_begin(g, LIBRARY_LIST, view, per * row_h + (per - 1) * gap + 16.0 * u) }
+              else { 0.0 };
     var k = 0;
     for t in puzzles::THEMES {
         guard puzzles::theme_count(puzzles::all, t) > 0 else { continue; }
-        let r = float4 { x + (k / per) * (col_w + gap), y + head + (k % per) * (row_h + gap), col_w, row_h };
+        let r = float4 { x + (k / per) * (col_w + gap), list_top - off + (k % per) * (row_h + gap), col_w, row_h };
         k++;
         if at >= 0 && puzzles::all.list[at].theme == t { spot = float4 { r.x, r.y, r.w, r.w }; }
         if theme_row(g, r, t, stars, phone) {
@@ -215,6 +226,7 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
             pick = SHOWN;
         }
     }
+    if !landscape { gui::scroll_end(g); }
     return pick;
 }
 
@@ -292,6 +304,7 @@ fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, sp
         // levels wouldn't fit the height beside that (Shots on a phone with its insets).
         let stacked = tightest(t, room.z - back_w(g) - 24.0 * u, short, phone, u) > room.w;
         column = gui::cut_left(room, if stacked { 88.0 * u } else { back_w(g) });
+        gui::cut_top(column, gui::corner_drop(g, column));
         if back(g, gui::cut_top(column, 88.0 * u), stacked) { pick = SHOWN; }
         gui::cut_left(room, 24.0 * u);
     }
@@ -343,6 +356,7 @@ fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, sp
         var head = float4 { x, y, w, head_h };
         y += head_h;
         if !landscape {
+            gui::cut_left(head, gui::corner_shift(g, head));
             if back(g, gui::cut_left(head, back_w(g))) { pick = SHOWN; }
             gui::cut_left(head, 16.0 * u);
         }
@@ -354,6 +368,13 @@ fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, sp
         gui::cut_right(head, 12.0 * u);
         let name = strings::get(NAMES[t]);
         gui::text(g, gui::fitting(g, gui::LABEL, name, head.z), head, name, 1.0, 0.0, gui::LEFT);
+    }
+    // In portrait the levels scroll under the head where they run past the page's foot
+    // (a small window), shown down to the screen's foot.
+    let scrolls = !landscape;
+    if scrolls {
+        let view = float4 { area.x, y, area.z, g.insets.w + area.y + area.w - y };
+        y -= gui::scroll_begin(g, PAGE_LIST + t, view, lv + 16.0 * u);
     }
     let lit = first_open(stars, t);
     for l in puzzles::LEVELS {
@@ -408,6 +429,7 @@ fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, sp
             }
         }
     }
+    if scrolls { gui::scroll_end(g); }
     if pick == SHOWN { theme = -1; }
     return pick;
 }
