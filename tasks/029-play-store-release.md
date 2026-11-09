@@ -1,13 +1,14 @@
 # 029: Release on Google Play
 
-Status: in-progress (the package and the drafts ready, 2026-11-08; the listing's first
-screenshots and feature graphic, 2026-11-09; the identity, the Play account, and the
-checks on the tablet remain)
+Status: in-progress (the package and the drafts ready, 2026-11-08; the listing's texts,
+answers, screenshots, and a preview checked against Play's current help, 2026-11-09; the
+identity, the final feature graphic, the Play account, and the checks on the tablet
+remain)
 
 Everything between a sideloaded APK and the app on Google Play, under Google's Families
 Policy: the app is for children, with no ads, no tracking, no accounts, and no network
-(`docs/product.md`, "After the MVP": release). Android first; the App Store is not
-planned yet. Things Play requires change yearly: check each against Play's current
+(`docs/product.md`, "After the MVP": release). Android first; the App Store's listing is
+prepared in task 046. Things Play requires change yearly: check each against Play's current
 documentation when doing this, not this list.
 
 ## Done (2026-11-08)
@@ -89,9 +90,13 @@ masters present):
 - **Read the drafts:** the listing (rewritten for task 037's puzzles and task 038's
   players), the Estonian especially, and the policy, which now names players and their
   optional names.
-- **Pick or redo the images:** the feature graphic is a first draft; say whether the
-  screenshots' choice of scenes and the made-up player (Mia the fox) will do, and
-  whether the Estonian listing gets a full Estonian set.
+- **Pick or redo the images:** the feature graphic is a first draft, and its wordmark
+  repeats the title beside it on Play's web page (Play asks for no branding that only
+  repeats the icon); an Estonian one would say "Kabe". Say whether the 0.2 screenshots'
+  scenes and the made-up player (Mia the fox) will do, and whether the Estonian listing
+  takes its Estonian set (`~/Downloads/draughts-store/screenshots/play-0.2/`).
+- **Decide:** trader status (non-trader proposed, `store/play-console.md`), the tags in
+  the Console's list, and the Estonian text's new lines after a translation review.
 
 ## The listing's images, first iteration (2026-11-09)
 
@@ -117,6 +122,33 @@ masters present):
   as Learn's page instead of the puzzle and was right when run again; not looked into.
 - The old `screenshots/play/` set (2026-11-08, before the puzzles and players) is
   superseded.
+
+## The listing, ready to paste (2026-11-09)
+
+- **Texts:** `store/listing-en.md` and `listing-et.md` brought to the app on `main` at
+  `1824780`: 120 puzzles (74 International in six themes, Safe move the sixth, and 46
+  Russian), the 3D board turned by hand on home, the four season boards, the pips on a
+  piece that must capture. English 17, 75, and 2,524 characters; Estonian 12, 65, and
+  2,595. The plain background (task 044) isn't in `main`, and neither store lets a listing
+  describe what the app doesn't do yet, so its line waits in each file under "Coming".
+- **Play's current help** (read 2026-11-09, linked in `store/README.md` and
+  `store/play-console.md`): the limits and image rules unchanged; Data safety must be
+  filled in even with nothing collected; IARC is mandatory; Teacher Approved is now an
+  opt-in for Families apps, not invitation only; "Designed for Families" is the Families
+  Policy; EU trader status is declared by every account (a non-trader shows only email
+  and country); a personal account shows its developer email publicly. Play's Data safety
+  help names nothing about Android's backup (unconfirmed either way).
+- **Screenshots 0.2** in `~/Downloads/draughts-store/screenshots/play-0.2/`: seven scenes,
+  phone (1080 × 1920) and tablet (2560 × 1440), English and Estonian, from one batch of the
+  Mac app (2026-11-09, 15:45 to 15:49): home on the 3D board in winter, the flat game in
+  autumn, the 3D game in summer, the puzzle library in spring, a Shots puzzle in winter,
+  settings, the computer's setup. Play wants at least 3 of the phone's (for game
+  recommendations) and 4 of the tablet's; all seven go up.
+- **Preview:** `store/preview/play.html` (filled by `store/preview/build.py`) shows the
+  page on a phone and on the web in both languages: the titles fit on one line in a
+  search row, the short descriptions under 80, the web's "About this game" folds after
+  the opening paragraph and the first line of PLAY. Shots of it in
+  `~/Downloads/draughts-store/preview/`.
 
 ## Checks before upload
 
@@ -146,8 +178,8 @@ masters present):
       (2026-11-08; the key's backup is the user's)
 - [x] Task 030 done, so phones and larger tablets are listed
 - [ ] Store listing in English and Estonian, with icon, feature graphic, and screenshots
-      (texts, screenshots, and a feature graphic drafted 2026-11-09; the developer
-      name, the user's review, and the final feature graphic remain)
+      (texts, the 0.2 screenshots, and a preview 2026-11-09; the developer name, the
+      contact email, the user's review, and the final feature graphic remain)
 - [ ] Target audience, content rating, Data safety, and privacy policy filled in (the
       answers and the policy drafted in `store/`)
 - [ ] Closed test run as Play requires, then the app published
