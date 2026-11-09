@@ -516,7 +516,7 @@ fn main() {
         if draw3d::bench_done(d3) { break; }
     }
     if frames > 0 { gfx::screenshot("draughts.png"); }
-    if frames > 0 && d3.frames > 0 { print("3D board: ", d3.frames, " frames showed it, ", d3.draws, " drew it, ", d3.shadows, " its shadow map"); }
+    if frames > 0 && d3.frames > 0 { print("3D board: ", d3.frames, " frames showed it, ", d3.draws, " drew it, ", d3.shadows, " its shadow map, ", d3.pulses, " only its pulsing marks"); }
     shell::write_game(sh);
     if sh.quit { draughts_close(); }
 }

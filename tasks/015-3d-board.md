@@ -682,15 +682,57 @@ and a puzzle:
   it at once), the top view zoomed, a showcase angle with the dot, and portrait. Not on the
   tablet.
 
+### The pulsing marks off the 3D pass (the `pulse3d` branch off `3d-board`, 2026-11-09)
+
+A must-capture ring's pulse, a wrong move's flash, and a hint's pulsing ring changed the
+scene every frame, so the lit, multisampled, shadowed pass ran on each frame they showed,
+the most expensive thing the app does on a tiler.
+
+- **Kept apart:** the board's pass draws only the marks that hold still (the field shader
+  without `PULSE`); the pulsing ones are drawn each frame over the kept image, in the
+  screen's pass right after `render3d::show` lays it, by the same shader with `PULSE`
+  (`render3d::marks_over`): one additive quad over the field, through the camera's matrix
+  moved and scaled with the image (so a transition carries them too). Their phases are a
+  uniform (`view3d::Scene.pulse`: the rings' pulse phase, the flash's progress, the
+  hint's square and strength); the field buffer only says where (a ring 1 pulsing or 2
+  still, the flash's square). `view3d::changes` gives MARKS when only the phases moved,
+  and `draw3d::frame` then just takes them: no fill of the GPU's buffers, no 3D pass. So
+  the flat board does it: its flash's square and progress and the time are its pass's
+  uniforms, and its pass is cheap.
+- **Occlusion:** the screen's pass has no depth target and the multisampled depth is
+  never stored (`0005`), so the board's pass, when marks pulse, also draws the board and
+  the opaque pieces' depth into a kept 1x 16-bit target (vertices only, no shading; made
+  the first time marks pulse, 5 MB at 2400 × 1080), which the shader tests at the pixel's
+  middle. Drawing the rings in the image at a fixed phase and only modulating them would
+  not do: the flash's ring grows as it flashes, and the image's alpha has no room for a
+  mask. Four taps mixed as the 4x samples (nine fetches) matched the old rings worse than
+  one test (150 pixels off by more than 4 levels against 300), so it is one.
+- **Matching:** headless shots with the clock held (a local copy, never committed: the
+  clock fixed until the taps, then a fixed lag), before and after, the ring and the flash
+  mid-phase (`--fen W:Wc3,h2:Bd4,a7 --tap h2`, Russian, 1280 × 800): 293 pixels differ,
+  143 of them by 1 to 4 levels (the ring added after the resolve rather than per sample),
+  150 by more, all on the pieces' outlines where a ring passes behind (at most 112, one
+  pixel). Settings' preview with its held flash: 28 pixels by more than 4. A transition
+  held at 0.5 carries the ring with the image, hidden behind its piece as at rest.
+- **Frames:** that run, 3000 frames while the ring pulsed: before, 3000 drew the 3D board;
+  after, 1, and 2999 drew only the marks. `test/board/scene3d`: from the mistake to the
+  pulse's end at 20 fps, 51 frames change only the marks and 2 draw the board (the
+  flash's end and the pulse's; the flash's end drew twice before, its square and its
+  progress compared apart). A hint's pulsing ring likewise, drawn in the board's pass
+  once still.
+- **Measured** on the M1 Pro headless, 1920 × 1200, `--bench 300` (a fourth phase: a
+  ring round every piece): a pulsing frame was the pass, 3.0 ms waited, and the screen's
+  part, about 0.5; now the screen's part with the rings, 0.75 ms waited (0.49 without
+  them), and the kept depth, 0.84 ms waited, only on the frame the board is drawn. Not
+  measured on a device: the tablet was attached, not the Pixel 7a.
+
 ### Open
 
 - The rule that only `app/` imports `gfx`: the shared renderer is a package that does.
 - The drag threshold is measured on the flat layout, near the screen's pixels in the
   board's middle only.
-- A pulsing must-capture ring changes the 3D scene every frame, so the 3D pass runs each
-  frame while it pulses (settings' preview after its wrong move, a mistake in the game):
-  the ring could move to the shaders with the time as a uniform, drawing then only the
-  marks; to measure on the tablet.
+- The pulsing marks' frame time on a device: the Pixel 7a wasn't attached when they moved
+  out of the 3D pass (the tablet was), so only the Mac's numbers are in.
 - Between screens the switches that aren't transitions (settings and the game or a
   puzzle) draw the board again through the other view, once.
 - Spring's and summer's looks were judged headless only, against the prototype's 3D

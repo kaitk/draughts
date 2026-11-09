@@ -4,10 +4,12 @@
 // two instances; a crowned king one; the last move's squares and the targets in the
 // world's grid, which a turned board turns; a move in flight with its hop and the pieces
 // it takes fading; the must-capture rings pulsing; a dragged piece; the field's marks as
-// the renderer reads them (the last move's tint, targets, the ring's strength, the flash).
-// And what a new frame changes against the last drawn (view3d::changes): nothing for
-// the same frame, the draw for a mark or a ring, the shadow map too when a piece moves
-// or lifts.
+// the renderer reads them (the last move's tint, targets, the ring pulsing or still, the
+// flash's square). And what a new frame changes against the last drawn (view3d::changes):
+// nothing for the same frame, the draw for a mark or a ring, the shadow map too when a
+// piece moves or lifts; and while a ring pulses, a flash flashes, or a hint's ring pulses,
+// only the marks over the kept image (MARKS, their phases in Scene.pulse), so the 3D pass
+// runs once for the whole pulse, then again only when it ends.
 import std;
 import vec;
 import math;
@@ -117,6 +119,24 @@ fn main() {
     board::fill(b, l, 3.2);
     view3d::fill(s, b, l, v, 3.2);
     show(s, "h8 touched while c5 must capture");
+    print("  pulse ", v4(s.pulse), ", pulsing ", s.pulsing);
+    // The pulse and the flash run on: every frame until they end changes only the marks
+    // over the image, never the board's pass.
+    var draws = 0;
+    var marks = 0;
+    var t3 = 3.2;
+    while t3 < 6.0 {
+        was = s;
+        board::update(b, t3 + 0.05);
+        board::fill(b, l, t3 + 0.05);
+        view3d::fill(s, b, l, v, t3 + 0.05);
+        let c = view3d::changes(was, s);
+        if c & view3d::DRAW != 0 { draws++; }
+        if c == view3d::MARKS { marks++; }
+        t3 += 0.05;
+    }
+    print("  from 3.2 s to 6 s at 20 fps: ", marks, " frames change only the marks, ", draws,
+          " draw the board (the flash's end, the pulse's end), pulsing ", s.pulsing);
     board::update(b, 10.0);
     board::press(b, l, drive::at(l, "c5"), 10.0);
     board::press(b, l, drive::at(l, "e3"), 10.0);
@@ -146,4 +166,30 @@ fn main() {
     was = s;
     s.view = view3d::turned(v, view3d::Camera { pitch: 52.5, yaw: 10.0 });
     print("the camera turned changes ", view3d::changes(was, s));
+
+    // A hint's glow ring round c3: pulsing for its first 2.8 s, only the marks change; then
+    // lit and still, in the board's pass, drawn once more.
+    board::update(b, 30.0);
+    board::set(b, r);
+    board::glow_on(b, rules::bit_at(vr, 2, 2), 30.0);
+    board::fill(b, l, 30.1);
+    view3d::fill(s, b, l, v, 30.1);
+    print("hint pulsing: pulse ", v4(s.pulse), ", lit there ", r2(s.lit[s.pulse.z as i64].x));
+    was = s;
+    board::fill(b, l, 30.4);
+    view3d::fill(s, b, l, v, 30.4);
+    print("  a frame later changes ", view3d::changes(was, s), ", strength ", r2(s.pulse.w));
+    board::update(b, 33.0);
+    was = s;
+    board::fill(b, l, 33.0);
+    view3d::fill(s, b, l, v, 33.0);
+    print("  still after 2.8 s changes ", view3d::changes(was, s), ", pulsing ", s.pulsing, ", glow rings lit at ",
+          rings(s));
+}
+
+// The squares (row.column) whose glow ring the board's pass draws.
+fn rings(s: view3d::Scene&) -> u8[>..] {
+    var t: u8[>..] = [];
+    for i in s.view.n * s.view.n { if s.lit[i].x > 0.0 { format(t, i / s.view.n, ".", i % s.view.n, " "); } }
+    return t;
 }

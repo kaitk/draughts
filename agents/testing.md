@@ -208,6 +208,13 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   B:...` shows the 3D board turned for black in a friend's game). State with no flag,
   such as the 3D camera's (`rig::put` on `sh.game.cam`), is set from a temporary flag
   pair parsed in the copy only (2026-11-09).
+- To shoot an animation at a known moment (a ring's pulse, a flash) in two builds, hold
+  the copy's clock: `now` fixed at T until the taps are made, then at T + L
+  (`tapped >= taps.len`), so the launch's own time doesn't shift the tap. A clock that
+  starts by frame count hangs: `gfx::frame_count()` counts only drawn frames, so once
+  nothing draws, time and the count both stop (2026-11-09). Two such runs of one build
+  differ by nothing; a third build's taken from `git archive` of the old commit into the
+  scratchpad, its `third_party/goose_gfx` and `build/` linked (task 015's pulsing marks).
 - A state change made inside a screen's frame shows only when that frame is drawn with
   it: the 3D board's view is aimed again after the game's frame (`shell::game_screen`),
   or a change with no animation behind it (the hot-seat turn put at once) showed a frame

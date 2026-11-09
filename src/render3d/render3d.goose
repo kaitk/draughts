@@ -12,9 +12,12 @@
 //
 // Frame structure: the shadow map (1024², 16-bit, from the key light) only when the
 // pieces stand differently; then one pass: the blurred photograph as a backdrop, the
-// board's soft shadow on nothing, the board and the pieces lit, the field's marks added.
-// No post pass, no discard, nothing temporal. Nothing is made or released while drawing
-// but the targets on a resize.
+// board's soft shadow on nothing, the board and the pieces lit, the field's marks that
+// hold still added. The marks that pulse (a must-capture ring, a wrong move's flash, a
+// hint's ring) are drawn apart, over the kept image in the screen's pass each frame
+// (marks_over), against a 1x depth of the board kept with the image. No post pass, no
+// discard, nothing temporal. Nothing is made or released while drawing but the targets
+// on a resize, and the kept depth the first time marks pulse.
 namespace render3d;
 import std;
 import vec;
@@ -85,6 +88,7 @@ struct Bake {
     lichen:        float4,  // looks::LICHEN
 }
 struct Shrink { to: float4 }
+struct Pulse { pulse: float4, place: float4 }
 struct Show { from: float4, to: float4, screen: float4 }
 struct Blur { dir: float4 }
 
@@ -143,6 +147,7 @@ struct Gpu {
     color:          gfx::Texture,   // the multisampled target and its depth
     depth:          gfx::Texture,
     image:          gfx::Texture,   // what draw() resolves into when asked to keep it
+    kept_depth:     gfx::Texture,   // its depth at 1x, for the pulsing marks (marks_over)
     size:           int2,
     linear:         gfx::Sampler,
     aniso:          gfx::Sampler,
@@ -153,6 +158,8 @@ struct Gpu {
     backdrop:       gfx::Pipeline,
     catcher:        gfx::Pipeline,
     glow:           gfx::Pipeline,
+    pulse:          gfx::Pipeline,  // the pulsing marks over the kept image (marks_over)
+    depth_only:     gfx::Pipeline,  // the kept depth
     copy:           gfx::Pipeline,
     show:           gfx::Pipeline,  // the kept image over what is there, anywhere (show())
     bake:           gfx::Pipeline,  // kept for a theme's rebake, with the photograph's
@@ -336,6 +343,16 @@ fn targets(g: Gpu&, size: int2) {
                                               samples: g.samples });
     g.image = gfx::render_target(size.x, size.y, gfx::RGBA8);
     g.size = size;
+    if g.kept_depth.id != 0 {
+        gfx::release(g.kept_depth);
+        g.kept_depth = depth_target(size);
+    }
+}
+
+// The kept depth: 1x, 16-bit as the pass's, sampled by the pulsing marks.
+fn depth_target(size: int2) -> gfx::Texture {
+    return gfx::texture(gfx::TextureDesc { format: gfx::DEPTH16, usage: gfx::DEPTH_TARGET | gfx::SAMPLED,
+                                           width: size.x, height: size.y });
 }
 
 // Makes everything the renderer draws with: the meshes, the buffers, the pipelines, the
@@ -413,6 +430,11 @@ fn setup(g: Gpu&, samples: i32 = SAMPLES) {
     g.glow = gfx::pipeline(quad_vs, embed_shader("frag", shaders::FS_SET, shaders::FRAME,
                                                  shaders::MARKS_FRAG),
                            gfx::PipelineDesc { depth_test: true, blend: gfx::BLEND_ADD });
+    g.pulse = gfx::pipeline(quad_vs, embed_shader("frag", shaders::MARKS_PULSE, shaders::FS_SET, shaders::FRAME,
+                                                  shaders::MARKS_FRAG),
+                            gfx::PipelineDesc { blend: gfx::BLEND_ADD });
+    g.depth_only = gfx::pipeline(lit_vs, embed_shader("frag", shaders::EMPTY_FRAG),
+                                 gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true });
     g.frame = default<Frame>();
     g.frame.view_proj = gfx::mat4_identity;
     g.frame.params.w = 8.0;
@@ -615,10 +637,11 @@ fn place(g: Gpu&, inst: const float4[:], alphas: const f32[:], squares: const fl
 // (gfx's screen; or for Texture { 0 } g.image, kept for show()): the shadow map first if
 // the pieces moved, then the one pass. Without the `backdrop` the target is clear but for
 // the board, its shadow, and the pieces (premultiplied), for show() to lay over a
-// backdrop drawn apart (backdrop(), or the app's photograph). Recording only; the
-// caller's gfx::frame() submits it.
+// backdrop drawn apart (backdrop(), or the app's photograph). With `keep_depth` the
+// board's depth is kept too, at 1x, for marks_over. Recording only; the caller's
+// gfx::frame() submits it.
 fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int2, shadow_every: bool = false,
-        backdrop: bool = true) {
+        backdrop: bool = true, keep_depth: bool = false) {
     if size.x != g.size.x || size.y != g.size.y { targets(g, size); }
     let target = if out.id == 0 { g.image } else { out };
     g.frame.view_proj = view_proj;
@@ -686,6 +709,48 @@ fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int
     gfx::uniforms(gfx::FRAGMENT, 1, Draw { float4 { 2.0, g.n, 0.0, 0.0 } });
     gfx::draw(6);
     gfx::end_pass();
+    if keep_depth { draw_depth(g); }
+}
+
+// The board and the opaque pieces' depth at 1x into g.kept_depth, as the pass above drew
+// them (the fading pieces write none there either): only the vertices and a 16-bit
+// target, no shading.
+fn draw_depth(g: Gpu&) {
+    if g.kept_depth.id == 0 { g.kept_depth = depth_target(g.size); }
+    gfx::begin_pass(gfx::PassDesc { depth: g.kept_depth });
+    gfx::bind(g.depth_only);
+    gfx::bind_storage_buffer(gfx::VERTEX, 0, g.instances);
+    gfx::uniforms(gfx::VERTEX, 0, g.frame);
+    draw_meshes(g, 0.0);
+    gfx::end_pass();
+}
+
+// The pulsing marks (shaders::MARKS_FRAG with PULSE) over the open pass's target of
+// `size`, where show() laid the kept image: drawn with it (draw() with keep_depth) into
+// its rect `to` (as show()'s, the whole image), as opaque as `alpha`. `pulse` their
+// phases (view3d::Scene.pulse). The field's marks are the ones place() gave the image.
+fn marks_over(g: Gpu&, pulse: float4, to: float4, alpha: f32, size: int2) {
+    guard g.kept_depth.id != 0 && to.z > 0.0 else { return; }
+    // The image's clip space moved and scaled into `to`, depth left as it was.
+    let k = to.z / g.size.x;
+    let sx = 2.0 * to.x / size.x + k * g.size.x / size.x - 1.0;
+    let sy = 1.0 - 2.0 * to.y / size.y - k * g.size.y / size.y;
+    let kx = k * g.size.x / size.x;
+    let ky = k * g.size.y / size.y;
+    let place = gfx::mat4 { c0: float4 { kx, 0.0, 0.0, 0.0 }, c1: float4 { 0.0, ky, 0.0, 0.0 },
+                            c2: float4 { 0.0, 0.0, 1.0, 0.0 }, c3: float4 { sx, sy, 0.0, 1.0 } };
+    var f = g.frame;
+    f.view_proj = gfx::mul(place, g.frame.view_proj);
+    gfx::bind(g.pulse);
+    gfx::bind_texture(gfx::FRAGMENT, 0, g.kept_depth, g.linear);
+    gfx::bind_storage_buffer(gfx::FRAGMENT, 0, g.marks);
+    gfx::bind_storage_buffer(gfx::FRAGMENT, 1, g.glows);
+    gfx::uniforms(gfx::VERTEX, 0, f);
+    gfx::uniforms(gfx::VERTEX, 1, Draw { float4 { 2.0, g.n, 0.0, 0.0 } });
+    gfx::uniforms(gfx::FRAGMENT, 0, f);
+    gfx::uniforms(gfx::FRAGMENT, 1, Draw { float4 { 2.0, g.n, 0.0, 0.0 } });
+    gfx::uniforms(gfx::FRAGMENT, 2, Pulse { pulse, float4 { to.x, to.y, 1.0 / k, alpha } });
+    gfx::draw(6);
 }
 
 // The board, then the opaque pieces as instances; from the light when `light` is 1.

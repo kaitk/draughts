@@ -770,11 +770,16 @@ board's does and the backdrop over it as opaque as the blur.
   **Drawn** by `src/render3d/` (the prototype's renderer, shared with `poc/3d/`) from
   `src/app/draw3d.goose`: the shadow map only when the pieces move, one 4× multisampled
   forward pass (the board's shadow, the lit board and pieces, the fading ones blended
-  after, the field's marks added) into a kept image the screen's size, clear but for the
-  board, drawn only when the 3D board's scene changed (`view3d::changes`); each drawn
-  frame lays the image over the backdrop (the renderer's blurred and graded photograph
-  behind the game and a puzzle, the app's sharp one behind home and settings), under the
-  UI. The marks are the flat board's: the last move tinted, targets' dots, stops' rings,
+  after, the field's marks that hold still added) into a kept image the screen's size,
+  clear but for the board, drawn only when the 3D board's scene changed
+  (`view3d::changes`); each drawn frame lays the image over the backdrop (the renderer's
+  blurred and graded photograph behind the game and a puzzle, the app's sharp one behind
+  home and settings), under the UI. The marks that pulse (a must-capture ring, a wrong
+  move's flash, a hint's ring) stay out of the image: each frame draws them over it in
+  one additive quad from their phases, a uniform (`render3d::marks_over`), tested against
+  a 1x depth of the board the pass keeps with the image while marks pulse (a 16-bit
+  target the screen's size, made the first time), so a pulse runs the 3D pass once, not
+  on every frame. The marks are the flat board's: the last move tinted, targets' dots, stops' rings,
   the must-capture ring pulsing, a wrong move's red flash, the selected piece's glow
   ring, the glow ring tight round a hint's piece or a win's, a win's lit squares
   (`view3d::Scene.lit`). A captured piece and a wrong move's ghost fade, drawn blended
@@ -1010,7 +1015,10 @@ the display's rate, which costs nothing that matters there. The patched `frame()
 The 3D board's camera (the view, the zoom, the showcase's way back, a hot-seat turn) is an
 animation like a move: the 3D pass runs on each of its frames, about 36 for a 0.6 s ease
 at 60 Hz, and on none once it has settled (`test/game/camera`); a showcase drag draws only
-on the frames the finger moves.
+on the frames the finger moves. A pulse, a flash, or a hint's ring is not: while one runs
+each frame copies the kept image and adds the marks over it from their phases, and the 3D
+pass runs only where it starts and ends (`view3d::changes`' MARKS, `test/board/scene3d`;
+"Board and pieces").
 
 An animation's last frame is not the resting state: the frame after a move or a pulse
 ends is drawn too (`board::update` reports it), or the board would keep the move's last

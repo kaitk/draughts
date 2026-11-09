@@ -22,7 +22,9 @@ c3 to d4 played: 25 instances
 h8 touched while c5 must capture: 3 instances
   foot -1.5 0.0 -0.5 1.0; kind 1.0 0.0 0.0 1.0; state 1.0 1.0 0.0 0.0
   selected 0.0 0.0 0.0 0.0; last ; targets ; flash 7.0 0.17000000178813934 0.0 0.0
-  field 0.7 0.0 0.0 0.0 0.17000000178813934; 3.2 0.0 0.0 0.6100000143051147 -1.0; 
+  field 0.7 0.0 0.0 0.0 0.0; 3.2 0.0 0.0 1.0 -1.0; 
+  pulse 0.6100000143051147 0.17000000178813934 -1.0 0.0, pulsing true
+  from 3.2 s to 6 s at 20 fps: 51 frames change only the marks, 2 draw the board (the flash's end, the pulse's end), pulsing false
 capture moving true, W:W:Be3,h8
 c5 takes d4, the taken piece fading: 3 instances
   foot -0.5 0.0 0.5 1.0; kind 0.0 0.0 0.0 1.0; state 0.5 0.0 0.0 0.0
@@ -36,3 +38,6 @@ c3 dragged over d4: 2 instances
 changes 3
 a mark changes 1
 the camera turned changes 1
+hint pulsing: pulse 1.0 1.0 42.0 0.9700000286102295, lit there 0.0
+  a frame later changes 4, strength 0.5699999928474426
+  still after 2.8 s changes 1, pulsing false, glow rings lit at 5.2 

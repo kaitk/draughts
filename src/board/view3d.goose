@@ -413,12 +413,19 @@ fn pick(v: View, b: board::Board&, l: board::Layout, p: float2) -> float2 {
 // the prototype's glow ring takes it; `dim` the board's under a win. `field` is the
 // marks as the renderer's field pass reads them (shaders::MARKS_FRAG), a float4 a square
 // of the world's grid: x the last move's tint (1), y a target's dot (1) or a stop's ring
-// (2), z the must-capture ring's strength at `now` (it pulses every 1.4 s, as the flat
-// board's does), w a wrong move's flash, 0 to 1, or -1. `lit` runs beside it, a float4 a
-// square too: x the glow ring tight round the piece standing there (a puzzle's hint, a
-// win's wave), 0 to 1; y the square lit by a win's glow passing, 0 to 1. Under a win's
-// dim the winning piece alone stays lit: its seed (kind's w) is SEED_LIT more, which the
-// shaders take off again for its figure.
+// (2), z the must-capture ring, 1 pulsing or 2 still, w 0 on a wrong move's flashing
+// square, else -1. `lit` runs beside it, a float4 a square too: x the glow ring tight
+// round the piece standing there (a puzzle's hint, a win's wave), 0 to 1; y the square
+// lit by a win's glow passing, 0 to 1. Under a win's dim the winning piece alone stays
+// lit: its seed (kind's w) is SEED_LIT more, which the shaders take off again for its
+// figure.
+//
+// What moves while nothing else does, `pulse`, is drawn over the kept image each frame
+// rather than with the board (render3d::marks_over): x the must-capture rings' phase at
+// `now` (0 brightest, 1 dimmest; they pulse every 1.4 s, as the flat board's do), y the
+// wrong move's flash, 0 to 1 (1 none), z the square of the hint's glow ring while it
+// pulses (-1 none) and w its strength. `pulsing` says whether any of them shows; the
+// scene's other parts then stay the same from frame to frame (`changes` gives MARKS).
 let MAX_INSTANCES = 96;     // two for each of board::MAX_PIECES, as a stack takes
 let SEED_LIT: f32 = 1000.0;
 
@@ -433,6 +440,8 @@ struct Scene {
     dim:      f32                         = 0.0,
     field:    float4[100]                 = [float4 { 0.0, 0.0, 0.0, -1.0 }; 100],
     lit:      float4[100]                 = [float4 { 0.0, 0.0, 0.0, 0.0 }; 100],
+    pulse:    float4                      = float4 { 0.0, 1.0, -1.0, 0.0 },
+    pulsing:  bool                        = false,
 }
 
 // A board square's number (y * size + x, as board::Marks numbers it) in the world's grid
@@ -469,6 +478,10 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
     }
     // The must-capture ring: brightest still, fading to 0.4 and back while it pulses.
     let phase = (0.5 - 0.5 * cos(2.0 * PI * now / 1.4)) as f32;
+    s.pulse = float4 { phase, 1.0, -1.0, 0.0 };
+    s.pulsing = false;
+    // The hint's glow ring pulses for its first PULSE, round the one piece it lights.
+    let hint = b.glow >= 0 && b.glow_at >= 0.0 && now < b.glow_at + board::PULSE;
     s.selected = float4 { 0.0, 0.0, 0.0, 0.0 };
     let n = l.n;
     let u = unit(n);
@@ -481,7 +494,10 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
         let lift = lift_of(l, p.at.w);
         let dark = p.look.x;
         let seed = i + (if b.dim > 0.0 && p.win.x <= 0.0 { SEED_LIT } else { 0.0 });
-        let fx = float4 { p.look.w, p.ring.x, p.ring.y, glow };
+        // The hint's pulsing ring is left out of the state, so its pulse alone draws only
+        // the marks over the image.
+        let ring_y = if hint && p.ring.y > 0.0 { 1.0 } else { p.ring.y };
+        let fx = float4 { p.look.w, p.ring.x, ring_y, glow };
         var top = lift + HEIGHT * scale;
         let king = p.look.y;
         if king == board::STACK {
@@ -510,9 +526,15 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
         }
         if glow > 0.0 { s.selected = float4 { xz.x, lift, xz.y, RADIUS * scale }; }
         if p.ring.x > 0.5 && col >= 0 && row >= 0 && col < n && row < n {
-            s.field[row * n + col].z = if p.ring.x > 1.5 { 0.95 } else { 0.95 - 0.55 * phase };
+            let still = p.ring.x > 1.5;
+            s.field[row * n + col].z = if still { 2.0 } else { 1.0 };
+            if !still { s.pulsing = true; }
         }
-        if (p.ring.y > 0.0 || p.win.y > 0.0) && col >= 0 && row >= 0 && col < n && row < n {
+        if hint && p.ring.y > 0.0 && col >= 0 && row >= 0 && col < n && row < n {
+            s.pulse.z = row * n + col;
+            s.pulse.w = p.ring.y * p.look.w;
+            s.pulsing = true;
+        } else if (p.ring.y > 0.0 || p.win.y > 0.0) && col >= 0 && row >= 0 && col < n && row < n {
             let o .= s.lit[row * n + col];
             o.x = max(o.x, p.ring.y * p.look.w);
             o.y = max(o.y, p.win.y);
@@ -531,15 +553,23 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
         if s.marks.target[w] & bit != 0 { s.field[i].y = 1.0; }
         if s.marks.via[w] & bit != 0 { s.field[i].y = 2.0; }
     }
-    if s.flash.x >= 0.0 && s.flash.y < 1.0 { s.field[s.flash.x as i64].w = s.flash.y; }
+    if s.flash.x >= 0.0 && s.flash.y < 1.0 {
+        s.field[s.flash.x as i64].w = 0.0;
+        s.pulse.y = s.flash.y;
+        s.pulsing = true;
+    }
+    // Nothing pulsing: the phase stays put, so time alone changes nothing.
+    if !s.pulsing { s.pulse.x = 0.0; }
 }
 
 // What a new frame's scene changes against the last one drawn: DRAW when anything the 3D
 // board shows differs, so it is drawn again; SHADOW when the pieces stand or lift
-// differently, so the shadow map is drawn again too. Nothing for the same scene: the
-// board isn't drawn, though the UI over it may be.
+// differently, so the shadow map is drawn again too; MARKS when only `pulse` does (a ring
+// pulsing, a flash), so only the marks over the kept image are drawn with it. Nothing for
+// the same scene: the board isn't drawn, though the UI over it may be.
 let DRAW = 1;
 let SHADOW = 2;
+let MARKS = 4;
 
 fn same(a: float4, b: float4) -> bool { a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w }
 fn same3(a: float3, b: float3) -> bool { a.x == b.x && a.y == b.y && a.z == b.z }
@@ -560,7 +590,7 @@ fn same_view(a: View, b: View) -> bool {
 
 fn changes(was: Scene&, now: Scene&) -> i64 {
     guard same_list(was.inst, now.inst) else { return DRAW | SHADOW; }
-    var rest = same_view(was.view, now.view) && same_list(was.state, now.state) && same(was.flash, now.flash)
+    var rest = same_view(was.view, now.view) && same_list(was.state, now.state)
                && same(was.selected, now.selected) && was.dim == now.dim && same_bits(was.marks.last, now.marks.last)
                && same_bits(was.marks.target, now.marks.target) && same_bits(was.marks.via, now.marks.via);
     for i in 100 {
@@ -568,5 +598,6 @@ fn changes(was: Scene&, now: Scene&) -> i64 {
             rest = false;
         }
     }
-    return if rest { 0 } else { DRAW };
+    guard rest else { return DRAW; }
+    return if same(was.pulse, now.pulse) { 0 } else { MARKS };
 }

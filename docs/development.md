@@ -343,8 +343,9 @@ adb logcat -d | grep bench3d
 
 Two seconds after the launch the app times 300 frames drawing the 3D board and its
 shadow map, as while a piece moves, each submitted and waited for (`gfx::flush`); 300
-drawing the board alone, waited for; then 300 as the loop draws them, frame to frame,
-and quits. It prints those medians, the renderer's setup, the bake and the photograph,
+drawing the board alone, waited for; 300 as the loop draws them, frame to frame; then
+300 as a pulsing ring draws them, a ring round every piece (the kept depth's pass, and
+the screen's part with the rings and without, each waited for), and quits. It prints those medians, the renderer's setup, the bake and the photograph,
 the first frame (its pipelines made), and the bake again warm (`src/app/draw3d.goose`).
 A waited frame includes the submit and the wait, about 5 ms on the Pixel 7a for an empty
 pass, so it is an upper bound; the frame to frame time is held at the display's rate.

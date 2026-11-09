@@ -191,6 +191,10 @@ find out by compiling, so the next session doesn't.
 - A package's files bring their namespaces into every program that imports it, so keep
   a file's namespace apart from the program's own (untested what a clash does): the 3D
   renderer's `theme.goose` became `looks.goose` beside the app's `theme` (2026-11-09).
+- A shader's `#ifdef` lines in a multi-line string take the string's indentation like
+  any other line (`    #ifdef PULSE`), or the compiler refuses the string; one GLSL text
+  with an `#ifdef`, a define string put first in `embed_shader`, makes two shaders
+  (`shaders::MARKS_PULSE`, 2026-11-09).
 - GLSL's `smoothstep(a, b, x)` with `a > b` is undefined and on Metal silently does
   nothing useful; write `1.0 - smoothstep(b, a, x)` (2026-11-09).
 - A GLSL name that is a Metal keyword fails only when the pipeline is made on the Mac,

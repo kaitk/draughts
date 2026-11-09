@@ -1588,22 +1588,55 @@ let BLUR_FRAG = """
 // The field's marks, added over it on a quad covering the field (QUAD_VERT, draw.x 2),
 // tested against the depth so pieces hide them: per square of the world's grid
 // (row * n + column, row 0 the far side), x the last move's tint (1), y a legal target's
-// dot (1) or a capture's stop's ring (2), z the must-capture ring's strength (0 to 1,
-// pulsing on the CPU), w a wrong move's flash, 0 to 1 over its two flashes (or -1); and
-// the selected piece's glow ring round Frame.selected, wherever the piece is (a drag).
-// Beside them `lit`, per square: x the glow ring tight round the piece there (a hint, a
-// win's wave), y the square lit by a win's glow. A win's dim (screen.z) dims them all but
-// the glow rings. draw.y: squares per side. As the flat board draws them
-// (src/app/draw.goose).
+// dot (1) or a capture's stop's ring (2), z the must-capture ring (1 pulsing, 2 still), w
+// 0 where a wrong move's flash is (else -1); and the selected piece's glow ring round
+// Frame.selected, wherever the piece is (a drag). Beside them `lit`, per square: x the
+// glow ring tight round the piece there (a hint, a win's wave), y the square lit by a
+// win's glow passing. A win's dim (screen.z) dims them all but the glow rings. draw.y:
+// squares per side. As the flat board draws them (src/app/draw.goose).
+//
+// Two shaders: without PULSE, in the board's pass, everything that holds still; with
+// PULSE (MARKS_PULSE first), what moves while nothing else does, drawn each frame over
+// the kept image in the screen's pass (render3d::marks_over): the pulsing must-capture
+// rings, the flash, the hint's pulsing ring, their phases from the Pulse block. That pass
+// has no depth target, so the shader tests the kept depth (a 1x copy of the board's,
+// made with it) itself, at the pixel's middle. Against the 4x pass's own test the rings
+// differ only along the pieces' outlines, by fewer pixels than four taps mixed as the
+// samples gave (task 015).
+let MARKS_PULSE = "#define PULSE 1\n";
 let MARKS_FRAG = """
     layout(location = 0) in vec3 v_pos;
     layout(location = 0) out vec4 result;
+    #ifdef PULSE
+    layout(set = 2, binding = 0) uniform sampler2D kept_depth;
+    layout(std430, set = 2, binding = 1) readonly buffer Marks { vec4 marks[]; };
+    layout(std430, set = 2, binding = 2) readonly buffer Lit { vec4 lit[]; };
+    // pulse: x the must-capture rings' phase, y the flash (0 to 1), z the hint ring's
+    // square (-1 none), w its strength; place: the kept image's top left on the target,
+    // its texels per pixel, and how opaque it is laid.
+    layout(set = 3, binding = 2) uniform Pulse { vec4 pulse; vec4 place; };
+    #else
     layout(std430, set = 2, binding = 0) readonly buffer Marks { vec4 marks[]; };
     layout(std430, set = 2, binding = 1) readonly buffer Lit { vec4 lit[]; };
+    #endif
     layout(set = 3, binding = 1) uniform Draw { vec4 draw; };
     float line(float d, float w) { return exp(-pow(d / (0.6 * w + 0.008), 2.0)); }
+    #ifdef PULSE
+    // Whether the board's depth leaves the quad here: its kept texel under the pixel.
+    bool seen() {
+        ivec2 t = ivec2(floor((gl_FragCoord.xy - place.xy) * place.z));
+        return gl_FragCoord.z < texelFetch(kept_depth, clamp(t, ivec2(0), textureSize(kept_depth, 0) - 1), 0).r;
+    }
+    #endif
     void main() {
         vec3 c = vec3(0.0);
+        float n = draw.y;
+        float u = 2.0 * FIELD / n;
+        vec2 g = (v_pos.xz + FIELD) / u;
+        ivec2 q = ivec2(floor(g));
+        // A pixel in squares, from g, which runs on across the squares' edges.
+        float wg = max(length(fwidth(g)) * 0.7, 0.002);
+    #ifndef PULSE
         // The selected piece's ring, a little out from it, and a soft halo.
         if (selected.w > 0.0) {
             float r = length(v_pos.xz - selected.xz);
@@ -1612,12 +1645,6 @@ let MARKS_FRAG = """
             float halo = exp(-max(r - ring, 0.0) / 0.07) * smoothstep(ring - 0.04, ring, r);
             c += glow.rgb * glow.w * (0.85 * line(r - ring, w) + 0.3 * halo);
         }
-        float n = draw.y;
-        float u = 2.0 * FIELD / n;
-        vec2 g = (v_pos.xz + FIELD) / u;
-        ivec2 q = ivec2(floor(g));
-        // A pixel in squares, from g, which runs on across the squares' edges.
-        float wg = max(length(fwidth(g)) * 0.7, 0.002);
         if (q.x >= 0 && q.y >= 0 && q.x < int(n) && q.y < int(n)) {
             vec4 m = marks[q.y * int(n) + q.x];
             float r = length(fract(g) - 0.5);       // in squares from its middle
@@ -1631,38 +1658,59 @@ let MARKS_FRAG = """
             // A win's glow passing lights the square, as the last move's tint does more.
             c += glow.rgb * 0.3 * lit[q.y * int(n) + q.x].y;
         }
-        c *= 1.0 - screen.z;
+    #endif
         vec3 rings = vec3(0.0);
         // The red rings go a little out from a piece (0.44 of a square), past its square's
         // edge, so each pixel looks at the squares round it too.
         vec3 red = vec3(1.0, 0.353, 0.29);
+        vec3 reds = vec3(0.0);
         for (int dy = -1; dy <= 1; dy++) {
             for (int dx = -1; dx <= 1; dx++) {
                 ivec2 k = q + ivec2(dx, dy);
                 if (k.x < 0 || k.y < 0 || k.x >= int(n) || k.y >= int(n)) continue;
-                vec4 m = marks[k.y * int(n) + k.x];
+                int at = k.y * int(n) + k.x;
+                vec4 m = marks[at];
                 float r = length(g - (vec2(k) + 0.5));
                 float w = wg;
                 // The glow ring tight round a piece (0.44 of a square), with a soft halo.
-                float k_ring = lit[k.y * int(n) + k.x].x;
+    #ifdef PULSE
+                float k_ring = float(at) == pulse.z ? pulse.w : 0.0;
+    #else
+                float k_ring = lit[at].x;
+    #endif
                 if (k_ring > 0.0) {
                     float rr = 0.47;
                     float halo = exp(-max(r - rr, 0.0) / 0.06) * smoothstep(rr - 0.04, rr, r);
                     rings += glow.rgb * glow.w * k_ring * (1.1 * line(r - rr, w) + 0.45 * halo);
                 }
-                if (m.z > 0.0) {
+                // The must-capture ring: brightest still, fading to 0.4 and back pulsing.
+    #ifdef PULSE
+                float strength = m.z > 0.5 && m.z < 1.5 ? 0.95 - 0.55 * pulse.x : 0.0;
+    #else
+                float strength = m.z > 1.5 ? 0.95 : 0.0;
+    #endif
+                if (strength > 0.0) {
                     float rr = 0.52;
-                    c += red * m.z * (0.9 * line(r - rr, w) + 0.35 * exp(-abs(r - rr) / 0.04));
+                    reds += red * strength * (0.9 * line(r - rr, w) + 0.35 * exp(-abs(r - rr) / 0.04));
                 }
-                if (m.w >= 0.0 && m.w < 1.0) {
-                    float t = fract(m.w * 2.0);
+    #ifdef PULSE
+                if (m.w >= 0.0 && pulse.y < 1.0) {
+                    float t = fract(pulse.y * 2.0);
                     float op = t < 0.4 ? t / 0.4 : 1.0 - 0.4 * (t - 0.4) / 0.6;
                     float rr = 0.5 * (0.8 + 0.2 * min(t / 0.4, 1.0));
-                    c += red * op * (0.9 * line(r - rr, w) + 0.25 * (1.0 - smoothstep(rr - w, rr + w, r)));
+                    reds += red * op * (0.9 * line(r - rr, w) + 0.25 * (1.0 - smoothstep(rr - w, rr + w, r)));
                 }
+    #endif
             }
         }
-        result = vec4(c + rings, 1.0);
+        // A win's dim dims the still marks, not the rings round pieces.
+        c = c * (1.0 - screen.z) + reds + rings;
+    #ifdef PULSE
+        // The depth is read only where there is something to add.
+        result = c.r + c.g + c.b > 0.0 && seen() ? vec4(c, place.w) : vec4(0.0);
+    #else
+        result = vec4(c, 1.0);
+    #endif
     }
     """;
 
