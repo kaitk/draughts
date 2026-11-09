@@ -145,6 +145,11 @@ fn main() {
         if f.computer >= 0 { sh.prefs.color = 1 - f.computer; }
         if f.level >= 0 { sh.prefs.level = f.level; }
     }
+    // The puzzles the flags open are of their draughts' set, loaded above: the library's
+    // switch lights those draughts, and home doesn't load the player's set back on the way.
+    let to_puzzles = sh.screen == shell::PICKER || sh.screen == shell::PUZZLE || go == shell::PICKER
+                     || go == shell::PUZZLE || f.puzzle >= 0;
+    if f.variant >= 0 && to_puzzles { sh.prefs.variant = f.variant; }
     if f.puzzle >= 0 && puzzles::find(puzzles::all, f.puzzle) >= 0 && go != shell::PUZZLE {
         shell::play_puzzle(sh, puzzles::find(puzzles::all, f.puzzle));
     }

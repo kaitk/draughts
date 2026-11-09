@@ -198,7 +198,9 @@ test/perft.py puzzles brazilian src/puzzles/brazilian.txt
 ```
 
 The app shows the set of the player's draughts; `--variant russian` picks Russian's for
-a run (`--screen puzzles --variant russian`).
+a run (`--screen puzzles --variant russian`), the library's switch lit on it (in
+memory: written to the player's file only if the run changes something, as a solved
+puzzle's stars).
 
 `test/puzzles/` runs the same checks on every puzzle without the engine
 ([puzzles](architecture/puzzles.md#checks)).
