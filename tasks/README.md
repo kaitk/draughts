@@ -48,8 +48,8 @@ first start, 020 reviewed the code's layout, 021 built the game screen, clocks, 
 Estonian, 025 regrouped the settings, 027 had the computer spend its clock as a player of
 its level would, 028 made the icon and launch screen, 030 fitted the layouts to phones and
 other screen sizes, 031 made the win calmer, 032 brought memory down, 034 made the setup's
-board show the game, 035 added home's X, 015 the 3D board (in main 2026-11-09), and 047
-reviewed the structure; 016 (tabletop pictures) and 033 (an icon per season) were
+board show the game, 035 added home's X, 015 the 3D board (in main 2026-11-09), 047
+reviewed the structure, and 049 added the draws; 016 (tabletop pictures) and 033 (an icon per season) were
 cancelled. All are archived. The MVP in `docs/product.md` is built.
 
 Open:
@@ -57,7 +57,7 @@ Open:
 - Release: 029 Google Play, 046 the App Store (after 043, iOS), 036 the announcement
   after the Play release.
 - Content and play: 037 the puzzle set by theme, 038 players, 040 a hint in the game
-  (later), 048 a reported forced capture with a king, 049 draws.
+  (later), 048 a reported forced capture with a king.
 - The 3D board: 039 procedural wood, 041 a carved spring board, 042 its frame cost, 044
   a plain background, 045 board styles to choose from.
 - Later: 010 goose_gfx changes to propose upstream (alongside), 013 season effects, 014
@@ -86,7 +86,7 @@ What needs the user:
 6. The child's next games: whether easy at skill 0 feels right (`docs/architecture/ai.md`'s
    tuning notes), and whether multi-jump captures are clear with the capture count.
 
-Then: 049's draws, the device checks in 042 and 044, 048, 041's carved looks, 036 after
+Then: the device checks in 042 and 044, 048, 041's carved looks, 036 after
 the release.
 
 Not in the MVP (the user, 2026-11-08): sound; the visual feedback is clear, and sound

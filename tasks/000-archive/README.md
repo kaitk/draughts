@@ -118,3 +118,8 @@ and the commit that last has it.
   table in `rules/`, stale comments, docs, and tasks cleaned up, the shots unchanged; a
   shared CMake include declined, 010's upstream list deferred.
   `047-structure-review.md`, `d41c3d9`
+- 049: Draws. Done: repetition and each variant's counts in `rules/draw.goose` checked
+  against the federations' texts, scored 0 by the search, a calm card and a countdown
+  (a short form between the clocks where the line has no room); checked headless on the
+  Mac, not on a device, by the user's choice.
+  `049-draws.md`, `fb29d63`
