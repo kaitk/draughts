@@ -83,8 +83,8 @@ What needs the user:
    `store/privacy/` on GitHub Pages; open the personal Play account and find the 12
    testers for the 14-day closed test. Nothing goes to Play until the user says so.
 3. 037: play the sets and their levels' order on the tablet, Brazilian's new one too
-   (2026-11-10); the Russian set's open terms; the store's text, which still says 120
-   puzzles and that Brazilian players get International's (now 166, Brazilian's own 46).
+   (2026-11-10); the Russian set's open terms; approve the store's text, now saying 166
+   puzzles with Brazilian's own 46, and the 2026-11-10 screenshots (`store/README.md`).
 4. 038: the final badge silhouettes, if the traced ones are to be replaced.
 5. The child's next games: whether easy at skill 0 feels right (`docs/architecture/ai.md`'s
    tuning notes), and whether multi-jump captures are clear with the capture count.
