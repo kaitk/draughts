@@ -116,8 +116,8 @@ cd poc/3d
 ../../build/board3d --bench 1000 --size 1920x1200   # frame timing, headless
 ../../build/board3d --frames 30                     # the window's loop hidden, a drag injected
 ../../build/board3d --bench 300 --samples 1 --shadow-every   # 1× MSAA, the shadow map every frame
-cd ../.. && scripts/android.py poc/3d/board3d.goose --run       # on the tablet, as the app's id
-adb shell am start -S -n io.github.kaitk.draughts/.DraughtsActivity --es args "'--bench 300'"
+cd ../.. && scripts/android.py poc/3d/board3d.goose --run       # on the tablet, beside the game (its own id)
+adb shell am start -S -n io.github.kaitk.draughts.board3d/io.github.kaitk.draughts.DraughtsActivity --es args "'--bench 300'"
 ```
 
 It compiles `src/app/background.c` from where it is (`board3d.build`) for the photograph.
