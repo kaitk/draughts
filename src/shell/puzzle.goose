@@ -64,11 +64,11 @@ struct Play {
     path:      puzzles::Ply[..puzzles::MAX_PLIES],  // the moves played since the start
     at:        f64 = 0.0,     // when the move shown lands (ANSWER, BACK, SHOW, SHOWN, SOLVED)
     tried:     rules::Move,   // the wrong move, to slide back after its answer
-    answer:    i64  = -1,     // the answer to it that shows why, in the board's moves (SHOW)
-    missed_at: f64  = -100.0,
-    won:       i64  = 0,      // stars won, once solved
-    fresh:     bool = false,  // solved this frame, for the shell to keep the stars
-    grab:      float2 = float2 { 0.0, 0.0 },  // on the 3D board, a held piece against the finger (game::touch)
+    answer:    i64      = -1, // the answer to it that shows why, in the board's moves (SHOW)
+    missed_at: f64      = -100.0,
+    won:       i64      = 0,     // stars won, once solved
+    fresh:     bool     = false, // solved this frame, for the shell to keep the stars
+    grab:      float2   = float2 { 0.0, 0.0 }, // on the 3D board, a held piece against the finger (game::touch)
     cam:       rig::Rig = rig::Rig {},          // and the camera its buttons move (board/rig.goose)
 }
 
@@ -443,10 +443,14 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: game::
             gui::cut_top(right, 14.0 * u);
         }
         goal(pl, g, gui::cut_top(right, goal_h), 72.0, true, now, if above { 0.0 } else { 72.0 }, over);
-        gui::cut_top(right, 16.0 * u);
-        // Smaller where the panel is narrowed near square.
+        // The gap and the stars shrink to the room left above next, so a short corner panel
+        // round the 3D board doesn't run them into next's tile; smaller too where the
+        // panel is narrowed near square.
+        gui::cut_top(right, clamp(right.w - 56.0 * u, 0.0, 16.0 * u));
         let most = (right.z / u - 2.0 * 8.0) / STAKE;
-        stake(pl, g, gui::cut_top(right, 56.0 * u), min(if solved { 56.0 } else { 44.0 }, most), 8.0, now);
+        let room = max(right.w, 0.0);
+        stake(pl, g, gui::cut_top(right, min(56.0 * u, room)), min(min(if solved { 56.0 } else { 44.0 }, most), room / u),
+              8.0, now);
         if gui::labelled(g, 114, next, gui::NEXT, 48.0, word, gui::HEADING, gui::STACKED, style, on) { ask = NEXT; }
         return ask;
     }
