@@ -1,0 +1,28 @@
+calm now: near d4 g3
+held now: nothing
+king now: step e1
+flying king now: far 28
+triple now: many b6 d4 f2, jump g1
+held after b2-a3: nothing
+held after b4-a5: two c3 c5
+held after c1-d2: nothing
+held after c3-d4: nothing
+held after c5-b6: two b4 c5
+held after e1-d2: nothing
+held after f2-e3: nothing
+held after g3-f4: nothing
+held after g3-h4: nothing
+calm after a3-b4: near g3, two a3 d4
+calm after b2-c3: near g3
+calm after d2-c3: near g3
+calm after d4-c5: two d4 e3 g3
+calm after e1-f2: two d2 d4, jump e1
+calm after e3-f4: near d4 g3
+calm after g1-f2: near d4
+calm after g3-f4: near d4 g3
+king after b4-a5: near c5
+king after c1-b2: step c1 e1
+king after c5-b6: near c5, two b4 c5
+king after g1-f2: near g1, jump g1
+king after g3-f4: near g3
+king after g3-h4: step e1
