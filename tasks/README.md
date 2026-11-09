@@ -75,7 +75,8 @@ Done on 2026-11-09: the 3D board (015) in main; the store listings revised and a
 rules confirmed against the federations' texts and the user's answers recorded (049),
 with the draw's screen prototyped in three takes; the structure review (047): shared
 build steps in `scripts/native.py`, the app's flags in `src/app/flags.goose`, one
-variant-name table, stale comments and docs.
+variant-name table, stale comments and docs. On the tablet, a drop 0.6 of a square off
+puzzle 4's target, on the light square beside it, lands on the target (`board::snap`).
 
 What needs the user:
 
@@ -86,9 +87,7 @@ What needs the user:
 3. 037: play the set and its levels' order on the tablet; the Russian set's open terms;
    Brazilian's own set.
 4. 038: the final badge silhouettes, if the traced ones are to be replaced.
-5. On the Pixel 7a: a drop about 0.6 of a square off a target in puzzle 4 lands on it
-   (`board::snap`, not yet seen on a device).
-6. The child's next games: whether easy at skill 0 feels right (`docs/architecture/ai.md`'s
+5. The child's next games: whether easy at skill 0 feels right (`docs/architecture/ai.md`'s
    tuning notes), and whether multi-jump captures are clear with the capture count.
 
 Then: the device checks in 042 and 044, 041's carved looks, 036 after
