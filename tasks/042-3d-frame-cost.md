@@ -72,6 +72,7 @@ Two runs of one build are byte-identical.
 | Before (`2e2f634`) | 2.48 ms | 2.51 ms | |
 | 1. The piece mesh | 1.71 ms | 1.73 ms | 54 to 58 dB, 40 to 90 pixels |
 | 2. Pieces before the board | 1.72 ms | 1.71 ms | identical |
+| 3. The shadow catcher | 1.67 ms | 1.68 ms | 84 to 98 dB, none |
 
 1. **The piece mesh:** the top's 42 rows down to 9 (`mesh::TOP_ROWS`, dense only round
    the step), the edge's arc 12 steps to 6, the foot's 5 to 3, and the lathe's 72
@@ -84,6 +85,10 @@ Two runs of one build are byte-identical.
    the field under the pieces fails the depth test before it is shaded. Pixel for pixel
    the same; nothing on the Mac, whose GPU removes hidden surfaces by itself. Mali's
    forward pixel kill does only part of that, so the tablet is where it can show.
+3. **The shadow catcher** after the opaque meshes (and the fading pieces), depth-tested
+   without writes, so nothing under the board is shaded, and its quad only as large as
+   its shadow reaches (QUAD_VERT: 0.3 round the board, 1.6 round it moved along the
+   light): about 12.4 × 13 units instead of 32 × 32. Within the Mac's noise.
 
 ## The idle wakeup
 

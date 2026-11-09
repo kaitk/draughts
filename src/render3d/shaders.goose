@@ -567,10 +567,16 @@ let QUAD_VERT = """
         const vec2 corners[6] = vec2[6](vec2(-1, -1), vec2(1, -1), vec2(1, 1),
                                         vec2(-1, -1), vec2(1, 1), vec2(-1, 1));
         vec2 c = corners[gl_VertexIndex];
+        // The catcher reaches only as far as its shadow does (SHADOW_CATCHER_FRAG): the
+        // contact 0.3 out from the board, the soft one 1.6 out from it moved by `off`.
+        vec2 off = -light_dir.xz / light_dir.y * (FRAME_TOP - BOTTOM) * 0.6;
+        vec2 lo = min(vec2(-INNER - FRAME_W - 0.3), off - (INNER + FRAME_W + 1.6));
+        vec2 hi = max(vec2(INNER + FRAME_W + 0.3), off + (INNER + FRAME_W + 1.6));
+        vec2 at = mix(lo, hi, c * 0.5 + 0.5);
         vec3 pos = draw.x > 1.5 ? vec3(c.x * FIELD, 0.004, c.y * FIELD)
                  : draw.x > 0.5 ? vec3(selected.x + c.x * selected.w * 2.0, 0.004,
                                        selected.z + c.y * selected.w * 2.0)
-                                : vec3(c.x * 16.0, BOTTOM, c.y * 16.0);
+                                : vec3(at.x, BOTTOM, at.y);
         v_pos = pos;
         gl_Position = view_proj * vec4(pos, 1.0);
     }

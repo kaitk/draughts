@@ -12,8 +12,8 @@
 //
 // Frame structure: the shadow map (1024², 16-bit, from the key light) only when the
 // pieces stand differently; then one pass: the blurred photograph as a backdrop, the
-// board's soft shadow on nothing, the board and the pieces lit, the field's marks that
-// hold still added. The marks that pulse (a must-capture ring, a wrong move's flash, a
+// pieces and the board lit (front to back), the board's soft shadow on nothing round
+// it, the field's marks that hold still added. The marks that pulse (a must-capture ring, a wrong move's flash, a
 // hint's ring) are drawn apart, over the kept image in the screen's pass each frame
 // (marks_over), against a 1x depth of the board kept with the image. No post pass, no
 // discard, nothing temporal. Nothing is made or released while drawing but the targets
@@ -431,7 +431,7 @@ fn setup(g: Gpu&, samples: i32 = SAMPLES) {
                                gfx::PipelineDesc { blend: gfx::BLEND_ALPHA });
     g.catcher = gfx::pipeline(quad_vs, embed_shader("frag", shaders::FS_SET, shaders::FRAME,
                                                     shaders::SHADOW_CATCHER_FRAG),
-                              gfx::PipelineDesc { blend: gfx::BLEND_ALPHA });
+                              gfx::PipelineDesc { depth_test: true, blend: gfx::BLEND_ALPHA });
     g.glow = gfx::pipeline(quad_vs, embed_shader("frag", shaders::FS_SET, shaders::FRAME,
                                                  shaders::MARKS_FRAG),
                            gfx::PipelineDesc { depth_test: true, blend: gfx::BLEND_ADD });
@@ -677,12 +677,6 @@ fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int
     gfx::begin_pass(pass);
     if backdrop { draw_backdrop(g, 1.0); }
 
-    gfx::bind(g.catcher);
-    gfx::uniforms(gfx::FRAGMENT, 0, f);
-    gfx::uniforms(gfx::VERTEX, 0, f);
-    gfx::uniforms(gfx::VERTEX, 1, Draw { float4_0 });
-    gfx::draw(6);
-
     gfx::bind(g.lit);
     gfx::bind_storage_buffer(gfx::VERTEX, 0, g.instances);
     gfx::bind_texture(gfx::FRAGMENT, 0, g.plan_albedo, g.aniso);
@@ -704,6 +698,14 @@ fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int
             gfx::draw_indexed(g.piece_count);
         }
     }
+
+    // The board's soft shadow round it, after the board so the depth test leaves out
+    // what the board covers.
+    gfx::bind(g.catcher);
+    gfx::uniforms(gfx::FRAGMENT, 0, f);
+    gfx::uniforms(gfx::VERTEX, 0, f);
+    gfx::uniforms(gfx::VERTEX, 1, Draw { float4_0 });
+    gfx::draw(6);
 
     // The field's marks and the selected piece's ring, added where nothing stands over.
     gfx::bind(g.glow);
