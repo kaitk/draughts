@@ -12,7 +12,7 @@ Apple's pages when doing this, as `store/app-store.md` was on 2026-11-09.
 
 - **The listing:** name "Draughts for Kids", subtitle "Play, learn, and solve puzzles"
   (30 of 30), promotional text (159 of 170), keywords (97 of 100 bytes), and the
-  description (2,520 of 4,000): Play's text with the devices named as iPhone and iPad, as
+  description (2,593 of 4,000): Play's text with the devices named as iPhone and iPad, as
   Apple bars other platforms' names.
 - **No Estonian listing:** Estonian is not an App Store localization, and Estonia's
   storefront shows English (U.K.). The Estonian text is in `store/app-store.md` for when

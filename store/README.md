@@ -73,6 +73,15 @@ The seven scenes, in the order to upload, each a season so all four show:
    iPhone the Game tab
 7. `07-computer-summer`: the computer's setup, summer
 
+**To retake** (all four sets), since `main` at `49f44e6` changed what they show: the
+games' and the puzzle's top buttons are now one way back ("Back", "Tagasi") where the
+shots show "Home"/"Koju" beside settings, and take back reads "Undo move"/"Võta käik
+tagasi" where they show "Take back"/"Võta tagasi" (02, 03, 05); settings' Background row
+is now the Theme row with the photo/plain switch (06); home, the library, and the setup
+may have their arrow moved (01, 04, 07; check). A scene on the plain background would show
+task 044. One Mac batch (`shoot.sh`, with `draughts` and `draughts-look` rebuilt) and one
+simulator run (`ios-shoot*.sh`, then `island.sh`).
+
 The player is made up (Mia the fox, with some stars): `play-0.1/player-1.txt` and
 `settings.txt`, written into the Mac's app data (copied aside first and put back after)
 and into each simulator's container. The Mac's shots come from one batch of 28 runs

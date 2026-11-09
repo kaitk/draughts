@@ -55,7 +55,7 @@ checkers,board game,international,russian,brazilian,puzzles,children,offline,fam
 Not repeated: the name's words (draughts, kids), which Apple indexes anyway. No other
 app's name. "kabe" for people in Estonia searching the English storefront.
 
-### Description (2,520 of 4,000)
+### Description (2,593 of 4,000)
 
 ```text
 Draughts for children and their families: a calm board game to play and learn, with big pieces, a clear board, and nothing to distract from the game.
@@ -87,6 +87,7 @@ A BOARD TO ENJOY
 • A flat board, or a 3D one with light and shadow, which you can turn by hand on the home screen.
 • Four seasons, each a photograph with its own board: autumn wood, winter stone, spring carved stone, and summer sunset.
 • The season follows the date, or stays on the one you choose.
+• Or a plain background in the colours of the board, with no photograph.
 
 MADE FOR CHILDREN
 • Made for children from about 5, and the grown-ups who play with them.
@@ -103,8 +104,7 @@ NOTHING ELSE
 Draughts runs on iPhone and iPad, in portrait and landscape.
 ```
 
-The same text as Play's (`listing-en.md`) but for the devices named. When task 044's plain
-background ships, add its line from `listing-en.md` here too.
+The same text as Play's (`listing-en.md`) but for the devices named.
 
 ## App Privacy
 

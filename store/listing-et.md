@@ -21,7 +21,7 @@ The launcher's name stays "Kabe" (`strings/et.txt`). Alternatives: "Kabe: mängi
 Mängi kabet sõbra või arvutiga ja õpi see 120 ülesandega selgeks.
 ```
 
-## Full description (2,595 of 4,000)
+## Full description (2,648 of 4,000)
 
 ```text
 Kabe lastele ja peredele: rahulik lauamäng mängimiseks ja õppimiseks. Suured nupud, selge laud ja mitte midagi, mis tähelepanu mängult kõrvale juhiks.
@@ -53,6 +53,7 @@ ILUS KABELAUD
 • Lame laud või ruumiline 3D-laud valguse ja varjudega, mida saab avalehel käega pöörata.
 • Neli aastaaega, igaühel oma foto ja laud: sügisel puit, talvel kivi, kevadel nikerdatud kivi ja suvel päikeseloojang.
 • Aastaaeg vahetub kuupäeva järgi või jääb selleks, mille ise valid.
+• Või ühevärviline taust laua toonides, ilma fotota.
 
 LASTELE TEHTUD
 • Mõeldud lastele alates umbes viiendast eluaastast ja täiskasvanutele, kes nendega mängivad.
@@ -67,14 +68,6 @@ MITTE MIDAGI LIIGSET
 • Andmeid ei koguta: mängijad, nende seaded ja mängud jäävad seadmesse.
 
 Kabe töötab telefonis ja tahvelarvutis, nii püst- kui ka rõhtpaigutuses.
-```
-
-## Coming, not yet in the text
-
-When task 044's plain background ships, add to "ILUS KABELAUD", after the seasons:
-
-```text
-• Või ühevärviline taust laua toonides, ilma fotota.
 ```
 
 ## Wording notes

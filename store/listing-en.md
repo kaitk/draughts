@@ -24,7 +24,7 @@ the title ("#1", "best", "free"), not a word for the audience
 Play draughts with a friend or the computer, and learn it with 120 puzzles.
 ```
 
-## Full description (2,524 of 4,000)
+## Full description (2,597 of 4,000)
 
 ```text
 Draughts for children and their families: a calm board game to play and learn, with big pieces, a clear board, and nothing to distract from the game.
@@ -56,6 +56,7 @@ A BOARD TO ENJOY
 • A flat board, or a 3D one with light and shadow, which you can turn by hand on the home screen.
 • Four seasons, each a photograph with its own board: autumn wood, winter stone, spring carved stone, and summer sunset.
 • The season follows the date, or stays on the one you choose.
+• Or a plain background in the colours of the board, with no photograph.
 
 MADE FOR CHILDREN
 • Made for children from about 5, and the grown-ups who play with them.
@@ -70,15 +71,6 @@ NOTHING ELSE
 • No data collected: the players, their settings, and their games stay on the device.
 
 Draughts runs on phones and tablets, in portrait and landscape.
-```
-
-## Coming, not yet in the text
-
-Neither store lets a listing describe what the app doesn't do yet. When task 044's plain
-background ships, add to "A BOARD TO ENJOY", after the seasons:
-
-```text
-• Or a plain background in the colours of the board, with no photograph.
 ```
 
 ## What the text leans on

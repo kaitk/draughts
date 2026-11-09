@@ -128,9 +128,8 @@ masters present):
 - **Texts:** `store/listing-en.md` and `listing-et.md` brought to the app on `main` at
   `1824780`: 120 puzzles (74 International in six themes, Safe move the sixth, and 46
   Russian), the 3D board turned by hand on home, the four season boards, the pips on a
-  piece that must capture. English 17, 75, and 2,524 characters; Estonian 12, 65, and
-  2,595. The plain background (task 044) isn't in `main`, and neither store lets a listing
-  describe what the app doesn't do yet, so its line waits in each file under "Coming".
+  piece that must capture, and the plain background (task 044). English 17, 75, and 2,597
+  characters; Estonian 12, 65, and 2,648.
 - **Play's current help** (read 2026-11-09, linked in `store/README.md` and
   `store/play-console.md`): the limits and image rules unchanged; Data safety must be
   filled in even with nothing collected; IARC is mandatory; Teacher Approved is now an
@@ -143,7 +142,8 @@ masters present):
   Mac app (2026-11-09, 15:45 to 15:49): home on the 3D board in winter, the flat game in
   autumn, the 3D game in summer, the puzzle library in spring, a Shots puzzle in winter,
   settings, the computer's setup. Play wants at least 3 of the phone's (for game
-  recommendations) and 4 of the tablet's; all seven go up.
+  recommendations) and 4 of the tablet's; all seven go up. They predate main's way back
+  and Theme row (`49f44e6`), so the scenes `store/README.md` names need a retake.
 - **Preview:** `store/preview/play.html` (filled by `store/preview/build.py`) shows the
   page on a phone and on the web in both languages: the titles fit on one line in a
   search row, the short descriptions under 80, the web's "About this game" folds after
