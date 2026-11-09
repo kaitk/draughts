@@ -4,8 +4,8 @@
 // Tab or a double click switches between inspecting round the default view and turning
 // freely round the board; R resets the view; T, or a long press for touch, switches the
 // theme; K switches the king between a stack of two discs and one crowned disc; W cycles
-// the wood's model and M the winter frame's marble (task 039); P shows the tuning panel
-// (panel.goose), V prints its values. Nothing of the app's shell.
+// the wood's model and M the winter frame's marble (task 039); S cycles summer's variants;
+// P shows the tuning panel (panel.goose), V prints its values. Nothing of the app's shell.
 //
 //   cd poc/3d
 //   ../../build/goose-v2026.4-macos-arm64/goose build -o ../../build/board3d board3d.goose
@@ -14,6 +14,7 @@
 //   ../../build/board3d --theme winter --king crown
 //   ../../build/board3d --wood 0                  # the wood's model: 0 to 3, 2 the default
 //   ../../build/board3d --theme winter --marble 1 # the frame's marble: 0 the slate, 1 to 4
+//   ../../build/board3d --summer 2                # summer's variant: 0 to 3 (looks::SUMMERS)
 //   ../../build/board3d --panel                   # the tuning panel shown; --plain no finish
 //   ../../build/board3d --bench 200
 //
@@ -133,9 +134,24 @@ fn draw(g: render3d::Gpu&, cam: Camera, out: gfx::Texture = gfx::screen()) {
     render3d::draw(g, view_proj, eye, out, size, shadow_every);
 }
 
-// Puts theme `which` on the board, timed.
+// The wood's model the looks without their own take (--wood, then W), and summer's
+// variant (--summer, S).
+var wood_chosen: i64 = render3d::WOOD_MODEL;
+var summer:      i64 = 0;
+
+// The look for a season: summer's its variant's.
+fn look_of(season: i64) -> i64 { if season == looks::SUMMER { looks::summer_look(summer) } else { season } }
+
+// Puts look `which` on the board, with its own wood's model and finish if it has one,
+// timed.
 fn apply(g: render3d::Gpu&, which: i64) {
     let c = clock();
+    let own = looks::wood_for(which);
+    let wood = if own >= 0 { own } else { wood_chosen };
+    if wood != g.wood || own >= 0 || looks::wood_for(g.look) >= 0 {
+        render3d::choose(g, wood, -1);
+        g.finish = looks::finish_for(which, g.wood);
+    }
     render3d::apply(g, which, 8);
     print("theme ", which, " applied in ", ((clock() - c) * 1000.0) as i64, " ms (wood ", g.wood,
           ", marble ", g.marble, ")");
@@ -221,6 +237,12 @@ fn main() {
     if ti > 0 && argv[ti] == "winter" { which = looks::WINTER; }
     if ti > 0 && argv[ti] == "spring" { which = looks::SPRING; }
     if ti > 0 && argv[ti] == "summer" { which = looks::SUMMER; }
+    // --summer N: summer's variant (and summer).
+    let si2 = flag_str(argv, "--summer");
+    if si2 > 0 {
+        summer = clamp(flag_f32(argv, "--summer", 0.0) as i64, 0, looks::SUMMERS - 1);
+        which = looks::SUMMER;
+    }
     let ki = flag_str(argv, "--king");
     if ki > 0 && argv[ki] == "crown" { king_crown = true; }
 
@@ -229,10 +251,15 @@ fn main() {
     render3d::setup(g, samples);
     // --wood N, --marble N: the wood's model with its finish, and the winter frame's
     // marble (0 the slate); --plain takes the finish off (looks::PLAIN), to compare.
-    render3d::choose(g, flag_f32(argv, "--wood", render3d::WOOD_MODEL) as i64,
-                     flag_f32(argv, "--marble", looks::MARBLE) as i64);
-    for a in argv { if a == "--plain" { g.finish = looks::PLAIN; } }
-    apply(g, which);
+    wood_chosen = clamp(flag_f32(argv, "--wood", render3d::WOOD_MODEL) as i64, 0, render3d::WOOD_MODELS - 1);
+    render3d::choose(g, wood_chosen, flag_f32(argv, "--marble", looks::MARBLE) as i64);
+    apply(g, look_of(which));
+    for a in argv {
+        if a == "--plain" {
+            g.finish = looks::PLAIN;
+            render3d::bake_surfaces(g);
+        }
+    }
     place(g);
     print("setup ", ((clock() - t0) * 1000.0) as i64, " ms");
 
@@ -348,7 +375,16 @@ fn main() {
         }
         if switch {
             which = (which + 1) % looks::COUNT;
-            apply(g, which);
+            apply(g, look_of(which));
+            panel::sync(tuning, g);
+            dirty = true;
+        }
+        if gfx::key_pressed("S") {
+            summer = if which == looks::SUMMER { (summer + 1) % looks::SUMMERS } else { summer };
+            which = looks::SUMMER;
+            apply(g, look_of(which));
+            print("summer ", summer);
+            panel::sync(tuning, g);
             dirty = true;
         }
         if gfx::key_pressed("Escape") { break; }
@@ -364,6 +400,7 @@ fn main() {
         if gfx::key_pressed("W") {
             let c = clock();
             render3d::set_wood(g, (g.wood + 1) % render3d::WOOD_MODELS);
+            wood_chosen = g.wood;
             print("wood ", g.wood, " baked in ", (clock() - c) * 1000.0, " ms");
             panel::sync(tuning, g);
             dirty = true;
@@ -442,6 +479,25 @@ fn bench_frames(g: render3d::Gpu&, cam_in: Camera, n: i64, headless: bool) {
         print("bench: marble ", m, " baked in ", ms, " ms");
     }
     render3d::tune(g, g.wood, g.finish, chosen, looks::marble(chosen));
+    // In summer, each variant's bake (the plan and the frame map, their mips, waited
+    // for), twice, the second timed, with its own wood; then the chosen one again.
+    if looks::get(g.look).photo == looks::get(looks::SUMMER).photo {
+        let kept = summer;
+        for v in looks::SUMMERS {
+            var ms: f64 = 0.0;
+            for k in 2 {
+                summer = (v + 1) % looks::SUMMERS;
+                apply(g, look_of(looks::SUMMER));
+                summer = v;
+                let c = clock();
+                apply(g, look_of(looks::SUMMER));
+                ms = (clock() - c) * 1000.0;
+            }
+            print("bench: summer ", v, " baked in ", ms, " ms");
+        }
+        summer = kept;
+        apply(g, look_of(looks::SUMMER));
+    }
     if !headless {
         // Let the window reach its size and the swapchain settle.
         for i in 30 {

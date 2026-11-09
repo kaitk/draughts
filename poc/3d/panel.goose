@@ -14,13 +14,14 @@ import ui;
 let X:      f32 = 12.0;
 let Y:      f32 = 12.0;
 let WIDTH:  f32 = 300.0;
-let HEIGHT: f32 = 452.0;
+let HEIGHT: f32 = 504.0;
 let ROW:    f32 = 22.0;
 let SETTLE: f64 = 0.35;  // seconds a held slider waits before baking
 
 struct Panel {
     shown:      bool,
     ctx:        ui::Context,
+    look:       i64,            // the look shown, for its own finish (Defaults)
     wood:       i64,
     finish:     looks::Finish,
     marble:     i64,
@@ -36,7 +37,7 @@ struct Panel {
 // A panel holding g's values, hidden; its ui context is made the first time it shows,
 // drawn `scale` pixels to the ui's unit.
 fn new(g: render3d::Gpu&) -> Panel {
-    var p = Panel { shown: false, ctx: default<ui::Context>(), wood: g.wood, finish: g.finish,
+    var p = Panel { shown: false, ctx: default<ui::Context>(), look: g.look, wood: g.wood, finish: g.finish,
                     marble: g.marble, stone: g.stone, seen_f: g.finish, seen_m: g.stone,
                     changed_at: 0.0, varnish_at: ui::rect(0, 0, 0, 0), print_at: ui::rect(0, 0, 0, 0) };
     return p;
@@ -51,8 +52,9 @@ fn toggle(p: Panel&, scale: f32) {
     }
 }
 
-// Takes g's values again, after a key switched the wood or the marble.
+// Takes g's values again, after a key switched the look, the wood or the marble.
 fn sync(p: Panel&, g: render3d::Gpu&) {
+    p.look = g.look;
     p.wood = g.wood;
     p.finish = g.finish;
     p.marble = g.marble;
@@ -95,12 +97,14 @@ fn frame(p: Panel&, now: f64, input: bool) -> bool {
     let s = ui::scale(c);
     if ui::begin(c, "Tuning (P)", ui::rect(X, Y, WIDTH, HEIGHT), flags) {
         heading(c, "Wood");
-        if variant(c, "variant", p.wood, render3d::WOOD_MODELS - 1) { p.finish = looks::finish(p.wood); }
+        if variant(c, "variant", p.wood, render3d::WOOD_MODELS - 1) { p.finish = looks::finish_for(p.look, p.wood); }
         p.varnish_at = scaled(slider(c, "varnish", p.finish.varnish, 0.0, 1.0), s);
         slider(c, "sanding", p.finish.sanding, 0.0, 1.0);
         slider(c, "grain", p.finish.grain, 0.0, 2.0);
         slider(c, "rings", p.finish.rings, 0.5, 2.0);
         slider(c, "warmth", p.finish.warmth, -1.0, 1.0);
+        slider(c, "pickle", p.finish.pickle, 0.0, 1.0);
+        slider(c, "caulk", p.finish.caulk, 0.0, 2.0);
         heading(c, "Marble (winter frame)");
         if variant(c, "variant", p.marble, looks::MARBLES - 1) { p.stone = looks::marble(p.marble); }
         slider(c, "veins", p.stone.veins, 0.0, 2.0);
@@ -111,7 +115,7 @@ fn frame(p: Panel&, now: f64, input: bool) -> bool {
         p.print_at = scaled(ui::widget_bounds(c), s);
         if ui::button_label(c, "Print") { printed = true; }
         if ui::button_label(c, "Defaults") {
-            p.finish = looks::finish(p.wood);
+            p.finish = looks::finish_for(p.look, p.wood);
             p.stone = looks::marble(p.marble);
         }
         if ui::button_label(c, "Plain") { p.finish = looks::PLAIN; }
@@ -171,11 +175,12 @@ fn num4(out: u8[>..]&, v: float4) {
     out.append(" }");
 }
 
-// The values as Goose literals, for looks::finish and looks::marble.
+// The values as Goose literals, for looks::finish (or a summer variant's in
+// looks::finish_for) and looks::marble.
 fn print_values(p: Panel&) {
     let f = p.finish;
     var a: u8[>..] = [];
-    format(a, "// wood ", p.wood, "\nlooks::Finish { varnish: ");
+    format(a, "// wood ", p.wood, ", look ", p.look, "\nlooks::Finish { varnish: ");
     num(a, f.varnish);
     a.append(", sanding: ");
     num(a, f.sanding);
@@ -185,6 +190,10 @@ fn print_values(p: Panel&) {
     num(a, f.rings);
     a.append(", warmth: ");
     num(a, f.warmth);
+    a.append(", pickle: ");
+    num(a, f.pickle);
+    a.append(", caulk: ");
+    num(a, f.caulk);
     a.append(" }");
     print(a);
     let m = p.stone;
