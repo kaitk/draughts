@@ -1,0 +1,60 @@
+the count
+W:W37,39,43,46:B23,32,34
+  37x28x19  takes 2
+1 move
+a man's double: counts c3 2 
+  the computer's turn: counts 
+  a friend's: counts c3 2 
+B:WK1,K21,24,28,31,32,33,45:BK35
+  35x8x26x42x29  takes 4
+1 move
+the child's king: counts j4 4 
+W:W34,37:B29,32
+  34x23  takes 1
+  37x28  takes 1
+2 moves
+two pieces taking one each: counts h4 1 c3 1 
+W:W37,44:B23,32,39
+  37x28x19  takes 2
+1 move
+the majority rule, c3 two and h2 one: counts c3 2 
+W:Wh2,c3:Bg3,d4,f6
+  c3:e5:g7  takes 2
+  h2:f4  takes 1
+2 moves
+russian, any capture: counts c3 2 h2 1 
+W:WK46:B17,18,27,29,37,39
+  46x23x12x21x43x34x23  takes 6
+  46x32x21x12x23x34x43  takes 6
+  46x32x21x12x23x34x48  takes 6
+3 moves
+a king's capture of six, past five pips: counts a1 6 
+the child's king, its way j4 e9 a5 d2 g5 
+tapped stop by stop
+  j4: waits on -, counts j4 4 , wrong -, pulsing next playing -
+  e9: waits on e9, counts e9 3 , wrong -, pulsing next playing -
+  a5: waits on a5, counts a5 2 , wrong -, pulsing next playing -
+  d2: waits on d2, counts d2 1 , wrong -, pulsing next playing -
+  g5: waits on -, counts , wrong -, pulsing next playing 35x8x26x42x29
+  W:WK1,28,32,45:BK29
+dropped stop by stop
+  j4 to e9: waits on e9, counts e9 3 , wrong -, pulsing next playing -
+  e9 to a5: waits on a5, counts a5 2 , wrong -, pulsing next playing -
+  a5 to d2: waits on d2, counts d2 1 , wrong -, pulsing next playing -
+  d2 to g5: waits on -, counts , wrong -, pulsing next playing 35x8x26x42x29
+straight to the last square
+  g5: waits on -, counts , wrong -, pulsing next playing 35x8x26x42x29
+  j4 to g5: waits on -, counts , wrong -, pulsing next playing 35x8x26x42x29
+two wrong squares
+  e9: waits on e9, counts e9 3 , wrong -, pulsing next playing -
+  i1, wrong: waits on e9, counts e9 3 , wrong i1, pulsing b4 f4 b6 next playing -
+  i1 again: waits on e9, counts e9 3 , wrong i1, pulsing next a5 (pulsing) playing -
+  a5: waits on a5, counts a5 2 , wrong i1, pulsing next d2 (pulsing) playing -
+  a moment later: waits on a5, counts a5 2 , wrong -, pulsing next d2 (lit) playing -
+  with move hints, from the first stop
+  e9: waits on e9, counts e9 3 , wrong -, pulsing next a5 (pulsing) playing -
+take back mid-capture
+  a5: waits on a5, counts a5 2 , wrong -, pulsing next playing -
+  take back: waits on -, counts j4 4 , wrong -, pulsing next playing -
+  B:WK1,K21,24,28,31,32,33,45:BK35, history 0, selected -
+  j4, e9 again: waits on e9, counts e9 3 , wrong -, pulsing next playing -

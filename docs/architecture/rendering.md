@@ -710,27 +710,41 @@ in and ends once a move is played: it used to run on through the move and ring t
 side's capturers, so after a child's capture on the turned board the computer's man
 beside the child's pieces pulsed red as if it were the child's to move (reported
 2026-11-09, two pieces each taking one; the rings, taps, and moves agree under the turn,
-`test/board/several`). A capture of many
-jumps is tapped or dropped by its last square or stop by stop (`board::follow`): a tap
+`test/board/several`). A piece that must capture shows how many pieces its
+capture takes, at most, whatever the hints and whether or not its ring pulses
+(`board::takes`, `Piece.ring.z`): one pip per piece on its ring, 28° apart and centred
+over the top, light with a red rim (22% and 30% of the radius, on the ring at 1.24
+radii), and past five one larger red pip with the number (`prototypes/game.html?count=a`;
+take b, a badge with the number, needs a child who reads digits; the pips are counted).
+It counts pieces, not stops or the squares a flying king could land on; under the
+majority rule every piece that takes the most shows it, and in Russian each piece its own
+most. Partway through a capture only the piece making it shows what is left; the
+computer's pieces on its turn show none (`Board.quiet`), and a puzzle none. Before
+(reported 2026-11-09, a child's lone king on the turned board with a capture of four),
+nothing said how far a capture went. A capture of many jumps is tapped or dropped by its
+last square, when one capture alone goes there, or stop by stop (`board::follow`): a tap
 or a drop on the next stop of the selected piece's captures leaves the piece waiting
-there, lifted and selected, as in a puzzle, the stops behind it ringed whatever the
-hints, and narrows the targets shown to the ways through it; once only one capture goes
-on that way it is played, and a tap off every way is wrong and forgets the stops. In a
-game the squares a waiting piece goes on to show the target's dot whatever the hints,
-pulsing as the hint's ring does for two cycles and then lit, so a child sees the capture
-isn't over. Before (reported 2026-11-09, International, a black man's capture over a
+there, lifted and selected, the pieces it jumped still on the board as the rules leave
+them until the capture ends, the stops behind it ringed whatever the hints, and narrows
+the targets shown to the ways through it. The rest is never played by itself, in a game
+as in a puzzle: each next jump is the child's, by tap or by drag from the stop, and the
+move, once its last stop is reached, is shown from there. A last square several captures
+reach waits for the stops. Until 2026-11-09 a game played a capture once only one went
+on from the stops made, so a child whose first jump played the whole of it never learned
+the way. Before that (reported 2026-11-09, International, a black man's capture over a
 far-row square it only passes, the board turned), the piece went back to its square with
 the stop ringed, and picked up again it forgot the stop: dropped, such a capture was made
-only by its last square, the far-row square did nothing and the next stop was wrong. A
-wrong square for a piece that must capture also pulses the pieces its captures take
-(`board::missed`), so a far-row square that a shorter capture would crown on, which the
-majority rule forbids, shows what to take instead (`test/board/stuck`). In a puzzle a capture
-is made by hand (`Board.by_hand`, 2026-11-08): a tap or a drop on a stop leaves the
-piece there, lifted and selected, the pieces it jumped still on the board as the rules
-leave them until the capture ends, and never plays the rest; the piece is pressed or
-dragged on from that stop, and the move, once its last stop is reached, is shown from
-there. A last square is played when the capture ends just after the stops or one
-capture alone goes there; one several captures reach waits for the stops. A piece that must
+only by its last square. In a game, a wrong square for a piece that must capture is a
+miss that leaves a waiting piece on its stop (`board::missed`): the first in a turn
+pulses the pieces its captures have still to take, so a far-row square that a shorter
+capture would crown on, which the majority rule forbids, shows what to take instead
+(`test/board/stuck`); the second lights the next stops with the target's dot, pulsing
+as the hint's ring does for two cycles and then lit, and so on to the capture's end
+(`test/board/count`). With move hints, the next stops of a waiting piece show from the
+first jump. Take back while a piece waits takes the capture back to its start, the
+piece on its square, and takes back no move (`board::unwind`). A puzzle
+(`Board.by_hand`, 2026-11-08) shows none of these: a wrong square there forgets the
+stops, and its own hint is a glow after two misses. A piece that must
 capture pulses a red ring
   `#ff5a4a` with a soft red glow every 1.4 s, in every theme. The last move's squares are
   tinted with the glow color at 16%.

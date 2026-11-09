@@ -6,12 +6,14 @@
 //
 // - alone: e3 takes d2 and crowns on c1, tapped or dropped on c1.
 // - on, one way: from c1 the capture goes on over b2 to a3 (International crowns only a
-//   man that stops on the far row): c1 alone plays the whole of it.
+//   man that stops on the far row): c1 is a stop the man waits on, a3 then plays the
+//   rest, and a3 alone plays the whole of it (2026-11-09: c1 alone played it before).
 // - on, two ways: c3 by e1 and g3, then to e5 or i5. e1 is only a stop. The piece waits
-//   on it, as in a puzzle, and the squares it goes on to (g3) pulse, whatever the hints,
-//   then g3's next, e5 and i5. It used to go back to c3 with e1 ringed, and picked up
-//   again it forgot e1, so a drop on g3 was wrong and on e1 did nothing: dropped, such a
-//   capture was made only by its last square.
+//   on it, as in a puzzle; with hints on mistakes nothing shows where it goes on. It used
+//   to go back to c3 with e1 ringed, and picked up again it forgot e1, so a drop on g3
+//   was wrong and on e1 did nothing: dropped, such a capture was made only by its last
+//   square. With move hints, the squares it goes on to (g3) pulse, then g3's next, e5
+//   and i5 (the pulse, and through the shell).
 // - majority: e3 to c1 takes one, e3 by g5 to e7 two, so c1 is no move. The drop is
 //   wrong, and the pieces e3 must take, f4 and f6, pulse beside it.
 // - a king takes to the far row; and in Russian a man crowned on the far row mid-capture
@@ -123,7 +125,7 @@ fn main() {
     print("alone: e3 takes d2, crowned on c1");
     run(I, "B:Wd2,j8:Be3,a9", ["t e3 c1", "d e3 c1"]);
     print("on past the far row, one way: e3 by c1 to a3");
-    run(I, "B:Wd2,b2,j8:Be3,a9", ["t e3 c1", "d e3 c1", "d e3 a3"]);
+    run(I, "B:Wd2,b2,j8:Be3,a9", ["t e3 c1 a3", "d e3 c1 a3", "d e3 a3"]);
     print("on past the far row, two ways: c3 by e1 and g3 to e5 or i5");
     run(I, FORK, ["t c3 e1 g3 e5", "d c3 e1 g3 i5", "d c3 e1 e1", "d c3 e5", "d c3 e1 c3"]);
     print("majority: e3 to c1 takes one, by g5 to e7 two");
@@ -133,8 +135,9 @@ fn main() {
     print("russian: crowned on e1, the king goes on over f2");
     run(rules::RUSSIAN, "B:Wd2,f2,h6:Bc3,a7", ["d c3 e1", "d c3 e1 h4"]);
 
-    // The pulse of where the piece goes on ends, and the frame it ends on is drawn.
-    print("the pulse of where it goes on");
+    // With move hints, the pulse of where the piece goes on ends, and the frame it ends
+    // on is drawn.
+    print("the pulse of where it goes on, with move hints");
     var l = panel::layout(1280.0, 800.0, 10);
     l.board.flip = true;
     var g = gui::Gui {};
@@ -143,6 +146,7 @@ fn main() {
     game::start(gm, I, clock::NONE, rules::WHITE, game::MEDIUM, 40, 1);
     board::set(gm.b, check::position(I, FORK));
     gm.turn = gm.b.pos.side;
+    gm.b.hints = board::MOVES;
     drive::idle(gm, g, l, 1.0);
     line(gm, g, l, "d c3 e1", 1.0);
     for t in [2.0, 3.0, 4.0, 5.0] {

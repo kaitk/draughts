@@ -250,7 +250,8 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
     let pick = panel::game(g, l, gm.clock, side, won >= 0, gm.asking != 0, pulse(gm, now), over);
     var undone = false;
     match pick {
-        panel::UNDO => { if gm.clock.flag < 0 { undone = take_back(gm); } },
+        // Partway through a capture, take back only takes the capture back to its start.
+        panel::UNDO => { if !board::unwind(b) && gm.clock.flag < 0 { undone = take_back(gm); } },
         panel::RESTART => { restart(gm); },
         panel::HOME => { go = HOME; },
         panel::SETTINGS => { go = SETTINGS; },
@@ -299,6 +300,8 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
         clock::moved(gm.clock, gm.turn);
     }
     gm.turn = b.pos.side;
+    // The computer's pieces show no count of what they must take: the child can't move them.
+    b.quiet = gm.computer >= 0 && b.pos.side == gm.computer;
     if b.moves.len == 0 { clock::stop(gm.clock); }
     // A running clock draws once a second, when the time it shows changes.
     let shown = if gm.clock.running >= 0 { clock::shown(gm.clock, gm.clock.running) } else { -1 };

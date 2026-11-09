@@ -9,7 +9,7 @@ jsDelivr CDN, so they need internet access. Start at [index.html](index.html).
 | `home.html` | Home: a title menu over the photograph and a 3D board; `?pick=friend` or `computer` shows a new game's setup |
 | `first-start.html` | The first start, pages in order (`?page=variant`, `learn`, `1` to `7`, `done`; `&v=russian`) |
 | `settings.html` | Settings: background, board, move hints, language |
-| `game.html` | The game: the board between the way out and the play, a selected piece and its capture, a forced capture; `?clock=on` or `low` for the clocks |
+| `game.html` | The game: the board between the way out and the play, a selected piece and its capture, a forced capture; `?clock=on` or `low` for the clocks; `?count=a` or `b` (`&n=`) for takes on how many pieces a must-capture piece takes, on a child's position of 2026-11-09 (a, pips on the ring, built) |
 | `puzzles.html` | Takes on the puzzle picker by theme (`?take=a` to `c`, `now` for the tiers of ten, `&view=library`, `theme`, `&theme=`, `&themes=first`, `all`, `&solved=0` to `12`, `&lang=et`): a library of themes and a theme's three levels (task 037) |
 | `puzzle.html` | Takes on playing one puzzle (`?take=a` to `c`, `&state=play`, `wrong`, `hint`, `solved`), waiting for a pick (task 007) |
 | `solved.html` | A solved puzzle: stars over the dimmed board |

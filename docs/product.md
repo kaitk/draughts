@@ -15,7 +15,11 @@ Chess may follow on the same base.
   settings, which the game reaches in one tap: **moves** shows the selected piece's targets
   (for learning the basics), **mistakes** shows nothing until a move is wrong, then
   marks the square and why (the piece that must capture pulses, and when another piece
-  takes more, the pieces it takes). Mistakes is the
+  takes more, the pieces it takes; a second wrong square in the same capture lights its
+  next stop). Whatever the setting, a piece that must capture shows how many pieces it
+  takes, as pips a child counts without reading, but not which, and a capture of many
+  jumps is played jump by jump by the child, never finished by the game (2026-11-09).
+  Mistakes is the
   default; moves is on by default only in the first lessons that teach the basic ideas,
   and in the tutorial at the first start. A game has no hint button (2026-11-07).
   Puzzles never show a selected piece's targets, whatever the setting: the point of a

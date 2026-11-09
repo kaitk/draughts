@@ -302,6 +302,51 @@ let PIECE_FRAG = """
             over(red, op * fill(abs(r - rr) - 0.06, w));
         }
     }
+    // How many pieces a piece that must capture takes (prototypes/game.html?count=a): one
+    // pip per piece on its ring, 28 degrees apart and centred over the top, light with a
+    // red rim; past five, one larger red pip with the number. Over everything of the
+    // piece, so a stacked king's upper disc doesn't hide them.
+    float seg(vec2 p, vec2 a, vec2 b) {
+        vec2 pa = p - a, ba = b - a;
+        return length(pa - ba * clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0));
+    }
+    // A digit's strokes' distance at p, the digit spanning x -0.5..0.5 and y -1..1 (down).
+    float digit(vec2 p, int d) {
+        const int SEGS[10] = int[](0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F);
+        int m = SEGS[clamp(d, 0, 9)];
+        float r = 1e5;
+        if ((m & 1) != 0) r = min(r, seg(p, vec2(-0.5, -1.0), vec2(0.5, -1.0)));
+        if ((m & 2) != 0) r = min(r, seg(p, vec2(0.5, -1.0), vec2(0.5, 0.0)));
+        if ((m & 4) != 0) r = min(r, seg(p, vec2(0.5, 0.0), vec2(0.5, 1.0)));
+        if ((m & 8) != 0) r = min(r, seg(p, vec2(-0.5, 1.0), vec2(0.5, 1.0)));
+        if ((m & 16) != 0) r = min(r, seg(p, vec2(-0.5, 0.0), vec2(-0.5, 1.0)));
+        if ((m & 32) != 0) r = min(r, seg(p, vec2(-0.5, -1.0), vec2(-0.5, 0.0)));
+        if ((m & 64) != 0) r = min(r, seg(p, vec2(-0.5, 0.0), vec2(0.5, 0.0)));
+        return r;
+    }
+    void pips(vec2 f, int n, float w) {
+        vec3 red = vec3(1.0, 0.353, 0.29);
+        vec3 light = vec3(1.0, 0.957, 0.925);
+        if (n <= 5) {
+            for (int i = 0; i < n; i++) {
+                float a = radians((float(i) - 0.5 * float(n - 1)) * 28.0);
+                float d = length(f - 1.24 * vec2(sin(a), -cos(a)));
+                over(red, 0.55 * exp(-max(d - 0.22, 0.0) * 9.0));
+                over(red, fill(d - 0.30, w));
+                over(light, fill(d - 0.22, w));
+            }
+            return;
+        }
+        vec2 c = f - vec2(0.0, -1.24);
+        float d = length(c);
+        over(red, 0.55 * exp(-max(d - 0.40, 0.0) * 9.0));
+        over(light, fill(d - 0.46, w));
+        over(red, fill(d - 0.40, w));
+        float s = 0.17;         // a digit's half height is 0.17 radii, its stroke 0.035
+        float t = n < 10 ? digit(c / s, n) : min(digit((c - vec2(-0.12, 0.0)) / s, n / 10 % 10),
+                                                 digit((c - vec2(0.12, 0.0)) / s, n % 10));
+        over(light, fill(t * s - 0.035, w));
+    }
     void main() {
         vec2 p = v_local;
         bool black = v_look.x > 0.5;
@@ -365,6 +410,7 @@ let PIECE_FRAG = """
             over(col, fill(r - 1.0, w));
             if (k == 0) rings(r, sel, v_extra.x, w);
         }
+        if (v_ring.z > 0.5) pips((p + vec2(0.0, lift)) / scale, int(v_ring.z + 0.5), w);
         // Dimmed with the board under a win, as a black fill over both would.
         result = vec4(acc.rgb * (1.0 - v_win.x), acc.a) * v_look.w;
         // Over the UI in a transition, hidden where the board passes unless it lies on it.

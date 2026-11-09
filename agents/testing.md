@@ -23,9 +23,15 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   printing what a reader can check by eye (positions as FEN, moves sorted, how many
   pieces each takes). A test explains in a comment what rule it shows and why the
   position shows it. Areas so far: `rules`, `board` (taps, hints, and a capture tapped
-  stop by stop through the board package, as a game does and by hand as a puzzle
-  does, a press or drop off the dark squares snapping to the nearest it could mean:
-  `snap`, and several pieces that can capture under each draughts' rule: `several`; a capture to or past the far row, dropped on the turned board: `stuck`), `gui`, `game` (the game screen driven through
+  stop by stop through the board package, a game and a puzzle alike, never played on
+  by itself: `steps`; a press or drop off the dark squares snapping to the nearest it
+  could mean: `snap`, and several pieces that can capture under each draughts' rule:
+  `several`; a capture to or past the far row, dropped on the turned board: `stuck`;
+  the count of pieces a capture takes, a capture played jump by jump by taps and by
+  drops through the game's frames, straight to its last square, the hints after one
+  and two wrong squares, and take back mid-capture, on a child's position read from a
+  photo: `count`, whose `state` fills the board a moment on, so a pulse at its start,
+  which is at full, shows as pulsing), `gui`, `game` (the game screen driven through
   the pointer: take back, start over, home and settings, presses kept apart, the
   celebration and its moments to the still frame (`win`), a clocked game with its
   frames, pause, and flag, the turned board; the computer's turn, answered at once with

@@ -2,15 +2,16 @@
 47, then 33: selected c1, stops 1, ringed targets wrong -, moving false
   with hints on moves: selected c1, stops 1, ringed c7 targets e9 f10 wrong -, moving false
 then 17: selected c1, stops 2, ringed f4 targets e9 f10 wrong -, moving false
-then 28: selected c1, stops 0, ringed f4 c7 targets e9 f10 wrong e5, moving false
-33, then 47 again: selected c1, stops 0, ringed f4 c7 targets e9 f10 wrong -, moving false
+then 28: selected c1, stops 2, ringed f4 targets e9 f10 wrong e5, moving false
+47 again: selected c1, stops 0, ringed f4 c7 targets e9 f10 wrong -, moving false
 33, 17, 8: selected -, stops 0, ringed targets wrong -, moving true
   B:WK8,46:B5
 47 dropped on 33: selected c1, stops 1, ringed targets wrong -, moving false
 then 3: selected -, stops 0, ringed targets wrong -, moving true
   the way 3 jumps to f10
-37, then 28: selected -, stops 0, ringed targets wrong -, moving true
-  to g7, taking 2
+37, then 28: selected c3, stops 1, ringed targets wrong -, moving false
+then 19: selected -, stops 0, ringed targets wrong -, moving true
+  to g7, taking 2, shown from e5
 by hand, 37, then 28: selected c3, stops 1, ringed targets wrong -, moving false
 then 19: selected -, stops 0, ringed targets wrong -, moving true
   to g7, taking 2, shown from e5
@@ -18,5 +19,7 @@ by hand, two ways: 9, then 15: selected g9, stops 0, ringed targets wrong -, mov
 then 27, 38: selected g9, stops 2, ringed c5 targets wrong -, moving false
 then 15: selected -, stops 0, ringed targets wrong -, moving true
   by c5, taking 3
-in a game: 9, then 15: selected -, stops 0, ringed targets wrong -, moving true
-  by d6
+in a game, two ways: 9, then 15: selected g9, stops 0, ringed targets wrong -, moving false
+then 27, 38: selected g9, stops 2, ringed c5 targets wrong -, moving false
+then 15: selected -, stops 0, ringed targets wrong -, moving true
+  by c5, taking 3
