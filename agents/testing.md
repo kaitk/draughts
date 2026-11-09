@@ -237,6 +237,15 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   --tap j4 --tap i1 --tap e9 --tap a5 --tap i1 --frames 400` (task 051), which leaves the
   player's files alone. The run must still be drawing at frame N: `--frames` counts drawn
   frames, so a shot past the last animation never comes; 400 lands in the dots' pulse.
+- An iPad's window headless (task 050, 2026-11-09): its real pixels with its density
+  floor, `--size 748x968 --display-scale 2 --density-floor 0.75` for the 11" iPad's
+  smallest window (499 × 645 dp), `760x2380` the tallest, `2420x960` the widest, and
+  `--corner 88,60` for the window control's dots. A Mac window's layout is the same size
+  with `--density-floor 0`. A list scrolled part-way: a temporary flag pair in the copy
+  that calls `gui::scroll_set(g, id, px)` after `gui::begin` each frame, with the list's
+  id (`picker::LIBRARY_LIST`, `PAGE_LIST` + the theme, `settings::LIST` + the group);
+  a theme's page or settings' tab from flags setting `sh.theme` or `sh.prefs.group` the
+  same way.
 - A season changed mid-run in the headless copy (2026-11-09): a clock from the loop's
   count (`now` = loops / 60; the headless loop doesn't block when nothing draws, so it
   counts on, and `--frames` ends by it) and a temporary flag pair that at loop N sets

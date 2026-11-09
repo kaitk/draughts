@@ -105,11 +105,52 @@ follows each, so a screen left open while turning shows the new orientation's la
 once.
 
 Nuklear (`ui`) is only for developer tools, such as a puzzle editor, because restyling
-its desktop widgets into the kid UI would fight it. If layout outgrows rect-cutting
-(scrolling lists, wrapping text, menus like Snowtime's), we copy
+its desktop widgets into the kid UI would fight it; its scroll offsets
+(`ui::window_get_scroll`) are its windows', so the kid UI keeps its own ("Small windows").
+If layout outgrows rect-cutting (wrapping text, menus like Snowtime's), we copy
 [Clay](https://github.com/nicbarker/clay)'s model, a per-frame layout tree with
 grow/fit/fixed sizing, rather than linking it. Its API is C macros, which Goose can't
 call directly.
+
+### Small windows
+
+iPadOS 26 resizes any app's window, down to about 374 × 484 pt on an 11" iPad Pro, a
+499 × 645 dp layout at the density floor (task 050, 2026-11-09). Every size works; the
+extremes aren't polished.
+
+- **Compact** (`gui::compact`): a portrait safe area under 760 dp tall. Every phone's is
+  taller (801 dp at least), so only a small window takes it. The game's bar is three
+  icon-only tiles 72 × 64 dp (back at the left, settings and start over at the right) in
+  an 88 dp bar, the play one 112 dp row (the piece and whose turn, or the two clocks with
+  the countdown's short form between, at the left; undo move at the right), the margins
+  16 dp: the board goes from about a third of the width to nearly all of it. Home's menu
+  rows are 72 dp, the wordmark's row 64 with 8 under it, the sheet's rim 20, which leaves
+  the board about 240 dp above the sheet. Both under the 88 dp floor, accepted for compact
+  only (the user, 2026-11-09). A single puzzle keeps its layout (`small: false`) for now.
+- **Scrolling** (`gui::scroll_begin`, `scroll_end`): one vertical list a frame, its offset
+  kept in `gui::Gui` by the list's id, so another list starts at its top. A press in the
+  list's view is a tap until it moves 10 dp up or down (`gui::SLOP`); then it is a drag
+  that takes the pointer (`g.active`), so the tile it went down on rises and clicks
+  nothing. The wheel (`gfx::mouse_wheel`, 40 dp a step) scrolls it on the Mac and a
+  trackpad. No fling (the user, 2026-11-09). The list's quads are marked (`gui::CLIP` in
+  extra.z) and the UI shader keeps them inside the view, one more uniform and still one
+  draw; the pointer reaches the list only inside it. The puzzle library's rows and a
+  theme's levels scroll under the title row in portrait, down to the screen's foot;
+  settings' shown group scrolls inside its glass where the tabs leave it too little room.
+  `test/gui/scroll` checks a tap, a wobble under the slop, a drag, the ends, the wheel, and
+  a press outside the view.
+- **The window control** (iPadOS 26's three dots at a window's top left): `g.corner`, how
+  far it reaches right and down from the screen's corner in pixels, 0 with none. Each
+  screen's top-left control alone keeps clear of it, so no height is lost: in a row it
+  steps right (`gui::corner_shift`: the game's compact bar, settings' head, the puzzles'
+  back in portrait), in a column down (`gui::corner_drop`: the game's back in landscape,
+  home's player chip and its landscape column, the puzzles' back in landscape). On iOS
+  `ios/corner.m` reads it each frame through `display.c` from UIKit's corner-adapted safe
+  area (`edgeInsetsForLayoutRegion:` with `safeAreaLayoutRegionWithCornerAdaptation:`,
+  across for the reach right and down for the reach down); the difference from the plain
+  safe area says whether there is a control, none before iOS 26, full screen without
+  windowing, or on an iPhone. The simulator's shots put the dots about 22 to 60 pt across
+  and 22 to 42 pt down; `--corner 88,60` (dp) tries it on the Mac.
 
 ## Look
 
@@ -571,18 +612,28 @@ the prototype tried, kept for 3D:
   would run past the page's foot, each setting's name goes above its tiles, as in
   portrait, and the column narrows to its widest row (2026-11-08); where that runs past
   the foot too, the names go back to the left and the rows take the width they want,
-  unwrapped (a foldable). Where even that doesn't fit (a phone), one group shows at a time:
+  unwrapped (a foldable), as long as the board keeps 128 dp beside them (a phone: the
+  choices at most 70% of the page). Where that doesn't fit, the board goes on top and the
+  groups side by side under it, as in portrait, so a window that widens goes from portrait
+  to landscape without tabs between (task 050, the user 2026-11-09): the hand-over is at
+  about 870 × 800 dp, and from about 800 × 930 dp to square the groups leave the board
+  under 128 dp, and none shows. Where even that doesn't fit (a phone, a small window), one group shows at a time:
   two tiles, the game's and the look's icon and title, each on glass as back is (a plain
   tile alone was hard to read over a bright photograph, 2026-11-09), the shown one lit, choose which,
   in the title row in place of the title in landscape and in a row under it in portrait
-  (where the groups side by side would leave the board under 45% of the width, or under
-  220 dp, 45% of a 553 dp phone's: a tablet's 736 dp page keeps both groups down to the
-  13" iPad's 3:4 with its bars, a 237 dp board where the tabs gave 277, the look's group
-  setting their 600 dp height; a foldable's 206 dp keeps the tabs, 2026-11-09), and the
+  (on a phone, its shorter side under 600 dp, where the groups side by side would leave
+  the board under 45% of the width, or under 220 dp, 45% of a 553 dp phone's; a larger
+  screen keeps them side by side as long as they fit under the title row, so the
+  foldable's and 4:3's portraits show both with a 206 and 269 dp board, task 050), and the
   group's glass, without its title row, is as tall as the taller of the two so the board
   stays put; in portrait it is its own group's height and the board takes the rest, larger
   on the game's tab (the game's glass as tall as the look's ended in empty glass under its
-  rows, 2026-11-09). A board under 128 dp isn't shown, as on home (a 9:16 phone at 480 dp). In
+  rows, 2026-11-09); where the group is taller than the room under the tabs (a small
+  window), its glass takes the room down to the foot, no board, and its rows scroll inside
+  it ("Small windows"). Side by side, each group is as wide as it wants unwrapped where
+  both fit the page, centered, else they share the width in proportion to what each
+  wants. Where the theme's five wrap, they are an even grid three across (two where three
+  don't fit), not a ragged wrap. A board under 128 dp isn't shown, as on home (a 9:16 phone at 480 dp). In
   portrait, where the title doesn't fit beside the worded back and the language in the
   row labels' 30 dp face (a phone: at 548 dp "Settings" had 61 dp, "Seaded" 45 and was
   left out), back is the arrow over the word in an 88 dp square, which leaves 107 dp; at
