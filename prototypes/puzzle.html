@@ -24,7 +24,13 @@
           in the panel with no card over the board.
      A wrong move plays, then slides back by itself: its square flashes the red ring, a
      ghost of the piece fades there, and a star goes out.
-     ?take=a|b|c and ?state=play|wrong|hint|solved, also from the switcher. */
+     ?take=a|b|c and ?state=play|wrong|hint|solved, also from the switcher.
+     Take c was built. Whose puzzle it is shows as the game's turn piece (2026-11-09), so
+     a child who can't read knows the side they play: in portrait the 52 px piece leads
+     the goal's row; in landscape two takes, ?turn=a|b (with ?side=white|black):
+       a: the 72 px piece over the goal, as it stands over "White's turn" in a game;
+          where the panel is too short for that (a phone in landscape), as b.
+       b: the piece beside the goal's icon in one row, the words under both. */
   .game {
     --gap: 24px;
     --side: 232px;
@@ -70,6 +76,10 @@
   .what > svg { flex: none; width: 40px; height: 40px; stroke-width: 2; color: var(--glow); }
   .what.big { flex-direction: column; gap: 8px; font-size: 28px; }
   .what.big > svg { width: 72px; height: 72px; stroke-width: 1.8; }
+  .lead { display: flex; align-items: center; justify-content: center; gap: 20px; }
+  .lead > svg { flex: none; width: 72px; height: 72px; stroke-width: 1.8; color: var(--glow); }
+  .words { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .words .side { font-size: 17px; opacity: 0.66; }
 
   /* After a miss: the goal's words give way to "try again" for a moment. */
   .again { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 16px;
@@ -146,6 +156,10 @@
     .goal .piece { width: 52px; height: 52px; --u: 5px; }
     .what.big { flex-direction: row; gap: 12px; }
     .what.big > svg { width: 48px; height: 48px; }
+    .lead { gap: 12px; }
+    .lead > svg { width: 48px; height: 48px; }
+    .what.big:has(.lead) { gap: 12px; }
+    .words { align-items: flex-start; }
     .stake { padding-right: 6px; }
     .stake.won svg:not(.off) { width: 52px; height: 52px; }
     .row.big { flex-direction: row; min-height: 80px; }
@@ -170,6 +184,9 @@
   const TAKES = ['a', 'b', 'c'];
   const STATES = ['play', 'wrong', 'hint', 'solved'];
   const take = TAKES.includes(params.get('take')) ? params.get('take') : 'a';
+  const TURNS = ['a', 'b'];
+  const turn = TURNS.includes(params.get('turn')) ? params.get('turn') : 'a';
+  const side = params.get('side') === 'black' ? 'black' : 'white';
   const state = STATES.includes(params.get('state')) ? params.get('state') : 'play';
   const I = Draughts.icon;
 
@@ -212,8 +229,16 @@
       (state === 'wrong' || state === 'hint' ? row('hint', W.hint, `big ${state === 'hint' ? 'lit' : ''}`) : '');
   } else {
     out += '<div class="space"></div>' + row('restart', W.restart);
-    const top = state === 'solved' ? `<div class="what big">${I('target')}<span>${W.solved}</span></div>`
-      : state === 'wrong' ? `<div class="what big">${I('target')}${retry}</div>` : what(true);
+    // Whose puzzle it is: the game's turn piece, and the words under the goal's.
+    const disc = `<div class="piece ${side}"></div>`;
+    const words = state === 'wrong' ? retry : `<div class="words"><span>${state === 'solved' ? W.solved : W.goal}</span>` +
+      `<span class="side">${side === 'black' ? 'Black' : 'White'} to move</span></div>`;
+    // Take a's column needs the panel's room for the piece too (rendering.md's sizes).
+    const room = innerHeight - 2 * 24 - 40;
+    const short = room < 14 + 72 + 16 + 72 + 8 + 62 + 16 + 56 + (innerHeight - 48 < 420 ? 96 : 132);
+    const beside = matchMedia('(orientation: portrait)').matches || turn === 'b' || short;
+    const top = beside ? `<div class="what big"><div class="lead">${disc}${I('target')}</div>${words}</div>`
+      : `${disc}<div class="what big">${I('target')}${words}</div>`;
     play = `<div class="goal">${top}</div>${stake(left, state === 'solved' ? 'won' : '')}` +
       '<div class="space"></div>' + row('next', W.next, `big ${state === 'solved' ? 'lit' : 'off'}`, 'puzzles.html');
   }
@@ -278,7 +303,8 @@
   const bar = document.querySelector('.proto-bar');
   const select = (key, values, current) => `<select data-own="${key}" aria-label="${key}">${values.map((v) =>
     `<option${v === current ? ' selected' : ''}>${v}</option>`).join('')}</select>`;
-  bar.insertAdjacentHTML('afterbegin', select('take', TAKES, take) + select('state', STATES, state));
+  bar.insertAdjacentHTML('afterbegin', select('take', TAKES, take) + select('state', STATES, state) +
+    select('turn', TURNS, turn));
   bar.querySelectorAll('[data-own]').forEach((s) => {
     s.onchange = (e) => {
       e.stopPropagation();
