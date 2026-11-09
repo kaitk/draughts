@@ -11,7 +11,8 @@
 // on top and the groups stand side by side under it, each setting's name above its
 // tiles. Where the groups don't fit so (a phone), one shows at a time: two tiles, Game
 // and Look, choose which, in the title row in landscape and under it in portrait. A
-// tap applies at once; there is no save button.
+// tap applies at once; there is no save button. The game's group also holds the privacy
+// note (`note_lines`), beside its title or at its foot.
 //
 // The values are kept across runs as a small text file per player, one `key = value`
 // per line, which the app reads at start and writes after a change (players.goose): the
@@ -485,13 +486,84 @@ fn rows(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4,
     return y - r.y, changed;
 }
 
+// The privacy note (App Review Guideline 5.1.1(i); store/app-store.md): what the app
+// collects, nothing, in the small face and dim as the settings' names, in the game's
+// group. At its title row's right end where it fits there in two lines at most (most
+// landscapes, where both groups stack and the height is short; one line in English and
+// Estonian on the tablet and the iPad), the row as tall as they are; otherwise at the
+// glass's foot, wrapped to its width, where the game's group, as tall as the look's
+// (portrait, a phone's tabs), has room to spare. No link out: in the Kids category one
+// needs a parental gate.
+let NOTE_A = 0.66;
+let NOTE_GAP = 24.0;        // between the group's title and the note beside it
+let NOTE_BESIDE = 2;        // the most lines the note takes beside the title
+
+// The note wrapped at whole words to r's width, `align`ed in it: how many lines, each a
+// small face's height; drawn from r's top when `draw`.
+fn note_lines(g: gui::Gui&, r: float4, draw: bool, align: i64 = gui::LEFT) -> i64 {
+    let s = strings::get(strings::SETTINGS_PRIVACY);
+    let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
+    var n = 0;
+    var start = 0;
+    while start < s.len {
+        // The most words that fit, or the first alone where none does.
+        var end = s.len;
+        if gui::text_width(g, gui::SMALL, s[start..]) > r.z {
+            var fit = -1;
+            var first = -1;
+            for i in start..s.len {
+                guard s[i] == ' ' else { continue; }
+                if first < 0 { first = i; }
+                if gui::text_width(g, gui::SMALL, s[start..i]) <= r.z { fit = i; }
+            }
+            end = if fit >= 0 { fit } else if first >= 0 { first } else { s.len };
+        }
+        if draw { gui::text(g, gui::SMALL, float4 { r.x, r.y + n * line, r.z, line }, s[start..end], NOTE_A, 0.0, align); }
+        n++;
+        start = end + 1;
+    }
+    return n;
+}
+
+// How wide the note may be beside the title of a game's group glass w wide.
+fn note_room(g: gui::Gui&, w: f32) -> f32 {
+    return w - (2.0 * GROUP_PAD + 30.0 + 12.0 + NOTE_GAP) * g.scale
+           - gui::text_width(g, gui::HEADING, strings::get(GROUP_TITLES[0]));
+}
+
+// How many lines the note takes beside the title of a game's group glass w wide; 0 where
+// it goes at the foot.
+fn note_beside(g: gui::Gui&, w: f32, titled: bool) -> i64 {
+    guard titled else { return 0; }
+    let n = note_lines(g, float4 { 0.0, 0.0, note_room(g, w), 0.0 }, false);
+    return if n <= NOTE_BESIDE { n } else { 0 };
+}
+
+// How tall a group's title row is: as tall as the note beside it, at least TITLE_H.
+fn title_height(g: gui::Gui&, group: i64, w: f32) -> f32 {
+    let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
+    let n = if group == 0 { note_beside(g, w, true) } else { 0 };
+    return max(TITLE_H * g.scale, n * line);
+}
+
+// How tall the note is at the foot of a game's group glass w wide, with the gap above it;
+// 0 where it goes in the title row.
+fn note_height(g: gui::Gui&, w: f32, titled: bool) -> f32 {
+    let u = g.scale;
+    guard note_beside(g, w, titled) == 0 else { return 0.0; }
+    let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
+    let n = note_lines(g, float4 { 0.0, 0.0, w - 2.0 * GROUP_PAD * u, 0.0 }, false);
+    return ROW_GAP * u + n * line;
+}
+
 // How tall a group's glass is at width w; with no title row where a tab names it.
 fn group_height(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, w: f32, aside: bool,
                 titled: bool = true) -> f32 {
     let u = g.scale;
     let h, unused = rows(s, over, g, group, float4 { 0.0, 0.0, w - 2.0 * GROUP_PAD * u, 0.0 }, aside, false);
-    let title: f32 = if titled { TITLE_H + ROW_GAP } else { 0.0 };
-    return (12.0 + title + 14.0) * u + h;
+    let title: f32 = if titled { title_height(g, group, w) + ROW_GAP * u } else { 0.0 };
+    let note: f32 = if group == 0 { note_height(g, w, titled) } else { 0.0 };
+    return (12.0 + 14.0) * u + title + h + note;
 }
 
 // How wide a group's glass wants to be with its rows unwrapped, the names at their left
@@ -520,14 +592,28 @@ fn group(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4
     gui::glass(g, gui::bleed(g, r, area), 24.0);
     var c = float4 { r.x + GROUP_PAD * u, r.y + 12.0 * u, r.z - 2.0 * GROUP_PAD * u, r.w - 26.0 * u };
     if titled {
-        var title = gui::cut_top(c, TITLE_H * u);
+        var title = gui::cut_top(c, title_height(g, group, r.z));
         gui::cut_top(c, ROW_GAP * u);
         gui::glyph_icon(g, gui::center(gui::cut_left(title, 30.0 * u), 30.0 * u, 30.0 * u), GROUP_ICONS[group],
                         gui::PLAIN, 0.0, 0.85);
         gui::cut_left(title, 12.0 * u);
         gui::text(g, gui::HEADING, title, strings::get(GROUP_TITLES[group]), 1.0, 0.0, gui::LEFT);
+        let n = if group == 0 { note_beside(g, r.z, true) } else { 0 };
+        if n > 0 {
+            // Right-aligned beside the title, centered down its row.
+            let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
+            let room = note_room(g, r.z);
+            note_lines(g, float4 { title.x + title.z - room, title.y + 0.5 * (title.w - n * line), room, 0.0 }, true,
+                       gui::RIGHT);
+        }
     }
     let h, changed = rows(s, over, g, group, c, aside, true);
+    if group == 0 && note_beside(g, r.z, titled) == 0 {
+        // At the glass's foot, below the rows however much taller the glass is.
+        let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
+        let n = note_lines(g, c, false);
+        note_lines(g, float4 { c.x, c.y + c.w - n * line, c.z, 0.0 }, true);
+    }
     return changed;
 }
 

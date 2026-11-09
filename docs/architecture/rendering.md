@@ -515,7 +515,14 @@ the prototype tried, kept for 3D:
   **Game**: the draughts a new game starts on (international, Brazilian, Russian; the
   setup can still change it) and move hints; the tutorial's row (one tile, learn the
   moves) comes with the tutorial, taken out until then so the tablet's
-  landscape shows both groups (the user, 2026-11-09).
+  landscape shows both groups (the user, 2026-11-09). Last, the privacy note
+  (`settings.privacy`, App Review Guideline 5.1.1(i)): the policy in one sentence, dim
+  in the small face, with no link out, as a link in the Kids category needs a parental
+  gate. It sits at the group's title row's right end where it fits there in two lines
+  at most (the stacked landscapes, which have no height to spare: one line in both
+  languages on the tablet and the iPad), else at the glass's foot, wrapped, where the
+  game's group is as tall as the look's (portrait, a phone's tabs), so it moves no
+  layout (2026-11-09).
   **Look**: the theme (the row's name, "Theme") as
   thumbnails of the four photographs (62 × 40 px), or of their plain fades when the
   plain background is chosen, and, last, a tile for by the date, so on a phone in

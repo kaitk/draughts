@@ -22,6 +22,7 @@ settings.by_date = By date
 settings.board = Board
 settings.hints = Move hints
 settings.kings = Kings
+settings.privacy = Privacy: Draughts collects nothing. Everything stays on this device.
 
 season.winter = Winter
 season.spring = Spring

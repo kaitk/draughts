@@ -21,6 +21,7 @@ settings.by_date = Tänane
 settings.board = Kabelaud
 settings.hints = Vihjed
 settings.kings = Tammid
+settings.privacy = Privaatsus: Kabe ei kogu midagi. Kõik jääb sellesse seadmesse.
 
 season.winter = Talv
 season.spring = Kevad
