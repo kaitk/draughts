@@ -42,6 +42,7 @@ let FRAME = """
         vec4 frame_map;      // x: the frame map's height over its width
     };
     const float PI = 3.14159265;
+    // The board's sizes, kept in step with mesh.goose's and src/board/view3d.goose's.
     const float FIELD = 4.0;
     const float INNER = 4.1;
     const float FRAME_W = 0.5;

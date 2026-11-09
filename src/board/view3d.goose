@@ -4,7 +4,7 @@
 // board draws (board::fill), so both views follow one state and one animation. The app
 // draws what `Scene` holds; tests run all of it headless.
 //
-// World units are poc/3d's (poc/3d/mesh.goose): the playing field spans -4..4 in x and
+// World units are the renderer's (src/render3d/mesh.goose): the playing field spans -4..4 in x and
 // z whatever the draughts, so a square is 8 / n; y is up, the field's top y = 0; +z is
 // the near side, the bottom of the screen. The world is laid out as the flat board shows
 // it: x and z follow the flat layout's x and y (`to_world`, `to_flat`), so a turned board
@@ -32,8 +32,9 @@ let TARGET = float3 { 0.0, -0.15, 1.1 };
 let NEAR: f32 = 2.0;
 let FAR:  f32 = 40.0;
 
-// The board (poc/3d/mesh.goose): the field's half width, the dark inlay round it, the
-// frame round that, its top above the field, and the board's underside.
+// The board: the field's half width, the dark inlay round it, the frame round that, its
+// top above the field, and the board's underside. Kept in step with
+// src/render3d/mesh.goose's and src/render3d/shaders.goose's constants of these names.
 let FIELD:     f32 = 4.0;
 let INNER:     f32 = 4.1;
 let FRAME_W:   f32 = 0.5;
@@ -409,7 +410,7 @@ fn pick(v: View, b: board::Board&, l: board::Layout, p: float2) -> float2 {
 
 // A frame of the 3D board, filled from the flat board's draw lists (fill below).
 //
-// `inst` is poc/3d's storage buffer, two float4s an instance: the foot (x, y, z) and the
+// `inst` is the renderer's storage buffer (src/render3d/), two float4s an instance: the foot (x, y, z) and the
 // scale; then dark (0 or 1), 1 for a crowned disc or 0.5 a stack's upper disc, 1 for the
 // selected piece or 2 a stack's lower disc, and a seed for its figure. A stacked king is
 // two instances. `state` runs beside it, two float4s an instance, what the 2D pieces

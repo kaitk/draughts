@@ -194,12 +194,12 @@ find out by compiling, so the next session doesn't.
   pixel a small triangle covers in part shades with attributes extrapolated outside it.
   On the 3D prototype's grooves that made specks through Filament's micro-shadowing;
   keep terms that blow up on wild values off such meshes, or shade fine detail from a
-  function of the object-space position, as the pieces' tops do (`poc/3d/shaders.goose`,
+  function of the object-space position, as the pieces' tops do (`src/render3d/shaders.goose`,
   `mesh::top_height`).
 - MSAA antialiases only coverage: shading runs once per pixel and triangle, so detail a
   shader makes from a function of position (the pieces' step) aliases however fine the
   mesh. Filter it over the pixel's footprint (`fwidth` of its argument) and widen the
-  roughness by the normals' spread (`poc/3d/shaders.goose`). A `textureGrad` whose
+  roughness by the normals' spread (`src/render3d/shaders.goose`). A `textureGrad` whose
   gradients come from another mapping than the one sampled picks the wrong footprint
   (the frame's sides) (2026-11-09).
 - `fwidth` of a value that jumps where a pixel quad straddles a cell's edge (a distance

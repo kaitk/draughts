@@ -30,7 +30,7 @@ import org.libsdl.app.SDLSurface;
 // black until SDL presents, and Android removes its splash at the window's first draw,
 // before that. So a view in that colour covers the whole window, and on Android 12+ the
 // splash, the icon on that colour, is held too; both go when the program calls
-// firstFrame() (app/launch.c). Home's way out closes it, card and all, through
+// firstFrame() (src/app/launch.c). Home's way out closes it, card and all, through
 // closeApp().
 //
 // The system's back reaches the program as SDL's back key (AC Back), which goes back a
@@ -142,7 +142,7 @@ public class DraughtsActivity extends SDLActivity {
         runOnUiThread(show);
     }
 
-    // From the program's thread, as it returns after home's way out (app/launch.c): ends
+    // From the program's thread, as it returns after home's way out (src/app/launch.c): ends
     // the activity and takes its card out of recents, where SDL's own finish() would leave
     // a card showing home as if the app still ran. Called here rather than posted, as SDL
     // calls finish() from this thread too, so the activity is finishing by the time SDL
@@ -152,7 +152,7 @@ public class DraughtsActivity extends SDLActivity {
         finishAndRemoveTask();
     }
 
-    // From the program's thread, on the system's back at home's menu (app/launch.c): puts
+    // From the program's thread, on the system's back at home's menu (src/app/launch.c): puts
     // the app in the background, the activity and the game kept, as the system's back
     // does for a launcher's root activity. onBackPressed, which SDL's own back would run,
     // finished the activity and removed its card on Android 17 (the Pixel 7a).

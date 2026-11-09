@@ -13,7 +13,8 @@ import math;
 
 // The playing field's half width with its dark inlay round it, and the frame round that
 // (about 1/18 of the board's width, as the 3D reference has it), its top above the
-// field, its bullnose's radius, and the board's underside.
+// field, its bullnose's radius, and the board's underside. Kept in step with
+// shaders.goose's constants and src/board/view3d.goose's (the taps' geometry).
 let FIELD:     f32 = 4.0;
 let INLAY:     f32 = 0.1;
 let INNER:     f32 = 4.1;
