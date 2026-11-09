@@ -56,6 +56,30 @@ turns (the shadow pass culls nothing: `CULL_FRONT` would halve it and cut acne);
 pieces blended after the opaque ones without depth writes; the crown's SDF only on
 kings.
 
+## Tried on the Mac (the `perf-3d-frame-cost` branch, 2026-11-09)
+
+Each step headless on the M1 Pro (a local copy of the app opening `gfx::open_headless`,
+never committed, `agents/testing.md`), 1920 × 1200, Russian, autumn: `--bench 300`, the
+median of three launches, each launch's the median of 300 frames, waited. The Mac's
+figures are a proxy only; the tablet's are to come. Shots before and after of autumn,
+winter, summer, and spring (a selected piece, a stacked king), the board turned for
+black and swung 40°, swung and tipped low, and zoomed (pieces about 140 px across, the
+largest on any screen): PSNR and pixels off by more than 4 levels of 255, and 200% crops.
+Two runs of one build are byte-identical.
+
+| Step | Pass, waited | With the shadow map | Look |
+| --- | --- | --- | --- |
+| Before (`2e2f634`) | 2.48 ms | 2.51 ms | |
+| 1. The piece mesh | 1.71 ms | 1.73 ms | 54 to 58 dB, 40 to 90 pixels |
+
+1. **The piece mesh:** the top's 42 rows down to 9 (`mesh::TOP_ROWS`, dense only round
+   the step), the edge's arc 12 steps to 6, the foot's 5 to 3, and the lathe's 72
+   segments to 48 (the silhouette off a true circle by 0.15 px on a 140 px piece, 0.07
+   before). 9,216 triangles a piece to 2,208, 221k to 53k for 24 pieces. The pixels that
+   differ are along the step's ring and the edge, and the shadows round the pieces (the
+   shadow map's geometry); no difference visible at 200%, the low view's silhouettes
+   included.
+
 ## The idle wakeup
 
 The tablet's 3D board at rest wakes once a second, as the flat board does, but spends

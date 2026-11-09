@@ -91,15 +91,18 @@ fn top_ao(u: f32) -> f32 {
 }
 
 // The piece's profile from its axis out over the face and down the side, in world units
-// at scale 1: the top sampled from top_height, finely over the step and the band, the
-// outer edge rounded from 89% of the radius into the side, the side, a small round at
-// the foot, and the underside.
+// at scale 1: the top sampled from top_height at TOP_ROWS, the outer edge rounded from
+// 89% of the radius into the side, the side, a small round at the foot, and the
+// underside. The top's rows only place it: the lit shader shades the top from
+// top_height at each pixel, so a few rows round the step do (task 042: 42 rows and 72
+// segments were about 9,200 triangles a piece, most of them 2 to 3 pixels).
+let TOP_ROWS = [0.0, 0.6, 0.625, 0.64, 0.655, 0.67, 0.69, 0.79, 0.89];
+let SEGMENTS = 48;
 fn piece_profile(p: Profile&) {
     let r = RADIUS;
     let h = HEIGHT;
-    // Three steps over the flat inner disc, then 39 to the edge.
-    for i in 42 {
-        let u = if i < 3 { i as f32 * 0.25 } else { 0.5 + (i - 2) as f32 * 0.01 };
+    for row in TOP_ROWS {
+        let u = row as f32;
         let e: f32 = 0.002;
         let slope = (top_height(u + e) - top_height(u - e)) / (2.0 * e * r);
         let n = normalize(float2 { -slope, 1.0 });
@@ -107,9 +110,9 @@ fn piece_profile(p: Profile&) {
     }
     // The outer edge, rounded from 89% of the radius into the side.
     let er = r - EDGE_AT * r;
-    p.arc(EDGE_AT * r, h - er, er, PI * 0.5, 0.0, 12, true, 1.0, 1.0);
+    p.arc(EDGE_AT * r, h - er, er, PI * 0.5, 0.0, 6, true, 1.0, 1.0);
     p.line(r, h - er, r, 0.025, 1.0, 0.92);
-    p.arc(r - 0.025, 0.025, 0.025, 0.0, -PI * 0.5, 5, true, 0.92, 0.75);
+    p.arc(r - 0.025, 0.025, 0.025, 0.0, -PI * 0.5, 3, true, 0.92, 0.75);
     p.line(r - 0.025, 0.0, 0.0, 0.0, 0.6, 0.5);
 }
 
@@ -205,6 +208,6 @@ fn piece(verts: Vertex[>..]&, indices: u32[>..]&) {
     var prof: Profile = [];
     piece_profile(prof);
     var path: Path = [];
-    lathe_path(path, 72);
+    lathe_path(path, SEGMENTS);
     sweep(verts, indices, prof, path, MAT_PIECE);
 }
