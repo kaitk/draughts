@@ -544,6 +544,14 @@ after the launch, `dumpsys meminfo`. Before is `e279c86` with only the bench add
   across (656 dp at 1.97 px a dp), its field's near edge about 1120 px, so the 2048² plan
   is 1.8 texels a pixel there and 1024² would magnify it. A 720p phone would take 1024²
   (about 60 MB less); not measured, as there is no such device.
+- **Rebased onto the 3D screens, summer's and spring's looks** (`e974ace`, Russian, two
+  launches each): autumn GL mtrack 212 MB, the theme applied in 0.79 to 0.84 s (the
+  bake 0.75 to 0.79, warm the plan 105 ms and the frame map 44); spring's carved stone
+  (`--theme birch --spring 1`) 212 MB, 0.85 to 0.89 s (the bake 0.81 to 0.85, warm the
+  plan 146 ms and the frame map 77). Headless shots of autumn, winter (marble 2), summer
+  0 to 3 and spring 0 and 1 against `e974ace`'s: 53 to 55 dB each, the shadow map's
+  difference, none visible in 200% crops of the frame's corner (the carving, the seams,
+  the pickling, the marble all as before).
 - **After moves:** GL mtrack at rest after c3–d4 on Russian 219 MB against 210 at launch.
 - **What's left:** the 3D board on top of the flat board's memory is still about 160 to
   175 MB: the surfaces 70 MB, the 4× target and its 16-bit depth about 60, the kept
