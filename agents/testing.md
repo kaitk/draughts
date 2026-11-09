@@ -36,7 +36,10 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   celebration and its moments to the still frame (`win`), a clocked game with its
   frames, pause, and flag, the turned board; the computer's turn, answered at once with
   `ai::think` as the app's worker would; the clock value on its own; and the computer's
-  time a move on the clock, over whole games with simulated time, in `pace`), `shell`
+  time a move on the clock, over whole games with simulated time, in `pace`; several captures of
+  one piece each, black against the computer on 10×10, every capture and each landing of a
+  king's chosen by taps and by a drag, on the flat and the 3D board, nothing played unchosen:
+  `choice`), `shell`
   (home, the switch to the game and back, settings and their file, their taps and the
   board beside them, the transitions between home and settings, home and the game, and
   the puzzles to pick from and a puzzle (their frames, the end, a tap during them, turning
