@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App Store preview</title>
+<!-- A preview of Draughts' App Store page, on an iPhone and on the web, from the texts in
+     store/app-store.md and the simulator's screenshots. store/preview/build.py fills DATA
+     and img/. An approximation of the App Store's layout of 2026-11, not Apple's own. -->
+<style>
+  :root { --ink: #1d1d1f; --muted: #6e6e73; --blue: #0071e3; --line: #d2d2d7; --page: #e8e8ed; --fill: #f5f5f7; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink);
+         font: 15px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif; }
+  header.bar { position: sticky; top: 0; z-index: 5; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+               padding: 10px 16px; background: #1d1d1f; color: #fff; }
+  header.bar h1 { font-size: 16px; margin: 0 12px 0 0; font-weight: 600; }
+  .seg { display: inline-flex; border: 1px solid #fff6; border-radius: 16px; overflow: hidden; }
+  .seg button { background: none; color: #fff; border: 0; padding: 5px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+  .seg button.on { background: #fff; color: #1d1d1f; }
+  .note { opacity: .75; font-size: 12px; }
+  .banner { background: #fff4d6; color: #5c4400; padding: 8px 16px; font-size: 13px; display: none; }
+  main { display: flex; flex-wrap: wrap; gap: 32px; padding: 24px 16px 64px; align-items: flex-start; justify-content: center; }
+  .label { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  /* The iPhone: 440 pt wide, as a 6.9" iPhone. */
+  .phone { width: 440px; height: 956px; border-radius: 56px; border: 11px solid #111; background: #fff;
+           overflow: hidden; box-shadow: 0 10px 40px #0003; flex: none; }
+  .phone .scroll { height: 100%; overflow-y: auto; }
+  .island { width: 126px; height: 37px; border-radius: 20px; background: #111; margin: 11px auto 6px; }
+  .nav { display: flex; justify-content: space-between; padding: 4px 20px; color: var(--blue); font-size: 17px; }
+  .head { display: flex; gap: 16px; padding: 10px 20px 0; }
+  .head img.icon { width: 118px; height: 118px; border-radius: 26px; flex: none; border: .5px solid #0002; }
+  .name { font-size: 22px; font-weight: 600; line-height: 1.2; margin: 0; }
+  .subtitle { color: var(--muted); font-size: 15px; margin-top: 2px; }
+  .get { display: inline-block; margin-top: 14px; background: var(--blue); color: #fff; font-weight: 700; font-size: 15px;
+         border-radius: 16px; padding: 4px 22px; }
+  .strip { display: flex; margin: 18px 0 0; padding: 0 20px; overflow-x: auto; text-align: center; border-bottom: 1px solid var(--line); }
+  .strip div { flex: 1 0 100px; padding: 0 6px 12px; border-right: 1px solid var(--line); font-size: 11px; color: var(--muted); }
+  .strip div:last-child { border: 0; }
+  .strip b { display: block; font-size: 19px; color: var(--muted); margin: 2px 0; }
+  .shots { display: flex; gap: 10px; overflow-x: auto; padding: 16px 20px 6px; scroll-snap-type: x mandatory; }
+  .shots img, .shots .missing { flex: none; border-radius: 18px; border: .5px solid #0002; scroll-snap-align: start; background: var(--fill); }
+  .i-shots img, .i-shots .missing { width: 192px; height: 417px; }
+  .i-shots.ipad img, .i-shots.ipad .missing { width: 300px; height: 400px; border-radius: 12px; }
+  .devs { padding: 4px 20px 0; color: var(--muted); font-size: 13px; }
+  .block { padding: 16px 20px 0; }
+  .block h3 { font-size: 20px; font-weight: 700; margin: 0 0 8px; display: flex; justify-content: space-between; }
+  .block h3 a { color: var(--blue); font-weight: 400; font-size: 17px; }
+  .promo { margin-bottom: 10px; }
+  .desc { white-space: pre-line; max-height: calc(1.4em * 3); overflow: hidden; }
+  .desc.open { max-height: none; }
+  button.more { border: 0; background: none; color: var(--blue); font: inherit; padding: 2px 0; cursor: pointer; float: right; }
+  .privacy { background: var(--fill); border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 30px; }
+  .privacy b { display: block; font-size: 15px; margin: 6px 0 4px; }
+  .privacy span { font-size: 13px; color: var(--muted); }
+  .missing { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 11px; text-align: center; padding: 4px; }
+  /* The web page: apps.apple.com. */
+  .web { width: 1068px; max-width: 100%; background: #fff; border-radius: 12px; box-shadow: 0 10px 40px #0002; padding: 0 0 40px; overflow: hidden; }
+  .w-nav { height: 48px; background: #fafafc; border-bottom: 1px solid var(--line); display: flex; align-items: center; padding: 0 32px; gap: 28px; font-size: 13px; color: var(--muted); }
+  .w-head { display: flex; gap: 32px; padding: 32px 40px 0; }
+  .w-head img { width: 230px; height: 230px; border-radius: 50px; border: .5px solid #0002; flex: none; }
+  .w-head h2 { font-size: 32px; line-height: 1.15; margin: 8px 0 4px; font-weight: 600; }
+  .w-head h2 small { font-size: 13px; background: var(--fill); color: var(--muted); border-radius: 4px; padding: 2px 6px; vertical-align: middle; font-weight: 400; }
+  .w-head .subtitle { font-size: 20px; }
+  .w-head .devname { color: var(--blue); font-size: 17px; margin-top: 6px; }
+  .w-head .muted { color: var(--muted); margin-top: 14px; }
+  .w-body { padding: 24px 40px 0; }
+  .w-tabs { display: flex; gap: 6px; margin-bottom: 4px; }
+  .w-tabs button { border: 0; background: none; font: inherit; padding: 4px 10px; color: var(--muted); cursor: pointer; border-radius: 6px; }
+  .w-tabs button.on { background: var(--fill); color: var(--ink); }
+  .w-shots { padding-left: 0; padding-right: 0; }
+  .w-shots img, .w-shots .missing { width: 230px; height: 500px; }
+  .w-shots.ipad img, .w-shots.ipad .missing { width: 380px; height: 507px; border-radius: 12px; }
+  .w-desc { white-space: pre-line; max-height: calc(1.4em * 6); overflow: hidden; max-width: 760px; }
+  .w-desc.open { max-height: none; }
+  .checks { width: 340px; background: #fff; border-radius: 12px; padding: 16px 18px; font-size: 13px; box-shadow: 0 2px 10px #0001; flex: none; }
+  .checks h2 { font-size: 15px; margin: 0 0 8px; }
+  .checks table { width: 100%; border-collapse: collapse; }
+  .checks td { padding: 4px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .checks td:last-child { text-align: right; white-space: nowrap; }
+  .checks p { color: var(--muted); }
+  .over { color: #c5221f; font-weight: 600; }
+  code { font-size: 12px; word-break: break-all; }
+</style>
+</head>
+<body>
+<header class="bar">
+  <h1>Draughts on the App Store: preview</h1>
+  <span class="seg" id="lang"><button data-v="en" class="on">English (U.K.)</button><button data-v="et">Eesti</button></span>
+  <span class="seg" id="dev"><button data-v="iphone" class="on">iPhone</button><button data-v="ipad">iPad</button></span>
+  <span class="note">An approximation of the App Store's layout (2026-11); App Store Connect's own preview has the last word.</span>
+</header>
+<div class="banner" id="banner">Estonian is not an App Store language: Estonia's storefront shows the English (U.K.) listing. Shown here only for reference, with the app's Estonian screens.</div>
+<main>
+  <section>
+    <p class="label">iPhone, App Store app</p>
+    <div class="phone"><div class="scroll">
+      <div class="island"></div>
+      <div class="nav"><span>&#8249; Search</span><span>&#8679;</span></div>
+      <div class="head"><img class="icon" data-img="icon" alt="">
+        <div><p class="name" id="i-name"></p><div class="subtitle" id="i-sub"></div><span class="get" id="i-get"></span></div></div>
+      <div class="strip">
+        <div>RATINGS<b>&mdash;</b>Not enough</div>
+        <div>AGE<b>4+</b>Years</div>
+        <div>CATEGORY<b>&#9822;</b>Board</div>
+        <div>KIDS<b id="i-band">6–8</b>Ages</div>
+        <div>DEVELOPER<b>&#9786;</b>{DEVELOPER}</div>
+        <div>LANGUAGE<b>EN</b>+ 1 more</div>
+      </div>
+      <div class="shots i-shots" id="i-shots"></div>
+      <div class="devs" id="i-devs"></div>
+      <div class="block"><div class="promo" id="i-promo"></div>
+        <div class="desc" id="i-desc"></div><button class="more" id="i-more">more</button><div style="clear:both"></div></div>
+      <div class="block"><h3>App Privacy <a>See Details</a></h3>
+        <div class="privacy">&#9995;<b>Data Not Collected</b><span>The developer does not collect any data from this app.</span></div></div>
+    </div></div>
+  </section>
+  <aside class="checks">
+    <h2>Fine detail</h2>
+    <table id="counts"></table>
+    <p>Keywords (not shown on the page):<br><code id="kw"></code></p>
+    <p>Search results usually show the name, the subtitle, and the first three portrait screenshots, so those three carry the board.</p>
+    <p class="label">Icon, 1024 × 1024, as iOS rounds it</p>
+    <img data-img="icon" alt="" style="width:96px;border-radius:22%">
+  </aside>
+  <section style="width:100%;display:flex;flex-direction:column;align-items:center">
+    <p class="label">Web, apps.apple.com</p>
+    <div class="web">
+      <div class="w-nav"><b style="color:#1d1d1f">App Store</b><span>Preview</span></div>
+      <div class="w-head"><img data-img="icon" alt="">
+        <div><h2><span id="w-name"></span> <small>4+</small></h2><div class="subtitle" id="w-sub"></div>
+          <div class="devname">{DEVELOPER}</div><div class="muted">Designed for iPhone and iPad<br>Free</div></div></div>
+      <div class="w-body">
+        <h3 style="font-size:22px;margin:16px 0 8px">Screenshots</h3>
+        <div class="w-tabs" id="w-tabs"><button data-v="iphone" class="on">iPhone</button><button data-v="ipad">iPad</button></div>
+        <div class="shots w-shots" id="w-shots"></div>
+        <div class="w-desc" id="w-desc" style="margin-top:24px"></div>
+        <button class="more" id="w-more" style="float:none">more</button>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+const DATA = {"play": {"en": {"title": "Draughts for kids", "short": "Play draughts with a friend or the computer, and learn it with 120 puzzles.", "full": "Draughts for children and their families: a calm board game to play and learn, with big pieces, a clear board, and nothing to distract from the game.\n\nPLAY\n• Play a friend on the same tablet or phone, taking turns.\n• Play the computer at three levels: easy, medium, and hard. It adjusts a little after each game, so it stays a fair match.\n• Three kinds of draughts: International on the 10 × 10 board, and Brazilian and Russian on 8 × 8.\n• Move by tapping a piece and its square, or by dragging it.\n• Take back a move, or start over.\n• Play without a clock, or with 5 or 10 minutes each.\n\nPUZZLES\n• 120 puzzles: 74 for International draughts on the 10 × 10 board, in six themes (Learn, Captures, Crowning, Shots, King shots, and Safe move), and 46 for Russian draughts on 8 × 8.\n• Each theme goes from easy to harder, and some puzzles are played with black.\n• Learn comes first and shows the rules in action; the other themes open once half of it is solved.\n• Up to three stars a puzzle, one fewer for each mistake; a solved puzzle can be played again for all three.\n\nPLAYERS\n• Up to four players on one tablet, each with an animal badge and a name if they want one.\n• Each player keeps their own look, move hints, stars, computer level, and saved game, so one child's game or stars never replace another's.\n• Switching player takes two taps from the home screen.\n\nLEARN AS YOU PLAY\n• Move hints that help without doing the thinking: by default the game says nothing until a move is wrong, then shows the square and why. Showing every possible move can be turned on for the very first games.\n• Capturing is compulsory: the piece that must capture is marked, with a dot for each piece it will take.\n\nA BOARD TO ENJOY\n• A flat board, or a 3D one with light and shadow, which you can turn by hand on the home screen.\n• Four seasons, each a photograph with its own board: autumn wood, winter stone, spring carved stone, and summer sunset.\n• The season follows the date, or stays on the one you choose.\n\nMADE FOR CHILDREN\n• Made for children from about 5, and the grown-ups who play with them.\n• Large buttons and pictures, so a child who can't read yet can find their way.\n• In English and Estonian, following the device's language.\n\nNOTHING ELSE\n• No ads.\n• No in-app purchases.\n• No accounts or sign-in.\n• No internet: the app works offline and never connects to the network.\n• No data collected: the players, their settings, and their games stay on the device.\n\nDraughts runs on phones and tablets, in portrait and landscape."}, "et": {"title": "Kabe lastele", "short": "Mängi kabet sõbra või arvutiga ja õpi see 120 ülesandega selgeks.", "full": "Kabe lastele ja peredele: rahulik lauamäng mängimiseks ja õppimiseks. Suured nupud, selge laud ja mitte midagi, mis tähelepanu mängult kõrvale juhiks.\n\nMÄNGI\n• Mängi sõbraga samas tahvelarvutis või telefonis, kordamööda käies.\n• Mängi arvutiga kolmel tasemel: kerge, keskmine ja raske. Pärast iga mängu kohaneb arvuti veidi, et mäng jääks tasavägiseks.\n• Kolm kabeliiki: rahvusvaheline kabe 10 × 10 laual ning Brasiilia ja vene kabe 8 × 8 laual.\n• Käi nuppu ja siis ruutu puudutades või lohista nupp kohale.\n• Võta käik tagasi või alusta uuesti.\n• Mängi kellata või kellaga, kummalgi 5 või 10 minutit.\n\nÜLESANDED\n• 120 ülesannet: 74 rahvusvahelises kabes 10 × 10 laual kuues teemas (Õpi, Löömine, Tammiks, Kombinatsioonid, Tammi löögid ja Ohutu käik) ning 46 vene kabes 8 × 8 laual.\n• Iga teema läheb kergest raskemaks ja mõnes ülesandes mängid mustadega.\n• Esimesena tuleb Õpi, mis näitab reegleid mängus; teised teemad avanevad, kui pooled selle ülesannetest on lahendatud.\n• Iga ülesande eest kuni kolm tähte, iga vea eest üks vähem; lahendatud ülesannet saab uuesti mängida, et võita kõik kolm.\n\nMÄNGIJAD\n• Ühes tahvelarvutis kuni neli mängijat, igaühel oma loomapilt ja soovi korral nimi.\n• Igal mängijal on oma välimus, vihjed, tähed, arvuti tase ja salvestatud mäng, nii et ühe lapse mäng või tähed ei asenda kunagi teise omi.\n• Mängijat saab avalehelt vahetada kahe puudutusega.\n\nÕPI MÄNGIDES\n• Vihjed, mis aitavad, kuid ei mõtle lapse eest: vaikimisi ei näita mäng midagi enne, kui käik on vale; siis näitab see ruutu ja põhjust. Esimesteks mängudeks saab sisse lülitada ka kõigi võimalike käikude näitamise.\n• Löömine on kohustuslik: nupp, mis peab lööma, on märgitud ja sellel on täpp iga nupu kohta, mille see lööb.\n\nILUS KABELAUD\n• Lame laud või ruumiline 3D-laud valguse ja varjudega, mida saab avalehel käega pöörata.\n• Neli aastaaega, igaühel oma foto ja laud: sügisel puit, talvel kivi, kevadel nikerdatud kivi ja suvel päikeseloojang.\n• Aastaaeg vahetub kuupäeva järgi või jääb selleks, mille ise valid.\n\nLASTELE TEHTUD\n• Mõeldud lastele alates umbes viiendast eluaastast ja täiskasvanutele, kes nendega mängivad.\n• Suured pildid ja ikoonid, et ka laps, kes veel lugeda ei oska, saaks ise hakkama.\n• Eesti ja inglise keeles, vastavalt seadme keelele.\n\nMITTE MIDAGI LIIGSET\n• Reklaamideta.\n• Rakendusesiseste ostudeta.\n• Kontode ja sisselogimiseta.\n• Internetita: rakendus töötab võrguühenduseta ega loo kunagi ühendust internetiga.\n• Andmeid ei koguta: mängijad, nende seaded ja mängud jäävad seadmesse.\n\nKabe töötab telefonis ja tahvelarvutis, nii püst- kui ka rõhtpaigutuses."}}, "apple": {"name": "Draughts for Kids", "subtitle": "Play, learn, and solve puzzles", "promo": "Play draughts with a friend or the computer, and learn it with 120 puzzles. No ads, no purchases, no accounts, and no internet: everything stays on the device.", "keywords": "checkers,board game,international,russian,brazilian,puzzles,children,offline,family,strategy,kabe", "description": "Draughts for children and their families: a calm board game to play and learn, with big pieces, a clear board, and nothing to distract from the game.\n\nPLAY\n• Play a friend on the same iPhone or iPad, taking turns.\n• Play the computer at three levels: easy, medium, and hard. It adjusts a little after each game, so it stays a fair match.\n• Three kinds of draughts: International on the 10 × 10 board, and Brazilian and Russian on 8 × 8.\n• Move by tapping a piece and its square, or by dragging it.\n• Take back a move, or start over.\n• Play without a clock, or with 5 or 10 minutes each.\n\nPUZZLES\n• 120 puzzles: 74 for International draughts on the 10 × 10 board, in six themes (Learn, Captures, Crowning, Shots, King shots, and Safe move), and 46 for Russian draughts on 8 × 8.\n• Each theme goes from easy to harder, and some puzzles are played with black.\n• Learn comes first and shows the rules in action; the other themes open once half of it is solved.\n• Up to three stars a puzzle, one fewer for each mistake; a solved puzzle can be played again for all three.\n\nPLAYERS\n• Up to four players on one device, each with an animal badge and a name if they want one.\n• Each player keeps their own look, move hints, stars, computer level, and saved game, so one child's game or stars never replace another's.\n• Switching player takes two taps from the home screen.\n\nLEARN AS YOU PLAY\n• Move hints that help without doing the thinking: by default the game says nothing until a move is wrong, then shows the square and why. Showing every possible move can be turned on for the very first games.\n• Capturing is compulsory: the piece that must capture is marked, with a dot for each piece it will take.\n\nA BOARD TO ENJOY\n• A flat board, or a 3D one with light and shadow, which you can turn by hand on the home screen.\n• Four seasons, each a photograph with its own board: autumn wood, winter stone, spring carved stone, and summer sunset.\n• The season follows the date, or stays on the one you choose.\n\nMADE FOR CHILDREN\n• Made for children from about 5, and the grown-ups who play with them.\n• Large buttons and pictures, so a child who can't read yet can find their way.\n• In English and Estonian, following the device's language.\n\nNOTHING ELSE\n• No ads.\n• No in-app purchases.\n• No accounts or sign-in.\n• No internet: the app works offline and never connects to the network.\n• No data collected: the players, their settings, and their games stay on the device.\n\nDraughts runs on iPhone and iPad, in portrait and landscape."}, "scenes": ["01-home-3d-winter", "02-game-autumn", "03-game-3d-summer", "04-puzzles-spring", "05-puzzle-winter", "06-settings-autumn", "07-computer-summer"], "have": {"icon": true, "apple_icon": true, "feature": true, "play-phone-01-home-3d-winter-en": true, "play-tablet-01-home-3d-winter-en": true, "iphone-6.9-01-home-3d-winter-en": true, "ipad-13-01-home-3d-winter-en": true, "play-phone-02-game-autumn-en": true, "play-tablet-02-game-autumn-en": true, "iphone-6.9-02-game-autumn-en": true, "ipad-13-02-game-autumn-en": true, "play-phone-03-game-3d-summer-en": true, "play-tablet-03-game-3d-summer-en": true, "iphone-6.9-03-game-3d-summer-en": true, "ipad-13-03-game-3d-summer-en": true, "play-phone-04-puzzles-spring-en": true, "play-tablet-04-puzzles-spring-en": true, "iphone-6.9-04-puzzles-spring-en": true, "ipad-13-04-puzzles-spring-en": true, "play-phone-05-puzzle-winter-en": true, "play-tablet-05-puzzle-winter-en": true, "iphone-6.9-05-puzzle-winter-en": true, "ipad-13-05-puzzle-winter-en": true, "play-phone-06-settings-autumn-en": true, "play-tablet-06-settings-autumn-en": true, "iphone-6.9-06-settings-autumn-en": true, "ipad-13-06-settings-autumn-en": true, "play-phone-07-computer-summer-en": true, "play-tablet-07-computer-summer-en": true, "iphone-6.9-07-computer-summer-en": true, "ipad-13-07-computer-summer-en": true, "play-phone-01-home-3d-winter-et": true, "play-tablet-01-home-3d-winter-et": true, "iphone-6.9-01-home-3d-winter-et": true, "ipad-13-01-home-3d-winter-et": true, "play-phone-02-game-autumn-et": true, "play-tablet-02-game-autumn-et": true, "iphone-6.9-02-game-autumn-et": true, "ipad-13-02-game-autumn-et": true, "play-phone-03-game-3d-summer-et": true, "play-tablet-03-game-3d-summer-et": true, "iphone-6.9-03-game-3d-summer-et": true, "ipad-13-03-game-3d-summer-et": true, "play-phone-04-puzzles-spring-et": true, "play-tablet-04-puzzles-spring-et": true, "iphone-6.9-04-puzzles-spring-et": true, "ipad-13-04-puzzles-spring-et": true, "play-phone-05-puzzle-winter-et": true, "play-tablet-05-puzzle-winter-et": true, "iphone-6.9-05-puzzle-winter-et": true, "ipad-13-05-puzzle-winter-et": true, "play-phone-06-settings-autumn-et": true, "play-tablet-06-settings-autumn-et": true, "iphone-6.9-06-settings-autumn-et": true, "ipad-13-06-settings-autumn-et": true, "play-phone-07-computer-summer-et": true, "play-tablet-07-computer-summer-et": true, "iphone-6.9-07-computer-summer-et": true, "ipad-13-07-computer-summer-et": true}};  // build.py writes this line
+const ET = { name: "Kabe lastele", subtitle: "Mängi ja lahenda ülesandeid",
+  promo: "Mängi kabet sõbra või arvutiga ja õpi see 120 ülesandega selgeks. Reklaamideta, ostudeta, kontodeta ja internetita: kõik jääb seadmesse." };
+let lang = "en", dev = "iphone", wdev = "iphone", open = false, wopen = false;
+const $ = id => document.getElementById(id);
+function shots(d) {
+  const folder = d === "ipad" ? "ipad-13" : "iphone-6.9";
+  return DATA.scenes.map(s => DATA.have[`${folder}-${s}-${lang}`]
+    ? `<img src="img/${folder}-${s}-${lang}.jpg" alt="">`
+    : `<div class="missing">${folder}-${s}-${lang}.jpg<br>(run build.py)</div>`).join("");
+}
+function etDescription() {
+  // listing-et.md's text with the devices named as for iOS (store/app-store.md).
+  return DATA.play.et.full.replace("samas tahvelarvutis või telefonis", "samas iPhone'is või iPadis")
+    .replace("Ühes tahvelarvutis", "Ühes seadmes")
+    .replace(/Kabe töötab telefonis ja tahvelarvutis/, "Kabe töötab iPhone'is ja iPadis");
+}
+function render() {
+  if (!DATA) { document.body.insertAdjacentHTML("afterbegin", "<p style='padding:16px'>Run store/preview/build.py first.</p>"); return; }
+  const A = DATA.apple, et = lang === "et";
+  document.documentElement.lang = et ? "et" : "en";
+  $("banner").style.display = et ? "block" : "none";
+  document.querySelectorAll("[data-img=icon]").forEach(e => { if (DATA.have.apple_icon) e.src = "img/icon-apple.png"; });
+  const name = et ? ET.name : A.name, sub = et ? ET.subtitle : A.subtitle, promo = et ? ET.promo : A.promo;
+  const desc = et ? etDescription() : A.description;
+  $("i-name").textContent = name; $("w-name").textContent = name;
+  $("i-sub").textContent = sub; $("w-sub").textContent = sub;
+  $("i-get").textContent = et ? "Hangi" : "Get";
+  $("i-promo").textContent = promo;
+  $("i-desc").textContent = desc; $("i-desc").className = "desc" + (open ? " open" : "");
+  $("i-more").textContent = open ? "less" : "more";
+  $("w-desc").textContent = promo + "\n\n" + desc; $("w-desc").className = "w-desc" + (wopen ? " open" : "");
+  $("w-more").textContent = wopen ? "less" : "more";
+  $("i-shots").className = "shots i-shots " + dev; $("i-shots").innerHTML = shots(dev);
+  $("i-devs").textContent = dev === "ipad" ? "iPad screenshots" : "iPhone · iPad";
+  $("w-shots").className = "shots w-shots " + wdev; $("w-shots").innerHTML = shots(wdev);
+  $("kw").textContent = A.keywords;
+  const rows = [["Name", name.length, 30], ["Subtitle", sub.length, 30], ["Promotional text", promo.length, 170],
+                ["Keywords (bytes)", new TextEncoder().encode(A.keywords).length, 100], ["Description", desc.length, 4000]];
+  $("counts").innerHTML = rows.map(([k, n, max]) => `<tr><td>${k}</td><td class="${n > max ? "over" : ""}">${n} / ${max}</td></tr>`).join("");
+}
+function seg(id, set) {
+  $(id).addEventListener("click", e => { const v = e.target.dataset.v; if (!v) return;
+    [...$(id).children].forEach(b => b.classList.toggle("on", b.dataset.v === v)); set(v); render(); });
+}
+seg("lang", v => lang = v); seg("dev", v => dev = v); seg("w-tabs", v => wdev = v);
+$("i-more").addEventListener("click", () => { open = !open; render(); });
+$("w-more").addEventListener("click", () => { wopen = !wopen; render(); });
+const q = new URLSearchParams(location.search);
+if (q.get("full")) document.querySelector(".phone").style.height = "auto";  // the whole phone page, for a screenshot
+if (q.get("lang") === "et") $("lang").children[1].click();
+if (q.get("device") === "ipad") { $("dev").children[1].click(); $("w-tabs").children[1].click(); }
+render();
+</script>
+</body>
+</html>

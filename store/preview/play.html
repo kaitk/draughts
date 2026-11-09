@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Play listing preview</title>
+<!-- A preview of Draughts' Google Play page, on a phone and on the web, from the real
+     listing texts and images. store/preview/build.py fills DATA and img/. An approximation
+     of Play's layout of 2026-11 for checking the fine detail, not Play's own rendering. -->
+<style>
+  :root { --ink: #1f1f1f; --muted: #5f6368; --green: #01875f; --line: #dadce0; --page: #eef0f2;
+          --chip: #f1f3f4; --card: #fff; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink);
+         font: 14px/1.43 Roboto, "Google Sans", system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header.bar { position: sticky; top: 0; z-index: 5; display: flex; gap: 12px; align-items: center;
+               flex-wrap: wrap; padding: 10px 16px; background: #263238; color: #fff; }
+  header.bar h1 { font-size: 16px; margin: 0 12px 0 0; font-weight: 500; }
+  .seg { display: inline-flex; border: 1px solid #fff6; border-radius: 16px; overflow: hidden; }
+  .seg button { background: none; color: #fff; border: 0; padding: 5px 12px; font: inherit; cursor: pointer; }
+  .seg button.on { background: #fff; color: #263238; }
+  header.bar .note { opacity: .75; font-size: 12px; }
+  main { display: flex; flex-wrap: wrap; gap: 32px; padding: 24px 16px 64px; align-items: flex-start;
+         justify-content: center; }
+  .label { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+           margin: 0 0 8px; }
+  /* The phone: 412 dp wide, as a Pixel's Play Store at its default scale. */
+  .phone { width: 412px; height: 892px; border-radius: 36px; border: 10px solid #111; background: var(--card);
+           overflow: hidden; position: relative; box-shadow: 0 10px 40px #0003; flex: none; }
+  .phone .scroll { height: 100%; overflow-y: auto; }
+  .phone .status { height: 28px; }
+  .phone .top { display: flex; justify-content: space-between; padding: 4px 16px 8px; color: var(--muted); font-size: 20px; }
+  .p-head { display: flex; gap: 16px; padding: 4px 24px 0; }
+  .p-head img.icon { width: 72px; height: 72px; border-radius: 16px; flex: none; box-shadow: 0 1px 3px #0003; }
+  .p-title { font-size: 22px; line-height: 28px; font-weight: 400; margin: 0; }
+  .dev { color: var(--green); font-weight: 500; font-size: 14px; margin-top: 2px; }
+  .sub { color: var(--muted); font-size: 12px; }
+  .stats { display: flex; padding: 16px 24px 0; text-align: center; }
+  .stats div { flex: 1; font-size: 12px; color: var(--muted); border-right: 1px solid var(--line); }
+  .stats div:last-child { border: 0; }
+  .stats b { display: block; color: var(--ink); font-size: 14px; font-weight: 500; }
+  .install { margin: 16px 24px 0; background: var(--green); color: #fff; border-radius: 8px; text-align: center;
+             padding: 9px; font-weight: 500; }
+  .shots { display: flex; gap: 8px; overflow-x: auto; padding: 16px 24px 4px; scrollbar-width: thin; }
+  .shots img, .shots .missing { border-radius: 8px; flex: none; background: var(--chip); }
+  .p-shots img, .p-shots .missing { height: 224px; width: 126px; }
+  .p-shots.land img, .p-shots.land .missing { height: 186px; width: 331px; }
+  .section { padding: 16px 24px 0; }
+  .section h3 { font-size: 18px; font-weight: 400; margin: 0 0 8px; display: flex; justify-content: space-between; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 12px; }
+  .chips span { border: 1px solid var(--line); border-radius: 8px; padding: 4px 12px; font-size: 13px; color: var(--muted); }
+  .safety { border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; font-size: 13px; }
+  .safety div { padding: 6px 0; }
+  .search { border-top: 8px solid var(--chip); margin-top: 20px; padding: 12px 24px 24px; }
+  .row { display: flex; gap: 12px; align-items: center; padding: 8px 0; }
+  .row img { width: 56px; height: 56px; border-radius: 12px; flex: none; }
+  .row .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+  .missing { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 11px;
+             text-align: center; padding: 4px; }
+  /* The web page: play.google.com at 1280 px. */
+  .web { width: 1280px; max-width: 100%; background: var(--card); border-radius: 12px; overflow: hidden;
+         box-shadow: 0 10px 40px #0002; }
+  .w-nav { height: 64px; border-bottom: 1px solid var(--line); display: flex; align-items: center; padding: 0 24px;
+           color: var(--muted); gap: 24px; font-size: 15px; }
+  .w-nav b { color: var(--ink); font-weight: 500; }
+  .hero { position: relative; min-height: 420px; padding: 48px 56px; color: #fff; background: #202124; overflow: hidden; }
+  .hero .fg { position: absolute; right: 0; top: 0; height: 100%; width: 66%; background-size: cover;
+              background-position: center; }
+  .hero .fg::after { content: ""; position: absolute; inset: 0;
+                     background: linear-gradient(90deg, #202124 0%, #20212400 45%, #20212400 100%); }
+  .hero .txt { position: relative; max-width: 560px; }
+  .hero h2 { font-size: 56px; line-height: 64px; font-weight: 400; margin: 0 0 12px; }
+  .hero .dev { color: #81c995; font-size: 18px; }
+  .hero .meta { display: flex; gap: 24px; margin: 28px 0; align-items: center; }
+  .hero .meta img { width: 64px; height: 64px; border-radius: 14px; }
+  .hero .install { display: inline-block; margin: 0; padding: 10px 56px; }
+  .w-body { padding: 24px 56px 48px; max-width: 900px; }
+  .w-tabs { display: flex; gap: 8px; margin: 12px 0 4px; }
+  .w-tabs button { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 14px; font: inherit; cursor: pointer; }
+  .w-tabs button.on { background: #e6f4ea; border-color: #e6f4ea; color: #0d652d; }
+  .w-shots { padding-left: 0; padding-right: 0; }
+  .w-shots img, .w-shots .missing { height: 300px; }
+  .w-shots.wphone img, .w-shots.wphone .missing { width: 169px; }
+  .w-shots.wtablet img, .w-shots.wtablet .missing { width: 533px; }
+  .about { white-space: pre-line; max-height: calc(1.43em * 5); overflow: hidden; position: relative; font-size: 14px; }
+  .about.open { max-height: none; }
+  .fold { color: var(--muted); font-size: 12px; margin: 4px 0 0; }
+  button.more { border: 0; background: none; color: var(--green); font: inherit; font-weight: 500; padding: 8px 0; cursor: pointer; }
+  /* The checks beside the pages. */
+  .checks { width: 340px; background: var(--card); border-radius: 12px; padding: 16px 18px; font-size: 13px;
+            box-shadow: 0 2px 10px #0001; flex: none; }
+  .checks h2 { font-size: 15px; margin: 0 0 8px; font-weight: 500; }
+  .checks table { width: 100%; border-collapse: collapse; }
+  .checks td { padding: 4px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .checks td:last-child { text-align: right; white-space: nowrap; }
+  .over { color: #c5221f; font-weight: 500; }
+  .checks p { color: var(--muted); }
+  .fgbox { margin-top: 10px; }
+  .fgbox img { width: 100%; border-radius: 6px; display: block; }
+  .safe { outline: 2px dashed #fbbc04; outline-offset: -2px; }
+</style>
+</head>
+<body>
+<header class="bar">
+  <h1>Draughts on Google Play: preview</h1>
+  <span class="seg" id="lang"><button data-v="en" class="on">English</button><button data-v="et">Eesti</button></span>
+  <span class="seg" id="pset"><button data-v="phone" class="on">Phone shots</button><button data-v="tablet">Tablet shots</button></span>
+  <span class="note">An approximation of Play's layout (2026-11) for the fine detail; Play's own preview in the Console has the last word.</span>
+</header>
+<main>
+  <section>
+    <p class="label">Phone, Play Store app</p>
+    <div class="phone"><div class="scroll">
+      <div class="status"></div>
+      <div class="top"><span>&#8592;</span><span>&#9906;&nbsp;&nbsp;&#8942;</span></div>
+      <div class="p-head">
+        <img class="icon" data-img="icon" alt="">
+        <div><p class="p-title" id="p-title"></p><div class="dev" id="p-dev"></div><div class="sub" id="p-sub"></div></div>
+      </div>
+      <div class="stats"><div><b id="p-new"></b><span id="p-norev"></span></div><div><b>3+</b><span id="p-rated"></span></div><div><b>0.1.0</b><span id="p-free"></span></div></div>
+      <div class="install" id="p-install"></div>
+      <div class="shots p-shots" id="p-shots"></div>
+      <div class="section"><h3><span id="p-about"></span><span>&#8594;</span></h3><div id="p-short"></div>
+        <div class="chips" id="p-chips"></div></div>
+      <div class="section"><h3><span id="p-safety-h"></span><span>&#8594;</span></h3>
+        <div class="safety" id="p-safety"></div></div>
+      <div class="search"><p class="label" id="p-search-h"></p>
+        <div class="row"><img data-img="icon" alt=""><div style="min-width:0"><div class="t" id="p-row-t"></div><div class="sub" id="p-row-s"></div></div></div>
+        <div class="row" style="width:200px"><img data-img="icon" alt=""><div style="min-width:0"><div class="t" id="p-row-t2"></div><div class="sub" id="p-row-c"></div></div></div>
+      </div>
+    </div></div>
+  </section>
+  <aside class="checks">
+    <h2>Fine detail</h2>
+    <table id="counts"></table>
+    <p id="fold-note"></p>
+    <div class="fgbox"><p class="label">Feature graphic, 1024 × 500 (dashed: keep the main content inside; an approximation)</p>
+      <div id="fg"></div></div>
+    <div class="fgbox"><p class="label">Icon, 512 × 512, as Play masks it</p>
+      <img data-img="icon" alt="" style="width:96px;border-radius:20%"></div>
+  </aside>
+  <section style="width:100%;display:flex;flex-direction:column;align-items:center">
+    <p class="label">Web, play.google.com at 1280 px</p>
+    <div class="web">
+      <div class="w-nav"><b>Google Play</b><span>Games</span><span>Apps</span><span>Kids</span></div>
+      <div class="hero"><div class="fg" id="w-fg"></div>
+        <div class="txt"><h2 id="w-title"></h2><div class="dev" id="w-dev"></div>
+          <div class="meta"><img data-img="icon" alt=""><div><b>3+</b><br><span id="w-rated"></span></div></div>
+          <div class="install" id="w-install"></div></div></div>
+      <div class="w-body">
+        <div class="w-tabs" id="w-tabs"><button data-v="phone" class="on">Phone</button><button data-v="tablet">Tablet</button></div>
+        <div class="shots w-shots wphone" id="w-shots"></div>
+        <h3 style="font-size:22px;font-weight:400;margin:28px 0 12px" id="w-about"></h3>
+        <div class="about" id="w-full"></div>
+        <button class="more" id="w-more"></button>
+        <h3 style="font-size:22px;font-weight:400;margin:28px 0 12px" id="w-safety-h"></h3>
+        <div class="safety" id="w-safety"></div>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+const DATA = {"play": {"en": {"title": "Draughts for kids", "short": "Play draughts with a friend or the computer, and learn it with 120 puzzles.", "full": "Draughts for children and their families: a calm board game to play and learn, with big pieces, a clear board, and nothing to distract from the game.\n\nPLAY\n• Play a friend on the same tablet or phone, taking turns.\n• Play the computer at three levels: easy, medium, and hard. It adjusts a little after each game, so it stays a fair match.\n• Three kinds of draughts: International on the 10 × 10 board, and Brazilian and Russian on 8 × 8.\n• Move by tapping a piece and its square, or by dragging it.\n• Take back a move, or start over.\n• Play without a clock, or with 5 or 10 minutes each.\n\nPUZZLES\n• 120 puzzles: 74 for International draughts on the 10 × 10 board, in six themes (Learn, Captures, Crowning, Shots, King shots, and Safe move), and 46 for Russian draughts on 8 × 8.\n• Each theme goes from easy to harder, and some puzzles are played with black.\n• Learn comes first and shows the rules in action; the other themes open once half of it is solved.\n• Up to three stars a puzzle, one fewer for each mistake; a solved puzzle can be played again for all three.\n\nPLAYERS\n• Up to four players on one tablet, each with an animal badge and a name if they want one.\n• Each player keeps their own look, move hints, stars, computer level, and saved game, so one child's game or stars never replace another's.\n• Switching player takes two taps from the home screen.\n\nLEARN AS YOU PLAY\n• Move hints that help without doing the thinking: by default the game says nothing until a move is wrong, then shows the square and why. Showing every possible move can be turned on for the very first games.\n• Capturing is compulsory: the piece that must capture is marked, with a dot for each piece it will take.\n\nA BOARD TO ENJOY\n• A flat board, or a 3D one with light and shadow, which you can turn by hand on the home screen.\n• Four seasons, each a photograph with its own board: autumn wood, winter stone, spring carved stone, and summer sunset.\n• The season follows the date, or stays on the one you choose.\n\nMADE FOR CHILDREN\n• Made for children from about 5, and the grown-ups who play with them.\n• Large buttons and pictures, so a child who can't read yet can find their way.\n• In English and Estonian, following the device's language.\n\nNOTHING ELSE\n• No ads.\n• No in-app purchases.\n• No accounts or sign-in.\n• No internet: the app works offline and never connects to the network.\n• No data collected: the players, their settings, and their games stay on the device.\n\nDraughts runs on phones and tablets, in portrait and landscape."}, "et": {"title": "Kabe lastele", "short": "Mängi kabet sõbra või arvutiga ja õpi see 120 ülesandega selgeks.", "full": "Kabe lastele ja peredele: rahulik lauamäng mängimiseks ja õppimiseks. Suured nupud, selge laud ja mitte midagi, mis tähelepanu mängult kõrvale juhiks.\n\nMÄNGI\n• Mängi sõbraga samas tahvelarvutis või telefonis, kordamööda käies.\n• Mängi arvutiga kolmel tasemel: kerge, keskmine ja raske. Pärast iga mängu kohaneb arvuti veidi, et mäng jääks tasavägiseks.\n• Kolm kabeliiki: rahvusvaheline kabe 10 × 10 laual ning Brasiilia ja vene kabe 8 × 8 laual.\n• Käi nuppu ja siis ruutu puudutades või lohista nupp kohale.\n• Võta käik tagasi või alusta uuesti.\n• Mängi kellata või kellaga, kummalgi 5 või 10 minutit.\n\nÜLESANDED\n• 120 ülesannet: 74 rahvusvahelises kabes 10 × 10 laual kuues teemas (Õpi, Löömine, Tammiks, Kombinatsioonid, Tammi löögid ja Ohutu käik) ning 46 vene kabes 8 × 8 laual.\n• Iga teema läheb kergest raskemaks ja mõnes ülesandes mängid mustadega.\n• Esimesena tuleb Õpi, mis näitab reegleid mängus; teised teemad avanevad, kui pooled selle ülesannetest on lahendatud.\n• Iga ülesande eest kuni kolm tähte, iga vea eest üks vähem; lahendatud ülesannet saab uuesti mängida, et võita kõik kolm.\n\nMÄNGIJAD\n• Ühes tahvelarvutis kuni neli mängijat, igaühel oma loomapilt ja soovi korral nimi.\n• Igal mängijal on oma välimus, vihjed, tähed, arvuti tase ja salvestatud mäng, nii et ühe lapse mäng või tähed ei asenda kunagi teise omi.\n• Mängijat saab avalehelt vahetada kahe puudutusega.\n\nÕPI MÄNGIDES\n• Vihjed, mis aitavad, kuid ei mõtle lapse eest: vaikimisi ei näita mäng midagi enne, kui käik on vale; siis näitab see ruutu ja põhjust. Esimesteks mängudeks saab sisse lülitada ka kõigi võimalike käikude näitamise.\n• Löömine on kohustuslik: nupp, mis peab lööma, on märgitud ja sellel on täpp iga nupu kohta, mille see lööb.\n\nILUS KABELAUD\n• Lame laud või ruumiline 3D-laud valguse ja varjudega, mida saab avalehel käega pöörata.\n• Neli aastaaega, igaühel oma foto ja laud: sügisel puit, talvel kivi, kevadel nikerdatud kivi ja suvel päikeseloojang.\n• Aastaaeg vahetub kuupäeva järgi või jääb selleks, mille ise valid.\n\nLASTELE TEHTUD\n• Mõeldud lastele alates umbes viiendast eluaastast ja täiskasvanutele, kes nendega mängivad.\n• Suured pildid ja ikoonid, et ka laps, kes veel lugeda ei oska, saaks ise hakkama.\n• Eesti ja inglise keeles, vastavalt seadme keelele.\n\nMITTE MIDAGI LIIGSET\n• Reklaamideta.\n• Rakendusesiseste ostudeta.\n• Kontode ja sisselogimiseta.\n• Internetita: rakendus töötab võrguühenduseta ega loo kunagi ühendust internetiga.\n• Andmeid ei koguta: mängijad, nende seaded ja mängud jäävad seadmesse.\n\nKabe töötab telefonis ja tahvelarvutis, nii püst- kui ka rõhtpaigutuses."}}, "apple": {"name": "Draughts for Kids", "subtitle": "Play, learn, and solve puzzles", "promo": "Play draughts with a friend or the computer, and learn it with 120 puzzles. No ads, no purchases, no accounts, and no internet: everything stays on the device.", "keywords": "checkers,board game,international,russian,brazilian,puzzles,children,offline,family,strategy,kabe", "description": "Draughts for children and their families: a calm board game to play and learn, with big pieces, a clear board, and nothing to distract from the game.\n\nPLAY\n• Play a friend on the same iPhone or iPad, taking turns.\n• Play the computer at three levels: easy, medium, and hard. It adjusts a little after each game, so it stays a fair match.\n• Three kinds of draughts: International on the 10 × 10 board, and Brazilian and Russian on 8 × 8.\n• Move by tapping a piece and its square, or by dragging it.\n• Take back a move, or start over.\n• Play without a clock, or with 5 or 10 minutes each.\n\nPUZZLES\n• 120 puzzles: 74 for International draughts on the 10 × 10 board, in six themes (Learn, Captures, Crowning, Shots, King shots, and Safe move), and 46 for Russian draughts on 8 × 8.\n• Each theme goes from easy to harder, and some puzzles are played with black.\n• Learn comes first and shows the rules in action; the other themes open once half of it is solved.\n• Up to three stars a puzzle, one fewer for each mistake; a solved puzzle can be played again for all three.\n\nPLAYERS\n• Up to four players on one device, each with an animal badge and a name if they want one.\n• Each player keeps their own look, move hints, stars, computer level, and saved game, so one child's game or stars never replace another's.\n• Switching player takes two taps from the home screen.\n\nLEARN AS YOU PLAY\n• Move hints that help without doing the thinking: by default the game says nothing until a move is wrong, then shows the square and why. Showing every possible move can be turned on for the very first games.\n• Capturing is compulsory: the piece that must capture is marked, with a dot for each piece it will take.\n\nA BOARD TO ENJOY\n• A flat board, or a 3D one with light and shadow, which you can turn by hand on the home screen.\n• Four seasons, each a photograph with its own board: autumn wood, winter stone, spring carved stone, and summer sunset.\n• The season follows the date, or stays on the one you choose.\n\nMADE FOR CHILDREN\n• Made for children from about 5, and the grown-ups who play with them.\n• Large buttons and pictures, so a child who can't read yet can find their way.\n• In English and Estonian, following the device's language.\n\nNOTHING ELSE\n• No ads.\n• No in-app purchases.\n• No accounts or sign-in.\n• No internet: the app works offline and never connects to the network.\n• No data collected: the players, their settings, and their games stay on the device.\n\nDraughts runs on iPhone and iPad, in portrait and landscape."}, "scenes": ["01-home-3d-winter", "02-game-autumn", "03-game-3d-summer", "04-puzzles-spring", "05-puzzle-winter", "06-settings-autumn", "07-computer-summer"], "have": {"icon": true, "apple_icon": true, "feature": true, "play-phone-01-home-3d-winter-en": true, "play-tablet-01-home-3d-winter-en": true, "iphone-6.9-01-home-3d-winter-en": true, "ipad-13-01-home-3d-winter-en": true, "play-phone-02-game-autumn-en": true, "play-tablet-02-game-autumn-en": true, "iphone-6.9-02-game-autumn-en": true, "ipad-13-02-game-autumn-en": true, "play-phone-03-game-3d-summer-en": true, "play-tablet-03-game-3d-summer-en": true, "iphone-6.9-03-game-3d-summer-en": true, "ipad-13-03-game-3d-summer-en": true, "play-phone-04-puzzles-spring-en": true, "play-tablet-04-puzzles-spring-en": true, "iphone-6.9-04-puzzles-spring-en": true, "ipad-13-04-puzzles-spring-en": true, "play-phone-05-puzzle-winter-en": true, "play-tablet-05-puzzle-winter-en": true, "iphone-6.9-05-puzzle-winter-en": true, "ipad-13-05-puzzle-winter-en": true, "play-phone-06-settings-autumn-en": true, "play-tablet-06-settings-autumn-en": true, "iphone-6.9-06-settings-autumn-en": true, "ipad-13-06-settings-autumn-en": true, "play-phone-07-computer-summer-en": true, "play-tablet-07-computer-summer-en": true, "iphone-6.9-07-computer-summer-en": true, "ipad-13-07-computer-summer-en": true, "play-phone-01-home-3d-winter-et": true, "play-tablet-01-home-3d-winter-et": true, "iphone-6.9-01-home-3d-winter-et": true, "ipad-13-01-home-3d-winter-et": true, "play-phone-02-game-autumn-et": true, "play-tablet-02-game-autumn-et": true, "iphone-6.9-02-game-autumn-et": true, "ipad-13-02-game-autumn-et": true, "play-phone-03-game-3d-summer-et": true, "play-tablet-03-game-3d-summer-et": true, "iphone-6.9-03-game-3d-summer-et": true, "ipad-13-03-game-3d-summer-et": true, "play-phone-04-puzzles-spring-et": true, "play-tablet-04-puzzles-spring-et": true, "iphone-6.9-04-puzzles-spring-et": true, "ipad-13-04-puzzles-spring-et": true, "play-phone-05-puzzle-winter-et": true, "play-tablet-05-puzzle-winter-et": true, "iphone-6.9-05-puzzle-winter-et": true, "ipad-13-05-puzzle-winter-et": true, "play-phone-06-settings-autumn-et": true, "play-tablet-06-settings-autumn-et": true, "iphone-6.9-06-settings-autumn-et": true, "ipad-13-06-settings-autumn-et": true, "play-phone-07-computer-summer-et": true, "play-tablet-07-computer-summer-et": true, "iphone-6.9-07-computer-summer-et": true, "ipad-13-07-computer-summer-et": true}};  // build.py writes this line
+const T = {
+  en: { dev: "{DEVELOPER}", sub: "Contains no ads · No in-app purchases", rated: "Rated for 3+", free: "Free",
+        install: "Install", about: "About this game", safety: "Data safety", tags: ["Board", "Casual", "Offline", "Single player", "Family"],
+        safe: ["No data shared with third parties", "No data collected"], search: "In search results",
+        more: "Show all", less: "Show less", isnew: "New", norev: "no reviews yet", cat: "Board" },
+  et: { dev: "{DEVELOPER}", sub: "Reklaamideta · Rakendusesiseste ostudeta", rated: "Vanusele 3+", free: "Tasuta",
+        install: "Installi", about: "Teave selle mängu kohta", safety: "Andmete ohutus", tags: ["Lauamäng", "Vabaaja", "Võrguühenduseta", "Üksikmängija", "Pere"],
+        safe: ["Andmeid ei jagata kolmandate osapooltega", "Andmeid ei koguta"], search: "Otsingutulemustes",
+        more: "Näita kõike", less: "Näita vähem", isnew: "Uus", norev: "arvustusi pole", cat: "Lauamäng" },
+};
+let lang = "en", pset = "phone", wset = "phone", open = false;
+const $ = id => document.getElementById(id);
+function img(key, file, cls) {
+  if (DATA && DATA.have[key]) return `<img src="img/${file}" alt="" class="${cls || ""}">`;
+  return `<div class="missing ${cls || ""}">${file}<br>(run build.py)</div>`;
+}
+function shots(cls) {
+  return DATA.scenes.map(s => img(`play-${cls}-${s}-${lang}`, `play-${cls}-${s}-${lang}.jpg`)).join("");
+}
+function render() {
+  if (!DATA) { document.body.insertAdjacentHTML("afterbegin", "<p style='padding:16px'>Run store/preview/build.py first.</p>"); return; }
+  const L = DATA.play[lang], t = T[lang];
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-img=icon]").forEach(e => { if (DATA.have.icon) e.src = "img/icon-512.png"; });
+  $("p-title").textContent = L.title; $("w-title").textContent = L.title;
+  $("p-dev").textContent = t.dev; $("w-dev").textContent = t.dev; $("p-sub").textContent = t.sub;
+  $("p-rated").textContent = t.rated; $("w-rated").textContent = t.rated; $("p-free").textContent = t.free;
+  $("p-install").textContent = t.install; $("w-install").textContent = t.install;
+  $("p-about").textContent = t.about; $("w-about").textContent = t.about;
+  $("p-short").textContent = L.short;
+  $("p-chips").innerHTML = t.tags.map(x => `<span>${x}</span>`).join("");
+  $("p-safety-h").textContent = t.safety; $("w-safety-h").textContent = t.safety;
+  const safe = t.safe.map(x => `<div>&#10003;&nbsp; ${x}</div>`).join("");
+  $("p-safety").innerHTML = safe; $("w-safety").innerHTML = safe;
+  $("p-search-h").textContent = t.search;
+  $("p-row-t").textContent = L.title; $("p-row-t2").textContent = L.title; $("p-row-s").textContent = t.dev + " · " + t.cat; $("p-row-c").textContent = t.cat;
+  $("p-new").textContent = t.isnew; $("p-norev").textContent = t.norev;
+  const ps = $("p-shots"); ps.className = "shots p-shots" + (pset === "tablet" ? " land" : ""); ps.innerHTML = shots(pset);
+  const ws = $("w-shots"); ws.className = "shots w-shots w" + wset; ws.innerHTML = shots(wset);
+  $("w-full").textContent = L.full; $("w-full").className = "about" + (open ? " open" : "");
+  $("w-more").textContent = open ? t.less : t.more;
+  $("w-fg").style.backgroundImage = DATA.have.feature ? "url(img/feature.jpg)" : "none";
+  $("fg").innerHTML = DATA.have.feature ? `<div style="position:relative"><img src="img/feature.jpg" alt=""><div class="safe" style="position:absolute;left:12.5%;right:12.5%;top:10%;bottom:10%"></div></div>`
+                                        : `<div class="missing" style="height:120px">feature.jpg (run build.py)</div>`;
+  const rows = [["Title", L.title.length, 30], ["Short description", L.short.length, 80], ["Full description", L.full.length, 4000]];
+  $("counts").innerHTML = rows.map(([k, n, max]) => `<tr><td>${k}</td><td class="${n > max ? "over" : ""}">${n} / ${max}</td></tr>`).join("");
+  $("fold-note").textContent = `Above the fold on the web, before "${t.more}": about five lines, the opening paragraph and the first heading. On the phone the page shows the short description; the full text opens behind "${t.about}".`;
+}
+function seg(id, set) {
+  $(id).addEventListener("click", e => { const v = e.target.dataset.v; if (!v) return;
+    [...$(id).children].forEach(b => b.classList.toggle("on", b.dataset.v === v)); set(v); render(); });
+}
+seg("lang", v => lang = v); seg("pset", v => pset = v); seg("w-tabs", v => wset = v);
+$("w-more").addEventListener("click", () => { open = !open; render(); });
+const q = new URLSearchParams(location.search);
+if (q.get("full")) document.querySelector(".phone").style.height = "auto";  // the whole phone page, for a screenshot
+if (q.get("lang") === "et") $("lang").children[1].click();
+if (q.get("set") === "tablet") { $("pset").children[1].click(); $("w-tabs").children[1].click(); }
+render();
+</script>
+</body>
+</html>

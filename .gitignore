@@ -13,3 +13,5 @@ design/tabletops/*.png
 *.jks
 *.keystore
 upload-key.properties
+# The previews' images, copied by store/preview/build.py from outside git
+store/preview/img/
