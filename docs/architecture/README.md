@@ -199,7 +199,7 @@ what a child makes their own; the rest belongs to the device.
 | Kept | Per player | Per device |
 | --- | --- | --- |
 | Badge (one of six, each its own colour; one a player has isn't offered to another) and name | yes | |
-| Look: background, kings, board; move hints | yes | |
+| Look: theme (and photograph or plain), kings, board; move hints | yes | |
 | A new game's setup: draughts, level, colour, clock | yes | |
 | The computer's skill per level and the games against it | yes | |
 | Puzzle stars | yes | |

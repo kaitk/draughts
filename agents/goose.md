@@ -154,6 +154,14 @@ find out by compiling, so the next session doesn't.
 - File functions (`read_file`, `write_file_atomic`, `file_exists`, `delete_file`,
   `rename_file`, `list_dir`) need `import os;` in every file that calls them, packages
   included (`src/shell/players.goose`) (2026-11-09).
+- `smoothstep(0.0, 1.0, x)` with untyped literals is ambiguous between std's f32 and f64
+  forms even when `x` is an `f32`; wrap it in a function of `f32`s
+  (`render3d::ease`) (2026-11-09).
+- A GLSL local named like a uniform block's member hides it in that function: the
+  widgets' `int kind` hid the theme's `kind`; read the member through a function
+  declared beside the block (`draw::THEME_BLOCK`'s `theme_index`) (2026-11-09).
+- A GLSL string of the shared renderer is the app's too: `shaders::FADE_FN` (from
+  `src/render3d/shaders.goose`) goes into the app's `embed_shader` calls as is.
 - `float4` has no swizzles (`.xy`); build the `float2` from `.x` and `.y`.
 - `gfx::uniforms` takes its block by value: a struct bound with `.=` doesn't compile
   ("bytes_of cannot write theme::Theme&[1] out"); bind it with `=`.

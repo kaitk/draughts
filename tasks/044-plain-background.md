@@ -1,6 +1,6 @@
 # 044: A plain background
 
-Status: todo
+Status: in-progress
 
 A background without a photograph, as a choice in settings' Background row beside the
 seasons and by the date (the user, 2026-11-09). On the Galaxy A33 a build without the
@@ -14,11 +14,13 @@ or harmonics to make, so its first switch is shorter.
 
 ## Acceptance criteria
 
-- [ ] A Plain tile in the Background row, its thumbnail the gradient, kept in the
-      player's file
-- [ ] A gradient per season's board, checked beside each board flat and 3D, in a
-      prototype first (`prototypes/`)
-- [ ] With Plain chosen, no photograph is decoded or held (memory measured)
+- [x] A Plain tile in the Background row, its thumbnail the gradient, kept in the
+      player's file: as place b, the Theme row's two-part switch, photograph or plain,
+      kept as `background = photo|plain` (`test/shell/settings`)
+- [x] A gradient per season's board, checked beside each board flat and 3D, in a
+      prototype first (`prototypes/`): fade b, checked on the Mac flat and 3D
+- [x] With Plain chosen, no photograph is decoded or held (memory measured on the Mac;
+      the tablet's still to check)
 
 ## Prototype
 
@@ -28,4 +30,38 @@ on/off of its own beside the Background row rather than a sixth tile: a, a Pictu
 row's end. Two takes on the fade per board (`&grad=`): a, what the 3D backdrop's grade
 makes of the page color with no photograph (the A33 build's look), pale low down; b,
 darker, the page to a deep tone of the frame with a faint light of the dark square in
-the middle. Awaiting the choice of place and fade.
+the middle. The user chose b and b (below).
+
+## Built (2026-11-09)
+
+The user chose place b and fade b. Settings' row is now Theme (Teema), and its switch
+sits under the name in its column where names are at the tiles' left, beside the name
+where they are above (`docs/architecture/rendering.md`, "Settings" and "Scene and
+glass").
+
+- **The switch's size.** Under the name, two 88 dp halves don't fit: they need 180 dp
+  across where the name's column has 120, and the look's group can't grow taller, since
+  the tablet's landscape (1920 × 1200 with its 72 px bar) has 8 dp to spare before
+  settings falls back to one group at a time (`test/shell/sizes`). The halves there are
+  58 × 68 dp, inside the row's 88 dp, under the floor. Nearest fits that keep 88 dp,
+  not built: the halves 88 dp tall with the name moved out of the column (onto the
+  group's title line, or dropped in that layout), or the switch as a row of its own,
+  which the tablet's landscape has no room for. Beside the name the halves are 88 dp
+  square, and the line under the name grows from 28 to 92 dp: settings' board in
+  portrait shrinks by about 60 dp (the tablet's 485 → 425 dp; the tightest phone tab,
+  9:16 at 480 dp, 194 → 134 dp), and the tablet's portrait in Estonian with its bar keeps
+  both groups with the gap under the switch at 4 dp (10 would have tipped it to tabs).
+- **The 3D board's ambient** comes from the fade, painted 64 texels square on the CPU
+  and taken as the photograph's harmonics are, then scaled to the brightness of the
+  fixed ambient a theme without a photograph had (0.25, 0.17, 0.1): the A33 build the
+  task began from. The fade's own light, unscaled, is several times darker.
+- **Memory on the Mac** (headless build, 1920 × 1200, autumn, `footprint` 6 s in):
+  home, flat: 97 MB with the photograph, 85 MB with the fade, graphics 52 → 34 MB.
+  The 3D game: 833 → 813 MB. Settings and the 3D game read far higher headless (600 MB
+  and more of graphics, falling over seconds) with either background, so only their
+  difference means anything.
+- **On the device, still to check:** `dumpsys meminfo` at home with the photograph and
+  with the fade, after the same frames (`agents/testing.md`); the frame a switch between
+  them takes (a theme change's 22 ms before); the 3D board's switch, which runs only the
+  photograph's steps; and the fade's look on the tablet and the A33: banding in the dark
+  fade, and the switch's 58 × 68 dp halves under a child's finger.

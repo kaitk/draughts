@@ -211,6 +211,11 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   B:...` shows the 3D board turned for black in a friend's game). State with no flag,
   such as the 3D camera's (`rig::put` on `sh.game.cam`), is set from a temporary flag
   pair parsed in the copy only (2026-11-09).
+- Memory on the Mac: run the headless copy with a flag that keeps the player's game
+  file alone (`--screen home`), wait a few seconds, then `footprint PID` (its
+  "graphics" rows are the GPU's) and kill it. Headless, settings and the 3D game read
+  600 MB and more of graphics that falls over seconds, with either background, so
+  compare two runs of the same screen only (task 044, 2026-11-09).
 - To shoot an animation at a known moment (a ring's pulse, a flash) in two builds, hold
   the copy's clock: `now` fixed at T until the taps are made, then at T + L
   (`tapped >= taps.len`), so the launch's own time doesn't shift the tap. A clock that

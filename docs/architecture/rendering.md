@@ -234,6 +234,33 @@ but its olive sits nearer spring's greens than the sunset does.
   a dense phone) would save at most 1 MB there and needs several encodings or a choice
   at load, so it stays 2048 everywhere. Larger tablets stretch it 1.25 to 1.41×, as
   before.
+- **The plain background** (2026-11-09, `prototypes/plain.html`, fade b): in place of
+  the photograph, a fade matched to the season's board, chosen in settings (the Theme
+  row's switch, below; the player's file's `background = photo|plain`, photo by default).
+  The season still picks the board, by the date or as chosen; only the photograph goes.
+  From the theme's page color at the top to a deep tone of its frame at the foot, with a
+  faint light of its dark square behind the middle (wider than tall, as the board sits
+  there) and the corners 30% darker, mixed in linear light and dithered by under half a
+  level so the dark fade shows no bands. Its colors, top and foot:
+
+  | | Autumn: wood | Winter: stone | Spring: birch | Summer: sunset |
+  | --- | --- | --- | --- | --- |
+  | Top | `#1e1510` | `#0c1724` | `#101b15` | `#21150f` |
+  | Foot | `#4a2c1a` | `#2c3a4c` | `#2f3d30` | `#4f2e28` |
+  | Light (the dark square) | `#7a4626` | `#5a6777` | `#6b7f6a` | `#9a6655` |
+
+  It is a function of the pixel's place on the screen, drawn where the photograph would
+  be sampled (`FADE_FN` in `src/render3d/shaders.goose`): by the board pass (sharp
+  behind home and settings, dimmed to 0.8 behind the flat game as the blurred photograph
+  is), by the glass (in place of the glass copy), and by the 3D board's backdrop (dimmed
+  to 0.8, as the flat game's). With it no photograph is decoded, uploaded, or held, and no
+  blurred copies are made: the scene is 1 × 1 stand-ins, and choosing it loads in the
+  frame after the lit tile as a season does. Settings' thumbnails still shrink each
+  photograph once (the switch's photograph half shows the season's), with the four fades
+  drawn under them in the same texture. Where the photograph is decoded (the Mac) the
+  fade saves its 16 MB texture and copies; where it is ASTC (Android) they sit in SDL's
+  shared block, so the fade saves about 3 MB inside that block and the photograph's
+  upload and blur on a theme change (task 044 has the numbers).
 - **Glass is a pre-blurred copy, not a live blur.** Snowtime measured live backdrop blur
   costing more than its weather animation, and switched to a copy of the background
   blurred once (its `docs/architecture/scene.md`). Here the scene is blurred on the GPU
@@ -459,10 +486,19 @@ the prototype tried, kept for 3D:
   setup can still change it) and move hints; the tutorial's row (one tile, learn the
   moves) comes with the tutorial (task 026), taken out until then so the tablet's
   landscape shows both groups (the user, 2026-11-09).
-  **Look**: the background as thumbnails of the four photographs (62 × 40 px) and,
-  last, a tile for by the date, so on a phone in portrait, where the row wraps, the four
-  seasons keep one row and by the date goes under them, in the same order at every size
-  (2026-11-08); and kings (auto, crown, or stack, the last two each with its
+  **Look**: the theme (the row's name, "Theme") as
+  thumbnails of the four photographs (62 × 40 px), or of their plain fades when the
+  plain background is chosen, and, last, a tile for by the date, so on a phone in
+  portrait, where the row wraps, the four seasons keep one row and by the date goes
+  under them, in the same order at every size (2026-11-08). With the theme's name, a
+  two-part switch, the season's photograph or its plain fade, the one chosen lit
+  (`settings::switch`, `prototypes/plain.html` place b): where the names are above the
+  tiles (portrait, near square, a phone), beside the name at the line's right end, each
+  half 88 dp square, the line 92 dp tall; where the names are at the tiles' left (most
+  landscapes), under the name in its 120 dp column, within the row's 88 dp: each half
+  58 × 68 dp, under the 88 dp floor. Two 88 dp halves need 180 dp across, and a taller
+  row leaves the tablet's landscape, which has 8 dp to spare over its navigation bar,
+  one group at a time (`test/shell/sizes` gives the halves on their own); and kings (auto, crown, or stack, the last two each with its
   king drawn on the tile). Between them the Board row, flat or raised (the file's
   `board = 2d|3d`): its 3D tile plays the game on the 3D board (`settings::raised`,
   `src/shell/settings.goose`; the game screen round it is under "Board and pieces"), and
@@ -801,7 +837,14 @@ board's does and the backdrop over it as opaque as the blur.
   clear but for the board, drawn only when the 3D board's scene changed
   (`view3d::changes`); each drawn frame lays the image over the backdrop (the renderer's
   blurred and graded photograph behind the game and a puzzle, the app's sharp one behind
-  home and settings), under the UI. The marks that pulse (a must-capture ring, a wrong
+  home and settings; or the plain fade, dimmed to 0.8 behind the game), under the UI.
+  The board's ambient light (nine spherical harmonics) comes from the blurred
+  photograph; with the plain fade, from the fade painted 64 texels square on the CPU,
+  scaled so its brightness is the dim ambient a theme without a photograph had (the
+  look the Galaxy A33's build without photographs showed, which the plain background
+  comes from): the fade tints the board's shade by season, a fade's own light being far
+  too dark to light it (`render3d::fade_harmonics`). Switching between the photograph
+  and the fade takes only the theme's photograph steps again, not its bake. The marks that pulse (a must-capture ring, a wrong
   move's flash, a hint's ring) stay out of the image: each frame draws them over it in
   one additive quad from their phases, a uniform (`render3d::marks_over`), tested against
   a 1x depth of the board the pass keeps with the image while marks pulse (a 16-bit

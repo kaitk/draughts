@@ -78,4 +78,5 @@ Each claim is a fact of the app as built (2026-11-09); check again before an upl
   chip, then a face on the card: two taps.
 - Hints: `docs/product.md`, "Principles"; puzzles never show a piece's targets.
 - No internet: the manifest asks for no permission at all (`aapt2 dump permissions`).
-- "The one you choose": settings' Background row (a season, or by date).
+- "The one you choose": settings' Theme row (a season, or by date); its switch can put a
+  plain background in place of the photograph, which the text leaves out.
