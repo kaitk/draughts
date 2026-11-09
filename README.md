@@ -14,9 +14,27 @@ solve puzzles. No ads, no accounts, no tracking, and no network.
 - Play a friend on the same device, or the computer at three levels
 - Puzzles, from the first capture to multi-piece shots
 - Four seasonal looks, each a photograph with its own board: autumn wood, winter stone,
-  spring birch, and summer sunset
+  spring carved stone, and summer sunset
+- A flat board or a 3D one, lit and shadowed, its camera turned by hand on home
 - Works offline, with no ads and no in-app purchases
 - English and Estonian
+
+## Tested on
+
+Every device below is arm64. The app needs Android 10 (API 29) or later with Vulkan, or
+iOS 16 or later with Metal.
+
+| Device | Chip (CPU) | GPU, API | System | Status |
+| --- | --- | --- | --- | --- |
+| Galaxy Tab A11+ (SM-X230) | MediaTek MT6878 | Mali-G615 MC2, Vulkan 1.3 | Android 16 | Plays in 2D and 3D; the main test device |
+| Pixel 7a | Google Tensor G2 | Mali-G710 MC7, Vulkan | Android 17 | Plays in 2D and 3D |
+| Galaxy A33 5G (SM-A336B) | Samsung Exynos 1280 | Mali-G68 MP4, Vulkan 1.3 | Android 16 | Plays in 2D at 90 Hz and 3D at about 39 fps while it moves; the weakest tried |
+| iPhone 13 mini | Apple A15 Bionic | Apple GPU, Metal | iOS 26 | Runs, a development build (task 043) |
+| Mac with Apple silicon (M1 Pro) | Apple M1 Pro | Apple GPU, Metal | macOS | Development and headless tests |
+
+Measured numbers per device are in [task 015](tasks/015-3d-board.md) and
+[task 042](tasks/042-3d-frame-cost.md); [development](docs/development.md) has the
+details.
 
 ## Implementation
 
@@ -42,7 +60,8 @@ Android, so an idle board costs next to no CPU and no GPU work.
 ### How it is built
 
 - **Goose, compiled to C,** with [goose_gfx](https://github.com/aardappel/goose_gfx) on
-  SDL3's GPU API: Vulkan on Android, Metal on the Mac. No engine, no Gradle.
+  SDL3's GPU API: Vulkan on Android, Metal on the Mac and iOS. No engine, no Gradle, no
+  Xcode project.
 - **Shaders draw everything:** the board in one full-screen pass, the pieces, rings, and
   glass panels as signed distance shapes, crisp at any size. All pieces are one
   instanced draw, the whole UI another.
@@ -77,6 +96,13 @@ On an Android device with USB debugging on, with the Android SDK, NDK r29, and a
 scripts/android.py src/app/draughts.goose --run     # build the APK, install it, start it
 ```
 
+For iOS, with Xcode (the Simulator, or an iPhone with a signing identity):
+
+```sh
+scripts/ios.py src/app/draughts.goose --run             # the Simulator
+scripts/ios.py src/app/draughts.goose --device --run    # an iPhone
+```
+
 The tests run headless:
 
 ```sh
@@ -105,7 +131,8 @@ src/          the program: one directory per package, and the app
 strings/      the text, one file per language
 assets/       the fonts and the badges
 android/      the manifest, the activity, resources, and the native build
-scripts/      the Android build, the icon, and device measurements
+ios/          the iOS entry point and its native build
+scripts/      the Android and iOS builds, the icon, and device measurements
 tools/        perft, computer-player benchmarks, a terminal player, the puzzle checker
 test/         headless tests with expected output
 patches/      patches to goose_gfx and SDL, applied to a copy at build time
