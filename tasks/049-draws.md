@@ -104,18 +104,16 @@ piece's move (3.2). The Brazilian confederation's (CBD) own text wasn't found on
   and 20 or 10 moves for three kings against one, unlike the FMJD-64 text; lidraughts and
   playstrategy follow the FMJD-64 text, as Wikipedia's Brazilian article cites it.
 
-### Open questions
+### Decided (the user, 2026-11-09)
 
-- Russian: follow the 2022 Russian rules (proposed) or the IDF text lidraughts uses?
-  They differ in the kings-only count and the cases above.
-- "15/25/30/60 moves" where the text doesn't say "each": read as each side's (the
-  record's numbering, as lidraughts does); only FMJD 6.3–6.4 say "each" outright.
-- Russian 6.1.8.5's exception ("unless either side can win") and IDF 7.2.7–7.2.8's "a
-  winning position" need an oracle; proposed: test only whether the king is taken.
-- Russian 6.1.8.5 when the lone king leaves the main road: the count stops, and 6.1.8.3
-  (15 moves) applies to three kings; proposed to restart nothing and let 6.1.8.3 or
-  6.1.8.6 run from their own start.
-- Brazilian: whether to find the CBD's text (Portuguese) or keep FMJD-64.
+- Russian follows the Russian federation's 2022 rules, not the IDF text lidraughts uses.
+- "15/25/30/60 moves" without "each" means each side's moves (the record's numbering).
+- The "either side can win" and "a winning position" exceptions are left out: a count
+  ends only when the lone king is taken.
+- When the lone king leaves the main road, the 5-move count stops and nothing restarts;
+  6.1.8.3 or 6.1.8.6 run from their own start.
+- Brazilian keeps the FMJD-64 text; the CBD's isn't looked for further.
+- The draw's screen is prototyped in `prototypes/` before it is built.
 
 ## Work
 
