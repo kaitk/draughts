@@ -57,7 +57,10 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   written back, their migration (killed after each step too), adding, switching,
   starting again, and removing (`players`), who's playing and a player's sheet, the
   holds let go early and held, the name typed, the first run, and their layout at the
-  tablet's and a phone's size (`who`), the computer's skill moving
+  tablet's and a phone's size (`who`), every screen with a board on the 3D board (home's and
+  settings' bounds at eight sizes, a puzzle tapped through the perspective with its ghost
+  and hint ring, the win's card on the 3D bounds, the transitions moving one image:
+  `screens3d`), the computer's skill moving
   across games, home's X closing the app and where it sits, Android's back and Escape
   on each screen against its own back tile (`back`), and every screen at a
   foldable, 4:3, and a 20:9 phone in both orientations, and the phone's layout at 540

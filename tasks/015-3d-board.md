@@ -470,18 +470,77 @@ spring back; pressing it again, or a move, eases back to rest in 0.6 s.
   4× target and its depth, and the kept image the screen's size), and the photograph is
   decoded a second time for its blur and harmonics. To measure on the tablet.
 
+### Phase 3: every screen (the `screens3d` branch off `3d-board`, 2026-11-09)
+
+- **Home and settings' preview:** each screen gives the board a room (`home::frame`'s and
+  `settings::frame`'s `room3d`): home across its stage less 40 dp each side (24 in
+  portrait), as tall as the flat board below the chip's and the way out's row, or the
+  flat square where that leaves under half of it; settings 94% of the page beside the
+  choices. The shell fits the 3D view there, as large as it fits and in its middle
+  (`shell::raise_in`), the flat square in the bounds' middle (`view3d::square`, which
+  `panel::corners_in` uses too). On the tablet home's board is 760 × 521 dp (the flat one
+  560 square), settings' 506 × 347 in landscape and 692 × 474 in portrait. Behind home and
+  settings the sharp photograph, as the flat board has: the renderer now draws the board
+  on clear (`render3d::draw`'s `backdrop` false), and the app lays the image over its own
+  photograph (`draw::photo`) or the renderer's graded backdrop (`render3d::backdrop`,
+  behind the game and a puzzle), `render3d::show` placing it.
+- **Puzzles:** the game's corners layout (`shell::puzzle_layout`), next the shorter tile
+  in a corner panel (STACK_H; the tall one ran past the 352 dp panel), turned for black to
+  move as the flat board is; taps and drags through the perspective, shared with the game
+  (`game::touch`). The hint's glow ring and a win's are drawn in the field's marks pass
+  from a second buffer a square (`view3d::Scene.lit`: x the ring, y a win's lit square).
+  A captured piece and a wrong move's ghost now fade instead of shrinking: the fading
+  instances go last and are drawn blended one at a time (`render3d`'s `fading` pipeline,
+  Draw.z the alpha, Draw.w the instance), casting no shadow.
+- **The win:** the dim in the frame's `screen.z`, the board and the pieces dimmed but the
+  winning one, whose seed is `view3d::SEED_LIT` more (the shaders take it off again for
+  its figure); the glow passing lights the squares and rings the pieces. The card is
+  centered in the 3D bounds on screen and keeps clear of the winning piece's top as the
+  perspective shows it (`game::card_area`, `game::winning_spot`); on the tablet it sits
+  in the lower half, 304 × 269 dp.
+- **Transitions:** the three the flat board has (home and settings, home and the game,
+  the puzzles' tile and a puzzle) move one image. It is drawn once through the larger
+  end's view (the game's, 898 wide, against home's 760) and then only moved and scaled
+  between the ends' bounds (`shell.place`); a tile end fits the bounds into the tile's
+  square and crossfades (`shell.fade`). The scene is filled on the drawn view's flat
+  square, so it doesn't change while the image moves; `draw3d::frame` draws again during
+  one only for another view or board (`hold`, `which`). Headless, `--go settings --hold
+  0.5` drew the 3D board once in 3000 frames, `--go puzzle --hold 0.5` once in 2999. The
+  UI's hole is the image's bounds (`shell.tall` its height).
+- **Spring and summer** in `looks.goose`, from the theme table and `prototypes/boards.html`'s
+  3D boards: spring's pale birch (a faint figure, rings and pores barely there) with the
+  dark squares the same birch stained sage `#6b7f6a`, a green-stained frame, cream and
+  dark green pieces, a cooler key; summer's peach and dusky rose squares under a satin
+  lacquer (roughness 0.35, almost no figure, as the flat board's plain sheen), a red-brown
+  frame, cream and plum pieces, a warmer, lower key. The app picks each season's look
+  (`draw3d::look_of`); the prototype takes `--theme spring|summer`.
+- **Hot seat** against a friend keeps today's board (the user is prototyping a 180° turn in
+  the web page).
+- **Tests:** `test/shell/screens3d` (home's board and settings' preview at eight sizes,
+  inside the screen and clear of every tile; a puzzle's right move tapped through the
+  perspective, a wrong move's ghost and flash, the hint's ring after two misses, a black
+  puzzle turned; the win's card inside the 3D bounds and clear of the winning piece, the
+  dim leaving one instance lit; home to the game drawn through one view with the flat
+  layout steady; a tile to a puzzle fading in). `test/shell/settings` now shows the preview
+  stacked and 3D where the row and 3D are chosen.
+- **Checked** headless on the Mac at 1280 × 800 and 800 × 1280 (the local headless copy,
+  never committed): home, settings in portrait, a puzzle in portrait, the win, the game in
+  the four seasons. Not on the tablet.
+
 ### Open
 
 - Portrait's camera (above).
 - The rule that only `app/` imports `gfx`: the shared renderer is a package that does.
-- The win's card is placed on the flat square, not the 3D bounds; the drag threshold is
-  measured on the flat layout, near the screen's pixels in the board's middle only.
-- Home, settings' preview, puzzles, and the transitions into and out of the game still
-  show the flat board; a transition switches between the two boards at its ends.
-- Not drawn in 3D yet: the win (the dim, the lit squares, the winning piece's lift are
-  in the scene, not in the shaders), a hint's glow ring, the ghost of a piece slid back
-  (it shrinks as a captured piece does).
-- The seasons without a 3D look (spring's birch, summer's sunset) take the autumn wood.
+- The drag threshold is measured on the flat layout, near the screen's pixels in the
+  board's middle only.
+- A pulsing must-capture ring changes the 3D scene every frame, so the 3D pass runs each
+  frame while it pulses (settings' preview after its wrong move, a mistake in the game):
+  the ring could move to the shaders with the time as a uniform, drawing then only the
+  marks; to measure on the tablet.
+- Between screens the switches that aren't transitions (settings and the game or a
+  puzzle) draw the board again through the other view, once.
+- Spring's and summer's looks were judged headless only, against the prototype's 3D
+  boards, not beside the user's reference images or on the tablet.
 
 ## Later, only if the floating board falls short
 
@@ -522,12 +581,28 @@ spring back; pressing it again, or a move, eases back to rest in 0.6 s.
 
 ## When 3D lands
 
-Still needed after phase 2: the open points above (home, settings' preview, puzzles,
-and the transitions with the 3D board, or a decision that they stay flat; the win in 3D;
-looks for spring and summer; the card on the 3D bounds), the tablet's frame times and
-memory with the game on the 3D board, and draw-on-demand checked there with
-`scripts/idle_cpu.sh`. Then show settings'
-Board row again: remove `Settings.show_board_row` (`src/shell/settings.goose`)
-and the `--3d` flag (`src/app/draughts.goose`, `docs/development.md`), make the board follow
-`Settings.board`, and update `docs/architecture/rendering.md`' Settings paragraph and
-`test/shell/settings.goose`.
+Every screen shows the 3D board behind `--3d` (phase 3). Still needed before merging: the
+tablet's frame times and memory on each screen with the 3D board (and the performance
+branch's bake and MSAA changes rebased in), draw-on-demand checked there with
+`scripts/idle_cpu.sh`, the open points above as the user decides them (portrait's camera,
+hot seat's turn), and the user's look at spring and summer.
+
+Then, once the user says merge, flip exactly this:
+
+1. **Show the Board row:** remove `Settings.show_board_row` (`src/shell/settings.goose`:
+   the field, `group_rows`' and `group_row`'s checks, so the look always has three rows)
+   and its copies in `src/shell/shell.goose` (`enter` keeps it across players) and
+   `src/app/draughts.goose` (`sh.prefs.show_board_row = show_3d`).
+2. **Follow `Settings.board`:** `settings::raised` becomes `s.board == RAISED`; its comment
+   and `king_look`'s ("the only board drawn while the Board row is hidden") change with it.
+3. **Remove the `--3d` flag:** its parse and the pairs' shift in `src/app/draughts.goose`
+   (`show_3d`, the `--3d` skip), its line in the flags comment, and `docs/development.md`.
+   `--board 3d` stays, to open on the 3D board.
+4. **Docs:** `docs/architecture/rendering.md`'s Settings paragraph ("hidden until the 3D
+   board exists ... the app's `--3d` flag shows the row") says the row shows flat or raised
+   and every screen follows it; this task's references to `--3d`; `docs/product.md`'s
+   Looks, if it still calls the 3D board later.
+5. **Tests:** `test/shell/settings.goose` (its "Board row hidden by default" line and the
+   cases that set `show_board_row`; the look's tile count with the row always there), then
+   `test/game/corners` and `test/shell/screens3d`, which set it, and
+   every expected output that counts the settings' tiles; `scripts/test.sh` passing.

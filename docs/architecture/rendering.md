@@ -442,7 +442,9 @@ the prototype tried, kept for 3D:
   3D board exists (task 015): the board is always flat, the file's `board = 2d|3d` key is
   still read and written, and the app's `--3d` flag shows the row, whose 3D tile then
   plays the game on the 3D board (`Settings.show_board_row`, `settings::raised`,
-  `src/shell/settings.goose`; the game screen round it is under "Board and pieces"). Each
+  `src/shell/settings.goose`; the game screen round it is under "Board and pieces"), and
+  shows it on every screen with a board: home, the preview here (its kings' auto a
+  stack), and a puzzle. Each
   setting is a dim 18 px name at the left of its tiles (above them in portrait); a tile
   has radius 16 px and is lit in the glow color at 22% with a 2 px glow border when on.
   Every tile, the language's and the seasons' too, is 88 px tall and wide at least
@@ -654,6 +656,23 @@ is true. The frame after it ends is drawn at rest, and then nothing more. A land
 frame between home and the game declares about 130 of the 512 quads (home 77, the game
 53), between home and settings about 350.
 
+With the 3D board (task 015) the same three transitions move one image instead of a
+board drawn each frame. The 3D board is drawn once, through the view of the end that
+shows it larger (the game's against home's; the board of the screen `shell.shows`
+names, as above), into its kept image with nothing but the board and its shadow on clear;
+then each frame lays that image over the backdrop moved and scaled from one end's bounds
+to the other's (`shell.place`). Both ends see the board through the same camera, so the
+image at one fit is the image at the other scaled and shifted. A puzzle's tile has no 3D
+board: the image starts or ends at the bounds fitted into the tile's square, fading in or
+out there (`shell.fade`). The flat layout the scene is filled on follows the drawn view,
+so it stays the same while the image moves, and the board isn't drawn again
+(`draw3d::frame`'s `hold`) unless the view or the board changes; at the end it is drawn
+at rest through its own view, once. The hole is the image's bounds, square-cornered
+(`shell.tall` its height; the UI and piece shaders take it in `screen.w` and `time.y`).
+Behind the image the game and a puzzle show the renderer's graded backdrop, home and
+settings the sharp photograph; a transition between them draws the photograph as the flat
+board's does and the backdrop over it as opaque as the blur.
+
 ### Board and pieces
 
 - **Board** in 2D: the theme's squares in a thin raised lip 1.1% of the board's width,
@@ -711,14 +730,33 @@ frame between home and the game declares about 130 of the 512 quads (home 77, th
   board's order, the bar, the board as wide as the screen less the margins, the play;
   its camera is a constant of its own (`panel::PITCH_PORTRAIT`, 52.5°; a steeper one is
   open with the user).
+  **Every screen with a board** shows it when it is chosen: home's board and settings'
+  preview are fitted, as large as they fit, into the room each screen gives them (home:
+  across its stage less 40 dp each side, 24 in portrait, as tall as the flat board below
+  the chip's and the way out's row, 760 × 521 dp on the tablet; settings: 94% of the page
+  beside the choices), with the flat square the board package plays on in the middle of
+  the bounds (`view3d::square`). A puzzle takes the game's corners layout, next the shorter
+  tile in a corner panel, turned so the side to move plays from the bottom, its taps and
+  drags through the perspective as the game's (`game::touch`). **The win** dims the board
+  and the pieces but the winning one (its seed `view3d::SEED_LIT` more, the dim in the
+  frame's `screen.z`), lights the squares the glow passes and rings the pieces it lifts;
+  its card is centered in the 3D board's bounds on screen and keeps clear of the winning
+  piece's top where the perspective shows it (`game::card_area`, `game::winning_spot`).
   **Drawn** by `src/render3d/` (the prototype's renderer, shared with `poc/3d/`) from
   `src/app/draw3d.goose`: the shadow map only when the pieces move, one 4× multisampled
-  forward pass (the blurred photograph, the board's shadow, the lit board and pieces, the
-  field's marks added) into a kept image the screen's size, drawn only when the 3D
-  board's scene changed (`view3d::changes`); each drawn frame copies the image under the
+  forward pass (the board's shadow, the lit board and pieces, the fading ones blended
+  after, the field's marks added) into a kept image the screen's size, clear but for the
+  board, drawn only when the 3D board's scene changed (`view3d::changes`); each drawn
+  frame lays the image over the backdrop (the renderer's blurred and graded photograph
+  behind the game and a puzzle, the app's sharp one behind home and settings), under the
   UI. The marks are the flat board's: the last move tinted, targets' dots, stops' rings,
-  the must-capture ring pulsing, a wrong move's red flash, the selected piece's glow ring.
-  A captured piece shrinks into its square as it fades.
+  the must-capture ring pulsing, a wrong move's red flash, the selected piece's glow
+  ring, the glow ring tight round a hint's piece or a win's, a win's lit squares
+  (`view3d::Scene.lit`). A captured piece and a wrong move's ghost fade, drawn blended
+  one by one after the opaque pieces, casting no shadow. The four seasons have looks as
+  data (`src/render3d/looks.goose`): autumn's maple and walnut in cherry, winter's stone,
+  spring's pale birch with sage-stained squares in a green-stained frame, and summer's
+  peach and dusky rose under a satin lacquer in a red-brown frame, from the theme table.
 - **States**, in the theme's glow color: the selected piece lifts by 0.8% of the board
   and grows to 1.05 with a glow ring a little out from it (at 1.13 of the radius); with move hints on, a legal target is a glowing
   dot 30% of a square and a capture's stop on the way is a ring. With hints on mistakes
