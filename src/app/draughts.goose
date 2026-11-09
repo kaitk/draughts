@@ -7,6 +7,7 @@
 //   ../build/draughts                             at home
 //   ../build/draughts --screen game               the game screen; --fen and --tap open it too
 //   ../build/draughts --theme sunset              another board than the season's
+//   ../build/draughts --background plain          the plain fade in place of the photograph
 //   ../build/draughts --frames 30 --tap c3        taps squares, then saves draughts.png
 //   ../build/draughts --fen W:Wc3,Kh6:Be5         starts from a position
 //   ../build/draughts --hints moves               shows the selected piece's targets
@@ -97,8 +98,10 @@ fn main() {
     // frame, through its transition: game as continue does, play as the setup's play,
     // puzzle from the puzzles to pick from to --puzzle ID or the first; after any taps),
     // --hold T (keeps a transition at T of the way, 0..1, for a screenshot),
-    // --win T (keeps a win at T seconds into its celebration, for a screenshot). --theme,
-    // --hints, and --lang override the settings for the run without changing them.
+    // --win T (keeps a win at T seconds into its celebration, for a screenshot),
+    // --background photo|plain (the photograph or the plain fade, task 044). --theme,
+    // --hints, --lang, and --background override the settings for the run without
+    // changing them, unless a tap in settings writes them.
     // --wood N and --marble N choose the 3D board's wood (0..3) and winter frame's marble
     // (0 the slate, 1..4), to try them in the game (task 039); --summer N summer's 3D look
     // (0..5, looks::SUMMERS; 4 and 5 amber stone, task 041); --spring N spring's look (0
@@ -124,6 +127,7 @@ fn main() {
     var hold = -1.0;
     var win_at = -1.0;
     var raised = false;
+    var background = -1;        // --background photo|plain: 0 or 1, -1 the player's
     var flat = false;
     var bench = 0;
     var wood_3d = -1;
@@ -199,6 +203,8 @@ fn main() {
         }
         if argv[i] == "--board" && argv[i + 1] == "3d" { raised = true; }
         if argv[i] == "--board" && argv[i + 1] == "flat" { flat = true; }
+        if argv[i] == "--background" && argv[i + 1] == "photo" { background = 0; }
+        if argv[i] == "--background" && argv[i + 1] == "plain" { background = 1; }
         if argv[i] == "--bench" {
             let n, ok = parse_int(argv[i + 1]);
             if ok { bench = clamp(n, 1, 1000); }
@@ -312,7 +318,8 @@ fn main() {
     shell::read_game(sh);
     // A fresh install's first run opens on the sheet of its one player, to pick a badge.
     if keep && sh.players.fresh { who::first_run(sh.who, sh.players); }
-    var d = draw::new(kind);
+    if background >= 0 { sh.prefs.plain = background == 1; }
+    var d = draw::new(kind, !settings::photo_shown(sh.prefs));
     var d3 = draw3d::Drawer { wood: wood_3d, marble: marble_3d, summer: summer_3d, spring: spring_3d, timed: bench > 0, .. };
     var w = widgets::new();
     var g = gui::Gui {};
@@ -352,8 +359,8 @@ fn main() {
         // (80 to 95 ms on the tablet) holds the thread.
         if season_in > 0 {
             season_in--;
-            if season_in == 0 && theme_for(sh.prefs.season) != d.kind {
-                draw::reload(d, theme_for(sh.prefs.season));
+            if season_in == 0 && (theme_for(sh.prefs.season) != d.kind || !settings::photo_shown(sh.prefs) != d.scene.plain) {
+                draw::reload(d, theme_for(sh.prefs.season), !settings::photo_shown(sh.prefs));
                 dirty = true;
             }
         }
@@ -427,7 +434,7 @@ fn main() {
         // a new theme bakes, and leaves taps on it alone; the frames go on until it shows
         // and has faded in. Back to flat, it is all given back.
         let n_was = if sh.layout.n > 0 { sh.layout.n } else { rules::VARIANTS[sh.prefs.variant].size };
-        sh.ready3d = !settings::raised(sh.prefs) || draw3d::ready(d3, d.kind, n_was);
+        sh.ready3d = !settings::raised(sh.prefs) || draw3d::ready(d3, d.kind, n_was, d.scene.plain);
         sh.shown3d = draw3d::shows(d3);
         if settings::raised(sh.prefs) && (!sh.ready3d || !sh.shown3d || draw3d::appearing(d3, now)) { dirty = true; }
         if !settings::raised(sh.prefs) && sh.from < 0 { draw3d::drop(d3); }
@@ -454,7 +461,7 @@ fn main() {
             players::write(sh.players, sh.prefs);
             let next = if sh.prefs.language >= 0 { sh.prefs.language } else { system_lang };
             if next != strings::current { strings::use(next); }
-            if theme_for(sh.prefs.season) != d.kind { season_in = 2; }
+            if theme_for(sh.prefs.season) != d.kind || !settings::photo_shown(sh.prefs) != d.scene.plain { season_in = 2; }
             dirty = true;
         }
         // Settings' thumbnails, if settings show before the first idle frame loaded them
@@ -499,7 +506,7 @@ fn main() {
                 // The 3D board (draw3d.goose) over the photograph, the UI and its pieces
                 // drawn over it as on the flat board; in a transition its image moves,
                 // drawn once.
-                draw3d::frame(d3, shown, l, sh.view, now, size, d.kind, shell::which(sh.shows), sh.hold);
+                draw3d::frame(d3, shown, l, sh.view, now, size, d.kind, d.scene.plain, shell::which(sh.shows), sh.hold);
                 draw::pieces_over(d, sh.over, l, size.x, size.y);
                 draw::photo(d, sh.blur, now, size.x, size.y, draw3d::shows(d3) && !draw3d::appearing(d3, now));
                 draw3d::show(d3, sh.blur, sh.place, sh.fade, size, now);

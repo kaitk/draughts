@@ -37,7 +37,7 @@ let BUTTON = 1;             // a glass tile, with its shadow; look.w: how far it
 let ICON = 2;               // a line icon on a 24-unit grid; look.z: which
 let FILL = 3;               // a plain rounded rect in `color`
 let TEXT = 4;               // a glyph from the font atlas in the text color; look.yzw, extra.y: its uv
-let PICTURE = 5;            // a season's thumbnail (look.z: its theme), or the glow's tint for -1
+let PICTURE = 5;            // a thumbnail (look.z: a season's, its fade's, the theme's; widgets.goose), or the glow's tint for -1
 let MINI = 6;               // a small board at the start; look.z: squares per side, look.w: rows of men
 let RING = 7;               // a hold's ring round a tile, filled clockwise from the top; look.z: how far, 0..1
 let FACE = 8;               // a player's badge on a disc; look.z: which, -1 for +; look.w: lit
@@ -543,7 +543,7 @@ fn row(g: Gui&, id: i64, r: float4, icon: i64, label: const u8[:], note: const u
 
 // A choice tile (prototypes/settings.html): a picture of size `pic` (centered across)
 // with a label under it, lit in the glow color when on. The picture is a season's
-// thumbnail (kind, a theme), or for -1 the glow's tint with a sun. A choice that isn't
+// thumbnail (kind, a theme; 4 more its plain fade), or for -1 the glow's tint with a sun. A choice that isn't
 // `enabled` is dimmed and takes no tap. True when it is tapped.
 fn choice(g: Gui&, id: i64, r: float4, kind: i64, pic: float2, label: const u8[:], on: bool, enabled: bool) -> bool {
     let u = g.scale;
@@ -557,6 +557,19 @@ fn choice(g: Gui&, id: i64, r: float4, kind: i64, pic: float2, label: const u8[:
                   extra: float4 { u, 0.0, 0.0, 0.0 } });
     if kind == -1 { glyph_icon(g, center(picture, 30.0 * u, 30.0 * u), SUN, PLAIN, 0.0, a); }
     text(g, SMALL, c, label, a, 0.0, CENTER);
+    return clicked;
+}
+
+// A choice that is a picture alone, `pic` in dp's pixels in its middle (look.z `kind`,
+// as choice's): the theme's switch, photograph or plain (shell/settings.goose). True
+// when it is tapped.
+fn picture(g: Gui&, id: i64, r: float4, kind: i64, pic: float2, on: bool) -> bool {
+    let u = g.scale;
+    let clicked, unused = hold_if(g, id, r, true);
+    add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, 1.0 }, look: float4 { BUTTON, 16.0 * u, 0.0, 0.0 },
+                  extra: float4 { u, if on { CHOSEN } else { CHOICE }, 0.0, 0.0 } });
+    add(g, Quad { rect: center(r, pic.x, pic.y), color: float4 { 1.0, 1.0, 1.0, 1.0 },
+                  look: float4 { PICTURE, 9.0 * u, kind, 0.0 }, extra: float4 { u, 0.0, 0.0, 0.0 } });
     return clicked;
 }
 

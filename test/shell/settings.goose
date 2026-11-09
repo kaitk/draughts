@@ -8,8 +8,10 @@
 // for auto. Each choice restages the board beside them: its size, its kings, and what the move hints show on
 // a fixed position, where white must capture with the man on d4 or the king on h6.
 // With mistakes only, a wrong move's ring flashes and both capturing pieces pulse, then
-// both stay lit and still, so nothing animates after. In landscape the board is right of
-// the choices; in portrait above them.
+// both stay lit and still, so nothing animates after. The row of seasons is named Theme
+// (Teema): its switch, photograph or plain, is kept in the file as `background`, and with
+// plain no photograph is shown (the app then loads none) and the seasons' thumbnails are
+// their fades. In landscape the board is right of the choices; in portrait above them.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -33,10 +35,24 @@ let MISTAKES = 6;
 let MOVES = 7;
 let SUMMER = 10;
 let BY_DATE = 12;
-let RAISED = 14;
-let AUTO = 15;
-let STACK = 17;
-let TILES = 18;
+let PHOTO = 13;             // the theme's switch, under its name
+let PLAIN = 14;
+let RAISED = 16;
+let AUTO = 17;
+let STACK = 19;
+let TILES = 20;
+
+// The pictures the last frame declared, by look.z: the seasons' (0 to 3 their
+// photographs, 4 to 7 their fades), by the date's (-1), and the switch's (-2 the theme
+// shown's photograph, -3 its fade).
+fn thumbnails(g: gui::Gui&) -> u8[>..] {
+    var out: u8[>..] = [];
+    for q in g.quads {
+        guard q.look.x == gui::PICTURE else { continue; }
+        format(out, if out.len > 0 { " " } else { "" }, q.look.z as i64);
+    }
+    return out;
+}
 
 fn show(sh: shell::Shell&, what: const u8[:]) {
     var out: u8[>..] = [];
@@ -153,6 +169,25 @@ fn main() {
     show(sh, "by the date");
     drive::tap(sh, g, drive::tile(g, ENGLISH), 9.5);
     show(sh, "English");
+
+    // The theme's switch: plain keeps the season (by the date here) and its board, shows
+    // no photograph, and is kept in the file; the seasons' thumbnails show their fades.
+    print("the row: ", strings::get(settings::ROW_NAMES[settings::THEME_ROW]), ", photo shown ",
+          settings::photo_shown(sh.prefs), ", thumbnails ", thumbnails(g));
+    drive::tap(sh, g, drive::tile(g, PLAIN), 9.6);
+    show(sh, "plain");
+    drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 9.65);
+    var plain: u8[>..] = [];
+    settings::write(sh.prefs, plain);
+    let back = settings::parse(plain);
+    print("plain: photo shown ", settings::photo_shown(sh.prefs), ", read back plain ", back.plain, " season ",
+          back.season, ", thumbnails ", thumbnails(g));
+    drive::tap(sh, g, drive::tile(g, PHOTO), 9.7);
+    show(sh, "photo");
+    print("photo: photo shown ", settings::photo_shown(sh.prefs));
+    strings::use(strings::ET);
+    print("in Estonian: ", strings::get(settings::ROW_NAMES[settings::THEME_ROW]));
+    strings::use(strings::EN);
 
     // Portrait: the board on top, the groups side by side under it.
     drive::size = float2 { 800.0, 1280.0 };

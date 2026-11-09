@@ -9,13 +9,13 @@ settings: settings, board at vec4<f32> { 726.14, 147.14, 505.72, 8.09152 }, shar
 back from settings: home
 settings from the game: settings
 back from settings: game, sharp false, board at vec4<f32> { 280.0, 40.0, 720.0, 11.52 }, glyphs 43, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
-a friend's setup: home, tiles 9, small boards 3, picture = fox;season = by-date;board = 2d;hints = mistakes;kings = auto;draughts = international;level = easy;color = white;clock = none;skill_easy = 0;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;
-Russian, 5+3: changed true, picture = fox;season = by-date;board = 2d;hints = mistakes;kings = auto;draughts = russian;level = easy;color = white;clock = 5+3;skill_easy = 0;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;
+a friend's setup: home, tiles 9, small boards 3, picture = fox;season = by-date;background = photo;board = 2d;hints = mistakes;kings = auto;draughts = international;level = easy;color = white;clock = none;skill_easy = 0;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;
+Russian, 5+3: changed true, picture = fox;season = by-date;background = photo;board = 2d;hints = mistakes;kings = auto;draughts = russian;level = easy;color = white;clock = 5+3;skill_easy = 0;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;
 back: setup 0, home
 play: game, 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, clock 1, computer -1, level 0, skill 0, number 0, turned false
 the computer's setup: tiles 14, pieces over the UI 2
 draughts tiles: 141.0 101.0 99.0, the first's name in the body face true
-play: game, 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, clock 2, computer 0, level 2, skill 90, number 0, turned true; picture = fox;season = by-date;board = 2d;hints = mistakes;kings = auto;draughts = russian;level = hard;color = black;clock = 10+5;skill_easy = 0;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 1;
+play: game, 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, clock 2, computer 0, level 2, skill 90, number 0, turned true; picture = fox;season = by-date;background = photo;board = 2d;hints = mistakes;kings = auto;draughts = russian;level = hard;color = black;clock = 10+5;skill_easy = 0;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 1;
 home: the computer's row notes hard; glyphs 62, turned true
 portrait: board vec4<f32> { 90.0, 128.0, 620.0, 9.92 }, sheet from 772.0, clear true
 portrait setup: board vec4<f32> { 202.0, 40.0, 396.0, 6.3360004 }, sheet from 476.0, clear true

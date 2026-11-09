@@ -58,6 +58,9 @@ struct Frame {
     frame_map:       float4,
 }
 struct Draw { draw: float4 }
+// The backdrop's draw: x how opaque, y the plain fade's brightness (0: the photograph);
+// the fade's colors in linear light (shaders::FADE_FN).
+struct Backdrop { draw: float4, fade_top: float4, fade_low: float4, fade_light: float4 }
 struct Bake {
     mode:          float4,
     size:          float4,
@@ -155,7 +158,9 @@ struct Gpu {
     warm_color:     gfx::Texture,   // 4 × 4 targets warm() makes the pipelines on
     warm_depth:     gfx::Texture,
     warm_kept:      gfx::Texture,
-    no_photo:       bool,           // no photograph built in for the theme (photo_part)
+    no_photo:       bool,           // no photograph built in for the theme (photo_part), or plain
+    plain:          bool,           // the plain fade behind (task 044), set before a theme's steps
+    fade:           float4[3],      // its colors (app/theme.goose's fade_top, low, light), linear
     size:           int2,
     linear:         gfx::Sampler,
     aniso:          gfx::Sampler,
@@ -243,6 +248,64 @@ fn harmonics(px: const u8[:], size: i64, toward_grey: f32) -> float4[9] {
     return out;
 }
 
+// The plain fade behind the 3D game: dimmed to 0.8, as the flat game's background is.
+let PLAIN_DIM = 0.8;
+
+fn ease(a: f32, b: f32, x: f32) -> f32 { smoothstep(a, b, x) }
+
+// The plain fade (shaders::FADE_FN) at (x, y) of a w × h screen, both 0..1 across it, in
+// linear light: the backdrop's colors before they are encoded.
+fn fade(f: float4[3]&, x: f32, y: f32, w: f32, h: f32) -> float3 {
+    let qx = x - 0.5;
+    let qy = y - 0.5;
+    let m = max(w, h);
+    let top = float3 { f[0].x, f[0].y, f[0].z };
+    let low = float3 { f[1].x, f[1].y, f[1].z };
+    let light = float3 { f[2].x, f[2].y, f[2].z };
+    var c = lerp(top, low, ease(0.0, 1.0, y));
+    let r = hypot(qx * (w / m) / 0.62, (qy - 0.04) * (h / m) / 0.5);
+    c = lerp(c, light, 0.22 * (1.0 - ease(0.0, 1.0, r)));
+    return c * (1.0 - 0.3 * ease(0.15, 0.6, qx * qx + qy * qy));
+}
+
+// The ambient light of the plain fade (task 044), as harmonics() takes a photograph's:
+// the fade painted 64 texels square (harmonics() reads every eighth), laid round the board
+// as the photograph is. A fade is far darker than a photograph, so the result is scaled
+// to the dim ambient a theme without a photograph had (photo_part), which the Galaxy
+// A33's build without the photographs showed and the user liked (2026-11-09): the fade
+// tints the board's shadows, its brightness stays.
+fn fade_harmonics(f: float4[3]&, grey: f32) -> float4[9] {
+    let n = 64;
+    var px: u8[64 * 64 * 4] = [0; 64 * 64 * 4];
+    for y in n {
+        for x in n {
+            let c = fade(f, (x + 0.5) / n, (y + 0.5) / n, 1.0, 1.0);
+            let o = (y * n + x) * 4;
+            px[o] = encode(c.x);
+            px[o + 1] = encode(c.y);
+            px[o + 2] = encode(c.z);
+            px[o + 3] = 255;
+        }
+    }
+    var sh = harmonics(px[..], n, grey);
+    let luma = 0.2126 * sh[0].x + 0.7152 * sh[0].y + 0.0722 * sh[0].z;
+    let a = no_photo_ambient();
+    let k = (0.2126 * a.x + 0.7152 * a.y + 0.0722 * a.z) / max(luma, 1.0e-4);
+    for i in 9 { sh[i] = sh[i] * k; }
+    return sh;
+}
+
+// The ambient of a theme whose photograph isn't built in.
+fn no_photo_ambient() -> float4 { float4 { 0.25, 0.17, 0.1, 0.0 } }
+
+// A linear value in sRGB, 0..255, as linear() reads it back.
+fn encode(c: f32) -> u8 {
+    let v = clamp(c, 0.0, 1.0);
+    let e: f32 = 1.0 / 2.4;
+    let s = if v <= 0.0031308 { 12.92 * v } else { 1.055 * pow(v, e) - 0.055 };
+    return (255.0 * s + 0.5) as u8;
+}
+
 // The photograph `kind` blurred into g.photo (src/app/scene.goose's way: shrunk to 512
 // on the GPU, two passes of a Gaussian of sigma 5.6 texels), and its harmonics, taken
 // `grey` of the way to grey. Decodes the photograph, so only at setup and on a theme
@@ -256,6 +319,12 @@ fn photograph(g: Gpu&, kind: i64, grey: f32, sh: float4[9]&) {
 // harmonics taken into sh.
 fn photo_part(g: Gpu&, kind: i64, grey: f32, sh: float4[9]&, k: i64) {
     let s: f32 = 1.0 / PHOTO_SIZE;
+    if k == 0 && g.plain {
+        // The plain background: nothing to decode or blur, the ambient from the fade.
+        g.no_photo = true;
+        sh = fade_harmonics(g.fade, grey);
+        return;
+    }
     if k == 0 {
         let sharp = draughts_photo(kind, 2048);
         g.no_photo = sharp.id == 0;
@@ -264,7 +333,7 @@ fn photo_part(g: Gpu&, kind: i64, grey: f32, sh: float4[9]&, k: i64) {
             gfx::begin_pass(g.photo, gfx::Texture { 0 }, float4 { 0.11, 0.078, 0.063, 1.0 });
             gfx::end_pass();
             for i in 9 { sh[i] = float4_0; }
-            sh[0] = float4 { 0.25, 0.17, 0.1, 0.0 };
+            sh[0] = no_photo_ambient();
             return;
         }
         gfx::begin_pass(g.small, gfx::Texture { 0 }, float4_0);
@@ -468,7 +537,7 @@ fn setup(g: Gpu&, samples: i32 = SAMPLES) {
     g.shadow = gfx::pipeline(lit_vs, embed_shader("frag", shaders::EMPTY_FRAG),
                              gfx::PipelineDesc { depth_test: true, depth_write: true,
                                                  depth_bias: 1.0, depth_bias_slope: 1.5 });
-    g.backdrop = gfx::pipeline(full, embed_shader("frag", shaders::FS_SET, shaders::FRAME,
+    g.backdrop = gfx::pipeline(full, embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::FADE_FN,
                                                   shaders::BACKDROP_FRAG),
                                gfx::PipelineDesc { blend: gfx::BLEND_ALPHA });
     g.catcher = gfx::pipeline(quad_vs, embed_shader("frag", shaders::FS_SET, shaders::FRAME,
@@ -944,12 +1013,14 @@ fn draw_meshes(g: Gpu&, light: f32) {
     gfx::draw_indexed(g.board_count);
 }
 
-// The blurred photograph, graded, at opacity `alpha` over the open pass's target.
+// The blurred photograph, graded, or the plain fade dimmed as the flat game dims what is
+// behind it (draw::frame's 0.8), at opacity `alpha` over the open pass's target.
 fn draw_backdrop(g: Gpu&, alpha: f32) {
     gfx::bind(g.backdrop);
     gfx::bind_texture(gfx::FRAGMENT, 0, g.photo, g.linear);
     gfx::uniforms(gfx::FRAGMENT, 0, g.frame);
-    gfx::uniforms(gfx::FRAGMENT, 1, Draw { float4 { alpha, 0.0, 0.0, 0.0 } });
+    let dim: f32 = if g.plain { PLAIN_DIM } else { 0.0 };
+    gfx::uniforms(gfx::FRAGMENT, 1, Backdrop { float4 { alpha, dim, 0.0, 0.0 }, g.fade[0], g.fade[1], g.fade[2] });
     gfx::draw(3);
 }
 

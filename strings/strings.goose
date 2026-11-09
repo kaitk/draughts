@@ -17,7 +17,7 @@ let KEYS = [
     "home.continue", "home.friend", "home.computer", "home.puzzles", "home.settings",
     "level.easy", "level.medium", "level.hard",
     "settings.game", "settings.look", "settings.tutorial",
-    "settings.background", "settings.by_date", "settings.board", "settings.hints", "settings.kings",
+    "settings.theme", "settings.by_date", "settings.board", "settings.hints", "settings.kings",
     "season.winter", "season.spring", "season.summer", "season.autumn",
     "hints.mistakes", "hints.moves",
     "board.flat", "board.flat_note", "board.raised", "board.raised_note",
@@ -52,7 +52,7 @@ let LEVEL_HARD = 9;
 let SETTINGS_GAME = 10;
 let SETTINGS_LOOK = 11;
 let SETTINGS_TUTORIAL = 12;
-let SETTINGS_BACKGROUND = 13;
+let SETTINGS_THEME = 13;
 let SETTINGS_BY_DATE = 14;
 let SETTINGS_BOARD = 15;
 let SETTINGS_HINTS = 16;

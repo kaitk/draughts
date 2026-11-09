@@ -5,7 +5,9 @@
 // copy, and two passes of a Gaussian, across and then down, blur that into the texture
 // the board pass samples behind the game. A season whose image isn't built in has no
 // photograph, and the board pass shows the page color. Glass panels sample a copy
-// blurred further, made at the same time.
+// blurred further, made at the same time. With the plain background (task 044) nothing
+// is decoded, uploaded, or held: the board pass and the glass draw the fade
+// (shaders::FADE_FN in src/render3d/) from the theme's colors.
 namespace scene;
 import std;
 import vec;
@@ -32,9 +34,23 @@ let GLASS_SIGMA = 3.9;
 extern fn draughts_photo(kind: i64, decoded: i64) -> gfx::Texture;
 
 // A season's thumbnail in settings: the photograph's middle at the picture's 104 × 64
-// shape, about a texel to a pixel at 1.5 pixels per dp; the four stacked in one texture.
+// shape, about a texel to a pixel at 1.5 pixels per dp; the four stacked in one texture,
+// and under them the four plain fades (THUMBS slots in all).
 let THUMB_W = 160;
 let THUMB_H = 98;
+let THUMBS = 8;
+
+// The plain fade in a pass's part `to` (pixels: origin, size), from the theme's colors.
+let FADE_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 3, binding = 0) uniform Fade { vec4 to; vec4 top; vec4 low; vec4 light; };
+    void main() {
+        result = vec4(plain_fade(gl_FragCoord.xy - to.xy, to.zw, top.rgb, low.rgb, light.rgb), 1.0);
+    }
+    """;
+
+struct Fade { to: float4, top: float4, low: float4, light: float4 }
 
 let BLUR_FRAG = """
     layout(location = 0) in vec2 v_uv;
@@ -89,17 +105,19 @@ struct Scene {
     glass:   gfx::Texture,     // the copy glass samples, blurred further
     sampler: gfx::Sampler,
     has:     bool,             // whether there is a photograph
+    plain:   bool,             // the plain background chosen: no photograph, the fade
 }
 
-// The photograph of theme `kind` (theme::WOOD..SUNSET), and its blurred copies.
-fn load(kind: i64, full_vert: const u8[:]) -> Scene {
+// The photograph of theme `kind` (theme::WOOD..SUNSET), and its blurred copies; with
+// `plain`, none.
+fn load(kind: i64, full_vert: const u8[:], plain: bool = false) -> Scene {
     let sampler = gfx::sampler(gfx::LINEAR, gfx::CLAMP);
-    let sharp = draughts_photo(kind, SHARP_SIZE);
+    let sharp = if plain { gfx::Texture { 0 } } else { draughts_photo(kind, SHARP_SIZE) };
     if sharp.id == 0 {
         let none = gfx::texture2d(1, 1);
         var black: u8[4] = [0; 4];
         gfx::update_texture(none, black);
-        return Scene { photo: none, sharp: none, glass: none, sampler: sampler, has: false };
+        return Scene { photo: none, sharp: none, glass: none, sampler: sampler, has: false, plain: plain };
     }
     let src = gfx::render_target(SIZE, SIZE, gfx::RGBA8);
     let shrink = gfx::pipeline(full_vert, embed_shader("frag", SHRINK_FRAG), gfx::PipelineDesc {});
@@ -124,7 +142,7 @@ fn load(kind: i64, full_vert: const u8[:]) -> Scene {
     gfx::release(across);
     gfx::release(glass_across);
     gfx::release(src);
-    return Scene { photo: blurred, sharp: sharp, glass: glass, sampler: sampler, has: true };
+    return Scene { photo: blurred, sharp: sharp, glass: glass, sampler: sampler, has: true, plain: false };
 }
 
 // Draws src's part `from` (uv origin and size) shrunk into the part `to` (pixels) of the
@@ -161,12 +179,13 @@ fn release(s: Scene&) {
 
 // The four seasons' thumbnails stacked, by theme, top to bottom, in one texture: each
 // photograph's middle at the thumbnail's shape, shrunk on the GPU, one at a time; a
-// season without a photograph is black. A decoded JPEG (about 125 ms for the four on the
+// season without a photograph is black. Under them the four plain fades, by theme, as
+// the plain background paints them at the thumbnail's shape. A decoded JPEG (about 125 ms for the four on the
 // tablet) is scaled to SIZE on the way, so its texture is small. The app makes this in
 // the first frame after the launch's first that draws nothing, rather than when settings
 // first open.
 fn thumbs(full_vert: const u8[:]) -> gfx::Texture {
-    let t = gfx::render_target(THUMB_W, 4 * THUMB_H, gfx::RGBA8);
+    let t = gfx::render_target(THUMB_W, THUMBS * THUMB_H, gfx::RGBA8);
     let sampler = gfx::sampler(gfx::LINEAR, gfx::CLAMP);
     let shrink = gfx::pipeline(full_vert, embed_shader("frag", SHRINK_FRAG), gfx::PipelineDesc {});
     let crop: f32 = THUMB_H as f32 / THUMB_W;
@@ -188,6 +207,20 @@ fn thumbs(full_vert: const u8[:]) -> gfx::Texture {
         gfx::flush();
     }
     gfx::release(shrink);
+    let fade = gfx::pipeline(full_vert, embed_shader("frag", shaders::FADE_FN, FADE_FRAG), gfx::PipelineDesc {});
+    var desc = gfx::PassDesc { clear_color: false, .. };
+    desc.color[0] = t;
+    gfx::begin_pass(desc);
+    gfx::bind(fade);
+    for kind in 4 {
+        let c = theme::get(kind);
+        let to = float4 { 0.0, (4 + kind) * THUMB_H, THUMB_W, THUMB_H };
+        gfx::viewport(to.x, to.y, to.z, to.w);
+        gfx::uniforms(gfx::FRAGMENT, 0, Fade { to: to, top: c.fade_top, low: c.fade_low, light: c.fade_light });
+        gfx::draw(3);
+    }
+    gfx::end_pass();
+    gfx::release(fade);
     gfx::release(sampler);
     return t;
 }

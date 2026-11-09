@@ -34,6 +34,7 @@ struct Drawer {
     gpu:       render3d::Gpu                         = default<render3d::Gpu>(),
     ready:     bool                                  = false,
     kind:      i64                                   = -1, // the app's theme the board was set up with
+    plain:     bool                                  = false, // and whether behind it the plain fade
     which:     i64                                   = -1, // the board drawn (the shell's which())
     n:         i64                                   = 0,
     wood:      i64                                   = -1, // --wood, --marble: -1 the renderer's own
@@ -141,13 +142,18 @@ fn choose_look(d: Drawer&, kind: i64) -> i64 {
     return look;
 }
 
-// Whether the 3D board is ready to draw for the app's theme `kind` on n squares a side:
-// set up, baked for them, its pipelines made. Only the targets the size of the screen
-// are left for its first frame (render3d::targets).
-fn ready(d: Drawer&, kind: i64, n: i64) -> bool {
-    return d.ready && d.kind == kind && d.n == n && d.themed == render3d::THEME_STEPS
+// Whether the 3D board is ready to draw for the app's theme `kind` on n squares a side,
+// with the photograph or the `plain` fade behind it: set up, baked for them, its
+// pipelines made. Only the targets the size of the screen are left for its first frame
+// (render3d::targets).
+fn ready(d: Drawer&, kind: i64, n: i64, plain: bool) -> bool {
+    return d.ready && d.kind == kind && d.n == n && d.plain == plain && d.themed == render3d::THEME_STEPS
            && d.warmed == render3d::WARM_STEPS;
 }
+
+// The theme's steps that put its photograph on (render3d::photo_part), from the first:
+// all a change between the photograph and the plain fade takes again.
+fn photo_steps() -> i64 { return 2 + render3d::PLAN_BANDS + render3d::FRAME_BANDS; }
 
 // Whether an image of the board shows (drawn since it was set up): while a new theme is
 // prepared it stays; with none, the board's place shows the shell's still mark.
@@ -164,18 +170,27 @@ fn appearing(d: Drawer&, now: f64) -> bool { d.appear_at >= 0.0 && now < d.appea
 // board did at once before (about 1.1 s on the Pixel 7a by task 015's numbers). A new
 // theme or size takes the theme's steps again. Each step is waited for (gfx::flush), so
 // its GPU work stays in its own frame, and timed (prep_ms).
-fn prepare(d: Drawer&, kind: i64, n: i64) {
-    guard !ready(d, kind, n) else { return; }
+fn prepare(d: Drawer&, kind: i64, n: i64, plain: bool) {
+    guard !ready(d, kind, n, plain) else { return; }
     let t0 = clock();
     if !d.ready {
         set_up(d);
-    } else if d.kind != kind || d.n != n || d.themed < render3d::THEME_STEPS {
+    } else if d.kind != kind || d.n != n || d.plain != plain || d.themed < render3d::THEME_STEPS {
         if d.kind != kind || d.n != n {
             // A new theme (or one changed partway) starts its steps again.
             d.kind = kind;
             d.n = n;
             d.themed = 0;
         }
+        if d.plain != plain {
+            // The photograph or the plain fade behind the same board: only the
+            // photograph's steps again, unless a theme's are under way.
+            d.plain = plain;
+            d.themed = min(d.themed, photo_steps());
+        }
+        let t = theme::get(kind);
+        d.gpu.plain = plain;
+        d.gpu.fade = [t.fade_top, t.fade_low, t.fade_light];
         let look = if d.themed == 0 { choose_look(d, kind) } else { d.gpu.look };
         render3d::theme_step(d.gpu, look, n, kind, d.themed);
         d.themed++;
@@ -188,7 +203,7 @@ fn prepare(d: Drawer&, kind: i64, n: i64) {
     d.apply_ms += ms;
     if d.prep_ms.len < 48 { d.prep_ms.push(ms); }
     // Done: the next frame draws the board, its shadow map too.
-    if ready(d, kind, n) { d.fresh = true; }
+    if ready(d, kind, n, plain) { d.fresh = true; }
 }
 
 // Everything the 3D board holds on the GPU given back (the board back to flat), the
@@ -200,18 +215,19 @@ fn drop(d: Drawer&) {
 }
 
 // Draws the frame board::fill left in b, on the flat layout l, seen through v, into the
-// kept image if anything it shows changed; the app's theme `kind`, the screen `size`.
-// `which` tells the boards apart (the game's, a puzzle's, settings' preview). While
-// `hold` (a transition) the image is drawn again only for another view or board.
+// kept image if anything it shows changed; the app's theme `kind` with the photograph or
+// the `plain` fade behind it, the screen `size`. `which` tells the boards apart (the
+// game's, a puzzle's, settings' preview). While `hold` (a transition) the image is drawn
+// again only for another view or board.
 fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f64, size: int2, kind: i64,
-         which: i64 = 0, hold: bool = false) {
+         plain: bool, which: i64 = 0, hold: bool = false) {
     let t0 = clock();
     d.redraw = false;
     d.shadow = false;
-    if !ready(d, kind, l.n) {
+    if !ready(d, kind, l.n, plain) {
         // A step of getting ready instead; the image already shown (a theme changing)
         // stays, else the shell's still mark shows.
-        prepare(d, kind, l.n);
+        prepare(d, kind, l.n, plain);
         d.frames++;
         return;
     }

@@ -598,17 +598,46 @@ let FULL_VERT = """
     }
     """;
 
+// The plain background in place of the photograph (task 044; prototypes/draughts.js's
+// paintPlain, take b): the page at the top to a deep tone of the frame at the foot, a
+// faint light of the dark square behind the middle, wider than tall, and the corners a
+// little darker. `px` is in pixels from the screen's top left, `s` the screen's size,
+// the colors in linear light; the result in sRGB, dithered by under half a level so the
+// dark fade shows no bands. The app's board pass, its glass, the settings' thumbnails,
+// and the 3D backdrop all draw it from here; fade() in render3d.goose is its port for the
+// 3D board's ambient light.
+let FADE_FN = """
+    vec3 plain_fade(vec2 px, vec2 s, vec3 top, vec3 low, vec3 light) {
+        vec2 q = px / s - 0.5;
+        float m = max(s.x, s.y);
+        vec3 c = mix(top, low, smoothstep(0.0, 1.0, px.y / s.y));
+        float r = length(vec2(q.x * (s.x / m) / 0.62, (q.y - 0.04) * (s.y / m) / 0.5));
+        c = mix(c, light, 0.22 * (1.0 - smoothstep(0.0, 1.0, r)));
+        c *= 1.0 - 0.3 * smoothstep(0.15, 0.6, dot(q, q));
+        float n = fract(sin(dot(floor(px), vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
+        return pow(min(c, vec3(1.0)), vec3(1.0 / 2.2)) + n / 255.0;
+    }
+    """;
+
 // The backdrop: the blurred photograph cover-cropped by the screen's long side, graded
 // to sit as the 3D reference's background does: lighter, a little more saturated, its
 // bright patches lifted into warm bokeh, and lifted toward the theme's tint low down,
-// where the reference has a surface under the board, darkened toward the edges.
+// where the reference has a surface under the board, darkened toward the edges. With the
+// plain background (draw.y over 0) the fade instead, dimmed to draw.y as the flat game
+// dims what is behind it.
 let BACKDROP_FRAG = """
     layout(location = 0) in vec2 v_uv;
     layout(location = 0) out vec4 result;
     layout(set = 2, binding = 0) uniform sampler2D photo;
-    layout(set = 3, binding = 1) uniform Draw { vec4 draw; };    // x: how opaque
+    // x: how opaque; y: the plain fade's brightness, 0 for the photograph; its colors.
+    layout(set = 3, binding = 1) uniform Backdrop { vec4 draw; vec4 fade_top; vec4 fade_low; vec4 fade_light; };
     void main() {
         vec2 s = screen.xy;
+        if (draw.y > 0.0) {
+            vec3 f = plain_fade(gl_FragCoord.xy, s, fade_top.rgb, fade_low.rgb, fade_light.rgb);
+            result = vec4(draw.y * f, draw.x);
+            return;
+        }
         vec2 uv = (gl_FragCoord.xy - 0.5 * s) / max(s.x, s.y) + 0.5;
         vec3 c = srgb(texture(photo, uv).rgb) * grade.x;
         float luma = dot(c, vec3(0.2126, 0.7152, 0.0722));

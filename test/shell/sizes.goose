@@ -4,7 +4,10 @@
 // side (gui::short_dp, the phone scale's floor), with a 9:16 phone at 480, the tightest.
 // On each, every tile lies inside the screen and no two overlap; the board lies inside
 // it too, clear of the tiles (the win card's excepted, which sits on the board); every
-// tile that takes a tap keeps the 88 dp a small hand needs (the clocks only show). A line
+// tile that takes a tap keeps the 88 dp a small hand needs (the clocks only show), but
+// settings' theme switch, whose halves are given on their own: 88 dp square beside the
+// theme's name where it is above the tiles, under it in the name's column where it is
+// at their left, where they don't fit (shell/settings.goose). A line
 // per screen gives its tiles, the smallest tap across and down in dp, and the board in
 // dp (0 where none shows), so a layout that moves shows here. The words are the test
 // faces' (each character half its face wide), wider than the real font's, so a word
@@ -65,20 +68,25 @@ fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool,
     var wrong:  u8[>..] = [];
     let b = float4 { sh.layout.board.x, sh.layout.board.y, sh.layout.board.z, sh.layout.board.z };
     var small = 0;
+    let sw = sh.prefs.switch_at;
+    var half = float2 { 0.0, 0.0 };
     for i in n {
         let r = drive::rect(g, i);
         let tap = style(g, i) < gui::CLOCK_RUN;
-        if tap {
+        let switched = sh.screen == shell::SETTINGS && sw.z > 0.0 && inside(r, sw);
+        if switched { half = float2 { r.z, r.w }; }
+        if tap && !switched {
             narrow = min(narrow, r.z);
             low = min(low, r.w);
         }
         if !inside(r, safe) { format(wrong, " tile ", i, " off the safe area;"); }
         for j in i { if overlaps(r, drive::rect(g, j)) { format(wrong, " tiles ", j, " and ", i, " overlap;"); } }
         if board_shows && b.z > 0.0 && overlaps(r, b) && !(card && i >= n - 2) { format(wrong, " tile ", i, " on the board;"); }
-        if tap && (r.z < 88.0 * u - 0.5 || r.w < 88.0 * u - 0.5) { small++; }
+        if tap && !switched && (r.z < 88.0 * u - 0.5 || r.w < 88.0 * u - 0.5) { small++; }
     }
     if small > 0 { format(wrong, " ", small, " taps under 88 dp;"); }
     format(line, ", smallest ", whole(narrow / u), " x ", whole(low / u), " dp");
+    if half.x > 0.0 { format(line, ", the theme's switch ", whole(half.x / u), " x ", whole(half.y / u), " dp a half"); }
     if board_shows {
         format(line, ", board ", whole(b.z / u), " dp");
         if b.z > 0.0 && !inside(b, safe) { wrong.append(" the board off the safe area;"); }

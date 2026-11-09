@@ -31,7 +31,10 @@ let THEME_BLOCK = """
     layout(set = 3, binding = 0) uniform Theme {
         vec4 light; vec4 dark; vec4 frame; vec4 w_face; vec4 b_face; vec4 crown_w;
         vec4 glow; vec4 page; vec4 kind; vec4 glass; vec4 text;
+        vec4 fade_top; vec4 fade_low; vec4 fade_light;
     };
+    vec3 theme_fade(vec2 px, vec2 s) { return plain_fade(px, s, fade_top.rgb, fade_low.rgb, fade_light.rgb); }
+    int theme_index() { return int(kind.x); }
     """;
 
 // What the board's, the pieces', and the UI's shaders share: a quad's corners as two
@@ -92,11 +95,13 @@ let BOARD_FRAG = """
         float u = rect.z * 0.01;                // 1% of the board
         // The season's photograph, cover-cropped by the long side: blurred and dimmed to
         // 0.8 behind the game, sharp behind home, the two mixed in a transition between
-        // them; or the page color without one.
+        // them; or the page color without one; or the plain fade (scene.x -2), dimmed as
+        // the photograph is.
         float side = max(screen.x, screen.y);
         vec2 puv = (px - 0.5 * (screen.xy - side)) / side;
         vec3 c = page.rgb;
-        if (scene.x >= 1.0) c = scene.y * texture(photo, puv).rgb;
+        if (scene.x < -1.5) c = scene.y * theme_fade(px, screen.xy);
+        else if (scene.x >= 1.0) c = scene.y * texture(photo, puv).rgb;
         else if (scene.x <= 0.0 && scene.x > -0.5) c = scene.y * texture(sharp_photo, puv).rgb;
         else if (scene.x > 0.0) c = scene.y * mix(texture(sharp_photo, puv).rgb, texture(photo, puv).rgb, scene.x);
         vec2 bc = rect.xy + 0.5 * rect.z;
@@ -438,11 +443,11 @@ struct Drawer {
     view:        View,
 }
 
-fn new(kind: i64) -> Drawer {
+fn new(kind: i64, plain: bool) -> Drawer {
     let full = embed_shader("vert", FULL_VERT);
-    let board_fs = embed_shader("frag", THEME_BLOCK, SHARED_BLOCK, BOARD_FRAG);
+    let board_fs = embed_shader("frag", shaders::FADE_FN, THEME_BLOCK, SHARED_BLOCK, BOARD_FRAG);
     let piece_vs = embed_shader("vert", SHARED_BLOCK, STACK_BLOCK, PIECE_VERT);
-    let piece_fs = embed_shader("frag", THEME_BLOCK, SHARED_BLOCK, MAN_BLOCK, STACK_BLOCK, PIECE_FRAG);
+    let piece_fs = embed_shader("frag", shaders::FADE_FN, THEME_BLOCK, SHARED_BLOCK, MAN_BLOCK, STACK_BLOCK, PIECE_FRAG);
     var d = Drawer {
         full:           full,
         board_pipeline: gfx::pipeline(full, board_fs, gfx::PipelineDesc {}),
@@ -450,7 +455,7 @@ fn new(kind: i64) -> Drawer {
                                       gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED }),
         pieces:      gfx::Buffer { 0 },
         overlay:     gfx::Buffer { 0 },
-        scene:       scene::load(kind, full),
+        scene:       scene::load(kind, full, plain),
         kind:        kind,
         colors:      theme::get(kind),
         upload:      [board::Piece {}; board::MAX_PIECES],
@@ -496,7 +501,7 @@ fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::La
     gfx::uniforms(gfx::FRAGMENT, 1, BoardUniforms {
         screen: float4 { width, height, now as f32, l.n },
         rect:   l.board, inner: l.inner,
-        scene:  float4 { if d.scene.has { k } else { -1.0 }, bright, b.dim, if l.flip { 1.0 } else { 0.0 } },
+        scene:  float4 { backdrop(d, k), bright, b.dim, if l.flip { 1.0 } else { 0.0 } },
         wrong: b.flash, marks: b.marks });
     gfx::bind_texture(gfx::FRAGMENT, 0, d.scene.photo, d.scene.sampler);
     gfx::bind_texture(gfx::FRAGMENT, 1, d.scene.sharp, d.scene.sampler);
@@ -526,20 +531,27 @@ fn photo(d: Drawer&, blur: f32, now: f64, width: f32, height: f32, covered: bool
     var none = board::Marks {};
     gfx::uniforms(gfx::FRAGMENT, 1, BoardUniforms {
         screen: float4 { width, height, now as f32, 8.0 }, rect: away, inner: away,
-        scene:  float4 { if d.scene.has { k } else { -1.0 }, bright, 0.0, 0.0 }, wrong: float4 { -1.0, 0.0, 0.0, 0.0 },
+        scene:  float4 { backdrop(d, k), bright, 0.0, 0.0 }, wrong: float4 { -1.0, 0.0, 0.0, 0.0 },
         marks: none });
     gfx::bind_texture(gfx::FRAGMENT, 0, d.scene.photo, d.scene.sampler);
     gfx::bind_texture(gfx::FRAGMENT, 1, d.scene.sharp, d.scene.sampler);
     gfx::draw(3);
 }
 
-// Swaps the theme and its scene for theme `kind`'s.
-fn reload(d: Drawer&, kind: i64) {
+// What the board pass shows behind the board (BoardUniforms.scene.x): the photograph
+// blurred `k` of the way, the page color (-1) without one, or the plain fade (-2).
+fn backdrop(d: Drawer&, k: f32) -> f32 {
+    if d.scene.plain { return -2.0; }
+    return if d.scene.has { k } else { -1.0 };
+}
+
+// Swaps the theme and its scene for theme `kind`'s, its photograph or with `plain` none.
+fn reload(d: Drawer&, kind: i64, plain: bool) {
     scene::release(d.scene);
     // The old scene is freed once the GPU is done with it; waiting (about a frame) lets
     // the new one take its place in SDL's shared block rather than open another.
     gfx::flush();
-    d.scene = scene::load(kind, d.full);
+    d.scene = scene::load(kind, d.full, plain);
     d.kind = kind;
     d.colors = theme::get(kind);
 }

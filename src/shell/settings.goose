@@ -2,8 +2,9 @@
 // the language at the title row's right end, and the choices as words in two glass
 // groups by what they change. Game: the draughts a new game starts on (the setup's
 // choice too) and move hints; the tutorial's row comes with the tutorial (task 026).
-// Look: the background (one season, or by the date), the board (flat or raised), and
-// the kings (auto, crown, or stack). Beside them is home's board as the choices make it: its size, the
+// Look: the theme (one season, or by the date; and under its name a two-part switch,
+// the season's photograph or the plain fade in its place), the board (flat or raised),
+// and the kings (auto, crown, or stack). Beside them is home's board as the choices make it: its size, the
 // kings, and what the move hints show, on a fixed position. In landscape the choices
 // take the width they need at the left and the board the rest (near square, each
 // setting's name above its tiles, so the rows fit the height); in portrait the board is
@@ -78,6 +79,7 @@ struct Settings {
     name:             players::Name = [],
     first_start_done: bool          = false,
     season:           i64           = BY_DATE, // a theme (app/theme.goose), or BY_DATE
+    plain:            bool          = false,   // the plain fade in place of the photograph (`background = plain`)
     board:            i64           = FLAT,    // the Board row's: flat, or raised (the 3D board)
     hints:            i64           = board::MISTAKES,
     kings:            i64           = AUTO,
@@ -97,6 +99,9 @@ struct Settings {
     stars: u8[puzzles::MAX_PUZZLES + 1][rules::VARIANT_COUNT] = [[0; puzzles::MAX_PUZZLES + 1]; rules::VARIANT_COUNT],
     // The group a phone's settings show, 0 the game's or 1 the look's. Not in the file.
     group: i64 = 0,
+    // Where the theme's switch was declared last (both halves), for the tests. Not in the
+    // file.
+    switch_at: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
 }
 
 // What the screen asks for.
@@ -110,6 +115,10 @@ fn king_look(s: Settings) -> i64 { if s.kings == board::STACK { board::STACK } e
 
 // Whether the game is played on the 3D board, chosen in the Board row.
 fn raised(s: Settings) -> bool { s.board == RAISED }
+
+// Whether the season's photograph is shown, or the plain fade in its place: with plain
+// the app decodes, uploads, and holds no photograph (task 044).
+fn photo_shown(s: Settings) -> bool { !s.plain }
 
 // How the 3D board draws kings: auto is a stack of two plain discs there.
 fn raised_king_look(s: Settings) -> i64 { if s.kings == board::CROWN { board::CROWN } else { board::STACK } }
@@ -135,6 +144,7 @@ fn parse(text: const u8[:]) -> Settings {
         if key == "season" {
             for name, i in SEASON_NAMES { if value == name { s.season = SEASON_KINDS[i]; } }
         }
+        if key == "background" && value == "plain" { s.plain = true; }
         if key == "board" && value == "3d" { s.board = RAISED; }
         if key == "hints" && value == "moves" { s.hints = board::MOVES; }
         if key == "kings" {
@@ -209,6 +219,7 @@ fn write(s: Settings, out: u8[>..]&) {
     var season = "by-date";
     for kind, i in SEASON_KINDS { if s.season == kind { season = SEASON_NAMES[i]; } }
     out.append(season);
+    out.append(if s.plain { "\nbackground = plain" } else { "\nbackground = photo" });
     out.append(if s.board == RAISED { "\nboard = 3d" } else { "\nboard = 2d" });
     out.append(if s.hints == board::MOVES { "\nhints = moves" } else { "\nhints = mistakes" });
     out.append("\nkings = ");
@@ -298,18 +309,26 @@ let ROW_GAP = 10.0;
 let TILE_GAP = 10.0;
 let THUMB_W = 62.0;         // a season's thumbnail
 let THUMB_H = 40.0;
+// The theme's switch, photograph or plain (prototypes/plain.html, take b): two halves
+// side by side. Where the name is above the tiles, beside it at the line's right end,
+// each half 88 dp square. Where the name is at the left of the tiles (most landscapes),
+// under it in the name's column, in the row's 88 dp: two 88 dp halves need 180 dp across
+// where the column has 120, and a taller row would leave the tablet's landscape, which
+// has 8 dp to spare over its navigation bar, one group at a time (2026-11-09).
+let SWITCH_GAP = 4.0;
+let SWITCH_NAME = 20.0;     // the name's line above the switch in the name's column
 let SLACK = 0.5;            // px a row may pass its width by without wrapping
 
 // The settings in order, the first two in the game's group, the rest in the look's:
 // each one's name, how many tiles, and how tall they are.
 let DRAUGHTS_ROW = 0;
 let HINTS_ROW = 1;
-let BACKGROUND_ROW = 2;
+let THEME_ROW = 2;
 let BOARD_ROW = 3;
 let KINGS_ROW = 4;
 let GAME_ROWS = 2;
 let ROW_NAMES = [strings::SETUP_DRAUGHTS, strings::SETTINGS_HINTS,
-                 strings::SETTINGS_BACKGROUND, strings::SETTINGS_BOARD, strings::SETTINGS_KINGS];
+                 strings::SETTINGS_THEME, strings::SETTINGS_BOARD, strings::SETTINGS_KINGS];
 let ROW_TILES = [3, 2, 5, 2, 3];
 let ROW_H = [88.0, 88.0, 88.0, 88.0, 88.0]; // the floor for small hands (56 to 72 until 2026-11-08)
 let GROUP_ICONS = [gui::TARGET, gui::SUN];
@@ -321,11 +340,40 @@ fn group_rows(group: i64) -> i64 { return if group == 0 { GAME_ROWS } else { ROW
 
 fn group_row(group: i64, k: i64) -> i64 { return GAME_ROWS * group + k; }
 
+// The switch's tap ids, photograph and plain, after the rows' (410 + 10 × row + i).
+let SWITCH_ID = 460;
+
+// How wide the line of the theme's name and its switch beside it wants to be.
+fn switch_line(g: gui::Gui&) -> f32 {
+    let u = g.scale;
+    return gui::text_width(g, gui::SMALL, strings::get(ROW_NAMES[THEME_ROW])) + (14.0 + 2.0 * 88.0 + SWITCH_GAP) * u;
+}
+
+// The theme's switch in r, its halves side by side: the season's photograph and its
+// plain fade, the one chosen lit. True when a tap changed s.
+fn switch(s: Settings&, g: gui::Gui&, r: float4) -> bool {
+    let u = g.scale;
+    let w = 0.5 * (r.z - SWITCH_GAP * u);
+    let pic = min(THUMB_W * u, w - 12.0 * u);
+    var changed = false;
+    for k in 2 {
+        let half = float4 { r.x + k * (w + SWITCH_GAP * u), r.y, w, r.w };
+        let plain = k == 1;
+        // The theme shown's photograph (-2) or fade (-3), as the widgets draw them.
+        if gui::picture(g, SWITCH_ID + k, half, if plain { -3 } else { -2 }, float2 { pic, pic * THUMB_H / THUMB_W },
+                        s.plain == plain) {
+            changed = s.plain != plain;
+            s.plain = plain;
+        }
+    }
+    return changed;
+}
+
 // Tile i of a row's word.
 fn word(row: i64, i: i64) -> i64 {
     if row == DRAUGHTS_ROW { return DRAUGHTS_KEYS[i]; }
     if row == HINTS_ROW { return [strings::HINTS_MISTAKES, strings::HINTS_MOVES][i]; }
-    if row == BACKGROUND_ROW { return if i == BY_DATE_TILE { strings::SETTINGS_BY_DATE } else { SEASON_KEYS[i] }; }
+    if row == THEME_ROW { return if i == BY_DATE_TILE { strings::SETTINGS_BY_DATE } else { SEASON_KEYS[i] }; }
     if row == BOARD_ROW { return [strings::BOARD_FLAT, strings::BOARD_RAISED][i]; }
     return KING_KEYS[i];
 }
@@ -342,7 +390,7 @@ fn note(row: i64, i: i64) -> const u8[:] {
 fn tile_width(g: gui::Gui&, row: i64, i: i64) -> f32 {
     let u = g.scale;
     let label = strings::get(word(row, i));
-    if row == BACKGROUND_ROW { return max(88.0 * u, max(THUMB_W * u, gui::text_width(g, gui::SMALL, label)) + 12.0 * u); }
+    if row == THEME_ROW { return max(88.0 * u, max(THUMB_W * u, gui::text_width(g, gui::SMALL, label)) + 12.0 * u); }
     let w = gui::text_width(g, gui::BODY, label);
     return max(88.0 * u, max(w, gui::text_width(g, gui::SMALL, note(row, i))) + 32.0 * u);
 }
@@ -352,9 +400,11 @@ fn tile(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, i: i64, r: f
     let u = g.scale;
     let id = 410 + 10 * row + i;
     let label = strings::get(word(row, i));
-    if row == BACKGROUND_ROW {
+    if row == THEME_ROW {
         let kind = if i == BY_DATE_TILE { BY_DATE } else { SEASON_KINDS[i] };
-        guard gui::choice(g, id, r, kind, float2 { THUMB_W * u, THUMB_H * u }, label, s.season == kind, true)
+        // A season's thumbnail: its photograph, or with plain its fade (the widgets' 4 on).
+        let pic = if kind >= 0 && s.plain { kind + 4 } else { kind };
+        guard gui::choice(g, id, r, pic, float2 { THUMB_W * u, THUMB_H * u }, label, s.season == kind, true)
         else { return false; }
         s.season = kind;
         return true;
@@ -407,16 +457,31 @@ fn rows(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4,
         let row = group_row(group, k);
         if k > 0 { y += ROW_GAP * u; }
         let left = (NAME_W + 14.0) * u;
+        // The theme's row: its name on a line of its own, the switch under it at the
+        // left of the tiles; or where the name is above the tiles, beside it at the
+        // line's right end, the line as tall as the switch.
+        let switched = row == THEME_ROW;
+        let line: f32 = if switched { (88.0 + SWITCH_GAP) * u } else { NAME_H * u };
         let tiles = if aside { float4 { r.x + left, y, r.z - left, 0.0 } }
-                    else { float4 { r.x, y + NAME_H * u, r.z, 0.0 } };
+                    else { float4 { r.x, y + line, r.z, 0.0 } };
         let h, tapped = lay(s, over, g, row, tiles, declare);
         if declare {
-            let name = float4 { r.x, y, NAME_W * u, if aside { h } else { NAME_H * u - 6.0 * u } };
+            var name = float4 { r.x, y, NAME_W * u, if aside { h } else { NAME_H * u - 6.0 * u } };
+            var sw = float4 { r.x, y + SWITCH_NAME * u, NAME_W * u, (ROW_H[row] as f32 - SWITCH_NAME) * u };
+            if switched && aside { name.w = SWITCH_NAME * u; }
+            if switched && !aside {
+                name = float4 { r.x, y, r.z, 88.0 * u };
+                sw = float4 { r.x + r.z - (2.0 * 88.0 + SWITCH_GAP) * u, y, (2.0 * 88.0 + SWITCH_GAP) * u, 88.0 * u };
+            }
             gui::text(g, gui::SMALL, name, strings::get(ROW_NAMES[row]), 0.66, 0.03 * gui::FACE_DP[gui::SMALL] as f32 * u,
                       gui::LEFT);
+            if switched {
+                s.switch_at = sw;
+                if switch(s, g, sw) { changed = true; }
+            }
         }
         if tapped { changed = true; }
-        y += if aside { h } else { NAME_H * u + h };
+        y += if aside { h } else { line + h };
     }
     return y - r.y, changed;
 }
@@ -440,6 +505,8 @@ fn group_width(s: Settings&, g: gui::Gui&, group: i64, aside: bool) -> f32 {
         var w = -TILE_GAP * u;
         for i in ROW_TILES[row] { w += tile_width(g, row, i) + TILE_GAP * u; }
         widest = max(widest, w);
+        // The theme's name and its switch beside it, where the name is above the tiles.
+        if row == THEME_ROW && !aside { widest = max(widest, switch_line(g)); }
     }
     let names = if aside { NAME_W + 14.0 } else { 0.0 };
     return widest + (names + 2.0 * GROUP_PAD) * u;
@@ -559,6 +626,7 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
     let n = rules::VARIANTS[s.variant].size;
     var page = float4 { area.x + PAD_X * u, area.y + PAD_Y * u, area.z - 2.0 * PAD_X * u, area.w - 2.0 * PAD_Y * u };
     over.clear();
+    s.switch_at = float4 { 0.0, 0.0, 0.0, 0.0 };
     var ask = NOTHING;
     if landscape {
         // The choices as wide as they want, at most 55% of the page, wrapping beyond, each

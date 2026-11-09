@@ -355,14 +355,14 @@ let FRAG = """
         vec2 c = v_rect.xy + h;
         float r = v_look.y;
         if (kind == 0) {
-            // Glass: the scene's glass copy at this place on screen, dimmed and
-            // saturated, under the theme's tint, with a light border and top highlight,
-            // and a soft shadow outside it.
+            // Glass: the scene's glass copy at this place on screen, or the plain fade
+            // there (screen.z 2), dimmed and saturated, under the theme's tint, with a
+            // light border and top highlight, and a soft shadow outside it.
             float d = box(p, c, h, r);
             float side = max(screen.x, screen.y);
-            vec3 g = screen.z > 0.5
-                ? texture(glass_copy, (p - 0.5 * (screen.xy - side)) / side).rgb
-                : page.rgb;
+            vec3 g = screen.z > 1.5 ? theme_fade(p, screen.xy)
+                   : screen.z > 0.5 ? texture(glass_copy, (p - 0.5 * (screen.xy - side)) / side).rgb
+                   : page.rgb;
             float l = dot(g, vec3(0.2126, 0.7152, 0.0722));
             g = max(mix(vec3(l), g, 1.3), 0.0) * text.w;
             g = mix(g, glass.rgb, glass.a);
@@ -427,13 +427,17 @@ let FRAG = """
             return;
         }
         if (kind == 5) {
-            // A picture: a season's thumbnail, cover-cropped; or for -1 the glow at 18%
-            // mixed into white at 6% (CSS color-mix), which leaves it 23% opaque.
+            // A picture: a thumbnail, cover-cropped, a season's photograph (its theme,
+            // 0 to 3) or its plain fade (4 to 7), the theme shown's photograph (-2) or
+            // fade (-3); or for -1 the glow at 18% mixed into white at 6% (CSS
+            // color-mix), which leaves it 23% opaque.
             float a = cover(box(p, c, h, r)) * v_color.a;
             int k = int(v_look.z);
+            if (k == -2) k = theme_index();
+            if (k == -3) k = theme_index() + 4;
             vec2 t = (p - v_rect.xy) / v_rect.zw;
             if (k < 0) a *= 0.23;
-            vec3 pc = k >= 0 ? texture(thumbs, vec2(t.x, (float(k) + t.y) * 0.25)).rgb
+            vec3 pc = k >= 0 ? texture(thumbs, vec2(t.x, (float(k) + t.y) / 8.0)).rgb
                              : mix(vec3(1.0), glow.rgb, 0.78);
             result = vec4(pc * a, a);
             return;
@@ -568,7 +572,7 @@ struct Widgets {
 fn new() -> Widgets {
     var w = Widgets {
         pipeline: gfx::pipeline(embed_shader("vert", draw::SHARED_BLOCK, VERT),
-                                embed_shader("frag", draw::THEME_BLOCK, draw::SHARED_BLOCK, draw::MAN_BLOCK, FRAG),
+                                embed_shader("frag", shaders::FADE_FN, draw::THEME_BLOCK, draw::SHARED_BLOCK, draw::MAN_BLOCK, FRAG),
                                 gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED }),
         quads:  gfx::Buffer { 0 },
         upload: [gui::Quad {}; gui::MAX_QUADS],
@@ -614,7 +618,8 @@ fn upload(w: Widgets&, g: gui::Gui&) {
 fn frame(w: Widgets&, g: gui::Gui&, s: scene::Scene&, t: theme::Theme, width: f32, height: f32, hole: float4,
          tall: f32 = 0.0) {
     guard g.quads.len > 0 else { return; }
-    let view = View { screen: float4 { width, height, if s.has { 1.0 } else { 0.0 }, tall }, hole: hole };
+    let behind: f32 = if s.plain { 2.0 } else if s.has { 1.0 } else { 0.0 };
+    let view = View { screen: float4 { width, height, behind, tall }, hole: hole };
     gfx::bind(w.pipeline);
     gfx::bind_storage_buffer(gfx::VERTEX, 0, w.quads);
     gfx::uniforms(gfx::VERTEX, 0, view);
