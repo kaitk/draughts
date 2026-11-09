@@ -176,6 +176,8 @@ def main():
     args = ap.parse_args()
     program = args.program.resolve()
     name = program.stem
+    # Another program (a prototype in poc/) gets its own id, so it installs beside the app.
+    app_id = APP_ID if name == "draughts" else f"{APP_ID}.{name}"
     out = ROOT / "build/android" / name
     gen, native, apk_dir = out / "gen", out / "native", out / "apk"
     gen.mkdir(parents=True, exist_ok=True)
@@ -261,7 +263,7 @@ def main():
     run(BUILD_TOOLS / "aapt2", "compile", "--dir", ROOT / "android/res", "-o", res)
     run(BUILD_TOOLS / "aapt2", "compile", "--dir", names_dir, "-o", names)
     link = [BUILD_TOOLS / "aapt2", "link", "--manifest", ROOT / "android/AndroidManifest.xml",
-            "-I", android_jar, res, names, "--rename-manifest-package", APP_ID,
+            "-I", android_jar, res, names, "--rename-manifest-package", app_id,
             "--version-code", VERSION_CODE, "--version-name", VERSION_NAME,
             "--min-sdk-version", MIN_SDK, "--target-sdk-version", TARGET_SDK]
     run(*link, "-o", unaligned)
@@ -332,7 +334,7 @@ def main():
 
     if args.run:
         run("adb", "install", "-r", aligned)
-        run("adb", "shell", "am", "start", "-n", f"{APP_ID}/{ACTIVITY}")
+        run("adb", "shell", "am", "start", "-n", f"{app_id}/{ACTIVITY}")
 
 
 if __name__ == "__main__":
