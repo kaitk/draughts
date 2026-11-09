@@ -21,6 +21,7 @@ jsDelivr CDN, so they need internet access. Start at [index.html](index.html).
 | `profiles.html` | Takes on players, one per child (`?take=a` to `c`, `&state=home`, `pick`, `add`, `edit`, `hold`, `&n=1` to `4`, `&lang=et`): the face beside the name, who's playing on launch, faces on home; the player's sheet with its holds (task 038) |
 | `badges.html` | Takes on a player's picture (task 038): five badge styles at 64 and 112 dp over the photograph and glass (carved pieces, nature tokens, animal lines, coloured rims, at dusk; `?disc=wood`, `?pieces=both`), the carved one placed on home four ways (`?home=1` to `4`) and the first start's pick (`?home=first`), with an image prompt for finer art |
 | `chip.html` | Takes on keeping the bare player's chip's name readable on bright photographs in landscape (`?take=a` to `e`: bare, a soft shadow, a top scrim, a glass pill, a short dark shadow; `&season=` for one, else the four at half size) |
+| `back.html` | Takes on one way back on every screen (`?take=a`, the arrow alone in the top-left corner; `b`, the arrow and "Back", take back renamed "Undo move"; `&screen=game`, `puzzle`, `picker`, `settings`, `&lang=et`, `&view=3d` for the corner panels), the layouts otherwise as built |
 | `boards.html` | The four season boards in 2D and 3D, crowned and stacked kings, and 10×10 |
 
 Shared parts: `draughts.css` (theme tokens, glass, buttons, board, pieces, light) and

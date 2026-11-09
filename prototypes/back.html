@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draughts: the way back</title>
+<link rel="stylesheet" href="draughts.css">
+<script src="draughts.js"></script>
+<style>
+  /* One way back on every screen (2026-11-09). The way out was labelled by where it goes
+     (Home on the game, Puzzles on a puzzle), which confused children; one control in one
+     place replaces it. The screens keep their layouts as built; only the way out changes.
+       a: an arrow alone (no words), the glass button settings and the puzzle picker
+          already have, in the top-left corner of every screen: game to home, puzzle to
+          the puzzle list, the list to home, settings to where it came from. Settings and
+          start over stay in their panel, which starts under it. Take back keeps its words.
+       b: the same button with the arrow and "Back" on every screen; take back renamed
+          to say it's about the move, "Undo move" ("Võta käik tagasi").
+     ?screen=game|puzzle|picker|settings, ?take=a|b, &lang=et, &view=3d (the game's and
+     a puzzle's corner panels round the raised board, in landscape). */
+  main { position: fixed; inset: 0; }
+  h1, h2 { margin: 0; font-weight: 400; }
+
+  /* The way back: a glass button, 88 dp, at the top left of every screen. b adds the word. */
+  .back { position: relative; flex: none; justify-self: start; text-decoration: none; }
+  .back svg { width: 44px; height: 44px; }
+  .take-b .back { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 26px 0 18px;
+    font-size: 26px; white-space: nowrap; }
+  .take-b .back svg { width: 38px; height: 38px; }
+
+  /* The game and a puzzle (game.html, puzzle.html): the board between two panels as tall
+     as it. The way back stands over the left panel, which starts under it. */
+  .game { --gap: 24px; --side: 232px; --b: min(100vh - 2 * var(--gap), 100vw - 2 * var(--side) - 4 * var(--gap));
+    display: flex; align-items: center; justify-content: center; gap: var(--gap); height: 100%; padding: var(--gap); }
+  #board { flex: none; width: var(--b); }
+  .panel { display: flex; flex-direction: column; gap: 12px; flex: none; width: var(--side); height: var(--b); padding: 20px 16px; }
+  .panel .space { flex: 1; }
+  .out { order: -1; display: flex; flex-direction: column; gap: 12px; width: var(--side); height: var(--b); flex: none; }
+  .out .panel { flex: 1; height: auto; }
+  .out .back { align-self: flex-start; }
+  .take-b .out .back { align-self: stretch; }
+  .row { display: flex; align-items: center; justify-content: flex-start; gap: 12px; min-height: 88px;
+    padding: 0 14px; font-size: 24px; text-align: left; white-space: nowrap; }
+  .row.button svg { flex: none; width: 34px; height: 34px; stroke-width: 2.2; }
+  .row.big { flex-direction: column; justify-content: center; gap: 8px; min-height: 132px; font-size: 26px;
+    white-space: normal; text-align: center; line-height: 1.1; }
+  .row.big svg { width: 48px; height: 48px; }
+  .row.off { opacity: 0.35; pointer-events: none; }
+  .turn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    padding: 18px 0 10px; text-align: center; font-size: 26px; }
+  .turn .piece { --u: 7px; position: relative; inset: auto; flex: none; width: 72px; height: 72px;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--glow) 80%, transparent), 0 0 22px 4px color-mix(in srgb, var(--glow) 45%, transparent); }
+  .what { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 26px; text-align: center; }
+  .what > svg { width: 56px; height: 56px; stroke-width: 1.8; color: var(--glow); margin-bottom: 4px; }
+  .what span { display: grid; gap: 4px; }
+  /* In portrait the turn piece leads the goal's row. */
+  .what .piece.lead { --u: 5px; position: relative; inset: auto; flex: none; width: 52px; height: 52px; margin-right: 6px;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--glow) 80%, transparent), 0 0 18px 3px color-mix(in srgb, var(--glow) 45%, transparent); }
+  .what small { font-size: 17px; opacity: 0.66; }
+  .stake { display: flex; justify-content: center; gap: 8px; color: var(--glow); }
+  .stake svg { width: 44px; height: 44px; }
+  .stake svg.off { color: rgb(255 255 255 / 0.3); stroke-width: 1.5; }
+
+  /* The raised board in landscape: short panels in the top corners (232 × 352), the board
+     as large as clears them, its near edge on the bottom margin. */
+  .corners .game { display: block; position: relative; }
+  .corners .out { position: absolute; left: 24px; top: 24px; height: 352px; }
+  .corners .play { position: absolute; right: 24px; top: 24px; height: 352px; }
+  .corners #board { position: absolute; left: 50%; bottom: 40px; width: 700px; margin-left: -350px; }
+
+  @media (orientation: portrait) {
+    /* The way out is a bar above the board, the play below it. The way back leads the bar. */
+    .game { --top: 104px; --bottom: 200px; --b: min(100vw - 2 * var(--gap), 100vh - var(--top) - var(--bottom) - 4 * var(--gap));
+      flex-direction: column; }
+    .panel { display: grid; gap: 12px 16px; align-content: start; height: auto; width: var(--b); padding: 16px 20px; }
+    .panel .space { display: none; }
+    .out { flex-direction: row; height: auto; width: var(--b); }
+    /* The way back is the bar's first tile: square in a, a third in b. */
+    .out .panel { grid-template-columns: auto 1fr 1fr; }
+    .take-b .out .panel { grid-template-columns: repeat(3, 1fr); }
+    .out .row { justify-content: center; }
+    .out .panel .back { width: 88px; }
+    .take-b .out .panel .back { width: auto; justify-self: stretch; }
+    .turn { flex-direction: row; padding: 0 6px; }
+    .turn .piece { width: 52px; height: 52px; --u: 5px; }
+    .what { flex-direction: row; gap: 12px; text-align: left; }
+    .what > svg { width: 44px; height: 44px; margin: 0; }
+    .row.big { flex-direction: row; min-height: 88px; }
+    .row.big svg { width: 36px; height: 36px; }
+  }
+  /* A phone in portrait: each tile's icon over its word, the bar 8 dp taller. */
+  .phone .out .row, .phone.take-b .out .back { flex-direction: column; justify-content: center; gap: 2px; min-height: 96px;
+    padding: 0 10px; font-size: 20px; }
+  .phone .out .row svg, .phone.take-b .out .back svg { width: 32px; height: 32px; }
+  .phone.take-a .out .back { min-height: 96px; width: 96px; }
+  .phone .out .panel { padding: 12px; gap: 10px; }
+  .phone .game { --gap: 16px; }
+
+  /* The puzzle picker's library (puzzles.html, take a, built). */
+  .picker { overflow-y: auto; padding: 24px; }
+  .phone .picker { padding: 16px; }
+  .wrap { min-height: 100%; display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: start; }
+  .library { display: grid; gap: 14px; align-content: start; max-width: 600px; width: 100%; justify-self: center; align-self: center; }
+  .head { display: flex; align-items: center; gap: 16px; min-height: 88px; }
+  .head h1 { font-size: 40px; white-space: nowrap; }
+  .phone .head h1 { font-size: 32px; }
+  .mark { position: relative; flex: none; display: grid; place-items: center; border-radius: 50%;
+    background: color-mix(in srgb, var(--glow) 20%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--glow) 45%, transparent); }
+  .locked .mark { background: rgb(255 255 255 / 0.06); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16); }
+  .locked .mark > .icon { opacity: 0.45; }
+  .badge { position: absolute; right: -4px; bottom: -4px; width: 30px; height: 30px; border-radius: 50%; display: grid;
+    place-items: center; background: color-mix(in srgb, var(--glass-tint), rgb(255 255 255 / 0.25)); }
+  .badge .icon { width: 18px; height: 18px; stroke-width: 2.4; }
+  .bar { display: block; height: 8px; border-radius: 4px; background: rgb(255 255 255 / 0.14); overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 4px; background: var(--glow); }
+  .num { font-size: 24px; color: var(--fg-dim); white-space: nowrap; }
+  .hint { font-size: 17px; color: var(--fg-dim); }
+  .theme { display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto auto; column-gap: 22px; row-gap: 10px;
+    align-items: center; min-height: 124px; padding: 18px 26px 18px 20px; color: var(--fg); text-decoration: none; }
+  .theme .mark { grid-row: 1 / 3; width: 88px; height: 88px; }
+  .theme .mark > .icon { width: 50px; height: 50px; stroke-width: 2.2; }
+  .theme h2 { font-size: 34px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: end; }
+  .theme .num { align-self: end; }
+  .theme .bar, .theme .hint { grid-column: 2 / 4; align-self: start; }
+  .theme.locked h2 { color: var(--fg-dim); }
+  .phone .theme { min-height: 96px; padding: 10px 18px 10px 12px; column-gap: 18px; }
+  .phone .theme .mark { width: 64px; height: 64px; }
+  .phone .theme .mark > .icon { width: 38px; height: 38px; }
+  .phone .theme h2 { font-size: 28px; }
+  .phone .num { font-size: 22px; }
+  .portrait .wrap { grid-template-columns: 1fr; }
+
+  /* Settings (settings.html as built): the way back and the title, the language at the
+     row's end, the groups at the left and the preview the rest. */
+  .settings { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; height: 100%; padding: 24px; }
+  .side { display: grid; grid-template-rows: auto 1fr; gap: 14px; min-height: 0; }
+  .top { display: flex; align-items: center; gap: 20px; min-height: 100px; }
+  .top h1 { font-size: 34px; }
+  .lang { --r: 20px; display: flex; align-items: center; gap: 8px; margin-left: auto; padding: 6px 6px 6px 14px; }
+  .lang > .icon { width: 28px; height: 28px; opacity: 0.85; margin-right: 4px; }
+  .groups { display: grid; gap: 10px; align-content: center; }
+  .group { --r: 24px; display: grid; gap: 10px; padding: 12px 20px 14px; }
+  .group h2 { display: flex; align-items: center; gap: 12px; font-size: 24px; }
+  .group h2 .icon { width: 30px; height: 30px; stroke-width: 2; opacity: 0.85; }
+  .setting { display: grid; grid-template-columns: 120px 1fr; align-items: center; gap: 14px; }
+  .setting h3 { margin: 0; font-size: 18px; font-weight: 400; color: var(--fg-dim); }
+  .tiles { display: flex; gap: 10px; flex-wrap: wrap; }
+  .tile { display: grid; justify-items: center; align-content: center; gap: 2px; min-width: 88px; min-height: 88px; padding: 4px 16px 6px;
+    border: 0; border-radius: 16px; color: var(--fg); font: inherit; font-size: 19px;
+    background: var(--button); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12); }
+  .tile small { font-size: 13px; color: var(--fg-dim); }
+  .tile.on { background: color-mix(in srgb, var(--glow) 22%, transparent); box-shadow: inset 0 0 0 2px var(--glow); }
+  .tile.pic { min-width: 0; padding: 4px 4px 5px; font-size: 13px; }
+  .tile .thumb { width: 62px; height: 40px; border-radius: 11px; background: center / cover; display: grid; place-items: center; }
+  .tile .thumb .icon { width: 26px; height: 26px; }
+  .tile.pick { grid-auto-flow: column; gap: 10px; font-size: 22px; }
+  .tile.pick .icon { width: 28px; height: 28px; }
+  .preview { container-type: size; display: grid; place-items: center; min-height: 0; }
+  .preview #board { width: calc(min(100cqw, 100cqh) * 0.94); }
+  .preview .board:not(.view-3d) { isolation: isolate; }
+  .kp { position: relative; width: 34px; height: 38px; }
+  .kp .piece { --u: 3px; inset: 4px 0 0; }
+  @media (orientation: portrait) {
+    .settings { grid-template-columns: 1fr; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 16px; }
+    .side { display: contents; }
+    .top { order: -3; }
+    .picks { order: -2; display: flex; gap: 10px; }
+    .preview { order: -1; }
+    .groups { grid-template-columns: 1fr 1fr; align-items: start; }
+    .group { height: 100%; align-content: start; }
+    .setting { grid-template-columns: 1fr; gap: 6px; }
+  }
+  .phone .settings { padding: 16px; }
+  .phone .groups { grid-template-columns: 1fr; }
+  .phone .top { gap: 12px; }
+  .phone .top h1 { font-size: 26px; }
+  .phone .lang .tile { min-width: 88px; padding: 4px 8px; }
+
+  .guides a, .guides button { outline: 1px dashed rgb(255 120 120 / 0.8); }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+  const params = new URLSearchParams(location.search);
+  const SCREENS = ['game', 'puzzle', 'picker', 'settings'];
+  const screen = SCREENS.includes(params.get('screen')) ? params.get('screen') : 'game';
+  const take = params.get('take') === 'b' ? 'b' : 'a';
+  const lang = params.get('lang') === 'et' ? 'et' : 'en';
+  const S = {
+    en: { back: 'Back', settings: 'Settings', restart: 'Start over', undo: { a: 'Take back', b: 'Undo move' },
+      turn: "White's turn", goal: 'Win 2 men', toMove: 'White to move', next: 'Next', puzzles: 'Puzzles',
+      themes: ['Learn', 'Captures', 'Crowning', 'Shots'], more: 'Solve 4 more in Learn',
+      game: 'Game', look: 'Look', draughts: 'Draughts', hints: 'Move hints', bg: 'Background', board: 'Board', kings: 'Kings',
+      intl: 'International', brazilian: 'Brazilian', russian: 'Russian', mistakes: 'Mistakes only', moves: 'All moves',
+      seasons: ['Winter', 'Spring', 'Summer', 'Autumn'], date: 'By the date', flat: 'Flat', raised: 'Raised',
+      auto: 'Auto', crown: 'Crown', stack: 'Stack' },
+    et: { back: 'Tagasi', settings: 'Seaded', restart: 'Alusta uuesti', undo: { a: 'Võta tagasi', b: 'Võta käik tagasi' },
+      turn: 'Valgete käik', goal: 'Võida 2 nuppu', toMove: 'Valgete käik', next: 'Edasi', puzzles: 'Ülesanded',
+      themes: ['Õpi', 'Löömine', 'Tammiks', 'Kombinatsioonid'], more: 'Lahenda Õpis veel 4',
+      game: 'Mäng', look: 'Välimus', draughts: 'Kabe', hints: 'Vihjed', bg: 'Taust', board: 'Kabelaud', kings: 'Tammid',
+      intl: 'Rahvusvaheline', brazilian: 'Brasiilia', russian: 'Vene', mistakes: 'Ainult vead', moves: 'Kõik käigud',
+      seasons: ['Talv', 'Kevad', 'Suvi', 'Sügis'], date: 'Tänane', flat: 'Lame', raised: 'Ruumiline',
+      auto: 'Laua järgi', crown: 'Kroon', stack: 'Virn' },
+  }[lang];
+  document.documentElement.lang = lang;
+  const W = innerWidth, H = innerHeight, landscape = W >= H, phone = Math.min(W, H) < 600;
+  document.body.classList.add(`take-${take}`);
+  document.body.classList.toggle('phone', phone);
+  document.body.classList.toggle('portrait', !landscape);
+  document.body.classList.toggle('guides', params.has('guides'));
+  const icon = Draughts.icon;
+  Object.assign(Draughts.ICONS, {
+    book: '<path d="M12 6.5C10 5 7 4.4 3 4.8v13.4c4-.4 7 .1 9 1.6 2-1.5 5-2 9-1.6V4.8c-4-.4-7 .2-9 1.7z"/><path d="M12 6.5v13.3"/>',
+    jumps: '<circle cx="7.5" cy="18" r="2.8"/><circle cx="16.5" cy="18" r="2.8"/><path d="M2.5 15.5C3.5 7.5 11 7.5 12 14.5 13 7.5 20.5 7.5 21.5 15.5"/><path d="M19 14.2l2.5 1.6 1.3-2.7"/>',
+  });
+
+  // Where back goes from each screen (settings: where it came from, ?from=).
+  const to = (s) => { const p = new URLSearchParams(location.search); p.set('screen', s); p.delete('from'); return `?${p}`; };
+  const BACK = { game: 'home.html', puzzle: to('picker'), picker: 'home.html',
+    settings: params.get('from') && SCREENS.includes(params.get('from')) ? to(params.get('from')) : 'home.html' };
+  const settingsHref = () => { const p = new URLSearchParams(location.search); p.set('screen', 'settings'); p.set('from', screen); return `?${p}`; };
+  const back = () => `<a class="button glass back" href="${BACK[screen]}" aria-label="${S.back}">${icon('back')}` +
+    `${take === 'b' ? `<span>${S.back}</span>` : ''}</a>`;
+  const row = (name, word, cls = '', href = '') => href
+    ? `<a class="row button ${cls}" href="${href}" style="text-decoration:none">${icon(name)}<span>${word}</span></a>`
+    : `<button class="row button ${cls}">${icon(name)}<span>${word}</span></button>`;
+  const app = document.getElementById('app');
+
+  function game(puzzle) {
+    const raised = Draughts.settings.view === '3d' && landscape;
+    document.body.classList.toggle('corners', raised);
+    // The way out: back over the panel of settings and start over.
+    const out = `<div class="out">${back()}<aside class="panel glass">${row('gear', S.settings, '', settingsHref())}` +
+      `<div class="space"></div>${row('restart', S.restart)}</aside></div>`;
+    const play = puzzle
+      ? (landscape ? `<div class="turn" style="padding-bottom:0"><div class="piece white"></div></div>` : '') +
+        `<div class="what">${landscape ? '' : '<div class="piece white lead"></div>'}${icon('target')}<span>${S.goal}<small>${S.toMove}</small></span></div>` +
+        `<div class="stake">${icon('star')}${icon('star')}${icon('star')}</div>` +
+        `<div class="space"></div>${row('next', S.next, 'big off')}`
+      : `<div class="turn"><div class="piece white"></div>${S.turn}</div><div class="space"></div>${row('undo', S.undo[take], 'big')}`;
+    app.innerHTML = `<div class="game">${out}<div id="board"></div><aside class="panel glass play">${play}</aside></div>`;
+    if (puzzle) {
+      Draughts.board(document.getElementById('board'), {
+        white: ['a1', 'g1', 'c3', 'e3', 'g3'], black: ['d4', 'f6', 'a7', 'd8', 'h8'], last: ['e7', 'f6'] });
+    } else {
+      Draughts.board(document.getElementById('board'), {
+        white: ['a1', 'c1', 'e1', 'g1', 'b2', 'f2', 'h2', 'c3', 'e3', 'd4', 'h6'],
+        black: ['b8', 'd8', 'f8', 'h8', 'a7', 'c7', 'b6', 'e5', 'g5'],
+        kings: ['h6'], forced: ['h6'], last: ['h4', 'g5'],
+      });
+    }
+    if (!landscape) {
+      // In portrait the way back is the bar's first tile, on its glass.
+      const b = document.querySelector('.out > .back');
+      b.classList.remove('glass');
+      document.querySelector('.out .panel').prepend(b);
+    }
+  }
+
+  function picker() {
+    const T = [['book', 8, 12], ['jumps', 5, 10], ['crownLine', 2, 12], ['target', 0, 20]];
+    const rowOf = ([ic, done, total], i) => {
+      return `<a class="theme glass" href="#">` +
+        `<span class="mark">${icon(ic)}</span><h2>${S.themes[i]}</h2><span class="num">${done} / ${total}</span>` +
+        `<span class="bar"><i style="width:${(100 * done / total).toFixed(1)}%"></i></span></a>`;
+    };
+    const title = landscape ? `<div class="head"><h1>${S.puzzles}</h1></div>` : `<div class="head">${back()}<h1>${S.puzzles}</h1></div>`;
+    app.innerHTML = `<div class="picker"><div class="wrap">${landscape ? back() : ''}<div class="library">${title}` +
+      `${T.map(rowOf).join('')}</div></div></div>`;
+    app.firstChild.style.cssText = 'position:absolute;inset:0';
+  }
+
+  function settings() {
+    const St = Draughts.settings;
+    const tile = (on, label, cls = '') => `<button class="tile ${cls}${on ? ' on' : ''}">${label}</button>`;
+    const setting = (title, tiles) => `<div class="setting"><h3>${title}</h3><div class="tiles">${tiles}</div></div>`;
+    const group = (ic, title, body) => `<section class="group glass">${phone ? '' : `<h2>${icon(ic)}${title}</h2>`}${body}</section>`;
+    const king = (stack) => `<span class="kp${stack ? ' stack' : ''}"><span class="piece white king"></span></span>`;
+    const photo = (s) => `../design/backgrounds/masters/${s}-01-2048.jpg`;
+    const gameGroup = group('target', S.game,
+      setting(S.draughts, tile(true, `${S.intl}<small>10 × 10</small>`) + tile(false, `${S.brazilian}<small>8 × 8</small>`) +
+        tile(false, `${S.russian}<small>8 × 8</small>`)) +
+      setting(S.hints, tile(St.assist === 'mistakes', S.mistakes) + tile(St.assist === 'moves', S.moves)));
+    const lookGroup = group('sun', S.look,
+      setting(S.bg, ['winter', 'spring', 'summer', 'autumn'].map((s, i) =>
+        tile(false, `<span class="thumb" style="background-image: url(${photo(s)})"></span>${S.seasons[i]}`, 'pic')).join('') +
+        tile(true, `<span class="thumb" style="background: color-mix(in srgb, var(--glow) 18%, rgb(255 255 255 / 0.06))">${icon('sun')}</span>${S.date}`, 'pic')) +
+      setting(S.board, tile(St.view === '2d', `${S.flat}<small>2D</small>`) + tile(St.view === '3d', `${S.raised}<small>3D</small>`)) +
+      setting(S.kings, tile(St.king === 'auto', S.auto) + tile(St.king === 'crown', `${king(false)}${S.crown}`) +
+        tile(St.king === 'stack', `${king(true)}${S.stack}`)));
+    // A phone shows one group at a time, two tiles choosing which.
+    const picks = phone ? `<div class="picks">${tile(true, `${icon('target')}${S.game}`, 'pick')}${tile(false, `${icon('sun')}${S.look}`, 'pick')}</div>` : '';
+    const langRow = `<div class="lang glass">${icon('globe')}${tile(lang === 'en', 'English')}${tile(lang === 'et', 'Eesti')}</div>`;
+    app.innerHTML = `<div class="settings"><div class="side"><div class="top">${back()}` +
+      `${phone ? '' : `<h1>${S.settings}</h1>`}${langRow}</div>${picks}<div class="groups">${phone ? gameGroup : gameGroup + lookGroup}</div></div>` +
+      `<div class="preview"><div id="board"></div></div></div>`;
+    Draughts.board(document.getElementById('board'), {
+      n: 10, white: ['a1', 'c1', 'e1', 'g1', 'b2', 'f2', 'h2', 'c3', 'e3', 'd4', 'h6'],
+      black: ['b8', 'd8', 'f8', 'h8', 'a7', 'c7', 'b6', 'e5', 'g5'], kings: ['h6'], forced: ['h6'], error: ['c5'],
+    });
+  }
+
+  // The theme's colors must be on the page before the pieces outside a board are painted.
+  if (screen === 'picker') Draughts.settings.bg = 'photo';
+  Draughts.init();
+  if (screen === 'game') game(false);
+  else if (screen === 'puzzle') game(true);
+  else if (screen === 'picker') picker();
+  else settings();
+  Draughts.paint();
+  Draughts.syncGlass();
+
+  // The screen, take, and language, from the switcher.
+  const bar = document.querySelector('.proto-bar');
+  const sel = (key, values, current) => `<select data-k="${key}" aria-label="${key}">${values.map((v) =>
+    `<option${v === current ? ' selected' : ''}>${v}</option>`).join('')}</select>`;
+  bar.insertAdjacentHTML('afterbegin', sel('screen', SCREENS, screen) + sel('take', ['a', 'b'], take) + sel('lang', ['en', 'et'], lang));
+  bar.querySelectorAll('select[data-k]').forEach((s) => s.onchange = (e) => {
+    e.stopPropagation();
+    params.set(s.dataset.k, s.value);
+    location.search = params.toString();
+  });
+</script>
+</body>
+</html>
