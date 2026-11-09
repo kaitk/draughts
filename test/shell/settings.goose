@@ -4,7 +4,8 @@
 // On the regrouped screen a tap applies at once and marks the settings changed for the
 // app to write: the language in the title row; the draughts a new game starts on, move
 // hints (which the game's board takes), a season, and the kings (which the game's board
-// draws too); the tutorial and the 3D board do nothing until they exist. Each choice
+// draws too); the tutorial does nothing until it exists, and the 3D board, shown with the
+// `--3d` flag, plays the game on the 3D board, whose kings are stacks for auto. Each choice
 // restages the board beside them: its size, its kings, and what the move hints show on
 // a fixed position, where white must capture with the man on d4 or the king on h6.
 // With mistakes only, a wrong move's ring flashes and both capturing pieces pulse, then

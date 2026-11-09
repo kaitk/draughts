@@ -39,11 +39,76 @@ let STACK_W = 170.0;        // dp: a third of the bar under which it is
 let BOTTOM = 204.0;         // dp: the play below it
 let GAP = 24.0;
 
-// Where the board and the panels beside it go, in pixels.
+// Where the board and the panels beside it go, in pixels. A 3D board (`three`) is drawn
+// through `view`, its bounds on screen view.rect; `board` is then the flat layout the
+// board package plays on, a square of the bounds' height in their middle, which taps
+// reach through the perspective (view3d::pick) and which the 3D board's world follows
+// (view3d::to_world).
 struct Layout {
     board: board::Layout,
     left:  float4,      // x, y, width, height of the panel that leaves the game (above in portrait)
     right: float4,      // and of the one that plays it (below in portrait)
+    three: bool         = false,
+    view:  view3d::View = view3d::View {},
+}
+
+// The game screen round the 3D board (task 015, prototypes/game3d.html's `corners`): in
+// landscape short glass panels in the top corners, the board's far edge narrowing between
+// them and its wide near edge running under them, as large as clears them by half a gap;
+// in portrait the order of the flat board's, the bar, the board, the play, with the board
+// as wide as the screen less the gaps and as tall as its perspective makes it. The
+// portrait camera's pitch is its own constant, so a steeper one (60 to 65°, a proposal
+// open with the user) is one change.
+let CORNER_H = 352.0;       // dp: a corner panel, room for three tiles with their icons over their words
+let PHONE_DP = 600.0;       // dp: a screen whose shorter side is under this (a phone) has NARROW panels
+let PITCH_LANDSCAPE: f32 = 52.5;
+let PITCH_PORTRAIT:  f32 = 52.5;
+
+fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT) -> Layout {
+    let width = area.z;
+    let height = area.w;
+    let gap = GAP * s;
+    if width >= height {
+        let side = (if min(width, height) / s < PHONE_DP { NARROW } else { SIDE }) * s;
+        let tall = min(CORNER_H * s, height - 2.0 * gap);
+        let left = float4 { area.x + gap, area.y + gap, side, tall };
+        let right = float4 { area.x + width - gap - side, area.y + gap, side, tall };
+        let cam = view3d::Camera { pitch: PITCH_LANDSCAPE, yaw: 0.0 };
+        let box = float4 { area.x + gap, area.y + gap, width - 2.0 * gap, height - 2.0 * gap };
+        // The largest share of the box, kept at its bottom and centered across, whose board
+        // clears both panels: found by halving, the board shrinking as the share does.
+        var v = view3d::fit(cam, n, box, view3d::BOTTOM_EDGE);
+        if clear(v, left, right, 0.5 * gap) { return corner_layout(v, left, right, s, n); }
+        var lo: f32 = 0.2;
+        var hi: f32 = 1.0;
+        for i in 20 {
+            let k = 0.5 * (lo + hi);
+            let b = float4 { box.x + 0.5 * box.z * (1.0 - k), box.y + box.w * (1.0 - k), box.z * k, box.w * k };
+            if clear(view3d::fit(cam, n, b, view3d::BOTTOM_EDGE), left, right, 0.5 * gap) { lo = k; } else { hi = k; }
+        }
+        let b = float4 { box.x + 0.5 * box.z * (1.0 - lo), box.y + box.w * (1.0 - lo), box.z * lo, box.w * lo };
+        return corner_layout(view3d::fit(cam, n, b, view3d::BOTTOM_EDGE), left, right, s, n);
+    }
+    let cam = view3d::Camera { pitch: portrait_pitch, yaw: 0.0 };
+    let narrow = (width - 2.0 * gap - 72.0 * s) / 3.0 < STACK_W * s;
+    let top = (if narrow { TOP_STACKED } else { TOP }) * s;
+    let bottom = BOTTOM * s;
+    let b = view3d::bounds(cam, n);
+    let w = width - 2.0 * gap;
+    let h = min(w * b.w / b.z, height - top - bottom - 4.0 * gap);
+    let x = area.x + gap;
+    let y = area.y + (height - (top + h + bottom + 2.0 * gap)) / 2.0;
+    let v = view3d::fit(cam, n, float4 { x, y + top + gap, w, h }, view3d::MIDDLE);
+    return corner_layout(v, float4 { x, y, w, top }, float4 { x, y + top + gap + h + gap, w, bottom }, s, n);
+}
+
+fn clear(v: view3d::View, a: float4, b: float4, gap: f32) -> bool { !view3d::touches(v, a, gap) && !view3d::touches(v, b, gap) }
+
+fn corner_layout(v: view3d::View, left: float4, right: float4, s: f32, n: i64) -> Layout {
+    let r = v.rect;
+    let size = min(r.z, r.w);
+    return Layout { board: board::layout_at(r.x + 0.5 * (r.z - size), r.y + 0.5 * (r.w - size), size, s, n), left: left,
+                    right: right, three: true, view: v };
 }
 
 // The game screen (rendering.md, "Game screen"). Landscape: the board fills the height
@@ -177,7 +242,11 @@ fn leave(g: gui::Gui&, l: Layout, icon: i64, word: i64) -> i64 {
 
 // How tall the right panel's bottom tile is in landscape: TALL_H, or STACK_H in a panel
 // too short for it beside what is above it (a phone).
-fn tall(l: Layout, u: f32) -> f32 { (if l.right.w < SHORT * u { STACK_H } else { TALL_H }) * u }
+fn tall(l: Layout, u: f32) -> f32 {
+    // A corner panel is short on every screen: the tall tile but in a phone's narrow one.
+    if l.three { return (if l.right.z < SIDE * u - 0.5 { STACK_H } else { TALL_H }) * u; }
+    return (if l.right.w < SHORT * u { STACK_H } else { TALL_H }) * u;
+}
 
 // The right panel's room inside its glass, where a screen plays.
 fn play_area(g: gui::Gui&, l: Layout) -> float4 {

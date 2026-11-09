@@ -1,0 +1,21 @@
+eye 0.0 11.550000190734863 10.079999923706055
+bounds 1.4600000381469727:1, far edge 0.6899999976158142 of the near edge
+  at 60.0° down: 1.3200000524520874:1
+  at 65.0° down: 1.2400000095367432:1
+fit into 1232 × 752 at its bottom: rect 91.62999725341797 24.0 1096.739990234375 752.0
+matrix against project: true
+8 × 8 at 52.5° down, turned 0.0°: 160 of 160 taps on their square
+8 × 8 at 52.5° down, turned 20.0°: 160 of 160 taps on their square
+8 × 8 at 75.0° down, turned -35.0°: 160 of 160 taps on their square
+8 × 8 at 52.5° down, turned 180.0°: 160 of 160 taps on their square
+8 × 8 corners and edges: a1 a1, h8 h8, a5 a5, h4 h4, d8 d8, e1 e1, off - off - 
+10 × 10 at 52.5° down, turned 0.0°: 250 of 250 taps on their square
+10 × 10 at 52.5° down, turned 20.0°: 250 of 250 taps on their square
+10 × 10 at 75.0° down, turned -35.0°: 250 of 250 taps on their square
+10 × 10 at 52.5° down, turned 180.0°: 250 of 250 taps on their square
+10 × 10 corners and edges: a1 a1, j10 j10, a5 a5, j6 j6, f10 f10, e1 e1, off - off - 
+selected c3
+lifted c3's face: the field under it c4, a light square (true, at -0.7200000286102295 squares behind), picked c3
+lifted c3's front side: picked c3
+stacked king on c3, its top's far edge: the field under it c4, a light square (-0.8700000047683716 squares behind), picked c3
+turned round, the king's top's far edge: the field under it c2, a light square, picked c3

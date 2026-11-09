@@ -43,6 +43,7 @@ import puzzles from "../puzzles";
 import badges from "../badges";
 import .text;
 import .think;
+import .draw3d;
 
 // The system's preferred locales, "et-EE,en-US" (locale.c); returns how many bytes.
 extern fn draughts_locales(out: u8[:]) -> i64;
@@ -113,6 +114,7 @@ fn main() {
     var hold = -1.0;
     var win_at = -1.0;
     var show_3d = false;
+    var raised = false;
     var dp_given = false;
     var floor_given = false;
     var display_given = false;
@@ -174,6 +176,7 @@ fn main() {
             }
         }
         if argv[i] == "--fen" { fen.append(argv[i + 1]); }
+        if argv[i] == "--board" && argv[i + 1] == "3d" { raised = true; }
         if argv[i] == "--hints" && argv[i + 1] == "moves" { hints = board::MOVES; }
         if argv[i] == "--lang" { lang = strings::pick(argv[i + 1]); }
         for name, k in settings::DRAUGHTS_NAMES { if argv[i] == "--variant" && argv[i + 1] == name { variant = settings::DRAUGHTS[k]; } }
@@ -250,6 +253,7 @@ fn main() {
         sh.prefs.played = [0; 3];
         sh.changed = true;
     }
+    if raised { sh.prefs.board = settings::RAISED; }
     sh.players = players_read;
     let gm .= sh.game;
     let b .= gm.b;
@@ -277,6 +281,7 @@ fn main() {
     // A fresh install's first run opens on the sheet of its one player, to pick a badge.
     if keep && sh.players.fresh { who::first_run(sh.who, sh.players); }
     var d = draw::new(kind);
+    var d3 = draw3d::Drawer {};
     var w = widgets::new();
     var g = gui::Gui {};
     var t = text::Text {};
@@ -440,6 +445,7 @@ fn main() {
         let drew = dirty || shell::animating(sh, g, now);
         if drew {
             let shown .= shell::fill(sh, now);
+            if sh.raised { draw3d::frame(d3, shown, l, sh.view); }
             widgets::upload(w, g);
             draw::frame(d, shown, sh.over, l, sh.blur, now, size.x, size.y);
             widgets::frame(w, g, d.scene, d.colors, size.x, size.y, sh.hole);
@@ -476,6 +482,7 @@ fn main() {
         if frames > 0 && gfx::frame_count() >= frames { break; }
     }
     if frames > 0 { gfx::screenshot("draughts.png"); }
+    if frames > 0 && d3.frames > 0 { print("3D board: ", d3.frames, " frames shown it, ", d3.draws, " would draw it, ", d3.shadows, " its shadow map"); }
     shell::write_game(sh);
     if sh.quit { draughts_close(); }
 }

@@ -314,6 +314,93 @@ board, though it is fine on the other screens, where nobody touches the pieces. 
 screen takes `corners` in landscape. Portrait is still open; the steeper camera is the
 proposal.
 
+## Integration (on the `integrate3d` branch, off `main` until the game is solid)
+
+### Phase 1: what doesn't depend on the renderer (2026-11-09)
+
+- **Camera and picking** in `src/board/view3d.goose`, a file of the `board` package: the
+  code layout keeps the 3D board's math in `board/` (docs/architecture/README.md), and it
+  is the 3D counterpart of `board::hit` and `board::center`, working on the same
+  `board::Board` and `board::Layout`. `view3d::View` is the prototype's camera (52.5°
+  down, 31°, 14.75 from (0, -0.15, 1.1)) with its fit in pixels: a point at view x, y,
+  depth d lands at c + k (x / d, -y / d), the prototype's clip-space scale and shift;
+  `view3d::matrix` gives the clip matrix for any screen size. The field is always 8
+  world units across, so 10 × 10's squares and pieces are 0.8 of 8 × 8's. A turn
+  (`view3d::turned`) keeps the fit. `view3d::pick` turns a tap into a point on the flat
+  layout the board package plays on: a ray against each piece as a cylinder (top and
+  side; the selected piece lifted and grown, a stack two discs high, a piece waiting on
+  its stop), else the field's plane; while a piece is held, the plane of its lifted top,
+  the finger's offset kept (`game::Game.grab`), so a drag carries it under the finger.
+  The world follows the flat layout's x and y, so a turned board (`Layout.flip`) turns
+  the 3D one with the light kept on screen. `test/board/view3d`: five taps on every dark
+  square (its middle and near its corners) on 8 × 8 and 10 × 10, at rest, turned 20°,
+  at 75° turned -35°, and turned round, all on their squares; just inside the field's
+  corners and on its edges; just off it no square; a lifted man's face and a stacked
+  king's top picking their square where the field under the tap is the light square
+  behind (0.72 and 0.87 squares behind), turned round too; the matrix against the
+  projection.
+- **The scene from the game's state:** `view3d::fill` maps the flat board's draw list
+  (`board::fill`, after `game::cheer`) to the prototype's storage buffer, two float4s an
+  instance (foot and scale; dark, crown or upper disc, selected or lower disc, seed), a
+  stack as two; a parallel `state` buffer carries what the prototype's position lacked
+  (opacity, must-capture ring, glow ring, selected glow, then `board::Piece.win`); the
+  field's occlusion squares (top, foot, radius, occupied); the last move, targets, stops,
+  and flash in the world's grid; the selected piece's foot and radius for the glow ring;
+  the win's dim. A 2D lift maps by 1.1% of the board to 0.07 (the selected lift), a
+  radius by the disc's 0.39 of a square. So moves, hops, drags, fades, and the win
+  animate as in 2D. `test/board/scene3d`.
+- **The `corners` layout** in `panel::corners_in` (`src/game/panel.goose`, beside the
+  flat layout it replaces; the task asked for `gui`, but the game screen's layout lives
+  in `game/panel` and `gui` has no board): landscape panels 232 × 352 dp in the top
+  corners (192 wide under 600 dp), the board's largest share of the safe area less the
+  margin, at its bottom, whose outline (the hull of the frame's corners and kings' tops)
+  clears both panels by 12 dp, found by halving. The panels' tiles are the flat game
+  screen's; take back keeps its tall tile in a short corner panel but on a phone. In
+  portrait the flat order, the board as wide as the safe area less 24 dp each side. The
+  board package plays on a flat square of the bounds' height in their middle
+  (`panel::Layout.board`), what the 3D world maps to. Numbers (`test/game/corners`, dp):
+  the tablet landscape 898 × 616 (the prototype's 985 × 677, whose panels were 16 dp
+  shorter and gap measured less strictly), 876 × 600 with its navigation bar; portrait
+  752 × 516; a foldable 628 × 430 landscape; 4:3 693 × 475; a 20:9 phone at 540 dp 718 ×
+  492, 656 × 450 with the Pixel 7a's cutout; at 480 dp 620 × 425; a 9:16 phone at 480 dp
+  414 × 284 (346 × 237 with insets), all 1.46:1, the far edge 69%, every tile in its
+  panel and the safe area at 88 dp, the board inside the safe area off the panels.
+- **Portrait's camera** is `panel::PITCH_PORTRAIT`, 52.5°. Steeper (same test): on the
+  tablet the board goes from 752 × 516 to 752 × 570 at 60° and 752 × 604 at 65° (the far
+  edge 69% → 74% → 77%), the screen used 888 → 942 → 976 of 1280 dp; on a 20:9 phone at
+  540 dp 337 → 373 → 395 dp tall. Width still holds the board; a steeper camera only
+  fills more of the empty height. Open with the user.
+- **Wiring:** `settings::raised` (the Board row's 3D with `--3d`; the 3D tile now takes
+  the tap) makes the game screen use `corners_in` and `view3d::pick`
+  (`shell::game_layout`, `game::frame`); kings' auto is a stack there
+  (`settings::raised_king_look`). `--3d --board 3d` plays a run on it. In the app
+  `src/app/draw3d.goose` is the stub: it fills the scene each drawn frame and keeps the
+  dirty flags, and the flat board is drawn in the flat square, so in phase 1 taps go
+  through a perspective that isn't drawn yet. `test/game/corners` plays c3–d4 by
+  projected taps and drags f6 to e5 through the shell. `--3d` and `show_board_row` stay.
+- **Draw on demand:** `view3d::changes` against the last scene drawn: DRAW when anything
+  the 3D board shows differs (view, instances, state, marks, flash, occlusion, dim),
+  SHADOW too when the instances do (a piece moved, lifted, appeared or went). The app
+  draws only on change already; the 3D pass is the expensive part of a frame (about 11 ms
+  on the tablet), so a frame that changes only the UI (a clock's second, a pressed tile)
+  should not draw it: phase 2 keeps the board's image in a target and draws the UI over
+  it when DRAW is clear.
+
+### Phase 2: the renderer in the app
+
+Moves `poc/3d`'s meshes, shaders, themes, bake, shadow map, and the MSAA pass into a
+package the app and the prototype share, the prototype a thin program over it; draws
+the real board in the game behind `--3d`: selection, targets, moves animated, the
+must-capture ring.
+
+### Open
+
+- Portrait's camera (above).
+- The rule that only `app/` imports `gfx`: the shared renderer is a package that does.
+- The win's card is placed on the flat square, not the 3D bounds; the drag threshold is
+  measured on the flat layout, near the screen's pixels in the board's middle only.
+- Home and the transitions still show the flat board.
+
 ## Later, only if the floating board falls short
 
 - **A painted backdrop and a real table.** The camera barely moves (about 50° down), so a
@@ -353,7 +440,10 @@ proposal.
 
 ## When 3D lands
 
-Show settings' Board row again: remove `Settings.show_board_row` (`src/shell/settings.goose`)
+Still needed after phase 2: the 3D board on home and settings' preview (or a decision
+that they stay flat), the transitions with it, puzzles on it, the card placed on the 3D
+bounds, the winter theme from the season, the measures on the tablet. Then show settings'
+Board row again: remove `Settings.show_board_row` (`src/shell/settings.goose`)
 and the `--3d` flag (`src/app/draughts.goose`, `docs/development.md`), make the board follow
 `Settings.board`, and update `docs/architecture/rendering.md`' Settings paragraph and
 `test/shell/settings.goose`.

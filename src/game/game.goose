@@ -86,6 +86,8 @@ struct Game {
     // Whether the game was started over (play again, or start over), for the shell to
     // give the new game its level's skill as adapting left it and a new number.
     restarted: bool = false,
+    // On the 3D board, a held piece's place against the finger on its plane (frame).
+    grab: float2 = float2 { 0.0, 0.0 },
 }
 
 fn new(variant: u8) -> Game {
@@ -288,9 +290,17 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
         }
         if ask == panel::HOME { go = HOME; }
     } else if !g.took && b.pos.side != gm.computer {
-        if input.pressed { board::press(b, l.board, input.at, now); }
-        if input.down && board::drag(b, l.board, input.at) { changed = true; }
-        if input.released { board::release(b, l.board, input.at, now); }
+        // On the 3D board a tap reaches the flat layout through the perspective.
+        // A piece held moves on the plane of its lifted top, kept where the finger took
+        // it (`grab`), so a press doesn't drag it before the finger moves.
+        let at = if l.three { view3d::pick(l.view, b, l.board, input.at) } else { input.at };
+        if input.pressed {
+            board::press(b, l.board, at, now);
+            if l.three && b.pressed >= 0 { gm.grab = b.press_at - view3d::pick(l.view, b, l.board, input.at); }
+        }
+        let held = if l.three && b.pressed >= 0 { view3d::pick(l.view, b, l.board, input.at) + gm.grab } else { at };
+        if input.down && board::drag(b, l.board, held) { changed = true; }
+        if input.released { board::release(b, l.board, held, now); }
     }
     // A move made or taken back, whichever way: the clocks follow it, and stop once the
     // side to move has none.

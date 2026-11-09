@@ -440,8 +440,9 @@ the prototype tried, kept for 3D:
   (2026-11-08); and kings (auto, crown, or stack, the last two each with its
   king drawn on the tile). The prototype's Board row (flat or raised) is hidden until the
   3D board exists (task 015): the board is always flat, the file's `board = 2d|3d` key is
-  still read and written, and the app's `--3d` flag shows the row, its 3D tile dimmed
-  (`Settings.show_board_row`, `src/shell/settings.goose`). Each
+  still read and written, and the app's `--3d` flag shows the row, whose 3D tile then
+  plays the game on the 3D board (`Settings.show_board_row`, `settings::raised`,
+  `src/shell/settings.goose`; the game screen round it is under "Board and pieces"). Each
   setting is a dim 18 px name at the left of its tiles (above them in portrait); a tile
   has radius 16 px and is lit in the glow color at 22% with a 2 px glow border when on.
   Every tile, the language's and the seasons' too, is 88 px tall and wide at least
@@ -473,8 +474,8 @@ the prototype tried, kept for 3D:
   language (2026-11-08). The Board row (`--3d`) makes the look group too tall for a
   landscape 800 px tall, so with it the tablet shows one group at a time too; their notes and the thumbnails' labels are in the 17 px
   face, which makes them a little wider than the prototype's 13 px, so the landscape
-  board is about 550 px where the prototype's is 590. The tutorial's tile (and the raised
-  board's with `--3d`) is dimmed and takes no tap until it exists.
+  board is about 550 px where the prototype's is 590. The tutorial's tile is dimmed and
+  takes no tap until it exists.
   **Puzzle picker** (`prototypes/puzzles.html`, take a, a library list, chosen
   2026-11-09; rejected: b's large theme tiles, which shrink long Estonian names and hold
   the fewest themes a screen, and c's library beside the theme, which needs two
@@ -692,9 +693,24 @@ frame between home and the game declares about 130 of the 512 quads (home 77, th
   piece covers the shadow above it. The crown is a signed-distance polygon in that shader. The panel's line icons are
   to be drawn the same way, as distances to their strokes' segments and arcs, rather than
   baked into the font atlas: crisp at any size, no texture.
-- **3D board**: the same board tilted (about 38°, in perspective) with a front edge,
-  pieces as discs with height (one disc 1.7% of the board), and the selected piece
-  lifted. `prototypes/boards.html` shows it for every theme.
+- **3D board** (task 015, `poc/3d/`): the board in perspective, 52.5° down with a 31°
+  field of view, its image fitted into a rectangle of the screen by a scale and a shift
+  in clip space, so the perspective is the native one at every size. Its bounds are
+  about 1.46 times as wide as tall, the far edge 69% of the near one. Natively
+  (`src/board/view3d.goose`, plain math in `board/` as the code layout says): the camera
+  and its fit (`view3d::View`), a tap turned into a square by a ray through the
+  perspective onto the field, a piece's top or side picking that piece's square, and each
+  frame's instances filled from the flat board's draw lists (`board::fill`), so the two
+  views follow one state and one animation. The world follows the flat layout the board
+  package plays on, so a turned board turns the 3D one. **The game screen round it**
+  (`panel::corners_in`, `prototypes/game3d.html`'s `corners`, chosen 2026-11-09): in
+  landscape the two panels are short glass panels in the top corners, 232 × 352 dp (192
+  wide on a phone, under 600 dp), home, settings, and start over on the left, the turn or
+  the clocks and take back on the right; the board as large as clears them by 12 dp, its
+  near edge on the bottom margin (898 × 616 dp on the tablet). In portrait the flat
+  board's order, the bar, the board as wide as the screen less the margins, the play;
+  its camera is a constant of its own (`panel::PITCH_PORTRAIT`, 52.5°; a steeper one is
+  open with the user).
 - **States**, in the theme's glow color: the selected piece lifts by 0.8% of the board
   and grows to 1.05 with a glow ring a little out from it (at 1.13 of the radius); with move hints on, a legal target is a glowing
   dot 30% of a square and a capture's stop on the way is a ring. With hints on mistakes

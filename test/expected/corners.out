@@ -1,0 +1,36 @@
+  the tablet, landscape: board 191 160 898 x 616 dp, 1.46:1, far edge 69%; panels 24 24 232 x 352, 1024 24 232 x 352; 4 tiles, all in place
+  the tablet, portrait: board 24 340 752 x 516 dp, 1.46:1, far edge 69%; panels 24 196 752 x 120, 24 880 752 x 204; 4 tiles, all in place
+  a foldable, landscape: board 186 346 628 x 430 dp, 1.46:1, far edge 69%; panels 24 24 232 x 352, 743 24 232 x 352; 4 tiles, all in place
+  a foldable, portrait: board 24 200 752 x 516 dp, 1.46:1, far edge 69%; panels 24 56 752 x 120, 24 739 752 x 204; 4 tiles, all in place
+  4:3, landscape: board 187 301 693 x 475 dp, 1.46:1, far edge 69%; panels 24 24 232 x 352, 811 24 232 x 352; 4 tiles, all in place
+  4:3, portrait: board 24 234 752 x 516 dp, 1.46:1, far edge 69%; panels 24 90 752 x 120, 24 773 752 x 204; 4 tiles, all in place
+  the tablet, landscape, its 72 px navigation bar: board 202 128 876 x 600 dp, 1.46:1, far edge 69%; panels 24 24 232 x 352, 1024 24 232 x 352; 4 tiles, all in place
+  the tablet, portrait, its 72 px navigation bar: board 24 316 752 x 516 dp, 1.46:1, far edge 69%; panels 24 172 752 x 120, 24 856 752 x 204; 4 tiles, all in place
+  a 20:9 phone, landscape at 540 dp: board 241 24 718 x 492 dp, 1.46:1, far edge 69%; panels 24 24 192 x 352, 984 24 192 x 352; 4 tiles, all in place
+  a 20:9 phone, landscape at 540 dp, insets 118 0 0 84: board 301 24 656 x 450 dp, 1.46:1, far edge 69%; panels 83 24 192 x 352, 984 24 192 x 352; 4 tiles, all in place
+  a 20:9 phone, landscape at 540 dp, insets 0 0 118 84: board 242 24 656 x 450 dp, 1.46:1, far edge 69%; panels 24 24 192 x 352, 925 24 192 x 352; 4 tiles, all in place
+  a 20:9 phone, portrait at 540 dp: board 24 393 492 x 337 dp, 1.46:1, far edge 69%; panels 24 241 492 x 128, 24 755 492 x 204; 4 tiles, all in place
+  a 20:9 phone, portrait at 540 dp, insets 0 118 0 84: board 24 402 492 x 337 dp, 1.46:1, far edge 69%; panels 24 250 492 x 128, 24 763 492 x 204; 4 tiles, all in place
+  a 20:9 phone, landscape at 480 dp: board 223 31 620 x 425 dp, 1.46:1, far edge 69%; panels 24 24 192 x 352, 851 24 192 x 352; 4 tiles, all in place
+  a 20:9 phone, landscape at 480 dp, insets 118 0 0 84: board 280 36 558 x 383 dp, 1.46:1, far edge 69%; panels 76 24 192 x 352, 851 24 192 x 352; 4 tiles, all in place
+  a 20:9 phone, landscape at 480 dp, insets 0 0 118 84: board 228 36 558 x 383 dp, 1.46:1, far edge 69%; panels 24 24 192 x 352, 798 24 192 x 352; 4 tiles, all in place
+  a 20:9 phone, portrait at 480 dp: board 24 347 432 x 296 dp, 1.46:1, far edge 69%; panels 24 195 432 x 128, 24 667 432 x 204; 4 tiles, all in place
+  a 20:9 phone, portrait at 480 dp, insets 0 118 0 84: board 24 355 432 x 296 dp, 1.46:1, far edge 69%; panels 24 203 432 x 128, 24 675 432 x 204; 4 tiles, all in place
+  a 9:16 phone, landscape at 480 dp: board 219 172 414 x 284 dp, 1.46:1, far edge 69%; panels 24 24 192 x 352, 637 24 192 x 352; 4 tiles, all in place
+  a 9:16 phone, landscape at 480 dp, insets 118 0 0 84: board 280 181 346 x 237 dp, 1.46:1, far edge 69%; panels 76 24 192 x 352, 637 24 192 x 352; 4 tiles, all in place
+  a 9:16 phone, landscape at 480 dp, insets 0 0 118 84: board 227 181 346 x 237 dp, 1.46:1, far edge 69%; panels 24 24 192 x 352, 585 24 192 x 352; 4 tiles, all in place
+  a 9:16 phone, portrait at 480 dp: board 24 241 432 x 296 dp, 1.46:1, far edge 69%; panels 24 89 432 x 128, 24 561 432 x 204; 4 tiles, all in place
+  a 9:16 phone, portrait at 480 dp, insets 0 118 0 84: board 24 248 432 x 296 dp, 1.46:1, far edge 69%; panels 24 96 432 x 128, 24 568 432 x 204; 4 tiles, all in place
+portrait 1200 x 1920 at 52.5° down: board 752 x 516 dp, far edge 69%, 888 of 1280 dp tall used
+portrait 1200 x 1920 at 60.0° down: board 752 x 570 dp, far edge 74%, 942 of 1280 dp tall used
+portrait 1200 x 1920 at 65.0° down: board 752 x 604 dp, far edge 77%, 976 of 1280 dp tall used
+portrait 1080 x 2400 at 52.5° down: board 492 x 337 dp, far edge 69%, 717 of 1200 dp tall used
+portrait 1080 x 2400 at 60.0° down: board 492 x 373 dp, far edge 74%, 753 of 1200 dp tall used
+portrait 1080 x 2400 at 65.0° down: board 492 x 395 dp, far edge 77%, 775 of 1200 dp tall used
+raised true, kings drawn as 2, flat layout vec4<f32> { 332.11185, 160.2237, 615.7763, 9.852422 }, 3D bounds vec4<f32> { 190.96704, 160.2237, 898.0659, 615.7763 }
+tap c3 at 510 499: selected c3, moving false
+tap d4 at 599 433: selected -, moving true
+after: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8
+pressed f6: selected f6, dragging false
+dragged: dragging true, under e5
+dropped: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Be5,b6,d6,h6,a7,c7,e7,g7,b8,d8,f8,h8

@@ -67,6 +67,10 @@ struct Shell {
     setup:   i64                = home::NOTHING, // home's column: the menu, or a setup
     staged:  bool               = false,      // home shows `next`, having declared a setup this frame
     layout:  board::Layout,                   // where the board is this frame
+    // The game's 3D board this frame, at rest on the game screen (settings::raised), and
+    // the view the app draws it through; sh.layout is then its flat layout.
+    raised: bool         = false,
+    view:   view3d::View = view3d::View {},
     // How blurred the photograph is this frame: 0 as it is (home, settings, the puzzles to
     // pick from), 1 blurred and dimmed (the game, a puzzle), between in a transition.
     blur:   f32           = 0.0,
@@ -212,7 +216,8 @@ fn sync_puzzles(sh: Shell&) {
 
 fn declare(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> bool {
     sync_puzzles(sh);
-    sh.game.b.king_look = settings::king_look(sh.prefs);
+    sh.game.b.king_look = if settings::raised(sh.prefs) { settings::raised_king_look(sh.prefs) } else { settings::king_look(sh.prefs) };
+    sh.raised = false;
     // Time away from the game screen isn't on the clock.
     if sh.screen != GAME { game::pause(sh.game); }
     // In a transition the screen left is declared first, with no pointer, then the screen
@@ -257,9 +262,11 @@ fn declare(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> boo
     return changed || asked || ended || crossing;
 }
 
-// Where the game puts the board and its panels, turned when the computer plays white.
+// Where the game puts the board and its panels, turned when the computer plays white:
+// round the 3D board when it is chosen (settings::raised), else the flat board's.
 fn game_layout(sh: Shell&, area: float4, u: f32) -> panel::Layout {
-    var l = panel::layout_in(area, rules::VARIANTS[sh.game.b.variant].size, u);
+    let n = rules::VARIANTS[sh.game.b.variant].size;
+    var l = if settings::raised(sh.prefs) { panel::corners_in(area, n, u) } else { panel::layout_in(area, n, u) };
     l.board.flip = sh.game.computer == rules::WHITE;
     return l;
 }
@@ -269,6 +276,8 @@ fn game_layout(sh: Shell&, area: float4, u: f32) -> panel::Layout {
 fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -> bool {
     let l = game_layout(sh, area, g.scale);
     sh.layout = l.board;
+    sh.raised = l.three && !frozen;
+    sh.view = l.view;
     let go, changed = game::frame(sh.game, g, l, now, sh.over, frozen);
     // A game against the computer ended: the child meets a stronger or weaker one next.
     let gm .= sh.game;

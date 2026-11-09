@@ -114,6 +114,14 @@ let SHOWN = 3;              // the other group shown (a phone's tabs): drawn aga
 // drawn while the Board row is hidden, and none other exists yet).
 fn king_look(s: Settings) -> i64 { if s.kings == board::STACK { board::STACK } else { board::CROWN } }
 
+// Whether the game is played on the 3D board: chosen in the Board row, which shows only
+// with the app's `--3d` flag until 3D lands (task 015); without it a file's `board = 3d`
+// still plays flat.
+fn raised(s: Settings) -> bool { s.show_board_row && s.board == RAISED }
+
+// How the 3D board draws kings: auto is a stack of two plain discs there.
+fn raised_king_look(s: Settings) -> i64 { if s.kings == board::CROWN { board::CROWN } else { board::STACK } }
+
 // The settings a file holds; what it lacks or doesn't know stays at the default.
 fn parse(text: const u8[:]) -> Settings {
     var s = Settings {};
@@ -379,7 +387,7 @@ fn tile(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, i: i64, r: f
     }
     let on = if row == DRAUGHTS_ROW { s.variant == DRAUGHTS[i] } else if row == HINTS_ROW { s.hints == i }
              else if row == BOARD_ROW { s.board == i } else { s.kings == i };
-    let enabled = if row == DRAUGHTS_ROW { DRAUGHTS_ON[i] } else { row != BOARD_ROW || i == FLAT };
+    let enabled = if row == DRAUGHTS_ROW { DRAUGHTS_ON[i] } else { true };
     // The crown's and the stack's tiles each show their king.
     let king = row == KINGS_ROW && i != AUTO;
     let tapped, pic = gui::pick(g, id, r, if king { 34.0 } else { 0.0 }, label, note(row, i), on, enabled);

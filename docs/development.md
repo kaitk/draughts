@@ -118,7 +118,8 @@ second, takes some thousands of frames: `--variant russian --computer black --ta
 `~/Library/Application Support/kaitk/draughts/`): `settings.txt` the device's (the
 language, who plays), `player-N.txt` each player's ([players](architecture/README.md#players));
 `--theme`, `--hints`, and `--lang` override them for a run without changing them. Settings' Board row (flat or 3D) is hidden
-until the 3D board exists; `--3d`, a flag with no value, shows it for working on task 015
+until the 3D board exists; `--3d`, a flag with no value, shows it for working on task 015,
+its 3D tile playing the game on the 3D board, and `--3d --board 3d` plays a run there at once
 (the file's `board` key is read and written either way, and the board is flat while the
 row is hidden). Each player's game is kept in `game-N.bin` beside them; a
 run with `--fen`, `--tap`, `--screen`, `--frames`, `--variant`, `--clock`, or
