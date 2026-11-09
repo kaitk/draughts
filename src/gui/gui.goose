@@ -897,6 +897,15 @@ fn shadowed(g: Gui&, face: i64, r: float4, s: const u8[:], align: i64) {
     text(g, face, r, s, 1.0, 0.0, align);
 }
 
+// Text at opacity a over one dark copy 1.5 dp down at 45%, for a line too long for
+// shadowed's nine copies a glyph within the frame's quads (the library's note): two quads
+// a glyph.
+fn shaded(g: Gui&, face: i64, r: float4, s: const u8[:], a: f32, align: i64) {
+    write(g, face, float4 { r.x, r.y + 1.5 * g.scale, r.z, r.w }, s, float4 { 0.0, 0.0, 0.0, 0.45 }, true, 0.0, align,
+          false);
+    text(g, face, r, s, a, 0.0, align);
+}
+
 // The widest digit's advance in a face, the cell each digit takes in tabular figures.
 fn figure_width(g: Gui&, face: i64) -> f32 {
     let f .= g.faces[face];

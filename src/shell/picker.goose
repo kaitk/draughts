@@ -1,9 +1,11 @@
 // The puzzles to pick from (prototypes/puzzles.html, take a; docs/architecture/puzzles.md,
 // "The screen"): a library of the themes, and a theme's page.
 //
-// The library is back and a glass row per theme: its mark (the theme's icon on a disc in
-// the glow color), its name, "n / total" solved, and a bar; under the title in portrait
-// and where the height allows in landscape. Learn is open; the other themes open once
+// The library is back, the title, the draughts switch (prototypes/puzzle-set.html, take
+// a: settings' draughts, one setting), and a glass row per theme: its mark (the theme's
+// icon on a disc in the glow color), its name, "n / total" solved, and a bar. The switch
+// stands at the title row's right in landscape and in a row under the title in portrait;
+// Brazilian, shown International's set, says so under the title. Learn is open; the other themes open once
 // half of Learn is solved, and until then each shows its mark plain with a lock and how
 // many more Learn wants. The rows are one column, or two in landscape where one doesn't
 // fit the height. A row opens the theme's page: back, the theme's mark, name, and count
@@ -23,6 +25,7 @@ import puzzles from "../puzzles";
 let BACK = -2;              // home
 let NOTHING = -1;
 let SHOWN = -3;             // a theme's page opened or left: drawn again
+let SWITCHED = -4;          // other draughts chosen on the library's switch
 
 let MARKS = [gui::BOOK, gui::JUMPS, gui::CROWN, gui::TARGET, gui::KING, gui::SHIELD];
 let NAMES = [strings::THEME_LEARN, strings::THEME_CAPTURES, strings::THEME_CROWNING, strings::THEME_SHOTS,
@@ -84,9 +87,10 @@ fn line_h(g: gui::Gui&, face: i64) -> f32 { g.faces[face].ascent - g.faces[face]
 // the library while `theme` is -1, else that theme's page. Sets `spot` to the tile of the
 // puzzle tapped, or else of puzzle `at` (an index in puzzles::all, or -1 for none), which
 // a puzzle's board grows out of and shrinks back into. Returns BACK, SHOWN (having set
-// `theme`), the index in puzzles::all of a puzzle tapped, or NOTHING.
-fn frame(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, spot: float4&) -> i64 {
-    if theme < 0 { return library(g, area, stars, at, theme, spot); }
+// `theme`), SWITCHED (having set `variant`, the player's draughts, from the library's
+// switch), the index in puzzles::all of a puzzle tapped, or NOTHING.
+fn frame(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, spot: float4&, variant: i64&) -> i64 {
+    if theme < 0 { return library(g, area, stars, at, theme, spot, variant); }
     return page(g, area, stars, at, theme, spot);
 }
 
@@ -133,7 +137,7 @@ fn theme_row(g: gui::Gui&, r: float4, theme: i64, stars: const u8[:], phone: boo
     var c = r;
     gui::cut_left(c, (if phone { 12.0 } else { 20.0 }) * u);
     gui::cut_right(c, (if phone { 18.0 } else { 26.0 }) * u);
-    let size: f32 = if phone { 64.0 } else { 88.0 };
+    let size: f32 = min(if phone { 64.0 } else { 88.0 }, r.w / u - 24.0);    // a row given up height keeps 12 dp round it
     mark(g, gui::cut_left(c, size * u), theme, size, opened);
     gui::cut_left(c, (if phone { 18.0 } else { 22.0 }) * u);
     let name_h = line_h(g, gui::LABEL);
@@ -164,15 +168,100 @@ fn theme_row(g: gui::Gui&, r: float4, theme: i64, stars: const u8[:], phone: boo
     return tapped && opened;
 }
 
-// The library: back, the title, and a row per theme the set has.
-fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, spot: float4&) -> i64 {
+// The draughts switch (prototypes/puzzle-set.html, take a): settings' draughts tiles, each
+// its name over its board's size, joined on one glass, 4 dp round them and between.
+let SWITCH_PAD = 4.0;
+let SWITCH_H = 96.0;        // its 88 dp tiles and the glass round them
+let SWITCH_IDS = 620;
+
+// How wide draughts tile i wants to be: as settings' tiles, its words with 16 dp either
+// side, at least 88 dp.
+fn switch_tile_w(g: gui::Gui&, i: i64) -> f32 {
+    let u = g.scale;
+    let w = max(gui::text_width(g, gui::BODY, strings::get(settings::DRAUGHTS_KEYS[i])),
+                gui::text_width(g, gui::SMALL, strings::get(settings::DRAUGHTS_SIZES[i])));
+    return max(88.0 * u, w + 32.0 * u);
+}
+
+// How wide the switch wants to be.
+fn switch_width(g: gui::Gui&) -> f32 {
+    var w = (settings::DRAUGHTS.len + 1) * SWITCH_PAD * g.scale;
+    for i in settings::DRAUGHTS.len { w += switch_tile_w(g, i); }
+    return w;
+}
+
+// The switch in r, the player's draughts lit; its tiles widened or narrowed in proportion to what each wants.
+// True when a tap chose other draughts, set in `variant`.
+fn switch(g: gui::Gui&, r: float4, variant: i64&) -> bool {
+    let u = g.scale;
+    let rim = SWITCH_PAD * u;
+    gui::glass(g, r, 22.0);
+    let n = settings::DRAUGHTS.len;
+    let k = (r.z - (n + 1) * rim) / (switch_width(g) - (n + 1) * rim);
+    var x = r.x + rim;
+    var chose = false;
+    for d, i in settings::DRAUGHTS {
+        let w = if i == n - 1 { r.x + r.z - rim - x } else { floor(switch_tile_w(g, i) * k + 0.5) };
+        let on = variant == d;
+        let tapped, pic = gui::pick(g, SWITCH_IDS + i, float4 { x, r.y + rim, w, r.w - 2.0 * rim },
+                                    0.0, strings::get(settings::DRAUGHTS_KEYS[i]),
+                                    strings::get(settings::DRAUGHTS_SIZES[i]), on, settings::DRAUGHTS_ON[i]);
+        if tapped && !on {
+            variant = d;
+            chose = true;
+        }
+        x += w + rim;
+    }
+    return chose;
+}
+
+// The note under the title while the draughts show another's set (Brazilian, until it has
+// its own), or "".
+fn note_of(variant: i64) -> const u8[:] {
+    return if puzzles::set_of(variant as u8) != variant as u8 { strings::get(strings::PUZZLES_FOR_NOW) } else { "" };
+}
+
+// How many lines the note takes in w pixels: one, two broken at a space, or 0 for none.
+fn note_lines(g: gui::Gui&, note: const u8[:], w: f32) -> i64 {
+    guard note.len > 0 else { return 0; }
+    return if gui::text_width(g, gui::SMALL, note) <= w || gui::break_at(g, gui::SMALL, note, w) < 0 { 1 } else { 2 };
+}
+
+// The title in r, bare on the photograph, the note under it, the two centered down r.
+fn title(g: gui::Gui&, r: float4, note: const u8[:]) {
+    let u = g.scale;
+    let name = strings::get(strings::HOME_PUZZLES);
+    let face = gui::fitting(g, gui::LABEL, name, r.z);
+    let lines = note_lines(g, note, r.z);
+    let small = line_h(g, gui::SMALL);
+    let under = if lines > 0 { 2.0 * u + lines * small } else { 0.0 };
+    var c = gui::center(r, r.z, line_h(g, face) + under);
+    // Bare on the photograph, over bright bark or snow at some sizes: a soft shadow.
+    gui::shadowed(g, face, gui::cut_top(c, line_h(g, face)), name, gui::LEFT);
+    guard lines > 0 else { return; }
+    gui::cut_top(c, 2.0 * u);
+    let cut = if lines == 2 { gui::break_at(g, gui::SMALL, note, r.z) } else { note.len };
+    gui::shaded(g, gui::SMALL, gui::cut_top(c, small), note[..cut], 0.85, gui::LEFT);
+    if lines == 2 { gui::shaded(g, gui::SMALL, gui::cut_top(c, small), note[cut + 1..], 0.85, gui::LEFT); }
+}
+
+// How wide the title and its note want to be.
+fn title_width(g: gui::Gui&, note: const u8[:]) -> f32 {
+    return max(gui::text_width(g, gui::LABEL, strings::get(strings::HOME_PUZZLES)), gui::text_width(g, gui::SMALL, note));
+}
+
+// The library: back, the title, the draughts switch, and a row per theme the set has.
+// In landscape the switch stands at the title row's right where the two fit, else (in
+// portrait, a small window) in a row of its own under the title. A tap on the switch
+// sets `variant` and returns SWITCHED, the list back at its top.
+fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, spot: float4&,
+           variant: i64&) -> i64 {
     let u = g.scale;
     let landscape = area.z >= area.w;
     let phone = min(area.z, area.w) < PHONE * u;
-    let short = landscape && area.w < PHONE * u;
     var page = gui::inset(area, (if phone { 16.0 } else { 24.0 }) * u);
     var pick = NOTHING;
-    let title = strings::get(strings::HOME_PUZZLES);
+    let note = note_of(variant);
     let whole = page;           // the rows center on the screen, not on what back leaves
     if landscape {
         var column = gui::cut_left(page, back_w(g));
@@ -180,12 +269,20 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
         gui::cut_left(page, 24.0 * u);
     }
     let gap = 12.0 * u;
-    let row_h = (if phone { 96.0 } else { 124.0 }) * u;
+    let sw_w = switch_width(g);
+    let sw_h = SWITCH_H * u;
+    let beside = landscape && title_width(g, note) + 24.0 * u + sw_w <= page.z;
+    let head = if beside { sw_h + gap } else { 88.0 * u + gap + sw_h + gap };
     // A variant's set may leave a theme out (Russian's has no king shots): its row too.
     var rows = 0;
     for t in puzzles::THEMES { if puzzles::theme_count(puzzles::all, t) > 0 { rows++; } }
+    // In portrait the rows give up height to fit the page under the switch's row (a
+    // foldable, a 9:16 phone), down to the 88 dp a tap wants; where even that doesn't
+    // fit, they keep their height and scroll.
+    var row_h = (if phone { 96.0 } else { 124.0 }) * u;
+    let fit = floor((page.w - head - (rows - 1) * gap) / rows);
+    if !landscape && fit >= 88.0 * u { row_h = min(row_h, fit); }
     let one = rows * row_h + (rows - 1) * gap;
-    let head = if short { 0.0 } else { 88.0 * u + gap };
     let cols = if landscape && head + one > page.w { 2 } else { 1 };
     let per = (rows + cols - 1) / cols;
     let h = head + per * row_h + (per - 1) * gap;
@@ -193,25 +290,30 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     // Where the title and the rows start below back (a tablet's landscape), they take the
     // whole width and center on it; else they keep clear of back's column, centered on
     // the screen as far as that allows (a phone's landscape, back beside the rows).
-    let room = if landscape && !short && y >= whole.y + 88.0 * u + gap { whole } else { page };
+    let room = if landscape && y >= whole.y + 88.0 * u + gap { whole } else { page };
     let col_w = min((room.z - (cols - 1) * gap) / cols, COLUMN * u);
     let w = cols * col_w + (cols - 1) * gap;
     let x = max(room.x, whole.x + floor(0.5 * (whole.z - w) + 0.5));
-    if !short {
-        var top = float4 { x, y, w, 88.0 * u };
-        if !landscape {
-            if back(g, gui::cut_left(top, back_w(g))) { pick = BACK; }
-            gui::cut_left(top, 20.0 * u);
-        }
-        // Bare on the photograph, over bright bark or snow at some sizes: a soft shadow.
-        gui::shadowed(g, gui::fitting(g, gui::LABEL, title, top.z), top, title, gui::LEFT);
+    // The title row as wide as the rows, or as the title and the switch beside it want.
+    let top_w = if beside { min(room.z, max(w, title_width(g, note) + 24.0 * u + sw_w)) } else { w };
+    let top_x = max(room.x, min(x, whole.x + floor(0.5 * (whole.z - top_w) + 0.5)));
+    var top = float4 { top_x, y, top_w, if beside { sw_h } else { 88.0 * u } };
+    if !landscape {
+        if back(g, gui::cut_left(top, back_w(g))) { pick = BACK; }
+        gui::cut_left(top, 20.0 * u);
     }
-    // Rows that run past the page's foot (a small window) scroll under the title row,
-    // shown down to the screen's foot.
+    let sw = if beside { gui::cut_right(top, sw_w) } else { float4 { x, y + 88.0 * u + gap, w, sw_h } };
+    if beside { gui::cut_right(top, 24.0 * u); }
+    title(g, top, note);
+    if switch(g, sw, variant) {
+        gui::scroll_set(g, LIBRARY_LIST, 0.0);
+        pick = SWITCHED;
+    }
+    // Rows that run past the page's foot (a small window, a phone with its insets) scroll
+    // under the title row, shown down to the screen's foot.
     let list_top = y + head;
     let view = float4 { area.x, list_top, area.z, g.insets.w + area.y + area.w - list_top };
-    let off = if !landscape { gui::scroll_begin(g, LIBRARY_LIST, view, per * row_h + (per - 1) * gap + 16.0 * u) }
-              else { 0.0 };
+    let off = gui::scroll_begin(g, LIBRARY_LIST, view, per * row_h + (per - 1) * gap + 16.0 * u);
     var k = 0;
     for t in puzzles::THEMES {
         guard puzzles::theme_count(puzzles::all, t) > 0 else { continue; }
@@ -223,7 +325,7 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
             pick = SHOWN;
         }
     }
-    if !landscape { gui::scroll_end(g); }
+    gui::scroll_end(g);
     return pick;
 }
 

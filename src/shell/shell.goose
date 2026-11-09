@@ -232,9 +232,17 @@ fn frame(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> bool {
 
 // The puzzles are the set of the player's draughts (puzzles::set_of). The draughts
 // change in home's setup, in settings, or with the player; home, where every way to the
-// puzzles starts, reads the other set then, and the picker starts at its library.
+// puzzles starts, reads the other set then, and the picker starts at its library. The
+// library's own switch reads it at once (load_set).
 fn sync_puzzles(sh: Shell&) {
-    guard sh.screen == HOME && puzzles::set_of(sh.prefs.variant as u8) != puzzles::loaded else { return; }
+    guard sh.screen == HOME else { return; }
+    load_set(sh);
+}
+
+// Reads the set of the player's draughts where another is loaded: no puzzle is open, and
+// the picker is at its library.
+fn load_set(sh: Shell&) {
+    guard puzzles::set_of(sh.prefs.variant as u8) != puzzles::loaded else { return; }
     puzzles::load(sh.prefs.variant as u8);
     sh.puzzle = puzzle::new();
     sh.theme = -1;
@@ -482,8 +490,15 @@ fn in_tile(sh: Shell&, spot: float4, scale: f32) -> board::Layout {
 fn picker_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     sh.over.clear();
     var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
-    let pick = picker::frame(g, area, sh.prefs.stars[puzzles::loaded], sh.puzzle.index, sh.theme, spot);
-    if pick == picker::BACK {
+    var variant = sh.prefs.variant;
+    let pick = picker::frame(g, area, sh.prefs.stars[puzzles::loaded], sh.puzzle.index, sh.theme, spot, variant);
+    if pick == picker::SWITCHED {
+        // The library's switch is settings' draughts: new games' too, saved as settings
+        // saves it, and home's count over the set it shows. The next frame shows it.
+        sh.prefs.variant = variant;
+        load_set(sh);
+        sh.changed = true;
+    } else if pick == picker::BACK {
         go_to(sh, HOME, now);
         sh.setup = home::NOTHING;
     } else if pick >= 0 {
@@ -663,7 +678,8 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: ga
         if p.three { sh.went_view = p.view; }
     } else if screen == PICKER {
         var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
-        picker::frame(g, area, sh.prefs.stars[puzzles::loaded], sh.puzzle.index, sh.theme, spot);
+        var variant = sh.prefs.variant;
+        picker::frame(g, area, sh.prefs.stars[puzzles::loaded], sh.puzzle.index, sh.theme, spot, variant);
         l = in_tile(sh, spot, g.scale);
     } else {
         home::frame(over, g, l, rules::VARIANTS[board_of(sh, HOME).variant].size, area, sh.left, sh.prefs, room);

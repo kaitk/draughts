@@ -86,7 +86,7 @@ fn main() {
     drive::idle(sh, g, 0.5);
     show(sh, "puzzles");
     print("  ", library(g));
-    drive::tap(sh, g, drive::tile(g, 1), 0.6);              // learn
+    drive::tap(sh, g, drive::tile(g, drive::LEARN_ROW), 0.6);   // learn
     show(sh, "learn tapped");
     print("  tiles ", drive::tiles(g));
 
@@ -123,7 +123,7 @@ fn main() {
     show(sh, "puzzles");
     var themes = 0;
     for t in puzzles::THEMES { if puzzles::theme_count(puzzles::all, t) > 0 { themes++; } }
-    print("  back and a row per theme of the set: ", drive::tiles(g) == themes + 1, ", king shots' mark ",
+    print("  back and a row per theme of the set: ", drive::tiles(g) == themes + drive::LEARN_ROW, ", king shots' mark ",
           icons(g, gui::KING));
     print("  kept: ", kept(sh));
 }

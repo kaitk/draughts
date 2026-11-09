@@ -97,9 +97,9 @@ fn screens(o: i64, gear: i64) {
     check("settings from home", [gear]);
     check("settings from the game", [o, 1]);
     check("the puzzles", [3 + o]);
-    check("a theme", [3 + o, 1]);
-    check("a puzzle", [3 + o, 1, 1]);
-    check("settings from a puzzle", [3 + o, 1, 1, 1]);
+    check("a theme", [3 + o, drive::LEARN_ROW]);
+    check("a puzzle", [3 + o, drive::LEARN_ROW, 1]);
+    check("settings from a puzzle", [3 + o, drive::LEARN_ROW, 1, 1]);
 }
 
 fn main() {

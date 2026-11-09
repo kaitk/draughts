@@ -126,3 +126,4 @@ count.repeated = Kordus
 game.lookout = Valvur
 game.hint = Vihje
 game.where_to = Kuhu?
+puzzles.for_now = Esialgu rahvusvahelise kabe ülesanded

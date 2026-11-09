@@ -99,9 +99,9 @@ fn main() {
     show(sh, "puzzles");
     print("  ", picker(g), ", marks ", icons(g, gui::BOOK), " ", icons(g, gui::JUMPS), " ", icons(g, gui::CROWN), " ",
           icons(g, gui::TARGET), " ", icons(g, gui::KING));
-    drive::tap(sh, g, drive::tile(g, 2), 0.6);              // captures: shut, nothing
+    drive::tap(sh, g, drive::tile(g, drive::LEARN_ROW + 1), 0.6); // captures: shut, nothing
     show(sh, "captures tapped");
-    drive::tap(sh, g, drive::tile(g, 1), 0.7);              // learn
+    drive::tap(sh, g, drive::tile(g, drive::LEARN_ROW), 0.7);   // learn
     show(sh, "learn tapped");
     print("  ", picker(g), ", levels ", icons(g, gui::LEVEL), " ", icons(g, gui::LEVEL + 1), " ",
           icons(g, gui::LEVEL + 2));

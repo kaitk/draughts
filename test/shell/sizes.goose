@@ -13,7 +13,8 @@
 // faces' (each character half its face wide), wider than the real font's, so a word
 // that fits here fits on screen. The phones again with the Pixel 7a's insets (its
 // camera's cutout at the top in portrait and at a side in landscape, either side, and
-// its gesture bar at the bottom): every tile and the board inside the safe area; and
+// its gesture bar at the bottom): every tile and the board inside the safe area, but a
+// scrolling list's rows past its foot (the puzzles' library on a 9:16 phone); and
 // the 16:10 tablet with its hidden navigation bar at the bottom, and the 13" and 11"
 // iPad's landscape with their status bar and home indicator, settings keeping both
 // groups on each. Then a phone's tabs:
@@ -55,6 +56,18 @@ fn style(g: gui::Gui&, n: i64) -> f32 {
     return -1.0;
 }
 
+// Whether the n-th tile is in a scrolling list (gui::scroll_begin), drawn only inside its
+// view: the rows past its foot are reached by scrolling.
+fn listed(g: gui::Gui&, n: i64) -> bool {
+    var k = 0;
+    for q in g.quads {
+        guard q.look.x == gui::BUTTON else { continue; }
+        if k == n { return q.extra.z >= gui::CLIP; }
+        k++;
+    }
+    return false;
+}
+
 // What the last frame declared on screen `what`: its tiles, the smallest tap across and
 // down, the board, and anything out of place. `board_shows` when the screen has a board,
 // `card` when the win's card sits on it.
@@ -81,7 +94,9 @@ fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool,
             narrow = min(narrow, r.z);
             low = min(low, r.w);
         }
-        if !inside(r, safe) { format(wrong, " tile ", i, " off the safe area;"); }
+        // A list's rows past the safe area's foot scroll into it (the puzzles' library).
+        let below = listed(g, i) && r.y >= safe.y && r.x >= safe.x && r.x + r.z <= safe.x + safe.z;
+        if !inside(r, safe) && !below { format(wrong, " tile ", i, " off the safe area;"); }
         for j in i { if overlaps(r, drive::rect(g, j)) { format(wrong, " tiles ", j, " and ", i, " overlap;"); } }
         if board_shows && b.z > 0.0 && overlaps(r, b) && !(card && i >= n - 2) { format(wrong, " tile ", i, " on the board;"); }
         if tap && !switched && (r.z < 88.0 * u - 0.5 || r.w < 88.0 * u - 0.5) { small++; }
@@ -302,7 +317,7 @@ fn tabs(g: gui::Gui&) {
     var picker = showing(shell::PICKER, home::NOTHING);
     at_rest(picker, g);
     let rows = drive::tiles(g);
-    drive::tap(picker, g, drive::tile(g, 1), 2.0);
+    drive::tap(picker, g, drive::tile(g, drive::LEARN_ROW), 2.0);
     drive::idle(picker, g, 2.1);
     print("the puzzles' Learn row: theme ", picker.theme, ", tiles ", rows, " then ", drive::tiles(g));
 }

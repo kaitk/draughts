@@ -15,6 +15,9 @@ import shell from "../../src/shell";
 var over: game::Overlay;
 // The screen the shell's frames lay out on, in pixels; its short side sets the scale.
 var size = float2 { 1280.0, 800.0 };
+// The puzzles' library's first theme row among its tiles: after back and the draughts
+// switch's three.
+let LEARN_ROW = 4;
 
 // A square's name ("c3"), or "-" for none.
 fn name(v: rules::Variant&, sq: i64) -> u8[>..] {
