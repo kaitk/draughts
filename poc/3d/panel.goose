@@ -14,7 +14,7 @@ import ui;
 let X:      f32 = 12.0;
 let Y:      f32 = 12.0;
 let WIDTH:  f32 = 300.0;
-let HEIGHT: f32 = 664.0;
+let HEIGHT: f32 = 738.0;
 let ROW:    f32 = 22.0;
 let SETTLE: f64 = 0.35;  // seconds a held slider waits before baking
 
@@ -117,20 +117,23 @@ fn frame(p: Panel&, now: f64, input: bool) -> bool {
         slider(c, "waviness", p.stone.wave, 0.0, 2.5);
         slider(c, "polish", p.stone.polish, 0.0, 1.0);
         slider(c, "tint", p.stone.tint, 0.0, 1.0);
-        heading(c, "Carving (spring 1)");
+        heading(c, "Carving (spring 1, 2; summer 4, 5)");
         variant(c, "spring", p.spring, looks::SPRINGS - 1);
+        variant(c, "motif", p.carving.motif, 2);
         slider(c, "depth", p.carving.depth, 0.0, 0.04);
-        slider(c, "scale", p.carving.scale, 3.0, 15.0);
+        slider(c, "scale", p.carving.scale, 3.0, 24.0);
         slider(c, "moss", p.carving.moss, 0.0, 1.0);
+        slider(c, "amber", p.carving.amber, 0.0, 1.0);
+        slider(c, "lichen", p.carving.lichen, 0.0, 1.0);
         slider(c, "warmth", p.carving.warmth, -1.0, 1.0);
-        slider(c, "jade", p.carving.jade, 0.0, 1.0);
+        slider(c, "dark", p.carving.jade, 0.0, 1.0);
         ui::layout_row_dynamic(c, ROW + 4.0, 3);
         p.print_at = scaled(ui::widget_bounds(c), s);
         if ui::button_label(c, "Print") { printed = true; }
         if ui::button_label(c, "Defaults") {
             p.finish = looks::finish_for(p.look, p.wood);
             p.stone = looks::marble(p.marble);
-            p.carving = looks::ELVEN;
+            p.carving = looks::carving_for(looks::shown(p.look, p.spring));
         }
         if ui::button_label(c, "Plain") { p.finish = looks::PLAIN; }
     }
@@ -194,7 +197,8 @@ fn num4(out: u8[>..]&, v: float4) {
 }
 
 // The values as Goose literals, for looks::finish (or a summer variant's in
-// looks::finish_for), looks::marble and looks::ELVEN.
+// looks::finish_for), looks::marble and a carved look's looks::Carving (ELVEN, BALTIC,
+// AMBER).
 fn print_values(p: Panel&) {
     let f = p.finish;
     var a: u8[>..] = [];
@@ -234,12 +238,16 @@ fn print_values(p: Panel&) {
     print(b);
     let k = p.carving;
     var e: u8[>..] = [];
-    e.append("// spring carving\nlooks::Carving { depth: ");
+    format(e, "// carving, look ", looks::shown(p.look, p.spring), "\nlooks::Carving { motif: ", k.motif, ", depth: ");
     num(e, k.depth);
     e.append(", scale: ");
     num(e, k.scale);
     e.append(", moss: ");
     num(e, k.moss);
+    e.append(", amber: ");
+    num(e, k.amber);
+    e.append(", lichen: ");
+    num(e, k.lichen);
     e.append(", warmth: ");
     num(e, k.warmth);
     e.append(", jade: ");

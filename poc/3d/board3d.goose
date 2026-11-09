@@ -5,7 +5,7 @@
 // freely round the board; R resets the view; T, or a long press for touch, switches the
 // theme; K switches the king between a stack of two discs and one crowned disc; W cycles
 // the wood's model and M the winter frame's marble (task 039); S cycles summer's variants;
-// G spring's look, the birch or the elven carved stone (task 041); P shows the tuning
+// G spring's look: the birch, the elven stone or the Baltic oak (task 041); P shows the tuning
 // panel (panel.goose), V prints its values. Nothing of the app's shell.
 //
 //   cd poc/3d
@@ -15,8 +15,8 @@
 //   ../../build/board3d --theme winter --king crown
 //   ../../build/board3d --wood 0                  # the wood's model: 0 to 3, 2 the default
 //   ../../build/board3d --theme winter --marble 1 # the frame's marble: 0 the slate, 1 to 4
-//   ../../build/board3d --summer 2                # summer's variant: 0 to 3 (looks::SUMMERS)
-//   ../../build/board3d --theme spring --spring 1 # spring's look: 0 the birch, 1 carved stone
+//   ../../build/board3d --summer 2                # summer's variant: 0 to 5 (looks::SUMMERS), 4 and 5 amber
+//   ../../build/board3d --theme spring --spring 1 # spring's look: 0 the birch, 1 elven, 2 Baltic
 //   ../../build/board3d --panel                   # the tuning panel shown; --plain no finish
 //   ../../build/board3d --bench 200
 //
@@ -148,11 +148,12 @@ fn look_of(season: i64) -> i64 { if season == looks::SUMMER { looks::summer_look
 // timed.
 fn apply(g: render3d::Gpu&, which: i64) {
     let c = clock();
-    let own = looks::wood_for(which);
+    let shown = looks::shown(which, g.spring);
+    let own = looks::wood_for(shown);
     let wood = if own >= 0 { own } else { wood_chosen };
-    if wood != g.wood || own >= 0 || looks::wood_for(g.look) >= 0 {
+    if wood != g.wood || own >= 0 || looks::wood_for(looks::shown(g.look, g.spring)) >= 0 {
         render3d::choose(g, wood, -1);
-        g.finish = looks::finish_for(which, g.wood);
+        g.finish = looks::finish_for(shown, g.wood);
     }
     render3d::apply(g, which, 8);
     print("theme ", which, " applied in ", ((clock() - c) * 1000.0) as i64, " ms (wood ", g.wood,

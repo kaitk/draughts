@@ -116,10 +116,10 @@ cd poc/3d
 ../../build/board3d                                 # a drag turns; Tab or a double click switches mode; R resets
 ../../build/board3d --theme winter --king crown     # T or a long press switches the theme, K the king
 ../../build/board3d --wood 3 --theme winter --marble 1   # W cycles the wood, M the winter frame's marble
-../../build/board3d --theme spring --spring 1       # G switches spring's look: 0 the birch, 1 the carved stone
+../../build/board3d --theme spring --spring 1       # G switches spring's look: 0 the birch, 1 elven stone, 2 Baltic oak (task 041)
 ../../build/board3d --shot out.png --turn 180       # the board turned under the light, as the hot-seat turn
 ../../build/board3d --panel                         # the tuning panel shown (P toggles it, V prints)
-../../build/board3d --summer 2 --panel              # summer's variant, 0 to 3 (S cycles; task 039); the app takes --summer N too
+../../build/board3d --summer 2 --panel              # summer's variant, 0 to 5 (S cycles; tasks 039, 041); the app takes --summer N too
 ../../build/board3d --shot out.png --size 1920x1200 [--yaw 20 --pitch 40]   # one frame, headless
 ../../build/board3d --bench 1000 --size 1920x1200   # frame timing, headless
 ../../build/board3d --frames 200                    # the window's loop hidden, a drag, T, K and a long press injected
@@ -241,7 +241,9 @@ the pass); it keeps the camera, the input, the fixed position, and the bench. It
   scale and warmth (`looks::Finish`), and the marble, its veins' contrast, waviness,
   polish and tint (`looks::Marble`), and spring's look with its carving's depth, scale
   (repeats per side), moss, stone warmth and jade depth (`looks::Carving`, task 041,
-  baked again through `render3d::carve`). The values live in the look data
+  baked again through `render3d::carve`), and since the carved looks (task 041) the
+  carving's motif, amber and lichen, each carved look with its own defaults
+  (`looks::carving_for`). The values live in the look data
   (`src/render3d/looks.goose`), per wood model and per marble, so the app bakes the
   same; `render3d::tune` bakes again only what they show on (the wood's surfaces where
   the look has wood, the frame map where its frame is stone), when they settle: on the
@@ -552,6 +554,9 @@ after the launch, `dumpsys meminfo`. Before is `e279c86` with only the bench add
   0 to 3 and spring 0 and 1 against `e974ace`'s: 53 to 55 dB each, the shadow map's
   difference, none visible in 200% crops of the frame's corner (the carving, the seams,
   the pickling, the marble all as before).
+- **The carved looks** (task 041, 2026-11-09): the Mac's warm bake for elven and amber
+  about 54 ms against the birch's 24, Baltic 35; the Pixel's not measured (not
+  connected). The bake's pipeline is larger by the folk band's and the signs' SDFs.
 - **After moves:** GL mtrack at rest after c3–d4 on Russian 219 MB against 210 at launch.
 - **What's left:** the 3D board on top of the flat board's memory is still about 160 to
   175 MB: the surfaces 70 MB, the 4× target and its 16-bit depth about 60, the kept

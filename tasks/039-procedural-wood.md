@@ -237,6 +237,16 @@ of the four, run to run within the same spread. Shots in the session's scratchpa
 (`shots/summer/sheet.png`, `strip.png` beside autumn, `corners.png`, `squares.png`).
 The user to pick one on the Mac and tune it.
 
+## Carved variants (2026-11-09)
+
+Summer 4 and 5 are amber stone, a carved granite frame round honed sandstone and red
+stone squares (4) or limestone and serpentine (5); spring 2 is Baltic folk oak on wood
+2 with an oiled finish (`OILED_OAK`, `wood_for`, `finish_for`). All in task 041. The
+stone surfaces gained a finer mottling with pale veins (a stone surface's `*_ring`, unused
+by stone before) and the frame granite's speckle (`Theme.stone.w`). The mitred bands'
+split moved into the gap between them, so the foot of each mitred piece's face keeps its
+own seed (task 041): autumn's and summer's mitred frames change in that strip only.
+
 ## Acceptance criteria
 
 - [x] `--wood N` and W switch the wood's model, rebaking only on a switch

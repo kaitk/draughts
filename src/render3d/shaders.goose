@@ -637,6 +637,9 @@ let BAKE_FRAG = """
         vec4 seam;       // the frame's caulked seams: x a plank's width, y half width, z dark
         vec4 carve;      // looks::Carving: depth, repeats per side, moss; w 1 carved
         vec4 moss;       // the moss's color (sRGB), w: how patchy
+        vec4 carve_more; // looks::Carving: x the motif, y amber, z lichen
+        vec4 fill;       // the carving's fill (looks::Theme.fill, sRGB), w: how much
+        vec4 lichen;     // the lichen's color (sRGB)
     };
     const float FIELD = 4.0;
     vec3 srgb(vec3 c) { return pow(c, vec3(2.2)); }
@@ -662,6 +665,17 @@ let BAKE_FRAG = """
             a *= 0.5;
         }
         return s / 0.97;
+    }
+    // Three octaves, for the figures that don't need five.
+    float fbm3(vec2 p) {
+        float s = 0.0;
+        float a = 0.5;
+        for (int i = 0; i < 3; i++) {
+            s += a * vnoise(p);
+            p = p * 2.03 + vec2(17.1, 9.2);
+            a *= 0.5;
+        }
+        return s / 0.875;
     }
 
     // Grooves along the grain at y: two contours of a noise drawn out along it,
@@ -841,6 +855,25 @@ let BAKE_FRAG = """
             float pale = dot(base.rgb, vec3(0.33)) > 0.5 ? -1.0 : 1.0;
             w.albedo *= (1.0 + stone.y * (cloud - 0.5) * 2.0) * (1.0 + pale * stone.x * vein);
             w.rough += stone.z * ((cloud - 0.5) * 2.0 + 0.5 * vein);
+            if (ring.x > 0.0) {
+                // A finer mottling (a stone surface's ring.x, ring.y its features a unit),
+                // and paler veins winding through it (ring.z), as jade and serpentine have.
+                vec2 mq = q * ring.y;
+                float mot = fbm3(mq + vec2(vnoise(mq * 0.7 + 3.3), 0.0) * 1.2 + 21.0);
+                float ridge = ring.z > 0.0 ? 1.0 - smoothstep(0.0, 0.07, abs(fbm3(mq * 0.6 + 41.0) - 0.5)) : 0.0;
+                w.albedo *= (1.0 + ring.x * (mot - 0.5) * 2.0) * (1.0 + ring.z * ridge);
+                w.rough += 0.1 * ring.x * (0.5 - mot);
+            }
+            if (stone.w > 0.0 && mode.x > 0.5) {
+                // Granite on the frame: dark and pale grains a texel or two across.
+                float dk = smoothstep(0.6, 0.85, vnoise(q * 120.0));
+                float lt = smoothstep(0.68, 0.88, vnoise(q * 95.0 + 31.0));
+                w.albedo *= (1.0 - 0.4 * stone.w * dk) * (1.0 + 0.35 * stone.w * lt);
+                w.rough += 0.08 * stone.w * (dk - lt);
+                w.height += 0.3 * stone.w * (lt - dk);
+                // Coarse: the mottling raised a little, the stone's bumpy grain.
+                if (ring.x > 0.0) w.height += 2.0 * ring.x * (fbm3(q * ring.y * 1.5 + 61.0) - 0.5);
+            }
         }
         return w;
     }
@@ -883,16 +916,6 @@ let BAKE_FRAG = """
     // form. q: x across the frame map's grain, y along it (world x on the block), in
     // world units. Flat: polished stone has no relief. The colors drawn toward the
     // board's steel blue by the tint, their lightness kept.
-    float fbm3(vec2 p) {
-        float s = 0.0;
-        float a = 0.5;
-        for (int i = 0; i < 3; i++) {
-            s += a * vnoise(p);
-            p = p * 2.03 + vec2(17.1, 9.2);
-            a *= 0.5;
-        }
-        return s / 0.875;
-    }
     vec2 cells(vec2 p) {
         vec2 i = floor(p);
         vec2 f = fract(p);
@@ -1032,28 +1055,39 @@ let BAKE_FRAG = """
         return c;
     }
 
-    // The carved frame (task 041, carve.w): a band of two vines on the frame's top and
-    // one on its outer face, interlaced over and under, slender leaves in the eyes
-    // between their crossings and a pair at each crossing, a leaf knot (a boss, a ring,
-    // four leaves) on each corner's diagonal; the ground round them cut in, the motifs
-    // domed back up to the surface. A height field the bake's normal takes, the hollows
-    // a cavity for the occlusion and the moss. Every edge at least a texel soft, so the
-    // mips average it and the frame's Toksvig term widens the roughness where they do.
-    // Signed distances in world units: the stems as offset curves, the leaves vesicas.
+    // The carved frame (task 041, carve.w), its motif carve_more.x: 0 two thin vines in
+    // low relief on the frame's top and outer face, interlaced over and under, slender
+    // leaves in the eyes between their crossings and a pair at each crossing, a leaf knot
+    // (a boss, a ring, four leaves) on each corner's diagonal, a shallow outline cut round
+    // them and the stone beyond it left whole; 1 the Baltic folk band cut into the top
+    // between two lines, diamonds with a cross in each and between them zigzags and a
+    // running meander by turns, a sun wheel (a ring, eight spokes) on each corner's
+    // diagonal and a tree of life mid-side on the far and near sides; 2 signs cut into the
+    // top, for amber: sun signs and small runic marks by turns, a tree of life mid-side on
+    // the far and near sides, a sun on each corner. A height field the bake's normal
+    // takes, the cuts a cavity for the occlusion, the moss and the fill (Theme.fill: the
+    // leaves' tint, the cut wood's color, the amber). Every edge at least a texel soft, so
+    // the mips average it and the frame's Toksvig term widens the roughness where they
+    // do. Signed distances in world units: the stems as offset curves, the leaves
+    // vesicas, the cut strokes segments, rings and wedges.
     // The map is the mitred frame's (LIT_FRAG): each piece its own band of the map,
     // along it the world's x or z, across the length along the profile (v_uv.y). Two
     // pieces meet on each corner's diagonal, the one at +along and the other at -along
-    // in its own band, so the pattern is laid out by |along| near the corners: the
-    // knot centred on the diagonal, symmetric, hides the mirror's seam. Along the corners'
-    // quarter round the vines run on an arc, at a length along of the band's middle.
+    // in its own band, so the pattern is laid out by |along| near the corners (the cut
+    // motifs everywhere, mirrored about each side's middle): the knot or the medallion
+    // centred on the diagonal, symmetric, hides the mirror's seam. Along the corners'
+    // quarter round the band runs on an arc, at a length along of the band's middle.
     const float PI = 3.14159265;
     const float C_INNER = 4.1;
     const float TOP_AT = 0.0449;     // v_uv.y less the distance out on the frame's top
     const float TOP_MID = 0.256;     // the top band's middle across (v_uv.y)
     const float SIDE_MID = 0.86;     // the outer face's band's
-    const float BAND = 0.14;         // a band's half width
-    const float STRAND_W = 0.017;    // a vine's half width
-    const float SWAY = 0.078;        // how far a vine sways from the band's middle
+    const float BAND = 0.17;         // the vines' band's half width
+    const float STRAND_W = 0.016;    // a vine's half width
+    const float SWAY = 0.1;          // how far a vine sways from the band's middle
+    const float OUTLINE = 0.011;     // the outline cut round the vines, its width
+    const float CUT_W = 0.0135;      // a cut stroke's half width
+    const float FOLK_LINE = 0.182;   // the folk band's lines, from its middle
     float vesica(vec2 p, float r, float d) {
         p = abs(p);
         float b = sqrt(r * r - d * d);
@@ -1077,12 +1111,14 @@ let BAKE_FRAG = """
         float m = clamp((-d + 0.5 * texel) / (round + texel), 0.0, 1.0);
         return m * (2.0 - m);
     }
-    // The band at x along (signed, by its middle's length), y across from its middle, its
-    // corner's arc of radius rc: the motifs' height (0..1) and the ground's mask.
-    vec2 vines(float x, float y, float rc) {
+    // The vines' band at x along (signed, by its middle's length), y across from its
+    // middle, its corner's arc of radius rc: the motifs' height (0..1), the cut's mask
+    // (the outline round them), the leaves' share, how near the motifs (where moss
+    // clings).
+    vec4 vines(float x, float y, float rc) {
         float texel = size.z / size.x;
-        float ground = 1.0 - smoothstep(BAND - 0.004, BAND + 0.004 + texel, abs(y));
-        if (ground <= 0.0) return vec2(0.0);
+        float band = 1.0 - smoothstep(BAND - 0.004, BAND + 0.004 + texel, abs(y));
+        if (band <= 0.0) return vec4(0.0);
         float xc = C_INNER + rc * 0.25 * PI;
         float m = max(floor((carve.y - 1.0) * 0.5 + 0.5), 1.0);
         float k = PI * (m + 0.5) / xc;
@@ -1102,6 +1138,7 @@ let BAKE_FRAG = """
         float under = dome(d_under, 0.6 * STRAND_W) * (1.0 - 0.45 * near)
                     * mix(1.0, smoothstep(0.004, 0.011 + texel, d_over), near);
         float h = max(dome(d_over, STRAND_W), under);
+        float dm = min(d1, d2);
         // Leaves: one from each vine into each eye, the two turned half round each other
         // (the upper one from right of the middle reaching down and on, the lower from
         // left of it reaching up and back), curling; a pair at each crossing reaching
@@ -1115,51 +1152,231 @@ let BAKE_FRAG = """
             float xb = xe + side * 0.42 * half_eye;
             float yb = float(s) * SWAY * cos(k * xb);
             vec2 dir = normalize(vec2(-side * 0.88, -side * 0.48));
-            lf = min(lf, leaf(vec2(x, y), vec2(xb, yb) - dir * 0.04, dir, 0.25, 0.25));
+            lf = min(lf, leaf(vec2(x, y), vec2(xb, yb) - dir * 0.045, dir, 0.28, 0.25));
         }
         float lean = mod(j, 2.0) < 0.5 ? 1.0 : -1.0;
         for (int s = -1; s <= 1; s += 2) {
             vec2 dir = normalize(vec2(0.5 * lean, float(s)));
-            lf = min(lf, leaf(vec2(x, y), vec2(xj, 0.0) + dir * 0.022, dir, 0.1, -0.25 * lean * float(s)));
+            lf = min(lf, leaf(vec2(x, y), vec2(xj, 0.0) + dir * 0.025, dir, 0.12, -0.25 * lean * float(s)));
         }
-        h = max(h, 0.85 * dome(lf, 0.02) * (1.0 - dome(min(d1, d2) - 0.003, 0.004)));
+        float stems = dome(dm - 0.003, 0.004);
+        h = max(h, 0.85 * dome(lf, 0.02) * (1.0 - stems));
+        float leaves = (1.0 - smoothstep(-texel, texel, lf)) * (1.0 - stems);
+        dm = min(dm, lf);
         // The knot on the corner's diagonal: the vines pass under a ring, a boss over
         // their crossing, four leaves out from the ring.
         vec2 kp = vec2(abs(x) - xc, y);
         float kr = length(kp);
         if (kr < 0.25) {
-            float ring = abs(kr - 0.082) - 0.014;
+            float ring = abs(kr - 0.08) - 0.011;
             h *= smoothstep(0.003, 0.010 + texel, ring);
-            h = max(h, dome(ring, 0.014));
-            float boss = kr - 0.04;
-            h = max(h, dome(boss, 0.035));
+            leaves *= smoothstep(0.003, 0.010 + texel, ring);
+            h = max(h, dome(ring, 0.011));
+            float boss = kr - 0.035;
+            h = max(h, dome(boss, 0.03));
             float kl = 1e3;
             for (int i = 0; i < 4; i++) {
                 float a = radians(i < 2 ? 40.0 : 140.0) * (i % 2 == 0 ? 1.0 : -1.0);
                 vec2 dir = vec2(cos(a), sin(a));
-                kl = min(kl, leaf(kp, dir * 0.085, dir, 0.1, 0.2 * (i % 2 == 0 ? 1.0 : -1.0)));
+                kl = min(kl, leaf(kp, dir * 0.08, dir, 0.1, 0.2 * (i % 2 == 0 ? 1.0 : -1.0)));
             }
-            h = max(h, 0.9 * dome(kl, 0.02) * smoothstep(0.0, 0.006, ring));
+            float out_ring = smoothstep(0.0, 0.006, ring);
+            h = max(h, 0.9 * dome(kl, 0.02) * out_ring);
+            leaves = max(leaves, (1.0 - smoothstep(-texel, texel, kl)) * out_ring);
+            dm = min(dm, min(min(ring, boss), kl));
         }
-        return vec2(h, ground);
+        // The cut: an outline of OUTLINE round the motifs, its outer edge a texel soft.
+        float cut = band * (1.0 - smoothstep(OUTLINE, OUTLINE + texel, dm));
+        return vec4(h, cut, leaves, band * (1.0 - smoothstep(OUTLINE, 0.045, dm)));
     }
-    // The carving at the frame map's q (x across from the band's start, y along): its
-    // height (world units, 0 the surface), its hollow (0..1: the cut ground the motifs
-    // leave), and how near a motif's foot (where moss gathers).
-    vec3 carving(vec2 q) {
+
+    float seg(vec2 p, vec2 a, vec2 b) {
+        vec2 pa = p - a;
+        vec2 ba = b - a;
+        return length(pa - ba * clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0));
+    }
+    // The angle of p off the nearest of n spokes (one along +x), turned by `turn` spokes.
+    float spoke(vec2 p, float n, float turn) {
+        float k = 2.0 * PI / n;
+        float a = atan(p.y, p.x + 1e-7) - turn * k;
+        return a - k * floor(a / k + 0.5);
+    }
+    // A tree of life `s` from its middle to its top, upright along +y: a trunk, three
+    // pairs of branches rising out, a twig up from each, two pairs of roots. The
+    // distance to its strokes' middles.
+    float tree(vec2 p, float s) {
+        p /= s;
+        vec2 q = vec2(abs(p.x), p.y);
+        float d = seg(q, vec2(0.0, -0.75), vec2(0.0, 0.98));
+        for (int i = 0; i < 3; i++) {
+            float y0 = -0.38 + 0.34 * float(i);
+            vec2 tip = vec2(0.95 - 0.2 * float(i), y0 + 0.62);
+            d = min(d, seg(q, vec2(0.0, y0), tip));
+            vec2 mid = mix(vec2(0.0, y0), tip, 0.5);
+            d = min(d, seg(q, mid, mid + vec2(0.02, 0.34)));
+            d = min(d, seg(q, tip, tip + vec2(0.16, -0.12)));
+        }
+        d = min(d, seg(q, vec2(0.0, -0.55), vec2(0.55, -0.95)));
+        d = min(d, seg(q, vec2(0.0, -0.75), vec2(0.22, -1.0)));
+        return d * s;
+    }
+    // A sun wheel of radius r: a ring and eight spokes from the hub, widening out.
+    float sun_wheel(vec2 p, float r) {
+        float l = length(p);
+        float ad = spoke(p, 8.0, 0.0);
+        float spokes = max(abs(l * sin(ad)) - CUT_W * (0.4 + 1.3 * l / r), l - 0.78 * r);
+        return min(abs(l - r) - CUT_W, spokes);
+    }
+    // Two diamonds one in the other, `r` the outer's half diagonal, a cross in the inner.
+    float diamond(vec2 p, float r) {
+        vec2 a = abs(p);
+        float outer = abs(a.x + a.y - r) * 0.7071 - CUT_W;
+        float inner = abs(a.x + a.y - 0.56 * r) * 0.7071 - 0.85 * CUT_W;
+        float cross = max(min(a.x, a.y) - 0.8 * CUT_W, max(a.x, a.y) - 0.27 * r);
+        return min(min(outer, inner), cross);
+    }
+    // A zigzag along t (from its start), y across, a its sway, len a wavelength, a small
+    // cross in each bay it leaves, above and below by turns.
+    float zigzag(float t, float y, float a, float len) {
+        float f = fract(t / len);
+        float z = a * (4.0 * abs(f - 0.5) - 1.0);
+        float norm = inversesqrt(1.0 + 16.0 * a * a / (len * len));
+        float d = abs(y - z) * norm - CUT_W;
+        vec2 up = abs(vec2((f - 0.5) * len, y - 0.45 * a));
+        vec2 dn = abs(vec2((f - floor(f + 0.5)) * len, y + 0.45 * a));
+        float c_up = max(min(up.x, up.y) - 0.75 * CUT_W, max(up.x, up.y) - 0.4 * a);
+        float c_dn = max(min(dn.x, dn.y) - 0.75 * CUT_W, max(dn.x, dn.y) - 0.4 * a);
+        return min(d, min(c_up, c_dn));
+    }
+    // A running meander along t: a line stepping between ±a, len a step and back.
+    float meander(float t, float y, float a, float len) {
+        float u = t - len * floor(t / len);
+        float d = abs(y - (u < 0.5 * len ? a : -a));
+        float yc = clamp(y, -a, a);
+        d = min(d, length(vec2(u, y - yc)));
+        d = min(d, length(vec2(u - 0.5 * len, y - yc)));
+        d = min(d, length(vec2(u - len, y - yc)));
+        return d - 0.9 * CUT_W;
+    }
+    // The folk band at x along (signed, by its middle's length), y across from its middle,
+    // on band `side` (0 the near side, 1 the far, 2 and 3 those along z), its corner's arc
+    // of radius rc: the cut strokes' signed distance. Diamonds at n steps from the side's
+    // middle to the corner's medallion (n from the repeats per side), a tree there on the
+    // far and near sides; zigzags and a meander between them by turns.
+    float folk(float x, float y, float rc, float side) {
+        float xc = C_INNER + rc * 0.25 * PI;
+        float n = max(floor(carve.y * 0.5 + 0.5), 2.0);
+        float step_ = xc / n;
+        float u = abs(x);
+        float j = clamp(floor(u / step_ + 0.5), 0.0, n);
+        vec2 e = vec2(u - j * step_, y);
+        bool trees = side < 1.5;
+        float up = side < 0.5 ? -1.0 : 1.0;
+        float d = abs(abs(y) - FOLK_LINE) - 0.8 * CUT_W;
+        float m = j > n - 0.5 ? sun_wheel(e, 0.155)
+                : (j < 0.5 && trees ? tree(vec2(e.x, e.y * up), 0.165) - CUT_W : diamond(e, 0.15));
+        d = min(d, m);
+        float g = min(floor(u / step_), n - 1.0);
+        float lo = g * step_ + (g < 0.5 && trees ? 0.2 : 0.175);
+        float hi = (g + 1.0) * step_ - (g > n - 1.5 ? 0.2 : 0.175);
+        float span = hi - lo;
+        if (span > 0.05) {
+            float t = u - lo;
+            float pat = mod(g, 2.0) < 0.5 ? zigzag(t, y, 0.08, span / max(floor(span / 0.17 + 0.5), 1.0))
+                                          : meander(t, y, 0.078, span / max(floor(span / 0.2 + 0.5), 1.0));
+            d = min(d, max(pat, max(lo - u, u - hi)));
+        }
+        return d;
+    }
+    // A sun sign of radius r: a disc and eight rays round it, eight shorter between.
+    float sun_sign(vec2 p, float r) {
+        float l = length(p);
+        float disc = l - 0.34 * r;
+        float t = clamp((l - 0.48 * r) / (0.52 * r), 0.0, 1.0);
+        float ray = max(abs(l * sin(spoke(p, 8.0, 0.0))) - 0.15 * r * (1.0 - t) - 0.25 * CUT_W,
+                        max(0.48 * r - l, l - r));
+        float t2 = clamp((l - 0.48 * r) / (0.3 * r), 0.0, 1.0);
+        float ray2 = max(abs(l * sin(spoke(p, 8.0, 0.5))) - 0.1 * r * (1.0 - t2) - 0.25 * CUT_W,
+                         max(0.48 * r - l, l - 0.78 * r));
+        return min(disc, min(ray, ray2));
+    }
+    // A runic mark `s` from its middle to its top, upright along +y, symmetric: kind 0 a
+    // stave with a chevron at its top, 1 a diamond on a stave, 2 two chevrons one over the
+    // other, 3 a stave crossed by two diagonals. The cut's signed distance.
+    float rune(vec2 p, float kind, float s) {
+        p /= s;
+        vec2 q = vec2(abs(p.x), p.y);
+        float d;
+        if (kind < 0.5) {
+            d = min(seg(q, vec2(0.0, -1.0), vec2(0.0, 1.0)), seg(q, vec2(0.0, 1.0), vec2(0.55, 0.42)));
+        } else if (kind < 1.5) {
+            d = abs(q.x + abs(p.y) - 0.55) * 0.7071;
+            d = min(d, seg(vec2(q.x, abs(p.y)), vec2(0.0, 0.55), vec2(0.0, 1.0)));
+        } else if (kind < 2.5) {
+            d = min(seg(q, vec2(0.0, 0.85), vec2(0.62, 0.25)), seg(q, vec2(0.0, 0.0), vec2(0.62, -0.6)));
+        } else {
+            d = min(seg(q, vec2(0.0, -1.0), vec2(0.0, 1.0)), seg(abs(p), vec2(0.0), vec2(0.55, 0.55)));
+        }
+        return d * s - 0.85 * CUT_W;
+    }
+    // The signs at x along, y across, on band `side`, its corner's arc of radius rc: suns
+    // and runic marks by turns at 2n steps from the side's middle to the corner, a tree
+    // of life in the middle of the far and near sides, a sun on the corner.
+    float signs(float x, float y, float rc, float side) {
+        float xc = C_INNER + rc * 0.25 * PI;
+        float n = 2.0 * max(floor(carve.y * 0.25 + 0.5), 1.0);
+        const float W = 1.45;   // the signs' strokes wider than the folk band's
+        float step_ = xc / n;
+        float u = abs(x);
+        float j = clamp(floor(u / step_ + 0.5), 0.0, n);
+        vec2 e = vec2(u - j * step_, y);
+        vec2 eu = vec2(e.x, side < 0.5 ? -e.y : e.y);
+        if (j < 0.5 && side < 1.5) return tree(eu, 0.185) - W * CUT_W;
+        if (mod(j, 2.0) < 0.5) return sun_sign(e, 0.16);
+        return rune(eu, mod(floor(j * 0.5) + side, 4.0), 0.11) - (W - 1.0) * CUT_W;
+    }
+
+    // What the carving gives a point of the frame map: its height (world units, 0 the
+    // surface), how far it is in the cut ground (0..1), how near a motif's foot (where
+    // moss gathers), the fill's share (Theme.fill), and how deep the amber is over the
+    // cut there (0..1, its glow).
+    struct Carve { float h; float hollow; float foot; float fill; float glow; };
+    // q: x across from the band's start, y along; band: the mitred piece (0 the near
+    // side, 1 the far, 2 and 3 the sides along z).
+    Carve carving(vec2 q, float band) {
+        Carve r = Carve(0.0, 0.0, 0.0, 0.0, 0.0);
         float across = q.x - 0.2;
         float along = q.y - 5.2;
         bool top = across < 0.55;
+        float motif = carve_more.x;
+        if (!top && motif > 0.5) return r;
         float mid = top ? TOP_MID : SIDE_MID;
         float rc = top ? TOP_MID - TOP_AT : 0.5;
-        float r = top ? max(across - TOP_AT, 0.01) : 0.5;
+        float rr = top ? max(across - TOP_AT, 0.01) : 0.5;
         float a = abs(along);
         float x = a;
-        if (a > C_INNER) x = C_INNER + rc * (0.5 * PI - acos(clamp((a - C_INNER) / r, 0.0, 1.0)));
-        vec2 v = vines(sign(along) * x, across - mid, rc);
-        float hollow = v.y * (1.0 - v.x);
-        float foot = v.y * (1.0 - smoothstep(0.0, 0.5, v.x)) * smoothstep(0.0, 0.15, v.x + 0.02);
-        return vec3(-carve.x * hollow, hollow, foot);
+        if (a > C_INNER) x = C_INNER + rc * (0.5 * PI - acos(clamp((a - C_INNER) / rr, 0.0, 1.0)));
+        float y = across - mid;
+        if (motif < 0.5) {
+            vec4 v = vines(sign(along) * x, y, rc);
+            r.hollow = v.y * (1.0 - v.x);
+            r.h = -carve.x * r.hollow;
+            r.foot = max(v.y * (1.0 - smoothstep(0.0, 0.5, v.x)) * smoothstep(0.0, 0.15, v.x + 0.02),
+                         0.6 * v.w * (1.0 - v.x));
+            r.fill = v.z;
+            return r;
+        }
+        // A rounded groove from the strokes' signed distance, deepest along their middle;
+        // the amber filling it to `level` below the surface, level and glossy.
+        float d = motif < 1.5 ? folk(x, y, rc, band) : signs(x, y, rc, band);
+        float cut = dome(d, motif < 1.5 ? CUT_W : 1.45 * CUT_W);
+        float level = 1.0 - carve_more.y;
+        r.h = -carve.x * min(cut, level);
+        r.hollow = cut;
+        r.foot = smoothstep(0.0, 0.3, cut) * (1.0 - smoothstep(0.3, 0.8, cut));
+        r.fill = carve_more.y > 0.0 ? smoothstep(level - 0.02, level + 0.1, cut) : smoothstep(0.0, 0.45, cut);
+        r.glow = clamp((cut - level) / max(carve_more.y, 1e-3), 0.0, 1.0);
+        return r;
     }
 
     // The frame map: the frame's wood or stone over a square, its grain along u.
@@ -1171,7 +1388,9 @@ let BAKE_FRAG = """
         c.q = p.yx;
         c.seed = 7.0;
         if ((mode.y > 0.5 && mode.y < 2.5 && frame_fig.w > 0.5) || carve.w > 0.5) {
-            float band = floor(c.q.x / 1.4);
+            // Each band 1.4 apart, its profile from 0.2 to 1.46 into it: split them in the
+            // gap between, so the foot of a piece's face keeps its own band.
+            float band = floor((c.q.x - 0.13) / 1.4);
             c.q.x -= band * 1.4;
             c.seed = 7.0 + 5.0 * band;
         }
@@ -1204,17 +1423,65 @@ let BAKE_FRAG = """
             w.cavity -= 0.3 * line;
         }
         if (carve.w > 0.5) {
+            Carve cv = carving(q, floor((seed - 7.0) / 5.0 + 0.5));
+            float across = q.x - 0.2;
             // The cut ground a little darker and rougher, moss settling in it in patches,
-            // most at the motifs' feet.
-            vec3 cv = carving(q);
-            float patch = smoothstep(0.35, 0.75, mix(0.5, fbm(q * vec2(3.0, 1.2) + seed), moss.w));
-            float m = clamp(carve.z * (1.2 * cv.y + 1.2 * cv.z) * patch, 0.0, 1.0);
+            // most at the motifs' feet, and along the frame's edges: its inner lip, its
+            // rounded edge, the foot of its face.
+            float patch = smoothstep(0.4, 0.75, mix(0.5, fbm(q * vec2(4.0, 1.6) + seed), moss.w));
+            float edges = max(max(1.0 - smoothstep(0.02, 0.075, across), smoothstep(1.08, 1.24, across)),
+                              0.6 * (1.0 - smoothstep(0.0, 0.06, abs(across - 0.5))));
+            float edge_moss = edges * smoothstep(0.42, 0.78, fbm(q * vec2(5.0, 1.4) + seed + 3.0));
+            float m = clamp(carve.z * ((1.2 * cv.hollow + 1.2 * cv.foot) * patch + edge_moss), 0.0, 1.0);
             float shade = 0.85 + 0.3 * vnoise(q * 40.0);
-            w.albedo *= 1.0 - 0.25 * cv.y;
+            // The cut's walls in their own shade where nothing fills them, a little
+            // grime round the motifs' feet.
+            w.albedo *= (1.0 - 0.45 * cv.hollow * (1.0 - cv.fill)) * (1.0 - 0.1 * cv.foot);
             w.albedo = mix(w.albedo, srgb(moss.rgb) * shade, m);
-            w.rough = mix(w.rough + 0.15 * cv.y, 0.75, m);
-            w.height += cv.x / (0.0015 * max(frame_surface.y, 1e-3));
-            w.cavity *= 1.0 - 0.25 * cv.y - 0.2 * cv.z;
+            w.rough = mix(w.rough + 0.15 * cv.hollow, 0.75, m);
+            w.cavity *= 1.0 - 0.3 * cv.hollow - 0.3 * cv.foot;
+            if (carve_more.z > 0.0) {
+                // Lichen: small round rosettes scattered over the stone, more on the outer
+                // face than on the top, out of the cuts, their rims frilled, paler toward
+                // the rim; matte and a little raised.
+                vec2 cq = q * 4.5 + seed * 3.1;
+                vec2 ci = floor(cq);
+                float share = 0.4 * carve_more.z * mix(0.5, 1.0, smoothstep(0.4, 0.7, across));
+                float lich = 0.0;
+                float rim = 0.0;
+                for (int k = 0; k < 9; k++) {
+                    vec2 id = ci + vec2(float(k % 3) - 1.0, float(k / 3) - 1.0);
+                    float h = h12(id + 7.7);
+                    if (h < share) {
+                        vec2 c = id + 0.2 + 0.6 * vec2(h12(id + 1.9), h12(id + 4.3)) - cq;
+                        float r = (0.2 + 0.22 * h12(id + 3.1)) * (0.88 + 0.24 * vnoise(cq * 9.0 + id));
+                        float l = length(c);
+                        float in_ = 1.0 - smoothstep(r - 0.06, r, l);
+                        lich = max(lich, in_);
+                        rim = max(rim, in_ * smoothstep(0.4 * r, r, l));
+                    }
+                }
+                lich *= 1.0 - cv.hollow;
+                vec3 lc = srgb(lichen.rgb) * (0.75 + 0.2 * vnoise(q * 90.0) + 0.25 * rim);
+                w.albedo = mix(w.albedo, lc, 0.85 * lich);
+                w.rough = mix(w.rough, 0.85, lich);
+                w.height += 0.5 * lich;
+            }
+            // The fill: the leaves' tint, the cut's lighter wood (its grain kept), or the
+            // amber: warm and glossy, level, darker where thin over the cut's walls and
+            // brighter where it lies deep (the light it scatters back), catching the light.
+            float f = cv.fill * fill.w;
+            if (carve_more.y > 0.0) {
+                vec3 deep = srgb(mix(fill.rgb, vec3(1.0, 0.9, 0.55), 0.4));
+                w.albedo = mix(w.albedo, mix(srgb(fill.rgb) * 0.3, deep * 1.15, pow(cv.glow, 0.6)), f);
+                w.rough = mix(w.rough, 0.08, f);
+                w.cavity = mix(w.cavity, 1.0, 0.8 * f);
+            } else {
+                vec3 fig = sqrt(max(w.albedo / srgb(frame.rgb), vec3(0.0)));
+                w.albedo = mix(w.albedo, srgb(fill.rgb) * fig, f);
+                w.rough = mix(w.rough, w.rough + 0.1, f);
+            }
+            w.height += cv.h / (0.0015 * max(frame_surface.y, 1e-3));
         }
         return w;
     }
@@ -1226,7 +1493,7 @@ let BAKE_FRAG = """
         w.rough = mix(w.rough, 0.8, c.seam);
         w.height -= c.dip;
         float m = max(abs(p.x), abs(p.y));
-        if (carve.w > 0.5 && m > FIELD) {
+        if (carve.w > 0.5 && carve_more.x < 0.5 && m > FIELD) {
             // The carved look's fine engraved line round the field, down the inlay's
             // middle, a texel soft.
             float texel = size.z / size.x;

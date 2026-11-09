@@ -96,8 +96,8 @@ fn main() {
     // --3d (alone) shows settings' Board row, hidden until the 3D board exists (task 015);
     // --wood N and --marble N choose the 3D board's wood (0..3) and winter frame's marble
     // (0 the slate, 1..4), to try them in the game (task 039); --summer N summer's 3D look
-    // (0..3, looks::SUMMERS); --spring N spring's look (0 the birch, 1 the elven carved
-    // stone, task 041).
+    // (0..5, looks::SUMMERS; 4 and 5 amber stone, task 041); --spring N spring's look (0
+    // the birch, 1 the elven carved stone, 2 the Baltic folk carved oak, task 041).
     // --dp N lays out N dp across the shorter side (and leaves the density floor off);
     // --inset L,T,R,B in dp stands for a phone's safe area; --density-floor F and
     // --display-scale S try the scale's floor (gui::scale_of), S standing for the

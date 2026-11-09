@@ -14,11 +14,19 @@ let COUNT = 4;
 // Summer's variants (the user, 2026-11-09: summer clearly apart from autumn, the coast at
 // sunset), looks after the seasons': 0 summer() itself, 1 SUMMER_OAK wood 3's crisp grain
 // in summer's palette, 2 SUMMER_PICKLED limewashed oak, 3 SUMMER_TEAK a teak deck frame
-// round sand and terracotta. T cycles the seasons; --summer N and S pick the variant.
-let SUMMERS = 4;
+// round sand and terracotta, 4 SUMMER_AMBER and 5 SUMMER_SERPENTINE a granite frame
+// carved with sun signs and trees of life filled with amber (task 041). T cycles the
+// seasons; --summer N and S pick the variant.
+let SUMMERS = 6;
 let SUMMER_OAK = 4;
 let SUMMER_PICKLED = 5;
 let SUMMER_TEAK = 6;
+let SUMMER_AMBER = 7;
+let SUMMER_SERPENTINE = 8;
+// Spring's carved looks (task 041), shown for spring by Gpu.spring (shown()): 1 the elven
+// stone, 2 the Baltic folk oak.
+let SPRING_ELVEN = 9;
+let SPRING_BALTIC = 10;
 
 struct Theme {
     photo: i64,             // the season's photograph, src/app/background.c's kind
@@ -72,6 +80,9 @@ struct Theme {
     // plank's width across the frame's top (world units; 0 none), y a seam's half width,
     // z how dark it is.
     seam: float4,
+    // A carved frame's fill (sRGB; shaders::BAKE_FRAG's carving): the vines' leaves'
+    // tint, the folk band's freshly cut wood, or the amber in the signs; w: how much.
+    fill: float4,
 }
 
 fn get(which: i64) -> Theme {
@@ -81,7 +92,20 @@ fn get(which: i64) -> Theme {
     if which == SUMMER_OAK { return summer_oak(); }
     if which == SUMMER_PICKLED { return summer_pickled(); }
     if which == SUMMER_TEAK { return summer_teak(); }
+    if which == SUMMER_AMBER { return summer_amber(); }
+    if which == SUMMER_SERPENTINE { return summer_serpentine(); }
+    if which == SPRING_ELVEN { return elven(); }
+    if which == SPRING_BALTIC { return baltic(); }
     return autumn();
+}
+
+// The look shown for `which` with spring's look `spring` (SPRING_LOOK..): spring's
+// carved ones their own.
+fn shown(which: i64, spring: i64) -> i64 {
+    guard which == SPRING else { return which; }
+    if spring == 1 { return SPRING_ELVEN; }
+    if spring == 2 { return SPRING_BALTIC; }
+    return SPRING;
 }
 
 // The look for summer's variant n (0 to SUMMERS - 1).
@@ -93,7 +117,7 @@ fn summer_look(n: i64) -> i64 {
 // The wood's model a look is made with, -1 for any (the one chosen).
 fn wood_for(look: i64) -> i64 {
     if look == SUMMER_OAK { return 3; }
-    if look == SUMMER_PICKLED || look == SUMMER_TEAK { return 2; }
+    if look == SUMMER_PICKLED || look == SUMMER_TEAK || look == SPRING_BALTIC { return 2; }
     return -1;
 }
 
@@ -103,6 +127,7 @@ fn finish_for(look: i64, wood: i64) -> Finish {
     guard wood == wood_for(look) else { return finish(wood); }
     if look == SUMMER_PICKLED { return PICKLED; }
     if look == SUMMER_TEAK { return OILED; }
+    if look == SPRING_BALTIC { return OILED_OAK; }
     return VARNISHED;
 }
 
@@ -142,6 +167,7 @@ fn autumn() -> Theme {
         tint:          float4 { 0.72, 0.5, 0.34, 0.45 },
         build:         float4 { 0.0, 1.0, 0.0, 0.0 },
         seam:          float4_0,
+        fill:          float4_0,
     };
 }
 
@@ -182,6 +208,7 @@ fn winter() -> Theme {
         tint:          float4 { 0.72, 0.76, 0.86, 0.35 },
         build:         float4 { 1.0, 0.0, 1.0, 0.0 },
         seam:          float4_0,
+        fill:          float4_0,
     };
 }
 
@@ -223,6 +250,7 @@ fn spring() -> Theme {
         tint:          float4 { 0.7, 0.74, 0.62, 0.4 },
         build:         float4 { 0.0, 1.0, 0.0, 0.0 },
         seam:          float4_0,
+        fill:          float4_0,
     };
 }
 
@@ -262,6 +290,7 @@ fn summer() -> Theme {
         tint:          float4 { 0.78, 0.56, 0.48, 0.42 },
         build:         float4 { 0.0, 1.0, 0.0, 0.0 },
         seam:          float4_0,
+        fill:          float4_0,
     };
 }
 
@@ -369,6 +398,10 @@ let PICKLED = Finish { varnish: 0.0, sanding: 0.25, grain: 1.0, rings: 1.0, warm
 // Summer's teak: oiled, a satin sheen, the relief a little softened.
 let OILED = Finish { varnish: 0.3, sanding: 0.3, grain: 1.0, rings: 1.0, warmth: 0.1, pickle: 0.0, caulk: 1.0 };
 
+// Spring's Baltic oak: oiled, a soft satin, the grain kept.
+let OILED_OAK = Finish { varnish: 0.35, sanding: 0.2, grain: 1.1, rings: 1.0, warmth: 0.0, pickle: 0.0,
+                         caulk: 1.0 };
+
 fn finish(wood: i64) -> Finish {
     if wood == 2 { return TUNED; }
     if wood == 3 { return VARNISHED; }
@@ -425,37 +458,39 @@ fn marble(which: i64) -> Marble {
 }
 
 // Spring's looks (task 041, the app's and the prototype's --spring): 0 the birch, 1 the
-// elven carved stone.
-let SPRINGS = 2;
+// elven carved stone, 2 the Baltic folk carved oak.
+let SPRINGS = 3;
 let SPRING_LOOK = 0;
 
-// Pale stone carved with flowing vines and slender leaves, as in overgrown elven ruins
-// (the user's idea, 2026-11-09; our own motifs): an ivory-white frame of soft polish
-// with a carved band of two interlaced vines on its top and outer face, a leaf knot at
-// each corner, faint moss in the hollows; ivory stone light squares and polished jade
-// dark ones with a cloudy figure, a fine engraved line round the field; ivory and deep
-// jade pieces. The carving's own values are Carving's; spring's light.
+// Pale stone with a fine vine line carved along the frame, as in overgrown elven ruins
+// (the user's idea, 2026-11-09, toned down to their image `Mossy Elven Checkers in
+// Birchwood.png`, our own motifs): a soft, slightly weathered ivory stone frame, two thin
+// vines flowing along its top and outer face in a shallow cut outline, crossing over and
+// under, sage-tinted leaves, a leaf knot at each corner, moss in the hollows and along
+// the frame's edges; ivory stone light squares with faint veins and cloudy olive jade
+// dark ones, a fine engraved line round the field; ivory and deep jade pieces. Colors
+// measured from the image; the carving's own values are Carving's; spring's light.
 fn elven() -> Theme {
     return Theme {
         photo:         2,
-        light_sq:      float4 { 0.9, 0.87, 0.79, 0.3 },
-        light_fig:     float4 { 0.6, 0.1, 0.05, 0.0 },
-        dark_sq:       float4 { 0.42, 0.52, 0.44, 0.2 },
-        dark_fig:      float4 { 0.6, 0.22, 0.06, 0.0 },
-        inlay:         float4 { 0.3, 0.38, 0.32, 0.25 },
-        inlay_fig:     float4 { 0.6, 0.15, 0.06, 0.0 },
-        frame:         float4 { 0.88, 0.85, 0.77, 0.32 },
-        frame_fig:     float4 { 0.6, 0.08, 0.06, 0.0 },
+        light_sq:      float4 { 0.875, 0.82, 0.77, 0.32 },
+        light_fig:     float4 { 0.6, 0.12, 0.06, 0.0 },
+        dark_sq:       float4 { 0.385, 0.44, 0.27, 0.22 },
+        dark_fig:      float4 { 0.8, 0.5, 0.15, 0.0 },
+        inlay:         float4 { 0.28, 0.33, 0.19, 0.25 },
+        inlay_fig:     float4 { 0.6, 0.2, 0.08, 0.0 },
+        frame:         float4 { 0.85, 0.81, 0.73, 0.45 },
+        frame_fig:     float4 { 0.6, 0.16, 0.08, 0.0 },
         surface:       float4 { 0.03, 0.0, 0.35, 0.5 },
         frame_surface: float4 { 0.0, 1.0, 0.0, 0.1 },
-        stone:         float4 { 0.04, 0.1, 0.1, 0.0 },
-        light_ring:    float4_0,
-        dark_ring:     float4_0,
-        frame_ring:    float4_0,
-        light_piece:   float4 { 0.93, 0.9, 0.82, 0.4 },
-        dark_piece:    float4 { 0.2, 0.3, 0.25, 0.25 },
-        piece_fig:     float4 { 0.04, 0.16, 0.0, 0.55 },
-        crown:         float4 { 0.2, 0.3, 0.25, 0.0 },
+        stone:         float4 { 0.07, 0.12, 0.12, 0.0 },
+        light_ring:    float4 { 0.05, 5.0, 0.03, 0.0 },
+        dark_ring:     float4 { 0.6, 4.5, 0.15, 0.0 },
+        frame_ring:    float4 { 0.06, 4.0, 0.0, 0.0 },
+        light_piece:   float4 { 0.86, 0.81, 0.72, 0.42 },
+        dark_piece:    float4 { 0.37, 0.41, 0.26, 0.28 },
+        piece_fig:     float4 { 0.04, 0.25, 0.0, 0.55 },
+        crown:         float4 { 0.37, 0.41, 0.26, 0.0 },
         edge:          float4 { 0.0, 0.0, 0.0, 0.0 },
         line:          float4 { 0.0, 0.0, 0.0, 0.0 },
         key:           float4 { -0.5, 0.85, -0.45, 3.3 },
@@ -467,29 +502,128 @@ fn elven() -> Theme {
         tint:          float4 { 0.7, 0.74, 0.62, 0.4 },
         build:         float4 { 0.0, 0.0, 0.0, 1.0 },
         seam:          float4_0,
+        fill:          float4 { 0.52, 0.6, 0.38, 0.75 },
     };
 }
 
-// The carving and the stone's colors (the prototype's tuning panel, P): what the elven
-// look bakes into its frame and how it tints its surfaces.
-struct Carving {
-    depth:  f32,    // how deep the ground is cut round the vines, world units (a square is 1)
-    scale:  f32,    // the vines' repeats per side (the eyes between crossings), made odd
-    moss:   f32,    // 0..1: how much moss settles in the hollows
-    warmth: f32,    // -1..1: the ivory stone toward grey-white (-) or warm bone (+)
-    jade:   f32,    // 0..1: the jade pale celadon (0) to deep (1), 0.5 as the look has it
+// Baltic folk: a dark oiled oak frame, mitred, carved along its top with a band of
+// geometric ornament (diamonds with a cross in each, zigzags, a running meander between
+// two lines), a sun wheel in each corner and a tree of life in the middle of the far and
+// near sides, the cut showing the lighter wood under the oil; pale birch light squares
+// and green-stained dark ones, dark oak and pale birch pieces (the user's image `Baltic
+// Folk Carved Checkers Board.png`, colors measured from it, our own forms). Spring's
+// light; wood 2, oiled (wood_for, finish_for).
+fn baltic() -> Theme {
+    var t = spring();
+    t.light_sq = float4 { 0.91, 0.75, 0.55, 0.45 };
+    t.light_fig = float4 { 0.15, 0.35, 0.4, 1.0 };
+    t.dark_sq = float4 { 0.3, 0.3, 0.09, 0.45 };
+    t.dark_fig = float4 { 0.15, 0.3, 0.35, 1.0 };
+    t.inlay = float4 { 0.2, 0.12, 0.07, 0.5 };
+    t.inlay_fig = float4 { 0.2, 0.25, 0.25, 1.0 };
+    t.frame = float4 { 0.36, 0.22, 0.12, 0.55 };
+    t.frame_fig = float4 { 0.2, 0.25, 0.45, 1.0 };
+    t.surface = float4 { 0.06, 0.4, 0.45, 0.6 };
+    t.frame_surface = float4 { 0.8, 2.5, 0.8, 0.3 };
+    t.light_ring = float4 { 0.09, 0.35, 0.18, 0.08 };
+    t.dark_ring = float4 { 0.09, 0.35, 0.22, 0.08 };
+    t.frame_ring = float4 { 0.06, 0.4, 0.6, 0.7 };
+    t.light_piece = float4 { 0.87, 0.68, 0.45, 0.5 };
+    t.dark_piece = float4 { 0.42, 0.25, 0.13, 0.4 };
+    t.piece_fig = float4 { 0.04, 0.22, 0.35, 0.45 };
+    t.crown = float4 { 0.42, 0.26, 0.15, 0.0 };
+    t.build = float4 { 0.0, 1.0, 0.0, 1.0 };
+    t.fill = float4 { 0.78, 0.55, 0.32, 1.0 };
+    return t;
 }
 
-let ELVEN = Carving { depth: 0.018, scale: 7.0, moss: 0.6, warmth: 0.0, jade: 0.5 };
+// Summer 4, amber stone: a grey-green granite frame, speckled, with soft lichen patches,
+// carved along its top with sun signs, a tree of life in the middle of the far and near
+// sides and small runic marks between (our own strokes), the cuts filled with amber;
+// summer's warmth in honed stone squares, warm sandstone and a deep reddish stone, pale
+// limestone and reddish pieces (the user's image `Amber-Carved Stone Checkers in the
+// Forest.png` but its squares). Summer's light.
+fn summer_amber() -> Theme {
+    var t = summer();
+    t.light_sq = float4 { 0.88, 0.75, 0.59, 0.45 };
+    t.light_fig = float4 { 0.6, 0.12, 0.12, 0.0 };
+    t.dark_sq = float4 { 0.43, 0.21, 0.16, 0.42 };
+    t.dark_fig = float4 { 0.7, 0.3, 0.14, 0.0 };
+    t.inlay = float4 { 0.3, 0.15, 0.11, 0.45 };
+    t.inlay_fig = float4 { 0.6, 0.2, 0.1, 0.0 };
+    t.frame = float4 { 0.5, 0.51, 0.46, 0.62 };
+    t.frame_fig = float4 { 0.8, 0.6, 0.4, 0.0 };
+    t.surface = float4 { 0.04, 0.0, 0.4, 0.5 };
+    t.frame_surface = float4 { 0.0, 2.5, 0.0, 0.1 };
+    t.stone = float4 { 0.03, 0.12, 0.15, 1.0 };
+    t.light_ring = float4 { 0.06, 8.0, 0.0, 0.0 };
+    t.dark_ring = float4 { 0.3, 6.0, 0.08, 0.0 };
+    t.frame_ring = float4 { 0.4, 9.0, 0.0, 0.0 };
+    t.light_piece = float4 { 0.88, 0.83, 0.72, 0.45 };
+    t.dark_piece = float4 { 0.36, 0.17, 0.13, 0.35 };
+    t.piece_fig = float4 { 0.05, 0.18, 0.0, 0.5 };
+    t.crown = float4 { 0.36, 0.17, 0.13, 0.0 };
+    t.build = float4 { 0.0, 0.5, 0.0, 1.0 };
+    t.fill = float4 { 0.95, 0.64, 0.16, 1.0 };
+    return t;
+}
 
-// The moss in the carving's hollows (sRGB), w: how patchy.
-let MOSS = float4 { 0.34, 0.42, 0.21, 0.6 };
+// Summer 5: the amber stone with the image's squares, pale limestone and deep green
+// serpentine with a mottled figure, limestone and serpentine pieces.
+fn summer_serpentine() -> Theme {
+    var t = summer_amber();
+    t.light_sq = float4 { 0.82, 0.79, 0.73, 0.45 };
+    t.dark_sq = float4 { 0.27, 0.3, 0.19, 0.32 };
+    t.dark_fig = float4 { 0.8, 0.4, 0.2, 0.0 };
+    t.dark_ring = float4 { 0.55, 7.0, 0.3, 0.0 };
+    t.inlay = float4 { 0.18, 0.21, 0.14, 0.4 };
+    t.light_piece = float4 { 0.82, 0.78, 0.7, 0.45 };
+    t.dark_piece = float4 { 0.26, 0.29, 0.2, 0.32 };
+    t.crown = float4 { 0.26, 0.29, 0.2, 0.0 };
+    t.key_color = float4 { 1.0, 0.95, 0.88, 0.0 };
+    return t;
+}
 
-// The theme for `which` with spring's look `spring` (SPRING_LOOK..) and, for the carved
-// one, its carving's tints: what the renderer bakes and lights.
+// A carved frame's carving and the look's tints (the prototype's tuning panel, P): what
+// a carved look (Theme.build.w) bakes into its frame and how it tints its surfaces.
+struct Carving {
+    // The motif (shaders::BAKE_FRAG's carving): 0 vines in relief, a shallow outline cut
+    // round them, on the top and the outer face; 1 the folk band cut in (diamonds,
+    // zigzags, a meander, a sun wheel in the corners, a tree of life mid-side); 2 signs
+    // cut in (sun signs, trees of life, runic marks), for amber
+    motif:  i64,
+    depth:  f32,    // how deep the cut is, world units (a square is 1)
+    scale:  f32,    // the motifs' repeats per side
+    moss:   f32,    // 0..1: how much moss settles in the hollows and along the edges
+    amber:  f32,    // 0..1: how full of amber the cuts are (Theme.fill)
+    lichen: f32,    // 0..1: lichen patches on the stone
+    warmth: f32,    // -1..1: the light stone or wood toward grey-white (-) or warm (+)
+    jade:   f32,    // 0..1: the dark squares pale (0) to deep (1), 0.5 as the look has it
+}
+
+let ELVEN = Carving { motif: 0, depth: 0.015, scale: 7.0, moss: 0.85, amber: 0.0, lichen: 0.0, warmth: 0.0,
+                      jade: 0.5 };
+let BALTIC = Carving { motif: 1, depth: 0.012, scale: 12.0, moss: 0.0, amber: 0.0, lichen: 0.0, warmth: 0.0,
+                       jade: 0.5 };
+let AMBER = Carving { motif: 2, depth: 0.02, scale: 12.0, moss: 0.5, amber: 0.55, lichen: 0.5, warmth: 0.0,
+                      jade: 0.5 };
+
+// A carved look's own carving (shown()'s look), ELVEN for one that isn't carved.
+fn carving_for(look: i64) -> Carving {
+    if look == SPRING_BALTIC { return BALTIC; }
+    if look == SUMMER_AMBER || look == SUMMER_SERPENTINE { return AMBER; }
+    return ELVEN;
+}
+
+// The moss in the carving's hollows (sRGB), w: how patchy; the lichen on stone.
+let MOSS = float4 { 0.45, 0.5, 0.17, 0.6 };
+let LICHEN = float4 { 0.72, 0.74, 0.58, 0.0 };
+
+// The theme for `which` with spring's look `spring` (SPRING_LOOK..) and, for a carved
+// look, its carving's tints: what the renderer bakes and lights.
 fn variant(which: i64, spring: i64, c: Carving) -> Theme {
-    guard which == SPRING && spring == 1 else { return get(which); }
-    var t = elven();
+    var t = get(shown(which, spring));
+    guard t.build.w > 0.5 else { return t; }
     let warm = float4 { 1.0 + 0.05 * c.warmth, 1.0 + 0.005 * c.warmth, 1.0 - 0.07 * c.warmth, 1.0 };
     t.light_sq *= warm;
     t.frame *= warm;

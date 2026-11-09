@@ -78,8 +78,11 @@ struct Bake {
     marble_vein:   float4,
     marble_form:   float4,
     seam:          float4,  // looks::Theme.seam
-    carve:         float4, // looks::Carving: depth, repeats per side, moss; w 1 carved
+    carve:         float4,  // looks::Carving: depth, repeats per side, moss; w 1 carved
     moss:          float4,  // looks::MOSS
+    carve_more:    float4,  // looks::Carving: motif, amber, lichen
+    fill:          float4,  // looks::Theme.fill
+    lichen:        float4,  // looks::LICHEN
 }
 struct Shrink { to: float4 }
 struct Show { from: float4, to: float4, screen: float4 }
@@ -112,7 +115,8 @@ struct Gpu {
     marble:         i64,            // the stone frame's marble (looks::MARBLE..), 0 slate
     stone:          looks::Marble,  // and its look
     spring:         i64,            // spring's look (looks::SPRING_LOOK..), 1 the carved
-    carving:        looks::Carving, // and its carving
+    carving:        looks::Carving, // and the carving of a carved look shown,
+    carved:         i64,            // the look it is the carving of (looks::shown), -1 none yet
     n:              i64,            // squares per side the plan is baked for
     look:           i64,            // looks::AUTUMN.., and the photograph's kind
     photo_kind:     i64,
@@ -282,7 +286,9 @@ fn bake(g: Gpu&, albedo: gfx::Texture, normal: gfx::Texture, w: i64, h: i64, mod
                                            float4 { m.veins, m.wave, m.polish, m.tint },
                                            m.base, m.vein, m.form, t.seam,
                                            float4 { g.carving.depth, g.carving.scale, g.carving.moss, t.build.w },
-                                           looks::MOSS });
+                                           looks::MOSS,
+                                           float4 { g.carving.motif, g.carving.amber, g.carving.lichen, 0.0 },
+                                           t.fill, looks::LICHEN });
     gfx::draw(3);
     gfx::end_pass();
     gfx::generate_mips(albedo);
@@ -343,6 +349,7 @@ fn setup(g: Gpu&, samples: i32 = SAMPLES) {
     g.stone = looks::marble(looks::MARBLE);
     g.spring = looks::SPRING_LOOK;
     g.carving = looks::ELVEN;
+    g.carved = -1;
     g.n = 8;
     g.look = -1;
     g.photo_kind = -1;
@@ -418,6 +425,7 @@ fn setup(g: Gpu&, samples: i32 = SAMPLES) {
 // is done again; outside the frame loop's steady state: at setup, on a theme change, a
 // new board size.
 fn apply(g: Gpu&, which: i64, n: i64, photo: i64 = -1) {
+    own_carving(g, looks::shown(which, g.spring));
     let t = look(g, which);
     let kind = if photo >= 0 { photo } else { t.photo };
     if which != g.look || n != g.n {
@@ -545,16 +553,39 @@ fn tune(g: Gpu&, wood: i64, finish: looks::Finish, marble: i64, stone: looks::Ma
     if marbled(g, t) { g.frame.edge.w = 0.0; }
 }
 
+// Takes look `id`'s own carving (looks::carving_for) when it isn't the one g has: a
+// carved look's carving tuned in the panel stays while it shows.
+fn own_carving(g: Gpu&, id: i64) {
+    guard id != g.carved else { return; }
+    g.carving = looks::carving_for(id);
+    g.carved = id;
+}
+
 // Sets spring's look and the carving (the prototype's G and tuning panel), putting the
-// look on again, its surfaces baked, when spring shows and either changed.
+// look on again, its surfaces baked, when it shows: spring's look switched (with the
+// new look's own carving, and its own wood if it has one), or a carved look's carving
+// changed.
 fn carve(g: Gpu&, spring: i64, c: looks::Carving) {
     let s = clamp(spring, 0, looks::SPRINGS - 1);
     guard s != g.spring || c != g.carving else { return; }
+    let was = looks::shown(g.look, g.spring);
     g.spring = s;
     g.carving = c;
-    guard g.look == looks::SPRING else { return; }
+    let id = looks::shown(g.look, s);
+    guard id != was || looks::get(id).build.w > 0.5 else { return; }
+    if id != was {
+        own_carving(g, id);
+        let own = looks::wood_for(id);
+        if own >= 0 {
+            g.wood = own;
+            g.finish = looks::finish_for(id, own);
+        } else if looks::wood_for(was) >= 0 {
+            g.finish = looks::finish(g.wood);
+        }
+    }
+    let which = g.look;
     g.look = -1;
-    apply(g, looks::SPRING, g.n);
+    apply(g, which, g.n);
 }
 
 // Puts the pieces on the GPU: `inst` two float4s an instance (view3d::Scene.inst), the
