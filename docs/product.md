@@ -2,9 +2,10 @@
 
 ## Purpose
 
-A draughts learning app for children of about 5 to 8: play, puzzles, and later
-lessons. It runs first on an Android Galaxy tablet, then on the Play Store for free.
-Chess may follow on the same base.
+A draughts app for all ages, from 4: play, puzzles, and later lessons. Simple enough for
+a young child's first game, with puzzles and a hard level for grown-ups. It runs first on
+an Android Galaxy tablet, then on the Play Store for free. Chess may follow on the same
+base.
 
 ## Principles
 
