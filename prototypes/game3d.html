@@ -27,10 +27,13 @@
      &controls=a   the corners take's floating camera buttons (the default there): a column
                    at the right edge under the play panel, in portrait above it; b, beside
                    the board's near corners, in portrait under them; off. View: 52.5° or 74°
-                   down. Zoom: the board grown until its field fills the width, the near edge
-                   kept. Tilt: drag it to look round the board, which springs back on release;
-                   a tap shows what it does. The board refits as the camera moves.
-     &pp=          portrait's camera angle on the corners take: 52.5, 60 or 65 (open)
+                   down. Zoom (landscape only): the whole playing field, pieces and all,
+                   grown to the largest size clear of the panels and the buttons. Showcase
+                   (the hand): a mode, lit while on, in which a drag anywhere on the board
+                   turns it (±35°) and tips it (35° to 80° down); it stays where it is let
+                   go, and the button again (or a move) eases back in 0.6 s. The board
+                   refits as the camera moves.
+     &pp=          portrait's camera angle on the corners take: 52.5, 60 or 65 (the default)
      The switcher's Move plays a move and turns the board 180° for the other player, as a
      hot-seat game against a friend would (0.7 s, eased).
 
@@ -112,7 +115,7 @@ bar.querySelector('select').onchange = (e) => {
 // The corners take's camera controls, portrait's angle, and a move for the hot-seat turn.
 const CONTROLS = take === 'corners' ? (['a', 'b', 'off'].includes(params.get('controls')) ? params.get('controls') : 'a') : 'off';
 const PORTRAIT = ['52.5', '60', '65'];
-const PP = PORTRAIT.includes(params.get('pp')) ? +params.get('pp') : 52.5;
+const PP = PORTRAIT.includes(params.get('pp')) ? +params.get('pp') : 65;
 if (take === 'corners') {
   const opt = (key, values, cur, label) => `<select data-proto="${key}" aria-label="${key}">${values.map((x) =>
     `<option value="${x}"${String(cur) === x ? ' selected' : ''}>${label(x)}</option>`).join('')}</select>`;
@@ -143,7 +146,7 @@ const PITCH_ASKED = +params.get('pitch');
 let PITCH = PITCH_ASKED || (take === 'steep' ? 65 : 52.5);
 const TOP_PITCH = 74;
 // The camera now: the view (0 at rest, 1 the top view), the zoom (0 to 1), the board's
-// turn in degrees (the hot-seat turn), and a look round's yaw and pitch on top.
+// turn in degrees (the hot-seat turn), and the showcase's yaw and pitch on top.
 const v = { top: 0, zoom: 0, turn: 0, yaw: 0, pitch: 0 };
 let viewPitch = PITCH;
 
@@ -563,11 +566,11 @@ function layout() {
     // as the camera moves (the view, the zoom, the turn); `keep` are the rects it clears.
     const B = 48 * k, gB = 8 * k, M = 12 * k, keep = [];
     const clear = (g) => keep.every((r) => !touches(g, r, G / 2));
-    const zmax = (bb, g, pitch, turn) => Math.max(1, Math.min(1.3, (W - 16 * k) / (bounds(W, H, field, pitch, turn).w * g.s)));
-    let place, zoom;
+    const zkeep = []; // what the zoomed field must also clear: buttons off the rest board's way
+    let place, zoom = null, zright = W - G;
     if (land) {
       // The panels in the top corners, the board as large as clears them, its near edge
-      // on the bottom margin; zoomed, it grows up from the near edge, under the panels.
+      // on the bottom margin; zoomed, the field fills the area clear of the panels and buttons.
       const P = (phone ? 192 : 232) * k, tall = phone ? 'tall' : '';
       const a = panel(HOME(tall) + SET(tall) + RESTART(tall), { x: G, y: G, w: P });
       const z = panel(TURN() + UNDO(phone ? 'big short' : 'big'), { x: W - G - P, y: G, w: P });
@@ -582,13 +585,27 @@ function layout() {
         }
         return g;
       };
-      zoom = (bb, g, zf) => placed(bb, g.s * zf, g.l + g.w * (1 - zf) / 2, g.t + g.h * (1 - zf));
+      // The zoom: the field's projected bounds (its corners and the pieces' tops, fb) as
+      // large as fits the free area, bottom aligned and centered across it, shrunk until
+      // the field's outline clears every panel and button.
+      zoom = (bb, fb) => {
+        const bx = { x: G, y: G, w: zright - G, h: H - 2 * G };
+        let q, s = Math.min(bx.w / fb.w, bx.h / fb.h);
+        for (; s > 0.2; s *= 0.99) {
+          const fl = bx.x + (bx.w - fb.w * s) / 2, ft = bx.y + bx.h - fb.h * s;
+          q = { s, l: fl - (fb.x0 - bb.x0) * s, t: ft - (fb.y0 - bb.y0) * s,
+            pts: fb.pts.map((p) => [fl + (p[0] - fb.x0) * s, ft + (p[1] - fb.y0) * s]) };
+          if (keep.concat(zkeep).every((r) => !touches(q, r, G / 4))) break;
+        }
+        return q;
+      };
       if (CONTROLS === 'a') {
         // A column under the play panel at the right edge, a row where it doesn't fit.
         const len = 3 * B + 2 * gB, y = rz.y + rz.h + M, col = y + len <= H - G;
         const r = col ? { x: W - G - B, y, w: B, h: len } : { x: W - G - len, y, w: len, h: B };
         keep.push(r);
-        controls(['view', 'zoom', 'tilt'], r, !col);
+        if (col) zright = r.x - M;
+        controls(['view', 'zoom', 'orbit'], r, !col);
       } else if (CONTROLS === 'b') {
         // Beside the near corners: as low as clears the board at rest. Zoomed, the
         // board's frame runs under them (clearing it too put them halfway up).
@@ -602,14 +619,16 @@ function layout() {
           }
           return { x, y: top, w: B, h };
         };
-        controls(['view', 'zoom'], lowest(G, 2), false);
-        controls(['tilt'], lowest(W - G - B, 1), false);
+        const q1 = lowest(G, 2), q2 = lowest(W - G - B, 1);
+        zkeep.push(q1, q2);
+        controls(['view', 'zoom'], q1, false);
+        controls(['orbit'], q2, false);
       }
       f = place(b);
     } else {
       // Home and settings as tiles in the top corners beside the far edge; the board
-      // pulled up as far as clears them; start over and the play below. Zoomed, the
-      // board grows down into the band below it, its far edge clear of the tiles.
+      // pulled up as far as clears them; start over and the play below. No zoom here:
+      // the width already holds the board.
       const a = panel(HOME('tall'), { x: G, y: G }, 'tile'), z = panel(SET('tall'), { x: 0, y: G }, 'tile');
       z.style.left = `${W - G - z.offsetWidth}px`;
       keep.push(rectOf(a), rectOf(z));
@@ -622,31 +641,22 @@ function layout() {
         }
         return g;
       };
-      zoom = (bb, g, zf) => {
-        let q;
-        for (let y = g.t; y < H; y += 2) {
-          q = placed(bb, g.s * zf, g.l + g.w * (1 - zf) / 2, y);
-          if (clear(q)) break;
-        }
-        return q;
-      };
       f = place(b);
       const play = panel(`<div class="pair">${RESTART(phone ? 'tall' : '')}${TURN('line')}</div>` + UNDO('big wide'), { x: G, y: 0, w });
       const playTop = Math.max(f.t + f.h + G, H - G - play.offsetHeight);
       play.style.top = `${playTop}px`;
       if (CONTROLS === 'a') {
         // A column at the right edge, on the play panel.
-        const len = 3 * B + 2 * gB;
-        controls(['view', 'zoom', 'tilt'], { x: W - G - B, y: playTop - M - len, w: B, h: len }, false);
+        const len = 2 * B + gB;
+        controls(['view', 'orbit'], { x: W - G - B, y: playTop - M - len, w: B, h: len }, false);
       } else if (CONTROLS === 'b') {
-        // Under the near corners, below where the zoomed board reaches.
-        const gz = zoom(b, f, zmax(b, f, PITCH, 0));
-        const y = Math.min(gz.t + gz.h + M, playTop - M - B);
-        controls(['view', 'zoom'], { x: G, y, w: 2 * B + gB, h: B }, true);
-        controls(['tilt'], { x: W - G - B, y, w: B, h: B }, false);
+        // Under the near corners.
+        const y = Math.min(f.t + f.h + M, playTop - M - B);
+        controls(['view'], { x: G, y, w: B, h: B }, false);
+        controls(['orbit'], { x: W - G - B, y, w: B, h: B }, false);
       }
     }
-    corners = { place, zoom, zmax };
+    corners = { place, zoom };
   }
   useFit(b, f, W, H);
   if (params.has('guides')) {
@@ -671,11 +681,12 @@ function frame() {
     viewPitch = PITCH + (TOP_PITCH - PITCH) * v.top;
     const b = bounds(W, H, outline, viewPitch, v.turn);
     let f = corners.place(b);
-    if (v.zoom > 0) f = corners.zoom(b, f, 1 + (corners.zmax(b, f, viewPitch, v.turn) - 1) * v.zoom);
+    if (v.zoom > 0 && corners.zoom) {
+      const z = corners.zoom(b, bounds(W, H, field, viewPitch, v.turn));
+      f = { s: f.s + (z.s - f.s) * v.zoom, l: f.l + (z.l - f.l) * v.zoom, t: f.t + (z.t - f.t) * v.zoom };
+    }
     useFit(b, f, W, H);
   } else viewPitch = PITCH;
-  const tilt = ui.querySelector('[data-ctl=tilt] svg');
-  if (tilt) tilt.style.transform = `rotate(${-v.yaw * 0.8}deg)`;
   render();
 }
 
@@ -705,10 +716,10 @@ const CTL_ICONS = {
   low: '<path d="M7.5 5h9L21 19H3z"/><path d="M12 5v14M5.25 12h13.5"/>',
   zoomIn: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/><path d="M7.5 10.5h6M10.5 7.5v6"/>',
   zoomOut: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/><path d="M7.5 10.5h6"/>',
-  // A board in perspective over an arc turning both ways.
-  tilt: '<path d="M8.5 4.5h7l2.5 6H6z"/><path d="M4 15c2 2.7 4.8 4 8 4s6-1.3 8-4"/><path d="M3.6 18.8 4 15l3.8.4"/><path d="M20.4 18.8 20 15l-3.8.4"/>',
+  // The showcase: a board in perspective on an orbit with its arrowhead.
+  orbit: '<path d="M8.5 6.5h7l2 5h-11z"/><path d="M3.5 14.5c1.2 3 4.6 5 8.5 5s7.3-2 8.5-5"/><path d="m20.7 18.2-.2-3.7-3.6.8"/><path d="m3.3 18.2.2-3.7 3.6.8"/>',
 };
-const want = { top: false, zoom: false };
+const want = { top: false, zoom: false, orbit: false };
 function controls(names, r, row) {
   const B = Math.min(r.w, r.h), step = names.length > 1 ? ((row ? r.w : r.h) - B) / (names.length - 1) : 0;
   names.forEach((n, i) => {
@@ -724,7 +735,7 @@ function syncControls() {
   for (const el of ui.querySelectorAll('.ctl')) {
     const n = el.dataset.ctl;
     el.innerHTML = svg(CTL_ICONS[n === 'view' ? (want.top ? 'low' : 'top') : n === 'zoom' ? (want.zoom ? 'zoomOut' : 'zoomIn') : n]);
-    el.classList.toggle('on', (n === 'view' && want.top) || (n === 'zoom' && want.zoom));
+    el.classList.toggle('on', (n === 'view' && want.top) || (n === 'zoom' && want.zoom) || (n === 'orbit' && want.orbit));
   }
 }
 ui.addEventListener('click', (e) => {
@@ -732,35 +743,22 @@ ui.addEventListener('click', (e) => {
   if (!el) return;
   if (el.dataset.ctl === 'view') { want.top = !want.top; tween('top', want.top ? 1 : 0, 600); }
   if (el.dataset.ctl === 'zoom') { want.zoom = !want.zoom; tween('zoom', want.zoom ? 1 : 0, 450); }
+  if (el.dataset.ctl === 'orbit') {
+    if (want.orbit) endShowcase();
+    else { want.orbit = true; delete tweens.yaw; delete tweens.pitch; canvas.style.touchAction = 'none'; }
+  }
   syncControls();
 });
-// Tilt: a drag on the button looks round the board within the inspection range (yaw ±35°,
-// pitch 35° to 80°); on release it springs back. A tap looks a little to one side and back.
-let peek = null;
-ui.addEventListener('pointerdown', (e) => {
-  const el = e.target.closest('[data-ctl=tilt]');
-  if (!el) return;
-  delete tweens.yaw; delete tweens.pitch;
-  peek = { x: e.clientX, y: e.clientY, yaw: v.yaw, pitch: v.pitch, moved: false };
-  el.setPointerCapture(e.pointerId);
-});
-ui.addEventListener('pointermove', (e) => {
-  if (!peek) return;
-  const dx = e.clientX - peek.x, dy = e.clientY - peek.y;
-  if (Math.hypot(dx, dy) > 6) peek.moved = true;
-  v.yaw = Math.max(-35, Math.min(35, peek.yaw - dx * 0.35));
-  v.pitch = Math.max(35 - viewPitch, Math.min(80 - viewPitch, peek.pitch + dy * 0.3));
-  frame();
-});
-const peekEnd = () => {
-  if (!peek) return;
-  const tap = !peek.moved;
-  peek = null;
-  if (tap) tween('yaw', 22, 450, () => tween('yaw', 0, 650));
-  else { tween('yaw', 0, 450); tween('pitch', 0, 450); }
-};
-ui.addEventListener('pointerup', peekEnd);
-ui.addEventListener('pointercancel', peekEnd);
+// Showcase: a mode in which a drag anywhere on the board turns and tips it within the
+// range (yaw ±35°, 35° to 80° down). It stays where it is let go; ending the mode (the
+// button, a move) eases back to the resting view.
+function endShowcase() {
+  if (!want.orbit) return;
+  want.orbit = false;
+  tween('yaw', 0, 600); tween('pitch', 0, 600);
+  canvas.style.touchAction = '';
+  syncControls();
+}
 
 // ---- The hot-seat turn: a move, then the board turns to face the next player.
 const START = structuredClone(POS);
@@ -782,28 +780,29 @@ function makeMove() {
     t.querySelector('span').textContent = side === 'white' ? "White's turn" : "Black's turn";
   }
   Draughts.paint();
+  endShowcase();
   frame();
   turnTo += 180;
   setTimeout(() => tween('turn', turnTo, 700), 250);
 }
 
-// A drag on the board turns it within the inspection range; a double click resets. With
-// the camera buttons on, a drag on the board is the game's, so only the tilt button turns it.
+// A drag on the board: in the showcase it moves the camera; with the buttons off it turns
+// the board as before (a double click resets); otherwise it is the game's.
 let drag = null;
 canvas.addEventListener('pointerdown', (e) => {
-  if (CONTROLS !== 'off') return;
+  if (CONTROLS !== 'off' && !want.orbit) return;
   drag = [e.clientX, e.clientY];
   canvas.setPointerCapture(e.pointerId);
 });
 canvas.addEventListener('pointermove', (e) => {
   if (!drag) return;
-  v.yaw = Math.max(-35, Math.min(35, v.yaw - (e.clientX - drag[0]) * 0.25));
-  v.pitch = Math.max(35 - viewPitch, Math.min(75 - viewPitch, v.pitch + (e.clientY - drag[1]) * 0.25));
+  v.yaw = Math.max(-35, Math.min(35, v.yaw - (e.clientX - drag[0]) * 0.3));
+  v.pitch = Math.max(35 - viewPitch, Math.min(80 - viewPitch, v.pitch + (e.clientY - drag[1]) * 0.3));
   drag = [e.clientX, e.clientY];
   frame();
 });
 canvas.addEventListener('pointerup', () => { drag = null; });
-canvas.addEventListener('dblclick', () => { v.yaw = 0; v.pitch = 0; frame(); });
+canvas.addEventListener('dblclick', () => { if (CONTROLS === 'off') { v.yaw = 0; v.pitch = 0; frame(); } });
 let resizing = 0;
 addEventListener('resize', () => { clearTimeout(resizing); resizing = setTimeout(layout, 60); });
 document.fonts.ready.then(layout);

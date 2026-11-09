@@ -342,6 +342,15 @@ under the panels) and tilt (a drag on the button, springing back), the board ref
 each frame, placed two ways (`&controls=a`, `b`), with `&pp=` for portrait's angle and a
 hot-seat turn of 180° in 0.7 s; for the user to choose.
 
+**Chosen** (the user, 2026-11-09): placement `a`, the column at the right edge (`b` stays
+reachable by `&controls=b`); keep View (52.5° and 74°); Zoom in landscape only; the board
+turns 180° in hot-seat games; 65° at rest in portrait (`&pp=65`, the default). Revised
+after that: zoom frames the whole playing field, every square and the pieces' tops, as
+large as fits the area clear of the panels and the button column (in the top view too);
+the third button is a showcase mode, not a tilt: while on it is lit and a drag anywhere on
+the board turns it (±35°) and tips it (35° to 80° down) instead of moving pieces, with no
+spring back; pressing it again, or a move, eases back to rest in 0.6 s.
+
 ## Integration (on the `integrate3d` branch, off `main` until the game is solid)
 
 ### Phase 1: what doesn't depend on the renderer (2026-11-09)
