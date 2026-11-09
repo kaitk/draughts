@@ -19,16 +19,16 @@ text names no age, since the hard level and puzzles are hard for grown-ups too
 ([9898842](https://support.google.com/googleplay/android-developer/answer/9898842), read
 2026-11-09).
 
-## Short description (70 of 80)
+## Short description (79 of 80)
 
 ```text
-Play draughts against the computer or a friend, and solve 120 puzzles.
+Draughts on a 2D or 3D board: play the computer or a friend, solve 120 puzzles.
 ```
 
-## Full description (2,434 of 4,000)
+## Full description (2,444 of 4,000)
 
 ```text
-A calm draughts game to play and learn: big pieces, a clear board, and nothing to distract from the game.
+A calm draughts game to play and learn: big pieces, a flat 2D or a 3D board, and nothing to distract from the game.
 
 PLAY
 • Play the computer at three levels: easy, medium, and hard. It adjusts a little after each game, so it stays a fair match.

@@ -41,10 +41,10 @@ read 2026-11-09: name 2 to 30 characters, subtitle 30, promotional text 170 (cha
 without a new version), description 4000, keywords 100 bytes with each keyword over 2
 characters, What's New 4000 (from the second version), review notes 4000 bytes.
 
-### Promotional text (164 of 170)
+### Promotional text (160 of 170)
 
 ```text
-Play draughts against the computer or a friend on one device, and solve 120 puzzles. International, Brazilian, and Russian rules. No ads, no purchases, no internet.
+Play draughts on a 2D or 3D board against the computer or a friend on one device, and solve 120 puzzles. International, Brazilian, and Russian. No ads, offline.
 ```
 
 ### Keywords (93 of 100 bytes)
@@ -57,10 +57,10 @@ Not repeated: the name's word (draughts), which Apple indexes anyway. "kids" sta
 the audience the name no longer names. No other app's name. "kabe" for people in Estonia
 searching the English storefront.
 
-### Description (2,371 of 4,000)
+### Description (2,381 of 4,000)
 
 ```text
-A calm draughts game to play and learn: big pieces, a clear board, and nothing to distract from the game.
+A calm draughts game to play and learn: big pieces, a flat 2D or a 3D board, and nothing to distract from the game.
 
 PLAY
 • Play the computer at three levels: easy, medium, and hard. It adjusts a little after each game, so it stays a fair match.
@@ -257,5 +257,5 @@ Landscape needs the simulator turned, which `simctl` can't do headless; portrait
 | --- | --- |
 | Name | `Kabe` |
 | Subtitle | `Mängi ja lahenda ülesandeid` (27) |
-| Promotional text | `Mängi kabet arvuti või sõbraga ühes seadmes ja lahenda 120 ülesannet. Rahvusvaheline, Brasiilia ja vene kabe. Reklaamide ja ostudeta, töötab internetita.` (153) |
+| Promotional text | `Mängi kabet 2D- või 3D-laual arvuti või sõbraga ühes seadmes ja lahenda 120 ülesannet. Rahvusvaheline, Brasiilia ja vene kabe. Reklaamideta, töötab internetita.` (160) |
 | Description | `listing-et.md`'s, with "tahvelarvutis või telefonis" as "iPhone'is või iPadis", the section "Mitte midagi liigset" replaced by a last bullet under "Kõigile", "Reklaamide ja ostudeta, töötab internetita.", and the last line "Kabe töötab iPhone'is ja iPadis, nii püst- kui ka rõhtpaigutuses." |

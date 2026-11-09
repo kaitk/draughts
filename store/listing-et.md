@@ -14,16 +14,16 @@ Kabe
 
 The same as the launcher's name (`strings/et.txt`), as the English is "Draughts".
 
-## Short description (56 of 80)
+## Short description (73 of 80)
 
 ```text
-Mängi kabet arvuti või sõbraga ja lahenda 120 ülesannet.
+Kabe 2D- või 3D-laual: mängi arvuti või sõbraga ja lahenda 120 ülesannet.
 ```
 
-## Full description (2,518 of 4,000)
+## Full description (2,538 of 4,000)
 
 ```text
-Rahulik kabemäng mängimiseks ja õppimiseks: suured nupud, selge laud ja mitte midagi, mis tähelepanu mängult kõrvale juhiks.
+Rahulik kabemäng mängimiseks ja õppimiseks: suured nupud, lame 2D- või ruumiline 3D-laud ja mitte midagi, mis tähelepanu mängult kõrvale juhiks.
 
 MÄNGI
 • Mängi arvutiga kolmel tasemel: kerge, keskmine ja raske. Pärast iga partiid kohaneb arvuti veidi, et mäng jääks tasavägiseks.
