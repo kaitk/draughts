@@ -128,6 +128,50 @@ struct Game {
     hint_shows: i64         = -1,
     hint_move:  rules::Move = rules::Move { .. },
     hint_new:   bool        = false,
+    // What each side has taken (taken()), as last counted for the board at rest at
+    // `taken_pos` after `taken_len` moves, or -1 for not yet.
+    taken:     panel::Taken    = panel::Taken {},
+    taken_len: i64             = -1,
+    taken_pos: rules::Position = rules::Position { pieces: [0, 0], kings: 0, side: 0, variant: 0 },
+}
+
+// The pieces of each color taken so far (task 052): the start's pieces less those on the
+// board, so a game set up from a position counts what it lacks as taken. Kings apart: a
+// piece taken while a king counts as a king, as the child saw it taken, found from the
+// undo history's positions (a king of the side not moving gone after the move), so
+// kings taken more than board::MAX_HISTORY moves back count as men.
+fn taken(b: board::Board&) -> panel::Taken {
+    var t = panel::Taken {};
+    let v .= rules::VARIANTS[b.variant];
+    for c in 2 {
+        let lost = max(popcount(v.start[c]) - popcount(b.pos.pieces[c]), 0);
+        var kings: i64 = 0;
+        for st, i in b.history {
+            let a = st.pos;
+            guard a.side as i64 != c else { continue; }
+            let next = if i + 1 < b.history.len { b.history[i + 1].pos } else { b.pos };
+            kings += popcount(a.pieces[c] & a.kings & ~next.pieces[c]);
+        }
+        t.kings[c] = min(kings, lost);
+        t.men[c] = lost - t.kings[c];
+    }
+    return t;
+}
+
+// Counts what each side has taken again where the board, at rest, shows another position
+// than it was counted for (a move has shown, or undo, start over). Returns whether the
+// counts may have changed.
+fn count_taken(gm: Game&) -> bool {
+    let b .= gm.b;
+    guard !b.moving else { return false; }
+    let p = b.pos;
+    let q = gm.taken_pos;
+    guard gm.taken_len != b.history.len || p.pieces[0] != q.pieces[0] || p.pieces[1] != q.pieces[1]
+          || p.kings != q.kings || p.side != q.side || p.variant != q.variant else { return false; }
+    gm.taken = taken(b);
+    gm.taken_len = b.history.len;
+    gm.taken_pos = p;
+    return true;
 }
 
 // What the lookout last worked its threats out for (watch): whether it showed, the
@@ -427,6 +471,8 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
     countdown(gm, note);
     let pick = panel::game(g, l, gm.clock, side, won >= 0, drawn(gm) != rules::NO_DRAW, note, gm.asking != 0,
                            pulse(gm, now), over, help(gm));
+    if count_taken(gm) { changed = true; }
+    panel::taken(g, l, gm.taken, over);
     var undone = false;
     match pick {
         // Partway through a capture, take back only takes the capture back to its start.
@@ -630,6 +676,7 @@ fn still(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&) {
     let draw = drawn(gm);
     panel::game(g, l, gm.clock, side, won >= 0, draw != rules::NO_DRAW, note, gm.asking != 0, pulse(gm, now), over,
                 help(gm));
+    panel::taken(g, l, gm.taken, over);
     panel::camera(g, l, gm.cam, now);
     if gm.won_at >= 0.0 { celebrate(gm, g, l, won, now, over); }
     if gm.drawn_at >= 0.0 { settle(gm, g, l, draw, now, over); }

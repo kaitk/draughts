@@ -20,7 +20,10 @@
 // groups on each. Then a phone's tabs:
 // settings' Look tab and the puzzles' crown each show their own tiles. A puzzle's turn
 // piece lies in its panel clear of the tiles, icons, and words, over the goal where the
-// panel has the room and beside its icon where not.
+// panel has the room and beside its icon where not. On the game, flat and 3D, what each
+// side has taken late in a game (task 052) lies inside the safe area clear of the tiles,
+// the camera buttons, and the board, and the flat screen's panels are the 3D one's
+// (task 054), or the line says how they differ; the iPad's smallest window too.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -227,6 +230,7 @@ fn screens(g: gui::Gui&) {
     game::start(clocked.game, rules::RUSSIAN, clock::RAPID, -1, game::MEDIUM, 50, 0);
     at_rest(clocked, g);
     report("the game on the clock", g, clocked, true, false);
+    taken(g);
     var settings = showing(shell::SETTINGS, home::NOTHING);
     at_rest(settings, g);
     report("settings", g, settings, true, false);
@@ -257,6 +261,67 @@ fn screens(g: gui::Gui&) {
     report("the win", g, won, true, true);
 }
 
+// What each side has taken late in a game, 14 white men and a white king and 12 black
+// men, on the game screen flat and 3D (task 052): how many pieces show and how many are
+// kings, each inside the safe area and clear of every tile, camera button, and the
+// board; then whether the flat screen's panels are the 3D screen's (task 054).
+fn taken(g: gui::Gui&) {
+    let w = drive::size.x;
+    let h = drive::size.y;
+    let u = gui::scale_of(w, h);
+    let safe = gui::safe(g, w, h);
+    var line = str("  taken late in a game:");
+    for raised in [false, true] {
+        var sh = showing(shell::GAME, home::NOTHING);
+        if raised { sh.prefs.board = settings::RAISED; }
+        let gm .= sh.game;
+        gm.taken = panel::Taken { men: [14, 12], kings: [1, 0] };
+        gm.taken_len = gm.b.history.len;
+        gm.taken_pos = gm.b.pos;
+        at_rest(sh, g);
+        let b = float4 { sh.layout.board.x, sh.layout.board.y, sh.layout.board.z, sh.layout.board.z };
+        var wrong: u8[>..] = [];
+        var count = 0;
+        var kings = 0;
+        for p in sh.over {
+            guard p.at.z < 0.5 * panel::TAKEN_D * u + 0.5 else { continue; }
+            count++;
+            if p.look.y == board::CROWN as f32 { kings++; }
+            let r = float4 { p.at.x - p.at.z, p.at.y - p.at.z, 2.0 * p.at.z, 2.0 * p.at.z };
+            if !inside(r, safe) { wrong.append(" off the safe area;"); break; }
+            var hit = false;
+            for i in drive::tiles(g) { if overlaps(r, drive::rect(g, i)) { hit = true; } }
+            for q, n in g.quads { if drive::camera_disc(g, n) && overlaps(r, q.rect) { hit = true; } }
+            if hit { wrong.append(" on a tile;"); break; }
+            let on = if raised { view3d::touches(sh.view, r, 0.0) } else { overlaps(r, b) };
+            if on { wrong.append(" on the board;"); break; }
+        }
+        format(line, if raised { "; 3D " } else { " flat " }, count, " pieces, ", kings, " a king");
+        line.append(if wrong.len == 0 { ", in place" } else { "" });
+        line.append(wrong);
+    }
+    let n = 10;
+    let fl = panel::layout_in(safe, n, u, true, true);
+    let c3 = panel::corners_in(safe, n, u, panel::PITCH_PORTRAIT, true, true);
+    // In portrait the bar and the play sit round boards of different heights: their sizes.
+    let wide = fl.left.z < fl.left.w;
+    let alike = if wide { same(fl.left, c3.left) && same(fl.right, c3.right) }
+                else { same(sized(fl.left), sized(c3.left)) && same(sized(fl.right), sized(c3.right)) };
+    if alike { line.append("; the panels the 3D screen's"); }
+    else {
+        format(line, "; the panels ", whole(fl.left.z / u), " x ", whole(fl.left.w / u), " and ", whole(fl.right.z / u), " x ",
+               whole(fl.right.w / u), " dp, the 3D screen's ", whole(c3.left.z / u), " x ", whole(c3.left.w / u), " and ",
+               whole(c3.right.z / u), " x ", whole(c3.right.w / u));
+    }
+    print(line);
+}
+
+fn sized(r: float4) -> float4 { float4 { 0.0, 0.0, r.z, r.w } }
+
+fn same(a: float4, b: float4) -> bool {
+    return abs(a.x - b.x) < 0.5 && abs(a.y - b.y) < 0.5 && abs(a.z - b.z) < 0.5 && abs(a.w - b.w) < 0.5;
+}
+
 // The 11" iPad's smallest window (task 050), 374 x 484 pt at 2 px a point with the
 // density floor, a 499 x 645 dp compact layout: settings' Look tab, its theme's tiles
 // slim, and how far above the glass's foot the Board and Kings rows end (negative: below
@@ -283,6 +348,11 @@ fn small_window(g: gui::Gui&) {
           drive::tiles(g), " tiles, the switch ", whole(half.z / u), " x ", whole(half.w / u), " dp a half, a season ",
           whole(season.z / u), " x ", whole(season.w / u), " dp, Board ending ", whole((foot - board.y - board.w) / u),
           " dp above the glass's foot, Kings ", whole((foot - kings.y - kings.w) / u));
+    print("the iPad's smallest window, the game:");
+    var plain = showing(shell::GAME, home::NOTHING);
+    at_rest(plain, g);
+    report("the game", g, plain, true, false);
+    taken(g);
     gui::display_scale = 0.0;
 }
 

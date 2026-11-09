@@ -3,11 +3,11 @@ at rest: 52.5° down, board turned 0.0°, bounds 191 160 898 x 616; 3 buttons:
   1206 458 44 x 44
   1206 522 44 x 44
 the view tapped, 0.3 s on: 65.3° down, board turned 0.0°, bounds 220 98 841 x 678; 18 redraws
-  1 s on: 74.0° down, board turned 0.0°, bounds 237 68 806 x 708; 17 redraws more, still animating false
+  1 s on: 74.0° down, board turned 0.0°, bounds 246 84 788 x 692; 17 redraws more, still animating false
   a second later: 0 redraws, animating false
 tapped again: 52.5° down, board turned 0.0°, bounds 191 160 898 x 616
 zoomed: 52.5° down, board turned 0.0°, bounds 130 171 1020 x 699, 1.1 times the size; 35 redraws, animating false
-zoomed, the top view: 74.0° down, board turned 0.0°, bounds 188 45 903 x 794
+zoomed, the top view: 74.0° down, board turned 0.0°, bounds 201 66 877 x 771
 back: 52.5° down, board turned 0.0°, bounds 191 160 898 x 616, the same view as at first true
 showcase on: lit true, dot false
 dragged 60 left and 30 down: 61.5° down, board turned 0.0°, bounds 191 160 898 x 616; eye 2.2 12.8 7.8; selected -1, pressed -1, the position the same true, dot true

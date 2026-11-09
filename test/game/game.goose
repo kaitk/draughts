@@ -141,7 +141,7 @@ fn main() {
     drive::frame(gm, g, l, away, false, false, false, 11.0);
     print("after: celebrating since ", gm.won_at, ", over the UI ", pieces(), "tiles ", drive::tiles(g));
     drive::frame(gm, g, l, away, false, false, false, 13.0);
-    print("at 2.0 s: over the UI ", pieces(), "the winner crowned ", drive::over[1].look.y, ", tiles ",
+    print("at 2.0 s: over the UI ", pieces(), "the winner crowned ", drive::over[drive::over.len - 1].look.y, ", tiles ",
           drive::tiles(g), ", animating at 8 s ", game::animating(gm, g, 19.0));
     print("back on the card asks for home: ", drive::tap(gm, g, l, drive::control(g, CARD_BACK), 19.1) == game::HOME);
     drive::tap(gm, g, l, drive::control(g, CARD_RESTART), 19.2);

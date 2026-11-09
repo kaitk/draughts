@@ -54,7 +54,10 @@ let WIDE_H = 88.0;          // undo move in portrait
 let CLOCK_H = 72.0;
 let SHORT_GAP = 36.0;       // dp: the clocks' gap holding the countdown's short line in a corner panel
 let MID_GAP = 12.0;         // dp: either side of the short form between side-by-side clocks
-let OVER = 4;               // pieces over the UI: two clocks and the winner, or both pieces twice for a draw, at most
+// Pieces over the UI: two clocks and the winner, or both pieces twice for a draw, and
+// what each side has taken (two sides' 20 on 10 × 10), at most; a transition holds two
+// screens' at once.
+let OVER = 96;
 
 let SIDE = 232.0;           // dp: each panel's width in landscape,
 let NARROW = 192.0;         // narrowing to this near square
@@ -99,9 +102,47 @@ struct Layout {
     disc:    f32          = 0.0,
     box:     float4       = float4 { 0.0, 0.0, 0.0, 0.0 },
     room:    float4       = float4 { 0.0, 0.0, 0.0, 0.0 },
-    keep:    float4[3]    = [float4 { 0.0, 0.0, 0.0, 0.0 }; 3],
+    keep:    float4[4]    = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4],
     gap:     f32          = 0.0,
     compact: bool         = false,   // a small window's portrait (TOP_COMPACT)
+    corners: bool         = false,   // landscape's short panels in the top corners, flat or 3D
+    // Where what each side has taken goes (task 052), as `taken_as` lays it out, each
+    // piece `taken_d` pixels across; TAKEN_NONE where the screen shows none (a puzzle).
+    taken:    float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
+    taken_as: i64    = 0,
+    taken_d:  f32    = 0.0,
+}
+
+// What each side has taken (task 052, prototypes/game-captured.html's take a, its `row`
+// look): the app's pieces small, each covering about half the one before, the kings after
+// a gap, crowned. Landscape, flat: a small glass panel under the left corner panel, black's
+// catch (the white pieces) over white's, as black's side of the board is above white's
+// (under it on a turned board); one line where the panel has no height for two (a short
+// phone with its gesture bar). Landscape, 3D: one line on glass above the board, at the
+// top between the corner panels, white's catch at the left and black's at the right, as
+// in portrait's row. Portrait: a row under the bar's tiles, the bar TAKEN_ROW taller.
+// Compact: the bar's empty middle, two rows as the flat panel's. A piece is TAKEN_D dp,
+// TAKEN_PHONE on a phone, TAKEN_COMPACT in a small window.
+let TAKEN_NONE = 0;
+let TAKEN_PANEL = 1;        // two rows on their own glass
+let TAKEN_LINE = 2;         // one line on its own glass, the far side's catch first
+let TAKEN_BAR = 3;          // one line on glass as wide as it, centered in `taken`
+let TAKEN_ROW = 4;          // the portrait bar's row: white's catch at the left, black's at the right
+let TAKEN_STACK = 5;        // two rows, no glass of their own (compact's bar)
+let TAKEN_D = 32.0;
+let TAKEN_PHONE = 26.0;
+let TAKEN_COMPACT = 22.0;
+let TAKEN_BAR_ROW = 52.0;   // dp: the portrait bar's row for them, 36 under a 16 dp gap
+let TAKEN_STEP: f32 = 0.52; // of a piece: from one to the next in a row
+let TAKEN_GAP:  f32 = 0.3;  // of a piece: before the kings, and between two rows
+let TAKEN_PAD = 16.0;       // dp: either side inside their glass
+let TAKEN_ROWS_PAD = 14.0;  // dp: above and below two rows on their glass
+let TAKEN_LINE_PAD = 8.0;   // dp: above and below one line
+
+// How many pieces of each color have been taken, men and kings apart (game::taken).
+struct Taken {
+    men:   i64[2] = [0, 0],
+    kings: i64[2] = [0, 0],
 }
 
 // The game screen round the 3D board (task 015, prototypes/game3d.html's `corners` with
@@ -135,7 +176,9 @@ let VIEW = 0;
 let ZOOM = 1;
 let SHOWCASE = 2;
 
-fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT, small: bool = true) -> Layout {
+// `game`: the game's screen, with room for what each side has taken.
+fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT, small: bool = true,
+              game: bool = false) -> Layout {
     let width = area.z;
     let height = area.w;
     let gap = GAP * s;
@@ -160,16 +203,51 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
         let box = float4 { area.x + gap, area.y + gap, width - 2.0 * gap, height - 2.0 * gap };
         var l = Layout { board: board::layout_at(0.0, 0.0, 1.0, s, n), left: left, right: right, three: true,
                          pitch: PITCH_LANDSCAPE, buttons: buttons, count: 3, row: !col, touch: touch, disc: disc,
-                         box: box, room: box, gap: gap, .. };
-        l.keep = [left, right, buttons];
-        rest(l, settle(l, view3d::Camera { pitch: PITCH_LANDSCAPE, yaw: 0.0 }, n), s);
+                         box: box, room: box, gap: gap, corners: true, .. };
+        l.keep = [left, right, buttons, float4 { 0.0, 0.0, 0.0, 0.0 }];
+        let cam = view3d::Camera { pitch: PITCH_LANDSCAPE, yaw: 0.0 };
+        rest(l, settle(l, cam, n), s);
+        guard game else { return l; }
+        // What each side has taken: a line at the top between the panels, which the board
+        // clears as it clears them, where the board at rest already does (a tablet). Else
+        // (a phone, whose board reaches the top margin) in the free corner under the left
+        // panel, as on the flat screen, where the board clears that; else the line, the
+        // board shrinking for it.
+        let d = (if phone { TAKEN_PHONE } else { TAKEN_D }) * s;
+        let x0 = left.x + left.z + gap;
+        let bar = float4 { x0, area.y + gap, right.x - gap - x0, d + 2.0 * TAKEN_LINE_PAD * s };
+        if !view3d::touches(l.rest, bar, 0.5 * gap) {
+            l.taken = bar;
+            l.taken_as = TAKEN_BAR;
+            l.taken_d = d;
+            l.keep[3] = bar;
+            return l;
+        }
+        var under = l;
+        under_left(under, area, s, d);
+        // Narrowed to clear the board's near edge, the bounds' widest, down to 3/4.
+        under.taken.z = min(under.taken.z, l.rest.rect.x - 0.5 * gap - under.taken.x);
+        if under.taken.z >= 0.75 * left.z && under.taken_as != TAKEN_NONE && !view3d::touches(l.rest, under.taken, 0.5 * gap)
+           && !overlaps(under.taken, buttons) {
+            l.taken = under.taken;
+            l.taken_as = under.taken_as;
+            l.taken_d = under.taken_d;
+            l.keep[3] = l.taken;
+            return l;
+        }
+        l.taken = bar;
+        l.taken_as = TAKEN_BAR;
+        l.taken_d = d;
+        l.keep[3] = bar;
+        rest(l, settle(l, cam, n), s);
         return l;
     }
     let cam = view3d::Camera { pitch: portrait_pitch, yaw: 0.0 };
     let compact = small && height < gui::COMPACT * s;
     let gap = (if compact { GAP_COMPACT } else { GAP }) * s;
     let narrow = (width - 2.0 * gap - 72.0 * s) / 3.0 < STACK_W * s;
-    let top = (if compact { TOP_COMPACT } else if narrow { TOP_STACKED } else { TOP }) * s;
+    let extra = if game && !compact { TAKEN_BAR_ROW } else { 0.0 };
+    let top = ((if compact { TOP_COMPACT } else if narrow { TOP_STACKED } else { TOP }) + extra) * s;
     let bottom = (if compact { BOTTOM_COMPACT } else { BOTTOM }) * s;
     let touch = (if phone { TOUCH_PHONE_PORTRAIT } else { TOUCH_TABLET }) * s;
     let disc = (if phone { DISC_PHONE_PORTRAIT } else { DISC_TABLET }) * s;
@@ -192,7 +270,8 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
     var l = Layout { board: board::layout_at(0.0, 0.0, 1.0, s, n), left: float4 { x, y, w, top }, right: play,
                      three: true, pitch: portrait_pitch, buttons: buttons, count: 2, row: !col, touch: touch,
                      disc: disc, box: box, gap: gap, compact: compact, .. };
-    l.keep = [l.left, play, buttons];
+    l.keep = [l.left, play, buttons, float4 { 0.0, 0.0, 0.0, 0.0 }];
+    if game { taken_in_bar(l, phone, s); }
     rest(l, view3d::fit(cam, n, box, view3d::MIDDLE), s);
     return l;
 }
@@ -207,7 +286,7 @@ fn rest(l: Layout&, v: view3d::View, s: f32) {
 
 // Whether the board v places (with `field`, its playing field) is clear of what the
 // layout keeps clear, by `gap` pixels.
-fn clear(v: view3d::View, keep: float4[3]&, gap: f32, field: bool = false) -> bool {
+fn clear(v: view3d::View, keep: float4[4]&, gap: f32, field: bool = false) -> bool {
     for r in keep { if view3d::touches(v, r, gap, field) { return false; } }
     return true;
 }
@@ -316,7 +395,7 @@ fn camera(g: gui::Gui&, l: Layout, r: rig::Rig&, now: f64) -> bool {
 // 120 dp bar above it (128 where a third of it is under STACK_W, on a phone, its icons
 // over their words) and the 204 dp play below it, both as wide as the board.
 fn layout(width: f32, height: f32, n: i64) -> Layout {
-    return layout_in(float4 { 0.0, 0.0, width, height }, n, gui::scale_of(width, height));
+    return layout_in(float4 { 0.0, 0.0, width, height }, n, gui::scale_of(width, height), true, true);
 }
 
 // The landscape layout's panels' width in `area`: SIDE, narrowing to NARROW for the board.
@@ -345,14 +424,20 @@ fn landscape(area: float4, s: f32) -> bool {
     return area.z >= area.w && landscape_board(area, s) >= HANDOVER * (area.w - 2.0 * GAP * s);
 }
 
-// The same in `area`, a screen's safe area, at s pixels a dp.
-fn layout_in(area: float4, n: i64, s: f32, small: bool = true) -> Layout {
+// The same in `area`, a screen's safe area, at s pixels a dp. The game's screen (`game`,
+// task 054) has the 3D board's panels round the flat board: in landscape its short
+// corner panels (flat_corners), in portrait the bar and the play as wide as the 3D
+// board's, and room for what each side has taken (task 052). A puzzle keeps the panels
+// as tall as the board.
+fn layout_in(area: float4, n: i64, s: f32, small: bool = true, game: bool = false) -> Layout {
     let width = area.z;
     let height = area.w;
     let gap = GAP * s;
+    let phone = min(width, height) / s < PHONE_DP;
     if landscape(area, s) {
         let side = side_of(area, s);
         let size = landscape_board(area, s);
+        if game { return flat_corners(area, n, s, size); }
         let x = area.x + (width - (size + 2.0 * side + 2.0 * gap)) / 2.0;
         let y = area.y + (height - size) / 2.0;
         // The panels as tall as the board, or PANEL_LEAST where the width keeps the board
@@ -368,18 +453,94 @@ fn layout_in(area: float4, n: i64, s: f32, small: bool = true) -> Layout {
     // Narrow where a third of the bar is under STACK_W: the width's, or in a window
     // wider than tall that keeps this layout (panel::landscape) the board's, which the
     // height holds under the width.
-    let across = if width > height { min(width - 2.0 * gap, height - TOP * s - bottom - 4.0 * gap) }
+    // The game's bar is as wide as the 3D board's, the width less the margins.
+    let across = if game { width - 2.0 * gap }
+                 else if width > height { min(width - 2.0 * gap, height - TOP * s - bottom - 4.0 * gap) }
                  else { width - 2.0 * gap };
     let narrow = (across - 72.0 * s) / 3.0 < STACK_W * s;
-    let top = (if compact { TOP_COMPACT } else if narrow { TOP_STACKED } else { TOP }) * s;
+    let extra = if game && !compact { TAKEN_BAR_ROW } else { 0.0 };
+    let top = ((if compact { TOP_COMPACT } else if narrow { TOP_STACKED } else { TOP }) + extra) * s;
     let size = min(width - 2.0 * gap, height - top - bottom - 4.0 * gap);
     let x = area.x + (width - size) / 2.0;
     let y = area.y + (height - (top + size + bottom + 2.0 * gap)) / 2.0;
-    // Compact, the panels keep the width where the board is narrower.
-    let px = if compact { area.x + gap } else { x };
-    let pw = if compact { width - 2.0 * gap } else { size };
-    return Layout { board: board::layout_at(x, y + top + gap, size, s, n), left: float4 { px, y, pw, top },
-                    right: float4 { px, y + top + gap + size + gap, pw, bottom }, compact: compact };
+    // Compact and the game's, the panels keep the width where the board is narrower.
+    let px = if compact || game { area.x + gap } else { x };
+    let pw = if compact || game { width - 2.0 * gap } else { size };
+    var l = Layout { board: board::layout_at(x, y + top + gap, size, s, n), left: float4 { px, y, pw, top },
+                     right: float4 { px, y + top + gap + size + gap, pw, bottom }, compact: compact };
+    if game { taken_in_bar(l, phone, s); }
+    return l;
+}
+
+// The game's flat board in landscape (task 054) with the 3D board's panels: short glass
+// panels in the top corners, CORNER_H tall, NARROW on a phone, else SIDE, but no wider
+// than the flat layout's panels (side_of), so the board keeps its size and place (near
+// square they narrow for it, where the 3D board's stay SIDE); a narrowed play panel
+// CORNER_PLAY tall, as a phone's, for the hint over undo move. Under the left one, what
+// each side has taken, on its own glass.
+fn flat_corners(area: float4, n: i64, s: f32, size: f32) -> Layout {
+    let width = area.z;
+    let height = area.w;
+    let gap = GAP * s;
+    let phone = min(width, height) / s < PHONE_DP;
+    let side = min((if phone { NARROW } else { SIDE }) * s, side_of(area, s));
+    let tall = min(CORNER_H * s, height - 2.0 * gap);
+    let play_tall = if side < SIDE * s - 0.5 { min(CORNER_PLAY * s, height - 2.0 * gap) } else { tall };
+    let left = float4 { area.x + gap, area.y + gap, side, tall };
+    let right = float4 { area.x + width - gap - side, area.y + gap, side, play_tall };
+    var l = Layout { board: board::layout_at(area.x + (width - size) / 2.0, area.y + (height - size) / 2.0, size, s, n),
+                     left: left, right: right, corners: true, .. };
+    under_left(l, area, s, (if phone { TAKEN_PHONE } else { TAKEN_D }) * s);
+    return l;
+}
+
+fn overlaps(a: float4, b: float4) -> bool { a.x < b.x + b.z && b.x < a.x + a.z && a.y < b.y + b.w && b.y < a.y + a.w }
+
+// What each side has taken on its own glass under l's left corner panel, its pieces d
+// across: two rows where they fit down to the bottom margin, smaller where they must (to
+// 3/4), else one line; none where even that has no room.
+fn under_left(l: Layout&, area: float4, s: f32, d: f32) {
+    let left = l.left;
+    let side = left.z;
+    let gap = GAP * s;
+    let height = area.w;
+    let under = left.y + left.w + BACK_GAP * s;
+    let room = area.y + height - gap - under;
+    let rows = (2.0 + TAKEN_GAP) * d + 2.0 * TAKEN_ROWS_PAD * s;
+    let edge = TAKEN_LINE_PAD * s;
+    let squeezed = (room - 2.0 * edge) / (2.0 + TAKEN_GAP);
+    if room >= rows {
+        l.taken = float4 { left.x, under, side, rows };
+        l.taken_as = TAKEN_PANEL;
+        l.taken_d = d;
+    } else if squeezed >= 0.75 * d {
+        l.taken = float4 { left.x, under, side, room };
+        l.taken_as = TAKEN_PANEL;
+        l.taken_d = squeezed;
+    } else {
+        let one = min(d, room - 2.0 * edge);
+        guard one > 0.5 * d else { return; }
+        l.taken = float4 { left.x, under, side, one + 2.0 * edge };
+        l.taken_as = TAKEN_LINE;
+        l.taken_d = one;
+    }
+}
+
+// What each side has taken in the portrait bar: a row under its tiles; compact, the
+// bar's middle between back and settings.
+fn taken_in_bar(l: Layout&, phone: bool, s: f32) {
+    if l.compact {
+        let x0 = l.left.x + (12.0 + ICON_W + 12.0) * s;
+        let x1 = l.left.x + l.left.z - (12.0 + ICON_W + 12.0 + ICON_W + 12.0) * s;
+        l.taken = float4 { x0, l.left.y + 12.0 * s, max(x1 - x0, 0.0), l.left.w - 24.0 * s };
+        l.taken_as = TAKEN_STACK;
+        l.taken_d = TAKEN_COMPACT * s;
+        return;
+    }
+    let h = (TAKEN_BAR_ROW - 16.0) * s;
+    l.taken = float4 { l.left.x + 20.0 * s, l.left.y + l.left.w - 16.0 * s - h, l.left.z - 40.0 * s, h };
+    l.taken_as = TAKEN_ROW;
+    l.taken_d = (if phone { TAKEN_PHONE } else { TAKEN_D }) * s;
 }
 
 // The countdown before a draw under whose turn (prototypes/draw.html, take a): a line
@@ -585,9 +746,11 @@ fn leave(g: gui::Gui&, l: Layout) -> i64 {
     // Thirds of the bar while each word fits its third; else each tile as wide as its
     // word wants and an even share of the rest, as the setup's draughts are. A bar made
     // taller for it (TOP_STACKED) puts each icon over its word, which needs less width.
-    let stacked = l.left.w >= TOP_STACKED * u - 0.5;
+    // A bar with what each side has taken has its row under the tiles.
+    let tiles_h = l.left.w - (if l.taken_as == TAKEN_ROW { TAKEN_BAR_ROW * u } else { 0.0 });
+    let stacked = tiles_h >= TOP_STACKED * u - 0.5;
     let arrange = if stacked { gui::STACKED } else { gui::MIDDLE };
-    let bar = float4 { l.left.x + 20.0 * u, l.left.y + 16.0 * u, l.left.z - 40.0 * u, l.left.w - 32.0 * u };
+    let bar = float4 { l.left.x + 20.0 * u, l.left.y + 16.0 * u, l.left.z - 40.0 * u, tiles_h - 32.0 * u };
     let gap = (if stacked { 12.0 } else { 16.0 }) * u;
     let free = bar.z - 2.0 * gap;
     var wants: f32[3] = [0.0, 0.0, 0.0];
@@ -617,7 +780,7 @@ fn leave(g: gui::Gui&, l: Layout) -> i64 {
 // too short for it beside what is above it (a phone).
 fn tall(l: Layout, u: f32) -> f32 {
     // A corner panel is short on every screen: the tall tile but in a phone's narrow one.
-    if l.three { return (if l.right.z < SIDE * u - 0.5 { STACK_H } else { TALL_H }) * u; }
+    if l.corners { return (if l.right.z < SIDE * u - 0.5 { STACK_H } else { TALL_H }) * u; }
     return (if l.right.w < SHORT * u { STACK_H } else { TALL_H }) * u;
 }
 
@@ -657,7 +820,7 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: 
     if landscape {
         // A corner panel's short line between the clocks takes from undo move what the
         // panel lacks, and leaves a gap above it.
-        let squeezed = l.three && clock::on(c) && note.of > 0 && !drawn;
+        let squeezed = l.corners && clock::on(c) && note.of > 0 && !drawn;
         let wanted = tall(l, u);
         let low = if squeezed { min(wanted, right.w - (2.0 * CLOCK_H + SHORT_GAP + 12.0) * u) } else { wanted };
         // The column as the prototype has it where the panel is tall enough: whose turn or
@@ -695,7 +858,7 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: 
         } else {
             // The piece, its glow ring, and the words under it; both pieces for a draw. A
             // countdown in a 3D board's short corner panel closes the gaps up.
-            let close = (l.three && note.of > 0) || tight;
+            let close = (l.corners && note.of > 0) || tight;
             gui::cut_top(right, (if close { 8.0 } else { 18.0 }) * u);
             var spot = gui::cut_top(right, 72.0 * u);
             if !column {
@@ -721,7 +884,7 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: 
             let dim: f32 = if help.look { 1.0 } else { 0.66 };
             gui::text(g, gui::fitting(g, gui::BODY, name, pair_r.z), pair_r, name, dim, 0.0, gui::LEFT);
         }
-        if !(l.three && clock::on(c)) { countdown(g, right, note); }
+        if !(l.corners && clock::on(c)) { countdown(g, right, note); }
         let undo_icon: f32 = if beside { 36.0 } else { 48.0 };
         if gui::labelled(g, 113, back, gui::UNDO, undo_icon, strings::get(strings::GAME_UNDO_MOVE), gui::HEADING,
                          gui::STACKED) {
@@ -903,5 +1066,97 @@ fn pips(g: gui::Gui&, r: float4, left: i64, a: f32) {
         let d = float4 { r.x + i * (PIP + PIP_GAP) * u, r.y, PIP * u, PIP * u };
         if i < left { gui::glow_fill(g, d, a, 0.5 * PIP * u); }
         else { gui::fill(g, d, float4 { 1.0, 1.0, 1.0, 0.2 * a }, 0.5 * PIP * u); }
+    }
+}
+
+// What each side has taken (task 052), where the layout puts it (Layout.taken): `t`
+// counts the pieces of each color taken, so black's catch is t's white pieces. Each
+// catch is a row of the app's pieces, men then the kings after a gap, crowned, each
+// covering about half the one before, closer where the row would run past its room. A
+// catch on its own glass shows it only once a piece has been taken. The pieces go into
+// `over`.
+fn taken(g: gui::Gui&, l: Layout, t: Taken, over: board::Piece[..OVER]&) {
+    guard l.taken_as != TAKEN_NONE && l.taken.z > 0.0 && l.taken.w > 0.0 else { return; }
+    let u = g.scale;
+    let d = l.taken_d;
+    let r = l.taken;
+    // The catch nearer the top first: black's (white's pieces) over white's, as black's
+    // side of the board is, unless the board is turned.
+    let first = if l.board.flip { rules::BLACK } else { rules::WHITE };
+    let any = t.men[0] + t.kings[0] + t.men[1] + t.kings[1] > 0;
+    let edge = TAKEN_PAD * u;
+    if l.taken_as == TAKEN_PANEL || l.taken_as == TAKEN_STACK {
+        guard any || l.taken_as == TAKEN_STACK else { return; }
+        var inner = r;
+        if l.taken_as == TAKEN_PANEL {
+            gui::panel(g, r);
+            inner = float4 { r.x + edge, r.y, r.z - 2.0 * edge, r.w };
+        }
+        let gap = TAKEN_GAP * d;
+        let y = inner.y + 0.5 * (inner.w - 2.0 * d - gap);
+        catch_row(over, t, first, float4 { inner.x, y, inner.z, d }, false);
+        catch_row(over, t, 1 - first, float4 { inner.x, y + d + gap, inner.z, d }, false);
+        return;
+    }
+    if l.taken_as == TAKEN_ROW {
+        // White's catch (black's pieces) at the left, black's at the right, each in at
+        // most its half less a gap.
+        let y = r.y + 0.5 * (r.w - d);
+        let half = 0.5 * (r.z - TAKEN_GAP * d);
+        catch_row(over, t, rules::BLACK, float4 { r.x, y, half, d }, false);
+        catch_row(over, t, rules::WHITE, float4 { r.x + r.z - half, y, half, d }, true);
+        return;
+    }
+    guard any else { return; }
+    // One line on its glass: TAKEN_LINE's the far side's catch first, the bar's white's
+    // catch first, as portrait's row; the bar as wide as what it holds.
+    let a = if l.taken_as == TAKEN_LINE { first } else { rules::BLACK };
+    let b = 1 - a;
+    let mid = (if row_len(t, a, d) > 0.0 && row_len(t, b, d) > 0.0 { 24.0 } else { 0.0 }) * u;
+    var glass = r;
+    if l.taken_as == TAKEN_BAR {
+        let w = min(r.z, row_len(t, a, d) + mid + row_len(t, b, d) + 2.0 * edge);
+        glass = float4 { r.x + 0.5 * (r.z - w), r.y, w, r.w };
+    }
+    gui::panel(g, glass);
+    let inner = float4 { glass.x + edge, glass.y + 0.5 * (glass.w - d), glass.z - 2.0 * edge, d };
+    // Each catch in at most its share of the room, as long as it wants.
+    let la = row_len(t, a, d);
+    let lb = row_len(t, b, d);
+    let room = inner.z - mid;
+    let wa = if la + lb <= room { la } else { room * la / (la + lb) };
+    catch_row(over, t, a, float4 { inner.x, inner.y, wa, d }, false);
+    catch_row(over, t, b, float4 { inner.x + wa + mid, inner.y, inner.z - wa - mid, d }, false);
+}
+
+// How long a row of the pieces of color `c` taken is at its usual spacing, d across each.
+fn row_len(t: Taken, c: i64, d: f32) -> f32 {
+    let n = t.men[c] + t.kings[c];
+    guard n > 0 else { return 0.0; }
+    let gap = if t.men[c] > 0 && t.kings[c] > 0 { TAKEN_GAP * d } else { 0.0 };
+    return (n - 1) * TAKEN_STEP * d + d + gap;
+}
+
+// The pieces of color `c` taken, in a row in r (at most r.w across each), from its left,
+// or ending at its right (`right`). A row that would run past r takes smaller pieces,
+// down to TAKEN_LEAST of r.w, then closer ones.
+let TAKEN_LEAST: f32 = 0.7;
+fn catch_row(over: board::Piece[..OVER]&, t: Taken, c: i64, r: float4, right: bool) {
+    let n = t.men[c] + t.kings[c];
+    guard n > 0 && r.z > 0.0 else { return; }
+    let both = t.men[c] > 0 && t.kings[c] > 0;
+    let gaps: f32 = if both { TAKEN_GAP } else { 0.0 };
+    let d = clamp(r.z / ((n - 1) * TAKEN_STEP + 1.0 + gaps), TAKEN_LEAST * r.w, r.w);
+    let gap = gaps * d;
+    var step = TAKEN_STEP * d;
+    if n > 1 && (n - 1) * step + d + gap > r.z { step = max((r.z - d - gap) / (n - 1), 0.1 * d); }
+    let len = (n - 1) * step + d + gap;
+    var x = if right { r.x + r.z - len } else { r.x };
+    let y = r.y + 0.5 * (r.w - d);
+    for i in n {
+        let king = i >= t.men[c];
+        if king && i == t.men[c] && t.men[c] > 0 { x += gap; }
+        piece(over, float4 { x, y, d, d }, 0.5 * d, c, if king { board::CROWN } else { 0 }, 1.0, 0.0);
+        x += step;
     }
 }

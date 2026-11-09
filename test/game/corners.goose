@@ -12,7 +12,9 @@
 // the panels and the buttons, and how much it grows. Portrait's camera is 65° down; then
 // what it gave at 52.5° and 60°. Then the shell on the 3D board (settings::raised): a
 // game against a friend tapped through the perspective, the board turned for black and a
-// piece dragged through it, and the flat layout's board untouched.
+// piece dragged through it, and the flat layout's board untouched. The layout is the
+// game's, with what each side has taken (task 052): a line above the board between the
+// panels in landscape, clear of the board and the panels, a row in portrait's bar.
 import std;
 import vec;
 import math;
@@ -46,7 +48,7 @@ fn edges(v: view3d::View) -> f32 {
 fn report(what: const u8[:], g: gui::Gui&, size: float2) {
     let u = gui::scale_of(size.x, size.y);
     let safe = gui::safe(g, size.x, size.y);
-    let l = panel::corners_in(safe, 10, u);
+    let l = panel::corners_in(safe, 10, u, panel::PITCH_PORTRAIT, true, true);
     var gm = game::new(rules::INTERNATIONAL);
     drive::idle(gm, g, l, 0.0);
     var wrong: u8[>..] = [];
@@ -62,6 +64,16 @@ fn report(what: const u8[:], g: gui::Gui&, size: float2) {
     view3d::hull(l.view, h);
     for q in h { if !inside(float4 { q.x, q.y, 0.0, 0.0 }, safe) { format(wrong, " the board off the safe area;"); break; } }
     if view3d::touches(l.view, l.left, 0.0) || view3d::touches(l.view, l.right, 0.0) { format(wrong, " the board on a panel;"); }
+    // What each side has taken: in landscape a line at the top between the panels, or
+    // its glass under the left panel, which the board clears; in portrait the bar's row.
+    let tk = l.taken;
+    if !inside(tk, safe) { format(wrong, " what is taken off the safe area;"); }
+    if l.taken_as == panel::TAKEN_ROW { if !inside(tk, l.left) { format(wrong, " what is taken off the bar;"); } }
+    else {
+        if overlaps(tk, l.left) || overlaps(tk, l.right) || overlaps(tk, l.buttons) { format(wrong, " what is taken on a panel;"); }
+        if view3d::touches(l.view, tk, 0.0) { format(wrong, " the board on what is taken;"); }
+    }
+    let places = ["none", "under the left panel", "under the left panel in a line", "above the board", "in the bar", "in the bar"];
     // The camera buttons: inside the safe area, off both panels and the board, each disc
     // in its touch area.
     let bt = l.buttons;
@@ -78,7 +90,7 @@ fn report(what: const u8[:], g: gui::Gui&, size: float2) {
     let r = l.view.rect;
     print("  ", what, ": board ", dp(r, u), " dp, ", floor(r.z / r.w * 100.0 + 0.5) / 100.0, ":1, far edge ",
           whole(100.0 * edges(l.view)), "%; panels ", dp(l.left, u), ", ", dp(l.right, u), "; ", drive::tiles(g),
-          " tiles; ", l.count, " buttons ", whole(l.touch / u), "/", whole(l.disc / u), " dp in a ",
+          " tiles; taken ", places[l.taken_as], "; ", l.count, " buttons ", whole(l.touch / u), "/", whole(l.disc / u), " dp in a ",
           if l.row { "row " } else { "column " }, dp(bt, u), if wrong.len == 0 { ", all in place" } else { "" }, wrong);
     // Zoomed (landscape only), at rest and in the top view: the field's outline inside
     // the zoom's room and the safe area, clear of the panels and the buttons.

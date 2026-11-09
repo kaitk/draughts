@@ -370,7 +370,8 @@ fn raise_in(sh: Shell&, room: float4, n: i64, u: f32, l: board::Layout&) -> view
 // `now` (panel::aim), else the flat board's.
 fn game_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
     let n = rules::VARIANTS[sh.game.b.variant].size;
-    var l = if settings::raised(sh.prefs) { panel::corners_in(area, n, u) } else { panel::layout_in(area, n, u) };
+    var l = if settings::raised(sh.prefs) { panel::corners_in(area, n, u, panel::PITCH_PORTRAIT, true, true) }
+            else { panel::layout_in(area, n, u, true, true) };
     l.board.flip = sh.game.computer == rules::WHITE;
     panel::aim(l, sh.game.cam, now);
     return l;
