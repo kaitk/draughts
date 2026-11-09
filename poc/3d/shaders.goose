@@ -36,6 +36,7 @@ let FRAME = """
         vec4 tint;
         vec4 frame_build;    // x: 1 one solid block, 0 four mitred pieces; y: the joint
                              // line's strength; z: 1 for stone, its u leaning at the ends
+        vec4 frame_surface;  // w: how much smoother the frame's rounded edge is
     };
     const float PI = 3.14159265;
     const float FIELD = 4.0;
@@ -44,8 +45,8 @@ let FRAME = """
     const float FRAME_TOP = 0.05;
     const float BOTTOM = -0.7;
     const float RADIUS = 0.44;
-    const float HEIGHT = 0.24;
-    const float EDGE_AT = 0.86;
+    const float HEIGHT = 0.29;
+    const float EDGE_AT = 0.89;
     // Along the frame's profile (mesh.goose's uv.y): where the bullnose starts and ends.
     const float BULL_START = 0.4546;
     const float BULL_END = 0.5960;
@@ -215,15 +216,19 @@ let LIT_FRAG = """
         return vis;
     }
 
-    // The crown on a king's face, in units of half the piece's radius: a body with three
-    // points, a ball on each, and a bar under it.
-    const vec2 CROWN[7] = vec2[7](vec2(-0.55, -0.12), vec2(-0.66, 0.34), vec2(-0.27, 0.10),
-                                  vec2(0.0, 0.46), vec2(0.27, 0.10), vec2(0.66, 0.34),
-                                  vec2(0.55, -0.12));
+    // The crown on a king's face, in units of the piece's radius, traced from the 3D
+    // reference's king: a body with three points, the side ones reaching out, its edges
+    // between them bowed in, a ball on each point, and a bar under it; 1.06 of the radius
+    // across and 0.86 tall, centred in the recess.
+    const vec2 CROWN[11] = vec2[11](vec2(-0.35, -0.29), vec2(-0.45, 0.11),
+                                    vec2(-0.31, 0.055), vec2(-0.19, 0.04),
+                                    vec2(-0.075, 0.18), vec2(0.0, 0.33), vec2(0.075, 0.18),
+                                    vec2(0.19, 0.04), vec2(0.31, 0.055),
+                                    vec2(0.45, 0.11), vec2(0.35, -0.29));
     float crown(vec2 p) {
         float d = dot(p - CROWN[0], p - CROWN[0]);
         float s = 1.0;
-        for (int i = 0, j = 6; i < 7; j = i, i++) {
+        for (int i = 0, j = 10; i < 11; j = i, i++) {
             vec2 e = CROWN[j] - CROWN[i];
             vec2 w = p - CROWN[i];
             vec2 b = w - e * clamp(dot(w, e) / dot(e, e), 0.0, 1.0);
@@ -232,22 +237,23 @@ let LIT_FRAG = """
             if (all(c) || all(not(c))) s = -s;
         }
         d = s * sqrt(d);
-        d = min(d, length(p - vec2(-0.68, 0.40)) - 0.1);
-        d = min(d, length(p - vec2(0.0, 0.53)) - 0.1);
-        d = min(d, length(p - vec2(0.68, 0.40)) - 0.1);
-        vec2 q = abs(p - vec2(0.0, -0.27)) - vec2(0.55, 0.055);
-        d = min(d, length(max(q, 0.0)) + min(max(q.x, q.y), 0.0));
+        d = min(d, length(p - vec2(-0.47, 0.15)) - 0.062);
+        d = min(d, length(p - vec2(0.0, 0.37)) - 0.062);
+        d = min(d, length(p - vec2(0.47, 0.15)) - 0.062);
+        vec2 q = abs(p - vec2(0.0, -0.36)) - vec2(0.34, 0.03);
+        d = min(d, length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - 0.01);
         return d;
     }
 
     // The piece's top as mesh::top_height and mesh::top_ao have it: keep them in step.
     float top_height(float u) {
-        float c = (u - 0.705) / 0.028;
-        return -0.022 * (1.0 - smoothstep(0.6, 0.67, u)) + 0.006 * exp(-c * c);
+        float t = clamp((u - 0.63) / 0.06, 0.0, 1.0);
+        float c = (u - 0.636) / 0.022;
+        return -0.02 * (1.0 - t * t * (2.4 - 1.4 * t)) - 0.008 * exp(-c * c);
     }
     float top_ao(float u) {
-        float c = (u - 0.63) / 0.04;
-        return 1.0 - 0.06 * (1.0 - u) - 0.35 * exp(-c * c);
+        float c = (u - 0.634) / 0.026;
+        return 1.0 - 0.05 * (1.0 - u) - 0.3 * exp(-c * c);
     }
 
     vec3 tonemap(vec3 c) {
@@ -337,6 +343,9 @@ let LIT_FRAG = """
             float round_part = smoothstep(BULL_START - 0.02, BULL_START + 0.04, along)
                              * (1.0 - smoothstep(BULL_END, BULL_END + 0.2, along));
             albedo = mix(albedo, edge.rgb, round_part * edge.a);
+            // Hands polish the rounded edge: smoother than the top, so the sheen gathers
+            // on the curve instead of spreading over the flat.
+            rough = max(rough - frame_surface.w * round_part, 0.2);
             float lw = max(fwidth(along), 0.004);
             float line = 1.0 - smoothstep(0.5 * lw, 1.5 * lw, abs(along - BULL_START - 0.006));
             albedo = mix(albedo, edge_line.rgb, line * edge_line.a);
@@ -375,26 +384,31 @@ let LIT_FRAG = """
                 n = normalize(vec3(-slope * radial.x, 1.0, -slope * radial.y));
                 ao = top_ao(u);
             }
-            if (v_kind.y > 0.5 && u < 0.66 && lp.y > 0.5 * HEIGHT) {
-                // The crown debossed in a king's face, filled with the crown's color, its
-                // walls sloping in, crisp by its distance's screen derivative.
-                float k = 0.72 * RADIUS;
+            if (v_kind.y > 0.75 && lp.y > 0.5 * HEIGHT) {
+                // The crown debossed in a crowned king's face, filled with the crown's
+                // color, its walls sloping in, crisp by its distance's screen derivative
+                // (taken over the whole top: a branch on the radius left specks where a
+                // pixel quad straddled it).
+                float k = RADIUS;
                 vec2 c = vec2(lp.x, -lp.z) / k;
                 float d = crown(c) * k;
                 float e = 0.002;
                 vec2 grad = vec2(crown(c + vec2(e / k, 0.0)) * k - d,
                                  crown(c + vec2(0.0, e / k)) * k - d) / e;
                 float w = fwidth(d);
-                float inside = 1.0 - smoothstep(-w, w, d);
+                float inside = (1.0 - smoothstep(-w, w, d)) * step(u, 0.6);
                 float wall = inside * smoothstep(-0.012 - w, -0.012 + w, d);
                 n = normalize(n - vec3(grad.x, 0.0, -grad.y) * wall * 1.6);
                 albedo = mix(albedo, crown_color.rgb, inside);
                 rough = mix(rough, 0.7, inside);
                 ao *= 1.0 - 0.35 * inside;
+                // The face's edge round the deboss catches the light: a thin lighter lip.
+                float lip = smoothstep(-w, w, d) * (1.0 - smoothstep(0.0, 0.005 + w, d));
+                albedo *= 1.0 + 0.18 * lip * step(u, 0.6);
             }
             // Contact: the foot darkens near what it stands on; a stack's lower disc
             // darkens under the upper.
-            float h = v_kind.y > 0.5 ? lp.y : p.y;
+            float h = v_kind.y > 0.25 ? lp.y : p.y;
             ao *= mix(0.6, 1.0, smoothstep(0.0, 0.035, h));
             if (v_kind.z > 1.5) ao *= mix(1.0, 0.65, smoothstep(HEIGHT - 0.05, HEIGHT, lp.y));
         }
@@ -555,6 +569,8 @@ let BAKE_FRAG = """
         vec4 frame;
         vec4 frame_fig;
         vec4 surface;    // x: each square's own tone, y: pores, z: seams, w: relief
+        vec4 frame_surface;  // the frame's wood: x pores, y relief, z late-wood streaks
+        vec4 stone;      // x: veins, y: clouding, z: the roughness following the figure
     };
     const float FIELD = 4.0;
     vec3 srgb(vec3 c) { return pow(c, vec3(2.2)); }
@@ -587,22 +603,42 @@ let BAKE_FRAG = """
     // A surface with its grain along y, from noise drawn out along the grain, never a
     // regular stripe: a broad soft figure, fine streaks, pores. k: how far the grain
     // wanders, the broad figure's contrast, the fine streaks' contrast, and how far the
-    // noise is drawn out along y (1 wood; 0 stone: the same noise round, a mottling with
-    // no veins). base: the color (sRGB) and roughness.
-    Wood wood(vec2 q, float seed, vec4 base, vec4 k) {
+    // noise is drawn out along y (1 wood; 0 stone: the same noise round, a clouding with
+    // faint veins). base: the color (sRGB) and roughness. f: the pores' strength, the
+    // open pores' (dense fine dashes), the fine dark late-wood lines', all following the
+    // grain, roughest in them.
+    Wood wood(vec2 q, float seed, vec4 base, vec4 k, vec3 f) {
         float s = k.w;
         q += vec2(h12(vec2(seed, 1.7)), h12(vec2(seed, 9.3))) * 97.0;
         float wander = (fbm(q * vec2(0.45, mix(0.45, 0.16, s))) - 0.5) * k.x;
         float x = q.x + wander;
         float broad = fbm(vec2(x * mix(1.3, 2.4, s), q.y * mix(1.3, 0.22, s)));
         float fine = fbm(vec2(x * 26.0, q.y * mix(26.0, 0.7, s)));
-        float pores = smoothstep(0.6, 0.9, vnoise(vec2(x * 70.0, q.y * mix(70.0, 1.6, s))))
-                    * surface.y;
+        float pores = smoothstep(0.6, 0.9, vnoise(vec2(x * 70.0, q.y * mix(70.0, 1.6, s))));
+        // Open pores, dense fine dashes along the grain, and late wood: thin darker lines,
+        // both near the screen's pixel at the default view, so the wood reads rough.
+        float dash = smoothstep(0.48, 0.82, vnoise(vec2(x * 55.0, q.y * 4.5)))
+                   * (0.6 + 0.4 * vnoise(vec2(x * 6.0, q.y * 0.8)));
+        float late = smoothstep(0.55, 0.8, vnoise(vec2(x * 24.0 + 3.1, q.y * 0.5)));
+        float open = dash * f.y * s;
+        pores *= f.x;
+        float streak = late * f.z * s;
         Wood w;
         w.albedo = srgb(base.rgb) * (1.0 + k.y * (broad - 0.5)) * (1.0 + k.z * (fine - 0.5))
-                 * (1.0 - 0.12 * pores);
-        w.rough = base.a + 0.14 * pores - 0.06 * (fine - 0.5);
-        w.height = (fine - 0.5) * 0.4 - pores * 0.5;
+                 * (1.0 - 0.12 * pores) * (1.0 - 0.3 * open) * (1.0 - 0.25 * streak);
+        pores = max(pores, open);
+        w.rough = base.a + 0.16 * pores + 0.1 * streak - 0.08 * (fine - 0.5);
+        w.height = (fine - 0.5) * 0.4 - pores * 0.5 - streak * 0.35;
+        if (s < 0.5) {
+            // Stone: a soft clouding and a few thin, faint veins, the roughness lowest in
+            // the clear stone between them; veins lighter in dark stone, darker in pale.
+            float cloud = fbm(q * 0.55 + 4.7);
+            float r = abs(fbm(q * vec2(0.35, 0.5) + vec2(fbm(q * 0.8) * 1.4, 0.0)) - 0.5);
+            float vein = 1.0 - smoothstep(0.0, 0.02, r);
+            float pale = dot(base.rgb, vec3(0.33)) > 0.5 ? -1.0 : 1.0;
+            w.albedo *= (1.0 + stone.y * (cloud - 0.5) * 2.0) * (1.0 + pale * stone.x * vein);
+            w.rough += stone.z * ((cloud - 0.5) * 2.0 + 0.5 * vein);
+        }
         return w;
     }
 
@@ -615,7 +651,7 @@ let BAKE_FRAG = """
         if (m > FIELD) {
             bool along_x = a.y > a.x;
             vec2 q = along_x ? p.yx : p;
-            Wood w = wood(q, along_x ? 71.0 : 83.0, inlay, inlay_fig);
+            Wood w = wood(q, along_x ? 71.0 : 83.0, inlay, inlay_fig, vec3(surface.y, 0.0, 0.0));
             float line = 1.0 - smoothstep(0.004, 0.010, m - FIELD);
             w.albedo *= 1.0 - 0.6 * line;
             w.height -= line;
@@ -625,10 +661,11 @@ let BAKE_FRAG = """
         ivec2 sq = clamp(ivec2(floor(g)), ivec2(0), ivec2(7));
         bool dark = ((sq.x + sq.y) & 1) == 1;
         float seed = float(sq.y * 8 + sq.x) + 1.0;
-        Wood w = dark ? wood(p, seed, dark_sq, dark_fig) : wood(p, seed, light_sq, light_fig);
+        vec3 f = vec3(surface.y, 0.0, 0.0);
+        Wood w = dark ? wood(p, seed, dark_sq, dark_fig, f) : wood(p, seed, light_sq, light_fig, f);
         w.albedo *= 1.0 + surface.x * (h12(vec2(seed, 4.2)) - 0.5);
-        vec2 f = fract(g);
-        float edge = min(min(f.x, 1.0 - f.x), min(f.y, 1.0 - f.y));
+        vec2 fr = fract(g);
+        float edge = min(min(fr.x, 1.0 - fr.x), min(fr.y, 1.0 - fr.y));
         float seam = 1.0 - smoothstep(0.002, 0.007, edge);
         w.albedo *= 1.0 - surface.z * seam;
         w.rough = mix(w.rough, 0.8, seam);
@@ -637,7 +674,7 @@ let BAKE_FRAG = """
     }
 
     // The frame map: the frame's wood or stone over a square, its grain along u.
-    Wood frame_map(vec2 p) { return wood(p.yx, 7.0, frame, frame_fig); }
+    Wood frame_map(vec2 p) { return wood(p.yx, 7.0, frame, frame_fig, frame_surface.xxz * vec3(0.3, 1.0, 1.0)); }
 
     Wood at(vec2 p) { return mode.x < 0.5 ? plan(p) : frame_map(p); }
 
@@ -648,7 +685,8 @@ let BAKE_FRAG = """
         Wood wx = at(p + vec2(texel.x, 0.0));
         Wood wy = at(p + vec2(0.0, texel.y));
         vec2 grad = vec2(wx.height - w.height, wy.height - w.height) / texel;
-        vec3 n = normalize(vec3(-grad.x * 0.0015 * surface.w, 1.0, -grad.y * 0.0015 * surface.w));
+        float relief = 0.0015 * (mode.x < 0.5 ? surface.w : frame_surface.y);
+        vec3 n = normalize(vec3(-grad.x * relief, 1.0, -grad.y * relief));
         out_albedo = vec4(w.albedo, w.rough);
         out_normal = vec4(n.x * 0.5 + 0.5, n.z * 0.5 + 0.5, 0.5, 1.0);
     }

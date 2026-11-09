@@ -2,13 +2,14 @@
 // and a fixed position, drawn natively with goose_gfx, floating in front of the season's
 // photograph. A drag turns the camera; Tab or a double click switches between inspecting
 // round the default view and turning freely round the board; R resets the view; T, or a
-// long press for touch, switches the theme. Nothing of the app's shell.
+// long press for touch, switches the theme; K switches the king between a stack of two
+// discs and one crowned disc. Nothing of the app's shell.
 //
 //   cd poc/3d
 //   ../../build/goose-v2026.4-macos-arm64/goose build -o ../../build/board3d board3d.goose
 //   ../../build/board3d
 //   ../../build/board3d --shot out.png --size 1920x1200 [--yaw 20 --pitch 40]
-//   ../../build/board3d --theme winter
+//   ../../build/board3d --theme winter --king crown
 //   ../../build/board3d --bench 200
 //
 // --shot draws one frame headless (no window) into a PNG; --bench times frames.
@@ -54,20 +55,23 @@ struct Frame {
     grade:           float4,
     tint:            float4,
     frame_build:     float4,
+    frame_surface:   float4,
 }
 struct Draw { draw: float4 }
 struct Bake {
-    mode:      float4,
-    size:      float4,
-    light_sq:  float4,
-    light_fig: float4,
-    dark_sq:   float4,
-    dark_fig:  float4,
-    inlay:     float4,
-    inlay_fig: float4,
-    frame:     float4,
-    frame_fig: float4,
-    surface:   float4,
+    mode:          float4,
+    size:          float4,
+    light_sq:      float4,
+    light_fig:     float4,
+    dark_sq:       float4,
+    dark_fig:      float4,
+    inlay:         float4,
+    inlay_fig:     float4,
+    frame:         float4,
+    frame_fig:     float4,
+    surface:       float4,
+    frame_surface: float4,
+    stone:         float4,
 }
 struct Shrink { to: float4 }
 struct Blur { dir: float4 }
@@ -164,9 +168,14 @@ let PIECES: i32[5][23] = [
 let LIFT: f32 = 0.07;
 let GROW: f32 = 1.05;
 
-// Fills the instances (two float4s each: foot and scale; dark, crown, selected or
-// stacked, seed) and the squares the field's occlusion reads (top, foot, radius,
-// occupied), and says where the selected piece stands.
+// How a king is shown (--king stack|crown, K switches): a plain stack of two discs, or
+// one disc with the crown debossed in its recess. The app will show one or the other.
+var king_crown = false;
+
+// Fills the instances (two float4s each: foot and scale; dark, 1 crowned or 0.5 a
+// stack's upper disc, 1 selected or 2 a stack's lower disc, seed) and the squares the
+// field's occlusion reads (top, foot, radius, occupied), and says where the selected
+// piece stands.
 fn position(inst: float4[..64]&, squares: float4[64]&) -> float4 {
     var selected = float4_0;
     for p, i in PIECES {
@@ -178,11 +187,14 @@ fn position(inst: float4[..64]&, squares: float4[64]&) -> float4 {
         let scale: f32 = if sel { GROW } else { 1.0 };
         let seed = i as f32;
         var top = lift + mesh::HEIGHT * scale;
-        if p[3] == 1 {
+        if p[3] == 1 && king_crown {
+            inst.push(float4 { x, lift, z, scale });
+            inst.push(float4 { dark, 1.0, 0.0, seed });
+        } else if p[3] == 1 {
             inst.push(float4 { x, lift, z, scale });
             inst.push(float4 { dark, 0.0, 2.0, seed });
             inst.push(float4 { x, top, z, scale });
-            inst.push(float4 { dark, 1.0, 0.0, seed + 0.5 });
+            inst.push(float4 { dark, 0.5, 0.0, seed + 0.5 });
             top += mesh::HEIGHT * scale;
         } else {
             inst.push(float4 { x, lift, z, scale });
@@ -289,7 +301,7 @@ fn bake(g: Gpu&, albedo: gfx::Texture, normal: gfx::Texture, w: i64, h: i64, mod
                                            float4 { w, h, extent.x, extent.y },
                                            t.light_sq, t.light_fig, t.dark_sq, t.dark_fig,
                                            t.inlay, t.inlay_fig, t.frame, t.frame_fig,
-                                           t.surface });
+                                           t.surface, t.frame_surface, t.stone });
     gfx::draw(3);
     gfx::end_pass();
     gfx::generate_mips(albedo);
@@ -378,6 +390,18 @@ fn setup(g: Gpu&) {
     g.frame.selected = selected;
 }
 
+// Puts the position on the GPU again after the king's look switched: the instances, the
+// squares, and the shadow map.
+fn place(g: Gpu&) {
+    var inst:    float4[..64] = [];
+    var squares: float4[64]   = [float4_0; 64];
+    g.frame.selected = position(inst, squares);
+    gfx::update_buffer(g.instances, bytes_of(inst));
+    gfx::update_buffer(g.squares, bytes_of(squares));
+    g.instance_count = inst.len / 2;
+    g.shadow_dirty = true;
+}
+
 // sRGB to linear for a color with its fourth value kept.
 fn linear4(c: float4) -> float4 { float4 { linear(c.x), linear(c.y), linear(c.z), c.w } }
 
@@ -421,6 +445,7 @@ fn apply(g: Gpu&, which: i64) {
     f.grade = t.grade;
     f.tint = linear4(t.tint);
     f.frame_build = t.build;
+    f.frame_surface = t.frame_surface;
     g.shadow_dirty = true;
     gfx::flush();
 }
@@ -553,7 +578,7 @@ fn main() {
     }
     let shot = flag_str(argv, "--shot");
     let bench = flag_str(argv, "--bench");
-    // --frames N runs the window's loop hidden for N frames, with a drag, T and a long
+    // --frames N runs the window's loop hidden for N frames, with a drag, T, K and a long
     // press injected (the press needs N of about 200 to last), and saves the last frame
     // to --shot's path if given: the loop checked without a window in the way.
     let frames_at = flag_str(argv, "--frames");
@@ -579,6 +604,8 @@ fn main() {
     var which = theme::AUTUMN;
     let ti = flag_str(argv, "--theme");
     if ti > 0 && argv[ti] == "winter" { which = theme::WINTER; }
+    let ki = flag_str(argv, "--king");
+    if ki > 0 && argv[ki] == "crown" { king_crown = true; }
 
     let t0 = clock();
     var g = default<Gpu>();
@@ -616,9 +643,12 @@ fn main() {
                 gfx::inject_mouse(400.0 - (frame - 2) * 8.0, 400.0 - (frame - 2) * 4.0, 0, true);
             }
             if frame == 12 { gfx::inject_mouse(328.0, 364.0, gfx::MOUSE_LEFT, false); }
-            // Then T, and a long press held still: the theme switches twice.
+            // Then T, K, and a long press held still: the theme switches twice, the king
+            // once.
             if frame == 14 { gfx::inject_key("T", true); }
             if frame == 15 { gfx::inject_key("T", false); }
+            if frame == 16 { gfx::inject_key("K", true); }
+            if frame == 17 { gfx::inject_key("K", false); }
             if frame == 20 { gfx::inject_mouse(328.0, 364.0, gfx::MOUSE_LEFT, true); }
             if frame == frames - 1 { gfx::inject_mouse(328.0, 364.0, gfx::MOUSE_LEFT, false); }
             if frame == frames { break; }
@@ -656,6 +686,11 @@ fn main() {
         if gfx::key_pressed("Escape") { break; }
         if gfx::key_pressed("Tab") {
             cam.free = !cam.free;
+            dirty = true;
+        }
+        if gfx::key_pressed("K") {
+            king_crown = !king_crown;
+            place(g);
             dirty = true;
         }
         if gfx::key_pressed("R") {
