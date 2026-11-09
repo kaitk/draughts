@@ -167,6 +167,12 @@ find out by compiling, so the next session doesn't.
   keep terms that blow up on wild values off such meshes, or shade fine detail from a
   function of the object-space position, as the pieces' tops do (`poc/3d/shaders.goose`,
   `mesh::top_height`).
+- MSAA antialiases only coverage: shading runs once per pixel and triangle, so detail a
+  shader makes from a function of position (the pieces' step) aliases however fine the
+  mesh. Filter it over the pixel's footprint (`fwidth` of its argument) and widen the
+  roughness by the normals' spread (`poc/3d/shaders.goose`). A `textureGrad` whose
+  gradients come from another mapping than the one sampled picks the wrong footprint
+  (the frame's sides) (2026-11-09).
 - GLSL's `smoothstep(a, b, x)` with `a > b` is undefined and on Metal silently does
   nothing useful; write `1.0 - smoothstep(b, a, x)` (2026-11-09).
 - A storage buffer block must hold one runtime-sized array (`vec4 squares[];`), not a

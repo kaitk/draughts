@@ -206,6 +206,23 @@ It compiles `src/app/background.c` from where it is (`board3d.build`) for the ph
   on the face); the pale line on winter's frame edge left out after a side by side, the
   steel-blue round kept. Cost unchanged: 4.9 to 5.7 ms a frame against 4.8 to 5.7
   before, interleaved, the same measure as below (the GPU's clocks make it noisy).
+- **The fourth pass** (the user's notes, 2026-11-09): the jaggies on the pieces' step
+  were shading aliasing, not geometry: MSAA shades once per pixel and triangle, and the
+  step, a function of the object-space radius, turned its normal sharply inside a
+  pixel (a 2× supersampled render had none). The step's slope is now averaged over the
+  pixel's footprint in the radius (1.5 × its screen derivative, four pieces of it), its
+  occlusion too, and the four normals' spread widens the roughness (Toksvig's 1 − r over
+  r, added to Filament's variance term), which also took the glints off the far dark
+  pieces' step; the crown's wall tilts only its share of a pixel and widens the
+  roughness the same way. No more rings or sample-rate shading needed. The autumn
+  frame's late wood is now furrows: two contours of a noise drawn out along the grain,
+  each a groove 2 to 4 pixels across at the default view (at least a texel soft in the
+  2048² bake), with finer, shallower ones between, broken into lengths, rougher and
+  darker inside, deeper relief, and a cavity occlusion baked into the normal map's
+  blue; its alpha holds the normal's y, so the mips' shortened normal widens the
+  roughness at a distance. The mitred pieces' texture gradients now follow each piece's
+  own axes (the sides' were taken along the wrong one). Cost: 5.0 to 5.2 ms a frame
+  against 5.0 to 5.1, interleaved; the bake about 30 ms either way.
 - **Camera:** 52.5° down, a 31° field of view, 14.75 away, fitted to the reference's
   field corners, so the board fills the height of the frame as there.
 - **Tuned** against the references with patch means at the same framing (`--size
