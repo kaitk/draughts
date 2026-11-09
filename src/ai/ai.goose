@@ -54,13 +54,19 @@ let PROBE_EXTRA = 4;
 let PROBE_LIMIT = 20000;
 let MAX_PROBES = 12;
 
-// Overlooking the child's captures (the easiest skills only): now and then it doesn't
-// look where the piece it moves lands, or what its move opens behind it.
-let SURE_SKILL = 15;        // from this skill on it never overlooks a capture
-let LAND_CHANCE = 4;        // per thousand moves, per skill point below SURE_SKILL
-let OPEN_CHANCE = 6;
-let LAND = 1;               // it misses captures that take the piece it moved
-let OPEN = 2;               // it misses the child's other captures
+// Overlooking the child's captures, as a person errs: where captures are around, more
+// the more pieces a capture takes and the further it starts from the piece just moved
+// (docs/architecture/ai.md, "Levels"). Each reply capture after each of its moves is
+// seen or not by its own seeded chance, in 1/1000: MISS by the pieces it takes (1, 2, 3,
+// 4 or more) at skill 0 in a tense position, next to the moved piece, fading with the
+// square of the way left to SURE, where it is none; times FAR by how far it starts from
+// that piece, in quarters; times QUIET in percent where no capture is around.
+let MISS: i64[4] = [25, 160, 300, 450];
+let SURE: i64[4] = [15, 25, 65, 65];   // from these skills on it sees every such capture
+let FAR:  i64[4] = [4, 5, 6, 8];       // a step away (as a capture of the moved piece starts), 2, 3, 4 or more
+let QUIET = 10;
+let LAND = 1;               // Engine.overlook: it missed a capture of the piece it moved
+let OPEN = 2;               // or another of the child's captures
 
 // What the engine is doing.
 let IDLE = 0;
@@ -75,21 +81,21 @@ struct Params {
     margin: i64,            // it never plays a move this much worse than the best it sees
     temper: i64,            // how much worse a move is for its chance to fall by e
     gift:   i64,            // per thousand moves, how often it leaves the child a chance
-    land:   i64,            // per thousand moves, how often it misses where its piece lands
-    open:   i64,            // per thousand moves, how often it misses a capture it opens
+    miss:   i64[4],         // per thousand, how often it misses a capture of 1, 2, 3, 4+ pieces (MISS)
 }
 
 fn params(skill: i64) -> Params {
     let s = clamp(skill, 0, 100);
     let temper = 2 + 60 * (100 - s) * (100 - s) / 10000;
+    var miss: i64[4] = [0; 4];
+    for i in 4 { miss[i] = MISS[i] * max(SURE[i] - s, 0) * max(SURE[i] - s, 0) / (SURE[i] * SURE[i]); }
     return Params {
         depth:  1 + s / 12 + max(s - 60, 0) / 6,
         extra:  2 + s / 8,
         margin: min(MAX_MARGIN, 3 * temper),
         temper: temper,
         gift:   max(GIFT_SKILL - s, 0) * GIFT_CHANCE,
-        land:   max(SURE_SKILL - s, 0) * LAND_CHANCE,
-        open:   max(SURE_SKILL - s, 0) * OPEN_CHANCE,
+        miss:   miss,
     };
 }
 
@@ -121,7 +127,9 @@ root struct Engine {
     use_tt:     bool             = true, // off only to test that the table changes no result
     node_limit: i64              = NODE_LIMIT,
     overlooks:  i64              = 100,  // percent of the overlook chances: 0 to measure without
-    blind:      i64,            // what the search under way doesn't see (LAND, OPEN), only in the main search
+    blind:      bool,           // whether the search under way may overlook (only the main search)
+    tense:      bool,           // whether a capture is around the position a move is found for
+    hidden:     u64,            // the seed of what this move overlooks
     // The search under way (search.goose).
     root:       rules::Position,
     root_draw:  rules::Draw,                // the draw counts at the search's root
@@ -160,7 +168,7 @@ root struct Engine {
     gift_score: i64,
     chosen:     i64,            // the reply, an index into moves, or -1
     gifted:     bool,           // whether the reply leaves the child a chance
-    overlook:   i64,            // what this move overlooks: LAND, OPEN, both, or 0
+    overlook:   i64,            // what the reply overlooked: LAND, OPEN, both, or 0
     budget:     i64,
     // What the last search did, for benchmarks.
     total_nodes: i64,
@@ -187,14 +195,14 @@ fn start_after(e: Engine&, past: rules::Past&, p: rules::Position, skill: i64, s
 fn begin_move(e: Engine&, p: rules::Position, skill: i64, seed: u64) {
     init(e);
     e.root_draw = e.draw_at;
-    e.position = p;
-    e.params = params(skill);
+    notice(e, p, skill, seed);
     e.random = rng { seed };
     e.total_nodes = 0;
     e.seen = 0;
     e.chosen = -1;
     e.gifted = false;
     e.gift_move = -1;
+    e.overlook = 0;
     rules::generate(p, e.moves);
     if e.moves.len <= 1 {
         e.chosen = if e.moves.len == 1 { 0 } else { -1 };
@@ -202,16 +210,46 @@ fn begin_move(e: Engine&, p: rules::Position, skill: i64, seed: u64) {
         return;
     }
     e.gift = rand_int(e.random, 1000) < e.params.gift;
-    // Its own stream, so the choices among moves stay as they were where nothing is
-    // overlooked.
-    var r = rng { seed ^ 0x9E3779B97F4A7C15 };
-    e.overlook = 0;
-    if rand_int(r, 100000) < e.params.land * e.overlooks { e.overlook |= LAND; }
-    if rand_int(r, 100000) < e.params.open * e.overlooks { e.overlook |= OPEN; }
     let margin = if e.gift { max(e.params.margin, GIFT_COST) } else { e.params.margin };
     begin(e, p, e.params.depth, e.params.extra, margin, e.node_limit);
-    e.blind = e.overlook;
+    e.blind = e.overlooks > 0 && e.params.miss[3] > 0;
     e.phase = MAIN;
+}
+
+// Sets up finding a move for p at `skill` as far as what it overlooks goes: the
+// skill's chances, whether a capture is around p (its side must capture, or the other
+// side could were it its turn: a piece of its is attacked), and the seed of what it
+// overlooks, apart from the one of its choices among moves, so those stay as they were
+// where nothing is overlooked. Two move generations into the first frame's buffer,
+// before the search fills it.
+fn notice(e: Engine&, p: rules::Position, skill: i64, seed: u64) {
+    e.position = p;
+    e.params = params(skill);
+    e.hidden = seed ^ 0x9E3779B97F4A7C15;
+    let buf .= e.plies[0].moves;
+    rules::generate(p, buf);
+    e.tense = buf.len > 0 && buf[0].captured != 0;
+    guard !e.tense else { return; }
+    var other = p;
+    other.side = 1 - p.side;
+    rules::generate(other, buf);
+    e.tense = buf.len > 0 && buf[0].captured != 0;
+}
+
+// What the reply overlooks: LAND when it misses a capture of the piece it moves, OPEN
+// another of the child's captures.
+fn missed(e: Engine&) {
+    e.overlook = 0;
+    guard e.overlooks > 0 && e.params.miss[3] > 0 && e.chosen >= 0 else { return; }
+    let m = e.moves[e.chosen];
+    let buf .= e.plies[1].moves;
+    rules::generate(rules::play(e.position, m), buf);
+    guard buf.len > 0 && buf[0].captured != 0 else { return; }
+    let moved = rules::bit(m.to);
+    for i in buf.len {
+        guard overlooked(e, m, buf[i]) else { continue; }
+        e.overlook |= if buf[i].captured & moved != 0 { LAND } else { OPEN };
+    }
 }
 
 // Thinks for about `nodes` more nodes; true once the reply is ready.
@@ -350,6 +388,7 @@ fn choose(e: Engine&) {
         if r < w {
             e.chosen = i;
             e.phase = READY;
+            missed(e);
             return;
         }
         r -= w;

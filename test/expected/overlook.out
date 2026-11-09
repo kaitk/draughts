@@ -1,11 +1,22 @@
-skill 0: per 1000 moves, misses where its piece lands 60, a capture it opens 90
-skill 5: per 1000 moves, misses where its piece lands 40, a capture it opens 60
-skill 10: per 1000 moves, misses where its piece lands 20, a capture it opens 30
-skill 14: per 1000 moves, misses where its piece lands 4, a capture it opens 6
-skill 15: per 1000 moves, misses where its piece lands 0, a capture it opens 0
-skill 30: per 1000 moves, misses where its piece lands 0, a capture it opens 0
-skill 0 over 2000 moves: misses where its piece lands 115, a capture it opens 192
-W:Wc3,h2,g1:Be5,h8,a7: c3-d4 moves a man where it is taken
-  skill 0, overlooks off 0, as in play 1, every move 10; skill 15, every move 0 of 40
-W:Wc1,c3,d2,f4,h2:Ba5,b4,h8: d2-e3 opens a capture behind it
-  skill 0, overlooks off 0, as in play 1, every move 8; skill 15, every move 0 of 40
+skill 0: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 25, 160, 300, 450
+skill 5: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 11, 102, 255, 383
+skill 10: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 2, 57, 214, 322
+skill 14: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 0, 30, 184, 277
+skill 15: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 0, 25, 177, 266
+skill 20: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 0, 6, 143, 215
+skill 25: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 0, 0, 113, 170
+skill 40: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 0, 0, 44, 66
+skill 60: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 0, 0, 1, 2
+skill 65: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 0, 0, 0, 0
+skill 90: per 1000, tense, next to the moved piece, misses a capture of 1, 2, 3, 4+ pieces 0, 0, 0, 0
+W:Wc3,h2,g1,g3:Be5,h6,a7: c3-d4 then e5:c3, one man next to it, quiet; overlooked at skill 0, 10, 15, 25, 40, 65: 10 0 0 0 0 0 of 4000
+W:Wc3,h2,g1,g5:Be5,h6,a7: c3-d4 then e5:c3, one man next to it, tense; overlooked at skill 0, 10, 15, 25, 40, 65: 103 8 0 0 0 0 of 4000
+W:Wc3,h2,g1,g5:Be5,h6,a7: c3-b4 then h6:f4, one man far from it, tense; overlooked at skill 0, 10, 15, 25, 40, 65: 200 18 0 0 0 0 of 4000
+W:Wa5,d4,f2,g3:Ba7,h6: a5-b6 then a7:c5:e3:g1, three men from next to it, quiet; overlooked at skill 0, 10, 15, 25, 40, 65: 123 82 69 45 27 0 of 4000
+W:Wa5,d4,f2,g5:Ba7,h6: a5-b6 then a7:c5:e3:g1, three men from next to it, tense; overlooked at skill 0, 10, 15, 25, 40, 65: 1190 862 716 471 176 0 of 4000
+W:Wc3,h2,g1,g3:Be5,h6,a7: c3-d4 moves a man where it is taken, quiet
+  skill 0, overlooks off 0, as in play 0, a thousand times over 6 of 40
+W:Wa5,d4,f2,g5:Ba7,h6: a5-b6 gives three men, tense
+  skill 0, overlooks off 0, as in play 1, a thousand times over 5 of 40
+W:Wa5,d4,f2,g5:Ba7,h6: a5-b6 gives three men, tense
+  skill 65, overlooks off 0, as in play 0, a thousand times over 0 of 40

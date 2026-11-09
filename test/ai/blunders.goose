@@ -1,9 +1,13 @@
-// No skill from 15 on hangs a piece: in positions from games the computer played
-// against itself, neither easy's skill 15 nor medium's or hard's start, under any of
-// several seeds, plays a move after which the opponent's captures win a man or more,
-// when another move loses less that way. Below 15 easy now and then overlooks a capture
-// the child can make (ai::start's overlook), as a young child does: easy's start, skill
-// 0, hangs a piece only on a move that overlooked one, and those are counted apart. The check is a
+// No skill from 15 on hangs a piece but to a capture it overlooked: in positions from
+// games the computer played against itself, neither easy's skill 15 nor medium's or
+// hard's start, under any of several seeds, plays a move after which the opponent's
+// captures win a man or more, when another move loses less that way, unless it
+// overlooked one of them. Easy and medium now and then overlook a capture the child
+// can make (ai::overlooked), as a person does: easy's start, skill 0, any, more the
+// more pieces it takes; skill 15 only one of two pieces or more, medium three or more,
+// hard none. Moves that overlooked something, and those of them that hung a piece, are
+// counted apart per skill, as are captures overlooked smaller than the skill may
+// overlook, which must be none. The check is a
 // plain recursive minimax over material written here: the move, then only captures,
 // four plies of them at most. A move it flags passes as a sacrifice only when the
 // level's own search shows the material coming back within what it sees: a combination
@@ -17,8 +21,10 @@ import rules from "../../src/rules";
 import ai from "../../src/ai";
 
 let SEEDS = 2;
-// The skills checked: easy's start, the lowest that never overlooks, medium's, hard's.
+// The skills checked: easy's start, the lowest that never overlooks a one-piece capture,
+// medium's, hard's; and the fewest pieces a capture it overlooks takes at each.
 let SKILLS = [0, 15, 40, 90];
+let LEAST = [1, 2, 3, 99];
 let COUNT = 4;
 
 fn material(p: rules::Position) -> i64 {
@@ -53,10 +59,11 @@ fn main() {
     let tested: u8[3] = [rules::RUSSIAN, rules::INTERNATIONAL, rules::BRAZILIAN];
     for variant in tested {
         var positions = 0;
-        var checked: i64[COUNT] = [0; COUNT];
-        var hangs:   i64[COUNT] = [0; COUNT];
-        var overlooks = 0;          // moves at skill 0 that overlooked something
-        var overlooked = 0;         // and of them, those that hung a piece
+        var checked:    i64[COUNT] = [0; COUNT];
+        var hangs:      i64[COUNT] = [0; COUNT];
+        var overlooks:  i64[COUNT] = [0; COUNT];    // moves that overlooked something
+        var overlooked: i64[COUNT] = [0; COUNT];    // and of them, those that hung a piece
+        var small = 0;              // captures overlooked that take fewer than LEAST
         var sacrifices = 0;
         var gifts = 0;
         for game in 3 {
@@ -79,7 +86,14 @@ fn main() {
                             checked[level] += 1;
                             if e.gifted { gifts += 1; }
                             let missed = e.overlook != 0;
-                            if missed { overlooks += 1; }
+                            if missed {
+                                overlooks[level] += 1;
+                                var replies: rules::Moves = [];
+                                rules::generate(rules::play(p, m), replies);
+                                for &c in replies {
+                                    if ai::overlooked(e, m, c) && popcount(c.captured) < LEAST[level] { small += 1; }
+                                }
+                            }
                             var i = 0;
                             while !same(moves[i], m) { i += 1; }
                             guard value[i] <= best - 100 else { continue; }
@@ -92,7 +106,7 @@ fn main() {
                             if e.exact[i] && e.score[i] > deep - 100 {
                                 sacrifices += 1;
                             } else if missed {
-                                overlooked += 1;
+                                overlooked[level] += 1;
                             } else {
                                 hangs[level] += 1;
                                 var t: u8[>..] = [];
@@ -109,7 +123,8 @@ fn main() {
         print(rules::VARIANT_NAMES[variant], ": ", positions,
               " positions; moves checked per skill 0, 15, 40, 90: ", checked[0], ", ", checked[1], ", ", checked[2],
               ", ", checked[3], "; hangs ", hangs[0], ", ", hangs[1], ", ", hangs[2], ", ", hangs[3], "; sacrifices ",
-              sacrifices, "; combinations left ", gifts, "; at skill 0, moves overlooking a capture ", overlooks,
-              ", of them hanging a piece ", overlooked);
+              sacrifices, "; combinations left ", gifts, "; moves overlooking a capture ", overlooks[0], ", ",
+              overlooks[1], ", ", overlooks[2], ", ", overlooks[3], ", of them hanging a piece ", overlooked[0], ", ",
+              overlooked[1], ", ", overlooked[2], ", ", overlooked[3], "; overlooked smaller than allowed ", small);
     }
 }

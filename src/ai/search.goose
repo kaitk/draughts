@@ -83,7 +83,7 @@ fn begin(e: Engine&, p: rules::Position, depth: i64, extra: i64, margin: i64, li
     for &x in e.history { x = 0; }
     for &x in e.killer { x = 0; }
     e.root = p;
-    e.blind = 0;
+    e.blind = false;
     e.depth = min(depth, MAX_PLY - 1);
     e.extra = extra;
     e.margin = margin;
@@ -208,19 +208,18 @@ fn enter(e: Engine&) {
         leave(e, evaluate(f.pos));
         return;
     }
-    // Overlooking: right after its own move it doesn't see the child's captures of the
-    // kinds it missed this move (Engine.blind), and takes the position as quiet when it
-    // sees none of them.
-    if ply == 1 && e.blind != 0 && capture {
-        let moved = rules::bit(e.plies[0].moves[e.plies[0].f.move].to);
+    // Overlooking: right after its own move it doesn't see the child's captures it
+    // overlooks with this move, and takes the position as quiet when it sees none.
+    if ply == 1 && e.blind && capture {
+        let m .= e.plies[0].moves[e.plies[0].f.move];
         var seen = 0;
-        for i in n { if !overlooked(e.blind, pl.moves[i].captured, moved) { seen += 1; } }
+        for i in n { if !overlooked(e, m, pl.moves[i]) { seen += 1; } }
         if seen == 0 {
             leave(e, evaluate(f.pos));
             return;
         }
         rank(e, ply);
-        for i in n { if overlooked(e.blind, pl.moves[i].captured, moved) { pl.rank[i] = -1; } }
+        for i in n { if overlooked(e, m, pl.moves[i]) { pl.rank[i] = -1; } }
     } else {
         rank(e, ply);
     }
@@ -258,11 +257,36 @@ fn drawn(e: Engine&, ply: i64) -> bool {
     return times >= 3;
 }
 
-// Whether a capture of `captured` goes unseen when the search is blind to `blind`
-// (LAND, OPEN), `moved` being the square its piece moved to, as a bit.
-fn overlooked(blind: i64, captured: u64, moved: u64) -> bool {
-    let kind = if captured & moved != 0 { LAND } else { OPEN };
-    return blind & kind != 0;
+// Whether the child's capture `c`, after the computer's move `m`, goes unseen: by its
+// own chance (ai.goose, MISS), more the more pieces it takes and the further it starts
+// from where m's piece landed, less where no capture was around before m. Drawn from a
+// hash of the move's seed and both moves, so the same capture is overlooked or not
+// however often the search meets it, on every machine.
+fn overlooked(e: Engine&, m: rules::Move&, c: rules::Move&) -> bool {
+    let v .= rules::VARIANTS[e.position.variant];
+    let n = min(popcount(c.captured), 4) - 1;
+    let dx = abs(v.x_of[m.to] as i64 - v.x_of[c.from]);
+    let dy = abs(v.y_of[m.to] as i64 - v.y_of[c.from]);
+    let far = clamp(max(dx, dy), 1, 4) - 1;
+    let share = if e.tense { 100 } else { QUIET };
+    let chance = e.params.miss[n] * FAR[far] * share * e.overlooks;
+    guard chance > 0 else { return false; }
+    let from: u64 = m.from;
+    var h = e.hidden ^ (from | ((m.to as u64) << 8) | ((c.from as u64) << 16) | ((c.to as u64) << 24));
+    h ^= m.captured * 0xC2B2AE3D27D4EB4F;
+    h = mix(h);
+    h ^= c.captured * 0x165667B19E3779F9;
+    h = mix(h);
+    // The chance is in 1/1000 times quarters times two percents.
+    return ((h >> 1) % (1000 * 4 * 100 * 100)) as i64 < chance;
+}
+
+// SplitMix64's finalizer: every bit of x stirs every bit of the result.
+fn mix(x: u64) -> u64 {
+    var z = x;
+    z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9;
+    z = (z ^ (z >> 27)) * 0x94D049BB133111EB;
+    return z ^ (z >> 31);
 }
 
 // The order to try a node's moves in: the table's move, then captures by what they

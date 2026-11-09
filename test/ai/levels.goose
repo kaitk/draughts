@@ -74,8 +74,8 @@ fn main() {
         let s = ai::level_skill(level);
         let pr = ai::params(s);
         print("level ", level, ": skill ", s, ", sees ", pr.depth, "+", pr.extra, " plies, margin ",
-              pr.margin, ", temper ", pr.temper, ", gift ", pr.gift, " per 1000, overlooks ", pr.land, " and ",
-              pr.open, " per 1000");
+              pr.margin, ", temper ", pr.temper, ", gift ", pr.gift, " per 1000, overlooks a capture of 1, 2, 3, 4+ pieces ",
+              pr.miss[0], ", ", pr.miss[1], ", ", pr.miss[2], ", ", pr.miss[3], " per 1000");
     }
     var e = ai::Engine { .. };
     ai::init(e);
