@@ -16,7 +16,25 @@
 // onBackPressed (SDL_SendAndroidBackButton) finished it on Android 17 instead, taking
 // the card out of recents (the Pixel 7a, 2026-11-08).
 //
-// On the Mac there is nothing to tell: the window closes as the program returns.
+// On the Mac there is nothing to tell: the window closes as the program returns. On iOS
+// neither: an app never closes itself there (home hides its way out), and the system
+// takes the launch screen down at the first frame by itself.
+//
+// draughts_platform: which platform the program runs on, which Goose can't ask
+// (docs/goose-findings.md): 0 a desktop, 1 Android, 2 iOS.
+
+#include "platform.h"
+#include <stdint.h>
+
+int64_t draughts_platform(void) {
+#if defined(__ANDROID__)
+    return 1;
+#elif DRAUGHTS_IOS
+    return 2;
+#else
+    return 0;
+#endif
+}
 
 #if defined(__ANDROID__)
 #include <jni.h>

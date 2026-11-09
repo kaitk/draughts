@@ -7,13 +7,22 @@
 //
 // Android embeds only the ASTC files and has no JPEG decoder: every Vulkan GPU the app
 // targets samples ASTC LDR, and the JPEGs would add 2.2 MB to the APK. A GPU without it
-// gets no photograph, the page color, as a checkout without the images does.
+// gets no photograph, the page color, as a checkout without the images does. An iPhone
+// or iPad embeds only the ASTC files for the same reasons (every Apple GPU since the A8
+// samples ASTC); the iOS simulator keeps the JPEGs, as its GPU may not.
 //
 // The images are not in git yet, so each is embedded only if its file is there: a fresh
 // checkout builds, with no photograph, and the app shows the page color. Until they are
 // checked in, the build takes the local masters (design/backgrounds/README.md).
 
-#ifndef __ANDROID__
+#include "platform.h"
+#if defined(__ANDROID__) || (DRAUGHTS_IOS && !TARGET_OS_SIMULATOR)
+#define ASTC_ONLY 1
+#else
+#define ASTC_ONLY 0
+#endif
+
+#if !ASTC_ONLY
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_JPEG
 #define STBI_NO_STDIO
@@ -50,7 +59,7 @@ __attribute__((weak)) uint8_t gs_gfx_format_supported(int32_t format, int32_t us
 // Each image's bytes and then one 0, so the array is never empty. #embed is C23, which
 // clang takes in C11 too.
 #pragma clang diagnostic ignored "-Wc23-extensions"
-#ifndef __ANDROID__
+#if !ASTC_ONLY
 #if __has_embed("../../design/backgrounds/masters/autumn-01-2048.jpg")
 static const unsigned char autumn[] = {
 #embed "../../design/backgrounds/masters/autumn-01-2048.jpg"
@@ -110,7 +119,7 @@ static const unsigned char summer_astc[] = { 0 };
 #endif
 
 // By theme: wood (autumn), stone (winter), birch (spring), sunset (summer).
-#ifndef __ANDROID__
+#if !ASTC_ONLY
 static const unsigned char *const jpegs[4] = { autumn, winter, spring, summer };
 static const int64_t jpeg_lengths[4] = { sizeof autumn - 1, sizeof winter - 1,
                                          sizeof spring - 1, sizeof summer - 1 };
@@ -164,7 +173,7 @@ static gs_gfx_texture astc(int64_t kind) {
     return t;
 }
 
-#ifndef __ANDROID__
+#if !ASTC_ONLY
 // The middle square of an RGBA image, `side` × `side` from (x0, y0), scaled down to
 // size × size by averaging into `out`. A box's sum is divided by one reciprocal multiply.
 static void shrink(const unsigned char *px, int w, int x0, int y0, int side, int size,

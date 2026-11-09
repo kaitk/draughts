@@ -23,6 +23,7 @@
 //   ../build/draughts --screen friend --go play --hold 0.5 --frames 10   a friend's play, halfway into the game
 //   ../build/draughts --fen W:Wa1,e3:Bf4 --tap e3 --tap g5 --win 1.2 --frames 60   a win held 1.2 s in
 //   scripts/android.py app/draughts.goose --run   on the tablet (docs/development.md)
+//   scripts/ios.py src/app/draughts.goose --run   in the iOS simulator
 
 import std;
 import vec;
@@ -66,6 +67,11 @@ extern fn draughts_leave();
 // Gives back to the system the memory malloc keeps for freed blocks; Android only
 // (memory.c).
 extern fn draughts_release_memory();
+// Which platform the program runs on: DESKTOP, ANDROID, or IOS (launch.c).
+extern fn draughts_platform() -> i64;
+let DESKTOP = 0;
+let ANDROID = 1;
+let IOS = 2;
 
 // --go play: a new game from home's setup, as its play starts one.
 let GO_PLAY = 99;
@@ -253,9 +259,15 @@ fn main() {
     strings::use(lang);
     puzzles::load((if variant >= 0 { variant } else { prefs.variant }) as u8);
 
-    var android_root: u8[>..] = [];
-    let on_android = env("ANDROID_ROOT", android_root);
-    let window_flags = if on_android { gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE } else { gfx::WINDOW_RESIZABLE };
+    // A phone or a tablet: the window fills the screen with the system's bars hidden, the
+    // clocks count only while the app has focus, and the layout takes the display's scale.
+    let platform = draughts_platform();
+    let on_android = platform == ANDROID;
+    let on_ios = platform == IOS;
+    let mobile = platform != DESKTOP;
+    // An iOS app never closes itself, so home has no way out there.
+    if on_ios { home::closable = false; }
+    let window_flags = if mobile { gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE } else { gfx::WINDOW_RESIZABLE };
     guard gfx::open(strings::get(strings::APP_NAME), width, height, window_flags) else { abort(str("gfx: ", gfx::error())); }
     defer gfx::close();
 
@@ -333,7 +345,7 @@ fn main() {
         // the app paused, nor while it was in the background. On the Mac a window started
         // from a terminal never has focus, and the loop never blocks there, so focus is
         // left out and the clock runs while the window shows.
-        if on_android && (!focused || !gfx::focused()) { game::pause(sh.game); }
+        if mobile && (!focused || !gfx::focused()) { game::pause(sh.game); }
         focused = gfx::focused();
         // A new season's photograph, colors, and blurred copies load two frames after the
         // tap: the frame after it shows the tile lit, and is on screen before the load
@@ -356,7 +368,7 @@ fn main() {
         // of either is a change of the screen, as a new size is. The Mac's display scale
         // is left out (gui::scale_of).
         draughts_display(display);
-        if on_android && !display_given { gui::display_scale = display[4]; }
+        if mobile && !display_given { gui::display_scale = display[4]; }
         let scale = gui::scale_of(size.x, size.y);
         let e = if inset_dp.x < 0.0 { float4 { display[0], display[1], display[2], display[3] } }
                 else { float4 { floor(inset_dp.x * scale + 0.5), floor(inset_dp.y * scale + 0.5),
@@ -474,7 +486,12 @@ fn main() {
         // --bench N times the 3D board's frames 2 s after the launch, settled (draw3d.goose).
         if bench > 0 && sh.raised && d3.draws > 0 && now > 2.0 && d3.bench.n == 0 { d3.bench.n = bench; }
         if d3.bench.n > 0 { dirty = true; }
-        let drew = dirty || shell::animating(sh, g, now);
+        // iOS ends an app that uses the GPU in the background, and SDL doesn't block the
+        // loop there as on Android: nothing is drawn while the app hasn't focus, which it
+        // loses before going to the background, and the screen is drawn again on its return.
+        let hidden = on_ios && !gfx::focused();
+        if hidden { dirty = true; }
+        let drew = !hidden && (dirty || shell::animating(sh, g, now));
         if drew {
             let shown .= shell::fill(sh, now);
             widgets::upload(w, g);
@@ -498,7 +515,7 @@ fn main() {
         // first frame is on screen, so settings' first opening doesn't wait for them; the
         // next frame shows the screen again unchanged, then the app is idle. The launch's
         // loads are done then, and what they freed goes back to the system (memory.c).
-        if !drew && !released && gfx::frame_count() >= 2 {
+        if !drew && !hidden && !released && gfx::frame_count() >= 2 {
             if w.thumbs.id == 0 { w.thumbs = scene::thumbs(d.full); }
             draughts_release_memory();
             released = true;

@@ -1,12 +1,15 @@
 // The app's own storage folder, through SDL's SDL_GetPrefPath: on Android the app's
 // internal files folder, on the Mac ~/Library/Application Support/kaitk/draughts/. The
 // settings and the saved game are kept there. As in locale.c, on the Mac SDL is in the
-// goose binary and is looked up when called; on Android the program links libSDL3.so.
+// goose binary and is looked up when called; on Android and iOS the program links SDL
+// (platform.h). On iOS it is Library/Application Support/kaitk/draughts/ in the app's
+// container.
 
+#include "platform.h"
 #include <stdint.h>
 #include <string.h>
 
-#if defined(__ANDROID__)
+#if DRAUGHTS_SDL_LINKED
 extern char *SDL_GetPrefPath(const char *org, const char *app);
 extern void SDL_free(void *mem);
 #else
@@ -18,7 +21,7 @@ typedef struct { uint8_t *data; int64_t len; } draughts_path;
 // Writes the folder's path, ending in a separator, into out and returns how many bytes;
 // 0 when SDL can't make one.
 int64_t draughts_storage(draughts_path out) {
-#if defined(__ANDROID__)
+#if DRAUGHTS_SDL_LINKED
     char *(*pref_path)(const char *, const char *) = SDL_GetPrefPath;
     void (*sdl_free)(void *) = SDL_free;
 #else

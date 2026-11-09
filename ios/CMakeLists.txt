@@ -52,5 +52,8 @@ target_include_directories(main PRIVATE "${GOOSE_GFX}/third_party/nuklear" ${GOO
 target_link_libraries(main PRIVATE SDL3::SDL3-static)
 # main.c's main hands UIKit the thread and SDL calls the program back as SDL_main; the
 # Goose program's C defines main.
-set_source_files_properties(${GOOSE_PROGRAM_C} PROPERTIES COMPILE_DEFINITIONS "main=SDL_main")
+set_source_files_properties(${GOOSE_PROGRAM_C} PROPERTIES COMPILE_DEFINITIONS "main=SDL_main"
+                            COMPILE_OPTIONS "-w")
+# The generated C warns of what Goose has checked already, as goose build compiles it.
+set_source_files_properties(${GOOSE_RUNTIME_C} PROPERTIES COMPILE_OPTIONS "-w")
 set_source_files_properties(${GOOSE_GFX_SRC}/ui/ui_nuklear.c PROPERTIES COMPILE_OPTIONS "-w")

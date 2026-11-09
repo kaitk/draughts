@@ -1,14 +1,16 @@
 // The system's preferred locales, through SDL, for the string table to pick a language
 // from (strings/strings.goose). SDL reads them from macOS's settings and, on Android,
-// from the Java side. On Android the program links libSDL3.so and calls it directly;
+// from the Java side, and on iOS from NSLocale. On Android and iOS the program links SDL
+// and calls it directly (platform.h);
 // on the Mac the program's C is linked on its own and SDL is in the goose binary, so a
 // direct call wouldn't link, and SDL's two functions are looked up when called.
 
+#include "platform.h"
 #include <stdint.h>
 
 typedef struct { const char *language; const char *country; } SDL_Locale;
 
-#if defined(__ANDROID__)
+#if DRAUGHTS_SDL_LINKED
 extern SDL_Locale **SDL_GetPreferredLocales(int *count);
 extern void SDL_free(void *mem);
 #else
@@ -20,7 +22,7 @@ typedef struct { uint8_t *data; int64_t len; } draughts_text;
 // Writes the locales into out in order of preference, as "et-EE,en-US", and returns how
 // many bytes; 0 when SDL knows none.
 int64_t draughts_locales(draughts_text out) {
-#if defined(__ANDROID__)
+#if DRAUGHTS_SDL_LINKED
     SDL_Locale **(*preferred)(int *) = SDL_GetPreferredLocales;
     void (*sdl_free)(void *) = SDL_free;
 #else

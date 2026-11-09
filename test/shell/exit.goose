@@ -5,7 +5,8 @@
 // image restores it. A tap just outside it, left of it or under it, does nothing. It
 // goes down while held as the other tiles do. It is clear of the board and of the column
 // or sheet: in portrait the board moves down to 16 dp under it and shrinks to keep 24 dp
-// above the sheet.
+// above the sheet. On iOS, where an app never closes itself, home shows none
+// (home::closable): a tap where it would be does nothing.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -102,4 +103,16 @@ fn main() {
     var next = shell::new(rules::INTERNATIONAL);
     print("the next start restores it: ", shell::restore(next, image), ", screen ", next.screen, ", ",
           rules::fen(next.game.b.pos), ", quit ", next.quit);
+
+    // Without the way out (iOS) home declares one tile fewer, and a tap where it was
+    // does nothing.
+    var ios = shell::new(rules::RUSSIAN);
+    drive::idle(ios, g, 0.0);
+    let spot = way_out(g);
+    let tiles = drive::tiles(g);
+    home::closable = false;
+    drive::idle(ios, g, 0.5);
+    print("not closable: tiles ", drive::tiles(g), " of ", tiles);
+    drive::tap(ios, g, drive::middle(spot), 1.0);
+    print("  a tap where the way out was: quit ", ios.quit, ", screen ", ios.screen, ", setup ", ios.setup);
 }

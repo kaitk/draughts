@@ -41,6 +41,10 @@ let PLAY = 6;               // a new game as the setup stands
 let CHANGED = 7;            // a choice in the setup
 let PUZZLES = 8;
 let EXIT = 9;               // close the app
+
+// Whether home shows its way out: not on iOS, where an app never closes itself (the app
+// sets it at launch).
+var closable = true;
 let PLAYERS = 10;           // who's playing
 
 let ROWS = 4;               // and settings, a fifth in landscape
@@ -256,7 +260,7 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
                else { menu(over, g, content, gear, mark_gap(gear, height, u), s) };
     // The player and the way out, declared last so the tiles before them keep their order.
     if chip && player_chip(g, player_spot(g, area, side, l.board, way, s), s) { pick = PLAYERS; }
-    if gui::bare_x(g, 309, way, gui::CLOSE, CROSS) { pick = EXIT; }
+    if closable && gui::bare_x(g, 309, way, gui::CLOSE, CROSS) { pick = EXIT; }
     return pick;
 }
 

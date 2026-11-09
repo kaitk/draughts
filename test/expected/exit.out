@@ -25,3 +25,5 @@ portrait at 600 x 960: the way out at vec4<f32> { 516.0, 18.0, 66.0, 66.0 } (24.
   home asks for EXIT: true
 a game under way, the way out: quit true
 the next start restores it: true, screen 0, W:Wc3,e3:Bd6,f6, quit false
+not closable: tiles 6 of 7
+  a tap where the way out was: quit false, screen 0, setup 0
