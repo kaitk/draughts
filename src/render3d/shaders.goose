@@ -1,6 +1,6 @@
 // The 3D board's shaders, GLSL 450 that embed_shader compiles with the program. One
-// forward pass draws everything lit: the board and the pieces share one fragment shader
-// (GGX after Filament, wrap diffuse, Filament's specular antialiasing, 9 weighted
+// forward pass draws everything lit: the field, the frame, and the pieces each with their
+// own build of one fragment shader (LIT_FRAG; GGX after Filament, wrap diffuse, Filament's specular antialiasing, 9 weighted
 // hardware-compared shadow taps over 5 × 5 texels, analytic occlusion, an ambient of nine spherical
 // harmonics taken from the photograph, a mild tonemap). The wood is baked once at
 // startup by the bake shader into textures with mips.
@@ -102,7 +102,103 @@ let EMPTY_FRAG = """
     void main() { }
     """;
 
-let LIT_FRAG = """
+// The key light's shadow, from a point pushed off the surface along its normal: a
+// 5 × 5 texel box with bilinear edges in 9 hardware-compared taps, their places and
+// weights from where the point falls in its texel (Castaño's filter, as The Witness
+// has it); the 16 taps 1.25 texels apart it replaced covered the same 5 texels. Wants
+// `shadow_map` declared before it; left out of the field's lit shader, which reads its
+// shadow from FIELD_LIGHT_FRAG's map.
+let SHADOW_FN = """
+    #ifndef LIT_FIELD
+    float shadow(vec3 p, vec3 n) {
+        float nl = clamp(dot(n, light_dir.xyz), 0.0, 1.0);
+        vec3 q = p + n * (0.004 + 0.012 * (1.0 - nl));
+        vec4 s = light_view_proj * vec4(q, 1.0);
+        vec2 size = vec2(textureSize(shadow_map, 0));
+        vec2 uv = vec2(s.x * 0.5 + 0.5, 0.5 - s.y * 0.5) * size;
+        float z = s.z - 0.0005;
+        vec2 base = floor(uv + 0.5);
+        vec2 f = uv + 0.5 - base;
+        base = (base - 0.5) / size;
+        vec3 w0 = vec3(4.0 - 3.0 * f.x, 7.0, 1.0 + 3.0 * f.x);
+        vec3 u = vec3((3.0 - 2.0 * f.x) / w0.x - 2.0, (3.0 + f.x) / 7.0, f.x / w0.z + 2.0) / size.x;
+        vec3 w1 = vec3(4.0 - 3.0 * f.y, 7.0, 1.0 + 3.0 * f.y);
+        vec3 v = vec3((3.0 - 2.0 * f.y) / w1.x - 2.0, (3.0 + f.y) / 7.0, f.y / w1.z + 2.0) / size.y;
+        float sum = 0.0;
+        for (int j = 0; j < 3; j++) {
+            for (int i = 0; i < 3; i++) {
+                sum += w0[i] * w1[j] * texture(shadow_map, vec3(base + vec2(u[i], v[j]), z));
+            }
+        }
+        return sum * (1.0 / 144.0);
+    }
+    #endif
+    """;
+
+// The field's light, baked into an RG8 map over the field and its inlay (the plan's
+// extent) whenever the shadow map is drawn or the pieces' occlusion changes, so the
+// field's pixels read one texel instead of 9 shadow taps and the 3 × 3 squares: r the
+// key light's shadow (the field's normal taken as up), g the occlusion.
+let FIELD_LIGHT_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2DShadow shadow_map;
+    // Per square: the top of what stands there, its foot, its radius, 1 if a piece.
+    layout(std430, set = 2, binding = 1) readonly buffer Squares { vec4 squares[]; };
+    layout(set = 3, binding = 1) uniform Draw { vec4 draw; };   // x: 1 over the map's side
+    """;
+
+// The field's occlusion, analytic: each piece in the 3 × 3 squares round as a cylinder
+// (the share of the cosine-weighted sky its angle across and its height take), and the
+// frame's short inner wall as a long wall. FIELD_LIGHT_FRAG's, after SHADOW_FN.
+let FIELD_LIGHT_MAIN = """
+    float field_occlusion(vec3 p) {
+        float vis = 1.0;
+        int n = int(params.w + 0.5);
+        float u = 2.0 * FIELD / params.w;
+        ivec2 c = ivec2(floor((p.xz + FIELD) / u));
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                ivec2 q = c + ivec2(dx, dy);
+                if (q.x < 0 || q.y < 0 || q.x >= n || q.y >= n) continue;
+                vec4 s = squares[q.y * n + q.x];
+                if (s.w < 0.5) continue;
+                float rho = length(p.xz - ((vec2(q) + 0.5) * u - FIELD));
+                float r = s.z;
+                float occ;
+                if (rho > r) {
+                    float gap = rho - r + 0.01;
+                    float top = s.x * s.x / (s.x * s.x + gap * gap);
+                    float foot = s.y * s.y / (s.y * s.y + gap * gap);
+                    occ = asin(r / rho) / PI * (top - foot);
+                } else {
+                    float foot = s.y * s.y / (s.y * s.y + r * r);
+                    occ = (0.5 + 0.45 * (1.0 - rho / r)) * (1.0 - foot);
+                }
+                vis *= 1.0 - occ;
+            }
+        }
+        vec2 d = max(INNER - abs(p.xz), vec2(0.0));
+        float h = FRAME_TOP;
+        vis *= 1.0 - 0.5 * (1.0 - d.x / sqrt(d.x * d.x + h * h));
+        vis *= 1.0 - 0.5 * (1.0 - d.y / sqrt(d.y * d.y + h * h));
+        return vis;
+    }
+    void main() {
+        vec2 uv = gl_FragCoord.xy * draw.x;
+        vec3 p = vec3(uv.x * 2.0 * INNER - INNER, 0.0, uv.y * 2.0 * INNER - INNER);
+        result = vec4(shadow(p, vec3(0.0, 1.0, 0.0)), field_occlusion(p), 0.0, 1.0);
+    }
+    """;
+
+// The lit shader, one per material (LIT_FIELD, LIT_FRAME, LIT_PIECE defined first), each
+// with only the bindings and the work its material takes: the field the baked plan and
+// its light, the frame its map and the shadow, a piece the shadow alone (its figure,
+// crown, and top from functions of its position). SHADOW_FN goes after it.
+let LIT_FIELD = "#define LIT_FIELD 1\n";
+let LIT_FRAME = "#define LIT_FRAME 1\n";
+let LIT_PIECE = "#define LIT_PIECE 1\n";
+let LIT_DECL = """
     layout(location = 0) in vec3 v_world;
     layout(location = 1) in vec3 v_normal;
     layout(location = 2) in vec2 v_uv;
@@ -111,14 +207,22 @@ let LIT_FRAG = """
     layout(location = 5) flat in vec4 v_kind;
     layout(location = 6) flat in float v_alpha;
     layout(location = 0) out vec4 result;
+    #ifdef LIT_FIELD
     layout(set = 2, binding = 0) uniform sampler2D plan_albedo;
     layout(set = 2, binding = 1) uniform sampler2D plan_normal;
-    layout(set = 2, binding = 2) uniform sampler2D frame_albedo;
-    layout(set = 2, binding = 3) uniform sampler2D frame_normal;
-    layout(set = 2, binding = 4) uniform sampler2DShadow shadow_map;
-    // Per square: the top of what stands there, its foot, its radius, 1 if a piece.
-    layout(std430, set = 2, binding = 5) readonly buffer Squares { vec4 squares[]; };
+    layout(set = 2, binding = 2) uniform sampler2D field_light;
+    #endif
+    #ifdef LIT_FRAME
+    layout(set = 2, binding = 0) uniform sampler2D frame_albedo;
+    layout(set = 2, binding = 1) uniform sampler2D frame_normal;
+    layout(set = 2, binding = 2) uniform sampler2DShadow shadow_map;
+    #endif
+    #ifdef LIT_PIECE
+    layout(set = 2, binding = 0) uniform sampler2DShadow shadow_map;
+    #endif
+    """;
 
+let LIT_FRAG = """
     const float FRAME_SPAN = 10.4;   // the frame map's side in world units
 
     float hash13(vec3 p) {
@@ -171,69 +275,6 @@ let LIT_FRAG = """
                + sh[7].rgb * (1.092548 * n.x * n.z)
                + sh[8].rgb * (0.546274 * (n.x * n.x - n.z * n.z));
         return max(r, vec3(0.0));
-    }
-
-    // The key light's shadow, from a point pushed off the surface along its normal: a
-    // 5 × 5 texel box with bilinear edges in 9 hardware-compared taps, their places and
-    // weights from where the point falls in its texel (Castaño's filter, as The Witness
-    // has it); the 16 taps 1.25 texels apart it replaced covered the same 5 texels.
-    float shadow(vec3 p, vec3 n) {
-        float nl = clamp(dot(n, light_dir.xyz), 0.0, 1.0);
-        vec3 q = p + n * (0.004 + 0.012 * (1.0 - nl));
-        vec4 s = light_view_proj * vec4(q, 1.0);
-        vec2 size = vec2(textureSize(shadow_map, 0));
-        vec2 uv = vec2(s.x * 0.5 + 0.5, 0.5 - s.y * 0.5) * size;
-        float z = s.z - 0.0005;
-        vec2 base = floor(uv + 0.5);
-        vec2 f = uv + 0.5 - base;
-        base = (base - 0.5) / size;
-        vec3 w0 = vec3(4.0 - 3.0 * f.x, 7.0, 1.0 + 3.0 * f.x);
-        vec3 u = vec3((3.0 - 2.0 * f.x) / w0.x - 2.0, (3.0 + f.x) / 7.0, f.x / w0.z + 2.0) / size.x;
-        vec3 w1 = vec3(4.0 - 3.0 * f.y, 7.0, 1.0 + 3.0 * f.y);
-        vec3 v = vec3((3.0 - 2.0 * f.y) / w1.x - 2.0, (3.0 + f.y) / 7.0, f.y / w1.z + 2.0) / size.y;
-        float sum = 0.0;
-        for (int j = 0; j < 3; j++) {
-            for (int i = 0; i < 3; i++) {
-                sum += w0[i] * w1[j] * texture(shadow_map, vec3(base + vec2(u[i], v[j]), z));
-            }
-        }
-        return sum * (1.0 / 144.0);
-    }
-
-    // The field's occlusion, analytic: each piece in the 3 × 3 squares round as a
-    // cylinder (the share of the cosine-weighted sky its angle across and its height
-    // take), and the frame's short inner wall as a long wall.
-    float field_occlusion(vec3 p) {
-        float vis = 1.0;
-        int n = int(params.w + 0.5);
-        float u = 2.0 * FIELD / params.w;
-        ivec2 c = ivec2(floor((p.xz + FIELD) / u));
-        for (int dy = -1; dy <= 1; dy++) {
-            for (int dx = -1; dx <= 1; dx++) {
-                ivec2 q = c + ivec2(dx, dy);
-                if (q.x < 0 || q.y < 0 || q.x >= n || q.y >= n) continue;
-                vec4 s = squares[q.y * n + q.x];
-                if (s.w < 0.5) continue;
-                float rho = length(p.xz - ((vec2(q) + 0.5) * u - FIELD));
-                float r = s.z;
-                float occ;
-                if (rho > r) {
-                    float gap = rho - r + 0.01;
-                    float top = s.x * s.x / (s.x * s.x + gap * gap);
-                    float foot = s.y * s.y / (s.y * s.y + gap * gap);
-                    occ = asin(r / rho) / PI * (top - foot);
-                } else {
-                    float foot = s.y * s.y / (s.y * s.y + r * r);
-                    occ = (0.5 + 0.45 * (1.0 - rho / r)) * (1.0 - foot);
-                }
-                vis *= 1.0 - occ;
-            }
-        }
-        vec2 d = max(INNER - abs(p.xz), vec2(0.0));
-        float h = FRAME_TOP;
-        vis *= 1.0 - 0.5 * (1.0 - d.x / sqrt(d.x * d.x + h * h));
-        vis *= 1.0 - 0.5 * (1.0 - d.y / sqrt(d.y * d.y + h * h));
-        return vis;
     }
 
     // The crown on a king's face, in units of the piece's radius, traced from the 3D
@@ -297,23 +338,29 @@ let LIT_FRAG = """
     }
 
     void main() {
-        float mat = v_extra.y;
         vec3 p = v_world;
         vec3 n = normalize(v_normal);
         float ao = clamp(v_extra.x, 0.0, 1.0);
         vec3 albedo;
         float rough;
         float top_var = 0.0;     // the spread of a shader-made normal over the pixel
-        if (mat < 0.5) {
-            // The field: the baked plan, seen from above.
+    #ifdef LIT_FIELD
+        // The field: the baked plan, seen from above, and its light baked with the
+        // shadow map (FIELD_LIGHT_FRAG): the key's shadow and the occlusion.
+        vec2 baked;
+        {
             vec2 uv = (p.xz + INNER) / (2.0 * INNER);
             vec4 a = texture(plan_albedo, uv);
             vec2 t = texture(plan_normal, uv).xy * 2.0 - 1.0;
+            baked = texture(field_light, uv).rg;
             albedo = a.rgb;
             rough = a.a;
             n = normalize(vec3(t.x, sqrt(max(1.0 - dot(t, t), 0.0)), t.y));
-            ao *= field_occlusion(p);
-        } else if (mat < 1.5) {
+            ao *= baked.g;
+        }
+    #endif
+    #ifdef LIT_FRAME
+        {
             // The frame, mapped from where the point is, so the figure runs on unbroken
             // over the top, the rounded edge and the side, round the corners too, as in
             // a real piece cut from a plank. The frame map holds the theme's wood or
@@ -398,7 +445,10 @@ let LIT_FRAG = """
             rough = mix(rough, 0.4, line * edge_line.a);
             // Darker toward the underside, where the board's own shade gathers.
             ao *= mix(0.4, 1.0, smoothstep(BOTTOM, FRAME_TOP - 0.1, p.y));
-        } else {
+        }
+    #endif
+    #ifdef LIT_PIECE
+        {
             vec3 lp = v_local;
             bool dark = v_kind.x > 0.5;
             vec4 m = dark ? dark_piece : light_piece;
@@ -478,6 +528,7 @@ let LIT_FRAG = """
             ao *= mix(0.6, 1.0, smoothstep(0.0, 0.035, h));
             if (v_kind.z > 1.5) ao *= mix(1.0, 0.65, smoothstep(HEIGHT - 0.05, HEIGHT, lp.y));
         }
+    #endif
 
         vec3 v = normalize(eye.xyz - p);
         vec3 l = light_dir.xyz;
@@ -502,11 +553,18 @@ let LIT_FRAG = """
         float diff = clamp((nol + wrap) / (1.0 + wrap), 0.0, 1.0) / (1.0 + wrap);
         // Filament's micro-shadowing from the occlusion, on the field only: on the
         // pieces' grooves, tiny triangles near the terminator turned it into specks.
+    #ifdef LIT_FIELD
         float micro = clamp(nl * inversesqrt(1.0 - min(ao, 0.9999)), 0.0, 1.0);
-        micro = nol > 0.0 && mat < 0.5 ? micro * micro : 1.0;
+        float vis = baked.r * (nol > 0.0 ? micro * micro : 1.0);
+    #endif
+    #ifdef LIT_FRAME
+        float vis = shadow(p, n);
+    #endif
+    #ifdef LIT_PIECE
         // A piece's lip and groove are finer than a shadow texel: its lookups start a
         // little toward the light, so they leave them to the baked occlusion.
-        float vis = shadow(mat > 1.5 ? p + l * 0.03 : p, n) * micro;
+        float vis = shadow(p + l * 0.03, n);
+    #endif
         vec3 light = light_color.rgb * light_dir.w;
         vec3 direct = (albedo * (diff / PI) + spec) * light * vis;
         // The photograph's light: diffuse from the harmonics, specular from them along
@@ -515,12 +573,12 @@ let LIT_FRAG = """
         vec3 env = sh_eval(reflect(-v, n)) * params.z;
         float spec_ao = clamp(pow(nov + ao, exp2(-16.0 * a - 1.0)) - 1.0 + ao, 0.0, 1.0);
         vec3 ambient = albedo * irr * ao + env * env_brdf(f0, rough, nov) * spec_ao;
-        if (mat > 1.5) {
-            // The lit board's light on a piece's side: what faces down and out sees the
-            // board round it, lit by the key from above.
-            float down = clamp(0.5 - 0.5 * n.y, 0.0, 1.0);
-            ambient += albedo * bounce.rgb * (light * l.y / PI) * bounce.a * down * ao;
-        }
+    #ifdef LIT_PIECE
+        // The lit board's light on a piece's side: what faces down and out sees the
+        // board round it, lit by the key from above.
+        float down = clamp(0.5 - 0.5 * n.y, 0.0, 1.0);
+        ambient += albedo * bounce.rgb * (light * l.y / PI) * bounce.a * down * ao;
+    #endif
         vec3 color = (direct + ambient) * params.x;
         color = tonemap(color) * vec3(1.02, 1.0, 0.97);
         // A win dims the board and the pieces but the winning one, as the flat board's

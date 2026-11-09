@@ -183,7 +183,9 @@ fn sweep(verts: Vertex[>..]&, indices: u32[>..]&, prof: Profile&, path: Path&, m
     }
 }
 
-// The playing field: one quad at y = 0 over the field and its inlay.
+// The playing field: one quad at y = 0 over the field and its inlay, the board mesh's
+// first FIELD_INDICES indices (the renderer draws it apart, with its own shader).
+let FIELD_INDICES = 6;
 fn field(verts: Vertex[>..]&, indices: u32[>..]&) {
     let base = verts.len as u32;
     let up = float3 { 0.0, 1.0, 0.0 };

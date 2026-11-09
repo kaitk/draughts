@@ -76,6 +76,7 @@ Two runs of one build are byte-identical.
 | 4. No marks quad with nothing marked | 1.44 ms | 1.50 ms | identical |
 | 5. `CULL_FRONT` in the shadow pass | left | | peter-pans |
 | 6. 9 shadow taps instead of 16 | 1.41 ms | 1.48 ms | 50 to 56 dB, 80 to 310 pixels |
+| 7. The field's light baked, a shader per material | 1.12 ms | 1.43 ms | 67 to 74 dB, 0 to 5 pixels |
 
 1. **The piece mesh:** the top's 42 rows down to 9 (`mesh::TOP_ROWS`, dense only round
    the step), the edge's arc 12 steps to 6, the foot's 5 to 3, and the lathe's 72
@@ -109,6 +110,22 @@ Two runs of one build are byte-identical.
    the pixels that differ are on the pieces' shaded sides by their feet, by a few levels,
    alike at 200%. 44% fewer shadow fetches for every lit pixel. `Frame.params.y` (the
    old spacing) is unused now.
+7. **The field's light baked, and a shader per material** (candidates 2 and 4, one
+   commit: the field's own shader is what reads the baked map). `FIELD_LIGHT_FRAG`
+   bakes the key's shadow and the occlusion into a 1024² RG8 map over the plan's extent
+   (2 MB) after the shadow map is drawn, or when the squares' occlusion changes without
+   it (a captured piece fading); RG, not one channel of shadow × occlusion, because
+   the shader uses them apart (the shadow under the micro-shadowing, the occlusion in
+   the ambient). The bake takes the field's normal as up; its normal map still shades
+   each pixel. LIT_FRAG is built three times (`LIT_FIELD`, `LIT_FRAME`, `LIT_PIECE`),
+   each binding only what it reads, and the pass draws the opaque pieces, the frame
+   (the board mesh's indices from `mesh::FIELD_INDICES`), then the field quad. A
+   field pixel is now three texture reads and the lighting: no shadow taps, no loop over
+   the squares, none of the pieces' noise or crown in its registers. Turning the camera
+   (the pass alone) 1.39 → 1.12 ms; a frame that draws the shadow map is even (1.43),
+   the bake's 1M texels paying for what the field saves. Four pipelines instead of one
+   (three lit and the bake) are made at the first frame: on the Mac 6.5 ms against 5.8;
+   the Pixel's first frame (0.3 s, mostly pipelines) is worth reading again.
 
 ## The idle wakeup
 
