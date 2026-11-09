@@ -1,0 +1,14 @@
+--- a/src/gpu/metal/SDL_gpu_metal.m	2026-11-09 14:09:36
++++ b/src/gpu/metal/SDL_gpu_metal.m	2026-11-09 14:11:14
+@@ -4564,6 +4564,11 @@
+ #else
+         if (@available(iOS 13.0, tvOS 13.0, *)) {
+             hasHardwareSupport = [device supportsFamily:MTLGPUFamilyApple3];
++#if TARGET_OS_SIMULATOR
++            /* The simulator's device draws on the Mac's GPU but answers no for
++               Apple3 and for Mac2, so SDL_GPU refused it though it draws what it asks. */
++            hasHardwareSupport = true;
++#endif
+         }
+ #endif
+ 

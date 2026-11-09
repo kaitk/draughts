@@ -84,6 +84,22 @@ them. goose_gfx `6cfa3de`, SDL as goose_gfx pins it, Goose v2026.4.
   saved and loaded with its data blob, Metal's binary archives), which would take the
   compiles off every launch after the first.
 
+## SDL: SDL_GPU refuses the iOS simulator's Metal device (2026-11-09)
+
+`METAL_CreateDevice` on iOS requires `[device supportsFamily:MTLGPUFamilyApple3]`, and
+the simulator's device answers no for it (and for `MTLGPUFamilyMac2`), so
+`SDL_CreateGPUDevice` fails with "Device does not meet the hardware requirements for
+SDL_GPU Metal" and nothing can be tried in the simulator. Its device draws on the Mac's
+GPU, and with the check passed it draws `poc/poc.goose` and the app as the Mac does.
+SDL 3.4.16 (goose_gfx `6cfa3de`'s pin), Xcode 26.4, the iOS 18.3 simulator.
+
+- Here: `patches/SDL/0004-metal-on-the-ios-simulator.patch` accepts the device under
+  `TARGET_OS_SIMULATOR`, which only the simulator's build compiles; a device build is
+  unchanged.
+- Upstream (a note for the user, who decides): the same under `TARGET_OS_SIMULATOR`, or a
+  property to skip the check, as `SDL_PROP_GPU_DEVICE_CREATE_METAL_ALLOW_MACFAMILY1_BOOLEAN`
+  does for old Macs.
+
 ## goose_gfx: no compressed texture formats (2026-11-08)
 
 gfx's formats are uncompressed only: `gfx_texture_format` maps none of SDL_GPU's BC or
