@@ -7,10 +7,13 @@
 // replies aside), a take's line wins its count exactly, and a crown's line ends with
 // the king made; a safe puzzle's every other move loses to a shot; no move along a line
 // shares its squares with another legal move, which a tap couldn't tell apart; and it
-// says where it came from.
+// says where it came from. Beyond the checks, rivals reports the moves a take puzzle
+// turns down that win as much a move later.
 namespace puzzles;
 import std;
 import rules from "../rules";
+
+let RIVAL_PLIES = 2;        // a rival's one more move, and the reply to it
 
 // A legal move of p as PDN writes it, with every stop.
 fn move_text(out: u8[>..]&, p: rules::Position, m: Short, moves: rules::Moves&) {
@@ -160,6 +163,42 @@ fn safe_check(s: Solver&, pz: Puzzle&, out: u8[>..]&) -> i64 {
         move_text(t, pz.start, m, moves);
         format(out, "  ", t, " loses material, but not to a shot\n");
         n++;
+    }
+    return n;
+}
+
+// The moves a take puzzle turns down that win its count all the same, given one more
+// move each: at each of the solver's turns along a line, a wrong move after which the
+// solver still ends `count` up with best play over the moves left and RIVAL_PLIES more,
+// the captures due beyond. The child sees such a move refused that wins as much, only
+// a move later (the 2026-11-09 report). A report, not a refusal: each appended to out
+// as the puzzle's id and the move; returns how many. Lines sharing the moves so far are
+// looked at once.
+fn rivals(s: Solver&, pz: Puzzle&, out: u8[>..]&) -> i64 {
+    guard pz.goal == TAKE else { return 0; }
+    var moves: rules::Moves = [];
+    var n = 0;
+    begin(s, pz);
+    for line, li in pz.lines {
+        var p = pz.start;
+        for ply, i in line.plies {
+            var first = true;
+            for k in li { if same_start(pz.lines[k], line, i) { first = false; } }
+            if i % 2 == 0 && first {
+                let left = pz.moves - i / 2;
+                rules::generate(p, moves);
+                var all: Short[..rules::MAX_MOVES] = [];
+                for m in moves { all.push(short(m)); }
+                for m in all {
+                    guard judge(s, p, m, left) == WRONG else { continue; }
+                    guard value(s, after(p, m), 2 * left - 1 + RIVAL_PLIES, -WON - 1, WON + 1) >= pz.count else { continue; }
+                    format(out, if n == 0 { "" } else { ", " }, "move ", i / 2 + 1, " ");
+                    move_text(out, p, m, moves);
+                    n++;
+                }
+            }
+            p = after(p, as_played(p, ply, moves));
+        }
     }
     return n;
 }

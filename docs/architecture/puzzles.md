@@ -194,6 +194,19 @@ puzzle, and by `tools/puzzles.goose`) refuses a puzzle when:
   couldn't tell apart;
 - it has no source.
 
+A move is right by the goal within the puzzle's moves, so a take puzzle turns down a
+move that wins as much only a move later, and a child sees a good move refused (the
+2026-11-09 report: International's second Captures puzzle, whose other double, taking
+two too, was taken back at once by a double; its man on 39 moved to 34, so the backward
+double is the one capture that takes most). `puzzles::rivals` reports those moves: at
+each of the solver's turns along a line, a wrong move after which the solver still ends
+the count up with best play over the moves left and two plies more, the captures due
+beyond. The set tests and `tools/puzzles.goose` print them under their puzzle; they are
+a report, not a refusal, until each is decided: a move that wins as much listed as a
+line in its own right, or the position changed. A move whose capture is taken back, or
+that wins less, is no rival: that is the lesson of Captures' first level, the double
+whose last stop is safe.
+
 `tools/puzzles.goose` adds the computer player's view at full skill: its root scores,
 whether the moves it rates best solve the puzzle, a second engine sharing only the
 rules with the solver, and whether it scores a right first move as losing material

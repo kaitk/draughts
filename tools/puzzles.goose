@@ -16,7 +16,8 @@
 // than a shot.
 //
 // For each puzzle it prints its theme, level, goal, pieces, the moves that solve it, and
-// what the checks found (puzzles::check); then the computer player at full skill: its
+// what the checks found (puzzles::check), and the moves it turns down that win as much
+// a move later (puzzles::rivals); then the computer player at full skill: its
 // root scores, whether the moves it rates best all solve the puzzle, which a second
 // engine sharing only the rules with the solver confirms, and whether it scores a right
 // first move as losing material. The positions searched show how much a puzzle costs the
@@ -99,6 +100,7 @@ fn check_file(path: const u8[:]) {
     var engine_losing = 0;
     var black = 0;
     var most = 0;
+    var rivals = 0;
     var counts: i64[puzzles::THEMES * (puzzles::LEVELS + 1)] = [0; puzzles::THEMES * (puzzles::LEVELS + 1)];
     for pz in set.list {
         var out:  u8[>..] = [];
@@ -118,6 +120,10 @@ fn check_file(path: const u8[:]) {
               puzzles::pieces(pz.start), " pieces; ", if n == 0 { "ok" } else { "PROBLEMS" }, "; solved by ", ways, " (",
               s.nodes, " positions, ", cost, " ms)");
         if n > 0 { print(out); }
+        var won: u8[>..] = [];
+        let r = puzzles::rivals(s, pz, won);
+        rivals += r;
+        if r > 0 { print("  wins as much a move later: ", won); }
         var view: u8[>..] = [];
         let agrees, losing = engine(e, s, pz, view);
         // The engine plays for material, so a king made is no aim of its own.
@@ -133,6 +139,7 @@ fn check_file(path: const u8[:]) {
     print(set.list.len, " puzzles, ", black, " black to move; by theme, levels 1 to 3:", per);
     print(problems, " problems; the engine's best doesn't solve ", engine_off, " (crowning aside); it scores ",
           engine_losing, " right first moves as losing; at most ", most, " positions a check");
+    print("moves turned down that win as much a move later: ", rivals);
 }
 
 // A puzzle of position p with a goal as the file writes it ("take 2") in k moves.

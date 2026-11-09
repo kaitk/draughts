@@ -4,7 +4,9 @@
 // line has the solver to move listed, each line ending quiet with a take's count won
 // exactly and a crown's king made, no move along a line sharing its squares with
 // another, a source), printed with its theme, level, side, goal, pieces, and the first
-// moves that solve it; then the count per theme and level, and how many are black's.
+// moves that solve it, and the moves it turns down that win as much a move later
+// (puzzles::rivals, a report for each to be decided, not a refusal); then the count
+// per theme and level, and how many are black's.
 // The computer player's view of them is tools/puzzles.goose's, too slow for TinyCC.
 import std;
 import rules from "../../src/rules";
@@ -17,6 +19,7 @@ fn main() {
     var problems = 0;
     var black = 0;
     var most = 0;
+    var rivals = 0;
     for pz in set.list {
         var out:  u8[>..] = [];
         var ways: u8[>..] = [];
@@ -33,6 +36,10 @@ fn main() {
               puzzles::pieces(pz.start), " pieces, ", pz.lines.len, if pz.lines.len == 1 { " line" } else { " lines" },
               "; solved by ", ways);
         if n > 0 { print(out); }
+        var won: u8[>..] = [];
+        let r = puzzles::rivals(s, pz, won);
+        rivals += r;
+        if r > 0 { print("  wins as much a move later: ", won); }
     }
     for t in puzzles::THEMES {
         var levels: u8[>..] = [];
@@ -44,5 +51,5 @@ fn main() {
         print(puzzles::THEME_NAMES[t], ": ", puzzles::theme_count(set, t), " puzzles, by level", levels);
     }
     print(set.list.len, " puzzles, ", black, " black to move; at most ", most, " positions a check; ", problems,
-          " problems");
+          " problems; moves turned down that win as much a move later: ", rivals);
 }
