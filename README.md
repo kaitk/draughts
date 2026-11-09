@@ -123,6 +123,7 @@ src/          the program: one directory per package, and the app
   ai/           the computer player
   puzzles/      the puzzles and their checks
   board/        the board's logic and draw lists
+  render3d/     the 3D board's renderer: meshes, shaders, and its looks
   gui/          the UI layer: layout, glass, buttons, text
   game/         the game screen and its clock
   shell/        home, settings, puzzles, players, and which screen shows
