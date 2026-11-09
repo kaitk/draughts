@@ -854,7 +854,8 @@ the prototype tried, kept for 3D:
   corner play panel is 368 dp tall for it, `panel::CORNER_PLAY`, the gaps round the piece
   closed up where the panel is short); portrait halves of the row under whose turn, hint
   at the left; compact between the eye and undo move, each icon over its word, or icons
-  alone with clocks. It is declared after undo move, so the controls' order in tests is
+  alone with clocks and where the words would leave whose turn too little room for its
+  own in the small face (Estonian's undo move, 2026-11-10). It is declared after undo move, so the controls' order in tests is
   back, settings, start over, undo move, the hint.
 - **The marks**, on the board (`board::fill`): a piece in danger is drained, its color
   greyed and a little darker, solid and still (`Piece.ring.w`, `board::DRAINED`: CSS

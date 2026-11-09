@@ -171,6 +171,29 @@ fn main() {
                   whole(drive::control(g, HINT - 1).x), ", the hint ", whole(drive::control(g, HINT).x),
                   ", glyphs past their tile ", past);
         }
+        // The iPad's smallest window (compact, 499 x 645 dp): whose turn's words clear of
+        // the eye and the tiles, the tiles icons alone where their words would leave it
+        // too little room (Estonian's undo move).
+        g.scale = 1.5;
+        gui::test_faces(g);
+        let k = panel::layout_in(float4 { 0.0, 0.0, 748.0, 968.0 }, 8, 1.5, true, true);
+        start(gm, calm, -1, 0);
+        drive::idle(gm, g, k, 70.0);
+        var eye = float4 { 0.0, 0.0, 0.0, 0.0 };
+        for q in g.quads { if q.look.x == gui::FLOAT { eye = q.rect; } }
+        var on = 0;
+        for q in g.quads {
+            guard q.look.x == gui::TEXT else { continue; }
+            if overlaps(q.rect, eye) { on++; }
+            for i in drive::tiles(g) {
+                let r = drive::rect(g, i);
+                if overlaps(q.rect, r) && (q.rect.x < r.x || q.rect.x + q.rect.z > r.x + r.z) { on++; }
+            }
+        }
+        print(strings::LANGUAGES[lang], ", the smallest window: undo move ", whole(drive::rect(g, HINT - 1).z / 1.5),
+              " dp across, glyphs on the eye or past a tile ", on);
+        g.scale = 1.0;
+        gui::test_faces(g);
     }
 }
 

@@ -899,13 +899,20 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: 
     if l.compact {
         // One row: whose turn (or the two clocks) at the left, undo move at the right.
         // The eye at the end of whose turn's line, the hint between it and undo move, each
-        // its icon over its word, or with clocks icons alone.
+        // its icon over its word, or icons alone with clocks and where the words would leave
+        // whose turn too little room for its own in the small face (Estonian's undo move).
         var row = float4 { l.right.x + 12.0 * u, l.right.y + 12.0 * u, l.right.z - 24.0 * u, l.right.w - 24.0 * u };
         let undo_word = strings::get(strings::GAME_UNDO_MOVE);
         let hint_word = strings::get(if help.stage == 1 { strings::GAME_WHERE_TO } else { strings::GAME_HINT });
+        let label = strings::get(turn_key);
+        let mark = (if drawn { 84.0 } else { 44.0 }) * u;
         let sides = 2.0 * gui::LABEL_PAD * u;
-        let undo_w = if clock::on(c) { ICON_W * u } else { max(88.0 * u, gui::text_width(g, gui::HEADING, undo_word) + sides) };
-        let hint_w = if clock::on(c) { ICON_W * u } else { max(88.0 * u, gui::text_width(g, gui::HEADING, hint_word) + sides) };
+        let undo_wants = max(88.0 * u, gui::text_width(g, gui::HEADING, undo_word) + sides);
+        let hint_wants = max(88.0 * u, gui::text_width(g, gui::HEADING, hint_word) + sides);
+        let words = row.z - undo_wants - hint_wants - (8.0 + 4.0 + EYE_TOUCH + 4.0 + 12.0) * u - mark;
+        let icons = clock::on(c) || words < gui::text_width(g, gui::SMALL, label);
+        let undo_w = if icons { ICON_W * u } else { undo_wants };
+        let hint_w = if icons { ICON_W * u } else { hint_wants };
         let undo = gui::cut_right(row, undo_w);
         gui::cut_right(row, 8.0 * u);
         let hint_r = gui::cut_right(row, hint_w);
@@ -928,8 +935,6 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: 
             if eye(g, eye_r, help.look) { chosen = LOOKOUT; }
             return chosen;
         }
-        let label = strings::get(turn_key);
-        let mark = (if drawn { 84.0 } else { 44.0 }) * u;
         let spot = gui::cut_left(row, mark);
         if drawn { pair(over, spot, 22.0 * u, 4.0 * u, 1.0); }
         else { piece(over, spot, 22.0 * u, side, 0, 1.0, glow); }
@@ -947,8 +952,12 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: 
         } else {
             gui::text(g, face, row, label, 1.0, 0.0, gui::LEFT);
         }
-        if gui::labelled(g, 113, undo, gui::UNDO, 28.0, undo_word, gui::HEADING, gui::STACKED) { chosen = UNDO; }
-        if hint_tile(g, hint_r, gui::STACKED, help, 28.0) { chosen = HINT; }
+        if icons {
+            if gui::button(g, 113, undo, gui::UNDO) { chosen = UNDO; }
+        } else if gui::labelled(g, 113, undo, gui::UNDO, 28.0, undo_word, gui::HEADING, gui::STACKED) {
+            chosen = UNDO;
+        }
+        if hint_tile(g, hint_r, if icons { ICON } else { gui::STACKED }, help, 28.0) { chosen = HINT; }
         if eye(g, eye_r, help.look) { chosen = LOOKOUT; }
         return chosen;
     }
