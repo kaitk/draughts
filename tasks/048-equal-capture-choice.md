@@ -22,5 +22,35 @@ where the "worse" capture took more pieces.
 
 ## Acceptance criteria
 
-- [ ] Both captures playable through taps in the game screen, each landing for the king
+- [x] Both captures playable through taps in the game screen, each landing for the king
 - [ ] The report explained or fixed
+
+## Findings (2026-11-09)
+
+No cause found in the rules or the game screen; nothing there plays a capture the
+player didn't choose.
+
+- `test/game/choice.goose`: black against the computer on the turned 10×10 board, a
+  king with one capture and several landings and a man that can also take one, in three
+  positions: `B:W23,44:B18,K46`, `B:W12,23,31:B18,K46` (the king's nearest landing is
+  taken back), `B:W19,23,41:B18,K46` (its furthest is). Every capture and every landing
+  is played by a tap on the piece and a tap on the square and by a drag, with hints on
+  mistakes only and on all moves, and each is the one chosen; a tap on a piece only
+  selects it; a landing tapped with nothing or the man selected, and a square no capture
+  ends on, play nothing, and every capture can be chosen after them. On the 3D board
+  (raised, turned) each capture of the last two is tapped through the perspective and
+  dragged, and each is the one chosen.
+- The engine against `test/perft.py` on 3000 random International positions with black
+  to move, 40% kings: no difference. Both read the rule the same way (a king lands where
+  it can go on taking if it can), which the majority rule implies anyway.
+- Read and ruled out: `board::press` and `release` play only a move whose last square is
+  the one tapped or dropped on (`follow`), never on selecting; `snap` moves only a press
+  or drop off the dark squares, to the nearest square within 0.9 of one; the computer's
+  move and take back clear the selection (`start_move`, `show`); a press during the
+  computer's move or while it animates is ignored, and an answer to a dropped ask too.
+
+What remains: a capture the player saw as one piece may have taken two (the king must
+then land where it goes on, and the majority rule forces that capture), or the computer
+was the one that lost its king. A screenshot or the position, and which side's king, if
+it happens again.
+
