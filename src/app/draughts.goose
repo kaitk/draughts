@@ -2,29 +2,15 @@
 // computer, which thinks on a worker thread (think.goose). It draws only when something
 // changed: input, a move or a pulse animating, or a new screen size
 // (docs/architecture/rendering.md, "Frames and battery"). The thread needs a build: on
-// the Mac, from app/, `goose build -o ../build/draughts draughts.goose`, then
+// the Mac, from src/app/, `goose build -o ../../build/draughts draughts.goose`, then
 //
-//   ../build/draughts                             at home
-//   ../build/draughts --screen game               the game screen; --fen and --tap open it too
-//   ../build/draughts --theme sunset              another board than the season's
-//   ../build/draughts --background plain          the plain fade in place of the photograph
-//   ../build/draughts --frames 30 --tap c3        taps squares, then saves draughts.png
-//   ../build/draughts --fen W:Wc3,Kh6:Be5         starts from a position
-//   ../build/draughts --hints moves               shows the selected piece's targets
-//   ../build/draughts --lang et                   another language than the system's
-//   ../build/draughts --dp 540                    the layout 540 dp across its shorter side, not 800
-//   ../build/draughts --inset 0,59,0,42           a phone's insets, in dp: left, top, right, bottom
-//   ../build/draughts --density-floor 0.75 --display-scale 2.625   the scale's floor, as on a phone
-//   ../build/draughts --variant russian           a new game of another draughts
-//   ../build/draughts --clock 5+3                 with a clock
-//   ../build/draughts --computer white --level hard   against the computer playing white
-//   ../build/draughts --screen puzzles            the puzzles to pick from
-//   ../build/draughts --puzzle 21 --tap f4 --tap e5   puzzle 21, taps on its board
-//   ../build/draughts --go settings --hold 0.4 --frames 10   home going to settings, held at 40%
-//   ../build/draughts --screen friend --go play --hold 0.5 --frames 10   a friend's play, halfway into the game
-//   ../build/draughts --fen W:Wa1,e3:Bf4 --tap e3 --tap g5 --win 1.2 --frames 60   a win held 1.2 s in
-//   scripts/android.py app/draughts.goose --run   on the tablet (docs/development.md)
+//   ../../build/draughts                          at home
+//   ../../build/draughts --screen game            the game screen; --fen and --tap open it too
+//   ../../build/draughts --fen W:Wc3,Kh6:Be5 --tap c3 --frames 30   taps, then saves draughts.png
+//   scripts/android.py src/app/draughts.goose --run   on a device over USB (docs/development.md)
 //   scripts/ios.py src/app/draughts.goose --run   in the iOS simulator
+//
+// Every flag is a field of flags::Flags.
 
 import std;
 import vec;
@@ -47,6 +33,7 @@ import render3d from "../render3d";
 import .text;
 import .think;
 import .draw3d;
+import .flags;
 
 // The system's preferred locales, "et-EE,en-US" (locale.c); returns how many bytes.
 extern fn draughts_locales(out: u8[:]) -> i64;
@@ -74,183 +61,29 @@ let DESKTOP = 0;
 let ANDROID = 1;
 let IOS = 2;
 
-// --go play: a new game from home's setup, as its play starts one.
-let GO_PLAY = 99;
-
 // The theme a season setting picks: its own, or by the date.
 fn theme_for(season: i64) -> i64 {
     return if season >= 0 { season } else { theme::for_month(theme::month(time())) };
 }
 
 fn main() {
-    // Development flags: --theme NAME, --size WxH (the window), --fen POSITION,
-    // --tap SQUARE (any number, played in order on the first frames), --frames N (then
-    // save draughts.png), --hints moves (show targets; mistakes only by default), --lang
-    // CODE (a language with a file in strings/; the system's by default), --screen
-    // home|game|settings|friend|computer (home unless a position, taps, a clock, or the
-    // computer are given; the last two open home's setup; puzzles the puzzles to pick
-    // from), --puzzle ID (that puzzle, its taps on its board), --variant
-    // international|brazilian|russian (the puzzles' set too), --clock none|5+3|10+5,
-    // --computer white|black (a new game; --level easy|medium|hard, the setup's last
-    // by default; with --screen
-    // friend or computer, the setup's choices instead, the child playing the other
-    // color), --go home|settings|game|play|puzzles|puzzle (switches there on the second
-    // frame, through its transition: game as continue does, play as the setup's play,
-    // puzzle from the puzzles to pick from to --puzzle ID or the first; after any taps),
-    // --hold T (keeps a transition at T of the way, 0..1, for a screenshot),
-    // --win T (keeps a win at T seconds into its celebration, for a screenshot),
-    // --background photo|plain (the photograph or the plain fade, task 044). --theme,
-    // --hints, --lang, and --background override the settings for the run without
-    // changing them, unless a tap in settings writes them.
-    // --wood N and --marble N choose the 3D board's wood (0..3) and winter frame's marble
-    // (0 the slate, 1..4), to try them in the game (task 039); --summer N summer's 3D look
-    // (0..5, looks::SUMMERS; 4 and 5 amber stone, task 041); --spring N spring's look (0
-    // the birch, 1 the elven carved stone, 2 the Baltic folk carved oak, task 041).
-    // --dp N lays out N dp across the shorter side (and leaves the density floor off);
-    // --inset L,T,R,B in dp stands for a phone's safe area; --density-floor F and
-    // --display-scale S try the scale's floor (gui::scale_of), S standing for the
-    // display's (the Mac's is left out: its windows are in points, not a phone's dp).
-    var width = 1280;
-    var height = 800;
-    var kind = -1;
-    var frames = -1;
-    var hints = -1;
-    var lang = -1;
-    var screen = -1;
-    var variant = -1;
-    var clock_kind = -1;
-    var computer = -1;
-    var level = -1;
-    var setup = 0;
-    var puzzle_id = -1;
-    var go = -1;
-    var hold = -1.0;
-    var win_at = -1.0;
-    var raised = false;
-    var background = -1;        // --background photo|plain: 0 or 1, -1 the player's
-    var flat = false;
-    var bench = 0;
-    var wood_3d = -1;
-    var marble_3d = -1;
-    var summer_3d = 0;
-    var spring_3d = -1;
-    var dp_given = false;
-    var floor_given = false;
-    var display_given = false;
-    var inset_dp = float4 { -1.0, 0.0, 0.0, 0.0 };     // x < 0: the window's own
-    var fen:  u8[>..]       = [];
-    var taps: u8[..3][..16] = [];
-    let argv = args();
-    var i = 1;
-    // --reset-skill: the playing player back to easy, the computer's skill at every level
-    // at its start with the first steps to come, kept in their file; stars and games stay.
-    var reset_skill = false;
-    for a in argv { if a == "--reset-skill" { reset_skill = true; } }
-    while i + 1 < argv.len {
-        if argv[i] == "--reset-skill" { i += 1; continue; }   // no value: the pairs shift by one
-        if argv[i] == "--theme" && theme::by_name(argv[i + 1]) >= 0 { kind = theme::by_name(argv[i + 1]); }
-        if argv[i] == "--frames" {
-            let n, ok = parse_int(argv[i + 1]);
-            if ok { frames = n; }
-        }
-        if argv[i] == "--size" {
-            let w, h, found = split_once(argv[i + 1], "x");
-            let a, ok_a = parse_int(w);
-            let c, ok_c = parse_int(h);
-            if found && ok_a && ok_c { width = a; height = c; }
-        }
-        if argv[i] == "--dp" {
-            let n, ok = parse_int(argv[i + 1]);
-            if ok && n >= 200 {
-                gui::short_dp = n;
-                dp_given = true;
-            }
-        }
-        if argv[i] == "--inset" {
-            var rest: const u8[:] = argv[i + 1];
-            var d:    f32[4]      = [0.0; 4];
-            var good = true;
-            for k in 4 {
-                let part, after, more = split_once(rest, ',');
-                let x, ok = parse_flt(part);
-                good = good && ok && more == (k < 3);
-                d[k] = x as f32;
-                rest = after;
-            }
-            if good { inset_dp = float4 { max(d[0], 0.0), max(d[1], 0.0), max(d[2], 0.0), max(d[3], 0.0) }; }
-        }
-        if argv[i] == "--density-floor" {
-            let x, ok = parse_flt(argv[i + 1]);
-            if ok {
-                gui::density_floor = x as f32;
-                floor_given = true;
-            }
-        }
-        if argv[i] == "--display-scale" {
-            let x, ok = parse_flt(argv[i + 1]);
-            if ok {
-                gui::display_scale = x as f32;
-                display_given = true;
-            }
-        }
-        if argv[i] == "--fen" { fen.append(argv[i + 1]); }
-        if argv[i] == "--wood" || argv[i] == "--marble" || argv[i] == "--summer" || argv[i] == "--spring" {
-            let n, ok = parse_int(argv[i + 1]);
-            if ok && argv[i] == "--wood" { wood_3d = n; }
-            if ok && argv[i] == "--marble" { marble_3d = n; }
-            if ok && argv[i] == "--summer" { summer_3d = clamp(n, 0, looks::SUMMERS - 1); }
-            if ok && argv[i] == "--spring" { spring_3d = n; }
-        }
-        if argv[i] == "--board" && argv[i + 1] == "3d" { raised = true; }
-        if argv[i] == "--board" && argv[i + 1] == "flat" { flat = true; }
-        if argv[i] == "--background" && argv[i + 1] == "photo" { background = 0; }
-        if argv[i] == "--background" && argv[i + 1] == "plain" { background = 1; }
-        if argv[i] == "--bench" {
-            let n, ok = parse_int(argv[i + 1]);
-            if ok { bench = clamp(n, 1, 1000); }
-        }
-        if argv[i] == "--hints" && argv[i + 1] == "moves" { hints = board::MOVES; }
-        if argv[i] == "--lang" { lang = strings::pick(argv[i + 1]); }
-        for name, k in settings::DRAUGHTS_NAMES { if argv[i] == "--variant" && argv[i + 1] == name { variant = settings::DRAUGHTS[k]; } }
-        for name, k in settings::CLOCK_NAMES { if argv[i] == "--clock" && argv[i + 1] == name { clock_kind = k; } }
-        if argv[i] == "--computer" { computer = if argv[i + 1] == "white" { rules::WHITE } else { rules::BLACK }; }
-        for name, k in settings::LEVEL_NAMES { if argv[i] == "--level" && argv[i + 1] == name { level = k; } }
-        if argv[i] == "--screen" {
-            screen = if argv[i + 1] == "game" { shell::GAME } else if argv[i + 1] == "settings" { shell::SETTINGS } else { shell::HOME };
-            if argv[i + 1] == "friend" { setup = home::FRIEND; }
-            if argv[i + 1] == "computer" { setup = home::COMPUTER; }
-            if argv[i + 1] == "puzzles" { screen = shell::PICKER; }
-        }
-        if argv[i] == "--go" {
-            let to = argv[i + 1];
-            go = if to == "settings" { shell::SETTINGS } else if to == "game" { shell::GAME }
-                 else if to == "play" { GO_PLAY } else if to == "puzzles" { shell::PICKER }
-                 else if to == "puzzle" { shell::PUZZLE } else { shell::HOME };
-        }
-        if argv[i] == "--hold" {
-            let n, ok = parse_flt(argv[i + 1]);
-            if ok { hold = clamp(n, 0.0, 1.0); }
-        }
-        if argv[i] == "--win" {
-            let n, ok = parse_flt(argv[i + 1]);
-            if ok { win_at = max(n, 0.0); }
-        }
-        if argv[i] == "--puzzle" {
-            let n, ok = parse_int(argv[i + 1]);
-            if ok { puzzle_id = n; }
-        }
-        if argv[i] == "--tap" && argv[i + 1].len >= 2 && argv[i + 1].len <= 3 && taps.len < 16 {
-            let t .= taps.push([]);
-            t.append(argv[i + 1]);
-        }
-        i += 2;
-    }
+    // The development flags (flags.goose), and the layout's that set gui's values.
+    let f = flags::parse(args());
+    if f.dp > 0 { gui::short_dp = f.dp; }
+    if f.density_floor >= 0.0 { gui::density_floor = f.density_floor; }
+    if f.display_scale >= 0.0 { gui::display_scale = f.display_scale; }
     // --dp says how many dp the shorter side has, so the floor stays off unless asked.
-    if dp_given && !floor_given { gui::density_floor = 0.0; }
+    if f.dp > 0 && f.density_floor < 0.0 { gui::density_floor = 0.0; }
+    let fen .= f.fen;
+    let taps .= f.taps;
+    var kind = f.theme;
+    var hints = f.hints;
+    var lang = f.lang;
+    var go = f.go;
     // The game as it was when the app was last paused (shell::restore; nothing changes
     // for a missing or damaged file). A run with flags that set up a game or take a
     // screenshot neither reads nor writes it.
-    let keep = screen < 0 && puzzle_id < 0 && go < 0 && win_at < 0.0 && fen.len == 0 && taps.len == 0 && frames < 0 && variant < 0 && clock_kind < 0 && computer < 0;
+    let keep = f.screen < 0 && f.puzzle < 0 && go < 0 && f.win < 0.0 && fen.len == 0 && taps.len == 0 && f.frames < 0 && f.variant < 0 && f.clock < 0 && f.computer < 0;
     // The players, their settings, and their games, kept in the app's storage folder
     // (shell/players.goose): the playing player's settings with the device's language.
     var folder: u8[512] = [0; 512];
@@ -263,7 +96,7 @@ fn main() {
     let system_lang = strings::pick(locales[..draughts_locales(locales)]);
     if lang < 0 { lang = if prefs.language >= 0 { prefs.language } else { system_lang }; }
     strings::use(lang);
-    puzzles::load((if variant >= 0 { variant } else { prefs.variant }) as u8);
+    puzzles::load((if f.variant >= 0 { f.variant } else { prefs.variant }) as u8);
 
     // A phone or a tablet: the window fills the screen with the system's bars hidden, the
     // clocks count only while the app has focus, and the layout takes the display's scale.
@@ -274,24 +107,23 @@ fn main() {
     // An iOS app never closes itself, so home has no way out there.
     if on_ios { home::closable = false; }
     let window_flags = if mobile { gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE } else { gfx::WINDOW_RESIZABLE };
-    guard gfx::open(strings::get(strings::APP_NAME), width, height, window_flags) else { abort(str("gfx: ", gfx::error())); }
+    guard gfx::open(strings::get(strings::APP_NAME), f.width, f.height, window_flags) else { abort(str("gfx: ", gfx::error())); }
     defer gfx::close();
 
     // A new game of the draughts the setup last chose, until a saved game is restored.
-    var sh = shell::new((if variant >= 0 { variant } else { prefs.variant }) as u8);
-    if clock_kind >= 0 || computer >= 0 {
-        let lv = if level >= 0 { level } else { prefs.level };
-        game::start(sh.game, sh.game.b.variant, max(clock_kind, 0), computer, lv, prefs.skill[lv], prefs.games);
+    var sh = shell::new((if f.variant >= 0 { f.variant } else { prefs.variant }) as u8);
+    if f.clock >= 0 || f.computer >= 0 {
+        let lv = if f.level >= 0 { f.level } else { prefs.level };
+        game::start(sh.game, sh.game.b.variant, max(f.clock, 0), f.computer, lv, prefs.skill[lv], prefs.games);
     }
     sh.prefs = prefs;
-    if reset_skill {
+    if f.reset_skill {
         sh.prefs.level = game::EASY;
         sh.prefs.skill = ai::LEVEL_SKILL;
         sh.prefs.played = [0; 3];
         sh.changed = true;
     }
-    if raised { sh.prefs.board = settings::RAISED; }
-    if flat { sh.prefs.board = settings::FLAT; }
+    if f.board >= 0 { sh.prefs.board = f.board; }
     sh.players = players_read;
     let gm .= sh.game;
     let b .= gm.b;
@@ -301,26 +133,25 @@ fn main() {
         guard ok else { abort(str("not a position: ", fen)); }
         board::set(b, p);
     }
-    sh.screen = if screen >= 0 { screen } else if fen.len > 0 || taps.len > 0 || clock_kind >= 0 || computer >= 0 { shell::GAME } else { shell::HOME };
-    sh.setup = setup;
+    sh.screen = if f.screen >= 0 { f.screen } else if fen.len > 0 || taps.len > 0 || f.clock >= 0 || f.computer >= 0 { shell::GAME } else { shell::HOME };
+    sh.setup = f.setup;
     // A setup the flags open shows the draughts, the child's color, and the level they
     // give, with the settings file left as it is unless a tap in the setup writes it.
-    if setup != home::NOTHING {
-        if variant >= 0 { sh.prefs.variant = variant; }
-        if computer >= 0 { sh.prefs.color = 1 - computer; }
-        if level >= 0 { sh.prefs.level = level; }
+    if f.setup != home::NOTHING {
+        if f.variant >= 0 { sh.prefs.variant = f.variant; }
+        if f.computer >= 0 { sh.prefs.color = 1 - f.computer; }
+        if f.level >= 0 { sh.prefs.level = f.level; }
     }
-    if puzzle_id >= 0 && puzzles::find(puzzles::all, puzzle_id) >= 0 && go != shell::PUZZLE {
-        shell::play_puzzle(sh, puzzles::find(puzzles::all, puzzle_id));
-        screen = shell::PUZZLE;
+    if f.puzzle >= 0 && puzzles::find(puzzles::all, f.puzzle) >= 0 && go != shell::PUZZLE {
+        shell::play_puzzle(sh, puzzles::find(puzzles::all, f.puzzle));
     }
     // The playing player's game, with the screen it was on.
     shell::read_game(sh);
     // A fresh install's first run opens on the sheet of its one player, to pick a badge.
     if keep && sh.players.fresh { who::first_run(sh.who, sh.players); }
-    if background >= 0 { sh.prefs.plain = background == 1; }
+    if f.background >= 0 { sh.prefs.plain = f.background == 1; }
     var d = draw::new(kind, !settings::photo_shown(sh.prefs));
-    var d3 = draw3d::Drawer { wood: wood_3d, marble: marble_3d, summer: summer_3d, spring: spring_3d, timed: bench > 0, .. };
+    var d3 = draw3d::Drawer { wood: f.wood, marble: f.marble, summer: f.summer, spring: f.spring, timed: f.bench > 0, .. };
     var w = widgets::new();
     var g = gui::Gui {};
     var t = text::Text {};
@@ -375,11 +206,11 @@ fn main() {
         // of either is a change of the screen, as a new size is. The Mac's display scale
         // is left out (gui::scale_of).
         draughts_display(display);
-        if mobile && !display_given { gui::display_scale = display[4]; }
+        if mobile && f.display_scale < 0.0 { gui::display_scale = display[4]; }
         let scale = gui::scale_of(size.x, size.y);
-        let e = if inset_dp.x < 0.0 { float4 { display[0], display[1], display[2], display[3] } }
-                else { float4 { floor(inset_dp.x * scale + 0.5), floor(inset_dp.y * scale + 0.5),
-                                floor(inset_dp.z * scale + 0.5), floor(inset_dp.w * scale + 0.5) } };
+        let e = if f.inset.x < 0.0 { float4 { display[0], display[1], display[2], display[3] } }
+                else { float4 { floor(f.inset.x * scale + 0.5), floor(f.inset.y * scale + 0.5),
+                                floor(f.inset.z * scale + 0.5), floor(f.inset.w * scale + 0.5) } };
         if scale != was_scale || e.x != g.insets.x || e.y != g.insets.y || e.z != g.insets.z || e.w != g.insets.w {
             was_scale = scale;
             g.insets = e;
@@ -407,14 +238,14 @@ fn main() {
         // win they lead to, if any, held at --win's moment (which must be past: the
         // celebration's start is kept as a time, never before 0).
         if go >= 0 && gfx::frame_count() >= 2 && tapped >= taps.len && !b.moving
-           && (win_at < 0.0 || (sh.game.won_at >= 0.0 && now > win_at)) {
-            if go == GO_PLAY {
+           && (f.win < 0.0 || (sh.game.won_at >= 0.0 && now > f.win)) {
+            if go == flags::GO_PLAY {
                 // As the setup's play, leaving settings.txt as it is: the count of games
                 // against the computer and the choices the flags gave aren't written.
                 shell::play(sh, now);
                 sh.changed = false;
             }
-            else if go == shell::PUZZLE { shell::play_puzzle(sh, max(puzzles::find(puzzles::all, puzzle_id), 0), now); }
+            else if go == shell::PUZZLE { shell::play_puzzle(sh, max(puzzles::find(puzzles::all, f.puzzle), 0), now); }
             else { shell::go_to(sh, go, now); }
             go = -1;
         }
@@ -427,8 +258,8 @@ fn main() {
             else if on_android { draughts_leave(); }
             else { break; }
         }
-        if hold >= 0.0 && sh.from >= 0 { sh.since = now - hold * shell::DURATION; }
-        if win_at >= 0.0 && sh.game.won_at >= 0.0 { sh.game.won_at = now - win_at; }
+        if f.hold >= 0.0 && sh.from >= 0 { sh.since = now - f.hold * shell::DURATION; }
+        if f.win >= 0.0 && sh.game.won_at >= 0.0 { sh.game.won_at = now - f.win; }
         // The 3D board chosen but not ready (it gets ready a step a frame as it is drawn,
         // draw3d::prepare): the shell shows a still mark in its place, or the old image while
         // a new theme bakes, and leaves taps on it alone; the frames go on until it shows
@@ -491,7 +322,7 @@ fn main() {
             g.acted = true;
         }
         // --bench N times the 3D board's frames 2 s after the launch, settled (draw3d.goose).
-        if bench > 0 && sh.raised && d3.draws > 0 && now > 2.0 && d3.bench.n == 0 { d3.bench.n = bench; }
+        if f.bench > 0 && sh.raised && d3.draws > 0 && now > 2.0 && d3.bench.n == 0 { d3.bench.n = f.bench; }
         if d3.bench.n > 0 { dirty = true; }
         // iOS ends an app that uses the GPU in the background, and SDL doesn't block the
         // loop there as on Android: nothing is drawn while the app hasn't focus, which it
@@ -544,16 +375,16 @@ fn main() {
         // lit, a toggle), so the next frame draws again; this one drew, so the next
         // doesn't wait for an event.
         if g.acted { dirty = true; }
-        if frames > 0 && gfx::frame_count() >= frames { break; }
+        if f.frames > 0 && gfx::frame_count() >= f.frames { break; }
         if draw3d::bench_done(d3) { break; }
     }
-    if frames > 0 { gfx::screenshot("draughts.png"); }
-    if frames > 0 && d3.prep_ms.len > 0 {
+    if f.frames > 0 { gfx::screenshot("draughts.png"); }
+    if f.frames > 0 && d3.prep_ms.len > 0 {
         var line: u8[>..] = [];
         for ms in d3.prep_ms { format(line, " ", floor(ms * 100.0 + 0.5) / 100.0); }
         print("3D board prepared in ", d3.prep_ms.len, " steps, each waited, ms:", line);
     }
-    if frames > 0 && d3.frames > 0 { print("3D board: ", d3.frames, " frames showed it, ", d3.draws, " drew it, ", d3.shadows, " its shadow map, ", d3.pulses, " only its pulsing marks"); }
+    if f.frames > 0 && d3.frames > 0 { print("3D board: ", d3.frames, " frames showed it, ", d3.draws, " drew it, ", d3.shadows, " its shadow map, ", d3.pulses, " only its pulsing marks"); }
     shell::write_game(sh);
     if sh.quit { draughts_close(); }
 }

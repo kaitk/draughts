@@ -60,6 +60,10 @@ find out by compiling, so the next session doesn't.
 - A package's other files' namespaces come with it: after `import shell from
   "../shell";` the app calls `settings::parse` from `src/shell/settings.goose`. Importing
   the same directory again under another name is an error.
+- A file imported with `import .name;` starts with `namespace name;` and imports the std
+  modules it uses (`import std; import vec;`). Without the `namespace` line its functions
+  are unknown from the importer (`unknown function: name::f`), with no error in the file
+  itself (2026-11-09).
 - A package's files see each other's namespaces without importing them: `panel.goose`
   uses `clock::` because `game.goose` imports `.clock`. From outside, a file's namespace
   is reached by its own name (`home::COMPUTER` after `import shell`), never
