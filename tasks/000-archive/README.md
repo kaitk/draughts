@@ -113,3 +113,8 @@ and the commit that last has it.
 - 033: An icon per season. Cancelled (2026-11-09): one icon, autumn, shipped for the
   release; a seasonal icon costs its place on the home screen four times a year.
   `033-icon-per-season.md`, `a9d4cd6`
+- 047: Review the code's structure and clean up. Done: the build scripts' shared steps
+  in `scripts/native.py`, the app's flags in `src/app/flags.goose`, one variant-name
+  table in `rules/`, stale comments, docs, and tasks cleaned up, the shots unchanged; a
+  shared CMake include declined, 010's upstream list deferred.
+  `047-structure-review.md`, `d41c3d9`
