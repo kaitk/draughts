@@ -149,7 +149,10 @@ frame, as expected of a texture.
 bake than 0 on the Mac (37 against 33 ms) and nothing a frame.
 
 The user (2026-11-09): 2 and 3 both look great. 2 stays the default; 3 is kept as the
-alternative, and the choice can be made once they're seen in the game.
+alternative, and the choice can be made once they're seen in the game. 2 is the more
+realistic wood, the squares especially; 3's look appeals too. Later the material may
+become a setting with several woods: pick a first, a second, and maybe a third take
+after trying them in the 3D game.
 
 Next, if the frame should come closer still: the reference's front shows more broad
 tonal mottling and more pronounced cross-grain flecks; finished wood's moving sheen
