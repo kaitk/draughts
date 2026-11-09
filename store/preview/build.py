@@ -91,7 +91,7 @@ def main():
     have = {}
     have["icon"] = image(IMAGES / "icon/play-512.png", "icon-512.png", 512)
     have["apple_icon"] = image(IMAGES / "icon/apple-1024.png", "icon-apple.png", 512)
-    have["feature"] = image(SHOTS / "play-0.1/feature-graphic-draft.png", "feature.jpg", 1024)
+    have["feature"] = image(IMAGES / "feature-0.2/feature-render-close-name.png", "feature.jpg", 1024)
     for lang in ("en", "et"):
         for s in SCENES:
             for cls, w in (("phone", 540), ("tablet", 1280)):

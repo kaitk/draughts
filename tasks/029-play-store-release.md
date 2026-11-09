@@ -2,8 +2,8 @@
 
 Status: in-progress (the package and the drafts ready, 2026-11-08; the listing's texts,
 answers, screenshots, and a preview checked against Play's current help, 2026-11-09; the
-identity, the final feature graphic, the Play account, and the checks on the tablet
-remain)
+identity and the feature graphic settled the same day; the Play account, the screenshots'
+retake, and the checks on the tablet remain)
 
 Everything between a sideloaded APK and the app on Google Play, under Google's Families
 Policy: the app is for children, with no ads, no tracking, no accounts, and no network
@@ -83,8 +83,9 @@ masters present):
 - **`allowBackup` stays on** (the user, 2026-11-09), so Android's own backup may carry a
   child's progress to a new tablet; the Data safety answers count that as not collected
   (`store/play-console.md`).
-- **A new feature graphic** (the user, 2026-11-09): a close-up of the autumn 3D board,
-  rendered headless at a large size, in place of the first draft.
+- **The feature graphic** (chosen by the user, 2026-11-09):
+  `~/Downloads/draughts-store/feature-0.2/feature-render-close-name.png`, the autumn 3D
+  board close at a low angle with home's king and the name (`store/README.md`).
 - **Play Console:** the developer account (a personal account: identity check, then the
   closed test above), the app's entry, the listing pasted from `store/`, the 512 px icon
   (`~/Downloads/draughts-store/icon/play-512.png`, autumn), the 1024 × 500 feature
@@ -94,9 +95,7 @@ masters present):
 - **Read the drafts:** the listing (rewritten for task 037's puzzles and task 038's
   players), the Estonian especially, and the policy, which now names players and their
   optional names.
-- **Pick or redo the images:** the feature graphic is a first draft, and its wordmark
-  repeats the title beside it on Play's web page (Play asks for no branding that only
-  repeats the icon); an Estonian one would say "Kabe". Say whether the 0.2 screenshots'
+- **Pick or redo the images:** an Estonian feature graphic would say "Kabe". Say whether the 0.2 screenshots'
   scenes and the made-up player (Mia the fox) will do, and whether the Estonian listing
   takes its Estonian set (`~/Downloads/draughts-store/screenshots/play-0.2/`).
 - **Decide:** trader status (non-trader proposed, `store/play-console.md`), the tags in
@@ -183,8 +182,8 @@ masters present):
 - [x] Task 030 done, so phones and larger tablets are listed
 - [ ] Store listing in English and Estonian, with icon, feature graphic, and screenshots
       (texts, the 0.2 screenshots, and a preview 2026-11-09; the texts approved by the
-      user 2026-11-09; the developer name, the contact email, the final feature graphic,
-      and the retake of scenes 02, 03, 05, and 06 remain)
+      user 2026-11-09; the developer name, the contact email, and the feature graphic
+      settled 2026-11-09; the retake of scenes 02, 03, 05, and 06 remains)
 - [ ] Target audience, content rating, Data safety, and privacy policy filled in (the
       answers and the policy drafted in `store/`)
 - [ ] Closed test run as Play requires, then the app published

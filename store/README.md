@@ -94,11 +94,13 @@ blur and colour to the pixels around the island (`iphone-6.9-raw/` keeps them as
 `iphone-6.9-mirrored/` the first, mirrored fill). The scripts that took them are kept beside the
 sets.
 
-`play-0.1/feature-graphic-draft.png` (1024 × 500, no alpha) is the only feature graphic, a
-first draft: the autumn photograph softened and dimmed, the flat board at the right, and
-the wordmark "Draughts" in Libertinus Sans (`assets/fonts/`) beside home's king. Play's web
-page puts the title beside it, so the wordmark repeats it; and the Estonian listing may
-have its own, with "Kabe" (Play takes a feature graphic per language). The older sets
+The feature graphic is `feature-0.2/feature-render-close-name.png` (1024 × 500, no alpha;
+chosen by the user 2026-11-09): the autumn 3D board close at a low angle, rendered
+headless from a copy of the app without its UI, with home's king and "Draughts" in
+Libertinus Sans top-left over the blurred forest. Its `README.md` and `fgshot.py` say how
+it was rendered. The Estonian listing may take its own, with "Kabe" (Play takes a feature
+graphic per language). `play-0.1/feature-graphic-draft.png`, the flat first draft, is
+superseded. The older sets
 (`play/`, `apple-*`, `play-0.1/`, before the 3D board, the sixth theme, and the Russian
 puzzles) are superseded.
 
