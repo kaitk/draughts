@@ -157,3 +157,9 @@ and the commit that last has it.
   tile with three pips, lights the piece and then its square, from a search at 15 above
   the opponent's skill on the worker. Three rounds of prototypes (`prototypes/coach*.html`).
   `040-coach-and-hint.md`, `08e55e1`
+- 054: The flat game screen's controls as the 3D one's. Done: the user set aside the
+  takes' frame, shadow, and blur (the UI round the board only); the flat board between
+  the 3D screen's short corner panels in landscape, the same tiles in the same places,
+  narrowed to 192 dp near square so the board keeps its size; portrait's bar and play as
+  wide as the 3D screen's. A puzzle keeps its tall panels. `054-flat-screen-like-3d.md`,
+  `3331ab9`
