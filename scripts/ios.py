@@ -14,7 +14,7 @@ Steps, as scripts/android.py's: Goose writes the program's C and the runtime's C
 goose_gfx's sources are copied and patches/goose_gfx applied, and SDL is copied and
 patches/SDL applied; CMake with Ninja and Xcode's clang builds ios/CMakeLists.txt, one
 executable with SDL linked statically; the bundle is the executable, an Info.plist written
-here (the id, the version, full screen, the launch screen's colour), the launcher's name
+here (the id, the version, full screen, an empty launch screen), the launcher's name
 per language (<lang>.lproj/InfoPlist.strings from strings/<lang>.txt's app.name); no icon
 yet (task 043). A simulator build is signed ad hoc; a device build with the Mac's development
 identity and a provisioning profile for the app's id (docs/development.md, "Run on
@@ -49,7 +49,6 @@ STACK_RESERVE = "128M"
 # The simulator this script makes and uses: the size of the iPhone the app is tried on.
 SIM_NAME = "Draughts iPhone 13 mini"
 SIM_TYPE = "com.apple.CoreSimulator.SimDeviceType.iPhone-13-mini"
-LAUNCH_COLOR = (0x06 / 255, 0x17 / 255, 0x2b / 255)   # the icon's background (android/res)
 
 
 def write_bundle(app, exe, app_id, title, device):
@@ -82,7 +81,7 @@ def write_bundle(app, exe, app_id, title, device):
         "UIDeviceFamily": [1, 2],
         "UIRequiredDeviceCapabilities": ["arm64", "metal"],
         # A launch screen makes iOS give the app the whole screen at its own size; without
-        # one it runs letterboxed at an old iPhone's. Its colour is the icon's background.
+        # one it runs letterboxed at an old iPhone's.
         "UILaunchScreen": {},
         "UIStatusBarHidden": True,
         # SDL asks for it to take a pointer (an iPad's trackpad, the simulator's mouse).
