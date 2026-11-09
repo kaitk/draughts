@@ -29,6 +29,7 @@ struct Drawer {
     n:       i64                                   = 0,
     wood:    i64                                   = -1, // --wood, --marble: -1 the renderer's own
     marble:  i64                                   = -1,
+    summer:  i64                                   = 0,  // --summer: summer's variant (looks::SUMMERS)
     size:    int2                                  = int2 { 0, 0 },
     scene:   view3d::Scene                         = view3d::Scene {}, // this frame's
     drawn:   view3d::Scene                         = view3d::Scene {}, // the last one drawn
@@ -42,10 +43,10 @@ struct Drawer {
 }
 
 // The look for the app's theme, the season's: autumn's wood, winter's stone, spring's
-// birch, summer's sunset; the photograph is the theme's own.
-fn look_of(kind: i64) -> i64 {
+// birch, summer's sunset (its variant `summer`); the photograph is the theme's own.
+fn look_of(kind: i64, summer: i64) -> i64 {
     return if kind == theme::STONE { looks::WINTER } else if kind == theme::BIRCH { looks::SPRING }
-           else if kind == theme::SUNSET { looks::SUMMER } else { looks::AUTUMN };
+           else if kind == theme::SUNSET { looks::summer_look(summer) } else { looks::AUTUMN };
 }
 
 // Draws the frame board::fill left in b, on the flat layout l, seen through v, into the
@@ -64,7 +65,13 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
     if kind != d.kind || l.n != d.n {
         d.kind = kind;
         d.n = l.n;
-        render3d::apply(d.gpu, look_of(kind), l.n, kind);
+        let look = look_of(kind, d.summer);
+        // A summer variant's own wood and finish; else --wood's, or the renderer's own.
+        let own = looks::wood_for(look);
+        let wood = if own >= 0 { own } else if d.wood >= 0 { d.wood } else { render3d::WOOD_MODEL };
+        render3d::choose(d.gpu, wood, -1);
+        d.gpu.finish = looks::finish_for(look, d.gpu.wood);
+        render3d::apply(d.gpu, look, l.n, kind);
         force = true;
     }
     if size.x != d.size.x || size.y != d.size.y {

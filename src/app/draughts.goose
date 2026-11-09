@@ -95,7 +95,8 @@ fn main() {
     // --hints, and --lang override the settings for the run without changing them.
     // --3d (alone) shows settings' Board row, hidden until the 3D board exists (task 015);
     // --wood N and --marble N choose the 3D board's wood (0..3) and winter frame's marble
-    // (0 the slate, 1..4), to try them in the game (task 039).
+    // (0 the slate, 1..4), to try them in the game (task 039); --summer N summer's 3D look
+    // (0..3, looks::SUMMERS).
     // --dp N lays out N dp across the shorter side (and leaves the density floor off);
     // --inset L,T,R,B in dp stands for a phone's safe area; --density-floor F and
     // --display-scale S try the scale's floor (gui::scale_of), S standing for the
@@ -120,6 +121,7 @@ fn main() {
     var raised = false;
     var wood_3d = -1;
     var marble_3d = -1;
+    var summer_3d = 0;
     var dp_given = false;
     var floor_given = false;
     var display_given = false;
@@ -181,10 +183,11 @@ fn main() {
             }
         }
         if argv[i] == "--fen" { fen.append(argv[i + 1]); }
-        if argv[i] == "--wood" || argv[i] == "--marble" {
+        if argv[i] == "--wood" || argv[i] == "--marble" || argv[i] == "--summer" {
             let n, ok = parse_int(argv[i + 1]);
             if ok && argv[i] == "--wood" { wood_3d = n; }
             if ok && argv[i] == "--marble" { marble_3d = n; }
+            if ok && argv[i] == "--summer" { summer_3d = clamp(n, 0, looks::SUMMERS - 1); }
         }
         if argv[i] == "--board" && argv[i + 1] == "3d" { raised = true; }
         if argv[i] == "--hints" && argv[i + 1] == "moves" { hints = board::MOVES; }
@@ -291,7 +294,7 @@ fn main() {
     // A fresh install's first run opens on the sheet of its one player, to pick a badge.
     if keep && sh.players.fresh { who::first_run(sh.who, sh.players); }
     var d = draw::new(kind);
-    var d3 = draw3d::Drawer { wood: wood_3d, marble: marble_3d, .. };
+    var d3 = draw3d::Drawer { wood: wood_3d, marble: marble_3d, summer: summer_3d, .. };
     var w = widgets::new();
     var g = gui::Gui {};
     var t = text::Text {};
