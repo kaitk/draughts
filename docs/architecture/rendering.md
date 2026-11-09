@@ -694,8 +694,9 @@ the prototype tried, kept for 3D:
   once (`shell::load_set`), puts the list back at its top, and home's count follows; the
   lit tile takes a tap and changes nothing. It stands at the title row's right in
   landscape where the title, its note, and the switch fit the width beside back, else
-  (portrait, the compact window) in a row of its own under the title. Brazilian, until
-  it has its own set, shows International's with "International's puzzles for now"
+  (portrait, the compact window) in a row of its own under the title. A draughts with no
+  set of its own (as Brazilian was until 2026-11-10; now none of the three) shows
+  International's with "International's puzzles for now"
   ("Esialgu rahvusvahelise kabe ülesanded") under the title in the small face, over one
   dark copy 1.5 dp down (`gui::shaded`: the halo's nine quads a glyph would take the
   frame past `gui::MAX_QUADS`, 512), broken onto two lines where one doesn't fit (the

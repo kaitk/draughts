@@ -194,6 +194,7 @@ build/puzzles --variant russian                                       # Russian'
 build/puzzles try --variant russian 'W:Wh4,a5:Bg5,c7,e7,g7' 'take 3' 1
 build/puzzles find black 'take 2' 2 7 7 6 --variant russian          # flags anywhere; --rows N, --tempo
 test/perft.py puzzles russian src/puzzles/russian.txt                    # Russian's only independent check
+test/perft.py puzzles brazilian src/puzzles/brazilian.txt
 ```
 
 The app shows the set of the player's draughts; `--variant russian` picks Russian's for

@@ -59,13 +59,19 @@ struct Set { list: Puzzle[..MAX_PUZZLES] }
 var all:    Set;
 var loaded: u8 = rules::INTERNATIONAL;
 
-// The variant whose set a player of `variant` is shown: Russian has its own, the others
-// International's for now.
-fn set_of(variant: u8) -> u8 { if variant == rules::RUSSIAN { rules::RUSSIAN } else { rules::INTERNATIONAL } }
+// The variant whose set a player of `variant` is shown: International, Russian, and
+// Brazilian have their own; a variant without one (English, not offered) is shown
+// International's, and the picker says so (picker::note_of).
+fn set_of(variant: u8) -> u8 {
+    guard variant != rules::RUSSIAN && variant != rules::BRAZILIAN else { return variant; }
+    return rules::INTERNATIONAL;
+}
 
 // A variant's puzzle file, as built into the program.
 fn file(variant: u8 = rules::INTERNATIONAL) -> const u8[:] {
-    if set_of(variant) == rules::RUSSIAN { return embed_file("russian.txt"); }
+    let set = set_of(variant);
+    if set == rules::RUSSIAN { return embed_file("russian.txt"); }
+    if set == rules::BRAZILIAN { return embed_file("brazilian.txt"); }
     return embed_file("international.txt");
 }
 

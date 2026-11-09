@@ -40,3 +40,4 @@ python3 test/perft.py compare brazilian 40 120
 
 python3 test/perft.py puzzles international src/puzzles/international.txt
 python3 test/perft.py puzzles russian src/puzzles/russian.txt
+python3 test/perft.py puzzles brazilian src/puzzles/brazilian.txt

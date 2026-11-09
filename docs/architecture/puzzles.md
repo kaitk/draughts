@@ -8,8 +8,9 @@ is in `shell/` ([rendering](rendering.md#controls)).
 ## The file
 
 Each variant with puzzles has a file of its own: `src/puzzles/international.txt` holds the
-International puzzles (International is the default game), and `src/puzzles/russian.txt`
-the Russian ones ([Russian's set](#russians-set)). They are grouped by theme, each theme
+International puzzles (International is the default game), `src/puzzles/russian.txt`
+the Russian ones ([Russian's set](#russians-set)), and `src/puzzles/brazilian.txt` the
+Brazilian ones ([Brazilian's set](#brazilians-set)). They are grouped by theme, each theme
 a short curve of its own in three levels, easy to hardest (chosen 2026-11-09). The
 themes are a fixed list in code (`puzzles::THEME_NAMES`, their icons and names in
 `src/shell/picker.goose` and `strings/`), in the library's order, International's:
@@ -82,8 +83,33 @@ hand. Squares are written a1..h8, moves `c3-d4`, captures by their stops `c3:e5:
 | Shots | Give one, take three, onto the crowning square too (level 1, two moves); give one and take four through the crowning square, and the free tempo, a quiet move after which every move the other side has gives a man (level 2); give two, then take four or five through the crowning square (level 3, three moves). | 6, 5, 3 |
 
 That is 46, 12 of them black to move (35% of the 34 outside Learn). The library shows
-only the themes a set has, so a Russian player sees four rows. A Brazilian player is
-shown International's set. Russian's ids are its own, from 1.
+only the themes a set has, so a Russian player sees four rows. Russian's ids are its own,
+from 1.
+
+## Brazilian's set
+
+`src/puzzles/brazilian.txt` is composed for Brazilian's rules, International's on the
+8×8 board ([rules](rules.md#variants)): men capture backward, a capture must take the
+most, so a choice is among captures of the same size, and a man that passes the far row
+in a capture and ends elsewhere stays a man, which makes Brazilian's shots past the
+crowning square. Russian's positions were each checked again under Brazilian rules
+(`tools/puzzles.goose try --variant brazilian`) and kept where the shot still works and
+there is still a choice; the rest are found by `find --variant brazilian` from game-like
+camps. Squares and moves are written as Russian's.
+
+| Theme | What it teaches | Levels 1, 2, 3 |
+|---|---|---|
+| Learn | Brazilian's rules in action: the first capture, the backward one, two men that can take and the one not taken back, the flying king's landing, the majority capture (the double where a single is there too, and two doubles where one leaves a man to be taken), a capture going on backward, a man passing the far row uncrowned, the king's zigzag landing safe, and a sacrifice that opens the way to crown. White to move. | 4, 4, 4 |
+| Captures | Two captures of the most, the lesser not allowed: the one not taken back, the one that leaves no man to be taken; three jumps up and back down; four past the far row uncrowned; a king's three that lands safe. | 4, 3, 3 |
+| Crowning | A capture that ends on the far row; the breakthrough sacrifice; two men given for a crown. | 4, 3, 3 |
+| Shots | Give one, take three, onto the crowning square too (level 1, two moves); give one and take four past the crowning square uncrowned, give two in one capture and take five, and the free tempo (level 2); give two, then take four or five, past the far row and crowned, or after giving a king (level 3, three moves). | 6, 5, 3 |
+
+That is 46, 13 of them black to move (38% of the 34 outside Learn); a Brazilian player
+sees four rows. 26 of them are Russian's positions (Learn 9, Crowning 9, Shots 8, and
+none of Captures, where majority's rule leaves Russian's choices a single legal move).
+Brazilian's ids are its own, from 1. A variant with no set of its own (English, not
+offered) is shown International's, with "International's puzzles for now" under the
+library's title (`picker::note_of`).
 
 ## Goals
 
@@ -228,10 +254,10 @@ whether the moves it rates best solve the puzzle, a second engine sharing only t
 rules with the solver, and whether it scores a right first move as losing material
 (under −50, half a man). It plays for material, so it is not asked about crowning.
 `test/perft.py puzzles international src/puzzles/international.txt` (and `russian
-src/puzzles/russian.txt`) plays every line with the independent generator, checking each
-move and each position's moves against `build/perft`; for Russian, which has no
-published perft table, it is the only independent check. `scripts/test.sh` runs it on
-both files.
+src/puzzles/russian.txt`, `brazilian src/puzzles/brazilian.txt`) plays every line with
+the independent generator, checking each move and each position's moves against
+`build/perft`; for Russian, which has no published perft table, it is the only
+independent check. `scripts/test.sh` runs it on all three files.
 
 `tools/puzzles.goose try FEN GOAL MOVES [LINE]` shows the moves that are right, the line
 the screen would play (after LINE's moves, when given, which shows where a rival leads),

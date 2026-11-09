@@ -5,7 +5,7 @@
 // a: settings' draughts, one setting), and a glass row per theme: its mark (the theme's
 // icon on a disc in the glow color), its name, its stars ("★ n / total"), and a bar of
 // them. The switch stands at the title row's right in landscape and in a row under the
-// title in portrait; Brazilian, shown International's set, says so under the title.
+// title in portrait; a draughts shown another's set (none now) says so under the title.
 // Learn is open; the other themes open once
 // half of Learn is solved, and until then each shows its mark plain with a lock and how
 // many more Learn wants. The rows are two columns in landscape where two fit the width or
@@ -231,8 +231,8 @@ fn switch(g: gui::Gui&, r: float4, variant: i64&) -> bool {
     return chose;
 }
 
-// The note under the title while the draughts show another's set (Brazilian, until it has
-// its own), or "".
+// The note under the title while the draughts show another's set (none does now: kept
+// for a variant that lacks a set of its own, as Brazilian once did), or "".
 fn note_of(variant: i64) -> const u8[:] {
     return if puzzles::set_of(variant as u8) != variant as u8 { strings::get(strings::PUZZLES_FOR_NOW) } else { "" };
 }

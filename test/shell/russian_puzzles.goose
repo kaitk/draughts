@@ -7,7 +7,8 @@
 // goes on as a king over c7 to b6, which solves it. The stars are kept under
 // `stars.russian`, and home counts them over Russian's set. Back to International on
 // home, the library is International's again, its stars kept apart. A Brazilian player
-// is shown International's set until Brazilian has its own.
+// has Brazilian's own set; a variant with none (English, not offered) is shown
+// International's.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -75,7 +76,8 @@ fn main() {
     print("loaded: ", puzzles::load(), ", the set ", rules::VARIANT_NAMES[puzzles::loaded], " of ",
           puzzles::all.list.len);
     print("a Brazilian player's set: ", rules::VARIANT_NAMES[puzzles::set_of(rules::BRAZILIAN)],
-          ", a Russian's: ", rules::VARIANT_NAMES[puzzles::set_of(rules::RUSSIAN)]);
+          ", a Russian's: ", rules::VARIANT_NAMES[puzzles::set_of(rules::RUSSIAN)], ", an English one's: ",
+          rules::VARIANT_NAMES[puzzles::set_of(rules::ENGLISH)]);
     var g = gui::Gui {};
     gui::test_faces(g);
     var sh = shell::new(rules::RUSSIAN);

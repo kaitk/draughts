@@ -67,8 +67,8 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   wrong move with none sliding back as before (`puzzle_answer`, which reads its own
   puzzles into `puzzles::all`), the library and every theme's page laid out at the tablet's
   and a phone's size (`picker`), the draughts switch on the library (each draughts' set,
-  Brazilian's note, the file, home's count, a scrolled list back at its top, and the
-  layouts: `puzzle_set`), a capture made by hand in a puzzle (tapped and dragged
+  the note for a draughts without one (English stands in), the file, home's count, a
+  scrolled list back at its top, and the layouts: `puzzle_set`), a capture made by hand in a puzzle (tapped and dragged
   stop by stop, dropped on its last square, left partway and next pressed: a miss) and
   no targets in any puzzle, a Russian player's set read on home, its library, a puzzle
   crowned mid-capture made by hand, and its stars kept apart (`russian_puzzles`),
@@ -105,13 +105,16 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   needed (`overlook`), and draws scored 0, steered into when behind and clear of when ahead (`draws`)), and `puzzles` (the puzzle file's format and refusals, what `puzzles::check`
   refuses beyond the format, what a move does to each goal, and every built-in puzzle
   passing `puzzles::check`, with its counts by theme and level: `set` International's,
-  `russian_set` Russian's). A new puzzle is checked with `build/puzzles FILE` (the
-  engine's view too) and `test/perft.py puzzles` before `test/expected/set.out` or
-  `russian_set.out` is blessed. With no FILE, `build/puzzles` checks the set built into
+  `russian_set` Russian's, `brazilian_set` Brazilian's). A new puzzle is checked with
+  `build/puzzles FILE` (the engine's view too) and `test/perft.py puzzles` before
+  `test/expected/set.out`, `russian_set.out`, or `brazilian_set.out` is blessed. With no FILE, `build/puzzles` checks the set built into
   it, so rebuild it after a set changes, or an old build checks the old set. In tiny positions the engine sees the
   game's end, so a Learn puzzle of a few men can fail its view (a right move scored as
   lost, or another move winning sooner) though the solver passes it: add men, or pick
-  another from `find` (2026-11-09). A
+  another from `find` (2026-11-09). `build/puzzles FILE` reads at most `MAX_PUZZLES` (150)
+  ids, so a pool of `find`'s candidates checked as one file goes in files of 150; a set
+  carried to another variant is checked one puzzle at a time with `try --variant`, which
+  says what solves it there and makes its line (2026-11-10). A
   test that lays out text calls `gui::test_faces` for glyph sizes without an atlas, and
   `strings::use` before reading a string. Shared helpers are in
   `test/check.goose` (`check::show`, `check::play_only`), imported as

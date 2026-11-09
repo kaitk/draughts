@@ -1,16 +1,18 @@
 // The draughts switch on the puzzles' library (shell/picker.goose, take a of
 // prototypes/puzzle-set.html), headless, driven through the pointer. The switch is
 // settings' draughts: a tap on Russian shows Russian's set and its four themes, on
-// Brazilian International's set with the note "International's puzzles for now" under the
-// title, on International its set without the note; each tap sets the player's draughts,
-// written to the player's file as settings writes them, and home's count follows. A tap
-// on the lit tile changes nothing. A list scrolled down (a small window) is back at
-// its top after a switch. Then the library with each draughts chosen at the tablet's size
-// in both orientations, a 20:9 phone's at 480 dp in both, in English and Estonian, and
-// the 11" iPad's smallest window (a compact layout): its tiles (back, the switch's three,
-// a row per theme), where the switch stands, the note's lines, and whether any tile lies
-// off the screen, overlaps another, or is under 88 dp, or the title or the note runs into
-// a tile or off the screen.
+// Brazilian Brazilian's own set and its four, on International its six, none with a
+// note under the title; each tap sets the player's draughts, written to the player's
+// file as settings writes them, and home's count follows, each set's stars apart. A tap
+// on the lit tile changes nothing. A list scrolled down (a small window) is back at its
+// top after a switch. Then the library with each draughts chosen at the tablet's size in
+// both orientations, a 20:9 phone's at 480 dp in both, in English and Estonian, and the
+// 11" iPad's smallest window (a compact layout): its tiles (back, the switch's three, a
+// row per theme), where the switch stands, the note's lines, and whether any tile lies
+// off the screen, overlaps another, or is under 88 dp, or the title or the note runs
+// into a tile or off the screen. English, which isn't offered and has no set, stands for
+// a variant shown another's: International's set, no tile lit, and the note
+// "International's puzzles for now" under the title, as Brazilian had until its own.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -124,7 +126,7 @@ fn at_size(g: gui::Gui&, size: float2, short: f32, display: f32) {
 
 fn layouts(g: gui::Gui&, what: const u8[:]) {
     print(what, ":");
-    for v in [rules::INTERNATIONAL, rules::BRAZILIAN, rules::RUSSIAN] {
+    for v in [rules::INTERNATIONAL, rules::BRAZILIAN, rules::RUSSIAN, rules::ENGLISH] {
         var sh = shell::new(rules::INTERNATIONAL);
         sh.prefs.variant = v;
         sh.screen = shell::HOME;
@@ -143,6 +145,7 @@ fn main() {
     var sh = shell::new(rules::INTERNATIONAL);
     sh.prefs.stars[rules::INTERNATIONAL][1] = 3;
     sh.prefs.stars[rules::RUSSIAN][9] = 2;
+    sh.prefs.stars[rules::BRAZILIAN][9] = 1;
     sh.screen = shell::PICKER;
     drive::idle(sh, g, 0.0);
     show(sh, g, "the library");
