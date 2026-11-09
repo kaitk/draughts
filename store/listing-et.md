@@ -6,66 +6,59 @@ as `listing-en.md`. The wording follows `strings/et.txt` and task 024: kabe, tam
 lööma, käik; a side in the plural (valged, mustad). The App Store has no Estonian
 listing (`app-store.md`), so this text is Play's alone.
 
-## Title (12 of 30)
+## Title (4 of 30)
 
 ```text
-Kabe lastele
+Kabe
 ```
 
-The launcher's name stays "Kabe" (`strings/et.txt`). Alternatives: "Kabe: mängi ja õpi"
-(18), "Kabe" (4).
+The same as the launcher's name (`strings/et.txt`), as the English is "Draughts".
 
-## Short description (65 of 80)
+## Short description (56 of 80)
 
 ```text
-Mängi kabet sõbra või arvutiga ja õpi see 120 ülesandega selgeks.
+Mängi kabet arvuti või sõbraga ja lahenda 120 ülesannet.
 ```
 
-## Full description (2,648 of 4,000)
+## Full description (2,518 of 4,000)
 
 ```text
-Kabe lastele ja peredele: rahulik lauamäng mängimiseks ja õppimiseks. Suured nupud, selge laud ja mitte midagi, mis tähelepanu mängult kõrvale juhiks.
+Rahulik kabemäng mängimiseks ja õppimiseks: suured nupud, selge laud ja mitte midagi, mis tähelepanu mängult kõrvale juhiks.
 
 MÄNGI
-• Mängi sõbraga samas tahvelarvutis või telefonis, kordamööda käies.
-• Mängi arvutiga kolmel tasemel: kerge, keskmine ja raske. Pärast iga mängu kohaneb arvuti veidi, et mäng jääks tasavägiseks.
+• Mängi arvutiga kolmel tasemel: kerge, keskmine ja raske. Pärast iga partiid kohaneb arvuti veidi, et mäng jääks tasavägiseks.
+• Või mängi sõbraga samas tahvelarvutis või telefonis, kordamööda käies (ühes seadmes, mitte võrgus).
 • Kolm kabeliiki: rahvusvaheline kabe 10 × 10 laual ning Brasiilia ja vene kabe 8 × 8 laual.
-• Käi nuppu ja siis ruutu puudutades või lohista nupp kohale.
-• Võta käik tagasi või alusta uuesti.
-• Mängi kellata või kellaga, kummalgi 5 või 10 minutit.
+• Käi nuppu ja siis ruutu puudutades või lohista nupp kohale. Võta käik tagasi või alusta uuesti.
+• Mängi kellata või ajakontrolliga: kummalgi 5 või 10 minutit, lisaks 3 või 5 sekundit käigule.
 
 ÜLESANDED
-• 120 ülesannet: 74 rahvusvahelises kabes 10 × 10 laual kuues teemas (Õpi, Löömine, Tammiks, Kombinatsioonid, Tammi löögid ja Ohutu käik) ning 46 vene kabes 8 × 8 laual.
+• 120 ülesannet: 74 rahvusvahelises kabes kuues teemas (Õpi, Löömine, Tammiks, Kombinatsioonid, Tammi löögid ja Ohutu käik) ning 46 vene kabes neljas teemas. Brasiilia kabe mängijad saavad rahvusvahelise kabe ülesanded.
 • Iga teema läheb kergest raskemaks ja mõnes ülesandes mängid mustadega.
-• Esimesena tuleb Õpi, mis näitab reegleid mängus; teised teemad avanevad, kui pooled selle ülesannetest on lahendatud.
-• Iga ülesande eest kuni kolm tähte, iga vea eest üks vähem; lahendatud ülesannet saab uuesti mängida, et võita kõik kolm.
+• Esimesena tuleb Õpi, mis näitab reegleid mängu käigus; teised teemad avanevad, kui sellest on pool lahendatud.
+• Iga ülesande eest kuni kolm tähte, iga vea eest üks vähem; lahendatud ülesannet saab kõigi kolme tähe nimel uuesti proovida.
 
 MÄNGIJAD
-• Ühes tahvelarvutis kuni neli mängijat, igaühel oma loomapilt ja soovi korral nimi.
-• Igal mängijal on oma välimus, vihjed, tähed, arvuti tase ja salvestatud mäng, nii et ühe lapse mäng või tähed ei asenda kunagi teise omi.
-• Mängijat saab avalehelt vahetada kahe puudutusega.
+• Ühes seadmes kuni neli mängijat, igaühel oma loomapilt ja soovi korral nimi.
+• Igal mängijal on oma välimus, vihjed, tähed, arvuti tase ja pooleliolev mäng.
+• Mängijat saab avalehel vahetada kahe puudutusega.
 
-ÕPI MÄNGIDES
-• Vihjed, mis aitavad, kuid ei mõtle lapse eest: vaikimisi ei näita mäng midagi enne, kui käik on vale; siis näitab see ruutu ja põhjust. Esimesteks mängudeks saab sisse lülitada ka kõigi võimalike käikude näitamise.
-• Löömine on kohustuslik: nupp, mis peab lööma, on märgitud ja sellel on täpp iga nupu kohta, mille see lööb.
+VIHJED
+• Vihjed, mis aitavad, kuid ei mõtle mängija eest: vaikimisi ei näita mäng midagi enne, kui käik on vale; siis näitab see ruutu ja põhjust. Esimesteks mängudeks saab sisse lülitada ka kõigi võimalike käikude näitamise.
+• Löömine on kohustuslik: nupp, mis peab lööma, on märgitud täpiga iga löödava nupu kohta.
 
-ILUS KABELAUD
+KABELAUD
 • Lame laud või ruumiline 3D-laud valguse ja varjudega, mida saab avalehel käega pöörata.
-• Neli aastaaega, igaühel oma foto ja laud: sügisel puit, talvel kivi, kevadel nikerdatud kivi ja suvel päikeseloojang.
-• Aastaaeg vahetub kuupäeva järgi või jääb selleks, mille ise valid.
-• Või ühevärviline taust laua toonides, ilma fotota.
+• Neli aastaaega, igaühel oma foto ja laud: sügisene puit, talvine kivi, kevadine nikerdatud kivi ja suvine päikeseloojang.
+• Aastaaeg vahetub kuupäeva järgi või jääb selleks, mille ise valid; või ühevärviline taust laua toonides, ilma fotota.
 
-LASTELE TEHTUD
-• Mõeldud lastele alates umbes viiendast eluaastast ja täiskasvanutele, kes nendega mängivad.
+KÕIGILE
 • Suured pildid ja ikoonid, et ka laps, kes veel lugeda ei oska, saaks ise hakkama.
+• Piisavalt lihtne esimeseks partiiks, kuid raske tase ja raskeimad ülesanded panevad proovile ka täiskasvanu.
 • Eesti ja inglise keeles, vastavalt seadme keelele.
 
 MITTE MIDAGI LIIGSET
-• Reklaamideta.
-• Rakendusesiseste ostudeta.
-• Kontode ja sisselogimiseta.
-• Internetita: rakendus töötab võrguühenduseta ega loo kunagi ühendust internetiga.
-• Andmeid ei koguta: mängijad, nende seaded ja mängud jäävad seadmesse.
+• Reklaamide, rakendusesiseste ostude ja kontodeta ning internetita: kõik jääb seadmesse.
 
 Kabe töötab telefonis ja tahvelarvutis, nii püst- kui ka rõhtpaigutuses.
 ```
@@ -82,8 +75,18 @@ Kabe töötab telefonis ja tahvelarvutis, nii püst- kui ka rõhtpaigutuses.
   as in `players.new` (Uus mängija).
 - "Ruumiline" for the 3D board, as settings' Board row (`board.raised`), with "3D" beside
   it as there; "lame" for the flat one (`board.flat`).
-- "Ilus kabelaud" ("a fine board") heads the look, where English has "A board to enjoy";
-  "Mitte midagi liigset" ("nothing superfluous") heads what the app leaves out.
-- "Tasavägine" (evenly matched) for "a fair match".
-- The new lines (the 120 puzzles, the pips, the board and seasons) are unreviewed; run
-  them through `agents/writing.md`'s translation review before an upload.
+- "Igal mängijal on oma välimus": settings' tab is Välimus (`settings.look`), so it
+  stays, though "välimus" is first a person's looks.
+- The headings: "Vihjed" (`settings.hints`), "Kabelaud", "Kõigile" (for everyone), and
+  "Mitte midagi liigset" ("nothing superfluous") for what the app leaves out.
+- "Tasavägine" (evenly matched) for "a fair match"; "partii" for a game played, so "mäng"
+  isn't said twice; "ajakontroll" for the clock; "pooleliolev mäng" for the saved game.
+- The short description says "lahenda 120 ülesannet": "õpi see 120 ülesandega selgeks"
+  read as learning the rules, which takes minutes, and "see" for "kabet" was clumsy.
+- Revised 2026-11-09 with a Gemini review (`agents/writing.md`): taken were "partii",
+  "kergest" kept over its "kergemast", "mängu käigus" for "in action", "kui sellest on pool
+  lahendatud", the stars "kõigi kolme tähe nimel" (not "võita"), "mängija eest" (not
+  "lapse eest"), the pips as "märgitud täpiga iga löödava nupu kohta", and the seasons as
+  adjectives (sügisene puit, …). Not taken: "lauavaade" for "välimus" (the app's tab is
+  Välimus), and dropping "3D" beside "ruumiline" (the app's Board row shows both). The
+  user reads the new lines before an upload.

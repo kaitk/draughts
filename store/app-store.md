@@ -16,14 +16,15 @@ The counts are Python's `len`, and bytes for the keywords, as Apple counts them;
   and for the user's own pages.
 - **No other platform named** (Review Guideline 2.3.10), so the text says iPhone and iPad,
   never Android, and the screenshots come from the simulator.
-- **"For Kids" in the name** is allowed only in the Kids category (Guideline 2.3.8); the
-  app goes there (below).
+- **The name is "Draughts"**, as on Play, with no "for Kids" (2026-11-09). App Store names
+  are unique: if "Draughts" is taken, App Store Connect refuses it at the app record, and a
+  fallback such as "Draughts: Play and Learn" is needed.
 
 ## App information
 
 | Field | Limit | Answer |
 | --- | --- | --- |
-| Name | 30 | `Draughts for Kids` (17); the launcher's name stays "Draughts" |
+| Name | 30 | `Draughts` (8), the launcher's name; unique on the store, so check it's free |
 | Subtitle | 30 | `Play, learn, and solve puzzles` (30) |
 | Primary category | | Games, subcategory Board |
 | Secondary category | | Kids (age band below); or Education, if Kids is left out |
@@ -40,71 +41,66 @@ read 2026-11-09: name 2 to 30 characters, subtitle 30, promotional text 170 (cha
 without a new version), description 4000, keywords 100 bytes with each keyword over 2
 characters, What's New 4000 (from the second version), review notes 4000 bytes.
 
-### Promotional text (159 of 170)
+### Promotional text (164 of 170)
 
 ```text
-Play draughts with a friend or the computer, and learn it with 120 puzzles. No ads, no purchases, no accounts, and no internet: everything stays on the device.
+Play draughts against the computer or a friend on one device, and solve 120 puzzles. International, Brazilian, and Russian rules. No ads, no purchases, no internet.
 ```
 
-### Keywords (97 of 100 bytes)
+### Keywords (93 of 100 bytes)
 
 ```text
-checkers,board game,international,russian,brazilian,puzzles,children,offline,family,strategy,kabe
+checkers,board game,international,russian,brazilian,puzzles,kids,offline,family,strategy,kabe
 ```
 
-Not repeated: the name's words (draughts, kids), which Apple indexes anyway. No other
-app's name. "kabe" for people in Estonia searching the English storefront.
+Not repeated: the name's word (draughts), which Apple indexes anyway. "kids" stands for
+the audience the name no longer names. No other app's name. "kabe" for people in Estonia
+searching the English storefront.
 
-### Description (2,593 of 4,000)
+### Description (2,371 of 4,000)
 
 ```text
-Draughts for children and their families: a calm board game to play and learn, with big pieces, a clear board, and nothing to distract from the game.
+A calm draughts game to play and learn: big pieces, a clear board, and nothing to distract from the game.
 
 PLAY
-• Play a friend on the same iPhone or iPad, taking turns.
 • Play the computer at three levels: easy, medium, and hard. It adjusts a little after each game, so it stays a fair match.
+• Or play a friend on the same iPhone or iPad, taking turns (on one device, not online).
 • Three kinds of draughts: International on the 10 × 10 board, and Brazilian and Russian on 8 × 8.
-• Move by tapping a piece and its square, or by dragging it.
-• Take back a move, or start over.
-• Play without a clock, or with 5 or 10 minutes each.
+• Move by tapping a piece and its square, or by dragging it. Undo a move, or start over.
+• Play without a clock, or with 5 or 10 minutes each, plus 3 or 5 seconds a move.
 
 PUZZLES
-• 120 puzzles: 74 for International draughts on the 10 × 10 board, in six themes (Learn, Captures, Crowning, Shots, King shots, and Safe move), and 46 for Russian draughts on 8 × 8.
+• 120 puzzles: 74 for International draughts in six themes (Learn, Captures, Crowning, Shots, King shots, and Safe move), and 46 for Russian draughts in four. Brazilian players get the International set.
 • Each theme goes from easy to harder, and some puzzles are played with black.
 • Learn comes first and shows the rules in action; the other themes open once half of it is solved.
 • Up to three stars a puzzle, one fewer for each mistake; a solved puzzle can be played again for all three.
 
 PLAYERS
-• Up to four players on one device, each with an animal badge and a name if they want one.
-• Each player keeps their own look, move hints, stars, computer level, and saved game, so one child's game or stars never replace another's.
+• Up to four players on one device, each with an animal picture and a name if they want one.
+• Each player keeps their own look, move hints, stars, computer level, and saved game.
 • Switching player takes two taps from the home screen.
 
-LEARN AS YOU PLAY
-• Move hints that help without doing the thinking: by default the game says nothing until a move is wrong, then shows the square and why. Showing every possible move can be turned on for the very first games.
+MOVE HINTS
+• Hints that help without doing the thinking: by default the game says nothing until a move is wrong, then shows the square and why. Showing every possible move can be turned on for the very first games.
 • Capturing is compulsory: the piece that must capture is marked, with a dot for each piece it will take.
 
-A BOARD TO ENJOY
+THE BOARD
 • A flat board, or a 3D one with light and shadow, which you can turn by hand on the home screen.
 • Four seasons, each a photograph with its own board: autumn wood, winter stone, spring carved stone, and summer sunset.
-• The season follows the date, or stays on the one you choose.
-• Or a plain background in the colours of the board, with no photograph.
+• The season follows the date, or stays on the one you choose; or a plain background in the colours of the board.
 
-MADE FOR CHILDREN
-• Made for children from about 5, and the grown-ups who play with them.
-• Large buttons and pictures, so a child who can't read yet can find their way.
+FOR EVERYONE
+• Large buttons and pictures, so even a child who can't read yet finds their way.
+• Simple enough for a first game, while the hard level and the hardest puzzles test grown-ups too.
 • In English and Estonian, following the device's language.
-
-NOTHING ELSE
-• No ads.
-• No in-app purchases.
-• No accounts or sign-in.
-• No internet: the app works offline and never connects to the network.
-• No data collected: the players, their settings, and their games stay on the device.
+• No ads, no purchases, and no internet needed.
 
 Draughts runs on iPhone and iPad, in portrait and landscape.
 ```
 
-The same text as Play's (`listing-en.md`) but for the devices named.
+Play's text (`listing-en.md`) with the devices named, and what the app leaves out cut
+to one line under "For everyone": the store's privacy label ("Data Not Collected") says
+the rest.
 
 ## App Privacy
 
@@ -259,7 +255,7 @@ Landscape needs the simulator turned, which `simctl` can't do headless; portrait
 
 | Field | Text |
 | --- | --- |
-| Name | `Kabe lastele` |
+| Name | `Kabe` |
 | Subtitle | `Mängi ja lahenda ülesandeid` (27) |
-| Promotional text | `Mängi kabet sõbra või arvutiga ja õpi see 120 ülesandega selgeks. Reklaamideta, ostudeta, kontodeta ja internetita: kõik jääb seadmesse.` |
-| Description | `listing-et.md`'s, with "tahvelarvutis või telefonis" as "iPhone'is või iPadis" and the last line "Kabe töötab iPhone'is ja iPadis, nii püst- kui ka rõhtpaigutuses." |
+| Promotional text | `Mängi kabet arvuti või sõbraga ühes seadmes ja lahenda 120 ülesannet. Rahvusvaheline, Brasiilia ja vene kabe. Reklaamide ja ostudeta, töötab internetita.` (153) |
+| Description | `listing-et.md`'s, with "tahvelarvutis või telefonis" as "iPhone'is või iPadis", the section "Mitte midagi liigset" replaced by a last bullet under "Kõigile", "Reklaamide ja ostudeta, töötab internetita.", and the last line "Kabe töötab iPhone'is ja iPadis, nii püst- kui ka rõhtpaigutuses." |
