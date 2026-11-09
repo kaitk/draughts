@@ -3,7 +3,8 @@
 Play Console → Grow users → Store presence → Main store listing → Manage translations →
 Estonian, entered by hand (not Google's machine translation). The same limits and counts
 as `listing-en.md`. The wording follows `strings/et.txt` and task 024: kabe, tamm,
-lööma, käik; a side in the plural (valged, mustad).
+lööma, käik; a side in the plural (valged, mustad). The App Store has no Estonian
+listing (`app-store.md`), so this text is Play's alone.
 
 ## Title (12 of 30)
 
@@ -14,13 +15,13 @@ Kabe lastele
 The launcher's name stays "Kabe" (`strings/et.txt`). Alternatives: "Kabe: mängi ja õpi"
 (18), "Kabe" (4).
 
-## Short description (64 of 80)
+## Short description (65 of 80)
 
 ```text
-Mängi kabet sõbra või arvutiga ja õpi see 74 ülesandega selgeks.
+Mängi kabet sõbra või arvutiga ja õpi see 120 ülesandega selgeks.
 ```
 
-## Full description (2,284 of 4,000)
+## Full description (2,595 of 4,000)
 
 ```text
 Kabe lastele ja peredele: rahulik lauamäng mängimiseks ja õppimiseks. Suured nupud, selge laud ja mitte midagi, mis tähelepanu mängult kõrvale juhiks.
@@ -34,7 +35,7 @@ MÄNGI
 • Mängi kellata või kellaga, kummalgi 5 või 10 minutit.
 
 ÜLESANDED
-• 74 ülesannet 10 × 10 laual kuues teemas: Õpi, Löömine, Tammiks, Kombinatsioonid, Tammi löögid ja Ohutu käik.
+• 120 ülesannet: 74 rahvusvahelises kabes 10 × 10 laual kuues teemas (Õpi, Löömine, Tammiks, Kombinatsioonid, Tammi löögid ja Ohutu käik) ning 46 vene kabes 8 × 8 laual.
 • Iga teema läheb kergest raskemaks ja mõnes ülesandes mängid mustadega.
 • Esimesena tuleb Õpi, mis näitab reegleid mängus; teised teemad avanevad, kui pooled selle ülesannetest on lahendatud.
 • Iga ülesande eest kuni kolm tähte, iga vea eest üks vähem; lahendatud ülesannet saab uuesti mängida, et võita kõik kolm.
@@ -46,12 +47,16 @@ MÄNGIJAD
 
 ÕPI MÄNGIDES
 • Vihjed, mis aitavad, kuid ei mõtle lapse eest: vaikimisi ei näita mäng midagi enne, kui käik on vale; siis näitab see ruutu ja põhjust. Esimesteks mängudeks saab sisse lülitada ka kõigi võimalike käikude näitamise.
-• Löömine on kohustuslik ja nupp, mis peab lööma, on märgitud.
+• Löömine on kohustuslik: nupp, mis peab lööma, on märgitud ja sellel on täpp iga nupu kohta, mille see lööb.
+
+ILUS KABELAUD
+• Lame laud või ruumiline 3D-laud valguse ja varjudega, mida saab avalehel käega pöörata.
+• Neli aastaaega, igaühel oma foto ja laud: sügisel puit, talvel kivi, kevadel nikerdatud kivi ja suvel päikeseloojang.
+• Aastaaeg vahetub kuupäeva järgi või jääb selleks, mille ise valid.
 
 LASTELE TEHTUD
 • Mõeldud lastele alates umbes viiendast eluaastast ja täiskasvanutele, kes nendega mängivad.
 • Suured pildid ja ikoonid, et ka laps, kes veel lugeda ei oska, saaks ise hakkama.
-• Taust vahetub aastaaegadega: talvine, kevadine, suvine või sügisene foto või see, mille ise valid.
 • Eesti ja inglise keeles, vastavalt seadme keelele.
 
 MITTE MIDAGI LIIGSET
@@ -64,16 +69,28 @@ MITTE MIDAGI LIIGSET
 Kabe töötab telefonis ja tahvelarvutis, nii püst- kui ka rõhtpaigutuses.
 ```
 
+## Coming, not yet in the text
+
+When task 044's plain background ships, add to "ILUS KABELAUD", after the seasons:
+
+```text
+• Või ühevärviline taust laua toonides, ilma fotota.
+```
+
 ## Wording notes
 
 - "Nupp" is both a draughts piece and a button, so the text says "nupud" only of pieces
   and "ikoonid" of the controls.
 - The themes are named as the library names them (`theme.*` in `strings/et.txt`): Õpi,
-  Löömine, Tammiks, Kombinatsioonid, Tammi löögid. The section on hints is "Õpi
-  mängides" (learn while playing), apart from the theme Õpi.
+  Löömine, Tammiks, Kombinatsioonid, Tammi löögid, Ohutu käik. The section on hints is
+  "Õpi mängides" (learn while playing), apart from the theme Õpi.
 - "Mõnes ülesandes mängid mustadega": a side in the plural, as `color.black` (Mustad).
 - "Loomapilt" (animal picture) for the badge, after `players.picture` (Pilt); "mängija"
   as in `players.new` (Uus mängija).
-- "Mitte midagi liigset" ("nothing superfluous") heads the list of what the app leaves
-  out, where English has "Nothing else".
+- "Ruumiline" for the 3D board, as settings' Board row (`board.raised`), with "3D" beside
+  it as there; "lame" for the flat one (`board.flat`).
+- "Ilus kabelaud" ("a fine board") heads the look, where English has "A board to enjoy";
+  "Mitte midagi liigset" ("nothing superfluous") heads what the app leaves out.
 - "Tasavägine" (evenly matched) for "a fair match".
+- The new lines (the 120 puzzles, the pips, the board and seasons) are unreviewed; run
+  them through `agents/writing.md`'s translation review before an upload.

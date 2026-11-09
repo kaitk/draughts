@@ -1,8 +1,10 @@
 # Store listing: English (en-GB, the default)
 
 Play Console → Grow users → Store presence → Main store listing. Play's limits: title 30
-characters, short description 80, full description 4000. The counts are of the text in
-each fence, as Python's `len` gives them.
+characters, short description 80, full description 4000 (Play Console Help
+[9859152](https://support.google.com/googleplay/android-developer/answer/9859152), read
+2026-11-09). The counts are of the text in each fence, as Python's `len` gives them;
+`store/preview/build.py` checks them. The App Store's text is in `app-store.md`.
 
 ## Title (17 of 30)
 
@@ -11,15 +13,18 @@ Draughts for kids
 ```
 
 The launcher's name stays "Draughts" (`strings/en.txt`). Alternatives: "Draughts: play and
-learn" (24), "Draughts" (8).
+learn" (24), "Draughts" (8). Play's metadata policy bars ranking, price, and promotion in
+the title ("#1", "best", "free"), not a word for the audience
+([9898842](https://support.google.com/googleplay/android-developer/answer/9898842), read
+2026-11-09).
 
-## Short description (74 of 80)
+## Short description (75 of 80)
 
 ```text
-Play draughts with a friend or the computer, and learn it with 74 puzzles.
+Play draughts with a friend or the computer, and learn it with 120 puzzles.
 ```
 
-## Full description (2,218 of 4,000)
+## Full description (2,524 of 4,000)
 
 ```text
 Draughts for children and their families: a calm board game to play and learn, with big pieces, a clear board, and nothing to distract from the game.
@@ -33,7 +38,7 @@ PLAY
 • Play without a clock, or with 5 or 10 minutes each.
 
 PUZZLES
-• 74 puzzles on the 10 × 10 board, in six themes: Learn, Captures, Crowning, Shots, King shots, and Safe move.
+• 120 puzzles: 74 for International draughts on the 10 × 10 board, in six themes (Learn, Captures, Crowning, Shots, King shots, and Safe move), and 46 for Russian draughts on 8 × 8.
 • Each theme goes from easy to harder, and some puzzles are played with black.
 • Learn comes first and shows the rules in action; the other themes open once half of it is solved.
 • Up to three stars a puzzle, one fewer for each mistake; a solved puzzle can be played again for all three.
@@ -45,12 +50,16 @@ PLAYERS
 
 LEARN AS YOU PLAY
 • Move hints that help without doing the thinking: by default the game says nothing until a move is wrong, then shows the square and why. Showing every possible move can be turned on for the very first games.
-• Capturing is compulsory, and the piece that must capture is marked.
+• Capturing is compulsory: the piece that must capture is marked, with a dot for each piece it will take.
+
+A BOARD TO ENJOY
+• A flat board, or a 3D one with light and shadow, which you can turn by hand on the home screen.
+• Four seasons, each a photograph with its own board: autumn wood, winter stone, spring carved stone, and summer sunset.
+• The season follows the date, or stays on the one you choose.
 
 MADE FOR CHILDREN
 • Made for children from about 5, and the grown-ups who play with them.
 • Large buttons and pictures, so a child who can't read yet can find their way.
-• The background follows the season: a photograph of winter, spring, summer, or autumn, or the one you choose.
 • In English and Estonian, following the device's language.
 
 NOTHING ELSE
@@ -63,20 +72,36 @@ NOTHING ELSE
 Draughts runs on phones and tablets, in portrait and landscape.
 ```
 
+## Coming, not yet in the text
+
+Neither store lets a listing describe what the app doesn't do yet. When task 044's plain
+background ships, add to "A BOARD TO ENJOY", after the seasons:
+
+```text
+• Or a plain background in the colours of the board, with no photograph.
+```
+
 ## What the text leans on
 
-Each claim is a fact of the app as built (2026-11-09); check again before an upload:
+Each claim is a fact of the app as built (2026-11-09, `main` at `1824780`); check again
+before an upload:
 
 - Variants, levels, clocks, take back, start over: `docs/product.md`, `strings/en.txt`.
 - "It adjusts after each game": `ai::adapt` (`docs/architecture/ai.md`), per player.
-- Puzzles: `src/puzzles/international.txt`, 74 in the six themes, 18 of the 62 outside Learn
-  black to move; the themes opening at half of Learn, and the stars (three at stake, a
-  miss puts one out down to one, the best kept): `docs/architecture/puzzles.md`. Shots
-  has two levels so far, the others three, so the text says "from easy to harder".
+- Puzzles: `src/puzzles/international.txt`, 74 in six themes (Learn 12, Captures 10,
+  Crowning 12, Shots 20, King shots 10, Safe move 10), and `src/puzzles/russian.txt`, 46
+  in four (Learn 12, Captures 10, Crowning 10, Shots 14); the app shows the set of the
+  player's draughts, Brazilian players International's. The themes opening at half of
+  Learn, and the stars (three at stake, a miss puts one out down to one, the best kept):
+  `docs/architecture/puzzles.md`. Shots has two levels so far, the others three, so the
+  text says "from easy to harder".
 - Players: four at most, six badges, an optional name of up to 12 characters, and what
   each keeps: `docs/architecture/README.md`, "Players", and task 038. Switching is home's
   chip, then a face on the card: two taps.
-- Hints: `docs/product.md`, "Principles"; puzzles never show a piece's targets.
+- Hints and the pips on a piece that must capture: `docs/product.md`, "Principles";
+  puzzles never show a piece's targets.
+- The 3D board, turned by hand on home, and the four season boards: the README's
+  features, task 015.
 - No internet: the manifest asks for no permission at all (`aapt2 dump permissions`).
-- "The one you choose": settings' Theme row (a season, or by date); its switch can put a
-  plain background in place of the photograph, which the text leaves out.
+- "Stays on the one you choose": settings' Theme row (a season, or by date); its switch
+  puts the plain background in place of the photograph (task 044).
