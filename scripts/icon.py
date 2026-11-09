@@ -3,6 +3,7 @@
 
     scripts/icon.py                  write android/res/mipmap-*/ic_launcher_foreground.png
     scripts/icon.py --store          also the Play and Apple icons, into ~/Downloads/draughts-store/icon/
+                                     (scripts/ios.py makes the Apple one itself, into build/, for the bundle)
     scripts/icon.py autumn --res DIR --store
                                      another season's foreground PNGs into DIR, and its store
                                      icons into ~/Downloads/draughts-store/icon/autumn/
@@ -75,6 +76,16 @@ def render(src, edge, box, size, scene_px, out, png):
     print(f"{out} ({out.stat().st_size // 1024} KB)")
 
 
+def apple_icon(out, season=SHIPPED):
+    """The season's 1024 px App Store icon, opaque and full-bleed, into out: the store's
+    apple-1024.png and the iOS bundle's asset catalog (scripts/ios.py) alike."""
+    master = ICON / f"master-{season}.png"
+    if not master.exists():
+        raise SystemExit(f"{master} is missing: design/icon/README.md says where it comes from")
+    box = scene_box(master, corners(master)[0])
+    render(master, True, box, 1024, 1024 * SCENE_DP / VISIBLE_DP, out, "PNG24")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("season", nargs="?", default=SHIPPED,
@@ -105,7 +116,7 @@ def main():
         # Full-bleed squares the stores mask themselves, framed as the launcher shows the icon.
         # Play wants 32-bit PNG; Apple wants no alpha.
         render(master, True, box, 512, 512 * SCENE_DP / VISIBLE_DP, store / "play-512.png", "PNG32")
-        render(master, True, box, 1024, 1024 * SCENE_DP / VISIBLE_DP, store / "apple-1024.png", "PNG24")
+        apple_icon(store / "apple-1024.png", args.season)
 
 
 if __name__ == "__main__":

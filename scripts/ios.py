@@ -14,9 +14,12 @@ Steps, as scripts/android.py's: Goose writes the program's C and the runtime's C
 goose_gfx's sources are copied and patches/goose_gfx applied, and SDL is copied and
 patches/SDL applied; CMake with Ninja and Xcode's clang builds ios/CMakeLists.txt, one
 executable with SDL linked statically; the bundle is the executable, an Info.plist written
-here (the id, the version, full screen, an empty launch screen), the launcher's name
-per language (<lang>.lproj/InfoPlist.strings from strings/<lang>.txt's app.name); no icon
-yet (task 043). A simulator build is signed ad hoc; a device build with the Mac's development
+here (the id, the version, full screen, the launch screen in the icon's background),
+the launcher's name per language (<lang>.lproj/InfoPlist.strings from strings/<lang>.txt's
+app.name), the icon and the launch screen's colour in an asset catalog compiled by
+actool into Assets.car (the icon made from the shipped season's master by
+scripts/icon.py), and the privacy manifest, PrivacyInfo.xcprivacy. A simulator build is
+signed ad hoc; a device build with the Mac's development
 identity and a provisioning profile for the app's id (docs/development.md, "Run on
 iOS"), made once through Xcode when missing; no team, identity, or device id is ever
 written into the repo.
@@ -37,6 +40,7 @@ import sys
 import time
 from pathlib import Path
 
+import icon
 from native import APP_ID, ROOT, VERSION_NAME, app_names, copy_sources, goose_to_c, run, sidecar
 
 # The bundle id is native.APP_ID and CFBundleShortVersionString native.VERSION_NAME.
@@ -49,14 +53,93 @@ STACK_RESERVE = "128M"
 # The simulator this script makes and uses: the size of the iPhone the app is tried on.
 SIM_NAME = "Draughts iPhone 13 mini"
 SIM_TYPE = "com.apple.CoreSimulator.SimDeviceType.iPhone-13-mini"
+# The asset catalog's names: the icon, and the launch screen's colour.
+APP_ICON = "AppIcon"
+LAUNCH_COLOR = "LaunchBackground"
+# The privacy manifest (store/app-store.md, "Privacy manifest"): the "required reason"
+# APIs the binary imports, each with Apple's reason code; `nm -u` on a build lists them
+# (docs/development.md). No tracking, no tracking domains, no data collected.
+PRIVACY_APIS = {
+    # stat, fstat: the metadata of files in the app's container (the players' files).
+    "NSPrivacyAccessedAPICategoryFileTimestamp": ["C617.1"],
+    # mach_absolute_time: time between events in the app (frames, animations, clocks).
+    "NSPrivacyAccessedAPICategorySystemBootTime": ["35F9.1"],
+}
+
+
+def icon_background():
+    """The shipped icon's background, the colour Android's window and splash take
+    (android/res/values/colors.xml), as #rrggbb."""
+    xml = (ROOT / "android/res/values/colors.xml").read_text()
+    return "#" + re.search(r'name="icon_background">#([0-9a-fA-F]{6})<', xml).group(1).lower()
+
+
+def apple_icon():
+    """The shipped season's 1024 px icon, made by scripts/icon.py into build/ios/icon/
+    from its master (local, design/icon/README.md), again when the master is newer."""
+    png = ROOT / "build/ios/icon/apple-1024.png"
+    master = icon.ICON / f"master-{icon.SHIPPED}.png"
+    if not png.exists() or (master.exists() and master.stat().st_mtime > png.stat().st_mtime):
+        icon.apple_icon(png)
+    return png
+
+
+def asset_catalog(work, app, device):
+    """The icon and the launch screen's colour as an asset catalog under work, compiled
+    by actool into the bundle's Assets.car and its icon PNGs; returns the Info.plist keys
+    actool says the bundle needs (CFBundleIcons and their iPad twin)."""
+    catalog = work / "Assets.xcassets"
+    if catalog.exists():
+        shutil.rmtree(catalog)
+    info = {"info": {"author": "xcode", "version": 1}}
+    icons = catalog / f"{APP_ICON}.appiconset"
+    icons.mkdir(parents=True)
+    shutil.copy(apple_icon(), icons / "icon-1024.png")
+    (icons / "Contents.json").write_text(json.dumps(dict(info, images=[
+        {"filename": "icon-1024.png", "idiom": "universal", "platform": "ios",
+         "size": "1024x1024"}]), indent=2))
+    color = catalog / f"{LAUNCH_COLOR}.colorset"
+    color.mkdir()
+    rgb = icon_background()
+    (color / "Contents.json").write_text(json.dumps(dict(info, colors=[
+        {"idiom": "universal", "color": {"color-space": "srgb", "components": {
+            "red": f"0x{rgb[1:3]}", "green": f"0x{rgb[3:5]}", "blue": f"0x{rgb[5:7]}",
+            "alpha": "1.000"}}}]), indent=2))
+    (catalog / "Contents.json").write_text(json.dumps(info, indent=2))
+    partial = work / "assets-info.plist"
+    run("xcrun", "actool", "--compile", app,
+        "--platform", "iphoneos" if device else "iphonesimulator",
+        "--minimum-deployment-target", MIN_IOS, "--target-device", "iphone",
+        "--target-device", "ipad", "--app-icon", APP_ICON,
+        "--output-partial-info-plist", partial, "--errors", "--warnings",
+        "--output-format", "human-readable-text", catalog)
+    with open(partial, "rb") as f:
+        return plistlib.load(f)
+
+
+def privacy_manifest(app):
+    """PrivacyInfo.xcprivacy at the bundle's root: Apple refuses an upload without it."""
+    manifest = {
+        "NSPrivacyTracking": False,
+        "NSPrivacyTrackingDomains": [],
+        "NSPrivacyCollectedDataTypes": [],
+        "NSPrivacyAccessedAPITypes": [
+            {"NSPrivacyAccessedAPIType": api, "NSPrivacyAccessedAPITypeReasons": reasons}
+            for api, reasons in PRIVACY_APIS.items()],
+    }
+    with open(app / "PrivacyInfo.xcprivacy", "wb") as f:
+        plistlib.dump(manifest, f)
 
 
 def write_bundle(app, exe, app_id, title, device):
-    """The .app: the executable, Info.plist, and the launcher's name per language."""
+    """The .app: the executable, Info.plist, the launcher's name per language, the icon
+    and the launch screen's colour (Assets.car), and the privacy manifest."""
     if app.exists():
         shutil.rmtree(app)
     app.mkdir(parents=True)
     shutil.copy(exe, app / title)
+    assets = asset_catalog(app.parent, app, device)
+    privacy_manifest(app)
     names = app_names()
     platform = "iPhoneOS" if device else "iPhoneSimulator"
     sdk = "iphoneos" if device else "iphonesimulator"
@@ -81,8 +164,10 @@ def write_bundle(app, exe, app_id, title, device):
         "UIDeviceFamily": [1, 2],
         "UIRequiredDeviceCapabilities": ["arm64", "metal"],
         # A launch screen makes iOS give the app the whole screen at its own size; without
-        # one it runs letterboxed at an old iPhone's.
-        "UILaunchScreen": {},
+        # one it runs letterboxed at an old iPhone's. Its colour is the icon's background,
+        # as Android's splash.
+        "UILaunchScreen": {"UIColorName": LAUNCH_COLOR},
+        "CFBundleIconName": APP_ICON,
         "UIStatusBarHidden": True,
         # SDL asks for it to take a pointer (an iPad's trackpad, the simulator's mouse).
         "UIApplicationSupportsIndirectInputEvents": True,
@@ -95,6 +180,7 @@ def write_bundle(app, exe, app_id, title, device):
             "UIInterfaceOrientationPortrait", "UIInterfaceOrientationPortraitUpsideDown",
             "UIInterfaceOrientationLandscapeLeft", "UIInterfaceOrientationLandscapeRight"],
         "ITSAppUsesNonExemptEncryption": False,
+        **assets,
     }
     with open(app / "Info.plist", "wb") as f:
         plistlib.dump(info, f, fmt=plistlib.FMT_BINARY)

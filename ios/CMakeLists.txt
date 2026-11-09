@@ -26,6 +26,10 @@ set(SDL_CAMERA OFF CACHE BOOL "" FORCE)
 set(SDL_RENDER OFF CACHE BOOL "" FORCE)
 set(SDL_OPENGL OFF CACHE BOOL "" FORCE)
 set(SDL_OPENGLES OFF CACHE BOOL "" FORCE)
+# No HIDAPI: on iOS it links CoreBluetooth, and App Store Connect refuses a binary that
+# references Bluetooth without a purpose string (NSBluetoothAlwaysUsageDescription). The
+# app opens no joystick, and a Kids app asks for no Bluetooth (task 046).
+set(SDL_HIDAPI OFF CACHE BOOL "" FORCE)
 add_subdirectory("${SDL_SRC}" SDL EXCLUDE_FROM_ALL)
 
 # --- the program -------------------------------------------------------------------------
