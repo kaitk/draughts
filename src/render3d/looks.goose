@@ -463,9 +463,9 @@ fn marble(which: i64) -> Marble {
 // Spring's looks (task 041, the app's and the prototype's --spring): 0 the birch, 1 the
 // elven carved stone, 2 the Baltic folk carved oak.
 let SPRINGS = 3;
-// The look spring shows by default is the Baltic oak (the user, 2026-11-09); --spring 0 is
-// still the birch.
-let SPRING_LOOK = 2;
+// The look spring shows by default is the elven stone (chosen on the tablet, 2026-11-09,
+// over the Baltic oak); --spring 0 is still the birch, 2 the Baltic oak.
+let SPRING_LOOK = 1;
 
 // Pale stone with a fine vine line carved along the frame, as in overgrown elven ruins
 // (the user's idea, 2026-11-09, toned down to their image `Mossy Elven Checkers in

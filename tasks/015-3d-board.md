@@ -562,7 +562,8 @@ after the launch, `dumpsys meminfo`. Before is `e279c86` with only the bench add
   carving `AMBER_TUNED` (motif 2, scale 3, lichen 0.085); spring's default is now the
   Baltic oak (look 10, `SPRING_LOOK` 2, motif 2 amber signs) and the elven stone
   (look 9) the alternative, both wood 3 with `SPRING_FINISH` (varnish 0.335, sanding 1).
-  Spring's flags: `--spring 0` the birch, 1 elven, 2 Baltic (the default); G cycles them.
+  Spring's flags: `--spring 0` the birch, 1 elven (the default from 2026-11-09, chosen on
+  the tablet), 2 Baltic; G cycles them.
   Winter (marble 2) and autumn (wood 2, `TUNED`) unchanged. Only winter's frame reads the
   marble (carved and wood frames don't), so the panel's marble lines don't matter for
   summer or spring.
