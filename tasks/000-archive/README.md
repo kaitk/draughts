@@ -163,3 +163,9 @@ and the commit that last has it.
   narrowed to 192 dp near square so the board keeps its size; portrait's bar and play as
   wide as the 3D screen's. A puzzle keeps its tall panels. `054-flat-screen-like-3d.md`,
   `3331ab9`
+- 052: What each side has taken. Done: take a's row of small pieces, kings after a gap
+  and crowned, counted from the position with kings from the undo history; under the
+  flat screen's left corner panel, above the 3D board between its panels (under the left
+  panel on a phone, the board never smaller at rest), a row under the portrait bar's
+  tiles (the bar 52 dp taller), and compact's bar middle. `052-captured-pieces.md`,
+  `6ed79a5`

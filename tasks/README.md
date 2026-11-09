@@ -52,16 +52,15 @@ board show the game, 035 added home's X, 015 the 3D board (in main 2026-11-09), 
 reviewed the structure, 049 added the draws, 051 polished what preparing the stores found,
 053 made the computer's mistakes follow how tense the position is, 050 fitted small iPad
 windows, 048 found no forced capture behind a report (covered by tests), 039 baked the 3D
-board's wood, 040 added the lookout and the hint, and 054 gave the flat game screen the 3D one's
-controls; 016 (tabletop pictures) and 033 (an icon per season) were
+board's wood, 040 added the lookout and the hint, 054 gave the flat game screen the 3D one's
+controls, and 052 showed what each side has taken; 016 (tabletop pictures) and 033 (an icon per season) were
 cancelled. All are archived. The MVP in `docs/product.md` is built.
 
 Open:
 
 - Release: 029 Google Play, 046 the App Store (after 043, iOS), 036 the announcement
   after the Play release.
-- Content and play: 037 the puzzle set by theme, 038 players, 052 what each side has
-  captured (take a's row chosen, to build).
+- Content and play: 037 the puzzle set by theme, 038 players.
 - The 3D board: 041 a carved spring board, 042 its frame cost, 044 a plain background,
   045 board styles to choose from.
 - Later: 010 goose_gfx changes to propose upstream (alongside), 013 season effects, 014
