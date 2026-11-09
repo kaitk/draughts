@@ -62,6 +62,10 @@ sets, from `1824780`, kept beside them):
 | `screenshots/app-store-0.3/iphone-6.9/` | 1320 × 2868 | The App Store's iPhone 6.9" set | An iPhone 16 Pro Max simulator, iOS 26.4, headless |
 | `screenshots/app-store-0.3/ipad-13/` | 2064 × 2752 | The App Store's iPad 13" set | An iPad Pro 13-inch (M4) simulator, iOS 26.4, headless |
 
+Upload from `~/Downloads/draughts-store/upload/`: the same sets flattened to 24-bit RGB
+(the Play and iPad shots are RGBA, though opaque, and both stores refuse alpha), made with
+`magick IN -background black -alpha remove -alpha off -type TrueColor OUT`.
+
 The seven scenes, in the order to upload, each a season so all four show:
 
 1. `01-home-3d-winter`: home on the 3D board, winter, with the player's chip
