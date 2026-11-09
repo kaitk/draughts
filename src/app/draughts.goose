@@ -57,6 +57,9 @@ extern fn draughts_leave();
 extern fn draughts_release_memory();
 // Which platform the program runs on: DESKTOP, ANDROID, or IOS (launch.c).
 extern fn draughts_platform() -> i64;
+// Seconds between looks for the hint's answer while it is on its way (think::frame).
+let HINT_POLL = 0.02;
+
 let DESKTOP = 0;
 let ANDROID = 1;
 let IOS = 2;
@@ -289,7 +292,10 @@ fn main() {
         // Home's way out ends the loop; the game is written below.
         if sh.quit { break; }
         // The computer's move: the worker gets what the game asks, and the game the answer.
-        think::frame(thinker, sh.game);
+        if think::frame(thinker, sh.game) {
+            dirty = true;
+            g.acted = true;
+        }
         // A tap in settings applies at once and is written; a new season reloads the
         // photograph and its blurred copies, once the tile shows lit. A change made by the
         // tap that starts a transition (the computer's play counting a game) is written
@@ -374,6 +380,8 @@ fn main() {
             next = clock::until_next(sh.game.clock);
             let due = game::due(sh.game, now);
             if due >= 0.0 && (next < 0.0 || due < next) { next = due; }
+            // The hint's answer, which no frame of its own waits for: looked for soon.
+            if game::awaiting(sh.game) && (next < 0.0 || next > HINT_POLL) { next = HINT_POLL; }
         }
         if next >= 0.0 && (wake_at < now || now + next < wake_at - 0.005) {
             draughts_wake_in((1000.0 * next) as i64 + 2);

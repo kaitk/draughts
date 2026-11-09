@@ -51,6 +51,7 @@ let DRAW_STILL = 0.8;
 let STEP = 2.0;             // seconds: the longest gap between two frames the clock counts
 let PAUSE = [0.8, 0.6, 0.45];   // seconds from the computer's turn to its move without a clock, by level
 let PULSE = 1.2;            // seconds: the computer's ring pulses once as it begins to think
+let HINT_UP = 15;           // the hint's search: this much above the skill of the side it plays against
 
 // What the screen asks the shell for.
 let STAY = 0;
@@ -113,6 +114,16 @@ struct Game {
     look:       bool  = false,
     look_skill: i64   = 0,
     watched:    Watch = Watch {},
+    // The hint (docs/product.md): hints left a game, each side's against a friend; how far
+    // the one shown has gone (panel::Help.stage: 1 the piece lit, 2 its square too); the ask
+    // for its move, the position it is for (board::Board.shows), and the move once
+    // answered, lit on the next frame (`hint_new`).
+    hints:      i64[2]      = [panel::HINTS, panel::HINTS],
+    hint_stage: i64         = 0,
+    hinting:    i64         = 0,
+    hint_shows: i64         = -1,
+    hint_move:  rules::Move = rules::Move { .. },
+    hint_new:   bool        = false,
 }
 
 // What the lookout last worked its threats out for (watch): whether it showed, the
@@ -151,7 +162,16 @@ fn start(gm: Game&, variant: u8, kind: i64, computer: i64, level: i64, skill: i6
     gm.asking = 0;
     gm.restarted = false;
     gm.watched = Watch {};
+    new_hints(gm);
     rig::reset(gm.cam);
+}
+
+// A game's hints, all of them left, none shown or asked for.
+fn new_hints(gm: Game&) {
+    gm.hints = [panel::HINTS, panel::HINTS];
+    gm.hint_stage = 0;
+    gm.hinting = 0;
+    gm.hint_new = false;
 }
 
 // Starts the game over from where it began, the clocks full again: a new game, whose
@@ -166,6 +186,7 @@ fn restart(gm: Game&, now: f64 = 0.0) {
     gm.drawn_at = -1.0;
     gm.counted = false;
     gm.asking = 0;
+    new_hints(gm);
     rig::settle(gm.cam, now);
 }
 
@@ -219,13 +240,76 @@ struct Ask {
     past:  rules::Past,     // the game before pos, for the draws (ai::start_after)
     skill: i64,
     seed:  u64,
+    kind:  i64 = THINK,
 }
+
+// What an ask is for: the computer's move, or the hint's (ai::helping).
+let THINK = 0;
+let HINT = 1;
 
 fn asking(gm: Game&) -> Ask {
     // The seed: the game's number and the ply, so moves vary between games yet the same
     // game replays the same.
     let seed = (gm.number as u64) * 1000 + gm.b.history.len as u64;
     return Ask { id: gm.asking, pos: gm.b.pos, past: past(gm), skill: gm.skill, seed: seed };
+}
+
+// The ask the worker should have, by its id: the computer's move, else the hint's, else
+// none (0). One at a time: the hint is asked on the side to move's turn, the computer's
+// move on its own.
+fn open_ask(gm: Game&) -> i64 { if gm.asking != 0 { gm.asking } else { gm.hinting } }
+
+// That ask in full: the hint's searched at HINT_UP above the skill of the side it plays
+// against (the computer's, or against a friend the player's on their level), capped.
+fn ask_for(gm: Game&) -> Ask {
+    guard gm.asking == 0 && gm.hinting != 0 else { return asking(gm); }
+    var a = asking(gm);
+    let against = if gm.computer >= 0 { gm.skill } else { gm.look_skill };
+    a.id = gm.hinting;
+    a.skill = min(against + HINT_UP, 100);
+    a.kind = HINT;
+    return a;
+}
+
+// Whether the hint can be asked for or shown on: the side to move's turn, the board at
+// rest with no capture due (the must-capture ring says what to do then) and no piece
+// waiting partway through one, the game going on.
+fn can_hint(gm: Game&) -> bool {
+    let b .= gm.b;
+    return !b.moving && b.pos.side != gm.computer && !ended(gm) && !board::must_capture(b) && b.steps.len == 0;
+}
+
+// The hint's move for the ask `id`, from the worker (or a test): spends one of the side's
+// hints and lights the piece to move on the next frame. One for an ask no longer open is
+// ignored.
+fn hinted(gm: Game&, id: i64, m: rules::Move) {
+    guard id != 0 && id == gm.hinting else { return; }
+    gm.hinting = 0;
+    let side = gm.b.pos.side;
+    gm.hints[side] = max(gm.hints[side] - 1, 0);
+    gm.hint_move = m;
+    gm.hint_stage = 1;
+    gm.hint_new = true;
+}
+
+// Whether an ask the app waits on for no frame of its own is open (the hint's), for the
+// loop to wake soon and take its answer.
+fn awaiting(gm: Game&) -> bool { gm.hinting != 0 }
+
+// The hint's tile pressed: the first press asks for the move (answered, it lights the
+// piece and spends a hint), the second shows the square with a light ghost of the piece,
+// for nothing more; then it stays until the move.
+fn press_hint(gm: Game&, now: f64) {
+    guard can_hint(gm) else { return; }
+    let b .= gm.b;
+    if gm.hint_stage == 0 && gm.hinting == 0 && gm.hints[b.pos.side] > 0 {
+        gm.asks += 1;
+        gm.hinting = gm.asks;
+        gm.hint_shows = b.shows;
+    } else if gm.hint_stage == 1 {
+        board::ghost_on(b, gm.hint_move.to, now);
+        gm.hint_stage = 2;
+    }
 }
 
 // The computer's move for the ask `id`, `close` of the moves about as good as it
@@ -327,6 +411,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
         panel::BACK => { go = HOME; },
         panel::SETTINGS => { go = SETTINGS; },
         panel::LOOKOUT => { gm.look = !gm.look; },
+        panel::HINT => { press_hint(gm, now); },
         _ => {},
     }
     if pick != panel::NOTHING { changed = true; }
@@ -405,6 +490,19 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
     }
     gm.turn = b.pos.side;
     if watch(gm) { changed = true; }
+    // The hint belongs to the position it was asked in: a move, undo, or start over ends
+    // it. Its answer lights the piece on the frame after it came.
+    if (gm.hint_stage > 0 || gm.hinting != 0) && b.shows != gm.hint_shows {
+        gm.hint_stage = 0;
+        gm.hinting = 0;
+        gm.hint_new = false;
+        changed = true;
+    }
+    if gm.hint_new {
+        gm.hint_new = false;
+        board::glow_on(b, gm.hint_move.from, now);
+        changed = true;
+    }
     // The computer's pieces show no count of what they must take: the child can't move them.
     b.quiet = gm.computer >= 0 && b.pos.side == gm.computer;
     if b.moves.len == 0 || drawn(gm) != rules::NO_DRAW { clock::stop(gm.clock); }
@@ -481,7 +579,8 @@ fn watch(gm: Game&) -> bool {
 
 // What the play panel shows of the lookout and the hint.
 fn help(gm: Game&) -> panel::Help {
-    return panel::Help { look: gm.look, left: 0, stage: 0, can: false };
+    let side = clamp(gm.b.pos.side as i64, 0, 1);
+    return panel::Help { look: gm.look, left: gm.hints[side], stage: gm.hint_stage, can: can_hint(gm) };
 }
 
 // Declares the screen as it stands, its pieces over the UI put in `over`, doing nothing:

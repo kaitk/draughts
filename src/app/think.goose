@@ -20,6 +20,7 @@ struct Thought {
     close:   i64,           // moves about as good as the best, for the time it takes (ai::close)
     nodes:   i64,
     seconds: f64,
+    kind:    i64,           // game::THINK or game::HINT, as asked
 }
 
 // The engine is the worker's own, made once: a root can't cross to a thread.
@@ -33,6 +34,9 @@ thread_fn worker() {
             continue;
         }
         let began = clock();
+        // The hint's search sees all and leaves nothing, and gives the best it sees.
+        let hint = ask.kind == game::HINT;
+        ai::helping(e, hint);
         ai::start_after(e, ask.past, ask.pos, ask.skill, ask.seed);
         var newer = false;
         var next = ask;
@@ -46,9 +50,10 @@ thread_fn worker() {
             continue;
         }
         let found = ai::has_reply(e);
-        let m = if found { ai::reply(e) } else { rules::Move { .. } };
+        var m = rules::Move { .. };
+        if found { m = if hint { ai::best(e) } else { ai::reply(e) }; }
         qput(Thought { id: ask.id, move: m, found: found, close: ai::close(e, pace::CLOSE), nodes: e.total_nodes,
-                       seconds: clock() - began });
+                       seconds: clock() - began, kind: ask.kind });
         ask = qget<game::Ask>();
     }
 }
@@ -59,16 +64,23 @@ struct Thinker {
     sent:   i64 = 0,        // the ask it has last been given
 }
 
-// Each frame: gives the worker the game's ask when it changed, and the game the answer
-// when one has come.
-fn frame(t: Thinker&, gm: game::Game&) {
-    if gm.asking != t.sent {
-        let ask = game::asking(gm);
+// Each frame: gives the worker the game's ask when it changed (the computer's move or the
+// hint's, game::open_ask), and the game the answer when one has come. True when a hint's
+// answer came, which nothing else draws: the app draws it, and the frame after.
+fn frame(t: Thinker&, gm: game::Game&) -> bool {
+    if game::open_ask(gm) != t.sent {
+        let ask = game::ask_for(gm);
         if t.worker < 0 && ask.id != 0 { t.worker = thread_spawn(worker); }
         if t.worker >= 0 { qput(ask); }
         t.sent = ask.id;
     }
-    guard t.worker >= 0 else { return; }
+    guard t.worker >= 0 else { return false; }
     let th, got = qpoll<Thought>();
-    if got && th.found { game::answer(gm, th.id, th.move, th.close); }
+    guard got && th.found else { return false; }
+    if th.kind == game::HINT {
+        game::hinted(gm, th.id, th.move);
+        return true;
+    }
+    game::answer(gm, th.id, th.move, th.close);
+    return false;
 }
