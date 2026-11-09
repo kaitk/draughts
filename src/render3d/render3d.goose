@@ -316,11 +316,16 @@ fn bake_surfaces(g: Gpu&, plan: bool = true, frame: bool = true) {
     gfx::flush();
 }
 
-// A target with its mips for a baked surface.
+// A target with its mips for a baked surface, down to the level whose shorter side is 1
+// pixel. The full chain runs to the longer side's 1: a mitred frame map's (2048 × 1152)
+// last level would be 1 × 0 in SDL's mip blits, a zero-height blit that loses the device
+// on a Mali-G68 (the Galaxy A33; docs/goose-findings.md). Nothing samples that far down.
 fn baked(w: i64, h: i64, format: i32) -> gfx::Texture {
+    var mips = 1;
+    while min(w, h) >> mips > 0 { mips++; }
     return gfx::texture(gfx::TextureDesc { format: format,
                                            usage: gfx::COLOR_TARGET | gfx::SAMPLED,
-                                           width: w as i32, height: h as i32, mips: 0 });
+                                           width: w as i32, height: h as i32, mips: mips as i32 });
 }
 
 // The multisampled target, its depth, and the kept image, at `size`; made again only

@@ -103,6 +103,13 @@ find out by compiling, so the next session doesn't.
   patch adds gets a `__attribute__((weak))` stand-in in the program's C, so the Mac,
   whose `goose build` links the release's prebuilt gfx, still links; on Android the
   patched gfx's definition wins (2026-11-08).
+- A texture with mips that isn't square gets them only down to its shorter side's 1
+  pixel (`render3d::baked`): `mips: 0`'s full chain ends in levels 0 pixels high, which
+  SDL blits anyway and the Galaxy A33's Mali-G68 loses the device on. A lost device shows
+  nowhere until something waits for a fence; on Android the Khronos validation layer
+  (its release's `android-binaries`, `libVkLayer_khronos_validation.so` zipped into a
+  test APK's `lib/arm64-v8a/`, re-aligned and signed, with gfx's `debug` forced on in a
+  local patch) logs to logcat under `VALIDATION` (2026-11-09).
 - A released texture is freed once the GPU is done with it, after the submit that used
   it. Making several small ones in a row, or a new set beside the one just released,
   can open another 16 MiB block in SDL's allocator that then stays; `gfx::flush()` (a
