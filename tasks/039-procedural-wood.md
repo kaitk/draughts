@@ -211,6 +211,32 @@ samples), marbles 8.5 to 9.3 ms (flat, one sample a texel). A frame, `--bench 20
 scratchpad (`shots/tune/marble_default.png`, `marble_close.png`, `varnish_close.png`).
 The user to pick one, or none, on the Mac.
 
+## Summer's variants (2026-11-09)
+
+The user (2026-11-09): summer's board should be clearly apart from autumn's, not another
+warm wood; summer is the coast at sunset. Three variants beside the summer look as it
+was (0), as looks after the seasons' (`looks::SUMMER_OAK`, `SUMMER_PICKLED`,
+`SUMMER_TEAK`), each with its own wood's model and finish (`looks::wood_for`,
+`finish_for`): `--summer N` and S in the prototype, `--summer N` in the app.
+
+- **1, wood 3 in summer's palette:** wood 3's crisper lines and pores in peach and dusky
+  rose, a rose-brown frame with open pores and furrows, varnished (`VARNISHED`).
+- **2, pickled oak:** limewashed oak on wood 2 (rings with vessels): bleached oak light
+  squares, rose-washed oak dark ones, a grey-beige driftwood frame, a satin matte
+  (`PICKLED`, no varnish). New in the bake, `Finish.pickle` (0..1): the grain's exponent
+  turns round (paler where it was darker) and the cavity (pores, grooves) fills with
+  matte white, level, a little rougher.
+- **3, teak and sand:** an oiled straight-grained teak frame with fine dark caulking
+  seams along each mitred piece, a plank (0.17) apart over the top (`Theme.seam`, its
+  strength `Finish.caulk`), round pale sand and terracotta squares, satin (`OILED`).
+
+Pieces stay the theme's cream and plum, the plum a touch browner on 1 and 3. Both new
+finish terms are in the tuning panel (pickle, caulk; V prints them). Bake (the plan and
+the frame map, their mips, waited for, warm, `--bench` in summer): 26 to 35 ms for each
+of the four, run to run within the same spread. Shots in the session's scratchpad
+(`shots/summer/sheet.png`, `strip.png` beside autumn, `corners.png`, `squares.png`).
+The user to pick one on the Mac and tune it.
+
 ## Acceptance criteria
 
 - [x] `--wood N` and W switch the wood's model, rebaking only on a switch
@@ -222,3 +248,6 @@ The user to pick one, or none, on the Mac.
 - [x] Marbles for winter's frame beside the slate, `--marble N` and M, and the finish
       (varnish, sanding) with the user's preset on 2 and 3
 - [ ] The user's pick of the marble and the finish, tuned with the panel
+- [x] Summer's three variants beside the summer look, `--summer N` and S, pickle and
+      caulk in the panel
+- [ ] The user's pick of summer's variant

@@ -117,6 +117,7 @@ cd poc/3d
 ../../build/board3d --theme winter --king crown     # T or a long press switches the theme, K the king
 ../../build/board3d --wood 3 --theme winter --marble 1   # W cycles the wood, M the winter frame's marble
 ../../build/board3d --panel                         # the tuning panel shown (P toggles it, V prints)
+../../build/board3d --summer 2 --panel              # summer's variant, 0 to 3 (S cycles; task 039); the app takes --summer N too
 ../../build/board3d --shot out.png --size 1920x1200 [--yaw 20 --pitch 40]   # one frame, headless
 ../../build/board3d --bench 1000 --size 1920x1200   # frame timing, headless
 ../../build/board3d --frames 200                    # the window's loop hidden, a drag, T, K and a long press injected
