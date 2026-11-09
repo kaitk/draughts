@@ -1042,11 +1042,12 @@ fn copy(g: Gpu&) {
 
 // Draws the kept image (draw() into g.image without the backdrop) over the open pass's
 // target of `size`: its rect `from` into the rect `to`, both x, y, width, height in
-// pixels, at opacity `alpha`. The same rect is the image as drawn, texel for texel.
-fn show(g: Gpu&, from: float4, to: float4, alpha: f32, size: int2) {
+// pixels, at opacity `alpha`, `grey` of the way to grey and dimmer (shaders::SHOW_FRAG).
+// The same rect is the image as drawn, texel for texel.
+fn show(g: Gpu&, from: float4, to: float4, alpha: f32, size: int2, grey: f32 = 0.0) {
     gfx::bind(g.show);
     gfx::bind_texture(gfx::FRAGMENT, 0, g.image, g.linear);
-    let u = Show { from: from, to: to, screen: float4 { size.x, size.y, alpha, 0.0 } };
+    let u = Show { from: from, to: to, screen: float4 { size.x, size.y, alpha, grey } };
     gfx::uniforms(gfx::VERTEX, 0, u);
     gfx::uniforms(gfx::FRAGMENT, 0, u);
     gfx::draw(6);

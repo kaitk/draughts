@@ -1829,7 +1829,8 @@ let COPY_FRAG = """
 // The kept image (premultiplied, clear where no board is) drawn over what is there: its
 // rect `from` (pixels of the image) into the rect `to` (pixels of the target), at
 // opacity screen.z; the same rect texel for texel at rest, moved and scaled in a
-// transition.
+// transition. screen.w greys it (a new theme being prepared over it, draw3d's grey):
+// at 1 its saturation GREY_SAT of its own and its brightness GREY_BRIGHT.
 let SHOW_VS = "#define SHOW_SET 1\n";
 let SHOW_FS = "#define SHOW_SET 3\n";
 let SHOW_BLOCK = """
@@ -1849,5 +1850,12 @@ let SHOW_FRAG = """
     layout(location = 0) in vec2 v_uv;
     layout(location = 0) out vec4 result;
     layout(set = 2, binding = 0) uniform sampler2D src;
-    void main() { result = texture(src, v_uv) * screen.z; }
+    const float GREY_SAT = 0.15;
+    const float GREY_BRIGHT = 0.8;
+    void main() {
+        vec4 c = texture(src, v_uv);
+        float luma = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+        c.rgb = mix(c.rgb, vec3(luma), screen.w * (1.0 - GREY_SAT)) * (1.0 - screen.w * (1.0 - GREY_BRIGHT));
+        result = c * screen.z;
+    }
     """;

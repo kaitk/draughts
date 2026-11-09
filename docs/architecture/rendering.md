@@ -869,7 +869,18 @@ board's does and the backdrop over it as opaque as the blur.
   look the Galaxy A33's build without photographs showed, which the plain background
   comes from): the fade tints the board's shade by season, a fade's own light being far
   too dark to light it (`render3d::fade_harmonics`). Switching between the photograph
-  and the fade takes only the theme's photograph steps again, not its bake. The marks that pulse (a must-capture ring, a wrong
+  and the fade takes only the theme's photograph steps again, not its bake. **Getting
+  ready** (`draw3d::prepare`, task 042) takes a step a frame: the setup, the theme's 28
+  steps (the bake in bands, the photograph), the pass's 12 pipelines; meanwhile a still
+  mark shows in the board's place, and once ready the board fades in over 0.3 s. A new
+  season or board size takes the theme's steps again with the old image still shown:
+  while they run it eases over 0.2 s towards grey and dimmer (saturation 0.15 of its own,
+  brightness 0.8, the user's plan, 2026-11-09), so the old board on the new photograph
+  reads as changing, and the new theme's first image eases back to full color from there
+  over 0.3 s. It costs a uniform of the shader that lays the image on screen
+  (`shaders::SHOW_FRAG`: a dot product and a mix), never a drawing of the board again;
+  the frames go on only while it eases. The photograph and the fade switched alone
+  aren't greyed (four short steps). The marks that pulse (a must-capture ring, a wrong
   move's flash, a hint's ring) stay out of the image: each frame draws them over it in
   one additive quad from their phases, a uniform (`render3d::marks_over`), tested against
   a 1x depth of the board the pass keeps with the image while marks pulse (a 16-bit

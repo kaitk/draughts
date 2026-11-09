@@ -24,7 +24,9 @@
 // keeps drawing and answering; meanwhile the shell shows a still mark in the board's place
 // and leaves taps on it alone (shell's ready3d), and once ready the board fades in. A new
 // theme or board size takes the theme's steps again, the old image shown until they are
-// done. The board back to flat gives all of it back (drop).
+// done, eased towards grey and dimmer meanwhile so it reads as changing, and the new
+// one's first image eased back from there (grey: a uniform of the shader that lays the
+// image, no drawing again). The board back to flat gives all of it back (drop).
 namespace draw3d;
 import std;
 import vec;
@@ -61,6 +63,9 @@ struct Drawer {
     prep_ms:   f64[..48]                             = [],    // each prepare() step's time
     fresh:     bool                                  = false, // just made ready: draw all again
     appear_at: f64                                   = -1.0,  // when its first image showed, -1 none yet
+    grey_at:   f64                                   = -1.0,  // when the image began easing grey or back, -1 settled
+    grey_from: f32                                   = 0.0,   // from how grey
+    grey_to:   f32                                   = 0.0,   // to how grey: 1 while a new theme is prepared
     bench:     Bench                                 = Bench {},
 }
 
@@ -163,6 +168,26 @@ fn shows(d: Drawer&) -> bool { d.appear_at >= 0.0 }
 let APPEAR = 0.3;
 fn appearing(d: Drawer&, now: f64) -> bool { d.appear_at >= 0.0 && now < d.appear_at + APPEAR }
 
+// How grey the image shows at `now` (render3d::show's grey): it eases to 1 over GREY once a
+// new theme's steps start over it, and back to 0 over APPEAR from the new theme's first
+// image, from wherever it was.
+let GREY = 0.2;
+fn grey_span(d: Drawer&) -> f64 { if d.grey_to > d.grey_from { GREY } else { APPEAR } }
+fn grey(d: Drawer&, now: f64) -> f32 {
+    guard d.grey_at >= 0.0 else { return d.grey_to; }
+    let k = render3d::ease(0.0, 1.0, clamp((now - d.grey_at) / grey_span(d), 0.0, 1.0) as f32);
+    return d.grey_from + (d.grey_to - d.grey_from) * k;
+}
+fn grey_towards(d: Drawer&, to: f32, now: f64) {
+    d.grey_from = grey(d, now);
+    d.grey_to = to;
+    d.grey_at = now;
+}
+
+// Whether the image is easing grey or back, so the app draws on; show() settles it once
+// a frame has drawn its end.
+fn greying(d: Drawer&) -> bool { d.grey_at >= 0.0 }
+
 // One step of getting the 3D board ready, each a frame of its own so the screen keeps
 // drawing and answering: the setup; the theme in render3d::THEME_STEPS (the bake's
 // pipeline made, the bake in bands, the photograph's pipelines, the photograph in three
@@ -170,14 +195,16 @@ fn appearing(d: Drawer&, now: f64) -> bool { d.appear_at >= 0.0 && now < d.appea
 // board did at once before (about 1.1 s on the Pixel 7a by task 015's numbers). A new
 // theme or size takes the theme's steps again. Each step is waited for (gfx::flush), so
 // its GPU work stays in its own frame, and timed (prep_ms).
-fn prepare(d: Drawer&, kind: i64, n: i64, plain: bool) {
+fn prepare(d: Drawer&, kind: i64, n: i64, plain: bool, now: f64) {
     guard !ready(d, kind, n, plain) else { return; }
     let t0 = clock();
     if !d.ready {
         set_up(d);
     } else if d.kind != kind || d.n != n || d.plain != plain || d.themed < render3d::THEME_STEPS {
         if d.kind != kind || d.n != n {
-            // A new theme (or one changed partway) starts its steps again.
+            // A new theme (or one changed partway) starts its steps again, the image
+            // shown meanwhile easing grey.
+            if shows(d) && d.grey_to < 1.0 { grey_towards(d, 1.0, now); }
             d.kind = kind;
             d.n = n;
             d.themed = 0;
@@ -227,7 +254,7 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
     if !ready(d, kind, l.n, plain) {
         // A step of getting ready instead; the image already shown (a theme changing)
         // stays, else the shell's still mark shows.
-        prepare(d, kind, l.n, plain);
+        prepare(d, kind, l.n, plain, now);
         d.frames++;
         return;
     }
@@ -294,6 +321,8 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
     render3d::draw(d.gpu, vp, v.eye, gfx::Texture { 0 }, size, false, false, s.pulsing);
     d.drawn = d.scene;
     if d.appear_at < 0.0 { d.appear_at = now; }
+    // A new theme's first image: back from grey.
+    if d.grey_to > 0.0 { grey_towards(d, 0.0, now); }
     if phase == 0 || phase == 1 {
         let t2 = clock();
         gfx::flush();
@@ -315,6 +344,8 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
 fn show(d: Drawer&, blur: f32, place: float4, fade0: f32, size: int2, now: f64) {
     guard shows(d) else { return; }
     let k0 = clamp((now - d.appear_at) / APPEAR, 0.0, 1.0) as f32;
+    let grey = grey(d, now);
+    if d.grey_at >= 0.0 && now >= d.grey_at + grey_span(d) { d.grey_at = -1.0; }
     let fade = fade0 * k0;
     if blur > 0.0 { render3d::backdrop(d.gpu, min(blur, 1.0) * k0, size); }
     guard fade > 0.0 else { return; }
@@ -324,7 +355,7 @@ fn show(d: Drawer&, blur: f32, place: float4, fade0: f32, size: int2, now: f64) 
     guard r.z > 0.0 else { return; }
     let k = place.z / r.z;
     let whole = float4 { place.x - r.x * k, place.y - r.y * k, size.x * k, size.y * k };
-    render3d::show(d.gpu, float4 { 0.0, 0.0, size.x, size.y }, whole, min(fade, 1.0), size);
+    render3d::show(d.gpu, float4 { 0.0, 0.0, size.x, size.y }, whole, min(fade, 1.0), size, grey);
     if d.drawn.pulsing { render3d::marks_over(d.gpu, d.drawn.pulse, whole, min(fade, 1.0), size); }
 }
 

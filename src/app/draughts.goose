@@ -264,12 +264,16 @@ fn main() {
         // The 3D board chosen but not ready (it gets ready a step a frame as it is drawn,
         // draw3d::prepare): the shell shows a still mark in its place, or the old image while
         // a new theme bakes, and leaves taps on it alone; the frames go on until it shows
-        // and has faded in. Back to flat, it is all given back once settings is left, so
-        // switching flat and 3D there and back doesn't prepare it again each time.
+        // and has faded in, and while the old image eases grey or the new one back. Back
+        // to flat, it is all given back once settings is left, so switching flat and 3D
+        // there and back doesn't prepare it again each time.
         let n_was = if sh.layout.n > 0 { sh.layout.n } else { rules::VARIANTS[sh.prefs.variant].size };
         sh.ready3d = !settings::raised(sh.prefs) || draw3d::ready(d3, d.kind, n_was, d.scene.plain);
         sh.shown3d = draw3d::shows(d3);
         if settings::raised(sh.prefs) && (!sh.ready3d || !sh.shown3d || draw3d::appearing(d3, now)) { dirty = true; }
+        // Once ready, the frame after its last step draws the new image (nothing else may
+        // be changing then), and it eases back from grey.
+        if sh.raised && (d3.fresh || draw3d::greying(d3)) { dirty = true; }
         if !settings::raised(sh.prefs) && sh.screen != shell::SETTINGS && sh.from < 0 { draw3d::drop(d3); }
         if shell::frame(sh, g, size.x, size.y, now) { dirty = true; }
         // The keyboard: up while a name is typed, brought up again by each tap on the name.
