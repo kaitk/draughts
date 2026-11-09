@@ -568,8 +568,12 @@ the prototype tried, kept for 3D:
   (where the groups side by side would leave the board under 45% of the width), and the
   group's glass, without its title row, is as tall as the taller of the two so the board
   stays put. A board under 128 dp isn't shown, as on home (a 9:16 phone at 480 dp). In
-  portrait the title takes a smaller face, or none, where it doesn't fit beside the
-  language (2026-11-08). The tiles' notes and the thumbnails' labels are in the 17 px
+  portrait, where the title doesn't fit beside the worded back and the language in the
+  row labels' 30 dp face (a phone: at 548 dp "Settings" had 61 dp, "Seaded" 45 and was
+  left out), back is the arrow over the word in an 88 dp square, which leaves 107 dp; at
+  480 dp, where that leaves under the headings' 24 dp face, the language's glass also
+  leaves out its globe, which leaves 87 dp, "Settings" 80 in that face. A title still too
+  wide takes a smaller face, or none (2026-11-08, 2026-11-09). The tiles' notes and the thumbnails' labels are in the 17 px
   face, which makes them a little wider than the prototype's 13 px, so the landscape
   board is about 550 px where the prototype's is 590.
   **Puzzle picker** (`prototypes/puzzles.html`, take a, a library list, chosen

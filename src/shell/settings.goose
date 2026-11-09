@@ -622,9 +622,10 @@ fn language_width(g: gui::Gui&, lang: i64) -> f32 {
     return max(88.0 * g.scale, gui::text_width(g, gui::BODY, strings::name_of(lang)) + 32.0 * g.scale);
 }
 
-// How wide the language's glass is: a globe, then a tile per language.
-fn languages_width(g: gui::Gui&) -> f32 {
-    var w = 52.0 * g.scale;
+// How wide the language's glass is: a globe, unless `globe` is false, then a tile per
+// language, 8 dp apart, inside the glass's 6 dp sides.
+fn languages_width(g: gui::Gui&, globe: bool = true) -> f32 {
+    var w = (if globe { 52.0 } else { 4.0 }) * g.scale;
     for i in strings::LANGUAGES.len { w += language_width(g, i) + 8.0 * g.scale; }
     return w;
 }
@@ -653,24 +654,34 @@ fn tabs(s: Settings&, g: gui::Gui&, r: float4) -> bool {
 
 // The title row in r: back, the title, and at its right end the language on glass, each
 // named in itself, with `shown` lit. With `tabbed`, the tabs instead of the title (a
-// phone's landscape); without, the title in a smaller face where it is too wide for its
-// room, or none where even that is (a phone's portrait). Returns BACK, CHANGED, SHOWN,
-// or NOTHING.
+// phone's landscape); without, the title, and where it doesn't fit beside them in the
+// row labels' face (a phone's portrait), back is the arrow over the word in an 88 dp
+// square, and where the title still doesn't fit in the headings' face (480 dp across),
+// the language's glass leaves out its globe; the title then takes a smaller face where it
+// is too wide for its room, or none where even that is. Returns BACK, CHANGED, SHOWN, or
+// NOTHING.
 fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, tabbed: bool = false) -> i64 {
     let u = g.scale;
     var row = r;
     var ask = NOTHING;
-    let bw = gui::back_width(g, strings::get(strings::NAV_BACK));
+    let title = strings::get(strings::HOME_SETTINGS);
+    let wide = gui::back_width(g, strings::get(strings::NAV_BACK));
+    let stacked = !tabbed && r.z - wide - 40.0 * u - languages_width(g) < gui::text_width(g, gui::LABEL, title);
+    let globe = !stacked || r.z - (BACK_W + 40.0) * u - languages_width(g) >= gui::text_width(g, gui::HEADING, title);
+    let bw = if stacked { BACK_W * u } else { wide };
     let back = gui::center(gui::cut_left(row, bw), bw, BACK_W * u);
-    if gui::back(g, 400, back, strings::get(strings::NAV_BACK)) { ask = BACK; }
+    if gui::back(g, 400, back, strings::get(strings::NAV_BACK), stacked) { ask = BACK; }
     gui::cut_left(row, 20.0 * u);
-    let w = languages_width(g);
+    let w = languages_width(g, globe);
     let glass = gui::center(gui::cut_right(row, w), w, HEAD_H * u);
     gui::glass(g, glass, 20.0);
     var c = gui::inset(glass, 6.0 * u);
-    gui::cut_left(c, 8.0 * u);
-    gui::glyph_icon(g, gui::center(gui::cut_left(c, 28.0 * u), 28.0 * u, 28.0 * u), gui::GLOBE, gui::PLAIN, 0.0, 0.85);
-    gui::cut_left(c, 12.0 * u);
+    if globe {
+        gui::cut_left(c, 8.0 * u);
+        gui::glyph_icon(g, gui::center(gui::cut_left(c, 28.0 * u), 28.0 * u, 28.0 * u), gui::GLOBE, gui::PLAIN, 0.0,
+                        0.85);
+        gui::cut_left(c, 12.0 * u);
+    }
     for i in strings::LANGUAGES.len {
         let tapped, pic = gui::pick(g, 401 + i, gui::cut_left(c, language_width(g, i)), 0.0, strings::name_of(i), "",
                                     shown == i, true);
@@ -685,7 +696,6 @@ fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, tabbed: bool = false)
         if tabs(s, g, gui::center(row, row.z, BACK_W * u)) { ask = SHOWN; }
         return ask;
     }
-    let title = strings::get(strings::HOME_SETTINGS);
     let face = gui::fitting(g, gui::LABEL, title, row.z);
     if gui::text_width(g, face, title) <= row.z { gui::text(g, face, row, title, 1.0, 0.0, gui::LEFT); }
     return ask;
