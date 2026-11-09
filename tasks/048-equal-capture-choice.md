@@ -1,6 +1,6 @@
 # 048: A report of a forced capture with a king
 
-Status: todo
+Status: done (not reproduced; covered by tests)
 
 Reported from the tablet (2026-11-09, not seen by the user themselves): in a game
 against the computer, International, playing black, two captures each took one piece,
@@ -23,7 +23,7 @@ where the "worse" capture took more pieces.
 ## Acceptance criteria
 
 - [x] Both captures playable through taps in the game screen, each landing for the king
-- [ ] The report explained or fixed
+- [x] The report explained or fixed: not reproduced; what remains is below
 
 ## Findings (2026-11-09)
 
@@ -48,6 +48,32 @@ player didn't choose.
   or drop off the dark squares, to the nearest square within 0.9 of one; the computer's
   move and take back clear the selection (`start_move`, `show`); a press during the
   computer's move or while it animates is ignored, and an answer to a dropped ask too.
+
+## Second pass (2026-11-09)
+
+The hunt in the game screen and the board package again, headless; nothing found.
+
+- Which piece a tap or press selects: `board::press` selects the piece pressed when it
+  has a move, whichever else can capture; a target of the selected piece is played only
+  through `follow`, and only for the selected piece.
+- The must-capture rings (`choice`, now): on mistakes only none up front; after a square
+  no capture ends on, tapped with the king selected, both the king and the man ring with a
+  count of one each, and the piece the king takes rings beside them; with move hints both
+  show their count of one from the start. The mistake flashes, keeps the king selected,
+  plays nothing, and every capture is still chosen after it.
+- A king's landing taps (`test/game/aim.goose`, new): every capture of
+  `B:W12,23,31:B18,K46`, each of the king's four landings and the man's two, by a tap on
+  the piece and a tap at 25 points spread over the landing square, to 0.4 of a square from
+  its center, and by a drag dropped there, on the turned flat and 3D boards at the tablet's
+  size in landscape and portrait: all 1200 play the capture aimed at.
+- The turned board: `board::hit` and `center` agree turned, and `aim` sweeps it.
+- On the 3D board a dragged piece is held where the finger took it, on the plane of its
+  lifted top (`game::touch`), so the drop is the square under the piece, not under the
+  finger. A stacked king (the 3D board's kings by default) held by its lower disc and
+  dropped with the finger on the field's point lands up to about a third of a square back
+  along its way: aimed at the far corner of a landing, it can take the neighboring
+  landing of the same capture. That is a landing, not the other capture, and the board
+  shown in the app is flat unless 3D is chosen; recorded, not changed.
 
 What remains: a capture the player saw as one piece may have taken two (the king must
 then land where it goes on, and the majority rule forces that capture), or the computer
