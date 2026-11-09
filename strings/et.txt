@@ -119,3 +119,5 @@ count.black = Mustad peavad võitma {} käiguga
 count.black_one = Mustad peavad võitma 1 käiguga
 count.twice = Sama seis teist korda
 count.third = Kolmas kord on viik
+count.short = Viigini
+count.repeated = Kordus

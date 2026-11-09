@@ -1,12 +1,12 @@
-ply 1 c1-a3: Draw in 5 moves, dots 5 of 5; drawn 0
-ply 2 f8-g7: Draw in 4 moves, dots 4 of 5; drawn 0
-ply 3 a3-b4: Draw in 4 moves, dots 4 of 5; drawn 0
-ply 4 g7-a1: Draw in 3 moves, dots 3 of 5; drawn 0
-ply 5 b4-a3: Draw in 3 moves, dots 3 of 5; drawn 0
-ply 6 a1-c3: Draw in 2 moves, dots 2 of 5; drawn 0
-ply 7 a3-c1: Draw in 2 moves, dots 2 of 5; drawn 0
-ply 8 c3-a1: Draw in 1 move, dots 1 of 5; drawn 0
-ply 9 c1-d2: Draw in 1 move, dots 1 of 5; drawn 0
+ply 1 c1-a3: Draw in 5 moves, dots 5 of 5, short Draw in 5; drawn 0
+ply 2 f8-g7: Draw in 4 moves, dots 4 of 5, short Draw in 4; drawn 0
+ply 3 a3-b4: Draw in 4 moves, dots 4 of 5, short Draw in 4; drawn 0
+ply 4 g7-a1: Draw in 3 moves, dots 3 of 5, short Draw in 3; drawn 0
+ply 5 b4-a3: Draw in 3 moves, dots 3 of 5, short Draw in 3; drawn 0
+ply 6 a1-c3: Draw in 2 moves, dots 2 of 5, short Draw in 2; drawn 0
+ply 7 a3-c1: Draw in 2 moves, dots 2 of 5, short Draw in 2; drawn 0
+ply 8 c3-a1: Draw in 1 move, dots 1 of 5, short Draw in 1; drawn 0
+ply 9 c1-d2: Draw in 1 move, dots 1 of 5, short Draw in 1; drawn 0
 a1-b2 showing: drawn 0, no countdown
 drawn: 5 moves without a capture or a new king; the clock runs for -1
   at 0.05 s: board dim 0.01, piece dim 0.01; card: pieces on it 0
@@ -14,16 +14,20 @@ drawn: 5 moves without a capture or a new king; the clock runs for -1
   at 0.6 s: board dim 0.45, piece dim 0.45; card: tile at y 470.0 opacity 0.98; tile at y 470.0 opacity 0.98; pieces on it 2
   at 1.0 s: board dim 0.45, piece dim 0.45; card: tile at y 469.0 opacity 1.0; tile at y 469.0 opacity 1.0; pieces on it 2
 frames over 5 s: 48, the last at 0.78 s
-undone: drawn 0, Draw in 1 move, dots 1 of 5, card gone true
+undone: drawn 0, Draw in 1 move, dots 1 of 5, short Draw in 1, card gone true
 again: drawn 4
 against the computer, before the drawing move: counted false
   drawn 4, counted true, result 0; asks the computer false
-saved, brought back true: Draw in 1 move, dots 1 of 5
+saved, brought back true: Draw in 1 move, dots 1 of 5, short Draw in 1
 ply 1: no countdown; drawn 0
 ply 2: no countdown; drawn 0
 ply 3: no countdown; drawn 0
-ply 4: Same position twice, dots 2 of 3, and: A third time is a draw; drawn 0
+ply 4: Same position twice, dots 2 of 3, and: A third time is a draw, short Repeat 2/3; drawn 0
 ply 5: no countdown; drawn 0
 ply 6: no countdown; drawn 0
 ply 7: no countdown; drawn 0
 ply 8: no countdown; drawn 1
+portrait: [44.0 1014.0 314.25 72.0] [441.75 1014.0 314.25 72.0] [44.0 1098.0 712.0 88.0]
+portrait, no countdown: [44.0 1014.0 348.0 72.0] [408.0 1014.0 348.0 72.0] [44.0 1098.0 712.0 88.0]
+corner: [1040.0 44.0 200.0 72.0] [1040.0 152.0 200.0 72.0] [1040.0 236.0 200.0 120.0]
+corner, no countdown: [1040.0 44.0 200.0 72.0] [1040.0 126.0 200.0 72.0] [1040.0 224.0 200.0 132.0]

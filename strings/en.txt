@@ -120,3 +120,5 @@ count.black = Black must win in {} moves
 count.black_one = Black must win in 1 move
 count.twice = Same position twice
 count.third = A third time is a draw
+count.short = Draw in
+count.repeated = Repeat

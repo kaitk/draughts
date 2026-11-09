@@ -30,6 +30,7 @@ fn note(gm: game::Game&) -> u8[>..] {
     guard n.of > 0 else { return str("no countdown"); }
     var s = str(n.line[..n.line.len], ", dots ", n.lit, " of ", n.of);
     if n.more { s.append(", and: "); s.append(strings::get(strings::COUNT_THIRD)); }
+    format(s, ", short ", n.word[..n.word.len], " ", n.fig[..n.fig.len]);
     return s;
 }
 
@@ -152,4 +153,35 @@ fn main() {
         t = play(gm, g, l, round[2 * i], round[2 * i + 1], t);
         print("ply ", i + 1, ": ", note(gm), "; drawn ", game::drawn(gm));
     }
+
+    // The short form with the clocks where the line has no room: a portrait panel, the
+    // clocks narrowing for it, and the 3D corner panel, its line between them and undo
+    // move shorter. The tiles, in dp (the play panel's clocks and undo move).
+    shape(g, "portrait", panel::layout(800.0, 1280.0, 8), true);
+    shape(g, "portrait, no countdown", panel::layout(800.0, 1280.0, 8), false);
+    shape(g, "corner", panel::corners_in(float4 { 0.0, 0.0, 1280.0, 800.0 }, 8, 1.0), true);
+    shape(g, "corner, no countdown", panel::corners_in(float4 { 0.0, 0.0, 1280.0, 800.0 }, 8, 1.0), false);
+}
+
+// The play panel with clocks at layout l: the clocks' and undo move's tiles.
+fn shape(g: gui::Gui&, name: const u8[:], l: panel::Layout, counting: bool) {
+    var c = clock::new(clock::BLITZ);
+    var n = panel::Note {};
+    if counting {
+        n.of = 5;
+        n.lit = 3;
+        n.word.append("Draw in");
+        n.fig.push('3');
+    }
+    gui::begin(g, gui::Input { at: drive::AWAY, .. }, l.board.scale, 0.0);
+    drive::over.clear();
+    panel::game(g, l, c, 0, false, false, n, false, 1.0, drive::over);
+    var s: u8[>..] = [];
+    format(s, name, ":");
+    for q in g.quads {
+        guard q.look.x == gui::BUTTON else { continue; }
+        guard q.rect.y >= l.right.y - 1.0 && q.rect.x >= l.right.x - 1.0 else { continue; }
+        format(s, " [", r2(q.rect.x), " ", r2(q.rect.y), " ", r2(q.rect.z), " ", r2(q.rect.w), "]");
+    }
+    print(s);
 }

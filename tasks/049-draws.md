@@ -115,6 +115,12 @@ piece's move (3.2). The Brazilian confederation's (CBD) own text wasn't found on
 - Brazilian keeps the FMJD-64 text; the CBD's isn't looked for further.
 - The draw's screen: take a of `prototypes/draw.html` (a card with words, like the win's,
   and the countdown as a line under whose turn), chosen 2026-11-09.
+- The countdown where clocks leave no room: `fit=b` of the same page, a short form between
+  the clocks ("Draw in 3", "Repeat 2/3"), chosen 2026-11-09 over the line beside a halved
+  undo and the dots alone.
+- Three readings confirmed as built (2026-11-09): Brazilian 7.2.4 counts three or more
+  kings with men beside them; the Russian main road stops for good when a strong piece
+  steps on it; king against king names no side.
 
 ## Work
 
@@ -131,7 +137,7 @@ piece's move (3.2). The Brazilian confederation's (CBD) own text wasn't found on
 
 - Rules: `rules/draw.goose` (rules.md, "Draws"). Brazilian 7.2.4 counts three kings or
   more with men beside them, as Russian 6.1.8.4 says outright; the FMJD-64 text names
-  only kings, and lidraughts needs all kings: to confirm. The main road stops for good
+  only kings, and lidraughts needs all kings. The main road stops for good
   when the lone king leaves it, and in Russian also when a strong piece steps on it
   (the condition no longer holds). A lone king against a lone king counts each side's
   moves in the countdown ("Draw in"), with no side named.
@@ -146,8 +152,12 @@ piece's move (3.2). The Brazilian confederation's (CBD) own text wasn't found on
   it is; `draw.kings` in English became "{} moves by kings only", since "with only kings"
   read as only kings on the board (191 dp at the body face, two lines on the smallest
   card).
-- Not built: the countdown in a portrait panel with clocks and in the 3D corner panel with
-  clocks (no room); 6.1.8.7 and the winning-position exceptions (as decided).
+- The countdown with clocks in a portrait panel and the 3D corner panel: the short form
+  (`fit=b`; rendering.md), shot headless at phone sizes (`--dp 540`, `--dp 480` with a
+  10:15 clock, Estonian), the tablet's portrait and landscape 3D, and a phone's landscape
+  3D. `tools/play.goose` searches with the game's past and ends in the rules' draws;
+  `--tap` takes 256 taps, so a count can be played to its draw headless.
+- Not built: 6.1.8.7 and the winning-position exceptions (as decided).
 
 ## Acceptance criteria
 

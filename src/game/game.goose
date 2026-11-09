@@ -616,6 +616,8 @@ fn countdown(gm: Game&, note: panel::Note&) {
     note.of = rules::SOON;
     note.lit = c.moves;
     let one = c.moves == 1;
+    note.word.append(strings::get(strings::COUNT_SHORT));
+    note.fig.push(('0' + c.moves) as u8);
     if c.kind == rules::COUNT_DRAW {
         strings::fill_in(note.line, if one { strings::COUNT_DRAW_ONE } else { strings::COUNT_DRAW }, [c.moves]);
     } else if c.kind == rules::COUNT_WIN {
@@ -627,6 +629,10 @@ fn countdown(gm: Game&, note: panel::Note&) {
         note.more = true;
         note.of = 3;
         note.lit = 2;
+        note.word.clear();
+        note.word.append(strings::get(strings::COUNT_REPEATED));
+        note.fig.clear();
+        note.fig.append("2/3");
     }
 }
 

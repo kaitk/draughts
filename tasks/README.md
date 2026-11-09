@@ -78,13 +78,12 @@ What needs the user:
 2. 029: the developer name and the contact email in `store/`'s placeholders; publish
    `store/privacy/` on GitHub Pages; open the personal Play account and find the 12
    testers for the 14-day closed test. Nothing goes to Play until the user says so.
-3. 049: pick a take of the draw's screen (`prototypes/draw.html`).
-4. 037: play the set and its levels' order on the tablet; the Russian set's open terms;
+3. 037: play the set and its levels' order on the tablet; the Russian set's open terms;
    Brazilian's own set.
-5. 038: the final badge silhouettes, if the traced ones are to be replaced.
-6. On the Pixel 7a: a drop about 0.6 of a square off a target in puzzle 4 lands on it
+4. 038: the final badge silhouettes, if the traced ones are to be replaced.
+5. On the Pixel 7a: a drop about 0.6 of a square off a target in puzzle 4 lands on it
    (`board::snap`, not yet seen on a device).
-7. The child's next games: whether easy at skill 0 feels right (`docs/architecture/ai.md`'s
+6. The child's next games: whether easy at skill 0 feels right (`docs/architecture/ai.md`'s
    tuning notes), and whether multi-jump captures are clear with the capture count.
 
 Then: 049's draws, the device checks in 042 and 044, 048, 041's carved looks, 036 after

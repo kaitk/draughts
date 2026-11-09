@@ -427,9 +427,14 @@ the prototype tried, kept for 3D:
   broken in two where the panel is narrow; in portrait the line, in the small face, goes
   under the turn's words beside the piece, with no dots. In landscape with clocks it
   goes under the clocks. A 3D board's short corner panel closes the gaps round the
-  piece, leaves the dots out, and takes the small face; with clocks it has no room, nor
-  has a portrait panel with clocks, and those show none. Two lines are made as even as
-  they can be, as the prototypes' balanced wrap. The strong side's count shows on a tie with another, so the words don't swap
+  piece, leaves the dots out, and takes the small face. Where clocks leave no room for
+  the line (`prototypes/draw.html`, `fit=b`), a short form stands between them: "Draw in
+  3", or "Repeat 2/3" for the position come twice, whichever side's count it is. In a
+  portrait panel the word in the small face is over the figure in the label face, the
+  clocks narrowing for it with 12 px either side; in the corner panel it is one line in
+  the small face in a 36 px gap between the clocks, undo move giving up what the panel
+  lacks (120 px on a tablet). Two lines are made as even as they can be, as the
+  prototypes' balanced wrap. The strong side's count shows on a tie with another, so the words don't swap
   from one move to the next.
 - **Home** is a title menu (`prototypes/home.html`, chosen 2026-11-07 over the
   icon tiles and two other takes): the scene and the 3D board, and one glass column

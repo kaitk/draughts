@@ -40,7 +40,7 @@ let KEYS = [
     "board.preparing",
     "draw", "draw.repeat", "draw.kings", "draw.balance", "draw.lone",
     "count.draw", "count.draw_one", "count.white", "count.white_one", "count.black", "count.black_one",
-    "count.twice", "count.third",
+    "count.twice", "count.third", "count.short", "count.repeated",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -143,7 +143,9 @@ let COUNT_BLACK = 97;
 let COUNT_BLACK_ONE = 98;
 let COUNT_TWICE = 99;       // the position has come twice
 let COUNT_THIRD = 100;      // under it: a third time draws
-let COUNT = 101;
+let COUNT_SHORT = 101;      // the short form between the clocks: over or before the moves left
+let COUNT_REPEATED = 102;   // and before "2/3" for the position come twice
+let COUNT = 103;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];
