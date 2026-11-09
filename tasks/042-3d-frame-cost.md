@@ -74,6 +74,8 @@ Two runs of one build are byte-identical.
 | 2. Pieces before the board | 1.72 ms | 1.71 ms | identical |
 | 3. The shadow catcher | 1.67 ms | 1.68 ms | 84 to 98 dB, none |
 | 4. No marks quad with nothing marked | 1.44 ms | 1.50 ms | identical |
+| 5. `CULL_FRONT` in the shadow pass | left | | peter-pans |
+| 6. 9 shadow taps instead of 16 | 1.41 ms | 1.48 ms | 50 to 56 dB, 80 to 310 pixels |
 
 1. **The piece mesh:** the top's 42 rows down to 9 (`mesh::TOP_ROWS`, dense only round
    the step), the edge's arc 12 steps to 6, the foot's 5 to 3, and the lathe's 72
@@ -101,6 +103,12 @@ Two runs of one build are byte-identical.
    field's plane, so with only back faces in the map nothing occludes the field right at
    the foot. Not measured, as the look didn't hold; the map is drawn only when pieces
    move anyway.
+6. **9 shadow taps instead of 16** (LIT_FRAG's `shadow`): Castaño's 5 × 5 filter, nine
+   bilinear compares placed and weighted by where the point falls in its texel. The 16
+   taps 1.25 texels apart covered the same 5 texels, so the penumbra keeps its width;
+   the pixels that differ are on the pieces' shaded sides by their feet, by a few levels,
+   alike at 200%. 44% fewer shadow fetches for every lit pixel. `Frame.params.y` (the
+   old spacing) is unused now.
 
 ## The idle wakeup
 

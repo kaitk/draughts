@@ -92,10 +92,9 @@ struct Pulse { pulse: float4, place: float4 }
 struct Show { from: float4, to: float4, screen: float4 }
 struct Blur { dir: float4 }
 
-// The shadow map: 1024² keeps the soft shadows as they were at 2048² (the taps spread
-// as far in the world, SHADOW_TAP of the map apart), at a quarter of the memory.
+// The shadow map: 1024² keeps the soft shadows as they were at 2048² (the lit shader's
+// filter spreads over 5 of its texels), at a quarter of the memory.
 let SHADOW_SIZE = 1024;
-let SHADOW_TAP: f32 = 2.5 / 2048.0;
 let PLAN_SIZE = 2048;
 let FRAME_MAP = 2048;
 // A mitred frame's map holds only its four bands (LIT_FRAG: 0.2 to 5.65 of the map's 10.4
@@ -487,7 +486,7 @@ fn apply(g: Gpu&, which: i64, n: i64, photo: i64 = -1) {
     light(g);
     let f .= g.frame;
     f.light_color = linear4(t.key_color);
-    f.params = float4 { t.ambient.x, SHADOW_TAP, t.ambient.y, n };
+    f.params = float4 { t.ambient.x, 0.0, t.ambient.y, n };
     f.glow = t.glow;
     f.light_piece = linear4(t.light_piece);
     f.dark_piece = linear4(t.dark_piece);

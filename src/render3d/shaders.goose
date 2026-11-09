@@ -1,7 +1,7 @@
 // The 3D board's shaders, GLSL 450 that embed_shader compiles with the program. One
 // forward pass draws everything lit: the board and the pieces share one fragment shader
-// (GGX after Filament, wrap diffuse, Filament's specular antialiasing, a 4 × 4 grid of
-// hardware-compared shadow taps, analytic occlusion, an ambient of nine spherical
+// (GGX after Filament, wrap diffuse, Filament's specular antialiasing, 9 weighted
+// hardware-compared shadow taps over 5 × 5 texels, analytic occlusion, an ambient of nine spherical
 // harmonics taken from the photograph, a mild tonemap). The wood is baked once at
 // startup by the bake shader into textures with mips.
 //
@@ -18,7 +18,7 @@ let FRAME = """
         vec4 light_dir;      // toward the light; w: its intensity
         vec4 light_color;
         vec4 sh[9];          // the photograph's irradiance over pi, rgb
-        vec4 params;         // x: exposure, y: the shadow taps' spacing in uv, z: ambient scale,
+        vec4 params;         // x: exposure, y: unused, z: ambient scale,
                              // w: squares per side (a square is 8 / w)
         vec4 screen;         // xy: the target's size in pixels, z: the board dimmed by (a win)
         vec4 glow;           // rgb: the theme's glow color, w: its strength
@@ -173,22 +173,31 @@ let LIT_FRAG = """
         return max(r, vec3(0.0));
     }
 
-    // The key light's shadow: 16 hardware-compared bilinear taps on a fixed grid, from a
-    // point pushed off the surface along its normal.
+    // The key light's shadow, from a point pushed off the surface along its normal: a
+    // 5 × 5 texel box with bilinear edges in 9 hardware-compared taps, their places and
+    // weights from where the point falls in its texel (Castaño's filter, as The Witness
+    // has it); the 16 taps 1.25 texels apart it replaced covered the same 5 texels.
     float shadow(vec3 p, vec3 n) {
         float nl = clamp(dot(n, light_dir.xyz), 0.0, 1.0);
         vec3 q = p + n * (0.004 + 0.012 * (1.0 - nl));
         vec4 s = light_view_proj * vec4(q, 1.0);
-        vec2 uv = vec2(s.x * 0.5 + 0.5, 0.5 - s.y * 0.5);
+        vec2 size = vec2(textureSize(shadow_map, 0));
+        vec2 uv = vec2(s.x * 0.5 + 0.5, 0.5 - s.y * 0.5) * size;
         float z = s.z - 0.0005;
-        float t = params.y;
+        vec2 base = floor(uv + 0.5);
+        vec2 f = uv + 0.5 - base;
+        base = (base - 0.5) / size;
+        vec3 w0 = vec3(4.0 - 3.0 * f.x, 7.0, 1.0 + 3.0 * f.x);
+        vec3 u = vec3((3.0 - 2.0 * f.x) / w0.x - 2.0, (3.0 + f.x) / 7.0, f.x / w0.z + 2.0) / size.x;
+        vec3 w1 = vec3(4.0 - 3.0 * f.y, 7.0, 1.0 + 3.0 * f.y);
+        vec3 v = vec3((3.0 - 2.0 * f.y) / w1.x - 2.0, (3.0 + f.y) / 7.0, f.y / w1.z + 2.0) / size.y;
         float sum = 0.0;
-        for (int y = 0; y < 4; y++) {
-            for (int x = 0; x < 4; x++) {
-                sum += texture(shadow_map, vec3(uv + (vec2(x, y) - 1.5) * t, z));
+        for (int j = 0; j < 3; j++) {
+            for (int i = 0; i < 3; i++) {
+                sum += w0[i] * w1[j] * texture(shadow_map, vec3(base + vec2(u[i], v[j]), z));
             }
         }
-        return sum * (1.0 / 16.0);
+        return sum * (1.0 / 144.0);
     }
 
     // The field's occlusion, analytic: each piece in the 3 × 3 squares round as a
