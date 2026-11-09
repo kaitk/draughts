@@ -171,6 +171,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("program", type=Path)
     ap.add_argument("--run", action="store_true", help="install over adb and start it")
+    ap.add_argument("--id-suffix", default="",
+                    help="append .SUFFIX to the application id, to install a test build beside the app")
     ap.add_argument("--release", action="store_true",
                     help="sign with the upload key and build the AAB beside the APK")
     args = ap.parse_args()
@@ -178,6 +180,7 @@ def main():
     name = program.stem
     # Another program (a prototype in poc/) gets its own id, so it installs beside the app.
     app_id = APP_ID if name == "draughts" else f"{APP_ID}.{name}"
+    if args.id_suffix: app_id += "." + args.id_suffix
     out = ROOT / "build/android" / name
     gen, native, apk_dir = out / "gen", out / "native", out / "apk"
     gen.mkdir(parents=True, exist_ok=True)
