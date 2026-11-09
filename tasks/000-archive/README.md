@@ -134,3 +134,10 @@ and the commit that last has it.
   from the moved piece, a tenth as often where no capture was around; easy's quiet hangs
   fell to a fifth, its tense ones rose, its strength stayed, medium misses only captures
   of three pieces or more (the user, 2026-11-09). `053-mistakes-by-tension.md`, `6a3f742`
+- 050: Small windows. Done: iPad windows down to 374 × 484 pt work: a compact game,
+  home, and settings (slim theme tiles), drag and wheel scrolling for the puzzles and
+  settings, settings' groups side by side as a window widens, and the game's portrait
+  kept until its landscape board takes about 2/3 of the height; the window control's
+  margin was built and taken out, the dots may sit over back's corner (the user,
+  2026-11-09). A single puzzle's compact layout is left for later.
+  `050-small-windows.md`, `4cfc89b`

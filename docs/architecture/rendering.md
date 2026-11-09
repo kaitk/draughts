@@ -116,7 +116,11 @@ call directly.
 
 iPadOS 26 resizes any app's window, down to about 374 × 484 pt on an 11" iPad Pro, a
 499 × 645 dp layout at the density floor (task 050, 2026-11-09). Every size works; the
-extremes aren't polished.
+extremes aren't polished. The tallest window is about 380 × 1190 pt (507 × 1587 dp), the
+widest about 1210 × 480 pt (1613 × 640 dp); both keep the usual layouts. Headless at 2 px
+a point with the density floor (`agents/testing.md`), the smallest window's 3D game board
+is about 350 dp wide (from about 200 before the compact layout), home's board about 160
+dp (from none).
 
 - **Compact** (`gui::compact`): a portrait safe area under 760 dp tall. Every phone's is
   taller (801 dp at least), so only a small window takes it. The game's bar is three
