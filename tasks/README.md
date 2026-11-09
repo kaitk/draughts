@@ -58,61 +58,37 @@ switched by hand). 026 (the first start and tutorial) comes after the MVP's menu
 (release on Google Play) makes the release, 036 announces it, 037 builds the puzzle set by
 theme, and 038 adds players.
 
-## Next (agreed 2026-11-08, updated at the session's end)
+## Next (updated 2026-11-09, at the night session's end)
 
-The MVP's features are in, and on 2026-11-08 also: 030 (phones and other sizes), 035
-(home's X), 032 (memory: the tablet's PSS at home 216 → 130 MB, the Pixel 7a's 291 →
-146) and 011 (idle 1.2 → 0.05 s a minute), all archived; puzzles' multi-captures by hand
-(a capture left partway and next pressed is a miss), drops that snap to the nearest
-legal square within 0.9 of one, home's gear as a bare icon in portrait, the date-based
-season tile after the four seasons, and the second Estonian review taken (Võta, Päästa
-nupp, Proovi veel, Tänane, Tammid).
+Done on 2026-11-08 and 9: 029's package (the AAB and APK signed with the upload key,
+version 0.1.0, app id `io.github.kaitk.draughts`, the listing drafts in English and
+Estonian, the privacy page, the Play Console answers drafted; nothing submitted); 037's
+set by theme with the picker on glass rows, a first Russian set of 46, and stars per
+variant; 038's players, with the chip (the badge bare, the name on a glass pill) at the
+board's side, the first-run pick on a fresh install only, and the traced animal badges;
+the public repo `kaitk/draughts` under MIT OR Apache-2.0. Idle CPU on the release build,
+untouched: 0.05%.
 
-The goal for the morning (2026-11-09): a working, good build on the tablet, which the
-user reconnects. Turn its stay-awake on first and leave it on until the session is done.
-Screenshots: keep them to a minimum, no portrait-and-landscape sweeps of every screen;
-shoot only at the very end, or where something concrete is or may be off.
+What needs the user:
 
-Ask first, build after (the user, 2026-11-08): at the session's start, while the user is
-there, put every open question and prototype to them in one go: 037's themes, counts,
-label, and picker take (prototype it early); 038's take and its open questions; and
-029's decisions only the user can make (the final application id, the developer name,
-where the privacy policy is hosted, the listing's wording, the version). Then the work
-that follows from the answers (037, 038, 029) can run while the user is away or asleep.
+1. Back up the upload key (`~/.config/draughts/upload-key.jks` and its properties).
+2. 029: the developer name (likely "Gideonic") and the contact email in `store/`'s
+   placeholders; publish `store/privacy/` on GitHub Pages; open the personal Play
+   account and find the 12 testers for the 14-day closed test; review the listing
+   drafts, the Estonian especially. Nothing goes to Play until the user says so.
+3. 037: play the set and its levels' order on the tablet; the Russian set's open terms
+   (the sieve, free tempo); Brazilian's own set.
+4. 038: the final badge silhouettes, if the traced ones are to be replaced.
+5. On the Pixel 7a: a drop about 0.6 of a square off a target in puzzle 4 lands on it
+   (`board::snap`, not yet seen on a device).
 
-The next session is lean: the main session delegates to subagents (the default model for
-judgment, Sonnet for mechanical work), one device agent at a time, stay-awake turned on
-first. The order:
-
-1. 029, the Play release: everything that needs neither the user nor the Play account,
-   so the package is ready for upload: the AAB, release signing with an upload key kept
-   outside the repo (the user backs it up), a version below 1 (0.x), the target SDK
-   and 16 KB alignment, the listing's text in English and Estonian, the privacy policy,
-   the Data safety and content rating answers drafted. Switch the icon back to winter
-   before it ships. The user starts the developer account (a new personal account needs
-   a 14-day closed test with 12 testers).
-2. 037, the puzzle set by theme: the user decides the themes and their counts, what
-   replaces "Capture 2", and which picker take to prototype; then build the set and the
-   picker. Black to move in about a third.
-3. 038, players (one per child): the user picks a take in `prototypes/profiles.html`
-   (a proposed) and answers the task's open questions.
-4. Small checks: on the Pixel 7a, a drop about 0.6 of a square off a target in puzzle 4
-   lands on it (`board::snap`, not yet seen on a device); the tablet's stay-awake was
-   left on when it was unplugged, turn it off when it is next attached.
-5. Done (2026-11-08): the done tasks 006, 007, 008, 019, 020, 021, 023, 024, 025, 027, and
-   028, and the cancelled 016, are archived.
-6. 036, the announcement, after the release.
+Then: 015's 3D prototype (`poc/3d/`), the user's next session; 036, the announcement,
+after the release.
 
 Not in the MVP (the user, 2026-11-08): sound; the visual feedback is clear, and sound
-may come soon after, kept from being bling. To decide later: a puzzle rating like GoDraughts' and the computer's level
-shown as a rating (both per player, after 037 and 038), 026's first start.
+may come soon after, kept from being bling. To decide later: a puzzle rating like
+GoDraughts' and the computer's level shown as a rating (per player), 026's first start.
 
-Alongside, when the user wants it: 015's 3D prototype (`poc/3d/`, its plan and sources in
-the task; the user has more to add first).
-
-After the MVP: 026 (first start and tutorial; its prototype awaits the user's review), 038
-(players, a take to choose),
-more Russian puzzles (037 has a first 46) and Brazilian's, each level's adapted skill
-shown as a rating (a number or stars on the computer's tile, like a chess rating; the user,
-2026-11-08), 015, 013, 014, 033's seasonal icons, and
-010 alongside.
+After the MVP: 026 (first start and tutorial; its prototype awaits the user's review),
+more Russian puzzles and Brazilian's, 015, 013, 014, 033's seasonal icons, and 010
+alongside.

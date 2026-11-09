@@ -124,6 +124,8 @@ masters present):
   io.github.kaitk.draughts`, then `adb install draughts-release.apk`), and
   `scripts/idle_cpu.sh` and `scripts/lifecycle_memory.sh` on it; task 011 (SDL's
   accelerometer, the last idle CPU) done.
+- Idle CPU, 2026-11-09, the tablet untouched at home: 0.03 s in 60 s (0.05%), 61
+  voluntary switches; the PSS at home 134 MB.
 - Raise `VERSION_CODE` for every upload after the first.
 
 ## Notes
