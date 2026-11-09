@@ -1,6 +1,6 @@
 # 015: The 3D board
 
-Status: in-progress
+Status: done (landed in main 2026-11-09)
 
 A 3D board from the same game state (`docs/product.md`, after the MVP: Looks), on the
 title menu first and as a setting for play. Start simple: the board floats in front of
@@ -780,10 +780,10 @@ the most expensive thing the app does on a tiler.
 
 ## Acceptance criteria
 
-- [ ] The 3D board drawn natively from the game state, floating in front of the scene
+- [x] The 3D board drawn natively from the game state, floating in front of the scene
       with a soft shadow, with the theme's colors and the key light
-- [ ] Taps hit the right squares through the perspective
-- [ ] Draws nothing while idle, as the 2D board
+- [x] Taps hit the right squares through the perspective
+- [x] Draws nothing while idle, as the 2D board
 
 ## When 3D lands
 

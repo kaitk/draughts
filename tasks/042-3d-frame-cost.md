@@ -1,6 +1,6 @@
 # 042: The 3D board's frame cost
 
-Status: todo
+Status: in-progress
 
 A moving 3D board (the camera turning, a hop, a capture) takes about 14 ms on the Pixel 7a
 (Mali-G710) and on the tablet (Mali-G615 MC2, MSAA 4×), over the tablet's 11 ms at

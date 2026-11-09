@@ -19,8 +19,13 @@ or harmonics to make, so its first switch is shorter.
       kept as `background = photo|plain` (`test/shell/settings`)
 - [x] A gradient per season's board, checked beside each board flat and 3D, in a
       prototype first (`prototypes/`): fade b, checked on the Mac flat and 3D
-- [x] With Plain chosen, no photograph is decoded or held (memory measured on the Mac;
-      the tablet's still to check)
+- [x] With Plain chosen, no photograph is decoded or held (memory measured on the Mac)
+- [ ] On the tablet: `dumpsys meminfo` at home with the photograph and with the fade,
+      after the same frames (`agents/testing.md`)
+- [ ] On the tablet: the frame a switch between them takes (a theme change's 22 ms
+      before), and the 3D board's switch, which runs only the photograph's steps
+- [ ] On the tablet and the A33: the fade's look, banding in the dark fade, and the
+      switch's 58 × 68 dp halves under a child's finger
 
 ## Prototype
 
@@ -60,8 +65,3 @@ glass").
   The 3D game: 833 → 813 MB. Settings and the 3D game read far higher headless (600 MB
   and more of graphics, falling over seconds) with either background, so only their
   difference means anything.
-- **On the device, still to check:** `dumpsys meminfo` at home with the photograph and
-  with the fade, after the same frames (`agents/testing.md`); the frame a switch between
-  them takes (a theme change's 22 ms before); the 3D board's switch, which runs only the
-  photograph's steps; and the fade's look on the tablet and the A33: banding in the dark
-  fade, and the switch's 58 × 68 dp halves under a child's finger.
