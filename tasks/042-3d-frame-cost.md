@@ -293,3 +293,9 @@ over.
       method) and kept only for a measured win, with headless shots matching the look
 - [ ] The tablet's moving 3D board within 11 ms, or 60 Hz chosen there while it moves
 - [ ] The idle wakeup's cost explained, and fixed if it draws
+
+**On the Pixel 7a (2026-11-09, a screen recording at 20 fps):** autumn to winter in
+settings' Look tab. The old board is grey within 0.1 s of the tap; the new one shows
+about 0.45 s after it, grey, and is back in color 0.35 s later, all under a second. Flat
+and back to 3D in settings shows the board 0.25 s after the tap with no "Setting up the
+board…" (the GPU's resources are kept until settings is left).
