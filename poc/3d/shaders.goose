@@ -283,6 +283,7 @@ let LIT_FRAG = """
         float ao = clamp(v_extra.x, 0.0, 1.0);
         vec3 albedo;
         float rough;
+        float top_var = 0.0;     // the spread of a shader-made normal over the pixel
         if (mat < 0.5) {
             // The field: the baked plan, seen from above.
             vec2 uv = (p.xz + INNER) / (2.0 * INNER);
@@ -375,14 +376,30 @@ let LIT_FRAG = """
             // (mesh::top_height): the normal and the cove's occlusion come from the
             // object-space position, never from interpolants a multisampled pixel can
             // extrapolate past a small triangle.
+            // MSAA shades once per pixel and triangle, so a step narrower than a pixel
+            // aliases inside the triangles: the height is filtered over the pixel's
+            // footprint in u (the 2D board's coverage idea), its slope averaged over four
+            // pieces of it, and how far their normals spread widens the roughness below.
             float rho = length(lp.xz);
             float u = rho / RADIUS;
+            float span = max(1.5 * length(vec2(dFdx(u), dFdy(u))), 0.004);
             if (u < EDGE_AT && lp.y > 0.5 * HEIGHT) {
-                float e = 0.002;
-                float slope = (top_height(u + e) - top_height(u - e)) / (2.0 * e * RADIUS);
                 vec2 radial = rho > 1e-5 ? lp.xz / rho : vec2(0.0);
-                n = normalize(vec3(-slope * radial.x, 1.0, -slope * radial.y));
-                ao = top_ao(u);
+                float q = 0.25 * span;
+                float h0 = top_height(u - 2.0 * q);
+                vec3 sum = vec3(0.0);
+                ao = 0.5 * top_ao(u - 2.0 * q);
+                for (int i = -1; i <= 2; i++) {
+                    float h1 = top_height(u + float(i) * q);
+                    float slope = (h1 - h0) / (q * RADIUS);
+                    sum += normalize(vec3(-slope * radial.x, 1.0, -slope * radial.y));
+                    ao += (i == 2 ? 0.5 : 1.0) * top_ao(u + float(i) * q);
+                    h0 = h1;
+                }
+                ao *= 0.25;
+                float r = length(sum) * 0.25;
+                n = sum / max(r * 4.0, 1e-5);
+                top_var = (1.0 - r) / max(r, 1e-3);
             }
             if (v_kind.y > 0.75 && lp.y > 0.5 * HEIGHT) {
                 // The crown debossed in a crowned king's face, filled with the crown's
@@ -398,7 +415,11 @@ let LIT_FRAG = """
                 float w = fwidth(d);
                 float inside = (1.0 - smoothstep(-w, w, d)) * step(u, 0.6);
                 float wall = inside * smoothstep(-0.012 - w, -0.012 + w, d);
-                n = normalize(n - vec3(grad.x, 0.0, -grad.y) * wall * 1.6);
+                // A wall narrower than the pixel tilts only its share of it, and its
+                // edges' spread over the pixel widens the roughness, as the step's does.
+                float share = min(1.0, 0.006 / max(w, 1e-5));
+                n = normalize(n - vec3(grad.x, 0.0, -grad.y) * wall * 1.6 * share);
+                top_var += wall * (1.0 - wall) * share;
                 albedo = mix(albedo, crown_color.rgb, inside);
                 rough = mix(rough, 0.7, inside);
                 ao *= 1.0 - 0.35 * inside;
@@ -421,12 +442,14 @@ let LIT_FRAG = """
         vec3 hv = normalize(v + l);
         float noh = clamp(dot(n, hv), 0.0, 1.0);
         float voh = clamp(dot(v, hv), 0.0, 1.0);
-        // Filament's specular antialiasing: roughness widened by the normal's variance.
+        // Specular antialiasing (Kaplanyan and Tokuyoshi, as Filament has it): roughness
+        // widened by the normal's screen-space variance, and by the spread of the normals
+        // a shader-made step averaged over the pixel (Toksvig's 1 - r over r).
         vec3 du = dFdx(n);
         vec3 dv = dFdy(n);
         float variance = 0.15 * (dot(du, du) + dot(dv, dv));
         float a = rough * rough;
-        a = sqrt(clamp(a * a + min(2.0 * variance, 0.2), 0.0, 1.0));
+        a = sqrt(clamp(a * a + min(2.0 * variance + top_var, 0.3), 0.0, 1.0));
         a = max(a, 0.0079);
         vec3 f0 = vec3(0.04);
         vec3 spec = d_ggx(noh, a) * v_smith(nov, nl, a) * f_schlick(f0, voh) * nl;
