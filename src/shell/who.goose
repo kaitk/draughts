@@ -178,8 +178,11 @@ fn picker(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i6
             let nf = gui::fitting(g, gui::BODY, p.name[..], inner.z);
             gui::text(g, nf, inner, p.name[..], 1.0, 0.0, gui::CENTER);
             if w.editing {
+                // A dark disc with a light rim under the pencil: over the face's light
+                // picture a faint white disc left the pencil hard to see.
                 let b = float4 { tr.x + tr.z - 48.0 * u, tr.y + 8.0 * u, 40.0 * u, 40.0 * u };
-                gui::fill(g, b, float4 { 1.0, 1.0, 1.0, 0.22 }, 20.0 * u);
+                gui::fill(g, b, float4 { 1.0, 1.0, 1.0, 0.85 }, 20.0 * u);
+                gui::fill(g, gui::inset(b, 2.0 * u), float4 { 0.16, 0.12, 0.10, 0.95 }, 18.0 * u);
                 gui::glyph_icon(g, gui::center(b, 22.0 * u, 22.0 * u), gui::PENCIL, gui::PLAIN, 0.0, 1.0);
             }
         }
