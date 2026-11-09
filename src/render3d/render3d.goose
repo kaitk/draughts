@@ -759,17 +759,19 @@ fn marks_over(g: Gpu&, pulse: float4, to: float4, alpha: f32, size: int2) {
     gfx::draw(6);
 }
 
-// The board, then the opaque pieces as instances; from the light when `light` is 1.
+// The opaque pieces as instances, then the board, front to back: the field under the
+// pieces fails the depth test before it is shaded. From the light when `light` is 1.
 fn draw_meshes(g: Gpu&, light: f32) {
+    if g.solid > 0 {
+        gfx::uniforms(gfx::VERTEX, 1, Draw { float4 { 1.0, light, 1.0, 0.0 } });
+        gfx::bind_vertex_buffer(g.piece_vb);
+        gfx::bind_index_buffer(g.piece_ib, 4);
+        gfx::draw_indexed_instanced(g.piece_count, g.solid);
+    }
     gfx::uniforms(gfx::VERTEX, 1, Draw { float4 { 0.0, light, 1.0, 0.0 } });
     gfx::bind_vertex_buffer(g.board_vb);
     gfx::bind_index_buffer(g.board_ib, 4);
     gfx::draw_indexed(g.board_count);
-    guard g.solid > 0 else { return; }
-    gfx::uniforms(gfx::VERTEX, 1, Draw { float4 { 1.0, light, 1.0, 0.0 } });
-    gfx::bind_vertex_buffer(g.piece_vb);
-    gfx::bind_index_buffer(g.piece_ib, 4);
-    gfx::draw_indexed_instanced(g.piece_count, g.solid);
 }
 
 // The blurred photograph, graded, at opacity `alpha` over the open pass's target.

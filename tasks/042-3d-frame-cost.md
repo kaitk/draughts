@@ -71,6 +71,7 @@ Two runs of one build are byte-identical.
 | --- | --- | --- | --- |
 | Before (`2e2f634`) | 2.48 ms | 2.51 ms | |
 | 1. The piece mesh | 1.71 ms | 1.73 ms | 54 to 58 dB, 40 to 90 pixels |
+| 2. Pieces before the board | 1.72 ms | 1.71 ms | identical |
 
 1. **The piece mesh:** the top's 42 rows down to 9 (`mesh::TOP_ROWS`, dense only round
    the step), the edge's arc 12 steps to 6, the foot's 5 to 3, and the lathe's 72
@@ -79,6 +80,10 @@ Two runs of one build are byte-identical.
    differ are along the step's ring and the edge, and the shadows round the pieces (the
    shadow map's geometry); no difference visible at 200%, the low view's silhouettes
    included.
+2. **Pieces before the board** (`render3d::draw_meshes`, all three passes that use it):
+   the field under the pieces fails the depth test before it is shaded. Pixel for pixel
+   the same; nothing on the Mac, whose GPU removes hidden surfaces by itself. Mali's
+   forward pixel kill does only part of that, so the tablet is where it can show.
 
 ## The idle wakeup
 
