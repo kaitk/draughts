@@ -175,7 +175,9 @@ scripts/android_cli.sh tools/aibench.goose                          # the same o
 Brazilian and prints its speed in nodes a second ([computer player](architecture/ai.md));
 give it a variant and a FEN to time one position. `tools/aimatch.goose` plays the computer
 against itself at two skills (`--nodes A B` gives each side its own node limit;
-`--fens PLY` prints the positions games reach, for benchmarks). `tools/play.goose` lets you
+`--fens PLY` prints the positions games reach, for benchmarks; `--overlooks A B` scales
+each side's overlooks in percent; `--hangs` counts each side's hung pieces in quiet and
+tense positions). `tools/play.goose` lets you
 play it in the terminal at a level or a skill (0 to 100) with either color: type a move
 as its list shows it or its number, `u` to take back your move and its reply. `scripts/android_cli.sh`
 builds any headless Goose program as a plain Android executable with the NDK's clang at

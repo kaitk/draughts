@@ -85,7 +85,10 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   coarsely, and the path syntax a tracer writes: bless it after replacing an animal), `ai` (the computer player:
   its search against a plain minimax, the table changing no score, keys, what each level
   plays in known shots, the same move in steps as at once, that no skill from 15 on
-  hangs a piece (`blunders`), easy's overlooks below 15 (`overlook`), and draws scored 0, steered into when behind and clear of when ahead (`draws`)), and `puzzles` (the puzzle file's format and refusals, what `puzzles::check`
+  hangs a piece but to a capture it overlooked, of two pieces or more (`blunders`), the
+  overlooks by tension, a capture's size, and its distance from the moved piece, with
+  each one's rate over 4000 seeds through `ai::notice` and `ai::overlooked`, no search
+  needed (`overlook`), and draws scored 0, steered into when behind and clear of when ahead (`draws`)), and `puzzles` (the puzzle file's format and refusals, what `puzzles::check`
   refuses beyond the format, what a move does to each goal, and every built-in puzzle
   passing `puzzles::check`, with its counts by theme and level: `set` International's,
   `russian_set` Russian's). A new puzzle is checked with `build/puzzles FILE` (the
@@ -117,10 +120,17 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
 - The search counts nodes, so a test's moves change with `Engine.node_limit`. Tests that
   call hard lower it to stay quick through TinyCC (`test/ai/blunders.goose`, the seeds
   in `test/ai/levels.goose`); the whole `ai` area takes about 10 s that way.
-- Self-play below skill 15 against a skill as it played before the overlooks (task
-  of 2026-11-09): `build/aimatch VARIANT 0 10 400 --overlooks 100 0`. A simple child
+- Self-play against a skill as it played before the overlooks (task of 2026-11-09):
+  `build/aimatch VARIANT 0 10 400 --overlooks 100 0`. Skills 0 and 10 without overlooks
+  are the yardsticks of easy's strength, which no overlook change touches. A simple child
   model is skill 0 overlooking three times as often, `--overlooks 100 300` (or `300` on
   its side). 400 games of easy take seconds; anything with hard, many minutes.
+- `--hangs` adds each side's hanging moves in quiet and tense positions (task 053's
+  table in `docs/architecture/ai.md`). Seven pairs of 400 games in three variants, with
+  `--hangs`, take about 2 minutes on the Mac in parallel; skills up to 55 are quick. A
+  change to the overlooks moves the self-play games in `test/game/pace.goose` (its
+  plies and times), `test/ai/levels.goose`'s easy moves, and `blunders`' counts: bless
+  them with the reason.
 - `test/game/pace.goose` plays twelve whole games on the clock (each level against
   itself, both clocks, Russian and International) with hard at 20,000 nodes: about 12 s
   through TinyCC. For numbers at full strength, build a copy with `NODES` at

@@ -97,7 +97,8 @@ On a worker the frame loop draws as it would without the computer.
 
   Over whole games of easy against itself (the test's 2 games a clock) a move took
   2.22 s on 5+3 and 2.83 s on 10+5 on average; now 3.38 s and 5.86 s, at most 12, its
-  clock never under 244 s and 507 s. The test's ranges for easy's mean are 2.5–5 s and
+  clock never under 244 s and 507 s (3.54 s and 5.79 s once task 053's overlooks changed
+  the test's games). The test's ranges for easy's mean are 2.5–5 s and
   4–8 s; medium's and hard's are unchanged.
 - **While it thinks**, its piece on the panel pulses once: the glow ring fades from full
   to a third and back over 1.2 s, on its clock's piece when there are clocks, even before
@@ -191,29 +192,47 @@ for a whole game. It sets:
 | Temper: how much worse makes a move e times less likely | `2 + 60 (100 − s)² / 10000` | 62 | 23 | 2 |
 | Margin: never a move this much worse than the best it sees | `min(60, 3 × temper)` | 60 | 60 | 6 |
 | Chances left for the child, per thousand moves | `5 × max(25 − s, 0)` | 125 | 0 | 0 |
-| Overlooks, per thousand moves: where its piece lands; a capture it opens | `4 × max(15 − s, 0)`; `6 × max(15 − s, 0)` | 60; 90 | 0 | 0 |
+| Overlooks a capture of 1; 2; 3; 4+ pieces, per thousand, tense, next to the moved piece | `MISS × (max(SURE − s, 0) / SURE)²`, MISS 25; 160; 300; 450, SURE 15; 25; 65; 65 | 25; 160; 300; 450 | 0; 0; 44; 66 | 0 |
 
 How each part plays like a person:
 
-1. **It misses only what shows deep, or what a young child overlooks.** A level never
+1. **It misses only what shows deep, or what a person overlooks.** A level never
    searches past what it sees, so it misses a shot or a threat only when the point lies
-   beyond. From skill 15 on it sees its own move and every capture it allows, so it
-   never hangs a piece to the reply that just takes it (`test/ai/blunders.goose`). Easy
-   plays a sacrifice that fails only further on, as a child does.
-2. **Below 15 it sometimes overlooks a capture** (the table's last row, the user's
-   call, 2026-11-09: a young player found that easy never missed a capture nor hung a
-   piece, so every mistake was punished). A young child checks their move only some of
-   the time, and misses most often what isn't the piece in hand. So on a move drawn
-   with the first chance it doesn't look where the piece it moves lands: it doesn't see
-   the child's captures that take that piece. With the second, it doesn't see what its
-   move opens: the child's captures of its other pieces, such as one behind the square
-   it left. Each is drawn once a move from its own seeded stream, with integer chances,
-   and both can come together. It still chooses as always among what it does see, so
-   an overlooking move is a sensible move but for the one capture, and it hangs a piece
-   only where its best-looking move does: at 0 about 14% of moves overlook something
-   and about one in seven of those hangs a man, about one a game. Its own captures stay
-   compulsory, as the rules make them. The chances fade to none by 15
-   (`test/ai/overlook.goose`).
+   beyond. From skill 15 on it sees its own move and every one-piece capture it allows,
+   so it never hangs a piece to the reply that just takes one; from 25 every two-piece
+   capture, from 65 every capture (`test/ai/blunders.goose`). Easy plays a sacrifice
+   that fails only further on, as a child does.
+2. **It sometimes overlooks a capture, as a person errs** (the table's last row). After
+   each of its moves it may not see one of the child's captures: each capture is seen
+   or not by its own chance, drawn from a hash of the move's seed and both moves
+   (`ai::overlooked`), so the search meets the same answer each time and every machine
+   agrees. The chance grows with how many pieces the capture takes (MISS) and with how
+   far it starts from the piece just moved (times 1, 1.25, 1.5, and 2 for a step, 2, 3,
+   and 4 or more squares away; a capture of the moved piece by one jump starts a step
+   away), and is a tenth as large in a quiet position: one where neither side could
+   capture before its move (`ai::notice`, the root's half of `pace::tense`). It fades
+   with skill, each size by the square of the way left to its own sure skill: easy
+   misses a one-piece capture now and then until 15 and a two-piece one until 25;
+   medium only captures of three pieces or more, now and then (44 per thousand at 40,
+   next to the moved piece); from 65 on, hard included, nothing. Where it sees none of
+   the child's captures it takes the position as quiet. It still chooses as always among
+   what it does see, so an overlooking move is a sensible move but for the capture, and
+   it hangs a piece only where its best-looking move does. Its own captures stay
+   compulsory, as the rules make them (`test/ai/overlook.goose`).
+
+   Why (the user, 2026-11-09): easy and medium should err where a person does, more
+   where captures are around (a long multi-capture, a capture away from the piece just
+   moved) and less in a quiet position, where an obvious blunder looks like a machine.
+   In chess every strength errs more in complex positions (Guid and Bratko, 2006 and
+   2011; Regan and Haworth's model, which the choosing uses, shows the same), and
+   tactics are among the strongest signals of a human blunder (Maia, McIlroy-Young et
+   al., 2020). Until then easy overlooked with a flat chance a move, fading to none by
+   15: at 0, 60 per thousand moves where its piece lands and 90 for a capture its move
+   opens (a young player had found that easy never missed a capture nor hung a piece,
+   so every mistake was punished, 2026-11-09); medium never did. Most of those hangs
+   came in quiet positions. Now they come where captures are around, and easy hangs
+   about as many pieces as before, so its strength stays (the numbers below).
+
 3. **Consistent strength.** It chooses among the moves within the margin with chances
    that fall off as e^(−δ / temper), δ being how much worse each is than the best it sees:
    Regan and Haworth's model of how players of a given strength choose. So there are no
@@ -244,14 +263,54 @@ and Brazilian (`build/aimatch ... --overlooks`), wins, draws, losses for the fir
 
 | Pair | Russian | International | Brazilian |
 | --- | --- | --- | --- |
-| Easy at 0 against skill 10 as it was (no overlooks) | 115, 42, 243 | 91, 40, 269 | 109, 46, 245 |
-| Skill 0 without overlooks against skill 10 without | 142, 65, 193 | 136, 80, 184 | 142, 75, 183 |
-| Skill 15 against skill 10 as it was | 314, 48, 38 | 340, 42, 18 | 313, 51, 36 |
-| Medium (40) against easy at 0 | 391, 5, 4 | 398, 2, 0 | 391, 8, 1 |
-| Medium (40) against easy at its top (30) | 270, 76, 54 | 303, 69, 28 | 263, 82, 55 |
+| Easy at 0 against skill 10 without overlooks | 100, 76, 224 | 69, 89, 242 | 95, 82, 223 |
+| Easy at 0 against skill 0 without overlooks | 133, 76, 191 | 92, 89, 219 | 117, 91, 192 |
+| Skill 15 against easy at 0 | 320, 45, 35 | 335, 34, 31 | 328, 35, 37 |
+| Medium (40) against easy at 0 | 391, 6, 3 | 398, 1, 1 | 389, 9, 2 |
+| Medium (40) against easy at its top (30) | 255, 84, 61 | 301, 57, 42 | 255, 93, 52 |
 
-A simple child model, skill 0 overlooking three times as often (about 43% of its moves
-check nothing of one kind or the other), loses to easy at 0 in 64 to 74% of games, at 8
-in 76 to 82%, at 15 in 95 to 99%, at 30 in 99%. Easy's top and medium's start are
-closer than the levels' starts: medium wins about 70% there and loses about 10%, as
-before this change, which left skills from 15 on as they were.
+A simple child model, skill 0 overlooking three times as often (`--overlooks 300`),
+loses to skill 0 without overlooks in 58 to 70% of games and to 15 in 85 to 90%. Easy's
+top and medium's start are closer than the levels' starts: medium wins about 64 to 75%
+there and loses 10 to 15%.
+
+### Mistakes by tension: before and after (task 053, 2026-11-09)
+
+`build/aimatch VARIANT A B 400 --hangs` counts, for each side, the moves that hang a
+piece: after them the other side's captures win a man or more (a minimax over material,
+the move and then captures only, four plies), when another move loses less that way,
+unless the side's own search shows the material coming back (a sacrifice it sees).
+Quiet and tense as above: tense when the side to move must capture or the other side
+could capture were it its turn. Hanging moves per 100 games, quiet then tense, each
+skill against the one in brackets (each side plays about 35 moves a game in Russian and
+Brazilian, 60 in International, one in seven to nine of them tense):
+
+| Skill | Russian, before → after | International | Brazilian |
+| --- | --- | --- | --- |
+| 0 (against 10) | 36, 12 → 6, 32 | 72, 22 → 10, 79 | 34, 15 → 6, 33 |
+| 10 (against 25) | 12, 4 → 3, 16 | 20, 8 → 8, 78 | 11, 5 → 3, 31 |
+| 15 (against 0) | 0, 0 → 2, 7 | 0, 0 → 3, 24 | 0, 0 → 0, 7 |
+| 25 (against 40) | 0, 0 → 1, 5 | 0, 0 → 3, 31 | 0, 0 → 1, 6 |
+| 40 (against 55) | 0, 0 → 0, 1 | 0, 0 → 1, 11 | 0, 0 → 0, 4 |
+| 55 (against 40) | 0, 0 → 0, 0 | 0, 0 → 0, 1 | 0, 0 → 0, 0 |
+
+Wins, draws, losses for the first, before → after; adapting's steps rely on 15 skill
+points winning about three games in four:
+
+| Pair | Russian | International | Brazilian |
+| --- | --- | --- | --- |
+| 10 against 0 | 217, 63, 120 → 198, 73, 129 | 221, 67, 112 → 192, 100, 108 | 222, 73, 105 → 198, 75, 127 |
+| 15 against 0 | 339, 38, 23 → 320, 45, 35 | 376, 20, 4 → 335, 34, 31 | 336, 47, 17 → 328, 35, 37 |
+| 25 against 10 | 367, 27, 6 → 363, 23, 14 | 396, 3, 1 → 386, 12, 2 | 362, 29, 9 → 360, 22, 18 |
+| 40 against 25 | 267, 82, 51 → 272, 78, 50 | 274, 93, 33 → 299, 61, 40 | 248, 108, 44 → 252, 105, 43 |
+| 55 against 40 | 248, 98, 54 → 252, 92, 56 | 290, 84, 26 → 300, 75, 25 | 255, 97, 48 → 257, 95, 48 |
+| Easy at 0 against 10 without overlooks | 108, 62, 230 → 100, 76, 224 | 88, 67, 245 → 69, 89, 242 | 99, 78, 223 → 95, 82, 223 |
+| Easy at 0 against 0 without overlooks | 113, 74, 213 → 133, 76, 191 | 98, 87, 215 → 92, 89, 219 | 104, 75, 221 → 117, 91, 192 |
+
+Easy at 0 scores about as before against the fixed yardsticks (skill 0 and 10 without
+overlooks, which the change doesn't touch): a little better in Russian and Brazilian, a
+little worse in International, where long captures are common. Fifteen points still win
+80 to 97% of games at the bottom of the scale and 63 to 75% from 25 to 40, as before.
+International's 10 to 25 now hang more in tense positions than the other variants'
+(its majority rule makes multi-captures the only replies more often); their win rates
+moved little.
