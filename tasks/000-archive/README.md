@@ -146,3 +146,7 @@ and the commit that last has it.
   turned flat and 3D boards play the capture chosen (`test/game/choice`, `aim`). If it is
   seen again: a screenshot or the position, the taps, and which side's king.
   `048-equal-capture-choice.md`, `5a01306`
+- 039: Procedural wood for the 3D board. Done: growth rings with pores and a fibre
+  relief the default wood, a black marble for winter's frame, summer's variants kept
+  beside its look; the bake 0.27 to 0.30 s warm on the tablet; the defaults kept by the
+  user (2026-11-09). `039-procedural-wood.md`, `6c3ae96`

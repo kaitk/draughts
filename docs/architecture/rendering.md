@@ -995,6 +995,16 @@ board's does and the backdrop over it as opaque as the blur.
   Spring's default is ivory stone with a carved vine band on the frame and jade dark
   squares (`looks::elven`, `--spring 1`, chosen on the tablet 2026-11-09); the Baltic
   carved oak is `--spring 2`, the birch `--spring 0`. Summer keeps its default wood look.
+  **The wood and the stone are baked** once into 2048² maps (the plan and the frame map,
+  with mips; `shaders::BAKE_FRAG`) at getting ready and on a theme change, never a frame.
+  The wood is growth rings round a wandering pith axis with pores along the fibres and a
+  fibre relief (Liu, Dong, Hašan and Marschner, 2016), colored by Beer's law, under a
+  finish per look (`looks::Finish`: varnish, sanding, pickling, caulking); winter's
+  frame is a black marble, contours of a warped ramp with fine cracks (`looks::MARBLE`,
+  2). `--wood N`, `--marble N` (0 the slate), and `--summer N` show the other models and
+  variants kept beside the defaults (task 039; the user settled on the defaults,
+  2026-11-09). Warm, the bake takes 37 ms on the M1 Pro and 0.27 to 0.30 s on the
+  tablet; its pipeline's first compile there about 1 s.
 - **States**, in the theme's glow color: the selected piece lifts by 0.8% of the board
   and grows to 1.05 with a glow ring a little out from it (at 1.13 of the radius); with move hints on, a legal target is a glowing
   dot 30% of a square and a capture's stop on the way is a ring. With hints on mistakes
