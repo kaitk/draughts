@@ -49,6 +49,12 @@ Also, not from the review: a lower render scale for the 3D pass (about 0.75, sca
 in the screen pass), the largest lever on a fill-bound frame; and asking for 60 Hz on
 the tablet while the 3D board moves, where 90 Hz misses and alternates.
 
+**Later: a low-quality mode for weak phones** (the user, 2026-11-09; not built yet):
+when the moving 3D board stays under about 30 fps, cut the 3D pass's render resolution
+first, then its geometry, until it reaches 30. A data point: a Galaxy A33 5G (Mali-G68
+MP4, 1080 × 2400) draws the moving board in about 36 ms waited (about 28 fps), at
+thermal status 3.
+
 **Fine as is:** back-face culling (counter-clockwise front faces) on the lit, fading, and
 depth-only pipelines; 16-bit depth, the multisampled color resolved and neither it nor
 its depth stored (`0005`); the shadow map drawn only when pieces move or the board
