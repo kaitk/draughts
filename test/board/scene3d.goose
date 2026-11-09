@@ -3,9 +3,11 @@
 // state and one animation. A selected man lifted and grown, with its glow; a stacked king
 // two instances; a crowned king one; the last move's squares and the targets in the
 // world's grid, which a turned board turns; a move in flight with its hop and the pieces
-// it takes fading; the must-capture rings pulsing; a dragged piece. And what a new frame
-// changes against the last drawn (view3d::changes): nothing for the same frame, the draw
-// for a mark or a ring, the shadow map too when a piece moves or lifts.
+// it takes fading; the must-capture rings pulsing; a dragged piece; the field's marks as
+// the renderer reads them (the last move's tint, targets, the ring's strength, the flash).
+// And what a new frame changes against the last drawn (view3d::changes): nothing for
+// the same frame, the draw for a mark or a ring, the shadow map too when a piece moves
+// or lifts.
 import std;
 import vec;
 import math;
@@ -47,6 +49,12 @@ fn show(s: view3d::Scene&, what: const u8[:]) {
     }
     print("  selected ", v4(s.selected), "; last ", cells(s.view.n, s.marks.last), "; targets ",
           cells(s.view.n, s.marks.target), "; flash ", v4(s.flash));
+    var f: u8[>..] = [];
+    for i in s.view.n * s.view.n {
+        let m = s.field[i];
+        if m.x > 0.0 || m.y > 0.0 || m.z > 0.0 || m.w >= 0.0 { format(f, i / s.view.n, ".", i % s.view.n, " ", v4(m), "; "); }
+    }
+    print("  field ", f);
 }
 
 fn main() {
@@ -67,7 +75,7 @@ fn main() {
     var s = view3d::Scene {};
     var was = view3d::Scene {};
     board::fill(b, l, 0.1);
-    view3d::fill(s, b, l, v);
+    view3d::fill(s, b, l, v, 0.1);
     show(s, "c3 selected, the king on h4 a stack");
     let same = s;
     print("the same frame again changes ", view3d::changes(same, s));
@@ -77,14 +85,14 @@ fn main() {
     t.flip = true;
     board::fill(b, t, 0.1);
     var ts = view3d::Scene {};
-    view3d::fill(ts, b, t, v);
+    view3d::fill(ts, b, t, v, 0.1);
     print("turned: selected ", v4(ts.selected), ", targets ", cells(8, ts.marks.target));
 
     // A crowned king: one instance with its crown.
     b.king_look = board::CROWN;
     board::fill(b, l, 0.1);
     was = s;
-    view3d::fill(s, b, l, v);
+    view3d::fill(s, b, l, v, 0.1);
     print("crowned king: ", s.inst.len / 2, " instances, changes ", view3d::changes(was, s));
     b.king_look = board::STACK;
 
@@ -92,10 +100,13 @@ fn main() {
     board::press(b, l, drive::at(l, "d4"), 1.0);
     board::fill(b, l, 1.1);
     was = s;
-    view3d::fill(s, b, l, v);
+    view3d::fill(s, b, l, v, 1.1);
     show(s, "c3 to d4, halfway");
     print("changes ", view3d::changes(was, s));
     board::update(b, 2.0);
+    board::fill(b, l, 2.0);
+    view3d::fill(s, b, l, v, 2.0);
+    show(s, "c3 to d4 played");
 
     // Black must capture with c5: h8 touched is a wrong tap, its ring flashing and c5 pulsing;
     // then c5 takes d4, filled halfway through the taken piece's fade.
@@ -104,14 +115,14 @@ fn main() {
     board::set(b, q);
     board::press(b, l, drive::at(l, "h8"), 3.0);  // can't move while c5 must capture
     board::fill(b, l, 3.2);
-    view3d::fill(s, b, l, v);
+    view3d::fill(s, b, l, v, 3.2);
     show(s, "h8 touched while c5 must capture");
     board::update(b, 10.0);
     board::press(b, l, drive::at(l, "c5"), 10.0);
     board::press(b, l, drive::at(l, "e3"), 10.0);
     print("capture moving ", b.moving, ", ", rules::fen(b.pos));
     board::fill(b, l, 10.0 + board::HOP + 0.09);
-    view3d::fill(s, b, l, v);
+    view3d::fill(s, b, l, v, 10.0 + board::HOP + 0.09);
     show(s, "c5 takes d4, the taken piece fading");
 
     // A drag: the piece held over the board, lifted higher and grown.
@@ -124,7 +135,7 @@ fn main() {
     board::drag(b, l, to);
     board::fill(b, l, 21.1);
     was = s;
-    view3d::fill(s, b, l, v);
+    view3d::fill(s, b, l, v, 21.1);
     show(s, "c3 dragged over d4");
     print("changes ", view3d::changes(was, s));
     // Only the targets' marks changing: drawn again, no shadow map.

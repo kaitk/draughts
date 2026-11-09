@@ -194,6 +194,13 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   on chosen frames. A run without flags reads and writes the Mac's `game-N.bin`: copy it
   aside first and put it back after. Any run migrates a `settings.txt` from before
   players to `player-1.txt` and renames `game.bin` (2026-11-09).
+- A shot of the app without a window in the user's way (2026-11-09): copy
+  `src/app/draughts.goose` to `src/app/xshot.goose` with its `gfx::open(...)` replaced by
+  `gfx::open_headless(width, height)`, and `draughts.build` to `xshot.build`; build it into
+  `build/xshot` and run it with the usual flags and `--frames N` in a folder of its own
+  (it writes `draughts.png` there and never exits by itself: end it after the shot).
+  Delete both copies after; never commit them. Its sizes are real pixels, so 800 × 1280
+  works. The 3D board was checked that way (task 015).
 - The prototypes' painter (`Paint` in `prototypes/draughts.js`) is a port of the piece
   shader, so a native crop beside the prototype's at the same scale shows a shader
   change exactly (the stacked king was checked that way).

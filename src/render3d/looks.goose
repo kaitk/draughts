@@ -2,7 +2,7 @@
 // parameters per theme, read by one bake and one set of shaders. Colors are sRGB (the
 // shaders take them linear); a surface's color is about how it reads lit from above,
 // tuned against the user's even-lit swatches (agents/design.md).
-namespace theme;
+namespace looks;
 import std;
 import vec;
 

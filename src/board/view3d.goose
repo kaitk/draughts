@@ -356,7 +356,11 @@ fn pick(v: View, b: board::Board&, l: board::Layout, p: float2) -> float2 {
 // world's grid, row * n + column, row 0 the far side: the top, the foot, the radius,
 // and 1 when a piece stands there. `marks` and `flash` are board::fill's, numbered by the
 // world's grid too; `selected` the selected piece's foot and radius (w 0 for none), as
-// the prototype's glow ring takes it; `dim` the board's under a win.
+// the prototype's glow ring takes it; `dim` the board's under a win. `field` is the
+// marks as the renderer's field pass reads them (shaders::MARKS_FRAG), a float4 a square
+// of the world's grid: x the last move's tint (1), y a target's dot (1) or a stop's ring
+// (2), z the must-capture ring's strength at `now` (it pulses every 1.4 s, as the flat
+// board's does), w a wrong move's flash, 0 to 1, or -1.
 let MAX_INSTANCES = 96;     // two for each of board::MAX_PIECES, as a stack takes
 
 struct Scene {
@@ -368,6 +372,7 @@ struct Scene {
     flash:    float4                      = float4 { -1.0, 0.0, 0.0, 0.0 },
     selected: float4                      = float4 { 0.0, 0.0, 0.0, 0.0 },
     dim:      f32                         = 0.0,
+    field:    float4[100]                 = [float4 { 0.0, 0.0, 0.0, -1.0 }; 100],
 }
 
 // A board square's number (y * size + x, as board::Marks numbers it) in the world's grid
@@ -391,12 +396,18 @@ fn mark_world(l: board::Layout, from: u32[4]&, to: u32[4]&) {
 // Fills s for the frame board::fill left in b, on the flat layout l, seen through v.
 // Each 2D piece becomes one instance, or two for a stacked king, at its place, lift,
 // and size as the 2D board animates them: a move along its stops with its hop, a drag,
-// a captured piece fading, a win's lift and growth.
-fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View) {
+// a captured piece fading, a win's lift and growth; the must-capture ring's pulse at
+// `now`.
+fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
     s.view = v;
     s.inst.clear();
     s.state.clear();
-    for i in 100 { s.squares[i] = float4 { 0.0, 0.0, 0.0, 0.0 }; }
+    for i in 100 {
+        s.squares[i] = float4 { 0.0, 0.0, 0.0, 0.0 };
+        s.field[i] = float4 { 0.0, 0.0, 0.0, -1.0 };
+    }
+    // The must-capture ring: brightest still, fading to 0.4 and back while it pulses.
+    let phase = (0.5 - 0.5 * cos(2.0 * PI * now / 1.4)) as f32;
     s.selected = float4 { 0.0, 0.0, 0.0, 0.0 };
     let n = l.n;
     let u = unit(n);
@@ -437,6 +448,9 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View) {
             s.squares[row * n + col] = float4 { top, lift, RADIUS * scale, 1.0 };
         }
         if glow > 0.0 { s.selected = float4 { xz.x, lift, xz.y, RADIUS * scale }; }
+        if p.ring.x > 0.5 && col >= 0 && row >= 0 && col < n && row < n {
+            s.field[row * n + col].z = if p.ring.x > 1.5 { 0.95 } else { 0.95 - 0.55 * phase };
+        }
     }
     mark_world(l, b.marks.last, s.marks.last);
     mark_world(l, b.marks.target, s.marks.target);
@@ -444,6 +458,14 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View) {
     s.flash = b.flash;
     if b.flash.x >= 0.0 { s.flash.x = world_square(l, b.flash.x as i64); }
     s.dim = b.dim;
+    for i in n * n {
+        let w = i / 32;
+        let bit = (1 as u32) << (i % 32);
+        if s.marks.last[w] & bit != 0 { s.field[i].x = 1.0; }
+        if s.marks.target[w] & bit != 0 { s.field[i].y = 1.0; }
+        if s.marks.via[w] & bit != 0 { s.field[i].y = 2.0; }
+    }
+    if s.flash.x >= 0.0 && s.flash.y < 1.0 { s.field[s.flash.x as i64].w = s.flash.y; }
 }
 
 // What a new frame's scene changes against the last one drawn: DRAW when anything the 3D
@@ -472,6 +494,6 @@ fn changes(was: Scene&, now: Scene&) -> i64 {
     var rest = same_view && same_list(was.state, now.state) && same(was.flash, now.flash)
                && same(was.selected, now.selected) && was.dim == now.dim && same_bits(was.marks.last, now.marks.last)
                && same_bits(was.marks.target, now.marks.target) && same_bits(was.marks.via, now.marks.via);
-    for i in 100 { if rest && !same(was.squares[i], now.squares[i]) { rest = false; } }
+    for i in 100 { if rest && (!same(was.squares[i], now.squares[i]) || !same(was.field[i], now.field[i])) { rest = false; } }
     return if rest { 0 } else { DRAW };
 }

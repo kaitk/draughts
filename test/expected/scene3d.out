@@ -3,6 +3,7 @@ c3 selected, the king on h4 a stack: 25 instances
   foot 3.5 0.28999999165534973 0.5 1.0; kind 0.0 0.5 0.0 12.5; state 1.0 0.0 0.0 0.0
   foot -1.5 0.07000000029802322 1.5 1.0499999523162842; kind 0.0 0.0 1.0 14.0; state 1.0 0.0 0.0 1.0
   selected -1.5 0.07000000029802322 1.5 0.46000000834465027; last ; targets 4.1 4.3 ; flash -1.0 1.0 0.0 0.0
+  field 4.1 0.0 1.0 0.0 -1.0; 4.3 0.0 1.0 0.0 -1.0; 
 the same frame again changes 0
 turned: selected 1.5 0.07000000029802322 -1.5 0.46000000834465027, targets 3.4 3.6 
 crowned king: 24 instances, changes 3
@@ -11,18 +12,27 @@ c3 to d4, halfway: 25 instances
   foot 3.5 0.28999999165534973 0.5 1.0; kind 0.0 0.5 0.0 12.5; state 1.0 0.0 0.0 0.0
   foot -1.0 0.10000000149011612 1.0 1.0; kind 0.0 0.0 0.0 23.0; state 1.0 0.0 0.0 0.0
   selected 0.0 0.0 0.0 0.0; last ; targets ; flash -1.0 1.0 0.0 0.0
+  field 
 changes 3
+c3 to d4 played: 25 instances
+  foot 3.5 0.0 0.5 1.0; kind 0.0 0.0 2.0 13.0; state 1.0 0.0 0.0 0.0
+  foot 3.5 0.28999999165534973 0.5 1.0; kind 0.0 0.5 0.0 13.5; state 1.0 0.0 0.0 0.0
+  selected 0.0 0.0 0.0 0.0; last 4.3 5.2 ; targets ; flash -1.0 1.0 0.0 0.0
+  field 4.3 1.0 0.0 0.0 -1.0; 5.2 1.0 0.0 0.0 -1.0; 
 h8 touched while c5 must capture: 3 instances
   foot -1.5 0.0 -0.5 1.0; kind 1.0 0.0 0.0 1.0; state 1.0 1.0 0.0 0.0
   selected 0.0 0.0 0.0 0.0; last ; targets ; flash 7.0 0.17000000178813934 0.0 0.0
+  field 0.7 0.0 0.0 0.0 0.17000000178813934; 3.2 0.0 0.0 0.6100000143051147 -1.0; 
 capture moving true, W:W:Be3,h8
 c5 takes d4, the taken piece fading: 3 instances
   foot -0.5 0.0 0.5 1.0; kind 0.0 0.0 0.0 1.0; state 0.5 0.0 0.0 0.0
   foot 0.5 0.0 1.5 1.0; kind 1.0 0.0 0.0 2.0; state 1.0 0.0 0.0 0.0
   selected 0.0 0.0 0.0 0.0; last ; targets ; flash -1.0 1.0 0.0 0.0
+  field 
 c3 dragged over d4: 2 instances
   foot -0.5 0.10000000149011612 0.5 1.1100000143051147; kind 0.0 0.0 1.0 1.0; state 1.0 0.0 0.0 1.0
   selected -0.5 0.10000000149011612 0.5 0.49000000953674316; last ; targets 4.1 4.3 ; flash -1.0 1.0 0.0 0.0
+  field 4.1 0.0 1.0 0.0 -1.0; 4.3 0.0 1.0 0.0 -1.0; 
 changes 3
 a mark changes 1
 the camera turned changes 1

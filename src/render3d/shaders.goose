@@ -1,4 +1,4 @@
-// The prototype's shaders, GLSL 450 that embed_shader compiles with the program. One
+// The 3D board's shaders, GLSL 450 that embed_shader compiles with the program. One
 // forward pass draws everything lit: the board and the pieces share one fragment shader
 // (GGX after Filament, wrap diffuse, Filament's specular antialiasing, a 4 × 4 grid of
 // hardware-compared shadow taps, analytic occlusion, an ambient of nine spherical
@@ -18,11 +18,12 @@ let FRAME = """
         vec4 light_dir;      // toward the light; w: its intensity
         vec4 light_color;
         vec4 sh[9];          // the photograph's irradiance over pi, rgb
-        vec4 params;         // x: exposure, y: a shadow texel in uv, z: ambient scale
+        vec4 params;         // x: exposure, y: a shadow texel in uv, z: ambient scale,
+                             // w: squares per side (a square is 8 / w)
         vec4 screen;         // xy: the target's size in pixels
         vec4 glow;           // rgb: the theme's glow color, w: its strength
         vec4 selected;       // xyz: the selected piece's foot, w: its radius (0: none)
-        // The theme (theme::Theme), colors linear: the pieces' colors and roughness, their
+        // The theme (looks::Theme), colors linear: the pieces' colors and roughness, their
         // figure, the crown, the frame's rounded edge and its line, the board's light on
         // the pieces' sides, the backdrop's grade and lift color.
         vec4 light_piece;
@@ -187,14 +188,16 @@ let LIT_FRAG = """
     // take), and the frame's short inner wall as a long wall.
     float field_occlusion(vec3 p) {
         float vis = 1.0;
-        ivec2 c = ivec2(floor(p.xz + FIELD));
+        int n = int(params.w + 0.5);
+        float u = 2.0 * FIELD / params.w;
+        ivec2 c = ivec2(floor((p.xz + FIELD) / u));
         for (int dy = -1; dy <= 1; dy++) {
             for (int dx = -1; dx <= 1; dx++) {
                 ivec2 q = c + ivec2(dx, dy);
-                if (q.x < 0 || q.y < 0 || q.x > 7 || q.y > 7) continue;
-                vec4 s = squares[q.y * 8 + q.x];
+                if (q.x < 0 || q.y < 0 || q.x >= n || q.y >= n) continue;
+                vec4 s = squares[q.y * n + q.x];
                 if (s.w < 0.5) continue;
-                float rho = length(p.xz - (vec2(q) - 3.5));
+                float rho = length(p.xz - ((vec2(q) + 0.5) * u - FIELD));
                 float r = s.z;
                 float occ;
                 if (rho > r) {
@@ -529,8 +532,8 @@ let BACKDROP_FRAG = """
     }
     """;
 
-// A quad on a plane: the shadow catcher under the board (draw.x 0) or the selected
-// piece's glow on the field (draw.x 1).
+// A quad on a plane: the shadow catcher under the board (draw.x 0), the selected
+// piece's glow on the field (draw.x 1), or the field's marks over all of it (draw.x 2).
 let QUAD_VERT = """
     layout(set = 1, binding = 1) uniform Draw { vec4 draw; };
     layout(location = 0) out vec3 v_pos;
@@ -538,7 +541,8 @@ let QUAD_VERT = """
         const vec2 corners[6] = vec2[6](vec2(-1, -1), vec2(1, -1), vec2(1, 1),
                                         vec2(-1, -1), vec2(1, 1), vec2(-1, 1));
         vec2 c = corners[gl_VertexIndex];
-        vec3 pos = draw.x > 0.5 ? vec3(selected.x + c.x * selected.w * 2.0, 0.004,
+        vec3 pos = draw.x > 1.5 ? vec3(c.x * FIELD, 0.004, c.y * FIELD)
+                 : draw.x > 0.5 ? vec3(selected.x + c.x * selected.w * 2.0, 0.004,
                                        selected.z + c.y * selected.w * 2.0)
                                 : vec3(c.x * 16.0, BOTTOM, c.y * 16.0);
         v_pos = pos;
@@ -567,28 +571,13 @@ let SHADOW_CATCHER_FRAG = """
     }
     """;
 
-// The selected piece's glow ring on the field, added: a ring a little out from the piece
-// (1.13 of its radius) and a soft halo outside it.
-let GLOW_FRAG = """
-    layout(location = 0) in vec3 v_pos;
-    layout(location = 0) out vec4 result;
-    void main() {
-        float r = length(v_pos.xz - selected.xz);
-        float ring = 1.08 * selected.w;
-        float w = max(fwidth(r), 0.01);
-        float line = exp(-pow((r - ring) / (0.6 * w + 0.012), 2.0));
-        float halo = exp(-max(r - ring, 0.0) / 0.07) * smoothstep(ring - 0.04, ring, r);
-        result = vec4(glow.rgb * glow.w * (0.85 * line + 0.3 * halo), 1.0);
-    }
-    """;
-
 // The board's surfaces, baked once per theme into two targets: albedo and roughness
 // (sRGB), and the normal's x and z. mode.x 0 bakes the plan of the field and its inlay,
 // seen from above; 1 the frame map, its grain along u. mode.y: the wood's model (task
 // 039, board3d's --wood): 0 noise drawn out along the grain, 1 growth rings, 2 growth
 // rings with pores and a fibre relief, 3 the first with thin lines and pores laid over
 // it. size: the target in texels, then in world units. The rest is the theme's
-// (theme::Theme): each surface's color and roughness and its figure.
+// (looks::Theme): each surface's color and roughness and its figure.
 let BAKE_FRAG = """
     layout(location = 0) in vec2 v_uv;
     layout(location = 0) out vec4 out_albedo;
@@ -838,16 +827,18 @@ let BAKE_FRAG = """
             w.height -= line;
             return w;
         }
-        vec2 g = p + FIELD;
-        ivec2 sq = clamp(ivec2(floor(g)), ivec2(0), ivec2(7));
+        // mode.z squares per side (8 or 10), each 8 / mode.z across.
+        float n = mode.z;
+        vec2 g = (p + FIELD) * (n / (2.0 * FIELD));
+        ivec2 sq = clamp(ivec2(floor(g)), ivec2(0), ivec2(int(n) - 1));
         bool dark = ((sq.x + sq.y) & 1) == 1;
-        float seed = float(sq.y * 8 + sq.x) + 1.0;
+        float seed = float(sq.y * int(n) + sq.x) + 1.0;
         vec3 f = vec3(surface.y, 0.0, 0.0);
         Wood w = dark ? wood(p, seed, dark_sq, dark_fig, f, dark_ring)
                       : wood(p, seed, light_sq, light_fig, f, light_ring);
         w.albedo *= 1.0 + surface.x * (h12(vec2(seed, 4.2)) - 0.5);
         vec2 fr = fract(g);
-        float edge = min(min(fr.x, 1.0 - fr.x), min(fr.y, 1.0 - fr.y));
+        float edge = min(min(fr.x, 1.0 - fr.x), min(fr.y, 1.0 - fr.y)) * (2.0 * FIELD / n);
         float seam = 1.0 - smoothstep(0.002, 0.007, edge);
         w.albedo *= 1.0 - surface.z * seam;
         w.rough = mix(w.rough, 0.8, seam);
@@ -925,4 +916,79 @@ let BLUR_FRAG = """
         }
         result = vec4(sum / total, 1.0);
     }
+    """;
+
+// The field's marks, added over it on a quad covering the field (QUAD_VERT, draw.x 2),
+// tested against the depth so pieces hide them: per square of the world's grid
+// (row * n + column, row 0 the far side), x the last move's tint (1), y a legal target's
+// dot (1) or a capture's stop's ring (2), z the must-capture ring's strength (0 to 1,
+// pulsing on the CPU), w a wrong move's flash, 0 to 1 over its two flashes (or -1); and
+// the selected piece's glow ring round Frame.selected, wherever the piece is (a drag).
+// draw.y: squares per side. As the flat board draws them (src/app/draw.goose).
+let MARKS_FRAG = """
+    layout(location = 0) in vec3 v_pos;
+    layout(location = 0) out vec4 result;
+    layout(std430, set = 2, binding = 0) readonly buffer Marks { vec4 marks[]; };
+    layout(set = 3, binding = 1) uniform Draw { vec4 draw; };
+    float line(float d, float w) { return exp(-pow(d / (0.6 * w + 0.008), 2.0)); }
+    void main() {
+        vec3 c = vec3(0.0);
+        // The selected piece's ring, a little out from it, and a soft halo.
+        if (selected.w > 0.0) {
+            float r = length(v_pos.xz - selected.xz);
+            float ring = 1.08 * selected.w;
+            float w = max(fwidth(r), 0.01);
+            float halo = exp(-max(r - ring, 0.0) / 0.07) * smoothstep(ring - 0.04, ring, r);
+            c += glow.rgb * glow.w * (0.85 * line(r - ring, w) + 0.3 * halo);
+        }
+        float n = draw.y;
+        float u = 2.0 * FIELD / n;
+        vec2 g = (v_pos.xz + FIELD) / u;
+        ivec2 q = ivec2(floor(g));
+        // A pixel in squares, from g, which runs on across the squares' edges.
+        float wg = max(length(fwidth(g)) * 0.7, 0.002);
+        if (q.x >= 0 && q.y >= 0 && q.x < int(n) && q.y < int(n)) {
+            vec4 m = marks[q.y * int(n) + q.x];
+            float r = length(fract(g) - 0.5);       // in squares from its middle
+            float w = wg;
+            if (m.x > 0.5) c += glow.rgb * 0.10;
+            if (m.y > 0.5 && m.y < 1.5) {
+                c += glow.rgb * (0.9 * (1.0 - smoothstep(0.15 - w, 0.15 + w, r))
+                                 + 0.35 * exp(-max(r - 0.15, 0.0) / 0.05));
+            }
+            if (m.y > 1.5) c += glow.rgb * 0.9 * line(r - 0.18, w);
+        }
+        // The red rings go a little out from a piece (0.44 of a square), past its square's
+        // edge, so each pixel looks at the squares round it too.
+        vec3 red = vec3(1.0, 0.353, 0.29);
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                ivec2 k = q + ivec2(dx, dy);
+                if (k.x < 0 || k.y < 0 || k.x >= int(n) || k.y >= int(n)) continue;
+                vec4 m = marks[k.y * int(n) + k.x];
+                float r = length(g - (vec2(k) + 0.5));
+                float w = wg;
+                if (m.z > 0.0) {
+                    float rr = 0.52;
+                    c += red * m.z * (0.9 * line(r - rr, w) + 0.35 * exp(-abs(r - rr) / 0.04));
+                }
+                if (m.w >= 0.0 && m.w < 1.0) {
+                    float t = fract(m.w * 2.0);
+                    float op = t < 0.4 ? t / 0.4 : 1.0 - 0.4 * (t - 0.4) / 0.6;
+                    float rr = 0.5 * (0.8 + 0.2 * min(t / 0.4, 1.0));
+                    c += red * op * (0.9 * line(r - rr, w) + 0.25 * (1.0 - smoothstep(rr - w, rr + w, r)));
+                }
+            }
+        }
+        result = vec4(c, 1.0);
+    }
+    """;
+
+// A texture drawn over the whole target as it is: the 3D board's image kept from the
+// last frame that drew it, under the UI.
+let COPY_FRAG = """
+    layout(location = 0) in vec2 v_uv;
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D src;
+    void main() { result = vec4(texelFetch(src, ivec2(gl_FragCoord.xy), 0).rgb, 1.0); }
     """;

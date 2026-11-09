@@ -21,8 +21,8 @@ NoGraphicsAPI's ideas, inside SDL_GPU:
   they kept SDL from a second 64 MiB block after the first rotation, about 70 MB of
   graphics memory on the tablet, before SDL's blocks were sized to their resources
   ([GPU memory](#gpu-memory)).
-- **3D later** reuses the game state and the storage buffer, with a camera and lit meshes
-  in place of the 2D pieces.
+- **The 3D board** reuses the game state and the flat board's draw lists, with a camera
+  and lit meshes in place of the 2D pieces ("Board and pieces").
 
 ## UI layer
 
@@ -711,6 +711,14 @@ frame between home and the game declares about 130 of the 512 quads (home 77, th
   board's order, the bar, the board as wide as the screen less the margins, the play;
   its camera is a constant of its own (`panel::PITCH_PORTRAIT`, 52.5°; a steeper one is
   open with the user).
+  **Drawn** by `src/render3d/` (the prototype's renderer, shared with `poc/3d/`) from
+  `src/app/draw3d.goose`: the shadow map only when the pieces move, one 4× multisampled
+  forward pass (the blurred photograph, the board's shadow, the lit board and pieces, the
+  field's marks added) into a kept image the screen's size, drawn only when the 3D
+  board's scene changed (`view3d::changes`); each drawn frame copies the image under the
+  UI. The marks are the flat board's: the last move tinted, targets' dots, stops' rings,
+  the must-capture ring pulsing, a wrong move's red flash, the selected piece's glow ring.
+  A captured piece shrinks into its square as it fades.
 - **States**, in the theme's glow color: the selected piece lifts by 0.8% of the board
   and grows to 1.05 with a glow ring a little out from it (at 1.13 of the radius); with move hints on, a legal target is a glowing
   dot 30% of a square and a capture's stop on the way is a ring. With hints on mistakes

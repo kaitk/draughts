@@ -41,6 +41,7 @@ import shell from "../shell";
 import ai from "../ai";
 import puzzles from "../puzzles";
 import badges from "../badges";
+import render3d from "../render3d";
 import .text;
 import .think;
 import .draw3d;
@@ -445,9 +446,16 @@ fn main() {
         let drew = dirty || shell::animating(sh, g, now);
         if drew {
             let shown .= shell::fill(sh, now);
-            if sh.raised { draw3d::frame(d3, shown, l, sh.view); }
             widgets::upload(w, g);
-            draw::frame(d, shown, sh.over, l, sh.blur, now, size.x, size.y);
+            if sh.raised {
+                // The 3D board (draw3d.goose), the UI and its pieces drawn over it as on
+                // the flat board.
+                draw3d::frame(d3, shown, l, sh.view, now, size, d.kind);
+                draw::pieces_over(d, sh.over, l, size.x, size.y);
+                draw3d::begin(d3);
+            } else {
+                draw::frame(d, shown, sh.over, l, sh.blur, now, size.x, size.y);
+            }
             widgets::frame(w, g, d.scene, d.colors, size.x, size.y, sh.hole);
             draw::overlay(d, now, sh.hole);
             gfx::end_pass();
@@ -482,7 +490,7 @@ fn main() {
         if frames > 0 && gfx::frame_count() >= frames { break; }
     }
     if frames > 0 { gfx::screenshot("draughts.png"); }
-    if frames > 0 && d3.frames > 0 { print("3D board: ", d3.frames, " frames shown it, ", d3.draws, " would draw it, ", d3.shadows, " its shadow map"); }
+    if frames > 0 && d3.frames > 0 { print("3D board: ", d3.frames, " frames showed it, ", d3.draws, " drew it, ", d3.shadows, " its shadow map"); }
     shell::write_game(sh);
     if sh.quit { draughts_close(); }
 }

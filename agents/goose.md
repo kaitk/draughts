@@ -175,6 +175,14 @@ find out by compiling, so the next session doesn't.
   roughness by the normals' spread (`poc/3d/shaders.goose`). A `textureGrad` whose
   gradients come from another mapping than the one sampled picks the wrong footprint
   (the frame's sides) (2026-11-09).
+- `fwidth` of a value that jumps where a pixel quad straddles a cell's edge (a distance
+  to the cell's middle, or one taken per neighbour in a loop over the cells round it)
+  is huge there and drew bright seams along the 3D field's squares; take the width from
+  a value that runs on across the edges (`fwidth` of the grid coordinate) instead
+  (`src/render3d/shaders.goose`'s MARKS_FRAG, 2026-11-09).
+- A package's files bring their namespaces into every program that imports it, so keep
+  a file's namespace apart from the program's own (untested what a clash does): the 3D
+  renderer's `theme.goose` became `looks.goose` beside the app's `theme` (2026-11-09).
 - GLSL's `smoothstep(a, b, x)` with `a > b` is undefined and on Metal silently does
   nothing useful; write `1.0 - smoothstep(b, a, x)` (2026-11-09).
 - A storage buffer block must hold one runtime-sized array (`vec4 squares[];`), not a

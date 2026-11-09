@@ -66,11 +66,15 @@ the rest. Below, `app/` means `src/app/`, and so on.
 **The rule: only `app/` imports `gfx` or calls SDL or the platform** (2026-11-08). The
 packages hand it flat, fixed-size data and take back the pointer and the time; nothing
 outside `app/` (and `android/`, the build scripts) knows what draws or what it runs on.
+One package is drawing code outside `app/`: `render3d/`, the 3D board's renderer, which
+the app and the 3D prototype (`poc/3d/`) share (task 015, 2026-11-09). It imports gfx,
+and only those two programs import it; no package of the game does.
 The targets this keeps open, each replacing or adding to `app/` alone:
 
-- **The 3D board** (task 015, a prototype soon): drawn in `app/`; what the board needs
-  of it, the camera's tilt eased into the layout and a tap turned into a square by a ray
-  onto the board's plane, stays plain math in `board/`, tested headless.
+- **The 3D board** (task 015): drawn by `render3d/` from `app/`; what the board needs
+  of it, the camera and its fit into the layout, a tap turned into a square by a ray
+  through the perspective, and each frame's instances, stays plain math in `board/`
+  (`view3d`), tested headless.
 - **Other platforms on SDL:** iOS (UIKit, SDL_GPU on Metal), and desktop Windows and
   Linux (SDL_GPU on D3D12 or Vulkan): a build script and shims beside the Android ones
   (storage, locales, the launch cover, closing; iOS hides home's X).
@@ -90,14 +94,16 @@ The targets this keeps open, each replacing or adding to `app/` alone:
 | `src/board/` | The board on screen: the position, the legal moves, and the undo history; where the board goes and which square a point is on; taps and drags; a move's animation; and each frame's draw lists (pieces, the squares' marks, a wrong move's flash); the 3D board's camera, its fit on screen, picking through its perspective, and its instances (`view3d`) |
 | `src/game/` | The game screen: its panels and where they and the board go (`panel::layout`, round the 3D board `panel::corners_in`), the clocks, the computer's turn (asking for a move and playing the answer), the celebration, and the pieces it puts over the UI |
 | `src/shell/` | The screens and which one shows: home and a new game's setup with the board of the game it starts, the game, settings with their preview board, the puzzles to pick from and the puzzle playing ([puzzles.md](puzzles.md#the-screen)); the pieces the screen showing puts over the UI (`Shell.over`, which the app draws); who's playing over home and a player's sheet; the players, their settings files, and their saved games |
+| `src/render3d/` | The 3D board's renderer, shared by the app and `poc/3d/`: its meshes, shaders, themes (`looks`), the surfaces' bake, the photograph's blur and ambient, the shadow map, and the multisampled pass ([rendering.md](rendering.md#board-and-pieces)) |
 | `src/badges/` | The players' animal badges: their SVGs from `assets/badges/` baked at startup into a distance-field atlas |
 | `src/app/` | The program: the main loop, the GPU drawing of the board, the pieces, and the UI's quads, the season's photograph and its blurs, the font atlas, the themes, the computer's worker thread, and its C (storage folder, locales, the clock's wake timer, the JPEG decoder) |
 | `tools/` | Programs for development: perft, the computer's benchmark and matches, a terminal game against it, and the puzzles' checks |
 
 `ai`, `board`, and `puzzles` build on `rules`; `game` on `board`, `gui`, and `strings`; `shell` on
-`game` and `ai`; the app on all of them. What crosses to the renderer is flat and
+`game` and `ai`; `render3d` on nothing of the game's; the app on all of them. What crosses to the renderer is flat and
 fixed-size, laid out as the shaders read it: `board::Piece`, `board::Marks`, the flash,
-`board::Layout`, `gui::Quad`, and `theme::Theme`.
+`board::Layout`, `gui::Quad`, and `theme::Theme`; to the 3D board, `view3d::Scene` and
+`view3d::View`'s matrix.
 
 ### A frame
 

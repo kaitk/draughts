@@ -123,7 +123,10 @@ cd ../.. && scripts/android.py poc/3d/board3d.goose --run       # on the tablet,
 adb shell am start -S -n io.github.kaitk.draughts.board3d/io.github.kaitk.draughts.DraughtsActivity --es args "'--bench 300'"
 ```
 
-It compiles `src/app/background.c` from where it is (`board3d.build`) for the photograph.
+Since phase 2 of the integration (below) the program is a thin one over the renderer the
+app shares, `src/render3d/` (meshes, shaders, themes as `looks`, the bake, the shadow map,
+the pass); it keeps the camera, the input, the fixed position, and the bench. It compiles
+`src/app/background.c` from where it is (`board3d.build`) for the photograph.
 
 - **Frames:** the shadow map (2048², 16-bit, the board and pieces from the key light) only
   when the position changes; then one forward pass into a 4× multisampled RGBA8 target
@@ -167,7 +170,7 @@ It compiles `src/app/background.c` from where it is (`board3d.build`) for the ph
   the inner wall: at the corners the grain fanned into arcs and broke at the side
   switch, the artefacts on the right front corner. Autumn is mitred (the reference reads
   like mitred cherry), winter one block of stone.
-- **Themes** are data (`poc/3d/theme.goose`): a flat struct of colors, roughness, figure,
+- **Themes** are data (`src/render3d/looks.goose`, first `poc/3d/theme.goose`): a flat struct of colors, roughness, figure,
   the frame's construction and edge, the key light, the pieces' bounce, the ambient and
   the backdrop's grade, read by the one bake and shaders. `--theme autumn|winter`; T, or
   a press held 0.6 s within 12 pixels for touch (gfx has no multi-touch events), switches:
@@ -373,25 +376,61 @@ proposal.
 - **Wiring:** `settings::raised` (the Board row's 3D with `--3d`; the 3D tile now takes
   the tap) makes the game screen use `corners_in` and `view3d::pick`
   (`shell::game_layout`, `game::frame`); kings' auto is a stack there
-  (`settings::raised_king_look`). `--3d --board 3d` plays a run on it. In the app
-  `src/app/draw3d.goose` is the stub: it fills the scene each drawn frame and keeps the
-  dirty flags, and the flat board is drawn in the flat square, so in phase 1 taps go
-  through a perspective that isn't drawn yet. `test/game/corners` plays c3–d4 by
-  projected taps and drags f6 to e5 through the shell. `--3d` and `show_board_row` stay.
+  (`settings::raised_king_look`). `--3d --board 3d` plays a run on it. In phase 1
+  `src/app/draw3d.goose` was a stub drawing the flat board in the flat square.
+  `test/game/corners` plays c3–d4 by projected taps and drags f6 to e5 through the
+  shell. `--3d` and `show_board_row` stay.
 - **Draw on demand:** `view3d::changes` against the last scene drawn: DRAW when anything
   the 3D board shows differs (view, instances, state, marks, flash, occlusion, dim),
   SHADOW too when the instances do (a piece moved, lifted, appeared or went). The app
   draws only on change already; the 3D pass is the expensive part of a frame (about 11 ms
   on the tablet), so a frame that changes only the UI (a clock's second, a pressed tile)
-  should not draw it: phase 2 keeps the board's image in a target and draws the UI over
-  it when DRAW is clear.
+  should not draw it (phase 2 below).
 
-### Phase 2: the renderer in the app
+### Phase 2: the renderer in the app (2026-11-09)
 
-Moves `poc/3d`'s meshes, shaders, themes, bake, shadow map, and the MSAA pass into a
-package the app and the prototype share, the prototype a thin program over it; draws
-the real board in the game behind `--3d`: selection, targets, moves animated, the
-must-capture ring.
+- **`src/render3d/`**, a package the app and the prototype share: `mesh.goose`,
+  `shaders.goose`, and `looks.goose` (the prototype's `theme.goose`, renamed so its
+  namespace doesn't meet the app's `theme`) moved from `poc/3d/` as they were;
+  `render3d.goose` holds what `board3d.goose` did: setup, a theme applied (the bake, the
+  photograph and its harmonics, the frame's block), the pieces placed, the shadow map
+  and the forward pass drawn into gfx's screen or a kept image. It is the one package
+  besides `app/` that imports gfx (docs/architecture/README.md). `poc/3d/board3d.goose` is
+  now its camera, input, position, and bench over it; its default frame is the same as
+  before the move but for 30 pixels of the selection's ring (headless shot against
+  `b4024b5`'s, `magick compare`), now drawn by the field's marks pass.
+- **Any board size:** the field is 8 world units across on 10 × 10 too; the bake's plan
+  takes the squares per side (`Bake.mode.z`), the field's occlusion too
+  (`Frame.params.w`), so 10 × 10 is the same board with smaller squares and pieces.
+- **The field's marks**, as the flat board draws them, in one additive pass over a quad
+  covering the field, after the lit meshes and tested against their depth, from a
+  storage buffer a float4 a square (`view3d::Scene.field`, filled with the scene): the
+  last move's squares tinted, a target's dot, a stop's ring, the must-capture ring
+  (pulsing every 1.4 s, its strength worked out on the CPU so the scene changes while it
+  pulses), and a wrong move's red flash twice; the selected piece's glow ring round it,
+  wherever it is. The red rings sit at 0.52 of a square, out from the 0.44 piece, so each
+  pixel looks at the squares round it; their width comes from the grid's own derivative,
+  not the ring's distance, which jumps at the squares' edges and drew bright seams there.
+  The prototype's GLOW_FRAG gave way to it.
+- **In the game** (`src/app/draw3d.goose`): set up the first time the 3D board shows,
+  its look from the app's theme (stone the winter stone, the rest autumn wood for now)
+  and the photograph the theme's own, baked again on a theme or board size change. Each
+  drawn frame fills the scene; when `view3d::changes` says so, or the size or theme
+  changed, the pieces are placed (a captured piece fading shrinks into its square, the
+  pass being opaque) and the board drawn into the kept image, the shadow map only when
+  the pieces moved; then the screen's pass copies the image and the UI and its pieces
+  are drawn over it as on the flat board (`draw::pieces_over`). A frame that changes only
+  the UI costs the copy. A `--frames` run of the app prints how many frames showed the
+  3D board, drew it, and drew the shadow map: a selection and its targets at rest drew it
+  once in 200 frames.
+- **Checked** headless on the Mac (a local copy of the app opening `gfx::open_headless`,
+  never committed; `agents/testing.md`): the selection and targets at 1280 × 800, a
+  must-capture ring and a wrong tap's flash, 10 × 10 in winter stone and in portrait at
+  800 × 1280, round the corners panels. Not on the tablet yet.
+- **Memory** behind `--3d`: the renderer's targets come on top of the flat board's, made
+  once (the four 2048² baked surfaces with mips, about 85 MB, the 2048² shadow map, the
+  4× target and its depth, and the kept image the screen's size), and the photograph is
+  decoded a second time for its blur and harmonics. To measure on the tablet.
 
 ### Open
 
@@ -399,7 +438,12 @@ must-capture ring.
 - The rule that only `app/` imports `gfx`: the shared renderer is a package that does.
 - The win's card is placed on the flat square, not the 3D bounds; the drag threshold is
   measured on the flat layout, near the screen's pixels in the board's middle only.
-- Home and the transitions still show the flat board.
+- Home, settings' preview, puzzles, and the transitions into and out of the game still
+  show the flat board; a transition switches between the two boards at its ends.
+- Not drawn in 3D yet: the win (the dim, the lit squares, the winning piece's lift are
+  in the scene, not in the shaders), a hint's glow ring, the ghost of a piece slid back
+  (it shrinks as a captured piece does).
+- The seasons without a 3D look (spring's birch, summer's sunset) take the autumn wood.
 
 ## Later, only if the floating board falls short
 
@@ -440,9 +484,11 @@ must-capture ring.
 
 ## When 3D lands
 
-Still needed after phase 2: the 3D board on home and settings' preview (or a decision
-that they stay flat), the transitions with it, puzzles on it, the card placed on the 3D
-bounds, the winter theme from the season, the measures on the tablet. Then show settings'
+Still needed after phase 2: the open points above (home, settings' preview, puzzles,
+and the transitions with the 3D board, or a decision that they stay flat; the win in 3D;
+looks for spring and summer; the card on the 3D bounds), the tablet's frame times and
+memory with the game on the 3D board, and draw-on-demand checked there with
+`scripts/idle_cpu.sh`. Then show settings'
 Board row again: remove `Settings.show_board_row` (`src/shell/settings.goose`)
 and the `--3d` flag (`src/app/draughts.goose`, `docs/development.md`), make the board follow
 `Settings.board`, and update `docs/architecture/rendering.md`' Settings paragraph and

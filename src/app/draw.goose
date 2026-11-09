@@ -462,6 +462,18 @@ fn new(kind: i64) -> Drawer {
     return d;
 }
 
+// Copies the pieces in `over` for overlay() to draw over the UI: frame() does, and the
+// 3D board's frame (draw3d.goose), which draws the board itself.
+fn pieces_over(d: Drawer&, over: const board::Piece[:], l: board::Layout, width: f32, height: f32) {
+    d.over_count = min(over.len, panel::OVER);
+    for i in d.over_count { d.over_upload[i] = over[i]; }
+    if d.over_count > 0 { gfx::update_buffer(d.overlay, bytes_of(d.over_upload)); }
+    // The disc's side is 0.55% of the board deep, whatever a piece's size; the same for
+    // the pieces over the UI where no board shows (a setup on a short phone).
+    let across = if l.inner.w > 0.0 { l.board.z / l.inner.w } else { l.n / 0.978 };
+    d.view = View { screen: float4 { width, height, 0.0055 * across / 0.39, 0.0 } };
+}
+
 // Draws one frame of the board as fill() left it, into the screen's pass, which it
 // leaves open for the UI; the caller ends it. The pieces in `over` are copied now and
 // drawn by overlay(), after the UI. `blur` 0 shows the photograph as it is (home,
@@ -471,13 +483,7 @@ fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::La
     let t = d.colors;
     for i in b.pieces.len { d.upload[i] = b.pieces[i]; }
     gfx::update_buffer(d.pieces, bytes_of(d.upload));
-    d.over_count = min(over.len, panel::OVER);
-    for i in d.over_count { d.over_upload[i] = over[i]; }
-    if d.over_count > 0 { gfx::update_buffer(d.overlay, bytes_of(d.over_upload)); }
-    // The disc's side is 0.55% of the board deep, whatever a piece's size; the same for
-    // the pieces over the UI where no board shows (a setup on a short phone).
-    let across = if l.inner.w > 0.0 { l.board.z / l.inner.w } else { l.n / 0.978 };
-    d.view = View { screen: float4 { width, height, 0.0055 * across / 0.39, 0.0 } };
+    pieces_over(d, over, l, width, height);
     // No depth target: nothing tests depth, and asking for the screen's would make gfx
     // keep a window-sized one (patches/goose_gfx/0003).
     gfx::begin_pass(gfx::screen(), gfx::Texture { 0 }, t.page);
