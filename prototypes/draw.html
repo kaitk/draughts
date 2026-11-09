@@ -22,9 +22,21 @@
           stay in the panel, as "White wins" does. The countdown is dots round the turn
           piece's ring, the words under it.
 
+     Take a is built. With clocks on there is no whose-turn to go under, and two panels
+     have no spare height: a portrait game panel (clocks 72 + 12 + undo 88 fill it) and
+     the 3D board's corner panel on a tablet (26 dp left). Three takes for those two:
+
+       fit a: the whole line. In portrait undo gives up half its width and the line
+          stands beside it; in the corner undo takes the shorter tile (96 dp) and the
+          line goes under the clocks.
+       fit b: a short form between the clocks, "Draw in 3" or "Repeat 2/3": in portrait
+          a small column that narrows both clocks a little; in the corner one line, undo 12 dp shorter (120).
+       fit c: the dots alone between the clocks, a column in the gap in portrait, a row
+          in the corner. No words.
+
      ?take=a|b|c, &state=draw|count, &reason=repeat|kings|endgame, &n=1..5 (the count's
      moves left), &lang=et, &t= seconds to hold one moment of the ending (a click plays it
-     again). */
+     again), &clocks=on with &fit=a|b|c, &view=3d for the corner panels in landscape. */
   main { position: fixed; inset: 0; }
 
   .game { --gap: 24px; --side: 232px; --b: min(100vh - 2 * var(--gap), 100vw - 2 * var(--side) - 4 * var(--gap));
@@ -88,6 +100,46 @@
     box-shadow: 0 0 calc(1.2 * var(--u)) color-mix(in srgb, var(--glow) 70%, transparent); }
   .ringed .pips i.out { background: color-mix(in srgb, var(--page) 70%, transparent); box-shadow: inset 0 0 0 calc(0.3 * var(--u)) rgb(255 255 255 / 0.35); }
 
+  /* The clocks, as game.html's. */
+  .clocks { display: grid; gap: 10px; }
+  .clock { display: flex; align-items: center; gap: 16px; min-height: 72px; padding: 0 14px; border-radius: 20px;
+    font-size: 36px; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; color: var(--fg-dim);
+    background: rgb(255 255 255 / 0.06); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12); }
+  .clock .piece { --u: 4px; position: relative; inset: auto; flex: none; width: 44px; height: 44px; opacity: 0.7; }
+  .clock .time { margin-left: auto; }
+  .clock.run { color: var(--fg); background: color-mix(in srgb, var(--glow) 18%, transparent); box-shadow: inset 0 0 0 2px var(--glow); }
+  .clock.run .piece { opacity: 1; box-shadow: 0 0 0 3px color-mix(in srgb, var(--glow) 80%, transparent),
+    0 0 18px 3px color-mix(in srgb, var(--glow) 45%, transparent); }
+  .note.small { font-size: 17px; }
+
+  /* The raised board in landscape, as back.html's: short panels in the top corners. */
+  .corners .game { display: block; position: relative; }
+  .corners .game > .out { position: absolute; left: 24px; top: 24px; height: 352px; }
+  .corners .play { position: absolute; right: 24px; top: 24px; height: 352px; }
+  .corners #board { position: absolute; left: 50%; bottom: 40px; width: 700px; margin-left: -350px; }
+  .corners .play { gap: 0; }
+  .corners .play .note { margin-top: 10px; }
+  .corners .row.big { min-height: 132px; }
+  .corners .row.big.short { min-height: 96px; }
+  .corners .row.big.short svg { width: 36px; height: 36px; }
+  .corners .row.big.trim { min-height: 120px; }
+
+  /* fit a: the line beside undo in portrait. */
+  .beside { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: center; }
+  .beside .note { text-align: center; }
+  /* fit b and c: what goes between the clocks. */
+  .mid { display: flex; align-items: center; justify-content: center; white-space: nowrap; color: var(--fg); }
+  .mid.stack { flex-direction: column; gap: 0; line-height: 1.1; }
+  .mid.stack small { font-size: 17px; }
+  .mid.stack b { font-weight: 400; font-size: 30px; font-variant-numeric: tabular-nums; }
+  .mid.one { height: 26px; font-size: 17px; }
+  .clocks.with-mid.one-line { gap: 5px; }
+  .clocks .dots { display: flex; align-self: center; }
+  .dots i { order: 0; }
+  .dots.col { flex-direction: column; gap: 5px; }
+  .dots.col i { width: 10px; height: 10px; }
+  .clocks.with-dots { gap: 11px; }
+
   /* The ending: the board's dim (a black fill natively the board pass's, as the win's),
      and the card over the board. --fit shrinks it with a board under 720 dp, as the
      win's card does. */
@@ -137,6 +189,9 @@
     .ending h2 { font-size: 28px; }
     .ending p { font-size: 18px; }
     .pairs-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .clocks { grid-template-columns: 1fr 1fr; gap: 16px; }
+    .clocks.with-mid { grid-template-columns: 1fr auto 1fr; gap: 12px; }
+    .clocks.with-dots { grid-template-columns: 1fr auto 1fr; gap: 8px; }
   }
   /* A phone in portrait: the bar's tiles each an icon over its word, as built. */
   .phone .out .row, .phone .out .back { flex-direction: column; justify-content: center; gap: 2px; min-height: 96px;
@@ -150,6 +205,7 @@
   .phone .note { font-size: 17px; }
   .phone .play-row { gap: 10px; }
   .phone .play-row .turn { gap: 12px; }
+  .phone .clock { gap: 8px; }
   .phone .row.big { font-size: 22px; padding: 0 8px; gap: 8px; }
   .phone .row.big svg { width: 30px; height: 30px; }
   .phone .pairs-row .row.big { flex-direction: column; gap: 2px; font-size: 20px; }
@@ -170,6 +226,8 @@
   const lang = pick('lang', ['en', 'et']);
   const n = Math.max(1, Math.min(5, +(params.get('n') || (reason === 'repeat' ? 2 : 5)) || 5));
   const hold = params.has('t') ? +params.get('t') : null;
+  const clocked = params.get('clocks') === 'on';
+  const fit = pick('fit', ['a', 'b', 'c']);
 
   // The proposed strings (task 049). KINGS is the variant's kings-only count: 25 in
   // International (6.2), 15 in Brazilian, 15 or 25 by pieces in Russian.
@@ -180,13 +238,13 @@
       why: { repeat: 'Same position three times', kings: `${KINGS} moves by kings only`, endgame: 'The lone king held out' },
       soon: (k) => (k === 1 ? 'Draw in 1 move' : `Draw in ${k} moves`),
       win: (k) => (k === 1 ? 'White must win in 1 move' : `White must win in ${k} moves`),
-      twice: 'Same position twice', third: 'A third time is a draw' },
+      twice: 'Same position twice', third: 'A third time is a draw', drawin: 'Draw in', repeated: 'Repeat' },
     et: { back: 'Tagasi', settings: 'Seaded', restart: 'Alusta uuesti', undo: 'Võta käik tagasi', again: 'Mängi uuesti',
       turn: 'Valgete käik', draw: 'Viik',
       why: { repeat: 'Sama seis kolm korda', kings: `${KINGS} käiku ainult tammidega`, endgame: 'Üksik tamm pidas vastu' },
       soon: (k) => (k === 1 ? 'Viigini 1 käik' : `Viigini ${k} käiku`),
       win: (k) => `Valged peavad võitma ${k} käiguga`,
-      twice: 'Sama seis teist korda', third: 'Kolmas kord on viik' },
+      twice: 'Sama seis teist korda', third: 'Kolmas kord on viik', drawin: 'Viigini', repeated: 'Kordus' },
   }[lang];
   document.documentElement.lang = lang;
 
@@ -203,6 +261,8 @@
   document.body.classList.toggle('phone', phone);
   document.body.classList.add(`take-${take}`);
   const icon = Draughts.icon;
+  const corners = Draughts.settings.view === '3d' && landscape;
+  document.body.classList.toggle('corners', corners);
   Draughts.ICONS.repeat = '<path d="M17 2.5 20.5 6 17 9.5"/><path d="M3.5 11.5V10a4 4 0 0 1 4-4h13"/><path d="M7 21.5 3.5 18 7 14.5"/><path d="M20.5 12.5V14a4 4 0 0 1-4 4h-13"/>';
   Draughts.init();
 
@@ -220,8 +280,33 @@
   const dots = () => `<div class="dots">${Array.from({ length: count.of }, (_, i) => `<i class="${i < count.lit ? '' : 'out'}"></i>`).join('')}</div>`;
   const noteHTML = () => `<div class="note"><b>${count.line}</b>${count.more ? `<br>${count.more}` : ''}</div>`;
 
+  // The play panel with clocks: as built where the line fits (landscape round the flat
+  // board), else by `fit`, only while counting.
+  const clockOf = (side, t, run) => `<div class="clock ${run ? 'run' : ''}">${piece(side)}<span class="time">${t}</span></div>`;
+  function clockedPlay() {
+    const undo = (cls = '') => row('undo', S.undo, `big ${cls}`);
+    const a = clockOf('black', '3:12', false), b = clockOf('white', '4:37', true);
+    const plain = `<div class="clocks">${a}${b}</div>`;
+    if (state !== 'count') return `${plain}<div class="space"></div>${undo()}`;
+    const short = reason === 'repeat' ? [S.repeated, '2/3'] : [S.drawin, n];
+    const words = (cls = '') => `<div class="note ${cls}"><b>${count.line}</b>${count.more ? `<br>${count.more}` : ''}</div>`;
+    if (landscape && !corners) return `${plain}${dots()}<div style="text-align:center">${words()}</div><div class="space"></div>${undo()}`;
+    if (fit === 'a') {
+      if (landscape) return `${plain}<div style="text-align:center">${words('small')}</div><div class="space"></div>${undo('short')}`;
+      return `${plain}<div class="beside">${words(phone ? 'small' : '')}${undo()}</div>`;
+    }
+    if (fit === 'b') {
+      const mid = landscape ? `<div class="mid one">${short[0]} ${short[1]}</div>`
+        : `<div class="mid stack"><small>${short[0]}</small><b>${short[1]}</b></div>`;
+      return `<div class="clocks with-mid ${landscape ? 'one-line' : ''}">${a}${mid}${b}</div><div class="space"></div>${undo('trim')}`;
+    }
+    const d = dots().replace('class="dots"', `class="dots ${landscape ? '' : 'col'}"`);
+    return `<div class="clocks with-dots">${a}${d}${b}</div><div class="space"></div>${undo('trim')}`;
+  }
+
   // The play panel while the game goes on, with the countdown by take.
   function playing() {
+    if (clocked) return clockedPlay();
     const words = `<div class="words"><span>${S.turn}</span>${take !== 'b' && state === 'count' && !landscape ? noteHTML() : ''}</div>`;
     let turnPiece = piece('white', 'on');
     if (take === 'c' && state === 'count') {
@@ -352,7 +437,7 @@
     `<option${v === current ? ' selected' : ''}>${v}</option>`).join('')}</select>`;
   bar.insertAdjacentHTML('afterbegin', sel('take', ['a', 'b', 'c'], take) + sel('state', ['draw', 'count'], state) +
     sel('reason', ['repeat', 'kings', 'endgame'], reason) + sel('n', ['1', '2', '3', '4', '5'], String(n)) +
-    sel('lang', ['en', 'et'], lang));
+    sel('lang', ['en', 'et'], lang) + sel('clocks', ['off', 'on'], clocked ? 'on' : 'off') + sel('fit', ['a', 'b', 'c'], fit));
   bar.querySelectorAll('select[data-k]').forEach((s) => s.onchange = (e) => {
     e.stopPropagation();
     params.set(s.dataset.k, s.value);
