@@ -129,3 +129,8 @@ and the commit that last has it.
   the Game/Look tabs sit on glass as Back does; in portrait the shown group is its own
   height and the board takes the rest (the user, 2026-11-09).
   `051-polish/`, `5066f4f`
+- 053: Mistakes where the position is tense. Done: each of the child's captures after the
+  computer's move is overlooked by its own seeded chance, more for more pieces and further
+  from the moved piece, a tenth as often where no capture was around; easy's quiet hangs
+  fell to a fifth, its tense ones rose, its strength stayed, medium misses only captures
+  of three pieces or more (the user, 2026-11-09). `053-mistakes-by-tension.md`, `6a3f742`
