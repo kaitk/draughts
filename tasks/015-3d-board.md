@@ -104,18 +104,20 @@ look good, not merely work.
 
 ## Prototype
 
-`poc/3d/` (2026-11-09), a first step and a second look pass: the autumn and winter
-boards and the 3D reference's position (one light king as a stack of two discs with the crown debossed on the upper, one light
-piece selected), with the pipeline the method comparisons will hang off.
+`poc/3d/` (2026-11-09), a first step and three look passes: the autumn and winter
+boards and the 3D reference's position (one light king, one light piece selected), with
+the pipeline the method comparisons will hang off. The app will show a king one way or
+the other, never both (the user, 2026-11-09): a plain stack of two discs, the default,
+or one disc with the crown debossed in its recess; `--king stack|crown` and K switch.
 
 ```sh
 cd poc/3d
 ../../build/goose-v2026.4-macos-arm64/goose build -o ../../build/board3d board3d.goose
 ../../build/board3d                                 # a drag turns; Tab or a double click switches mode; R resets
-../../build/board3d --theme winter                  # T or a long press switches the theme
+../../build/board3d --theme winter --king crown     # T or a long press switches the theme, K the king
 ../../build/board3d --shot out.png --size 1920x1200 [--yaw 20 --pitch 40]   # one frame, headless
 ../../build/board3d --bench 1000 --size 1920x1200   # frame timing, headless
-../../build/board3d --frames 200                    # the window's loop hidden, a drag, T and a long press injected
+../../build/board3d --frames 200                    # the window's loop hidden, a drag, T, K and a long press injected
 ../../build/board3d --bench 300 --samples 1 --shadow-every   # 1× MSAA, the shadow map every frame
 cd ../.. && scripts/android.py poc/3d/board3d.goose --run       # on the tablet, beside the game (its own id)
 adb shell am start -S -n io.github.kaitk.draughts.board3d/io.github.kaitk.draughts.DraughtsActivity --es args "'--bench 300'"
@@ -130,19 +132,31 @@ It compiles `src/app/background.c` from where it is (`board3d.build`) for the ph
   outline), the board and the pieces lit, the selection's glow ring added. No post pass,
   no discard, nothing temporal. Drawn only when the camera or the window changes.
 - **Geometry**, built once at startup: a piece is a profile turned on a lathe (72 steps:
-  a top sampled from one smooth height function, a recessed inner disc, a soft cove at
-  60 to 67% of the radius rising to a low crest at 70%, a flat ring, the edge rounded
-  from 86%, the side, a round at the foot); the frame is a profile swept round the field
-  (an inner wall, the top, a bullnose of 0.09 squares, the side down to 0.7 under the
-  field). Pieces are 88% of a square across and 27% of their diameter high, measured on
-  the 3D reference at the same framing (the 2D board's are 78%). The pieces are one
-  instanced draw from a storage buffer.
+  a top sampled from one smooth height function, as the reference's pieces: a flat band
+  from where the edge rounds at 89% of the radius in to 69%, one step down of 0.02,
+  crisper at its top with a narrow cove at its foot, which gives the reference's dark
+  and light lines round the inner disc, the flat inner disc inside 63%; the side, a
+  round at the foot); the frame is a profile swept round the field (an inner wall, the
+  top, a bullnose of 0.09 squares, the side down to 0.7 under the field). Pieces are 88%
+  of a square across and 33% of their diameter high, their side as tall as the
+  reference's at the same framing (column profiles through a near piece: 21 pixels
+  against 22; the 2D board's are 78% across). The pieces are one instanced draw from a
+  storage buffer.
+- **The crown** (`--king crown`): a polygon of eleven points and three balls traced from
+  the reference's king, in units of the radius, 1.06 across and 0.86 tall, centred in
+  the recess, filled with the crown's color, its walls sloping in, a thin lighter lip
+  round it. Its distance's derivatives are taken over the whole top: a branch on the
+  radius left specks where a pixel quad straddled it.
 - **Surfaces**, baked on the GPU into albedo-and-roughness (sRGB) and normal textures
   with mips, at startup and again on a theme change: a plan of the field (2048², the
   light and dark squares each its own stretch of grain and tone, seams, the dark inlay)
   and a frame map (2048² over 10.4 world units). Grain is noise drawn out along it, no
-  sines; stone is the same noise round (a mottling, no veins). The pieces' figure is
-  noise in the shader, not baked.
+  sines; the autumn frame adds open pores (dense fine dashes along the grain) and thin
+  dark late-wood lines near the screen's pixel at the default view, roughest in them,
+  with stronger relief, so it no longer reads like modelling clay; finer pores than
+  that vanish in the mips. Stone is the same noise round, a calm clouding with a few
+  faint veins (lighter in dark stone, darker in pale), its roughness following them.
+  The pieces' figure is noise in the shader, not baked.
 - **The frame's two constructions**, per theme (the user, 2026-11-09): mitred, four
   pieces glued at 45°, each with the grain along its side and its own band of the map,
   a thin joint on each diagonal through the top, the edge and the side; or one solid
@@ -178,6 +192,20 @@ It compiles `src/app/background.c` from where it is (`board3d.build`) for the ph
   and less saturated; less ambient against the key for more contrast; a soft vignette
   on the backdrop so the board stands out, under the lift low down. The board's contrast
   is still under the reference's (a luma spread of 45 against 60).
+- **The third pass** (the user's notes, 2026-11-09): the pieces' profile and the crown
+  above; the autumn frame rougher (0.7, its pores and lines rougher still), its rounded
+  edge polished smoother (0.3 less), so the sheen gathers on the right edge's curve, not
+  over the flat top, its color kept at the reference's (front top 165, 85, 37 against
+  172, 88, 32); the key light from the upper left and further behind (z -0.4, winter
+  -0.55), as the reference's shadows fall, which also lights the step's far wall as
+  there; less of the board's bounce on the light pieces' sides. Winter's stone is
+  honed and softly polished (roughness 0.32 to 0.45), its dark squares and dark pieces
+  darker than the reference's, toward the 2D board's (the dark pieces' faces 55, 61,
+  80 against the reference's 71, 79, 92 and the 2D #2b3440; the dark squares about 60,
+  70, 88 against 64, 81, 102), autumn's dark pieces darker and less orange (98, 56, 28
+  on the face); the pale line on winter's frame edge left out after a side by side, the
+  steel-blue round kept. Cost unchanged: 4.9 to 5.7 ms a frame against 4.8 to 5.7
+  before, interleaved, the same measure as below (the GPU's clocks make it noisy).
 - **Camera:** 52.5° down, a 31° field of view, 14.75 away, fitted to the reference's
   field corners, so the board fills the height of the frame as there.
 - **Tuned** against the references with patch means at the same framing (`--size
