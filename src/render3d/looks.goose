@@ -140,3 +140,72 @@ fn winter() -> Theme {
         build:         float4 { 1.0, 0.0, 1.0, 0.0 },
     };
 }
+
+// The wood's finish, per model of the wood (render3d::WOOD_MODEL..): what the prototype's
+// tuning panel (P) sets, baked into the wood's surfaces only, never the stone. Neutral
+// is varnish 0, sanding 0, grain 1, rings 1, warmth 0: the bake as the model has it.
+struct Finish {
+    varnish: f32,   // 0..1: the roughness lower (×0.55 at 1), the pores a little filled
+    sanding: f32,   // 0..1: the grain's and the pores' relief shallower (×0.3 at 1)
+    grain:   f32,   // the figure's contrast round the base color, 1 as baked
+    rings:   f32,   // the rings' and the grain's spacing across, 1 as baked
+    warmth:  f32,   // -1..1: the color toward grey-yellow (-) or red-orange (+)
+}
+
+let PLAIN = Finish { varnish: 0.0, sanding: 0.0, grain: 1.0, rings: 1.0, warmth: 0.0 };
+
+// "The same wood, very slightly more varnish and sanded a tiny bit more" (the user,
+// 2026-11-09), on the two woods kept for the game.
+let VARNISHED = Finish { varnish: 0.2, sanding: 0.15, grain: 1.0, rings: 1.0, warmth: 0.0 };
+
+fn finish(wood: i64) -> Finish {
+    if wood == 2 || wood == 3 { return VARNISHED; }
+    return PLAIN;
+}
+
+// The winter frame's marble (task 039), one solid block, its figure running one way:
+// 0 the slate as before (Theme.frame and its clouding), the others polished marbles.
+let MARBLES = 5;
+let MARBLE = 0;
+
+struct Marble {
+    base: float4,   // the stone (sRGB), w: its clouding
+    vein: float4,   // the veins (sRGB), w: how much the thin threads go toward white
+    // x: the main veins' width (world units, a square is 1), y: their softness (0 crisp,
+    // 1 cloudy bands), z: the network of fine cracks between them, w: thin wavy threads
+    form:   float4,
+    veins:  f32,    // the veins' contrast, 1 as made
+    wave:   f32,    // how far the flow is warped: 0 straight, 1 as made, 2 very wavy
+    polish: f32,    // 0 honed (roughness 0.5) to 1 polished (0.06)
+    tint:   f32,    // 0..1: the colors toward the board's steel blue, their lightness kept
+}
+
+fn marble(which: i64) -> Marble {
+    // Nero Marquina: black with crisp white veins and a fine network of cracks.
+    if which == 1 {
+        return Marble { base: float4 { 0.075, 0.075, 0.08, 0.25 }, vein: float4 { 0.88, 0.88, 0.86, 0.6 },
+                        form: float4 { 0.012, 0.15, 0.8, 0.15 },
+                        veins: 1.0, wave: 1.0, polish: 0.8, tint: 0.0 };
+    }
+    // Dark grey with soft, wavy, cloudy veining.
+    if which == 2 {
+        return Marble { base: float4 { 0.2, 0.205, 0.215, 0.5 }, vein: float4 { 0.46, 0.47, 0.48, 0.3 },
+                        form: float4 { 0.04, 1.0, 0.3, 0.0 },
+                        veins: 1.0, wave: 1.3, polish: 0.6, tint: 0.0 };
+    }
+    // Blue-black with steel-blue veins, the board's palette.
+    if which == 3 {
+        return Marble { base: float4 { 0.075, 0.09, 0.12, 0.3 }, vein: float4 { 0.45, 0.55, 0.67, 0.5 },
+                        form: float4 { 0.016, 0.45, 0.5, 0.25 },
+                        veins: 1.0, wave: 1.0, polish: 0.75, tint: 0.0 };
+    }
+    // Black with bundles of thin wavy white threads flowing one way, as in flow-banded
+    // black marbles (Nero Ondulato, Port Laurent's threads without the gold).
+    if which == 4 {
+        return Marble { base: float4 { 0.08, 0.085, 0.095, 0.3 }, vein: float4 { 0.78, 0.8, 0.82, 0.7 },
+                        form: float4 { 0.008, 0.25, 0.2, 1.0 },
+                        veins: 1.0, wave: 1.2, polish: 0.8, tint: 0.0 };
+    }
+    return Marble { base: float4_0, vein: float4_0, form: float4_0, veins: 1.0, wave: 1.0, polish: 0.5,
+                    tint: 0.0 };
+}

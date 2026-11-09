@@ -185,6 +185,13 @@ find out by compiling, so the next session doesn't.
   renderer's `theme.goose` became `looks.goose` beside the app's `theme` (2026-11-09).
 - GLSL's `smoothstep(a, b, x)` with `a > b` is undefined and on Metal silently does
   nothing useful; write `1.0 - smoothstep(b, a, x)` (2026-11-09).
+- A GLSL name that is a Metal keyword fails only when the pipeline is made on the Mac,
+  with "expected unqualified-id" from the MTLLibrary: `thread` (also `device`,
+  `constant`, `kernel`); `vec3 thread = ...` in the marble's bake did (2026-11-09).
+- gfx ui's slider (Nuklear's) drags only from its knob, which stands at the value; a
+  press on the track elsewhere only steps it. Injected input for a `--frames` check
+  grabs the knob (`poc/3d/board3d.goose --frames N --panel`); `ui::widget_bounds` right
+  before a widget gives its bounds in ui units, times `ui::scale` for pixels (2026-11-09).
 - A storage buffer block must hold one runtime-sized array (`vec4 squares[];`), not a
   sized one, or embed_shader refuses it for HLSL.
 - `gfx::BLEND_ADD` weights the source by its alpha: an additive glow writes alpha 1.

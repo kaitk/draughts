@@ -70,6 +70,12 @@ struct Bake {
     light_ring:    float4,
     dark_ring:     float4,
     frame_ring:    float4,
+    finish:        float4,  // looks::Finish: varnish, sanding, grain, rings
+    tone:          float4,  // x: its warmth
+    marble:        float4,  // looks::Marble: veins, wave, polish, tint
+    marble_base:   float4,
+    marble_vein:   float4,
+    marble_form:   float4,
 }
 struct Shrink { to: float4 }
 struct Blur { dir: float4 }
@@ -91,6 +97,9 @@ let WOOD_MODEL = 2;
 struct Gpu {
     samples:        i32,
     wood:           i64,            // the wood's model the surfaces are baked with
+    finish:         looks::Finish,  // and its finish
+    marble:         i64,            // the stone frame's marble (looks::MARBLE..), 0 slate
+    stone:          looks::Marble,  // and its look
     n:              i64,            // squares per side the plan is baked for
     look:           i64,            // looks::AUTUMN.., and the photograph's kind
     photo_kind:     i64,
@@ -227,7 +236,7 @@ fn photograph(g: Gpu&, kind: i64, grey: f32, sh: float4[9]&) {
 
 // Bakes one surface of the theme into its albedo-and-roughness and normal targets, and
 // their mips. Bake.mode: x the surface (0 the plan, 1 the frame map), y the wood's model,
-// z the squares per side.
+// z the squares per side, w the marble (a stone frame's only).
 fn bake(g: Gpu&, albedo: gfx::Texture, normal: gfx::Texture, w: i64, h: i64, mode: f32,
         extent: float2, t: looks::Theme&) {
     var pass = gfx::PassDesc {};
@@ -235,25 +244,32 @@ fn bake(g: Gpu&, albedo: gfx::Texture, normal: gfx::Texture, w: i64, h: i64, mod
     pass.color[1] = normal;
     gfx::begin_pass(pass);
     gfx::bind(g.bake);
-    gfx::uniforms(gfx::FRAGMENT, 0, Bake { float4 { mode, g.wood, g.n, 0.0 },
+    let fi = g.finish;
+    let m = g.stone;
+    gfx::uniforms(gfx::FRAGMENT, 0, Bake { float4 { mode, g.wood, g.n, g.marble },
                                            float4 { w, h, extent.x, extent.y },
                                            t.light_sq, t.light_fig, t.dark_sq, t.dark_fig,
                                            t.inlay, t.inlay_fig, t.frame, t.frame_fig,
                                            t.surface, t.frame_surface, t.stone,
-                                           t.light_ring, t.dark_ring, t.frame_ring });
+                                           t.light_ring, t.dark_ring, t.frame_ring,
+                                           float4 { fi.varnish, fi.sanding, fi.grain, fi.rings },
+                                           float4 { fi.warmth, 0.0, 0.0, 0.0 },
+                                           float4 { m.veins, m.wave, m.polish, m.tint },
+                                           m.base, m.vein, m.form });
     gfx::draw(3);
     gfx::end_pass();
     gfx::generate_mips(albedo);
     gfx::generate_mips(normal);
 }
 
-// Bakes the plan and the frame map, and waits for them: at setup, on a theme change, a
-// new board size, and when the wood's model switches.
-fn bake_surfaces(g: Gpu&) {
+// Bakes the plan and the frame map (or one of them), and waits for them: at setup, on a
+// theme change, a new board size, and when the wood's model, its finish or the marble
+// switches.
+fn bake_surfaces(g: Gpu&, plan: bool = true, frame: bool = true) {
     let t = looks::get(g.look);
     let span = 2.0 * mesh::INNER;
-    bake(g, g.plan_albedo, g.plan_normal, PLAN_SIZE, PLAN_SIZE, 0.0, float2 { span, span }, t);
-    bake(g, g.frame_albedo, g.frame_normal, FRAME_MAP, FRAME_MAP, 1.0, float2 { 10.4, 10.4 }, t);
+    if plan { bake(g, g.plan_albedo, g.plan_normal, PLAN_SIZE, PLAN_SIZE, 0.0, float2 { span, span }, t); }
+    if frame { bake(g, g.frame_albedo, g.frame_normal, FRAME_MAP, FRAME_MAP, 1.0, float2 { 10.4, 10.4 }, t); }
     gfx::flush();
 }
 
@@ -289,6 +305,9 @@ fn targets(g: Gpu&, size: int2) {
 fn setup(g: Gpu&, samples: i32 = SAMPLES) {
     g.samples = samples;
     g.wood = WOOD_MODEL;
+    g.finish = looks::finish(WOOD_MODEL);
+    g.marble = looks::MARBLE;
+    g.stone = looks::marble(looks::MARBLE);
     g.n = 8;
     g.look = -1;
     g.photo_kind = -1;
@@ -390,6 +409,7 @@ fn apply(g: Gpu&, which: i64, n: i64, photo: i64 = -1) {
     f.piece_fig = t.piece_fig;
     f.crown = linear4(t.crown);
     f.edge = linear4(t.edge);
+    if marbled(g, t) { f.edge.w = 0.0; }
     f.line = linear4(t.line);
     f.bounce = linear4(t.bounce);
     f.grade = t.grade;
@@ -399,10 +419,45 @@ fn apply(g: Gpu&, which: i64, n: i64, photo: i64 = -1) {
     g.shadow_dirty = true;
 }
 
-// Switches the wood's model and bakes the surfaces again.
+// Whether the frame is marble: a stone frame with a marble chosen. Its rounded edge
+// then keeps the marble, not the slate's steel-blue round.
+fn marbled(g: Gpu&, t: looks::Theme&) -> bool { g.marble > 0 && t.frame_fig.w < 0.5 }
+
+// Chooses the wood's model and the marble, each with its own finish or look, before
+// apply() bakes them (-1 keeps what is chosen): the app's --wood and --marble.
+fn choose(g: Gpu&, wood: i64, marble: i64) {
+    if wood >= 0 {
+        g.wood = clamp(wood, 0, WOOD_MODELS - 1);
+        g.finish = looks::finish(g.wood);
+    }
+    if marble >= 0 {
+        g.marble = clamp(marble, 0, looks::MARBLES - 1);
+        g.stone = looks::marble(g.marble);
+    }
+}
+
+// Switches the wood's model, with its finish, and bakes the surfaces again.
 fn set_wood(g: Gpu&, model: i64) {
-    g.wood = clamp(model, 0, WOOD_MODELS - 1);
+    choose(g, model, -1);
     bake_surfaces(g);
+}
+
+// Sets the wood's model and finish, and the marble and its look (the prototype's tuning
+// panel), baking again only the surfaces they show on: the wood's where the look has
+// wood, the frame map where its frame is stone.
+fn tune(g: Gpu&, wood: i64, finish: looks::Finish, marble: i64, stone: looks::Marble) {
+    let t = looks::get(g.look);
+    let wood_changed = wood != g.wood || finish != g.finish;
+    let marble_changed = marble != g.marble || stone != g.stone;
+    g.wood = clamp(wood, 0, WOOD_MODELS - 1);
+    g.finish = finish;
+    g.marble = clamp(marble, 0, looks::MARBLES - 1);
+    g.stone = stone;
+    let plan = wood_changed && t.light_fig.w > 0.5;
+    let frame = (wood_changed && t.frame_fig.w > 0.5) || (marble_changed && t.frame_fig.w < 0.5);
+    if plan || frame { bake_surfaces(g, plan, frame); }
+    g.frame.edge = linear4(t.edge);
+    if marbled(g, t) { g.frame.edge.w = 0.0; }
 }
 
 // Puts the pieces on the GPU: `inst` two float4s an instance (view3d::Scene.inst),

@@ -360,7 +360,7 @@ let LIT_FRAG = """
             albedo = mix(albedo, edge.rgb, round_part * edge.a);
             // Hands polish the rounded edge: smoother than the top, so the sheen gathers
             // on the curve instead of spreading over the flat.
-            rough = max(rough - frame_surface.w * round_part, 0.2);
+            rough = max(rough - frame_surface.w * round_part, min(rough, 0.2));
             float lw = max(fwidth(along), 0.004);
             float line = 1.0 - smoothstep(0.5 * lw, 1.5 * lw, abs(along - BULL_START - 0.006));
             albedo = mix(albedo, edge_line.rgb, line * edge_line.a);
@@ -602,6 +602,12 @@ let BAKE_FRAG = """
         vec4 light_ring;
         vec4 dark_ring;
         vec4 frame_ring;
+        vec4 finish;     // the wood's (looks::Finish): varnish, sanding, grain, rings
+        vec4 tone;       // x: its warmth
+        vec4 marble;     // looks::Marble: veins, wave, polish, tint; mode.w the variant
+        vec4 marble_base;
+        vec4 marble_vein;
+        vec4 marble_form;
     };
     const float FIELD = 4.0;
     vec3 srgb(vec3 c) { return pow(c, vec3(2.2)); }
@@ -703,7 +709,7 @@ let BAKE_FRAG = """
     // stained pores are deeper and more saturated, as stained wood is. detail adds the
     // pores and a fibre relief into the normal.
     Wood rings(vec2 q, float seed, vec4 base, vec4 k, vec4 ring, bool detail) {
-        float rw = ring.x;
+        float rw = ring.x * finish.w;
         float texel = size.z / size.x;
         vec2 o = vec2(h1(seed, 1.7), h1(seed, 9.3)) * 97.0;
         float flatness = clamp(ring.y + (h1(seed, 2.1) - 0.5) * 0.6, 0.0, 1.0);
@@ -756,9 +762,10 @@ let BAKE_FRAG = """
     // faint veins). base: the color (sRGB) and roughness. f: the pores' strength, the
     // open pores' (dense fine dashes), the fine dark late-wood lines', all following the
     // grain, roughest in them; the late wood as furrows.
-    Wood wood(vec2 q, float seed, vec4 base, vec4 k, vec3 f, vec4 ring) {
+    Wood figure(vec2 q, float seed, vec4 base, vec4 k, vec3 f, vec4 ring) {
         float s = k.w;
         if (s > 0.5 && mode.y > 0.5 && mode.y < 2.5) return rings(q, seed, base, k, ring, mode.y > 1.5);
+        if (s > 0.5) q.x /= finish.w;
         q += vec2(h12(vec2(seed, 1.7)), h12(vec2(seed, 9.3))) * 97.0;
         float wander = (fbm(q * vec2(0.45, mix(0.45, 0.16, s))) - 0.5) * k.x;
         float x = q.x + wander;
@@ -807,6 +814,138 @@ let BAKE_FRAG = """
             w.rough += stone.z * ((cloud - 0.5) * 2.0 + 0.5 * vein);
         }
         return w;
+    }
+
+    // The wood's finish (looks::Finish), on wood only: grain scales the figure's
+    // contrast round the base color (in the exponent, as Beer's law has it), warmth
+    // shifts the color, varnish lowers the roughness and fills the pores a little,
+    // sanding makes the relief shallower.
+    Wood wood(vec2 q, float seed, vec4 base, vec4 k, vec3 f, vec4 ring) {
+        Wood w = figure(q, seed, base, k, f, ring);
+        if (k.w < 0.5) return w;
+        vec3 b = srgb(base.rgb);
+        w.albedo = b * pow(max(w.albedo / b, vec3(1e-3)), vec3(finish.z));
+        w.albedo *= vec3(1.0 + 0.1 * tone.x, 1.0 + 0.02 * tone.x, 1.0 - 0.14 * tone.x);
+        w.rough = mix(w.rough, 0.55 * w.rough, finish.x);
+        w.cavity = mix(w.cavity, 1.0, 0.3 * finish.x + 0.5 * finish.y);
+        w.height *= 1.0 - 0.7 * finish.y;
+        return w;
+    }
+
+    // Marble, polished, one solid block whose figure runs one way (a stone frame with
+    // mode.w > 0; task 039). Perlin's turbulent marble without the sine: the veins are
+    // contours of a ramp across the flow plus a domain-warped noise (Quilez's warp,
+    // noise of the point moved by noise of noise), so they run long and one way,
+    // wander, merge and part, never close into rings as contours of noise alone do.
+    // Each contour has its own strength and fades in and out along its length; its
+    // width is kept even by dividing the distance by the field's slope (fwidth: the
+    // bake is a fragment shader), with a soft cloudy halo by the softness. Finer,
+    // fainter veins of a second such field, cracks joining them (the edges of warped
+    // cells, Worley's), and bundles of thin threads (close contours of a third) by the
+    // form. q: x across the frame map's grain, y along it (world x on the block), in
+    // world units. Flat: polished stone has no relief. The colors drawn toward the
+    // board's steel blue by the tint, their lightness kept.
+    float fbm3(vec2 p) {
+        float s = 0.0;
+        float a = 0.5;
+        for (int i = 0; i < 3; i++) {
+            s += a * vnoise(p);
+            p = p * 2.03 + vec2(17.1, 9.2);
+            a *= 0.5;
+        }
+        return s / 0.875;
+    }
+    vec2 cells(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        float d1 = 8.0;
+        float d2 = 8.0;
+        for (int y = -1; y <= 1; y++) {
+            for (int x = -1; x <= 1; x++) {
+                vec2 o = vec2(float(x), float(y));
+                vec2 c = o + vec2(h12(i + o), h12(i + o + 19.7)) * 0.9 + 0.05 - f;
+                float d = dot(c, c);
+                if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) { d2 = d; }
+            }
+        }
+        return vec2(sqrt(d1), sqrt(d2));
+    }
+    vec3 steel(vec3 c, float t) {
+        const vec3 STEEL = vec3(0.36, 0.42, 0.48);
+        float l = dot(c, vec3(0.3, 0.55, 0.15));
+        return mix(c, STEEL * (l / dot(STEEL, vec3(0.3, 0.55, 0.15))), t);
+    }
+    // A contour of g at each whole number: its strength (some faint, some none) fading
+    // along sw, a crisp core `width` across (world units) with a halo by `soft`.
+    float vein(float g, float width, float soft, float seed, vec2 sw, float share) {
+        float texel = size.z / size.x;
+        float level = floor(g + 0.5);
+        float dist = abs(g - level) / max(fwidth(g), 1e-5) * texel;
+        float strength = smoothstep(1.0 - share, 1.0 - share + 0.35, h12(vec2(level, seed)))
+                       * smoothstep(0.3, 0.6, fbm3(vec2(sw.x * 1.2, sw.y * 0.8) + level * 7.1 + seed));
+        float w = width * (0.4 + 1.2 * vnoise(sw * vec2(2.0, 3.0) + level + seed));
+        float core = 1.0 - smoothstep(w * (1.0 - 0.8 * soft), w + texel, dist);
+        float halo = exp(-dist / (0.015 + 0.1 * soft)) * (0.2 + 0.8 * soft);
+        return strength * max(core, 0.6 * halo);
+    }
+    Wood marble_at(vec2 q) {
+        float texel = size.z / size.x;
+        float veins = marble.x;
+        float wave = marble.y;
+        float soft = marble_form.y;
+        // One way: leaning about 24 degrees off the board's x.
+        const float C = 0.913;
+        const float S = 0.407;
+        vec2 r = vec2(C * q.x + S * q.y, -S * q.x + C * q.y);
+        vec2 s = vec2(r.x, r.y * 0.4);
+        vec2 w1 = vec2(fbm3(s * 0.5 + vec2(3.1, 7.7)), fbm3(s * 0.5 + vec2(8.4, 1.9))) - 0.5;
+        vec2 w2 = vec2(fbm3(s * 0.7 + 2.0 * wave * w1 + vec2(5.5, 2.2)),
+                       fbm3(s * 0.7 + 2.0 * wave * w1 + vec2(1.1, 6.6))) - 0.5;
+        vec2 sw = s + wave * (1.2 * w1 + 0.5 * w2);
+        // The main veins, about 1.3 contours a unit across the flow, half of them shown.
+        float g = r.x * 1.3 + wave * 2.2 * (fbm3(sw * 0.5 + 11.3) - 0.5)
+                + 0.03 * (vnoise(sw * 5.0) - 0.5);
+        float v = vein(g, marble_form.x, soft, 3.7, sw, 0.5);
+        // Finer, fainter veins between them, and cracks joining them, in places.
+        if (marble_form.z > 0.0) {
+            float g2 = r.x * 3.7 + wave * 3.2 * (fbm3(sw * 0.9 + 23.0) - 0.5)
+                     + 0.04 * (vnoise(sw * 8.0) - 0.5);
+            v = max(v, 0.55 * marble_form.z * vein(g2, 0.4 * marble_form.x, 0.5 * soft, 8.1, sw, 0.6));
+            vec2 cp = sw * vec2(1.1, 0.9) + 2.5 * w2;
+            vec2 c = cells(cp);
+            // The width from the cells' coordinate, which runs on across their edges
+            // (fwidth of the edge distance jumps there and broke the cracks into dashes).
+            float e = (c.y - c.x) * 0.5;
+            float crack = 1.0 - smoothstep(0.4, 1.3, e / max(length(fwidth(cp)), 1e-5));
+            crack *= smoothstep(0.55, 0.75, fbm3(sw * 0.9 + 21.0));
+            v = max(v, 0.6 * marble_form.z * crack);
+        }
+        // Bundles of thin wavy threads along the flow.
+        float threads = 0.0;
+        if (marble_form.w > 0.0) {
+            float h = r.x * 14.0 + wave * 9.0 * (fbm3(sw * 0.8 + 31.0) - 0.5) + 3.0 * w2.x
+                    + 2.0 * (vnoise(vec2(r.x * 3.0, sw.y * 0.5)) - 0.5);
+            float d = abs(h - floor(h + 0.5)) / max(fwidth(h), 1e-5);
+            float t = 1.0 - smoothstep(0.3, 1.1, d);
+            // In bundles that follow the flow (across it, g), some threads missing.
+            float bundle = vnoise(vec2(g * 0.9 + 41.0, sw.y * 0.25));
+            t *= smoothstep(0.58, 0.72, bundle) * step(0.3, h12(vec2(floor(h + 0.5), 9.1)))
+               * (0.4 + 0.6 * h12(vec2(floor(h + 0.5), 5.3)));
+            threads = t * marble_form.w;
+        }
+        float cloud = fbm(sw * 1.6 + 51.0) - 0.5;
+        vec3 base = srgb(steel(marble_base.rgb, marble.w));
+        vec3 vein_c = srgb(steel(marble_vein.rgb, marble.w));
+        vec3 thread_c = mix(vein_c, vec3(0.8), marble_vein.w);
+        base *= 1.0 + marble_base.w * 2.0 * cloud;
+        float vv = clamp(v * veins, 0.0, 1.0);
+        Wood m;
+        m.albedo = mix(base, vein_c, vv);
+        m.albedo = mix(m.albedo, thread_c, clamp(threads * veins, 0.0, 1.0));
+        m.rough = mix(0.5, 0.06, marble.z) + 0.03 * vv + 0.04 * cloud;
+        m.height = 0.0;
+        m.cavity = 1.0;
+        return m;
     }
 
     // The field: light and dark squares, each its own stretch of the surface and its own
@@ -866,6 +1005,13 @@ let BAKE_FRAG = """
     void main() {
         vec2 texel = size.zw / size.xy;
         vec2 p = gl_FragCoord.xy * texel - (mode.x < 0.5 ? 0.5 * size.zw : vec2(0.0));
+        if (mode.x > 0.5 && mode.w > 0.5 && frame_fig.w < 0.5) {
+            // A marble frame, flat: once a texel, no relief to take the normal from.
+            Wood m = marble_at(p.yx);
+            out_albedo = vec4(m.albedo, m.rough);
+            out_normal = vec4(0.5, 0.5, 1.0, 1.0);
+            return;
+        }
         Wood w = at(p);
         Wood wx = at(p + vec2(texel.x, 0.0));
         Wood wy = at(p + vec2(0.0, texel.y));

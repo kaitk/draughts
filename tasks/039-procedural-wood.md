@@ -158,6 +158,59 @@ Next, if the frame should come closer still: the reference's front shows more br
 tonal mottling and more pronounced cross-grain flecks; finished wood's moving sheen
 (Marschner et al.) would need a fibre-direction map and a second specular lobe.
 
+## The finish: varnish and sanding (2026-11-09)
+
+Per wood model a finish in the look data (`looks::Finish`, baked into the wood only,
+never the stone), set from the prototype's tuning panel (task 015): varnish lowers the
+roughness (× 0.55 at 1) and fills the pores a little; sanding makes the grain's and the
+pores' relief shallower (× 0.3 at 1); grain scales the figure's contrast round the base
+color (in Beer's exponent); rings scale the rings' and the grain's spacing; warmth
+shifts the color. The user's "the same wood, very slightly more varnish and sanded a
+tiny bit more" is `looks::VARNISHED`, varnish 0.2 and sanding 0.15 (the roughness about
+10% lower, the relief about 10% shallower), now the default for 2 and 3; 0 and 1 stay
+plain. Side by side with `--plain`: the frame's rounded edge takes a slightly brighter
+sheen and the pores read a touch softer, the color unchanged. Bake and frame cost as
+before.
+
+## Marble for winter's frame (2026-11-09)
+
+The user (2026-11-09): try black wavy marbles for winter's frame, one solid block with
+the figure running one way, the board's stone unchanged. `--marble N` and M switch
+(0 the slate as before), and the app's `--marble N`; only the frame map is baked again.
+
+How marble is made procedurally, what was taken:
+
+- **Perlin, "An image synthesizer"** (SIGGRAPH 1985): marble as sin(x + turbulence(p)),
+  veins where a ramp across the layers, disturbed by turbulence, crosses a level. Taken
+  without the sine (which bands): the veins are contours of a ramp plus noise, so they
+  run long and one way, wander, merge and part. Contours of noise alone close into
+  rings and blobs; the first try looked like a contour map.
+- **Quilez, "Domain warping"** ([iquilezles.org](https://iquilezles.org/articles/warp/)):
+  f(p + fbm(p + fbm(p))), the flowing, folded look; its strength is the waviness.
+- **Worley, "A cellular texture basis function"** (SIGGRAPH 1996): the edges of warped
+  cells (F2 − F1) as a network of fine cracks between the main veins, in places.
+- Each contour's width is kept even by dividing the distance by the field's slope
+  (`fwidth`, the bake being a fragment shader), its strength hashed per contour and
+  faded along its length; the cracks' width comes from the cells' coordinate, since
+  `fwidth` of the edge distance jumps at the cells' edges and broke them into dashes.
+  Fewer octaves (3) in the vein fields: five frayed the contours into squiggles.
+
+The variants (`looks::marble`, all polished, flat, the figure leaning 24° off the
+board's x):
+
+- **1, Nero Marquina:** near black, crisp white veins, faint finer ones and cracks.
+- **2, dark grey cloudy:** soft wide grey bands with halos, more warped, low contrast.
+- **3, blue-black steel:** blue-black with steel-blue veins, the board's palette.
+- **4, black with threads** (the one found): bundles of thin wavy white threads flowing
+  one way, as in flow-banded black marbles, with Marquina's main veins.
+
+The slate's steel-blue round on the frame edge is left out with a marble. Bake (the
+frame map, its mips, waited for, warm, M1 Pro): slate 15.6 ms (its normal from three
+samples), marbles 8.5 to 9.3 ms (flat, one sample a texel). A frame, `--bench 200 --size
+1920x1200`: 5.3 to 5.6 ms with the slate or a marble, the same. Shots in the session's
+scratchpad (`shots/tune/marble_default.png`, `marble_close.png`, `varnish_close.png`).
+The user to pick one, or none, on the Mac.
+
 ## Acceptance criteria
 
 - [x] `--wood N` and W switch the wood's model, rebaking only on a switch
@@ -166,3 +219,6 @@ tonal mottling and more pronounced cross-grain flecks; finished wood's moving sh
 - [x] The bake's and a frame's cost per variant on the Mac
 - [x] The recommended variant the default
 - [ ] The user's look at the four on the Mac, and the bake's time on the tablet
+- [x] Marbles for winter's frame beside the slate, `--marble N` and M, and the finish
+      (varnish, sanding) with the user's preset on 2 and 3
+- [ ] The user's pick of the marble and the finish, tuned with the panel
