@@ -2,8 +2,8 @@
 
 Status: in-progress (the package and the drafts ready, 2026-11-08; the listing's texts,
 answers, screenshots, and a preview checked against Play's current help, 2026-11-09; the
-identity and the feature graphic settled the same day; the Play account, the screenshots'
-retake, and the checks on the tablet remain)
+identity and the feature graphic settled the same day; the screenshots retaken as 0.3;
+the Play account and the checks on the tablet remain)
 
 Everything between a sideloaded APK and the app on Google Play, under Google's Families
 Policy: the app is for children, with no ads, no tracking, no accounts, and no network
@@ -146,7 +146,8 @@ masters present):
   autumn, the 3D game in summer, the puzzle library in spring, a Shots puzzle in winter,
   settings, the computer's setup. Play wants at least 3 of the phone's (for game
   recommendations) and 4 of the tablet's; all seven go up. They predate main's way back
-  and Theme row (`49f44e6`), so the scenes `store/README.md` names need a retake.
+  and Theme row (`49f44e6`); the 0.3 sets (`play-0.3/`, `app-store-0.3/`) retake them
+  from `78c7029`, the Mac's headless, 2026-11-09.
 - **Preview:** `store/preview/play.html` (filled by `store/preview/build.py`) shows the
   page on a phone and on the web in both languages: the titles fit on one line in a
   search row, the short descriptions under 80, the web's "About this game" folds after
@@ -183,7 +184,7 @@ masters present):
 - [ ] Store listing in English and Estonian, with icon, feature graphic, and screenshots
       (texts, the 0.2 screenshots, and a preview 2026-11-09; the texts approved by the
       user 2026-11-09; the developer name, the contact email, and the feature graphic
-      settled 2026-11-09; the retake of scenes 02, 03, 05, and 06 remains)
+      settled 2026-11-09; the 0.3 screenshots, retaken 2026-11-09)
 - [ ] Target audience, content rating, Data safety, and privacy policy filled in (the
       answers and the policy drafted in `store/`)
 - [ ] Closed test run as Play requires, then the app published

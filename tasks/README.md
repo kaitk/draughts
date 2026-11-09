@@ -77,8 +77,7 @@ What needs the user:
 1. Back up the upload key (`~/.config/draughts/upload-key.jks` and its properties).
 2. 029: the developer name and the contact email in `store/`'s placeholders; publish
    `store/privacy/` on GitHub Pages; open the personal Play account and find the 12
-   testers for the 14-day closed test; the retake of scenes 02, 03, 05, and 06. Nothing
-   goes to Play until the user says so.
+   testers for the 14-day closed test. Nothing goes to Play until the user says so.
 3. 049: pick a take of the draw's screen (`prototypes/draw.html`).
 4. 037: play the set and its levels' order on the tablet; the Russian set's open terms;
    Brazilian's own set.

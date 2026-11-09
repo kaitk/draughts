@@ -50,15 +50,15 @@ Store's rules are in `app-store.md`, "Screenshots".
 
 ## Screenshots and the feature graphic
 
-The current sets, outside git, taken 2026-11-09 from `main` at `1824780`, each scene in
-English and Estonian:
+The current sets, outside git, taken 2026-11-09 from `main` at `78c7029`, each scene in
+English and Estonian (the 0.2 sets, from `1824780`, kept beside them):
 
 | Folder | Size | For | Made with |
 | --- | --- | --- | --- |
-| `screenshots/play-0.2/phone/` | 1080 × 1920, 9:16, laid out at 548 dp (a 1080 px phone at the 0.75 density floor) | Play's phone slot | The Mac app, `--frames` |
-| `screenshots/play-0.2/tablet/` | 2560 × 1440, 16:9 | Play's 7" and 10" tablet slots | The Mac app, `--frames` |
-| `screenshots/app-store-0.2/iphone-6.9/` | 1320 × 2868 | The App Store's iPhone 6.9" set | An iPhone 16 Pro Max simulator, iOS 26.4, headless |
-| `screenshots/app-store-0.2/ipad-13/` | 2064 × 2752 | The App Store's iPad 13" set | An iPad Pro 13-inch (M4) simulator, iOS 26.4, headless |
+| `screenshots/play-0.3/phone/` | 1080 × 1920, 9:16, laid out at 548 dp (a 1080 px phone at the 0.75 density floor) | Play's phone slot | The app's headless copy, `--frames` |
+| `screenshots/play-0.3/tablet/` | 2560 × 1440, 16:9 | Play's 7" and 10" tablet slots | The app's headless copy, `--frames` |
+| `screenshots/app-store-0.3/iphone-6.9/` | 1320 × 2868 | The App Store's iPhone 6.9" set | An iPhone 16 Pro Max simulator, iOS 26.4, headless |
+| `screenshots/app-store-0.3/ipad-13/` | 2064 × 2752 | The App Store's iPad 13" set | An iPad Pro 13-inch (M4) simulator, iOS 26.4, headless |
 
 The seven scenes, in the order to upload, each a season so all four show:
 
@@ -73,26 +73,18 @@ The seven scenes, in the order to upload, each a season so all four show:
    iPhone the Game tab
 7. `07-computer-summer`: the computer's setup, summer
 
-**To retake** (all four sets), since `main` at `49f44e6` changed what they show: the
-games' and the puzzle's top buttons are now one way back ("Back", "Tagasi") where the
-shots show "Home"/"Koju" beside settings, and take back reads "Undo move"/"Võta käik
-tagasi" where they show "Take back"/"Võta tagasi" (02, 03, 05); settings' Background row
-is now the Theme row with the photo/plain switch (06); home, the library, and the setup
-may have their arrow moved (01, 04, 07; check). A scene on the plain background would show
-task 044. One Mac batch (`shoot.sh`, with `draughts` and `draughts-look` rebuilt) and one
-simulator run (`ios-shoot*.sh`, then `island_fill.py`).
-
 The player is made up (Mia the fox, with some stars): `play-0.1/player-1.txt` and
-`settings.txt`, written into the Mac's app data (copied aside first and put back after)
-and into each simulator's container. The Mac's shots come from one batch of 28 runs
-(about 4 minutes of windows); the phone's Look tab needs a second, local build with
-`group: i64 = 1` in `src/shell/settings.goose`'s `Settings`, never committed: no flag
-picks the tab. The simulator draws the Dynamic Island into its framebuffer, so the iPhone
-shots have it painted over with what the app draws there, the season's photograph alone:
+`settings.txt`, written into the Mac's app data and into each simulator's container (each
+copied aside first and put back after). Play's shots come from one batch of 28 runs of the
+app's headless copy (`agents/testing.md`; about a minute, no window), its loop's break
+also waiting for 6 s of the clock so every fade has finished (`mkxshot-0.3.py` makes it);
+the phone's Look tab needs a second, local build with `group: i64 = 1` in
+`src/shell/settings.goose`'s `Settings`, never committed: no flag picks the tab. The
+simulator draws the Dynamic Island into its framebuffer, so the iPhone shots have it
+painted over with what the app draws there, the season's photograph alone:
 `island_fill.py` takes the same cover crop from `design/backgrounds/masters/` and fits its
-blur and colour to the pixels around the island (`iphone-6.9-raw/` keeps them as taken,
-`iphone-6.9-mirrored/` the first, mirrored fill). The scripts that took them are kept beside the
-sets.
+blur and colour to the pixels around the island (`iphone-6.9-raw/` keeps them as taken).
+The scripts that took them are kept beside the sets.
 
 The feature graphic is `feature-0.2/feature-render-close-name.png` (1024 × 500, no alpha;
 chosen by the user 2026-11-09): the autumn 3D board close at a low angle, rendered

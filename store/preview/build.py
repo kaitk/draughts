@@ -96,10 +96,10 @@ def main():
         for s in SCENES:
             for cls, w in (("phone", 540), ("tablet", 1280)):
                 have[f"play-{cls}-{s}-{lang}"] = image(
-                    SHOTS / f"play-0.2/{cls}/{s}-{lang}.png", f"play-{cls}-{s}-{lang}.jpg", w)
+                    SHOTS / f"play-0.3/{cls}/{s}-{lang}.png", f"play-{cls}-{s}-{lang}.jpg", w)
             for cls, w in (("iphone-6.9", 660), ("ipad-13", 1032)):
                 have[f"{cls}-{s}-{lang}"] = image(
-                    SHOTS / f"app-store-0.2/{cls}/{s}-{lang}.png", f"{cls}-{s}-{lang}.jpg", w)
+                    SHOTS / f"app-store-0.3/{cls}/{s}-{lang}.png", f"{cls}-{s}-{lang}.jpg", w)
 
     data = {"play": play, "apple": asc, "scenes": SCENES, "have": have}
     line = "const DATA = " + json.dumps(data, ensure_ascii=False) + ";  // build.py writes this line"
