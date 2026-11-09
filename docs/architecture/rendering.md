@@ -569,7 +569,10 @@ the prototype tried, kept for 3D:
   unwrapped (a foldable). Where even that doesn't fit (a phone), one group shows at a time:
   two tiles, the game's and the look's icon and title, the shown one lit, choose which,
   in the title row in place of the title in landscape and in a row under it in portrait
-  (where the groups side by side would leave the board under 45% of the width), and the
+  (where the groups side by side would leave the board under 45% of the width, or under
+  220 dp, 45% of a 553 dp phone's: a tablet's 736 dp page keeps both groups down to the
+  13" iPad's 3:4 with its bars, a 237 dp board where the tabs gave 277, the look's group
+  setting their 600 dp height; a foldable's 206 dp keeps the tabs, 2026-11-09), and the
   group's glass, without its title row, is as tall as the taller of the two so the board
   stays put. A board under 128 dp isn't shown, as on home (a 9:16 phone at 480 dp). In
   portrait, where the title doesn't fit beside the worded back and the language in the

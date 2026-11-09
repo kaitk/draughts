@@ -324,6 +324,12 @@ let SWITCH_GAP = 4.0;
 let SWITCH_NAME = 20.0;     // the name's line above the switch in the name's column
 let WIDE_NAME_W = 2.0 * 88.0 + SWITCH_GAP; // the names' column as wide as the switch
 let SLACK = 0.5;            // px a row may pass its width by without wrapping
+// The smallest board the groups side by side may leave in portrait: 45% of the page, as
+// on a phone, but no more than 220 dp, 45% of a 553 dp phone's, so a tablet keeps both
+// groups down to the 13" iPad's 3:4 with its bars (a 237 dp board; the look's group, 600
+// dp tall at half the page, sets the height, the game's with its privacy note being 459).
+// A foldable's 206 dp keeps the tabs.
+let BOTH_BOARD = 220.0;
 
 // The settings in order, the first two in the game's group, the rest in the look's:
 // each one's name, how many tiles, and how tall they are.
@@ -796,12 +802,12 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
     } else {
         // The title row, the board as large as the rest leaves, and the groups side by
         // side along the bottom, as tall as the taller. Where that leaves the board under
-        // 45% of the width (a phone), one group shows at a time, across the width, tabs
-        // for the two under the title row.
+        // 45% of the width, or under BOTH_BOARD (a phone), one group shows at a time,
+        // across the width, tabs for the two under the title row.
         let w = 0.5 * (page.z - GROUP_GAP * u);
         let h = max(group_height(s, over, g, 0, w, false), group_height(s, over, g, 1, w, false));
         let left = page.w - (HEAD_H + 32.0) * u - h;
-        let tabbed = 0.94 * min(page.z, left) < 0.45 * page.z;
+        let tabbed = 0.94 * min(page.z, left) < min(0.45 * page.z, BOTH_BOARD * u);
         ask = head(s, g, gui::cut_top(page, HEAD_H * u), shown);
         gui::cut_top(page, 16.0 * u);
         if tabbed {
