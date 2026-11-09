@@ -397,7 +397,7 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
     gui::text(g, gui::fitting(g, gui::SMALL, side, both.z), both, side, 0.66, 0.0, align);
 }
 
-// Declares the panels: the left one as the game's with the puzzles for home; on the right
+// Declares the panels: the left one as the game's, its back going to the theme; on the right
 // whose puzzle it is as the game's turn piece (72 dp over the goal in landscape, beside
 // its icon where the panel is too short for that, a phone's; 52 dp leading the goal's row
 // in portrait), the goal, the stars, and next, a tall tile in landscape, a wide one in
@@ -409,13 +409,12 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
 fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: game::Overlay&) -> i64 {
     let u = g.scale;
     let landscape = l.left.z < l.left.w;
-    gui::panel(g, l.left);
-    gui::panel(g, l.right);
     var ask = STAY;
+    let out = panel::leave(g, l);
+    gui::panel(g, l.right);
     // The camera buttons round the 3D board, as the game's.
     if panel::camera(g, l, pl.cam, now) { ask = CAMERA; }
-    let out = panel::leave(g, l, gui::PUZZLE, strings::HOME_PUZZLES);
-    if out == panel::HOME { ask = PUZZLES; }
+    if out == panel::BACK { ask = PUZZLES; }
     if out == panel::SETTINGS { ask = SETTINGS; }
     if out == panel::RESTART { ask = RESTART_ASK; }
     var right = panel::play_area(g, l);

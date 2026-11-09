@@ -88,11 +88,14 @@ fn frame(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, s
     return page(g, area, stars, at, theme, spot);
 }
 
-// Back, a glass tile in r.
-fn back(g: gui::Gui&, r: float4) -> bool {
-    gui::glass(g, r, 22.0);
-    return gui::button(g, 500, r, gui::BACK);
+// Back (gui::back) in r: the arrow and "Back" on a glass tile, side by side or, `stacked`,
+// one over the other.
+fn back(g: gui::Gui&, r: float4, stacked: bool = false) -> bool {
+    return gui::back(g, 500, r, strings::get(strings::NAV_BACK), stacked);
 }
+
+// How wide back is.
+fn back_w(g: gui::Gui&) -> f32 { gui::back_width(g, strings::get(strings::NAV_BACK)) }
 
 // A theme's mark, a disc `size` dp across centered in r: its icon on the glow color at
 // 20%, or plain at 6% with a lock badge while the theme is shut.
@@ -170,7 +173,7 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let title = strings::get(strings::HOME_PUZZLES);
     let whole = page;           // the rows center on the screen, not on what back leaves
     if landscape {
-        var column = gui::cut_left(page, 88.0 * u);
+        var column = gui::cut_left(page, back_w(g));
         if back(g, gui::cut_top(column, 88.0 * u)) { pick = BACK; }
         gui::cut_left(page, 24.0 * u);
     }
@@ -191,7 +194,7 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     if !short {
         var top = float4 { x, y, w, 88.0 * u };
         if !landscape {
-            if back(g, gui::cut_left(top, 88.0 * u)) { pick = BACK; }
+            if back(g, gui::cut_left(top, back_w(g))) { pick = BACK; }
             gui::cut_left(top, 20.0 * u);
         }
         gui::text(g, gui::fitting(g, gui::LABEL, title, top.z), top, title, 1.0, 0.0, gui::LEFT);
@@ -244,6 +247,26 @@ fn levels_h(t: i64, fit: i64, side: f32, gap: f32, margin: f32, above: f32, betw
     return h, widest;
 }
 
+// How tall theme t's levels are at least on a landscape page w pixels wide, its head in
+// the column under back: as page() lays them out.
+fn tightest(t: i64, w: f32, short: bool, phone: bool, u: f32) -> f32 {
+    let side = (if phone { 88.0 } else { 96.0 }) * u;
+    let gap = (if short { 8.0 } else { 10.0 }) * u;
+    let pad_x = (if short { 12.0 } else { 16.0 }) * u;
+    let pad_y = (if short { 4.0 } else { 14.0 }) * u;
+    let between = (if short { 6.0 } else { 14.0 }) * u;
+    var label = (if short { 96.0 } else { 120.0 }) * u + 14.0 * u;
+    var above: f32 = 0.0;
+    var fit = fit_of(w, pad_x, label, side, gap);
+    if fit < 4 {
+        label = 0.0;
+        above = 30.0 * u + 8.0 * u;
+        fit = fit_of(w, pad_x, label, side, gap);
+    }
+    let lv, widest = levels_h(t, fit, side, gap, pad_y, above, between);
+    return lv - between;
+}
+
 // A theme's page: back, the theme's head (its mark, name, and count), and its levels,
 // each its label (the level's mark and name) beside its tiles, or over them where four
 // tiles don't fit beside it. Where that leaves the page taller than the screen (a phone
@@ -260,8 +283,11 @@ fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, sp
     var pick = NOTHING;
     var column = room;
     if landscape {
-        column = gui::cut_left(room, 88.0 * u);
-        if back(g, gui::cut_top(column, 88.0 * u)) { pick = SHOWN; }
+        // Back as wide as its word wants, or 88 dp with the word under the arrow where the
+        // levels wouldn't fit the height beside that (Shots on a phone with its insets).
+        let stacked = tightest(t, room.z - back_w(g) - 24.0 * u, short, phone, u) > room.w;
+        column = gui::cut_left(room, if stacked { 88.0 * u } else { back_w(g) });
+        if back(g, gui::cut_top(column, 88.0 * u), stacked) { pick = SHOWN; }
         gui::cut_left(room, 24.0 * u);
     }
     let side = (if phone { 88.0 } else { 96.0 }) * u;
@@ -312,7 +338,7 @@ fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, sp
         var head = float4 { x, y, w, head_h };
         y += head_h;
         if !landscape {
-            if back(g, gui::cut_left(head, 88.0 * u)) { pick = SHOWN; }
+            if back(g, gui::cut_left(head, back_w(g))) { pick = SHOWN; }
             gui::cut_left(head, 16.0 * u);
         }
         let m: f32 = if short { 52.0 } else if landscape { 60.0 } else { 64.0 };

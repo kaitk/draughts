@@ -41,9 +41,9 @@ kings.stack = Virn
 
 tutorial.learn = Õpi käike
 
-game.home = Koju
+nav.back = Tagasi
 game.start_over = Alusta uuesti
-game.take_back = Võta tagasi
+game.undo_move = Võta käik tagasi
 turn.white = Valgete käik
 turn.black = Mustade käik
 won.white = Valged võitsid

@@ -26,7 +26,7 @@
 // of it, drawn once through the larger end's view, from one end's bounds to the other's
 // (a puzzle's tile, which has no 3D board, crossfading it in or out).
 // Home's way out asks the app to stop (quit), which ends its loop. Android's back, and
-// Escape on the Mac, go back a screen as its own back or home control does (back).
+// Escape on the Mac, go back a screen as its own back control does (back).
 // A game against the computer plays at the skill kept for its level, which each
 // finished game moves (ai::adapt). Tests run it headless.
 namespace shell;

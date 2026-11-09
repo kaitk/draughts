@@ -286,7 +286,7 @@ fn stage(b: board::Board&, s: Settings&, now: f64) {
 let PAD_X = 32.0;
 let PAD_Y = 24.0;
 let HEAD_H = 100.0;         // back (88), the title, and the language's glass round 88 dp tiles
-let BACK_W = 88.0;          // back, square
+let BACK_W = 88.0;          // back's height, and the tabs'
 let HEAD_GAP = 14.0;        // under them in landscape; 16 in portrait, as round the board
 let SIDE_GAP = 24.0;        // between the choices and the board in landscape
 let GROUP_GAP = 10.0;
@@ -508,9 +508,9 @@ fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, tabbed: bool = false)
     let u = g.scale;
     var row = r;
     var ask = NOTHING;
-    let back = gui::center(gui::cut_left(row, BACK_W * u), BACK_W * u, BACK_W * u);
-    gui::glass(g, back, 22.0);
-    if gui::button(g, 400, back, gui::BACK) { ask = BACK; }
+    let bw = gui::back_width(g, strings::get(strings::NAV_BACK));
+    let back = gui::center(gui::cut_left(row, bw), bw, BACK_W * u);
+    if gui::back(g, 400, back, strings::get(strings::NAV_BACK)) { ask = BACK; }
     gui::cut_left(row, 20.0 * u);
     let w = languages_width(g);
     let glass = gui::center(gui::cut_right(row, w), w, HEAD_H * u);
@@ -571,7 +571,7 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
         // the names at the left. Over a bottom inset (a gesture or hidden navigation bar)
         // the groups may run on through the page's foot, as long as the look's tiles end
         // above the inset and as far from the screen's edge as they would with none: `room` gains up to that foot, 38 dp.
-        let head_w = (HEAD_H + 40.0) * u + languages_width(g)
+        let head_w = gui::back_width(g, strings::get(strings::NAV_BACK)) + 40.0 * u + languages_width(g)
                      + gui::text_width(g, gui::LABEL, strings::get(strings::HOME_SETTINGS));
         let foot = min(g.insets.w, (PAD_Y + 14.0) * u);
         let room = page.w - (HEAD_H + HEAD_GAP) * u + foot;
@@ -589,7 +589,8 @@ fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, ar
                      || w > 0.7 * page.z;
         if tabbed {
             aside = true;
-            let tabs_w = (BACK_W + 40.0) * u + languages_width(g) + tab_width(g, 0) + tab_width(g, 1) + TILE_GAP * u;
+            let tabs_w = gui::back_width(g, strings::get(strings::NAV_BACK)) + 40.0 * u + languages_width(g)
+                         + tab_width(g, 0) + tab_width(g, 1) + TILE_GAP * u;
             w = max(max(group_width(s, g, 0, true), group_width(s, g, 1, true)), tabs_w);
         }
         var side = gui::cut_left(page, w);

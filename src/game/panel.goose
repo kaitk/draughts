@@ -1,10 +1,11 @@
 // The game screen's panels (docs/architecture/rendering.md, "Game screen";
-// prototypes/game.html): the board between them, leaving the game on the left (home,
-// settings, and start over at the bottom) and playing it on the right (whose turn, or
-// the two clocks, and take back at the bottom, a tall tile). Each control is a glass
-// tile with an icon and a word. In portrait the left panel is a bar of three above the
-// board and the right one is below it: whose turn or the clocks side by side, over take
-// back across the width. Start over sits far from take back so it isn't hit for it.
+// prototypes/game.html, and prototypes/back.html's take b for back): the board between
+// them, leaving the game on the left (back on its own glass tile over a panel of
+// settings and start over at the bottom) and playing it on the right (whose turn, or the
+// two clocks, and undo move at the bottom, a tall tile). Each control is a glass tile
+// with an icon and a word. In portrait the left side is a bar of three above the board,
+// back first, and the right one is below it: whose turn or the clocks side by side, over
+// undo move across the width. Start over sits far from undo move so it isn't hit for it.
 // layout() places the board and the two panels, for every screen that has them.
 namespace panel;
 import std;
@@ -18,13 +19,14 @@ import strings from "../../strings";
 let NOTHING = 0;
 let UNDO = 1;
 let RESTART = 2;
-let HOME = 3;
+let BACK = 3;
 let SETTINGS = 4;
 
 let ROW_H = 88.0;           // dp: a control's row, the 88 dp a small hand needs
-let TALL_H = 132.0;         // take back in landscape, STACK_H in a panel under SHORT
+let BACK_GAP = 12.0;        // dp: back over the left panel in landscape
+let TALL_H = 132.0;         // undo move in landscape, STACK_H in a panel under SHORT
 let SHORT = 420.0;          // dp: a panel this short (a phone) has the shorter tile
-let WIDE_H = 88.0;          // take back in portrait
+let WIDE_H = 88.0;          // undo move in portrait
 let CLOCK_H = 72.0;
 let OVER = 4;               // pieces over the UI: two clocks and the winner, at most
 
@@ -51,7 +53,7 @@ let GAP = 24.0;
 // camera's angle at rest.
 struct Layout {
     board:   board::Layout,
-    left:    float4,      // x, y, width, height of the panel that leaves the game (above in portrait)
+    left:    float4,      // x, y, width, height of what leaves the game: back over its panel (the bar above in portrait)
     right:   float4,      // and of the one that plays it (below in portrait)
     three:   bool         = false,
     view:    view3d::View = view3d::View {},
@@ -77,7 +79,7 @@ struct Layout {
 // with the board as wide as the screen less the gaps and as tall as its perspective at
 // PITCH_PORTRAIT makes it, steeper than landscape's to fill more of the height. A puzzle
 // shares it.
-let CORNER_H = 352.0;       // dp: a corner panel, room for three tiles with their icons over their words
+let CORNER_H = 352.0;       // dp: a corner panel, room for three tiles with their icons over their words (back and a panel of two on the left)
 let PHONE_DP = 600.0;       // dp: a screen whose shorter side is under this (a phone) has NARROW panels
 let PITCH_LANDSCAPE: f32 = 52.5;
 let PITCH_PORTRAIT:  f32 = 65.0;
@@ -337,36 +339,41 @@ fn clock_of(g: gui::Gui&, r: float4, c: clock::Clock&, side: i64, ring: f32, ove
     gui::figures(g, gui::FIGURES, room, t, if runs { 1.0 } else { 0.66 }, low, gui::RIGHT);
 }
 
-// The left panel's three tiles: the way out (`icon` and the word `word`: home, or the
-// puzzles), settings, and start over at the bottom, far from what plays; in portrait a
-// bar of three above the board. Returns HOME for the way out, SETTINGS, RESTART, or
-// NOTHING.
-fn leave(g: gui::Gui&, l: Layout, icon: i64, word: i64) -> i64 {
+// The way out: back, settings, and start over at the bottom, far from what plays. In
+// landscape back is its own glass tile at the top of `left` (prototypes/back.html, take
+// b) and the panel under it holds the other two; in portrait the three are a bar above
+// the board, back first. Back goes where the screen's way out goes (home from the game,
+// the theme's page from a puzzle). Returns BACK, SETTINGS, RESTART, or NOTHING.
+fn leave(g: gui::Gui&, l: Layout) -> i64 {
     let u = g.scale;
     var chosen = NOTHING;
-    let words = [word, strings::HOME_SETTINGS, strings::GAME_START_OVER];
-    let icons = [icon, gui::GEAR, gui::RESTART];
-    let asks = [HOME, SETTINGS, RESTART];
+    let words = [strings::NAV_BACK, strings::HOME_SETTINGS, strings::GAME_START_OVER];
+    let icons = [gui::BACK, gui::GEAR, gui::RESTART];
+    let asks = [BACK, SETTINGS, RESTART];
     if l.left.z < l.left.w {
+        var column = l.left;
+        if gui::back(g, 110, gui::cut_top(column, ROW_H * u), strings::get(words[0])) { chosen = BACK; }
+        gui::cut_top(column, BACK_GAP * u);
+        gui::panel(g, column);
         // Each icon beside its word, or, where a word doesn't fit so in a narrowed panel,
-        // every icon over its word in taller rows.
-        var left = float4 { l.left.x + 16.0 * u, l.left.y + 20.0 * u, l.left.z - 32.0 * u, l.left.w - 40.0 * u };
+        // both icons over their words in taller rows.
+        var left = float4 { column.x + 16.0 * u, column.y + 20.0 * u, column.z - 32.0 * u, column.w - 40.0 * u };
         var arrange = gui::BESIDE;
-        for i in 3 {
+        for i in 1..3 {
             if gui::labelled_width(g, 34.0, strings::get(words[i]), gui::HEADING, gui::BESIDE) > left.z {
                 arrange = gui::STACKED;
             }
         }
         let h = (if arrange == gui::BESIDE { ROW_H } else { STACK_H }) * u;
-        for i in 3 {
-            let r = if i < 2 { gui::cut_top(left, h) } else { gui::cut_bottom(left, h) };
-            if i == 0 { gui::cut_top(left, 12.0 * u); }
+        for i in 1..3 {
+            let r = if i == 1 { gui::cut_top(left, h) } else { gui::cut_bottom(left, h) };
             if gui::labelled(g, 110 + i, r, icons[i], 34.0, strings::get(words[i]), gui::HEADING, arrange) {
                 chosen = asks[i];
             }
         }
         return chosen;
     }
+    gui::panel(g, l.left);
     // Thirds of the bar while each word fits its third; else each tile as wide as its
     // word wants and an even share of the rest, as the setup's draughts are. A bar made
     // taller for it (TOP_STACKED) puts each icon over its word, which needs less width.
@@ -431,9 +438,8 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, thinkin
     let first = if l.board.flip { 0 } else { 1 };
     var rings: f32[2] = [0.0, 0.0];
     for s in 2 { if c.running == s || (thinking && s == side) { rings[s] = glow; } }
-    gui::panel(g, l.left);
+    var chosen = leave(g, l);
     gui::panel(g, l.right);
-    var chosen = leave(g, l, gui::HOME, strings::GAME_HOME);
     var right = play_area(g, l);
     if landscape {
         let back = gui::cut_bottom(right, tall(l, u));
@@ -452,7 +458,7 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, thinkin
             gui::text(g, gui::fitting(g, gui::HEADING, words, right.z), gui::cut_top(right, f.ascent - f.descent), words,
                       1.0, 0.0, gui::CENTER);
         }
-        if gui::labelled(g, 113, back, gui::UNDO, 48.0, strings::get(strings::GAME_TAKE_BACK), gui::HEADING,
+        if gui::labelled(g, 113, back, gui::UNDO, 48.0, strings::get(strings::GAME_UNDO_MOVE), gui::HEADING,
                          gui::STACKED) {
             chosen = UNDO;
         }
@@ -475,7 +481,7 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, thinkin
         gui::cut_left(row, 18.0 * u);
         gui::text(g, gui::HEADING, row, label, 1.0, 0.0, gui::LEFT);
     }
-    if gui::labelled(g, 113, gui::cut_top(right, WIDE_H * u), gui::UNDO, 36.0, strings::get(strings::GAME_TAKE_BACK),
+    if gui::labelled(g, 113, gui::cut_top(right, WIDE_H * u), gui::UNDO, 36.0, strings::get(strings::GAME_UNDO_MOVE),
                      gui::HEADING, gui::MIDDLE) {
         chosen = UNDO;
     }

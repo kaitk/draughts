@@ -260,7 +260,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
         // Partway through a capture, take back only takes the capture back to its start.
         panel::UNDO => { if !board::unwind(b) && gm.clock.flag < 0 { undone = take_back(gm); } },
         panel::RESTART => { restart(gm, now); },
-        panel::HOME => { go = HOME; },
+        panel::BACK => { go = HOME; },
         panel::SETTINGS => { go = SETTINGS; },
         _ => {},
     }
@@ -294,7 +294,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
             restart(gm, now);
             changed = true;
         }
-        if ask == panel::HOME { go = HOME; }
+        if ask == panel::BACK { go = HOME; }
     } else if !g.took && l.three && gm.cam.showcase {
         // The showcase: a drag anywhere off the UI turns and tips the board, not a piece.
         if rig::drive(gm.cam, input.at, input.down, input.pressed, input.released, g.scale, l.pitch, now) {
@@ -477,7 +477,7 @@ fn winning_spot(gm: Game&, pl: panel::Layout) -> float2, f32 {
 // The card over the dimmed board once the pieces have answered: the winner's piece,
 // crowned, fading in over restart or back; it slides up as it fades in, its taps where
 // it is at rest. On the 3D board it is placed by the board's bounds on screen and the
-// winning piece where the perspective shows it. Returns panel::RESTART, panel::HOME, or
+// winning piece where the perspective shows it. Returns panel::RESTART, panel::BACK, or
 // panel::NOTHING.
 fn celebrate(gm: Game&, g: gui::Gui&, pl: panel::Layout, won: i64, now: f64, over: Overlay&) -> i64 {
     let t = moment(gm, now);
@@ -512,7 +512,7 @@ fn celebrate(gm: Game&, g: gui::Gui&, pl: panel::Layout, won: i64, now: f64, ove
     let row = gui::cut_top(c, 88.0 * u);
     var ask = panel::NOTHING;
     let gap = 20.0 * fit * u;
-    if gui::button(g, 200, gui::cell(row, 2, 1, button * u, 88.0 * u, gap, 0), gui::BACK) { ask = panel::HOME; }
+    if gui::button(g, 200, gui::cell(row, 2, 1, button * u, 88.0 * u, gap, 0), gui::BACK) { ask = panel::BACK; }
     if gui::tile(g, 201, gui::cell(row, 2, 1, button * u, 88.0 * u, gap, 1), gui::RESTART, gui::PRIMARY, 22.0) {
         ask = panel::RESTART;
     }

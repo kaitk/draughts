@@ -23,7 +23,7 @@ let KEYS = [
     "board.flat", "board.flat_note", "board.raised", "board.raised_note",
     "kings.auto", "kings.crown", "kings.stack",
     "tutorial.learn",
-    "game.home", "game.start_over", "game.take_back",
+    "nav.back", "game.start_over", "game.undo_move",
     "turn.white", "turn.black", "won.white", "won.black",
     "setup.draughts", "setup.level", "setup.color", "setup.clock", "setup.play",
     "variant.international", "variant.brazilian", "variant.russian", "size.10", "size.8",
@@ -71,9 +71,9 @@ let KINGS_AUTO = 28;
 let KINGS_CROWN = 29;
 let KINGS_STACK = 30;
 let TUTORIAL_LEARN = 31;
-let GAME_HOME = 32;
+let NAV_BACK = 32;
 let GAME_START_OVER = 33;
-let GAME_TAKE_BACK = 34;
+let GAME_UNDO_MOVE = 34;
 let TURN_WHITE = 35;
 let TURN_BLACK = 36;
 let WON_WHITE = 37;

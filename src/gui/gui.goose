@@ -584,10 +584,22 @@ fn labelled(g: Gui&, id: i64, r: float4, icon: i64, size: f32, label: const u8[:
         let f .= g.faces[face];
         let line = f.ascent - f.descent;
         let gap = 8.0 * u;
-        var c = center(r, r.z, s + gap + line);
+        let room = r.z - 2.0 * LABEL_PAD * u;
+        // A word too wide for one line goes on two where the tile is tall enough for them,
+        // broken at a space ("Undo move" in a narrow tile); else it takes a smaller face.
+        let cut = if text_width(g, face, label) > room && r.w >= s + gap + 2.0 * line + 16.0 * u {
+            break_at(g, face, label, room)
+        } else { -1 };
+        let lines: f32 = if cut >= 0 { 2.0 } else { 1.0 };
+        var c = center(r, r.z, s + gap + lines * line);
         glyph_icon(g, center(cut_top(c, s), s, s), icon, PLAIN, p, a);
         cut_top(c, gap);
-        text(g, fitting(g, face, label, r.z - 2.0 * LABEL_PAD * u), c, label, a, 0.0, CENTER);
+        if cut >= 0 {
+            text(g, face, cut_top(c, line), label[..cut], a, 0.0, CENTER);
+            text(g, face, c, label[cut + 1..], a, 0.0, CENTER);
+            return clicked;
+        }
+        text(g, fitting(g, face, label, room), c, label, a, 0.0, CENTER);
         return clicked;
     }
     let gap = 12.0 * u;
@@ -610,6 +622,34 @@ fn labelled(g: Gui&, id: i64, r: float4, icon: i64, size: f32, label: const u8[:
 fn labelled_width(g: Gui&, size: f32, label: const u8[:], face: i64, arrange: i64) -> f32 {
     let lead = if arrange == BESIDE { INDENT } else { LABEL_PAD };
     return (lead + size + 12.0 + LABEL_PAD) * g.scale + text_width(g, face, label);
+}
+
+// The way back (rendering.md, "Controls"; prototypes/back.html, take b): one control on
+// every screen, the arrow and the word `label` ("Back") side by side on a glass tile,
+// 88 dp tall. back_width is how wide it is: its icon and word with BACK_PAD at either
+// side, 88 dp at least.
+let BACK_ICON = 34.0;
+let BACK_PAD = 20.0;
+fn back_width(g: Gui&, label: const u8[:]) -> f32 {
+    return max(88.0 * g.scale, (2.0 * BACK_PAD + BACK_ICON + 12.0) * g.scale + text_width(g, HEADING, label));
+}
+
+// The way back in r, on its own glass, or with `stacked` the arrow over the word in an
+// 88 dp square where a page has no room for it wider; true when tapped.
+fn back(g: Gui&, id: i64, r: float4, label: const u8[:], stacked: bool = false) -> bool {
+    glass(g, r, 22.0);
+    return labelled(g, id, r, BACK, BACK_ICON, label, HEADING, if stacked { STACKED } else { MIDDLE });
+}
+
+// Where to break `text` into two lines of face `face` each at most w pixels wide: the
+// space that leaves the first line longest, or -1 where none does.
+fn break_at(g: Gui&, face: i64, text: const u8[:], w: f32) -> i64 {
+    var best = -1;
+    for c, i in text {
+        guard c == 32 else { continue; }
+        if text_width(g, face, text[..i]) <= w && text_width(g, face, text[i + 1..]) <= w { best = i; }
+    }
+    return best;
 }
 
 // The largest of the faces from `face` down to SMALL that fits `text` in w pixels.

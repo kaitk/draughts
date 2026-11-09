@@ -12,7 +12,7 @@ settings 1768 x 2208 at 800 dp: raised true, bounds 176 248 448 x 307 (146:100),
 settings 2208 x 1768 at 800 dp: raised true, bounds 718 317 242 x 166 (146:100), on screen true, tiles touched 0 of 18, flat square in the middle true, drawn as placed true
 settings 1024 x 768 at 800 dp: raised true, bounds 720 295 305 x 209 (146:100), on screen true, tiles touched 0 of 18, flat square in the middle true, drawn as placed true
 settings 768 x 1024 at 800 dp: raised true, bounds 129 250 541 x 371 (146:100), on screen true, tiles touched 0 of 10, flat square in the middle true, drawn as placed true
-settings 2400 x 1080 at 540 dp: raised true, bounds 724 122 431 x 295 (146:100), on screen true, tiles touched 0 of 10, flat square in the middle true, drawn as placed true
+settings 2400 x 1080 at 540 dp: raised true, bounds 755 133 400 x 275 (146:100), on screen true, tiles touched 0 of 10, flat square in the middle true, drawn as placed true
 settings 1080 x 2400 at 540 dp: raised true, bounds 73 149 395 x 271 (146:100), on screen true, tiles touched 0 of 18, flat square in the middle true, drawn as placed true
 flat home: raised false
 puzzle: raised true, bounds 191 160 898 x 616, tiles 4 on screen true, touched 0, kings drawn as 2
@@ -32,8 +32,8 @@ won: B:Wa1,g5:B, winning piece on g5, card 488 333 304 x 269 inside the 3D bound
   home to the game 1.25: raised true, hold false, placed 191 160 898 x 616, fade 1.0
   views drawn through 1, the flat layout steady true, at rest placed at the game's bounds true, the game's larger than home's true
 picker: raised false
-  tile to the puzzle 1.07: raised true, placed 518 260 179 x 123, fade 0.1, hole as tall as the image true
-  tile to the puzzle 1.12: raised true, placed 428 233 378 x 259, fade 0.35, hole as tall as the image true
-  tile to the puzzle 1.17: raised true, placed 319 200 616 x 422, fade 0.65, hole as tall as the image true
-  tile to the puzzle 1.22: raised true, placed 229 172 815 x 559, fade 0.9, hole as tall as the image true
+  tile to the puzzle 1.07: raised true, placed 539 260 179 x 123, fade 0.1, hole as tall as the image true
+  tile to the puzzle 1.12: raised true, placed 442 233 378 x 259, fade 0.35, hole as tall as the image true
+  tile to the puzzle 1.17: raised true, placed 328 200 616 x 422, fade 0.65, hole as tall as the image true
+  tile to the puzzle 1.22: raised true, placed 231 172 815 x 559, fade 0.9, hole as tall as the image true
   tile to the puzzle 1.27: raised true, placed 191 160 898 x 616, fade 1.0, hole as tall as the image true

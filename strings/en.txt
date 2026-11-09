@@ -42,9 +42,9 @@ kings.stack = Stack
 
 tutorial.learn = Learn the moves
 
-game.home = Home
+nav.back = Back
 game.start_over = Start over
-game.take_back = Take back
+game.undo_move = Undo move
 turn.white = White's turn
 turn.black = Black's turn
 won.white = White wins
