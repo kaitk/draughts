@@ -41,21 +41,24 @@ Measured numbers per device are in
 
 ### Performance
 
-The release, idle 25 s at rest, and while a piece moves (`--bench 300`, Russian, wood):
-frames per second as presented, and a frame's time from the start of its work to the GPU
-done, waited for, against the display's 11.1 ms at 90 Hz or 16.7 ms at 60 Hz.
+The release in a game (Russian, wood, the start), on the 2D and the 3D board: idle 25 s
+at rest, and while it draws every frame (`--bench 1000`). Frames per second as presented,
+on average and the 1% low (the rate of the slowest 1% of frames); a frame's time from the
+start of its work to the GPU done, waited for, the median and the 99th percentile,
+against the display's 11.1 ms at 90 Hz or 16.7 ms at 60 Hz
+([development](docs/development.md#time-the-3d-board)).
 
-| Device | Board | Idle CPU (one core) | Memory (PSS) | Frames per second | Frame time | Measured |
+| Device | Board | Idle CPU (one core) | Memory (PSS) | FPS (avg / 1% low) | Frame time (P50 / P99) | Measured |
 | --- | --- | --- | --- | --- | --- | --- |
-| Galaxy Tab A11+, 1920 × 1200, 90 Hz | 2D, a game | 0.04% | 143 MB | 91 | 10.2 ms | 2026-11-10 |
-| Galaxy Tab A11+ | 3D, a game | 0.28% | 271 MB | 77 | 10.7 ms | 2026-11-10 |
-| Pixel 7a, 2400 × 1080, 60 Hz | 3D, a game | 0.05% | 345 MB | 60 | 13 to 14 ms | 2026-11-09 |
+| Galaxy Tab A11+, 1920 × 1200, 90 Hz | 2D | 0.04% | 141 MB | 91 / 69 | 9.8 / 12.9 ms | 2026-11-10 |
+| Galaxy Tab A11+ | 3D | 0.32% | 274 MB | 77 / 60 | 10.6 / 12.8 ms | 2026-11-10 |
+| Pixel 7a, 2400 × 1080, 60 Hz | 3D | 0.05% | 345 MB | 60 | 13 to 14 ms | 2026-11-09 |
 | Galaxy A33 5G, 2400 × 1080, 90 Hz | 2D | 0.00% | 107 MB | 90 | | 2026-11-09 |
 | Galaxy A33 5G | 3D | 0.00% | 309 MB | 39 | 19 ms | 2026-11-09 |
 
 The 2D board draws in one full-screen pass, the UI's glass over it. The 3D board's frame
 time is its pass with the shadow map, as while a piece moves; the UI adds to it. On the
-tablet it fits in a 90 Hz frame, but frames are presented every 13 ms.
+tablet its median fits in a 90 Hz frame, but frames are presented every 13 ms on average.
 
 The 3D board's extra memory is GPU memory: 180 to 230 MB against about 36 MB in 2D.
 

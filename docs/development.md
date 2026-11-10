@@ -445,7 +445,8 @@ frames, from the shell's fill to the GPU done, each waited for, then N as the lo
 them, frame to frame.
 Both end with a summary: the waited frame's P50 and P99, and the presented frames'
 average and 1% low (the rate of the 99th percentile's gap). The README's table takes
-those from `--bench 1000`, in a game, Russian, wood.
+those from `--bench 1000`, in a game, Russian, wood.: `scripts/device_perf.sh` takes a device's
+rows, each board's bench once the device is cool, then its idle CPU and memory.
 
 Two seconds after the launch the app times 300 frames drawing the 3D board and its
 shadow map, as while a piece moves, each submitted and waited for (`gfx::flush`); 300
