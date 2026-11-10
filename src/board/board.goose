@@ -751,6 +751,7 @@ fn update(b: Board&, now: f64) -> bool {
     return ended;
 }
 
+// Eased in and out (smoothstep), t in 0..1: a hop, a transition, the end cards' fades.
 fn ease(t: f64) -> f64 { t * t * (3.0 - 2.0 * t) }
 
 fn set_bit(bits: u32[4]&, n: i64) { bits[n / 32] |= (1 as u32) << (n % 32); }

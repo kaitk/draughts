@@ -733,9 +733,9 @@ fn apart(v: rules::Variant&, a: i64, b: i64) -> f64 {
     return sqrt(dx * dx + dy * dy);
 }
 
-// Where t is from a to b, 0..1; eased in and out; eased out; up and back down.
+// Where t is from a to b, 0..1; eased out; up and back down. Eased in and out is
+// board::ease.
 fn span(t: f64, a: f64, b: f64) -> f64 { clamp((t - a) / (b - a), 0.0, 1.0) }
-fn smooth(x: f64) -> f64 { x * x * (3.0 - 2.0 * x) }
 fn ease_out(x: f64) -> f64 { 1.0 - (1.0 - x) * (1.0 - x) * (1.0 - x) }
 fn bump(x: f64) -> f64 { if x <= 0.0 || x >= 1.0 { 0.0 } else { sin(PI * x) } }
 
@@ -748,7 +748,7 @@ fn bump(x: f64) -> f64 { if x <= 0.0 || x >= 1.0 { 0.0 } else { sin(PI * x) } }
 fn cheer(gm: Game&, l: board::Layout, now: f64, share: f32 = 1.0) {
     if gm.drawn_at >= 0.0 {
         let b .= gm.b;
-        b.dim = (DIM * smooth(span(now - gm.drawn_at, 0.0, DRAW_DIM))) as f32 * share;
+        b.dim = (DIM * board::ease(span(now - gm.drawn_at, 0.0, DRAW_DIM))) as f32 * share;
         for &p in b.pieces { p.win.x = b.dim; }
         return;
     }
@@ -757,7 +757,7 @@ fn cheer(gm: Game&, l: board::Layout, now: f64, share: f32 = 1.0) {
     let v .= rules::VARIANTS[b.variant];
     let t = moment(gm, now);
     let won = winner(gm);
-    b.dim = (DIM * smooth(span(t, DIM_AT, DIM_AT + 0.6))) as f32 * share;
+    b.dim = (DIM * board::ease(span(t, DIM_AT, DIM_AT + 0.6))) as f32 * share;
     var top = -1;
     for i in b.pieces.len {
         let p .= b.pieces[i];
@@ -856,7 +856,7 @@ fn celebrate(gm: Game&, g: gui::Gui&, pl: panel::Layout, won: i64, now: f64, ove
     gui::fade(g, first, g.quads.len, k as f32, float2 { 0.0, drop });
     gui::on_board(g, first, g.quads.len);
     spot.y += drop;
-    let a = smooth(span(t, CROWN_AT, STILL)) as f32;
+    let a = board::ease(span(t, CROWN_AT, STILL)) as f32;
     let n = over.len;
     panel::piece(over, spot, 44.0 * fit * u, won, gm.b.king_look, a, a);
     if over.len > n { over[n].win.w = 1.0; }   // on the board, as the card is
