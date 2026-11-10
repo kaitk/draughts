@@ -9,6 +9,29 @@ Today the flow of one tap takes about ten hops over seven files. That isn't the 
 The problem is state passed between packages through flags, and an order that holds
 only because of where calls sit in `main`.
 
+## First: review stage 1's four departures
+
+Stage 1 (`02-moves.md`, "Outcome") left four places where it didn't do what its file
+asked. The user wants each one reviewed before this stage starts. For each, read the code
+and decide whether the choice holds or an alternative is better. Ask the user before
+changing an expected output. Record each verdict here.
+
+1. **`strings::PUZZLES_FOR_NOW` and `picker::note_of` were kept.** The note shows only
+   for English, which the engine plays but the setup doesn't offer;
+   `test/shell/puzzle_set` drives it. The alternative: drop the note, its key in both
+   string files, and the English case in that test.
+2. **`shell::face_chars` stayed in the shell** instead of moving to `app/text.goose`.
+   `test/shell/faces` calls it headless, and `text.goose` imports gfx and ui. The
+   alternatives: move it to another package without graphics (`game` has the clock's
+   characters, `strings` the names), or split `text.goose`.
+3. **`board` now imports `gui`**, because `board::touch` takes `gui::Input` (and
+   `test/board/rig` declares `gui`). The alternatives: a small pointer struct in `board`,
+   or `touch` taking the pointer's fields, which keeps `board` on `rules` alone.
+4. **`home::NO_SETUP` (0) was split from `home::NOTHING`**, now `gui::ASK_NOTHING` (−1).
+   The shared asks are negative so that the picker can return a puzzle's index. Four
+   tests print the setup's raw number. The alternatives: tests that print the setup's
+   name and a re-blessed output, or another numbering of the asks.
+
 ## One screen table
 
 `shell.goose` checks which screen is showing in eight functions:
