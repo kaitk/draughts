@@ -1355,7 +1355,7 @@ The release at rest, idle 20 to 30 s:
   (the camera turning) 9.9, presented 12.8 ms frame to frame; 90 Hz kept. The release, 2026-11-10, 1000 frames: waited P50
   10.6 / P99 12.7 ms, the pass alone 10.0; the compositor counts 17% of the frames on
   screen for two refreshes, 78 fps on average, 45 at the 1% low (task 055). The flat board's
-  whole frame (`bench2d`) 10.2 ms waited, and no frame missed (`scripts/device_perf.sh`). Baking the
+  whole frame (`bench2d`) 10.2 ms waited, and no frame dropped (`scripts/device_perf.sh`). Baking the
   field's shadow and occlusion into a map with the shadow map was dropped (the user,
   2026-11-09): it took the camera's turn to 8.4 ms but every frame that draws the
   shadow map to 11.5.
@@ -1371,7 +1371,7 @@ The release at rest, idle 20 to 30 s:
   mips now end at the shorter side's 1 pixel (`render3d::baked`). 2026-11-10, 1000
   frames: the 3D frame waited P50 23.2 / P99 26.0 ms (the pass alone 17.1), on screen for
   two refreshes every other frame, a steady 60 fps; the flat board's 15.6 ms waited, and
-  no frame missed.
+  no frame dropped.
 - **Open:** at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the
   flat board's 0.3, outside the app's own work, as the Mac shows no draw at rest.
 

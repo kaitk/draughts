@@ -10,7 +10,7 @@
 # frames the compositor's own count (SurfaceFlinger's timestats): how long each frame
 # stayed on screen, which no clock in the app can tell. From that: frames per second on
 # average and at the 1% low (the 99th percentile's frame), the frame time's P50 and P99,
-# and how many frames missed their refresh (on screen for more than one). Then the app
+# and how many frames were dropped (the one before on screen for more than one refresh). Then the app
 # opened again and left at rest: its idle CPU for 25 s (scripts/idle_cpu.sh) and memory.
 P=$(sed -n 's/^APP_ID = "\(.*\)"/\1/p' "$(dirname "$0")/native.py")   # the application id
 N=${1:-1000}
@@ -63,11 +63,11 @@ for b in ${BOARDS:-flat 3d}; do
       }
       if (most <= 0 || !hz[best]) { print "compositor: no frames counted"; exit }
       period = 1000 / hz[best]
-      n = split(hist[best], a, " "); total = 0; refreshes = 0; missed = 0
+      n = split(hist[best], a, " "); total = 0; refreshes = 0; dropped = 0
       for (i = 1; i <= n; i++) {
         split(a[i], kv, "="); ms[i] = kv[1] + 0; c[i] = kv[2] + 0
         r[i] = int(ms[i] / period + 0.5); if (r[i] < 1) r[i] = 1
-        total += c[i]; refreshes += r[i] * c[i]; if (r[i] > 1) missed += c[i]
+        total += c[i]; refreshes += r[i] * c[i]; if (r[i] > 1) dropped += c[i]
       }
       seen = 0; p50 = 0; p99 = 0
       for (i = 1; i <= n; i++) {
@@ -75,8 +75,8 @@ for b in ${BOARDS:-flat 3d}; do
         if (!p50 && seen >= 0.50 * total) p50 = r[i]
         if (!p99 && seen >= 0.99 * total) p99 = r[i]
       }
-      printf "compositor: %d frames at %d Hz: avg %.1f / 1%% low %.0f fps, frame time P50 %.1f / P99 %.1f ms, %d missed a refresh (%.1f%%)\n",
-        total, hz[best], hz[best] * total / refreshes, hz[best] / p99, p50 * period, p99 * period, missed, 100 * missed / total }' "$dump"
+      printf "compositor: %d frames at %d Hz: avg %.1f / 1%% low %.0f fps, frame time P50 %.1f / P99 %.1f ms, %d dropped (%.1f%%)\n",
+        total, hz[best], hz[best] * total / refreshes, hz[best] / p99, p50 * period, p99 * period, dropped, 100 * dropped / total }' "$dump"
   adb shell dumpsys SurfaceFlinger --timestats -disable >/dev/null
   await "$tag: summar[y]"
   adb logcat -d | grep -E "$tag: (summary,|[0-9]+x)" | sed 's/.*bench/bench/'

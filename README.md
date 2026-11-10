@@ -60,12 +60,10 @@ percentile, against the display's 11.1 ms at 90 Hz or 16.7 ms at 60 Hz
 | iPhone 13 mini | 3D | | | 60 / 60 | 16.7 / 16.7 ms | 2026-11-10 |
 
 The 2D board draws in one full-screen pass, the UI's glass over it, and holds the display's
-rate. The 3D board's frame takes about 10.6 ms of GPU work on the tablet, so 17% of its
-frames miss a refresh and stay on screen for two (task 055, and task 042 for its cost); on
-the Pixel 7a, 13.5 ms of its 16.7, it missed one frame in 995. The Galaxy A33's 3D frame
-takes 23 ms, so it holds a steady 60 on its 90 Hz display, every other frame on screen for
-two refreshes. On the iPhone the frames are counted by Instruments' Animation Hitches
-rather than Android's compositor: 4 of 979 missed on the 2D board, 1 of 985 on the 3D.
+rate. The 3D board's frame takes about 10.6 ms of GPU work on the tablet, over its 90 Hz
+budget now and then (task 055, and task 042 for its cost); the Galaxy A33's 23 ms holds a
+steady 60 on its 90 Hz display. On the iPhone, Instruments' Animation Hitches counts the
+frames in place of Android's compositor.
 
 The 3D board's extra memory is GPU memory: 180 to 230 MB against about 36 MB in 2D.
 
