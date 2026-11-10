@@ -167,6 +167,14 @@ screen): of about 970 bench frames per board, none dropped and none held past a 
 on both boards, each flipped straight to the screen (Independent Flip), 6 ms from present
 to display. A moving board and a transition are still to record there.
 
+0. **Next (2026-11-10): the display at 60 Hz while the 3D board moves, on Android.** The
+   A33's moving 3D board shows 60 frames a second on its 90 Hz display as two refreshes
+   and one in turn; asking for 60 (`ANativeWindow_setFrameRate` on the game's surface,
+   from the app's own C, or `Surface.setFrameRate` from `DraughtsActivity`) while the
+   board moves, and the display's own rate again at rest, should show each frame for one
+   refresh. Check it on the A33 with Perfetto (`agents/testing.md`, "Frame pacing"): the
+   latch gaps all one refresh at 60 Hz; then the tablet and the Pixel 7a, whose 3D boards
+   run near their rate, so that it doesn't cost them frames they now hold.
 1. **When each frame is presented.** On the iPhone, the trace's Metal tables
    (`metal-command-buffer-completed`, `display-surface-swap`) against the display's
    vsyncs (`display-vsyncs-interval`), and the app's own time stamps at acquire and

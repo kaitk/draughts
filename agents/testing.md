@@ -478,3 +478,30 @@ measuring there:
 - A worktree's own `build/`: `build/ios/` holds CMake caches tied to one checkout's path,
   so a worktree links only the toolchains (`build/goose-v2026.4-macos-arm64`, ...) into a
   `build/` of its own rather than linking the whole of the main checkout's.
+
+## Frame pacing
+
+How task 056 found which frames were late and why (2026-11-10):
+
+- **The Mac:** `xcrun xctrace record --template 'Metal System Trace' --launch --
+  build/draughts …`; the app's stdout doesn't reach the log. Its trace has no
+  `display-vsyncs-interval` rows: a frame's time on screen is
+  `ca-client-presented-handler`'s requested time (raw units are 41.67 a ns), joined to
+  `ca-client-present-request`, `metal-command-buffer-completed`, `metal-gpu-intervals`
+  (200 MB exported for 40 s: parse it with `iterparse`), and
+  `ca-client-buffer-wait-interval`. A 50 ms stall every 5.00 s from the recording's start
+  is most likely Instruments' own.
+- **The iPhone:** Animation Hitches only (`scripts/ios_perf.py`; its tables
+  `display-surface-swap`, `displayed-surfaces-interval`, `display-surface-queue`,
+  `metal-command-buffer-completed`). Under Metal System Trace the app's loop runs at 120
+  on the 60 Hz panel, and the display tables hold only the first half second.
+- **Android:** Perfetto, its config on stdin (`/data/local/tmp` isn't readable to it):
+  `adb shell "perfetto --txt -c - -o /data/misc/perfetto-traces/x.pftrace --background"
+  < config.pbtx`, with `linux.ftrace` (atrace `gfx view sched freq`, `atrace_apps` the
+  app id), a 384 MB buffer and 140 s for the whole 3D bench (its four phases take about
+  100 s on the A33). The app's SurfaceView has no frame tokens, so SurfaceFlinger's
+  frame timeline leaves it out: a frame's latch is a drop of the counter `BufferTX -
+  …SurfaceView[io.github.kaitk.draughts…]`, the app's hand-over a top-level
+  `queueBuffer` on `SDLThread`, and `VSYNC-sf` toggles each refresh. Read it with
+  Perfetto's trace processor (`get.perfetto.dev/trace_processor`, the user allowed the
+  download).
