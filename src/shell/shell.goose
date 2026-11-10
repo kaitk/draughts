@@ -179,9 +179,9 @@ fn play_puzzle(sh: Shell&, index: i64, now: f64 = 0.0) {
 // Android's back, or Escape on the Mac, at `now`: what the screen's own back or home
 // control does. A setup goes back to home's menu, the game, settings, and the puzzles to
 // pick from where their tiles go (home, or where settings came from), a puzzle to its
-// theme's page, a theme's page to the library. False, changing nothing, on home's menu, which has no way back: there back
-// leaves the app as the system's does, and Escape closes the window. In a transition it
-// acts on the screen come to, as a tap does.
+// theme's page, a theme's page to the library. False, changing nothing, on home's menu,
+// which has no way back: there back leaves the app as the system's does, and Escape
+// closes the window. In a transition it acts on the screen come to, as a tap does.
 fn back(sh: Shell&, now: f64) -> bool {
     if sh.screen == HOME && sh.who.state != who::CLOSED {
         who::back(sh.who);
@@ -219,8 +219,7 @@ fn play(sh: Shell&, now: f64) {
 }
 
 // One frame, after gui::begin, on a screen width × height pixels, each screen laid out in
-// its safe area (gui::safe, the insets in g). Returns whether
-// anything on screen changed.
+// its safe area (gui::safe, the insets in g). Returns whether anything on screen changed.
 fn frame(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> bool {
     // A switch happens in a frame that declared the old screen, so the first frame of the
     // new one is a change, however long ago the tap was.
@@ -930,10 +929,10 @@ fn fill(sh: Shell&, now: f64) -> board::Board& {
     return b;
 }
 
-// Whether anything is still moving at `now`; the app draws while it is.
 // Whether the 3D board is chosen but not ready to draw (sh.ready3d).
 fn waiting3d(sh: Shell&) -> bool { settings::raised(sh.prefs) && !sh.ready3d }
 
+// Whether anything is still moving at `now`; the app draws while it is.
 fn animating(sh: Shell&, g: gui::Gui&, now: f64) -> bool {
     if sh.from >= 0 { return true; }
     return if sh.screen == GAME { game::animating(sh.game, g, now) }
