@@ -41,7 +41,8 @@ above.
 - [x] The page matches the code after stage 4: every cited name exists
 - [x] It is in the repo, linked from both READMEs, and opens from `file:///` with no
       broken parts
-- [ ] It is on GitHub Pages (may wait for task 029's Pages setup): task 062's step 3
+- [x] It is on GitHub Pages (may wait for task 029's Pages setup): task 062's step 3,
+      live 2026-11-11
 
 ## Outcome
 

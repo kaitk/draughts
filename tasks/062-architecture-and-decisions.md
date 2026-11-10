@@ -1,6 +1,6 @@
 # 062: Architecture for people, decisions for agents
 
-Status: in-progress
+Status: done (2026-11-11)
 
 After task 061. `docs/architecture/` mixes two things: how the app works now, and the
 dated decisions with their reasons, what was rejected, and the measurements behind them.
@@ -47,7 +47,7 @@ model here:
 - [x] Every decision now in `docs/architecture/` is in `docs/decisions/`, dated, with its
       reason, and what it rejected where the source says so; nothing is lost (check by
       diffing the facts, not the lines)
-- [ ] The overview page is `docs/architecture/index.html`, linked from both READMEs, and
+- [x] The overview page is `docs/architecture/index.html`, linked from both READMEs, and
       on Pages at `/draughts/architecture/`
 - [x] `AGENTS.md` and `agents/writing.md` state the split as Plod's do
 - [x] No link points at a heading that moved (grep for `architecture/` and `#` anchors)
@@ -69,5 +69,6 @@ Done on 2026-11-10 and 11, one commit per file, `rendering.md` in four section g
   quoted section name.
 - `puzzles.md` said a game plays a capture whole once one goes on; the code and
   `rendering.md` make it stop by stop in a game too, so that line was corrected.
-- Pages: the page is committed on the local `gh-pages` branch as
-  `architecture/index.html`, not pushed (2026-11-11).
+- Pages: `architecture/index.html` on the `gh-pages` branch (`bb06d31`), live at
+  <https://kaitk.github.io/draughts/architecture/> (2026-11-11). A change to the page is
+  copied there again by hand.
