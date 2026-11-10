@@ -35,7 +35,9 @@ draws its HUD:
   small fixed table holds per-id state for the press animation (0.12 s). A press that
   lands on the UI is the UI's and never reaches the board.
 - Calls append quads (`panel`, `button`, `icon`, `fill`; `text` with home) to one fixed
-  array, reset each frame, and one pipeline draws them in one instanced draw.
+  array, reset each frame, drawn by instanced draws in their order: one pipeline for the
+  icons, one for the players' faces, one for the rest, each run of quads one draw (task
+  060: one shader for all held 64 registers for every UI pixel, each of the three 32).
 - **Native form**: `gui/` holds the layer with no graphics (tested headless in
   `test/gui/`), and `src/app/widgets.goose` draws it: each quad pulls `{rect, color, kind,
   radius, icon, pressed, dp, look}` from one storage buffer, and its fragment shader works
