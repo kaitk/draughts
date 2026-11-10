@@ -172,6 +172,7 @@ fn main() {
     drive::frame(sh, g, c, false, false, true, 1.16);
     print("  the puzzle's man waits on ", drive::name(v, board::waiting(sh.puzzle.b)));
     sh.prefs.hints = board::MOVES;
+    shell::apply_prefs(sh);
     shell::go_to(sh, shell::SETTINGS, 2.0);
     for t in [2.0, 2.1, 2.3, 3.0] { drive::idle(sh, g, t); }
     game::start(sh.game, I, clock::NONE, rules::WHITE, game::MEDIUM, 40, 1);

@@ -86,7 +86,6 @@ fn main() {
     let fen .= f.fen;
     let taps .= f.taps;
     var kind = f.theme;
-    var hints = f.hints;
     var lang = f.lang;
     // The game as it was when the app was last paused (shell::restore; nothing changes
     // for a missing or damaged file). A run with flags that set up a game or take a
@@ -99,7 +98,6 @@ fn main() {
     var players_read = players::Players {};
     let prefs = players::load(players_read, dir, keep);
     if kind < 0 { kind = theme_for(prefs.season); }
-    if hints < 0 { hints = prefs.hints; }
     var locales: u8[256] = [0; 256];
     let system_lang = strings::pick(locales[..draughts_locales(locales)]);
     if lang < 0 { lang = if prefs.language >= 0 { prefs.language } else { system_lang }; }
@@ -134,10 +132,9 @@ fn main() {
     }
     if f.board >= 0 { sh.prefs.board = f.board; }
     if f.lookout >= 0 { sh.prefs.lookout = f.lookout == 1; }
+    if f.hints >= 0 { sh.prefs.hints = f.hints; }
     sh.players = players_read;
-    let gm .= sh.game;
-    let b .= gm.b;
-    b.hints = hints;
+    let b .= sh.game.b;
     if fen.len > 0 {
         let p, ok = rules::parse_fen(fen, b.variant);
         guard ok else { abort(str("not a position: ", fen)); }
@@ -152,6 +149,7 @@ fn main() {
         if f.computer >= 0 { sh.prefs.color = 1 - f.computer; }
         if f.level >= 0 { sh.prefs.level = f.level; }
     }
+    shell::apply_prefs(sh);
     // The puzzles the flags open are of their draughts' set, loaded above: the library's
     // switch lights those draughts, and home doesn't load the player's set back on the way.
     let to_puzzles = sh.screen == shell::PICKER || sh.screen == shell::PUZZLE || f.go == shell::PICKER
@@ -294,6 +292,8 @@ fn main() {
         // Home's way out ends the loop; the game is written below.
         if sh.quit { break; }
         // The computer's move: the worker gets what the game asks, and the game the answer.
+        // After shell::frame, so a game the shell started over this frame, its skill set
+        // anew there, is asked at that skill (shell::game_screen).
         if think::frame(thinker, sh.game) {
             dirty = true;
             g.acted = true;

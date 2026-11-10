@@ -5,7 +5,7 @@
 // open a new game's setup in home's column, whose play starts the game; puzzles opens
 // the puzzles to pick from, and a pick plays that puzzle, whose next plays the one after;
 // settings opens from home, the game, and a puzzle, and goes back where it came from.
-// It holds the settings, keeps the game's move hints and kings in step with them, and
+// It holds the settings, puts them where they act (apply_prefs), and
 // says when they changed, for the app to write and apply; and where the board goes this
 // frame, turned when the child plays black, and how blurred the photograph behind it
 // is, and the pieces the screen shows over the UI, for the app to draw. Settings show
@@ -208,7 +208,24 @@ fn new(variant: u8) -> Shell {
                      went: l, came: l, .. };
     // One player, the fox, until the app reads the players (players::load).
     sh.players.list.push(players::Player { id: 1, .. });
+    apply_prefs(sh);
     return sh;
+}
+
+// Puts the player's settings where they act: the game's move hints and lookout, the
+// kings on the game's board and the puzzle's, and the skill whose plain threats the
+// lookout leaves to the player (against the computer the game's, against a friend the
+// player's on their level). Called whenever the settings change, the shell's own
+// changes and another player's settings read, and whenever a game starts or the puzzle
+// is new; the app calls it once the flags have set the settings at launch.
+fn apply_prefs(sh: Shell&) {
+    let p .= sh.prefs;
+    let gm .= sh.game;
+    gm.b.hints = p.hints;
+    gm.b.king_look = king_look(sh);
+    sh.puzzle.b.king_look = king_look(sh);
+    gm.look = p.lookout;
+    gm.look_skill = if gm.computer >= 0 { gm.skill } else { p.skill[clamp(p.level, game::EASY, game::HARD)] };
 }
 
 // The characters a face draws, for the faces baked with only those (rendering.md,
@@ -293,6 +310,7 @@ fn play(sh: Shell&, now: f64) {
         p.games += 1;
         sh.changed = true;
     }
+    apply_prefs(sh);
     // The transition shows the setup leaving; home, come back to, shows this game rather
     // than the setup's board.
     go_to(sh, GAME, now);
@@ -327,11 +345,11 @@ fn load_set(sh: Shell&) {
     puzzles::load(sh.prefs.variant as u8);
     sh.puzzle = puzzle::new();
     sh.theme = -1;
+    apply_prefs(sh);
 }
 
 fn declare(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> bool {
     sync_puzzles(sh);
-    sh.game.b.king_look = king_look(sh);
     sh.went_view = view3d::View {};
     sh.came_view = view3d::View {};
     // Time away from the game screen isn't on the clock.
@@ -458,14 +476,10 @@ fn game_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
 fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -> bool {
     var l = game_layout(sh, area, g.scale, now);
     sh.layout = l.board;
-    // The lookout as the player's setting has it, against the computer at the game's
-    // skill, against a friend at the player's on their level.
     let p .= sh.prefs;
-    sh.game.look = p.lookout;
-    sh.game.look_skill = if sh.game.computer >= 0 { sh.game.skill } else { p.skill[clamp(p.level, game::EASY, game::HARD)] };
     let ev, changed = game::frame(sh.game, g, l, now, sh.over, frozen);
     // Its eye turned on or off: kept in the player's file.
-    if sh.game.look != p.lookout {
+    if ev.looked {
         p.lookout = sh.game.look;
         sh.changed = true;
     }
@@ -483,8 +497,9 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
         sh.changed = true;
     }
     // Played again or started over: a new game, at its level's skill as it is now, and
-    // counted as home's play counts one. The computer is asked only after this frame, so
-    // it thinks at the new skill from the first move.
+    // counted as home's play counts one. The app asks the computer for a move only after
+    // shell::frame (think::frame comes after it in the app's loop), so the computer
+    // thinks at the new skill from the first move.
     if ev.restarted {
         if gm.computer >= 0 {
             gm.skill = p.skill[clamp(gm.level, game::EASY, game::HARD)];
@@ -493,6 +508,7 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
             sh.changed = true;
         }
     }
+    if ev.ended || ev.restarted { apply_prefs(sh); }
     if ev.go == game::HOME {
         go_to(sh, HOME, now);
         sh.setup = home::NO_SETUP;
@@ -522,7 +538,6 @@ fn puzzle_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
 // The puzzle for this frame. Returns whether anything on screen changed.
 fn puzzle_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     let pl .= sh.puzzle;
-    pl.b.king_look = king_look(sh);
     var l = puzzle_layout(sh, area, g.scale, now);
     sh.layout = l.board;
     let ev, changed = puzzle::frame(pl, g, l, now, sh.over);
@@ -633,7 +648,7 @@ fn settings_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool
     let ask = settings::frame(sh.prefs, sh.over, g, sh.layout, area, strings::current, room);
     sh.came_view = raise_in(sh, room, sh.layout.n, g.scale, sh.layout);
     if ask == settings::CHANGED {
-        sh.game.b.hints = sh.prefs.hints;
+        apply_prefs(sh);
         settings::stage(sh.preview, sh.prefs, now);
         sh.changed = true;
     }
@@ -684,7 +699,10 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
         home::FRIEND => { sh.setup = home::FRIEND; },
         home::COMPUTER => { sh.setup = home::COMPUTER; },
         home::BACK => { sh.setup = home::NO_SETUP; },
-        home::CHANGED => { sh.changed = true; },
+        home::CHANGED => {
+            sh.changed = true;
+            apply_prefs(sh);
+        },
         home::EXIT => { sh.quit = true; },
         home::PLAYERS => { who::open(sh.who); },
         home::PLAY => { play(sh, now); },

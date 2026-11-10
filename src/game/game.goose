@@ -44,12 +44,14 @@ let SETTINGS = gui::ASK_SETTINGS;
 // shell keeps a count of. A game against the computer that ended this frame, the first
 // time it ends (`counted`), with its result: 1 the child won, -1 lost, 0 drawn. And a
 // game started over (play again, or start over), for the shell to give it its level's
-// skill as adapting left it and a new number.
+// skill as adapting left it and a new number. And the lookout's eye turned on or off,
+// for the player's file.
 struct Event {
     go:        i64  = STAY,
     ended:     bool = false,
     result:    i64  = 0,
     restarted: bool = false,
+    looked:    bool = false,
 }
 
 // The computer's levels.
@@ -94,7 +96,7 @@ struct Game {
     grab: float2   = float2 { 0.0, 0.0 },
     cam:  rig::Rig = rig::Rig {},
     // The lookout (docs/architecture/ai.md, "The lookout"): on as the player's setting has
-    // it (the shell keeps them in step), the skill whose plain threats it leaves to the
+    // it (shell::apply_prefs, and Event.looked back), the skill whose plain threats it leaves to the
     // player (the shell's: the game's against the computer, the player's level's against
     // a friend), and what it last worked the threats out for, so it does once a position
     // or held target, never a frame.
@@ -288,9 +290,15 @@ fn asking(gm: Game&) -> Ask {
     return Ask { id: gm.asking, pos: gm.b.pos, past: past(gm), skill: gm.skill, seed: seed };
 }
 
-// The ask the worker should have, by its id: the computer's move, else the hint's, else
-// none (0). One at a time: the hint is asked on the side to move's turn, the computer's
-// move on its own.
+// The ask the worker should have, by its id, or 0 for none. The game has three slots, an
+// ask each, and the worker takes one at a time, the first open in this order:
+//   1. the computer's move (asking): its turn waits on it;
+//   2. the hint's move (hinting): the child pressed for it and waits;
+//   3. the lookout's traps (trapping): marks added to those already shown.
+// The first two never overlap: the hint is asked on the side to move's turn, the
+// computer's move on its own. A slot behind another keeps its ask; once the one before
+// is answered or dropped, this returns it again and the app hands it over anew
+// (think::frame).
 fn open_ask(gm: Game&) -> i64 { if gm.asking != 0 { gm.asking } else if gm.hinting != 0 { gm.hinting } else { gm.trapping } }
 
 // That ask in full: the hint's searched at HINT_UP above the skill of the side it plays
@@ -467,7 +475,10 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         },
         panel::BACK => { ev.go = HOME; },
         panel::SETTINGS => { ev.go = SETTINGS; },
-        panel::LOOKOUT => { gm.look = !gm.look; },
+        panel::LOOKOUT => {
+            gm.look = !gm.look;
+            ev.looked = true;
+        },
         panel::HINT => { press_hint(gm, now); },
         _ => {},
     }

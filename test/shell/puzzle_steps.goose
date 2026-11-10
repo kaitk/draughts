@@ -89,6 +89,7 @@ fn main() {
     gui::test_faces(g);
     var sh = shell::new(rules::INTERNATIONAL);
     sh.prefs.hints = board::MOVES;
+    shell::apply_prefs(sh);
 
     // Tapped stop by stop: the king waits on each stop, and the last solves.
     shell::play_puzzle(sh, 8);

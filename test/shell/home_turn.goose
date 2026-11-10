@@ -69,6 +69,7 @@ fn main() {
     gui::test_faces(g);
     var sh = shell::new(rules::INTERNATIONAL);
     sh.prefs.board = settings::RAISED;
+    shell::apply_prefs(sh);
     drive::idle(sh, g, 0.0);
     drive::idle(sh, g, 1.0);
     let r = sh.view.rect;

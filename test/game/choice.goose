@@ -198,6 +198,7 @@ fn raised(g: gui::Gui&, fen: const u8[:]) {
     for by_drag in [false, true] {
         var sh = shell::new(V);
         sh.prefs.board = settings::RAISED;
+        shell::apply_prefs(sh);
         game::start(sh.game, V, clock::NONE, rules::WHITE, game::MEDIUM, 40, 0);
         let p, ok = rules::parse_fen(fen, V);
         assert(ok);

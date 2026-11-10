@@ -196,6 +196,7 @@ fn main() {
     gui::test_faces(g);
     var sh = shell::new(rules::RUSSIAN);
     sh.prefs.board = settings::RAISED;
+    shell::apply_prefs(sh);
     sh.screen = shell::GAME;
     drive::idle(sh, g, 0.0);
     print("raised ", sh.raised, ", kings drawn as ", sh.game.b.king_look, ", flat layout ", sh.layout.board, ", 3D bounds ",

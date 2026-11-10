@@ -42,7 +42,10 @@ fn sweep(g: gui::Gui&, fen: const u8[:], size: float2, three: bool, by_drag: boo
     g.scale = gui::scale_of(size.x, size.y);
     var t = 0.0;
     var sh = shell::new(V);
-    if three { sh.prefs.board = settings::RAISED; }
+    if three {
+        sh.prefs.board = settings::RAISED;
+        shell::apply_prefs(sh);
+    }
     game::start(sh.game, V, clock::NONE, rules::WHITE, game::MEDIUM, 40, 0);
     let p, ok = rules::parse_fen(fen, V);
     assert(ok);

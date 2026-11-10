@@ -22,11 +22,11 @@ fn enter(sh: Shell&, index: i64, s: settings::Settings) {
     let screen = sh.screen;
     read_game(sh);
     sh.screen = screen;
-    sh.game.b.hints = sh.prefs.hints;
     sh.puzzle = puzzle::new();
     sh.theme = -1;
     sh.setup = home::NO_SETUP;
     sh.changed = true;
+    apply_prefs(sh);
 }
 
 // Switches to the player at `index`: the leaving player's settings and game are written,
@@ -86,10 +86,10 @@ fn start_again(sh: Shell&, index: i64) {
     if index == ps.playing {
         players::clear_progress(sh.prefs);
         sh.game = game::new(sh.prefs.variant as u8);
-        sh.game.b.hints = sh.prefs.hints;
         sh.puzzle = puzzle::new();
         sh.theme = -1;
         sh.changed = true;
+        apply_prefs(sh);
         return;
     }
     var s = players::read(ps, id);

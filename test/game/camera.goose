@@ -107,6 +107,7 @@ fn main() {
     gui::test_faces(g);
     var sh = shell::new(rules::RUSSIAN);
     sh.prefs.board = settings::RAISED;
+    shell::apply_prefs(sh);
     game::start(sh.game, rules::RUSSIAN, clock::NONE, -1, game::MEDIUM, 40, 0);
     sh.screen = shell::GAME;
     drive::idle(sh, g, 0.0);

@@ -57,6 +57,7 @@ fn main() {
     // the game's own start has settled.
     var sh = shell::new(rules::RUSSIAN);
     sh.prefs.board = settings::RAISED;
+    shell::apply_prefs(sh);
     sh.screen = shell::GAME;
     sh.ready3d = false;
     sh.shown3d = false;
@@ -71,6 +72,7 @@ fn main() {
     for i in drive::tiles(g) {
         var s = shell::new(rules::RUSSIAN);
         s.prefs.board = settings::RAISED;
+        shell::apply_prefs(s);
         s.screen = shell::GAME;
         s.ready3d = false;
         s.shown3d = false;
@@ -91,6 +93,7 @@ fn main() {
     // A new theme getting ready over the image shown: no mark, taps wait.
     var th = shell::new(rules::RUSSIAN);
     th.prefs.board = settings::RAISED;
+    shell::apply_prefs(th);
     th.screen = shell::GAME;
     th.ready3d = false;
     th.shown3d = true;
@@ -104,6 +107,7 @@ fn main() {
         for screen in [shell::HOME, shell::SETTINGS] {
             var s = shell::new(rules::RUSSIAN);
             s.prefs.board = settings::RAISED;
+            shell::apply_prefs(s);
             s.screen = screen;
             s.ready3d = false;
             s.shown3d = false;

@@ -84,6 +84,7 @@ fn restore(sh: Shell&, file: const u8[:]) -> bool {
     gm.turn = b.pos.side;
     // A puzzle isn't kept; the puzzles to pick from come back instead.
     sh.screen = if s.screen == PUZZLE { PICKER } else { s.screen };
+    apply_prefs(sh);
     return true;
 }
 

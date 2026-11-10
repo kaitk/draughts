@@ -34,6 +34,7 @@ fn inside(r: float4, a: float4) -> bool {
 fn raised(variant: u8) -> shell::Shell {
     var sh = shell::new(variant);
     sh.prefs.board = settings::RAISED;
+    shell::apply_prefs(sh);
     return sh;
 }
 

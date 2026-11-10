@@ -315,7 +315,10 @@ fn taken(g: gui::Gui&) {
     var line = str("  taken late in a game:");
     for raised in [false, true] {
         var sh = showing(shell::GAME, home::NO_SETUP);
-        if raised { sh.prefs.board = settings::RAISED; }
+        if raised {
+            sh.prefs.board = settings::RAISED;
+            shell::apply_prefs(sh);
+        }
         let gm .= sh.game;
         gm.taken = panel::Taken { men: [14, 12], kings: [1, 0] };
         gm.taken_len = gm.b.history.len;
