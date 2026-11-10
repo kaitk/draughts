@@ -1764,11 +1764,11 @@ let MARKS_FRAG = """
             float r = length(fract(g) - 0.5);       // in squares from its middle
             float w = wg;
             if (m.x > 0.5) c += glow.rgb * 0.10;
-            // The lookout's crowning square (w 1): shaded, darkest along its edges, as an
-            // inset shadow, under the dark ghost king standing on it.
+            // The lookout's crowning square (w 1): shaded toward a deep red for danger,
+            // darkest along its edges, as an inset shadow, under the dark ghost king on it.
             if (m.w > 0.5) {
                 vec2 e2 = min(fract(g), 1.0 - fract(g));
-                over(shade, vec3(0.0), 0.3 + 0.32 * (1.0 - smoothstep(0.0, 0.25, min(e2.x, e2.y))));
+                over(shade, vec3(0.3, 0.03, 0.02), 0.3 + 0.32 * (1.0 - smoothstep(0.0, 0.25, min(e2.x, e2.y))));
             }
             if (m.y > 0.5 && m.y < 1.5) c += glow.rgb * dot_at(r, w);
             if (m.y > 1.5) c += glow.rgb * 0.9 * line(r - 0.18, w);

@@ -31,7 +31,7 @@ base.
   off until the player turns it on and remembered per player, marks what the player's
   skill would miss: the pieces the other side could take were it its turn, every piece
   of a multi-capture's chain, drained of color and still; while a piece is dragged over
-  a square, what that move would leave open; a crowning square, shaded under a dark ghost
+  a square, what that move would leave open; a crowning square, shaded a deep red under a dark ghost
   king; and the other side's traps, a sacrifice whose forced capture wins it more. It
   shows less as the skill climbs, the plainest threats first, and nothing at hard
   ([ai](architecture/ai.md#the-lookout)). The **hint** is a tile beside undo move with

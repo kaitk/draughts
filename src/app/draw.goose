@@ -164,11 +164,11 @@ let BOARD_FRAG = """
             s = tint(s, a);
             int sq = y * n + x;
             if (has(last, sq)) s = mix(s, glow.rgb, 0.16);
-            // The lookout's crowning square: shaded, darkest along its edges, as an inset
-            // shadow, under the dark ghost king on it.
+            // The lookout's crowning square: shaded toward a deep red for danger, darkest
+            // along its edges, as an inset shadow, under the dark ghost king on it.
             if (has(shade, sq)) {
                 vec2 e2 = min(fq, 1.0 - fq);
-                s *= 1.0 - (0.3 + 0.32 * (1.0 - smoothstep(0.0, 0.25, min(e2.x, e2.y))));
+                s = mix(s, vec3(0.3, 0.03, 0.02), 0.3 + 0.32 * (1.0 - smoothstep(0.0, 0.25, min(e2.x, e2.y))));
             }
             // A legal target: a glowing dot; a capture's stop: a ring.
             float r = length(fq - 0.5) * inner.w;

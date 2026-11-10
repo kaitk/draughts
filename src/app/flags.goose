@@ -20,6 +20,7 @@ struct Flags {
     theme:      i64 = -1,   // --theme wood|stone|birch|sunset: the board, else the season's
     background: i64 = -1,   // --background photo|plain: 0 the photograph, 1 the plain fade
     board:      i64 = -1,   // --board 3d|flat: settings::RAISED or settings::FLAT
+    lookout:    i64 = -1,   // --lookout on|off: the player's lookout, 1 on, 0 off
     // --hints moves: the selected piece's targets (board::MOVES); mistakes only by default
     hints: i64 = -1,
     // --lang CODE: a language with a file in strings/, else the system's
@@ -100,6 +101,8 @@ fn parse(argv: u8[:][>..]) -> Flags {
         if a == "--background" && v == "plain" { f.background = 1; }
         if a == "--board" && v == "3d" { f.board = settings::RAISED; }
         if a == "--board" && v == "flat" { f.board = settings::FLAT; }
+        if a == "--lookout" && v == "on" { f.lookout = 1; }
+        if a == "--lookout" && v == "off" { f.lookout = 0; }
         if a == "--hints" && v == "moves" { f.hints = board::MOVES; }
         if a == "--lang" { f.lang = strings::pick(v); }
         if a == "--dp" {

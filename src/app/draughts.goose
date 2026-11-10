@@ -127,6 +127,7 @@ fn main() {
         sh.changed = true;
     }
     if f.board >= 0 { sh.prefs.board = f.board; }
+    if f.lookout >= 0 { sh.prefs.lookout = f.lookout == 1; }
     sh.players = players_read;
     let gm .= sh.game;
     let b .= gm.b;

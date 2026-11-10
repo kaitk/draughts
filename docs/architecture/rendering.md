@@ -864,7 +864,7 @@ built or superseded; they are in git history before that day.
 - **The marks**, on the board (`board::fill`): a piece in danger is drained, its color
   greyed and a little darker, solid and still (`Piece.ring.w`, `board::DRAINED`: CSS
   `grayscale(1) brightness(0.66) contrast(0.85)` on its face and side in the piece shader,
-  `draw.goose`'s `marked`); a crowning square is shaded, darkest along its edges as an
+  `draw.goose`'s `marked`); a crowning square is shaded toward a deep red, darkest along its edges as an
   inset shadow (`Marks.shade` in the board pass), under the other side's king as a dark,
   still ghost (drained, at 62%). The hint's piece takes the puzzles' glow ring
   (`board::glow_on`); its square, a light ghost of the piece at 50%, lightened 20%, with
