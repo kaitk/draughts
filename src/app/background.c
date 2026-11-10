@@ -11,9 +11,9 @@
 // or iPad embeds only the ASTC files for the same reasons (every Apple GPU since the A8
 // samples ASTC); the iOS simulator keeps the JPEGs, as its GPU may not.
 //
-// The images are not in git yet, so each is embedded only if its file is there: a fresh
-// checkout builds, with no photograph, and the app shows the page color. Until they are
-// checked in, the build takes the local masters (design/backgrounds/README.md).
+// The JPEG and ASTC masters are in git (design/backgrounds/README.md). Each is still
+// embedded only if its file is there, so a checkout without them builds, with no
+// photograph, and the app shows the page color.
 
 #include "platform.h"
 #if defined(__ANDROID__) || (DRAUGHTS_IOS && !TARGET_OS_SIMULATOR)

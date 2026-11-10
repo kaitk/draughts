@@ -42,8 +42,9 @@ would otherwise look up again:
   trailers. Don't push unless asked.
 - Images: a few essential ones the app needs, of a few MB at most (the icon's layers),
   may go in git; large ones stay local, as design references, background originals, and
-  masters do (`agents/design.md`, `design/backgrounds/README.md`). Ask when unsure
-  (2026-11-08).
+  PNG masters do (`agents/design.md`, `design/backgrounds/README.md`). Ask when unsure
+  (2026-11-08). The season backgrounds' JPEG and ASTC files, which the app embeds (about
+  9.7 MB), are in git (2026-11-10).
 - Never edit the submodules. A gap in Goose or goose_gfx gets a patch and a findings entry
   (above); for SDL, write only a note for the user, who decides about anything sent there.
 - The user maintains goose-ngfx and contributes to Goose and goose_gfx. Snowtime, a

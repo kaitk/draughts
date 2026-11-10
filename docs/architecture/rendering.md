@@ -270,10 +270,10 @@ but its olive sits nearer spring's greens than the sunset does.
   (`madvise(MADV_DONTNEED)`: clean pages of the APK, but counted while resident).
   Settings' thumbnails shrink each season's photograph on the GPU in turn (the JPEG path
   decodes and scales to 512 first), waiting for the GPU after each so only one is alive
-  at a time. Until the images are checked in, `src/app/background.c`
-  embeds the local masters with C23 `#embed` under `__has_embed`, so a checkout without
-  them builds and shows the page color, and one without the ASTC files decodes the
-  JPEGs everywhere. Android embeds only the ASTC files and compiles no stb_image
+  at a time. The JPEG and ASTC masters are in git (2026-11-10), and
+  `src/app/background.c` embeds them with C23 `#embed` under `__has_embed`, so a checkout
+  that lacks them still builds and shows the page color, and one without the ASTC files
+  decodes the JPEGs everywhere. Android embeds only the ASTC files and compiles no stb_image
   (`#ifndef __ANDROID__` in `background.c`): every Vulkan GPU the app targets samples ASTC
   LDR, and an Android GPU without it would show the page color, no photograph, as a
   checkout without the images does. The ASTC files add 7.5 MB to `libmain.so` (the JPEGs

@@ -21,7 +21,8 @@ The pipeline, from that README:
 3. Detail: the same model img2img at denoise 0.25, 25 steps.
 4. Upscale: SeedVR2 7B through `SeedVR2TilingUpscaler`, `linear` blending (not
    `multiband`, which leaves seams), the model cached on the GPU, `lab` color correction.
-5. Encode for the app: JPEG quality 85, 2048 × 2048, as `assets/backgrounds/<season>.jpg`
+5. Encode for the app: JPEG quality 85 and ASTC 6 × 6, 2048 × 2048, as the tracked masters
+   in `design/backgrounds/masters/` (`design/backgrounds/README.md`)
    ([rendering](../docs/architecture/rendering.md#scene-and-glass)).
 
 For this app the target is smaller than Snowtime's 3840 px: the tablet is 1920 × 1200, and a
@@ -35,4 +36,5 @@ may be enough, without step 4; try that first.
       colors, with real texture in bark, moss, snow, leaves, and rock
 - [ ] Checked at 1:1 for seams, redrawn shapes, and color shifts against the original
 - [ ] `design/backgrounds/README.md` updated with the steps and settings that ran
-- [ ] The four JPEGs in `assets/backgrounds/`, added to git only once the user agrees
+- [ ] The eight tracked JPEG and ASTC masters in `design/backgrounds/masters/` replaced
+      (in git since 2026-11-10), made from the new PNG masters

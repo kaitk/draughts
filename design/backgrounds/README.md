@@ -6,14 +6,17 @@ the season: autumn wood, winter stone, spring birch, summer sunset
 
 | Files | What they are |
 | --- | --- |
-| `<season>-01.png` | The originals from ChatGPT, 1254 × 1254 px. Kept as they are. |
-| `masters/<season>-01-2048.png` | Placeholder masters, 2048 × 2048, Lanczos and a light sharpen. |
-| `masters/<season>-01-2048.jpg` | The same at JPEG quality 85, 0.46 to 0.70 MB: the fallback where the GPU lacks ASTC. |
-| `masters/<season>-01-2048-6x6.astc` | The PNG master as ASTC in 6 × 6 blocks, 1.87 MB: what Android's GPU samples. |
+| `<season>-01.png` | The originals from ChatGPT, 1254 × 1254 px. Kept as they are. Local. |
+| `masters/<season>-01-2048.png` | Placeholder masters, 2048 × 2048, Lanczos and a light sharpen. Local. |
+| `masters/<season>-01-2048.jpg` | The same at JPEG quality 85, 0.46 to 0.70 MB: the fallback where the GPU lacks ASTC. In git. |
+| `masters/<season>-01-2048-6x6.astc` | The PNG master as ASTC in 6 × 6 blocks, 1.87 MB: what Android's and Apple's GPUs sample. In git. |
 
-Originals and masters stay local and out of git (`.gitignore`): they're temporary, and
-this README says how to make them again. The app builds each season's JPEG and ASTC
-file into the program from `masters/` (`src/app/background.c`,
+The JPEG and ASTC masters, which the app embeds, are in git (2026-11-10, about 9.7 MB), so
+a fresh checkout shows the photographs. The originals and the PNG masters stay local
+(`.gitignore`), and this README says how to make the masters again from them; replacing
+the images (task 014) means replacing the eight tracked files, each replacement adding
+its size to git's history. The app builds each season's JPEG and ASTC file into the
+program from `masters/` (`src/app/background.c`,
 [rendering](../../docs/architecture/rendering.md#scene-and-glass)). Both are made from the
 lossless PNG master, never one from the other; the final images (task 014) take the
 same steps.
