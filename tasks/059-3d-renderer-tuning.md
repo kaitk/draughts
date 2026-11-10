@@ -342,6 +342,36 @@ pipeline more to make while getting ready (39 steps).
   what malioc reports, or occupancy doesn't limit it. Not worth a pipeline more.
 - **The tablet:** to measure (not connected this session).
 
+### 2. The backdrop kept (2026-11-10)
+
+First, what each of the screen's two full-screen layers costs, from two throwaway
+builds on the Pixel (Streamline, the same bench): the backdrop cut to a plain texture
+copy took GPU active from 6.54M to 6.11M cycles a frame and the screen pass from 4.57
+to 3.28 ms; the 3D image's layer left out took it only to 6.47M (−1%). So laying the
+image over the board's bounds alone isn't worth doing (the layer is 8 registers and
+0.2 cycles); the backdrop's grade, vignette, and fade (30 registers, 1.9 cycles on the
+G710) is the cost.
+
+`render3d::keep_backdrop` draws the backdrop at full opacity into an RGBA8 image the
+screen's size before draw()'s passes when what it is drawn from changed (the size, a
+photograph step, the grade, the tint, the plain fade's brightness and colors), and
+`render3d::backdrop` lays it with `shaders::KEPT_FRAG` (a texel fetch, 6 registers),
+blended at the same opacity; when the image isn't current (a photograph changed, no 3D
+draw since) it grades live as before, so a frame is never wrong. Two pipelines more to
+make while getting ready (12 warm steps); 10 MB more on the Pixel (1080 × 2400 × 4), 9
+on the tablet.
+
+- **The look:** the seven scenes against the build before: no pixel more than 4 levels
+  off, 52 to 71 dB; four of them now differ only inside the board's box (the
+  full-screen 1 to 2 levels the builds showed against themselves came from the live
+  backdrop).
+- **The Pixel 7a:** **GPU active 6.54M → 6.06M cycles a frame (−7%)**, the screen
+  pass's fragment work 4.57 → 3.03 ms (median), FMA instructions 16.1M → 12.9M a frame.
+  The pass alone waited 12.17 → 11.78 ms; the screen's part of a pulsing frame without
+  rings 3.29 → 2.07 ms waited.
+- **Both items so far:** GPU active 7.01M → 6.06M cycles a frame (−14%).
+- **The tablet:** to measure.
+
 ## Acceptance criteria
 
 - [ ] Nsight and RenderDoc captures of the moving 3D board on the PC, the clocks locked:

@@ -39,6 +39,7 @@ SHADERS = [
     ("marks_pulse", "frag", ["MARKS_PULSE", "FS_SET", "FRAME", "MARKS_FRAG"]),
     ("show", "vert", ["SHOW_VS", "SHOW_BLOCK", "SHOW_VERT"]),
     ("show", "frag", ["SHOW_FS", "SHOW_BLOCK", "SHOW_FRAG"]),
+    ("kept", "frag", ["KEPT_FRAG"]),
     ("bake", "frag", ["BAKE_FRAG"]),
     # The screen's (src/app/draw.goose's setup, widgets.goose's).
     ("board2d", "frag", ["FADE_FN", "draw.THEME_BLOCK", "draw.SHARED_BLOCK", "draw.BOARD_FRAG"]),

@@ -158,6 +158,9 @@ struct Gpu {
     color:          gfx::Texture,   // the multisampled target and its depth
     depth:          gfx::Texture,
     image:          gfx::Texture,   // what draw() resolves into when asked to keep it
+    kept_backdrop:  gfx::Texture,   // the backdrop at full opacity, g.size (keep_backdrop())
+    kept_for:       float4[7],      // what it was drawn from (backdrop_key())
+    photo_gen:      i64,            // counts photo_part()'s steps, each of which may change g.photo
     kept_depth:     gfx::Texture,   // its depth at 1x, for the pulsing marks (marks_over)
     warm_color:     gfx::Texture,   // 4 × 4 targets warm() makes the pipelines on
     warm_depth:     gfx::Texture,
@@ -180,6 +183,7 @@ struct Gpu {
     copy:           gfx::Pipeline,
     show:           gfx::Pipeline,  // the kept image over what is there, anywhere (show())
     occ:            gfx::Pipeline,  // the field's occlusion map (occlusion())
+    kept:           gfx::Pipeline,  // the kept backdrop laid on the screen (backdrop())
     bake:           gfx::Pipeline,  // kept for a theme's rebake, with the photograph's
     shrink:         gfx::Pipeline,
     blur:           gfx::Pipeline,
@@ -317,6 +321,7 @@ fn photograph(g: Gpu&, kind: i64, grey: f32, sh: float4[9]&) {
 // decoded or uploaded and shrunk, 1 blurred across, 2 blurred down, read back, and its
 // harmonics taken into sh.
 fn photo_part(g: Gpu&, kind: i64, grey: f32, sh: float4[9]&, k: i64) {
+    g.photo_gen++;
     let s: f32 = 1.0 / PHOTO_SIZE;
     if k == 0 && g.plain {
         // The plain background: nothing to decode or blur, the ambient from the fade.
@@ -447,6 +452,9 @@ fn targets(g: Gpu&, size: int2) {
                                               width: size.x, height: size.y,
                                               samples: g.samples });
     g.image = gfx::render_target(size.x, size.y, gfx::RGBA8);
+    if g.kept_backdrop.id != 0 { gfx::release(g.kept_backdrop); }
+    g.kept_backdrop = gfx::render_target(size.x, size.y, gfx::RGBA8);
+    g.kept_for[0] = float4_0;
     g.size = size;
     if g.kept_depth.id != 0 {
         gfx::release(g.kept_depth);
@@ -517,6 +525,7 @@ fn setup(g: Gpu&, samples: i32 = SAMPLES) {
                                                 width: OCC_SIZE, height: OCC_SIZE });
     g.occ_n = 0;
     g.occ = gfx::pipeline(full, embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::OCC_FRAG));
+    g.kept = gfx::pipeline(full, embed_shader("frag", shaders::KEPT_FRAG), gfx::PipelineDesc { blend: gfx::BLEND_ALPHA });
     g.linear = gfx::sampler(gfx::LINEAR, gfx::CLAMP);
     g.aniso = gfx::sampler(gfx::SamplerDesc { max_anisotropy: 8.0 });
     g.compare = gfx::shadow_sampler();
@@ -841,6 +850,7 @@ fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int
     g.frame.screen = float4 { size.x, size.y, g.frame.screen.z, 0.0 };
     let f = g.frame;
 
+    keep_backdrop(g, size);
     if g.shadow_dirty || shadow_every {
         var sp = gfx::PassDesc { depth: g.shadow_map };
         gfx::begin_pass(sp);
@@ -1040,7 +1050,50 @@ fn draw_backdrop(g: Gpu&, alpha: f32) {
 // own photograph in a transition.
 fn backdrop(g: Gpu&, alpha: f32, size: int2) {
     g.frame.screen = float4 { size.x, size.y, g.frame.screen.z, 0.0 };
-    draw_backdrop(g, alpha);
+    guard kept_current(g, size) else {
+        draw_backdrop(g, alpha);
+        return;
+    }
+    gfx::bind(g.kept);
+    gfx::bind_texture(gfx::FRAGMENT, 0, g.kept_backdrop, g.linear);
+    gfx::uniforms(gfx::FRAGMENT, 0, Draw { float4 { alpha, 0.0, 0.0, 0.0 } });
+    gfx::draw(3);
+}
+
+// The backdrop drawn at full opacity into g.kept_backdrop when what it is drawn from
+// changed (a size, a photograph, a look, the plain fade), so the screen's frames lay it
+// with a fetch a pixel (shaders::KEPT_FRAG) instead of grading the photograph each frame
+// (task 059: 7% of the Pixel 7a's GPU cycles a frame). Before draw()'s passes, which
+// come with every change but the photograph's alone; till the next, backdrop() draws
+// it as it was. Recording only.
+fn keep_backdrop(g: Gpu&, size: int2) {
+    guard !kept_current(g, size) else { return; }
+    var pass = gfx::PassDesc { clear_color: false };
+    pass.color[0] = g.kept_backdrop;
+    gfx::begin_pass(pass);
+    draw_backdrop(g, 1.0);
+    gfx::end_pass();
+    g.kept_for = backdrop_key(g, size);
+}
+
+// What the backdrop at `size` is drawn from: the size and the photograph's steps, the
+// grade, the tint, the plain fade's brightness, and its colors.
+fn backdrop_key(g: Gpu&, size: int2) -> float4[7] {
+    let dim: f32 = if g.plain { PLAIN_DIM } else { 0.0 };
+    return [float4 { size.x, size.y, g.photo_gen, 1.0 }, g.frame.grade, g.frame.tint, float4 { 1.0, dim, 0.0, 0.0 },
+            g.fade[0], g.fade[1], g.fade[2]];
+}
+
+// Whether g.kept_backdrop holds the backdrop at `size` as it would be drawn now.
+fn kept_current(g: Gpu&, size: int2) -> bool {
+    guard g.kept_backdrop.id != 0 && size.x == g.size.x && size.y == g.size.y else { return false; }
+    let k = backdrop_key(g, size);
+    for i in 7 {
+        let a = k[i];
+        let b = g.kept_for[i];
+        guard a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w else { return false; }
+    }
+    return true;
 }
 
 // Draws the kept image (draw() into g.image with its backdrop) over the open pass's
@@ -1070,7 +1123,7 @@ fn show(g: Gpu&, from: float4, to: float4, alpha: f32, size: int2, grey: f32 = 0
 // pass's target formats (docs/goose-findings.md). Bound in a pass on 4 × 4 targets of the
 // pass's formats (made by the first step, given back by the last), or on the target
 // itself where it is small or held anyway, with nothing drawn.
-let WARM_STEPS = 10;
+let WARM_STEPS = 12;
 fn warm(g: Gpu&, k: i64) {
     if k == 0 {
         g.warm_color = gfx::texture(gfx::TextureDesc { format: gfx::RGBA8, usage: gfx::COLOR_TARGET, width: 4,
@@ -1090,12 +1143,17 @@ fn warm(g: Gpu&, k: i64) {
     } else if k == 9 {
         pass.color[0] = g.occ_map;
         pass.clear_color = false;
+    } else if k == 10 {
+        // The backdrop as keep_backdrop() draws it, on a target of its format.
+        pass.color[0] = g.small;
+        pass.clear_color = false;
     } else {
         pass.color[0] = gfx::screen();
         pass.clear_color = false;
     }
     gfx::begin_pass(pass);
-    let p = [g.lit, g.fading, g.catcher, g.glow, g.shadow, g.depth_only, g.backdrop, g.show, g.pulse, g.occ][k];
+    let p = [g.lit, g.fading, g.catcher, g.glow, g.shadow, g.depth_only, g.backdrop, g.show, g.pulse, g.occ,
+             g.backdrop, g.kept][k];
     gfx::bind(p);
     gfx::end_pass();
     if k == WARM_STEPS - 1 {
@@ -1112,7 +1170,7 @@ fn warm(g: Gpu&, k: i64) {
 // targets, surfaces, buffers, samplers, and pipelines. g is set up again from scratch.
 fn release(g: Gpu&) {
     let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.photo, g.shadow_map, g.occ_map, g.color,
-                    g.depth, g.image, g.kept_depth, g.small, g.across, g.warm_color, g.warm_depth,
+                    g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across, g.warm_color, g.warm_depth,
                     g.warm_kept];
     for t in textures { if t.id != 0 { gfx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.instances, g.squares, g.marks, g.glows];
@@ -1120,7 +1178,7 @@ fn release(g: Gpu&) {
     let samplers = [g.linear, g.aniso, g.compare];
     for s in samplers { if s.id != 0 { gfx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
-                     g.occ, g.bake, g.shrink, g.blur];
+                     g.occ, g.kept, g.bake, g.shrink, g.blur];
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
     gfx::flush();
     g = default<Gpu>();

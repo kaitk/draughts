@@ -1873,6 +1873,16 @@ let COPY_FRAG = """
     void main() { result = vec4(texelFetch(src, ivec2(gl_FragCoord.xy), 0).rgb, 1.0); }
     """;
 
+// The kept backdrop (render3d::keep_backdrop: BACKDROP_FRAG at full opacity, the
+// screen's size) laid texel for texel at opacity draw.x: a fetch for a pixel where the
+// backdrop's grade, vignette, and fade are 2 cycles and 30 registers (task 059).
+let KEPT_FRAG = """
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D kept;
+    layout(set = 3, binding = 0) uniform Kept { vec4 draw; };
+    void main() { result = vec4(texelFetch(kept, ivec2(gl_FragCoord.xy), 0).rgb, draw.x); }
+    """;
+
 // The kept image (premultiplied, clear where no board is) drawn over what is there: its
 // rect `from` (pixels of the image) into the rect `to` (pixels of the target), at
 // opacity screen.z; the same rect texel for texel at rest, moved and scaled in a

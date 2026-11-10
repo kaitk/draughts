@@ -1109,6 +1109,10 @@ board's does and the backdrop over it as opaque as the blur.
   (`view3d::changes`); each drawn frame lays the image over the backdrop (the renderer's
   blurred and graded photograph behind the game and a puzzle, the app's sharp one behind
   home and settings; or the plain fade, dimmed to 0.8 behind the game), under the UI.
+  The renderer's backdrop is kept too, drawn at full opacity into its own image the
+  screen's size when its size, photograph, look, or fade changed, and laid with a fetch
+  a pixel (`render3d::keep_backdrop`, task 059: its grade each frame was 7% of the
+  Pixel 7a's GPU cycles); between a change and the next 3D draw it is graded live.
   The board's ambient light (nine spherical harmonics) comes from the blurred
   photograph; with the plain fade, from the fade painted 64 texels square on the CPU,
   scaled so its brightness is the dim ambient a theme without a photograph had (the
@@ -1117,7 +1121,7 @@ board's does and the backdrop over it as opaque as the blur.
   too dark to light it (`render3d::fade_harmonics`). Switching between the photograph
   and the fade takes only the theme's photograph steps again, not its bake. **Getting
   ready** (`draw3d::prepare`, task 042) takes a step a frame: the setup, the theme's 28
-  steps (the bake in bands, the photograph), the pass's 10 pipelines; meanwhile a still
+  steps (the bake in bands, the photograph), the pass's 12 pipelines; meanwhile a still
   mark shows in the board's place, and once ready the board fades in over 0.3 s. A new
   season or board size takes the theme's steps again with the old image still shown:
   while they run it eases over 0.2 s towards grey and dimmer (saturation 0.15 of its own,
