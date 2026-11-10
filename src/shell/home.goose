@@ -160,15 +160,34 @@ fn content_height(setup: i64, landscape: bool, height: f32, u: f32, small: bool 
     return setup_height(setup, paired(setup, landscape, height, u), u);
 }
 
-// Declares home for this frame in `area`, the screen's safe area, its pieces over the UI
-// put in `over`, and sets l to where the board of n × n squares goes: the menu, or the
-// setup `setup` (FRIEND or COMPUTER) with the choices in s. `room3d` is where a 3D board
-// may go instead (wider than tall, it fits there as large as it can): across the stage
-// less 40 dp each side (24 in portrait), as tall as the flat board below the row of the
-// player's chip and the way out, or the flat board's square where that leaves under half
-// of it. Returns what was tapped.
-fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: float4, setup: i64,
-         s: settings::Settings&, room3d: float4&) -> i64 {
+// Where home's parts go in `area`, the screen's safe area (layout): the column or sheet's
+// glass (`col`) and its content, the menu or the setup `setup` (FRIEND or COMPUTER);
+// back and the title where they share a row with the way out (`head`); the way out;
+// where the board's side of the screen starts (`side`, for the player's chip); the board
+// of n × n squares, and `room3d`, where a 3D board may go instead (wider than tall, it
+// fits there as large as it can): across the stage less 40 dp each side (24 in
+// portrait), as tall as the flat board below the row of the player's chip and the way
+// out, or the flat board's square where that leaves under half of it. With the menu: the
+// gear beside the wordmark or settings a row, the gap under the wordmark and between the
+// rows in dp, and `small`, a small window's rows; with a setup, two columns `pair_w` dp
+// wide each, or 0 for one.
+struct Home {
+    col:     float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
+    content: float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
+    head:    float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
+    way:     float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
+    side:    f32           = 0.0,
+    board:   board::Layout = board::layout_at(0.0, 0.0, 0.0, 1.0, 8),
+    room3d:  float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
+    gear:    bool          = false,
+    below:   f32           = 0.0,
+    apart:   f32           = 0.0,
+    small:   bool          = false,
+    pair_w:  f32           = 0.0,
+}
+
+// Where home's parts go (Home), declaring nothing.
+fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, s: settings::Settings&) -> Home {
     let u = g.scale;
     let width = area.z;
     let height = area.w;
@@ -187,6 +206,8 @@ fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: f
     var content = col;
     var head = col;             // back and the title, where they share a row with the way out
     var way = corner(area, u);  // the way out
+    var l = board::layout_at(0.0, 0.0, 0.0, u, n);
+    var room3d = col;
     if landscape {
         // The column, its left corners off the screen, 360 dp of content (a setup too
         // tall for that, two columns of 300 side by side); the board in the rest, 70% of
@@ -278,16 +299,29 @@ fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: f
             float4 { area.x + 24.0 * u, area.y + top, width - 48.0 * u, y + size - top }
         } else { float4 { area.x + 0.5 * (width - size), area.y + y, size, size } };
     }
-    // The column or sheet runs on past the safe area to the screen's edges.
-    gui::glass(g, gui::bleed(g, col, area), 32.0);
-    over.clear();
     let gear = gear_beside(landscape, height, u);
-    var pick = if setup != NO_SETUP { choose(over, g, content, setup == COMPUTER, pair_w, head, s) }
-               else { menu(over, g, content, gear, mark_gap(gear, height, u, small), row_gap(gear, height, u, small), s,
-                           small) };
+    return Home { col: col, content: content, head: head, way: way, side: side, board: l, room3d: room3d, gear: gear,
+                  below: mark_gap(gear, height, u, small), apart: row_gap(gear, height, u, small), small: small,
+                  pair_w: pair_w };
+}
+
+// Declares home for this frame in `area`, the screen's safe area, where layout puts its
+// parts, its pieces over the UI put in `over`, and sets l to where the board of n × n
+// squares goes and `room3d` to where a 3D board may go instead: the menu, or the setup
+// `setup` (FRIEND or COMPUTER) with the choices in s. Returns what was tapped.
+fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: float4, setup: i64,
+         s: settings::Settings&, room3d: float4&) -> i64 {
+    let h = layout(g, n, area, setup, s);
+    l = h.board;
+    room3d = h.room3d;
+    // The column or sheet runs on past the safe area to the screen's edges.
+    gui::glass(g, gui::bleed(g, h.col, area), 32.0);
+    over.clear();
+    var pick = if setup != NO_SETUP { choose(over, g, h.content, setup == COMPUTER, h.pair_w, h.head, s) }
+               else { menu(over, g, h.content, h.gear, h.below, h.apart, s, h.small) };
     // The player and the way out, declared last so the tiles before them keep their order.
-    if chip && player_chip(g, player_spot(g, area, side, l.board, way, s), s) { pick = PLAYERS; }
-    if closable && gui::bare_x(g, gui::HOME_IDS + 9, way, gui::CLOSE, CROSS) { pick = EXIT; }
+    if setup == NO_SETUP && player_chip(g, player_spot(g, area, h.side, l.board, h.way, s), s) { pick = PLAYERS; }
+    if closable && gui::bare_x(g, gui::HOME_IDS + 9, h.way, gui::CLOSE, CROSS) { pick = EXIT; }
     return pick;
 }
 
