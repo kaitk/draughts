@@ -73,6 +73,34 @@ its refresh, the drawable a whole refresh late).
 So on the Mac the drops are the 3D pass's GPU cost against a 120 Hz refresh, the
 fixable part. The iPhone's beat (above) is not seen here: its GPU work is small.
 
+## The iPhone, 2026-11-10
+
+The development build from 37f350b, the flat board, `--bench 1000`.
+
+- **Instruments' Metal System Trace changes the pacing on the iPhone:** under it the loop
+  presented every 8.33 ms, 120 a second on the 60 Hz panel (`ca-client-present-request`
+  1000 in 8.3 s; the bench's own clock: avg 120.0 / 1% low 104.2 fps), and its display
+  tables hold only the first half second. Under Animation Hitches the same build runs at
+  60. So the iPhone's pacing is read with Animation Hitches only.
+- Animation Hitches, four runs: 0, 1, 1, 2 frames dropped of 982 to 984
+  (`scripts/ios_perf.py`; the bench's own clock avg 60.0 / 1% low 58.0 to 58.4 fps). The
+  app's surfaces go direct to display, 33 ms from the CPU to the display.
+- **Each drop is a frame rendered in time and never shown.** Around every one (run 0 at
+  7.78 s and 17.38 s; run 1 at 28.10 s; run 2 at 0.78, 2.51, 15.21, 18.36, 25.66 s) the
+  app's GPU work completes every 16.7 ms without a gap (`metal-command-buffer-completed`),
+  yet `display-surface-swap` skips one of the three surfaces: the swap before and after it
+  were generated 15.5 to 16.8 ms before their swap and queued 14.6 to 15.9 ms before it,
+  as every frame is. At 7.78 s the skipped frame was done at 7.7798 s, about 0.4 ms past
+  the latch for its refresh (its swap would have been 7.7944, queued by about 7.7794);
+  the next frame, done at 7.7964, caught the refresh after, and replaced it. So the
+  frames finish close to the latch, and the app's phase against it drifts: a frame that
+  runs a little long misses by a fraction of a millisecond and is dropped, not delayed.
+  The app's frame starts when `nextDrawable` returns a surface, which is tied to the
+  display's swaps, so the phase is set by the frame's own CPU and GPU time.
+- The way to hold it off: finish each frame further from the latch, by starting it at a
+  chosen point after the vsync (a display link) or presenting at a chosen time
+  (`presentDrawable:atTime:`); both are changes to SDL's Metal path or goose_gfx.
+
 ## Directions
 
 First on the desktops, going to a device only if nothing shows there (the user,
@@ -107,6 +135,6 @@ way to rule its drawing out there.
 
 ## Acceptance criteria
 
-- [ ] The iPhone's drops explained, with a measurement that shows the cause
+- [x] The iPhone's drops explained, with a measurement that shows the cause
 - [ ] The flat board drops no frame over 1000 on the iPhone
 - [ ] The Pixel's 3D drop checked over a longer run
