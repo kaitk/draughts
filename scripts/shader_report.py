@@ -48,7 +48,12 @@ SHADERS = [
     ("piece2d", "frag", ["FADE_FN", "draw.THEME_BLOCK", "draw.SHARED_BLOCK", "draw.MAN_BLOCK", "draw.STACK_BLOCK",
                          "draw.PIECE_FRAG"]),
     ("ui", "vert", ["draw.SHARED_BLOCK", "widgets.VERT"]),
-    ("ui", "frag", ["FADE_FN", "draw.THEME_BLOCK", "draw.SHARED_BLOCK", "draw.MAN_BLOCK", "widgets.FRAG"]),
+    ("ui_base", "frag", ["widgets.BASE", "FADE_FN", "draw.THEME_BLOCK", "draw.SHARED_BLOCK", "draw.MAN_BLOCK",
+                         "widgets.FRAG"]),
+    ("ui_icons", "frag", ["widgets.ICONS", "FADE_FN", "draw.THEME_BLOCK", "draw.SHARED_BLOCK", "draw.MAN_BLOCK",
+                         "widgets.FRAG"]),
+    ("ui_faces", "frag", ["widgets.FACES", "FADE_FN", "draw.THEME_BLOCK", "draw.SHARED_BLOCK", "draw.MAN_BLOCK",
+                         "widgets.FRAG"]),
 ]
 
 

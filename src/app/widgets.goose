@@ -39,12 +39,18 @@ let VERT = """
         vec4 rect = q[i];
         vec4 look = q[i + 2];
         vec4 extra = q[i + 3];
-        // Room round the rect for the shadow: glass casts one 30 dp down, a tile 12 dp, a
-        // face 12 dp and its glow 26 dp round it, a floating disc 6 dp and its dot.
+        // Room round the rect for the shadow, as far as each reaches, and a pixel more for
+        // the edge's antialiasing (task 063): glass's (12 dp down, 32 blur, -14 spread)
+        // 6 dp above, 18 to the sides, 30 below; a tile's (6 down, 14 blur, -8 spread) 0,
+        // 6, and 12; a face 12 dp and its glow 26 dp round it, a floating disc 6 dp and
+        // its dot.
         int kind = int(look.x);
-        // A glyph is drawn exactly over its rect, a texel to a pixel.
-        float m = (kind == 0 ? 48.0 : kind == 1 ? 20.0 : kind == 8 ? 28.0 : kind == 9 ? 12.0 : kind == 4 ? 0.0 : 1.0) * extra.x;
-        vec2 px = mix(rect.xy - m, rect.xy + rect.zw + m, CORNERS[gl_VertexIndex]);
+        float u = extra.x;
+        // left, top, right, bottom; a glyph is drawn exactly over its rect, a texel to a pixel.
+        vec4 m = kind == 0 ? vec4(18.0, 6.0, 18.0, 30.0) * u + 1.0
+               : kind == 1 ? vec4(6.0, 0.0, 6.0, 12.0) * u + 1.0
+               : vec4(kind == 8 ? 28.0 : kind == 9 ? 12.0 : kind == 4 ? 0.0 : 1.0) * u;
+        vec2 px = mix(rect.xy - m.xy, rect.xy + rect.zw + m.zw, CORNERS[gl_VertexIndex]);
         gl_Position = vec4(px.x / screen.x * 2.0 - 1.0, 1.0 - px.y / screen.y * 2.0, 0.0, 1.0);
         v_px = px;
         v_rect = rect;
@@ -54,6 +60,14 @@ let VERT = """
     }
     """;
 
+// FRAG is built three times (task 063), each kind in one of them, so no pixel pays for
+// another's registers: together the icons' or the faces' paths took the whole shader to
+// 64 registers, half occupancy on Mali, where each set alone fits 32. draw_quads() draws
+// the quads in runs of one pipeline, in their order: gui::ICON's in the second,
+// gui::FACE's in the third, the rest in the first.
+let BASE = "#define UI_BASE\n";
+let ICONS = "#define UI_ICONS\n";
+let FACES = "#define UI_FACES\n";
 let FRAG = """
     layout(location = 0) in vec2 v_px;
     layout(location = 1) flat in vec4 v_rect;
@@ -368,11 +382,21 @@ let FRAG = """
         vec2 h = 0.5 * v_rect.zw;
         vec2 c = v_rect.xy + h;
         float r = v_look.y;
+        int style = int(v_extra.y);
+    #ifdef UI_BASE
         if (kind == 0) {
             // Glass: the scene's glass copy at this place on screen, or the plain fade
             // there (screen.z 2), dimmed and saturated, under the theme's tint, with a
             // light border and top highlight, and a soft shadow outside it.
             float d = box(p, c, h, r);
+            // Outside it only the shadow, under nothing (its cover 0); more than 3 dp
+            // inside it no highlight (2 dp down, 1 dp in), border, or shadow: each the
+            // same as below, without the parts that are 0 there.
+            if (d >= 0.5) {
+                result = vec4(0.0, 0.0, 0.0, 0.55 * shadow(p, c, h, r, 12.0 * u, 32.0 * u, -14.0 * u));
+                return;
+            }
+            bool inner = d < -3.0 * u - 0.5;
             float side = max(screen.x, screen.y);
             vec3 g = screen.z > 1.5 ? theme_fade(p, screen.xy)
                    : screen.z > 0.5 ? texture(glass_copy, (p - 0.5 * (screen.xy - side)) / side).rgb
@@ -380,6 +404,10 @@ let FRAG = """
             float l = dot(g, vec3(0.2126, 0.7152, 0.0722));
             g = max(mix(vec3(l), g, 1.3), 0.0) * text.w;
             g = mix(g, glass.rgb, glass.a);
+            if (inner) {
+                result = vec4(g, 1.0);
+                return;
+            }
             g = mix(g, vec3(1.0), 0.12 * top_line(p, c, h, r, u));
             g = mix(g, vec3(1.0), 0.14 * (1.0 - cover(d + u)));
             float a = cover(d);
@@ -387,9 +415,8 @@ let FRAG = """
             result = vec4(g * a, a + s);
             return;
         }
-        // plain, primary, toggle on, toggle off, quiet, row, primary row, choice on and
-        // off, clock running, waiting, and low
-        int style = int(v_extra.y);
+        // style: plain, primary, toggle on, toggle off, quiet, row, primary row, choice on
+        // and off, clock running, waiting, and low
         if (kind == 1) {
             // A glass tile: white at 10%, 14 points more pressed and scaled to 0.96; an
             // inset light border and top highlight; a small shadow. A primary tile is the
@@ -406,7 +433,14 @@ let FRAG = """
             bool flat = style >= 5;
             if (!flat) h *= 1.0 - 0.04 * pr;
             float d = box(p, c, h, r);
-            if (!flat) over(vec3(0.0), 0.5 * shadow(p, c, h, r, 6.0 * u, 14.0 * u, -8.0 * u) * (1.0 - cover(d)));
+            // Outside it only the shadow (the tile's cover 0); more than 3 dp inside it
+            // no shadow, edge (at most 2 dp), or highlight (3 dp): as below without them.
+            if (d >= 0.5) {
+                result = flat ? vec4(0.0) : vec4(0.0, 0.0, 0.0, 0.5 * shadow(p, c, h, r, 6.0 * u, 14.0 * u, -8.0 * u));
+                return;
+            }
+            bool inner = d < -3.0 * u - 0.5;
+            if (!flat && !inner) over(vec3(0.0), 0.5 * shadow(p, c, h, r, 6.0 * u, 14.0 * u, -8.0 * u) * (1.0 - cover(d)));
             float a = cover(d) * (v_color.a > 0.0 ? v_color.a : 1.0);
             vec3 red = vec3(1.0, 0.353, 0.29);
             vec3 gold = vec3(1.0, 0.843, 0.353);
@@ -417,6 +451,10 @@ let FRAG = """
                         : style == 5 ? 0.0 : style == 6 ? 0.24 : style == 7 ? 0.22 : style == 9 ? 0.18
                         : style == 10 ? 0.06 : style == 11 || style == 12 ? 0.16 : 0.10) + 0.14 * pr);
             vec4 tile = vec4(fc * fa, fa);
+            if (inner) {
+                result = tile * a;
+                return;
+            }
             bool wide = style == 7 || style == 9 || style == 11 || style == 12;
             float ea = style == 5 || style == 6 ? 0.0 : style == 2 || wide ? 1.0 : style == 8 || style == 10 ? 0.12
                        : style >= 3 ? 0.18 : 0.2;
@@ -430,6 +468,8 @@ let FRAG = """
             result = acc;
             return;
         }
+    #endif
+    #ifdef UI_ICONS
         if (kind == 2) {
             // A line icon: strokes 2.4 units (look.y sets another) of its 24-unit grid wide, as the prototypes'
             // SVGs draw them, round caps, in the text color.
@@ -442,6 +482,8 @@ let FRAG = """
             result = vec4(ic * a, a);
             return;
         }
+    #endif
+    #ifdef UI_BASE
         if (kind == 5) {
             // A picture: a thumbnail, cover-cropped, a season's photograph (its theme,
             // 0 to 3) or its plain fade (4 to 7), the theme shown's photograph (-2) or
@@ -479,6 +521,8 @@ let FRAG = """
             result = vec4(rc * al, al);
             return;
         }
+    #endif
+    #ifdef UI_FACES
         if (kind == 8) {
             // A player's face: the badge (badge()), a man as on the board with its side
             // and short shadow, its top and side filling the disc. Lit, a 4 dp glow ring
@@ -518,6 +562,8 @@ let FRAG = """
             result = acc;
             return;
         }
+    #endif
+    #ifdef UI_BASE
         if (kind == 9) {
             // A floating button (the 3D board's camera, prototypes/game3d.html's `.ctl`): a
             // disc of black at 30% with an inset 1 px hairline of white at 22% and a soft
@@ -562,6 +608,9 @@ let FRAG = """
         // A plain rounded rect, in its color or (look.z 1) the glow color.
         float a = cover(box(p, c, h, r)) * v_color.a;
         result = vec4((v_look.z > 0.5 ? glow.rgb : v_color.rgb) * a, a);
+    #else
+        result = vec4(0.0);
+    #endif
     }
     // Each quad as its kind draws it, faded with its layer (a screen in a transition), and
     // in a transition hidden where the board passes, unless it lies on the board (a win's
@@ -581,7 +630,7 @@ let FRAG = """
     """;
 
 struct Widgets {
-    pipeline: gfx::Pipeline,
+    pipelines: gfx::Pipeline[3],  // the base kinds, the icons, the faces (FRAG)
     quads:    gfx::Buffer,
     upload:   gui::Quad[gui::MAX_QUADS],
     atlas:    gfx::Texture,     // the text's glyphs (text.goose), or 0 before they're baked
@@ -599,13 +648,19 @@ struct Widgets {
     ids:     i64[4],
     kept:    bool,
     stale:   bool,              // something the quads don't show changed (the glyphs baked again)
+    live:    bool,              // the app's --keep off: drawn as they come each frame, never kept
 }
 
 fn new() -> Widgets {
+    let vert = embed_shader("vert", draw::SHARED_BLOCK, VERT);
+    let desc = gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED };
     var w = Widgets {
-        pipeline: gfx::pipeline(embed_shader("vert", draw::SHARED_BLOCK, VERT),
-                                embed_shader("frag", shaders::FADE_FN, draw::THEME_BLOCK, draw::SHARED_BLOCK, draw::MAN_BLOCK, FRAG),
-                                gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED }),
+        pipelines: [gfx::pipeline(vert, embed_shader("frag", BASE, shaders::FADE_FN, draw::THEME_BLOCK, draw::SHARED_BLOCK,
+                                                     draw::MAN_BLOCK, FRAG), desc),
+                    gfx::pipeline(vert, embed_shader("frag", ICONS, shaders::FADE_FN, draw::THEME_BLOCK, draw::SHARED_BLOCK,
+                                                     draw::MAN_BLOCK, FRAG), desc),
+                    gfx::pipeline(vert, embed_shader("frag", FACES, shaders::FADE_FN, draw::THEME_BLOCK, draw::SHARED_BLOCK,
+                                                     draw::MAN_BLOCK, FRAG), desc)],
         quads:  gfx::Buffer { 0 },
         upload: [gui::Quad {}; gui::MAX_QUADS],
         atlas:  gfx::Texture { 0 },
@@ -622,6 +677,7 @@ fn new() -> Widgets {
         ids:     [0, 0, 0, 0],
         kept:    false,
         stale:   true,
+        live:    false,
     };
     w.quads = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(w.upload));
     w.badges = bake_badges();
@@ -664,7 +720,7 @@ fn prepare(w: Widgets&, quads: const gui::Quad[:], clip: float4, s: scene::Scene
         w.kept = false;
         return;
     }
-    guard !w.kept && n > 0 else { return; }
+    guard !w.kept && !w.live && n > 0 else { return; }
     let lw = width as i64;
     let lh = height as i64;
     if w.layer.id == 0 || w.layer_w != lw || w.layer_h != lh {
@@ -714,9 +770,27 @@ fn atlas(w: Widgets&, px: const u8[:], size: int2) {
     w.stale = true;
 }
 
-// The `n` uploaded quads in the open pass.
+// The `n` uploaded quads in the open pass, in runs of one pipeline (FRAG), in order.
 fn draw_quads(w: Widgets&, n: i64, s: scene::Scene&, t: theme::Theme, view: View) {
-    gfx::bind(w.pipeline);
+    var start = 0;
+    while start < n {
+        let p = pipeline_of(w.upload[start]);
+        var end = start + 1;
+        while end < n && pipeline_of(w.upload[end]) == p { end++; }
+        bind_quads(w, p, s, t, view);
+        gfx::draw(6, end - start, 0, start);
+        start = end;
+    }
+}
+
+// Which of w.pipelines draws quad `q`.
+fn pipeline_of(q: gui::Quad) -> i64 {
+    let kind = q.look.x as i64;
+    return if kind == gui::ICON { 1 } else if kind == gui::FACE { 2 } else { 0 };
+}
+
+fn bind_quads(w: Widgets&, p: i64, s: scene::Scene&, t: theme::Theme, view: View) {
+    gfx::bind(w.pipelines[p]);
     gfx::bind_storage_buffer(gfx::VERTEX, 0, w.quads);
     gfx::uniforms(gfx::VERTEX, 0, view);
     gfx::uniforms(gfx::FRAGMENT, 0, t);
@@ -725,5 +799,4 @@ fn draw_quads(w: Widgets&, n: i64, s: scene::Scene&, t: theme::Theme, view: View
     gfx::bind_texture(gfx::FRAGMENT, 1, if w.atlas.id != 0 { w.atlas } else { s.glass }, s.sampler);
     gfx::bind_texture(gfx::FRAGMENT, 2, if w.thumbs.id != 0 { w.thumbs } else { s.glass }, s.sampler);
     gfx::bind_texture(gfx::FRAGMENT, 3, w.badges, s.sampler);
-    gfx::draw_instanced(6, n);
 }

@@ -53,8 +53,9 @@ struct Frame {
 fn new(kind: i64, plain: bool, f: flags::Flags&) -> Renderer {
     var r = Renderer { d: draw::new(kind, plain, f.bench > 0),
                       d3: draw3d::Drawer { wood: f.wood, marble: f.marble, summer: f.summer, spring: f.spring,
-                                           timed: f.bench > 0, .. },
+                                           timed: f.bench > 0, live: !f.keep, .. },
                       w: widgets::new(), t: text::Text {} };
+    r.w.live = !f.keep;
     if f.bench > 0 {
         print("bench: the photograph loaded in ", floor(r.d.load_ms * 100.0 + 0.5) / 100.0,
               " ms (decoded or uploaded, shrunk, blurred, waited for)");

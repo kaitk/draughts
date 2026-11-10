@@ -54,7 +54,7 @@ reviewed the structure, 049 added the draws, 051 polished what preparing the sto
 windows, 048 found no forced capture behind a report (covered by tests), 039 baked the 3D
 board's wood, 040 added the lookout and the hint, 054 gave the flat game screen the 3D one's
 controls, 052 showed what each side has taken, 044 added the plain background, 057 made the app
-rest on every platform, and 059 profiled and reworked the 3D renderer; 016 (tabletop pictures) and 033 (an icon per season) were
+rest on every platform, 059 profiled and reworked the 3D renderer, and 063 made the UI's shader fast in itself; 016 (tabletop pictures) and 033 (an icon per season) were
 cancelled. All are archived. The MVP in `docs/product.md` is built.
 
 Open:
@@ -71,7 +71,7 @@ Open:
   people, after 061.
 - Later: 010 goose_gfx changes to propose upstream (alongside), 013 season effects, 014
   upscaled backgrounds, 026 the first start and tutorial, 060 shared blocks for a second
-  board game (chess).
+  board game (chess), 064 Steam for Windows, macOS, and Linux (low priority, scoped only).
 
 ## Next (updated 2026-11-10)
 
@@ -80,14 +80,15 @@ into maps, the backdrop and the UI kept while they stand still): the tablet's mo
 board holds 90 Hz with no frame dropped, the Pixel 7a a third fewer GPU cycles a frame;
 044 (the plain background) and 057 (at rest everywhere) closed.
 
+Done later on 2026-11-10: 063, the UI drawn live at half its GPU cycles on the Pixel
+(three shaders at 32 registers, quads only as large as their shadows, glass and tiles
+shaded in parts); 042 brought up to date after 059.
+
 Next for the agent:
 
-1. The UI's uber-shader made fast in itself, measured with the caches off (64 registers
-   for every UI pixel, 1.45M cycles a frame on the Pixel when the UI changes;
-   `docs/architecture/rendering.md`, "The 3D board on devices").
-2. 042: whether what's left still holds after 059, and the 3D board's idle wakeup (about
-   2.7 ms CPU against the flat board's 0.3).
-3. 055: a screen transition counted as the boards' frames are; 056: the iPhone's flat
+1. 042: the 3D board's idle wakeup on the tablet (about 2.7 ms CPU against the flat
+   board's 0.3), when the tablet is attached.
+2. 055: a screen transition counted as the boards' frames are; 056: the iPhone's flat
    board's drops and the Pixel's one 3D drop over a longer run.
 
 What needs the user:
