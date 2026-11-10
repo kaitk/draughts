@@ -149,9 +149,11 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
   P99 6.43 ms, 166.1 fps (1% low 108.9); ngfx CPU 0.029 ms, waited P50 5.64 / P99 8.58
   ms, 165.8 fps (1% low 113.0). Both wait on the display; the pass at twice the size
   costs the RTX 4090 nothing visible here.
-- **The footprint** is ngfx's texture heap, one 512 MB block made at open: at 256 MB the
-  flat game's footprint fell from 741 to 556 MB. It becomes a heap that grows as
-  textures need it (ngfx).
+- **The footprint** was ngfx's texture heap, one 512 MB block made at open. ngfx now
+  grows texture memory in 64 MB chunks, as it does buffers (`042de64`, a test with it,
+  39 passing). At rest (`--rest 15`): the flat game 293 MB on ngfx against 255 on gfx
+  (741 before), the 3D game 494 MB against 397 (815 before). Most of the 3D board's
+  remaining gap is likely the pass at twice the size.
 
 ## Later, not in this task
 
@@ -164,6 +166,10 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
   picked.
 - **Presenting on Linux**: a Vulkan surface from SDL (`SDL_Vulkan_CreateSurface`) in
   ngfx's layer where NoGraphicsAPI makes none, the rest as on Windows.
+- **Antialiasing without MSAA** (the user, 2026-11-11): a modern non-temporal filter such
+  as SMAA over the 3D pass drawn at 1x, in place of the 2 × 2 supersampling, which
+  shades four times the pixels (and on the Mac's GPU will cost more than on the PC's)
+  and holds a target four times the screen.
 - ngfx on iPad and iPhone; the Steam builds (task 064).
 
 ## Acceptance criteria
