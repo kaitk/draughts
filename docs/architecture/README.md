@@ -1,7 +1,7 @@
 # Architecture
 
-The decisions the code follows, and why. This file holds the stack, how the code is laid
-out, and the rules every part of it keeps. [Draughts from above](index.html) tells the
+How the app works, as it is now. This file holds the stack, how the code is laid out, and
+the rules every part of it keeps. [Draughts from above](index.html) tells the
 whole app in plain words: the start-up, the loop, the packages, and the threads. The rest
 is by area:
 
@@ -10,37 +10,27 @@ is by area:
 - [puzzles.md](puzzles.md): the puzzles, their file, goals, and checks
 - [rendering.md](rendering.md): drawing, the UI layer, glass, fonts, and frame pacing
 
+Each decision, with its date, its reason, and what it rejected, is in
+[decisions](../decisions/README.md).
+
 ## Stack
 
 | Concern | Choice |
 | --- | --- |
 | Language | [Goose](https://github.com/aardappel/goose), compiled to C (`goose -o game.c`, `goose --emit-runtime`) |
 | Graphics, input, window | `gfx` from [goose_gfx](https://github.com/aardappel/goose_gfx): SDL3's GPU API, with GLSL compiled to SPIR-V, MSL, and HLSL at compile time |
-| GPU backend | Vulkan on Android and Windows; Metal on macOS and iOS (2026-11-10: on Windows SDL would pick Direct3D 12, whose HLSL its compiler FXC took 5 s to compile at each launch; Vulkan takes the SPIR-V compiled with the program, as on Android) |
+| GPU backend | Vulkan on Android and Windows; Metal on macOS and iOS. Windows takes the SPIR-V compiled with the program, as Android does |
 | Android build | NDK clang for `aarch64-linux-android29`; SDL shared (`libSDL3.so`) with SDL's stock SDLActivity Java and one small subclass of it (`DraughtsActivity`: development flags, the launch cover, closing the app, SDL's accelerometer kept off); APK built by `scripts/android.py` without Gradle ([development](../development.md)) |
 | Desktop iteration | `goose game.goose` runs in the compiler's process (TinyCC), with no build step |
 | UI | Our own immediate-mode layer in Goose ([rendering.md](rendering.md)); Nuklear (`ui`) for developer tools only |
 | Text | TrueType fonts baked by `ui`'s font atlas |
 
-**Decided 2026-11-07: Goose.** The proof of concept runs on the Galaxy Tab
-A11+ through Vulkan with no change to the Goose compiler or runtime. It needed one
-goose_gfx patch, one SDL patch (a swapchain leak on resume), one C shim, and a shared SDL
-build, all listed in [goose-findings](../goose-findings.md).
-
-**Fallback: C99 + sokol** (sokol_app, sokol_gfx, sokol_audio, sokol-shdc; NativeActivity
-on GLES3), if SDL_GPU's Vulkan path turns out unreliable on the tablet. The structure and
-rules below stay the same.
-
-**Rejected for now: NoGraphicsAPI / goose-ngfx on Android.** Its Vulkan backend needs
-`VK_EXT_descriptor_heap` and mesh shaders, which mobile GPUs lack. Its utility math adds
-AVX2 only for the x86-64 slice and uses NEON on arm64; whether its utility libraries need
-AVX2 on x86 Windows is still open. It is a later, separate desktop and Apple version
-([product](../product.md)). Its ideas are used inside SDL_GPU now
-([rendering.md](rendering.md)).
+Why Goose, the fallback, and why not goose-ngfx on Android:
+[decisions](../decisions/README.md#the-stack).
 
 ## What the stack costs against bare C + sokol
 
-Checked against goose_gfx's source on 2026-11-07:
+From goose_gfx's source:
 
 - Game code is compiled C with no GC and no heap, and frame-loop code allocates nothing.
 - goose_gfx's `realloc`s run only when handle tables grow, and no texture or target is
@@ -58,24 +48,24 @@ Checked against goose_gfx's source on 2026-11-07:
 ## Code layout
 
 The code is packages with no graphics, each run headless by its tests, and an app that
-feeds them the pointer and the time and draws what they leave (2026-11-08).
+feeds them the pointer and the time and draws what they leave.
 
-**The program's code is under `src/`** (the user, 2026-11-09), as the tests are under
+**The program's code is under `src/`**, as the tests are under
 `test/`: `src/` holds the packages and the app, one directory each, and the top level
 keeps what isn't the program's Goose: `test/`, `tools/`, `strings/` (the text and its
 loader, shared with the build scripts), `assets/`, `android/`, `scripts/`, `docs/`, and
 the rest. Below, `app/` means `src/app/`, and so on.
 
-**The rule: only `app/` imports `gfx` or calls SDL or the platform** (2026-11-08). The
+**The rule: only `app/` imports `gfx` or calls SDL or the platform.** The
 packages hand it flat, fixed-size data and take back the pointer and the time; nothing
 outside `app/` (and `android/`, the build scripts) knows what draws or what it runs on.
 One package is drawing code outside `app/`: `render3d/`, the 3D board's renderer, which
-the app and the 3D prototype (`poc/3d/`) share (2026-11-09). It imports gfx,
+the app and the 3D prototype (`poc/3d/`) share. It imports gfx,
 and only those two programs import it; no package of the game does. What the 3D board
 is but drawing, its meshes, looks, light, and the plan of its bake, is `model3d/`, which
 imports no gfx and is tested headless.
 
-**Inside `app/`, the main loop sees two halves of what it runs on** (2026-11-10): the
+**Inside `app/`, the main loop sees two halves of what it runs on**: the
 platform, `app/host` (the window, the frame's end and clock, the screen's size and
 focus, the pointer, keys and typed text, the screenshot, and the program's C for the
 safe area, the wake timer, storage, locales, and Android's launch, back, and close), and
@@ -178,21 +168,19 @@ the screen's own back or home control does (`shell::back`): a setup to home's me
 game, settings, and the puzzles to pick from where their tile goes, a puzzle to the
 puzzles. On home's menu, which has no way back, back leaves the app as the system's back
 does, putting it in the background with the activity kept (`draughts_leave`,
-`DraughtsActivity.leaveApp`, `moveTaskToBack`), and Escape ends the loop. SDL's own
-way, `SDL_SendAndroidBackButton` and the activity's `onBackPressed`, finished the
-activity on Android 17 instead, taking the card out of recents as home's X does. Back reaches the program as SDL's
+`DraughtsActivity.leaveApp`, `moveTaskToBack`), and Escape ends the loop. Back reaches
+the program as SDL's
 "AC Back" key: up to Android 12 through SDL's own key handling, from Android 13 through
 an `OnBackInvokedCallback` in `DraughtsActivity` that hands it to SDL, the manifest
 opting into back callbacks (`enableOnBackInvokedCallback`), as Android 16 does for an app
-targeting it, where the key is no longer dispatched. SDL's sample manifest opts out
-instead, which Android calls temporary. No SDL patch is needed.
+targeting it, where the key is no longer dispatched
+([why not SDL's way](../decisions/README.md#the-apps-lifecycle)).
 
 The loop ends on Escape on home's menu or when home's X asks the shell to stop
 (`Frame.quit`). The game is then written as at any loop's end; after home's X, on Android the program
 calls `DraughtsActivity.closeApp()` over JNI (`src/app/launch.c`), which finishes the
 activity with `finishAndRemoveTask()`, so no card is left in recents, before the
-program returns. Plain `finish()`, what SDL does when the program returns, would leave a
-card with a picture of home, as if the app still ran. SDL then finds the activity finishing and leaves it; the next start
+program returns. SDL then finds the activity finishing and leaves it; the next start
 is a fresh process that restores the game. On the Mac the window closes as the program
 returns.
 
@@ -236,8 +224,7 @@ returns.
 
 ## Players
 
-Up to four players share one tablet, local only: no accounts, no network, no passwords
-(decided 2026-11-09). A player is a badge, an optional name of up to 12 characters, and
+Up to four players share one tablet, local only: no accounts, no network, no passwords. A player is a badge, an optional name of up to 12 characters, and
 what a child makes their own; the rest belongs to the device.
 
 | Kept | Per player | Per device |
