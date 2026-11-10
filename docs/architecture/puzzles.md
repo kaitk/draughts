@@ -176,8 +176,8 @@ whose puzzle it is. Their look is in [rendering](rendering.md#controls).
   pressed it is a miss, the piece sliding back from its stop with the red ring and "try
   again", as after a wrong move. Next is the one way to say a move is done, so it is
   where stopping short is caught; leaving for the puzzles, settings, or start over
-  isn't an answer and costs nothing. A game keeps its quicker way: a stop that only one
-  capture goes on through plays it whole, since nothing there is judged.
+  isn't an answer and costs nothing. A game makes captures stop by stop too, but shows
+  the way ([board and pieces](rendering.md#board-and-pieces)).
 - **Help**: after two misses the piece of the next right move glows; there is no hint
   tile. No puzzle shows a selected piece's targets, whatever the move hints setting: the
   child is to find the move ([product](../product.md)). The selection, the

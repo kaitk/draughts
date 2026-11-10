@@ -788,7 +788,7 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
 
 ### The lookout and the hint
 
-`prototypes/coach.html`, round 3, take a, chosen 2026-11-09; what they show is in
+`prototypes/coach.html`, round 3, take a; what they show is in
 `docs/product.md` and [ai](ai.md#the-lookout).
 
 - **The eye** (`panel::eye`): the lookout's toggle, a floating disc as the 3D board's
@@ -811,7 +811,7 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   closed up where the panel is short); portrait halves of the row under whose turn, hint
   at the left; compact between the eye and undo move, each icon over its word, or icons
   alone with clocks and where the words would leave whose turn too little room for its
-  own in the small face (Estonian's undo move, 2026-11-10). It is declared after undo move, so the controls' order in tests is
+  own in the small face (Estonian's undo move). It is declared after undo move, so the controls' order in tests is
   back, settings, start over, undo move, the hint.
 - **The marks**, on the board (`board::fill`): a piece in danger is drained, its color
   greyed, a little darker, and tinted red, solid and still (`Piece.ring.w`, `board::DRAINED`: CSS
@@ -834,7 +834,7 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
 
 ### What each side has taken
 
-Task 052, `prototypes/game-captured.html`'s take a in its `row` look, chosen 2026-11-09.
+`prototypes/game-captured.html`'s take a in its `row` look.
 
 - **Counts** (`game::taken`): the variant's start pieces of each color less those on the
   board, men and kings apart; a piece of the side not moving that was a king before a
@@ -930,8 +930,7 @@ board's does and the backdrop over it as opaque as the blur.
   The lip is the dark square's color, with a line of the light square's color on its
   outer edge (gold on wood, pale blue on stone), brightest on top, and a dark seam where
   the squares sit below it. The lip, the pieces' flat tops with one groove, and the wood
-  theme's warm tones and calm grain follow the close-up boards chosen on 2026-11-07,
-  which read better than the first design boards' frameless board and two-ringed pieces. The 3D board has a
+  theme's warm tones and calm grain follow the close-up boards. The 3D board has a
   frame 2.4% of the board's width. 10 × 10 uses the same.
 - **Pieces** are SDF discs filling 78% of a square, flat-topped and matte like turned
   discs, as the 3D close-up shows them: one color and one height across the top, with
@@ -946,11 +945,11 @@ board's does and the backdrop over it as opaque as the blur.
 - **Kings** are a setting: crown, stack, or auto (the default). Auto draws a crown on
   the face in the top-down board (the theme's dark piece color on a light piece, gold
   `#e9c46a` on a dark one), which reads at a glance, and in a 3D board a stack of two
-  plain discs, no crown, as kings are in Estonian play (2026-11-07). Top down, a stack reads as
+  plain discs, no crown, as kings are in Estonian play. Top down, a stack reads as
   a shadow at tablet size, so it's there for those who want it. The stack's upper disc
   sits 1.3% of the board above the lower one, its side as deep, so the lower disc's rim
   shows under it. A selected or must-capture ring goes round the lower disc, the stack's
-  foot, with the upper disc hiding its back (2026-11-08). The setting applies to the game's board, the winner's piece,
+  foot, with the upper disc hiding its back. The setting applies to the game's board, the winner's piece,
   and the preview; home's wordmark keeps its crown.
 - **Native form** (`src/app/draw.goose`): the blurred photograph, the board's shadow, lip,
   squares, and marks are one full-screen fragment pass, worked out at `gl_FragCoord`
@@ -959,9 +958,9 @@ board's does and the backdrop over it as opaque as the blur.
   crown, or stack), selected, opacity; must capture (pulsing or still), side to move}`
   from a storage buffer and drawing its shadows, side, face, light, crown or second disc,
   and rings in the fragment shader, blended premultiplied, top row first so a lower
-  piece covers the shadow above it. The crown is a signed-distance polygon in that shader. The panel's line icons are
-  to be drawn the same way, as distances to their strokes' segments and arcs, rather than
-  baked into the font atlas: crisp at any size, no texture.
+  piece covers the shadow above it. The crown is a signed-distance polygon in that shader. The UI's line icons are
+  drawn the same way, as distances to their strokes' segments and arcs, not baked into
+  the font atlas: crisp at any size, no texture.
 - **3D board** (prototyped in `poc/3d/`): the board in perspective, 52.5° down with a 31°
   field of view, its image fitted into a rectangle of the screen by a scale and a shift
   in clip space, so the perspective is the native one at every size. Its bounds are
@@ -972,17 +971,17 @@ board's does and the backdrop over it as opaque as the blur.
   frame's instances filled from the flat board's draw lists (`board::fill`), so the two
   views follow one state and one animation. The world follows the flat layout the board
   package plays on, so a turned board turns the 3D one. **The game screen round it**
-  (`panel::corners_in`, `prototypes/game3d.html`'s `corners`, chosen 2026-11-09): in
+  (`panel::corners_in`, `prototypes/game3d.html`'s `corners`): in
   landscape the two panels are short glass panels in the top corners, 232 × 352 dp (192
   wide on a phone, under 600 dp), on the left back on its own tile over a panel of
   settings and start over (the column's bounds the panel's were, so the board's fit is
   unchanged), the turn or the clocks and undo move on the right; the board as large as clears them by 12 dp, its
   near edge on the bottom margin (898 × 616 dp on the tablet). The flat game screen takes
-  the same panels (task 054, "Game screen"); `Layout.corners` marks them, flat or 3D. In portrait the flat
+  the same panels ("Game screen"); `Layout.corners` marks them, flat or 3D. In portrait the flat
   board's order, the bar, the board as wide as the screen less the margins, the camera
-  buttons, the play; its camera 65° down (`panel::PITCH_PORTRAIT`, the user, 2026-11-09),
+  buttons, the play; its camera 65° down (`panel::PITCH_PORTRAIT`),
   which fills more of the height (752 × 604 dp on the tablet).
-  **The camera buttons** (the user, 2026-11-09; `prototypes/game3d.html`'s placement `a`):
+  **The camera buttons** (`prototypes/game3d.html`'s placement `a`):
   round floating buttons at the right edge, a column under the play panel in landscape
   (a row on a phone, where a column runs past the bottom margin) and above it in
   portrait (a row where a column would shrink the board): a shaded disc with a hairline
@@ -1028,12 +1027,9 @@ board's does and the backdrop over it as opaque as the blur.
   `src/app/draw3d.goose`, the meshes, looks, harmonics, and the bake's steps from
   `src/model3d/`, which has no graphics: the shadow map only when the pieces move, and the pieces'
   occlusion of the field (each piece a cylinder over the 3 × 3 squares round it) into a
-  512² map only where squares changed, a moving piece about 3 × 3 squares of it (task
-  059: a texel a field pixel reads instead of the loop; the dropped bake above drew
-  shadow and occlusion with every shadow map); a crowned king's crown read from its
-  signed distance drawn once at setup into a 256² map (`shaders::CROWN_FRAG`, task 059:
-  evaluated three times a pixel for its slope, it was a third of a frame with 16 kings
-  on the Pixel 7a); one 4× multisampled
+  512² map only where squares changed, a moving piece about 3 × 3 squares of it (a texel
+  a field pixel reads); a crowned king's crown read from its
+  signed distance drawn once at setup into a 256² map (`shaders::CROWN_FRAG`); one 4× multisampled
   forward pass (the board's shadow, the lit board and pieces, the fading ones blended
   after, the field's marks that hold still added) into a kept image the screen's size,
   clear but for the board, drawn only when the 3D board's scene changed
@@ -1042,21 +1038,18 @@ board's does and the backdrop over it as opaque as the blur.
   home and settings; or the plain fade, dimmed to 0.8 behind the game), under the UI.
   The renderer's backdrop is kept too, drawn at full opacity into its own image the
   screen's size when its size, photograph, look, or fade changed, and laid with a fetch
-  a pixel (`render3d::keep_backdrop`, task 059: its grade each frame was 7% of the
-  Pixel 7a's GPU cycles); between a change and the next 3D draw it is graded live.
+  a pixel (`render3d::keep_backdrop`); between a change and the next 3D draw it is graded live.
   The board's ambient light (nine spherical harmonics) comes from the blurred
   photograph; with the plain fade, from the fade painted 64 texels square on the CPU,
-  scaled so its brightness is the dim ambient a theme without a photograph had (the
-  look the Galaxy A33's build without photographs showed, which the plain background
-  comes from): the fade tints the board's shade by season, a fade's own light being far
+  scaled to a dim ambient (`model3d::no_photo_ambient`): the fade tints the board's shade by season, a fade's own light being far
   too dark to light it (`model3d::fade_harmonics`). Switching between the photograph
   and the fade takes only the theme's photograph steps again, not its bake. **Getting
-  ready** (`draw3d::prepare`, task 042) takes a step a frame: the setup, the theme's 28
+  ready** (`draw3d::prepare`) takes a step a frame: the setup, the theme's 28
   steps (the bake in bands, the photograph), the pass's 11 pipelines; meanwhile a still
   mark shows in the board's place, and once ready the board fades in over 0.3 s. A new
   season or board size takes the theme's steps again with the old image still shown:
   while they run it eases over 0.2 s towards grey and dimmer (saturation 0.15 of its own,
-  brightness 0.8, the user's plan, 2026-11-09), so the old board on the new photograph
+  brightness 0.8), so the old board on the new photograph
   reads as changing, and the new theme's first image eases back to full color from there
   over 0.3 s. It costs a uniform of the shader that lays the image on screen
   (`shaders::SHOW_FRAG`: a dot product and a mix), never a drawing of the board again;
@@ -1075,7 +1068,7 @@ board's does and the backdrop over it as opaque as the blur.
   spring's pale birch with sage-stained squares in a green-stained frame, and summer's
   peach and dusky rose under a satin lacquer in a red-brown frame, from the theme table.
   Spring's default is ivory stone with a carved vine band on the frame and jade dark
-  squares (`looks::elven`, `--spring 1`, chosen on the tablet 2026-11-09); the Baltic
+  squares (`looks::elven`, `--spring 1`); the Baltic
   carved oak is `--spring 2`, the birch `--spring 0`. Summer keeps its default wood look.
   **The wood and the stone are baked** once into 2048² maps (the plan and the frame map,
   with mips; `shaders::BAKE_FRAG`) at getting ready and on a theme change, never a frame.
@@ -1084,8 +1077,7 @@ board's does and the backdrop over it as opaque as the blur.
   finish per look (`looks::Finish`: varnish, sanding, pickling, caulking); winter's
   frame is a black marble, contours of a warped ramp with fine cracks (`looks::MARBLE`,
   2). `--wood N`, `--marble N` (0 the slate), and `--summer N` show the other models and
-  variants kept beside the defaults (task 039; the user settled on the defaults,
-  2026-11-09). Warm, the bake takes 37 ms on the M1 Pro and 0.27 to 0.30 s on the
+  variants kept beside the defaults. Warm, the bake takes 37 ms on the M1 Pro and 0.27 to 0.30 s on the
   tablet; its pipeline's first compile there about 1 s.
 - **States**, in the theme's glow color: the selected piece lifts by 0.8% of the board
   and grows to 1.05 with a glow ring a little out from it (at 1.13 of the radius); with move hints on, a legal target is a glowing
@@ -1098,19 +1090,14 @@ legal capture pulses, never one of several. Under the majority rule a piece that
 take, but fewer than another, can't move: touching it is wrong, and the pieces the legal
 captures take pulse too, beside the piece that takes them, so a child sees the other piece
 takes more (`board::outnumbered`). The pulse belongs to the position the mistake was made
-in and ends once a move is played: it used to run on through the move and ring the next
-side's capturers, so after a child's capture on the turned board the computer's man
-beside the child's pieces pulsed red as if it were the child's to move (reported
-2026-11-09, two pieces each taking one; the rings, taps, and moves agree under the turn,
-`test/board/several`). A piece that must capture shows how many pieces its
+in and ends once a move is played (`test/board/several`). A piece that must capture shows how many pieces its
 capture takes, at most (`board::takes`, `Piece.ring.z`), when `board::counting`: with
 move hints always; on mistakes only from a mistake while a capture is due (`mistake`
 sets `Board.counted`) to the next right move or jump (`start_move`, `kept`), so a
-second mistake partway through shows what is left (2026-11-09, `test/game/pips`; it
-showed whatever the hints before, which gave the capture away). One pip per piece on its ring, 28° apart and centred
+second mistake partway through shows what is left (`test/game/pips`). One pip per piece on its ring, 28° apart and centred
 over the top, light with a red rim (22% and 30% of the radius, on the ring at 1.24
-radii), and past five one larger red pip with the number (`prototypes/game.html?count=a`;
-take b, a badge with the number, needs a child who reads digits; the pips are counted).
+radii), and past five one larger red pip with the number (`prototypes/game.html?count=a`:
+the pips are counted, where a number needs a child who reads digits).
 It counts pieces, not stops or the squares a flying king could land on; under the
 majority rule every piece that takes the most shows it, and in Russian each piece its own
 most. Partway through a capture only the piece making it shows what is left; the
@@ -1120,10 +1107,7 @@ field by the still marks' pass (`shaders::MARKS_FRAG`'s `count_pips`), 22° apar
 of a square round the piece on the side toward the eye, as the piece hides its far side;
 painted over the field (that pass blends premultiplied, the other marks adding with alpha
 0), as added light washed out on a light square. They change only with the count, so they
-cost a draw of the board then and nothing per frame. Until 2026-11-09 the 3D board drew
-no pips: its scene never read `ring.z`. Before
-(reported 2026-11-09, a child's lone king on the turned board with a capture of four),
-nothing said how far a capture went. A capture of many jumps is tapped or dropped by its
+cost a draw of the board then and nothing per frame. A capture of many jumps is tapped or dropped by its
 last square, when one capture alone goes there, or stop by stop (`board::follow`): a tap
 or a drop on the next stop of the selected piece's captures leaves the piece waiting
 there, lifted and selected, the pieces it jumped still on the board as the rules leave
@@ -1131,12 +1115,7 @@ them until the capture ends, the stops behind it ringed whatever the hints, and 
 the targets shown to the ways through it. The rest is never played by itself, in a game
 as in a puzzle: each next jump is the child's, by tap or by drag from the stop, and the
 move, once its last stop is reached, is shown from there. A last square several captures
-reach waits for the stops. Until 2026-11-09 a game played a capture once only one went
-on from the stops made, so a child whose first jump played the whole of it never learned
-the way. Before that (reported 2026-11-09, International, a black man's capture over a
-far-row square it only passes, the board turned), the piece went back to its square with
-the stop ringed, and picked up again it forgot the stop: dropped, such a capture was made
-only by its last square. In a game, a wrong square for a piece that must capture is a
+reach waits for the stops. In a game, a wrong square for a piece that must capture is a
 miss that leaves a waiting piece on its stop (`board::missed`): the first in a turn
 pulses the pieces its captures have still to take, so a far-row square that a shorter
 capture would crown on, which the majority rule forbids, shows what to take instead
@@ -1145,11 +1124,11 @@ as the hint's ring does for two cycles and then lit, and so on to the capture's 
 (`test/board/count`). The 3D board lights the same stops with its target's dot
 (`view3d::Scene.lit`'s w): while they pulse they are drawn over the kept image at
 `Scene.next`, a uniform of `render3d::marks_over`, and once lit by the still marks' pass,
-so a pulse costs the marks' quad a frame and a draw of the board at its start and end.
-Until 2026-11-09 the 3D board never showed them (`test/game/pips`). With move hints, the next stops of a waiting piece show from the
+so a pulse costs the marks' quad a frame and a draw of the board at its start and end
+(`test/game/pips`). With move hints, the next stops of a waiting piece show from the
 first jump. Undo move while a piece waits takes the capture back to its start, the
 piece on its square, and takes back no move (`board::unwind`). A puzzle
-(`Board.by_hand`, 2026-11-08) shows none of these: a wrong square there forgets the
+(`Board.by_hand`) shows none of these: a wrong square there forgets the
 stops, and its own hint is a glow after two misses. A piece that must
 capture pulses a red ring
   `#ff5a4a` with a soft red glow every 1.4 s, in every theme. The last move's squares are

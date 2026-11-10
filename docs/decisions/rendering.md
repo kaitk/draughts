@@ -242,3 +242,68 @@ tablet shows it as the game does).
   349 at 540 dp).
 - A badge is home's king with its animal in the crown's place (2026-11-09, `badges.html`
   direction 1).
+
+### The lookout and the hint
+
+`prototypes/coach.html`, round 3, take a, chosen 2026-11-09. In compact, the hint and undo
+move go to icons alone with clocks and where the words would leave whose turn too little
+room, for Estonian's undo move (2026-11-10).
+
+### What each side has taken
+
+Task 052, `prototypes/game-captured.html`'s take a in its `row` look, chosen 2026-11-09.
+
+### Board and pieces
+
+**The flat board**
+
+- The lip, the pieces' flat tops with one groove, and the wood theme's warm tones and calm
+  grain follow the close-up boards chosen on 2026-11-07, which read better than the first
+  design boards' frameless board and two-ringed pieces.
+- Kings in a 3D board are a stack of two plain discs, as kings are in Estonian play
+  (2026-11-07). A stack's selected or must-capture ring goes round its foot (2026-11-08).
+
+**The 3D board**
+
+- The game screen round it, `prototypes/game3d.html`'s `corners` (2026-11-09). The flat
+  game takes the same panels (task 054).
+- The portrait camera at 65° down (2026-11-09), and the camera buttons,
+  `prototypes/game3d.html`'s placement `a` (2026-11-09).
+- The pieces' occlusion of the field into a map only where squares changed (task 059):
+  a texel a field pixel reads instead of the loop; the dropped bake drew shadow and
+  occlusion with every shadow map.
+- The crown into a 256² map drawn once at setup (task 059): evaluated three times a pixel
+  for its slope, it was a third of a frame with 16 kings on the Pixel 7a.
+- The renderer's backdrop kept as an image (task 059): its grade each frame was 7% of the
+  Pixel 7a's GPU cycles.
+- With the plain fade, the board's ambient is scaled to the dim ambient a theme without a
+  photograph had: the look the Galaxy A33's build without photographs showed, which the
+  plain background comes from.
+- Getting ready a step a frame (task 042). The old image eased toward grey while a new
+  theme bakes (2026-11-09).
+- Spring's default 3D look is `looks::elven`, chosen on the tablet on 2026-11-09. The
+  defaults of `--wood`, `--marble`, and `--summer` were settled the same day (task 039),
+  the other models kept beside them.
+
+**States and captures**
+
+- Prototype `game.html?count=a`'s pips for a capture's count. Rejected: take b, a badge
+  with the number, which needs a child who reads digits.
+- Before 2026-11-09 nothing said how far a capture went (reported 2026-11-09: a child's
+  lone king on the turned board with a capture of four), and then the 3D board drew no
+  pips, as its scene never read `ring.z`; both fixed that day. The count shows on mistakes
+  only from a mistake while a capture is due (2026-11-09); it showed whatever the hints
+  before, which gave the capture away.
+- The must-capture pulse ends once a move is played (2026-11-09). It ran on through the
+  move and rang the next side's capturers, so after a child's capture on the turned board
+  the computer's man beside the child's pieces pulsed red as if it were the child's to
+  move (reported 2026-11-09, two pieces each taking one).
+- A capture of many jumps is never played by itself in a game either (2026-11-09). Until
+  then a game played a capture once only one went on from the stops made, so a child whose
+  first jump played the whole of it never learned the way. Before that (reported
+  2026-11-09, International, a black man's capture over a far-row square it only passes,
+  the board turned), the piece went back to its square with the stop ringed, and picked
+  up again it forgot the stop: dropped, such a capture was made only by its last square.
+- The 3D board lights a missed capture's next stops (2026-11-09); it never showed them
+  before.
+- A puzzle's board makes captures by hand with none of the game's help (2026-11-08).
