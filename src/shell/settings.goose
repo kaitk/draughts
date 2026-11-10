@@ -337,8 +337,11 @@ let SLIM_THUMB_H = 26.0;
 // where the column has 120, and a taller row would leave the tablet's landscape, which
 // has 8 dp to spare over its navigation bar, one group at a time (2026-11-09). Where the
 // choices' 55% of the page has the width (16:9 and wider), the names' column widens to
-// the switch's 180 dp, so each half is 88 dp wide; the rows keep their height.
+// the switch's 180 dp, so each half is 88 dp wide; the rows keep their height. Either way
+// the halves are only as tall as their thumbnail and SWITCH_PAD above and below it, no
+// taller than the row's tiles: 60 dp where they are 88 wide (the user, 2026-11-10).
 let SWITCH_GAP = 4.0;
+let SWITCH_PAD = 10.0;
 let SWITCH_NAME = 20.0;     // the name's line above the switch in the name's column
 let WIDE_NAME_W = 2.0 * 88.0 + SWITCH_GAP; // the names' column as wide as the switch
 let SLACK = 0.5;            // px a row may pass its width by without wrapping
@@ -383,18 +386,34 @@ fn switch_line(g: gui::Gui&) -> f32 {
     return gui::text_width(g, gui::SMALL, strings::get(ROW_NAMES[THEME_ROW])) + (14.0 + 2.0 * 88.0 + SWITCH_GAP) * u;
 }
 
+// A half's thumbnail, as wide as w (pixels) leaves it, at most the tiles' own.
+fn switch_pic(s: Settings&, g: gui::Gui&, w: f32) -> float2 {
+    let u = g.scale;
+    let pic = min((if s.slim { SLIM_THUMB_W } else { THUMB_W }) * u, w - 12.0 * u);
+    return float2 { pic, pic * THUMB_H / THUMB_W };
+}
+
+// How tall the switch is, in pixels, `across` pixels wide: its thumbnails and SWITCH_PAD
+// above and below them, no taller than the theme's tiles; SLIM_H in a small window.
+fn switch_h(s: Settings&, g: gui::Gui&, across: f32) -> f32 {
+    let u = g.scale;
+    if s.slim { return SLIM_H * u; }    // the compact tiles' floor
+    let pic = switch_pic(s, g, 0.5 * (across - SWITCH_GAP * u));
+    return min(row_h(s, THEME_ROW) * u, pic.y + 2.0 * SWITCH_PAD * u);
+}
+
 // The theme's switch in r, its halves side by side: the season's photograph and its
 // plain fade, the one chosen lit. True when a tap changed s.
 fn switch(s: Settings&, g: gui::Gui&, r: float4) -> bool {
     let u = g.scale;
     let w = 0.5 * (r.z - SWITCH_GAP * u);
-    let pic = min((if s.slim { SLIM_THUMB_W } else { THUMB_W }) * u, w - 12.0 * u);
+    let pic = switch_pic(s, g, w);
     var changed = false;
     for k in 2 {
         let half = float4 { r.x + k * (w + SWITCH_GAP * u), r.y, w, r.w };
         let plain = k == 1;
         // The theme shown's photograph (-2) or fade (-3), as the widgets draw them.
-        if gui::picture(g, SWITCH_ID + k, half, if plain { -3 } else { -2 }, float2 { pic, pic * THUMB_H / THUMB_W },
+        if gui::picture(g, SWITCH_ID + k, half, if plain { -3 } else { -2 }, pic,
                         s.plain == plain) {
             changed = s.plain != plain;
             s.plain = plain;
@@ -510,22 +529,24 @@ fn rows(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4,
         let row = group_row(group, k);
         if k > 0 { y += ROW_GAP * u; }
         let left = (s.name_w + 14.0) * u;
-        // The theme's row: its name on a line of its own, the switch under it at the
-        // left of the tiles; or where the name is above the tiles, beside it at the
-        // line's right end, the line as tall as the switch.
+        // The theme's row: its name on a line of its own, the switch under it, the two
+        // centered down the row at the left of the tiles; or where the name is above the
+        // tiles, beside it at the line's right end, the line as tall as the switch.
         let switched = row == THEME_ROW;
-        let sh = row_h(s, row);   // the switch as tall as the theme's tiles
-        let line: f32 = if switched { (sh + SWITCH_GAP) * u } else { NAME_H * u };
+        let across = if aside { s.name_w * u } else { (2.0 * 88.0 + SWITCH_GAP) * u };
+        let sh = switch_h(s, g, across);
+        let line: f32 = if switched { sh + SWITCH_GAP * u } else { NAME_H * u };
         let tiles = if aside { float4 { r.x + left, y, r.z - left, 0.0 } }
                     else { float4 { r.x, y + line, r.z, 0.0 } };
         let h, tapped = lay(s, over, g, row, tiles, declare);
         if declare {
             var name = float4 { r.x, y, s.name_w * u, if aside { h } else { NAME_H * u - 6.0 * u } };
-            var sw = float4 { r.x, y + SWITCH_NAME * u, s.name_w * u, (ROW_H[row] as f32 - SWITCH_NAME) * u };
-            if switched && aside { name.w = SWITCH_NAME * u; }
+            let top = y + max(0.0, 0.5 * (h - SWITCH_NAME * u - sh));
+            var sw = float4 { r.x, top + SWITCH_NAME * u, across, sh };
+            if switched && aside { name = float4 { r.x, top, across, SWITCH_NAME * u }; }
             if switched && !aside {
-                name = float4 { r.x, y, r.z, sh * u };
-                sw = float4 { r.x + r.z - (2.0 * 88.0 + SWITCH_GAP) * u, y, (2.0 * 88.0 + SWITCH_GAP) * u, sh * u };
+                name = float4 { r.x, y, r.z, sh };
+                sw = float4 { r.x + r.z - across, y, across, sh };
             }
             gui::text(g, gui::SMALL, name, strings::get(ROW_NAMES[row]), 0.66, 0.03 * gui::FACE_DP[gui::SMALL] as f32 * u,
                       gui::LEFT);

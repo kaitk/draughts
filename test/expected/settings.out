@@ -91,7 +91,7 @@ plain: photo shown false, read back plain true season -1, thumbnails 5 6 7 4 -1 
 photo: picture = fox;season = by-date;background = photo;board = 3d;hints = mistakes;lookout = off;kings = auto;draughts = international;level = easy;color = white;clock = none;skill_easy = 0;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0; language 0, changed true, game's board hints moves false, kings 2
 photo: photo shown true
 in Estonian: Teema
-portrait: board at vec4<f32> { 160.52158, 178.29941, 478.95682, 7.6633096 }, the groups from 800.0002, clear true, look beside game true, tiles 20
+portrait: board at vec4<f32> { 160.52158, 190.74384, 478.95682, 7.6633096 }, the groups from 824.88904, clear true, look beside game true, tiles 20
 portrait stack: picture = fox;season = by-date;background = photo;board = 3d;hints = mistakes;lookout = off;kings = stack;draughts = international;level = easy;color = white;clock = none;skill_easy = 0;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0; language 0, changed true, game's board hints moves false, kings 2
 back: true
 a file's board = 3d: raised true, tiles 20 of 20
