@@ -23,7 +23,10 @@
 // panel has the room and beside its icon where not. On the game, flat and 3D, what each
 // side has taken late in a game (task 052) lies inside the safe area clear of the tiles,
 // the camera buttons, and the board, and the flat screen's panels are the 3D one's
-// (task 054), or the line says how they differ; the iPad's smallest window too.
+// (task 054), or the line says how they differ; the iPad's smallest window too, with home's menu there.
+//
+// A line with anything wrong fails the test unless the failure is on `ALLOWED` below,
+// with its reason: a regression shows as an exit, not only as a line in the diff.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -35,6 +38,38 @@ import ai from "../../src/ai";
 import shell from "../../src/shell";
 import puzzles from "../../src/puzzles";
 import drive from "../drive";
+
+// Failures that are known and accepted: the start of the heading the line is under (the
+// size, or the run), the line's name, and its failure as printed, whole.
+struct Allowed {
+    under: const u8[:],
+    what:  const u8[:],
+    wrong: const u8[:],
+}
+
+let ALLOWED = [
+    // A small window's (gui::compact) menu rows are 72 dp, under the floor, accepted for
+    // compact only (the user, 2026-11-09; rendering.md, "Compact").
+    Allowed { under: "the iPad's smallest window", what: "home", wrong: " 4 taps under 88 dp;" },
+    // Its game bar's three tiles are 72 x 64 dp, the same acceptance.
+    Allowed { under: "the iPad's smallest window", what: "the game", wrong: " 3 taps under 88 dp;" },
+];
+
+var heading: u8[..160] = []; // what the lines print under now
+var failures = 0;           // lines wrong and not allowed
+
+fn head(line: const u8[:]) {
+    heading.clear();
+    heading.append(line);
+    print(line);
+}
+
+// Counts the line `what` wrong with `wrong` unless ALLOWED holds it.
+fn check(what: const u8[:], wrong: const u8[:]) {
+    guard wrong.len > 0 else { return; }
+    for a in ALLOWED { if starts_with(heading[..], a.under) && what == a.what && wrong == a.wrong { return; } }
+    failures++;
+}
 
 fn overlaps(a: float4, b: float4) -> bool {
     let e: f32 = 0.5;           // px: tiles that only touch don't overlap
@@ -120,6 +155,7 @@ fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool,
     line.append(if wrong.len > 0 { ";" } else { ", all in place" });
     line.append(wrong);
     print(line);
+    check(what, wrong[..]);
 }
 
 // Home's chip (the last tile but one), with no name and with twelve characters, mirrors
@@ -152,17 +188,21 @@ fn chip(g: gui::Gui&, sh: shell::Shell&) {
         if abs(c.y - way.y) > 0.5 { wrong.append(" not level with the X;"); }
         if abs(c.x - side - inset) > 0.5 { wrong.append(" not mirroring the X;"); }
         if b.z > 0.0 && b.x + 0.5 < side { wrong.append(" the board not on its side;"); }
-        // The name's glass pill: inside the chip's tap, none without a name.
+        // The name's glass pill: inside the chip's tap, none without a name or where the
+        // chip is round, its badge alone, for want of room (home::player_spot).
+        let round = c.z < home::CORNER * u + 0.5;
+        if named && round { line.append(", round"); }
         var pills = 0;
         for q in g.quads {
             guard q.look.x == gui::GLASS && q.rect.z < c.z else { continue; }
             pills++;
             if q.rect.x < c.x || q.rect.x + q.rect.z > c.x + c.z { wrong.append(" the pill outside the chip;"); }
         }
-        if pills != (if named { 1 } else { 0 }) { wrong.append(" the pill wrong;"); }
+        if pills != (if named && !round { 1 } else { 0 }) { wrong.append(" the pill wrong;"); }
         line.append(if wrong.len > 0 { ";" } else { ", mirroring the X on the board's side, off the column and the board" });
         line.append(wrong);
         print(line);
+        check(if named { "home's chip, named" } else { "home's chip" }, wrong[..]);
     }
     sh.prefs.name.clear();
 }
@@ -174,6 +214,7 @@ fn turn_piece(g: gui::Gui&, sh: shell::Shell&) {
     let u = g.scale;
     guard sh.over.len == 1 else {
         print("  the turn piece: ", sh.over.len, " pieces over the UI");
+        failures++;
         return;
     }
     let p = sh.over[0];
@@ -197,6 +238,7 @@ fn turn_piece(g: gui::Gui&, sh: shell::Shell&) {
     let where = if disc.y + disc.w <= goal.y + 0.5 { "over" } else { "beside" };
     print("  the turn piece: ", whole(2.0 * r / u), " dp, ", where, " the goal's icon, side ", p.look.x, ", ring ",
           p.ring.y, if wrong.len > 0 { ";" } else { ", in place" }, wrong);
+    check("the turn piece", wrong[..]);
 }
 
 // A shell showing `screen` at rest, home's column showing `setup`.
@@ -286,7 +328,7 @@ fn taken(g: gui::Gui&) {
         for p in sh.over {
             guard p.at.z < 0.5 * panel::TAKEN_D * u + 0.5 else { continue; }
             count++;
-            if p.look.y == board::CROWN as f32 { kings++; }
+            if p.look.y == board::CROWN { kings++; }
             let r = float4 { p.at.x - p.at.z, p.at.y - p.at.z, 2.0 * p.at.z, 2.0 * p.at.z };
             if !inside(r, safe) { wrong.append(" off the safe area;"); break; }
             var hit = false;
@@ -299,6 +341,7 @@ fn taken(g: gui::Gui&) {
         format(line, if raised { "; 3D " } else { " flat " }, count, " pieces, ", kings, " a king");
         line.append(if wrong.len == 0 { ", in place" } else { "" });
         line.append(wrong);
+        check(if raised { "taken, 3D" } else { "taken, flat" }, wrong[..]);
     }
     let n = 10;
     let fl = panel::layout_in(safe, n, u, true, true);
@@ -348,7 +391,11 @@ fn small_window(g: gui::Gui&) {
           drive::tiles(g), " tiles, the switch ", whole(half.z / u), " x ", whole(half.w / u), " dp a half, a season ",
           whole(season.z / u), " x ", whole(season.w / u), " dp, Board ending ", whole((foot - board.y - board.w) / u),
           " dp above the glass's foot, Kings ", whole((foot - kings.y - kings.w) / u));
-    print("the iPad's smallest window, the game:");
+    head("the iPad's smallest window, home:");
+    var home = showing(shell::HOME, home::NOTHING);
+    at_rest(home, g);
+    report("home", g, home, true, false);
+    head("the iPad's smallest window, the game:");
     var plain = showing(shell::GAME, home::NOTHING);
     at_rest(plain, g);
     report("the game", g, plain, true, false);
@@ -412,7 +459,7 @@ fn main() {
             drive::size = size;
             g.scale = gui::scale_of(size.x, size.y);
             gui::test_faces(g);
-            print(names[i], ", ", size.x as i64, " x ", size.y as i64, ":");
+            head(str(names[i], ", ", size.x as i64, " x ", size.y as i64, ":"));
             screens(g);
         }
         for dp in [540.0, 480.0] {
@@ -422,7 +469,7 @@ fn main() {
                 drive::size = size;
                 g.scale = gui::scale_of(size.x, size.y);
                 gui::test_faces(g);
-                print(phone_names[i], ", ", size.x as i64, " x ", size.y as i64, " at ", dp as i64, " dp:");
+                head(str(phone_names[i], ", ", size.x as i64, " x ", size.y as i64, " at ", dp as i64, " dp:"));
                 screens(g);
             }
         }
@@ -448,8 +495,8 @@ fn main() {
                     g.insets = if size.x < size.y { float4 { 0.0, cut, 0.0, bar } }
                                else if k == 0 { float4 { cut, 0.0, 0.0, bar } } else { float4 { 0.0, 0.0, cut, bar } };
                     let e = g.insets;
-                    print(phone_names[i], ", ", size.x as i64, " x ", size.y as i64, " at ", dp as i64, " dp, insets ",
-                          e.x as i64, ", ", e.y as i64, ", ", e.z as i64, ", ", e.w as i64, " px:");
+                    head(str(phone_names[i], ", ", size.x as i64, " x ", size.y as i64, " at ", dp as i64, " dp, insets ",
+                             e.x as i64, ", ", e.y as i64, ", ", e.z as i64, ", ", e.w as i64, " px:"));
                     screens(g);
                 }
             }
@@ -472,13 +519,14 @@ fn main() {
             at_rest(bare, g);
             let both = drive::tiles(g);
             g.insets = float4 { 0.0, 0.0, 0.0, 72.0 };
-            print(size.x as i64, " x ", size.y as i64, ", insets 0, 0, 0, 72 px:");
+            head(str(size.x as i64, " x ", size.y as i64, ", insets 0, 0, 0, 72 px:"));
             screens(g);
             var inset = showing(shell::SETTINGS, home::NOTHING);
             at_rest(inset, g);
             let shown = drive::tiles(g);
             print("  settings: ", shown, " tiles, ", both, " with no inset: ",
                   if shown == both { "both groups" } else { "one group" });
+            if shown != both { failures++; }
         }
     }
     // The 13" and 11" iPad in landscape with the status bar and the home indicator, in
@@ -495,13 +543,14 @@ fn main() {
             at_rest(bare, g);
             let both = drive::tiles(g);
             g.insets = float4 { 0.0, 48.0, 0.0, 40.0 };
-            print(size.x as i64, " x ", size.y as i64, ", insets 0, 48, 0, 40 px:");
+            head(str(size.x as i64, " x ", size.y as i64, ", insets 0, 48, 0, 40 px:"));
             screens(g);
             var inset = showing(shell::SETTINGS, home::NOTHING);
             at_rest(inset, g);
             let shown = drive::tiles(g);
             print("  settings: ", shown, " tiles, ", both, " with no inset: ",
                   if shown == both { "both groups" } else { "one group" });
+            if shown != both { failures++; }
         }
     }
     g.insets = float4 { 0.0, 0.0, 0.0, 0.0 };
@@ -514,4 +563,8 @@ fn main() {
     gui::short_dp = 800.0;
     small_window(g);
     handover();
+    if failures > 0 {
+        print(failures, " lines wrong and not allowed");
+        exit(1);
+    }
 }

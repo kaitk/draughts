@@ -91,7 +91,8 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   orientations (the cutout at either side in landscape), every tile and the board inside
   the safe area, the 16:10 tablet with its 72 px hidden navigation bar and the 13" and 11" iPad's
   landscape with their bars (settings keeps both groups on each), and a phone's tabs in settings and the puzzles:
-  `sizes`; the title's and the clock's faces holding every character drawn in them, the
+  `sizes`, which exits non-zero on any failure not on its `ALLOWED` list (each entry with
+  its reason; add one only for a failure the user accepted, never to pass a regression); the title's and the clock's faces holding every character drawn in them, the
   app's name in every language and every clock time: `faces`), `strings` (every language
   file has every key), `badges` (each badge's SVG baked into its distance field, drawn
   coarsely, and the path syntax a tracer writes: bless it after replacing an animal), `ai` (the computer player:

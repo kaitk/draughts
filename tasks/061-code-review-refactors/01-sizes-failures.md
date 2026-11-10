@@ -1,6 +1,6 @@
 # 01: Stage 0, the failures saved in `sizes`
 
-Status: todo
+Status: done (2026-11-10)
 
 `test/shell/sizes.goose` drives every screen across many sizes:
 
@@ -37,8 +37,33 @@ A new failure looks the same as these in a diff, so a regression can hide among 
 
 ## Acceptance criteria
 
-- [ ] Every saved failure fixed, or allowed with its reason
-- [ ] `sizes` fails on a new failure (checked by breaking a layout on purpose, then
+- [x] Every saved failure fixed, or allowed with its reason
+- [x] `sizes` fails on a new failure (checked by breaking a layout on purpose, then
       reverting)
-- [ ] The fixed layouts checked on the Mac, landscape with insets; on a device only if
+- [x] The fixed layouts checked on the Mac, landscape with insets; on a device only if
       the Mac can't tell
+
+## Outcome
+
+- **The overlaps were real.** Home's gear has an 88 dp tap that reaches 8 dp under the
+  wordmark's row, but the gap under the row went down to 4 dp. On a landscape phone at
+  480 dp less its gesture bar (the Pixel 7a), the tap reached about 3 dp into Continue's.
+  A press there fired both. Fixed: the gap never goes under the gear's reach, and the
+  rows close up from 2 dp apart to about 1 where that leaves too little room
+  (`home::row_gap`). A small window's menu (compact) had the same overlap, 4 dp, which
+  `sizes` didn't check. Its gap is now 12 dp instead of 8, and the board there is 187 dp
+  instead of 191. `sizes` now checks home in the small window too.
+- **The pill check was stale.** With a name too long to keep 16 dp from the X or the
+  board, the chip is round on purpose: the badge alone, with no pill
+  (`home::player_spot`). The check now expects a pill only on a chip wider than its
+  badge, and the line says "round".
+- **One more saved failure was already accepted:** the small window's 72 dp tiles (home's
+  rows and the game's bar), accepted for compact only (the user, 2026-11-09). It is on
+  the allow-list.
+- **`sizes` exits 1 on any failure not on `ALLOWED`**, and prints how many lines failed.
+  Checked by setting home's `ROW_GAP` to −6: exit 1, 51 lines. Reverted, it exits 0.
+- **Mac shots:** `--size 1200x540 --dp 480 --inset 52,0,0,37` (the Pixel in landscape)
+  and a 374 × 484 window. The gear sits clear of the first row in both. No device
+  check: nothing here is beyond what the Mac shows.
+- **Not measured:** the change is two sums in home's layout, with nothing added per
+  frame. Idle CPU and the bench start with stage 1.

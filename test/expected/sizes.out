@@ -18,7 +18,7 @@ a foldable, landscape, 2208 x 1768:
 a foldable, portrait, 1768 x 2208:
   home: 7 tiles, smallest 88 x 88 dp, board 411 dp, all in place
   home's chip: 88 dp wide, board 411 dp, mirroring the X on the board's side, off the column and the board
-  home's chip, named: 88 dp wide, board 411 dp; the pill wrong;
+  home's chip, named: 88 dp wide, board 411 dp, round, mirroring the X on the board's side, off the column and the board
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 359 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 147 dp, all in place
   the game: 5 tiles, smallest 227 x 88 dp, board 527 dp, all in place
@@ -50,7 +50,7 @@ a foldable, portrait, 1768 x 2208:
 4:3, portrait, 1536 x 2048:
   home: 7 tiles, smallest 88 x 88 dp, board 479 dp, all in place
   home's chip: 88 dp wide, board 479 dp, mirroring the X on the board's side, off the column and the board
-  home's chip, named: 88 dp wide, board 479 dp; the pill wrong;
+  home's chip, named: 88 dp wide, board 479 dp, round, mirroring the X on the board's side, off the column and the board
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 427 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 215 dp, all in place
   the game: 5 tiles, smallest 227 x 88 dp, board 595 dp, all in place
@@ -162,7 +162,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp:
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp:
   home: 7 tiles, smallest 88 x 88 dp, board 253 dp, all in place
   home's chip: 88 dp wide, board 253 dp, mirroring the X on the board's side, off the column and the board
-  home's chip, named: 88 dp wide, board 253 dp; the pill wrong;
+  home's chip, named: 88 dp wide, board 253 dp, round, mirroring the X on the board's side, off the column and the board
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 5 tiles, smallest 160 x 88 dp, board 373 dp, all in place
@@ -211,7 +211,7 @@ a foldable, landscape, 2208 x 1768:
 a foldable, portrait, 1768 x 2208:
   home: 7 tiles, smallest 88 x 88 dp, board 411 dp, all in place
   home's chip: 88 dp wide, board 411 dp, mirroring the X on the board's side, off the column and the board
-  home's chip, named: 88 dp wide, board 411 dp; the pill wrong;
+  home's chip, named: 88 dp wide, board 411 dp, round, mirroring the X on the board's side, off the column and the board
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 359 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 147 dp, all in place
   the game: 5 tiles, smallest 227 x 88 dp, board 527 dp, all in place
@@ -243,7 +243,7 @@ a foldable, portrait, 1768 x 2208:
 4:3, portrait, 1536 x 2048:
   home: 7 tiles, smallest 88 x 88 dp, board 479 dp, all in place
   home's chip: 88 dp wide, board 479 dp, mirroring the X on the board's side, off the column and the board
-  home's chip, named: 88 dp wide, board 479 dp; the pill wrong;
+  home's chip, named: 88 dp wide, board 479 dp, round, mirroring the X on the board's side, off the column and the board
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 427 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 215 dp, all in place
   the game: 5 tiles, smallest 227 x 88 dp, board 595 dp, all in place
@@ -355,7 +355,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp:
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp:
   home: 7 tiles, smallest 88 x 88 dp, board 253 dp, all in place
   home's chip: 88 dp wide, board 253 dp, mirroring the X on the board's side, off the column and the board
-  home's chip, named: 88 dp wide, board 253 dp; the pill wrong;
+  home's chip, named: 88 dp wide, board 253 dp, round, mirroring the X on the board's side, off the column and the board
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 5 tiles, smallest 160 x 88 dp, board 373 dp, all in place
@@ -484,7 +484,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp, insets 0, 118, 0, 84 px:
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   home: 7 tiles, smallest 88 x 88 dp, board 201 dp, all in place
   home's chip: 88 dp wide, board 201 dp, mirroring the X on the board's side, off the column and the board
-  home's chip, named: 88 dp wide, board 201 dp; the pill wrong;
+  home's chip, named: 88 dp wide, board 201 dp, round, mirroring the X on the board's side, off the column and the board
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 5 tiles, smallest 160 x 88 dp, board 321 dp, all in place
@@ -500,7 +500,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   home: 7 tiles, smallest 88 x 88 dp, board 201 dp, all in place
   home's chip: 88 dp wide, board 201 dp, mirroring the X on the board's side, off the column and the board
-  home's chip, named: 88 dp wide, board 201 dp; the pill wrong;
+  home's chip, named: 88 dp wide, board 201 dp, round, mirroring the X on the board's side, off the column and the board
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 5 tiles, smallest 160 x 88 dp, board 321 dp, all in place
@@ -516,7 +516,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
 a 9:16 phone, portrait, 1080 x 1920 at 480 dp, insets 0, 118, 0, 84 px:
   home: 7 tiles, smallest 88 x 88 dp, board 192 dp, all in place
   home's chip: 88 dp wide, board 192 dp, mirroring the X on the board's side, off the column and the board
-  home's chip, named: 88 dp wide, board 192 dp; the pill wrong;
+  home's chip, named: 88 dp wide, board 192 dp, round, mirroring the X on the board's side, off the column and the board
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 156 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 5 tiles, smallest 99 x 88 dp, board 284 dp, all in place
@@ -629,7 +629,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp, insets 0, 118, 0, 84 px:
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   home: 7 tiles, smallest 88 x 88 dp, board 201 dp, all in place
   home's chip: 88 dp wide, board 201 dp, mirroring the X on the board's side, off the column and the board
-  home's chip, named: 88 dp wide, board 201 dp; the pill wrong;
+  home's chip, named: 88 dp wide, board 201 dp, round, mirroring the X on the board's side, off the column and the board
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 5 tiles, smallest 160 x 88 dp, board 321 dp, all in place
@@ -645,7 +645,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   home: 7 tiles, smallest 88 x 88 dp, board 201 dp, all in place
   home's chip: 88 dp wide, board 201 dp, mirroring the X on the board's side, off the column and the board
-  home's chip, named: 88 dp wide, board 201 dp; the pill wrong;
+  home's chip, named: 88 dp wide, board 201 dp, round, mirroring the X on the board's side, off the column and the board
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 5 tiles, smallest 160 x 88 dp, board 321 dp, all in place
@@ -661,7 +661,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
 a 9:16 phone, portrait, 1080 x 1920 at 480 dp, insets 0, 118, 0, 84 px:
   home: 7 tiles, smallest 88 x 88 dp, board 192 dp, all in place
   home's chip: 88 dp wide, board 192 dp, mirroring the X on the board's side, off the column and the board
-  home's chip, named: 88 dp wide, board 192 dp; the pill wrong;
+  home's chip, named: 88 dp wide, board 192 dp, round, mirroring the X on the board's side, off the column and the board
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 156 dp, all in place
   the computer's setup: 14 tiles, smallest 88 x 88 dp, board 0 dp, all in place
   the game: 5 tiles, smallest 95 x 88 dp, board 284 dp, all in place
@@ -817,6 +817,8 @@ et, the iPads in landscape with their bars:
 settings' Look tab: group 1, tiles 10 then 17, changed false
 the puzzles' Learn row: theme 0, tiles 10 then 13
 the iPad's smallest window, 499 x 645 dp: Look's 17 tiles, the switch 88 x 48 dp a half, a season 125 x 48 dp, Board ending 87 dp above the glass's foot, Kings -39
+the iPad's smallest window, home:
+  home: 7 tiles, smallest 88 x 72 dp, board 187 dp; 4 taps under 88 dp;
 the iPad's smallest window, the game:
   the game: 5 tiles, smallest 72 x 64 dp, board 381 dp; 3 taps under 88 dp;
   taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels the 3D screen's

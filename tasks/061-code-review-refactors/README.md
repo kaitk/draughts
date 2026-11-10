@@ -1,6 +1,6 @@
 # 061: The code review's refactors
 
-Status: todo
+Status: in-progress
 
 On 2026-11-10 a high-level review, at commit `abfcb5c`, read the code for readability,
 how it is split into files, how easy its flow is to follow, the layout code, and how
@@ -57,7 +57,7 @@ Left out on purpose:
 
 ## Acceptance criteria
 
-- [ ] Stage 0: `sizes` fails on any listed failure not on its allow-list
+- [x] Stage 0: `sizes` fails on any listed failure not on its allow-list
 - [ ] Stage 1: the moves made, tests identical
 - [ ] Stage 2: one screen table; the game returns events; the app reads the shell's frame
       output only
