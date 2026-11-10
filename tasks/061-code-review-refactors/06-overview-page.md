@@ -33,8 +33,8 @@ above.
    linked from `README.md` and `docs/architecture/README.md`. It must stand alone, with
    its own `<!doctype html>`, head, and body, and Google Fonts with fallbacks. It must
    read in light and dark, and at phone width.
-3. Later, publish it on GitHub Pages, together with `store/privacy/` (task 029). Decide
-   then whether Pages serves `docs/` or its own folder.
+3. Later, publish it on GitHub Pages. Task 062 moves it to `docs/architecture/index.html`
+   and publishes it at `/draughts/architecture/`.
 
 ## Acceptance criteria
 

@@ -49,7 +49,7 @@ reached the screen; memory is the whole app's.
 | --- | --- | --- | --- | --- |
 | Galaxy Tab A11+ | 1920 × 1200, 90 Hz | locked 90 fps | locked 90 fps | 137 / 295 MB |
 | Pixel 7a | 2400 × 1080, 60 Hz | locked 60 fps | locked 60 fps | 159 / 324 MB |
-| Galaxy A33 5G | 2400 × 1080, 90 Hz | locked 90 fps | 60 fps average | 116 / 275 MB |
+| Galaxy A33 5G | 2400 × 1080, 90 Hz | locked 90 fps | 60 fps (45 fps 1% low) | 116 / 275 MB |
 | iPhone 13 mini | 2340 × 1080, 60 Hz | locked 60 fps | locked 60 fps | 59 / 204 MB |
 | Windows PC | 2560 × 1440, 165 Hz | locked 165 fps | locked 165 fps | 258 / 477 MB |
 
