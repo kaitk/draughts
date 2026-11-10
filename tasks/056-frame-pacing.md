@@ -101,6 +101,34 @@ The development build from 37f350b, the flat board, `--bench 1000`.
   chosen point after the vsync (a display link) or presenting at a chosen time
   (`presentDrawable:atTime:`); both are changes to SDL's Metal path or goose_gfx.
 
+## The Galaxy A33, 2026-11-10
+
+The release built from 37f350b, `--bench 1000` in the usual scene, traced with Perfetto
+(SurfaceFlinger and the app's atrace: `gfx`, `view`, `sched`, `freq`, at 90 Hz). The
+app's SurfaceView carries no frame tokens, so SurfaceFlinger's frame timeline leaves it
+out; a frame's latch is the drop of the layer's `BufferTX` counter, read with Perfetto's
+trace processor.
+
+- **The flat board:** 2 of 1000 frames latched a refresh late, both from the app's side.
+  The loop is paced by the buffers, not the vsync: `dequeueBuffer` (3.3 ms on average,
+  up to 14.7) and `queueBuffer`, whose BLAST queue waits (`waitForever`) while the
+  compositor holds the swapchain's other buffers, so the app hands its buffers over at
+  uneven times (8.5, 13.9, 6.1, 3.8, 3.6 ms apart around the one at 24.7 s). One came
+  just after SurfaceFlinger's wake-up, so that refresh had nothing new; the next two
+  came 3.6 ms apart, and the app then waited 13.2 ms in `queueBuffer` for a buffer
+  back. The iPhone's pattern on Android: the frame's place against the latch drifts
+  with the loop's own timing. The bench's own clock: waited P50 18.3 / P99 19.0 ms,
+  presented avg 89.6 / 1% low 79.0 fps.
+- **The 3D board, moving (the bench's loop phase):** 60 frames a second, but on the 90 Hz
+  display they alternate two refreshes and one (22.2 and 11.1 ms: 424 and 404 of 829
+  latched), an uneven 60. The app is GPU-bound: its thread sleeps in `queueBuffer` 13.8
+  ms of each 16.7 ms frame (`waitForever`, waiting for a buffer back), running 2.2 s of
+  the 14. The waited phases before it ran at 47 to 52 frames a second.
+- So on the A33 the 3D board can't be locked to 90 Hz, and 60 frames on a 90 Hz display
+  is judder, not even motion: evenly paced it would be 45 at 90 Hz, or 60 with the
+  display switched to 60 Hz while the 3D board moves (`ANativeWindow_setFrameRate`), the
+  choice being the user's. The 3D pass's cost is task 059's.
+
 ## Directions
 
 First on the desktops, going to a device only if nothing shows there (the user,
