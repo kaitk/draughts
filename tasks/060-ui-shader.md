@@ -68,20 +68,57 @@ interpolating its own) are the same or more. Registers were not the main cost; t
 cuts are the work itself: the glass's shadow margins (48 dp round each panel, shaded
 for a shadow that is mostly 0) and the varyings each pixel interpolates.
 
-## Plan
+## Step 2: each quad only as large as its shadow, and glass and tiles in parts (2026-11-10)
 
-1. Three variants of FRAG from one source with defines (as `MARKS_PULSE` does): the base
-   kinds, the icons (2), the faces (8); `draw_quads` draws the quads in runs of one
-   pipeline, in order (`gfx::draw`'s first instance), so the blending order holds.
-2. Fewer flat varyings where a kind needs fewer (the glyph's uv from the vertex shader).
-3. Check shots against the build before; measure GPU cycles a frame on the Pixel
-   (Streamline, `agents/testing.md`'s "GPU profiling") and `--bench 1000` on the tablet,
-   both with `--keep off`, test builds beside the app (`--id-suffix`).
+The vertex shader's margin round a quad is now what its shadow reaches on each side, and
+a pixel for the edge: glass 6 dp above, 18 to the sides, 30 below (48 all round before), a
+tile 0, 6, and 12 (20). Glass and tiles then shade a pixel outside them as the shadow
+alone, and one more than 3 dp inside as the fill alone: the highlight, border, edge, and
+shadow are exactly 0 there. Shots: within 1 level of 255 on at most a few hundred pixels
+along panels' edges (the compiler's rounding), the 3D game as two runs of one build.
+
+## Step 3: fewer varyings, tried and undone (2026-11-10)
+
+malioc said a pixel pays about 0.06 varying cycles for each flat component it reads (a
+`vec4` 0.25), so the glyph's atlas coordinate was interpolated in the vertex shader
+(`v_uv`, 2 components read instead of 8; malioc 1.12 → 0.75 varying cycles for a glyph)
+and the style read only by tiles and icons (f36ee1c). On the Pixel it changed nothing:
+GPU active 3.575M → 3.576M a frame, the 32-bit varying slots 5.21M both, so the hardware
+pays for the varyings declared, not those a path reads. Undone.
+
+Also left: the quad read from the storage buffer by a flat index (malioc: 4 load/store
+cycles a pixel against 1.12 varying ones), and the color and extra as `mediump`
+varyings (1.12 → 1.00, less precise). Half precision for the colors' math: not worth it
+after step 2, as a glass or tile pixel's work is now the edge's distances, which must
+stay 32-bit.
+
+**On the Pixel 7a**, as above (12 s of the presented phase, a frame):
+
+| | Kept | One shader | Step 1 | Step 2 | Step 3 (undone) |
+| --- | --- | --- | --- | --- | --- |
+| GPU active | 3.28M | 3.89M | 3.81M | 3.58M | 3.58M |
+| The UI's part (less kept) | | 0.61M | 0.53M | 0.30M | 0.30M |
+| Fragment active | 13.7M | 18.4M | 18.1M | 15.2M | 15.2M |
+| FMA instructions | 7.46M | 10.52M | 10.50M | 8.58M | 8.58M |
+| 32-bit varying slots | 2.00M | 5.60M | 6.20M | 5.21M | 5.21M |
+| Rasterized quads | 2.17M | 1.99M | 1.99M | 1.88M | 1.87M |
+
+**Steps 1 and 2 together: the UI's live cost 0.61M → 0.30M GPU cycles a frame (−51%)**,
+its fragment cycles 4.69M → 1.54M (−67%), and the flat frame drawn live 3.89M → 3.58M
+(−8%). On the Pixel the cool-down check is skin under 30 °C: its overall thermal status
+stayed at 1 with every sensor at 0 and the skin at 23 °C.
+
+## Left
+
+- The 3D board on the Pixel, and the tablet's `--bench 1000`, both with `--keep off`.
+- The plain background's glass works the fade out a pixel at a time (a `pow` and a
+  `sin` hash); drawing the fade into the glass copy once would make it one fetch, as the
+  photograph's is. Only with the plain background.
 
 ## Acceptance criteria
 
 - [x] Every UI pipeline at 32 registers or fewer on the G615 and G710 (and the G68)
-- [ ] The look the same as before (headless shots)
+- [x] The look the same as before (headless shots: within 1 level of 255, step 2)
 - [ ] GPU cycles a frame on the Pixel and `--bench 1000` on the tablet, before and after,
       with `--keep off`, recorded here: the Pixel's flat board for step 1 (above); the
       3D board and the tablet to come
