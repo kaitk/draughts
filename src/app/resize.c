@@ -10,13 +10,20 @@
 // Elsewhere it does nothing: Android and iOS don't block the loop while a window
 // resizes, and Windows' modal size loop shows the last frame unscaled, not stretched. SDL,
 // Objective-C, and Core Graphics are looked up with dlsym, as the program's C is linked
-// on the Mac with no undefined symbols (platform.h).
+// on the Mac with no undefined symbols (platform.h). The scene comes as pixels, read back
+// by the renderer only where a cover is shown (draughts_resize_covers), and kept here.
 
 #include "platform.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include "gfx_api.h"
+#include <string.h>
+
+// A slice of bytes as Goose passes it.
+typedef struct {
+    const uint8_t *data;
+    int64_t len;
+} draughts_bytes;
 
 #if defined(__APPLE__) && !DRAUGHTS_IOS
 
@@ -75,9 +82,11 @@ static bool setup(void) {
     return true;
 }
 
-// Puts the scene under the Metal view: `photo`, the blurred copy (SIDE square, RGBA8),
-// when `has`, else the page color (r, g, b).
-void draughts_resize_cover(gs_gfx_texture photo, uint8_t has, float r, float g, float b) {
+uint8_t draughts_resize_covers(void) { return 1; }
+
+// Puts the scene under the Metal view: `px`, the blurred copy (SIDE square, RGBA8), when
+// it holds one, else the page color (r, g, b).
+void draughts_resize_cover(draughts_bytes px, float r, float g, float b) {
     void *(*space_named)(void *) = (void *(*)(void *))dlsym(RTLD_DEFAULT, "CGColorSpaceCreateWithName");
     void **srgb = (void **)dlsym(RTLD_DEFAULT, "kCGColorSpaceSRGB");
     void *(*color)(CGFloat, CGFloat, CGFloat, CGFloat) =
@@ -90,8 +99,8 @@ void draughts_resize_cover(gs_gfx_texture photo, uint8_t has, float r, float g, 
     void (*release)(const void *) = (void (*)(const void *))dlsym(RTLD_DEFAULT, "CFRelease");
     if (!space_named || !srgb || !color || !provider || !image || !release || !setup()) return;
     void *contents = 0;
-    gs_gfx_region whole = { 0 };
-    if (has && gs_gfx_read_texture(photo, &whole, (gs_gfx_bytes){ pixels, sizeof pixels })) {
+    if (px.len == sizeof pixels) {
+        memcpy(pixels, px.data, sizeof pixels);     // the image keeps pointing at them
         void *space = space_named(*srgb);
         void *data = provider(0, pixels, sizeof pixels, 0);
         contents = image(SIDE, SIDE, 8, 32, SIDE * 4, space, 5 /* RGBX: no alpha, skip last */,
@@ -112,9 +121,10 @@ void draughts_resize_cover(gs_gfx_texture photo, uint8_t has, float r, float g, 
 
 #else
 
-void draughts_resize_cover(gs_gfx_texture photo, uint8_t has, float r, float g, float b) {
-    (void)photo;
-    (void)has;
+uint8_t draughts_resize_covers(void) { return 0; }
+
+void draughts_resize_cover(draughts_bytes px, float r, float g, float b) {
+    (void)px;
     (void)r;
     (void)g;
     (void)b;

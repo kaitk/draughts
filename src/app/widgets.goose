@@ -628,23 +628,10 @@ fn new() -> Widgets {
     return w;
 }
 
-// The badges' animals from their SVG files (badges.goose), each baked into its cell of a
-// distance texture the shader carves from, once at start (about 54 KB, a few ms). A file
-// that can't be read leaves its cell empty, so that badge is a plain man, and says so.
+// The badges' animals as badges::atlas bakes them (about 54 KB, a few ms), the distance
+// texture the shader carves from, made once at start.
 fn bake_badges() -> gfx::Texture {
-    let n = badges::CELL * badges::CELL;
-    var px: u8[>..] = [];
-    for i in badges::COUNT * n { px.push(255); }
-    var shapes: badges::Shape[>..] = [];
-    let sh .= shapes.push(badges::Shape {});
-    for k in badges::COUNT {
-        guard badges::read(badges::svg(k), sh) else {
-            print("badges: ", badges::NAMES[k], ".svg can't be read");
-            continue;
-        }
-        if sh.full { print("badges: ", badges::NAMES[k], ".svg has more than ", badges::MAX_SEGS, " pieces"); }
-        badges::bake(sh, px[k * n..(k + 1) * n]);
-    }
+    let px = badges::atlas();
     let t = gfx::texture2d(badges::CELL, badges::COUNT * badges::CELL, gfx::R8, gfx::SAMPLED);
     gfx::update_texture(t, px[..]);
     return t;
@@ -716,6 +703,15 @@ fn same_bytes(a: const u8[:], b: const u8[:]) -> bool {
     guard a.len == b.len else { return false; }
     for i in a.len { if a[i] != b[i] { return false; } }
     return true;
+}
+
+// The text's coverage, R8, `size` texels, as the UI's glyph texture in place of the last
+// (text::bake): the quads drawn again.
+fn atlas(w: Widgets&, px: const u8[:], size: int2) {
+    if w.atlas.id != 0 { gfx::release(w.atlas); }
+    w.atlas = gfx::texture2d(size.x, size.y, gfx::R8, gfx::SAMPLED);
+    gfx::update_texture(w.atlas, px);
+    w.stale = true;
 }
 
 // The `n` uploaded quads in the open pass.

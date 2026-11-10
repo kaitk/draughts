@@ -441,3 +441,23 @@ fn bake(sh: Shape&, out: u8[:]) {
         }
     }
 }
+
+// Every animal from its SVG file, each baked into its CELL × CELL cell, top to bottom in
+// COUNT cells, one byte a texel, for the UI's badge texture. A file that can't be read
+// leaves its cell empty, so that badge is a plain man, and says so.
+fn atlas() -> u8[>..] {
+    let n = CELL * CELL;
+    var px: u8[>..] = [];
+    for i in COUNT * n { px.push(255); }
+    var shapes: Shape[>..] = [];
+    let sh .= shapes.push(Shape {});
+    for k in COUNT {
+        guard read(svg(k), sh) else {
+            print("badges: ", NAMES[k], ".svg can't be read");
+            continue;
+        }
+        if sh.full { print("badges: ", NAMES[k], ".svg has more than ", MAX_SEGS, " pieces"); }
+        bake(sh, px[k * n..(k + 1) * n]);
+    }
+    return px;
+}

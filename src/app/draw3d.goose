@@ -265,16 +265,16 @@ fn prepare(d: Drawer&, kind: i64, n: i64, plain: bool, now: f64) {
 // What a Mac window shows around its last frame while its edge is dragged (resize.c;
 // rendering.md, "Window resizing"): this board's graded backdrop, which the flat game's
 // blurred photograph doesn't match, drawn once at the cover's side.
-extern fn draughts_resize_cover(photo: gfx::Texture, has: bool, r: f32, g: f32, b: f32);
 let COVER = 512;    // resize.c's SIDE
 fn cover(d: Drawer&) {
+    guard draw::draughts_resize_covers() else { return; }
     let t = gfx::render_target(COVER, COVER, gfx::RGBA8);
     let screen = d.gpu.frame.screen;
     gfx::begin_pass(t, gfx::Texture { 0 }, float4 { 0.0, 0.0, 0.0, 1.0 });
     render3d::backdrop(d.gpu, 1.0, int2 { COVER, COVER });
     gfx::end_pass();
     d.gpu.frame.screen = screen;
-    draughts_resize_cover(t, true, 0.0, 0.0, 0.0);
+    draw::cover_with(t, float4 { 0.0, 0.0, 0.0, 1.0 });
     gfx::release(t);
 }
 

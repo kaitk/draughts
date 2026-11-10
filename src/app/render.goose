@@ -65,9 +65,9 @@ fn reload(r: Renderer&, kind: i64, plain: bool) { draw::reload(r.d, kind, plain)
 // Bakes the text's faces at `scale` pixels per dp into g's glyph tables and their
 // texture, unless they are baked at that scale; true when it baked.
 fn upload_text(r: Renderer&, g: gui::Gui&, scale: f32) -> bool {
-    guard text::bake(r.t, g, scale) else { r.w.atlas = r.t.texture; return false; }
-    r.w.stale = true;
-    r.w.atlas = r.t.texture;
+    guard text::stale(r.t, scale) else { return false; }
+    let px, size = text::bake(r.t, g, scale);
+    widgets::atlas(r.w, px[..size.x * size.y], size);
     return true;
 }
 

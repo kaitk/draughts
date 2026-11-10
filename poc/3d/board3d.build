@@ -1,5 +1,6 @@
 // The app's C for the season's photograph, compiled from where it is: the built-in
-// images (it embeds them by paths relative to itself) and gfx's C API to upload them.
-c_sources = ["../../src/app/background.c"];
+// images as pixels (embedded by paths relative to itself) and their upload through gfx's C
+// API.
+c_sources = ["../../src/app/background.c", "../../src/app/photo.c"];
 c_include = ["../../third_party/goose_gfx/third_party/nuklear/demo/common/filebrowser",
              "../../third_party/goose_gfx/src/gfx"];

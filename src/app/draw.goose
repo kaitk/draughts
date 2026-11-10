@@ -444,14 +444,23 @@ let PIECE_FRAG = """
     }
     """;
 
-// What a Mac window shows around its last frame while its edge is dragged: the scene's
-// blurred photograph when it has one, else the page color (resize.c; rendering.md,
-// "Window resizing").
-extern fn draughts_resize_cover(photo: gfx::Texture, has: bool, r: f32, g: f32, b: f32);
+// What a Mac window shows around its last frame while its edge is dragged (resize.c;
+// rendering.md, "Window resizing"): whether it shows one at all (only the Mac does), and
+// the pixels of a texture of the cover's side, RGBA8, or with none `page`'s color.
+extern fn draughts_resize_covers() -> bool;
+extern fn draughts_resize_cover(px: const u8[:], r: f32, g: f32, b: f32);
 
+// The cover from texture t (its pixels read back), or with t 0 the page's color.
+fn cover_with(t: gfx::Texture, page: float4) {
+    guard draughts_resize_covers() else { return; }
+    var px: u8[>..] = [];
+    if t.id != 0 && !gfx::read_texture(t, px) { px.clear(); }
+    draughts_resize_cover(px[..], page.x, page.y, page.z);
+}
+
+// The scene's blurred photograph when it has one, else the page color.
 fn cover(d: Drawer&) {
-    let p = d.colors.page;
-    draughts_resize_cover(d.scene.photo, d.scene.has && !d.scene.plain, p.x, p.y, p.z);
+    cover_with(if d.scene.has && !d.scene.plain { d.scene.photo } else { gfx::Texture { 0 } }, d.colors.page);
 }
 
 struct Drawer {

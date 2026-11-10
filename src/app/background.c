@@ -1,9 +1,8 @@
-// The season's photograph: the images built into the program, made into a texture
-// (docs/architecture/rendering.md, "Scene and glass"). Where gfx and the GPU take ASTC,
-// the compressed image is uploaded as it is stored, with nothing decoded; elsewhere the
-// JPEG is decoded with stb_image and scaled down. goose_gfx has no compressed formats
-// and reads only PNG and BMP, from a file (docs/goose-findings.md); its C API is called
-// from here so the embedded bytes upload with no copy on the program's data stack.
+// The season's photograph: the images built into the program, as pixels for the renderer
+// (docs/architecture/rendering.md, "Scene and glass"), which photo.c uploads. Where the
+// renderer takes ASTC, the compressed image is handed over as it is stored, with nothing
+// decoded or copied; elsewhere the JPEG is decoded with stb_image and scaled down. No
+// graphics API here: a renderer brings its own upload (photo.h).
 //
 // Android embeds only the ASTC files and has no JPEG decoder: every Vulkan GPU the app
 // targets samples ASTC LDR, and the JPEGs would add 2.2 MB to the APK. A GPU without it
@@ -45,18 +44,9 @@
 #include <unistd.h>
 #endif
 
-#include "gfx_api.h"
+#include "photo.h"
 
-// What patches/goose_gfx/0004-compressed-textures.patch adds to gfx: its number for
-// ASTC in 6 × 6 blocks, and whether the GPU samples a format. A gfx without the patch
-// (the Mac's, built into Goose) has neither, and this weak stand-in says no, so the
-// JPEG is decoded there; the patched gfx's own definition takes its place.
-enum { ASTC_6x6 = 26, BLOCK = 6 };
-__attribute__((weak)) uint8_t gs_gfx_format_supported(int32_t format, int32_t usage) {
-    (void)format;
-    (void)usage;
-    return 0;
-}
+enum { BLOCK = 6 };     // the ASTC blocks' side
 
 // Each image's bytes and then one 0, so the array is never empty. #embed is C23, which
 // clang takes in C11 too.
@@ -147,38 +137,22 @@ static void forget(const unsigned char *data, int64_t len) {
 #endif
 }
 
-// A texture of `format` holding `data`, or 0.
-static gs_gfx_texture upload(int32_t format, int width, int height, const unsigned char *data,
-                             int64_t len) {
-    gs_gfx_texture_desc d = { .kind = GS_GFX_TEXTURE_2D, .format = format,
-                              .usage = GS_GFX_SAMPLED, .width = width, .height = height,
-                              .depth = 1, .mips = 1, .samples = 1 };
-    gs_gfx_texture t = gs_gfx_create_texture(&d);
-    gs_gfx_region whole = { 0 };
-    if (t.id && !gs_gfx_update_texture(t, &whole, (gs_gfx_bytes){ (uint8_t *)data, len })) {
-        gs_gfx_release_texture(t);
-        t.id = 0;
-    }
-    return t;
-}
-
-// The ASTC image's texture, or 0 if it isn't built in or the GPU doesn't take it. The
-// file is astcenc's: a 16-byte header (magic, block size, then each side in 3 bytes)
-// and the blocks.
-static gs_gfx_texture astc(int64_t kind) {
+// The ASTC image's blocks, as they are embedded, or false if it isn't built in. The file
+// is astcenc's: a 16-byte header (magic, block size, then each side in 3 bytes) and the
+// blocks.
+static bool astc(int64_t kind, draughts_pixels *out) {
     const unsigned char *a = astcs[kind];
     int64_t len = astc_lengths[kind];
     if (len < 16 || a[0] != 0x13 || a[1] != 0xAB || a[2] != 0xA1 || a[3] != 0x5C ||
-        a[4] != BLOCK || a[5] != BLOCK || a[6] != 1 ||
-        !gs_gfx_format_supported(ASTC_6x6, GS_GFX_SAMPLED)) {
-        return (gs_gfx_texture){ 0 };
+        a[4] != BLOCK || a[5] != BLOCK || a[6] != 1) {
+        return false;
     }
     int w = a[7] | a[8] << 8 | a[9] << 16, h = a[10] | a[11] << 8 | a[12] << 16;
     int64_t blocks = (int64_t)((w + BLOCK - 1) / BLOCK) * ((h + BLOCK - 1) / BLOCK);
-    if (w < 1 || h < 1 || len != 16 + blocks * 16) return (gs_gfx_texture){ 0 };
-    gs_gfx_texture t = upload(ASTC_6x6, w, h, a + 16, len - 16);
-    forget(a, len);
-    return t;
+    if (w < 1 || h < 1 || len != 16 + blocks * 16) return false;
+    *out = (draughts_pixels){ .data = a + 16, .len = len - 16, .width = w, .height = h,
+                              .format = DRAUGHTS_ASTC_6x6, .embedded = a, .embedded_len = len };
+    return true;
 }
 
 #if !ASTC_ONLY
@@ -212,41 +186,48 @@ static void shrink(const unsigned char *px, int w, int x0, int y0, int side, int
 }
 
 // The JPEG's middle square, decoded and scaled down to `size` × `size` RGBA8 (as it is
-// when that is its side), or 0. It decodes to RGBA, which stb converts with NEON.
-static gs_gfx_texture jpeg(int64_t kind, int size) {
-    if (jpeg_lengths[kind] == 0) return (gs_gfx_texture){ 0 };
+// when that is its side), or false. It decodes to RGBA, which stb converts with NEON. The
+// pixels are stb's own, or the scaled copy's, given back by draughts_photo_done.
+static bool jpeg(int64_t kind, int size, draughts_pixels *out) {
+    if (jpeg_lengths[kind] == 0) return false;
     int w = 0, h = 0, n = 0;
     unsigned char *px = stbi_load_from_memory(jpegs[kind], (int)jpeg_lengths[kind], &w, &h, &n, 4);
     forget(jpegs[kind], jpeg_lengths[kind]);
-    if (!px) return (gs_gfx_texture){ 0 };
+    if (!px) return false;
     int side = w < h ? w : h;
-    gs_gfx_texture t = { 0 };
+    unsigned char *owned = 0;
     if (side == size && w == h) {
-        t = upload(GS_GFX_RGBA8, size, size, px, (int64_t)size * size * 4);
+        owned = px;
     } else if (side > size) {           // it only scales down
-        unsigned char *out = malloc((size_t)size * size * 4);
-        if (out) {
-            shrink(px, w, (w - side) / 2, (h - side) / 2, side, size, out);
-            t = upload(GS_GFX_RGBA8, size, size, out, (int64_t)size * size * 4);
-            free(out);
-        }
+        owned = malloc((size_t)size * size * 4);
+        if (owned) shrink(px, w, (w - side) / 2, (h - side) / 2, side, size, owned);
+        stbi_image_free(px);
+    } else {
+        stbi_image_free(px);
     }
-    stbi_image_free(px);
-    return t;
+    if (!owned) return false;
+    *out = (draughts_pixels){ .data = owned, .len = (int64_t)size * size * 4, .width = size,
+                              .height = size, .format = DRAUGHTS_RGBA8, .owned = owned };
+    return true;
 }
 #else
-static gs_gfx_texture jpeg(int64_t kind, int size) {
+static bool jpeg(int64_t kind, int size, draughts_pixels *out) {
     (void)kind;
     (void)size;
-    return (gs_gfx_texture){ 0 };
+    (void)out;
+    return false;
 }
 #endif
 
-// Theme `kind`'s photograph as a texture, or 0 when it isn't built in: the ASTC image as
-// stored where the GPU samples ASTC, else the JPEG's middle square decoded and scaled
-// to `decoded` × `decoded` (at most 4096).
-gs_gfx_texture draughts_photo(int64_t kind, int64_t decoded) {
-    if (kind < 0 || kind > 3 || decoded < 1 || decoded > 4096) return (gs_gfx_texture){ 0 };
-    gs_gfx_texture t = astc(kind);
-    return t.id ? t : jpeg(kind, (int)decoded);
+bool draughts_photo_pixels(int64_t kind, int64_t decoded, bool astc_sampled, draughts_pixels *out) {
+    *out = (draughts_pixels){ 0 };
+    if (kind < 0 || kind > 3 || decoded < 1 || decoded > 4096) return false;
+    if (astc_sampled && astc(kind, out)) return true;
+    return jpeg(kind, (int)decoded, out);
+}
+
+void draughts_photo_done(draughts_pixels *p) {
+    if (p->embedded) forget(p->embedded, p->embedded_len);
+    free(p->owned);     // stb's buffer is malloc's too (STBI_FREE)
+    *p = (draughts_pixels){ 0 };
 }

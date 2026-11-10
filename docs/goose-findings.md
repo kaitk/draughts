@@ -3,6 +3,35 @@
 Gaps found in Goose, goose_gfx, and the SDL it pins, while building for Android, with what
 we do about each here and what could go upstream. Newest first.
 
+## Goose: an `export fn` called back from C inside an `extern` call overwrites the caller's data stack (2026-11-10)
+
+A Goose function that calls an `extern fn`, whose C calls an `export fn` of the same
+program, loses what its own resizables hold: the exported function's resizables are
+pushed over them. Found on v2026.4, reduced to:
+
+```goose
+extern fn decode() -> bool;                      // C: calls take_pixels(...), returns 1
+export fn take_pixels(px: const u8[:]) {
+    var tmp: u8[>..] = [];
+    for i in 10 { tmp.push((i + 100) as u8); }
+}
+fn main() {
+    var keep: u8[>..] = [];
+    keep.push(7);
+    decode();
+    print(keep[0]);                              // prints 100, not 7
+}
+```
+
+The export's wrapper seems to start from the data stacks' base rather than their tops.
+
+- Here: no callbacks into Goose. The season's photograph is handed from its decoder
+  (`src/app/background.c`) to the renderer's own C (`src/app/photo.c`), which uploads
+  it, so the embedded bytes still reach the GPU with no copy (task 061).
+- Upstream: a re-entrant export continues from the stacks' tops where a Goose call is
+  under way on the thread, or the spec says that an export may not be called while one
+  is.
+
 ## SDL: `SDL_WaitEventTimeout` polls every millisecond on iOS (2026-11-10)
 
 UIKit's video driver has no `WaitEventTimeout` and no `SendWakeupEvent`, so

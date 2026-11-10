@@ -2,13 +2,13 @@
 // package's atlas, one face per size gui uses, at the screen's pixel size, so a glyph is
 // drawn a texel to a pixel. The title and the figures hold only the characters they draw
 // (shell::face_chars). The glyphs' boxes and places go into gui's tables, and the atlas's
-// coverage, one byte a texel and only the rows the glyphs reach, into a texture the UI
-// shader samples, and the atlas is destroyed, its pixels with it; nothing else of `ui` is
-// used. Baked at start, and again only when the layout's scale changes.
+// coverage, one byte a texel and only the rows the glyphs reach, to the renderer, which
+// makes it the texture the UI shader samples (render::upload_text); the atlas is
+// destroyed. Nothing else of `ui` is used. Baked at start, and again only when the
+// layout's scale changes.
 namespace text;
 import std;
 import vec;
-import gfx;
 import ui;
 
 import gui from "../gui";
@@ -17,16 +17,14 @@ import gui from "../gui";
 // em). The atlas sizes a font by that line, CSS and gui's faces by the em.
 let LINE = 1.14;
 
-struct Text {
-    texture: gfx::Texture = gfx::Texture { 0 },
-    scale:   f32          = 0.0,
-}
+struct Text { scale: f32 = 0.0 }
 
-// Bakes the faces at `scale` pixels per dp into g's glyph tables and t.texture, unless
-// they are baked at that scale already; true when it baked.
-fn bake(t: Text&, g: gui::Gui&, scale: f32) -> bool {
-    guard scale != t.scale else { return false; }
-    if t.texture.id != 0 { gfx::release(t.texture); }
+// Whether the faces need baking at `scale` pixels per dp: they aren't baked at it yet.
+fn stale(t: Text&, scale: f32) -> bool { scale != t.scale }
+
+// Bakes the faces at `scale` pixels per dp into g's glyph tables. Returns the coverage,
+// one byte a texel, the first width × height of it the texture's.
+fn bake(t: Text&, g: gui::Gui&, scale: f32) -> u8[>..], int2 {
     t.scale = scale;
     let atlas = ui::create_font_atlas();
     let ttf = embed_file("../../assets/fonts/LibertinusSans-Regular.ttf");
@@ -85,8 +83,6 @@ fn bake(t: Text&, g: gui::Gui&, scale: f32) -> bool {
     var px = ui::atlas_pixels(atlas);
     let n = size.x * h;
     for i in n { px[i] = px[4 * i + 3]; }
-    t.texture = gfx::texture2d(size.x, h, gfx::R8, gfx::SAMPLED);
-    gfx::update_texture(t.texture, px[..n]);
     ui::destroy(atlas);
-    return true;
+    return px, int2 { size.x, h as i32 };
 }
