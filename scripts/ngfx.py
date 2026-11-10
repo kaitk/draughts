@@ -12,7 +12,8 @@ versions of the files that draw (src/ngfx/app/ over src/app/, src/ngfx/render3d/
 src/render3d/). The root file gets the package's import, the sidecar the package's C
 headers, and the Slang shaders are compiled ahead into ngfx's blobs, which the app embeds,
 so it runs no shader compiler: src/ngfx/shaders/, and the 3D board's, written from gfx's
-GLSL by ngfx_3d_shaders.py.
+GLSL by ngfx_3d_shaders.py. SMAA (third_party/smaa) comes with them: its shader, which
+smaa.slang includes, and its tables, which render3d embeds.
 
 Needs a goose-ngfx checkout (NGFX, else ../goose/goose-ngfx beside this repository),
 slangc 2026.18.2 or later (NGFX_SLANGC), and what ngfx's own build needs (its
@@ -102,12 +103,17 @@ def shaders():
     gen.mkdir(parents=True, exist_ok=True)
     for f in (ROOT / "src/ngfx/shaders").glob("*.slang"):
         copy_if_changed(f, gen / f.name)
+    smaa = ROOT / "third_party/smaa"
+    copy_if_changed(smaa / "SMAA.hlsl", gen / "SMAA.hlsl")
     for name, text in ngfx_3d_shaders.sources().items():
         write_if_changed(gen / name, text)
     src = sorted(gen.glob("*.slang"))
     out = TREE / "src/app/shaders"
     out.mkdir(parents=True, exist_ok=True)
-    newest = max(f.stat().st_mtime for f in src)
+    # SMAA's tables, which render3d embeds beside the blobs.
+    for name in ["area", "search"]:
+        copy_if_changed(smaa / f"{name}.bin", out / f"smaa_{name}.bin")
+    newest = max(f.stat().st_mtime for f in [*src, gen / "SMAA.hlsl"])
     parts = ["common.slang", "ui.slang", "glsl.slang", "r3d.slang", "r3d_frame.slang"]
     stale = [f for f in src if f.name not in parts
              and (not (out / (f.stem + ".blob")).exists() or (out / (f.stem + ".blob")).stat().st_mtime < newest)]

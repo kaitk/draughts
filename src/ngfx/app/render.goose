@@ -53,7 +53,7 @@ struct Frame {
 fn new(kind: i64, plain: bool, f: flags::Flags&) -> Renderer {
     var r = Renderer { d: draw::new(kind, plain, f.bench > 0),
                       d3: draw3d::Drawer { wood: f.wood, marble: f.marble, summer: f.summer, spring: f.spring,
-                                           timed: f.bench > 0, live: !f.keep, .. },
+                                           timed: f.bench > 0, live: !f.keep, aa: aa_flag(), .. },
                       w: widgets::new(), t: text::Text {} };
     r.w.live = !f.keep;
     if f.bench > 0 {
@@ -61,6 +61,21 @@ fn new(kind: i64, plain: bool, f: flags::Flags&) -> Renderer {
               " ms (decoded or uploaded, shrunk, blurred, waited for)");
     }
     return r;
+}
+
+// --aa off|fxaa|smaa|ssaa, how the 3D pass is antialiased, which only this build has
+// (render3d's AA); render3d::AA without it.
+fn aa_flag() -> i32 {
+    let a = args();
+    for i in 1..a.len - 1 {
+        guard a[i] == "--aa" else { continue; }
+        let v = a[i + 1];
+        if v == "off" { return render3d::AA_OFF; }
+        if v == "fxaa" { return render3d::AA_FXAA; }
+        if v == "smaa" { return render3d::AA_SMAA; }
+        if v == "ssaa" { return render3d::AA_SSAA; }
+    }
+    return render3d::AA;
 }
 
 // Whether it draws theme `kind` with its photograph, or with `plain` the fade.

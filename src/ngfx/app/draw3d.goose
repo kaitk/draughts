@@ -59,6 +59,7 @@ struct Drawer {
     first_ms:  f64                                   = 0.0,   // the first frame drawn, waited for
     timed:     bool                                  = false, // --bench: the first frame waited for and timed
     live:      bool                                  = false, // --keep off: the backdrop never kept (render3d's live)
+    aa:        i32                                   = render3d::AA, // --aa: render3d's AA_OFF..AA_SSAA
     themed:    i64                                   = 0,     // prepare()'s next theme step (THEME_STEPS: done)
     warmed:    i64                                   = 0,     // and its next pipeline (WARM_STEPS: done)
     prep_ms:   f64[..48]                             = [],    // each prepare() step's time
@@ -156,7 +157,7 @@ fn look_of(kind: i64, summer: i64) -> i64 {
 // The renderer set up: its meshes, buffers, pipelines, and the baked surfaces' targets.
 fn set_up(d: Drawer&) {
     let t0 = clock();
-    render3d::setup(d.gpu);
+    render3d::setup(d.gpu, d.aa);
     render3d::choose(d.gpu, d.wood, d.marble, d.spring);
     d.ready = true;
     d.setup_ms = (clock() - t0) * 1000.0;

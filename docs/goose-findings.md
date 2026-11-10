@@ -11,8 +11,9 @@ NoGraphicsAPI's textures take no sample count and it has no resolve, so ngfx has
 is drawn with 4× MSAA on gfx and resolved without a store (patch 0005). goose-ngfx
 v0.3.0, NoGraphicsAPI `0400414`.
 
-- Here: the ngfx build draws the 3D pass without multisampling and antialiases it
-  afterwards in a pass of its own (task 065 says which filter and what each cost).
+- Here: the ngfx build draws the 3D pass at 1x and antialiases it after with SMAA 1x
+  (`third_party/smaa/`), FXAA, or 2 × 2 supersampling by `--aa`; SMAA by default, closest
+  to the MSAA for half supersampling's cost (task 065 has the comparison).
 - Upstream: MSAA in NoGraphicsAPI (a sample count in `TextureDesc`, and a resolve, on
   Metal 4 and Vulkan), then in ngfx's `TextureDesc` and `PassDesc`. For sebbbi's
   NoGraphicsAPI, a note for the user.

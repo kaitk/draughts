@@ -1,6 +1,7 @@
 # 065: The NoGraphicsAPI renderer through goose-ngfx
 
-Status: in-progress (on the `ngfx` branch; steps 1 to 6 on Windows, 2026-11-11)
+Status: in-progress (on the `ngfx` branch; steps 1 to 7 on Windows, 2026-11-11; the Mac
+to run)
 
 Draw Draughts through goose-ngfx (github.com/kaitk/goose-ngfx, NoGraphicsAPI over Metal 4
 and Vulkan 1.4) on devices that have it: Apple silicon Macs, later iPads and iPhones, and
@@ -155,6 +156,92 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
   (741 before), the 3D game 494 MB against 397 (815 before). Most of the 3D board's
   remaining gap is likely the pass at twice the size.
 
+### 2026-11-11, later, on Windows
+
+- **goose-ngfx v0.3.0** released (github.com/kaitk/goose-ngfx/releases/tag/v0.3.0): the
+  v2026.4 pin, `WINDOW_ON_DEMAND`, gfx `737d91a`'s platform calls, and growing texture
+  memory, in its README, API, design, and development docs, and release notes in
+  v0.2.0's form that say the Mac is untested since the pin moved. Its externs are
+  declared as `extern fn ... = "sym"` now, which took the build's 99 deprecation warnings
+  to none. All 40 checks passed in the compiler with clang-cl, built (`--aot`), and with
+  MSVC; the tag fetched from GitHub built and ran.
+- **The findings** (`docs/goose-findings.md`): ngfx has no MSAA (NoGraphicsAPI's gap);
+  ngfx's `generate_mips` takes no sRGB; `pad` and `block` are keywords everywhere (a
+  Goose request: documented keywords, so not a bug). The `'\\'` literal parses on
+  v2026.4: what failed was the Bash tool, which collapses `\\` to `\` in text it
+  writes (`agents/goose.md`); `tools/ngfx_shaders.goose.in` now uses the literals.
+- **The photograph behind the 3D board** is the same on both builds. The 512 px blur, the
+  copy it is blurred from, and the glass copy, saved from each build, are byte for byte
+  identical, and the settled 3D view's smooth backdrop differs by 0.00 to 0.07 of 255 on
+  average in every theme, both backgrounds, and with `--keep off`. The 2 of 255 came from
+  shots taken before ngfx's board had faded in: a headless run draws about 3,500 frames
+  a second, so `--frames 80` is 23 ms, and ngfx's board, whose preparing is slower,
+  appears later in wall time than gfx's (still fading at 3,000 frames). 3D shots are
+  compared at `--frames 20000` now (`agents/testing.md`).
+- **In a window** (a script posting mouse messages to it, `agents/testing.md`), both
+  builds: a game on the 3D board played to its win by clicking squares, with the board
+  turning between turns and start over after; the four themes, both boards, and both
+  backgrounds switched in settings; home, back, and continue with their transitions
+  caught half-way; the window resized to 1600 × 900, 800 × 1000, 1000 × 600, 640 × 400,
+  and dragged through 30 sizes. The grabs match gfx's as the headless shots do; neither
+  build printed anything, no misuse.
+- **One executable** (step 7): the ngfx build imports only `vulkan-1.dll` beyond Windows'
+  own DLLs, and holds no slangc, Vulkan SDK, or NoGraphicsAPI path (`ngfx::slang` isn't
+  linked in). Run with a bare environment (PATH only `C:\Windows\System32;C:\Windows`,
+  no `VULKAN_SDK`, no `NGFX_*`) it draws, and loads System32's Vulkan loader, which the
+  GPU driver installs, NVIDIA's driver, and the implicit layers other programs
+  registered (RivaTuner, OBS); nothing of Slang's or the SDK's. Nothing to fix.
+- **Antialiasing**: `--aa off|fxaa|smaa|ssaa` (the ngfx build only, read in
+  `src/ngfx/app/render.goose`) picks how the 3D pass is antialiased, `render3d::AA` the
+  default, now SMAA. SMAA 1x is SMAA's reference shader (`third_party/smaa/`, MIT,
+  unchanged) through its porting macros in `src/ngfx/shaders/smaa.slang`: luma edges,
+  the HIGH preset, three passes over the pass drawn at 1x. FXAA is FXAA 3.11's quality
+  algorithm, its preset 39's twelve steps, written in `src/ngfx/shaders/fxaa.slang`.
+  `ssaa` is the 2 × 2 supersampling before. Against gfx's 4× MSAA at 1280 × 800, the
+  3D game settled, edges taken as the pixels where the pass without antialiasing
+  differs from gfx by more than 8, grown by a pixel (mean difference of 255 there, and
+  elsewhere):
+
+  | `--aa` | wood: edges / rest | spring carved | winter stone | GPU busy P50 / P99 | the pass's targets at 2560 × 1440 | footprint at rest |
+  |---|---|---|---|---|---|---|
+  | gfx 4× MSAA | 0 / 0 | 0 / 0 | 0 / 0 | 2.02 / 4.87 ms | | 526 MB |
+  | off | 4.58 / 0.07 | 5.87 / 0.07 | 5.95 / 0.06 | 1.90 / 5.13 ms | 7 MB (depth) | 563 MB |
+  | fxaa | 4.40 / 0.36 | 5.29 / 0.45 | 5.73 / 0.26 | 2.13 / 4.98 ms | 22 MB | 561 MB |
+  | smaa | 3.74 / 0.12 | 4.62 / 0.18 | 4.79 / 0.10 | 2.25 / 5.29 ms | 44 MB | 563 MB |
+  | ssaa | 3.63 / 0.94 | 4.12 / 0.91 | 4.89 / 0.52 | 2.65 / 5.38 ms | 88 MB | 619 MB |
+
+  GPU busy is PresentMon's, `scripts/windows_perf.py` full screen at 2560 × 1440 on the
+  165 Hz display, 1,000 bench frames (`EXE` and `FLAGS` there measure the ngfx build);
+  every build presented all its frames at 165 fps. The footprint is the private bytes
+  after `--rest 25`; ngfx's texture memory grows in 64 MB chunks, so the 1x modes'
+  differences vanish in them. SMAA is the default: its edges are as close to the MSAA as
+  supersampling's, while the surfaces stay as gfx draws them (supersampling filters the
+  wood's grain and the carvings' relief again, 0.5 to 0.9 of 255 over the whole board,
+  and outlines the carvings darker), at half supersampling's added GPU time and half its
+  memory. FXAA blurs the surfaces more and dots the one-pixel highlight along the stone
+  frame's rim, a pattern FXAA makes on thin lines. Within SMAA, the ULTRA preset came out
+  further from the MSAA than HIGH in all three looks (its lower threshold smooths surface
+  detail: wood 3.85 / 0.16), and color edges tied with luma (3.72 / 0.12), so HIGH and
+  luma stay. With SMAA every 3D case compared settled is within 0.10 to 0.25 of 255 on
+  average (home, settings, portrait, a held transition, a win, the capture's pulse, the
+  plain fade), against 0.6 to 2.4 with supersampling; the flat board is still within 1.
+
+### Left for the Mac
+
+- **goose-ngfx v0.3.0 on Metal 4**: its tests and samples at the v2026.4 pin, which have
+  run only on Vulkan since the pin moved, with `WINDOW_ON_DEMAND`, the platform calls,
+  and the growing texture memory; then the release notes' Mac line.
+- **The build on Metal**: `scripts/ngfx.py` on the Mac, every Slang module (the 3D
+  board's written from GLSL, and SMAA's and FXAA's, untried in MSL) compiled to
+  metallibs, and the shots of every screen against the Mac's gfx build, 3D settled at
+  `--frames 20000`, with `--aa` each way.
+- **ASTC**: the season's photographs as ASTC 6 × 6 on Apple silicon (gfx's patch 0004),
+  which ngfx's textures don't take yet.
+- **The Mac's numbers**: `--bench` and `--rest` of both builds, flat and 3D, and the
+  antialiasing modes' GPU time on the M1 Pro, where supersampling's four times the
+  shading should cost more than on the RTX 4090.
+- **The iPad later**: ngfx has no iOS build yet (below).
+
 ## Later, not in this task
 
 - **Choosing at run time.** Both renderers in one executable, ngfx where the device has
@@ -166,10 +253,9 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
   picked.
 - **Presenting on Linux**: a Vulkan surface from SDL (`SDL_Vulkan_CreateSurface`) in
   ngfx's layer where NoGraphicsAPI makes none, the rest as on Windows.
-- **Antialiasing without MSAA** (the user, 2026-11-11): a modern non-temporal filter such
-  as SMAA over the 3D pass drawn at 1x, in place of the 2 × 2 supersampling, which
-  shades four times the pixels (and on the Mac's GPU will cost more than on the PC's)
-  and holds a target four times the screen.
+- **SMAA's targets**: its edges and weights could share memory with other per-frame
+  targets, or the edges pass write a stencil that the weights pass tests, as SMAA's
+  reference does, if the Mac's numbers ask for it.
 - ngfx on iPad and iPhone; the Steam builds (task 064).
 
 ## Acceptance criteria
@@ -183,7 +269,9 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
 - [x] Every screen, the flat board, and the 3D board drawn by ngfx, compared against the
       gfx build at the same flags, on the PC
 - [ ] The same on the Mac
-- [ ] Nothing drawn while idle; shaders built ahead, no Slang at run time
+- [x] Nothing drawn while idle; shaders built ahead, no Slang or Vulkan SDK at run time,
+      on the PC
+- [ ] The same on the Mac, with ASTC
 - [x] Frame time against the gfx build on the PC, recorded here
 - [ ] The same on the Mac
 - [x] What ngfx gained recorded in its own docs, and gaps in Goose in

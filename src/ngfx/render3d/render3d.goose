@@ -129,13 +129,20 @@ let OCC_SIZE = 512;
 // The crown's map (shaders::CROWN_FRAG): 256 texels over 1.2 of the piece's radius, a
 // texel 0.7 px on a piece 140 px across.
 let CROWN_SIZE = 256;
-let SAMPLES = 4;            // more than 1: the pass at twice the size, shrunk
+// How the 3D pass is antialiased, NoGraphicsAPI having no MSAA (task 065): not at all;
+// FXAA or SMAA 1x over the pass drawn at 1x; or the pass drawn at twice the size and
+// shrunk (2 x 2 supersampling).
+let AA_OFF = 0;
+let AA_FXAA = 1;
+let AA_SMAA = 2;
+let AA_SSAA = 3;
+let AA = AA_SMAA;
 let MAX_INSTANCES = 96;     // view3d::MAX_INSTANCES: two for each of board::MAX_PIECES
 let SQUARES = 100;          // the field's squares, 10 × 10 at most
 
 // Everything on the GPU, made by setup() (the targets again on a resize).
 struct Gpu {
-    samples:        i32,            // more than 1: the pass drawn at twice the size (color, depth)
+    aa:             i32,            // AA_OFF..AA_SSAA: how the pass is antialiased
     wood:           i64,            // the wood's model the surfaces are baked with
     finish:         looks::Finish,  // and its finish
     marble:         i64,            // the stone frame's marble (looks::MARBLE..), 0 slate
@@ -172,9 +179,13 @@ struct Gpu {
     frame_rows:     i64,            // the frame map's rows: model3d::FRAME_MAP, or the mitred bands'
     photo:          ngfx::Texture,
     shadow_map:     ngfx::Texture,
-    color:          ngfx::Texture,  // the pass at twice the size and its depth (samples > 1)
+    color:          ngfx::Texture,  // the pass before antialiasing (aa not AA_OFF), and its depth
     depth:          ngfx::Texture,
-    image:          ngfx::Texture,  // what draw() shrinks into when asked to keep it
+    image:          ngfx::Texture,  // what draw() antialiases into when asked to keep it
+    edges:          ngfx::Texture,  // SMAA's edges and blending weights, at the pass's size
+    weights:        ngfx::Texture,
+    area:           ngfx::Texture,  // SMAA's tables (third_party/smaa)
+    search:         ngfx::Texture,
     kept_backdrop:  ngfx::Texture,  // the backdrop at full opacity, g.size (keep_backdrop())
     kept_for:       float4[7],      // what it was drawn from (backdrop_key())
     live:           bool,           // the app's --keep off: the backdrop drawn each frame, never kept
@@ -187,6 +198,7 @@ struct Gpu {
     fade:           float4[3],      // its colors (app/theme.goose's fade_top, low, light), linear
     size:           int2,
     linear:         ngfx::Sampler,
+    point:          ngfx::Sampler,  // nearest, clamped (SMAA)
     aniso:          ngfx::Sampler,
     compare:        ngfx::Sampler,
     lit:            ngfx::Pipeline,
@@ -206,6 +218,10 @@ struct Gpu {
     blur:           ngfx::Pipeline,
     mip:            ngfx::Pipeline, // a baked surface's mips (mip_chain())
     down:           ngfx::Pipeline, // the pass at twice the size into its target
+    fxaa:           ngfx::Pipeline,
+    smaa_edges:     ngfx::Pipeline, // SMAA's three passes
+    smaa_weights:   ngfx::Pipeline,
+    smaa_blend:     ngfx::Pipeline,
     small:          ngfx::Texture,
     across:         ngfx::Texture,
     frame:          Frame,
@@ -392,15 +408,20 @@ fn baked(w: i64, h: i64, format: i32) -> ngfx::Texture {
                                              width: w as i32, height: h as i32, mips: mips as i32 });
 }
 
-// The pass's target at twice the size and its depth, and the kept image, at `size`; made
-// again only when the size changes.
+// The pass's target (at twice the size for AA_SSAA) and its depth, SMAA's, and the kept
+// image, at `size`; made again only when the size changes.
 fn targets(g: Gpu&, size: int2) {
-    if g.color.id != 0 { ngfx::release(g.color); }
-    if g.depth.id != 0 { ngfx::release(g.depth); }
-    if g.image.id != 0 { ngfx::release(g.image); }
+    let old = [g.color, g.depth, g.image, g.edges, g.weights];
+    for t in old { if t.id != 0 { ngfx::release(t); } }
     g.color = ngfx::Texture { 0 };
+    g.edges = ngfx::Texture { 0 };
+    g.weights = ngfx::Texture { 0 };
     let k = scale(g);
-    if k > 1 { g.color = ngfx::render_target(size.x * k, size.y * k, ngfx::RGBA8); }
+    if g.aa != AA_OFF { g.color = ngfx::render_target(size.x * k, size.y * k, ngfx::RGBA8); }
+    if g.aa == AA_SMAA {
+        g.edges = ngfx::render_target(size.x, size.y, ngfx::RG8);
+        g.weights = ngfx::render_target(size.x, size.y, ngfx::RGBA8);
+    }
     // 16-bit depth is plenty between NEAR 2 and FAR 40 for a scene 10 to 20 away (a step
     // about 0.003 at 20, under the marks' 0.004 lift).
     g.depth = ngfx::texture2d(size.x * k, size.y * k, ngfx::DEPTH16, ngfx::DEPTH_TARGET);
@@ -415,8 +436,8 @@ fn targets(g: Gpu&, size: int2) {
     }
 }
 
-// How many times the size the pass is drawn at: 2 in place of gfx's 4× MSAA.
-fn scale(g: Gpu&) -> i64 { return if g.samples > 1 { 2 } else { 1 }; }
+// How many times the size the pass is drawn at: 2 for AA_SSAA.
+fn scale(g: Gpu&) -> i64 { return if g.aa == AA_SSAA { 2 } else { 1 }; }
 
 // The kept depth: 1x, 16-bit as the pass's, sampled by the pulsing marks.
 fn depth_target(size: int2) -> ngfx::Texture {
@@ -425,10 +446,9 @@ fn depth_target(size: int2) -> ngfx::Texture {
 
 // Makes everything the renderer draws with: the meshes, the buffers, the pipelines, the
 // baked surfaces' and the photograph's targets. Then apply() puts a theme on it.
-// `samples` more than 1 draws the pass at twice the size; 1 straight into the target
-// (measuring).
-fn setup(g: Gpu&, samples: i32 = SAMPLES) {
-    g.samples = samples;
+// `aa` is how the pass is antialiased (AA_OFF..AA_SSAA).
+fn setup(g: Gpu&, aa: i32 = AA) {
+    g.aa = aa;
     g.wood = model3d::WOOD_MODEL;
     g.finish = looks::finish(model3d::WOOD_MODEL);
     g.marble = looks::MARBLE;
@@ -469,6 +489,17 @@ fn setup(g: Gpu&, samples: i32 = SAMPLES) {
     g.copy = module(embed_file("../app/shaders/r3d_copy.blob"));
     g.mip = module(embed_file("../app/shaders/mip.blob"));
     g.down = module(embed_file("../app/shaders/down.blob"));
+    if aa == AA_FXAA { g.fxaa = module(embed_file("../app/shaders/fxaa.blob")); }
+    if aa == AA_SMAA {
+        let smaa = embed_file("../app/shaders/smaa.blob");
+        g.smaa_edges = ngfx::pipeline(smaa, "edges_vertex", "edges_fragment", ngfx::PipelineDesc {});
+        g.smaa_weights = ngfx::pipeline(smaa, "weights_vertex", "weights_fragment", ngfx::PipelineDesc {});
+        g.smaa_blend = ngfx::pipeline(smaa, "blend_vertex", "blend_fragment", ngfx::PipelineDesc {});
+        g.area = ngfx::texture2d(160, 560, ngfx::RG8, ngfx::SAMPLED);
+        ngfx::update_texture(g.area, embed_file("../app/shaders/smaa_area.bin"));
+        g.search = ngfx::texture2d(64, 16, ngfx::R8, ngfx::SAMPLED);
+        ngfx::update_texture(g.search, embed_file("../app/shaders/smaa_search.bin"));
+    }
     g.show = module(embed_file("../app/shaders/r3d_show.blob"), ngfx::PipelineDesc { blend: ngfx::BLEND_PREMULTIPLIED });
     g.plan_albedo = baked(model3d::PLAN_SIZE, model3d::PLAN_SIZE, ngfx::RGBA8_SRGB);
     g.plan_normal = baked(model3d::PLAN_SIZE, model3d::PLAN_SIZE, ngfx::RGBA8);
@@ -483,6 +514,7 @@ fn setup(g: Gpu&, samples: i32 = SAMPLES) {
     g.occ = module(embed_file("../app/shaders/r3d_occ.blob"));
     g.kept = module(embed_file("../app/shaders/r3d_kept.blob"), blend);
     g.linear = ngfx::sampler(ngfx::LINEAR, ngfx::CLAMP);
+    g.point = ngfx::sampler(ngfx::NEAREST, ngfx::CLAMP);
     g.aniso = ngfx::sampler(ngfx::SamplerDesc { max_anisotropy: 8.0 });
     g.compare = ngfx::shadow_sampler();
 
@@ -795,7 +827,7 @@ fn draw(g: Gpu&, view_proj: Mat, eye: float3, out: ngfx::Texture, size: int2, sh
     let f = frame_addr(g);
     let clear = if backdrop { float4 { 0.11, 0.078, 0.063, 1.0 } } else { float4_0 };
     var pass = ngfx::PassDesc { depth: g.depth, color_value: clear };
-    pass.color[0] = if k > 1 { g.color } else { target };
+    pass.color[0] = if g.aa != AA_OFF { g.color } else { target };
     ngfx::begin_pass(pass);
     if backdrop { draw_backdrop(g, f, 1.0); }
 
@@ -833,16 +865,46 @@ fn draw(g: Gpu&, view_proj: Mat, eye: float3, out: ngfx::Texture, size: int2, sh
     ngfx::end_pass();
     settle();
     g.frame.screen = float4 { size.x, size.y, g.frame.screen.z, 0.0 };
-    if k > 1 {
+    antialias(g, target, size);
+    if keep_depth { draw_depth(g); }
+}
+struct DownRoot { src: u32, pad0: u32, pad1: u32, pad2: u32 }
+struct FxaaRoot { color: u32, linear: u32, pad0: u32, pad1: u32, metrics: float4 }
+struct SmaaRoot { color: u32, edges: u32, weights: u32, area: u32, search: u32, linear: u32, point: u32, pad0: u32,
+                  metrics: float4 }
+
+// The pass in g.color antialiased into `target` as g.aa says: shrunk (AA_SSAA), FXAA's
+// one pass, or SMAA's three (shaders/smaa.slang); with AA_OFF the pass drew into it.
+fn antialias(g: Gpu&, target: ngfx::Texture, size: int2) {
+    guard g.aa != AA_OFF else { return; }
+    let metrics = float4 { 1.0 / size.x, 1.0 / size.y, size.x, size.y };
+    if g.aa == AA_SSAA {
         ngfx::begin_pass(target, ngfx::Texture { 0 }, float4_0);
         ngfx::bind(g.down);
         ngfx::draw(ngfx::root(DownRoot { src: ngfx::index(g.color), pad0: 0, pad1: 0, pad2: 0 }), 3);
         ngfx::end_pass();
-        settle();
+    } else if g.aa == AA_FXAA {
+        ngfx::begin_pass(target, ngfx::Texture { 0 }, float4_0);
+        ngfx::bind(g.fxaa);
+        ngfx::draw(ngfx::root(FxaaRoot { color: ngfx::index(g.color), linear: ngfx::index(g.linear), pad0: 0,
+                                         pad1: 0, metrics: metrics }), 3);
+        ngfx::end_pass();
+    } else {
+        let r = SmaaRoot { color: ngfx::index(g.color), edges: ngfx::index(g.edges), weights: ngfx::index(g.weights),
+                           area: ngfx::index(g.area), search: ngfx::index(g.search), linear: ngfx::index(g.linear),
+                           point: ngfx::index(g.point), pad0: 0, metrics: metrics };
+        let steps = [g.smaa_edges, g.smaa_weights, g.smaa_blend];
+        let into = [g.edges, g.weights, target];
+        for p, i in steps {
+            ngfx::begin_pass(into[i], ngfx::Texture { 0 }, float4_0);
+            ngfx::bind(p);
+            ngfx::draw(ngfx::root(r), 3);
+            ngfx::end_pass();
+            if i < 2 { settle(); }
+        }
     }
-    if keep_depth { draw_depth(g); }
+    settle();
 }
-struct DownRoot { src: u32, pad0: u32, pad1: u32, pad2: u32 }
 
 // The lit module's root (r3d_lit.slang's header): the frame, the instances, the vertices,
 // and its seven textures.
@@ -1088,6 +1150,18 @@ fn warm(g: Gpu&, k: i64) {
              g.kept][k];
     ngfx::prepare(p, pass);
     if k == WARM_STEPS - 1 {
+        // The antialiasing's pipelines, for the RGBA8 targets they draw into, and SMAA's
+        // edges for RG8.
+        var into = ngfx::PassDesc {};
+        into.color[0] = g.warm_color;
+        let post = [g.down, g.fxaa, g.smaa_weights, g.smaa_blend];
+        for q in post { if q.id != 0 { ngfx::prepare(q, into); } }
+        if g.smaa_edges.id != 0 {
+            let rg = ngfx::render_target(4, 4, ngfx::RG8);
+            into.color[0] = rg;
+            ngfx::prepare(g.smaa_edges, into);
+            ngfx::release(rg);
+        }
         ngfx::release(g.warm_color);
         ngfx::release(g.warm_depth);
         g.warm_color = ngfx::Texture { 0 };
@@ -1101,14 +1175,15 @@ fn release(g: Gpu&) {
     ngfx::flush();
     let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.photo, g.shadow_map, g.occ_map,
                     g.crown_map, g.color, g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across,
-                    g.warm_color, g.warm_depth];
+                    g.warm_color, g.warm_depth, g.edges, g.weights, g.area, g.search];
     for t in textures { if t.id != 0 { ngfx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.instances, g.squares, g.marks, g.glows];
     for b in buffers { if b.id != 0 { ngfx::release(b); } }
-    let samplers = [g.linear, g.aniso, g.compare];
+    let samplers = [g.linear, g.point, g.aniso, g.compare];
     for s in samplers { if s.id != 0 { ngfx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
-                     g.occ, g.kept, g.bake, g.shrink, g.blur, g.mip, g.down];
+                     g.occ, g.kept, g.bake, g.shrink, g.blur, g.mip, g.down, g.fxaa, g.smaa_edges, g.smaa_weights,
+                     g.smaa_blend];
     for p in pipelines { if p.id != 0 { ngfx::release(p); } }
     g = default<Gpu>();
 }
