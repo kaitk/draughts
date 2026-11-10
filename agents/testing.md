@@ -68,7 +68,7 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   wrong move with none sliding back as before (`puzzle_answer`, which reads its own
   puzzles into `puzzles::all`), the library and every theme's page laid out at the tablet's
   and a phone's size (`picker`), the draughts switch on the library (each draughts' set,
-  the note for a draughts without one (English stands in), the file, home's count, a
+  the file, home's count, a
   scrolled list back at its top, and the layouts: `puzzle_set`), a capture made by hand in a puzzle (tapped and dragged
   stop by stop, dropped on its last square, left partway and next pressed: a miss) and
   no targets in any puzzle, a Russian player's set read on home, its library, a puzzle

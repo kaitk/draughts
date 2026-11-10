@@ -127,4 +127,3 @@ count.repeated = Repeat
 game.lookout = Lookout
 game.hint = Hint
 game.where_to = Where to?
-puzzles.for_now = International's puzzles for now

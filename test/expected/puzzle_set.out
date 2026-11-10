@@ -1,49 +1,41 @@
-the library: draughts international, lit 0, the set international of 74, 6 themes, 10 tiles, note "", home's count 3 / 222, changed false
-Russian tapped: draughts russian, lit 2, the set russian of 46, 4 themes, 8 tiles, note "", home's count 2 / 138, changed true
-Brazilian tapped: draughts brazilian, lit 1, the set brazilian of 46, 4 themes, 8 tiles, note "", home's count 1 / 138, changed true
-International tapped: draughts international, lit 0, the set international of 74, 6 themes, 10 tiles, note "", home's count 3 / 222, changed true
-International tapped: draughts international, lit 0, the set international of 74, 6 themes, 10 tiles, note "", home's count 3 / 222, changed false
+the library: draughts international, lit 0, the set international of 74, 6 themes, 10 tiles, home's count 3 / 222, changed false
+Russian tapped: draughts russian, lit 2, the set russian of 46, 4 themes, 8 tiles, home's count 2 / 138, changed true
+Brazilian tapped: draughts brazilian, lit 1, the set brazilian of 46, 4 themes, 8 tiles, home's count 1 / 138, changed true
+International tapped: draughts international, lit 0, the set international of 74, 6 themes, 10 tiles, home's count 3 / 222, changed true
+International tapped: draughts international, lit 0, the set international of 74, 6 themes, 10 tiles, home's count 3 / 222, changed false
 the file: draughts = russian
-home: draughts russian, lit -1, the set russian of 46, 4 themes, 7 tiles, note "", home's count 2 / 138, changed true
+home: draughts russian, lit -1, the set russian of 46, 4 themes, 7 tiles, home's count 2 / 138, changed true
 the smallest window's list dragged: 231 dp down
 Russian tapped: 0 dp down, the first row at 16,224 467x92
 the tablet, landscape:
-  international: 10 tiles, back 24,24 134x88, the switch 848,152 394x88 (162 122 102), the first row 34,256 600x124, 1 lines of title and note, 319 quads, all in place
-  brazilian: 8 tiles, back 24,24 134x88, the switch 848,220 394x88 (162 122 102), the first row 34,324 600x124, 1 lines of title and note, 246 quads, all in place
-  russian: 8 tiles, back 24,24 134x88, the switch 848,220 394x88 (162 122 102), the first row 34,324 600x124, 1 lines of title and note, 246 quads, all in place
-  english: 10 tiles, back 24,24 134x88, the switch 848,152 394x88 (162 122 102), the first row 34,256 600x124, 2 lines of title and note, 381 quads, all in place
+  international: 10 tiles, back 24,24 134x88, the switch 848,152 394x88 (162 122 102), the first row 34,256 600x124, 1 lines of title, 319 quads, all in place
+  brazilian: 8 tiles, back 24,24 134x88, the switch 848,220 394x88 (162 122 102), the first row 34,324 600x124, 1 lines of title, 246 quads, all in place
+  russian: 8 tiles, back 24,24 134x88, the switch 848,220 394x88 (162 122 102), the first row 34,324 600x124, 1 lines of title, 246 quads, all in place
 the tablet, portrait:
-  international: 10 tiles, back 100,24 134x88, the switch 104,128 592x88 (245 185 154), the first row 100,232 600x124, 1 lines of title and note, 319 quads, all in place
-  brazilian: 8 tiles, back 100,24 134x88, the switch 104,128 592x88 (245 185 154), the first row 100,232 600x124, 1 lines of title and note, 246 quads, all in place
-  russian: 8 tiles, back 100,24 134x88, the switch 104,128 592x88 (245 185 154), the first row 100,232 600x124, 1 lines of title and note, 246 quads, all in place
-  english: 10 tiles, back 100,24 134x88, the switch 104,128 592x88 (245 185 154), the first row 100,232 600x124, 2 lines of title and note, 381 quads, all in place
+  international: 10 tiles, back 100,24 134x88, the switch 104,128 592x88 (245 185 154), the first row 100,232 600x124, 1 lines of title, 319 quads, all in place
+  brazilian: 8 tiles, back 100,24 134x88, the switch 104,128 592x88 (245 185 154), the first row 100,232 600x124, 1 lines of title, 246 quads, all in place
+  russian: 8 tiles, back 100,24 134x88, the switch 104,128 592x88 (245 185 154), the first row 100,232 600x124, 1 lines of title, 246 quads, all in place
 a 20:9 phone at 480 dp, landscape:
-  international: 10 tiles, back 16,16 134x88, the switch 653,34 394x88 (162 122 102), the first row 174,138 432x96, 1 lines of title and note, 319 quads, all in place
-  brazilian: 8 tiles, back 16,16 134x88, the switch 653,88 394x88 (162 122 102), the first row 174,192 432x96, 1 lines of title and note, 246 quads, all in place
-  russian: 8 tiles, back 16,16 134x88, the switch 653,88 394x88 (162 122 102), the first row 174,192 432x96, 1 lines of title and note, 246 quads, all in place
-  english: 10 tiles, back 16,16 134x88, the switch 653,34 394x88 (162 122 102), the first row 174,138 432x96, 2 lines of title and note, 381 quads, all in place
+  international: 10 tiles, back 16,16 134x88, the switch 653,34 394x88 (162 122 102), the first row 174,138 432x96, 1 lines of title, 319 quads, all in place
+  brazilian: 8 tiles, back 16,16 134x88, the switch 653,88 394x88 (162 122 102), the first row 174,192 432x96, 1 lines of title, 246 quads, all in place
+  russian: 8 tiles, back 16,16 134x88, the switch 653,88 394x88 (162 122 102), the first row 174,192 432x96, 1 lines of title, 246 quads, all in place
 a 20:9 phone at 480 dp, portrait:
-  international: 10 tiles, back 16,16 134x88, the switch 20,120 440x88 (181 136 114), the first row 16,224 448x96, 1 lines of title and note, 319 quads, all in place
-  brazilian: 8 tiles, back 16,16 134x88, the switch 20,120 440x88 (181 136 114), the first row 16,224 448x96, 1 lines of title and note, 246 quads, all in place
-  russian: 8 tiles, back 16,16 134x88, the switch 20,120 440x88 (181 136 114), the first row 16,224 448x96, 1 lines of title and note, 246 quads, all in place
-  english: 10 tiles, back 16,16 134x88, the switch 20,120 440x88 (181 136 114), the first row 16,224 448x96, 2 lines of title and note, 381 quads, all in place
+  international: 10 tiles, back 16,16 134x88, the switch 20,120 440x88 (181 136 114), the first row 16,224 448x96, 1 lines of title, 319 quads, all in place
+  brazilian: 8 tiles, back 16,16 134x88, the switch 20,120 440x88 (181 136 114), the first row 16,224 448x96, 1 lines of title, 246 quads, all in place
+  russian: 8 tiles, back 16,16 134x88, the switch 20,120 440x88 (181 136 114), the first row 16,224 448x96, 1 lines of title, 246 quads, all in place
 a 20:9 phone at 480 dp, portrait, Estonian:
-  international: 10 tiles, back 16,16 158x88, the switch 20,120 440x88 (195 138 100), the first row 16,224 448x96, 1 lines of title and note, 338 quads, all in place
-  brazilian: 8 tiles, back 16,16 158x88, the switch 20,120 440x88 (195 138 100), the first row 16,224 448x96, 1 lines of title and note, 266 quads, all in place
-  russian: 8 tiles, back 16,16 158x88, the switch 20,120 440x88 (195 138 100), the first row 16,224 448x96, 1 lines of title and note, 266 quads, all in place
-  english: 10 tiles, back 16,16 158x88, the switch 20,120 440x88 (195 138 100), the first row 16,224 448x96, 3 lines of title and note, 410 quads, all in place
+  international: 10 tiles, back 16,16 158x88, the switch 20,120 440x88 (195 138 100), the first row 16,224 448x96, 1 lines of title, 338 quads, all in place
+  brazilian: 8 tiles, back 16,16 158x88, the switch 20,120 440x88 (195 138 100), the first row 16,224 448x96, 1 lines of title, 266 quads, all in place
+  russian: 8 tiles, back 16,16 158x88, the switch 20,120 440x88 (195 138 100), the first row 16,224 448x96, 1 lines of title, 266 quads, all in place
 a 20:9 phone at 480 dp, landscape, Estonian:
-  international: 10 tiles, back 16,16 158x88, the switch 657,34 390x88 (172 122 88), the first row 198,138 420x96, 1 lines of title and note, 338 quads, all in place
-  brazilian: 8 tiles, back 16,16 158x88, the switch 657,88 390x88 (172 122 88), the first row 198,192 420x96, 1 lines of title and note, 266 quads, all in place
-  russian: 8 tiles, back 16,16 158x88, the switch 657,88 390x88 (172 122 88), the first row 198,192 420x96, 1 lines of title and note, 266 quads, all in place
-  english: 10 tiles, back 16,16 158x88, the switch 657,34 390x88 (172 122 88), the first row 198,138 420x96, 2 lines of title and note, 412 quads, all in place
+  international: 10 tiles, back 16,16 158x88, the switch 657,34 390x88 (172 122 88), the first row 198,138 420x96, 1 lines of title, 338 quads, all in place
+  brazilian: 8 tiles, back 16,16 158x88, the switch 657,88 390x88 (172 122 88), the first row 198,192 420x96, 1 lines of title, 266 quads, all in place
+  russian: 8 tiles, back 16,16 158x88, the switch 657,88 390x88 (172 122 88), the first row 198,192 420x96, 1 lines of title, 266 quads, all in place
 the smallest iPad window:
-  international: 10 tiles, back 16,16 134x88, the switch 20,120 459x88 (189 143 119), the first row 16,224 467x96, 1 lines of title and note, 319 quads, all in place
-  brazilian: 8 tiles, back 16,16 134x88, the switch 20,120 459x88 (189 143 119), the first row 16,224 467x92, 1 lines of title and note, 246 quads, all in place
-  russian: 8 tiles, back 16,16 134x88, the switch 20,120 459x88 (189 143 119), the first row 16,224 467x92, 1 lines of title and note, 246 quads, all in place
-  english: 10 tiles, back 16,16 134x88, the switch 20,120 459x88 (189 143 119), the first row 16,224 467x96, 2 lines of title and note, 381 quads, all in place
+  international: 10 tiles, back 16,16 134x88, the switch 20,120 459x88 (189 143 119), the first row 16,224 467x96, 1 lines of title, 319 quads, all in place
+  brazilian: 8 tiles, back 16,16 134x88, the switch 20,120 459x88 (189 143 119), the first row 16,224 467x92, 1 lines of title, 246 quads, all in place
+  russian: 8 tiles, back 16,16 134x88, the switch 20,120 459x88 (189 143 119), the first row 16,224 467x92, 1 lines of title, 246 quads, all in place
 the smallest iPad window, Estonian:
-  international: 10 tiles, back 16,16 158x88, the switch 20,120 459x88 (203 144 104), the first row 16,224 467x96, 1 lines of title and note, 338 quads, all in place
-  brazilian: 8 tiles, back 16,16 158x88, the switch 20,120 459x88 (203 144 104), the first row 16,224 467x92, 1 lines of title and note, 266 quads, all in place
-  russian: 8 tiles, back 16,16 158x88, the switch 20,120 459x88 (203 144 104), the first row 16,224 467x92, 1 lines of title and note, 266 quads, all in place
-  english: 10 tiles, back 16,16 158x88, the switch 20,120 459x88 (203 144 104), the first row 16,224 467x96, 3 lines of title and note, 410 quads, all in place
+  international: 10 tiles, back 16,16 158x88, the switch 20,120 459x88 (203 144 104), the first row 16,224 467x96, 1 lines of title, 338 quads, all in place
+  brazilian: 8 tiles, back 16,16 158x88, the switch 20,120 459x88 (203 144 104), the first row 16,224 467x92, 1 lines of title, 266 quads, all in place
+  russian: 8 tiles, back 16,16 158x88, the switch 20,120 459x88 (203 144 104), the first row 16,224 467x92, 1 lines of title, 266 quads, all in place

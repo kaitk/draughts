@@ -231,42 +231,16 @@ fn switch(g: gui::Gui&, r: float4, variant: i64&) -> bool {
     return chose;
 }
 
-// The note under the title while the draughts show another's set, or "". None of the
-// three offered does now, as Brazilian once did; it stays for English, which the engine
-// plays but the setup doesn't offer (test/shell/puzzle_set), and a variant added before
-// its set.
-fn note_of(variant: i64) -> const u8[:] {
-    return if puzzles::set_of(variant as u8) != variant as u8 { strings::get(strings::PUZZLES_FOR_NOW) } else { "" };
-}
-
-// How many lines the note takes in w pixels: one, two broken at a space, or 0 for none.
-fn note_lines(g: gui::Gui&, note: const u8[:], w: f32) -> i64 {
-    guard note.len > 0 else { return 0; }
-    return if gui::text_width(g, gui::SMALL, note) <= w || gui::break_at(g, gui::SMALL, note, w) < 0 { 1 } else { 2 };
-}
-
-// The title in r, bare on the photograph, the note under it, the two centered down r.
-fn title(g: gui::Gui&, r: float4, note: const u8[:]) {
-    let u = g.scale;
+// The title in r, bare on the photograph, centered down r.
+fn title(g: gui::Gui&, r: float4) {
     let name = strings::get(strings::HOME_PUZZLES);
     let face = gui::fitting(g, gui::LABEL, name, r.z);
-    let lines = note_lines(g, note, r.z);
-    let small = line_h(g, gui::SMALL);
-    let under = if lines > 0 { 2.0 * u + lines * small } else { 0.0 };
-    var c = gui::center(r, r.z, line_h(g, face) + under);
     // Bare on the photograph, over bright bark or snow at some sizes: a soft shadow.
-    gui::shadowed(g, face, gui::cut_top(c, line_h(g, face)), name, gui::LEFT);
-    guard lines > 0 else { return; }
-    gui::cut_top(c, 2.0 * u);
-    let cut = if lines == 2 { gui::break_at(g, gui::SMALL, note, r.z) } else { note.len };
-    gui::shaded(g, gui::SMALL, gui::cut_top(c, small), note[..cut], 0.85, gui::LEFT);
-    if lines == 2 { gui::shaded(g, gui::SMALL, gui::cut_top(c, small), note[cut + 1..], 0.85, gui::LEFT); }
+    gui::shadowed(g, face, gui::center(r, r.z, line_h(g, face)), name, gui::LEFT);
 }
 
-// How wide the title and its note want to be.
-fn title_width(g: gui::Gui&, note: const u8[:]) -> f32 {
-    return max(gui::text_width(g, gui::LABEL, strings::get(strings::HOME_PUZZLES)), gui::text_width(g, gui::SMALL, note));
-}
+// How wide the title wants to be.
+fn title_width(g: gui::Gui&) -> f32 { gui::text_width(g, gui::LABEL, strings::get(strings::HOME_PUZZLES)) }
 
 // The library: back, the title, the draughts switch, and a row per theme the set has.
 // In landscape the switch stands at the title row's right where the two fit, else (in
@@ -279,7 +253,6 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let phone = gui::phone(area, u);
     var page = gui::inset(area, (if phone { 16.0 } else { 24.0 }) * u);
     var pick = NOTHING;
-    let note = note_of(variant);
     let whole = page;           // the rows center on the screen, not on what back leaves
     if landscape {
         var column = gui::cut_left(page, back_w(g));
@@ -289,7 +262,7 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let gap = gui::PAD * u;
     let sw_w = switch_width(g);
     let sw_h = SWITCH_H * u;
-    let beside = landscape && title_width(g, note) + 24.0 * u + sw_w <= page.z;
+    let beside = landscape && title_width(g) + 24.0 * u + sw_w <= page.z;
     let head = if beside { sw_h + gap } else { 88.0 * u + gap + sw_h + gap };
     // A variant's set may leave a theme out (Russian's has no king shots): its row too.
     var rows = 0;
@@ -316,7 +289,7 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let w = cols * col_w + (cols - 1) * gap;
     let x = max(room.x, whole.x + floor(0.5 * (whole.z - w) + 0.5));
     // The title row as wide as the rows, or as the title and the switch beside it want.
-    let top_w = if beside { min(room.z, max(w, title_width(g, note) + 24.0 * u + sw_w)) } else { w };
+    let top_w = if beside { min(room.z, max(w, title_width(g) + 24.0 * u + sw_w)) } else { w };
     let top_x = max(room.x, min(x, whole.x + floor(0.5 * (whole.z - top_w) + 0.5)));
     var top = float4 { top_x, y, top_w, if beside { sw_h } else { 88.0 * u } };
     if !landscape {
@@ -325,7 +298,7 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     }
     let sw = if beside { gui::cut_right(top, sw_w) } else { float4 { x, y + 88.0 * u + gap, w, sw_h } };
     if beside { gui::cut_right(top, 24.0 * u); }
-    title(g, top, note);
+    title(g, top);
     if switch(g, sw, variant) {
         gui::scroll_set(g, LIBRARY_LIST, 0.0);
         pick = SWITCHED;

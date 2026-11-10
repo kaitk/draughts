@@ -43,7 +43,6 @@ let KEYS = [
     "count.twice", "count.third", "count.short", "count.repeated",
     "settings.privacy",
     "game.lookout", "game.hint", "game.where_to",
-    "puzzles.for_now",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -152,8 +151,7 @@ let SETTINGS_PRIVACY = 103; // the privacy note at the end of settings' game gro
 let GAME_LOOKOUT = 104;     // the lookout's toggle: the threats past the player's sight
 let GAME_HINT = 105;        // the hint's tile
 let GAME_WHERE_TO = 106;    // and its word once it has lit the piece to move
-let PUZZLES_FOR_NOW = 107; // under the puzzles' title while a draughts shows another's set (picker::note_of)
-let COUNT = 108;
+let COUNT = 107;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

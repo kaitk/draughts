@@ -733,14 +733,8 @@ built or superseded; they are in git history before that day.
   new games' draughts too, saved as settings saves them, reads that draughts' set at
   once (`shell::load_set`), puts the list back at its top, and home's count follows; the
   lit tile takes a tap and changes nothing. It stands at the title row's right in
-  landscape where the title, its note, and the switch fit the width beside back, else
-  (portrait, the compact window) in a row of its own under the title. A draughts with no
-  set of its own (as Brazilian was until 2026-11-10; now none of the three) shows
-  International's with "International's puzzles for now"
-  ("Esialgu rahvusvahelise kabe ülesanded") under the title in the small face, over one
-  dark copy 1.5 dp down (`gui::shaded`: the halo's nine quads a glyph would take the
-  frame past `gui::MAX_QUADS`, 512), broken onto two lines where one doesn't fit (the
-  test faces at 480 dp; the real font's 271 dp fits the 278 left beside back). The title
+  landscape where the title and the switch fit the width beside back, else (portrait,
+  the compact window) in a row of its own under the title. The title
   "Puzzles" stands in the title row (beside back in portrait), bare on the photograph
   over a soft dark halo (`gui::shadowed`: eight dark copies 2 dp round it at 20% and one
   2 dp down at 35%), as it sat partly over spring's and autumn's birch bark at the

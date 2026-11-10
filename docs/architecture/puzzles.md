@@ -108,8 +108,7 @@ That is 46, 13 of them black to move (38% of the 34 outside Learn); a Brazilian 
 sees four rows. 26 of them are Russian's positions (Learn 9, Crowning 9, Shots 8, and
 none of Captures, where majority's rule leaves Russian's choices a single legal move).
 Brazilian's ids are its own, from 1. A variant with no set of its own (English, not
-offered) is shown International's, with "International's puzzles for now" under the
-library's title (`picker::note_of`).
+offered) is shown International's (`puzzles::set_of`).
 
 ## Goals
 

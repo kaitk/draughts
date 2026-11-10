@@ -1,18 +1,15 @@
 // The draughts switch on the puzzles' library (shell/picker.goose, take a of
 // prototypes/puzzle-set.html), headless, driven through the pointer. The switch is
 // settings' draughts: a tap on Russian shows Russian's set and its four themes, on
-// Brazilian Brazilian's own set and its four, on International its six, none with a
-// note under the title; each tap sets the player's draughts, written to the player's
+// Brazilian Brazilian's own set and its four, on International its six; each tap sets the player's draughts, written to the player's
 // file as settings writes them, and home's count follows, each set's stars apart. A tap
 // on the lit tile changes nothing. A list scrolled down (a small window) is back at its
 // top after a switch. Then the library with each draughts chosen at the tablet's size in
 // both orientations, a 20:9 phone's at 480 dp in both, in English and Estonian, and the
 // 11" iPad's smallest window (a compact layout): its tiles (back, the switch's three, a
-// row per theme), where the switch stands, the note's lines, and whether any tile lies
-// off the screen, overlaps another, or is under 88 dp, or the title or the note runs
-// into a tile or off the screen. English, which isn't offered and has no set, stands for
-// a variant shown another's: International's set, no tile lit, and the note
-// "International's puzzles for now" under the title, as Brazilian had until its own.
+// row per theme), where the switch stands, the title's lines, and whether any tile lies
+// off the screen, overlaps another, or is under 88 dp, or the title runs into a tile or
+// off the screen.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -51,8 +48,8 @@ fn lit(g: gui::Gui&) -> i64 {
     return -1;
 }
 
-// The lines of text drawn bare on the photograph outside every tile (the title, and the
-// note's lines), counted by their distinct tops, the halo's copies left out.
+// The lines of text drawn bare on the photograph outside every tile (the title),
+// counted by their distinct tops, the halo's copies left out.
 fn bare_lines(g: gui::Gui&) -> i64 {
     var tops: f32[..8] = [];
     for q in g.quads {
@@ -73,7 +70,7 @@ fn show(sh: shell::Shell&, g: gui::Gui&, what: const u8[:]) {
     let won, all = picker::totals(sh.prefs.stars[puzzles::loaded]);
     print(what, ": draughts ", rules::VARIANT_NAMES[sh.prefs.variant], ", lit ", lit(g), ", the set ",
           rules::VARIANT_NAMES[puzzles::loaded], " of ", puzzles::all.list.len, ", ", rows, " themes, ",
-          drive::tiles(g), " tiles, note \"", picker::note_of(sh.prefs.variant), "\", home's count ", won, " / ", all,
+          drive::tiles(g), " tiles, home's count ", won, " / ", all,
           ", changed ", sh.changed);
 }
 
@@ -113,7 +110,7 @@ fn report(what: const u8[:], g: gui::Gui&) {
     print("  ", what, ": ", n, " tiles, back ", dp(drive::rect(g, 0), u), ", the switch ", dp(sw, u), " (",
           floor(drive::rect(g, 1).z / u + 0.5) as i64, " ", floor(drive::rect(g, 2).z / u + 0.5) as i64, " ",
           floor(drive::rect(g, 3).z / u + 0.5) as i64, "), the first row ", dp(drive::rect(g, 4), u), ", ",
-          bare_lines(g), " lines of title and note, ", g.quads.len, " quads", if wrong.len > 0 { str(";", wrong) } else { str(", all in place") });
+          bare_lines(g), " lines of title, ", g.quads.len, " quads", if wrong.len > 0 { str(";", wrong) } else { str(", all in place") });
 }
 
 fn at_size(g: gui::Gui&, size: float2, short: f32, display: f32) {
@@ -126,7 +123,7 @@ fn at_size(g: gui::Gui&, size: float2, short: f32, display: f32) {
 
 fn layouts(g: gui::Gui&, what: const u8[:]) {
     print(what, ":");
-    for v in [rules::INTERNATIONAL, rules::BRAZILIAN, rules::RUSSIAN, rules::ENGLISH] {
+    for v in [rules::INTERNATIONAL, rules::BRAZILIAN, rules::RUSSIAN] {
         var sh = shell::new(rules::INTERNATIONAL);
         sh.prefs.variant = v;
         sh.screen = shell::HOME;

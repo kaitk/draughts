@@ -1,6 +1,6 @@
 # 03: Stage 2, structure
 
-Status: todo
+Status: in-progress
 
 Stage 1 (`02-moves.md`) first. Behaviour stays the same and every expected output stays
 byte-identical.
@@ -31,6 +31,26 @@ changing an expected output. Record each verdict here.
    The shared asks are negative so that the picker can return a puzzle's index. Four
    tests print the setup's raw number. The alternatives: tests that print the setup's
    name and a re-blessed output, or another numbering of the asks.
+
+### Verdicts (2026-11-10)
+
+1. **Dropped**, with the user's yes. Prefs read only the three offered draughts, so the
+   app could never show the note. The note, its key in both files, the title's
+   two-line note layout, and the English case in `test/shell/puzzle_set` are gone;
+   `puzzle_set.out` and `strings.out` re-blessed (the English lines and the note's
+   text only). `puzzles::set_of` still falls back to International's for English.
+2. **Holds.** The characters come from `strings` (the app's name in every language) and
+   `game`'s clock, and only the shell sees both with no graphics. `game` would have to
+   learn home's wordmark, `strings` the faces and the clock; splitting `text.goose`
+   leaves a file for one function. The shell composes the screens, so what they draw
+   is its to say.
+3. **Holds.** `gui` is a leaf on `std` and `vec` alone, with no graphics, and `Input` is
+   the pointer both callers already have. A pointer struct in `board` would copy
+   `gui::Input`; four loose fields would spread one value over four parameters at both
+   calls. `board` keeps no other `gui` use.
+4. **Holds.** The setup open and an ask are two things that only shared a number:
+   `FRIEND` and `COMPUTER` name both, `NO_SETUP` is a state no ask is. Printing names
+   would re-bless six outputs for no change in what they check.
 
 ## One screen table
 

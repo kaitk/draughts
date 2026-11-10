@@ -61,7 +61,7 @@ var loaded: u8 = rules::INTERNATIONAL;
 
 // The variant whose set a player of `variant` is shown: International, Russian, and
 // Brazilian have their own; a variant without one (English, not offered) is shown
-// International's, and the picker says so (picker::note_of).
+// International's.
 fn set_of(variant: u8) -> u8 {
     guard variant != rules::RUSSIAN && variant != rules::BRAZILIAN else { return variant; }
     return rules::INTERNATIONAL;
