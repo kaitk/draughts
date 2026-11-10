@@ -1,7 +1,8 @@
 # 046: Release on the App Store
 
 Status: in-progress (the listing and answers prepared, and the app meets the bundle's
-rules, 2026-11-09; the account's enrolment waits on Apple's check; nothing submitted)
+rules, 2026-11-09; the account's enrolment pending on a new personal Apple ID,
+2026-11-10; nothing submitted)
 
 Everything between task 043's development build and Draughts on the App Store for iPhone
 and iPad, in Games → Puzzle at 4+ (not the Kids category): no ads, no tracking, no
@@ -85,17 +86,23 @@ Each is a store rule the app doesn't meet yet:
   listing speaks to all ages, as Guideline 5.1.4(b) requires outside Kids
   (`store/app-store.md`).
 - **iPhone and iPad.**
-- **The account:** the Apple Developer Program as an individual on the Apple ID the
-  development builds already use, enrolled on the web and paid by card there. Apple
-  locked the account while it checks the email and phone; waiting on its reply. Once
-  active, that Apple ID has two teams, the free Personal Team and the paid one:
-  `scripts/ios.py` must pick the paid one, whose development profiles last a year, not 7
-  days (`docs/development.md` then says so).
+- **The account** (corrected 2026-11-10): the Apple Developer Program as an individual
+  on a separate personal Apple ID made for the store, not the Apple ID the development
+  builds use now, whose free Personal Team stays for those builds until the paid team
+  exists. Enrolled on the web and paid by card there. A first enrolment, on another
+  Apple ID, was dropped after Apple locked that Apple ID; the enrolment on the new one is
+  pending (2026-11-10). No Apple ID, team id, or device identifier goes into the repo.
+- **Signing with the paid team:** once its team shows in Xcode (Settings → Accounts, the
+  store's Apple ID added beside the other), `scripts/ios.py` picks it over the Personal
+  Team, as its development profiles last a year, not 7 days, and `docs/development.md`
+  says so. Not before the team exists.
 - **EU trader status:** non-trader, for the account and the app.
 - **The support URL** `https://kaitk.github.io/draughts/`, the privacy URL
   `https://kaitk.github.io/draughts/privacy/`.
 
 ## What remains for the user
+
+- **Enrol** the new personal Apple ID as an individual (pending, 2026-11-10).
 
 Once the account is active:
 
