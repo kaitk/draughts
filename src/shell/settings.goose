@@ -595,28 +595,55 @@ fn preview_room(page: float4, size: f32) -> float4 {
     return float4 { page.x + 0.03 * page.z, page.y + 0.03 * page.w, PREVIEW_SHARE * page.z, PREVIEW_SHARE * page.w };
 }
 
-// Declares the screen for this frame in `area`, the screen's safe area, with `shown`
-// the language showing, and sets l to where the preview goes, and `room3d` to where a 3D
-// preview goes instead, as large as it fits (the same share of the page beside the
-// choices as the flat square's). The kings' tiles put their pieces in `over`. Returns
-// BACK, CHANGED after a tap changed s, SHOWN after a tab, or NOTHING.
-fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, area: float4, shown: i64,
-         room3d: float4&) -> i64 {
+// Where the screen's parts go in `area`, the screen's safe area (layout): the title row
+// (`head`), the tabs under it (TABS_UNDER), each group's glass and where it runs on to
+// the screen's edges (`bleed`), how the groups lay out their rows (`aside`, `titled`,
+// and `content`, the height a scrolling group's rows take), and the preview, `board` and
+// `room3d` where a 3D preview goes instead, as large as it fits (the same share of the
+// page beside the choices as the flat square's). Of the groups one at a time, only the
+// shown one's glass. Three layouts, each taken where the one before doesn't fit, so a
+// window that widens goes through them in order (task 050): the groups stacked at the
+// left of the board (COLUMN, landscape); the board on top and the groups side by side
+// under it (BOTH: portrait, and a near-square landscape); one group at a time with tabs
+// (a phone, a small window), in the title row in landscape (TABS_BESIDE), else under it
+// (TABS_UNDER).
+let COLUMN = 0;
+let BOTH = 1;
+let TABS_BESIDE = 2;
+let TABS_UNDER = 3;
+struct Page {
+    kind:    i64           = COLUMN,
+    head:    float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
+    tabs:    float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
+    glass:   float4[2]     = [float4 { 0.0, 0.0, 0.0, 0.0 }; 2],
+    bleed:   float4[2]     = [float4 { 0.0, 0.0, 0.0, 0.0 }; 2],
+    aside:   bool          = true,
+    titled:  bool          = true,
+    content: f32           = 0.0,
+    board:   board::Layout = board::layout_at(0.0, 0.0, 0.0, 1.0, 8),
+    room3d:  float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
+}
+
+// The preview in what the page leaves it: PREVIEW_SHARE of its shorter side, centered,
+// none under board::SMALLEST (or where `shown` is false); and the 3D preview's room.
+fn preview(p: Page&, page: float4, u: f32, n: i64, shown: bool = true) {
+    var size = PREVIEW_SHARE * min(page.z, page.w);
+    if !shown || size < board::SMALLEST * u { size = 0.0; }
+    p.board = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
+    p.room3d = preview_room(page, size);
+}
+
+// Where the screen's parts go in `area` (Page). It declares nothing; it sets s.name_w and
+// s.slim, which the rows read.
+fn layout(s: Settings&, g: gui::Gui&, area: float4) -> Page {
     let u = g.scale;
     let landscape = area.z >= area.w;
     let n = rules::VARIANTS[s.variant].size;
     var page = float4 { area.x + PAD_X * u, area.y + PAD_Y * u, area.z - 2.0 * PAD_X * u, area.w - 2.0 * PAD_Y * u };
-    over.clear();
-    s.switch_at = float4 { 0.0, 0.0, 0.0, 0.0 };
     s.name_w = NAME_W;
     s.slim = gui::compact(g, area);
-    var ask = NOTHING;
-    // Three layouts, each taken where the one before doesn't fit, so a window that widens
-    // goes through them in order (task 050): the groups stacked at the left of the board
-    // (landscape); the board on top and the groups side by side under it (portrait, and a
-    // near-square landscape); one group at a time with tabs (a phone, a small window).
+    var p = Page { bleed: [area, area], .. };
     let phone = gui::phone(area, u);
-    var aside = true;
     var w: f32 = 0.0;
     var tabbed = true;
     if landscape {
@@ -639,43 +666,39 @@ fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, a
         let room = page.w - (HEAD_H + HEAD_GAP) * u + foot;
         w = min(max(max(group_width(s, g, 0, true), group_width(s, g, 1, true)), head_w), 0.55 * page.z);
         if group_height(s, g, 0, w, true) + GROUP_GAP * u + group_height(s, g, 1, w, true) > room {
-            aside = false;
+            p.aside = false;
             w = min(max(max(group_width(s, g, 0, false), group_width(s, g, 1, false)), head_w), 0.55 * page.z);
         }
-        if group_height(s, g, 0, w, aside) + GROUP_GAP * u + group_height(s, g, 1, w, aside) > room {
-            aside = true;
+        if group_height(s, g, 0, w, p.aside) + GROUP_GAP * u + group_height(s, g, 1, w, p.aside) > room {
+            p.aside = true;
             w = max(max(group_width(s, g, 0, true), group_width(s, g, 1, true)), head_w);
         }
         let widest = if phone { 0.7 * page.z } else { page.z - (SIDE_GAP + board::SMALLEST) * u };
-        tabbed = group_height(s, g, 0, w, aside) + GROUP_GAP * u + group_height(s, g, 1, w, aside) > room
+        tabbed = group_height(s, g, 0, w, p.aside) + GROUP_GAP * u + group_height(s, g, 1, w, p.aside) > room
                  || w > widest;
-        if !tabbed && aside && w + (WIDE_NAME_W - NAME_W) * u <= 0.55 * page.z {
+        if !tabbed && p.aside && w + (WIDE_NAME_W - NAME_W) * u <= 0.55 * page.z {
             w += (WIDE_NAME_W - NAME_W) * u;
             s.name_w = WIDE_NAME_W;
         }
     }
     if landscape && !tabbed {
-        var side = gui::cut_left(page, w);
+        let side = gui::cut_left(page, w);
         gui::cut_left(page, SIDE_GAP * u);
-        var size = PREVIEW_SHARE * min(page.z, page.w);
-        if size < board::SMALLEST * u { size = 0.0; }
-        l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
-        room3d = preview_room(page, size);
-        ask = head(s, g, gui::cut_top(side, HEAD_H * u), shown);
-        gui::cut_top(side, HEAD_GAP * u);
-        let game_h = group_height(s, g, 0, side.z, aside);
-        let look_h = group_height(s, g, 1, side.z, aside);
-        // Centered down the rest, or from its top if they are taller, running on into the
-        // foot; the look's glass ends below its kings there rather than running on to the
-        // screen's bottom edge, which left it mostly empty below (the user, 2026-11-09).
-        gui::cut_top(side, max(0.0, 0.5 * (side.w - game_h - GROUP_GAP * u - look_h)));
-        var list = side;
-        if group(s, over, g, 0, gui::cut_top(list, game_h), area, aside) { ask = CHANGED; }
-        gui::cut_top(list, GROUP_GAP * u);
-        let look = float4 { list.x, list.y, list.z, look_h };
-        let unbled = float4 { area.x, area.y, area.z, area.w + g.insets.w };   // no bleed at the foot
-        if group(s, over, g, 1, look, unbled, aside) { ask = CHANGED; }
-        return ask;
+        preview(p, page, u, n);
+        // The title row, then the groups centered down the rest, or from its top if they
+        // are taller, running on into the foot; the look's glass ends below its kings
+        // there rather than running on to the screen's bottom edge, which left it mostly
+        // empty below (the user, 2026-11-09).
+        let items = [gui::Item { size: HEAD_H * u, .. }, gui::Item { grow: 1.0, gap: HEAD_GAP * u, .. },
+                     gui::Item { size: group_height(s, g, 0, side.z, p.aside), .. },
+                     gui::Item { size: group_height(s, g, 1, side.z, p.aside), gap: GROUP_GAP * u, .. },
+                     gui::Item { grow: 1.0, .. }];
+        var at: float4[5] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 5];
+        gui::stack(side, items, at);
+        p.head = at[0];
+        p.glass = [at[2], at[3]];
+        p.bleed[1] = float4 { area.x, area.y, area.z, area.w + g.insets.w };   // no bleed at the foot
+        return p;
     }
     // The title row, the board as large as the rest leaves, and the groups side by side
     // along the bottom, as tall as the taller: each as wide as it wants unwrapped where
@@ -684,6 +707,7 @@ fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, a
     // screen as long as they fit under the title row, the board left out under its least
     // (near square, the user 2026-11-09). Else one group at a time.
     s.name_w = NAME_W;
+    p.aside = false;
     let want0 = group_width(s, g, 0, false);
     let want1 = group_width(s, g, 1, false);
     let across = page.z - GROUP_GAP * u;
@@ -694,54 +718,69 @@ fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, a
     let left = page.w - (HEAD_H + 32.0) * u - h;
     let both = if phone { PREVIEW_SHARE * min(page.z, left) >= min(0.45 * page.z, BOTH_BOARD * u) } else { left >= 0.0 };
     if both {
-        ask = head(s, g, gui::cut_top(page, HEAD_H * u), shown);
+        p.kind = BOTH;
+        p.head = gui::cut_top(page, HEAD_H * u);
         gui::cut_top(page, gui::PAD_WIDE * u);
         let groups = gui::cut_bottom(page, h);
         gui::cut_bottom(page, gui::PAD_WIDE * u);
-        var size = PREVIEW_SHARE * min(page.z, page.w);
-        if size < board::SMALLEST * u { size = 0.0; }
-        l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
-        room3d = preview_room(page, size);
+        preview(p, page, u, n);
         let x = groups.x + floor(0.5 * (groups.z - w0 - w1 - GROUP_GAP * u) + 0.5);
-        if group(s, over, g, 0, float4 { x, groups.y, w0, h }, area, false) { ask = CHANGED; }
-        if group(s, over, g, 1, float4 { x + w0 + GROUP_GAP * u, groups.y, w1, h }, area, false) { ask = CHANGED; }
-        return ask;
+        p.glass = [float4 { x, groups.y, w0, h }, float4 { x + w0 + GROUP_GAP * u, groups.y, w1, h }];
+        return p;
     }
+    p.titled = false;
     if landscape {
         // One group at a time, tabs for the two in the title row in place of the title,
         // the names at the left (a phone's landscape): the shown group as tall as the
         // taller, centered down the rest.
+        p.kind = TABS_BESIDE;
+        p.aside = true;
         let tabs_w = gui::back_width(g, strings::get(strings::NAV_BACK)) + 40.0 * u + languages_width(g)
                      + tab_width(g, 0) + tab_width(g, 1) + TILE_GAP * u;
         w = max(max(group_width(s, g, 0, true), group_width(s, g, 1, true)), tabs_w);
         var side = gui::cut_left(page, w);
         gui::cut_left(page, SIDE_GAP * u);
-        var size = PREVIEW_SHARE * min(page.z, page.w);
-        if size < board::SMALLEST * u { size = 0.0; }
-        l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
-        room3d = preview_room(page, size);
-        ask = head(s, g, gui::cut_top(side, HEAD_H * u), shown, true);
+        preview(p, page, u, n);
+        p.head = gui::cut_top(side, HEAD_H * u);
         gui::cut_top(side, HEAD_GAP * u);
         let gh = max(group_height(s, g, 0, side.z, true, false), group_height(s, g, 1, side.z, true, false));
-        if group(s, over, g, s.group, gui::center(side, side.z, gh), area, true, false) { ask = CHANGED; }
-        return ask;
+        p.glass[s.group] = gui::center(side, side.z, gh);
+        return p;
     }
     // One group at a time across the width, tabs for the two under the title row; the
     // shown group's own height, the board taking the rest: the game's glass as tall as the
     // look's ended in empty glass under its rows (2026-11-09). Taller than the room (a
     // small window), it takes the room, the board none, and its rows scroll.
-    ask = head(s, g, gui::cut_top(page, HEAD_H * u), shown);
+    p.kind = TABS_UNDER;
+    p.head = gui::cut_top(page, HEAD_H * u);
     gui::cut_top(page, gui::PAD_WIDE * u);
-    if tabs(s, g, gui::cut_top(page, BACK_W * u)) { ask = SHOWN; }
+    p.tabs = gui::cut_top(page, BACK_W * u);
     gui::cut_top(page, GROUP_GAP * u);
     let one = group_height(s, g, s.group, page.z, false, false);
     let fits = one <= page.w;
-    let glass = gui::cut_bottom(page, one);
+    p.content = one;
+    p.glass[s.group] = gui::cut_bottom(page, one);
     gui::cut_bottom(page, gui::PAD_WIDE * u);
-    var size = PREVIEW_SHARE * min(page.z, page.w);
-    if !fits || size < board::SMALLEST * u { size = 0.0; }
-    l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
-    room3d = preview_room(page, size);
-    if group(s, over, g, s.group, glass, area, false, false, one) { ask = CHANGED; }
+    preview(p, page, u, n, fits);
+    return p;
+}
+
+// Declares the screen for this frame in `area`, the screen's safe area, where layout puts
+// its parts, with `shown` the language showing, and sets l to where the preview goes, and
+// `room3d` to where a 3D preview goes instead. The kings' tiles put their pieces in
+// `over`. Returns BACK, CHANGED after a tap changed s, SHOWN after a tab, or NOTHING.
+fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, area: float4, shown: i64,
+         room3d: float4&) -> i64 {
+    over.clear();
+    s.switch_at = float4 { 0.0, 0.0, 0.0, 0.0 };
+    let p = layout(s, g, area);
+    l = p.board;
+    room3d = p.room3d;
+    var ask = head(s, g, p.head, shown, p.kind == TABS_BESIDE);
+    if p.kind == TABS_UNDER && tabs(s, g, p.tabs) { ask = SHOWN; }
+    for k in 2 {
+        guard p.glass[k].z > 0.0 else { continue; }
+        if group(s, over, g, k, p.glass[k], p.bleed[k], p.aside, p.titled, p.content) { ask = CHANGED; }
+    }
     return ask;
 }
