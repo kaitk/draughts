@@ -47,7 +47,7 @@ Read at `665257c`, 2026-11-10.
    fades and drifts them out under the screen come to: everything `still` declares
    shows. A cheaper declaration would leave out only what is already invisible, which is
    nothing, and dropping the fade changes what the app shows. The cost is about 28 µs a
-   frame for the 0.4 s of a transition.
+   frame for the 0.25 s of a transition.
 2. **Holds.** `Out` and `Play` are the per-frame regions, worked out by pure functions
    from the `Layout` and what shows (`Shows`, `Words`); the `Layout` holds what doesn't
    change with the game. Filling them into the `Layout` would make the shell, which
