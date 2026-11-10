@@ -30,8 +30,7 @@ Under the majority rule a piece that can take fewer than another has no move, th
 child sees it can take; `rules::can_take_from` tells such a piece from one with no
 capture, for the board to say why (rendering.md, "States"). Checked on the board with
 several capturing pieces, equal and unequal, a king and a man, and captures through a
-shared first stop, in International, Brazilian, and Russian (`test/board/several`,
-2026-11-09). A man's capture that reaches or passes the far row, tapped and dropped on the
+shared first stop, in International, Brazilian, and Russian (`test/board/several`). A man's capture that reaches or passes the far row, tapped and dropped on the
 turned board, alone, going on past it, and beside a longer capture, is checked in
 `test/board/stuck`; the board shows a far-row square passed as a stop the piece waits on
 (rendering.md, "States").
@@ -66,8 +65,8 @@ computer player, and the tests share it.
 
 ## Draws
 
-A game is drawn at once when a rule's count ends; nobody claims it, since an app has no
-arbiter. A *move* is one side's move, a ply. Every count runs side by side and the first to
+A game is drawn at once when a rule's count ends; nobody claims it
+([why](../decisions/rules.md#draws)). A *move* is one side's move, a ply. Every count runs side by side and the first to
 end draws; a win on that move (the last piece taken, or the opponent left without a move)
 is a win.
 
@@ -94,8 +93,7 @@ is a win.
   before can recur.
 - English has repetition only.
 
-The sources and how they differ (lidraughts follows IDF's text for Russian; Brazilian
-leaflets give other numbers): Russian is the 2022 sport rules
+The sources ([how they were chosen](../decisions/rules.md#draws)): Russian is the 2022 sport rules
 (<https://pravo.ppt.ru/pravila/264594>), International FMJD's Annex 1 (fmjd.org's own copy is gone; read from
 <https://studfile.net/preview/9635026/page:3/>), Brazilian FMJD's
 draughts-64 text (<https://fmjd64.org/rules-of-the-game/>).
