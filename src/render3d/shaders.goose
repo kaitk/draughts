@@ -71,8 +71,6 @@ let LIT_VERT = """
     layout(location = 3) in vec2 a_extra;          // occlusion, material
     layout(std430, set = 0, binding = 0) readonly buffer Instances { vec4 inst[]; };
     layout(set = 1, binding = 1) uniform Draw { vec4 draw; };   // x: 1 for instances
-    // In location order, as LIT_DECL reads them: Direct3D links the stages by register,
-    // which follows the order declared (docs/goose-findings.md).
     layout(location = 0) out vec3 v_world;
     layout(location = 1) out vec3 v_normal;
     layout(location = 2) out vec2 v_uv;

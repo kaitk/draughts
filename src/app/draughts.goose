@@ -42,6 +42,8 @@ extern fn draughts_storage(out: u8[:]) -> i64;
 // The insets around the window's safe area in pixels (left, top, right, bottom) and the
 // display's scale, into out[0..5] (display.c); 0, leaving out as it is, without a window.
 extern fn draughts_display(out: f32[:]) -> i64;
+// Asks SDL for Vulkan on Windows, before the window opens (display.c).
+extern fn draughts_choose_gpu();
 // Wakes the loop in ms milliseconds, where frame() waits for events (wake.c).
 extern fn draughts_wake_in(ms: i64);
 // Tells Android the first frame is on screen, to lift the splash and the cover (launch.c).
@@ -107,6 +109,7 @@ fn main() {
     // An iOS app never closes itself, so home has no way out there.
     if on_ios { home::closable = false; }
     let window_flags = if mobile { gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE } else { gfx::WINDOW_RESIZABLE };
+    draughts_choose_gpu();
     guard gfx::open(strings::get(strings::APP_NAME), f.width, f.height, window_flags) else { abort(str("gfx: ", gfx::error())); }
     defer gfx::close();
 

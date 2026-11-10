@@ -7,9 +7,10 @@
 
 The release's own goose_gfx.lib is unpatched. This builds goose_gfx's sources with
 patches/goose_gfx applied, as Android and iOS do, into a copy of the release
-(build/windows/goose/), and builds the program with that copy's goose: its gfx keeps
-FXC's compiles on disk (0007), draws only when something changed (0002), and so on.
-SDL is the release's own, linked statically; patches/SDL are for Android and iOS.
+(build/windows/goose/), and builds the program with that copy's goose: its gfx draws
+only when something changed (0002), and so on. SDL is the release's own, linked
+statically; patches/SDL are for Android and iOS. The app draws through Vulkan there, as on
+Android (src/app/display.c).
 
 The copy is made once; delete build/windows/goose/ after the release changes. clang-cl is
 the one in Visual Studio (found with vswhere), or CLANG_CL; the release is

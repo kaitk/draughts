@@ -160,15 +160,14 @@ python scripts/windows.py src/app/draughts.goose --run -- --board 3d --screen ga
 iOS do, into a copy of the release (`build/windows/goose/`; delete it after the release
 changes), and builds the program with that copy's `goose`; about 10 s. SDL is the
 release's own, linked statically into the program, so the program's C calls SDL directly
-as on Android (`src/app/platform.h`). gfx draws through Direct3D 12, from HLSL that the
-system's FXC compiles when a pipeline is made: 4.5 s for the app's 23 shaders on a desktop
-CPU, so the patched gfx keeps the results in `%LOCALAPPDATA%\goose_gfx\dxbc\` (0007,
-[findings](goose-findings.md)), and a launch after the first opens in 0.6 s, not 5 s. The
-patched gfx draws only on change too: idle at home, the app takes no CPU (344 ms in 10 s
-with the release's gfx), and `--frames N` counts the frames drawn, so a shot of a
-settled screen wants few (4 for a 2D screen, 95 for the 3D board once it has appeared).
-A plain `goose build` with the release's `goose.exe` works as on the Mac, without any of
-that.
+as on Android (`src/app/platform.h`). The app draws through Vulkan, as on Android
+(`draughts_choose_gpu` in `src/app/display.c`): the driver takes the SPIR-V compiled with
+the program and keeps what it makes of it, so a launch takes 1.25 s the first time and
+0.66 s after. The patched gfx draws only on change: idle at home the app takes no CPU (the
+release's gfx, 344 ms in 10 s), and `--frames N` counts the frames drawn, so a shot of a
+settled screen wants few (4 for a 2D screen, 95 for the 3D board once it has appeared). A
+plain `goose build` with the release's `goose.exe` works as on the Mac, redrawing every
+frame.
 
 The flags are the Mac's. The settings and the saved game are in `%APPDATA%\kaitk\draughts\`.
 `test/run_tests.py` takes the Windows release by default there; the Android and iOS

@@ -164,10 +164,6 @@ find out by compiling, so the next session doesn't.
 - A GLSL local named like a uniform block's member hides it in that function: the
   widgets' `int kind` hid the theme's `kind`; read the member through a function
   declared beside the block (`draw::THEME_BLOCK`'s `theme_index`) (2026-11-09).
-- Shaders become HLSL for Windows, unchecked until gfx makes the pipeline there: name
-  nothing in GLSL like an HLSL keyword (`line`, `point`, `sample`, `linear`, `precise`,
-  `matrix`), and declare a stage's `in`s and `out`s in location order, or Direct3D 12
-  refuses the pipeline (docs/goose-findings.md) (2026-11-10).
 - A GLSL string of the shared renderer is the app's too: `shaders::FADE_FN` (from
   `src/render3d/shaders.goose`) goes into the app's `embed_shader` calls as is.
 - `float4` has no swizzles (`.xy`); build the `float2` from `.x` and `.y`.

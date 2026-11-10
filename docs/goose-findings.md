@@ -3,52 +3,6 @@
 Gaps found in Goose, goose_gfx, and the SDL it pins, while building for Android, with what
 we do about each here and what could go upstream. Newest first.
 
-## goose_gfx: FXC compiles every shader again at each launch on Windows (2026-11-10)
-
-Goose embeds HLSL for Direct3D 12, and goose_gfx turns it into DXBC with the system's
-FXC (`D3DCompile`) when `gfx::pipeline` is called, on the main thread, keeping nothing.
-The app makes its pipelines at launch, so each launch sat on a black window with a busy
-cursor for 5 s: 4.5 s of FXC for 23 shaders on a desktop CPU, 2.65 s of it the 3D board's
-bake shader (34 KB of HLSL) and 0.93 s the widgets'. Making the pipeline states took 6 to
-17 ms in all; the driver keeps those. Vulkan takes SPIR-V Goose compiled at build time,
-and Metal's compiles are cached by the system, so nothing shows there. Skipping FXC's
-optimization (`D3DCOMPILE_SKIP_OPTIMIZATION`) cuts it to 1.5 s and makes the DXBC half
-again as large. goose_gfx `6cfa3de`, Goose v2026.4.
-
-- Here: `patches/goose_gfx/0007-dxbc-cache.patch`: the DXBC is kept in
-  `%LOCALAPPDATA%\goose_gfx\dxbc\`, by a hash of the HLSL and the target, written to a
-  temporary file and renamed into place, and read back when it is DXBC of the length its
-  header gives. A launch after the first: 0.6 s to the first frame, home or the 3D board.
-  `scripts/windows.py` builds the patched gfx for Windows.
-- Upstream, for goose_gfx: the cache (where it goes could be the program's choice). For
-  Goose: embed DXBC (or DXIL) beside the HLSL when compiling on Windows, so no launch
-  compiles; the first launch would then be fast as well.
-
-## Goose: HLSL keeps the stage outputs in the order declared, not by location (2026-11-10)
-
-`embed_shader` writes a vertex shader's outputs into its HLSL struct in the order the GLSL
-declares them, each with its location's `TEXCOORD`, and FXC packs registers in that order.
-Direct3D 12 links a vertex shader to a pixel shader by register, so a vertex shader that
-declares location 6 second, read by a pixel shader that declares them in order, fails
-`CreateGraphicsPipelineState` with `E_INVALIDARG` and no more. Vulkan and Metal match by
-location and take it. Every 3D board stopped there on Windows. Goose v2026.4.
-
-- Here: `shaders::LIT_VERT` declares its outputs in location order, as `LIT_DECL` reads them.
-- Upstream: sort a stage's inputs and outputs by location when writing the HLSL struct
-  (`goose --compile-shader f.vert --shader-source hlsl` shows it).
-
-## Goose: HLSL keywords are kept as GLSL names (2026-11-10)
-
-`embed_shader` writes GLSL identifiers into the HLSL unchanged, so one that is an HLSL
-keyword compiles to SPIR-V and MSL but fails FXC when gfx makes the pipeline, at run time
-on Windows: `line` (a geometry shader's primitive type) as a local and as a function's
-name stopped the app's first frame. Goose v2026.4.
-
-- Here: no such names in the shaders (`scribe`, `thin_ring`, `rim_tint`).
-- Upstream: rename identifiers that are HLSL keywords (`line`, `point`, `triangle`,
-  `sample`, `linear`, `precise`, `shared`, `matrix`, `vector`, ...) when writing the HLSL,
-  as SPIRV-Cross does, or reject them when compiling the shader.
-
 ## SDL: a size change while in the background leaves the window black on return (2026-11-09)
 
 Turned in the background (another app open, the screen rotated there), the app came back
