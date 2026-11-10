@@ -91,7 +91,8 @@ the other way). What the Pixel would show at a floor of 0.75: `--size 1200x540
 into textures through gfx's C API, and, on the Mac only, their JPEG decoder;
 `src/app/locale.c`, the system's locales; `src/app/display.c`, the window's safe area and the
 display's scale; `src/app/wake.c`, the timer a running clock wakes the
-loop with; `src/app/memory.c`, which gives back on Android the memory malloc keeps for
+loop with; `src/app/resize.c`, the backdrop a Mac window shows around its last frame
+while its edge is dragged; `src/app/memory.c`, which gives back on Android the memory malloc keeps for
 what the launch freed; `src/app/launch.c`, which tells the activity the first frame is on screen, and
 to close and leave recents after home's X), which `scripts/android.py` builds into the APK too. The photographs are
 embedded from `design/backgrounds/masters/` when they are there (the JPEGs, and the ASTC

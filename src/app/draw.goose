@@ -444,6 +444,16 @@ let PIECE_FRAG = """
     }
     """;
 
+// What a Mac window shows around its last frame while its edge is dragged: the scene's
+// blurred photograph when it has one, else the page color (resize.c; rendering.md,
+// "Window resizing").
+extern fn draughts_resize_cover(photo: gfx::Texture, has: bool, r: f32, g: f32, b: f32);
+
+fn cover(d: Drawer&) {
+    let p = d.colors.page;
+    draughts_resize_cover(d.scene.photo, d.scene.has && !d.scene.plain, p.x, p.y, p.z);
+}
+
 struct Drawer {
     full:           const u8[:],     // the full-screen vertex shader, for reloading the scene
     board_pipeline: gfx::Pipeline,
@@ -482,6 +492,7 @@ fn new(kind: i64, plain: bool) -> Drawer {
     };
     d.pieces = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(d.upload));
     d.overlay = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(d.over_upload));
+    cover(d);
     return d;
 }
 
@@ -571,6 +582,7 @@ fn reload(d: Drawer&, kind: i64, plain: bool) {
     d.scene = scene::load(kind, d.full, plain);
     d.kind = kind;
     d.colors = theme::get(kind);
+    cover(d);
 }
 
 // Draws the pieces frame() was given for over the UI, in the open pass, none inside

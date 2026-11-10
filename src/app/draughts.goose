@@ -304,7 +304,10 @@ fn main() {
         // Once ready, the frame after its last step draws the new image (nothing else may
         // be changing then), and it eases back from grey.
         if sh.raised && (d3.fresh || draw3d::greying(d3)) { dirty = true; }
-        if !settings::raised(sh.prefs) && sh.screen != shell::SETTINGS && sh.from < 0 { draw3d::drop(d3); }
+        if !settings::raised(sh.prefs) && sh.screen != shell::SETTINGS && sh.from < 0 && d3.ready {
+            draw3d::drop(d3);
+            draw::cover(d);     // the flat game's cover again (resize.c)
+        }
         if shell::frame(sh, g, size.x, size.y, now) { dirty = true; }
         // The keyboard: up while a name is typed, brought up again by each tap on the name.
         let typing = sh.who.typing && sh.screen == shell::HOME;

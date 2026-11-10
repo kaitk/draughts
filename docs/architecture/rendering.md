@@ -159,6 +159,27 @@ dp (from none).
   (`edgeInsetsForLayoutRegion:` with `safeAreaLayoutRegionWithCornerAdaptation:`) is what
   reports the dots' reach, should a screen ever need it.
 
+### Window resizing
+
+While a Mac window's edge is dragged, Cocoa holds the main thread in its own loop until
+the mouse comes up: the frame loop doesn't run, and the Metal layer would stretch the
+last frame to the window. Instead (`src/app/resize.c`, set once at launch) the Metal
+layer keeps that frame's shape, scaled to fit, and the window's content view under it
+shows the backdrop, cover-cropped as the app crops it: the flat game's blurred
+photograph or the page color, or with the 3D board its graded backdrop, drawn once at
+512 px when the board is ready (`draw3d::cover`). Both are read back to the CPU once, at
+a season change or when the board changes, never per frame; Core Animation does the
+rest while the loop is held. On mouse-up the frame at the new size takes the window's
+whole area again, with no layer to take off and nothing to flicker. Idle stays at 0.08%
+of a core (2026-11-10).
+
+Drawing live during the drag was set aside (task 058): it needs the loop's body run from
+SDL's 60 Hz expose in an event watch, from inside gfx's own `frame()`, which Goose may
+not allow, and Metal's frame lags the window's size by one, so the edges wobble. A cover
+over the stretched frame, taken off after the next frame, flickered on mouse-up and
+switched too suddenly. Android and iOS don't hold the loop while a window resizes.
+Windows' modal size loop is the Mac's, to be checked there.
+
 ## Look
 
 Reference: Snowtime's UI ([repo](https://github.com/Snowhound/snowtime), its
