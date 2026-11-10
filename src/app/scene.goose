@@ -29,10 +29,6 @@ let SHARP_SIZE = 2048;
 let GLASS_SIZE = 256;
 let GLASS_SIGMA = 3.9;
 
-// Theme `kind`'s photograph, or 0 when it isn't built in: the ASTC image as stored, or
-// the JPEG decoded and scaled down to `decoded` square (background.c).
-extern fn draughts_photo(kind: i64, decoded: i64) -> gfx::Texture;
-
 // A season's thumbnail in settings: the photograph's middle at the picture's 104 × 64
 // shape, about a texel to a pixel at 1.5 pixels per dp; the four stacked in one texture,
 // and under them the four plain fades (THUMBS slots in all).
@@ -112,7 +108,7 @@ struct Scene {
 // `plain`, none.
 fn load(kind: i64, full_vert: const u8[:], plain: bool = false) -> Scene {
     let sampler = gfx::sampler(gfx::LINEAR, gfx::CLAMP);
-    let sharp = if plain { gfx::Texture { 0 } } else { draughts_photo(kind, SHARP_SIZE) };
+    let sharp = if plain { gfx::Texture { 0 } } else { render3d::draughts_photo(kind, SHARP_SIZE) };
     if sharp.id == 0 {
         let none = gfx::texture2d(1, 1);
         var black: u8[4] = [0; 4];
@@ -190,7 +186,7 @@ fn thumbs(full_vert: const u8[:]) -> gfx::Texture {
     let shrink = gfx::pipeline(full_vert, embed_shader("frag", SHRINK_FRAG), gfx::PipelineDesc {});
     let crop: f32 = THUMB_H as f32 / THUMB_W;
     for kind in 4 {
-        let photo = draughts_photo(kind, SIZE);
+        let photo = render3d::draughts_photo(kind, SIZE);
         // The first pass clears the whole texture; the others keep what is drawn.
         var desc = gfx::PassDesc { clear_color: kind == 0, .. };
         desc.color[0] = t;
