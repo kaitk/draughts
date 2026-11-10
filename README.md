@@ -78,8 +78,9 @@ Release builds in a game, 2026-11-10, frames as they reached the screen:
 - **No allocation in the frame loop:** fixed arrays reset each frame.
 - **Rules as pure functions** over bitboards, checked against published perft counts.
   Rules, computer, puzzles, and UI are tested headless.
-- **A computer that plays like a person** of its level, on its own thread, not an engine
-  with noise added.
+- **The computer thinks on its own thread:** an alpha-beta search that counts nodes, not
+  time, so a position gives the same move on every machine. Each level sees a fixed
+  number of plies and picks among the good moves it sees, as a person of that level would.
 
 More in [docs/architecture/](docs/architecture/README.md): [rendering](docs/architecture/rendering.md),
 [rules](docs/architecture/rules.md), [computer player](docs/architecture/ai.md),
