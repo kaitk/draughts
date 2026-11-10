@@ -36,14 +36,14 @@ Galaxy A33, 90 Hz:
 | Flat | 990 | 0 | 90 / 90 |
 | 3D | 993 | 500, every other frame (23 ms of GPU work) | 60 / 45 |
 
-iPhone 13 mini, 60 Hz, the development build from 2919b45 (no app source changed since
-1aaf406), counted by Instruments' Animation Hitches (`displayed-surfaces-interval`)
-between the bench's console lines, stamped on the Mac:
+iPhone 13 mini, 60 Hz, development builds from 2919b45 to 1c25f33 (the same app code),
+counted by Instruments' Animation Hitches (`displayed-surfaces-interval`) between the
+bench's console lines, stamped on the Mac (`scripts/ios_perf.py`):
 
 | Board | Frames counted | Dropped frames | FPS (avg / 1% low) |
 | --- | --- | --- | --- |
-| Flat | 979 | 4 | 60 / 60 |
-| 3D | 985 | 1 | 60 / 60 |
+| Flat | 979 to 984, five runs | 0 to 5 | 60 / 60 |
+| 3D | 984 to 985, two runs | 1 | 60 / 60 |
 
 The iPhone's flat board's few dropped frames come from pacing, not the frame's cost:
 task 056.

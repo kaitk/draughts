@@ -58,6 +58,8 @@ extern fn draughts_release_memory();
 // The process's CPU time in seconds and its memory footprint in MB (memory.c), for --rest.
 extern fn draughts_cpu_seconds() -> f64;
 extern fn draughts_footprint_mb() -> f64;
+// Each thread's name and CPU time so far, on Apple platforms (memory.c), for --rest.
+extern fn draughts_threads(out: u8[:]) -> i64;
 // Which platform the program runs on: DESKTOP, ANDROID, or IOS (launch.c).
 extern fn draughts_platform() -> i64;
 // Seconds between looks for the hint's answer while it is on its way (think::frame).
@@ -191,6 +193,8 @@ fn main() {
     var rest_at = -1.0;
     var rest_cpu = 0.0;
     var rested = false;
+    var rest_passes = 0;    // frame()'s returns during --rest, and the frames drawn
+    var rest_draws = 0;
     while gfx::frame() {
         // frame() presents what the pass before it drew, and the first pass draws.
         if gfx::frame_count() == 2 { draughts_first_frame(); }
@@ -430,12 +434,23 @@ fn main() {
         if f.rest > 0 && rest_at < 0.0 && now > 12.0 {
             rest_at = now;
             rest_cpu = draughts_cpu_seconds();
+            var names: u8[2048] = [0; 2048];
+            let k = draughts_threads(names[..]);
+            if k > 0 { print("rest: threads' CPU at the start: ", names[..k]); }
+        }
+        if f.rest > 0 && rest_at >= 0.0 && !rested {
+            rest_passes++;
+            if drew { rest_draws++; }
         }
         if f.rest > 0 && rest_at >= 0.0 && now >= rest_at + f.rest && !rested {
             rested = true;
             let cpu = draughts_cpu_seconds() - rest_cpu;
             print("rest: ", now - rest_at, " s: process CPU ", cpu, " s (", 100.0 * cpu / (now - rest_at),
-                  "%), footprint ", draughts_footprint_mb(), " MB");
+                  "%), footprint ", draughts_footprint_mb(), " MB; the loop ran ", rest_passes, " times and drew ",
+                  rest_draws, " frames");
+            var names: u8[2048] = [0; 2048];
+            let k = draughts_threads(names[..]);
+            if k > 0 { print("rest: threads' CPU since the launch: ", names[..k]); }
         }
         if draw3d::bench_done(d3) { break; }
         if f.bench > 0 && bench2d.i >= 2 * f.bench {

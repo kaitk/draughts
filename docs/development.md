@@ -453,6 +453,10 @@ SurfaceFlinger's timestats between the bench's `presenting` and `presented` line
 takes the idle CPU and memory. The bench's first phase waits for the GPU after every frame
 and drops frames by design, so a count must not overlap it. `poc/pace.goose` draws
 every frame with nothing else, or a set GPU load, to check the pacing alone.
+`scripts/ios_perf.py` takes the iPhone's rows: Instruments' Animation Hitches counts the
+frames the display showed between the bench's console lines, and `--rest 25` has the app
+count its own CPU time, footprint, and each thread's CPU time at rest, as Instruments'
+Activity Monitor often can't reach the phone after `devicectl` has used it.
 
 Two seconds after the launch the app times 300 frames drawing the 3D board and its
 shadow map, as while a piece moves, each submitted and waited for (`gfx::flush`); 300

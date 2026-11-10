@@ -136,9 +136,12 @@ def rest(board, dev):
     p, lines = launch(dev, ["--board", board, *SCENE, "--rest", "25"], console=True)
     for _ in range(90):
         time.sleep(1)
-        done = [line for _, line in lines if "rest: " in line]
+        done = [line for _, line in lines if "process CPU" in line]
         if done:
-            print(done[0][done[0].index("rest: "):])
+            time.sleep(1)
+            for _, line in lines:
+                if "rest: " in line:
+                    print(line[line.index("rest: "):])
             break
     else:
         print("no rest line in the console")

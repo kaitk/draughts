@@ -1333,7 +1333,8 @@ depth target, a shadow map, albedo, normal, and roughness atlases with mips):
 Measured with the app's `--bench 300` ([development](../development.md#time-the-3d-board)),
 idle with `scripts/idle_cpu.sh`, memory with `dumpsys meminfo` at rest (2026-11-09; the
 three Android devices again 2026-11-10 with `scripts/device_perf.sh`, the release built
-from 1aaf406).
+from 1aaf406; the iPhone with `scripts/ios_perf.py`, its development build from 1c25f33, the
+same app code with `--rest`, which counts its own CPU time and footprint).
 
 The release at rest, idle 20 to 30 s:
 
@@ -1345,6 +1346,8 @@ The release at rest, idle 20 to 30 s:
 | Pixel 7a | 3D, a game | 0.04% | 215 MB | 73 MB | 324 MB |
 | Galaxy A33 5G, 2400 × 1080 | 2D, a game | 0.04% | 35 MB | 43 MB | 116 MB |
 | Galaxy A33 5G | 3D, a game | 0.04% | 197 MB | 29 MB | 275 MB |
+| iPhone 13 mini, 2340 × 1080 | 2D, a game | 16% (task 057) | | | 59 MB footprint |
+| iPhone 13 mini | 3D, a game | 16% | | | 204 MB footprint |
 
 - **The tablet's frame** while the board moves (the first baseline, 1920 × 1200 at 90 Hz):
   the forward pass alone 10.9 ms at 1×, the whole budget; MSAA 4× adds 3.2 ms (6.3 ms

@@ -13,8 +13,8 @@ measurement (`scripts/device_perf.sh`, and Instruments on the iPhone) it uses.
 The release built from 1aaf406 (the iPhone's development build from 2919b45, the same
 app code), 1000 presented frames of the bench (`--bench 1000`):
 
-- **iPhone 13 mini, 60 Hz, the flat board:** 4 and 5 frames dropped of about 980 in two
-  runs, though its GPU work is small. Instruments' own hitch table counts none of them,
+- **iPhone 13 mini, 60 Hz, the flat board:** 0 to 5 frames dropped of about 980 over five
+  runs (4, 5, 3, 0, 0), though its GPU work is small. Instruments' own hitch table counts none of them,
   the render server takes its usual 2 ms around each, and the app's loop hands over
   every frame on time (a temporary log of any gap over 25 ms printed nothing). The drops
   come in bursts about 1.05 to 1.08 s apart (19.67, 20.75, 21.83 s; 29.31, 30.36,

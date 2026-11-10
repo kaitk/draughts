@@ -37,6 +37,38 @@ double draughts_footprint_mb(void) {
         return -1.0;
     return (double)info.phys_footprint / (1024.0 * 1024.0);
 }
+
+// draughts_threads: each thread's name and CPU time so far, "name 1.23 s; ...", into the
+// text (cut at its size); returns the length. For --rest, to find what is busy at rest.
+#include <stdint.h>
+#include <stdio.h>
+
+typedef struct { uint8_t *data; int64_t len; } draughts_text;   // a Goose u8[:]
+
+int64_t draughts_threads(draughts_text text) {
+    char *out = (char *)text.data;
+    long size = (long)text.len;
+    thread_act_array_t threads;
+    mach_msg_type_number_t n = 0;
+    long len = 0;
+    if (size <= 0 || task_threads(mach_task_self(), &threads, &n) != KERN_SUCCESS) return 0;
+    for (mach_msg_type_number_t i = 0; i < n; i++) {
+        thread_extended_info_data_t info;
+        mach_msg_type_number_t count = THREAD_EXTENDED_INFO_COUNT;
+        if (thread_info(threads[i], THREAD_EXTENDED_INFO, (thread_info_t)&info, &count) == KERN_SUCCESS) {
+            double s = (double)(info.pth_user_time + info.pth_system_time) / 1e9;
+            int w = snprintf(out + len, (size_t)(size - len), "%s%s %.2f s", len ? "; " : "",
+                             info.pth_name[0] ? info.pth_name : "?", s);
+            if (w > 0) len += w < size - len ? w : size - len - 1;
+        }
+        mach_port_deallocate(mach_task_self(), threads[i]);
+    }
+    vm_deallocate(mach_task_self(), (vm_address_t)threads, n * sizeof(thread_act_t));
+    return len;
+}
 #else
 double draughts_footprint_mb(void) { return -1.0; }
+#include <stdint.h>
+typedef struct { uint8_t *data; int64_t len; } draughts_text;
+int64_t draughts_threads(draughts_text text) { (void)text; return 0; }
 #endif
