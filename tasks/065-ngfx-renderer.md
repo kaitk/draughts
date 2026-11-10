@@ -1,6 +1,6 @@
 # 065: The NoGraphicsAPI renderer through goose-ngfx
 
-Status: todo (scoped 2026-11-11)
+Status: in-progress (on the `ngfx` branch; steps 1 to 5 on Windows, 2026-11-11)
 
 Draw Draughts through goose-ngfx (github.com/kaitk/goose-ngfx, NoGraphicsAPI over Metal 4
 and Vulkan 1.4) on devices that have it: Apple silicon Macs, later iPads and iPhones, and
@@ -84,6 +84,46 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
    embedded, ASTC on the Mac, and one executable that needs no Slang or Vulkan SDK.
    Frame time measured against the gfx build on the Mac and the PC (`--bench`), recorded
    here.
+
+## Progress
+
+### 2026-11-11, on Windows (RTX 4090, Vulkan)
+
+- **goose-ngfx** (pushed to `main`, no release yet): the pin moved to v2026.4, where its
+  36 tests and samples passed unchanged; `WINDOW_ON_DEMAND`, gfx's patch 0002 as a flag
+  (a frame that drew nothing into the screen isn't presented, and the next `frame()`
+  waits for an event up to a second); and goose_gfx `main`'s platform additions since
+  `v1` (`737d91a`: fullscreen and maximize, pixel density and display scale, system
+  cursors, gamepads), 38 tests passing. goose_gfx `v1`, which Goose v2026.4 blesses, is
+  the commit ngfx's platform half was copied from, so nothing else drifted.
+- **The build** (step 2, decided): `scripts/ngfx.py` copies the program into
+  `build/ngfx/tree/` and lays `src/ngfx/` over it: `app/` (`host`, `render`, `scene`,
+  `draw`, `widgets`, `photo.c`, a stand-in `draw3d`) and a stand-in `render3d`. The root
+  file gets ngfx's import and the sidecar ngfx's C headers there; `src/app/` is
+  untouched. The package is a checkout (`NGFX`, else `../goose/goose-ngfx`).
+- **Shaders built ahead**: `src/ngfx/shaders/*.slang`, compiled by
+  `tools/ngfx_shaders.goose.in` (run under `goose run` with the package) into ngfx's
+  blobs, which the app embeds. The gfx GLSL carries over almost as written: Slang takes
+  it with type aliases (`vec2`..., `bvec3`), `mix` and `fract` as macros, GLSL's `mod`
+  and two-argument `atan` defined, arrays as `{ }` lists, and uniforms as statics set
+  from the root (`common.slang`). Clip space is y down there.
+- **Steps 3 to 5**: the photograph, its blurs and thumbnails, the UI and its kept layer,
+  and the flat board, compared headless at 1280 × 800 against the gfx build: home, the
+  game, settings, taps, a capture, stone, birch's settings, sunset on the plain fade,
+  home on the plain fade, a puzzle, a win, a transition held at half, portrait 800 ×
+  1280, and the lookout. Every one within 1 of 255 a channel, but the must-capture pulse
+  (up to 7 on 89 pixels) and settings' preview flash (up to 4 on 125), which move with
+  time and differ between two gfx runs too. The 3D board shows the shell's still mark.
+- **At rest** (`--rest 15`, the flat game): gfx 0.0% CPU, 17 loops, 0 frames drawn;
+  ngfx 0.1%, 16 loops, 0 drawn. The footprint is 741 MB on ngfx against 256 MB on gfx:
+  to look into.
+- **Bench** (`--bench 300`, the flat game at 2560 × 1440, a 165 Hz display): gfx CPU
+  0.155 ms a frame, waited P50 5.36 / P99 8.36 ms, presented 166.0 fps (1% low 112.1),
+  photograph 20.3 ms; ngfx CPU 0.0125 ms, waited P50 5.91 / P99 7.71 ms, presented 165.4
+  fps (1% low 111.9), photograph 17.4 ms.
+- **No MSAA in NoGraphicsAPI** (no sample count on its textures, no resolve): the 3D
+  board's 4× MSAA needs another way. The prototype draws it at twice the size and shrinks
+  it; MSAA itself would be a change to NoGraphicsAPI (sebbbi/NoGraphicsAPI) and ngfx.
 
 ## Later, not in this task
 
