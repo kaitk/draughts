@@ -152,11 +152,10 @@ struct Taken {
 // shares it.
 let CORNER_H = 352.0;       // dp: a corner panel, room for three tiles with their icons over their words (back and a panel of two on the left)
 let CORNER_PLAY = 368.0;    // dp: a phone's narrow play panel, room for whose turn and the eye, the hint over undo move
-let PHONE_DP = 600.0;       // dp: a screen whose shorter side is under this (a phone) has NARROW panels
 let PITCH_LANDSCAPE: f32 = 52.5;
 let PITCH_PORTRAIT:  f32 = 65.0;
 // The camera buttons (the user, 2026-11-09): a touch area and the disc in it, in dp, on a
-// tablet (its shorter side PHONE_DP or more), a phone in landscape, and in portrait;
+// tablet (not gui::phone), a phone in landscape, and in portrait;
 // BUTTON_GAP between two touch areas, BUTTON_MARGIN from the panel or board beside them.
 let TOUCH_TABLET = 56.0;
 let DISC_TABLET = 44.0;
@@ -179,7 +178,7 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
     let height = area.w;
     let gap = GAP * s;
     let m = BUTTON_MARGIN * s;
-    let phone = min(width, height) / s < PHONE_DP;
+    let phone = gui::phone(area, s);   // NARROW panels
     if landscape(area, s) {
         let side = (if phone { NARROW } else { SIDE }) * s;
         let tall = min(CORNER_H * s, height - 2.0 * gap);
@@ -429,7 +428,7 @@ fn layout_in(area: float4, n: i64, s: f32, small: bool = true, game: bool = fals
     let width = area.z;
     let height = area.w;
     let gap = GAP * s;
-    let phone = min(width, height) / s < PHONE_DP;
+    let phone = gui::phone(area, s);   // NARROW panels
     if landscape(area, s) {
         let side = side_of(area, s);
         let size = landscape_board(area, s);
@@ -478,7 +477,7 @@ fn flat_corners(area: float4, n: i64, s: f32, size: f32) -> Layout {
     let width = area.z;
     let height = area.w;
     let gap = GAP * s;
-    let phone = min(width, height) / s < PHONE_DP;
+    let phone = gui::phone(area, s);   // NARROW panels
     let side = min((if phone { NARROW } else { SIDE }) * s, side_of(area, s));
     let tall = min(CORNER_H * s, height - 2.0 * gap);
     let play_tall = if side < SIDE * s - 0.5 { min(CORNER_PLAY * s, height - 2.0 * gap) } else { tall };

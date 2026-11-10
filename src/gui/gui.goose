@@ -299,6 +299,11 @@ fn scroll_set(g: Gui&, id: i64, px: f32) {
 let COMPACT = 760.0;
 fn compact(g: Gui&, area: float4) -> bool { area.z < area.w && area.w < COMPACT * g.scale }
 
+// Whether an area at s pixels a dp is a phone's: under PHONE dp across its shorter side.
+// A tablet's, a foldable's, and an iPad window's are wider.
+let PHONE = 600.0;
+fn phone(area: float4, s: f32) -> bool { min(area.z, area.w) < PHONE * s }
+
 // The safe area of a screen width × height pixels: where the screens lay out.
 fn safe(g: Gui&, width: f32, height: f32) -> float4 {
     let e = g.insets;

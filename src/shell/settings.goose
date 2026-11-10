@@ -121,12 +121,11 @@ let SWITCH_NAME = 20.0;     // the name's line above the switch in the name's co
 let WIDE_NAME_W = 2.0 * 88.0 + SWITCH_GAP; // the names' column as wide as the switch
 let SLACK = 0.5;            // px a row may pass its width by without wrapping
 // The smallest board the groups side by side may leave on a phone (its shorter side under
-// PHONE_DP): 45% of the page, but no more than 220 dp, 45% of a 553 dp phone's. A larger
+// gui::PHONE): 45% of the page, but no more than 220 dp, 45% of a 553 dp phone's. A larger
 // screen keeps both groups side by side as long as they fit, the board as large as the
 // rest leaves and none under board::SMALLEST (a foldable's is 206 dp, a near-square
 // window's none; task 050, the user 2026-11-09).
 let BOTH_BOARD = 220.0;
-let PHONE_DP = 600.0;
 
 // The settings in order, the first two in the game's group, the rest in the look's:
 // each one's name, how many tiles, and how tall they are.
@@ -589,7 +588,7 @@ fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, a
     // goes through them in order (task 050): the groups stacked at the left of the board
     // (landscape); the board on top and the groups side by side under it (portrait, and a
     // near-square landscape); one group at a time with tabs (a phone, a small window).
-    let phone = min(area.z, area.w) < PHONE_DP * u;
+    let phone = gui::phone(area, u);
     var aside = true;
     var w: f32 = 0.0;
     var tabbed = true;

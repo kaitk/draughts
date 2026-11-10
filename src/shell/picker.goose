@@ -36,7 +36,6 @@ let COLUMN = 600.0;         // dp a column of the library takes at most
 let NARROWEST = 420.0;      // and at least where it goes to two in landscape for the width
 let LIBRARY_LIST = 700;     // the scrolling lists' ids (gui::scroll_begin): the library,
 let PAGE_LIST = 710;        // and a theme's page, plus the theme
-let PHONE = 600.0;          // dp across the shorter side under which the layout is a phone's
 
 // How many of a theme's puzzles have stars.
 fn solved(stars: const u8[:], theme: i64) -> i64 {
@@ -276,7 +275,7 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
            variant: i64&) -> i64 {
     let u = g.scale;
     let landscape = area.z >= area.w;
-    let phone = min(area.z, area.w) < PHONE * u;
+    let phone = gui::phone(area, u);
     var page = gui::inset(area, (if phone { 16.0 } else { 24.0 }) * u);
     var pick = NOTHING;
     let note = note_of(variant);
@@ -414,8 +413,8 @@ fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, sp
     let u = g.scale;
     let t = theme;
     let landscape = area.z >= area.w;
-    let phone = min(area.z, area.w) < PHONE * u;
-    let short = landscape && area.w < PHONE * u;
+    let phone = gui::phone(area, u);
+    let short = landscape && area.w < gui::PHONE * u;
     var room = gui::inset(area, (if phone { 16.0 } else { 24.0 }) * u);
     var pick = NOTHING;
     var column = room;

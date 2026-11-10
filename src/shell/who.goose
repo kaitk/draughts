@@ -75,12 +75,9 @@ fn back(w: Who&) {
     w.state = if w.state == SHEET && !w.first { PICKING } else { CLOSED };
 }
 
-// Whether a layout of `area` is a phone's: under 600 dp across its shorter side.
-fn phone(area: float4, u: f32) -> bool { min(area.z, area.w) < 600.0 * u }
-
 // A face's tile on the card: its width in dp, and its height, the face 72% of the
 // width over the name.
-fn tile_w(area: float4, u: f32) -> f32 { if phone(area, u) { 120.0 } else { 156.0 } }
+fn tile_w(area: float4, u: f32) -> f32 { if gui::phone(area, u) { 120.0 } else { 156.0 } }
 fn tile_h(area: float4, u: f32) -> f32 { 0.72 * tile_w(area, u) + 58.0 }
 
 // The faces' tiles: how many there are, how many a row holds, and how many rows, so
@@ -240,7 +237,7 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
     let u = g.scale;
     let edit = w.target >= 0 && !w.first;
     let holds = if !edit { 0 } else if ps.list.len > 1 { 2 } else { 1 };
-    let wide = area.z > area.w && area.w < 600.0 * u;
+    let wide = area.z > area.w && area.w < gui::PHONE * u;
     let room = area.z / u - 2.0 * (EDGE + PAD);
     let pic, cols = pictures(room, wide);
     let grid_w = cols * pic + (cols - 1) * PIC_GAP;
