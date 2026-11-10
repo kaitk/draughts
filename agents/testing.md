@@ -33,7 +33,8 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   drops through the game's frames, straight to its last square, the hints after one
   and two wrong squares, and take back mid-capture, on a child's position read from a
   photo: `count`, whose `state` fills the board a moment on, so a pulse at its start,
-  which is at full, shows as pulsing), `gui`, `game` (the game screen driven through
+  which is at full, shows as pulsing), `gui` (and the widget ids' ranges, one per
+  screen, none running into the next: `ids`), `game` (the game screen driven through
   the pointer: take back, start over, home and settings, presses kept apart, the
   celebration and its moments to the still frame (`win`), a clocked game with its
   frames, pause, and flag, the turned board; the computer's turn, answered at once with

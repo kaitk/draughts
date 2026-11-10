@@ -181,8 +181,8 @@ fn celebrate(gm: Game&, g: gui::Gui&, pl: panel::Layout, won: i64, now: f64, ove
     let row = gui::cut_top(c, 88.0 * u);
     var ask = panel::NOTHING;
     let gap = 20.0 * fit * u;
-    if gui::button(g, 200, gui::cell(row, 2, 1, button * u, 88.0 * u, gap, 0), gui::BACK) { ask = panel::BACK; }
-    if gui::tile(g, 201, gui::cell(row, 2, 1, button * u, 88.0 * u, gap, 1), gui::RESTART, gui::PRIMARY, 22.0) {
+    if gui::button(g, gui::CARD_IDS, gui::cell(row, 2, 1, button * u, 88.0 * u, gap, 0), gui::BACK) { ask = panel::BACK; }
+    if gui::tile(g, gui::CARD_IDS + 1, gui::cell(row, 2, 1, button * u, 88.0 * u, gap, 1), gui::RESTART, gui::PRIMARY, 22.0) {
         ask = panel::RESTART;
     }
     let k = ease_out(span(t, CARD_AT, CARD_AT + 0.7));
@@ -263,8 +263,8 @@ fn settle(gm: Game&, g: gui::Gui&, pl: panel::Layout, draw: i64, now: f64, over:
     let row = gui::cut_top(c, 88.0 * u);
     var ask = panel::NOTHING;
     let gap = 20.0 * fit * u;
-    if gui::button(g, 200, gui::cell(row, 2, 1, button * u, 88.0 * u, gap, 0), gui::BACK) { ask = panel::BACK; }
-    if gui::tile(g, 201, gui::cell(row, 2, 1, button * u, 88.0 * u, gap, 1), gui::RESTART, gui::PRIMARY, 22.0) {
+    if gui::button(g, gui::CARD_IDS, gui::cell(row, 2, 1, button * u, 88.0 * u, gap, 0), gui::BACK) { ask = panel::BACK; }
+    if gui::tile(g, gui::CARD_IDS + 1, gui::cell(row, 2, 1, button * u, 88.0 * u, gap, 1), gui::RESTART, gui::PRIMARY, 22.0) {
         ask = panel::RESTART;
     }
     let k = ease_out(span(t, DRAW_CARD, DRAW_STILL));

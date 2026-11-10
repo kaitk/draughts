@@ -221,9 +221,23 @@ struct Gui {
     scroll: Scroll = Scroll {},
 }
 
+// Widget ids (slot keeps a widget's press by its id, scroll_begin a list's offset): each
+// screen numbers its widgets from its base, inside its own range, so two screens declared
+// in one frame (a transition) never share an id. IDS, under SCROLL_ID below, lists the
+// bases in order, IDS_SPAN how many ids each range holds; test/gui/ids checks no range
+// runs into the next.
+let PANEL_IDS = 110;        // the game's and a puzzle's panels: the bar, the play, the camera's buttons
+let CARD_IDS = 200;         // the game's end cards
+let HOME_IDS = 300;         // home's menu and a new game's setup
+let SETTINGS_IDS = 400;
+let WHO_IDS = 500;          // who's playing, and a player's sheet
+let PICKER_IDS = 600;       // the puzzles to pick from: the library, a theme's page, its puzzles
+
 // One scrolling list a frame (task 050; rendering.md, "Scrolling"): what scroll_begin
 // keeps across frames. A plain drag and the wheel, no fling.
 let SCROLL_ID = 9000;       // the drag's id while it holds the pointer
+let IDS = [PANEL_IDS, CARD_IDS, HOME_IDS, SETTINGS_IDS, WHO_IDS, PICKER_IDS, SCROLL_ID];
+let IDS_SPAN = [20, 2, 71, 72, 43, 600, 1];
 let SLOP = 10.0;            // dp a press moves before it is a drag, not a tap
 let CLIP = 4.0;             // added to a quad's extra.z: drawn only inside the list's view
 let WHEEL = 40.0;           // dp a wheel's step scrolls

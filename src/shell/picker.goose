@@ -34,8 +34,8 @@ let NAMES = [strings::THEME_LEARN, strings::THEME_CAPTURES, strings::THEME_CROWN
 let LEVEL_NAMES = [strings::PUZZLES_LEVEL1, strings::PUZZLES_LEVEL2, strings::PUZZLES_LEVEL3];
 let COLUMN = 600.0;         // dp a column of the library takes at most
 let NARROWEST = 420.0;      // and at least where it goes to two in landscape for the width
-let LIBRARY_LIST = 700;     // the scrolling lists' ids (gui::scroll_begin): the library,
-let PAGE_LIST = 710;        // and a theme's page, plus the theme
+let LIBRARY_LIST = gui::PICKER_IDS + 100;     // the scrolling lists' ids (gui::scroll_begin): the library,
+let PAGE_LIST = gui::PICKER_IDS + 110;        // and a theme's page, plus the theme
 
 // How many of a theme's puzzles have stars.
 fn solved(stars: const u8[:], theme: i64) -> i64 {
@@ -98,7 +98,7 @@ fn frame(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, s
 // Back (gui::back) in r: the arrow and "Back" on a glass tile, side by side or, `stacked`,
 // one over the other.
 fn back(g: gui::Gui&, r: float4, stacked: bool = false) -> bool {
-    return gui::back(g, 500, r, strings::get(strings::NAV_BACK), stacked);
+    return gui::back(g, gui::PICKER_IDS, r, strings::get(strings::NAV_BACK), stacked);
 }
 
 // How wide back is.
@@ -142,7 +142,7 @@ fn theme_row(g: gui::Gui&, r: float4, theme: i64, stars: const u8[:], phone: boo
     // A glass card as a level's on a theme's page, lit only while pressed: a plain tile
     // (white at 10%) barely shows over the sharp photograph.
     gui::glass(g, r, 22.0);
-    let tapped = gui::tile(g, 600 + theme, r, gui::NO_ICON, gui::ROW, 22.0);
+    let tapped = gui::tile(g, gui::PICKER_IDS + 10 + theme, r, gui::NO_ICON, gui::ROW, 22.0);
     var c = r;
     gui::cut_left(c, (if phone { 12.0 } else { 20.0 }) * u);
     gui::cut_right(c, (if phone { 18.0 } else { 26.0 }) * u);
@@ -187,7 +187,7 @@ fn theme_row(g: gui::Gui&, r: float4, theme: i64, stars: const u8[:], phone: boo
 // its name over its board's size, joined on one glass, 4 dp round them and between.
 let SWITCH_PAD = 4.0;
 let SWITCH_H = 96.0;        // its 88 dp tiles and the glass round them
-let SWITCH_IDS = 620;
+let SWITCH_IDS = gui::PICKER_IDS + 20;
 
 // How wide draughts tile i wants to be: as settings' tiles, its words with 16 dp either
 // side, at least 88 dp.
@@ -352,7 +352,7 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
 // One puzzle's tile: its stars, lit if it is the first without them. True when tapped.
 fn tile(g: gui::Gui&, i: i64, r: float4, won: i64, lit: bool) -> bool {
     let u = g.scale;
-    let tapped, pic = gui::pick(g, 1000 + i, r, 0.0, "", "", lit, true);
+    let tapped, pic = gui::pick(g, gui::PICKER_IDS + 400 + i, r, 0.0, "", "", lit, true);
     let star: f32 = 20.0;
     for k in 3 {
         let cell = gui::cell(r, 3, 1, star * u, star * u, 2.0 * u, k);

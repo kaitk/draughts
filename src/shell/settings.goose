@@ -154,8 +154,9 @@ fn group_row(group: i64, k: i64) -> i64 { return GAME_ROWS * group + k; }
 // How tall a row's tiles are: SLIM_H for the theme's in a small window.
 fn row_h(s: Settings&, row: i64) -> f32 { if s.slim && row == THEME_ROW { SLIM_H } else { ROW_H[row] as f32 } }
 
-// The switch's tap ids, photograph and plain, after the rows' (410 + 10 × row + i).
-let SWITCH_ID = 460;
+// The switch's tap ids, photograph and plain, after the rows' (SETTINGS_IDS + 10 + 10 ×
+// row + i).
+let SWITCH_ID = gui::SETTINGS_IDS + 60;
 
 // How wide the line of the theme's name and its switch beside it wants to be.
 fn switch_line(g: gui::Gui&) -> f32 {
@@ -231,7 +232,7 @@ fn tile_width(s: Settings&, g: gui::Gui&, row: i64, i: i64) -> f32 {
 // Declares tile i of a row in r. True when a tap changed s.
 fn tile(s: Settings&, over: board::Overlay&, g: gui::Gui&, row: i64, i: i64, r: float4) -> bool {
     let u = g.scale;
-    let id = 410 + 10 * row + i;
+    let id = gui::SETTINGS_IDS + 10 + 10 * row + i;
     let label = strings::get(word(row, i));
     if row == THEME_ROW {
         let kind = if i == BY_DATE_TILE { BY_DATE } else { SEASON_KINDS[i] };
@@ -437,7 +438,7 @@ fn group_width(s: Settings&, g: gui::Gui&, group: i64, aside: bool) -> f32 {
 // Where r reaches the edge of `area`, the safe area, the glass runs on to the screen's.
 // Where its content, `content` pixels tall, is taller than r (a small window), the
 // glass stays and the rows scroll inside it (task 050). True when a tap changed s.
-let LIST = 800;             // the group's scrolling list's id (gui::scroll_begin), plus the group
+let LIST = gui::SETTINGS_IDS + 70;             // the group's scrolling list's id (gui::scroll_begin), plus the group
 fn group(s: Settings&, over: board::Overlay&, g: gui::Gui&, group: i64, r: float4, area: float4, aside: bool,
          titled: bool = true, content: f32 = 0.0) -> bool {
     let u = g.scale;
@@ -505,7 +506,7 @@ fn tabs(s: Settings&, g: gui::Gui&, r: float4) -> bool {
     for k in 2 {
         let t = float4 { r.x + k * (w + TILE_GAP * u), r.y, w, r.w };
         gui::glass(g, t, 22.0);
-        if gui::labelled(g, 398 + k, t, GROUP_ICONS[k], 30.0, strings::get(GROUP_TITLES[k]), gui::HEADING, gui::MIDDLE,
+        if gui::labelled(g, gui::SETTINGS_IDS + 8 + k, t, GROUP_ICONS[k], 30.0, strings::get(GROUP_TITLES[k]), gui::HEADING, gui::MIDDLE,
                          if s.group == k { gui::CHOSEN } else { gui::PLAIN }) {
             changed = s.group != k;
             s.group = k;
@@ -532,7 +533,7 @@ fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, tabbed: bool = false)
     let globe = !stacked || r.z - (BACK_W + 40.0) * u - languages_width(g) >= gui::text_width(g, gui::HEADING, title);
     let bw = if stacked { BACK_W * u } else { wide };
     let back = gui::center(gui::cut_left(row, bw), bw, BACK_W * u);
-    if gui::back(g, 400, back, strings::get(strings::NAV_BACK), stacked) { ask = BACK; }
+    if gui::back(g, gui::SETTINGS_IDS, back, strings::get(strings::NAV_BACK), stacked) { ask = BACK; }
     gui::cut_left(row, 20.0 * u);
     let w = languages_width(g, globe);
     let glass = gui::center(gui::cut_right(row, w), w, HEAD_H * u);
@@ -545,7 +546,7 @@ fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, tabbed: bool = false)
         gui::cut_left(c, gui::PAD * u);
     }
     for i in strings::LANGUAGES.len {
-        let tapped, pic = gui::pick(g, 401 + i, gui::cut_left(c, language_width(g, i)), 0.0, strings::name_of(i), "",
+        let tapped, pic = gui::pick(g, gui::SETTINGS_IDS + 1 + i, gui::cut_left(c, language_width(g, i)), 0.0, strings::name_of(i), "",
                                     shown == i, true);
         gui::cut_left(c, 8.0 * u);
         if tapped {

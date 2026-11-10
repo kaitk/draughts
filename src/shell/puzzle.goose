@@ -450,7 +450,7 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
         let room = max(right.w, 0.0);
         stake(pl, g, gui::cut_top(right, min(56.0 * u, room)), min(min(if solved { 56.0 } else { 44.0 }, most), room / u),
               8.0, now);
-        if gui::labelled(g, 114, next, gui::NEXT, 48.0, word, gui::HEADING, gui::STACKED, style, on) { ask = NEXT; }
+        if gui::labelled(g, panel::EYE_ID, next, gui::NEXT, 48.0, word, gui::HEADING, gui::STACKED, style, on) { ask = NEXT; }
         return ask;
     }
     // Portrait: the goal at the left of the row and the stars at its right, over next.
@@ -461,7 +461,7 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
     gui::cut_left(top, 6.0 * u);
     goal(pl, g, top, 48.0, false, now, 52.0, over);
     stake(pl, g, stars_at, if solved { 48.0 } else { 40.0 }, 6.0, now);
-    if gui::labelled(g, 114, gui::cut_top(right, panel::WIDE_H * u), gui::NEXT, 36.0, word, gui::HEADING, gui::MIDDLE,
+    if gui::labelled(g, panel::EYE_ID, gui::cut_top(right, panel::WIDE_H * u), gui::NEXT, 36.0, word, gui::HEADING, gui::MIDDLE,
                      style, on) {
         ask = NEXT;
     }

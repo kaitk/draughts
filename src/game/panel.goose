@@ -33,8 +33,8 @@ let EYE_DISC = 48.0;
 let HINT_H = 88.0;          // dp: the hint's tile over undo move in the landscape column
 let PIP = 12.0;             // dp: a hint's pip, and the gap between two
 let PIP_GAP = 7.0;
-let EYE_ID = 114;
-let HINT_ID = 115;
+let EYE_ID = gui::PANEL_IDS + 4;
+let HINT_ID = gui::PANEL_IDS + 5;
 
 // What the panel shows of the lookout and the hint: the lookout on; the hints left; how
 // far the hint has gone (0 none shown, 1 the piece lit, 2 its square too); whether the
@@ -379,7 +379,7 @@ fn camera(g: gui::Gui&, l: Layout, r: rig::Rig&, now: f64) -> bool {
         let icon = if what == VIEW { if rig::top(r) && !rig::off_rest(r) { gui::VIEW_LOW } else { gui::VIEW_TOP } }
                    else if what == ZOOM { if rig::zoomed(r) { gui::ZOOM_OUT } else { gui::ZOOM_IN } }
                    else { gui::SHOWCASE };
-        guard gui::floating(g, 120 + what, at, l.disc, icon, what == SHOWCASE && r.showcase,
+        guard gui::floating(g, gui::PANEL_IDS + 10 + what, at, l.disc, icon, what == SHOWCASE && r.showcase,
                             what == VIEW && rig::off_rest(r)) else { continue; }
         tapped = true;
         if what == VIEW { rig::view_tap(r, now); }
@@ -710,7 +710,7 @@ fn leave(g: gui::Gui&, l: Layout) -> i64 {
     let asks = [BACK, SETTINGS, RESTART];
     if l.left.z < l.left.w {
         var column = l.left;
-        if gui::back(g, 110, gui::cut_top(column, ROW_H * u), strings::get(words[0])) { chosen = BACK; }
+        if gui::back(g, gui::PANEL_IDS, gui::cut_top(column, ROW_H * u), strings::get(words[0])) { chosen = BACK; }
         gui::cut_top(column, BACK_GAP * u);
         gui::panel(g, column);
         // Each icon beside its word, or, where a word doesn't fit so in a narrowed panel,
@@ -725,7 +725,7 @@ fn leave(g: gui::Gui&, l: Layout) -> i64 {
         let h = (if arrange == gui::BESIDE { ROW_H } else { STACK_H }) * u;
         for i in 1..3 {
             let r = if i == 1 { gui::cut_top(left, h) } else { gui::cut_bottom(left, h) };
-            if gui::labelled(g, 110 + i, r, icons[i], 34.0, strings::get(words[i]), gui::HEADING, arrange) {
+            if gui::labelled(g, gui::PANEL_IDS + i, r, icons[i], 34.0, strings::get(words[i]), gui::HEADING, arrange) {
                 chosen = asks[i];
             }
         }
@@ -737,12 +737,12 @@ fn leave(g: gui::Gui&, l: Layout) -> i64 {
         // between start over and undo move.
         var bar = gui::inset(l.left, gui::PAD * u);
         let tw = ICON_W * u;
-        if gui::button(g, 110, gui::cut_left(bar, tw), icons[0]) { chosen = BACK; }
+        if gui::button(g, gui::PANEL_IDS, gui::cut_left(bar, tw), icons[0]) { chosen = BACK; }
         let restart = gui::cut_right(bar, tw);
         gui::cut_right(bar, gui::PAD * u);
         let gear = gui::cut_right(bar, tw);
-        if gui::button(g, 111, gear, icons[1]) { chosen = SETTINGS; }
-        if gui::button(g, 112, restart, icons[2]) { chosen = RESTART; }
+        if gui::button(g, gui::PANEL_IDS + 1, gear, icons[1]) { chosen = SETTINGS; }
+        if gui::button(g, gui::PANEL_IDS + 2, restart, icons[2]) { chosen = RESTART; }
         return chosen;
     }
     // Thirds of the bar while each word fits its third; else each tile as wide as its
@@ -771,7 +771,7 @@ fn leave(g: gui::Gui&, l: Layout) -> i64 {
         let w = if even { free / 3.0 } else { wants[i] + share };
         let r = if even { float4 { bar.x + i * (w + gap), bar.y, w, bar.w } } else { float4 { x, bar.y, w, bar.w } };
         x += w + gap;
-        if gui::labelled(g, 110 + i, r, icons[i], 34.0, strings::get(words[i]), gui::HEADING, arrange) {
+        if gui::labelled(g, gui::PANEL_IDS + i, r, icons[i], 34.0, strings::get(words[i]), gui::HEADING, arrange) {
             chosen = asks[i];
         }
     }
@@ -893,7 +893,7 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: 
         }
         if !(l.corners && clock::on(c)) { countdown(g, right, note); }
         let undo_icon: f32 = if beside { 36.0 } else { 48.0 };
-        if gui::labelled(g, 113, back, gui::UNDO, undo_icon, strings::get(strings::GAME_UNDO_MOVE), gui::HEADING,
+        if gui::labelled(g, gui::PANEL_IDS + 3, back, gui::UNDO, undo_icon, strings::get(strings::GAME_UNDO_MOVE), gui::HEADING,
                          gui::STACKED) {
             chosen = UNDO;
         }
@@ -937,7 +937,7 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: 
             clock_of(g, float4 { mid.x, mid.y, half, mid.w }, c, first, rings[first], over);
             clock_of(g, float4 { mid.x + half + gap, mid.y, half, mid.w }, c, 1 - first, rings[1 - first], over);
             if between { short_stacked(g, float4 { mid.x + half, mid.y, gap, mid.w }, note); }
-            if gui::button(g, 113, undo, gui::UNDO) { chosen = UNDO; }
+            if gui::button(g, gui::PANEL_IDS + 3, undo, gui::UNDO) { chosen = UNDO; }
             if hint_tile(g, hint_r, ICON, help, 28.0) { chosen = HINT; }
             if eye(g, eye_r, help.look) { chosen = LOOKOUT; }
             return chosen;
@@ -960,8 +960,8 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: 
             gui::text(g, face, row, label, 1.0, 0.0, gui::LEFT);
         }
         if icons {
-            if gui::button(g, 113, undo, gui::UNDO) { chosen = UNDO; }
-        } else if gui::labelled(g, 113, undo, gui::UNDO, 28.0, undo_word, gui::HEADING, gui::STACKED) {
+            if gui::button(g, gui::PANEL_IDS + 3, undo, gui::UNDO) { chosen = UNDO; }
+        } else if gui::labelled(g, gui::PANEL_IDS + 3, undo, gui::UNDO, 28.0, undo_word, gui::HEADING, gui::STACKED) {
             chosen = UNDO;
         }
         if hint_tile(g, hint_r, if icons { ICON } else { gui::STACKED }, help, 28.0) { chosen = HINT; }
@@ -1010,7 +1010,7 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: 
     var row = gui::cut_top(right, WIDE_H * u);
     let undo = gui::cut_right(row, 0.5 * (row.z - gui::PAD_WIDE * u));
     gui::cut_right(row, gui::PAD_WIDE * u);
-    if gui::labelled(g, 113, undo, gui::UNDO, 36.0, strings::get(strings::GAME_UNDO_MOVE), gui::HEADING, gui::MIDDLE) {
+    if gui::labelled(g, gui::PANEL_IDS + 3, undo, gui::UNDO, 36.0, strings::get(strings::GAME_UNDO_MOVE), gui::HEADING, gui::MIDDLE) {
         chosen = UNDO;
     }
     if hint_tile(g, row, gui::MIDDLE, help, 36.0) { chosen = HINT; }

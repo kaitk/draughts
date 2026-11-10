@@ -285,7 +285,7 @@ fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: f
                            small) };
     // The player and the way out, declared last so the tiles before them keep their order.
     if chip && player_chip(g, player_spot(g, area, side, l.board, way, s), s) { pick = PLAYERS; }
-    if closable && gui::bare_x(g, 309, way, gui::CLOSE, CROSS) { pick = EXIT; }
+    if closable && gui::bare_x(g, gui::HOME_IDS + 9, way, gui::CLOSE, CROSS) { pick = EXIT; }
     return pick;
 }
 
@@ -335,7 +335,7 @@ fn player_chip(g: gui::Gui&, r: float4, s: settings::Settings&) -> bool {
         let pill = gui::center(float4 { r.x + (CORNER + CHIP_GAP - CHIP_PILL) * u, r.y, w, r.w }, w, CHIP_PILL_H * u);
         gui::glass(g, pill, CHIP_RADIUS);
     }
-    let clicked, p = gui::bare(g, 308, r);
+    let clicked, p = gui::bare(g, gui::HOME_IDS + 8, r);
     let k = 1.0 - 0.04 * p;
     var c = r;
     let f = CHIP_FACE * u * k;
@@ -366,7 +366,7 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
     var pick = NOTHING;
     if gear {
         let r = gui::center(gui::cut_right(mark, GEAR * u), GEAR * u, GEAR * u);
-        if gui::icon_button(g, 300, r, gui::GEAR, GEAR_ICON) { pick = SETTINGS; }
+        if gui::icon_button(g, gui::HOME_IDS, r, gui::GEAR, GEAR_ICON) { pick = SETTINGS; }
         mark.z += 0.5 * (GEAR - GEAR_ICON) * u;
     }
     // The name spaced out, less where the gear leaves it too little room (a phone).
@@ -388,11 +388,11 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
         let won, all = picker::totals(s.stars[puzzles::loaded]);
         strings::fill_in(stars, strings::PUZZLES_STARS, [won, all]);
         let note = if i == 2 { strings::get(LEVEL_NOTES[s.level]) } else if i == 3 && all > 0 { stars[..] } else { "" };
-        if gui::row(g, 301 + i, r, icons[i], strings::get(keys[i]), note, i == 0, rows[i] != 0) { pick = rows[i]; }
+        if gui::row(g, gui::HOME_IDS + 1 + i, r, icons[i], strings::get(keys[i]), note, i == 0, rows[i] != 0) { pick = rows[i]; }
     }
     if !gear {
         let r = gui::cut_top(content, ROW_H * u);
-        if gui::row(g, 305, r, gui::GEAR, strings::get(strings::HOME_SETTINGS), "", false, true) { pick = SETTINGS; }
+        if gui::row(g, gui::HOME_IDS + 5, r, gui::GEAR, strings::get(strings::HOME_SETTINGS), "", false, true) { pick = SETTINGS; }
     }
     return pick;
 }
@@ -468,7 +468,7 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, computer: bool, 
         gui::cut_top(c, HEAD_GAP * u);
     }
     let back = gui::cut_left(head, HEAD_H * u);
-    if gui::tile(g, 320, back, gui::BACK, gui::PLAIN, 16.0) { ask = BACK; }
+    if gui::tile(g, gui::HOME_IDS + 20, back, gui::BACK, gui::PLAIN, 16.0) { ask = BACK; }
     gui::cut_left(head, 14.0 * u);
     gui::glyph_icon(g, gui::center(gui::cut_left(head, 36.0 * u), 36.0 * u, 36.0 * u),
                     if computer { gui::COMPUTER } else { gui::FRIEND }, gui::PLAIN, 0.0, 0.85);
@@ -480,7 +480,7 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, computer: bool, 
     // The draughts, each with its board at the start.
     let kinds = group(g, c, strings::SETUP_DRAUGHTS, BOARD_TILE_H);
     for v, i in settings::DRAUGHTS {
-        let tapped, pic = gui::pick(g, 330 + i, draughts_tile(g, kinds, i), MINI_SIZE,
+        let tapped, pic = gui::pick(g, gui::HOME_IDS + 30 + i, draughts_tile(g, kinds, i), MINI_SIZE,
                                     strings::get(settings::DRAUGHTS_KEYS[i]), strings::get(settings::DRAUGHTS_SIZES[i]),
                                     s.variant == v, true);
         let n = rules::VARIANTS[v].size;
@@ -494,7 +494,7 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, computer: bool, 
         // The level, with one to three pips.
         let levels = group(g, c, strings::SETUP_LEVEL, TILE_H);
         for i in 3 {
-            let tapped, pic = gui::pick(g, 340 + i, across(levels, 3, i, u), 10.0, strings::get(LEVEL_KEYS[i]), "",
+            let tapped, pic = gui::pick(g, gui::HOME_IDS + 40 + i, across(levels, 3, i, u), 10.0, strings::get(LEVEL_KEYS[i]), "",
                                         s.level == i, true);
             gui::pips(g, pic, i + 1, 1.0);
             if tapped {
@@ -506,7 +506,7 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, computer: bool, 
         // The child's pieces, each tile showing one.
         let colors = group(g, c, strings::SETUP_COLOR, TILE_H);
         for i in 2 {
-            let tapped, pic = gui::pick(g, 350 + i, across(colors, 2, i, u), 30.0,
+            let tapped, pic = gui::pick(g, gui::HOME_IDS + 50 + i, across(colors, 2, i, u), 30.0,
                                         strings::get(if i == 0 { strings::COLOR_WHITE } else { strings::COLOR_BLACK }), "",
                                         s.color == i, true);
             game::put(over, pic, 15.0 * u, i, 0, 1.0, false);
@@ -523,7 +523,7 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, computer: bool, 
     let notes = [strings::CLOCK_NONE, strings::CLOCK_BLITZ_NOTE, strings::CLOCK_RAPID_NOTE];
     for i in 3 {
         let label = if labels[i] >= 0 { strings::get(labels[i]) } else { "" };
-        let tapped, pic = gui::pick(g, 360 + i, across(clocks, 3, i, u), if i == 0 { 26.0 } else { 0.0 }, label,
+        let tapped, pic = gui::pick(g, gui::HOME_IDS + 60 + i, across(clocks, 3, i, u), if i == 0 { 26.0 } else { 0.0 }, label,
                                     strings::get(notes[i]), s.clock == i, true);
         if i == 0 { gui::glyph_icon(g, gui::center(pic, 26.0 * u, 26.0 * u), gui::CLOCK, gui::PLAIN, 0.0, 0.85); }
         if tapped {
@@ -539,7 +539,7 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, computer: bool, 
     let word = strings::get(strings::SETUP_PLAY);
     // Play: the row's icon and word centered.
     let w = 34.0 * u + 18.0 * u + gui::text_width(g, gui::LABEL, word) + 36.0 * u;
-    if gui::row(g, 370, play, gui::NO_ICON, "", "", true, true) { ask = PLAY; }
+    if gui::row(g, gui::HOME_IDS + 70, play, gui::NO_ICON, "", "", true, true) { ask = PLAY; }
     var mid = gui::center(play, w, play.w);
     gui::cut_left(mid, 18.0 * u);
     gui::glyph_icon(g, gui::center(gui::cut_left(mid, 34.0 * u), 34.0 * u, 34.0 * u), gui::NEXT, gui::ROW_PRIMARY, 0.0,
