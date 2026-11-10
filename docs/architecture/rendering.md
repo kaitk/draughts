@@ -17,9 +17,7 @@ NoGraphicsAPI's ideas, inside SDL_GPU:
   Android build gfx makes the screen's depth target only when a program asks for it, and
   never cycles the screen (`patches/goose_gfx/0003-screen-without-depth-or-cycling.patch`,
   [findings](../goose-findings.md)): the GPU orders a frame's clear after the last
-  frame's blit instead of SDL keeping a fresh copy for each frame in flight. Together
-  they kept SDL from a second 64 MiB block after the first rotation, about 70 MB of
-  graphics memory on the tablet, before SDL's blocks were sized to their resources
+  frame's blit instead of SDL keeping a fresh copy for each frame in flight
   ([GPU memory](#gpu-memory)).
 - **The 3D board** reuses the game state and the flat board's draw lists, with a camera
   and lit meshes in place of the 2D pieces ("Board and pieces").
@@ -46,8 +44,8 @@ draws its HUD:
   lands on the UI is the UI's and never reaches the board.
 - Calls append quads (`panel`, `button`, `icon`, `fill`; `text` with home) to one fixed
   array, reset each frame, drawn by instanced draws in their order: one pipeline for the
-  icons, one for the players' faces, one for the rest, each run of quads one draw (task
-  063: one shader for all held 64 registers for every UI pixel, each of the three 32).
+  icons, one for the players' faces, one for the rest, each run of quads one draw, each
+  shader at 32 registers ([why three](../decisions/rendering.md#ui-layer)).
 - **Native form**: `gui/` holds the layer with no graphics (tested headless in
   `test/gui/`), and `src/app/widgets.goose` draws it: each quad pulls `{rect, color, kind,
   radius, icon, pressed, dp, look}` from one storage buffer, and its fragment shader works
@@ -59,24 +57,19 @@ draws its HUD:
   the UI. Pieces shown on the UI (the side to move, the winner) are drawn after it by the
   piece pipeline from a second small storage buffer, so they look exactly like the
   board's.
-- **Shaded only where it shows** (task 063): a quad is as large as its shadow reaches on
+- **Shaded only where it shows**: a quad is as large as its shadow reaches on
   each side (glass 6 dp above, 18 to the sides, 30 below; a tile 0, 6, and 12), and glass
   and tiles shade a pixel outside them as the shadow alone and one more than 3 dp inside
-  as the fill alone, the highlight, border, and shadow being 0 there. With the three
-  pipelines, the UI drawn live costs half the GPU cycles it did on the Pixel 7a (0.61M →
-  0.30M a frame on the flat game). Measured with `--keep off`, which draws the UI and the
-  3D backdrop each frame instead of keeping them. Tried and dropped: a glyph's atlas place
-  interpolated (malioc's fewer varyings read, nothing on the Pixel, which pays for the
-  varyings declared), the quads read from the storage buffer in the fragment shader (4
-  load/store cycles a pixel), `mediump` varyings. Not done: with the plain background,
-  glass works the fade out a pixel at a time (about 1.3 of glass's 4 cycles); a texture
-  of it would save that but smear its dither.
-- **Kept while it stands still** (`widgets::prepare`, task 059): when a frame's quads,
+  as the fill alone, the highlight, border, and shadow being 0 there. The UI drawn live
+  costs about 0.30M GPU cycles a frame on the Pixel 7a on the flat game. `--keep off`
+  draws the UI and the 3D backdrop each frame instead of keeping them, to measure their
+  work alone. With the plain background, glass works the fade out a pixel at a time
+  (about 1.3 of glass's 4 cycles).
+- **Kept while it stands still** (`widgets::prepare`): when a frame's quads,
   view, theme, and textures are the same as the last frame's, they are drawn once into
   a layer the screen's size, premultiplied, and each frame after lays it with a fetch a
-  pixel until they change; while they change they are drawn as they come. The quads
-  were a quarter of the 3D frame's GPU cycles on the Pixel 7a while only the board
-  moved; the layer is 10 MB there.
+  pixel until they change; while they change they are drawn as they come. The layer is
+  10 MB on the Pixel 7a.
 
 ### Screen sizes and the safe area
 
@@ -84,16 +77,12 @@ Layouts are in dp: the screen's shorter side is 800 dp (`gui::scale_of`, the one
 scale is computed), so the tablet's 1200 px are 1.5 px a dp. The scale has room for a
 floor in physical size, `max(short side / 800, F × display scale)`, the display scale
 being Android's density / 160 (2.625 on the Pixel 7a, 1.5 on the tablet), so a phone's
-dp stays at least F of Android's; F is 0.75 (`gui::DENSITY_FLOOR`, picked by the user on
-2026-11-08), so the Pixel 7a lays out about 549 dp across and the tablet, whose 1.125
-floor is under its 1.5, is unchanged. Without the floor a phone draws the tablet's
-layout into its 64 mm short side: an 88 dp tap is 7.0 mm on the Pixel 7a against 16.3
-on the tablet, the 17 dp notes 1.4 mm. At 0.75 an 88 dp tap is about 10.5 mm on any
-phone, near a child's fingertip and over Android's 48 dp (7.6 mm), and the notes 2 mm.
-Going further buys nothing on the board, whose size the phone's width fixes whatever the
-scale, and at 1 every layout would have to work 360 dp across; going less (0.69) leaves
-taps at 9.3 mm and still needs most of the same layout work. So the layouts are made for
-a short side down to 480 dp (a 360 dp phone at 0.75). A larger tablet lays out
+dp stays at least F of Android's; F is 0.75 (`gui::DENSITY_FLOOR`,
+[why](../decisions/rendering.md#screen-sizes-and-the-safe-area)), so the Pixel 7a lays
+out about 549 dp across and the tablet, whose 1.125 floor is under its 1.5, is unchanged.
+An 88 dp tap is then about 10.5 mm on any phone, near a child's fingertip and over
+Android's 48 dp (7.6 mm), and the 17 dp notes 2 mm. The layouts are made for a short side
+down to 480 dp (a 360 dp phone at 0.75). A larger tablet lays out
 the same dp as a smaller screen of its proportions, only scaled; the photograph is
 then stretched by long side / 2048 (1.25× at 2560 px, 1.41× at 2880), soft but fine
 behind home. The Mac's display scale (2 on Retina, its
@@ -121,13 +110,12 @@ navigation bar, shown or hidden), and the gesture bar at the bottom (on the Pixe
 118, 0, 84 px in portrait; on the Galaxy Tab A11+ 0, 0, 0, 72, its hidden
 navigation bar). Settings in landscape lets its two groups run over a bottom inset: the
 fit counts up to 38 dp of it (the page's foot and the look group's bottom pad), the
-look's glass ending below its tiles there (not running on to the screen's bottom edge,
-which left it mostly empty below, the user 2026-11-09), its tiles still above the inset
+look's glass ending below its tiles there, its tiles still above the inset
 and as far from the screen's edge as with none; so the tablet keeps both groups
 beside the board rather than the Game and Look tabs. Under a top inset in landscape (an
 iPad's status bar) the page's top padding gives up to 12 dp of its 24, the bar already
 keeping the head from the edge, so the 13" and 11" iPad keep both groups too, 1 and 5 dp
-short with the full padding (2026-11-09). A
+short with the full padding. A
 change of the insets or the scale counts as a change, as a new size does, and the screen
 is laid out and drawn again (see "Frames and battery"). When the screen turns, the new
 insets and the new size arrive a frame or two apart, the insets first; the layout
@@ -137,20 +125,15 @@ once.
 Nuklear (`ui`) is only for developer tools, such as a puzzle editor, because restyling
 its desktop widgets into the kid UI would fight it; its scroll offsets
 (`ui::window_get_scroll`) are its windows', so the kid UI keeps its own ("Small windows").
-If layout outgrows rect-cutting (wrapping text, menus like Snowtime's), we copy
-[Clay](https://github.com/nicbarker/clay)'s model, a per-frame layout tree with
-grow/fit/fixed sizing, rather than linking it. Its API is C macros, which Goose can't
-call directly.
 
 ### Small windows
 
 iPadOS 26 resizes any app's window, down to about 374 × 484 pt on an 11" iPad Pro, a
-499 × 645 dp layout at the density floor (task 050, 2026-11-09). Every size works; the
+499 × 645 dp layout at the density floor. Every size works; the
 extremes aren't polished. The tallest window is about 380 × 1190 pt (507 × 1587 dp), the
 widest about 1210 × 480 pt (1613 × 640 dp); both keep the usual layouts. Headless at 2 px
 a point with the density floor (`agents/testing.md`), the smallest window's 3D game board
-is about 350 dp wide (from about 200 before the compact layout), home's board about 160
-dp (from none).
+is about 350 dp wide, home's board about 160 dp.
 
 - **Compact** (`gui::compact`): a portrait safe area under 760 dp tall. Every phone's is
   taller (801 dp at least), so only a small window takes it. The game's bar is three
@@ -160,20 +143,18 @@ dp (from none).
   16 dp: the board goes from about a third of the width to nearly all of it. The bar's
   middle holds what each side has taken ("What each side has taken"). Home's menu
   rows are 72 dp, the wordmark's row 64 with 12 under it (the gear's reach, so its 88 dp
-  tap keeps off Continue's; 8 until 2026-11-10), the sheet's rim 20, which leaves
+  tap keeps off Continue's), the sheet's rim 20, which leaves
   the board about 240 dp above the sheet. Settings' theme tiles are slim
   (`settings::SLIM_H`, `gui::choice`'s `beside`): 48 dp tall, a 40 × 26 dp thumbnail with
   its word beside it, the switch's halves 88 × 48 beside the name, so the Look tab shows
-  Theme and Board whole and the top of Kings without scrolling (Board's foot had been 33 dp
-  under the glass's; `test/shell/sizes`' last line). All under the 88 dp floor, accepted
-  for compact only (the user, 2026-11-09). A single puzzle keeps its layout
-  (`small: false`) for now.
+  Theme and Board whole and the top of Kings without scrolling. All are under the 88 dp
+  floor, in compact only. A single puzzle keeps its layout (`small: false`).
 - **Scrolling** (`gui::scroll_begin`, `scroll_end`): one vertical list a frame, its offset
   kept in `gui::Gui` by the list's id, so another list starts at its top. A press in the
   list's view is a tap until it moves 10 dp up or down (`gui::SLOP`); then it is a drag
   that takes the pointer (`g.active`), so the tile it went down on rises and clicks
   nothing. The wheel (`gfx::mouse_wheel`, 40 dp a step) scrolls it on the Mac and a
-  trackpad. No fling (the user, 2026-11-09). The list's quads are marked (`gui::CLIP` in
+  trackpad. No fling. The list's quads are marked (`gui::CLIP` in
   extra.z) and the UI shader keeps them inside the view, one more uniform and still one
   draw; the pointer reaches the list only inside it. The puzzle library's rows scroll under
   the switch, in either orientation, and a theme's levels under the title row in
@@ -183,10 +164,9 @@ dp (from none).
   a press outside the view.
 - **The window control** (iPadOS 26's three dots at a window's top left, about 22 to 60
   pt across and 22 to 42 pt down) may sit over the corner of whatever control is there:
-  back, the player's chip, the game's back tile. No screen moves out of its way (the user,
-  2026-11-09): back and the chip are large and still easy to tap beside the dots, and a
-  control that steps aside in a window only is one that moves. A margin clear of the dots
-  was built and taken out (task 050); UIKit's corner-adapted safe area
+  back, the player's chip, the game's back tile. No screen moves out of its way: back and
+  the chip are large and still easy to tap beside the dots
+  ([why](../decisions/rendering.md#small-windows)). UIKit's corner-adapted safe area
   (`edgeInsetsForLayoutRegion:` with `safeAreaLayoutRegionWithCornerAdaptation:`) is what
   reports the dots' reach, should a screen ever need it.
 
@@ -203,18 +183,12 @@ renderer (`draw::cover_with`), only where a cover shows (`draughts_resize_covers
 Mac), once at a season change or when the board changes, never per frame, and handed to
 `resize.c` as pixels; Core Animation does the rest while the loop is held. On mouse-up the frame at the new size takes the window's
 whole area again, with no layer to take off and nothing to flicker. Idle stays at 0.08%
-of a core (2026-11-10).
+of a core on the Mac.
 
-Drawing live during the drag was set aside (task 058): it needs the loop's body run from
-SDL's 60 Hz expose in an event watch, from inside gfx's own `frame()`, which Goose may
-not allow, and Metal's frame lags the window's size by one, so the edges wobble. A cover
-over the stretched frame, taken off after the next frame, flickered on mouse-up and
-switched too suddenly. Android and iOS don't hold the loop while a window resizes: an
-iPad's window (the 11" iPad Pro simulator, iOS 26.4) lays out live. Windows' modal size
-loop holds it as the Mac's does, and shows the last frame unscaled, black where the
-window grew, which is kept (the user, 2026-11-10): the Mac's look there would need a gfx
-patch presenting the backdrop and the last frame from SDL's 60 Hz expose, the swapchain
-made again each tick.
+Android and iOS don't hold the loop while a window resizes: an iPad's window lays out
+live. Windows' modal size loop holds it as the Mac's does, and shows the last frame
+unscaled, black where the window grew
+([why not drawn live, or covered on Windows](../decisions/rendering.md#window-resizing)).
 
 ## Look
 
@@ -222,13 +196,12 @@ Reference: Snowtime's UI ([repo](https://github.com/Snowhound/snowtime), its
 `prototypes/`): frosted glass panels over a scene, thin light borders, flat buttons;
 and the seasonal design boards made with `prototypes/design-boards-prompt.md`, which set
 each season's palette. The HTML
-prototypes in [`prototypes/`](../../prototypes/README.md) settled the values below on
-2026-11-07; they use only what this renderer draws cheaply.
+prototypes in [`prototypes/`](../../prototypes/README.md) settled the values below; they use only what this renderer draws cheaply.
 
 ### Seasons and themes
 
 The season, picked from the date, chooses the background and the board theme together;
-the theme can be overridden in settings. Values from the design boards (2026-11-07):
+the theme can be overridden in settings. Values from the design boards:
 
 | | Autumn: wood | Winter: stone | Spring: birch | Summer: sunset |
 | --- | --- | --- | --- | --- |
@@ -244,38 +217,13 @@ the theme can be overridden in settings. Values from the design boards (2026-11-
 | Page under the scene | `#1c1410` | `#0b1622` | `#101a14` | `#20140f` |
 | Square surface | wood grain | soft mottling | faint fibre | plain sheen |
 
-Summer's sunset (chosen 2026-11-07) takes the summer photograph's evening sky, peach and
-dusky rose, where the design boards' sea greens were cold against it and close to
-spring's sage. The crown on a light piece is the dark piece's color.
+Summer's sunset takes the summer photograph's evening sky, peach and dusky rose. The crown on a light piece is the dark piece's color.
 
 Secondary text is the text color at 66%. The surfaces are faint, never busy: a few sines
 and value noise in the board shader. Wood is fine irregular streaks along the board and
 a broad soft figure, never a regular stripe, which reads as bands from afar, with each
 square its own tone; stone a paper-like mottling; birch a hint of fibre across;
 sunset almost flat.
-
-#### Themes kept for later
-
-Set aside, not rejected: candidates for another season's photograph, a theme setting, or
-a later board. Values as in the table above.
-
-| | Sand and pine (2026-11-07) | Sea (the design boards' summer, until 2026-11-07) |
-| --- | --- | --- |
-| Light square | `#e6cfa6` | `#c7d5c6` |
-| Dark square | `#56603f` | `#2e5546` |
-| Frame | `#33361f` | `#1d3a30` |
-| Light piece | `#f7efdf` | `#f6f1e4` |
-| Dark piece | `#b5603f` (terracotta) | `#b56a57` (terracotta) |
-| Crown on a light piece | `#56603f` | `#2e5546` |
-| Glow | `#ffc67a` | `#86e7d3` |
-| Glass tint | `#3a2a1e` at 50% | `#1e4a4a` at 40% |
-| Glass copy dimmed to | 0.8 | 0.75 |
-| Text | `#fbf3e6` | `#f4f8f2` |
-| Page under the scene | `#1e1a12` | `#0d1c1c` |
-| Square surface | soft mottling, like sand | plain sheen |
-
-Sand and pine is warm sand with olive pine squares; it suits the summer photograph too,
-but its olive sits nearer spring's greens than the sunset does.
 
 ### Scene and glass
 
@@ -290,22 +238,17 @@ but its olive sits nearer spring's greens than the sunset does.
   4 × 4 texels from 2 × 2 bilinear taps) and blurred once when the season is picked, two
   passes of a Gaussian of sigma 5.6 texels: since a square image is cover-cropped by the
   screen's long side, that is the same blur at every screen size and orientation, so a
-  new screen size needs no new blur. The board pass samples it, a 1 MB texture. Tried and
-  set aside on 2026-11-07: the sharp photograph (busy behind the board), a plain painted tabletop,
-  and generated tabletop pictures with a crafted board.
+  new screen size needs no new blur. The board pass samples it, a 1 MB texture.
 - **The 3D board floats in front of the scene**, with a soft shadow under it: no room or
-  table to model. A painted backdrop with a real table comes later only if this falls
-  short.
+  table to model.
 - **Stored** twice per season, 2048 × 2048, built into the program (C23 `#embed` in its
   C): nothing to package in the APK's assets, and the same path on the Mac and Android.
   As **ASTC in 6 × 6 blocks** (1.87 MB each, from the lossless masters with
   `astcenc`, `design/backgrounds/README.md`), which the GPU samples as it is stored, with
   nothing decoded; and as **JPEG at quality 85** (0.46 to 0.70 MB each), the fallback for
   a GPU without ASTC: an Intel Mac, a desktop GPU with only BC, and the Mac's `goose`,
-  whose built-in gfx lacks compressed formats (below). Chosen on 2026-11-08: 6 × 6
-  looks the same as the JPEG and 4 × 4 side by side at the tablet's and a phone's size,
-  sharp behind home and blurred, and is nearer the master than the JPEG (44 to 45 dB
-  against 40 to 41, summer 40 against 37.5); 4 × 4 (4 MB) buys nothing visible.
+  whose built-in gfx lacks compressed formats (below)
+  ([why 6 × 6](../decisions/rendering.md#scene-and-glass)).
 - **Loading** (`src/app/background.c`, the program's own C, a `c_sources` entry in its
   `.build` sidecar, which decodes into pixels and knows no graphics API, and the
   renderer's `src/app/photo.c`, which uploads them): gfx has no compressed formats, so
@@ -322,14 +265,14 @@ but its olive sits nearer spring's greens than the sunset does.
   BMP from a file. A season is picked by a settings tile, which lights in the frame after
   the tap; the photograph loads in the frame after that, once the lit tile is on screen,
   after a `gfx::flush()` that lets the GPU finish with the old scene so the new one takes
-  its place in SDL's shared block. On the tablet a season change's longest frame went
-  from 54 to 66 ms to 22 ms (one frame late at 90 Hz). Only the current season is
+  its place in SDL's shared block. On the tablet a season change's longest frame is 22 ms
+  (one frame late at 90 Hz). Only the current season is
   resident: the sharp texture behind home and the blurred copies; nothing passes through
   the data stack, and the embedded file's pages are given back once read
   (`madvise(MADV_DONTNEED)`: clean pages of the APK, but counted while resident).
   Settings' thumbnails shrink each season's photograph on the GPU in turn (the JPEG path
   decodes and scales to 512 first), waiting for the GPU after each so only one is alive
-  at a time. The JPEG and ASTC masters are in git (2026-11-10), and
+  at a time. The JPEG and ASTC masters are in git, and
   `src/app/background.c` embeds them with C23 `#embed` under `__has_embed`, so a checkout
   that lacks them still builds and shows the page color, and one without the ASTC files
   decodes the JPEGs everywhere. Android embeds only the ASTC files and compiles no stb_image
@@ -337,14 +280,10 @@ but its olive sits nearer spring's greens than the sunset does.
   LDR, and an Android GPU without it would show the page color, no photograph, as a
   checkout without the images does. The ASTC files add 7.5 MB to `libmain.so` (the JPEGs
   2.2, the Mac's only), which the APK stores uncompressed (11.4 MB with the ASTC alone;
-  13.7 with the JPEGs too, 6.0 without the ASTC): ASTC hardly compresses (3 to 5%). PNG was rejected at about 5 MB a season; AVIF
-  needs libavif and an AV1 decoder on both platforms to save about 1 MB.
-- **One size for every screen** (2026-11-08): at 1.87 MB as ASTC, the sharp image
-  sits in SDL's shared 16 MiB block; sizing it by the screen's density (1024 to 1536 on
-  a dense phone) would save at most 1 MB there and needs several encodings or a choice
-  at load, so it stays 2048 everywhere. Larger tablets stretch it 1.25 to 1.41×, as
-  before.
-- **The plain background** (2026-11-09, `prototypes/plain.html`, fade b): in place of
+  13.7 with the JPEGs too, 6.0 without the ASTC): ASTC hardly compresses (3 to 5%).
+- **One size for every screen**: 2048 everywhere, at 1.87 MB as ASTC in SDL's shared
+  16 MiB block. Larger tablets stretch it 1.25 to 1.41×.
+- **The plain background** (`prototypes/plain.html`, fade b): in place of
   the photograph, a fade matched to the season's board, chosen in settings (the Theme
   row's switch, below; the player's file's `background = photo|plain`, photo by default).
   The season still picks the board, by the date or as chosen; only the photograph goes.
@@ -371,21 +310,14 @@ but its olive sits nearer spring's greens than the sunset does.
   fade saves its 16 MB texture and copies; where it is ASTC (Android) they sit in SDL's
   shared block, so the fade saves about 3 MB inside that block and the photograph's
   upload and blur on a theme change (on the Mac, home's graphics 52 → 34 MB).
-- **Glass is a pre-blurred copy, not a live blur.** Snowtime measured live backdrop blur
-  costing more than its weather animation, and switched to a copy of the background
-  blurred once (its `docs/architecture/scene.md`). Here the scene is blurred on the GPU
+- **Glass is a pre-blurred copy, not a live blur**
+  ([why](../decisions/rendering.md#scene-and-glass)). The scene is blurred on the GPU
   when the season is picked, into a small texture (the blur a 24 px one would be at
   1280 px wide, saturation 1.3), so nothing pre-blurred is stored. Natively
   (`src/app/scene.goose`) two more passes blur the 512 px copy into a 256 × 256 one (sigma
   3.9 texels, on the copy's 2.8), the same at every screen size for the same reason as
   the board's copy. A glass panel samples it at its screen position: one texture fetch
   per pixel, no blur per frame.
-- **The blurred copies stay as they are** (2026-11-08): smaller copies (a sigma-5.6
-  blur at 512 keeps its look at 256 or 128), a dual-filter (Kawase) chain, sampling a
-  mip of the photograph, and copies blurred offline and shipped compressed were weighed
-  and dropped. The two copies are 1.25 MiB together inside SDL's shared 16 MiB block
-  ([GPU memory](#gpu-memory)), so none would save measurable memory, and the blur runs
-  only on a season change. The thumbnails as ASTC (0.4 MB) were dropped the same way.
 - **Glass layers**, bottom to top: the copy, dimmed as the table says; the theme's
   glass tint; a 1 px border of white at 14%; a 1 px top highlight of white at 12%; a
   shadow `0 12px 32px -14px` of black at 55%. Corner radius 28 px.
@@ -393,13 +325,10 @@ but its olive sits nearer spring's greens than the sunset does.
 ### Light
 
 The 2D board is kept simple: flat squares with no light pool, as on the design boards.
-The pieces have a soft, diffuse light from above the board and toward its top
-(2026-11-07): the rounded outer edge catches it on its upper side, most halfway round,
+The pieces have a soft, diffuse light from above the board and toward its top: the rounded outer edge catches it on its upper side, most halfway round,
 and is in shade on its lower side; in the groove the wall facing the light is lit and
 the other in shade. Nothing else: no glossy spot, the face matte. Shade darkens toward a
-deeper tone of the piece's own color, which keeps a cream warm where black would grey it. A strong light pool
-and, with the tabletops, a crafted board with a soft light were tried on 2026-11-07 and
-set aside. The 3D board has one key light from the top left,
+deeper tone of the piece's own color, which keeps a cream warm where black would grey it. The 3D board has one key light from the top left,
 as in the design boards, a few terms in its shaders with no lighting pass. The terms
 the prototype tried, kept for 3D:
 
