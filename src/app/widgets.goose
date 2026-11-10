@@ -599,6 +599,7 @@ struct Widgets {
     ids:      i64[4],
     kept:     bool,
     stale:    bool,             // something the quads don't show changed (the glyphs baked again)
+    live:     bool,             // the app's --keep off: drawn as they come each frame, never kept
 }
 
 fn new() -> Widgets {
@@ -622,6 +623,7 @@ fn new() -> Widgets {
         ids: [0, 0, 0, 0],
         kept: false,
         stale: true,
+        live: false,
     };
     w.quads = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(w.upload));
     w.badges = bake_badges();
@@ -677,7 +679,7 @@ fn prepare(w: Widgets&, g: gui::Gui&, s: scene::Scene&, t: theme::Theme, width: 
         w.kept = false;
         return;
     }
-    guard !w.kept && n > 0 else { return; }
+    guard !w.kept && !w.live && n > 0 else { return; }
     let lw = width as i64;
     let lh = height as i64;
     if w.layer.id == 0 || w.layer_w != lw || w.layer_h != lh {

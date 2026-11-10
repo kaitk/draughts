@@ -72,6 +72,9 @@ struct Flags {
     // --bench N: times N of the board's frames, then quits (draw3d.goose; the flat board's
     // in draughts.goose)
     bench: i64 = 0,
+    // --keep off: the UI and the 3D backdrop drawn as they come each frame, never kept as
+    // layers (widgets::prepare, render3d::keep_backdrop), to measure their work alone
+    keep: bool = true,
     // --rest S: the CPU time and memory footprint over S seconds at rest, printed once
     // (draughts.goose; where Instruments can't measure them, the iPhone)
     rest: i64 = 0,
@@ -109,6 +112,7 @@ fn parse(argv: u8[:][>..]) -> Flags {
         if a == "--board" && v == "flat" { f.board = settings::FLAT; }
         if a == "--lookout" && v == "on" { f.lookout = 1; }
         if a == "--lookout" && v == "off" { f.lookout = 0; }
+        if a == "--keep" && v == "off" { f.keep = false; }
         if a == "--hints" && v == "moves" { f.hints = board::MOVES; }
         if a == "--lang" { f.lang = strings::pick(v); }
         if a == "--dp" {

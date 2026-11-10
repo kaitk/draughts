@@ -173,12 +173,13 @@ fn main() {
     if keep && sh.players.fresh { who::first_run(sh.who, sh.players); }
     if f.background >= 0 { sh.prefs.plain = f.background == 1; }
     var d = draw::new(kind, !settings::photo_shown(sh.prefs));
-    var d3 = draw3d::Drawer { wood: f.wood, marble: f.marble, summer: f.summer, spring: f.spring, timed: f.bench > 0, .. };
+    var d3 = draw3d::Drawer { wood: f.wood, marble: f.marble, summer: f.summer, spring: f.spring, timed: f.bench > 0, live: !f.keep, .. };
     // --bench N on the flat board: N whole frames, from the shell's fill to the GPU done,
     // each waited for (cpu: up to the submit); then N as the loop draws them, frame to
     // frame. In seconds; draw3d::Bench times the 3D board.
     var bench2d = draw3d::Bench {};
     var w = widgets::new();
+    w.live = !f.keep;
     var g = gui::Gui {};
     var t = text::Text {};
     var size = int2 { 0, 0 };

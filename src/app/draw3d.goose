@@ -58,6 +58,7 @@ struct Drawer {
     apply_ms:  f64                                   = 0.0,   // and prepare()'s steps in all, waited
     first_ms:  f64                                   = 0.0,   // the first frame drawn, waited for
     timed:     bool                                  = false, // --bench: the first frame waited for and timed
+    live:      bool                                  = false, // --keep off: the backdrop never kept (render3d's live)
     themed:    i64                                   = 0,     // prepare()'s next theme step (THEME_STEPS: done)
     warmed:    i64                                   = 0,     // and its next pipeline (WARM_STEPS: done)
     prep_ms:   f64[..48]                             = [],    // each prepare() step's time
@@ -294,6 +295,7 @@ fn drop(d: Drawer&) {
 fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f64, size: int2, kind: i64,
          plain: bool, which: i64 = 0, hold: bool = false) {
     let t0 = clock();
+    d.gpu.live = d.live;
     d.redraw = false;
     d.shadow = false;
     if !ready(d, kind, l.n, plain) {

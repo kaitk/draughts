@@ -165,6 +165,7 @@ struct Gpu {
     image:          gfx::Texture,   // what draw() resolves into when asked to keep it
     kept_backdrop:  gfx::Texture,   // the backdrop at full opacity, g.size (keep_backdrop())
     kept_for:       float4[7],      // what it was drawn from (backdrop_key())
+    live:           bool,           // the app's --keep off: the backdrop drawn each frame, never kept
     photo_gen:      i64,            // counts photo_part()'s steps, each of which may change g.photo
     kept_depth:     gfx::Texture,   // its depth at 1x, for the pulsing marks (marks_over)
     warm_color:     gfx::Texture,   // 4 × 4 targets warm() makes the pipelines on
@@ -1082,7 +1083,7 @@ fn backdrop(g: Gpu&, alpha: f32, size: int2) {
 // come with every change but the photograph's alone; till the next, backdrop() draws
 // it as it was. Recording only.
 fn keep_backdrop(g: Gpu&, size: int2) {
-    guard !kept_current(g, size) else { return; }
+    guard !g.live && !kept_current(g, size) else { return; }
     var pass = gfx::PassDesc { clear_color: false };
     pass.color[0] = g.kept_backdrop;
     gfx::begin_pass(pass);
@@ -1101,7 +1102,7 @@ fn backdrop_key(g: Gpu&, size: int2) -> float4[7] {
 
 // Whether g.kept_backdrop holds the backdrop at `size` as it would be drawn now.
 fn kept_current(g: Gpu&, size: int2) -> bool {
-    guard g.kept_backdrop.id != 0 && size.x == g.size.x && size.y == g.size.y else { return false; }
+    guard !g.live && g.kept_backdrop.id != 0 && size.x == g.size.x && size.y == g.size.y else { return false; }
     let k = backdrop_key(g, size);
     for i in 7 {
         let a = k[i];
