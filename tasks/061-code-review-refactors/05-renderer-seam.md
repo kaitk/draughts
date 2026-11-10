@@ -6,6 +6,45 @@ Stage 3 (`04-layout.md`) first. What the app shows doesn't change. This is the s
 that task 060 (shared blocks for chess) and a later goose-ngfx renderer build on. It is
 worth having even without either.
 
+## First: review stage 3's departures
+
+Stage 3 (`04-layout.md`, "Outcome") left five places where it didn't do what its file
+asked. The user wants each one reviewed before this stage starts. For each, read the
+code and decide whether the choice holds or an alternative is better. Ask the user
+before changing an expected output or what the app shows. Record each verdict here.
+
+1. **`shell::still` still runs the screen's frame.** The file said it declared the
+   screen left only to learn where the board goes; in fact `shell::blend` fades those
+   quads out, so the screen left is drawn. The transition's frame time wasn't measured
+   for that reason; the shell's frame was timed headless instead. The alternatives: a
+   cheaper still declaration (the layout plus only what shows faded), or dropping the
+   fade-out, which changes what the app shows.
+2. **The rects that change with the game aren't in `panel::Layout`.** The layout holds
+   what doesn't change (the bar's tiles' room, `stacked`, what each side has taken); the
+   clocks, the eye, the hint, and undo move come per frame from `way_out` and the three
+   `*_play` functions, as `Out` and `Play`. The alternative: fill them into the layout
+   each frame before `game()`, which needs the game's state and the faces where the
+   shell builds the layout.
+3. **`game()` was split by layout, not by declaring.** One function per mode works out
+   the regions; one declaring sequence serves all three, with `turn_words` choosing the
+   words' look by mode. The alternative: a declaring function per mode as well, repeating
+   the clocks, the piece, and the controls three times.
+4. **`gui::stack` is used in fewer places than listed.** Home's menu and settings'
+   landscape column use it. Settings' side-by-side groups keep their cuts (the stack
+   changed a printed position in its last decimals), one group at a time keeps them (a
+   cut clamps a glass taller than its room), and the rows, the cards, and the picker's
+   grid don't use it. The alternatives: re-bless the outputs the stack moves by a last
+   bit, or give the stack a cut's clamp.
+5. **`settings::layout` writes `s.name_w` and `s.slim`.** It is pure but for those two,
+   which the rows read through `s`. The alternative: return them in the `Page` and pass
+   them down to `rows_at`, `group_width`, `group_height`, and the tiles.
+
+### Verdicts
+
+(to fill in)
+
+## The seam
+
 The game packages are already clean. The flat structs that cross to the renderer are
 laid out as the shaders read them:
 
