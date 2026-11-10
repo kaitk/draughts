@@ -463,7 +463,7 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
     let p .= sh.prefs;
     sh.game.look = p.lookout;
     sh.game.look_skill = if sh.game.computer >= 0 { sh.game.skill } else { p.skill[clamp(p.level, game::EASY, game::HARD)] };
-    let go, changed = game::frame(sh.game, g, l, now, sh.over, frozen);
+    let ev, changed = game::frame(sh.game, g, l, now, sh.over, frozen);
     // Its eye turned on or off: kept in the player's file.
     if sh.game.look != p.lookout {
         p.lookout = sh.game.look;
@@ -473,20 +473,19 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
     // the board facing the side to move shows at once.
     panel::aim(l, sh.game.cam, now);
     if l.three { sh.came_view = l.view; }
-    // A game against the computer ended: the child meets a stronger or weaker one next.
+    // A game against the computer won or lost: the child meets a stronger or weaker one
+    // next.
     let gm .= sh.game;
-    if gm.result != 0 {
+    if ev.ended && ev.result != 0 {
         let k = clamp(gm.level, game::EASY, game::HARD);
-        sh.prefs.skill[k] = ai::adapt(sh.prefs.skill[k], k, gm.result, sh.prefs.played[k]);
+        sh.prefs.skill[k] = ai::adapt(sh.prefs.skill[k], k, ev.result, sh.prefs.played[k]);
         sh.prefs.played[k] += 1;
-        gm.result = 0;
         sh.changed = true;
     }
     // Played again or started over: a new game, at its level's skill as it is now, and
     // counted as home's play counts one. The computer is asked only after this frame, so
     // it thinks at the new skill from the first move.
-    if gm.restarted {
-        gm.restarted = false;
+    if ev.restarted {
         if gm.computer >= 0 {
             gm.skill = p.skill[clamp(gm.level, game::EASY, game::HARD)];
             gm.number = p.games;
@@ -494,12 +493,12 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
             sh.changed = true;
         }
     }
-    if go == game::HOME {
+    if ev.go == game::HOME {
         go_to(sh, HOME, now);
         sh.setup = home::NO_SETUP;
         return true;
     }
-    if go == game::SETTINGS {
+    if ev.go == game::SETTINGS {
         go_to(sh, SETTINGS, now);
         sh.back = GAME;
         return true;
@@ -526,23 +525,23 @@ fn puzzle_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     pl.b.king_look = king_look(sh);
     var l = puzzle_layout(sh, area, g.scale, now);
     sh.layout = l.board;
-    let go, changed = puzzle::frame(pl, g, l, now, sh.over);
+    let ev, changed = puzzle::frame(pl, g, l, now, sh.over);
     panel::aim(l, pl.cam, now);
     if l.three { sh.came_view = l.view; }
     // Solved: the stars kept are the most it has won.
-    if pl.fresh {
+    if ev.solved {
         let id = puzzle::current(pl).id;
         if pl.won > sh.prefs.stars[puzzles::loaded][id] {
             sh.prefs.stars[puzzles::loaded][id] = pl.won as u8;
             sh.changed = true;
         }
     }
-    if go == puzzle::PUZZLES { go_to(sh, PICKER, now); }
-    if go == puzzle::SETTINGS {
+    if ev.go == puzzle::PUZZLES { go_to(sh, PICKER, now); }
+    if ev.go == puzzle::SETTINGS {
         go_to(sh, SETTINGS, now);
         sh.back = PUZZLE;
     }
-    if go == puzzle::NEXT {
+    if ev.go == puzzle::NEXT {
         // On inside the theme, and after its last back to the library.
         let i = pl.index + 1;
         if i < puzzles::all.list.len && puzzles::all.list[i].theme == sh.theme { play_puzzle(sh, i, now); }
@@ -551,7 +550,7 @@ fn puzzle_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
             go_to(sh, PICKER, now);
         }
     }
-    return changed || go != puzzle::STAY;
+    return changed || ev.go != puzzle::STAY;
 }
 
 // The board of the puzzle playing, small in its tile on the puzzles to pick from, which

@@ -13,6 +13,9 @@ import shell from "../../src/shell";
 
 // The pieces the game screen puts over the UI, which the shell holds in the app.
 var over: board::Overlay;
+// The result of the last game against the computer the game's frames said had ended
+// (game::Event), for a test to print; 0 until one has.
+var result: i64 = 0;
 // The screen the shell's frames lay out on, in pixels; its short side sets the scale.
 var size = float2 { 1280.0, 800.0 };
 // The puzzles' library's first theme row among its tiles: after back and the draughts
@@ -110,8 +113,9 @@ fn control(g: gui::Gui&, n: i64) -> float2 {
 fn frame(gm: game::Game&, g: gui::Gui&, l: panel::Layout, at: float2, down: bool, pressed: bool, released: bool,
          now: f64) -> i64 {
     gui::begin(g, gui::Input { at: at, down: down, pressed: pressed, released: released }, l.board.scale, now);
-    let go, changed = game::frame(gm, g, l, now, over);
-    return go;
+    let ev, changed = game::frame(gm, g, l, now, over);
+    if ev.ended { result = ev.result; }
+    return ev.go;
 }
 
 // One frame of the shell on a screen of `size`; returns whether anything changed.

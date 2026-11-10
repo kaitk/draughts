@@ -216,13 +216,13 @@ fn main() {
     drive::tap(gm, g, l, drive::at(l.board, "c3"), 100.0);
     drive::tap(gm, g, l, drive::at(l.board, "e5"), 100.1);
     drive::idle(gm, g, l, 101.0);
-    print("the child takes the last piece: winner ", game::winner(gm), ", result ", gm.result);
-    gm.result = 0;
+    print("the child takes the last piece: winner ", game::winner(gm), ", result ", drive::result);
+    drive::result = 0;
     drive::tap(gm, g, l, drive::control(g, UNDO), 102.0);
     drive::tap(gm, g, l, drive::at(l.board, "c3"), 103.0);
     drive::tap(gm, g, l, drive::at(l.board, "e5"), 103.1);
     drive::idle(gm, g, l, 104.0);
-    print("  taken back and won again: winner ", game::winner(gm), ", result ", gm.result);
+    print("  taken back and won again: winner ", game::winner(gm), ", result ", drive::result);
     let lost, ok_lost = rules::parse_fen("B:Wd4:Bc5", rules::RUSSIAN);
     assert(ok_lost);
     game::start(gm, rules::RUSSIAN, clock::NONE, rules::BLACK, game::EASY, 10, 10);
@@ -231,5 +231,5 @@ fn main() {
     print("the computer can take the last piece: ", answer(gm, e));
     drive::idle(gm, g, l, 111.0);
     drive::idle(gm, g, l, 112.0);
-    print("  winner ", game::winner(gm), ", result ", gm.result);
+    print("  winner ", game::winner(gm), ", result ", drive::result);
 }

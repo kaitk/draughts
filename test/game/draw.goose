@@ -134,7 +134,7 @@ fn main() {
     gm.computer = rules::WHITE;
     print("against the computer, before the drawing move: counted ", gm.counted);
     t = play(gm, g, l, "a1", "b2", t);
-    print("  drawn ", game::drawn(gm), ", counted ", gm.counted, ", result ", gm.result, "; asks the computer ",
+    print("  drawn ", game::drawn(gm), ", counted ", gm.counted, ", result ", drive::result, "; asks the computer ",
           game::computer_to_move(gm));
 
     // A saved game: 9 plies in, saved and brought back, the countdown as it was.

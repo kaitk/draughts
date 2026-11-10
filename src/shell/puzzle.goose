@@ -55,6 +55,13 @@ let PUZZLES = gui::ASK_BACK;
 let SETTINGS = gui::ASK_SETTINGS;
 let NEXT = 3;
 
+// What a frame tells the shell: where to go, and whether the puzzle was solved this frame,
+// for the shell to keep its stars (Play.won).
+struct Event {
+    go:     i64  = STAY,
+    solved: bool = false,
+}
+
 struct Play {
     b:         board::Board,
     s:         puzzles::Solver,
@@ -68,7 +75,6 @@ struct Play {
     answer:    i64      = -1, // the answer to it that shows why, in the board's moves (SHOW)
     missed_at: f64      = -100.0,
     won:       i64      = 0,     // stars won, once solved
-    fresh:     bool     = false, // solved this frame, for the shell to keep the stars
     grab:      float2   = float2 { 0.0, 0.0 }, // on the 3D board, a held piece against the finger (board::touch)
     cam:       rig::Rig = rig::Rig {},          // and the camera its buttons move (board/rig.goose)
 }
@@ -105,7 +111,6 @@ fn restart(pl: Play&) {
     pl.path.clear();
     pl.missed_at = -100.0;
     pl.won = 0;
-    pl.fresh = false;
 }
 
 // The stars still at stake, or won.
@@ -151,8 +156,9 @@ fn missed(pl: Play&, now: f64) {
 }
 
 // After the pointer has gone to the board: a move made is judged, a mistake tapped is a
-// miss. `history` and `wrong_at` are the board's from before.
-fn judge(pl: Play&, history: i64, wrong_at: f64, now: f64) {
+// miss. `history` and `wrong_at` are the board's from before. Returns whether the move
+// solved the puzzle.
+fn judge(pl: Play&, history: i64, wrong_at: f64, now: f64) -> bool {
     let b .= pl.b;
     if b.history.len > history {
         let m = b.move;
@@ -162,7 +168,7 @@ fn judge(pl: Play&, history: i64, wrong_at: f64, now: f64) {
         if what == puzzles::SOLVED {
             pl.won = stars(pl);
             pl.state = SOLVED;
-            pl.fresh = true;
+            return true;
         } else if what == puzzles::ON {
             pl.state = ANSWER;
             pl.left--;
@@ -173,7 +179,7 @@ fn judge(pl: Play&, history: i64, wrong_at: f64, now: f64) {
             pl.answer = puzzles::answer(pl.s, b.pos);
             pl.state = if pl.answer >= 0 { SHOW } else { BACK };
         }
-        return;
+        return false;
     }
     if b.wrong >= 0 && b.wrong_at != wrong_at {
         // The board's pulse of the pieces that must capture would show the answer; the
@@ -181,9 +187,11 @@ fn judge(pl: Play&, history: i64, wrong_at: f64, now: f64) {
         b.pulse_end = 0.0;
         missed(pl, now);
     }
+    return false;
 }
 
-// A tap at p by the app's development flags, as a press and release.
+// A tap at p by the app's development flags, as a press and release. A puzzle it solves
+// keeps no stars: a run with taps writes no player's file.
 fn tap(pl: Play&, l: board::Layout, p: float2, now: f64) {
     let history = pl.b.history.len;
     let wrong_at = pl.b.wrong_at;
@@ -192,9 +200,9 @@ fn tap(pl: Play&, l: board::Layout, p: float2, now: f64) {
     judge(pl, history, wrong_at, now);
 }
 
-// One frame, after gui::begin. Returns what the shell should do and whether anything on
-// screen changed.
-fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overlay&) -> i64, bool {
+// One frame, after gui::begin. Returns what the shell should do and know (Event) and
+// whether anything on screen changed.
+fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overlay&) -> Event, bool {
     let b .= pl.b;
     let input = g.input;
     var changed = board::update(b, now) || input.pressed || input.released;
@@ -236,24 +244,23 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         hint(pl, now);
         changed = true;
     }
-    pl.fresh = false;
 
-    var go = STAY;
+    var ev = Event {};
     let ask = panel_frame(pl, g, l, now, over);
     if ask != STAY {
         changed = true;
-        go = ask;
+        ev.go = ask;
     }
     if ask == RESTART_ASK {
         restart(pl);
         rig::settle(pl.cam, now);
-        go = STAY;
+        ev.go = STAY;
     }
-    if ask == CAMERA { go = STAY; }
+    if ask == CAMERA { ev.go = STAY; }
     if ask == NEXT && pl.state != SOLVED {
         // A capture left partway: the piece slides back, and it is a miss.
         if board::abandon(b, now) { missed(pl, now); }
-        go = STAY;
+        ev.go = STAY;
     }
     let held, moved = board::showcase(pl.cam, g, input, l.three, l.pitch, now);
     if moved { changed = true; }
@@ -263,13 +270,13 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         let waited = board::waiting(b);
         // Through the perspective on the 3D board, as the game's.
         if board::touch(b, l.board, l.three, l.view, input, pl.grab, now) { changed = true; }
-        judge(pl, history, wrong_at, now);
+        ev.solved = judge(pl, history, wrong_at, now);
         // Next was declared above, before the board took the pointer: a press or a drop
         // that starts or ends a piece's wait changes how next looks, and a drop is the
         // finger's last event, so the frame after is drawn too, as after a click.
         if board::waiting(b) != waited { g.acted = true; }
     }
-    return go, changed;
+    return ev, changed;
 }
 
 // Whether anything is still moving at `now`; the app draws while it is.

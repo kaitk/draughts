@@ -40,6 +40,18 @@ let STAY = gui::ASK_NOTHING;
 let HOME = gui::ASK_BACK;
 let SETTINGS = gui::ASK_SETTINGS;
 
+// What a frame tells the shell: where to go, and what happened to the game that the
+// shell keeps a count of. A game against the computer that ended this frame, the first
+// time it ends (`counted`), with its result: 1 the child won, -1 lost, 0 drawn. And a
+// game started over (play again, or start over), for the shell to give it its level's
+// skill as adapting left it and a new number.
+struct Event {
+    go:        i64  = STAY,
+    ended:     bool = false,
+    result:    i64  = 0,
+    restarted: bool = false,
+}
+
 // The computer's levels.
 let EASY = 0;
 let MEDIUM = 1;
@@ -74,13 +86,9 @@ struct Game {
     answered: bool        = false,                  // whether its answer has come
     wait:     f64         = 0.0,                    // seconds from its turn to its move, once answered
     reply:    rules::Move = rules::Move { .. },
-    // Against the computer, the result as the game ends, for the shell: 1 the child won,
-    // -1 lost; and whether it was given, for a game counts once.
-    result:  i64  = 0,
+    // Against the computer, whether the game's end was given to the shell (Event): a
+    // game counts once.
     counted: bool = false,
-    // Whether the game was started over (play again, or start over), for the shell to
-    // give the new game its level's skill as adapting left it and a new number.
-    restarted: bool = false,
     // On the 3D board, a held piece's place against the finger on its plane (frame), and
     // the camera its buttons move (board/rig.goose).
     grab: float2   = float2 { 0.0, 0.0 },
@@ -185,9 +193,7 @@ fn start(gm: Game&, variant: u8, kind: i64, computer: i64, level: i64, skill: i6
     gm.drawn_at = -1.0;
     gm.seen_len = -1;
     gm.counted = false;
-    gm.result = 0;
     gm.asking = 0;
-    gm.restarted = false;
     gm.watched = Watch {};
     new_hints(gm);
     rig::reset(gm.cam);
@@ -202,10 +208,9 @@ fn new_hints(gm: Game&) {
 }
 
 // Starts the game over from where it began, the clocks full again: a new game, whose
-// result counts again, the 3D board's showcase angle easing back from `now`. The shell
-// sees `restarted` and gives it its skill and number.
+// result counts again, the 3D board's showcase angle easing back from `now`. The frame
+// tells the shell (Event.restarted), which gives it its skill and number.
 fn restart(gm: Game&, now: f64 = 0.0) {
-    gm.restarted = true;
     board::restart(gm.b);
     gm.clock = clock::new(gm.clock.kind);
     gm.turn = gm.b.pos.side;
@@ -431,14 +436,14 @@ fn due(gm: Game&, now: f64) -> f64 {
 }
 
 // One frame, after gui::begin, its pieces over the UI put in `over`. Returns what the
-// shell should do and whether anything on screen changed. `frozen` (the shell's
+// shell should do and know (Event) and whether anything on screen changed. `frozen` (the shell's
 // transition into the game) counts no time on the clock and asks the computer for
 // nothing; the clock counts again from the frame after.
-fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overlay&, frozen: bool = false) -> i64, bool {
+fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overlay&, frozen: bool = false) -> Event, bool {
     let b .= gm.b;
     let input = g.input;
     var changed = board::update(b, now) || input.pressed || input.released;
-    var go = STAY;
+    var ev = Event {};
     over.clear();
     if !frozen && gm.seen >= 0.0 && clock::tick(gm.clock, min(now - gm.seen, STEP)) { changed = true; }
     gm.seen = if frozen { -1.0 } else { now };
@@ -456,9 +461,12 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     match pick {
         // Partway through a capture, take back only takes the capture back to its start.
         panel::UNDO => { if !board::unwind(b) && gm.clock.flag < 0 { undone = take_back(gm); } },
-        panel::RESTART => { restart(gm, now); },
-        panel::BACK => { go = HOME; },
-        panel::SETTINGS => { go = SETTINGS; },
+        panel::RESTART => {
+            restart(gm, now);
+            ev.restarted = true;
+        },
+        panel::BACK => { ev.go = HOME; },
+        panel::SETTINGS => { ev.go = SETTINGS; },
         panel::LOOKOUT => { gm.look = !gm.look; },
         panel::HINT => { press_hint(gm, now); },
         _ => {},
@@ -478,7 +486,8 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         // A draw counts too, as 0: the computer's skill stays (ai::adapt).
         if gm.computer >= 0 && !gm.counted {
             gm.counted = true;
-            gm.result = 0;
+            ev.ended = true;
+            ev.result = 0;
         }
     }
     if won < 0 {
@@ -491,7 +500,8 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         // moves the computer's skill (ai::adapt).
         if gm.computer >= 0 && !gm.counted {
             gm.counted = true;
-            gm.result = if won == gm.computer { -1 } else { 1 };
+            ev.ended = true;
+            ev.result = if won == gm.computer { -1 } else { 1 };
         }
     }
     if gm.won_at >= 0.0 {
@@ -503,9 +513,10 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         let ask = celebrate(gm, g, l, won, now, over);
         if ask == panel::RESTART {
             restart(gm, now);
+            ev.restarted = true;
             changed = true;
         }
-        if ask == panel::BACK { go = HOME; }
+        if ask == panel::BACK { ev.go = HOME; }
     } else if gm.drawn_at >= 0.0 {
         if !gm.drawn_still && now - gm.drawn_at >= DRAW_STILL {
             gm.drawn_still = true;
@@ -514,9 +525,10 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         let ask = settle(gm, g, l, draw, now, over);
         if ask == panel::RESTART {
             restart(gm, now);
+            ev.restarted = true;
             changed = true;
         }
-        if ask == panel::BACK { go = HOME; }
+        if ask == panel::BACK { ev.go = HOME; }
     } else {
         let held, moved = board::showcase(gm.cam, g, input, l.three, l.pitch, now);
         if moved { changed = true; }
@@ -560,7 +572,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         gm.shown = shown;
         changed = true;
     }
-    return go, changed;
+    return ev, changed;
 }
 
 // Whether the lookout shows now: on, the side to move's turn and the board at rest, the
