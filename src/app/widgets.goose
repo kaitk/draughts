@@ -34,7 +34,6 @@ let VERT = """
     layout(location = 2) flat out vec4 v_color;
     layout(location = 3) flat out vec4 v_look;
     layout(location = 4) flat out vec4 v_extra;
-    layout(location = 5) out vec2 v_uv;          // a glyph's place in the atlas
     void main() {
         int i = gl_InstanceIndex * 4;
         vec4 rect = q[i];
@@ -58,9 +57,6 @@ let VERT = """
         v_color = q[i + 1];
         v_look = look;
         v_extra = extra;
-        // Linear over the glyph's quad (no margin), so interpolated here: a glyph's pixel
-        // then reads 2 components for it, not 8 (task 060).
-        v_uv = kind == 4 ? mix(look.yz, vec2(look.w, extra.y), CORNERS[gl_VertexIndex]) : vec2(0.0);
     }
     """;
 
@@ -78,7 +74,6 @@ let FRAG = """
     layout(location = 2) flat in vec4 v_color;
     layout(location = 3) flat in vec4 v_look;
     layout(location = 4) flat in vec4 v_extra;
-    layout(location = 5) in vec2 v_uv;
     layout(location = 0) out vec4 result;
     layout(set = 2, binding = 0) uniform sampler2D glass_copy;
     layout(set = 2, binding = 1) uniform sampler2D atlas;
@@ -387,6 +382,7 @@ let FRAG = """
         vec2 h = 0.5 * v_rect.zw;
         vec2 c = v_rect.xy + h;
         float r = v_look.y;
+        int style = int(v_extra.y);
     #ifdef UI_BASE
         if (kind == 0) {
             // Glass: the scene's glass copy at this place on screen, or the plain fade
@@ -422,7 +418,6 @@ let FRAG = """
         // style: plain, primary, toggle on, toggle off, quiet, row, primary row, choice on
         // and off, clock running, waiting, and low
         if (kind == 1) {
-            int style = int(v_extra.y);
             // A glass tile: white at 10%, 14 points more pressed and scaled to 0.96; an
             // inset light border and top highlight; a small shadow. A primary tile is the
             // glow color at 22%. A toggle has no highlight: on, the glow color at 26%
@@ -476,7 +471,6 @@ let FRAG = """
     #endif
     #ifdef UI_ICONS
         if (kind == 2) {
-            int style = int(v_extra.y);
             // A line icon: strokes 2.4 units (look.y sets another) of its 24-unit grid wide, as the prototypes'
             // SVGs draw them, round caps, in the text color.
             vec2 q = (p - v_rect.xy) / v_rect.zw * 24.0;
@@ -508,7 +502,8 @@ let FRAG = """
         }
         if (kind == 4) {
             // A glyph: the atlas's coverage (R8) over the quad, in the text color.
-            float a = texture(atlas, v_uv).r * v_color.a;
+            vec2 t = (p - v_rect.xy) / v_rect.zw;
+            float a = texture(atlas, mix(v_look.yz, vec2(v_look.w, v_extra.y), t)).r * v_color.a;
             result = vec4((mod(v_extra.z, 2.0) > 0.5 ? v_color.rgb : text.rgb) * a, a);
             return;
         }
