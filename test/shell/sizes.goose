@@ -255,7 +255,7 @@ fn at_rest(sh: shell::Shell&, g: gui::Gui&) {
 }
 
 fn screens(g: gui::Gui&) {
-    var home = showing(shell::HOME, home::NOTHING);
+    var home = showing(shell::HOME, home::NO_SETUP);
     at_rest(home, g);
     report("home", g, home, true, false);
     chip(g, home);
@@ -265,34 +265,34 @@ fn screens(g: gui::Gui&) {
     var computer = showing(shell::HOME, home::COMPUTER);
     at_rest(computer, g);
     report("the computer's setup", g, computer, true, false);
-    var plain = showing(shell::GAME, home::NOTHING);
+    var plain = showing(shell::GAME, home::NO_SETUP);
     at_rest(plain, g);
     report("the game", g, plain, true, false);
-    var clocked = showing(shell::GAME, home::NOTHING);
+    var clocked = showing(shell::GAME, home::NO_SETUP);
     game::start(clocked.game, rules::RUSSIAN, clock::RAPID, -1, game::MEDIUM, 50, 0);
     at_rest(clocked, g);
     report("the game on the clock", g, clocked, true, false);
     taken(g);
-    var settings = showing(shell::SETTINGS, home::NOTHING);
+    var settings = showing(shell::SETTINGS, home::NO_SETUP);
     at_rest(settings, g);
     report("settings", g, settings, true, false);
-    var picker = showing(shell::PICKER, home::NOTHING);
+    var picker = showing(shell::PICKER, home::NO_SETUP);
     at_rest(picker, g);
     report("the puzzles", g, picker, false, false);
     // Learn's page, three levels of four, and Shots', the longest: two levels of ten.
     for t in [puzzles::LEARN, puzzles::SHOTS] {
-        var page = showing(shell::PICKER, home::NOTHING);
+        var page = showing(shell::PICKER, home::NO_SETUP);
         page.theme = t;
         at_rest(page, g);
         report(if t == puzzles::LEARN { "the puzzles' Learn" } else { "the puzzles' Shots" }, g, page, false, false);
     }
-    var one = showing(shell::PUZZLE, home::NOTHING);
+    var one = showing(shell::PUZZLE, home::NO_SETUP);
     puzzle::open(one.puzzle, 0);
     at_rest(one, g);
     report("a puzzle", g, one, true, false);
     turn_piece(g, one);
     // Black to move with no move left: white has won, and the card comes at once.
-    var won = showing(shell::GAME, home::NOTHING);
+    var won = showing(shell::GAME, home::NO_SETUP);
     won.game = game::new(rules::RUSSIAN);
     let p, ok = rules::parse_fen("B:Wg1:Bh2", rules::RUSSIAN);
     assert(ok);
@@ -314,7 +314,7 @@ fn taken(g: gui::Gui&) {
     let safe = gui::safe(g, w, h);
     var line = str("  taken late in a game:");
     for raised in [false, true] {
-        var sh = showing(shell::GAME, home::NOTHING);
+        var sh = showing(shell::GAME, home::NO_SETUP);
         if raised { sh.prefs.board = settings::RAISED; }
         let gm .= sh.game;
         gm.taken = panel::Taken { men: [14, 12], kings: [1, 0] };
@@ -375,7 +375,7 @@ fn small_window(g: gui::Gui&) {
     g.scale = gui::scale_of(drive::size.x, drive::size.y);
     gui::test_faces(g);
     let u = g.scale;
-    var settings = showing(shell::SETTINGS, home::NOTHING);
+    var settings = showing(shell::SETTINGS, home::NO_SETUP);
     settings.prefs.group = 1;
     at_rest(settings, g);
     var glass = float4 { 0.0, 0.0, 0.0, 0.0 };
@@ -392,11 +392,11 @@ fn small_window(g: gui::Gui&) {
           whole(season.z / u), " x ", whole(season.w / u), " dp, Board ending ", whole((foot - board.y - board.w) / u),
           " dp above the glass's foot, Kings ", whole((foot - kings.y - kings.w) / u));
     head("the iPad's smallest window, home:");
-    var home = showing(shell::HOME, home::NOTHING);
+    var home = showing(shell::HOME, home::NO_SETUP);
     at_rest(home, g);
     report("home", g, home, true, false);
     head("the iPad's smallest window, the game:");
-    var plain = showing(shell::GAME, home::NOTHING);
+    var plain = showing(shell::GAME, home::NO_SETUP);
     at_rest(plain, g);
     report("the game", g, plain, true, false);
     taken(g);
@@ -423,7 +423,7 @@ fn handover() {
 // A phone's tabs, at 480 dp: settings' Look tab shows the look's tiles in place of the
 // game's, and the puzzles' Learn row opens Learn's page.
 fn tabs(g: gui::Gui&) {
-    var settings = showing(shell::SETTINGS, home::NOTHING);
+    var settings = showing(shell::SETTINGS, home::NO_SETUP);
     at_rest(settings, g);
     let game_tiles = drive::tiles(g);
     // Back, the two languages, then the tabs.
@@ -431,7 +431,7 @@ fn tabs(g: gui::Gui&) {
     drive::idle(settings, g, 2.1);
     print("settings' Look tab: group ", settings.prefs.group, ", tiles ", game_tiles, " then ", drive::tiles(g),
           ", changed ", settings.changed);
-    var picker = showing(shell::PICKER, home::NOTHING);
+    var picker = showing(shell::PICKER, home::NO_SETUP);
     at_rest(picker, g);
     let rows = drive::tiles(g);
     drive::tap(picker, g, drive::tile(g, drive::LEARN_ROW), 2.0);
@@ -515,13 +515,13 @@ fn main() {
             g.scale = gui::scale_of(size.x, size.y);
             gui::test_faces(g);
             g.insets = float4 { 0.0, 0.0, 0.0, 0.0 };
-            var bare = showing(shell::SETTINGS, home::NOTHING);
+            var bare = showing(shell::SETTINGS, home::NO_SETUP);
             at_rest(bare, g);
             let both = drive::tiles(g);
             g.insets = float4 { 0.0, 0.0, 0.0, 72.0 };
             head(str(size.x as i64, " x ", size.y as i64, ", insets 0, 0, 0, 72 px:"));
             screens(g);
-            var inset = showing(shell::SETTINGS, home::NOTHING);
+            var inset = showing(shell::SETTINGS, home::NO_SETUP);
             at_rest(inset, g);
             let shown = drive::tiles(g);
             print("  settings: ", shown, " tiles, ", both, " with no inset: ",
@@ -539,13 +539,13 @@ fn main() {
             g.scale = gui::scale_of(size.x, size.y);
             gui::test_faces(g);
             g.insets = float4 { 0.0, 0.0, 0.0, 0.0 };
-            var bare = showing(shell::SETTINGS, home::NOTHING);
+            var bare = showing(shell::SETTINGS, home::NO_SETUP);
             at_rest(bare, g);
             let both = drive::tiles(g);
             g.insets = float4 { 0.0, 48.0, 0.0, 40.0 };
             head(str(size.x as i64, " x ", size.y as i64, ", insets 0, 48, 0, 40 px:"));
             screens(g);
-            var inset = showing(shell::SETTINGS, home::NOTHING);
+            var inset = showing(shell::SETTINGS, home::NO_SETUP);
             at_rest(inset, g);
             let shown = drive::tiles(g);
             print("  settings: ", shown, " tiles, ", both, " with no inset: ",

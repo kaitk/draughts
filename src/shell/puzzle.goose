@@ -48,10 +48,11 @@ let POP_GAP = 0.15;         // and the next a little after
 let STAKE = 3;
 let GLOW_AFTER = 2;         // misses before the piece to move glows
 
-// What the screen asks the shell for.
-let STAY = 0;
-let PUZZLES = 1;
-let SETTINGS = 2;
+// What the screen asks the shell for: nothing, the puzzles (its back), settings, or the
+// next puzzle.
+let STAY = gui::ASK_NOTHING;
+let PUZZLES = gui::ASK_BACK;
+let SETTINGS = gui::ASK_SETTINGS;
 let NEXT = 3;
 
 struct Play {
@@ -282,8 +283,8 @@ fn animating(pl: Play&, g: gui::Gui&, now: f64) -> bool {
            || now < pl.missed_at + TRY_AGAIN || rig::moving(pl.cam, now);
 }
 
-let RESTART_ASK = -1;
-let CAMERA = -2;            // a camera button was tapped (panel_frame)
+let RESTART_ASK = gui::ASK_RESTART;
+let CAMERA = 4;             // a camera button was tapped (panel_frame)
 
 // The goal's icon and words.
 fn goal_icon(pz: puzzles::Puzzle&) -> i64 {

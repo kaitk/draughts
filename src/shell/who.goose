@@ -20,8 +20,8 @@ let PICKING = 1;            // who's playing
 let SHEET = 2;              // a player's sheet
 
 // What the card asks the shell for.
-let NOTHING = 0;
-let CHANGED = 1;            // only the card changed
+let NOTHING = gui::ASK_NOTHING;
+let CHANGED = gui::ASK_CHANGED; // only the card changed
 let SWITCH = 2;             // to the player at the index given
 let CREATE = 3;             // a new player with the sheet's picture and name
 let SAVE = 4;               // the sheet's picture and name for its player

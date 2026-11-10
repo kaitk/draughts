@@ -30,15 +30,17 @@ import game from "../game";
 import strings from "../../strings";
 import puzzles from "../puzzles";
 
-// What home asks for.
-let NOTHING = 0;
+// What home asks for: the shared asks (gui::ASK_NOTHING..), and home's own. FRIEND and
+// COMPUTER are also which setup is open (Shell.setup), NO_SETUP when none is.
+let NO_SETUP = 0;
+let NOTHING = gui::ASK_NOTHING;
+let SETTINGS = gui::ASK_SETTINGS;
+let BACK = gui::ASK_BACK;   // from a setup to the menu
+let CHANGED = gui::ASK_CHANGED; // a choice in the setup
 let CONTINUE = 1;
 let FRIEND = 2;             // a friend's setup
-let SETTINGS = 3;
 let COMPUTER = 4;           // the computer's setup
-let BACK = 5;               // from a setup to the menu
 let PLAY = 6;               // a new game as the setup stands
-let CHANGED = 7;            // a choice in the setup
 let PUZZLES = 8;
 let EXIT = 9;               // close the app
 
@@ -149,12 +151,12 @@ fn setup_height(setup: i64, paired: bool, u: f32, headed: bool = true) -> f32 {
 
 // Whether a setup's column is two side by side: in a landscape too short for one.
 fn paired(setup: i64, landscape: bool, height: f32, u: f32) -> bool {
-    return landscape && setup != NOTHING && setup_height(setup, false, u) > height - 2.0 * MARGIN * u;
+    return landscape && setup != NO_SETUP && setup_height(setup, false, u) > height - 2.0 * MARGIN * u;
 }
 
 // How tall the column's content is: the menu, or a setup (FRIEND or COMPUTER).
 fn content_height(setup: i64, landscape: bool, height: f32, u: f32, small: bool = false) -> f32 {
-    if setup == NOTHING { return menu_height(gear_beside(landscape, height, u), height, u, small); }
+    if setup == NO_SETUP { return menu_height(gear_beside(landscape, height, u), height, u, small); }
     return setup_height(setup, paired(setup, landscape, height, u), u);
 }
 
@@ -171,12 +173,12 @@ fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: f
     let width = area.z;
     let height = area.w;
     let landscape = width >= height;
-    let small = setup == NOTHING && gui::compact(g, area);
+    let small = setup == NO_SETUP && gui::compact(g, area);
     let content_h = content_height(setup, landscape, height, u, small);
     let pair = paired(setup, landscape, height, u);
     let clear = (EDGE + CORNER + 16.0) * u;
     // The player's chip on the menu, in the way out's row at the board's side's left.
-    let chip = setup == NOTHING;
+    let chip = setup == NO_SETUP;
     var side = area.x;          // where the board's side of the screen starts
     // Two columns, each 330 dp, narrower where the second would reach the way out (a
     // 16:9 phone with its camera's cutout at a side), in dp; 0 for one column.
@@ -191,14 +193,14 @@ fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: f
         // the height at most, 40 dp from the column. Where the board would reach the way
         // out (a phone), it moves down to 8 dp under it or narrows to 16 dp left of it,
         // whichever leaves it larger.
-        let wide = if pair { 2.0 * pair_w + PAIR_GAP } else if setup == NOTHING && gear_beside(true, height, u) { GEAR_W }
+        let wide = if pair { 2.0 * pair_w + PAIR_GAP } else if setup == NO_SETUP && gear_beside(true, height, u) { GEAR_W }
                    else { COLUMN_W };
         let w = wide * u;
         col = float4 { area.x - 32.0 * u, area.y, w + 112.0 * u, height };
         content = gui::center(float4 { area.x + 40.0 * u, area.y, w, height }, w, content_h);
         // The gear reaches 8 dp over the wordmark's row: on the screen, where the menu
         // has under 8 dp above it (a 16:9 phone less its gesture bar).
-        if setup == NOTHING && gear_beside(true, height, u) {
+        if setup == NO_SETUP && gear_beside(true, height, u) {
             content.y = min(max(content.y, area.y + 8.0 * u), area.y + height - content_h);
         }
         let stage = float4 { w + 80.0 * u, 0.0, width - w - 80.0 * u, height };
@@ -245,7 +247,7 @@ fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: f
         // row, and the board, with no room left, isn't shown.
         var rim = (if small { RIM_COMPACT } else { 32.0 }) * u;
         var sheet_h = content_h + 2.0 * rim;
-        let full = setup != NOTHING && height - sheet_h < clear;
+        let full = setup != NO_SETUP && height - sheet_h < clear;
         if full {
             rim = clamp(0.5 * (height - 8.0 * u - content_h), 8.0 * u, 32.0 * u);
             sheet_h = content_h + 2.0 * rim;
@@ -280,7 +282,7 @@ fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: f
     gui::glass(g, gui::bleed(g, col, area), 32.0);
     over.clear();
     let gear = gear_beside(landscape, height, u);
-    var pick = if setup != NOTHING { choose(over, g, content, setup == COMPUTER, pair_w, head, s) }
+    var pick = if setup != NO_SETUP { choose(over, g, content, setup == COMPUTER, pair_w, head, s) }
                else { menu(over, g, content, gear, mark_gap(gear, height, u, small), row_gap(gear, height, u, small), s,
                            small) };
     // The player and the way out, declared last so the tiles before them keep their order.
@@ -388,7 +390,7 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
         let won, all = picker::totals(s.stars[puzzles::loaded]);
         strings::fill_in(stars, strings::PUZZLES_STARS, [won, all]);
         let note = if i == 2 { strings::get(LEVEL_NOTES[s.level]) } else if i == 3 && all > 0 { stars[..] } else { "" };
-        if gui::row(g, gui::HOME_IDS + 1 + i, r, icons[i], strings::get(keys[i]), note, i == 0, rows[i] != 0) { pick = rows[i]; }
+        if gui::row(g, gui::HOME_IDS + 1 + i, r, icons[i], strings::get(keys[i]), note, i == 0, rows[i] != NOTHING) { pick = rows[i]; }
     }
     if !gear {
         let r = gui::cut_top(content, ROW_H * u);

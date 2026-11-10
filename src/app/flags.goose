@@ -15,13 +15,13 @@ let GO_PLAY = 99;
 let MAX_TAPS = 256;
 
 struct Flags {
-    width:      i64 = 1280, // --size WxH: the window, in points on the Mac
-    height:     i64 = 800,
+    width:      i64  = 1280, // --size WxH: the window, in points on the Mac
+    height:     i64  = 800,
     full:       bool = false, // --size full: the desktop's window fills the screen
-    theme:      i64 = -1,   // --theme wood|stone|birch|sunset: the board, else the season's
-    background: i64 = -1,   // --background photo|plain: 0 the photograph, 1 the plain fade
-    board:      i64 = -1,   // --board 3d|flat: settings::RAISED or settings::FLAT
-    lookout:    i64 = -1,   // --lookout on|off: the player's lookout, 1 on, 0 off
+    theme:      i64  = -1,  // --theme wood|stone|birch|sunset: the board, else the season's
+    background: i64  = -1,  // --background photo|plain: 0 the photograph, 1 the plain fade
+    board:      i64  = -1,  // --board 3d|flat: settings::RAISED or settings::FLAT
+    lookout:    i64  = -1,  // --lookout on|off: the player's lookout, 1 on, 0 off
     // --hints moves: the selected piece's targets (board::MOVES); mistakes only by default
     hints: i64 = -1,
     // --lang CODE: a language with a file in strings/, else the system's
@@ -44,7 +44,7 @@ struct Flags {
     // taps, a clock, or the computer are given)
     screen: i64 = -1,
     // --screen friend|computer: home with that setup open (home::FRIEND, COMPUTER)
-    setup:  i64 = 0,
+    setup:  i64 = home::NO_SETUP,
     puzzle: i64 = -1,       // --puzzle ID: that puzzle, its taps on its board
     // --variant international|brazilian|russian: a new game of that draughts, and the
     // puzzles' set; with a setup open, its choice

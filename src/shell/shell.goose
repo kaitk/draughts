@@ -72,7 +72,7 @@ struct Shell {
     quit:    bool               = false,      // home's way out was tapped: the app stops
     drawn:   i64                = -1,         // the screen the last frame declared
     back:    i64                = HOME,       // where settings goes back to
-    setup:   i64                = home::NOTHING, // home's column: the menu, or a setup
+    setup:   i64                = home::NO_SETUP, // home's column: the menu, or a setup
     staged:  bool               = false,      // home shows `next`, having declared a setup this frame
     layout:  board::Layout,                   // where the board is this frame
     // The 3D board this frame (settings::raised, on a screen showing a board), and the
@@ -107,7 +107,7 @@ struct Shell {
     mix:   f32 = 1.0,
     went:  board::Layout,
     came:  board::Layout,
-    left:  i64 = home::NOTHING,
+    left:  i64 = home::NO_SETUP,
     // This frame: the screen whose board shows, and where the UI is hidden for the board
     // passing in a transition (x, y, size, corner radius; size 0 at rest), `tall` pixels
     // tall (0 as tall as wide; the 3D board's bounds are wider).
@@ -189,8 +189,8 @@ fn back(sh: Shell&, now: f64) -> bool {
     if sh.screen == HOME && sh.who.state != who::CLOSED {
         who::back(sh.who);
     } else if sh.screen == HOME {
-        guard sh.setup != home::NOTHING else { return false; }
-        sh.setup = home::NOTHING;
+        guard sh.setup != home::NO_SETUP else { return false; }
+        sh.setup = home::NO_SETUP;
     } else if sh.screen == SETTINGS {
         go_to(sh, sh.back, now);
     } else if sh.screen == PUZZLE {
@@ -199,7 +199,7 @@ fn back(sh: Shell&, now: f64) -> bool {
         sh.theme = -1;
     } else {
         go_to(sh, HOME, now);
-        sh.setup = home::NOTHING;
+        sh.setup = home::NO_SETUP;
     }
     return true;
 }
@@ -217,7 +217,7 @@ fn play(sh: Shell&, now: f64) {
     // The transition shows the setup leaving; home, come back to, shows this game rather
     // than the setup's board.
     go_to(sh, GAME, now);
-    sh.setup = home::NOTHING;
+    sh.setup = home::NO_SETUP;
     sh.staged = false;
 }
 
@@ -422,7 +422,7 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
     }
     if go == game::HOME {
         go_to(sh, HOME, now);
-        sh.setup = home::NOTHING;
+        sh.setup = home::NO_SETUP;
         return true;
     }
     if go == game::SETTINGS {
@@ -503,7 +503,7 @@ fn picker_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
         sh.changed = true;
     } else if pick == picker::BACK {
         go_to(sh, HOME, now);
-        sh.setup = home::NOTHING;
+        sh.setup = home::NO_SETUP;
     } else if pick >= 0 {
         play_puzzle(sh, pick, now);
     }
@@ -574,7 +574,7 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     // starts, set up afresh when the draughts chosen changes. The board switches at once,
     // as the column does. A tap that changes the setup shows on the next frame, the board
     // and the column together: this one shows what it declared.
-    sh.staged = sh.setup != home::NOTHING;
+    sh.staged = sh.setup != home::NO_SETUP;
     var changed = false;
     if sh.staged && sh.next.variant != sh.prefs.variant as u8 {
         board::reset(sh.next, sh.prefs.variant as u8);
@@ -584,7 +584,7 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     if board::update(b, now) { changed = true; }
     let flip = turned(sh, sh.setup);
     // Who's playing, over the menu: home under it takes no pointer.
-    let card = sh.who.state != who::CLOSED && sh.setup == home::NOTHING;
+    let card = sh.who.state != who::CLOSED && sh.setup == home::NO_SETUP;
     if card { gui::listen(g, false); }
     var room = float4 { 0.0, 0.0, 0.0, 0.0 };
     let pick = home::frame(sh.over, g, sh.layout, rules::VARIANTS[b.variant].size, area, sh.setup, sh.prefs, room);
@@ -610,7 +610,7 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
         home::PUZZLES => { go_to(sh, PICKER, now); },
         home::FRIEND => { sh.setup = home::FRIEND; },
         home::COMPUTER => { sh.setup = home::COMPUTER; },
-        home::BACK => { sh.setup = home::NOTHING; },
+        home::BACK => { sh.setup = home::NO_SETUP; },
         home::CHANGED => { sh.changed = true; },
         home::EXIT => { sh.quit = true; },
         home::PLAYERS => { who::open(sh.who); },

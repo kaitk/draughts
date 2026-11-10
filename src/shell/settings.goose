@@ -25,11 +25,12 @@ import game from "../game";
 import strings from "../../strings";
 import .prefs;
 
-// What the screen asks for.
-let NOTHING = 0;
-let BACK = 1;
-let CHANGED = 2;
-let SHOWN = 3;              // the other group shown (a phone's tabs): drawn again, nothing kept
+// What the screen asks for (gui::ASK_NOTHING..): SHOWN when the other group shows (a
+// phone's tabs).
+let NOTHING = gui::ASK_NOTHING;
+let BACK = gui::ASK_BACK;
+let CHANGED = gui::ASK_CHANGED;
+let SHOWN = gui::ASK_SHOWN;
 
 // The preview's position: white to move and bound to capture two, the man on d4 over
 // e5 and g5 or the king on h6 over g5 and e5, after black's d6 to e5; the same on every

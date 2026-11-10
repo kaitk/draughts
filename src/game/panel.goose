@@ -15,12 +15,12 @@ import gui from "../gui";
 import board from "../board";
 import strings from "../../strings";
 
-// What the panels' tiles ask for.
-let NOTHING = 0;
+// What the panels' tiles ask for: the shared asks (gui::ASK_NOTHING..), and the panel's own.
+let NOTHING = gui::ASK_NOTHING;
+let RESTART = gui::ASK_RESTART;
+let BACK = gui::ASK_BACK;
+let SETTINGS = gui::ASK_SETTINGS;
 let UNDO = 1;
-let RESTART = 2;
-let BACK = 3;
-let SETTINGS = 4;
 let LOOKOUT = 5;            // the lookout's eye, turned on or off
 let HINT = 6;               // the hint's tile
 

@@ -147,7 +147,7 @@ fn main() {
     sh.setup = f.setup;
     // A setup the flags open shows the draughts, the child's color, and the level they
     // give, with the settings file left as it is unless a tap in the setup writes it.
-    if f.setup != home::NOTHING {
+    if f.setup != home::NO_SETUP {
         if f.variant >= 0 { sh.prefs.variant = f.variant; }
         if f.computer >= 0 { sh.prefs.color = 1 - f.computer; }
         if f.level >= 0 { sh.prefs.level = f.level; }

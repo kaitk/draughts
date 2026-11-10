@@ -22,11 +22,12 @@ import gui from "../gui";
 import strings from "../../strings";
 import puzzles from "../puzzles";
 
-// What the screen asks for: these, or the index in puzzles::all of a puzzle tapped.
-let BACK = -2;              // home
-let NOTHING = -1;
-let SHOWN = -3;             // a theme's page opened or left: drawn again
-let SWITCHED = -4;          // other draughts chosen on the library's switch
+// What the screen asks for: these, or the index in puzzles::all of a puzzle tapped, and
+// so all negative, the shared asks (gui::ASK_NOTHING..) and its own.
+let NOTHING = gui::ASK_NOTHING;
+let BACK = gui::ASK_BACK;   // home
+let SHOWN = gui::ASK_SHOWN; // a theme's page opened or left: drawn again
+let SWITCHED = -10;         // other draughts chosen on the library's switch
 
 let MARKS = [gui::BOOK, gui::JUMPS, gui::CROWN, gui::TARGET, gui::KING, gui::SHIELD];
 let NAMES = [strings::THEME_LEARN, strings::THEME_CAPTURES, strings::THEME_CROWNING, strings::THEME_SHOTS,

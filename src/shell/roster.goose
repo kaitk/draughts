@@ -25,7 +25,7 @@ fn enter(sh: Shell&, index: i64, s: settings::Settings) {
     sh.game.b.hints = sh.prefs.hints;
     sh.puzzle = puzzle::new();
     sh.theme = -1;
-    sh.setup = home::NOTHING;
+    sh.setup = home::NO_SETUP;
     sh.changed = true;
 }
 

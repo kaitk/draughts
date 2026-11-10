@@ -79,13 +79,13 @@ fn main() {
     strings::use(strings::EN);
     puzzles::load();
     drive::size = float2 { 1280.0, 800.0 };
-    check("landscape", home::NOTHING);
+    check("landscape", home::NO_SETUP);
     check("landscape, the computer's setup", home::COMPUTER);
     drive::size = float2 { 800.0, 1280.0 };
-    check("portrait", home::NOTHING);
+    check("portrait", home::NO_SETUP);
     check("portrait, the computer's setup", home::COMPUTER);
     drive::size = float2 { 600.0, 960.0 };
-    check("portrait at 600 x 960", home::NOTHING);
+    check("portrait at 600 x 960", home::NO_SETUP);
 
     // After the way out, the app writes the game as at any loop's end: a game under way
     // comes back from that image in a new start.

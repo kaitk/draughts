@@ -221,6 +221,16 @@ struct Gui {
     scroll: Scroll = Scroll {},
 }
 
+// What a screen's frame asks for (gui is what every screen imports): the asks the screens
+// share, numbered once, here. They are negative: a screen's own asks are 0 and up, as is
+// the index of a puzzle the puzzles to pick from return.
+let ASK_NOTHING = -1;
+let ASK_BACK = -2;          // the screen's back: home, the menu, the puzzles, where it came from
+let ASK_SETTINGS = -3;
+let ASK_CHANGED = -4;       // a choice changed, to write
+let ASK_SHOWN = -5;         // a part of the screen shown or hidden: drawn again, nothing kept
+let ASK_RESTART = -6;
+
 // Widget ids (slot keeps a widget's press by its id, scroll_begin a list's offset): each
 // screen numbers its widgets from its base, inside its own range, so two screens declared
 // in one frame (a transition) never share an id. IDS, under SCROLL_ID below, lists the

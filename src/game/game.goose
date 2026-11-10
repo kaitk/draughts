@@ -35,10 +35,10 @@ let PAUSE = [0.8, 0.6, 0.45];   // seconds from the computer's turn to its move 
 let PULSE = 1.2;            // seconds: the computer's ring pulses once as it begins to think
 let HINT_UP = 15;           // the hint's search: this much above the skill of the side it plays against
 
-// What the screen asks the shell for.
-let STAY = 0;
-let HOME = 1;
-let SETTINGS = 2;
+// What the screen asks the shell for: nothing, home (its back), or settings.
+let STAY = gui::ASK_NOTHING;
+let HOME = gui::ASK_BACK;
+let SETTINGS = gui::ASK_SETTINGS;
 
 // The computer's levels.
 let EASY = 0;

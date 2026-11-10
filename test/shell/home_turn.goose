@@ -100,7 +100,7 @@ fn main() {
     let setup = sh.setup == home::FRIEND;
     drive::tap(sh, g, drive::tile(g, 0), 9.6);
     print("drags off the board and a menu row tapped: the angle kept ", angle(sh, 10.0) == before, ", the setup opened ",
-          setup, " and closed ", sh.setup == home::NOTHING);
+          setup, " and closed ", sh.setup == home::NO_SETUP);
     // Far past the range, the other way: it stops at its ends.
     drag(sh, g, mid, mid + float2 { 600.0, 400.0 }, 4, 11.0);
     print("dragged far: ", angle(sh, 11.2), ", in its room ", in_room(sh, g, mid, k0), " at ", r1(100.0 * sh.view.k / k0),
