@@ -31,7 +31,7 @@ Vulkan, or iOS 16 or later with Metal.
 | Galaxy A33 5G (SM-A336B) | Samsung Exynos 1280 | Mali-G68 MP4, Vulkan 1.3 | Android 16 | Plays in 2D at 90 Hz and 3D at 60 while it moves; the weakest tried |
 | iPhone 13 mini | Apple A15 Bionic | Apple GPU, Metal | iOS 26 | Runs, a development build |
 | iPad Pro 11-inch (M5), in the Simulator | The Mac's M1 Pro | Apple GPU, Metal | iPadOS 26.4 | Runs full screen and in resized windows, both orientations; the smallest windows still to fit |
-| Mac with Apple silicon (M1 Pro) | Apple M1 Pro | Apple GPU, Metal | macOS | Development and headless tests |
+| Mac with Apple silicon (M1 Pro) | Apple M1 Pro | Apple GPU, Metal | macOS | Runs in 2D and 3D; development and headless tests |
 | Windows PC | AMD Ryzen 7 5800X3D | NVIDIA GeForce RTX 4090, Vulkan | Windows 11 | Runs in 2D and 3D; development, headless tests, and Android builds |
 
 Measured numbers per device are in
@@ -65,20 +65,33 @@ rate. The 3D board's frame takes about 10.6 ms of GPU work on the tablet, over i
 budget now and then (task 055, and task 042 for its cost); the Galaxy A33's 23 ms holds a
 steady 60 on its 90 Hz display. On the iPhone, Instruments' Animation Hitches counts the
 frames in place of Android's compositor, and the app counts its own CPU time and memory
-footprint (its idle CPU from 2026-11-10's run loop wait, task 057; before it, SDL polled
-for input at 16% of a core).
+footprint.
 
 The 3D board's extra memory is GPU memory: 180 to 230 MB against about 36 MB in 2D.
 
-The app draws a frame only when something changes (a touch, a moving piece, a clock's
-change). Otherwise it draws nothing and waits for input, waking about once a second on
-Android, so an idle board costs next to no CPU and no GPU work.
+### How it works
 
-### How it is built
-
+- **It sleeps when nothing changes.** A frame is drawn only for a touch, a moving piece,
+  or a clock's next second; otherwise the app presents nothing and blocks in the
+  system's own event wait (on iOS the run loop itself) until input or its own timer wakes
+  it. At rest it wakes about once a second and uses 0.03 to 0.3% of a core on every
+  device measured, with no GPU work
+  ([frames and battery](docs/architecture/rendering.md#frames-and-battery)).
+- **Immediate-mode UI.** Each frame the screens are declared in code: no widget tree, no
+  retained state but a small table of presses and scroll offsets. Every tile, panel, icon,
+  and glyph is a quad in one fixed array, and the whole UI is one instanced draw
+  ([UI layer](docs/architecture/rendering.md#ui-layer)).
+- **One responsive layout, every screen.** Layouts cut rows, columns, and grids from the
+  screen's rectangle in dp, the shorter side 800 dp with a floor in physical size so a
+  phone's taps stay finger-sized. They fit the safe area around cutouts and gesture bars,
+  turn with the screen, and switch to a compact form in small windows: the same code lays
+  out a phone, a tablet, an iPad's resized window, and a desktop window, checked headless
+  at each device's size
+  ([screen sizes](docs/architecture/rendering.md#screen-sizes-and-the-safe-area),
+  [small windows](docs/architecture/rendering.md#small-windows)).
 - **Goose, compiled to C,** with [goose_gfx](https://github.com/aardappel/goose_gfx) on
-  SDL3's GPU API: Vulkan on Android, Metal on the Mac and iOS. No engine, no Gradle, no
-  Xcode project.
+  SDL3's GPU API: Vulkan on Android and Windows, Metal on the Mac and iOS. No engine, no
+  Gradle, no Xcode project: one Python script builds each platform.
 - **Shaders draw everything:** the board in one full-screen pass, the pieces, rings, and
   glass panels as signed distance shapes, crisp at any size. All pieces are one
   instanced draw, the whole UI another.

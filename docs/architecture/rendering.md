@@ -1346,7 +1346,7 @@ The release at rest, idle 20 to 30 s:
 | Pixel 7a | 3D, a game | 0.04% | 215 MB | 73 MB | 324 MB |
 | Galaxy A33 5G, 2400 × 1080 | 2D, a game | 0.04% | 35 MB | 43 MB | 116 MB |
 | Galaxy A33 5G | 3D, a game | 0.04% | 197 MB | 29 MB | 275 MB |
-| iPhone 13 mini, 2340 × 1080 | 2D, a game | 0.08% (16% before task 057) | | | 59 MB footprint |
+| iPhone 13 mini, 2340 × 1080 | 2D, a game | 0.08% | | | 59 MB footprint |
 | iPhone 13 mini | 3D, a game | 0.08% | | | 204 MB footprint |
 
 - **The tablet's frame** while the board moves (the first baseline, 1920 × 1200 at 90 Hz):
@@ -1421,11 +1421,11 @@ At rest, the board drawn and nothing changing, over 25 s (`--rest 25`, 2026-11-1
 | Where | Process CPU | `frame()` returns, draws |
 | --- | --- | --- |
 | Android, the Galaxy Tab A11+ | 0.04 to 0.3% of a core (`scripts/idle_cpu.sh`) | about 1 a second, none |
-| iPhone 13 mini, home | 0.09% (was 16%, polling) | 26, none |
+| iPhone 13 mini, home | 0.09% | 26, none |
 | iPhone 13 mini, flat board, a game | 0.08% | 26, none |
 | iPhone 13 mini, 3D board, a game | 0.08% | 26, none |
 | iPhone 13 mini, a clock running | 0.52% | 51, 26 |
-| Mac (M-series), home | 0.03% (8.2% with the release's gfx: 120 returns a second) | 27, none |
+| Mac (M-series), home | 0.03% (8.2% with the release's gfx, presenting at 120 Hz) | 27, none |
 | Mac, a clock running | 0.17% | 51, 26 |
 | Windows | not measured yet | |
 
