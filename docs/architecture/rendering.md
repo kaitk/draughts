@@ -1400,7 +1400,13 @@ The release at rest, idle 20 to 30 s:
   (the camera turning) 9.9, presented 12.8 ms frame to frame; 90 Hz kept. The release, 2026-11-10, 1000 frames: waited P50
   10.6 / P99 12.7 ms, the pass alone 10.0; the compositor counts 17% of the frames on
   screen for two refreshes, 78 fps on average, 45 at the 1% low (task 055). The flat board's
-  whole frame (`bench2d`) 10.2 ms waited, and no frame dropped (`scripts/device_perf.sh`). Baking the
+  whole frame (`bench2d`) 10.2 ms waited, and no frame dropped (`scripts/device_perf.sh`).
+  After task 059's four changes (2026-11-10, debuggable test builds of fab1757 and c7d23bf
+  beside the app, two runs each): waited P50 10.6 to 10.9 → 9.2 to 9.4 / P99 12.8 to 12.9
+  → 10.9 to 11.2 ms, the pass alone 10.0 to 10.3 → 9.0 to 9.1, presented 12.9 → 11.0 ms
+  frame to frame; the compositor counts 90 fps at the 1% low and no frame dropped (17%
+  before). With 16 crowned kings 12.2 → 9.0 ms waited, 31% dropped → none. The GPU's clock
+  stays near its top (1047 MHz) in both, so the frame times show the work. Baking the
   field's shadow and occlusion into a map with the shadow map was dropped (the user,
   2026-11-09): it took the camera's turn to 8.4 ms but every frame that draws the
   shadow map to 11.5.

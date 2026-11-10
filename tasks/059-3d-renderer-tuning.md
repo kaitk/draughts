@@ -340,7 +340,14 @@ pipeline more to make while getting ready (39 steps).
   the all-register warps stayed at 206k a frame in all three captures: the field's
   warps were never among them, so the driver's real register count for the field isn't
   what malioc reports, or occupancy doesn't limit it. Not worth a pipeline more.
-- **The tablet:** to measure (not connected this session).
+- **The tablet** (2026-11-10, debuggable test builds beside the app, each commit as
+  its own id; the same 1000-frame bench, thermal status 0, the screen kept on; the GPU's
+  clock from `/sys/kernel/gpu/gpu_clock`, near its 1047 MHz top throughout, so unlike
+  the Pixel the frame times show the work; Streamline isn't on the Mac): the build before
+  (fab1757) waited P50 10.86 and 10.59 / P99 12.92 and 12.78 ms, the pass alone 10.30 and
+  10.03, presented 12.92 ms frame to frame, 172 frames of 994 (17%) on screen for two
+  refreshes, 45 fps at the compositor's 1% low. With the map (b9536de): **waited P50
+  9.79 / P99 12.14 ms**, the pass alone 9.13, presented 11.99 ms, 9% dropped.
 
 ### 2. The backdrop kept (2026-11-10)
 
@@ -370,7 +377,9 @@ on the tablet.
   The pass alone waited 12.17 → 11.78 ms; the screen's part of a pulsing frame without
   rings 3.29 → 2.07 ms waited.
 - **Both items so far:** GPU active 7.01M → 6.06M cycles a frame (−14%).
-- **The tablet:** to measure.
+- **The tablet:** waited P50 9.79 → **9.15** / P99 12.14 → 11.05 ms, the pass alone 9.13
+  → 8.52, presented 11.99 → 10.99 ms; **no frame dropped, 90 fps at the 1% low**: the
+  moving 3D board inside 11.1 ms at 90 Hz from here on.
 
 ### 3. The UI kept while it stands still (2026-11-10)
 
@@ -399,7 +408,12 @@ RGBA8 target goes for the same reason (11 steps; 39 to prepare).
   2% of the build without any UI. The waited times barely move (12.08 ms the pass
   alone): the governor lowers the clock as the work falls, so the saving is battery.
 - **The three items:** GPU active 7.01M → 4.70M cycles a frame (−33%).
-- **The tablet:** to measure.
+- **The tablet:** waited P50 9.15 → 9.23 / P99 11.05 → 10.98 ms, the pass alone 8.52 →
+  9.00, within run to run (the GPU's clock near its top at both; the build before and
+  main 85% and 83% busy at 1024 and 975 MHz on average); the bench's own presented 1% low 69 → 77 fps, still none dropped.
+  Main (with c7d23bf's pacing, which a board that keeps up leaves at 90 Hz) in two runs:
+  9.35 and 9.18 / 10.92 and 11.24 ms, the pass alone 9.15 and 8.98. **The four items
+  on the tablet: waited P50 10.6 to 10.9 → 9.2 to 9.4 ms, dropped frames 17% → 0.**
 - **The user's view (2026-11-10):** prefer making the work fast over caching slow work,
   which can hide slowdowns that cascade; caches stay where nothing changes for long.
   The live paths behind items 2 and 3 cost what's measured above (the backdrop's grade
@@ -426,16 +440,28 @@ shader's `crown()` is a bilinear fetch, three of them for the slope as before.
   → 7.53 ms (median), fragment cycles 25.1M → 17.8M. The crown, three distance
   evaluations with a spill in every king's top pixel, was a third of the frame there.
 - **The start position (no kings):** 4.70M → 4.77M, within run-to-run noise.
-- **The tablet:** to measure.
+- **The tablet, 16 crowned kings:** the build before 12.22 / 14.44 ms waited, 31%
+  dropped; item 3's build 10.62 / 12.53, 9% dropped; with the map **9.05 and 9.03 /
+  10.79 and 10.50 ms, the pass alone 9.2 and 8.8, none dropped**: the kings now cost no
+  more than the start position.
+
+### The look on the tablet (2026-11-10)
+
+Screenshots (`adb exec-out screencap`) of the build before and main, 1920 × 1200: the
+game at each season's theme (stone, birch, sunset), settings, a transition held halfway
+(`--go home --hold 0.5`), and 16 crowned kings on wood. All but the kings at most 7
+levels off, 48 to 57 dB; the kings 114 pixels more than 8 levels off (at most 43), on
+the dark rim where a ball meets its point, the same at 400%. A season changed live
+wasn't filmed.
 
 ## Acceptance criteria
 
 - [ ] Nsight and RenderDoc captures of the moving 3D board on the PC, the clocks locked:
       each pass's and the heaviest draws' GPU time recorded here
-- [ ] The Mali Offline Compiler's report for each 3D shader, recorded here
+- [x] The Mali Offline Compiler's report for each 3D shader, recorded here
 - [ ] Android GPU Inspector or Streamline on the Pixel 7a: what bounds the moving 3D
       board's frame, confirmed on the tablet
-- [ ] A ranked plan of changes, each with its expected win, measured cost, and what it
+- [x] A ranked plan of changes, each with its expected win, measured cost, and what it
       does to the look (checked against the reference images, `agents/design.md`)
 - [ ] The changes made, each measured on the PC and on the tablet, with the README's and
       the rendering doc's numbers updated

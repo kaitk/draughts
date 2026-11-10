@@ -383,6 +383,14 @@ measuring there:
   beforehand, its taps being where it rests.
 - Tests that tap tiles find them by the order of `gui::BUTTON` quads; the clocks are
   `BUTTON` quads too, so the game's helpers skip styles from `gui::CLOCK_RUN` on.
+- The tablet's GPU clock and load, readable without root: `/sys/kernel/gpu/gpu_clock`
+  (kHz, 0 at rest) and `gpu_busy` (a percentage); `gpu_freq_table` lists 265 to 1047 MHz,
+  and `gpu_model` says Mali-G720 MC12, whatever the hardware is. The devfreq node's
+  `cur_freq` is denied. The 3D bench runs near 1047 MHz, so its frame times show the
+  work, unlike the Pixel 7a's (2026-11-10). Old commits for a bench install beside the
+  app as their own `--id-suffix` builds, one each, built from a checkout of the commit
+  (task 059); `kings = crown` goes into a debuggable build's `files/player-1.txt` with
+  `run-as`.
 - To see where a frame's time goes on the tablet, `print` from the app's loop with
   `gfx::time()` deltas around its parts, only for frames over a few ms or a switch: the
   program's output shows in `adb logcat` under the tag `goose`. Remove it after (task
