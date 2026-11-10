@@ -353,6 +353,35 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   shader, so a native crop beside the prototype's at the same scale shows a shader
   change exactly (the stacked king was checked that way).
 
+## Screenshots and windows on Windows
+
+- `GOOSE_GFX_HEADLESS=1` in the environment makes both builds headless (gfx's and
+  ngfx's `open`): `--frames N` then saves `draughts.png` in the working folder and exits.
+  Headless loops run about 3,500 frames a second, so `--frames` is wall time too short
+  for the 3D board: at 80 it hasn't appeared, and ngfx's board, whose preparing takes
+  longer, is still fading in at 3,000 when gfx's is done. Shoot the 3D board settled at
+  `--frames 20000` (about 6 s), portrait too (2026-11-11).
+- To compare the ngfx build with gfx, run both with the same flags in folders of their
+  own and diff the PNGs (mean, max, pixels over 2, 8, and 32, and the box they're in).
+  A one-off script in the scratchpad does it; settled, the flat board is within 1 of 255
+  everywhere and the 3D board differs along edges and in the wood's grain.
+- A real window is driven from Python with ctypes, no real cursor moved: find the app's
+  window by its process id (`EnumWindows`), post `WM_MOUSEMOVE`, `WM_LBUTTONDOWN`, and
+  `WM_LBUTTONUP` with client coordinates (SDL takes them; the draw-on-demand wait wakes
+  on them), resize with `SetWindowPos`, and grab the client area with
+  `PIL.ImageGrab.grab(bbox=..., all_screens=True)` after `SetForegroundWindow`. Call
+  `SetProcessDPIAware()` first. A game on the 3D board is played by clicking squares
+  mapped through a homography of the field's four inner corners (at 1280 × 800 with the
+  default camera: 355,190 · 928,190 · 1028,693 · 245,693), mirrored on black's turn, when
+  the board turns. Settings at 1280 × 800: Back 100,74; the themes' tiles at y 512, x 230
+  (winter) to 524 (autumn); Flat and Raised at 230,610 and 328,610; the photo and plain
+  tiles at 80,522 and 143,522 (2026-11-11).
+- Changing the theme or board in a window writes `%APPDATA%\kaitk\draughts\player-1.txt`:
+  copy the folder aside first and put it back after.
+- `scripts/windows_perf.py` measures another build with `EXE=build/ngfx/draughts.exe`
+  and adds flags to each run with `FLAGS`; PresentMon's GPU busy time is the one frame
+  time both builds report alike, since both wait on the display.
+
 ## Rules
 
 - Add a test for behavior that could break unnoticed, not to cover lines. A new rule

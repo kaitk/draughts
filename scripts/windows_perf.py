@@ -6,6 +6,8 @@ scene (Russian, wood, the start).
     python scripts/windows_perf.py [frames]     default 1000; build first with
                                                 scripts/windows.py src/app/draughts.goose
     BOARDS=3d python scripts/windows_perf.py    one board; REST=0 leaves the rest out
+    EXE=build/ngfx/draughts.exe FLAGS="--aa smaa" python scripts/windows_perf.py
+                                                another build, and flags added to each run
 
 Per board: the bench (--bench N) with PresentMon recording the app's presents, and of
 those between the bench's "presenting" and "presented" lines (stamped here as they
@@ -33,8 +35,9 @@ import csv
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-EXE = ROOT / "build/windows/draughts.exe"
-SCENE = ["--size", "full", "--screen", "game", "--theme", "wood", "--variant", "russian"]
+EXE = (ROOT / os.environ.get("EXE", "build/windows/draughts.exe")).resolve()
+SCENE = ["--size", "full", "--screen", "game", "--theme", "wood", "--variant", "russian",
+         *os.environ.get("FLAGS", "").split()]
 SESSION = "draughts_perf"
 
 
@@ -98,7 +101,10 @@ def frames(board, n, work):
     # "2026-11-10 12:05:01.123456789", to the microsecond for Python. PresentMon 2.6's
     # date is whole hours off local time here (its time zone), so its clock is put to the
     # app's launch, its first present a few seconds after it, by the nearest quarter hour.
-    when = lambda r: datetime.datetime.fromisoformat(r["CPUStartDateTime"][:26])
+    # Its hour has no leading zero before 10 ("2026-11-11 3:38:57.356"): pad it.
+    def when(r):
+        day, clock = r["CPUStartDateTime"].split(" ")
+        return datetime.datetime.fromisoformat(f"{day} {clock.zfill(len(clock) + (clock.index(':') == 1))}"[:26])
     if not every:
         sys.exit("PresentMon counted no presents")
     off = datetime.timedelta(minutes=15 * round((when(every[0]) - launched).total_seconds() / 900))
