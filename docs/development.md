@@ -7,7 +7,7 @@ The app builds from a Mac (Apple silicon) and from Windows (x64):
 | macOS app | Mac | `goose build -o ../../build/draughts draughts.goose` in `src/app` | [Run on the Mac](#run-on-the-mac) |
 | Windows app | Windows | `python scripts/windows.py src/app/draughts.goose` | [Run on Windows](#run-on-windows) |
 | Android APK | Mac, Windows | `scripts/android.py src/app/draughts.goose --run` | [Run on Android](#run-on-android) |
-| Android release (APK and AAB for Play) | Mac, where the upload key is | `scripts/android.py src/app/draughts.goose --release` | [Release builds](#release-builds) |
+| Android release (APK and AAB for Play) | Mac, Windows, with an upload key | `scripts/android.py src/app/draughts.goose --release` | [Release builds](#release-builds) |
 | iOS simulator, iPhone, iPad | Mac (Xcode) | `scripts/ios.py src/app/draughts.goose --run`, `--device --run` | [Run on iOS](#run-on-ios) |
 | Rules tests | Mac, Windows | `test/run_tests.py` | [Test the rules](#test-the-rules) |
 
@@ -301,11 +301,11 @@ winget install -e --id Ninja-build.Ninja
 python scripts/android.py src/app/draughts.goose --run   # build, install, start
 ```
 
-`adb` is the SDK's `platform-tools\adb.exe` when it isn't on `PATH`. Windows 11 found a
-Pixel's driver by itself; if Device Manager shows a device without one, Google's is in
+`adb` is the SDK's `platform-tools\adb.exe` when it isn't on `PATH`. Windows 11 usually
+finds a phone's driver itself; if Device Manager shows a device without one, Google's is in
 `extras\google\usb_driver`, and a Samsung takes Samsung's. A device Windows doesn't list at all, whose USB
-preferences offer only "This device", is on a charge-only cable. The first build takes
-about 80 s, into `build\android\` as on the Mac.
+preferences offer only "This device", is on a charge-only cable. The build goes into
+`build\android\`, as on the Mac.
 
 ### The debug key
 
@@ -505,34 +505,21 @@ checked 2026-11-08). Raise `VERSION_CODE` for every upload; Play refuses one it 
 
 Play App Signing holds the key that signs the app on users' devices; the upload key only
 proves an upload comes from the developer. Lost, it can be reset through Play Console's
-support, which takes days, so keep a backup anyway. It is kept outside the repo, and
-neither it nor its password is ever committed:
+support, which takes days, so keep a backup anyway. Whoever publishes to Play, a fork
+included, makes their own. It stays outside the repo, and neither it nor its password is
+ever committed. The script reads it from two files:
 
 | File | What it is |
 | --- | --- |
-| `~/.config/draughts/upload-key.jks` | The keystore: PKCS12, alias `upload`, RSA 4096, `CN=Draughts`, valid until 2054-03-26 |
-| `~/.config/draughts/upload-key.properties` | `storeFile`, `keyAlias`, `storePassword`, and `keyPassword` (the same password, as PKCS12 has one), mode 600 |
+| `~/.config/draughts/upload-key.jks` | The keystore: PKCS12, alias `upload`, RSA 4096 |
+| `~/.config/draughts/upload-key.properties` | `storeFile`, `keyAlias`, `storePassword`, and `keyPassword` (the same password, as PKCS12 has one), readable only by its owner |
 
 `DRAUGHTS_UPLOAD_KEY` points the script at another properties file. The script hands the
 password to `apksigner` and `jarsigner` through the environment, never the command line.
-Its certificate's SHA-256 is
-`C4:F6:7B:CD:9E:DD:45:3F:5B:64:5F:AF:16:E6:F3:50:71:46:29:24:59:39:17:51:4B:3C:53:FC:25:1D:6F:4B`
-(`keytool -list -v -keystore ~/.config/draughts/upload-key.jks`), which Play Console
-shows once the first upload has registered it.
+`keytool -list -v -keystore ~/.config/draughts/upload-key.jks` shows the certificate's
+SHA-256, which Play Console shows once the first upload has registered it.
 
-**Back it up before the first upload**, both files together, somewhere that survives the
-Mac: a password manager's file attachment (1Password, Bitwarden) is the simplest, or an
-encrypted disk image on a drive kept elsewhere:
-
-```sh
-hdiutil create -encryption AES-256 -srcfolder ~/.config/draughts -volname draughts-key \
-    ~/Desktop/draughts-key.dmg            # asks for a passphrase; store it apart from the image
-```
-
-Check a backup by restoring it to a scratch folder and running `keytool -list -keystore
-upload-key.jks` with the password from its properties file.
-
-The key was made once (2026-11-08) with:
+Make one with:
 
 ```sh
 mkdir -p ~/.config/draughts && chmod 700 ~/.config/draughts
@@ -541,7 +528,14 @@ keytool -genkeypair -keystore ~/.config/draughts/upload-key.jks -storetype PKCS1
     -storepass:env PASS -keypass:env PASS   # PASS: 40 random letters and digits
 ```
 
-and the properties file written beside it with the same password, both `chmod 600`.
+and write the properties file beside it with the same password, both `chmod 600`.
+
+**Back it up before the first upload**, both files together, somewhere that survives the
+computer: a password manager's file attachment is the simplest, or an encrypted disk
+image on a drive kept elsewhere (on a Mac, `hdiutil create -encryption AES-256
+-srcfolder ~/.config/draughts ...`, its passphrase stored apart from the image). Check a
+backup by restoring it to a scratch folder and running `keytool -list -keystore
+upload-key.jks` with the password from its properties file.
 
 ## Time the 3D board
 
