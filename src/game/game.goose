@@ -888,7 +888,9 @@ fn countdown(gm: Game&, note: panel::Note&) {
         note.word.clear();
         note.word.append(strings::get(strings::COUNT_REPEATED));
         note.fig.clear();
-        note.fig.append("2/3");
+        note.fig.push(('0' + note.lit) as u8);
+        note.fig.push('/');
+        note.fig.push(('0' + note.of) as u8);
     }
 }
 
