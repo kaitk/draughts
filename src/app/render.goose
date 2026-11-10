@@ -49,11 +49,17 @@ struct Frame {
 
 // The renderer for the app's theme `kind`, with its photograph or the `plain` fade
 // behind, the 3D board's looks as the development flags pick them (`f`, flags.goose).
+// With --bench, the photograph's load is timed and printed.
 fn new(kind: i64, plain: bool, f: flags::Flags&) -> Renderer {
-    return Renderer { d: draw::new(kind, plain),
+    var r = Renderer { d: draw::new(kind, plain, f.bench > 0),
                       d3: draw3d::Drawer { wood: f.wood, marble: f.marble, summer: f.summer, spring: f.spring,
                                            timed: f.bench > 0, .. },
                       w: widgets::new(), t: text::Text {} };
+    if f.bench > 0 {
+        print("bench: the photograph loaded in ", floor(r.d.load_ms * 100.0 + 0.5) / 100.0,
+              " ms (decoded or uploaded, shrunk, blurred, waited for)");
+    }
+    return r;
 }
 
 // Whether it draws theme `kind` with its photograph, or with `plain` the fade.

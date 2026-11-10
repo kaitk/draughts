@@ -477,27 +477,35 @@ struct Drawer {
     over_upload: board::Piece[board::OVER],     // the pieces drawn over the UI
     over_count:  i64,
     view:        View,
+    load_ms:     f64,              // the photograph's load and blurs at new(), waited for when `timed`
 }
 
-fn new(kind: i64, plain: bool) -> Drawer {
+// The drawer for theme `kind`, its photograph or with `plain` none; with `timed` the
+// photograph's load waited for and timed (--bench), load_ms.
+fn new(kind: i64, plain: bool, timed: bool = false) -> Drawer {
     let full = embed_shader("vert", FULL_VERT);
     let board_fs = embed_shader("frag", shaders::FADE_FN, THEME_BLOCK, SHARED_BLOCK, BOARD_FRAG);
     let piece_vs = embed_shader("vert", SHARED_BLOCK, STACK_BLOCK, PIECE_VERT);
     let piece_fs = embed_shader("frag", shaders::FADE_FN, THEME_BLOCK, SHARED_BLOCK, MAN_BLOCK, STACK_BLOCK, PIECE_FRAG);
+    let board_pipeline = gfx::pipeline(full, board_fs, gfx::PipelineDesc {});
+    let piece_pipeline = gfx::pipeline(piece_vs, piece_fs, gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED });
+    let t0 = clock();
+    let sc = scene::load(kind, full, plain);
+    if timed { gfx::flush(); }
     var d = Drawer {
         full:           full,
-        board_pipeline: gfx::pipeline(full, board_fs, gfx::PipelineDesc {}),
-        piece_pipeline: gfx::pipeline(piece_vs, piece_fs,
-                                      gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED }),
-        pieces:      gfx::Buffer { 0 },
-        overlay:     gfx::Buffer { 0 },
-        scene:       scene::load(kind, full, plain),
-        kind:        kind,
-        colors:      theme::get(kind),
-        upload:      [board::Piece {}; board::MAX_PIECES],
-        over_upload: [board::Piece {}; board::OVER],
-        over_count:  0,
-        view:        View { screen: float4 { 0.0, 0.0, 0.0, 0.0 } },
+        board_pipeline: board_pipeline,
+        piece_pipeline: piece_pipeline,
+        pieces:         gfx::Buffer { 0 },
+        overlay:        gfx::Buffer { 0 },
+        scene:          sc,
+        kind:           kind,
+        colors:         theme::get(kind),
+        upload:         [board::Piece {}; board::MAX_PIECES],
+        over_upload:    [board::Piece {}; board::OVER],
+        over_count:     0,
+        view:           View { screen: float4 { 0.0, 0.0, 0.0, 0.0 } },
+        load_ms:        (clock() - t0) * 1000.0,
     };
     d.pieces = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(d.upload));
     d.overlay = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(d.over_upload));

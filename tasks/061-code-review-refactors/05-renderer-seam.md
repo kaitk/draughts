@@ -1,6 +1,6 @@
 # 05: Stage 4, the renderer seam
 
-Status: todo
+Status: done (2026-11-10)
 
 Stage 3 (`04-layout.md`) first. What the app shows doesn't change. This is the seam
 that task 060 (shared blocks for chess) and a later goose-ngfx renderer build on. It is
@@ -147,10 +147,54 @@ Leave alone:
 
 ## Acceptance criteria
 
-- [ ] `main` calls `host` and `render` only, no gfx directly
-- [ ] One `render::frame(FrameData)` owns the pass; no gfx handle outside `render` and
+- [x] `main` calls `host` and `render` only, no gfx directly
+- [x] One `render::frame(FrameData)` owns the pass; no gfx handle outside `render` and
       its Drawers
-- [ ] The C decoders return pixels; `draughts_photo` declared once
-- [ ] `render3d`'s gfx-free half separate
-- [ ] Every expected output byte-identical; shots on the Mac match before and after
-- [ ] The task's end measurement, with the photograph's load (`README.md`)
+- [x] The C decoders return pixels; `draughts_photo` declared once
+- [x] `render3d`'s gfx-free half separate
+- [x] Every expected output byte-identical; shots on the Mac match before and after
+- [ ] The task's end measurement, with the photograph's load (`README.md`): only the
+      photograph's load and one flat bench on the Mac (below); the rest left open
+
+## Outcome
+
+One commit per step; after each, the tests passed with every expected output
+byte-identical (`plan.out` is new).
+
+- **`app/host`** holds every platform call: the window, `frame`, the clock, the screen's
+  size and focus, the pointer and typed text (`host::input`), back, the keyboard, the
+  screenshot, and the program's C for the platform (the externs that were in `main`).
+- **`app/render`** holds the drawers (`draw`, `draw3d`, `widgets`, `text`'s state) and
+  owns the screen's pass. `render::Frame` carries the board by reference and the pieces
+  over the UI and the quads as slices (a Goose struct may hold both), the rest as values.
+  `draw::frame` became `draw::upload` (the buffers, before the pass) and `draw::board`;
+  `draw::photo` no longer begins the pass. The GPU sees the same commands in the same
+  order. `dev` takes the renderer and waits through `render::wait`.
+- **Pixels from C.** An `export fn` called back from C during an `extern` call overwrites
+  the caller's resizables (`docs/goose-findings.md`), so the decoder can't hand pixels to
+  Goose by a callback, and C can't return a slice. Instead `background.c` fills a
+  `draughts_pixels` (`photo.h`) pointing into the embedded ASTC blocks, or the decoded
+  JPEG, and the renderer's own C, `photo.c`, uploads them and gives them back: no copy
+  added. `resize.c` takes pixels the renderer reads back (`draw::cover_with`), only where
+  `draughts_resize_covers` says a cover shows (the Mac); elsewhere the 3D board's cover
+  is no longer drawn at all. `text::bake` returns its R8 bytes, `badges::atlas` builds the
+  badges', and `widgets` uploads both. `draughts_photo` is still declared once, in
+  `render3d`.
+- **`model3d`** (`src/model3d/`): `mesh`, `looks`, the harmonics, the fade and its
+  ambient, sRGB to linear and back, the light's turn, and the bake's plan
+  (`model3d::step`, `frame_rows`, the extents), which `render3d::theme_step` now follows.
+  `test/model3d/plan.goose` checks the plan and the harmonics headless.
+- **Shots**, a headless copy of `665257c` against each step (agents/testing.md): home,
+  settings, both in portrait, a game with taps, a clocked game, the computer's setup, a
+  puzzle reached through its transition, home to settings held at half, a capture, the
+  3D game in both orientations, home and settings on the 3D board, and the 3D game in
+  stone, sunset, and birch. All byte-identical but settings' preview flash and the
+  must-capture pulse, which differ in the same boxes between two runs of the old build.
+  The Android build compiles. The resize cover wasn't checked by dragging a window.
+- **Measured on the Mac** (M-series, `--bench 300`, Russian, wood, 2560 × 1600): the
+  photograph's load (the ASTC upload, shrunk, blurred, waited for; `--bench` prints it
+  now) 7.4 and 7.7 ms for `6bf54c8` with the same timer, 7.5 ms after; on the 3D board 4.0
+  ms before. The flat bench after: CPU 0.12 ms a frame, waited P50 3.91 / P99 6.1 ms,
+  presented 119.9 fps, 1% low 91.2. The other bench runs printed no summary (a piece was
+  picked up during one), and the idle CPU, the 3D bench, and the A33 were not run
+  (2026-11-10).
