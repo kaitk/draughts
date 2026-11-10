@@ -56,6 +56,28 @@ let GAME = 1;
 let SETTINGS = 2;
 let PICKER = 3;             // the puzzles to pick from
 let PUZZLE = 4;             // one puzzle
+let SCREENS = 5;
+
+// What sets the screens apart where the shell runs none of their code: whose board each
+// shows (board_of; home's setup shows its own), how blurred it shows the photograph,
+// where back goes, and which switches to or from it are drawn as a transition. Their
+// code is chosen in the three functions after the table, its frame, its still frame,
+// and whether it moves: a new screen is a row here and an arm in each.
+struct Kind {
+    board: i64,     // GAME the game's, SETTINGS the preview, PUZZLE the puzzle's
+    blur:  f32,     // 0 the photograph as it is, 1 blurred and dimmed
+    up:    i64,     // where back goes: a screen, NO_WAY on home's menu, RETURN where it was opened from
+    with:  i64,     // the screens it switches to and from through a transition, a bit each
+}
+let NO_WAY = -1;
+let RETURN = -2;            // sh.back
+let KINDS: Kind[SCREENS] = [
+    Kind { board: GAME,     blur: 0.0, up: NO_WAY, with: (1 << GAME) | (1 << SETTINGS) },    // HOME
+    Kind { board: GAME,     blur: 1.0, up: HOME,   with: 1 << HOME },                        // GAME
+    Kind { board: SETTINGS, blur: 0.0, up: RETURN, with: 1 << HOME },                        // SETTINGS
+    Kind { board: PUZZLE,   blur: 0.0, up: HOME,   with: 1 << PUZZLE },                      // PICKER
+    Kind { board: PUZZLE,   blur: 1.0, up: PICKER, with: 1 << PICKER },                      // PUZZLE
+];
 
 let DURATION = 0.25;        // seconds a transition takes
 let DRIFT = 40.0;           // dp the screens' UI drifts along with the board in one
@@ -119,6 +141,66 @@ struct Shell {
     cam: rig::Rig = rig::Rig {},
 }
 
+// The screen showing for this frame, taking the pointer and doing what it asks: `fresh`
+// its first frame, `crossing` in a transition to it. Returns whether anything on screen
+// changed.
+fn screen_frame(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool, crossing: bool) -> bool {
+    return match sh.screen {
+        GAME => game_screen(sh, g, area, now, crossing),
+        SETTINGS => settings_screen(sh, g, area, now, fresh),
+        PICKER => picker_screen(sh, g, area, now),
+        PUZZLE => puzzle_screen(sh, g, area, now),
+        _ => home_screen(sh, g, area, now),
+    };
+}
+
+// Declares `screen`, the one a transition leaves, as it stands, its pieces over the UI
+// put in `over`, and sets l to where it puts the board. It acts on nothing: the caller
+// has taken the pointer away, and the game's clocks are paused.
+fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: board::Overlay&,
+         l: board::Layout&) {
+    var room = float4 { 0.0, 0.0, 0.0, 0.0 };
+    match screen {
+        GAME => {
+            let p = game_layout(sh, area, g.scale, now);
+            game::still(sh.game, g, p, now, over);
+            l = p.board;
+            if p.three { sh.went_view = p.view; }
+        },
+        SETTINGS => {
+            settings::frame(sh.prefs, over, g, l, area, strings::current, room);
+            sh.went_view = raise_in(sh, room, l.n, g.scale, l);
+        },
+        PICKER => {
+            var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
+            var variant = sh.prefs.variant;
+            picker::frame(g, area, sh.prefs.stars[puzzles::loaded], sh.puzzle.index, sh.theme, spot, variant);
+            l = in_tile(sh, spot, g.scale);
+        },
+        PUZZLE => {
+            let p = puzzle_layout(sh, area, g.scale, now);
+            puzzle::panel_frame(sh.puzzle, g, p, now, over);
+            l = p.board;
+            if p.three { sh.went_view = p.view; }
+        },
+        _ => {
+            home::frame(over, g, l, rules::VARIANTS[board_of(sh, HOME).variant].size, area, sh.left, sh.prefs, room);
+            l.flip = turned(sh, sh.left);
+            sh.went_view = home_view(sh, raise_in(sh, room, l.n, g.scale, l), room, now);
+        },
+    }
+}
+
+// Whether anything is still moving at `now`; the app draws while it is.
+fn animating(sh: Shell&, g: gui::Gui&, now: f64) -> bool {
+    if sh.from >= 0 { return true; }
+    return match sh.screen {
+        GAME => game::animating(sh.game, g, now),
+        PUZZLE => puzzle::animating(sh.puzzle, g, now),
+        _ => board::animating(shown(sh), now) || gui::animating(g) || rig::moving(sh.cam, now),
+    };
+}
+
 fn new(variant: u8) -> Shell {
     let g = game::new(variant);
     let l = panel::layout(1.0, 1.0, rules::VARIANTS[variant].size).board;
@@ -146,11 +228,10 @@ fn face_chars(face: i64, set: gui::Chars&) -> bool {
 }
 
 // Whether a switch between screens a and b is drawn as a transition.
-fn animates(a: i64, b: i64) -> bool { pair(a, b, HOME, SETTINGS) || pair(a, b, HOME, GAME) || pair(a, b, PICKER, PUZZLE) }
-fn pair(a: i64, b: i64, x: i64, y: i64) -> bool { (a == x && b == y) || (a == y && b == x) }
+fn animates(a: i64, b: i64) -> bool { (KINDS[a].with >> b) & 1 != 0 }
 
 // How blurred a screen shows the photograph.
-fn blurred(screen: i64) -> f32 { if screen == GAME || screen == PUZZLE { 1.0 } else { 0.0 } }
+fn blurred(screen: i64) -> f32 { KINDS[screen].blur }
 
 // How far the transition is at `now`, 0..1; 1 when there is none.
 fn progress(sh: Shell&, now: f64) -> f64 {
@@ -191,15 +272,13 @@ fn back(sh: Shell&, now: f64) -> bool {
     } else if sh.screen == HOME {
         guard sh.setup != home::NO_SETUP else { return false; }
         sh.setup = home::NO_SETUP;
-    } else if sh.screen == SETTINGS {
-        go_to(sh, sh.back, now);
-    } else if sh.screen == PUZZLE {
-        go_to(sh, PICKER, now);
     } else if sh.screen == PICKER && sh.theme >= 0 {
         sh.theme = -1;
     } else {
-        go_to(sh, HOME, now);
-        sh.setup = home::NO_SETUP;
+        let up = KINDS[sh.screen].up;
+        go_to(sh, if up == RETURN { sh.back } else { up }, now);
+        // Home, come back to, shows its menu.
+        if up == HOME { sh.setup = home::NO_SETUP; }
     }
     return true;
 }
@@ -280,12 +359,7 @@ fn declare(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> boo
     // The 3D board not ready yet: a press is the UI's, never the board's (game and puzzle
     // touch the board only when the UI didn't take it); the panels work as ever.
     if waiting3d(sh) && g.input.pressed { g.took = true; }
-    var asked = false;
-    if sh.screen == GAME { asked = game_screen(sh, g, area, now, crossing); }
-    else if sh.screen == PUZZLE { asked = puzzle_screen(sh, g, area, now); }
-    else if sh.screen == PICKER { asked = picker_screen(sh, g, area, now); }
-    else if sh.screen == SETTINGS { asked = settings_screen(sh, g, area, now, fresh); }
-    else { asked = home_screen(sh, g, area, now); }
+    let asked = screen_frame(sh, g, area, now, fresh, crossing);
     sh.came = sh.layout;
     sh.mix = 1.0;
     // Between home and settings the board is home's all the way: settings show their
@@ -660,37 +734,6 @@ fn who_card(sh: Shell&, g: gui::Gui&, area: float4) -> bool {
     return ask != who::NOTHING;
 }
 
-// Declares `screen`, the one a transition leaves, as it stands, its pieces over the UI
-// put in `over`, and sets l to where it puts the board. It acts on nothing: the caller
-// has taken the pointer away, and the game's clocks are paused.
-fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: board::Overlay&,
-         l: board::Layout&) {
-    var room = float4 { 0.0, 0.0, 0.0, 0.0 };
-    if screen == SETTINGS {
-        settings::frame(sh.prefs, over, g, l, area, strings::current, room);
-        sh.went_view = raise_in(sh, room, l.n, g.scale, l);
-    } else if screen == GAME {
-        let p = game_layout(sh, area, g.scale, now);
-        game::still(sh.game, g, p, now, over);
-        l = p.board;
-        if p.three { sh.went_view = p.view; }
-    } else if screen == PUZZLE {
-        let p = puzzle_layout(sh, area, g.scale, now);
-        puzzle::panel_frame(sh.puzzle, g, p, now, over);
-        l = p.board;
-        if p.three { sh.went_view = p.view; }
-    } else if screen == PICKER {
-        var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
-        var variant = sh.prefs.variant;
-        picker::frame(g, area, sh.prefs.stars[puzzles::loaded], sh.puzzle.index, sh.theme, spot, variant);
-        l = in_tile(sh, spot, g.scale);
-    } else {
-        home::frame(over, g, l, rules::VARIANTS[board_of(sh, HOME).variant].size, area, sh.left, sh.prefs, room);
-        l.flip = turned(sh, sh.left);
-        sh.went_view = home_view(sh, raise_in(sh, room, l.n, g.scale, l), room, now);
-    }
-}
-
 // Whether home's board is turned with its column showing `setup`, for a child playing
 // black against the computer: in the game as it stands on the menu, and in the
 // computer's setup when black is chosen.
@@ -700,16 +743,15 @@ fn turned(sh: Shell&, setup: i64) -> bool {
            else { sh.game.computer == rules::WHITE };
 }
 
-// The board a screen shows: settings their preview, a puzzle its own (and the puzzles to
-// pick from, which show it only in a transition with it), home's setup the game its play
-// starts, the other screens the game's.
+// The board a screen shows (KINDS): settings their preview, a puzzle its own (and the
+// puzzles to pick from, which show it only in a transition with it), home's setup the
+// game its play starts, the other screens the game's.
 fn board_of(sh: Shell&, screen: i64) -> board::Board& {
-    return if screen == SETTINGS { sh.preview } else if screen == PUZZLE || screen == PICKER { sh.puzzle.b }
-           else if screen == HOME && sh.staged { sh.next } else { sh.game.b };
+    let kind = which(screen);
+    return if screen == HOME && sh.staged { sh.next } else if kind == SETTINGS { sh.preview }
+           else if kind == PUZZLE { sh.puzzle.b } else { sh.game.b };
 }
-fn which(screen: i64) -> i64 {
-    if screen == SETTINGS { SETTINGS } else if screen == PUZZLE || screen == PICKER { PUZZLE } else { GAME }
-}
+fn which(screen: i64) -> i64 { KINDS[screen].board }
 
 // The board on screen at rest.
 fn shown(sh: Shell&) -> board::Board& { board_of(sh, sh.screen) }
@@ -727,11 +769,3 @@ fn fill(sh: Shell&, now: f64) -> board::Board& {
 
 // Whether the 3D board is chosen but not ready to draw (sh.ready3d).
 fn waiting3d(sh: Shell&) -> bool { settings::raised(sh.prefs) && !sh.ready3d }
-
-// Whether anything is still moving at `now`; the app draws while it is.
-fn animating(sh: Shell&, g: gui::Gui&, now: f64) -> bool {
-    if sh.from >= 0 { return true; }
-    return if sh.screen == GAME { game::animating(sh.game, g, now) }
-           else if sh.screen == PUZZLE { puzzle::animating(sh.puzzle, g, now) }
-           else { board::animating(shown(sh), now) || gui::animating(g) || rig::moving(sh.cam, now) };
-}
