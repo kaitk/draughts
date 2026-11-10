@@ -61,9 +61,9 @@ What stays per game:
    - `board::Piece` gets a piece-kind index in place of its crown and stack flags.
    - `render3d` gets a mesh table indexed by kind, and draws instanced per kind.
    - The panel's taken-pieces tray takes pieces by kind.
-3. Start chess in its own repo with these packages copied in. Pieces in 2D come from SVGs
-   through the badge baker's distance-field atlas, beside the analytic disc Draughts
-   keeps. In 3D, five pieces are lathe profiles with a few additions; the knight is a
+3. Start chess in its own repo with these packages copied in (decided 2026-11-10).
+   Pieces in 2D come from SVGs through the badge baker's distance-field atlas, beside the
+   analytic disc Draughts keeps. In 3D, five pieces are lathe profiles with a few additions; the knight is a
    sculpted mesh embedded in the binary.
 4. Once both games use the copies, move what both use unchanged into a shared repo of
    blocks, and pin both apps to it. What differs stays in each game. Designing the blocks
