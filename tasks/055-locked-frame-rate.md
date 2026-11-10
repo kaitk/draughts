@@ -45,14 +45,8 @@ between the bench's console lines, stamped on the Mac:
 | Flat | 979 | 4 | 60 / 60 |
 | 3D | 985 | 1 | 60 / 60 |
 
-The iPhone's flat board's dropped frames (two runs, 4 and 5): Instruments' own hitch
-table counts none of them, the render server takes its usual 2 ms around each, and the
-app's loop hands over every frame on time (a temporary log of any gap over 25 ms printed
-nothing). They come in bursts about 1.05 to 1.08 s apart (19.67, 20.75, 21.83 s; 29.31,
-30.36, 31.42 s), a beat between two clocks: the present's timing against the display's
-refresh, in SDL's Metal path or the way goose_gfx uses it, not the drawing. Next: when
-each frame is presented against the refresh. The iPhone can't run `poc/pace.goose` with
-the free team: a new bundle id needs a profile it won't make.
+The iPhone's flat board's few dropped frames come from pacing, not the frame's cost:
+task 056.
 
 What was ruled out on the way, with `poc/pace.goose` (the screen cleared every frame
 through the same goose_gfx and SDL): the pacing itself dropped none of 1815 frames, nor
@@ -77,7 +71,6 @@ clock the governor picks, not just at the top one.
 - [x] The tablet's flat board drops no frame over 1000 presented ones
 - [x] The same on the Pixel 7a
 - [x] The same on the Galaxy A33
-- [ ] The iPhone's flat board's 4 to 5 dropped of about 980 looked into
 - [ ] The 3D board drops no frame on the tablet and the Pixel 7a (the Galaxy A33,
       the weakest tried, at least holding a steady rate)
 - [ ] A screen transition counted the same way

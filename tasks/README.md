@@ -63,7 +63,8 @@ Open:
 - Content and play: 037 the puzzle set by theme, 038 players.
 - The 3D board: 041 a carved spring board, 042 its frame cost, 044 a plain background,
   045 board styles to choose from.
-- Frames: 055 both boards locked to the display's rate on every device.
+- Frames: 055 both boards locked to the display's rate on every device, 056 even pacing
+  where the frame fits but still drops (the iPhone).
 - Later: 010 goose_gfx changes to propose upstream (alongside), 013 season effects, 014
   upscaled backgrounds, 026 the first start and tutorial.
 
