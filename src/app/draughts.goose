@@ -34,6 +34,7 @@ import .text;
 import .think;
 import .draw3d;
 import .flags;
+import .dev;
 
 // The system's preferred locales, "et-EE,en-US" (locale.c); returns how many bytes.
 extern fn draughts_locales(out: u8[:]) -> i64;
@@ -46,8 +47,6 @@ extern fn draughts_display(out: f32[:]) -> i64;
 extern fn draughts_choose_gpu();
 // Wakes the loop in ms milliseconds, where frame() waits for events (wake.c).
 extern fn draughts_wake_in(ms: i64);
-// Ends the next frame()'s wait at once: an event pushed now (wake.c).
-extern fn draughts_wake_now();
 // Tells Android the first frame is on screen, to lift the splash and the cover (launch.c).
 extern fn draughts_first_frame();
 // Closes the app on Android and takes it out of recents, as home's way out asks; on the
@@ -59,11 +58,6 @@ extern fn draughts_leave();
 // Gives back to the system the memory malloc keeps for freed blocks; Android only
 // (memory.c).
 extern fn draughts_release_memory();
-// The process's CPU time in seconds and its memory footprint in MB (memory.c), for --rest.
-extern fn draughts_cpu_seconds() -> f64;
-extern fn draughts_footprint_mb() -> f64;
-// Each thread's name and CPU time so far, on Apple platforms (memory.c), for --rest.
-extern fn draughts_threads(out: u8[:]) -> i64;
 // Asks Android's display for 60 Hz while the 3D board draws, if its frames can't keep up
 // with a faster display; drawing is 1 when this pass drew it (display.c). Nothing elsewhere.
 extern fn draughts_pace_3d(drawing: i64, now: f64);
@@ -94,11 +88,10 @@ fn main() {
     var kind = f.theme;
     var hints = f.hints;
     var lang = f.lang;
-    var go = f.go;
     // The game as it was when the app was last paused (shell::restore; nothing changes
     // for a missing or damaged file). A run with flags that set up a game or take a
     // screenshot neither reads nor writes it.
-    let keep = f.screen < 0 && f.puzzle < 0 && go < 0 && f.win < 0.0 && fen.len == 0 && taps.len == 0 && f.frames < 0 && f.variant < 0 && f.clock < 0 && f.computer < 0;
+    let keep = f.screen < 0 && f.puzzle < 0 && f.go < 0 && f.win < 0.0 && fen.len == 0 && taps.len == 0 && f.frames < 0 && f.variant < 0 && f.clock < 0 && f.computer < 0;
     // The players, their settings, and their games, kept in the app's storage folder
     // (shell/players.goose): the playing player's settings with the device's language.
     var folder: u8[512] = [0; 512];
@@ -161,10 +154,10 @@ fn main() {
     }
     // The puzzles the flags open are of their draughts' set, loaded above: the library's
     // switch lights those draughts, and home doesn't load the player's set back on the way.
-    let to_puzzles = sh.screen == shell::PICKER || sh.screen == shell::PUZZLE || go == shell::PICKER
-                     || go == shell::PUZZLE || f.puzzle >= 0;
+    let to_puzzles = sh.screen == shell::PICKER || sh.screen == shell::PUZZLE || f.go == shell::PICKER
+                     || f.go == shell::PUZZLE || f.puzzle >= 0;
     if f.variant >= 0 && to_puzzles { sh.prefs.variant = f.variant; }
-    if f.puzzle >= 0 && puzzles::find(puzzles::all, f.puzzle) >= 0 && go != shell::PUZZLE {
+    if f.puzzle >= 0 && puzzles::find(puzzles::all, f.puzzle) >= 0 && f.go != shell::PUZZLE {
         shell::play_puzzle(sh, puzzles::find(puzzles::all, f.puzzle));
     }
     // The playing player's game, with the screen it was on.
@@ -174,10 +167,7 @@ fn main() {
     if f.background >= 0 { sh.prefs.plain = f.background == 1; }
     var d = draw::new(kind, !settings::photo_shown(sh.prefs));
     var d3 = draw3d::Drawer { wood: f.wood, marble: f.marble, summer: f.summer, spring: f.spring, timed: f.bench > 0, .. };
-    // --bench N on the flat board: N whole frames, from the shell's fill to the GPU done,
-    // each waited for (cpu: up to the submit); then N as the loop draws them, frame to
-    // frame. In seconds; draw3d::Bench times the 3D board.
-    var bench2d = draw3d::Bench {};
+    var dv = dev::new(f);
     var w = widgets::new();
     var g = gui::Gui {};
     var t = text::Text {};
@@ -185,7 +175,6 @@ fn main() {
     var display:   f32[5] = [0.0; 5];
     var was_scale: f32    = 0.0;
     var dirty = true;
-    var tapped = 0;
     var focused = true;
     var season_in = 0;
     var wake_at = -1.0;
@@ -198,11 +187,6 @@ fn main() {
     let enter_key = gfx::scancode("Return");
     var text_on = false;
     var keyboard = 0;
-    var rest_at = -1.0;
-    var rest_cpu = 0.0;
-    var rested = false;
-    var rest_passes = 0;    // frame()'s returns during --rest, and the frames drawn
-    var rest_draws = 0;
     while gfx::frame() {
         // frame() presents what the pass before it drew, and the first pass draws.
         if gfx::frame_count() == 2 { draughts_first_frame(); }
@@ -270,21 +254,6 @@ fn main() {
         gui::begin(g, input, scale, now);
         // A wheel's turn scrolls a list (gui::scroll_begin), a change to draw.
         if input.wheel != 0.0 { dirty = true; }
-        // A switch the flags ask for waits for their taps to have played out, and for the
-        // win they lead to, if any, held at --win's moment (which must be past: the
-        // celebration's start is kept as a time, never before 0).
-        if go >= 0 && gfx::frame_count() >= 2 && tapped >= taps.len && !b.moving
-           && (f.win < 0.0 || ((sh.game.won_at >= 0.0 || sh.game.drawn_at >= 0.0) && now > f.win)) {
-            if go == flags::GO_PLAY {
-                // As the setup's play, leaving settings.txt as it is: the count of games
-                // against the computer and the choices the flags gave aren't written.
-                shell::play(sh, now);
-                sh.changed = false;
-            }
-            else if go == shell::PUZZLE { shell::play_puzzle(sh, max(puzzles::find(puzzles::all, f.puzzle), 0), now); }
-            else { shell::go_to(sh, go, now); }
-            go = -1;
-        }
         // Android's back (SDL's "AC Back"; DraughtsActivity hands the system's back to SDL
         // as that key) and Escape go back a screen, as the screen's own back or home control
         // does. On home's menu back leaves the app as the system's back would, putting it in
@@ -294,9 +263,8 @@ fn main() {
             else if on_android { draughts_leave(); }
             else { break; }
         }
-        if f.hold >= 0.0 && sh.from >= 0 { sh.since = now - f.hold * shell::DURATION; }
-        if f.win >= 0.0 && sh.game.won_at >= 0.0 { sh.game.won_at = now - f.win; }
-        if f.win >= 0.0 && sh.game.drawn_at >= 0.0 { sh.game.drawn_at = now - f.win; }
+        // The development flags' switch and held moments (dev.goose).
+        dev::before(dv, f, sh, now);
         // The 3D board chosen but not ready (it gets ready a step a frame as it is drawn,
         // draw3d::prepare): the shell shows a still mark in its place, or the old image while
         // a new theme bakes, and leaves taps on it alone; the frames go on until it shows
@@ -348,32 +316,9 @@ fn main() {
         if sh.screen == shell::SETTINGS && w.thumbs.id == 0 {
             w.thumbs = scene::thumbs(d.full);
         }
+        // The development flags' taps, and their benches' start (dev.goose).
+        if dev::after_shell(dv, f, sh, g, d3, now) { dirty = true; }
         let l = sh.layout;
-        if tapped < taps.len && !b.moving && sh.screen == shell::GAME && b.pos.side != gm.computer {
-            let v .= rules::VARIANTS[b.variant];
-            let sq, ok = rules::parse_square(v, taps[tapped]);
-            if ok {
-                let p = board::center(l, v, sq);
-                board::press(b, l, p, now);
-                board::release(b, l, p, now);
-            }
-            tapped++;
-            dirty = true;
-        }
-        if tapped < taps.len && sh.screen == shell::PUZZLE && puzzle::ready(sh.puzzle) {
-            let v .= rules::VARIANTS[sh.puzzle.b.variant];
-            let sq, ok = rules::parse_square(v, taps[tapped]);
-            if ok { puzzle::tap(sh.puzzle, l, board::center(l, v, sq), now); }
-            tapped++;
-            dirty = true;
-            // Next was declared before this tap, which may have left a piece waiting.
-            g.acted = true;
-        }
-        // --bench N times the 3D board's frames 2 s after the launch, settled (draw3d.goose).
-        if f.bench > 0 && sh.raised && d3.draws > 0 && now > 2.0 && d3.bench.n == 0 { d3.bench.n = f.bench; }
-        if d3.bench.n > 0 { dirty = true; }
-        let flat_bench = f.bench > 0 && !sh.raised && now > 2.0 && bench2d.i < 2 * f.bench;
-        if flat_bench { dirty = true; }
         // iOS ends an app that uses the GPU in the background, and SDL doesn't block the
         // loop there as on Android: nothing is drawn while the app hasn't focus, which it
         // loses before going to the background, and the screen is drawn again on its return.
@@ -381,7 +326,7 @@ fn main() {
         if hidden { dirty = true; }
         let drew = !hidden && (dirty || shell::animating(sh, g, now));
         if drew {
-            let t0 = clock();
+            dev::drawing(dv);
             let shown .= shell::fill(sh, now);
             widgets::prepare(w, g, d.scene, d.colors, size.x, size.y, sh.hole, sh.tall);
             if sh.raised {
@@ -399,28 +344,14 @@ fn main() {
             draw::overlay(d, now, sh.hole, sh.tall);
             gfx::end_pass();
             dirty = false;
-            if flat_bench {
-                let bn .= bench2d;
-                if bn.i < f.bench {
-                    bn.cpu.push(clock() - t0);
-                    gfx::flush();
-                    bn.all.push(clock() - t0);
-                } else {
-                    // The presented frames' start, for the compositor's count of them.
-                    if bn.i == f.bench { print("bench2d: presenting"); }
-                    if bn.i > f.bench { bn.gap.push(t0 - bn.last); }
-                    bn.last = t0;
-                }
-                bn.i++;
-            }
+            dev::drawn(dv, f);
         }
         // The display at 60 Hz while the 3D board draws, on a device whose 3D board is too slow
         // for its faster display (task 056): a 90 Hz display shows 60 frames a second two
         // refreshes and one in turn, where at 60 each shows for one.
-        // The bench's first two phases wait for each frame, slower than the loop draws them,
-        // and aren't timed.
-        let waited3d = d3.bench.n > 0 && d3.bench.i < 2 * d3.bench.n;
-        if on_android { draughts_pace_3d(if drew && sh.raised && sh.ready3d && sh.shown3d && !waited3d { 1 } else { 0 }, now); }
+        // The 3D bench's frames that wait for each are left out (dev::waited3d).
+        let paced = drew && sh.raised && sh.ready3d && sh.shown3d && !dev::waited3d(d3);
+        if on_android { draughts_pace_3d(if paced { 1 } else { 0 }, now); }
         // Settings' thumbnails load in the first frame that draws nothing once the launch's
         // first frame is on screen, so settings' first opening doesn't wait for them; the
         // next frame shows the screen again unchanged, then the app is idle. The launch's
@@ -449,53 +380,10 @@ fn main() {
         // lit, a toggle), so the next frame draws again; this one drew, so the next
         // doesn't wait for an event.
         if g.acted { dirty = true; }
-        if f.frames > 0 && gfx::frame_count() >= f.frames { break; }
-        // A --frames run counts frames, not seconds: none waits for an event, so the
-        // computer's reply or a transition is the same number of frames as without the wait.
-        if f.frames > 0 { draughts_wake_now(); }
-        // --rest S: the app at rest from 12 s after the launch for S seconds, its CPU time
-        // and footprint printed once (memory.c).
-        if f.rest > 0 && rest_at < 0.0 && now > 12.0 {
-            rest_at = now;
-            rest_cpu = draughts_cpu_seconds();
-            var names: u8[2048] = [0; 2048];
-            let k = draughts_threads(names[..]);
-            if k > 0 { print("rest: threads' CPU at the start: ", names[..k]); }
-        }
-        if f.rest > 0 && rest_at >= 0.0 && !rested {
-            rest_passes++;
-            if drew { rest_draws++; }
-        }
-        if f.rest > 0 && rest_at >= 0.0 && now >= rest_at + f.rest && !rested {
-            rested = true;
-            let cpu = draughts_cpu_seconds() - rest_cpu;
-            print("rest: ", now - rest_at, " s: process CPU ", cpu, " s (", 100.0 * cpu / (now - rest_at),
-                  "%), footprint ", draughts_footprint_mb(), " MB; the loop ran ", rest_passes, " times and drew ",
-                  rest_draws, " frames");
-            var names: u8[2048] = [0; 2048];
-            let k = draughts_threads(names[..]);
-            if k > 0 { print("rest: threads' CPU since the launch: ", names[..k]); }
-        }
-        if draw3d::bench_done(d3) { break; }
-        if f.bench > 0 && bench2d.i >= 2 * f.bench {
-            print("bench2d: presented");
-            var line: u8[>..] = [];
-            format(line, "bench2d: summary, ", size.x, "x", size.y, ", ", f.bench, " frames each: cpu ", draw3d::median(bench2d.cpu),
-                   " ms; waited ");
-            draw3d::spread(line, bench2d.all);
-            format(line, "; presented ");
-            draw3d::rates(line, bench2d.gap);
-            print(line);
-            break;
-        }
+        // The development flags' frame count, rest, and benches (dev.goose).
+        if dev::after(dv, f, d3, drew, size, now) { break; }
     }
-    if f.frames > 0 { gfx::screenshot("draughts.png"); }
-    if f.frames > 0 && d3.prep_ms.len > 0 {
-        var line: u8[>..] = [];
-        for ms in d3.prep_ms { format(line, " ", floor(ms * 100.0 + 0.5) / 100.0); }
-        print("3D board prepared in ", d3.prep_ms.len, " steps, each waited, ms:", line);
-    }
-    if f.frames > 0 && d3.frames > 0 { print("3D board: ", d3.frames, " frames showed it, ", d3.draws, " drew it, ", d3.shadows, " its shadow map, ", d3.pulses, " only its pulsing marks"); }
+    dev::end(f, d3);
     shell::write_game(sh);
     if sh.quit { draughts_close(); }
 }

@@ -133,6 +133,10 @@ and `theme::Theme`; to the 3D board, `view3d::Scene` and `view3d::View`'s matrix
    Otherwise nothing is drawn, and the next frame waits for input.
 6. While a clock runs, a timer is set for when the time it shows changes.
 
+The development flags that act while the loop runs (`--tap`, `--go`, `--win`, `--hold`,
+`--bench`, `--rest`, `--frames`) are `src/app/dev.goose`, which the loop calls at fixed
+points of a frame; with none of them given, its calls do nothing.
+
 Android's back (the gesture or the button) and Escape on the Mac go back a screen, as
 the screen's own back or home control does (`shell::back`): a setup to home's menu, the
 game, settings, and the puzzles to pick from where their tile goes, a puzzle to the
