@@ -14,7 +14,6 @@
 
 import std;
 import vec;
-import gfx;
 import os;
 import rules from "../rules";
 import board from "../board";
@@ -34,6 +33,7 @@ import .text;
 import .host;
 import .think;
 import .draw3d;
+import .render;
 import .flags;
 import .dev;
 
@@ -90,12 +90,9 @@ fn main() {
     shell::launch(sh, prefs, players_read);
     dev::setup(f, sh, prefs);
     shell::open(sh, keep);
-    var d = draw::new(kind, !settings::photo_shown(sh.prefs));
-    var d3 = draw3d::Drawer { wood: f.wood, marble: f.marble, summer: f.summer, spring: f.spring, timed: f.bench > 0, .. };
+    var rd = render::new(kind, !settings::photo_shown(sh.prefs), f);
     var dv = dev::new(f);
-    var w = widgets::new();
     var g = gui::Gui {};
-    var t = text::Text {};
     var size = int2 { 0, 0 };
     var was_scale: f32 = 0.0;
     var dirty = true;
@@ -122,8 +119,8 @@ fn main() {
         // (80 to 95 ms on the tablet) holds the thread.
         if season_in > 0 {
             season_in--;
-            if season_in == 0 && (theme_for(sh.prefs.season) != d.kind || !settings::photo_shown(sh.prefs) != d.scene.plain) {
-                draw::reload(d, theme_for(sh.prefs.season), !settings::photo_shown(sh.prefs));
+            if season_in == 0 && !render::shows_theme(rd, theme_for(sh.prefs.season), !settings::photo_shown(sh.prefs)) {
+                render::reload(rd, theme_for(sh.prefs.season), !settings::photo_shown(sh.prefs));
                 dirty = true;
             }
         }
@@ -149,11 +146,7 @@ fn main() {
             g.insets = e;
             dirty = true;
         }
-        if text::bake(t, g, scale) {
-            trim_memory();
-            w.stale = true;
-        }
-        w.atlas = t.texture;
+        if render::upload_text(rd, g, scale) { trim_memory(); }
         // The pointer, and a player's name typed while the keyboard is up (shell::who). The
         // screens give the pointer to the UI first; a press that lands on it never reaches
         // the board.
@@ -178,16 +171,13 @@ fn main() {
         // to flat, it is all given back once settings is left, so switching flat and 3D
         // there and back doesn't prepare it again each time.
         let want = shell::board3d(sh);
-        let ready3d = want != shell::WANTED || draw3d::ready(d3, d.kind, shell::board_n(sh), d.scene.plain);
-        let shown3d = draw3d::shows(d3);
-        if want == shell::WANTED && (!ready3d || !shown3d || draw3d::appearing(d3, now)) { dirty = true; }
+        let ready3d = want != shell::WANTED || render::ready3d(rd, shell::board_n(sh));
+        let shown3d = render::shown3d(rd);
+        if want == shell::WANTED && (!ready3d || !shown3d || render::appearing3d(rd, now)) { dirty = true; }
         // Once ready, the frame after its last step draws the new image (nothing else may
         // be changing then), and it eases back from grey: when the last frame showed it.
-        if sh.out.raised && (d3.fresh || draw3d::greying(d3)) { dirty = true; }
-        if want == shell::DROPPED && d3.ready {
-            draw3d::drop(d3);
-            draw::cover(d);     // the flat game's cover again (resize.c)
-        }
+        if sh.out.raised && render::moving3d(rd) { dirty = true; }
+        if want == shell::DROPPED { render::drop3d(rd); }
         let out .= shell::frame(sh, g, size.x, size.y, now, ready3d, shown3d);
         if out.changed { dirty = true; }
         // The keyboard: up while a name is typed, brought up again by each tap on the name.
@@ -208,16 +198,14 @@ fn main() {
             shell::wrote(sh);
             let next = if sh.prefs.language >= 0 { sh.prefs.language } else { system_lang };
             if next != strings::current { strings::use(next); }
-            if theme_for(sh.prefs.season) != d.kind || !settings::photo_shown(sh.prefs) != d.scene.plain { season_in = 2; }
+            if !render::shows_theme(rd, theme_for(sh.prefs.season), !settings::photo_shown(sh.prefs)) { season_in = 2; }
             dirty = true;
         }
         // Settings' thumbnails, if settings show before the first idle frame loaded them
         // (below): opened at launch.
-        if out.screen == shell::SETTINGS && w.thumbs.id == 0 {
-            w.thumbs = scene::thumbs(d.full);
-        }
+        if out.screen == shell::SETTINGS { render::thumbs(rd); }
         // The development flags' taps, and their benches' start (dev.goose).
-        if dev::after_shell(dv, f, sh, g, d3, now) { dirty = true; }
+        if dev::after_shell(dv, f, sh, g, rd, now) { dirty = true; }
         let l = out.layout;
         // iOS ends an app that uses the GPU in the background, and SDL doesn't block the
         // loop there as on Android: nothing is drawn while the app hasn't focus, which it
@@ -227,22 +215,14 @@ fn main() {
         let drew = !hidden && (dirty || shell::animating(sh, g, now));
         if drew {
             dev::drawing(dv);
-            let shown .= shell::fill(sh, now);
-            widgets::prepare(w, g, d.scene, d.colors, size.x, size.y, out.hole, out.tall);
-            if out.raised {
-                // The 3D board (draw3d.goose) over the photograph, the UI and its pieces
-                // drawn over it as on the flat board; in a transition its image moves,
-                // drawn once.
-                draw3d::frame(d3, shown, l, out.view, now, size, d.kind, d.scene.plain, shell::which(out.shows), out.hold);
-                draw::pieces_over(d, out.over, l, size.x, size.y);
-                draw::photo(d, out.blur, now, size.x, size.y, draw3d::shows(d3) && !draw3d::appearing(d3, now));
-                draw3d::show(d3, out.blur, out.place, out.fade, size, now);
-            } else {
-                draw::frame(d, shown, out.over, l, out.blur, now, size.x, size.y);
-            }
-            widgets::frame(w, g, d.scene, d.colors, size.x, size.y, out.hole, out.tall);
-            draw::overlay(d, now, out.hole, out.tall);
-            gfx::end_pass();
+            // The board the screen shows, its draw lists filled, and what the shell's frame
+            // left: on the 3D board its image moves in a transition, drawn once.
+            var frame = render::Frame { board: shell::fill(sh, now), layout: l, over: out.over[..], quads: g.quads[..],
+                                        clip:  g.scroll.view, raised: out.raised, view: out.view,
+                                        which: shell::which(out.shows), hold: out.hold, place: out.place,
+                                        fade:  out.fade, blur: out.blur, hole: out.hole, tall: out.tall, now: now,
+                                        size: size };
+            render::frame(rd, frame);
             dirty = false;
             dev::drawn(dv, f);
         }
@@ -250,14 +230,14 @@ fn main() {
         // for its faster display (task 056): a 90 Hz display shows 60 frames a second two
         // refreshes and one in turn, where at 60 each shows for one.
         // The 3D bench's frames that wait for each are left out (dev::waited3d).
-        let paced = drew && out.raised && ready3d && shown3d && !dev::waited3d(d3);
+        let paced = drew && out.raised && ready3d && shown3d && !dev::waited3d(rd);
         if on_android { host::pace_3d(paced, now); }
         // Settings' thumbnails load in the first frame that draws nothing once the launch's
         // first frame is on screen, so settings' first opening doesn't wait for them; the
         // next frame shows the screen again unchanged, then the app is idle. The launch's
         // loads are done then, and what they freed goes back to the system (memory.c).
         if !drew && !hidden && !released && host::frame_count() >= 2 {
-            if w.thumbs.id == 0 { w.thumbs = scene::thumbs(d.full); }
+            render::thumbs(rd);
             host::release_memory();
             released = true;
         }
@@ -274,9 +254,9 @@ fn main() {
         // doesn't wait for an event.
         if g.acted { dirty = true; }
         // The development flags' frame count, rest, and benches (dev.goose).
-        if dev::after(dv, f, d3, drew, size, now) { break; }
+        if dev::after(dv, f, rd, drew, size, now) { break; }
     }
-    dev::end(f, d3);
+    dev::end(f, rd);
     shell::write_game(sh);
     if sh.out.quit { host::close_app(); }
 }

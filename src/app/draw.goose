@@ -496,8 +496,17 @@ fn new(kind: i64, plain: bool) -> Drawer {
     return d;
 }
 
-// Copies the pieces in `over` for overlay() to draw over the UI: frame() does, and the
-// 3D board's frame (draw3d.goose), which draws the board itself.
+// Copies the board's pieces (with `flat`; the 3D board draws its own) for board() to
+// draw, and those in `over` for overlay() to draw over the UI, before the screen's pass.
+fn upload(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::Layout, width: f32, height: f32,
+          flat: bool) {
+    if flat {
+        for i in b.pieces.len { d.upload[i] = b.pieces[i]; }
+        gfx::update_buffer(d.pieces, bytes_of(d.upload));
+    }
+    pieces_over(d, over, l, width, height);
+}
+
 fn pieces_over(d: Drawer&, over: const board::Piece[:], l: board::Layout, width: f32, height: f32) {
     d.over_count = min(over.len, board::OVER);
     for i in d.over_count { d.over_upload[i] = over[i]; }
@@ -508,19 +517,11 @@ fn pieces_over(d: Drawer&, over: const board::Piece[:], l: board::Layout, width:
     d.view = View { screen: float4 { width, height, 0.0055 * across / 0.39, 0.0 } };
 }
 
-// Draws one frame of the board as fill() left it, into the screen's pass, which it
-// leaves open for the UI; the caller ends it. The pieces in `over` are copied now and
-// drawn by overlay(), after the UI. `blur` 0 shows the photograph as it is (home,
-// settings), 1 blurred and dimmed (the game), and between mixes the two (a transition).
-fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::Layout, blur: f32, now: f64,
-         width: f32, height: f32) {
+// Draws the board as fill() left it, its pieces as upload() copied them, into the
+// screen's open pass. `blur` 0 shows the photograph as it is (home, settings), 1 blurred
+// and dimmed (the game), and between mixes the two (a transition).
+fn board(d: Drawer&, b: board::Board&, l: board::Layout, blur: f32, now: f64, width: f32, height: f32) {
     let t = d.colors;
-    for i in b.pieces.len { d.upload[i] = b.pieces[i]; }
-    gfx::update_buffer(d.pieces, bytes_of(d.upload));
-    pieces_over(d, over, l, width, height);
-    // No depth target: nothing tests depth, and asking for the screen's would make gfx
-    // keep a window-sized one (patches/goose_gfx/0003).
-    gfx::begin_pass(gfx::screen(), gfx::Texture { 0 }, t.page);
     gfx::bind(d.board_pipeline);
     gfx::uniforms(gfx::FRAGMENT, 0, t);
     // Dimmed to 0.8 blurred; the ends exact, so a screen at rest draws as it always has.
@@ -542,13 +543,12 @@ fn frame(d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::La
     gfx::draw_instanced(6, b.pieces.len);
 }
 
-// Opens the screen's pass with the photograph alone behind a 3D board (draw3d.goose),
-// `blur` as frame() takes it; with blur 1 and `covered` (the renderer's own backdrop
-// fully shown over it) the pass is only cleared. While the 3D board gets ready or fades
-// in, the photograph shows as on the flat board, so only the board appears.
+// The photograph alone behind a 3D board (draw3d.goose), in the screen's open pass,
+// `blur` as board() takes it; with blur 1 and `covered` (the renderer's own backdrop
+// fully shown over it) nothing, the pass only cleared. While the 3D board gets ready or
+// fades in, the photograph shows as on the flat board, so only the board appears.
 fn photo(d: Drawer&, blur: f32, now: f64, width: f32, height: f32, covered: bool = true) {
     let t = d.colors;
-    gfx::begin_pass(gfx::screen(), gfx::Texture { 0 }, t.page);
     guard blur < 1.0 || !covered else { return; }
     gfx::bind(d.board_pipeline);
     gfx::uniforms(gfx::FRAGMENT, 0, t);
@@ -585,7 +585,7 @@ fn reload(d: Drawer&, kind: i64, plain: bool) {
     cover(d);
 }
 
-// Draws the pieces frame() was given for over the UI, in the open pass, none inside
+// Draws the pieces upload() was given for over the UI, in the open pass, none inside
 // `hole` (`tall` pixels tall, 0 as tall as wide) but those on the board.
 fn overlay(d: Drawer&, now: f64, hole: float4, tall: f32 = 0.0) {
     guard d.over_count > 0 else { return; }

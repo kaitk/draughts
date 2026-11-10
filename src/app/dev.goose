@@ -6,7 +6,6 @@
 namespace dev;
 import std;
 import vec;
-import gfx;
 
 // Ends the next frame()'s wait at once: an event pushed now (wake.c).
 extern fn draughts_wake_now();
@@ -106,7 +105,8 @@ fn before(dv: Dev&, f: flags::Flags&, sh: shell::Shell&, now: f64) {
 // when it is the child's turn or on a puzzle's when it takes one. True when it tapped,
 // a change to draw. --bench then starts timing: the 3D board 2 s after the launch,
 // settled (draw3d.goose), and the flat board's frames.
-fn after_shell(dv: Dev&, f: flags::Flags&, sh: shell::Shell&, g: gui::Gui&, d3: draw3d::Drawer&, now: f64) -> bool {
+fn after_shell(dv: Dev&, f: flags::Flags&, sh: shell::Shell&, g: gui::Gui&, r: render::Renderer&, now: f64) -> bool {
+    let d3 .= r.d3;
     var dirty = false;
     let l = sh.out.layout;
     let b .= sh.game.b;
@@ -148,7 +148,7 @@ fn drawn(dv: Dev&, f: flags::Flags&) {
     let bn .= dv.bench2d;
     if bn.i < f.bench {
         bn.cpu.push(clock() - t0);
-        gfx::flush();
+        render::wait();
         bn.all.push(clock() - t0);
     } else {
         // The presented frames' start, for the compositor's count of them.
@@ -161,11 +161,12 @@ fn drawn(dv: Dev&, f: flags::Flags&) {
 
 // Whether the 3D board's bench waits for each frame now: its first two phases do, slower
 // than the loop draws them, and aren't paced.
-fn waited3d(d3: draw3d::Drawer&) -> bool { d3.bench.n > 0 && d3.bench.i < 2 * d3.bench.n }
+fn waited3d(r: render::Renderer&) -> bool { r.d3.bench.n > 0 && r.d3.bench.i < 2 * r.d3.bench.n }
 
 // At the frame's end, whether drawn or not; true when the loop should end: --frames'
 // count reached, or a bench done.
-fn after(dv: Dev&, f: flags::Flags&, d3: draw3d::Drawer&, drew: bool, size: int2, now: f64) -> bool {
+fn after(dv: Dev&, f: flags::Flags&, r: render::Renderer&, drew: bool, size: int2, now: f64) -> bool {
+    let d3 .= r.d3;
     if f.frames > 0 && host::frame_count() >= f.frames { return true; }
     // A --frames run counts frames, not seconds: none waits for an event, so the
     // computer's reply or a transition is the same number of frames as without the wait.
@@ -210,7 +211,8 @@ fn after(dv: Dev&, f: flags::Flags&, d3: draw3d::Drawer&, drew: bool, size: int2
 
 // After the loop: --frames' screenshot, and what the 3D board's preparing and drawing
 // took.
-fn end(f: flags::Flags&, d3: draw3d::Drawer&) {
+fn end(f: flags::Flags&, r: render::Renderer&) {
+    let d3 .= r.d3;
     if f.frames > 0 { host::screenshot("draughts.png"); }
     if f.frames > 0 && d3.prep_ms.len > 0 {
         var line: u8[>..] = [];
