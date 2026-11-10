@@ -215,7 +215,8 @@ sibling never replaces a game against the computer. The computer's skill is the
 player's, or `ai::adapt` would follow neither child. Language is the device's: the
 parent sets it once.
 
-**The files** (`src/shell/players.goose`), one per player rather than sections in one file,
+**The files** (`src/shell/players.goose`; the shell's changes to the list in
+`roster.goose`, the saved game in `saved.goose`), one per player rather than sections in one file,
 so a change rewrites only that player's and no section parser is needed:
 
 - `settings.txt`: the device's keys, `language` and `player = N`, the playing player's id.

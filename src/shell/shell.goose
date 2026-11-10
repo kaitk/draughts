@@ -28,7 +28,8 @@
 // Home's way out asks the app to stop (quit), which ends its loop. Android's back, and
 // Escape on the Mac, go back a screen as its own back control does (back).
 // A game against the computer plays at the skill kept for its level, which each
-// finished game moves (ai::adapt). Tests run it headless.
+// finished game moves (ai::adapt). Tests run it headless. What is kept of the game is in
+// saved.goose, switching and changing players in roster.goose.
 namespace shell;
 import std;
 import vec;
@@ -47,6 +48,8 @@ import .picker;
 import .puzzle;
 import .players;
 import .who;
+import .saved;
+import .roster;
 
 let HOME = 0;
 let GAME = 1;
@@ -695,213 +698,6 @@ fn turned(sh: Shell&, setup: i64) -> bool {
     return if setup == home::COMPUTER { sh.prefs.color == rules::BLACK }
            else if setup == home::FRIEND { false }
            else { sh.game.computer == rules::WHITE };
-}
-
-// What is kept when the app is paused, for Android may kill it then: the screen and the
-// game with its variant, undo history, clocks, and whom it is against at which skill, one
-// flat value (docs/architecture/README.md, "Game state is a value"). VERSION changes when
-// its layout does; an image of another layout doesn't verify, and the app starts afresh.
-let VERSION = 3;
-
-struct Saved {
-    version:   i64,
-    screen:    i64,
-    variant:   u8,
-    start:     rules::Position,
-    pos:       rules::Position,
-    last_from: u8,
-    last_to:   u8,
-    has_last:  bool,
-    history:   board::Step[..board::MAX_HISTORY],
-    clock:     clock::Clock,
-    computer:  i64,
-    level:     i64,
-    skill:     i64,
-    number:    i64,
-    counted:   bool,
-}
-
-// FNV-1a over bytes, for the image's checksum: from_bytes checks an image's shape, not
-// that its bytes are the ones written.
-fn checksum(data: const u8[:]) -> u64 {
-    var h: u64 = 0xcbf29ce484222325;
-    for c in data { h = (h ^ c) * 0x100000001b3; }
-    return h;
-}
-
-// The image of what is kept, then its checksum (8 bytes, little-endian), for the app to
-// write.
-fn save(sh: Shell&) -> u8[>..] {
-    let b .= sh.game.b;
-    var one: Saved[>..] = [];
-    one.push(Saved { version: VERSION, screen: sh.screen, variant: b.variant, start: b.start, pos: b.pos,
-                     last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.history,
-                     clock:     sh.game.clock, computer: sh.game.computer, level: sh.game.level, skill: sh.game.skill,
-                     number: sh.game.number, counted: sh.game.counted });
-    var image = to_bytes(one);
-    let h = checksum(image);
-    for i in 8 { image.push(((h >> (8 * i)) & 0xFF) as u8); }
-    return image;
-}
-
-// Brings back what an image kept: the screen, and the game as it was, of whichever
-// variant, with no move or selection under way. False, changing nothing, for an image
-// that isn't one.
-fn restore(sh: Shell&, file: const u8[:]) -> bool {
-    guard file.len > 8 else { return false; }
-    let image = file[..file.len - 8];
-    var h: u64 = 0;
-    for i in 8 { h |= (file[image.len + i] as u64) << (8 * i); }
-    guard h == checksum(image) else { return false; }
-    let one, ok = from_bytes<Saved[>..]>(image);
-    guard ok && one.len == 1 else { return false; }
-    let s .= one[0];
-    guard s.version == VERSION && s.variant < rules::VARIANT_COUNT && s.start.variant == s.variant
-          && s.pos.variant == s.variant && s.screen >= HOME && s.screen <= PUZZLE && s.computer >= -1
-          && s.computer <= rules::BLACK && s.level >= game::EASY && s.level <= game::HARD
-          && s.clock.kind >= 0 && s.clock.kind < clock::KINDS && s.skill >= 0 && s.skill <= 100
-    else { return false; }
-    // The game as started, then its board and clocks as they were.
-    let gm .= sh.game;
-    game::start(gm, s.variant, s.clock.kind, s.computer, s.level, s.skill, s.number);
-    let b .= gm.b;
-    board::set(b, s.start);
-    board::show(b, s.pos);
-    b.history = s.history;
-    b.has_last = s.has_last;
-    b.last = rules::Move { from: s.last_from, to: s.last_to, .. };
-    gm.clock = s.clock;
-    gm.counted = s.counted;
-    gm.turn = b.pos.side;
-    // A puzzle isn't kept; the puzzles to pick from come back instead.
-    sh.screen = if s.screen == PUZZLE { PICKER } else { s.screen };
-    return true;
-}
-
-// Writes the playing player's game to their file (game-N.bin), where games are kept: as
-// the app is paused or quits, and before another player plays.
-fn write_game(sh: Shell&) {
-    let ps .= sh.players;
-    guard ps.games && ps.list.len > 0 else { return; }
-    write_file_atomic(players::game_path(ps, ps.list[ps.playing].id), save(sh));
-}
-
-// Brings back the playing player's game from their file, where games are kept, the
-// screen too (at start); false, leaving the game as it is, with none.
-fn read_game(sh: Shell&) -> bool {
-    let ps .= sh.players;
-    guard ps.games && ps.list.len > 0 else { return false; }
-    var saved: u8[>..] = [];
-    guard read_file(players::game_path(ps, ps.list[ps.playing].id), saved) else { return false; }
-    return restore(sh, saved);
-}
-
-// The player at `index` of the list plays from now on, with settings s and the device's
-// language: their game, or a new one of their draughts, on home's menu; the puzzles from
-// the start. The app writes and applies their settings (changed): their look and the
-// device's file naming them.
-fn enter(sh: Shell&, index: i64, s: settings::Settings) {
-    let ps .= sh.players;
-    let language = sh.prefs.language;
-    ps.playing = index;
-    sh.prefs = s;
-    sh.prefs.picture = ps.list[index].picture;
-    sh.prefs.name = ps.list[index].name;
-    sh.prefs.language = language;
-    sh.game = game::new(sh.prefs.variant as u8);
-    let screen = sh.screen;
-    read_game(sh);
-    sh.screen = screen;
-    sh.game.b.hints = sh.prefs.hints;
-    sh.puzzle = puzzle::new();
-    sh.theme = -1;
-    sh.setup = home::NOTHING;
-    sh.changed = true;
-}
-
-// Switches to the player at `index`: the leaving player's settings and game are written,
-// the other's read; the screen shows their game and look at once.
-fn switch_player(sh: Shell&, index: i64) {
-    let ps .= sh.players;
-    guard index >= 0 && index < ps.list.len && index != ps.playing else { return; }
-    players::store(ps, ps.list[ps.playing].id, sh.prefs);
-    write_game(sh);
-    enter(sh, index, players::read(ps, ps.list[index].id));
-}
-
-// Adds a player with `picture` and `name` and switches to them, every setting at its
-// default (the season by the date). False, changing nothing, with four players.
-fn add_player(sh: Shell&, picture: i64, name: players::Name) -> bool {
-    let ps .= sh.players;
-    let id = players::free_id(ps);
-    guard id > 0 else { return false; }
-    players::store(ps, ps.list[ps.playing].id, sh.prefs);
-    write_game(sh);
-    players::delete_game(ps, id);
-    var s = settings::Settings {};
-    s.picture = picture;
-    s.name = name;
-    players::store(ps, id, s);
-    let at = players::insert(ps, players::Player { id: id, picture: picture, name: name });
-    enter(sh, at, s);
-    return true;
-}
-
-// Gives the player at `index` another picture and name.
-fn edit_player(sh: Shell&, index: i64, picture: i64, name: players::Name) {
-    let ps .= sh.players;
-    guard index >= 0 && index < ps.list.len else { return; }
-    let p .= ps.list[index];
-    p.picture = picture;
-    p.name = name;
-    if index == ps.playing {
-        sh.prefs.picture = picture;
-        sh.prefs.name = name;
-        sh.changed = true;
-        return;
-    }
-    var s = players::read(ps, p.id);
-    s.picture = picture;
-    s.name = name;
-    players::store(ps, p.id, s);
-}
-
-// Starts the player at `index` again: their stars, the computer's skill and games, and
-// their saved game are cleared; their picture, name, look, and setup stay.
-fn start_again(sh: Shell&, index: i64) {
-    let ps .= sh.players;
-    guard index >= 0 && index < ps.list.len else { return; }
-    let id = ps.list[index].id;
-    players::delete_game(ps, id);
-    if index == ps.playing {
-        players::clear_progress(sh.prefs);
-        sh.game = game::new(sh.prefs.variant as u8);
-        sh.game.b.hints = sh.prefs.hints;
-        sh.puzzle = puzzle::new();
-        sh.theme = -1;
-        sh.changed = true;
-        return;
-    }
-    var s = players::read(ps, id);
-    players::clear_progress(s);
-    players::store(ps, id, s);
-}
-
-// Removes the player at `index` and their files. The last player can't be removed
-// (false). Removing the player who is playing makes the first left the player.
-fn remove_player(sh: Shell&, index: i64) -> bool {
-    let ps .= sh.players;
-    guard ps.list.len > 1 && index >= 0 && index < ps.list.len else { return false; }
-    let playing = index == ps.playing;
-    players::delete_files(ps, ps.list[index].id);
-    for i in index..ps.list.len - 1 { ps.list[i] = ps.list[i + 1]; }
-    ps.list.pop();
-    if playing {
-        enter(sh, 0, players::read(ps, ps.list[0].id));
-    } else if index < ps.playing {
-        ps.playing--;
-    }
-    return true;
 }
 
 // The board a screen shows: settings their preview, a puzzle its own (and the puzzles to
