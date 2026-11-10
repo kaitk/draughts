@@ -85,7 +85,7 @@ fn setup(f: flags::Flags&, sh: shell::Shell&, prefs: settings::Settings) {
 // moment (which must be past: the celebration's start is kept as a time, never before
 // 0). Then --hold keeps a transition at its moment, and --win the end's.
 fn before(dv: Dev&, f: flags::Flags&, sh: shell::Shell&, now: f64) {
-    if dv.go >= 0 && gfx::frame_count() >= 2 && dv.tapped >= f.taps.len && !sh.game.b.moving
+    if dv.go >= 0 && host::frame_count() >= 2 && dv.tapped >= f.taps.len && !sh.game.b.moving
        && (f.win < 0.0 || ((sh.game.won_at >= 0.0 || sh.game.drawn_at >= 0.0) && now > f.win)) {
         if dv.go == flags::GO_PLAY {
             // As the setup's play, leaving settings.txt as it is: the count of games
@@ -166,7 +166,7 @@ fn waited3d(d3: draw3d::Drawer&) -> bool { d3.bench.n > 0 && d3.bench.i < 2 * d3
 // At the frame's end, whether drawn or not; true when the loop should end: --frames'
 // count reached, or a bench done.
 fn after(dv: Dev&, f: flags::Flags&, d3: draw3d::Drawer&, drew: bool, size: int2, now: f64) -> bool {
-    if f.frames > 0 && gfx::frame_count() >= f.frames { return true; }
+    if f.frames > 0 && host::frame_count() >= f.frames { return true; }
     // A --frames run counts frames, not seconds: none waits for an event, so the
     // computer's reply or a transition is the same number of frames as without the wait.
     if f.frames > 0 { draughts_wake_now(); }
@@ -211,7 +211,7 @@ fn after(dv: Dev&, f: flags::Flags&, d3: draw3d::Drawer&, drew: bool, size: int2
 // After the loop: --frames' screenshot, and what the 3D board's preparing and drawing
 // took.
 fn end(f: flags::Flags&, d3: draw3d::Drawer&) {
-    if f.frames > 0 { gfx::screenshot("draughts.png"); }
+    if f.frames > 0 { host::screenshot("draughts.png"); }
     if f.frames > 0 && d3.prep_ms.len > 0 {
         var line: u8[>..] = [];
         for ms in d3.prep_ms { format(line, " ", floor(ms * 100.0 + 0.5) / 100.0); }

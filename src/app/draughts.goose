@@ -31,44 +31,14 @@ import puzzles from "../puzzles";
 import badges from "../badges";
 import render3d from "../render3d";
 import .text;
+import .host;
 import .think;
 import .draw3d;
 import .flags;
 import .dev;
 
-// The system's preferred locales, "et-EE,en-US" (locale.c); returns how many bytes.
-extern fn draughts_locales(out: u8[:]) -> i64;
-// The app's storage folder, ending in a separator (storage.c); returns how many bytes.
-extern fn draughts_storage(out: u8[:]) -> i64;
-// The insets around the window's safe area in pixels (left, top, right, bottom) and the
-// display's scale, into out[0..5] (display.c); 0, leaving out as it is, without a window.
-extern fn draughts_display(out: f32[:]) -> i64;
-// Asks SDL for Vulkan on Windows, before the window opens (display.c).
-extern fn draughts_choose_gpu();
-// Wakes the loop in ms milliseconds, where frame() waits for events (wake.c).
-extern fn draughts_wake_in(ms: i64);
-// Tells Android the first frame is on screen, to lift the splash and the cover (launch.c).
-extern fn draughts_first_frame();
-// Closes the app on Android and takes it out of recents, as home's way out asks; on the
-// Mac the window closes as the program returns (launch.c).
-extern fn draughts_close();
-// Android's back where the app has no way back (home's menu): the system's back, which
-// puts the app in the background; nothing on the Mac (launch.c).
-extern fn draughts_leave();
-// Gives back to the system the memory malloc keeps for freed blocks; Android only
-// (memory.c).
-extern fn draughts_release_memory();
-// Asks Android's display for 60 Hz while the 3D board draws, if its frames can't keep up
-// with a faster display; drawing is 1 when this pass drew it (display.c). Nothing elsewhere.
-extern fn draughts_pace_3d(drawing: i64, now: f64);
-// Which platform the program runs on: DESKTOP, ANDROID, or IOS (launch.c).
-extern fn draughts_platform() -> i64;
 // Seconds between looks for the hint's answer while it is on its way (think::frame).
 let HINT_POLL = 0.02;
-
-let DESKTOP = 0;
-let ANDROID = 1;
-let IOS = 2;
 
 // The theme a season setting picks: its own, or by the date.
 fn theme_for(season: i64) -> i64 {
@@ -92,28 +62,26 @@ fn main() {
     // The players, their settings, and their games, kept in the app's storage folder
     // (shell/players.goose): the playing player's settings with the device's language.
     var folder: u8[512] = [0; 512];
-    let dir = folder[..draughts_storage(folder)];
+    let dir = host::storage(folder);
     var players_read = players::Players {};
     let prefs = players::load(players_read, dir, keep);
     if kind < 0 { kind = theme_for(prefs.season); }
     var locales: u8[256] = [0; 256];
-    let system_lang = strings::pick(locales[..draughts_locales(locales)]);
+    let system_lang = strings::pick(host::locales(locales));
     if lang < 0 { lang = if prefs.language >= 0 { prefs.language } else { system_lang }; }
     strings::use(lang);
     puzzles::load((if f.variant >= 0 { f.variant } else { prefs.variant }) as u8);
 
     // A phone or a tablet: the window fills the screen with the system's bars hidden, the
     // clocks count only while the app has focus, and the layout takes the display's scale.
-    let platform = draughts_platform();
-    let on_android = platform == ANDROID;
-    let on_ios = platform == IOS;
-    let mobile = platform != DESKTOP;
+    let platform = host::platform();
+    let on_android = platform == host::ANDROID;
+    let on_ios = platform == host::IOS;
+    let mobile = platform != host::DESKTOP;
     // An iOS app never closes itself, so home has no way out there.
     if on_ios { home::closable = false; }
-    let window_flags = if mobile || f.full { gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE } else { gfx::WINDOW_RESIZABLE };
-    draughts_choose_gpu();
-    guard gfx::open(strings::get(strings::APP_NAME), f.width, f.height, window_flags) else { abort(str("gfx: ", gfx::error())); }
-    defer gfx::close();
+    var h = host::open(strings::get(strings::APP_NAME), f.width, f.height, f.full);
+    defer host::close();
 
     // A new game of the draughts the setup last chose, until a saved game is restored;
     // the flags' setup (dev.goose), then the playing player's game, with the screen it
@@ -129,34 +97,26 @@ fn main() {
     var g = gui::Gui {};
     var t = text::Text {};
     var size = int2 { 0, 0 };
-    var display:   f32[5] = [0.0; 5];
-    var was_scale: f32    = 0.0;
+    var was_scale: f32 = 0.0;
     var dirty = true;
     var focused = true;
     var season_in = 0;
     var wake_at = -1.0;
     var released = false;
     var thinker = think::Thinker {};
-    // A player's name, typed: the keyboard is up while the shell asks (shell::who), and its
-    // characters, Backspace, and Return go to the UI with the pointer.
-    var events: gfx::Event[64] = [default<gfx::Event>(); 64];
-    let erase_key = gfx::scancode("Backspace");
-    let enter_key = gfx::scancode("Return");
-    var text_on = false;
-    var keyboard = 0;
-    while gfx::frame() {
+    while host::frame() {
         // frame() presents what the pass before it drew, and the first pass draws.
-        if gfx::frame_count() == 2 { draughts_first_frame(); }
+        if host::frame_count() == 2 { host::first_frame(); }
         // Android may kill the app once it is paused; it loses focus then, and SDL lets
         // the loop run once more before blocking, so the game is written here: one small
         // write per pause, none while idle.
-        if focused && !gfx::focused() { shell::write_game(sh); }
+        if focused && !host::focused() { shell::write_game(sh); }
         // The clocks count only time the game was on screen: not the gap while Android had
         // the app paused, nor while it was in the background. On the Mac a window started
         // from a terminal never has focus, and the loop never blocks there, so focus is
         // left out and the clock runs while the window shows.
-        if mobile && (!focused || !gfx::focused()) { shell::pause(sh); }
-        focused = gfx::focused();
+        if mobile && (!focused || !host::focused()) { shell::pause(sh); }
+        focused = host::focused();
         // A new season's photograph, colors, and blurred copies load two frames after the
         // tap: the frame after it shows the tile lit, and is on screen before the load
         // (80 to 95 ms on the tablet) holds the thread.
@@ -167,8 +127,8 @@ fn main() {
                 dirty = true;
             }
         }
-        let now = gfx::time();
-        let s = gfx::screen_size();
+        let now = host::time();
+        let s = host::screen_size();
         if s.x != size.x || s.y != size.y {
             size = s;
             dirty = true;
@@ -177,7 +137,8 @@ fn main() {
         // turning the screen moves the camera's cutout and the gesture bar, and a change
         // of either is a change of the screen, as a new size is. The Mac's display scale
         // is left out (gui::scale_of).
-        draughts_display(display);
+        host::read_display(h);
+        let display = h.display;
         if mobile && f.display_scale < 0.0 { gui::display_scale = display[4]; }
         let scale = gui::scale_of(size.x, size.y);
         let e = if f.inset.x < 0.0 { float4 { display[0], display[1], display[2], display[3] } }
@@ -193,31 +154,19 @@ fn main() {
             w.stale = true;
         }
         w.atlas = t.texture;
-        // A quick tap can press and release within one frame, which mouse_down never
-        // sees; pressed and released catch it. The screens give the pointer to the UI
-        // first; a press that lands on it never reaches the board.
-        var input = gui::Input { at: gfx::mouse_pos(), down: gfx::mouse_down(gfx::MOUSE_LEFT),
-                                 pressed: gfx::mouse_pressed(gfx::MOUSE_LEFT),
-                                 released: gfx::mouse_released(gfx::MOUSE_LEFT), wheel: gfx::mouse_wheel() };
-        if text_on {
-            let n = min(gfx::events_into(events), events.len);
-            for e in events[..n] {
-                guard input.typed.len < gui::MAX_TYPED else { break; }
-                if e.kind == gfx::EVENT_TEXT { input.typed.push(e.codepoint); }
-                if e.kind == gfx::EVENT_KEY && e.down && e.scancode == erase_key { input.typed.push(gui::ERASE); }
-                if e.kind == gfx::EVENT_KEY && e.down && e.scancode == enter_key { input.typed.push(gui::ENTER); }
-            }
-        }
+        // The pointer, and a player's name typed while the keyboard is up (shell::who). The
+        // screens give the pointer to the UI first; a press that lands on it never reaches
+        // the board.
+        let input = host::input(h);
         gui::begin(g, input, scale, now);
         // A wheel's turn scrolls a list (gui::scroll_begin), a change to draw.
         if input.wheel != 0.0 { dirty = true; }
-        // Android's back (SDL's "AC Back"; DraughtsActivity hands the system's back to SDL
-        // as that key) and Escape go back a screen, as the screen's own back or home control
-        // does. On home's menu back leaves the app as the system's back would, putting it in
-        // the background; Escape there ends the loop, closing the Mac's window.
-        if gfx::key_pressed("AC Back") || gfx::key_pressed("Escape") {
+        // Android's back and Escape go back a screen, as the screen's own back or home
+        // control does. On home's menu back leaves the app as the system's back would,
+        // putting it in the background; Escape there ends the loop, closing the Mac's window.
+        if host::back() {
             if shell::back(sh, now) { dirty = true; }
-            else if on_android { draughts_leave(); }
+            else if on_android { host::leave(); }
             else { break; }
         }
         // The development flags' switch and held moments (dev.goose).
@@ -242,12 +191,7 @@ fn main() {
         let out .= shell::frame(sh, g, size.x, size.y, now, ready3d, shown3d);
         if out.changed { dirty = true; }
         // The keyboard: up while a name is typed, brought up again by each tap on the name.
-        if out.typing != text_on || (out.typing && out.keyboard != keyboard) {
-            gfx::text_input(false);
-            if out.typing { gfx::text_input(true); }
-            text_on = out.typing;
-            keyboard = out.keyboard;
-        }
+        host::keyboard(h, out.typing, out.keyboard);
         // Home's way out ends the loop; the game is written below.
         if out.quit { break; }
         // The computer's move: the worker gets what the game asks, and the game the answer.
@@ -278,7 +222,7 @@ fn main() {
         // iOS ends an app that uses the GPU in the background, and SDL doesn't block the
         // loop there as on Android: nothing is drawn while the app hasn't focus, which it
         // loses before going to the background, and the screen is drawn again on its return.
-        let hidden = on_ios && !gfx::focused();
+        let hidden = on_ios && !host::focused();
         if hidden { dirty = true; }
         let drew = !hidden && (dirty || shell::animating(sh, g, now));
         if drew {
@@ -307,14 +251,14 @@ fn main() {
         // refreshes and one in turn, where at 60 each shows for one.
         // The 3D bench's frames that wait for each are left out (dev::waited3d).
         let paced = drew && out.raised && ready3d && shown3d && !dev::waited3d(d3);
-        if on_android { draughts_pace_3d(if paced { 1 } else { 0 }, now); }
+        if on_android { host::pace_3d(paced, now); }
         // Settings' thumbnails load in the first frame that draws nothing once the launch's
         // first frame is on screen, so settings' first opening doesn't wait for them; the
         // next frame shows the screen again unchanged, then the app is idle. The launch's
         // loads are done then, and what they freed goes back to the system (memory.c).
-        if !drew && !hidden && !released && gfx::frame_count() >= 2 {
+        if !drew && !hidden && !released && host::frame_count() >= 2 {
             if w.thumbs.id == 0 { w.thumbs = scene::thumbs(d.full); }
-            draughts_release_memory();
+            host::release_memory();
             released = true;
         }
         // A running clock is drawn when the time it shows changes, and the computer's move
@@ -322,7 +266,7 @@ fn main() {
         // idle wait ends (wake.c).
         let next = shell::wake_in(sh, now, HINT_POLL);
         if next >= 0.0 && (wake_at < now || now + next < wake_at - 0.005) {
-            draughts_wake_in((1000.0 * next) as i64 + 2);
+            host::wake_in((1000.0 * next) as i64 + 2);
             wake_at = now + next;
         }
         // A widget declared this frame before a click changed what it shows (a choice
@@ -334,5 +278,5 @@ fn main() {
     }
     dev::end(f, d3);
     shell::write_game(sh);
-    if sh.out.quit { draughts_close(); }
+    if sh.out.quit { host::close_app(); }
 }
