@@ -488,6 +488,9 @@ has Xcode make one, building an empty app of that id once
 the device. A free team's profile lasts 7 days, after which the script makes another.
 The team, the identity, and the device are read on the Mac at each build and never
 written into the repo; `DRAUGHTS_IOS_DEVICE` picks a device when several are attached.
+With several development identities on the Mac, as when an Apple ID of a company's team
+is in Xcode too, the script stops and lists them; `DRAUGHTS_IOS_TEAM` (a team id or an
+Apple ID) picks a personal one, so the app is never signed into a company's team.
 The first launch of an app from a free team waits for the phone to trust its developer
 (Settings → General → VPN & Device Management). `devicectl` installs and starts it;
 `--console` shows its output.

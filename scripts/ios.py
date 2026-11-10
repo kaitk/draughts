@@ -27,7 +27,8 @@ written into the repo.
 The simulator is one this script creates once, named SIM_NAME, of SIM_TYPE, and boots
 headless: no Simulator.app window opens. Tools come from Xcode (xcrun) and the
 environment: GOOSE, DRAUGHTS_IOS_SIM (another simulator's name or UDID),
-DRAUGHTS_IOS_DEVICE (a device's name, identifier, or UDID).
+DRAUGHTS_IOS_DEVICE (a device's name, identifier, or UDID), DRAUGHTS_IOS_TEAM (the
+signing team's id or Apple ID, when the Mac has several development identities).
 """
 import argparse
 import json
@@ -240,23 +241,36 @@ def device():
 
 def identity():
     """The Mac's Apple Development signing identity: its SHA-1 and its team, the
-    certificate's organizational unit. Neither is ever written into the repo."""
+    certificate's organizational unit. With several identities, as when an Apple ID of a
+    company's team is in Xcode too, DRAUGHTS_IOS_TEAM picks one by its team id or its
+    Apple ID, so the app is never signed into a team by chance. Neither is ever written
+    into the repo."""
     out = run("security", "find-identity", "-v", "-p", "codesigning", capture=True)
-    m = re.search(r'([0-9A-F]{40}) "(Apple Development: [^"]+)"', out)
-    if not m:
+    found = []
+    for sha1, name in sorted(set(re.findall(r'([0-9A-F]{40}) "(Apple Development: [^"]+)"', out))):
+        pem = run("security", "find-certificate", "-a", "-Z", "-p", "-c", name, capture=True)
+        # The certificate whose SHA-1 is the identity's.
+        block = pem[pem.index(f"SHA-1 hash: {sha1}"):]
+        cert = block[block.index("-----BEGIN"):block.index("-----END CERTIFICATE-----") + 25]
+        subject = subprocess.run(["openssl", "x509", "-noout", "-subject", "-nameopt",
+                                  "sep_multiline"], input=cert, text=True,
+                                 capture_output=True, check=True).stdout
+        team = re.search(r"OU=(\w+)", subject)
+        org = re.search(r"O=(.+)", subject)
+        if team:
+            found.append((sha1, team.group(1), name, org.group(1).strip() if org else ""))
+    if not found:
         sys.exit("no Apple Development identity: sign in to Xcode with an Apple ID "
                  "(Settings → Accounts) and make one under Manage Certificates")
-    pem = run("security", "find-certificate", "-a", "-Z", "-p", "-c", m.group(2), capture=True)
-    # The certificate whose SHA-1 is the identity's.
-    block = pem[pem.index(f"SHA-1 hash: {m.group(1)}"):]
-    cert = block[block.index("-----BEGIN"):block.index("-----END CERTIFICATE-----") + 25]
-    subject = subprocess.run(["openssl", "x509", "-noout", "-subject", "-nameopt",
-                              "sep_multiline"], input=cert, text=True, capture_output=True,
-                             check=True).stdout
-    team = re.search(r"OU=(\w+)", subject)
-    if not team:
-        sys.exit("the identity's certificate names no team")
-    return m.group(1), team.group(1)
+    want = os.environ.get("DRAUGHTS_IOS_TEAM")
+    if want:
+        found = [f for f in found if want == f[1] or want in f[2]]
+    if len(found) != 1:
+        listed = "\n".join(f"  {t}  {o}  {n}" for _, t, n, o in found)
+        sys.exit(("no identity of DRAUGHTS_IOS_TEAM" if want and not found else
+                  "several Apple Development identities: set DRAUGHTS_IOS_TEAM to the team "
+                  "id or Apple ID of a personal one, never a company's") + "\n" + listed)
+    return found[0][0], found[0][1]
 
 
 PROFILES = [Path.home() / "Library/Developer/Xcode/UserData/Provisioning Profiles",

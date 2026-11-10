@@ -212,8 +212,9 @@ Draughts is a board game for all ages, simple enough for young children. It has 
 - **iPhone and iPad** (2026-11-09): the Info.plist offers both (`UIDeviceFamily` 1, 2),
   so iPad screenshots are required. `UIRequiresFullScreen` is deprecated in iPadOS 26
   and will be ignored, so the app follows a resized window instead.
-- **The account:** a separate personal Apple ID made for the store, not the one the
-  development builds use; its enrolment as an individual is pending (2026-11-10). No
+- **The account:** a separate personal Apple ID made for the store, after Apple locked
+  the first one mid-enrolment, unpaid (task 046); its enrolment as an individual is
+  pending (2026-11-10). No
   Apple ID, team id, or device identifier is written here (the repo is public).
 - **The account's enrolment** (read 2026-11-09): an Apple Account with two-factor
   authentication and the legal name as first and last name; enrolled on the web, as the
