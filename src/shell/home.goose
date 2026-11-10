@@ -355,12 +355,21 @@ fn player_chip(g: gui::Gui&, r: float4, s: settings::Settings&) -> bool {
 fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, apart: f32, s: settings::Settings&,
         small: bool = false) -> i64 {
     let u = g.scale;
-    var content = c;
+    // The wordmark, then the rows, and settings as the last where it isn't the gear.
+    let rows_n = if gear { ROWS } else { ROWS + 1 };
+    var items: gui::Item[ROWS + 2] = [gui::Item {}; ROWS + 2];
+    var at:    float4[ROWS + 2]    = [float4 { 0.0, 0.0, 0.0, 0.0 }; ROWS + 2];
+    items[0].size = mark_h(small) * u;
+    for i in rows_n {
+        items[1 + i].size = (if i < ROWS { row_h(small) } else { ROW_H }) * u;
+        items[1 + i].gap = (if i == 0 { below } else { apart }) * u;
+    }
+    gui::stack(c, items[..rows_n + 1], at);
 
     // The wordmark: a crowned light piece and the app's name; settings at the right, a
     // gear with no tile in an 88 dp tap reaching 8 dp over and under the row. The name may
     // run under the tap's clear left side, up to 12 dp from the gear.
-    var mark = gui::cut_top(content, mark_h(small) * u);
+    var mark = at[0];
     let piece = gui::cut_left(mark, 56.0 * u);
     game::put(over, piece, 28.0 * u, rules::WHITE, board::CROWN,
               1.0, false);
@@ -377,15 +386,13 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
     let spaced = 0.06 * gui::FACE_DP[gui::TITLE] as f32 * u;
     let room = (mark.z - gap - gui::text_width(g, gui::TITLE, name)) / max(1, name.len - 1);
     gui::text(g, gui::TITLE, mark, name, 1.0, clamp(room, 0.0, spaced), gui::LEFT);
-    gui::cut_top(content, below * u);
 
     // The menu.
     let rows = [CONTINUE, FRIEND, COMPUTER, PUZZLES];
     let icons = [gui::NEXT, gui::FRIEND, gui::COMPUTER, gui::PUZZLE];
     let keys = [strings::HOME_CONTINUE, strings::HOME_FRIEND, strings::HOME_COMPUTER, strings::HOME_PUZZLES];
     for i in ROWS {
-        let r = gui::cut_top(content, row_h(small) * u);
-        gui::cut_top(content, apart * u);
+        let r = at[1 + i];
         var stars: u8[..64] = [];
         let won, all = picker::totals(s.stars[puzzles::loaded]);
         strings::fill_in(stars, strings::PUZZLES_STARS, [won, all]);
@@ -393,8 +400,7 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
         if gui::row(g, gui::HOME_IDS + 1 + i, r, icons[i], strings::get(keys[i]), note, i == 0, rows[i] != NOTHING) { pick = rows[i]; }
     }
     if !gear {
-        let r = gui::cut_top(content, ROW_H * u);
-        if gui::row(g, gui::HOME_IDS + 5, r, gui::GEAR, strings::get(strings::HOME_SETTINGS), "", false, true) { pick = SETTINGS; }
+        if gui::row(g, gui::HOME_IDS + 5, at[1 + ROWS], gui::GEAR, strings::get(strings::HOME_SETTINGS), "", false, true) { pick = SETTINGS; }
     }
     return pick;
 }

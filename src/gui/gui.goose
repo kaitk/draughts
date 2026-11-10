@@ -394,6 +394,50 @@ fn cell(r: float4, cols: i64, rows: i64, w: f32, h: f32, gap: f32, i: i64) -> fl
     return float4 { all.x + (i % cols) * (w + gap), all.y + (i / cols) * (h + gap), w, h };
 }
 
+// A stack: children in a column (DOWN) or a row (ALONG) of `area`, laid out in one pass
+// into out[i] for items[i], with no tree and nothing kept, so taps test this frame's
+// rects. Each child is `size` pixels along the stack (fixed, or a text's width measured
+// first), plus a share by `grow` weight of what the sized ones and the gaps leave (none
+// where they leave nothing), `gap` pixels after the one before it. Across, it takes the
+// whole stack, or `across` pixels placed by `align` (LEFT, CENTER, RIGHT: the top, the
+// middle, the bottom in a row). Where nothing grows, `justify` puts the children at the
+// stack's start, middle, or end. Children past the stack's end run on past it.
+let DOWN = 0;
+let ALONG = 1;
+struct Item {
+    size:   f32 = 0.0,
+    grow:   f32 = 0.0,
+    gap:    f32 = 0.0,
+    across: f32 = 0.0,
+    align:  i64 = LEFT,
+}
+fn stack(area: float4, items: const Item[:], out: float4[:], dir: i64 = DOWN, justify: i64 = LEFT) {
+    assert(out.len >= items.len);
+    let down = dir == DOWN;
+    let length = if down { area.w } else { area.z };
+    let breadth = if down { area.z } else { area.w };
+    var sized:  f32 = 0.0;
+    var weight: f32 = 0.0;
+    for it in items {
+        sized += it.gap + it.size;
+        weight += it.grow;
+    }
+    let spare = max(length - sized, 0.0);
+    let lead = if weight > 0.0 || justify == LEFT { 0.0 } else if justify == CENTER { 0.5 * spare } else { spare };
+    // Positions run on from the stack's start as rect cuts do, each gap and child added in
+    // turn.
+    var at = (if down { area.y } else { area.x }) + lead;
+    for it, i in items {
+        at += it.gap;
+        var len = it.size;
+        if it.grow > 0.0 { len += spare * it.grow / weight; }
+        let wide = if it.across > 0.0 { it.across } else { breadth };
+        let off = if it.align == CENTER { 0.5 * (breadth - wide) } else if it.align == RIGHT { breadth - wide } else { 0.0 };
+        out[i] = if down { float4 { area.x + off, at, wide, len } } else { float4 { at, area.y + off, len, wide } };
+        at += len;
+    }
+}
+
 fn inside(r: float4, p: float2) -> bool { p.x >= r.x && p.x < r.x + r.z && p.y >= r.y && p.y < r.y + r.w }
 
 // Starts a frame: no quads yet, this frame's pointer and time.
