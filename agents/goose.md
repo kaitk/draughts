@@ -70,6 +70,8 @@ find out by compiling, so the next session doesn't.
   `shell::home::COMPUTER`, which doesn't parse.
 - A root file and a package it imports may both declare the same package by different
   relative paths (`"../../rules"` and `"../rules"`): they resolve to one directory.
+- `pad` is a keyword (a struct's padding bytes, `reference.md`): it can't name a
+  parameter or a local (`expected identifier in parameter list, found 'pad'`).
 - `os::args()` for a program's arguments; `exit(code)`. On Android they come from the
   intent's `args` extra (`android/java/.../DraughtsActivity.java`).
 - State with several large buffers (the computer player's 4 MB table and its frames) is

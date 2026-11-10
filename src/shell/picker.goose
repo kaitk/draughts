@@ -168,7 +168,7 @@ fn theme_row(g: gui::Gui&, r: float4, theme: i64, stars: const u8[:], phone: boo
         gui::cut_right(top, 6.0 * u);
         let star = 22.0 * u;
         gui::glyph_icon(g, gui::center(gui::cut_right(top, star), star, star), gui::STAR, gui::ON, 0.0, 1.0);
-        gui::cut_right(top, 12.0 * u);
+        gui::cut_right(top, gui::PAD * u);
         let bar = gui::cut_top(b, 8.0 * u);
         gui::fill(g, bar, float4 { 1.0, 1.0, 1.0, 0.14 }, 4.0 * u);
         let k = (won as f32) / max(1, all);
@@ -285,7 +285,7 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
         if back(g, gui::cut_top(column, 88.0 * u)) { pick = BACK; }
         gui::cut_left(page, 24.0 * u);
     }
-    let gap = 12.0 * u;
+    let gap = gui::PAD * u;
     let sw_w = switch_width(g);
     let sw_h = SWITCH_H * u;
     let beside = landscape && title_width(g, note) + 24.0 * u + sw_w <= page.z;
@@ -333,7 +333,7 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     // under the title row, shown down to the screen's foot.
     let list_top = y + head;
     let view = float4 { area.x, list_top, area.z, g.insets.w + area.y + area.w - list_top };
-    let off = gui::scroll_begin(g, LIBRARY_LIST, view, per * row_h + (per - 1) * gap + 16.0 * u);
+    let off = gui::scroll_begin(g, LIBRARY_LIST, view, per * row_h + (per - 1) * gap + gui::PAD_WIDE * u);
     var k = 0;
     for t in puzzles::THEMES {
         guard puzzles::theme_count(puzzles::all, t) > 0 else { continue; }
@@ -450,7 +450,7 @@ fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, sp
         label = 30.0 * u + 10.0 * u;
         above = 0.0;
         gap = 8.0 * u;
-        pad_x = 12.0 * u;
+        pad_x = gui::PAD * u;
         pad_y = 4.0 * u;
         between = 6.0 * u;
         fit = fit_of(room.z, pad_x, label, side, gap);
@@ -464,7 +464,7 @@ fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, sp
     count_of(stars, t, n);
     if in_column {
         // The mark and the count under back.
-        gui::cut_top(column, 12.0 * u);
+        gui::cut_top(column, gui::PAD * u);
         mark(g, gui::cut_top(column, 52.0 * u), t, 52.0, true);
         gui::cut_top(column, 6.0 * u);
         gui::text(g, gui::SMALL, gui::cut_top(column, line_h(g, gui::SMALL)), n[..], 0.66, 0.0, gui::CENTER);
@@ -475,14 +475,14 @@ fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, sp
         y += head_h;
         if !landscape {
             if back(g, gui::cut_left(head, back_w(g))) { pick = SHOWN; }
-            gui::cut_left(head, 16.0 * u);
+            gui::cut_left(head, gui::PAD_WIDE * u);
         }
         let m: f32 = if short { 52.0 } else if landscape { 60.0 } else { 64.0 };
         mark(g, gui::cut_left(head, m * u), t, m, true);
-        gui::cut_left(head, 16.0 * u);
+        gui::cut_left(head, gui::PAD_WIDE * u);
         let count_w = gui::text_width(g, gui::BODY, n[..]);
         gui::text(g, gui::BODY, gui::cut_right(head, count_w + 8.0 * u), n[..], 0.66, 0.0, gui::LEFT);
-        gui::cut_right(head, 12.0 * u);
+        gui::cut_right(head, gui::PAD * u);
         let name = strings::get(NAMES[t]);
         gui::text(g, gui::fitting(g, gui::LABEL, name, head.z), head, name, 1.0, 0.0, gui::LEFT);
     }
@@ -491,7 +491,7 @@ fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, sp
     let scrolls = !landscape;
     if scrolls {
         let view = float4 { area.x, y, area.z, g.insets.w + area.y + area.w - y };
-        y -= gui::scroll_begin(g, PAGE_LIST + t, view, lv + 16.0 * u);
+        y -= gui::scroll_begin(g, PAGE_LIST + t, view, lv + gui::PAD_WIDE * u);
     }
     let lit = first_open(stars, t);
     for l in puzzles::LEVELS {

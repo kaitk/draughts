@@ -361,10 +361,10 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
     } else {
         if d > 0.0 {
             panel::piece(over, gui::center(gui::cut_left(c, d), d, d), 0.5 * d, pz.start.side, 0, 1.0, turn_ring(pl));
-            gui::cut_left(c, 12.0 * u);
+            gui::cut_left(c, gui::PAD * u);
         }
         icon = gui::center(gui::cut_left(c, s), s, s);
-        gui::cut_left(c, 12.0 * u);
+        gui::cut_left(c, gui::PAD * u);
     }
     gui::glyph_icon(g, icon, goal_icon(pz), gui::ON, 0.0, 1.0);
     if again {
@@ -376,7 +376,7 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
                    else { gui::center(float4 { c.x, c.y, w, c.w }, w, 48.0 * u) };
         gui::fill(g, pill, float4 { gui::RED.x, gui::RED.y, gui::RED.z, 0.16 }, 16.0 * u);
         var inner = pill;
-        gui::cut_left(inner, 16.0 * u);
+        gui::cut_left(inner, gui::PAD_WIDE * u);
         gui::glyph_icon(g, gui::center(gui::cut_left(inner, 30.0 * u), 30.0 * u, 30.0 * u), gui::UNDO, gui::PLAIN, 0.0,
                         1.0);
         gui::cut_left(inner, 10.0 * u);
@@ -455,7 +455,7 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
     }
     // Portrait: the goal at the left of the row and the stars at its right, over next.
     var top = gui::cut_top(right, panel::CLOCK_H * u);
-    gui::cut_top(right, 12.0 * u);
+    gui::cut_top(right, gui::PAD * u);
     let star_room = 3.0 * 44.0 * u + 2.0 * 8.0 * u;
     let stars_at = gui::cut_right(top, star_room);
     gui::cut_left(top, 6.0 * u);

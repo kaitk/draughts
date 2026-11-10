@@ -126,6 +126,9 @@ let SLACK = 0.5;            // px a row may pass its width by without wrapping
 // rest leaves and none under board::SMALLEST (a foldable's is 206 dp, a near-square
 // window's none; task 050, the user 2026-11-09).
 let BOTH_BOARD = 220.0;
+// The preview's share of the room it is given, each way: the rest a margin round it.
+// preview_room's 0.03 is half of what is left.
+let PREVIEW_SHARE = 0.94;
 
 // The settings in order, the first two in the game's group, the rest in the look's:
 // each one's name, how many tiles, and how tall they are.
@@ -163,7 +166,7 @@ fn switch_line(g: gui::Gui&) -> f32 {
 // A half's thumbnail, as wide as w (pixels) leaves it, at most the tiles' own.
 fn switch_pic(s: Settings&, g: gui::Gui&, w: f32) -> float2 {
     let u = g.scale;
-    let pic = min((if s.slim { SLIM_THUMB_W } else { THUMB_W }) * u, w - 12.0 * u);
+    let pic = min((if s.slim { SLIM_THUMB_W } else { THUMB_W }) * u, w - gui::PAD * u);
     return float2 { pic, pic * THUMB_H / THUMB_W };
 }
 
@@ -220,7 +223,7 @@ fn tile_width(s: Settings&, g: gui::Gui&, row: i64, i: i64) -> f32 {
     if row == THEME_ROW && s.slim {
         return max(88.0 * u, gui::choice_beside_width(g, float2 { SLIM_THUMB_W * u, SLIM_THUMB_H * u }, label));
     }
-    if row == THEME_ROW { return max(88.0 * u, max(THUMB_W * u, gui::text_width(g, gui::SMALL, label)) + 12.0 * u); }
+    if row == THEME_ROW { return max(88.0 * u, max(THUMB_W * u, gui::text_width(g, gui::SMALL, label)) + gui::PAD * u); }
     let w = gui::text_width(g, gui::BODY, label);
     return max(88.0 * u, max(w, gui::text_width(g, gui::SMALL, note(row, i))) + 32.0 * u);
 }
@@ -452,7 +455,7 @@ fn group(s: Settings&, over: board::Overlay&, g: gui::Gui&, group: i64, r: float
         gui::cut_top(c, ROW_GAP * u);
         gui::glyph_icon(g, gui::center(gui::cut_left(title, 30.0 * u), 30.0 * u, 30.0 * u), GROUP_ICONS[group],
                         gui::PLAIN, 0.0, 0.85);
-        gui::cut_left(title, 12.0 * u);
+        gui::cut_left(title, gui::PAD * u);
         gui::text(g, gui::HEADING, title, strings::get(GROUP_TITLES[group]), 1.0, 0.0, gui::LEFT);
         let n = if group == 0 { note_beside(g, r.z, true) } else { 0 };
         if n > 0 {
@@ -539,7 +542,7 @@ fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, tabbed: bool = false)
         gui::cut_left(c, 8.0 * u);
         gui::glyph_icon(g, gui::center(gui::cut_left(c, 28.0 * u), 28.0 * u, 28.0 * u), gui::GLOBE, gui::PLAIN, 0.0,
                         0.85);
-        gui::cut_left(c, 12.0 * u);
+        gui::cut_left(c, gui::PAD * u);
     }
     for i in strings::LANGUAGES.len {
         let tapped, pic = gui::pick(g, 401 + i, gui::cut_left(c, language_width(g, i)), 0.0, strings::name_of(i), "",
@@ -560,12 +563,12 @@ fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, tabbed: bool = false)
     return ask;
 }
 
-// Where a 3D preview may go on the page left beside the choices: 94% of it each way, as
-// the flat square takes 94% of its shorter side; nothing where the flat preview isn't
-// shown (`size` 0).
+// Where a 3D preview may go on the page left beside the choices: PREVIEW_SHARE of it each way,
+// as the flat square takes PREVIEW_SHARE of its shorter side; nothing where the flat preview
+// isn't shown (`size` 0).
 fn preview_room(page: float4, size: f32) -> float4 {
     guard size > 0.0 else { return float4 { page.x + 0.5 * page.z, page.y + 0.5 * page.w, 0.0, 0.0 }; }
-    return float4 { page.x + 0.03 * page.z, page.y + 0.03 * page.w, 0.94 * page.z, 0.94 * page.w };
+    return float4 { page.x + 0.03 * page.z, page.y + 0.03 * page.w, PREVIEW_SHARE * page.z, PREVIEW_SHARE * page.w };
 }
 
 // Declares the screen for this frame in `area`, the screen's safe area, with `shown`
@@ -630,7 +633,7 @@ fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, a
     if landscape && !tabbed {
         var side = gui::cut_left(page, w);
         gui::cut_left(page, SIDE_GAP * u);
-        var size = 0.94 * min(page.z, page.w);
+        var size = PREVIEW_SHARE * min(page.z, page.w);
         if size < board::SMALLEST * u { size = 0.0; }
         l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
         room3d = preview_room(page, size);
@@ -665,13 +668,13 @@ fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, a
     let w1 = if unwrapped { want1 } else { across - w0 };
     let h = max(group_height(s, over, g, 0, w0, false), group_height(s, over, g, 1, w1, false));
     let left = page.w - (HEAD_H + 32.0) * u - h;
-    let both = if phone { 0.94 * min(page.z, left) >= min(0.45 * page.z, BOTH_BOARD * u) } else { left >= 0.0 };
+    let both = if phone { PREVIEW_SHARE * min(page.z, left) >= min(0.45 * page.z, BOTH_BOARD * u) } else { left >= 0.0 };
     if both {
         ask = head(s, g, gui::cut_top(page, HEAD_H * u), shown);
-        gui::cut_top(page, 16.0 * u);
+        gui::cut_top(page, gui::PAD_WIDE * u);
         let groups = gui::cut_bottom(page, h);
-        gui::cut_bottom(page, 16.0 * u);
-        var size = 0.94 * min(page.z, page.w);
+        gui::cut_bottom(page, gui::PAD_WIDE * u);
+        var size = PREVIEW_SHARE * min(page.z, page.w);
         if size < board::SMALLEST * u { size = 0.0; }
         l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
         room3d = preview_room(page, size);
@@ -689,7 +692,7 @@ fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, a
         w = max(max(group_width(s, g, 0, true), group_width(s, g, 1, true)), tabs_w);
         var side = gui::cut_left(page, w);
         gui::cut_left(page, SIDE_GAP * u);
-        var size = 0.94 * min(page.z, page.w);
+        var size = PREVIEW_SHARE * min(page.z, page.w);
         if size < board::SMALLEST * u { size = 0.0; }
         l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
         room3d = preview_room(page, size);
@@ -704,14 +707,14 @@ fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, a
     // look's ended in empty glass under its rows (2026-11-09). Taller than the room (a
     // small window), it takes the room, the board none, and its rows scroll.
     ask = head(s, g, gui::cut_top(page, HEAD_H * u), shown);
-    gui::cut_top(page, 16.0 * u);
+    gui::cut_top(page, gui::PAD_WIDE * u);
     if tabs(s, g, gui::cut_top(page, BACK_W * u)) { ask = SHOWN; }
     gui::cut_top(page, GROUP_GAP * u);
     let one = group_height(s, over, g, s.group, page.z, false, false);
     let fits = one <= page.w;
     let glass = gui::cut_bottom(page, one);
-    gui::cut_bottom(page, 16.0 * u);
-    var size = 0.94 * min(page.z, page.w);
+    gui::cut_bottom(page, gui::PAD_WIDE * u);
+    var size = PREVIEW_SHARE * min(page.z, page.w);
     if !fits || size < board::SMALLEST * u { size = 0.0; }
     l = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
     room3d = preview_room(page, size);

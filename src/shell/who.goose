@@ -151,8 +151,8 @@ fn picker(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i6
         w.editing = !w.editing;
         ask = CHANGED;
     }
-    gui::cut_left(row, 16.0 * u);
-    gui::cut_right(row, 16.0 * u);
+    gui::cut_left(row, gui::PAD_WIDE * u);
+    gui::cut_right(row, gui::PAD_WIDE * u);
     let face = gui::fitting(g, gui::LABEL, title, row.z);
     if gui::text_width(g, face, title) <= row.z { gui::text(g, face, row, title, 1.0, 0.0, gui::LEFT); }
     // The faces, row by row, each row centered.
@@ -163,7 +163,7 @@ fn picker(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i6
         let tr = float4 { x0 + (i % per) * (t + TILE_GAP) * u, c.y + line * (th + TILE_GAP) * u, t * u, th * u };
         let add = i == ps.list.len;
         let tapped = gui::tile(g, 510 + i, tr, gui::NO_ICON, if w.editing && !add { gui::QUIET } else { gui::ROW }, 24.0);
-        var inner = gui::inset(tr, 12.0 * u);
+        var inner = gui::inset(tr, gui::PAD * u);
         let fs = 0.72 * t * u;
         let fr = gui::center(gui::cut_top(inner, fs), fs, fs);
         gui::cut_top(inner, 8.0 * u);
@@ -243,7 +243,7 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
     let grid_w = cols * pic + (cols - 1) * PIC_GAP;
     let grid_h = (6 / cols) * pic + (6 / cols - 1) * PIC_GAP;
     // The holds side by side where both fit, else one over the other.
-    var both = hold_width(g, strings::PLAYERS_START_AGAIN) + 12.0 * u;
+    var both = hold_width(g, strings::PLAYERS_START_AGAIN) + gui::PAD * u;
     if holds == 2 { both += hold_width(g, strings::PLAYERS_REMOVE); }
     // The head: back, the face (editing) and the name or the title, done.
     let title = if edit { w.name[..] } else { strings::get(strings::PLAYERS_NEW) };
@@ -277,11 +277,11 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
         ask = CHANGED;
     }
     let done = glass_tile(g, 521, gui::cut_right(row, HEAD_H * u), gui::CHECK, gui::PRIMARY);
-    gui::cut_left(row, 16.0 * u);
-    gui::cut_right(row, 16.0 * u);
+    gui::cut_left(row, gui::PAD_WIDE * u);
+    gui::cut_right(row, gui::PAD_WIDE * u);
     if edit {
         gui::face(g, gui::center(gui::cut_left(row, 56.0 * u), 56.0 * u, 56.0 * u), w.picture, 1.0, false);
-        gui::cut_left(row, 16.0 * u);
+        gui::cut_left(row, gui::PAD_WIDE * u);
     }
     let tf = gui::fitting(g, gui::LABEL, title, row.z);
     if gui::text_width(g, tf, title) <= row.z { gui::text(g, tf, row, title, 1.0, 0.0, gui::LEFT); }
@@ -316,8 +316,8 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
     if holds > 0 {
         gui::cut_top(rest, ROW_GAP * u);
         var hr = gui::cut_top(rest, holds_h * u);
-        let first = if stacked || holds == 1 { gui::cut_top(hr, HOLD_H * u) } else { gui::cut_left(hr, 0.5 * (hr.z - 12.0 * u)) };
-        if stacked { gui::cut_top(hr, ROW_GAP * u); } else { gui::cut_left(hr, 12.0 * u); }
+        let first = if stacked || holds == 1 { gui::cut_top(hr, HOLD_H * u) } else { gui::cut_left(hr, 0.5 * (hr.z - gui::PAD * u)) };
+        if stacked { gui::cut_top(hr, ROW_GAP * u); } else { gui::cut_left(hr, gui::PAD * u); }
         if hold(g, 541, first, gui::RESTART, strings::PLAYERS_START_AGAIN, false) { ask = AGAIN; }
         if holds == 2 && hold(g, 542, hr, gui::TRASH, strings::PLAYERS_REMOVE, true) {
             w.state = PICKING;
@@ -393,10 +393,10 @@ fn hold(g: gui::Gui&, id: i64, r: float4, icon: i64, key: i64, red: bool) -> boo
     let body = g.faces[gui::BODY].ascent - g.faces[gui::BODY].descent;
     let small = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
     let words = max(gui::text_width(g, gui::BODY, word), gui::text_width(g, gui::SMALL, note));
-    var c = gui::center(r, min((30.0 + 12.0) * u + words, r.z - 16.0 * u), r.w);
+    var c = gui::center(r, min((30.0 + 12.0) * u + words, r.z - gui::PAD_WIDE * u), r.w);
     gui::glyph_icon(g, gui::center(gui::cut_left(c, 30.0 * u), 30.0 * u, 30.0 * u), icon,
                     if red { gui::CLOCK_LOW } else { gui::PLAIN }, 0.0, 0.85);
-    gui::cut_left(c, 12.0 * u);
+    gui::cut_left(c, gui::PAD * u);
     var t = gui::center(c, c.z, body + small);
     let color = if red { float4 { 1.0, 0.644, 0.610, 1.0 } } else { float4 { 1.0, 1.0, 1.0, 1.0 } };
     if red { gui::colored(g, gui::BODY, gui::cut_top(t, body), word, color, gui::LEFT); }

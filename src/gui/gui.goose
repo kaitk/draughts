@@ -299,6 +299,12 @@ fn scroll_set(g: Gui&, id: i64, px: f32) {
 let COMPACT = 760.0;
 fn compact(g: Gui&, area: float4) -> bool { area.z < area.w && area.w < COMPACT * g.scale }
 
+// The two paddings the screens put between and round their parts, in dp: PAD between
+// two tiles in a row or a glass and round the tiles inside one, PAD_WIDE at a row's ends
+// and between a page's blocks.
+let PAD = 12.0;
+let PAD_WIDE = 16.0;
+
 // Whether an area at s pixels a dp is a phone's: under PHONE dp across its shorter side.
 // A tablet's, a foldable's, and an iPad window's are wider.
 let PHONE = 600.0;
@@ -736,7 +742,7 @@ fn labelled(g: Gui&, id: i64, r: float4, icon: i64, size: f32, label: const u8[:
         text(g, shown, c, label, a, 0.0, CENTER);
         return clicked;
     }
-    let gap = 12.0 * u;
+    let gap = PAD * u;
     let shown = fitting(g, face, label, r.z - labelled_width(g, size, "", face, arrange));
     var c = r;
     if arrange == BESIDE {

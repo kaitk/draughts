@@ -371,7 +371,7 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
     }
     // The name spaced out, less where the gear leaves it too little room (a phone).
     let name = strings::get(strings::APP_NAME);
-    let gap = if gear { 12.0 * u } else { 0.0 };
+    let gap = if gear { gui::PAD * u } else { 0.0 };
     let spaced = 0.06 * gui::FACE_DP[gui::TITLE] as f32 * u;
     let room = (mark.z - gap - gui::text_width(g, gui::TITLE, name)) / max(1, name.len - 1);
     gui::text(g, gui::TITLE, mark, name, 1.0, clamp(room, 0.0, spaced), gui::LEFT);
