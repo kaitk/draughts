@@ -9,6 +9,13 @@ A moving 3D board (the camera turning, a hop, a capture) takes about 14 ms on th
 expected win, which comes from task 015's Pixel ablations (the pass 14.3 ms waited, an
 empty pass 5.1, the pieces about 2.3, the board about 5.6). None is measured yet.
 
+**What still holds after task 059 (2026-11-10):** candidates 1, 3, 5, 6, and 7 are
+in (below); 2 and 4 were tried together as step 7 and dropped; 8 is done by task 059
+(the backdrop kept as an image, laid with a fetch a pixel). Left open, and listed in
+rendering.md's ranked plan rather than here: 9 (fp16), a lower render scale, and the
+pieces' shadows made analytic; the low-quality mode for weak phones stays for later.
+The frame goal is met, so this task holds only the idle wakeup now.
+
 ## Candidates
 
 1. **The piece mesh is far too dense** (`mesh.goose`, `piece_profile` and `lathe_path(path,
