@@ -42,10 +42,10 @@ tar -xzf goose-v2026.4-macos-arm64.tar.gz && rm goose-v2026.4-macos-arm64.tar.gz
 gh release download 5.7.0 -R ARM-software/astc-encoder -p 'astcenc-5.7.0-macos-universal.zip'
 unzip -q astcenc-5.7.0-macos-universal.zip -d astcenc-5.7.0 && rm astcenc-5.7.0-macos-universal.zip
 cd ..
-$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install \
-    "ndk;29.0.14206865" "platforms;android-36" "build-tools;36.0.0" "platform-tools"
-brew install cmake ninja
+brew install cmake ninja     # for iOS and Android
 ```
+
+Android's SDK, NDK, and JDK: [Set up on the Mac](#set-up-on-the-mac) under Run on Android.
 
 When the Goose release changes, pin goose_gfx to the commit whose `src/`, `gfx.goose`, and
 `CMakeLists.txt` match the release's `pkg/gfx/`, so Android and desktop compile the same
@@ -263,22 +263,28 @@ adb logcat -s goose:* SDL:*                 # the program's output and SDL's log
 
 ### Set up on the Mac
 
-The tools are the Toolchain table's. Without Android Studio, the SDK comes from Google's
+The tools are the Toolchain table's. The script looks for the SDK in
+`~/Library/Android/sdk`, where Android Studio puts it; with Android Studio, install the
+packages below through its SDK Manager. Without it, the SDK comes from Google's
 [command-line tools](https://developer.android.com/studio#command-line-tools-only) for
-the Mac, unpacked as `~/Library/Android/sdk/cmdline-tools/latest/`, where Android Studio
-would put the SDK:
+the Mac, whose zip holds a `cmdline-tools/` folder that `sdkmanager` wants at
+`cmdline-tools/latest/`:
 
 ```sh
-brew install openjdk@21 cmake ninja     # then put openjdk@21's bin on PATH, as brew says
+brew install openjdk@21 cmake ninja
+export PATH="$(brew --prefix openjdk@21)/bin:$PATH"   # keg-only; in the shell's profile
 sdk=~/Library/Android/sdk
+mkdir -p $sdk/cmdline-tools
+unzip -q ~/Downloads/commandlinetools-mac-*_latest.zip -d $sdk/cmdline-tools
+mv $sdk/cmdline-tools/cmdline-tools $sdk/cmdline-tools/latest
 $sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$sdk \
     "ndk;29.0.14206865" "platforms;android-36" "build-tools;36.0.0" "platform-tools"
-export PATH="$sdk/platform-tools:$PATH"   # adb, in the shell's profile
+export PATH="$sdk/platform-tools:$PATH"   # adb for logcat by hand; in the shell's profile
 scripts/android.py src/app/draughts.goose --run
 ```
 
 `sdkmanager` asks to accept the SDK's licences. A Mac needs no USB driver. The script
-takes the SDK's `adb` when none is on `PATH`.
+takes the SDK's `adb` when none is on `PATH`, and `patch` is the system's.
 
 ### Set up on Windows
 
@@ -353,7 +359,8 @@ version, the Goose-to-C step, the patched copies, and the launcher's names):
    `res/values/strings.xml` and `res/values-<lang>/strings.xml` into the build directory
    from each `strings/<lang>.txt`'s `app.name` key, and the manifest's label is
    `@string/app_name`.
-   `zip` adds the dex and the stripped libraries, stored uncompressed. `zipalign -P 16`
+   Python's `zipfile` adds the dex and the stripped libraries, the libraries stored
+   uncompressed. `zipalign -P 16`
    aligns them to 16 KB pages, and `apksigner` signs with `~/.android/debug.keystore`,
    which it creates if missing (each computer's own: The debug key, above). The
    script checks that every library's ELF segments and

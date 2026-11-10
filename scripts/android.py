@@ -13,7 +13,7 @@ NDK builds
 libSDL3.so and libmain.so (android/CMakeLists.txt); javac and d8 compile SDL's Java
 glue from the patched copy and DraughtsActivity; aapt2 compiles android/res (the icon and the theme) and the
 launcher's name per language (res/values*/strings.xml, written from strings/<lang>.txt's
-app.name) and links them with the manifest, giving it APP_ID and the version; zip adds the dex and
+app.name) and links them with the manifest, giving it APP_ID and the version; zipfile adds the dex and
 the stripped libraries, the libraries stored uncompressed; zipalign aligns them to 16 KB;
 apksigner signs with the debug key, or with --release the upload key. A release also links
 the resources in protobuf form and packs them, the dex, and the libraries into the bundle's
