@@ -69,7 +69,7 @@ fn show(sh: shell::Shell&, what: const u8[:]) {
 // still animating.
 fn preview(sh: shell::Shell&, now: f64) {
     let b .= sh.preview;
-    board::fill(b, sh.layout, now);
+    board::fill(b, sh.out.layout, now);
     let v .= rules::VARIANTS[b.variant];
     var text: u8[>..] = [];
     format(text, "  preview ", v.size, "x", v.size, ", ", rules::fen(b.pos));
@@ -125,13 +125,13 @@ fn main() {
     var sh = shell::new(rules::RUSSIAN);
     sh.screen = shell::SETTINGS;
     drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 0.0);
-    print("tiles ", drive::tiles(g), " of ", TILES, ", the kings' tiles' pieces ", sh.over.len, ": ",
-          sh.over[0].look.y, " and ", sh.over[1].look.y);
+    print("tiles ", drive::tiles(g), " of ", TILES, ", the kings' tiles' pieces ", sh.out.over.len, ": ",
+          sh.out.over[0].look.y, " and ", sh.out.over[1].look.y);
     // The board is right of the choices: every tile and the groups end left of it.
     var right: f32 = 0.0;
     for q in g.quads { right = max(right, q.rect.x + q.rect.z); }
-    print("landscape: board at ", sh.layout.board, ", choices end at ", right, ", clear ",
-          right < sh.layout.board.x);
+    print("landscape: board at ", sh.out.layout.board, ", choices end at ", right, ", clear ",
+          right < sh.out.layout.board.x);
     print("opened, defaults:");
     preview(sh, 0.0);
     preview(sh, 1.0);
@@ -195,8 +195,8 @@ fn main() {
     drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 10.0);
     let first = drive::rect(g, INTERNATIONAL);
     let look = drive::rect(g, BY_DATE);
-    print("portrait: board at ", sh.layout.board, ", the groups from ", first.y, ", clear ",
-          sh.layout.board.y + sh.layout.board.z < first.y, ", look beside game ", look.x > first.x + first.z,
+    print("portrait: board at ", sh.out.layout.board, ", the groups from ", first.y, ", clear ",
+          sh.out.layout.board.y + sh.out.layout.board.z < first.y, ", look beside game ", look.x > first.x + first.z,
           ", tiles ", drive::tiles(g));
     drive::tap(sh, g, drive::tile(g, STACK), 10.1);
     show(sh, "portrait stack");

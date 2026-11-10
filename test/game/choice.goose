@@ -207,14 +207,14 @@ fn raised(g: gui::Gui&, fen: const u8[:]) {
         sh.screen = shell::GAME;
         sh.drawn = shell::GAME;
         drive::idle(sh, g, t);
-        sh_raised = sh.raised;
-        sh_flip = sh.layout.flip;
+        sh_raised = sh.out.raised;
+        sh_flip = sh.out.layout.flip;
         let opts = sh.game.b.moves;
         for m in opts {
             board::set(sh.game.b, p);
             drive::idle(sh, g, t);
             drive::idle(sh, g, t + 0.05);
-            let un = view3d::unit(sh.layout.n);
+            let un = view3d::unit(sh.out.layout.n);
             let top = sq_screen(sh, m.from, view3d::HEIGHT * un);
             let field = sq_screen(sh, m.to, 0.0);
             if by_drag {
@@ -242,8 +242,8 @@ fn raised(g: gui::Gui&, fen: const u8[:]) {
 }
 
 fn sq_screen(sh: shell::Shell&, sq: i64, h: f32) -> float2 {
-    let c = view3d::to_world(sh.layout, board::center(sh.layout, rules::VARIANTS[V], sq));
-    let q = view3d::project(sh.view, float3 { c.x, h, c.y });
+    let c = view3d::to_world(sh.out.layout, board::center(sh.out.layout, rules::VARIANTS[V], sq));
+    let q = view3d::project(sh.out.view, float3 { c.x, h, c.y });
     return float2 { q.x, q.y };
 }
 

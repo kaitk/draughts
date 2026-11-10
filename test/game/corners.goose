@@ -199,13 +199,13 @@ fn main() {
     shell::apply_prefs(sh);
     sh.screen = shell::GAME;
     drive::idle(sh, g, 0.0);
-    print("raised ", sh.raised, ", kings drawn as ", sh.game.b.king_look, ", flat layout ", sh.layout.board, ", 3D bounds ",
-          sh.view.rect);
+    print("raised ", sh.out.raised, ", kings drawn as ", sh.game.b.king_look, ", flat layout ", sh.out.layout.board, ", 3D bounds ",
+          sh.out.view.rect);
     let vr .= rules::VARIANTS[rules::RUSSIAN];
     var now = 1.0;
     for name in ["c3", "d4"] {
-        let c = view3d::to_world(sh.layout, board::center(sh.layout, vr, drive::square(vr, name)));
-        let q = view3d::project(sh.view, float3 { c.x, 0.0, c.y });
+        let c = view3d::to_world(sh.out.layout, board::center(sh.out.layout, vr, drive::square(vr, name)));
+        let q = view3d::project(sh.out.view, float3 { c.x, 0.0, c.y });
         drive::tap(sh, g, float2 { q.x, q.y }, now);
         now += 0.1;
         print("tap ", name, " at ", whole(q.x), " ", whole(q.y), ": selected ", drive::name(vr, sh.game.b.selected),
@@ -218,19 +218,19 @@ fn main() {
     // move it over e5, let go.
     now += 1.0;
     drive::idle(sh, g, now);
-    print("turned ", sh.view.turn, "°");
+    print("turned ", sh.out.view.turn, "°");
     let u = view3d::unit(8);
-    let f6 = view3d::to_world(sh.layout, board::center(sh.layout, vr, drive::square(vr, "f6")));
-    let e5 = view3d::to_world(sh.layout, board::center(sh.layout, vr, drive::square(vr, "e5")));
-    let a = view3d::project(sh.view, float3 { f6.x, view3d::HEIGHT * u, f6.y });
+    let f6 = view3d::to_world(sh.out.layout, board::center(sh.out.layout, vr, drive::square(vr, "f6")));
+    let e5 = view3d::to_world(sh.out.layout, board::center(sh.out.layout, vr, drive::square(vr, "e5")));
+    let a = view3d::project(sh.out.view, float3 { f6.x, view3d::HEIGHT * u, f6.y });
     let top = view3d::LIFT * 0.016 / 0.011 + view3d::HEIGHT * u * view3d::GROW;
-    let b = view3d::project(sh.view, float3 { e5.x, top, e5.y });
+    let b = view3d::project(sh.out.view, float3 { e5.x, top, e5.y });
     drive::frame(sh, g, float2 { a.x, a.y }, true, true, false, now);
     print("pressed f6: selected ", drive::name(vr, sh.game.b.selected), ", dragging ", sh.game.b.dragging);
     drive::frame(sh, g, float2 { 0.5 * (a.x + b.x), 0.5 * (a.y + b.y) }, true, false, false, now + 0.02);
     drive::frame(sh, g, float2 { b.x, b.y }, true, false, false, now + 0.04);
     print("dragged: dragging ", sh.game.b.dragging, ", under ",
-          drive::name(vr, board::hit(sh.layout, vr, sh.game.b.drag_at)));
+          drive::name(vr, board::hit(sh.out.layout, vr, sh.game.b.drag_at)));
     drive::frame(sh, g, float2 { b.x, b.y }, false, false, true, now + 0.06);
     drive::idle(sh, g, now + 2.0);
     print("dropped: ", rules::fen(sh.game.b.pos));

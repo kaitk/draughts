@@ -30,7 +30,7 @@ fn name(sh: shell::Shell&) -> const u8[:] {
 
 fn state(sh: shell::Shell&) -> u8[>..] {
     return str(name(sh), ", setup ", sh.setup, ", in a transition ", sh.from >= 0, ", the board at ",
-               sh.layout.board, ", the game ", rules::fen(sh.game.b.pos));
+               sh.out.layout.board, ", the game ", rules::fen(sh.game.b.pos));
 }
 
 // A fresh shell at home with a game under way, then the tiles `path` tapped in

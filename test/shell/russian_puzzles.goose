@@ -68,7 +68,7 @@ fn kept(sh: shell::Shell&) -> u8[>..] {
 }
 
 fn tap_square(sh: shell::Shell&, g: gui::Gui&, name: const u8[:], now: f64) {
-    drive::tap(sh, g, drive::at(sh.layout, name), now);
+    drive::tap(sh, g, drive::at(sh.out.layout, name), now);
 }
 
 fn main() {

@@ -34,13 +34,13 @@ fn sq(n: i64) -> u8[>..] {
 // The name of a square given as its bit.
 fn named(bit: i64) -> u8[>..] { drive::name(rules::VARIANTS[rules::INTERNATIONAL], bit) }
 
-fn tap(sh: shell::Shell&, g: gui::Gui&, n: i64, now: f64) { drive::tap(sh, g, drive::at(sh.layout, sq(n)), now); }
+fn tap(sh: shell::Shell&, g: gui::Gui&, n: i64, now: f64) { drive::tap(sh, g, drive::at(sh.out.layout, sq(n)), now); }
 
 // A drag from square number `from` dropped on `to`, frame by frame as a finger makes it,
 // up to the frame the finger lifts.
 fn drop(sh: shell::Shell&, g: gui::Gui&, from: i64, to: i64, now: f64) {
-    let a = drive::at(sh.layout, sq(from));
-    let c = drive::at(sh.layout, sq(to));
+    let a = drive::at(sh.out.layout, sq(from));
+    let c = drive::at(sh.out.layout, sq(to));
     drive::frame(sh, g, a, true, true, false, now);
     drive::frame(sh, g, a + (c - a) * 0.5, true, false, false, now + 0.02);
     drive::frame(sh, g, c, true, false, false, now + 0.04);
@@ -67,7 +67,7 @@ fn next(g: gui::Gui&) -> u8[>..] {
 fn drawn(sh: shell::Shell&, b: board::Board&) -> u8[>..] {
     let v .= rules::VARIANTS[b.variant];
     for p in b.pieces {
-        if p.look.z == 1.0 { return drive::name(v, board::hit(sh.layout, v, float2 { p.at.x, p.at.y })); }
+        if p.look.z == 1.0 { return drive::name(v, board::hit(sh.out.layout, v, float2 { p.at.x, p.at.y })); }
     }
     return str("-");
 }

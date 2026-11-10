@@ -34,7 +34,7 @@ fn rect(r: float4) -> u8[>..] { str(round(r.x), ",", round(r.y), " ", round(r.z)
 
 // Where the UI is hidden this frame: nowhere at rest, else the board's rect.
 fn hole(sh: shell::Shell&) -> const u8[:] {
-    if sh.hole.z <= 0.0 { "none" } else if sh.hole == sh.layout.board { "the board" } else { "elsewhere" }
+    if sh.out.hole.z <= 0.0 { "none" } else if sh.out.hole == sh.out.layout.board { "the board" } else { "elsewhere" }
 }
 
 // One idle frame at `now`: what the shell says of it and what it declared.
@@ -49,10 +49,10 @@ fn look(sh: shell::Shell&, g: gui::Gui&, now: f64, what: const u8[:]) {
     let b .= shell::fill(sh, now);
     var faint = 0;
     for p in b.pieces { if p.look.w < 1.0 { faint++; } }
-    print(what, " ", now, ": ", screen(sh), ", board ", rect(sh.layout.board), " ", sh.layout.n, "x", sh.layout.n,
+    print(what, " ", now, ": ", screen(sh), ", board ", rect(sh.out.layout.board), " ", sh.out.layout.n, "x", sh.out.layout.n,
           ", mix ", round(100.0 * sh.mix), "%, quads ", g.quads.len, " faded ", faded, " mostly ", gone, ", pieces ",
           b.pieces.len, " faint ", faint, if b.flash.x >= 0.0 { ", a wrong move" } else { "" }, ", over the UI ",
-          sh.over.len, ", hole ", hole(sh), ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
+          sh.out.over.len, ", hole ", hole(sh), ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
 }
 
 fn main() {
@@ -63,7 +63,7 @@ fn main() {
     // A Russian game at home; settings' preview is International, the default.
     var sh = shell::new(rules::RUSSIAN);
     look(sh, g, 0.0, "home");
-    let home_at = sh.layout.board;
+    let home_at = sh.out.layout.board;
     let settings_row = drive::tile(g, 4);
     let continue_row = drive::tile(g, 0);
 
@@ -71,22 +71,22 @@ fn main() {
     drive::frame(sh, g, settings_row, true, true, false, 1.0);
     let first = drive::frame(sh, g, settings_row, false, false, true, 1.02);
     print("tapped settings: ", screen(sh), ", from home ", sh.from == shell::HOME, ", drawn ", first, " with home's board ",
-          sh.layout.board == home_at, " at ", round(100.0 * sh.mix), "%, its pieces ", shell::fill(sh, 1.02).pieces.len,
+          sh.out.layout.board == home_at, " at ", round(100.0 * sh.mix), "%, its pieces ", shell::fill(sh, 1.02).pieces.len,
           ", hole ", hole(sh));
     var x = home_at.x;
     var right = true;
     for i in 1..5 {
         let t = 1.02 + 0.0625 * i;
         look(sh, g, t, "  ");
-        if sh.layout.board.x < x { right = false; }
-        x = sh.layout.board.x;
+        if sh.out.layout.board.x < x { right = false; }
+        x = sh.out.layout.board.x;
     }
     look(sh, g, 1.3, "ended");
     look(sh, g, 1.4, "  ");
     look(sh, g, 5.3, "after the flash and the pulse");
     look(sh, g, 5.4, "idle");
     print("the board went right all the way ", right);
-    let settings_at = sh.layout.board;
+    let settings_at = sh.out.layout.board;
     let back_at = drive::tile(g, 0);
     // At rest it is where settings opened straight put it.
     var direct = shell::new(rules::RUSSIAN);
@@ -94,19 +94,19 @@ fn main() {
     var h = gui::Gui {};
     gui::test_faces(h);
     drive::idle(direct, h, 0.0);
-    print("settings at rest as opened straight: board ", direct.layout.board == settings_at, ", quads ",
+    print("settings at rest as opened straight: board ", direct.out.layout.board == settings_at, ", quads ",
           h.quads.len == g.quads.len);
 
     // Back to home, and once more to settings; halfway, a tap where home's continue was
     // lands on settings, not home.
     drive::frame(sh, g, back_at, true, true, false, 6.0);
     drive::frame(sh, g, back_at, false, false, true, 6.02);
-    print("tapped back: ", screen(sh), ", settings' board ", sh.layout.board == settings_at, ", the preview's pieces ",
+    print("tapped back: ", screen(sh), ", settings' board ", sh.out.layout.board == settings_at, ", the preview's pieces ",
           shell::fill(sh, 6.02).pieces.len, ", hole ", hole(sh));
     look(sh, g, 6.04, "  ");
     look(sh, g, 6.145, "  ");
     drive::idle(sh, g, 6.5);
-    print("back: ", screen(sh), ", board ", sh.layout.board == home_at, ", animating ", shell::animating(sh, g, 6.5));
+    print("back: ", screen(sh), ", board ", sh.out.layout.board == home_at, ", animating ", shell::animating(sh, g, 6.5));
     drive::frame(sh, g, settings_row, true, true, false, 7.0);
     drive::frame(sh, g, settings_row, false, false, true, 7.02);
     look(sh, g, 7.1, "again");
@@ -119,18 +119,18 @@ fn main() {
     // it is, and takes as long as it came.
     look(sh, g, 7.16, "before back");
     drive::frame(sh, g, back_at, true, true, false, 7.17);
-    let before = sh.layout.board;
+    let before = sh.out.layout.board;
     drive::frame(sh, g, back_at, false, false, true, 7.18);
-    let turned = sh.layout.board;
+    let turned = sh.out.layout.board;
     drive::idle(sh, g, 7.19);
-    let after = sh.layout.board;
+    let after = sh.out.layout.board;
     print("back during it: ", screen(sh), ", from settings ", sh.from == shell::SETTINGS, ", the board on the frames ",
           rect(before), ", ", rect(turned), ", ", rect(after));
     look(sh, g, 7.24, "  ");
     look(sh, g, 7.32, "  ");
     look(sh, g, 7.36, "ended");
     look(sh, g, 7.5, "idle");
-    print("at home's place ", sh.layout.board == home_at);
+    print("at home's place ", sh.out.layout.board == home_at);
 
     // Portrait: settings' gear beside the wordmark; the board shrinks and goes down a
     // little, under settings' title row.
@@ -140,18 +140,18 @@ fn main() {
     var p = shell::new(rules::INTERNATIONAL);
     look(p, g, 0.0, "portrait home");
     let gear = drive::tile(g, 0);
-    let low = p.layout.board.y;
+    let low = p.out.layout.board.y;
     drive::tap(p, g, gear, 1.0);
     var down = true;
     var y = low;
     for i in 1..5 {
         let t = 1.02 + 0.0625 * i;
         look(p, g, t, "  ");
-        if p.layout.board.y < y { down = false; }
-        y = p.layout.board.y;
+        if p.out.layout.board.y < y { down = false; }
+        y = p.out.layout.board.y;
     }
     look(p, g, 1.3, "ended");
     look(p, g, 5.3, "after the flash and the pulse");
     look(p, g, 5.4, "idle");
-    print("the board went down all the way ", down, ", from ", round(low), " to ", round(p.layout.board.y));
+    print("the board went down all the way ", down, ", from ", round(low), " to ", round(p.out.layout.board.y));
 }

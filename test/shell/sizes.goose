@@ -119,7 +119,7 @@ fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool,
     var narrow: f32     = 1.0e9;
     var low:    f32     = 1.0e9;
     var wrong:  u8[>..] = [];
-    let b = float4 { sh.layout.board.x, sh.layout.board.y, sh.layout.board.z, sh.layout.board.z };
+    let b = float4 { sh.out.layout.board.x, sh.out.layout.board.y, sh.out.layout.board.z, sh.out.layout.board.z };
     var small = 0;
     let sw = sh.prefs.switch_at;
     var half = float2 { 0.0, 0.0 };
@@ -175,7 +175,7 @@ fn chip(g: gui::Gui&, sh: shell::Shell&) {
         let way = drive::rect(g, n - 1);
         var col = float4 { 0.0, 0.0, 0.0, 0.0 };
         for q in g.quads { if q.look.x == gui::GLASS { col = q.rect; break; } }
-        let b = sh.layout.board;
+        let b = sh.out.layout.board;
         let sq = float4 { b.x, b.y, b.z, b.z };
         var line = str("  home's chip", if named { ", named" } else { "" }, ": ", whole(c.z / u), " dp wide, board ", whole(b.z / u), " dp");
         var wrong: u8[>..] = [];
@@ -212,12 +212,12 @@ fn chip(g: gui::Gui&, sh: shell::Shell&) {
 // of every tile, icon, and word the frame declared.
 fn turn_piece(g: gui::Gui&, sh: shell::Shell&) {
     let u = g.scale;
-    guard sh.over.len == 1 else {
-        print("  the turn piece: ", sh.over.len, " pieces over the UI");
+    guard sh.out.over.len == 1 else {
+        print("  the turn piece: ", sh.out.over.len, " pieces over the UI");
         failures++;
         return;
     }
-    let p = sh.over[0];
+    let p = sh.out.over[0];
     let r = p.at.z;
     let disc = float4 { p.at.x - r, p.at.y - r, 2.0 * r, 2.0 * r };
     var panel = float4 { 0.0, 0.0, 0.0, 0.0 };
@@ -324,11 +324,11 @@ fn taken(g: gui::Gui&) {
         gm.taken_len = gm.b.history.len;
         gm.taken_pos = gm.b.pos;
         at_rest(sh, g);
-        let b = float4 { sh.layout.board.x, sh.layout.board.y, sh.layout.board.z, sh.layout.board.z };
+        let b = float4 { sh.out.layout.board.x, sh.out.layout.board.y, sh.out.layout.board.z, sh.out.layout.board.z };
         var wrong: u8[>..] = [];
         var count = 0;
         var kings = 0;
-        for p in sh.over {
+        for p in sh.out.over {
             guard p.at.z < 0.5 * panel::TAKEN_D * u + 0.5 else { continue; }
             count++;
             if p.look.y == board::CROWN { kings++; }
@@ -338,7 +338,7 @@ fn taken(g: gui::Gui&) {
             for i in drive::tiles(g) { if overlaps(r, drive::rect(g, i)) { hit = true; } }
             for q, n in g.quads { if drive::camera_disc(g, n) && overlaps(r, q.rect) { hit = true; } }
             if hit { wrong.append(" on a tile;"); break; }
-            let on = if raised { view3d::touches(sh.view, r, 0.0) } else { overlaps(r, b) };
+            let on = if raised { view3d::touches(sh.out.view, r, 0.0) } else { overlaps(r, b) };
             if on { wrong.append(" on the board;"); break; }
         }
         format(line, if raised { "; 3D " } else { " flat " }, count, " pieces, ", kings, " a king");

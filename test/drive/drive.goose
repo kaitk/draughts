@@ -16,6 +16,10 @@ var over: board::Overlay;
 // The result of the last game against the computer the game's frames said had ended
 // (game::Event), for a test to print; 0 until one has.
 var result: i64 = 0;
+// What the shell's frames are told of the 3D board, as the app tells it (shell::frame):
+// ready to draw, and an image of it shown.
+var ready3d = true;
+var shown3d = true;
 // The screen the shell's frames lay out on, in pixels; its short side sets the scale.
 var size = float2 { 1280.0, 800.0 };
 // The puzzles' library's first theme row among its tiles: after back and the draughts
@@ -122,7 +126,7 @@ fn frame(gm: game::Game&, g: gui::Gui&, l: panel::Layout, at: float2, down: bool
 fn frame(sh: shell::Shell&, g: gui::Gui&, at: float2, down: bool, pressed: bool, released: bool, now: f64) -> bool {
     gui::begin(g, gui::Input { at: at, down: down, pressed: pressed, released: released }, gui::scale_of(size.x, size.y),
                now);
-    return shell::frame(sh, g, size.x, size.y, now);
+    return shell::frame(sh, g, size.x, size.y, now, ready3d, shown3d).changed;
 }
 
 let AWAY = float2 { -1.0, -1.0 };

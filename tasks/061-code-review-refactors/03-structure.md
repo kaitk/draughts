@@ -1,6 +1,6 @@
 # 03: Stage 2, structure
 
-Status: in-progress
+Status: done (2026-11-10)
 
 Stage 1 (`02-moves.md`) first. Behaviour stays the same and every expected output stays
 byte-identical.
@@ -124,8 +124,69 @@ the `Frame` by reference: its piece lists must not be copied each frame.
 
 ## Acceptance criteria
 
-- [ ] One screen table; adding a screen touches one place in `shell`
-- [ ] No flag set by one package and cleared by another; one `apply_prefs`
-- [ ] `main` reads `shell::Frame` and writes no shell field
-- [ ] One card helper, and one showcase-drag function
-- [ ] Every expected output byte-identical
+- [x] One screen table; adding a screen touches one place in `shell`
+- [x] No flag set by one package and cleared by another; one `apply_prefs`
+- [x] `main` reads `shell::Frame` and writes no shell field
+- [x] One card helper, and one showcase-drag function
+- [x] Every expected output byte-identical (but the two the user approved, below)
+
+## Outcome
+
+One commit per item. After each, `scripts/test.sh` passed and the app built on the Mac.
+Every expected output stayed byte-identical but three, each its own commit: the
+puzzles' note dropped (verdict 1: `puzzle_set.out`, `strings.out`), and a draw against
+the computer counted (`adapt.out`, below).
+
+- **The screen table.** `shell::KINDS`, a row per screen: whose board it shows, its blur,
+  where back goes (a screen, `NO_WAY`, or `RETURN` to where settings opened from), and
+  the screens it switches to through a transition, a bit each. `animates`, `blurred`,
+  `which`, `board_of`, and `back` read it. The screens' own code is chosen in three
+  `match`es right after it: `screen_frame` (the live frame), `still` (the one a
+  transition leaves), and `animating`. A new screen is a row and an arm in each, in one
+  place at the file's head.
+- **Events.** `game::frame` returns a `game::Event`: where to go, whether a game against
+  the computer ended this frame and how, whether it was started over, and whether the
+  lookout's eye was turned. `puzzle::frame` returns a `puzzle::Event`: where to go and
+  whether it was solved. `Game.result`, `Game.restarted`, and `Play.fresh` are gone.
+  Tests read the game's last result from `drive::result`.
+- **A draw found uncounted.** The game set its result to 0 on a draw, meant to count
+  ("a draw counts too, as 0", and `ai.md` says so), but the shell took 0 as no result,
+  so a draw never reached `played[level]`. With the event's `ended` apart from its
+  result, the shell counts it (the user, 2026-11-10); `test/shell/adapt` now draws a game
+  on hard: played 1, skill kept.
+- **`apply_prefs`.** One function puts the settings where they act: the game's hints and
+  lookout, both boards' kings, and the lookout's skill. It is called where the settings
+  change (settings, home's setup, a player entered or started again, a game ended),
+  where a game starts (play, played again, restored, `shell::new`), where the puzzle is
+  new (`load_set`), and once by the app after the flags (`shell::open`). The four copies
+  of the hints and the per-frame pushes of the kings and the lookout are gone; the
+  lookout's eye comes back to the settings through the event. `--hints moves` now sets
+  the player's hints for the run, as `--board` and `--lookout` set theirs. Tests that set
+  `sh.prefs` themselves call `shell::apply_prefs` after, as the app does.
+- **The asks' order** is written at `game::open_ask`: the computer's move, then the
+  hint's, then the lookout's traps, and why the first two never overlap. The order of
+  `shell::frame` before `think::frame` is said at both places.
+- **`shell::Frame`** (`sh.out`, passed by reference, returned by `shell::frame`) holds
+  what a frame leaves for the app: changed, the screen, whose board shows, the layout,
+  the pieces over the UI, the blur, the hole, the 3D board's view, place, fade, and hold,
+  the keyboard, `save`, and `quit`. The app hands in the 3D board's ready and shown as
+  `shell::frame`'s parameters (tests through `drive::ready3d` and `shown3d`), after
+  asking `shell::board3d` whether it is `WANTED`, `KEPT`, or `DROPPED`;
+  `shell::board_n`, `wake_in`, and `pause` answer the loop's other questions. `save`
+  is the old "changed and no transition"; the app calls `shell::wrote` once it wrote
+  them, since `Shell.changed` stays as tests read it. The flags' launch setup moved to
+  `dev::setup`, and the rest of it to `shell::launch` and `shell::open`, so `main`
+  writes no shell field. It still reads `sh.prefs` (the season, the language, the file
+  it writes) and hands `sh.game` to `think::frame`.
+- **Merges.** The win's and the draw's cards share `card_size`, `card_at` (centered,
+  kept off a piece), and `card_end` (the buttons, the fade and slide);
+  `board::showcase` is the showcase drag the game and a puzzle share.
+- **On the Mac,** against a build of `f5ea195` (from before this stage), flat-board shots
+  of eight flag runs were byte-identical: taps, `--hints moves` with a tap, a setup,
+  `--go settings` and `--go puzzle` held mid-transition, the picker, the lookout. The
+  settings shot differs only in the preview's flash box, as two runs of the old build
+  do; the 3D game matched by eye (its fade is timed). The `--frames` runs hang with
+  stdin or stdout left to a shell loop: give each `< /dev/null` and no redirect to a
+  file, from `src/app` (2026-11-10).
+- **Not measured.** Nothing runs more often than before; the per-frame copies of the
+  settings are gone.

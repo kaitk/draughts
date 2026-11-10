@@ -98,7 +98,7 @@ The targets this keeps open, each replacing or adding to `app/` alone:
 | `src/gui/` | The UI layer ([rendering.md](rendering.md#ui-layer)): rect cuts, widgets with their press state, text laid out from glyph tables the app bakes; every call appends quads to one fixed array |
 | `src/board/` | The board on screen: the position, the legal moves, and the undo history; where the board goes and which square a point is on; taps and drags; a move's animation; and each frame's draw lists (pieces, the squares' marks, a wrong move's flash); the 3D board's camera, its fit on screen, picking through its perspective, and its instances (`view3d`) |
 | `src/game/` | The game screen: its panels and where they and the board go (`panel::layout`, round the 3D board `panel::corners_in`), the clocks, the computer's turn (asking for a move and playing the answer), the celebration, and the pieces it puts over the UI |
-| `src/shell/` | The screens and which one shows: home and a new game's setup with the board of the game it starts, the game, settings with their preview board, the puzzles to pick from and the puzzle playing ([puzzles.md](puzzles.md#the-screen)); the pieces the screen showing puts over the UI (`Shell.over`, which the app draws); who's playing over home and a player's sheet; the players, their settings files, and their saved games |
+| `src/shell/` | The screens and which one shows: home and a new game's setup with the board of the game it starts, the game, settings with their preview board, the puzzles to pick from and the puzzle playing ([puzzles.md](puzzles.md#the-screen)); the pieces the screen showing puts over the UI (`Frame.over`, which the app draws); who's playing over home and a player's sheet; the players, their settings files, and their saved games |
 | `src/render3d/` | The 3D board's renderer, shared by the app and `poc/3d/`: its meshes, shaders, themes (`looks`), the surfaces' bake, the photograph's blur and ambient, the shadow map, and the multisampled pass ([rendering.md](rendering.md#board-and-pieces)) |
 | `src/badges/` | The players' animal badges: their SVGs from `assets/badges/` baked at startup into a distance-field atlas |
 | `src/app/` | The program: the main loop, the GPU drawing of the board, the pieces, and the UI's quads, the season's photograph and its blurs, the font atlas, the themes, the computer's worker thread, and its C (storage folder, locales, the clock's wake timer, the JPEG decoder) |
@@ -119,23 +119,33 @@ and `theme::Theme`; to the 3D board, `view3d::Scene` and `view3d::View`'s matrix
 1. The window: when it loses focus the game is written (Android may kill a paused app),
    and on Android the clocks pause; a new season's photograph loads two frames after its
    tile was tapped; the text is baked again if the scale changed.
-2. `gui::begin` takes the pointer and the time, and `shell::frame` declares the screen
-   showing. Its widgets append quads and its pieces over the UI go into the shell's
-   list; a press that lands on the UI is the UI's, and only otherwise does the game
-   screen hand the pointer to `board`. The screen reports what it asks for (another
-   screen, a new game) and whether anything on it changed.
+2. The app tells the shell what only it knows, whether the 3D board is ready and shown,
+   after asking it whether the 3D board is wanted, kept, or to be dropped
+   (`shell::board3d`). `gui::begin` takes the pointer and the time, and `shell::frame`
+   declares the screen showing. Its widgets append quads and its pieces over the UI go
+   into the frame's list; a press that lands on the UI is the UI's, and only otherwise
+   does the game screen hand the pointer to `board`. The game's and a puzzle's frames
+   return an event (where to go, a game ended or started over, a puzzle solved), which
+   the shell acts on; the settings are put where they act by one `shell::apply_prefs`,
+   when they change or a game starts. The shell's frame leaves what the app needs in a
+   `shell::Frame`, which the app reads and never writes: whether anything changed, where
+   the board is and how the 3D board shows, the blur, the pieces over the UI, the
+   keyboard, and whether to save the settings.
 3. `think::frame` hands the computer's worker the game's ask, and the game its answer.
-4. After a change in settings: the file is written, the language switched, and a new
-   season's photograph scheduled.
+   It comes after the shell's frame, so a game the shell started over this frame is asked
+   at the skill the shell gave it.
+4. After a change in settings (`Frame.save`): the file is written, the language
+   switched, and a new season's photograph scheduled.
 5. If anything changed or still moves (`shell::animating`), the board the screen shows
    (`shell::shown`) fills its draw lists, and the frame is drawn: the photograph and the
    squares in one pass, the pieces, the UI's quads, then the pieces over the UI.
    Otherwise nothing is drawn, and the next frame waits for input.
 6. While a clock runs, a timer is set for when the time it shows changes.
 
-The development flags that act while the loop runs (`--tap`, `--go`, `--win`, `--hold`,
-`--bench`, `--rest`, `--frames`) are `src/app/dev.goose`, which the loop calls at fixed
-points of a frame; with none of them given, its calls do nothing.
+The development flags are `src/app/dev.goose`: those that set up the shell at launch
+(`dev::setup`), and those that act while the loop runs (`--tap`, `--go`, `--win`,
+`--hold`, `--bench`, `--rest`, `--frames`), which the loop calls at fixed points of a
+frame; with none of them given, its calls do nothing.
 
 Android's back (the gesture or the button) and Escape on the Mac go back a screen, as
 the screen's own back or home control does (`shell::back`): a setup to home's menu, the
@@ -152,7 +162,7 @@ targeting it, where the key is no longer dispatched. SDL's sample manifest opts 
 instead, which Android calls temporary. No SDL patch is needed.
 
 The loop ends on Escape on home's menu or when home's X asks the shell to stop
-(`Shell.quit`). The game is then written as at any loop's end; after home's X, on Android the program
+(`Frame.quit`). The game is then written as at any loop's end; after home's X, on Android the program
 calls `DraughtsActivity.closeApp()` over JNI (`src/app/launch.c`), which finishes the
 activity with `finishAndRemoveTask()`, so no card is left in recents, before the
 program returns. Plain `finish()`, what SDL does when the program returns, would leave a

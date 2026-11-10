@@ -125,7 +125,10 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   the tiles a frame declared (`tile`, `rect`, `control` leaving out the clocks), and the
   pointer driving the game screen or the shell (`frame`, `tap`, `idle`, with the game's
   pieces over the UI in `drive::over` and the shell's screen size in `drive::size`).
-  Importing it means declaring every package it reaches (`rules` through `shell`, `ai`);
+  The game's frames' last result against the computer is `drive::result`; what the
+  shell's frames are told of the 3D board, `drive::ready3d` and `drive::shown3d`. A
+  shell's frame output is `sh.out` (`shell::Frame`); a test that sets `sh.prefs` itself
+  calls `shell::apply_prefs(sh)` after, as the app does at launch. Importing it means declaring every package it reaches (`rules` through `shell`, `ai`);
   `test/run_tests.py` skips the directories in its `PACKAGES`.
 - `test/perft.py`: an independent generator sharing no code or layout with `rules/`.
   Use `test/perft.py moves VARIANT FEN` to get the expected moves of a new test position
@@ -379,7 +382,7 @@ measuring there:
   `drive::camera_disc` tells the 3D board's camera buttons from it (2026-11-09).
 - During a transition (home and settings, home and the game, the puzzles and a puzzle)
   both screens' quads are declared, the one left first, so `drive::tile(g, n)` counts the
-  wrong screen's tiles and `drive::at(sh.layout, ...)` finds squares on a moving board. A
+  wrong screen's tiles and `drive::at(sh.out.layout, ...)` finds squares on a moving board. A
   shell test that taps again after such a switch idles past `shell::DURATION` first
   (`switch` in `test/shell/shell.goose`); a tile of the screen come to is found at rest
   beforehand, its taps being where it rests.

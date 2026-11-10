@@ -43,11 +43,11 @@ fn drag(sh: shell::Shell&, g: gui::Gui&, a: float2, b: float2, steps: i64, now: 
 // Whether the board as drawn stays in its room: on the screen, clear of every tile, its
 // bounds' middle at `mid` (the rest view's), and no larger than at rest (k0).
 fn in_room(sh: shell::Shell&, g: gui::Gui&, mid: float2, k0: f32) -> bool {
-    let v = sh.view.rect;
+    let v = sh.out.view.rect;
     var clear = true;
-    for i in drive::tiles(g) { if view3d::touches(sh.view, drive::rect(g, i), 0.0) { clear = false; } }
+    for i in drive::tiles(g) { if view3d::touches(sh.out.view, drive::rect(g, i), 0.0) { clear = false; } }
     return clear && v.x >= 0.0 && v.y >= 0.0 && v.x + v.z <= drive::size.x && v.y + v.w <= drive::size.y
-           && abs(v.x + 0.5 * v.z - mid.x) < 0.5 && abs(v.y + 0.5 * v.w - mid.y) < 0.5 && sh.view.k <= k0;
+           && abs(v.x + 0.5 * v.z - mid.x) < 0.5 && abs(v.y + 0.5 * v.w - mid.y) < 0.5 && sh.out.view.k <= k0;
 }
 
 // Frames at rest from `now`: how many changed or kept animating.
@@ -72,26 +72,26 @@ fn main() {
     shell::apply_prefs(sh);
     drive::idle(sh, g, 0.0);
     drive::idle(sh, g, 1.0);
-    let r = sh.view.rect;
-    let eye = sh.view.eye;
-    let k0 = sh.view.k;
+    let r = sh.out.view.rect;
+    let eye = sh.out.view.eye;
+    let k0 = sh.out.view.k;
     let mid = float2 { r.x + 0.5 * r.z, r.y + 0.5 * r.w };
-    print("home at rest: ", angle(sh, 1.0), ", its middle on the board ", view3d::on_board(sh.view, mid),
-          ", the screen's corner ", view3d::on_board(sh.view, float2 { 1270.0, 790.0 }), ", the bounds' corner ",
-          view3d::on_board(sh.view, float2 { r.x + 2.0, r.y + 2.0 }));
+    print("home at rest: ", angle(sh, 1.0), ", its middle on the board ", view3d::on_board(sh.out.view, mid),
+          ", the screen's corner ", view3d::on_board(sh.out.view, float2 { 1270.0, 790.0 }), ", the bounds' corner ",
+          view3d::on_board(sh.out.view, float2 { r.x + 2.0, r.y + 2.0 }));
 
     // On the board: 100 px left and 50 down turn it 30° and tip it 15° toward the top.
     let d1 = drag(sh, g, mid, mid + float2 { -100.0, 50.0 }, 5, 2.0);
     print("dragged on the board: ", angle(sh, 2.2), ", frames drawn ", d1, " of 7, the view drawn turned ",
-          r1(sh.view.eye.x) != 0.0, ", in its room ", in_room(sh, g, mid, k0), " at ",
-          r1(100.0 * sh.view.k / k0), "% of its size");
+          r1(sh.out.view.eye.x) != 0.0, ", in its room ", in_room(sh, g, mid, k0), " at ",
+          r1(100.0 * sh.out.view.k / k0), "% of its size");
     print("let go: frames drawn at rest ", rest(sh, g, 3.0), ", ", angle(sh, 4.0));
     // Off the board: beside it in the stage, under its outline's foot, and on the column's
     // glass between rows; a tap on the friend row opens the setup and back.
     let before = angle(sh, 8.0);
     let beside = float2 { 1250.0, mid.y };
     let foot = float2 { mid.x, 790.0 };
-    print("beside the board on it ", view3d::on_board(sh.view, beside), ", under it ", view3d::on_board(sh.view, foot));
+    print("beside the board on it ", view3d::on_board(sh.out.view, beside), ", under it ", view3d::on_board(sh.out.view, foot));
     drag(sh, g, beside, beside + float2 { -200.0, 0.0 }, 4, 8.0);
     drag(sh, g, foot, foot + float2 { 0.0, -200.0 }, 4, 8.5);
     let row = drive::rect(g, 1);
@@ -104,16 +104,16 @@ fn main() {
           setup, " and closed ", sh.setup == home::NO_SETUP);
     // Far past the range, the other way: it stops at its ends.
     drag(sh, g, mid, mid + float2 { 600.0, 400.0 }, 4, 11.0);
-    print("dragged far: ", angle(sh, 11.2), ", in its room ", in_room(sh, g, mid, k0), " at ", r1(100.0 * sh.view.k / k0),
+    print("dragged far: ", angle(sh, 11.2), ", in its room ", in_room(sh, g, mid, k0), " at ", r1(100.0 * sh.out.view.k / k0),
           "%");
     drag(sh, g, mid, mid + float2 { -600.0, -600.0 }, 4, 11.5);
     print("dragged far back: ", angle(sh, 11.7), ", in its room ", in_room(sh, g, mid, k0), " at ",
-          r1(100.0 * sh.view.k / k0), "%, frames drawn at rest ", rest(sh, g, 12.0));
+          r1(100.0 * sh.out.view.k / k0), "%, frames drawn at rest ", rest(sh, g, 12.0));
 
     // In the setup the board turns too.
     drive::tap(sh, g, drive::tile(g, 1), 13.1);
     drive::idle(sh, g, 13.2);
-    let rs = sh.view.rect;
+    let rs = sh.out.view.rect;
     let ms = float2 { rs.x + 0.5 * rs.z, rs.y + 0.5 * rs.w };
     drag(sh, g, ms, ms + float2 { 30.0, 0.0 }, 3, 13.3);
     print("in the setup: ", angle(sh, 13.5));
@@ -131,14 +131,14 @@ fn main() {
     shell::go_to(sh, shell::HOME, 16.0);
     drive::idle(sh, g, 16.0);
     drive::idle(sh, g, 17.0);
-    print("home again: ", angle(sh, 17.0), ", the view as at first ", sh.view.eye == eye && sh.view.rect == r,
+    print("home again: ", angle(sh, 17.0), ", the view as at first ", sh.out.view.eye == eye && sh.out.view.rect == r,
           ", drawn at rest ", rest(sh, g, 18.0));
 
     // The flat board: no turn.
     var flat = shell::new(rules::INTERNATIONAL);
     drive::idle(flat, g, 0.0);
-    let fl = flat.layout.board;
+    let fl = flat.out.layout.board;
     let fm = float2 { fl.x + 0.5 * fl.z, fl.y + 0.5 * fl.z };
     drag(flat, g, fm, fm + float2 { 100.0, 0.0 }, 4, 1.0);
-    print("flat: ", angle(flat, 2.0), ", raised ", flat.raised);
+    print("flat: ", angle(flat, 2.0), ", raised ", flat.out.raised);
 }

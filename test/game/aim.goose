@@ -32,8 +32,8 @@ fn same(a: rules::Move, b: rules::Move) -> bool { a.from == b.from && a.to == b.
 
 // A point of the flat layout at height h on the 3D board, on the screen.
 fn on_screen(sh: shell::Shell&, flat: float2, h: f32) -> float2 {
-    let c = view3d::to_world(sh.layout, flat);
-    let q = view3d::project(sh.view, float3 { c.x, h, c.y });
+    let c = view3d::to_world(sh.out.layout, flat);
+    let q = view3d::project(sh.out.view, float3 { c.x, h, c.y });
     return float2 { q.x, q.y };
 }
 
@@ -66,21 +66,21 @@ fn sweep(g: gui::Gui&, fen: const u8[:], size: float2, three: bool, by_drag: boo
                 board::set(sh.game.b, p);
                 drive::idle(sh, g, t);
                 drive::idle(sh, g, t + 0.05);
-                let l = sh.layout;
+                let l = sh.out.layout;
                 let w = l.inner.w;
                 let from = board::center(l, rules::VARIANTS[V], m.from);
                 let to = board::center(l, rules::VARIANTS[V], m.to)
                          + float2 { (i as f32 - 2.0) * 0.2 * w, (j as f32 - 2.0) * 0.2 * w };
                 var a = from;
                 var q = to;
-                if sh.raised {
+                if sh.out.raised {
                     let un = view3d::unit(l.n);
                     let stack = sh.game.b.pos.kings & rules::bit(m.from) != 0 && sh.game.b.king_look == board::STACK;
                     let discs: f32 = if stack { 2.0 } else { 1.0 };
                     a = on_screen(sh, from, discs * view3d::HEIGHT * un);
                     if by_drag {
                         let h = view3d::lift_of(l, view3d::FLAT_DRAG * l.board.z) + discs * view3d::HEIGHT * un * view3d::GROW;
-                        let xz, on = view3d::on_plane(sh.view, a, h);
+                        let xz, on = view3d::on_plane(sh.out.view, a, h);
                         assert(on);
                         let grab = from - view3d::to_flat(l, xz);
                         q = on_screen(sh, to - grab, h);
@@ -107,7 +107,7 @@ fn sweep(g: gui::Gui&, fen: const u8[:], size: float2, three: bool, by_drag: boo
         if good != 25 { all = false; }
         format(line, " ", number(m.from), "x", number(m.to), " ", good, "/", none, "/", other);
     }
-    print(if sh.raised { "3D" } else { "flat" }, " ", size.x as i64, " x ", size.y as i64, " (turned ", sh.layout.flip,
+    print(if sh.out.raised { "3D" } else { "flat" }, " ", size.x as i64, " x ", size.y as i64, " (turned ", sh.out.layout.flip,
           ") by ", if by_drag { "drags" } else { "taps" }, ":", line, if all { "" } else { "  <- not all chosen" });
 }
 

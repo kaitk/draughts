@@ -41,7 +41,7 @@ fn raised(variant: u8) -> shell::Shell {
 // The tiles the last frame declared that the board's outline comes within `gap` of.
 fn touching(sh: shell::Shell&, g: gui::Gui&) -> i64 {
     var n = 0;
-    for i in drive::tiles(g) { if view3d::touches(sh.view, drive::rect(g, i), 0.0) { n++; } }
+    for i in drive::tiles(g) { if view3d::touches(sh.out.view, drive::rect(g, i), 0.0) { n++; } }
     return n;
 }
 
@@ -55,25 +55,25 @@ fn screen_at(sh: shell::Shell&, g: gui::Gui&, size: float2, short: f32, what: co
     drive::idle(sh, g, 0.0);
     drive::idle(sh, g, 1.0);
     let u = g.scale;
-    let r = sh.view.rect;
-    let sq = view3d::square(sh.view, u);
-    let flat_mid = abs(sh.layout.board.x + 0.5 * sh.layout.board.z - (r.x + 0.5 * r.z)) < 0.5;
-    print(what, " ", whole(size.x), " x ", whole(size.y), " at ", whole(short), " dp: raised ", sh.raised, ", bounds ",
+    let r = sh.out.view.rect;
+    let sq = view3d::square(sh.out.view, u);
+    let flat_mid = abs(sh.out.layout.board.x + 0.5 * sh.out.layout.board.z - (r.x + 0.5 * r.z)) < 0.5;
+    print(what, " ", whole(size.x), " x ", whole(size.y), " at ", whole(short), " dp: raised ", sh.out.raised, ", bounds ",
           dp(r, u), " (", whole(100.0 * r.z / r.w), ":100), on screen ", inside(r, float4 { 0.0, 0.0, size.x, size.y }),
           ", tiles touched ", touching(sh, g), " of ", drive::tiles(g), ", flat square in the middle ",
-          flat_mid && abs(sh.layout.board.z - sq.board.z) < 0.5, ", drawn as placed ", sh.place == r && sh.fade == 1.0 && !sh.hold);
+          flat_mid && abs(sh.out.layout.board.z - sq.board.z) < 0.5, ", drawn as placed ", sh.out.place == r && sh.out.fade == 1.0 && !sh.out.hold);
     gui::short_dp = 800.0;
 }
 
 // The flat point of square `name` on the board's world, projected to the screen at height h.
 fn on_screen(sh: shell::Shell&, v: rules::Variant&, name: const u8[:], h: f32) -> float2 {
-    let c = view3d::to_world(sh.layout, board::center(sh.layout, v, drive::square(v, name)));
-    let q = view3d::project(sh.view, float3 { c.x, h, c.y });
+    let c = view3d::to_world(sh.out.layout, board::center(sh.out.layout, v, drive::square(v, name)));
+    let q = view3d::project(sh.out.view, float3 { c.x, h, c.y });
     return float2 { q.x, q.y };
 }
 fn sq_screen(sh: shell::Shell&, v: rules::Variant&, sq: i64, h: f32) -> float2 {
-    let c = view3d::to_world(sh.layout, board::center(sh.layout, v, sq));
-    let q = view3d::project(sh.view, float3 { c.x, h, c.y });
+    let c = view3d::to_world(sh.out.layout, board::center(sh.out.layout, v, sq));
+    let q = view3d::project(sh.out.view, float3 { c.x, h, c.y });
     return float2 { q.x, q.y };
 }
 
@@ -101,7 +101,7 @@ fn main() {
     var flat = shell::new(rules::INTERNATIONAL);
     drive::size = float2 { 1280.0, 800.0 };
     drive::idle(flat, g, 0.0);
-    print("flat home: raised ", flat.raised);
+    print("flat home: raised ", flat.out.raised);
 
     // A puzzle: Learn's first, then one with black to move.
     drive::size = float2 { 1280.0, 800.0 };
@@ -113,11 +113,11 @@ fn main() {
     let u = g.scale;
     var all_in = true;
     for i in drive::tiles(g) { if !inside(drive::rect(g, i), float4 { 0.0, 0.0, 1280.0, 800.0 }) { all_in = false; } }
-    print("puzzle: raised ", sh.raised, ", bounds ", dp(sh.view.rect, u), ", tiles ", drive::tiles(g), " on screen ", all_in,
+    print("puzzle: raised ", sh.out.raised, ", bounds ", dp(sh.out.view.rect, u), ", tiles ", drive::tiles(g), " on screen ", all_in,
           ", touched ", touching(sh, g), ", kings drawn as ", sh.puzzle.b.king_look);
     let pl .= sh.puzzle;
     let vr .= rules::VARIANTS[pl.b.variant];
-    let un = view3d::unit(sh.layout.n);
+    let un = view3d::unit(sh.out.layout.n);
     let ply, on = puzzle::line_next(pl);
     assert(on);
     var now = 1.0;
@@ -149,7 +149,7 @@ fn main() {
         drive::idle(sh, g, t + 0.1);
         var scene = view3d::Scene {};
         let b .= shell::fill(sh, t + 0.1);
-        view3d::fill(scene, b, sh.layout, sh.view, t + 0.1);
+        view3d::fill(scene, b, sh.out.layout, sh.out.view, t + 0.1);
         var fading = 0;
         var i = 0;
         while i < scene.state.len {
@@ -168,9 +168,9 @@ fn main() {
         while t < until && (pl.state != puzzle::PLAYING || pl.b.moving) { drive::idle(sh, g, t); t += 0.05; }
         drive::idle(sh, g, t + 0.1);
         let b2 .= shell::fill(sh, t + 4.0);
-        view3d::fill(scene, b2, sh.layout, sh.view, t + 4.0);
+        view3d::fill(scene, b2, sh.out.layout, sh.out.view, t + 4.0);
         var glows: u8[>..] = [];
-        for k in sh.layout.n * sh.layout.n { if scene.lit[k].x > 0.0 { format(glows, k / sh.layout.n, ".", k % sh.layout.n, " "); } }
+        for k in sh.out.layout.n * sh.out.layout.n { if scene.lit[k].x > 0.0 { format(glows, k / sh.out.layout.n, ".", k % sh.out.layout.n, " "); } }
         print("  misses ", pl.misses, ", hint on ", drive::name(vr, pl.b.glow), ", glow rings in the world's grid at ", glows);
     }
 
@@ -180,7 +180,7 @@ fn main() {
     if black >= 0 {
         shell::play_puzzle(sh, black);
         drive::idle(sh, g, 10.0);
-        print("black to move: turned ", sh.layout.flip, ", raised ", sh.raised);
+        print("black to move: turned ", sh.out.layout.flip, ", raised ", sh.out.raised);
     }
 
     // A win on the 3D board: white takes f4 and the game is won.
@@ -202,15 +202,15 @@ fn main() {
         card = float4 { min(card.x, q.rect.x), min(card.y, q.rect.y), max(card.z, q.rect.x + q.rect.z), max(card.w, q.rect.y + q.rect.w) };
     }
     card = float4 { card.x, card.y, card.z - card.x, card.w - card.y };
-    let spot = view3d::on_screen(w.view, w.layout, board::center(w.layout, rv, w.game.won_on));
+    let spot = view3d::on_screen(w.out.view, w.out.layout, board::center(w.out.layout, rv, w.game.won_on));
     let clear = spot.x + spot.z <= card.x || spot.x - spot.z >= card.x + card.z || spot.y + spot.z <= card.y
                 || spot.y - spot.z >= card.y + card.w;
     print("won: ", rules::fen(w.game.b.pos), ", winning piece on ", drive::name(rv, w.game.won_on), ", card ", dp(card, u),
-          " inside the 3D bounds ", inside(card, w.view.rect), ", centered across them ",
-          abs(card.x + 0.5 * card.z - (w.view.rect.x + 0.5 * w.view.rect.z)) < 1.0, ", clear of the winning piece ", clear);
+          " inside the 3D bounds ", inside(card, w.out.view.rect), ", centered across them ",
+          abs(card.x + 0.5 * card.z - (w.out.view.rect.x + 0.5 * w.out.view.rect.z)) < 1.0, ", clear of the winning piece ", clear);
     var ws = view3d::Scene {};
     let wb .= shell::fill(w, t);
-    view3d::fill(ws, wb, w.layout, w.view, t);
+    view3d::fill(ws, wb, w.out.layout, w.out.view, t);
     var lit = 0;
     var i = 1;
     while i < ws.inst.len {
@@ -223,36 +223,36 @@ fn main() {
     var tr = raised(rules::INTERNATIONAL);
     tr.screen = shell::HOME;
     drive::idle(tr, g, 0.0);
-    let home_rect = tr.view.rect;
+    let home_rect = tr.out.view.rect;
     shell::go_to(tr, shell::GAME, 1.0);
     var views = 0;
     var steady = true;
     var last_view = view3d::View {};
-    var first = tr.layout;
+    var first = tr.out.layout;
     for k in 0..6 {
         let at = 1.0 + 0.05 * k;
         drive::idle(tr, g, at);
-        if k == 0 { first = tr.layout; }
-        if !view3d::same_view(tr.view, last_view) { views++; last_view = tr.view; }
-        if tr.from >= 0 && tr.layout != first { steady = false; }
-        print("  home to the game ", at, ": raised ", tr.raised, ", hold ", tr.hold, ", placed ", dp(tr.place, u), ", fade ",
-              tr.fade);
+        if k == 0 { first = tr.out.layout; }
+        if !view3d::same_view(tr.out.view, last_view) { views++; last_view = tr.out.view; }
+        if tr.from >= 0 && tr.out.layout != first { steady = false; }
+        print("  home to the game ", at, ": raised ", tr.out.raised, ", hold ", tr.out.hold, ", placed ", dp(tr.out.place, u), ", fade ",
+              tr.out.fade);
     }
     print("  views drawn through ", views, ", the flat layout steady ", steady, ", at rest placed at the game's bounds ",
-          tr.place == tr.view.rect, ", the game's larger than home's ", tr.view.rect.z > home_rect.z);
+          tr.out.place == tr.out.view.rect, ", the game's larger than home's ", tr.out.view.rect.z > home_rect.z);
 
     // The puzzles' tile to a puzzle: the image fades in as it grows from the tile.
     var pk = raised(rules::INTERNATIONAL);
     pk.screen = shell::PICKER;
     pk.theme = puzzles::LEARN;
     drive::idle(pk, g, 0.0);
-    print("picker: raised ", pk.raised);
+    print("picker: raised ", pk.out.raised);
     drive::frame(pk, g, drive::tile(g, 1), true, true, false, 1.0);
     drive::frame(pk, g, drive::tile(g, 1), false, false, true, 1.02);
     for k in 1..6 {
         let at = 1.02 + 0.05 * k;
         drive::idle(pk, g, at);
-        print("  tile to the puzzle ", at, ": raised ", pk.raised, ", placed ", dp(pk.place, u), ", fade ",
-              floor(pk.fade * 100.0 + 0.5) / 100.0, ", hole as tall as the image ", pk.from < 0 || pk.tall == pk.place.w);
+        print("  tile to the puzzle ", at, ": raised ", pk.out.raised, ", placed ", dp(pk.out.place, u), ", fade ",
+              floor(pk.out.fade * 100.0 + 0.5) / 100.0, ", hole as tall as the image ", pk.from < 0 || pk.out.tall == pk.out.place.w);
     }
 }

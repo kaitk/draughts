@@ -23,8 +23,8 @@ import drive from "../drive";
 // board's draughts has.
 fn whole(sh: shell::Shell&, now: f64) -> bool {
     let b .= shell::fill(sh, now);
-    let r = sh.layout.board;
-    var inside = sh.layout.n == rules::VARIANTS[b.variant].size;
+    let r = sh.out.layout.board;
+    var inside = sh.out.layout.n == rules::VARIANTS[b.variant].size;
     for p in b.pieces { inside = inside && p.at.x > r.x && p.at.x < r.x + r.z && p.at.y > r.y && p.at.y < r.y + r.z; }
     return inside;
 }
@@ -33,7 +33,7 @@ fn whole(sh: shell::Shell&, now: f64) -> bool {
 // bottom of the screen, and whether it lies whole.
 fn shows(sh: shell::Shell&, now: f64) -> u8[>..] {
     let b .= shell::fill(sh, now);
-    let mid = sh.layout.board.y + 0.5 * sh.layout.board.z;
+    let mid = sh.out.layout.board.y + 0.5 * sh.out.layout.board.z;
     var low = 0;
     var white = 0;
     for p in b.pieces {
@@ -80,8 +80,8 @@ fn main() {
     var sh = shell::new(rules::RUSSIAN);
     drive::idle(sh, g, 0.0);
     tap(sh, g, drive::tile(g, 0), 1.0, "continue");
-    drive::tap(sh, g, drive::at(sh.layout, "c3"), 2.0);
-    drive::tap(sh, g, drive::at(sh.layout, "d4"), 2.1);
+    drive::tap(sh, g, drive::at(sh.out.layout, "c3"), 2.0);
+    drive::tap(sh, g, drive::at(sh.out.layout, "d4"), 2.1);
     drive::idle(sh, g, 3.0);
     tap(sh, g, drive::tile(g, 0), 4.0, "home");
 
@@ -117,11 +117,11 @@ fn main() {
     // Play: the game starts as the board showed it, turned the same. The computer, white,
     // is to move, and its turn's ring animates.
     let before = shows(sh, 32.0);
-    let flip = sh.layout.flip;
+    let flip = sh.out.layout.flip;
     tap(sh, g, drive::tile(g, 12), 32.0, "play");
     let gm .= sh.game;
-    print("the game: computer ", gm.computer, ", turned ", sh.layout.flip, ", as the setup showed ",
-          shows(sh, 33.0) == before && sh.layout.flip == flip);
+    print("the game: computer ", gm.computer, ", turned ", sh.out.layout.flip, ", as the setup showed ",
+          shows(sh, 33.0) == before && sh.out.layout.flip == flip);
     drive::tap(sh, g, drive::tile(g, 0), 34.0);       // home
-    print("home: ", shows(sh, 34.1), ", turned ", sh.layout.flip);
+    print("home: ", shows(sh, 34.1), ", turned ", sh.out.layout.flip);
 }

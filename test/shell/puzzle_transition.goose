@@ -27,7 +27,7 @@ fn pc(x: f32) -> f64 { round(100.0 * x) }
 
 // Where the UI is hidden this frame: nowhere at rest, else the board's rect.
 fn hole(sh: shell::Shell&) -> const u8[:] {
-    if sh.hole.z <= 0.0 { "none" } else if sh.hole == sh.layout.board { "the board" } else { "elsewhere" }
+    if sh.out.hole.z <= 0.0 { "none" } else if sh.out.hole == sh.out.layout.board { "the board" } else { "elsewhere" }
 }
 
 fn look(sh: shell::Shell&, g: gui::Gui&, now: f64, what: const u8[:]) {
@@ -37,8 +37,8 @@ fn look(sh: shell::Shell&, g: gui::Gui&, now: f64, what: const u8[:]) {
     let b .= shell::fill(sh, now);
     var faint = 0;
     for p in b.pieces { if p.look.w < 1.0 { faint++; } }
-    print(what, " ", now, ": ", screen(sh), ", board ", rect(sh.layout.board), " ", sh.layout.n, "x", sh.layout.n,
-          ", mix ", pc(sh.mix), "%, blur ", pc(sh.blur), "%, quads ", g.quads.len, " faded ", faded, ", pieces ",
+    print(what, " ", now, ": ", screen(sh), ", board ", rect(sh.out.layout.board), " ", sh.out.layout.n, "x", sh.out.layout.n,
+          ", mix ", pc(sh.mix), "%, blur ", pc(sh.out.blur), "%, quads ", g.quads.len, " faded ", faded, ", pieces ",
           b.pieces.len, " faint ", faint, ", hole ", hole(sh), ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
 }
 
@@ -56,18 +56,18 @@ fn main() {
     // The first puzzle, tapped at 1.0 and released at 1.02.
     drive::frame(sh, g, drive::tile(g, 1), true, true, false, 1.0);
     drive::frame(sh, g, drive::tile(g, 1), false, false, true, 1.02);
-    print("tapped: ", screen(sh), ", the board in the tile ", sh.layout.board.x == first_tile.x && sh.layout.board.y == first_tile.y
-          && sh.layout.board.z == first_tile.z, ", blur ", pc(sh.blur), "%");
-    var size = sh.layout.board.z;
+    print("tapped: ", screen(sh), ", the board in the tile ", sh.out.layout.board.x == first_tile.x && sh.out.layout.board.y == first_tile.y
+          && sh.out.layout.board.z == first_tile.z, ", blur ", pc(sh.out.blur), "%");
+    var size = sh.out.layout.board.z;
     var grew = true;
     for i in 1..5 {
         look(sh, g, 1.02 + 0.0625 * i, "  ");
-        if sh.layout.board.z < size { grew = false; }
-        size = sh.layout.board.z;
+        if sh.out.layout.board.z < size { grew = false; }
+        size = sh.out.layout.board.z;
     }
     look(sh, g, 1.4, "idle");
     print("the board grew all the way ", grew);
-    let arrived = sh.layout.board;
+    let arrived = sh.out.layout.board;
     let quads = g.quads.len;
     let way_out = drive::control(g, 0);
 
@@ -77,8 +77,8 @@ fn main() {
     var h = gui::Gui {};
     gui::test_faces(h);
     drive::idle(straight, h, 0.0);
-    print("as opened straight: board ", straight.layout.board == arrived, ", quads ", h.quads.len == quads, ", blur ",
-          pc(straight.blur), "%");
+    print("as opened straight: board ", straight.out.layout.board == arrived, ", quads ", h.quads.len == quads, ", blur ",
+          pc(straight.out.blur), "%");
 
     // Back to the picker: the board shrinks into its tile, then lies off the screen.
     drive::tap(sh, g, way_out, 2.0);
@@ -91,12 +91,12 @@ fn main() {
     drive::frame(sh, g, drive::tile(g, 1), false, false, true, 3.02);
     look(sh, g, 3.145, "again");
     drive::frame(sh, g, way_out, true, true, false, 3.16);
-    let before = sh.layout.board;
+    let before = sh.out.layout.board;
     drive::frame(sh, g, way_out, false, false, true, 3.17);
-    let turned = sh.layout.board;
+    let turned = sh.out.layout.board;
     drive::idle(sh, g, 3.18);
     print("its way out during it: ", screen(sh), ", the board on the frames ", rect(before), ", ", rect(turned), ", ",
-          rect(sh.layout.board));
+          rect(sh.out.layout.board));
     look(sh, g, 3.3, "  ");
     look(sh, g, 3.4, "ended");
     look(sh, g, 3.5, "idle");

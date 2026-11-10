@@ -45,7 +45,7 @@ fn show(sh: shell::Shell&, what: const u8[:]) {
 
 fn tap(sh: shell::Shell&, g: gui::Gui&, n: i64, now: f64) {
     let v .= rules::VARIANTS[rules::INTERNATIONAL];
-    drive::tap(sh, g, drive::at(sh.layout, drive::name(v, v.bit_of[n])), now);
+    drive::tap(sh, g, drive::at(sh.out.layout, drive::name(v, v.bit_of[n])), now);
 }
 
 fn main() {

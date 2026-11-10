@@ -22,7 +22,7 @@ import drive from "../drive";
 // bounds' middle line (a glyph's middle within 40 px of it; the panels' words lie farther)
 // are centred there, within 2 px (a glyph's own bearings), else 0.
 fn marks(sh: shell::Shell&, g: gui::Gui&) -> i64 {
-    let r = sh.place;
+    let r = sh.out.place;
     var lo = float2 { 1e9, 1e9 };
     var hi = float2 { -1e9, -1e9 };
     for q in g.quads {
@@ -38,8 +38,8 @@ fn marks(sh: shell::Shell&, g: gui::Gui&) -> i64 {
 }
 
 fn on_screen(sh: shell::Shell&, v: rules::Variant&, name: const u8[:], h: f32) -> float2 {
-    let c = view3d::to_world(sh.layout, board::center(sh.layout, v, drive::square(v, name)));
-    let q = view3d::project(sh.view, float3 { c.x, h, c.y });
+    let c = view3d::to_world(sh.out.layout, board::center(sh.out.layout, v, drive::square(v, name)));
+    let q = view3d::project(sh.out.view, float3 { c.x, h, c.y });
     return float2 { q.x, q.y };
 }
 
@@ -59,11 +59,11 @@ fn main() {
     sh.prefs.board = settings::RAISED;
     shell::apply_prefs(sh);
     sh.screen = shell::GAME;
-    sh.ready3d = false;
-    sh.shown3d = false;
+    drive::ready3d = false;
+    drive::shown3d = false;
     drive::idle(sh, g, 0.0);
     drive::idle(sh, g, 5.0);
-    print("game, waiting: raised ", sh.raised, ", marks in the board's middle ", marks(sh, g), ", animating ",
+    print("game, waiting: raised ", sh.out.raised, ", marks in the board's middle ", marks(sh, g), ", animating ",
           shell::animating(sh, g, 5.5));
     drive::tap(sh, g, on_screen(sh, v, "c3", top), 6.0);
     print("  c3 tapped: selected ", sh.game.b.selected, " (none is -1)");
@@ -74,8 +74,8 @@ fn main() {
         s.prefs.board = settings::RAISED;
         shell::apply_prefs(s);
         s.screen = shell::GAME;
-        s.ready3d = false;
-        s.shown3d = false;
+        drive::ready3d = false;
+        drive::shown3d = false;
         drive::idle(s, g, 0.0);
         drive::tap(s, g, drive::tile(g, i), 1.0);
         if s.screen == shell::SETTINGS || s.from == shell::GAME { went = true; }
@@ -83,8 +83,8 @@ fn main() {
     print("  a panel tile still leaves the game: ", went);
 
     // Ready: no mark, and the tap selects.
-    sh.ready3d = true;
-    sh.shown3d = true;
+    drive::ready3d = true;
+    drive::shown3d = true;
     drive::idle(sh, g, 7.0);
     print("game, ready: marks ", marks(sh, g));
     drive::tap(sh, g, on_screen(sh, v, "c3", top), 8.0);
@@ -95,8 +95,8 @@ fn main() {
     th.prefs.board = settings::RAISED;
     shell::apply_prefs(th);
     th.screen = shell::GAME;
-    th.ready3d = false;
-    th.shown3d = true;
+    drive::ready3d = false;
+    drive::shown3d = true;
     drive::idle(th, g, 0.0);
     drive::tap(th, g, on_screen(th, v, "c3", top), 1.0);
     print("game, a new theme getting ready: marks ", marks(th, g), ", c3 tapped: selected ", th.game.b.selected);
@@ -109,11 +109,11 @@ fn main() {
             s.prefs.board = settings::RAISED;
             shell::apply_prefs(s);
             s.screen = screen;
-            s.ready3d = false;
-            s.shown3d = false;
+            drive::ready3d = false;
+            drive::shown3d = false;
             drive::idle(s, g, 0.0);
             drive::idle(s, g, 1.0);
-            print(if screen == shell::HOME { "home" } else { "settings" }, ", waiting: raised ", s.raised,
+            print(if screen == shell::HOME { "home" } else { "settings" }, ", waiting: raised ", s.out.raised,
                   ", marks in the board's middle ", marks(s, g), ", saying \"", strings::get(strings::BOARD_PREPARING), "\"");
         }
     }
@@ -122,8 +122,8 @@ fn main() {
     // Flat: never a mark, whatever the app says of the 3D board.
     var flat = shell::new(rules::RUSSIAN);
     flat.screen = shell::GAME;
-    flat.ready3d = false;
-    flat.shown3d = false;
+    drive::ready3d = false;
+    drive::shown3d = false;
     drive::idle(flat, g, 0.0);
     print("flat: marks ", marks(flat, g));
 }

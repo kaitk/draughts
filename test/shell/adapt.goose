@@ -42,15 +42,15 @@ fn current(sh: shell::Shell&) -> u8[>..] {
 fn win_easy(sh: shell::Shell&, g: gui::Gui&, t: f64) {
     board::set(sh.game.b, check_position("W:Wc3:Bd4"));
     drive::idle(sh, g, t);
-    drive::tap(sh, g, drive::at(sh.layout, "c3"), t + 0.1);
-    drive::tap(sh, g, drive::at(sh.layout, "e5"), t + 0.2);
+    drive::tap(sh, g, drive::at(sh.out.layout, "c3"), t + 0.1);
+    drive::tap(sh, g, drive::at(sh.out.layout, "e5"), t + 0.2);
     drive::idle(sh, g, t + 1.0);
 }
 
 // Plays `a`-`b` by taps through the shell and lets it show; returns the time after.
 fn move(sh: shell::Shell&, g: gui::Gui&, a: const u8[:], b: const u8[:], now: f64) -> f64 {
-    drive::tap(sh, g, drive::at(sh.layout, a), now);
-    drive::tap(sh, g, drive::at(sh.layout, b), now + 0.1);
+    drive::tap(sh, g, drive::at(sh.out.layout, a), now);
+    drive::tap(sh, g, drive::at(sh.out.layout, b), now + 0.1);
     var t = now + 0.2;
     while sh.game.b.moving || t < now + 1.0 {
         drive::idle(sh, g, t);
@@ -92,8 +92,8 @@ fn main() {
     // Easy: the child takes black's last piece and wins.
     play(sh, game::EASY, "W:Wc3:Bd4");
     drive::idle(sh, g, 0.0);
-    drive::tap(sh, g, drive::at(sh.layout, "c3"), 0.1);
-    drive::tap(sh, g, drive::at(sh.layout, "e5"), 0.2);
+    drive::tap(sh, g, drive::at(sh.out.layout, "c3"), 0.1);
+    drive::tap(sh, g, drive::at(sh.out.layout, "e5"), 0.2);
     drive::idle(sh, g, 1.0);
     print("the child won on easy: winner ", game::winner(sh.game), ", ", skills(sh));
     sh.changed = false;

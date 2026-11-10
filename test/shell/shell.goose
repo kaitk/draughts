@@ -45,7 +45,7 @@ fn screen(sh: shell::Shell&) -> const u8[:] {
 fn show(sh: shell::Shell&, g: gui::Gui&, what: const u8[:]) {
     var glyphs = 0;
     for q in g.quads { if q.look.x == gui::TEXT { glyphs++; } }
-    print(what, ": ", screen(sh), ", sharp ", sh.blur == 0.0, ", board at ", sh.layout.board, ", glyphs ", glyphs,
+    print(what, ": ", screen(sh), ", sharp ", sh.out.blur == 0.0, ", board at ", sh.out.layout.board, ", glyphs ", glyphs,
           ", ", rules::fen(sh.game.b.pos), ", history ", sh.game.b.history.len);
 }
 
@@ -60,7 +60,7 @@ fn game_of(sh: shell::Shell&) -> u8[>..] {
     let gm .= sh.game;
     return str(rules::VARIANTS[gm.b.variant].size, "x", rules::VARIANTS[gm.b.variant].size, " ",
                rules::fen(gm.b.pos), ", clock ", gm.clock.kind, ", computer ", gm.computer, ", level ", gm.level,
-               ", skill ", gm.skill, ", number ", gm.number, ", turned ", sh.layout.flip);
+               ", skill ", gm.skill, ", number ", gm.number, ", turned ", sh.out.layout.flip);
 }
 
 // A tap that switches screens, then a frame once the transition it starts is over.
@@ -79,8 +79,8 @@ fn main() {
     let off = float2 { -1.0, -1.0 };
     drive::frame(sh, g, off, false, false, false, 0.0);
     show(sh, g, "start");
-    print("the wordmark's piece: ", sh.over.len, ", crowned ", sh.over[0].look.y,
-          ", no ring ", sh.over[0].ring.y == 0.0);
+    print("the wordmark's piece: ", sh.out.over.len, ", crowned ", sh.out.over[0].look.y,
+          ", no ring ", sh.out.over[0].ring.y == 0.0);
     // The player's chip, mirroring the way out: the last tile but one, and their face.
     var faces = 0;
     for q in g.quads { if q.look.x == gui::FACE { faces++; } }
@@ -88,8 +88,8 @@ fn main() {
 
     switch(sh, g, drive::tile(g, 0), 1.0);                // continue
     show(sh, g, "continue");
-    let c3 = board::center(sh.layout, v, rules::bit_at(v, 2, 2));
-    let d4 = board::center(sh.layout, v, rules::bit_at(v, 3, 3));
+    let c3 = board::center(sh.out.layout, v, rules::bit_at(v, 2, 2));
+    let d4 = board::center(sh.out.layout, v, rules::bit_at(v, 3, 3));
     drive::tap(sh, g, c3, 1.5);
     drive::tap(sh, g, d4, 1.6);
     drive::frame(sh, g, off, false, false, false, 2.0);
@@ -105,10 +105,10 @@ fn main() {
     drive::frame(sh, g, at, true, true, false, 3.5);
     drive::frame(sh, g, at, false, false, true, 3.52);
     gui::begin(g, gui::Input { at: off, .. }, 1.0, 4.0);
-    let first = shell::frame(sh, g, W, H, 4.0);
+    let first = shell::frame(sh, g, W, H, 4.0).changed;
     gui::begin(g, gui::Input { at: off, .. }, 1.0, 4.1);
-    print("settings: ", screen(sh), ", board at ", sh.layout.board, ", sharp ", sh.blur == 0.0, ", its first frame drawn ", first,
-          ", the next ", shell::frame(sh, g, W, H, 4.1));
+    print("settings: ", screen(sh), ", board at ", sh.out.layout.board, ", sharp ", sh.out.blur == 0.0, ", its first frame drawn ", first,
+          ", the next ", shell::frame(sh, g, W, H, 4.1).changed);
     switch(sh, g, drive::tile(g, 0), 4.2);                // back
     print("back from settings: ", screen(sh));
     switch(sh, g, drive::tile(g, 0), 4.7);                // continue
@@ -142,7 +142,7 @@ fn main() {
     drive::tap(sh, g, drive::tile(g, 2), 7.5);            // the computer
     tiles = 0;
     for q in g.quads { if q.look.x == gui::BUTTON { tiles++; } }
-    print("the computer's setup: tiles ", tiles, ", pieces over the UI ", sh.over.len);
+    print("the computer's setup: tiles ", tiles, ", pieces over the UI ", sh.out.over.len);
     print("draughts tiles: ", draughts_widths(g));
     drive::tap(sh, g, drive::tile(g, 6), 7.6);            // hard
     drive::tap(sh, g, drive::tile(g, 8), 7.7);            // black
@@ -152,7 +152,7 @@ fn main() {
     switch(sh, g, drive::tile(g, 0), 8.4);                // home
     var note = 0;
     for q in g.quads { if q.look.x == gui::TEXT { note++; } }
-    print("home: the computer's row notes hard; glyphs ", note, ", turned ", sh.layout.flip);
+    print("home: the computer's row notes hard; glyphs ", note, ", turned ", sh.out.layout.flip);
 
     // Home in portrait: the board above the sheet; the setup too.
     sh.screen = shell::HOME;
@@ -161,14 +161,14 @@ fn main() {
     // The sheet is the first glass; the way out's is the last.
     var sheet = float4 { 0.0, 0.0, 0.0, 0.0 };
     for q in g.quads { if q.look.x == gui::GLASS && sheet.z == 0.0 { sheet = q.rect; } }
-    print("portrait: board ", sh.layout.board, ", sheet from ", sheet.y, ", clear ",
-          sh.layout.board.y + sh.layout.board.z < sheet.y);
+    print("portrait: board ", sh.out.layout.board, ", sheet from ", sheet.y, ", clear ",
+          sh.out.layout.board.y + sh.out.layout.board.z < sheet.y);
     sh.setup = home::COMPUTER;
     gui::begin(g, gui::Input {}, 1.0, 9.1);
     shell::frame(sh, g, H, W, 9.1);
     sheet.z = 0.0;
     for q in g.quads { if q.look.x == gui::GLASS && sheet.z == 0.0 { sheet = q.rect; } }
-    print("portrait setup: board ", sh.layout.board, ", sheet from ", sheet.y, ", clear ",
-          sh.layout.board.y + sh.layout.board.z < sheet.y);
+    print("portrait setup: board ", sh.out.layout.board, ", sheet from ", sheet.y, ", clear ",
+          sh.out.layout.board.y + sh.out.layout.board.z < sheet.y);
     print("draughts tiles: ", draughts_widths(g));
 }

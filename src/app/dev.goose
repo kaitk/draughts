@@ -1,5 +1,5 @@
-// The development flags that act while the loop runs (flags.goose, docs/development.md
-// "Run on the Mac"): --tap's taps, --go's switch, --win's and --hold's moments, --bench's
+// The development flags (flags.goose, docs/development.md "Run on the Mac"): those that
+// set up the shell at launch (setup), and those that act while the loop runs: --tap's taps, --go's switch, --win's and --hold's moments, --bench's
 // frame times, --rest's CPU and footprint, and --frames' count and screenshot. The loop
 // calls in at fixed points of a frame, and with none of these flags given each call does
 // nothing.
@@ -34,6 +34,52 @@ struct Dev {
 
 fn new(f: flags::Flags&) -> Dev { Dev { go: f.go, .. } }
 
+// At launch, once the shell has the player's settings (`prefs`, as read) and before the
+// saved game is brought back: the game, the settings, the position, the screen, the
+// setup, and the puzzle the flags give. The settings they set apply for the run and are
+// written only if a tap there writes them.
+fn setup(f: flags::Flags&, sh: shell::Shell&, prefs: settings::Settings) {
+    if f.clock >= 0 || f.computer >= 0 {
+        let lv = if f.level >= 0 { f.level } else { prefs.level };
+        game::start(sh.game, sh.game.b.variant, max(f.clock, 0), f.computer, lv, prefs.skill[lv], prefs.games);
+    }
+    if f.reset_skill {
+        sh.prefs.level = game::EASY;
+        sh.prefs.skill = ai::LEVEL_SKILL;
+        sh.prefs.played = [0; 3];
+        sh.changed = true;
+    }
+    if f.board >= 0 { sh.prefs.board = f.board; }
+    if f.lookout >= 0 { sh.prefs.lookout = f.lookout == 1; }
+    if f.hints >= 0 { sh.prefs.hints = f.hints; }
+    if f.background >= 0 { sh.prefs.plain = f.background == 1; }
+    let fen .= f.fen;
+    if fen.len > 0 {
+        let b .= sh.game.b;
+        let p, ok = rules::parse_fen(fen, b.variant);
+        guard ok else { abort(str("not a position: ", fen)); }
+        board::set(b, p);
+    }
+    sh.screen = if f.screen >= 0 { f.screen } else if fen.len > 0 || f.taps.len > 0 || f.clock >= 0 || f.computer >= 0 { shell::GAME } else { shell::HOME };
+    sh.setup = f.setup;
+    // A setup the flags open shows the draughts, the child's color, and the level they
+    // give, with the settings file left as it is unless a tap in the setup writes it.
+    if f.setup != home::NO_SETUP {
+        if f.variant >= 0 { sh.prefs.variant = f.variant; }
+        if f.computer >= 0 { sh.prefs.color = 1 - f.computer; }
+        if f.level >= 0 { sh.prefs.level = f.level; }
+    }
+    // The puzzles the flags open are of their draughts' set, loaded at launch: the
+    // library's switch lights those draughts, and home doesn't load the player's set back
+    // on the way.
+    let to_puzzles = sh.screen == shell::PICKER || sh.screen == shell::PUZZLE || f.go == shell::PICKER
+                     || f.go == shell::PUZZLE || f.puzzle >= 0;
+    if f.variant >= 0 && to_puzzles { sh.prefs.variant = f.variant; }
+    if f.puzzle >= 0 && puzzles::find(puzzles::all, f.puzzle) >= 0 && f.go != shell::PUZZLE {
+        shell::play_puzzle(sh, puzzles::find(puzzles::all, f.puzzle));
+    }
+}
+
 // After the system's back, before the shell's frame. A switch the flags ask for waits for
 // their taps to have played out, and for the win they lead to, if any, held at --win's
 // moment (which must be past: the celebration's start is kept as a time, never before
@@ -62,7 +108,7 @@ fn before(dv: Dev&, f: flags::Flags&, sh: shell::Shell&, now: f64) {
 // settled (draw3d.goose), and the flat board's frames.
 fn after_shell(dv: Dev&, f: flags::Flags&, sh: shell::Shell&, g: gui::Gui&, d3: draw3d::Drawer&, now: f64) -> bool {
     var dirty = false;
-    let l = sh.layout;
+    let l = sh.out.layout;
     let b .= sh.game.b;
     if dv.tapped < f.taps.len && !b.moving && sh.screen == shell::GAME && b.pos.side != sh.game.computer {
         let v .= rules::VARIANTS[b.variant];
@@ -84,9 +130,9 @@ fn after_shell(dv: Dev&, f: flags::Flags&, sh: shell::Shell&, g: gui::Gui&, d3: 
         // Next was declared before this tap, which may have left a piece waiting.
         g.acted = true;
     }
-    if f.bench > 0 && sh.raised && d3.draws > 0 && now > 2.0 && d3.bench.n == 0 { d3.bench.n = f.bench; }
+    if f.bench > 0 && sh.out.raised && d3.draws > 0 && now > 2.0 && d3.bench.n == 0 { d3.bench.n = f.bench; }
     if d3.bench.n > 0 { dirty = true; }
-    dv.flat_bench = f.bench > 0 && !sh.raised && now > 2.0 && dv.bench2d.i < 2 * f.bench;
+    dv.flat_bench = f.bench > 0 && !sh.out.raised && now > 2.0 && dv.bench2d.i < 2 * f.bench;
     if dv.flat_bench { dirty = true; }
     return dirty;
 }

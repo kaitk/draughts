@@ -40,7 +40,7 @@ fn check(what: const u8[:], setup: i64) {
     var sh = fresh(setup);
     drive::idle(sh, g, 0.0);
     let r = way_out(g);
-    let b = sh.layout.board;
+    let b = sh.out.layout.board;
     // The column or sheet: the first glass.
     var col = float4 { 0.0, 0.0, 0.0, 0.0 };
     for q in g.quads { if q.look.x == gui::GLASS && col.z == 0.0 { col = q.rect; } }
@@ -52,19 +52,19 @@ fn check(what: const u8[:], setup: i64) {
     // Just outside it, left and under: nothing.
     drive::tap(sh, g, float2 { r.x - 1.0, r.y + 0.5 * r.w }, 1.0);
     drive::tap(sh, g, float2 { r.x + 0.5 * r.z, r.y + r.w + 1.0 }, 1.1);
-    print("  a tap just left of it and just under it: quit ", sh.quit, ", ", if sh.screen == shell::HOME { "home" } else { "moved" },
+    print("  a tap just left of it and just under it: quit ", sh.out.quit, ", ", if sh.screen == shell::HOME { "home" } else { "moved" },
           ", setup ", sh.setup);
 
     // Held: it goes down as a tile does.
     let at = drive::middle(r);
     drive::frame(sh, g, at, true, true, false, 2.0);
     drive::frame(sh, g, at, true, false, false, 2.0 + gui::PRESS);
-    print("  held: pressed ", g.quads[g.quads.len - 2].look.w, ", quit ", sh.quit);
+    print("  held: pressed ", g.quads[g.quads.len - 2].look.w, ", quit ", sh.out.quit);
     drive::frame(sh, g, at, false, false, true, 2.2);
-    print("  released over it: quit ", sh.quit);
+    print("  released over it: quit ", sh.out.quit);
 
     // Home itself asks for EXIT.
-    var l = sh.layout;
+    var l = sh.out.layout;
     var room = float4 { 0.0, 0.0, 0.0, 0.0 };
     var over: board::Overlay = [];
     var h = gui::Gui {};
@@ -98,11 +98,11 @@ fn main() {
     board::set(sh.game.b, p);
     drive::idle(sh, g, 0.0);
     drive::tap(sh, g, drive::middle(way_out(g)), 1.0);
-    print("a game under way, the way out: quit ", sh.quit);
+    print("a game under way, the way out: quit ", sh.out.quit);
     let image = shell::save(sh);
     var next = shell::new(rules::INTERNATIONAL);
     print("the next start restores it: ", shell::restore(next, image), ", screen ", next.screen, ", ",
-          rules::fen(next.game.b.pos), ", quit ", next.quit);
+          rules::fen(next.game.b.pos), ", quit ", next.out.quit);
 
     // Without the way out (iOS) home declares one tile fewer, and a tap where it was
     // does nothing.
@@ -114,5 +114,5 @@ fn main() {
     drive::idle(ios, g, 0.5);
     print("not closable: tiles ", drive::tiles(g), " of ", tiles);
     drive::tap(ios, g, drive::middle(spot), 1.0);
-    print("  a tap where the way out was: quit ", ios.quit, ", screen ", ios.screen, ", setup ", ios.setup);
+    print("  a tap where the way out was: quit ", ios.out.quit, ", screen ", ios.screen, ", setup ", ios.setup);
 }

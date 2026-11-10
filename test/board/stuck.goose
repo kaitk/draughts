@@ -164,8 +164,8 @@ fn main() {
     drive::idle(sh, g, 0.0);
     drive::idle(sh, g, 1.0);
     let v .= rules::VARIANTS[I];
-    let a = drive::at(sh.layout, drive::name(v, v.bit_of[26]));
-    let c = drive::at(sh.layout, drive::name(v, v.bit_of[17]));
+    let a = drive::at(sh.out.layout, drive::name(v, v.bit_of[26]));
+    let c = drive::at(sh.out.layout, drive::name(v, v.bit_of[17]));
     drive::frame(sh, g, a, true, true, false, 1.1);
     drive::frame(sh, g, a + (c - a) * 0.5, true, false, false, 1.12);
     drive::frame(sh, g, c, true, false, false, 1.14);
@@ -181,13 +181,13 @@ fn main() {
     sh.game.b.hints = sh.prefs.hints;
     shell::go_to(sh, shell::GAME, 4.0);
     for t in [4.0, 4.1, 4.3, 5.0] { drive::idle(sh, g, t); }
-    print("  the game: turned ", sh.layout.flip, ", by hand ", sh.game.b.by_hand);
+    print("  the game: turned ", sh.out.layout.flip, ", by hand ", sh.game.b.by_hand);
     var now = 6.0;
     for to in ["e1", "g3", "e5"] {
         let w = board::waiting(sh.game.b);
         let from = if w >= 0 { drive::name(v, w) } else { str("c3") };
-        let p = drive::at(sh.layout, from);
-        let q = drive::at(sh.layout, to);
+        let p = drive::at(sh.out.layout, from);
+        let q = drive::at(sh.out.layout, to);
         drive::frame(sh, g, p, true, true, false, now);
         drive::frame(sh, g, p + (q - p) * 0.5, true, false, false, now + 0.02);
         drive::frame(sh, g, q, true, false, false, now + 0.04);
@@ -195,7 +195,7 @@ fn main() {
         drive::idle(sh, g, now + 0.08);
         now += 0.1;
         let b .= shell::fill(sh, now);
-        state(b, sh.layout, str(from, " to ", to), now);
+        state(b, sh.out.layout, str(from, " to ", to), now);
         print("    targets ", drive::marked(v, b.marks.target));
     }
 }

@@ -62,7 +62,7 @@ Left out on purpose:
 
 - [x] Stage 0: `sizes` fails on any listed failure not on its allow-list
 - [x] Stage 1: the moves made, tests identical
-- [ ] Stage 2: one screen table; the game returns events; the app reads the shell's frame
+- [x] Stage 2: one screen table; the game returns events; the app reads the shell's frame
       output only
 - [ ] Stage 3: the panel's layout as regions with a mode; `gui::stack` in use; home and
       settings with pure layout functions

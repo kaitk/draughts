@@ -32,7 +32,7 @@ fn rect(r: float4) -> u8[>..] { str(round(r.x), ",", round(r.y), " ", round(r.z)
 
 // Where the UI is hidden this frame: nowhere at rest, else the board's rect.
 fn hole(sh: shell::Shell&) -> const u8[:] {
-    if sh.hole.z <= 0.0 { "none" } else if sh.hole == sh.layout.board { "the board" } else { "elsewhere" }
+    if sh.out.hole.z <= 0.0 { "none" } else if sh.out.hole == sh.out.layout.board { "the board" } else { "elsewhere" }
 }
 
 // The quads and pieces over the UI that lie on the board, which the hole leaves: a win's
@@ -41,7 +41,7 @@ fn on_board(sh: shell::Shell&, g: gui::Gui&) -> u8[>..] {
     var quads = 0;
     var pieces = 0;
     for q in g.quads { if q.extra.z >= gui::ON_BOARD { quads++; } }
-    for p in sh.over { if p.win.w > 0.5 { pieces++; } }
+    for p in sh.out.over { if p.win.w > 0.5 { pieces++; } }
     return str(quads, " quads and ", pieces, " piece");
 }
 fn pc(x: f32) -> f64 { round(100.0 * x) }
@@ -60,10 +60,10 @@ fn look(sh: shell::Shell&, g: gui::Gui&, now: f64, what: const u8[:]) {
     let b .= shell::fill(sh, now);
     var faint = 0;
     for p in b.pieces { if p.look.w < 1.0 { faint++; } }
-    print(what, " ", now, ": ", screen(sh), ", board ", rect(sh.layout.board), " ", sh.layout.n, "x", sh.layout.n,
-          ", mix ", pc(sh.mix), "%, blur ", pc(sh.blur), "%, quads ", g.quads.len, " faded ", faded, " mostly ", gone,
+    print(what, " ", now, ": ", screen(sh), ", board ", rect(sh.out.layout.board), " ", sh.out.layout.n, "x", sh.out.layout.n,
+          ", mix ", pc(sh.mix), "%, blur ", pc(sh.out.blur), "%, quads ", g.quads.len, " faded ", faded, " mostly ", gone,
           if minis > 0 { str(", small boards ", minis) } else { str("") }, ", pieces ", b.pieces.len, " faint ", faint,
-          ", over the UI ", sh.over.len, ", hole ", hole(sh), ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
+          ", over the UI ", sh.out.over.len, ", hole ", hole(sh), ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
 }
 
 // The game's clocks and the computer's ask.
@@ -83,8 +83,8 @@ fn straight(sh: shell::Shell&, now: f64) -> u8[>..] {
     sh.screen = shell::GAME;
     sh.drawn = shell::GAME;
     drive::idle(sh, h, now);
-    let s = str(rect(sh.layout.board), " ", sh.layout.flip, ", quads ", h.quads.len, ", over the UI ", sh.over.len,
-                ", blur ", pc(sh.blur));
+    let s = str(rect(sh.out.layout.board), " ", sh.out.layout.flip, ", quads ", h.quads.len, ", over the UI ", sh.out.over.len,
+                ", blur ", pc(sh.out.blur));
     sh.screen = screen;
     sh.drawn = drawn;
     return s;
@@ -109,8 +109,8 @@ fn lift(b: board::Board&) -> f32 {
 }
 
 fn arrived(sh: shell::Shell&, g: gui::Gui&) -> u8[>..] {
-    return str(rect(sh.layout.board), " ", sh.layout.flip, ", quads ", g.quads.len, ", over the UI ", sh.over.len,
-               ", blur ", pc(sh.blur));
+    return str(rect(sh.out.layout.board), " ", sh.out.layout.flip, ", quads ", g.quads.len, ", over the UI ", sh.out.over.len,
+               ", blur ", pc(sh.out.blur));
 }
 
 fn main() {
@@ -125,26 +125,26 @@ fn main() {
     drive::idle(sh, g, 0.0);
     let into = straight(sh, 0.0);
     let take_back = drive::control(g, 3);
-    drive::tap(sh, g, drive::at(sh.layout, "c3"), 0.1);
-    drive::tap(sh, g, drive::at(sh.layout, "d4"), 0.2);
+    drive::tap(sh, g, drive::at(sh.out.layout, "c3"), 0.1);
+    drive::tap(sh, g, drive::at(sh.out.layout, "d4"), 0.2);
     sh.screen = shell::HOME;
     look(sh, g, 1.0, "home");
-    let home_at = sh.layout.board;
+    let home_at = sh.out.layout.board;
     let continue_row = drive::tile(g, 0);
 
     // Continue, tapped at 2.0 and released at 2.02: the transition runs from then.
     drive::frame(sh, g, continue_row, true, true, false, 2.0);
     let first = drive::frame(sh, g, continue_row, false, false, true, 2.02);
     print("tapped continue: ", screen(sh), ", from home ", sh.from == shell::HOME, ", drawn ", first,
-          " with home's board ", sh.layout.board == home_at, " at ", pc(sh.mix), "%, blur ", pc(sh.blur), "%");
+          " with home's board ", sh.out.layout.board == home_at, " at ", pc(sh.mix), "%, blur ", pc(sh.out.blur), "%");
     var x = home_at.x;
     var size = home_at.z;
     var left = true;
     for i in 1..5 {
         look(sh, g, 2.02 + 0.0625 * i, "  ");
-        if sh.layout.board.x > x || sh.layout.board.z < size { left = false; }
-        x = sh.layout.board.x;
-        size = sh.layout.board.z;
+        if sh.out.layout.board.x > x || sh.out.layout.board.z < size { left = false; }
+        x = sh.out.layout.board.x;
+        size = sh.out.layout.board.z;
     }
     look(sh, g, 2.4, "  ");
     look(sh, g, 2.5, "idle");
@@ -156,7 +156,7 @@ fn main() {
     drive::tap(sh, g, drive::control(g, 0), 3.0);
     look(sh, g, 3.1, "home again");
     drive::idle(sh, g, 3.5);
-    print("home: ", screen(sh), ", board ", sh.layout.board == home_at, ", blur ", pc(sh.blur), "%, animating ",
+    print("home: ", screen(sh), ", board ", sh.out.layout.board == home_at, ", blur ", pc(sh.out.blur), "%, animating ",
           shell::animating(sh, g, 3.5));
     drive::frame(sh, g, continue_row, true, true, false, 4.0);
     drive::frame(sh, g, continue_row, false, false, true, 4.02);
@@ -175,28 +175,28 @@ fn main() {
     drive::frame(sh, g, continue_row, false, false, true, 5.12);
     look(sh, g, 5.26, "before home");
     drive::frame(sh, g, home_tile, true, true, false, 5.27);
-    let before = sh.layout.board;
+    let before = sh.out.layout.board;
     drive::frame(sh, g, home_tile, false, false, true, 5.28);
-    let turned = sh.layout.board;
+    let turned = sh.out.layout.board;
     drive::idle(sh, g, 5.29);
-    let after = sh.layout.board;
+    let after = sh.out.layout.board;
     print("home during it: ", screen(sh), ", from the game ", sh.from == shell::GAME, ", the board on the frames ",
           rect(before), ", ", rect(turned), ", ", rect(after));
     look(sh, g, 5.34, "  ");
     look(sh, g, 5.42, "  ");
     look(sh, g, 5.46, "ended");
     look(sh, g, 5.6, "idle");
-    print("at home's place ", sh.layout.board == home_at);
+    print("at home's place ", sh.out.layout.board == home_at);
 
     // A friend's setup, Brazilian (8 × 8, as the Russian game at home is); play.
     drive::tap(sh, g, drive::tile(g, 1), 6.0);
     drive::tap(sh, g, drive::tile(g, 2), 6.1);
     look(sh, g, 6.5, "a friend's setup");
-    let setup_at = sh.layout.board;
+    let setup_at = sh.out.layout.board;
     let play = drive::tile(g, 7);
     drive::frame(sh, g, play, true, true, false, 7.0);
     drive::frame(sh, g, play, false, false, true, 7.02);
-    print("tapped play: ", screen(sh), ", the setup's board ", sh.layout.board == setup_at, ", a new game ",
+    print("tapped play: ", screen(sh), ", the setup's board ", sh.out.layout.board == setup_at, ", a new game ",
           sh.game.b.history.len == 0, ", setup ", sh.setup);
     for i in 1..5 { look(sh, g, 7.02 + 0.0625 * i, "  "); }
     look(sh, g, 7.4, "idle");
@@ -207,8 +207,8 @@ fn main() {
     // asks the computer for a move.
     game::start(sh.game, rules::RUSSIAN, clock::BLITZ, rules::BLACK, game::MEDIUM, 40, 0);
     drive::idle(sh, g, 10.0);
-    drive::tap(sh, g, drive::at(sh.layout, "c3"), 10.1);
-    drive::tap(sh, g, drive::at(sh.layout, "d4"), 10.2);
+    drive::tap(sh, g, drive::at(sh.out.layout, "c3"), 10.1);
+    drive::tap(sh, g, drive::at(sh.out.layout, "d4"), 10.2);
     drive::idle(sh, g, 11.0);
     print("the computer's turn: ", clocks(sh));
     drive::tap(sh, g, drive::control(g, 0), 12.0);
@@ -235,8 +235,8 @@ fn main() {
     board::set(sh.game.b, p);
     sh.game.turn = sh.game.b.pos.side;
     drive::idle(sh, g, 20.0);
-    drive::tap(sh, g, drive::at(sh.layout, "e3"), 20.1);
-    drive::tap(sh, g, drive::at(sh.layout, "g5"), 20.2);
+    drive::tap(sh, g, drive::at(sh.out.layout, "e3"), 20.1);
+    drive::tap(sh, g, drive::at(sh.out.layout, "g5"), 20.2);
     drive::idle(sh, g, 21.0);
     drive::idle(sh, g, 25.0);
     print("won: ", ok, ", winner ", game::winner(sh.game), ", the card's back ", opacity(g, 4), ", on the board ",
@@ -249,7 +249,7 @@ fn main() {
         drive::idle(sh, g, t);
         let b .= shell::fill(sh, t);
         print("  ", t, ": ", screen(sh), ", the board dimmed ", pc(b.dim), "%, lifted ", round(lift(b)),
-              " px, the card's back ", if sh.from >= 0 { opacity(g, 4) } else { -1.0 }, ", over the UI ", sh.over.len,
+              " px, the card's back ", if sh.from >= 0 { opacity(g, 4) } else { -1.0 }, ", over the UI ", sh.out.over.len,
               ", on the board ", on_board(sh, g), ", hole ", hole(sh));
     }
 
@@ -259,18 +259,18 @@ fn main() {
     gui::test_faces(g);
     var q = shell::new(rules::INTERNATIONAL);
     look(q, g, 0.0, "portrait home");
-    let top = q.layout.board;
+    let top = q.out.layout.board;
     drive::tap(q, g, drive::tile(g, 1), 1.0);
     var down = true;
     var y = top.y;
     var z = top.z;
     for i in 1..5 {
         look(q, g, 1.02 + 0.0625 * i, "  ");
-        if q.layout.board.y < y || q.layout.board.z < z { down = false; }
-        y = q.layout.board.y;
-        z = q.layout.board.z;
+        if q.out.layout.board.y < y || q.out.layout.board.z < z { down = false; }
+        y = q.out.layout.board.y;
+        z = q.out.layout.board.z;
     }
     look(q, g, 1.4, "idle");
-    print("the board went down and grew all the way ", down, ", from ", rect(top), " to ", rect(q.layout.board));
+    print("the board went down and grew all the way ", down, ", from ", rect(top), " to ", rect(q.out.layout.board));
     print("the game as opened straight ", arrived(q, g) == straight(q, 1.4));
 }

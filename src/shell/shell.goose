@@ -82,6 +82,53 @@ let KINDS: Kind[SCREENS] = [
 let DURATION = 0.25;        // seconds a transition takes
 let DRIFT = 40.0;           // dp the screens' UI drifts along with the board in one
 
+// What a frame of the shell leaves for the app, each field set every frame (frame) but
+// `quit`. The app reads it and writes none of it; it lives in the shell (Shell.out) and is passed by
+// reference, so its pieces aren't copied.
+struct Frame {
+    changed: bool = false,          // anything on screen changed
+    screen:  i64  = HOME,           // the screen showing
+    // The screen whose board shows: in a transition between home and settings, home's.
+    shows:   i64           = HOME,
+    layout:  board::Layout,          // where the board is
+    over:    board::Overlay = [],    // the screen's pieces over the UI
+    // How blurred the photograph is: 0 as it is (home, settings, the puzzles to pick
+    // from), 1 blurred and dimmed (the game, a puzzle), between in a transition.
+    blur:    f32 = 0.0,
+    // Where the UI is hidden for the board passing in a transition (x, y, size, corner
+    // radius; size 0 at rest), `tall` pixels tall (0 as tall as wide; the 3D board's
+    // bounds are wider).
+    hole:    float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
+    tall:    f32    = 0.0,
+    // The 3D board this frame (settings::raised, on a screen showing a board), and the
+    // view the app draws it through, `layout` then the flat square it plays on
+    // (view3d::square); where on screen the view's bounds (view.rect) go and how opaque:
+    // the bounds and 1 at rest, moving between the ends' in a transition, which `hold`s
+    // the image as drawn once.
+    raised:  bool         = false,
+    view:    view3d::View = view3d::View {},
+    place:   float4       = float4 { 0.0, 0.0, 0.0, 0.0 },
+    fade:    f32          = 1.0,
+    hold:    bool         = false,
+    // A player's name typed (who's playing): the keyboard up, and brought up again each
+    // time `keyboard` counts a tap on the name.
+    typing:   bool = false,
+    keyboard: i64  = 0,
+    // The settings changed, and no transition runs: the app writes them and applies what
+    // is its own (the language, the season's photograph). Once a transition is over for
+    // a change made by the tap that started it: the write flushes to disk, 13 to 17 ms on
+    // the tablet, too long for the frame that starts it moving.
+    save:    bool = false,
+    quit:    bool = false,          // home's way out was tapped: the app stops (stays set)
+}
+
+// What the app does with the 3D board before a frame (board3d): it is chosen, so the app
+// gets it ready; it isn't, but settings show (it may be chosen again there) or a
+// transition runs, so the app keeps it; or the app gives it back.
+let WANTED = 0;
+let KEPT = 1;
+let DROPPED = 2;
+
 struct Shell {
     screen:  i64 = HOME,
     game:    game::Game,
@@ -90,34 +137,21 @@ struct Shell {
     prefs:   settings::Settings = settings::Settings {},  // the playing player's, and the device's language
     players: players::Players   = players::Players {},
     who:     who::Who           = who::Who {},        // who's playing, over home's menu
-    changed: bool               = false,      // prefs changed since the app last wrote them
-    quit:    bool               = false,      // home's way out was tapped: the app stops
+    changed: bool               = false,      // prefs changed since the app last wrote them (Frame.save)
     drawn:   i64                = -1,         // the screen the last frame declared
     back:    i64                = HOME,       // where settings goes back to
     setup:   i64                = home::NO_SETUP, // home's column: the menu, or a setup
     staged:  bool               = false,      // home shows `next`, having declared a setup this frame
-    layout:  board::Layout,                   // where the board is this frame
-    // The 3D board this frame (settings::raised, on a screen showing a board), and the
-    // view the app draws it through, sh.layout then the flat square it plays on
-    // (view3d::square); where on screen the view's bounds (view.rect) go and how opaque:
-    // the bounds and 1 at rest, moving between the ends' in a transition, which `hold`s
-    // the image as drawn once. Each end's view this frame, rect.z 0 for none.
-    raised: bool = false,
-    // Set by the app each frame: whether the 3D board, when chosen, is ready to draw
-    // (else it gets ready a step a frame, taps on it left alone), and whether an image of
-    // it shows meanwhile (else a still mark in its place: gui::waiting's words).
+    out:     Frame,                           // this frame's, for the app
+    // Handed in by the app each frame (frame): whether the 3D board, when chosen, is
+    // ready to draw (else it gets ready a step a frame, taps on it left alone), and
+    // whether an image of it shows meanwhile (else a still mark in its place:
+    // gui::waiting's words).
     ready3d:   bool         = true,
     shown3d:   bool         = true,
-    view:      view3d::View = view3d::View {},
-    place:     float4       = float4 { 0.0, 0.0, 0.0, 0.0 },
-    fade:      f32          = 1.0,
-    hold:      bool         = false,
+    // Each end's 3D view this frame, rect.z 0 for none (raise).
     went_view: view3d::View = view3d::View {},
     came_view: view3d::View = view3d::View {},
-    // How blurred the photograph is this frame: 0 as it is (home, settings, the puzzles to
-    // pick from), 1 blurred and dimmed (the game, a puzzle), between in a transition.
-    blur:   f32            = 0.0,
-    over:   board::Overlay = [],               // the screen's pieces over the UI this frame
     puzzle: puzzle::Play,                     // the puzzle playing, or last played
     theme:  i64 = -1,                         // the theme the picker shows, -1 its library
     // A transition: the screen it leaves, or -1, and when it began; and this frame, how
@@ -130,12 +164,6 @@ struct Shell {
     went:  board::Layout,
     came:  board::Layout,
     left:  i64 = home::NO_SETUP,
-    // This frame: the screen whose board shows, and where the UI is hidden for the board
-    // passing in a transition (x, y, size, corner radius; size 0 at rest), `tall` pixels
-    // tall (0 as tall as wide; the 3D board's bounds are wider).
-    shows: i64    = HOME,
-    hole:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
-    tall:  f32    = 0.0,
     // Home's 3D board as a drag on it left it: the showcase's swing and tilt (rig::drive),
     // kept while home stays open, eased back to rest as home is left.
     cam: rig::Rig = rig::Rig {},
@@ -204,8 +232,8 @@ fn animating(sh: Shell&, g: gui::Gui&, now: f64) -> bool {
 fn new(variant: u8) -> Shell {
     let g = game::new(variant);
     let l = panel::layout(1.0, 1.0, rules::VARIANTS[variant].size).board;
-    var sh = Shell { game: g, preview: board::new(variant), next: board::new(variant), layout: l, puzzle: puzzle::new(),
-                     went: l, came: l, .. };
+    var sh = Shell { game: g, preview: board::new(variant), next: board::new(variant), out: Frame { layout: l, .. },
+                     puzzle: puzzle::new(), went: l, came: l, .. };
     // One player, the fox, until the app reads the players (players::load).
     sh.players.list.push(players::Player { id: 1, .. });
     apply_prefs(sh);
@@ -319,14 +347,70 @@ fn play(sh: Shell&, now: f64) {
 }
 
 // One frame, after gui::begin, on a screen width × height pixels, each screen laid out in
-// its safe area (gui::safe, the insets in g). Returns whether anything on screen changed.
-fn frame(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64) -> bool {
+// its safe area (gui::safe, the insets in g). The app hands in what only it knows: whether
+// the 3D board, when chosen, is ready to draw, and whether an image of it shows
+// (Shell.ready3d). Returns what the frame leaves for the app (Frame).
+fn frame(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, ready3d: bool = true,
+         shown3d: bool = true) -> Frame& {
+    sh.ready3d = ready3d;
+    sh.shown3d = shown3d;
     // A switch happens in a frame that declared the old screen, so the first frame of the
     // new one is a change, however long ago the tap was.
     let fresh = sh.drawn != sh.screen;
     sh.drawn = sh.screen;
     let changed = declare(sh, g, gui::safe(g, width, height), now, fresh);
-    return changed || fresh;
+    let out .= sh.out;
+    out.changed = changed || fresh;
+    out.screen = sh.screen;
+    out.typing = sh.who.typing && sh.screen == HOME;
+    out.keyboard = sh.who.keyboard;
+    out.save = sh.changed && sh.from < 0;
+    return sh.out;
+}
+
+// The app has written the settings Frame.save asked it to.
+fn wrote(sh: Shell&) { sh.changed = false; }
+
+// What the app does with the 3D board before this frame: WANTED, KEPT, or DROPPED.
+fn board3d(sh: Shell&) -> i64 {
+    return if settings::raised(sh.prefs) { WANTED } else if sh.screen == SETTINGS || sh.from >= 0 { KEPT } else { DROPPED };
+}
+
+// How many squares a side the board the last frame laid out has (before the first, the
+// player's draughts'): the 3D board the app gets ready.
+fn board_n(sh: Shell&) -> i64 { if sh.out.layout.n > 0 { sh.out.layout.n } else { rules::VARIANTS[sh.prefs.variant].size } }
+
+// The game's clocks count nothing until the frame after the next (game::pause): the app
+// lost focus or was paused.
+fn pause(sh: Shell&) { game::pause(sh.game); }
+
+// Seconds from `now` until the app should wake to draw though nothing else wakes it, or
+// -1 for none: on the game screen, a running clock's next change of what it shows, the
+// computer's move once due, or a look soon for the hint's answer, which no frame of its
+// own waits for (`poll` seconds).
+fn wake_in(sh: Shell&, now: f64, poll: f64) -> f64 {
+    guard sh.screen == GAME else { return -1.0; }
+    var next = clock::until_next(sh.game.clock);
+    let due = game::due(sh.game, now);
+    if due >= 0.0 && (next < 0.0 || due < next) { next = due; }
+    if game::awaiting(sh.game) && (next < 0.0 || next > poll) { next = poll; }
+    return next;
+}
+
+// The players and the playing player's settings as the app read them at launch, before
+// the development flags change any.
+fn launch(sh: Shell&, prefs: settings::Settings, ps: players::Players&) {
+    sh.prefs = prefs;
+    sh.players = ps;
+}
+
+// After the flags: the settings put where they act, the playing player's game brought
+// back with the screen it was on, and on a fresh install's first run (`first`) the sheet
+// of its one player, to pick a badge.
+fn open(sh: Shell&, first: bool) {
+    apply_prefs(sh);
+    read_game(sh);
+    if first && sh.players.fresh { who::first_run(sh.who, sh.players); }
 }
 
 // The puzzles are the set of the player's draughts (puzzles::set_of). The draughts
@@ -378,19 +462,19 @@ fn declare(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> boo
     // touch the board only when the UI didn't take it); the panels work as ever.
     if waiting3d(sh) && g.input.pressed { g.took = true; }
     let asked = screen_frame(sh, g, area, now, fresh, crossing);
-    sh.came = sh.layout;
+    sh.came = sh.out.layout;
     sh.mix = 1.0;
     // Between home and settings the board is home's all the way: settings show their
     // preview once the board is there, and home's board as soon as they are left, so one
     // set of pieces is ever on screen.
-    sh.shows = if crossing && was == SETTINGS { from } else { was };
-    if crossing { blend(sh, g, first, middle, gone, e, if sh.shows == was { sh.came } else { sh.went }); }
-    sh.hole = if crossing { sh.layout.board } else { float4 { 0.0, 0.0, 0.0, 0.0 } };
-    sh.tall = 0.0;
+    sh.out.shows = if crossing && was == SETTINGS { from } else { was };
+    if crossing { blend(sh, g, first, middle, gone, e, if sh.out.shows == was { sh.came } else { sh.went }); }
+    sh.out.hole = if crossing { sh.out.layout.board } else { float4 { 0.0, 0.0, 0.0, 0.0 } };
+    sh.out.tall = 0.0;
     raise(sh, g, crossing, e);
     // With no image of it yet, a still mark where the 3D board goes until it shows.
-    if sh.raised && waiting3d(sh) && !sh.shown3d { gui::waiting(g, sh.place, strings::get(strings::BOARD_PREPARING)); }
-    sh.blur = if crossing { blurred(from) + (blurred(was) - blurred(from)) * e } else { blurred(was) };
+    if sh.out.raised && waiting3d(sh) && !sh.shown3d { gui::waiting(g, sh.out.place, strings::get(strings::BOARD_PREPARING)); }
+    sh.out.blur = if crossing { blurred(from) + (blurred(was) - blurred(from)) * e } else { blurred(was) };
     // A switch this frame shows what was declared, and what the app fills and draws
     // agrees with it: the start of a transition, the screen left as it stands; one turned
     // round, the same moment of it the other way.
@@ -407,37 +491,37 @@ fn king_look(sh: Shell&) -> i64 {
 // screen's view; in a transition the image drawn once through the larger end's view and
 // moved from the bounds at one end to the other's, `e` of the way. An end with no 3D
 // board (a puzzle's tile) gives the bounds fitted into its flat square, the image fading
-// in or out there. sh.layout follows the drawn view, so the scene stays the same while
+// in or out there. sh.out.layout follows the drawn view, so the scene stays the same while
 // the image moves.
 fn raise(sh: Shell&, g: gui::Gui&, crossing: bool, e: f32) {
-    sh.raised = false;
-    sh.hold = crossing;
-    sh.fade = 1.0;
+    sh.out.raised = false;
+    sh.out.hold = crossing;
+    sh.out.fade = 1.0;
     let a = if crossing { sh.went_view } else { view3d::View {} };
     let b = sh.came_view;
     let has_a = a.rect.z > 0.0;
     let has_b = b.rect.z > 0.0;
     guard has_a || has_b else { return; }
-    sh.raised = true;
-    sh.view = if has_a && has_b { if a.k > b.k { a } else { b } } else if has_a { a } else { b };
+    sh.out.raised = true;
+    sh.out.view = if has_a && has_b { if a.k > b.k { a } else { b } } else if has_a { a } else { b };
     // At rest the screen's flat layout stays, which its camera's view may have moved away
     // from (panel::aim); in a transition the drawn view's square.
     guard crossing else {
-        sh.place = sh.view.rect;
+        sh.out.place = sh.out.view.rect;
         return;
     }
-    let flip = sh.layout.flip;
-    sh.layout = view3d::square(sh.view, g.scale);
-    sh.layout.flip = flip;
-    let ra = if has_a { a.rect } else { tile_rect(sh.view.rect, sh.went.board) };
-    let rb = if has_b { b.rect } else { tile_rect(sh.view.rect, sh.came.board) };
-    sh.place = float4 { ra.x + (rb.x - ra.x) * e, ra.y + (rb.y - ra.y) * e, ra.z + (rb.z - ra.z) * e,
+    let flip = sh.out.layout.flip;
+    sh.out.layout = view3d::square(sh.out.view, g.scale);
+    sh.out.layout.flip = flip;
+    let ra = if has_a { a.rect } else { tile_rect(sh.out.view.rect, sh.went.board) };
+    let rb = if has_b { b.rect } else { tile_rect(sh.out.view.rect, sh.came.board) };
+    sh.out.place = float4 { ra.x + (rb.x - ra.x) * e, ra.y + (rb.y - ra.y) * e, ra.z + (rb.z - ra.z) * e,
                         ra.w + (rb.w - ra.w) * e };
     let fa: f32 = if has_a { 1.0 } else { 0.0 };
     let fb: f32 = if has_b { 1.0 } else { 0.0 };
-    sh.fade = fa + (fb - fa) * e;
-    sh.hole = float4 { sh.place.x, sh.place.y, sh.place.z, 0.0 };
-    sh.tall = sh.place.w;
+    sh.out.fade = fa + (fb - fa) * e;
+    sh.out.hole = float4 { sh.out.place.x, sh.out.place.y, sh.out.place.z, 0.0 };
+    sh.out.tall = sh.out.place.w;
 }
 
 // Bounds of r's shape fitted into the flat square sq (x, y, size), centered.
@@ -475,9 +559,9 @@ fn game_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
 // on screen changed.
 fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -> bool {
     var l = game_layout(sh, area, g.scale, now);
-    sh.layout = l.board;
+    sh.out.layout = l.board;
     let p .= sh.prefs;
-    let ev, changed = game::frame(sh.game, g, l, now, sh.over, frozen);
+    let ev, changed = game::frame(sh.game, g, l, now, sh.out.over, frozen);
     // Its eye turned on or off: kept in the player's file.
     if ev.looked {
         p.lookout = sh.game.look;
@@ -539,8 +623,8 @@ fn puzzle_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
 fn puzzle_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     let pl .= sh.puzzle;
     var l = puzzle_layout(sh, area, g.scale, now);
-    sh.layout = l.board;
-    let ev, changed = puzzle::frame(pl, g, l, now, sh.over);
+    sh.out.layout = l.board;
+    let ev, changed = puzzle::frame(pl, g, l, now, sh.out.over);
     panel::aim(l, pl.cam, now);
     if l.three { sh.came_view = l.view; }
     // Solved: the stars kept are the most it has won.
@@ -579,7 +663,7 @@ fn in_tile(sh: Shell&, spot: float4, scale: f32) -> board::Layout {
 
 // The puzzles to pick from for this frame. Returns whether anything on screen changed.
 fn picker_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
-    sh.over.clear();
+    sh.out.over.clear();
     var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
     var variant = sh.prefs.variant;
     let pick = picker::frame(g, area, sh.prefs.stars[puzzles::loaded], sh.puzzle.index, sh.theme, spot, variant);
@@ -597,8 +681,8 @@ fn picker_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     }
     // No board at rest: it lies off the screen. Coming from a puzzle, or going to one,
     // it is the puzzle's, in its tile.
-    if sh.from == PUZZLE || pick >= 0 { sh.layout = in_tile(sh, spot, g.scale); }
-    else { sh.layout = board::layout_at(-2.0 * area.z, 0.0, 0.5 * area.z, g.scale, sh.layout.n); }
+    if sh.from == PUZZLE || pick >= 0 { sh.out.layout = in_tile(sh, spot, g.scale); }
+    else { sh.out.layout = board::layout_at(-2.0 * area.z, 0.0, 0.5 * area.z, g.scale, sh.out.layout.n); }
     return pick != picker::NOTHING;
 }
 
@@ -618,14 +702,14 @@ fn blend(sh: Shell&, g: gui::Gui&, first: i64, middle: i64, gone: board::Overlay
     let into = drift * (e - 1.0);
     gui::fade(g, first, middle, 1.0 - e, out);
     gui::fade(g, middle, g.quads.len, e, into);
-    sh.layout = board::layout_at(a.board.x + (b.board.x - a.board.x) * e, a.board.y + (b.board.y - a.board.y) * e,
+    sh.out.layout = board::layout_at(a.board.x + (b.board.x - a.board.x) * e, a.board.y + (b.board.y - a.board.y) * e,
                                  a.board.z + (b.board.z - a.board.z) * e, g.scale, own.n);
-    sh.layout.flip = own.flip;
+    sh.out.layout.flip = own.flip;
     // The pieces over the UI likewise, the screen left's first.
     var both: board::Overlay = [];
     for p in gone { put(both, p, 1.0 - e, out); }
-    for p in sh.over { put(both, p, e, into); }
-    sh.over = both;
+    for p in sh.out.over { put(both, p, e, into); }
+    sh.out.over = both;
 }
 
 // A piece over the UI at opacity a, moved by d.
@@ -645,8 +729,8 @@ fn settings_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool
     if fresh { settings::stage(sh.preview, sh.prefs, now + (1.0 - progress(sh, now)) * DURATION); }
     let changed = board::update(sh.preview, now);
     var room = float4 { 0.0, 0.0, 0.0, 0.0 };
-    let ask = settings::frame(sh.prefs, sh.over, g, sh.layout, area, strings::current, room);
-    sh.came_view = raise_in(sh, room, sh.layout.n, g.scale, sh.layout);
+    let ask = settings::frame(sh.prefs, sh.out.over, g, sh.out.layout, area, strings::current, room);
+    sh.came_view = raise_in(sh, room, sh.out.layout.n, g.scale, sh.out.layout);
     if ask == settings::CHANGED {
         apply_prefs(sh);
         settings::stage(sh.preview, sh.prefs, now);
@@ -675,16 +759,16 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     let card = sh.who.state != who::CLOSED && sh.setup == home::NO_SETUP;
     if card { gui::listen(g, false); }
     var room = float4 { 0.0, 0.0, 0.0, 0.0 };
-    let pick = home::frame(sh.over, g, sh.layout, rules::VARIANTS[b.variant].size, area, sh.setup, sh.prefs, room);
-    sh.layout.flip = flip;
-    let v = raise_in(sh, room, sh.layout.n, g.scale, sh.layout);
+    let pick = home::frame(sh.out.over, g, sh.out.layout, rules::VARIANTS[b.variant].size, area, sh.setup, sh.prefs, room);
+    sh.out.layout.flip = flip;
+    let v = raise_in(sh, room, sh.out.layout.n, g.scale, sh.out.layout);
     if !card && turn_home(sh, g, v, room, now) { changed = true; }
     sh.came_view = home_view(sh, v, room, now);
     if card {
         // Home's pieces over its UI (the wordmark's crown, the player's picture) draw
         // after all the UI, so they would sit on the card: under it, home shows without
         // them.
-        sh.over.clear();
+        sh.out.over.clear();
         gui::listen(g, true);
         if who_card(sh, g, area) { changed = true; }
     }
@@ -703,7 +787,7 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
             sh.changed = true;
             apply_prefs(sh);
         },
-        home::EXIT => { sh.quit = true; },
+        home::EXIT => { sh.out.quit = true; },
         home::PLAYERS => { who::open(sh.who); },
         home::PLAY => { play(sh, now); },
         _ => {},
@@ -773,14 +857,14 @@ fn which(screen: i64) -> i64 { KINDS[screen].board }
 // The board on screen at rest.
 fn shown(sh: Shell&) -> board::Board& { board_of(sh, sh.screen) }
 
-// Fills the board this frame shows (sh.shows) for the frame at `now`, where sh.layout
+// Fills the board this frame shows (sh.out.shows) for the frame at `now`, where sh.out.layout
 // puts it, and returns it for the app to draw; the game's with its win (game::cheer),
 // which fades with the game screen in a transition.
 fn fill(sh: Shell&, now: f64) -> board::Board& {
-    let b .= board_of(sh, sh.shows);
-    board::fill(b, sh.layout, now);
+    let b .= board_of(sh, sh.out.shows);
+    board::fill(b, sh.out.layout, now);
     let share = if sh.screen == GAME { sh.mix } else if sh.from == GAME { 1.0 - sh.mix } else { 0.0 };
-    if share > 0.0 && which(sh.shows) == GAME { game::cheer(sh.game, sh.layout, now, share); }
+    if share > 0.0 && which(sh.out.shows) == GAME { game::cheer(sh.game, sh.out.layout, now, share); }
     return b;
 }
 

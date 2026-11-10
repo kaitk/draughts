@@ -70,8 +70,8 @@ fn angle(v: view3d::View) -> u8[>..] {
 // Where a named square's middle lands on screen through the shell's view.
 fn spot(sh: shell::Shell&, name: const u8[:]) -> float2 {
     let vr .= rules::VARIANTS[sh.game.b.variant];
-    let c = view3d::to_world(sh.layout, board::center(sh.layout, vr, drive::square(vr, name)));
-    let q = view3d::project(sh.view, float3 { c.x, 0.0, c.y });
+    let c = view3d::to_world(sh.out.layout, board::center(sh.out.layout, vr, drive::square(vr, name)));
+    let q = view3d::project(sh.out.view, float3 { c.x, 0.0, c.y });
     return float2 { q.x, q.y };
 }
 
@@ -87,12 +87,12 @@ fn play(sh: shell::Shell&, g: gui::Gui&, a: const u8[:], b: const u8[:], now: f6
 // after the last.
 fn run(sh: shell::Shell&, g: gui::Gui&, from: f64, to: f64) -> i64, bool {
     var redraws = 0;
-    var last = sh.view;
+    var last = sh.out.view;
     var t = from;
     while t <= to {
         drive::idle(sh, g, t);
-        if !view3d::same_view(last, sh.view) { redraws++; }
-        last = sh.view;
+        if !view3d::same_view(last, sh.out.view) { redraws++; }
+        last = sh.out.view;
         t += 1.0 / 60.0;
     }
     return redraws, shell::animating(sh, g, to);
@@ -111,34 +111,34 @@ fn main() {
     game::start(sh.game, rules::RUSSIAN, clock::NONE, -1, game::MEDIUM, 40, 0);
     sh.screen = shell::GAME;
     drive::idle(sh, g, 0.0);
-    print("at rest: ", angle(sh.view), "; ", buttons(g), " buttons:");
+    print("at rest: ", angle(sh.out.view), "; ", buttons(g), " buttons:");
     for k in buttons(g) { print("  ", dp(button(g, k))); }
 
     // The view: the top view and back, each 0.6 s, drawn while it moves and then not.
     drive::tap(sh, g, middle(button(g, 0)), 1.0);
     var t = 1.04;
     let n1, moving1 = run(sh, g, t, t + 0.3);
-    print("the view tapped, 0.3 s on: ", angle(sh.view), "; ", n1, " redraws");
+    print("the view tapped, 0.3 s on: ", angle(sh.out.view), "; ", n1, " redraws");
     let n2, moving2 = run(sh, g, t + 0.3 + 1.0 / 60.0, t + 1.0);
-    print("  1 s on: ", angle(sh.view), "; ", n2, " redraws more, still animating ", moving2);
+    print("  1 s on: ", angle(sh.out.view), "; ", n2, " redraws more, still animating ", moving2);
     let n3, moving3 = run(sh, g, t + 1.0 + 1.0 / 60.0, t + 2.0);
     print("  a second later: ", n3, " redraws, animating ", moving3);
     drive::tap(sh, g, middle(button(g, 0)), 4.0);
     run(sh, g, 4.04, 5.0);
-    print("tapped again: ", angle(sh.view));
+    print("tapped again: ", angle(sh.out.view));
 
     // The zoom: the field framed in the room, at rest and in the top view.
-    let l0 = sh.view;
+    let l0 = sh.out.view;
     drive::tap(sh, g, middle(button(g, 1)), 6.0);
     let nz, mz = run(sh, g, 6.04, 7.0);
-    print("zoomed: ", angle(sh.view), ", ", r1(sh.view.k / l0.k), " times the size; ", nz, " redraws, animating ", mz);
+    print("zoomed: ", angle(sh.out.view), ", ", r1(sh.out.view.k / l0.k), " times the size; ", nz, " redraws, animating ", mz);
     drive::tap(sh, g, middle(button(g, 0)), 8.0);
     run(sh, g, 8.04, 9.0);
-    print("zoomed, the top view: ", angle(sh.view));
+    print("zoomed, the top view: ", angle(sh.out.view));
     drive::tap(sh, g, middle(button(g, 0)), 10.0);
     drive::tap(sh, g, middle(button(g, 1)), 10.1);
     run(sh, g, 10.14, 11.0);
-    print("back: ", angle(sh.view), ", the same view as at first ", view3d::same_view(l0, sh.view));
+    print("back: ", angle(sh.out.view), ", the same view as at first ", view3d::same_view(l0, sh.out.view));
 
     // The showcase: a drag on the board turns and tips the camera, moving no piece.
     let fen = rules::fen(sh.game.b.pos);
@@ -150,13 +150,13 @@ fn main() {
     drive::frame(sh, g, from + float2 { -60.0, 30.0 }, true, false, false, 12.54);
     drive::frame(sh, g, from + float2 { -60.0, 30.0 }, false, false, true, 12.56);
     drive::idle(sh, g, 12.6);
-    print("dragged 60 left and 30 down: ", angle(sh.view), "; eye ", r1(sh.view.eye.x), " ", r1(sh.view.eye.y), " ",
-          r1(sh.view.eye.z), "; selected ", sh.game.b.selected, ", pressed ", sh.game.b.pressed, ", the position the same ",
+    print("dragged 60 left and 30 down: ", angle(sh.out.view), "; eye ", r1(sh.out.view.eye.x), " ", r1(sh.out.view.eye.y), " ",
+          r1(sh.out.view.eye.z), "; selected ", sh.game.b.selected, ", pressed ", sh.game.b.pressed, ", the position the same ",
           rules::fen(sh.game.b.pos) == fen, ", dot ", dot(g, 0));
     drive::tap(sh, g, middle(button(g, 2)), 13.0);
-    let kept = sh.view;
+    let kept = sh.out.view;
     drive::idle(sh, g, 14.0);
-    print("showcase off: lit ", lit(g, 2), ", the angle kept ", view3d::same_view(kept, sh.view), ", dot ", dot(g, 0));
+    print("showcase off: lit ", lit(g, 2), ", the angle kept ", view3d::same_view(kept, sh.out.view), ", dot ", dot(g, 0));
     // White plays c3-d4 through that angle; the board then turns for black and the angle
     // eases back with the turn.
     let vr .= rules::VARIANTS[rules::RUSSIAN];
@@ -165,9 +165,9 @@ fn main() {
     drive::tap(sh, g, spot(sh, "d4"), 15.1);
     print("d4 tapped: moving ", sh.game.b.moving);
     let nt, mt = run(sh, g, 15.2, 15.7);
-    print("the move shown, the board turning: ", angle(sh.view), ", dot ", dot(g, 0));
+    print("the move shown, the board turning: ", angle(sh.out.view), ", dot ", dot(g, 0));
     let nt2, mt2 = run(sh, g, 15.7 + 1.0 / 60.0, 17.0);
-    print("turned: ", angle(sh.view), "; ", nt + nt2, " redraws over the move and the turn, animating ", mt2, ", dot ",
+    print("turned: ", angle(sh.out.view), "; ", nt + nt2, " redraws over the move and the turn, animating ", mt2, ", dot ",
           dot(g, 0), ", ", rules::fen(sh.game.b.pos));
     // Black, its pieces now at the bottom, plays f6-e5 through the turned board.
     let f6 = spot(sh, "f6");
@@ -175,22 +175,22 @@ fn main() {
     print("f6 at ", whole(f6.x), " ", whole(f6.y), ", e5 at ", whole(e5.x), " ", whole(e5.y), " (low on the screen)");
     play(sh, g, "f6", "e5", 18.0);
     run(sh, g, 19.0, 20.0);
-    print("black's move: ", rules::fen(sh.game.b.pos), "; ", angle(sh.view));
+    print("black's move: ", rules::fen(sh.game.b.pos), "; ", angle(sh.out.view));
     // White takes on f6, the board turns to black again, and a new game turns it back.
     play(sh, g, "d4", "f6", 21.0);
     run(sh, g, 22.0, 23.0);
-    print("white's capture: ", rules::fen(sh.game.b.pos), "; ", angle(sh.view));
+    print("white's capture: ", rules::fen(sh.game.b.pos), "; ", angle(sh.out.view));
     drive::tap(sh, g, drive::control(g, 2), 24.0);
     run(sh, g, 24.04, 24.4);
-    print("started over, turning back: ", angle(sh.view));
+    print("started over, turning back: ", angle(sh.out.view));
     run(sh, g, 24.4 + 1.0 / 60.0, 25.0);
-    print("  turned: ", angle(sh.view), ", ", rules::fen(sh.game.b.pos));
+    print("  turned: ", angle(sh.out.view), ", ", rules::fen(sh.game.b.pos));
 
     // Against the computer the board stays turned to the child (here black, the flat
     // layout turned): no turn as the sides move.
     game::start(sh.game, rules::RUSSIAN, clock::NONE, rules::WHITE, game::MEDIUM, 40, 0);
     drive::idle(sh, g, 30.0);
-    print("against the computer (white): ", angle(sh.view), ", the flat layout turned ", sh.layout.flip);
+    print("against the computer (white): ", angle(sh.out.view), ", the flat layout turned ", sh.out.layout.flip);
     var e = ai::Engine { .. };
     ai::init(e);
     e.node_limit = 2000;
@@ -204,10 +204,10 @@ fn main() {
         drive::idle(sh, g, now);
     }
     run(sh, g, now, now + 2.0);
-    print("after its move: ", angle(sh.view), ", black to move ", sh.game.b.pos.side == rules::BLACK);
+    print("after its move: ", angle(sh.out.view), ", black to move ", sh.game.b.pos.side == rules::BLACK);
 
     // A puzzle shares the layout and the buttons.
     shell::play_puzzle(sh, 0, 50.0);
     drive::idle(sh, g, 51.0);
-    print("a puzzle: ", buttons(g), " buttons, ", angle(sh.view));
+    print("a puzzle: ", buttons(g), " buttons, ", angle(sh.out.view));
 }

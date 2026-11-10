@@ -83,14 +83,12 @@ fn main() {
     if f.display_scale >= 0.0 { gui::display_scale = f.display_scale; }
     // --dp says how many dp the shorter side has, so the floor stays off unless asked.
     if f.dp > 0 && f.density_floor < 0.0 { gui::density_floor = 0.0; }
-    let fen .= f.fen;
-    let taps .= f.taps;
     var kind = f.theme;
     var lang = f.lang;
     // The game as it was when the app was last paused (shell::restore; nothing changes
     // for a missing or damaged file). A run with flags that set up a game or take a
     // screenshot neither reads nor writes it.
-    let keep = f.screen < 0 && f.puzzle < 0 && f.go < 0 && f.win < 0.0 && fen.len == 0 && taps.len == 0 && f.frames < 0 && f.variant < 0 && f.clock < 0 && f.computer < 0;
+    let keep = f.screen < 0 && f.puzzle < 0 && f.go < 0 && f.win < 0.0 && f.fen.len == 0 && f.taps.len == 0 && f.frames < 0 && f.variant < 0 && f.clock < 0 && f.computer < 0;
     // The players, their settings, and their games, kept in the app's storage folder
     // (shell/players.goose): the playing player's settings with the device's language.
     var folder: u8[512] = [0; 512];
@@ -117,52 +115,13 @@ fn main() {
     guard gfx::open(strings::get(strings::APP_NAME), f.width, f.height, window_flags) else { abort(str("gfx: ", gfx::error())); }
     defer gfx::close();
 
-    // A new game of the draughts the setup last chose, until a saved game is restored.
+    // A new game of the draughts the setup last chose, until a saved game is restored;
+    // the flags' setup (dev.goose), then the playing player's game, with the screen it
+    // was on, and a fresh install's first run on the sheet of its one player.
     var sh = shell::new((if f.variant >= 0 { f.variant } else { prefs.variant }) as u8);
-    if f.clock >= 0 || f.computer >= 0 {
-        let lv = if f.level >= 0 { f.level } else { prefs.level };
-        game::start(sh.game, sh.game.b.variant, max(f.clock, 0), f.computer, lv, prefs.skill[lv], prefs.games);
-    }
-    sh.prefs = prefs;
-    if f.reset_skill {
-        sh.prefs.level = game::EASY;
-        sh.prefs.skill = ai::LEVEL_SKILL;
-        sh.prefs.played = [0; 3];
-        sh.changed = true;
-    }
-    if f.board >= 0 { sh.prefs.board = f.board; }
-    if f.lookout >= 0 { sh.prefs.lookout = f.lookout == 1; }
-    if f.hints >= 0 { sh.prefs.hints = f.hints; }
-    sh.players = players_read;
-    let b .= sh.game.b;
-    if fen.len > 0 {
-        let p, ok = rules::parse_fen(fen, b.variant);
-        guard ok else { abort(str("not a position: ", fen)); }
-        board::set(b, p);
-    }
-    sh.screen = if f.screen >= 0 { f.screen } else if fen.len > 0 || taps.len > 0 || f.clock >= 0 || f.computer >= 0 { shell::GAME } else { shell::HOME };
-    sh.setup = f.setup;
-    // A setup the flags open shows the draughts, the child's color, and the level they
-    // give, with the settings file left as it is unless a tap in the setup writes it.
-    if f.setup != home::NO_SETUP {
-        if f.variant >= 0 { sh.prefs.variant = f.variant; }
-        if f.computer >= 0 { sh.prefs.color = 1 - f.computer; }
-        if f.level >= 0 { sh.prefs.level = f.level; }
-    }
-    shell::apply_prefs(sh);
-    // The puzzles the flags open are of their draughts' set, loaded above: the library's
-    // switch lights those draughts, and home doesn't load the player's set back on the way.
-    let to_puzzles = sh.screen == shell::PICKER || sh.screen == shell::PUZZLE || f.go == shell::PICKER
-                     || f.go == shell::PUZZLE || f.puzzle >= 0;
-    if f.variant >= 0 && to_puzzles { sh.prefs.variant = f.variant; }
-    if f.puzzle >= 0 && puzzles::find(puzzles::all, f.puzzle) >= 0 && f.go != shell::PUZZLE {
-        shell::play_puzzle(sh, puzzles::find(puzzles::all, f.puzzle));
-    }
-    // The playing player's game, with the screen it was on.
-    shell::read_game(sh);
-    // A fresh install's first run opens on the sheet of its one player, to pick a badge.
-    if keep && sh.players.fresh { who::first_run(sh.who, sh.players); }
-    if f.background >= 0 { sh.prefs.plain = f.background == 1; }
+    shell::launch(sh, prefs, players_read);
+    dev::setup(f, sh, prefs);
+    shell::open(sh, keep);
     var d = draw::new(kind, !settings::photo_shown(sh.prefs));
     var d3 = draw3d::Drawer { wood: f.wood, marble: f.marble, summer: f.summer, spring: f.spring, timed: f.bench > 0, .. };
     var dv = dev::new(f);
@@ -196,7 +155,7 @@ fn main() {
         // the app paused, nor while it was in the background. On the Mac a window started
         // from a terminal never has focus, and the loop never blocks there, so focus is
         // left out and the clock runs while the window shows.
-        if mobile && (!focused || !gfx::focused()) { game::pause(sh.game); }
+        if mobile && (!focused || !gfx::focused()) { shell::pause(sh); }
         focused = gfx::focused();
         // A new season's photograph, colors, and blurred copies load two frames after the
         // tap: the frame after it shows the tile lit, and is on screen before the load
@@ -269,28 +228,28 @@ fn main() {
         // and has faded in, and while the old image eases grey or the new one back. Back
         // to flat, it is all given back once settings is left, so switching flat and 3D
         // there and back doesn't prepare it again each time.
-        let n_was = if sh.layout.n > 0 { sh.layout.n } else { rules::VARIANTS[sh.prefs.variant].size };
-        sh.ready3d = !settings::raised(sh.prefs) || draw3d::ready(d3, d.kind, n_was, d.scene.plain);
-        sh.shown3d = draw3d::shows(d3);
-        if settings::raised(sh.prefs) && (!sh.ready3d || !sh.shown3d || draw3d::appearing(d3, now)) { dirty = true; }
+        let want = shell::board3d(sh);
+        let ready3d = want != shell::WANTED || draw3d::ready(d3, d.kind, shell::board_n(sh), d.scene.plain);
+        let shown3d = draw3d::shows(d3);
+        if want == shell::WANTED && (!ready3d || !shown3d || draw3d::appearing(d3, now)) { dirty = true; }
         // Once ready, the frame after its last step draws the new image (nothing else may
-        // be changing then), and it eases back from grey.
-        if sh.raised && (d3.fresh || draw3d::greying(d3)) { dirty = true; }
-        if !settings::raised(sh.prefs) && sh.screen != shell::SETTINGS && sh.from < 0 && d3.ready {
+        // be changing then), and it eases back from grey: when the last frame showed it.
+        if sh.out.raised && (d3.fresh || draw3d::greying(d3)) { dirty = true; }
+        if want == shell::DROPPED && d3.ready {
             draw3d::drop(d3);
             draw::cover(d);     // the flat game's cover again (resize.c)
         }
-        if shell::frame(sh, g, size.x, size.y, now) { dirty = true; }
+        let out .= shell::frame(sh, g, size.x, size.y, now, ready3d, shown3d);
+        if out.changed { dirty = true; }
         // The keyboard: up while a name is typed, brought up again by each tap on the name.
-        let typing = sh.who.typing && sh.screen == shell::HOME;
-        if typing != text_on || (typing && sh.who.keyboard != keyboard) {
+        if out.typing != text_on || (out.typing && out.keyboard != keyboard) {
             gfx::text_input(false);
-            if typing { gfx::text_input(true); }
-            text_on = typing;
-            keyboard = sh.who.keyboard;
+            if out.typing { gfx::text_input(true); }
+            text_on = out.typing;
+            keyboard = out.keyboard;
         }
         // Home's way out ends the loop; the game is written below.
-        if sh.quit { break; }
+        if out.quit { break; }
         // The computer's move: the worker gets what the game asks, and the game the answer.
         // After shell::frame, so a game the shell started over this frame, its skill set
         // anew there, is asked at that skill (shell::game_screen).
@@ -298,14 +257,11 @@ fn main() {
             dirty = true;
             g.acted = true;
         }
-        // A tap in settings applies at once and is written; a new season reloads the
-        // photograph and its blurred copies, once the tile shows lit. A change made by the
-        // tap that starts a transition (the computer's play counting a game) is written
-        // once it is over: the write flushes to disk, 13 to 17 ms on the tablet, too long
-        // for the frame that starts it moving.
-        if sh.changed && sh.from < 0 {
-            sh.changed = false;
+        // A tap in settings applies at once and is written (Frame.save); a new season
+        // reloads the photograph and its blurred copies, once the tile shows lit.
+        if out.save {
             players::write(sh.players, sh.prefs);
+            shell::wrote(sh);
             let next = if sh.prefs.language >= 0 { sh.prefs.language } else { system_lang };
             if next != strings::current { strings::use(next); }
             if theme_for(sh.prefs.season) != d.kind || !settings::photo_shown(sh.prefs) != d.scene.plain { season_in = 2; }
@@ -313,12 +269,12 @@ fn main() {
         }
         // Settings' thumbnails, if settings show before the first idle frame loaded them
         // (below): opened at launch.
-        if sh.screen == shell::SETTINGS && w.thumbs.id == 0 {
+        if out.screen == shell::SETTINGS && w.thumbs.id == 0 {
             w.thumbs = scene::thumbs(d.full);
         }
         // The development flags' taps, and their benches' start (dev.goose).
         if dev::after_shell(dv, f, sh, g, d3, now) { dirty = true; }
-        let l = sh.layout;
+        let l = out.layout;
         // iOS ends an app that uses the GPU in the background, and SDL doesn't block the
         // loop there as on Android: nothing is drawn while the app hasn't focus, which it
         // loses before going to the background, and the screen is drawn again on its return.
@@ -328,20 +284,20 @@ fn main() {
         if drew {
             dev::drawing(dv);
             let shown .= shell::fill(sh, now);
-            widgets::prepare(w, g, d.scene, d.colors, size.x, size.y, sh.hole, sh.tall);
-            if sh.raised {
+            widgets::prepare(w, g, d.scene, d.colors, size.x, size.y, out.hole, out.tall);
+            if out.raised {
                 // The 3D board (draw3d.goose) over the photograph, the UI and its pieces
                 // drawn over it as on the flat board; in a transition its image moves,
                 // drawn once.
-                draw3d::frame(d3, shown, l, sh.view, now, size, d.kind, d.scene.plain, shell::which(sh.shows), sh.hold);
-                draw::pieces_over(d, sh.over, l, size.x, size.y);
-                draw::photo(d, sh.blur, now, size.x, size.y, draw3d::shows(d3) && !draw3d::appearing(d3, now));
-                draw3d::show(d3, sh.blur, sh.place, sh.fade, size, now);
+                draw3d::frame(d3, shown, l, out.view, now, size, d.kind, d.scene.plain, shell::which(out.shows), out.hold);
+                draw::pieces_over(d, out.over, l, size.x, size.y);
+                draw::photo(d, out.blur, now, size.x, size.y, draw3d::shows(d3) && !draw3d::appearing(d3, now));
+                draw3d::show(d3, out.blur, out.place, out.fade, size, now);
             } else {
-                draw::frame(d, shown, sh.over, l, sh.blur, now, size.x, size.y);
+                draw::frame(d, shown, out.over, l, out.blur, now, size.x, size.y);
             }
-            widgets::frame(w, g, d.scene, d.colors, size.x, size.y, sh.hole, sh.tall);
-            draw::overlay(d, now, sh.hole, sh.tall);
+            widgets::frame(w, g, d.scene, d.colors, size.x, size.y, out.hole, out.tall);
+            draw::overlay(d, now, out.hole, out.tall);
             gfx::end_pass();
             dirty = false;
             dev::drawn(dv, f);
@@ -350,7 +306,7 @@ fn main() {
         // for its faster display (task 056): a 90 Hz display shows 60 frames a second two
         // refreshes and one in turn, where at 60 each shows for one.
         // The 3D bench's frames that wait for each are left out (dev::waited3d).
-        let paced = drew && sh.raised && sh.ready3d && sh.shown3d && !dev::waited3d(d3);
+        let paced = drew && out.raised && ready3d && shown3d && !dev::waited3d(d3);
         if on_android { draughts_pace_3d(if paced { 1 } else { 0 }, now); }
         // Settings' thumbnails load in the first frame that draws nothing once the launch's
         // first frame is on screen, so settings' first opening doesn't wait for them; the
@@ -364,14 +320,7 @@ fn main() {
         // A running clock is drawn when the time it shows changes, and the computer's move
         // played when it is due; a timer wakes the loop then, rather than whenever the
         // idle wait ends (wake.c).
-        var next = -1.0;
-        if sh.screen == shell::GAME {
-            next = clock::until_next(sh.game.clock);
-            let due = game::due(sh.game, now);
-            if due >= 0.0 && (next < 0.0 || due < next) { next = due; }
-            // The hint's answer, which no frame of its own waits for: looked for soon.
-            if game::awaiting(sh.game) && (next < 0.0 || next > HINT_POLL) { next = HINT_POLL; }
-        }
+        let next = shell::wake_in(sh, now, HINT_POLL);
         if next >= 0.0 && (wake_at < now || now + next < wake_at - 0.005) {
             draughts_wake_in((1000.0 * next) as i64 + 2);
             wake_at = now + next;
@@ -385,5 +334,5 @@ fn main() {
     }
     dev::end(f, d3);
     shell::write_game(sh);
-    if sh.quit { draughts_close(); }
+    if sh.out.quit { draughts_close(); }
 }

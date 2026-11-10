@@ -220,7 +220,7 @@ fn main() {
     let at = home_tiles(fresh, g, t);
     print("first run: ", state(fresh), ", tiles ", drive::tiles(g) - at);
     // Home's pieces over its UI (the wordmark's crown) would draw on the sheet: none.
-    print("home's pieces over the sheet: ", fresh.over.len);
+    print("home's pieces over the sheet: ", fresh.out.over.len);
     drive::tap(fresh, g, card_tile(g, at, 2 + 4), tick());
     drive::tap(fresh, g, card_tile(g, at, 1), tick());
     print("a frog, done: ", state(fresh), ", changed ", fresh.changed);

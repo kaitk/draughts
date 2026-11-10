@@ -75,13 +75,13 @@ fn picker(g: gui::Gui&) -> u8[>..] {
 }
 
 fn tap_square(sh: shell::Shell&, g: gui::Gui&, name: const u8[:], now: f64) {
-    drive::tap(sh, g, drive::at(sh.layout, name), now);
+    drive::tap(sh, g, drive::at(sh.out.layout, name), now);
 }
 
 // A square by its number.
 fn tap_number(sh: shell::Shell&, g: gui::Gui&, n: i64, now: f64) {
     let v .= rules::VARIANTS[rules::INTERNATIONAL];
-    drive::tap(sh, g, drive::at(sh.layout, drive::name(v, v.bit_of[n])), now);
+    drive::tap(sh, g, drive::at(sh.out.layout, drive::name(v, v.bit_of[n])), now);
 }
 
 // The index in puzzles::all of the puzzle with `id`.
@@ -191,13 +191,13 @@ fn main() {
     shell::play_puzzle(sh, index(33));
     drive::idle(sh, g, 24.0);
     show(sh, "puzzle 33");
-    print("  turned ", sh.layout.flip, ", it says ", puzzle::to_move(puzzle::current(sh.puzzle)), ", its turn piece ",
-          sh.over[0].look.x, " lit ", sh.over[0].ring.y, ", 21 at ",
-          drive::at(sh.layout, "f6"), ", 23 at ", drive::at(sh.layout, "d6"));
+    print("  turned ", sh.out.layout.flip, ", it says ", puzzle::to_move(puzzle::current(sh.puzzle)), ", its turn piece ",
+          sh.out.over[0].look.x, " lit ", sh.out.over[0].ring.y, ", 21 at ",
+          drive::at(sh.out.layout, "f6"), ", 23 at ", drive::at(sh.out.layout, "d6"));
     tap_number(sh, g, 21, 24.1);
     tap_number(sh, g, 23, 24.2);
     show(sh, "21 takes two");
-    print("  the turn piece unlit once solved: ", sh.over[0].ring.y == 0.0);
+    print("  the turn piece unlit once solved: ", sh.out.over[0].ring.y == 0.0);
 
     // The stars read back from the file, and an older file's key; half of Learn solved
     // opens the other themes.
@@ -243,7 +243,7 @@ fn main() {
     // Portrait: the left panel above the board, the goal, stars, and next below it.
     drive::size = float2 { 800.0, 1280.0 };
     drive::idle(sh, g, 40.0);
-    print("portrait: board ", sh.layout.board, ", next at ", drive::rect(g, 3));
+    print("portrait: board ", sh.out.layout.board, ", next at ", drive::rect(g, 3));
     // The portrait picker on Learn's page: back, then its tiles of at least 88 dp.
     sh.screen = shell::PICKER;
     sh.theme = puzzles::LEARN;
