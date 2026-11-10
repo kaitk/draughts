@@ -103,7 +103,7 @@ fn frame(p: Panel&, now: f64, input: bool) -> bool {
     let s = ui::scale(c);
     if ui::begin(c, "Tuning (P)", ui::rect(X, Y, WIDTH, HEIGHT), flags) {
         heading(c, "Wood");
-        if variant(c, "variant", p.wood, render3d::WOOD_MODELS - 1) { p.finish = looks::finish_for(looks::shown(p.look, p.spring), p.wood); }
+        if variant(c, "variant", p.wood, model3d::WOOD_MODELS - 1) { p.finish = looks::finish_for(looks::shown(p.look, p.spring), p.wood); }
         p.varnish_at = scaled(slider(c, "varnish", p.finish.varnish, 0.0, 1.0), s);
         slider(c, "sanding", p.finish.sanding, 0.0, 1.0);
         slider(c, "grain", p.finish.grain, 0.0, 2.0);

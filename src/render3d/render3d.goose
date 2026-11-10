@@ -1,14 +1,15 @@
 // The 3D board's renderer (task 015), shared by the app (src/app/draw3d.goose) and the
-// prototype (poc/3d/board3d.goose): the board and the pieces as meshes (mesh.goose), the
-// themes as data (looks.goose), the surfaces baked on the GPU, the season's photograph
-// blurred into the backdrop with its ambient taken, the shadow map, and one forward pass
-// into a 4× multisampled target resolved into a picture (shaders.goose).
+// prototype (poc/3d/board3d.goose): the meshes and the themes (src/model3d/, which holds
+// all of the board but drawing) put on the GPU, the surfaces baked there in the steps
+// model3d plans, the season's photograph blurred into the backdrop with its ambient
+// taken, the shadow map, and one forward pass into a 4× multisampled target resolved
+// into a picture (shaders.goose).
 //
 // The one package besides app/ that draws: it imports gfx, and only the app and the
 // prototype import it; the game's packages stay headless (docs/architecture/README.md).
 // What it draws comes as data: the camera's matrix and eye (view3d::matrix), the
 // instances and the field's occlusion and marks (view3d::Scene, laid out as the shaders
-// read them).
+// read them), and model3d's meshes, looks, and harmonics.
 //
 // Frame structure: the shadow map (1024², 16-bit, from the key light) only when the
 // pieces stand differently; then one pass: the blurred photograph as a backdrop, the
@@ -23,9 +24,9 @@ import std;
 import vec;
 import math;
 import gfx;
-import .mesh;
 import .shaders;
-import .looks;
+
+import model3d from "../model3d";
 
 // Theme `kind`'s photograph, or 0 when it isn't built in: the ASTC image as stored, or
 // the JPEG decoded and scaled down to `decoded` square (src/app/background.c, which the
@@ -99,11 +100,6 @@ struct Blur { dir: float4 }
 // The shadow map: 1024² keeps the soft shadows as they were at 2048² (the lit shader's
 // filter spreads over 5 of its texels), at a quarter of the memory.
 let SHADOW_SIZE = 1024;
-let PLAN_SIZE = 2048;
-let FRAME_MAP = 2048;
-// A mitred frame's map holds only its four bands (LIT_FRAG: 0.2 to 5.65 of the map's 10.4
-// world units across), its rows at the same density: 44% less memory and bake.
-let FRAME_MITRED_ROWS = 1152;
 let PHOTO_SIZE = 512;
 // The pieces' occlusion of the field (shaders::OCC_FRAG), over the plan's extent: 62
 // texels a square on 8 × 8, for a falloff a piece's radius wide that rises steeply at
@@ -115,11 +111,6 @@ let CROWN_SIZE = 256;
 let SAMPLES = 4;
 let MAX_INSTANCES = 96;     // view3d::MAX_INSTANCES: two for each of board::MAX_PIECES
 let SQUARES = 100;          // the field's squares, 10 × 10 at most
-// The wood's model (task 039): 0 noise drawn out along the grain, 1 growth rings, 2
-// growth rings with pores and a fibre relief, 3 the first with thin lines and pores laid
-// over it.
-let WOOD_MODELS = 4;
-let WOOD_MODEL = 2;
 
 // Everything on the GPU, made by setup() (the targets again on a resize).
 struct Gpu {
@@ -157,7 +148,7 @@ struct Gpu {
     plan_normal:    gfx::Texture,
     frame_albedo:   gfx::Texture,
     frame_normal:   gfx::Texture,
-    frame_rows:     i64,            // the frame map's rows: FRAME_MAP, or the mitred bands'
+    frame_rows:     i64,            // the frame map's rows: model3d::FRAME_MAP, or the mitred bands'
     photo:          gfx::Texture,
     shadow_map:     gfx::Texture,
     color:          gfx::Texture,   // the multisampled target and its depth
@@ -201,118 +192,8 @@ struct Gpu {
     photo_ms:       f64,
 }
 
-fn f4(v: float3, w: f32) -> float4 { float4 { v.x, v.y, v.z, w } }
-
-// sRGB to linear, as the shaders take colors.
-fn linear(c: f32) -> f32 {
-    if c <= 0.04045 { return c / 12.92; }
-    let e: f32 = 2.4;
-    pow((c + 0.055) / 1.055, e)
-}
-
-fn linear4(c: float4) -> float4 { float4 { linear(c.x), linear(c.y), linear(c.z), c.w } }
-
-// Nine spherical harmonics of the photograph's light, convolved with the cosine and over
-// pi, so the shader's sum is the irradiance a white Lambert surface sends back. The
-// photograph is laid over the sphere as a latitude-longitude map, its middle straight
-// behind the board (-z), its top up.
-fn harmonics(px: const u8[:], size: i64, toward_grey: f32) -> float4[9] {
-    var sh: float3[9] = [float3_0; 9];
-    let step = 8;
-    var total: f32 = 0.0;
-    var y = step / 2;
-    while y < size {
-        let el = (0.5 - (y as f32 + 0.5) / size) * PI;
-        let w = cos(el);
-        var x = step / 2;
-        while x < size {
-            let az = ((x as f32 + 0.5) / size - 0.5) * TAU;
-            let d = float3 { cos(el) * sin(az), sin(el), -cos(el) * cos(az) };
-            let o = (y * size + x) * 4;
-            let c = float3 { linear(px[o] / 255.0), linear(px[o + 1] / 255.0),
-                             linear(px[o + 2] / 255.0) } * w;
-            let b: f32[9] = [0.282095, 0.488603 * d.y, 0.488603 * d.z, 0.488603 * d.x,
-                             1.092548 * d.x * d.y, 1.092548 * d.y * d.z,
-                             0.315392 * (3.0 * d.y * d.y - 1.0), 1.092548 * d.x * d.z,
-                             0.546274 * (d.x * d.x - d.z * d.z)];
-            for k in 9 { sh[k] += c * b[k]; }
-            total += w;
-            x += step;
-        }
-        y += step;
-    }
-    // Each sample stands for 4 pi / total of the sphere; the bands' cosine lobes are
-    // pi, 2 pi / 3 and pi / 4, and the result is over pi.
-    let band: f32[3] = [1.0, 2.0 / 3.0, 0.25];
-    var out: float4[9] = [float4_0; 9];
-    // Part way to grey (the theme's): autumn's forest is orange, and its full color
-    // tinted everything.
-    for k in 9 {
-        let l = if k == 0 { 0 } else { if k < 4 { 1 } else { 2 } };
-        let c = sh[k] * (4.0 * PI / total * band[l]);
-        let grey = (c.x + c.y + c.z) / 3.0;
-        out[k] = f4(lerp(c, float3 { grey, grey, grey }, toward_grey), 0.0);
-    }
-    return out;
-}
-
 // The plain fade behind the 3D game: dimmed to 0.8, as the flat game's background is.
 let PLAIN_DIM = 0.8;
-
-fn ease(a: f32, b: f32, x: f32) -> f32 { smoothstep(a, b, x) }
-
-// The plain fade (shaders::FADE_FN) at (x, y) of a w × h screen, both 0..1 across it, in
-// linear light: the backdrop's colors before they are encoded.
-fn fade(f: float4[3]&, x: f32, y: f32, w: f32, h: f32) -> float3 {
-    let qx = x - 0.5;
-    let qy = y - 0.5;
-    let m = max(w, h);
-    let top = float3 { f[0].x, f[0].y, f[0].z };
-    let low = float3 { f[1].x, f[1].y, f[1].z };
-    let light = float3 { f[2].x, f[2].y, f[2].z };
-    var c = lerp(top, low, ease(0.0, 1.0, y));
-    let r = hypot(qx * (w / m) / 0.62, (qy - 0.04) * (h / m) / 0.5);
-    c = lerp(c, light, 0.22 * (1.0 - ease(0.0, 1.0, r)));
-    return c * (1.0 - 0.3 * ease(0.15, 0.6, qx * qx + qy * qy));
-}
-
-// The ambient light of the plain fade (task 044), as harmonics() takes a photograph's:
-// the fade painted 64 texels square (harmonics() reads every eighth), laid round the board
-// as the photograph is. A fade is far darker than a photograph, so the result is scaled
-// to the dim ambient a theme without a photograph had (photo_part), which the Galaxy
-// A33's build without the photographs showed and the user liked (2026-11-09): the fade
-// tints the board's shadows, its brightness stays.
-fn fade_harmonics(f: float4[3]&, grey: f32) -> float4[9] {
-    let n = 64;
-    var px: u8[64 * 64 * 4] = [0; 64 * 64 * 4];
-    for y in n {
-        for x in n {
-            let c = fade(f, (x + 0.5) / n, (y + 0.5) / n, 1.0, 1.0);
-            let o = (y * n + x) * 4;
-            px[o] = encode(c.x);
-            px[o + 1] = encode(c.y);
-            px[o + 2] = encode(c.z);
-            px[o + 3] = 255;
-        }
-    }
-    var sh = harmonics(px[..], n, grey);
-    let luma = 0.2126 * sh[0].x + 0.7152 * sh[0].y + 0.0722 * sh[0].z;
-    let a = no_photo_ambient();
-    let k = (0.2126 * a.x + 0.7152 * a.y + 0.0722 * a.z) / max(luma, 1.0e-4);
-    for i in 9 { sh[i] = sh[i] * k; }
-    return sh;
-}
-
-// The ambient of a theme whose photograph isn't built in.
-fn no_photo_ambient() -> float4 { float4 { 0.25, 0.17, 0.1, 0.0 } }
-
-// A linear value in sRGB, 0..255, as linear() reads it back.
-fn encode(c: f32) -> u8 {
-    let v = clamp(c, 0.0, 1.0);
-    let e: f32 = 1.0 / 2.4;
-    let s = if v <= 0.0031308 { 12.92 * v } else { 1.055 * pow(v, e) - 0.055 };
-    return (255.0 * s + 0.5) as u8;
-}
 
 // The photograph `kind` blurred into g.photo (src/app/scene.goose's way: shrunk to 512
 // on the GPU, two passes of a Gaussian of sigma 5.6 texels), and its harmonics, taken
@@ -331,7 +212,7 @@ fn photo_part(g: Gpu&, kind: i64, grey: f32, sh: float4[9]&, k: i64) {
     if k == 0 && g.plain {
         // The plain background: nothing to decode or blur, the ambient from the fade.
         g.no_photo = true;
-        sh = fade_harmonics(g.fade, grey);
+        sh = model3d::fade_harmonics(g.fade, grey);
         return;
     }
     if k == 0 {
@@ -342,7 +223,7 @@ fn photo_part(g: Gpu&, kind: i64, grey: f32, sh: float4[9]&, k: i64) {
             gfx::begin_pass(g.photo, gfx::Texture { 0 }, float4 { 0.11, 0.078, 0.063, 1.0 });
             gfx::end_pass();
             for i in 9 { sh[i] = float4_0; }
-            sh[0] = no_photo_ambient();
+            sh[0] = model3d::no_photo_ambient();
             return;
         }
         gfx::begin_pass(g.small, gfx::Texture { 0 }, float4_0);
@@ -371,7 +252,7 @@ fn photo_part(g: Gpu&, kind: i64, grey: f32, sh: float4[9]&, k: i64) {
     gfx::draw(3);
     gfx::end_pass();
     let px = gfx::read_pixels(g.photo);
-    sh = harmonics(px, PHOTO_SIZE, grey);
+    sh = model3d::harmonics(px, PHOTO_SIZE, grey);
 }
 
 // Bakes one surface of the theme into its albedo-and-roughness and normal targets, and
@@ -417,11 +298,12 @@ fn bake(g: Gpu&, albedo: gfx::Texture, normal: gfx::Texture, w: i64, h: i64, mod
 // switches.
 fn bake_surfaces(g: Gpu&, plan: bool = true, frame: bool = true) {
     let t = look(g, g.look);
-    let span = 2.0 * mesh::INNER;
-    if plan { bake(g, g.plan_albedo, g.plan_normal, PLAN_SIZE, PLAN_SIZE, 0.0, float2 { span, span }, t); }
+    if plan {
+        bake(g, g.plan_albedo, g.plan_normal, model3d::PLAN_SIZE, model3d::PLAN_SIZE, 0.0, model3d::plan_extent(), t);
+    }
     if frame {
         let rows = g.frame_rows;
-        bake(g, g.frame_albedo, g.frame_normal, FRAME_MAP, rows, 1.0, float2 { 10.4, 10.4 * rows / FRAME_MAP }, t);
+        bake(g, g.frame_albedo, g.frame_normal, model3d::FRAME_MAP, rows, 1.0, model3d::frame_extent(rows), t);
     }
     gfx::flush();
 }
@@ -478,8 +360,8 @@ fn depth_target(size: int2) -> gfx::Texture {
 // `samples` 4 is the multisampled pass; 1 draws straight into the target (measuring).
 fn setup(g: Gpu&, samples: i32 = SAMPLES) {
     g.samples = samples;
-    g.wood = WOOD_MODEL;
-    g.finish = looks::finish(WOOD_MODEL);
+    g.wood = model3d::WOOD_MODEL;
+    g.finish = looks::finish(model3d::WOOD_MODEL);
     g.marble = looks::MARBLE;
     g.stone = looks::marble(looks::MARBLE);
     g.spring = looks::SPRING_LOOK;
@@ -517,8 +399,8 @@ fn setup(g: Gpu&, samples: i32 = SAMPLES) {
     g.show = gfx::pipeline(embed_shader("vert", shaders::SHOW_VS, shaders::SHOW_BLOCK, shaders::SHOW_VERT),
                            embed_shader("frag", shaders::SHOW_FS, shaders::SHOW_BLOCK, shaders::SHOW_FRAG),
                            gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED });
-    g.plan_albedo = baked(PLAN_SIZE, PLAN_SIZE, gfx::RGBA8_SRGB);
-    g.plan_normal = baked(PLAN_SIZE, PLAN_SIZE, gfx::RGBA8);
+    g.plan_albedo = baked(model3d::PLAN_SIZE, model3d::PLAN_SIZE, gfx::RGBA8_SRGB);
+    g.plan_normal = baked(model3d::PLAN_SIZE, model3d::PLAN_SIZE, gfx::RGBA8);
     g.frame_rows = 0;   // made by apply(), as the look's frame wants
     g.photo = gfx::render_target(PHOTO_SIZE, PHOTO_SIZE, gfx::RGBA8);
     g.small = gfx::render_target(PHOTO_SIZE, PHOTO_SIZE, gfx::RGBA8);
@@ -596,15 +478,15 @@ fn theme_begin(g: Gpu&, which: i64, n: i64) -> bool {
     let t = look(g, which);
     g.look = which;
     g.n = n;
-    let rows = if t.build.x < 0.5 { FRAME_MITRED_ROWS } else { FRAME_MAP };
+    let rows = model3d::frame_rows(t);
     if rows != g.frame_rows {
         if g.frame_rows != 0 {
             gfx::release(g.frame_albedo);
             gfx::release(g.frame_normal);
             gfx::flush();
         }
-        g.frame_albedo = baked(FRAME_MAP, rows, gfx::RGBA8_SRGB);
-        g.frame_normal = baked(FRAME_MAP, rows, gfx::RGBA8);
+        g.frame_albedo = baked(model3d::FRAME_MAP, rows, gfx::RGBA8_SRGB);
+        g.frame_normal = baked(model3d::FRAME_MAP, rows, gfx::RGBA8);
         g.frame_rows = rows;
     }
     return true;
@@ -625,38 +507,22 @@ fn theme_photo(g: Gpu&, which: i64, photo: i64) {
     g.photo_ms = (clock() - t0) * 1000.0;
 }
 
-// The steps theme_step() takes apply() in, each about 2.5 ms of the M1 Pro's, about 16 ms
-// of the Pixel 7a's and 35 of a Galaxy A33's by task 015's ratios (task 042): the start;
-// the bake's pipeline made, drawing one row (its compile can't be split: the largest
-// step); the plan in PLAN_BANDS bands and the frame map in FRAME_BANDS, each surface's
-// mips with its last; the photograph's two pipelines made; the photograph in its three
-// parts (photo_part), the end with the last.
-let PLAN_BANDS = 16;
-let FRAME_BANDS = 6;
-let THEME_STEPS = 6 + PLAN_BANDS + FRAME_BANDS;
-
-// Step k (0 to THEME_STEPS - 1) of putting a theme on, as apply(which, n, photo) does at
-// once. Recording only; the frame's submit runs it.
+// Step k (0 to model3d::THEME_STEPS - 1) of putting a theme on, as apply(which, n, photo)
+// does at once, as model3d::step plans it. Recording only; the frame's submit runs it.
 fn theme_step(g: Gpu&, which: i64, n: i64, photo: i64, k: i64) {
     let t = look(g, g.look);
-    let span = 2.0 * mesh::INNER;
-    let plan = float2 { span, span };
     let rows = g.frame_rows;
-    let frame = float2 { 10.4, 10.4 * rows / FRAME_MAP };
-    if k == 0 {
+    let st = model3d::step(k, rows);
+    if st.what == model3d::BEGIN {
         // A new look or size is baked whatever theme_begin finds: the steps bake in turn.
         theme_begin(g, which, n);
-    } else if k == 1 {
-        bake(g, g.plan_albedo, g.plan_normal, PLAN_SIZE, PLAN_SIZE, 0.0, plan, t, 0, 1, false);
-    } else if k < 2 + PLAN_BANDS {
-        let b = k - 2;
-        bake(g, g.plan_albedo, g.plan_normal, PLAN_SIZE, PLAN_SIZE, 0.0, plan, t, PLAN_SIZE * b / PLAN_BANDS,
-             PLAN_SIZE * (b + 1) / PLAN_BANDS, b == PLAN_BANDS - 1);
-    } else if k < 2 + PLAN_BANDS + FRAME_BANDS {
-        let b = k - 2 - PLAN_BANDS;
-        bake(g, g.frame_albedo, g.frame_normal, FRAME_MAP, rows, 1.0, frame, t, rows * b / FRAME_BANDS,
-             rows * (b + 1) / FRAME_BANDS, b == FRAME_BANDS - 1);
-    } else if k == 2 + PLAN_BANDS + FRAME_BANDS {
+    } else if st.what == model3d::PIPELINE || st.what == model3d::PLAN {
+        bake(g, g.plan_albedo, g.plan_normal, model3d::PLAN_SIZE, model3d::PLAN_SIZE, 0.0, model3d::plan_extent(), t,
+             st.y0, st.y1, st.mips);
+    } else if st.what == model3d::FRAME {
+        bake(g, g.frame_albedo, g.frame_normal, model3d::FRAME_MAP, rows, 1.0, model3d::frame_extent(rows), t, st.y0,
+             st.y1, st.mips);
+    } else if st.what == model3d::PHOTO_PIPELINES {
         var pass = gfx::PassDesc { clear_color: false };
         pass.color[0] = g.small;
         gfx::begin_pass(pass);
@@ -664,7 +530,7 @@ fn theme_step(g: Gpu&, which: i64, n: i64, photo: i64, k: i64) {
         gfx::bind(g.blur);
         gfx::end_pass();
     } else {
-        let part = k - 3 - PLAN_BANDS - FRAME_BANDS;
+        let part = st.part;
         let lk = look(g, which);
         let kind = if photo >= 0 { photo } else { lk.photo };
         var sh = g.frame.sh;
@@ -683,21 +549,21 @@ fn theme_end(g: Gpu&, which: i64, n: i64) {
     // The key light, from the upper left; the photograph's ambient.
     light(g);
     let f .= g.frame;
-    f.light_color = linear4(t.key_color);
+    f.light_color = model3d::linear4(t.key_color);
     f.params = float4 { t.ambient.x, 0.0, t.ambient.y, n };
     f.glow = t.glow;
-    f.light_piece = linear4(t.light_piece);
-    f.dark_piece = linear4(t.dark_piece);
+    f.light_piece = model3d::linear4(t.light_piece);
+    f.dark_piece = model3d::linear4(t.dark_piece);
     f.piece_fig = t.piece_fig;
-    f.crown = linear4(t.crown);
-    f.edge = linear4(t.edge);
+    f.crown = model3d::linear4(t.crown);
+    f.edge = model3d::linear4(t.edge);
     if marbled(g, t) { f.edge.w = 0.0; }
-    f.line = linear4(t.line);
-    f.bounce = linear4(t.bounce);
+    f.line = model3d::linear4(t.line);
+    f.bounce = model3d::linear4(t.bounce);
     f.grade = t.grade;
-    f.tint = linear4(t.tint);
+    f.tint = model3d::linear4(t.tint);
     f.frame_build = t.build;
-    f.frame_map = float4 { (g.frame_rows as f32) / FRAME_MAP, 0.0, 0.0, 0.0 };
+    f.frame_map = float4 { (g.frame_rows as f32) / model3d::FRAME_MAP, 0.0, 0.0, 0.0 };
     f.frame_surface = t.frame_surface;
     g.shadow_dirty = true;
 }
@@ -707,12 +573,12 @@ fn theme_end(g: Gpu&, which: i64, n: i64) {
 // map's projection.
 fn light(g: Gpu&) {
     let t = look(g, g.look);
-    let l = spin(normalize(float3 { t.key.x, t.key.y, t.key.z }), g.turn);
+    let l = model3d::spin(normalize(float3 { t.key.x, t.key.y, t.key.z }), g.turn);
     let light_view = gfx::look_at(l * 20.0, float3_0, float3 { 0.0, 1.0, 0.0 });
     let reach: f32 = 6.6;
     let light_proj = gfx::ortho(-reach, reach, -reach, reach, 5.0, 35.0);
     g.frame.light_view_proj = gfx::mul(light_proj, light_view);
-    g.frame.light_dir = f4(l, t.key.w);
+    g.frame.light_dir = model3d::f4(l, t.key.w);
 }
 
 // The board turned `turn` degrees under the light (a hot-seat turn, view3d::Camera.turn):
@@ -722,14 +588,6 @@ fn turn_light(g: Gpu&, turn: f32) {
     g.turn = turn;
     light(g);
     g.shadow_dirty = true;
-}
-
-// p turned `degrees` about the y axis, as view3d::spin turns the camera.
-fn spin(p: float3, degrees: f32) -> float3 {
-    let a = radians(degrees);
-    let c = cos(a);
-    let s = sin(a);
-    return float3 { c * p.x + s * p.z, p.y, c * p.z - s * p.x };
 }
 
 // Whether the frame is marble: a stone frame with a marble chosen. Its rounded edge
@@ -745,7 +603,7 @@ fn look(g: Gpu&, which: i64) -> looks::Theme { looks::variant(which, g.spring, g
 fn choose(g: Gpu&, wood: i64, marble: i64, spring: i64 = -1) {
     if spring >= 0 { g.spring = clamp(spring, 0, looks::SPRINGS - 1); }
     if wood >= 0 {
-        g.wood = clamp(wood, 0, WOOD_MODELS - 1);
+        g.wood = clamp(wood, 0, model3d::WOOD_MODELS - 1);
         g.finish = looks::finish(g.wood);
     }
     if marble >= 0 {
@@ -767,14 +625,14 @@ fn tune(g: Gpu&, wood: i64, finish: looks::Finish, marble: i64, stone: looks::Ma
     let t = look(g, g.look);
     let wood_changed = wood != g.wood || finish != g.finish;
     let marble_changed = marble != g.marble || stone != g.stone;
-    g.wood = clamp(wood, 0, WOOD_MODELS - 1);
+    g.wood = clamp(wood, 0, model3d::WOOD_MODELS - 1);
     g.finish = finish;
     g.marble = clamp(marble, 0, looks::MARBLES - 1);
     g.stone = stone;
     let plan = wood_changed && t.light_fig.w > 0.5;
     let frame = (wood_changed && t.frame_fig.w > 0.5) || (marble_changed && t.frame_fig.w < 0.5 && t.build.w < 0.5);
     if plan || frame { bake_surfaces(g, plan, frame); }
-    g.frame.edge = linear4(t.edge);
+    g.frame.edge = model3d::linear4(t.edge);
     if marbled(g, t) { g.frame.edge.w = 0.0; }
 }
 
@@ -805,7 +663,7 @@ fn carve(g: Gpu&, spring: i64, c: looks::Carving) {
             g.wood = own;
             g.finish = looks::finish_for(id, own);
         } else if looks::wood_for(was) >= 0 {
-            g.wood = WOOD_MODEL;
+            g.wood = model3d::WOOD_MODEL;
             g.finish = looks::finish(g.wood);
         }
     }
@@ -860,7 +718,7 @@ fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int
     if size.x != g.size.x || size.y != g.size.y { targets(g, size); }
     let target = if out.id == 0 { g.image } else { out };
     g.frame.view_proj = view_proj;
-    g.frame.eye = f4(eye, 1.0);
+    g.frame.eye = model3d::f4(eye, 1.0);
     g.frame.screen = float4 { size.x, size.y, g.frame.screen.z, 0.0 };
     let f = g.frame;
 

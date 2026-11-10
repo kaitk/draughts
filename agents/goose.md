@@ -177,7 +177,7 @@ find out by compiling, so the next session doesn't.
   included (`src/shell/players.goose`) (2026-11-09).
 - `smoothstep(0.0, 1.0, x)` with untyped literals is ambiguous between std's f32 and f64
   forms even when `x` is an `f32`; wrap it in a function of `f32`s
-  (`render3d::ease`) (2026-11-09).
+  (`model3d::ease`) (2026-11-09).
 - A GLSL local named like a uniform block's member hides it in that function: the
   widgets' `int kind` hid the theme's `kind`; read the member through a function
   declared beside the block (`draw::THEME_BLOCK`'s `theme_index`) (2026-11-09).

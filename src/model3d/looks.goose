@@ -369,7 +369,7 @@ fn summer_teak() -> Theme {
     return t;
 }
 
-// The wood's finish, per model of the wood (render3d::WOOD_MODEL..): what the prototype's
+// The wood's finish, per model of the wood (model3d::WOOD_MODEL..): what the prototype's
 // tuning panel (P) sets, baked into the wood's surfaces only, never the stone. Neutral
 // is varnish 0, sanding 0, grain 1, rings 1, warmth 0: the bake as the model has it.
 struct Finish {

@@ -104,7 +104,7 @@ const Draughts = (() => {
 
   // The plain background, by board theme, in two takes. a: what the 3D board's backdrop
   // makes of the page color with no photograph (render3d's BACKDROP_FRAG with the look's
-  // grade and tint, src/render3d/looks.goose): the page lifted by the gain, a soft
+  // grade and tint, src/model3d/looks.goose): the page lifted by the gain, a soft
   // vignette, and the look's warm or cool lift low down, the dark-to-brown fade a build
   // without photographs showed on the Galaxy A33. b: calmer and darker, the page at the
   // top to a deep tone of the board's frame low down, with a faint light of its dark

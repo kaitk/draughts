@@ -1,0 +1,65 @@
+a frame map 2048 rows high:
+    0 begin
+    1 pipeline rows 0..1
+    2 plan rows 0..128
+    3 plan rows 128..256
+    4 plan rows 256..384
+    5 plan rows 384..512
+    6 plan rows 512..640
+    7 plan rows 640..768
+    8 plan rows 768..896
+    9 plan rows 896..1024
+    10 plan rows 1024..1152
+    11 plan rows 1152..1280
+    12 plan rows 1280..1408
+    13 plan rows 1408..1536
+    14 plan rows 1536..1664
+    15 plan rows 1664..1792
+    16 plan rows 1792..1920
+    17 plan rows 1920..2048, mips
+    18 frame rows 0..341
+    19 frame rows 341..682
+    20 frame rows 682..1024
+    21 frame rows 1024..1365
+    22 frame rows 1365..1706
+    23 frame rows 1706..2048, mips
+    24 photo pipelines
+    25 photo part 0
+    26 photo part 1
+    27 photo part 2
+    the plan to row 2048 of 2048, the frame map to 2048 of 2048
+a frame map 1152 rows high:
+    0 begin
+    1 pipeline rows 0..1
+    2 plan rows 0..128
+    3 plan rows 128..256
+    4 plan rows 256..384
+    5 plan rows 384..512
+    6 plan rows 512..640
+    7 plan rows 640..768
+    8 plan rows 768..896
+    9 plan rows 896..1024
+    10 plan rows 1024..1152
+    11 plan rows 1152..1280
+    12 plan rows 1280..1408
+    13 plan rows 1408..1536
+    14 plan rows 1536..1664
+    15 plan rows 1664..1792
+    16 plan rows 1792..1920
+    17 plan rows 1920..2048, mips
+    18 frame rows 0..192
+    19 frame rows 192..384
+    20 frame rows 384..576
+    21 frame rows 576..768
+    22 frame rows 768..960
+    23 frame rows 960..1152, mips
+    24 photo pipelines
+    25 photo part 0
+    26 photo part 1
+    27 photo part 2
+    the plan to row 2048 of 2048, the frame map to 1152 of 1152
+the grey's linear value: 0.216
+grey: (0.77 0.77 0.77) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0)
+lit from above: (1.82 1.82 1.82) (1.04 1.04 1.04) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0) (-0.01 -0.01 -0.01) (0.0 0.0 0.0) (0.0 0.0 0.0)
+orange: (2.81 0.67 0.05) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.01 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0)
+orange half grey: (1.99 0.92 0.61) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0) (0.01 0.0 0.0) (0.0 0.0 0.0) (0.0 0.0 0.0)

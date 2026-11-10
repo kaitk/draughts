@@ -40,7 +40,7 @@ fn rgba(hex: i64, w: f32) -> float4 {
 // An sRGB color in linear light, as the fade mixes them.
 fn linear(hex: i64) -> float4 {
     let c = rgb(hex);
-    return float4 { render3d::linear(c.x), render3d::linear(c.y), render3d::linear(c.z), 1.0 };
+    return float4 { model3d::linear(c.x), model3d::linear(c.y), model3d::linear(c.z), 1.0 };
 }
 
 // The plain background's colors, by theme: prototypes/draughts.js's PLAIN, take b
@@ -53,7 +53,7 @@ fn get(kind: i64) -> Theme {
     let k = clamp(kind, WOOD, SUNSET);
     t.fade_top = linear(FADE_TOP[k]);
     t.fade_low = linear(FADE_LOW[k]);
-    t.fade_light = float4 { render3d::linear(t.dark.x), render3d::linear(t.dark.y), render3d::linear(t.dark.z), 1.0 };
+    t.fade_light = float4 { model3d::linear(t.dark.x), model3d::linear(t.dark.y), model3d::linear(t.dark.z), 1.0 };
     return t;
 }
 

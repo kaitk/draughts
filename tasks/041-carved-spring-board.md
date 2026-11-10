@@ -10,7 +10,7 @@ overgrown with moss, as in fantasy ruins (Tolkien's elves, the ruins in The Witc
 Our own motifs in that spirit, nothing copied from either. A thought to explore, not a
 settled look; try both directions.
 
-- Prototype it in `poc/3d` as a look in `src/render3d/looks` beside the birch, switchable,
+- Prototype it in `poc/3d` as a look in `src/model3d/looks` beside the birch, switchable,
   and judge both side by side.
 - Carving as relief the bake can make: a border band of repeating motifs (lotus, leaf
   scrolls) on the frame (lotus and leaf scrolls for the temple take, interlaced vines and slender leaves

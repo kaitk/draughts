@@ -28,6 +28,7 @@ import shell from "../shell";
 import ai from "../ai";
 import puzzles from "../puzzles";
 import badges from "../badges";
+import model3d from "../model3d";
 import render3d from "../render3d";
 import .text;
 import .host;

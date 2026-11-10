@@ -4,7 +4,7 @@
 // board draws (board::fill), so both views follow one state and one animation. The app
 // draws what `Scene` holds; tests run all of it headless.
 //
-// World units are the renderer's (src/render3d/mesh.goose): the playing field spans -4..4 in x and
+// World units are the renderer's (src/model3d/mesh.goose): the playing field spans -4..4 in x and
 // z whatever the draughts, so a square is 8 / n; y is up, the field's top y = 0; +z is
 // the near side, the bottom of the screen. The world is laid out as the flat board shows
 // it: x and z follow the flat layout's x and y (`to_world`, `to_flat`), so a turned board
@@ -34,7 +34,7 @@ let FAR:  f32 = 40.0;
 
 // The board: the field's half width, the dark inlay round it, the frame round that, its
 // top above the field, and the board's underside. Kept in step with
-// src/render3d/mesh.goose's and src/render3d/shaders.goose's constants of these names.
+// src/model3d/mesh.goose's and src/render3d/shaders.goose's constants of these names.
 let FIELD:     f32 = 4.0;
 let INNER:     f32 = 4.1;
 let FRAME_W:   f32 = 0.5;

@@ -1154,7 +1154,7 @@ board's does and the backdrop over it as opaque as the blur.
   ring, the glow ring tight round a hint's piece or a win's, a win's lit squares
   (`view3d::Scene.lit`). A captured piece and a wrong move's ghost fade, drawn blended
   one by one after the opaque pieces, casting no shadow. The four seasons have looks as
-  data (`src/render3d/looks.goose`): autumn's maple and walnut in cherry, winter's stone,
+  data (`src/model3d/looks.goose`): autumn's maple and walnut in cherry, winter's stone,
   spring's pale birch with sage-stained squares in a green-stained frame, and summer's
   peach and dusky rose under a satin lacquer in a red-brown frame, from the theme table.
   Spring's default is ivory stone with a carved vine band on the frame and jade dark

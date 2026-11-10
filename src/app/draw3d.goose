@@ -167,7 +167,7 @@ fn choose_look(d: Drawer&, kind: i64) -> i64 {
     let look = look_of(kind, d.summer);
     let shown = looks::shown(look, d.gpu.spring);
     let own = looks::wood_for(shown);
-    let wood = if d.wood >= 0 { d.wood } else if own >= 0 { own } else { render3d::WOOD_MODEL };
+    let wood = if d.wood >= 0 { d.wood } else if own >= 0 { own } else { model3d::WOOD_MODEL };
     render3d::choose(d.gpu, wood, -1);
     d.gpu.finish = looks::finish_for(shown, d.gpu.wood);
     return look;
@@ -178,13 +178,13 @@ fn choose_look(d: Drawer&, kind: i64) -> i64 {
 // pipelines made. Only the targets the size of the screen are left for its first frame
 // (render3d::targets).
 fn ready(d: Drawer&, kind: i64, n: i64, plain: bool) -> bool {
-    return d.ready && d.kind == kind && d.n == n && d.plain == plain && d.themed == render3d::THEME_STEPS
+    return d.ready && d.kind == kind && d.n == n && d.plain == plain && d.themed == model3d::THEME_STEPS
            && d.warmed == render3d::WARM_STEPS;
 }
 
 // The theme's steps that put its photograph on (render3d::photo_part), from the first:
 // all a change between the photograph and the plain fade takes again.
-fn photo_steps() -> i64 { return 2 + render3d::PLAN_BANDS + render3d::FRAME_BANDS; }
+fn photo_steps() -> i64 { return 2 + model3d::PLAN_BANDS + model3d::FRAME_BANDS; }
 
 // Whether an image of the board shows (drawn since it was set up): while a new theme is
 // prepared it stays; with none, the board's place shows the shell's still mark.
@@ -201,7 +201,7 @@ let GREY = 0.2;
 fn grey_span(d: Drawer&) -> f64 { if d.grey_to > d.grey_from { GREY } else { APPEAR } }
 fn grey(d: Drawer&, now: f64) -> f32 {
     guard d.grey_at >= 0.0 else { return d.grey_to; }
-    let k = render3d::ease(0.0, 1.0, clamp((now - d.grey_at) / grey_span(d), 0.0, 1.0) as f32);
+    let k = model3d::ease(0.0, 1.0, clamp((now - d.grey_at) / grey_span(d), 0.0, 1.0) as f32);
     return d.grey_from + (d.grey_to - d.grey_from) * k;
 }
 fn grey_towards(d: Drawer&, to: f32, now: f64) {
@@ -215,7 +215,7 @@ fn grey_towards(d: Drawer&, to: f32, now: f64) {
 fn greying(d: Drawer&) -> bool { d.grey_at >= 0.0 }
 
 // One step of getting the 3D board ready, each a frame of its own so the screen keeps
-// drawing and answering: the setup; the theme in render3d::THEME_STEPS (the bake's
+// drawing and answering: the setup; the theme in model3d::THEME_STEPS (the bake's
 // pipeline made, the bake in bands, the photograph's pipelines, the photograph in three
 // parts); the pass's pipelines in render3d::WARM_STEPS. What the first frame on the 3D
 // board did at once before (about 1.1 s on the Pixel 7a by task 015's numbers). A new
@@ -226,7 +226,7 @@ fn prepare(d: Drawer&, kind: i64, n: i64, plain: bool, now: f64) {
     let t0 = clock();
     if !d.ready {
         set_up(d);
-    } else if d.kind != kind || d.n != n || d.plain != plain || d.themed < render3d::THEME_STEPS {
+    } else if d.kind != kind || d.n != n || d.plain != plain || d.themed < model3d::THEME_STEPS {
         if d.kind != kind || d.n != n {
             // A new theme (or one changed partway) starts its steps again, the image
             // shown meanwhile easing grey.

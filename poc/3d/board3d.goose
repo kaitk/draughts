@@ -32,6 +32,7 @@ import math;
 import os;
 import gfx;
 import ui;
+import model3d from "../../src/model3d";
 import render3d from "../../src/render3d";
 import .panel;
 
@@ -150,7 +151,7 @@ fn apply(g: render3d::Gpu&, which: i64) {
     let c = clock();
     let shown = looks::shown(which, g.spring);
     let own = looks::wood_for(shown);
-    let wood = if wood_chosen >= 0 { wood_chosen } else if own >= 0 { own } else { render3d::WOOD_MODEL };
+    let wood = if wood_chosen >= 0 { wood_chosen } else if own >= 0 { own } else { model3d::WOOD_MODEL };
     if wood != g.wood || own >= 0 || looks::wood_for(looks::shown(g.look, g.spring)) >= 0 {
         render3d::choose(g, wood, -1);
         g.finish = looks::finish_for(shown, g.wood);
@@ -255,7 +256,7 @@ fn main() {
     // --wood N, --marble N: the wood's model with its finish, and the winter frame's
     // marble (0 the slate); --plain takes the finish off (looks::PLAIN), to compare.
     if flag_str(argv, "--wood") > 0 {
-        wood_chosen = clamp(flag_f32(argv, "--wood", 0.0) as i64, 0, render3d::WOOD_MODELS - 1);
+        wood_chosen = clamp(flag_f32(argv, "--wood", 0.0) as i64, 0, model3d::WOOD_MODELS - 1);
     }
     render3d::choose(g, wood_chosen, flag_f32(argv, "--marble", looks::MARBLE) as i64,
                      flag_f32(argv, "--spring", looks::SPRING_LOOK) as i64);
@@ -412,7 +413,7 @@ fn main() {
         }
         if gfx::key_pressed("W") {
             let c = clock();
-            render3d::set_wood(g, (g.wood + 1) % render3d::WOOD_MODELS);
+            render3d::set_wood(g, (g.wood + 1) % model3d::WOOD_MODELS);
             wood_chosen = g.wood;
             print("wood ", g.wood, " baked in ", (clock() - c) * 1000.0, " ms");
             panel::sync(tuning, g);
