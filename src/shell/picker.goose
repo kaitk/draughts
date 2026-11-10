@@ -221,7 +221,7 @@ fn switch(g: gui::Gui&, r: float4, variant: i64&) -> bool {
         let on = variant == d;
         let tapped, pic = gui::pick(g, SWITCH_IDS + i, float4 { x, r.y + rim, w, r.w - 2.0 * rim },
                                     0.0, strings::get(settings::DRAUGHTS_KEYS[i]),
-                                    strings::get(settings::DRAUGHTS_SIZES[i]), on, settings::DRAUGHTS_ON[i]);
+                                    strings::get(settings::DRAUGHTS_SIZES[i]), on, true);
         if tapped && !on {
             variant = d;
             chose = true;
@@ -231,8 +231,10 @@ fn switch(g: gui::Gui&, r: float4, variant: i64&) -> bool {
     return chose;
 }
 
-// The note under the title while the draughts show another's set (none does now: kept
-// for a variant that lacks a set of its own, as Brazilian once did), or "".
+// The note under the title while the draughts show another's set, or "". None of the
+// three offered does now, as Brazilian once did; it stays for English, which the engine
+// plays but the setup doesn't offer (test/shell/puzzle_set), and a variant added before
+// its set.
 fn note_of(variant: i64) -> const u8[:] {
     return if puzzles::set_of(variant as u8) != variant as u8 { strings::get(strings::PUZZLES_FOR_NOW) } else { "" };
 }

@@ -480,12 +480,11 @@ fn choose(over: game::Overlay&, g: gui::Gui&, content: float4, computer: bool, p
     // The draughts, each with its board at the start.
     let kinds = group(g, c, strings::SETUP_DRAUGHTS, BOARD_TILE_H);
     for v, i in settings::DRAUGHTS {
-        let on = settings::DRAUGHTS_ON[i];
         let tapped, pic = gui::pick(g, 330 + i, draughts_tile(g, kinds, i), MINI_SIZE,
                                     strings::get(settings::DRAUGHTS_KEYS[i]), strings::get(settings::DRAUGHTS_SIZES[i]),
-                                    s.variant == v, on);
+                                    s.variant == v, true);
         let n = rules::VARIANTS[v].size;
-        gui::mini(g, pic, MINI_SIZE * u, n, n / 2 - 1, if on { 1.0 } else { 0.4 });
+        gui::mini(g, pic, MINI_SIZE * u, n, n / 2 - 1, 1.0);
         if tapped {
             s.variant = v;
             ask = CHANGED;

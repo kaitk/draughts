@@ -55,12 +55,10 @@ let KING_NAMES = ["auto", "crown", "stack"];
 let KING_KEYS = [strings::KINGS_AUTO, strings::KINGS_CROWN, strings::KINGS_STACK];
 
 // The draughts a new game can be, in the order the setup shows them: the variant, its
-// name and board, and whether it is offered; the file names it as rules::VARIANT_NAMES
-// does. International is the default.
+// name, and its board; the file names it as rules::VARIANT_NAMES does. International is the default.
 let DRAUGHTS = [rules::INTERNATIONAL, rules::BRAZILIAN, rules::RUSSIAN];
 let DRAUGHTS_KEYS = [strings::VARIANT_INTERNATIONAL, strings::VARIANT_BRAZILIAN, strings::VARIANT_RUSSIAN];
 let DRAUGHTS_SIZES = [strings::SIZE_10, strings::SIZE_8, strings::SIZE_8];
-let DRAUGHTS_ON = [true, true, true];
 let DEFAULT_DRAUGHTS = rules::INTERNATIONAL;
 // The computer's levels (game::EASY..) and the clocks (clock::NONE..), in the file.
 let LEVEL_NAMES = ["easy", "medium", "hard"];
@@ -163,7 +161,7 @@ fn parse(text: const u8[:]) -> Settings {
         }
         if key == "draughts" {
             let v, known = rules::variant_named(value);
-            for d, i in DRAUGHTS { if known && v == d && DRAUGHTS_ON[i] { s.variant = d; } }
+            for d in DRAUGHTS { if known && v == d { s.variant = d; } }
         }
         if key == "level" {
             for name, i in LEVEL_NAMES { if value == name { s.level = i; } }
@@ -467,10 +465,9 @@ fn tile(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, i: i64, r: f
     }
     let on = if row == DRAUGHTS_ROW { s.variant == DRAUGHTS[i] } else if row == HINTS_ROW { s.hints == i }
              else if row == BOARD_ROW { s.board == i } else { s.kings == i };
-    let enabled = if row == DRAUGHTS_ROW { DRAUGHTS_ON[i] } else { true };
     // The crown's and the stack's tiles each show their king.
     let king = row == KINGS_ROW && i != AUTO;
-    let tapped, pic = gui::pick(g, id, r, if king { 34.0 } else { 0.0 }, label, note(row, i), on, enabled);
+    let tapped, pic = gui::pick(g, id, r, if king { 34.0 } else { 0.0 }, label, note(row, i), on, true);
     if king { game::put(over, pic, 15.0 * u, rules::WHITE, i, 1.0, false); }
     guard tapped else { return false; }
     if row == DRAUGHTS_ROW { s.variant = DRAUGHTS[i]; }
