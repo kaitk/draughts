@@ -120,8 +120,8 @@ let BOARD_FRAG = """
             float t = clamp(-fd / lw, 0.0, 1.0);    // 0 at the outer edge, 1 at the squares
             float ny = (px.y - bc.y) / bh.y;
             vec3 lip = tint(dark.rgb, 0.06 - 0.1 * ny);
-            vec3 line = mix(light.rgb, vec3(1.0), 0.25);
-            lip = mix(lip, line, (0.75 - 0.25 * ny) * (1.0 - smoothstep(0.1, 0.26, t)));
+            vec3 rim_tint = mix(light.rgb, vec3(1.0), 0.25);
+            lip = mix(lip, rim_tint, (0.75 - 0.25 * ny) * (1.0 - smoothstep(0.1, 0.26, t)));
             lip = tint(lip, -0.35 * smoothstep(0.7, 1.0, t));
             c = mix(c, lip, clamp(0.5 - fd, 0.0, 1.0));
         }

@@ -14,7 +14,7 @@ out, and the rules every part of it keeps. The rest is by area:
 | --- | --- |
 | Language | [Goose](https://github.com/aardappel/goose), compiled to C (`goose -o game.c`, `goose --emit-runtime`) |
 | Graphics, input, window | `gfx` from [goose_gfx](https://github.com/aardappel/goose_gfx): SDL3's GPU API, with GLSL compiled to SPIR-V, MSL, and HLSL at compile time |
-| GPU backend | Vulkan on Android; Metal on macOS; D3D12 or Vulkan on Windows |
+| GPU backend | Vulkan on Android and Windows; Metal on macOS and iOS (2026-11-10: on Windows SDL would pick Direct3D 12, whose HLSL its compiler FXC took 5 s to compile at each launch; Vulkan takes the SPIR-V compiled with the program, as on Android) |
 | Android build | NDK clang for `aarch64-linux-android29`; SDL shared (`libSDL3.so`) with SDL's stock SDLActivity Java and one small subclass of it (`DraughtsActivity`: development flags, the launch cover, closing the app, SDL's accelerometer kept off); APK built by `scripts/android.py` without Gradle ([development](../development.md)) |
 | Desktop iteration | `goose game.goose` runs in the compiler's process (TinyCC), with no build step |
 | UI | Our own immediate-mode layer in Goose ([rendering.md](rendering.md)); Nuklear (`ui`) for developer tools only |
@@ -76,8 +76,8 @@ The targets this keeps open, each replacing or adding to `app/` alone:
   through the perspective, and each frame's instances, stays plain math in `board/`
   (`view3d`), tested headless.
 - **Other platforms on SDL:** iOS (UIKit, SDL_GPU on Metal; `ios/` and
-  `scripts/ios.py`, [development](../development.md#run-on-ios)), and desktop Windows and Linux (SDL_GPU on D3D12 or
-  Vulkan): a build script and shims beside the Android ones (storage, locales, the
+  `scripts/ios.py`, [development](../development.md#run-on-ios)), and desktop Windows and Linux (SDL_GPU on
+  Vulkan; Windows built by `scripts/windows.py`): a build script and shims beside the Android ones (storage, locales, the
   launch cover, closing). On iOS the program's C calls SDL directly as on Android
   (`src/app/platform.h`), `draughts_platform` tells the app where it runs, home has no
   way out (`home::closable`), and nothing is drawn while the app hasn't focus: iOS ends

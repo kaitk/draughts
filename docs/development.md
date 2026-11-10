@@ -1,11 +1,23 @@
 # Development
 
-Built on macOS (Apple silicon). The tablet is a Galaxy Tab A11+ (SM-X230, Android 16,
-MediaTek MT6878 with a Mali-G615 MC2, Vulkan 1.3).
+The app builds from a Mac (Apple silicon) and from Windows (x64):
+
+| Build | From | Command | Section |
+| --- | --- | --- | --- |
+| macOS app | Mac | `goose build -o ../../build/draughts draughts.goose` in `src/app` | [Run on the Mac](#run-on-the-mac) |
+| Windows app | Windows | `python scripts/windows.py src/app/draughts.goose` | [Run on Windows](#run-on-windows) |
+| Android APK | Mac, Windows | `scripts/android.py src/app/draughts.goose --run` | [Run on Android](#run-on-android) |
+| Android release (APK and AAB for Play) | Mac, Windows, with an upload key | `scripts/android.py src/app/draughts.goose --release` | [Release builds](#release-builds) |
+| iOS simulator, iPhone, iPad | Mac (Xcode) | `scripts/ios.py src/app/draughts.goose --run`, `--device --run` | [Run on iOS](#run-on-ios) |
+| Rules tests | Mac, Windows | `test/run_tests.py` | [Test the rules](#test-the-rules) |
+
+The Toolchain table below is the Mac's; Windows lists its own under Run on Windows and Run
+on Android. The tablet is a Galaxy Tab A11+ (SM-X230, Android 16, MediaTek MT6878 with a
+Mali-G615 MC2, Vulkan 1.3).
 
 ## Toolchain
 
-Tested 2026-11-07 on macOS 26.3.1:
+The Mac's, tested 2026-11-07 on macOS 26.3.1:
 
 | Tool | Where | Version |
 | --- | --- | --- |
@@ -32,7 +44,7 @@ unzip -q astcenc-5.7.0-macos-universal.zip -d astcenc-5.7.0 && rm astcenc-5.7.0-
 cd ..
 $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install \
     "ndk;29.0.14206865" "platforms;android-36" "build-tools;36.0.0" "platform-tools"
-brew install ninja
+brew install cmake ninja
 ```
 
 When the Goose release changes, pin goose_gfx to the commit whose `src/`, `gfx.goose`, and
@@ -142,6 +154,37 @@ started from a terminal never has it, the clocks run while the window shows. `po
 the first proofs of concept (Goose on Android, an idle frame that draws nothing) and the
 3D board's prototype.
 
+## Run on Windows
+
+Tested 2026-11-10 on Windows 11 with Visual Studio's Build Tools (their `clang-cl`), Python,
+and Git Bash (for `patch`):
+
+```sh
+mkdir -p build && cd build
+curl -sLO https://github.com/aardappel/goose/releases/download/v2026.4/goose-v2026.4-windows-x64.zip
+unzip -q goose-v2026.4-windows-x64.zip && rm goose-v2026.4-windows-x64.zip
+cd ..
+python scripts/windows.py src/app/draughts.goose                 # build/windows/draughts.exe
+python scripts/windows.py src/app/draughts.goose --run -- --board 3d --screen game
+```
+
+`scripts/windows.py` builds goose_gfx with `patches/goose_gfx/` applied, as Android and
+iOS do, into a copy of the release (`build/windows/goose/`; delete it after the release
+changes), and builds the program with that copy's `goose`; about 10 s. SDL is the
+release's own, linked statically into the program, so the program's C calls SDL directly
+as on Android (`src/app/platform.h`). The app draws through Vulkan, as on Android
+(`draughts_choose_gpu` in `src/app/display.c`): the driver takes the SPIR-V compiled with
+the program and keeps what it makes of it, so a launch takes 1.25 s the first time and
+0.66 s after. The patched gfx draws only on change: idle at home the app takes no CPU (the
+release's gfx, 344 ms in 10 s), and `--frames N` counts the frames drawn, so a shot of a
+settled screen wants few (4 for a 2D screen, 95 for the 3D board once it has appeared). A
+plain `goose build` with the release's `goose.exe` works as on the Mac, redrawing every
+frame.
+
+The flags are the Mac's. The settings and the saved game are in `%APPDATA%\kaitk\draughts\`.
+`test/run_tests.py` takes the Windows release by default there. The iOS script is the
+Mac's only. Android builds from Windows too (Run on Android, below).
+
 ## Test the rules
 
 ```sh
@@ -205,17 +248,87 @@ puzzle's stars).
 `test/puzzles/` runs the same checks on every puzzle without the engine
 ([puzzles](architecture/puzzles.md#checks)).
 
-## Run on the tablet
+## Run on Android
 
-The tablet needs Developer options with **USB debugging** on, and Samsung's **Auto
+A device needs Developer options with **USB debugging** on; a Samsung, also **Auto
 Blocker** off (Settings → Security and privacy), which otherwise blocks USB debugging
-and sideloading. Use USB mode **Transferring files** and allow the Mac's key.
-`adb devices` should list it.
+and sideloading. Use USB mode **Transferring files** and allow the computer's key.
+`adb devices` should list it. The scripts build from the Mac and from Windows (on
+Windows, `python scripts/android.py ...`).
 
 ```sh
 scripts/android.py src/app/draughts.goose --run     # build, install, start
 adb logcat -s goose:* SDL:*                 # the program's output and SDL's log
 ```
+
+### Set up on the Mac
+
+The tools are the Toolchain table's. Without Android Studio, the SDK comes from Google's
+[command-line tools](https://developer.android.com/studio#command-line-tools-only) for
+the Mac, unpacked as `~/Library/Android/sdk/cmdline-tools/latest/`, where Android Studio
+would put the SDK:
+
+```sh
+brew install openjdk@21 cmake ninja     # then put openjdk@21's bin on PATH, as brew says
+sdk=~/Library/Android/sdk
+$sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$sdk \
+    "ndk;29.0.14206865" "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+export PATH="$sdk/platform-tools:$PATH"   # adb, in the shell's profile
+scripts/android.py src/app/draughts.goose --run
+```
+
+`sdkmanager` asks to accept the SDK's licences. A Mac needs no USB driver. The script
+takes the SDK's `adb` when none is on `PATH`.
+
+### Set up on Windows
+
+Tested 2026-11-10 on Windows 11, with the same SDK packages as on the Mac. The script
+finds them where Android Studio puts them, and runs with `python`:
+
+| Tool | Where on Windows |
+| --- | --- |
+| Goose | `build/goose-v2026.4-windows-x64/goose.exe` (above); `GOOSE` overrides it |
+| Android SDK | `%LOCALAPPDATA%\Android\Sdk`; `ANDROID_HOME` overrides it |
+| JDK | `javac`, `java`, and `keytool` on `PATH`, 17 or newer (`d8` and `sdkmanager` need it) |
+| CMake, Ninja | on `PATH`, from winget |
+| `patch` | Git Bash's |
+
+Without Android Studio, the SDK comes from Google's
+[command-line tools](https://developer.android.com/studio#command-line-tools-only),
+unpacked as `%LOCALAPPDATA%\Android\Sdk\cmdline-tools\latest\`:
+
+```sh
+sdk="$LOCALAPPDATA/Android/Sdk"
+"$sdk/cmdline-tools/latest/bin/sdkmanager.bat" --sdk_root="$sdk" \
+    "ndk;29.0.14206865" "platforms;android-36" "build-tools;36.0.0" "platform-tools" \
+    "extras;google;usb_driver"       # asks to accept the SDK's licences
+winget install -e --id Kitware.CMake --scope user
+winget install -e --id Ninja-build.Ninja
+python scripts/android.py src/app/draughts.goose --run   # build, install, start
+```
+
+`adb` is the SDK's `platform-tools\adb.exe` when it isn't on `PATH`. Windows 11 usually
+finds a phone's driver itself; if Device Manager shows a device without one, Google's is in
+`extras\google\usb_driver`, and a Samsung takes Samsung's. A device Windows doesn't list at all, whose USB
+preferences offer only "This device", is on a charge-only cable. The build goes into
+`build\android\`, as on the Mac.
+
+### The debug key
+
+Each computer has its own debug key (`~/.android/debug.keystore`, which the script makes
+when it's missing), and Android refuses to install an app over one signed with
+another key, as it refuses a debug build over a release (Release builds, below). Never
+uninstall to get past that on a device whose saved game and settings matter: uninstalling
+deletes them. Either copy the debug key from the computer that installed the app, or
+install the build beside it under its own id:
+
+```sh
+scripts/android.py src/app/draughts.goose --run --id-suffix test   # io.github.kaitk.draughts.test
+```
+
+The script never uninstalls; a refused install stops it with that advice.
+
+### The build
 
 `scripts/android.py` builds without Gradle, into `build/android/<program>/`, with
 `scripts/native.py`, which holds what it shares with `scripts/ios.py` (the app's id and
@@ -242,7 +355,8 @@ version, the Goose-to-C step, the patched copies, and the launcher's names):
    `@string/app_name`.
    `zip` adds the dex and the stripped libraries, stored uncompressed. `zipalign -P 16`
    aligns them to 16 KB pages, and `apksigner` signs with `~/.android/debug.keystore`,
-   which it creates if missing. The script checks that every library's ELF segments and
+   which it creates if missing (each computer's own: The debug key, above). The
+   script checks that every library's ELF segments and
    its offset in the APK are on 16 KB pages, as Play requires.
 
 The POC's APK is 2.8 MB: `libSDL3.so` 1.9 MB and `libmain.so` 0.9 MB stripped, SDL's dex
@@ -250,6 +364,8 @@ The POC's APK is 2.8 MB: `libSDL3.so` 1.9 MB and `libmain.so` 0.9 MB stripped, S
 
 The CMake build directory is configured once. Delete `build/android/<program>/native`
 after changing `android/CMakeLists.txt`.
+
+### Screens and devices
 
 On Android the program opens with `gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE`,
 which SDL turns into an immersive window with the system bars hidden. Resizable makes
@@ -368,7 +484,8 @@ the Android App Bundle Play takes, both in `build/android/draughts/`:
 
 - `draughts-release.apk`, the same APK as a debug build but for its signature, to install
   from a clean state and check before an upload. Android refuses it over a debug build,
-  as their signatures differ: `adb uninstall io.github.kaitk.draughts` first.
+  as their signatures differ: `adb uninstall io.github.kaitk.draughts` first, which deletes
+  the app's saved game and settings, so only on a device whose data doesn't matter.
 - `draughts-release.aab`, for Play. `aapt2 link --proto-format` links the resources in
   the bundle's protobuf form; the script packs them, the dex, and the libraries into the
   base module's layout (`manifest/`, `dex/`, `lib/arm64-v8a/`, `res/`, `resources.pb`);
@@ -394,34 +511,21 @@ checked 2026-11-08). Raise `VERSION_CODE` for every upload; Play refuses one it 
 
 Play App Signing holds the key that signs the app on users' devices; the upload key only
 proves an upload comes from the developer. Lost, it can be reset through Play Console's
-support, which takes days, so keep a backup anyway. It is kept outside the repo, and
-neither it nor its password is ever committed:
+support, which takes days, so keep a backup anyway. Whoever publishes to Play, a fork
+included, makes their own. It stays outside the repo, and neither it nor its password is
+ever committed. The script reads it from two files:
 
 | File | What it is |
 | --- | --- |
-| `~/.config/draughts/upload-key.jks` | The keystore: PKCS12, alias `upload`, RSA 4096, `CN=Draughts`, valid until 2054-03-26 |
-| `~/.config/draughts/upload-key.properties` | `storeFile`, `keyAlias`, `storePassword`, and `keyPassword` (the same password, as PKCS12 has one), mode 600 |
+| `~/.config/draughts/upload-key.jks` | The keystore: PKCS12, alias `upload`, RSA 4096 |
+| `~/.config/draughts/upload-key.properties` | `storeFile`, `keyAlias`, `storePassword`, and `keyPassword` (the same password, as PKCS12 has one), readable only by its owner |
 
 `DRAUGHTS_UPLOAD_KEY` points the script at another properties file. The script hands the
 password to `apksigner` and `jarsigner` through the environment, never the command line.
-Its certificate's SHA-256 is
-`C4:F6:7B:CD:9E:DD:45:3F:5B:64:5F:AF:16:E6:F3:50:71:46:29:24:59:39:17:51:4B:3C:53:FC:25:1D:6F:4B`
-(`keytool -list -v -keystore ~/.config/draughts/upload-key.jks`), which Play Console
-shows once the first upload has registered it.
+`keytool -list -v -keystore ~/.config/draughts/upload-key.jks` shows the certificate's
+SHA-256, which Play Console shows once the first upload has registered it.
 
-**Back it up before the first upload**, both files together, somewhere that survives the
-Mac: a password manager's file attachment (1Password, Bitwarden) is the simplest, or an
-encrypted disk image on a drive kept elsewhere:
-
-```sh
-hdiutil create -encryption AES-256 -srcfolder ~/.config/draughts -volname draughts-key \
-    ~/Desktop/draughts-key.dmg            # asks for a passphrase; store it apart from the image
-```
-
-Check a backup by restoring it to a scratch folder and running `keytool -list -keystore
-upload-key.jks` with the password from its properties file.
-
-The key was made once (2026-11-08) with:
+Make one with:
 
 ```sh
 mkdir -p ~/.config/draughts && chmod 700 ~/.config/draughts
@@ -430,7 +534,14 @@ keytool -genkeypair -keystore ~/.config/draughts/upload-key.jks -storetype PKCS1
     -storepass:env PASS -keypass:env PASS   # PASS: 40 random letters and digits
 ```
 
-and the properties file written beside it with the same password, both `chmod 600`.
+and write the properties file beside it with the same password, both `chmod 600`.
+
+**Back it up before the first upload**, both files together, somewhere that survives the
+computer: a password manager's file attachment is the simplest, or an encrypted disk
+image on a drive kept elsewhere (on a Mac, `hdiutil create -encryption AES-256
+-srcfolder ~/.config/draughts ...`, its passphrase stored apart from the image). Check a
+backup by restoring it to a scratch folder and running `keytool -list -keystore
+upload-key.jks` with the password from its properties file.
 
 ## Time the 3D board
 

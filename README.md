@@ -21,8 +21,8 @@ solve puzzles. No ads, no accounts, no tracking, and no network.
 
 ## Tested on
 
-Every device below is arm64. The app needs Android 10 (API 29) or later with Vulkan, or
-iOS 16 or later with Metal.
+Every phone and tablet below is arm64. The app needs Android 10 (API 29) or later with
+Vulkan, or iOS 16 or later with Metal.
 
 | Device | Chip (CPU) | GPU, API | System | Status |
 | --- | --- | --- | --- | --- |
@@ -32,6 +32,7 @@ iOS 16 or later with Metal.
 | iPhone 13 mini | Apple A15 Bionic | Apple GPU, Metal | iOS 26 | Runs, a development build |
 | iPad Pro 11-inch (M5), in the Simulator | The Mac's M1 Pro | Apple GPU, Metal | iPadOS 26.4 | Runs full screen and in resized windows, both orientations; the smallest windows still to fit |
 | Mac with Apple silicon (M1 Pro) | Apple M1 Pro | Apple GPU, Metal | macOS | Development and headless tests |
+| Windows PC | AMD Ryzen 7 5800X3D | NVIDIA GeForce RTX 4090, Vulkan | Windows 11 | Runs in 2D and 3D; development, headless tests, and Android builds |
 
 Measured numbers per device are in
 [rendering](docs/architecture/rendering.md#the-3d-board-on-devices);

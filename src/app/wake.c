@@ -3,9 +3,10 @@
 // patched frame() waits up to a second for an event after a frame that drew nothing, so
 // a clock drawn once a second slipped by a frame each second and skipped a second about
 // every two and a half minutes. An SDL timer pushes an event of the program's own type
-// when the time shown changes, which ends the wait; goose_gfx ignores the event. On the
-// Mac the built-in frame() doesn't wait, so this does nothing there. iOS builds the
-// patched gfx as Android does, and needs the timer too (platform.h).
+// when the time shown changes, which ends the wait; goose_gfx ignores the event. iOS and
+// Windows (scripts/windows.py) build the patched gfx as Android does, and need the timer
+// too; with the release's gfx (the Mac's, a plain `goose build` on Windows) frame()
+// doesn't wait, and the event changes nothing. The Mac leaves it out (platform.h).
 
 #include "platform.h"
 #include <stdbool.h>

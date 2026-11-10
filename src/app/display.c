@@ -11,6 +11,9 @@
 // on the Mac a window's safe area is all of it. The display scale: on Android
 // densityDpi / 160 (2.625 on the Pixel 7a, 1.5 on the Tab A11+), on iOS the screen's
 // pixels a point, on a Mac's Retina screen 2.
+//
+// The GPU driver: Vulkan on Windows, as on Android, which SDL would otherwise pass over
+// for Direct3D 12 (docs/architecture/README.md).
 
 #include "platform.h"
 #include <stdbool.h>
@@ -18,6 +21,18 @@
 
 typedef struct SDL_Window SDL_Window;
 typedef struct { int x, y, w, h; } SDL_Rect;
+
+#if defined(_WIN32)
+extern bool SDL_SetHint(const char *name, const char *value);
+#endif
+
+// Asks SDL for the GPU driver the app draws with, before gfx opens the window: Vulkan on
+// Windows; elsewhere the platform's only one (Metal on Apple's, Vulkan on Android).
+void draughts_choose_gpu(void) {
+#if defined(_WIN32)
+    SDL_SetHint("SDL_GPU_DRIVER", "vulkan");
+#endif
+}
 
 #if DRAUGHTS_SDL_LINKED
 extern SDL_Window **SDL_GetWindows(int *count);

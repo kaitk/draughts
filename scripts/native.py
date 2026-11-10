@@ -11,7 +11,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-GOOSE = Path(os.environ.get("GOOSE", ROOT / "build/goose-v2026.4-macos-arm64/goose"))
+WINDOWS = sys.platform == "win32"
+GOOSE = Path(os.environ.get("GOOSE", ROOT / ("build/goose-v2026.4-windows-x64/goose.exe" if WINDOWS
+                                             else "build/goose-v2026.4-macos-arm64/goose")))
 SDL = ROOT / "third_party/goose_gfx/third_party/SDL"
 # The application id on Android and the bundle id on iOS (2026-11-08): Play fixes it for
 # good at the first upload. Another program (a prototype in poc/) gets APP_ID.<name>, so
@@ -64,10 +66,8 @@ def sdl_stamp():
     return stamp.hexdigest()
 
 
-def copy_sources(out, sdl_src):
-    """goose_gfx's src/ under out with patches/goose_gfx applied, and SDL in sdl_src with
-    patches/SDL applied; SDL is large, so its copy is remade only when its commit or a
-    patch changes. Returns the two folders the CMake build takes."""
+def copy_gfx(out):
+    """goose_gfx's src/ under out with patches/goose_gfx applied; returns that src/."""
     gfx_src, fresh = out / "goose_gfx_src", out / "goose_gfx_src.new"
     if fresh.exists():
         shutil.rmtree(fresh)
@@ -78,6 +78,14 @@ def copy_sources(out, sdl_src):
     if gfx_src.exists():
         shutil.rmtree(gfx_src)
     fresh.rename(gfx_src)
+    return gfx_src / "src"
+
+
+def copy_sources(out, sdl_src):
+    """goose_gfx's src/ under out with patches/goose_gfx applied, and SDL in sdl_src with
+    patches/SDL applied; SDL is large, so its copy is remade only when its commit or a
+    patch changes. Returns the two folders the CMake build takes."""
+    gfx_src = copy_gfx(out)
     stamp, stamp_file = sdl_stamp(), sdl_src / ".draughts-stamp"
     if not stamp_file.exists() or stamp_file.read_text() != stamp:
         fresh = sdl_src.with_name("SDL_src.new")
@@ -91,7 +99,7 @@ def copy_sources(out, sdl_src):
         if sdl_src.exists():
             shutil.rmtree(sdl_src)
         fresh.rename(sdl_src)
-    return gfx_src / "src", sdl_src
+    return gfx_src, sdl_src
 
 
 def app_names():
