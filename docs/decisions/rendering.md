@@ -307,3 +307,161 @@ Task 052, `prototypes/game-captured.html`'s take a in its `row` look, chosen 202
 - The 3D board lights a missed capture's next stops (2026-11-09); it never showed them
   before.
 - A puzzle's board makes captures by hand with none of the game's help (2026-11-08).
+
+## Fonts
+
+Libertinus Sans, the face of a reference liked for its look (arXiv 2611.07289), in the
+style of Optima. Tenor Sans, Belleza, and Marcellus were compared with it in Estonian
+text; all four have õ ä ö ü š ž. Tenor Sans, which the proof of concept uses, is the
+runner-up: clean and wide, but one weight only. Marcellus has small serifs, further from
+Optima. If titles want more character, Tenor Sans could set them and Libertinus the rest;
+one face is the default, for one atlas.
+
+The title and the figures hold only their characters, as those two faces were 71% of the
+atlas's area with every glyph. With one byte a texel and only the rows used, the texture
+went from power-of-two RGBA to R8:
+
+At 1024 texels wide, the texture's size by scale:
+
+| Screen (scale) | Before: every glyph, RGBA, power of two | R8, the rows used |
+| --- | --- | --- |
+| A 720 × 1280 phone at low density (0.9) | 1024 rows, 4 MiB | 261 rows, 0.25 MiB |
+| The Galaxy tablet; a 720 × 1280 phone at xhdpi (1.5) | 2048 rows, 8 MiB | 630 rows, 0.62 MiB |
+| The Pixel 7a (1.97) | 4096 rows, 16 MiB | 1023 rows, 1.0 MiB |
+| 2880 × 1920 (2.4) | 8192 rows, 32 MiB | 1482 rows, 1.45 MiB |
+
+## GPU memory
+
+Large allocations are their own size (`patches/SDL/0003`). Upstream rounds them up to
+64 MiB blocks that later large resources share: on the tablet the screen (9.6 MiB) and
+the photograph (16.3) would take a whole 64 MiB block.
+
+`gfx::flush()` between short-lived small resources took the tablet's GL mtrack at home
+from 60.7 to 36.4 MB, and after three season changes from 57.3 to 40.9.
+
+Exact allocations, not rounded to 4 or 8 MiB (2026-11-08): the count of allocations is
+  the same either way, one per large resource, and rounding wastes half a step each on
+  average (about 10 or 22 MiB on the tablet). It would pay only if a freed block were
+  kept and taken by a later resource of nearly its size, but SDL makes the new screen or
+  photograph before it releases the old one, so the old block is still in use when the
+  new one wants it; and keeping freed blocks for reuse is how a large block stays alive
+  for a small tenant, the 64 MiB blocks' trouble. A smaller fixed block shared as
+  upstream does (16 or 32 MiB) still needs its own for anything larger (the largest
+  tablet's screen, a 3D MSAA target) and stays alive while any tenant lives; SDL has no
+  `VK_KHR_dedicated_allocation` plumbing, and an exact plain allocation already gives
+  the memory back.
+
+Not done: drawing straight into the swapchain, dropping gfx's screen copy, which would
+save only the screen's 9.6 MiB for a large gfx patch; and halving the computer's worker's
+tables, which would save about 3 MB, not worth checking what it costs in strength.
+
+Giving back what malloc keeps after the launch (`mallopt(M_PURGE_ALL, 0)`) took the
+native heap at home from 42.6 to 26.7 MB.
+
+The 3D bake stopped clearing its four surfaces (2026-11-09): each had kept a cycled second
+copy, 85 MB on the Pixel 7a.
+
+## The 3D board on devices
+
+The measurements as they were taken, kept here as the architecture keeps only the
+current ones. Taken with the app's `--bench 300`, `scripts/idle_cpu.sh`, and
+`dumpsys meminfo` on 2026-11-09; the three Android devices again on 2026-11-10 with
+`scripts/device_perf.sh`, the release built from 1aaf406; the iPhone with
+`scripts/ios_perf.py`, its development build from 1c25f33, the same app code with
+`--rest`. The tablet again from 4d50eb2's release, after task 059 (its 3D memory 30 MB
+more: the kept backdrop and UI layers, 9 MB each, and the occlusion and crown maps). The
+release's frames and the idle table were taken on 2026-11-10.
+
+Measured with the app's `--bench 300` ([development](../development.md#time-the-3d-board)),
+idle with `scripts/idle_cpu.sh`, memory with `dumpsys meminfo` at rest (2026-11-09; the
+three Android devices again 2026-11-10 with `scripts/device_perf.sh`, the release built
+from 1aaf406; the iPhone with `scripts/ios_perf.py`, its development build from 1c25f33, the
+same app code with `--rest`, which counts its own CPU time and footprint). The tablet
+again from 4d50eb2's release, after task 059 (its 3D memory 30 MB more: the kept
+backdrop and UI layers, 9 MB each, and the occlusion and crown maps).
+
+The release at rest, idle 20 to 30 s:
+
+| Device | Board | Idle program thread | GL mtrack | EGL mtrack | Total PSS |
+| --- | --- | --- | --- | --- | --- |
+| Galaxy Tab A11+, 1920 × 1200 | 2D, a game | 0.04 to 0.08% | 37 MB | 55 to 60 MB | 133 to 141 MB |
+| Galaxy Tab A11+ | 3D, a game | 0.28 to 0.32% | 210 MB | 32 MB | 295 MB |
+| Pixel 7a, 2400 × 1080 | 2D, a game | 0.08% | 45 MB | 73 MB | 159 MB |
+| Pixel 7a | 3D, a game | 0.04% | 215 MB | 73 MB | 324 MB |
+| Galaxy A33 5G, 2400 × 1080 | 2D, a game | 0.04% | 35 MB | 43 MB | 116 MB |
+| Galaxy A33 5G | 3D, a game | 0.04% | 197 MB | 29 MB | 275 MB |
+| iPhone 13 mini, 2340 × 1080 | 2D, a game | 0.08% | | | 59 MB footprint |
+| iPhone 13 mini | 3D, a game | 0.08% | | | 204 MB footprint |
+
+- **The tablet's frame** while the board moves (the first baseline, 1920 × 1200 at 90 Hz):
+  the forward pass alone 10.9 ms at 1×, the whole budget; MSAA 4× adds 3.2 ms (6.3 ms
+  and 72 MB more without `patches/goose_gfx/0005`, which keeps the samples and the depth
+  from being stored); the shadow map 2 ms on the frames that draw it; the CPU's part
+  about 0.4 ms. It renders as the Mac does. After task 042's cuts (2026-11-10): the
+  frame with the shadow map, as while a piece moves, 10.5 ms waited, the pass alone
+  (the camera turning) 9.9, presented 12.8 ms frame to frame; 90 Hz kept. The release, 2026-11-10, 1000 frames: waited P50
+  10.6 / P99 12.7 ms, the pass alone 10.0; the compositor counts 17% of the frames on
+  screen for two refreshes, 78 fps on average, 45 at the 1% low (task 055). The flat board's
+  whole frame (`bench2d`) 10.2 ms waited, and no frame dropped (`scripts/device_perf.sh`).
+  After task 059's four changes (2026-11-10, debuggable test builds of fab1757 and c7d23bf
+  beside the app, two runs each): waited P50 10.6 to 10.9 → 9.2 to 9.4 / P99 12.8 to 12.9
+  → 10.9 to 11.2 ms, the pass alone 10.0 to 10.3 → 9.0 to 9.1, presented 12.9 → 11.0 ms
+  frame to frame; the compositor counts 90 fps at the 1% low and no frame dropped (17%
+  before). With 16 crowned kings 12.2 → 9.0 ms waited, 31% dropped → none. The release
+  from 4d50eb2, 1000 frames: waited P50 9.22 / P99 12.13 ms, the pass alone 8.96, 90 fps
+  on average and at the 1% low, none dropped; the flat board's 9.39 ms waited, none dropped. The GPU's clock
+  stays near its top (1047 MHz) in both, so the frame times show the work. Baking the
+  field's shadow and occlusion into a map with the shadow map was dropped
+  (2026-11-09): it took the camera's turn to 8.4 ms but every frame that draws the
+  shadow map to 11.5.
+- **The Pixel 7a** (60 Hz): the pass 14.0 ms waited for International, 13.0 for Russian,
+  presented every 16.6 ms; 2026-11-10, 1000 frames: waited P50 13.5 / P99 16.0 ms, and the
+  compositor counts 1 of 995 frames on screen for two refreshes (the flat board's none, its
+  frame 11.8 ms waited); the theme applied at launch in 0.76 s (the bake, its
+  pipeline made), the first frame 0.31 s.
+- **The Galaxy A33** (90 Hz, thermal status 3): the pass 36 ms waited at first, about
+  28 fps while the board moves; after the frame cost's first cuts the pass 19.3 ms and
+  about 39 fps (25.7 ms frame to frame); the theme applied in 1.66 s, the first frame 0.35 s. Its Mali-G68 lost the device
+  on a texture's mip level 0 pixels high ([findings](../goose-findings.md)); the bake's
+  mips now end at the shorter side's 1 pixel (`render3d::baked`). 2026-11-10, 1000
+  frames: the 3D frame waited P50 23.2 / P99 26.0 ms (the pass alone 17.1), on screen for
+  two refreshes every other frame, a steady 60 fps; the flat board's 15.6 ms waited, and
+  no frame dropped.
+- **60 Hz for a slow 3D board** (task 056): on Android, once 60 frames of the ready 3D
+  board average over 1.25 refreshes of a display faster than 60 Hz, the app asks for 60
+  Hz on its surface (`ANativeWindow_setFrameRate`, `src/app/display.c`) whenever the 3D
+  board draws, and for the display's own rate otherwise: 60 frames on a 90 Hz display
+  show two refreshes and one in turn. A device that holds its display's rate keeps it.
+  The Galaxy A33 ignores it: its "High" motion smoothness holds 90 Hz whatever an app asks.
+  The tablet's frames fit its 90 Hz since task 059 (they averaged about 1.15 refreshes
+  before, and it kept 90, chosen over an even 60); the Pixel 7a's display is at 60 already.
+- **Where the moving 3D frame goes** (task 059, Streamline on the Pixel 7a, after its
+  four changes): GPU active 7.01M → 4.70M cycles a frame, fragment-bound (the tiler 3%
+  of the GPU's time), not bandwidth-bound (0.6 GB/s), little overdraw. The lit fragment
+  shader still holds 64 registers (half occupancy on the G615). The UI's live cost was
+  1.45M cycles a frame, 24%, paid only when the UI changes now that it is kept
+  (`widgets::prepare`), and the backdrop's grade 0.43M when it changes; after task 063
+  the two together 1.54M → 0.99M (the moving 3D game with `--keep off`: 6.76M → 6.21M a
+  frame, 5.22M kept), the UI's part about halved. Ranked and not yet tried: the pieces' shadows on the field analytic (a disc's stadium along the light) in place
+  of the shadow map's pass and its 9 taps on every lit pixel; fp16 for colors, the
+  harmonics, the tonemap, and the varyings (no shader uses 16-bit yet); MSAA 4× read
+  again at 2,208 triangles a piece; a lower render scale for the 3D pass, last.
+- **Open:** at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the
+  flat board's 0.3, outside the app's own work, as the Mac shows no draw at rest.
+
+## When a frame reaches the screen
+
+goose_gfx records a frame and its blit into the window's image in one command buffer.
+Submitting the frame before the wait and the blit apart was measured worse: the window
+has 3 surfaces and the compositor holds two, so the blit waits for one and the frame
+after it for the blit.
+
+## Frames and battery
+
+- The idle table and the Mac's and Windows' footprints were taken with `--rest 25` on
+  2026-11-10.
+- A drop that leaves a piece waiting draws the frame after too (2026-11-08): a puzzle's
+  next stayed dim on the Pixel 7a, as a drop is a finger's last event.
+- The wake timer for a running clock (2026-11-08): measured on the tablet, the clock was
+  drawn 6 ms later each second, up to a second late, and skipped a second every two and a
+  half minutes.

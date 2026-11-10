@@ -1137,13 +1137,9 @@ capture pulses a red ring
 ## Fonts
 
 **Libertinus Sans** (SIL OFL 1.1), the maintained fork of Linux Biolinum: a humanist sans
-with flared strokes in the style of Optima, the face of the reference the user liked
-(arXiv 2611.07289), with a regular and a bold. Tenor Sans, Belleza, and Marcellus were
-compared with it in Estonian text; all four have õ ä ö ü š ž. Tenor Sans, which the
-proof of concept uses (`assets/fonts/`), is the runner-up: clean and wide, but one weight
-only. Marcellus has small serifs, further from Optima. The atlas bakes Latin-1, Latin
-Extended-A, and general punctuation. If titles want more character, Tenor Sans could set
-them and Libertinus the rest; one face is the default, for one atlas.
+with flared strokes in the style of Optima, with a regular and a bold, and õ ä ö ü š ž
+([why this face](../decisions/rendering.md#fonts)). The proof of concept uses Tenor Sans
+(`assets/fonts/`). The atlas bakes Latin-1, Latin Extended-A, and general punctuation.
 
 Natively (`src/app/text.goose`) the regular weight (`assets/fonts/`, from the v7.051
 release) is baked by `ui`'s atlas once per size the UI uses, at the screen's pixel size,
@@ -1160,7 +1156,7 @@ The texture holds only what is drawn:
 - **The title and the figures hold only their characters** (`shell::face_chars`): the
   64 dp title the app's name in every language in `strings/` (home's wordmark), the 36
   dp figures the clock's digits and colon, and both '?', the glyph a missing character
-  is drawn as. Those two faces were 71% of the atlas's area with every glyph. A
+  is drawn as. A
   translation's name is taken from its file at the bake, so nothing else changes for
   a new language; `test/shell/faces` fails if a string drawn in either face has a
   character outside its set. The other four faces keep every glyph, as any string may
@@ -1171,14 +1167,9 @@ The texture holds only what is drawn:
   lowest glyph and one empty row as an R8 texture, its v remapped from whole rows, and
   the UI shader reads `.r`. The text is drawn byte for byte as from the whole RGBA atlas.
 
-At 1024 texels wide, the texture's size by scale:
-
-| Screen (scale) | Before: every glyph, RGBA, power of two | R8, the rows used |
-| --- | --- | --- |
-| A 720 × 1280 phone at low density (0.9) | 1024 rows, 4 MiB | 261 rows, 0.25 MiB |
-| The Galaxy tablet; a 720 × 1280 phone at xhdpi (1.5) | 2048 rows, 8 MiB | 630 rows, 0.62 MiB |
-| The Pixel 7a (1.97) | 4096 rows, 16 MiB | 1023 rows, 1.0 MiB |
-| 2880 × 1920 (2.4) | 8192 rows, 32 MiB | 1482 rows, 1.45 MiB |
+At 1024 texels wide the texture is 261 rows (0.25 MiB) for a 720 × 1280 phone at low
+density (scale 0.9), 630 (0.62 MiB) on the Galaxy tablet, 1023 (1.0 MiB) on the Pixel 7a
+(1.97), and 1482 (1.45 MiB) at 2880 × 1920 (2.4).
 
 Under 2 MiB at every size, so it lives in SDL's shared small blocks ([GPU
 memory](#gpu-memory)), and its upload's transfer buffer is as small. Nuklear's own bake
@@ -1197,9 +1188,8 @@ the driver. How the patched allocator works:
   live there, one block on the tablet.
   A block that empties goes back to the driver.
 - **Over 2 MiB**: a `VkDeviceMemory` of the resource's own size, nothing else ever placed
-  in it, given back to the driver at a submit soon after the resource is released.
-  Upstream rounds these up to 64 MiB blocks that later large resources share: on the
-  tablet the screen (9.6 MiB) and the photograph (16.3) would take a whole 64 MiB block.
+  in it, given back to the driver at a submit soon after the resource is released
+  ([why not upstream's 64 MiB blocks](../decisions/rendering.md#gpu-memory)).
 - **Transfer buffers** are their own exact allocations at any size, upstream too. Each
   drawn frame allocates and frees three small ones (gfx's `update_buffer`: 32 KB, 3 KB,
   256 B); a persistent upload buffer in gfx would end that.
@@ -1211,19 +1201,9 @@ the driver. How the patched allocator works:
   after the submit that used it completes, so making several in a row (settings'
   thumbnails, four photographs) or a new scene beside the old one fills the shared block
   and opens another, which a later resident resource can keep alive. The app calls
-  `gfx::flush()` between them (on the tablet GL mtrack at home 60.7 → 36.4 MB, after
-  three season changes 57.3 → 40.9).
-- **Exact, not rounded to 4 or 8 MiB** (2026-11-08): the count of allocations is
-  the same either way, one per large resource, and rounding wastes half a step each on
-  average (about 10 or 22 MiB on the tablet). It would pay only if a freed block were
-  kept and taken by a later resource of nearly its size, but SDL makes the new screen or
-  photograph before it releases the old one, so the old block is still in use when the
-  new one wants it; and keeping freed blocks for reuse is how a large block stays alive
-  for a small tenant, the 64 MiB blocks' trouble. A smaller fixed block shared as
-  upstream does (16 or 32 MiB) still needs its own for anything larger (the largest
-  tablet's screen, a 3D MSAA target) and stays alive while any tenant lives; SDL has no
-  `VK_KHR_dedicated_allocation` plumbing, and an exact plain allocation already gives
-  the memory back.
+  `gfx::flush()` between them.
+- **Exact, not rounded** to a step of 4 or 8 MiB
+  ([why](../decisions/rendering.md#gpu-memory)).
 
 What the memory is, on the tablet (1920 × 1200) at home: GL mtrack about 36 MB (the
 screen, 9.6 MiB, in its own allocation; one shared 16 MiB block with everything else;
@@ -1233,18 +1213,16 @@ native heap of about 27 MB. Two parts are out of the app's reach:
 - **The swapchain is the driver's minimum.** SDL asks for 2 images, but the Mali-G615's
   `minImageCount` is 6 (about seven screen-sized images on the Pixel 7a), so it is 58 MiB
   at 1920 × 1200, 21 at 720 × 1280, and 127 at 2880 × 1920: most of what is left at
-  every size. Drawing straight into the swapchain, dropping gfx's screen copy, would save
-  only the screen's 9.6 MiB for a large gfx patch; not done.
+  every size.
 - **The driver's own** about 10 MB.
 
 On the CPU side, Android's malloc (Scudo) keeps freed pages resident: small blocks' until
 Android purges them as the app goes to the background, freed large blocks (100 KB to
 1 MB) in a secondary cache that purge leaves. The launch frees about 16 MB of both, so
 the app calls `mallopt(M_PURGE_ALL, 0)` once, in the first idle frame after the launch
-(`src/app/memory.c`, 2 ms; [Frames and battery](#frames-and-battery)): native heap at home
-42.6 → 26.7 MB. Goose packs structs, so large tables carry no padding. The computer's
-worker's tables (about 5 MB, [ai](ai.md)) take memory only once it first plays; halving
-them would save about 3 MB, not worth checking what it costs in strength.
+(`src/app/memory.c`, 2 ms; [Frames and battery](#frames-and-battery)), leaving the native
+heap at home about 27 MB. Goose packs structs, so large tables carry no padding. The
+computer's worker's tables (about 5 MB, [ai](ai.md)) take memory only once it first plays.
 
 What to watch when adding large resources (the 3D board: an MSAA target, a
 depth target, a shadow map, albedo, normal, and roughness atlases with mips):
@@ -1254,11 +1232,10 @@ depth target, a shadow map, albedo, normal, and roughness atlases with mips):
   per frame. Vulkan guarantees at least 4096 live allocations
   (`maxMemoryAllocationCount`); a dozen large resources are far from it.
 - A large target SDL cycles (cleared or written with `cycle` while the GPU still reads
-  it) keeps a second or third copy for good, each its own allocation, as the screen did
-  before gfx stopped cycling it. Clear without cycling where the GPU can wait instead.
-  A target cleared by its first pass right after it is made is cycled too: the 3D
-  board's four baked surfaces each kept a second copy, 85 MB on the Pixel 7a, until the
-  bake stopped clearing (it writes every texel anyway; 2026-11-09).
+  it) keeps a second or third copy for good, each its own allocation. Clear without
+  cycling where the GPU can wait instead. A target cleared by its first pass right after
+  it is made is cycled too, so the 3D bake doesn't clear its four surfaces (it writes
+  every texel anyway).
 - A pipeline is made once per set of target formats it draws into, each a full compile
   of its shaders: on the Pixel 7a the 3D bake's takes about 0.4 s, so the plan's normal
   map stays RGBA8 like the frame's (RG8 would save 11 MB and cost a second compile).
@@ -1275,12 +1252,10 @@ depth target, a shadow map, albedo, normal, and roughness atlases with mips):
 ## The 3D board on devices
 
 Measured with the app's `--bench 300` ([development](../development.md#time-the-3d-board)),
-idle with `scripts/idle_cpu.sh`, memory with `dumpsys meminfo` at rest (2026-11-09; the
-three Android devices again 2026-11-10 with `scripts/device_perf.sh`, the release built
-from 1aaf406; the iPhone with `scripts/ios_perf.py`, its development build from 1c25f33, the
-same app code with `--rest`, which counts its own CPU time and footprint). The tablet
-again from 4d50eb2's release, after task 059 (its 3D memory 30 MB more: the kept
-backdrop and UI layers, 9 MB each, and the occlusion and crown maps).
+idle with `scripts/idle_cpu.sh`, memory with `dumpsys meminfo` at rest, the Android
+devices with `scripts/device_perf.sh` on a release build; the iPhone with
+`scripts/ios_perf.py` on a development build with `--rest`, which counts its own CPU time
+and footprint. How the numbers came to be: [decisions](../decisions/rendering.md#the-3d-board-on-devices).
 
 The release at rest, idle 20 to 30 s:
 
@@ -1295,65 +1270,42 @@ The release at rest, idle 20 to 30 s:
 | iPhone 13 mini, 2340 × 1080 | 2D, a game | 0.08% | | | 59 MB footprint |
 | iPhone 13 mini | 3D, a game | 0.08% | | | 204 MB footprint |
 
-- **The tablet's frame** while the board moves (the first baseline, 1920 × 1200 at 90 Hz):
-  the forward pass alone 10.9 ms at 1×, the whole budget; MSAA 4× adds 3.2 ms (6.3 ms
-  and 72 MB more without `patches/goose_gfx/0005`, which keeps the samples and the depth
-  from being stored); the shadow map 2 ms on the frames that draw it; the CPU's part
-  about 0.4 ms. It renders as the Mac does. After task 042's cuts (2026-11-10): the
-  frame with the shadow map, as while a piece moves, 10.5 ms waited, the pass alone
-  (the camera turning) 9.9, presented 12.8 ms frame to frame; 90 Hz kept. The release, 2026-11-10, 1000 frames: waited P50
-  10.6 / P99 12.7 ms, the pass alone 10.0; the compositor counts 17% of the frames on
-  screen for two refreshes, 78 fps on average, 45 at the 1% low (task 055). The flat board's
-  whole frame (`bench2d`) 10.2 ms waited, and no frame dropped (`scripts/device_perf.sh`).
-  After task 059's four changes (2026-11-10, debuggable test builds of fab1757 and c7d23bf
-  beside the app, two runs each): waited P50 10.6 to 10.9 → 9.2 to 9.4 / P99 12.8 to 12.9
-  → 10.9 to 11.2 ms, the pass alone 10.0 to 10.3 → 9.0 to 9.1, presented 12.9 → 11.0 ms
-  frame to frame; the compositor counts 90 fps at the 1% low and no frame dropped (17%
-  before). With 16 crowned kings 12.2 → 9.0 ms waited, 31% dropped → none. The release
-  from 4d50eb2, 1000 frames: waited P50 9.22 / P99 12.13 ms, the pass alone 8.96, 90 fps
-  on average and at the 1% low, none dropped; the flat board's 9.39 ms waited, none dropped. The GPU's clock
-  stays near its top (1047 MHz) in both, so the frame times show the work. Baking the
-  field's shadow and occlusion into a map with the shadow map was dropped (the user,
-  2026-11-09): it took the camera's turn to 8.4 ms but every frame that draws the
-  shadow map to 11.5.
-- **The Pixel 7a** (60 Hz): the pass 14.0 ms waited for International, 13.0 for Russian,
-  presented every 16.6 ms; 2026-11-10, 1000 frames: waited P50 13.5 / P99 16.0 ms, and the
-  compositor counts 1 of 995 frames on screen for two refreshes (the flat board's none, its
-  frame 11.8 ms waited); the theme applied at launch in 0.76 s (the bake, its
+- **The tablet** (1920 × 1200, 90 Hz), the release, 1000 frames: waited P50 9.22 / P99
+  12.13 ms, the pass alone 8.96, 90 fps on average and at the 1% low, none dropped; with
+  16 crowned kings 9.0 ms waited. The flat board's frame 9.39 ms waited, none dropped. The
+  GPU's clock stays near its top (1047 MHz) in both, so the frame times show the work.
+  MSAA 4× adds about 3.2 ms (6.3 ms and 72 MB more without `patches/goose_gfx/0005`, which
+  keeps the samples and the depth from being stored); the shadow map about 2 ms on the
+  frames that draw it; the CPU's part about 0.4 ms. It renders as the Mac does.
+- **The Pixel 7a** (60 Hz), 1000 frames: waited P50 13.5 / P99 16.0 ms, and the
+  compositor counts 1 of 995 frames on screen for two refreshes (the flat board's none,
+  its frame 11.8 ms waited); the theme applied at launch in 0.76 s (the bake, its
   pipeline made), the first frame 0.31 s.
-- **The Galaxy A33** (90 Hz, thermal status 3): the pass 36 ms waited at first, about
-  28 fps while the board moves; after the frame cost's first cuts the pass 19.3 ms and
-  about 39 fps (25.7 ms frame to frame); the theme applied in 1.66 s, the first frame 0.35 s. Its Mali-G68 lost the device
-  on a texture's mip level 0 pixels high ([findings](../goose-findings.md)); the bake's
-  mips now end at the shorter side's 1 pixel (`render3d::baked`). 2026-11-10, 1000
-  frames: the 3D frame waited P50 23.2 / P99 26.0 ms (the pass alone 17.1), on screen for
-  two refreshes every other frame, a steady 60 fps; the flat board's 15.6 ms waited, and
-  no frame dropped.
-- **60 Hz for a slow 3D board** (task 056): on Android, once 60 frames of the ready 3D
-  board average over 1.25 refreshes of a display faster than 60 Hz, the app asks for 60
-  Hz on its surface (`ANativeWindow_setFrameRate`, `src/app/display.c`) whenever the 3D
-  board draws, and for the display's own rate otherwise: 60 frames on a 90 Hz display
-  show two refreshes and one in turn. A device that holds its display's rate keeps it.
-  The Galaxy A33 ignores it: its "High" motion smoothness holds 90 Hz whatever an app asks.
-  The tablet's frames fit its 90 Hz since task 059 (they averaged about 1.15 refreshes
-  before, and it kept 90, the user's choice over an even 60); the Pixel 7a's display is at 60 already.
-- **Where the moving 3D frame goes** (task 059, Streamline on the Pixel 7a, after its
-  four changes): GPU active 7.01M → 4.70M cycles a frame, fragment-bound (the tiler 3%
-  of the GPU's time), not bandwidth-bound (0.6 GB/s), little overdraw. The lit fragment
-  shader still holds 64 registers (half occupancy on the G615). The UI's live cost was
-  1.45M cycles a frame, 24%, paid only when the UI changes now that it is kept
-  (`widgets::prepare`), and the backdrop's grade 0.43M when it changes; after task 063
-  the two together 1.54M → 0.99M (the moving 3D game with `--keep off`: 6.76M → 6.21M a
-  frame, 5.22M kept), the UI's part about halved. Ranked and not yet tried: the pieces' shadows on the field analytic (a disc's stadium along the light) in place
-  of the shadow map's pass and its 9 taps on every lit pixel; fp16 for colors, the
-  harmonics, the tonemap, and the varyings (no shader uses 16-bit yet); MSAA 4× read
-  again at 2,208 triangles a piece; a lower render scale for the 3D pass, last.
-- **Open:** at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the
-  flat board's 0.3, outside the app's own work, as the Mac shows no draw at rest.
+- **The Galaxy A33** (90 Hz, thermal status 3), 1000 frames: the 3D frame waited P50 23.2
+  / P99 26.0 ms (the pass alone 17.1), on screen for two refreshes every other frame, a
+  steady 60 fps; the flat board's 15.6 ms waited, and no frame dropped. The theme applied
+  in 1.66 s, the first frame 0.35 s. Its Mali-G68 lost the device on a texture's mip level
+  0 pixels high ([findings](../goose-findings.md)); the bake's mips end at the shorter
+  side's 1 pixel (`render3d::baked`).
+- **60 Hz for a slow 3D board**: on Android, once 60 frames of the ready 3D board average
+  over 1.25 refreshes of a display faster than 60 Hz, the app asks for 60 Hz on its
+  surface (`ANativeWindow_setFrameRate`, `src/app/display.c`) whenever the 3D board draws,
+  and for the display's own rate otherwise: 60 frames on a 90 Hz display show two
+  refreshes and one in turn. A device that holds its display's rate keeps it. The Galaxy
+  A33 ignores it: its "High" motion smoothness holds 90 Hz whatever an app asks. The
+  tablet's frames fit its 90 Hz; the Pixel 7a's display is at 60 already.
+- **Where the moving 3D frame goes** (Streamline on the Pixel 7a): GPU active 4.70M cycles
+  a frame, fragment-bound (the tiler 3% of the GPU's time), not bandwidth-bound (0.6
+  GB/s), little overdraw. The lit fragment shader holds 64 registers (half occupancy on
+  the G615). The UI's live cost and the backdrop's grade are 0.99M together, paid only
+  when they change, as both are kept (the moving 3D game with `--keep off` 6.21M a frame,
+  5.22M kept).
+- **At rest** the tablet's 3D board spends about 2.7 ms CPU a wakeup against the flat
+  board's 0.3, outside the app's own work, as the Mac shows no draw at rest.
 
 ### The release's frames
 
-The release in a game (Russian, wood, the start), on the 2D and the 3D board, 2026-11-10:
+The release in a game (Russian, wood, the start), on the 2D and the 3D board:
 idle 25 s at rest, and while it draws every frame (`--bench 1000`). The frames as the
 screen showed them, counted by Android's compositor: frames per second on average and at
 the 1% low (the slowest 1% of frames), and how long a frame stayed on screen, the median
@@ -1391,10 +1343,8 @@ flight). On Metal the whole command buffer then waits on the GPU until the image
 surface is free, the refresh after the commit, so a frame's GPU work must end about 7.5 ms
 after a refresh at 120 Hz, not 8.3, and the compositor shares the GPU. On the M1 Pro
 in a 2560 × 1600 px window the moving 3D board's frame takes 6.2 ms there (the 3D pass's
-fragments 4.1 ms, the screen's pass 1.3), and about 1 frame in 200 is late.
-Submitting the frame before the wait and the blit apart
-was measured worse: the window has 3 surfaces and the compositor holds two, so the blit
-waits for one and the frame after it for the blit.
+fragments 4.1 ms, the screen's pass 1.3), and about 1 frame in 200 is late
+([why the frame and its blit are one](../decisions/rendering.md#when-a-frame-reaches-the-screen)).
 
 ## Frames and battery
 
@@ -1434,7 +1384,7 @@ presents every frame at the display's rate. The patched `frame()`:
   (`patches/goose_gfx/0007-wait-in-the-ios-run-loop.patch`). The Mac's and Windows' SDL
   block in their system's event wait and wake it on a push themselves.
 
-At rest, the board drawn and nothing changing, over 25 s (`--rest 25`, 2026-11-10):
+At rest, the board drawn and nothing changing, over 25 s (`--rest 25`):
 
 | Where | Process CPU | `frame()` returns, draws |
 | --- | --- | --- |
@@ -1451,7 +1401,7 @@ At rest, the board drawn and nothing changing, over 25 s (`--rest 25`, 2026-11-1
 | Windows, a clock running (10 s) | 0.16% | 22, 11 |
 
 A running clock costs a frame and its present each second, the timer's wake and the
-idle wait's end. With the release's gfx the Mac's footprint was 414 MB, with the
+idle wait's end. With the release's gfx the Mac's footprint is 414 MB, with the
 patched one 321 MB, which also samples the photographs as ASTC instead of decoded JPEGs.
 On Windows, full screen at 2560 × 1440, the private bytes are 253 MB on the flat board
 and 476 MB on the 3D one.
@@ -1477,12 +1427,12 @@ A screen declares its tiles before the board takes the pointer, so a tile whose 
 follows the board is a frame behind it. When the board's input changes such a look, the
 frame after is drawn too (`gui::Gui.acted`, as after a click): a puzzle's next wakes when a
 drop leaves a piece waiting partway through a capture, and a drop is a finger's last
-event, after which nothing would be drawn (seen on the Pixel 7a, 2026-11-08).
+event, after which nothing would be drawn.
 
 A running clock must show its next second on time, which the wait doesn't: after a drawn
 frame the next wait ends a second and a frame later, so the clock was drawn 6 ms later
 each second, up to a second late, and skipped a second every two and a half minutes
-(measured on the tablet, 2026-11-08). So while a clock runs the app sets an SDL timer for
+(measured on the tablet). So while a clock runs the app sets an SDL timer for
 when the time shown changes (`src/app/wake.c`), which pushes an event of the program's own
 type and ends the wait; the second is then drawn within 5 ms. Every platform takes it
 (on the Mac SDL's functions are looked up with dlsym, `src/app/platform.h`). A `--frames`
