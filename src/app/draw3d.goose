@@ -90,10 +90,30 @@ struct Bench {
 
 let BENCH_PHASES = 4;
 
-fn median(xs: f64[..1024]&) -> f64 {
+fn median(xs: f64[..1024]&) -> f64 { return percentile(xs, 50); }
+
+// The time p percent of xs take at most, in ms (sorts xs).
+fn percentile(xs: f64[..1024]&, p: i64) -> f64 {
     guard xs.len > 0 else { return 0.0; }
     sort(xs[..xs.len]);
-    return xs[xs.len / 2] * 1000.0;
+    return xs[min(xs.len * p / 100, xs.len - 1)] * 1000.0;
+}
+
+// Frames presented frame to frame, gaps in seconds: "avg A / 1% low L fps", the average
+// over their whole time and the rate of the 99th percentile's gap.
+fn rates(line: u8[>..]&, gaps: f64[..1024]&) {
+    var sum = 0.0;
+    for x in gaps { sum += x; }
+    let avg = if sum > 0.0 { gaps.len / sum } else { 0.0 };
+    let p99 = percentile(gaps, 99);
+    format(line, "avg ", floor(avg * 10.0 + 0.5) / 10.0, " / 1% low ",
+           floor((if p99 > 0.0 { 1000.0 / p99 } else { 0.0 }) * 10.0 + 0.5) / 10.0, " fps");
+}
+
+// A frame's times waited, in seconds: "P50 a / P99 b ms".
+fn spread(line: u8[>..]&, xs: f64[..1024]&) {
+    format(line, "P50 ", floor(percentile(xs, 50) * 100.0 + 0.5) / 100.0, " / P99 ",
+           floor(percentile(xs, 99) * 100.0 + 0.5) / 100.0, " ms");
 }
 
 // Whether the bench has timed all its frames; it prints them then.
@@ -113,6 +133,12 @@ fn bench_done(d: Drawer&) -> bool {
     print("bench3d: ", d.size.x, "x", d.size.y, " with the shadow map: cpu ", median(b.cpu),
           " ms, cpu+gpu waited ", median(b.all), " ms; the pass alone waited ", median(b.pass),
           " ms; presented frame to frame ", median(b.gap), " ms (", b.n, " frames each)");
+    var line: u8[>..] = [];
+    format(line, "bench3d: summary, waited with the shadow map ");
+    spread(line, b.all);
+    format(line, "; presented ");
+    rates(line, b.gap);
+    print(line);
     print("bench3d: pulsing, a ring round every piece: the kept depth ", median(b.depth),
           " ms waited; the screen's part with the rings ", median(b.over), " ms waited, without ", median(b.plain),
           " ms");

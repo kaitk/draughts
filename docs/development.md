@@ -440,9 +440,12 @@ adb shell am start -S -n io.github.kaitk.draughts/.DraughtsActivity \
 adb logcat -d | grep bench3d
 ```
 
-On the flat board (`--board flat`) the same flag prints `bench2d:` instead: 300 whole
-frames, from the shell's fill to the GPU done, each waited for, then 300 as the loop draws
+On the flat board (`--board flat`) the same flag prints `bench2d:` instead: N whole
+frames, from the shell's fill to the GPU done, each waited for, then N as the loop draws
 them, frame to frame.
+Both end with a summary: the waited frame's P50 and P99, and the presented frames'
+average and 1% low (the rate of the 99th percentile's gap). The README's table takes
+those from `--bench 1000`, in a game, Russian, wood.
 
 Two seconds after the launch the app times 300 frames drawing the 3D board and its
 shadow map, as while a piece moves, each submitted and waited for (`gfx::flush`); 300

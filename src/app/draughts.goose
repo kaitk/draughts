@@ -419,9 +419,13 @@ fn main() {
         if f.frames > 0 && gfx::frame_count() >= f.frames { break; }
         if draw3d::bench_done(d3) { break; }
         if f.bench > 0 && bench2d.i >= 2 * f.bench {
-            print("bench2d: ", size.x, "x", size.y, ": cpu ", draw3d::median(bench2d.cpu), " ms, cpu+gpu waited ",
-                  draw3d::median(bench2d.all), " ms; presented frame to frame ", draw3d::median(bench2d.gap),
-                  " ms (", f.bench, " frames each)");
+            var line: u8[>..] = [];
+            format(line, "bench2d: ", size.x, "x", size.y, ", ", f.bench, " frames each: cpu ", draw3d::median(bench2d.cpu),
+                   " ms; waited ");
+            draw3d::spread(line, bench2d.all);
+            format(line, "; presented ");
+            draw3d::rates(line, bench2d.gap);
+            print(line);
             break;
         }
     }
