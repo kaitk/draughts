@@ -4,7 +4,7 @@ The app builds from a Mac (Apple silicon) and from Windows (x64):
 
 | Build | From | Command | Section |
 | --- | --- | --- | --- |
-| macOS app | Mac | `goose build -o ../../build/draughts draughts.goose` in `src/app` | [Run on the Mac](#run-on-the-mac) |
+| macOS app | Mac | `scripts/mac.py src/app/draughts.goose` | [Run on the Mac](#run-on-the-mac) |
 | Windows app | Windows | `python scripts/windows.py src/app/draughts.goose` | [Run on Windows](#run-on-windows) |
 | Android APK | Mac, Windows | `scripts/android.py src/app/draughts.goose --run` | [Run on Android](#run-on-android) |
 | Android release (APK and AAB for Play) | Mac, Windows, with an upload key | `scripts/android.py src/app/draughts.goose --release` | [Release builds](#release-builds) |
@@ -54,16 +54,22 @@ gfx layer.
 ## Run on the Mac
 
 ```sh
+scripts/mac.py src/app/draughts.goose     # build/draughts
 cd src/app
-../../build/goose-v2026.4-macos-arm64/goose build -o ../../build/draughts draughts.goose
 ../../build/draughts
 ../../build/draughts --theme sunset --size 800x1280
 ../../build/draughts --fen W:Wc3,e3,Kh2:Bd4,f6 --tap c3 --frames 30
 ```
 
 The app is built, not run through `goose run`: the computer thinks on a worker thread
-(`src/app/think.goose`), and `goose run` refuses a program that starts one. The build takes
-about 3 s, and the flags follow the executable with no `--`. `src/app/draughts.goose` is the
+(`src/app/think.goose`), and `goose run` refuses a program that starts one.
+`scripts/mac.py` builds goose_gfx's sources with `patches/goose_gfx/` applied into a copy
+of the release (`build/mac/goose/`), as the Android, iOS, and Windows builds do, then the
+program with that copy's `goose`: about 8 s, as long as a plain `goose build`. A plain
+`goose build` in `src/app` still works, but its gfx presents every frame, so at rest it
+spins at the display's rate ([rendering](architecture/rendering.md#frames-and-battery)).
+Run the app from `src/app`, where `--frames` saves `draughts.png`; the flags follow the
+executable with no `--`. `src/app/draughts.goose` is the
 app; its development flags (each a field of `Flags` in `src/app/flags.goose`, the one list
 of them) pick the board theme (`wood`, `stone`, `birch`, `sunset`; the
 season's by default, with its photograph), the window size, a starting position,
@@ -91,14 +97,10 @@ to close and leave recents after home's X), which `scripts/android.py` builds in
 embedded from `design/backgrounds/masters/` when they are there (the JPEGs, and the ASTC
 files `design/backgrounds/README.md` says how to make with astcenc); without them the
 board sits on the page color. goose caches the program's C by its source, so after
-adding or changing a master, touch `src/app/background.c`. The Mac's `goose build` links the
-release's prebuilt gfx, which has no compressed formats, so the Mac decodes the JPEGs;
-the Android build's gfx is patched and takes the ASTC files, and embeds only those, not
-the JPEGs ([rendering](architecture/rendering.md#scene-and-glass)). To see the ASTC path on the
-Mac, compile goose_gfx's `src/gfx/*.c` with `patches/goose_gfx/0004-*.patch` applied
-(`clang -c -O2 -DNDEBUG -I third_party/goose_gfx/third_party/SDL/include`), archive them
-as `pkg/gfx/lib/libgoose_gfx.a` in a copy of the release (the rest linked), and build
-with that copy's `goose`. The
+adding or changing a master, touch `src/app/background.c`. The Mac's patched gfx takes the
+ASTC files, which Apple silicon samples, and the JPEGs are left for a GPU without ASTC
+(an Intel Mac; a plain `goose build`, whose gfx has no compressed formats); Android
+embeds only the ASTC files ([rendering](architecture/rendering.md#scene-and-glass)). The
 board's logic is the `board/` package, the UI layer `gui/`, the game screen `game/`, and
 the screens around it `shell/` (home, and which screen shows), each tested headless
 (`test/board/`, `test/gui/`, `test/game/`, `test/shell/`). The app opens at home; `--fen`,
@@ -126,8 +128,9 @@ easy|medium|hard` (else the setup's last choice). With `--screen friend` or
 `--computer` doesn't, and leave the player's file alone unless a tap in the setup writes
 it: `--screen computer --variant russian --computer white --frames 12` shows the
 computer's setup for Russian with the child on black. A `--frames` run doesn't wait for the
-display, so a screenshot of the computer's reply, which comes after a pause of under a
-second, takes some thousands of frames: `--variant russian --computer black --tap c3
+display, nor for events (it wakes each frame's idle wait at once, `draughts_wake_now`), so a
+screenshot of the computer's reply, which comes after a pause of under a second, takes
+some thousands of frames, about 2 s: `--variant russian --computer black --tap c3
 --tap d4 --frames 5000`. The settings are in the app's storage folder (on the Mac
 `~/Library/Application Support/kaitk/draughts/`): `settings.txt` the device's (the
 language, who plays), `player-N.txt` each player's ([players](architecture/README.md#players));

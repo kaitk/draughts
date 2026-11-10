@@ -64,7 +64,8 @@ Open:
 - The 3D board: 041 a carved spring board, 042 its frame cost, 044 a plain background,
   045 board styles to choose from.
 - Frames: 055 both boards locked to the display's rate on every device, 056 even pacing
-  where the frame fits but still drops (the iPhone), 057 the iPhone at rest (SDL polls).
+  where the frame fits but still drops (the iPhone), 057 at rest on every platform (done on iOS and the Mac;
+  Windows to measure), 058 a window being resized shows a stretched picture.
 - Later: 010 goose_gfx changes to propose upstream (alongside), 013 season effects, 014
   upscaled backgrounds, 026 the first start and tutorial.
 

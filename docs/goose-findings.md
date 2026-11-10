@@ -3,6 +3,28 @@
 Gaps found in Goose, goose_gfx, and the SDL it pins, while building for Android, with what
 we do about each here and what could go upstream. Newest first.
 
+## SDL: `SDL_WaitEventTimeout` polls every millisecond on iOS (2026-11-10)
+
+UIKit's video driver has no `WaitEventTimeout` and no `SendWakeupEvent`, so
+`SDL_WaitEventTimeoutNS` falls back to polling: `SDL_PumpEvents`, which runs the run loop
+for 2 µs (`UIKit_PumpEvents`), and a 1 ms sleep (`EVENT_POLL_INTERVAL_NS`), a thousand
+times a second. With patch 0002's idle wait the iPhone 13 mini's app at rest used 16% of
+a core, 8.8% on the main thread and about 2.4% on each of three others, though its loop
+passed once a second and drew nothing (task 057). SDL 3.4.16 (`fa2c02b`).
+
+- Here: `patches/goose_gfx/0007-wait-in-the-ios-run-loop.patch`. On iOS the idle wait
+  pumps once and, with no event queued, runs the main run loop itself
+  (`CFRunLoopRunInMode(kCFRunLoopDefaultMode, timeout, true)`), which sleeps until a
+  source fires (a touch, the system) or the timeout. An event pushed from another thread,
+  such as an SDL timer's (`src/app/wake.c`), reaches an event watch that signals a run
+  loop source of gfx's own and wakes the main run loop; a signalled source stays pending
+  until handled, so a push just before the wait isn't lost. At rest 0.08% of a core in a game
+  on either board, and the other threads near nothing too.
+- Upstream: in SDL, for the user only (see the swapchain entry): a UIKit
+  `WaitEventTimeout` that runs the run loop for the timeout, and a `SendWakeupEvent`
+  that signals a source and wakes it, as Cocoa's does with an `NSEvent`. Until then, the
+  same in goose_gfx's idle wait if it goes upstream with 0002.
+
 ## SDL: a size change while in the background leaves the window black on return (2026-11-09)
 
 Turned in the background (another app open, the screen rotated there), the app came back
@@ -141,11 +163,11 @@ Goose v2026.4.
   `vkGetPhysicalDeviceFormatProperties`, which is what SDL checks. The Goose side
   compiles against the built-in `gfx.goose`, which lacks both, so the program's C calls
   gfx's C API itself (`src/app/background.c`), with a weak stand-in for
-  `gs_gfx_format_supported` that answers no where gfx lacks the patch: the Mac's
-  `goose build` links the release's prebuilt `libgoose_gfx.a`, so the Mac decodes the
-  JPEG, as an Intel Mac or a BC-only GPU would. Linking a `libgoose_gfx.a` built from
-  the patched sources into a copy of the release gives the Mac the ASTC path, to compare
-  the look (`docs/development.md` says how).
+  `gs_gfx_format_supported` that answers no where gfx lacks the patch: a plain `goose
+  build` links the release's prebuilt `libgoose_gfx.a` and decodes the JPEG, as an Intel
+  Mac or a BC-only GPU would. `scripts/mac.py` links a `libgoose_gfx.a` built from the
+  patched sources into a copy of the release, which gives the Mac the ASTC path
+  (2026-11-10).
 - Upstream: the formats and `format_supported` in `gfx.goose` and the header, the byte
   count and upload in blocks, and `texel_size` (Goose side) returning a block's bytes
   for a block format, or a `format_bytes(format, w, h)`. Perhaps loading a `.astc` or
@@ -382,7 +404,10 @@ vsync wait its loop would spin. There is no way to wait for an event instead. go
   ([rendering](architecture/rendering.md#frames-and-battery)). The first version lost
   the picture on resume: the first present after Android recreates the surface gets no
   image, so the patch keeps trying for up to 8 frames. The wait also needs the next
-  entry's workaround, or it spins on Android.
+  entry's workaround, or it spins on Android, and on iOS its own (the iOS entry above).
+  Every build takes the patched gfx since 2026-11-10 (`scripts/mac.py`, as
+  `windows.py`): the Mac at rest went from 8.2% of a core, presenting at 120 Hz, to
+  0.03%.
 - Upstream: the same in `gs_gfx_frame`, but opt-in, since a program that polls input
   without drawing would otherwise block for up to a second: for example
   `gfx::set_wait_when_idle(true)`, or a window flag for `gfx::open`. A frame that drew

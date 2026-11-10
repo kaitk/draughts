@@ -109,9 +109,10 @@ find out by compiling, so the next session doesn't.
   as `../third_party/goose_gfx/src/gfx`) and return a `gs_gfx_texture` to Goose, which
   an `extern fn ... -> gfx::Texture` takes (a flat struct by value): `src/app/background.c`
   uploads embedded bytes that way, with no copy on a data stack. A function only a gfx
-  patch adds gets a `__attribute__((weak))` stand-in in the program's C, so the Mac,
-  whose `goose build` links the release's prebuilt gfx, still links; on Android the
-  patched gfx's definition wins (2026-11-08).
+  patch adds gets a `__attribute__((weak))` stand-in in the program's C, so a plain
+  `goose build`, which links the release's prebuilt gfx, still links; every build script
+  (`scripts/mac.py` too, since 2026-11-10) links the patched gfx, whose definition wins
+  (2026-11-08).
 - A texture with mips that isn't square gets them only down to its shorter side's 1
   pixel (`render3d::baked`): `mips: 0`'s full chain ends in levels 0 pixels high, which
   SDL blits anyway and the Galaxy A33's Mali-G68 loses the device on. A lost device shows

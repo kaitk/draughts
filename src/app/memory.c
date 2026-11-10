@@ -17,7 +17,31 @@ void draughts_release_memory(void) {}
 // draughts_cpu_seconds: the process's CPU time so far, user and system, in seconds; and
 // draughts_footprint_mb: its memory as the system counts it against the app (Apple's
 // phys_footprint, what Xcode's gauge shows), in MB, -1 where not had. For --rest
-// (flags.goose), which measures the app at rest where Instruments can't.
+// (flags.goose), which measures the app at rest where Instruments can't. On Windows the
+// footprint is the private bytes, what Task Manager's Memory column shows.
+#if defined(_WIN32)
+#define PSAPI_VERSION 2         // GetProcessMemoryInfo from kernel32, no psapi.lib
+#include <windows.h>
+#include <psapi.h>
+#include <stdint.h>
+
+double draughts_cpu_seconds(void) {
+    FILETIME created, ended, kernel, user;
+    if (!GetProcessTimes(GetCurrentProcess(), &created, &ended, &kernel, &user)) return -1.0;
+    uint64_t k = ((uint64_t)kernel.dwHighDateTime << 32) | kernel.dwLowDateTime;
+    uint64_t u = ((uint64_t)user.dwHighDateTime << 32) | user.dwLowDateTime;
+    return (double)(k + u) / 1e7;      // 100 ns units
+}
+
+double draughts_footprint_mb(void) {
+    PROCESS_MEMORY_COUNTERS_EX m;
+    if (!GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS *)&m, sizeof m)) return -1.0;
+    return (double)m.PrivateUsage / (1024.0 * 1024.0);
+}
+
+typedef struct { uint8_t *data; int64_t len; } draughts_text;
+int64_t draughts_threads(draughts_text text) { (void)text; return 0; }
+#else
 #include <sys/resource.h>
 
 double draughts_cpu_seconds(void) {
@@ -71,4 +95,5 @@ double draughts_footprint_mb(void) { return -1.0; }
 #include <stdint.h>
 typedef struct { uint8_t *data; int64_t len; } draughts_text;
 int64_t draughts_threads(draughts_text text) { (void)text; return 0; }
+#endif
 #endif

@@ -1346,8 +1346,8 @@ The release at rest, idle 20 to 30 s:
 | Pixel 7a | 3D, a game | 0.04% | 215 MB | 73 MB | 324 MB |
 | Galaxy A33 5G, 2400 × 1080 | 2D, a game | 0.04% | 35 MB | 43 MB | 116 MB |
 | Galaxy A33 5G | 3D, a game | 0.04% | 197 MB | 29 MB | 275 MB |
-| iPhone 13 mini, 2340 × 1080 | 2D, a game | 16% (task 057) | | | 59 MB footprint |
-| iPhone 13 mini | 3D, a game | 16% | | | 204 MB footprint |
+| iPhone 13 mini, 2340 × 1080 | 2D, a game | 0.08% (16% before task 057) | | | 59 MB footprint |
+| iPhone 13 mini | 3D, a game | 0.08% | | | 204 MB footprint |
 
 - **The tablet's frame** while the board moves (the first baseline, 1920 × 1200 at 90 Hz):
   the forward pass alone 10.9 ms at 1×, the whole budget; MSAA 4× adds 3.2 ms (6.3 ms
@@ -1395,9 +1395,10 @@ while gfx::frame() {
 }
 ```
 
-This is `patches/goose_gfx/0002-draw-on-demand.patch`, applied in the Android build
-([findings](../goose-findings.md)). The Mac's built-in gfx still presents every frame at
-the display's rate, which costs nothing that matters there. The patched `frame()`:
+This is `patches/goose_gfx/0002-draw-on-demand.patch` ([findings](../goose-findings.md)),
+applied in every build: `scripts/android.py`, `ios.py`, `mac.py`, and `windows.py` each
+build goose_gfx from its patched sources. The release's own gfx (a plain `goose build`)
+presents every frame at the display's rate. The patched `frame()`:
 
 - presents only if something used the GPU since the last call, or the window needs the
   screen again (exposed, restored, back in the foreground, resized);
@@ -1408,7 +1409,29 @@ the display's rate, which costs nothing that matters there. The patched `frame()
 - leaves the wait out of `delta_time()`, so the first animation frame after idle doesn't
   jump.
 - on Android, turns off SDL's poll sentinel, without which SDL's wait spins instead of
-  blocking there.
+  blocking there;
+- on iOS, waits in the main run loop itself (`CFRunLoopRunInMode`), as UIKit's SDL has no
+  real wait and polls every millisecond; an event pushed from another thread (the wake
+  timer's) signals a run loop source of gfx's own, which ends the wait
+  (`patches/goose_gfx/0007-wait-in-the-ios-run-loop.patch`). The Mac's and Windows' SDL
+  block in their system's event wait and wake it on a push themselves.
+
+At rest, the board drawn and nothing changing, over 25 s (`--rest 25`, 2026-11-10):
+
+| Where | Process CPU | `frame()` returns, draws |
+| --- | --- | --- |
+| Android, the Galaxy Tab A11+ | 0.04 to 0.3% of a core (`scripts/idle_cpu.sh`) | about 1 a second, none |
+| iPhone 13 mini, home | 0.09% (was 16%, polling) | 26, none |
+| iPhone 13 mini, flat board, a game | 0.08% | 26, none |
+| iPhone 13 mini, 3D board, a game | 0.08% | 26, none |
+| iPhone 13 mini, a clock running | 0.52% | 51, 26 |
+| Mac (M-series), home | 0.03% (8.2% with the release's gfx: 120 returns a second) | 27, none |
+| Mac, a clock running | 0.17% | 51, 26 |
+| Windows | not measured yet | |
+
+A running clock costs a frame and its present each second, the timer's wake and the
+idle wait's end. With the release's gfx the Mac's footprint was 414 MB, with the
+patched one 321 MB, which also samples the photographs as ASTC instead of decoded JPEGs.
 
 The 3D board's camera (the view, the zoom, the showcase's way back, a hot-seat turn) is an
 animation like a move: the 3D pass runs on each of its frames, about 36 for a 0.6 s ease
@@ -1438,8 +1461,10 @@ frame the next wait ends a second and a frame later, so the clock was drawn 6 ms
 each second, up to a second late, and skipped a second every two and a half minutes
 (measured on the tablet, 2026-11-08). So while a clock runs the app sets an SDL timer for
 when the time shown changes (`src/app/wake.c`), which pushes an event of the program's own
-type and ends the wait; the second is then drawn within 5 ms. The Mac's gfx doesn't
-wait, so the timer is Android's only.
+type and ends the wait; the second is then drawn within 5 ms. Every platform takes it
+(on the Mac SDL's functions are looked up with dlsym, `src/app/platform.h`). A `--frames`
+run, which counts frames rather than seconds, ends every wait at once with an event pushed
+each frame (`draughts_wake_now`).
 
 Work that finishes on another thread, such as the computer's reply, would be seen only
 when the wait ends; so as the computer begins to think its piece on the panel pulses,

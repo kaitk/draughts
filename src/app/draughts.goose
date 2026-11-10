@@ -46,6 +46,8 @@ extern fn draughts_display(out: f32[:]) -> i64;
 extern fn draughts_choose_gpu();
 // Wakes the loop in ms milliseconds, where frame() waits for events (wake.c).
 extern fn draughts_wake_in(ms: i64);
+// Ends the next frame()'s wait at once: an event pushed now (wake.c).
+extern fn draughts_wake_now();
 // Tells Android the first frame is on screen, to lift the splash and the cover (launch.c).
 extern fn draughts_first_frame();
 // Closes the app on Android and takes it out of recents, as home's way out asks; on the
@@ -432,6 +434,9 @@ fn main() {
         // doesn't wait for an event.
         if g.acted { dirty = true; }
         if f.frames > 0 && gfx::frame_count() >= f.frames { break; }
+        // A --frames run counts frames, not seconds: none waits for an event, so the
+        // computer's reply or a transition is the same number of frames as without the wait.
+        if f.frames > 0 { draughts_wake_now(); }
         // --rest S: the app at rest from 12 s after the launch for S seconds, its CPU time
         // and footprint printed once (memory.c).
         if f.rest > 0 && rest_at < 0.0 && now > 12.0 {
