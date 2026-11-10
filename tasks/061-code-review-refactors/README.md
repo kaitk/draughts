@@ -61,7 +61,7 @@ Left out on purpose:
 ## Acceptance criteria
 
 - [x] Stage 0: `sizes` fails on any listed failure not on its allow-list
-- [ ] Stage 1: the moves made, tests identical
+- [x] Stage 1: the moves made, tests identical
 - [ ] Stage 2: one screen table; the game returns events; the app reads the shell's frame
       output only
 - [ ] Stage 3: the panel's layout as regions with a mode; `gui::stack` in use; home and
