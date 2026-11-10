@@ -1455,6 +1455,38 @@ The release at rest, idle 20 to 30 s:
 - **Open:** at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the
   flat board's 0.3, outside the app's own work, as the Mac shows no draw at rest.
 
+### The release's frames
+
+The release in a game (Russian, wood, the start), on the 2D and the 3D board, 2026-11-10:
+idle 25 s at rest, and while it draws every frame (`--bench 1000`). The frames as the
+screen showed them, counted by Android's compositor: frames per second on average and at
+the 1% low (the slowest 1% of frames), and how long a frame stayed on screen, the median
+and the 99th percentile, against the display's 11.1 ms at 90 Hz or 16.7 ms at 60 Hz
+([development](../development.md#time-the-3d-board)).
+
+| Device | Board | Idle CPU (one core) | Memory (PSS) | FPS (avg / 1% low) | Frame time (P50 / P99) |
+| --- | --- | --- | --- | --- | --- |
+| Galaxy Tab A11+, 1920 × 1200, 90 Hz | 2D | 0.08% | 137 MB | 90 / 90 | 11.1 / 11.1 ms |
+| Galaxy Tab A11+ | 3D | 0.32% | 295 MB | 90 / 90 | 11.1 / 11.1 ms |
+| Pixel 7a, 2400 × 1080, 60 Hz | 2D | 0.08% | 159 MB | 60 / 60 | 16.7 / 16.7 ms |
+| Pixel 7a | 3D | 0.04% | 324 MB | 60 / 60 | 16.7 / 16.7 ms |
+| Galaxy A33 5G, 2400 × 1080, 90 Hz | 2D | 0.04% | 116 MB | 90 / 90 | 11.1 / 11.1 ms |
+| Galaxy A33 5G | 3D | 0.04% | 275 MB | 60 / 45 | 22.2 / 22.2 ms |
+| iPhone 13 mini, 2340 × 1080, 60 Hz | 2D | 0.08% | 59 MB | 60 / 60 | 16.7 / 16.7 ms |
+| iPhone 13 mini | 3D | 0.08% | 204 MB | 60 / 60 | 16.7 / 16.7 ms |
+| Windows PC, 2560 × 1440, 165 Hz | 2D | 0.00% | 258 MB | 165 / 165 | 6.1 / 6.1 ms |
+| Windows PC | 3D | 0.12% | 477 MB | 165 / 165 | 6.1 / 6.1 ms |
+
+The 2D board draws in one full-screen pass, the UI's glass over it, and holds the
+display's rate. The 3D board's frame takes about 9.2 ms of GPU work on the tablet and
+holds its 90 Hz; the Galaxy A33's 23 ms holds a steady 60 on its 90 Hz display. The 3D
+board's extra memory is GPU memory: 180 to 230 MB against about 36 MB in 2D. On the
+iPhone, Instruments' Animation Hitches counts the frames in place of Android's
+compositor, and the app counts its own CPU time and memory footprint. On Windows, full
+screen (`--size full`), PresentMon counts the frames the display showed (none dropped;
+each flipped straight to the screen, 6 ms from present to display), and the app counts
+its CPU time and its memory as the private bytes.
+
 ### When a frame reaches the screen
 
 goose_gfx records a frame and its blit into the window's image in one command buffer,

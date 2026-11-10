@@ -38,40 +38,24 @@ Vulkan, or iOS 16 or later with Metal.
 | Mac with Apple silicon (M1 Pro) | Apple M1 Pro | Apple GPU, Metal | macOS | Runs in 2D and 3D; development and headless tests |
 | Windows PC | AMD Ryzen 7 5800X3D | NVIDIA GeForce RTX 4090, Vulkan | Windows 11 | Runs in 2D and 3D; development, headless tests, and Android builds |
 
-Measured numbers per device are in
-[rendering](docs/architecture/rendering.md#the-3d-board-on-devices);
-[development](docs/development.md) says how they are taken.
-
 ## Implementation
 
 ### Performance
 
-The release in a game (Russian, wood, the start), on the 2D and the 3D board: idle 25 s
-at rest, and while it draws every frame (`--bench 1000`). The frames as the screen showed
-them, counted by Android's compositor: frames per second on average and at the 1% low
-(the slowest 1% of frames), and how long a frame stayed on screen, the median and the 99th
-percentile, against the display's 11.1 ms at 90 Hz or 16.7 ms at 60 Hz
-([development](docs/development.md#time-the-3d-board)).
+The release in a game, measured on 2026-11-10. Frames are counted by the system as they
+reached the screen; memory is the whole app's.
 
-| Device | Board | Idle CPU (one core) | Memory (PSS) | FPS (avg / 1% low) | Frame time (P50 / P99) | Measured |
-| --- | --- | --- | --- | --- | --- | --- |
-| Galaxy Tab A11+, 1920 × 1200, 90 Hz | 2D | 0.08% | 137 MB | 90 / 90 | 11.1 / 11.1 ms | 2026-11-10 |
-| Galaxy Tab A11+ | 3D | 0.32% | 295 MB | 90 / 90 | 11.1 / 11.1 ms | 2026-11-10 |
-| Pixel 7a, 2400 × 1080, 60 Hz | 2D | 0.08% | 159 MB | 60 / 60 | 16.7 / 16.7 ms | 2026-11-10 |
-| Pixel 7a | 3D | 0.04% | 324 MB | 60 / 60 | 16.7 / 16.7 ms | 2026-11-10 |
-| Galaxy A33 5G, 2400 × 1080, 90 Hz | 2D | 0.04% | 116 MB | 90 / 90 | 11.1 / 11.1 ms | 2026-11-10 |
-| Galaxy A33 5G | 3D | 0.04% | 275 MB | 60 / 45 | 22.2 / 22.2 ms | 2026-11-10 |
-| iPhone 13 mini, 2340 × 1080, 60 Hz | 2D | 0.08% | 59 MB | 60 / 60 | 16.7 / 16.7 ms | 2026-11-10 |
-| iPhone 13 mini | 3D | 0.08% | 204 MB | 60 / 60 | 16.7 / 16.7 ms | 2026-11-10 |
-| Windows PC, 2560 × 1440, 165 Hz | 2D | 0.00% | 258 MB | 165 / 165 | 6.1 / 6.1 ms | 2026-11-10 |
-| Windows PC | 3D | 0.12% | 477 MB | 165 / 165 | 6.1 / 6.1 ms | 2026-11-10 |
+| Device | Display | 2D board | 3D board | Memory (2D / 3D) |
+| --- | --- | --- | --- | --- |
+| Galaxy Tab A11+ | 1920 × 1200, 90 Hz | locked 90 fps | locked 90 fps | 137 / 295 MB |
+| Pixel 7a | 2400 × 1080, 60 Hz | locked 60 fps | locked 60 fps | 159 / 324 MB |
+| Galaxy A33 5G | 2400 × 1080, 90 Hz | locked 90 fps | 60 fps average | 116 / 275 MB |
+| iPhone 13 mini | 2340 × 1080, 60 Hz | locked 60 fps | locked 60 fps | 59 / 204 MB |
+| Windows PC | 2560 × 1440, 165 Hz | locked 165 fps | locked 165 fps | 258 / 477 MB |
 
-The 2D board draws in one full-screen pass, the UI's glass over it, and holds the display's
-rate. The 3D board's frame takes about 9.2 ms of GPU work on the tablet and holds its 90 Hz;
-the Galaxy A33's 23 ms holds a steady 60 on its 90 Hz display. The 3D board's extra memory
-is GPU memory: 180 to 230 MB against about 36 MB in 2D. The iPhone and Windows rows are
-counted with Instruments and PresentMon in place of Android's compositor
-([development](docs/development.md#time-the-3d-board)).
+At rest the app uses under 0.35% of one core on every device. The 3D board's extra
+memory is GPU memory. Frame times, percentiles, and how each device is measured are in
+[rendering](docs/architecture/rendering.md#the-releases-frames).
 
 ### How it works
 

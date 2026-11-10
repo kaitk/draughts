@@ -579,8 +579,8 @@ them, frame to frame.
 Both end with a summary: the waited frame's P50 and P99, and the presented frames'
 average and 1% low (the rate of the 99th percentile's gap), both by the app's own clock,
 which can't tell how long a frame stayed on screen: it put the tablet's flat board's 1% low
-at 70 fps where the compositor counts no frame dropped. The README's table takes its frames
-from the compositor: `scripts/device_perf.sh` runs `--bench 1000` in a game (Russian,
+at 70 fps where the compositor counts no frame dropped. [Rendering's table](architecture/rendering.md#the-releases-frames) takes its
+frames from the compositor: `scripts/device_perf.sh` runs `--bench 1000` in a game (Russian,
 wood) on each board once the device is cool, counts the presented frames with
 SurfaceFlinger's timestats between the bench's `presenting` and `presented` lines, then
 takes the idle CPU and memory. The bench's first phase waits for the GPU after every frame
