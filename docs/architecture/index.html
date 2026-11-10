@@ -225,7 +225,7 @@ footer { margin-top: 4rem; color: var(--muted); font-size: .88rem; border-top: 1
 <h3>Layouts as regions</h3>
 <p>Before a screen declares anything, a pure function works out where everything goes. It only measures: it draws nothing and changes nothing.</p>
 <ul>
-  <li><b>The game screen's panels.</b> <code>panel::layout_in</code> gives a <code>panel::Layout</code> with a <b>mode</b>: <code>LANDSCAPE</code> (columns beside the board), <code>PORTRAIT</code> (bars above and below), or <code>COMPACT</code> (a small window, icons only). The parts that change while you play are worked out each frame from it: <code>panel::way_out</code> gives an <code>Out</code> (where back, the eye and the hint go), and one function per mode, <code>column_play</code>, <code>compact_play</code>, or <code>portrait_play</code>, gives a <code>Play</code> (the clocks, whose turn, undo). Then <code>panel::game</code> declares them all in one order, whatever the mode.</li>
+  <li><b>The game screen's panels.</b> <code>panel::layout_in</code> (or <code>panel::corners_in</code> for the 3D board) gives a <code>panel::Layout</code> with a <b>mode</b>: <code>LANDSCAPE</code> (columns as tall as the board, beside it), <code>CORNERS</code> (short columns in the top corners), <code>PORTRAIT</code> (a bar above the board, the play below it), or <code>COMPACT</code> (a small window, one row each). The parts that change while you play are worked out each frame from it: <code>panel::way_out</code> gives an <code>Out</code> (where back, the eye and the hint go), and one function per shape, <code>column_play</code> (both column modes), <code>compact_play</code>, or <code>portrait_play</code>, gives a <code>Play</code> (the clocks, whose turn, undo). Then <code>panel::game</code> declares them all in one order, whatever the mode.</li>
   <li><b>Settings.</b> <code>settings::layout</code> returns a <code>settings::Page</code>: the heading, the tabs, the glass panels, the preview board, and a <code>settings::Fit</code> (how wide the row names are, and whether the theme's tiles are slim). The rows and tiles take the <code>Fit</code> as an argument.</li>
 </ul>
 
@@ -467,7 +467,7 @@ host::input ──▶ <span class="k">g</span> ──▶ shell::frame(<span clas
 <tr><td>over / Overlay</td><td>Pieces drawn on top of the UI, like a piece flying into a panel when captured.</td></tr>
 <tr><td>hole</td><td>A cut-out in the UI where the board passes through during a slide between screens.</td></tr>
 <tr><td>panel</td><td>The strips beside the board on the game screen: whose turn, clocks, buttons.</td></tr>
-<tr><td>mode</td><td>How the panels sit: landscape columns, portrait bars, or compact icons.</td></tr>
+<tr><td>mode</td><td>How the panels sit: tall columns, short corner columns, portrait bars, or compact rows.</td></tr>
 <tr><td>Out / Play</td><td>The panels' two groups of places: the way out (back, the eye, the hint), and the play (clocks, turn, undo).</td></tr>
 <tr><td>Page / Fit</td><td>Where settings' parts go, and how its rows fit the width.</td></tr>
 <tr><td>cover</td><td>What a Mac window shows in the strip it gains while you drag its edge, before the app draws again.</td></tr>
