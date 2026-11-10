@@ -49,6 +49,18 @@ draws its HUD:
   the UI. Pieces shown on the UI (the side to move, the winner) are drawn after it by the
   piece pipeline from a second small storage buffer, so they look exactly like the
   board's.
+- **Shaded only where it shows** (task 060): a quad is as large as its shadow reaches on
+  each side (glass 6 dp above, 18 to the sides, 30 below; a tile 0, 6, and 12), and glass
+  and tiles shade a pixel outside them as the shadow alone and one more than 3 dp inside
+  as the fill alone, the highlight, border, and shadow being 0 there. With the three
+  pipelines, the UI drawn live costs half the GPU cycles it did on the Pixel 7a (0.61M →
+  0.30M a frame on the flat game). Measured with `--keep off`, which draws the UI and the
+  3D backdrop each frame instead of keeping them. Tried and dropped: a glyph's atlas place
+  interpolated (malioc's fewer varyings read, nothing on the Pixel, which pays for the
+  varyings declared), the quads read from the storage buffer in the fragment shader (4
+  load/store cycles a pixel), `mediump` varyings. Not done: with the plain background,
+  glass works the fade out a pixel at a time (about 1.3 of glass's 4 cycles); a texture
+  of it would save that but smear its dither.
 - **Kept while it stands still** (`widgets::prepare`, task 059): when a frame's quads,
   view, theme, and textures are the same as the last frame's, they are drawn once into
   a layer the screen's size, premultiplied, and each frame after lays it with a fetch a
@@ -1445,12 +1457,11 @@ The release at rest, idle 20 to 30 s:
 - **Where the moving 3D frame goes** (task 059, Streamline on the Pixel 7a, after its
   four changes): GPU active 7.01M → 4.70M cycles a frame, fragment-bound (the tiler 3%
   of the GPU's time), not bandwidth-bound (0.6 GB/s), little overdraw. The lit fragment
-  shader still holds 64 registers (half occupancy on the G615), and the UI's
-  uber-shader 64 for every UI pixel: its live cost is 1.45M cycles a frame, 24%, paid
-  only when the UI changes now that it is kept (`widgets::prepare`), and the backdrop's
-  grade 0.43M when it changes. Ranked and not yet tried: the UI's shader made fast by
-  itself, measured with the caches off (the user prefers fast work to cached slow work);
-  the pieces' shadows on the field analytic (a disc's stadium along the light) in place
+  shader still holds 64 registers (half occupancy on the G615). The UI's live cost was
+  1.45M cycles a frame, 24%, paid only when the UI changes now that it is kept
+  (`widgets::prepare`), and the backdrop's grade 0.43M when it changes; after task 060
+  the two together 1.54M → 0.99M (the moving 3D game with `--keep off`: 6.76M → 6.21M a
+  frame, 5.22M kept), the UI's part about halved. Ranked and not yet tried: the pieces' shadows on the field analytic (a disc's stadium along the light) in place
   of the shadow map's pass and its 9 taps on every lit pixel; fp16 for colors, the
   harmonics, the tonemap, and the varyings (no shader uses 16-bit yet); MSAA 4× read
   again at 2,208 triangles a piece; a lower render scale for the 3D pass, last.
