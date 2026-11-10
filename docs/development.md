@@ -343,6 +343,9 @@ scripts/android.py src/app/draughts.goose --run --id-suffix test   # io.github.k
 
 The script never uninstalls; a refused install stops it with that advice.
 
+A GPU profiler (Arm's Streamline, Android GPU Inspector) on a device that isn't rooted
+needs a debuggable app: `--debuggable` marks the APK so (task 059). Not with `--release`.
+
 ### The build
 
 `scripts/android.py` builds without Gradle, into `build/android/<program>/`, with

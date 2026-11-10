@@ -156,7 +156,10 @@ def main():
                     help="append .SUFFIX to the application id, to install a test build beside the app")
     ap.add_argument("--release", action="store_true",
                     help="sign with the upload key and build the AAB beside the APK")
+    ap.add_argument("--debuggable", action="store_true",
+                    help="mark the APK debuggable, for GPU profilers (Streamline, AGI) on a device that isn't rooted")
     args = ap.parse_args()
+    if args.debuggable and args.release: sys.exit("--debuggable is for test builds, not a release")
     program = args.program.resolve()
     name = program.stem
     # Another program (a prototype in poc/) gets its own id, so it installs beside the app.
@@ -219,6 +222,7 @@ def main():
             "-I", android_jar, res, names, "--rename-manifest-package", app_id,
             "--version-code", VERSION_CODE, "--version-name", VERSION_NAME,
             "--min-sdk-version", MIN_SDK, "--target-sdk-version", TARGET_SDK]
+    if args.debuggable: link.append("--debug-mode")
     run(*link, "-o", unaligned)
     with zipfile.ZipFile(unaligned, "a", zipfile.ZIP_DEFLATED) as z:
         z.write(apk_dir / "classes.dex", "classes.dex")
