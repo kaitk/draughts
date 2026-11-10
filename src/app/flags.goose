@@ -71,6 +71,9 @@ struct Flags {
     // --bench N: times N of the board's frames, then quits (draw3d.goose; the flat board's
     // in draughts.goose)
     bench: i64 = 0,
+    // --rest S: the CPU time and memory footprint over S seconds at rest, printed once
+    // (draughts.goose; where Instruments can't measure them, the iPhone)
+    rest: i64 = 0,
     // --reset-skill: the playing player back to easy, the computer's skill at every level
     // at its start with the first steps to come, kept in their file; stars and games stay
     reset_skill: bool,
@@ -179,6 +182,10 @@ fn parse(argv: u8[:][>..]) -> Flags {
             if ok && a == "--marble" { f.marble = n; }
             if ok && a == "--summer" { f.summer = clamp(n, 0, looks::SUMMERS - 1); }
             if ok && a == "--spring" { f.spring = n; }
+        }
+        if a == "--rest" {
+            let n, ok = parse_int(v);
+            if ok { f.rest = clamp(n, 1, 600); }
         }
         if a == "--bench" {
             let n, ok = parse_int(v);

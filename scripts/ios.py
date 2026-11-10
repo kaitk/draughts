@@ -373,6 +373,13 @@ def main():
             "--timestamp=none", app)
     else:
         run("codesign", "--force", "--sign", "-", "--timestamp=none", app)
+    # The commit it was built from, beside it, for the measurements that name their build
+    # (scripts/ios_perf.py): "dirty" when the sources differed from it.
+    head = subprocess.run(["git", "log", "-1", "--format=%h %cs"], cwd=ROOT, capture_output=True,
+                          text=True).stdout.strip()
+    dirty = subprocess.run(["git", "diff", "--quiet", "HEAD", "--", "src", "strings", "assets", "ios"],
+                           cwd=ROOT).returncode != 0
+    app.with_suffix(".commit").write_text(head + (" dirty" if dirty else "") + "\n")
     print(f"{app} ({sum(f.stat().st_size for f in app.rglob('*') if f.is_file()) // 1024} KB)")
 
     # 4. Install and start it on the device.

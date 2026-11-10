@@ -55,6 +55,9 @@ extern fn draughts_leave();
 // Gives back to the system the memory malloc keeps for freed blocks; Android only
 // (memory.c).
 extern fn draughts_release_memory();
+// The process's CPU time in seconds and its memory footprint in MB (memory.c), for --rest.
+extern fn draughts_cpu_seconds() -> f64;
+extern fn draughts_footprint_mb() -> f64;
 // Which platform the program runs on: DESKTOP, ANDROID, or IOS (launch.c).
 extern fn draughts_platform() -> i64;
 // Seconds between looks for the hint's answer while it is on its way (think::frame).
@@ -185,6 +188,9 @@ fn main() {
     let enter_key = gfx::scancode("Return");
     var text_on = false;
     var keyboard = 0;
+    var rest_at = -1.0;
+    var rest_cpu = 0.0;
+    var rested = false;
     while gfx::frame() {
         // frame() presents what the pass before it drew, and the first pass draws.
         if gfx::frame_count() == 2 { draughts_first_frame(); }
@@ -419,6 +425,18 @@ fn main() {
         // doesn't wait for an event.
         if g.acted { dirty = true; }
         if f.frames > 0 && gfx::frame_count() >= f.frames { break; }
+        // --rest S: the app at rest from 12 s after the launch for S seconds, its CPU time
+        // and footprint printed once (memory.c).
+        if f.rest > 0 && rest_at < 0.0 && now > 12.0 {
+            rest_at = now;
+            rest_cpu = draughts_cpu_seconds();
+        }
+        if f.rest > 0 && rest_at >= 0.0 && now >= rest_at + f.rest && !rested {
+            rested = true;
+            let cpu = draughts_cpu_seconds() - rest_cpu;
+            print("rest: ", now - rest_at, " s: process CPU ", cpu, " s (", 100.0 * cpu / (now - rest_at),
+                  "%), footprint ", draughts_footprint_mb(), " MB");
+        }
         if draw3d::bench_done(d3) { break; }
         if f.bench > 0 && bench2d.i >= 2 * f.bench {
             print("bench2d: presented");
