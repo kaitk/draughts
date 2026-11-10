@@ -27,6 +27,13 @@ app code), 1000 presented frames of the bench (`--bench 1000`):
 
 ## Directions
 
+First on the desktops, going to a device only if nothing shows there (the user,
+2026-11-10): Windows with PresentMon (the user tunes there), and the Mac with `xcrun xctrace
+record --template 'Metal System Trace' --launch -- build/draughts …` on a moving 3D board's
+`--bench` run and a screen transition, in one batch, exported with `xctrace export`: the
+frames past one refresh, and whether CPU, GPU, or the present made them late. The Metal
+HUD (`MTL_HUD_ENABLED=1`) for a look by eye.
+
 1. **When each frame is presented.** On the iPhone, the trace's Metal tables
    (`metal-command-buffer-completed`, `display-surface-swap`) against the display's
    vsyncs (`display-vsyncs-interval`), and the app's own time stamps at acquire and
