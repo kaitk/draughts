@@ -90,8 +90,13 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
 - **Choosing at run time.** Both renderers in one executable, ngfx where the device has
   it (Metal 4; Vulkan 1.4 with `VK_EXT_descriptor_heap`), else gfx. They can't both
   link their own SDL as they do now: Goose's release builds gfx with its SDL, and ngfx
-  builds its own. One SDL for both is the first problem of that task.
-- ngfx on iPad and iPhone; presenting on Linux; the Steam builds (task 064).
+  builds its own. Fixable, since the app already builds gfx from patched sources and
+  ngfx is ours: ngfx's CMake takes the SDL the app links instead of its submodule's, the
+  app opens the window, probes the device, and hands the window to the renderer it
+  picked.
+- **Presenting on Linux**: a Vulkan surface from SDL (`SDL_Vulkan_CreateSurface`) in
+  ngfx's layer where NoGraphicsAPI makes none, the rest as on Windows.
+- ngfx on iPad and iPhone; the Steam builds (task 064).
 
 ## Acceptance criteria
 
