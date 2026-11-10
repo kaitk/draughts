@@ -153,8 +153,9 @@ Leave alone:
 - [x] The C decoders return pixels; `draughts_photo` declared once
 - [x] `render3d`'s gfx-free half separate
 - [x] Every expected output byte-identical; shots on the Mac match before and after
-- [ ] The task's end measurement, with the photograph's load (`README.md`): only the
-      photograph's load and one flat bench on the Mac (below); the rest left open
+- [x] The task's end check (`README.md`): the photograph's load and one flat bench on the
+      Mac (below), and the Android release smoke-tested by hand on the Pixel 7a
+      (2026-11-11, below); the rest of the measurement dropped (the user, 2026-11-11)
 
 ## Outcome
 
@@ -197,4 +198,12 @@ byte-identical (`plan.out` is new).
   ms before. The flat bench after: CPU 0.12 ms a frame, waited P50 3.91 / P99 6.1 ms,
   presented 119.9 fps, 1% low 91.2. The other bench runs printed no summary (a piece was
   picked up during one), and the idle CPU, the 3D bench, and the A33 were not run
-  (2026-11-10).
+  (2026-11-10); the user dropped them on 2026-11-11, the app having been checked by hand.
+- **Smoke-tested on Android** (2026-11-11, the release APK of `ffffb8c` on the Pixel 7a):
+  the launch lifts straight from the splash, a season's photograph and blur load, the 3D
+  board fades in and back to flat leaves nothing stale, a name types with Backspace and
+  Return, back goes back a screen and on home puts the app in the background, a game
+  returns as it was with its clocks paused while away, and home's X ends the activity
+  and its card in recents, the next start a fresh process. All worked. Seen there and
+  fixed in `f2d3f11`, though older than 061: the sheet's head showed the name one
+  character behind while it was typed.

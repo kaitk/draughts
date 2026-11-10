@@ -1,6 +1,6 @@
 # 061: The code review's refactors
 
-Status: in-progress
+Status: done
 
 On 2026-11-10 a high-level review, at commit `abfcb5c`, read the code for readability,
 how it is split into files, how easy its flow is to follow, the layout code, and how
@@ -69,7 +69,7 @@ Left out on purpose:
 - [x] Stage 4: `main` calls no gfx drawing; one `render::frame`; C decoders return pixels
 - [x] The overview page updated to the new code and in the repo
       (`docs/architecture/index.html`, `06-overview-page.md`)
-- [ ] Idle CPU, frame times, and the photograph's load on the Mac and the A33, measured
-      once at the end against `6bf54c8`, none noticeably worse
-      (2026-11-10: only the photograph's load and one flat bench on the Mac, in
-      `05-renderer-seam.md`; the load unchanged)
+- [x] Checked at the end against `6bf54c8`: the photograph's load (unchanged) and one flat
+      bench on the Mac, and the Android release smoke-tested by hand on the Pixel 7a
+      (`05-renderer-seam.md`); idle CPU, frame times, and the A33 dropped (the user,
+      2026-11-11)
