@@ -118,8 +118,8 @@ let LIT_FRAG = """
     layout(set = 2, binding = 2) uniform sampler2D frame_albedo;
     layout(set = 2, binding = 3) uniform sampler2D frame_normal;
     layout(set = 2, binding = 4) uniform sampler2DShadow shadow_map;
-    // Per square: the top of what stands there, its foot, its radius, 1 if a piece.
-    layout(std430, set = 2, binding = 5) readonly buffer Squares { vec4 squares[]; };
+    // The pieces' occlusion of the field (OCC_FRAG), over the plan's extent.
+    layout(set = 2, binding = 5) uniform sampler2D field_occ;
 
     const float FRAME_SPAN = 10.4;   // the frame map's side in world units
 
@@ -202,40 +202,13 @@ let LIT_FRAG = """
         return sum * (1.0 / 144.0);
     }
 
-    // The field's occlusion, analytic: each piece in the 3 × 3 squares round as a
-    // cylinder (the share of the cosine-weighted sky its angle across and its height
-    // take), and the frame's short inner wall as a long wall.
-    float field_occlusion(vec3 p) {
-        float vis = 1.0;
-        int n = int(params.w + 0.5);
-        float u = 2.0 * FIELD / params.w;
-        ivec2 c = ivec2(floor((p.xz + FIELD) / u));
-        for (int dy = -1; dy <= 1; dy++) {
-            for (int dx = -1; dx <= 1; dx++) {
-                ivec2 q = c + ivec2(dx, dy);
-                if (q.x < 0 || q.y < 0 || q.x >= n || q.y >= n) continue;
-                vec4 s = squares[q.y * n + q.x];
-                if (s.w < 0.5) continue;
-                float rho = length(p.xz - ((vec2(q) + 0.5) * u - FIELD));
-                float r = s.z;
-                float occ;
-                if (rho > r) {
-                    float gap = rho - r + 0.01;
-                    float top = s.x * s.x / (s.x * s.x + gap * gap);
-                    float foot = s.y * s.y / (s.y * s.y + gap * gap);
-                    occ = asin(r / rho) / PI * (top - foot);
-                } else {
-                    float foot = s.y * s.y / (s.y * s.y + r * r);
-                    occ = (0.5 + 0.45 * (1.0 - rho / r)) * (1.0 - foot);
-                }
-                vis *= 1.0 - occ;
-            }
-        }
+    // The frame's short inner wall's occlusion of the field, as a long wall: too sharp
+    // (FRAME_TOP across) for the pieces' map, and two square roots.
+    float wall_occlusion(vec3 p) {
         vec2 d = max(INNER - abs(p.xz), vec2(0.0));
         float h = FRAME_TOP;
-        vis *= 1.0 - 0.5 * (1.0 - d.x / sqrt(d.x * d.x + h * h));
-        vis *= 1.0 - 0.5 * (1.0 - d.y / sqrt(d.y * d.y + h * h));
-        return vis;
+        return (1.0 - 0.5 * (1.0 - d.x / sqrt(d.x * d.x + h * h)))
+             * (1.0 - 0.5 * (1.0 - d.y / sqrt(d.y * d.y + h * h)));
     }
 
     // The crown on a king's face, in units of the piece's radius, traced from the 3D
@@ -314,7 +287,7 @@ let LIT_FRAG = """
             albedo = a.rgb;
             rough = a.a;
             n = normalize(vec3(t.x, sqrt(max(1.0 - dot(t, t), 0.0)), t.y));
-            ao *= field_occlusion(p);
+            ao *= texture(field_occ, uv).r * wall_occlusion(p);
         } else if (mat < 1.5) {
             // The frame, mapped from where the point is, so the figure runs on unbroken
             // over the top, the rounded edge and the side, round the corners too, as in
@@ -535,6 +508,47 @@ let LIT_FRAG = """
             float grey = dot(result.rgb, vec3(0.2126, 0.7152, 0.0722)) * 0.66;
             result.rgb = min(vec3((grey - 0.5) * 0.85 + 0.5) * vec3(1.45, 0.68, 0.62), 1.0);
         }
+    }
+    """;
+
+// The pieces' occlusion of the field into its map (render3d::occlusion), over the plan's
+// extent as the plan is laid (BAKE_FRAG's mode 0), OCC_SIZE texels a side: each piece
+// in the 3 × 3 squares round as a cylinder, the share of the cosine-weighted sky its
+// angle across and its height take. Only the texels whose squares changed are drawn
+// again (a scissor), so a moving piece redraws a few squares' worth, not the field.
+let OCC_FRAG = """
+    layout(location = 0) out vec4 result;
+    // Per square: the top of what stands there, its foot, its radius, 1 if a piece.
+    layout(std430, set = 2, binding = 0) readonly buffer Squares { vec4 squares[]; };
+    const float OCC_SIZE = 512.0;   // render3d::OCC_SIZE
+    void main() {
+        vec2 xz = gl_FragCoord.xy / OCC_SIZE * (2.0 * INNER) - INNER;
+        float vis = 1.0;
+        int n = int(params.w + 0.5);
+        float u = 2.0 * FIELD / params.w;
+        ivec2 c = ivec2(floor((xz + FIELD) / u));
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                ivec2 q = c + ivec2(dx, dy);
+                if (q.x < 0 || q.y < 0 || q.x >= n || q.y >= n) continue;
+                vec4 s = squares[q.y * n + q.x];
+                if (s.w < 0.5) continue;
+                float rho = length(xz - ((vec2(q) + 0.5) * u - FIELD));
+                float r = s.z;
+                float occ;
+                if (rho > r) {
+                    float gap = rho - r + 0.01;
+                    float top = s.x * s.x / (s.x * s.x + gap * gap);
+                    float foot = s.y * s.y / (s.y * s.y + gap * gap);
+                    occ = asin(r / rho) / PI * (top - foot);
+                } else {
+                    float foot = s.y * s.y / (s.y * s.y + r * r);
+                    occ = (0.5 + 0.45 * (1.0 - rho / r)) * (1.0 - foot);
+                }
+                vis *= 1.0 - occ;
+            }
+        }
+        result = vec4(vis, 0.0, 0.0, 1.0);
     }
     """;
 

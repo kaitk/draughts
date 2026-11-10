@@ -104,6 +104,10 @@ let FRAME_MAP = 2048;
 // world units across), its rows at the same density: 44% less memory and bake.
 let FRAME_MITRED_ROWS = 1152;
 let PHOTO_SIZE = 512;
+// The pieces' occlusion of the field (shaders::OCC_FRAG), over the plan's extent: 62
+// texels a square on 8 × 8, for a falloff a piece's radius wide that rises steeply at
+// its foot.
+let OCC_SIZE = 512;
 let SAMPLES = 4;
 let MAX_INSTANCES = 96;     // view3d::MAX_INSTANCES: two for each of board::MAX_PIECES
 let SQUARES = 100;          // the field's squares, 10 × 10 at most
@@ -137,6 +141,10 @@ struct Gpu {
     solid:          i64,                    // the instances drawn opaque, first; the rest fade
     alphas:         f32[MAX_INSTANCES],     // how opaque each fading one is
     squares:        gfx::Buffer,
+    occ_map:        gfx::Texture,           // the pieces' occlusion of the field (occlusion())
+    occ_n:          i64,                    // the squares a side it was drawn for, 0 none yet
+    occ_squares:    float4[SQUARES],        // the squares it was drawn from
+    squares_now:    float4[SQUARES],        // and the ones place() last gave
     marks:          gfx::Buffer,
     glows:          gfx::Buffer,      // the field's glow rings and lit squares
     marked:         bool,             // whether the board's pass has marks to draw
@@ -171,6 +179,7 @@ struct Gpu {
     depth_only:     gfx::Pipeline,  // the kept depth
     copy:           gfx::Pipeline,
     show:           gfx::Pipeline,  // the kept image over what is there, anywhere (show())
+    occ:            gfx::Pipeline,  // the field's occlusion map (occlusion())
     bake:           gfx::Pipeline,  // kept for a theme's rebake, with the photograph's
     shrink:         gfx::Pipeline,
     blur:           gfx::Pipeline,
@@ -504,6 +513,10 @@ fn setup(g: Gpu&, samples: i32 = SAMPLES) {
 
     g.shadow_map = gfx::texture2d(SHADOW_SIZE, SHADOW_SIZE, gfx::DEPTH16,
                                   gfx::DEPTH_TARGET | gfx::SAMPLED);
+    g.occ_map = gfx::texture(gfx::TextureDesc { format: gfx::R8, usage: gfx::COLOR_TARGET | gfx::SAMPLED,
+                                                width: OCC_SIZE, height: OCC_SIZE });
+    g.occ_n = 0;
+    g.occ = gfx::pipeline(full, embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::OCC_FRAG));
     g.linear = gfx::sampler(gfx::LINEAR, gfx::CLAMP);
     g.aniso = gfx::sampler(gfx::SamplerDesc { max_anisotropy: 8.0 });
     g.compare = gfx::shadow_sampler();
@@ -794,6 +807,7 @@ fn place(g: Gpu&, inst: const float4[:], alphas: const f32[:], squares: const fl
     g.solid = g.instance_count - fading;
     for i in fading { g.alphas[i] = alphas[i]; }
     gfx::update_buffer(g.squares, bytes_of(squares[..min(squares.len, SQUARES)]));
+    for i in SQUARES { g.squares_now[i] = if i < squares.len { squares[i] } else { float4_0 }; }
     gfx::update_buffer(g.marks, bytes_of(marks[..min(marks.len, SQUARES)]));
     if lit.len > 0 { gfx::update_buffer(g.glows, bytes_of(lit[..min(lit.len, SQUARES)])); }
     // What MARKS_FRAG without PULSE draws: the selected piece's ring, a last move's tint,
@@ -838,6 +852,8 @@ fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int
         g.shadow_dirty = false;
     }
 
+    occlusion(g);
+
     let clear = if backdrop { float4 { 0.11, 0.078, 0.063, 1.0 } } else { float4_0 };
     var pass = gfx::PassDesc { depth: g.depth, color_value: clear };
     if g.samples > 1 {
@@ -856,7 +872,7 @@ fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int
     gfx::bind_texture(gfx::FRAGMENT, 2, g.frame_albedo, g.aniso);
     gfx::bind_texture(gfx::FRAGMENT, 3, g.frame_normal, g.aniso);
     gfx::bind_texture(gfx::FRAGMENT, 4, g.shadow_map, g.compare);
-    gfx::bind_storage_buffer(gfx::FRAGMENT, 0, g.squares);
+    gfx::bind_texture(gfx::FRAGMENT, 5, g.occ_map, g.linear);
     gfx::uniforms(gfx::VERTEX, 0, f);
     gfx::uniforms(gfx::FRAGMENT, 0, f);
     draw_meshes(g, 0.0);
@@ -893,6 +909,62 @@ fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int
     }
     gfx::end_pass();
     if keep_depth { draw_depth(g); }
+}
+
+// The pieces' occlusion of the field drawn into g.occ_map where the squares changed since
+// it was drawn (all of it the first time and for a new board size): a square's piece
+// darkens the field within one square of its own (shaders::OCC_FRAG's 3 × 3), so the
+// changed squares and one round them, scissored. A moving piece redraws about 3 × 3
+// squares of the 64; a still board, nothing. Recording only, before the board's pass.
+fn occlusion(g: Gpu&) {
+    let n = g.n;
+    var c0 = n;
+    var r0 = n;
+    var c1 = -1;
+    var r1 = -1;
+    if g.occ_n != n {
+        c0 = 0;
+        r0 = 0;
+        c1 = n - 1;
+        r1 = n - 1;
+    } else {
+        for i in n * n {
+            let a = g.occ_squares[i];
+            let b = g.squares_now[i];
+            guard a.x != b.x || a.y != b.y || a.z != b.z || a.w != b.w else { continue; }
+            let row = i / n;
+            let col = i % n;
+            c0 = min(c0, col - 1);
+            c1 = max(c1, col + 1);
+            r0 = min(r0, row - 1);
+            r1 = max(r1, row + 1);
+        }
+        guard c1 >= 0 else { return; }
+        c0 = max(c0, 0);
+        r0 = max(r0, 0);
+        c1 = min(c1, n - 1);
+        r1 = min(r1, n - 1);
+    }
+    // The texels over those squares, out to the map's edge past the outer ones (the
+    // inlay round the field takes the edge squares' occlusion), a texel more each side.
+    let u = 2.0 * mesh::FIELD / n;
+    let k = OCC_SIZE / (2.0 * mesh::INNER);
+    let at = mesh::INNER - mesh::FIELD;
+    let x0 = if c0 == 0 { 0 } else { max(floor((c0 * u + at) * k) as i64 - 1, 0) };
+    let y0 = if r0 == 0 { 0 } else { max(floor((r0 * u + at) * k) as i64 - 1, 0) };
+    let x1 = if c1 == n - 1 { OCC_SIZE } else { min(ceil(((c1 + 1) * u + at) * k) as i64 + 1, OCC_SIZE) };
+    let y1 = if r1 == n - 1 { OCC_SIZE } else { min(ceil(((r1 + 1) * u + at) * k) as i64 + 1, OCC_SIZE) };
+    var pass = gfx::PassDesc { clear_color: false };
+    pass.color[0] = g.occ_map;
+    gfx::begin_pass(pass);
+    gfx::scissor(x0, y0, x1 - x0, y1 - y0);
+    gfx::bind(g.occ);
+    gfx::bind_storage_buffer(gfx::FRAGMENT, 0, g.squares);
+    gfx::uniforms(gfx::FRAGMENT, 0, g.frame);
+    gfx::draw(3);
+    gfx::end_pass();
+    g.occ_squares = g.squares_now;
+    g.occ_n = n;
 }
 
 // The board and the opaque pieces' depth at 1x into g.kept_depth, as the pass above drew
@@ -998,7 +1070,7 @@ fn show(g: Gpu&, from: float4, to: float4, alpha: f32, size: int2, grey: f32 = 0
 // pass's target formats (docs/goose-findings.md). Bound in a pass on 4 × 4 targets of the
 // pass's formats (made by the first step, given back by the last), or on the target
 // itself where it is small or held anyway, with nothing drawn.
-let WARM_STEPS = 9;
+let WARM_STEPS = 10;
 fn warm(g: Gpu&, k: i64) {
     if k == 0 {
         g.warm_color = gfx::texture(gfx::TextureDesc { format: gfx::RGBA8, usage: gfx::COLOR_TARGET, width: 4,
@@ -1015,12 +1087,15 @@ fn warm(g: Gpu&, k: i64) {
         pass.depth = g.shadow_map;
     } else if k == 5 {
         pass.depth = g.warm_kept;
+    } else if k == 9 {
+        pass.color[0] = g.occ_map;
+        pass.clear_color = false;
     } else {
         pass.color[0] = gfx::screen();
         pass.clear_color = false;
     }
     gfx::begin_pass(pass);
-    let p = [g.lit, g.fading, g.catcher, g.glow, g.shadow, g.depth_only, g.backdrop, g.show, g.pulse][k];
+    let p = [g.lit, g.fading, g.catcher, g.glow, g.shadow, g.depth_only, g.backdrop, g.show, g.pulse, g.occ][k];
     gfx::bind(p);
     gfx::end_pass();
     if k == WARM_STEPS - 1 {
@@ -1036,7 +1111,7 @@ fn warm(g: Gpu&, k: i64) {
 // Everything setup() and the frames made given back (the app's board back to flat): the
 // targets, surfaces, buffers, samplers, and pipelines. g is set up again from scratch.
 fn release(g: Gpu&) {
-    let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.photo, g.shadow_map, g.color,
+    let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.photo, g.shadow_map, g.occ_map, g.color,
                     g.depth, g.image, g.kept_depth, g.small, g.across, g.warm_color, g.warm_depth,
                     g.warm_kept];
     for t in textures { if t.id != 0 { gfx::release(t); } }
@@ -1045,7 +1120,7 @@ fn release(g: Gpu&) {
     let samplers = [g.linear, g.aniso, g.compare];
     for s in samplers { if s.id != 0 { gfx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
-                     g.bake, g.shrink, g.blur];
+                     g.occ, g.bake, g.shrink, g.blur];
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
     gfx::flush();
     g = default<Gpu>();

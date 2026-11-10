@@ -310,6 +310,38 @@ Not worth it, from the counters: bandwidth (0.6 GB/s), geometry (the tiler 3% of
 GPU's time, 97% full warps), early-depth order (44k quads killed of 335k tested), the
 reflection's harmonics and the specular antialiasing (under 0.3 cycles each).
 
+## The changes, measured
+
+### 1. The field's occlusion into a map (2026-11-10)
+
+`shaders::OCC_FRAG` draws the pieces' occlusion of the field (the 3 × 3 loop of
+cylinders the lit shader ran per field pixel) into a 512² R8 map over the plan's extent
+(`render3d::occlusion`): all of it for a new board or size, otherwise only the squares
+that changed and one round them, scissored. The lit shader reads one bilinear texel and
+keeps the frame's inner wall analytic (`wall_occlusion`, too sharp for the map). One
+pipeline more to make while getting ready (39 steps).
+
+- **The look:** the seven headless scenes at 1920 × 1200 (the four seasons at the
+  start, a middlegame with kings, portrait, International) against the build before: no
+  pixel more than 4 levels off, 47 to 70 dB; the build before against itself differs as
+  much (at most 3 levels, 47 to 64 dB), so the change is within run-to-run noise.
+- **The Pixel 7a** (Streamline, the same 1000-frame bench, 8 to 52 s of it): the 3D
+  pass's fragment work 6.86 → 6.03 ms (median), **GPU active 7.01M → 6.54M cycles a
+  frame (−7%)**, the shader cores' fragment cycles 30.0M → 27.8M, the texture unit's
+  stalls 12.0M → 11.0M. The bench's waited time 12.77 → 12.17 ms for the pass alone
+  (the governor's clock moves it as much as the work). The map's pass: 0.05 ms for a
+  move's few squares, 2.1 to 2.4 ms for the whole map (a new game or size, one frame).
+- Below the 1.5 to 2.5 ms the plan expected: the field is about a tenth of the frame's
+  fragment warps (64k of 729k), and the loop's loads overlapped other work.
+- **Tried and dropped:** the field drawn alone in a variant of the lit shader with its
+  material a constant (the board mesh's first 6 indices), 32 registers and full
+  occupancy against the shared program's 64 (malioc, the G710: 6.6 cycles). On the
+  Pixel it gained 1% of the fragment cycles and none of the GPU's (6.54M → 6.59M), and
+  the all-register warps stayed at 206k a frame in all three captures: the field's
+  warps were never among them, so the driver's real register count for the field isn't
+  what malioc reports, or occupancy doesn't limit it. Not worth a pipeline more.
+- **The tablet:** to measure (not connected this session).
+
 ## Acceptance criteria
 
 - [ ] Nsight and RenderDoc captures of the moving 3D board on the PC, the clocks locked:

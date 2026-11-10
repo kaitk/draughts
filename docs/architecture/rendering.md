@@ -1098,7 +1098,11 @@ board's does and the backdrop over it as opaque as the blur.
   its card is centered in the 3D board's bounds on screen and keeps clear of the winning
   piece's top where the perspective shows it (`game::card_area`, `game::winning_spot`).
   **Drawn** by `src/render3d/` (the prototype's renderer, shared with `poc/3d/`) from
-  `src/app/draw3d.goose`: the shadow map only when the pieces move, one 4× multisampled
+  `src/app/draw3d.goose`: the shadow map only when the pieces move, and the pieces'
+  occlusion of the field (each piece a cylinder over the 3 × 3 squares round it) into a
+  512² map only where squares changed, a moving piece about 3 × 3 squares of it (task
+  059: a texel a field pixel reads instead of the loop; the dropped bake above drew
+  shadow and occlusion with every shadow map); one 4× multisampled
   forward pass (the board's shadow, the lit board and pieces, the fading ones blended
   after, the field's marks that hold still added) into a kept image the screen's size,
   clear but for the board, drawn only when the 3D board's scene changed
@@ -1113,7 +1117,7 @@ board's does and the backdrop over it as opaque as the blur.
   too dark to light it (`render3d::fade_harmonics`). Switching between the photograph
   and the fade takes only the theme's photograph steps again, not its bake. **Getting
   ready** (`draw3d::prepare`, task 042) takes a step a frame: the setup, the theme's 28
-  steps (the bake in bands, the photograph), the pass's 9 pipelines; meanwhile a still
+  steps (the bake in bands, the photograph), the pass's 10 pipelines; meanwhile a still
   mark shows in the board's place, and once ready the board fades in over 0.3 s. A new
   season or board size takes the theme's steps again with the old image still shown:
   while they run it eases over 0.2 s towards grey and dimmer (saturation 0.15 of its own,
