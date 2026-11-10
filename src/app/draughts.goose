@@ -64,6 +64,9 @@ extern fn draughts_cpu_seconds() -> f64;
 extern fn draughts_footprint_mb() -> f64;
 // Each thread's name and CPU time so far, on Apple platforms (memory.c), for --rest.
 extern fn draughts_threads(out: u8[:]) -> i64;
+// Asks Android's display for 60 Hz while the 3D board draws, if its frames can't keep up
+// with a faster display; drawing is 1 when this pass drew it (display.c). Nothing elsewhere.
+extern fn draughts_pace_3d(drawing: i64, now: f64);
 // Which platform the program runs on: DESKTOP, ANDROID, or IOS (launch.c).
 extern fn draughts_platform() -> i64;
 // Seconds between looks for the hint's answer while it is on its way (think::frame).
@@ -411,6 +414,13 @@ fn main() {
                 bn.i++;
             }
         }
+        // The display at 60 Hz while the 3D board draws, on a device whose 3D board is too slow
+        // for its faster display (task 056): a 90 Hz display shows 60 frames a second two
+        // refreshes and one in turn, where at 60 each shows for one.
+        // The bench's first two phases wait for each frame, slower than the loop draws them,
+        // and aren't timed.
+        let waited3d = d3.bench.n > 0 && d3.bench.i < 2 * d3.bench.n;
+        if on_android { draughts_pace_3d(if drew && sh.raised && sh.ready3d && sh.shown3d && !waited3d { 1 } else { 0 }, now); }
         // Settings' thumbnails load in the first frame that draws nothing once the launch's
         // first frame is on screen, so settings' first opening doesn't wait for them; the
         // next frame shows the screen again unchanged, then the app is idle. The launch's

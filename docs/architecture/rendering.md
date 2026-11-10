@@ -1417,6 +1417,14 @@ The release at rest, idle 20 to 30 s:
   frames: the 3D frame waited P50 23.2 / P99 26.0 ms (the pass alone 17.1), on screen for
   two refreshes every other frame, a steady 60 fps; the flat board's 15.6 ms waited, and
   no frame dropped.
+- **60 Hz for a slow 3D board** (task 056): on Android, once 60 frames of the ready 3D
+  board average over 1.25 refreshes of a display faster than 60 Hz, the app asks for 60
+  Hz on its surface (`ANativeWindow_setFrameRate`, `src/app/display.c`) whenever the 3D
+  board draws, and for the display's own rate otherwise: 60 frames on a 90 Hz display
+  show two refreshes and one in turn. A device that holds its display's rate keeps it.
+  The Galaxy A33 ignores it: its "High" motion smoothness holds 90 Hz whatever an app asks.
+  The tablet's frames average about 1.15 refreshes, so it keeps 90 (the user's choice
+  over an even 60); the Pixel 7a's display is at 60 already.
 - **Open:** at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the
   flat board's 0.3, outside the app's own work, as the Mac shows no draw at rest.
 

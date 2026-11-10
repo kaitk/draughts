@@ -99,3 +99,82 @@ int64_t draughts_display(draughts_floats out) {
     out.data[4] = display_scale(window);
     return 1;
 }
+
+// The display at 60 Hz while the 3D board draws, on a device whose 3D board can't keep up
+// with a faster display (task 056). On a 90 Hz display, such as the Galaxy A33's, a 3D
+// board that draws 60 frames a second shows them two refreshes and one in turn; at 60 Hz
+// each shows for one. A device that holds its display's rate keeps it.
+//
+// draughts_pace_3d(drawing, now) is called each pass of the loop, drawing 1 when the pass
+// drew the 3D board, ready and shown (its preparing steps are long by design), and not
+// in --bench's waited phases. The gaps between passes that drew it one after the other are timed
+// at the display's own rate: after SLOW_AFTER of them, if they average over a quarter
+// more than a refresh and the display is faster than 60, the app asks for 60 whenever the
+// 3D board draws, from then on, and for the display's own rate (0) otherwise. Android
+// only (ANativeWindow_setFrameRate, API 30, looked up as the app runs from 29), and only
+// when the rate or the surface changed: a new surface, after the app was in the
+// background, starts with no rate of its own. Some displays ignore it: the Galaxy A33's
+// "High" motion smoothness holds 90 Hz whatever an app asks.
+#if defined(__ANDROID__)
+#include <dlfcn.h>
+typedef struct ANativeWindow ANativeWindow;
+typedef uint32_t SDL_PropertiesID;
+typedef uint32_t SDL_DisplayID;
+typedef struct {
+    SDL_DisplayID displayID;
+    uint32_t format;
+    int w, h;
+    float pixel_density, refresh_rate;
+    int refresh_rate_numerator, refresh_rate_denominator;
+    void *internal;
+} SDL_DisplayMode;
+extern SDL_PropertiesID SDL_GetWindowProperties(SDL_Window *window);
+extern void *SDL_GetPointerProperty(SDL_PropertiesID props, const char *name, void *default_value);
+extern SDL_DisplayID SDL_GetDisplayForWindow(SDL_Window *window);
+extern const SDL_DisplayMode *SDL_GetCurrentDisplayMode(SDL_DisplayID display);
+
+enum { SLOW_AFTER = 60 };
+
+static void ask_rate(float hz) {
+    static int32_t (*set_rate)(ANativeWindow *, float, int8_t);
+    static int looked;
+    static ANativeWindow *was;
+    static float was_hz;
+    if (!looked) {
+        looked = 1;
+        // Not found through RTLD_DEFAULT: the app's libraries are in their own namespace.
+        void *lib = dlopen("libandroid.so", RTLD_NOW);
+        if (lib) set_rate = (int32_t (*)(ANativeWindow *, float, int8_t))dlsym(lib, "ANativeWindow_setFrameRate");
+    }
+    if (!set_rate) return;
+    ANativeWindow *surface = (ANativeWindow *)SDL_GetPointerProperty(
+        SDL_GetWindowProperties(window), "SDL.window.android.window", 0);
+    if (!surface || (surface == was && hz == was_hz)) return;
+    // ANATIVEWINDOW_FRAME_RATE_COMPATIBILITY_DEFAULT: a game's frames, not a video's.
+    if (set_rate(surface, hz, 0) == 0) {
+        was = surface;
+        was_hz = hz;
+    }
+}
+
+void draughts_pace_3d(int64_t drawing, double now) {
+    static int slow, timed;
+    static double last = -1.0, sum;
+    if (!the_window()) return;
+    // A gap over 0.1 s is a hitch (a season's photograph loading), not the board's pace.
+    if (!slow && drawing && last >= 0.0 && now - last < 0.1) {
+        sum += now - last;
+        if (++timed == SLOW_AFTER) {
+            const SDL_DisplayMode *mode = SDL_GetCurrentDisplayMode(SDL_GetDisplayForWindow(window));
+            float hz = mode ? mode->refresh_rate : 0.0f;
+            slow = hz > 61.0f && sum / SLOW_AFTER > 1.25 / hz;
+            timed = 0;
+            sum = 0.0;
+        }
+    }
+    last = drawing ? now : -1.0;
+    ask_rate(slow && drawing ? 60.0f : 0.0f);
+}
+#else
+void draughts_pace_3d(int64_t drawing, double now) { (void)drawing; (void)now; }
+#endif

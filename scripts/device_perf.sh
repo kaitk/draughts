@@ -51,8 +51,9 @@ for b in ${BOARDS:-flat 3d}; do
   dump="${TMPDIR:-/tmp}/device_perf_timestats.txt"
   adb shell dumpsys SurfaceFlinger --timestats -dump > "$dump"
   LC_ALL=C awk -v app="$P/" '
-    /^layerName/ { on = index($0, app) > 0 && index($0, "SurfaceView") > 0 && index($0, "Background") == 0; k++ }
-    on && /^displayRefreshRate/ { hz[k] = $3 }
+    # A layer'"'"'s displayRefreshRate line comes before its layerName.
+    /^displayRefreshRate/ { rate = $3 }
+    /^layerName/ { on = index($0, app) > 0 && index($0, "SurfaceView") > 0 && index($0, "Background") == 0; k++; if (on) hz[k] = rate }
     on && /^present2present histogram/ { getline; hist[k] = $0 }
     END {
       best = 0; most = -1

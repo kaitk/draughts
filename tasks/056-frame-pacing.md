@@ -153,6 +153,44 @@ the swapchain's buffers pace it, not the frame's start. So the start of a frame 
 what decides the drops here; the patch was removed. What's left for the flat boards is
 a few frames in a thousand; for the A33's 3D board, the display at 60 Hz while it moves.
 
+## The display at 60 Hz while the 3D board moves (2026-11-10)
+
+On Android the app asks for 60 Hz on its surface (`ANativeWindow_setFrameRate`, from
+`src/app/display.c`) while the 3D board draws, on a device whose 3D board can't keep up
+with a faster display: the gaps between frames that drew a ready, shown board are timed
+at the display's own rate, and if 60 of them average over 1.25 refreshes on a display over
+60 Hz, it asks from then on whenever the 3D board draws, and for the display's own rate
+(0) at rest and on the flat board. A device that holds its rate is left alone (the user
+chose that over a fixed 60, which would cap faster devices). `RTLD_DEFAULT` doesn't find
+the function from the app's library (its own linker namespace); `dlopen("libandroid.so")`
+does.
+
+- **The Galaxy A33 ignores it.** The release built from 8a22ba0 with the change:
+  SurfaceFlinger holds the layer's vote (`frameRate: 60.00 Hz` on the 3D bench, 0.00 at
+  rest and on the flat bench; timestats' "SetFrameRate vote for this layer"), but the
+  display stays at 90. Its motion smoothness is "High", which Samsung's
+  `RefreshRateModeManager` runs as `REFRESH_RATE_MODE_ALWAYS`: the display manager's
+  policy is 90 to 90 for both the primary and the app-request ranges (`dumpsys
+  SurfaceFlinger`, `dumpsys display`), so no surface's or window's vote moves it; only the
+  user's Standard setting puts it at 60 (its history, 2026-11-09). Perfetto over the
+  moving board's 1000 frames: 59.0 a second, latch gaps 10 to 14 ms 481, 20 to 24 ms 519,
+  as before (404 and 424 of 829). `scripts/device_perf.sh`: the flat board 990 frames at
+  90 Hz, avg 90.0 / 1% low 90, none dropped; the 3D board 995 at 90 Hz, avg 57.6 / 1% low
+  45 fps, 558 dropped (the two-and-one alternation). The script missed the 3D board's
+  rate (a layer's `displayRefreshRate` line comes before its name) and is fixed.
+- **The Galaxy Tab A11+** (its policy 60 to 90 Hz, so it follows a vote), the release with
+  the change: the flat board 989 frames at 90 Hz, avg 90.0 / 1% low 90, none dropped. Its
+  3D board at first came out at 60 Hz, 994 frames, none dropped (avg 60.0, waited P50
+  14.2 ms): the first 60 frames timed were the bench's waited phase, slower than the loop.
+  With the bench's two waited phases left out of the timing, it keeps 90: 995 frames,
+  avg 77.7 / 1% low 45 fps, 158 dropped (15.9%), as before the change (17%); its frames
+  average about 1.15 refreshes, under the 1.25. The user chose to keep it at 90 rather
+  than an even 60.
+- **The Pixel 7a** runs its display at 60 Hz (Smooth Display off, the policy 0 to 60), so
+  the app asks it for nothing; not measured.
+- So on a fixed-90 Samsung the even choices left are 45 frames a second, every second
+  refresh, chosen by the app, or the user's Standard setting.
+
 ## Directions
 
 First on the desktops, going to a device only if nothing shows there (the user,
@@ -167,7 +205,7 @@ screen): of about 970 bench frames per board, none dropped and none held past a 
 on both boards, each flipped straight to the screen (Independent Flip), 6 ms from present
 to display. A moving board and a transition are still to record there.
 
-0. **Next (2026-11-10): the display at 60 Hz while the 3D board moves, on Android.** The
+0. **Done (2026-11-10, above): the display at 60 Hz while the 3D board moves, on Android.** The
    A33's moving 3D board shows 60 frames a second on its 90 Hz display as two refreshes
    and one in turn; asking for 60 (`ANativeWindow_setFrameRate` on the game's surface,
    from the app's own C, or `Surface.setFrameRate` from `DraughtsActivity`) while the
