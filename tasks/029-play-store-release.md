@@ -154,6 +154,24 @@ masters present):
   the opening paragraph and the first line of PLAY. Shots of it in
   `~/Downloads/draughts-store/preview/`.
 
+## On Play (2026-11-10 and 11)
+
+- **The app's entry** made: `Draughts`, en-GB default, a game, free; package
+  `io.github.kaitk.draughts` asked at creation (Android developer verification);
+  automatic protection off (it would add Google's code to the app). Every setup task
+  done: the App content forms as `store/play-console.md` has them, the target audience
+  every age group (the user: the game is for all ages), Teacher Approved joined, the
+  listing in English and Estonian (an Estonian feature graphic with "Kabe" made the same
+  way, `~/Downloads/draughts-store/feature-0.2/`), the icon alone labelled as made by AI,
+  category Board.
+- **Internal test:** 0.1.0 (code 1, `f2d3f11`) available to internal testers from
+  2026-11-11 00:17, 11,375 supported devices; installed from Play on the Pixel 7a and
+  played (the unreviewed name and a plain icon on Play's page until the first review).
+  The release smoke-tested by hand on the Pixel 7a beforehand (task 061's archive line).
+- **0.1.1** (code 2, `7a78595`): easy starts at 8 and a first game's win lifts it 16
+  (`docs/decisions/ai.md`), after the user found easy too weak on 8 × 8. For the closed
+  test, the Alpha track, with `~/Downloads/draughts-store/testers.csv`.
+
 ## Checks before upload
 
 - The release build on the tablet from a clean install (`adb uninstall
