@@ -87,8 +87,8 @@ Each is a store rule the app doesn't meet yet:
   (`store/app-store.md`).
 - **iPhone and iPad.**
 - **The account** (corrected 2026-11-10): the Apple Developer Program as an individual
-  on a separate personal Apple ID made for the store, enrolled on the web; the enrolment
-  on it is pending (2026-11-10). A first enrolment, started on the Apple ID whose free
+  on a separate personal Apple ID made for the store, enrolled and paid on the web; the
+  membership is pending, the order taking up to 2 business days (2026-11-10). A first enrolment, started on the Apple ID whose free
   Personal Team signed the development builds and left before paying, ended when Apple
   locked that Apple ID; its reinstatement was refused (2026-11-10). That team's profile
   for the app expires 2026-11-16, after which device builds need another team (a
