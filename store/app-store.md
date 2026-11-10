@@ -34,7 +34,7 @@ The counts are Python's `len`, and bytes for the keywords, as Apple counts them;
 | Primary category | | Games, subcategory Puzzle (Board as the second subcategory, if offered) |
 | Secondary category | | None |
 | Age rating | | 4+ (below) |
-| Content rights | | No third-party content: the photographs and fonts are the app's own or under the OFL |
+| Content rights | | No third-party content: the pictures (made with AI, ChatGPT) are the app's own, and the fonts are under the OFL |
 | Copyright | | `2026 Gideonic` (Apple adds the ©); for an individual account the seller shown is the legal name |
 | Privacy Policy URL | required | `https://kaitk.github.io/draughts/privacy/` |
 | Support URL | required | `https://kaitk.github.io/draughts/` (a support page with the contact email, live 2026-11-09) |
@@ -91,7 +91,7 @@ MOVE HINTS
 
 THE BOARD
 • A flat board, or a 3D one with light and shadow, which you can turn by hand on the home screen.
-• Four seasons, each a photograph with its own board: autumn wood, winter stone, spring carved stone, and summer sunset.
+• Four seasons, each a picture with its own board: autumn wood, winter stone, spring carved stone, and summer sunset.
 • The season follows the date, or stays on the one you choose; or a plain background in the colours of the board.
 
 FOR EVERYONE

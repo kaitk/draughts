@@ -49,8 +49,8 @@ VIHJED
 
 KABELAUD
 • Lame laud või ruumiline 3D-laud valguse ja varjudega, mida saab avalehel käega pöörata.
-• Neli aastaaega, igaühel oma foto ja laud: sügisene puit, talvine kivi, kevadine nikerdatud kivi ja suvine päikeseloojang.
-• Aastaaeg vahetub kuupäeva järgi või jääb selleks, mille ise valid; või ühevärviline taust laua toonides, ilma fotota.
+• Neli aastaaega, igaühel oma pilt ja laud: sügisene puit, talvine kivi, kevadine nikerdatud kivi ja suvine päikeseloojang.
+• Aastaaeg vahetub kuupäeva järgi või jääb selleks, mille ise valid; või ühevärviline taust laua toonides, ilma pildita.
 
 KÕIGILE
 • Suured pildid ja ikoonid, et ka laps, kes veel lugeda ei oska, saaks ise hakkama.
