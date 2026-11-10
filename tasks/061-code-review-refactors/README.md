@@ -16,9 +16,9 @@ separate the drawing is. Its findings:
   - Layout worked out by hand per screen, with about 400 bare `N.0 * u` numbers.
   - No seam between the app and the renderer.
 
-This task turns those findings into five stages, each a subtask. Do one stage per
-session and clear the context between them. A stage's file holds what its session
-needs. Line numbers are as of `abfcb5c`, so look a name up again before editing.
+This task turns those findings into five stages, each a subtask, and then updates the
+overview page. Do one stage per session and clear the context between them. A stage's
+file holds what its session needs. Line numbers are as of `abfcb5c`, so look a name up again before editing.
 
 | Stage | Subtask | Changes what the app shows |
 | --- | --- | --- |
@@ -27,6 +27,7 @@ needs. Line numbers are as of `abfcb5c`, so look a name up again before editing.
 | 2 | `03-structure.md`: one screen table, events instead of flags, the shell's `Frame` | no |
 | 3 | `04-layout.md`: the panel's regions and modes, `gui::stack`, pure screen layouts | no |
 | 4 | `05-renderer-seam.md`: `app/host` and `app/render`, pixels from C, `render3d` split | no |
+| after | `06-overview-page.md`: "Draughts from above" updated and put in `docs/`, later on Pages | no |
 
 The order matters:
 
@@ -63,5 +64,6 @@ Left out on purpose:
 - [ ] Stage 3: the panel's layout as regions with a mode; `gui::stack` in use; home and
       settings with pure layout functions
 - [ ] Stage 4: `main` calls no gfx drawing; one `render::frame`; C decoders return pixels
+- [ ] The overview page updated to the new code and in the repo
 - [ ] Each stage's idle CPU and frame times on the Mac and the A33 recorded, none
       noticeably worse
