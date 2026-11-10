@@ -1452,11 +1452,16 @@ At rest, the board drawn and nothing changing, over 25 s (`--rest 25`, 2026-11-1
 | iPhone 13 mini, a clock running | 0.52% | 51, 26 |
 | Mac (M-series), home | 0.03% (8.2% with the release's gfx, presenting at 120 Hz) | 27, none |
 | Mac, a clock running | 0.17% | 51, 26 |
-| Windows | not measured yet | |
+| Windows (Ryzen 7 5800X3D, RTX 4090), home | 0.06% | 27, none |
+| Windows, full screen, flat board, a game | 0.18% | 27, none |
+| Windows, full screen, 3D board, a game | 0.06% | 27, none |
+| Windows, a clock running (10 s) | 0.16% | 22, 11 |
 
 A running clock costs a frame and its present each second, the timer's wake and the
 idle wait's end. With the release's gfx the Mac's footprint was 414 MB, with the
 patched one 321 MB, which also samples the photographs as ASTC instead of decoded JPEGs.
+On Windows, full screen at 2560 × 1440, the private bytes are 253 MB on the flat board
+and 476 MB on the 3D one.
 
 The 3D board's camera (the view, the zoom, the showcase's way back, a hot-seat turn) is an
 animation like a move: the 3D pass runs on each of its frames, about 36 for a 0.6 s ease

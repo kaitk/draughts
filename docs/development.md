@@ -170,7 +170,12 @@ unzip -q goose-v2026.4-windows-x64.zip && rm goose-v2026.4-windows-x64.zip
 cd ..
 python scripts/windows.py src/app/draughts.goose                 # build/windows/draughts.exe
 python scripts/windows.py src/app/draughts.goose --run -- --board 3d --screen game
+python scripts/windows.py src/app/draughts.goose --run -- --size full --board flat --screen game --rest 25
 ```
+
+`--size full` fills the screen on the desktop, as the app always does on a phone. `--rest`
+prints its line and leaves the app running, so close it (or kill it from a script) once
+the line is out; a `--bench` run quits by itself.
 
 `scripts/windows.py` builds goose_gfx with `patches/goose_gfx/` applied, as Android and
 iOS do, into a copy of the release (`build/windows/goose/`; delete it after the release

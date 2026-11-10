@@ -49,6 +49,10 @@ At rest over 25 s (`--rest 25`):
 | Mac, home, release gfx (before) | 8.2% | 2989, none | 414 MB |
 | Mac, home, patched gfx | 0.03% | 27, none | 321 MB |
 | Mac, a clock running | 0.17% | 51, 26 | 338 MB |
+| Windows, home | 0.06% | 27, none | 298 MB |
+| Windows, full screen, flat board, a game | 0.18% | 27, none | 253 MB |
+| Windows, full screen, 3D board, a game | 0.06% | 27, none | 476 MB |
+| Windows, a clock running (10 s) | 0.16% | 22, 11 | 260 MB |
 
 The iPhone's other threads, 2.4% each before, now spend next to nothing.
 
@@ -61,5 +65,6 @@ The iPhone's other threads, 2.4% each before, now spend next to nothing.
 - [x] The other threads' share checked after the change
 - [x] The Mac at rest under 1%
 - [x] Windows: `python scripts/windows.py src/app/draughts.goose --run -- --rest 25`
-      builds, and at rest is under 1%; the numbers here and in the rendering doc (works,
-      the user, 2026-11-10; numbers not recorded)
+      builds, and at rest is under 1%; the numbers here and in the rendering doc
+      (2026-11-10: Ryzen 7 5800X3D, RTX 4090, 2560 × 1440 at 165 Hz; Windows' footprint is
+      the private bytes; works by hand too, the user)

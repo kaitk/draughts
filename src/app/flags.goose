@@ -17,6 +17,7 @@ let MAX_TAPS = 256;
 struct Flags {
     width:      i64 = 1280, // --size WxH: the window, in points on the Mac
     height:     i64 = 800,
+    full:       bool = false, // --size full: the desktop's window fills the screen
     theme:      i64 = -1,   // --theme wood|stone|birch|sunset: the board, else the season's
     background: i64 = -1,   // --background photo|plain: 0 the photograph, 1 the plain fade
     board:      i64 = -1,   // --board 3d|flat: settings::RAISED or settings::FLAT
@@ -99,6 +100,7 @@ fn parse(argv: u8[:][>..]) -> Flags {
             let x, ok_x = parse_int(w);
             let y, ok_y = parse_int(h);
             if found && ok_x && ok_y { f.width = x; f.height = y; }
+            if v == "full" { f.full = true; }
         }
         if a == "--theme" && theme::by_name(v) >= 0 { f.theme = theme::by_name(v); }
         if a == "--background" && v == "photo" { f.background = 0; }
