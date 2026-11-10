@@ -725,6 +725,15 @@ fn touch(b: Board&, flat: Layout, three: bool, view: view3d::View, input: gui::I
     return moved;
 }
 
+// The showcase (rig.goose): while its mode is on, a drag on the 3D board anywhere off the
+// UI (g.took) turns and tips the board, not a piece (rig::drive). The game and a puzzle
+// share it, before the pieces take the pointer (touch). Returns whether the showcase had
+// the pointer, and whether the board moved.
+fn showcase(cam: rig::Rig&, g: gui::Gui&, input: gui::Input, three: bool, pitch: f32, now: f64) -> bool, bool {
+    guard !g.took && three && cam.showcase else { return false, false; }
+    return true, rig::drive(cam, input.at, input.down, input.pressed, input.released, g.scale, pitch, now);
+}
+
 fn hops(m: rules::Move&) -> i64 { max(m.path.len - 1, 1) }
 
 // How long the move takes: a quiet move one hop, a capture one per stop, then the fade.

@@ -517,13 +517,12 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
             changed = true;
         }
         if ask == panel::BACK { go = HOME; }
-    } else if !g.took && l.three && gm.cam.showcase {
-        // The showcase: a drag anywhere off the UI turns and tips the board, not a piece.
-        if rig::drive(gm.cam, input.at, input.down, input.pressed, input.released, g.scale, l.pitch, now) {
+    } else {
+        let held, moved = board::showcase(gm.cam, g, input, l.three, l.pitch, now);
+        if moved { changed = true; }
+        if !held && !g.took && b.pos.side != gm.computer && board::touch(b, l.board, l.three, l.view, input, gm.grab, now) {
             changed = true;
         }
-    } else if !g.took && b.pos.side != gm.computer {
-        if board::touch(b, l.board, l.three, l.view, input, gm.grab, now) { changed = true; }
     }
     // Against a friend the 3D board turns to face the side to move once a move has shown,
     // unless the game is over; against the computer it stays turned to the child.

@@ -255,12 +255,9 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         if board::abandon(b, now) { missed(pl, now); }
         go = STAY;
     }
-    if !g.took && l.three && pl.cam.showcase {
-        // The showcase: a drag anywhere off the UI turns and tips the board, not a piece.
-        if rig::drive(pl.cam, input.at, input.down, input.pressed, input.released, g.scale, l.pitch, now) {
-            changed = true;
-        }
-    } else if !g.took && ready(pl) && b.pos.side == side {
+    let held, moved = board::showcase(pl.cam, g, input, l.three, l.pitch, now);
+    if moved { changed = true; }
+    if !held && !g.took && ready(pl) && b.pos.side == side {
         let history = b.history.len;
         let wrong_at = b.wrong_at;
         let waited = board::waiting(b);
