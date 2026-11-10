@@ -152,8 +152,16 @@ fn group_rows(group: i64) -> i64 { return if group == 0 { GAME_ROWS } else { ROW
 
 fn group_row(group: i64, k: i64) -> i64 { return GAME_ROWS * group + k; }
 
+// How the rows fit the page (layout): the names' width at the left of their tiles, NAME_W
+// or WIDE_NAME_W where the landscape has the width, and whether the theme's tiles are slim
+// (a small window, gui::compact).
+struct Fit {
+    name_w: f32  = NAME_W,
+    slim:   bool = false,
+}
+
 // How tall a row's tiles are: SLIM_H for the theme's in a small window.
-fn row_h(s: Settings&, row: i64) -> f32 { if s.slim && row == THEME_ROW { SLIM_H } else { ROW_H[row] as f32 } }
+fn row_h(f: Fit, row: i64) -> f32 { if f.slim && row == THEME_ROW { SLIM_H } else { ROW_H[row] as f32 } }
 
 // The switch's tap ids, photograph and plain, after the rows' (SETTINGS_IDS + 10 + 10 ×
 // row + i).
@@ -166,27 +174,27 @@ fn switch_line(g: gui::Gui&) -> f32 {
 }
 
 // A half's thumbnail, as wide as w (pixels) leaves it, at most the tiles' own.
-fn switch_pic(s: Settings&, g: gui::Gui&, w: f32) -> float2 {
+fn switch_pic(f: Fit, g: gui::Gui&, w: f32) -> float2 {
     let u = g.scale;
-    let pic = min((if s.slim { SLIM_THUMB_W } else { THUMB_W }) * u, w - gui::PAD * u);
+    let pic = min((if f.slim { SLIM_THUMB_W } else { THUMB_W }) * u, w - gui::PAD * u);
     return float2 { pic, pic * THUMB_H / THUMB_W };
 }
 
 // How tall the switch is, in pixels, `across` pixels wide: its thumbnails and SWITCH_PAD
 // above and below them, no taller than the theme's tiles; SLIM_H in a small window.
-fn switch_h(s: Settings&, g: gui::Gui&, across: f32) -> f32 {
+fn switch_h(f: Fit, g: gui::Gui&, across: f32) -> f32 {
     let u = g.scale;
-    if s.slim { return SLIM_H * u; }    // the compact tiles' floor
-    let pic = switch_pic(s, g, 0.5 * (across - SWITCH_GAP * u));
-    return min(row_h(s, THEME_ROW) * u, pic.y + 2.0 * SWITCH_PAD * u);
+    if f.slim { return SLIM_H * u; }    // the compact tiles' floor
+    let pic = switch_pic(f, g, 0.5 * (across - SWITCH_GAP * u));
+    return min(row_h(f, THEME_ROW) * u, pic.y + 2.0 * SWITCH_PAD * u);
 }
 
 // The theme's switch in r, its halves side by side: the season's photograph and its
 // plain fade, the one chosen lit. True when a tap changed s.
-fn switch(s: Settings&, g: gui::Gui&, r: float4) -> bool {
+fn switch(s: Settings&, f: Fit, g: gui::Gui&, r: float4) -> bool {
     let u = g.scale;
     let w = 0.5 * (r.z - SWITCH_GAP * u);
-    let pic = switch_pic(s, g, w);
+    let pic = switch_pic(f, g, w);
     var changed = false;
     for k in 2 {
         let half = float4 { r.x + k * (w + SWITCH_GAP * u), r.y, w, r.w };
@@ -219,10 +227,10 @@ fn note(row: i64, i: i64) -> const u8[:] {
 
 // How wide tile i of a row is: its words with 16 dp either side, at least 88 dp; a
 // season's, its thumbnail or label and 6 dp either side, at least 88 dp too.
-fn tile_width(s: Settings&, g: gui::Gui&, row: i64, i: i64) -> f32 {
+fn tile_width(f: Fit, g: gui::Gui&, row: i64, i: i64) -> f32 {
     let u = g.scale;
     let label = strings::get(word(row, i));
-    if row == THEME_ROW && s.slim {
+    if row == THEME_ROW && f.slim {
         return max(88.0 * u, gui::choice_beside_width(g, float2 { SLIM_THUMB_W * u, SLIM_THUMB_H * u }, label));
     }
     if row == THEME_ROW { return max(88.0 * u, max(THUMB_W * u, gui::text_width(g, gui::SMALL, label)) + gui::PAD * u); }
@@ -231,7 +239,7 @@ fn tile_width(s: Settings&, g: gui::Gui&, row: i64, i: i64) -> f32 {
 }
 
 // Declares tile i of a row in r. True when a tap changed s.
-fn tile(s: Settings&, over: board::Overlay&, g: gui::Gui&, row: i64, i: i64, r: float4) -> bool {
+fn tile(s: Settings&, f: Fit, over: board::Overlay&, g: gui::Gui&, row: i64, i: i64, r: float4) -> bool {
     let u = g.scale;
     let id = gui::SETTINGS_IDS + 10 + 10 * row + i;
     let label = strings::get(word(row, i));
@@ -239,8 +247,8 @@ fn tile(s: Settings&, over: board::Overlay&, g: gui::Gui&, row: i64, i: i64, r: 
         let kind = if i == BY_DATE_TILE { BY_DATE } else { SEASON_KINDS[i] };
         // A season's thumbnail: its photograph, or with plain its fade (the widgets' 4 on).
         let pic = if kind >= 0 && s.plain { kind + 4 } else { kind };
-        let size = if s.slim { float2 { SLIM_THUMB_W * u, SLIM_THUMB_H * u } } else { float2 { THUMB_W * u, THUMB_H * u } };
-        guard gui::choice(g, id, r, pic, size, label, s.season == kind, true, s.slim) else { return false; }
+        let size = if f.slim { float2 { SLIM_THUMB_W * u, SLIM_THUMB_H * u } } else { float2 { THUMB_W * u, THUMB_H * u } };
+        guard gui::choice(g, id, r, pic, size, label, s.season == kind, true, f.slim) else { return false; }
         s.season = kind;
         return true;
     }
@@ -262,16 +270,16 @@ fn tile(s: Settings&, over: board::Overlay&, g: gui::Gui&, row: i64, i: i64, r: 
 // how tall they are. A row as wide as r, as group_width makes it, doesn't wrap for a
 // rounding difference: SLACK.
 let MOST_TILES = 5;
-fn lay(s: Settings&, g: gui::Gui&, row: i64, r: float4, at: float4[:]) -> f32 {
+fn lay(f: Fit, g: gui::Gui&, row: i64, r: float4, at: float4[:]) -> f32 {
     let u = g.scale;
-    let h = row_h(s, row) * u;
+    let h = row_h(f, row) * u;
     var x: f32 = 0.0;
     var y: f32 = 0.0;
     // The theme's five where they don't fit one line (a small window): a grid of equal
     // tiles three across (two where three don't fit), not a ragged wrap (task 050).
     if row == THEME_ROW {
         var all = -TILE_GAP * u;
-        for i in ROW_TILES[row] { all += tile_width(s, g, row, i) + TILE_GAP * u; }
+        for i in ROW_TILES[row] { all += tile_width(f, g, row, i) + TILE_GAP * u; }
         if all > r.z + SLACK {
             let cols = if 3.0 * 88.0 * u + 2.0 * TILE_GAP * u <= r.z { 3 } else { 2 };
             let w = (r.z - (cols - 1) * TILE_GAP * u) / cols;
@@ -283,7 +291,7 @@ fn lay(s: Settings&, g: gui::Gui&, row: i64, r: float4, at: float4[:]) -> f32 {
         }
     }
     for i in ROW_TILES[row] {
-        let w = min(tile_width(s, g, row, i), r.z);
+        let w = min(tile_width(f, g, row, i), r.z);
         if x > 0.0 && x + w > r.z + SLACK {
             x = 0.0;
             y += h + TILE_GAP * u;
@@ -308,7 +316,7 @@ struct Rows {
 
 // A group's settings from r's top left, as wide as r, each its dim name and its tiles:
 // the name at the left when `aside`, else above them.
-fn rows_at(s: Settings&, g: gui::Gui&, group: i64, r: float4, aside: bool) -> Rows {
+fn rows_at(f: Fit, g: gui::Gui&, group: i64, r: float4, aside: bool) -> Rows {
     let u = g.scale;
     var rs = Rows {};
     var y = r.y;
@@ -316,18 +324,18 @@ fn rows_at(s: Settings&, g: gui::Gui&, group: i64, r: float4, aside: bool) -> Ro
         let row = group_row(group, k);
         let at .= rs.row[k];
         if k > 0 { y += ROW_GAP * u; }
-        let left = (s.name_w + 14.0) * u;
+        let left = (f.name_w + 14.0) * u;
         // The theme's row: its name on a line of its own, the switch under it, the two
         // centered down the row at the left of the tiles; or where the name is above the
         // tiles, beside it at the line's right end, the line as tall as the switch.
         let switched = row == THEME_ROW;
-        let across = if aside { s.name_w * u } else { (2.0 * 88.0 + SWITCH_GAP) * u };
-        let sh = switch_h(s, g, across);
+        let across = if aside { f.name_w * u } else { (2.0 * 88.0 + SWITCH_GAP) * u };
+        let sh = switch_h(f, g, across);
         let line: f32 = if switched { sh + SWITCH_GAP * u } else { NAME_H * u };
         let tiles = if aside { float4 { r.x + left, y, r.z - left, 0.0 } }
                     else { float4 { r.x, y + line, r.z, 0.0 } };
-        let h = lay(s, g, row, tiles, at.tiles);
-        at.name = float4 { r.x, y, s.name_w * u, if aside { h } else { NAME_H * u - 6.0 * u } };
+        let h = lay(f, g, row, tiles, at.tiles);
+        at.name = float4 { r.x, y, f.name_w * u, if aside { h } else { NAME_H * u - 6.0 * u } };
         let top = y + max(0.0, 0.5 * (h - SWITCH_NAME * u - sh));
         if switched {
             at.sw = float4 { r.x, top + SWITCH_NAME * u, across, sh };
@@ -344,18 +352,18 @@ fn rows_at(s: Settings&, g: gui::Gui&, group: i64, r: float4, aside: bool) -> Ro
 }
 
 // Declares a group's settings where rows_at put them. True when a tap changed s.
-fn rows(s: Settings&, over: board::Overlay&, g: gui::Gui&, group: i64, rs: Rows&) -> bool {
+fn rows(s: Settings&, f: Fit, over: board::Overlay&, g: gui::Gui&, group: i64, rs: Rows&) -> bool {
     let u = g.scale;
     var changed = false;
     for k in group_rows(group) {
         let row = group_row(group, k);
         let at .= rs.row[k];
-        for i in ROW_TILES[row] { if tile(s, over, g, row, i, at.tiles[i]) { changed = true; } }
+        for i in ROW_TILES[row] { if tile(s, f, over, g, row, i, at.tiles[i]) { changed = true; } }
         gui::text(g, gui::SMALL, at.name, strings::get(ROW_NAMES[row]), 0.66, 0.03 * gui::FACE_DP[gui::SMALL] as f32 * u,
                   gui::LEFT);
         if row == THEME_ROW {
             s.switch_at = at.sw;
-            if switch(s, g, at.sw) { changed = true; }
+            if switch(s, f, g, at.sw) { changed = true; }
         }
     }
     return changed;
@@ -431,9 +439,9 @@ fn note_height(g: gui::Gui&, w: f32, titled: bool) -> f32 {
 }
 
 // How tall a group's glass is at width w; with no title row where a tab names it.
-fn group_height(s: Settings&, g: gui::Gui&, group: i64, w: f32, aside: bool, titled: bool = true) -> f32 {
+fn group_height(f: Fit, g: gui::Gui&, group: i64, w: f32, aside: bool, titled: bool = true) -> f32 {
     let u = g.scale;
-    let h = rows_at(s, g, group, float4 { 0.0, 0.0, w - 2.0 * GROUP_PAD * u, 0.0 }, aside).h;
+    let h = rows_at(f, g, group, float4 { 0.0, 0.0, w - 2.0 * GROUP_PAD * u, 0.0 }, aside).h;
     let title: f32 = if titled { title_height(g, group, w) + ROW_GAP * u } else { 0.0 };
     let note:  f32 = if group == 0 { note_height(g, w, titled) } else { 0.0 };
     return (12.0 + 14.0) * u + title + h + note;
@@ -441,18 +449,18 @@ fn group_height(s: Settings&, g: gui::Gui&, group: i64, w: f32, aside: bool, tit
 
 // How wide a group's glass wants to be with its rows unwrapped, the names at their left
 // when `aside`.
-fn group_width(s: Settings&, g: gui::Gui&, group: i64, aside: bool) -> f32 {
+fn group_width(f: Fit, g: gui::Gui&, group: i64, aside: bool) -> f32 {
     let u = g.scale;
     var widest: f32 = 0.0;
     for k in group_rows(group) {
         let row = group_row(group, k);
         var w = -TILE_GAP * u;
-        for i in ROW_TILES[row] { w += tile_width(s, g, row, i) + TILE_GAP * u; }
+        for i in ROW_TILES[row] { w += tile_width(f, g, row, i) + TILE_GAP * u; }
         widest = max(widest, w);
         // The theme's name and its switch beside it, where the name is above the tiles.
         if row == THEME_ROW && !aside { widest = max(widest, switch_line(g)); }
     }
-    let names = if aside { s.name_w + 14.0 } else { 0.0 };
+    let names = if aside { f.name_w + 14.0 } else { 0.0 };
     return widest + (names + 2.0 * GROUP_PAD) * u;
 }
 
@@ -461,7 +469,7 @@ fn group_width(s: Settings&, g: gui::Gui&, group: i64, aside: bool) -> f32 {
 // Where its content, `content` pixels tall, is taller than r (a small window), the
 // glass stays and the rows scroll inside it (task 050). True when a tap changed s.
 let LIST = gui::SETTINGS_IDS + 70;             // the group's scrolling list's id (gui::scroll_begin), plus the group
-fn group(s: Settings&, over: board::Overlay&, g: gui::Gui&, group: i64, r: float4, area: float4, aside: bool,
+fn group(s: Settings&, f: Fit, over: board::Overlay&, g: gui::Gui&, group: i64, r: float4, area: float4, aside: bool,
          titled: bool = true, content: f32 = 0.0) -> bool {
     let u = g.scale;
     let glass = gui::bleed(g, r, area);
@@ -489,8 +497,8 @@ fn group(s: Settings&, over: board::Overlay&, g: gui::Gui&, group: i64, r: float
                        gui::RIGHT);
         }
     }
-    var rs = rows_at(s, g, group, c, aside);
-    let changed = rows(s, over, g, group, rs);
+    var rs = rows_at(f, g, group, c, aside);
+    let changed = rows(s, f, over, g, group, rs);
     if group == 0 && note_beside(g, r.z, titled) == 0 {
         // At the glass's foot, below the rows however much taller the glass is.
         let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
@@ -622,6 +630,7 @@ struct Page {
     content: f32           = 0.0,
     board:   board::Layout = board::layout_at(0.0, 0.0, 0.0, 1.0, 8),
     room3d:  float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
+    fit:     Fit           = Fit {},
 }
 
 // The preview in what the page leaves it: PREVIEW_SHARE of its shorter side, centered,
@@ -633,16 +642,13 @@ fn preview(p: Page&, page: float4, u: f32, n: i64, shown: bool = true) {
     p.room3d = preview_room(page, size);
 }
 
-// Where the screen's parts go in `area` (Page). It declares nothing; it sets s.name_w and
-// s.slim, which the rows read.
+// Where the screen's parts go in `area` (Page). It declares nothing and changes nothing.
 fn layout(s: Settings&, g: gui::Gui&, area: float4) -> Page {
     let u = g.scale;
     let landscape = area.z >= area.w;
     let n = rules::VARIANTS[s.variant].size;
     var page = float4 { area.x + PAD_X * u, area.y + PAD_Y * u, area.z - 2.0 * PAD_X * u, area.w - 2.0 * PAD_Y * u };
-    s.name_w = NAME_W;
-    s.slim = gui::compact(g, area);
-    var p = Page { bleed: [area, area], .. };
+    var p = Page { bleed: [area, area], fit: Fit { slim: gui::compact(g, area), .. }, .. };
     let phone = gui::phone(area, u);
     var w: f32 = 0.0;
     var tabbed = true;
@@ -664,21 +670,21 @@ fn layout(s: Settings&, g: gui::Gui&, area: float4) -> Page {
         page.w += rise;
         let foot = min(g.insets.w, (PAD_Y + 14.0) * u);
         let room = page.w - (HEAD_H + HEAD_GAP) * u + foot;
-        w = min(max(max(group_width(s, g, 0, true), group_width(s, g, 1, true)), head_w), 0.55 * page.z);
-        if group_height(s, g, 0, w, true) + GROUP_GAP * u + group_height(s, g, 1, w, true) > room {
+        w = min(max(max(group_width(p.fit, g, 0, true), group_width(p.fit, g, 1, true)), head_w), 0.55 * page.z);
+        if group_height(p.fit, g, 0, w, true) + GROUP_GAP * u + group_height(p.fit, g, 1, w, true) > room {
             p.aside = false;
-            w = min(max(max(group_width(s, g, 0, false), group_width(s, g, 1, false)), head_w), 0.55 * page.z);
+            w = min(max(max(group_width(p.fit, g, 0, false), group_width(p.fit, g, 1, false)), head_w), 0.55 * page.z);
         }
-        if group_height(s, g, 0, w, p.aside) + GROUP_GAP * u + group_height(s, g, 1, w, p.aside) > room {
+        if group_height(p.fit, g, 0, w, p.aside) + GROUP_GAP * u + group_height(p.fit, g, 1, w, p.aside) > room {
             p.aside = true;
-            w = max(max(group_width(s, g, 0, true), group_width(s, g, 1, true)), head_w);
+            w = max(max(group_width(p.fit, g, 0, true), group_width(p.fit, g, 1, true)), head_w);
         }
         let widest = if phone { 0.7 * page.z } else { page.z - (SIDE_GAP + board::SMALLEST) * u };
-        tabbed = group_height(s, g, 0, w, p.aside) + GROUP_GAP * u + group_height(s, g, 1, w, p.aside) > room
+        tabbed = group_height(p.fit, g, 0, w, p.aside) + GROUP_GAP * u + group_height(p.fit, g, 1, w, p.aside) > room
                  || w > widest;
         if !tabbed && p.aside && w + (WIDE_NAME_W - NAME_W) * u <= 0.55 * page.z {
             w += (WIDE_NAME_W - NAME_W) * u;
-            s.name_w = WIDE_NAME_W;
+            p.fit.name_w = WIDE_NAME_W;
         }
     }
     if landscape && !tabbed {
@@ -690,8 +696,8 @@ fn layout(s: Settings&, g: gui::Gui&, area: float4) -> Page {
         // there rather than running on to the screen's bottom edge, which left it mostly
         // empty below (the user, 2026-11-09).
         let items = [gui::Item { size: HEAD_H * u, .. }, gui::Item { grow: 1.0, gap: HEAD_GAP * u, .. },
-                     gui::Item { size: group_height(s, g, 0, side.z, p.aside), .. },
-                     gui::Item { size: group_height(s, g, 1, side.z, p.aside), gap: GROUP_GAP * u, .. },
+                     gui::Item { size: group_height(p.fit, g, 0, side.z, p.aside), .. },
+                     gui::Item { size: group_height(p.fit, g, 1, side.z, p.aside), gap: GROUP_GAP * u, .. },
                      gui::Item { grow: 1.0, .. }];
         var at: float4[5] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 5];
         gui::stack(side, items, at);
@@ -706,15 +712,15 @@ fn layout(s: Settings&, g: gui::Gui&, area: float4) -> Page {
     // phone keeps them while the board has 45% of the width, or BOTH_BOARD; a larger
     // screen as long as they fit under the title row, the board left out under its least
     // (near square, the user 2026-11-09). Else one group at a time.
-    s.name_w = NAME_W;
+    p.fit.name_w = NAME_W;
     p.aside = false;
-    let want0 = group_width(s, g, 0, false);
-    let want1 = group_width(s, g, 1, false);
+    let want0 = group_width(p.fit, g, 0, false);
+    let want1 = group_width(p.fit, g, 1, false);
     let across = page.z - GROUP_GAP * u;
     let unwrapped = want0 + want1 <= across;
     let w0 = if unwrapped { want0 } else { across * want0 / (want0 + want1) };
     let w1 = if unwrapped { want1 } else { across - w0 };
-    let h = max(group_height(s, g, 0, w0, false), group_height(s, g, 1, w1, false));
+    let h = max(group_height(p.fit, g, 0, w0, false), group_height(p.fit, g, 1, w1, false));
     let left = page.w - (HEAD_H + 32.0) * u - h;
     let both = if phone { PREVIEW_SHARE * min(page.z, left) >= min(0.45 * page.z, BOTH_BOARD * u) } else { left >= 0.0 };
     if both {
@@ -737,13 +743,13 @@ fn layout(s: Settings&, g: gui::Gui&, area: float4) -> Page {
         p.aside = true;
         let tabs_w = gui::back_width(g, strings::get(strings::NAV_BACK)) + 40.0 * u + languages_width(g)
                      + tab_width(g, 0) + tab_width(g, 1) + TILE_GAP * u;
-        w = max(max(group_width(s, g, 0, true), group_width(s, g, 1, true)), tabs_w);
+        w = max(max(group_width(p.fit, g, 0, true), group_width(p.fit, g, 1, true)), tabs_w);
         var side = gui::cut_left(page, w);
         gui::cut_left(page, SIDE_GAP * u);
         preview(p, page, u, n);
         p.head = gui::cut_top(side, HEAD_H * u);
         gui::cut_top(side, HEAD_GAP * u);
-        let gh = max(group_height(s, g, 0, side.z, true, false), group_height(s, g, 1, side.z, true, false));
+        let gh = max(group_height(p.fit, g, 0, side.z, true, false), group_height(p.fit, g, 1, side.z, true, false));
         p.glass[s.group] = gui::center(side, side.z, gh);
         return p;
     }
@@ -756,7 +762,7 @@ fn layout(s: Settings&, g: gui::Gui&, area: float4) -> Page {
     gui::cut_top(page, gui::PAD_WIDE * u);
     p.tabs = gui::cut_top(page, BACK_W * u);
     gui::cut_top(page, GROUP_GAP * u);
-    let one = group_height(s, g, s.group, page.z, false, false);
+    let one = group_height(p.fit, g, s.group, page.z, false, false);
     let fits = one <= page.w;
     p.content = one;
     p.glass[s.group] = gui::cut_bottom(page, one);
@@ -780,7 +786,7 @@ fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, a
     if p.kind == TABS_UNDER && tabs(s, g, p.tabs) { ask = SHOWN; }
     for k in 2 {
         guard p.glass[k].z > 0.0 else { continue; }
-        if group(s, over, g, k, p.glass[k], p.bleed[k], p.aside, p.titled, p.content) { ask = CHANGED; }
+        if group(s, p.fit, over, g, k, p.glass[k], p.bleed[k], p.aside, p.titled, p.content) { ask = CHANGED; }
     }
     return ask;
 }

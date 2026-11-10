@@ -41,7 +41,31 @@ before changing an expected output or what the app shows. Record each verdict he
 
 ### Verdicts
 
-(to fill in)
+Read at `665257c`, 2026-11-10.
+
+1. **Holds.** `declare` puts the screen left's quads at `first..middle` and `blend`
+   fades and drifts them out under the screen come to: everything `still` declares
+   shows. A cheaper declaration would leave out only what is already invisible, which is
+   nothing, and dropping the fade changes what the app shows. The cost is about 28 µs a
+   frame for the 0.4 s of a transition.
+2. **Holds.** `Out` and `Play` are the per-frame regions, worked out by pure functions
+   from the `Layout` and what shows (`Shows`, `Words`); the `Layout` holds what doesn't
+   change with the game. Filling them into the `Layout` would make the shell, which
+   builds it, measure the panel's words and read the clocks, the countdown, and a draw:
+   the game's state crossing back into the layout for no gain.
+3. **Holds.** The modes differ in where things go, not in what is declared or in what
+   order. One declaring sequence keeps one order of quads for all three; a declaring
+   function per mode would repeat the clocks, the piece, and the controls three times.
+4. **Holds.** Re-blessing would change expected outputs, which this task keeps
+   byte-identical, for a last-bit difference no one sees; a cut's clamp would make the
+   stack a second cut API. The rows' heights are known only once their tiles wrap, the
+   cards share `card_size` and `card_at`, and the picker is a grid: a stack adds nothing
+   there.
+5. **Changed.** Two layout results in the player's `Settings`, written by `layout` and
+   read through `s` by the rows, were the side channel stage 2 removed elsewhere.
+   `settings::Fit` (the names' width and the slim tiles) is now in the `Page`, and
+   `rows_at`, `group_width`, `group_height`, `lay`, the tiles, and the switch take it;
+   `layout` changes nothing. Every expected output is byte-identical.
 
 ## The seam
 

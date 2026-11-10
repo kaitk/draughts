@@ -87,12 +87,6 @@ struct Settings {
     // Where the theme's switch was declared last (both halves), for the tests. Not in the
     // file.
     switch_at: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
-    // How wide the settings' names are at the left of their tiles: NAME_W, or WIDE_NAME_W
-    // where the landscape has the width (`frame` sets it each frame). Not in the file.
-    name_w: f32 = NAME_W,
-    // Whether the theme's tiles are slim (a small window, gui::compact; `frame` sets it
-    // each frame). Not in the file.
-    slim: bool = false,
 }
 
 // How the flat board draws kings: auto is a crown there.
