@@ -71,7 +71,7 @@ Open:
   people, after 061.
 - Later: 010 goose_gfx changes to propose upstream (alongside), 013 season effects, 014
   upscaled backgrounds, 026 the first start and tutorial, 060 shared blocks for a second
-  board game (chess).
+  board game (chess), 064 Steam for Windows, macOS, and Linux (low priority, scoped only).
 
 ## Next (updated 2026-11-10)
 
