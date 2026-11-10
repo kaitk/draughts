@@ -39,12 +39,18 @@ let VERT = """
         vec4 rect = q[i];
         vec4 look = q[i + 2];
         vec4 extra = q[i + 3];
-        // Room round the rect for the shadow: glass casts one 30 dp down, a tile 12 dp, a
-        // face 12 dp and its glow 26 dp round it, a floating disc 6 dp and its dot.
+        // Room round the rect for the shadow, as far as each reaches, and a pixel more for
+        // the edge's antialiasing (task 060): glass's (12 dp down, 32 blur, -14 spread)
+        // 6 dp above, 18 to the sides, 30 below; a tile's (6 down, 14 blur, -8 spread) 0,
+        // 6, and 12; a face 12 dp and its glow 26 dp round it, a floating disc 6 dp and
+        // its dot.
         int kind = int(look.x);
-        // A glyph is drawn exactly over its rect, a texel to a pixel.
-        float m = (kind == 0 ? 48.0 : kind == 1 ? 20.0 : kind == 8 ? 28.0 : kind == 9 ? 12.0 : kind == 4 ? 0.0 : 1.0) * extra.x;
-        vec2 px = mix(rect.xy - m, rect.xy + rect.zw + m, CORNERS[gl_VertexIndex]);
+        float u = extra.x;
+        // left, top, right, bottom; a glyph is drawn exactly over its rect, a texel to a pixel.
+        vec4 m = kind == 0 ? vec4(18.0, 6.0, 18.0, 30.0) * u + 1.0
+               : kind == 1 ? vec4(6.0, 0.0, 6.0, 12.0) * u + 1.0
+               : vec4(kind == 8 ? 28.0 : kind == 9 ? 12.0 : kind == 4 ? 0.0 : 1.0) * u;
+        vec2 px = mix(rect.xy - m.xy, rect.xy + rect.zw + m.zw, CORNERS[gl_VertexIndex]);
         gl_Position = vec4(px.x / screen.x * 2.0 - 1.0, 1.0 - px.y / screen.y * 2.0, 0.0, 1.0);
         v_px = px;
         v_rect = rect;
@@ -383,6 +389,14 @@ let FRAG = """
             // there (screen.z 2), dimmed and saturated, under the theme's tint, with a
             // light border and top highlight, and a soft shadow outside it.
             float d = box(p, c, h, r);
+            // Outside it only the shadow, under nothing (its cover 0); more than 3 dp
+            // inside it no highlight (2 dp down, 1 dp in), border, or shadow: each the
+            // same as below, without the parts that are 0 there.
+            if (d >= 0.5) {
+                result = vec4(0.0, 0.0, 0.0, 0.55 * shadow(p, c, h, r, 12.0 * u, 32.0 * u, -14.0 * u));
+                return;
+            }
+            bool inner = d < -3.0 * u - 0.5;
             float side = max(screen.x, screen.y);
             vec3 g = screen.z > 1.5 ? theme_fade(p, screen.xy)
                    : screen.z > 0.5 ? texture(glass_copy, (p - 0.5 * (screen.xy - side)) / side).rgb
@@ -390,6 +404,10 @@ let FRAG = """
             float l = dot(g, vec3(0.2126, 0.7152, 0.0722));
             g = max(mix(vec3(l), g, 1.3), 0.0) * text.w;
             g = mix(g, glass.rgb, glass.a);
+            if (inner) {
+                result = vec4(g, 1.0);
+                return;
+            }
             g = mix(g, vec3(1.0), 0.12 * top_line(p, c, h, r, u));
             g = mix(g, vec3(1.0), 0.14 * (1.0 - cover(d + u)));
             float a = cover(d);
@@ -415,7 +433,14 @@ let FRAG = """
             bool flat = style >= 5;
             if (!flat) h *= 1.0 - 0.04 * pr;
             float d = box(p, c, h, r);
-            if (!flat) over(vec3(0.0), 0.5 * shadow(p, c, h, r, 6.0 * u, 14.0 * u, -8.0 * u) * (1.0 - cover(d)));
+            // Outside it only the shadow (the tile's cover 0); more than 3 dp inside it
+            // no shadow, edge (at most 2 dp), or highlight (3 dp): as below without them.
+            if (d >= 0.5) {
+                result = flat ? vec4(0.0) : vec4(0.0, 0.0, 0.0, 0.5 * shadow(p, c, h, r, 6.0 * u, 14.0 * u, -8.0 * u));
+                return;
+            }
+            bool inner = d < -3.0 * u - 0.5;
+            if (!flat && !inner) over(vec3(0.0), 0.5 * shadow(p, c, h, r, 6.0 * u, 14.0 * u, -8.0 * u) * (1.0 - cover(d)));
             float a = cover(d) * (v_color.a > 0.0 ? v_color.a : 1.0);
             vec3 red = vec3(1.0, 0.353, 0.29);
             vec3 gold = vec3(1.0, 0.843, 0.353);
@@ -426,6 +451,10 @@ let FRAG = """
                         : style == 5 ? 0.0 : style == 6 ? 0.24 : style == 7 ? 0.22 : style == 9 ? 0.18
                         : style == 10 ? 0.06 : style == 11 || style == 12 ? 0.16 : 0.10) + 0.14 * pr);
             vec4 tile = vec4(fc * fa, fa);
+            if (inner) {
+                result = tile * a;
+                return;
+            }
             bool wide = style == 7 || style == 9 || style == 11 || style == 12;
             float ea = style == 5 || style == 6 ? 0.0 : style == 2 || wide ? 1.0 : style == 8 || style == 10 ? 0.12
                        : style >= 3 ? 0.18 : 0.2;
