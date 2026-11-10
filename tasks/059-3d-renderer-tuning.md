@@ -179,11 +179,136 @@ constant):
 
 ## On the PC, the clocks locked
 
-To come: Nsight Graphics and RenderDoc captures of a `--bench` frame.
+Nsight Graphics 2026.4's GPU Trace (the user ran it from Nsight's window: its command line,
+`ngfx.exe`, fails to start Qt when launched from the agent's shell, in its sandbox or out
+of it), 2026-11-10: `--size 1920x1200 --board 3d --screen game --theme wood --variant
+russian --bench 3000`, from frame 400, 5 frames, every action timed, the clocks at base
+(2235 MHz). Saved locally as `build/nsight/bench3d.ngfx-gputrace`.
+
+- Each frame 0.92 to 0.95 ms apart (the bench's waited phase), **the GPU busy 0.25 to
+  0.29 ms of it**: the whole moving 3D frame is a quarter of a millisecond on the 4090.
+- The shaders' samples are FP32 arithmetic mostly; their stalls are on texture fetches
+  (47.5%) and FP32 rounding (28%).
+- At this size the 4090 shows the frame's shape and nothing finer: the Pixel's own
+  counters and timeline (below) rank the passes and the draws.
 
 ## On the Pixel 7a
 
-To come: Streamline or Android GPU Inspector on the debuggable build.
+The debuggable build (`--debuggable`, 2026-11-10, `3d9ecd4`'s code), `--bench 1000` (the
+3D game, Russian, autumn, 1080 × 2400, MSAA 4×), thermal status 0. Streamline 9.9.1's
+gatord run by hand (`streamline_me.py`'s headless run didn't keep the capture, and
+`Streamline-cli -generate-config` rejects every template), 42 G710 counters and the Mali
+timeline, read back with `Streamline-cli -report -timeline` and `-cam`:
+
+```sh
+adb shell "cd /data/local/tmp && ./gatord --android-pkg io.github.kaitk.draughts \
+  --android-activity .DraughtsActivity \
+  --activity-args \"--es args '--board 3d --screen game --theme wood --variant russian --bench 1000'\" \
+  --stop-on-exit yes --max-duration 100 --output /data/local/tmp/b.apc --gpu-timeline auto -c configuration.xml"
+```
+
+(`configuration.xml` lists `ARM_Mali-G710_<COUNTER>` lines and `MaliTimeline_Perfetto`;
+the IDs are in gatord's binary; `streamline_me.py` pushes gatord and the layers first.)
+The bench in that run: waited P50 13.47 ms, the pass alone 12.88, presented 16.65 ms frame
+to frame; without the profiler 12.75 to 12.94, 12.65 to 12.77, 16.65 to 16.73.
+
+**The GPU's clock:** sampled from `/sys/class/misc/mali0/device/cur_freq` through a
+bench run, 351 to 471 MHz, a mean of 360 to 400 MHz in every phase (the G710 reaches
+about 850). The governor runs it as slow as keeps up, and the GPU is busy nearly all
+the time at that clock (393M active cycles a second). So the Pixel's frame time is the
+work at a low clock; **GPU cycles a frame are the measure**, and cutting work lowers the
+clock (battery) as much as the time.
+
+**Each pass** (the Mali timeline, the median over 840 to 900 frames a phase):
+
+| Pass | Fragment | Vertex |
+| --- | --- | --- |
+| The 3D pass (4× MSAA color and depth, 3 draws: pieces, board, catcher) | 6.86 to 6.89 ms | 0.43 to 0.46 ms |
+| The screen pass (4 draws: the backdrop, the kept image, the UI's two) | 4.58 ms | 0.10 ms |
+| The shadow map (1024², 2 draws), on the frames that draw it | 0.40 ms | 0.42 ms |
+| The screen pass with the backdrop and the kept image alone (the bench's pulse phase) | 2.38 ms | |
+
+So the waited frame is GPU work, about 12 ms at 360 MHz, with no large fixed part
+(hypothesis 1 is out). **The screen pass is 40% of it**: its two full-screen layers
+2.4 ms and the UI about 2.2 ms.
+
+**The counters, per frame** (the pass alone; with the shadow map in brackets):
+
+| Counter | Per frame | Reading |
+| --- | --- | --- |
+| GPU active | 6.23M cycles (6.84M) | the shadow map adds 10% |
+| Fragment queued / tiler active | 5.41M / 0.20M | fragment-bound; geometry is done |
+| Fragment warps; all-register (64) warps | 690k; 195k | the lit shader's 28% run at half occupancy |
+| Full warps | 667k (97%) | small triangles waste little |
+| Quads rasterized; partial | 2.74M; 180k | 4.2 a screen's quads: the screen pass's two full-screen layers are most |
+| Early ZS tested; killed | 335k; 44k | little overdraw to reject |
+| FMA / CVT / SFU instructions | 15.9M / 5.8M / 2.1M | arithmetic |
+| Texture filtering active; its stalls | 4.05M; 11.5M | the texture unit waits 3× as long as it filters |
+| Varying slots, 32-bit; 16-bit | 6.7M; 0 | no 16-bit varyings |
+| External reads; writes | 458k; 180k beats (about 7 and 3 MB) | 0.6 GB/s: not bandwidth-bound |
+| Tiles; unchanged tiles killed | 9.7k; 19.3k | transaction elimination drops most writes |
+
+**The screen's shaders** (`scripts/shader_report.py`, the G710; the G615 about half):
+
+| Shader | Registers | A longest | A total (every branch) |
+| --- | --- | --- | --- |
+| backdrop.frag (full screen) | 30 | 1.87 | 3.27 |
+| show.frag (full screen) | 8 | 0.20 | 0.20 |
+| ui.frag (the UI's quads) | 64 | 5.59 | 58.20 |
+| board2d.frag (the flat board, full screen) | 32 | 10.11 | 15.58 |
+| piece2d.frag (the flat pieces) | 64 | | 15.18 |
+
+The UI's shader holds 64 registers for every UI pixel, whatever it draws; the flat board
+pays the same UI, so its frame (11.8 ms waited on the Pixel) gains from the same change.
+
+## The plan, ranked (2026-11-10, before any change)
+
+The Pixel's 3D frame is about 12 ms of GPU work at its governor's 360 MHz: the 3D pass
+6.9, the screen pass 4.6, the shadow map 0.8 when drawn. Expected wins are in the
+Pixel's milliseconds at that clock, from the counters and the offline compiler; the
+tablet's are to be measured. Each is checked with headless shots against the build
+before (`agents/design.md`) and measured with `--bench` on the tablet.
+
+1. **The field's occlusion into a small map, drawn when pieces move.** The 3 × 3 loop
+   over the squares is most of a field pixel (G710: 16.0 → 6.4 cycles, 64 → 32
+   registers, 9 → 0 loads). Draw it into a 256² R8 map over the field (64k texels, a
+   sixteenth of task 042's dropped 1024² bake; 31 texels a square for a falloff a
+   piece's radius wide) when the pieces stand differently, and read one bilinear texel.
+   **Expected 1.5 to 2.5 ms** of the 3D pass's 6.9, less on a moving frame by the small
+   pass. Look: the same (a smooth function, filtered); check the dark ring at a piece's
+   foot at 200%.
+2. **The screen's still layers kept, the board laid in its own rect.** The backdrop and
+   the kept image are two full-screen layers (2.4 ms) and the UI 2.2 more, every frame,
+   while only the board moves. Draw the backdrop into a kept screen image when the
+   theme, size, or blur changes, and lay the 3D image only over the board's bounds (it
+   is clear round them): one opaque full-screen copy and a board-sized quad. **Expected
+   1 to 1.5 ms.** Look: the same; transitions and the fade keep their own path.
+3. **The UI's shader under 32 registers:** split by what a quad draws (glass, icons,
+   text), or its rare branches moved out. Half occupancy on every UI pixel today, on the
+   flat board too. **Expected about 1 ms** on both boards. Look: the same.
+4. **The crown into a texture.** Its distance evaluated three times holds the lit
+   shader's spill (40 bytes; the G68's 158) and half a piece's arithmetic, for every
+   piece. A 128² distance map of the crown, made once, read once with its slope from
+   the texel's derivatives. **Expected 0.3 to 0.8 ms**, more on the G68. Look: the same
+   at a piece's 140 px; check the crown's edge at 200%.
+5. **The shadow map's pass when pieces move, 0.8 ms**, and its 9 taps on every lit pixel
+   (most of the field's texture cycles): analytic shadows of the discs on the field (the
+   stadium a disc sweeps along the light), sharing item 1's map, and the map only for
+   piece on piece. **Expected 0.8 ms on moving frames plus some of the texture stalls.**
+   Look: the penumbra's shape changes, a choice to show the user.
+6. **fp16 (`mediump`)** for colors, the harmonics, the tonemap, and the varyings that
+   allow it, once 1 and 4 are in: Valhall's FMA runs fp16 at twice the rate and the
+   varying unit packs 16-bit slots (6.7M 32-bit slots a frame now). **Expected 10 to 20%
+   of what arithmetic remains.** Look: watch for banding in the dark wood.
+7. **MSAA 4× read again** (`setup`'s `samples` 1, measuring only): partial quads are 6.6%
+   of all, so its cost now is likely small; if it is, nothing changes.
+8. **Resolution, last:** the 3D pass is fragment-bound, so a render scale of 0.8 takes
+   about 36% of its pixels (**about 2.5 ms**) but softens the board. Only if 1 to 6
+   leave the tablet over 11.1 ms.
+
+Not worth it, from the counters: bandwidth (0.6 GB/s), geometry (the tiler 3% of the
+GPU's time, 97% full warps), early-depth order (44k quads killed of 335k tested), the
+reflection's harmonics and the specular antialiasing (under 0.3 cycles each).
 
 ## Acceptance criteria
 

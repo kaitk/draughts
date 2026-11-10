@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""The 3D renderer's shaders as standalone GLSL, and the Mali Offline Compiler's report
-for each (task 059).
+"""The app's shaders as standalone GLSL, and the Mali Offline Compiler's report for each
+(task 059): the 3D renderer's, and the screen's (the flat board, its pieces, the UI).
 
 Pulls each shader's parts out of src/render3d/shaders.goose, joined as embed_shader
 joins them (render3d::setup's calls, repeated in SHADERS below: keep them in step),
@@ -20,7 +20,10 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SOURCE = os.path.join(ROOT, "src", "render3d", "shaders.goose")
+# A part names a constant of src/render3d/shaders.goose, or of another file as file.NAME.
+SOURCES = {"": os.path.join(ROOT, "src", "render3d", "shaders.goose"),
+           "draw.": os.path.join(ROOT, "src", "app", "draw.goose"),
+           "widgets.": os.path.join(ROOT, "src", "app", "widgets.goose")}
 OUT = os.path.join(ROOT, "build", "shaders")
 
 # name, stage, parts in embed_shader's order (render3d::setup).
@@ -37,6 +40,13 @@ SHADERS = [
     ("show", "vert", ["SHOW_VS", "SHOW_BLOCK", "SHOW_VERT"]),
     ("show", "frag", ["SHOW_FS", "SHOW_BLOCK", "SHOW_FRAG"]),
     ("bake", "frag", ["BAKE_FRAG"]),
+    # The screen's (src/app/draw.goose's setup, widgets.goose's).
+    ("board2d", "frag", ["FADE_FN", "draw.THEME_BLOCK", "draw.SHARED_BLOCK", "draw.BOARD_FRAG"]),
+    ("piece2d", "vert", ["draw.SHARED_BLOCK", "draw.STACK_BLOCK", "draw.PIECE_VERT"]),
+    ("piece2d", "frag", ["FADE_FN", "draw.THEME_BLOCK", "draw.SHARED_BLOCK", "draw.MAN_BLOCK", "draw.STACK_BLOCK",
+                         "draw.PIECE_FRAG"]),
+    ("ui", "vert", ["draw.SHARED_BLOCK", "widgets.VERT"]),
+    ("ui", "frag", ["FADE_FN", "draw.THEME_BLOCK", "draw.SHARED_BLOCK", "draw.MAN_BLOCK", "widgets.FRAG"]),
 ]
 
 
@@ -82,8 +92,10 @@ def main():
     ap.add_argument("--core", action="append", default=[], help="a Mali core for malioc, e.g. Mali-G615")
     args = ap.parse_args()
 
-    with open(SOURCE, encoding="utf-8") as f:
-        consts = constants(f.read())
+    consts = {}
+    for prefix, path in SOURCES.items():
+        with open(path, encoding="utf-8") as f:
+            consts.update({prefix + k: v for k, v in constants(f.read()).items()})
     os.makedirs(OUT, exist_ok=True)
     validator = glslang()
     malioc = find_malioc()
@@ -93,9 +105,13 @@ def main():
     failed = False
     for name, stage, parts in SHADERS:
         body = "\n".join(consts[p] for p in parts)
-        # `patch` is a keyword to glslang's 450 (tessellation), not to the compiler goose
-        # uses: BAKE_FRAG names a local so.
+        # `patch` and `flat` are keywords to glslang's 450, not to the compiler goose uses:
+        # BAKE_FRAG and the UI's FRAG name locals so.
         body = re.sub(r"\bpatch\b", "patch_", body)
+        body = re.sub(r"\bbool flat\b", "bool flat_", body)
+        body = re.sub(r"\(!flat\)", "(!flat_)", body)
+        body = re.sub(r"\bflat \?", "flat_ ?", body)
+        body = re.sub(r"([!(&|] *)flat\b(?! (?:in|out))", r"\1flat_", body)
         src = "#version 450\n" + body + "\n"
         path = os.path.join(OUT, f"{name}.{stage}")
         with open(path, "w", encoding="utf-8", newline="\n") as f:
