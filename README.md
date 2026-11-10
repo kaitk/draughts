@@ -28,7 +28,7 @@ iOS 16 or later with Metal.
 | --- | --- | --- | --- | --- |
 | Galaxy Tab A11+ (SM-X230) | MediaTek MT6878 | Mali-G615 MC2, Vulkan 1.3 | Android 16 | Plays in 2D and 3D; the main test device |
 | Pixel 7a | Google Tensor G2 | Mali-G710 MC7, Vulkan | Android 17 | Plays in 2D and 3D |
-| Galaxy A33 5G (SM-A336B) | Samsung Exynos 1280 | Mali-G68 MP4, Vulkan 1.3 | Android 16 | Plays in 2D at 90 Hz and 3D at about 39 fps while it moves; the weakest tried |
+| Galaxy A33 5G (SM-A336B) | Samsung Exynos 1280 | Mali-G68 MP4, Vulkan 1.3 | Android 16 | Plays in 2D at 90 Hz and 3D at 60 while it moves; the weakest tried |
 | iPhone 13 mini | Apple A15 Bionic | Apple GPU, Metal | iOS 26 | Runs, a development build |
 | iPad Pro 11-inch (M5), in the Simulator | The Mac's M1 Pro | Apple GPU, Metal | iPadOS 26.4 | Runs full screen and in resized windows, both orientations; the smallest windows still to fit |
 | Mac with Apple silicon (M1 Pro) | Apple M1 Pro | Apple GPU, Metal | macOS | Development and headless tests |
@@ -54,13 +54,18 @@ percentile, against the display's 11.1 ms at 90 Hz or 16.7 ms at 60 Hz
 | Galaxy Tab A11+ | 3D | 0.32% | 261 MB | 77 / 45 | 11.1 / 22.2 ms | 2026-11-10 |
 | Pixel 7a, 2400 × 1080, 60 Hz | 2D | 0.08% | 159 MB | 60 / 60 | 16.7 / 16.7 ms | 2026-11-10 |
 | Pixel 7a | 3D | 0.04% | 324 MB | 60 / 60 | 16.7 / 16.7 ms | 2026-11-10 |
-| Galaxy A33 5G, 2400 × 1080, 90 Hz | 2D | 0.00% | 107 MB | 90 | | 2026-11-09 |
-| Galaxy A33 5G | 3D | 0.00% | 309 MB | 39 | | 2026-11-09 |
+| Galaxy A33 5G, 2400 × 1080, 90 Hz | 2D | 0.04% | 116 MB | 90 / 90 | 11.1 / 11.1 ms | 2026-11-10 |
+| Galaxy A33 5G | 3D | 0.04% | 275 MB | 60 / 45 | 22.2 / 22.2 ms | 2026-11-10 |
+| iPhone 13 mini, 2340 × 1080, 60 Hz | 2D | | | 60 / 60 | 16.7 / 16.7 ms | 2026-11-10 |
+| iPhone 13 mini | 3D | | | 60 / 60 | 16.7 / 16.7 ms | 2026-11-10 |
 
 The 2D board draws in one full-screen pass, the UI's glass over it, and holds the display's
 rate. The 3D board's frame takes about 10.6 ms of GPU work on the tablet, so 17% of its
 frames miss a refresh and stay on screen for two (task 055, and task 042 for its cost); on
-the Pixel 7a, 13.5 ms of its 16.7, it missed one frame in 995.
+the Pixel 7a, 13.5 ms of its 16.7, it missed one frame in 995. The Galaxy A33's 3D frame
+takes 23 ms, so it holds a steady 60 on its 90 Hz display, every other frame on screen for
+two refreshes. On the iPhone the frames are counted by Instruments' Animation Hitches
+rather than Android's compositor: 4 of 979 missed on the 2D board, 1 of 985 on the 3D.
 
 The 3D board's extra memory is GPU memory: 180 to 230 MB against about 36 MB in 2D.
 

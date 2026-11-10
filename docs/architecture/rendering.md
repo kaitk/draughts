@@ -1332,7 +1332,7 @@ depth target, a shadow map, albedo, normal, and roughness atlases with mips):
 
 Measured with the app's `--bench 300` ([development](../development.md#time-the-3d-board)),
 idle with `scripts/idle_cpu.sh`, memory with `dumpsys meminfo` at rest (2026-11-09; the
-tablet's and the Pixel's again 2026-11-10 with `scripts/device_perf.sh`, the release built
+three Android devices again 2026-11-10 with `scripts/device_perf.sh`, the release built
 from 1aaf406).
 
 The release at rest, idle 20 to 30 s:
@@ -1343,8 +1343,8 @@ The release at rest, idle 20 to 30 s:
 | Galaxy Tab A11+ | 3D, a game | 0.28 to 0.32% | 181 MB | 28 to 37 MB | 261 to 274 MB |
 | Pixel 7a, 2400 × 1080 | 2D, a game | 0.08% | 45 MB | 73 MB | 159 MB |
 | Pixel 7a | 3D, a game | 0.04% | 215 MB | 73 MB | 324 MB |
-| Galaxy A33 5G, 2400 × 1080 | 2D | 0.00% | 35 MB | 38 MB | 107 MB |
-| Galaxy A33 5G | 3D | 0.00% | 224 MB | | 309 MB |
+| Galaxy A33 5G, 2400 × 1080 | 2D, a game | 0.04% | 35 MB | 43 MB | 116 MB |
+| Galaxy A33 5G | 3D, a game | 0.04% | 197 MB | 29 MB | 275 MB |
 
 - **The tablet's frame** while the board moves (the first baseline, 1920 × 1200 at 90 Hz):
   the forward pass alone 10.9 ms at 1×, the whole budget; MSAA 4× adds 3.2 ms (6.3 ms
@@ -1368,7 +1368,10 @@ The release at rest, idle 20 to 30 s:
   28 fps while the board moves; after the frame cost's first cuts the pass 19.3 ms and
   about 39 fps (25.7 ms frame to frame); the theme applied in 1.66 s, the first frame 0.35 s. Its Mali-G68 lost the device
   on a texture's mip level 0 pixels high ([findings](../goose-findings.md)); the bake's
-  mips now end at the shorter side's 1 pixel (`render3d::baked`).
+  mips now end at the shorter side's 1 pixel (`render3d::baked`). 2026-11-10, 1000
+  frames: the 3D frame waited P50 23.2 / P99 26.0 ms (the pass alone 17.1), on screen for
+  two refreshes every other frame, a steady 60 fps; the flat board's 15.6 ms waited, and
+  no frame missed.
 - **Open:** at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the
   flat board's 0.3, outside the app's own work, as the Mac shows no draw at rest.
 

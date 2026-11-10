@@ -28,6 +28,22 @@ Pixel 7a, 60 Hz:
 | Flat | 995 | 0 | 60 / 60 |
 | 3D | 995 | 1 | 60 / 60 |
 
+Galaxy A33, 90 Hz:
+
+| Board | Frames counted | Missed a refresh | FPS (avg / 1% low) |
+| --- | --- | --- | --- |
+| Flat | 990 | 0 | 90 / 90 |
+| 3D | 993 | 500, every other frame (23 ms of GPU work) | 60 / 45 |
+
+iPhone 13 mini, 60 Hz, the development build from 2919b45 (no app source changed since
+1aaf406), counted by Instruments' Animation Hitches (`displayed-surfaces-interval`)
+between the bench's console lines, stamped on the Mac:
+
+| Board | Frames counted | Missed a refresh | FPS (avg / 1% low) |
+| --- | --- | --- | --- |
+| Flat | 979 | 4 | 60 / 60 |
+| 3D | 985 | 1 | 60 / 60 |
+
 What was ruled out on the way, with `poc/pace.goose` (the screen cleared every frame
 through the same goose_gfx and SDL): the pacing itself missed none of 1815 frames, nor
 with a full-screen shader keeping the GPU 76% busy at its top clock, nor with three 16 KB
@@ -50,7 +66,8 @@ clock the governor picks, not just at the top one.
 
 - [x] The tablet's flat board misses no refresh over 1000 presented frames
 - [x] The same on the Pixel 7a
-- [ ] The same on the Galaxy A33
+- [x] The same on the Galaxy A33
+- [ ] The iPhone's flat board's 4 missed of 979 looked into
 - [ ] The 3D board misses no refresh on the tablet and the Pixel 7a (the Galaxy A33,
       the weakest tried, at least holding a steady rate)
 - [ ] A screen transition counted the same way
