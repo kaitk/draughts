@@ -1,11 +1,23 @@
 # Development
 
-Built on macOS (Apple silicon). The tablet is a Galaxy Tab A11+ (SM-X230, Android 16,
-MediaTek MT6878 with a Mali-G615 MC2, Vulkan 1.3).
+The app builds from a Mac (Apple silicon) and from Windows (x64):
+
+| Build | From | Command | Section |
+| --- | --- | --- | --- |
+| macOS app | Mac | `goose build -o ../../build/draughts draughts.goose` in `src/app` | [Run on the Mac](#run-on-the-mac) |
+| Windows app | Windows | `python scripts/windows.py src/app/draughts.goose` | [Run on Windows](#run-on-windows) |
+| Android APK | Mac, Windows | `scripts/android.py src/app/draughts.goose --run` | [Run on Android](#run-on-android) |
+| Android release (APK and AAB for Play) | Mac, where the upload key is | `scripts/android.py src/app/draughts.goose --release` | [Release builds](#release-builds) |
+| iOS simulator, iPhone, iPad | Mac (Xcode) | `scripts/ios.py src/app/draughts.goose --run`, `--device --run` | [Run on iOS](#run-on-ios) |
+| Rules tests | Mac, Windows | `test/run_tests.py` | [Test the rules](#test-the-rules) |
+
+The Toolchain table below is the Mac's; Windows lists its own under Run on Windows and Run
+on Android. The tablet is a Galaxy Tab A11+ (SM-X230, Android 16, MediaTek MT6878 with a
+Mali-G615 MC2, Vulkan 1.3).
 
 ## Toolchain
 
-Tested 2026-11-07 on macOS 26.3.1:
+The Mac's, tested 2026-11-07 on macOS 26.3.1:
 
 | Tool | Where | Version |
 | --- | --- | --- |
