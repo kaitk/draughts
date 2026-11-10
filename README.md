@@ -42,8 +42,7 @@ Vulkan, or iOS 16 or later with Metal.
 
 ### Performance
 
-The release in a game, measured on 2026-11-10. Frames are counted by the system as they
-reached the screen; memory is the whole app's.
+Release builds in a game, 2026-11-10, frames as they reached the screen:
 
 | Device | Display | 2D board | 3D board | Memory (2D / 3D) |
 | --- | --- | --- | --- | --- |
@@ -53,48 +52,34 @@ reached the screen; memory is the whole app's.
 | iPhone 13 mini | 2340 × 1080, 60 Hz | locked 60 fps | locked 60 fps | 59 / 204 MB |
 | Windows PC | 2560 × 1440, 165 Hz | locked 165 fps | locked 165 fps | 258 / 477 MB |
 
-At rest the app uses under 0.35% of one core on every device. The 3D board's extra
-memory is GPU memory. Frame times, percentiles, and how each device is measured are in
-[rendering](docs/architecture/rendering.md#the-releases-frames).
+At rest: under 0.35% of one core, no GPU work. The 3D board's extra memory is on the GPU.
+[Full numbers and method](docs/architecture/rendering.md#the-releases-frames).
 
 ### How it works
 
-- **It sleeps when nothing changes.** A frame is drawn only for a touch, a moving piece,
-  or a clock's next second; otherwise the app presents nothing and blocks in the
-  system's own event wait (on iOS the run loop itself) until input or its own timer wakes
-  it. At rest it wakes about once a second and uses 0.03 to 0.3% of a core on every
-  device measured, with no GPU work
+- **Goose compiled to C**, on [goose_gfx](https://github.com/aardappel/goose_gfx) and
+  SDL3's GPU API: Vulkan on Android and Windows, Metal on Apple. No engine, no Gradle, no
+  Xcode project; one Python script per platform.
+- **Draws only on change.** A touch, a moving piece, or a clock's tick draws a frame;
+  otherwise the app sleeps in the system's event wait
   ([frames and battery](docs/architecture/rendering.md#frames-and-battery)).
-- **Immediate-mode UI.** Each frame the screens are declared in code: no widget tree, no
-  retained state but a small table of presses and scroll offsets. Every tile, panel, icon,
-  and glyph is a quad in one fixed array, and the whole UI is one instanced draw
+- **Immediate-mode UI.** Screens are declared in code each frame, no widget tree. Every
+  panel, icon, and glyph is a quad in one fixed array, drawn in one instanced call
   ([UI layer](docs/architecture/rendering.md#ui-layer)).
-- **One responsive layout, every screen.** Layouts cut rows, columns, and grids from the
-  screen's rectangle in dp, the shorter side 800 dp with a floor in physical size so a
-  phone's taps stay finger-sized. They fit the safe area around cutouts and gesture bars,
-  turn with the screen, and switch to a compact form in small windows: the same code lays
-  out a phone, a tablet, an iPad's resized window, and a desktop window, checked headless
-  at each device's size
-  ([screen sizes](docs/architecture/rendering.md#screen-sizes-and-the-safe-area),
-  [small windows](docs/architecture/rendering.md#small-windows)).
-- **Goose, compiled to C,** with [goose_gfx](https://github.com/aardappel/goose_gfx) on
-  SDL3's GPU API: Vulkan on Android and Windows, Metal on the Mac and iOS. No engine, no
-  Gradle, no Xcode project: one Python script builds each platform.
-- **Shaders draw everything:** the flat board in one full-screen pass, the pieces, rings, and
-  glass panels as signed distance shapes, crisp at any size. All pieces are one
-  instanced draw, the whole UI another.
-- **Text from a glyph atlas** of Libertinus Sans, baked once at the screen's pixel size so
-  a glyph is drawn a texel to a pixel; each glyph is one more quad in the UI's draw.
-- **No allocation in the frame loop:** fixed arrays reset each frame, tables sized at
-  startup.
-- **Rules as pure functions** over bitboards, checked against published perft counts;
-  rules, the computer, puzzles, and the UI are tested headless.
+- **One layout code for every screen size.** Rows and grids are cut from the screen in
+  dp, fitted to the safe area, and compacted in small windows; checked headless at each
+  device's size ([screen sizes](docs/architecture/rendering.md#screen-sizes-and-the-safe-area)).
+- **Shapes in shaders.** The flat board is one full-screen pass; pieces, rings, and glass
+  are signed distance shapes, crisp at any size. Text is a Libertinus Sans atlas baked at
+  the screen's pixel size.
+- **No allocation in the frame loop:** fixed arrays reset each frame.
+- **Rules as pure functions** over bitboards, checked against published perft counts.
+  Rules, computer, puzzles, and UI are tested headless.
 - **A computer that plays like a person** of its level, on its own thread, not an engine
   with noise added.
 
-The details and their reasons are in [docs/architecture/](docs/architecture/README.md):
-[rendering](docs/architecture/rendering.md), the [rules](docs/architecture/rules.md),
-the [computer player](docs/architecture/ai.md), and the
+More in [docs/architecture/](docs/architecture/README.md): [rendering](docs/architecture/rendering.md),
+[rules](docs/architecture/rules.md), [computer player](docs/architecture/ai.md),
 [puzzles](docs/architecture/puzzles.md).
 
 ## Building and running
