@@ -62,6 +62,21 @@ def glslang():
     return None
 
 
+def find_malioc():
+    """malioc on PATH, or in Arm Performance Studio's newest install (its installer
+    doesn't add it to PATH on Windows)."""
+    exe = shutil.which("malioc")
+    if exe:
+        return exe
+    base = os.path.join(os.environ.get("ProgramFiles", r"C:\Program Files"), "Arm")
+    if os.path.isdir(base):
+        for d in sorted(os.listdir(base), reverse=True):
+            p = os.path.join(base, d, "mali_offline_compiler", "malioc.exe")
+            if os.path.exists(p):
+                return p
+    return None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--core", action="append", default=[], help="a Mali core for malioc, e.g. Mali-G615")
@@ -71,9 +86,9 @@ def main():
         consts = constants(f.read())
     os.makedirs(OUT, exist_ok=True)
     validator = glslang()
-    malioc = shutil.which("malioc")
+    malioc = find_malioc()
     if args.core and not malioc:
-        sys.exit("malioc isn't on PATH: install Arm Performance Studio (its Mali Offline Compiler)")
+        sys.exit("malioc isn't on PATH or in Program Files/Arm: install Arm Performance Studio (its Mali Offline Compiler)")
 
     failed = False
     for name, stage, parts in SHADERS:

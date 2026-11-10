@@ -128,8 +128,54 @@ What weighs most, as hypotheses for the captures to confirm or kill:
 
 ## The Mali Offline Compiler's reports
 
-To come: `python scripts/shader_report.py --core Mali-G615 --core Mali-G710` once Arm
-Performance Studio is installed.
+Mali Offline Compiler 2026.5 (Arm Performance Studio 2026.6, driver r56p1), each shader
+as `scripts/shader_report.py` joins it, 2026-11-10. Cycles are per thread on one core,
+arithmetic (A), load/store (LS), texture (T); "longest" is the slowest branch's path. The
+G615 is the tablet's, the G710 the Pixel 7a's, the G68 the Galaxy A33's. No shader uses
+any 16-bit arithmetic.
+
+| Shader | Core | Work registers | Spilled | A total | LS total | T total | A, LS longest |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| lit.frag | G615 | 64 (half occupancy) | 40 B | 23.84 | 10.50 | 1.88 | 14.90, 24.00 |
+| lit.frag | G710 | 64 | 40 B | 46.11 | 15.00 | 1.88 | 28.98, 24.00 |
+| lit.frag | G68 | 64 | 158 B | 55.25 | 27.00 | 3.75 | 34.50, 72.00 |
+| marks.frag | G615 | 64 | | 5.55 | 9.00 | 0 | |
+| marks_pulse.frag | G615 | 38 | | 3.05 | 5.00 | 0.12 | 6.87, 11.00 |
+| backdrop.frag | G615 | 30 | | 1.65 | 1.00 | 0.12 | 0.94, 1.00 |
+| catcher.frag | G615 | 9 | | 0.30 | 0 | 0 | |
+| show.frag | G615 | 8 | | 0.10 | 0 | 0.12 | |
+| bake.frag | G615 | 64 | 58 B | 117.70 | 20.40 | 0 | (once a theme) |
+| lit.vert | G615 | 17 | | 0.38 | 4.00 (14 with varyings) | | |
+
+The vertex shaders and the screen's part are small; the lit fragment shader is the
+frame. Ablated (a scratch copy of lit.frag through malioc, each change alone: the
+material fixed, so the compiler drops the other paths; a feature replaced by a
+constant):
+
+| lit.frag variant | G615 regs, spill | G615 A longest | G710 A longest | G68 regs, spill | G68 A, LS longest |
+| --- | --- | --- | --- | --- | --- |
+| As is (every material) | 64, 40 B | 14.90 | 28.98 | 64, 158 B | 34.50, 72.00 |
+| The field's path | 64 | 8.19 (LS 9) | 15.95 | 64 | 19.50, 9.00 |
+| The field without its occlusion loop | 32 | 3.26 (LS 0) | 6.35 | 32 | 9.52, 0 |
+| The field without its shadow taps | 32 | 7.94 (LS 9) | | | |
+| The field without the reflection's harmonics | 64 | 7.94 | | | |
+| The field without specular antialiasing | 64 | 8.19 | | | |
+| The field with none of the four | 32 | 1.80 | | | |
+| The frame's path | 64 | 4.91 | | | |
+| A piece's path | 64, 48 B | 14.42 (LS 26) | 28.03 | 64, 158 B | 34.25, 93.00 |
+| A piece without the crown | 64 | 7.78 (LS 0) | 14.83 | 64 | 21.62, 0 |
+| No occlusion loop and no crown, every material | 64 | 8.18 (LS 0) | 15.62 | 64 | 21.88, 0 |
+
+- **The field's occlusion loop** (3 × 3 squares read from a storage buffer, an `asin` for
+  each piece) is most of a field pixel: without it 8.19 → 3.26 cycles, 9 → 0 loads, and
+  64 → 32 registers, which doubles the threads a core holds. The field is most of the
+  board's pixels. It changes only when pieces move.
+- **The crown** (its 11-edge distance three times, for its slope) holds the spill and
+  half a piece's arithmetic, and every piece pays its registers, king or not; on the
+  G68 a piece's longest path has 93 load/store cycles of spilling.
+- The shadow's taps cost little arithmetic (0.25 cycles) but are the field's 32 extra
+  registers' other half and most of its texture cycles (1.38 → 0.25); the reflection's
+  harmonics and the specular antialiasing are each under 0.3 cycles: not worth the look.
 
 ## On the PC, the clocks locked
 
