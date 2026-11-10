@@ -142,6 +142,25 @@ started from a terminal never has it, the clocks run while the window shows. `po
 the first proofs of concept (Goose on Android, an idle frame that draws nothing) and the
 3D board's prototype.
 
+## Run on Windows
+
+Tested 2026-11-10 on Windows 11 with Visual Studio's Build Tools (Goose finds their
+`clang-cl` by itself) and Git Bash:
+
+```sh
+mkdir -p build && cd build
+curl -sLO https://github.com/aardappel/goose/releases/download/v2026.4/goose-v2026.4-windows-x64.zip
+unzip -q goose-v2026.4-windows-x64.zip && rm goose-v2026.4-windows-x64.zip
+cd ../src/app
+../../build/goose-v2026.4-windows-x64/goose.exe build -o ../../build/draughts.exe draughts.goose
+../../build/draughts.exe --board 3d --screen game
+```
+
+The flags are the Mac's. gfx draws through Direct3D 12 there, and links SDL statically into the program, so the
+program's C calls SDL directly as on Android (`src/app/platform.h`). The settings and the
+saved game are in `%APPDATA%\kaitk\draughts\`. `test/run_tests.py` takes the Windows
+release by default there; the Android and iOS scripts are the Mac's only.
+
 ## Test the rules
 
 ```sh

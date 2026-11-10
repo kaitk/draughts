@@ -4,14 +4,14 @@
 // a clock drawn once a second slipped by a frame each second and skipped a second about
 // every two and a half minutes. An SDL timer pushes an event of the program's own type
 // when the time shown changes, which ends the wait; goose_gfx ignores the event. On the
-// Mac the built-in frame() doesn't wait, so this does nothing there. iOS builds the
-// patched gfx as Android does, and needs the timer too (platform.h).
+// Mac and Windows the built-in frame() doesn't wait, so this does nothing there. iOS
+// builds the patched gfx as Android does, and needs the timer too (platform.h).
 
 #include "platform.h"
 #include <stdbool.h>
 #include <stdint.h>
 
-#if DRAUGHTS_SDL_LINKED
+#if DRAUGHTS_PATCHED_GFX
 typedef struct { uint32_t type; uint8_t rest[124]; } SDL_Event;    // SDL3's 128-byte union
 typedef uint32_t (*SDL_TimerCallback)(void *userdata, uint32_t timer, uint32_t interval);
 extern uint32_t SDL_AddTimer(uint32_t interval, SDL_TimerCallback callback, void *userdata);

@@ -71,13 +71,15 @@ let LIT_VERT = """
     layout(location = 3) in vec2 a_extra;          // occlusion, material
     layout(std430, set = 0, binding = 0) readonly buffer Instances { vec4 inst[]; };
     layout(set = 1, binding = 1) uniform Draw { vec4 draw; };   // x: 1 for instances
+    // In location order, as LIT_DECL reads them: Direct3D links the stages by register,
+    // which follows the order declared (docs/goose-findings.md).
     layout(location = 0) out vec3 v_world;
-    layout(location = 6) flat out float v_alpha;
     layout(location = 1) out vec3 v_normal;
     layout(location = 2) out vec2 v_uv;
     layout(location = 3) out vec2 v_extra;
     layout(location = 4) out vec3 v_local;
     layout(location = 5) flat out vec4 v_kind;
+    layout(location = 6) flat out float v_alpha;
     void main() {
         vec3 world = a_pos;
         vec4 kind = vec4(0.0);
@@ -441,9 +443,9 @@ let LIT_FRAG = """
             // on the curve instead of spreading over the flat.
             rough = max(rough - frame_surface.w * round_part, min(rough, 0.2));
             float lw = max(fwidth(along), 0.004);
-            float line = 1.0 - smoothstep(0.5 * lw, 1.5 * lw, abs(along - BULL_START - 0.006));
-            albedo = mix(albedo, edge_line.rgb, line * edge_line.a);
-            rough = mix(rough, 0.4, line * edge_line.a);
+            float scribe = 1.0 - smoothstep(0.5 * lw, 1.5 * lw, abs(along - BULL_START - 0.006));
+            albedo = mix(albedo, edge_line.rgb, scribe * edge_line.a);
+            rough = mix(rough, 0.4, scribe * edge_line.a);
             // Darker toward the underside, where the board's own shade gathers.
             ao *= mix(0.4, 1.0, smoothstep(BOTTOM, FRAME_TOP - 0.1, p.y));
         }
@@ -1135,9 +1137,9 @@ let BAKE_FRAG = """
             c.base = inlay;
             c.k = inlay_fig;
             c.ring = dark_ring;
-            float line = 1.0 - smoothstep(0.004, 0.010, m - FIELD);
-            c.shade = 1.0 - 0.6 * line;
-            c.dip = line;
+            float scribe = 1.0 - smoothstep(0.004, 0.010, m - FIELD);
+            c.shade = 1.0 - 0.6 * scribe;
+            c.dip = scribe;
             return c;
         }
         // mode.z squares per side (8 or 10), each 8 / mode.z across.
@@ -1518,12 +1520,12 @@ let BAKE_FRAG = """
             float k = across / seam.x;
             float d = abs(k - floor(k + 0.5)) * seam.x;
             float texel = size.z / size.x;
-            float line = (1.0 - smoothstep(seam.y, seam.y + texel, d))
+            float scribe = (1.0 - smoothstep(seam.y, seam.y + texel, d))
                        * step(0.5 * seam.x, across) * step(across, 0.47) * min(tone.z, 1.0);
-            w.albedo = mix(w.albedo, srgb(vec3(0.07, 0.06, 0.055)), clamp(line * seam.z * max(tone.z, 1.0), 0.0, 1.0));
-            w.rough = mix(w.rough, 0.6, line);
-            w.height -= 0.6 * line;
-            w.cavity -= 0.3 * line;
+            w.albedo = mix(w.albedo, srgb(vec3(0.07, 0.06, 0.055)), clamp(scribe * seam.z * max(tone.z, 1.0), 0.0, 1.0));
+            w.rough = mix(w.rough, 0.6, scribe);
+            w.height -= 0.6 * scribe;
+            w.cavity -= 0.3 * scribe;
         }
         if (carve.w > 0.5) {
             Carve cv = carving(q, floor((seed - 7.0) / 5.0 + 0.5));
@@ -1724,7 +1726,7 @@ let MARKS_FRAG = """
     layout(std430, set = 2, binding = 1) readonly buffer Lit { vec4 lit[]; };
     #endif
     layout(set = 3, binding = 1) uniform Draw { vec4 draw; };
-    float line(float d, float w) { return exp(-pow(d / (0.6 * w + 0.008), 2.0)); }
+    float thin_ring(float d, float w) { return exp(-pow(d / (0.6 * w + 0.008), 2.0)); }
     #ifndef PULSE
     float seg(vec2 p, vec2 a, vec2 b) {
         vec2 pa = p - a, ba = b - a;
@@ -1801,7 +1803,7 @@ let MARKS_FRAG = """
             float ring = 1.08 * selected.w;
             float w = max(fwidth(r), 0.01);
             float halo = exp(-max(r - ring, 0.0) / 0.07) * smoothstep(ring - 0.04, ring, r);
-            c += glow.rgb * glow.w * (0.85 * line(r - ring, w) + 0.3 * halo);
+            c += glow.rgb * glow.w * (0.85 * thin_ring(r - ring, w) + 0.3 * halo);
         }
         if (q.x >= 0 && q.y >= 0 && q.x < int(n) && q.y < int(n)) {
             vec4 m = marks[q.y * int(n) + q.x];
@@ -1812,7 +1814,7 @@ let MARKS_FRAG = """
                 c += glow.rgb * (0.9 * (1.0 - smoothstep(0.15 - w, 0.15 + w, r))
                                  + 0.35 * exp(-max(r - 0.15, 0.0) / 0.05));
             }
-            if (m.y > 1.5) c += glow.rgb * 0.9 * line(r - 0.18, w);
+            if (m.y > 1.5) c += glow.rgb * 0.9 * thin_ring(r - 0.18, w);
             // A win's glow passing lights the square, as the last move's tint does more.
             c += glow.rgb * 0.3 * lit[q.y * int(n) + q.x].y;
         }
@@ -1840,7 +1842,7 @@ let MARKS_FRAG = """
                 if (k_ring > 0.0) {
                     float rr = 0.47;
                     float halo = exp(-max(r - rr, 0.0) / 0.06) * smoothstep(rr - 0.04, rr, r);
-                    rings += glow.rgb * glow.w * k_ring * (1.1 * line(r - rr, w) + 0.45 * halo);
+                    rings += glow.rgb * glow.w * k_ring * (1.1 * thin_ring(r - rr, w) + 0.45 * halo);
                 }
                 // The must-capture ring: brightest still, fading to 0.4 and back pulsing.
     #ifdef PULSE
@@ -1850,7 +1852,7 @@ let MARKS_FRAG = """
     #endif
                 if (strength > 0.0) {
                     float rr = 0.52;
-                    reds += red * strength * (0.9 * line(r - rr, w) + 0.35 * exp(-abs(r - rr) / 0.04));
+                    reds += red * strength * (0.9 * thin_ring(r - rr, w) + 0.35 * exp(-abs(r - rr) / 0.04));
                 }
     #ifndef PULSE
                 if (lit[at].z > 0.5) {
@@ -1864,7 +1866,7 @@ let MARKS_FRAG = """
                     float t = fract(pulse.y * 2.0);
                     float op = t < 0.4 ? t / 0.4 : 1.0 - 0.4 * (t - 0.4) / 0.6;
                     float rr = 0.5 * (0.8 + 0.2 * min(t / 0.4, 1.0));
-                    reds += red * op * (0.9 * line(r - rr, w) + 0.25 * (1.0 - smoothstep(rr - w, rr + w, r)));
+                    reds += red * op * (0.9 * thin_ring(r - rr, w) + 0.25 * (1.0 - smoothstep(rr - w, rr + w, r)));
                 }
     #endif
             }

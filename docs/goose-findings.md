@@ -3,6 +3,31 @@
 Gaps found in Goose, goose_gfx, and the SDL it pins, while building for Android, with what
 we do about each here and what could go upstream. Newest first.
 
+## Goose: HLSL keeps the stage outputs in the order declared, not by location (2026-11-10)
+
+`embed_shader` writes a vertex shader's outputs into its HLSL struct in the order the GLSL
+declares them, each with its location's `TEXCOORD`, and FXC packs registers in that order.
+Direct3D 12 links a vertex shader to a pixel shader by register, so a vertex shader that
+declares location 6 second, read by a pixel shader that declares them in order, fails
+`CreateGraphicsPipelineState` with `E_INVALIDARG` and no more. Vulkan and Metal match by
+location and take it. Every 3D board stopped there on Windows. Goose v2026.4.
+
+- Here: `shaders::LIT_VERT` declares its outputs in location order, as `LIT_DECL` reads them.
+- Upstream: sort a stage's inputs and outputs by location when writing the HLSL struct
+  (`goose --compile-shader f.vert --shader-source hlsl` shows it).
+
+## Goose: HLSL keywords are kept as GLSL names (2026-11-10)
+
+`embed_shader` writes GLSL identifiers into the HLSL unchanged, so one that is an HLSL
+keyword compiles to SPIR-V and MSL but fails FXC when gfx makes the pipeline, at run time
+on Windows: `line` (a geometry shader's primitive type) as a local and as a function's
+name stopped the app's first frame. Goose v2026.4.
+
+- Here: no such names in the shaders (`scribe`, `thin_ring`, `rim_tint`).
+- Upstream: rename identifiers that are HLSL keywords (`line`, `point`, `triangle`,
+  `sample`, `linear`, `precise`, `shared`, `matrix`, `vector`, ...) when writing the HLSL,
+  as SPIRV-Cross does, or reject them when compiling the shader.
+
 ## SDL: a size change while in the background leaves the window black on return (2026-11-09)
 
 Turned in the background (another app open, the screen rotated there), the app came back

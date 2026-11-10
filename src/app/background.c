@@ -40,8 +40,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#if !defined(_WIN32)
 #include <sys/mman.h>
 #include <unistd.h>
+#endif
 
 #include "gfx_api.h"
 
@@ -132,11 +134,17 @@ static const int64_t astc_lengths[4] = { sizeof autumn_astc - 1, sizeof winter_a
 // Gives back the pages of an embedded image once it is uploaded or decoded. They are clean
 // pages of the program's file (on Android mapped from the APK), read again if needed, but
 // count in the process's memory while resident: 5 MB once the thumbnails read all four.
+// Windows has no madvise for an image's pages, and keeps them.
 static void forget(const unsigned char *data, int64_t len) {
+#if defined(_WIN32)
+    (void)data;
+    (void)len;
+#else
     uintptr_t page = (uintptr_t)sysconf(_SC_PAGESIZE);
     uintptr_t a = ((uintptr_t)data + page - 1) & ~(page - 1);
     uintptr_t b = ((uintptr_t)data + (uintptr_t)len) & ~(page - 1);
     if (b > a) madvise((void *)a, b - a, MADV_DONTNEED);
+#endif
 }
 
 // A texture of `format` holding `data`, or 0.

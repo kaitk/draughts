@@ -26,7 +26,8 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 EXPECTED = HERE / "expected"
 OUT = ROOT / "build" / "test"
-GOOSE = os.environ.get("GOOSE", str(ROOT / "build" / "goose-v2026.4-macos-arm64" / "goose"))
+RELEASE = "goose-v2026.4-windows-x64/goose.exe" if os.name == "nt" else "goose-v2026.4-macos-arm64/goose"
+GOOSE = os.environ.get("GOOSE", str(ROOT / "build" / RELEASE))
 TIMEOUT = 300
 # Directories under test/ that hold the tests' shared packages, not tests.
 PACKAGES = {"drive"}
@@ -115,13 +116,13 @@ def main():
         if code != 0:
             problem, detail = f"exit {code}", out + err
         elif args.bless:
-            if not expected.exists() or expected.read_text().rstrip("\n") != got:
-                expected.write_text(got + "\n")
+            if not expected.exists() or expected.read_text(encoding="utf-8").rstrip("\n") != got:
+                expected.write_bytes((got + "\n").encode("utf-8"))
                 print(f"blessed {expected.relative_to(ROOT)}")
         elif not expected.exists():
             problem = f"no {expected.relative_to(ROOT)}"
         else:
-            want = expected.read_text().rstrip("\n")
+            want = expected.read_text(encoding="utf-8").rstrip("\n")
             if got != want:
                 problem = "stdout differs"
                 detail = "\n".join(difflib.unified_diff(want.splitlines(), got.splitlines(),
