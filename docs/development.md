@@ -32,7 +32,7 @@ unzip -q astcenc-5.7.0-macos-universal.zip -d astcenc-5.7.0 && rm astcenc-5.7.0-
 cd ..
 $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install \
     "ndk;29.0.14206865" "platforms;android-36" "build-tools;36.0.0" "platform-tools"
-brew install ninja
+brew install cmake ninja
 ```
 
 When the Goose release changes, pin goose_gfx to the commit whose `src/`, `gfx.goose`, and
@@ -171,53 +171,7 @@ frame.
 
 The flags are the Mac's. The settings and the saved game are in `%APPDATA%\kaitk\draughts\`.
 `test/run_tests.py` takes the Windows release by default there. The iOS script is the
-Mac's only.
-
-### Android on Windows
-
-`scripts/android.py` builds and installs from Windows too (tested 2026-11-10), with the
-same SDK packages as on the Mac. The script finds them where Android Studio puts them:
-
-| Tool | Where on Windows |
-| --- | --- |
-| Goose | `build/goose-v2026.4-windows-x64/goose.exe` (above); `GOOSE` overrides it |
-| Android SDK | `%LOCALAPPDATA%\Android\Sdk`; `ANDROID_HOME` overrides it |
-| JDK | `javac`, `java`, and `keytool` on `PATH`, 17 or newer (`d8` and `sdkmanager` need it) |
-| CMake, Ninja | on `PATH`, from winget |
-| `patch` | Git Bash's |
-
-Without Android Studio, the SDK comes from Google's
-[command-line tools](https://developer.android.com/studio#command-line-tools-only),
-unpacked as `%LOCALAPPDATA%\Android\Sdk\cmdline-tools\latest\`:
-
-```sh
-sdk="$LOCALAPPDATA/Android/Sdk"
-"$sdk/cmdline-tools/latest/bin/sdkmanager.bat" --sdk_root="$sdk" \
-    "ndk;29.0.14206865" "platforms;android-36" "build-tools;36.0.0" "platform-tools" \
-    "extras;google;usb_driver"       # asks to accept the SDK's licences
-winget install -e --id Kitware.CMake --scope user
-winget install -e --id Ninja-build.Ninja
-python scripts/android.py src/app/draughts.goose --run   # build, install, start
-```
-
-`adb` is the SDK's `platform-tools\adb.exe` when it isn't on `PATH`. A Pixel takes Google's
-USB driver (`extras\google\usb_driver`, installed through Device Manager if Windows
-doesn't find one); a Samsung, Samsung's. A device Windows doesn't list at all, whose USB
-preferences offer only "This device", is on a charge-only cable. The first build takes
-about 80 s, into `build\android\` as on the Mac.
-
-**Each computer has its own debug key** (`~/.android/debug.keystore`, which the script
-makes when it's missing), and Android refuses to install an app over one signed with
-another key, as it refuses a debug build over a release (Release builds, below). Never
-uninstall to get past that on a device whose saved game and settings matter: uninstalling
-deletes them. Either copy the debug key from the computer that installed the app, or
-install the build beside it under its own id:
-
-```sh
-python scripts/android.py src/app/draughts.goose --run --id-suffix test   # io.github.kaitk.draughts.test
-```
-
-The script never uninstalls; a refused install stops it with that advice.
+Mac's only. Android builds from Windows too (Run on Android, below).
 
 ## Test the rules
 
@@ -276,18 +230,87 @@ a run (`--screen puzzles --variant russian`).
 `test/puzzles/` runs the same checks on every puzzle without the engine
 ([puzzles](architecture/puzzles.md#checks)).
 
-## Run on the tablet
+## Run on Android
 
-The tablet needs Developer options with **USB debugging** on, and Samsung's **Auto
+A device needs Developer options with **USB debugging** on; a Samsung, also **Auto
 Blocker** off (Settings → Security and privacy), which otherwise blocks USB debugging
 and sideloading. Use USB mode **Transferring files** and allow the computer's key.
-`adb devices` should list it. On Windows run the scripts with `python` (Android on
-Windows, above).
+`adb devices` should list it. The scripts build from the Mac and from Windows (on
+Windows, `python scripts/android.py ...`).
 
 ```sh
 scripts/android.py src/app/draughts.goose --run     # build, install, start
 adb logcat -s goose:* SDL:*                 # the program's output and SDL's log
 ```
+
+### Set up on the Mac
+
+The tools are the Toolchain table's. Without Android Studio, the SDK comes from Google's
+[command-line tools](https://developer.android.com/studio#command-line-tools-only) for
+the Mac, unpacked as `~/Library/Android/sdk/cmdline-tools/latest/`, where Android Studio
+would put the SDK:
+
+```sh
+brew install openjdk@21 cmake ninja     # then put openjdk@21's bin on PATH, as brew says
+sdk=~/Library/Android/sdk
+$sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$sdk \
+    "ndk;29.0.14206865" "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+export PATH="$sdk/platform-tools:$PATH"   # adb, in the shell's profile
+scripts/android.py src/app/draughts.goose --run
+```
+
+`sdkmanager` asks to accept the SDK's licences. A Mac needs no USB driver. The script
+takes the SDK's `adb` when none is on `PATH`.
+
+### Set up on Windows
+
+Tested 2026-11-10 on Windows 11, with the same SDK packages as on the Mac. The script
+finds them where Android Studio puts them, and runs with `python`:
+
+| Tool | Where on Windows |
+| --- | --- |
+| Goose | `build/goose-v2026.4-windows-x64/goose.exe` (above); `GOOSE` overrides it |
+| Android SDK | `%LOCALAPPDATA%\Android\Sdk`; `ANDROID_HOME` overrides it |
+| JDK | `javac`, `java`, and `keytool` on `PATH`, 17 or newer (`d8` and `sdkmanager` need it) |
+| CMake, Ninja | on `PATH`, from winget |
+| `patch` | Git Bash's |
+
+Without Android Studio, the SDK comes from Google's
+[command-line tools](https://developer.android.com/studio#command-line-tools-only),
+unpacked as `%LOCALAPPDATA%\Android\Sdk\cmdline-tools\latest\`:
+
+```sh
+sdk="$LOCALAPPDATA/Android/Sdk"
+"$sdk/cmdline-tools/latest/bin/sdkmanager.bat" --sdk_root="$sdk" \
+    "ndk;29.0.14206865" "platforms;android-36" "build-tools;36.0.0" "platform-tools" \
+    "extras;google;usb_driver"       # asks to accept the SDK's licences
+winget install -e --id Kitware.CMake --scope user
+winget install -e --id Ninja-build.Ninja
+python scripts/android.py src/app/draughts.goose --run   # build, install, start
+```
+
+`adb` is the SDK's `platform-tools\adb.exe` when it isn't on `PATH`. A Pixel takes Google's
+USB driver (`extras\google\usb_driver`, installed through Device Manager if Windows
+doesn't find one); a Samsung, Samsung's. A device Windows doesn't list at all, whose USB
+preferences offer only "This device", is on a charge-only cable. The first build takes
+about 80 s, into `build\android\` as on the Mac.
+
+### The debug key
+
+Each computer has its own debug key (`~/.android/debug.keystore`, which the script makes
+when it's missing), and Android refuses to install an app over one signed with
+another key, as it refuses a debug build over a release (Release builds, below). Never
+uninstall to get past that on a device whose saved game and settings matter: uninstalling
+deletes them. Either copy the debug key from the computer that installed the app, or
+install the build beside it under its own id:
+
+```sh
+scripts/android.py src/app/draughts.goose --run --id-suffix test   # io.github.kaitk.draughts.test
+```
+
+The script never uninstalls; a refused install stops it with that advice.
+
+### The build
 
 `scripts/android.py` builds without Gradle, into `build/android/<program>/`, with
 `scripts/native.py`, which holds what it shares with `scripts/ios.py` (the app's id and
@@ -314,7 +337,7 @@ version, the Goose-to-C step, the patched copies, and the launcher's names):
    `@string/app_name`.
    `zip` adds the dex and the stripped libraries, stored uncompressed. `zipalign -P 16`
    aligns them to 16 KB pages, and `apksigner` signs with `~/.android/debug.keystore`,
-   which it creates if missing (each computer's own: Android on Windows, above). The
+   which it creates if missing (each computer's own: The debug key, above). The
    script checks that every library's ELF segments and
    its offset in the APK are on 16 KB pages, as Play requires.
 
@@ -323,6 +346,8 @@ The POC's APK is 2.8 MB: `libSDL3.so` 1.9 MB and `libmain.so` 0.9 MB stripped, S
 
 The CMake build directory is configured once. Delete `build/android/<program>/native`
 after changing `android/CMakeLists.txt`.
+
+### Screens and devices
 
 On Android the program opens with `gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE`,
 which SDL turns into an immersive window with the system bars hidden. Resizable makes
@@ -441,7 +466,8 @@ the Android App Bundle Play takes, both in `build/android/draughts/`:
 
 - `draughts-release.apk`, the same APK as a debug build but for its signature, to install
   from a clean state and check before an upload. Android refuses it over a debug build,
-  as their signatures differ: `adb uninstall io.github.kaitk.draughts` first.
+  as their signatures differ: `adb uninstall io.github.kaitk.draughts` first, which deletes
+  the app's saved game and settings, so only on a device whose data doesn't matter.
 - `draughts-release.aab`, for Play. `aapt2 link --proto-format` links the resources in
   the bundle's protobuf form; the script packs them, the dex, and the libraries into the
   base module's layout (`manifest/`, `dex/`, `lib/arm64-v8a/`, `res/`, `resources.pb`);
