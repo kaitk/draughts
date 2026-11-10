@@ -144,22 +144,35 @@ the first proofs of concept (Goose on Android, an idle frame that draws nothing)
 
 ## Run on Windows
 
-Tested 2026-11-10 on Windows 11 with Visual Studio's Build Tools (Goose finds their
-`clang-cl` by itself) and Git Bash:
+Tested 2026-11-10 on Windows 11 with Visual Studio's Build Tools (their `clang-cl`), Python,
+and Git Bash (for `patch`):
 
 ```sh
 mkdir -p build && cd build
 curl -sLO https://github.com/aardappel/goose/releases/download/v2026.4/goose-v2026.4-windows-x64.zip
 unzip -q goose-v2026.4-windows-x64.zip && rm goose-v2026.4-windows-x64.zip
-cd ../src/app
-../../build/goose-v2026.4-windows-x64/goose.exe build -o ../../build/draughts.exe draughts.goose
-../../build/draughts.exe --board 3d --screen game
+cd ..
+python scripts/windows.py src/app/draughts.goose                 # build/windows/draughts.exe
+python scripts/windows.py src/app/draughts.goose --run -- --board 3d --screen game
 ```
 
-The flags are the Mac's. gfx draws through Direct3D 12 there, and links SDL statically into the program, so the
-program's C calls SDL directly as on Android (`src/app/platform.h`). The settings and the
-saved game are in `%APPDATA%\kaitk\draughts\`. `test/run_tests.py` takes the Windows
-release by default there; the Android and iOS scripts are the Mac's only.
+`scripts/windows.py` builds goose_gfx with `patches/goose_gfx/` applied, as Android and
+iOS do, into a copy of the release (`build/windows/goose/`; delete it after the release
+changes), and builds the program with that copy's `goose`; about 10 s. SDL is the
+release's own, linked statically into the program, so the program's C calls SDL directly
+as on Android (`src/app/platform.h`). gfx draws through Direct3D 12, from HLSL that the
+system's FXC compiles when a pipeline is made: 4.5 s for the app's 23 shaders on a desktop
+CPU, so the patched gfx keeps the results in `%LOCALAPPDATA%\goose_gfx\dxbc\` (0007,
+[findings](goose-findings.md)), and a launch after the first opens in 0.6 s, not 5 s. The
+patched gfx draws only on change too: idle at home, the app takes no CPU (344 ms in 10 s
+with the release's gfx), and `--frames N` counts the frames drawn, so a shot of a
+settled screen wants few (4 for a 2D screen, 95 for the 3D board once it has appeared).
+A plain `goose build` with the release's `goose.exe` works as on the Mac, without any of
+that.
+
+The flags are the Mac's. The settings and the saved game are in `%APPDATA%\kaitk\draughts\`.
+`test/run_tests.py` takes the Windows release by default there; the Android and iOS
+scripts are the Mac's only.
 
 ## Test the rules
 

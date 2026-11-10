@@ -3,6 +3,27 @@
 Gaps found in Goose, goose_gfx, and the SDL it pins, while building for Android, with what
 we do about each here and what could go upstream. Newest first.
 
+## goose_gfx: FXC compiles every shader again at each launch on Windows (2026-11-10)
+
+Goose embeds HLSL for Direct3D 12, and goose_gfx turns it into DXBC with the system's
+FXC (`D3DCompile`) when `gfx::pipeline` is called, on the main thread, keeping nothing.
+The app makes its pipelines at launch, so each launch sat on a black window with a busy
+cursor for 5 s: 4.5 s of FXC for 23 shaders on a desktop CPU, 2.65 s of it the 3D board's
+bake shader (34 KB of HLSL) and 0.93 s the widgets'. Making the pipeline states took 6 to
+17 ms in all; the driver keeps those. Vulkan takes SPIR-V Goose compiled at build time,
+and Metal's compiles are cached by the system, so nothing shows there. Skipping FXC's
+optimization (`D3DCOMPILE_SKIP_OPTIMIZATION`) cuts it to 1.5 s and makes the DXBC half
+again as large. goose_gfx `6cfa3de`, Goose v2026.4.
+
+- Here: `patches/goose_gfx/0007-dxbc-cache.patch`: the DXBC is kept in
+  `%LOCALAPPDATA%\goose_gfx\dxbc\`, by a hash of the HLSL and the target, written to a
+  temporary file and renamed into place, and read back when it is DXBC of the length its
+  header gives. A launch after the first: 0.6 s to the first frame, home or the 3D board.
+  `scripts/windows.py` builds the patched gfx for Windows.
+- Upstream, for goose_gfx: the cache (where it goes could be the program's choice). For
+  Goose: embed DXBC (or DXIL) beside the HLSL when compiling on Windows, so no launch
+  compiles; the first launch would then be fast as well.
+
 ## Goose: HLSL keeps the stage outputs in the order declared, not by location (2026-11-10)
 
 `embed_shader` writes a vertex shader's outputs into its HLSL struct in the order the GLSL
