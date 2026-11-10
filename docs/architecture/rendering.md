@@ -1403,6 +1403,19 @@ The release at rest, idle 20 to 30 s:
 - **Open:** at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the
   flat board's 0.3, outside the app's own work, as the Mac shows no draw at rest.
 
+### When a frame reaches the screen
+
+goose_gfx records a frame and its blit into the window's image in one command buffer,
+committed once SDL has that image (`SDL_WaitAndAcquireGPUSwapchainTexture`, 2 frames in
+flight). On Metal the whole command buffer then waits on the GPU until the image's
+surface is free, the refresh after the commit, so a frame's GPU work must end about 7.5 ms
+after a refresh at 120 Hz, not 8.3, and the compositor shares the GPU. On the M1 Pro
+in a 2560 × 1600 px window the moving 3D board's frame takes 6.2 ms there (the 3D pass's
+fragments 4.1 ms, the screen's pass 1.3), and about 1 frame in 200 is late.
+Submitting the frame before the wait and the blit apart
+was measured worse: the window has 3 surfaces and the compositor holds two, so the blit
+waits for one and the frame after it for the blit.
+
 ## Frames and battery
 
 The app draws only when something changed: input, a running animation, the AI's reply, or
