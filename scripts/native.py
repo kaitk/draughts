@@ -21,7 +21,7 @@ SDL = ROOT / "third_party/goose_gfx/third_party/SDL"
 APP_ID = "io.github.kaitk.draughts"
 # The version people see: Android's versionName and iOS's CFBundleShortVersionString.
 # Each platform's build number is its own script's (VERSION_CODE, BUILD_NUMBER).
-VERSION_NAME = "0.1.0"
+VERSION_NAME = "0.1.1"
 
 
 def run(*cmd, cwd=None, env=None, capture=False, check=True):
