@@ -194,6 +194,10 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   which for settings is the same box as between two runs of one build. The win's
   `--win 3 --frames 3000` shot varies over the whole board from run to run: compare it
   against a second run of the old build.
+- Shots scripted in a shell loop hang until killed when the app inherits the loop's
+  stdin or writes stdout to a file: run each from `src/app` with `< /dev/null` and
+  output to `/dev/null`, outside the sandbox, and `perl -e 'alarm 25; exec @ARGV'` in
+  place of `timeout`, which the Mac lacks (2026-11-10).
 - `--tap` takes up to 256 taps (`flags::MAX_TAPS`), two a move, so a draw by any count can
   be played to its last move from a `--fen`; `--win T` holds a draw's ending at T too
   (2026-11-09).
