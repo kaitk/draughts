@@ -288,6 +288,10 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
     d.fresh = false;
     let bn .= d.bench;
     let phase = if bn.n > 0 && bn.i < BENCH_PHASES * bn.n { bn.i / bn.n } else { -1 };
+    // The presented frames' start and end, for the compositor's count of them
+    // (scripts/device_perf.sh).
+    if phase == 2 && bn.i == 2 * bn.n { print("bench3d: presenting"); }
+    if phase == 3 && bn.i == 3 * bn.n { print("bench3d: presented"); }
     if phase == 2 {
         if bn.i > 2 * bn.n { bn.gap.push(t0 - bn.last); }
         bn.last = t0;

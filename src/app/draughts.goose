@@ -382,6 +382,8 @@ fn main() {
                     gfx::flush();
                     bn.all.push(clock() - t0);
                 } else {
+                    // The presented frames' start, for the compositor's count of them.
+                    if bn.i == f.bench { print("bench2d: presenting"); }
                     if bn.i > f.bench { bn.gap.push(t0 - bn.last); }
                     bn.last = t0;
                 }
@@ -419,8 +421,9 @@ fn main() {
         if f.frames > 0 && gfx::frame_count() >= f.frames { break; }
         if draw3d::bench_done(d3) { break; }
         if f.bench > 0 && bench2d.i >= 2 * f.bench {
+            print("bench2d: presented");
             var line: u8[>..] = [];
-            format(line, "bench2d: ", size.x, "x", size.y, ", ", f.bench, " frames each: cpu ", draw3d::median(bench2d.cpu),
+            format(line, "bench2d: summary, ", size.x, "x", size.y, ", ", f.bench, " frames each: cpu ", draw3d::median(bench2d.cpu),
                    " ms; waited ");
             draw3d::spread(line, bench2d.all);
             format(line, "; presented ");

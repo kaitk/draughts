@@ -444,9 +444,15 @@ On the flat board (`--board flat`) the same flag prints `bench2d:` instead: N wh
 frames, from the shell's fill to the GPU done, each waited for, then N as the loop draws
 them, frame to frame.
 Both end with a summary: the waited frame's P50 and P99, and the presented frames'
-average and 1% low (the rate of the 99th percentile's gap). The README's table takes
-those from `--bench 1000`, in a game, Russian, wood.: `scripts/device_perf.sh` takes a device's
-rows, each board's bench once the device is cool, then its idle CPU and memory.
+average and 1% low (the rate of the 99th percentile's gap), both by the app's own clock,
+which can't tell how long a frame stayed on screen: it put the tablet's flat board's 1% low
+at 70 fps where the compositor counts no frame missed. The README's table takes its frames
+from the compositor: `scripts/device_perf.sh` runs `--bench 1000` in a game (Russian,
+wood) on each board once the device is cool, counts the presented frames with
+SurfaceFlinger's timestats between the bench's `presenting` and `presented` lines, then
+takes the idle CPU and memory. The bench's first phase waits for the GPU after every frame
+and misses refreshes by design, so a count must not overlap it. `poc/pace.goose` draws
+every frame with nothing else, or a set GPU load, to check the pacing alone.
 
 Two seconds after the launch the app times 300 frames drawing the 3D board and its
 shadow map, as while a piece moves, each submitted and waited for (`gfx::flush`); 300

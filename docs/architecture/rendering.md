@@ -1338,8 +1338,8 @@ The release at rest, idle 20 to 30 s:
 
 | Device | Board | Idle program thread | GL mtrack | EGL mtrack | Total PSS |
 | --- | --- | --- | --- | --- | --- |
-| Galaxy Tab A11+, 1920 × 1200 | 2D, a game | 0.04% | 37 MB | 55 MB | 141 MB |
-| Galaxy Tab A11+ | 3D, a game | 0.32% | 181 MB | 32 MB | 274 MB |
+| Galaxy Tab A11+, 1920 × 1200 | 2D, a game | 0.04 to 0.08% | 37 MB | 55 to 60 MB | 133 to 141 MB |
+| Galaxy Tab A11+ | 3D, a game | 0.28 to 0.32% | 181 MB | 28 to 37 MB | 261 to 274 MB |
 | Pixel 7a, 2400 × 1080 | 3D, a game | 0.05% | 227 MB | 73 MB | 345 MB |
 | Galaxy A33 5G, 2400 × 1080 | 2D | 0.00% | 35 MB | 38 MB | 107 MB |
 | Galaxy A33 5G | 3D | 0.00% | 224 MB | | 309 MB |
@@ -1351,9 +1351,9 @@ The release at rest, idle 20 to 30 s:
   about 0.4 ms. It renders as the Mac does. After task 042's cuts (2026-11-10): the
   frame with the shadow map, as while a piece moves, 10.5 ms waited, the pass alone
   (the camera turning) 9.9, presented 12.8 ms frame to frame; 90 Hz kept. The release, 2026-11-10, 1000 frames: waited P50
-  10.6 / P99 12.8 ms, the pass alone 10.0, presented 77 fps on average, 60 at the 1% low;
-  the flat board's whole frame (`bench2d`) P50 9.8 / P99 12.9 ms, 91 / 69 fps, the CPU's
-  part 0.3 ms (`scripts/device_perf.sh`). Baking the
+  10.6 / P99 12.7 ms, the pass alone 10.0; the compositor counts 17% of the frames on
+  screen for two refreshes, 78 fps on average, 45 at the 1% low (task 055). The flat board's
+  whole frame (`bench2d`) 10.2 ms waited, and no frame missed (`scripts/device_perf.sh`). Baking the
   field's shadow and occlusion into a map with the shadow map was dropped (the user,
   2026-11-09): it took the camera's turn to 8.4 ms but every frame that draws the
   shadow map to 11.5.
