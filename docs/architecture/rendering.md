@@ -1331,14 +1331,15 @@ depth target, a shadow map, albedo, normal, and roughness atlases with mips):
 ## The 3D board on devices
 
 Measured with the app's `--bench 300` ([development](../development.md#time-the-3d-board)),
-idle with `scripts/idle_cpu.sh`, memory with `dumpsys meminfo` at rest (2026-11-09).
+idle with `scripts/idle_cpu.sh`, memory with `dumpsys meminfo` at rest (2026-11-09; the
+tablet's again 2026-11-10).
 
 The release at rest, idle 20 to 30 s:
 
 | Device | Board | Idle program thread | GL mtrack | EGL mtrack | Total PSS |
 | --- | --- | --- | --- | --- | --- |
-| Galaxy Tab A11+, 1920 × 1200 | 2D, home | 0.03% | 37 MB | 60 MB | 145 MB |
-| Galaxy Tab A11+ | 3D, a game / a puzzle | 0.27 to 0.30% | 193 / 179 MB | 32 / 46 MB | 287 / 286 MB |
+| Galaxy Tab A11+, 1920 × 1200 | 2D, home / a game | 0.08 / 0.04% | 37 MB | 60 MB | 147 / 143 MB |
+| Galaxy Tab A11+ | 3D, a game | 0.28% | 180 MB | 28 MB | 271 MB |
 | Pixel 7a, 2400 × 1080 | 3D, a game | 0.05% | 227 MB | 73 MB | 345 MB |
 | Galaxy A33 5G, 2400 × 1080 | 2D | 0.00% | 35 MB | 38 MB | 107 MB |
 | Galaxy A33 5G | 3D | 0.00% | 224 MB | | 309 MB |
@@ -1349,7 +1350,9 @@ The release at rest, idle 20 to 30 s:
   from being stored); the shadow map 2 ms on the frames that draw it; the CPU's part
   about 0.4 ms. It renders as the Mac does. After task 042's cuts (2026-11-10): the
   frame with the shadow map, as while a piece moves, 10.5 ms waited, the pass alone
-  (the camera turning) 9.9, presented 12.8 ms frame to frame; 90 Hz kept. Baking the
+  (the camera turning) 9.9, presented 12.8 ms frame to frame; 90 Hz kept. The release, 2026-11-10: 10.7 ms waited,
+  the pass alone 10.1, presented 13.0 ms; the flat board's whole frame (`bench2d`) 10.2 ms
+  waited, presented 10.9 ms, the CPU's part 0.7 ms. Baking the
   field's shadow and occlusion into a map with the shadow map was dropped (the user,
   2026-11-09): it took the camera's turn to 8.4 ms but every frame that draws the
   shadow map to 11.5.

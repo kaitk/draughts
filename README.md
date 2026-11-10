@@ -41,22 +41,21 @@ Measured numbers per device are in
 
 ### Performance
 
-The release at rest, idle 20 to 30 s (2026-11-09):
+The release, idle 25 s at rest, and while a piece moves (`--bench 300`, Russian, wood):
+frames per second as presented, and a frame's time from the start of its work to the GPU
+done, waited for, against the display's 11.1 ms at 90 Hz or 16.7 ms at 60 Hz.
 
-| Device | Board | Idle CPU (one core) | Memory (PSS) |
-| --- | --- | --- | --- |
-| Galaxy Tab A11+, 1920 × 1200 | 2D, home | 0.03% | 145 MB |
-| Galaxy Tab A11+ | 3D, a game | 0.3% | 287 MB |
-| Pixel 7a, 2400 × 1080 | 3D, a game | 0.05% | 345 MB |
-| Galaxy A33 5G, 2400 × 1080 | 2D | 0.00% | 107 MB |
-| Galaxy A33 5G | 3D | 0.00% | 309 MB |
+| Device | Board | Idle CPU (one core) | Memory (PSS) | Frames per second | Frame time | Measured |
+| --- | --- | --- | --- | --- | --- | --- |
+| Galaxy Tab A11+, 1920 × 1200, 90 Hz | 2D, a game | 0.04% | 143 MB | 91 | 10.2 ms | 2026-11-10 |
+| Galaxy Tab A11+ | 3D, a game | 0.28% | 271 MB | 77 | 10.7 ms | 2026-11-10 |
+| Pixel 7a, 2400 × 1080, 60 Hz | 3D, a game | 0.05% | 345 MB | 60 | 13 to 14 ms | 2026-11-09 |
+| Galaxy A33 5G, 2400 × 1080, 90 Hz | 2D | 0.00% | 107 MB | 90 | | 2026-11-09 |
+| Galaxy A33 5G | 3D | 0.00% | 309 MB | 39 | 19 ms | 2026-11-09 |
 
-The 2D board draws in one full-screen pass and keeps up with a 90 Hz display even on the
-Galaxy A33. The 3D board, while it moves:
-
-- **Galaxy Tab A11+** (90 Hz): the pass about 11 ms, with 4× MSAA 3 ms more
-- **Pixel 7a** (60 Hz): the pass 13 to 14 ms, presented every 16.6 ms
-- **Galaxy A33 5G** (90 Hz): the pass 19 ms, about 39 fps; the weakest tried
+The 2D board draws in one full-screen pass, the UI's glass over it. The 3D board's frame
+time is its pass with the shadow map, as while a piece moves; the UI adds to it. On the
+tablet it fits in a 90 Hz frame, but frames are presented every 13 ms.
 
 The 3D board's extra memory is GPU memory: 180 to 230 MB against about 36 MB in 2D.
 
