@@ -357,8 +357,10 @@ over.
       method) and kept only for a measured win, with headless shots matching the look:
       all measured (2026-11-09, "On the tablet"); steps 1 to 6 win, step 7 wins only
       without the shadow map, for the user to keep or drop
-- [ ] The tablet's moving 3D board within 11 ms, or 60 Hz chosen there while it moves:
-      the pass alone 8.6 to 9.2 ms, with the shadow map 11.2, presented 13.4 (2026-11-09)
+- [x] The tablet's moving 3D board within 11 ms, or 60 Hz chosen there while it moves:
+      the pass alone 8.6 to 9.2 ms, with the shadow map 11.2, presented 13.4 (2026-11-09);
+      after task 059 the release's 9.2 ms waited with the shadow map, 90 fps at the 1% low,
+      none of 1000 frames dropped (2026-11-10)
 - [ ] The idle wakeup's cost explained, and fixed if it draws
 
 **On the Pixel 7a (2026-11-09, a screen recording at 20 fps):** autumn to winter in

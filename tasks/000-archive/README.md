@@ -181,3 +181,12 @@ and the commit that last has it.
   `docs/architecture/rendering.md` and `agents/testing.md`. The PC's per-pass captures
   and RenderDoc were left (the user, 2026-11-10: good enough).
   `059-3d-renderer-tuning.md`, `e2b8f8f`
+- 044: A plain background. Done: settings' Theme row switches between the photograph and
+  a fade per season's board (`prototypes/plain.html`'s fade b), the 3D board's ambient
+  taken from the fade; on the tablet about 1 MB less than the ASTC photograph, and a
+  switch one late frame (22 ms, or 58 ms when the photograph uploads).
+  `044-plain-background.md`, `4d50eb2`
+- 057: At rest on every platform. Done: the iPhone's 16% of a core at rest to 0.08%
+  (`patches/goose_gfx/0007`, the wait in the run loop), the Mac's 8.2% to 0.03% (built
+  with the patched gfx, `scripts/mac.py`), Windows 0.06%; the numbers in
+  `docs/architecture/rendering.md`. `057-at-rest.md`, `4d50eb2`

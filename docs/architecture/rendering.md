@@ -1376,14 +1376,16 @@ Measured with the app's `--bench 300` ([development](../development.md#time-the-
 idle with `scripts/idle_cpu.sh`, memory with `dumpsys meminfo` at rest (2026-11-09; the
 three Android devices again 2026-11-10 with `scripts/device_perf.sh`, the release built
 from 1aaf406; the iPhone with `scripts/ios_perf.py`, its development build from 1c25f33, the
-same app code with `--rest`, which counts its own CPU time and footprint).
+same app code with `--rest`, which counts its own CPU time and footprint). The tablet
+again from 4d50eb2's release, after task 059 (its 3D memory 30 MB more: the kept
+backdrop and UI layers, 9 MB each, and the occlusion and crown maps).
 
 The release at rest, idle 20 to 30 s:
 
 | Device | Board | Idle program thread | GL mtrack | EGL mtrack | Total PSS |
 | --- | --- | --- | --- | --- | --- |
 | Galaxy Tab A11+, 1920 × 1200 | 2D, a game | 0.04 to 0.08% | 37 MB | 55 to 60 MB | 133 to 141 MB |
-| Galaxy Tab A11+ | 3D, a game | 0.28 to 0.32% | 181 MB | 28 to 37 MB | 261 to 274 MB |
+| Galaxy Tab A11+ | 3D, a game | 0.28 to 0.32% | 210 MB | 32 MB | 295 MB |
 | Pixel 7a, 2400 × 1080 | 2D, a game | 0.08% | 45 MB | 73 MB | 159 MB |
 | Pixel 7a | 3D, a game | 0.04% | 215 MB | 73 MB | 324 MB |
 | Galaxy A33 5G, 2400 × 1080 | 2D, a game | 0.04% | 35 MB | 43 MB | 116 MB |
@@ -1405,7 +1407,9 @@ The release at rest, idle 20 to 30 s:
   beside the app, two runs each): waited P50 10.6 to 10.9 → 9.2 to 9.4 / P99 12.8 to 12.9
   → 10.9 to 11.2 ms, the pass alone 10.0 to 10.3 → 9.0 to 9.1, presented 12.9 → 11.0 ms
   frame to frame; the compositor counts 90 fps at the 1% low and no frame dropped (17%
-  before). With 16 crowned kings 12.2 → 9.0 ms waited, 31% dropped → none. The GPU's clock
+  before). With 16 crowned kings 12.2 → 9.0 ms waited, 31% dropped → none. The release
+  from 4d50eb2, 1000 frames: waited P50 9.22 / P99 12.13 ms, the pass alone 8.96, 90 fps
+  on average and at the 1% low, none dropped; the flat board's 9.39 ms waited, none dropped. The GPU's clock
   stays near its top (1047 MHz) in both, so the frame times show the work. Baking the
   field's shadow and occlusion into a map with the shadow map was dropped (the user,
   2026-11-09): it took the camera's turn to 8.4 ms but every frame that draws the
@@ -1429,8 +1433,8 @@ The release at rest, idle 20 to 30 s:
   board draws, and for the display's own rate otherwise: 60 frames on a 90 Hz display
   show two refreshes and one in turn. A device that holds its display's rate keeps it.
   The Galaxy A33 ignores it: its "High" motion smoothness holds 90 Hz whatever an app asks.
-  The tablet's frames average about 1.15 refreshes, so it keeps 90 (the user's choice
-  over an even 60); the Pixel 7a's display is at 60 already.
+  The tablet's frames fit its 90 Hz since task 059 (they averaged about 1.15 refreshes
+  before, and it kept 90, the user's choice over an even 60); the Pixel 7a's display is at 60 already.
 - **Where the moving 3D frame goes** (task 059, Streamline on the Pixel 7a, after its
   four changes): GPU active 7.01M → 4.70M cycles a frame, fragment-bound (the tiler 3%
   of the GPU's time), not bandwidth-bound (0.6 GB/s), little overdraw. The lit fragment

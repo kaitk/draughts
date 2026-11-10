@@ -51,8 +51,8 @@ percentile, against the display's 11.1 ms at 90 Hz or 16.7 ms at 60 Hz
 
 | Device | Board | Idle CPU (one core) | Memory (PSS) | FPS (avg / 1% low) | Frame time (P50 / P99) | Measured |
 | --- | --- | --- | --- | --- | --- | --- |
-| Galaxy Tab A11+, 1920 × 1200, 90 Hz | 2D | 0.08% | 138 MB | 90 / 90 | 11.1 / 11.1 ms | 2026-11-10 |
-| Galaxy Tab A11+ | 3D | 0.32% | 261 MB | 77 / 45 | 11.1 / 22.2 ms | 2026-11-10 |
+| Galaxy Tab A11+, 1920 × 1200, 90 Hz | 2D | 0.08% | 137 MB | 90 / 90 | 11.1 / 11.1 ms | 2026-11-10 |
+| Galaxy Tab A11+ | 3D | 0.32% | 295 MB | 90 / 90 | 11.1 / 11.1 ms | 2026-11-10 |
 | Pixel 7a, 2400 × 1080, 60 Hz | 2D | 0.08% | 159 MB | 60 / 60 | 16.7 / 16.7 ms | 2026-11-10 |
 | Pixel 7a | 3D | 0.04% | 324 MB | 60 / 60 | 16.7 / 16.7 ms | 2026-11-10 |
 | Galaxy A33 5G, 2400 × 1080, 90 Hz | 2D | 0.04% | 116 MB | 90 / 90 | 11.1 / 11.1 ms | 2026-11-10 |
@@ -63,9 +63,8 @@ percentile, against the display's 11.1 ms at 90 Hz or 16.7 ms at 60 Hz
 | Windows PC | 3D | 0.12% | 477 MB | 165 / 165 | 6.1 / 6.1 ms | 2026-11-10 |
 
 The 2D board draws in one full-screen pass, the UI's glass over it, and holds the display's
-rate. The 3D board's frame takes about 10.6 ms of GPU work on the tablet, over its 90 Hz
-budget now and then (task 055, and task 042 for its cost); the Galaxy A33's 23 ms holds a
-steady 60 on its 90 Hz display. On the iPhone, Instruments' Animation Hitches counts the
+rate. The 3D board's frame takes about 9.2 ms of GPU work on the tablet and holds its 90 Hz
+(task 059); the Galaxy A33's 23 ms holds a steady 60 on its 90 Hz display. On the iPhone, Instruments' Animation Hitches counts the
 frames in place of Android's compositor, and the app counts its own CPU time and memory
 footprint. On Windows, full screen (`--size full`), PresentMon counts the
 frames the display showed (none dropped; each flipped straight to the screen, 6 ms from

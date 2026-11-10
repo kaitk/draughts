@@ -72,5 +72,7 @@ clock the governor picks, not just at the top one.
 - [x] The same on the Pixel 7a
 - [x] The same on the Galaxy A33
 - [ ] The 3D board drops no frame on the tablet and the Pixel 7a (the Galaxy A33,
-      the weakest tried, at least holding a steady rate)
+      the weakest tried, at least holding a steady rate): the tablet none of 994 after
+      task 059 (the release, 2026-11-10); the Pixel 1 of 995 (task 056's longer run to
+      check); the A33 a steady 60
 - [ ] A screen transition counted the same way
