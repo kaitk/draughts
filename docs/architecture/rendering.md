@@ -1108,7 +1108,10 @@ board's does and the backdrop over it as opaque as the blur.
   occlusion of the field (each piece a cylinder over the 3 × 3 squares round it) into a
   512² map only where squares changed, a moving piece about 3 × 3 squares of it (task
   059: a texel a field pixel reads instead of the loop; the dropped bake above drew
-  shadow and occlusion with every shadow map); one 4× multisampled
+  shadow and occlusion with every shadow map); a crowned king's crown read from its
+  signed distance drawn once at setup into a 256² map (`shaders::CROWN_FRAG`, task 059:
+  evaluated three times a pixel for its slope, it was a third of a frame with 16 kings
+  on the Pixel 7a); one 4× multisampled
   forward pass (the board's shadow, the lit board and pieces, the fading ones blended
   after, the field's marks that hold still added) into a kept image the screen's size,
   clear but for the board, drawn only when the 3D board's scene changed

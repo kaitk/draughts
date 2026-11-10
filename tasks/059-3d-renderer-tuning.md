@@ -400,6 +400,33 @@ RGBA8 target goes for the same reason (11 steps; 39 to prepare).
   alone): the governor lowers the clock as the work falls, so the saving is battery.
 - **The three items:** GPU active 7.01M → 4.70M cycles a frame (−33%).
 - **The tablet:** to measure.
+- **The user's view (2026-11-10):** prefer making the work fast over caching slow work,
+  which can hide slowdowns that cascade; caches stay where nothing changes for long.
+  The live paths behind items 2 and 3 cost what's measured above (the backdrop's grade
+  0.43M cycles a frame, the UI 1.45M): the uber-shader's own speed is a separate session,
+  measured with the caches off.
+
+### 4. The crown into a map (2026-11-10)
+
+The crown's signed distance (`shaders::CROWN_FN`, the 11-point polygon, three balls and
+the bar) is drawn once at setup into a 256² R16F map over ±0.6 of the piece's radius
+(`render3d::crown_map`, a texel 0.7 px on a piece 140 px across, 128 KB); the lit
+shader's `crown()` is a bilinear fetch, three of them for the slope as before.
+
+- **The offline compiler, the lit shader:** the spill gone on all three cores (no
+  stack, LS 0 on the longest path; it was 24 on the G615 and 72 on the G68), the longest
+  path 28.9 → 17.1 cycles on the G710 and 34.5 → 23.9 on the G68. Still 64 registers.
+- **The look:** the middlegame with crowned kings (`kings = crown` in the PC's player
+  file for the shot, restored after) at 1920 × 1200: 7 pixels more than 4 levels off, at
+  most 9; at 3840 × 2400, 33 of 9.2M, at most 17, all where a ball meets its point (the
+  neck a hair softer from the map's filter). At 400% and 800% the crowns are the same,
+  the points and balls sharp, no stepping. Crops in the session's scratchpad.
+- **The Pixel 7a, 16 crowned kings** (`--fen` with every piece a king, `kings = crown`):
+  **GPU active 6.24M → 4.12M cycles a frame (−34%)**, the 3D pass's fragment work 8.99
+  → 7.53 ms (median), fragment cycles 25.1M → 17.8M. The crown, three distance
+  evaluations with a spill in every king's top pixel, was a third of the frame there.
+- **The start position (no kings):** 4.70M → 4.77M, within run-to-run noise.
+- **The tablet:** to measure.
 
 ## Acceptance criteria
 

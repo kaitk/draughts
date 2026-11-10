@@ -104,6 +104,48 @@ let EMPTY_FRAG = """
     void main() { }
     """;
 
+// The crown on a king's face as a signed distance, drawn once into its map (CROWN_FRAG,
+// render3d::crown_map) rather than in every king's pixel, three times for its slope
+// (task 059: it held the lit shader's spill).
+let CROWN_FN = """
+    // The crown on a king's face, in units of the piece's radius, traced from the 3D
+    // reference's king: a body with three points, the side ones reaching out, its edges
+    // between them bowed in, a ball on each point, and a bar under it; 1.06 of the radius
+    // across and 0.86 tall, centred in the recess.
+    const vec2 CROWN[11] = vec2[11](vec2(-0.35, -0.29), vec2(-0.45, 0.11),
+                                    vec2(-0.31, 0.055), vec2(-0.19, 0.04),
+                                    vec2(-0.075, 0.18), vec2(0.0, 0.33), vec2(0.075, 0.18),
+                                    vec2(0.19, 0.04), vec2(0.31, 0.055),
+                                    vec2(0.45, 0.11), vec2(0.35, -0.29));
+    float crown(vec2 p) {
+        float d = dot(p - CROWN[0], p - CROWN[0]);
+        float s = 1.0;
+        for (int i = 0, j = 10; i < 11; j = i, i++) {
+            vec2 e = CROWN[j] - CROWN[i];
+            vec2 w = p - CROWN[i];
+            vec2 b = w - e * clamp(dot(w, e) / dot(e, e), 0.0, 1.0);
+            d = min(d, dot(b, b));
+            bvec3 c = bvec3(p.y >= CROWN[i].y, p.y < CROWN[j].y, e.x * w.y > e.y * w.x);
+            if (all(c) || all(not(c))) s = -s;
+        }
+        d = s * sqrt(d);
+        d = min(d, length(p - vec2(-0.47, 0.15)) - 0.062);
+        d = min(d, length(p - vec2(0.0, 0.37)) - 0.062);
+        d = min(d, length(p - vec2(0.47, 0.15)) - 0.062);
+        vec2 q = abs(p - vec2(0.0, -0.36)) - vec2(0.34, 0.03);
+        d = min(d, length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - 0.01);
+        return d;
+    }
+    """;
+
+// The crown's distance into its map: CROWN_SIZE texels over ±CROWN_SPAN of the radius.
+let CROWN_FRAG = """
+    layout(location = 0) out vec4 result;
+    const float CROWN_SPAN = 0.6;       // render3d::crown_map
+    const float CROWN_SIZE = 256.0;
+    void main() { result = vec4(crown((gl_FragCoord.xy / CROWN_SIZE - 0.5) * (2.0 * CROWN_SPAN)), 0.0, 0.0, 1.0); }
+    """;
+
 let LIT_FRAG = """
     layout(location = 0) in vec3 v_world;
     layout(location = 1) in vec3 v_normal;
@@ -120,6 +162,9 @@ let LIT_FRAG = """
     layout(set = 2, binding = 4) uniform sampler2DShadow shadow_map;
     // The pieces' occlusion of the field (OCC_FRAG), over the plan's extent.
     layout(set = 2, binding = 5) uniform sampler2D field_occ;
+    // The crown's distance over ±CROWN_SPAN of the piece's radius (CROWN_FRAG).
+    layout(set = 2, binding = 6) uniform sampler2D crown_map;
+    const float CROWN_SPAN = 0.6;       // render3d::crown_map
 
     const float FRAME_SPAN = 10.4;   // the frame map's side in world units
 
@@ -211,34 +256,8 @@ let LIT_FRAG = """
              * (1.0 - 0.5 * (1.0 - d.y / sqrt(d.y * d.y + h * h)));
     }
 
-    // The crown on a king's face, in units of the piece's radius, traced from the 3D
-    // reference's king: a body with three points, the side ones reaching out, its edges
-    // between them bowed in, a ball on each point, and a bar under it; 1.06 of the radius
-    // across and 0.86 tall, centred in the recess.
-    const vec2 CROWN[11] = vec2[11](vec2(-0.35, -0.29), vec2(-0.45, 0.11),
-                                    vec2(-0.31, 0.055), vec2(-0.19, 0.04),
-                                    vec2(-0.075, 0.18), vec2(0.0, 0.33), vec2(0.075, 0.18),
-                                    vec2(0.19, 0.04), vec2(0.31, 0.055),
-                                    vec2(0.45, 0.11), vec2(0.35, -0.29));
-    float crown(vec2 p) {
-        float d = dot(p - CROWN[0], p - CROWN[0]);
-        float s = 1.0;
-        for (int i = 0, j = 10; i < 11; j = i, i++) {
-            vec2 e = CROWN[j] - CROWN[i];
-            vec2 w = p - CROWN[i];
-            vec2 b = w - e * clamp(dot(w, e) / dot(e, e), 0.0, 1.0);
-            d = min(d, dot(b, b));
-            bvec3 c = bvec3(p.y >= CROWN[i].y, p.y < CROWN[j].y, e.x * w.y > e.y * w.x);
-            if (all(c) || all(not(c))) s = -s;
-        }
-        d = s * sqrt(d);
-        d = min(d, length(p - vec2(-0.47, 0.15)) - 0.062);
-        d = min(d, length(p - vec2(0.0, 0.37)) - 0.062);
-        d = min(d, length(p - vec2(0.47, 0.15)) - 0.062);
-        vec2 q = abs(p - vec2(0.0, -0.36)) - vec2(0.34, 0.03);
-        d = min(d, length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - 0.01);
-        return d;
-    }
+    // The crown's signed distance (CROWN_FN), from its map (CROWN_FRAG).
+    float crown(vec2 p) { return texture(crown_map, p * (0.5 / CROWN_SPAN) + 0.5).r; }
 
     // The piece's top as mesh::top_height and mesh::top_ao have it: keep them in step.
     float top_height(float u) {

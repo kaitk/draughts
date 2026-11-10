@@ -41,6 +41,7 @@ SHADERS = [
     ("show", "frag", ["SHOW_FS", "SHOW_BLOCK", "SHOW_FRAG"]),
     ("kept", "frag", ["KEPT_FRAG"]),
     ("bake", "frag", ["BAKE_FRAG"]),
+    ("crown", "frag", ["CROWN_FN", "CROWN_FRAG"]),
     # The screen's (src/app/draw.goose's setup, widgets.goose's).
     ("board2d", "frag", ["FADE_FN", "draw.THEME_BLOCK", "draw.SHARED_BLOCK", "draw.BOARD_FRAG"]),
     ("piece2d", "vert", ["draw.SHARED_BLOCK", "draw.STACK_BLOCK", "draw.PIECE_VERT"]),

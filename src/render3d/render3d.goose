@@ -108,6 +108,9 @@ let PHOTO_SIZE = 512;
 // texels a square on 8 × 8, for a falloff a piece's radius wide that rises steeply at
 // its foot.
 let OCC_SIZE = 512;
+// The crown's map (shaders::CROWN_FRAG): 256 texels over 1.2 of the piece's radius, a
+// texel 0.7 px on a piece 140 px across.
+let CROWN_SIZE = 256;
 let SAMPLES = 4;
 let MAX_INSTANCES = 96;     // view3d::MAX_INSTANCES: two for each of board::MAX_PIECES
 let SQUARES = 100;          // the field's squares, 10 × 10 at most
@@ -141,6 +144,7 @@ struct Gpu {
     solid:          i64,                    // the instances drawn opaque, first; the rest fade
     alphas:         f32[MAX_INSTANCES],     // how opaque each fading one is
     squares:        gfx::Buffer,
+    crown_map:      gfx::Texture,           // the crown's distance (shaders::CROWN_FRAG), drawn at setup
     occ_map:        gfx::Texture,           // the pieces' occlusion of the field (occlusion())
     occ_n:          i64,                    // the squares a side it was drawn for, 0 none yet
     occ_squares:    float4[SQUARES],        // the squares it was drawn from
@@ -553,6 +557,15 @@ fn setup(g: Gpu&, samples: i32 = SAMPLES) {
                             gfx::PipelineDesc { blend: gfx::BLEND_ADD });
     g.depth_only = gfx::pipeline(lit_vs, embed_shader("frag", shaders::EMPTY_FRAG),
                                  gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true });
+    // The crown's distance, once: a small pipeline made, drawn, and given back.
+    g.crown_map = gfx::texture(gfx::TextureDesc { format: gfx::R16F, usage: gfx::COLOR_TARGET | gfx::SAMPLED,
+                                                  width: CROWN_SIZE, height: CROWN_SIZE });
+    let crown = gfx::pipeline(full, embed_shader("frag", shaders::CROWN_FN, shaders::CROWN_FRAG));
+    gfx::begin_pass(g.crown_map, gfx::Texture { 0 }, float4_0);
+    gfx::bind(crown);
+    gfx::draw(3);
+    gfx::end_pass();
+    gfx::release(crown);
     g.frame = default<Frame>();
     g.frame.view_proj = gfx::mat4_identity;
     g.frame.params.w = 8.0;
@@ -883,6 +896,7 @@ fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int
     gfx::bind_texture(gfx::FRAGMENT, 3, g.frame_normal, g.aniso);
     gfx::bind_texture(gfx::FRAGMENT, 4, g.shadow_map, g.compare);
     gfx::bind_texture(gfx::FRAGMENT, 5, g.occ_map, g.linear);
+    gfx::bind_texture(gfx::FRAGMENT, 6, g.crown_map, g.linear);
     gfx::uniforms(gfx::VERTEX, 0, f);
     gfx::uniforms(gfx::FRAGMENT, 0, f);
     draw_meshes(g, 0.0);
@@ -1165,7 +1179,7 @@ fn warm(g: Gpu&, k: i64) {
 // Everything setup() and the frames made given back (the app's board back to flat): the
 // targets, surfaces, buffers, samplers, and pipelines. g is set up again from scratch.
 fn release(g: Gpu&) {
-    let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.photo, g.shadow_map, g.occ_map, g.color,
+    let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.photo, g.shadow_map, g.occ_map, g.crown_map, g.color,
                     g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across, g.warm_color, g.warm_depth,
                     g.warm_kept];
     for t in textures { if t.id != 0 { gfx::release(t); } }
