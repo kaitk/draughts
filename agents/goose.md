@@ -164,6 +164,14 @@ find out by compiling, so the next session doesn't.
   `return if a { X } else { Y }, i;` and `let a, b = if c { f() } else { g() };` don't
   parse. Use two `return`s, or `var a = ...; var b = ...;` and then `a, b = f();`, which
   works. An assignment isn't an expression: `f(now += 1.0)` doesn't parse (2026-11-09).
+- A rect worked out from a sum (`gui::stack`'s room left: the area less the children
+  added up) can differ in the last bit from the same rect cut from it piece by piece, and
+  the screens' tests print floats: keep the cuts where an output must stay byte-identical
+  (settings' groups side by side, task 061). A stack's positions run on from its start
+  as cuts do, so a column from the top matches them (2026-11-10).
+- A struct field can't default to `T {}` where T has a field with no default
+  (`board::Layout`'s `scale`): give it a built value, `board::layout_at(0.0, 0.0, 0.0,
+  1.0, 8)` (2026-11-10).
 - File functions (`read_file`, `write_file_atomic`, `file_exists`, `delete_file`,
   `rename_file`, `list_dir`) need `import os;` in every file that calls them, packages
   included (`src/shell/players.goose`) (2026-11-09).

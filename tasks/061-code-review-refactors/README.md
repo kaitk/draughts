@@ -64,7 +64,7 @@ Left out on purpose:
 - [x] Stage 1: the moves made, tests identical
 - [x] Stage 2: one screen table; the game returns events; the app reads the shell's frame
       output only
-- [ ] Stage 3: the panel's layout as regions with a mode; `gui::stack` in use; home and
+- [x] Stage 3: the panel's layout as regions with a mode; `gui::stack` in use; home and
       settings with pure layout functions
 - [ ] Stage 4: `main` calls no gfx drawing; one `render::frame`; C decoders return pixels
 - [ ] The overview page updated to the new code and in the repo

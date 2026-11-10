@@ -30,7 +30,13 @@ The UI is a small immediate-mode layer in Goose, drawn the way Goose's Mini Mine
 draws its HUD:
 
 - Each frame, screens are declared in code. Layout cuts rows, columns, and grids from
-  the screen rect.
+  the screen rect, or lays a column or row of sized and growing children out in one pass
+  (`gui::stack`: no tree, nothing kept, taps tested against the same frame's rects). A
+  screen works out where its parts go in a function that declares nothing (home's and
+  settings' `layout`, the panel's `way_out` and one `*_play` per mode, its words measured
+  first), and its frame declares into what that returns. The fit decisions (how large
+  the board is, whether the panels go beside or below it, the 3D camera's fit) stay
+  code.
 - `button(id, rect, icon)` returns true on release over the button it went down on. A
   small fixed table holds per-id state for the press animation (0.12 s). A press that
   lands on the UI is the UI's and never reaches the board.
