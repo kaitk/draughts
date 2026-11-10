@@ -11,7 +11,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-GOOSE = Path(os.environ.get("GOOSE", ROOT / "build/goose-v2026.4-macos-arm64/goose"))
+WINDOWS = sys.platform == "win32"
+GOOSE = Path(os.environ.get("GOOSE", ROOT / ("build/goose-v2026.4-windows-x64/goose.exe" if WINDOWS
+                                             else "build/goose-v2026.4-macos-arm64/goose")))
 SDL = ROOT / "third_party/goose_gfx/third_party/SDL"
 # The application id on Android and the bundle id on iOS (2026-11-08): Play fixes it for
 # good at the first upload. Another program (a prototype in poc/) gets APP_ID.<name>, so

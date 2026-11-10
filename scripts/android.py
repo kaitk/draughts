@@ -43,9 +43,11 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-from native import APP_ID, ROOT, VERSION_NAME, app_names, copy_sources, goose_to_c, run, sidecar
+from native import (APP_ID, ROOT, VERSION_NAME, WINDOWS, app_names, copy_sources, goose_to_c,
+                    run, sidecar)
 
-SDK = Path(os.environ.get("ANDROID_HOME", Path.home() / "Library/Android/sdk"))
+SDK = Path(os.environ.get("ANDROID_HOME", Path(os.environ.get("LOCALAPPDATA", "")) / "Android/Sdk"
+                          if WINDOWS else Path.home() / "Library/Android/sdk"))
 NDK = Path(os.environ.get("ANDROID_NDK", SDK / "ndk/29.0.14206865"))
 BUILD_TOOLS = Path(os.environ.get("ANDROID_BUILD_TOOLS", SDK / "build-tools/36.0.0"))
 PLATFORM = Path(os.environ.get("ANDROID_PLATFORM", SDK / "platforms/android-36"))
@@ -62,6 +64,10 @@ UPLOAD_KEY = Path(os.environ.get("DRAUGHTS_UPLOAD_KEY",
 BUNDLETOOL_VERSION = "1.18.3"
 BUNDLETOOL_SHA256 = "a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29"
 PAGE = 16384              # the page size Play requires native libraries to be aligned to
+# The SDK's Java tools are batch files on Windows.
+D8 = BUILD_TOOLS / ("d8.bat" if WINDOWS else "d8")
+APKSIGNER = BUILD_TOOLS / ("apksigner.bat" if WINDOWS else "apksigner")
+ADB = shutil.which("adb") or SDK / "platform-tools/adb"
 
 
 def upload_key():
@@ -197,7 +203,7 @@ def main():
     java += sorted(str(p) for p in (ROOT / "android/java").rglob("*.java"))
     run("javac", "-nowarn", "-Xlint:-options", "-source", "8", "-target", "8",
         "-bootclasspath", android_jar, "-d", classes, *java)
-    run(BUILD_TOOLS / "d8", "--release", "--min-api", MIN_SDK, "--lib", android_jar,
+    run(D8, "--release", "--min-api", MIN_SDK, "--lib", android_jar,
         "--output", apk_dir, *sorted(str(p) for p in classes.rglob("*.class")))
 
     # 4. Link, add, align, sign.
@@ -214,14 +220,16 @@ def main():
             "--version-code", VERSION_CODE, "--version-name", VERSION_NAME,
             "--min-sdk-version", MIN_SDK, "--target-sdk-version", TARGET_SDK]
     run(*link, "-o", unaligned)
-    run("zip", "-q", unaligned, "classes.dex", cwd=apk_dir)
-    run("zip", "-q", "-0", "-r", unaligned, "lib", cwd=apk_dir)
+    with zipfile.ZipFile(unaligned, "a", zipfile.ZIP_DEFLATED) as z:
+        z.write(apk_dir / "classes.dex", "classes.dex")
+        for so in sorted(libs.iterdir()):
+            z.write(so, f"lib/arm64-v8a/{so.name}", zipfile.ZIP_STORED)
     run(BUILD_TOOLS / "zipalign", "-f", "-P", PAGE // 1024, "4", unaligned, aligned)
     if args.release:
         # The password reaches the tools through the environment, never the command line.
         keystore, alias, password = upload_key()
         key_env = {"DRAUGHTS_UPLOAD_PASS": password}
-        run(BUILD_TOOLS / "apksigner", "sign", "--ks", keystore, "--ks-key-alias", alias,
+        run(APKSIGNER, "sign", "--ks", keystore, "--ks-key-alias", alias,
             "--ks-pass", "env:DRAUGHTS_UPLOAD_PASS", aligned, env=key_env)
     else:
         keystore = Path.home() / ".android/debug.keystore"
@@ -230,7 +238,7 @@ def main():
             run("keytool", "-genkeypair", "-keystore", keystore, "-storepass", "android",
                 "-alias", "androiddebugkey", "-keypass", "android", "-keyalg", "RSA",
                 "-validity", "10000", "-dname", "CN=Android Debug,O=Android,C=US")
-        run(BUILD_TOOLS / "apksigner", "sign", "--ks", keystore, "--ks-pass", "pass:android",
+        run(APKSIGNER, "sign", "--ks", keystore, "--ks-pass", "pass:android",
             aligned)
     unaligned.unlink()
     check_zip_pages(aligned)
@@ -280,8 +288,14 @@ def main():
         print(f"{aab} ({aab.stat().st_size // 1024} KB)")
 
     if args.run:
-        run("adb", "install", "-r", aligned)
-        run("adb", "shell", "am", "start", "-n", f"{app_id}/{ACTIVITY}")
+        # Never uninstalls: that deletes the app's data. A build signed with another key
+        # (another machine's debug key, or the upload key's release) can't install over it.
+        r = run(ADB, "install", "-r", aligned, capture=True, check=False)
+        print(r, flush=True)
+        if "INSTALL_FAILED_UPDATE_INCOMPATIBLE" in r or "Success" not in r:
+            sys.exit(f"not installed. If the installed {app_id} is signed with another key, "
+                     "install beside it with --id-suffix; uninstalling it deletes its data")
+        run(ADB, "shell", "am", "start", "-n", f"{app_id}/{ACTIVITY}")
 
 
 if __name__ == "__main__":
