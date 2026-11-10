@@ -3,13 +3,18 @@
 - `README.md` and `docs/` are for people: what the app is, how it works, how to build
   it, and the decisions with their reasons. Rules for agents, Goose notes, and anything
   only an agent needs go in `AGENTS.md` and `agents/` (2026-11-07).
-- User-facing docs reference no tasks and keep no history: say what is, not what used to
-  be. Open work, causes not yet measured, and plans go in a task. Measurements a task
+- User-facing docs, all of `docs/` but `docs/decisions/`, reference no tasks and keep no
+  history: say what is, not what used to be. The decisions are dated and may name the
+  task that made them. Open work, causes not yet measured, and plans go in a task. Measurements a task
   took stay in its file (`tasks/README.md`).
 - Lead with the decision, behavior, or action, then explain why. Use concrete facts and
   cut filler.
-- Record a decision in `docs/architecture/` with its reason, and what was rejected when
-  that matters. Keep each fact in one place and link to it elsewhere. Use absolute dates.
+- `docs/architecture/` says how the app works now: no dates, tasks, history, or people.
+  Its current per-device numbers stay there; how they came to be does not.
+- Record a decision in `docs/decisions/`, in the area's file, with its date, its reason,
+  and what was rejected when that matters; measurement histories go there or to the task
+  that took them. A decision that replaces an earlier one says so, and both stay. Keep
+  each fact in one place and link to it elsewhere. Use absolute dates.
 - Tasks follow `tasks/README.md`, with concrete acceptance criteria. Use sentence-case
   headings, backticks for identifiers and commands, and wrap prose at about 90
   characters.

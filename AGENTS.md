@@ -6,7 +6,10 @@ work.
 ## Project context
 
 - Product scope: `docs/product.md`
-- Architecture decisions: `docs/architecture/`
+- How the app works now, for people: `docs/architecture/`, with its front page
+  `index.html` ("Draughts from above"); the design decisions, each dated with its reason
+  and what it rejected, for contributors and agents: `docs/decisions/`, one file per
+  area as the architecture has
 - Task tracking: `tasks/` (see `tasks/README.md`)
 - The language: `agents/goose.md` first, which sums up what writing Goose here needs;
   the pinned release's `build/goose-v2026.4-macos-arm64/docs/` for the rest. Write
@@ -21,8 +24,9 @@ work.
   patch in `patches/<package>/`, applied at build time to a copy of the sources (never in
   the submodule), with its findings entry saying what to propose upstream
 
-Follow the recorded decisions. If a change contradicts one, update the doc in the same
-change or ask first.
+Follow the recorded decisions in `docs/decisions/`. If a change contradicts one, record
+the new decision there, saying which it replaces, and update `docs/architecture/` to
+match, in the same change, or ask first.
 
 ## Rules for particular work
 

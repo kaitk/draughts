@@ -153,7 +153,7 @@ store/        the Play and App Store listings, their previews, and the privacy p
 design/       the icon's, backgrounds', and tabletops' sources and how they were made
 prototypes/   HTML prototypes of the UI, compared before building in Goose
 poc/          small programs that tried one thing, such as frame pacing
-docs/         product scope, architecture decisions, development
+docs/         product scope, architecture, decisions, development
 tasks/        the work, one file per task
 ```
 
@@ -162,7 +162,9 @@ tasks/        the work, one file per task
 - [Product](docs/product.md): what the app is for, the MVP, and what follows
 - [Draughts from above](docs/architecture/index.html): the app's start-up, loop, packages,
   and threads, in plain words
-- [Architecture](docs/architecture/README.md): the decisions and their reasons
+- [Architecture](docs/architecture/README.md): how the app works
+- [Decisions](docs/decisions/README.md): each design decision, dated, with its reason and
+  what it rejected
 - [Development](docs/development.md): the toolchain, building, running, and testing
 - [Goose findings](docs/goose-findings.md): gaps found in Goose and goose_gfx, and the
   patches for them
