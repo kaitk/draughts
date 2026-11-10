@@ -543,7 +543,7 @@ How task 059 found where the 3D frame went (2026-11-10):
   ```
 
   With a test build (`--id-suffix`), `--android-activity` raced: something force-stopped
-  the app a second after gatord started it (task 060). What worked: gatord with
+  the app a second after gatord started it (task 063). What worked: gatord with
   `--android-pkg` alone, in the background (it waits for the package), then `am start -S`
   by hand a few seconds later with `--es args "'...'"` quoted exactly as in "On the
   tablet": one more layer of quotes leaves a `'` on the first and last flags, and the app

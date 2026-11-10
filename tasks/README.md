@@ -54,7 +54,7 @@ reviewed the structure, 049 added the draws, 051 polished what preparing the sto
 windows, 048 found no forced capture behind a report (covered by tests), 039 baked the 3D
 board's wood, 040 added the lookout and the hint, 054 gave the flat game screen the 3D one's
 controls, 052 showed what each side has taken, 044 added the plain background, 057 made the app
-rest on every platform, 059 profiled and reworked the 3D renderer, and 060 made the UI's shader fast in itself; 016 (tabletop pictures) and 033 (an icon per season) were
+rest on every platform, 059 profiled and reworked the 3D renderer, and 063 made the UI's shader fast in itself; 016 (tabletop pictures) and 033 (an icon per season) were
 cancelled. All are archived. The MVP in `docs/product.md` is built.
 
 Open:
@@ -80,7 +80,7 @@ into maps, the backdrop and the UI kept while they stand still): the tablet's mo
 board holds 90 Hz with no frame dropped, the Pixel 7a a third fewer GPU cycles a frame;
 044 (the plain background) and 057 (at rest everywhere) closed.
 
-Done later on 2026-11-10: 060, the UI drawn live at half its GPU cycles on the Pixel
+Done later on 2026-11-10: 063, the UI drawn live at half its GPU cycles on the Pixel
 (three shaders at 32 registers, quads only as large as their shadows, glass and tiles
 shaded in parts); 042 brought up to date after 059.
 

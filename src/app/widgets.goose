@@ -40,7 +40,7 @@ let VERT = """
         vec4 look = q[i + 2];
         vec4 extra = q[i + 3];
         // Room round the rect for the shadow, as far as each reaches, and a pixel more for
-        // the edge's antialiasing (task 060): glass's (12 dp down, 32 blur, -14 spread)
+        // the edge's antialiasing (task 063): glass's (12 dp down, 32 blur, -14 spread)
         // 6 dp above, 18 to the sides, 30 below; a tile's (6 down, 14 blur, -8 spread) 0,
         // 6, and 12; a face 12 dp and its glow 26 dp round it, a floating disc 6 dp and
         // its dot.
@@ -60,7 +60,7 @@ let VERT = """
     }
     """;
 
-// FRAG is built three times (task 060), each kind in one of them, so no pixel pays for
+// FRAG is built three times (task 063), each kind in one of them, so no pixel pays for
 // another's registers: together the icons' or the faces' paths took the whole shader to
 // 64 registers, half occupancy on Mali, where each set alone fits 32. draw_quads() draws
 // the quads in runs of one pipeline, in their order: gui::ICON's in the second,

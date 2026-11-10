@@ -37,7 +37,7 @@ draws its HUD:
 - Calls append quads (`panel`, `button`, `icon`, `fill`; `text` with home) to one fixed
   array, reset each frame, drawn by instanced draws in their order: one pipeline for the
   icons, one for the players' faces, one for the rest, each run of quads one draw (task
-  060: one shader for all held 64 registers for every UI pixel, each of the three 32).
+  063: one shader for all held 64 registers for every UI pixel, each of the three 32).
 - **Native form**: `gui/` holds the layer with no graphics (tested headless in
   `test/gui/`), and `src/app/widgets.goose` draws it: each quad pulls `{rect, color, kind,
   radius, icon, pressed, dp, look}` from one storage buffer, and its fragment shader works
@@ -49,7 +49,7 @@ draws its HUD:
   the UI. Pieces shown on the UI (the side to move, the winner) are drawn after it by the
   piece pipeline from a second small storage buffer, so they look exactly like the
   board's.
-- **Shaded only where it shows** (task 060): a quad is as large as its shadow reaches on
+- **Shaded only where it shows** (task 063): a quad is as large as its shadow reaches on
   each side (glass 6 dp above, 18 to the sides, 30 below; a tile 0, 6, and 12), and glass
   and tiles shade a pixel outside them as the shadow alone and one more than 3 dp inside
   as the fill alone, the highlight, border, and shadow being 0 there. With the three
@@ -1459,7 +1459,7 @@ The release at rest, idle 20 to 30 s:
   of the GPU's time), not bandwidth-bound (0.6 GB/s), little overdraw. The lit fragment
   shader still holds 64 registers (half occupancy on the G615). The UI's live cost was
   1.45M cycles a frame, 24%, paid only when the UI changes now that it is kept
-  (`widgets::prepare`), and the backdrop's grade 0.43M when it changes; after task 060
+  (`widgets::prepare`), and the backdrop's grade 0.43M when it changes; after task 063
   the two together 1.54M → 0.99M (the moving 3D game with `--keep off`: 6.76M → 6.21M a
   frame, 5.22M kept), the UI's part about halved. Ranked and not yet tried: the pieces' shadows on the field analytic (a disc's stadium along the light) in place
   of the shadow map's pass and its 9 taps on every lit pixel; fp16 for colors, the
