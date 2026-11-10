@@ -584,6 +584,14 @@ every frame with nothing else, or a set GPU load, to check the pacing alone.
 frames the display showed between the bench's console lines, and `--rest 25` has the app
 count its own CPU time, footprint, and each thread's CPU time at rest, as Instruments'
 Activity Monitor often can't reach the phone after `devicectl` has used it.
+`python scripts/windows_perf.py` takes the Windows rows, full screen: PresentMon's command
+line exe (from github.com/GameTechDev/PresentMon's releases, into `build/presentmon/`,
+no admin rights needed) records the presents through the bench, and the script counts
+those between its console lines that reached the display, each in whole refreshes, with
+the GPU's busy time a frame, the latency to the display, and the present mode (DWM's
+composing costs a refresh of latency; full screen the window is flipped straight to the
+screen). The app's own 1% low there (105 fps for the flat board) is the loop's wakes
+jittering against the swapchain's queue, not frames dropped (2026-11-10).
 
 Two seconds after the launch the app times 300 frames drawing the 3D board and its
 shadow map, as while a piece moves, each submitted and waited for (`gfx::flush`); 300

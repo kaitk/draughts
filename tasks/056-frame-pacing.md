@@ -34,6 +34,11 @@ record --template 'Metal System Trace' --launch -- build/draughts …` on a movi
 frames past one refresh, and whether CPU, GPU, or the present made them late. The Metal
 HUD (`MTL_HUD_ENABLED=1`) for a look by eye.
 
+Windows, 2026-11-10 (`scripts/windows_perf.py`, RTX 4090, 2560 × 1440 at 165 Hz, full
+screen): of about 970 bench frames per board, none dropped and none held past a refresh,
+on both boards, each flipped straight to the screen (Independent Flip), 6 ms from present
+to display. A moving board's movement and transitions are still to record there.
+
 1. **When each frame is presented.** On the iPhone, the trace's Metal tables
    (`metal-command-buffer-completed`, `display-surface-swap`) against the display's
    vsyncs (`display-vsyncs-interval`), and the app's own time stamps at acquire and

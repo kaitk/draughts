@@ -67,4 +67,5 @@ The iPhone's other threads, 2.4% each before, now spend next to nothing.
 - [x] Windows: `python scripts/windows.py src/app/draughts.goose --run -- --rest 25`
       builds, and at rest is under 1%; the numbers here and in the rendering doc
       (2026-11-10: Ryzen 7 5800X3D, RTX 4090, 2560 × 1440 at 165 Hz; Windows' footprint is
-      the private bytes; works by hand too, the user)
+      the private bytes; works by hand too, the user; the README's rows by
+      `scripts/windows_perf.py`, with PresentMon)

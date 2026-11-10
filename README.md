@@ -59,17 +59,18 @@ percentile, against the display's 11.1 ms at 90 Hz or 16.7 ms at 60 Hz
 | Galaxy A33 5G | 3D | 0.04% | 275 MB | 60 / 45 | 22.2 / 22.2 ms | 2026-11-10 |
 | iPhone 13 mini, 2340 × 1080, 60 Hz | 2D | 0.08% | 59 MB | 60 / 60 | 16.7 / 16.7 ms | 2026-11-10 |
 | iPhone 13 mini | 3D | 0.08% | 204 MB | 60 / 60 | 16.7 / 16.7 ms | 2026-11-10 |
-| Windows PC, 2560 × 1440, 165 Hz | 2D | 0.18% | 253 MB | 165 / 114 | 6.1 / 8.8 ms | 2026-11-10 |
-| Windows PC | 3D | 0.06% | 476 MB | 165 / 90 | 6.1 / 11.1 ms | 2026-11-10 |
+| Windows PC, 2560 × 1440, 165 Hz | 2D | 0.00% | 258 MB | 165 / 165 | 6.1 / 6.1 ms | 2026-11-10 |
+| Windows PC | 3D | 0.12% | 477 MB | 165 / 165 | 6.1 / 6.1 ms | 2026-11-10 |
 
 The 2D board draws in one full-screen pass, the UI's glass over it, and holds the display's
 rate. The 3D board's frame takes about 10.6 ms of GPU work on the tablet, over its 90 Hz
 budget now and then (task 055, and task 042 for its cost); the Galaxy A33's 23 ms holds a
 steady 60 on its 90 Hz display. On the iPhone, Instruments' Animation Hitches counts the
 frames in place of Android's compositor, and the app counts its own CPU time and memory
-footprint. On Windows the app runs full screen (`--size full`) and
-counts everything itself: its frames by its own clock, which can't see how long a frame
-stayed on screen, so its 1% low is a floor; its memory as the private bytes.
+footprint. On Windows, full screen (`--size full`), PresentMon counts the
+frames the display showed (none dropped; each flipped straight to the screen, 6 ms from
+present to display), and the app counts its CPU time, in Windows' 15.6 ms ticks (0.06% of
+25 s), and its memory as the private bytes.
 
 The 3D board's extra memory is GPU memory: 180 to 230 MB against about 36 MB in 2D.
 
