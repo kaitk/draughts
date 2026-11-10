@@ -74,11 +74,11 @@ Expected: the lowest rating everywhere (PEGI 3, ESRB Everyone, USK 0, IARC 3+).
 
 | Question | Answer |
 | --- | --- |
-| Target age groups | **5 and under**, **6–8**. Not 9–12 or older: older children and adults may enjoy it, but adding them changes nothing here, and a game for 5 to 8 is what it is made for |
-| Could your store listing unintentionally appeal to children? | Not asked: children are the target |
+| Target age groups | **All of them**, 5 and under through 18 and over: the game is for all ages, simple enough for a first game while the hard level and puzzles test grown-ups (the user, 2026-11-10) |
+| Could your store listing unintentionally appeal to children? | Not asked: children are among the targets |
 | Does the app appeal to children? | Yes |
 
-Choosing an age group under 13 puts the app under the **Families Policy**. What it asks,
+Choosing any age group under 13 puts the app under the **Families Policy**, with adults in the audience too (a mixed audience). What it asks,
 and where the app stands:
 
 - **Privacy policy** at a public URL, linked in the listing and reachable from the app's

@@ -6,7 +6,7 @@ identity and the feature graphic settled the same day; the screenshots retaken a
 the Play account and the checks on the tablet remain)
 
 Everything between a sideloaded APK and the app on Google Play, under Google's Families
-Policy: the app is for children, with no ads, no tracking, no accounts, and no network
+Policy: the app is for all ages, children included, with no ads, no tracking, no accounts, and no network
 (`docs/product.md`, "After the MVP": release). Android first; the App Store's listing is
 prepared in task 046. Things Play requires change yearly: check each against Play's current
 documentation when doing this, not this list.
