@@ -126,7 +126,7 @@ and the contact email are filled in):
 | Placeholder | Value |
 | --- | --- |
 | `{DEVELOPER}` | Gideonic: the developer name on Play (the user, 2026-11-09); on the App Store an individual's legal name is shown instead |
-| `{CONTACT_EMAIL}` | kaitkasak@gmail.com: the contact address both stores show or ask for (the user, 2026-11-09) |
+| `{CONTACT_EMAIL}` | kaitkasak@proton.me: the contact address both stores show or ask for (the user, 2026-11-10; Gmail was blocked), also the Play developer account's login |
 | `{PRIVACY_URL}` | https://kaitk.github.io/draughts/privacy/ (live 2026-11-09, from the `gh-pages` branch) |
 | `{SUPPORT_URL}` | https://kaitk.github.io/draughts/ (the App Store's support page, live 2026-11-09, `gh-pages`) |
 

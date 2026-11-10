@@ -51,7 +51,7 @@ collected".
 
 ## Content rating (IARC questionnaire)
 
-Email for the certificate: `kaitkasak@gmail.com`. Category: **Game** (not "Reference, news, or
+Email for the certificate: `kaitkasak@proton.me`. Category: **Game** (not "Reference, news, or
 educational": the app is played, and its puzzles are part of the game).
 
 | Topic | Answer |
@@ -130,7 +130,7 @@ read 2026-11-09).
 | App or game | Game |
 | Category | Board |
 | Tags | Up to five of Play's list, in Store settings → App category → Manage tags ([9859673](https://support.google.com/googleplay/android-developer/answer/9859673), read 2026-11-09; the list shows only in the Console): pick Board, Casual, Offline, Single player, Family, if offered |
-| Contact email | `kaitkasak@gmail.com` (required, shown on the listing) |
+| Contact email | `kaitkasak@proton.me` (required, shown on the listing) |
 | Website | `https://kaitk.github.io/draughts/` (optional; to confirm) |
 | Phone | None |
 | Price | Free (a free app can never become paid) |

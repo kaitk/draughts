@@ -73,8 +73,8 @@ masters present):
 
 ## What remains for the user
 
-- **Identity:** the developer name Gideonic and the contact email kaitkasak@gmail.com
-  (the user, 2026-11-09; filled into `store/`); the account opened on that address. Confirm
+- **Identity:** the developer name Gideonic and the contact email kaitkasak@proton.me
+  (the user, 2026-11-10, replacing the blocked Gmail; filled into `store/`); the Play developer account opened on that address 2026-11-10 as a non-trader, identity check pending. Confirm
   the privacy policy's URL,
   `https://kaitk.github.io/draughts/privacy`, and publish `store/privacy/index.html` there
   (`store/README.md`). Never the Snowhound name, domain, or email.

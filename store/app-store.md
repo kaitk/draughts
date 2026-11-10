@@ -186,7 +186,7 @@ release build (`docs/development.md`, "Run on iOS").
 | Field | Answer |
 | --- | --- |
 | Sign-in required | No |
-| Contact | The user's name, `kaitkasak@gmail.com`, and a phone with its country code (required, not shown publicly) |
+| Contact | The user's name, `kaitkasak@proton.me`, and a phone with its country code (required, not shown publicly) |
 | Notes | Below |
 
 ```text
