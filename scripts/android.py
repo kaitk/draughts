@@ -290,9 +290,11 @@ def main():
     if args.run:
         # Never uninstalls: that deletes the app's data. A build signed with another key
         # (another machine's debug key, or the upload key's release) can't install over it.
-        r = run(ADB, "install", "-r", aligned, capture=True, check=False)
-        print(r, flush=True)
-        if "INSTALL_FAILED_UPDATE_INCOMPATIBLE" in r or "Success" not in r:
+        print(f"+ {ADB} install -r {aligned}", flush=True)
+        r = subprocess.run([str(ADB), "install", "-r", str(aligned)], text=True,
+                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        print(r.stdout, flush=True)
+        if r.returncode != 0:
             sys.exit(f"not installed. If the installed {app_id} is signed with another key, "
                      "install beside it with --id-suffix; uninstalling it deletes its data")
         run(ADB, "shell", "am", "start", "-n", f"{app_id}/{ACTIVITY}")

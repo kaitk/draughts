@@ -289,9 +289,9 @@ winget install -e --id Ninja-build.Ninja
 python scripts/android.py src/app/draughts.goose --run   # build, install, start
 ```
 
-`adb` is the SDK's `platform-tools\adb.exe` when it isn't on `PATH`. A Pixel takes Google's
-USB driver (`extras\google\usb_driver`, installed through Device Manager if Windows
-doesn't find one); a Samsung, Samsung's. A device Windows doesn't list at all, whose USB
+`adb` is the SDK's `platform-tools\adb.exe` when it isn't on `PATH`. Windows 11 found a
+Pixel's driver by itself; if Device Manager shows a device without one, Google's is in
+`extras\google\usb_driver`, and a Samsung takes Samsung's. A device Windows doesn't list at all, whose USB
 preferences offer only "This device", is on a charge-only cable. The first build takes
 about 80 s, into `build\android\` as on the Mac.
 
