@@ -597,7 +597,9 @@ those between its console lines that reached the display, each in whole refreshe
 the GPU's busy time a frame, the latency to the display, and the present mode (DWM's
 composing costs a refresh of latency; full screen the window is flipped straight to the
 screen). The app's own 1% low there (105 fps for the flat board) is the loop's wakes
-jittering against the swapchain's queue, not frames dropped (2026-11-10).
+jittering against the swapchain's queue, not frames dropped (2026-11-10). The app counts its own CPU time
+there, in Windows' 15.6 ms ticks (one tick is 0.06% of 25 s), and its memory as the
+private bytes.
 
 Two seconds after the launch the app times 300 frames drawing the 3D board and its
 shadow map, as while a piece moves, each submitted and waited for (`gfx::flush`); 300

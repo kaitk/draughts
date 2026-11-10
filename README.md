@@ -1,7 +1,7 @@
 # Draughts
 
-A calm draughts game for Android tablets and phones. Play a friend or the computer, or
-solve puzzles. No ads, no accounts, no tracking, and no network.
+A calm draughts game for tablets and phones, on a flat 2D or a 3D board. Play the
+computer or a friend, or solve puzzles. No ads, no accounts, no tracking, and no network.
 
 <p align="center">
   <img src="docs/images/home-winter.webp" alt="Home on a tablet over the winter photograph: continue, a friend, the computer, puzzles, and settings beside the 3D stone board" width="49%" />
@@ -10,13 +10,17 @@ solve puzzles. No ads, no accounts, no tracking, and no network.
 
 ## Features
 
+- A flat 2D board, or a 3D one with light and shadow, its camera turned by hand on home
 - International draughts on the 10 × 10 board, and Brazilian and Russian on 8 × 8
-- Play a friend on the same device, or the computer at three levels
-- Puzzles, from the first capture to multi-piece shots
+- Play the computer at three levels, or a friend on the same device; with no clock, or
+  5 or 10 minutes each
+- 166 puzzles in themes, from the rules in action to multi-piece shots, with stars
+- Up to four players on one device, each with an animal badge, their own look, hints,
+  stars, and saved game
+- Move hints that wait until a move is wrong, then show the square and why
 - Four seasonal looks, each a photograph with its own board: autumn wood, winter stone,
   spring carved stone, and summer sunset
-- A flat board or a 3D one, lit and shadowed, its camera turned by hand on home
-- Works offline, with no ads and no in-app purchases
+- No ads and no in-app purchases; nothing leaves the device
 - English and Estonian
 
 ## Tested on
@@ -63,15 +67,11 @@ percentile, against the display's 11.1 ms at 90 Hz or 16.7 ms at 60 Hz
 | Windows PC | 3D | 0.12% | 477 MB | 165 / 165 | 6.1 / 6.1 ms | 2026-11-10 |
 
 The 2D board draws in one full-screen pass, the UI's glass over it, and holds the display's
-rate. The 3D board's frame takes about 9.2 ms of GPU work on the tablet and holds its 90 Hz
-(task 059); the Galaxy A33's 23 ms holds a steady 60 on its 90 Hz display. On the iPhone, Instruments' Animation Hitches counts the
-frames in place of Android's compositor, and the app counts its own CPU time and memory
-footprint. On Windows, full screen (`--size full`), PresentMon counts the
-frames the display showed (none dropped; each flipped straight to the screen, 6 ms from
-present to display), and the app counts its CPU time, in Windows' 15.6 ms ticks (0.06% of
-25 s), and its memory as the private bytes.
-
-The 3D board's extra memory is GPU memory: 180 to 230 MB against about 36 MB in 2D.
+rate. The 3D board's frame takes about 9.2 ms of GPU work on the tablet and holds its 90 Hz;
+the Galaxy A33's 23 ms holds a steady 60 on its 90 Hz display. The 3D board's extra memory
+is GPU memory: 180 to 230 MB against about 36 MB in 2D. The iPhone and Windows rows are
+counted with Instruments and PresentMon in place of Android's compositor
+([development](docs/development.md#time-the-3d-board)).
 
 ### How it works
 
@@ -96,7 +96,7 @@ The 3D board's extra memory is GPU memory: 180 to 230 MB against about 36 MB in 
 - **Goose, compiled to C,** with [goose_gfx](https://github.com/aardappel/goose_gfx) on
   SDL3's GPU API: Vulkan on Android and Windows, Metal on the Mac and iOS. No engine, no
   Gradle, no Xcode project: one Python script builds each platform.
-- **Shaders draw everything:** the board in one full-screen pass, the pieces, rings, and
+- **Shaders draw everything:** the flat board in one full-screen pass, the pieces, rings, and
   glass panels as signed distance shapes, crisp at any size. All pieces are one
   instanced draw, the whole UI another.
 - **Text from a glyph atlas** of Libertinus Sans, baked once at the screen's pixel size so
@@ -122,6 +122,9 @@ in `build/` ([docs/development.md](docs/development.md#toolchain) sets these up)
 scripts/mac.py src/app/draughts.goose    # build build/draughts with the patched gfx
 build/draughts
 ```
+
+On Windows, `python scripts/windows.py src/app/draughts.goose` builds the same app
+([development](docs/development.md#run-on-windows)).
 
 On an Android device with USB debugging on, with the Android SDK, NDK r29, and a JDK:
 
@@ -172,7 +175,11 @@ test/         headless tests with expected output
 patches/      patches to goose_gfx and SDL, applied to a copy at build time
 third_party/  goose_gfx, as a submodule, with SDL and Nuklear
 store/        the Play and App Store listings, their previews, and the privacy policy
+design/       the icon's, backgrounds', and tabletops' sources and how they were made
+prototypes/   HTML prototypes of the UI, compared before building in Goose
+poc/          small programs that tried one thing, such as frame pacing
 docs/         product scope, architecture decisions, development
+tasks/        the work, one file per task
 ```
 
 ## Documentation
@@ -182,6 +189,7 @@ docs/         product scope, architecture decisions, development
 - [Development](docs/development.md): the toolchain, building, running, and testing
 - [Goose findings](docs/goose-findings.md): gaps found in Goose and goose_gfx, and the
   patches for them
+- [Store](store/README.md): the Play and App Store listings and the privacy policy
 - [Tasks](tasks/README.md): the work, one file per task
 
 ## License
