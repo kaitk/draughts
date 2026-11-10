@@ -235,6 +235,9 @@ fn hold_width(g: gui::Gui&, key: i64) -> f32 {
 // for a player already there the holds.
 fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64 {
     let u = g.scale;
+    var ask = NOTHING;
+    // The characters typed this frame go into the name before the head shows it.
+    if typed(w, g) { ask = CHANGED; }
     let edit = w.target >= 0 && !w.first;
     let holds = if !edit { 0 } else if ps.list.len > 1 { 2 } else { 1 };
     let wide = area.z > area.w && area.w < gui::PHONE * u;
@@ -267,7 +270,6 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
     if w.typing { r.y = min(r.y, area.y + EDGE * u); }
     card(g, r);
     var c = float4 { r.x + PAD * u, r.y + 20.0 * u, r.z - 2.0 * PAD * u, r.w - 44.0 * u };
-    var ask = NOTHING;
 
     var row = gui::cut_top(c, HEAD_H * u);
     gui::cut_top(c, GAP * u);
@@ -344,12 +346,9 @@ fn heading(g: gui::Gui&, c: float4&, key: i64) {
     gui::text(g, gui::SMALL, r, strings::get(key), 0.66, 0.03 * gui::FACE_DP[gui::SMALL] as f32 * u, gui::LEFT);
 }
 
-// The name's field in r: a pencil, then the name, or "Name" faint while there is none and
-// it isn't typed; a caret after it while it is. A tap brings up the keyboard; while it
-// is up the characters typed go into the name, Return closing it. True when anything
-// changed.
-fn field(w: Who&, g: gui::Gui&, r: float4) -> bool {
-    let u = g.scale;
+// While the keyboard is up the characters typed go into the name, Return closing it.
+// True when any came.
+fn typed(w: Who&, g: gui::Gui&) -> bool {
     var changed = false;
     for c in g.input.typed {
         guard w.typing else { break; }
@@ -358,6 +357,15 @@ fn field(w: Who&, g: gui::Gui&, r: float4) -> bool {
         else { players::add_char(w.name, c); }
         changed = true;
     }
+    return changed;
+}
+
+// The name's field in r: a pencil, then the name, or "Name" faint while there is none and
+// it isn't typed; a caret after it while it is. A tap brings up the keyboard (`typed`,
+// above, takes what it types). True when the tap came.
+fn field(w: Who&, g: gui::Gui&, r: float4) -> bool {
+    let u = g.scale;
+    var changed = false;
     gui::fill(g, r, float4 { 0.0, 0.0, 0.0, 0.18 }, 20.0 * u);
     if gui::tile(g, gui::WHO_IDS + 40, r, gui::NO_ICON, if w.typing { gui::CHOSEN } else { gui::QUIET }, 20.0) {
         w.typing = true;
