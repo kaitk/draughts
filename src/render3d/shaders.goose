@@ -529,11 +529,11 @@ let LIT_FRAG = """
         // black fill over them does.
         float dim = abs(v_kind.w) >= 1000.0 ? 0.0 : screen.z;
         result = vec4(to_srgb(color) * (1.0 - dim), v_alpha);
-        // The lookout's drained piece (a seed below 0): its color drained and a little
-        // darker, as the flat board's (src/app/draw.goose's `drained`).
+        // The lookout's drained piece (a seed below 0): its color drained, a little
+        // darker, and tinted red, as the flat board's (src/app/draw.goose's `marked`).
         if (v_kind.w < 0.0) {
             float grey = dot(result.rgb, vec3(0.2126, 0.7152, 0.0722)) * 0.66;
-            result.rgb = vec3((grey - 0.5) * 0.85 + 0.5);
+            result.rgb = min(vec3((grey - 0.5) * 0.85 + 0.5) * vec3(1.45, 0.68, 0.62), 1.0);
         }
     }
     """;

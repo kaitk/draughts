@@ -862,7 +862,7 @@ built or superseded; they are in git history before that day.
   own in the small face (Estonian's undo move, 2026-11-10). It is declared after undo move, so the controls' order in tests is
   back, settings, start over, undo move, the hint.
 - **The marks**, on the board (`board::fill`): a piece in danger is drained, its color
-  greyed and a little darker, solid and still (`Piece.ring.w`, `board::DRAINED`: CSS
+  greyed, a little darker, and tinted red, solid and still (`Piece.ring.w`, `board::DRAINED`: CSS
   `grayscale(1) brightness(0.66) contrast(0.85)` on its face and side in the piece shader,
   `draw.goose`'s `marked`); a crowning square is shaded toward a deep red, darkest along its edges as an
   inset shadow (`Marks.shade` in the board pass), under the other side's king as a dark,

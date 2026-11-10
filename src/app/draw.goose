@@ -360,13 +360,13 @@ let PIECE_FRAG = """
         over(light, fill(t * s - 0.035, w));
     }
     // The lookout's piece in danger, or its crowning ghost king (board::DRAINED): the color
-    // drained and a little darker, solid (CSS grayscale(1) brightness(0.66)
-    // contrast(0.85), prototypes/coach.html's `drain`); a hint's ghost (board::LIGHT)
-    // lighter.
+    // drained, a little darker, and tinted red for danger (CSS grayscale(1)
+    // brightness(0.66) contrast(0.85), prototypes/coach.html's `drain`, then the red); a
+    // hint's ghost (board::LIGHT) lighter.
     vec3 marked(vec3 c, float k) {
         if (k > 0.5) {
             float grey = dot(c, vec3(0.2126, 0.7152, 0.0722)) * 0.66;
-            return vec3((grey - 0.5) * 0.85 + 0.5);
+            return min(vec3((grey - 0.5) * 0.85 + 0.5) * vec3(1.45, 0.68, 0.62), 1.0);
         }
         return k < -0.5 ? mix(c, vec3(1.0), 0.2) : c;
     }
