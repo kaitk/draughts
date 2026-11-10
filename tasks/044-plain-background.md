@@ -1,6 +1,6 @@
 # 044: A plain background
 
-Status: in-progress
+Status: done
 
 A background without a photograph, as a choice in settings' Background row beside the
 seasons and by the date (the user, 2026-11-09). On the Galaxy A33 a build without the
@@ -25,8 +25,8 @@ or harmonics to make, so its first switch is shorter.
 - [x] On the tablet: the frame a switch between them takes (a theme change's 22 ms
       before), and the 3D board's switch, which runs only the photograph's steps: 22 ms,
       and one of 58 ms on some switches ("On the tablet")
-- [ ] On the tablet and the A33: the fade's look, banding in the dark fade, and the
-      switch's 58 × 68 dp halves under a child's finger
+- [x] On the tablet and the A33: the fade's look, banding in the dark fade, and the
+      switch's 58 × 68 dp halves under a child's finger (the user: perfect, 2026-11-10)
 
 ## Prototype
 

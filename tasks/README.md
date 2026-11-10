@@ -61,11 +61,10 @@ Open:
 - Release: 029 Google Play, 046 the App Store (after 043, iOS), 036 the announcement
   after the Play release.
 - Content and play: 037 the puzzle set by theme, 038 players.
-- The 3D board: 041 a carved spring board, 042 its frame cost, 044 a plain background,
+- The 3D board: 041 a carved spring board, 042 its frame cost, 044 a plain background (done, to archive),
   045 board styles to choose from.
 - Frames: 055 both boards locked to the display's rate on every device, 056 even pacing
-  where the frame fits but still drops (the iPhone), 057 at rest on every platform (done on iOS and the Mac;
-  Windows to measure).
+  where the frame fits but still drops (the iPhone), 057 at rest on every platform (done, to archive).
 - Later: 010 goose_gfx changes to propose upstream (alongside), 013 season effects, 014
   upscaled backgrounds, 026 the first start and tutorial.
 

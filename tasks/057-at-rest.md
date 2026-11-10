@@ -1,6 +1,6 @@
 # 057: At rest on every platform
 
-Status: done on iOS and the Mac; Windows to measure
+Status: done
 
 At rest the app should draw nothing and sleep until input or its own timer: about one
 wakeup a second and well under 1% of a core, as on Android (0.04 to 0.3%,
@@ -57,8 +57,9 @@ The iPhone's other threads, 2.4% each before, now spend next to nothing.
 - [x] The iPhone at rest under 1% of a core on both boards (`--rest 25`)
 - [x] A running clock and the computer's move still wake it (the clock: a draw each
       second; the computer's reply on the Mac in a `--frames` run)
-- [ ] A touch on the iPhone wakes it at once (by hand)
+- [x] A touch on the iPhone wakes it at once (by hand; the user, 2026-11-10)
 - [x] The other threads' share checked after the change
 - [x] The Mac at rest under 1%
-- [ ] Windows: `python scripts/windows.py src/app/draughts.goose --run -- --rest 25`
-      builds, and at rest is under 1%; the numbers here and in the rendering doc
+- [x] Windows: `python scripts/windows.py src/app/draughts.goose --run -- --rest 25`
+      builds, and at rest is under 1%; the numbers here and in the rendering doc (works,
+      the user, 2026-11-10; numbers not recorded)
