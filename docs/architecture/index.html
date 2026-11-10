@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draughts From Above</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tenor+Sans&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column like a field guide; diagrams break out a little wider. Palette: pine, birch, lamp-amber, a dark "board square". */
+:root {
+  --bg: #f3f4f1;
+  --paper: #ffffff;
+  --ink: #1d2422;
+  --muted: #5d6763;
+  --line: #d5dad6;
+  --pine: #2f5d50;
+  --pine-soft: #e3ece8;
+  --amber: #b86b12;
+  --amber-soft: #f8ead6;
+  --slate: #3c4a63;
+  --slate-soft: #e4e8f0;
+  --square: #2a302e;
+  --display: "Tenor Sans", "Gill Sans", "Trebuchet MS", sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141917; --paper: #1c2220; --ink: #e6ebe8; --muted: #9aa5a0; --line: #303a36;
+    --pine: #7fbfa8; --pine-soft: #1f2f2a; --amber: #e5a457; --amber-soft: #2f2416;
+    --slate: #a6b6d6; --slate-soft: #222a38; --square: #0e1211; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141917; --paper: #1c2220; --ink: #e6ebe8; --muted: #9aa5a0; --line: #303a36;
+  --pine: #7fbfa8; --pine-soft: #1f2f2a; --amber: #e5a457; --amber-soft: #2f2416;
+  --slate: #a6b6d6; --slate-soft: #222a38; --square: #0e1211; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--body); font-size: 1.06rem; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 4rem;
+}
+.wrap { max-width: 46rem; margin: 0 auto; }
+.wide { max-width: 60rem; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--display); font-weight: 400; text-wrap: balance; line-height: 1.2; }
+h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); margin: 0 0 .6rem; letter-spacing: .01em; }
+h2 { font-size: 1.75rem; margin: 3.5rem 0 .4rem; }
+h3 { font-size: 1.2rem; margin: 1.8rem 0 .3rem; }
+p { margin: .6rem 0; }
+code, .mono { font-family: var(--mono); font-size: .86em; }
+code { background: var(--pine-soft); color: var(--ink); padding: .05em .35em; border-radius: 4px; }
+.lede { font-size: 1.2rem; color: var(--muted); max-width: 40rem; }
+.eyebrow { font-family: var(--mono); font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--pine); }
+a { color: var(--pine); }
+
+/* Hero */
+header { padding-block: 3rem 1rem; display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: center; }
+.mini-board { display: grid; grid-template-columns: repeat(4, 22px); grid-template-rows: repeat(4, 22px); border: 2px solid var(--square); }
+.mini-board span { display: block; }
+.mini-board span:nth-child(8n+1), .mini-board span:nth-child(8n+3), .mini-board span:nth-child(8n+6), .mini-board span:nth-child(8n+8) { background: var(--square); }
+.mini-board span.p { position: relative; }
+.mini-board span.p::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: var(--amber); }
+@media (max-width: 520px) { header { grid-template-columns: 1fr; } .mini-board { display: none; } }
+
+.note {
+  background: var(--amber-soft); border-left: 3px solid var(--amber);
+  padding: .8rem 1rem; border-radius: 0 6px 6px 0; margin: 1.2rem 0;
+}
+.note b { color: var(--amber); }
+
+/* Steps (real sequences) */
+ol.steps { list-style: none; counter-reset: s; padding: 0; margin: 1rem 0; display: grid; gap: .55rem; }
+ol.steps > li {
+  counter-increment: s; position: relative; background: var(--paper);
+  border: 1px solid var(--line); border-radius: 8px; padding: .7rem 1rem .7rem 3.2rem;
+}
+ol.steps > li::before {
+  content: counter(s); position: absolute; left: .8rem; top: .7rem;
+  width: 1.7rem; height: 1.7rem; border-radius: 50%; display: grid; place-items: center;
+  font-family: var(--mono); font-size: .8rem; font-weight: 600;
+  background: var(--pine); color: var(--paper);
+}
+ol.steps > li.skip::before { background: var(--muted); }
+ol.steps .where { display: block; font-family: var(--mono); font-size: .78rem; color: var(--muted); margin-top: .15rem; }
+
+/* Layer diagram */
+.layers { display: grid; gap: .5rem; margin: 1.4rem 0; }
+.layer { display: grid; grid-template-columns: 7.5rem 1fr; gap: .8rem; align-items: stretch; }
+.layer .lab { font-family: var(--mono); font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); padding-top: .7rem; text-align: right; }
+.row { display: flex; flex-wrap: wrap; gap: .5rem; }
+.box {
+  flex: 1 1 10rem; min-width: 0; border-radius: 8px; padding: .55rem .8rem;
+  border: 1px solid var(--line); background: var(--paper);
+}
+.box b { font-family: var(--mono); font-size: .9rem; display: block; }
+.box small { color: var(--muted); font-size: .86rem; line-height: 1.35; display: block; }
+.box.gpu { background: var(--amber-soft); border-color: var(--amber); }
+.box.gpu b { color: var(--amber); }
+.box.pure b { color: var(--pine); }
+.box.side { background: var(--slate-soft); border-color: transparent; }
+.box.side b { color: var(--slate); }
+.legend { display: flex; flex-wrap: wrap; gap: 1rem; font-size: .88rem; color: var(--muted); }
+.legend i { display: inline-block; width: .9rem; height: .9rem; border-radius: 3px; vertical-align: -2px; margin-right: .35rem; border: 1px solid var(--line); }
+@media (max-width: 560px) {
+  .layer { grid-template-columns: 1fr; gap: .25rem; }
+  .layer .lab { text-align: left; padding-top: .4rem; }
+}
+
+/* Ownership tree */
+.tree { font-family: var(--mono); font-size: .84rem; line-height: 1.5; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 1rem 1.2rem; overflow-x: auto; white-space: pre; }
+.tree .k { color: var(--pine); font-weight: 600; }
+.tree .a { color: var(--amber); font-weight: 600; }
+.tree .c { color: var(--muted); }
+
+.twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 760px) { .twocol { grid-template-columns: 1fr; } }
+.twocol > div { min-width: 0; }
+
+/* Threads SVG */
+.fig { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 1rem; margin: 1.2rem 0; overflow-x: auto; }
+.fig svg { display: block; width: 100%; min-width: 640px; height: auto; }
+.fig .lane { fill: var(--bg); stroke: var(--line); }
+.fig .lane-t { fill: var(--ink); font: 600 13px var(--body); }
+.fig .lane-s { fill: var(--muted); font: 12px var(--body); }
+.fig .blk { fill: var(--pine-soft); stroke: var(--pine); }
+.fig .blk-a { fill: var(--amber-soft); stroke: var(--amber); }
+.fig .blk-s { fill: var(--slate-soft); stroke: var(--slate); }
+.fig .bt { fill: var(--ink); font: 12px var(--mono); }
+.fig .arrow { stroke: var(--ink); stroke-width: 1.4; fill: none; }
+.fig .arrow-a { stroke: var(--amber); stroke-width: 1.6; fill: none; }
+.fig .at { fill: var(--amber); font: 600 12px var(--mono); }
+.fig .ah { fill: var(--ink); }
+.fig .aha { fill: var(--amber); }
+.fig figcaption { font-size: .9rem; color: var(--muted); margin-top: .6rem; }
+
+table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+th, td { text-align: left; padding: .45rem .6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--mono); font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 400; }
+td:first-child { font-family: var(--mono); font-size: .86rem; white-space: nowrap; color: var(--pine); }
+
+footer { margin-top: 4rem; color: var(--muted); font-size: .88rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+</style>
+
+
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <div class="eyebrow">Draughts · how it hangs together</div>
+    <h1>Draughts from above</h1>
+    <p class="lede">What happens from the moment you tap the icon, what the one big loop does up to a hundred and twenty times a second (or not at all), who owns what, and which threads talk to which. Plain words. You can follow it with the code open next to you.</p>
+  </div>
+  <div class="mini-board" aria-hidden="true">
+    <span></span><span class="p"></span><span></span><span></span>
+    <span></span><span></span><span></span><span class="p"></span>
+    <span></span><span></span><span class="p"></span><span></span>
+    <span></span><span></span><span></span><span></span>
+  </div>
+</header>
+
+<h2>The whole thing in five sentences</h2>
+<p>The app is <b>one program with one loop</b>. Each time round, the loop reads your finger, asks the current screen "what do you look like now, and did anything change?", and only if something did, it paints the picture.</p>
+<p>Everything that <i>thinks</i> (the rules, the board, the game, the screens, the layout) is plain code that knows nothing about the screen or the GPU. Everything that <i>paints</i> sits behind <b>one renderer</b>, <code>src/app/render.goose</code>, which the loop calls once a frame; everything that talks to the phone or the window sits behind <b>the host</b>, <code>src/app/host.goose</code>.</p>
+<p>The computer opponent thinks on <b>its own thread</b>, so the screen never freezes while it ponders. They pass notes through two queues.</p>
+<p>When nothing moves, the app sleeps. A ticking clock sets an alarm to wake it at the next second. That is why the battery lasts.</p>
+<p>That is it. The rest is detail, and there is quite a lot of detail.</p>
+
+<h2>1. Waking up</h2>
+<p>All of this is in <code>main()</code> in <code>src/app/draughts.goose</code>, before the loop starts. It runs once. <code>main()</code> never calls the graphics library itself: it asks <code>host</code> for the platform and <code>render</code> for the pictures.</p>
+<ol class="steps">
+  <li>Read the <b>developer flags</b> (<code>--screen game</code>, <code>--fen …</code>, <code>--frames 30</code> and so on). On a phone there are none, so everything takes its normal value.<span class="where">flags::parse · src/app/flags.goose</span></li>
+  <li>Ask the system for the <b>storage folder</b>, then read the players and the playing player's settings from it.<span class="where">host::storage (storage.c) · players::load</span></li>
+  <li>Pick the <b>language</b>: the player's choice, else the first of the phone's languages that has a file, else English. Load the <b>puzzles</b> for the chosen draughts.<span class="where">host::locales · strings::pick, strings::use · puzzles::load</span></li>
+  <li>Ask <b>which platform</b> this is (desktop, Android, iOS). Phones get a full-screen window, and on iOS home has no "close" button because iOS apps never close themselves.<span class="where">host::platform (launch.c)</span></li>
+  <li><b>Open the window and the GPU</b>. On Windows, first tell SDL to use Vulkan. This is the first time anything graphical happens.<span class="where">host::open → draughts_choose_gpu (display.c), gfx::open</span></li>
+  <li>Make the <b>Shell</b>, the value that holds every screen and the game. Give it the player's settings, let the developer flags set up a game if they ask for one, then restore the <b>saved game</b> if there is one. A brand-new install opens on the "pick your badge" sheet.<span class="where">shell::new · shell::launch · dev::setup · shell::open → read_game, who::first_run</span></li>
+  <li>Make the <b>renderer</b>. It makes all the painters at once: the flat-board drawer (it loads the season's photograph), the 3D-board drawer (empty for now; it gets ready a step at a time later), the UI drawer, and the text's state. Then the thinker (no thread yet).<span class="where">render::new → draw::new, draw3d::Drawer, widgets::new, text::Text · think::Thinker</span></li>
+</ol>
+<div class="note"><b>Worth knowing.</b> The computer's thread does not start here. It starts the first time the game actually asks for a move, so a game between two kids on one tablet never pays for the 6 MB search engine.</div>
+
+<h2>2. The loop, once round</h2>
+<p><code>while host::frame() { … }</code>. One pass is one "frame". <code>host::frame()</code> shows the picture the last pass painted, then waits. If the last pass painted nothing, it waits for an event (a touch, a timer) for up to a second. So an idle app really is idle.</p>
+<ol class="steps">
+  <li><b>Housekeeping for the window.</b> Lost focus? Save the game now, because Android may kill a paused app without asking. Pause the clocks on phones. If the season changed two frames ago, load its photograph now.<span class="where">shell::write_game · shell::pause · render::reload</span></li>
+  <li><b>Did the screen change?</b> New size, rotated, a different notch or gesture bar, different display scale: any of these marks the frame "dirty". If the scale changed, bake the font again at the new size.<span class="where">host::screen_size · host::read_display (display.c) · gui::scale_of · render::upload_text</span></li>
+  <li><b>Read the finger.</b> Position, down, pressed, released, wheel; and typed letters if a name is being typed. Packed into a small <code>gui::Input</code> value and handed to the UI layer.<span class="where">host::input · gui::begin</span></li>
+  <li><b>Back button or Escape.</b> Go back a screen. On home's menu, Android's back puts the app in the background; Escape on the Mac ends the program.<span class="where">host::back · shell::back · host::leave</span></li>
+  <li><b>Is the 3D board ready?</b> If the player chose the 3D board, the renderer prepares it one step per frame so no frame stalls. Until it is ready the screen shows a still mark in its place. If the player went back to flat, the 3D board's memory is given back.<span class="where">shell::board3d · render::ready3d, render::shown3d · render::drop3d</span></li>
+  <li><b>The screen declares itself.</b> This is the heart. <code>shell::frame</code> calls the current screen (home, settings, the game, the puzzle list, a puzzle). The screen lays out its rectangles, declares its buttons, and handles the finger. A press that lands on a button belongs to the button; only otherwise does the board get it. Out comes a <code>shell::Frame</code>: what changed, where the board goes, how blurred the photograph is, and more (section 3).<span class="where">shell::frame → declare → home_screen / game_screen / settings_screen / picker_screen / puzzle_screen</span></li>
+  <li><b>Pass notes to the computer.</b> If the game now wants a move, put the question on the worker's queue. If an answer has arrived, give it to the game.<span class="where">think::frame</span></li>
+  <li><b>Settings changed?</b> The shell's frame says so (<code>save</code>). Write the player's file, switch language if needed, and schedule a new season photograph two frames later (so the tapped tile can light up first, before the 80 ms load).<span class="where">players::write · shell::wrote · season_in</span></li>
+  <li><b>Paint, only if needed.</b> If something changed or still moves: the board fills its draw lists, the loop packs everything the renderer needs into one <code>render::Frame</code>, and <code>render::frame</code> paints it all (section 4). Otherwise: nothing is drawn at all.<span class="where">shell::fill · render::Frame · render::frame</span></li>
+  <li><b>Set the alarm.</b> If a clock is running, or the computer's move is due, or a hint is on its way, set a timer to wake the loop exactly then.<span class="where">shell::wake_in → clock::until_next, game::due · host::wake_in (wake.c)</span></li>
+</ol>
+<p>Developer tooling, the benchmarks (<code>--bench</code>), the idle measurement (<code>--rest</code>), scripted taps (<code>--tap</code>), and screenshots (<code>--frames</code>), lives in <code>src/app/dev.goose</code>. The loop calls it at a few fixed points (<code>dev::before</code>, <code>dev::after_shell</code>, <code>dev::drawing</code>, <code>dev::drawn</code>, <code>dev::after</code>), and with no flags given each call does nothing. On a real phone none of it runs.</p>
+
+<h2>3. What a screen hands back</h2>
+<p>The screens never reach out and change the app. Each frame they <b>return</b> what happened, and the loop decides what to do with it. Three pieces make that work.</p>
+<h3>The screen table</h3>
+<p>There are five screens: home, the game, settings, the puzzle list (the picker), and one puzzle. What sets them apart, where the shell runs none of their code, is one row each in a table, <code>shell::KINDS</code>. A row (<code>shell::Kind</code>) says whose board the screen shows, how blurred the photograph is behind it, where back goes, and which screens it slides to and from. The screens' own code is picked in one <code>match</code> (<code>screen_frame</code>). A new screen is a row in the table and an arm in the match.</p>
+<h3>The game's events</h3>
+<p><code>game::frame</code> returns a <code>game::Event</code>: where to go (stay, home, settings), whether a game against the computer just ended and how, whether it was started over, and whether the lookout's eye was turned on or off. The shell reads it: it adapts the computer's level to how the child did, counts the game, and switches screens. No flag is set in one place and cleared in another.</p>
+<h3>The shell's frame</h3>
+<p><code>shell::frame</code> returns a <code>shell::Frame</code>, filled anew every frame. The loop only reads it:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Field</th><th>Means</th></tr></thead>
+<tbody>
+<tr><td>changed</td><td>Anything on screen changed, so paint.</td></tr>
+<tr><td>screen, shows</td><td>The screen showing, and the one whose board shows (in a slide between home and settings, home's).</td></tr>
+<tr><td>layout, over</td><td>Where the board is, and the pieces drawn over the UI.</td></tr>
+<tr><td>blur, hole, tall</td><td>How blurred the photograph is, and the hole cut in the UI for the board passing through in a slide.</td></tr>
+<tr><td>raised, view, place, fade, hold</td><td>The 3D board: on or off, its camera, where its picture goes and how opaque, and whether to keep the picture as drawn during a slide.</td></tr>
+<tr><td>typing, keyboard</td><td>A name is being typed: keep the keyboard up.</td></tr>
+<tr><td>save, quit</td><td>Write the settings; home's way out was tapped.</td></tr>
+</tbody></table></div>
+
+<h3>Layouts as regions</h3>
+<p>Before a screen declares anything, a pure function works out where everything goes. It only measures: it draws nothing and changes nothing.</p>
+<ul>
+  <li><b>The game screen's panels.</b> <code>panel::layout_in</code> gives a <code>panel::Layout</code> with a <b>mode</b>: <code>LANDSCAPE</code> (columns beside the board), <code>PORTRAIT</code> (bars above and below), or <code>COMPACT</code> (a small window, icons only). The parts that change while you play are worked out each frame from it: <code>panel::way_out</code> gives an <code>Out</code> (where back, the eye and the hint go), and one function per mode, <code>column_play</code>, <code>compact_play</code>, or <code>portrait_play</code>, gives a <code>Play</code> (the clocks, whose turn, undo). Then <code>panel::game</code> declares them all in one order, whatever the mode.</li>
+  <li><b>Settings.</b> <code>settings::layout</code> returns a <code>settings::Page</code>: the heading, the tabs, the glass panels, the preview board, and a <code>settings::Fit</code> (how wide the row names are, and whether the theme's tiles are slim). The rows and tiles take the <code>Fit</code> as an argument.</li>
+</ul>
+
+<h2>4. The renderer</h2>
+<p><code>render::Renderer</code> holds every painter and everything they keep on the GPU. The loop hands it a <code>render::Frame</code> of plain values: the board as <code>shell::fill</code> left it, its layout, the pieces over the UI and the UI's quads (as slices), the 3D board's camera, the blur, the hole, the time, and the screen's size. <code>render::frame</code> then paints, always in the same order:</p>
+<ol class="steps">
+  <li><b>Work that can't happen on the screen.</b> Copy the UI's quads up, draw the 3D board's picture into its own texture if the 3D board is on, and copy up the pieces.<span class="where">widgets::prepare · draw3d::frame · draw::upload</span></li>
+  <li><b>Open the screen's pass.</b><span class="where">gfx::begin_pass</span></li>
+  <li><b>The background and the board.</b> Flat: the photograph, the squares and the pieces. 3D: the photograph, then the 3D board's picture laid over it.<span class="where">draw::board · or draw::photo, draw3d::show</span></li>
+  <li><b>The UI, then the pieces flying over it.</b><span class="where">widgets::frame · draw::overlay</span></li>
+  <li><b>Close the pass.</b> The next <code>host::frame()</code> shows it.<span class="where">gfx::end_pass</span></li>
+</ol>
+<h3>Pixels handed over from C</h3>
+<p>A few jobs are done in C: decoding the season's photograph, the cover a Mac window shows while you drag its edge. The C code never touches the GPU. It hands pixels over, and the renderer uploads them.</p>
+<ul>
+  <li><code>background.c</code> fills a <code>draughts_pixels</code> (<code>photo.h</code>) that points straight into the photograph's compressed blocks baked into the app, or into the decoded JPEG. The renderer's own C, <code>photo.c</code>, uploads them (<code>draughts_photo</code>) and gives them back (<code>draughts_photo_done</code>). No copy is made on the way.</li>
+  <li><code>resize.c</code> takes pixels the renderer reads back (<code>draw::cover_with</code>), and only where a cover shows at all (<code>draughts_resize_covers</code>: the Mac).</li>
+  <li>The font's glyphs (<code>text::bake</code>) and the badges' animals (<code>badges::atlas</code>) come out as one byte per pixel, built in Goose; <code>widgets</code> uploads both.</li>
+</ul>
+
+<h2>5. Who owns what</h2>
+<p>Think of it as floors in a house. Each floor may use the floors below it, never the ones above. Only the top floor touches the GPU.</p>
+</div>
+
+<div class="wide">
+<div class="layers" role="img" aria-label="Package layers from rules at the bottom to app at the top">
+  <div class="layer"><div class="lab">Paints</div><div class="row">
+    <div class="box gpu"><b>app/</b><small>main loop · host (window, input, the phone's C) · render, and its drawers: draw (flat board), draw3d, widgets (UI quads), scene (photo, blur) · text (font) · theme · think (worker) · dev (benchmarks, screenshots)</small></div>
+    <div class="box gpu"><b>render3d/</b><small>the 3D board on the GPU: shaders, buffers, the shadow map, multisampling, the theme's bake</small></div>
+  </div></div>
+  <div class="layer"><div class="lab">Screens</div><div class="row">
+    <div class="box pure"><b>shell/</b><small>the screen table, slides, saving · home · settings · picker · puzzle · who · players</small></div>
+  </div></div>
+  <div class="layer"><div class="lab">The game</div><div class="row">
+    <div class="box pure"><b>game/</b><small>the game screen: panels and their regions, clocks, the computer's pace, the ending</small></div>
+    <div class="box pure"><b>gui/</b><small>the UI layer: rect cuts, stacks, buttons, text layout; spits out quads</small></div>
+  </div></div>
+  <div class="layer"><div class="lab">The board</div><div class="row">
+    <div class="box pure"><b>board/</b><small>position on screen, taps and drags, move animation, draw lists · view3d (3D camera, picking) · rig</small></div>
+    <div class="box pure"><b>ai/</b><small>the computer: search in slices, evaluation, levels, the lookout</small></div>
+    <div class="box pure"><b>puzzles/</b><small>puzzle table and the solver that checks a move</small></div>
+  </div></div>
+  <div class="layer"><div class="lab">Ground</div><div class="row">
+    <div class="box pure"><b>rules/</b><small>draughts itself: variants, positions as a few u64, legal moves, FEN, draws</small></div>
+    <div class="box pure"><b>model3d/</b><small>the 3D board's shapes and looks as numbers: meshes, colours, lighting, the bake's plan</small></div>
+    <div class="box side"><b>strings/</b><small>all the words, by key, per language</small></div>
+    <div class="box side"><b>badges/</b><small>animal badges baked to a distance field</small></div>
+  </div></div>
+</div>
+<div class="legend"><span><i style="background:var(--amber-soft);border-color:var(--amber)"></i>touches the GPU (gfx / SDL)</span><span><i style="background:var(--paper)"></i>pure: no graphics, tested headless</span><span><i style="background:var(--slate-soft)"></i>helpers anyone may use</span></div>
+</div>
+
+<div class="wrap">
+<p>The useful trick: the pure floors <b>fill flat arrays</b> (where each piece is, which squares glow, a list of UI rectangles) and the top floor just pours those arrays into the GPU. That is the whole contract between "thinking" and "painting": <code>board::Piece</code>, <code>board::Marks</code>, <code>board::Layout</code>, <code>gui::Quad</code>, <code>view3d::Scene</code>, and <code>theme::Theme</code>. That is why the tests can run a whole game with no window. <code>model3d</code> is the 3D board's half that needs no GPU, split from <code>render3d</code> so its sums are tested headless too.</p>
+
+<h3>The objects, as a family tree</h3>
+<p>Goose has structs, not classes. A struct holds data; functions in the same file work on it. "Owns" here means "is a field inside", so it is all one big value with no pointers between them.</p>
+</div>
+
+<div class="wide twocol">
+<div>
+<div class="tree"><span class="c">// the thinking side, all in one value</span>
+<span class="k">shell::Shell</span>               <span class="c">the whole app's state</span>
+├─ screen, from, since     <span class="c">which screen, slide</span>
+├─ <span class="k">game::Game</span>              <span class="c">the game being played</span>
+│  ├─ <span class="k">board::Board</span>          <span class="c">position, legal moves,</span>
+│  │  │                     <span class="c">undo, animation, draw lists</span>
+│  │  └─ rules::Position   <span class="c">a few u64 + side</span>
+│  ├─ clock::Clock
+│  ├─ computer, level, skill
+│  └─ asking / reply       <span class="c">the open question</span>
+├─ preview  board::Board   <span class="c">settings' small board</span>
+├─ next     board::Board   <span class="c">home's setup board</span>
+├─ puzzle   puzzle::Play
+├─ prefs    settings::Settings
+├─ players  players::Players
+├─ who      who::Who       <span class="c">badge / name sheet</span>
+├─ cam      rig::Rig       <span class="c">home's 3D board, dragged</span>
+└─ out      <span class="k">shell::Frame</span>   <span class="c">this frame's answer:</span>
+   ├─ layout board::Layout <span class="c">where the board is</span>
+   ├─ view   view3d::View  <span class="c">3D camera this frame</span>
+   └─ over   board::Overlay <span class="c">pieces over the UI</span></div>
+</div>
+<div>
+<div class="tree"><span class="c">// the painting side, locals in main()</span>
+<span class="a">rd  render::Renderer</span>
+    ├─ <span class="a">d  draw::Drawer</span>     <span class="c">flat board + photo</span>
+    │  └─ scene            <span class="c">photograph, blurs, colors</span>
+    ├─ <span class="a">d3 draw3d::Drawer</span>   <span class="c">3D board, kept image</span>
+    │  └─ render3d::…      <span class="c">GPU side; sums in model3d</span>
+    ├─ <span class="a">w  widgets::Widgets</span> <span class="c">UI quads, font, badges,</span>
+    │                      <span class="c">seasons' thumbnails</span>
+    └─ t  text::Text       <span class="c">the font's baked scale</span>
+h   host::Host             <span class="c">insets, typed text</span>
+dv  dev::Dev               <span class="c">the developer flags' state</span>
+
+<span class="c">// in between</span>
+<span class="k">g   gui::Gui</span>              <span class="c">this frame's quads,</span>
+                          <span class="c">input, press states</span>
+<span class="k">thinker think::Thinker</span>    <span class="c">worker's id, last ask sent</span>
+
+<span class="c">// how a frame uses them</span>
+host::input ──▶ <span class="k">g</span> ──▶ shell::frame(<span class="k">sh</span>, <span class="k">g</span>)
+                       │ returns
+                       ▼
+     <span class="k">sh</span>.out (shell::Frame), <span class="k">g</span>.quads
+                       │ packed into
+                       ▼
+     render::Frame ──▶ render::frame(<span class="a">rd</span>) ──▶ GPU</div>
+</div>
+</div>
+
+<div class="wrap">
+<h2>6. Threads: who talks to whom</h2>
+<p>Almost everything happens on <b>one thread</b>, the main one. That keeps life simple: no locks, no "who changed this behind my back". There is exactly one helper thread of our own, plus a timer that SDL runs for us.</p>
+</div>
+
+<div class="wide">
+<figure class="fig">
+<svg viewBox="0 0 900 360" role="img" aria-labelledby="thr-t">
+  <title id="thr-t">Threads: main loop, computer worker, SDL timer, and the system</title>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+    <marker id="aha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="aha" d="M0,0 L10,5 L0,10 z"/></marker>
+  </defs>
+  <!-- lanes -->
+  <rect class="lane" x="10" y="14" width="880" height="72" rx="8"/>
+  <text class="lane-t" x="24" y="38">System / OS</text>
+  <text class="lane-s" x="24" y="56">Android's Java side, iOS, the</text>
+  <text class="lane-s" x="24" y="72">GPU driver. Not ours.</text>
+
+  <rect class="lane" x="10" y="98" width="880" height="96" rx="8"/>
+  <text class="lane-t" x="24" y="124">Main thread</text>
+  <text class="lane-s" x="24" y="142">the loop: input, screens,</text>
+  <text class="lane-s" x="24" y="158">saving, all GPU calls</text>
+
+  <rect class="lane" x="10" y="206" width="880" height="72" rx="8"/>
+  <text class="lane-t" x="24" y="230">Computer's worker</text>
+  <text class="lane-s" x="24" y="248">started at the first ask,</text>
+  <text class="lane-s" x="24" y="264">sleeps on its queue</text>
+
+  <rect class="lane" x="10" y="290" width="880" height="56" rx="8"/>
+  <text class="lane-t" x="24" y="314">SDL timer</text>
+  <text class="lane-s" x="24" y="332">only the wake-up alarm</text>
+
+  <!-- system blocks -->
+  <rect class="blk-s" x="230" y="28" width="150" height="44" rx="6"/>
+  <text class="bt" x="244" y="48">touch, back,</text><text class="bt" x="244" y="63">pause / resume</text>
+  <rect class="blk-s" x="700" y="28" width="170" height="44" rx="6"/>
+  <text class="bt" x="714" y="48">GPU shows the</text><text class="bt" x="714" y="63">picture (Vulkan/Metal)</text>
+
+  <!-- main blocks -->
+  <rect class="blk" x="230" y="120" width="120" height="52" rx="6"/>
+  <text class="bt" x="244" y="142">host::frame</text><text class="bt" x="244" y="158">wait / input</text>
+  <rect class="blk" x="370" y="120" width="130" height="52" rx="6"/>
+  <text class="bt" x="384" y="142">shell::frame</text><text class="bt" x="384" y="158">screens decide</text>
+  <rect class="blk" x="520" y="120" width="140" height="52" rx="6"/>
+  <text class="bt" x="534" y="142">think::frame</text><text class="bt" x="534" y="158">post / collect</text>
+  <rect class="blk-a" x="700" y="120" width="170" height="52" rx="6"/>
+  <text class="bt" x="714" y="142">render::frame</text><text class="bt" x="714" y="158">only if dirty</text>
+
+  <!-- worker -->
+  <rect class="blk" x="430" y="222" width="300" height="40" rx="6"/>
+  <text class="bt" x="444" y="246">ai::step × 10 000 nodes, peek for newer ask</text>
+
+  <!-- timer -->
+  <rect class="blk-s" x="230" y="300" width="200" height="36" rx="6"/>
+  <text class="bt" x="244" y="322">host::wake_in(ms)</text>
+
+  <!-- arrows -->
+  <path class="arrow" d="M305,72 L295,118" marker-end="url(#ah)"/>
+  <path class="arrow" d="M350,146 L368,146" marker-end="url(#ah)"/>
+  <path class="arrow" d="M500,146 L518,146" marker-end="url(#ah)"/>
+  <path class="arrow" d="M660,146 L698,146" marker-end="url(#ah)"/>
+  <path class="arrow" d="M785,120 L785,74" marker-end="url(#ah)"/>
+  <path class="arrow-a" d="M560,172 L520,220" marker-end="url(#aha)"/>
+  <text class="at" x="456" y="200">Ask ▸ queue</text>
+  <path class="arrow-a" d="M650,220 L620,174" marker-end="url(#aha)"/>
+  <text class="at" x="642" y="200">◂ Thought</text>
+  <path class="arrow" d="M330,300 Q300,240 285,174" marker-end="url(#ah)"/>
+  <text class="lane-s" x="318" y="270">event ends the wait</text>
+  <path class="arrow" d="M640,172 Q560,260 432,318" marker-end="url(#ah)" stroke-dasharray="4 3"/>
+  <text class="lane-s" x="560" y="296">loop sets the alarm</text>
+</svg>
+<figcaption>The worker and the main thread share nothing. The only things that cross are two small values: a <code>game::Ask</code> (position, skill, seed, an id) going in, and a <code>think::Thought</code> (the move, the same id) coming back. If you take a move back while the computer thinks, a newer Ask arrives, the worker notices within about 2 ms and drops the old search. An answer whose id is no longer open is ignored.</figcaption>
+</figure>
+</div>
+
+<div class="wrap">
+<div class="tablewrap"><table>
+<thead><tr><th>Thread</th><th>Who starts it</th><th>What it does</th><th>How it talks</th></tr></thead>
+<tbody>
+<tr><td>main</td><td>SDL calls <code>main()</code></td><td>Everything: input, screens, layout, game logic, saving files, every GPU call.</td><td>—</td></tr>
+<tr><td>worker</td><td><code>think::frame</code>, at the first ask</td><td>The computer's move, a hint, or the lookout's traps. Owns its own search engine (6 MB table).</td><td><code>qput</code> / <code>qpoll</code> on Goose's typed queues</td></tr>
+<tr><td>SDL timer</td><td>SDL, on <code>host::wake_in</code></td><td>Pushes one event at the right moment, so a sleeping loop wakes for the clock's next second or the computer's due move.</td><td>an SDL event</td></tr>
+<tr><td>system</td><td>Android / iOS</td><td>Touch, lifecycle, the GPU driver's own threads. SDL turns them into events for the main thread.</td><td>SDL events</td></tr>
+</tbody></table></div>
+
+<h2>7. One tap, followed all the way</h2>
+<p>You play against the computer. You tap your piece, then the square to move to. Here is the trip.</p>
+<ol class="steps">
+  <li>The loop wakes on the touch. <code>host::input</code> reads it into a <code>gui::Input</code>, and <code>gui::begin</code> hands it to the UI layer.<span class="where">draughts.goose, the loop · host.goose</span></li>
+  <li><code>shell::frame</code> → <code>game_screen</code> → <code>game::frame</code>. The panels declare their buttons first (<code>panel::game</code>). Your finger is not on any of them, so the press goes to the board.<span class="where">shell.goose → game.goose → panel.goose</span></li>
+  <li><code>board::press</code> turns the point into a square (through the 3D camera's ray if the board is 3D), finds your piece among the legal moves and selects it. Its targets light up. The frame is dirty, so it gets painted.<span class="where">board.goose · view3d::pick for 3D</span></li>
+  <li>Second tap, on a target. <code>board::release</code> picks the move, starts the move's animation, and plays it on the position using <code>rules</code>.<span class="where">board.goose → rules.goose</span></li>
+  <li>The game notices the side to move changed, and that the computer plays it. It opens an "ask" with a fresh id. <code>game::frame</code> returns its <code>Event</code> (nothing to report: stay).<span class="where">game::frame, game::ask_for</span></li>
+  <li>Same frame, <code>think::frame</code> sees a new open ask. If there is no worker yet, it starts one. It drops the Ask in the queue.<span class="where">think.goose</span></li>
+  <li>The worker wakes, searches in slices of 10 000 positions, peeking between slices for a newer ask. Done: it posts a Thought.<span class="where">think's worker → ai::start_after, ai::step</span></li>
+  <li>Meanwhile the main loop keeps painting your piece's slide. A frame later <code>qpoll</code> finds the Thought; <code>game::answer</code> stores it. The game does not play it at once: it waits a human-like time first, so the computer doesn't look like a machine gun.<span class="where">game::answer · game/pace.goose</span></li>
+  <li>If nothing moves on screen, the loop sleeps, but first sets the alarm for when the move is due.<span class="where">shell::wake_in → game::due · host::wake_in</span></li>
+  <li>The alarm fires. The board animates the computer's move. The loop paints until it stops moving, then sleeps again.<span class="where">board animation · shell::animating</span></li>
+</ol>
+
+<h2>8. House rules everyone keeps</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Rule</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Nothing allocates in the loop</td><td>Memory for a frame lives in fixed arrays sized at the start. No garbage, no hiccups.</td></tr>
+<tr><td>Draw only on change</td><td>A still screen costs nothing. Battery is the main feature nobody sees.</td></tr>
+<tr><td>Game state is a value</td><td>A position is a few numbers. Undo is a stack of them; saving is writing the value (about 15 KB) with a checksum.</td></tr>
+<tr><td>Only render paints</td><td><code>main()</code> calls <code>host</code> and <code>render</code>, never the graphics library. The rest is tested headless, and a different renderer could replace <code>render</code> and its drawers without touching the rest.</td></tr>
+<tr><td>Screens return, not reach</td><td>A screen hands back a <code>shell::Frame</code>, the game a <code>game::Event</code>. Nobody sets a flag for someone else to clear.</td></tr>
+<tr><td>No text in code</td><td>Every word comes from <code>strings/en.txt</code>, <code>et.txt</code>, … by key.</td></tr>
+<tr><td>Assets are baked in</td><td>Shaders, fonts, puzzles, photographs live inside the binary. No file loading on the phone except the player's own files.</td></tr>
+</tbody></table></div>
+
+<h2>9. Odd words you'll meet in the code</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Word</th><th>Means</th></tr></thead>
+<tbody>
+<tr><td>shell</td><td>The thing that holds all screens and switches between them. Not a terminal.</td></tr>
+<tr><td>host</td><td>The window, the clock, the finger, the keyboard, and the phone's own calls: everything the app asks of the platform.</td></tr>
+<tr><td>Frame</td><td>Two of them. <code>shell::Frame</code> is what the screens hand back; <code>render::Frame</code> is what the loop hands the renderer.</td></tr>
+<tr><td>declare</td><td>A screen "declares" its buttons each frame, immediate-mode style: if the code calls <code>button()</code> this frame, the button exists this frame.</td></tr>
+<tr><td>Kind</td><td>One screen's row in the screen table: its board, its blur, where back goes.</td></tr>
+<tr><td>Event</td><td>What the game tells the shell after a frame: go somewhere, a game ended, started over.</td></tr>
+<tr><td>dirty</td><td>Something changed; paint this frame.</td></tr>
+<tr><td>raised</td><td>The 3D board is on.</td></tr>
+<tr><td>over / Overlay</td><td>Pieces drawn on top of the UI, like a piece flying into a panel when captured.</td></tr>
+<tr><td>hole</td><td>A cut-out in the UI where the board passes through during a slide between screens.</td></tr>
+<tr><td>panel</td><td>The strips beside the board on the game screen: whose turn, clocks, buttons.</td></tr>
+<tr><td>mode</td><td>How the panels sit: landscape columns, portrait bars, or compact icons.</td></tr>
+<tr><td>Out / Play</td><td>The panels' two groups of places: the way out (back, the eye, the hint), and the play (clocks, turn, undo).</td></tr>
+<tr><td>Page / Fit</td><td>Where settings' parts go, and how its rows fit the width.</td></tr>
+<tr><td>cover</td><td>What a Mac window shows in the strip it gains while you drag its edge, before the app draws again.</td></tr>
+<tr><td>rig</td><td>The 3D camera's swing and tilt when you drag the showcase board on home.</td></tr>
+<tr><td>Ask / Thought</td><td>A question to the computer, and its answer.</td></tr>
+<tr><td>lookout</td><td>The helper that warns a child about pieces the opponent could win.</td></tr>
+<tr><td>season / theme</td><td>The background photograph and colours: winter, spring, summer, autumn, by date unless chosen.</td></tr>
+</tbody></table></div>
+
+<footer>Written from <code>src/app/draughts.goose</code>, <code>host.goose</code>, <code>render.goose</code>, <code>think.goose</code>, <code>src/shell/shell.goose</code>, and <code>src/game/</code>. The loop's exact order is in <code>main()</code>; when this page and the code disagree, the code is right. The detail is in the <a href="https://github.com/kaitk/draughts/tree/main/docs/architecture">architecture's Markdown pages</a>, and the decisions behind it in <a href="https://github.com/kaitk/draughts/tree/main/docs/decisions">the decisions</a>.</footer>
+</div>
+</body>
+</html>

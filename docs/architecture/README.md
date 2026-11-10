@@ -1,7 +1,9 @@
 # Architecture
 
 The decisions the code follows, and why. This file holds the stack, how the code is laid
-out, and the rules every part of it keeps. The rest is by area:
+out, and the rules every part of it keeps. [Draughts from above](index.html) tells the
+whole app in plain words: the start-up, the loop, the packages, and the threads. The rest
+is by area:
 
 - [rules.md](rules.md): draughts variants and how the engine represents them
 - [ai.md](ai.md): the computer player, its search, and how its levels play like a person

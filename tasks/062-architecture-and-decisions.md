@@ -1,6 +1,6 @@
 # 062: Architecture for people, decisions for agents
 
-Status: todo
+Status: in-progress
 
 After task 061. `docs/architecture/` mixes two things: how the app works now, and the
 dated decisions with their reasons, what was rejected, and the measurements behind them.

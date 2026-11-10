@@ -82,7 +82,9 @@ Release builds in a game, 2026-11-10, frames as they reached the screen:
   time, so a position gives the same move on every machine. Each level sees a fixed
   number of plies and picks among the good moves it sees, as a person of that level would.
 
-More in [docs/architecture/](docs/architecture/README.md): [rendering](docs/architecture/rendering.md),
+The whole app in plain words, from launch to one tap followed to the computer's reply:
+[Draughts from above](docs/architecture/index.html). More in
+[docs/architecture/](docs/architecture/README.md): [rendering](docs/architecture/rendering.md),
 [rules](docs/architecture/rules.md), [computer player](docs/architecture/ai.md),
 [puzzles](docs/architecture/puzzles.md).
 
@@ -158,6 +160,8 @@ tasks/        the work, one file per task
 ## Documentation
 
 - [Product](docs/product.md): what the app is for, the MVP, and what follows
+- [Draughts from above](docs/architecture/index.html): the app's start-up, loop, packages,
+  and threads, in plain words
 - [Architecture](docs/architecture/README.md): the decisions and their reasons
 - [Development](docs/development.md): the toolchain, building, running, and testing
 - [Goose findings](docs/goose-findings.md): gaps found in Goose and goose_gfx, and the

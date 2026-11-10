@@ -1,6 +1,6 @@
 # 06: The overview page, brought up to date
 
-Status: todo
+Status: done (2026-11-10)
 
 After stage 4, once the code has its new shape. "Draughts from above" is a plain-words
 HTML page about the app:
@@ -38,7 +38,20 @@ above.
 
 ## Acceptance criteria
 
-- [ ] The page matches the code after stage 4: every cited name exists
-- [ ] It is in the repo, linked from both READMEs, and opens from `file:///` with no
+- [x] The page matches the code after stage 4: every cited name exists
+- [x] It is in the repo, linked from both READMEs, and opens from `file:///` with no
       broken parts
-- [ ] It is on GitHub Pages (may wait for task 029's Pages setup)
+- [ ] It is on GitHub Pages (may wait for task 029's Pages setup): task 062's step 3
+
+## Outcome
+
+Step 1 done at `ffffb8c`: start-up and the loop through `host` and `render`, `dev`'s
+fixed points, a section on what a screen hands back (the screen table, `game::Event`,
+`shell::Frame`, the panel's and settings' layouts), one on the renderer (`render::frame`'s
+order and the pixels from C), `model3d` among the floors, and the ownership tree with
+`render::Renderer`. Every `pkg::name` it cites was checked by grep against its namespace.
+
+Step 2 went to task 062's path instead, `docs/architecture/index.html`, linked from
+`README.md` and `docs/architecture/README.md`; it has no `docs/overview/`. Checked with
+agent-browser from `file:///`: no errors, no page-wide horizontal scroll at 390 px, and
+dark mode. Step 3 is task 062's.

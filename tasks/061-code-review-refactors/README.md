@@ -67,7 +67,8 @@ Left out on purpose:
 - [x] Stage 3: the panel's layout as regions with a mode; `gui::stack` in use; home and
       settings with pure layout functions
 - [x] Stage 4: `main` calls no gfx drawing; one `render::frame`; C decoders return pixels
-- [ ] The overview page updated to the new code and in the repo
+- [x] The overview page updated to the new code and in the repo
+      (`docs/architecture/index.html`, `06-overview-page.md`)
 - [ ] Idle CPU, frame times, and the photograph's load on the Mac and the A33, measured
       once at the end against `6bf54c8`, none noticeably worse
       (2026-11-10: only the photograph's load and one flat bench on the Mac, in
