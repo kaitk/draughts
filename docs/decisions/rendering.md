@@ -127,3 +127,118 @@ against it and close to spring's sage.
 The pieces' soft light from above and toward the top was chosen on 2026-11-07. A strong
 light pool and, with the tabletops, a crafted board with a soft light were tried that day
 and set aside.
+
+### Controls
+
+The prototypes `back.html`, `win.html`, `draw.html`, `gear.html`, `exit.html`,
+`puzzles.html`, and `chip.html` were removed on 2026-11-10 once built or superseded; they
+are in git history before that day.
+
+**The game screen**
+
+- `prototypes/game.html`, chosen 2026-11-07 over three other takes: each control a glass
+  tile with an icon and a word, as on home, since icons alone (three arrows for undo,
+  restart, and back) confused.
+- Landscape only where the flat board fills at least about 2/3 of the height, else
+  portrait (2026-11-09): a near-square window's landscape had a small board between
+  square-ish panels.
+- The flat game's controls are the 3D screen's (2026-11-09, task 054): the UI round the
+  board only, the boards untouched. The board stayed as it was, and the flat screen's
+  corner panels near square are no wider than the old panels, 192 dp.
+- Landscape panels narrow to 192 px where the board would be under 720 px (2026-11-08).
+  Rows are 88 px, the floor for small hands (2026-11-08). Portrait's bar tiles take each
+  word's width and an even share of the rest where thirds don't fit (2026-11-08).
+- The child's pieces are at the bottom against the computer, the board turned when the
+  child plays black (2026-11-08).
+
+**The way back** (`back.html`'s take b, chosen 2026-11-09 over a, the arrow alone): one
+control on every screen that leaves. It replaced buttons named for where they went
+("Home" on the game, "Puzzles" on a puzzle), which children read as different controls,
+and a bare arrow on the puzzles and settings; take back became "Undo move" ("Võta käik
+tagasi") so it says it is about the move, not the screen. On a phone in landscape
+settings' title row is wider for it: the preview board went from 431 to 400 dp at 540 dp,
+and from 285 to 219 in Estonian at 480 with the Pixel's insets.
+
+**Clocks**: black's clock runs only after white's first move (2026-11-08), so a child can
+settle before anything counts. The running clock's gold under a minute and red at 0:20
+came on 2026-11-09.
+
+**A draw** (`draw.html`'s take a, chosen 2026-11-09).
+
+**Home**
+
+- `prototypes/home.html`, chosen 2026-11-07 over the icon tiles and two other takes.
+- The bare gear in portrait (`gear.html`'s take a, chosen 2026-11-08). Rejected: the
+  88 dp quiet tile, which looked too big beside the wordmark, and the X's round glass
+  button, which the X itself later left. The wordmark's letters close up where the gear
+  leaves them too little room (2026-11-08).
+- The menu's rows close up from 2 dp apart to about 1 where the gear's reach doesn't fit
+  (2026-11-10): the Pixel 7a in landscape had overlapped Continue's tap.
+- The X closes the app (`exit.html`'s take b, chosen 2026-11-08 as a round glass button;
+  made a bare X, `gear.html`'s `x=d`, on 2026-11-09 to match the bare gear). Rejected: a
+  quiet last row, which would take the portrait board's room and lengthen the sheet
+  phones can't fit; a door, which reads less surely at 34 dp; and a power sign, which
+  suggests turning the tablet off.
+- The board keeps 40 dp above and below, down to 24 where a setup's tall sheet near
+  square would leave it under 40% of the width (2026-11-08).
+- The setups (2026-11-08): the child's colour against the computer, every tile 88 dp tall
+  at least, two columns in a landscape too short for one, ending on one line, the
+  draughts' tiles taking their names' width with an even share of the rest, and the
+  setup's board switching at once rather than crossfading. Easy is the default level for
+  a new player (2026-11-09).
+- The language is only in settings (2026-11-07): kids who can't read yet don't need it on
+  home, and a tablet set to one language can still play in another.
+
+**Settings** (`prototypes/settings.html`, regrouped 2026-11-07)
+
+- The tutorial's row (one tile, learn the moves) comes with the tutorial, taken out until
+  then so the tablet's landscape shows both groups (2026-11-09).
+- The privacy note's place, at the group's title row or the glass's foot, so it moves no
+  layout (2026-11-09).
+- The theme's tiles, by the date last, so the four seasons keep one row on a phone
+  (2026-11-08). Every tile 88 px tall and wide at least (2026-11-08).
+- Where the choices have 60 dp to spare (16:9 and wider), every name's column widens to
+  the switch's 180 dp (2026-11-09): the board beside them went from 639 to 583 dp there.
+- Near square the names go above the tiles and the column narrows (2026-11-08); where
+  that fails, the board goes on top with the groups side by side under it, so a widening
+  window goes from portrait to landscape without tabs between (2026-11-09, task 050).
+- The tabs stand on glass (2026-11-09): a plain tile alone was hard to read over a bright
+  photograph. In portrait a group's glass is its own height (2026-11-09): the game's
+  glass as tall as the look's had ended in empty glass under its rows.
+- Back over its word in portrait (2026-11-08, 2026-11-09): at 548 dp "Settings" had
+  61 dp beside the worded back and the language, and "Seaded" 45 and was left out.
+
+**The puzzle picker** (`puzzles.html`'s take a, a library list, chosen 2026-11-09).
+Rejected: b's large theme tiles, which shrink long Estonian names and hold the fewest
+themes a screen, and c's library beside the theme, which needs two scrolling panes.
+
+- The library's rows are glass lit only while pressed (2026-11-09): a plain tile barely
+  showed over the photograph.
+- The rows' marks and stars, `prototypes/puzzle-set.html`'s take b (2026-11-09), its
+  Continue row and "Next: Easy 3" left out.
+- The draughts switch, `prototypes/puzzle-set.html`'s take a (2026-11-09). Rejected: b's
+  name under the title opening a list, and c's setup tiles with the themes as a grid.
+- The title is shadowed (2026-11-09), as it sat partly over spring's and autumn's birch
+  bark at the tablet's and iPad's sizes; until the switch it was left out in landscape
+  under 600 dp tall.
+- In a tablet's landscape the rows take the whole width (2026-11-09); they had kept clear
+  of back's column too, which pushed them against the right edge: 183 dp left of them, 27
+  right at 16:9.
+
+**A puzzle** (`prototypes/puzzle.html`, take c, chosen 2026-11-08). A selected piece's
+targets never show (2026-11-08). The turn piece beside the goal in a short landscape panel
+(`turn=a`, chosen 2026-11-09 over `turn=b`, beside everywhere, since over the goal the
+tablet shows it as the game does).
+
+**Players** (`prototypes/profiles.html`, take a, chosen 2026-11-09)
+
+- The name on a glass pill (2026-11-09, `chip.html`'s take d), so it reads on a bright
+  photograph.
+- The chip mirrors the X (2026-11-09, after the tablet). This gave back the room first
+  kept above the board for the chip (`badges.html?home=2`, where it stood above the
+  board's top left corner): the tablet's landscape board is back at 120 dp from the top,
+  the foldable's portrait went from 339 to 411 dp, 4:3's portrait 407 to 479, a 20:9
+  phone's landscape at 480 dp 328 to 336 (291 to 299 with the Pixel 7a's insets, 346 to
+  349 at 540 dp).
+- A badge is home's king with its animal in the crown's place (2026-11-09, `badges.html`
+  direction 1).

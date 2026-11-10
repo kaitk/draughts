@@ -346,8 +346,8 @@ the prototype tried, kept for 3D:
 ### Controls
 
 The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
-`gear.html`, `exit.html`, `puzzles.html`, `chip.html`) were removed on 2026-11-10 once
-built or superseded; they are in git history before that day.
+`gear.html`, `exit.html`, `puzzles.html`, `chip.html`) are in git history only
+([where](../decisions/rendering.md#controls)).
 
 - **Buttons** are glass tiles: white at 10%, 16% when hovered, 24% while pressed (and
   scaled to 0.96), with an inset 1 px border of white at 20% and a top highlight; radius
@@ -359,25 +359,22 @@ built or superseded; they are in git history before that day.
   puzzle themes' target, crown, and shield; the 3D camera's buttons' board from above, board
   in perspective, magnifier with + or -, and board on an orbit. The home tiles' icons are filled shapes,
   which read better large: two figures, a robot head, a jigsaw piece.
-- **Game screen** (`prototypes/game.html`, chosen 2026-11-07 over three other takes):
+- **Game screen** (`prototypes/game.html`):
   the board in the middle, leaving the game on its left and playing it on its right,
   each control a glass tile with an icon and a word, as on home, since icons alone (three
   arrows for undo, restart, and back) confused. The landscape layout is taken only where
   its flat board fills at least about 2/3 of the height less the margins
   (`panel::landscape`); a wider-than-tall window short of that, near square, keeps the
-  portrait layout, the bar above the board and the play below it, as does the 3D board
-  (the user, 2026-11-09: a near-square window's landscape had a small board between
-  square-ish panels). At 800 dp tall the hand-over is at about 981 dp across; every
+  portrait layout, the bar above the board and the play below it, as does the 3D board. At 800 dp tall the hand-over is at about 981 dp across; every
   device's landscape passes, the foldable's closest at 69%. **The game's controls are the
-  3D screen's** (task 054, the user 2026-11-09: the UI round the board only, the boards
-  untouched): in landscape the flat board between the 3D screen's short corner panels
+  3D screen's**: in landscape the flat board between the 3D screen's short corner panels
   (`panel::flat_corners`; "Board and pieces", 3D board, the game screen round it), back
   and a panel of settings and start over in the top left, whose turn, the eye, the hint
   beside undo move, or the clocks, in the top right, 232 × 352 dp (192 on a phone), the
-  same tiles in the same places as round the 3D board; the board as it was, a square of
+  same tiles in the same places as round the 3D board; the board a square of
   the height less the margins centered across, which the corner panels leave the same
   room (they free none it could grow into). Near square (4:3, a foldable) the flat
-  screen's corner panels are no wider than the old ones, 192 dp, and the play panel 368
+  screen's corner panels are 192 dp wide, and the play panel 368
   dp tall as a phone's, so the board keeps its 587 and 519 dp; the 3D screen's stay 232
   there. The flat screen has no round buttons (the 3D board's view, zoom, and showcase).
   In portrait the game's bar and play are as wide as the 3D screen's, the screen less the
@@ -385,20 +382,20 @@ built or superseded; they are in git history before that day.
   the panels below. In landscape the board fills the height
   less a 24 px margin, between two glass panels 232 px wide and as tall as it (where
   that leaves the board under 720 px, the tablet's at 16:10, the panels narrow down to
-  192 px for it: 587 px at 4:3, 520 on a foldable; 2026-11-08; where the width holds the
+  192 px for it: 587 px at 4:3, 520 on a foldable; where the width holds the
   board under 372 dp, a 16:9 phone less its cutout at a side, the panels stay 372 dp tall,
   centered beside it): on the
   left back (see "The way back" below) on its own glass tile, 88 px tall, over a panel
   12 px under it holding settings and at the bottom start over, the column as tall as
   the right panel; 88 px rows (the floor for
-  small hands, 2026-11-08) with 34 px icons and 24 px words (in a narrowed panel, where a word doesn't fit beside its icon,
+  small hands) with 34 px icons and 24 px words (in a narrowed panel, where a word doesn't fit beside its icon,
   both icons over their words in 96 px rows); on the right whose turn it is (a 72 px piece of its color with
   the glow ring, 4 px of the glow color at 80% and a 22 px glow, over "White's turn"),
   or the two clocks, and at the bottom undo move, a tall 132 px tile with a 48 px icon
   over its word, on two lines where one is too wide ("Võta käik / tagasi" in a narrowed
   panel), else in a smaller face (96 px in a panel under 420 px tall, a phone's, as a puzzle's next). In portrait the left side is a bar above the board, its three tiles in
   a row, back first, 88 px tall, thirds of it while each word fits, else each as wide as its word and
-  an even share of the rest (2026-11-08); where a third would be under 170 px (a phone),
+  an even share of the rest; where a third would be under 170 px (a phone),
   the bar is 8 px taller and each icon stands over its word, which needs less width. The
   right side is below it: whose turn, or the clocks side by side, over undo move across
   the width, 88 px tall. Start over sits far from undo move so it isn't hit for
@@ -408,13 +405,13 @@ built or superseded; they are in git history before that day.
   Undo move takes back one move, also one still animating; start over goes back to where
   the game began; back goes home; settings opens settings, whose back returns to the
   game. Against the computer the child's pieces are at the bottom: when the child plays
-  black the board is turned, black playing up the screen (2026-11-08). While the
+  black the board is turned, black playing up the screen. While the
   computer thinks its piece's glow ring pulses once, and its move comes after a short
   pause, or against the clock after the time a player of its level would take;
   undo move then takes back the child's move and the computer's reply
   ([computer player](ai.md#in-the-game)).
   The words are 24 px; the turn's words say who has won once a side has.
-- **The way back** (`back.html`'s take b, chosen 2026-11-09 over a, the arrow alone): one
+- **The way back** (`back.html`'s take b): one
   control on every screen that leaves, a glass tile with the arrow and "Back" side by side
   (34 px icon, 24 px word, 20 px either side, 88 px tall and at least as wide), in the
   top-left corner: over the left panel on the game and a puzzle in
@@ -423,15 +420,12 @@ built or superseded; they are in git history before that day.
   portrait), and at the start of settings' title row. It goes where the screen's way out
   goes: the game home, a puzzle to its theme's page, a theme's page to the library, the
   library home, and settings where it was opened from; Android's back and Escape do the
-  same. It replaced buttons named for where they went ("Home" on the game, "Puzzles" on
-  a puzzle), which children read as different controls, and a bare arrow on the
-  puzzles and settings; take back became "Undo move" ("Võta käik tagasi") so it says
-  it is about the move, not the screen. On a theme's page in landscape where the levels
+  same. Taking a move back is "Undo move" ("Võta käik tagasi"), so it says it is about
+  the move, not the screen. On a theme's page in landscape where the levels
   wouldn't fit the height beside a worded back (Shots on a phone with its insets), back
   is 88 px square with the arrow over the word. On a phone in landscape settings' title
   row (back, the tabs, the language) is wider for it, so the preview board beside it is
-  smaller (431 to 400 dp at 540 dp; 285 to 219 in Estonian at 480 with the Pixel's
-  insets). Home's setups and who's playing keep their square arrow.
+  smaller. Home's setups and who's playing keep their square arrow.
 - **Clocks**: each side's piece and its time, m:ss in 36 px tabular figures, in a tile
   of radius 20 px; black's on top, as black's side of the board is (white's on a turned
   board, so the child's clock is the nearer one). The running clock is
@@ -439,12 +433,12 @@ built or superseded; they are in git history before that day.
   other is white at 6% with its text and piece dimmed. Under a minute shown (0:59) the
   running clock turns autumn's glow gold (#ffd75a) in every season, and at 0:20 and under
   the forced-capture red: the tile at 16% with a 2 px border and the figures in that
-  color (2026-11-09). The waiting clock and a stopped one never do. The hue changes
+  color. The waiting clock and a stopped one never do. The hue changes
   with the second shown, so it adds no frame. A running clock redraws once a second,
   when the time it shows changes; a stopped one draws nothing. The time shown is rounded up, so
   0:00 shows only once the time is out. The player whose time runs out loses, as FMJD's
   rules say, and the win card shows the other. The clocks start with the first move:
-  white's first move is untimed, then black's clock runs (2026-11-08), so a child can
+  white's first move is untimed, then black's clock runs, so a child can
   settle before anything counts. A move adds the increment to the clock that ran; take
   back runs the clock of the side to move again, the time taken staying taken, and none
   back at the start; start over sets both full again. Only time with the game on screen
@@ -473,7 +467,7 @@ built or superseded; they are in git history before that day.
   the board pass's and the piece shader's, not a fill over them, so the winning piece
   can stay out of it while the card, in the UI's draw, is over it; the lit square is the
   piece shader's too, drawn under the piece. The panel's piece shows the winner.
-- **A draw** (`draw.html`'s take a, chosen 2026-11-09; the rules in
+- **A draw** (`draw.html`'s take a; the rules in
   [rules](rules.md#draws)) is calm: once the drawing move has shown, the clock stops,
   the board and its pieces dim to 55% over 0.6 s, nothing lifts or glows, and a card
   like the win's slides up 28 px as it fades in from 0.1 s to 0.8 s, still from then:
@@ -503,32 +497,26 @@ built or superseded; they are in git history before that day.
   lacks (120 px on a tablet). Two lines are made as even as they can be, as the
   prototypes' balanced wrap. The strong side's count shows on a tie with another, so the words don't swap
   from one move to the next.
-- **Home** is a title menu (`prototypes/home.html`, chosen 2026-11-07 over the
-  icon tiles and two other takes): the scene and the 3D board, and one glass column
+- **Home** is a title menu (`prototypes/home.html`): the scene and the 3D board, and one glass column
   with the wordmark, then continue, a friend, the computer with its level, and puzzles
   with stars, then settings, each an icon and a word, in rows 88 dp tall, 2 dp apart. In
   portrait settings is instead a gear beside the wordmark, so the sheet leaves the board
   its room: the gear alone, 40 dp at 85%, with no tile, in an 88 dp tap reaching 8 dp over
   and under the row, clear until pressed and then lit round as a pressed row is
-  (`gear.html`'s take a, chosen 2026-11-08 over the 88 dp quiet tile, which
-  looked too big beside the wordmark, and the X's round glass button, which the X itself later left); the name may run
+  (`gear.html`'s take a); the name may run
   under the tap's clear side, up to 12 dp from the gear; so too in a landscape too
   short for the menu with settings as a row (a phone under about 590 dp tall), where the
   column widens to 440 dp for the wordmark and the gear. Under the wordmark it keeps
   14 dp, less on a short screen, but never less than the gear's reach, so its tap never
   meets the first row's: where even that doesn't fit (the Pixel 7a in landscape at 480 dp
-  less its gesture bar, 3 dp short), the rows close up from 2 dp apart to about 1
-  (2026-11-10; it had overlapped Continue's tap). The wordmark's letters close up
-  where the gear leaves them too little room (2026-11-08). In the
+  less its gesture bar, 3 dp short), the rows close up from 2 dp apart to about 1. The wordmark's letters close up
+  where the gear leaves them too little room. In the
   screen's top right, 24 dp from both edges of its safe area, a bare X, 34 dp with strokes of 2.8 grid units at
   80%, in a round 88 dp tap, closes the app at once, asking nothing, since the game is kept anyway; on the
-  menu and in a setup, in both orientations (`exit.html`'s take b, chosen
-  2026-11-08 over a quiet last row and a door, as a round glass button; made a bare X,
-  `gear.html`'s `x=d`, the user, 2026-11-09, to match the bare gear). One place in both orientations, it
-  costs the menu nothing (a last row would take the portrait board's room and lengthen
-  the sheet phones can't fit), it is far from where children tap and hold a tablet, and
-  an X is what closes things in the apps children know; a door reads less surely at
-  34 dp, and a power sign suggests turning the tablet off. At rest it is the X alone, no
+  menu and in a setup, in both orientations (`exit.html`'s take b, made a bare X to match
+  the bare gear, `gear.html`'s `x=d`). One place in both orientations, it costs the menu
+  nothing, it is far from where children tap and hold a tablet, and an X is what closes
+  things in the apps children know ([why not a row or a door](../decisions/rendering.md#controls)). At rest it is the X alone, no
   disc, sized to the bare gear's weight; pressed, it lights round in its tap (white at 10%
   and a faint 1 px ring) and goes down to 0.96 (`gui::bare_x`). In landscape it sits above the photograph,
   clear of the board (28 dp right of its edge, 8 dp above its top; on a phone, where the
@@ -537,22 +525,20 @@ built or superseded; they are in git history before that day.
   it would reach the board, the board moves down to 16 dp under it and shrinks to keep
   24 dp above the sheet (640 to 620 dp on the tablet). The board keeps 40 dp above and
   below it, down to 24 where a setup's tall sheet near square would leave it under 40%
-  of the width (2026-11-08). A board under 128 dp isn't shown (a setup on a short phone;
+  of the width. A board under 128 dp isn't shown (a setup on a short phone;
   `board::SMALLEST`, the same for settings' preview): its squares would be under 13 dp
   on 10 × 10. The pieces on its tiles still are. A friend
   and the computer open a new game's setup in the same column: back (88 dp) and the title, then
   a row of tiles per choice, lit as in settings, each with its dim name above it: which
   draughts (international 10 × 10, the default, Brazilian 8 × 8, or Russian 8 × 8, each
-  with a small board at the start), the level against the computer (easy, the default for a new player, the user's call
-  of 2026-11-09, medium, hard, with one to three pips), the child's pieces against the computer (white, the default,
-  or black, each tile showing its piece; 2026-11-08), and the clock (none with a
+  with a small board at the start), the level against the computer (easy, the default for a new player, medium, hard, with one to three pips), the child's pieces against the computer (white, the default,
+  or black, each tile showing its piece), and the clock (none with a
   stopwatch, 5 min +3 s a move, 10 min +5 s a move); then play, a primary row. Every tile
-  is 88 dp tall at least (2026-11-08). In a
+  is 88 dp tall at least. In a
   landscape too short for the column (a phone), it becomes two columns of 330 dp side by
   side: back, the title, the draughts, and the level in the first; the child's pieces,
   the clock, and play in the second, the title in a smaller face if it needs it, play at
-  the second's bottom, level with the first's last tile so both columns end on one line
-  (2026-11-08); down to
+  the second's bottom, level with the first's last tile so both columns end on one line; down to
   290 dp each where the second would reach the X (a 16:9 phone less its cutout at a
   side). In portrait, where the sheet would reach the X (the computer's on a 9:16 phone
   at 480 dp), the sheet takes the height, 8 dp under its top at least, its margins above
@@ -566,17 +552,17 @@ built or superseded; they are in git history before that day.
   jumps. The board switches at once, rather than crossfading its pieces as home and
   settings do: it stays in place, so a crossfade between 10 × 10 and 8 × 8 would switch
   the squares halfway under half-faded pieces, and the column beside it, opening the
-  setup or lighting a tile, changes in one frame too (2026-11-08). Natively the setup's
+  setup or lighting a tile, changes in one frame too. Natively the setup's
   board is a board of its own (`Shell.next`), set to `rules::start` when the draughts
   chosen differs from it; a tap's frame still shows what it declared, and the next
   shows the board and the column changed together. The draughts' tiles are thirds of their row while each name fits a
   third with 16 dp either side; else, as in landscape, each takes its name's width and
-  an even share of the rest (2026-11-08), each at least 88 dp wide; thirds again where
+  an even share of the rest, each at least 88 dp wide; thirds again where
   the names leave nothing to share. A tile's word still too wide for it, as a
   translation's may be, takes the small face. Home's computer row notes the kept level. The language is
-  only in settings (2026-11-07): kids who can't read yet don't need it on home, and a
+  only in settings: kids who can't read yet don't need it on home, and a
   tablet set to one language can still play in another. In portrait the column is a sheet below the
-  board. **Settings** (`prototypes/settings.html`, regrouped 2026-11-07): back and the
+  board. **Settings** (`prototypes/settings.html`): back and the
   title, with the language at the title row's right end on glass, each named in itself;
   the choices as words in two glass groups (radius 24 px, icon and title in 24 px) by
   what they change; and beside them one preview of what they make. In landscape the
@@ -584,20 +570,18 @@ built or superseded; they are in git history before that day.
   rest, about two thirds, so from home the board only moves a little; in portrait the board is
   on top, as large as the rest leaves, and the two groups stand side by side under it.
   **Game**: the draughts a new game starts on (international, Brazilian, Russian; the
-  setup can still change it) and move hints; the tutorial's row (one tile, learn the
-  moves) comes with the tutorial, taken out until then so the tablet's
-  landscape shows both groups (the user, 2026-11-09). Last, the privacy note
+  setup can still change it) and move hints. Last, the privacy note
   (`settings.privacy`, App Review Guideline 5.1.1(i)): the policy in one sentence, dim
   in the small face, with no link out, as the app has none. It sits at the group's title row's right end where it fits there in two lines
   at most (the stacked landscapes, which have no height to spare: one line in both
   languages on the tablet and the iPad), else at the glass's foot, wrapped, where the
   game's group is as tall as the look's (portrait, a phone's tabs), so it moves no
-  layout (2026-11-09).
+  layout.
   **Look**: the theme (the row's name, "Theme") as
   thumbnails of the four photographs (62 × 40 px), or of their plain fades when the
   plain background is chosen, and, last, a tile for by the date, so on a phone in
   portrait, where the row wraps, the four seasons keep one row and by the date goes
-  under them, in the same order at every size (2026-11-08). With the theme's name, a
+  under them, in the same order at every size. With the theme's name, a
   two-part switch, the season's photograph or its plain fade, the one chosen lit
   (`settings::switch`, `prototypes/plain.html` place b): where the names are above the
   tiles (portrait, near square, a phone), beside the name at the line's right end, each
@@ -609,7 +593,7 @@ built or superseded; they are in git history before that day.
   choices' 55% of the page has 60 dp more than they want (16:9 and wider: the Play
   tablet shot at 2560 × 1440), every name's column widens to the switch's 180 dp, so
   each half is 88 × 68 dp; the rows keep their height, and the board beside them is 56
-  dp smaller there (639 to 583 dp) (2026-11-09); and kings (auto, crown, or stack, the last two each with its
+  dp smaller there (583 dp); and kings (auto, crown, or stack, the last two each with its
   king drawn on the tile). Between them the Board row, flat or raised (the file's
   `board = 2d|3d`): its 3D tile plays the game on the 3D board (`settings::raised`,
   `src/shell/prefs.goose`; the game screen round it is under "Board and pieces"), and
@@ -617,8 +601,7 @@ built or superseded; they are in git history before that day.
   stack), and a puzzle. Each
   setting is a dim 18 px name at the left of its tiles (above them in portrait); a tile
   has radius 16 px and is lit in the glow color at 22% with a 2 px glow border when on.
-  Every tile, the language's and the seasons' too, is 88 px tall and wide at least
-  (2026-11-08); the title row is 100 px,
+  Every tile, the language's and the seasons' too, is 88 px tall and wide at least; the title row is 100 px,
   the language's glass round its 88 px tiles.
   The preview is the board as the choices make it: its size, the kings,
   and what the move hints show (all moves: the selected piece's capture; mistakes only:
@@ -634,55 +617,48 @@ built or superseded; they are in git history before that day.
   sets the preview up again. The choices take the width their words want, at most 55% of
   the page, and wrap beyond it; near square (4:3, a foldable), where the wrapped rows
   would run past the page's foot, each setting's name goes above its tiles, as in
-  portrait, and the column narrows to its widest row (2026-11-08); where that runs past
+  portrait, and the column narrows to its widest row; where that runs past
   the foot too, the names go back to the left and the rows take the width they want,
   unwrapped (a foldable), as long as the board keeps 128 dp beside them (a phone: the
   choices at most 70% of the page). Where that doesn't fit, the board goes on top and the
   groups side by side under it, as in portrait, so a window that widens goes from portrait
-  to landscape without tabs between (task 050, the user 2026-11-09): the hand-over is at
+  to landscape without tabs between: the hand-over is at
   about 870 × 800 dp, and from about 800 × 930 dp to square the groups leave the board
   under 128 dp, and none shows. Where even that doesn't fit (a phone, a small window), one group shows at a time:
   two tiles, the game's and the look's icon and title, each on glass as back is (a plain
-  tile alone was hard to read over a bright photograph, 2026-11-09), the shown one lit, choose which,
+  tile alone is hard to read over a bright photograph), the shown one lit, choose which,
   in the title row in place of the title in landscape and in a row under it in portrait
   (on a phone, its shorter side under 600 dp, where the groups side by side would leave
   the board under 45% of the width, or under 220 dp, 45% of a 553 dp phone's; a larger
   screen keeps them side by side as long as they fit under the title row, so the
-  foldable's and 4:3's portraits show both with a 206 and 269 dp board, task 050), and the
+  foldable's and 4:3's portraits show both with a 206 and 269 dp board), and the
   group's glass, without its title row, is as tall as the taller of the two so the board
   stays put; in portrait it is its own group's height and the board takes the rest, larger
-  on the game's tab (the game's glass as tall as the look's ended in empty glass under its
-  rows, 2026-11-09); where the group is taller than the room under the tabs (a small
+  on the game's tab; where the group is taller than the room under the tabs (a small
   window), its glass takes the room down to the foot, no board, and its rows scroll inside
   it ("Small windows"). Side by side, each group is as wide as it wants unwrapped where
   both fit the page, centered, else they share the width in proportion to what each
   wants. Where the theme's five wrap, they are an even grid three across (two where three
   don't fit), not a ragged wrap; in a small window slim tiles ("Small windows"). A board under 128 dp isn't shown, as on home (a 9:16 phone at 480 dp). In
   portrait, where the title doesn't fit beside the worded back and the language in the
-  row labels' 30 dp face (a phone: at 548 dp "Settings" had 61 dp, "Seaded" 45 and was
-  left out), back is the arrow over the word in an 88 dp square, which leaves 107 dp; at
+  row labels' 30 dp face (a phone), back is the arrow over the word in an 88 dp square, which leaves 107 dp; at
   480 dp, where that leaves under the headings' 24 dp face, the language's glass also
   leaves out its globe, which leaves 87 dp, "Settings" 80 in that face. A title still too
-  wide takes a smaller face, or none (2026-11-08, 2026-11-09). The tiles' notes and the thumbnails' labels are in the 17 px
+  wide takes a smaller face, or none. The tiles' notes and the thumbnails' labels are in the 17 px
   face, which makes them a little wider than the prototype's 13 px, so the landscape
   board is about 550 px where the prototype's is 590.
-  **Puzzle picker** (`puzzles.html`'s take a, a library list, chosen
-  2026-11-09; rejected: b's large theme tiles, which shrink long Estonian names and hold
-  the fewest themes a screen, and c's library beside the theme, which needs two
-  scrolling panes): two views, a library of the themes and a theme's page. The library
+  **Puzzle picker** (`puzzles.html`'s take a, a library list): two views, a library of the themes and a theme's page. The library
   is back, the title, the draughts switch, and one glass row per theme (the glass panel a
-  level's row on a theme's page is, lit only while pressed: a plain tile barely showed
-  over the photograph, 2026-11-09), 124 dp tall on the tablet and 96 on a phone: its
+  level's row on a theme's page is, lit only while pressed: a plain tile barely shows
+  over the photograph), 124 dp tall on the tablet and 96 on a phone: its
   mark (the theme's icon, a book, two men and a jump, a crown, a target, a crowned ring,
   on a disc of the glow color at 20%), its name, its stars as home counts them, a star in
   the glow color before "n / total" (three a puzzle), and a bar of them in the glow color
-  over a faint track (`prototypes/puzzle-set.html`'s take b, the user 2026-11-09; its
-  Continue row and "Next: Easy 3" were left out). Learn is open; the others open once
+  over a faint track (`prototypes/puzzle-set.html`'s take b, without its Continue row and "Next: Easy
+  3"). Learn is open; the others open once
   half of Learn is solved, and until then each mark is plain with a lock badge, the name
   dim, and "Solve n more in Learn" in place of the bar, and a tap on it does nothing.
-  **The draughts switch** (`prototypes/puzzle-set.html`, take a, the user 2026-11-09;
-  rejected: b's name under the title opening a list, and c's setup tiles with the themes
-  as a grid) is settings' draughts tiles, International 10 × 10, Brazilian 8 × 8, Russian
+  **The draughts switch** (`prototypes/puzzle-set.html`, take a) is settings' draughts tiles, International 10 × 10, Brazilian 8 × 8, Russian
   8 × 8 (each its name over its size, 88 dp tall, as wide as settings' tile would be,
   widened in proportion to fill a row), joined on one glass 4 dp round them and between,
   the player's draughts lit. It is settings' draughts choice, one setting: a tap sets
@@ -693,17 +669,15 @@ built or superseded; they are in git history before that day.
   the compact window) in a row of its own under the title. The title
   "Puzzles" stands in the title row (beside back in portrait), bare on the photograph
   over a soft dark halo (`gui::shadowed`: eight dark copies 2 dp round it at 20% and one
-  2 dp down at 35%), as it sat partly over spring's and autumn's birch bark at the
-  tablet's and iPad's sizes (2026-11-09); until the switch it was left out in landscape
-  under 600 dp tall. The rows are one column at most 600 dp wide in portrait, and two in
+  2 dp down at 35%), as it sits partly over spring's and autumn's birch bark at the
+  tablet's and iPad's sizes. The rows are one column at most 600 dp wide in portrait, and two in
   landscape where two columns of 420 dp fit beside back (the tablet, a wide window) or
   one doesn't fit the height (phones); in portrait under the switch's row they give up
   height to fit the page (a foldable, a 9:16 phone), down to 88 dp, and where even that
   doesn't fit (a small window, a 9:16 phone with its insets) they keep it and scroll, in
   either orientation. They center on the screen:
   in a tablet's landscape the title and the rows start below back, so they take the
-  whole width (until 2026-11-09 they kept clear of back's column too, which pushed them
-  against the right edge: 183 dp left of them, 27 right at 16:9); in a phone's, where
+  whole width; in a phone's, where
   the rows reach back's height, they center as far as clearing back allows. A row opens the theme's
   page: back (at the left in landscape, in the head in portrait), the theme's mark,
   name, and count, over its levels as glass rows, each its level's mark (three rising
@@ -717,8 +691,7 @@ built or superseded; they are in git history before that day.
   level's label is its mark alone, the spacing as on a phone in landscape. Back on a
   page (and Android's back) goes to the library, and from the library home; next on a
   puzzle goes on inside its theme and after its last back to the library. Behind it the
-  sharp photograph and no board. **A puzzle** (`prototypes/puzzle.html`, take c, chosen
-  2026-11-08): the game screen's layout, the left side the game's, its back going to the
+  sharp photograph and no board. **A puzzle** (`prototypes/puzzle.html`, take c): the game screen's layout, the left side the game's, its back going to the
   theme's page; on the right whose puzzle it is as the game's turn piece (72 px, its
   side's color, the glow ring while it is the child's turn, none once solved), so a child
   who can't read knows the side they play, then the goal's icon in the glow color over its
@@ -738,27 +711,25 @@ built or superseded; they are in git history before that day.
   back along its way without the red ring, and the wrong move then slides back as
   above (`puzzle::SHOW`, `SHOWN`, `UNSHOW`, timed by `SHOW_PAUSE` and `SHOW_HOLD`). A tap the board flashes as a mistake is a miss too, without the
   must-capture pulse, which would show the answer. A selected piece's targets never
-  show, whatever the move hints (2026-11-08). After two misses the piece to move
+  show, whatever the move hints. After two misses the piece to move
   has the glow ring, pulsing twice, then still. A right move that leaves the goal ahead
   is answered 0.5 s after it lands. Solved, the words say so, the stars won pop in one
   after another (56 px, 0.6 s each, 0.15 s apart), and next lights; nothing covers the
   board. In portrait the goal and the stars share a row under the board, over next
   across the width, the turn piece at 52 px leading the goal. Where a landscape panel is
   too short for the piece over the goal (a phone's), it stands beside the goal's icon, up
-  to 20 px apart, the words under both (`prototypes/puzzle.html?take=c&turn=a`, chosen
-  2026-11-09 over `turn=b`, beside everywhere, since over the goal the tablet shows it as
-  the game does).
+  to 20 px apart, the words under both (`prototypes/puzzle.html?take=c&turn=a`; over the goal elsewhere, as the game shows
+  it).
 
-- **Players** (`prototypes/profiles.html`, take a, chosen 2026-11-09; what a player
+- **Players** (`prototypes/profiles.html`, take a; what a player
   holds and the files: [players](README.md#players)). On home's menu the player's chip
   opens who's playing: their badge (64 dp, centred in the first 88 dp) and their name
   beside it in the row labels' 30 dp face on a small glass pill (`gui::glass`, 22 dp
   corners, 16 dp either side of the name, 49 dp tall, the name 12 dp past the badge's
-  88 dp; the user, 2026-11-09, `chip.html`'s take d, so the name reads on a
+  88 dp; `chip.html`'s take d, so the name reads on a
   bright photograph), the badge bare as the X and the gear are; no name, no pill; the tap
   ends 40 dp past the name and covers both; pressed, the tap lights as the X's does (white at 10% and a faint 1 px ring,
-  a pill round badge and name, 88 dp tall; `gui::bare`). It mirrors the X (the user,
-  2026-11-09, after the tablet): 24 dp from the top and from the left of the board's
+  a pill round badge and name, 88 dp tall; `gui::bare`). It mirrors the X: 24 dp from the top and from the left of the board's
   side of the screen, the safe area's left in portrait, the column's right edge in
   landscape, so it is never on the column and its badge is level with the X. The board
   clears the badge as it clears the X: in portrait the centred board's room from the X
@@ -768,12 +739,7 @@ built or superseded; they are in git history before that day.
   that costs it no size, as on the tablet with its navigation bar in landscape; a name
   that would still come within 16 dp of the X or of the board leaves the chip round,
   the badge alone (with twelve characters: the foldable's and 4:3's portrait, a 9:16
-  phone's landscape at 480 dp and its portrait with the Pixel 7a's insets). This gave back the room first kept
-  above the board for the chip (2026-11-09, `badges.html?home=2`, where it stood above
-  the board's top left corner): the tablet's landscape board is back at 120 dp from the
-  top, the foldable's portrait 339 to 411 dp, 4:3's portrait 407 to 479, a 20:9 phone's
-  landscape at 480 dp 328 to 336 (291 to 299 with the Pixel 7a's insets, 346 to 349 at
-  540 dp). The wordmark keeps its king; `home::player_spot` alone places the chip, and
+  phone's landscape at 480 dp and its portrait with the Pixel 7a's insets). The wordmark keeps its king; `home::player_spot` alone places the chip, and
   `test/shell/sizes` checks it at every size. Who's playing is a glass card over the home
   dimmed by black at 42%: back, the title, and a pencil; then a tile per player, 156 dp
   wide (120 on a phone, under 600 dp across), the badge 72% of it over the name, the
@@ -797,8 +763,8 @@ built or superseded; they are in git history before that day.
   toward the text color), frames running only while it is held; let go early and
   nothing happens, and no dialog asks, since a dialog needs reading and a hold is what a
   child doesn't do in passing. Back goes from the sheet to the card and closes the card.
-  **A badge** (chosen 2026-11-09, `badges.html` direction 1) is home's king as the light
-  pieces are drawn now, its animal in the crown's place and colour: a man with its side
+  **A badge** (`badges.html` direction 1) is home's king as the light
+  pieces are drawn, its animal in the crown's place and colour: a man with its side
   and short shadow filling the face's disc, its top from `draw::MAN_BLOCK`'s `man_top`
   (the board's pieces share it, so a new piece style reaches the badges with it), the
   animal flat and bold as the crown is, with only a faint shadow inside its upper edge
