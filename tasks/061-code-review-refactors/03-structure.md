@@ -85,4 +85,4 @@ the `Frame` by reference: its piece lists must not be copied each frame.
 - [ ] No flag set by one package and cleared by another; one `apply_prefs`
 - [ ] `main` reads `shell::Frame` and writes no shell field
 - [ ] One card helper, and one showcase-drag function
-- [ ] Every expected output byte-identical; idle CPU and the bench recorded here
+- [ ] Every expected output byte-identical

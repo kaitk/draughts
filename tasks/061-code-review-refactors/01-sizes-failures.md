@@ -66,4 +66,4 @@ A new failure looks the same as these in a diff, so a regression can hide among 
   and a 374 × 484 window. The gear sits clear of the first row in both. No device
   check: nothing here is beyond what the Mac shows.
 - **Not measured:** the change is two sums in home's layout, with nothing added per
-  frame. Idle CPU and the bench start with stage 1.
+  frame. The task is measured once, at its end.

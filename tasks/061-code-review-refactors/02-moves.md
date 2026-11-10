@@ -78,4 +78,3 @@ shots and the bench output are the check.
 - [ ] Each item above done, or noted here with why not
 - [ ] Every expected output byte-identical; the app builds on the Mac
 - [ ] `main`'s loop holds no developer-flag code
-- [ ] Idle CPU and the 2D and 3D bench on the Mac and the A33, recorded here

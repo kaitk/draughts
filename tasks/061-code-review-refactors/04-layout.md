@@ -73,4 +73,5 @@ This saves the extra frame during transitions.
 - [ ] `gui::stack` in `gui`, with a test, used by settings and at least home's menu
 - [ ] `shell::still` doesn't run a screen's frame; home and settings have pure layouts
 - [ ] `sizes.out` and every other expected output byte-identical
-- [ ] Idle CPU, the bench, and a transition's frame time recorded here
+- [ ] A transition's frame time on the Mac, before and after (`shell::still` no longer
+      runs a screen's frame)

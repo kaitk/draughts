@@ -63,7 +63,7 @@ The app has no seam:
    - `resize.c` takes pixels instead of reading a gfx texture back.
    - Text and badges hand over R8 bytes; `text.goose` already builds them.
    - **Watch the season photograph's load**, 80 to 95 ms on the tablet today. It must not
-     gain a copy. Time it before and after on the tablet or the A33.
+     gain a copy. It is timed with the task's end measurement (`README.md`).
 4. **Split `render3d`** (about half a day). Its gfx-free half moves to its own file or
    package:
    - `mesh`
@@ -90,5 +90,4 @@ Leave alone:
 - [ ] The C decoders return pixels; `draughts_photo` declared once
 - [ ] `render3d`'s gfx-free half separate
 - [ ] Every expected output byte-identical; shots on the Mac match before and after
-- [ ] The photograph's load time, idle CPU, and the 2D and 3D bench on the Mac and the
-      A33 recorded here, none noticeably worse
+- [ ] The task's end measurement, with the photograph's load (`README.md`)

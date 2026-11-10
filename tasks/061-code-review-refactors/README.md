@@ -42,9 +42,12 @@ Rules for every stage:
   or less. Where an item could cost time, its stage says what to measure.
 - **Identical tests.** After each item, `scripts/test.sh` passes with every expected
   output byte-identical. Stage 0 is the exception: it may change `sizes.out` on purpose.
-- **Measure at the end of the stage only**, not per item. Run the idle CPU script and
-  `--bench` on the 2D and 3D boards, on the Mac first, then on the A33
-  (`docs/development.md`). Record the numbers in the stage's file.
+- **Measure once, at the end of the task** (after stage 4), not per stage (the user,
+  2026-11-10). Run the idle CPU script and `--bench` on the 2D and 3D boards on the Mac,
+  then on the A33 (`docs/development.md`), with the season photograph's load time (stage
+  4). Compare with a build of `6bf54c8`, from before the task, and record both here. A
+  stage may run a quick `--bench` on the Mac where it reshapes something that runs each
+  frame, but no devices.
 - **One commit per finished item**, one lean sentence each.
 - **Docs in the same change.** Update `docs/architecture/` wherever a stage moves
   something it names.
@@ -65,5 +68,5 @@ Left out on purpose:
       settings with pure layout functions
 - [ ] Stage 4: `main` calls no gfx drawing; one `render::frame`; C decoders return pixels
 - [ ] The overview page updated to the new code and in the repo
-- [ ] Each stage's idle CPU and frame times on the Mac and the A33 recorded, none
-      noticeably worse
+- [ ] Idle CPU, frame times, and the photograph's load on the Mac and the A33, measured
+      once at the end against `6bf54c8`, none noticeably worse
