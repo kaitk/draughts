@@ -69,7 +69,25 @@ packages hand it flat, fixed-size data and take back the pointer and the time; n
 outside `app/` (and `android/`, the build scripts) knows what draws or what it runs on.
 One package is drawing code outside `app/`: `render3d/`, the 3D board's renderer, which
 the app and the 3D prototype (`poc/3d/`) share (2026-11-09). It imports gfx,
-and only those two programs import it; no package of the game does.
+and only those two programs import it; no package of the game does. What the 3D board
+is but drawing, its meshes, looks, light, and the plan of its bake, is `model3d/`, which
+imports no gfx and is tested headless.
+
+**Inside `app/`, the main loop sees two halves of what it runs on** (2026-11-10): the
+platform, `app/host` (the window, the frame's end and clock, the screen's size and
+focus, the pointer, keys and typed text, the screenshot, and the program's C for the
+safe area, the wake timer, storage, locales, and Android's launch, back, and close), and
+the renderer, `app/render`, which holds every drawer (`draw`, `draw3d`, `scene`,
+`widgets`) and every gfx handle. `main` calls these two and nothing of gfx. Each frame it
+hands `render::frame` one `render::Frame` of the app's own values: the board as
+`board::fill` left it, where it goes, the pieces over the UI, the UI's quads, the 3D
+board's view and place, the blur, and the transition's hole; the frame's pass begins and
+ends there. The glyphs, the badges, and the season's photograph reach the renderer as
+pixels: `text::bake` and `badges::atlas` return R8 bytes, `background.c` decodes into
+pixels that the renderer's own C (`photo.c`) uploads, the embedded ASTC blocks with no
+copy, and `resize.c` takes the pixels the renderer reads back for a Mac window's cover.
+A second renderer replaces `render` and the drawers under it, and `photo.c`.
+
 The targets this keeps open, each replacing or adding to `app/` alone:
 
 - **The 3D board** ([rendering](rendering.md#board-and-pieces)): drawn by `render3d/` from `app/`; what the board needs
@@ -99,26 +117,29 @@ The targets this keeps open, each replacing or adding to `app/` alone:
 | `src/board/` | The board on screen: the position, the legal moves, and the undo history; where the board goes and which square a point is on; taps and drags; a move's animation; and each frame's draw lists (pieces, the squares' marks, a wrong move's flash); the 3D board's camera, its fit on screen, picking through its perspective, and its instances (`view3d`) |
 | `src/game/` | The game screen: its panels and where they and the board go (`panel::layout`, round the 3D board `panel::corners_in`, each a `Layout` with its mode: landscape, corners, portrait, or compact), the clocks, the computer's turn (asking for a move and playing the answer), the celebration, and the pieces it puts over the UI |
 | `src/shell/` | The screens and which one shows: home and a new game's setup with the board of the game it starts, the game, settings with their preview board, the puzzles to pick from and the puzzle playing ([puzzles.md](puzzles.md#the-screen)); the pieces the screen showing puts over the UI (`Frame.over`, which the app draws); who's playing over home and a player's sheet; the players, their settings files, and their saved games |
-| `src/render3d/` | The 3D board's renderer, shared by the app and `poc/3d/`: its meshes, shaders, themes (`looks`), the surfaces' bake, the photograph's blur and ambient, the shadow map, and the multisampled pass ([rendering.md](rendering.md#board-and-pieces)) |
+| `src/model3d/` | The 3D board but its drawing, with no graphics: the meshes, the themes as data (`looks`), the photograph's light as spherical harmonics, the plain fade's ambient, and the plan of a theme's bake in steps |
+| `src/render3d/` | The 3D board's renderer, shared by the app and `poc/3d/`: its shaders, the meshes and surfaces on the GPU, the surfaces' bake, the photograph's blur, the shadow map, and the multisampled pass ([rendering.md](rendering.md#board-and-pieces)) |
 | `src/badges/` | The players' animal badges: their SVGs from `assets/badges/` baked at startup into a distance-field atlas |
-| `src/app/` | The program: the main loop, the GPU drawing of the board, the pieces, and the UI's quads, the season's photograph and its blurs, the font atlas, the themes, the computer's worker thread, and its C (storage folder, locales, the clock's wake timer, the JPEG decoder) |
+| `src/app/` | The program: the main loop, the platform (`host`), the renderer (`render`) over the GPU drawing of the board, the pieces, and the UI's quads, the season's photograph and its blurs, the font atlas, the themes, the computer's worker thread, and its C (storage folder, locales, the clock's wake timer, the JPEG decoder and the photograph's upload) |
 | `tools/` | Programs for development: perft, the computer's benchmark and matches, a terminal game against it, and the puzzles' checks |
 
 `ai`, `board`, and `puzzles` build on `rules`, `board` also on `gui`'s pointer
 (`board::touch`); `game` on `board`, `gui`, `strings`, and `ai`'s lookout
-(`game::watch`); `shell` on `game` and `ai`; `render3d` on nothing of the game's; the
-app on all of them. What crosses to the renderer is flat and fixed-size, laid out as the
-shaders read it: `board::Piece`, `board::Marks`, the flash, `board::Layout`, `gui::Quad`,
-and `theme::Theme`; to the 3D board, `view3d::Scene` and `view3d::View`'s matrix.
+(`game::watch`); `shell` on `game` and `ai`; `render3d` on `model3d` and nothing of the
+game's; the app on all of them. What crosses to the renderer (`render::Frame`) is flat
+and fixed-size, laid out as the shaders read it: `board::Piece`, `board::Marks`, the
+flash, `board::Layout`, `gui::Quad`, and `theme::Theme`; to the 3D board,
+`view3d::Scene` and `view3d::View`'s matrix.
 
 ### A frame
 
 `src/app/draughts.goose` runs one loop on every platform
 ([rendering.md](rendering.md#frames-and-battery)):
 
-1. The window: when it loses focus the game is written (Android may kill a paused app),
-   and on Android the clocks pause; a new season's photograph loads two frames after its
-   tile was tapped; the text is baked again if the scale changed.
+1. The window (`host`): when it loses focus the game is written (Android may kill a
+   paused app), and on Android the clocks pause; a new season's photograph loads two
+   frames after its tile was tapped; the text is baked again if the scale changed
+   (`render::upload_text`).
 2. The app tells the shell what only it knows, whether the 3D board is ready and shown,
    after asking it whether the 3D board is wanted, kept, or to be dropped
    (`shell::board3d`). `gui::begin` takes the pointer and the time, and `shell::frame`
@@ -137,9 +158,12 @@ and `theme::Theme`; to the 3D board, `view3d::Scene` and `view3d::View`'s matrix
 4. After a change in settings (`Frame.save`): the file is written, the language
    switched, and a new season's photograph scheduled.
 5. If anything changed or still moves (`shell::animating`), the board the screen shows
-   (`shell::shown`) fills its draw lists, and the frame is drawn: the photograph and the
-   squares in one pass, the pieces, the UI's quads, then the pieces over the UI.
-   Otherwise nothing is drawn, and the next frame waits for input.
+   (`shell::fill`) fills its draw lists, and `render::frame` draws the frame: first what
+   can't run inside the screen's pass (the UI's quads copied or kept, the 3D board's
+   image when its scene changed, the pieces' buffers), then the pass: the photograph and
+   the squares, the pieces, the UI's quads, then the pieces over the UI; on the 3D board
+   the photograph and its image in place of the squares and pieces. Otherwise nothing is
+   drawn, and the next frame waits for input. `host::frame` presents it.
 6. While a clock runs, a timer is set for when the time it shows changes.
 
 The development flags are `src/app/dev.goose`: those that set up the shell at launch

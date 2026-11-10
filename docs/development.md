@@ -87,8 +87,9 @@ gesture bar, 2 px a dp at that scale: `--size 450x1000 --dp 540 --inset 0,59,0,4
 and in landscape `--size 1200x540 --dp 540 --inset 59,0,0,42` (or `0,0,59,42`, turned
 the other way). What the Pixel would show at a floor of 0.75: `--size 1200x540
 --density-floor 0.75 --display-scale 2.625` (1.97 px a dp, 548 dp across).
-`src/app/draughts.build` adds the program's own C (`src/app/background.c`, the photographs, made
-into textures through gfx's C API, and, on the Mac only, their JPEG decoder;
+`src/app/draughts.build` adds the program's own C (`src/app/background.c`, the photographs as
+pixels, with, on the Mac only, their JPEG decoder; `src/app/photo.c`, their upload
+through gfx's C API;
 `src/app/locale.c`, the system's locales; `src/app/display.c`, the window's safe area and the
 display's scale; `src/app/wake.c`, the timer a running clock wakes the
 loop with; `src/app/resize.c`, the backdrop a Mac window shows around its last frame

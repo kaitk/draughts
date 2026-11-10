@@ -23,6 +23,10 @@ NoGraphicsAPI's ideas, inside SDL_GPU:
   ([GPU memory](#gpu-memory)).
 - **The 3D board** reuses the game state and the flat board's draw lists, with a camera
   and lit meshes in place of the 2D pieces ("Board and pieces").
+- **One frame call.** `render::frame` (`src/app/render.goose`) draws each frame from a
+  `render::Frame` of plain values and owns the screen's pass: the copies and the passes
+  into textures first, then the screen's one pass, ended there; the app holds no gfx
+  handle ([architecture](README.md#code-layout)).
 
 ## UI layer
 
@@ -180,9 +184,10 @@ last frame to the window. Instead (`src/app/resize.c`, set once at launch) the M
 layer keeps that frame's shape, scaled to fit, and the window's content view under it
 shows the backdrop, cover-cropped as the app crops it: the flat game's blurred
 photograph or the page color, or with the 3D board its graded backdrop, drawn once at
-512 px when the board is ready (`draw3d::cover`). Both are read back to the CPU once, at
-a season change or when the board changes, never per frame; Core Animation does the
-rest while the loop is held. On mouse-up the frame at the new size takes the window's
+512 px when the board is ready (`draw3d::cover`). Both are read back to the CPU by the
+renderer (`draw::cover_with`), only where a cover shows (`draughts_resize_covers`, the
+Mac), once at a season change or when the board changes, never per frame, and handed to
+`resize.c` as pixels; Core Animation does the rest while the loop is held. On mouse-up the frame at the new size takes the window's
 whole area again, with no layer to take off and nothing to flicker. Idle stays at 0.08%
 of a core (2026-11-10).
 
@@ -288,11 +293,13 @@ but its olive sits nearer spring's greens than the sunset does.
   sharp behind home and blurred, and is nearer the master than the JPEG (44 to 45 dB
   against 40 to 41, summer 40 against 37.5); 4 × 4 (4 MB) buys nothing visible.
 - **Loading** (`src/app/background.c`, the program's own C, a `c_sources` entry in its
-  `.build` sidecar): gfx has no compressed formats, so
+  `.build` sidecar, which decodes into pixels and knows no graphics API, and the
+  renderer's `src/app/photo.c`, which uploads them): gfx has no compressed formats, so
   `patches/goose_gfx/0004-compressed-textures.patch` adds them and
   `gs_gfx_format_supported` ([findings](../goose-findings.md)); the Goose side compiles
-  against the built-in `gfx.goose`, so the C calls gfx's C API itself (`gfx_api.h`), which
-  also uploads the embedded bytes with no copy on the data stack. Where gfx and the GPU
+  against the built-in `gfx.goose`, so `photo.c` calls gfx's C API itself (`gfx_api.h`),
+  which also uploads the embedded bytes with no copy on the data stack: the pixels
+  `background.c` hands over point into the embedded image. Where gfx and the GPU
   take ASTC 6 × 6 (Android, whose gfx is patched at build time), the texture is made from
   the embedded blocks; elsewhere, or where a weak stand-in answers for an unpatched gfx
   (the Mac's `goose build`, which links the release's prebuilt `libgoose_gfx.a`), the
@@ -1109,7 +1116,8 @@ board's does and the backdrop over it as opaque as the blur.
   its card is centered in the 3D board's bounds on screen and keeps clear of the winning
   piece's top where the perspective shows it (`game::card_area`, `game::winning_spot`).
   **Drawn** by `src/render3d/` (the prototype's renderer, shared with `poc/3d/`) from
-  `src/app/draw3d.goose`: the shadow map only when the pieces move, and the pieces'
+  `src/app/draw3d.goose`, the meshes, looks, harmonics, and the bake's steps from
+  `src/model3d/`, which has no graphics: the shadow map only when the pieces move, and the pieces'
   occlusion of the field (each piece a cylinder over the 3 × 3 squares round it) into a
   512² map only where squares changed, a moving piece about 3 × 3 squares of it (task
   059: a texel a field pixel reads instead of the loop; the dropped bake above drew
@@ -1132,7 +1140,7 @@ board's does and the backdrop over it as opaque as the blur.
   scaled so its brightness is the dim ambient a theme without a photograph had (the
   look the Galaxy A33's build without photographs showed, which the plain background
   comes from): the fade tints the board's shade by season, a fade's own light being far
-  too dark to light it (`render3d::fade_harmonics`). Switching between the photograph
+  too dark to light it (`model3d::fade_harmonics`). Switching between the photograph
   and the fade takes only the theme's photograph steps again, not its bake. **Getting
   ready** (`draw3d::prepare`, task 042) takes a step a frame: the setup, the theme's 28
   steps (the bake in bands, the photograph), the pass's 11 pipelines; meanwhile a still
@@ -1255,7 +1263,8 @@ so a glyph is drawn a texel to a pixel: 64 dp for the wordmark, 30 for labels, 1
 notes. The atlas sizes a font by its ascent less its descent, 1.14 em for Libertinus,
 so each is baked at 1.14 times its size in ems to match the prototypes' CSS. The glyphs'
 boxes and atlas places are copied into `gui`'s fixed tables, which lay text out headless,
-the image into a texture, and the atlas is then destroyed. A glyph is one more quad kind
+the image's coverage, one byte a texel, to the renderer, which makes it a texture
+(`render::upload_text`), and the atlas is then destroyed. A glyph is one more quad kind
 in the UI's one draw. Baked again only when the layout's scale changes.
 
 The texture holds only what is drawn:

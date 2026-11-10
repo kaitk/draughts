@@ -104,7 +104,9 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   (`lookout`), the
   overlooks by tension, a capture's size, and its distance from the moved piece, with
   each one's rate over 4000 seeds through `ai::notice` and `ai::overlooked`, no search
-  needed (`overlook`), and draws scored 0, steered into when behind and clear of when ahead (`draws`)), and `puzzles` (the puzzle file's format and refusals, what `puzzles::check`
+  needed (`overlook`), and draws scored 0, steered into when behind and clear of when ahead (`draws`)), `model3d`
+  (the 3D board's bake in steps, every row of each surface once, and the photograph's
+  light as harmonics: `plan`), and `puzzles` (the puzzle file's format and refusals, what `puzzles::check`
   refuses beyond the format, what a move does to each goal, and every built-in puzzle
   passing `puzzles::check`, with its counts by theme and level: `set` International's,
   `russian_set` Russian's, `brazilian_set` Brazilian's). A new puzzle is checked with
@@ -270,7 +272,13 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   `gfx::open_headless(width, height)`, and `draughts.build` to `xshot.build`; build it into
   `build/xshot` and run it with the usual flags and `--frames N` in a folder of its own
   (it writes `draughts.png` there and never exits by itself: end it after the shot).
-  Delete both copies after; never commit them. Its sizes are real pixels, so 800 × 1280
+  Delete both copies after; never commit them. Since task 061 `gfx::open` is in
+  `src/app/host.goose`. To compare two commits, `git archive` each into the scratchpad
+  (`third_party/goose_gfx` and `build/goose-v2026.4-macos-arm64` symlinked in), replace
+  `gfx::open(…, w, h, …)` there with `gfx::open_headless(w, h)` in whichever file holds it,
+  put `dirty = true;` first in the loop's body so `--frames` counts loops, and build each
+  with `build/mac/goose/goose build` from its `src/app`: a dozen shots of both, run four at
+  a time, take about 15 s (2026-11-10). Its sizes are real pixels, so 800 × 1280
   works. The 3D board was checked that way (task 015). Taps in such a run (`--tap c3
   --tap d4`) may not all play before the shot; a position from `--fen` is surer (`--fen
   B:...` shows the 3D board turned for black in a friend's game). State with no flag,
