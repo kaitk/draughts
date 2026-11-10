@@ -165,7 +165,7 @@ fn content_height(setup: i64, landscape: bool, height: f32, u: f32, small: bool 
 // less 40 dp each side (24 in portrait), as tall as the flat board below the row of the
 // player's chip and the way out, or the flat board's square where that leaves under half
 // of it. Returns what was tapped.
-fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: float4, setup: i64,
+fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: float4, setup: i64,
          s: settings::Settings&, room3d: float4&) -> i64 {
     let u = g.scale;
     let width = area.z;
@@ -350,7 +350,7 @@ fn player_chip(g: gui::Gui&, r: float4, s: settings::Settings&) -> bool {
 // The menu in c: the wordmark, `below` dp under it, the rows `apart` dp apart, and
 // settings, a row of its own or, `gear`, a gear at the wordmark's right (portrait, and a
 // short landscape).
-fn menu(over: game::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, apart: f32, s: settings::Settings&,
+fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, apart: f32, s: settings::Settings&,
         small: bool = false) -> i64 {
     let u = g.scale;
     var content = c;
@@ -451,7 +451,7 @@ fn draughts_tile(g: gui::Gui&, row: float4, i: i64) -> float4 {
 }
 
 // The setup in c: back and the title, the choices, play.
-fn choose(over: game::Overlay&, g: gui::Gui&, content: float4, computer: bool, pair_w: f32, apart: float4,
+fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, computer: bool, pair_w: f32, apart: float4,
           s: settings::Settings&) -> i64 {
     let u = g.scale;
     var ask = NOTHING;

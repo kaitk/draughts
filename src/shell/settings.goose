@@ -227,7 +227,7 @@ fn tile_width(s: Settings&, g: gui::Gui&, row: i64, i: i64) -> f32 {
 }
 
 // Declares tile i of a row in r. True when a tap changed s.
-fn tile(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, i: i64, r: float4) -> bool {
+fn tile(s: Settings&, over: board::Overlay&, g: gui::Gui&, row: i64, i: i64, r: float4) -> bool {
     let u = g.scale;
     let id = 410 + 10 * row + i;
     let label = strings::get(word(row, i));
@@ -257,7 +257,7 @@ fn tile(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, i: i64, r: f
 // Lays out a row's tiles from r's top left, wrapping at its width, and declares them
 // when `declare`. Returns how tall they are, and whether a tap changed s. A row as wide
 // as r, as group_width makes it, doesn't wrap for a rounding difference: SLACK.
-fn lay(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, r: float4, declare: bool) -> f32, bool {
+fn lay(s: Settings&, over: board::Overlay&, g: gui::Gui&, row: i64, r: float4, declare: bool) -> f32, bool {
     let u = g.scale;
     let h = row_h(s, row) * u;
     var x: f32 = 0.0;
@@ -294,7 +294,7 @@ fn lay(s: Settings&, over: game::Overlay&, g: gui::Gui&, row: i64, r: float4, de
 // A group's settings from r's top left, as wide as r, each its dim name and its tiles:
 // the name at the left when `aside`, else above them. Declares them when
 // `declare`. Returns how tall they are, and whether a tap changed s.
-fn rows(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4, aside: bool,
+fn rows(s: Settings&, over: board::Overlay&, g: gui::Gui&, group: i64, r: float4, aside: bool,
         declare: bool) -> f32, bool {
     let u = g.scale;
     var y = r.y;
@@ -405,7 +405,7 @@ fn note_height(g: gui::Gui&, w: f32, titled: bool) -> f32 {
 }
 
 // How tall a group's glass is at width w; with no title row where a tab names it.
-fn group_height(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, w: f32, aside: bool,
+fn group_height(s: Settings&, over: board::Overlay&, g: gui::Gui&, group: i64, w: f32, aside: bool,
                 titled: bool = true) -> f32 {
     let u = g.scale;
     let h, unused = rows(s, over, g, group, float4 { 0.0, 0.0, w - 2.0 * GROUP_PAD * u, 0.0 }, aside, false);
@@ -436,7 +436,7 @@ fn group_width(s: Settings&, g: gui::Gui&, group: i64, aside: bool) -> f32 {
 // Where its content, `content` pixels tall, is taller than r (a small window), the
 // glass stays and the rows scroll inside it (task 050). True when a tap changed s.
 let LIST = 800;             // the group's scrolling list's id (gui::scroll_begin), plus the group
-fn group(s: Settings&, over: game::Overlay&, g: gui::Gui&, group: i64, r: float4, area: float4, aside: bool,
+fn group(s: Settings&, over: board::Overlay&, g: gui::Gui&, group: i64, r: float4, area: float4, aside: bool,
          titled: bool = true, content: f32 = 0.0) -> bool {
     let u = g.scale;
     let glass = gui::bleed(g, r, area);
@@ -574,7 +574,7 @@ fn preview_room(page: float4, size: f32) -> float4 {
 // preview goes instead, as large as it fits (the same share of the page beside the
 // choices as the flat square's). The kings' tiles put their pieces in `over`. Returns
 // BACK, CHANGED after a tap changed s, SHOWN after a tab, or NOTHING.
-fn frame(s: Settings&, over: game::Overlay&, g: gui::Gui&, l: board::Layout&, area: float4, shown: i64,
+fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, area: float4, shown: i64,
          room3d: float4&) -> i64 {
     let u = g.scale;
     let landscape = area.z >= area.w;

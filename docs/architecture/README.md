@@ -104,11 +104,12 @@ The targets this keeps open, each replacing or adding to `app/` alone:
 | `src/app/` | The program: the main loop, the GPU drawing of the board, the pieces, and the UI's quads, the season's photograph and its blurs, the font atlas, the themes, the computer's worker thread, and its C (storage folder, locales, the clock's wake timer, the JPEG decoder) |
 | `tools/` | Programs for development: perft, the computer's benchmark and matches, a terminal game against it, and the puzzles' checks |
 
-`ai`, `board`, and `puzzles` build on `rules`; `game` on `board`, `gui`, `strings`, and `ai`'s lookout (`game::watch`); `shell` on
-`game` and `ai`; `render3d` on nothing of the game's; the app on all of them. What crosses to the renderer is flat and
-fixed-size, laid out as the shaders read it: `board::Piece`, `board::Marks`, the flash,
-`board::Layout`, `gui::Quad`, and `theme::Theme`; to the 3D board, `view3d::Scene` and
-`view3d::View`'s matrix.
+`ai`, `board`, and `puzzles` build on `rules`, `board` also on `gui`'s pointer
+(`board::touch`); `game` on `board`, `gui`, `strings`, and `ai`'s lookout
+(`game::watch`); `shell` on `game` and `ai`; `render3d` on nothing of the game's; the
+app on all of them. What crosses to the renderer is flat and fixed-size, laid out as the
+shaders read it: `board::Piece`, `board::Marks`, the flash, `board::Layout`, `gui::Quad`,
+and `theme::Theme`; to the 3D board, `view3d::Scene` and `view3d::View`'s matrix.
 
 ### A frame
 

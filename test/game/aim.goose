@@ -6,7 +6,7 @@
 // drag dropped there, on the flat board and the 3D board, at the tablet's size in
 // landscape and portrait. On the 3D board a tap goes to the field under the finger, and
 // a dragged piece is held where the finger took it, on the plane of its lifted top
-// (game::touch), so the drop is aimed with the piece over the point. Each line counts,
+// (board::touch), so the drop is aimed with the piece over the point. Each line counts,
 // per capture, the points that played it, played nothing, or played another.
 import std;
 import vec;

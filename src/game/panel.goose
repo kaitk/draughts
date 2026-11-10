@@ -54,10 +54,6 @@ let WIDE_H = 88.0;          // undo move in portrait
 let CLOCK_H = 72.0;
 let SHORT_GAP = 36.0;       // dp: the clocks' gap holding the countdown's short line in a corner panel
 let MID_GAP = 12.0;         // dp: either side of the short form between side-by-side clocks
-// Pieces over the UI: two clocks and the winner, or both pieces twice for a draw, and
-// what each side has taken (two sides' 20 on 10 × 10), at most; a transition holds two
-// screens' at once.
-let OVER = 96;
 
 let SIDE = 232.0;           // dp: each panel's width in landscape,
 let NARROW = 192.0;         // narrowing to this near square
@@ -559,7 +555,7 @@ struct Note {
 
 // Both pieces side by side, just touching, white on the left: a draw's mark where a
 // winner's piece goes. Each of radius r, overlapping by `overlap` pixels, at opacity a.
-fn pair(over: board::Piece[..OVER]&, spot: float4, r: f32, overlap: f32, a: f32) {
+fn pair(over: board::Overlay&, spot: float4, r: f32, overlap: f32, a: f32) {
     let w = 4.0 * r - overlap;
     let x = spot.x + 0.5 * (spot.z - w);
     piece(over, float4 { x, spot.y, 2.0 * r, spot.w }, r, 0, 0, a, 0.0);
@@ -664,8 +660,8 @@ fn words(g: gui::Gui&, face: i64, r: float4&, s: const u8[:], a: f32) {
 // A piece of `side` over the UI centered in `spot` with radius r, at opacity a, a man (0)
 // or a king (board::CROWN, board::STACK), with a glow ring right round it as strong as
 // `ring`, 0 to 1.
-fn piece(over: board::Piece[..OVER]&, spot: float4, r: f32, side: i64, king: i64, a: f32, ring: f32) {
-    guard over.len < OVER else { return; }
+fn piece(over: board::Overlay&, spot: float4, r: f32, side: i64, king: i64, a: f32, ring: f32) {
+    guard over.len < board::OVER else { return; }
     let x = spot.x + 0.5 * spot.z;
     let y = spot.y + 0.5 * spot.w;
     over.push(board::Piece { at: float4 { x, y, r, 0.0 }, look: float4 { side, king, 0.0, a },
@@ -675,7 +671,7 @@ fn piece(over: board::Piece[..OVER]&, spot: float4, r: f32, side: i64, king: i64
 // One side's clock in r: its piece and its time, lit while it runs (gold under a
 // minute, red at 20 seconds or under), faint while it waits; its piece's ring as strong
 // as `ring`.
-fn clock_of(g: gui::Gui&, r: float4, c: clock::Clock&, side: i64, ring: f32, over: board::Piece[..OVER]&) {
+fn clock_of(g: gui::Gui&, r: float4, c: clock::Clock&, side: i64, ring: f32, over: board::Overlay&) {
     let u = g.scale;
     let runs = c.running == side;
     let style = if clock::low(c, side) { gui::CLOCK_LOW } else if clock::warn(c, side) { gui::CLOCK_WARN }
@@ -803,7 +799,7 @@ fn play_area(g: gui::Gui&, l: Layout) -> float4 {
 // the hint's tile (`help`) go on the play panel. Returns the tile tapped this frame, if
 // any.
 fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: bool, note: Note&, thinking: bool,
-        glow: f32, over: board::Piece[..OVER]&, help: Help = Help {}) -> i64 {
+        glow: f32, over: board::Overlay&, help: Help = Help {}) -> i64 {
     let u = g.scale;
     let landscape = l.left.z < l.left.w;
     let turn_key = if drawn { strings::DRAW }
@@ -1084,7 +1080,7 @@ fn pips(g: gui::Gui&, r: float4, left: i64, a: f32) {
 // covering about half the one before, closer where the row would run past its room. A
 // catch on its own glass shows it only once a piece has been taken. The pieces go into
 // `over`.
-fn taken(g: gui::Gui&, l: Layout, t: Taken, over: board::Piece[..OVER]&) {
+fn taken(g: gui::Gui&, l: Layout, t: Taken, over: board::Overlay&) {
     guard l.taken_as != TAKEN_NONE && l.taken.z > 0.0 && l.taken.w > 0.0 else { return; }
     let u = g.scale;
     let d = l.taken_d;
@@ -1150,7 +1146,7 @@ fn row_len(t: Taken, c: i64, d: f32) -> f32 {
 // or ending at its right (`right`). A row that would run past r takes smaller pieces,
 // down to TAKEN_LEAST of r.w, then closer ones.
 let TAKEN_LEAST: f32 = 0.7;
-fn catch_row(over: board::Piece[..OVER]&, t: Taken, c: i64, r: float4, right: bool) {
+fn catch_row(over: board::Overlay&, t: Taken, c: i64, r: float4, right: bool) {
     let n = t.men[c] + t.kings[c];
     guard n > 0 && r.z > 0.0 else { return; }
     let both = t.men[c] > 0 && t.kings[c] > 0;

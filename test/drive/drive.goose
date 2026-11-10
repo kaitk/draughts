@@ -12,7 +12,7 @@ import game from "../../src/game";
 import shell from "../../src/shell";
 
 // The pieces the game screen puts over the UI, which the shell holds in the app.
-var over: game::Overlay;
+var over: board::Overlay;
 // The screen the shell's frames lay out on, in pixels; its short side sets the scale.
 var size = float2 { 1280.0, 800.0 };
 // The puzzles' library's first theme row among its tiles: after back and the draughts

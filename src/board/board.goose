@@ -10,6 +10,7 @@ import std;
 import math;
 import vec;
 import rules from "../rules";
+import gui from "../gui";
 import .view3d;
 import .rig;
 
@@ -92,6 +93,14 @@ struct Piece {
     ring: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x: must-capture ring, 1 pulsing, 2 still; y: a glow ring tight round it, 0 to 1; z: pieces it takes, as pips; w: DRAINED, or LIGHT a hint's ghost
     win:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // a win (game::cheer): x dimmed by, 0..1; y its square lit, 0..1; z the square's half side in radii; w: over the UI, 1 on the board (a win's card's piece)
 }
+
+// Pieces over the UI: two clocks and the winner, or both pieces twice for a draw, and
+// what each side has taken (two sides' 20 on 10 × 10), at most; a transition holds two
+// screens' at once.
+let OVER = 96;
+
+// The pieces a screen shows over the UI this frame (game::put), drawn after it.
+type Overlay = Piece[..OVER];
 
 // What the board shader marks, one bit per square numbered y * size + x.
 struct Marks {
@@ -186,7 +195,7 @@ struct Board {
     held:  bool,
     // The square of the selected piece's move under the finger while it drags the piece,
     // or under the mouse with the piece selected by a tap, or -1: what the lookout shows
-    // the move would leave open (`target_at`, set by game::touch).
+    // the move would leave open (`target_at`, set by touch).
     over: i64,
     // A press on a piece, and whether it became a drag.
     pressed:  i64,
@@ -690,6 +699,30 @@ fn release(b: Board&, l: Layout, p: float2, now: f64) {
     } else if empty(b, sq) {
         missed(b, sq, now);
     }
+}
+
+// The pointer on the board this frame (gui's input): a press, a drag, a release, as
+// press and the rest take them, on the board laid out `flat`. On the 3D board (three) a
+// tap reaches the flat layout through the perspective (view3d::pick through `view`); a
+// piece held moves on the plane of its lifted top, kept where the finger took it
+// (`grab`, the screen's own), so a press doesn't drag it before the finger moves. The
+// game and a puzzle share it. Returns whether a drag moved a piece.
+fn touch(b: Board&, flat: Layout, three: bool, view: view3d::View, input: gui::Input, grab: float2&, now: f64) -> bool {
+    let at = if three { view3d::pick(view, b, flat, input.at) } else { input.at };
+    if input.pressed {
+        press(b, flat, at, now);
+        if three && b.pressed >= 0 { grab = b.press_at - view3d::pick(view, b, flat, input.at); }
+    }
+    let held = if three && b.pressed >= 0 { view3d::pick(view, b, flat, input.at) + grab } else { at };
+    var moved = false;
+    if input.down && drag(b, flat, held) { moved = true; }
+    if input.released { release(b, flat, held, now); }
+    // The square under a held piece, or under the mouse over a piece selected by a tap, for
+    // the lookout: a finger lifted from a tap rests on the piece, so on touch it is only
+    // while a drag goes.
+    b.over = if b.dragging { target_at(b, flat, held) }
+             else if !input.down && b.pressed < 0 { target_at(b, flat, at) } else { -1 };
+    return moved;
 }
 
 fn hops(m: rules::Move&) -> i64 { max(m.path.len - 1, 1) }

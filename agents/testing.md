@@ -44,7 +44,7 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   and the must-capture rings and counts before and after a mistake: `choice`; anywhere on
   a landing square, 25 points, tapped and dropped on the turned flat and 3D boards in
   both orientations, plays that capture: `aim` (a 3D drop is aimed with the held piece
-  over the point, as `game::touch` keeps it where the finger took it, a stacked king two
+  over the point, as `board::touch` keeps it where the finger took it, a stacked king two
   discs high); a draw by a count tapped to its last move, its countdown, card, frames, undo,
   against the computer, kept in a saved game, and by repetition: `draw`; when a capture's
   count shows, on mistakes only from a mistake to the next right jump and with move

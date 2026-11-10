@@ -6,7 +6,7 @@
 // press didn't land on the UI, so a press that starts on a panel never moves a piece and
 // one that starts on the board never presses a tile. The app draws what it leaves: the
 // board's draw lists, the UI's quads, and a few pieces over the UI, in a list the shell
-// holds for every screen (Overlay). Tests run it headless.
+// holds for every screen (board::Overlay). Tests run it headless.
 //
 // Against the computer the game knows which side it plays, its level, and the skill it
 // plays the whole game at. On its turn the game asks for a move (asking()) and plays the
@@ -44,9 +44,6 @@ let SETTINGS = 2;
 let EASY = 0;
 let MEDIUM = 1;
 let HARD = 2;
-
-// The pieces a screen shows over the UI this frame (put()), drawn after it.
-type Overlay = board::Piece[..panel::OVER];
 
 struct Game {
     b:        board::Board,
@@ -437,7 +434,7 @@ fn due(gm: Game&, now: f64) -> f64 {
 // shell should do and whether anything on screen changed. `frozen` (the shell's
 // transition into the game) counts no time on the clock and asks the computer for
 // nothing; the clock counts again from the frame after.
-fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, frozen: bool = false) -> i64, bool {
+fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overlay&, frozen: bool = false) -> i64, bool {
     let b .= gm.b;
     let input = g.input;
     var changed = board::update(b, now) || input.pressed || input.released;
@@ -526,7 +523,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
             changed = true;
         }
     } else if !g.took && b.pos.side != gm.computer {
-        if touch(b, l, input, gm.grab, now) { changed = true; }
+        if board::touch(b, l.board, l.three, l.view, input, gm.grab, now) { changed = true; }
     }
     // Against a friend the 3D board turns to face the side to move once a move has shown,
     // unless the game is over; against the computer it stays turned to the child.
@@ -565,29 +562,6 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&, fr
         changed = true;
     }
     return go, changed;
-}
-
-// The pointer on the board this frame: a press, a drag, a release, as board::press and
-// the rest take them. On the 3D board (l.three) a tap reaches the flat layout through the
-// perspective (view3d::pick); a piece held moves on the plane of its lifted top, kept
-// where the finger took it (`grab`, the screen's own), so a press doesn't drag it before
-// the finger moves. The game and a puzzle share it. Returns whether a drag moved a piece.
-fn touch(b: board::Board&, l: panel::Layout, input: gui::Input, grab: float2&, now: f64) -> bool {
-    let at = if l.three { view3d::pick(l.view, b, l.board, input.at) } else { input.at };
-    if input.pressed {
-        board::press(b, l.board, at, now);
-        if l.three && b.pressed >= 0 { grab = b.press_at - view3d::pick(l.view, b, l.board, input.at); }
-    }
-    let held = if l.three && b.pressed >= 0 { view3d::pick(l.view, b, l.board, input.at) + grab } else { at };
-    var moved = false;
-    if input.down && board::drag(b, l.board, held) { moved = true; }
-    if input.released { board::release(b, l.board, held, now); }
-    // The square under a held piece, or under the mouse over a piece selected by a tap, for
-    // the lookout: a finger lifted from a tap rests on the piece, so on touch it is only
-    // while a drag goes.
-    b.over = if b.dragging { board::target_at(b, l.board, held) }
-             else if !input.down && b.pressed < 0 { board::target_at(b, l.board, at) } else { -1 };
-    return moved;
 }
 
 // Whether the lookout shows now: on, the side to move's turn and the board at rest, the
@@ -649,7 +623,7 @@ fn help(gm: Game&) -> panel::Help {
 // Declares the screen as it stands, its pieces over the UI put in `over`, doing nothing:
 // the shell's transition away from the game, with the pointer taken away and the clocks
 // paused. A win's card is declared as it is, to fade with the panels.
-fn still(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: Overlay&) {
+fn still(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overlay&) {
     over.clear();
     let won = winner(gm);
     let side = if won >= 0 { won } else { gm.b.pos.side as i64 };
@@ -676,7 +650,7 @@ fn animating(gm: Game&, g: gui::Gui&, now: f64) -> bool {
 // A piece of `side` over the UI centered in `spot` with radius r, at opacity a, a man (0)
 // or a king as board::CROWN or board::STACK draws it, with a glow ring right round it or
 // not.
-fn put(over: Overlay&, spot: float4, r: f32, side: i64, king: i64, a: f32, ring: bool) {
+fn put(over: board::Overlay&, spot: float4, r: f32, side: i64, king: i64, a: f32, ring: bool) {
     panel::piece(over, spot, r, side, king, a, if ring { 1.0 } else { 0.0 });
 }
 

@@ -36,8 +36,8 @@ find out by compiling, so the next session doesn't.
   a call leaves them out.
 - A struct literal ending in `..` leaves the rest at defaults: `Move { from: f, .. }`.
 - `type Name = T;` names a long type, the same type under another name
-  (`game::Overlay`, a limited array of pieces). A test file may hold state its helpers
-  share in a top-level `var` (`var over: game::Overlay;` in `test/game/`).
+  (`board::Overlay`, a limited array of pieces). A test file may hold state its helpers
+  share in a top-level `var` (`var over: board::Overlay;` in `test/game/`).
 - `guard cond else { continue; }` for early exits; `if` and `match` are expressions, no
   ternary.
 - `for i in n`, `for i in a..b`, `for x, i in xs`, `for &x in xs` (by reference).

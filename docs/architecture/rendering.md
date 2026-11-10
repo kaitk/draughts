@@ -926,7 +926,7 @@ Task 052, `prototypes/game-captured.html`'s take a in its `row` look, chosen 202
   game, `board::MAX_HISTORY` moves back). Counted once a move has shown, and after undo
   and start over (`game::count_taken`), never per frame.
 - **Drawn** as more instances of the pieces' quad over the UI (`panel::taken`, into the
-  overlay, `panel::OVER` 96): the app's men and crowned kings, 32 dp on a tablet, 26 on a
+  overlay, `board::OVER` 96): the app's men and crowned kings, 32 dp on a tablet, 26 on a
   phone, 22 compact, each a step of 0.52 of a piece after the one before, the kings after
   a gap of 0.3; a row too long for its room takes smaller pieces, to 70%, then closes up.
 - **Placed** by the game's layouts (`Layout.taken`, `taken_as`): flat landscape, on
@@ -1103,7 +1103,7 @@ board's does and the backdrop over it as opaque as the blur.
   Let go, the angle stays while home is open; leaving home eases it back to rest over the
   transition (`shell::home_view`, `test/shell/home_turn`). A puzzle takes the game's corners layout, next the shorter
   tile in a corner panel, turned so the side to move plays from the bottom, its taps and
-  drags through the perspective as the game's (`game::touch`). **The win** dims the board
+  drags through the perspective as the game's (`board::touch`). **The win** dims the board
   and the pieces but the winning one (its seed `view3d::SEED_LIT` more, the dim in the
   frame's `screen.z`), lights the squares the glow passes and rings the pieces it lifts;
   its card is centered in the 3D board's bounds on screen and keeps clear of the winning

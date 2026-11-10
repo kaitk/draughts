@@ -465,7 +465,7 @@ struct Drawer {
     colors:         theme::Theme,
     // What goes into the buffers: always the whole of each, so SDL can cycle them.
     upload:      board::Piece[board::MAX_PIECES],
-    over_upload: board::Piece[panel::OVER],     // the pieces drawn over the UI
+    over_upload: board::Piece[board::OVER],     // the pieces drawn over the UI
     over_count:  i64,
     view:        View,
 }
@@ -486,7 +486,7 @@ fn new(kind: i64, plain: bool) -> Drawer {
         kind:        kind,
         colors:      theme::get(kind),
         upload:      [board::Piece {}; board::MAX_PIECES],
-        over_upload: [board::Piece {}; panel::OVER],
+        over_upload: [board::Piece {}; board::OVER],
         over_count:  0,
         view:        View { screen: float4 { 0.0, 0.0, 0.0, 0.0 } },
     };
@@ -499,7 +499,7 @@ fn new(kind: i64, plain: bool) -> Drawer {
 // Copies the pieces in `over` for overlay() to draw over the UI: frame() does, and the
 // 3D board's frame (draw3d.goose), which draws the board itself.
 fn pieces_over(d: Drawer&, over: const board::Piece[:], l: board::Layout, width: f32, height: f32) {
-    d.over_count = min(over.len, panel::OVER);
+    d.over_count = min(over.len, board::OVER);
     for i in d.over_count { d.over_upload[i] = over[i]; }
     if d.over_count > 0 { gfx::update_buffer(d.overlay, bytes_of(d.over_upload)); }
     // The disc's side is 0.55% of the board deep, whatever a piece's size; the same for

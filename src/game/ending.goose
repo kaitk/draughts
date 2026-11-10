@@ -148,7 +148,7 @@ fn spot_of(gm: Game&, pl: panel::Layout, sq: i64) -> float2, f32 {
 // it is at rest. On the 3D board it is placed by the board's bounds on screen and the
 // winning piece where the perspective shows it. Returns panel::RESTART, panel::BACK, or
 // panel::NOTHING.
-fn celebrate(gm: Game&, g: gui::Gui&, pl: panel::Layout, won: i64, now: f64, over: Overlay&) -> i64 {
+fn celebrate(gm: Game&, g: gui::Gui&, pl: panel::Layout, won: i64, now: f64, over: board::Overlay&) -> i64 {
     let t = moment(gm, now);
     guard t >= CARD_AT else { return panel::NOTHING; }
     let l = pl.board;
@@ -213,7 +213,7 @@ fn reason(gm: Game&, draw: i64, out: u8[..64]&) {
 // taps where it is at rest. Sized and placed as the win's card, kept off the piece that
 // made the last move; on a board under 540 dp the words say it, and the pieces are left
 // out. Returns panel::RESTART, panel::BACK, or panel::NOTHING.
-fn settle(gm: Game&, g: gui::Gui&, pl: panel::Layout, draw: i64, now: f64, over: Overlay&) -> i64 {
+fn settle(gm: Game&, g: gui::Gui&, pl: panel::Layout, draw: i64, now: f64, over: board::Overlay&) -> i64 {
     let t = now - gm.drawn_at;
     guard t >= DRAW_CARD else { return panel::NOTHING; }
     let l = pl.board;

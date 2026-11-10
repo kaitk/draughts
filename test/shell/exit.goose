@@ -66,7 +66,7 @@ fn check(what: const u8[:], setup: i64) {
     // Home itself asks for EXIT.
     var l = sh.layout;
     var room = float4 { 0.0, 0.0, 0.0, 0.0 };
-    var over: game::Overlay = [];
+    var over: board::Overlay = [];
     var h = gui::Gui {};
     gui::test_faces(h);
     gui::begin(h, gui::Input { at: at, down: true, pressed: true, .. }, u, 3.0);

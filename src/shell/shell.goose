@@ -94,8 +94,8 @@ struct Shell {
     came_view: view3d::View = view3d::View {},
     // How blurred the photograph is this frame: 0 as it is (home, settings, the puzzles to
     // pick from), 1 blurred and dimmed (the game, a puzzle), between in a transition.
-    blur:   f32           = 0.0,
-    over:   game::Overlay = [],               // the screen's pieces over the UI this frame
+    blur:   f32            = 0.0,
+    over:   board::Overlay = [],               // the screen's pieces over the UI this frame
     puzzle: puzzle::Play,                     // the puzzle playing, or last played
     theme:  i64 = -1,                         // the theme the picker shows, -1 its library
     // A transition: the screen it leaves, or -1, and when it began; and this frame, how
@@ -268,7 +268,7 @@ fn declare(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> boo
     let from = sh.from;
     let crossing = from >= 0;
     let e = board::ease(progress(sh, now)) as f32;
-    var gone: game::Overlay = [];
+    var gone: board::Overlay = [];
     let first = g.quads.len;
     if crossing {
         gui::listen(g, false);
@@ -518,7 +518,7 @@ fn picker_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
 // its pieces over the UI in `gone`, at e of the way, eased: the first fades out and the
 // second in, both drifting the way the board moves, and the board eases from the one's
 // place to the other's, with the squares and turn of `own`, the end whose board shows.
-fn blend(sh: Shell&, g: gui::Gui&, first: i64, middle: i64, gone: game::Overlay&, e: f32, own: board::Layout) {
+fn blend(sh: Shell&, g: gui::Gui&, first: i64, middle: i64, gone: board::Overlay&, e: f32, own: board::Layout) {
     sh.mix = e;
     let a = sh.went;
     let b = sh.came;
@@ -534,15 +534,15 @@ fn blend(sh: Shell&, g: gui::Gui&, first: i64, middle: i64, gone: game::Overlay&
                                  a.board.z + (b.board.z - a.board.z) * e, g.scale, own.n);
     sh.layout.flip = own.flip;
     // The pieces over the UI likewise, the screen left's first.
-    var both: game::Overlay = [];
+    var both: board::Overlay = [];
     for p in gone { put(both, p, 1.0 - e, out); }
     for p in sh.over { put(both, p, e, into); }
     sh.over = both;
 }
 
 // A piece over the UI at opacity a, moved by d.
-fn put(over: game::Overlay&, p: board::Piece, a: f32, d: float2) {
-    guard over.len < panel::OVER else { return; }
+fn put(over: board::Overlay&, p: board::Piece, a: f32, d: float2) {
+    guard over.len < board::OVER else { return; }
     var q = p;
     q.at.x += floor(d.x + 0.5);
     q.at.y += floor(d.y + 0.5);
@@ -663,7 +663,7 @@ fn who_card(sh: Shell&, g: gui::Gui&, area: float4) -> bool {
 // Declares `screen`, the one a transition leaves, as it stands, its pieces over the UI
 // put in `over`, and sets l to where it puts the board. It acts on nothing: the caller
 // has taken the pointer away, and the game's clocks are paused.
-fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: game::Overlay&,
+fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: board::Overlay&,
          l: board::Layout&) {
     var room = float4 { 0.0, 0.0, 0.0, 0.0 };
     if screen == SETTINGS {

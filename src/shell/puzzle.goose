@@ -68,7 +68,7 @@ struct Play {
     missed_at: f64      = -100.0,
     won:       i64      = 0,     // stars won, once solved
     fresh:     bool     = false, // solved this frame, for the shell to keep the stars
-    grab:      float2   = float2 { 0.0, 0.0 }, // on the 3D board, a held piece against the finger (game::touch)
+    grab:      float2   = float2 { 0.0, 0.0 }, // on the 3D board, a held piece against the finger (board::touch)
     cam:       rig::Rig = rig::Rig {},          // and the camera its buttons move (board/rig.goose)
 }
 
@@ -193,7 +193,7 @@ fn tap(pl: Play&, l: board::Layout, p: float2, now: f64) {
 
 // One frame, after gui::begin. Returns what the shell should do and whether anything on
 // screen changed.
-fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: game::Overlay&) -> i64, bool {
+fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overlay&) -> i64, bool {
     let b .= pl.b;
     let input = g.input;
     var changed = board::update(b, now) || input.pressed || input.released;
@@ -264,7 +264,7 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: game::Overla
         let wrong_at = b.wrong_at;
         let waited = board::waiting(b);
         // Through the perspective on the 3D board, as the game's.
-        if game::touch(b, l, input, pl.grab, now) { changed = true; }
+        if board::touch(b, l.board, l.three, l.view, input, pl.grab, now) { changed = true; }
         judge(pl, history, wrong_at, now);
         // Next was declared above, before the board took the pointer: a press or a drop
         // that starts or ends a piece's wait changes how next looks, and a drop is the
@@ -336,7 +336,7 @@ fn turn_ring(pl: Play&) -> f32 {
 // before the icon as the game's turn piece that wide, beside it in landscape (the
 // two over the words) and leading the row in portrait.
 fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: f64, disc: f32,
-        over: game::Overlay&) {
+        over: board::Overlay&) {
     let u = g.scale;
     let pz .= current(pl);
     let d = disc * u;
@@ -406,7 +406,7 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
 // waits partway through a capture it wakes, unlit, to say the move is done, which a
 // capture left partway isn't. Round the 3D board, the camera buttons (panel::camera).
 // Returns PUZZLES, SETTINGS, NEXT, RESTART_ASK, CAMERA, or STAY.
-fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: game::Overlay&) -> i64 {
+fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overlay&) -> i64 {
     let u = g.scale;
     let landscape = l.left.z < l.left.w;
     var ask = STAY;
