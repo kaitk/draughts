@@ -258,15 +258,15 @@ fn tile(s: Settings&, over: board::Overlay&, g: gui::Gui&, row: i64, i: i64, r: 
     return true;
 }
 
-// Lays out a row's tiles from r's top left, wrapping at its width, and declares them
-// when `declare`. Returns how tall they are, and whether a tap changed s. A row as wide
-// as r, as group_width makes it, doesn't wrap for a rounding difference: SLACK.
-fn lay(s: Settings&, over: board::Overlay&, g: gui::Gui&, row: i64, r: float4, declare: bool) -> f32, bool {
+// Where a row's tiles go, from r's top left, wrapping at its width, into `at`. Returns
+// how tall they are. A row as wide as r, as group_width makes it, doesn't wrap for a
+// rounding difference: SLACK.
+let MOST_TILES = 5;
+fn lay(s: Settings&, g: gui::Gui&, row: i64, r: float4, at: float4[:]) -> f32 {
     let u = g.scale;
     let h = row_h(s, row) * u;
     var x: f32 = 0.0;
     var y: f32 = 0.0;
-    var changed = false;
     // The theme's five where they don't fit one line (a small window): a grid of equal
     // tiles three across (two where three don't fit), not a ragged wrap (task 050).
     if row == THEME_ROW {
@@ -277,10 +277,9 @@ fn lay(s: Settings&, over: board::Overlay&, g: gui::Gui&, row: i64, r: float4, d
             let w = (r.z - (cols - 1) * TILE_GAP * u) / cols;
             let lines = (ROW_TILES[row] + cols - 1) / cols;
             for i in ROW_TILES[row] {
-                let at = float4 { r.x + (i % cols) * (w + TILE_GAP * u), r.y + (i / cols) * (h + TILE_GAP * u), w, h };
-                if declare && tile(s, over, g, row, i, at) { changed = true; }
+                at[i] = float4 { r.x + (i % cols) * (w + TILE_GAP * u), r.y + (i / cols) * (h + TILE_GAP * u), w, h };
             }
-            return lines * h + (lines - 1) * TILE_GAP * u, changed;
+            return lines * h + (lines - 1) * TILE_GAP * u;
         }
     }
     for i in ROW_TILES[row] {
@@ -289,22 +288,33 @@ fn lay(s: Settings&, over: board::Overlay&, g: gui::Gui&, row: i64, r: float4, d
             x = 0.0;
             y += h + TILE_GAP * u;
         }
-        if declare && tile(s, over, g, row, i, float4 { r.x + x, r.y + y, w, h }) { changed = true; }
+        at[i] = float4 { r.x + x, r.y + y, w, h };
         x += w + TILE_GAP * u;
     }
-    return y + h, changed;
+    return y + h;
+}
+
+// Where a group's settings go (rows_at): each row's dim name, its tiles, and the theme's
+// switch; and how tall they are together.
+struct Row {
+    name:  float4             = float4 { 0.0, 0.0, 0.0, 0.0 },
+    sw:    float4             = float4 { 0.0, 0.0, 0.0, 0.0 },
+    tiles: float4[MOST_TILES] = [float4 { 0.0, 0.0, 0.0, 0.0 }; MOST_TILES],
+}
+struct Rows {
+    row: Row[3] = [Row {}; 3],
+    h:   f32    = 0.0,
 }
 
 // A group's settings from r's top left, as wide as r, each its dim name and its tiles:
-// the name at the left when `aside`, else above them. Declares them when
-// `declare`. Returns how tall they are, and whether a tap changed s.
-fn rows(s: Settings&, over: board::Overlay&, g: gui::Gui&, group: i64, r: float4, aside: bool,
-        declare: bool) -> f32, bool {
+// the name at the left when `aside`, else above them.
+fn rows_at(s: Settings&, g: gui::Gui&, group: i64, r: float4, aside: bool) -> Rows {
     let u = g.scale;
+    var rs = Rows {};
     var y = r.y;
-    var changed = false;
     for k in group_rows(group) {
         let row = group_row(group, k);
+        let at .= rs.row[k];
         if k > 0 { y += ROW_GAP * u; }
         let left = (s.name_w + 14.0) * u;
         // The theme's row: its name on a line of its own, the switch under it, the two
@@ -316,27 +326,39 @@ fn rows(s: Settings&, over: board::Overlay&, g: gui::Gui&, group: i64, r: float4
         let line: f32 = if switched { sh + SWITCH_GAP * u } else { NAME_H * u };
         let tiles = if aside { float4 { r.x + left, y, r.z - left, 0.0 } }
                     else { float4 { r.x, y + line, r.z, 0.0 } };
-        let h, tapped = lay(s, over, g, row, tiles, declare);
-        if declare {
-            var name = float4 { r.x, y, s.name_w * u, if aside { h } else { NAME_H * u - 6.0 * u } };
-            let top = y + max(0.0, 0.5 * (h - SWITCH_NAME * u - sh));
-            var sw = float4 { r.x, top + SWITCH_NAME * u, across, sh };
-            if switched && aside { name = float4 { r.x, top, across, SWITCH_NAME * u }; }
-            if switched && !aside {
-                name = float4 { r.x, y, r.z, sh };
-                sw = float4 { r.x + r.z - across, y, across, sh };
-            }
-            gui::text(g, gui::SMALL, name, strings::get(ROW_NAMES[row]), 0.66, 0.03 * gui::FACE_DP[gui::SMALL] as f32 * u,
-                      gui::LEFT);
-            if switched {
-                s.switch_at = sw;
-                if switch(s, g, sw) { changed = true; }
+        let h = lay(s, g, row, tiles, at.tiles);
+        at.name = float4 { r.x, y, s.name_w * u, if aside { h } else { NAME_H * u - 6.0 * u } };
+        let top = y + max(0.0, 0.5 * (h - SWITCH_NAME * u - sh));
+        if switched {
+            at.sw = float4 { r.x, top + SWITCH_NAME * u, across, sh };
+            if aside { at.name = float4 { r.x, top, across, SWITCH_NAME * u }; }
+            else {
+                at.name = float4 { r.x, y, r.z, sh };
+                at.sw = float4 { r.x + r.z - across, y, across, sh };
             }
         }
-        if tapped { changed = true; }
         y += if aside { h } else { line + h };
     }
-    return y - r.y, changed;
+    rs.h = y - r.y;
+    return rs;
+}
+
+// Declares a group's settings where rows_at put them. True when a tap changed s.
+fn rows(s: Settings&, over: board::Overlay&, g: gui::Gui&, group: i64, rs: Rows&) -> bool {
+    let u = g.scale;
+    var changed = false;
+    for k in group_rows(group) {
+        let row = group_row(group, k);
+        let at .= rs.row[k];
+        for i in ROW_TILES[row] { if tile(s, over, g, row, i, at.tiles[i]) { changed = true; } }
+        gui::text(g, gui::SMALL, at.name, strings::get(ROW_NAMES[row]), 0.66, 0.03 * gui::FACE_DP[gui::SMALL] as f32 * u,
+                  gui::LEFT);
+        if row == THEME_ROW {
+            s.switch_at = at.sw;
+            if switch(s, g, at.sw) { changed = true; }
+        }
+    }
+    return changed;
 }
 
 // The privacy note (App Review Guideline 5.1.1(i); store/app-store.md): what the app
@@ -409,10 +431,9 @@ fn note_height(g: gui::Gui&, w: f32, titled: bool) -> f32 {
 }
 
 // How tall a group's glass is at width w; with no title row where a tab names it.
-fn group_height(s: Settings&, over: board::Overlay&, g: gui::Gui&, group: i64, w: f32, aside: bool,
-                titled: bool = true) -> f32 {
+fn group_height(s: Settings&, g: gui::Gui&, group: i64, w: f32, aside: bool, titled: bool = true) -> f32 {
     let u = g.scale;
-    let h, unused = rows(s, over, g, group, float4 { 0.0, 0.0, w - 2.0 * GROUP_PAD * u, 0.0 }, aside, false);
+    let h = rows_at(s, g, group, float4 { 0.0, 0.0, w - 2.0 * GROUP_PAD * u, 0.0 }, aside).h;
     let title: f32 = if titled { title_height(g, group, w) + ROW_GAP * u } else { 0.0 };
     let note:  f32 = if group == 0 { note_height(g, w, titled) } else { 0.0 };
     return (12.0 + 14.0) * u + title + h + note;
@@ -468,7 +489,8 @@ fn group(s: Settings&, over: board::Overlay&, g: gui::Gui&, group: i64, r: float
                        gui::RIGHT);
         }
     }
-    let h, changed = rows(s, over, g, group, c, aside, true);
+    var rs = rows_at(s, g, group, c, aside);
+    let changed = rows(s, over, g, group, rs);
     if group == 0 && note_beside(g, r.z, titled) == 0 {
         // At the glass's foot, below the rows however much taller the glass is.
         let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
@@ -616,16 +638,16 @@ fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, a
         let foot = min(g.insets.w, (PAD_Y + 14.0) * u);
         let room = page.w - (HEAD_H + HEAD_GAP) * u + foot;
         w = min(max(max(group_width(s, g, 0, true), group_width(s, g, 1, true)), head_w), 0.55 * page.z);
-        if group_height(s, over, g, 0, w, true) + GROUP_GAP * u + group_height(s, over, g, 1, w, true) > room {
+        if group_height(s, g, 0, w, true) + GROUP_GAP * u + group_height(s, g, 1, w, true) > room {
             aside = false;
             w = min(max(max(group_width(s, g, 0, false), group_width(s, g, 1, false)), head_w), 0.55 * page.z);
         }
-        if group_height(s, over, g, 0, w, aside) + GROUP_GAP * u + group_height(s, over, g, 1, w, aside) > room {
+        if group_height(s, g, 0, w, aside) + GROUP_GAP * u + group_height(s, g, 1, w, aside) > room {
             aside = true;
             w = max(max(group_width(s, g, 0, true), group_width(s, g, 1, true)), head_w);
         }
         let widest = if phone { 0.7 * page.z } else { page.z - (SIDE_GAP + board::SMALLEST) * u };
-        tabbed = group_height(s, over, g, 0, w, aside) + GROUP_GAP * u + group_height(s, over, g, 1, w, aside) > room
+        tabbed = group_height(s, g, 0, w, aside) + GROUP_GAP * u + group_height(s, g, 1, w, aside) > room
                  || w > widest;
         if !tabbed && aside && w + (WIDE_NAME_W - NAME_W) * u <= 0.55 * page.z {
             w += (WIDE_NAME_W - NAME_W) * u;
@@ -641,8 +663,8 @@ fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, a
         room3d = preview_room(page, size);
         ask = head(s, g, gui::cut_top(side, HEAD_H * u), shown);
         gui::cut_top(side, HEAD_GAP * u);
-        let game_h = group_height(s, over, g, 0, side.z, aside);
-        let look_h = group_height(s, over, g, 1, side.z, aside);
+        let game_h = group_height(s, g, 0, side.z, aside);
+        let look_h = group_height(s, g, 1, side.z, aside);
         // Centered down the rest, or from its top if they are taller, running on into the
         // foot; the look's glass ends below its kings there rather than running on to the
         // screen's bottom edge, which left it mostly empty below (the user, 2026-11-09).
@@ -668,7 +690,7 @@ fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, a
     let unwrapped = want0 + want1 <= across;
     let w0 = if unwrapped { want0 } else { across * want0 / (want0 + want1) };
     let w1 = if unwrapped { want1 } else { across - w0 };
-    let h = max(group_height(s, over, g, 0, w0, false), group_height(s, over, g, 1, w1, false));
+    let h = max(group_height(s, g, 0, w0, false), group_height(s, g, 1, w1, false));
     let left = page.w - (HEAD_H + 32.0) * u - h;
     let both = if phone { PREVIEW_SHARE * min(page.z, left) >= min(0.45 * page.z, BOTH_BOARD * u) } else { left >= 0.0 };
     if both {
@@ -700,7 +722,7 @@ fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, a
         room3d = preview_room(page, size);
         ask = head(s, g, gui::cut_top(side, HEAD_H * u), shown, true);
         gui::cut_top(side, HEAD_GAP * u);
-        let gh = max(group_height(s, over, g, 0, side.z, true, false), group_height(s, over, g, 1, side.z, true, false));
+        let gh = max(group_height(s, g, 0, side.z, true, false), group_height(s, g, 1, side.z, true, false));
         if group(s, over, g, s.group, gui::center(side, side.z, gh), area, true, false) { ask = CHANGED; }
         return ask;
     }
@@ -712,7 +734,7 @@ fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, a
     gui::cut_top(page, gui::PAD_WIDE * u);
     if tabs(s, g, gui::cut_top(page, BACK_W * u)) { ask = SHOWN; }
     gui::cut_top(page, GROUP_GAP * u);
-    let one = group_height(s, over, g, s.group, page.z, false, false);
+    let one = group_height(s, g, s.group, page.z, false, false);
     let fits = one <= page.w;
     let glass = gui::cut_bottom(page, one);
     gui::cut_bottom(page, gui::PAD_WIDE * u);
