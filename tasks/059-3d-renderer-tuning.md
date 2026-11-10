@@ -31,6 +31,10 @@ So each change is judged on the PC and confirmed on the tablet (`scripts/device_
   cheapest first step, task 042's candidate 4), and Streamline for the tablet's counters
   (fragment-bound or vertex-bound, bandwidth, tile overflows). RenderDoc also captures
   Android's Vulkan.
+- **The device to profile on is the Pixel 7a** (Mali-G710 MC7, the tablet's Valhall
+  family, wider): Android GPU Inspector supports Pixels officially (Mali counters, each
+  pass's time), and profiling wants a debuggable build, which may mean an uninstall the
+  tablet's data rules out. The tablet takes only the usual build, to confirm the numbers.
 
 ## Directions to weigh
 
@@ -55,7 +59,8 @@ From task 042's review and beyond it, none measured yet:
 - [ ] Nsight and RenderDoc captures of the moving 3D board on the PC, the clocks locked:
       each pass's and the heaviest draws' GPU time recorded here
 - [ ] The Mali Offline Compiler's report for each 3D shader, recorded here
-- [ ] Streamline on the tablet: what bounds the moving 3D board's frame
+- [ ] Android GPU Inspector or Streamline on the Pixel 7a: what bounds the moving 3D
+      board's frame, confirmed on the tablet
 - [ ] A ranked plan of changes, each with its expected win, measured cost, and what it
       does to the look (checked against the reference images, `agents/design.md`)
 - [ ] The changes made, each measured on the PC and on the tablet, with the README's and
