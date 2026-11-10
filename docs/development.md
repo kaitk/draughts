@@ -438,8 +438,8 @@ scripts/ios.py src/app/draughts.goose --device --run            # on an attached
    `SDL_RunApp`, which calls the program's main back as `SDL_main`. SDL is built without
    HIDAPI (`SDL_HIDAPI OFF`): on iOS it links CoreBluetooth, and App Store Connect
    refuses a binary that references Bluetooth without a purpose string.
-4. The bundle is the executable, an `Info.plist` the script writes (the id
-   `io.github.kaitk.draughts`, the version from `native.py`'s `VERSION_NAME` and the
+4. The bundle is the executable, an `Info.plist` the script writes (the id, the script's
+   `BUNDLE_ID`, for now not Android's: `store/README.md`, "The app's identity"; the version from `native.py`'s `VERSION_NAME` and the
    script's `BUILD_NUMBER`, full screen, a `UILaunchScreen`, without which iOS
    letterboxes the app), and the
    launcher's name per language (`<lang>.lproj/InfoPlist.strings` from each
@@ -472,9 +472,9 @@ The simulator is an iPhone 13 mini the script creates once (`Draughts iPhone 13 
 window opens. `simctl` can't tap, so touch is checked on a device; the flags (`--screen`,
 `--tap`, `--go`) reach the rest. `--console` prints the program's output until it ends.
 To send the app to the background, start another (`xcrun simctl launch booted
-com.apple.Preferences`), and `xcrun simctl launch booted io.github.kaitk.draughts` brings
+com.apple.Preferences`), and `xcrun simctl launch booted io.github.kaitk.draughts.app` brings
 it back. Its storage folder is `Library/Application Support/kaitk/draughts/` in `xcrun
-simctl get_app_container booted io.github.kaitk.draughts data`. The simulator build embeds
+simctl get_app_container booted io.github.kaitk.draughts.app data`. The simulator build embeds
 the JPEGs beside the ASTC files, as the simulator's GPU may take no ASTC; a device build
 embeds the ASTC files only, as Android does (11.7 MB).
 

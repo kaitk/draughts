@@ -42,9 +42,13 @@ import time
 from pathlib import Path
 
 import icon
-from native import APP_ID, ROOT, VERSION_NAME, app_names, copy_sources, goose_to_c, run, sidecar
+from native import ROOT, VERSION_NAME, app_names, copy_sources, goose_to_c, run, sidecar
 
-# The bundle id is native.APP_ID and CFBundleShortVersionString native.VERSION_NAME.
+# The bundle id (2026-11-10), for now not Android's native.APP_ID: a free team on a locked
+# Apple ID holds that one. Back to APP_ID if Apple frees it before the first upload to App
+# Store Connect, which fixes it for good (tasks/046-app-store-release.md). Another
+# program gets BUNDLE_ID.<name>. CFBundleShortVersionString is native.VERSION_NAME.
+BUNDLE_ID = "io.github.kaitk.draughts.app"
 BUILD_NUMBER = "1"        # CFBundleVersion, raised for every upload
 MIN_IOS = "16.0"
 # Each data stack's address space. Goose reserves 2 GB a stack by default, and the app
@@ -339,7 +343,7 @@ def main():
     args = ap.parse_args()
     program = args.program.resolve()
     name = program.stem
-    app_id = APP_ID if name == "draughts" else f"{APP_ID}.{name}"
+    app_id = BUNDLE_ID if name == "draughts" else f"{BUNDLE_ID}.{name}"
     title = "Draughts" if name == "draughts" else name
     out = ROOT / "build/ios" / name
     plat = "device" if args.device else "sim"

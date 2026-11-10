@@ -88,13 +88,17 @@ Each is a store rule the app doesn't meet yet:
 - **iPhone and iPad.**
 - **The account** (corrected 2026-11-10): the Apple Developer Program as an individual
   on a separate personal Apple ID made for the store, enrolled and paid on the web; the
-  membership is pending, the order taking up to 2 business days (2026-11-10). A first enrolment, started on the Apple ID whose free
+  membership active since 2026-11-10. A first enrolment, started on the Apple ID whose free
   Personal Team signed the development builds and left before paying, ended when Apple
   locked that Apple ID; its reinstatement was refused (2026-11-10). That team's profile
   for the app expires 2026-11-16, after which device builds need another team (a
   personal one: the store's paid team, or another Apple ID's Personal Team). That team
-  also holds the app's bundle id, so the paid team may find `io.github.kaitk.draughts`
-  taken; a new id is cheap before release. No Apple ID, team id, or device identifier
+  also holds the app's bundle id: the paid team found `io.github.kaitk.draughts` taken
+  (2026-11-10), so iOS builds use `io.github.kaitk.draughts.app` (`BUNDLE_ID` in
+  `scripts/ios.py`) for now. After 2026-11-16, try registering the plain id again (Apple
+  may take days to free it); if it registers, switch back before creating the App Store
+  Connect record or uploading a build, either of which fixes the id for good. Android
+  keeps `io.github.kaitk.draughts` until its first Play upload fixes it. No Apple ID, team id, or device identifier
   goes into the repo.
 - **Signing with the paid team:** once its team shows in Xcode (Settings → Accounts),
   `DRAUGHTS_IOS_TEAM` picks it for `scripts/ios.py`, whose development profiles then
@@ -106,20 +110,15 @@ Each is a store rule the app doesn't meet yet:
 
 ## What remains for the user
 
-- **Enrol** the new personal Apple ID as an individual (pending, 2026-11-10). If it's
-  refused or stalls, tell Apple Developer Support about the locked Apple ID, which never
-  paid, rather than make another.
-
-Once the account is active:
-
-- **App Store Connect:** register the bundle id `io.github.kaitk.draughts` (Certificates,
+- **The bundle id:** after 2026-11-16, try the plain `io.github.kaitk.draughts` again
+  (above), before the App Store Connect record.
+- **App Store Connect:** register the bundle id (Certificates,
   Identifiers & Profiles), then the app record: name "Draughts" (or the fallback),
   English (U.K.), a SKU; App Information (category, URLs, content rights, the trader
   status); the listing and answers pasted from `store/app-store.md`; the screenshots; the
   review contact (a phone, not shown publicly).
-- **Signing:** an Apple Distribution certificate (Xcode → Settings → Accounts → Manage
-  Certificates) and an App Store provisioning profile for the bundle id, both on the Mac,
-  never in git.
+- **Signing:** an App Store provisioning profile for the bundle id, beside the Apple
+  Distribution certificate already on the Mac (2026-11-10), neither in git.
 - **TestFlight** on the iPhone 13 mini (an internal tester, no beta review) before
   submitting.
 
