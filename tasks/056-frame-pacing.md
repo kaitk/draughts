@@ -129,6 +129,30 @@ trace processor.
   display switched to 60 Hz while the 3D board moves (`ANativeWindow_setFrameRate`), the
   choice being the user's. The 3D pass's cost is task 059's.
 
+## Vsync pacing, tried and set aside (2026-11-10)
+
+A goose_gfx patch to `frame()` on iOS and Android: after a frame that drew is presented,
+wait for the display's next vsync before the next frame begins (iOS a `CADisplayLink`
+on the main run loop, made through the Objective-C runtime and paused while idle;
+Android `AChoreographer_postFrameCallback64` on the loop thread's own `ALooper`).
+First waiting for the vsync after the present, then (so a present that blocks past the
+vsync loses no refresh) the vsync after the frame began, waiting only if it hadn't come.
+Frames late of about 980 (the iPhone, Animation Hitches) or 1000 (the A33, Perfetto):
+
+| | Without | Vsync after the present | Vsync after the frame began |
+| --- | --- | --- | --- |
+| iPhone, flat, four runs | 0, 1, 1, 2 | 4, 2, 3, 2 | 6, 4, 1, 2 |
+| iPhone, 3D | 1 | 1 | |
+| A33, flat | 2 | 6 | 3 |
+
+On the A33 the first version lost a refresh whenever `QueuePresentKHR` blocked past the
+vsync waiting for a buffer back (12.6 ms at one late frame); the second made the frames
+reach SurfaceFlinger 9.7 ms before their latch instead of 4.5, but no fewer were late.
+The 3D board's loop stayed at 60 frames a second, `queueBuffer` still 14 ms of each:
+the swapchain's buffers pace it, not the frame's start. So the start of a frame isn't
+what decides the drops here; the patch was removed. What's left for the flat boards is
+a few frames in a thousand; for the A33's 3D board, the display at 60 Hz while it moves.
+
 ## Directions
 
 First on the desktops, going to a device only if nothing shows there (the user,
