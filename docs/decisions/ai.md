@@ -19,8 +19,20 @@ it costing more than it saved.
 ## Levels
 
 - Medium starts at skill 40 (2026-11-08).
-- Easy starts at 0 (2026-11-09); it started at 10 until then. A player's file still at
+- Easy starts at 0 (2026-11-09; replaced by the start at 8 below, 2026-11-11); it started at 10 until then. A player's file still at
   that old start has had no game that moved it, and starts afresh at 0.
+- Easy starts at 8, replacing the start at 0, and a win in a player's very first game on a level moves the skill
+  16 (2026-11-11), after a grown-up found easy at 0 too weak even after winning a game on
+  8 × 8 boards. The app is for all ages now (`store/play-console.md`). At 8 easy follows
+  a capture chain one ply further and overlooks a one-piece capture 5 times a thousand
+  against 25 and a two-piece one 110 against 240; one win takes it to 24, past 15, where
+  it no longer hangs a piece to a one-piece capture. A young child's first loss (a step
+  of 8) still brings easy to 0, so it is never harder for them than before. Rejected:
+  starting at 4, which changed little (13 and 169 per thousand, the same plies); and a
+  +16 for every early win, since a child's later wins should find them slowly. A level
+  no game has ended on reads as the level's start now, so files from before start at 8.
+  Self-play, 400 games a pair: 8 against 0 scores 0.57 to 0.59, about level with 10;
+  15 against 8 scores 0.82 to 0.89 (the table in the architecture's levels).
 - The default level for a new player, and for settings read fresh, is easy
   (2026-11-09), after a young player found easy hard.
 - A player's first three games on a level move the skill by 8, not 4 (2026-11-09), so the

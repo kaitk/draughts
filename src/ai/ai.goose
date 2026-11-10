@@ -28,14 +28,16 @@ let HARD = 2;
 let LEVELS = 3;
 
 // Skill runs 0 to 100. Each level starts at its own and adapts between its floor and
-// its top: easy starts at its floor, so it can only climb from where a young child
-// begins (the user's call, 2026-11-09).
-let LEVEL_SKILL: i64[LEVELS] = [0, 40, 90];
+// its top: easy starts a step above its floor, so a young child's first loss brings it
+// to the floor, and a grown-up's first win lifts it clear of its plainest mistakes (the
+// user's call, 2026-11-11; it started at the floor from 2026-11-09).
+let LEVEL_SKILL: i64[LEVELS] = [8, 40, 90];
 let LEVEL_FLOOR: i64[LEVELS] = [0, 25, 70];   // the lowest a level adapts to (medium never under 25)
 let LEVEL_TOP:   i64[LEVELS] = [30, 60, 100]; // the highest
 let STEP = 4;               // how far one win or loss moves the skill
 let FIRST_STEP = 8;         // how far it moves over a player's first games against a level
 let FIRST_GAMES = 3;        // how many games that is
+let FIRST_WIN = 16;         // how far a win in a player's very first game against a level moves it
 
 // The most nodes a search begins a new iteration after. It bounds hard's reply time:
 // see tasks and docs/architecture/ai.md for the speed on the tablet.
@@ -113,9 +115,9 @@ fn within(skill: i64, level: i64) -> i64 {
 // finished `played` games on it before this one: up a step when the person won, down a
 // step when the computer did (child_won 1, -1, or 0 for a draw), so a child meets an
 // opponent they beat about half the time. Over the first games the steps are larger,
-// so the skill finds the child quickly.
+// so the skill finds the child quickly, and a win in the very first game larger still.
 fn adapt(skill: i64, level: i64, child_won: i64, played: i64) -> i64 {
-    let step = if played < FIRST_GAMES { FIRST_STEP } else { STEP };
+    let step = if played == 0 && child_won > 0 { FIRST_WIN } else if played < FIRST_GAMES { FIRST_STEP } else { STEP };
     return within(skill + step * clamp(child_won, -1, 1), level);
 }
 

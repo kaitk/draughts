@@ -175,6 +175,11 @@ fn parse(text: const u8[:]) -> Settings {
             }
         }
     }
+    // No game has ended on a level, so nothing has moved its skill: it starts where the
+    // level starts now (easy moved from 0 to 8 on 2026-11-11).
+    for i in 3 {
+        if played_read[i] && s.played[i] == 0 { s.skill[i] = ai::level_skill(i); }
+    }
     for i in 3 {
         guard skill_read[i] && !played_read[i] else { continue; }
         if s.skill[i] == OLD_SKILL[i] {

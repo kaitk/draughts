@@ -160,17 +160,17 @@ and the table are made once, about 6 MB in all.
 
 ## Levels
 
-Skill runs from 0 to 100; easy starts at 0, medium at 40, hard at 90
+Skill runs from 0 to 100; easy starts at 8, medium at 40, hard at 90
 ([tuning the levels](#tuning-the-levels)). One skill holds for a whole game. It sets:
 
-| | Formula | Easy (0) | Medium (40) | Hard (90) |
+| | Formula | Easy (8) | Medium (40) | Hard (90) |
 | --- | --- | --- | --- | --- |
 | Plies of free moves it sees | `1 + s / 12 + max(s − 60, 0) / 6` | 1 | 4 | 13 |
-| Plies of forced captures past them | `2 + s / 8` | 2 | 7 | 13 |
-| Temper: how much worse makes a move e times less likely | `2 + 60 (100 − s)² / 10000` | 62 | 23 | 2 |
+| Plies of forced captures past them | `2 + s / 8` | 3 | 7 | 13 |
+| Temper: how much worse makes a move e times less likely | `2 + 60 (100 − s)² / 10000` | 52 | 23 | 2 |
 | Margin: never a move this much worse than the best it sees | `min(60, 3 × temper)` | 60 | 60 | 6 |
-| Chances left for the child, per thousand moves | `5 × max(25 − s, 0)` | 125 | 0 | 0 |
-| Overlooks a capture of 1; 2; 3; 4+ pieces, per thousand, tense, next to the moved piece | `MISS × (max(SURE − s, 0) / SURE)²`, MISS 25; 240; 300; 450, SURE 15; 25; 65; 65 | 25; 240; 300; 450 | 0; 0; 44; 66 | 0 |
+| Chances left for the child, per thousand moves | `5 × max(25 − s, 0)` | 85 | 0 | 0 |
+| Overlooks a capture of 1; 2; 3; 4+ pieces, per thousand, tense, next to the moved piece | `MISS × (max(SURE − s, 0) / SURE)²`, MISS 25; 240; 300; 450, SURE 15; 25; 65; 65 | 5; 110; 230; 346 | 0; 0; 44; 66 | 0 |
 
 How each part plays like a person:
 
@@ -205,15 +205,18 @@ How each part plays like a person:
    genius moves among random blunders. The margin, under 0.6 of a man, keeps positional
    terms from passing off a move that loses one. The chances use integer weights, so
    every machine agrees.
-4. **No long combinations on easy**: it sees four plies in all. Depth rises evenly with
+4. **No long combinations on easy**: it sees four plies in all at its start (8), six by 16. Depth rises evenly with
    skill, so 15 points more wins about three games in four against itself, and the
    small steps of adapting are felt.
 5. **It adapts.** `ai::adapt` moves the skill 4 up after the child wins and 4 down after
    the child loses, within the level's band (easy 0 to 30, medium 25 to 60, hard 70 to
    100: `LEVEL_FLOOR`, `LEVEL_TOP`), so a child meets an opponent they beat about half
    the time ([in the game](#in-the-game)). Over a player's first three games on a level
-   the steps are 8, so the skill finds the child sooner; the file counts the games that ended on each level. Easy starts at its floor and
-   only climbs from there. A file from before that count keeps its skills; one still at
+   the steps are 8, so the skill finds the child sooner, and a win in the very first game
+   moves it 16 (`FIRST_WIN`), so a grown-up's first win lifts easy from 8 to 24, clear of
+   its plainest mistakes; the file counts the games that ended on each level. Easy starts
+   at 8, a step above its floor, so a young child's first loss brings it to 0. A level no
+   game has ended on starts where the level starts now. A file from before that count keeps its skills; one still at
    its level's old start (easy at 10) has had no game that moved it, and starts afresh at
    the new start with its first steps to come, while one moved from it has had them.
 6. **It leaves chances to learn.** Below skill 25, now and then (the chances row),
@@ -228,10 +231,14 @@ and Brazilian (`build/aimatch ... --overlooks`), wins, draws, losses for the fir
 
 | Pair | Russian | International | Brazilian |
 | --- | --- | --- | --- |
-| Easy at 0 against skill 10 without overlooks | 92, 79, 229 | 61, 83, 256 | 96, 82, 222 |
-| Easy at 0 against skill 0 without overlooks | 124, 73, 203 | 87, 85, 228 | 112, 86, 202 |
-| Skill 15 against easy at 0 | 323, 46, 31 | 344, 27, 29 | 337, 27, 36 |
-| Medium (40) against easy at 0 | 391, 5, 4 | 398, 1, 1 | 387, 11, 2 |
+| Easy at its floor (0) against skill 10 without overlooks | 92, 79, 229 | 61, 83, 256 | 96, 82, 222 |
+| Easy at its floor (0) against skill 0 without overlooks | 124, 73, 203 | 87, 85, 228 | 112, 86, 202 |
+| Skill 15 against easy at its floor (0) | 323, 46, 31 | 344, 27, 29 | 337, 27, 36 |
+| Medium (40) against easy at its floor (0) | 391, 5, 4 | 398, 1, 1 | 387, 11, 2 |
+| Easy's start (8) against its floor (0) | 193, 72, 135 | 203, 66, 131 | 185, 78, 137 |
+| Easy's start (8) against skill 10 | 173, 61, 166 | 148, 70, 182 | 161, 62, 177 |
+| Skill 15 against easy's start (8) | 303, 51, 46 | 339, 33, 28 | 315, 41, 44 |
+| Skill 24, after a first win, against easy's start (8) | 369, 19, 12 | 394, 6, 0 | 373, 16, 11 |
 | Medium (40) against easy at its top (30) | 255, 84, 61 | 301, 57, 42 | 255, 93, 52 |
 
 A simple child model, skill 0 overlooking three times as often (`--overlooks 300`),
@@ -247,10 +254,10 @@ knob below is in `src/ai/ai.goose` but pace, and each is one constant or formula
 score is a side's wins plus half its draws over the games; "a point" is 1% of it.
 
 **First, if experienced players find easy too easy**: let easy climb to them faster
-before touching the overlooks. Larger first steps (`FIRST_STEP`, `FIRST_GAMES`) reach
-a strong player within a few games and still start a young child at 0; a higher floor
-(`LEVEL_FLOOR[0]`, with `LEVEL_SKILL[0]`, as easy starts at its floor) starts everyone
-higher. The overlooks set how easy plays at the bottom, which is where young children
+before touching the overlooks. Larger first steps (`FIRST_WIN`, `FIRST_STEP`,
+`FIRST_GAMES`) reach a strong player within a few games and still let a young child's
+losses take easy to its floor; a higher start (`LEVEL_SKILL[0]`) or floor
+(`LEVEL_FLOOR[0]`) starts everyone higher. The overlooks set how easy plays at the bottom, which is where young children
 meet it.
 
 The knobs:
