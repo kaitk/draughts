@@ -178,7 +178,7 @@ returns.
   and later voice clips keyed the same way.
 - **Kept in the app's storage folder** (SDL's pref path, through `src/app/storage.c`), per
   player ([players](#players)): the settings as a small `key = value` file
-  (`player-N.txt`, `src/shell/settings.goose`), written whole and atomically after a change;
+  (`player-N.txt`, `src/shell/prefs.goose`), written whole and atomically after a change;
   and the game as it stands, `game-N.bin`, written when the app is paused or quits,
   since Android may kill a paused app, and before another player plays. The device's
   own keys are in `settings.txt`. All are read at start. Nothing is written while idle.
@@ -221,7 +221,7 @@ so a change rewrites only that player's and no section parser is needed:
 
 - `settings.txt`: the device's keys, `language` and `player = N`, the playing player's id.
 - `player-N.txt`, N the id from 1 to 4: `picture = fox` (the badge's name), `name = Mia`
-  if there is one, `first_start = done` once had, then the keys `src/shell/settings.goose`
+  if there is one, `first_start = done` once had, then the keys `src/shell/prefs.goose`
   writes. Players show in the order of their ids; a new player takes the lowest free id.
 - `game-N.bin`: the player's saved game, as `shell::save` writes it.
 

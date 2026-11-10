@@ -656,7 +656,7 @@ built or superseded; they are in git history before that day.
   dp smaller there (639 to 583 dp) (2026-11-09); and kings (auto, crown, or stack, the last two each with its
   king drawn on the tile). Between them the Board row, flat or raised (the file's
   `board = 2d|3d`): its 3D tile plays the game on the 3D board (`settings::raised`,
-  `src/shell/settings.goose`; the game screen round it is under "Board and pieces"), and
+  `src/shell/prefs.goose`; the game screen round it is under "Board and pieces"), and
   shows it on every screen with a board: home, the preview here (its kings' auto a
   stack), and a puzzle. Each
   setting is a dim 18 px name at the left of its tiles (above them in portrait); a tile

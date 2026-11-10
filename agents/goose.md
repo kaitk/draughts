@@ -58,7 +58,7 @@ find out by compiling, so the next session doesn't.
   flipped byte in a value's middle still loads. Add a checksum (`shell::save` appends
   FNV-1a). A limited array in a struct is saved at its full capacity.
 - A package's other files' namespaces come with it: after `import shell from
-  "../shell";` the app calls `settings::parse` from `src/shell/settings.goose`. Importing
+  "../shell";` the app calls `settings::parse` from `src/shell/prefs.goose`. Importing
   the same directory again under another name is an error.
 - A file imported with `import .name;` starts with `namespace name;` and imports the std
   modules it uses (`import std; import vec;`). Without the `namespace` line its functions
