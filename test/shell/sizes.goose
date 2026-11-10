@@ -350,7 +350,7 @@ fn taken(g: gui::Gui&) {
     let fl = panel::layout_in(safe, n, u, true, true);
     let c3 = panel::corners_in(safe, n, u, panel::PITCH_PORTRAIT, true, true);
     // In portrait the bar and the play sit round boards of different heights: their sizes.
-    let wide = fl.left.z < fl.left.w;
+    let wide = panel::columns(fl);
     let alike = if wide { same(fl.left, c3.left) && same(fl.right, c3.right) }
                 else { same(sized(fl.left), sized(c3.left)) && same(sized(fl.right), sized(c3.right)) };
     if alike { line.append("; the panels the 3D screen's"); }
@@ -415,8 +415,8 @@ fn handover() {
         let area = float4 { 0.0, 0.0, w as f32, 800.0 };
         let fl = panel::layout_in(area, 10, 1.0);
         let c3 = panel::corners_in(area, 10, 1.0);
-        let wide = fl.left.z < fl.left.w;
-        let wide3 = c3.left.z < c3.left.w;
+        let wide = panel::columns(fl);
+        let wide3 = panel::columns(c3);
         print("the game at ", whole(w as f32), " x 800 dp: ", if wide { "landscape" } else { "portrait" }, ", board ",
               whole(fl.board.board.z), " dp; 3D ", if wide3 { "landscape" } else { "portrait" }, ", ", whole(c3.view.rect.z),
               " x ", whole(c3.view.rect.w), " dp");

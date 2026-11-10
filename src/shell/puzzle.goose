@@ -413,7 +413,7 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
 // Returns PUZZLES, SETTINGS, NEXT, RESTART_ASK, CAMERA, or STAY.
 fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overlay&) -> i64 {
     let u = g.scale;
-    let landscape = l.left.z < l.left.w;
+    let landscape = panel::columns(l);
     var ask = STAY;
     let out = panel::leave(g, l);
     gui::panel(g, l.right);
