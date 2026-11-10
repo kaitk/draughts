@@ -161,6 +161,10 @@ fn main() {
     if f.background >= 0 { sh.prefs.plain = f.background == 1; }
     var d = draw::new(kind, !settings::photo_shown(sh.prefs));
     var d3 = draw3d::Drawer { wood: f.wood, marble: f.marble, summer: f.summer, spring: f.spring, timed: f.bench > 0, .. };
+    // --bench N on the flat board: N whole frames, from the shell's fill to the GPU done,
+    // each waited for (cpu: up to the submit); then N as the loop draws them, frame to
+    // frame. In seconds; draw3d::Bench times the 3D board.
+    var bench2d = draw3d::Bench {};
     var w = widgets::new();
     var g = gui::Gui {};
     var t = text::Text {};
@@ -344,6 +348,8 @@ fn main() {
         // --bench N times the 3D board's frames 2 s after the launch, settled (draw3d.goose).
         if f.bench > 0 && sh.raised && d3.draws > 0 && now > 2.0 && d3.bench.n == 0 { d3.bench.n = f.bench; }
         if d3.bench.n > 0 { dirty = true; }
+        let flat_bench = f.bench > 0 && !sh.raised && now > 2.0 && bench2d.i < 2 * f.bench;
+        if flat_bench { dirty = true; }
         // iOS ends an app that uses the GPU in the background, and SDL doesn't block the
         // loop there as on Android: nothing is drawn while the app hasn't focus, which it
         // loses before going to the background, and the screen is drawn again on its return.
@@ -351,6 +357,7 @@ fn main() {
         if hidden { dirty = true; }
         let drew = !hidden && (dirty || shell::animating(sh, g, now));
         if drew {
+            let t0 = clock();
             let shown .= shell::fill(sh, now);
             widgets::upload(w, g);
             if sh.raised {
@@ -368,6 +375,18 @@ fn main() {
             draw::overlay(d, now, sh.hole, sh.tall);
             gfx::end_pass();
             dirty = false;
+            if flat_bench {
+                let bn .= bench2d;
+                if bn.i < f.bench {
+                    bn.cpu.push(clock() - t0);
+                    gfx::flush();
+                    bn.all.push(clock() - t0);
+                } else {
+                    if bn.i > f.bench { bn.gap.push(t0 - bn.last); }
+                    bn.last = t0;
+                }
+                bn.i++;
+            }
         }
         // Settings' thumbnails load in the first frame that draws nothing once the launch's
         // first frame is on screen, so settings' first opening doesn't wait for them; the
@@ -399,6 +418,12 @@ fn main() {
         if g.acted { dirty = true; }
         if f.frames > 0 && gfx::frame_count() >= f.frames { break; }
         if draw3d::bench_done(d3) { break; }
+        if f.bench > 0 && bench2d.i >= 2 * f.bench {
+            print("bench2d: ", size.x, "x", size.y, ": cpu ", draw3d::median(bench2d.cpu), " ms, cpu+gpu waited ",
+                  draw3d::median(bench2d.all), " ms; presented frame to frame ", draw3d::median(bench2d.gap),
+                  " ms (", f.bench, " frames each)");
+            break;
+        }
     }
     if f.frames > 0 { gfx::screenshot("draughts.png"); }
     if f.frames > 0 && d3.prep_ms.len > 0 {

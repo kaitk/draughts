@@ -68,7 +68,8 @@ struct Flags {
     marble: i64 = -1,
     summer: i64 = 0,
     spring: i64 = -1,
-    // --bench N: times N of the 3D board's frames, then quits (draw3d.goose)
+    // --bench N: times N of the board's frames, then quits (draw3d.goose; the flat board's
+    // in draughts.goose)
     bench: i64 = 0,
     // --reset-skill: the playing player back to easy, the computer's skill at every level
     // at its start with the first steps to come, kept in their file; stars and games stay
