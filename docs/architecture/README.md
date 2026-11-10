@@ -30,8 +30,9 @@ on GLES3), if SDL_GPU's Vulkan path turns out unreliable on the tablet. The stru
 rules below stay the same.
 
 **Rejected for now: NoGraphicsAPI / goose-ngfx on Android.** Its Vulkan backend needs
-`VK_EXT_descriptor_heap` and mesh shaders, which mobile GPUs lack, and its utility math
-needs x86-64 with AVX2. It is a later, separate desktop and Apple version
+`VK_EXT_descriptor_heap` and mesh shaders, which mobile GPUs lack. Its utility math adds
+AVX2 only for the x86-64 slice and uses NEON on arm64; whether its utility libraries need
+AVX2 on x86 Windows is still open. It is a later, separate desktop and Apple version
 ([product](../product.md)). Its ideas are used inside SDL_GPU now
 ([rendering.md](rendering.md)).
 
@@ -103,7 +104,7 @@ The targets this keeps open, each replacing or adding to `app/` alone:
 | `src/app/` | The program: the main loop, the GPU drawing of the board, the pieces, and the UI's quads, the season's photograph and its blurs, the font atlas, the themes, the computer's worker thread, and its C (storage folder, locales, the clock's wake timer, the JPEG decoder) |
 | `tools/` | Programs for development: perft, the computer's benchmark and matches, a terminal game against it, and the puzzles' checks |
 
-`ai`, `board`, and `puzzles` build on `rules`; `game` on `board`, `gui`, and `strings`; `shell` on
+`ai`, `board`, and `puzzles` build on `rules`; `game` on `board`, `gui`, `strings`, and `ai`'s lookout (`game::watch`); `shell` on
 `game` and `ai`; `render3d` on nothing of the game's; the app on all of them. What crosses to the renderer is flat and
 fixed-size, laid out as the shaders read it: `board::Piece`, `board::Marks`, the flash,
 `board::Layout`, `gui::Quad`, and `theme::Theme`; to the 3D board, `view3d::Scene` and
