@@ -16,9 +16,8 @@ let THUMB_W = 160;
 let THUMB_H = 98;
 let THUMBS = 8;
 
-// Theme `kind`'s photograph as a texture's id, or 0 without one (photo.c).
-extern fn draughts_photo_ngfx(kind: i64, decoded: i64) -> u32;
-fn photo(kind: i64, decoded: i64) -> ngfx::Texture { ngfx::Texture { draughts_photo_ngfx(kind, decoded) } }
+// Theme `kind`'s photograph, or Texture { 0 } without one (photo.c, through render3d).
+fn photo(kind: i64, decoded: i64) -> ngfx::Texture { render3d::draughts_photo(kind, decoded) }
 
 struct ShrinkRoot { src: u32, smp: u32, pad0: u32, pad1: u32, from: float4, to: float4 }
 struct BlurRoot { src: u32, smp: u32, pad0: u32, pad1: u32, dir: float4 }

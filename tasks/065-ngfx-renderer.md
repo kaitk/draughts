@@ -1,6 +1,6 @@
 # 065: The NoGraphicsAPI renderer through goose-ngfx
 
-Status: in-progress (on the `ngfx` branch; steps 1 to 5 on Windows, 2026-11-11)
+Status: in-progress (on the `ngfx` branch; steps 1 to 6 on Windows, 2026-11-11)
 
 Draw Draughts through goose-ngfx (github.com/kaitk/goose-ngfx, NoGraphicsAPI over Metal 4
 and Vulkan 1.4) on devices that have it: Apple silicon Macs, later iPads and iPhones, and
@@ -124,6 +124,34 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
 - **No MSAA in NoGraphicsAPI** (no sample count on its textures, no resolve): the 3D
   board's 4× MSAA needs another way. The prototype draws it at twice the size and shrinks
   it; MSAA itself would be a change to NoGraphicsAPI (sebbbi/NoGraphicsAPI) and ngfx.
+- **Step 6, the 3D board**: `src/ngfx/render3d/render3d.goose` is gfx's with the GPU calls
+  changed and its logic kept. Its 14 shader modules are not written by hand:
+  `scripts/ngfx_3d_shaders.py` writes them into `build/ngfx/shaders/` at every build from
+  `render3d/shaders.goose`'s GLSL, so the two builds keep one source. Each stage's body
+  stays as written, in a namespace. Its inputs, outputs, blocks, buffers, and samplers
+  become statics filled from one root (`r3d.slang`), the vertices are pulled from the mesh's
+  buffer, and the position's y is negated, which leaves the picture as gfx draws it. Two
+  hand modules fill what ngfx lacks. `mip.slang` draws the baked surfaces' mips as passes,
+  since ngfx's `generate_mips` takes no sRGB. `down.slang` shrinks the pass drawn at
+  twice the size, in place of the MSAA resolve. Compared at 1280 × 800 against the gfx
+  build in 16 cases: the four themes, summer's second look, spring's carved one, the plain
+  fade, home, settings, a held transition, a capture with its pulsing rings, the lookout,
+  a win, a puzzle, and portrait. The mean difference is 0.6 to 2.4 of 255. The rest is
+  along edges (2 × 2 supersampling against 4× MSAA, up to 79 on a few dozen pixels on
+  the carved frame) and in the wood's fine grain: anisotropy is NoGraphicsAPI's fixed 4×
+  against gfx's 8×, which also leaves the field about 1 to 2 of 255 lighter. The
+  photograph's backdrop is 2 of 255 lighter on ngfx, the plain fade's identical: to
+  look into. Preparing takes 40 steps as on gfx, the longest 29 ms (gfx 18 ms) once the
+  driver has the pipelines cached; the first launch ever took 687 ms on the bake's.
+- **3D at rest** (`--rest 15`, the 3D game): gfx 0.0% CPU, 17 loops, 0 drawn, 397 MB;
+  ngfx 0.4%, 17 loops, 0 drawn, 815 MB.
+- **3D bench** (`--bench 300`, 2560 × 1440, 165 Hz): gfx CPU 0.259 ms, waited P50 5.10 /
+  P99 6.43 ms, 166.1 fps (1% low 108.9); ngfx CPU 0.029 ms, waited P50 5.64 / P99 8.58
+  ms, 165.8 fps (1% low 113.0). Both wait on the display; the pass at twice the size
+  costs the RTX 4090 nothing visible here.
+- **The footprint** is ngfx's texture heap, one 512 MB block made at open: at 256 MB the
+  flat game's footprint fell from 741 to 556 MB. It becomes a heap that grows as
+  textures need it (ngfx).
 
 ## Later, not in this task
 

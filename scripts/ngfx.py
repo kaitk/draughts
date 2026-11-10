@@ -10,8 +10,9 @@ The gfx build is untouched. This copies the program (src/, strings/, assets/, an
 backgrounds' masters) into build/ngfx/tree/ and lays src/ngfx/ over it: the ngfx
 versions of the files that draw (src/ngfx/app/ over src/app/, src/ngfx/render3d/ over
 src/render3d/). The root file gets the package's import, the sidecar the package's C
-headers, and the Slang shaders in src/ngfx/shaders/ are compiled ahead into ngfx's blobs,
-which the app embeds, so it runs no shader compiler.
+headers, and the Slang shaders are compiled ahead into ngfx's blobs, which the app embeds,
+so it runs no shader compiler: src/ngfx/shaders/, and the 3D board's, written from gfx's
+GLSL by ngfx_3d_shaders.py.
 
 Needs a goose-ngfx checkout (NGFX, else ../goose/goose-ngfx beside this repository),
 slangc 2026.18.2 or later (NGFX_SLANGC), and what ngfx's own build needs (its
@@ -27,6 +28,7 @@ import sys
 from pathlib import Path
 
 import native
+import ngfx_3d_shaders
 
 ROOT = native.ROOT
 OUT = ROOT / "build/ngfx"
@@ -93,12 +95,21 @@ def write_if_changed(path, text):
 
 
 def shaders():
-    """The Slang modules compiled into blobs in the tree's src/app/shaders/, where stale."""
-    src = sorted((ROOT / "src/ngfx/shaders").glob("*.slang"))
+    """The Slang modules compiled into blobs in the tree's src/app/shaders/, where stale:
+    src/ngfx/shaders/ and the 3D board's, written from gfx's GLSL (ngfx_3d_shaders.py),
+    side by side in build/ngfx/shaders/."""
+    gen = OUT / "shaders"
+    gen.mkdir(parents=True, exist_ok=True)
+    for f in (ROOT / "src/ngfx/shaders").glob("*.slang"):
+        copy_if_changed(f, gen / f.name)
+    for name, text in ngfx_3d_shaders.sources().items():
+        write_if_changed(gen / name, text)
+    src = sorted(gen.glob("*.slang"))
     out = TREE / "src/app/shaders"
     out.mkdir(parents=True, exist_ok=True)
     newest = max(f.stat().st_mtime for f in src)
-    stale = [f for f in src if f.name != "common.slang" and f.name != "ui.slang"
+    parts = ["common.slang", "ui.slang", "glsl.slang", "r3d.slang", "r3d_frame.slang"]
+    stale = [f for f in src if f.name not in parts
              and (not (out / (f.stem + ".blob")).exists() or (out / (f.stem + ".blob")).stat().st_mtime < newest)]
     if not stale:
         return
