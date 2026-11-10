@@ -513,3 +513,39 @@ How task 056 found which frames were late and why (2026-11-10):
   `queueBuffer` on `SDLThread`, and `VSYNC-sf` toggles each refresh. Read it with
   Perfetto's trace processor (`get.perfetto.dev/trace_processor`, the user allowed the
   download).
+
+## GPU profiling
+
+How task 059 found where the 3D frame went (2026-11-10):
+
+- **The measure is GPU cycles a frame, not milliseconds**, where the governor moves the
+  clock: the Pixel 7a runs its Mali-G710 at 350 to 470 MHz of its 850 under the 3D bench
+  (`/sys/class/misc/mali0/device/cur_freq`), busy nearly all the time, so cutting work
+  lowers the clock as much as the frame time. The tablet holds its top clock (above), so
+  there the frame times show the work.
+- **The Mali Offline Compiler:** `scripts/shader_report.py --core Mali-G615` (or G710,
+  G68) with Arm Performance Studio's `malioc` on PATH (on the PC): each shader's
+  registers, spills, and cycles per unit. To weigh a feature, run a scratch copy of the
+  shader with it replaced by a constant. Its register count can differ from the
+  driver's: a field-only variant at 32 registers changed nothing on the Pixel.
+- **Streamline on the Pixel 7a** (a `--debuggable` build): `streamline_me.py` pushes
+  gatord and the layers, then run gatord by hand (the headless script didn't keep the
+  capture, and `Streamline-cli -generate-config` rejects every template), with a
+  `configuration.xml` of `ARM_Mali-G710_<COUNTER>` lines (the IDs are in gatord's
+  binary) and `MaliTimeline_Perfetto`:
+
+  ```sh
+  adb shell "cd /data/local/tmp && ./gatord --android-pkg io.github.kaitk.draughts \
+    --android-activity .DraughtsActivity \
+    --activity-args \"--es args '--board 3d --screen game --theme wood --variant russian --bench 1000'\" \
+    --stop-on-exit yes --max-duration 100 --output /data/local/tmp/b.apc --gpu-timeline auto -c configuration.xml"
+  ```
+
+  Read it back with `Streamline-cli -report -timeline` and `-cam`: GPU active cycles,
+  fragment against tiler time, all-register warps, texture stalls, and each pass's time
+  on the Mali timeline.
+- **Nsight Graphics on the PC** (clocks locked to base): its GPU Trace starts only from
+  Nsight's window, not from the agent's shell. The 4090 runs the whole 3D frame in a
+  quarter of a millisecond, so it shows the frame's shape and nothing finer.
+- To weigh a part of the frame, a throwaway build without it (the backdrop as a plain
+  copy, no `widgets::frame`) measured on the Pixel says what it costs in a few minutes.

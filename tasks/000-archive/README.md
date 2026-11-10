@@ -173,3 +173,11 @@ and the commit that last has it.
   stretches too); the Mac keeps its last frame in shape over the backdrop
   (`src/app/resize.c`), an iPad lays out live, and Windows' unscaled last frame with
   black where the window grew is kept. `058-resize-stretch.md`, `0c0b30c`
+- 059: Profile and rework the 3D renderer. Done: the field's occlusion into a map, the
+  backdrop and the UI kept while they stand still, and the crown read from a map took the
+  Pixel 7a's moving 3D frame from 7.01M to 4.70M GPU cycles (−33%, −34% more with 16
+  kings) and the tablet from 10.6 to 9.2 ms waited, 90 Hz with no frame dropped; the
+  Mali Offline Compiler's and Streamline's numbers and the untried items are in
+  `docs/architecture/rendering.md` and `agents/testing.md`. The PC's per-pass captures
+  and RenderDoc were left (the user, 2026-11-10: good enough).
+  `059-3d-renderer-tuning.md`, `e2b8f8f`

@@ -1431,6 +1431,18 @@ The release at rest, idle 20 to 30 s:
   The Galaxy A33 ignores it: its "High" motion smoothness holds 90 Hz whatever an app asks.
   The tablet's frames average about 1.15 refreshes, so it keeps 90 (the user's choice
   over an even 60); the Pixel 7a's display is at 60 already.
+- **Where the moving 3D frame goes** (task 059, Streamline on the Pixel 7a, after its
+  four changes): GPU active 7.01M → 4.70M cycles a frame, fragment-bound (the tiler 3%
+  of the GPU's time), not bandwidth-bound (0.6 GB/s), little overdraw. The lit fragment
+  shader still holds 64 registers (half occupancy on the G615), and the UI's
+  uber-shader 64 for every UI pixel: its live cost is 1.45M cycles a frame, 24%, paid
+  only when the UI changes now that it is kept (`widgets::prepare`), and the backdrop's
+  grade 0.43M when it changes. Ranked and not yet tried: the UI's shader made fast by
+  itself, measured with the caches off (the user prefers fast work to cached slow work);
+  the pieces' shadows on the field analytic (a disc's stadium along the light) in place
+  of the shadow map's pass and its 9 taps on every lit pixel; fp16 for colors, the
+  harmonics, the tonemap, and the varyings (no shader uses 16-bit yet); MSAA 4× read
+  again at 2,208 triangles a piece; a lower render scale for the 3D pass, last.
 - **Open:** at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the
   flat board's 0.3, outside the app's own work, as the Mac shows no draw at rest.
 
