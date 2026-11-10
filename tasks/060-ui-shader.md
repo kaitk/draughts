@@ -1,6 +1,6 @@
 # 060: The UI's shader made fast in itself
 
-Status: in-progress
+Status: done
 
 The UI's uber-shader (`widgets::FRAG`) holds 64 registers for every UI pixel, half
 occupancy on Mali, and cost 1.45M GPU cycles a frame on the Pixel 7a when the UI changes
@@ -108,17 +108,37 @@ its fragment cycles 4.69M → 1.54M (−67%), and the flat frame drawn live 3.89
 (−8%). On the Pixel the cool-down check is skin under 30 °C: its overall thermal status
 stayed at 1 with every sensor at 0 and the skin at 23 °C.
 
+## The 3D board on the Pixel 7a (2026-11-10)
+
+`--board 3d`, the same game, `--bench 1000`; the presented phase found from the log
+(`onResume` to `presenting` and `presented`, placed at the capture's first GPU activity),
+14.7 s of it, a frame: the single shader (`uibefore`) and steps 1 and 2 (`uistep2`)
+drawing the UI and the backdrop live, and `uistep2` with them kept.
+
+| A frame | Kept | One shader, live | Steps 1 and 2, live |
+| --- | --- | --- | --- |
+| GPU active | 5.22M | 6.76M | 6.21M |
+| The live layers' part (less kept) | | 1.54M | 0.99M (−36%) |
+| Fragment active | 19.5M | 28.3M | 25.4M |
+| FMA instructions | 9.53M | 16.10M | 14.07M |
+| All-register warps | 81.0k | 205.2k | 80.8k |
+| Waited P50 with the shadow map | 11.29 ms | 13.04 ms | 12.98 ms |
+
+The live layers' part holds the backdrop's grade too (0.43M, task 059), which this task
+left alone, so the UI's own falls from about 1.1M to 0.56M, about half, as on the flat
+board.
+
 ## Left
 
-- The 3D board on the Pixel, and the tablet's `--bench 1000`, both with `--keep off`.
-- The plain background's glass works the fade out a pixel at a time (a `pow` and a
-  `sin` hash); drawing the fade into the glass copy once would make it one fetch, as the
-  photograph's is. Only with the plain background.
+- The plain background's glass works the fade out a pixel at a time (about 1.3 of
+  glass's 4 cycles in malioc); a texture of it would save that but smear its dither, and
+  pays only while the UI changes with the plain background: not done (the user agreed,
+  2026-11-10).
+- The tablet's `--bench 1000`: skipped for now (the user, 2026-11-10).
 
 ## Acceptance criteria
 
 - [x] Every UI pipeline at 32 registers or fewer on the G615 and G710 (and the G68)
 - [x] The look the same as before (headless shots: within 1 level of 255, step 2)
-- [ ] GPU cycles a frame on the Pixel and `--bench 1000` on the tablet, before and after,
-      with `--keep off`, recorded here: the Pixel's flat board for step 1 (above); the
-      3D board and the tablet to come
+- [x] GPU cycles a frame on the Pixel, before and after, with `--keep off`, recorded
+      here: the flat and the 3D board; the tablet's bench skipped (the user, 2026-11-10)
