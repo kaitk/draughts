@@ -18,6 +18,14 @@ import badges from "../badges";
 // clip: the scrolling list's view (gui::scroll_begin), where quads marked gui::CLIP show.
 struct View { screen: float4, hole: float4, clip: float4 }
 
+// The kept layer (prepare()) laid over the screen texel for texel: premultiplied, as the
+// quads drew it.
+let COMPOSE_FRAG = """
+    layout(location = 0) out vec4 result;
+    layout(set = 2, binding = 0) uniform sampler2D layer;
+    void main() { result = texelFetch(layer, ivec2(gl_FragCoord.xy), 0); }
+    """;
+
 let VERT = """
     layout(std430, set = 0, binding = 0) readonly buffer Quads { vec4 q[]; };
     layout(set = 1, binding = 0) uniform View { vec4 screen; vec4 hole; vec4 clip; };
@@ -579,6 +587,18 @@ struct Widgets {
     atlas:    gfx::Texture,     // the text's glyphs (text.goose), or 0 before they're baked
     thumbs:   gfx::Texture,     // the seasons' thumbnails (scene.goose), or 0 until loaded
     badges:   gfx::Texture,     // the badges' animals' distances, baked at start
+    // The UI kept while it stands still (prepare()): the last frame's quads (upload, count),
+    // view, theme, and textures; the layer they were drawn into, and whether it holds them.
+    compose:  gfx::Pipeline,
+    layer:    gfx::Texture,
+    layer_w:  i64,
+    layer_h:  i64,
+    count:    i64,
+    view:     View,
+    theme:    theme::Theme,
+    ids:      i64[4],
+    kept:     bool,
+    stale:    bool,             // something the quads don't show changed (the glyphs baked again)
 }
 
 fn new() -> Widgets {
@@ -591,6 +611,17 @@ fn new() -> Widgets {
         atlas:  gfx::Texture { 0 },
         thumbs: gfx::Texture { 0 },
         badges: gfx::Texture { 0 },
+        compose: gfx::pipeline(embed_shader("vert", shaders::FULL_VERT), embed_shader("frag", COMPOSE_FRAG),
+                               gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED }),
+        layer: gfx::Texture { 0 },
+        layer_w: 0,
+        layer_h: 0,
+        count: -1,
+        view: default<View>(),
+        theme: default<theme::Theme>(),
+        ids: [0, 0, 0, 0],
+        kept: false,
+        stale: true,
     };
     w.quads = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(w.upload));
     w.badges = bake_badges();
@@ -619,19 +650,76 @@ fn bake_badges() -> gfx::Texture {
     return t;
 }
 
-// Copies the frame's quads to the GPU: before the pass, as copies happen between passes.
-fn upload(w: Widgets&, g: gui::Gui&) {
-    for i in g.quads.len { w.upload[i] = g.quads[i]; }
-    gfx::update_buffer(w.quads, bytes_of(w.upload));
+// Before the frame's passes (copies and passes can't run inside one), with what frame()
+// will take: the quads copied to the GPU when they changed. The UI stands still on most
+// frames that draw (the board moving, a pulse), and its quads cost a quarter of the 3D
+// frame on the Pixel 7a (task 059): once they, the view, the theme, and the textures are
+// the same as the last frame's, they are drawn once into a layer the screen's size,
+// which frame() then lays with a fetch a pixel. While they change, frame() draws them as
+// they come, so a moving UI pays no layer.
+fn prepare(w: Widgets&, g: gui::Gui&, s: scene::Scene&, t: theme::Theme, width: f32, height: f32, hole: float4,
+           tall: f32 = 0.0) {
+    let n = g.quads.len;
+    let view = view_of(g, s, width, height, hole, tall);
+    let ids: i64[4] = [s.glass.id, w.atlas.id, w.thumbs.id, w.badges.id];
+    var same = !w.stale && n == w.count && same_bytes(bytes_of([view]), bytes_of([w.view]))
+               && same_bytes(bytes_of([t]), bytes_of([w.theme]));
+    for i in 4 { if ids[i] != w.ids[i] { same = false; } }
+    if same && n > 0 { same = same_bytes(bytes_of(g.quads[..n]), bytes_of(w.upload[..n])); }
+    if !same {
+        for i in n { w.upload[i] = g.quads[i]; }
+        if n > 0 { gfx::update_buffer(w.quads, bytes_of(w.upload[..n])); }
+        w.count = n;
+        w.view = view;
+        w.theme = t;
+        w.ids = ids;
+        w.stale = false;
+        w.kept = false;
+        return;
+    }
+    guard !w.kept && n > 0 else { return; }
+    let lw = width as i64;
+    let lh = height as i64;
+    if w.layer.id == 0 || w.layer_w != lw || w.layer_h != lh {
+        if w.layer.id != 0 { gfx::release(w.layer); }
+        w.layer = gfx::render_target(lw, lh, gfx::RGBA8);
+        w.layer_w = lw;
+        w.layer_h = lh;
+    }
+    gfx::begin_pass(w.layer, gfx::Texture { 0 }, float4 { 0.0, 0.0, 0.0, 0.0 });
+    draw_quads(w, n, s, t, view);
+    gfx::end_pass();
+    w.kept = true;
 }
 
 // Draws the frame's quads in the open pass, over what is there, none inside `hole` but
-// those on the board (gui::on_board), `tall` pixels tall (0: as tall as wide).
+// those on the board (gui::on_board), `tall` pixels tall (0: as tall as wide): the kept
+// layer when prepare() drew them into it.
 fn frame(w: Widgets&, g: gui::Gui&, s: scene::Scene&, t: theme::Theme, width: f32, height: f32, hole: float4,
          tall: f32 = 0.0) {
     guard g.quads.len > 0 else { return; }
+    if w.kept {
+        gfx::bind(w.compose);
+        gfx::bind_texture(gfx::FRAGMENT, 0, w.layer, s.sampler);
+        gfx::draw(3);
+        return;
+    }
+    draw_quads(w, g.quads.len, s, t, view_of(g, s, width, height, hole, tall));
+}
+
+fn view_of(g: gui::Gui&, s: scene::Scene&, width: f32, height: f32, hole: float4, tall: f32) -> View {
     let behind: f32 = if s.plain { 2.0 } else if s.has { 1.0 } else { 0.0 };
-    let view = View { screen: float4 { width, height, behind, tall }, hole: hole, clip: g.scroll.view };
+    return View { screen: float4 { width, height, behind, tall }, hole: hole, clip: g.scroll.view };
+}
+
+fn same_bytes(a: const u8[:], b: const u8[:]) -> bool {
+    guard a.len == b.len else { return false; }
+    for i in a.len { if a[i] != b[i] { return false; } }
+    return true;
+}
+
+// The `n` uploaded quads in the open pass.
+fn draw_quads(w: Widgets&, n: i64, s: scene::Scene&, t: theme::Theme, view: View) {
     gfx::bind(w.pipeline);
     gfx::bind_storage_buffer(gfx::VERTEX, 0, w.quads);
     gfx::uniforms(gfx::VERTEX, 0, view);
@@ -641,5 +729,5 @@ fn frame(w: Widgets&, g: gui::Gui&, s: scene::Scene&, t: theme::Theme, width: f3
     gfx::bind_texture(gfx::FRAGMENT, 1, if w.atlas.id != 0 { w.atlas } else { s.glass }, s.sampler);
     gfx::bind_texture(gfx::FRAGMENT, 2, if w.thumbs.id != 0 { w.thumbs } else { s.glass }, s.sampler);
     gfx::bind_texture(gfx::FRAGMENT, 3, w.badges, s.sampler);
-    gfx::draw_instanced(6, g.quads.len);
+    gfx::draw_instanced(6, n);
 }

@@ -1123,7 +1123,7 @@ fn show(g: Gpu&, from: float4, to: float4, alpha: f32, size: int2, grey: f32 = 0
 // pass's target formats (docs/goose-findings.md). Bound in a pass on 4 × 4 targets of the
 // pass's formats (made by the first step, given back by the last), or on the target
 // itself where it is small or held anyway, with nothing drawn.
-let WARM_STEPS = 12;
+let WARM_STEPS = 11;
 fn warm(g: Gpu&, k: i64) {
     if k == 0 {
         g.warm_color = gfx::texture(gfx::TextureDesc { format: gfx::RGBA8, usage: gfx::COLOR_TARGET, width: 4,
@@ -1143,17 +1143,13 @@ fn warm(g: Gpu&, k: i64) {
     } else if k == 9 {
         pass.color[0] = g.occ_map;
         pass.clear_color = false;
-    } else if k == 10 {
-        // The backdrop as keep_backdrop() draws it, on a target of its format.
-        pass.color[0] = g.small;
-        pass.clear_color = false;
     } else {
         pass.color[0] = gfx::screen();
         pass.clear_color = false;
     }
     gfx::begin_pass(pass);
     let p = [g.lit, g.fading, g.catcher, g.glow, g.shadow, g.depth_only, g.backdrop, g.show, g.pulse, g.occ,
-             g.backdrop, g.kept][k];
+             g.kept][k];
     gfx::bind(p);
     gfx::end_pass();
     if k == WARM_STEPS - 1 {

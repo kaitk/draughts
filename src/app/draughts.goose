@@ -244,7 +244,10 @@ fn main() {
             g.insets = e;
             dirty = true;
         }
-        if text::bake(t, g, scale) { trim_memory(); }
+        if text::bake(t, g, scale) {
+            trim_memory();
+            w.stale = true;
+        }
         w.atlas = t.texture;
         // A quick tap can press and release within one frame, which mouse_down never
         // sees; pressed and released catch it. The screens give the pointer to the UI
@@ -377,7 +380,7 @@ fn main() {
         if drew {
             let t0 = clock();
             let shown .= shell::fill(sh, now);
-            widgets::upload(w, g);
+            widgets::prepare(w, g, d.scene, d.colors, size.x, size.y, sh.hole, sh.tall);
             if sh.raised {
                 // The 3D board (draw3d.goose) over the photograph, the UI and its pieces
                 // drawn over it as on the flat board; in a transition its image moves,

@@ -372,6 +372,35 @@ on the tablet.
 - **Both items so far:** GPU active 7.01M → 6.06M cycles a frame (−14%).
 - **The tablet:** to measure.
 
+### 3. The UI kept while it stands still (2026-11-10)
+
+The plan's item 3 was the UI's shader under 32 registers, about 1 ms. First its whole
+cost, from a throwaway build without `widgets::frame` on the Pixel: GPU active 6.06M →
+4.61M cycles a frame, **the UI 24% of the frame** (1.45M cycles for 479k quads, 0.74
+of a screen, with glass's 48 dp shadow margins), and 125k of the 206k all-register
+warps. A leaner shader would cut part of that on every frame; not drawing what didn't
+change cuts nearly all of it on the frames where only the board moves, which are most.
+(The uber-shader's 64 registers for every kind is still a cost on the frames where the
+UI changes: split by kind if those measure heavy.)
+
+`widgets::prepare` (before the frame's passes, in place of `upload`) compares the
+frame's quads (bytes, up to 32 KB), view, theme, and texture ids with the last frame's,
+and a re-baked glyph atlas marks it stale. Changed: the quads are uploaded and
+`widgets::frame` draws them as before. The same a frame later: they are drawn once into
+an RGBA8 layer the screen's size, cleared, premultiplied, and `widgets::frame` lays it
+(`COMPOSE_FRAG`, a texel fetch) until they change. The layer has the screen's format,
+so the UI's pipeline needs no second compile. Item 2's warm step for the backdrop on an
+RGBA8 target goes for the same reason (11 steps; 39 to prepare).
+
+- **The look:** the seven scenes against item 2's build: at most 2 levels off (the
+  8-bit layer's rounding), 51 to 68 dB.
+- **The Pixel 7a:** **GPU active 6.06M → 4.70M cycles a frame (−22%)**, the screen
+  pass's fragment work 3.03 → 1.57 ms (median), all-register warps 206k → 81k; within
+  2% of the build without any UI. The waited times barely move (12.08 ms the pass
+  alone): the governor lowers the clock as the work falls, so the saving is battery.
+- **The three items:** GPU active 7.01M → 4.70M cycles a frame (−33%).
+- **The tablet:** to measure.
+
 ## Acceptance criteria
 
 - [ ] Nsight and RenderDoc captures of the moving 3D board on the PC, the clocks locked:
