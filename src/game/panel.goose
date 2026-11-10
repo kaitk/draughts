@@ -119,6 +119,11 @@ struct Layout {
     keep:    float4[4]    = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4],
     gap:     f32          = 0.0,
     mode:    i64          = LANDSCAPE,
+    // The portrait bar's room for its three tiles inside its glass (task 050's compact
+    // row too), above what each side has taken in a game; `stacked` where each icon goes
+    // over its word (TOP_STACKED).
+    tiles:   float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
+    stacked: bool   = false,
     // Where what each side has taken goes (task 052), as `taken_as` lays it out, each
     // piece `taken_d` pixels across; TAKEN_NONE where the screen shows none (a puzzle).
     taken:    float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
@@ -281,7 +286,7 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
                      three: true, pitch: portrait_pitch, buttons: buttons, count: 2, row: !col, touch: touch,
                      disc: disc, box: box, gap: gap, mode: bar.mode, .. };
     l.keep = [l.left, play, buttons, float4 { 0.0, 0.0, 0.0, 0.0 }];
-    if game { taken_in_bar(l, phone, s); }
+    bar_tiles(l, bar, game, phone, s);
     rest(l, view3d::fit(cam, n, box, view3d::MIDDLE), s);
     return l;
 }
@@ -470,7 +475,7 @@ fn layout_in(area: float4, n: i64, s: f32, small: bool = true, game: bool = fals
     let pw = if compact || game { width - 2.0 * gap } else { size };
     var l = Layout { board: board::layout_at(x, y + top + gap, size, s, n), left: float4 { px, y, pw, top },
                      right: float4 { px, y + top + gap + size + gap, pw, bottom }, mode: bar.mode };
-    if game { taken_in_bar(l, phone, s); }
+    bar_tiles(l, bar, game, phone, s);
     return l;
 }
 
@@ -482,10 +487,11 @@ fn layout_in(area: float4, n: i64, s: f32, small: bool = true, game: bool = fals
 // 3D board's), else as wide as the board: in a window wider than tall that keeps this
 // layout (panel::landscape), the board's, which the height holds under the width.
 struct Bar {
-    mode:   i64 = PORTRAIT,
-    gap:    f32 = 0.0,
-    top:    f32 = 0.0,
-    bottom: f32 = 0.0,
+    mode:    i64  = PORTRAIT,
+    gap:     f32  = 0.0,
+    top:     f32  = 0.0,
+    bottom:  f32  = 0.0,
+    stacked: bool = false,
 }
 fn portrait_bar(area: float4, s: f32, small: bool, game: bool, wide: bool) -> Bar {
     let width = area.z;
@@ -499,7 +505,8 @@ fn portrait_bar(area: float4, s: f32, small: bool, game: bool, wide: bool) -> Ba
     let narrow = (across - BAR_SPARE * s) / 3.0 < STACK_W * s;
     let extra = if game && !compact { TAKEN_BAR_ROW } else { 0.0 };
     let top = ((if compact { TOP_COMPACT } else if narrow { TOP_STACKED } else { TOP }) + extra) * s;
-    return Bar { mode: if compact { COMPACT } else { PORTRAIT }, gap: gap, top: top, bottom: bottom };
+    return Bar { mode: if compact { COMPACT } else { PORTRAIT }, gap: gap, top: top, bottom: bottom,
+                 stacked: narrow && !compact };
 }
 
 // The game's flat board in landscape (task 054) with the 3D board's panels: short glass
@@ -556,22 +563,41 @@ fn under_left(l: Layout&, area: float4, s: f32, d: f32) {
     }
 }
 
-// What each side has taken in the portrait bar: a row under its tiles; compact, the
-// bar's middle between back and settings.
-fn taken_in_bar(l: Layout&, phone: bool, s: f32) {
+// The portrait bar's tiles and, in a game, what each side has taken: a row under the
+// tiles; compact, the bar's middle between back and settings.
+fn bar_tiles(l: Layout&, bar: Bar, game: bool, phone: bool, s: f32) {
+    l.stacked = bar.stacked;
     if l.mode == COMPACT {
-        let x0 = l.left.x + (12.0 + ICON_W + 12.0) * s;
-        let x1 = l.left.x + l.left.z - (12.0 + ICON_W + 12.0 + ICON_W + 12.0) * s;
-        l.taken = float4 { x0, l.left.y + gui::PAD * s, max(x1 - x0, 0.0), l.left.w - 2.0 * gui::PAD * s };
+        l.tiles = gui::inset(l.left, gui::PAD * s);
+        guard game else { return; }
+        let t = icons(l.tiles, s);
+        let x0 = t[0].x + t[0].z + gui::PAD * s;
+        let x1 = t[1].x - gui::PAD * s;
+        l.taken = float4 { x0, l.tiles.y, max(x1 - x0, 0.0), l.tiles.w };
         l.taken_as = TAKEN_STACK;
         l.taken_d = TAKEN_COMPACT * s;
         return;
     }
+    let row = if game { TAKEN_BAR_ROW * s } else { 0.0 };
+    l.tiles = inside(float4 { l.left.x, l.left.y, l.left.z, l.left.w - row }, WIDE_IN, s);
+    guard game else { return; }
     let h = (TAKEN_BAR_ROW - WIDE_IN.y) * s;
     l.taken = float4 { l.left.x + WIDE_IN.x * s, l.left.y + l.left.w - WIDE_IN.y * s - h, l.left.z - 2.0 * WIDE_IN.x * s,
                        h };
     l.taken_as = TAKEN_ROW;
     l.taken_d = (if phone { TAKEN_PHONE } else { TAKEN_D }) * s;
+}
+
+// The compact bar's icons in its tiles' room r: back at the left, settings and start over
+// at the right, the board between start over and undo move.
+fn icons(r: float4, s: f32) -> float4[3] {
+    var bar = r;
+    let tw = ICON_W * s;
+    let back = gui::cut_left(bar, tw);
+    let restart = gui::cut_right(bar, tw);
+    gui::cut_right(bar, gui::PAD * s);
+    let gear = gui::cut_right(bar, tw);
+    return [back, gear, restart];
 }
 
 // The countdown before a draw under whose turn (rendering.md, "Controls", The countdown): a line
@@ -731,65 +757,75 @@ fn clock_of(g: gui::Gui&, r: float4, c: clock::Clock&, side: i64, ring: f32, ove
 // way back) and the panel under it holds the other two; in portrait the three are a bar above
 // the board, back first. Back goes where the screen's way out goes (home from the game,
 // the theme's page from a puzzle). Returns BACK, SETTINGS, RESTART, or NOTHING.
+let OUT_WORDS = [strings::NAV_BACK, strings::HOME_SETTINGS, strings::GAME_START_OVER];
 fn leave(g: gui::Gui&, l: Layout) -> i64 {
-    let u = g.scale;
-    var chosen = NOTHING;
-    let words = [strings::NAV_BACK, strings::HOME_SETTINGS, strings::GAME_START_OVER];
+    var words: f32[3] = [0.0, 0.0, 0.0];
+    for i in 3 { words[i] = gui::text_width(g, gui::HEADING, strings::get(OUT_WORDS[i])); }
+    let o = way_out(l, words, g.scale);
     let icons = [gui::BACK, gui::GEAR, gui::RESTART];
     let asks = [BACK, SETTINGS, RESTART];
+    var chosen = NOTHING;
+    if columns(l) {
+        if gui::back(g, gui::PANEL_IDS, o.tiles[0], strings::get(OUT_WORDS[0])) { chosen = BACK; }
+        gui::panel(g, o.glass);
+    } else {
+        gui::panel(g, l.left);
+    }
+    for i in 3 {
+        guard i > 0 || !columns(l) else { continue; }
+        let tapped = if o.arrange == ICON { gui::button(g, gui::PANEL_IDS + i, o.tiles[i], icons[i]) }
+                     else { gui::labelled(g, gui::PANEL_IDS + i, o.tiles[i], icons[i], 34.0, strings::get(OUT_WORDS[i]),
+                                          gui::HEADING, o.arrange) };
+        if tapped { chosen = asks[i]; }
+    }
+    return chosen;
+}
+
+// Where the way out's tiles go: back, settings, start over; in landscape the glass under
+// back that holds the other two; and how each tile lays out its icon and word (gui::BESIDE,
+// MIDDLE, STACKED, or ICON alone).
+struct Out {
+    tiles:   float4[3] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 3],
+    glass:   float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
+    arrange: i64       = gui::BESIDE,
+}
+
+// The way out's tiles in l at u pixels a dp, `words` the three words' widths in the
+// heading face.
+fn way_out(l: Layout, words: f32[3], u: f32) -> Out {
+    var o = Out {};
     if columns(l) {
         var column = l.left;
-        if gui::back(g, gui::PANEL_IDS, gui::cut_top(column, ROW_H * u), strings::get(words[0])) { chosen = BACK; }
+        o.tiles[0] = gui::cut_top(column, ROW_H * u);
         gui::cut_top(column, BACK_GAP * u);
-        gui::panel(g, column);
+        o.glass = column;
         // Each icon beside its word, or, where a word doesn't fit so in a narrowed panel,
         // both icons over their words in taller rows.
         var left = inside(column, TALL_IN, u);
-        var arrange = gui::BESIDE;
         for i in 1..3 {
-            if gui::labelled_width(g, 34.0, strings::get(words[i]), gui::HEADING, gui::BESIDE) > left.z {
-                arrange = gui::STACKED;
-            }
+            if labelled_width(u, 34.0, words[i], gui::BESIDE) > left.z { o.arrange = gui::STACKED; }
         }
-        let h = (if arrange == gui::BESIDE { ROW_H } else { STACK_H }) * u;
-        for i in 1..3 {
-            let r = if i == 1 { gui::cut_top(left, h) } else { gui::cut_bottom(left, h) };
-            if gui::labelled(g, gui::PANEL_IDS + i, r, icons[i], 34.0, strings::get(words[i]), gui::HEADING, arrange) {
-                chosen = asks[i];
-            }
-        }
-        return chosen;
+        let h = (if o.arrange == gui::BESIDE { ROW_H } else { STACK_H }) * u;
+        o.tiles[1] = gui::cut_top(left, h);
+        o.tiles[2] = gui::cut_bottom(left, h);
+        return o;
     }
-    gui::panel(g, l.left);
     if l.mode == COMPACT {
-        // Icons alone: back at the left, settings and start over at the right, the board
-        // between start over and undo move.
-        var bar = gui::inset(l.left, gui::PAD * u);
-        let tw = ICON_W * u;
-        if gui::button(g, gui::PANEL_IDS, gui::cut_left(bar, tw), icons[0]) { chosen = BACK; }
-        let restart = gui::cut_right(bar, tw);
-        gui::cut_right(bar, gui::PAD * u);
-        let gear = gui::cut_right(bar, tw);
-        if gui::button(g, gui::PANEL_IDS + 1, gear, icons[1]) { chosen = SETTINGS; }
-        if gui::button(g, gui::PANEL_IDS + 2, restart, icons[2]) { chosen = RESTART; }
-        return chosen;
+        o.tiles = icons(l.tiles, u);
+        o.arrange = ICON;
+        return o;
     }
     // Thirds of the bar while each word fits its third; else each tile as wide as its
     // word wants and an even share of the rest, as the setup's draughts are. A bar made
     // taller for it (TOP_STACKED) puts each icon over its word, which needs less width.
-    // A bar with what each side has taken has its row under the tiles.
-    let tiles_h = l.left.w - (if l.taken_as == TAKEN_ROW { TAKEN_BAR_ROW * u } else { 0.0 });
-    let stacked = tiles_h >= TOP_STACKED * u - 0.5;
-    let arrange = if stacked { gui::STACKED } else { gui::MIDDLE };
-    let bar = inside(float4 { l.left.x, l.left.y, l.left.z, tiles_h }, WIDE_IN, u);
-    let gap = (if stacked { 12.0 } else { 16.0 }) * u;
+    o.arrange = if l.stacked { gui::STACKED } else { gui::MIDDLE };
+    let bar = l.tiles;
+    let gap = (if l.stacked { 12.0 } else { 16.0 }) * u;
     let free = bar.z - 2.0 * gap;
     var wants: f32[3] = [0.0, 0.0, 0.0];
     var fits = true;
     for i in 3 {
-        let word = strings::get(words[i]);
-        let want = if stacked { gui::text_width(g, gui::HEADING, word) + 2.0 * gui::LABEL_PAD * u }
-                   else { gui::labelled_width(g, 34.0, word, gui::HEADING, gui::MIDDLE) };
+        let want = if l.stacked { words[i] + 2.0 * gui::LABEL_PAD * u } else { labelled_width(u, 34.0, words[i], gui::MIDDLE) };
         wants[i] = max(want, 88.0 * u);
         if wants[i] > free / 3.0 { fits = false; }
     }
@@ -798,13 +834,16 @@ fn leave(g: gui::Gui&, l: Layout) -> i64 {
     var x = bar.x;
     for i in 3 {
         let w = if even { free / 3.0 } else { wants[i] + share };
-        let r = if even { float4 { bar.x + i * (w + gap), bar.y, w, bar.w } } else { float4 { x, bar.y, w, bar.w } };
+        o.tiles[i] = if even { float4 { bar.x + i * (w + gap), bar.y, w, bar.w } } else { float4 { x, bar.y, w, bar.w } };
         x += w + gap;
-        if gui::labelled(g, gui::PANEL_IDS + i, r, icons[i], 34.0, strings::get(words[i]), gui::HEADING, arrange) {
-            chosen = asks[i];
-        }
     }
-    return chosen;
+    return o;
+}
+
+// gui::labelled_width from the word's width `word` at u pixels a dp, its icon `size` dp.
+fn labelled_width(u: f32, size: f32, word: f32, arrange: i64) -> f32 {
+    let lead = if arrange == gui::BESIDE { gui::INDENT } else { gui::LABEL_PAD };
+    return (lead + size + 12.0 + gui::LABEL_PAD) * u + word;
 }
 
 // r less `room` dp (TALL_IN, WIDE_IN) at s pixels a dp across and down, each side.
@@ -821,12 +860,210 @@ fn tall(l: Layout, u: f32) -> f32 {
 }
 
 // The right panel's room inside its glass, where a screen plays.
-fn play_area(g: gui::Gui&, l: Layout) -> float4 {
-    let u = g.scale;
-    if columns(l) {
-        return inside(l.right, TALL_IN, u);
-    }
+fn play_area(g: gui::Gui&, l: Layout) -> float4 { play_room(l, g.scale) }
+fn play_room(l: Layout, u: f32) -> float4 {
+    if columns(l) { return inside(l.right, TALL_IN, u); }
     return inside(l.right, WIDE_IN, u);
+}
+
+// What the play panel shows this frame, as far as where things go: the clocks or whose
+// turn, the countdown's lines (`counting`), a draw, and the widths of its words, measured
+// first (Words).
+struct Shows {
+    clocks:   bool = false,
+    counting: bool = false,
+    drawn:    bool = false,
+}
+struct Words {
+    heading: f32 = 0.0,     // the faces' heights: the heading's,
+    small:   f32 = 0.0,     // the small one's
+    turn:    f32 = 0.0,     // whose turn's words, in the heading face,
+    turn_s:  f32 = 0.0,     // and in the small one
+    line:    f32 = 0.0,     // the countdown's line in the small face
+    short:   f32 = 0.0,     // its short form, the word or the figure, the wider
+    undo:    f32 = 0.0,     // undo move's word, the hint's, in the heading face
+    hint:    f32 = 0.0,
+    name:    f32 = 0.0,     // the lookout's name in the body face
+}
+
+// Where the play panel's parts go (one function per mode lays it out: column_play,
+// compact_play, portrait_play): the two clocks, the first one's (the far player's)
+// first; the countdown's short form between them, on a line (SHORT_LINE) or its word
+// over its figure (SHORT_STACKED); else whose turn's piece in `spot`, `r` pixels round
+// (both pieces overlapping by `overlap` for a draw), and its words; the lookout's name
+// beside its eye in the landscape column; where the countdown's line goes under whose
+// turn in landscape (`note`, empty for none); and the eye, the hint, and undo move,
+// each laid out as `*_as` says (gui::BESIDE.., or ICON alone) with its icon `*_icon` dp.
+let SHORT_NONE = 0;
+let SHORT_LINE = 1;
+let SHORT_STACKED = 2;
+struct Play {
+    clocks:    float4[2] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 2],
+    short:     float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
+    short_as:  i64       = SHORT_NONE,
+    spot:      float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
+    r:         f32       = 0.0,
+    overlap:   f32       = 0.0,
+    words:     float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
+    name:      float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
+    note:      float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
+    eye:       float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
+    hint:      float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
+    hint_as:   i64       = gui::BESIDE,
+    hint_icon: f32       = 0.0,
+    undo:      float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
+    undo_as:   i64       = gui::STACKED,
+    undo_icon: f32       = 0.0,
+}
+
+// The landscape column, a panel as tall as the board or a corner one: as the prototype
+// has it where the panel is tall enough, whose turn or the clocks, the lookout's eye and
+// name, the hint over undo move. Else (a phone's, a 3D board's corner panel) the eye at
+// the end of whose turn's line, or beside the clocks, and the hint beside undo move where
+// both keep 88 dp across, or over it, the gaps round the piece closed up where the panel
+// is short.
+fn column_play(l: Layout, w: Words, on: Shows, u: f32) -> Play {
+    var p = Play { r: 36.0 * u, overlap: 6.0 * u, .. };
+    var right = play_room(l, u);
+    // A corner panel's short line between the clocks takes from undo move what the
+    // panel lacks, and leaves a gap above it.
+    let squeezed = l.mode == CORNERS && on.clocks && on.counting && !on.drawn;
+    let wanted = tall(l, u);
+    let low = if squeezed { min(wanted, right.w - (2.0 * CLOCK_H + SHORT_GAP + 12.0) * u) } else { wanted };
+    let head = if on.clocks { (2.0 * CLOCK_H + 10.0) * u } else { (18.0 + 72.0 + 18.0) * u + w.heading };
+    let column = right.w >= head + (EYE_TOUCH + 12.0 + HINT_H + 12.0) * u + low;
+    let beside = !column && right.z >= (2.0 * 88.0 + 12.0) * u;
+    let tight = !column && !beside && right.w < head + (12.0 + HINT_H + 12.0) * u + low;
+    p.undo = gui::cut_bottom(right, low);
+    if beside {
+        p.hint = gui::cut_left(p.undo, 0.5 * (p.undo.z - gui::PAD * u));
+        gui::cut_left(p.undo, gui::PAD * u);
+    } else {
+        gui::cut_bottom(right, gui::PAD * u);
+        p.hint = gui::cut_bottom(right, HINT_H * u);
+    }
+    p.undo_icon = if beside { 36.0 } else { 48.0 };
+    p.hint_as = if beside { gui::STACKED } else { gui::BESIDE };
+    p.hint_icon = if beside { 36.0 } else { 34.0 };
+    if on.clocks {
+        let extra = if squeezed { (SHORT_GAP - 10.0) * u } else { 0.0 };
+        var clocks = gui::cut_top(right, head + extra);
+        if !column {
+            p.eye = gui::center(gui::cut_right(clocks, EYE_TOUCH * u), EYE_TOUCH * u, EYE_TOUCH * u);
+            gui::cut_right(clocks, 6.0 * u);
+        }
+        p.clocks[0] = gui::cut_top(clocks, CLOCK_H * u);
+        if squeezed {
+            p.short = gui::cut_top(clocks, SHORT_GAP * u);
+            p.short_as = SHORT_LINE;
+        } else {
+            gui::cut_top(clocks, 10.0 * u);
+        }
+        p.clocks[1] = gui::cut_top(clocks, CLOCK_H * u);
+    } else {
+        // The piece, its glow ring, and the words under it; both pieces for a draw. A
+        // countdown in a 3D board's short corner panel closes the gaps up.
+        let close = (l.mode == CORNERS && on.counting) || tight;
+        gui::cut_top(right, (if close { 8.0 } else { 18.0 }) * u);
+        p.spot = gui::cut_top(right, 72.0 * u);
+        if !column {
+            // The piece stays centered over the words where the panel is wide enough.
+            p.eye = gui::center(gui::cut_right(p.spot, EYE_TOUCH * u), EYE_TOUCH * u, EYE_TOUCH * u);
+            if p.spot.z - EYE_TOUCH * u >= 72.0 * u { gui::cut_left(p.spot, EYE_TOUCH * u); }
+        }
+        gui::cut_top(right, (if close { 10.0 } else { 18.0 }) * u);
+        p.words = gui::cut_top(right, w.heading);
+    }
+    if column {
+        // The eye and its name under whose turn.
+        let line = gui::cut_top(right, EYE_TOUCH * u);
+        let wide = EYE_TOUCH * u + 4.0 * u + w.name;
+        var pair_r = gui::center(line, min(wide, line.z), line.w);
+        p.eye = gui::cut_left(pair_r, EYE_TOUCH * u);
+        gui::cut_left(pair_r, 4.0 * u);
+        p.name = pair_r;
+    }
+    if !(l.mode == CORNERS && on.clocks) { p.note = right; }
+    return p;
+}
+
+// A small window's play (compact): one row, whose turn (or the two clocks) at the left,
+// undo move at the right. The eye at the end of whose turn's line, the hint between it
+// and undo move, each its icon over its word, or icons alone with clocks and where the
+// words would leave whose turn too little room for its own in the small face (Estonian's
+// undo move).
+fn compact_play(l: Layout, w: Words, on: Shows, u: f32) -> Play {
+    var p = Play { r: 22.0 * u, overlap: 4.0 * u, undo_icon: 28.0, hint_icon: 28.0, .. };
+    var row = float4 { l.right.x + gui::PAD * u, l.right.y + gui::PAD * u, l.right.z - 2.0 * gui::PAD * u, l.right.w - 2.0 * gui::PAD * u };
+    let mark = (if on.drawn { 84.0 } else { 44.0 }) * u;
+    let sides = 2.0 * gui::LABEL_PAD * u;
+    let undo_wants = max(88.0 * u, w.undo + sides);
+    let hint_wants = max(88.0 * u, w.hint + sides);
+    let words = row.z - undo_wants - hint_wants - (8.0 + 4.0 + EYE_TOUCH + 4.0 + 12.0) * u - mark;
+    let icons = on.clocks || words < w.turn_s;
+    p.undo = gui::cut_right(row, if icons { ICON_W * u } else { undo_wants });
+    gui::cut_right(row, 8.0 * u);
+    p.hint = gui::cut_right(row, if icons { ICON_W * u } else { hint_wants });
+    gui::cut_right(row, 4.0 * u);
+    p.eye = gui::center(gui::cut_right(row, EYE_TOUCH * u), EYE_TOUCH * u, EYE_TOUCH * u);
+    gui::cut_right(row, 4.0 * u);
+    p.undo_as = if icons { ICON } else { gui::STACKED };
+    p.hint_as = p.undo_as;
+    if on.clocks {
+        // The countdown's short form between them, as in portrait.
+        let between = on.counting && !on.drawn;
+        let gap = if between { w.short + 2.0 * MID_GAP * u } else { 8.0 * u };
+        let half = 0.5 * (row.z - gap);
+        let mid = gui::center(row, row.z, CLOCK_H * u);
+        p.clocks[0] = float4 { mid.x, mid.y, half, mid.w };
+        p.clocks[1] = float4 { mid.x + half + gap, mid.y, half, mid.w };
+        if between {
+            p.short = float4 { mid.x + half, mid.y, gap, mid.w };
+            p.short_as = SHORT_STACKED;
+        }
+        return p;
+    }
+    p.spot = gui::cut_left(row, mark);
+    gui::cut_left(row, gui::PAD * u);
+    p.words = row;
+    return p;
+}
+
+// Portrait: the play below the board, the eye at the end of whose turn's line (or of the
+// clocks side by side), the hint and undo move halves of the row under it.
+fn portrait_play(l: Layout, w: Words, on: Shows, u: f32) -> Play {
+    var p = Play { r: 26.0 * u, overlap: 4.0 * u, undo_as: gui::MIDDLE, undo_icon: 36.0, hint_as: gui::MIDDLE,
+                   hint_icon: 36.0, .. };
+    var right = play_room(l, u);
+    var top = gui::cut_top(right, CLOCK_H * u);
+    gui::cut_top(right, gui::PAD * u);
+    p.eye = gui::center(gui::cut_right(top, EYE_TOUCH * u), EYE_TOUCH * u, EYE_TOUCH * u);
+    gui::cut_right(top, 8.0 * u);
+    if on.clocks {
+        let between = on.counting && !on.drawn;
+        let mid = if between { w.short + 2.0 * MID_GAP * u } else { gui::PAD_WIDE * u };
+        let half = 0.5 * (top.z - mid);
+        p.clocks[0] = gui::cut_left(top, half);
+        p.clocks[1] = gui::cut_right(top, half);
+        if between {
+            p.short = top;
+            p.short_as = SHORT_STACKED;
+        }
+    } else {
+        // The piece beside the words, centered; both pieces for a draw. The countdown's
+        // line goes under the words.
+        let mark = (if on.drawn { 100.0 } else { 52.0 }) * u;
+        let span = mark + 18.0 * u + max(w.turn, w.line);
+        var row = gui::center(top, span, top.w);
+        p.spot = gui::cut_left(row, mark);
+        gui::cut_left(row, 18.0 * u);
+        p.words = row;
+    }
+    var row = gui::cut_top(right, WIDE_H * u);
+    p.undo = gui::cut_right(row, 0.5 * (row.z - gui::PAD_WIDE * u));
+    gui::cut_right(row, gui::PAD_WIDE * u);
+    p.hint = row;
+    return p;
 }
 
 // Declares the panels for this frame, with the clocks `c`, and `side` the side to move,
@@ -841,210 +1078,82 @@ fn play_area(g: gui::Gui&, l: Layout) -> float4 {
 fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: bool, note: Note&, thinking: bool,
         glow: f32, over: board::Overlay&, help: Help = Help {}) -> i64 {
     let u = g.scale;
-    let landscape = columns(l);
     let turn_key = if drawn { strings::DRAW }
                    else if won { if side == 0 { strings::WON_WHITE } else { strings::WON_BLACK } }
                    else if side == 0 { strings::TURN_WHITE } else { strings::TURN_BLACK };
-    // The clock nearer the player whose pieces are at the bottom goes second: under the
-    // other in landscape, right of it in portrait.
-    let first = if l.board.flip { 0 } else { 1 };
-    var rings: f32[2] = [0.0, 0.0];
-    for s in 2 { if c.running == s || (thinking && s == side) { rings[s] = glow; } }
+    let label = strings::get(turn_key);
+    let line = note.line[..note.line.len];
+    let hint_word = strings::get(if help.stage == 1 { strings::GAME_WHERE_TO } else { strings::GAME_HINT });
+    let name = strings::get(strings::GAME_LOOKOUT);
+    let heading .= g.faces[gui::HEADING];
+    let small .= g.faces[gui::SMALL];
+    let w = Words { heading: heading.ascent - heading.descent, small: small.ascent - small.descent,
+                    turn: gui::text_width(g, gui::HEADING, label), turn_s: gui::text_width(g, gui::SMALL, label),
+                    line: gui::text_width(g, gui::SMALL, line),
+                    short: max(gui::text_width(g, gui::SMALL, note.word[..note.word.len]),
+                               gui::text_width(g, gui::LABEL, note.fig[..note.fig.len])),
+                    undo: gui::text_width(g, gui::HEADING, strings::get(strings::GAME_UNDO_MOVE)),
+                    hint: gui::text_width(g, gui::HEADING, hint_word), name: gui::text_width(g, gui::BODY, name) };
+    let on = Shows { clocks: clock::on(c), counting: note.of > 0, drawn: drawn };
+    let p = match l.mode { COMPACT => compact_play(l, w, on, u), PORTRAIT => portrait_play(l, w, on, u),
+                           _ => column_play(l, w, on, u) };
     var chosen = leave(g, l);
     gui::panel(g, l.right);
-    var right = play_area(g, l);
-    if landscape {
-        // A corner panel's short line between the clocks takes from undo move what the
-        // panel lacks, and leaves a gap above it.
-        let squeezed = l.mode == CORNERS && clock::on(c) && note.of > 0 && !drawn;
-        let wanted = tall(l, u);
-        let low = if squeezed { min(wanted, right.w - (2.0 * CLOCK_H + SHORT_GAP + 12.0) * u) } else { wanted };
-        // The column as the prototype has it where the panel is tall enough: whose turn or
-        // the clocks, the lookout's eye and name, the hint over undo move. Else (a phone's,
-        // a 3D board's corner panel) the eye at the end of whose turn's line, or beside the
-        // clocks, and the hint beside undo move where both keep 88 dp across, or over it,
-        // the gaps round the piece closed up where the panel is short.
-        let f .= g.faces[gui::HEADING];
-        let words_h = f.ascent - f.descent;
-        let head = if clock::on(c) { (2.0 * CLOCK_H + 10.0) * u } else { (18.0 + 72.0 + 18.0) * u + words_h };
-        let column = right.w >= head + (EYE_TOUCH + 12.0 + HINT_H + 12.0) * u + low;
-        let beside = !column && right.z >= (2.0 * 88.0 + 12.0) * u;
-        let tight = !column && !beside && right.w < head + (12.0 + HINT_H + 12.0) * u + low;
-        var back = gui::cut_bottom(right, low);
-        var hint_r = float4 { 0.0, 0.0, 0.0, 0.0 };
-        if beside {
-            hint_r = gui::cut_left(back, 0.5 * (back.z - gui::PAD * u));
-            gui::cut_left(back, gui::PAD * u);
-        } else {
-            gui::cut_bottom(right, gui::PAD * u);
-            hint_r = gui::cut_bottom(right, HINT_H * u);
-        }
-        var eye_r = float4 { 0.0, 0.0, 0.0, 0.0 };
-        if clock::on(c) {
-            let extra = if squeezed { (SHORT_GAP - 10.0) * u } else { 0.0 };
-            var clocks = gui::cut_top(right, head + extra);
-            if !column {
-                eye_r = gui::center(gui::cut_right(clocks, EYE_TOUCH * u), EYE_TOUCH * u, EYE_TOUCH * u);
-                gui::cut_right(clocks, 6.0 * u);
-            }
-            clock_of(g, gui::cut_top(clocks, CLOCK_H * u), c, first, rings[first], over);
-            if squeezed { short_line(g, gui::cut_top(clocks, SHORT_GAP * u), note); }
-            else { gui::cut_top(clocks, 10.0 * u); }
-            clock_of(g, gui::cut_top(clocks, CLOCK_H * u), c, 1 - first, rings[1 - first], over);
-        } else {
-            // The piece, its glow ring, and the words under it; both pieces for a draw. A
-            // countdown in a 3D board's short corner panel closes the gaps up.
-            let close = (l.mode == CORNERS && note.of > 0) || tight;
-            gui::cut_top(right, (if close { 8.0 } else { 18.0 }) * u);
-            var spot = gui::cut_top(right, 72.0 * u);
-            if !column {
-                // The piece stays centered over the words where the panel is wide enough.
-                eye_r = gui::center(gui::cut_right(spot, EYE_TOUCH * u), EYE_TOUCH * u, EYE_TOUCH * u);
-                if spot.z - EYE_TOUCH * u >= 72.0 * u { gui::cut_left(spot, EYE_TOUCH * u); }
-            }
-            if drawn { pair(over, spot, 36.0 * u, 6.0 * u, 1.0); }
-            else { piece(over, spot, 36.0 * u, side, 0, 1.0, glow); }
-            gui::cut_top(right, (if close { 10.0 } else { 18.0 }) * u);
-            let words = strings::get(turn_key);
-            gui::text(g, gui::fitting(g, gui::HEADING, words, right.z), gui::cut_top(right, f.ascent - f.descent), words,
-                      1.0, 0.0, gui::CENTER);
-        }
-        if column {
-            // The eye and its name under whose turn, dim while off.
-            let line = gui::cut_top(right, EYE_TOUCH * u);
-            let name = strings::get(strings::GAME_LOOKOUT);
-            let w = EYE_TOUCH * u + 4.0 * u + gui::text_width(g, gui::BODY, name);
-            var pair_r = gui::center(line, min(w, line.z), line.w);
-            eye_r = gui::cut_left(pair_r, EYE_TOUCH * u);
-            gui::cut_left(pair_r, 4.0 * u);
-            let dim: f32 = if help.look { 1.0 } else { 0.66 };
-            gui::text(g, gui::fitting(g, gui::BODY, name, pair_r.z), pair_r, name, dim, 0.0, gui::LEFT);
-        }
-        if !(l.mode == CORNERS && clock::on(c)) { countdown(g, right, note); }
-        let undo_icon: f32 = if beside { 36.0 } else { 48.0 };
-        if gui::labelled(g, gui::PANEL_IDS + 3, back, gui::UNDO, undo_icon, strings::get(strings::GAME_UNDO_MOVE), gui::HEADING,
-                         gui::STACKED) {
-            chosen = UNDO;
-        }
-        let arrange = if beside { gui::STACKED } else { gui::BESIDE };
-        let hint_icon: f32 = if beside { 36.0 } else { 34.0 };
-        if hint_tile(g, hint_r, arrange, help, hint_icon) { chosen = HINT; }
-        if eye(g, eye_r, help.look) { chosen = LOOKOUT; }
-        return chosen;
-    }
-    if l.mode == COMPACT {
-        // One row: whose turn (or the two clocks) at the left, undo move at the right.
-        // The eye at the end of whose turn's line, the hint between it and undo move, each
-        // its icon over its word, or icons alone with clocks and where the words would leave
-        // whose turn too little room for its own in the small face (Estonian's undo move).
-        var row = float4 { l.right.x + gui::PAD * u, l.right.y + gui::PAD * u, l.right.z - 2.0 * gui::PAD * u, l.right.w - 2.0 * gui::PAD * u };
-        let undo_word = strings::get(strings::GAME_UNDO_MOVE);
-        let hint_word = strings::get(if help.stage == 1 { strings::GAME_WHERE_TO } else { strings::GAME_HINT });
-        let label = strings::get(turn_key);
-        let mark = (if drawn { 84.0 } else { 44.0 }) * u;
-        let sides = 2.0 * gui::LABEL_PAD * u;
-        let undo_wants = max(88.0 * u, gui::text_width(g, gui::HEADING, undo_word) + sides);
-        let hint_wants = max(88.0 * u, gui::text_width(g, gui::HEADING, hint_word) + sides);
-        let words = row.z - undo_wants - hint_wants - (8.0 + 4.0 + EYE_TOUCH + 4.0 + 12.0) * u - mark;
-        let icons = clock::on(c) || words < gui::text_width(g, gui::SMALL, label);
-        let undo_w = if icons { ICON_W * u } else { undo_wants };
-        let hint_w = if icons { ICON_W * u } else { hint_wants };
-        let undo = gui::cut_right(row, undo_w);
-        gui::cut_right(row, 8.0 * u);
-        let hint_r = gui::cut_right(row, hint_w);
-        gui::cut_right(row, 4.0 * u);
-        let eye_r = gui::center(gui::cut_right(row, EYE_TOUCH * u), EYE_TOUCH * u, EYE_TOUCH * u);
-        gui::cut_right(row, 4.0 * u);
-        if clock::on(c) {
-            // The countdown's short form between them, as in portrait.
-            let between = note.of > 0 && !drawn;
-            let gap = if between { max(gui::text_width(g, gui::SMALL, note.word[..note.word.len]),
-                                       gui::text_width(g, gui::LABEL, note.fig[..note.fig.len])) + 2.0 * MID_GAP * u }
-                      else { 8.0 * u };
-            let half = 0.5 * (row.z - gap);
-            let mid = gui::center(row, row.z, CLOCK_H * u);
-            clock_of(g, float4 { mid.x, mid.y, half, mid.w }, c, first, rings[first], over);
-            clock_of(g, float4 { mid.x + half + gap, mid.y, half, mid.w }, c, 1 - first, rings[1 - first], over);
-            if between { short_stacked(g, float4 { mid.x + half, mid.y, gap, mid.w }, note); }
-            if gui::button(g, gui::PANEL_IDS + 3, undo, gui::UNDO) { chosen = UNDO; }
-            if hint_tile(g, hint_r, ICON, help, 28.0) { chosen = HINT; }
-            if eye(g, eye_r, help.look) { chosen = LOOKOUT; }
-            return chosen;
-        }
-        let spot = gui::cut_left(row, mark);
-        if drawn { pair(over, spot, 22.0 * u, 4.0 * u, 1.0); }
-        else { piece(over, spot, 22.0 * u, side, 0, 1.0, glow); }
-        gui::cut_left(row, gui::PAD * u);
-        let face = gui::fitting(g, gui::HEADING, label, row.z);
-        if note.of > 0 {
-            // The countdown's line under the words, in the small face, as in portrait.
-            let head = g.faces[face].ascent - g.faces[face].descent;
-            let small = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
-            var words = gui::center(row, row.z, head + 2.0 * u + small);
-            gui::text(g, face, gui::cut_top(words, head), label, 1.0, 0.0, gui::LEFT);
-            gui::cut_top(words, 2.0 * u);
-            let line = note.line[..note.line.len];
-            gui::text(g, gui::fitting(g, gui::SMALL, line, words.z), gui::cut_top(words, small), line, 1.0, 0.0, gui::LEFT);
-        } else {
-            gui::text(g, face, row, label, 1.0, 0.0, gui::LEFT);
-        }
-        if icons {
-            if gui::button(g, gui::PANEL_IDS + 3, undo, gui::UNDO) { chosen = UNDO; }
-        } else if gui::labelled(g, gui::PANEL_IDS + 3, undo, gui::UNDO, 28.0, undo_word, gui::HEADING, gui::STACKED) {
-            chosen = UNDO;
-        }
-        if hint_tile(g, hint_r, if icons { ICON } else { gui::STACKED }, help, 28.0) { chosen = HINT; }
-        if eye(g, eye_r, help.look) { chosen = LOOKOUT; }
-        return chosen;
-    }
-    // Portrait: the play below the board, the eye at the end of whose turn's line, the
-    // hint and undo move halves of the row under it.
-    var top = gui::cut_top(right, CLOCK_H * u);
-    gui::cut_top(right, gui::PAD * u);
-    let eye_r = gui::center(gui::cut_right(top, EYE_TOUCH * u), EYE_TOUCH * u, EYE_TOUCH * u);
-    gui::cut_right(top, 8.0 * u);
-    if clock::on(c) {
-        let between = note.of > 0 && !drawn;
-        let mid = if between { max(gui::text_width(g, gui::SMALL, note.word[..note.word.len]),
-                                   gui::text_width(g, gui::LABEL, note.fig[..note.fig.len])) + 2.0 * MID_GAP * u }
-                  else { gui::PAD_WIDE * u };
-        let half = 0.5 * (top.z - mid);
-        clock_of(g, gui::cut_left(top, half), c, first, rings[first], over);
-        clock_of(g, gui::cut_right(top, half), c, 1 - first, rings[1 - first], over);
-        if between { short_stacked(g, top, note); }
+    if on.clocks {
+        // The clock nearer the player whose pieces are at the bottom goes second: under
+        // the other in landscape, right of it in portrait.
+        let first = if l.board.flip { 0 } else { 1 };
+        var rings: f32[2] = [0.0, 0.0];
+        for s in 2 { if c.running == s || (thinking && s == side) { rings[s] = glow; } }
+        clock_of(g, p.clocks[0], c, first, rings[first], over);
+        if p.short_as == SHORT_LINE { short_line(g, p.short, note); }
+        clock_of(g, p.clocks[1], c, 1 - first, rings[1 - first], over);
+        if p.short_as == SHORT_STACKED { short_stacked(g, p.short, note); }
     } else {
-        // The piece beside the words, centered; both pieces for a draw. The countdown's
-        // line goes under the words, in the small face.
-        let label = strings::get(turn_key);
-        let mark = (if drawn { 100.0 } else { 52.0 }) * u;
-        let line = note.line[..note.line.len];
-        let wide = max(gui::text_width(g, gui::HEADING, label), gui::text_width(g, gui::SMALL, line));
-        let span = mark + 18.0 * u + wide;
-        var row = gui::center(top, span, top.w);
-        let spot = gui::cut_left(row, mark);
-        if drawn { pair(over, spot, 26.0 * u, 4.0 * u, 1.0); }
-        else { piece(over, spot, 26.0 * u, side, 0, 1.0, glow); }
-        gui::cut_left(row, 18.0 * u);
-        if note.of > 0 {
-            let head = g.faces[gui::HEADING].ascent - g.faces[gui::HEADING].descent;
-            let small = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
-            var words = gui::center(row, row.z, head + 2.0 * u + small);
-            gui::text(g, gui::HEADING, gui::cut_top(words, head), label, 1.0, 0.0, gui::LEFT);
-            gui::cut_top(words, 2.0 * u);
-            gui::text(g, gui::SMALL, gui::cut_top(words, small), line, 1.0, 0.0, gui::LEFT);
-        } else {
-            gui::text(g, gui::HEADING, row, label, 1.0, 0.0, gui::LEFT);
-        }
+        if drawn { pair(over, p.spot, p.r, p.overlap, 1.0); }
+        else { piece(over, p.spot, p.r, side, 0, 1.0, glow); }
+        turn_words(g, l, p.words, label, line, on.counting);
     }
-    var row = gui::cut_top(right, WIDE_H * u);
-    let undo = gui::cut_right(row, 0.5 * (row.z - gui::PAD_WIDE * u));
-    gui::cut_right(row, gui::PAD_WIDE * u);
-    if gui::labelled(g, gui::PANEL_IDS + 3, undo, gui::UNDO, 36.0, strings::get(strings::GAME_UNDO_MOVE), gui::HEADING, gui::MIDDLE) {
+    if p.name.z > 0.0 {
+        // The lookout's name, dim while off.
+        let dim: f32 = if help.look { 1.0 } else { 0.66 };
+        gui::text(g, gui::fitting(g, gui::BODY, name, p.name.z), p.name, name, dim, 0.0, gui::LEFT);
+    }
+    var rest = p.note;
+    if rest.z > 0.0 { countdown(g, rest, note); }
+    let undo_word = strings::get(strings::GAME_UNDO_MOVE);
+    if p.undo_as == ICON {
+        if gui::button(g, gui::PANEL_IDS + 3, p.undo, gui::UNDO) { chosen = UNDO; }
+    } else if gui::labelled(g, gui::PANEL_IDS + 3, p.undo, gui::UNDO, p.undo_icon, undo_word, gui::HEADING, p.undo_as) {
         chosen = UNDO;
     }
-    if hint_tile(g, row, gui::MIDDLE, help, 36.0) { chosen = HINT; }
-    if eye(g, eye_r, help.look) { chosen = LOOKOUT; }
+    if hint_tile(g, p.hint, p.hint_as, help, p.hint_icon) { chosen = HINT; }
+    if eye(g, p.eye, help.look) { chosen = LOOKOUT; }
     return chosen;
+}
+
+// Whose turn's words in r: in landscape one line centered, in the heading face or a
+// smaller one where it doesn't fit; else at r's left, and the countdown's line under them
+// in the small face when `counting`, the faces fitted to r in a small window's row.
+fn turn_words(g: gui::Gui&, l: Layout, r: float4, label: const u8[:], line: const u8[:], counting: bool) {
+    let u = g.scale;
+    if columns(l) {
+        gui::text(g, gui::fitting(g, gui::HEADING, label, r.z), r, label, 1.0, 0.0, gui::CENTER);
+        return;
+    }
+    let fit = l.mode == COMPACT;
+    let face = if fit { gui::fitting(g, gui::HEADING, label, r.z) } else { gui::HEADING };
+    guard counting else {
+        gui::text(g, face, r, label, 1.0, 0.0, gui::LEFT);
+        return;
+    }
+    let head = g.faces[face].ascent - g.faces[face].descent;
+    let small = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
+    var words = gui::center(r, r.z, head + 2.0 * u + small);
+    gui::text(g, face, gui::cut_top(words, head), label, 1.0, 0.0, gui::LEFT);
+    gui::cut_top(words, 2.0 * u);
+    let small_face = if fit { gui::fitting(g, gui::SMALL, line, words.z) } else { gui::SMALL };
+    gui::text(g, small_face, gui::cut_top(words, small), line, 1.0, 0.0, gui::LEFT);
 }
 
 // The lookout's eye in its touch area r: a floating disc, lit in the glow with the open
