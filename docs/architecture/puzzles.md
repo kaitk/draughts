@@ -11,7 +11,7 @@ Each variant with puzzles has a file of its own: `src/puzzles/international.txt`
 International puzzles (International is the default game), `src/puzzles/russian.txt`
 the Russian ones ([Russian's set](#russians-set)), and `src/puzzles/brazilian.txt` the
 Brazilian ones ([Brazilian's set](#brazilians-set)). They are grouped by theme, each theme
-a short curve of its own in three levels, easy to hardest (chosen 2026-11-09). The
+a short curve of its own in three levels, easy to hardest. The
 themes are a fixed list in code (`puzzles::THEME_NAMES`, their icons and names in
 `src/shell/picker.goose` and `strings/`), in the library's order, International's:
 
@@ -44,8 +44,8 @@ source own, motif: give one, take three; found by tools/puzzles.goose find ...
 ```
 
 - **id** stays with a puzzle for good, and a new puzzle takes the next unused one, so a
-  child's stars stay with the puzzle that won them. Learn keeps the ids it had when the
-  set was three tiers of ten; the new puzzles start at 31.
+  child's stars stay with the puzzle that won them. Learn's ids are below 31, the other
+  themes' from 31 on.
 - **position** is PDN's FEN, as `rules::parse_fen` reads it; the side to move solves the
   puzzle.
 - **line** is a solving line in PDN: moves `32-28`, captures by their stops `28x19x10`
@@ -120,8 +120,7 @@ captures are forced.
 - **take N**: the solver's move is a capture, and once the captures due after it are
   played out the solver has taken N more pieces than it has lost. The goal is the
   balance, so a shot that gives a man and takes three is "take 2", which the screen
-  says as "Win 2 men" ("Win a man" for one; chosen 2026-11-09 over "Capture 2", which
-  a child counting the three taken reads wrong). Every line ends quiet (Checks), so the
+  says as "Win 2 men" ("Win a man" for one). Every line ends quiet (Checks), so the
   balance is the men won, with nothing still to be taken back.
 - **crown**: the move makes a king that the reply doesn't take.
 - **win**: the other side is left with no move: everything taken or blocked. Leaving it
@@ -156,18 +155,18 @@ whose puzzle it is. Their look is in [rendering](rendering.md#controls).
   plays and then slides back by itself, a tap the board flashes as a mistake, or a
   capture left partway (below). A puzzle solved keeps the most stars it has won. Start
   over begins the puzzle again with the misses kept, or afresh once it is solved.
-- **A wrong move shows why** (2026-11-09, the user): when the other side answers it by
+- **A wrong move shows why**: when the other side answers it by
   taking something back, a capture back or a shot's first move, that answer plays on
   the board as a reply does, holds, and slides back, and then the wrong move slides back
   as any does; the child sees why it was wrong. A move that is wrong without such an
   answer (one that wins too little, or a quiet move that doesn't lead on) slides back
-  0.35 s after it lands, as before. The answer is `puzzles::answer`, the solver's
+  0.35 s after it lands. The answer is `puzzles::answer`, the solver's
   search, not the computer player's, which lives on its worker: of the other side's
   replies, the one after which the solver ends worst over three plies and the captures
   due beyond, if that is less than the solver has after its move. It is a miss once, as
   any wrong move; the stars and the hint's glow are as for any miss.
-- **Captures of many jumps** are made by hand (2026-11-08, the user: children often
-  make them jump by jump). A tap or a drop on a stop leaves the piece waiting there for
+- **Captures of many jumps** are made by hand, as children often make them jump by
+  jump. A tap or a drop on a stop leaves the piece waiting there for
   the next jump; it never plays the rest of the way by itself, which would solve the
   puzzle for the child. A tap or a drop on the last square plays the capture when one
   capture alone goes there (or it ends just after the stops made), so the capture can
@@ -181,9 +180,9 @@ whose puzzle it is. Their look is in [rendering](rendering.md#controls).
   capture goes on through plays it whole, since nothing there is judged.
 - **Help**: after two misses the piece of the next right move glows; there is no hint
   tile. No puzzle shows a selected piece's targets, whatever the move hints setting: the
-  child is to find the move ([product](../product.md), 2026-11-08). The selection, the
+  child is to find the move ([product](../product.md)). The selection, the
   glow, and a wrong move's flash still show.
-- **Themes**: Learn is open; the others open once half of Learn is solved (2026-11-08),
+- **Themes**: Learn is open; the others open once half of Learn is solved,
   and inside a theme everything is open. A theme's page lights its first puzzle without
   stars.
 - **Next** opens the puzzle after it in its theme, and after the theme's last the
@@ -215,9 +214,9 @@ puzzle, and by `tools/puzzles.goose`) refuses a puzzle when:
   replies follow a line whichever right move the child finds;
 - a line doesn't end quiet: the other side has a capture due after it, or one of its
   replies gives the solver a capture. A puzzle that stops with a capture on the board
-  shows the child more to play than it let them (2026-11-08). A safe move's replies may
-  still give men, since the threat it answers starts with one: the sacrifice is still
-  there to make, only no longer wins (2026-11-09);
+  shows the child more to play than it let them. A safe move's replies may still give
+  men, since the threat it answers starts with one: the sacrifice is still there to
+  make, only no longer wins;
 - a safe puzzle isn't one move, has a capture due at the start, or has a move other
   than the right one that loses without a shot: each wrong move must leave the other
   side no capture due and a sacrifice after which the solver ends down
@@ -230,23 +229,15 @@ puzzle, and by `tools/puzzles.goose`) refuses a puzzle when:
 - it has no source.
 
 A move is right by the goal within the puzzle's moves, so a take puzzle turns down a
-move that wins as much only a move later, and a child sees a good move refused (the
-2026-11-09 report: International's second Captures puzzle, whose other double, taking
-two too, was taken back at once by a double; its man on 39 moved to 34, so the backward
-double is the one capture that takes most). `puzzles::rivals` reports those moves: at
+move that wins as much only a move later, and a child sees a good move refused
+([the report behind this](../decisions/puzzles.md#rivals)). `puzzles::rivals` reports those moves: at
 each of the solver's turns along a line, a wrong move after which the solver still ends
 the count up with best play over the moves left and two plies more, the captures due
 beyond. The set tests and `tools/puzzles.goose` print them under their puzzle; they are
 a report, not a refusal, until each is decided: a move that wins as much listed as a
 line in its own right, or the position changed. A move whose capture is taken back, or
 that wins less, is no rival: that is the lesson of Captures' first level, the double
-whose last stop is safe. Both sets report none since the six of the next check
-(2026-11-09): International's King shots 78 and Russian's 6, 9, 13, 20, and 45 each had a
-rival that needed two more of the solver's moves, not one, its line then winning more
-than the count or ending with a capture due, so none could be listed cleanly; each
-position had a man added or moved instead, named in its source, which kept its line
-and its lesson (Russian's 6 still the double answered by a double, its 13's single now
-taken back).
+whose last stop is safe. Both sets report none.
 
 `tools/puzzles.goose` adds the computer player's view at full skill: its root scores,
 whether the moves it rates best solve the puzzle, a second engine sharing only the
