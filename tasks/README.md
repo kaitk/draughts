@@ -66,6 +66,7 @@ Open:
   045 board styles to choose from.
 - Frames: 055 both boards locked to the display's rate on every device, 056 even pacing
   where the frame fits but still drops (the iPhone).
+- Code: 061 the code review's refactors (2026-11-10), five stages, one per session.
 - Later: 010 goose_gfx changes to propose upstream (alongside), 013 season effects, 014
   upscaled backgrounds, 026 the first start and tutorial, 060 shared blocks for a second
   board game (chess).
