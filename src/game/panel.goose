@@ -759,8 +759,13 @@ fn clock_of(g: gui::Gui&, r: float4, c: clock::Clock&, side: i64, ring: f32, ove
 // the theme's page from a puzzle). Returns BACK, SETTINGS, RESTART, or NOTHING.
 let OUT_WORDS = [strings::NAV_BACK, strings::HOME_SETTINGS, strings::GAME_START_OVER];
 fn leave(g: gui::Gui&, l: Layout) -> i64 {
+    // The words' widths, measured first, where they are shown: not the compact bar's icons,
+    // nor back's on its own glass tile in landscape, which measures its word itself.
     var words: f32[3] = [0.0, 0.0, 0.0];
-    for i in 3 { words[i] = gui::text_width(g, gui::HEADING, strings::get(OUT_WORDS[i])); }
+    if l.mode != COMPACT {
+        let first = if columns(l) { 1 } else { 0 };
+        for i in first..3 { words[i] = gui::text_width(g, gui::HEADING, strings::get(OUT_WORDS[i])); }
+    }
     let o = way_out(l, words, g.scale);
     let icons = [gui::BACK, gui::GEAR, gui::RESTART];
     let asks = [BACK, SETTINGS, RESTART];
@@ -875,8 +880,7 @@ struct Shows {
     drawn:    bool = false,
 }
 struct Words {
-    heading: f32 = 0.0,     // the faces' heights: the heading's,
-    small:   f32 = 0.0,     // the small one's
+    heading: f32 = 0.0,     // the heading face's height
     turn:    f32 = 0.0,     // whose turn's words, in the heading face,
     turn_s:  f32 = 0.0,     // and in the small one
     line:    f32 = 0.0,     // the countdown's line in the small face
@@ -1085,16 +1089,29 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: 
     let line = note.line[..note.line.len];
     let hint_word = strings::get(if help.stage == 1 { strings::GAME_WHERE_TO } else { strings::GAME_HINT });
     let name = strings::get(strings::GAME_LOOKOUT);
-    let heading .= g.faces[gui::HEADING];
-    let small .= g.faces[gui::SMALL];
-    let w = Words { heading: heading.ascent - heading.descent, small: small.ascent - small.descent,
-                    turn: gui::text_width(g, gui::HEADING, label), turn_s: gui::text_width(g, gui::SMALL, label),
-                    line: gui::text_width(g, gui::SMALL, line),
-                    short: max(gui::text_width(g, gui::SMALL, note.word[..note.word.len]),
-                               gui::text_width(g, gui::LABEL, note.fig[..note.fig.len])),
-                    undo: gui::text_width(g, gui::HEADING, strings::get(strings::GAME_UNDO_MOVE)),
-                    hint: gui::text_width(g, gui::HEADING, hint_word), name: gui::text_width(g, gui::BODY, name) };
     let on = Shows { clocks: clock::on(c), counting: note.of > 0, drawn: drawn };
+    // The words the mode's layout reads, measured first; only those, as this runs each frame.
+    var w = Words {};
+    if on.clocks && on.counting {
+        w.short = max(gui::text_width(g, gui::SMALL, note.word[..note.word.len]),
+                      gui::text_width(g, gui::LABEL, note.fig[..note.fig.len]));
+    }
+    match l.mode {
+        COMPACT => {
+            w.turn_s = gui::text_width(g, gui::SMALL, label);
+            w.undo = gui::text_width(g, gui::HEADING, strings::get(strings::GAME_UNDO_MOVE));
+            w.hint = gui::text_width(g, gui::HEADING, hint_word);
+        },
+        PORTRAIT => {
+            w.turn = gui::text_width(g, gui::HEADING, label);
+            w.line = gui::text_width(g, gui::SMALL, line);
+        },
+        _ => {
+            let heading .= g.faces[gui::HEADING];
+            w.heading = heading.ascent - heading.descent;
+            w.name = gui::text_width(g, gui::BODY, name);
+        },
+    }
     let p = match l.mode { COMPACT => compact_play(l, w, on, u), PORTRAIT => portrait_play(l, w, on, u),
                            _ => column_play(l, w, on, u) };
     var chosen = leave(g, l);
