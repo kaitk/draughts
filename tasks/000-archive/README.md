@@ -195,3 +195,10 @@ and the commit that last has it.
   cost on the Pixel 7a halved (0.61M → 0.30M GPU cycles a frame on the flat game), the
   3D game's live layers 1.54M → 0.99M; the glyph's interpolated atlas place tried and
   undone; the tablet's bench skipped (the user, 2026-11-10). `060-ui-shader.md` (numbered 060 before the remote's task 060), `eb31a17`
+- 061: The code review's refactors. Done in five stages: `sizes` failing on any unlisted
+  failure, the moves, one screen table with the game returning events, the panel's layout
+  as regions with `gui::stack`, and the renderer seam (`app/host` for the platform,
+  `app/render` owning the pass, C decoders returning pixels, `model3d` split out); every
+  expected output byte-identical, the Mac's photograph load unchanged, and the Android
+  release smoke-tested by hand on the Pixel 7a; the rest of the end measurement dropped
+  (the user, 2026-11-11). `061-code-review-refactors/`, `3aeb9ea`

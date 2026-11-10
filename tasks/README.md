@@ -54,7 +54,7 @@ reviewed the structure, 049 added the draws, 051 polished what preparing the sto
 windows, 048 found no forced capture behind a report (covered by tests), 039 baked the 3D
 board's wood, 040 added the lookout and the hint, 054 gave the flat game screen the 3D one's
 controls, 052 showed what each side has taken, 044 added the plain background, 057 made the app
-rest on every platform, 059 profiled and reworked the 3D renderer, and 063 made the UI's shader fast in itself; 016 (tabletop pictures) and 033 (an icon per season) were
+rest on every platform, 059 profiled and reworked the 3D renderer, 063 made the UI's shader fast in itself, and 061 carried out the code review's refactors; 016 (tabletop pictures) and 033 (an icon per season) were
 cancelled. All are archived. The MVP in `docs/product.md` is built.
 
 Open:
@@ -66,7 +66,6 @@ Open:
   045 board styles to choose from.
 - Frames: 055 both boards locked to the display's rate on every device, 056 even pacing
   where the frame fits but still drops (the iPhone).
-- Code: 061 the code review's refactors (2026-11-10), five stages, one per session.
 - Docs: 062 the docs split as Plod's are, decisions for agents and architecture for
   people, after 061.
 - Later: 010 goose_gfx changes to propose upstream (alongside), 013 season effects, 014
