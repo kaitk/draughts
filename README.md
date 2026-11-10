@@ -44,15 +44,18 @@ Vulkan, or iOS 16 or later with Metal.
 
 Release builds in a game, 2026-11-10, frames as they reached the screen:
 
-| Device | Display | 2D board | 3D board | Memory (2D / 3D) |
-| --- | --- | --- | --- | --- |
-| Galaxy Tab A11+ | 1920 × 1200, 90 Hz | locked 90 fps | locked 90 fps | 137 / 295 MB |
-| Pixel 7a | 2400 × 1080, 60 Hz | locked 60 fps | locked 60 fps | 159 / 324 MB |
-| Galaxy A33 5G | 2400 × 1080, 90 Hz | locked 90 fps | 60 fps (45 fps 1% low) | 116 / 275 MB |
-| iPhone 13 mini | 2340 × 1080, 60 Hz | locked 60 fps | locked 60 fps | 59 / 204 MB |
-| Windows PC | 2560 × 1440, 165 Hz | locked 165 fps | locked 165 fps | 258 / 477 MB |
+| Device | Display | 3D board | Memory (2D / 3D) |
+| --- | --- | --- | --- |
+| Galaxy Tab A11+ | 1920 × 1200, 90 Hz | locked 90 fps | 137 / 295 MB |
+| Pixel 7a | 2400 × 1080, 60 Hz | locked 60 fps | 159 / 324 MB |
+| Galaxy A33 5G | 2400 × 1080, 90 Hz | 60 fps (45 fps 1% low) | 116 / 275 MB |
+| iPhone 13 mini | 2340 × 1080, 60 Hz | locked 60 fps | 59 / 204 MB |
+| Windows PC | 2560 × 1440, 165 Hz | locked 165 fps | 258 / 477 MB |
 
-At rest: under 0.35% of one core, no GPU work. The 3D board's extra memory is on the GPU.
+- **2D board:** locked to the display's rate on every device.
+- **At rest:** under 0.35% of one core, no GPU work.
+- **Memory:** the 3D board's extra is on the GPU.
+
 [Full numbers and method](docs/architecture/rendering.md#the-releases-frames).
 
 ### How it works
