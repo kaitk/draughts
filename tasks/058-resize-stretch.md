@@ -11,9 +11,11 @@ or runs the main callbacks, which goose_gfx doesn't use. Windows' modal size loo
 same. An iPad's window resizes without blocking the loop, so it should re-lay out live
 already: to check in the simulator.
 
-The user saw a build of 2026-11-09 redraw live on the Mac, likely by accident: find what
-it did differently before building anything (`git log` of that day, `scripts/mac.py` on
-an older commit).
+Early 3D builds on main redrew live on the Mac, likely by accident (the user, 2026-11-10):
+find what they did differently before building anything. Start around the 3D renderer's
+arrival on main (`c8e0afe`, the game's 3D board behind `--3d`, and the commits after it
+on 2026-11-09): build one with a plain `goose build` in a worktree, drag the window's
+corner by hand, then bisect to the commit that lost it.
 
 ## Direction
 
@@ -24,6 +26,6 @@ nothing, until the size settles.
 
 ## Acceptance criteria
 
-- [ ] What the 2026-11-09 build did, found
+- [ ] The commit that lost the live redraw, and what it changed
 - [ ] On the Mac (and Windows) a resize drag shows no stretched picture
 - [ ] The iPad simulator's window checked while it resizes
