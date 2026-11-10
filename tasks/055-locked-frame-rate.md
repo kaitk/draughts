@@ -9,12 +9,24 @@ presented frames, between its `presenting` and `presented` lines), as the app's 
 clock can't tell how long a frame stayed on screen: from it the bench said the tablet's
 flat board had a 1% low of 70 fps, where the compositor counts none missed.
 
-## Tablet, 2026-11-10
+## Measured, 2026-11-10
+
+The release built from 1aaf406 (on the tablet, from the tree that became it), counted
+by `scripts/device_perf.sh`, which now prints the build it measured.
+
+Tablet, 90 Hz:
 
 | Board | Frames counted | Missed a refresh | FPS (avg / 1% low) |
 | --- | --- | --- | --- |
-| Flat | 988 to 991, four runs | 0 | 91 / 91 |
-| 3D | 993 | 172 (17%), each on screen for two refreshes | 78 / 45 |
+| Flat | 988 to 991, four runs | 0 | 90 / 90 |
+| 3D | 993 | 172 (17%), each on screen for two refreshes | 77 / 45 |
+
+Pixel 7a, 60 Hz:
+
+| Board | Frames counted | Missed a refresh | FPS (avg / 1% low) |
+| --- | --- | --- | --- |
+| Flat | 995 | 0 | 60 / 60 |
+| 3D | 995 | 1 | 60 / 60 |
 
 What was ruled out on the way, with `poc/pace.goose` (the screen cleared every frame
 through the same goose_gfx and SDL): the pacing itself missed none of 1815 frames, nor
@@ -37,7 +49,8 @@ clock the governor picks, not just at the top one.
 ## Acceptance criteria
 
 - [x] The tablet's flat board misses no refresh over 1000 presented frames
-- [ ] The same on the Pixel 7a and the Galaxy A33
+- [x] The same on the Pixel 7a
+- [ ] The same on the Galaxy A33
 - [ ] The 3D board misses no refresh on the tablet and the Pixel 7a (the Galaxy A33,
       the weakest tried, at least holding a steady rate)
 - [ ] A screen transition counted the same way

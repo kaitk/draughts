@@ -234,6 +234,13 @@ def main():
             aligned)
     unaligned.unlink()
     check_zip_pages(aligned)
+    # The commit it was built from, beside it, for the measurements that name their build
+    # (scripts/device_perf.sh): "dirty" when the sources differed from it.
+    head = subprocess.run(["git", "log", "-1", "--format=%h %cs"], cwd=ROOT, capture_output=True,
+                          text=True).stdout.strip()
+    dirty = subprocess.run(["git", "diff", "--quiet", "HEAD", "--", "src", "strings", "assets", "android"],
+                           cwd=ROOT).returncode != 0
+    aligned.with_suffix(".commit").write_text(head + (" dirty" if dirty else "") + "\n")
     print(f"{aligned} ({aligned.stat().st_size // 1024} KB)")
 
     # 5. A release's bundle: the base module in the bundle's layout (manifest/, dex/, lib/,

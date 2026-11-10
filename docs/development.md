@@ -468,7 +468,7 @@ warm, the Pixel 7a's frames slowed from 16.7 to 19.8 ms. [Rendering](architectur
 ## Check idle CPU
 
 ```sh
-adb shell svc power stayon usb     # keep the screen on: Android pauses the app when it sleeps
+adb shell svc power stayon true    # keep the screen on: Android pauses the app when it sleeps (not `usb`: the Pixel 7a charges as AC)
 scripts/idle_cpu.sh 60             # with the app running on the tablet, untouched
 adb shell svc power stayon false
 ```
