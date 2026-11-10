@@ -169,3 +169,7 @@ and the commit that last has it.
   panel on a phone, the board never smaller at rest), a row under the portrait bar's
   tiles (the bar 52 dp taller), and compact's bar middle. `052-captured-pieces.md`,
   `6ed79a5`
+- 058 A window being resized shows a stretched picture: no build ever redrew live (c8e0afe
+  stretches too); the Mac keeps its last frame in shape over the backdrop
+  (`src/app/resize.c`), an iPad lays out live, and Windows' unscaled last frame with
+  black where the window grew is kept. `058-resize-stretch.md`, `0c0b30c`

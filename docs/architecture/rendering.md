@@ -177,8 +177,12 @@ Drawing live during the drag was set aside (task 058): it needs the loop's body 
 SDL's 60 Hz expose in an event watch, from inside gfx's own `frame()`, which Goose may
 not allow, and Metal's frame lags the window's size by one, so the edges wobble. A cover
 over the stretched frame, taken off after the next frame, flickered on mouse-up and
-switched too suddenly. Android and iOS don't hold the loop while a window resizes.
-Windows' modal size loop is the Mac's, to be checked there.
+switched too suddenly. Android and iOS don't hold the loop while a window resizes: an
+iPad's window (the 11" iPad Pro simulator, iOS 26.4) lays out live. Windows' modal size
+loop holds it as the Mac's does, and shows the last frame unscaled, black where the
+window grew, which is kept (the user, 2026-11-10): the Mac's look there would need a gfx
+patch presenting the backdrop and the last frame from SDL's 60 Hz expose, the swapchain
+made again each tick.
 
 ## Look
 

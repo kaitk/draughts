@@ -8,7 +8,7 @@
 // Nothing changes at rest: the layers are set once, and again on a season change.
 //
 // Elsewhere it does nothing: Android and iOS don't block the loop while a window
-// resizes, and Windows' modal size loop is left to its own check (task 058). SDL,
+// resizes, and Windows' modal size loop shows the last frame unscaled, not stretched. SDL,
 // Objective-C, and Core Graphics are looked up with dlsym, as the program's C is linked
 // on the Mac with no undefined symbols (platform.h).
 
