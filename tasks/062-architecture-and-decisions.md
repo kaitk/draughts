@@ -42,12 +42,32 @@ model here:
 
 ## Acceptance criteria
 
-- [ ] `docs/architecture/` names no task, keeps no history, and credits no person; each
+- [x] `docs/architecture/` names no task, keeps no history, and credits no person; each
       file reads as how the app works now
-- [ ] Every decision now in `docs/architecture/` is in `docs/decisions/`, dated, with its
+- [x] Every decision now in `docs/architecture/` is in `docs/decisions/`, dated, with its
       reason, and what it rejected where the source says so; nothing is lost (check by
       diffing the facts, not the lines)
 - [ ] The overview page is `docs/architecture/index.html`, linked from both READMEs, and
       on Pages at `/draughts/architecture/`
-- [ ] `AGENTS.md` and `agents/writing.md` state the split as Plod's do
-- [ ] No link points at a heading that moved (grep for `architecture/` and `#` anchors)
+- [x] `AGENTS.md` and `agents/writing.md` state the split as Plod's do
+- [x] No link points at a heading that moved (grep for `architecture/` and `#` anchors)
+
+## Outcome
+
+Done on 2026-11-10 and 11, one commit per file, `rendering.md` in four section groups.
+
+- `docs/decisions/`: `README.md` (the stack, the code's layout and the renderer seam, with
+  task 061's stage verdicts, players, the app's lifecycle), `rules.md`, `ai.md` (the
+  self-play histories), `puzzles.md`, and `rendering.md`, whose headings follow the
+  architecture's. The old "The 3D board on devices" is kept there whole as its history.
+- `docs/architecture/rendering.md` stays one file with its headings, as 92 links and
+  about 50 quoted section names point into it; 1,638 lines became 1,462, the decisions
+  467. The architecture is 2,515 lines in all, from 2,860.
+- Checked by facts: every number, colour, code span, and URL of the five originals (at
+  `57298d4`, and `56ad433` for `rendering.md`) is in the new files. A script resolved every
+  Markdown link and anchor into both folders from the repo's text and code, and each
+  quoted section name.
+- `puzzles.md` said a game plays a capture whole once one goes on; the code and
+  `rendering.md` make it stop by stop in a game too, so that line was corrected.
+- Pages: the page is committed on the local `gh-pages` branch as
+  `architecture/index.html`, not pushed (2026-11-11).
