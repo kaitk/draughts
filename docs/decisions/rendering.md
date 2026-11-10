@@ -91,7 +91,28 @@ The seasons' values come from the design boards (2026-11-07). Summer's sunset (2
 takes the summer photograph's evening sky, where the design boards' sea greens were cold
 against it and close to spring's sage.
 
-{themes.rstrip()}
+### Themes kept for later
+
+Set aside, not rejected: candidates for another season's photograph, a theme setting, or
+a later board. Values as in the table above.
+
+| | Sand and pine (2026-11-07) | Sea (the design boards' summer, until 2026-11-07) |
+| --- | --- | --- |
+| Light square | `#e6cfa6` | `#c7d5c6` |
+| Dark square | `#56603f` | `#2e5546` |
+| Frame | `#33361f` | `#1d3a30` |
+| Light piece | `#f7efdf` | `#f6f1e4` |
+| Dark piece | `#b5603f` (terracotta) | `#b56a57` (terracotta) |
+| Crown on a light piece | `#56603f` | `#2e5546` |
+| Glow | `#ffc67a` | `#86e7d3` |
+| Glass tint | `#3a2a1e` at 50% | `#1e4a4a` at 40% |
+| Glass copy dimmed to | 0.8 | 0.75 |
+| Text | `#fbf3e6` | `#f4f8f2` |
+| Page under the scene | `#1e1a12` | `#0d1c1c` |
+| Square surface | soft mottling, like sand | plain sheen |
+
+Sand and pine is warm sand with olive pine squares; it suits the summer photograph too,
+but its olive sits nearer spring's greens than the sunset does.
 
 ### Scene and glass
 
