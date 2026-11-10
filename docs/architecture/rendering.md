@@ -135,7 +135,8 @@ dp (from none).
   the countdown's short form between, at the left; undo move at the right), the margins
   16 dp: the board goes from about a third of the width to nearly all of it. The bar's
   middle holds what each side has taken ("What each side has taken"). Home's menu
-  rows are 72 dp, the wordmark's row 64 with 8 under it, the sheet's rim 20, which leaves
+  rows are 72 dp, the wordmark's row 64 with 12 under it (the gear's reach, so its 88 dp
+  tap keeps off Continue's; 8 until 2026-11-10), the sheet's rim 20, which leaves
   the board about 240 dp above the sheet. Settings' theme tiles are slim
   (`settings::SLIM_H`, `gui::choice`'s `beside`): 48 dp tall, a 40 × 26 dp thumbnail with
   its word beside it, the switch's halves 88 × 48 beside the name, so the Look tab shows
@@ -557,7 +558,11 @@ built or superseded; they are in git history before that day.
   looked too big beside the wordmark, and the X's round glass button, which the X itself later left); the name may run
   under the tap's clear side, up to 12 dp from the gear; so too in a landscape too
   short for the menu with settings as a row (a phone under about 590 dp tall), where the
-  column widens to 440 dp for the wordmark and the gear. The wordmark's letters close up
+  column widens to 440 dp for the wordmark and the gear. Under the wordmark it keeps
+  14 dp, less on a short screen, but never less than the gear's reach, so its tap never
+  meets the first row's: where even that doesn't fit (the Pixel 7a in landscape at 480 dp
+  less its gesture bar, 3 dp short), the rows close up from 2 dp apart to about 1
+  (2026-11-10; it had overlapped Continue's tap). The wordmark's letters close up
   where the gear leaves them too little room (2026-11-08). In the
   screen's top right, 24 dp from both edges of its safe area, a bare X, 34 dp with strokes of 2.8 grid units at
   80%, in a round 88 dp tap, closes the app at once, asking nothing, since the game is kept anyway; on the

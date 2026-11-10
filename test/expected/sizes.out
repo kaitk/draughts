@@ -434,7 +434,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp, insets 0, 118, 0, 84 px:
   the turn piece: 52 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   the win: 7 tiles, smallest 88 x 88 dp, board 492 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
-  home: 7 tiles, smallest 88 x 88 dp, board 299 dp; tiles 0 and 1 overlap;
+  home: 7 tiles, smallest 88 x 88 dp, board 299 dp, all in place
   home's chip: 88 dp wide, board 299 dp, mirroring the X on the board's side, off the column and the board
   home's chip, named: 320 dp wide, board 299 dp, mirroring the X on the board's side, off the column and the board
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 170 dp, all in place
@@ -450,7 +450,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   the win: 7 tiles, smallest 88 x 88 dp, board 395 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
-  home: 7 tiles, smallest 88 x 88 dp, board 299 dp; tiles 0 and 1 overlap;
+  home: 7 tiles, smallest 88 x 88 dp, board 299 dp, all in place
   home's chip: 88 dp wide, board 299 dp, mirroring the X on the board's side, off the column and the board
   home's chip, named: 320 dp wide, board 299 dp, mirroring the X on the board's side, off the column and the board
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 170 dp, all in place
@@ -482,7 +482,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp, insets 0, 118, 0, 84 px:
   the turn piece: 52 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   the win: 7 tiles, smallest 88 x 88 dp, board 432 dp, card buttons 88 x 88 dp, all in place
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
-  home: 7 tiles, smallest 88 x 88 dp, board 201 dp; tiles 0 and 1 overlap;
+  home: 7 tiles, smallest 88 x 88 dp, board 201 dp, all in place
   home's chip: 88 dp wide, board 201 dp, mirroring the X on the board's side, off the column and the board
   home's chip, named: 88 dp wide, board 201 dp; the pill wrong;
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 0 dp, all in place
@@ -498,7 +498,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   the win: 7 tiles, smallest 88 x 88 dp, board 321 dp, card buttons 88 x 88 dp, all in place
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
-  home: 7 tiles, smallest 88 x 88 dp, board 201 dp; tiles 0 and 1 overlap;
+  home: 7 tiles, smallest 88 x 88 dp, board 201 dp, all in place
   home's chip: 88 dp wide, board 201 dp, mirroring the X on the board's side, off the column and the board
   home's chip, named: 88 dp wide, board 201 dp; the pill wrong;
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 0 dp, all in place
@@ -579,7 +579,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 540 dp, insets 0, 118, 0, 84 px:
   the turn piece: 52 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   the win: 7 tiles, smallest 88 x 88 dp, board 492 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
-  home: 7 tiles, smallest 88 x 88 dp, board 299 dp; tiles 0 and 1 overlap;
+  home: 7 tiles, smallest 88 x 88 dp, board 299 dp, all in place
   home's chip: 88 dp wide, board 299 dp, mirroring the X on the board's side, off the column and the board
   home's chip, named: 320 dp wide, board 299 dp, mirroring the X on the board's side, off the column and the board
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 170 dp, all in place
@@ -595,7 +595,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   the win: 7 tiles, smallest 88 x 88 dp, board 395 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
-  home: 7 tiles, smallest 88 x 88 dp, board 299 dp; tiles 0 and 1 overlap;
+  home: 7 tiles, smallest 88 x 88 dp, board 299 dp, all in place
   home's chip: 88 dp wide, board 299 dp, mirroring the X on the board's side, off the column and the board
   home's chip, named: 320 dp wide, board 299 dp, mirroring the X on the board's side, off the column and the board
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 170 dp, all in place
@@ -627,7 +627,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp, insets 0, 118, 0, 84 px:
   the turn piece: 52 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   the win: 7 tiles, smallest 88 x 88 dp, board 432 dp, card buttons 88 x 88 dp, all in place
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
-  home: 7 tiles, smallest 88 x 88 dp, board 201 dp; tiles 0 and 1 overlap;
+  home: 7 tiles, smallest 88 x 88 dp, board 201 dp, all in place
   home's chip: 88 dp wide, board 201 dp, mirroring the X on the board's side, off the column and the board
   home's chip, named: 88 dp wide, board 201 dp; the pill wrong;
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 0 dp, all in place
@@ -643,7 +643,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   the win: 7 tiles, smallest 88 x 88 dp, board 321 dp, card buttons 88 x 88 dp, all in place
 a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
-  home: 7 tiles, smallest 88 x 88 dp, board 201 dp; tiles 0 and 1 overlap;
+  home: 7 tiles, smallest 88 x 88 dp, board 201 dp, all in place
   home's chip: 88 dp wide, board 201 dp, mirroring the X on the board's side, off the column and the board
   home's chip, named: 88 dp wide, board 201 dp; the pill wrong;
   a friend's setup: 9 tiles, smallest 88 x 88 dp, board 0 dp, all in place

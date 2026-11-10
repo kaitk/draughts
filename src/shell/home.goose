@@ -96,20 +96,35 @@ fn corner(area: float4, u: f32) -> float4 {
     float4 { area.x + area.z - (EDGE + CORNER) * u, area.y + EDGE * u, CORNER * u, CORNER * u }
 }
 
+// How far in dp the gear's 88 dp tap reaches over and under the wordmark's row: 8, 12
+// in a small window.
+fn reach(small: bool) -> f32 { 0.5 * (GEAR - mark_h(small)) }
+
 // The gap under the wordmark in dp: MARK_GAP with settings a row of its own; 14 beside
-// the gear, less, down to 4, where the area's `height` would leave the gear's 8 dp over
-// the wordmark's row off the screen (a landscape phone at 480 dp less its gesture bar).
+// the gear, less where the area's `height` would leave the gear's reach over the
+// wordmark's row off the screen, but never under that reach, so the gear's tap keeps off
+// the first row's (a landscape phone at 480 dp less its gesture bar: row_gap gives way
+// instead).
 fn mark_gap(gear: bool, height: f32, u: f32, small: bool = false) -> f32 {
     guard gear else { return MARK_GAP; }
-    guard !small else { return 8.0; }
-    return clamp(height / u - 8.0 - (MARK_H + ROWS * ROW_H + (ROWS - 1) * ROW_GAP), 4.0, 14.0);
+    guard !small else { return reach(true); }
+    return clamp(height / u - reach(false) - (MARK_H + ROWS * ROW_H + (ROWS - 1) * ROW_GAP), reach(false), 14.0);
+}
+
+// The gap between the menu's rows in dp: ROW_GAP, less, down to none, where the gap
+// under the wordmark can't give way any further (mark_gap).
+fn row_gap(gear: bool, height: f32, u: f32, small: bool = false) -> f32 {
+    guard gear && !small else { return ROW_GAP; }
+    let left = height / u - reach(false) - MARK_H - mark_gap(gear, height, u) - ROWS * ROW_H;
+    return clamp(left / (ROWS - 1), 0.0, ROW_GAP);
 }
 
 // How tall the menu is in an area `height` tall, with settings a row of its own or the
 // gear beside the wordmark.
 fn menu_height(gear: bool, height: f32, u: f32, small: bool = false) -> f32 {
     let rows = if gear { ROWS } else { ROWS + 1 };
-    return (mark_h(small) + mark_gap(gear, height, u, small) + rows * row_h(small) + (rows - 1) * ROW_GAP) * u;
+    return (mark_h(small) + mark_gap(gear, height, u, small) + rows * row_h(small)
+            + (rows - 1) * row_gap(gear, height, u, small)) * u;
 }
 
 // Whether settings is the gear beside the wordmark: in portrait, and in a landscape too
@@ -266,7 +281,8 @@ fn frame(over: game::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: fl
     over.clear();
     let gear = gear_beside(landscape, height, u);
     var pick = if setup != NOTHING { choose(over, g, content, setup == COMPUTER, pair_w, head, s) }
-               else { menu(over, g, content, gear, mark_gap(gear, height, u, small), s, small) };
+               else { menu(over, g, content, gear, mark_gap(gear, height, u, small), row_gap(gear, height, u, small), s,
+                           small) };
     // The player and the way out, declared last so the tiles before them keep their order.
     if chip && player_chip(g, player_spot(g, area, side, l.board, way, s), s) { pick = PLAYERS; }
     if closable && gui::bare_x(g, 309, way, gui::CLOSE, CROSS) { pick = EXIT; }
@@ -331,9 +347,10 @@ fn player_chip(g: gui::Gui&, r: float4, s: settings::Settings&) -> bool {
     return clicked;
 }
 
-// The menu in c: the wordmark, `below` dp under it, the rows, and settings, a row of its
-// own or, `gear`, a gear at the wordmark's right (portrait, and a short landscape).
-fn menu(over: game::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, s: settings::Settings&,
+// The menu in c: the wordmark, `below` dp under it, the rows `apart` dp apart, and
+// settings, a row of its own or, `gear`, a gear at the wordmark's right (portrait, and a
+// short landscape).
+fn menu(over: game::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, apart: f32, s: settings::Settings&,
         small: bool = false) -> i64 {
     let u = g.scale;
     var content = c;
@@ -366,7 +383,7 @@ fn menu(over: game::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, s
     let keys = [strings::HOME_CONTINUE, strings::HOME_FRIEND, strings::HOME_COMPUTER, strings::HOME_PUZZLES];
     for i in ROWS {
         let r = gui::cut_top(content, row_h(small) * u);
-        gui::cut_top(content, ROW_GAP * u);
+        gui::cut_top(content, apart * u);
         var stars: u8[..64] = [];
         let won, all = picker::totals(s.stars[puzzles::loaded]);
         strings::fill_in(stars, strings::PUZZLES_STARS, [won, all]);
