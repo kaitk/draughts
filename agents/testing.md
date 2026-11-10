@@ -542,6 +542,15 @@ How task 059 found where the 3D frame went (2026-11-10):
     --stop-on-exit yes --max-duration 100 --output /data/local/tmp/b.apc --gpu-timeline auto -c configuration.xml"
   ```
 
+  With a test build (`--id-suffix`), `--android-activity` raced: something force-stopped
+  the app a second after gatord started it (task 060). What worked: gatord with
+  `--android-pkg` alone, in the background (it waits for the package), then `am start -S`
+  by hand a few seconds later with `--es args "'...'"` quoted exactly as in "On the
+  tablet": one more layer of quotes leaves a `'` on the first and last flags, and the app
+  drops both silently. Press HOME first: an app drawer left open over it pauses the app.
+  `-report X.apc -timeline -o DIR` writes `DIR/timeline.csv`, a row a millisecond of
+  global counters (decimal commas); sum a window of the bench's phase and divide by its
+  frames.
   Read it back with `Streamline-cli -report -timeline` and `-cam`: GPU active cycles,
   fragment against tiler time, all-register warps, texture stalls, and each pass's time
   on the Mali timeline.

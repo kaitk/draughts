@@ -44,6 +44,30 @@ and 800 × 1280 (home, its plain fade, the game, a clocked game, settings, both 
 puzzles, a transition held halfway, the 3D game): byte-identical to the build before but
 settings, whose preview moves and differs between two runs of either build.
 
+**On the Pixel 7a** (2026-11-10): debuggable test builds beside the app, `uibefore`
+(4e5864e's single shader) and `uiafter` (49cb335), the flat game (Russian, wood, autumn,
+1080 × 2400), `--bench 1000`, Streamline's counters over 12 s of the presented phase (720
+frames at 60 Hz), thermal status 0 at each start. "Kept" is the after build without
+`--keep off`, so the UI's live cost is a column less the kept one.
+
+| A frame | Kept layers | One shader, live | Three shaders, live |
+| --- | --- | --- | --- |
+| GPU active | 3.28M cycles | 3.89M | 3.81M |
+| The UI's part (less kept) | | 0.61M | 0.53M (−13%) |
+| Fragment active (shader cores) | 13.7M | 18.4M | 18.1M |
+| All-register (64) warps | 56.6k | 176.0k | 56.5k |
+| Instruction issue starvation | 2.32M | 2.57M | 1.33M |
+| FMA instructions | 7.46M | 10.52M | 10.50M |
+| 32-bit varying slots | 2.00M | 5.60M | 6.20M |
+| Waited P50 (the Pixel's clock moves) | 10.84 ms | 14.11 ms | 13.22 ms |
+
+So the split works as meant: the UI's 64-register warps are gone (119k a frame) and the
+cores starve half as often, but the UI's cost falls only 13% on the flat board, as its
+arithmetic (3M FMA a frame) and varyings (3.6M slots, 4.2M after: more draws, each
+interpolating its own) are the same or more. Registers were not the main cost; the next
+cuts are the work itself: the glass's shadow margins (48 dp round each panel, shaded
+for a shadow that is mostly 0) and the varyings each pixel interpolates.
+
 ## Plan
 
 1. Three variants of FRAG from one source with defines (as `MARKS_PULSE` does): the base
@@ -59,4 +83,5 @@ settings, whose preview moves and differs between two runs of either build.
 - [x] Every UI pipeline at 32 registers or fewer on the G615 and G710 (and the G68)
 - [ ] The look the same as before (headless shots)
 - [ ] GPU cycles a frame on the Pixel and `--bench 1000` on the tablet, before and after,
-      with `--keep off`, recorded here
+      with `--keep off`, recorded here: the Pixel's flat board for step 1 (above); the
+      3D board and the tablet to come
