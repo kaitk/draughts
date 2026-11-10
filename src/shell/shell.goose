@@ -473,10 +473,10 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
     // the board facing the side to move shows at once.
     panel::aim(l, sh.game.cam, now);
     if l.three { sh.came_view = l.view; }
-    // A game against the computer won or lost: the child meets a stronger or weaker one
-    // next.
+    // A game against the computer ended: won or lost, the child meets a stronger or weaker
+    // one next; drawn, the same, a game played on its level all the same.
     let gm .= sh.game;
-    if ev.ended && ev.result != 0 {
+    if ev.ended {
         let k = clamp(gm.level, game::EASY, game::HARD);
         sh.prefs.skill[k] = ai::adapt(sh.prefs.skill[k], k, ev.result, sh.prefs.played[k]);
         sh.prefs.played[k] += 1;

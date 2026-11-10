@@ -2,7 +2,8 @@
 // in the settings, which a game against the computer plays at throughout. A game the
 // child wins moves its level's skill up a step (ai::adapt), one the computer wins down a
 // step, and the settings file keeps it; the steps are larger over a player's first
-// games on a level. A game started over before it ends moves no skill. Play again on
+// games on a level. A game started over before it ends moves no skill. A draw counts
+// as a game played on its level and leaves its skill. Play again on
 // the card, or start over, begins a new game at its level's skill as it is now, and
 // counts it as home's play does. A skill in the file stays within its level's band, and
 // a file from before the games per level were kept starts a skill still where its level
@@ -45,6 +46,22 @@ fn win_easy(sh: shell::Shell&, g: gui::Gui&, t: f64) {
     drive::tap(sh, g, drive::at(sh.layout, "e5"), t + 0.2);
     drive::idle(sh, g, t + 1.0);
 }
+
+// Plays `a`-`b` by taps through the shell and lets it show; returns the time after.
+fn move(sh: shell::Shell&, g: gui::Gui&, a: const u8[:], b: const u8[:], now: f64) -> f64 {
+    drive::tap(sh, g, drive::at(sh.layout, a), now);
+    drive::tap(sh, g, drive::at(sh.layout, b), now + 0.1);
+    var t = now + 0.2;
+    while sh.game.b.moving || t < now + 1.0 {
+        drive::idle(sh, g, t);
+        t += 1.0 / 60.0;
+    }
+    return t;
+}
+
+// Two kings' moves to the edge of a draw in Russian (test/game/draw.goose): black's
+// a1-b2 after them draws.
+let LINE = ["c1", "a3", "f8", "g7", "a3", "b4", "g7", "a1", "b4", "a3", "a1", "c3", "a3", "c1", "c3", "a1", "c1", "d2"];
 
 fn check_position(fen: const u8[:]) -> rules::Position {
     let p, ok = rules::parse_fen(fen, rules::RUSSIAN);
@@ -130,6 +147,18 @@ fn main() {
     drive::tap(sh, g, drive::control(g, 2), 20.1);
     drive::idle(sh, g, 21.0);
     print("started over on hard: ", skills(sh));
+
+    // Hard drawn: the two kings' line played as between friends, then the child, black,
+    // makes the drawing move against the computer.
+    play(sh, game::HARD, "W:WKc1:BKf8");
+    sh.game.computer = -1;
+    var t = 30.0;
+    drive::idle(sh, g, t);
+    for i in 9 { t = move(sh, g, LINE[2 * i], LINE[2 * i + 1], t); }
+    sh.game.computer = rules::WHITE;
+    drive::idle(sh, g, t);
+    t = move(sh, g, "a1", "b2", t + 0.1);
+    print("drawn on hard: drawn ", game::drawn(sh.game) != rules::NO_DRAW, ", ", skills(sh));
 
     // The file keeps the skills, and reads them back.
     var out: u8[>..] = [];

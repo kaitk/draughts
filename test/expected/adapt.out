@@ -9,6 +9,7 @@ two more wins, the third game a large step and the fourth a small one: skills 28
 the computer won on medium: winner 1, skills 28 32 90, played 4 1 0, changed true
 six more losses on medium: skills 28 25 90, played 4 7 0, changed true
 started over on hard: skills 28 25 90, played 4 7 0, changed true
+drawn on hard: drawn true, skills 28 25 90, played 4 7 1, changed true
 read back: skills 28 25 90
 out of the band: skills 30 25 90
 a file from before: skills 0 44 90, played 0 3 0
