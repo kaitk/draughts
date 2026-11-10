@@ -54,6 +54,14 @@ let VERT = """
     }
     """;
 
+// FRAG is built three times (task 060), each kind in one of them, so no pixel pays for
+// another's registers: together the icons' or the faces' paths took the whole shader to
+// 64 registers, half occupancy on Mali, where each set alone fits 32. draw_quads() draws
+// the quads in runs of one pipeline, in their order: gui::ICON's in the second,
+// gui::FACE's in the third, the rest in the first.
+let BASE = "#define UI_BASE\n";
+let ICONS = "#define UI_ICONS\n";
+let FACES = "#define UI_FACES\n";
 let FRAG = """
     layout(location = 0) in vec2 v_px;
     layout(location = 1) flat in vec4 v_rect;
@@ -368,6 +376,8 @@ let FRAG = """
         vec2 h = 0.5 * v_rect.zw;
         vec2 c = v_rect.xy + h;
         float r = v_look.y;
+        int style = int(v_extra.y);
+    #ifdef UI_BASE
         if (kind == 0) {
             // Glass: the scene's glass copy at this place on screen, or the plain fade
             // there (screen.z 2), dimmed and saturated, under the theme's tint, with a
@@ -387,9 +397,8 @@ let FRAG = """
             result = vec4(g * a, a + s);
             return;
         }
-        // plain, primary, toggle on, toggle off, quiet, row, primary row, choice on and
-        // off, clock running, waiting, and low
-        int style = int(v_extra.y);
+        // style: plain, primary, toggle on, toggle off, quiet, row, primary row, choice on
+        // and off, clock running, waiting, and low
         if (kind == 1) {
             // A glass tile: white at 10%, 14 points more pressed and scaled to 0.96; an
             // inset light border and top highlight; a small shadow. A primary tile is the
@@ -430,6 +439,8 @@ let FRAG = """
             result = acc;
             return;
         }
+    #endif
+    #ifdef UI_ICONS
         if (kind == 2) {
             // A line icon: strokes 2.4 units (look.y sets another) of its 24-unit grid wide, as the prototypes'
             // SVGs draw them, round caps, in the text color.
@@ -442,6 +453,8 @@ let FRAG = """
             result = vec4(ic * a, a);
             return;
         }
+    #endif
+    #ifdef UI_BASE
         if (kind == 5) {
             // A picture: a thumbnail, cover-cropped, a season's photograph (its theme,
             // 0 to 3) or its plain fade (4 to 7), the theme shown's photograph (-2) or
@@ -479,6 +492,8 @@ let FRAG = """
             result = vec4(rc * al, al);
             return;
         }
+    #endif
+    #ifdef UI_FACES
         if (kind == 8) {
             // A player's face: the badge (badge()), a man as on the board with its side
             // and short shadow, its top and side filling the disc. Lit, a 4 dp glow ring
@@ -518,6 +533,8 @@ let FRAG = """
             result = acc;
             return;
         }
+    #endif
+    #ifdef UI_BASE
         if (kind == 9) {
             // A floating button (the 3D board's camera, prototypes/game3d.html's `.ctl`): a
             // disc of black at 30% with an inset 1 px hairline of white at 22% and a soft
@@ -562,6 +579,9 @@ let FRAG = """
         // A plain rounded rect, in its color or (look.z 1) the glow color.
         float a = cover(box(p, c, h, r)) * v_color.a;
         result = vec4((v_look.z > 0.5 ? glow.rgb : v_color.rgb) * a, a);
+    #else
+        result = vec4(0.0);
+    #endif
     }
     // Each quad as its kind draws it, faded with its layer (a screen in a transition), and
     // in a transition hidden where the board passes, unless it lies on the board (a win's
@@ -581,7 +601,7 @@ let FRAG = """
     """;
 
 struct Widgets {
-    pipeline: gfx::Pipeline,
+    pipelines: gfx::Pipeline[3],  // the base kinds, the icons, the faces (FRAG)
     quads:    gfx::Buffer,
     upload:   gui::Quad[gui::MAX_QUADS],
     atlas:    gfx::Texture,     // the text's glyphs (text.goose), or 0 before they're baked
@@ -603,10 +623,15 @@ struct Widgets {
 }
 
 fn new() -> Widgets {
+    let vert = embed_shader("vert", draw::SHARED_BLOCK, VERT);
+    let desc = gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED };
     var w = Widgets {
-        pipeline: gfx::pipeline(embed_shader("vert", draw::SHARED_BLOCK, VERT),
-                                embed_shader("frag", shaders::FADE_FN, draw::THEME_BLOCK, draw::SHARED_BLOCK, draw::MAN_BLOCK, FRAG),
-                                gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED }),
+        pipelines: [gfx::pipeline(vert, embed_shader("frag", BASE, shaders::FADE_FN, draw::THEME_BLOCK, draw::SHARED_BLOCK,
+                                                     draw::MAN_BLOCK, FRAG), desc),
+                    gfx::pipeline(vert, embed_shader("frag", ICONS, shaders::FADE_FN, draw::THEME_BLOCK, draw::SHARED_BLOCK,
+                                                     draw::MAN_BLOCK, FRAG), desc),
+                    gfx::pipeline(vert, embed_shader("frag", FACES, shaders::FADE_FN, draw::THEME_BLOCK, draw::SHARED_BLOCK,
+                                                     draw::MAN_BLOCK, FRAG), desc)],
         quads:  gfx::Buffer { 0 },
         upload: [gui::Quad {}; gui::MAX_QUADS],
         atlas:  gfx::Texture { 0 },
@@ -720,9 +745,27 @@ fn same_bytes(a: const u8[:], b: const u8[:]) -> bool {
     return true;
 }
 
-// The `n` uploaded quads in the open pass.
+// The `n` uploaded quads in the open pass, in runs of one pipeline (FRAG), in order.
 fn draw_quads(w: Widgets&, n: i64, s: scene::Scene&, t: theme::Theme, view: View) {
-    gfx::bind(w.pipeline);
+    var start = 0;
+    while start < n {
+        let p = pipeline_of(w.upload[start]);
+        var end = start + 1;
+        while end < n && pipeline_of(w.upload[end]) == p { end++; }
+        bind_quads(w, p, s, t, view);
+        gfx::draw(6, end - start, 0, start);
+        start = end;
+    }
+}
+
+// Which of w.pipelines draws quad `q`.
+fn pipeline_of(q: gui::Quad) -> i64 {
+    let kind = q.look.x as i64;
+    return if kind == gui::ICON { 1 } else if kind == gui::FACE { 2 } else { 0 };
+}
+
+fn bind_quads(w: Widgets&, p: i64, s: scene::Scene&, t: theme::Theme, view: View) {
+    gfx::bind(w.pipelines[p]);
     gfx::bind_storage_buffer(gfx::VERTEX, 0, w.quads);
     gfx::uniforms(gfx::VERTEX, 0, view);
     gfx::uniforms(gfx::FRAGMENT, 0, t);
@@ -731,5 +774,4 @@ fn draw_quads(w: Widgets&, n: i64, s: scene::Scene&, t: theme::Theme, view: View
     gfx::bind_texture(gfx::FRAGMENT, 1, if w.atlas.id != 0 { w.atlas } else { s.glass }, s.sampler);
     gfx::bind_texture(gfx::FRAGMENT, 2, if w.thumbs.id != 0 { w.thumbs } else { s.glass }, s.sampler);
     gfx::bind_texture(gfx::FRAGMENT, 3, w.badges, s.sampler);
-    gfx::draw_instanced(6, n);
 }

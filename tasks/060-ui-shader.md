@@ -33,6 +33,17 @@ So every kind alone fits 32 registers; the icons' and the face's paths together 
 rest push it to 64. Also, every UI pixel pays about 1.1 varying cycles for four flat
 `vec4`s, which bounds the glyphs.
 
+## Step 1: three shaders (2026-11-10)
+
+FRAG is built three times from one source (`widgets::BASE`, `ICONS`, `FACES`), and
+`widgets::draw_quads` draws the quads in runs of one pipeline, in their order
+(`gfx::draw`'s first instance; `gl_InstanceIndex` counts from it on Vulkan and Metal).
+malioc: each at 32 registers, full occupancy, on the G615, G710, and G68
+(`scripts/shader_report.py` reports the three). Headless shots on Windows at 1280 × 800
+and 800 × 1280 (home, its plain fade, the game, a clocked game, settings, both setups, the
+puzzles, a transition held halfway, the 3D game): byte-identical to the build before but
+settings, whose preview moves and differs between two runs of either build.
+
 ## Plan
 
 1. Three variants of FRAG from one source with defines (as `MARKS_PULSE` does): the base
@@ -45,7 +56,7 @@ rest push it to 64. Also, every UI pixel pays about 1.1 varying cycles for four 
 
 ## Acceptance criteria
 
-- [ ] Every UI pipeline at 32 registers or fewer on the G615 and G710
+- [x] Every UI pipeline at 32 registers or fewer on the G615 and G710 (and the G68)
 - [ ] The look the same as before (headless shots)
 - [ ] GPU cycles a frame on the Pixel and `--bench 1000` on the tablet, before and after,
       with `--keep off`, recorded here
