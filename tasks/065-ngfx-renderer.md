@@ -174,13 +174,17 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
 
 ## Acceptance criteria
 
-- [ ] goose-ngfx at Goose v2026.4, released, its tests and samples passing on the Mac
-      and the PC
-- [ ] `scripts/ngfx.py` builds Draughts on ngfx on the Mac and Windows, on the `ngfx`
-      branch, with the gfx build unchanged
-- [ ] Every screen, the flat board, and the 3D board drawn by ngfx, compared against the
-      gfx build at the same flags
+- [x] goose-ngfx at Goose v2026.4 and released (v0.3.0, 2026-11-11), its tests and
+      samples passing on the PC
+- [ ] The same tests and samples passing on the Mac (Metal 4)
+- [x] `scripts/ngfx.py` builds Draughts on ngfx on Windows, on the `ngfx` branch, with the
+      gfx build unchanged
+- [ ] The same on the Mac
+- [x] Every screen, the flat board, and the 3D board drawn by ngfx, compared against the
+      gfx build at the same flags, on the PC
+- [ ] The same on the Mac
 - [ ] Nothing drawn while idle; shaders built ahead, no Slang at run time
-- [ ] Frame time against the gfx build on the Mac and the PC, recorded here
-- [ ] What ngfx gained recorded in its own docs, and gaps in Goose in
+- [x] Frame time against the gfx build on the PC, recorded here
+- [ ] The same on the Mac
+- [x] What ngfx gained recorded in its own docs, and gaps in Goose in
       `docs/goose-findings.md` (ngfx's or this repo's, by whose they are)

@@ -20,7 +20,7 @@ work.
   builds and the upload key in `docs/development.md`
 - UI prototypes: `prototypes/` (see `prototypes/README.md`), checked in a browser with the
   `agent-browser` CLI
-- Gaps found in Goose or goose_gfx: `docs/goose-findings.md`. A gap that blocks us gets a
+- Gaps found in Goose, goose_gfx, or goose-ngfx: `docs/goose-findings.md`. A gap that blocks us gets a
   patch in `patches/<package>/`, applied at build time to a copy of the sources (never in
   the submodule), with its findings entry saying what to propose upstream
 

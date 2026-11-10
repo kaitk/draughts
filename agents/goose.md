@@ -70,8 +70,13 @@ find out by compiling, so the next session doesn't.
   `shell::home::COMPUTER`, which doesn't parse.
 - A root file and a package it imports may both declare the same package by different
   relative paths (`"../../rules"` and `"../rules"`): they resolve to one directory.
-- `pad` is a keyword (a struct's padding bytes, `reference.md`): it can't name a
-  parameter or a local (`expected identifier in parameter list, found 'pad'`).
+- `pad` and `block` are keywords (a struct's padding bytes; `block { }`, `reference.md`'s
+  Appendix A): neither can name a parameter, a local, or a field (`expected identifier
+  in parameter list, found 'pad'`). A root's padding is `pad0`, `pad1`.
+- `'\\'` is a backslash's character literal and parses. Write Goose (and Slang, GLSL)
+  with backslashes through the Write or Edit tool: text sent through the Bash tool here,
+  heredocs quoted or not, has `\\` collapsed to `\`, which then fails as `expected
+  closing ' of character literal` (2026-11-11).
 - `os::args()` for a program's arguments; `exit(code)`. On Android they come from the
   intent's `args` extra (`android/java/.../DraughtsActivity.java`).
 - State with several large buffers (the computer player's 4 MB table and its frames) is
@@ -141,8 +146,8 @@ find out by compiling, so the next session doesn't.
   only.
 - A cast that changes nothing is a warning; casts that narrow need `as` (checked in
   debug) or `as!` (never).
-- A local named `fill` or `count` shadows the std function of that name. `in` and `pad`
-  can't name a local at all (both are reserved).
+- A local named `fill` or `count` shadows the std function of that name. `in`, `pad`,
+  and `block` can't name a local at all (all are reserved).
 - Adjacent string literals don't join: `f("a" "b")` doesn't parse; write one literal.
 - A struct literal's fields must come in declaration order, or it doesn't compile.
 - `match` arms with block bodies are separated by commas: `A => { f(); },`.

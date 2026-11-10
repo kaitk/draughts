@@ -1,7 +1,58 @@
 # Goose findings
 
-Gaps found in Goose, goose_gfx, and the SDL it pins, while building for Android, with what
-we do about each here and what could go upstream. Newest first.
+Gaps found in Goose, goose_gfx, the SDL it pins, and goose-ngfx, with what we do about
+each here and what could go upstream. Newest first. goose-ngfx is the user's, so its gaps
+are fixed there when Draughts needs them; the entries name what is still open.
+
+## ngfx: no MSAA, since NoGraphicsAPI has none (2026-11-11)
+
+NoGraphicsAPI's textures take no sample count and it has no resolve, so ngfx has neither
+(`docs/api.md` in goose-ngfx lists MSAA among what is gone). The 3D board's forward pass
+is drawn with 4× MSAA on gfx and resolved without a store (patch 0005). goose-ngfx
+v0.3.0, NoGraphicsAPI `0400414`.
+
+- Here: the ngfx build draws the 3D pass without multisampling and antialiases it
+  afterwards in a pass of its own (task 065 says which filter and what each cost).
+- Upstream: MSAA in NoGraphicsAPI (a sample count in `TextureDesc`, and a resolve, on
+  Metal 4 and Vulkan), then in ngfx's `TextureDesc` and `PassDesc`. For sebbbi's
+  NoGraphicsAPI, a note for the user.
+
+## ngfx: `generate_mips` takes no sRGB texture (2026-11-11)
+
+ngfx's `generate_mips` is a compute pass that writes each level through a storage view,
+and neither Vulkan nor Metal allows an sRGB format as storage, so an `RGBA8_SRGB` texture
+gets no mips from it. The 3D board's baked surfaces are sRGB with mips, which SDL_GPU's
+mip blits average in linear light. goose-ngfx v0.3.0.
+
+- Here: `src/ngfx/shaders/mip.slang` draws each level as a pass into it, the average of
+  the 2 × 2 texels under it in the level above, read with `Load`, so the sRGB target
+  averages in linear light as the blits do (`render3d::mip_chain` in `src/ngfx/`).
+- Upstream, in goose-ngfx (its `docs/design.md`, "Open"): a UNORM texture with a mutable
+  format, an sRGB view to sample and a UNORM storage view, with the conversion in the
+  compute shader; or `generate_mips` drawing levels as passes for formats that can't be
+  storage, as this does.
+
+## Goose: `pad` and `block` are keywords everywhere (2026-11-11)
+
+`pad` (a struct's padding bytes) and `block` (`block { }`, an expression) are reserved
+throughout, though each means something only in one place: `pad` in a struct body,
+`block` before a `{`. Both are common names in graphics code, a root struct's padding
+field and a shader's uniform block, and both came up porting the renderer to goose-ngfx.
+The error names the word, though `block` adds a second, confusing one:
+
+```goose
+fn main() { let block = 1; print(block); }
+// error: expected identifier in variable declaration, found 'block'
+// error: expected '{' in block expression, found ')'
+```
+
+Goose v2026.4 (`6c1fbc7`); both are in `reference.md`'s keyword list, so this is by the
+spec, a request rather than a bug.
+
+- Here: other names (`pad0` and `pad1` in the ngfx build's roots), and `agents/goose.md`
+  lists both.
+- Upstream: make them contextual, as `inline` and `checkfree` are (a keyword only before
+  `fn`): `pad` only as a struct body's field, `block` only before `{`.
 
 ## Goose: `embed_shader`'s GLSL lacks two conversions, and its Metal translation an inout swizzle (2026-11-11)
 
