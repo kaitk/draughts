@@ -3,7 +3,7 @@
 Status: in-progress (the package and the drafts ready, 2026-11-08; the listing's texts,
 answers, screenshots, and a preview checked against Play's current help, 2026-11-09; the
 identity and the feature graphic settled the same day; the screenshots retaken as 0.3;
-the Play account and the checks on the tablet remain)
+on Play from 2026-11-10; 0.1.1 in review for the closed test, 2026-11-11)
 
 Everything between a sideloaded APK and the app on Google Play, under Google's Families
 Policy: the app is for all ages, children included, with no ads, no tracking, no accounts, and no network
@@ -170,7 +170,28 @@ masters present):
   The release smoke-tested by hand on the Pixel 7a beforehand (task 061's archive line).
 - **0.1.1** (code 2, `7a78595`): easy starts at 8 and a first game's win lifts it 16
   (`docs/decisions/ai.md`), after the user found easy too weak on 8 × 8. For the closed
-  test, the Alpha track, with `~/Downloads/draughts-store/testers.csv`.
+  test, the Alpha track, with `~/Downloads/draughts-store/testers.csv`. Tested by the
+  user on the Galaxy A33, the iPhone, and the Mac before the upload.
+- **Closed test sent for review** (2026-11-11): the AAB built from `fc352dc` (`7a78595`
+  and a task note), its manifest versionCode 2 and 0.1.1, main with nothing after it.
+  The Alpha track in all countries (the testers are all in Estonia, but only the list
+  can opt in), an email list of the 15 addresses in `testers.csv` (one of them not
+  Gmail, which needs a Google account on that address), feedback to
+  `kaitkasak@proton.me`. Release notes in en-GB and et (166 puzzles; easy starts a
+  little stronger and adapts faster after a win), 355 and 360 of Play's 500 characters.
+  Sending it first asked for the advertising ID declaration (No, as
+  `store/play-console.md` has it), then sent 16 changes, the app's first review: the
+  listing, the App content forms, and the track. Testers can't install from Alpha
+  until it passes; send them the opt-in link from the Testers tab then (Play doesn't
+  mail them), and the 14 days start once 12 have opted in.
+- **Production countries**, for later: all countries proposed, since the app is free,
+  offline, and collects nothing, and the English listing stands in where there is no
+  translation; draughts' players are mostly outside the English-speaking countries
+  (the Netherlands, France, Poland, West Africa, Brazil, the former USSR). The user
+  wants at least the main English-speaking audiences.
+- **The A33's move** from its sideloaded debug build to Play's (a backup with `run-as`
+  and `bmgr backupnow`, then a restore at install) not done yet; the tablet wasn't
+  attached.
 
 ## Checks before upload
 
