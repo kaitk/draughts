@@ -565,7 +565,9 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   prototypes' balanced wrap. The strong side's count shows on a tie with another, so the words don't swap
   from one move to the next.
 - **Home** is a title menu (`prototypes/home.html`): the scene and the 3D board, and one glass column
-  with the wordmark, then continue, a friend, the computer with its level, and puzzles
+  with the wordmark, then continue with whose game it goes back to ("A friend", "The
+  computer · easy"; dim, taking no tap, while the game is one nobody set up and no move
+  was played: `shell::resume`), a friend, the computer with its level, and puzzles
   with stars, then settings, each an icon and a word, in rows 88 dp tall, 2 dp apart. In
   portrait settings is instead a gear beside the wordmark, so the sheet leaves the board
   its room: the gear alone, 40 dp at 85%, with no tile, in an 88 dp tap reaching 8 dp over
@@ -640,8 +642,8 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   choices take the width they need at the left, as home's menu does, the groups under the
   title row with the room left below them, and the board the rest, about two thirds, so from home the board only moves a little; in portrait the board is
   on top, as large as the rest leaves, and the two groups stand side by side under it.
-  **Game**: the draughts a new game starts on (international, Brazilian, Russian; the
-  setup can still change it) and move hints. Last, the privacy note
+  **Game**: move hints (the draughts are chosen in home's setup and the puzzles'
+  library; the preview shows the player's). Last, the privacy note
   (`settings.privacy`, App Review Guideline 5.1.1(i)): the policy in one sentence, dim
   in the small face, with no link out, as the app has none. It sits at the group's title row's right end where it fits there in two lines
   at most (the stacked landscapes, which have no height to spare: one line in both
@@ -729,10 +731,10 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   3"). Learn is open; the others open once
   half of Learn is solved, and until then each mark is plain with a lock badge, the name
   dim, and "Solve n more in Learn" in place of the bar, and a tap on it does nothing.
-  **The draughts switch** (`prototypes/puzzle-set.html`, take a) is settings' draughts tiles, International 10 × 10, Brazilian 8 × 8, Russian
+  **The draughts switch** (`prototypes/puzzle-set.html`, take a) is the setup's draughts tiles, International 10 × 10, Brazilian 8 × 8, Russian
   8 × 8 (each its name over its size, 88 dp tall, as wide as settings' tile would be,
   widened in proportion to fill a row), joined on one glass 4 dp round them and between,
-  the player's draughts lit. It is settings' draughts choice, one setting: a tap sets
+  the player's draughts lit. It is the setup's draughts choice, one setting: a tap sets
   new games' draughts too, saved as settings saves them, reads that draughts' set at
   once (`shell::load_set`), puts the list back at its top, and home's count follows; the
   lit tile takes a tap and changes nothing. It stands at the title row's right in

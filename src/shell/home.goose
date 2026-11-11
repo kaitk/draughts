@@ -327,8 +327,23 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, s: settings::Settings&
 // parts, its pieces over the UI put in `over`, and sets l to where the board of n × n
 // squares goes and `room3d` to where a 3D board may go instead: the menu, or the setup
 // `setup` (FRIEND or COMPUTER) with the choices in s. Returns what was tapped.
+// What continue goes back to (issue 1, prototypes/issue-1.html, take a): whether there
+// is a game to go back to, one played or set up, and whose it is, a strings key for the
+// row's note (CONTINUE_FRIEND..), or -1 for none. On a first run there is none: the row
+// is dim and takes no tap.
+struct Resume {
+    on:   bool = true,
+    note: i64  = -1,
+}
+
+// The note for a game against the computer at `level`, or a friend for computer -1.
+fn resume_note(computer: i64, level: i64) -> i64 {
+    guard computer >= 0 else { return strings::CONTINUE_FRIEND; }
+    return [strings::CONTINUE_EASY, strings::CONTINUE_MEDIUM, strings::CONTINUE_HARD][clamp(level, 0, 2)];
+}
+
 fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: float4, setup: i64,
-         s: settings::Settings&, room3d: float4&) -> i64 {
+         s: settings::Settings&, room3d: float4&, resume: Resume = Resume {}) -> i64 {
     let h = layout(g, n, area, setup, s);
     l = h.board;
     room3d = h.room3d;
@@ -336,7 +351,7 @@ fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: f
     gui::glass(g, gui::bleed(g, h.col, area), 32.0);
     over.clear();
     var pick = if setup != NO_SETUP { choose(over, g, h.content, setup == COMPUTER, h.pair_w, h.head, s) }
-               else { menu(over, g, h.content, h.gear, h.below, h.apart, s, h.small, h.quit) };
+               else { menu(over, g, h.content, h.gear, h.below, h.apart, s, h.small, h.quit, resume) };
     // The player and the way out, declared last so the tiles before them keep their order.
     if setup == NO_SETUP && player_chip(g, player_spot(g, area, h.side, l.board, h.way, s), s) { pick = PLAYERS; }
     if closable && !h.quit && gui::bare_x(g, gui::HOME_IDS + 9, h.way, gui::CLOSE, CROSS) { pick = EXIT; }
@@ -405,7 +420,7 @@ fn player_chip(g: gui::Gui&, r: float4, s: settings::Settings&) -> bool {
 // settings, a row of its own or, `gear`, a gear at the wordmark's right (portrait, and a
 // short landscape).
 fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, apart: f32, s: settings::Settings&,
-        small: bool = false, quit: bool = false) -> i64 {
+        small: bool = false, quit: bool = false, resume: Resume = Resume {}) -> i64 {
     let u = g.scale;
     // The wordmark, then the rows, settings as the next where it isn't the gear, and Quit
     // last with `quit`.
@@ -450,8 +465,10 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
         var stars: u8[..64] = [];
         let won, all = picker::totals(s.stars[puzzles::loaded]);
         strings::fill_in(stars, strings::PUZZLES_STARS, [won, all]);
-        let note = if i == 2 { strings::get(LEVEL_NOTES[s.level]) } else if i == 3 && all > 0 { stars[..] } else { "" };
-        if gui::row(g, gui::HOME_IDS + 1 + i, r, icons[i], strings::get(keys[i]), note, i == 0, rows[i] != NOTHING) { pick = rows[i]; }
+        let note = if i == 0 && resume.on && resume.note >= 0 { strings::get(resume.note) }
+                   else if i == 2 { strings::get(LEVEL_NOTES[s.level]) } else if i == 3 && all > 0 { stars[..] } else { "" };
+        let on = i != 0 || resume.on;
+        if gui::row(g, gui::HOME_IDS + 1 + i, r, icons[i], strings::get(keys[i]), note, i == 0 && on, on) { pick = rows[i]; }
     }
     if !gear {
         if gui::row(g, gui::HOME_IDS + 5, at[1 + ROWS], gui::GEAR, strings::get(strings::HOME_SETTINGS), "", false, true) { pick = SETTINGS; }

@@ -1,10 +1,10 @@
 // Settings (prototypes/settings.html; rendering.md, "Settings"): back and the title,
 // the language at the title row's right end, and the choices as words in two glass
-// groups by what they change. Game: the draughts a new game starts on (the setup's
-// choice too) and move hints; the tutorial's row comes with the tutorial (task 026).
+// groups by what they change. Game: move hints (the draughts are chosen in home's setup
+// and the puzzles' library); the tutorial's row comes with the tutorial (task 026).
 // Look: the theme (one season, or by the date; and under its name a two-part switch,
 // the season's photograph or the plain fade in its place), the board (flat or raised),
-// and the kings (auto, crown, or stack). Beside them is home's board as the choices make it: its size, the
+// and the kings (auto, crown, or stack). Beside them is home's board as the choices make it: the player's draughts' size, the
 // kings, and what the move hints show, on a fixed position. In landscape the choices
 // take the width they need at the left and the board the rest (near square, each
 // setting's name above its tiles, so the rows fit the height); in portrait the board is
@@ -145,11 +145,14 @@ let ROW_TILES = [3, 2, 5, 2, 3];
 let GROUP_ICONS = [gui::TARGET, gui::SUN];
 let GROUP_TITLES = [strings::SETTINGS_GAME, strings::SETTINGS_LOOK];
 
-// The rows a group shows: the game's two, and the look's background, board, and kings.
-// Row k of a group is `group_row`.
-fn group_rows(group: i64) -> i64 { return if group == 0 { GAME_ROWS } else { ROW_TILES.len - GAME_ROWS }; }
+// The rows a group shows: the game's move hints, and the look's background, board, and
+// kings. Row k of a group is `group_row`. The draughts' row isn't shown (2026-11-11,
+// issue 1, prototypes/issue-1.html take a): home's setup and the puzzles' library each
+// choose the draughts, and here it read as if it changed the game in progress. It keeps
+// its number, so the rows' tap ids stay as they were.
+fn group_rows(group: i64) -> i64 { return if group == 0 { GAME_ROWS - HINTS_ROW } else { ROW_TILES.len - GAME_ROWS }; }
 
-fn group_row(group: i64, k: i64) -> i64 { return GAME_ROWS * group + k; }
+fn group_row(group: i64, k: i64) -> i64 { return if group == 0 { HINTS_ROW + k } else { GAME_ROWS + k }; }
 
 // How the rows fit the page (layout): the names' width at the left of their tiles, NAME_W
 // or wide_name_w() where the landscape has the width, and whether the theme's tiles are slim

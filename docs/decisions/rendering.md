@@ -280,6 +280,12 @@ came on 2026-11-09.
   leaves them too little room (2026-11-08).
 - The menu's rows close up from 2 dp apart to about 1 where the gear's reach doesn't fit
   (2026-11-10): the Pixel 7a in landscape had overlapped Continue's tap.
+- Continue's note says whose game it goes back to, "A friend" or "The computer · easy",
+  and the row is dim, taking no tap, while the game is one nobody set up (a fresh
+  install's first run, a new player) with no move played (2026-11-11, issue 1,
+  `prototypes/issue-1.html` take a). Rejected for now: no Continue row on a first run
+  (b), which makes the menu jump a row; continue going back to a puzzle too (c), which
+  the shell doesn't track and Puzzles already reaches.
 - The X closes the app (`exit.html`'s take b, chosen 2026-11-08 as a round glass button;
   made a bare X, `gear.html`'s `x=d`, on 2026-11-09 to match the bare gear). Rejected: a
   quiet last row, which would take the portrait board's room and lengthen the sheet
@@ -304,6 +310,11 @@ came on 2026-11-09.
 
 **Settings** (`prototypes/settings.html`, regrouped 2026-11-07)
 
+- No draughts row (2026-11-11, issue 1, `prototypes/issue-1.html` take a): home's setup
+  and the puzzles' library each choose the draughts, and here it read as if it changed
+  the game in progress. The preview shows the player's draughts. Rejected: the row kept
+  as "Draughts for new games and puzzles" (b), a third way to one choice; shown read-only
+  as the game's (c), a row that takes no tap among rows that do.
 - The tutorial's row (one tile, learn the moves) comes with the tutorial, taken out until
   then so the tablet's landscape shows both groups (2026-11-09).
 - The privacy note's place, at the group's title row or the glass's foot, so it moves no
