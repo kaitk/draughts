@@ -1,4 +1,4 @@
-# 065: Light the tile under the mouse
+# 066: Light the tile under the mouse
 
 Status: todo (before task 064's Steam release)
 
@@ -19,6 +19,13 @@ How (scoped 2026-11-11, half a day to a day):
 - Off on a phone and a tablet, and with `--touch on`: Android leaves the pointer where
   the last touch was, which would leave the tapped tile lit.
 
+The look: the press's own, lighter (the user, 2026-11-11). A press raises the tile's fill
+14 points in the tile's own color, the theme's glow on a lit tile (PRIMARY, CHOSEN, ON,
+ROW_PRIMARY, the running clock) and white on a plain one, and scales it to 0.96
+(`src/app/widgets.goose`, the glass tile). Hover raises the fill about a third as much
+(5 points) in the same color, so it is themed where the press is; it doesn't scale, and
+no glow border comes on a plain tile, which would read as chosen.
+
 The fade, not a motion (the user and the agent, 2026-11-11): about 0.1 s in and out, as
 long as the press's (`gui::PRESS`, 0.12 s), so a sweep across a row doesn't flicker; no
 growing or lifting, which would make the screen busy under a child's mouse and blur the
@@ -27,7 +34,8 @@ press, the one tile that moves.
 ## Acceptance criteria
 
 - [ ] The tile under the mouse lit with a short fade on the Mac, in every tile style that
-      takes a tap, and nothing lit on Android or with `--touch on`.
+      takes a tap, in the press's color at a third of its step, and nothing lit on Android
+      or with `--touch on`.
 - [ ] A dimmed tile (off, taking no tap) stays unlit.
 - [ ] The idle app still draws nothing while the mouse rests, and a move within one tile
       draws nothing new.
