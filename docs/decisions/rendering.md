@@ -171,6 +171,10 @@ are in git history before that day.
   word's width and an even share of the rest where thirds don't fit (2026-11-08).
 - The child's pieces are at the bottom against the computer, the board turned when the
   child plays black (2026-11-08).
+- A tile's icon and word are centered on it, side by side or stacked, on every tile
+  (2026-11-11). This replaces the landscape column's left-aligned layout (the icon 14 dp
+  from the left, `gui::BESIDE`) for settings, start over, and the hint: under back, which
+  was already centered, they looked misaligned.
 
 **The way back** (`back.html`'s take b, chosen 2026-11-09 over a, the arrow alone): one
 control on every screen that leaves. It replaced buttons named for where they went

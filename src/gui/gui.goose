@@ -762,11 +762,9 @@ fn picture(g: Gui&, id: i64, r: float4, kind: i64, pic: float2, on: bool) -> boo
 }
 
 // How a labelled tile lays out its icon and word.
-let BESIDE = 0;             // the icon, then the word, from the left
 let MIDDLE = 1;             // the icon and the word side by side, centered
 let STACKED = 2;            // the icon over the word, centered
 let LABEL_PAD = 8.0;        // dp a labelled tile's word keeps from its sides at least
-let INDENT = 14.0;          // dp before the icon BESIDE
 
 // A glass tile with an icon `size` dp across and a word in face `face`
 // (prototypes/game.html): true when it is tapped. `style` lights it (CHOSEN, a puzzle's
@@ -811,14 +809,8 @@ fn labelled(g: Gui&, id: i64, r: float4, icon: i64, size: f32, label: const u8[:
         return clicked;
     }
     let gap = PAD * u;
-    let shown = fitting(g, face, label, r.z - labelled_width(g, size, "", face, arrange));
-    var c = r;
-    if arrange == BESIDE {
-        cut_left(c, INDENT * u);
-    } else {
-        let w = s + gap + text_width(g, shown, label);
-        c = center(r, w, r.w);
-    }
+    let shown = fitting(g, face, label, r.z - labelled_width(g, size, "", face));
+    var c = center(r, s + gap + text_width(g, shown, label), r.w);
     glyph_icon(g, center(cut_left(c, s), s, s), icon, PLAIN, p, a);
     cut_left(c, gap);
     text(g, shown, c, label, a, 0.0, LEFT);
@@ -826,10 +818,9 @@ fn labelled(g: Gui&, id: i64, r: float4, icon: i64, size: f32, label: const u8[:
 }
 
 // How wide a labelled tile must be for its icon `size` dp across and its word in face
-// `face` side by side, BESIDE or MIDDLE, keeping LABEL_PAD at the sides.
-fn labelled_width(g: Gui&, size: f32, label: const u8[:], face: i64, arrange: i64) -> f32 {
-    let lead = if arrange == BESIDE { INDENT } else { LABEL_PAD };
-    return (lead + size + 12.0 + LABEL_PAD) * g.scale + text_width(g, face, label);
+// `face` side by side, centered, keeping LABEL_PAD at the sides.
+fn labelled_width(g: Gui&, size: f32, label: const u8[:], face: i64) -> f32 {
+    return (2.0 * LABEL_PAD + size + 12.0) * g.scale + text_width(g, face, label);
 }
 
 // The way back (rendering.md, "Controls", The way back): one control on

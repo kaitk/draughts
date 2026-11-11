@@ -787,12 +787,12 @@ fn leave(g: gui::Gui&, l: Layout) -> i64 {
 }
 
 // Where the way out's tiles go: back, settings, start over; in landscape the glass under
-// back that holds the other two; and how each tile lays out its icon and word (gui::BESIDE,
-// MIDDLE, STACKED, or ICON alone).
+// back that holds the other two; and how each tile lays out its icon and word (gui::MIDDLE,
+// STACKED, or ICON alone).
 struct Out {
     tiles:   float4[3] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 3],
     glass:   float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
-    arrange: i64       = gui::BESIDE,
+    arrange: i64       = gui::MIDDLE,
 }
 
 // The way out's tiles in l at u pixels a dp, `words` the three words' widths in the
@@ -808,9 +808,9 @@ fn way_out(l: Layout, words: f32[3], u: f32) -> Out {
         // both icons over their words in taller rows.
         var left = inside(column, TALL_IN, u);
         for i in 1..3 {
-            if labelled_width(u, 34.0, words[i], gui::BESIDE) > left.z { o.arrange = gui::STACKED; }
+            if labelled_width(u, 34.0, words[i]) > left.z { o.arrange = gui::STACKED; }
         }
-        let h = (if o.arrange == gui::BESIDE { ROW_H } else { STACK_H }) * u;
+        let h = (if o.arrange == gui::MIDDLE { ROW_H } else { STACK_H }) * u;
         o.tiles[1] = gui::cut_top(left, h);
         o.tiles[2] = gui::cut_bottom(left, h);
         return o;
@@ -830,7 +830,7 @@ fn way_out(l: Layout, words: f32[3], u: f32) -> Out {
     var wants: f32[3] = [0.0, 0.0, 0.0];
     var fits = true;
     for i in 3 {
-        let want = if l.stacked { words[i] + 2.0 * gui::LABEL_PAD * u } else { labelled_width(u, 34.0, words[i], gui::MIDDLE) };
+        let want = if l.stacked { words[i] + 2.0 * gui::LABEL_PAD * u } else { labelled_width(u, 34.0, words[i]) };
         wants[i] = max(want, 88.0 * u);
         if wants[i] > free / 3.0 { fits = false; }
     }
@@ -846,9 +846,8 @@ fn way_out(l: Layout, words: f32[3], u: f32) -> Out {
 }
 
 // gui::labelled_width from the word's width `word` at u pixels a dp, its icon `size` dp.
-fn labelled_width(u: f32, size: f32, word: f32, arrange: i64) -> f32 {
-    let lead = if arrange == gui::BESIDE { gui::INDENT } else { gui::LABEL_PAD };
-    return (lead + size + 12.0 + gui::LABEL_PAD) * u + word;
+fn labelled_width(u: f32, size: f32, word: f32) -> f32 {
+    return (2.0 * gui::LABEL_PAD + size + 12.0) * u + word;
 }
 
 // r less `room` dp (TALL_IN, WIDE_IN) at s pixels a dp across and down, each side.
@@ -897,7 +896,7 @@ struct Words {
 // (both pieces overlapping by `overlap` for a draw), and its words; the lookout's name
 // beside its eye in the landscape column; where the countdown's line goes under whose
 // turn in landscape (`note`, empty for none); and the eye, the hint, and undo move,
-// each laid out as `*_as` says (gui::BESIDE.., or ICON alone) with its icon `*_icon` dp.
+// each laid out as `*_as` says (gui::MIDDLE.., or ICON alone) with its icon `*_icon` dp.
 let SHORT_NONE = 0;
 let SHORT_LINE = 1;
 let SHORT_STACKED = 2;
@@ -913,7 +912,7 @@ struct Play {
     note:      float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
     eye:       float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
     hint:      float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
-    hint_as:   i64       = gui::BESIDE,
+    hint_as:   i64       = gui::MIDDLE,
     hint_icon: f32       = 0.0,
     undo:      float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
     undo_as:   i64       = gui::STACKED,
@@ -947,7 +946,7 @@ fn column_play(l: Layout, w: Words, on: Shows, u: f32) -> Play {
         p.hint = gui::cut_bottom(right, HINT_H * u);
     }
     p.undo_icon = if beside { 36.0 } else { 48.0 };
-    p.hint_as = if beside { gui::STACKED } else { gui::BESIDE };
+    p.hint_as = if beside { gui::STACKED } else { gui::MIDDLE };
     p.hint_icon = if beside { 36.0 } else { 34.0 };
     if on.clocks {
         let extra = if squeezed { (SHORT_GAP - 10.0) * u } else { 0.0 };
@@ -1183,8 +1182,8 @@ fn eye(g: gui::Gui&, r: float4, on: bool) -> bool {
 }
 
 // The hint's tile in r (prototypes/coach.html's `hint`): the bulb and its word over a pip
-// for each hint, a pip lit for each left, laid out as `arrange` has it (gui::BESIDE,
-// MIDDLE, STACKED, or ICON, the bulb over the pips alone), the bulb `size` dp. Its word is
+// for each hint, a pip lit for each left, laid out as `arrange` has it (gui::MIDDLE,
+// STACKED, or ICON, the bulb over the pips alone), the bulb `size` dp. Its word is
 // Hint, or Where to? once it has lit the piece; it is lit in the glow while it shows, as a
 // chosen tile is; dim, taking no tap, with no hint left or none to give. True when tapped.
 let ICON = 3;
@@ -1216,11 +1215,10 @@ fn hint_tile(g: gui::Gui&, r: float4, arrange: i64, help: Help, size: f32) -> bo
         return clicked;
     }
     let gap = gui::PAD * u;
-    let room = r.z - s - gap - (gui::INDENT + gui::LABEL_PAD) * u;
+    let room = r.z - s - gap - 2.0 * gui::LABEL_PAD * u;
     let face = gui::fitting(g, gui::HEADING, word, room);
     let w = s + gap + max(gui::text_width(g, face, word), pips_w);
-    var c = if arrange == gui::BESIDE { float4 { r.x + gui::INDENT * u, r.y, r.z - gui::INDENT * u, r.w } }
-            else { gui::center(r, min(w, r.z), r.w) };
+    var c = gui::center(r, min(w, r.z), r.w);
     gui::glyph_icon(g, gui::center(gui::cut_left(c, s), s, s), gui::HINT, gui::PLAIN, p, a);
     gui::cut_left(c, gap);
     var lbl = gui::center(c, c.z, line + PIP_GAP * u + PIP * u);

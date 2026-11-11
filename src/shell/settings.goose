@@ -524,7 +524,7 @@ fn languages_width(g: gui::Gui&, globe: bool = true) -> f32 {
 
 // How wide a group's tab must be: its icon and its title.
 fn tab_width(g: gui::Gui&, group: i64) -> f32 {
-    return gui::labelled_width(g, 30.0, strings::get(GROUP_TITLES[group]), gui::HEADING, gui::MIDDLE) + 16.0 * g.scale;
+    return gui::labelled_width(g, 30.0, strings::get(GROUP_TITLES[group]), gui::HEADING) + 16.0 * g.scale;
 }
 
 // The two tabs, Game and Look, side by side in r, the shown group's lit. Each on glass,
