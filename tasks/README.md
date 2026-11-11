@@ -61,7 +61,8 @@ Open:
 
 - Release: 029 Google Play, 046 the App Store (after 043, iOS), 036 the announcement
   after the Play release.
-- Content and play: 037 the puzzle set by theme, 038 players.
+- Content and play: 037 the puzzle set by theme, 038 players, 074 the games' history,
+  marked moves, and a rating (built on the `history` branch, its takes to choose).
 - The 3D board: 041 a carved spring board, 042 its frame cost (the idle wakeup left),
   045 board styles to choose from.
 - Frames: 055 both boards locked to the display's rate on every device, 056 even pacing

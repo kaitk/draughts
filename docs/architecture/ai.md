@@ -392,3 +392,43 @@ asked on the first press, answered in at most hard's time (a fifth of a second o
 tablet's big cores), and dropped if the position changes first; the loop looks for the
 answer every 20 ms while it is on its way, drawing nothing meanwhile. Games with hints
 count toward the skill as any other.
+
+## Judging a move
+
+Each move of a game, either side's, is judged after it is played (`src/ai/judge.goose`):
+the position before it searched as hard sees at its top (skill 100's depth, nothing
+overlooked, no gifts), at most 300,000 nodes, every root move within 2.5 men of the best
+scored exactly and the rest bounded. A score becomes the mover's expected result
+through a logistic, `1 / (1 + e^(−s/100))` with s in hundredths of a man (a man up 0.73,
+two 0.88), a won or lost score 1 or 0. The fall from the best move's to the played
+move's marks it, chess.com's cut-offs: under 0.01 best, under 0.05 good, then
+inaccuracy (?!), mistake (?) from 0.10, blunder (??) from 0.20; a position with one
+legal move is the only move, not judged. A move that keeps a won game won is no
+mistake, whatever it gives back. A side's accuracy over a game is lichess's: each move's
+`103.17 · e^(−4.354 · fall) − 3.17` percent, averaged over its judged moves.
+
+The game asks the worker for it (`game::JUDGE`, `src/game/notes.goose`) after the
+computer's move, the hint, and the lookout's traps, the oldest move not yet judged
+first, so nobody waits on it; a newer ask drops it and it is asked again after. The
+moves are read off the board's undo history, so a move taken back loses its mark and a
+saved game brought back is judged again.
+
+## Ratings
+
+The computer's rating at a skill (`ai::skill_rating`) comes from self-play between
+neighbouring skills, 200 International games each, the gap `400 · log10` of the
+stronger side's score over the weaker's, draws as halves, anchored at skill 0 = 500:
+
+| Skill | 0 | 8 | 12 | 16 | 20 | 25 | 30 | 40 | 50 | 60 | 90 | 100 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Rating | 500 | 587 | 940 | 983 | 1009 | 1362 | 1384 | 1644 | 1900 | 2127 | 2716 | 2800 |
+
+Between them it is a straight line. The gaps jump where a skill first sees another ply
+(12, 25) and are small between; 100's is an estimate. Easy starts at 587, medium at
+1644, hard at 2716.
+
+A player's rating is Elo, per draughts, from 800 (`ai::rate`): after a game against the
+computer `R + K · (S − E)`, E the expected score against the computer's rating at the
+game's skill, S 1, ½, or 0, K 40 over the player's first 20 rated games of that
+draughts and 20 after, never under 100. A friend's game on one tablet has no second
+rated player, and moves no rating.

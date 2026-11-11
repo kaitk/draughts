@@ -108,13 +108,13 @@ The targets this keeps open, each replacing or adding to `app/` alone:
 | Directory | What it holds |
 | --- | --- |
 | `src/rules/` | The rules as pure functions over values: variants as data, positions, legal moves, playing a move, FEN, and the square at a column and row ([rules.md](rules.md)) |
-| `src/ai/` | The computer player over `rules`: a search sliced into steps, and its levels and skill ([ai.md](ai.md)) |
+| `src/ai/` | The computer player over `rules`: a search sliced into steps, its levels and skill, a played move judged, and the ratings ([ai.md](ai.md)) |
 | `src/puzzles/` | The puzzles as plain text read into a fixed table, and the exact search that says whether a move solves one ([puzzles.md](puzzles.md)) |
 | `strings/` | The user-facing text by key, from `strings/<lang>.txt` |
 | `src/gui/` | The UI layer ([rendering.md](rendering.md#ui-layer)): rect cuts and `stack`, widgets with their press state, text laid out from glyph tables the app bakes; every call appends quads to one fixed array |
 | `src/board/` | The board on screen: the position, the legal moves, and the undo history; where the board goes and which square a point is on; taps and drags; a move's animation; and each frame's draw lists (pieces, the squares' marks, a wrong move's flash); the 3D board's camera, its fit on screen, picking through its perspective, and its instances (`view3d`) |
-| `src/game/` | The game screen: its panels and where they and the board go (`panel::layout`, round the 3D board `panel::corners_in`, each a `Layout` with its mode: landscape, corners, portrait, or compact), the clocks, the computer's turn (asking for a move and playing the answer), the celebration, and the pieces it puts over the UI |
-| `src/shell/` | The screens and which one shows: home and a new game's setup with the board of the game it starts, the game, settings with their preview board, the puzzles to pick from and the puzzle playing ([puzzles.md](puzzles.md#the-screen)); the pieces the screen showing puts over the UI (`Frame.over`, which the app draws); who's playing over home and a player's sheet; the players, their settings files, and their saved games |
+| `src/game/` | The game screen: its panels and where they and the board go (`panel::layout`, round the 3D board `panel::corners_in`, each a `Layout` with its mode: landscape, corners, portrait, or compact), the clocks, the computer's turn (asking for a move and playing the answer), the celebration, the moves as played with their marks and their panel (`notes.goose`), and the pieces it puts over the UI |
+| `src/shell/` | The screens and which one shows: home and a new game's setup with the board of the game it starts, the game, settings with their preview board, the puzzles to pick from and the puzzle playing ([puzzles.md](puzzles.md#the-screen)); the pieces the screen showing puts over the UI (`Frame.over`, which the app draws); who's playing over home and a player's sheet; the players, their settings files, their saved games, and their games played with the games screen |
 | `src/model3d/` | The 3D board but its drawing, with no graphics: the meshes, the themes as data (`looks`), the photograph's light as spherical harmonics, the plain fade's ambient, and the plan of a theme's bake in steps |
 | `src/render3d/` | The 3D board's renderer, shared by the app and `poc/3d/`: its shaders, the meshes and surfaces on the GPU, the surfaces' bake, the photograph's blur, the shadow map, and the multisampled pass ([rendering.md](rendering.md#board-and-pieces)) |
 | `src/badges/` | The players' animal badges: their SVGs from `assets/badges/` baked at startup into a distance-field atlas |
@@ -239,6 +239,7 @@ what a child makes their own; the rest belongs to the device.
 | Look: theme (and photograph or plain), kings, board; move hints | yes | |
 | A new game's setup: draughts, level, colour, clock | yes | |
 | The computer's skill per level and the games against it | yes | |
+| The games played, the rating by draughts, and the moves panel's setting | yes | |
 | Puzzle stars | yes | |
 | The game in progress | yes | |
 | The first start done (not built yet: only the flag) | yes | |
@@ -258,9 +259,18 @@ so a change rewrites only that player's and no section parser is needed:
   if there is one, `first_start = done` once had, then the keys `src/shell/prefs.goose`
   writes. Players show in the order of their ids; a new player takes the lowest free id.
 - `game-N.bin`: the player's saved game, as `shell::save` writes it.
+- `history-N.txt`: the player's finished games, a line each, oldest first, at most 200
+  (`src/shell/history.goose`): tab-separated `key=value` fields, the time, the draughts,
+  the opponent (the computer's level and skill, or a friend), the player's side, the
+  winner, the rating before and after, each side's accuracy, a digit a move for its mark,
+  and the moves in PDN. A game is written when it ends, and its line again once its last
+  moves are judged (`src/shell/record.goose`). The player's file keeps `moves =
+  hidden|list|marks` and, per draughts with rated games, `rating.<draughts>` and
+  `rated.<draughts>`.
 
 Each is written whole and atomically. Starting a player again deletes their game and
-clears their stars, the computer's skill, and the games against it, keeping the badge,
+their games played and clears their stars, the computer's skill, the games against it,
+and the rating, keeping the badge,
 the name, the look, and the setup. Removing deletes their game, then their settings, so
 one killed halfway is left as one started again. The last player can't be removed;
 removing the one playing makes the first left play.

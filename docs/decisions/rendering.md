@@ -369,6 +369,25 @@ room, for Estonian's undo move (2026-11-10).
 
 Task 052, `prototypes/game-captured.html`'s take a in its `row` look, chosen 2026-11-09.
 
+### The moves panel and the games screen
+
+Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
+
+- The moves panel under the play panel in landscape (take a), where at least four rows
+  fit: the play panel and the way out stay as built. Take b (under the left panel) had
+  290 dp beside what each side has taken; take c (the play panel grown) moved hint and
+  undo to the column's foot.
+- On the 3D board the panel is five rows, as wide as the play panel, with the camera's
+  buttons in a row under it; the board clears both as it clears the panels, about 11%
+  smaller at the tablet's landscape. With the setting at off the board is as before.
+- No panel in portrait or on a phone in landscape yet: the prototype found under four
+  rows' room there.
+- The setting is on the games screen, not in settings: a Moves row in settings' game
+  group left the preview board at 0 dp at several tested sizes, and at the tablet's
+  landscape the groups ran past the foot.
+- The games screen is reached from who's playing (a tile beside the pencil): the
+  player's sheet is a parent's place. Home's menu has no room for it on a phone.
+
 ### Board and pieces
 
 **The flat board**

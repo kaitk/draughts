@@ -192,3 +192,24 @@ The overlooks' history, all on 2026-11-09:
 - Task 053: by tension, size, and distance, `MISS` 25, 160, 300, 450.
 - Easy a touch weaker: the two-piece 160 → 300.
 - Easy a hair stronger ("a little too much"): the two-piece 300 → 240.
+
+## Judging moves and ratings (2026-11-11)
+
+Asked for: a history of games and moves rated as GoDraughts rates them (task 074).
+
+- **Marks by the fall in the expected result**, as lichess and chess.com mark moves,
+  rather than by the score lost: a score lost in a won game is no mistake. Chess.com's
+  cut-offs (0.05, 0.10, 0.20 of a game) over lichess's win-chance points, which are the
+  same at half the scale. The logistic's unit, a man, makes a man up 0.73, which a
+  draughts player reads as winning, more than a pawn up is in chess.
+- **One search a move** gives the best and the played move's score: the root's scores,
+  bounded past a margin of 2.5 men, which at an even position is already a blunder.
+- **Judged on the worker, last in line**, so the computer's reply and the hint never wait;
+  re-judging a saved game brought back costs the worker a few seconds and keeps the
+  saved game's format (`VERSION` 3).
+- **Elo, not Glicko-2.** FMJD rates by Elo with separate lists for 64 and 100 squares;
+  lidraughts uses Glicko-2. A child's few games a week against a fixed opponent gain
+  little from a deviation, and Elo's one number is what a parent knows. Kept per
+  draughts, as FMJD's lists are. K 40 for the first 20 games is FMJD's for juniors.
+- **The computer rated from self-play**, not by guess, anchored at 500 for skill 0 so
+  easy's start (587) sits under a new player's 800, as GoDraughts shows "Easy 800".

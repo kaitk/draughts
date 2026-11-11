@@ -1,18 +1,17 @@
 # 074: Games' history, marked moves, and a rating
 
-Status: in progress (designed and prototyped 2026-11-11; the engine side built on the
-`history` branch; the screens to choose and finish)
+Status: in progress (designed, prototyped, and built on the `history` branch
+2026-11-11; the takes to choose, the screens to check on the Mac and the tablet)
 
 A family asked for a history of the games played, minimal at first, and moves rated as
 GoDraughts rates them: was a move a blunder or not (2026-11-11). Three parts:
 
 1. **The moves of the game in progress**, each marked by how good it was, on the game
-   screen where there is room (a panel in the landscape's right column, under the play
-   panel), and hidden by a per-player setting for a child it would only crowd or
-   discourage.
+   screen where there is room, and hidden by a per-player setting for a child it would
+   only crowd or discourage.
 2. **The games played**, kept per player, with a screen of their own: the rating, wins,
-   draws, and losses by level, and the recent games with their marks.
-3. **A rating** per player and draughts, as the Elo scale chess and draughts players
+   draws, and losses by level, and the recent games.
+3. **A rating** per player and draughts, on the Elo scale chess and draughts players
    know, from games against the computer, whose levels get ratings of their own.
 
 ## What others do (searched 2026-11-11)
@@ -22,105 +21,108 @@ GoDraughts rates them: was a move a blunder or not (2026-11-11). Three parts:
   rating), and warns that numbers from different systems don't compare.
 - **Move marks**: lichess marks a move by how much it lowered the mover's chance to win:
   inaccuracy (?!), mistake (?), blunder (??) at 10, 20, and 30 points of its
-  win-chance scale (−1..1, so 5, 10, 15 points of a probability). Chess.com uses expected
-  points lost: 0.05, 0.10, 0.20. Both turn the engine's score into a chance through a
-  logistic, so a move that keeps a won game won is no blunder whatever it costs.
+  win-chance scale (−1..1). Chess.com uses expected points lost: 0.05, 0.10, 0.20. Both
+  turn the engine's score into a chance through a logistic, so a move that keeps a won
+  game won is no blunder whatever it costs.
 - GoDraughts shows the computer as "Easy 800" and a move list with the last move lit.
 
-## Proposed design
+## What was built
 
-### Marks
+How it works now is in `docs/architecture/ai.md` ("Judging a move", "Ratings"),
+`rendering.md` ("The moves panel", "The games screen"), and `README.md` ("Players"); the
+reasons in `docs/decisions/ai.md` and `rendering.md`, 2026-11-11.
 
-- Each move of either side is judged once, after it is played, by the computer's search
-  at full strength (hard's depth, nothing overlooked, no gifts) from the position before
-  it: the best move's score and the played move's, in hundredths of a man from the
-  mover's side. One search gives both (`Engine.main_score`, every root move's score; a
-  move outside the margin has only an upper bound, which is enough: its loss is at least
-  the margin).
-- A score becomes an expected result through a logistic, `E(s) = 1 / (1 + e^(-s/100))`:
-  a man up 73%, two 88%, three 95%; a won or lost score (past `ai::WON`) is 1 or 0.
-- The loss is `E(best) - E(played)`, and the mark by it, chess.com's cut-offs:
+- `src/ai/judge.goose`: a move judged by the fall in the mover's expected result (one
+  search of the position before it, at skill 100's depth, 300,000 nodes at most); the
+  marks best, good, ?!, ?, ??, and the only move; lichess's accuracy.
+- `src/ai/rating.goose`: the computer's rating by skill from self-play, a player's Elo
+  update (from 800, K 40 for 20 games then 20, per draughts).
+- `src/game/notes.goose`: the moves read off the undo history with their marks, judged on
+  the worker (`game::JUDGE`, last after the computer's move, the hint, and the traps);
+  the moves panel.
+- `src/shell/history.goose`, `record.goose`: `history-N.txt`, a game written when it ends
+  and again once its marks are in; the rating moved by a game against the computer.
+- `src/shell/games.goose`: the games screen, from who's playing's new tile.
+- The `moves` setting (off, moves, marks; default marks) in the player's file, set on the
+  games screen.
+- Tests: `test/ai/judge` (marks in known positions, the cut-offs, the ratings),
+  `test/shell/history` (a game judged as played, written, its marks filled in, ratings,
+  start again, the file capped), `test/shell/games` (the screen's taps and layouts).
 
-  | Mark | Loss | Shown |
-  | --- | --- | --- |
-  | best | the best move, or within 0.01 | a filled star, the glow color |
-  | good | under 0.05 | nothing |
-  | inaccuracy | 0.05 to 0.10 | `?!`, autumn's gold |
-  | mistake | 0.10 to 0.20 | `?`, orange |
-  | blunder | 0.20 or more | `??`, the forced-capture red |
-  | only move | one legal move (a forced capture with one way) | nothing |
+### The computer's ratings (2026-11-11)
 
-- A game's **accuracy** per side, as lichess's: each move's
-  `103.17 · e^(−4.354 · loss) − 3.17` percent, clamped to 0..100, averaged.
-- The judging runs on the worker that thinks for the computer, at a lower priority than
-  the computer's move, the hint, and the lookout's traps: when none of those is open, it
-  takes the oldest unjudged move. A newer ask drops it and it starts again later. A
-  move judged stays judged across undo for as long as the move stays in the game.
+`build/aimatch international A B 200`, A's score, and the gap it gives:
 
-### Rating
+| Skills | Won | Drawn | Lost | Gap |
+| --- | --- | --- | --- | --- |
+| 0 – 8 | 59 | 33 | 108 | 87 |
+| 8 – 12 | 13 | 13 | 174 | 387 |
+| 12 – 16 | 68 | 37 | 95 | 47 |
+| 16 – 20 | 76 | 32 | 92 | 28 |
+| 20 – 25 | 13 | 13 | 174 | 387 |
+| 25 – 30 | 64 | 58 | 78 | 24 |
+| 30 – 40 | 23 | 27 | 150 | 260 |
+| 40 – 50 | 16 | 42 | 142 | 257 |
+| 50 – 60 | 16 | 53 | 131 | 227 |
+| 60 – 90 | 0 | 13 | 187 | 589 |
+| 8 – 25 (check) | 0 | 7 | 193 | 700 |
+| 25 – 40 (check) | 18 | 37 | 145 | 260 |
 
-- Elo, per player and per draughts (64 and 100 squares differ, as FMJD's lists do; the
-  three draughts are three numbers). A new player starts at 800. Only games against the
-  computer count: a friend's game on one tablet has no second rated player.
-- The computer's rating at a game's skill comes from self-play between skills
-  (`build/aimatch`), the difference between two skills `400 · log10(won / lost)` with
-  draws as halves, anchored at skill 0 = 500. The table is in `ai::skill_rating`.
-- After a game: `R' = R + K · (S − E)`, `E = 1 / (1 + 10^((Rc − R) / 400))`, S 1, ½, 0;
-  K 40 over a player's first 20 rated games of that draughts, then 20 (FMJD's K for
-  juniors is 40 too). Never under 100.
+The chain 8 to 25 (849) was scaled to 775, between it and the direct match. Russian came
+out a little closer (0 – 8: 61, 37, 102, a gap of 72; 8 – 25: 440; 25 – 40: 212).
+Skill 0 overlooking three times as often (a child model) against skill 0: 46, 42, 112,
+about −120. 90 – 100 was still running; 100's 2800 is an estimate. A score near 0 or 1
+over 200 games is a wide estimate (±60 or more).
 
-### Games kept
+## Takes to choose
 
-- `history-N.txt` beside `player-N.txt`, one line a finished game, newest last, at most
-  `history::MAX_GAMES` (200; the oldest dropped when written): when (seconds since the
-  epoch), the draughts, the opponent (the computer's level and skill, or a friend), the
-  player's side, the result, the player's rating before and after, each side's marks
-  counted and accuracy, and the moves in PDN with their marks.
-- Start again clears it with the rest of the player's games; remove deletes it.
-- A game counts once it ends (won, lost, drawn; a flag fall too). A game left or started
-  over before its end isn't kept.
+The prototype: `prototypes/history.html` (`?view=game&take=a|b|c`, `view=games`,
+`view=replay`, `view=settings`, `view=entry&entry=home|sheet`). Built: take a, the entry
+from the player's card, the setting on the games screen.
 
-### Setting
+## Open questions
 
-- Settings gets a **Moves** row per player: hidden, the list, or the list with marks.
-  Default the list with marks. A child's parent turns it off; the history and rating are
-  kept whatever it says.
-
-### Screens
-
-Prototyped in `prototypes/history.html` (takes there, see its README row):
-
-- The game's panel in the right column in landscape where at least four rows fit under
-  the play panel; in portrait under the play row where the board leaves room, else not.
-- The games screen: reached from who's playing (the player's sheet), or from home.
+1. The panel's place: under the play panel (built), and the 3D board 11% smaller while
+   it shows: worth it, or a smaller panel there?
+2. Portrait: a one-line strip of the last moves under the play row (the prototype's
+   proposal, the board 12 dp smaller), or nothing (built)?
+3. The games screen from who's playing only (built), or also a row on home (fits the
+   tablet, not a phone in landscape)?
+4. The setting's default: marks (built), or off for a new player, so a young child sees
+   nothing unless a parent turns it on?
+5. Too many stars? Most moves come out best; a star only for a move that stood out (the
+   only good one) would be quieter.
+6. Ratings per draughts (built) or one for all; show the computer's rating beside its
+   level in the setup ("Medium · 1644")?
+7. Dates are UTC; the local date needs the system's time zone (a small C call).
+8. A past game's replay (the prototype's `view=replay`): the moves are kept in the file,
+   the screen isn't built.
 
 ## Native work
 
 - [x] `ai/judge.goose`: a position's moves judged, the mark and loss, the accuracy
-- [x] `ai::skill_rating`, `history::elo`, the rating's update
+- [x] `ai::skill_rating`, `ai::rate`, the rating's update
 - [x] `src/shell/history.goose`: a game's line written and read back, the file capped
 - [x] The worker judging moves (`game::JUDGE` asks), the game keeping its moves' marks
 - [x] The game's end recorded in the player's history, the rating updated
-- [ ] The setting's row in settings
-- [ ] The moves panel on the game screen
-- [ ] The games screen
-
-## Open questions
-
-1. Where the panel goes (right column, the take proposed), and what portrait shows.
-2. Where the games screen is reached from: the player's sheet, home, or both.
-3. The marks shown to a child at all, or the list alone (the setting's middle value).
-4. Ratings per draughts (proposed) or one for all.
-5. Show the computer's rating beside its level in the setup ("Medium · 1500")?
+- [x] The setting (on the games screen)
+- [x] The moves panel on the game screen (landscape, flat and 3D)
+- [x] The games screen
+- [ ] A summary at the panel's foot (each side's accuracy and marks counted), as the
+      prototype has
+- [ ] The replay of a past game
+- [ ] The games screen in `test/shell/sizes`' sizes, with insets
 
 ## Acceptance criteria
 
 - [ ] The prototype's takes compared and one chosen
-- [ ] Every move of a game judged on the worker without slowing the computer's reply
-- [ ] A finished game written to the player's history, its rating updated, start again
+- [x] Every move of a game judged on the worker without slowing the computer's reply
+- [x] A finished game written to the player's history, its rating updated, start again
       clearing both
-- [ ] The moves panel and the games screen built as chosen, every tap 88 dp, strings in
-      English and Estonian
-- [ ] Headless tests: judging known blunders and best moves, the rating's update, the
+- [x] The moves panel and the games screen built, every tap 88 dp, strings in English
+      and Estonian
+- [x] Headless tests: judging known blunders and best moves, the rating's update, the
       history file read and written back and capped
-- [ ] Checked on the Mac at the tablet's and a phone's sizes, then on the tablet
+- [ ] Checked on the Mac at the tablet's and a phone's sizes (headless shots taken
+      2026-11-11 at 1280 × 800, 800 × 1280, 1066 × 480), then on the tablet; the judging's
+      CPU on the A33

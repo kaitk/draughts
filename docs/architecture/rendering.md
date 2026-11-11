@@ -928,6 +928,34 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   left, black's at the right; compact, the bar's middle between back and settings, two
   rows. A catch's own glass shows once something is taken. A puzzle shows none.
 
+### The moves panel
+
+The game's moves (`game::moves_panel`): in landscape a glass panel under the play panel,
+as wide, down to the bottom margin, where at least four rows of 34 dp fit
+(`panel::under_right`); on the 3D board five rows, the camera's buttons a row under it,
+and the board shrinking to clear both. Each row is the move's number (small face, dim),
+then white's move and black's as from-to (`32-28`, `28x19`, `c3:e5`) in the body face,
+the latest lit with the glow at 22%, each followed by its mark ([ai](ai.md#judging-a-move)):
+a 16 dp star in the glow colour for the best, `?!` in autumn's gold, `?` orange, `??` the
+forced-capture red, nothing for a good or only move or one not judged yet. The last rows
+that fit show. The player's setting (`moves`: off, the moves, the moves with marks) is on
+the games screen; off, there is no panel and the 3D board is as large as without it. No
+panel in portrait or on a phone in landscape, which have under four rows' room.
+
+### The games screen
+
+The games played (`src/shell/games.goose`), reached from who's playing's tile of three
+rising bars, beside the pencil. Back and the title head it, the three draughts as tiles
+at its right, each its name and the player's rating there (a row of their own under the
+head where they don't fit beside back). In landscape a panel at the left holds the
+rating (36 dp figures), the results against each level (the level's name and its
+rating at the player's skill there, then won, drawn, lost: a crown, `=`, an X, each with
+its count; left out where the height is short, a phone in landscape), and the move list's
+three tiles; at the right the games in that draughts, newest first, in a scrolling list
+of 88 dp rows: the result as a crown, `=`, or an X, the opponent ("Medium 1644", or "A
+friend") over the date, the rating's change, and the player's blunders as `?? n`. In
+portrait the panel is above the list. Only the rows in view are declared.
+
 ### Transitions
 
 Three switches take 0.25 s each way, eased (smoothstep), rather than switching at once:
