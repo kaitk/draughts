@@ -52,8 +52,8 @@ struct Frame {
 // With --bench, the photograph's load is timed and printed.
 fn new(kind: i64, plain: bool, f: flags::Flags&) -> Renderer {
     var r = Renderer { d: draw::new(kind, plain, f.bench > 0),
-                      d3: draw3d::Drawer { wood: f.wood, marble: f.marble, summer: f.summer, spring: f.spring,
-                                           timed: f.bench > 0, live: !f.keep, aa: aa_flag(), .. },
+                      d3: draw3d::Drawer { aa: aa_flag(), wood: f.wood, marble: f.marble, summer: f.summer, spring: f.spring,
+                                           timed: f.bench > 0, live: !f.keep, .. },
                       w: widgets::new(), t: text::Text {} };
     r.w.live = !f.keep;
     if f.bench > 0 {

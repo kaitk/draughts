@@ -138,6 +138,22 @@ let AA_FXAA = 1;
 let AA_SMAA = 2;
 let AA_SSAA = 3;
 let AA = AA_SMAA;
+
+// The pass's ways by the names --aa takes and the log prints (-1 for none), and the next
+// the A key switches to: SMAA, none, FXAA, and 2 × 2 supersampling in turn.
+fn aa_named(name: const u8[:]) -> i32 {
+    if name == "off" { return AA_OFF; }
+    if name == "fxaa" { return AA_FXAA; }
+    if name == "smaa" { return AA_SMAA; }
+    if name == "ssaa" { return AA_SSAA; }
+    return -1;
+}
+fn aa_name(aa: i32) -> const u8[:] {
+    if aa == AA_FXAA { "fxaa" } else if aa == AA_SMAA { "smaa" } else if aa == AA_SSAA { "ssaa" } else { "off" }
+}
+fn aa_next(aa: i32) -> i32 {
+    if aa == AA_SMAA { AA_OFF } else if aa == AA_OFF { AA_FXAA } else if aa == AA_FXAA { AA_SSAA } else { AA_SMAA }
+}
 let MAX_INSTANCES = 96;     // view3d::MAX_INSTANCES: two for each of board::MAX_PIECES
 let SQUARES = 100;          // the field's squares, 10 × 10 at most
 

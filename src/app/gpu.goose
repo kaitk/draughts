@@ -17,6 +17,12 @@ fn no_texture() -> Texture { gfx::Texture { 0 } }
 fn release(t: Texture) { gfx::release(t); }
 fn release(s: Sampler) { gfx::release(s); }
 
+// The screen's texture, and a pass into texture t cleared to `clear`, with no depth
+// target, and its end.
+fn screen() -> Texture { gfx::screen() }
+fn begin_pass(t: Texture, clear: float4) { gfx::begin_pass(t, gfx::Texture { 0 }, clear); }
+fn end_pass() { gfx::end_pass(); }
+
 // A texture the passes draw into, RGBA8.
 fn target(width: i64, height: i64) -> Texture { gfx::render_target(width, height, gfx::RGBA8) }
 
@@ -36,3 +42,6 @@ fn flush() { gfx::flush(); }
 // The full-screen triangle's vertex shader (render3d's), which the board's, the scene's,
 // and the widgets' full-screen passes share.
 fn full_vert() -> const u8[:] { embed_shader("vert", shaders::FULL_VERT) }
+
+// Where the bench's pulse phase draws its passes: the screen, kept apart from the window.
+fn bench_target(t: Texture&, size: int2) -> Texture { gfx::screen() }

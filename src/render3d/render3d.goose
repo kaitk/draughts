@@ -118,6 +118,20 @@ let AA_OFF = 0;
 let AA_SMAA = 2;
 let AA_MSAA = 4;
 let AA = AA_MSAA;
+
+// The pass's ways by the names --aa takes and the log prints (-1 for none), and the next
+// the A key switches to: MSAA and SMAA in turn.
+fn aa_named(name: const u8[:]) -> i32 {
+    if name == "off" { return AA_OFF; }
+    if name == "msaa" { return AA_MSAA; }
+    if name == "smaa" { return AA_SMAA; }
+    return -1;
+}
+fn aa_name(aa: i32) -> const u8[:] { if aa == AA_MSAA { "msaa" } else if aa == AA_SMAA { "smaa" } else { "off" } }
+fn aa_next(aa: i32) -> i32 { if aa == AA_MSAA { AA_SMAA } else { AA_MSAA } }
+
+// The view's matrices, as the ngfx build's render3d names its own.
+type Mat = gfx::mat4;
 let MAX_INSTANCES = 96;     // view3d::MAX_INSTANCES: two for each of board::MAX_PIECES
 let SQUARES = 100;          // the field's squares, 10 × 10 at most
 
