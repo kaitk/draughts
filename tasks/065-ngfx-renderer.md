@@ -1,7 +1,8 @@
 # 065: The NoGraphicsAPI renderer through goose-ngfx
 
 Status: in-progress (on the `ngfx` branch; steps 1 to 7 on Windows and the Mac, and the
-iPhone, 2026-11-11; memory next)
+iPhone, 2026-11-11; ngfx's memory at or under gfx's on the iPhone and within 3 MB on the
+Mac, goose-ngfx v0.5.0)
 
 Draw Draughts through goose-ngfx (github.com/kaitk/goose-ngfx, NoGraphicsAPI over Metal 4
 and Vulkan 1.4) on devices that have it: Apple silicon Macs, later iPads and iPhones, and
@@ -419,9 +420,35 @@ start of this round, on goose-ngfx's `ios` branch with three drawables:
   P50 6.07 ms against gfx's 119.2 and 5.8. The flat bench's waited time (8.3 ms against
   4.8) and CPU time (3.7 ms against 0.12) now include waiting for a free drawable at the
   frame's first pass into the screen (`agents/testing.md`).
+- **The 3D bench flickered** (the user, 2026-11-11, on the Mac and the iPhone): its pulse
+  phase times passes into the screen with `ngfx::flush()` between them, and with the
+  screen the window's image each flush presented a frame without the UI, in turn with
+  the bench's whole frames. The phase draws into a BGRA8 texture of the screen's size
+  now; its times dropped from 7.9 and 6.3 ms (the rings, without) to 2.3 and 0.8 on the
+  Mac, no longer holding a drawable. The app itself never flushes the screen mid-frame.
 - goose-ngfx's 34 checks pass in the compiler, under `GOOSE_NGFX_SYNC=full`, and with
   `--aot`; `ngfx_frames` now uploads past the queue's staging, idles, and uploads,
   draws, and reads back after the trim.
+
+### 2026-11-11, later: ngfx's memory, on the iPhone 13 mini
+
+The build with both memory steps (goose-ngfx `34d6798`), `ios.py --device --ngfx`, then
+`scripts/ios_perf.py`; the 3D board's trace failed to export, so its rest and bench are
+the app's own, from the console (`--rest 25`, `--bench 1000`). At rest, nothing drawn,
+0.13% CPU on both boards:
+
+| footprint at rest | flat | 3D |
+|---|---|---|
+| ngfx before | 98 MB | 298 MB |
+| ngfx now | 42 MB | 204 MB |
+| gfx | 59 MB | 204 MB |
+
+- Frames: flat, 983 on the display at 60 Hz, 1 dropped, P50 and P99 16.7 ms; 3D, the
+  app's count, 60.0 fps presented, 1% low 58.6, waited P50 10.72 / P99 10.92 ms (9.7 and
+  10.45 before; the waited frame now includes the wait for a drawable, as on the Mac).
+  The flat bench's waited P50 is 16.2 ms for the same reason (7.48 before).
+- The bench's flicker the user filmed here is the pulse phase above, fixed after this
+  run; the installed build has it still, in `--bench` only.
 
 ### 2026-11-11, on the iPhone 13 mini (A15, iOS 26)
 
@@ -510,15 +537,6 @@ Not opened yet; the user opens them (2026-11-11):
 
 ## Later, not in this task
 
-- **ngfx's driver and CPU memory**: break down the IOAccelerator's 29 MB and malloc's
-  large blocks (Instruments' Metal resource list, or counting what ngfx and NoGraphicsAPI
-  make), then size what is ngfx's: buffer chunks of 2 to 4 MB, an upload queue that
-  shrinks when idle, descriptor heaps sized from use.
-- **The screen straight into the drawable**, in ngfx: no offscreen screen and no copy
-  (32 MB at 2560 × 1600), the screenshot from a texture of the program's or a read of
-  the drawable, and the app redrawing when gfx's `needs_present()` asks. Then no spare
-  screen per frame in flight (16 MB), as gfx's patch 0003 did for gfx.
-
 - **Choosing at run time.** Both renderers in one executable, ngfx where the device has
   it (Metal 4; Vulkan 1.4 with `VK_EXT_descriptor_heap`), else gfx. They can't both
   link their own SDL as they do now: Goose's release builds gfx with its SDL, and ngfx
@@ -537,8 +555,6 @@ Not opened yet; the user opens them (2026-11-11):
   `CADisableMinimumFrameDurationOnPhone` in the Info.plist, or iOS holds third-party apps
   to 60, and `ios_perf.py` reads `HZ = 60` where it should read the display's rate. The
   same for both renderers; no 120 Hz iPhone here.
-- **The memory on iOS**: ngfx holds 39 MB (flat) and 94 MB (3D) more than gfx at rest on
-  the iPhone; the follow-ups above are where it goes.
 - The Steam builds (task 064).
 
 ## Acceptance criteria
