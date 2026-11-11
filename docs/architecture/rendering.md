@@ -112,7 +112,17 @@ the panels'. Settings' preview, flat or 3D, stands with its top level with the g
 group's glass (`settings::level`), and home's column holds the menu or a setup 40 dp from
 its top, at least 440 dp wide (`home::DESKTOP_TOP`, `DESKTOP_COLUMN_W`), rather than
 centered down it. Each only moves things or widens the column on a desktop; a touch
-screen's layout is unchanged.
+screen's layout is unchanged. A desktop's tiles are thinner too: every size that is a
+tap, a tile's or a row's height and the least a tap is across, is `gui::tap()`, 88 dp on
+a touch screen and 64 on a desktop, and the room a tile sized to its words keeps either
+side of them is `gui::side()`, 16 dp and 12 (back keeps 4 more). The panels' heights are
+sums of their rows, gaps, and insets (`panel::corner_h`, `left_h`, `bar_h`, `play_h`, settings'
+`head_row_h`), so they follow. A tile with its icon or picture over its word (the hint,
+undo move, a puzzle's next, settings' rows, the setup's level, pieces, and clock) is
+`gui::stacked()`, at least 72 dp: below that undo move's word no longer takes two lines
+and a picture overruns its tile. The play's corner panel is as tall as the clocks over
+undo move's tall tile need where that is more than its touch height (314 dp on a
+desktop), and the left column is back and two rows (240).
 
 Each screen lays out its taps and words inside the window's **safe area**: the window less
 its insets, a phone's camera cutout and its gesture bar at the bottom. SDL reports them
@@ -376,8 +386,8 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
 
 - **Buttons** are glass tiles: white at 10%, 24% while pressed (and scaled to 0.96),
   with an inset 1 px border of white at 20% and a top highlight; radius 22 px; at least
-  88 × 88 px (dp: the screen's shorter side is 800, `gui::scale_of`) for small hands,
-  icons half the tile with strokes 2.4 units of their 24-unit grid. A primary button is
+  88 × 88 px (dp: the screen's shorter side is 800, `gui::scale_of`) for small hands
+  (`gui::tap`, 64 dp on a desktop; "Screen sizes and the safe area"), icons half the tile with strokes 2.4 units of their 24-unit grid. A primary button is
   the glow color at 22%.
 - **Under the mouse** (a desktop only, `gui::desktop_scale` above 0; task 066), a tile
   that takes a tap is lit as a faint chosen one, in the theme's glow whatever its style:
@@ -409,7 +419,8 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   3D screen's**: in landscape the flat board between the 3D screen's short corner panels
   (`panel::flat_corners`; "Board and pieces", 3D board, the game screen round it), back
   and a panel of settings and start over in the top left, whose turn, the eye, the hint
-  beside undo move, or the clocks, in the top right, 232 × 352 dp (192 on a phone), the
+  beside undo move, or the clocks, in the top right, 232 dp wide (192 on a phone), the left
+  336 dp tall and the play 352 (`panel::left_h`, `corner_h`), the
   same tiles in the same places as round the 3D board; the board a square of
   the height less the margins centered across, which the corner panels leave the same
   room (they free none it could grow into). Near square (4:3, a foldable) the flat
@@ -424,9 +435,10 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   less where the screen is shorter (395 dp on a phone at 480 dp, the piece then beside
   the goal's icon); in portrait it keeps the bar and play below. The panels hold: on the
   left back (see "The way back" below) on its own glass tile, 88 px tall, over a panel
-  12 px under it holding settings and start over; 88 px rows (the floor for
+  12 px under it holding settings and start over, 20 px above, between, and below them;
+  88 px rows (the floor for
   small hands) with 34 px icons and 24 px words (in a narrowed panel, where a word doesn't fit beside its icon,
-  both icons over their words in 96 px rows); on the right whose turn it is (a 72 px piece of its color with
+  both icons over their words in 96 px rows sharing the same glass, evenly apart); on the right whose turn it is (a 72 px piece of its color with
   the glow ring, 4 px of the glow color at 80% and a 22 px glow, over "White's turn"),
   or the two clocks, and at the bottom undo move, a tall 132 px tile with a 48 px icon
   over its word, on two lines where one is too wide ("Võta käik / tagasi" in a narrowed

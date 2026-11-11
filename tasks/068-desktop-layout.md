@@ -1,6 +1,6 @@
 # 068: A desktop's layout, tuned by eye
 
-Status: in-progress (before task 064's Steam release; 1 to 4 done 2026-11-11, 5 waits for task 069)
+Status: done (2026-11-11; note 5 through task 069)
 
 The user's notes on the desktop layout (2026-11-11), from the Mac and a 27" screen:
 
@@ -13,15 +13,16 @@ The user's notes on the desktop layout (2026-11-11), from the Mac and a 27" scre
    is too small there.
 5. Tiles thinner on a desktop, with less padding at their sides: the back, the game's
    corner panels, settings' tiles and language. This replaces the 2026-11-11 decision
-   that rejected a second set of desktop sizes; record why. Deferred (2026-11-11): done
-   cleanly only after task 069 names the tap's height and derives the panels' heights.
+   that rejected a second set of desktop sizes; record why. Done in task 069 (2026-11-11):
+   64 dp taps and 12 dp beside a tile's words on a desktop.
 
 ## Acceptance criteria
 
-- [ ] Each note built, shot on the Mac at 1280 × 800, a MacBook's full screen, and a 27"
+- [x] Each note built, shot on the Mac at 1280 × 800, a MacBook's full screen, and a 27"
       2560 × 1440 (`--display-scale 1`), and agreed with the user.
-- [ ] A touch screen's layout unchanged (`--touch on`, the tests' sizes).
-- [ ] `docs/architecture/rendering.md` and `docs/decisions/rendering.md` updated.
+- [x] A touch screen's layout unchanged (`--touch on`, the tests' sizes), but for the left
+      corner's even spacing, which the user asked for on every screen (task 069).
+- [x] `docs/architecture/rendering.md` and `docs/decisions/rendering.md` updated.
 
 ## Done (2026-11-11)
 

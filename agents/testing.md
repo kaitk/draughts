@@ -207,6 +207,13 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
 - Shoot a few runs per command (up to about four) with a short `alarm` (30 s for a flat
   `--frames 300`): fifteen runs under `alarm 90` in one command once sat for over 8
   minutes with nothing to show (2026-11-11).
+- Windowed `--frames` runs of one build differ from each other over the board and the
+  photograph, so `cmp` says nothing about them. For a check that must be byte-identical,
+  build headless copies of both commits with a fixed clock: `host::time()` adds 1/60 s
+  a call and `dirty = true;` heads the loop, so `--frames N` is N drawn loops at the same
+  moments every run. Two runs of one such build matched in all 102 shots (every screen,
+  flat and 3D, the win, a clocked game with taps, at the desktop's, the tablet's, and a
+  phone's sizes); about 50 s for the lot, four at a time (task 069, 2026-11-11).
 - Shots scripted in a shell loop hang until killed when the app inherits the loop's
   stdin or writes stdout to a file: run each from `src/app` with `< /dev/null` and
   output to `/dev/null`, outside the sandbox, and `perl -e 'alarm 25; exec @ARGV'` in

@@ -1,6 +1,6 @@
 # 069: Name the layout's sizes, then thinner tiles on a desktop
 
-Status: todo (a session of its own, before task 068's note 5)
+Status: done (2026-11-11)
 
 The tap's 88 dp height is written out about 60 times (`src/game/panel.goose`,
 `ending.goose`, `src/shell/home.goose`, `settings.goose`, `picker.goose`, `who.goose`,
@@ -22,11 +22,11 @@ code worse (the user, 2026-11-11: only if it can be done nicely).
 
 ## Acceptance criteria
 
-- [ ] Steps 1 and 2 with every test's output byte-identical (a touch screen's layout
+- [x] Steps 1 and 2 with every test's output byte-identical (a touch screen's layout
       unchanged), and no bare 88 left meaning a tap.
-- [ ] Step 3's heights shot and one picked by the user, the desktop's layout checked on
+- [x] Step 3's heights shot and one picked by the user, the desktop's layout checked on
       every screen.
-- [ ] `docs/architecture/rendering.md` and `docs/decisions/rendering.md` updated.
+- [x] `docs/architecture/rendering.md` and `docs/decisions/rendering.md` updated.
 
 ## Done (2026-11-11)
 
@@ -52,3 +52,30 @@ a MacBook's full screen, and 27"; the tablet both ways; a phone; every screen, f
   to 495) and `CORNER_PLAY` 368 (362). A face's line is its size in the app as in the
   tests (Nuklear scales a face by `stbtt_ScaleForPixelHeight`), so the gap is real slack,
   not the font's.
+
+Step 3 (the user picked 64 dp from shots of the game's corners at 72, 64, and 56 dp at
+1280 × 800, a MacBook's full screen, and 27"): `gui::tap()` is 88 dp on a touch screen
+and `gui::DESKTOP_TAP` 64 on a desktop, `gui::side()` 16 and `DESKTOP_SIDE` 12; the
+heights built from the tap are functions, as a top-level `let` is computed once at start.
+What 64 and 56 broke, and what the user chose (2026-11-11):
+
+- Undo move's tall tile, half again a tap, was 96 dp at 64: its word went to the small
+  face on one line, as two lines want 108 (`gui::lines_at`), and settings' seasons and
+  kings ran over 64 dp tiles. A tile with its icon or picture over its word is
+  `gui::stacked()`, a tap of 72 dp at least: the panel's stacked and tall tiles,
+  settings' rows (one height, as most hold two rows), and the setup's level, pieces,
+  and clock.
+- At 56 whose turn ran into the hint and undo move: the play's corner panel is the
+  larger of its touch height (352 dp) and the clocks over undo move (314 on a desktop).
+- On every screen the left corner's settings and start over are 20 dp apart, as from
+  their glass's ends (the gap was 36): the left column is back and two rows,
+  `panel::left_h`, 336 dp on a touch screen (240 on a desktop), stacked tiles sharing
+  it evenly apart. `game/corners`, `game/game`, `game/taken` (the pieces under it 16 dp
+  higher), `board/taps`, and `shell/sizes` moved with it; `shell/rest_hover`'s counts
+  of points over a lit tile with the desktop's smaller tiles, still 0 asking.
+- Home's rows in a small window are at most a tap, and the gear's reach over the
+  wordmark's row none where the tap is no taller than the row.
+
+Touch screens' headless shots (the tablet both ways, a phone) were byte-identical with
+the desktop values in, before the left corner's spacing. Every screen at the three sizes
+was checked at 64 dp, flat and 3D, with the clocks and the win.

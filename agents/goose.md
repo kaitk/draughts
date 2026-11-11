@@ -169,6 +169,9 @@ find out by compiling, so the next session doesn't.
   the screens' tests print floats: keep the cuts where an output must stay byte-identical
   (settings' groups side by side, task 061). A stack's positions run on from its start
   as cuts do, so a column from the top matches them (2026-11-10).
+- A top-level `let` built from a `var` (`let SUM = 2.0 * tap + 12.0;`) compiles and is
+  computed once at start, before `main` sets the `var`: a size that changes at run time
+  (`gui::tap()` on a desktop) and what is built from it are functions (2026-11-11).
 - A struct field can't default to `T {}` where T has a field with no default
   (`board::Layout`'s `scale`): give it a built value, `board::layout_at(0.0, 0.0, 0.0,
   1.0, 8)` (2026-11-10).

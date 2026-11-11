@@ -55,10 +55,11 @@ the short side always 800 dp, a Mac window 800 points tall had 88-point rows and
 screen larger still, sized for a hand on a screen a mouse uses; a desktop build (and a
 Steam one later, with a controller) wants them the size of a desktop's controls. The
 layouts already hold over 1600 dp, so a ceiling on the scale gives most of a desktop
-layout at once. Rejected: a second set of desktop sizes (44 dp rows, text that shrinks
-less than the tiles), which would double every layout's dp values (about 330 of them,
-in 16 files) and the sizes the tests check. At 1200 dp (0.67 points) the notes were 11
-points, too small.
+layout at once. A second set of desktop sizes (44 dp rows, text that shrinks less than
+the tiles) was rejected then, as it would double every layout's dp values (about 330 of
+them, in 16 files); it is replaced (2026-11-11) by one desktop value each for the tap
+and a tile's side room (below). At 1200 dp (0.67 points) the notes were 11 points, too
+small.
 
 On a desktop the landscape board, flat or 3D, and its corner panels stand in a frame
 (2026-11-11): from margin to margin the board crowded a large screen. A frame round the
@@ -85,12 +86,22 @@ Tuned by eye on the Mac and a 27" screen (task 068, the user, 2026-11-11):
 - Home's menu and the setups start at the column's top, 440 dp wide at least: centered
   on a large window the menu floated in the middle, and the setup's choices were cramped
   in 360 dp.
-- Thinner tiles and narrower side padding on a desktop were tried on the game's left
-  corner and set aside for now: 88 dp is written out about 60 times, and the panels'
-  heights (`panel::CORNER_H` 352, `CORNER_PUZZLE` 504, `CORNER_PLAY` 368, `TALL_H`)
-  are tuned numbers rather than sums of their rows, so each screen would need its own
-  desktop branch. Task 069 first names the tap's height once and derives the panels'
-  heights from their rows; a desktop height is then one value.
+- A desktop's tiles are 64 dp tall and keep 12 dp beside their words (2026-11-11, task
+  069), where the ceiling on the scale alone left a touch screen's 88 and 16 looking
+  fat under a mouse. One value each, `gui::tap()` and `gui::side()`, not a set of
+  desktop sizes: the tap is named once and the panels' heights are sums of their rows,
+  so no screen has a desktop branch. 72, 64, and 56 dp were shot at 1280 × 800, a
+  MacBook's full screen, and 27"; 64 was picked. Tiles with their icon or picture over
+  their word stay at 72 dp at least (`gui::stacked()`): at 64 undo move's word dropped
+  to the small face on one line, and settings' seasons and kings ran over their tiles.
+  The play's corner panel grows to hold the clocks over undo move rather than shrinking
+  with the left column, where at 56 whose turn ran into the hint.
+  Kept as tuned numbers, a few dp over their parts: a puzzle's play panel (504 dp, its
+  parts 495) and a phone's narrow one (368, 362).
+- The left corner's settings and start over are 20 dp apart, as from their glass's top
+  and bottom (2026-11-11), on every screen: the glass was as tall as the play panel, and
+  the 36 dp between them read loose. The left column is then 16 dp shorter than the play
+  panel on a touch screen; the corners already differ in a puzzle and on a phone.
 
 ### Small windows
 
