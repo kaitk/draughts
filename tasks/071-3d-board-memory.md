@@ -96,8 +96,8 @@ gfx, untouched. The iPhone's "before" is above task 065's 204 MB: that was anoth
 season (a mitred frame map), these winter's.
 
 - **The look**: headless shots at `--frames 20000` with a frame drawn after the rest (the
-  backdrop graded live), the four seasons, the plain fade, a season switched mid-run and
-  back, and ngfx's `--aa fxaa|off|ssaa`: 0 pixels apart at 3% on both builds (ngfx's
+  backdrop graded live), the four themes (`--theme wood|stone|birch|sunset`), the plain
+  fade, a season switched mid-run and back, and ngfx's `--aa fxaa|off|ssaa`: 0 pixels apart at 3% on both builds (ngfx's
   against its build before outside the left corner's panel, which main's layout changes
   moved).
 - **The first draw after a rest**, the pass with the GPU waited: gfx on the M1 Pro at
@@ -111,5 +111,53 @@ season (a mitred frame map), these winter's.
   MSAA targets would remove them without the first draw's cost, but SDL chooses the
   storage mode (a note for the user, not a patch).
 
-Left: SMAA on the gfx build, its look against MSAA and its GPU cost on the Pixel 7a and
-the A33, with a key to toggle them; the tablet's and the A33's numbers (neither attached).
+### 2026-11-11: SMAA on the gfx build, and its weights only where there are edges
+
+- **SMAA on gfx** beside the 4× MSAA: `--aa msaa|smaa|off` and the A key switch it live
+  (not while a name is typed); the ngfx build's A key goes through SMAA, off, FXAA, and
+  SSAA. The shader is SMAA.hlsl through `tools/smaa_glsl.py`, which rewrites the six
+  spots cute_spirv or its Metal translation refuse (`docs/goose-findings.md`), and
+  `src/render3d/smaa.goose`'s macros. Its triangle runs uv from the top left;
+  `shaders::FULL_VERT`'s runs from the bottom, which drew it upside down at first.
+- **The look**, 1280 × 800 headless, against gfx's MSAA, edges being where `--aa off`
+  differs from MSAA by more than 8, grown by a pixel (mean difference of 255):
+
+  | theme | edges | SMAA: edges / elsewhere | off: edges / elsewhere |
+  |---|---|---|---|
+  | wood | 3.22% | 3.84 / 0.08 | 4.71 / 0.03 |
+  | stone | 3.57% | 4.86 / 0.08 | 6.04 / 0.03 |
+  | birch | 3.09% | 4.34 / 0.17 | 5.60 / 0.02 |
+  | sunset | 3.07% | 4.20 / 0.08 | 5.22 / 0.03 |
+
+  As ngfx's SMAA in task 065: about a fifth of the way from none to MSAA at the edges,
+  and a trace elsewhere. MSAA's shots are those of the build before.
+- **Its memory**: the pass's targets at 1x (RGBA8, D16) and SMAA's edges (RG8) and
+  weights (RGBA8), 49 MB at 2560 × 1600 against MSAA's 98; at rest both are given back.
+- **The weights only where there are edges** (task 070's "What to try"): SMAA's reference
+  has the edges pass write a stencil the weights pass tests. ngfx has no stencil state,
+  so the edges pass writes depth 0 into the pass's own 1x depth (free by then) where it
+  finds an edge, and the weights pass, drawn at z 0, tests equal: no memory, and the look
+  the same as before to the pixel (3 to 8 pixels apart exactly, as two runs; 0 at 3%).
+  Both builds have it.
+- **The GPU's time**, the 3D bench full screen (3600 × 2260) on the M1 Pro, `--bench 300
+  --no-vsync`, Russian, wood, the start, Metal System Trace, the loop's frames, the union
+  of the app's GPU intervals, ms a frame, three traces each (the GPU at Maximum):
+
+  | build | ms a frame | overlap |
+  |---|---|---|
+  | ngfx SMAA, as before | 3.40 / 3.39 / 3.35 | × 1.06 |
+  | ngfx SMAA, weights depth-tested | 3.39 / 3.35 / 3.39 | × 1.07 |
+  | ngfx off (one trace) | 2.62 | × 1.05 |
+  | gfx 4× MSAA | 3.00 / 3.10 / 3.10 | × 1.24 to 1.32 |
+  | gfx SMAA, as before | 3.47 / 3.49 / 3.50 | × 1.34 to 1.36 |
+
+  The depth test is lost in the trace's noise. Headless at the same size, the pass with
+  SMAA (two runs each): 2.95 ms as before, 2.87 depth-tested, 2.65 with no weights pass
+  at all: that pass costs 0.3 ms, of which the test takes 0.08; the rest is its
+  full-screen target cleared and stored, which no test skips. On gfx 2.82 → 2.79. SMAA
+  costs 0.75 ms over none here, and gfx's SMAA 0.4 ms more than its MSAA: on the M1 Pro
+  MSAA is the cheaper of the two, as on Windows (task 065).
+
+Left: SMAA's cost against MSAA on the Pixel 7a and the A33 (the tile GPUs, where MSAA's
+4× targets cost bandwidth and memory SDL can't keep on the tile) before choosing a
+default for gfx; the tablet's and the A33's memory numbers (neither attached).
