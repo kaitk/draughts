@@ -278,6 +278,36 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
   (`static_assert` in `shader.slang`), and so would Draughts' roots. `astc-6x6` rebases
   onto it cleanly; moving ngfx's pin there is a step of its own (below).
 
+- **Where ngfx's memory goes, on the Mac** (`footprint` at rest, the flat game in a
+  window): gfx 116 MB, of it 41 MB graphics (32 MB IOSurface, the window's drawables, and
+  9 MB IOAccelerator); ngfx 309 MB, of it 220 MB graphics (132 MB of owned unmapped
+  heaps, 88 MB IOAccelerator) and the same 32 MB of drawables. A Goose program that only
+  opens ngfx and clears three frames already holds 160 MB, 138 MB of it graphics, at
+  64 × 64 as at 2560 × 1600: ngfx's fixed pools, before Draughts draws anything. They are
+  ngfx's sizes (`native/ngfx_gpu.hpp`): two frames' 16 MB of frame memory, the 32 MB
+  upload queue, and the first 64 MB buffer and texture chunks, each heap committed whole
+  on Metal, where Windows' private bytes didn't count it all (37 MB there). The rest is
+  Draughts' own textures in further chunks, and the screen: an offscreen color texture
+  and a depth texture and a spare of each for the frame in flight (16 MB apiece at
+  2560 × 1600), copied into the drawable at the frame's end, where gfx draws into the
+  drawable itself without depth (patch 0003). NoGraphicsAPI leaves sizing to the program:
+  its examples make fixed heaps (256 MB of textures, 1 to 16 MB of data), and its
+  utility upload queue defaults to 64 MB. So the change is ngfx's: pools sized from use,
+  starting small (frame memory of a few hundred KB, an upload queue of a few MB, chunks
+  of 8 MB doubling up to 64), the screen drawn into the drawable, and depth only for a
+  program that asks for it. Draughts' per-frame data is a few KB.
+- **SDL** (the user's call, 2026-11-11): ngfx drops SDL entirely. It takes the native
+  window from the program (a `CAMetalLayer` on Apple's systems, an `HWND` on Windows,
+  later a Vulkan surface on Linux) and keeps only drawing; the window, input, time, and
+  events are the program's. Draughts keeps one SDL, the one its gfx build links, for both
+  renderers, which is also what choosing the renderer at run time needs. The objc
+  warnings on every ngfx `goose run` on the Mac ("Class SDL3Window is implemented in
+  both" the compiler and ngfx's JIT library) are two SDLs in one process today.
+- **Next**, in this order: goose-ngfx without SDL and with its pools sized from use (a
+  new release); this branch's `host` on the app's SDL with ngfx drawing into its window;
+  then iOS and iPadOS, which then need no SDL of ngfx's; then upstream NoGraphicsAPI's
+  `ffd9f2a` (roots of a 16-byte stride) in the fork and ngfx.
+
 ### Left for the Mac
 
 - **goose-ngfx v0.3.0 on Metal 4**: its tests and samples at the v2026.4 pin, which have
