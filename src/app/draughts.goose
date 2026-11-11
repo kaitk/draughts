@@ -133,11 +133,15 @@ fn main() {
         }
         // The safe area and the display's scale, read each frame (a few fields in SDL):
         // turning the screen moves the camera's cutout and the gesture bar, and a change
-        // of either is a change of the screen, as a new size is. The Mac's display scale
-        // is left out (gui::scale_of).
+        // of either is a change of the screen, as a new size is. On a desktop the display
+        // scale sets only the scale's ceiling (gui::scale_of), and a window moved to
+        // another display lays out again.
         host::read_display(h);
         let display = h.display;
         if mobile && f.display_scale < 0.0 { gui::display_scale = display[4]; }
+        // A desktop's controls stay the size a mouse wants however large the window
+        // (gui::desktop_scale), unless --touch lays it out as a touch screen.
+        if !mobile && f.touch != 1 { gui::desktop_scale = display[4]; }
         let scale = gui::scale_of(size.x, size.y);
         let e = if f.inset.x < 0.0 { float4 { display[0], display[1], display[2], display[3] } }
                 else { float4 { floor(f.inset.x * scale + 0.5), floor(f.inset.y * scale + 0.5),

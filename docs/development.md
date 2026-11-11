@@ -81,7 +81,11 @@ top, right, bottom; the window's own safe area by default, all of it on the Mac)
 scale's floor in physical size (`--density-floor F` with `--display-scale S`: the scale
 becomes `max(short side / 800, F × S)`; off by default, and `--dp` turns it off unless
 `--density-floor` is given too; the Mac's own display scale is left out, so without
-`--display-scale` the floor does nothing there), and a frame to stop at and save as
+`--display-scale` the floor does nothing there), whether a desktop's window is laid out as a
+touch screen (`--touch on|off`: off by default, the controls a mouse's size; on with
+`--size WxH`, `--dp`, or `--inset`, which stand for a device, unless `--touch off` is
+given: `--size 1728x1080 --touch off` shows a MacBook's full screen as the app lays it
+out; [rendering](architecture/rendering.md#screen-sizes-and-the-safe-area)), and a frame to stop at and save as
 `draughts.png`. The Pixel 7a in portrait at 540 dp, its 118 px cutout and its 84 px
 gesture bar, 2 px a dp at that scale: `--size 450x1000 --dp 540 --inset 0,59,0,42`,
 and in landscape `--size 1200x540 --dp 540 --inset 59,0,0,42` (or `0,0,59,42`, turned

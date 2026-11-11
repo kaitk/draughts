@@ -27,9 +27,21 @@ let DENSITY_FLOOR = 0.75;
 var density_floor: f32 = DENSITY_FLOOR;
 var display_scale: f32 = 0.0;
 
+// On a desktop (the Mac, Windows), a ceiling on the scale in physical size: DESKTOP_DP
+// points a dp, the display's scale × DESKTOP_DP pixels, so a large window or a full
+// screen gives its room to the board and keeps the controls the size a mouse wants,
+// where the short side / 800 would grow them as for a hand. 0.75 (2026-11-11): an 88 dp
+// row is 66 points, a 17 dp note about 13. The app sets desktop_scale on a desktop unless
+// --touch asks for a touch screen's sizes; 0 is no ceiling (a phone, a tablet, the tests).
+let DESKTOP_DP = 0.75;
+var desktop_scale: f32 = 0.0;
+
 // The layout's scale, pixels a dp, on a screen width × height pixels: from the whole
 // screen's shorter side, its insets included, so it is the same in both orientations.
-fn scale_of(width: f32, height: f32) -> f32 { max(min(width, height) / short_dp, density_floor * display_scale) }
+fn scale_of(width: f32, height: f32) -> f32 {
+    let s = max(min(width, height) / short_dp, density_floor * display_scale);
+    return if desktop_scale > 0.0 { min(s, DESKTOP_DP * desktop_scale) } else { s };
+}
 
 // What a quad is, as the UI shader draws it.
 let GLASS = 0;              // a glass panel, with its shadow

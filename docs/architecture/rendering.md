@@ -86,8 +86,18 @@ down to 480 dp (a 360 dp phone at 0.75). A larger tablet lays out
 the same dp as a smaller screen of its proportions, only scaled; the photograph is
 then stretched by long side / 2048 (1.25× at 2560 px, 1.41× at 2880), soft but fine
 behind home. The Mac's display scale (2 on Retina, its
-windows being in points) is left out: a Mac window stands for a screen of its size in
+windows being in points) is left out of the floor: a Mac window stands for a screen of its size in
 pixels, and the floor there would make shots depend on the Mac's screen.
+
+**A desktop** (the Mac, Windows) is laid out for a mouse: the scale has a ceiling of
+0.75 points a dp, `min(…, gui::DESKTOP_DP × display scale)` (`gui::desktop_scale`, the
+window's display scale, read each frame), so an 88 dp row is 66 points and a 17 dp note
+about 13 whatever the window's size. A window under 600 points tall shrinks as before; a
+larger one, or a full screen, keeps its controls that size and gives the room to the
+board (a 1280 × 800 window lays out 1067 dp across its short side, a full 1728 × 1080
+MacBook screen 1440). The flag `--touch on` lays a desktop's window out as a touch
+screen's; `--size WxH`, `--dp`, and `--inset`, which stand for a device, imply it, so a
+shot of a device's layout is the same as before ([development](../development.md)).
 
 Each screen lays out its taps and words inside the window's **safe area**: the window less
 its insets, a phone's camera cutout and its gesture bar at the bottom. SDL reports them

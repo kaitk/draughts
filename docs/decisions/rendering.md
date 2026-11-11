@@ -49,6 +49,17 @@ Settings in landscape ends the look group's glass below its tiles over a bottom 
 empty below. Under a top inset in landscape the page's top padding gives up to 12 dp of
 its 24 (2026-11-09), so the 13" and 11" iPad keep both groups.
 
+A desktop's window is laid out for a mouse by default (2026-11-11): the scale stops at
+0.75 points a dp (`gui::DESKTOP_DP`), and `--touch on` gives a touch screen's sizes. With
+the short side always 800 dp, a Mac window 800 points tall had 88-point rows and a full
+screen larger still, sized for a hand on a screen a mouse uses; a desktop build (and a
+Steam one later, with a controller) wants them the size of a desktop's controls. The
+layouts already hold over 1600 dp, so a ceiling on the scale gives most of a desktop
+layout at once. Rejected: a second set of desktop sizes (44 dp rows, text that shrinks
+less than the tiles), which would double every layout's dp values (about 330 of them,
+in 16 files) and the sizes the tests check. At 1200 dp (0.67 points) the notes were 11
+points, too small.
+
 ### Small windows
 
 iPadOS 26's resizable windows got the compact layout (2026-11-09, task 050). Headless, the

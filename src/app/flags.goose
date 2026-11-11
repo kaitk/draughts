@@ -31,6 +31,10 @@ struct Flags {
     dp: i64 = -1,
     // --inset L,T,R,B: a phone's safe area in dp of the layout; x < 0 the window's own
     inset: float4 = float4 { -1.0, 0.0, 0.0, 0.0 },
+    // --touch on|off: a desktop's window laid out as a touch screen, its controls as large
+    // as a hand needs (gui::desktop_scale), or as a desktop's; on with --size WxH, --dp,
+    // or --inset, which stand for a device, unless off is given. 1 on, 0 off, -1 not given
+    touch: i64 = -1,
     // --density-floor F with --display-scale S: the scale's floor (gui::scale_of), S
     // standing for the display's (the Mac's is left out: its windows are in points)
     density_floor: f32 = -1.0,
@@ -87,6 +91,7 @@ struct Flags {
 // left out.
 fn parse(argv: u8[:][>..]) -> Flags {
     var f = Flags { .. };
+    var sized = false;      // --size WxH given, standing for a device's screen
     var i = 1;
     while i < argv.len {
         let a = argv[i];
@@ -102,7 +107,7 @@ fn parse(argv: u8[:][>..]) -> Flags {
             let w, h, found = split_once(v, "x");
             let x, ok_x = parse_int(w);
             let y, ok_y = parse_int(h);
-            if found && ok_x && ok_y { f.width = x; f.height = y; }
+            if found && ok_x && ok_y { f.width = x; f.height = y; sized = true; }
             if v == "full" { f.full = true; }
         }
         if a == "--theme" && theme::by_name(v) >= 0 { f.theme = theme::by_name(v); }
@@ -132,6 +137,8 @@ fn parse(argv: u8[:][>..]) -> Flags {
             }
             if good { f.inset = float4 { max(d[0], 0.0), max(d[1], 0.0), max(d[2], 0.0), max(d[3], 0.0) }; }
         }
+        if a == "--touch" && v == "on" { f.touch = 1; }
+        if a == "--touch" && v == "off" { f.touch = 0; }
         if a == "--density-floor" {
             let x, ok = parse_flt(v);
             if ok { f.density_floor = x as f32; }
@@ -198,5 +205,6 @@ fn parse(argv: u8[:][>..]) -> Flags {
             if ok { f.bench = clamp(n, 1, 1000); }
         }
     }
+    if f.touch < 0 && (sized || f.dp > 0 || f.inset.x >= 0.0) { f.touch = 1; }
     return f;
 }
