@@ -482,8 +482,17 @@ fn aa_resources(g: Gpu&, aa: i32) {
     if aa == AA_FXAA && g.fxaa.id == 0 { g.fxaa = module(embed_file("../app/shaders/fxaa.blob")); }
     if aa == AA_SMAA && g.smaa_edges.id == 0 {
         let smaa = embed_file("../app/shaders/smaa.blob");
-        g.smaa_edges = ngfx::pipeline(smaa, "edges_vertex", "edges_fragment", ngfx::PipelineDesc {});
-        g.smaa_weights = ngfx::pipeline(smaa, "weights_vertex", "weights_fragment", ngfx::PipelineDesc {});
+        // The edges pass marks the pixels it finds an edge on with depth 0 (its triangle's
+        // z; where it finds none it discards, leaving the cleared 1), and the weights pass,
+        // drawn at the same z, tests it equal: the early depth test skips the pixels with
+        // no edge, whose weights are 0, as the cleared target holds them. SMAA's reference
+        // does it with a stencil, which ngfx has none of; the pass's own depth is free by
+        // then and holds no stencil.
+        g.smaa_edges = ngfx::pipeline(smaa, "edges_vertex", "edges_fragment",
+                                      ngfx::PipelineDesc { depth_test: true, depth_write: true,
+                                                           depth_compare: ngfx::COMPARE_ALWAYS });
+        g.smaa_weights = ngfx::pipeline(smaa, "weights_vertex", "weights_fragment",
+                                        ngfx::PipelineDesc { depth_test: true, depth_compare: ngfx::COMPARE_EQUAL });
         g.smaa_blend = ngfx::pipeline(smaa, "blend_vertex", "blend_fragment", ngfx::PipelineDesc {});
         g.area = ngfx::texture2d(160, 560, ngfx::RG8, ngfx::SAMPLED);
         ngfx::update_texture(g.area, embed_file("../app/shaders/smaa_area.bin"));
@@ -967,7 +976,11 @@ fn antialias(g: Gpu&, target: ngfx::Texture, size: int2) {
         let steps = [g.smaa_edges, g.smaa_weights, g.smaa_blend];
         let into = [g.edges, g.weights, target];
         for p, i in steps {
-            ngfx::begin_pass(into[i], ngfx::Texture { 0 }, float4_0);
+            // The edges and the weights with the pass's depth (above), the edges clearing it.
+            var pass = ngfx::PassDesc { color_value: float4_0, clear_depth: i == 0 };
+            pass.color[0] = into[i];
+            if i < 2 { pass.depth = g.depth; }
+            ngfx::begin_pass(pass);
             ngfx::bind(p);
             ngfx::draw(ngfx::root(r), 3);
             ngfx::end_pass();
@@ -1226,8 +1239,11 @@ fn warm(g: Gpu&, k: i64) {
         // edges for RG8.
         var into = ngfx::PassDesc {};
         into.color[0] = g.warm_color;
-        let post = [g.down, g.fxaa, g.smaa_weights, g.smaa_blend];
+        let post = [g.down, g.fxaa, g.smaa_blend];
         for q in post { if q.id != 0 { ngfx::prepare(q, into); } }
+        // SMAA's weights test the depth its edges wrote (antialias).
+        into.depth = g.warm_depth;
+        if g.smaa_weights.id != 0 { ngfx::prepare(g.smaa_weights, into); }
         if g.smaa_edges.id != 0 {
             let rg = ngfx::render_target(4, 4, ngfx::RG8);
             into.color[0] = rg;
