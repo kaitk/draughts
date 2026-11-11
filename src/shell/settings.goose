@@ -642,6 +642,17 @@ fn preview(p: Page&, page: float4, u: f32, n: i64, shown: bool = true) {
     p.room3d = preview_room(page, size);
 }
 
+// On a desktop the preview's top level with the game group's glass at `top`, flat or 3D
+// (task 068): centered down the page it stood lower than the groups beside it, which
+// start under the title row (the user, 2026-11-11). Its size stays; it only moves up.
+fn level(p: Page&, top: f32, u: f32, n: i64) {
+    let b = p.board.board;
+    if b.z > 0.0 && top < b.y { p.board = board::layout_at(b.x, top, b.z, u, n); }
+    guard p.room3d.z > 0.0 else { return; }
+    let r = view3d::fit(view3d::Camera {}, n, p.room3d, view3d::MIDDLE).rect;
+    if top < r.y { p.room3d = float4 { r.x, top, r.z, r.w }; }
+}
+
 // Where the screen's parts go in `area` (Page). It declares nothing and changes nothing.
 fn layout(s: Settings&, g: gui::Gui&, area: float4) -> Page {
     let u = g.scale;
@@ -705,6 +716,7 @@ fn layout(s: Settings&, g: gui::Gui&, area: float4) -> Page {
         p.head = at[0];
         p.glass = [at[1], at[2]];
         p.bleed[1] = float4 { area.x, area.y, area.z, area.w + g.insets.w };   // no bleed at the foot
+        if gui::desktop_scale > 0.0 { level(p, at[1].y, u, n); }
         return p;
     }
     // The title row, the board as large as the rest leaves, and the groups side by side

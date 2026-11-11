@@ -463,6 +463,21 @@ fn framed_in(area: float4, s: f32, wide: f32 = FRAME_WIDE) -> float4 {
     return float4 { area.x + 0.5 * (area.z - w), area.y + m, w, h };
 }
 
+// The flat board's frame on a desktop: framed_in's, and where the width holds the board
+// under the height (a window not much wider than tall), only as tall as the board and its
+// margins, centered down the window, so the board's top stays level with the panels'
+// rather than sitting below them (task 068, the user 2026-11-11).
+fn flat_frame(area: float4, s: f32) -> float4 {
+    var f = framed_in(area, s);
+    guard gui::desktop_scale > 0.0 else { return f; }
+    let h = landscape_board(f, s) + 2.0 * GAP * s;
+    if h < f.w {
+        f.y += 0.5 * (f.w - h);
+        f.w = h;
+    }
+    return f;
+}
+
 // The same in `area`, a screen's safe area, at s pixels a dp, with the 3D board's panels
 // round the flat board (task 054): in landscape its short corner panels (flat_corners);
 // in portrait, for the game (`game`), the bar and the play as wide as the 3D board's,
@@ -473,7 +488,7 @@ fn layout_in(area: float4, n: i64, s: f32, small: bool = true, game: bool = fals
     let height = area.w;
     let phone = gui::phone(area, s);   // NARROW panels
     if landscape(area, s) {
-        let framed = framed_in(area, s);
+        let framed = flat_frame(area, s);
         return flat_corners(framed, n, s, landscape_board(framed, s));
     }
     let bar = portrait_bar(area, s, small, game, game);
@@ -550,7 +565,7 @@ fn flat_corners(area: float4, n: i64, s: f32, size: f32) -> Layout {
 fn puzzle_in(area: float4, n: i64, s: f32) -> Layout {
     var l = layout_in(area, n, s, false);
     guard columns(l) else { return l; }
-    l.right.w = min(CORNER_PUZZLE * s, framed_in(area, s).w - 2.0 * GAP * s);
+    l.right.w = min(CORNER_PUZZLE * s, flat_frame(area, s).w - 2.0 * GAP * s);
     l.taken_as = TAKEN_NONE;
     return l;
 }

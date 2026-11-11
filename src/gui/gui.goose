@@ -31,16 +31,25 @@ var display_scale: f32 = 0.0;
 // points a dp, the display's scale × DESKTOP_DP pixels, so a large window or a full
 // screen gives its room to the board and keeps the controls the size a mouse wants,
 // where the short side / 800 would grow them as for a hand. 0.75 (2026-11-11): an 88 dp
-// row is 66 points, a 17 dp note about 13. The app sets desktop_scale on a desktop unless
-// --touch asks for a touch screen's sizes; 0 is no ceiling (a phone, a tablet, the tests).
+// row is 66 points, a 17 dp note about 13. The ceiling grows with the window's shorter
+// side, from DESKTOP_DP at DESKTOP_SMALL points to DESKTOP_DP_LARGE at DESKTOP_LARGE (a
+// 27" screen's full window), as the board's frame does (panel::framed_in): at 0.75 the
+// controls looked too small on a 27" screen, seen from further away (task 068, the user
+// 2026-11-11). The app sets desktop_scale on a desktop unless --touch asks for a touch
+// screen's sizes; 0 is no ceiling (a phone, a tablet, the tests).
 let DESKTOP_DP = 0.75;
+let DESKTOP_DP_LARGE = 0.9;
+let DESKTOP_SMALL = 1000.0;
+let DESKTOP_LARGE = 1440.0;
 var desktop_scale: f32 = 0.0;
 
 // The layout's scale, pixels a dp, on a screen width × height pixels: from the whole
 // screen's shorter side, its insets included, so it is the same in both orientations.
 fn scale_of(width: f32, height: f32) -> f32 {
     let s = max(min(width, height) / short_dp, density_floor * display_scale);
-    return if desktop_scale > 0.0 { min(s, DESKTOP_DP * desktop_scale) } else { s };
+    guard desktop_scale > 0.0 else { return s; }
+    let k = clamp((min(width, height) / desktop_scale - DESKTOP_SMALL) / (DESKTOP_LARGE - DESKTOP_SMALL), 0.0, 1.0);
+    return min(s, (DESKTOP_DP + (DESKTOP_DP_LARGE - DESKTOP_DP) * k) * desktop_scale);
 }
 
 // What a quad is, as the UI shader draws it.

@@ -89,6 +89,12 @@ let GEAR_W = 440.0;         // the menu's with the gear beside the wordmark;
 let PAIR_W = 330.0;         // each of two side by side where one is too tall (a phone),
 let PAIR_LEAST = 290.0;     // narrowing to this to keep clear of the way out
 let PAIR_GAP = 24.0;
+// On a desktop (gui::desktop_scale) the column's content starts DESKTOP_TOP dp from the
+// top rather than centered down it, and is DESKTOP_COLUMN_W dp wide at least: centered on
+// a large window the menu floated in the column's middle, and the setup's choices were
+// cramped (task 068, the user 2026-11-11).
+let DESKTOP_TOP = 40.0;
+let DESKTOP_COLUMN_W = 440.0;
 
 let LEVEL_KEYS = [strings::PICK_EASY, strings::PICK_MEDIUM, strings::PICK_HARD];
 let LEVEL_NOTES = [strings::LEVEL_EASY, strings::LEVEL_MEDIUM, strings::LEVEL_HARD];
@@ -214,8 +220,10 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, s: settings::Settings&
         // the height at most, 40 dp from the column. Where the board would reach the way
         // out (a phone), it moves down to 8 dp under it or narrows to 16 dp left of it,
         // whichever leaves it larger.
-        let wide = if pair { 2.0 * pair_w + PAIR_GAP } else if setup == NO_SETUP && gear_beside(true, height, u) { GEAR_W }
-                   else { COLUMN_W };
+        let narrow = if pair { 2.0 * pair_w + PAIR_GAP } else if setup == NO_SETUP && gear_beside(true, height, u) { GEAR_W }
+                     else { COLUMN_W };
+        let desktop = gui::desktop_scale > 0.0;
+        let wide = if desktop && !pair { max(narrow, DESKTOP_COLUMN_W) } else { narrow };
         let w = wide * u;
         col = float4 { area.x - 32.0 * u, area.y, w + 112.0 * u, height };
         content = gui::center(float4 { area.x + 40.0 * u, area.y, w, height }, w, content_h);
@@ -224,6 +232,7 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, s: settings::Settings&
         if setup == NO_SETUP && gear_beside(true, height, u) {
             content.y = min(max(content.y, area.y + 8.0 * u), area.y + height - content_h);
         }
+        if desktop { content.y = max(area.y, min(area.y + DESKTOP_TOP * u, area.y + height - content_h)); }
         let stage = float4 { w + 80.0 * u, 0.0, width - w - 80.0 * u, height };
         side = area.x + stage.x;
         var size = min(0.7 * height, stage.z - 80.0 * u);
