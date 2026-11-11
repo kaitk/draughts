@@ -61,3 +61,17 @@ set_source_files_properties(${GOOSE_PROGRAM_C} PROPERTIES COMPILE_DEFINITIONS "m
 # The generated C warns of what Goose has checked already, as goose build compiles it.
 set_source_files_properties(${GOOSE_RUNTIME_C} PROPERTIES COMPILE_OPTIONS "-w")
 set_source_files_properties(${GOOSE_GFX_SRC}/ui/ui_nuklear.c PROPERTIES COMPILE_OPTIONS "-w")
+
+# --- goose-ngfx, for the ngfx build (scripts/ios.py --ngfx, task 065) ----------------------
+# Its CMake builds NoGraphicsAPI and the layer for the SDK, its shaders compiled for it.
+# goose.h, which the layer and the program's C include, is the compiler's: the one it wrote
+# for the package's build on the Mac (scripts/ios.py finds it).
+set(GOOSE_NGFX "" CACHE PATH "A goose-ngfx checkout, for the ngfx build")
+set(GOOSE_H_DIR "" CACHE PATH "The folder of the compiler's goose.h, for the ngfx build")
+if(GOOSE_NGFX)
+    enable_language(CXX OBJCXX)
+    add_subdirectory("${GOOSE_NGFX}" goose_ngfx EXCLUDE_FROM_ALL)
+    target_include_directories(ngfx PRIVATE "${GOOSE_H_DIR}")
+    target_include_directories(main PRIVATE "${GOOSE_H_DIR}")
+    target_link_libraries(main PRIVATE ngfx)
+endif()

@@ -1,22 +1,22 @@
-at rest: focus 0, lit 0, clicked nothing, acted false, animating false
-enter with no focus: focus 0, lit 0, clicked nothing, acted false, animating false
-down: the primary: focus 2, lit 2, clicked nothing, acted false, animating true
-  a frame on: focus 2, lit 2, clicked nothing, acted false, animating true
-  resting: focus 2, lit 2, clicked nothing, acted false, animating false
-down: focus 3, lit 3, clicked nothing, acted false, animating true
-down at the last row: stays: focus 3, lit 3, clicked nothing, acted false, animating true
-up: focus 2, lit 2, clicked nothing, acted false, animating true
-up: focus 1, lit 1, clicked nothing, acted false, animating true
-right: the tile in line: focus 11, lit 11, clicked nothing, acted false, animating true
-down: focus 13, lit 13, clicked nothing, acted false, animating true
-right: the dimmed tile skipped for the one above: focus 12, lit 12, clicked nothing, acted false, animating true
-left: the tile in line: focus 11, lit 11, clicked nothing, acted false, animating true
-enter: focus 11, lit 11, clicked tile 11, acted true, animating true
-  a frame on: focus 11, lit 11, clicked nothing, acted false, animating true
-the mouse moves over row 1: focus 0, lit 1, clicked nothing, acted false, animating true
-enter, the mouse leading: focus 0, lit 1, clicked nothing, acted false, animating true
-up: the primary again: focus 2, lit 2, clicked nothing, acted false, animating true
-  the pointer resting over row 1: focus 2, lit 2, clicked nothing, acted false, animating true
+at rest: focus 0, lit 0, rings 0, clicked nothing, acted false, animating false
+enter with no focus: focus 0, lit 0, rings 0, clicked nothing, acted false, animating false
+down: the primary: focus 2, lit 2, rings 1, clicked nothing, acted false, animating true
+  a frame on: focus 2, lit 2, rings 1, clicked nothing, acted false, animating true
+  resting: focus 2, lit 2, rings 1, clicked nothing, acted false, animating false
+down: focus 3, lit 3, rings 1, clicked nothing, acted false, animating true
+down at the last row: stays: focus 3, lit 3, rings 1, clicked nothing, acted false, animating true
+up: focus 2, lit 2, rings 1, clicked nothing, acted false, animating true
+up: focus 1, lit 1, rings 1, clicked nothing, acted false, animating true
+right: the tile in line: focus 11, lit 11, rings 1, clicked nothing, acted false, animating true
+down: focus 13, lit 13, rings 1, clicked nothing, acted false, animating true
+right: the dimmed tile skipped for the one above: focus 12, lit 12, rings 1, clicked nothing, acted false, animating true
+left: the tile in line: focus 11, lit 11, rings 1, clicked nothing, acted false, animating true
+enter: focus 11, lit 11, rings 1, clicked tile 11, acted true, animating true
+  a frame on: focus 11, lit 11, rings 1, clicked nothing, acted false, animating true
+the mouse moves over row 1: focus 0, lit 1, rings 0, clicked nothing, acted false, animating true
+enter, the mouse leading: focus 0, lit 1, rings 0, clicked nothing, acted false, animating true
+up: the primary again: focus 2, lit 2, rings 1, clicked nothing, acted false, animating true
+  the pointer resting over row 1: focus 2, lit 2, rings 1, clicked nothing, acted false, animating true
 another screen: focus 2
   the next frame: focus 41
   declared deaf: offered 0

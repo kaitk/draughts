@@ -1,6 +1,6 @@
 // The app's development flags, for trying it and for screenshots (docs/development.md,
-// "Run on the Mac"): each is `--name value` but --reset-skill, which takes none. A field
-// left at its default means the flag wasn't given, and the player's settings or the
+// "Run on the Mac"): each is `--name value` but --reset-skill and --no-vsync, which take
+// none. A field left at its default means the flag wasn't given, and the player's settings or the
 // app's default hold. --theme, --hints, --lang, --background, and --board override the
 // settings for the run without changing them, unless a tap in settings writes them.
 namespace flags;
@@ -93,6 +93,10 @@ struct Flags {
     // --reset-skill: the playing player back to easy, the computer's skill at every level
     // at its start with the first steps to come, kept in their file; stars and games stay
     reset_skill: bool,
+    // --no-vsync: presents without waiting for the display, to measure frames uncapped
+    // (task 070): gfx's NO_VSYNC, or ngfx's in its build; both turn the Metal layer's
+    // display sync off
+    no_vsync: bool,
 }
 
 // The flags in a program's arguments; one it doesn't know, or a value it can't read, is
@@ -105,6 +109,11 @@ fn parse(argv: u8[:][>..]) -> Flags {
         let a = argv[i];
         if a == "--reset-skill" {
             f.reset_skill = true;
+            i += 1;
+            continue;
+        }
+        if a == "--no-vsync" {
+            f.no_vsync = true;
             i += 1;
             continue;
         }

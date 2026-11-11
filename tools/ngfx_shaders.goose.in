@@ -1,0 +1,22 @@
+// Compiles the goose-ngfx build's shaders ahead (task 065): each Slang module named on
+// the command line into ngfx's blob, which the app embeds (embed_file) and hands to
+// ngfx::pipeline, so the app runs no shader compiler. scripts/ngfx.py fills in the
+// package's path and runs it: `goose run ngfx_shaders.goose <out dir> <file.slang>...`.
+import std;
+import os;
+import ngfx from "@NGFX@";
+
+fn main() {
+    let a = args();
+    guard a.len >= 3 else { abort("usage: ngfx_shaders <out dir> <file.slang>..."); }
+    let out = a[1];
+    for i in 2..a.len {
+        let path = a[i];
+        let blob = ngfx::slang_file(path);
+        var name = path;
+        // The file's name: after the last slash or backslash.
+        for j in path.len { if path[j] == '/' || path[j] == '\\' { name = path[j + 1..]; } }
+        let stem = name[..name.len - 6];
+        guard write_file(str(out, "/", stem, ".blob"), blob) else { abort(str("can't write ", stem, ".blob")); }
+    }
+}

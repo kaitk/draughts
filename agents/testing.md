@@ -339,6 +339,22 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   "graphics" rows are the GPU's) and kill it. Headless, settings and the 3D game read
   600 MB and more of graphics that falls over seconds, with either background, so
   compare two runs of the same screen only (task 044, 2026-11-09).
+- Memory experiments on the Mac without windows (task 065, 2026-11-11): the flat and 3D
+  games headless (`GOOSE_GFX_HEADLESS=1 ... --board flat --screen game --frames
+  100000000`, `footprint` after 14 s) read the same MB run to run, so a change to ngfx
+  can be tried there and only the result measured in a window (`--rest`). `vmmap -w PID`
+  lists the regions behind `footprint`'s rows: "IOAccelerator (graphics)" is GPU memory
+  mapped into the process (CPU-visible heaps such as ngfx's 4 MB upload staging and its
+  frame memory, and the driver's command memory), "owned unmapped (graphics)" the
+  GPU-only heaps and textures; their sizes tell chunks, staging, and screens apart.
+  Instruments' Game Memory template sat stopped at launch here, and `screencapture` has
+  no permission from the agent's shell ("could not create image"): count presented
+  frames from the app instead (`ngfx::frame_count()`).
+- On the ngfx build, `--bench`'s waited frame and its CPU time include waiting for a
+  free drawable, which a frame's first pass into the screen does since the screen is
+  the window's image (2026-11-11): flat 8.3 ms waited and 3.7 ms CPU against gfx's 4.8
+  and 0.1 at the same 120 fps presented. Compare the presented rate and the 3D board's
+  waited time, which the drawable doesn't hold up.
 - To shoot an animation at a known moment (a ring's pulse, a flash) in two builds, hold
   the copy's clock: `now` fixed at T until the taps are made, then at T + L
   (`tapped >= taps.len`), so the launch's own time doesn't shift the tap. A clock that
@@ -353,6 +369,35 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
 - The prototypes' painter (`Paint` in `prototypes/draughts.js`) is a port of the piece
   shader, so a native crop beside the prototype's at the same scale shows a shader
   change exactly (the stacked king was checked that way).
+
+## Screenshots and windows on Windows
+
+- `GOOSE_GFX_HEADLESS=1` in the environment makes both builds headless (gfx's and
+  ngfx's `open`): `--frames N` then saves `draughts.png` in the working folder and exits.
+  Headless loops run about 3,500 frames a second, so `--frames` is wall time too short
+  for the 3D board: at 80 it hasn't appeared, and ngfx's board, whose preparing takes
+  longer, is still fading in at 3,000 when gfx's is done. Shoot the 3D board settled at
+  `--frames 20000` (about 6 s), portrait too (2026-11-11).
+- To compare the ngfx build with gfx, run both with the same flags in folders of their
+  own and diff the PNGs (mean, max, pixels over 2, 8, and 32, and the box they're in).
+  A one-off script in the scratchpad does it; settled, the flat board is within 1 of 255
+  everywhere and the 3D board differs along edges and in the wood's grain.
+- A real window is driven from Python with ctypes, no real cursor moved: find the app's
+  window by its process id (`EnumWindows`), post `WM_MOUSEMOVE`, `WM_LBUTTONDOWN`, and
+  `WM_LBUTTONUP` with client coordinates (SDL takes them; the draw-on-demand wait wakes
+  on them), resize with `SetWindowPos`, and grab the client area with
+  `PIL.ImageGrab.grab(bbox=..., all_screens=True)` after `SetForegroundWindow`. Call
+  `SetProcessDPIAware()` first. A game on the 3D board is played by clicking squares
+  mapped through a homography of the field's four inner corners (at 1280 × 800 with the
+  default camera: 355,190 · 928,190 · 1028,693 · 245,693), mirrored on black's turn, when
+  the board turns. Settings at 1280 × 800: Back 100,74; the themes' tiles at y 512, x 230
+  (winter) to 524 (autumn); Flat and Raised at 230,610 and 328,610; the photo and plain
+  tiles at 80,522 and 143,522 (2026-11-11).
+- Changing the theme or board in a window writes `%APPDATA%\kaitk\draughts\player-1.txt`:
+  copy the folder aside first and put it back after.
+- `scripts/windows_perf.py` measures another build with `EXE=build/ngfx/draughts.exe`
+  and adds flags to each run with `FLAGS`; PresentMon's GPU busy time is the one frame
+  time both builds report alike, since both wait on the display.
 
 ## Rules
 
@@ -540,6 +585,19 @@ How task 056 found which frames were late and why (2026-11-10):
   (200 MB exported for 40 s: parse it with `iterparse`), and
   `ca-client-buffer-wait-interval`. A 50 ms stall every 5.00 s from the recording's start
   is most likely Instruments' own.
+- **The GPU's own time on the Mac** (task 070, 2026-11-11), the one measure both builds
+  give alike: in `metal-gpu-intervals`, the app's rows (`process` names it), the union of
+  all of them in a window of presents, whatever their `event-depth`. Depth isn't
+  nesting but Instruments stacking intervals that run at once, so depth 0 alone
+  undercounts gfx by a third. `gpu-performance-state-intervals` gives the GPU's clock
+  state over the same window; compare builds only at the same mix (full screen the 3D
+  bench runs at Maximum, a window moves between Medium and Maximum). The bench's phases
+  are its last 4 × N presents (3D) or 2 × N (flat), in order. gfx's waited phases cost
+  its MSAA about 1 ms more fragment time than its loop's frames (the pass split at the
+  flush), so compare the loop's. ngfx's `GOOSE_NGFX_BENCH=1` stamps span both of a
+  frame's submissions and the wait for a drawable between them: not a GPU time. An
+  `xctrace record` can hang after its app exits, at 100% CPU and deaf to SIGINT: run each
+  under a watchdog that kills it after 2 minutes. The parsing scripts were one-offs.
 - **The iPhone:** Animation Hitches only (`scripts/ios_perf.py`; its tables
   `display-surface-swap`, `displayed-surfaces-interval`, `display-surface-queue`,
   `metal-command-buffer-completed`). Under Metal System Trace the app's loop runs at 120

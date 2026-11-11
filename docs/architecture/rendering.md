@@ -405,7 +405,11 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   `--mouse X,Y` holds the pointer at a window pixel for a shot.
 - **The keys' focus**: the arrow keys move a focus among the controls and Enter or Space
   presses the focused one, as a release over it would (`gui::focus_keys`, `gui::hold`).
-  The focus is lit as the mouse's hover is, on any platform. Each `gui::hold` offers its
+  The focused control is lit as the mouse's hover lights one and ringed: a 2 dp ring in
+  the glow color 3 dp outside its own shape, tile, row, or disc, its corners grown to
+  match (`gui::RING_W`, `RING_GAP`; the hold's ring quad at that width, which `gui::add`
+  puts after the control's first quad), so it shows on a control lit already (a primary
+  row, a chosen tile) and is never taken for the mouse's softer light. On any platform. Each `gui::hold` offers its
   control (`gui::Spot`, its id and rect, in a fixed array the frame fills), but not the
   controls of a screen a transition leaves or a whole-screen catch such as who's
   playing's dimmed home. The next frame's `gui::begin` moves the focus: the first arrow

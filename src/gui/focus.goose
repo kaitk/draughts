@@ -33,6 +33,7 @@ fn focus_keys(g: Gui&, input: Input) {
     g.focused = if at >= 0 { g.spots[at] } else { Spot {} };
     g.spots.clear();
     g.deaf = false;
+    g.ring = false;
 }
 
 // Spot i of the control id the last frame offered, or -1.
