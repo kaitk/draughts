@@ -199,7 +199,7 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
     let m = BUTTON_MARGIN * s;
     let phone = gui::phone(area, s);   // NARROW panels
     if landscape(area, s) {
-        let area = framed_in(area, s);
+        let area = framed_in(area, s, FRAME_WIDE_3D);
         let width = area.z;
         let height = area.w;
         let side = (if phone { NARROW } else { SIDE }) * s;
@@ -443,20 +443,23 @@ fn landscape(area: float4, s: f32) -> bool {
 // panels stand in a wider frame on every side, so the flat board is 92% of the height it
 // would fill on a window up to FRAME_SMALL points tall, easing to 85% at FRAME_LARGE (a
 // 27" screen), and still level with the panels at the top; and the frame is at most
-// FRAME_WIDE times as wide as tall, centered, so on a wide screen the panels stay near
-// the board rather than at its far edges. From margin to margin the board crowded a large
+// FRAME_WIDE times as wide as tall (FRAME_WIDE_3D round the 3D board, whose wide near
+// edge must clear the panels: narrower, it shrank under them and sat lower than their
+// tops), centered, so on a wide screen the panels stay near the board rather than at its
+// far edges. From margin to margin the board crowded a large
 // screen, and the panels stood small and far apart (the user, 2026-11-11). A phone and a
 // tablet keep every dp for the board.
 let FRAME_SMALL = 1000.0;
 let FRAME_LARGE = 1440.0;
 let FRAME_WIDE = 1.45;
-fn framed_in(area: float4, s: f32) -> float4 {
+let FRAME_WIDE_3D = 1.7;
+fn framed_in(area: float4, s: f32, wide: f32 = FRAME_WIDE) -> float4 {
     guard gui::desktop_scale > 0.0 else { return area; }
     let k = clamp((area.w / gui::desktop_scale - FRAME_SMALL) / (FRAME_LARGE - FRAME_SMALL), 0.0, 1.0);
     // A share of the height less the margins on each side: 4% leaves the board 92%, 7.5% 85%.
     let m = (0.04 + 0.035 * k) * (area.w - 2.0 * GAP * s);
     let h = area.w - 2.0 * m;
-    let w = min(area.z - 2.0 * m, FRAME_WIDE * h);
+    let w = min(area.z - 2.0 * m, wide * h);
     return float4 { area.x + 0.5 * (area.z - w), area.y + m, w, h };
 }
 

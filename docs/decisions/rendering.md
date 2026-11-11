@@ -65,8 +65,11 @@ On a desktop the landscape board, flat or 3D, and its corner panels stand in a f
 whole layout, not a smaller board alone, keeps the board's top level with the panels'.
 The user found 85% of the full board the most pleasing on a large screen and 92% right
 on a smaller one, so the frame grows with the window's height, from 4% of it a side up
-to 1000 points to 7.5% at 1440. It is at most 1.45 times as wide as tall: on a 27"
-screen the panels at the window's edges stood small and far from the board. The 3D board
+to 1000 points to 7.5% at 1440. It is at most 1.45 times as wide as tall round the flat
+board: on a 27" screen the panels at the window's edges stood small and far from the
+board. Round the 3D board 1.7: at 1.45 its near edge, which must clear the panels, held
+it, so it shrank, sat lower than the panels' tops, and pressed against them; from 1.7
+its height holds it, its top level with theirs. The 3D board
 is framed with its panels: framing the panels alone shrank it about as much, since its
 near edge must clear them, and left the two boards' screens unlike.
 

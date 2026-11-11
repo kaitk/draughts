@@ -102,8 +102,8 @@ There the game's and a puzzle's landscape board, flat or 3D, and corner panels a
 in a wider frame (`panel::framed_in`): on every side 4% of the height less the margins on
 a window up to 1000 points tall, easing to 7.5% at 1440 (a 27" screen), so the flat board
 is 92% of what it would fill, down to 85%, its top still level with the panels'; and at
-most 1.45 times as wide as tall, centered, so on a wide screen the panels stay near the
-board. A MacBook's full screen (1728 × 1080) is about 91% and barely narrowed; a 27"
+most 1.45 times as wide as tall round the flat board and 1.7 round the 3D one, centered,
+so on a wide screen the panels stay near the board. A MacBook's full screen (1728 × 1080) is about 91% and barely narrowed; a 27"
 screen's 85%, its panels moved in from the edges.
 
 Each screen lays out its taps and words inside the window's **safe area**: the window less
