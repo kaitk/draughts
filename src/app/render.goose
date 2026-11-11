@@ -3,13 +3,12 @@
 // pieces, and the season's photograph with its blurred copies (draw, scene), the 3D
 // board (draw3d over render3d), the UI's quads with the text's and the badges' textures
 // and the seasons' thumbnails (widgets). The app hands it plain values (Frame) and the
-// bytes it builds (the glyphs, the badges), and holds no gfx handle of its own. A second
-// renderer (goose-ngfx, docs/product.md) replaces this file and the drawers under it;
-// what the packages fill stays as it is.
+// bytes it builds (the glyphs, the badges), and holds no GPU handle of its own. The
+// drawers are renderer-free; their `_gpu` recorders and gpu.goose are gfx's, or
+// goose-ngfx's in the build scripts/ngfx.py makes.
 namespace render;
 import std;
 import vec;
-import gfx;
 
 import board from "../board";
 import gui from "../gui";
@@ -63,16 +62,15 @@ fn new(kind: i64, plain: bool, f: flags::Flags&) -> Renderer {
     return r;
 }
 
-// --aa msaa|smaa|off, how the 3D pass is antialiased (task 071's comparison, as the ngfx
-// build's --aa), read here as it is this build's alone; render3d::AA without it.
+// --aa, how the 3D pass is antialiased (task 071's comparison), by the names of the
+// renderer's ways (render3d::aa_named: off, msaa, and smaa on gfx; off, fxaa, smaa, and
+// ssaa on ngfx); render3d::AA without it or with a name it hasn't.
 fn aa_flag() -> i32 {
     let a = args();
     for i in 1..a.len - 1 {
         guard a[i] == "--aa" else { continue; }
-        let v = a[i + 1];
-        if v == "off" { return render3d::AA_OFF; }
-        if v == "msaa" { return render3d::AA_MSAA; }
-        if v == "smaa" { return render3d::AA_SMAA; }
+        let aa = render3d::aa_named(a[i + 1]);
+        if aa >= 0 { return aa; }
     }
     return render3d::AA;
 }
@@ -100,7 +98,7 @@ fn thumbs(r: Renderer&) { if r.w.thumbs.id == 0 { r.w.thumbs = scene::thumbs(); 
 fn has_thumbs(r: Renderer&) -> bool { r.w.thumbs.id != 0 }
 
 // Submits what is drawn and waits for the GPU (the benches).
-fn wait() { gfx::flush(); }
+fn wait() { gpu::flush(); }
 
 // The 3D board: whether it is ready on n squares for the theme and background drawn (it
 // gets ready a step a frame as it is drawn, draw3d::prepare), whether an image of it
@@ -138,7 +136,7 @@ fn frame(r: Renderer&, f: Frame&) {
     draw::upload(r.d, f.board, f.over, f.layout, width, height, !f.raised);
     // No depth target: nothing tests depth, and asking for the screen's would make gfx
     // keep a window-sized one (patches/goose_gfx/0003).
-    gfx::begin_pass(gfx::screen(), gfx::Texture { 0 }, r.d.colors.page);
+    gpu::begin_pass(gpu::screen(), r.d.colors.page);
     if f.raised {
         draw::photo(r.d, f.blur, f.now, width, height, draw3d::shows(r.d3) && !draw3d::appearing(r.d3, f.now));
         draw3d::show(r.d3, f.blur, f.place, f.fade, f.size, f.now);
@@ -147,5 +145,5 @@ fn frame(r: Renderer&, f: Frame&) {
     }
     widgets::frame(r.w, f.quads, f.clip, r.d.scene, r.d.colors, width, height, f.hole, f.tall);
     draw::overlay(r.d, f.now, f.hole, f.tall);
-    gfx::end_pass();
+    gpu::end_pass();
 }
