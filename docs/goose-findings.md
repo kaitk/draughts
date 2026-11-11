@@ -9,6 +9,19 @@ Pull requests the user opens, not yet opened (2026-11-11): the goose_gfx patches
 stack on which), to `aardappel/goose_gfx`; and `kaitk/NoGraphicsAPI`'s `astc-6x6`, ASTC
 6 × 6, to `sebbbi/NoGraphicsAPI`. An entry's "Upstream" line says what each proposes.
 
+## Goose: no way to write `goose.h` for a build of one's own (2026-11-11)
+
+A package's C that takes a `u8[>..]&` includes `goose.h` (`gs_rref`, `gs_bld_append`),
+which the compiler writes only beside the native parts it builds itself. `goose -o`
+with `--emit-runtime` gives a program's C and the runtime's for a build of one's own (the
+iOS and Android builds here), but no `goose.h`, and `--header` writes a C host's header
+without `gs_bld_append`. goose-ngfx's C needs it on iOS. Goose v2026.4.
+
+- Here: `scripts/ios.py`'s `goose_h` takes the `goose.h` the compiler wrote for
+  goose-ngfx's Mac build under `~/.goose/build/pkg/local/`, so the ngfx tree's blob
+  compiler (`scripts/ngfx.py`) has to have run first.
+- Upstream: `goose --emit-header goose.h`, beside `--emit-runtime`.
+
 ## goose_gfx: no window without its GPU device (2026-11-11)
 
 `gfx::open` makes an SDL_GPU device and claims the window for it, and `frame()` presents

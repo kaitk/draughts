@@ -1,7 +1,7 @@
 # 065: The NoGraphicsAPI renderer through goose-ngfx
 
-Status: in-progress (on the `ngfx` branch; steps 1 to 7 on Windows, 2026-11-11; the Mac
-to run)
+Status: in-progress (on the `ngfx` branch; steps 1 to 7 on Windows and the Mac, and the
+iPhone, 2026-11-11; memory next)
 
 Draw Draughts through goose-ngfx (github.com/kaitk/goose-ngfx, NoGraphicsAPI over Metal 4
 and Vulkan 1.4) on devices that have it: Apple silicon Macs, later iPads and iPhones, and
@@ -371,6 +371,41 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
   the photograph's and the UI's kept layers are the app's design on both builds, not
   copies ngfx adds. Both screen changes are below, as follow-ups.
 
+### 2026-11-11, on the iPhone 13 mini (A15, iOS 26)
+
+- **goose-ngfx for iOS** (branch `ios`, `fe0b1e5` and `080ea34`, not released yet): its
+  CMake compiles the layer's two shaders for the SDK it builds for (`iphoneos` for iOS
+  and iPadOS, whose Metal loads no macOS metallib); `NGFX_METAL_SDK=iphoneos` makes
+  `ngfx::slang_file` on a Mac write blobs for iOS; on the device `ngfx::slang` fails at
+  once, saying to compile ahead, as iOS runs no subprocess. NoGraphicsAPI built for iOS
+  26 as it was. The device only; the simulator untried.
+- **Draughts on it**: `scripts/ios.py --device --ngfx` builds `scripts/ngfx.py`'s tree in
+  `build/ngfx/ios/tree/` with iOS blobs, and `ios/CMakeLists.txt` adds goose-ngfx's
+  CMake when `GOOSE_NGFX` is set; iOS 26 minimum for that build. `goose.h`, which ngfx's
+  C includes, is the one the compiler wrote for ngfx's Mac build (`ios.py`'s
+  `goose_h`): Goose writes it only for the native parts it builds itself
+  (`docs/goose-findings.md`). The build installs under the gfx build's bundle id, in its
+  place, keeping the app's data: a new id of the paid team was refused at launch while
+  the phone was offline ("Unable to verify app"), and the comparison reinstalls the
+  signed gfx build kept in `build/ios/gfx-signed/`. Online, a new id would likely verify;
+  untried since.
+- **On the iPhone**: home, the flat and 3D games, rotation, and settings all work
+  (checked by the user); gfx's `WINDOW_ONLY` window, UIKit's Metal view, the safe area,
+  and the run-loop wait needed nothing new. The first build presented a locked 30 fps:
+  ngfx left NoGraphicsAPI's swapchain at two drawables, and on the A15 `nextDrawable`
+  then waited for every other refresh. Three, as SDL_GPU has, give 60.
+- **Numbers** (`scripts/ios_perf.py`, Russian, wood, the start, 1000 frames; the gfx
+  build's from the README's table, as Instruments wouldn't attach to it this session):
+  flat, 982 frames on the display at 60 Hz, 2 dropped, waited P50 7.48 / P99 7.74 ms; 3D
+  with the shadow map, 983 frames, 2 dropped, waited P50 9.9 / P99 11.2 ms (the app's own
+  count, run alone: 9.7 / 10.45); both a locked 60 like gfx's. At rest (`--rest 25`): 0
+  frames drawn, 0.13% CPU, footprint flat 98 MB against gfx's 59, 3D 298 MB against
+  gfx's 204. The memory gap is the Mac's (below, "Later"), smaller at the phone's
+  1080 × 2338.
+- **iPadOS**: no iPad at hand. Its layouts are the app's, the same on both renderers and
+  checked headless on the Mac in task 050, so nothing was rerun; ngfx on an M-series iPad
+  is untried.
+
 ### Left for the Mac
 
 - **goose-ngfx v0.3.0 on Metal 4**: its tests and samples at the v2026.4 pin, which have
@@ -444,7 +479,15 @@ Not opened yet; the user opens them (2026-11-11):
 - **SMAA's targets**: its edges and weights could share memory with other per-frame
   targets, or the edges pass write a stencil that the weights pass tests, as SMAA's
   reference does, if the Mac's numbers ask for it.
-- ngfx on iPad and iPhone; the Steam builds (task 064).
+- **ngfx on an iPad**, and goose-ngfx's `ios` branch released (v0.4.1) once it has run
+  there or the user decides it's enough; the simulator, if Metal 4 runs there.
+- **Displays over 60 Hz** (the user, 2026-11-11): ProMotion iPhones need
+  `CADisableMinimumFrameDurationOnPhone` in the Info.plist, or iOS holds third-party apps
+  to 60, and `ios_perf.py` reads `HZ = 60` where it should read the display's rate. The
+  same for both renderers; no 120 Hz iPhone here.
+- **The memory on iOS**: ngfx holds 39 MB (flat) and 94 MB (3D) more than gfx at rest on
+  the iPhone; the follow-ups above are where it goes.
+- The Steam builds (task 064).
 
 ## Acceptance criteria
 
