@@ -94,6 +94,10 @@ fn shown3d(r: Renderer&) -> bool { draw3d::shows(r.d3) }
 fn appearing3d(r: Renderer&, now: f64) -> bool { draw3d::appearing(r.d3, now) }
 fn moving3d(r: Renderer&) -> bool { r.d3.fresh || draw3d::greying(r.d3) }
 
+// A frame that draws nothing: the 3D board's pass gives back its targets once it has
+// rested long enough (draw3d::rest); the seconds till then, or -1.
+fn rest(r: Renderer&, now: f64) -> f64 { draw3d::rest(r.d3, now) }
+
 // Gives back all the 3D board holds, if anything, and puts the flat game's cover back
 // under a resizing window (resize.c).
 fn drop3d(r: Renderer&) {

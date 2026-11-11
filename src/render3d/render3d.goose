@@ -18,7 +18,8 @@
 // hint's ring) are drawn apart, over the kept image in the screen's pass each frame
 // (marks_over), against a 1x depth of the board kept with the image. No post pass, no
 // discard, nothing temporal. Nothing is made or released while drawing but the targets
-// on a resize, and the kept depth the first time marks pulse.
+// on a resize, and the pass's targets, the kept backdrop, and the kept depth again after
+// rest() gave them back once the app drew nothing for a while.
 namespace render3d;
 import std;
 import vec;
@@ -149,6 +150,7 @@ struct Gpu {
     frame_albedo:   gfx::Texture,
     frame_normal:   gfx::Texture,
     frame_rows:     i64,            // the frame map's rows: model3d::FRAME_MAP, or the mitred bands'
+    frame_flat:     bool,           // frame_normal is flat_frame()'s 4 × 4, not the map's
     photo:          gfx::Texture,
     shadow_map:     gfx::Texture,
     color:          gfx::Texture,   // the multisampled target and its depth
@@ -303,8 +305,10 @@ fn bake_surfaces(g: Gpu&, plan: bool = true, frame: bool = true) {
         bake(g, g.plan_albedo, g.plan_normal, model3d::PLAN_SIZE, model3d::PLAN_SIZE, 0.0, model3d::plan_extent(), t);
     }
     if frame {
+        full_frame(g);
         let rows = g.frame_rows;
         bake(g, g.frame_albedo, g.frame_normal, model3d::FRAME_MAP, rows, 1.0, model3d::frame_extent(rows), t);
+        flat_frame(g);
     }
     gfx::flush();
 }
@@ -321,34 +325,58 @@ fn baked(w: i64, h: i64, format: i32) -> gfx::Texture {
                                            width: w as i32, height: h as i32, mips: mips as i32 });
 }
 
-// The multisampled target, its depth, and the kept image, at `size`; made again only
-// when the size changes.
+// The kept image at `size`, made again only when the size changes; the pass's own
+// targets when draw() needs them (pass_targets), the kept backdrop and depth when it
+// keeps them.
 fn targets(g: Gpu&, size: int2) {
-    if g.color.id != 0 { gfx::release(g.color); }
-    if g.depth.id != 0 { gfx::release(g.depth); }
+    give_back(g);
     if g.image.id != 0 { gfx::release(g.image); }
-    g.color = gfx::Texture { 0 };
-    if g.samples > 1 {
+    g.image = gfx::render_target(size.x, size.y, gfx::RGBA8);
+    g.kept_for[0] = float4_0;
+    g.size = size;
+}
+
+// The pass's multisampled target and its depth at g.size, made for a draw after rest()
+// gave them back.
+fn pass_targets(g: Gpu&) {
+    if g.samples > 1 && g.color.id == 0 {
         g.color = gfx::texture(gfx::TextureDesc { format: gfx::RGBA8, usage: gfx::COLOR_TARGET,
-                                                  width: size.x, height: size.y,
+                                                  width: g.size.x, height: g.size.y,
                                                   samples: g.samples });
     }
     // 16-bit depth is plenty between NEAR 2 and FAR 40 for a scene 10 to 20 away (a step
     // about 0.003 at 20, under the marks' 0.004 lift), and half of 32-bit's memory, which
     // SDL can't keep in tile memory: 20 MB less at 4× on the Pixel 7a.
-    g.depth = gfx::texture(gfx::TextureDesc { format: gfx::DEPTH16, usage: gfx::DEPTH_TARGET,
-                                              width: size.x, height: size.y,
-                                              samples: g.samples });
-    g.image = gfx::render_target(size.x, size.y, gfx::RGBA8);
-    if g.kept_backdrop.id != 0 { gfx::release(g.kept_backdrop); }
-    g.kept_backdrop = gfx::render_target(size.x, size.y, gfx::RGBA8);
-    g.kept_for[0] = float4_0;
-    g.size = size;
-    if g.kept_depth.id != 0 {
-        gfx::release(g.kept_depth);
-        g.kept_depth = depth_target(size);
+    if g.depth.id == 0 {
+        g.depth = gfx::texture(gfx::TextureDesc { format: gfx::DEPTH16, usage: gfx::DEPTH_TARGET,
+                                                  width: g.size.x, height: g.size.y,
+                                                  samples: g.samples });
     }
 }
+
+// Gives back what only drawing the board needs once the app is at rest: the pass's
+// targets, the depth kept for the pulsing marks, and the kept backdrop, which the
+// screen's frames grade live from the photograph till the next draw() keeps it again.
+// The kept image shows the board until it changes; the next draw() makes the rest again.
+// Not while drawing: it submits what was recorded, as released textures are freed after
+// the next submit is done, and none comes at rest.
+fn rest(g: Gpu&) {
+    give_back(g);
+    gfx::flush();
+}
+
+// rest()'s releases, also before a resize's new targets.
+fn give_back(g: Gpu&) {
+    let held = [g.color, g.depth, g.kept_depth, g.kept_backdrop];
+    for t in held { if t.id != 0 { gfx::release(t); } }
+    g.color = gfx::Texture { 0 };
+    g.depth = gfx::Texture { 0 };
+    g.kept_depth = gfx::Texture { 0 };
+    g.kept_backdrop = gfx::Texture { 0 };
+}
+
+// Whether rest() has anything to give back.
+fn resting(g: Gpu&) -> bool { g.color.id == 0 && g.depth.id == 0 && g.kept_depth.id == 0 && g.kept_backdrop.id == 0 }
 
 // The kept depth: 1x, 16-bit as the pass's, sampled by the pulsing marks.
 fn depth_target(size: int2) -> gfx::Texture {
@@ -489,8 +517,31 @@ fn theme_begin(g: Gpu&, which: i64, n: i64) -> bool {
         g.frame_albedo = baked(model3d::FRAME_MAP, rows, gfx::RGBA8_SRGB);
         g.frame_normal = baked(model3d::FRAME_MAP, rows, gfx::RGBA8);
         g.frame_rows = rows;
+        g.frame_flat = false;
     }
+    full_frame(g);
     return true;
+}
+
+// A flat marble frame's normal is the same everywhere (BAKE_FRAG writes it so, and its
+// mips are it too): once baked, its map, 22 MB with mips, is given back for a 4 × 4 of
+// that value, which samples the same. full_frame() makes the map again to bake into.
+fn flat_frame(g: Gpu&) {
+    let t = look(g, g.look);
+    guard !g.frame_flat && marbled(g, t) else { return; }
+    gfx::release(g.frame_normal);
+    g.frame_normal = gfx::render_target(4, 4, gfx::RGBA8);
+    let half: f32 = 128.0 / 255.0;
+    gfx::begin_pass(g.frame_normal, gfx::Texture { 0 }, float4 { half, half, 1.0, 1.0 });
+    gfx::end_pass();
+    g.frame_flat = true;
+}
+
+fn full_frame(g: Gpu&) {
+    guard g.frame_flat else { return; }
+    gfx::release(g.frame_normal);
+    g.frame_normal = baked(model3d::FRAME_MAP, g.frame_rows, gfx::RGBA8);
+    g.frame_flat = false;
 }
 
 // apply()'s photograph (`photo`, -1 the look's own) blurred and its ambient taken, when
@@ -546,6 +597,7 @@ fn theme_step(g: Gpu&, which: i64, n: i64, photo: i64, k: i64) {
 
 // apply()'s end: the key light, and the look's colors in the frame's block.
 fn theme_end(g: Gpu&, which: i64, n: i64) {
+    flat_frame(g);
     let t = look(g, which);
     // The key light, from the upper left; the photograph's ambient.
     light(g);
@@ -717,6 +769,7 @@ fn place(g: Gpu&, inst: const float4[:], alphas: const f32[:], squares: const fl
 fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int2, shadow_every: bool = false,
         backdrop: bool = true, keep_depth: bool = false) {
     if size.x != g.size.x || size.y != g.size.y { targets(g, size); }
+    pass_targets(g);
     let target = if out.id == 0 { g.image } else { out };
     g.frame.view_proj = view_proj;
     g.frame.eye = model3d::f4(eye, 1.0);
@@ -942,6 +995,7 @@ fn backdrop(g: Gpu&, alpha: f32, size: int2) {
 // it as it was. Recording only.
 fn keep_backdrop(g: Gpu&, size: int2) {
     guard !g.live && !kept_current(g, size) else { return; }
+    if g.kept_backdrop.id == 0 { g.kept_backdrop = gfx::render_target(size.x, size.y, gfx::RGBA8); }
     var pass = gfx::PassDesc { clear_color: false };
     pass.color[0] = g.kept_backdrop;
     gfx::begin_pass(pass);

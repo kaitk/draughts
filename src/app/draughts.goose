@@ -248,10 +248,13 @@ fn main() {
             host::release_memory();
             released = true;
         }
-        // A running clock is drawn when the time it shows changes, and the computer's move
-        // played when it is due; a timer wakes the loop then, rather than whenever the
-        // idle wait ends (wake.c).
-        let next = shell::wake_in(sh, now, HINT_POLL);
+        // A running clock is drawn when the time it shows changes, the computer's move
+        // played when it is due, and the 3D board's pass gives back its targets a second
+        // after it last drew (draw3d::rest); a timer wakes the loop then, rather than
+        // whenever the idle wait ends (wake.c).
+        let resting = if !drew && !hidden { render::rest(rd, now) } else { -1.0 };
+        var next = shell::wake_in(sh, now, HINT_POLL);
+        if resting >= 0.0 && (next < 0.0 || resting < next) { next = resting; }
         if next >= 0.0 && (wake_at < now || now + next < wake_at - 0.005) {
             host::wake_in((1000.0 * next) as i64 + 2);
             wake_at = now + next;

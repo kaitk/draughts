@@ -35,6 +35,7 @@ import gfx;
 struct Drawer {
     gpu:       render3d::Gpu                         = default<render3d::Gpu>(),
     ready:     bool                                  = false,
+    drawn_at:  f64                                   = 0.0,   // when the pass last drew (rest)
     kind:      i64                                   = -1, // the app's theme the board was set up with
     plain:     bool                                  = false, // and whether behind it the plain fade
     which:     i64                                   = -1, // the board drawn (the shell's which())
@@ -287,6 +288,21 @@ fn drop(d: Drawer&) {
     d = Drawer { wood: d.wood, marble: d.marble, summer: d.summer, spring: d.spring, timed: d.timed, .. };
 }
 
+// How long the 3D board's pass keeps its targets after it last drew: a hover or a drag
+// draws it again soon, and a move seconds later makes them again once (render3d::rest).
+let REST = 1.0;
+
+// At rest, a frame that draws nothing: what only drawing the board needs given back once
+// it hasn't drawn for REST (render3d::rest), made again by the next draw. The seconds
+// till then, for a wake, or -1 with nothing to give back.
+fn rest(d: Drawer&, now: f64) -> f64 {
+    guard d.ready && !render3d::resting(d.gpu) && !d.drawn.pulsing else { return -1.0; }
+    let left = d.drawn_at + REST - now;
+    guard left <= 0.0 else { return left; }
+    render3d::rest(d.gpu);
+    return -1.0;
+}
+
 // Draws the frame board::fill left in b, on the flat layout l, seen through v, into the
 // kept image if anything it shows changed; the app's theme `kind` with the photograph or
 // the `plain` fade behind it, the screen `size`. `which` tells the boards apart (the
@@ -372,6 +388,7 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
     let vp = gfx::mat4 { c0: m.c0, c1: m.c1, c2: m.c2, c3: m.c3 };
     render3d::draw(d.gpu, vp, v.eye, gfx::Texture { 0 }, size, false, false, s.pulsing);
     d.drawn = d.scene;
+    d.drawn_at = now;
     if d.appear_at < 0.0 { d.appear_at = now; }
     // A new theme's first image: back from grey.
     if d.grey_to > 0.0 { grey_towards(d, 0.0, now); }
