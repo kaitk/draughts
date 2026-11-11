@@ -49,13 +49,17 @@ is trying ngfx and falling back, not a list of devices kept here:
 
 ## Steps, in order
 
-1. **One copy of the drawing.** Split each twin into what to draw (layout, quads,
+1. **ngfx in main as a build option** (first, the user, 2026-11-11: the refactor below
+   touches `src/app/` all over, which other sessions change daily, so it is done on main
+   in small commits rather than on a branch rebased by hand). Merge `ngfx` into main:
+   `scripts/ngfx.py`, `src/ngfx/`, patch 0008, and its docs and tasks; the gfx build is
+   unchanged and still what ships. Then the `ngfx` branch is retired (deleted locally and
+   on origin once main is pushed, after asking).
+2. **One copy of the drawing.** Split each twin into what to draw (layout, quads,
    instances, uniforms, the passes' order: one module, renderer-free, as `model3d` is
    for the 3D board) and recording it (a small module per renderer). Both builds stay
    as they are on screen, compared against shots before (flat identical, 3D within
-   task 065's margins).
-2. **ngfx in main as a build option.** `scripts/ngfx.py` and `src/ngfx/` on main; the
-   `ngfx` branch retired. The gfx build is unchanged and still what ships.
+   task 065's margins). One twin at a time, each its own commit.
 3. **Both in one executable.** Draughts' one SDL for both (as task 065 left it); ngfx's
    code loaded only where it can run: Metal 4 behind `@available` with weak links, or
    ngfx in a library the app opens only on macOS and iOS 26. Which of the two, decided
@@ -67,8 +71,27 @@ is trying ngfx and falling back, not a list of devices kept here:
    gfx; Windows on the RTX 4090 ngfx and with `--renderer gfx` gfx; the tablet, the
    Pixel 7a, and the A33 gfx; the shots, `--rest`, and `--bench` of each as task 065's.
 
+## Where it stands (2026-11-11)
+
+- `ngfx` is main's history (merge base `c779f02`) with 35 commits on top, pushed to
+  origin at `005c58d`. Its last commit, `16d44ab` (task 072's focus ring), is another
+  session's, made while the main checkout was on `ngfx`: it belongs on main, and the
+  merge takes it there; check with the user that task 072 didn't also put it on main.
+- Before merging, the main checkout must have no uncommitted changes in the files the
+  merge touches (task 072's session had `src/gui/gui.goose` and the scroll test open).
+  Never commit with `-a` there: other sessions' changes sit in the same tree.
+- Building ngfx: `NGFX=~/projects/goose/goose-ngfx` and
+  `NGFX_SLANGC=~/projects/goose/slang/bin/slangc` in every shell, then
+  `python3 scripts/ngfx.py src/app/draughts.goose` (`build/ngfx/draughts`); gfx is
+  `scripts/mac.py src/app/draughts.goose`. Both need `third_party/goose_gfx` and its
+  SDL and nuklear checked out (`git submodule update --init` there, then the same in
+  `third_party/goose_gfx`).
+- The shots to compare against: headless at 1280 × 800, 3D cases at `--frames 20000`
+  (`agents/testing.md`), taken from both builds before step 2 starts.
+
 ## Acceptance criteria
 
+- [ ] ngfx on main as a build option, the gfx build unchanged
 - [ ] The drawing in one copy, both renderers' shots as before
 - [ ] One executable per platform holding both renderers, starting on Apple systems
       without Metal 4
