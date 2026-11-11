@@ -64,6 +64,10 @@ find out by compiling, so the next session doesn't.
   modules it uses (`import std; import vec;`). Without the `namespace` line its functions
   are unknown from the importer (`unknown function: name::f`), with no error in the file
   itself (2026-11-09).
+- A package's file can share the package's own namespace: `src/gui/focus.goose` starts
+  with `namespace gui;` and `gui.goose` imports it with `import .focus;`, so its types and
+  functions stay `gui::Spot`, `gui::offer`, and each file uses the other's freely
+  (2026-11-11). A big file splits this way with no call site changed.
 - A package's files see each other's namespaces without importing them: `panel.goose`
   uses `clock::` because `game.goose` imports `.clock`. From outside, a file's namespace
   is reached by its own name (`home::COMPUTER` after `import shell`), never
