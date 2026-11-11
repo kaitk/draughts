@@ -127,3 +127,8 @@ count.repeated = Kordus
 game.lookout = Valvur
 game.hint = Vihje
 game.where_to = Kuhu?
+
+settings.moves = Käigud
+moves.hidden = Peidus
+moves.list = Käigud
+moves.marks = Hinnangud

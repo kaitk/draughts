@@ -128,3 +128,8 @@ count.repeated = Repeat
 game.lookout = Lookout
 game.hint = Hint
 game.where_to = Where to?
+
+settings.moves = Move list
+moves.hidden = Off
+moves.list = Moves
+moves.marks = Marks
