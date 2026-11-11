@@ -50,9 +50,20 @@ settings, and the X is gone. The hover's light is too faint for a focus: Quit fo
 shows only a faint outline, and Continue, primary and so lit already, shows no change at
 all. The focus's own look is the next thing to agree.
 
-Left for step 5: a focused control in a scrolled list (the puzzles, settings on a phone)
-isn't scrolled into view; a hold tile (who's playing's start again and remove) takes no
-Enter; holding an arrow doesn't repeat (gfx reports a key's first press only).
+## Next session (agreed 2026-11-11)
+
+The rest of step 5, in this order:
+
+1. A focused control in a scrolled list (the puzzles' library and pages, settings on a
+   phone) scrolled into view: `gui::scroll_begin` knows the list's view and offset, and
+   the focused spot's rect says how far it lies outside.
+2. Hold tiles (who's playing's start again and remove, `gui::hold_tile`) filled by Enter
+   held while focused, as a held press fills them: `gui::Input` needs Enter's held state
+   beside `confirm`.
+3. Arrow keys repeating while held (gfx reports a key's first press only): a delay and
+   rate kept in `host`, from `gfx::key_down`.
+4. The board with the keys: a cursor on the squares, Enter choosing a piece and its
+   target, flat and 3D; its look likely task 067's lit square, to agree with the user.
 
 ## Acceptance criteria
 
