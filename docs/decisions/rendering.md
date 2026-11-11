@@ -73,6 +73,25 @@ its height holds it, its top level with theirs. The 3D board
 is framed with its panels: framing the panels alone shrank it about as much, since its
 near edge must clear them, and left the two boards' screens unlike.
 
+Tuned by eye on the Mac and a 27" screen (task 068, the user, 2026-11-11):
+
+- The ceiling grows from 0.75 points a dp at a 1000-point shorter side to 0.9 at 1440:
+  at 0.75 the controls looked too small on a 27" screen, seen from further away. A
+  MacBook's full screen moves only to about 0.78.
+- Where the width holds the flat board (1280 × 800), its frame shrinks to the board's
+  height and centers: the board, centered down a taller frame, sat 25 points below the
+  panels' tops. Settings' preview moves up to the game group's top for the same reason
+  (it was centered down the page beside groups that start under the title row).
+- Home's menu and the setups start at the column's top, 440 dp wide at least: centered
+  on a large window the menu floated in the middle, and the setup's choices were cramped
+  in 360 dp.
+- Thinner tiles and narrower side padding on a desktop were tried on the game's left
+  corner and set aside for now: 88 dp is written out about 60 times, and the panels'
+  heights (`panel::CORNER_H` 352, `CORNER_PUZZLE` 504, `CORNER_PLAY` 368, `TALL_H`)
+  are tuned numbers rather than sums of their rows, so each screen would need its own
+  desktop branch. Task 069 first names the tap's height once and derives the panels'
+  heights from their rows; a desktop height is then one value.
+
 ### Small windows
 
 iPadOS 26's resizable windows got the compact layout (2026-11-09, task 050). Headless, the

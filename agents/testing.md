@@ -204,6 +204,9 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   `gfx::inject_mouse` is ignored by a window started from a terminal, which never has
   focus (`--rest` drew 0 frames even with moves across tiles). Rest the real mouse
   over the window during `--rest` instead (2026-11-11).
+- Shoot a few runs per command (up to about four) with a short `alarm` (30 s for a flat
+  `--frames 300`): fifteen runs under `alarm 90` in one command once sat for over 8
+  minutes with nothing to show (2026-11-11).
 - Shots scripted in a shell loop hang until killed when the app inherits the loop's
   stdin or writes stdout to a file: run each from `src/app` with `< /dev/null` and
   output to `/dev/null`, outside the sandbox, and `perl -e 'alarm 25; exec @ARGV'` in

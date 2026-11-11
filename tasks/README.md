@@ -71,7 +71,8 @@ Open:
 - Later: 010 goose_gfx changes to propose upstream (alongside), 013 season effects, 014
   upscaled backgrounds, 026 the first start and tutorial, 060 shared blocks for a second
   board game (chess), 064 Steam for Windows, macOS, and Linux (low priority, scoped only), with 067 the
-  board under the mouse lit and 068 the desktop's layout tuned before it.
+  board under the mouse lit 068 the desktop's layout tuned before it, and 069 the layout's sizes named so a desktop's
+  tiles can be thinner.
 
 ## Next (updated 2026-11-10)
 

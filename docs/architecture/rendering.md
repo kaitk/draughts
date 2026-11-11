@@ -92,7 +92,8 @@ pixels, and the floor there would make shots depend on the Mac's screen.
 **A desktop** (the Mac, Windows) is laid out for a mouse: the scale has a ceiling of
 0.75 points a dp, `min(…, gui::DESKTOP_DP × display scale)` (`gui::desktop_scale`, the
 window's display scale, read each frame), so an 88 dp row is 66 points and a 17 dp note
-about 13 whatever the window's size. A window under 600 points tall shrinks as before; a
+about 13; from a shorter side of 1000 points the ceiling grows, to 0.9 at 1440 (a 27"
+screen's full window, `gui::DESKTOP_DP_LARGE`), where an 88 dp row is 79 points. A window under 600 points tall shrinks as before; a
 larger one, or a full screen, keeps its controls that size and gives the room to the
 board (a 1280 × 800 window lays out 1067 dp across its short side, a full 1728 × 1080
 MacBook screen 1440). The flag `--touch on` lays a desktop's window out as a touch
@@ -104,7 +105,14 @@ a window up to 1000 points tall, easing to 7.5% at 1440 (a 27" screen), so the f
 is 92% of what it would fill, down to 85%, its top still level with the panels'; and at
 most 1.45 times as wide as tall round the flat board and 1.7 round the 3D one, centered,
 so on a wide screen the panels stay near the board. A MacBook's full screen (1728 × 1080) is about 91% and barely narrowed; a 27"
-screen's 85%, its panels moved in from the edges.
+screen's 85%, its panels moved in from the edges. Where the width holds the flat board
+under the height (a 1280 × 800 window), its frame is only as tall as the board and its
+margins, centered down the window (`panel::flat_frame`), so the board's top still meets
+the panels'. Settings' preview, flat or 3D, stands with its top level with the game
+group's glass (`settings::level`), and home's column holds the menu or a setup 40 dp from
+its top, at least 440 dp wide (`home::DESKTOP_TOP`, `DESKTOP_COLUMN_W`), rather than
+centered down it. Each only moves things or widens the column on a desktop; a touch
+screen's layout is unchanged.
 
 Each screen lays out its taps and words inside the window's **safe area**: the window less
 its insets, a phone's camera cutout and its gesture bar at the bottom. SDL reports them
