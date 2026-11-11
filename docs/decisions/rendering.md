@@ -60,11 +60,15 @@ less than the tiles), which would double every layout's dp values (about 330 of 
 in 16 files) and the sizes the tests check. At 1200 dp (0.67 points) the notes were 11
 points, too small.
 
-On a desktop the landscape flat board and its corner panels stand in a frame 4% of the
-height wide on every side (2026-11-11): from margin to margin the board crowded a large
-screen. A frame round the whole layout, not a smaller board alone, keeps the board's top
-level with the panels'. Of 92% and 85% of the full board, the user found 85% the most
-pleasing but chose 92% as the compromise, keeping more of the board.
+On a desktop the landscape board, flat or 3D, and its corner panels stand in a frame
+(2026-11-11): from margin to margin the board crowded a large screen. A frame round the
+whole layout, not a smaller board alone, keeps the board's top level with the panels'.
+The user found 85% of the full board the most pleasing on a large screen and 92% right
+on a smaller one, so the frame grows with the window's height, from 4% of it a side up
+to 1000 points to 7.5% at 1440. It is at most 1.45 times as wide as tall: on a 27"
+screen the panels at the window's edges stood small and far from the board. The 3D board
+is framed with its panels: framing the panels alone shrank it about as much, since its
+near edge must clear them, and left the two boards' screens unlike.
 
 ### Small windows
 

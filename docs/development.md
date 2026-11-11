@@ -85,7 +85,9 @@ becomes `max(short side / 800, F × S)`; off by default, and `--dp` turns it off
 touch screen (`--touch on|off`: off by default, the controls a mouse's size; on with
 `--size WxH`, `--dp`, or `--inset`, which stand for a device, unless `--touch off` is
 given: `--size 1728x1080 --touch off` shows a MacBook's full screen as the app lays it
-out; [rendering](architecture/rendering.md#screen-sizes-and-the-safe-area)), and a frame to stop at and save as
+out, and `--display-scale` stands for another display's scale there, so `--size 1280x720
+--touch off --display-scale 1` draws a 27" 2560 × 1440 screen's pixels on a Retina Mac,
+whose window macOS would otherwise shrink to fit its own screen; [rendering](architecture/rendering.md#screen-sizes-and-the-safe-area)), and a frame to stop at and save as
 `draughts.png`. The Pixel 7a in portrait at 540 dp, its 118 px cutout and its 84 px
 gesture bar, 2 px a dp at that scale: `--size 450x1000 --dp 540 --inset 0,59,0,42`,
 and in landscape `--size 1200x540 --dp 540 --inset 59,0,0,42` (or `0,0,59,42`, turned

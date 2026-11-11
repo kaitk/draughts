@@ -199,6 +199,9 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
     let m = BUTTON_MARGIN * s;
     let phone = gui::phone(area, s);   // NARROW panels
     if landscape(area, s) {
+        let area = framed_in(area, s);
+        let width = area.z;
+        let height = area.w;
         let side = (if phone { NARROW } else { SIDE }) * s;
         let tall = min(CORNER_H * s, height - 2.0 * gap);
         let left = float4 { area.x + gap, area.y + gap, side, tall };
@@ -436,16 +439,25 @@ fn landscape(area: float4, s: f32) -> bool {
     return area.z >= area.w && landscape_board(area, s) >= HANDOVER * (area.w - 2.0 * GAP * s);
 }
 
-// On a desktop (gui::desktop_scale) the landscape flat board and its corner panels stand
-// in a wider frame, DESKTOP_FRAME of the height less the margins on every side, so the
-// board is 92% of the height it would fill and still level with the panels at the top:
-// on a large screen a board from margin to margin crowded the window (the user,
-// 2026-11-11). A phone and a tablet keep every dp for it.
-let DESKTOP_FRAME = 0.04;
+// On a desktop (gui::desktop_scale) the landscape board, flat or 3D, and its corner
+// panels stand in a wider frame on every side, so the flat board is 92% of the height it
+// would fill on a window up to FRAME_SMALL points tall, easing to 85% at FRAME_LARGE (a
+// 27" screen), and still level with the panels at the top; and the frame is at most
+// FRAME_WIDE times as wide as tall, centered, so on a wide screen the panels stay near
+// the board rather than at its far edges. From margin to margin the board crowded a large
+// screen, and the panels stood small and far apart (the user, 2026-11-11). A phone and a
+// tablet keep every dp for the board.
+let FRAME_SMALL = 1000.0;
+let FRAME_LARGE = 1440.0;
+let FRAME_WIDE = 1.45;
 fn framed_in(area: float4, s: f32) -> float4 {
     guard gui::desktop_scale > 0.0 else { return area; }
-    let m = DESKTOP_FRAME * (area.w - 2.0 * GAP * s);
-    return float4 { area.x + m, area.y + m, area.z - 2.0 * m, area.w - 2.0 * m };
+    let k = clamp((area.w / gui::desktop_scale - FRAME_SMALL) / (FRAME_LARGE - FRAME_SMALL), 0.0, 1.0);
+    // A share of the height less the margins on each side: 4% leaves the board 92%, 7.5% 85%.
+    let m = (0.04 + 0.035 * k) * (area.w - 2.0 * GAP * s);
+    let h = area.w - 2.0 * m;
+    let w = min(area.z - 2.0 * m, FRAME_WIDE * h);
+    return float4 { area.x + 0.5 * (area.z - w), area.y + m, w, h };
 }
 
 // The same in `area`, a screen's safe area, at s pixels a dp, with the 3D board's panels

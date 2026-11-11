@@ -141,7 +141,9 @@ fn main() {
         if mobile && f.display_scale < 0.0 { gui::display_scale = display[4]; }
         // A desktop's controls stay the size a mouse wants however large the window
         // (gui::desktop_scale), unless --touch lays it out as a touch screen.
-        if !mobile && f.touch != 1 { gui::desktop_scale = display[4]; }
+        // --display-scale stands for another display's (a 27" screen at 1: --size 1280x720
+        // --touch off --display-scale 1 on a Retina Mac draws its 2560 × 1440 pixels).
+        if !mobile && f.touch != 1 { gui::desktop_scale = if f.display_scale >= 0.0 { f.display_scale } else { display[4] }; }
         let scale = gui::scale_of(size.x, size.y);
         let e = if f.inset.x < 0.0 { float4 { display[0], display[1], display[2], display[3] } }
                 else { float4 { floor(f.inset.x * scale + 0.5), floor(f.inset.y * scale + 0.5),

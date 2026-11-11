@@ -98,9 +98,13 @@ board (a 1280 × 800 window lays out 1067 dp across its short side, a full 1728 
 MacBook screen 1440). The flag `--touch on` lays a desktop's window out as a touch
 screen's; `--size WxH`, `--dp`, and `--inset`, which stand for a device, imply it, so a
 shot of a device's layout is the same as before ([development](../development.md)).
-There the game's and a puzzle's landscape flat board and corner panels also stand in a
-wider frame, 4% of the height less the margins on every side (`panel::framed_in`), so
-the board is 92% of what it would fill, its top still level with the panels'.
+There the game's and a puzzle's landscape board, flat or 3D, and corner panels also stand
+in a wider frame (`panel::framed_in`): on every side 4% of the height less the margins on
+a window up to 1000 points tall, easing to 7.5% at 1440 (a 27" screen), so the flat board
+is 92% of what it would fill, down to 85%, its top still level with the panels'; and at
+most 1.45 times as wide as tall, centered, so on a wide screen the panels stay near the
+board. A MacBook's full screen (1728 × 1080) is about 91% and barely narrowed; a 27"
+screen's 85%, its panels moved in from the edges.
 
 Each screen lays out its taps and words inside the window's **safe area**: the window less
 its insets, a phone's camera cutout and its gesture bar at the bottom. SDL reports them
