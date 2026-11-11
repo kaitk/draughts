@@ -431,7 +431,7 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
         // Round the 3D board the panel is a short corner one (panel::corners_in): next
         // takes the shorter tile there.
         let next = gui::cut_bottom(right, if l.three { panel::STACK_H * u } else { panel::tall(l, u) });
-        if l.three { gui::cut_top(right, 8.0 * u); }
+        if l.three { gui::cut_top(right, 8.0 * u); } else { gui::cut_bottom(right, gui::PAD * u); }
         let f .= g.faces[gui::LABEL];
         let s .= g.faces[gui::SMALL];
         let words = f.ascent - f.descent + 4.0 * u + s.ascent - s.descent;

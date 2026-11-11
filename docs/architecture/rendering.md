@@ -378,22 +378,20 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   dp tall as a phone's, so the board keeps its 587 and 519 dp; the 3D screen's stay 232
   there. The flat screen has no round buttons (the 3D board's view, zoom, and showcase).
   In portrait the game's bar and play are as wide as the 3D screen's, the screen less the
-  margins, where the board is narrower (4:3 and a foldable in portrait). A puzzle keeps
-  the panels below. In landscape the board fills the height
-  less a 24 px margin, between two glass panels 232 px wide and as tall as it (where
-  that leaves the board under 720 px, the tablet's at 16:10, the panels narrow down to
-  192 px for it: 587 px at 4:3, 520 on a foldable; where the width holds the
-  board under 372 dp, a 16:9 phone less its cutout at a side, the panels stay 372 dp tall,
-  centered beside it): on the
+  margins, where the board is narrower (4:3 and a foldable in portrait). **A puzzle
+  takes the same corner panels** in landscape (`panel::puzzle_in`, 2026-11-11), its left
+  the game's and its play panel where the game's is, as tall as what it holds: 504 dp
+  (`panel::CORNER_PUZZLE`) for the piece over the goal, the stars, and next's tall tile,
+  less where the screen is shorter (395 dp on a phone at 480 dp, the piece then beside
+  the goal's icon); in portrait it keeps the bar and play below. The panels hold: on the
   left back (see "The way back" below) on its own glass tile, 88 px tall, over a panel
-  12 px under it holding settings and at the bottom start over, the column as tall as
-  the right panel; 88 px rows (the floor for
+  12 px under it holding settings and start over; 88 px rows (the floor for
   small hands) with 34 px icons and 24 px words (in a narrowed panel, where a word doesn't fit beside its icon,
   both icons over their words in 96 px rows); on the right whose turn it is (a 72 px piece of its color with
   the glow ring, 4 px of the glow color at 80% and a 22 px glow, over "White's turn"),
   or the two clocks, and at the bottom undo move, a tall 132 px tile with a 48 px icon
   over its word, on two lines where one is too wide ("Võta käik / tagasi" in a narrowed
-  panel), else in a smaller face (96 px in a panel under 420 px tall, a phone's, as a puzzle's next). In portrait the left side is a bar above the board, its three tiles in
+  panel), else in a smaller face (96 px in a phone's narrow corner panel, as a puzzle's next). In portrait the left side is a bar above the board, its three tiles in
   a row, back first, 88 px tall, thirds of it while each word fits, else each as wide as its word and
   an even share of the rest; where a third would be under 170 px (a phone),
   the bar is 8 px taller and each icon stands over its word, which needs less width. The

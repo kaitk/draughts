@@ -48,8 +48,7 @@ struct Help {
 
 let ROW_H = 88.0;           // dp: a control's row, the 88 dp a small hand needs
 let BACK_GAP = 12.0;        // dp: back over the left panel in landscape
-let TALL_H = 132.0;         // undo move in landscape, STACK_H in a panel under SHORT
-let SHORT = 420.0;          // dp: a panel this short (a phone) has the shorter tile
+let TALL_H = 132.0;         // undo move in landscape, STACK_H in a phone's narrow panel
 let WIDE_H = 88.0;          // undo move in portrait
 let CLOCK_H = 72.0;
 let SHORT_GAP = 36.0;       // dp: the clocks' gap holding the countdown's short line in a corner panel
@@ -58,7 +57,6 @@ let MID_GAP = 12.0;         // dp: either side of the short form between side-by
 let SIDE = 232.0;           // dp: each panel's width in landscape,
 let NARROW = 192.0;         // narrowing to this near square
 let BOARD = 720.0;          // dp: the board the panels narrow for, the tablet's at 16:10
-let PANEL_LEAST = 372.0;    // dp: a landscape panel's height at least, room for its tiles
 let STACK_H = 96.0;         // dp: a tile with its icon over its word
 let TOP = 120.0;            // dp: the bar above the board in portrait,
 let TOP_STACKED = 128.0;    // with its icons over their words where the bar is narrow:
@@ -79,17 +77,15 @@ let GAP_COMPACT = 16.0;
 let TALL_IN = float2 { 16.0, 20.0 };
 let WIDE_IN = float2 { 20.0, 16.0 };
 
-// How the panels stand round the board: in landscape as tall as it at its sides (a
-// puzzle's flat board), or short ones in the top corners (the game's flat board, and the
-// 3D board's); in portrait a bar above the board and the play below it, or in a small
-// window (gui::compact, task 050) each one row.
-let LANDSCAPE = 0;
+// How the panels stand round the board: in landscape short ones in the top corners (the
+// game's and a puzzle's, flat or 3D); in portrait a bar above the board and the play below
+// it, or in a small window (gui::compact, task 050) each one row.
 let CORNERS = 1;
 let PORTRAIT = 2;
 let COMPACT = 3;
 
 // Whether the panels are columns beside the board (landscape), not rows above and below it.
-fn columns(l: Layout) -> bool { l.mode == LANDSCAPE || l.mode == CORNERS }
+fn columns(l: Layout) -> bool { l.mode == CORNERS }
 
 // Where the board and the panels beside it go, in pixels. A 3D board (`three`) is drawn
 // through `view`, its bounds on screen view.rect; `board` is then the flat layout the
@@ -118,7 +114,7 @@ struct Layout {
     room:    float4       = float4 { 0.0, 0.0, 0.0, 0.0 },
     keep:    float4[4]    = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4],
     gap:     f32          = 0.0,
-    mode:    i64          = LANDSCAPE,
+    mode:    i64          = CORNERS,
     // The portrait bar's room for its three tiles inside its glass (task 050's compact
     // row too), above what each side has taken in a game; `stacked` where each icon goes
     // over its word (TOP_STACKED).
@@ -173,6 +169,7 @@ struct Taken {
 // PITCH_PORTRAIT makes it, steeper than landscape's to fill more of the height. A puzzle
 // shares it.
 let CORNER_H = 352.0;       // dp: a corner panel, room for three tiles with their icons over their words (back and a panel of two on the left)
+let CORNER_PUZZLE = 504.0;  // dp: a puzzle's play panel on the flat board, room for the piece over the goal, the stars, and next's tall tile
 let CORNER_PLAY = 368.0;    // dp: a phone's narrow play panel, room for whose turn and the eye, the hint over undo move
 let PITCH_LANDSCAPE: f32 = 52.5;
 let PITCH_PORTRAIT:  f32 = 65.0;
@@ -439,29 +436,16 @@ fn landscape(area: float4, s: f32) -> bool {
     return area.z >= area.w && landscape_board(area, s) >= HANDOVER * (area.w - 2.0 * GAP * s);
 }
 
-// The same in `area`, a screen's safe area, at s pixels a dp. The game's screen (`game`,
-// task 054) has the 3D board's panels round the flat board: in landscape its short
-// corner panels (flat_corners), in portrait the bar and the play as wide as the 3D
-// board's, and room for what each side has taken (task 052). A puzzle keeps the panels
-// as tall as the board.
+// The same in `area`, a screen's safe area, at s pixels a dp, with the 3D board's panels
+// round the flat board (task 054): in landscape its short corner panels (flat_corners);
+// in portrait, for the game (`game`), the bar and the play as wide as the 3D board's,
+// and room for what each side has taken (task 052), and for a puzzle its own bar and play
+// (puzzle_in).
 fn layout_in(area: float4, n: i64, s: f32, small: bool = true, game: bool = false) -> Layout {
     let width = area.z;
     let height = area.w;
-    let gap = GAP * s;
     let phone = gui::phone(area, s);   // NARROW panels
-    if landscape(area, s) {
-        let side = side_of(area, s);
-        let size = landscape_board(area, s);
-        if game { return flat_corners(area, n, s, size); }
-        let x = area.x + (width - (size + 2.0 * side + 2.0 * gap)) / 2.0;
-        let y = area.y + (height - size) / 2.0;
-        // The panels as tall as the board, or PANEL_LEAST where the width keeps the board
-        // shorter (a 16:9 phone less its camera's cutout at a side), centered beside it.
-        let tall = min(max(size, PANEL_LEAST * s), height - 2.0 * gap);
-        let py = area.y + (height - tall) / 2.0;
-        return Layout { board: board::layout_at(x + side + gap, y, size, s, n), left: float4 { x, py, side, tall },
-                        right: float4 { x + side + gap + size + gap, py, side, tall } };
-    }
+    if landscape(area, s) { return flat_corners(area, n, s, landscape_board(area, s)); }
     let bar = portrait_bar(area, s, small, game, game);
     let compact = bar.mode == COMPACT;
     let gap = bar.gap;
@@ -528,6 +512,16 @@ fn flat_corners(area: float4, n: i64, s: f32, size: f32) -> Layout {
     var l = Layout { board: board::layout_at(area.x + (width - size) / 2.0, area.y + (height - size) / 2.0, size, s, n),
                      left: left, right: right, mode: CORNERS, .. };
     under_left(l, area, s, (if phone { TAKEN_PHONE } else { TAKEN_D }) * s);
+    return l;
+}
+
+// A puzzle's layout on the flat board in `area` at s pixels a dp: layout_in's, in
+// landscape the play panel CORNER_PUZZLE tall for what it holds, and nothing taken shown.
+fn puzzle_in(area: float4, n: i64, s: f32) -> Layout {
+    var l = layout_in(area, n, s, false);
+    guard columns(l) else { return l; }
+    l.right.w = min(CORNER_PUZZLE * s, area.w - 2.0 * GAP * s);
+    l.taken_as = TAKEN_NONE;
     return l;
 }
 
@@ -855,13 +849,9 @@ fn inside(r: float4, room: float2, s: f32) -> float4 {
     return float4 { r.x + room.x * s, r.y + room.y * s, r.z - 2.0 * room.x * s, r.w - 2.0 * room.y * s };
 }
 
-// How tall the right panel's bottom tile is in landscape: TALL_H, or STACK_H in a panel
-// too short for it beside what is above it (a phone).
-fn tall(l: Layout, u: f32) -> f32 {
-    // A corner panel is short on every screen: the tall tile but in a phone's narrow one.
-    if l.mode == CORNERS { return (if l.right.z < SIDE * u - 0.5 { STACK_H } else { TALL_H }) * u; }
-    return (if l.right.w < SHORT * u { STACK_H } else { TALL_H }) * u;
-}
+// How tall the right panel's bottom tile is in landscape: TALL_H, or STACK_H in a phone's
+// narrow corner panel.
+fn tall(l: Layout, u: f32) -> f32 { (if l.right.z < SIDE * u - 0.5 { STACK_H } else { TALL_H }) * u }
 
 // The right panel's room inside its glass, where a screen plays.
 fn play_area(g: gui::Gui&, l: Layout) -> float4 { play_room(l, g.scale) }
@@ -930,7 +920,7 @@ fn column_play(l: Layout, w: Words, on: Shows, u: f32) -> Play {
     var right = play_room(l, u);
     // A corner panel's short line between the clocks takes from undo move what the
     // panel lacks, and leaves a gap above it.
-    let squeezed = l.mode == CORNERS && on.clocks && on.counting && !on.drawn;
+    let squeezed = on.clocks && on.counting && !on.drawn;
     let wanted = tall(l, u);
     let low = if squeezed { min(wanted, right.w - (2.0 * CLOCK_H + SHORT_GAP + 12.0) * u) } else { wanted };
     let head = if on.clocks { (2.0 * CLOCK_H + 10.0) * u } else { (18.0 + 72.0 + 18.0) * u + w.heading };
@@ -966,7 +956,7 @@ fn column_play(l: Layout, w: Words, on: Shows, u: f32) -> Play {
     } else {
         // The piece, its glow ring, and the words under it; both pieces for a draw. A
         // countdown in a 3D board's short corner panel closes the gaps up.
-        let close = (l.mode == CORNERS && on.counting) || tight;
+        let close = on.counting || tight;
         gui::cut_top(right, (if close { 8.0 } else { 18.0 }) * u);
         p.spot = gui::cut_top(right, 72.0 * u);
         if !column {
@@ -986,7 +976,7 @@ fn column_play(l: Layout, w: Words, on: Shows, u: f32) -> Play {
         gui::cut_left(pair_r, 4.0 * u);
         p.name = pair_r;
     }
-    if !(l.mode == CORNERS && on.clocks) { p.note = right; }
+    if !on.clocks { p.note = right; }
     return p;
 }
 

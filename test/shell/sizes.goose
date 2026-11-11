@@ -359,6 +359,16 @@ fn taken(g: gui::Gui&) {
                whole(fl.right.w / u), " dp, the 3D screen's ", whole(c3.left.z / u), " x ", whole(c3.left.w / u), " and ",
                whole(c3.right.z / u), " x ", whole(c3.right.w / u));
     }
+    // A flat puzzle's corner panels in landscape: its left the game's, its play panel
+    // where the game's is, only as tall as what it holds.
+    if wide {
+        let pz = panel::puzzle_in(safe, n, u);
+        let at = same(pz.left, fl.left)
+                 && same(float4 { pz.right.x, pz.right.y, pz.right.z, 0.0 }, float4 { fl.right.x, fl.right.y, fl.right.z, 0.0 });
+        format(line, "; a puzzle's panels ", if at { "the game's" } else { "apart from the game's" }, ", its play ",
+               whole(pz.right.w / u), " dp tall");
+        check("a puzzle's panels", if at { "" } else { "apart from the game's" });
+    }
     print(line);
 }
 

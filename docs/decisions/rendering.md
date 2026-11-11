@@ -166,6 +166,11 @@ are in git history before that day.
 - The flat game's controls are the 3D screen's (2026-11-09, task 054): the UI round the
   board only, the boards untouched. The board stayed as it was, and the flat screen's
   corner panels near square are no wider than the old panels, 192 dp.
+- A puzzle on the flat board takes the game's corner panels in landscape too
+  (2026-11-11), replacing its panels as tall as the board, which no screen uses now: the
+  two screens looked unrelated, settings far from start over. Its play panel is as tall
+  as what it holds, 504 dp, not the game's 352, at which the piece went beside the goal
+  and next shrank.
 - Landscape panels narrow to 192 px where the board would be under 720 px (2026-11-08).
   Rows are 88 px, the floor for small hands (2026-11-08). Portrait's bar tiles take each
   word's width and an even share of the rest where thirds don't fit (2026-11-08).
