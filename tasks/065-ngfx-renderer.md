@@ -260,6 +260,19 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
   passing). `src/ngfx/app/photo.c` uploads the embedded ASTC where it's supported, as
   gfx's does, and `scripts/ngfx.py` copies the ASTC masters into its tree, which it
   didn't: the photograph was the JPEG there before.
+- **The Mac's numbers** (a 1280 × 800 window, 2560 × 1600 pixels, the 120 Hz display;
+  the photograph ASTC on both). `--rest 15`: every build 0.03 to 0.05% CPU, 16 loops, 0
+  frames drawn (two ngfx runs 0.2% and 0.8%, a late wake from launch); the footprint
+  is the gap: the flat game 115 MB on gfx against 309 MB on ngfx, the 3D game 355 MB
+  against 614 MB (ngfx `off` 544, `fxaa` 544, `smaa` 614, `ssaa` 645). On Windows the
+  gap was 37 MB; here it's about 200 MB before the 3D board (below). `--bench 300`, two
+  runs each, waited P50 with the shadow map: gfx 5.49 / 5.54 ms; ngfx `off` 4.16 / 4.25,
+  `fxaa` 4.89 / 4.95, `smaa` 5.52 / 5.20, `ssaa` 5.39 / 6.00; flat, gfx 4.52 against
+  ngfx 4.71. Every build presented about 118 to 120 fps of 120, the 1% lows 60 to 101
+  and noisy run to run. The CPU a frame is 0.08 to 0.32 ms on both. On the M1 Pro
+  supersampling costs about 1.8 ms over `off` against SMAA's 1.0 to 1.3, so SMAA stays
+  the default; the antialiasing modes are measured again after the memory work, not
+  before.
 - **Upstream NoGraphicsAPI moved** (`ffd9f2a`, "Improve Metal 4 presentation and texture
   resource handling"): roots now need a 16-byte stride, which ngfx's two shaders fail
   (`static_assert` in `shader.slang`), and so would Draughts' roots. `astc-6x6` rebases
