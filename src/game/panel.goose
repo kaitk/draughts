@@ -45,8 +45,21 @@ struct Help {
     can:   bool = false,
 }
 
+// A panel's room inside its glass, in dp: IN_ACROSS across its narrow way and IN_ALONG
+// at its ends, so a tall one's (a landscape column, the play beside the board) is 16 at
+// the sides and 20 above and below, a wide one's (the bar, the play under the board) the
+// other way round.
+let IN_ACROSS = 16.0;
+let IN_ALONG = 20.0;
+let TALL_IN = float2 { IN_ACROSS, IN_ALONG };
+let WIDE_IN = float2 { IN_ALONG, IN_ACROSS };
+
+// The tiles, in dp: a control's row is a tap (gui::TAP); a tile with its icon over its
+// word 8 dp taller, for the word; undo move in landscape half again a tap, for its larger
+// icon (STACK_H in a phone's narrow panel).
+let STACK_H = gui::TAP + 8.0;
+let TALL_H = 1.5 * gui::TAP;
 let BACK_GAP = 12.0;        // dp: back over the left panel in landscape
-let TALL_H = 132.0;         // undo move in landscape, STACK_H in a phone's narrow panel
 let CLOCK_H = 72.0;
 let SHORT_GAP = 36.0;       // dp: the clocks' gap holding the countdown's short line in a corner panel
 let MID_GAP = 12.0;         // dp: either side of the short form between side-by-side clocks
@@ -54,25 +67,26 @@ let MID_GAP = 12.0;         // dp: either side of the short form between side-by
 let SIDE = 232.0;           // dp: each panel's width in landscape,
 let NARROW = 192.0;         // narrowing to this near square
 let BOARD = 720.0;          // dp: the board the panels narrow for, the tablet's at 16:10
-let STACK_H = 96.0;         // dp: a tile with its icon over its word
-let TOP = 120.0;            // dp: the bar above the board in portrait,
-let TOP_STACKED = 128.0;    // with its icons over their words where the bar is narrow:
-let STACK_W = 170.0;        // dp: a third of the bar under which it is
-let BAR_SPARE = 72.0;       // dp: the bar's width its tiles don't take, WIDE_IN at both ends and two 16 dp gaps
-let BOTTOM = 204.0;         // dp: the play below it
+// Portrait, in dp: the bar above the board, its row of tiles inside its glass (120 on a
+// touch screen), its icons over their words where the bar is narrow, a third of it
+// under STACK_W; the bar's width its tiles don't take, its glass's ends and two gaps; and
+// the play below the board, whose turn or the clocks over the hint and undo move.
+let TOP = gui::TAP + 2.0 * IN_ACROSS;
+let TOP_STACKED = STACK_H + 2.0 * IN_ACROSS;
+let STACK_W = 170.0;
+let BAR_SPARE = 2.0 * IN_ALONG + 2.0 * gui::PAD_WIDE;
+let BOTTOM = 2.0 * IN_ACROSS + CLOCK_H + gui::PAD + gui::TAP;
 let GAP = 24.0;
 // A small window in portrait (gui::compact, task 050): the bar a row of icons alone, the
 // play one row, whose turn beside undo move, and the margins smaller, for the board.
-let TOP_COMPACT = 88.0;     // dp: the bar, its 64 dp tiles and 12 dp round them
-let BOTTOM_COMPACT = 112.0; // dp: the play, its gui::TAP row and 12 dp round it
-let ICON_W = 72.0;          // dp: an icon's tile in the bar, 64 dp tall (accepted under the
-// gui::TAP floor in compact only, the user 2026-11-09)
+// An icon's tile in the bar is ICON_W × ICON_H dp (accepted under the gui::TAP floor in
+// compact only, the user 2026-11-09); the bar holds them and the play its row of a tap,
+// each gui::PAD round.
+let ICON_W = 72.0;
+let ICON_H = 64.0;
+let TOP_COMPACT = ICON_H + 2.0 * gui::PAD;
+let BOTTOM_COMPACT = gui::TAP + 2.0 * gui::PAD;
 let GAP_COMPACT = 16.0;
-// A panel's room inside its glass, in dp, across and down: a tall one's (a landscape
-// column, the play beside the board) 16 at the sides and 20 above and below, a wide
-// one's (the bar, the play under the board) the other way round.
-let TALL_IN = float2 { 16.0, 20.0 };
-let WIDE_IN = float2 { 20.0, 16.0 };
 
 // How the panels stand round the board: in landscape short ones in the top corners (the
 // game's and a puzzle's, flat or 3D); in portrait a bar above the board and the play below
@@ -165,9 +179,19 @@ struct Taken {
 // with the board as wide as the screen less the gaps and as tall as its perspective at
 // PITCH_PORTRAIT makes it, steeper than landscape's to fill more of the height. A puzzle
 // shares it.
-let CORNER_H = 352.0;       // dp: a corner panel, room for three tiles with their icons over their words (back and a panel of two on the left)
-let CORNER_PUZZLE = 504.0;  // dp: a puzzle's play panel on the flat board, room for the piece over the goal, the stars, and next's tall tile
-let CORNER_PLAY = 368.0;    // dp: a phone's narrow play panel, room for whose turn and the eye, the hint over undo move
+// A corner panel's height in dp: room for three tiles with their icons over their words,
+// back and, BACK_GAP under it, a panel of two, IN_ALONG above, between, and below them
+// (352 on a touch screen).
+let CORNER_H = gui::TAP + BACK_GAP + 2.0 * STACK_H + 3.0 * IN_ALONG;
+// Two panels' heights in dp are tuned, a few dp over what they hold (2026-11-11, task
+// 069): a puzzle's play panel on the flat board, room for the piece over the goal, the
+// stars, and next's tall tile, holds 495 (its glass's ends, TALL_H, a gui::PAD, the piece
+// and the stars with their gaps, 180, and the goal's 131 with its two lines of words); a
+// phone's narrow play panel, room for whose turn and the eye, the hint over undo move,
+// holds 362 (its glass's ends, the piece and its gaps closed up, 90, whose turn's line,
+// 24, and the hint and undo move a gui::PAD apart and from it).
+let CORNER_PUZZLE = 504.0;
+let CORNER_PLAY = 368.0;
 let PITCH_LANDSCAPE: f32 = 52.5;
 let PITCH_PORTRAIT:  f32 = 65.0;
 // The camera buttons (the user, 2026-11-09): a touch area and the disc in it, in dp, on a

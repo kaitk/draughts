@@ -86,7 +86,8 @@ let PAD_Y = 24.0;
 // fit in the 13" and 11" iPad's landscape, 1 and 5 dp short with the full padding
 // (2026-11-09).
 let TOP_RISE = 12.0;
-let HEAD_H = 100.0;         // back (gui::TAP, as the tabs), the title, and the language's glass round its tiles
+let LANG_IN = 6.0;          // the language's glass round its tiles
+let HEAD_H = gui::TAP + 2.0 * LANG_IN; // back (gui::TAP, as the tabs), the title, and the language on its glass
 let HEAD_GAP = 14.0;        // under them in landscape; 16 in portrait, as round the board
 let SIDE_GAP = 24.0;        // between the choices and the board in landscape
 let GROUP_GAP = 10.0;
@@ -514,7 +515,7 @@ fn language_width(g: gui::Gui&, lang: i64) -> f32 {
 }
 
 // How wide the language's glass is: a globe, unless `globe` is false, then a tile per
-// language, 8 dp apart, inside the glass's 6 dp sides.
+// language, 8 dp apart, inside the glass's LANG_IN sides.
 fn languages_width(g: gui::Gui&, globe: bool = true) -> f32 {
     var w = (if globe { 52.0 } else { 4.0 }) * g.scale;
     for i in strings::LANGUAGES.len { w += language_width(g, i) + 8.0 * g.scale; }
@@ -568,7 +569,7 @@ fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, tabbed: bool = false)
     let w = languages_width(g, globe);
     let glass = gui::center(gui::cut_right(row, w), w, HEAD_H * u);
     gui::glass(g, glass, 20.0);
-    var c = gui::inset(glass, 6.0 * u);
+    var c = gui::inset(glass, LANG_IN * u);
     if globe {
         gui::cut_left(c, 8.0 * u);
         gui::glyph_icon(g, gui::center(gui::cut_left(c, 28.0 * u), 28.0 * u, 28.0 * u), gui::GLOBE, gui::PLAIN, 0.0,

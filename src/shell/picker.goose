@@ -189,7 +189,7 @@ fn theme_row(g: gui::Gui&, r: float4, theme: i64, stars: const u8[:], phone: boo
 // The draughts switch (prototypes/puzzle-set.html, take a): settings' draughts tiles, each
 // its name over its board's size, joined on one glass, 4 dp round them and between.
 let SWITCH_PAD = 4.0;
-let SWITCH_H = 96.0;        // its gui::TAP tiles and the glass round them
+let SWITCH_H = gui::TAP + 2.0 * SWITCH_PAD; // its tiles, a tap tall, and the glass round them
 let SWITCH_IDS = gui::PICKER_IDS + 20;
 
 // How wide draughts tile i wants to be: as settings' tiles, its words with gui::WORD_SIDE
