@@ -10,9 +10,9 @@ import math;
 // gaps jump where a skill first sees another ply (12, 25: params' depth) and are small
 // between. The chain from 8 to 25 (849) was scaled to 775, between it and the two
 // skills' own match (700). Russian's gaps came out a little smaller (8 to 25: 440 for
-// 0 to 8's 72). 90 and 100 are estimates until measured.
+// 0 to 8's 72). 60 to 90 scored 6.5 of 200 (589); 100 is an estimate until measured.
 let RATED_SKILLS:  i64[12] = [0, 8, 12, 16, 20, 25, 30, 40, 50, 60, 90, 100];
-let SKILL_RATINGS: i64[12] = [500, 587, 940, 983, 1009, 1362, 1384, 1644, 1900, 2127, 2550, 2650];
+let SKILL_RATINGS: i64[12] = [500, 587, 940, 983, 1009, 1362, 1384, 1644, 1900, 2127, 2716, 2800];
 
 // A new player's rating, and the least a rating falls to.
 let FIRST_RATING = 800;
