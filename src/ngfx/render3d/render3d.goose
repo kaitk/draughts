@@ -468,6 +468,30 @@ fn resting(g: Gpu&) -> bool {
            && g.kept_backdrop.id == 0;
 }
 
+// The pass antialiased by `aa` (AA_OFF..) from the next draw on: its targets given back
+// (made again for the new way by the next draw), the way's pipelines and tables made the
+// first time it is chosen. The app's A key (task 071).
+fn set_aa(g: Gpu&, aa: i32) {
+    give_back(g);
+    g.aa = aa;
+    aa_resources(g, aa);
+}
+
+// What antialiasing by `aa` draws with, made once.
+fn aa_resources(g: Gpu&, aa: i32) {
+    if aa == AA_FXAA && g.fxaa.id == 0 { g.fxaa = module(embed_file("../app/shaders/fxaa.blob")); }
+    if aa == AA_SMAA && g.smaa_edges.id == 0 {
+        let smaa = embed_file("../app/shaders/smaa.blob");
+        g.smaa_edges = ngfx::pipeline(smaa, "edges_vertex", "edges_fragment", ngfx::PipelineDesc {});
+        g.smaa_weights = ngfx::pipeline(smaa, "weights_vertex", "weights_fragment", ngfx::PipelineDesc {});
+        g.smaa_blend = ngfx::pipeline(smaa, "blend_vertex", "blend_fragment", ngfx::PipelineDesc {});
+        g.area = ngfx::texture2d(160, 560, ngfx::RG8, ngfx::SAMPLED);
+        ngfx::update_texture(g.area, embed_file("../app/shaders/smaa_area.bin"));
+        g.search = ngfx::texture2d(64, 16, ngfx::R8, ngfx::SAMPLED);
+        ngfx::update_texture(g.search, embed_file("../app/shaders/smaa_search.bin"));
+    }
+}
+
 // How many times the size the pass is drawn at: 2 for AA_SSAA.
 fn scale(g: Gpu&) -> i64 { return if g.aa == AA_SSAA { 2 } else { 1 }; }
 
@@ -521,17 +545,7 @@ fn setup(g: Gpu&, aa: i32 = AA) {
     g.copy = module(embed_file("../app/shaders/r3d_copy.blob"));
     g.mip = module(embed_file("../app/shaders/mip.blob"));
     g.down = module(embed_file("../app/shaders/down.blob"));
-    if aa == AA_FXAA { g.fxaa = module(embed_file("../app/shaders/fxaa.blob")); }
-    if aa == AA_SMAA {
-        let smaa = embed_file("../app/shaders/smaa.blob");
-        g.smaa_edges = ngfx::pipeline(smaa, "edges_vertex", "edges_fragment", ngfx::PipelineDesc {});
-        g.smaa_weights = ngfx::pipeline(smaa, "weights_vertex", "weights_fragment", ngfx::PipelineDesc {});
-        g.smaa_blend = ngfx::pipeline(smaa, "blend_vertex", "blend_fragment", ngfx::PipelineDesc {});
-        g.area = ngfx::texture2d(160, 560, ngfx::RG8, ngfx::SAMPLED);
-        ngfx::update_texture(g.area, embed_file("../app/shaders/smaa_area.bin"));
-        g.search = ngfx::texture2d(64, 16, ngfx::R8, ngfx::SAMPLED);
-        ngfx::update_texture(g.search, embed_file("../app/shaders/smaa_search.bin"));
-    }
+    aa_resources(g, aa);
     g.show = module(embed_file("../app/shaders/r3d_show.blob"), ngfx::PipelineDesc { blend: ngfx::BLEND_PREMULTIPLIED });
     g.plan_albedo = baked(model3d::PLAN_SIZE, model3d::PLAN_SIZE, ngfx::RGBA8_SRGB);
     g.plan_normal = baked(model3d::PLAN_SIZE, model3d::PLAN_SIZE, ngfx::RGBA8);

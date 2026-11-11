@@ -289,7 +289,21 @@ fn cover(d: Drawer&) {
 fn drop(d: Drawer&) {
     guard d.ready else { return; }
     render3d::release(d.gpu);
-    d = Drawer { wood: d.wood, marble: d.marble, summer: d.summer, spring: d.spring, timed: d.timed, .. };
+    d = Drawer { wood: d.wood, marble: d.marble, summer: d.summer, spring: d.spring, timed: d.timed, aa: d.aa, .. };
+}
+
+// The A key (task 071's comparison): the pass's antialiasing switched in turn through
+// SMAA, none, FXAA, and 2 × 2 supersampling, the board drawn again with it.
+fn toggle_aa(d: Drawer&) {
+    let order: i32[4] = [render3d::AA_SMAA, render3d::AA_OFF, render3d::AA_FXAA, render3d::AA_SSAA];
+    let names = ["smaa", "off", "fxaa", "ssaa"];
+    var k = 0;
+    for a, i in order { if a == d.aa { k = (i + 1) % 4; } }
+    d.aa = order[k];
+    print("3D board: antialiasing ", names[k]);
+    guard d.ready else { return; }
+    render3d::set_aa(d.gpu, d.aa);
+    d.fresh = true;
 }
 
 // How long the 3D board's pass keeps its targets after it last drew: a hover or a drag

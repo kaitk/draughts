@@ -137,6 +137,9 @@ fn input(h: Host&) -> gui::Input {
 
 // Whether Android's back (SDL's "AC Back"; DraughtsActivity hands the system's back to
 // SDL as that key) or Escape went down this frame.
+// The A key, which switches the 3D board's antialiasing (task 071's comparison).
+fn aa_key() -> bool { gfx::key_pressed("A") }
+
 fn back() -> bool { gfx::key_pressed("AC Back") || gfx::key_pressed("Escape") }
 
 // The keyboard up while `typing`, brought up again by each new `tap` on the name.
