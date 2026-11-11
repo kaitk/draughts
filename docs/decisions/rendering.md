@@ -60,6 +60,12 @@ less than the tiles), which would double every layout's dp values (about 330 of 
 in 16 files) and the sizes the tests check. At 1200 dp (0.67 points) the notes were 11
 points, too small.
 
+On a desktop the landscape flat board and its corner panels stand in a frame 4% of the
+height wide on every side (2026-11-11): from margin to margin the board crowded a large
+screen. A frame round the whole layout, not a smaller board alone, keeps the board's top
+level with the panels'. Of 92% and 85% of the full board, the user found 85% the most
+pleasing but chose 92% as the compromise, keeping more of the board.
+
 ### Small windows
 
 iPadOS 26's resizable windows got the compact layout (2026-11-09, task 050). Headless, the

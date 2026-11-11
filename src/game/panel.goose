@@ -436,6 +436,18 @@ fn landscape(area: float4, s: f32) -> bool {
     return area.z >= area.w && landscape_board(area, s) >= HANDOVER * (area.w - 2.0 * GAP * s);
 }
 
+// On a desktop (gui::desktop_scale) the landscape flat board and its corner panels stand
+// in a wider frame, DESKTOP_FRAME of the height less the margins on every side, so the
+// board is 92% of the height it would fill and still level with the panels at the top:
+// on a large screen a board from margin to margin crowded the window (the user,
+// 2026-11-11). A phone and a tablet keep every dp for it.
+let DESKTOP_FRAME = 0.04;
+fn framed_in(area: float4, s: f32) -> float4 {
+    guard gui::desktop_scale > 0.0 else { return area; }
+    let m = DESKTOP_FRAME * (area.w - 2.0 * GAP * s);
+    return float4 { area.x + m, area.y + m, area.z - 2.0 * m, area.w - 2.0 * m };
+}
+
 // The same in `area`, a screen's safe area, at s pixels a dp, with the 3D board's panels
 // round the flat board (task 054): in landscape its short corner panels (flat_corners);
 // in portrait, for the game (`game`), the bar and the play as wide as the 3D board's,
@@ -445,7 +457,10 @@ fn layout_in(area: float4, n: i64, s: f32, small: bool = true, game: bool = fals
     let width = area.z;
     let height = area.w;
     let phone = gui::phone(area, s);   // NARROW panels
-    if landscape(area, s) { return flat_corners(area, n, s, landscape_board(area, s)); }
+    if landscape(area, s) {
+        let framed = framed_in(area, s);
+        return flat_corners(framed, n, s, landscape_board(framed, s));
+    }
     let bar = portrait_bar(area, s, small, game, game);
     let compact = bar.mode == COMPACT;
     let gap = bar.gap;
@@ -520,7 +535,7 @@ fn flat_corners(area: float4, n: i64, s: f32, size: f32) -> Layout {
 fn puzzle_in(area: float4, n: i64, s: f32) -> Layout {
     var l = layout_in(area, n, s, false);
     guard columns(l) else { return l; }
-    l.right.w = min(CORNER_PUZZLE * s, area.w - 2.0 * GAP * s);
+    l.right.w = min(CORNER_PUZZLE * s, framed_in(area, s).w - 2.0 * GAP * s);
     l.taken_as = TAKEN_NONE;
     return l;
 }
