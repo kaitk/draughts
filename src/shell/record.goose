@@ -78,7 +78,7 @@ fn write_kept(sh: Shell&, replace: bool) {
 fn read_history(sh: Shell&, out: history::Game[..history::MAX_GAMES]&) {
     out.clear();
     let ps .= sh.players;
-    guard ps.games && ps.list.len > 0 else { return; }
+    guard players::files(ps) && ps.list.len > 0 else { return; }
     let path = players::history_path(ps, ps.list[ps.playing].id);
     var text: u8[>..] = [];
     guard file_exists(path) && read_file(path, text) else { return; }

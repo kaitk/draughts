@@ -45,6 +45,7 @@ let KEYS = [
     "game.lookout", "game.hint", "game.where_to",
     "home.quit",
     "settings.moves", "moves.hidden", "moves.list", "moves.marks",
+    "games.title", "games.rating", "games.computer", "games.friend", "games.none",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -158,7 +159,12 @@ let SETTINGS_MOVES = 108;   // the moves panel's row (task 074): hidden, the lis
 let MOVES_HIDDEN = 109;
 let MOVES_LIST = 110;
 let MOVES_MARKS = 111;
-let COUNT = 112;
+let GAMES_TITLE = 112;      // the games screen (task 074): its title,
+let GAMES_RATING = 113;     // the rating's heading,
+let GAMES_COMPUTER = 114;   // the levels' results' heading,
+let GAMES_FRIEND = 115;     // a game against a friend in the list,
+let GAMES_NONE = 116;       // and the list with no game yet
+let COUNT = 117;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

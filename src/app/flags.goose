@@ -194,7 +194,7 @@ fn parse(argv: u8[:][>..]) -> Flags {
         }
         if a == "--screen" {
             f.screen = if v == "game" { shell::GAME } else if v == "settings" { shell::SETTINGS }
-                       else if v == "puzzles" { shell::PICKER } else { shell::HOME };
+                       else if v == "puzzles" { shell::PICKER } else if v == "games" { shell::GAMES } else { shell::HOME };
             if v == "friend" { f.setup = home::FRIEND; }
             if v == "computer" { f.setup = home::COMPUTER; }
         }

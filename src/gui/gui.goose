@@ -300,12 +300,13 @@ let HOME_IDS = 300;         // home's menu and a new game's setup
 let SETTINGS_IDS = 400;
 let WHO_IDS = 500;          // who's playing, and a player's sheet
 let PICKER_IDS = 600;       // the puzzles to pick from: the library, a theme's page, its puzzles
+let GAMES_IDS = 1300;       // the games played (task 074)
 
 // One scrolling list a frame (task 050; rendering.md, "Scrolling"): what scroll_begin
 // keeps across frames. A plain drag and the wheel, no fling.
 let SCROLL_ID = 9000;       // the drag's id while it holds the pointer
-let IDS = [PANEL_IDS, CARD_IDS, HOME_IDS, SETTINGS_IDS, WHO_IDS, PICKER_IDS, SCROLL_ID];
-let IDS_SPAN = [20, 2, 71, 72, 43, 600, 1];
+let IDS = [PANEL_IDS, CARD_IDS, HOME_IDS, SETTINGS_IDS, WHO_IDS, PICKER_IDS, GAMES_IDS, SCROLL_ID];
+let IDS_SPAN = [20, 2, 71, 72, 43, 600, 11, 1];
 let SLOP = 10.0;            // dp a press moves before it is a drag, not a tap
 let CLIP = 4.0;             // added to a quad's extra.z: drawn only inside the list's view
 let WHEEL = 40.0;           // dp a wheel's step scrolls

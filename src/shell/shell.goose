@@ -52,13 +52,15 @@ import .saved;
 import .roster;
 import .history;
 import .record;
+import .games;
 
 let HOME = 0;
 let GAME = 1;
 let SETTINGS = 2;
 let PICKER = 3;             // the puzzles to pick from
 let PUZZLE = 4;             // one puzzle
-let SCREENS = 5;
+let GAMES = 5;              // the games played (games.goose, task 074)
+let SCREENS = 6;
 
 // What sets the screens apart where the shell runs none of their code: whose board each
 // shows (board_of; home's setup shows its own), how blurred it shows the photograph,
@@ -79,6 +81,7 @@ let KINDS: Kind[SCREENS] = [
     Kind { board: SETTINGS, blur: 0.0, up: RETURN, with: 1 << HOME },                        // SETTINGS
     Kind { board: PUZZLE,   blur: 0.0, up: HOME,   with: 1 << PUZZLE },                      // PICKER
     Kind { board: PUZZLE,   blur: 1.0, up: PICKER, with: 1 << PICKER },                      // PUZZLE
+    Kind { board: PUZZLE,   blur: 0.0, up: HOME,   with: 0 },                                // GAMES
 ];
 
 let DURATION = 0.25;        // seconds a transition takes
@@ -174,6 +177,10 @@ struct Shell {
     // else -1 for the clock's.
     kept: Kept = Kept {},
     wall: f64  = -1.0,
+    // The games screen's: the playing player's games, read as it opens, and the draughts
+    // it shows.
+    games:         history::Game[..history::MAX_GAMES] = [],
+    games_variant: i64                                 = rules::INTERNATIONAL,
 }
 
 // The screen showing for this frame, taking the pointer and doing what it asks: `fresh`
@@ -185,6 +192,7 @@ fn screen_frame(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool, c
         SETTINGS => settings_screen(sh, g, area, now, fresh),
         PICKER => picker_screen(sh, g, area, now),
         PUZZLE => puzzle_screen(sh, g, area, now),
+        GAMES => games_screen(sh, g, area, now, fresh),
         _ => home_screen(sh, g, area, now),
     };
 }
@@ -217,6 +225,11 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: bo
             puzzle::panel_frame(sh.puzzle, g, p, now, over);
             l = p.board;
             if p.three { sh.went_view = p.view; }
+        },
+        GAMES => {
+            var variant = sh.games_variant;
+            games::frame(g, area, sh.prefs, sh.games, variant);
+            l = board::layout_at(-2.0 * area.z, 0.0, 0.5 * area.z, g.scale, l.n);
         },
         _ => {
             home::frame(over, g, l, rules::VARIANTS[board_of(sh, HOME).variant].size, area, sh.left, sh.prefs, room);
@@ -618,6 +631,29 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
     return changed;
 }
 
+// The games played: the history read as the screen opens, the draughts it shows at first
+// the setup's. Its board lies off the screen, as the puzzles' library's.
+fn games_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> bool {
+    sh.out.over.clear();
+    if fresh {
+        read_history(sh, sh.games);
+        sh.games_variant = sh.prefs.variant;
+    }
+    var variant = sh.games_variant;
+    let ask = games::frame(g, area, sh.prefs, sh.games, variant);
+    sh.games_variant = variant;
+    sh.out.layout = board::layout_at(-2.0 * area.z, 0.0, 0.5 * area.z, g.scale, sh.out.layout.n);
+    if ask == games::CHANGED {
+        sh.changed = true;
+        apply_prefs(sh);
+    }
+    if ask == games::BACK {
+        go_to(sh, HOME, now);
+        sh.setup = home::NO_SETUP;
+    }
+    return ask != games::NOTHING;
+}
+
 // Where a puzzle puts the board and its panels, turned when black is to move, so the side
 // to move plays from the bottom: round the 3D board when it is chosen, as the game's.
 fn puzzle_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
@@ -842,6 +878,7 @@ fn who_card(sh: Shell&, g: gui::Gui&, area: float4) -> bool {
         who::SAVE => { edit_player(sh, index, w.picture, w.name); },
         who::AGAIN => { start_again(sh, index); },
         who::REMOVE => { remove_player(sh, index); },
+        who::GAMES => { go_to(sh, GAMES, 0.0); },
         _ => {},
     }
     return ask != who::NOTHING;
