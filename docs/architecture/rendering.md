@@ -574,8 +574,8 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   title, with the language at the title row's right end on glass, each named in itself;
   the choices as words in two glass groups (radius 24 px, icon and title in 24 px) by
   what they change; and beside them one preview of what they make. In landscape the
-  choices take the width they need at the left, as home's menu does, and the board the
-  rest, about two thirds, so from home the board only moves a little; in portrait the board is
+  choices take the width they need at the left, as home's menu does, the groups under the
+  title row with the room left below them, and the board the rest, about two thirds, so from home the board only moves a little; in portrait the board is
   on top, as large as the rest leaves, and the two groups stand side by side under it.
   **Game**: the draughts a new game starts on (international, Brazilian, Russian; the
   setup can still change it) and move hints. Last, the privacy note

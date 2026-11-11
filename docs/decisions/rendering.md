@@ -243,6 +243,9 @@ came on 2026-11-09.
 - Near square the names go above the tiles and the column narrows (2026-11-08); where
   that fails, the board goes on top with the groups side by side under it, so a widening
   window goes from portrait to landscape without tabs between (2026-11-09, task 050).
+- In landscape the groups go under the title row, the room left below them (2026-11-11),
+  not centered down the column: on a large desktop window, with room to spare, they
+  floated in its middle; the tablet's moved up a few dp.
 - The tabs stand on glass (2026-11-09): a plain tile alone was hard to read over a bright
   photograph. In portrait a group's glass is its own height (2026-11-09): the game's
   glass as tall as the look's had ended in empty glass under its rows.

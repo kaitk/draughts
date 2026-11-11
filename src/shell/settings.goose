@@ -691,18 +691,19 @@ fn layout(s: Settings&, g: gui::Gui&, area: float4) -> Page {
         let side = gui::cut_left(page, w);
         gui::cut_left(page, SIDE_GAP * u);
         preview(p, page, u, n);
-        // The title row, then the groups centered down the rest, or from its top if they
-        // are taller, running on into the foot; the look's glass ends below its kings
-        // there rather than running on to the screen's bottom edge, which left it mostly
-        // empty below (the user, 2026-11-09).
-        let items = [gui::Item { size: HEAD_H * u, .. }, gui::Item { grow: 1.0, gap: HEAD_GAP * u, .. },
-                     gui::Item { size: group_height(p.fit, g, 0, side.z, p.aside), .. },
+        // The title row, then the groups under it, the room left below them (2026-11-11:
+        // centered down the rest they floated on a large desktop window), or running on
+        // into the foot where they are taller; the look's glass ends below its kings there
+        // rather than running on to the screen's bottom edge, which left it mostly empty
+        // below (the user, 2026-11-09).
+        let items = [gui::Item { size: HEAD_H * u, .. },
+                     gui::Item { size: group_height(p.fit, g, 0, side.z, p.aside), gap: HEAD_GAP * u, .. },
                      gui::Item { size: group_height(p.fit, g, 1, side.z, p.aside), gap: GROUP_GAP * u, .. },
                      gui::Item { grow: 1.0, .. }];
-        var at: float4[5] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 5];
+        var at: float4[4] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4];
         gui::stack(side, items, at);
         p.head = at[0];
-        p.glass = [at[2], at[3]];
+        p.glass = [at[1], at[2]];
         p.bleed[1] = float4 { area.x, area.y, area.z, area.w + g.insets.w };   // no bleed at the foot
         return p;
     }
