@@ -432,6 +432,9 @@ start of this round, on goose-ngfx's `ios` branch with three drawables:
 
 ### 2026-11-11, later: ngfx's memory, on the iPhone 13 mini
 
+goose-ngfx v0.5.0 is released with both memory steps and the iOS build
+(github.com/kaitk/goose-ngfx/releases/tag/v0.5.0).
+
 The build with both memory steps (goose-ngfx `34d6798`), `ios.py --device --ngfx`, then
 `scripts/ios_perf.py`; the 3D board's trace failed to export, so its rest and bench are
 the app's own, from the console (`--rest 25`, `--bench 1000`). At rest, nothing drawn,
@@ -549,8 +552,10 @@ Not opened yet; the user opens them (2026-11-11):
 - **SMAA's targets**: its edges and weights could share memory with other per-frame
   targets, or the edges pass write a stencil that the weights pass tests, as SMAA's
   reference does, if the Mac's numbers ask for it.
-- **ngfx on an iPad**, and goose-ngfx's `ios` branch released (v0.4.1) once it has run
-  there or the user decides it's enough; the simulator, if Metal 4 runs there.
+- **ngfx on an iPad** (goose-ngfx v0.5.0 builds for iPadOS, untried there); the
+  simulator, if Metal 4 runs there.
+- **Windows at v0.5.0**: ngfx's window and present changed at v0.4.0 and v0.5.0, and
+  neither has run on the PC.
 - **Displays over 60 Hz** (the user, 2026-11-11): ProMotion iPhones need
   `CADisableMinimumFrameDurationOnPhone` in the Info.plist, or iOS holds third-party apps
   to 60, and `ios_perf.py` reads `HZ = 60` where it should read the display's rate. The
