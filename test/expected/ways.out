@@ -1,0 +1,8 @@
+the move kept: c1:a3:c5:e3:c1, ways: 2
+c1, then e3: waits on e3, wrong -
+then c5, a3, c1: playing true, along c1:e3:c5:a3:c1, history 1
+c1 twice, two ways end there: selected c1, waits on -, playing false, wrong -
+c3: selected c3
+c3 again: selected -, wrong -
+c3 selected, pressed and dragged to d4: playing true, c3-d4
+c1, then a3: drawn b2 in the air at 0.1 s, animating true; a3 at 0.3 s, ended and at rest true

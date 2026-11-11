@@ -156,7 +156,7 @@ fn position(gm: game::Game&, g: gui::Gui&, l: panel::Layout, fen: const u8[:], w
         }
         // A landing with nothing selected, a king's landing with the man selected, and a
         // square no capture ends on with the king selected play nothing; every capture can
-        // still be chosen after them.
+        // still be chosen after them, the king's with it still selected.
         var king = -1;
         var man = -1;
         for m in opts { if gm.b.pos.kings & rules::bit(m.from) != 0 { king = m.from; } else { man = m.from; } }
@@ -172,7 +172,9 @@ fn position(gm: game::Game&, g: gui::Gui&, l: panel::Layout, fen: const u8[:], w
             drive::tap(gm, g, l, at(l, number(king)), t + 3.0);
             drive::tap(gm, g, l, at(l, stray(gm.b, opts)), t + 3.1);
             let wrong = gm.b.history.len;
-            drive::tap(gm, g, l, at(l, number(m.from)), t + 4.5);
+            // The king stays selected after the stray square; a tap on it would put it down
+            // (board::release), so it is tapped only when another piece is to move.
+            if gm.b.selected != m.from { drive::tap(gm, g, l, at(l, number(m.from)), t + 4.5); }
             drive::tap(gm, g, l, at(l, number(m.to)), t + 4.6);
             drive::idle(gm, g, l, t + 8.0);
             let ok = wrong == 0 && gm.b.history.len == 1 && same(gm.b.move, m);

@@ -26,7 +26,8 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   pieces each takes). A test explains in a comment what rule it shows and why the
   position shows it. Areas so far: `rules`, `board` (taps, hints, and a capture tapped
   stop by stop through the board package, a game and a puzzle alike, never played on
-  by itself: `steps`; a press or drop off the dark squares snapping to the nearest it
+  by itself: `steps`; any of a capture's ways tapped, a last square two ways reach, a tap on
+  the selected piece putting it down, and a tapped stop's hop: `ways`; a press or drop off the dark squares snapping to the nearest it
   could mean: `snap`, and several pieces that can capture under each draughts' rule:
   `several`; a capture to or past the far row, dropped on the turned board: `stuck`;
   the lookout's drained pieces, shaded crowning square, and the hint's ghost on the flat

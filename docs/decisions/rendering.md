@@ -423,6 +423,22 @@ Task 052, `prototypes/game-captured.html`'s take a in its `row` look, chosen 202
 - The 3D board lights a missed capture's next stops (2026-11-09); it never showed them
   before.
 - A puzzle's board makes captures by hand with none of the game's help (2026-11-08).
+- Issue 1 (2026-11-11), the board's taps:
+  - A capture made stop by stop may take any of its ways (`rules::ways`), not only the one
+    the move list keeps for each end and pieces taken: a king's other way was a miss and
+    cost a puzzle's stars. The move plays along the way tapped.
+  - An empty square the piece passes on its way to a next stop (a king's flight, or
+    squares past a jumped piece before the one it must land on) is no stop and no mistake:
+    a tap there does nothing (`board::passes`). Rejected: moving the piece there, which
+    the rules don't have as a stop.
+  - A last square further on plays only when one way alone goes there; it was when one
+    set of pieces taken did, which played a route the child never chose.
+  - A tap on a stop shows the piece hopping there over the move's hop (`board::hop`); it
+    jumped before, on both boards (the issue saw the flat one, where taps are the way;
+    the 3D board fills from the same lists). A drop needs none.
+  - A tap on the selected piece puts it down (released without a drag). A tap on a piece
+    waiting on a stop still does nothing, so a child who taps the piece before each jump
+    keeps the stops.
 
 ## Fonts
 

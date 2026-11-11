@@ -20,7 +20,9 @@ goal is the balance.
   (2026-11-08): the child is to find the move ([product](../product.md)).
 - Captures of many jumps are made by hand (2026-11-08), as children often make them jump
   by jump. A stop never plays the rest of the way by itself, which would solve the puzzle
-  for the child.
+  for the child. Its last square plays it only when one way alone goes there, and any way
+  and any square passed between stops costs no star (2026-11-11, issue 1: a king's
+  capture tapped through its squares lost stars).
 - A wrong move shows why (2026-11-09): when the other side answers it by taking something
   back, that answer plays, holds, and slides back before the wrong move does. Until then
   every wrong move slid back 0.35 s after it landed, as one without such an answer still

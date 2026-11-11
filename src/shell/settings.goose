@@ -72,7 +72,7 @@ fn stage(b: board::Board&, s: Settings&, now: f64) {
     b.king_look = if raised(s) { raised_king_look(s) } else { king_look(s) };
     b.still = true;
     if s.hints == board::MOVES {
-        b.selected = square(v, "d4", k);
+        board::select(b, square(v, "d4", k));
     } else {
         board::mistake(b, square(v, "c5", k), now);
     }

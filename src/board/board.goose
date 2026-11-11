@@ -135,7 +135,19 @@ struct Board {
     history:  Step[..MAX_HISTORY],  // the positions before each move, oldest first
     moves:    rules::Moves,     // the legal moves of pos
     selected: i64,              // a bit, or -1
+    // The selected piece's ways (`select`): its captures, every way to each (rules::ways),
+    // or its quiet moves. A capture made stop by stop follows any of them (`follow`).
+    ways:     rules::Moves,
     steps:    rules::Path,      // the stops of a capture tapped so far, after the selected piece's square
+    // A tap that kept a stop shows the piece hopping there from the square before
+    // (`hop_from`, a bit) from `hop_at`, as a move's hop: a drop needs none, the finger
+    // carried it (2026-11-11, issue 1).
+    hop_at:   f64,
+    hop_from: i64,
+    hop_to:   i64,
+    // A press on the selected piece where it stands: let go without a drag, it is put
+    // down, nothing selected (2026-11-11, issue 1).
+    again:    bool,
     // A puzzle's board: a capture is made stop by stop as in a game (`follow`), but
     // nothing shows the way: no count on the pieces that must capture, no pieces to
     // take after a wrong square, and no next stop after two.
@@ -210,8 +222,8 @@ struct Board {
 }
 
 fn new(variant: u8) -> Board {
-    var b = Board { variant: variant, selected: -1, wrong: -1, glow: -1, hint_to: -1, pulsed: -1, king_look: CROWN,
-                    over: -1, pressed: -1, .. };
+    var b = Board { variant: variant, selected: -1, hop_at: -1.0, hop_from: -1, hop_to: -1, wrong: -1, glow: -1, hint_to: -1,
+                    pulsed: -1, king_look: CROWN, over: -1, pressed: -1, .. };
     set(b, rules::start(variant));
     return b;
 }
@@ -338,6 +350,20 @@ fn has_move_from(b: Board&, from: i64) -> bool {
     return false;
 }
 
+// Selects the piece on sq, a piece of the side to move with a move, its stops forgotten:
+// its ways, every way of its captures or its quiet moves, go into `ways`.
+fn select(b: Board&, sq: i64) {
+    b.selected = sq;
+    b.steps.clear();
+    b.hop_at = -1.0;
+    if must_capture(b) {
+        rules::ways(b.pos, sq, b.ways);
+    } else {
+        b.ways.clear();
+        for m in b.moves { if m.from == sq { b.ways.push(m); } }
+    }
+}
+
 // Whether move m is the selected piece's and makes the stops tapped so far, with more of
 // its way still to come.
 fn on_steps(b: Board&, m: rules::Move&) -> bool {
@@ -346,37 +372,61 @@ fn on_steps(b: Board&, m: rules::Move&) -> bool {
     return true;
 }
 
-// What a tap or a drop on `sq` does for the selected piece, among its moves that make
-// the stops tapped so far. One ending just after them on sq is played. Else, if sq is
+// What a tap or a drop on `sq` does for the selected piece, among its ways that make
+// the stops tapped so far: every way, so a king's capture may land on any square the
+// rules allow between its jumps (2026-11-11, issue 1: a stop on a way the move list
+// didn't keep was a mistake). One ending just after them on sq is played. Else, if sq is
 // the next stop of any of them, it is kept, the piece waiting there to be tapped or
 // dragged on: the rest of the way is never played by itself, in a game as in a puzzle
 // (2026-11-09: a child whose first jump played the whole capture never learned its
-// way). A capture's last square further on is played when one capture alone goes
-// there; one several reach waits for the stops. Returns the move to play or -1, and
-// whether sq was taken as part of a way, so not a mistake.
+// way). A capture's last square further on is played only when one way alone goes
+// there (2026-11-11); one several reach waits for the stops. Returns the way to play
+// (in `ways`) or -1, and whether sq was taken as part of a way, so not a mistake.
 fn follow(b: Board&, sq: i64) -> i64, bool {
     guard b.selected >= 0 && sq >= 0 else { return -1, false; }
     let k = b.steps.len + 1;    // where sq stands in a way
     var end = -1;
+    var ends = 0;
     var vias = 0;
-    for m, i in b.moves {
+    for m, i in b.ways {
         guard on_steps(b, m) else { continue; }
         if m.to == sq {
-            if end < 0 || (m.path.len == k + 1 && b.moves[end].path.len != k + 1) { end = i; }
+            ends++;
+            if end < 0 || (m.path.len == k + 1 && b.ways[end].path.len != k + 1) { end = i; }
         } else if m.path[k] == sq {
             vias++;
         }
     }
-    if end >= 0 && b.moves[end].path.len == k + 1 { return end, false; }
+    if end >= 0 && b.ways[end].path.len == k + 1 { return end, false; }
     if vias > 0 {
         b.steps.push(sq as u8);
         return -1, true;
     }
     guard end >= 0 else { return -1, false; }
-    for m in b.moves {
-        if on_steps(b, m) && m.to == sq && m.captured != b.moves[end].captured { return -1, true; }
-    }
+    if ends > 1 { return -1, true; }
     return end, false;
+}
+
+// Whether sq is an empty square the selected piece passes on its way to a next stop,
+// strictly between where it stands and the stop on their diagonal: a king's flight, or
+// the squares beyond a piece it jumps before the one it must land on. A tap there is no
+// stop and no mistake, nothing at all (2026-11-11, issue 1: such taps cost a puzzle's
+// stars).
+fn passes(b: Board&, sq: i64) -> bool {
+    guard b.selected >= 0 && empty(b, sq) else { return false; }
+    let v .= rules::VARIANTS[b.variant];
+    let at = if waiting(b) >= 0 { waiting(b) } else { b.selected };
+    let k = b.steps.len + 1;
+    let dx = v.x_of[sq] as i64 - v.x_of[at];
+    let dy = v.y_of[sq] as i64 - v.y_of[at];
+    guard dx != 0 && (dx == dy || dx == -dy) else { return false; }
+    for m in b.ways {
+        guard on_steps(b, m) else { continue; }
+        let nx = v.x_of[m.path[k]] as i64 - v.x_of[at];
+        let ny = v.y_of[m.path[k]] as i64 - v.y_of[at];
+        if nx * dx > 0 && ny * dy > 0 && nx * dy == ny * dx && abs(dx) < abs(nx) { return true; }
+    }
+    return false;
 }
 
 // How many pieces the piece on `sq` takes from here, at most: the most its captures
@@ -385,10 +435,10 @@ fn follow(b: Board&, sq: i64) -> i64, bool {
 fn takes(b: Board&, sq: i64) -> i64 {
     var most = 0;
     let made = if sq == b.selected { b.steps.len } else { 0 };
-    for m in b.moves {
-        guard m.from == sq && m.captured != 0 else { continue; }
-        guard made == 0 || on_steps(b, m) else { continue; }
-        most = max(most, popcount(m.captured) - made);
+    if made == 0 {
+        for m in b.moves { if m.from == sq && m.captured != 0 { most = max(most, popcount(m.captured)); } }
+    } else {
+        for m in b.ways { if m.captured != 0 && on_steps(b, m) { most = max(most, popcount(m.captured) - made); } }
     }
     return most;
 }
@@ -396,7 +446,7 @@ fn takes(b: Board&, sq: i64) -> i64 {
 // The squares the selected piece can go to next: a move's target or a capture's next stop.
 fn reachable(b: Board&) -> u64 {
     var r: u64 = 0;
-    for m in b.moves { if on_steps(b, m) { r |= rules::bit(m.path[b.steps.len + 1]); } }
+    for m in b.ways { if on_steps(b, m) { r |= rules::bit(m.path[b.steps.len + 1]); } }
     return r;
 }
 
@@ -479,6 +529,18 @@ fn play_chosen(b: Board&, i: i64, now: f64) {
     start_move(b, i, now);
     b.skip = skip;
     b.since = now - skip * HOP;
+}
+
+// Plays way i of the selected piece (`ways`): its move, shown along the way the child
+// took, which may be another of the move's ways than the one the move list keeps.
+fn play_way(b: Board&, i: i64, now: f64) {
+    let w = b.ways[i];
+    var k = -1;
+    for m, j in b.moves { if k < 0 && m.from == w.from && m.to == w.to && m.captured == w.captured { k = j; } }
+    guard k >= 0 else { return; }
+    play_chosen(b, k, now);
+    b.move.path = w.path;
+    b.last = b.move;
 }
 
 // Leaves a capture made by hand unfinished, which is no move (a capture takes every
@@ -581,6 +643,19 @@ fn kept(b: Board&, before: i64, now: f64) {
     }
 }
 
+// A tap kept a stop (`kept`): the piece hops there from the square before it.
+fn hop(b: Board&, before: i64, now: f64) {
+    guard b.steps.len > before else { return; }
+    b.hop_from = if b.steps.len > 1 { b.steps[b.steps.len - 2] } else { b.selected };
+    b.hop_to = b.steps[b.steps.len - 1];
+    b.hop_at = now;
+}
+
+// Whether the piece waiting on a stop is still hopping there at `now`.
+fn hopping(b: Board&, now: f64) -> bool {
+    b.hop_at >= 0.0 && now < b.hop_at + HOP && waiting(b) == b.hop_to && !b.dragging
+}
+
 // Whether the pieces that must capture show how many pieces they take (2026-11-09,
 // docs/product.md): with move hints always; on mistakes only from a mistake to the next
 // right move or jump, as showing the count up front gives the capture away. Never in a
@@ -635,21 +710,24 @@ fn press(b: Board&, l: Layout, p: float2, now: f64) {
         b.dragging = false;
         return;
     }
+    b.again = false;
     let before = b.steps.len;
     let i, on_way = follow(b, sq);
     if i >= 0 {
         b.dropped = false;
-        play_chosen(b, i, now);
+        play_way(b, i, now);
         return;
     }
     if on_way {
         kept(b, before, now);
+        hop(b, before, now);
         return;
     }
+    if passes(b, sq) { return; }
     if sq >= 0 && (b.pos.pieces[b.pos.side] >> sq) & 1 != 0 {
         if has_move_from(b, sq) {
-            b.selected = sq;
-            b.steps.clear();
+            b.again = sq == b.selected && b.steps.len == 0;
+            if !b.again { select(b, sq); }
             b.pressed = sq;
             b.press_at = p;
             b.dragging = false;
@@ -683,20 +761,28 @@ fn drag(b: Board&, l: Layout, p: float2) -> bool {
 // A drop off the dark squares goes to the nearest target or stop within SNAP (`snap`).
 fn release(b: Board&, l: Layout, p: float2, now: f64) {
     let was = b.dragging;
+    let again = b.again;
     b.pressed = -1;
     b.dragging = false;
+    b.again = false;
+    if again && !was {
+        // A tap on the selected piece puts it down.
+        b.selected = -1;
+        b.steps.clear();
+        return;
+    }
     guard was else { return; }
     let sq = snap(l, rules::VARIANTS[b.variant], p, reachable(b));
     guard sq < 0 || sq != waiting(b) else { return; }
     let before = b.steps.len;
     let i, on_way = follow(b, sq);
     if i >= 0 {
-        play_chosen(b, i, now);
+        play_way(b, i, now);
         b.drop = p;
         b.dropped = true;
     } else if on_way {
         kept(b, before, now);
-    } else if empty(b, sq) {
+    } else if empty(b, sq) && !passes(b, sq) {
         missed(b, sq, now);
     }
 }
@@ -748,6 +834,7 @@ fn animating(b: Board&, now: f64) -> bool {
     || (b.glow >= 0 && b.glow_at >= 0.0 && now < b.glow_at + PULSE)
     || (b.hint_to >= 0 && b.ghost_at >= 0.0 && now < b.ghost_at + PULSE)
     || (b.kept_at >= 0.0 && now < b.kept_at + PULSE && next_shown(b))
+    || hopping(b, now)
 }
 
 // Whether the squares the selected piece's capture goes on to are shown: in a game, not
@@ -777,6 +864,10 @@ fn update(b: Board&, now: f64) -> bool {
     }
     if b.kept_at >= 0.0 && now >= b.kept_at + PULSE {
         b.kept_at = -1.0;
+        ended = true;
+    }
+    if b.hop_at >= 0.0 && now >= b.hop_at + HOP {
+        b.hop_at = -1.0;
         ended = true;
     }
     if b.pulse_end > 0.0 && now >= b.pulse_end {
@@ -953,7 +1044,16 @@ fn fill(b: Board&, l: Layout, now: f64) {
         if v.crowning == rules::CROWN_CONTINUES {
             for st in b.steps { if v.promotion[b.pos.side] & rules::bit(st) != 0 { king = true; } }
         }
-        add(b, center(l, v, waits), r, 1.1 * unit, b.pos.side == rules::BLACK, king, 1.0, 1.0, 0.0);
+        // Hopping there from the square before, over the piece it jumps, as a move's hop.
+        var at = center(l, v, waits);
+        var lift = 1.1 * unit;
+        if hopping(b, now) {
+            let a = center(l, v, b.hop_from);
+            let u = ease(clamp((now - b.hop_at) / HOP, 0.0, 1.0));
+            at = a + (at - a) * u as f32;
+            lift += 4.0 * unit * sin(PI * u) as f32;
+        }
+        add(b, at, r, lift, b.pos.side == rules::BLACK, king, 1.0, 1.0, 0.0);
         if b.glow == b.selected && b.pieces.len > 0 { glow_ring(b, glowing, b.glow_at, now); }
         if count_on { show_takes(b, b.selected); }
     }
@@ -983,8 +1083,8 @@ fn fill(b: Board&, l: Layout, now: f64) {
     if b.selected >= 0 && !b.moving {
         // The stops tapped so far are ringed whatever the hints: the child chose them.
         for s in b.steps { if s != waits { mark(b, b.marks.via, s); } }
-        for i in b.moves.len {
-            let m .= b.moves[i];
+        for i in b.ways.len {
+            let m .= b.ways[i];
             guard b.hints == MOVES && on_steps(b, m) else { continue; }
             mark(b, b.marks.target, m.to);
             for j in b.steps.len + 1..m.path.len - 1 { mark(b, b.marks.via, m.path[j]); }
