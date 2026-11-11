@@ -65,7 +65,8 @@ mip blits average in linear light. goose-ngfx v0.3.0.
 
 - Here: `src/ngfx/shaders/mip.slang` draws each level as a pass into it, the average of
   the 2 × 2 texels under it in the level above, read with `Load`, so the sRGB target
-  averages in linear light as the blits do (`render3d::mip_chain` in `src/ngfx/`).
+  averages in linear light as the blits do (`render3d::mip_chain` in
+  `src/ngfx/render3d/render3d_gpu.goose`).
 - Upstream, in goose-ngfx (its `docs/design.md`, "Open"): a UNORM texture with a mutable
   format, an sRGB view to sample and a UNORM storage view, with the conversion in the
   compute shader; or `generate_mips` drawing levels as passes for formats that can't be

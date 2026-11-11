@@ -68,6 +68,14 @@ find out by compiling, so the next session doesn't.
   with `namespace gui;` and `gui.goose` imports it with `import .focus;`, so its types and
   functions stay `gui::Spot`, `gui::offer`, and each file uses the other's freely
   (2026-11-11). A big file splits this way with no call site changed.
+- Two files of a package may both declare the same namespace and call each other
+  unqualified: `render3d.goose` (what the 3D board draws) and `render3d_gpu.goose` (its
+  recording, one per renderer) are both `namespace render3d;`, the first importing
+  `.render3d_gpu` (2026-11-11).
+- `type Texture = gfx::Texture;` names another package's struct: a literal through the
+  alias (`gpu::Texture { 0 }`) builds it, and overloads on aliases of different structs
+  resolve (`gpu::release` of a texture or a sampler), which is how the drawers hold each
+  renderer's handles (`src/app/gpu.goose`, 2026-11-11).
 - A package's files see each other's namespaces without importing them: `panel.goose`
   uses `clock::` because `game.goose` imports `.clock`. From outside, a file's namespace
   is reached by its own name (`home::COMPUTER` after `import shell`), never
@@ -94,7 +102,8 @@ find out by compiling, so the next session doesn't.
   `goose run` and `goose build` both compile it with the system clang, so C23 `#embed`
   and `__has_embed` work (with `-Wc23-extensions` silenced); a slice arrives in C as
   `struct { uint8_t *data; int64_t len; }` by value (`src/app/background.c`). The compiled C
-  is cached by its source: touch the `.c` after a file it embeds appears or changes.
+  is cached by its source: touch the `.c` after a file it embeds appears or changes. A
+  header it includes is tracked: a changed `photo_gpu.h` rebuilds `photo.c` (2026-11-11).
 - A missing `embed_file` path is a compile error; embed optional files from the C side.
 - The program's C is linked on the Mac as its own dylib with no undefined symbols, so it
   can't call SDL directly though the goose binary carries SDL: look the function up with

@@ -60,8 +60,8 @@ the rest. Below, `app/` means `src/app/`, and so on.
 packages hand it flat, fixed-size data and take back the pointer and the time; nothing
 outside `app/` (and `android/`, the build scripts) knows what draws or what it runs on.
 One package is drawing code outside `app/`: `render3d/`, the 3D board's renderer, which
-the app and the 3D prototype (`poc/3d/`) share. It imports gfx,
-and only those two programs import it; no package of the game does. What the 3D board
+the app and the 3D prototype (`poc/3d/`) share. Its recording (`render3d_gpu`) imports
+gfx, and only those two programs import it; no package of the game does. What the 3D board
 is but drawing, its meshes, looks, light, and the plan of its bake, is `model3d/`, which
 imports no gfx and is tested headless.
 
@@ -70,7 +70,7 @@ platform, `app/host` (the window, the frame's end and clock, the screen's size a
 focus, the pointer, keys and typed text, the screenshot, and the program's C for the
 safe area, the wake timer, storage, locales, and Android's launch, back, and close), and
 the renderer, `app/render`, which holds every drawer (`draw`, `draw3d`, `scene`,
-`widgets`) and every gfx handle. `main` calls these two and nothing of gfx. Each frame it
+`widgets`) and every GPU handle. `main` calls these two and nothing of gfx. Each frame it
 hands `render::frame` one `render::Frame` of the app's own values: the board as
 `board::fill` left it, where it goes, the pieces over the UI, the UI's quads, the 3D
 board's view and place, the blur, and the transition's hole; the frame's pass begins and
@@ -78,7 +78,13 @@ ends there. The glyphs, the badges, and the season's photograph reach the render
 pixels: `text::bake` and `badges::atlas` return R8 bytes, `background.c` decodes into
 pixels that the renderer's own C (`photo.c`) uploads, the embedded ASTC blocks with no
 copy, and `resize.c` takes the pixels the renderer reads back for a Mac window's cover.
-A second renderer replaces `render` and the drawers under it, and `photo.c`.
+Each drawer is what it draws, renderer-free, and its recording, a `_gpu` file per
+renderer: `scene_gpu`, `draw_gpu`, `widgets_gpu`, `host_gpu` (opening the window,
+presenting, the screenshot), `render3d_gpu` (a second file in namespace `render3d`), and
+`photo_gpu.h` for `photo.c`; `gpu` names the renderer's handle types and the few calls
+the drawers make themselves. gfx's are in `src/app/` and `src/render3d/`. goose-ngfx's
+are in `src/ngfx/`, which `scripts/ngfx.py` lays over them, with its shaders built ahead
+from Slang, for a build that draws through NoGraphicsAPI. The gfx build is what ships.
 
 The targets this keeps open, each replacing or adding to `app/` alone:
 
@@ -94,8 +100,8 @@ The targets this keeps open, each replacing or adding to `app/` alone:
   way out (`home::closable`), and nothing is drawn while the app hasn't focus: iOS ends
   an app that uses the GPU in the background, and SDL doesn't block the loop there.
 - **A second renderer**, the NoGraphicsAPI version through goose-ngfx on desktop and
-  Apple devices that support it ([product](../product.md)): `app/`'s drawing rewritten
-  against it, the packages unchanged.
+  Apple devices that support it ([product](../product.md)): its recorders in `src/ngfx/`,
+  a build option today, the packages and the drawers unchanged.
 - **Chess** ([product](../product.md)): new rules and board packages beside these,
   reusing `gui/`, `shell/`'s screens, and `app/` as they are.
 

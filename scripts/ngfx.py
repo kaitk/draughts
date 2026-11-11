@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """Build Draughts on goose-ngfx (NoGraphicsAPI) instead of gfx, and optionally run it
-(task 065, a prototype on the ngfx branch).
+(task 065; a build option beside gfx's, which ships).
 
     python scripts/ngfx.py src/app/draughts.goose              build build/ngfx/draughts(.exe)
     python scripts/ngfx.py src/app/draughts.goose --run -- --screen game
                                                                build, and run it with those flags
 
 The gfx build is untouched. This copies the program (src/, strings/, assets/, and the
-backgrounds' JPEG and ASTC masters) into build/ngfx/tree/ and lays src/ngfx/ over it: the ngfx
-versions of the files that draw (src/ngfx/app/ over src/app/, src/ngfx/render3d/ over
-src/render3d/). The root file gets the package's import, the sidecar the package's C
+backgrounds' JPEG and ASTC masters) into build/ngfx/tree/ and lays src/ngfx/ over it: the
+ngfx recorders in place of gfx's (src/ngfx/app/'s gpu, host_gpu, scene_gpu, draw_gpu,
+widgets_gpu, and photo_gpu.h over src/app/'s, src/ngfx/render3d/render3d_gpu.goose over
+src/render3d/'s), the drawers themselves shared. The root file gets the package's import, the sidecar the package's C
 headers, and the Slang shaders are compiled ahead into ngfx's blobs, which the app embeds,
 so it runs no shader compiler: src/ngfx/shaders/, and the 3D board's, written from gfx's
 GLSL by ngfx_3d_shaders.py. SMAA (third_party/smaa) comes with them: its shader, which

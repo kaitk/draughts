@@ -230,7 +230,7 @@ footer { margin-top: 4rem; color: var(--muted); font-size: .88rem; border-top: 1
 </ul>
 
 <h2>4. The renderer</h2>
-<p><code>render::Renderer</code> holds every painter and everything they keep on the GPU. The loop hands it a <code>render::Frame</code> of plain values: the board as <code>shell::fill</code> left it, its layout, the pieces over the UI and the UI's quads (as slices), the 3D board's camera, the blur, the hole, the time, and the screen's size. <code>render::frame</code> then paints, always in the same order:</p>
+<p><code>render::Renderer</code> holds every painter and everything they keep on the GPU. Each painter decides what to draw; a small recorder per renderer, its <code>_gpu</code> file, puts it on the GPU: gfx's in the app that ships, goose-ngfx's (<code>src/ngfx/</code>) in the build <code>scripts/ngfx.py</code> makes. The loop hands it a <code>render::Frame</code> of plain values: the board as <code>shell::fill</code> left it, its layout, the pieces over the UI and the UI's quads (as slices), the 3D board's camera, the blur, the hole, the time, and the screen's size. <code>render::frame</code> then paints, always in the same order:</p>
 <ol class="steps">
   <li><b>Work that can't happen on the screen.</b> Copy the UI's quads up, draw the 3D board's picture into its own texture if the 3D board is on, and copy up the pieces.<span class="where">widgets::prepare · draw3d::frame · draw::upload</span></li>
   <li><b>Open the screen's pass.</b><span class="where">gfx::begin_pass</span></li>
@@ -241,7 +241,7 @@ footer { margin-top: 4rem; color: var(--muted); font-size: .88rem; border-top: 1
 <h3>Pixels handed over from C</h3>
 <p>A few jobs are done in C: decoding the season's photograph, the cover a Mac window shows while you drag its edge. The C code never touches the GPU. It hands pixels over, and the renderer uploads them.</p>
 <ul>
-  <li><code>background.c</code> fills a <code>draughts_pixels</code> (<code>photo.h</code>) that points straight into the photograph's compressed blocks baked into the app, or into the decoded JPEG. The renderer's own C, <code>photo.c</code>, uploads them (<code>draughts_photo</code>) and gives them back (<code>draughts_photo_done</code>). No copy is made on the way.</li>
+  <li><code>background.c</code> fills a <code>draughts_pixels</code> (<code>photo.h</code>) that points straight into the photograph's compressed blocks baked into the app, or into the decoded JPEG. The renderer's own C, <code>photo.c</code>, uploads them through its renderer's <code>photo_gpu.h</code> (<code>draughts_photo_id</code>) and gives them back (<code>draughts_photo_done</code>). No copy is made on the way.</li>
   <li><code>resize.c</code> takes pixels the renderer reads back (<code>draw::cover_with</code>), and only where a cover shows at all (<code>draughts_resize_covers</code>: the Mac).</li>
   <li>The font's glyphs (<code>text::bake</code>) and the badges' animals (<code>badges::atlas</code>) come out as one byte per pixel, built in Goose; <code>widgets</code> uploads both.</li>
 </ul>

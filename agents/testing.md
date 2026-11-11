@@ -378,6 +378,13 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   for the 3D board: at 80 it hasn't appeared, and ngfx's board, whose preparing takes
   longer, is still fading in at 3,000 when gfx's is done. Shoot the 3D board settled at
   `--frames 20000` (about 6 s), portrait too (2026-11-11).
+- A change to the drawing (a drawer or its `_gpu` recorder) is checked on both builds:
+  every screen flat and 3D, headless at 1280 × 800 and `--frames 20000`, shot from both
+  before and after and compared each against itself; two runs of one build differ in
+  the 3D shots by a few pixels at most 2 of 255 (gfx's portrait 3D by about 3,900 of
+  them), so nothing over 32 is the test. For the 3D renderer also each `--aa` way, and
+  `--bench` and the footprint at `--rest` against a build of the commit before (task
+  073, 2026-11-11).
 - To compare the ngfx build with gfx, run both with the same flags in folders of their
   own and diff the PNGs (mean, max, pixels over 2, 8, and 32, and the box they're in).
   A one-off script in the scratchpad does it; settled, the flat board is within 1 of 255
@@ -516,8 +523,9 @@ measuring there:
   `SDL/APP`) and remove it after. The clock's lag was measured that way.
 - In a git worktree: `build/` is a real directory holding a link to the main checkout's
   `build/goose-v2026.4-macos-arm64` (tests write `build/test/`, so never link all of
-  `build/`). Init the submodules, and inside `third_party/goose_gfx` also
-  `third_party/nuklear` and `third_party/SDL` (the app's C needs nuklear's headers,
+  `build/`). Init the submodules (`git -c protocol.file.allow=always submodule update
+  --init`: the repository's config points goose_gfx's URL at the main checkout's copy,
+  2026-11-11), and inside `third_party/goose_gfx` also `third_party/nuklear` and `third_party/SDL` (the app's C needs nuklear's headers,
   `scripts/android.py` SDL's revision); link `build/android/SDL_src` to the main
   checkout's to skip copying SDL. The first Android build then takes about 35 s.
   `build/android/draughts/native` is a CMake cache bound to the main checkout's

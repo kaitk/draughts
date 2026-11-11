@@ -1,6 +1,6 @@
 # 073: One executable, the renderer chosen at run time
 
-Status: todo
+Status: in-progress (steps 1 and 2 done on main 2026-11-11; steps 3 to 5 on a branch of their own)
 
 Task 065 drew all of Draughts through goose-ngfx on its own branch, `ngfx`, as a
 build-time choice; tasks 070 and 071 brought it to gfx's frame time and memory on the Mac
@@ -8,6 +8,9 @@ and the iPhone. ngfx gains the user nothing measurable today (task 065, 070, 071
 branch is rebased by hand onto main (34 commits on 2026-11-11). This task brings it into
 main as a renderer the app picks when it starts: ngfx where the device has it, gfx
 everywhere else and on Android, and a flag to force either (the user, 2026-11-11).
+Main takes it as far as a build-time choice (steps 1 and 2); the run-time choice
+(steps 3 to 5) is built on a separate branch and not merged to main yet (the user,
+2026-11-11).
 
 ## What stands in the way
 
@@ -73,26 +76,47 @@ is trying ngfx and falling back, not a list of devices kept here:
 
 ## Where it stands (2026-11-11)
 
-- `ngfx` is main's history (merge base `c779f02`) with 35 commits on top, pushed to
-  origin at `005c58d`. Its last commit, `16d44ab` (task 072's focus ring), is another
-  session's, made while the main checkout was on `ngfx`: it belongs on main, and the
-  merge takes it there; check with the user that task 072 didn't also put it on main.
-- Before merging, the main checkout must have no uncommitted changes in the files the
-  merge touches (task 072's session had `src/gui/gui.goose` and the scroll test open).
-  Never commit with `-a` there: other sessions' changes sit in the same tree.
+- **Step 1 done.** `ngfx` merged into main (`088ca59`), after task 072's session
+  committed its gui work; the merge took `16d44ab` (task 072's focus ring, made on
+  `ngfx`) to main, where it wasn't, its `g.ring = false` carried into `src/gui/focus.goose`,
+  where main had moved the focus's code. The 82 tests pass, and the merge's shots match
+  the commit before it. Not yet: pushing main, then deleting `ngfx` locally and on
+  origin (to ask).
+- **Step 2 done**, one commit a twin: `host` (`cf7a17f`), `scene` (`6fb5cec`), `draw`
+  (`69b635d`), `widgets` (`23e3619`), `draw3d` (`2c4e972`), `render` (`19fe8fa`),
+  `photo.c` (`4fc3d44`), `render3d` (`553a407`). Each drawer is now what it draws and a
+  `_gpu` recorder per renderer, `gpu` naming each renderer's handles
+  ([decisions](../docs/decisions/README.md#the-codes-layout)). `src/ngfx/` holds only
+  recorders and shaders: `app/gpu`, `host_gpu`, `scene_gpu`, `draw_gpu`, `widgets_gpu`,
+  `photo_gpu.h`, and `render3d/render3d_gpu`. Along the way the ngfx build gained what
+  its copies had missed: the keys' focus in `host`, and gfx's wait on a theme's reload.
+- **Checked** on the Mac, both builds, after each twin: 26 shots headless at 1280 × 800
+  and `--frames 20000` (13 screens, flat and 3D: home, the game, taps, settings, stone,
+  birch's settings, sunset and home on the plain fade, a puzzle, a win, a held
+  transition, portrait 800 × 1280, the lookout), each build against its own shots taken
+  at the merge. Flat: identical. 3D: within two runs' noise, a few pixels by at most 2
+  of 255, none over 32 (gfx's portrait 3D differs by about 3,900 pixels between any two
+  runs). After render3d also every `--aa` way of each build against the merge's build
+  (none over 32), `--bench 60` alike (gfx waited P50 0.81 → 0.90 ms, ngfx 0.88 → 0.82,
+  run-to-run spread), and the headless footprint at `--rest 4` the same (gfx 122.0 →
+  122.2 MB, ngfx 139.3 → 139.3). poc/3d builds against the new render3d. Not run: the
+  tablet, the iPhone, and Windows, as nothing on screen was meant to change; the iOS and
+  Windows ngfx builds use the same overlay.
+- **Next, on its own branch** (steps 3 to 5): both renderers in one executable. The
+  recorders are the seam: each renderer's `_gpu` files compiled side by side (renamed
+  apart, or `gpu` and the recorders behind one interface chosen at start), the drawers
+  unchanged.
 - Building ngfx: `NGFX=~/projects/goose/goose-ngfx` and
   `NGFX_SLANGC=~/projects/goose/slang/bin/slangc` in every shell, then
   `python3 scripts/ngfx.py src/app/draughts.goose` (`build/ngfx/draughts`); gfx is
   `scripts/mac.py src/app/draughts.goose`. Both need `third_party/goose_gfx` and its
   SDL and nuklear checked out (`git submodule update --init` there, then the same in
   `third_party/goose_gfx`).
-- The shots to compare against: headless at 1280 × 800, 3D cases at `--frames 20000`
-  (`agents/testing.md`), taken from both builds before step 2 starts.
 
 ## Acceptance criteria
 
-- [ ] ngfx on main as a build option, the gfx build unchanged
-- [ ] The drawing in one copy, both renderers' shots as before
+- [x] ngfx on main as a build option, the gfx build unchanged
+- [x] The drawing in one copy, both renderers' shots as before
 - [ ] One executable per platform holding both renderers, starting on Apple systems
       without Metal 4
 - [ ] `--renderer auto|gfx|ngfx`, `auto` picking ngfx where it runs and gfx elsewhere

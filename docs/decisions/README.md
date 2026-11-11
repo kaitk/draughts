@@ -77,6 +77,19 @@ renderer. This is the seam a second renderer (goose-ngfx) and a second game buil
   goose-ngfx's APIs differ too much for one; and a Clay-like layout engine, as
   `gui::stack` covers what it would give here.
 
+goose-ngfx is a build option on main, its drawing one copy with gfx's (2026-11-11).
+Each drawer is split into what it draws, renderer-free (`scene`, `draw`, `widgets`,
+`draw3d`, `render`, `host`, `render3d`, `photo.c`), and its recording, a `_gpu` file per
+renderer, with `gpu` naming each renderer's handle types; `scripts/ngfx.py` lays
+`src/ngfx/`'s recorders over gfx's. Before, `src/ngfx/` held whole copies of eight files,
+alike but for the GPU calls: each rendering change was made twice, and the copies had
+drifted (the ngfx host lacked the keys' focus). The rejection above of a wrapper over
+single gfx calls stands: a recorder records whole passes in its renderer's own terms,
+and `gpu` holds only the types and the few calls that read the same in both (release, a
+target, a pass's begin and end, the wait). `render3d_gpu` is a second file in namespace
+`render3d`, so the 3D board's callers didn't change. Both renderers in one executable,
+chosen at run time, waits on a branch of its own.
+
 ### The shell's frame and the panel's regions (2026-11-10)
 
 - One screen table, `shell::KINDS`, and one `match` choosing each screen's code, in
