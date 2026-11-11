@@ -668,15 +668,15 @@ struct Widgets {
 }
 
 fn new() -> Widgets {
-    let vert = embed_shader("vert", draw::SHARED_BLOCK, VERT);
+    let vert = embed_shader("vert", draw_gpu::SHARED_BLOCK, VERT);
     let desc = gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED };
     var w = Widgets {
-        pipelines: [gfx::pipeline(vert, embed_shader("frag", BASE, shaders::FADE_FN, draw::THEME_BLOCK, draw::SHARED_BLOCK,
-                                                     draw::MAN_BLOCK, FRAG), desc),
-                    gfx::pipeline(vert, embed_shader("frag", ICONS, shaders::FADE_FN, draw::THEME_BLOCK, draw::SHARED_BLOCK,
-                                                     draw::MAN_BLOCK, FRAG), desc),
-                    gfx::pipeline(vert, embed_shader("frag", FACES, shaders::FADE_FN, draw::THEME_BLOCK, draw::SHARED_BLOCK,
-                                                     draw::MAN_BLOCK, FRAG), desc)],
+        pipelines: [gfx::pipeline(vert, embed_shader("frag", BASE, shaders::FADE_FN, draw_gpu::THEME_BLOCK, draw_gpu::SHARED_BLOCK,
+                                                     draw_gpu::MAN_BLOCK, FRAG), desc),
+                    gfx::pipeline(vert, embed_shader("frag", ICONS, shaders::FADE_FN, draw_gpu::THEME_BLOCK, draw_gpu::SHARED_BLOCK,
+                                                     draw_gpu::MAN_BLOCK, FRAG), desc),
+                    gfx::pipeline(vert, embed_shader("frag", FACES, shaders::FADE_FN, draw_gpu::THEME_BLOCK, draw_gpu::SHARED_BLOCK,
+                                                     draw_gpu::MAN_BLOCK, FRAG), desc)],
         quads:  gfx::Buffer { 0 },
         upload: [gui::Quad {}; gui::MAX_QUADS],
         atlas:  gfx::Texture { 0 },

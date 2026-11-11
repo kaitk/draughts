@@ -17,6 +17,9 @@ fn no_texture() -> Texture { gfx::Texture { 0 } }
 fn release(t: Texture) { gfx::release(t); }
 fn release(s: Sampler) { gfx::release(s); }
 
+// Texture t's pixels read back into px, RGBA8; false if it can't.
+fn read_texture(t: Texture, px: u8[>..]&) -> bool { gfx::read_texture(t, px) }
+
 // Submits what is drawn and waits for the GPU.
 fn flush() { gfx::flush(); }
 

@@ -21,6 +21,7 @@ import strings from "../../strings";
 import gui from "../gui";
 import .theme;
 import .draw;
+import .draw_gpu;
 import .gpu;
 import .scene;
 import .scene_gpu;

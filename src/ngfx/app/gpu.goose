@@ -15,5 +15,8 @@ fn no_texture() -> Texture { ngfx::Texture { 0 } }
 fn release(t: Texture) { ngfx::release(t); }
 fn release(s: Sampler) { ngfx::release(s); }
 
+// Texture t's pixels read back into px, RGBA8; false if it can't.
+fn read_texture(t: Texture, px: u8[>..]&) -> bool { ngfx::read_texture(t, px) }
+
 // Submits what is drawn and waits for the GPU.
 fn flush() { ngfx::flush(); }
