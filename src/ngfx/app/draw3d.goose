@@ -88,6 +88,9 @@ struct Bench {
     over:  f64[..1024] = [],
     plain: f64[..1024] = [],
     last:  f64         = 0.0,
+    // The pulse phase's passes go here: the screen is the window's image, which each
+    // flush would show without the UI.
+    into:  ngfx::Texture = ngfx::Texture { 0 },
 }
 
 let BENCH_PHASES = 4;
@@ -414,7 +417,8 @@ fn show(d: Drawer&, blur: f32, place: float4, fade0: f32, size: int2, now: f64) 
 
 // The bench's last phase: its first frame draws the board with a pulsing ring round every
 // piece and keeps its depth; each frame then times the kept depth's pass, and the
-// screen's part of a pulsing frame with the rings and without, each waited for.
+// screen's part of a pulsing frame with the rings and without, each waited for, drawn
+// into a texture of the screen's size.
 fn bench_pulse(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f64, size: int2) {
     let bn .= d.bench;
     if bn.i == 3 * bn.n {
@@ -434,13 +438,14 @@ fn bench_pulse(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, 
         d.redraw = true;
         ngfx::flush();
     }
+    if bn.into.id == 0 { bn.into = ngfx::render_target(size.x, size.y, ngfx::BGRA8); }
     let t0 = clock();
     render3d::draw_depth(d.gpu);
     ngfx::flush();
     let t1 = clock();
     for rings in 2 {
         let t2 = clock();
-        ngfx::begin_pass(ngfx::screen(), ngfx::Texture { 0 }, float4 { 0.0, 0.0, 0.0, 1.0 });
+        ngfx::begin_pass(bn.into, ngfx::Texture { 0 }, float4 { 0.0, 0.0, 0.0, 1.0 });
         render3d::backdrop(d.gpu, 1.0, size);
         render3d::show(d.gpu, float4 { 0.0, 0.0, size.x, size.y }, float4 { 0.0, 0.0, size.x, size.y }, 1.0, size);
         if rings == 0 {
