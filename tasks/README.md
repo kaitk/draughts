@@ -67,7 +67,8 @@ Open:
 - Frames: 055 both boards locked to the display's rate on every device, 056 even pacing
   where the frame fits but still drops (the iPhone).
 - Renderer: 065 NoGraphicsAPI through goose-ngfx, prototyped on the `ngfx` branch; 070
-  ngfx against gfx uncapped on the Mac; 071 where the 3D board's memory goes, on both.
+  ngfx against gfx uncapped on the Mac; 071 where the 3D board's memory goes, on both;
+  073 one executable with both renderers, chosen at run time, the drawing in one copy first.
 - Docs: 062 the docs split as Plod's are, decisions for agents and architecture for
   people, after 061.
 - Later: 010 goose_gfx changes to propose upstream (alongside), 013 season effects, 014
