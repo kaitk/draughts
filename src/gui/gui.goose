@@ -359,14 +359,26 @@ fn compact(g: Gui&, area: float4) -> bool { area.z < area.w && area.w < COMPACT 
 let PAD = 12.0;
 let PAD_WIDE = 16.0;
 
-// The tap's size in dp: a tile's or a row's height, and the least a tap is across, the
-// floor for small hands (rendering.md, "Controls"). Every screen's tiles and the panels'
-// heights follow it.
+// The tap's size in dp, tap(): a tile's or a row's height, and the least a tap is
+// across (rendering.md, "Controls"); every screen's tiles and the panels' heights follow
+// it. TAP on a touch screen, the floor for small hands; on a desktop (desktop_scale above
+// 0) DESKTOP_TAP, the size a mouse wants (task 069, the user 2026-11-11).
 let TAP = 88.0;
+let DESKTOP_TAP = 64.0;
+fn tap() -> f32 { if desktop_scale > 0.0 { DESKTOP_TAP } else { TAP } }
 
-// The room in dp a tile sized to its words keeps either side of them: settings' tiles and
-// languages, the setup's draughts, the puzzles' draughts switch.
+// A tile with its icon or picture over its word is at least STACKED_TAP tall, stacked():
+// under it a word on two lines, a picture, or the hint's pips crowd it (task 069, the
+// user 2026-11-11). A touch screen's tap is over it already.
+let STACKED_TAP = 72.0;
+fn stacked() -> f32 { max(tap(), STACKED_TAP) }
+
+// The room in dp a tile sized to its words keeps either side of them, side(): settings'
+// tiles and languages, the setup's draughts, the puzzles' draughts switch, and back, which
+// keeps 4 dp more for its arrow. WORD_SIDE on a touch screen, DESKTOP_SIDE on a desktop.
 let WORD_SIDE = 16.0;
+let DESKTOP_SIDE = 12.0;
+fn side() -> f32 { if desktop_scale > 0.0 { DESKTOP_SIDE } else { WORD_SIDE } }
 
 // Whether an area at s pixels a dp is a phone's: under PHONE dp across its shorter side.
 // A tablet's, a foldable's, and an iPad window's are wider.
@@ -663,7 +675,7 @@ fn tile(g: Gui&, id: i64, r: float4, icon: i64, style: i64, radius: f32) -> bool
     add(g, Quad { rect: r, look: float4 { BUTTON, radius * g.scale, 0.0, p },
                   extra: float4 { g.scale, style, hover(g, id), 0.0 } });
     if icon != NO_ICON {
-        // Icons are half the tile (44 dp in a TAP tall one), scaled with it and with the press.
+        // Icons are half the tile (44 dp in an 88 dp one), scaled with it and with the press.
         let s = 0.5 * min(r.z, r.w) * (1.0 - 0.04 * p);
         glyph_icon(g, center(r, s, s), icon, style, p, 1.0);
     }
@@ -911,16 +923,15 @@ fn labelled_width(g: Gui&, size: f32, label: const u8[:], face: i64) -> f32 {
 
 // The way back (rendering.md, "Controls", The way back): one control on
 // every screen, the arrow and the word `label` ("Back") side by side on a glass tile,
-// TAP tall. back_width is how wide it is: its icon and word with BACK_PAD at either
-// side, TAP at least.
+// a tap tall. back_width is how wide it is: its icon and word with side() and 4 dp at
+// either side, a tap at least.
 let BACK_ICON = 34.0;
-let BACK_PAD = 20.0;
 fn back_width(g: Gui&, label: const u8[:]) -> f32 {
-    return max(TAP * g.scale, (2.0 * BACK_PAD + BACK_ICON + 12.0) * g.scale + text_width(g, HEADING, label));
+    return max(tap() * g.scale, (2.0 * (side() + 4.0) + BACK_ICON + 12.0) * g.scale + text_width(g, HEADING, label));
 }
 
 // The way back in r, on its own glass, or with `stacked` the arrow over the word in a
-// TAP square where a page has no room for it wider; true when tapped.
+// tap's square where a page has no room for it wider; true when tapped.
 fn back(g: Gui&, id: i64, r: float4, label: const u8[:], stacked: bool = false) -> bool {
     glass(g, r, 22.0);
     return labelled(g, id, r, BACK, BACK_ICON, label, HEADING, if stacked { STACKED } else { MIDDLE });

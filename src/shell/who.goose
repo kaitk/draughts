@@ -30,7 +30,7 @@ let REMOVE = 6;             // remove the sheet's player
 
 let HOLD = 1.5;             // seconds start again and remove are held
 
-// The parts, in dp: the head, the name's field, and the holds are gui::TAP tall.
+// The parts, in dp: the head, the name's field, and the holds are gui::tap() tall.
 let EDGE = 16.0;            // the card keeps from the safe area's edges
 let PAD = 24.0;             // the card's sides; 20 above, 24 below
 let GAP = 14.0;             // between the head and the rest
@@ -131,20 +131,20 @@ fn picker(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i6
     let title = strings::get(strings::PLAYERS_WHO);
     let room = area.z - 2.0 * (EDGE + PAD) * u;
     let tiles = per * t + (per - 1) * TILE_GAP;
-    let head = (2.0 * gui::TAP + 32.0) * u + gui::text_width(g, gui::LABEL, title);
+    let head = (2.0 * gui::tap() + 32.0) * u + gui::text_width(g, gui::LABEL, title);
     let width = min(max(tiles * u, head), room) + 2.0 * PAD * u;
-    let height = (20.0 + gui::TAP + GAP + rows * th + (rows - 1) * TILE_GAP + 24.0) * u;
+    let height = (20.0 + gui::tap() + GAP + rows * th + (rows - 1) * TILE_GAP + 24.0) * u;
     let r = gui::center(area, width, height);
     card(g, r);
     var c = float4 { r.x + PAD * u, r.y + 20.0 * u, r.z - 2.0 * PAD * u, r.w - 44.0 * u };
     var ask = NOTHING;
-    var row = gui::cut_top(c, gui::TAP * u);
+    var row = gui::cut_top(c, gui::tap() * u);
     gui::cut_top(c, GAP * u);
-    if glass_tile(g, gui::WHO_IDS + 2, gui::cut_left(row, gui::TAP * u), gui::BACK, gui::PLAIN) {
+    if glass_tile(g, gui::WHO_IDS + 2, gui::cut_left(row, gui::tap() * u), gui::BACK, gui::PLAIN) {
         w.state = CLOSED;
         ask = CHANGED;
     }
-    if glass_tile(g, gui::WHO_IDS + 3, gui::cut_right(row, gui::TAP * u), gui::PENCIL, if w.editing { gui::ON } else { gui::PLAIN }) {
+    if glass_tile(g, gui::WHO_IDS + 3, gui::cut_right(row, gui::tap() * u), gui::PENCIL, if w.editing { gui::ON } else { gui::PLAIN }) {
         w.editing = !w.editing;
         ask = CHANGED;
     }
@@ -214,9 +214,9 @@ fn sheet_for(w: Who&, ps: players::Players&, index: i64) {
 // The pictures' size in dp and how many to a row, in a card whose content may be `room`
 // dp wide: six in a row, a tap to 112 dp; else three; three of a tap at the side (`wide`).
 fn pictures(room: f32, wide: bool) -> f32, i64 {
-    guard !wide else { return gui::TAP, 3; }
+    guard !wide else { return gui::tap(), 3; }
     let six = min(112.0, floor((min(room, 760.0 - 2.0 * PAD) - 5.0 * PIC_GAP) / 6.0));
-    guard six < gui::TAP else { return six, 6; }
+    guard six < gui::tap() else { return six, 6; }
     return min(112.0, floor((room - 2.0 * PIC_GAP) / 3.0)), 3;
 }
 
@@ -247,7 +247,7 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
     if holds == 2 { both += hold_width(g, strings::PLAYERS_REMOVE); }
     // The head: back, the face (editing) and the name or the title, done.
     let title = if edit { w.name[..] } else { strings::get(strings::PLAYERS_NEW) };
-    let head = (2.0 * gui::TAP + 32.0 + (if edit { 72.0 } else { 0.0 })) * u + gui::text_width(g, gui::LABEL, title);
+    let head = (2.0 * gui::tap() + 32.0 + (if edit { 72.0 } else { 0.0 })) * u + gui::text_width(g, gui::LABEL, title);
     var content: f32 = 0.0;
     var right:   f32 = 0.0;   // wide: the right column's width
     if wide {
@@ -257,25 +257,25 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
         content = clamp(max(head, both), grid_w * u, room * u);
     }
     let stacked = holds > 0 && both > (if wide { right } else { content }) + 0.5;
-    let holds_h = if holds == 0 { 0.0 } else if stacked && holds == 2 { 2.0 * gui::TAP + ROW_GAP } else { gui::TAP };
-    let name_h = TITLE_H + ROW_GAP + gui::TAP + (if holds > 0 { ROW_GAP + holds_h } else { 0.0 });
+    let holds_h = if holds == 0 { 0.0 } else if stacked && holds == 2 { 2.0 * gui::tap() + ROW_GAP } else { gui::tap() };
+    let name_h = TITLE_H + ROW_GAP + gui::tap() + (if holds > 0 { ROW_GAP + holds_h } else { 0.0 });
     let pics_h = TITLE_H + ROW_GAP + grid_h;
     let body = if wide { max(pics_h, name_h) } else { pics_h + GAP + name_h };
-    let height = (20.0 + gui::TAP + GAP + body + 24.0) * u;
+    let height = (20.0 + gui::tap() + GAP + body + 24.0) * u;
     var r = gui::center(area, content + 2.0 * PAD * u, height);
     // Clear of the keyboard while the name is typed.
     if w.typing { r.y = min(r.y, area.y + EDGE * u); }
     card(g, r);
     var c = float4 { r.x + PAD * u, r.y + 20.0 * u, r.z - 2.0 * PAD * u, r.w - 44.0 * u };
 
-    var row = gui::cut_top(c, gui::TAP * u);
+    var row = gui::cut_top(c, gui::tap() * u);
     gui::cut_top(c, GAP * u);
-    if glass_tile(g, gui::WHO_IDS + 20, gui::cut_left(row, gui::TAP * u), gui::BACK, gui::PLAIN) {
+    if glass_tile(g, gui::WHO_IDS + 20, gui::cut_left(row, gui::tap() * u), gui::BACK, gui::PLAIN) {
         w.state = if w.first { CLOSED } else { PICKING };
         w.typing = false;
         ask = CHANGED;
     }
-    let done = glass_tile(g, gui::WHO_IDS + 21, gui::cut_right(row, gui::TAP * u), gui::CHECK, gui::PRIMARY);
+    let done = glass_tile(g, gui::WHO_IDS + 21, gui::cut_right(row, gui::tap() * u), gui::CHECK, gui::PRIMARY);
     gui::cut_left(row, gui::PAD_WIDE * u);
     gui::cut_right(row, gui::PAD_WIDE * u);
     if edit {
@@ -311,11 +311,11 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
     }
 
     heading(g, rest, strings::PLAYERS_NAME);
-    if field(w, g, gui::cut_top(rest, gui::TAP * u)) { ask = CHANGED; }
+    if field(w, g, gui::cut_top(rest, gui::tap() * u)) { ask = CHANGED; }
     if holds > 0 {
         gui::cut_top(rest, ROW_GAP * u);
         var hr = gui::cut_top(rest, holds_h * u);
-        let first = if stacked || holds == 1 { gui::cut_top(hr, gui::TAP * u) } else { gui::cut_left(hr, 0.5 * (hr.z - gui::PAD * u)) };
+        let first = if stacked || holds == 1 { gui::cut_top(hr, gui::tap() * u) } else { gui::cut_left(hr, 0.5 * (hr.z - gui::PAD * u)) };
         if stacked { gui::cut_top(hr, ROW_GAP * u); } else { gui::cut_left(hr, gui::PAD * u); }
         if hold(g, gui::WHO_IDS + 41, first, gui::RESTART, strings::PLAYERS_START_AGAIN, false) { ask = AGAIN; }
         if holds == 2 && hold(g, gui::WHO_IDS + 42, hr, gui::TRASH, strings::PLAYERS_REMOVE, true) {

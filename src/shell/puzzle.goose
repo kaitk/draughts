@@ -430,7 +430,7 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
     if landscape {
         // Round the 3D board the panel is a short corner one (panel::corners_in): next
         // takes the shorter tile there.
-        let next = gui::cut_bottom(right, if l.three { panel::STACK_H * u } else { panel::tall(l, u) });
+        let next = gui::cut_bottom(right, if l.three { panel::stack_h() * u } else { panel::tall(l, u) });
         if l.three { gui::cut_top(right, 8.0 * u); } else { gui::cut_bottom(right, gui::PAD * u); }
         let f .= g.faces[gui::LABEL];
         let s .= g.faces[gui::SMALL];
@@ -466,7 +466,7 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
     gui::cut_left(top, 6.0 * u);
     goal(pl, g, top, 48.0, false, now, 52.0, over);
     stake(pl, g, stars_at, if solved { 48.0 } else { 40.0 }, 6.0, now);
-    if gui::labelled(g, panel::EYE_ID, gui::cut_top(right, gui::TAP * u), gui::NEXT, 36.0, word, gui::HEADING, gui::MIDDLE,
+    if gui::labelled(g, panel::EYE_ID, gui::cut_top(right, gui::tap() * u), gui::NEXT, 36.0, word, gui::HEADING, gui::MIDDLE,
                      style, on) {
         ask = NEXT;
     }
