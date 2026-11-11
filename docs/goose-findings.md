@@ -4,6 +4,26 @@ Gaps found in Goose, goose_gfx, the SDL it pins, and goose-ngfx, with what we do
 each here and what could go upstream. Newest first. goose-ngfx is the user's, so its gaps
 are fixed there when Draughts needs them; the entries name what is still open.
 
+## goose_gfx: no window without its GPU device (2026-11-11)
+
+`gfx::open` makes an SDL_GPU device and claims the window for it, and `frame()` presents
+through it, so another renderer can't draw into gfx's window and keep gfx's input,
+events, time, and draw-on-demand wait. goose-ngfx copied gfx's platform half over an SDL
+of its own instead, which puts two SDLs in one process and keeps the two renderers out
+of one executable. goose_gfx `v1`, Goose v2026.4.
+
+- Here: `patches/goose_gfx/0008-window-only.patch` adds the flag `WINDOW_ONLY` (64): the
+  window and no device; `gs_gfx_native_window()` (a `CAMetalLayer` from an SDL Metal
+  view on Apple's systems, the `HWND` on Windows, the `ANativeWindow` on Android, none
+  headless); `gs_gfx_presented(shown)`, which the renderer calls each frame so a frame
+  that showed nothing makes the next `frame()` wait; and `gs_gfx_needs_present()`, set
+  when the window is exposed, shown, or resized. `screen_size()` is the window's size in
+  pixels; the calls that need the device are misuses in this mode. The Goose side is the
+  program's own externs, as for 0004.
+- Upstream: the flag and the three calls in `gfx.goose`. It is also how a program would
+  choose its renderer at run time: gfx opens the window first, and then either another
+  renderer or gfx's own device draws into it (the device claiming the window later).
+
 ## ngfx: no MSAA, since NoGraphicsAPI has none (2026-11-11)
 
 NoGraphicsAPI's textures take no sample count and it has no resolve, so ngfx has neither
@@ -15,8 +35,8 @@ v0.3.0, NoGraphicsAPI `0400414`.
   (`third_party/smaa/`), FXAA, or 2 × 2 supersampling by `--aa`; SMAA by default, closest
   to the MSAA for half supersampling's cost (task 065 has the comparison).
 - Upstream: MSAA in NoGraphicsAPI (a sample count in `TextureDesc`, and a resolve, on
-  Metal 4 and Vulkan), then in ngfx's `TextureDesc` and `PassDesc`. For sebbbi's
-  NoGraphicsAPI, a note for the user.
+  Metal 4 and Vulkan), then in ngfx's `TextureDesc` and `PassDesc`: a branch of its own
+  in the user's fork, `kaitk/NoGraphicsAPI`, to offer upstream (goose-ngfx `docs/design.md`).
 
 ## ngfx: `generate_mips` takes no sRGB texture (2026-11-11)
 
