@@ -83,15 +83,19 @@ fn close() {
     gfx::close();
 }
 
-// Ends the frame, presenting what its pass drew (or the screen as it stands, when the
-// window was exposed), and waits for an event when nothing did; false once the window
-// is asked to close, and the loop ends. The screen then follows the window's size.
+// Ends the frame, presenting what its pass drew, and waits for an event when nothing
+// did; false once the window is asked to close, and the loop ends. The screen then
+// follows the window's size.
 fn frame() -> bool {
-    presented(ngfx::present(needs_present()));
+    presented(ngfx::present());
     let running = gfx::frame();
     ngfx::resize(gfx::screen_size());
     running
 }
+
+// Whether the window wants a frame drawn though nothing changed (exposed, shown or
+// resized): ngfx draws straight into the window's image and keeps no copy to show again.
+fn exposed() -> bool { needs_present() }
 
 // The frames presented so far: the first is on screen once the second frame() returns.
 fn frame_count() -> i64 { gfx::frame_count() }
@@ -142,7 +146,8 @@ fn keyboard(h: Host&, typing: bool, tap: i64) {
     h.keyboard = tap;
 }
 
-// Saves the screen as last shown to `path`, a PNG.
+// Saves the screen as last shown to `path`, a PNG; headless only, as a window's screen
+// is the window's image, which ngfx can't read.
 fn screenshot(path: const u8[:]) { ngfx::screenshot(path); }
 
 // The app's storage folder into `out`, and the system's locales; each returns its bytes.

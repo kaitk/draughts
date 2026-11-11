@@ -131,6 +131,7 @@ fn main() {
             size = s;
             dirty = true;
         }
+        if host::exposed() { dirty = true; }
         // The safe area and the display's scale, read each frame (a few fields in SDL):
         // turning the screen moves the camera's cutout and the gesture bar, and a change
         // of either is a change of the screen, as a new size is. On a desktop the display

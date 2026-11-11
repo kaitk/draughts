@@ -73,6 +73,10 @@ fn close() { gfx::close(); }
 // (patches/goose_gfx/0006), and the loop ends.
 fn frame() -> bool { gfx::frame() }
 
+// Whether the window wants a frame drawn though nothing changed (exposed, shown or
+// resized): never here, as gfx presents its kept screen again itself.
+fn exposed() -> bool { false }
+
 // The frames presented so far: the first is on screen once the second frame() returns.
 fn frame_count() -> i64 { gfx::frame_count() }
 
