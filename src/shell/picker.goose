@@ -13,7 +13,7 @@
 // over its levels, each a glass row of the level's mark and name beside its tiles, or
 // over them where the two don't fit side by side; a level's tiles split into rows as even
 // as they go. Each tile shows the stars won, the first without stars lit. Every tap is
-// 88 dp at least. The sharp photograph shows behind it, and no board.
+// a tap (gui::TAP) at least. The sharp photograph shows behind it, and no board.
 namespace picker;
 import std;
 import vec;
@@ -35,6 +35,8 @@ let NAMES = [strings::THEME_LEARN, strings::THEME_CAPTURES, strings::THEME_CROWN
 let LEVEL_NAMES = [strings::PUZZLES_LEVEL1, strings::PUZZLES_LEVEL2, strings::PUZZLES_LEVEL3];
 let COLUMN = 600.0;         // dp a column of the library takes at most
 let NARROWEST = 420.0;      // and at least where it goes to two in landscape for the width
+let MARGIN = 24.0;          // dp round the library and a theme's page, and between back's column and the rest,
+let MARGIN_PHONE = 16.0;    // round them on a phone
 let LIBRARY_LIST = gui::PICKER_IDS + 100;     // the scrolling lists' ids (gui::scroll_begin): the library,
 let PAGE_LIST = gui::PICKER_IDS + 110;        // and a theme's page, plus the theme
 
@@ -187,16 +189,16 @@ fn theme_row(g: gui::Gui&, r: float4, theme: i64, stars: const u8[:], phone: boo
 // The draughts switch (prototypes/puzzle-set.html, take a): settings' draughts tiles, each
 // its name over its board's size, joined on one glass, 4 dp round them and between.
 let SWITCH_PAD = 4.0;
-let SWITCH_H = 96.0;        // its 88 dp tiles and the glass round them
+let SWITCH_H = 96.0;        // its gui::TAP tiles and the glass round them
 let SWITCH_IDS = gui::PICKER_IDS + 20;
 
-// How wide draughts tile i wants to be: as settings' tiles, its words with 16 dp either
-// side, at least 88 dp.
+// How wide draughts tile i wants to be: as settings' tiles, its words with gui::WORD_SIDE
+// either side, at least a tap.
 fn switch_tile_w(g: gui::Gui&, i: i64) -> f32 {
     let u = g.scale;
     let w = max(gui::text_width(g, gui::BODY, strings::get(settings::DRAUGHTS_KEYS[i])),
                 gui::text_width(g, gui::SMALL, strings::get(settings::DRAUGHTS_SIZES[i])));
-    return max(88.0 * u, w + 32.0 * u);
+    return max(gui::TAP * u, w + 2.0 * gui::WORD_SIDE * u);
 }
 
 // How wide the switch wants to be.
@@ -251,28 +253,28 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let u = g.scale;
     let landscape = area.z >= area.w;
     let phone = gui::phone(area, u);
-    var page = gui::inset(area, (if phone { 16.0 } else { 24.0 }) * u);
+    var page = gui::inset(area, (if phone { MARGIN_PHONE } else { MARGIN }) * u);
     var pick = NOTHING;
     let whole = page;           // the rows center on the screen, not on what back leaves
     if landscape {
         var column = gui::cut_left(page, back_w(g));
-        if back(g, gui::cut_top(column, 88.0 * u)) { pick = BACK; }
-        gui::cut_left(page, 24.0 * u);
+        if back(g, gui::cut_top(column, gui::TAP * u)) { pick = BACK; }
+        gui::cut_left(page, MARGIN * u);
     }
     let gap = gui::PAD * u;
     let sw_w = switch_width(g);
     let sw_h = SWITCH_H * u;
     let beside = landscape && title_width(g) + 24.0 * u + sw_w <= page.z;
-    let head = if beside { sw_h + gap } else { 88.0 * u + gap + sw_h + gap };
+    let head = if beside { sw_h + gap } else { gui::TAP * u + gap + sw_h + gap };
     // A variant's set may leave a theme out (Russian's has no king shots): its row too.
     var rows = 0;
     for t in puzzles::THEMES { if puzzles::theme_count(puzzles::all, t) > 0 { rows++; } }
     // In portrait the rows give up height to fit the page under the switch's row (a
-    // foldable, a 9:16 phone), down to the 88 dp a tap wants; where even that doesn't
+    // foldable, a 9:16 phone), down to the gui::TAP a tap wants; where even that doesn't
     // fit, they keep their height and scroll.
     var row_h = (if phone { 96.0 } else { 124.0 }) * u;
     let fit = floor((page.w - head - (rows - 1) * gap) / rows);
-    if !landscape && fit >= 88.0 * u { row_h = min(row_h, fit); }
+    if !landscape && fit >= gui::TAP * u { row_h = min(row_h, fit); }
     let one = rows * row_h + (rows - 1) * gap;
     // Two columns in landscape where two fit the width (a tablet, a wide window) or one
     // doesn't fit the height (a phone); one in portrait, scrolling where it must.
@@ -284,19 +286,19 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     // Where the title and the rows start below back (a tablet's landscape), they take the
     // whole width and center on it; else they keep clear of back's column, centered on
     // the screen as far as that allows (a phone's landscape, back beside the rows).
-    let room = if landscape && y >= whole.y + 88.0 * u + gap { whole } else { page };
+    let room = if landscape && y >= whole.y + gui::TAP * u + gap { whole } else { page };
     let col_w = min((room.z - (cols - 1) * gap) / cols, COLUMN * u);
     let w = cols * col_w + (cols - 1) * gap;
     let x = max(room.x, whole.x + floor(0.5 * (whole.z - w) + 0.5));
     // The title row as wide as the rows, or as the title and the switch beside it want.
     let top_w = if beside { min(room.z, max(w, title_width(g) + 24.0 * u + sw_w)) } else { w };
     let top_x = max(room.x, min(x, whole.x + floor(0.5 * (whole.z - top_w) + 0.5)));
-    var top = float4 { top_x, y, top_w, if beside { sw_h } else { 88.0 * u } };
+    var top = float4 { top_x, y, top_w, if beside { sw_h } else { gui::TAP * u } };
     if !landscape {
         if back(g, gui::cut_left(top, back_w(g))) { pick = BACK; }
         gui::cut_left(top, 20.0 * u);
     }
-    let sw = if beside { gui::cut_right(top, sw_w) } else { float4 { x, y + 88.0 * u + gap, w, sw_h } };
+    let sw = if beside { gui::cut_right(top, sw_w) } else { float4 { x, y + gui::TAP * u + gap, w, sw_h } };
     if beside { gui::cut_right(top, 24.0 * u); }
     title(g, top);
     if switch(g, sw, variant) {
@@ -360,7 +362,7 @@ fn levels_h(t: i64, fit: i64, side: f32, gap: f32, margin: f32, above: f32, betw
 // How tall theme t's levels are at least on a landscape page w pixels wide, its head in
 // the column under back: as page() lays them out.
 fn tightest(t: i64, w: f32, short: bool, phone: bool, u: f32) -> f32 {
-    let side = (if phone { 88.0 } else { 96.0 }) * u;
+    let side = (if phone { gui::TAP } else { 96.0 }) * u;
     let gap = (if short { 8.0 } else { 10.0 }) * u;
     let pad_x = (if short { 12.0 } else { 16.0 }) * u;
     let pad_y = (if short { 4.0 } else { 14.0 }) * u;
@@ -389,23 +391,23 @@ fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, sp
     let landscape = area.z >= area.w;
     let phone = gui::phone(area, u);
     let short = landscape && area.w < gui::PHONE * u;
-    var room = gui::inset(area, (if phone { 16.0 } else { 24.0 }) * u);
+    var room = gui::inset(area, (if phone { MARGIN_PHONE } else { MARGIN }) * u);
     var pick = NOTHING;
     var column = room;
     if landscape {
-        // Back as wide as its word wants, or 88 dp with the word under the arrow where the
+        // Back as wide as its word wants, or a tap with the word under the arrow where the
         // levels wouldn't fit the height beside that (Shots on a phone with its insets).
         let stacked = tightest(t, room.z - back_w(g) - 24.0 * u, short, phone, u) > room.w;
-        column = gui::cut_left(room, if stacked { 88.0 * u } else { back_w(g) });
-        if back(g, gui::cut_top(column, 88.0 * u), stacked) { pick = SHOWN; }
-        gui::cut_left(room, 24.0 * u);
+        column = gui::cut_left(room, if stacked { gui::TAP * u } else { back_w(g) });
+        if back(g, gui::cut_top(column, gui::TAP * u), stacked) { pick = SHOWN; }
+        gui::cut_left(room, MARGIN * u);
     }
-    let side = (if phone { 88.0 } else { 96.0 }) * u;
+    let side = (if phone { gui::TAP } else { 96.0 }) * u;
     var gap = (if short { 8.0 } else { 10.0 }) * u;
     var pad_x = (if short { 12.0 } else { 16.0 }) * u;
     var pad_y = (if short { 4.0 } else { 14.0 }) * u;
     var between = (if short { 6.0 } else { 14.0 }) * u;
-    let head_h = (if !landscape { 88.0 } else if short { 52.0 } else { 72.0 }) * u;
+    let head_h = (if !landscape { gui::TAP } else if short { 52.0 } else { 72.0 }) * u;
     let label_h = 30.0 * u;
     let words = (if short { 96.0 } else { 120.0 }) * u;
     var label = words + 14.0 * u;       // the label beside the tiles, and its gap

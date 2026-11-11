@@ -137,7 +137,7 @@ fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool,
         if !inside(r, safe) && !below { format(wrong, " tile ", i, " off the safe area;"); }
         for j in i { if overlaps(r, drive::rect(g, j)) { format(wrong, " tiles ", j, " and ", i, " overlap;"); } }
         if board_shows && b.z > 0.0 && overlaps(r, b) && !(card && i >= n - 2) { format(wrong, " tile ", i, " on the board;"); }
-        if tap && !switched && (r.z < 88.0 * u - 0.5 || r.w < 88.0 * u - 0.5) { small++; }
+        if tap && !switched && (r.z < gui::TAP * u - 0.5 || r.w < gui::TAP * u - 0.5) { small++; }
     }
     if small > 0 { format(wrong, " ", small, " taps under 88 dp;"); }
     format(line, ", smallest ", whole(narrow / u), " x ", whole(low / u), " dp");
@@ -190,7 +190,7 @@ fn chip(g: gui::Gui&, sh: shell::Shell&) {
         if b.z > 0.0 && b.x + 0.5 < side { wrong.append(" the board not on its side;"); }
         // The name's glass pill: inside the chip's tap, none without a name or where the
         // chip is round, its badge alone, for want of room (home::player_spot).
-        let round = c.z < home::CORNER * u + 0.5;
+        let round = c.z < gui::TAP * u + 0.5;
         if named && round { line.append(", round"); }
         var pills = 0;
         for q in g.quads {

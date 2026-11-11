@@ -89,7 +89,7 @@ fn report(what: const u8[:], g: gui::Gui&) {
             format(wrong, " tile ", i, " off the screen;");
         }
         for j in i { if overlaps(r, drive::rect(g, j)) { format(wrong, " tiles ", j, " and ", i, " overlap;"); } }
-        if r.z < 88.0 * u - 0.5 || r.w < 88.0 * u - 0.5 { format(wrong, " tile ", i, " under 88 dp;"); }
+        if r.z < gui::TAP * u - 0.5 || r.w < gui::TAP * u - 0.5 { format(wrong, " tile ", i, " under 88 dp;"); }
     }
     var bad_text = 0;
     for q in g.quads {

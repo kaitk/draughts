@@ -57,7 +57,7 @@ fn report(what: const u8[:], g: gui::Gui&, size: float2) {
         let r = drive::rect(g, i);
         if !inside(r, safe) { format(wrong, " tile ", i, " off the safe area;"); }
         if !inside(r, l.left) && !inside(r, l.right) { format(wrong, " tile ", i, " off its panel;"); }
-        if r.z < 88.0 * u - 0.5 || r.w < 88.0 * u - 0.5 { small++; }
+        if r.z < gui::TAP * u - 0.5 || r.w < gui::TAP * u - 0.5 { small++; }
     }
     if small > 0 { format(wrong, " ", small, " taps under 88 dp;"); }
     var h: view3d::Hull = [];

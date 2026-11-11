@@ -142,15 +142,15 @@ fn spot_of(gm: Game&, pl: panel::Layout, sq: i64) -> float2, f32 {
 
 // The end's cards (celebrate, settle) share their size, their place, their buttons, and
 // how they come in. Their size on board l: 40 dp above and below, 56 dp at the sides;
-// the buttons 112 × 88 dp, 20 dp apart. On a board under panel::BOARD all but the
-// buttons' height shrink with it (`fit`), the buttons' width down to 88 dp (`button`):
+// the buttons 112 dp × gui::TAP, 20 dp apart. On a board under panel::BOARD all but the
+// buttons' height shrink with it (`fit`), the buttons' width down to gui::TAP (`button`):
 // the win's 356 × 300 dp, 49% of the tablet's board, comes to 52% of the smallest (the
 // foldable's 520 dp) where it would be 68%. Returns fit, button, and the card's width
 // in pixels.
 fn card_size(l: board::Layout) -> f32, f32, f32 {
     let u = l.scale;
     let fit: f32 = min(1.0, l.board.z / (panel::BOARD * u));
-    let button = max(88.0, 112.0 * fit);
+    let button = max(gui::TAP, 112.0 * fit);
     return fit, button, (112.0 * fit + 2.0 * button + 20.0 * fit) * u;
 }
 
@@ -177,8 +177,8 @@ fn card_at(gm: Game&, pl: panel::Layout, w: f32, h: f32, sq: i64) -> float4 {
 fn card_end(g: gui::Gui&, row: float4, fit: f32, button: f32, u: f32, first: i64, k: f64) -> i64, f32 {
     var ask = panel::NOTHING;
     let gap = 20.0 * fit * u;
-    if gui::button(g, gui::CARD_IDS, gui::cell(row, 2, 1, button * u, 88.0 * u, gap, 0), gui::BACK) { ask = panel::BACK; }
-    if gui::tile(g, gui::CARD_IDS + 1, gui::cell(row, 2, 1, button * u, 88.0 * u, gap, 1), gui::RESTART, gui::PRIMARY, 22.0) {
+    if gui::button(g, gui::CARD_IDS, gui::cell(row, 2, 1, button * u, gui::TAP * u, gap, 0), gui::BACK) { ask = panel::BACK; }
+    if gui::tile(g, gui::CARD_IDS + 1, gui::cell(row, 2, 1, button * u, gui::TAP * u, gap, 1), gui::RESTART, gui::PRIMARY, 22.0) {
         ask = panel::RESTART;
     }
     let drop = floor((1.0 - k) * SLIDE * u + 0.5) as f32;
@@ -199,12 +199,12 @@ fn celebrate(gm: Game&, g: gui::Gui&, pl: panel::Layout, won: i64, now: f64, ove
     // The piece, a 28 dp gap, the buttons (card_size).
     let fit, button, width = card_size(pl.board);
     let first = g.quads.len;
-    let card = card_at(gm, pl, width, ((40.0 + 40.0 + 104.0 + 28.0) * fit + 88.0) * u, gm.won_on);
+    let card = card_at(gm, pl, width, ((40.0 + 40.0 + 104.0 + 28.0) * fit + gui::TAP) * u, gm.won_on);
     gui::panel(g, card);
     var c = gui::inset(card, 40.0 * fit * u);
     var spot = gui::cut_top(c, 104.0 * fit * u);
     gui::cut_top(c, 28.0 * fit * u);
-    let ask, drop = card_end(g, gui::cut_top(c, 88.0 * u), fit, button, u, first, ease_out(span(t, CARD_AT, CARD_AT + 0.7)));
+    let ask, drop = card_end(g, gui::cut_top(c, gui::TAP * u), fit, button, u, first, ease_out(span(t, CARD_AT, CARD_AT + 0.7)));
     spot.y += drop;
     let a = board::ease(span(t, CROWN_AT, STILL)) as f32;
     let n = over.len;
@@ -247,7 +247,7 @@ fn settle(gm: Game&, g: gui::Gui&, pl: panel::Layout, draw: i64, now: f64, over:
     let say = head.ascent - head.descent + 6.0 * u + lines * line;
     let spot_h: f32 = if pieces { (104.0 + 28.0 - 10.0) * fit * u } else { 0.0 };
     let first = g.quads.len;
-    let card = card_at(gm, pl, width, (80.0 + 28.0) * fit * u + spot_h + say + 88.0 * u,
+    let card = card_at(gm, pl, width, (80.0 + 28.0) * fit * u + spot_h + say + gui::TAP * u,
                        if gm.b.has_last { gm.b.last.to } else { -1 });
     gui::panel(g, card);
     var c = gui::inset(card, 40.0 * fit * u);
@@ -267,7 +267,7 @@ fn settle(gm: Game&, g: gui::Gui&, pl: panel::Layout, draw: i64, now: f64, over:
     }
     gui::cut_top(c, 28.0 * fit * u);
     let k = ease_out(span(t, DRAW_CARD, DRAW_STILL));
-    let ask, drop = card_end(g, gui::cut_top(c, 88.0 * u), fit, button, u, first, k);
+    let ask, drop = card_end(g, gui::cut_top(c, gui::TAP * u), fit, button, u, first, k);
     guard pieces else { return ask; }
     spot.y += drop;
     let n = over.len;

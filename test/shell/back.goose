@@ -62,7 +62,7 @@ fn first_back(g: gui::Gui&) -> u8[>..] {
         }
     }
     let u = g.scale;
-    let big = r.z >= 88.0 * u - 0.5 && r.w >= 88.0 * u - 0.5;
+    let big = r.z >= gui::TAP * u - 0.5 && r.w >= gui::TAP * u - 0.5;
     return str(if arrow { "the arrow" } else { "not the arrow" }, if big { "" } else { ", under 88 dp" });
 }
 

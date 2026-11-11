@@ -466,7 +466,7 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
     gui::cut_left(top, 6.0 * u);
     goal(pl, g, top, 48.0, false, now, 52.0, over);
     stake(pl, g, stars_at, if solved { 48.0 } else { 40.0 }, 6.0, now);
-    if gui::labelled(g, panel::EYE_ID, gui::cut_top(right, panel::WIDE_H * u), gui::NEXT, 36.0, word, gui::HEADING, gui::MIDDLE,
+    if gui::labelled(g, panel::EYE_ID, gui::cut_top(right, gui::TAP * u), gui::NEXT, 36.0, word, gui::HEADING, gui::MIDDLE,
                      style, on) {
         ask = NEXT;
     }

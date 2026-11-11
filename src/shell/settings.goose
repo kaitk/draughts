@@ -86,8 +86,7 @@ let PAD_Y = 24.0;
 // fit in the 13" and 11" iPad's landscape, 1 and 5 dp short with the full padding
 // (2026-11-09).
 let TOP_RISE = 12.0;
-let HEAD_H = 100.0;         // back (88), the title, and the language's glass round 88 dp tiles
-let BACK_W = 88.0;          // back's height, and the tabs'
+let HEAD_H = 100.0;         // back (gui::TAP, as the tabs), the title, and the language's glass round its tiles
 let HEAD_GAP = 14.0;        // under them in landscape; 16 in portrait, as round the board
 let SIDE_GAP = 24.0;        // between the choices and the board in landscape
 let GROUP_GAP = 10.0;
@@ -101,25 +100,25 @@ let THUMB_W = 62.0;         // a season's thumbnail
 let THUMB_H = 40.0;
 // The theme's tiles in a small window (gui::compact, task 050): 48 dp tall, a smaller
 // thumbnail with its word beside it, and the switch's halves as low, so Theme, Board, and
-// Kings show in the smallest window without scrolling. Under the 88 dp floor, as the
+// Kings show in the smallest window without scrolling. Under the gui::TAP floor, as the
 // game's compact tiles are.
 let SLIM_H = 48.0;
 let SLIM_THUMB_W = 40.0;
 let SLIM_THUMB_H = 26.0;
 // The theme's switch, photograph or plain (prototypes/plain.html, take b): two halves
 // side by side. Where the name is above the tiles, beside it at the line's right end,
-// each half 88 dp square. Where the name is at the left of the tiles (most landscapes),
-// under it in the name's column, in the row's 88 dp: two 88 dp halves need 180 dp across
+// each half a tap square. Where the name is at the left of the tiles (most landscapes),
+// under it in the name's column, in the row's tap: two halves a tap wide need 180 dp across
 // where the column has 120, and a taller row would leave the tablet's landscape, which
 // has 8 dp to spare over its navigation bar, one group at a time (2026-11-09). Where the
 // choices' 55% of the page has the width (16:9 and wider), the names' column widens to
-// the switch's 180 dp, so each half is 88 dp wide; the rows keep their height. Either way
+// the switch's 180 dp, so each half is a tap wide; the rows keep their height. Either way
 // the halves are only as tall as their thumbnail and SWITCH_PAD above and below it, no
-// taller than the row's tiles: 60 dp where they are 88 wide (the user, 2026-11-10).
+// taller than the row's tiles: 60 dp where they are a tap wide (the user, 2026-11-10).
 let SWITCH_GAP = 4.0;
 let SWITCH_PAD = 10.0;
 let SWITCH_NAME = 20.0;     // the name's line above the switch in the name's column
-let WIDE_NAME_W = 2.0 * 88.0 + SWITCH_GAP; // the names' column as wide as the switch
+let WIDE_NAME_W = 2.0 * gui::TAP + SWITCH_GAP; // the names' column as wide as the switch
 let SLACK = 0.5;            // px a row may pass its width by without wrapping
 // The smallest board the groups side by side may leave on a phone (its shorter side under
 // gui::PHONE): 45% of the page, but no more than 220 dp, 45% of a 553 dp phone's. A larger
@@ -142,7 +141,6 @@ let GAME_ROWS = 2;
 let ROW_NAMES = [strings::SETUP_DRAUGHTS, strings::SETTINGS_HINTS,
                  strings::SETTINGS_THEME, strings::SETTINGS_BOARD, strings::SETTINGS_KINGS];
 let ROW_TILES = [3, 2, 5, 2, 3];
-let ROW_H = [88.0, 88.0, 88.0, 88.0, 88.0]; // the floor for small hands (56 to 72 until 2026-11-08)
 let GROUP_ICONS = [gui::TARGET, gui::SUN];
 let GROUP_TITLES = [strings::SETTINGS_GAME, strings::SETTINGS_LOOK];
 
@@ -160,8 +158,9 @@ struct Fit {
     slim:   bool = false,
 }
 
-// How tall a row's tiles are: SLIM_H for the theme's in a small window.
-fn row_h(f: Fit, row: i64) -> f32 { if f.slim && row == THEME_ROW { SLIM_H } else { ROW_H[row] as f32 } }
+// How tall a row's tiles are: a tap, the floor for small hands (56 to 72 dp until
+// 2026-11-08); SLIM_H for the theme's in a small window.
+fn row_h(f: Fit, row: i64) -> f32 { if f.slim && row == THEME_ROW { SLIM_H } else { gui::TAP } }
 
 // The switch's tap ids, photograph and plain, after the rows' (SETTINGS_IDS + 10 + 10 ×
 // row + i).
@@ -170,7 +169,7 @@ let SWITCH_ID = gui::SETTINGS_IDS + 60;
 // How wide the line of the theme's name and its switch beside it wants to be.
 fn switch_line(g: gui::Gui&) -> f32 {
     let u = g.scale;
-    return gui::text_width(g, gui::SMALL, strings::get(ROW_NAMES[THEME_ROW])) + (14.0 + 2.0 * 88.0 + SWITCH_GAP) * u;
+    return gui::text_width(g, gui::SMALL, strings::get(ROW_NAMES[THEME_ROW])) + (14.0 + 2.0 * gui::TAP + SWITCH_GAP) * u;
 }
 
 // A half's thumbnail, as wide as w (pixels) leaves it, at most the tiles' own.
@@ -225,17 +224,17 @@ fn note(row: i64, i: i64) -> const u8[:] {
     return "";
 }
 
-// How wide tile i of a row is: its words with 16 dp either side, at least 88 dp; a
-// season's, its thumbnail or label and 6 dp either side, at least 88 dp too.
+// How wide tile i of a row is: its words with gui::WORD_SIDE either side, at least a tap; a
+// season's, its thumbnail or label and 6 dp either side, at least a tap too.
 fn tile_width(f: Fit, g: gui::Gui&, row: i64, i: i64) -> f32 {
     let u = g.scale;
     let label = strings::get(word(row, i));
     if row == THEME_ROW && f.slim {
-        return max(88.0 * u, gui::choice_beside_width(g, float2 { SLIM_THUMB_W * u, SLIM_THUMB_H * u }, label));
+        return max(gui::TAP * u, gui::choice_beside_width(g, float2 { SLIM_THUMB_W * u, SLIM_THUMB_H * u }, label));
     }
-    if row == THEME_ROW { return max(88.0 * u, max(THUMB_W * u, gui::text_width(g, gui::SMALL, label)) + gui::PAD * u); }
+    if row == THEME_ROW { return max(gui::TAP * u, max(THUMB_W * u, gui::text_width(g, gui::SMALL, label)) + gui::PAD * u); }
     let w = gui::text_width(g, gui::BODY, label);
-    return max(88.0 * u, max(w, gui::text_width(g, gui::SMALL, note(row, i))) + 32.0 * u);
+    return max(gui::TAP * u, max(w, gui::text_width(g, gui::SMALL, note(row, i))) + 2.0 * gui::WORD_SIDE * u);
 }
 
 // Declares tile i of a row in r. True when a tap changed s.
@@ -281,7 +280,7 @@ fn lay(f: Fit, g: gui::Gui&, row: i64, r: float4, at: float4[:]) -> f32 {
         var all = -TILE_GAP * u;
         for i in ROW_TILES[row] { all += tile_width(f, g, row, i) + TILE_GAP * u; }
         if all > r.z + SLACK {
-            let cols = if 3.0 * 88.0 * u + 2.0 * TILE_GAP * u <= r.z { 3 } else { 2 };
+            let cols = if 3.0 * gui::TAP * u + 2.0 * TILE_GAP * u <= r.z { 3 } else { 2 };
             let w = (r.z - (cols - 1) * TILE_GAP * u) / cols;
             let lines = (ROW_TILES[row] + cols - 1) / cols;
             for i in ROW_TILES[row] {
@@ -329,7 +328,7 @@ fn rows_at(f: Fit, g: gui::Gui&, group: i64, r: float4, aside: bool) -> Rows {
         // centered down the row at the left of the tiles; or where the name is above the
         // tiles, beside it at the line's right end, the line as tall as the switch.
         let switched = row == THEME_ROW;
-        let across = if aside { f.name_w * u } else { (2.0 * 88.0 + SWITCH_GAP) * u };
+        let across = if aside { f.name_w * u } else { (2.0 * gui::TAP + SWITCH_GAP) * u };
         let sh = switch_h(f, g, across);
         let line: f32 = if switched { sh + SWITCH_GAP * u } else { NAME_H * u };
         let tiles = if aside { float4 { r.x + left, y, r.z - left, 0.0 } }
@@ -509,9 +508,9 @@ fn group(s: Settings&, f: Fit, over: board::Overlay&, g: gui::Gui&, group: i64, 
     return changed;
 }
 
-// A language's tile width: its name in itself with 16 dp either side, at least 88 dp.
+// A language's tile width: its name in itself with gui::WORD_SIDE either side, at least a tap.
 fn language_width(g: gui::Gui&, lang: i64) -> f32 {
-    return max(88.0 * g.scale, gui::text_width(g, gui::BODY, strings::name_of(lang)) + 32.0 * g.scale);
+    return max(gui::TAP * g.scale, gui::text_width(g, gui::BODY, strings::name_of(lang)) + 2.0 * gui::WORD_SIDE * g.scale);
 }
 
 // How wide the language's glass is: a globe, unless `globe` is false, then a tile per
@@ -549,7 +548,7 @@ fn tabs(s: Settings&, g: gui::Gui&, r: float4) -> bool {
 // The title row in r: back, the title, and at its right end the language on glass, each
 // named in itself, with `shown` lit. With `tabbed`, the tabs instead of the title (a
 // phone's landscape); without, the title, and where it doesn't fit beside them in the
-// row labels' face (a phone's portrait), back is the arrow over the word in an 88 dp
+// row labels' face (a phone's portrait), back is the arrow over the word in a tap
 // square, and where the title still doesn't fit in the headings' face (480 dp across),
 // the language's glass leaves out its globe; the title then takes a smaller face where it
 // is too wide for its room, or none where even that is. Returns BACK, CHANGED, SHOWN, or
@@ -561,9 +560,9 @@ fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, tabbed: bool = false)
     let title = strings::get(strings::HOME_SETTINGS);
     let wide = gui::back_width(g, strings::get(strings::NAV_BACK));
     let stacked = !tabbed && r.z - wide - 40.0 * u - languages_width(g) < gui::text_width(g, gui::LABEL, title);
-    let globe = !stacked || r.z - (BACK_W + 40.0) * u - languages_width(g) >= gui::text_width(g, gui::HEADING, title);
-    let bw = if stacked { BACK_W * u } else { wide };
-    let back = gui::center(gui::cut_left(row, bw), bw, BACK_W * u);
+    let globe = !stacked || r.z - (gui::TAP + 40.0) * u - languages_width(g) >= gui::text_width(g, gui::HEADING, title);
+    let bw = if stacked { gui::TAP * u } else { wide };
+    let back = gui::center(gui::cut_left(row, bw), bw, gui::TAP * u);
     if gui::back(g, gui::SETTINGS_IDS, back, strings::get(strings::NAV_BACK), stacked) { ask = BACK; }
     gui::cut_left(row, 20.0 * u);
     let w = languages_width(g, globe);
@@ -587,7 +586,7 @@ fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, tabbed: bool = false)
     }
     gui::cut_right(row, 20.0 * u);
     if tabbed {
-        if tabs(s, g, gui::center(row, row.z, BACK_W * u)) { ask = SHOWN; }
+        if tabs(s, g, gui::center(row, row.z, gui::TAP * u)) { ask = SHOWN; }
         return ask;
     }
     let face = gui::fitting(g, gui::LABEL, title, row.z);
@@ -773,7 +772,7 @@ fn layout(s: Settings&, g: gui::Gui&, area: float4) -> Page {
     p.kind = TABS_UNDER;
     p.head = gui::cut_top(page, HEAD_H * u);
     gui::cut_top(page, gui::PAD_WIDE * u);
-    p.tabs = gui::cut_top(page, BACK_W * u);
+    p.tabs = gui::cut_top(page, gui::TAP * u);
     gui::cut_top(page, GROUP_GAP * u);
     let one = group_height(p.fit, g, s.group, page.z, false, false);
     let fits = one <= page.w;

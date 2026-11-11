@@ -82,7 +82,7 @@ fn report(what: const u8[:], g: gui::Gui&, first: i64) {
         if q.look.x == gui::FILL && q.color.w > 0.4 && q.color.w < 0.45 { veiled = true; }
         if veiled && q.look.x == gui::GLASS && card.z == 0.0 { card = q.rect; }
     }
-    if narrow < 88.0 * u - 0.5 || low < 88.0 * u - 0.5 { wrong.append(" a tap under 88 dp;"); }
+    if narrow < gui::TAP * u - 0.5 || low < gui::TAP * u - 0.5 { wrong.append(" a tap under 88 dp;"); }
     print("  ", what, ": ", n - first, " tiles, smallest ", whole(narrow / u), " x ", whole(low / u), " dp, card at ",
           whole(card.y / u), " dp, ", whole(card.z / u), " x ", whole(card.w / u), " dp",
           if wrong.len > 0 { wrong[..] } else { ", all in place" });

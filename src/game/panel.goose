@@ -30,7 +30,6 @@ let HINT = 6;               // the hint's tile
 // landscape column; the hint a tile beside undo move, its word over a pip a hint left.
 let EYE_TOUCH = 56.0;
 let EYE_DISC = 48.0;
-let HINT_H = 88.0;          // dp: the hint's tile over undo move in the landscape column
 let PIP = 12.0;             // dp: a hint's pip, and the gap between two
 let PIP_GAP = 7.0;
 let EYE_ID = gui::PANEL_IDS + 4;
@@ -46,10 +45,8 @@ struct Help {
     can:   bool = false,
 }
 
-let ROW_H = 88.0;           // dp: a control's row, the 88 dp a small hand needs
 let BACK_GAP = 12.0;        // dp: back over the left panel in landscape
 let TALL_H = 132.0;         // undo move in landscape, STACK_H in a phone's narrow panel
-let WIDE_H = 88.0;          // undo move in portrait
 let CLOCK_H = 72.0;
 let SHORT_GAP = 36.0;       // dp: the clocks' gap holding the countdown's short line in a corner panel
 let MID_GAP = 12.0;         // dp: either side of the short form between side-by-side clocks
@@ -67,9 +64,9 @@ let GAP = 24.0;
 // A small window in portrait (gui::compact, task 050): the bar a row of icons alone, the
 // play one row, whose turn beside undo move, and the margins smaller, for the board.
 let TOP_COMPACT = 88.0;     // dp: the bar, its 64 dp tiles and 12 dp round them
-let BOTTOM_COMPACT = 112.0; // dp: the play, its 88 dp row and 12 dp round it
+let BOTTOM_COMPACT = 112.0; // dp: the play, its gui::TAP row and 12 dp round it
 let ICON_W = 72.0;          // dp: an icon's tile in the bar, 64 dp tall (accepted under the
-// 88 dp floor in compact only, the user 2026-11-09)
+// gui::TAP floor in compact only, the user 2026-11-09)
 let GAP_COMPACT = 16.0;
 // A panel's room inside its glass, in dp, across and down: a tall one's (a landscape
 // column, the play beside the board) 16 at the sides and 20 above and below, a wide
@@ -840,7 +837,7 @@ fn way_out(l: Layout, words: f32[3], u: f32) -> Out {
     var o = Out {};
     if columns(l) {
         var column = l.left;
-        o.tiles[0] = gui::cut_top(column, ROW_H * u);
+        o.tiles[0] = gui::cut_top(column, gui::TAP * u);
         gui::cut_top(column, BACK_GAP * u);
         o.glass = column;
         // Each icon beside its word, or, where a word doesn't fit so in a narrowed panel,
@@ -849,7 +846,7 @@ fn way_out(l: Layout, words: f32[3], u: f32) -> Out {
         for i in 1..3 {
             if labelled_width(u, 34.0, words[i]) > left.z { o.arrange = gui::STACKED; }
         }
-        let h = (if o.arrange == gui::MIDDLE { ROW_H } else { STACK_H }) * u;
+        let h = (if o.arrange == gui::MIDDLE { gui::TAP } else { STACK_H }) * u;
         o.tiles[1] = gui::cut_top(left, h);
         o.tiles[2] = gui::cut_bottom(left, h);
         return o;
@@ -870,7 +867,7 @@ fn way_out(l: Layout, words: f32[3], u: f32) -> Out {
     var fits = true;
     for i in 3 {
         let want = if l.stacked { words[i] + 2.0 * gui::LABEL_PAD * u } else { labelled_width(u, 34.0, words[i]) };
-        wants[i] = max(want, 88.0 * u);
+        wants[i] = max(want, gui::TAP * u);
         if wants[i] > free / 3.0 { fits = false; }
     }
     let share = (free - wants[0] - wants[1] - wants[2]) / 3.0;
@@ -958,7 +955,7 @@ struct Play {
 // has it where the panel is tall enough, whose turn or the clocks, the lookout's eye and
 // name, the hint over undo move. Else (a phone's, a 3D board's corner panel) the eye at
 // the end of whose turn's line, or beside the clocks, and the hint beside undo move where
-// both keep 88 dp across, or over it, the gaps round the piece closed up where the panel
+// both keep gui::TAP across, or over it, the gaps round the piece closed up where the panel
 // is short.
 fn column_play(l: Layout, w: Words, on: Shows, u: f32) -> Play {
     var p = Play { r: 36.0 * u, overlap: 6.0 * u, .. };
@@ -969,16 +966,16 @@ fn column_play(l: Layout, w: Words, on: Shows, u: f32) -> Play {
     let wanted = tall(l, u);
     let low = if squeezed { min(wanted, right.w - (2.0 * CLOCK_H + SHORT_GAP + 12.0) * u) } else { wanted };
     let head = if on.clocks { (2.0 * CLOCK_H + 10.0) * u } else { (18.0 + 72.0 + 18.0) * u + w.heading };
-    let column = right.w >= head + (EYE_TOUCH + 12.0 + HINT_H + 12.0) * u + low;
-    let beside = !column && right.z >= (2.0 * 88.0 + 12.0) * u;
-    let tight = !column && !beside && right.w < head + (12.0 + HINT_H + 12.0) * u + low;
+    let column = right.w >= head + (EYE_TOUCH + gui::PAD + gui::TAP + gui::PAD) * u + low;
+    let beside = !column && right.z >= (2.0 * gui::TAP + gui::PAD) * u;
+    let tight = !column && !beside && right.w < head + (gui::PAD + gui::TAP + gui::PAD) * u + low;
     p.undo = gui::cut_bottom(right, low);
     if beside {
         p.hint = gui::cut_left(p.undo, 0.5 * (p.undo.z - gui::PAD * u));
         gui::cut_left(p.undo, gui::PAD * u);
     } else {
         gui::cut_bottom(right, gui::PAD * u);
-        p.hint = gui::cut_bottom(right, HINT_H * u);
+        p.hint = gui::cut_bottom(right, gui::TAP * u);
     }
     p.undo_icon = if beside { 36.0 } else { 48.0 };
     p.hint_as = if beside { gui::STACKED } else { gui::MIDDLE };
@@ -1035,8 +1032,8 @@ fn compact_play(l: Layout, w: Words, on: Shows, u: f32) -> Play {
     var row = float4 { l.right.x + gui::PAD * u, l.right.y + gui::PAD * u, l.right.z - 2.0 * gui::PAD * u, l.right.w - 2.0 * gui::PAD * u };
     let mark = (if on.drawn { 84.0 } else { 44.0 }) * u;
     let sides = 2.0 * gui::LABEL_PAD * u;
-    let undo_wants = max(88.0 * u, w.undo + sides);
-    let hint_wants = max(88.0 * u, w.hint + sides);
+    let undo_wants = max(gui::TAP * u, w.undo + sides);
+    let hint_wants = max(gui::TAP * u, w.hint + sides);
     let words = row.z - undo_wants - hint_wants - (8.0 + 4.0 + EYE_TOUCH + 4.0 + 12.0) * u - mark;
     let icons = on.clocks || words < w.turn_s;
     p.undo = gui::cut_right(row, if icons { ICON_W * u } else { undo_wants });
@@ -1097,7 +1094,7 @@ fn portrait_play(l: Layout, w: Words, on: Shows, u: f32) -> Play {
         gui::cut_left(row, 18.0 * u);
         p.words = row;
     }
-    var row = gui::cut_top(right, WIDE_H * u);
+    var row = gui::cut_top(right, gui::TAP * u);
     p.undo = gui::cut_right(row, 0.5 * (row.z - gui::PAD_WIDE * u));
     gui::cut_right(row, gui::PAD_WIDE * u);
     p.hint = row;
