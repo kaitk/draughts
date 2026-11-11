@@ -285,6 +285,19 @@ fn past(b: Board&, out: rules::Past&) {
     }
 }
 
+// The same at the position before move `ply` of the history (task 074's judging of a
+// move played earlier).
+fn past_to(b: Board&, ply: i64, out: rules::Past&) {
+    let n = b.history.len;
+    let first = if n > 0 { b.history[0].pos } else { b.pos };
+    out.draw = rules::draw_start(first);
+    out.before.clear();
+    for i in 1..min(ply, n) + 1 {
+        let q = if i < n { b.history[i].pos } else { b.pos };
+        rules::pass_between(out, b.history[i - 1].pos, q);
+    }
+}
+
 // The side that has won, the other having no move left, or -1 while the game goes on
 // or a move is still showing.
 fn winner(b: Board&) -> i64 {

@@ -20,8 +20,10 @@ struct Thought {
     close:   i64,           // moves about as good as the best, for the time it takes (ai::close)
     nodes:   i64,
     seconds: f64,
-    kind:    i64,           // game::THINK, HINT, or TRAPS, as asked
+    kind:    i64,           // game::THINK, HINT, TRAPS, or JUDGE, as asked
     pieces:  u64,           // the lookout's traps: the pieces they would win
+    mark:    i64 = 0,       // JUDGE: the move's mark (ai::ONLY..BLUNDER) and its loss
+    loss:    i64 = 0,
 }
 
 // The engine is the worker's own, made once, at the first search: a root can't cross to a
@@ -46,6 +48,26 @@ thread_fn worker() {
         if !made {
             ai::init(e);
             made = true;
+        }
+        // A played move judged (task 074), dropped for any newer ask as a search is.
+        if ask.kind == game::JUDGE {
+            ai::judge_start(e, ask.past, ask.pos);
+            var newer = false;
+            var next = ask;
+            while !newer && !ai::judge_step(e, NODES) {
+                let a, got = qpoll<game::Ask>();
+                next = a;
+                newer = got;
+            }
+            if newer {
+                ask = next;
+                continue;
+            }
+            let v = ai::verdict(e, ask.move);
+            qput(Thought { id: ask.id, move: ask.move, found: true, close: 0, nodes: e.nodes, seconds: clock() - began,
+                           kind: ask.kind, pieces: 0, mark: v.mark, loss: v.loss });
+            ask = qget<game::Ask>();
+            continue;
         }
         // The hint's search sees all and leaves nothing, and gives the best it sees.
         let hint = ask.kind == game::HINT;
@@ -92,6 +114,7 @@ fn frame(t: Thinker&, gm: game::Game&) -> bool {
     let th, got = qpoll<Thought>();
     guard got && th.found else { return false; }
     if th.kind == game::TRAPS { return game::trapped(gm, th.id, th.pieces); }
+    if th.kind == game::JUDGE { return game::judged(gm, th.id, th.mark, th.loss); }
     if th.kind == game::HINT {
         game::hinted(gm, th.id, th.move);
         return true;

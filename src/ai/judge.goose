@@ -38,6 +38,7 @@ let SCALE = 100.0;
 // position that is a fall of 0.45 and more, a blunder whatever the bound.
 let JUDGE_MARGIN = 250;
 let JUDGE_SKILL = 100;      // the depth it sees: hard's at its top
+let JUDGE_LIMIT = 300000;   // nodes after which it begins no new iteration: about 0.1 s on the tablet's big cores
 
 struct Verdict {
     mark:   i64 = NOT_JUDGED,
@@ -63,7 +64,7 @@ fn mark_of(loss: i64) -> i64 {
 // One move's accuracy in percent, as lichess's: 103.17 · e^(−4.354 · loss) − 3.17,
 // within 0..100, a fall of 0 a hundred, of 0.2 about 39, of 0.5 8.
 fn accuracy(loss: i64) -> i64 {
-    let a = 103.1668 * exp(-4.354 * (loss as f64) / 1000.0) - 3.1669;
+    let a = 103.1668 * exp(-4.354 * loss / 1000.0) - 3.1669;
     return clamp((a + 0.5) as i64, 0, 100);
 }
 
@@ -80,7 +81,7 @@ fn judge_start(e: Engine&, past: rules::Past&, p: rules::Position) {
     e.searching = false;
     guard e.moves.len > 1 else { return; }
     let pr = params(JUDGE_SKILL);
-    begin(e, p, pr.depth, pr.extra, JUDGE_MARGIN, e.node_limit);
+    begin(e, p, pr.depth, pr.extra, JUDGE_MARGIN, min(e.node_limit, JUDGE_LIMIT));
 }
 
 // Searches for about `nodes` more nodes; true once the verdict is ready.

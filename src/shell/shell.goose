@@ -50,6 +50,8 @@ import .players;
 import .who;
 import .saved;
 import .roster;
+import .history;
+import .record;
 
 let HOME = 0;
 let GAME = 1;
@@ -167,6 +169,11 @@ struct Shell {
     // Home's 3D board as a drag on it left it: the showcase's swing and tilt (rig::drive),
     // kept while home stays open, eased back to rest as home is left.
     cam: rig::Rig = rig::Rig {},
+    // The game last written to the player's history, its marks perhaps still coming
+    // (record.goose), and the time now in seconds since the epoch where a test sets it,
+    // else -1 for the clock's.
+    kept: Kept = Kept {},
+    wall: f64  = -1.0,
 }
 
 // The screen showing for this frame, taking the pointer and doing what it asks: `fresh`
@@ -359,6 +366,7 @@ fn frame(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, ready3d: b
     let fresh = sh.drawn != sh.screen;
     sh.drawn = sh.screen;
     let changed = declare(sh, g, gui::safe(g, width, height), now, fresh);
+    keep_marks(sh);
     let out .= sh.out;
     out.changed = changed || fresh;
     out.screen = sh.screen;
@@ -574,6 +582,7 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
     // A game against the computer ended: won or lost, the child meets a stronger or weaker
     // one next; drawn, the same, a game played on its level all the same.
     let gm .= sh.game;
+    if ev.over { keep_game(sh, ev.winner); }
     if ev.ended {
         let k = clamp(gm.level, game::EASY, game::HARD);
         sh.prefs.skill[k] = ai::adapt(sh.prefs.skill[k], k, ev.result, sh.prefs.played[k]);

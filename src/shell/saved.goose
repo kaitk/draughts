@@ -82,6 +82,8 @@ fn restore(sh: Shell&, file: const u8[:]) -> bool {
     gm.clock = s.clock;
     gm.counted = s.counted;
     gm.turn = b.pos.side;
+    // A game kept after its end was put in the player's history then (Event.over).
+    gm.kept = game::ended(gm);
     // A puzzle isn't kept; the puzzles to pick from come back instead.
     sh.screen = if s.screen == PUZZLE { PICKER } else { s.screen };
     apply_prefs(sh);

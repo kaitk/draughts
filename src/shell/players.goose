@@ -110,6 +110,7 @@ fn trimmed(n: Name&) {
 fn device_path(ps: Players&) -> u8[>..] { str(ps.dir[..], "settings.txt") }
 fn player_path(ps: Players&, id: i64) -> u8[>..] { str(ps.dir[..], "player-", id, ".txt") }
 fn game_path(ps: Players&, id: i64) -> u8[>..] { str(ps.dir[..], "game-", id, ".bin") }
+fn history_path(ps: Players&, id: i64) -> u8[>..] { str(ps.dir[..], "history-", id, ".txt") }
 fn files(ps: Players&) -> bool { ps.dir.len > 0 }
 
 // The player id settings.txt names, or 0 when it names none (a file from before players,
@@ -273,11 +274,19 @@ fn delete_game(ps: Players&, id: i64) {
     if file_exists(path) { delete_file(path); }
 }
 
+// Deletes player `id`'s games played (history.goose): starting again and removing.
+fn delete_history(ps: Players&, id: i64) {
+    guard files(ps) else { return; }
+    let path = history_path(ps, id);
+    if file_exists(path) { delete_file(path); }
+}
+
 // Deletes player `id`'s files: the game first, so a player killed halfway is left as
 // one started again, never a game without its player.
 fn delete_files(ps: Players&, id: i64) {
     guard files(ps) else { return; }
     delete_game(ps, id);
+    delete_history(ps, id);
     let path = player_path(ps, id);
     if file_exists(path) { delete_file(path); }
 }
@@ -290,4 +299,6 @@ fn clear_progress(s: settings::Settings&) {
     s.skill = fresh.skill;
     s.played = fresh.played;
     s.games = fresh.games;
+    s.rating = fresh.rating;
+    s.rated = fresh.rated;
 }

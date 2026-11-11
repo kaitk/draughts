@@ -50,6 +50,12 @@ let DEFAULT_DRAUGHTS = rules::INTERNATIONAL;
 let LEVEL_NAMES = ["easy", "medium", "hard"];
 let SKILL_KEYS = ["skill_easy", "skill_medium", "skill_hard"];
 let PLAYED_KEYS = ["played_easy", "played_medium", "played_hard"];
+// The moves panel on the game screen (task 074): hidden, the moves alone, or with their
+// marks.
+let MOVES_HIDDEN = 0;
+let MOVES_LIST = 1;
+let MOVES_MARKS = 2;
+let MOVES_NAMES = ["hidden", "list", "marks"];
 // Where each level started before easy started at 0 (2026-11-09), for a file from
 // before `played`: a skill still there has had no games that moved it, and starts
 // afresh; one moved from it has had its first games.
@@ -79,6 +85,11 @@ struct Settings {
     skill:  i64[3] = ai::LEVEL_SKILL,
     played: i64[3] = [0; 3],
     games:  i64    = 0,
+    // The moves panel (MOVES_*), and the player's rating (ai/rating.goose) and rated games
+    // against the computer by draughts (rules::RUSSIAN..), task 074.
+    moves:  i64                       = MOVES_MARKS,
+    rating: i64[rules::VARIANT_COUNT] = [ai::FIRST_RATING; rules::VARIANT_COUNT],
+    rated:  i64[rules::VARIANT_COUNT] = [0; rules::VARIANT_COUNT],
     // The stars won in each puzzle, 1 to 3, by its set's variant (puzzles::set_of) and
     // its id; 0 for one not solved.
     stars: u8[puzzles::MAX_PUZZLES + 1][rules::VARIANT_COUNT] = [[0; puzzles::MAX_PUZZLES + 1]; rules::VARIANT_COUNT],
@@ -159,6 +170,15 @@ fn parse(text: const u8[:]) -> Settings {
             }
         }
         if key == "games" && number && n >= 0 { s.games = n; }
+        if key == "moves" {
+            for name, i in MOVES_NAMES { if value == name { s.moves = i; } }
+        }
+        let kind, of, has_of = split_once(key, '.');
+        let rated_v, rated_known = rules::variant_named(of);
+        if has_of && rated_known && number {
+            if kind == "rating" { s.rating[rated_v] = max(n, ai::LEAST_RATING); }
+            if kind == "rated" && n >= 0 { s.rated[rated_v] = n; }
+        }
         var set = -1;
         if key == "stars" { set = rules::INTERNATIONAL; }
         let dot, rest, has_dot = split_once(key, '.');
@@ -220,6 +240,13 @@ fn write(s: Settings, out: u8[>..]&) {
     for name, i in SKILL_KEYS { format(out, "\n", name, " = ", s.skill[i]); }
     for name, i in PLAYED_KEYS { format(out, "\n", name, " = ", s.played[i]); }
     format(out, "\ngames = ", s.games);
+    out.append("\nmoves = ");
+    out.append(MOVES_NAMES[clamp(s.moves, 0, 2)]);
+    for v in rules::VARIANT_COUNT {
+        guard s.rated[v] > 0 else { continue; }
+        format(out, "\nrating.", rules::VARIANT_NAMES[v], " = ", s.rating[v]);
+        format(out, "\nrated.", rules::VARIANT_NAMES[v], " = ", s.rated[v]);
+    }
     for set, v in s.stars {
         var first = true;
         for won, id in set {
