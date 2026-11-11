@@ -18,7 +18,9 @@ smaa.slang includes, and its tables, which render3d embeds.
 Needs a goose-ngfx checkout (NGFX, else ../goose/goose-ngfx beside this repository),
 slangc 2026.18.2 or later (NGFX_SLANGC), and what ngfx's own build needs (its
 docs/development.md: on Windows the Vulkan SDK and Visual Studio's Build Tools; on the
-Mac Xcode with its Metal toolchain). The Goose release is native.GOOSE.
+Mac Xcode with its Metal toolchain). The program is built with the Goose release's copy
+whose gfx has patches/goose_gfx applied (scripts/mac.py, scripts/windows.py), for gfx's
+WINDOW_ONLY: gfx's window, input, and events, with ngfx drawing into the window.
 """
 import argparse
 import os
@@ -30,6 +32,11 @@ from pathlib import Path
 
 import native
 import ngfx_3d_shaders
+
+if native.WINDOWS:
+    import windows as platform_build
+else:
+    import mac as platform_build
 
 ROOT = native.ROOT
 OUT = ROOT / "build/ngfx"
@@ -140,7 +147,9 @@ def main():
     root = tree(a.program.resolve())
     shaders()
     exe = OUT / f"{root.stem}{EXE}"
-    native.run(native.GOOSE, "build", "-o", exe, root.name, cwd=root.parent)
+    # gfx from the patched sources, as the gfx build's: the window comes from gfx opened
+    # WINDOW_ONLY (patches/goose_gfx/0008), and ngfx draws into it.
+    native.run(platform_build.patched_goose(), "build", "-o", exe, root.name, cwd=root.parent)
     if a.run:
         sys.exit(subprocess.run([str(exe), *a.args]).returncode)
 

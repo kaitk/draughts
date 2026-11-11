@@ -800,7 +800,7 @@ fn place(g: Gpu&, inst: const float4[:], alphas: const f32[:], squares: const fl
 // Without the `backdrop` the target is clear but for the board, its shadow, and the
 // pieces (premultiplied), for show() to lay over a backdrop drawn apart (backdrop(), or
 // the app's photograph). With `keep_depth` the board's depth is kept too, at 1x, for
-// marks_over. Recording only; the caller's ngfx::frame() submits it.
+// marks_over. Recording only; the caller's ngfx::present() submits it.
 fn draw(g: Gpu&, view_proj: Mat, eye: float3, out: ngfx::Texture, size: int2, shadow_every: bool = false,
         backdrop: bool = true, keep_depth: bool = false) {
     if size.x != g.size.x || size.y != g.size.y { targets(g, size); }

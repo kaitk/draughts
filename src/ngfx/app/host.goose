@@ -1,15 +1,16 @@
 // The platform the app runs on, all the main loop asks of it but drawing
 // (docs/architecture/README.md, "A frame"): the window, the frame's end and its clock,
 // the screen's size and focus, the pointer, the keys and typed text, and the screenshot,
-// through ngfx's platform half; and the program's own C for what gfx doesn't give: the
+// through gfx's platform half; and the program's own C for what gfx doesn't give: the
 // safe area and the display's scale, the wake timer, the storage folder, the locales,
 // Android's launch cover, back, and close, the memory malloc keeps, and the display's
 // rate under the 3D board. Drawing is render.goose's. This is the goose-ngfx build's
-// (task 065, scripts/ngfx.py): gfx's calls replaced by ngfx's, which keeps gfx's
-// platform half by name, and the window drawn on demand (ngfx::WINDOW_ON_DEMAND).
+// (task 065, scripts/ngfx.py): gfx opened WINDOW_ONLY (patches/goose_gfx/0008), a window
+// with gfx's input, events, and wait and no device, and ngfx drawing into it.
 namespace host;
 import std;
 import vec;
+import gfx;
 import ngfx;
 
 import gui from "../gui";
@@ -46,11 +47,19 @@ extern fn draughts_release_memory();
 // with a faster display; drawing is 1 when this pass drew it (display.c). Nothing elsewhere.
 extern fn draughts_pace_3d(drawing: i64, now: f64);
 
+// What patches/goose_gfx/0008 adds to gfx, which the release's gfx.goose doesn't
+// declare: open's flag for a window with no device, the window's native handle for ngfx,
+// whether ngfx showed this frame, and whether the window wants one shown.
+let WINDOW_ONLY = 64;
+extern fn native_window() -> u64 = "gs_gfx_native_window";
+extern fn presented(shown: bool) = "gs_gfx_presented";
+extern fn needs_present() -> bool = "gs_gfx_needs_present";
+
 // What the host keeps between frames: the safe area and scale as last read, the events
 // read for typed text, and whether the keyboard is up, for which tap on the name.
 struct Host {
     display:  f32[5]         = [0.0; 5],
-    events:   ngfx::Event[64] = [default<ngfx::Event>(); 64],
+    events:   gfx::Event[64] = [default<gfx::Event>(); 64],
     erase:    i64            = 0,
     enter:    i64            = 0,
     text_on:  bool           = false,
@@ -61,29 +70,40 @@ struct Host {
 // the screen with the system's bars hidden on a phone or a tablet, or with `full`.
 // Aborts if it can't.
 fn open(title: const u8[:], width: i64, height: i64, full: bool) -> Host {
-    let flags = if platform() != DESKTOP || full { ngfx::WINDOW_FULLSCREEN | ngfx::WINDOW_RESIZABLE } else { ngfx::WINDOW_RESIZABLE };
+    let flags = if platform() != DESKTOP || full { gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE } else { gfx::WINDOW_RESIZABLE };
     draughts_choose_gpu();
-    guard ngfx::open(title, width, height, flags | ngfx::WINDOW_ON_DEMAND) else { abort(str("ngfx: ", ngfx::error())); }
-    return Host { erase: ngfx::scancode("Backspace"), enter: ngfx::scancode("Return"), .. };
+    guard gfx::open(title, width, height, flags | WINDOW_ONLY) else { abort(str("gfx: ", gfx::error())); }
+    let size = gfx::screen_size();
+    guard ngfx::open(native_window(), size.x, size.y, 0) else { abort(str("ngfx: ", ngfx::error())); }
+    return Host { erase: gfx::scancode("Backspace"), enter: gfx::scancode("Return"), .. };
 }
 
-fn close() { ngfx::close(); }
+fn close() {
+    ngfx::close();
+    gfx::close();
+}
 
-// Ends the frame, presenting what its pass drew, and waits for an event when nothing
-// did; false once the window is asked to close, and the loop ends.
-fn frame() -> bool { ngfx::frame() }
+// Ends the frame, presenting what its pass drew (or the screen as it stands, when the
+// window was exposed), and waits for an event when nothing did; false once the window
+// is asked to close, and the loop ends. The screen then follows the window's size.
+fn frame() -> bool {
+    presented(ngfx::present(needs_present()));
+    let running = gfx::frame();
+    ngfx::resize(gfx::screen_size());
+    running
+}
 
 // The frames presented so far: the first is on screen once the second frame() returns.
-fn frame_count() -> i64 { ngfx::frame_count() }
+fn frame_count() -> i64 { gfx::frame_count() }
 
 // Seconds since the window opened.
-fn time() -> f64 { ngfx::time() }
+fn time() -> f64 { gfx::time() }
 
 // The screen's size in pixels.
-fn screen_size() -> int2 { ngfx::screen_size() }
+fn screen_size() -> int2 { gfx::screen_size() }
 
 // Whether the window had the keyboard's focus at the last frame().
-fn focused() -> bool { ngfx::focused() }
+fn focused() -> bool { gfx::focused() }
 
 fn platform() -> i64 { draughts_platform() }
 
@@ -95,29 +115,29 @@ fn read_display(h: Host&) { draughts_display(h.display); }
 // Return. A quick tap can press and release within one frame, which mouse_down never
 // sees; pressed and released catch it.
 fn input(h: Host&) -> gui::Input {
-    var input = gui::Input { at: ngfx::mouse_pos(), down: ngfx::mouse_down(ngfx::MOUSE_LEFT),
-                             pressed: ngfx::mouse_pressed(ngfx::MOUSE_LEFT),
-                             released: ngfx::mouse_released(ngfx::MOUSE_LEFT), wheel: ngfx::mouse_wheel() };
+    var input = gui::Input { at: gfx::mouse_pos(), down: gfx::mouse_down(gfx::MOUSE_LEFT),
+                             pressed: gfx::mouse_pressed(gfx::MOUSE_LEFT),
+                             released: gfx::mouse_released(gfx::MOUSE_LEFT), wheel: gfx::mouse_wheel() };
     guard h.text_on else { return input; }
-    let n = min(ngfx::events_into(h.events), h.events.len);
+    let n = min(gfx::events_into(h.events), h.events.len);
     for e in h.events[..n] {
         guard input.typed.len < gui::MAX_TYPED else { break; }
-        if e.kind == ngfx::EVENT_TEXT { input.typed.push(e.codepoint); }
-        if e.kind == ngfx::EVENT_KEY && e.down && e.scancode == h.erase { input.typed.push(gui::ERASE); }
-        if e.kind == ngfx::EVENT_KEY && e.down && e.scancode == h.enter { input.typed.push(gui::ENTER); }
+        if e.kind == gfx::EVENT_TEXT { input.typed.push(e.codepoint); }
+        if e.kind == gfx::EVENT_KEY && e.down && e.scancode == h.erase { input.typed.push(gui::ERASE); }
+        if e.kind == gfx::EVENT_KEY && e.down && e.scancode == h.enter { input.typed.push(gui::ENTER); }
     }
     return input;
 }
 
 // Whether Android's back (SDL's "AC Back"; DraughtsActivity hands the system's back to
 // SDL as that key) or Escape went down this frame.
-fn back() -> bool { ngfx::key_pressed("AC Back") || ngfx::key_pressed("Escape") }
+fn back() -> bool { gfx::key_pressed("AC Back") || gfx::key_pressed("Escape") }
 
 // The keyboard up while `typing`, brought up again by each new `tap` on the name.
 fn keyboard(h: Host&, typing: bool, tap: i64) {
     guard typing != h.text_on || (typing && tap != h.keyboard) else { return; }
-    ngfx::text_input(false);
-    if typing { ngfx::text_input(true); }
+    gfx::text_input(false);
+    if typing { gfx::text_input(true); }
     h.text_on = typing;
     h.keyboard = tap;
 }

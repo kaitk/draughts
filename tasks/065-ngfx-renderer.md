@@ -303,10 +303,47 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
   renderers, which is also what choosing the renderer at run time needs. The objc
   warnings on every ngfx `goose run` on the Mac ("Class SDL3Window is implemented in
   both" the compiler and ngfx's JIT library) are two SDLs in one process today.
-- **Next**, in this order: goose-ngfx without SDL and with its pools sized from use (a
-  new release); this branch's `host` on the app's SDL with ngfx drawing into its window;
-  then iOS and iPadOS, which then need no SDL of ngfx's; then upstream NoGraphicsAPI's
-  `ffd9f2a` (roots of a 16-byte stride) in the fork and ngfx.
+- **Next**, in this order: the goose_gfx fork's branches pushed and ngfx's samples taking
+  gfx from it, then goose-ngfx v0.4.0; iOS and iPadOS; upstream NoGraphicsAPI's `ffd9f2a`
+  (roots of a 16-byte stride) in the fork and ngfx.
+
+- **ngfx without SDL** (goose-ngfx `no-sdl`, `b38a5b6`): its platform half and SDL are
+  gone. `ngfx::open(window, w, h, flags)` takes a native window's handle (0 headless),
+  `present(force)` ends each frame and says whether it showed one, and `resize` follows
+  the window; PNG loading and saving use stb_image. The window, input, events, time, and
+  the idle wait are gfx's, opened `WINDOW_ONLY`: `patches/goose_gfx/0008-window-only.patch`
+  here (the user chose it over ngfx's platform on the program's SDL, or a host of the
+  program's own on SDL), and the branch `ngfx` of a local goose_gfx clone, `v1` with
+  patches 0001 to 0008 one commit each, for ngfx's samples, which take gfx from it until
+  the user's fork (`kaitk/goose_gfx`) has it. `src/ngfx/app/host.goose` is gfx's host
+  with `WINDOW_ONLY`, ngfx opened in its window, and `frame()` presenting through ngfx
+  before gfx's `frame()`; `scripts/ngfx.py` builds with the patched gfx, as `mac.py`
+  does. The objc runtime's warnings of every SDL class twice are gone from built
+  programs. ngfx's 34 checks pass (the four that tested the copied platform half
+  removed); the cube presents in a window at the display's rate.
+- **ngfx's memory sized from use** (`331821f`): frame memory from 256 KB per frame in
+  flight, doubling when a frame outgrows it; 8 MB chunks, a buffer or texture over half
+  of one in memory of exactly its size (as `patches/SDL/0003` does for SDL_GPU); a 4 MB
+  upload queue that larger uploads pass through in parts; the screen's depth only when
+  asked for. A program that opens ngfx and clears three frames: 160 MB before, 40 MB
+  after. Exact-size texture heaps round to the device's texture heap alignment, which
+  NoGraphicsAPI's allocator counts in (a 2048 × 2048 texture failed without it; a test
+  has a 6.6 MB one now).
+- **Draughts on the reworked ngfx, on the Mac**: every flat case identical to the gfx
+  build (0 difference; a held transition 1 at most), the 3D cases differing only inside
+  the board (SMAA against MSAA, mean 0.14 to 0.31, the win's confetti 0.69). At rest in
+  a window: the flat game 167 MB (309 before, gfx 115), the 3D game 419 MB (614 before,
+  gfx 355), 0.05% and 0.14% CPU, nothing drawn. `--bench 300` on the 3D board presented
+  120.2 fps of 120, waited P50 5.85 ms.
+- **Fewer copies** (the user's question, 2026-11-11), checked against the code: the
+  screen is an offscreen texture and a spare, copied into the drawable each frame, about
+  48 MB of the 52 MB still between the flat game's builds at 2560 × 1600. Drawing into
+  the drawable directly saves the screen and its copy (32 MB there); it needs the
+  screenshot read from elsewhere and the app redrawing when `needs_present()` asks
+  instead of ngfx presenting the old screen again. Dropping the spare (16 MB), as gfx's
+  patch 0003 dropped gfx's cycling, is ngfx's alone. The upload staging is 4 MB now, and
+  the photograph's and the UI's kept layers are the app's design on both builds, not
+  copies ngfx adds. Both screen changes are below, as follow-ups.
 
 ### Left for the Mac
 
@@ -347,6 +384,11 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
   numbers favour it: half the targets' memory here, the look within 0.1 to 0.25 of 255.
 
 ## Later, not in this task
+
+- **The screen straight into the drawable**, in ngfx: no offscreen screen and no copy
+  (32 MB at 2560 × 1600), the screenshot from a texture of the program's or a read of
+  the drawable, and the app redrawing when gfx's `needs_present()` asks. Then no spare
+  screen per frame in flight (16 MB), as gfx's patch 0003 did for gfx.
 
 - **Choosing at run time.** Both renderers in one executable, ngfx where the device has
   it (Metal 4; Vulkan 1.4 with `VK_EXT_descriptor_heap`), else gfx. They can't both
