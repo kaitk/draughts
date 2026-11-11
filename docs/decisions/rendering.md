@@ -462,6 +462,20 @@ native heap at home from 42.6 to 26.7 MB.
 The 3D bake stopped clearing its four surfaces (2026-11-09): each had kept a cycled second
 copy, 85 MB on the Pixel 7a.
 
+The 3D board gives back what only drawing it needs at rest (task 071, 2026-11-11): the
+pass's targets, the kept backdrop, and the kept depth, a second after the pass last drew.
+The 3D game at rest in winter: the Mac (1280 × 800 window) 356 → 225 MB on gfx and 311 →
+226 on ngfx; the iPhone 13 mini 243 → 152 on gfx and 223 → 160 on ngfx. The cost is the
+first draw after a rest: +4 ms on the M1 Pro, +13 ms on the iPhone (one 60 Hz refresh
+late, at the start of a response, never inside an animation). A second, not at once:
+a hover or a drag draws again within it. A flat marble frame's normal map, constant,
+is a 4 × 4 (22 MB). Not done: the plan's normal as RG8 (it would need a second bake
+pipeline, the frame's normal uses all four channels), the plan and frame maps without
+their top level (the anisotropic filter samples it on the tilted board), the photograph's
+two 512² working copies (2 MB). Apple's memoryless storage for the MSAA targets would
+remove them for good without the first draw's cost, but SDL picks the storage mode, not
+gfx.
+
 ## The 3D board on devices
 
 The measurements as they were taken, kept here as the architecture keeps only the

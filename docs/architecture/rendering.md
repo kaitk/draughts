@@ -1088,6 +1088,13 @@ board's does and the backdrop over it as opaque as the blur.
   The renderer's backdrop is kept too, drawn at full opacity into its own image the
   screen's size when its size, photograph, look, or fade changed, and laid with a fetch
   a pixel (`render3d::keep_backdrop`); between a change and the next 3D draw it is graded live.
+  **At rest** the board keeps only its image and what it is drawn from: a second after the
+  pass last drew, at a frame that draws nothing, the pass's targets (the 4× MSAA color
+  and depth), the kept backdrop, and the kept depth go back (`render3d::rest`, with a
+  wake for it), and the next draw makes them again; a frame drawn meanwhile grades the
+  backdrop live. That first draw costs about 4 ms more on the M1 Pro at 2560 × 1600 and
+  13 ms on the iPhone 13 mini, the GPU's first touch of the new memory. A flat marble
+  frame (winter's) keeps its normal map, the same value everywhere, as a 4 × 4.
   The board's ambient light (nine spherical harmonics) comes from the blurred
   photograph; with the plain fade, from the fade painted 64 texels square on the CPU,
   scaled to a dim ambient (`model3d::no_photo_ambient`): the fade tints the board's shade by season, a fade's own light being far
@@ -1107,7 +1114,7 @@ board's does and the backdrop over it as opaque as the blur.
   move's flash, a hint's ring) stay out of the image: each frame draws them over it in
   one additive quad from their phases, a uniform (`render3d::marks_over`), tested against
   a 1x depth of the board the pass keeps with the image while marks pulse (a 16-bit
-  target the screen's size, made the first time), so a pulse runs the 3D pass once, not
+  target the screen's size, made when marks first pulse after a rest), so a pulse runs the 3D pass once, not
   on every frame. The marks are the flat board's: the last move tinted, targets' dots, stops' rings,
   the must-capture ring pulsing, a capture's count as pips, a wrong move's red flash, the selected piece's glow
   ring, the glow ring tight round a hint's piece or a win's, a win's lit squares
