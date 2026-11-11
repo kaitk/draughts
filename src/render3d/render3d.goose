@@ -381,10 +381,18 @@ fn set_aa(g: Gpu&, aa: i32) {
     g.aa = aa;
     g.samples = if aa == AA_MSAA { SAMPLES } else { 1 };
     guard aa == AA_SMAA && g.smaa_edges.id == 0 else { return; }
+    // The edges pass marks the pixels it finds an edge on with depth 0 (its triangle's z;
+    // where it finds none it discards, leaving the cleared 1), and the weights pass, drawn
+    // at the same z, tests it equal: the early depth test skips the pixels with no edge,
+    // whose weights are 0, as the cleared target holds them. SMAA's reference does it
+    // with a stencil; the pass's own depth is free by then and needs none.
     g.smaa_edges = gfx::pipeline(embed_shader("vert", smaa::VS_METRICS, smaa::DEFS, smaa::CORNER, smaa::EDGES_VERT),
-                                 embed_shader("frag", smaa::FS_METRICS, smaa::DEFS, smaa::EDGES_FRAG));
+                                 embed_shader("frag", smaa::FS_METRICS, smaa::DEFS, smaa::EDGES_FRAG),
+                                 gfx::PipelineDesc { depth_test: true, depth_write: true,
+                                                     depth_compare: gfx::COMPARE_ALWAYS });
     g.smaa_weights = gfx::pipeline(embed_shader("vert", smaa::VS_METRICS, smaa::DEFS, smaa::CORNER, smaa::WEIGHTS_VERT),
-                                   embed_shader("frag", smaa::FS_METRICS, smaa::DEFS, smaa::WEIGHTS_FRAG));
+                                   embed_shader("frag", smaa::FS_METRICS, smaa::DEFS, smaa::WEIGHTS_FRAG),
+                                   gfx::PipelineDesc { depth_test: true, depth_compare: gfx::COMPARE_EQUAL });
     g.smaa_blend = gfx::pipeline(embed_shader("vert", smaa::VS_METRICS, smaa::DEFS, smaa::CORNER, smaa::BLEND_VERT),
                                  embed_shader("frag", smaa::FS_METRICS, smaa::DEFS, smaa::BLEND_FRAG));
     g.area = gfx::texture2d(160, 560, gfx::RG8, gfx::SAMPLED);
@@ -401,14 +409,18 @@ fn antialias(g: Gpu&, target: gfx::Texture) {
     let m = Metrics { float4 { 1.0 / g.size.x, 1.0 / g.size.y, g.size.x, g.size.y } };
     // The edge pass discards where it finds none, and the weights are read only where
     // there are edges, so both start cleared.
-    gfx::begin_pass(g.edges, gfx::Texture { 0 }, float4_0);
+    var edges = gfx::PassDesc { depth: g.depth, color_value: float4_0 };
+    edges.color[0] = g.edges;
+    gfx::begin_pass(edges);
     gfx::bind(g.smaa_edges);
     gfx::bind_texture(gfx::FRAGMENT, 0, g.color, g.linear);
     gfx::uniforms(gfx::VERTEX, 0, m);
     gfx::uniforms(gfx::FRAGMENT, 0, m);
     gfx::draw(3);
     gfx::end_pass();
-    gfx::begin_pass(g.weights, gfx::Texture { 0 }, float4_0);
+    var weights = gfx::PassDesc { depth: g.depth, clear_depth: false, color_value: float4_0 };
+    weights.color[0] = g.weights;
+    gfx::begin_pass(weights);
     gfx::bind(g.smaa_weights);
     gfx::bind_texture(gfx::FRAGMENT, 0, g.edges, g.linear);
     gfx::bind_texture(gfx::FRAGMENT, 1, g.area, g.linear);
