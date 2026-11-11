@@ -70,21 +70,35 @@ fn frame(g: gui::Gui&, area: float4, s: settings::Settings&, gs: history::Game[.
     gui::cut_top(c, GAP * u);
     let back = strings::get(strings::NAV_BACK);
     if gui::back(g, BACK_ID, gui::cut_left(head, gui::back_width(g, back)), back) { ask = BACK; }
-    // The draughts at the head's right, each its name and rating, as wide as its words.
-    var t: Text = [];
-    var right = head.x + head.z;
-    var tiles: float4[3] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 3];
-    for k in 3 {
-        let i = 2 - k;
+    // The draughts at the head's right, each its name and rating, as wide as its words;
+    // where they don't fit beside back (a phone in portrait), a row of their own under the
+    // head, sharing its width.
+    var t:      Text   = [];
+    var widths: f32[3] = [0.0; 3];
+    var all:    f32    = 0.0;
+    for i in 3 {
         let name = strings::get(settings::DRAUGHTS_KEYS[i]);
-        let w = max(gui::tap() * u, gui::text_width(g, gui::BODY, name) + 2.0 * gui::side() * u);
-        tiles[i] = float4 { right - w, head.y, w, head.w };
-        right -= w + 10.0 * u;
+        widths[i] = max(gui::tap() * u, gui::text_width(g, gui::BODY, name) + 2.0 * gui::side() * u);
+        all += widths[i] + (if i > 0 { 10.0 * u } else { 0.0 });
     }
     let title_x = head.x + gui::back_width(g, back) + gui::PAD_WIDE * u;
+    let own_row = title_x + all > head.x + head.z;
+    var tiles: float4[3] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 3];
+    var right = head.x + head.z;
+    if own_row {
+        let line = gui::cut_top(c, gui::tap() * u);
+        gui::cut_top(c, GAP * u);
+        let w = (line.z - 20.0 * u) / 3.0;
+        for i in 3 { tiles[i] = float4 { line.x + i * (w + 10.0 * u), line.y, w, line.w }; }
+    } else {
+        for k in 3 {
+            let i = 2 - k;
+            tiles[i] = float4 { right - widths[i], head.y, widths[i], head.w };
+            right -= widths[i] + 10.0 * u;
+        }
+    }
     let title = strings::get(strings::GAMES_TITLE);
     let room = right - title_x;
-    // Too narrow for the tiles beside the title (a phone in portrait): the title goes.
     if gui::text_width(g, gui::LABEL, title) <= room {
         gui::text(g, gui::LABEL, float4 { title_x, head.y, room, head.w }, title, 1.0, 0.0, gui::LEFT);
     }
@@ -103,7 +117,7 @@ fn frame(g: gui::Gui&, area: float4, s: settings::Settings&, gs: history::Game[.
     let wide = c.z > c.w;
     let levels = c.w >= 560.0 * u || !wide;
     let panel_h = panel_height(g, levels);
-    var side = if wide { gui::cut_left(c, min(SIDE * u, 0.42 * c.z)) } else { gui::cut_top(c, min(panel_h, 0.5 * c.w)) };
+    var side = if wide { gui::cut_left(c, min(SIDE * u, 0.42 * c.z)) } else { gui::cut_top(c, min(panel_h, c.w - (2.0 * ROW + ROW_GAP + 24.0) * u)) };
     if wide { gui::cut_left(c, GAP * u); } else { gui::cut_top(c, GAP * u); }
     if wide { side.w = min(side.w, panel_h); }
     if rating_panel(g, side, s, gs, variant, levels) { ask = CHANGED; }
