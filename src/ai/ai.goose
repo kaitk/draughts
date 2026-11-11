@@ -21,6 +21,8 @@ import rules from "../rules";
 import .eval;
 import .search;
 import .lookout;
+import .judge;
+import .rating;
 
 let EASY = 0;
 let MEDIUM = 1;
