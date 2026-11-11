@@ -18,8 +18,12 @@ everywhere else and on Android, and a flag to force either (the user, 2026-11-11
   were. Merged as it is, that cost moves onto main.
 - **Linking both.** NoGraphicsAPI's CMake refuses a deployment target under macOS or iOS
   26, and its Metal backend calls Metal 4's classes directly; the gfx build runs on iOS
-  16 (`scripts/ios.py`'s `MIN_IOS`). On Windows ngfx imports `vulkan-1.dll`, which a PC
-  without a Vulkan driver lacks, and Windows then refuses to start the program at all.
+  16 (`scripts/ios.py`'s `MIN_IOS`). On Windows ngfx imports `vulkan-1.dll` directly, which
+  is no loss: gfx draws only through Vulkan there too (Direct3D 12 rejected for FXC's 5 s
+  at each launch, `docs/decisions/README.md`), so a PC without a Vulkan driver can't run
+  Draughts either way; only Windows' own missing-DLL dialog stands in for the app's
+  message (the user, 2026-11-11). The fallback matters there for GPUs with Vulkan but
+  not ngfx's newer needs, `VK_EXT_descriptor_heap` above all.
 - **The hand-off.** The ngfx host opens gfx's window `WINDOW_ONLY` (patch 0008) and
   aborts if `ngfx::open` fails. Falling back needs gfx to make its GPU device afterwards,
   in the window it already opened.
@@ -54,9 +58,8 @@ is trying ngfx and falling back, not a list of devices kept here:
    `ngfx` branch retired. The gfx build is unchanged and still what ships.
 3. **Both in one executable.** Draughts' one SDL for both (as task 065 left it); ngfx's
    code loaded only where it can run: Metal 4 behind `@available` with weak links, or
-   ngfx in a library the app opens only on macOS and iOS 26 (and on Windows, only once
-   `vulkan-1.dll` loads: a delay-loaded import, or Vulkan's functions fetched at run
-   time). Which of the two, decided here and recorded in `docs/decisions/`.
+   ngfx in a library the app opens only on macOS and iOS 26. Which of the two, decided
+   here and recorded in `docs/decisions/`. Windows links both as they are.
 4. **Choosing.** `--renderer auto|gfx|ngfx` (`auto` the default): `auto` tries ngfx and
    falls back to gfx in the same window; `ngfx` fails loudly where it can't run; Android
    is always gfx. The choice and why printed at start, for bug reports.
@@ -67,8 +70,8 @@ is trying ngfx and falling back, not a list of devices kept here:
 ## Acceptance criteria
 
 - [ ] The drawing in one copy, both renderers' shots as before
-- [ ] One executable per platform holding both renderers, starting on systems without
-      Metal 4 or Vulkan
+- [ ] One executable per platform holding both renderers, starting on Apple systems
+      without Metal 4
 - [ ] `--renderer auto|gfx|ngfx`, `auto` picking ngfx where it runs and gfx elsewhere
 - [ ] Checked on the Mac, the iPhone, Windows, and an Android device, recorded here
 - [ ] The decision and the architecture docs updated; the `ngfx` branch retired
