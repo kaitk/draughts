@@ -202,9 +202,9 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
   differs from gfx by more than 8, grown by a pixel (mean difference of 255 there, and
   elsewhere):
 
-  | `--aa` | wood: edges / rest | spring carved | winter stone | GPU busy P50 / P99 | the pass's targets at 2560 × 1440 | footprint at rest |
+  | `--aa` | wood: edges / rest | spring carved | winter stone | GPU busy P50 / P99, the whole frame | the pass's targets at 2560 × 1440 | footprint at rest |
   |---|---|---|---|---|---|---|
-  | gfx 4× MSAA | 0 / 0 | 0 / 0 | 0 / 0 | 2.02 / 4.87 ms | | 526 MB |
+  | gfx 4× MSAA | 0 / 0 | 0 / 0 | 0 / 0 | 2.02 / 4.87 ms | 88 MB (4× color and depth) | 526 MB |
   | off | 4.58 / 0.07 | 5.87 / 0.07 | 5.95 / 0.06 | 1.90 / 5.13 ms | 7 MB (depth) | 563 MB |
   | fxaa | 4.40 / 0.36 | 5.29 / 0.45 | 5.73 / 0.26 | 2.13 / 4.98 ms | 22 MB | 561 MB |
   | smaa | 3.74 / 0.12 | 4.62 / 0.18 | 4.79 / 0.10 | 2.25 / 5.29 ms | 44 MB | 563 MB |
@@ -214,7 +214,9 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
   165 Hz display, 1,000 bench frames (`EXE` and `FLAGS` there measure the ngfx build);
   every build presented all its frames at 165 fps. The footprint is the private bytes
   after `--rest 25`; ngfx's texture memory grows in 64 MB chunks, so the 1x modes'
-  differences vanish in them. SMAA is the default: its edges are as close to the MSAA as
+  differences vanish in them. The ngfx build's footprint is about 37 MB above gfx's in
+  every mode, `off` included, so it is ngfx's own memory, not the pass's: what of it is
+  unmeasured (below). SMAA is the default: its edges are as close to the MSAA as
   supersampling's, while the surfaces stay as gfx draws them (supersampling filters the
   wood's grain and the carvings' relief again, 0.5 to 0.9 of 255 over the whole board,
   and outlines the carvings darker), at half supersampling's added GPU time and half its
@@ -240,7 +242,29 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
 - **The Mac's numbers**: `--bench` and `--rest` of both builds, flat and 3D, and the
   antialiasing modes' GPU time on the M1 Pro, where supersampling's four times the
   shading should cost more than on the RTX 4090.
-- **The iPad later**: ngfx has no iOS build yet (below).
+- **The iPad and iPhone**: NoGraphicsAPI builds for iOS and iPadOS 26 (A14 or M1 and
+  newer, `docs/building.md` in its tree), and takes a `CAMetalLayer` there; ngfx has no
+  iOS build yet. Draughts' iOS build (`ios/`) links gfx's SDL.
+
+### Questions from higher up
+
+- **Why ngfx holds more memory.** The sizes are ngfx's own (`native/ngfx_gpu.hpp`), not
+  NoGraphicsAPI's, which leaves allocation to the application: two frames in flight of
+  16 MB CPU-visible frame memory, a 32 MB upload queue, buffers and textures in 64 MB
+  chunks (a texture over half a chunk alone), 8,192 texture and 1,024 sampler
+  descriptors, and the screen as an offscreen RGBA8 texture and depth per frame in
+  flight, copied to the swapchain. Which of these the 37 MB is, and whether a program
+  this size should size them itself (`ngfx::open` taking them, or chunks that start
+  small), is to measure, Mac first, where memory is unified. NoGraphicsAPI's own
+  examples are the reference for how it is meant to be used.
+- **Why ngfx has SDL.** NoGraphicsAPI takes a native window (`HWND`, or a `CAMetalLayer`
+  on macOS and iOS) and needs no SDL; ngfx copied gfx's platform half (window, input,
+  time, gamepads, cursors) over SDL3 and builds its own SDL. That is what keeps the two
+  renderers from one executable (below). The options: ngfx takes a window from the
+  program and drops its platform half, so Draughts keeps one SDL for both renderers; or
+  ngfx links the SDL the program links.
+- **SMAA in the gfx build** too, in place of 4× MSAA, if the tablet's and the Mac's
+  numbers favour it: half the targets' memory here, the look within 0.1 to 0.25 of 255.
 
 ## Later, not in this task
 
