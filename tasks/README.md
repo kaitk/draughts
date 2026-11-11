@@ -70,8 +70,8 @@ Open:
   people, after 061.
 - Later: 010 goose_gfx changes to propose upstream (alongside), 013 season effects, 014
   upscaled backgrounds, 026 the first start and tutorial, 060 shared blocks for a second
-  board game (chess), 064 Steam for Windows, macOS, and Linux (low priority, scoped only), with 066 the
-  tile under the mouse lit before it.
+  board game (chess), 064 Steam for Windows, macOS, and Linux (low priority, scoped only), with 067 the
+  board under the mouse lit and 068 the desktop's layout tuned before it.
 
 ## Next (updated 2026-11-10)
 

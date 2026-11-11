@@ -202,3 +202,7 @@ and the commit that last has it.
   expected output byte-identical, the Mac's photograph load unchanged, and the Android
   release smoke-tested by hand on the Pixel 7a; the rest of the end measurement dropped
   (the user, 2026-11-11). `061-code-review-refactors/`, `3aeb9ea`
+- 066: The tile under the mouse lit on a desktop. Done: a faint form of the chosen tile's
+  glow (the glow at 8% and a 1 dp border at 40%; a lit tile's own glow 6% brighter),
+  fading over the press's 0.12 s, never on Android or with `--touch on`; a resting mouse
+  draws nothing (`test/gui/hover`, `test/shell/rest_hover`). `066-mouse-hover.md`, `6dfe01f`
