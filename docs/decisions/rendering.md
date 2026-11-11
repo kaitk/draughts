@@ -476,6 +476,16 @@ two 512² working copies (2 MB). Apple's memoryless storage for the MSAA targets
 remove them for good without the first draw's cost, but SDL picks the storage mode, not
 gfx.
 
+gfx keeps 4× MSAA as the 3D board's antialiasing, and SMAA stays a choice for comparing
+(`--aa smaa`, the A key; task 071, 2026-11-11). The two look alike: SMAA differs from
+MSAA by 4 to 5 of 255 at the edges and by 0.1 elsewhere, and side by side at 4× on a
+27" screen neither was clearly better. MSAA is the cheaper on every GPU measured: at full
+screen on the M1 Pro 3.05 ms of GPU a frame against SMAA's 3.49, and on the Pixel 7a's
+Mali 11.4 ms a frame waited against 12.5 (none: 11.5), where 4× MSAA stays on the tile
+and SMAA's three passes each store a full-screen target. SMAA's one gain, half the
+pass's memory while drawing (49 MB against 98 at 2560 × 1600), mostly went with the
+targets given back at rest. The ngfx build keeps SMAA, as goose-ngfx has no MSAA.
+
 ## The 3D board on devices
 
 The measurements as they were taken, kept here as the architecture keeps only the

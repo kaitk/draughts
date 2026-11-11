@@ -1,6 +1,6 @@
 # 071: Where the 3D board's memory goes
 
-Status: in progress (the SMAA on gfx question next; the tablet and the A33 not yet)
+Status: in progress (the tablet's and the A33's memory numbers not yet)
 
 The 3D game at rest holds about 200 MB more than the flat one on both renderers: on the
 M1 Pro in a 1280 × 800 window (2560 × 1600 pixels), 358 MB against 115 on gfx and 315
@@ -158,6 +158,30 @@ season (a mitred frame map), these winter's.
   costs 0.75 ms over none here, and gfx's SMAA 0.4 ms more than its MSAA: on the M1 Pro
   MSAA is the cheaper of the two, as on Windows (task 065).
 
-Left: SMAA's cost against MSAA on the Pixel 7a and the A33 (the tile GPUs, where MSAA's
-4× targets cost bandwidth and memory SDL can't keep on the tile) before choosing a
-default for gfx; the tablet's and the A33's memory numbers (neither attached).
+SMAA on the Pixel 7a (2026-11-11): the first `--aa smaa` crashed the Mali driver making
+the edges pipeline (a null pointer in `spir2lir::LIR_address::is_usable_in_function`,
+from `vkCreateGraphicsPipelines`): SMAA's functions took their textures as `sampler2D`
+parameters. They read globals now (`tools/smaa_glsl.py` writes each parameter as an
+unused int; each pass maps the names it doesn't bind onto one it does), the Mac's shots
+the same to the pixel in autumn and winter, and SMAA draws on the Pixel.
+
+The 3D bench on the Pixel (main's gfx build as `.bench`, 1080 × 2400, Russian, wood, the
+start, `--bench 300`, cooled to thermal status 0 and 20 s between runs), one round:
+
+| `--aa` | waited P50 | P99 | CPU | presented |
+|---|---|---|---|---|
+| msaa | 11.38 / 11.28 | 15.8 / 14.7 | 0.73 / 0.50 | 60.0 fps |
+| smaa | 12.53 | 17.1 | 1.13 | 59.9 |
+| off | 11.50 | 14.3 | 0.50 | 60.0 |
+
+(A second MSAA run's presented phase was cut by a phone call; its waited frames came
+before it.) The Pixel's GPU clock follows the load, so the gaps are rough, but the order
+is the M1 Pro's: MSAA no dearer than none, SMAA about 1.1 ms over it. With the two
+indistinguishable side by side at 4× on a 27" screen (the 3D prototype's Z and A), gfx
+keeps MSAA (`docs/decisions/rendering.md`, GPU memory); the remaining rounds and the A33's
+weren't run, as nothing pointed the other way.
+
+The 3D prototype (`poc/3d/board3d.goose`) has A for the antialiasing and Z for a 4× zoom
+on the board's near left corner, unfiltered, with a label naming both.
+
+Left: the tablet's and the A33's memory numbers (neither attached).

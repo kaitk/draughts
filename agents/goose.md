@@ -234,6 +234,11 @@ find out by compiling, so the next session doesn't.
   any other line (`    #ifdef PULSE`), or the compiler refuses the string; one GLSL text
   with an `#ifdef`, a define string put first in `embed_shader`, makes two shaders
   (`shaders::MARKS_PULSE`, 2026-11-09).
+- A `sampler2D` passed as a function's parameter crashes the Pixel 7a's Mali driver as
+  it makes the pipeline (a null pointer in `spir2lir`'s `evaluate_address`, from
+  `vkCreateGraphicsPipelines`), while the Mac and the iPhone take it. Read textures as
+  globals; SMAA's are (`src/render3d/smaa.goose`'s `*_TEX`, `tools/smaa_glsl.py`,
+  2026-11-11). embed_shader's preprocessor has no `##`, and a parameter needs a name.
 - GLSL's `smoothstep(a, b, x)` with `a > b` is undefined and on Metal silently does
   nothing useful; write `1.0 - smoothstep(b, a, x)` (2026-11-09).
 - A GLSL name that is a Metal keyword fails only when the pipeline is made on the Mac,
