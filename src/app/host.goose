@@ -12,6 +12,7 @@ import vec;
 import gfx;
 
 import gui from "../gui";
+import .keys;
 
 let DESKTOP = 0;
 let ANDROID = 1;
@@ -54,6 +55,7 @@ struct Host {
     enter:    i64            = 0,
     text_on:  bool           = false,
     keyboard: i64            = 0,
+    repeat:   Repeat         = Repeat {}, // the arrow held (keys.goose)
 }
 
 // Opens the window, `title` and width × height where the platform has windows; filling
@@ -98,20 +100,17 @@ fn read_display(h: Host&) { draughts_display(h.display); }
 // The pointer this frame and, but while the keyboard is up, the keys' moves; with it up
 // the characters typed, Backspace, and Return. A quick tap can press and release within one frame, which mouse_down never
 // sees; pressed and released catch it.
-fn input(h: Host&) -> gui::Input {
+fn input(h: Host&, now: f64) -> gui::Input {
     var input = gui::Input { at: gfx::mouse_pos(), down: gfx::mouse_down(gfx::MOUSE_LEFT),
                              pressed: gfx::mouse_pressed(gfx::MOUSE_LEFT),
                              released: gfx::mouse_released(gfx::MOUSE_LEFT), wheel: gfx::mouse_wheel() };
-    // The arrow keys move the UI's focus and Enter or Space presses it (gui::focus_keys),
-    // not while a name is typed, where they edit it.
+    // The arrow keys move the UI's focus, repeating while held, and Enter or Space presses
+    // it (gui::focus_keys, keys.goose), not while a name is typed, where they edit it.
     guard h.text_on else {
-        input.step = if gfx::key_pressed("Up") { gui::STEP_UP } else if gfx::key_pressed("Down") { gui::STEP_DOWN }
-                     else if gfx::key_pressed("Left") { gui::STEP_LEFT } else if gfx::key_pressed("Right") { gui::STEP_RIGHT }
-                     else { gui::STEP_NONE };
-        input.confirm = gfx::key_pressed("Return") || gfx::key_pressed("Keypad Enter") || gfx::key_pressed("Space");
-        input.held = gfx::key_down("Return") || gfx::key_down("Keypad Enter") || gfx::key_down("Space");
+        keys(h.repeat, input, now);
         return input;
     }
+    h.repeat = Repeat {};
     let n = min(gfx::events_into(h.events), h.events.len);
     for e in h.events[..n] {
         guard input.typed.len < gui::MAX_TYPED else { break; }

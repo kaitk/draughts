@@ -163,7 +163,7 @@ fn main() {
         // The pointer, and a player's name typed while the keyboard is up (shell::who). The
         // screens give the pointer to the UI first; a press that lands on it never reaches
         // the board.
-        let input = dev::pointer(dv, f, host::input(h));
+        let input = dev::pointer(dv, f, host::input(h, now));
         gui::begin(g, input, scale, now);
         // A wheel's turn scrolls a list (gui::scroll_begin), a change to draw.
         if input.wheel != 0.0 { dirty = true; }
@@ -266,6 +266,9 @@ fn main() {
         let resting = if !drew && !hidden { render::rest(rd, now) } else { -1.0 };
         var next = shell::wake_in(sh, now, HINT_POLL);
         if resting >= 0.0 && (next < 0.0 || resting < next) { next = resting; }
+        // An arrow held repeats (host's keys.goose), waking the loop when it is due.
+        let repeat = host::repeat_in(h.repeat, now);
+        if repeat >= 0.0 && (next < 0.0 || repeat < next) { next = repeat; }
         if next >= 0.0 && (wake_at < now || now + next < wake_at - 0.005) {
             host::wake_in((1000.0 * next) as i64 + 2);
             wake_at = now + next;

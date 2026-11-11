@@ -67,7 +67,8 @@ find out by compiling, so the next session doesn't.
 - A package's file can share the package's own namespace: `src/gui/focus.goose` starts
   with `namespace gui;` and `gui.goose` imports it with `import .focus;`, so its types and
   functions stay `gui::Spot`, `gui::offer`, and each file uses the other's freely
-  (2026-11-11). A big file splits this way with no call site changed.
+  (2026-11-11). A big file splits this way with no call site changed; `src/app/keys.goose`
+  does the same in `host`.
 - Two files of a package may both declare the same namespace and call each other
   unqualified: `render3d.goose` (what the 3D board draws) and `render3d_gpu.goose` (its
   recording, one per renderer) are both `namespace render3d;`, the first importing

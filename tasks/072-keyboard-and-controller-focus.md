@@ -71,9 +71,12 @@ The rest of step 5, in this order:
    hold tile as a press, not a click, and `gui::key_held` keeps it down, a ring that
    fired staying empty until Enter is pressed again (`test/gui/focus`). Checked headless
    only: `--keys` presses Enter but can't hold it.
-3. Arrow keys repeating while held (gfx reports a key's first press only): a delay and
-   rate kept in `host`, from `gfx::key_down`.
-4. The board with the keys: a cursor on the squares, Enter choosing a piece and its
+3. Done (2026-11-11): arrow keys repeat while held, 0.4 s after the press and then
+   every 0.08 s, in `src/app/keys.goose` (part of `host`, in its namespace, where a
+   gamepad's moves will come in too); `host::repeat_in` joins the loop's wake timer so a
+   held arrow repeats in an idle loop. Built, not yet tried by hand: `--keys` can't hold a
+   key.
+4. Next session: the board with the keys: a cursor on the squares, Enter choosing a piece and its
    target, flat and 3D; its look likely task 067's lit square, to agree with the user.
 
 ## Acceptance criteria
