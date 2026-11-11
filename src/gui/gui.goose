@@ -204,7 +204,8 @@ struct Quad {
 
 // The pointer this frame, and what was typed while text input is on. A quick tap can be
 // pressed and released in one frame. The keys' moves (focus) come in `step`, one of
-// STEP_NONE..STEP_RIGHT, and `confirm`, Enter pressing the focused control.
+// STEP_NONE..STEP_RIGHT, `confirm`, Enter pressing the focused control, and `held`, Enter
+// down, which fills a focused hold tile as a held press does.
 let MAX_TYPED = 16;
 let ERASE = 8;              // in typed: Backspace
 let ENTER = 13;             // and Return
@@ -222,6 +223,7 @@ struct Input {
     wheel:    f32              = 0.0,   // a mouse wheel's or trackpad's turn this frame, up positive
     step:     i64              = STEP_NONE, // an arrow key pressed this frame
     confirm:  bool             = false, // Enter or Space pressed this frame
+    held:     bool             = false, // Enter or Space down this frame
 }
 
 // A widget's state across frames: whether it is down and when that last changed.
@@ -676,16 +678,18 @@ fn button(g: Gui&, id: i64, r: float4, icon: i64) -> bool { tile(g, id, r, icon,
 
 // The press of widget id over r: true on the frame the pointer is released over r
 // after going down on it, or Enter is pressed while it has the keys' focus, and how far
-// it is pressed, 0..1. A `focusable` widget is offered to the keys' focus.
-fn hold(g: Gui&, id: i64, r: float4, focusable: bool = true) -> bool, f32 {
+// it is pressed, 0..1. A `focusable` widget is offered to the keys' focus. A `keyhold`
+// one (hold_tile) is never clicked by Enter: Enter pressed on it goes down and stays down
+// while Enter is held, as the pointer held on it does.
+fn hold(g: Gui&, id: i64, r: float4, focusable: bool = true, keyhold: bool = false) -> bool, f32 {
     let over = inside(r, g.input.at);
     if focusable { offer(g, id, r); }
     if g.input.pressed && over {
         g.active = id;
         g.took = true;
     }
-    let key = focusable && keyed(g, id);
-    let held = g.active == id && g.input.down && over;
+    let key = focusable && !keyhold && keyed(g, id);
+    let held = (g.active == id && g.input.down && over) || (focusable && keyhold && key_held(g, id));
     let clicked = (g.active == id && g.input.released && over) || key;
     if clicked { g.acted = true; }
     // The keys' focus is lit as the mouse's hover is. Without it, the mouse over it on a
@@ -775,13 +779,15 @@ fn face(g: Gui&, r: float4, animal: i64, a: f32, lit: bool) {
 
 // A tile that does its thing when held `seconds` (rendering.md, "Controls"): a ring fills
 // round it while it is held, in the glow color or, `red`, the forced-capture red; let
-// go early and nothing happens, a release being no tap. Returns true on the frame the
-// ring is full, after which the press does nothing more until the pointer is lifted, and
+// go early and nothing happens, a release being no tap. Enter held while it has the keys'
+// focus fills it too. Returns true on the frame the ring is full, after which the press
+// does nothing more until the pointer is lifted or Enter let go and pressed again, and
 // how far the ring is, 0..1. The caller draws the tile's face over it.
 fn hold_tile(g: Gui&, id: i64, r: float4, radius: f32, seconds: f64, red: bool) -> bool, f32 {
-    let unused, p = hold(g, id, r);
+    let key = key_held(g, id);
+    let unused, p = hold(g, id, r, true, true);
     let s .= g.slots[slot(g, id)];
-    let held = g.active == id && g.input.down && inside(r, g.input.at) && s.down;
+    let held = ((g.active == id && g.input.down && inside(r, g.input.at)) || key) && s.down;
     let k = if held { clamp((g.now - s.since) / seconds, 0.0, 1.0) as f32 } else { 0.0 };
     add(g, Quad { rect: r, look: float4 { BUTTON, radius * g.scale, 0.0, p }, extra: float4 { g.scale, PLAIN, hover(g, id), 0.0 } });
     guard held else { return false, 0.0; }

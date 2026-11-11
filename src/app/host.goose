@@ -105,6 +105,7 @@ fn input(h: Host&) -> gui::Input {
                      else if gfx::key_pressed("Left") { gui::STEP_LEFT } else if gfx::key_pressed("Right") { gui::STEP_RIGHT }
                      else { gui::STEP_NONE };
         input.confirm = gfx::key_pressed("Return") || gfx::key_pressed("Keypad Enter") || gfx::key_pressed("Space");
+        input.held = gfx::key_down("Return") || gfx::key_down("Keypad Enter") || gfx::key_down("Space");
         return input;
     }
     let n = min(gfx::events_into(h.events), h.events.len);

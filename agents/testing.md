@@ -37,8 +37,9 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   photo: `count`, whose `state` fills the board a moment on, so a pulse at its start,
   which is at full, shows as pulsing), `gui` (and the widget ids' ranges, one per
   screen, none running into the next: `ids`; `gui::stack`'s columns and rows: `stack`; the mouse's hover, its fade and turn, and none with `desktop_scale` 0: `hover`; the
-  keys' focus, its moves by the controls' rects, Enter, and the mouse taking over:
-  `focus`; in `shell`, `home_keys`: a desktop's Quit row or the X, and home walked and
+  keys' focus, its moves by the controls' rects, Enter, the mouse taking over, and
+  Enter held filling a hold tile: `focus`; a focused row scrolled into its list's view:
+  `scroll`; in `shell`, `home_keys`: a desktop's Quit row or the X, and home walked and
   pressed with the keys (`drive::key`); in
   `shell`, `rest_hover`: a mouse resting anywhere on home, settings, the game, and the
   puzzles asks for no frames), `game` (the game screen driven through

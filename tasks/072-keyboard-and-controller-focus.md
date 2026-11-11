@@ -63,9 +63,12 @@ The rest of step 5, in this order:
    focus's faint light didn't show in the shots. A phone-sized run once in a while never
    reached its `--frames` shot, with or without this change (5 of 5 runs of each build
    finished when retried).
-2. Hold tiles (who's playing's start again and remove, `gui::hold_tile`) filled by Enter
-   held while focused, as a held press fills them: `gui::Input` needs Enter's held state
-   beside `confirm`.
+2. Done (2026-11-11): hold tiles (who's playing's start again and remove,
+   `gui::hold_tile`) filled by Enter held while focused. `gui::Input.held` is Enter or
+   Space down (`gfx::key_down` in `host::input`); `gui::hold`'s `keyhold` takes Enter on a
+   hold tile as a press, not a click, and `gui::key_held` keeps it down, a ring that
+   fired staying empty until Enter is pressed again (`test/gui/focus`). Checked headless
+   only: `--keys` presses Enter but can't hold it.
 3. Arrow keys repeating while held (gfx reports a key's first press only): a delay and
    rate kept in `host`, from `gfx::key_down`.
 4. The board with the keys: a cursor on the squares, Enter choosing a piece and its

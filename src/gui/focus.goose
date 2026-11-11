@@ -98,3 +98,11 @@ fn prefer(g: Gui&, id: i64) {
 
 // Whether Enter pressed control id this frame: it has the keys' focus.
 fn keyed(g: Gui&, id: i64) -> bool { !g.deaf && g.focus == id && g.pointer.confirm }
+
+// Whether Enter holds control id down (a hold tile): it has the keys' focus and Enter is
+// down, pressed this frame or held since it went down on it. A press the hold let go of
+// (its ring full) stays up until Enter is pressed again.
+fn key_held(g: Gui&, id: i64) -> bool {
+    guard !g.deaf && g.focus == id && g.pointer.held else { return false; }
+    return g.pointer.confirm || g.slots[slot(g, id)].down;
+}

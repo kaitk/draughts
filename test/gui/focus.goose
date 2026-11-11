@@ -6,7 +6,9 @@
 // focused, the nearest that way taken past it; the focus is lit as the mouse's hover is, the frames asked for only while that
 // light moves; the mouse moving, a press, or the wheel lets it go; a control the next
 // frame doesn't declare (another screen) hands it to that screen's primary; a screen a
-// transition leaves (listen off) offers none.
+// transition leaves (listen off) offers none; and Enter held on a focused hold tile fills
+// its ring as a held press does, Enter pressed alone never firing it, let go early
+// nothing, held to the end firing it once and no more until Enter is pressed again.
 import std;
 import vec;
 import gui from "../../src/gui";
@@ -28,6 +30,13 @@ fn screen(g: gui::Gui&, step: i64, confirm: bool, at: float2, now: f64, dim: boo
     }
     print(what, ": focus ", g.focus, ", lit ", g.under, ", clicked", if clicked.len == 0 { " nothing" } else { clicked[..] },
           ", acted ", g.acted, ", animating ", gui::animating(g));
+}
+
+// One frame of a lone hold tile (id 70, primary, 2 s) with the keys as given.
+fn hold_frame(g: gui::Gui&, step: i64, confirm: bool, held: bool, now: f64, what: const u8[:]) {
+    gui::begin(g, gui::Input { at: float2 { -1.0, -1.0 }, step: step, confirm: confirm, held: held, .. }, 1.0, now);
+    let fired, k = gui::hold_tile(g, 70, float4 { 20.0, 20.0, 300.0, 88.0 }, 20.0, 2.0, false);
+    print(what, ": focus ", g.focus, ", ring ", k, ", fired ", fired, ", acted ", g.acted, ", holding ", g.holding);
 }
 
 fn main() {
@@ -73,4 +82,22 @@ fn main() {
     print("  declared deaf: offered ", g.spots.len);
     gui::begin(g, gui::Input { at: float2 { 50.0, 50.0 }, step: gui::STEP_DOWN, .. }, 1.0, now + 0.04);
     print("  down with nothing offered: focus ", g.focus);
+
+    // The hold tile with the keys.
+    var h = gui::Gui {};
+    gui::test_faces(h);
+    hold_frame(h, gui::STEP_NONE, false, false, 30.0, "hold tile at rest");
+    hold_frame(h, gui::STEP_DOWN, false, false, 31.0, "down: focused");
+    hold_frame(h, gui::STEP_NONE, true, true, 32.0, "enter pressed and let go");
+    hold_frame(h, gui::STEP_NONE, false, false, 32.02, "  a frame on");
+    hold_frame(h, gui::STEP_NONE, true, true, 33.0, "enter pressed, held");
+    hold_frame(h, gui::STEP_NONE, false, true, 34.0, "  held 1 s");
+    hold_frame(h, gui::STEP_NONE, false, false, 34.5, "  let go early");
+    hold_frame(h, gui::STEP_NONE, true, true, 35.0, "enter pressed, held");
+    hold_frame(h, gui::STEP_NONE, false, true, 36.0, "  held 1 s");
+    hold_frame(h, gui::STEP_NONE, false, true, 37.0, "  held 2 s: full");
+    hold_frame(h, gui::STEP_NONE, false, true, 38.0, "  still held");
+    hold_frame(h, gui::STEP_NONE, false, true, 40.5, "  still held, 2.5 s on");
+    hold_frame(h, gui::STEP_NONE, false, false, 41.0, "  let go");
+    hold_frame(h, gui::STEP_NONE, true, true, 42.0, "enter pressed again");
 }

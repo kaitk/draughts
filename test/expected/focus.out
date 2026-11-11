@@ -21,3 +21,17 @@ another screen: focus 2
   the next frame: focus 41
   declared deaf: offered 0
   down with nothing offered: focus 41
+hold tile at rest: focus 0, ring 0.0, fired false, acted false, holding false
+down: focused: focus 70, ring 0.0, fired false, acted false, holding false
+enter pressed and let go: focus 70, ring 0.0, fired false, acted false, holding true
+  a frame on: focus 70, ring 0.0, fired false, acted false, holding false
+enter pressed, held: focus 70, ring 0.0, fired false, acted false, holding true
+  held 1 s: focus 70, ring 0.5, fired false, acted false, holding true
+  let go early: focus 70, ring 0.0, fired false, acted false, holding false
+enter pressed, held: focus 70, ring 0.0, fired false, acted false, holding true
+  held 1 s: focus 70, ring 0.5, fired false, acted false, holding true
+  held 2 s: full: focus 70, ring 1.0, fired true, acted true, holding false
+  still held: focus 70, ring 0.0, fired false, acted false, holding false
+  still held, 2.5 s on: focus 70, ring 0.0, fired false, acted false, holding false
+  let go: focus 70, ring 0.0, fired false, acted false, holding false
+enter pressed again: focus 70, ring 0.0, fired false, acted false, holding true
