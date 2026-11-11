@@ -30,11 +30,11 @@ import ngfx;
 
 import model3d from "../model3d";
 
-// Theme `kind`'s photograph as a texture's id, or 0 when it isn't built in: the JPEG
-// decoded and scaled down to `decoded` square (src/ngfx/app/photo.c). Declared once,
+// Theme `kind`'s photograph, or 0 when it isn't built in: the ASTC image as stored, or
+// the JPEG decoded and scaled down to `decoded` square (src/app/photo.c). Declared once,
 // here; the app's scene calls it too.
-extern fn draughts_photo_ngfx(kind: i64, decoded: i64) -> u32;
-fn draughts_photo(kind: i64, decoded: i64) -> ngfx::Texture { ngfx::Texture { draughts_photo_ngfx(kind, decoded) } }
+extern fn draughts_photo_id(kind: i64, decoded: i64) -> u32;
+fn draughts_photo(kind: i64, decoded: i64) -> ngfx::Texture { ngfx::Texture { draughts_photo_id(kind, decoded) } }
 
 // gfx's mat4, as the shaders read it: four columns, clip space y up as SDL_GPU's is (the
 // vertex stages negate y for NoGraphicsAPI's).

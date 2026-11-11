@@ -31,9 +31,11 @@ import .smaa;
 import model3d from "../model3d";
 
 // Theme `kind`'s photograph, or 0 when it isn't built in: the ASTC image as stored, or
-// the JPEG decoded and scaled down to `decoded` square (src/app/background.c, which the
-// app and poc/3d both compile). Declared once, here; the app's scene calls it too.
-extern fn draughts_photo(kind: i64, decoded: i64) -> gfx::Texture;
+// the JPEG decoded and scaled down to `decoded` square (src/app/photo.c and
+// background.c, which the app and poc/3d both compile). Declared once, here; the app's
+// scene calls it too.
+extern fn draughts_photo_id(kind: i64, decoded: i64) -> u32;
+fn draughts_photo(kind: i64, decoded: i64) -> gfx::Texture { gfx::Texture { draughts_photo_id(kind, decoded) } }
 
 // Laid out as the shaders' blocks (shaders::FRAME), std140: all vec4s and mat4s.
 struct Frame {
