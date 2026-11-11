@@ -9,6 +9,8 @@
                                                  run, wait, and save the simulator's screen
     scripts/ios.py src/app/draughts.goose --device --run
                                                  build for the attached iPhone, sign, install, start
+    scripts/ios.py src/app/draughts.goose --device --run --ngfx
+                                                 the same on goose-ngfx (task 065), in its place
 
 Steps, as scripts/android.py's: Goose writes the program's C and the runtime's C;
 goose_gfx's sources are copied and patches/goose_gfx applied, and SDL is copied and
@@ -132,7 +134,7 @@ def privacy_manifest(app):
         plistlib.dump(manifest, f)
 
 
-def write_bundle(app, exe, app_id, title, device):
+def write_bundle(app, exe, app_id, title, device, min_ios=MIN_IOS, label=""):
     """The .app: the executable, Info.plist, the launcher's name per language, the icon
     and the launch screen's colour (Assets.car), and the privacy manifest."""
     if app.exists():
@@ -141,7 +143,7 @@ def write_bundle(app, exe, app_id, title, device):
     shutil.copy(exe, app / title)
     assets = asset_catalog(app.parent, app, device)
     privacy_manifest(app)
-    names = app_names()
+    names = {lang: name + label for lang, name in app_names().items()}
     platform = "iPhoneOS" if device else "iPhoneSimulator"
     sdk = "iphoneos" if device else "iphonesimulator"
     sdk_version = run("xcrun", "--sdk", sdk, "--show-sdk-version", capture=True).strip()
@@ -161,7 +163,7 @@ def write_bundle(app, exe, app_id, title, device):
         "DTSDKName": f"{sdk}{sdk_version}",
         "DTPlatformVersion": sdk_version,
         "LSRequiresIPhoneOS": True,
-        "MinimumOSVersion": MIN_IOS,
+        "MinimumOSVersion": min_ios,
         "UIDeviceFamily": [1, 2],
         "UIRequiredDeviceCapabilities": ["arm64", "metal"],
         # A launch screen makes iOS give the app the whole screen at its own size; without
@@ -241,6 +243,22 @@ def device():
             sys.exit("the device's Developer Mode is off: Settings → Privacy & Security")
         return d["identifier"], hw["udid"]
     sys.exit("no iPhone or iPad attached")
+
+
+def goose_h(ngfx_dir):
+    """The folder of the goose.h the compiler wrote for goose-ngfx's build on the Mac,
+    which the ngfx build's C includes: Goose writes it only for the native parts it builds
+    itself, so ngfx's Mac build (its blob compiler's, scripts/ngfx.py) comes first."""
+    home = Path(os.environ.get("GOOSE_HOME", Path.home() / ".goose"))
+    found = []
+    for jit in home.glob("build/pkg/local/*/*/goose_jit_ngfx.dylib"):
+        cache = jit.parent / "cmake/CMakeCache.txt"
+        header = jit.parent / "include/goose.h"
+        if header.exists() and cache.exists() and str(ngfx_dir) in cache.read_text(errors="replace"):
+            found.append(header)
+    if not found:
+        sys.exit(f"no goose.h from a Mac build of {ngfx_dir}: run scripts/ngfx.py first")
+    return max(found, key=lambda h: h.stat().st_mtime).parent
 
 
 def identity():
@@ -340,12 +358,27 @@ def main():
     ap.add_argument("--wait", type=float, default=3.0)
     ap.add_argument("--console", action="store_true",
                     help="run, and stay attached to the program's output until it ends")
+    ap.add_argument("--ngfx", action="store_true",
+                    help="draw through goose-ngfx (NGFX, NGFX_SLANGC; scripts/ngfx.py), "
+                         "in place of the gfx build, under its id; iOS 26 and later")
     args = ap.parse_args()
     program = args.program.resolve()
     name = program.stem
     app_id = BUNDLE_ID if name == "draughts" else f"{BUNDLE_ID}.{name}"
     title = "Draughts" if name == "draughts" else name
     out = ROOT / "build/ios" / name
+    min_ios, label, ngfx_cmake = MIN_IOS, "", []
+    if args.ngfx:
+        # The tree with src/ngfx/ laid over the program, its blobs made for iphoneos.
+        import ngfx
+        program = ngfx.ios_tree(program)
+        # The gfx build's id: the iPhone wouldn't verify a new id of the team (2026-11-11),
+        # so this replaces the gfx build, keeping its data, and the gfx build goes back on
+        # to compare.
+        out, label = out.with_name(name + "-ngfx"), " ngfx"
+        # NoGraphicsAPI's Metal 4.
+        min_ios = "26.0"
+        ngfx_cmake = [f"-DGOOSE_NGFX={ngfx.NGFX}", f"-DGOOSE_H_DIR={goose_h(ngfx.NGFX)}"]
     plat = "device" if args.device else "sim"
     gen, native = out / "gen", out / plat / "native"
 
@@ -358,8 +391,8 @@ def main():
         "-DCMAKE_SYSTEM_NAME=iOS",
         f"-DCMAKE_OSX_SYSROOT={'iphoneos' if args.device else 'iphonesimulator'}",
         "-DCMAKE_OSX_ARCHITECTURES=arm64",
-        f"-DCMAKE_OSX_DEPLOYMENT_TARGET={MIN_IOS}",
-        "-DCMAKE_BUILD_TYPE=Release",
+        f"-DCMAKE_OSX_DEPLOYMENT_TARGET={min_ios}",
+        "-DCMAKE_BUILD_TYPE=Release", *ngfx_cmake,
         f"-DGOOSE_PROGRAM_C={gen / 'program.c'}",
         f"-DGOOSE_RUNTIME_C={gen / 'goose_runtime.c'}",
         f"-DGOOSE_GFX_SRC={gfx_src}",
@@ -370,7 +403,7 @@ def main():
 
     # 3. The bundle, signed.
     app = out / plat / f"{title}.app"
-    write_bundle(app, native / "main", app_id, title, args.device)
+    write_bundle(app, native / "main", app_id, title, args.device, min_ios, label)
     if args.device:
         # The development identity, its team's profile for the app on this device (made
         # once through Xcode if missing), embedded, and its entitlements signed in.

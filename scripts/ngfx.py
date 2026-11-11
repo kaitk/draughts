@@ -73,17 +73,18 @@ def rel(frm, to):
     return os.path.relpath(to, frm).replace("\\", "/")
 
 
-def tree(program):
-    """build/ngfx/tree/: the program with src/ngfx/ laid over it; the root file's path."""
-    sync(ROOT / "src", TREE / "src", ROOT / "src/ngfx")
+def tree(program, tree=TREE):
+    """build/ngfx/tree/ (or another): the program with src/ngfx/ laid over it; the root
+    file's path."""
+    sync(ROOT / "src", tree / "src", ROOT / "src/ngfx")
     for part in ["strings", "assets"]:
-        sync(ROOT / part, TREE / part)
+        sync(ROOT / part, tree / part)
     masters = ROOT / "design/backgrounds/masters"
     if masters.exists():
-        (TREE / "design/backgrounds/masters").mkdir(parents=True, exist_ok=True)
+        (tree / "design/backgrounds/masters").mkdir(parents=True, exist_ok=True)
         for f in [*masters.glob("*-2048.jpg"), *masters.glob("*-2048-6x6.astc")]:
-            copy_if_changed(f, TREE / "design/backgrounds/masters" / f.name)
-    app = TREE / "src/app"
+            copy_if_changed(f, tree / "design/backgrounds/masters" / f.name)
+    app = tree / "src/app"
     root = app / program.name
     text = (ROOT / "src/app" / program.name).read_text(encoding="utf-8")
     text = text.replace("import os;\n", f'import os;\nimport ngfx from "{rel(app, NGFX)}";\n', 1)
@@ -102,10 +103,11 @@ def write_if_changed(path, text):
         path.write_bytes(text.encode())
 
 
-def shaders():
+def shaders(tree=TREE, sdk=None):
     """The Slang modules compiled into blobs in the tree's src/app/shaders/, where stale:
     src/ngfx/shaders/ and the 3D board's, written from gfx's GLSL (ngfx_3d_shaders.py),
-    side by side in build/ngfx/shaders/."""
+    side by side in build/ngfx/shaders/. sdk names the SDK the metallibs are for
+    (NGFX_METAL_SDK, iphoneos for iOS and iPadOS), else the Mac's."""
     gen = OUT / "shaders"
     gen.mkdir(parents=True, exist_ok=True)
     for f in (ROOT / "src/ngfx/shaders").glob("*.slang"):
@@ -115,7 +117,7 @@ def shaders():
     for name, text in ngfx_3d_shaders.sources().items():
         write_if_changed(gen / name, text)
     src = sorted(gen.glob("*.slang"))
-    out = TREE / "src/app/shaders"
+    out = tree / "src/app/shaders"
     out.mkdir(parents=True, exist_ok=True)
     # SMAA's tables, which render3d embeds beside the blobs.
     for name in ["area", "search"]:
@@ -131,7 +133,25 @@ def shaders():
     tool = tools / "ngfx_shaders.goose"
     write_if_changed(tool, (ROOT / "tools/ngfx_shaders.goose.in").read_text(encoding="utf-8")
                      .replace("@NGFX@", rel(tools, NGFX)))
-    native.run(native.GOOSE, "run", tool.name, "--", out, *stale, cwd=tools)
+    native.run(native.GOOSE, "run", tool.name, "--", out, *stale, cwd=tools,
+               env={"NGFX_METAL_SDK": sdk} if sdk else None)
+
+
+def check_setup():
+    if not (NGFX / "ngfx.goose").exists():
+        sys.exit(f"no goose-ngfx checkout at {NGFX}: set NGFX")
+    if not os.environ.get("NGFX_SLANGC"):
+        sys.exit("set NGFX_SLANGC to slangc 2026.18.2 or later (goose-ngfx's docs/development.md)")
+
+
+def ios_tree(program):
+    """The tree for iOS and iPadOS (scripts/ios.py --ngfx): build/ngfx/ios/tree/, its
+    blobs' metallibs compiled for iphoneos, as a Mac's don't load there. Its root file."""
+    check_setup()
+    tree_dir = OUT / "ios/tree"
+    root = tree(program.resolve(), tree_dir)
+    shaders(tree_dir, "iphoneos")
+    return root
 
 
 def main():
@@ -140,10 +160,7 @@ def main():
     ap.add_argument("--run", action="store_true", help="run it after building")
     ap.add_argument("args", nargs="*", help="the program's flags, after --")
     a = ap.parse_args()
-    if not (NGFX / "ngfx.goose").exists():
-        sys.exit(f"no goose-ngfx checkout at {NGFX}: set NGFX")
-    if not os.environ.get("NGFX_SLANGC"):
-        sys.exit("set NGFX_SLANGC to slangc 2026.18.2 or later (goose-ngfx's docs/development.md)")
+    check_setup()
     root = tree(a.program.resolve())
     shaders()
     exe = OUT / f"{root.stem}{EXE}"
