@@ -338,6 +338,22 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   "graphics" rows are the GPU's) and kill it. Headless, settings and the 3D game read
   600 MB and more of graphics that falls over seconds, with either background, so
   compare two runs of the same screen only (task 044, 2026-11-09).
+- Memory experiments on the Mac without windows (task 065, 2026-11-11): the flat and 3D
+  games headless (`GOOSE_GFX_HEADLESS=1 ... --board flat --screen game --frames
+  100000000`, `footprint` after 14 s) read the same MB run to run, so a change to ngfx
+  can be tried there and only the result measured in a window (`--rest`). `vmmap -w PID`
+  lists the regions behind `footprint`'s rows: "IOAccelerator (graphics)" is GPU memory
+  mapped into the process (CPU-visible heaps such as ngfx's 4 MB upload staging and its
+  frame memory, and the driver's command memory), "owned unmapped (graphics)" the
+  GPU-only heaps and textures; their sizes tell chunks, staging, and screens apart.
+  Instruments' Game Memory template sat stopped at launch here, and `screencapture` has
+  no permission from the agent's shell ("could not create image"): count presented
+  frames from the app instead (`ngfx::frame_count()`).
+- On the ngfx build, `--bench`'s waited frame and its CPU time include waiting for a
+  free drawable, which a frame's first pass into the screen does since the screen is
+  the window's image (2026-11-11): flat 8.3 ms waited and 3.7 ms CPU against gfx's 4.8
+  and 0.1 at the same 120 fps presented. Compare the presented rate and the 3D board's
+  waited time, which the drawable doesn't hold up.
 - To shoot an animation at a known moment (a ring's pulse, a flash) in two builds, hold
   the copy's clock: `now` fixed at T until the taps are made, then at T + L
   (`tapped >= taps.len`), so the launch's own time doesn't shift the tap. A clock that

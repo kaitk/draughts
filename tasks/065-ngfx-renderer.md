@@ -371,6 +371,58 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
   the photograph's and the UI's kept layers are the app's design on both builds, not
   copies ngfx adds. Both screen changes are below, as follow-ups.
 
+### 2026-11-11, later: ngfx's memory, on the Mac
+
+Footprint at rest in a 1280 × 800 window (`--rest`, the game on each board), from the
+start of this round, on goose-ngfx's `ios` branch with three drawables:
+
+| ngfx, step | flat | 3D |
+|---|---|---|
+| at the start (v0.4.0 and the iOS build) | 166 MB | 433 MB |
+| the screen drawn into the window's image | 147 MB | 389 MB |
+| the idle trim, releases in lists, smaller chunks | 118 MB | 315 MB |
+| gfx, the same session | 115 MB | 358 MB |
+
+- **The screen straight into the drawable** (goose-ngfx `7c3a300`): in a window ngfx's
+  screen is the window's image. A frame's first pass into it submits the frame's work so
+  far and acquires the image, so only the presenting submission waits for it; no
+  offscreen screen, no spare per frame in flight, no copy pass, and the copy's shader
+  gone. Headless, the screen is one texture, which keeps the last frame as before.
+  `present()` lost `force`: ngfx keeps nothing to show again, so the app redraws when
+  gfx's `needs_present()` asks (`host::exposed()`, false on the gfx build). A window's
+  screen can't be read, so `screenshot` there returns false; Draughts' shots are
+  headless and unchanged. On Apple's systems `open` and `resize` set the layer's drawable
+  size to the screen's; a frame with no image of that size draws into a stand-in shown
+  nowhere. Every drawn frame presented (241 of 244 loops on the flat bench, the rest
+  idle), and the shots match gfx's as before: flat identical, the 3D board, home, and
+  settings 200 to 470 pixels apart at 3%, along the board's edges.
+- **Where the driver's memory went.** `vmmap` shows "IOAccelerator (graphics)" as the
+  GPU memory mapped into the process: ngfx's 4 MB upload staging, its frame memory, and
+  the driver's command memory. Of the 2D game's 20 MB (headless), 11 MB was Metal 4's
+  command allocators, which keep the most they were ever recorded into and give none of
+  it back on reset: the startup's frames (textures initialized, the photographs uploaded
+  in parts) left it there for good. Counted and ruled out: the pipelines (7 for the flat
+  game), the 15 to 22 command contexts (about 70 KB each), the timestamp storage, and the
+  descriptor heaps (72 KB on Metal), which stay fixed. ngfx now waits for the GPU at the
+  first frame that records nothing after frames that did and makes its command pools
+  again, and its upload queue once more than its staging went through it: the driver's
+  share is 7.5 MB at rest on both boards, under gfx's 8.6 to 11.
+- **Where malloc's went.** The 9 MB block was NoGraphicsAPIUtility's `DeleteQueue`, a
+  fixed ring of 65,536 128-byte callbacks; ngfx's releases wait in growing lists now.
+  The rest (2 MB of small blocks) is NoGraphicsAPI's and Metal 4's objects; sharing the
+  pipelines' copies of their module's code saved nothing measurable and was dropped.
+- **Chunks**: 2 MB for buffers and 4 MB for textures (were 8 and 8): 4 MB less on the 3D
+  board, none on the flat one, whose textures fill four 4 MB chunks to 3 MB of slack.
+- **Headless**, the same: flat 74 MB → 52 (gfx 46), 3D 181 → 177 (gfx 188).
+- **Frame rate**, `--bench 300` in the window: flat 118 to 120 fps of 120 presented on
+  ngfx as on gfx, 1% lows 66 to 88 against 96 (noisy, as before); 3D 117.8 fps, waited
+  P50 6.07 ms against gfx's 119.2 and 5.8. The flat bench's waited time (8.3 ms against
+  4.8) and CPU time (3.7 ms against 0.12) now include waiting for a free drawable at the
+  frame's first pass into the screen (`agents/testing.md`).
+- goose-ngfx's 34 checks pass in the compiler, under `GOOSE_NGFX_SYNC=full`, and with
+  `--aot`; `ngfx_frames` now uploads past the queue's staging, idles, and uploads,
+  draws, and reads back after the trim.
+
 ### 2026-11-11, on the iPhone 13 mini (A15, iOS 26)
 
 - **goose-ngfx for iOS** (branch `ios`, `fe0b1e5` and `080ea34`, not released yet): its
