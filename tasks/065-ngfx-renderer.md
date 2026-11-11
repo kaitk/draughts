@@ -228,6 +228,43 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
   average (home, settings, portrait, a held transition, a win, the capture's pulse, the
   plain fade), against 0.6 to 2.4 with supersampling; the flat board is still within 1.
 
+### 2026-11-11, on the Mac (M1 Pro, macOS 26.3.1, Metal 4)
+
+- **goose-ngfx v0.3.0 on Metal 4**: its 40 checks pass, in the compiler with Apple clang
+  and built (`--aot`), with nothing changed; its README and the v0.3.0 release notes say
+  so now.
+- **The build on Metal**: `scripts/ngfx.py` builds on the Mac as on Windows (`NGFX` set to
+  the checkout, `NGFX_SLANGC` to slangc 2026.18.3). Every Slang module compiled to a
+  metallib on the first try: the 3D board's written from GLSL, SMAA's reference shader
+  through its porting macros, and FXAA. Headless shots against the Mac's gfx build
+  (`scripts/mac.py`) at 1280 × 800, every case at `--frames 20000` (the Mac's headless
+  loop is as fast as the PC's, and at 400 frames gfx's 3D board on home is still fading
+  in): the flat game, stone, a puzzle, a win, portrait, and the lookout within 1 of 255;
+  home, settings, birch's settings, a held transition, sunset and home on the plain fade
+  identical (0, once the photograph is ASTC on both, below). The 3D board with SMAA,
+  mean difference against gfx's 4× MSAA: wood 0.25, stone 0.32, birch 0.41, sunset 0.25,
+  summer's second look 0.25, spring's carved 0.39, the plain fade 0.26, home 0.24,
+  settings 0.14, a held transition 0.34, the capture's rings 0.27, the lookout 0.32, a
+  win 0.81 (its confetti moves), portrait 0.36; the rest along the board's edges and in
+  the wood's grain, as on the PC. `--aa` each way, mean difference (pixels over 32) for
+  wood, spring's carved, and stone: off 0.23 (1,462), 0.29 (1,930), 0.32 (1,992); fxaa
+  0.52 (1,149), 0.67 (1,626), 0.48 (1,504); smaa 0.25 (674), 0.39 (922), 0.32 (964); ssaa
+  0.89 (1,269), 0.95 (3,592), 0.57 (1,390). SMAA halves the edge pixels far from the MSAA
+  and leaves the surfaces; FXAA and supersampling blur them, as on the PC.
+- **ASTC**: NoGraphicsAPI knew ASTC only in 4 × 4 blocks. The user forked it
+  (github.com/kaitk/NoGraphicsAPI): `astc-6x6` adds ASTC 6 × 6 (both backends, its block
+  size, its tests), the fork's `ngfx` branch is the pinned upstream commit with it, and
+  goose-ngfx follows that branch (`b614c80`). goose-ngfx takes compressed textures now:
+  `BC3`, `BC7`, `ASTC_4x4`, `ASTC_6x6` (gfx's numbers), `SAMPLED` only, uploaded in
+  whole blocks, with `format_supported` (`4af28ec`, a test of its own, 42 checks
+  passing). `src/ngfx/app/photo.c` uploads the embedded ASTC where it's supported, as
+  gfx's does, and `scripts/ngfx.py` copies the ASTC masters into its tree, which it
+  didn't: the photograph was the JPEG there before.
+- **Upstream NoGraphicsAPI moved** (`ffd9f2a`, "Improve Metal 4 presentation and texture
+  resource handling"): roots now need a 16-byte stride, which ngfx's two shaders fail
+  (`static_assert` in `shader.slang`), and so would Draughts' roots. `astc-6x6` rebases
+  onto it cleanly; moving ngfx's pin there is a step of its own (below).
+
 ### Left for the Mac
 
 - **goose-ngfx v0.3.0 on Metal 4**: its tests and samples at the v2026.4 pin, which have

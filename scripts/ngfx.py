@@ -7,7 +7,7 @@
                                                                build, and run it with those flags
 
 The gfx build is untouched. This copies the program (src/, strings/, assets/, and the
-backgrounds' masters) into build/ngfx/tree/ and lays src/ngfx/ over it: the ngfx
+backgrounds' JPEG and ASTC masters) into build/ngfx/tree/ and lays src/ngfx/ over it: the ngfx
 versions of the files that draw (src/ngfx/app/ over src/app/, src/ngfx/render3d/ over
 src/render3d/). The root file gets the package's import, the sidecar the package's C
 headers, and the Slang shaders are compiled ahead into ngfx's blobs, which the app embeds,
@@ -74,7 +74,7 @@ def tree(program):
     masters = ROOT / "design/backgrounds/masters"
     if masters.exists():
         (TREE / "design/backgrounds/masters").mkdir(parents=True, exist_ok=True)
-        for f in masters.glob("*-2048.jpg"):
+        for f in [*masters.glob("*-2048.jpg"), *masters.glob("*-2048-6x6.astc")]:
             copy_if_changed(f, TREE / "design/backgrounds/masters" / f.name)
     app = TREE / "src/app"
     root = app / program.name
