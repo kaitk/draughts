@@ -137,6 +137,7 @@ struct Game {
     notes_pos:  rules::Position = rules::Position { pieces: [0, 0], kings: 0, side: 0, variant: 0 },
     scratch:    rules::Moves    = [],
     judge:      bool            = true,
+    moves_shown: i64            = 2,    // the moves panel: 0 hidden, 1 the moves, 2 with marks (settings::MOVES_*)
     judging:    i64             = 0,
     judge_ply:  i64             = 0,
     // Whether the game's end was given to the shell for the player's history (Event.over):
@@ -498,6 +499,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
                            pulse(gm, now), over, help(gm));
     if count_taken(gm) { changed = true; }
     if keep_notes(gm) { changed = true; }
+    moves_panel(gm, g, l);
     panel::taken(g, l, gm.taken, over);
     var undone = false;
     match pick {
@@ -701,6 +703,7 @@ fn still(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     // Counted here too: a transition declares a game before its first frame of its own.
     count_taken(gm);
     panel::taken(g, l, gm.taken, over);
+    moves_panel(gm, g, l);
     panel::camera(g, l, gm.cam, now);
     if gm.won_at >= 0.0 { celebrate(gm, g, l, won, now, over); }
     if gm.drawn_at >= 0.0 { settle(gm, g, l, draw, now, over); }

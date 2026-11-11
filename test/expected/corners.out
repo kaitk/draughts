@@ -53,9 +53,9 @@ portrait 1200 x 1920 at 65.0° down: board 752 x 604 dp, far edge 77%, 1096 of 1
 portrait 1080 x 2400 at 52.5° down: board 492 x 337 dp, far edge 69%, 829 of 1200 dp tall used
 portrait 1080 x 2400 at 60.0° down: board 492 x 373 dp, far edge 74%, 865 of 1200 dp tall used
 portrait 1080 x 2400 at 65.0° down: board 492 x 395 dp, far edge 77%, 887 of 1200 dp tall used
-raised true, kings drawn as 2, flat layout vec4<f32> { 332.11185, 160.2237, 615.7763, 9.852422 }, 3D bounds vec4<f32> { 190.96704, 160.2237, 898.0659, 615.7763 }
-tap c3 at 510 499: selected c3, moving false
-tap d4 at 599 433: selected -, moving true
+raised true, kings drawn as 2, flat layout vec4<f32> { 365.2155, 226.43103, 549.569, 8.793104 }, 3D bounds vec4<f32> { 239.24638, 226.43103, 801.5072, 549.569 }
+tap c3 at 524 529: selected c3, moving false
+tap d4 at 603 470: selected -, moving true
 after: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8
 turned 180.0°
 pressed f6: selected f6, dragging false

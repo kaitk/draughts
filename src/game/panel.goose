@@ -125,7 +125,7 @@ struct Layout {
     disc:    f32          = 0.0,
     box:     float4       = float4 { 0.0, 0.0, 0.0, 0.0 },
     room:    float4       = float4 { 0.0, 0.0, 0.0, 0.0 },
-    keep:    float4[4]    = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4],
+    keep:    float4[5]    = [float4 { 0.0, 0.0, 0.0, 0.0 }; 5],
     gap:     f32          = 0.0,
     mode:    i64          = CORNERS,
     // The portrait bar's room for its three tiles inside its glass (task 050's compact
@@ -138,6 +138,9 @@ struct Layout {
     taken:    float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
     taken_as: i64    = 0,
     taken_d:  f32    = 0.0,
+    // The moves panel (task 074, game::moves_panel): under the play panel in landscape
+    // where at least MOVES_LEAST rows fit, else z 0.
+    moves: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
 }
 
 // What each side has taken (task 052, prototypes/game-captured.html's take a, its `row`
@@ -222,7 +225,7 @@ let SHOWCASE = 2;
 
 // `game`: the game's screen, with room for what each side has taken.
 fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT, small: bool = true,
-              game: bool = false) -> Layout {
+              game: bool = false, moves: bool = false) -> Layout {
     let width = area.z;
     let height = area.w;
     let gap = GAP * s;
@@ -251,10 +254,28 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
         var l = Layout { board: board::layout_at(0.0, 0.0, 1.0, s, n), left: left, right: right, three: true,
                          pitch: PITCH_LANDSCAPE, buttons: buttons, count: 3, row: !col, touch: touch, disc: disc,
                          box: box, room: box, gap: gap, mode: CORNERS, .. };
-        l.keep = [left, right, buttons, float4 { 0.0, 0.0, 0.0, 0.0 }];
+        l.keep = [left, right, buttons, float4 { 0.0, 0.0, 0.0, 0.0 }, float4 { 0.0, 0.0, 0.0, 0.0 }];
         let cam = view3d::Camera { pitch: PITCH_LANDSCAPE, yaw: 0.0 };
         rest(l, settle(l, cam, n), s);
         guard game else { return l; }
+        // The moves panel shown: MOVES_3D rows under the play panel, beside the buttons'
+        // column, which the board clears as it clears the panels, shrinking for it.
+        // The moves panel shown: MOVES_3D rows under the play panel, as wide, and the
+        // buttons a row under it at the right edge, where both fit above the bottom margin;
+        // the board clears them as it clears the panels, shrinking for them.
+        if moves {
+            under_right(l, area, s, float4 { 0.0, 0.0, 0.0, 0.0 }, MOVES_3D);
+            let below = l.moves.y + l.moves.w + m;
+            if l.moves.z > 0.0 && below + touch <= area.y + height - gap {
+                l.buttons = float4 { x1 - len, below, len, touch };
+                l.row = true;
+                l.keep[2] = l.buttons;
+                l.keep[4] = l.moves;
+                rest(l, settle(l, cam, n), s);
+            } else {
+                l.moves = float4 { 0.0, 0.0, 0.0, 0.0 };
+            }
+        }
         // What each side has taken: a line at the top between the panels, which the board
         // clears as it clears them, where the board at rest already does (a tablet). Else
         // (a phone, whose board reaches the top margin) in the free corner under the left
@@ -315,7 +336,7 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
     var l = Layout { board: board::layout_at(0.0, 0.0, 1.0, s, n), left: float4 { x, y, w, top }, right: play,
                      three: true, pitch: portrait_pitch, buttons: buttons, count: 2, row: !col, touch: touch,
                      disc: disc, box: box, gap: gap, mode: bar.mode, .. };
-    l.keep = [l.left, play, buttons, float4 { 0.0, 0.0, 0.0, 0.0 }];
+    l.keep = [l.left, play, buttons, float4 { 0.0, 0.0, 0.0, 0.0 }, float4 { 0.0, 0.0, 0.0, 0.0 }];
     bar_tiles(l, bar, game, phone, s);
     rest(l, view3d::fit(cam, n, box, view3d::MIDDLE), s);
     return l;
@@ -331,7 +352,7 @@ fn rest(l: Layout&, v: view3d::View, s: f32) {
 
 // Whether the board v places (with `field`, its playing field) is clear of what the
 // layout keeps clear, by `gap` pixels.
-fn clear(v: view3d::View, keep: float4[4]&, gap: f32, field: bool = false) -> bool {
+fn clear(v: view3d::View, keep: float4[5]&, gap: f32, field: bool = false) -> bool {
     for r in keep { if view3d::touches(v, r, gap, field) { return false; } }
     return true;
 }
@@ -587,7 +608,30 @@ fn flat_corners(area: float4, n: i64, s: f32, size: f32) -> Layout {
     var l = Layout { board: board::layout_at(area.x + (width - size) / 2.0, area.y + (height - size) / 2.0, size, s, n),
                      left: left, right: right, mode: CORNERS, .. };
     under_left(l, area, s, (if phone { TAKEN_PHONE } else { TAKEN_D }) * s);
+    under_right(l, area, s, float4 { 0.0, 0.0, 0.0, 0.0 }, 0);
     return l;
+}
+
+// The moves panel under the play panel, as wide, down to the bottom margin (or `most`
+// rows, 0 for no limit), where it holds MOVES_LEAST rows, clear of `buttons` (the 3D
+// board's, at the right edge).
+let MOVES_LEAST = 4;
+let MOVES_3D = 5;
+fn moves_room(rows: i64, s: f32) -> f32 { (rows * game::MOVES_ROW + 2.0 * game::MOVES_PAD) * s }
+fn under_right(l: Layout&, area: float4, s: f32, buttons: float4, most: i64) {
+    let gap = GAP * s;
+    let right = l.right;
+    let x = right.x;
+    var w = right.z;
+    if buttons.z > 0.0 && buttons.x < right.x + right.z && buttons.x + buttons.z > right.x {
+        w = buttons.x - BUTTON_GAP * s - x;
+    }
+    let y = right.y + right.w + BACK_GAP * s;
+    let h = area.y + area.w - gap - y;
+    var rows = ((h / s - 2.0 * game::MOVES_PAD) / game::MOVES_ROW) as i64;
+    if most > 0 { rows = min(rows, most); }
+    guard rows >= MOVES_LEAST else { return; }
+    l.moves = float4 { x, y, w, moves_room(rows, s) };
 }
 
 // A puzzle's layout on the flat board in `area` at s pixels a dp: layout_in's, in

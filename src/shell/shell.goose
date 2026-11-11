@@ -260,6 +260,7 @@ fn apply_prefs(sh: Shell&) {
     gm.b.king_look = king_look(sh);
     sh.puzzle.b.king_look = king_look(sh);
     gm.look = p.lookout;
+    gm.moves_shown = p.moves;
     gm.look_skill = if gm.computer >= 0 { gm.skill } else { p.skill[clamp(p.level, game::EASY, game::HARD)] };
 }
 
@@ -556,7 +557,9 @@ fn raise_in(sh: Shell&, room: float4, n: i64, u: f32, l: board::Layout&) -> view
 // `now` (panel::aim), else the flat board's.
 fn game_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
     let n = rules::VARIANTS[sh.game.b.variant].size;
-    var l = if settings::raised(sh.prefs) { panel::corners_in(area, n, u, panel::PITCH_PORTRAIT, true, true) }
+    var l = if settings::raised(sh.prefs) {
+                panel::corners_in(area, n, u, panel::PITCH_PORTRAIT, true, true, sh.prefs.moves != settings::MOVES_HIDDEN)
+            }
             else { panel::layout_in(area, n, u, true, true) };
     l.board.flip = sh.game.computer == rules::WHITE;
     panel::aim(l, sh.game.cam, now);
