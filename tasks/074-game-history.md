@@ -74,6 +74,15 @@ Skill 0 overlooking three times as often (a child model) against skill 0: 46, 42
 about −120. 90 – 100 was still running; 100's 2800 is an estimate. A score near 0 or 1
 over 200 games is a wide estimate (±60 or more).
 
+### Judging's cost (2026-11-11)
+
+`build/judgebench` (`tools/judgebench.goose`), medium's start against itself, each move
+judged as the worker does, on the Mac built: International 80 moves, 25 ms a move on
+average, 34 at most, 300,000 nodes; Russian 72 moves, 25 ms, 43 at most. Marks over the
+International game: 14 only moves, 46 best, 16 good, 1 ?!, 1 ?, 2 ??. On the tablet's
+big cores the search runs at about half the Mac's speed, so about 50 ms a move; the A33
+to measure.
+
 ## Takes to choose
 
 The prototype: `prototypes/history.html` (`?view=game&take=a|b|c`, `view=games`,
