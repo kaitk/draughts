@@ -96,7 +96,7 @@ fn upload_text(r: Renderer&, g: gui::Gui&, scale: f32) -> bool {
 }
 
 // The seasons' thumbnails for settings (scene::thumbs), made once; whether they are.
-fn thumbs(r: Renderer&) { if r.w.thumbs.id == 0 { r.w.thumbs = scene::thumbs(r.d.full); } }
+fn thumbs(r: Renderer&) { if r.w.thumbs.id == 0 { r.w.thumbs = scene::thumbs(); } }
 fn has_thumbs(r: Renderer&) -> bool { r.w.thumbs.id != 0 }
 
 // Submits what is drawn and waits for the GPU (the benches).

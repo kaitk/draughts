@@ -464,7 +464,6 @@ fn cover(d: Drawer&) {
 }
 
 struct Drawer {
-    full:           const u8[:],     // the full-screen vertex shader, for reloading the scene
     board_pipeline: gfx::Pipeline,
     piece_pipeline: gfx::Pipeline,
     pieces:         gfx::Buffer,
@@ -490,10 +489,9 @@ fn new(kind: i64, plain: bool, timed: bool = false) -> Drawer {
     let board_pipeline = gfx::pipeline(full, board_fs, gfx::PipelineDesc {});
     let piece_pipeline = gfx::pipeline(piece_vs, piece_fs, gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED });
     let t0 = clock();
-    let sc = scene::load(kind, full, plain);
+    let sc = scene::load(kind, plain);
     if timed { gfx::flush(); }
     var d = Drawer {
-        full:           full,
         board_pipeline: board_pipeline,
         piece_pipeline: piece_pipeline,
         pieces:         gfx::Buffer { 0 },
@@ -596,7 +594,7 @@ fn reload(d: Drawer&, kind: i64, plain: bool) {
     // The old scene is freed once the GPU is done with it; waiting (about a frame) lets
     // the new one take its place in SDL's shared block rather than open another.
     gfx::flush();
-    d.scene = scene::load(kind, d.full, plain);
+    d.scene = scene::load(kind, plain);
     d.kind = kind;
     d.colors = theme::get(kind);
     cover(d);
