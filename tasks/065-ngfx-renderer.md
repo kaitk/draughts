@@ -303,9 +303,23 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
   renderers, which is also what choosing the renderer at run time needs. The objc
   warnings on every ngfx `goose run` on the Mac ("Class SDL3Window is implemented in
   both" the compiler and ngfx's JIT library) are two SDLs in one process today.
-- **Next**, in this order: the goose_gfx fork's branches pushed and ngfx's samples taking
-  gfx from it, then goose-ngfx v0.4.0; iOS and iPadOS; upstream NoGraphicsAPI's `ffd9f2a`
-  (roots of a 16-byte stride) in the fork and ngfx.
+- **goose-ngfx v0.4.0** (`9f7a0a3`, tagged and pushed; the GitHub release's notes wait for
+  the user, whose permission it needs): no SDL, memory sized from use, compressed
+  textures, NoGraphicsAPI from the fork. Its samples take gfx from the user's fork,
+  `kaitk/goose_gfx`, branch `ngfx` (`v1` with this repository's patches 0001 to 0008, one
+  commit each), fetched from git and passing; 34 checks in the compiler and with `--aot`
+  on the Mac. Windows is still to run at v0.4.0 (gfx's `HWND`).
+- **What still separates ngfx's memory from gfx's** (the flat game at rest, 52 MB, from
+  `footprint`): the GPU heaps +19 MB (the spare screen 16, chunk slack about 3); the
+  Metal driver's own memory (IOAccelerator) +20 MB, 29 against 9, not yet broken down:
+  likely the 4 MB upload queue, the buffer chunk's 8 MB held whole, and NoGraphicsAPI's
+  descriptor heaps (8,192 texture slots) and residency sets; malloc's large blocks +9 MB,
+  not yet broken down. The drawables are the same 32 MB. Drawing into the drawable and
+  dropping the spare take the heaps to about 13 MB under gfx's, which keeps a screen copy
+  too; the driver's and malloc's 29 MB decide whether ngfx ends below gfx.
+- **Next**, in this order: iOS and iPadOS; the memory follow-ups below; upstream
+  NoGraphicsAPI's `ffd9f2a` (roots of a 16-byte stride) in the fork and ngfx; the
+  goose_gfx patches as branches on upstream `main` for pull requests (they are on `v1`).
 
 - **ngfx without SDL** (goose-ngfx `no-sdl`, `b38a5b6`): its platform half and SDL are
   gone. `ngfx::open(window, w, h, flags)` takes a native window's handle (0 headless),
@@ -385,6 +399,10 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
 
 ## Later, not in this task
 
+- **ngfx's driver and CPU memory**: break down the IOAccelerator's 29 MB and malloc's
+  large blocks (Instruments' Metal resource list, or counting what ngfx and NoGraphicsAPI
+  make), then size what is ngfx's: buffer chunks of 2 to 4 MB, an upload queue that
+  shrinks when idle, descriptor heaps sized from use.
 - **The screen straight into the drawable**, in ngfx: no offscreen screen and no copy
   (32 MB at 2560 × 1600), the screenshot from a texture of the program's or a read of
   the drawable, and the app redrawing when gfx's `needs_present()` asks. Then no spare
