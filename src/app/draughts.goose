@@ -32,6 +32,7 @@ import model3d from "../model3d";
 import render3d from "../render3d";
 import .text;
 import .host;
+import .host_gpu;
 import .think;
 import .draw3d;
 import .render;

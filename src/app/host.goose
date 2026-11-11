@@ -4,8 +4,8 @@
 // through gfx's platform half; and the program's own C for what gfx doesn't give: the
 // safe area and the display's scale, the wake timer, the storage folder, the locales,
 // Android's launch cover, back, and close, the memory malloc keeps, and the display's
-// rate under the 3D board. Drawing is render.goose's. A second renderer that brings its
-// own window replaces the gfx calls here and leaves the rest.
+// rate under the 3D board. Drawing is render.goose's; opening the window, presenting, and
+// the screenshot are the renderer's (host_gpu.goose).
 namespace host;
 import std;
 import vec;
@@ -58,26 +58,24 @@ struct Host {
 
 // Opens the window, `title` and width × height where the platform has windows; filling
 // the screen with the system's bars hidden on a phone or a tablet, or with `full`;
-// presenting without waiting for the display with `no_vsync` (on Metal SDL_GPU's
-// immediate mode, the layer's display sync off). Aborts if it can't.
+// presenting without waiting for the display with `no_vsync`. Aborts if it can't.
 fn open(title: const u8[:], width: i64, height: i64, full: bool, no_vsync: bool) -> Host {
-    let window = if platform() != DESKTOP || full { gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE } else { gfx::WINDOW_RESIZABLE };
-    let flags = if no_vsync { window | gfx::NO_VSYNC } else { window };
+    let flags = if platform() != DESKTOP || full { gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE } else { gfx::WINDOW_RESIZABLE };
     draughts_choose_gpu();
-    guard gfx::open(title, width, height, flags) else { abort(str("gfx: ", gfx::error())); }
+    host_gpu::open(title, width, height, flags, no_vsync);
     return Host { erase: gfx::scancode("Backspace"), enter: gfx::scancode("Return"), .. };
 }
 
-fn close() { gfx::close(); }
+fn close() { host_gpu::close(); }
 
 // Ends the frame, presenting what its pass drew, and waits for an event when nothing
-// did; false once the window is asked to close, or the GPU device is lost
-// (patches/goose_gfx/0006), and the loop ends.
-fn frame() -> bool { gfx::frame() }
+// did; false once the window is asked to close, or the GPU device is lost, and the loop
+// ends.
+fn frame() -> bool { host_gpu::frame() }
 
 // Whether the window wants a frame drawn though nothing changed (exposed, shown or
-// resized): never here, as gfx presents its kept screen again itself.
-fn exposed() -> bool { false }
+// resized).
+fn exposed() -> bool { host_gpu::exposed() }
 
 // The frames presented so far: the first is on screen once the second frame() returns.
 fn frame_count() -> i64 { gfx::frame_count() }
@@ -141,7 +139,7 @@ fn keyboard(h: Host&, typing: bool, tap: i64) {
 }
 
 // Saves the screen as last shown to `path`, a PNG.
-fn screenshot(path: const u8[:]) { gfx::screenshot(path); }
+fn screenshot(path: const u8[:]) { host_gpu::screenshot(path); }
 
 // The app's storage folder into `out`, and the system's locales; each returns its bytes.
 fn storage(out: u8[:]) -> const u8[:] { out[..draughts_storage(out)] }
