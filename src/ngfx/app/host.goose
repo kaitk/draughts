@@ -67,14 +67,16 @@ struct Host {
 }
 
 // Opens the window, `title` and width × height where the platform has windows; filling
-// the screen with the system's bars hidden on a phone or a tablet, or with `full`.
-// Aborts if it can't.
-fn open(title: const u8[:], width: i64, height: i64, full: bool) -> Host {
+// the screen with the system's bars hidden on a phone or a tablet, or with `full`;
+// presenting without waiting for the display with `no_vsync` (ngfx's NO_VSYNC, the
+// Metal layer's display sync off; gfx's flag would mean nothing to a window with no
+// device). Aborts if it can't.
+fn open(title: const u8[:], width: i64, height: i64, full: bool, no_vsync: bool) -> Host {
     let flags = if platform() != DESKTOP || full { gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE } else { gfx::WINDOW_RESIZABLE };
     draughts_choose_gpu();
     guard gfx::open(title, width, height, flags | WINDOW_ONLY) else { abort(str("gfx: ", gfx::error())); }
     let size = gfx::screen_size();
-    guard ngfx::open(native_window(), size.x, size.y, 0) else { abort(str("ngfx: ", ngfx::error())); }
+    guard ngfx::open(native_window(), size.x, size.y, if no_vsync { ngfx::NO_VSYNC } else { 0 }) else { abort(str("ngfx: ", ngfx::error())); }
     return Host { erase: gfx::scancode("Backspace"), enter: gfx::scancode("Return"), .. };
 }
 

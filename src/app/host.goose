@@ -57,10 +57,12 @@ struct Host {
 }
 
 // Opens the window, `title` and width × height where the platform has windows; filling
-// the screen with the system's bars hidden on a phone or a tablet, or with `full`.
-// Aborts if it can't.
-fn open(title: const u8[:], width: i64, height: i64, full: bool) -> Host {
-    let flags = if platform() != DESKTOP || full { gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE } else { gfx::WINDOW_RESIZABLE };
+// the screen with the system's bars hidden on a phone or a tablet, or with `full`;
+// presenting without waiting for the display with `no_vsync` (on Metal SDL_GPU's
+// immediate mode, the layer's display sync off). Aborts if it can't.
+fn open(title: const u8[:], width: i64, height: i64, full: bool, no_vsync: bool) -> Host {
+    let window = if platform() != DESKTOP || full { gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE } else { gfx::WINDOW_RESIZABLE };
+    let flags = if no_vsync { window | gfx::NO_VSYNC } else { window };
     draughts_choose_gpu();
     guard gfx::open(title, width, height, flags) else { abort(str("gfx: ", gfx::error())); }
     return Host { erase: gfx::scancode("Backspace"), enter: gfx::scancode("Return"), .. };

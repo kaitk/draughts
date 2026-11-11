@@ -151,7 +151,10 @@ frame's marble for the run, and `--summer N` (0 to 5) and `--spring N` (0 the
 birch, 1 the carved stone, 2 the carved oak) summer's and spring's 3D looks.
 `--reset-skill`, which takes no value, puts the playing player back to easy with the
 computer's skill at every level at its start, and writes that to their file; stars and
-games stay. Each player's game is kept in `game-N.bin` beside them; a
+games stay. `--no-vsync`, which takes no value either, presents without waiting for the
+display, on both builds (gfx's `NO_VSYNC`, ngfx's in `scripts/ngfx.py`'s; on Metal both
+turn the layer's display sync off), so `--bench` measures frames uncapped (task 070).
+Each player's game is kept in `game-N.bin` beside them; a
 run with `--fen`, `--tap`, `--screen`, `--frames`, `--variant`, `--clock`, or
 `--computer` neither reads nor writes it, so
 screenshots don't depend on the last session. On the tablet, check a resume with

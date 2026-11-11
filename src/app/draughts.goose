@@ -81,7 +81,7 @@ fn main() {
     let mobile = platform != host::DESKTOP;
     // An iOS app never closes itself, so home has no way out there.
     if on_ios { home::closable = false; }
-    var h = host::open(strings::get(strings::APP_NAME), f.width, f.height, f.full);
+    var h = host::open(strings::get(strings::APP_NAME), f.width, f.height, f.full, f.no_vsync);
     defer host::close();
 
     // A new game of the draughts the setup last chose, until a saved game is restored;
