@@ -318,8 +318,20 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
   dropping the spare take the heaps to about 13 MB under gfx's, which keeps a screen copy
   too; the driver's and malloc's 29 MB decide whether ngfx ends below gfx.
 - **Next**, in this order: iOS and iPadOS; the memory follow-ups below; upstream
-  NoGraphicsAPI's `ffd9f2a` (roots of a 16-byte stride) in the fork and ngfx; the
-  goose_gfx patches as branches on upstream `main` for pull requests (they are on `v1`).
+  NoGraphicsAPI's `ffd9f2a` (roots of a 16-byte stride) in the fork and ngfx.
+- **goose_gfx pull-request branches** in `kaitk/goose_gfx`, patches 0001 to 0008 rebased
+  onto upstream `main` (`737d91a`, six commits past `v1`: fullscreen, gamepads, cursors,
+  the upload buffer reused, the externs' new form), one branch each: `no-clip-distance`,
+  `draw-on-demand`, `screen-without-depth`, and `compressed-textures` on `main`;
+  `msaa-resolve-without-store` on `screen-without-depth`; `end-on-device-lost` and
+  `ios-run-loop-wait` on `draw-on-demand`; `window-only` on `ios-run-loop-wait`. All
+  eight together are `upstream-series`. Two conflicts were resolved: the compressed
+  upload's tight rows against `main`'s reused upload buffer, and `WINDOW_ONLY` beside the
+  gamepads and cursors. `compressed-textures` gained its Goose side (the formats and
+  `format_supported` in `gfx.goose`), which the patch here never had, so goose_gfx's
+  `test/api_check.py` passes on every branch. ngfx's cube and ui_todo ran against
+  `upstream-series` as against the fork's `ngfx` branch (`v1` with the patches), which
+  ngfx's samples still take.
 
 - **ngfx without SDL** (goose-ngfx `no-sdl`, `b38a5b6`): its platform half and SDL are
   gone. `ngfx::open(window, w, h, flags)` takes a native window's handle (0 headless),
