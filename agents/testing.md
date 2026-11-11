@@ -584,6 +584,19 @@ How task 056 found which frames were late and why (2026-11-10):
   (200 MB exported for 40 s: parse it with `iterparse`), and
   `ca-client-buffer-wait-interval`. A 50 ms stall every 5.00 s from the recording's start
   is most likely Instruments' own.
+- **The GPU's own time on the Mac** (task 070, 2026-11-11), the one measure both builds
+  give alike: in `metal-gpu-intervals`, the app's rows (`process` names it), the union of
+  all of them in a window of presents, whatever their `event-depth`. Depth isn't
+  nesting but Instruments stacking intervals that run at once, so depth 0 alone
+  undercounts gfx by a third. `gpu-performance-state-intervals` gives the GPU's clock
+  state over the same window; compare builds only at the same mix (full screen the 3D
+  bench runs at Maximum, a window moves between Medium and Maximum). The bench's phases
+  are its last 4 × N presents (3D) or 2 × N (flat), in order. gfx's waited phases cost
+  its MSAA about 1 ms more fragment time than its loop's frames (the pass split at the
+  flush), so compare the loop's. ngfx's `GOOSE_NGFX_BENCH=1` stamps span both of a
+  frame's submissions and the wait for a drawable between them: not a GPU time. An
+  `xctrace record` can hang after its app exits, at 100% CPU and deaf to SIGINT: run each
+  under a watchdog that kills it after 2 minutes. The parsing scripts were one-offs.
 - **The iPhone:** Animation Hitches only (`scripts/ios_perf.py`; its tables
   `display-surface-swap`, `displayed-surfaces-interval`, `display-surface-queue`,
   `metal-command-buffer-completed`). Under Metal System Trace the app's loop runs at 120
