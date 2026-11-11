@@ -6,7 +6,9 @@
 // theme; K switches the king between a stack of two discs and one crowned disc; W cycles
 // the wood's model and M the winter frame's marble (task 039); S cycles summer's variants;
 // G spring's look: the birch, the elven stone or the Baltic oak (task 041); P shows the tuning
-// panel (panel.goose), V prints its values. Nothing of the app's shell.
+// panel (panel.goose), V prints its values; A cycles the antialiasing (MSAA, SMAA, none) and
+// Z a 4× zoom on the board's near left corner, magnified without filtering, which a drag
+// pans (task 071), the label at the top left naming both. Nothing of the app's shell.
 //
 //   cd poc/3d
 //   ../../build/goose-v2026.4-macos-arm64/goose build -o ../../build/board3d board3d.goose
@@ -19,6 +21,7 @@
 //   ../../build/board3d --theme spring --spring 1 # spring's look: 0 the birch, 1 elven, 2 Baltic (the default)
 //   ../../build/board3d --panel                   # the tuning panel shown; --plain no finish
 //   ../../build/board3d --bench 200
+//   ../../build/board3d --zoom 4 --aa smaa [--full]  # the antialiasing a pixel at a time
 //
 // --shot draws one frame headless (no window) into a PNG; --bench times frames.
 //
@@ -123,18 +126,85 @@ fn place(g: render3d::Gpu&) {
 
 fn radians32(d: f32) -> f32 { d * PI / 180.0 }
 
-// Draws a frame from the camera into gfx's screen (or for Texture { 0 } the kept image,
-// under the tuning panel).
-fn draw(g: render3d::Gpu&, cam: Camera, out: gfx::Texture = gfx::screen()) {
-    let size = gfx::screen_size();
+// The zoom (Z, --zoom N): the screen shows a 1/zoom crop of the view round `centre` (in
+// the full view's clip space), drawn at 1/zoom of the screen's pixels, as the full view
+// draws that part, and magnified zoom × zoom a pixel with no filtering, to see what the
+// antialiasing (A: MSAA, SMAA, none) does to each pixel. A drag pans the crop.
+var zoom:   i32    = 1;
+var centre: float2 = float2 { 0.0, 0.0 };
+var aa:     i32    = render3d::AA;
+var nearest = gfx::Sampler { 0 };
+var label = default<ui::Context>();
+
+// The view's matrices for the camera at the screen's aspect.
+fn view_of(cam: Camera, size: int2) -> gfx::mat4 {
     let yaw = radians32(cam.yaw);
     let pitch = radians32(cam.pitch);
     let target = float3 { 0.0, -0.15, 1.1 };
     let eye = target + float3 { sin(yaw) * cos(pitch), sin(pitch), cos(yaw) * cos(pitch) } * DISTANCE;
     let aspect = size.x as f32 / size.y;
     let proj = gfx::perspective(radians32(FOV), aspect, 2.0, 40.0);
-    let view_proj = gfx::mul(proj, gfx::look_at(eye, target, float3 { 0.0, 1.0, 0.0 }));
-    render3d::draw(g, view_proj, eye, out, size, shadow_every);
+    return gfx::mul(proj, gfx::look_at(eye, target, float3 { 0.0, 1.0, 0.0 }));
+}
+
+fn eye_of(cam: Camera) -> float3 {
+    let yaw = radians32(cam.yaw);
+    let pitch = radians32(cam.pitch);
+    return float3 { 0.0, -0.15, 1.1 } + float3 { sin(yaw) * cos(pitch), sin(pitch), cos(yaw) * cos(pitch) } * DISTANCE;
+}
+
+// Where the board's near left corner is in the full view's clip space.
+fn corner(cam: Camera) -> float2 {
+    let p = gfx::mul(view_of(cam, gfx::screen_size()), float4 { -4.55, 0.0, 4.55, 1.0 });
+    return float2 { p.x / p.w, p.y / p.w };
+}
+
+// Draws a frame from the camera into gfx's screen (or for Texture { 0 } the kept image,
+// under the tuning panel). Zoomed, into the kept image at 1/zoom and magnified onto the
+// screen.
+fn draw(g: render3d::Gpu&, cam: Camera, out: gfx::Texture = gfx::screen()) {
+    let size = gfx::screen_size();
+    let view_proj = view_of(cam, size);
+    if zoom == 1 {
+        render3d::draw(g, view_proj, eye_of(cam), out, size, shadow_every);
+        return;
+    }
+    let small = int2 { (size.x + zoom - 1) / zoom, (size.y + zoom - 1) / zoom };
+    // Scaled by the screen's pixels to the small image's, so a pixel of the small image
+    // is exactly one of the full view's.
+    let crop = gfx::mul(gfx::scale(float3 { size.x as f32 / small.x, size.y as f32 / small.y, 1.0 }),
+                        gfx::translate(float3 { -centre.x, -centre.y, 0.0 }));
+    render3d::draw(g, gfx::mul(crop, view_proj), eye_of(cam), gfx::Texture { 0 }, small, shadow_every);
+    gfx::begin_pass(gfx::screen(), gfx::Texture { 0 }, float4 { 0.0, 0.0, 0.0, 1.0 });
+    let keep = g.linear;
+    g.linear = nearest;
+    // show() reads its source rect as a part of `size` (the kept image is the screen's
+    // size in the app): the whole small image, magnified.
+    render3d::show(g, float4 { 0.0, 0.0, size.x, size.y },
+                   float4 { 0.0, 0.0, small.x * zoom, small.y * zoom }, 1.0, size);
+    g.linear = keep;
+    gfx::end_pass();
+}
+
+fn aa_name(a: i32) -> const u8[:] {
+    if a == render3d::AA_MSAA { return "MSAA 4x"; }
+    if a == render3d::AA_SMAA { return "SMAA"; }
+    return "no antialiasing";
+}
+
+// The label over the screen: the antialiasing shown and the zoom.
+fn draw_label(scale: f32) {
+    if label.id == 0 {
+        label = ui::create(18.0, scale);
+        guard label.id != 0 else { abort(str("ui: ", ui::error())); }
+    }
+    ui::input_from_gfx(label);   // also starts the ui's frame
+    if ui::begin(label, "aa", ui::rect(12.0, 12.0, 300.0, 44.0), ui::WINDOW_NO_INPUT | ui::WINDOW_NO_SCROLLBAR) {
+        ui::layout_row_dynamic(label, 26.0, 1);
+        ui::label(label, str(aa_name(aa), " (A)   ", zoom, "x (Z)"), ui::TEXT_LEFT);
+    }
+    ui::end(label);
+    ui::render(label);
 }
 
 // The wood's model --wood or W chose, -1 for each look's own (looks::wood_for), and
@@ -228,6 +298,7 @@ fn main() {
     var android_root: u8[>..] = [];
     let on_android = env("ANDROID_ROOT", android_root);
     var flags = if frames > 0 { gfx::WINDOW_HIDDEN } else { gfx::WINDOW_RESIZABLE };
+    for a in argv { if a == "--full" { flags |= gfx::WINDOW_FULLSCREEN; } }
     if on_android { flags = gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE; }
     let headless = frames < 0 && (shot > 0 || (bench > 0 && !on_android));
     let opened = if headless { gfx::open_headless(w, h) }
@@ -253,6 +324,13 @@ fn main() {
     let t0 = clock();
     var g = default<render3d::Gpu>();
     render3d::setup(g, samples);
+    nearest = gfx::sampler(gfx::NEAREST, gfx::CLAMP);
+    // --aa msaa|smaa|off (A cycles), --zoom N (Z switches between 1 and 4).
+    let ai = flag_str(argv, "--aa");
+    if ai > 0 && argv[ai] == "smaa" { aa = render3d::AA_SMAA; }
+    if ai > 0 && argv[ai] == "off" { aa = render3d::AA_OFF; }
+    render3d::set_aa(g, aa);
+    zoom = clamp(flag_f32(argv, "--zoom", 1.0) as i32, 1, 16);
     // --wood N, --marble N: the wood's model with its finish, and the winter frame's
     // marble (0 the slate); --plain takes the finish off (looks::PLAIN), to compare.
     if flag_str(argv, "--wood") > 0 {
@@ -278,6 +356,7 @@ fn main() {
         gfx::save_png(g.plan_albedo, str(argv[maps], "-plan.png"));
     }
     var cam = Camera { flag_f32(argv, "--yaw", 0.0), flag_f32(argv, "--pitch", PITCH), false };
+    centre = corner(cam);
     // --turn D (with --shot): the board turned D degrees under the light, as the game's
     // hot-seat turn does (render3d::turn_light), the camera with it.
     let turn = flag_f32(argv, "--turn", 0.0);
@@ -441,9 +520,30 @@ fn main() {
         }
         if gfx::key_pressed("R") {
             cam = Camera { 0.0, PITCH, cam.free };
+            centre = corner(cam);
             dirty = true;
         }
-        if gfx::mouse_down(gfx::MOUSE_LEFT) && mine {
+        if gfx::key_pressed("A") {
+            aa = if aa == render3d::AA_MSAA { render3d::AA_SMAA } else if aa == render3d::AA_SMAA { render3d::AA_OFF }
+                 else { render3d::AA_MSAA };
+            render3d::set_aa(g, aa);
+            print("antialiasing: ", aa_name(aa));
+            dirty = true;
+        }
+        if gfx::key_pressed("Z") {
+            zoom = if zoom == 1 { 4 } else { 1 };
+            dirty = true;
+        }
+        // Zoomed, a drag pans the crop (a screen pixel is 2 / (size × zoom) of clip space).
+        if zoom > 1 && gfx::mouse_down(gfx::MOUSE_LEFT) && mine {
+            let d = gfx::mouse_delta();
+            let ss = gfx::screen_size();
+            if d.x != 0.0 || d.y != 0.0 {
+                centre.x -= d.x * ui_scale * 2.0 / (ss.x * zoom);
+                centre.y += d.y * ui_scale * 2.0 / (ss.y * zoom);
+                dirty = true;
+            }
+        } else if gfx::mouse_down(gfx::MOUSE_LEFT) && mine {
             let d = gfx::mouse_delta();
             if d.x != 0.0 || d.y != 0.0 {
                 cam.yaw -= d.x * DRAG;
@@ -462,6 +562,7 @@ fn main() {
             // Under the panel the board goes into the kept image, so that the panel's
             // own changes cost only the copy.
             draw(g, cam, if tuning.shown { gfx::Texture { 0 } } else { gfx::screen() });
+            if !tuning.shown { draw_label(ui_scale); }
             cpu += clock() - c;
             drawn++;
         }
