@@ -420,7 +420,34 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   (the screen changed) hands the focus to the new screen's primary. The mouse moving, a
   press, or the wheel lets the focus go, and the pointer leads again. Not while a name
   is typed, where the keys edit it. `--keys down,enter` presses keys on the first
-  frames for a shot.
+  frames for a shot (`tab` and `backtab` too).
+- **The board with the keys**: the game's and a puzzle's board is one control to the
+  focus, a grid of its squares (`gui::grid`, `board::keys`), and the screen's first
+  choice, so the first arrow puts a cursor on the side to move's movable piece nearest
+  the bottom middle. The arrows move the cursor a square at a time, light squares too,
+  as the screen shows the board (a turned board's too, and the 3D board's from its rest
+  angle); Enter on a dark square is a tap there (`board::press`): it chooses a piece,
+  then its target or a capture's next stop, and a wrong one is a mistake as a tap's is.
+  Enter on a light square, or on the computer's turn, does nothing. With a piece chosen,
+  the square under the cursor is what the lookout shows the move would leave open, as
+  under the mouse. An arrow past the board's edge leaves for the nearest control that
+  way, and one back comes in on the near edge in line with it. Escape with a piece
+  chosen puts it down (`shell::put_down`) before it would leave the screen. The cursor
+  is a glow line round its square just inside the edge, its corners rounded, over a
+  faint dark seam that keeps it readable on a light square: in the flat board's pass
+  (`BoardUniforms.wrong.w`, the square + 1), and on the 3D board with the marks drawn
+  over the kept image (`view3d::Scene.cursor`, `render3d::marks_over`), so moving it
+  draws only those marks, not the board; the kept depth hides it under the pieces.
+- **Groups**: Tab and Shift and Tab step between a screen's groups (`gui::group`), on
+  the game's and a puzzle's screen the way out, the board, and the play panel with the
+  camera's buttons, coming back to the control each had last, the board to its cell. A
+  screen of one group steps through its controls in the order declared.
+- **A gamepad** is the keys (`src/app/pad.c`, `host::keys`): the D-pad or the left stick
+  past half way moves (let go under a third), repeating as a held arrow does; A, the
+  bottom button, is Enter, held too; B goes back as Escape does; the shoulder buttons
+  are Shift and Tab and Tab. The first gamepad connected is opened through SDL's own
+  gamepad API, on every platform, Android and iOS included; nothing else changes for it.
+  At rest it costs nothing: no gamepad, no work, and SDL's events wake the idle loop.
 - **Icons** are line icons on a 24-unit grid with round strokes, in the Lucide style:
   undo, hint (a bulb), restart, back (an arrow left), next, star, crown, lock, and the
   puzzle themes' target, crown, and shield; the 3D camera's buttons' board from above, board

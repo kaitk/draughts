@@ -9,6 +9,28 @@ Pull requests the user opens, not yet opened (2026-11-11): the goose_gfx patches
 stack on which), to `aardappel/goose_gfx`; and `kaitk/NoGraphicsAPI`'s `astc-6x6`, ASTC
 6 × 6, to `sebbbi/NoGraphicsAPI`. An entry's "Upstream" line says what each proposes.
 
+## goose_gfx: no gamepad (2026-11-11)
+
+goose_gfx reads the keyboard, the mouse, and touch, but no gamepad: it never starts SDL's
+gamepad subsystem, and its event loop passes gamepad events over. goose_gfx `6cfa3de`,
+Goose v2026.4.
+
+- Here: no patch, for the reason the safe area has none (below): the program's own C
+  (`src/app/pad.c`) starts `SDL_INIT_GAMEPAD`, opens the first gamepad when
+  `SDL_HasGamepad` says one is there, and reads its buttons and left stick each frame,
+  through `dlsym` on the Mac. gfx's event loop pumps SDL's events, which keeps the
+  gamepad's state current, and a button wakes the idle loop as any event does. Checked
+  against SDL's virtual gamepad on the Mac: the buttons, the D-pad, the stick and its
+  hysteresis, a gamepad going away. With the subsystem started SDL's event wait pumps
+  every 3 s to look for new gamepads (no CPU measurable over 20 s at rest on the Mac),
+  and every 1 ms while one is open (SDL_events.c's `EVENT_POLL_INTERVAL_NS`), the SDL
+  default for games; not yet measured with a real gamepad. If it shows at rest, setting
+  `SDL_HINT_AUTO_UPDATE_JOYSTICKS` off and calling `SDL_UpdateJoysticks` from the
+  program at its own pace would bound it.
+- Upstream: `gfx::gamepad_buttons() -> u32` and `gfx::gamepad_axis(i) -> f32` over the
+  first gamepad, its subsystem started with the window, and the gamepad's button events
+  counted as input where `frame()` reports input. Small.
+
 ## Goose: no way to write `goose.h` for a build of one's own (2026-11-11)
 
 A package's C that takes a `u8[>..]&` includes `goose.h` (`gs_rref`, `gs_bld_append`),

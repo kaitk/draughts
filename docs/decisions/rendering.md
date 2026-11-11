@@ -230,6 +230,25 @@ are in git history before that day.
   outside the control. The hover's light alone was too faint, and on a lit control
   (Continue, a chosen tile) showed nothing; a stronger fill would be taken for a
   chosen tile.
+- The board takes the keys as one grid control with a cursor (2026-11-11, task 072):
+  the cursor goes over every square, light ones too, one at a time, and Enter is a tap
+  on its square. Rejected: a cursor that jumps only between the pieces that can move and
+  their targets, which is quicker but gives away which pieces must capture, as showing
+  the count up front would (2026-11-09), and leaves no room for the mistakes a child
+  learns from; a cursor on the dark squares alone, whose up and down have two squares to
+  choose from and so need a rule to learn. Enter as a tap keeps one path through
+  `board::press` for the finger, the mouse, and the keys.
+- The board's cursor is a glow line just inside its square (2026-11-11, task 072, proposed
+  and shot; to be agreed with the user), as the focus ring is round a control, rather
+  than task 067's lit square, which the last move's tint already is. On the 3D board it
+  is drawn with the marks over the kept image, so a move of it doesn't draw the board.
+- Groups and Tab (2026-11-11): the game's screen is three groups, the way out, the
+  board, and the play panel, which Tab and a gamepad's shoulder buttons step between,
+  each coming back to where it was. Arrows alone would cross the board square by square
+  to get from one panel to the other.
+- A gamepad through SDL's gamepad API in the program's C (2026-11-11), as the safe area
+  is read: goose_gfx has none (docs/goose-findings.md). It feeds the same moves as the
+  keys, so the screens know nothing of it. B is back, as Escape and Android's back are.
 
 **The game screen**
 

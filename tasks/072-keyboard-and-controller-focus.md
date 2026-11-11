@@ -1,6 +1,6 @@
 # 072: Keyboard and controller focus
 
-Status: in-progress (steps 1 to 4 built and agreed 2026-11-11; step 5 next)
+Status: in-progress (steps 1 to 6 built 2026-11-11; the board's look and a real gamepad to try)
 
 Every screen played with the keyboard alone, and later a gamepad, as a desktop game is
 expected to be: arrow keys move a visible focus between the controls, Enter presses the
@@ -52,7 +52,7 @@ all. So the focus is ringed: 2 dp of glow 3 dp outside the control's shape, agre
 the user, who also tried the keys on the other screens and found them working (but the
 board).
 
-## Next session (agreed 2026-11-11)
+## Steps of 2026-11-11 (agreed)
 
 The rest of step 5, in this order:
 
@@ -76,8 +76,50 @@ The rest of step 5, in this order:
    gamepad's moves will come in too); `host::repeat_in` joins the loop's wake timer so a
    held arrow repeats in an idle loop. Built, not yet tried by hand: `--keys` can't hold a
    key.
-4. Next session: the board with the keys: a cursor on the squares, Enter choosing a piece and its
-   target, flat and 3D; its look likely task 067's lit square, to agree with the user.
+4. Built (2026-11-11, branch `keys-board`): the board with the keys, flat and 3D. The
+   board is one control to the focus, a grid (`gui::grid`, `board::keys`), and the
+   game's and a puzzle's first choice: the first arrow puts the cursor on the side to
+   move's movable piece nearest the bottom middle; the arrows move it a square at a
+   time, light squares too; Enter on a dark square is a tap there (`board::press`), so
+   a piece, its target, a capture's stops, and a mistake are what they are for a finger;
+   past the edge an arrow leaves for the nearest control, and one back comes in on the
+   near edge in line. With a piece chosen the lookout reads the cursor's square as it
+   reads the mouse's. Escape with a piece chosen puts it down (`shell::put_down`). Tab
+   and Shift and Tab step between groups (`gui::group`: the way out, the board, the play
+   panel), each coming back to where it was. `test/game/board_keys`; `--keys` takes
+   `tab` and `backtab`.
+   The look, proposed and shot, not yet agreed: a glow line just inside the square, its
+   corners rounded, over a faint dark seam (it vanished on a light square without it),
+   in the flat board's pass and, on the 3D board, with the marks over the kept image, so
+   a move of the cursor draws only those. Rejected: task 067's lit square, which the
+   last move's tint already is. Shots at 1280 × 800, `--touch off`: a piece chosen and
+   the cursor on its target, flat and 3D; the cursor on a light square; off the board
+   onto back; Tab to undo move.
+
+Step 6, the gamepad, built the same night (`src/app/pad.c`, `host::keys`): the D-pad or
+the left stick (past half way, let go under a third) moves and repeats as the arrows do,
+A presses as Enter and holds a hold tile, B goes back as Escape, LB and RB step between
+the groups as Shift and Tab and Tab. SDL's gamepad API from the program's C, as on every
+platform (Android's and iOS's SDL already carry it; iOS without HIDAPI, so no Bluetooth
+ask). Checked against SDL's virtual gamepad on the Mac, not yet with a real one. At rest
+on the Mac with no gamepad: no CPU over 20 s, as before. With one open SDL pumps every
+1 ms (docs/goose-findings.md, "no gamepad"): to measure with a real gamepad, and bound
+if it shows. No gamepad glyphs: the app shows no key's name anywhere to replace.
+
+The ngfx build's shaders (its `board.slang`, and the 3D marks it generates from gfx's
+GLSL) carry the cursor too, but weren't built: no goose-ngfx checkout or slangc on the
+Mac this ran on.
+
+## Next session
+
+1. The user agrees the board's cursor look (or changes it), from the shots.
+2. Try by hand on the Mac: the held-key repeat, Enter holding a hold tile, the board with
+   the keys flat and 3D, Tab; and a real gamepad, on the Mac and on a phone or the tablet
+   (A, B, the D-pad, the stick, the shoulders).
+3. Idle with a gamepad connected, on the Mac and a device; bound SDL's 1 ms pump if it
+   shows (`SDL_HINT_AUTO_UPDATE_JOYSTICKS` off, the program updating at its own pace).
+4. Build the ngfx variant once its toolchain is there, and look at the cursor in it.
+5. Merge `keys-board` into main.
 
 ## Acceptance criteria
 
@@ -91,7 +133,10 @@ The rest of step 5, in this order:
       (`docs/architecture/rendering.md`), and the frame loop allocates nothing.
 - [x] A test drives the keys through home and a setup and checks the focus and the pick
       (`test/gui/focus`, `test/shell/home_keys`).
-- [ ] The board played with the keyboard (step 5), agreed with the user.
-- [ ] A gamepad does all of it (with task 064).
-- [ ] `docs/architecture/rendering.md` and `docs/decisions/rendering.md` updated, the
-      Quit row recorded as narrowing the 2026-11-08 decision against a last row.
+- [ ] The board played with the keyboard (step 5), agreed with the user: built and
+      tested headless, the look shot, to agree.
+- [ ] A gamepad does all of it (with task 064): built, checked against SDL's virtual
+      gamepad; a real one to try.
+- [x] `docs/architecture/rendering.md` and `docs/decisions/rendering.md` updated, the
+      Quit row recorded as narrowing the 2026-11-08 decision against a last row (and the
+      board's keys, the groups, and the gamepad).
