@@ -29,8 +29,8 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from ios import device  # noqa: E402
-from native import APP_ID, ROOT  # noqa: E402
+from ios import BUNDLE_ID as APP_ID, device  # noqa: E402
+from native import ROOT  # noqa: E402
 
 SCENE = ["--screen", "game", "--theme", "wood", "--variant", "russian"]
 HZ = 60.0   # the iPhone 13 mini's display; ProMotion phones would need theirs read
