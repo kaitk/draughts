@@ -104,13 +104,14 @@ fn input(h: Host&, now: f64) -> gui::Input {
     var input = gui::Input { at: gfx::mouse_pos(), down: gfx::mouse_down(gfx::MOUSE_LEFT),
                              pressed: gfx::mouse_pressed(gfx::MOUSE_LEFT),
                              released: gfx::mouse_released(gfx::MOUSE_LEFT), wheel: gfx::mouse_wheel() };
-    // The arrow keys move the UI's focus, repeating while held, and Enter or Space presses
-    // it (gui::focus_keys, keys.goose), not while a name is typed, where they edit it.
+    // The arrow keys and a gamepad move the UI's focus, repeating while held, and Enter,
+    // Space, or the gamepad's A presses it (gui::focus_keys, keys.goose), not while a name
+    // is typed, where the keys edit it; a gamepad's buttons held then stay held after.
     guard h.text_on else {
         keys(h.repeat, input, now);
         return input;
     }
-    h.repeat = Repeat {};
+    h.repeat = Repeat { buttons: draughts_pad(), .. };
     let n = min(gfx::events_into(h.events), h.events.len);
     for e in h.events[..n] {
         guard input.typed.len < gui::MAX_TYPED else { break; }
@@ -121,12 +122,12 @@ fn input(h: Host&, now: f64) -> gui::Input {
     return input;
 }
 
-// Whether Android's back (SDL's "AC Back"; DraughtsActivity hands the system's back to
-// SDL as that key) or Escape went down this frame.
 // The A key, which switches the 3D board's antialiasing (task 071's comparison).
 fn aa_key() -> bool { gfx::key_pressed("A") }
 
-fn back() -> bool { gfx::key_pressed("AC Back") || gfx::key_pressed("Escape") }
+// Whether Android's back (SDL's "AC Back"; DraughtsActivity hands the system's back to
+// SDL as that key), Escape, or a gamepad's B (keys.goose) went down this frame.
+fn back(h: Host&) -> bool { gfx::key_pressed("AC Back") || gfx::key_pressed("Escape") || h.repeat.back }
 
 // The keyboard up while `typing`, brought up again by each new `tap` on the name.
 fn keyboard(h: Host&, typing: bool, tap: i64) {
