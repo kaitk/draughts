@@ -1215,7 +1215,7 @@ fn hint_tile(g: gui::Gui&, r: float4, arrange: i64, help: Help, size: f32) -> bo
     let a: f32 = if on { 1.0 } else { 0.35 };
     let style = if help.stage > 0 { gui::CHOSEN } else { gui::PLAIN };
     gui::add(g, gui::Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { gui::BUTTON, 22.0 * u, 0.0, p },
-                            extra: float4 { u, style, 0.0, 0.0 } });
+                            extra: float4 { u, style, gui::hover(g, HINT_ID), 0.0 } });
     let word = strings::get(if help.stage == 1 { strings::GAME_WHERE_TO } else { strings::GAME_HINT });
     let s = size * u;
     let f .= g.faces[gui::HEADING];

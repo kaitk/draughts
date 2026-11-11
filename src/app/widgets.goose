@@ -428,7 +428,7 @@ let FRAG = """
             // running, the glow color at 18% with a 2 dp glow border; waiting, white at 6%
             // with a border at 12%; under a minute, autumn's gold at 16% with a 2 dp gold
             // border; low, the forced-capture red at 16% with a 2 dp red border. color.a
-            // dims a tile.
+            // dims a tile. Under the mouse (extra.z), as below.
             float pr = v_look.w;
             bool flat = style >= 5;
             if (!flat) h *= 1.0 - 0.04 * pr;
@@ -450,7 +450,15 @@ let FRAG = """
             float fa = bare ? 0.10 * pr : ((style == 1 ? 0.22 : style == 2 ? 0.26 : style == 3 || style == 4 ? 0.08
                         : style == 5 ? 0.0 : style == 6 ? 0.24 : style == 7 ? 0.22 : style == 9 ? 0.18
                         : style == 10 ? 0.06 : style == 11 || style == 12 ? 0.16 : 0.10) + 0.14 * pr);
+            // The mouse over it on a desktop (task 066), extra.z's fraction 0..1 (ON_BOARD
+            // and CLIP add whole numbers): a lit tile's own glow a little brighter; any
+            // other the glow at 8%, about a third of a chosen tile's, over its own fill,
+            // and a 1 dp glow border at 40% below.
+            float hv = mod(v_extra.z, 2.0);
+            if (lit) fa += 0.06 * hv;
             vec4 tile = vec4(fc * fa, fa);
+            float ht = lit ? 0.0 : 0.08 * hv;
+            tile = vec4(glow.rgb * ht, ht) + tile * (1.0 - ht);
             if (inner) {
                 result = tile * a;
                 return;
@@ -462,6 +470,8 @@ let FRAG = """
             float edge = ea * (1.0 - cover(d + (wide ? 2.0 : 1.0) * u));
             vec3 ec = style == 11 ? red : style == 12 ? gold : style == 2 || style == 7 || style == 9 ? glow.rgb : vec3(1.0);
             tile = vec4(ec * edge, edge) + tile * (1.0 - edge);
+            float he = lit ? 0.0 : 0.4 * hv * (1.0 - cover(d + u));
+            tile = vec4(glow.rgb * he, he) + tile * (1.0 - he);
             float hl = style >= 2 ? 0.0 : 0.18 * top_line(p, c, h, r, u);
             tile = vec4(vec3(hl), hl) + tile * (1.0 - hl);
             acc = tile * a + acc * (1.0 - tile.a * a);
@@ -578,8 +588,13 @@ let FRAG = """
             over(vec3(0.0), 0.5 * (1.0 - smoothstep(-8.0 * u, 8.0 * u, sd)) * (1.0 - cover(d)));
             float a = cover(d);
             over(vec3(0.0), (0.3 + 0.12 * pr) * a);
-            if (flags % 2 == 1) over(glow.rgb, 0.3 * a);
+            // The mouse over it (extra.z, as a glass tile's): lit, its glow a little
+            // brighter; else the glow at 8% and a 1 dp glow border at 40%.
+            float hv = v_extra.z;
+            bool on = flags % 2 == 1;
+            over(glow.rgb, ((on ? 0.3 : 0.0) + (on ? 0.06 : 0.08) * hv) * a);
             over(vec3(1.0), 0.22 * (a - cover(d + 1.0)));
+            if (!on) over(glow.rgb, 0.4 * hv * (a - cover(d + u)));
             if (flags >= 2) {
                 float dd = length(p - c - vec2(0.7071, -0.7071) * (rad - 2.0 * u)) - 4.0 * u;
                 over(vec3(0.0), 0.35 * cover(dd - u));
@@ -631,11 +646,11 @@ let FRAG = """
 
 struct Widgets {
     pipelines: gfx::Pipeline[3],  // the base kinds, the icons, the faces (FRAG)
-    quads:    gfx::Buffer,
-    upload:   gui::Quad[gui::MAX_QUADS],
-    atlas:    gfx::Texture,     // the text's glyphs (text.goose), or 0 before they're baked
-    thumbs:   gfx::Texture,     // the seasons' thumbnails (scene.goose), or 0 until loaded
-    badges:   gfx::Texture,     // the badges' animals' distances, baked at start
+    quads:     gfx::Buffer,
+    upload:    gui::Quad[gui::MAX_QUADS],
+    atlas:     gfx::Texture,    // the text's glyphs (text.goose), or 0 before they're baked
+    thumbs:    gfx::Texture,    // the seasons' thumbnails (scene.goose), or 0 until loaded
+    badges:    gfx::Texture,    // the badges' animals' distances, baked at start
     // The UI kept while it stands still (prepare()): the last frame's quads (upload, count),
     // view, theme, and textures; the layer they were drawn into, and whether it holds them.
     compose: gfx::Pipeline,

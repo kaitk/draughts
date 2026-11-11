@@ -157,7 +157,7 @@ fn main() {
         // The pointer, and a player's name typed while the keyboard is up (shell::who). The
         // screens give the pointer to the UI first; a press that lands on it never reaches
         // the board.
-        let input = host::input(h);
+        let input = dev::pointer(f, host::input(h));
         gui::begin(g, input, scale, now);
         // A wheel's turn scrolls a list (gui::scroll_begin), a change to draw.
         if input.wheel != 0.0 { dirty = true; }

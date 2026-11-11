@@ -34,7 +34,9 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   and two wrong squares, and take back mid-capture, on a child's position read from a
   photo: `count`, whose `state` fills the board a moment on, so a pulse at its start,
   which is at full, shows as pulsing), `gui` (and the widget ids' ranges, one per
-  screen, none running into the next: `ids`; `gui::stack`'s columns and rows: `stack`), `game` (the game screen driven through
+  screen, none running into the next: `ids`; `gui::stack`'s columns and rows: `stack`; the mouse's hover, its fade and turn, and none with `desktop_scale` 0: `hover`; in
+  `shell`, `rest_hover`: a mouse resting anywhere on home, settings, the game, and the
+  puzzles asks for no frames), `game` (the game screen driven through
   the pointer: take back, start over, home and settings, presses kept apart, the
   celebration and its moments to the still frame (`win`), a clocked game with its
   frames, pause, and flag, the turned board; the computer's turn, answered at once with
@@ -196,6 +198,12 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   which for settings is the same box as between two runs of one build. The win's
   `--win 3 --frames 3000` shot varies over the whole board from run to run: compare it
   against a second run of the old build.
+- A hovered tile is shot with `--mouse X,Y` (window pixels, twice the points on a Retina
+  Mac) and `--touch off`. Mouse moves can't be scripted from here to count draws: events
+  posted with `CGEventPost` never reach the app without Accessibility rights, and
+  `gfx::inject_mouse` is ignored by a window started from a terminal, which never has
+  focus (`--rest` drew 0 frames even with moves across tiles). Rest the real mouse
+  over the window during `--rest` instead (2026-11-11).
 - Shots scripted in a shell loop hang until killed when the app inherits the loop's
   stdin or writes stdout to a file: run each from `src/app` with `< /dev/null` and
   output to `/dev/null`, outside the sandbox, and `perl -e 'alarm 25; exec @ARGV'` in

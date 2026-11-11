@@ -179,6 +179,20 @@ The prototypes `back.html`, `win.html`, `draw.html`, `gear.html`, `exit.html`,
 `puzzles.html`, and `chip.html` were removed on 2026-11-10 once built or superseded; they
 are in git history before that day.
 
+- The tile under the mouse lights on a desktop (task 066, 2026-11-11), as a faint form of
+  the chosen tile's glow (the glow at 8%, about a third of chosen's 22%, and a 1 dp
+  border at 40%), whatever the tile's style, so the mouse shows in the theme's color
+  everywhere and a child still tells the tile they picked from the one the mouse is
+  over; a lit tile brightens its own glow instead. A fade of the press's 0.12 s, not a
+  motion: growing or lifting would make the screen busy under a child's mouse and blur
+  the press, the one thing that moves a tile, and a fade that short keeps a sweep along
+  a row from flickering. The prototypes' white at 16% when hovered was a browser's
+  `:hover`, never built. Never on Android or with `--touch on`: Android leaves the
+  pointer where the last touch was, which would leave the tapped tile lit. The hovered
+  tile is the topmost found over a frame, made hovered at the next frame's start,
+  rather than the first `hold` the pointer is over, which flipped between a card and
+  its tiles each frame (`shell/who.goose` holds the whole screen behind its card).
+
 **The game screen**
 
 - `prototypes/game.html`, chosen 2026-11-07 over three other takes: each control a glass

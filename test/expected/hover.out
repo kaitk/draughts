@@ -1,0 +1,51 @@
+desktop_scale 0 (a phone, a tablet, --touch on):
+  away: a 0.0, b 0.0, d 0.0, a's quad 0.0, a pressed 0.0, animating false
+  over a: a 0.0, b 0.0, d 0.0, a's quad 0.0, a pressed 0.0, animating false
+  over a, a frame on: a 0.0, b 0.0, d 0.0, a's quad 0.0, a pressed 0.0, animating false
+  over a, resting: a 0.0, b 0.0, d 0.0, a's quad 0.0, a pressed 0.0, animating false
+desktop_scale 1 (a desktop):
+  away: a 0.0, b 0.0, d 0.0, a's quad 0.0, a pressed 0.0, animating false
+  onto a: found: a 0.0, b 0.0, d 0.0, a's quad 0.0, a pressed 0.0, animating true
+  a frame on: fading in: a 0.0, b 0.0, d 0.0, a's quad 0.0, a pressed 0.0, animating true
+  halfway: a 0.5, b 0.0, d 0.0, a's quad 0.5, a pressed 0.0, animating true
+  all the way: a 1.0, b 0.0, d 0.0, a's quad 1.0, a pressed 0.0, animating false
+  moved within a: a 1.0, b 0.0, d 0.0, a's quad 1.0, a pressed 0.0, animating false
+  onto b: found: a 1.0, b 0.0, d 0.0, a's quad 1.0, a pressed 0.0, animating true
+  a frame on: a 1.0, b 0.0, d 0.0, a's quad 1.0, a pressed 0.0, animating true
+  halfway: a 0.5, b 0.5, d 0.0, a's quad 0.5, a pressed 0.0, animating true
+  all the way: a 0.0, b 1.0, d 0.0, a's quad 0.0, a pressed 0.0, animating false
+  onto the panel: a 0.0, b 1.0, d 0.0, a's quad 0.0, a pressed 0.0, animating true
+  a frame on: a 0.0, b 1.0, d 0.0, a's quad 0.0, a pressed 0.0, animating true
+  a quarter of the way down: a 0.0, b 0.741, d 0.0, a's quad 0.0, a pressed 0.0, animating true
+  back onto b: a 0.0, b 0.624, d 0.0, a's quad 0.0, a pressed 0.0, animating true
+  a frame on: turned where it was: a 0.0, b 0.376, d 0.0, a's quad 0.0, a pressed 0.0, animating true
+  rising again: a 0.0, b 0.98, d 0.0, a's quad 0.0, a pressed 0.0, animating true
+  all the way: a 0.0, b 1.0, d 0.0, a's quad 0.0, a pressed 0.0, animating false
+  off the window: a 0.0, b 1.0, d 0.0, a's quad 0.0, a pressed 0.0, animating true
+  a frame on: a 0.0, b 1.0, d 0.0, a's quad 0.0, a pressed 0.0, animating true
+  all the way: a 0.0, b 0.0, d 0.0, a's quad 0.0, a pressed 0.0, animating false
+pressed:
+  onto a: a 0.0, b 0.0, d 0.0, a's quad 0.0, a pressed 0.0, animating true
+  a frame on: a 0.0, b 0.0, d 0.0, a's quad 0.0, a pressed 0.0, animating true
+  lit: a 1.0, b 0.0, d 0.0, a's quad 1.0, a pressed 0.0, animating false
+  down on a: a 1.0, b 0.0, d 0.0, a's quad 1.0, a pressed 0.0, animating true
+  held: lit and pressed: a 1.0, b 0.0, d 0.0, a's quad 1.0, a pressed 1.0, animating false
+  up on a: a 1.0, b 0.0, d 0.0, a's quad 1.0, a pressed 1.0, animating true
+  up: a 1.0, b 0.0, d 0.0, a's quad 1.0, a pressed 0.0, animating false
+  down off the UI: a 1.0, b 0.0, d 0.0, a's quad 1.0, a pressed 0.0, animating true
+  slid over b, down: a 1.0, b 0.0, d 0.0, a's quad 1.0, a pressed 0.0, animating true
+  still down over b: a 0.0, b 0.0, d 0.0, a's quad 0.0, a pressed 0.0, animating false
+  up over b: a 0.0, b 0.0, d 0.0, a's quad 0.0, a pressed 0.0, animating true
+  a frame on: a 0.0, b 0.0, d 0.0, a's quad 0.0, a pressed 0.0, animating true
+  lit: a 0.0, b 1.0, d 0.0, a's quad 0.0, a pressed 0.0, animating false
+  off: a 0.0, b 1.0, d 0.0, a's quad 0.0, a pressed 0.0, animating true
+  a frame on: a 0.0, b 1.0, d 0.0, a's quad 0.0, a pressed 0.0, animating true
+  dark: a 0.0, b 0.0, d 0.0, a's quad 0.0, a pressed 0.0, animating false
+dimmed:
+  over the dimmed tile: a 0.0, b 0.0, d 0.0, a's quad 0.0, a pressed 0.0, animating false
+  resting: a 0.0, b 0.0, d 0.0, a's quad 0.0, a pressed 0.0, animating false
+  turned on: a 0.0, b 0.0, d 0.0, a's quad 0.0, a pressed 0.0, animating true
+  a frame on: a 0.0, b 0.0, d 0.0, a's quad 0.0, a pressed 0.0, animating true
+  lit: a 0.0, b 0.0, d 1.0, a's quad 0.0, a pressed 0.0, animating false
+  turned off under the mouse: a 0.0, b 0.0, d 0.0, a's quad 0.0, a pressed 0.0, animating false
+  a frame on: a 0.0, b 0.0, d 0.0, a's quad 0.0, a pressed 0.0, animating false

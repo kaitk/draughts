@@ -1,6 +1,6 @@
 # 066: Light the tile under the mouse
 
-Status: todo (before task 064's Steam release)
+Status: done (2026-11-11)
 
 A desktop's window is laid out for a mouse since 2026-11-11 (0.75 points a dp at most,
 `gui::DESKTOP_DP`), but nothing shows what the pointer is over: a tile only answers when
@@ -35,12 +35,31 @@ press, the one tile that moves.
 
 ## Acceptance criteria
 
-- [ ] The tile under the mouse lit with a short fade on the Mac, in every tile style that
+- [x] The tile under the mouse lit with a short fade on the Mac, in every tile style that
       takes a tap, in the theme's glow, clearly fainter than a chosen tile, and nothing lit
       on Android or with `--touch on`.
-- [ ] A dimmed tile (off, taking no tap) stays unlit.
-- [ ] The idle app still draws nothing while the mouse rests, and a move within one tile
+- [x] A dimmed tile (off, taking no tap) stays unlit.
+- [x] The idle app still draws nothing while the mouse rests, and a move within one tile
       draws nothing new.
-- [ ] A test in `test/gui/` drives the pointer over a tile and off it and checks the fade.
-- [ ] `docs/architecture/rendering.md` ("Controls", the states) and
+- [x] A test in `test/gui/` drives the pointer over a tile and off it and checks the fade.
+- [x] `docs/architecture/rendering.md` ("Controls", the states) and
       `docs/decisions/rendering.md` say how a hovered tile looks and why.
+
+## Done (2026-11-11)
+
+- `gui::hold` notes the topmost tile under the pointer each frame (`g.under`); the next
+  `gui::begin` makes it `g.hovered`, the one it left `g.left`, each fading over
+  `gui::PRESS` and turned from where it stands; drawers pass `gui::hover(g, id)` in
+  `extra.z`. Hovering by the first `hold` over the pointer flipped between who's card
+  and its tiles every frame, so the topmost one wins, a frame later.
+- Shots at 1280×800 points, `--touch off --board flat`, `--mouse` on settings' Spring
+  beside the chosen Winter, birch: the tile's inside (R, G, B) 24.0, 30.7, 21.3% plain,
+  26.4, 34.6, 27.5% hovered, 28.4, 37.4, 38.3% chosen; its edge #566352 plain, #7096A0
+  hovered (1 dp), #8FD4FF chosen (2 dp). Sunset: 45.5, 34.8, 31.0% plain, 49.9, 37.5,
+  32.5% hovered, 53.4, 36.5, 29.8% chosen. The game's Settings, the hint, and the eye
+  light too; two runs of 2000 and 4000 frames are identical, the fade done.
+- At rest with the mouse away, `--rest 15` drew 0 frames on settings and home. Moves
+  can't be scripted here (`agents/testing.md`), so `test/shell/rest_hover` rests the
+  pointer on every 20 px point of home, settings, the game, and the puzzles at 1280 × 800:
+  two frames on, none asks for more. The user's own run, sweeping and clicking over
+  settings, drew 943 frames in 15 s of real moves; hover itself was fine.

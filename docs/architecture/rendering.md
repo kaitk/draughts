@@ -366,11 +366,25 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
 `gear.html`, `exit.html`, `puzzles.html`, `chip.html`) are in git history only
 ([where](../decisions/rendering.md#controls)).
 
-- **Buttons** are glass tiles: white at 10%, 16% when hovered, 24% while pressed (and
-  scaled to 0.96), with an inset 1 px border of white at 20% and a top highlight; radius
-  22 px; at least 88 × 88 px (dp: the screen's shorter side is 800, `gui::scale_of`) for
-  small hands, icons half the tile with strokes 2.4 units of their 24-unit grid. A
-  primary button is the glow color at 22%.
+- **Buttons** are glass tiles: white at 10%, 24% while pressed (and scaled to 0.96),
+  with an inset 1 px border of white at 20% and a top highlight; radius 22 px; at least
+  88 × 88 px (dp: the screen's shorter side is 800, `gui::scale_of`) for small hands,
+  icons half the tile with strokes 2.4 units of their 24-unit grid. A primary button is
+  the glow color at 22%.
+- **Under the mouse** (a desktop only, `gui::desktop_scale` above 0; task 066), a tile
+  that takes a tap is lit as a faint chosen one, in the theme's glow whatever its style:
+  the glow at 8% over its own fill and a 1 dp glow border at 40%, where a chosen tile
+  has 22% and a full 2 dp border. A tile lit already (chosen, primary, on, a primary row,
+  a lit floating button) brightens its own glow by 6% instead. It fades in and out over
+  `gui::PRESS` (0.12 s), eased as a press; nothing grows or lifts, and only the press
+  moves a tile. A dimmed tile, taking no tap, never lights. `gui::hold` notes the
+  topmost tile the pointer is over each frame (not while it is down on another widget
+  or the board); the next frame's `gui::begin` makes it the hovered one, and the tile it
+  left fades out from where it is, so a sweep to and fro never jumps. Each drawer passes
+  `gui::hover(g, id)` in its quad's `extra.z` (0..1, under `ON_BOARD`'s and `CLIP`'s
+  whole numbers). A frame is drawn only while the hover moves to another tile or fades
+  (`gui::animating`): a mouse resting, or moving within one tile, draws nothing.
+  `--mouse X,Y` holds the pointer at a window pixel for a shot.
 - **Icons** are line icons on a 24-unit grid with round strokes, in the Lucide style:
   undo, hint (a bulb), restart, back (an arrow left), next, star, crown, lock, and the
   puzzle themes' target, crown, and shield; the 3D camera's buttons' board from above, board

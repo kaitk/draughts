@@ -224,6 +224,15 @@ struct Gui {
     slots:   Slot[MAX_IDS]     = [Slot {}; MAX_IDS],
     faces:   Face[FACES]       = [Face {}; FACES],
     pointer: Input             = Input {}, // the frame's pointer, kept while input is off (listen)
+    // The mouse's hover on a desktop (desktop_scale > 0, hover): the tile lit under the
+    // pointer, fading in from hover_at over PRESS, and the one it left, fading out from
+    // left_at; `under` is the topmost tile the pointer is over as this frame declares
+    // them, which the next frame's begin makes the hovered one.
+    hovered:  i64 = 0,
+    hover_at: f64 = -1.0,
+    left:     i64 = 0,
+    left_at:  f64 = -1.0,
+    under:    i64 = 0,
     // The screen's edges outside its safe area, in pixels: left, top, right, bottom (a
     // phone's camera cutout and gesture bar). Taps and words stay inside (safe); the
     // photograph, and glass that runs off the screen (bleed), reach the edges.
@@ -463,6 +472,22 @@ fn begin(g: Gui&, input: Input, scale: f32, now: f64) {
     g.scale = scale;
     g.now = now;
     g.quads.clear();
+    // The tile the last frame found under the pointer is lit from now. One coming back
+    // while it fades out, and the one it leaves, turn from where they are, so a sweep
+    // to and fro never jumps.
+    if g.under != g.hovered {
+        let back = g.under != 0 && g.under == g.left;
+        let from = if back { turned(g, g.left_at) } else { now };
+        if g.hovered != 0 {
+            g.left = g.hovered;
+            g.left_at = turned(g, g.hover_at);
+        } else if back {
+            g.left = 0;
+        }
+        g.hovered = g.under;
+        g.hover_at = from;
+    }
+    g.under = 0;
 }
 
 // Whether what is declared from here on takes the pointer: not a screen a transition
@@ -520,10 +545,35 @@ fn set_down(g: Gui&, id: i64, down: bool) {
     }
 }
 
-// Whether any widget is still going down or up, or a hold filling; the app draws while
-// one is.
+// How far widget id is lit by the mouse over it (task 066, rendering.md, "Controls"),
+// 0..1, eased as a press is; 0 for any but the hovered tile and the one it left.
+fn hover(g: Gui&, id: i64) -> f32 {
+    guard id != 0 else { return 0.0; }
+    if id == g.hovered { return eased(g, g.hover_at); }
+    if id == g.left { return 1.0 - eased(g, g.left_at); }
+    return 0.0;
+}
+
+// A fade over PRESS begun at `since`, eased, 0..1 at g.now.
+fn eased(g: Gui&, since: f64) -> f32 {
+    let t = clamp((g.now - since) / PRESS, 0.0, 1.0);
+    return (t * t * (3.0 - 2.0 * t)) as f32;
+}
+
+// When the opposite fade would have begun to stand now where the one begun at `since`
+// stands: the ease is symmetric, so 1 - e(1 - t) is e(t).
+fn turned(g: Gui&, since: f64) -> f64 {
+    let t = clamp((g.now - since) / PRESS, 0.0, 1.0);
+    return g.now - (1.0 - t) * PRESS;
+}
+
+// Whether any widget is still going down or up, a hold filling, or the mouse's hover
+// moving to another tile or fading; the app draws while one is.
 fn animating(g: Gui&) -> bool {
     if g.holding || g.scroll.dragging { return true; }
+    if g.under != g.hovered { return true; }
+    if g.hovered != 0 && g.now < g.hover_at + PRESS { return true; }
+    if g.left != 0 && g.now < g.left_at + PRESS { return true; }
     for s in g.slots { if s.id != 0 && s.since >= 0.0 && g.now < s.since + PRESS { return true; } }
     return false;
 }
@@ -569,6 +619,9 @@ fn hold(g: Gui&, id: i64, r: float4) -> bool, f32 {
     let held = g.active == id && g.input.down && over;
     let clicked = g.active == id && g.input.released && over;
     if clicked { g.acted = true; }
+    // The mouse over it on a desktop, unless it is down on another widget or the board.
+    // Android leaves the pointer where the last touch was, so a phone never hovers.
+    if desktop_scale > 0.0 && over && (!g.input.down || g.active == id) { g.under = id; }
     set_down(g, id, held);
     return clicked, pressed(g, id);
 }
@@ -577,6 +630,9 @@ fn hold(g: Gui&, id: i64, r: float4) -> bool, f32 {
 fn hold_if(g: Gui&, id: i64, r: float4, on: bool) -> bool, f32 {
     guard on else {
         take(g, r);
+        // Dimmed, it is never lit: one turned off under the mouse goes dark at once.
+        if g.hovered == id { g.hovered = 0; }
+        if g.left == id { g.left = 0; }
         return false, 0.0;
     }
     return hold(g, id, r);
@@ -587,7 +643,7 @@ fn hold_if(g: Gui&, id: i64, r: float4, on: bool) -> bool, f32 {
 fn tile(g: Gui&, id: i64, r: float4, icon: i64, style: i64, radius: f32) -> bool {
     let clicked, p = hold(g, id, r);
     add(g, Quad { rect: r, look: float4 { BUTTON, radius * g.scale, 0.0, p },
-                  extra: float4 { g.scale, style, 0.0, 0.0 } });
+                  extra: float4 { g.scale, style, hover(g, id), 0.0 } });
     if icon != NO_ICON {
         // Icons are 44 dp in an 88 dp tile, scaled with it and with the press.
         let s = 0.5 * min(r.z, r.w) * (1.0 - 0.04 * p);
@@ -601,7 +657,7 @@ fn tile(g: Gui&, id: i64, r: float4, icon: i64, style: i64, radius: f32) -> bool
 // row is. True when it is tapped.
 fn icon_button(g: Gui&, id: i64, r: float4, icon: i64, size: f32) -> bool {
     let clicked, p = hold(g, id, r);
-    add(g, Quad { rect: r, look: float4 { BUTTON, 0.5 * min(r.z, r.w), 0.0, p }, extra: float4 { g.scale, ROW, 0.0, 0.0 } });
+    add(g, Quad { rect: r, look: float4 { BUTTON, 0.5 * min(r.z, r.w), 0.0, p }, extra: float4 { g.scale, ROW, hover(g, id), 0.0 } });
     let s = size * g.scale * (1.0 - 0.04 * p);
     glyph_icon(g, center(r, s, s), icon, ROW, p, 0.85);
     return clicked;
@@ -616,7 +672,7 @@ fn floating(g: Gui&, id: i64, r: float4, disc: f32, icon: i64, on: bool, dot: bo
     let clicked, p = hold(g, id, r);
     let d = disc * (1.0 - 0.08 * p);
     let flags = (if on { 1.0 } else { 0.0 }) + (if dot { 2.0 } else { 0.0 });
-    add(g, Quad { rect: center(r, d, d), look: float4 { FLOAT, 0.5 * d, flags, p }, extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
+    add(g, Quad { rect: center(r, d, d), look: float4 { FLOAT, 0.5 * d, flags, p }, extra: float4 { g.scale, 0.0, hover(g, id), 0.0 } });
     let s = 26.0 / 40.0 * d;
     glyph_icon(g, center(r, s, s), icon, PLAIN, p, a);
     return clicked;
@@ -653,7 +709,7 @@ fn hold_tile(g: Gui&, id: i64, r: float4, radius: f32, seconds: f64, red: bool) 
     let s .= g.slots[slot(g, id)];
     let held = g.active == id && g.input.down && inside(r, g.input.at) && s.down;
     let k = if held { clamp((g.now - s.since) / seconds, 0.0, 1.0) as f32 } else { 0.0 };
-    add(g, Quad { rect: r, look: float4 { BUTTON, radius * g.scale, 0.0, p }, extra: float4 { g.scale, PLAIN, 0.0, 0.0 } });
+    add(g, Quad { rect: r, look: float4 { BUTTON, radius * g.scale, 0.0, p }, extra: float4 { g.scale, PLAIN, hover(g, id), 0.0 } });
     guard held else { return false, 0.0; }
     if k >= 1.0 {
         g.active = 0;
@@ -680,7 +736,7 @@ fn bare(g: Gui&, id: i64, r: float4) -> bool, f32 {
     let k = 1.0 - 0.04 * p;
     let d = 0.5 * min(r.z, r.w);
     add(g, Quad { rect: center(r, r.z * k, r.w * k), look: float4 { BUTTON, d * k, 1.0, p },
-                  extra: float4 { g.scale, ROW, 0.0, 0.0 } });
+                  extra: float4 { g.scale, ROW, hover(g, id), 0.0 } });
     return clicked, p;
 }
 
@@ -708,7 +764,7 @@ fn row(g: Gui&, id: i64, r: float4, icon: i64, label: const u8[:], note: const u
     let u = g.scale;
     let clicked, p = hold_if(g, id, r, on);
     let style = if primary { ROW_PRIMARY } else { ROW };
-    add(g, Quad { rect: r, look: float4 { BUTTON, 20.0 * u, 0.0, p }, extra: float4 { u, style, 0.0, 0.0 } });
+    add(g, Quad { rect: r, look: float4 { BUTTON, 20.0 * u, 0.0, p }, extra: float4 { u, style, hover(g, id), 0.0 } });
     let a: f32 = if on { 1.0 } else { 0.4 };
     var c = r;
     cut_left(c, 18.0 * u);
@@ -733,7 +789,7 @@ fn choice(g: Gui&, id: i64, r: float4, kind: i64, pic: float2, label: const u8[:
     let clicked, unused = hold_if(g, id, r, enabled);
     let a: f32 = if enabled { 1.0 } else { 0.4 };
     add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { BUTTON, (if beside { 14.0 } else { 16.0 }) * u, 0.0, 0.0 },
-                  extra: float4 { u, if on { CHOSEN } else { CHOICE }, 0.0, 0.0 } });
+                  extra: float4 { u, if on { CHOSEN } else { CHOICE }, hover(g, id), 0.0 } });
     var c = inset(r, 6.0 * u);
     if beside {
         // The pair centered across the tile.
@@ -767,7 +823,7 @@ fn picture(g: Gui&, id: i64, r: float4, kind: i64, pic: float2, on: bool) -> boo
     let u = g.scale;
     let clicked, unused = hold_if(g, id, r, true);
     add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, 1.0 }, look: float4 { BUTTON, 16.0 * u, 0.0, 0.0 },
-                  extra: float4 { u, if on { CHOSEN } else { CHOICE }, 0.0, 0.0 } });
+                  extra: float4 { u, if on { CHOSEN } else { CHOICE }, hover(g, id), 0.0 } });
     add(g, Quad { rect: center(r, pic.x, pic.y), color: float4 { 1.0, 1.0, 1.0, 1.0 },
                   look: float4 { PICTURE, 9.0 * u, kind, 0.0 }, extra: float4 { u, 0.0, 0.0, 0.0 } });
     return clicked;
@@ -787,7 +843,7 @@ fn labelled(g: Gui&, id: i64, r: float4, icon: i64, size: f32, label: const u8[:
     let clicked, p = hold_if(g, id, r, on);
     let a: f32 = if on { 1.0 } else { 0.35 };
     add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { BUTTON, 22.0 * u, 0.0, p },
-                  extra: float4 { u, style, 0.0, 0.0 } });
+                  extra: float4 { u, style, hover(g, id), 0.0 } });
     let s = size * u;
     // The word keeps LABEL_PAD from the tile's sides, in a smaller face where it is too
     // wide for its own.
@@ -888,7 +944,7 @@ fn pick(g: Gui&, id: i64, r: float4, pic: f32, label: const u8[:], note: const u
     let clicked, unused = hold_if(g, id, r, enabled);
     let a: f32 = if enabled { 1.0 } else { 0.4 };
     add(g, Quad { rect: r, color: float4 { 1.0, 1.0, 1.0, a }, look: float4 { BUTTON, 16.0 * u, 0.0, 0.0 },
-                  extra: float4 { u, if on { CHOSEN } else { CHOICE }, 0.0, 0.0 } });
+                  extra: float4 { u, if on { CHOSEN } else { CHOICE }, hover(g, id), 0.0 } });
     let body = g.faces[BODY].ascent - g.faces[BODY].descent;
     let small = g.faces[SMALL].ascent - g.faces[SMALL].descent;
     let p = pic * u;

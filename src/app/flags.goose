@@ -35,6 +35,9 @@ struct Flags {
     // as a hand needs (gui::desktop_scale), or as a desktop's; on with --size WxH, --dp,
     // or --inset, which stand for a device, unless off is given. 1 on, 0 off, -1 not given
     touch: i64 = -1,
+    // --mouse X,Y: the pointer held at pixel X,Y of the window, to shoot the tile it
+    // lights on a desktop (gui::hover); x < 0 the mouse's own
+    mouse: float2 = float2 { -1.0, -1.0 },
     // --density-floor F with --display-scale S: the scale's floor (gui::scale_of), S
     // standing for the display's (the Mac's is left out: its windows are in points)
     density_floor: f32 = -1.0,
@@ -139,6 +142,12 @@ fn parse(argv: u8[:][>..]) -> Flags {
         }
         if a == "--touch" && v == "on" { f.touch = 1; }
         if a == "--touch" && v == "off" { f.touch = 0; }
+        if a == "--mouse" {
+            let xs, ys, found = split_once(v, ",");
+            let x, ok_x = parse_flt(xs);
+            let y, ok_y = parse_flt(ys);
+            if found && ok_x && ok_y && x >= 0.0 && y >= 0.0 { f.mouse = float2 { x as f32, y as f32 }; }
+        }
         if a == "--density-floor" {
             let x, ok = parse_flt(v);
             if ok { f.density_floor = x as f32; }

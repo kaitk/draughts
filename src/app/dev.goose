@@ -1,5 +1,5 @@
 // The development flags (flags.goose, docs/development.md "Run on the Mac"): those that
-// set up the shell at launch (setup), and those that act while the loop runs: --tap's taps, --go's switch, --win's and --hold's moments, --bench's
+// set up the shell at launch (setup), and those that act while the loop runs: --mouse's pointer, --tap's taps, --go's switch, --win's and --hold's moments, --bench's
 // frame times, --rest's CPU and footprint, and --frames' count and screenshot. The loop
 // calls in at fixed points of a frame, and with none of these flags given each call does
 // nothing.
@@ -135,6 +135,14 @@ fn after_shell(dv: Dev&, f: flags::Flags&, sh: shell::Shell&, g: gui::Gui&, r: r
     dv.flat_bench = f.bench > 0 && !sh.out.raised && now > 2.0 && dv.bench2d.i < 2 * f.bench;
     if dv.flat_bench { dirty = true; }
     return dirty;
+}
+
+// The frame's pointer, held where --mouse puts it for a hovered tile's shot.
+fn pointer(f: flags::Flags&, input: gui::Input) -> gui::Input {
+    guard f.mouse.x >= 0.0 else { return input; }
+    var i = input;
+    i.at = f.mouse;
+    return i;
 }
 
 // Before the frame's drawing, from the shell's fill on.
