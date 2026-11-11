@@ -6,7 +6,8 @@
 SMAA.hlsl stays as published. gfx's embed_shader compiles cute_spirv's GLSL, which lacks
 two conversions the shader makes (docs/goose-findings.md): a float from a bool, and a
 bool vector from a float one; and the Metal translation refuses a swizzle passed as an
-inout argument (SMAAMovc's bool4 form). This copy rewrites those lines and nothing else; the
+inout argument (SMAAMovc's bool4 form); and the Pixel 7a's Mali driver crashes on sampler
+parameters, so the textures become globals. This copy rewrites those lines and nothing else; the
 rest is the macros in src/render3d/smaa.goose (SMAA_CUSTOM_SL), as the ngfx build's
 smaa.slang has. Run it again only if SMAA.hlsl changes.
 """
@@ -30,6 +31,18 @@ REWRITES = [
     # The same for the corner patterns' weights, through a local.
     (r"(SMAADetect(?:Horizontal|Vertical)CornerPattern)\(SMAATexturePass2D\(edgesTex\), weights\.(rg|ba), (coords\.\w+), d\);",
      r"float2 w_\2 = weights.\2; \1(SMAATexturePass2D(edgesTex), w_\2, \3, d); weights.\2 = w_\2;", 2),
+    # The textures as globals under SMAA's names (smaa.goose's *_TEX), not as sampler
+    # parameters, whose addresses the Pixel 7a's Mali driver crashes compiling: each
+    # parameter an unused int of its own name (with SMAATexturePass2D passing 0). Counted
+    # apart: the macro's own definitions in the file's comments and #if branches match too.
+    (r"(?<!#define )SMAATexture2D\((\w+)\)", r"int \1_unused", None),
+    # SMAAGatherNeighbours reads whichever texture it is passed, by the name `tex`; only
+    # predication and depth edges call it, which the board doesn't use.
+    (r"(?s)float3 SMAAGatherNeighbours\(.*?\n\}\n", lambda m: m.group(0).replace("(tex, ", "(predicationTex, "), 1),
+    # Both predication helpers read a texture now, which the vertex stage has none of, so
+    # only the pixel stage takes them, as it does every other function that samples.
+    (r"(?s)(/\*\*\n \* Gathers current pixel.*?float2 SMAACalculatePredicatedThreshold\(.*?\n\}\n)",
+     r"#if SMAA_INCLUDE_PS\n\1#endif\n", 1),
 ]
 
 
@@ -38,7 +51,7 @@ def main():
     s = SRC.read_text(encoding="latin-1")
     for pattern, to, count in REWRITES:
         s, n = re.subn(pattern, to, s)
-        if n != count:
+        if count is not None and n != count:
             sys.exit(f"{SRC}: {pattern} matched {n} times, not {count}")
     head = ("// Written by tools/smaa_glsl.py from third_party/smaa/SMAA.hlsl (MIT, its\n"
             "// LICENSE.txt) for gfx's GLSL; edit neither, run the tool again.\n")

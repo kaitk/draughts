@@ -387,14 +387,14 @@ fn set_aa(g: Gpu&, aa: i32) {
     // whose weights are 0, as the cleared target holds them. SMAA's reference does it
     // with a stencil; the pass's own depth is free by then and needs none.
     g.smaa_edges = gfx::pipeline(embed_shader("vert", smaa::VS_METRICS, smaa::DEFS, smaa::CORNER, smaa::EDGES_VERT),
-                                 embed_shader("frag", smaa::FS_METRICS, smaa::DEFS, smaa::EDGES_FRAG),
+                                 embed_shader("frag", smaa::EDGES_TEX, smaa::UNUSED_TEX, smaa::FS_METRICS, smaa::DEFS, smaa::EDGES_FRAG),
                                  gfx::PipelineDesc { depth_test: true, depth_write: true,
                                                      depth_compare: gfx::COMPARE_ALWAYS });
     g.smaa_weights = gfx::pipeline(embed_shader("vert", smaa::VS_METRICS, smaa::DEFS, smaa::CORNER, smaa::WEIGHTS_VERT),
-                                   embed_shader("frag", smaa::FS_METRICS, smaa::DEFS, smaa::WEIGHTS_FRAG),
+                                   embed_shader("frag", smaa::WEIGHTS_TEX, smaa::UNUSED_TEX, smaa::FS_METRICS, smaa::DEFS, smaa::WEIGHTS_FRAG),
                                    gfx::PipelineDesc { depth_test: true, depth_compare: gfx::COMPARE_EQUAL });
     g.smaa_blend = gfx::pipeline(embed_shader("vert", smaa::VS_METRICS, smaa::DEFS, smaa::CORNER, smaa::BLEND_VERT),
-                                 embed_shader("frag", smaa::FS_METRICS, smaa::DEFS, smaa::BLEND_FRAG));
+                                 embed_shader("frag", smaa::BLEND_TEX, smaa::UNUSED_TEX, smaa::FS_METRICS, smaa::DEFS, smaa::BLEND_FRAG));
     g.area = gfx::texture2d(160, 560, gfx::RG8, gfx::SAMPLED);
     gfx::update_texture(g.area, embed_file("../../third_party/smaa/area.bin"));
     g.search = gfx::texture2d(64, 16, gfx::R8, gfx::SAMPLED);

@@ -16,6 +16,41 @@ let VS_METRICS = """
     #define SMAA_INCLUDE_PS 0
     layout(set = 1, binding = 0) uniform Metrics { vec4 metrics; };
     """;
+// SMAA's functions take their textures as sampler parameters, which the Pixel 7a's Mali
+// driver crashes compiling (in its SPIR-V front end, on the sampler's address as a call's
+// argument; task 071). So the textures are globals under the names SMAA's bodies use,
+// declared before smaa.glsl, and smaa.glsl's parameters are unused ints (tools/smaa_glsl.py).
+// Each stage compiles all of SMAA's pixel functions, so the names a pass doesn't bind
+// stand for one it does: only functions the pass never calls read them.
+let EDGES_TEX = """
+    layout(set = 2, binding = 0) uniform sampler2D colorTex;
+    #define edgesTex colorTex
+    #define areaTex colorTex
+    #define searchTex colorTex
+    #define blendTex colorTex
+    """;
+let WEIGHTS_TEX = """
+    layout(set = 2, binding = 0) uniform sampler2D edgesTex;
+    layout(set = 2, binding = 1) uniform sampler2D areaTex;
+    layout(set = 2, binding = 2) uniform sampler2D searchTex;
+    #define colorTex edgesTex
+    #define blendTex edgesTex
+    """;
+let BLEND_TEX = """
+    layout(set = 2, binding = 0) uniform sampler2D colorTex;
+    layout(set = 2, binding = 1) uniform sampler2D blendTex;
+    #define edgesTex colorTex
+    #define areaTex colorTex
+    #define searchTex colorTex
+    """;
+// Predication, depth edges, and the temporal resolve, which the board doesn't use; after
+// each pass's own part.
+let UNUSED_TEX = """
+    #define predicationTex colorTex
+    #define depthTex colorTex
+    #define currentColorTex colorTex
+    #define previousColorTex colorTex
+    """;
 let FS_METRICS = """
     #define SMAA_INCLUDE_VS 0
     layout(set = 3, binding = 0) uniform Metrics { vec4 metrics; };
@@ -26,7 +61,7 @@ let DEFS = """
     #define SMAA_PRESET_HIGH 1
     #define SMAA_RT_METRICS metrics
     #define SMAATexture2D(tex) sampler2D tex
-    #define SMAATexturePass2D(tex) tex
+    #define SMAATexturePass2D(tex) 0
     #define SMAASampleLevelZero(tex, coord) textureLod(tex, coord, 0.0)
     #define SMAASampleLevelZeroPoint(tex, coord) textureLod(tex, coord, 0.0)
     #define SMAASampleLevelZeroOffset(tex, coord, offset) textureLod(tex, coord + vec2(offset) * SMAA_RT_METRICS.xy, 0.0)
@@ -81,10 +116,9 @@ let EDGES_FRAG = """
     layout(location = 2) in vec4 v_o1;
     layout(location = 3) in vec4 v_o2;
     layout(location = 0) out vec4 result;
-    layout(set = 2, binding = 0) uniform sampler2D color_tex;
     void main() {
         vec4 offset[3] = vec4[3](v_o0, v_o1, v_o2);
-        result = vec4(SMAALumaEdgeDetectionPS(v_uv, offset, color_tex), 0.0, 0.0);
+        result = vec4(SMAALumaEdgeDetectionPS(v_uv, offset, 0), 0.0, 0.0);
     }
     """;
 
@@ -112,12 +146,9 @@ let WEIGHTS_FRAG = """
     layout(location = 3) in vec4 v_o1;
     layout(location = 4) in vec4 v_o2;
     layout(location = 0) out vec4 result;
-    layout(set = 2, binding = 0) uniform sampler2D edges_tex;
-    layout(set = 2, binding = 1) uniform sampler2D area_tex;
-    layout(set = 2, binding = 2) uniform sampler2D search_tex;
     void main() {
         vec4 offset[3] = vec4[3](v_o0, v_o1, v_o2);
-        result = SMAABlendingWeightCalculationPS(v_uv, v_pix, offset, edges_tex, area_tex, search_tex, vec4(0.0));
+        result = SMAABlendingWeightCalculationPS(v_uv, v_pix, offset, 0, 0, 0, vec4(0.0));
     }
     """;
 
@@ -135,9 +166,7 @@ let BLEND_FRAG = """
     layout(location = 0) in vec2 v_uv;
     layout(location = 1) in vec4 v_offset;
     layout(location = 0) out vec4 result;
-    layout(set = 2, binding = 0) uniform sampler2D color_tex;
-    layout(set = 2, binding = 1) uniform sampler2D blend_tex;
     void main() {
-        result = SMAANeighborhoodBlendingPS(v_uv, v_offset, color_tex, blend_tex);
+        result = SMAANeighborhoodBlendingPS(v_uv, v_offset, 0, 0);
     }
     """;
