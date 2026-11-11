@@ -38,7 +38,7 @@ check each against Steamworks' pages when doing this.
       a minimum window size, and every screen checked at 1080p, 1440p, and 4K with the
       mouse alone.
 - [ ] Controllers: every screen played with a gamepad alone, with a visible focus and
-      gamepad glyphs, at the Deck's 1280 × 800 with text readable there.
+      gamepad glyphs, at the Deck's 1280 × 800 with text readable there (task 072).
 - [ ] SteamPipe: one depot per OS and the build scripts in the repo, the upload key or
       login kept out of it; the game installed and played through the Steam client on
       each OS, and on a Deck if one is at hand.

@@ -74,7 +74,8 @@ Open:
   upscaled backgrounds, 026 the first start and tutorial, 060 shared blocks for a second
   board game (chess), 064 Steam for Windows, macOS, and Linux (low priority, scoped only), with 067 the
   board under the mouse lit 068 the desktop's layout tuned before it, and 069 the layout's sizes named so a desktop's
-  tiles can be thinner.
+  tiles can be thinner, and 072 keyboard and controller focus, with a desktop's Quit row on
+  home.
 
 ## Next (updated 2026-11-10)
 
