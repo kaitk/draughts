@@ -18,6 +18,7 @@ extern fn draughts_threads(out: u8[:]) -> i64;
 struct Dev {
     go:     i64 = -1,           // --go's screen, -1 once switched
     tapped: i64 = 0,            // --tap's taps played so far
+    keyed:  i64 = 0,            // --keys' keys pressed so far
     // --bench N on the flat board: N whole frames, from the shell's fill to the GPU done,
     // each waited for (cpu: up to the submit); then N as the loop draws them, frame to
     // frame. In seconds; draw3d::Bench times the 3D board.
@@ -137,11 +138,16 @@ fn after_shell(dv: Dev&, f: flags::Flags&, sh: shell::Shell&, g: gui::Gui&, r: r
     return dirty;
 }
 
-// The frame's pointer, held where --mouse puts it for a hovered tile's shot.
-fn pointer(f: flags::Flags&, input: gui::Input) -> gui::Input {
-    guard f.mouse.x >= 0.0 else { return input; }
+// The frame's pointer, held where --mouse puts it for a hovered tile's shot, and --keys'
+// next key from the third drawn frame on.
+fn pointer(dv: Dev&, f: flags::Flags&, input: gui::Input) -> gui::Input {
     var i = input;
-    i.at = f.mouse;
+    if f.mouse.x >= 0.0 { i.at = f.mouse; }
+    if dv.keyed < f.keys.len && host::frame_count() >= 3 {
+        let k = f.keys[dv.keyed];
+        if k == flags::KEY_ENTER { i.confirm = true; } else { i.step = k; }
+        dv.keyed++;
+    }
     return i;
 }
 

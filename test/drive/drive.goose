@@ -142,6 +142,13 @@ fn tap(gm: game::Game&, g: gui::Gui&, l: panel::Layout, p: float2, now: f64) -> 
     return frame(gm, g, l, p, false, false, true, now + 0.02);
 }
 
+// A frame of the shell with an arrow key `step` (gui::STEP_NONE..) or Enter (`confirm`)
+// pressed and the pointer resting away; returns whether anything changed.
+fn key(sh: shell::Shell&, g: gui::Gui&, step: i64, confirm: bool, now: f64) -> bool {
+    gui::begin(g, gui::Input { at: AWAY, step: step, confirm: confirm, .. }, gui::scale_of(size.x, size.y), now);
+    return shell::frame(sh, g, size.x, size.y, now, ready3d, shown3d).changed;
+}
+
 // A tap at p, then a frame with the pointer away, as a finger lifts.
 fn tap(sh: shell::Shell&, g: gui::Gui&, p: float2, now: f64) {
     frame(sh, g, p, true, true, false, now);

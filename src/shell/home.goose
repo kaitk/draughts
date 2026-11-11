@@ -13,6 +13,9 @@
 //
 // A bare X in the screen's top right, with no disc until pressed, closes the app, at
 // once: the game is kept in any case. In portrait the board moves down and shrinks to clear it.
+// On a desktop's landscape column, where it fits, the way out is a last row, Quit, under
+// settings, and the X isn't shown (quit_row): one way out shown one of two ways, as
+// settings is the gear or a row.
 //
 // On the menu, the player's chip, their badge bare as the X is and their name on a small
 // glass pill (rendering.md, "Controls", Players; so it reads on any photograph), opens who's
@@ -124,8 +127,9 @@ fn row_gap(gear: bool, height: f32, u: f32, small: bool = false) -> f32 {
 
 // How tall the menu is in an area `height` tall, with settings a row of its own or the
 // gear beside the wordmark.
-fn menu_height(gear: bool, height: f32, u: f32, small: bool = false) -> f32 {
-    let rows = if gear { ROWS } else { ROWS + 1 };
+fn menu_height(gear: bool, height: f32, u: f32, small: bool = false, quit: bool = false) -> f32 {
+    let more = if quit { 2 } else { 1 };
+    let rows = if gear { ROWS } else { ROWS + more };
     return (mark_h(small) + mark_gap(gear, height, u, small) + rows * row_h(small)
             + (rows - 1) * row_gap(gear, height, u, small)) * u;
 }
@@ -134,6 +138,13 @@ fn menu_height(gear: bool, height: f32, u: f32, small: bool = false) -> f32 {
 // short for the menu with it as a row (a phone).
 fn gear_beside(landscape: bool, height: f32, u: f32) -> bool {
     return !landscape || menu_height(false, height, u) > height - 2.0 * MARGIN * u;
+}
+
+// Whether the way out is Quit, a last row under settings: on a desktop (gui::desktop_scale),
+// where home shows its way out, in landscape with settings a row and room for one more.
+fn quit_row(landscape: bool, height: f32, u: f32, small: bool = false) -> bool {
+    guard closable && gui::desktop_scale > 0.0 && landscape && !gear_beside(true, height, u) else { return false; }
+    return menu_height(false, height, u, small, true) <= height - 2.0 * MARGIN * u;
 }
 
 // How tall a setup's column is (FRIEND or COMPUTER): its groups, back and the title before
@@ -157,7 +168,9 @@ fn paired(setup: i64, landscape: bool, height: f32, u: f32) -> bool {
 
 // How tall the column's content is: the menu, or a setup (FRIEND or COMPUTER).
 fn content_height(setup: i64, landscape: bool, height: f32, u: f32, small: bool = false) -> f32 {
-    if setup == NO_SETUP { return menu_height(gear_beside(landscape, height, u), height, u, small); }
+    if setup == NO_SETUP {
+        return menu_height(gear_beside(landscape, height, u), height, u, small, quit_row(landscape, height, u, small));
+    }
     return setup_height(setup, paired(setup, landscape, height, u), u);
 }
 
@@ -170,8 +183,8 @@ fn content_height(setup: i64, landscape: bool, height: f32, u: f32, small: bool 
 // portrait), as tall as the flat board below the row of the player's chip and the way
 // out, or the flat board's square where that leaves under half of it. With the menu: the
 // gear beside the wordmark or settings a row, the gap under the wordmark and between the
-// rows in dp, and `small`, a small window's rows; with a setup, two columns `pair_w` dp
-// wide each, or 0 for one.
+// rows in dp, `small`, a small window's rows, and `quit`, the way out a last row
+// (quit_row); with a setup, two columns `pair_w` dp wide each, or 0 for one.
 struct Home {
     col:     float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
     content: float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
@@ -184,6 +197,7 @@ struct Home {
     below:   f32           = 0.0,
     apart:   f32           = 0.0,
     small:   bool          = false,
+    quit:    bool          = false,
     pair_w:  f32           = 0.0,
 }
 
@@ -306,7 +320,7 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, s: settings::Settings&
     let gear = gear_beside(landscape, height, u);
     return Home { col: col, content: content, head: head, way: way, side: side, board: l, room3d: room3d, gear: gear,
                   below: mark_gap(gear, height, u, small), apart: row_gap(gear, height, u, small), small: small,
-                  pair_w: pair_w };
+                  quit: setup == NO_SETUP && quit_row(landscape, height, u, small), pair_w: pair_w };
 }
 
 // Declares home for this frame in `area`, the screen's safe area, where layout puts its
@@ -322,10 +336,10 @@ fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: f
     gui::glass(g, gui::bleed(g, h.col, area), 32.0);
     over.clear();
     var pick = if setup != NO_SETUP { choose(over, g, h.content, setup == COMPUTER, h.pair_w, h.head, s) }
-               else { menu(over, g, h.content, h.gear, h.below, h.apart, s, h.small) };
+               else { menu(over, g, h.content, h.gear, h.below, h.apart, s, h.small, h.quit) };
     // The player and the way out, declared last so the tiles before them keep their order.
     if setup == NO_SETUP && player_chip(g, player_spot(g, area, h.side, l.board, h.way, s), s) { pick = PLAYERS; }
-    if closable && gui::bare_x(g, gui::HOME_IDS + 9, h.way, gui::CLOSE, CROSS) { pick = EXIT; }
+    if closable && !h.quit && gui::bare_x(g, gui::HOME_IDS + 9, h.way, gui::CLOSE, CROSS) { pick = EXIT; }
     return pick;
 }
 
@@ -391,12 +405,14 @@ fn player_chip(g: gui::Gui&, r: float4, s: settings::Settings&) -> bool {
 // settings, a row of its own or, `gear`, a gear at the wordmark's right (portrait, and a
 // short landscape).
 fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, apart: f32, s: settings::Settings&,
-        small: bool = false) -> i64 {
+        small: bool = false, quit: bool = false) -> i64 {
     let u = g.scale;
-    // The wordmark, then the rows, and settings as the last where it isn't the gear.
-    let rows_n = if gear { ROWS } else { ROWS + 1 };
-    var items: gui::Item[ROWS + 2] = [gui::Item {}; ROWS + 2];
-    var at:    float4[ROWS + 2]    = [float4 { 0.0, 0.0, 0.0, 0.0 }; ROWS + 2];
+    // The wordmark, then the rows, settings as the next where it isn't the gear, and Quit
+    // last with `quit`.
+    let more = if quit { 2 } else { 1 };
+    let rows_n = if gear { ROWS } else { ROWS + more };
+    var items: gui::Item[ROWS + 3] = [gui::Item {}; ROWS + 3];
+    var at:    float4[ROWS + 3]    = [float4 { 0.0, 0.0, 0.0, 0.0 }; ROWS + 3];
     items[0].size = mark_h(small) * u;
     for i in rows_n {
         items[1 + i].size = (if i < ROWS { row_h(small) } else { gui::tap() }) * u;
@@ -439,6 +455,9 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
     }
     if !gear {
         if gui::row(g, gui::HOME_IDS + 5, at[1 + ROWS], gui::GEAR, strings::get(strings::HOME_SETTINGS), "", false, true) { pick = SETTINGS; }
+    }
+    if quit && gui::row(g, gui::HOME_IDS + 6, at[2 + ROWS], gui::CLOSE, strings::get(strings::HOME_QUIT), "", false, true) {
+        pick = EXIT;
     }
     return pick;
 }

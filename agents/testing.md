@@ -19,7 +19,9 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
 
 ## What each kind of test is for
 
-- `test/<area>/<name>.goose` with `test/expected/<name>.out`: one program per behavior,
+- `test/<area>/<name>.goose` with `test/expected/<name>.out`: `expected/` is flat, so a
+  name must be unique across the areas (a `test/shell/keys` overwrote `test/ai/keys`'s
+  output, 2026-11-11). One program per behavior,
   printing what a reader can check by eye (positions as FEN, moves sorted, how many
   pieces each takes). A test explains in a comment what rule it shows and why the
   position shows it. Areas so far: `rules`, `board` (taps, hints, and a capture tapped
@@ -34,7 +36,10 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   and two wrong squares, and take back mid-capture, on a child's position read from a
   photo: `count`, whose `state` fills the board a moment on, so a pulse at its start,
   which is at full, shows as pulsing), `gui` (and the widget ids' ranges, one per
-  screen, none running into the next: `ids`; `gui::stack`'s columns and rows: `stack`; the mouse's hover, its fade and turn, and none with `desktop_scale` 0: `hover`; in
+  screen, none running into the next: `ids`; `gui::stack`'s columns and rows: `stack`; the mouse's hover, its fade and turn, and none with `desktop_scale` 0: `hover`; the
+  keys' focus, its moves by the controls' rects, Enter, and the mouse taking over:
+  `focus`; in `shell`, `home_keys`: a desktop's Quit row or the X, and home walked and
+  pressed with the keys (`drive::key`); in
   `shell`, `rest_hover`: a mouse resting anywhere on home, settings, the game, and the
   puzzles asks for no frames), `game` (the game screen driven through
   the pointer: take back, start over, home and settings, presses kept apart, the

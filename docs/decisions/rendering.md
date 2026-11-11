@@ -222,6 +222,11 @@ are in git history before that day.
   tile is the topmost found over a frame, made hovered at the next frame's start,
   rather than the first `hold` the pointer is over, which flipped between a card and
   its tiles each frame (`shell/who.goose` holds the whole screen behind its card).
+- The arrow keys move a focus and Enter presses it (task 072, 2026-11-11), built once in
+  `gui` from what every control already declares, so each screen gets it without code
+  of its own and a gamepad later feeds the same moves. Nearest that way by the controls'
+  rects rather than the order declared, which suits a column and a grid alike (the
+  setups, settings). The focus is lit as the hover is for now; its own look is to agree.
 
 **The game screen**
 
@@ -277,6 +282,13 @@ came on 2026-11-09.
   quiet last row, which would take the portrait board's room and lengthen the sheet
   phones can't fit; a door, which reads less surely at 34 dp; and a power sign, which
   suggests turning the tablet off.
+- On a desktop's landscape column the way out is a last row, Quit, under settings
+  (2026-11-11, task 072), narrowing the decision above against a last row: a desktop's
+  window is where a quit in the menu is expected, the landscape column has room for it,
+  and a row is reached by the arrow keys in the menu's order where a corner X is not.
+  The X shows only where the row doesn't (the portrait sheet, a column too short for it,
+  a touch screen), as settings is the gear or a row, never both. Rejected: the row in
+  the portrait sheet, for the reason above; both the row and the X at once.
 - The board keeps 40 dp above and below, down to 24 where a setup's tall sheet near
   square would leave it under 40% of the width (2026-11-08).
 - The setups (2026-11-08): the child's colour against the computer, every tile 88 dp tall

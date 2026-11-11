@@ -9,6 +9,7 @@ home.friend = A friend
 home.computer = The computer
 home.puzzles = Puzzles
 home.settings = Settings
+home.quit = Quit
 
 level.easy = easy
 level.medium = medium

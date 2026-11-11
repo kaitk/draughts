@@ -91,14 +91,22 @@ fn platform() -> i64 { draughts_platform() }
 // fields in SDL, read each frame, since turning the screen moves them.
 fn read_display(h: Host&) { draughts_display(h.display); }
 
-// The pointer this frame, and with the keyboard up the characters typed, Backspace, and
-// Return. A quick tap can press and release within one frame, which mouse_down never
+// The pointer this frame and, but while the keyboard is up, the keys' moves; with it up
+// the characters typed, Backspace, and Return. A quick tap can press and release within one frame, which mouse_down never
 // sees; pressed and released catch it.
 fn input(h: Host&) -> gui::Input {
     var input = gui::Input { at: gfx::mouse_pos(), down: gfx::mouse_down(gfx::MOUSE_LEFT),
                              pressed: gfx::mouse_pressed(gfx::MOUSE_LEFT),
                              released: gfx::mouse_released(gfx::MOUSE_LEFT), wheel: gfx::mouse_wheel() };
-    guard h.text_on else { return input; }
+    // The arrow keys move the UI's focus and Enter or Space presses it (gui::focus_keys),
+    // not while a name is typed, where they edit it.
+    guard h.text_on else {
+        input.step = if gfx::key_pressed("Up") { gui::STEP_UP } else if gfx::key_pressed("Down") { gui::STEP_DOWN }
+                     else if gfx::key_pressed("Left") { gui::STEP_LEFT } else if gfx::key_pressed("Right") { gui::STEP_RIGHT }
+                     else { gui::STEP_NONE };
+        input.confirm = gfx::key_pressed("Return") || gfx::key_pressed("Keypad Enter") || gfx::key_pressed("Space");
+        return input;
+    }
     let n = min(gfx::events_into(h.events), h.events.len);
     for e in h.events[..n] {
         guard input.typed.len < gui::MAX_TYPED else { break; }

@@ -13,6 +13,8 @@ let GO_PLAY = 99;
 // The most --tap flags kept: two taps a move, room for the longest count a shot plays
 // to its end from a position (Russian's 60 moves each, 120 plies, takes 240).
 let MAX_TAPS = 256;
+let MAX_KEYS = 16;
+let KEY_ENTER = 9;          // in keys: Enter, after gui's STEP_UP..STEP_RIGHT
 
 struct Flags {
     width:      i64  = 1280, // --size WxH: the window, in points on the Mac
@@ -38,6 +40,9 @@ struct Flags {
     // --mouse X,Y: the pointer held at pixel X,Y of the window, to shoot the tile it
     // lights on a desktop (gui::hover); x < 0 the mouse's own
     mouse: float2 = float2 { -1.0, -1.0 },
+    // --keys up,down,left,right,enter (up to MAX_KEYS): pressed one a frame from the third
+    // drawn frame, to shoot the keys' focus (gui::focus_keys)
+    keys: i64[..MAX_KEYS] = [],
     // --density-floor F with --display-scale S: the scale's floor (gui::scale_of), S
     // standing for the display's (the Mac's is left out: its windows are in points)
     density_floor: f32 = -1.0,
@@ -147,6 +152,16 @@ fn parse(argv: u8[:][>..]) -> Flags {
             let x, ok_x = parse_flt(xs);
             let y, ok_y = parse_flt(ys);
             if found && ok_x && ok_y && x >= 0.0 && y >= 0.0 { f.mouse = float2 { x as f32, y as f32 }; }
+        }
+        if a == "--keys" {
+            var rest: const u8[:] = v;
+            while rest.len > 0 && f.keys.len < MAX_KEYS {
+                let part, after, more = split_once(rest, ",");
+                let k = if part == "up" { gui::STEP_UP } else if part == "down" { gui::STEP_DOWN } else if part == "left" { gui::STEP_LEFT }
+                        else if part == "right" { gui::STEP_RIGHT } else if part == "enter" { KEY_ENTER } else { gui::STEP_NONE };
+                if k != gui::STEP_NONE { f.keys.push(k); }
+                rest = if more { after } else { "" };
+            }
         }
         if a == "--density-floor" {
             let x, ok = parse_flt(v);

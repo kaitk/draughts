@@ -403,6 +403,20 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   whole numbers). A frame is drawn only while the hover moves to another tile or fades
   (`gui::animating`): a mouse resting, or moving within one tile, draws nothing.
   `--mouse X,Y` holds the pointer at a window pixel for a shot.
+- **The keys' focus**: the arrow keys move a focus among the controls and Enter or Space
+  presses the focused one, as a release over it would (`gui::focus_keys`, `gui::hold`).
+  The focus is lit as the mouse's hover is, on any platform. Each `gui::hold` offers its
+  control (`gui::Spot`, its id and rect, in a fixed array the frame fills), but not the
+  controls of a screen a transition leaves or a whole-screen catch such as who's
+  playing's dimmed home. The next frame's `gui::begin` moves the focus: the first arrow
+  key focuses the screen's primary control (a primary row, home's Continue), or the
+  first declared; later ones go to the nearest control that way, the gap that way plus
+  twice the gap across, so one in line beats a nearer one off to the side, and the
+  focus stays where none lies that way. A focused control the frame no longer declares
+  (the screen changed) hands the focus to the new screen's primary. The mouse moving, a
+  press, or the wheel lets the focus go, and the pointer leads again. Not while a name
+  is typed, where the keys edit it. `--keys down,enter` presses keys on the first
+  frames for a shot.
 - **Icons** are line icons on a 24-unit grid with round strokes, in the Lucide style:
   undo, hint (a bulb), restart, back (an arrow left), next, star, crown, lock, and the
   puzzle themes' target, crown, and shield; the 3D camera's buttons' board from above, board
@@ -567,7 +581,11 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   nothing, it is far from where children tap and hold a tablet, and an X is what closes
   things in the apps children know ([why not a row or a door](../decisions/rendering.md#controls)). At rest it is the X alone, no
   disc, sized to the bare gear's weight; pressed, it lights round in its tap (white at 10%
-  and a faint 1 px ring) and goes down to 0.96 (`gui::bare_x`). In landscape it sits above the photograph,
+  and a faint 1 px ring) and goes down to 0.96 (`gui::bare_x`). On a desktop's landscape
+  column, where it fits, the way out is instead a last row under settings, an X and Quit
+  (`home::quit_row`), and the corner shows no X: one way out shown one of two ways, as
+  settings is the gear or a row. A desktop's portrait sheet, a column too short for the
+  row, and every touch screen keep the X. In landscape it sits above the photograph,
   clear of the board (28 dp right of its edge, 8 dp above its top; on a phone, where the
   board would reach it, the board moves down to 8 dp under it or narrows to 16 dp left of it,
   whichever leaves it larger); in portrait, where

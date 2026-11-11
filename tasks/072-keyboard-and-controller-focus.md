@@ -1,6 +1,6 @@
 # 072: Keyboard and controller focus
 
-Status: todo (implementation waits; scoped 2026-11-11)
+Status: in-progress (steps 1 to 4 built 2026-11-11; the focus's look to agree)
 
 Every screen played with the keyboard alone, and later a gamepad, as a desktop game is
 expected to be: arrow keys move a visible focus between the controls, Enter presses the
@@ -40,17 +40,32 @@ frame with its id, so focus is an id in `gui::Gui` as `active` and `under` are.
 6. Gamepad, with task 064: D-pad and left stick move, A presses, B goes back, with
    gamepad glyphs where a key's name would show.
 
+## Progress (2026-11-11)
+
+Steps 1 to 4 built: `gui::focus_keys` and `gui::Spot` (every `gui::hold` offers its
+control, 128 at most a frame), the arrows, Enter, and Space from `host::input` (not while
+a name is typed), the focus lit as the hover, home's Quit row and the X shown one or the
+other, and `--keys` for shots. Shot at 1280 × 800 on the Mac: the Quit row fits under
+settings, and the X is gone. The hover's light is too faint for a focus: Quit focused
+shows only a faint outline, and Continue, primary and so lit already, shows no change at
+all. The focus's own look is the next thing to agree.
+
+Left for step 5: a focused control in a scrolled list (the puzzles, settings on a phone)
+isn't scrolled into view; a hold tile (who's playing's start again and remove) takes no
+Enter; holding an arrow doesn't repeat (gfx reports a key's first press only).
+
 ## Acceptance criteria
 
 - [ ] Home's menu worked with the arrow keys and Enter on the Mac, the focus visible and
       its look agreed with the user.
-- [ ] The Quit row on a desktop's landscape column only; never on Android, iOS, or with
+- [x] The Quit row on a desktop's landscape column only; never on Android, iOS, or with
       `--touch on`; the corner X shown only where the row isn't; a touch screen's layout
       unchanged.
 - [ ] Every screen but the board worked with the keyboard alone.
 - [ ] A focus that rests draws nothing; a key press draws one frame
       (`docs/architecture/rendering.md`), and the frame loop allocates nothing.
-- [ ] A test drives the keys through home and a setup and checks the focus and the pick.
+- [x] A test drives the keys through home and a setup and checks the focus and the pick
+      (`test/gui/focus`, `test/shell/home_keys`).
 - [ ] The board played with the keyboard (step 5), agreed with the user.
 - [ ] A gamepad does all of it (with task 064).
 - [ ] `docs/architecture/rendering.md` and `docs/decisions/rendering.md` updated, the

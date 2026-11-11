@@ -94,7 +94,7 @@ fn grid(ps: players::Players&, area: float4, u: f32) -> i64, i64, i64 {
 fn frame(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4, screen: float4) -> i64, i64 {
     gui::fill(g, screen, float4 { 0.0, 0.0, 0.0, 0.42 }, 0.0);
     // A tap on the dimmed home outside the card closes it.
-    let outside, unused = gui::hold(g, gui::WHO_IDS, screen);
+    let outside, unused = gui::hold(g, gui::WHO_IDS, screen, false);
     var ask = NOTHING;
     var index = -1;
     if w.state == SHEET {
@@ -113,7 +113,7 @@ fn frame(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4, screen: flo
 // The card's glass in r, which takes a press on it so it never reaches the dimmed home.
 fn card(g: gui::Gui&, r: float4) {
     gui::glass(g, r, 32.0);
-    gui::hold(g, gui::WHO_IDS + 1, r);
+    gui::hold(g, gui::WHO_IDS + 1, r, false);
 }
 
 // A glass round tile a tap across with an icon, as settings' back: true when tapped.

@@ -12,6 +12,7 @@ import vec;
 
 let MAX_QUADS = 512;
 let MAX_IDS = 32;
+let MAX_SPOTS = 128;        // the controls a frame offers the keys' focus (Spot)
 let PRESS = 0.12;           // seconds a button takes to go down or up
 
 // The layout's shorter side in dp: 800, or what the development flag --dp sets, to try
@@ -201,10 +202,16 @@ struct Quad {
 }
 
 // The pointer this frame, and what was typed while text input is on. A quick tap can be
-// pressed and released in one frame.
+// pressed and released in one frame. The keys' moves (focus) come in `step`, one of
+// STEP_NONE..STEP_RIGHT, and `confirm`, Enter pressing the focused control.
 let MAX_TYPED = 16;
 let ERASE = 8;              // in typed: Backspace
 let ENTER = 13;             // and Return
+let STEP_NONE = 0;
+let STEP_UP = 1;
+let STEP_DOWN = 2;
+let STEP_LEFT = 3;
+let STEP_RIGHT = 4;
 struct Input {
     at:       float2           = float2 { 0.0, 0.0 },
     down:     bool             = false,
@@ -212,6 +219,16 @@ struct Input {
     released: bool             = false,
     typed:    u32[..MAX_TYPED] = [],    // characters in order, ERASE and ENTER among them
     wheel:    f32              = 0.0,   // a mouse wheel's or trackpad's turn this frame, up positive
+    step:     i64              = STEP_NONE, // an arrow key pressed this frame
+    confirm:  bool             = false, // Enter or Space pressed this frame
+}
+
+// A control a frame declared that the keys can focus: its id, its rect, and whether it is
+// the screen's first choice (`primary`, home's Continue), which the first key focuses.
+struct Spot {
+    id:      i64    = 0,
+    rect:    float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
+    primary: bool   = false,
 }
 
 // A widget's state across frames: whether it is down and when that last changed.
@@ -249,6 +266,14 @@ struct Gui {
     // The screen's one vertical scroll (scroll_begin): which list, its offset in pixels,
     // the press it may become a drag from, and whether it has.
     scroll: Scroll = Scroll {},
+    // The keys' focus (rendering.md, "Keys"): the control an arrow key moved to, lit as
+    // the mouse's hover lights one, which Enter presses; 0 while the mouse or a touch
+    // leads. `spots` are the controls this frame offers it, in the order declared, which
+    // the next frame's begin moves the focus among; `deaf` while a screen a transition
+    // leaves is declared (listen), whose controls offer none.
+    focus: i64               = 0,
+    spots: Spot[..MAX_SPOTS] = [],
+    deaf:  bool              = false,
 }
 
 // What a screen's frame asks for (gui is what every screen imports): the asks the screens
@@ -491,8 +516,10 @@ fn stack(area: float4, items: const Item[:], out: float4[:], dir: i64 = DOWN, ju
 
 fn inside(r: float4, p: float2) -> bool { p.x >= r.x && p.x < r.x + r.z && p.y >= r.y && p.y < r.y + r.w }
 
-// Starts a frame: no quads yet, this frame's pointer and time.
+// Starts a frame: no quads yet, this frame's pointer and time, and the keys' focus moved
+// among the controls the last frame offered.
 fn begin(g: Gui&, input: Input, scale: f32, now: f64) {
+    focus_keys(g, input);
     if !g.pointer.down && !g.pointer.pressed { g.active = 0; }
     if input.pressed { g.took = false; }
     g.acted = false;
@@ -522,7 +549,91 @@ fn begin(g: Gui&, input: Input, scale: f32, now: f64) {
 
 // Whether what is declared from here on takes the pointer: not a screen a transition
 // leaves, which is declared with no pointer at all.
-fn listen(g: Gui&, on: bool) { g.input = if on { g.pointer } else { Input { at: float2 { -1.0e9, -1.0e9 }, .. } }; }
+fn listen(g: Gui&, on: bool) {
+    g.input = if on { g.pointer } else { Input { at: float2 { -1.0e9, -1.0e9 }, .. } };
+    g.deaf = !on;
+}
+
+// The keys' focus at a frame's start: the mouse moving, a press, or the wheel lets it go,
+// as the pointer leads again; an arrow key moves it from the control it is on to the
+// nearest that way, or, from none, to the screen's primary control; a focused control the
+// last frame didn't declare (the screen changed) hands it to the new screen's primary.
+fn focus_keys(g: Gui&, input: Input) {
+    let moved = input.at.x != g.pointer.at.x || input.at.y != g.pointer.at.y;
+    if input.pressed || input.wheel != 0.0 || moved { g.focus = 0; }
+    let n = g.spots.len;
+    if n > 0 && input.step != STEP_NONE {
+        g.focus = if spot_of(g, g.focus) < 0 { g.spots[primary_spot(g)].id } else { toward(g, input.step) };
+    } else if n > 0 && g.focus != 0 && spot_of(g, g.focus) < 0 {
+        g.focus = g.spots[primary_spot(g)].id;
+    }
+    g.spots.clear();
+    g.deaf = false;
+}
+
+// Spot i of the control id the last frame offered, or -1.
+fn spot_of(g: Gui&, id: i64) -> i64 {
+    guard id != 0 else { return -1; }
+    for s, i in g.spots { if s.id == id { return i; } }
+    return -1;
+}
+
+// The spot the first key focuses: the first marked primary, else the first declared.
+fn primary_spot(g: Gui&) -> i64 {
+    for s, i in g.spots { if s.primary { return i; } }
+    return 0;
+}
+
+// The control nearest the focused one in direction `step`: of those whose middle lies
+// that way, the least gap that way plus twice the gap across, so a control in line wins
+// over a nearer one off to the side; the focus stays where none lies that way.
+fn toward(g: Gui&, step: i64) -> i64 {
+    let a = g.spots[spot_of(g, g.focus)].rect;
+    let vertical = step == STEP_UP || step == STEP_DOWN;
+    var best = g.focus;
+    var least: f32 = 1.0e30;
+    for s in g.spots {
+        guard s.id != g.focus else { continue; }
+        let r = s.rect;
+        let ahead = match step {
+            STEP_UP => a.y - (r.y + r.w),
+            STEP_DOWN => r.y - (a.y + a.w),
+            STEP_LEFT => a.x - (r.x + r.z),
+            _ => r.x - (a.x + a.z),
+        };
+        let mid = match step {
+            STEP_UP => r.y + 0.5 * r.w < a.y + 0.5 * a.w,
+            STEP_DOWN => r.y + 0.5 * r.w > a.y + 0.5 * a.w,
+            STEP_LEFT => r.x + 0.5 * r.z < a.x + 0.5 * a.z,
+            _ => r.x + 0.5 * r.z > a.x + 0.5 * a.z,
+        };
+        guard mid else { continue; }
+        let side = if vertical { max(0.0, max(a.x, r.x) - min(a.x + a.z, r.x + r.z)) }
+                   else { max(0.0, max(a.y, r.y) - min(a.y + a.w, r.y + r.w)) };
+        let score = max(0.0, ahead) + 2.0 * side;
+        if score < least {
+            least = score;
+            best = s.id;
+        }
+    }
+    return best;
+}
+
+// Offers control id over r to the keys' focus, unless a screen a transition leaves is
+// being declared.
+fn offer(g: Gui&, id: i64, r: float4) {
+    guard !g.deaf && g.spots.len < MAX_SPOTS else { return; }
+    g.spots.push(Spot { id: id, rect: r, .. });
+}
+
+// Marks control id, just offered, as the screen's primary one (its first choice).
+fn prefer(g: Gui&, id: i64) {
+    let n = g.spots.len;
+    if n > 0 && g.spots[n - 1].id == id { g.spots[n - 1].primary = true; }
+}
+
+// Whether Enter pressed control id this frame: it has the keys' focus.
+fn keyed(g: Gui&, id: i64) -> bool { !g.deaf && g.focus == id && g.pointer.confirm }
 
 // Fades quads first..last (as g.quads.len counted them) to `opacity` and moves them by
 // `offset` pixels, whole ones, so glyphs stay a texel to a pixel: a screen in a
@@ -639,20 +750,28 @@ fn glow_fill(g: Gui&, r: float4, a: f32, radius: f32) {
 fn button(g: Gui&, id: i64, r: float4, icon: i64) -> bool { tile(g, id, r, icon, PLAIN, 22.0) }
 
 // The press of widget id over r: true on the frame the pointer is released over r
-// after going down on it, and how far it is pressed, 0..1.
-fn hold(g: Gui&, id: i64, r: float4) -> bool, f32 {
+// after going down on it, or Enter is pressed while it has the keys' focus, and how far
+// it is pressed, 0..1. A `focusable` widget is offered to the keys' focus.
+fn hold(g: Gui&, id: i64, r: float4, focusable: bool = true) -> bool, f32 {
     let over = inside(r, g.input.at);
+    if focusable { offer(g, id, r); }
     if g.input.pressed && over {
         g.active = id;
         g.took = true;
     }
+    let key = focusable && keyed(g, id);
     let held = g.active == id && g.input.down && over;
-    let clicked = g.active == id && g.input.released && over;
+    let clicked = (g.active == id && g.input.released && over) || key;
     if clicked { g.acted = true; }
-    // The mouse over it on a desktop, unless it is down on another widget or the board.
-    // Android leaves the pointer where the last touch was, so a phone never hovers.
-    if desktop_scale > 0.0 && over && (!g.input.down || g.active == id) { g.under = id; }
-    set_down(g, id, held);
+    // The keys' focus is lit as the mouse's hover is. Without it, the mouse over it on a
+    // desktop, unless it is down on another widget or the board. Android leaves the
+    // pointer where the last touch was, so a phone never hovers.
+    if g.focus != 0 {
+        if g.focus == id && !g.deaf { g.under = id; }
+    } else if desktop_scale > 0.0 && over && (!g.input.down || g.active == id) {
+        g.under = id;
+    }
+    set_down(g, id, held || key);
     return clicked, pressed(g, id);
 }
 
@@ -793,6 +912,7 @@ fn row(g: Gui&, id: i64, r: float4, icon: i64, label: const u8[:], note: const u
        on: bool) -> bool {
     let u = g.scale;
     let clicked, p = hold_if(g, id, r, on);
+    if primary { prefer(g, id); }
     let style = if primary { ROW_PRIMARY } else { ROW };
     add(g, Quad { rect: r, look: float4 { BUTTON, 20.0 * u, 0.0, p }, extra: float4 { u, style, hover(g, id), 0.0 } });
     let a: f32 = if on { 1.0 } else { 0.4 };
