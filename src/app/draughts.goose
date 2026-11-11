@@ -26,6 +26,7 @@ import .gpu;
 import .scene;
 import .scene_gpu;
 import .widgets;
+import .widgets_gpu;
 import game from "../game";
 import shell from "../shell";
 import ai from "../ai";

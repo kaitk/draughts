@@ -54,16 +54,16 @@ fn load(kind: i64, plain: bool = false) -> Scene {
         let none = scene_gpu::black();
         return Scene { photo: none, sharp: none, glass: none, sampler: sampler, has: false, plain: plain };
     }
-    let src = scene_gpu::target(SIZE, SIZE);
+    let src = gpu::target(SIZE, SIZE);
     let shrink = scene_gpu::shrinker();
     scene_gpu::begin(src, true);
     scene_gpu::shrink(shrink, sampler, sharp, float4 { 0.0, 0.0, 1.0, 1.0 }, float4 { 0.0, 0.0, SIZE, SIZE });
     scene_gpu::end();
     scene_gpu::done(shrink);
-    let across = scene_gpu::target(SIZE, SIZE);
-    let blurred = scene_gpu::target(SIZE, SIZE);
-    let glass_across = scene_gpu::target(GLASS_SIZE, GLASS_SIZE);
-    let glass = scene_gpu::target(GLASS_SIZE, GLASS_SIZE);
+    let across = gpu::target(SIZE, SIZE);
+    let blurred = gpu::target(SIZE, SIZE);
+    let glass_across = gpu::target(GLASS_SIZE, GLASS_SIZE);
+    let glass = gpu::target(GLASS_SIZE, GLASS_SIZE);
     let blur = scene_gpu::blurrer();
     let step = 1.0 / SIZE;
     scene_gpu::blur(blur, sampler, src, across, float4 { step, 0.0, 5.6, step });
@@ -97,7 +97,7 @@ fn release(s: Scene&) {
 // the first frame after the launch's first that draws nothing, rather than when settings
 // first open.
 fn thumbs() -> gpu::Texture {
-    let t = scene_gpu::target(THUMB_W, THUMBS * THUMB_H);
+    let t = gpu::target(THUMB_W, THUMBS * THUMB_H);
     let sampler = scene_gpu::sampler();
     let shrink = scene_gpu::shrinker();
     let crop: f32 = THUMB_H as f32 / THUMB_W;

@@ -25,8 +25,6 @@ fn made() -> Pipelines {
 
 fn sampler() -> gpu::Sampler { ngfx::sampler(ngfx::LINEAR, ngfx::CLAMP) }
 
-fn target(width: i64, height: i64) -> gpu::Texture { ngfx::render_target(width, height, ngfx::RGBA8) }
-
 fn black() -> gpu::Texture {
     let none = ngfx::texture2d(1, 1);
     var px: u8[4] = [0; 4];

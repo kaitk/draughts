@@ -67,8 +67,6 @@ struct Shrink { from: float4, to: float4 }
 
 fn sampler() -> gpu::Sampler { gfx::sampler(gfx::LINEAR, gfx::CLAMP) }
 
-fn target(width: i64, height: i64) -> gpu::Texture { gfx::render_target(width, height, gfx::RGBA8) }
-
 // A 1×1 black texture, the stand-in for a photograph there is none of.
 fn black() -> gpu::Texture {
     let none = gfx::texture2d(1, 1);
