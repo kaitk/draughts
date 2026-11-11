@@ -15,3 +15,23 @@ wheel over the panel: offset 500.0, tapped -1, dragging false, animating false, 
 down above the view: offset 500.0, tapped -1, dragging false, animating false, clipped 20 of 21
 up above the view: offset 500.0, tapped -1, dragging false, animating false, clipped 20 of 21
 list 2: offset 0.0, tapped -1, dragging false, animating false, clipped 20 of 21
+key down: offset 0.0, focus row 0
+key down: offset 0.0, focus row 1
+key down: offset 0.0, focus row 2
+key down: offset 64.0, focus row 3
+key down: offset 152.0, focus row 4
+key down: offset 240.0, focus row 5
+key down: offset 328.0, focus row 6
+key down: offset 416.0, focus row 7
+key down: offset 504.0, focus row 8
+key down: offset 580.0, focus row 9
+key up: offset 580.0, focus row 8
+key up: offset 580.0, focus row 7
+key up: offset 516.0, focus row 6
+key up: offset 428.0, focus row 5
+key up: offset 340.0, focus row 4
+key up: offset 252.0, focus row 3
+key up: offset 164.0, focus row 2
+key up: offset 76.0, focus row 1
+key up: offset 0.0, focus row 0
+key up: offset 0.0, focus row 0

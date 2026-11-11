@@ -54,9 +54,15 @@ all. The focus's own look is the next thing to agree.
 
 The rest of step 5, in this order:
 
-1. A focused control in a scrolled list (the puzzles' library and pages, settings on a
-   phone) scrolled into view: `gui::scroll_begin` knows the list's view and offset, and
-   the focused spot's rect says how far it lies outside.
+1. Done (2026-11-11): a focused control in a scrolled list scrolled into view.
+   `gui::Spot.list` records the list a control was offered in, `gui::Gui.focused` keeps
+   the focused spot as the last frame laid it out, and `scroll_begin` moves the offset so
+   it lies `PAD` dp inside the view (`test/gui/scroll`). Not seen in the app: on the Mac
+   the UI scales with the window, so no list scrolled at any size tried (settings at
+   900 × 380 and 360 × 640 at 540 dp, a puzzle page at 200 × 250), and the
+   focus's faint light didn't show in the shots. A phone-sized run once in a while never
+   reached its `--frames` shot, with or without this change (5 of 5 runs of each build
+   finished when retried).
 2. Hold tiles (who's playing's start again and remove, `gui::hold_tile`) filled by Enter
    held while focused, as a held press fills them: `gui::Input` needs Enter's held state
    beside `confirm`.

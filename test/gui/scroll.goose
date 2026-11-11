@@ -3,7 +3,9 @@
 // the slop is a drag that scrolls the list and clicks nothing, and the frames draw while
 // it lasts; the offset stops at the list's ends; the wheel scrolls it; a press outside
 // the view reaches nothing in the list; the list's quads are marked to be clipped and the
-// rest aren't; and another list starts at its top.
+// rest aren't; another list starts at its top; and the arrow keys walking the focus down
+// the rows and back up scroll each focused row into the view, PAD px clear of its edge,
+// the list still while the focus moves inside it.
 import std;
 import vec;
 import gui from "../../src/gui";
@@ -28,6 +30,15 @@ fn frame(g: gui::Gui&, id: i64, at: float2, down: bool, pressed: bool, released:
     for q in g.quads { if q.extra.z >= gui::CLIP { clipped++; } }
     print(what, ": offset ", off, ", tapped ", tapped, ", dragging ", g.scroll.dragging, ", animating ",
           gui::animating(g), ", clipped ", clipped, " of ", g.quads.len);
+}
+
+// One frame of list `id` with an arrow key, the pointer away: the offset and the focus.
+fn key(g: gui::Gui&, id: i64, step: i64, now: f64) {
+    gui::begin(g, gui::Input { at: float2 { 500.0, 500.0 }, step: step, .. }, 1.0, now);
+    let off = gui::scroll_begin(g, id, VIEW, ROWS * ROW);
+    for i in ROWS { gui::button(g, 10 + i, float4 { 0.0, VIEW.y - off + i * ROW, 200.0, ROW }, gui::UNDO); }
+    gui::scroll_end(g);
+    print(if step == gui::STEP_DOWN { "key down" } else { "key up" }, ": offset ", off, ", focus row ", g.focus - 10);
 }
 
 fn main() {
@@ -56,4 +67,9 @@ fn main() {
     frame(g, 1, float2 { 50.0, 60.0 }, false, false, true, 5.1, 0.0, "up above the view");
     // Another list starts at its top.
     frame(g, 2, away, false, false, false, 6.0, 0.0, "list 2");
+
+    // The keys: row 0 first, rows 0 to 2 in the view; row 3 (264 to 352) is scrolled up
+    // to end 12 px over the view's foot, offset 64; the last, 812 off, to 580; and back.
+    for i in ROWS { key(g, 3, gui::STEP_DOWN, 7.0 + i); }
+    for i in ROWS { key(g, 3, gui::STEP_UP, 20.0 + i); }
 }

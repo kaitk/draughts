@@ -223,12 +223,14 @@ struct Input {
     confirm:  bool             = false, // Enter or Space pressed this frame
 }
 
-// A control a frame declared that the keys can focus: its id, its rect, and whether it is
-// the screen's first choice (`primary`, home's Continue), which the first key focuses.
+// A control a frame declared that the keys can focus: its id, its rect, whether it is the
+// screen's first choice (`primary`, home's Continue), which the first key focuses, and the
+// scrolling list it was declared in (`list`, scroll_begin's id), or 0.
 struct Spot {
     id:      i64    = 0,
     rect:    float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
     primary: bool   = false,
+    list:    i64    = 0,
 }
 
 // A widget's state across frames: whether it is down and when that last changed.
@@ -270,9 +272,11 @@ struct Gui {
     // the mouse's hover lights one, which Enter presses; 0 while the mouse or a touch
     // leads. `spots` are the controls this frame offers it, in the order declared, which
     // the next frame's begin moves the focus among; `deaf` while a screen a transition
-    // leaves is declared (listen), whose controls offer none.
-    focus: i64               = 0,
-    spots: Spot[..MAX_SPOTS] = [],
+    // leaves is declared (listen), whose controls offer none. `focused` is the focused
+    // control's spot as the last frame laid it out, which its list scrolls into view.
+    focus:   i64               = 0,
+    spots:   Spot[..MAX_SPOTS] = [],
+    focused: Spot              = Spot {},
     deaf:  bool              = false,
 }
 
@@ -317,6 +321,7 @@ struct Scroll {
     dragging: bool   = false,
     first:    i64    = 0,
     saved:    Input  = Input {},
+    open:     bool   = false, // between scroll_begin and scroll_end: the controls offered are in the list
 }
 
 // List `id` (any nonzero number, unique to the list), `content` pixels tall, shown in
@@ -325,7 +330,9 @@ struct Scroll {
 // once it moves SLOP dp up or down; until then it is a tap on what is under it, and once it
 // is, the widget it went down on lets go without clicking. What is declared up to
 // scroll_end is drawn only inside `view` and takes the pointer only there. A list other
-// than the last one declared starts at its top.
+// than the last one declared starts at its top. A control in it with the keys' focus that
+// lies outside the view, by its rect the last frame, is scrolled into it, PAD dp clear of
+// its edge.
 fn scroll_begin(g: Gui&, id: i64, view: float4, content: f32) -> f32 {
     let s .= g.scroll;
     let i = g.input;
@@ -353,7 +360,14 @@ fn scroll_begin(g: Gui&, id: i64, view: float4, content: f32) -> f32 {
         s.dragging = false;
     }
     if inside(view, i.at) { s.offset -= i.wheel * WHEEL * g.scale; }
+    let f = g.focused;
+    if g.focus != 0 && f.id == g.focus && f.list == id {
+        let m = min(PAD * g.scale, max(0.0, 0.5 * (view.w - f.rect.w)));
+        if f.rect.y < view.y + m { s.offset -= view.y + m - f.rect.y; }
+        else if f.rect.y + f.rect.w > view.y + view.w - m { s.offset += f.rect.y + f.rect.w - (view.y + view.w - m); }
+    }
     s.offset = clamp(s.offset, 0.0, s.max);
+    s.open = true;
     s.first = g.quads.len;
     s.saved = g.input;
     if s.dragging || !inside(view, i.at) { g.input = Input { at: float2 { -1.0e9, -1.0e9 }, .. }; }
@@ -365,6 +379,7 @@ fn scroll_end(g: Gui&) {
     let s .= g.scroll;
     for k in s.first..g.quads.len { g.quads[k].extra.z += CLIP; }
     g.input = s.saved;
+    s.open = false;
 }
 
 // Sets the offset of list `id` (a screenshot's), clamped as it is declared.
@@ -567,6 +582,8 @@ fn focus_keys(g: Gui&, input: Input) {
     } else if n > 0 && g.focus != 0 && spot_of(g, g.focus) < 0 {
         g.focus = g.spots[primary_spot(g)].id;
     }
+    let at = spot_of(g, g.focus);
+    g.focused = if at >= 0 { g.spots[at] } else { Spot {} };
     g.spots.clear();
     g.deaf = false;
 }
@@ -623,7 +640,7 @@ fn toward(g: Gui&, step: i64) -> i64 {
 // being declared.
 fn offer(g: Gui&, id: i64, r: float4) {
     guard !g.deaf && g.spots.len < MAX_SPOTS else { return; }
-    g.spots.push(Spot { id: id, rect: r, .. });
+    g.spots.push(Spot { id: id, rect: r, primary: false, list: if g.scroll.open { g.scroll.id } else { 0 } });
 }
 
 // Marks control id, just offered, as the screen's primary one (its first choice).
