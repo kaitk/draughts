@@ -35,6 +35,7 @@ import gfx;
 struct Drawer {
     gpu:       render3d::Gpu                         = default<render3d::Gpu>(),
     ready:     bool                                  = false,
+    aa:        i32                                   = render3d::AA, // --aa and the A key: render3d's AA_OFF..
     drawn_at:  f64                                   = 0.0,   // when the pass last drew (rest)
     kind:      i64                                   = -1, // the app's theme the board was set up with
     plain:     bool                                  = false, // and whether behind it the plain fade
@@ -158,6 +159,7 @@ fn look_of(kind: i64, summer: i64) -> i64 {
 fn set_up(d: Drawer&) {
     let t0 = clock();
     render3d::setup(d.gpu);
+    render3d::set_aa(d.gpu, d.aa);
     render3d::choose(d.gpu, d.wood, d.marble, d.spring);
     d.ready = true;
     d.setup_ms = (clock() - t0) * 1000.0;
@@ -285,7 +287,18 @@ fn cover(d: Drawer&) {
 fn drop(d: Drawer&) {
     guard d.ready else { return; }
     render3d::release(d.gpu);
-    d = Drawer { wood: d.wood, marble: d.marble, summer: d.summer, spring: d.spring, timed: d.timed, .. };
+    d = Drawer { aa: d.aa, wood: d.wood, marble: d.marble, summer: d.summer, spring: d.spring, timed: d.timed, .. };
+}
+
+// The A key (task 071's comparison): the pass's antialiasing switched between 4× MSAA
+// and SMAA, the board drawn again with it.
+fn toggle_aa(d: Drawer&) {
+    d.aa = if d.aa == render3d::AA_MSAA { render3d::AA_SMAA } else { render3d::AA_MSAA };
+    let name = if d.aa == render3d::AA_MSAA { "msaa" } else { "smaa" };
+    print("3D board: antialiasing ", name);
+    guard d.ready else { return; }
+    render3d::set_aa(d.gpu, d.aa);
+    d.fresh = true;
 }
 
 // How long the 3D board's pass keeps its targets after it last drew: a hover or a drag

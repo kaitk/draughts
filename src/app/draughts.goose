@@ -187,6 +187,11 @@ fn main() {
         if want == shell::DROPPED { render::drop3d(rd); }
         let out .= shell::frame(sh, g, size.x, size.y, now, ready3d, shown3d);
         if out.changed { dirty = true; }
+        // The A key switches the 3D board between MSAA and SMAA, not while a name is typed.
+        if !out.typing && host::aa_key() {
+            render::toggle_aa(rd);
+            dirty = true;
+        }
         // The keyboard: up while a name is typed, brought up again by each tap on the name.
         host::keyboard(h, out.typing, out.keyboard);
         // Home's way out ends the loop; the game is written below.

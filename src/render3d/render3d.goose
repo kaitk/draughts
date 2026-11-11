@@ -26,6 +26,7 @@ import vec;
 import math;
 import gfx;
 import .shaders;
+import .smaa;
 
 import model3d from "../model3d";
 
@@ -110,6 +111,13 @@ let OCC_SIZE = 512;
 // texel 0.7 px on a piece 140 px across.
 let CROWN_SIZE = 256;
 let SAMPLES = 4;
+// How the pass is antialiased (set_aa, the app's --aa and its A key, task 071): 4×
+// multisampled, or drawn at 1x and SMAA 1x after it (smaa.goose), or neither. The
+// values are the ngfx build's.
+let AA_OFF = 0;
+let AA_SMAA = 2;
+let AA_MSAA = 4;
+let AA = AA_MSAA;
 let MAX_INSTANCES = 96;     // view3d::MAX_INSTANCES: two for each of board::MAX_PIECES
 let SQUARES = 100;          // the field's squares, 10 × 10 at most
 
@@ -153,7 +161,15 @@ struct Gpu {
     frame_flat:     bool,           // frame_normal is flat_frame()'s 4 × 4, not the map's
     photo:          gfx::Texture,
     shadow_map:     gfx::Texture,
-    color:          gfx::Texture,   // the multisampled target and its depth
+    aa:             i32,            // AA_MSAA.. (set_aa)
+    color:          gfx::Texture,   // the pass's target (multisampled, or SMAA's input) and its depth
+    edges:          gfx::Texture,   // SMAA's edges and blending weights, at the pass's size
+    weights:        gfx::Texture,
+    area:           gfx::Texture,   // SMAA's tables (third_party/smaa), made by set_aa
+    search:         gfx::Texture,
+    smaa_edges:     gfx::Pipeline,
+    smaa_weights:   gfx::Pipeline,
+    smaa_blend:     gfx::Pipeline,
     depth:          gfx::Texture,
     image:          gfx::Texture,   // what draw() resolves into when asked to keep it
     kept_backdrop:  gfx::Texture,   // the backdrop at full opacity, g.size (keep_backdrop())
@@ -336,22 +352,81 @@ fn targets(g: Gpu&, size: int2) {
     g.size = size;
 }
 
-// The pass's multisampled target and its depth at g.size, made for a draw after rest()
-// gave them back.
+// The pass's target (multisampled, or SMAA's input and its edges and weights) and its
+// depth at g.size, made for a draw after rest() gave them back.
 fn pass_targets(g: Gpu&) {
-    if g.samples > 1 && g.color.id == 0 {
+    guard g.depth.id == 0 else { return; }
+    if g.aa == AA_MSAA {
         g.color = gfx::texture(gfx::TextureDesc { format: gfx::RGBA8, usage: gfx::COLOR_TARGET,
                                                   width: g.size.x, height: g.size.y,
                                                   samples: g.samples });
+    } else if g.aa == AA_SMAA {
+        g.color = gfx::render_target(g.size.x, g.size.y, gfx::RGBA8);
+        g.edges = gfx::render_target(g.size.x, g.size.y, gfx::RG8);
+        g.weights = gfx::render_target(g.size.x, g.size.y, gfx::RGBA8);
     }
     // 16-bit depth is plenty between NEAR 2 and FAR 40 for a scene 10 to 20 away (a step
     // about 0.003 at 20, under the marks' 0.004 lift), and half of 32-bit's memory, which
     // SDL can't keep in tile memory: 20 MB less at 4× on the Pixel 7a.
-    if g.depth.id == 0 {
-        g.depth = gfx::texture(gfx::TextureDesc { format: gfx::DEPTH16, usage: gfx::DEPTH_TARGET,
-                                                  width: g.size.x, height: g.size.y,
-                                                  samples: g.samples });
-    }
+    g.depth = gfx::texture(gfx::TextureDesc { format: gfx::DEPTH16, usage: gfx::DEPTH_TARGET,
+                                              width: g.size.x, height: g.size.y,
+                                              samples: g.samples });
+}
+
+// The pass antialiased by `aa` (AA_MSAA..) from the next draw on: its targets given back
+// (made again for the new way by the next draw), SMAA's pipelines and tables made the
+// first time it is chosen. The app calls it after setup() and on its A key.
+fn set_aa(g: Gpu&, aa: i32) {
+    give_back(g);
+    g.aa = aa;
+    g.samples = if aa == AA_MSAA { SAMPLES } else { 1 };
+    guard aa == AA_SMAA && g.smaa_edges.id == 0 else { return; }
+    g.smaa_edges = gfx::pipeline(embed_shader("vert", smaa::VS_METRICS, smaa::DEFS, smaa::CORNER, smaa::EDGES_VERT),
+                                 embed_shader("frag", smaa::FS_METRICS, smaa::DEFS, smaa::EDGES_FRAG));
+    g.smaa_weights = gfx::pipeline(embed_shader("vert", smaa::VS_METRICS, smaa::DEFS, smaa::CORNER, smaa::WEIGHTS_VERT),
+                                   embed_shader("frag", smaa::FS_METRICS, smaa::DEFS, smaa::WEIGHTS_FRAG));
+    g.smaa_blend = gfx::pipeline(embed_shader("vert", smaa::VS_METRICS, smaa::DEFS, smaa::CORNER, smaa::BLEND_VERT),
+                                 embed_shader("frag", smaa::FS_METRICS, smaa::DEFS, smaa::BLEND_FRAG));
+    g.area = gfx::texture2d(160, 560, gfx::RG8, gfx::SAMPLED);
+    gfx::update_texture(g.area, embed_file("../../third_party/smaa/area.bin"));
+    g.search = gfx::texture2d(64, 16, gfx::R8, gfx::SAMPLED);
+    gfx::update_texture(g.search, embed_file("../../third_party/smaa/search.bin"));
+}
+
+struct Metrics { m: float4 }
+
+// SMAA's three passes over g.color into `target`, at g.size: the edges, their blending
+// weights, and the neighbours blended (smaa.goose). Recording only.
+fn antialias(g: Gpu&, target: gfx::Texture) {
+    let m = Metrics { float4 { 1.0 / g.size.x, 1.0 / g.size.y, g.size.x, g.size.y } };
+    // The edge pass discards where it finds none, and the weights are read only where
+    // there are edges, so both start cleared.
+    gfx::begin_pass(g.edges, gfx::Texture { 0 }, float4_0);
+    gfx::bind(g.smaa_edges);
+    gfx::bind_texture(gfx::FRAGMENT, 0, g.color, g.linear);
+    gfx::uniforms(gfx::VERTEX, 0, m);
+    gfx::uniforms(gfx::FRAGMENT, 0, m);
+    gfx::draw(3);
+    gfx::end_pass();
+    gfx::begin_pass(g.weights, gfx::Texture { 0 }, float4_0);
+    gfx::bind(g.smaa_weights);
+    gfx::bind_texture(gfx::FRAGMENT, 0, g.edges, g.linear);
+    gfx::bind_texture(gfx::FRAGMENT, 1, g.area, g.linear);
+    gfx::bind_texture(gfx::FRAGMENT, 2, g.search, g.linear);
+    gfx::uniforms(gfx::VERTEX, 0, m);
+    gfx::uniforms(gfx::FRAGMENT, 0, m);
+    gfx::draw(3);
+    gfx::end_pass();
+    var pass = gfx::PassDesc { clear_color: false };
+    pass.color[0] = target;
+    gfx::begin_pass(pass);
+    gfx::bind(g.smaa_blend);
+    gfx::bind_texture(gfx::FRAGMENT, 0, g.color, g.linear);
+    gfx::bind_texture(gfx::FRAGMENT, 1, g.weights, g.linear);
+    gfx::uniforms(gfx::VERTEX, 0, m);
+    gfx::uniforms(gfx::FRAGMENT, 0, m);
+    gfx::draw(3);
+    gfx::end_pass();
 }
 
 // Gives back what only drawing the board needs once the app is at rest: the pass's
@@ -367,16 +442,21 @@ fn rest(g: Gpu&) {
 
 // rest()'s releases, also before a resize's new targets.
 fn give_back(g: Gpu&) {
-    let held = [g.color, g.depth, g.kept_depth, g.kept_backdrop];
+    let held = [g.color, g.depth, g.edges, g.weights, g.kept_depth, g.kept_backdrop];
     for t in held { if t.id != 0 { gfx::release(t); } }
     g.color = gfx::Texture { 0 };
+    g.edges = gfx::Texture { 0 };
+    g.weights = gfx::Texture { 0 };
     g.depth = gfx::Texture { 0 };
     g.kept_depth = gfx::Texture { 0 };
     g.kept_backdrop = gfx::Texture { 0 };
 }
 
 // Whether rest() has anything to give back.
-fn resting(g: Gpu&) -> bool { g.color.id == 0 && g.depth.id == 0 && g.kept_depth.id == 0 && g.kept_backdrop.id == 0 }
+fn resting(g: Gpu&) -> bool {
+    return g.color.id == 0 && g.depth.id == 0 && g.edges.id == 0 && g.weights.id == 0 && g.kept_depth.id == 0
+           && g.kept_backdrop.id == 0;
+}
 
 // The kept depth: 1x, 16-bit as the pass's, sampled by the pulsing marks.
 fn depth_target(size: int2) -> gfx::Texture {
@@ -389,6 +469,7 @@ fn depth_target(size: int2) -> gfx::Texture {
 // `samples` 4 is the multisampled pass; 1 draws straight into the target (measuring).
 fn setup(g: Gpu&, samples: i32 = SAMPLES) {
     g.samples = samples;
+    g.aa = if samples > 1 { AA_MSAA } else { AA_OFF };
     g.wood = model3d::WOOD_MODEL;
     g.finish = looks::finish(model3d::WOOD_MODEL);
     g.marble = looks::MARBLE;
@@ -792,9 +873,11 @@ fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int
 
     let clear = if backdrop { float4 { 0.11, 0.078, 0.063, 1.0 } } else { float4_0 };
     var pass = gfx::PassDesc { depth: g.depth, color_value: clear };
-    if g.samples > 1 {
+    if g.aa == AA_MSAA {
         pass.color[0] = g.color;
         pass.resolve[0] = target;
+    } else if g.aa == AA_SMAA {
+        pass.color[0] = g.color;
     } else {
         pass.color[0] = target;
     }
@@ -845,6 +928,7 @@ fn draw(g: Gpu&, view_proj: gfx::mat4, eye: float3, out: gfx::Texture, size: int
         gfx::draw(6);
     }
     gfx::end_pass();
+    if g.aa == AA_SMAA { antialias(g, target); }
     if keep_depth { draw_depth(g); }
 }
 
@@ -1095,14 +1179,14 @@ fn warm(g: Gpu&, k: i64) {
 fn release(g: Gpu&) {
     let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.photo, g.shadow_map, g.occ_map, g.crown_map, g.color,
                     g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across, g.warm_color, g.warm_depth,
-                    g.warm_kept];
+                    g.warm_kept, g.edges, g.weights, g.area, g.search];
     for t in textures { if t.id != 0 { gfx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.instances, g.squares, g.marks, g.glows];
     for b in buffers { if b.id != 0 { gfx::release(b); } }
     let samplers = [g.linear, g.aniso, g.compare];
     for s in samplers { if s.id != 0 { gfx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
-                     g.occ, g.kept, g.bake, g.shrink, g.blur];
+                     g.occ, g.kept, g.bake, g.shrink, g.blur, g.smaa_edges, g.smaa_weights, g.smaa_blend];
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
     gfx::flush();
     g = default<Gpu>();

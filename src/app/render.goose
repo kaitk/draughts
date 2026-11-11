@@ -52,7 +52,7 @@ struct Frame {
 // With --bench, the photograph's load is timed and printed.
 fn new(kind: i64, plain: bool, f: flags::Flags&) -> Renderer {
     var r = Renderer { d: draw::new(kind, plain, f.bench > 0),
-                      d3: draw3d::Drawer { wood: f.wood, marble: f.marble, summer: f.summer, spring: f.spring,
+                      d3: draw3d::Drawer { aa: aa_flag(), wood: f.wood, marble: f.marble, summer: f.summer, spring: f.spring,
                                            timed: f.bench > 0, live: !f.keep, .. },
                       w: widgets::new(), t: text::Text {} };
     r.w.live = !f.keep;
@@ -62,6 +62,23 @@ fn new(kind: i64, plain: bool, f: flags::Flags&) -> Renderer {
     }
     return r;
 }
+
+// --aa msaa|smaa|off, how the 3D pass is antialiased (task 071's comparison, as the ngfx
+// build's --aa), read here as it is this build's alone; render3d::AA without it.
+fn aa_flag() -> i32 {
+    let a = args();
+    for i in 1..a.len - 1 {
+        guard a[i] == "--aa" else { continue; }
+        let v = a[i + 1];
+        if v == "off" { return render3d::AA_OFF; }
+        if v == "msaa" { return render3d::AA_MSAA; }
+        if v == "smaa" { return render3d::AA_SMAA; }
+    }
+    return render3d::AA;
+}
+
+// The A key: the 3D board's antialiasing switched (draw3d::toggle_aa).
+fn toggle_aa(r: Renderer&) { draw3d::toggle_aa(r.d3); }
 
 // Whether it draws theme `kind` with its photograph, or with `plain` the fade.
 fn shows_theme(r: Renderer&, kind: i64, plain: bool) -> bool { r.d.kind == kind && r.d.scene.plain == plain }

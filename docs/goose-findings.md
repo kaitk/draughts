@@ -3,6 +3,28 @@
 Gaps found in Goose, goose_gfx, and the SDL it pins, while building for Android, with what
 we do about each here and what could go upstream. Newest first.
 
+## Goose: `embed_shader`'s GLSL lacks two conversions, and its Metal translation an inout swizzle (2026-11-11)
+
+Compiling SMAA's reference shader (`third_party/smaa/SMAA.hlsl`, its GLSL 3 path) for
+the gfx build on v2026.4, cute_spirv refuses `float(b)` of a `bool` ("cannot convert
+'bool' to 'float'") and `bvec2(v)` of a `vec2`, both GLSL 4.50; it also has no
+`textureLodOffset` or `textureGather`. A swizzle passed as an `inout` argument
+(`f(v.xy)` against `void f(inout vec2 x)`) compiles, but the MSL it makes fails when
+the pipeline is made on the Mac ("non-const lvalue reference ... cannot bind to a
+temporary"):
+
+```glsl
+void f(inout vec2 x) { x += 1.0; }
+void main() { vec4 v = vec4(0.0); f(v.xy); result = v; }   // fails at gfx::pipeline on Metal
+```
+
+- Here: `tools/smaa_glsl.py` writes `src/render3d/smaa.glsl` from the unchanged
+  SMAA.hlsl with those six spots rewritten (a ternary, `greaterThanEqual`, the swizzles
+  through locals), and `src/render3d/smaa.goose` maps SMAA's sampling macros onto
+  `textureLod` with the offset added to the coordinate (task 071).
+- Upstream: `float(bool)`, `bvecN(vecN)`, `textureLodOffset`, and `textureGather` in
+  cute_spirv; an inout swizzle copied in and out through a temporary in the MSL.
+
 ## Goose: an `export fn` called back from C inside an `extern` call overwrites the caller's data stack (2026-11-10)
 
 A Goose function that calls an `extern fn`, whose C calls an `export fn` of the same
