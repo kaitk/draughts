@@ -328,6 +328,14 @@ fn back(sh: Shell&, now: f64) -> bool {
     return true;
 }
 
+// Back with the keys on the game's or a puzzle's board (board::keys): a piece chosen there
+// is put down, as a desktop's Escape lets go of what it holds, rather than the screen
+// left (back). False, changing nothing, with none chosen or one partway through a capture.
+fn put_down(sh: Shell&, g: gui::Gui&) -> bool {
+    guard (sh.screen == GAME || sh.screen == PUZZLE) && g.focus == panel::BOARD_ID else { return false; }
+    return board::put_down(shown(sh));
+}
+
 // Starts a new game as home's setup stands, replacing the one there was, and goes to it.
 // Against the computer it is counted, for the computer's seeds.
 fn play(sh: Shell&, now: f64) {

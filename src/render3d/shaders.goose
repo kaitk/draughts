@@ -1701,7 +1701,7 @@ let MARKS_FRAG = """
     // pulse: x the must-capture rings' phase, y the flash (0 to 1), z the hint ring's
     // square (-1 none), w its strength; place: the kept image's top left on the target,
     // its texels per pixel, and how opaque it is laid; more: x how lit a capture's next
-    // stops' dots are while they pulse.
+    // stops' dots are while they pulse, y the keys' cursor's square, or -1.
     layout(set = 3, binding = 2) uniform Pulse { vec4 pulse; vec4 place; vec4 more; };
     #else
     layout(std430, set = 2, binding = 0) readonly buffer Marks { vec4 marks[]; };
@@ -1815,6 +1815,14 @@ let MARKS_FRAG = """
     #ifdef PULSE
         if (q.x >= 0 && q.y >= 0 && q.x < int(n) && q.y < int(n) && lit[q.y * int(n) + q.x].w > 1.5) {
             c += glow.rgb * more.x * dot_at(length(fract(g) - 0.5), wg);
+        }
+        // The keys' cursor: a glow line round its square just inside the edge, its corners
+        // rounded, as the flat board's (src/app/draw_gpu.goose).
+        if (q.x >= 0 && q.y >= 0 && q.x < int(n) && q.y < int(n) && float(q.y * int(n) + q.x) == more.y) {
+            vec2 e = abs(fract(g) - 0.5);
+            vec2 dd = e - vec2(0.43 - 0.12);
+            float bd = abs(length(max(dd, vec2(0.0))) + min(max(dd.x, dd.y), 0.0) - 0.12);
+            c += glow.rgb * (0.95 * (1.0 - smoothstep(0.014 - wg, 0.014 + wg, bd)) + 0.3 * exp(-bd / 0.035));
         }
     #endif
         vec3 rings = vec3(0.0);

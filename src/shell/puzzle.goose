@@ -264,12 +264,16 @@ fn frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     }
     let held, moved = board::showcase(pl.cam, g, input, l.three, l.pitch, now);
     if moved { changed = true; }
-    if !held && !g.took && ready(pl) && b.pos.side == side {
-        let history = b.history.len;
-        let wrong_at = b.wrong_at;
-        let waited = board::waiting(b);
-        // Through the perspective on the 3D board, as the game's.
-        if board::touch(b, l.board, l.three, l.view, input, pl.grab, now) { changed = true; }
+    // The board is offered to the keys every frame, so their focus stays on it while the
+    // player can't move; Enter on it is a tap only when the pointer could tap.
+    let mine = !held && !g.took && ready(pl) && b.pos.side == side;
+    let history = b.history.len;
+    let wrong_at = b.wrong_at;
+    let waited = board::waiting(b);
+    // Through the perspective on the 3D board, as the game's.
+    if mine && board::touch(b, l.board, l.three, l.view, input, pl.grab, now) { changed = true; }
+    if panel::board_keys(g, l, b, mine, now) { changed = true; }
+    if mine {
         ev.solved = judge(pl, history, wrong_at, now);
         // Next was declared above, before the board took the pointer: a press or a drop
         // that starts or ends a piece's wait changes how next looks, and a drop is the
@@ -416,6 +420,7 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
     let landscape = panel::columns(l);
     var ask = STAY;
     let out = panel::leave(g, l);
+    gui::group(g, panel::GROUP_PLAY);
     gui::panel(g, l.right);
     // The camera buttons round the 3D board, as the game's.
     if panel::camera(g, l, pl.cam, now) { ask = CAMERA; }

@@ -566,9 +566,10 @@ fn draw_depth(g: Gpu&) {
 // The pulsing marks (shaders::MARKS_FRAG with PULSE) over the open pass's target of
 // `size`, where show() laid the kept image: drawn with it (draw() with keep_depth) into
 // its rect `to` (as show()'s, the whole image), as opaque as `alpha`. `pulse` their
-// phases (view3d::Scene.pulse), `next` how lit a capture's next stops are (Scene.next).
+// phases (view3d::Scene.pulse), `next` how lit a capture's next stops are (Scene.next),
+// `cursor` the keys' cursor's square in the world's grid, or -1 (Scene.cursor).
 // The field's marks are the ones place() gave the image.
-fn marks_over(g: Gpu&, pulse: float4, next: f32, to: float4, alpha: f32, size: int2) {
+fn marks_over(g: Gpu&, pulse: float4, next: f32, cursor: f32, to: float4, alpha: f32, size: int2) {
     guard g.kept_depth.id != 0 && to.z > 0.0 else { return; }
     // The image's clip space moved and scaled into `to`, depth left as it was.
     let k = to.z / g.size.x;
@@ -587,7 +588,7 @@ fn marks_over(g: Gpu&, pulse: float4, next: f32, to: float4, alpha: f32, size: i
     r.frame = f;
     // r3d_pulse.slang's header: Draw, then Pulse.
     r.u = blocks([float4 { 2.0, g.n, 0.0, 0.0 }, pulse, float4 { to.x, to.y, 1.0 / k, alpha },
-                 float4 { next, 0.0, 0.0, 0.0 }]);
+                 float4 { next, cursor, 0.0, 0.0 }]);
     r.buf0 = ngfx::address(g.marks);
     r.buf1 = ngfx::address(g.glows);
     slot(r, 0, g.kept_depth, g.linear);

@@ -8,15 +8,18 @@
 // frame doesn't declare (another screen) hands it to that screen's primary; a screen a
 // transition leaves (listen off) offers none; and Enter held on a focused hold tile fills
 // its ring as a held press does, Enter pressed alone never firing it, let go early
-// nothing, held to the end firing it once and no more until Enter is pressed again.
+// nothing, held to the end firing it once and no more until Enter is pressed again. On a
+// screen of one group, Tab steps through the controls in the order declared, round from
+// the last to the first, and Shift and Tab back (the board's grid and the groups:
+// test/game/board_keys).
 import std;
 import vec;
 import gui from "../../src/gui";
 
 // A column of three rows (1..3, the second primary) and, right of it, a grid of two by
 // two tiles (11, 12 over 13, 14), the last dimmed while `dim`. Prints what was clicked.
-fn screen(g: gui::Gui&, step: i64, confirm: bool, at: float2, now: f64, dim: bool, what: const u8[:]) {
-    gui::begin(g, gui::Input { at: at, step: step, confirm: confirm, .. }, 1.0, now);
+fn screen(g: gui::Gui&, step: i64, confirm: bool, at: float2, now: f64, dim: bool, what: const u8[:], tab: i64 = 0) {
+    gui::begin(g, gui::Input { at: at, step: step, confirm: confirm, tab: tab, .. }, 1.0, now);
     var clicked: u8[>..] = [];
     for i in 3 {
         if gui::row(g, 1 + i, float4 { 20.0, 20.0 + 100.0 * i, 300.0, 88.0 }, gui::NEXT, "row", "", i == 1, true) {
@@ -68,6 +71,10 @@ fn main() {
     screen(g, gui::STEP_NONE, true, float2 { 50.0, 50.0 }, now + 12.0, true, "enter, the mouse leading");
     screen(g, gui::STEP_UP, false, float2 { 50.0, 50.0 }, now + 13.0, true, "up: the primary again");
     screen(g, gui::STEP_NONE, false, float2 { 50.0, 50.0 }, now + 14.0, false, "  the pointer resting over row 1");
+    screen(g, gui::STEP_NONE, false, float2 { 50.0, 50.0 }, now + 14.5, false, "tab: the next declared", 1);
+    screen(g, gui::STEP_NONE, false, float2 { 50.0, 50.0 }, now + 14.6, false, "shift tab", -1);
+    screen(g, gui::STEP_NONE, false, float2 { 50.0, 50.0 }, now + 14.7, false, "shift tab", -1);
+    screen(g, gui::STEP_NONE, false, float2 { 50.0, 50.0 }, now + 14.8, false, "shift tab: round to the last", -1);
 
     // Another screen: one tile, primary, where the rows were; the focus goes to it.
     now = 20.0;

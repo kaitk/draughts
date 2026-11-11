@@ -17,7 +17,11 @@ the mouse moves over row 1: focus 0, lit 1, rings 0, clicked nothing, acted fals
 enter, the mouse leading: focus 0, lit 1, rings 0, clicked nothing, acted false, animating true
 up: the primary again: focus 2, lit 2, rings 1, clicked nothing, acted false, animating true
   the pointer resting over row 1: focus 2, lit 2, rings 1, clicked nothing, acted false, animating true
-another screen: focus 2
+tab: the next declared: focus 3, lit 3, rings 1, clicked nothing, acted false, animating true
+shift tab: focus 2, lit 2, rings 1, clicked nothing, acted false, animating true
+shift tab: focus 1, lit 1, rings 1, clicked nothing, acted false, animating true
+shift tab: round to the last: focus 14, lit 14, rings 1, clicked nothing, acted false, animating true
+another screen: focus 14
   the next frame: focus 41
   declared deaf: offered 0
   down with nothing offered: focus 41

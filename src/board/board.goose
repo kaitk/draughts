@@ -197,6 +197,9 @@ struct Board {
     // or under the mouse with the piece selected by a tap, or -1: what the lookout shows
     // the move would leave open (`target_at`, set by touch).
     over: i64,
+    // The keys' cursor (task 072, `keys`): the square the board's focus is on, numbered
+    // y * size + x as Marks are (a light square too), or -1 while the keys aren't on it.
+    cursor: i64,
     // A press on a piece, and whether it became a drag.
     pressed:  i64,
     press_at: float2,
@@ -205,13 +208,13 @@ struct Board {
     // Filled by fill() for the app to draw.
     pieces: Piece[..MAX_PIECES],
     marks:  Marks,
-    flash:  float4,             // x: the wrong move's square (y * size + x) or -1; y: its flash, 0..1; z: marks.next's dots, 0..1
+    flash:  float4,             // x: the wrong move's square (y * size + x) or -1; y: its flash, 0..1; z: marks.next's dots, 0..1; w: the keys' cursor's square + 1, or 0
     dim:    f32,                // the board dimmed by, 0..1, under a win (game::cheer)
 }
 
 fn new(variant: u8) -> Board {
     var b = Board { variant: variant, selected: -1, wrong: -1, glow: -1, hint_to: -1, pulsed: -1, king_look: CROWN,
-                    over: -1, pressed: -1, .. };
+                    over: -1, cursor: -1, pressed: -1, .. };
     set(b, rules::start(variant));
     return b;
 }
@@ -725,6 +728,81 @@ fn touch(b: Board&, flat: Layout, three: bool, view: view3d::View, input: gui::I
     return moved;
 }
 
+// The keys on the board (task 072; rendering.md, "Keys"): the board offered to gui's focus
+// as a grid of its squares over `r` (the flat board's own rect, or the 3D board's bounds on
+// screen), group and screen's first choice as the caller has set them; the arrows move its
+// cursor square by square (Board.cursor, which fill() marks), and Enter on a dark square
+// is a tap there (`press`, so a piece chosen and its target, a capture stop by stop, and a
+// mistake are what they are for a finger), when `mine` (the player's turn, the board at
+// rest). With a piece chosen, the square under the cursor is what the lookout shows the
+// move would leave open, as under the mouse (Board.over). The cursor comes first to the
+// chosen piece, or the player's movable piece nearest the bottom middle. Returns whether
+// anything changed.
+fn keys(b: Board&, flat: Layout, g: gui::Gui&, id: i64, r: float4, mine: bool, now: f64) -> bool {
+    let v .= rules::VARIANTS[b.variant];
+    let n = v.size;
+    let cell, enter = gui::grid(g, id, r, n, home_cell(b, flat));
+    gui::prefer(g, id);
+    let was = b.cursor;
+    let shows = b.shows;
+    b.cursor = -1;
+    guard cell >= 0 else { return was >= 0; }
+    let cx = cell % n;
+    let cr = cell / n;
+    b.cursor = if flat.flip { cr * n + (n - 1 - cx) } else { (n - 1 - cr) * n + cx };
+    let p = float2 { flat.inner.x + (cx + 0.5) * flat.inner.w, flat.inner.y + (cr + 0.5) * flat.inner.w };
+    let dark = hit(flat, v, p) >= 0;
+    var acted = false;
+    if enter && mine && dark && !b.moving {
+        let selected = b.selected;
+        let steps = b.steps.len;
+        let wrong_at = b.wrong_at;
+        press(b, flat, p, now);
+        // A key's press has no release: nothing is held for a drag.
+        b.pressed = -1;
+        b.dragging = false;
+        acted = b.selected != selected || b.steps.len != steps || b.wrong_at != wrong_at || b.shows != shows;
+    }
+    if mine && b.pressed < 0 { b.over = target_at(b, flat, p); }
+    return b.cursor != was || acted;
+}
+
+// Puts the chosen piece down, unless it is partway through a capture made by hand (take
+// back goes there: unwind). False with none chosen.
+fn put_down(b: Board&) -> bool {
+    guard b.selected >= 0 && b.steps.len == 0 && !b.moving else { return false; }
+    b.selected = -1;
+    b.pressed = -1;
+    b.dragging = false;
+    b.over = -1;
+    return true;
+}
+
+// The cell the board's focus takes first (gui::grid's home), y * size + x from the board's
+// top left on screen: the piece chosen, waiting on a stop, or else the side to move's
+// movable piece nearest the bottom middle, or the bottom middle.
+fn home_cell(b: Board&, l: Layout) -> i64 {
+    let v .= rules::VARIANTS[b.variant];
+    let n = v.size;
+    var sq = if waiting(b) >= 0 { waiting(b) } else { b.selected };
+    if sq < 0 {
+        let aim = float2 { l.inner.x + 0.5 * l.inner.z, l.inner.y + l.inner.z };
+        var near: f32 = 1.0e30;
+        for m in b.moves {
+            let d = length(center(l, v, m.from) - aim);
+            if d < near {
+                near = d;
+                sq = m.from;
+            }
+        }
+    }
+    guard sq >= 0 && l.inner.w > 0.0 else { return (n - 1) * n + n / 2; }
+    let c = center(l, v, sq);
+    let cx = clamp(floor((c.x - l.inner.x) / l.inner.w) as i64, 0, n - 1);
+    let cr = clamp(floor((c.y - l.inner.y) / l.inner.w) as i64, 0, n - 1);
+    return cr * n + cx;
+}
+
 // The showcase (rig.goose): while its mode is on, a drag on the 3D board anywhere off the
 // UI (g.took) turns and tips the board, not a piece (rig::drive). The game and a puzzle
 // share it, before the pieces take the pointer (touch). Returns whether the showcase had
@@ -961,7 +1039,7 @@ fn fill(b: Board&, l: Layout, now: f64) {
         mark(b, b.marks.last, b.last.from);
         mark(b, b.marks.last, b.last.to);
     }
-    b.flash = float4 { -1.0, 1.0, 0.0, 0.0 };
+    b.flash = float4 { -1.0, 1.0, 0.0, b.cursor + 1 };
     if next_shown(b) {
         // Where the selected piece's capture goes on to: dots that pulse as the hint's
         // ring does, then stay lit.

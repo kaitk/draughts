@@ -171,7 +171,7 @@ fn main() {
         // control does. On home's menu back leaves the app as the system's back would,
         // putting it in the background; Escape there ends the loop, closing the Mac's window.
         if host::back() {
-            if shell::back(sh, now) { dirty = true; }
+            if shell::put_down(sh, g) || shell::back(sh, now) { dirty = true; }
             else if on_android { host::leave(); }
             else { break; }
         }

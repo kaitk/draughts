@@ -34,6 +34,23 @@ let PIP = 12.0;             // dp: a hint's pip, and the gap between two
 let PIP_GAP = 7.0;
 let EYE_ID = gui::PANEL_IDS + 4;
 let HINT_ID = gui::PANEL_IDS + 5;
+let BOARD_ID = gui::PANEL_IDS + 15;     // the board, a grid to the keys' focus (board::keys)
+
+// The keys' groups on the game's and a puzzle's screen (gui::group), in Tab's order: the
+// way out (back, settings, start over), the board, and the play panel with the camera's
+// buttons.
+let GROUP_OUT = 0;
+let GROUP_BOARD = 1;
+let GROUP_PLAY = 2;
+
+// The board's keys (board::keys) on screen l: the board offered to the keys' focus over
+// its bounds on screen, the flat board's own or the 3D view's, as the screen's first
+// choice, Enter on it a tap when `mine`. Returns whether anything changed.
+fn board_keys(g: gui::Gui&, l: Layout, b: board::Board&, mine: bool, now: f64) -> bool {
+    gui::group(g, GROUP_BOARD);
+    let r = if l.three { l.view.rect } else { float4 { l.board.board.x, l.board.board.y, l.board.board.z, l.board.board.z } };
+    return board::keys(b, l.board, g, BOARD_ID, r, mine, now);
+}
 
 // What the panel shows of the lookout and the hint: the lookout on; the hints left; how
 // far the hint has gone (0 none shown, 1 the piece lit, 2 its square too); whether the
@@ -839,6 +856,7 @@ fn leave(g: gui::Gui&, l: Layout) -> i64 {
     let icons = [gui::BACK, gui::GEAR, gui::RESTART];
     let asks = [BACK, SETTINGS, RESTART];
     var chosen = NOTHING;
+    gui::group(g, GROUP_OUT);
     if columns(l) {
         if gui::back(g, gui::PANEL_IDS, o.tiles[0], strings::get(OUT_WORDS[0])) { chosen = BACK; }
         gui::panel(g, o.glass);
@@ -1181,6 +1199,7 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: 
     let p = match l.mode { COMPACT => compact_play(l, w, on, u), PORTRAIT => portrait_play(l, w, on, u),
                            _ => column_play(l, w, on, u) };
     var chosen = leave(g, l);
+    gui::group(g, GROUP_PLAY);
     gui::panel(g, l.right);
     if on.clocks {
         // The clock nearer the player whose pieces are at the bottom goes second: under

@@ -160,6 +160,19 @@ let BOARD_FRAG = """
                 s += glow.rgb * 0.5 * wrong.z * exp(-max(r - 0.15 * inner.w, 0.0) / (1.2 * u));
                 s = mix(s, glow.rgb, 0.9 * wrong.z * clamp(0.15 * inner.w - r + 0.5, 0.0, 1.0));
             }
+            // The keys' cursor (wrong.w, its square + 1): a glow line round the square just
+            // inside its edge, its corners rounded, as the keys' focus rings a control.
+            if (int(wrong.w) - 1 == sq) {
+                vec2 e = abs(fq - 0.5) * inner.w;
+                float rc = 0.12 * inner.w;
+                vec2 dd = e - vec2(0.43 * inner.w - rc);
+                float bd = length(max(dd, vec2(0.0))) + min(max(dd.x, dd.y), 0.0) - rc;
+                float rd = abs(bd) - 0.014 * inner.w;
+                // A dark seam under the line, so it reads on a light square too.
+                s *= 1.0 - 0.35 * clamp(0.5 - (abs(bd) - 0.03 * inner.w), 0.0, 1.0);
+                s = mix(s, glow.rgb, 0.35 * exp(-max(rd, 0.0) / (0.035 * inner.w)));
+                s = mix(s, glow.rgb, clamp(0.5 - rd, 0.0, 1.0));
+            }
             // A wrong move: a red ring on its square that flashes twice.
             if (int(wrong.x) == sq && wrong.y < 1.0) {
                 float t = fract(wrong.y * 2.0);
