@@ -4,6 +4,11 @@ Gaps found in Goose, goose_gfx, the SDL it pins, and goose-ngfx, with what we do
 each here and what could go upstream. Newest first. goose-ngfx is the user's, so its gaps
 are fixed there when Draughts needs them; the entries name what is still open.
 
+Pull requests the user opens, not yet opened (2026-11-11): the goose_gfx patches 0001 to
+0008 as branches of `kaitk/goose_gfx` on upstream `main` (task 065 lists them, and which
+stack on which), to `aardappel/goose_gfx`; and `kaitk/NoGraphicsAPI`'s `astc-6x6`, ASTC
+6 × 6, to `sebbbi/NoGraphicsAPI`. An entry's "Upstream" line says what each proposes.
+
 ## goose_gfx: no window without its GPU device (2026-11-11)
 
 `gfx::open` makes an SDL_GPU device and claims the window for it, and `frame()` presents

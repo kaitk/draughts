@@ -409,6 +409,18 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
 - **SMAA in the gfx build** too, in place of 4× MSAA, if the tablet's and the Mac's
   numbers favour it: half the targets' memory here, the look within 0.1 to 0.25 of 255.
 
+## Pull requests to open (the user, later)
+
+Not opened yet; the user opens them (2026-11-11):
+
+- `aardappel/goose_gfx`, from `kaitk/goose_gfx`: `no-clip-distance`, `draw-on-demand`,
+  `screen-without-depth`, `compressed-textures` (each on upstream `main`);
+  `msaa-resolve-without-store` (after `screen-without-depth`); `end-on-device-lost` and
+  `ios-run-loop-wait` (after `draw-on-demand`); `window-only` (after `ios-run-loop-wait`).
+  Once merged, Draughts drops the patch and ngfx's samples go back to Goose's gfx.
+- `sebbbi/NoGraphicsAPI`, from `kaitk/NoGraphicsAPI`: `astc-6x6` (`03a36c3`, on upstream
+  `main`).
+
 ## Later, not in this task
 
 - **ngfx's driver and CPU memory**: break down the IOAccelerator's 29 MB and malloc's
