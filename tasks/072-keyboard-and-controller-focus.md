@@ -1,6 +1,6 @@
 # 072: Keyboard and controller focus
 
-Status: in-progress (steps 1 to 4 built 2026-11-11; the focus's look to agree)
+Status: in-progress (steps 1 to 4 built and agreed 2026-11-11; step 5 next)
 
 Every screen played with the keyboard alone, and later a gamepad, as a desktop game is
 expected to be: arrow keys move a visible focus between the controls, Enter presses the
@@ -48,7 +48,9 @@ a name is typed), the focus lit as the hover, home's Quit row and the X shown on
 other, and `--keys` for shots. Shot at 1280 × 800 on the Mac: the Quit row fits under
 settings, and the X is gone. The hover's light is too faint for a focus: Quit focused
 shows only a faint outline, and Continue, primary and so lit already, shows no change at
-all. The focus's own look is the next thing to agree.
+all. So the focus is ringed: 2 dp of glow 3 dp outside the control's shape, agreed with
+the user, who also tried the keys on the other screens and found them working (but the
+board).
 
 Left for step 5: a focused control in a scrolled list (the puzzles, settings on a phone)
 isn't scrolled into view; a hold tile (who's playing's start again and remove) takes no
@@ -56,7 +58,7 @@ Enter; holding an arrow doesn't repeat (gfx reports a key's first press only).
 
 ## Acceptance criteria
 
-- [ ] Home's menu worked with the arrow keys and Enter on the Mac, the focus visible and
+- [x] Home's menu worked with the arrow keys and Enter on the Mac, the focus visible and
       its look agreed with the user.
 - [x] The Quit row on a desktop's landscape column only; never on Android, iOS, or with
       `--touch on`; the corner X shown only where the row isn't; a touch screen's layout

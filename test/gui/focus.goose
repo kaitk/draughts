@@ -3,8 +3,8 @@
 // the nearest control that way, one in line before a nearer one off to the side, and
 // leave it where none lies that way; Enter presses the focused control, a click as a
 // release over it is, and with none focused presses nothing; a disabled control is never
-// focused, the nearest that way taken past it; the focus is lit as the mouse's hover is, the frames asked for only while that
-// light moves; the mouse moving, a press, or the wheel lets it go; a control the next
+// focused, the nearest that way taken past it; the focus is lit as the mouse's hover is
+// and ringed (one RING quad), the frames asked for only while that light moves; the mouse moving, a press, or the wheel lets it go; a control the next
 // frame doesn't declare (another screen) hands it to that screen's primary; a screen a
 // transition leaves (listen off) offers none.
 import std;
@@ -24,9 +24,12 @@ fn screen(g: gui::Gui&, step: i64, confirm: bool, at: float2, now: f64, dim: boo
     for i in 4 {
         let r = float4 { 360.0 + 100.0 * (i % 2), 70.0 + 100.0 * (i / 2), 88.0, 88.0 };
         let clicked_tile, unused = gui::hold_if(g, 11 + i, r, !(dim && i == 3));
+        gui::fill(g, r, float4 { 1.0, 1.0, 1.0, 0.1 }, 16.0);
         if clicked_tile { format(clicked, " tile ", 11 + i); }
     }
-    print(what, ": focus ", g.focus, ", lit ", g.under, ", clicked", if clicked.len == 0 { " nothing" } else { clicked[..] },
+    var rings = 0;
+    for q in g.quads { if q.look.x == gui::RING { rings++; } }
+    print(what, ": focus ", g.focus, ", lit ", g.under, ", rings ", rings, ", clicked", if clicked.len == 0 { " nothing" } else { clicked[..] },
           ", acted ", g.acted, ", animating ", gui::animating(g));
 }
 

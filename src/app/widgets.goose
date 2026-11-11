@@ -518,11 +518,12 @@ let FRAG = """
             return;
         }
         if (kind == 7) {
-            // A hold's ring: a 4 dp outline 2 dp inside the tile, filled clockwise from its
-            // top's middle as far as look.z, in the glow color or the forced-capture red.
-            float w = 4.0 * u;
-            vec2 hh = h - 2.0 * u;
-            float rr = max(r - 2.0 * u, 0.0);
+            // A hold's ring: a 4 dp outline (look.w dp, the keys' focus ring) just inside
+            // the rect, filled clockwise from its top's middle as far as look.z, in the glow
+            // color or the forced-capture red.
+            float w = (v_look.w > 0.0 ? v_look.w : 4.0) * u;
+            vec2 hh = h - 0.5 * w;
+            float rr = max(r - 0.5 * w, 0.0);
             vec2 a = max(hh - rr, 0.0);
             float total = 4.0 * (a.x + a.y) + 6.2831853 * rr;
             float on = clamp((v_look.z * total - along(p - c, a, rr)) / u + 0.5, 0.0, 1.0);

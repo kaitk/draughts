@@ -226,7 +226,10 @@ are in git history before that day.
   `gui` from what every control already declares, so each screen gets it without code
   of its own and a gamepad later feeds the same moves. Nearest that way by the controls'
   rects rather than the order declared, which suits a column and a grid alike (the
-  setups, settings). The focus is lit as the hover is for now; its own look is to agree.
+  setups, settings). The focus is ringed (2026-11-11, the user agreeing): a glow ring
+  outside the control. The hover's light alone was too faint, and on a lit control
+  (Continue, a chosen tile) showed nothing; a stronger fill would be taken for a
+  chosen tile.
 
 **The game screen**
 

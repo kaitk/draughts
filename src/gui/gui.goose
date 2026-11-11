@@ -61,7 +61,7 @@ let FILL = 3;               // a plain rounded rect in `color`
 let TEXT = 4;               // a glyph from the font atlas in the text color; look.yzw, extra.y: its uv
 let PICTURE = 5;            // a thumbnail (look.z: a season's, its fade's, the theme's; widgets.goose), or the glow's tint for -1
 let MINI = 6;               // a small board at the start; look.z: squares per side, look.w: rows of men
-let RING = 7;               // a hold's ring round a tile, filled clockwise from the top; look.z: how far, 0..1
+let RING = 7;               // a hold's ring round a tile, filled clockwise from the top; look.z: how far, 0..1, look.w: its width in dp (0: 4)
 let FACE = 8;               // a player's badge on a disc; look.z: which, -1 for +; look.w: lit
 let FLOAT = 9;              // a floating button's disc (the 3D board's camera); look.z: 1 lit, + 2 a dot; look.w: pressed
 
@@ -274,7 +274,13 @@ struct Gui {
     focus: i64               = 0,
     spots: Spot[..MAX_SPOTS] = [],
     deaf:  bool              = false,
+    ring:  bool              = false, // the focused control was just held: its next quad gets the ring
 }
+
+// The keys' focus ring (rendering.md, "Controls"): RING_W dp in the glow color, RING_GAP
+// dp outside the focused control's own shape.
+let RING_W = 2.0;
+let RING_GAP = 3.0;
 
 // What a screen's frame asks for (gui is what every screen imports): the asks the screens
 // share, numbered once, here. They are negative: a screen's own asks are 0 and up, as is
@@ -569,6 +575,7 @@ fn focus_keys(g: Gui&, input: Input) {
     }
     g.spots.clear();
     g.deaf = false;
+    g.ring = false;
 }
 
 // Spot i of the control id the last frame offered, or -1.
@@ -657,6 +664,13 @@ fn on_board(g: Gui&, first: i64, last: i64) { for i in first..last { g.quads[i].
 fn add(g: Gui&, q: Quad) {
     guard g.quads.len < MAX_QUADS else { return; }
     g.quads.push(q);
+    // The focused control's first quad, its tile or disc, is its shape: the ring follows
+    // it, RING_GAP outside it with the corners grown to match.
+    guard g.ring && g.quads.len < MAX_QUADS else { return; }
+    g.ring = false;
+    let out = (RING_GAP + RING_W) * g.scale;
+    let r = float4 { q.rect.x - out, q.rect.y - out, q.rect.z + 2.0 * out, q.rect.w + 2.0 * out };
+    g.quads.push(Quad { rect: r, look: float4 { RING, q.look.y + out, 1.0, RING_W }, extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
 }
 
 // The slot of widget id, taking a free or the oldest one for a new id.
@@ -754,6 +768,7 @@ fn button(g: Gui&, id: i64, r: float4, icon: i64) -> bool { tile(g, id, r, icon,
 // it is pressed, 0..1. A `focusable` widget is offered to the keys' focus.
 fn hold(g: Gui&, id: i64, r: float4, focusable: bool = true) -> bool, f32 {
     let over = inside(r, g.input.at);
+    g.ring = false;
     if focusable { offer(g, id, r); }
     if g.input.pressed && over {
         g.active = id;
@@ -767,7 +782,10 @@ fn hold(g: Gui&, id: i64, r: float4, focusable: bool = true) -> bool, f32 {
     // desktop, unless it is down on another widget or the board. Android leaves the
     // pointer where the last touch was, so a phone never hovers.
     if g.focus != 0 {
-        if g.focus == id && !g.deaf { g.under = id; }
+        if g.focus == id && !g.deaf {
+            g.under = id;
+            g.ring = true;
+        }
     } else if desktop_scale > 0.0 && over && (!g.input.down || g.active == id) {
         g.under = id;
     }
