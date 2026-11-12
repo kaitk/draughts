@@ -225,6 +225,18 @@ fn corner_h() -> f32 {
 // 24, and the hint and undo move a gui::PAD apart and from it).
 let CORNER_PUZZLE = 504.0;
 let CORNER_PLAY = 368.0;
+
+// A narrow play panel's height in dp: CORNER_PLAY, a touch screen's, for the hint over
+// undo move; on a desktop, whose smaller tap may leave room for them side by side where
+// their words fit (column_play), what holds either: its glass's ends, the piece with its
+// gaps closed up, whose turn's line, the hint's row and undo move's tile a gui::PAD apart
+// (330): the rest for what goes under it, the moves (task 074; the desktop's narrow panel
+// kept the phone's 368, its tiles side by side squeezed short and Estonian's undo move
+// spilling out of its tile, 2026-11-12).
+fn narrow_play_h() -> f32 {
+    guard gui::tap() < gui::TAP else { return CORNER_PLAY; }
+    return 2.0 * IN_ALONG + (8.0 + 72.0 + 10.0 + 32.0) + gui::PAD + gui::tap() + gui::PAD + stack_h();
+}
 let PITCH_LANDSCAPE: f32 = 52.5;
 let PITCH_PORTRAIT:  f32 = 65.0;
 // The camera buttons (the user, 2026-11-09): a touch area and the disc in it, in dp, on a
@@ -253,13 +265,13 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
     let m = BUTTON_MARGIN * s;
     let phone = gui::phone(area, s);   // NARROW panels
     if landscape(area, s) {
-        let area = framed_in(area, s, FRAME_WIDE_3D);
+        let area = framed_in(area, s, if game && moves { FRAME_WIDE_MOVES } else { FRAME_WIDE_3D });
         let width = area.z;
         let height = area.w;
         let side = (if phone { NARROW } else { SIDE }) * s;
         let tall = min(corner_h() * s, height - 2.0 * gap);
         let left = float4 { area.x + gap, area.y + gap, side, min(left_h() * s, height - 2.0 * gap) };
-        let play_tall = if phone { min(CORNER_PLAY * s, height - 2.0 * gap) } else { tall };
+        let play_tall = if phone { min(narrow_play_h() * s, height - 2.0 * gap) } else { tall };
         let right = float4 { area.x + width - gap - side, area.y + gap, side, play_tall };
         // The buttons under the play panel at the right edge: a column where it fits above
         // the bottom margin, else a row, as low as the safe area lets it.
@@ -525,6 +537,11 @@ let FRAME_SMALL = 1000.0;
 let FRAME_LARGE = 1440.0;
 let FRAME_WIDE = 1.45;
 let FRAME_WIDE_3D = 1.7;
+// With the moves panel under the play panel (task 074) the 3D board's frame may be wider:
+// the panel and the camera's buttons under it took the board's room at the right, and on
+// a wide window the board shrank or its zoom cut it while the window had room either side
+// (the user, 2026-11-12).
+let FRAME_WIDE_MOVES = 2.0;
 fn framed_in(area: float4, s: f32, wide: f32 = FRAME_WIDE) -> float4 {
     guard gui::desktop_scale > 0.0 else { return area; }
     let k = clamp((area.w / gui::desktop_scale - FRAME_SMALL) / (FRAME_LARGE - FRAME_SMALL), 0.0, 1.0);
@@ -623,7 +640,7 @@ fn flat_corners(area: float4, n: i64, s: f32, size: f32) -> Layout {
     let phone = gui::phone(area, s);   // NARROW panels
     let side = min((if phone { NARROW } else { SIDE }) * s, side_of(area, s));
     let tall = min(corner_h() * s, height - 2.0 * gap);
-    let play_tall = if side < SIDE * s - 0.5 { min(CORNER_PLAY * s, height - 2.0 * gap) } else { tall };
+    let play_tall = if side < SIDE * s - 0.5 { min(narrow_play_h() * s, height - 2.0 * gap) } else { tall };
     let left = float4 { area.x + gap, area.y + gap, side, min(left_h() * s, height - 2.0 * gap) };
     let right = float4 { area.x + width - gap - side, area.y + gap, side, play_tall };
     var l = Layout { board: board::layout_at(area.x + (width - size) / 2.0, area.y + (height - size) / 2.0, size, s, n),
@@ -1019,6 +1036,8 @@ struct Words {
     short:   f32 = 0.0,     // its short form, the word or the figure, the wider
     undo:    f32 = 0.0,     // undo move's word, the hint's, in the heading face
     hint:    f32 = 0.0,
+    undo2:   f32 = 0.0,     // undo move's and the hint's widest line on two, in the small face
+    hint2:   f32 = 0.0,
     name:    f32 = 0.0,     // the lookout's name in the body face
 }
 
@@ -1064,11 +1083,15 @@ fn column_play(l: Layout, w: Words, on: Shows, u: f32) -> Play {
     // A corner panel's short line between the clocks takes from undo move what the
     // panel lacks, and leaves a gap above it.
     let squeezed = on.clocks && on.counting && !on.drawn;
-    let wanted = tall(l, u);
+    // The hint beside undo move where both keep a tap across and each word fits its half
+    // on two lines at most; the tiles are tall then, for their icons over those lines.
+    let half = 0.5 * (right.z - gui::PAD * u) - 2.0 * gui::LABEL_PAD * u;
+    let pair = right.z >= (2.0 * gui::tap() + gui::PAD) * u && half >= max(w.undo2, w.hint2);
+    let wanted = if pair { tall_h() * u } else { tall(l, u) };
     let low = if squeezed { min(wanted, right.w - (2.0 * CLOCK_H + SHORT_GAP + 12.0) * u) } else { wanted };
     let head = if on.clocks { (2.0 * CLOCK_H + CLOCK_GAP) * u } else { (18.0 + 72.0 + 18.0) * u + w.heading };
     let column = right.w >= head + (EYE_TOUCH + gui::PAD + gui::tap() + gui::PAD) * u + low;
-    let beside = !column && right.z >= (2.0 * gui::tap() + gui::PAD) * u;
+    let beside = !column && pair;
     let tight = !column && !beside && right.w < head + (gui::PAD + gui::tap() + gui::PAD) * u + low;
     p.undo = gui::cut_bottom(right, low);
     if beside {
@@ -1242,6 +1265,8 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: 
             let heading .= g.faces[gui::HEADING];
             w.heading = heading.ascent - heading.descent;
             w.name = gui::text_width(g, gui::BODY, name);
+            w.undo2 = gui::two_lines(g, gui::SMALL, strings::get(strings::GAME_UNDO_MOVE));
+            w.hint2 = gui::two_lines(g, gui::SMALL, hint_word);
         },
     }
     let p = match l.mode { COMPACT => compact_play(l, w, on, u), PORTRAIT => portrait_play(l, w, on, u),

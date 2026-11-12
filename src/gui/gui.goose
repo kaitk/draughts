@@ -391,6 +391,24 @@ fn scroll_end(g: Gui&) {
     s.open = false;
 }
 
+// Fades the quads from `first` (as g.quads.len counted them) near a scrolling list's
+// edges, to show there are rows past them: those whose middle lies in the lower 60% of a
+// `band` pixels deep at the view's top, while `above` pixels of rows lie above it, and
+// likewise at its foot for `below`, each eased in over the first 16 dp of those rows.
+fn fade_edges(g: Gui&, first: i64, view: float4, above: f32, below: f32, band: f32) {
+    let u = g.scale;
+    let top = clamp(above / (16.0 * u), 0.0, 1.0);
+    let foot = clamp(below / (16.0 * u), 0.0, 1.0);
+    guard top > 0.0 || foot > 0.0 else { return; }
+    for k in first..g.quads.len {
+        let q = g.quads[k];
+        let mid = q.rect.y + 0.5 * q.rect.w;
+        let a = top * clamp((view.y + band - mid) / (0.6 * band), 0.0, 1.0);
+        let b = foot * clamp((mid - (view.y + view.w - band)) / (0.6 * band), 0.0, 1.0);
+        g.quads[k].extra.w = max(q.extra.w, 0.85 * max(a, b));
+    }
+}
+
 // Sets the offset of list `id` (a screenshot's), clamped as it is declared.
 fn scroll_set(g: Gui&, id: i64, px: f32) {
     g.scroll.id = id;
@@ -1022,6 +1040,17 @@ fn break_at(g: Gui&, face: i64, text: const u8[:], w: f32) -> i64 {
     for c, i in text {
         guard c == 32 else { continue; }
         if text_width(g, face, text[..i]) <= w && text_width(g, face, text[i + 1..]) <= w { best = i; }
+    }
+    return best;
+}
+
+// The width `text` needs in `face` on two lines at most: its widest line where it breaks
+// at the space that makes that least, or its whole width with no space.
+fn two_lines(g: Gui&, face: i64, text: const u8[:]) -> f32 {
+    var best = text_width(g, face, text);
+    for c, i in text {
+        guard c == 32 else { continue; }
+        best = min(best, max(text_width(g, face, text[..i]), text_width(g, face, text[i + 1..])));
     }
     return best;
 }

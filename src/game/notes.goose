@@ -163,7 +163,9 @@ fn all_judged(gm: Game&) -> bool {
 // allocates: each line is built in a fixed buffer.
 let MOVES_ROW = 34.0;       // dp a row
 let MOVES_PAD = 12.0;       // dp round the rows inside the glass
-let MOVES_NUMBER = 40.0;    // dp the moves' numbers take
+let MOVES_FADE = 40.0;      // dp at the list's top and foot over which rows past them fade
+let MOVES_LIST = gui::PANEL_IDS + 16;  // the list's id (gui::scroll_begin)
+let MOVES_NUMBER = 32.0;    // dp the moves' numbers take ("19." in the small face, 22)
 let MARK_GAP = 4.0;         // dp between a move and its mark
 let ORANGE = float4 { 1.0, 0.62, 0.25, 1.0 };
 
@@ -225,12 +227,21 @@ fn moves_panel(gm: Game&, g: gui::Gui&, l: panel::Layout) {
     let first_number = (gm.notes_from + off) / 2 + 1;
     let rows = (ns.len + off + 1) / 2;
     let inner = gui::inset(r, MOVES_PAD * u);
-    let fit = max((inner.w / (MOVES_ROW * u)) as i64, 1);
-    let top = max(rows - fit, 0);
     let half = 0.5 * (inner.z - MOVES_NUMBER * u);
+    // Every move, a list scrolled within the glass, at its foot (the latest) when a move
+    // is added or the list is shown again; the rows past either edge fade out there.
+    let view = float4 { r.x, r.y + 4.0 * u, r.z, r.w - 8.0 * u };
+    let content = rows * MOVES_ROW * u + 2.0 * (MOVES_PAD - 4.0) * u;
+    if g.scroll.id != MOVES_LIST || gm.moves_seen != ns.len {
+        gui::scroll_set(g, MOVES_LIST, content);
+        gm.moves_seen = ns.len;
+    }
+    let scrolled = gui::scroll_begin(g, MOVES_LIST, view, content);
+    let listed = g.quads.len;
     var line: Line = [];
-    for row in top..rows {
-        let y = inner.y + (row - top) * MOVES_ROW * u;
+    for row in 0..rows {
+        let y = inner.y - scrolled + row * MOVES_ROW * u;
+        guard y + MOVES_ROW * u > view.y && y < view.y + view.w else { continue; }
         line.clear();
         push_number(line, first_number + row);
         line.push('.');
@@ -257,4 +268,6 @@ fn moves_panel(gm: Game&, g: gui::Gui&, l: panel::Layout) {
             if t.len > 0 { gui::colored(g, gui::BODY, float4 { at, cell.y, cell.z, cell.w }, t, c, gui::LEFT); }
         }
     }
+    gui::fade_edges(g, listed, view, scrolled, content - scrolled - view.w, MOVES_FADE * u);
+    gui::scroll_end(g);
 }

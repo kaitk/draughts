@@ -138,6 +138,7 @@ struct Game {
     scratch:    rules::Moves    = [],
     judge:      bool            = true,
     moves_shown: i64            = 2,    // the moves panel: 0 hidden, 1 the moves, 2 with marks (settings::MOVES_*)
+    moves_seen:  i64            = -1,   // the moves the panel's list was last scrolled to the foot for
     judging:    i64             = 0,
     judge_ply:  i64             = 0,
     // Whether the game's end was given to the shell for the player's history (Event.over):

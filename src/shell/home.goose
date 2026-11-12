@@ -514,12 +514,13 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
     // The rows, a list under the wordmark where the menu kept its height.
     let end = at[rows_n].y + at[rows_n].w;
     var listed = g.quads.len;
-    var past: f32 = 0.0;        // pixels of rows below the list's foot
+    var view = float4 { 0.0, 0.0, 0.0, 0.0 };
+    var off: f32 = 0.0;
     if scroll {
         let top = at[0].y + at[0].w;
-        let off = gui::scroll_begin(g, MENU_LIST, float4 { c.x - 24.0 * u, top, c.z + 48.0 * u, foot - top }, end - top);
+        view = float4 { c.x - 24.0 * u, top, c.z + 48.0 * u, foot - top };
+        off = gui::scroll_begin(g, MENU_LIST, view, end - top);
         for k in 1..rows_n + 1 { at[k].y -= off; }
-        past = end - off - foot;
         listed = g.quads.len;
     }
     let ways = [CONTINUE, FRIEND, COMPUTER, PUZZLES];
@@ -547,16 +548,9 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
         pick = EXIT;
     }
     if scroll {
-        // The rows fade out over FADE dp at the foot while there are rows below it.
-        // Full across the band's lower 60% while a row is cut off, easing out over the
-        // last 16 dp of scrolling.
-        let band = FADE * u;
-        let depth = clamp(past / (16.0 * u), 0.0, 1.0);
-        for k in listed..g.quads.len {
-            let q = g.quads[k];
-            let t = 0.85 * clamp((q.rect.y + 0.5 * q.rect.w - (foot - band)) / (0.6 * band), 0.0, 1.0) * depth;
-            g.quads[k].extra.w = max(q.extra.w, t);
-        }
+        // The rows fade out at the foot while there are more below (at the top they go
+        // under the wordmark, cut by the view).
+        gui::fade_edges(g, listed, view, 0.0, end - off - foot, FADE * u);
         gui::scroll_end(g);
     }
     return pick;

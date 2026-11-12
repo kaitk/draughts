@@ -198,7 +198,7 @@ fn main() {
     while t < 8.0 { drive::idle(w, g, t); t += 0.1; }
     var card = float4 { 1.0e9, 1.0e9, -1.0e9, -1.0e9 };
     for q in g.quads {
-        guard q.extra.z >= gui::ON_BOARD else { continue; }
+        guard q.extra.z - gui::CLIP * floor(q.extra.z / gui::CLIP) >= gui::ON_BOARD else { continue; }
         card = float4 { min(card.x, q.rect.x), min(card.y, q.rect.y), max(card.z, q.rect.x + q.rect.z), max(card.w, q.rect.y + q.rect.w) };
     }
     card = float4 { card.x, card.y, card.z - card.x, card.w - card.y };

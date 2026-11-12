@@ -40,7 +40,8 @@ fn hole(sh: shell::Shell&) -> const u8[:] {
 fn on_board(sh: shell::Shell&, g: gui::Gui&) -> u8[>..] {
     var quads = 0;
     var pieces = 0;
-    for q in g.quads { if q.extra.z >= gui::ON_BOARD { quads++; } }
+    // On the board: ON_BOARD in extra.z under a scrolling list's CLIP, as the renderer reads it.
+    for q in g.quads { if q.extra.z - gui::CLIP * floor(q.extra.z / gui::CLIP) >= gui::ON_BOARD { quads++; } }
     for p in sh.out.over { if p.win.w > 0.5 { pieces++; } }
     return str(quads, " quads and ", pieces, " piece");
 }
