@@ -309,12 +309,13 @@ let HOME_IDS = 300;         // home's menu and a new game's setup
 let SETTINGS_IDS = 400;
 let WHO_IDS = 500;          // who's playing, and a player's sheet
 let PICKER_IDS = 600;       // the puzzles to pick from: the library, a theme's page, its puzzles
+let GAMES_IDS = 1300;       // the games played (task 074)
 
 // One scrolling list a frame (task 050; rendering.md, "Scrolling"): what scroll_begin
 // keeps across frames. A plain drag and the wheel, no fling.
 let SCROLL_ID = 9000;       // the drag's id while it holds the pointer
-let IDS = [PANEL_IDS, CARD_IDS, HOME_IDS, SETTINGS_IDS, WHO_IDS, PICKER_IDS, SCROLL_ID];
-let IDS_SPAN = [20, 2, 71, 72, 43, 600, 1];
+let IDS = [PANEL_IDS, CARD_IDS, HOME_IDS, SETTINGS_IDS, WHO_IDS, PICKER_IDS, GAMES_IDS, SCROLL_ID];
+let IDS_SPAN = [20, 2, 71, 72, 43, 600, 11, 1];
 let SLOP = 10.0;            // dp a press moves before it is a drag, not a tap
 let CLIP = 4.0;             // added to a quad's extra.z: drawn only inside the list's view
 let WHEEL = 40.0;           // dp a wheel's step scrolls
@@ -388,6 +389,24 @@ fn scroll_end(g: Gui&) {
     for k in s.first..g.quads.len { g.quads[k].extra.z += CLIP; }
     g.input = s.saved;
     s.open = false;
+}
+
+// Fades the quads from `first` (as g.quads.len counted them) near a scrolling list's
+// edges, to show there are rows past them: those whose middle lies in the lower 60% of a
+// `band` pixels deep at the view's top, while `above` pixels of rows lie above it, and
+// likewise at its foot for `below`, each eased in over the first 16 dp of those rows.
+fn fade_edges(g: Gui&, first: i64, view: float4, above: f32, below: f32, band: f32) {
+    let u = g.scale;
+    let top = clamp(above / (16.0 * u), 0.0, 1.0);
+    let foot = clamp(below / (16.0 * u), 0.0, 1.0);
+    guard top > 0.0 || foot > 0.0 else { return; }
+    for k in first..g.quads.len {
+        let q = g.quads[k];
+        let mid = q.rect.y + 0.5 * q.rect.w;
+        let a = top * clamp((view.y + band - mid) / (0.6 * band), 0.0, 1.0);
+        let b = foot * clamp((mid - (view.y + view.w - band)) / (0.6 * band), 0.0, 1.0);
+        g.quads[k].extra.w = max(q.extra.w, 0.85 * max(a, b));
+    }
 }
 
 // Sets the offset of list `id` (a screenshot's), clamped as it is declared.
@@ -1021,6 +1040,17 @@ fn break_at(g: Gui&, face: i64, text: const u8[:], w: f32) -> i64 {
     for c, i in text {
         guard c == 32 else { continue; }
         if text_width(g, face, text[..i]) <= w && text_width(g, face, text[i + 1..]) <= w { best = i; }
+    }
+    return best;
+}
+
+// The width `text` needs in `face` on two lines at most: its widest line where it breaks
+// at the space that makes that least, or its whole width with no space.
+fn two_lines(g: Gui&, face: i64, text: const u8[:]) -> f32 {
+    var best = text_width(g, face, text);
+    for c, i in text {
+        guard c == 32 else { continue; }
+        best = min(best, max(text_width(g, face, text[..i]), text_width(g, face, text[i + 1..])));
     }
     return best;
 }

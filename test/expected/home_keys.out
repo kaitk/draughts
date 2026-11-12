@@ -2,7 +2,7 @@ a desktop, 1280 x 800: the Quit row
 a desktop's landscape 400 dp tall, too short for it: the Quit row false
 a desktop in portrait, 800 x 1280: the X
 a touch screen, 1280 x 800: the X
-down from none, seven times (ids past HOME_IDS): 1 2 3 4 5 6 6
+down from none, eight times (ids past HOME_IDS; the games 7): 1 2 3 4 7 5 6 6
 enter on Quit: quit true
 on a friend: focus 2
 enter: setup true, focus 70

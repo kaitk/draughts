@@ -1,19 +1,19 @@
-home 1280 x 800 at 800 dp: raised true, bounds 480 139 760 x 521 (146:100), on screen true, tiles touched 0 of 7, flat square in the middle true, drawn as placed true
-home 800 x 1280 at 800 dp: raised true, bounds 24 180 752 x 516 (146:100), on screen true, tiles touched 0 of 7, flat square in the middle true, drawn as placed true
-home 1768 x 2208 at 800 dp: raised true, bounds 164 128 471 x 323 (146:100), on screen true, tiles touched 0 of 7, flat square in the middle true, drawn as placed true
-home 2208 x 1768 at 800 dp: raised true, bounds 480 236 479 x 329 (146:100), on screen true, tiles touched 0 of 7, flat square in the middle true, drawn as placed true
-home 1024 x 768 at 800 dp: raised true, bounds 480 213 547 x 375 (146:100), on screen true, tiles touched 0 of 7, flat square in the middle true, drawn as placed true
-home 768 x 1024 at 800 dp: raised true, bounds 115 128 570 x 391 (146:100), on screen true, tiles touched 0 of 7, flat square in the middle true, drawn as placed true
-home 2400 x 1080 at 540 dp: raised true, bounds 613 120 494 x 339 (146:100), on screen true, tiles touched 0 of 7, flat square in the middle true, drawn as placed true
-home 1080 x 2400 at 540 dp: raised true, bounds 24 177 492 x 337 (146:100), on screen true, tiles touched 0 of 7, flat square in the middle true, drawn as placed true
-settings 1280 x 800 at 800 dp: raised true, bounds 726 227 506 x 347 (146:100), on screen true, tiles touched 0 of 17, flat square in the middle true, drawn as placed true
-settings 800 x 1280 at 800 dp: raised true, bounds 54 167 692 x 474 (146:100), on screen true, tiles touched 0 of 17, flat square in the middle true, drawn as placed true
-settings 1768 x 2208 at 800 dp: raised true, bounds 231 147 339 x 232 (146:100), on screen true, tiles touched 0 of 17, flat square in the middle true, drawn as placed true
-settings 2208 x 1768 at 800 dp: raised true, bounds 582 272 373 x 256 (146:100), on screen true, tiles touched 0 of 17, flat square in the middle true, drawn as placed true
-settings 1024 x 768 at 800 dp: raised true, bounds 620 262 402 x 275 (146:100), on screen true, tiles touched 0 of 17, flat square in the middle true, drawn as placed true
-settings 768 x 1024 at 800 dp: raised true, bounds 184 149 431 x 296 (146:100), on screen true, tiles touched 0 of 17, flat square in the middle true, drawn as placed true
-settings 2400 x 1080 at 540 dp: raised true, bounds 755 133 400 x 275 (146:100), on screen true, tiles touched 0 of 7, flat square in the middle true, drawn as placed true
-settings 1080 x 2400 at 540 dp: raised true, bounds 97 148 345 x 237 (146:100), on screen true, tiles touched 0 of 17, flat square in the middle true, drawn as placed true
+home 1280 x 800 at 800 dp: raised true, bounds 480 139 760 x 521 (146:100), on screen true, tiles touched 0 of 8, flat square in the middle true, drawn as placed true
+home 800 x 1280 at 800 dp: raised true, bounds 24 166 752 x 516 (146:100), on screen true, tiles touched 0 of 8, flat square in the middle true, drawn as placed true
+home 1768 x 2208 at 800 dp: raised true, bounds 185 128 430 x 295 (146:100), on screen true, tiles touched 0 of 8, flat square in the middle true, drawn as placed true
+home 2208 x 1768 at 800 dp: raised true, bounds 480 236 479 x 329 (146:100), on screen true, tiles touched 0 of 8, flat square in the middle true, drawn as placed true
+home 1024 x 768 at 800 dp: raised true, bounds 480 213 547 x 375 (146:100), on screen true, tiles touched 0 of 8, flat square in the middle true, drawn as placed true
+home 768 x 1024 at 800 dp: raised true, bounds 136 128 529 x 363 (146:100), on screen true, tiles touched 0 of 8, flat square in the middle true, drawn as placed true
+home 2400 x 1080 at 540 dp: raised true, bounds 613 120 494 x 339 (146:100), on screen true, tiles touched 0 of 8, flat square in the middle true, drawn as placed true
+home 1080 x 2400 at 540 dp: raised true, bounds 24 175 492 x 337 (146:100), on screen true, tiles touched 0 of 8, flat square in the middle true, drawn as placed true
+settings 1280 x 800 at 800 dp: raised true, bounds 726 227 506 x 347 (146:100), on screen true, tiles touched 0 of 20, flat square in the middle true, drawn as placed true
+settings 800 x 1280 at 800 dp: raised true, bounds 54 167 692 x 474 (146:100), on screen true, tiles touched 0 of 20, flat square in the middle true, drawn as placed true
+settings 1768 x 2208 at 800 dp: raised true, bounds 231 147 339 x 232 (146:100), on screen true, tiles touched 0 of 20, flat square in the middle true, drawn as placed true
+settings 2208 x 1768 at 800 dp: raised true, bounds 718 317 242 x 166 (146:100), on screen true, tiles touched 0 of 20, flat square in the middle true, drawn as placed true
+settings 1024 x 768 at 800 dp: raised true, bounds 720 295 305 x 209 (146:100), on screen true, tiles touched 0 of 20, flat square in the middle true, drawn as placed true
+settings 768 x 1024 at 800 dp: raised true, bounds 184 149 431 x 296 (146:100), on screen true, tiles touched 0 of 20, flat square in the middle true, drawn as placed true
+settings 2400 x 1080 at 540 dp: raised true, bounds 755 133 400 x 275 (146:100), on screen true, tiles touched 0 of 10, flat square in the middle true, drawn as placed true
+settings 1080 x 2400 at 540 dp: raised true, bounds 97 148 345 x 237 (146:100), on screen true, tiles touched 0 of 20, flat square in the middle true, drawn as placed true
 flat home: raised false
 puzzle: raised true, bounds 191 160 898 x 616, tiles 4 on screen true, touched 0, kings drawn as 2
   tapped the piece's top on d4: selected d4
@@ -22,14 +22,14 @@ puzzle: raised true, bounds 191 160 898 x 616, tiles 4 on screen true, touched 0
   wrong move i1-h2 slid back: misses 1, fading instances 1, flash true
   misses 2, hint on e7, glow rings in the world's grid at 3.4 
 black to move: turned true, raised true
-won: B:Wa1,g5:B, winning piece on g5, card 488 333 304 x 269 inside the 3D bounds true, centered across them true, clear of the winning piece true
+won: B:Wa1,g5:B, winning piece on g5, card 502 376 277 x 250 inside the 3D bounds true, centered across them true, clear of the winning piece true
   dim 0.45, instances left lit 1 of 2
   home to the game 1.0: raised true, hold true, placed 480 139 760 x 521, fade 1.0
-  home to the game 1.05: raised true, hold true, placed 450 142 774 x 531, fade 1.0
-  home to the game 1.1: raised true, hold true, placed 378 147 809 x 554, fade 1.0
-  home to the game 1.15: raised true, hold true, placed 293 153 849 x 582, fade 1.0
-  home to the game 1.2: raised true, hold true, placed 221 158 884 x 606, fade 1.0
-  home to the game 1.25: raised true, hold false, placed 191 160 898 x 616, fade 1.0
+  home to the game 1.05: raised true, hold true, placed 455 148 764 x 524, fade 1.0
+  home to the game 1.1: raised true, hold true, placed 395 170 775 x 531, fade 1.0
+  home to the game 1.15: raised true, hold true, placed 324 196 787 x 540, fade 1.0
+  home to the game 1.2: raised true, hold true, placed 264 217 797 x 547, fade 1.0
+  home to the game 1.25: raised true, hold false, placed 239 226 802 x 550, fade 1.0
   views drawn through 1, the flat layout steady true, at rest placed at the game's bounds true, the game's larger than home's true
 picker: raised false
   tile to the puzzle 1.07: raised true, placed 539 260 179 x 123, fade 0.1, hole as tall as the image true

@@ -56,12 +56,12 @@ fn main() {
     var now = 0.0;
     drive::idle(sh, g, now);
     var walk: u8[>..] = [];
-    for i in 7 {
+    for i in 8 {
         now += 1.0;
         drive::key(sh, g, gui::STEP_DOWN, false, now);
         format(walk, " ", g.focus - gui::HOME_IDS);
     }
-    print("down from none, seven times (ids past HOME_IDS):", walk[..]);
+    print("down from none, eight times (ids past HOME_IDS; the games 7):", walk[..]);
     now += 1.0;
     drive::key(sh, g, gui::STEP_NONE, true, now);
     print("enter on Quit: quit ", sh.out.quit);

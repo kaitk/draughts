@@ -11,7 +11,7 @@ import gui from "../../src/gui";
 import puzzles from "../../src/puzzles";
 
 fn main() {
-    let names = ["panel", "card", "home", "settings", "who", "picker", "scroll"];
+    let names = ["panel", "card", "home", "settings", "who", "picker", "games", "scroll"];
     assert(names.len == gui::IDS.len && gui::IDS_SPAN.len == gui::IDS.len);
     var wrong = 0;
     for base, i in gui::IDS {

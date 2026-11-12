@@ -29,6 +29,7 @@ import .panel;
 import .clock;
 import .pace;
 import .ending;
+import .notes;
 
 let STEP = 2.0;             // seconds: the longest gap between two frames the clock counts
 let PAUSE = [0.8, 0.6, 0.45];   // seconds from the computer's turn to its move without a clock, by level
@@ -52,6 +53,10 @@ struct Event {
     result:    i64  = 0,
     restarted: bool = false,
     looked:    bool = false,
+    // Any game, a friend's too, that ended this frame, the first time (Game.kept): the
+    // winner's side, or -1 for a draw, for the player's history (task 074).
+    over:   bool = false,
+    winner: i64  = -1,
 }
 
 // The computer's levels.
@@ -122,6 +127,23 @@ struct Game {
     taken:     panel::Taken    = panel::Taken {},
     taken_len: i64             = -1,
     taken_pos: rules::Position = rules::Position { pieces: [0, 0], kings: 0, side: 0, variant: 0 },
+    // The moves as played and their marks (notes.goose, task 074): the notes, the first's
+    // number less one when the history dropped its oldest, what they were last brought in
+    // line with, a buffer for finding a move; whether moves are judged, the judge's ask
+    // id, or 0, and the note it is for.
+    notes:      Notes           = [],
+    notes_from: i64             = 0,
+    notes_len:  i64             = -1,
+    notes_pos:  rules::Position = rules::Position { pieces: [0, 0], kings: 0, side: 0, variant: 0 },
+    scratch:    rules::Moves    = [],
+    judge:      bool            = true,
+    moves_shown: i64            = 2,    // the moves panel: 0 hidden, 1 the moves, 2 with marks (settings::MOVES_*)
+    moves_seen:  i64            = -1,   // the moves the panel's list was last scrolled to the foot for
+    judging:    i64             = 0,
+    judge_ply:  i64             = 0,
+    // Whether the game's end was given to the shell for the player's history (Event.over):
+    // any game, once.
+    kept: bool = false,
 }
 
 // The pieces of each color taken so far (task 052): the start's pieces less those on the
@@ -195,7 +217,9 @@ fn start(gm: Game&, variant: u8, kind: i64, computer: i64, level: i64, skill: i6
     gm.drawn_at = -1.0;
     gm.seen_len = -1;
     gm.counted = false;
+    gm.kept = false;
     gm.asking = 0;
+    gm.judging = 0;
     gm.watched = Watch {};
     new_hints(gm);
     rig::reset(gm.cam);
@@ -219,7 +243,9 @@ fn restart(gm: Game&, now: f64 = 0.0) {
     gm.won_at = -1.0;
     gm.drawn_at = -1.0;
     gm.counted = false;
+    gm.kept = false;
     gm.asking = 0;
+    gm.judging = 0;
     new_hints(gm);
     rig::settle(gm.cam, now);
 }
@@ -264,6 +290,7 @@ fn computer_to_move(gm: Game&) -> bool {
 fn pause(gm: Game&) {
     gm.seen = -1.0;
     gm.asking = 0;
+    gm.judging = 0;
 }
 
 // What the game asks the computer player for: a move in `pos` at `skill`, with `seed`
@@ -274,7 +301,8 @@ struct Ask {
     past:  rules::Past,     // the game before pos, for the draws (ai::start_after)
     skill: i64,
     seed:  u64,
-    kind:  i64 = THINK,
+    kind:  i64         = THINK,
+    move:  rules::Move = rules::Move { .. },   // JUDGE: the move played from pos
 }
 
 // What an ask is for: the computer's move, the hint's (ai::helping), or the lookout's
@@ -282,6 +310,7 @@ struct Ask {
 let THINK = 0;
 let HINT = 1;
 let TRAPS = 2;
+let JUDGE = 3;              // a played move judged (ai::judge_start, notes.goose)
 
 fn asking(gm: Game&) -> Ask {
     // The seed: the game's number and the ply, so moves vary between games yet the same
@@ -294,12 +323,16 @@ fn asking(gm: Game&) -> Ask {
 // ask each, and the worker takes one at a time, the first open in this order:
 //   1. the computer's move (asking): its turn waits on it;
 //   2. the hint's move (hinting): the child pressed for it and waits;
-//   3. the lookout's traps (trapping): marks added to those already shown.
+//   3. the lookout's traps (trapping): marks added to those already shown;
+//   4. a played move judged (judging, notes.goose): nobody waits on it.
 // The first two never overlap: the hint is asked on the side to move's turn, the
 // computer's move on its own. A slot behind another keeps its ask; once the one before
 // is answered or dropped, this returns it again and the app hands it over anew
 // (think::frame).
-fn open_ask(gm: Game&) -> i64 { if gm.asking != 0 { gm.asking } else if gm.hinting != 0 { gm.hinting } else { gm.trapping } }
+fn open_ask(gm: Game&) -> i64 {
+    return if gm.asking != 0 { gm.asking } else if gm.hinting != 0 { gm.hinting } else if gm.trapping != 0 { gm.trapping }
+           else { gm.judging };
+}
 
 // That ask in full: the hint's searched at HINT_UP above the skill of the side it plays
 // against (the computer's, or against a friend the player's on their level), capped.
@@ -315,6 +348,8 @@ fn ask_for(gm: Game&) -> Ask {
         a.id = gm.trapping;
         a.pos = gm.trap_pos;
         a.kind = TRAPS;
+    } else if gm.judging != 0 {
+        return judge_ask(gm);
     }
     return a;
 }
@@ -464,6 +499,8 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     let pick = panel::game(g, l, gm.clock, side, won >= 0, drawn(gm) != rules::NO_DRAW, note, gm.asking != 0,
                            pulse(gm, now), over, help(gm));
     if count_taken(gm) { changed = true; }
+    if keep_notes(gm) { changed = true; }
+    moves_panel(gm, g, l);
     panel::taken(g, l, gm.taken, over);
     var undone = false;
     match pick {
@@ -494,6 +531,11 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         gm.drawn_at = now;
         gm.drawn_still = false;
         changed = true;
+        if !gm.kept {
+            gm.kept = true;
+            ev.over = true;
+            ev.winner = -1;
+        }
         // A draw counts too, as 0: the computer's skill stays (ai::adapt).
         if gm.computer >= 0 && !gm.counted {
             gm.counted = true;
@@ -507,6 +549,11 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         gm.won_at = now;
         aim(gm, won);
         changed = true;
+        if !gm.kept {
+            gm.kept = true;
+            ev.over = true;
+            ev.winner = won;
+        }
         // A game against the computer counts once, when it first ends: the result
         // moves the computer's skill (ai::adapt).
         if gm.computer >= 0 && !gm.counted {
@@ -657,6 +704,7 @@ fn still(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     // Counted here too: a transition declares a game before its first frame of its own.
     count_taken(gm);
     panel::taken(g, l, gm.taken, over);
+    moves_panel(gm, g, l);
     panel::camera(g, l, gm.cam, now);
     if gm.won_at >= 0.0 { celebrate(gm, g, l, won, now, over); }
     if gm.drawn_at >= 0.0 { settle(gm, g, l, draw, now, over); }

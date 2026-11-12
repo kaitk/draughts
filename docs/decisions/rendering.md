@@ -408,6 +408,38 @@ room, for Estonian's undo move (2026-11-10).
 
 Task 052, `prototypes/game-captured.html`'s take a in its `row` look, chosen 2026-11-09.
 
+### The moves panel and the games screen
+
+Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
+
+- The moves panel under the play panel in landscape (take a), where at least four rows
+  fit: the play panel and the way out stay as built. Take b (under the left panel) had
+  290 dp beside what each side has taken; take c (the play panel grown) moved hint and
+  undo to the column's foot.
+- On the 3D board the panel is five rows, as wide as the play panel, with the camera's
+  buttons in a row under it; the board clears both as it clears the panels, about 11%
+  smaller at the tablet's landscape. With the setting at off the board is as before.
+- No panel in portrait or on a phone in landscape yet: the prototype found under four
+  rows' room there.
+- The panel scrolls through the whole game (2026-11-12): showing only its last five
+  rows on the 3D board left no way to see the rest (the user). On a desktop it runs on
+  where that costs the board nothing, and the 3D frame widens to 2.0 while it shows:
+  the board was cut by its zoom or shrank while the window had room at the sides.
+- The setting is a Move list row in settings' game group, under move hints (2026-11-12),
+  since issue 1 took the draughts' row out; it replaces the games screen as its place
+  (2026-11-11, when a third row there left the preview board at 0 dp at several sizes).
+  The tablet's settings are unchanged; where the game group shows alone its board is
+  smaller: a 16:9 phone in portrait 366 to 248 dp (282 to 163 with insets), the 4:3
+  tablet's landscape 402 to 305, a foldable's 373 to 242; a 20:9 phone at 540 dp, none.
+  The games screen keeps its three tiles too until the user has seen both.
+- The games screen is a row on home's menu (2026-11-12; the user: nobody would look in
+  the players' card), and stays a tile beside the pencil in who's playing. Where the row
+  would cost the board its size, the menu keeps its height and scrolls, the next row
+  showing faded at the foot, rather than shrinking the board (on the iPhone 13 mini
+  310 dp to about 220). Replaces 2026-11-11's who's-playing only. A screen with no inset
+  at its foot gives up 28 dp of board so the next row's word shows (a tablet in
+  portrait, 479 to 451 dp).
+
 ### Board and pieces
 
 **The flat board**

@@ -48,6 +48,7 @@ fn add_player(sh: Shell&, picture: i64, name: players::Name) -> bool {
     players::store(ps, ps.list[ps.playing].id, sh.prefs);
     write_game(sh);
     players::delete_game(ps, id);
+    players::delete_history(ps, id);
     var s = settings::Settings {};
     s.picture = picture;
     s.name = name;
@@ -77,12 +78,14 @@ fn edit_player(sh: Shell&, index: i64, picture: i64, name: players::Name) {
 }
 
 // Starts the player at `index` again: their stars, the computer's skill and games, and
-// their saved game are cleared; their picture, name, look, and setup stay.
+// their saved game, rating, and games played are cleared; their picture, name, look, and
+// setup stay.
 fn start_again(sh: Shell&, index: i64) {
     let ps .= sh.players;
     guard index >= 0 && index < ps.list.len else { return; }
     let id = ps.list[index].id;
     players::delete_game(ps, id);
+    players::delete_history(ps, id);
     if index == ps.playing {
         players::clear_progress(sh.prefs);
         sh.game = game::new(sh.prefs.variant as u8);

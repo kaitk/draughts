@@ -46,7 +46,7 @@ fn checksum(data: const u8[:]) -> u64 {
 fn save(sh: Shell&) -> u8[>..] {
     let b .= sh.game.b;
     var one: Saved[>..] = [];
-    one.push(Saved { version: VERSION, unset: sh.unset, screen: sh.screen, variant: b.variant, start: b.start, pos: b.pos,
+    one.push(Saved { version: VERSION, unset: sh.unset, screen: if sh.screen == GAMES { HOME } else { sh.screen }, variant: b.variant, start: b.start, pos: b.pos,
                      last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.history,
                      clock:     sh.game.clock, computer: sh.game.computer, level: sh.game.level, skill: sh.game.skill,
                      number: sh.game.number, counted: sh.game.counted });
@@ -88,6 +88,8 @@ fn restore(sh: Shell&, file: const u8[:]) -> bool {
     gm.counted = s.counted;
     gm.turn = b.pos.side;
     sh.unset = s.unset;
+    // A game kept after its end was put in the player's history then (Event.over).
+    gm.kept = game::ended(gm);
     // A puzzle isn't kept; the puzzles to pick from come back instead.
     sh.screen = if s.screen == PUZZLE { PICKER } else { s.screen };
     apply_prefs(sh);

@@ -40,7 +40,8 @@ fn hole(sh: shell::Shell&) -> const u8[:] {
 fn on_board(sh: shell::Shell&, g: gui::Gui&) -> u8[>..] {
     var quads = 0;
     var pieces = 0;
-    for q in g.quads { if q.extra.z >= gui::ON_BOARD { quads++; } }
+    // On the board: ON_BOARD in extra.z under a scrolling list's CLIP, as the renderer reads it.
+    for q in g.quads { if q.extra.z - gui::CLIP * floor(q.extra.z / gui::CLIP) >= gui::ON_BOARD { quads++; } }
     for p in sh.out.over { if p.win.w > 0.5 { pieces++; } }
     return str(quads, " quads and ", pieces, " piece");
 }
@@ -123,10 +124,11 @@ fn main() {
     var sh = shell::new(rules::RUSSIAN);
     sh.screen = shell::GAME;
     drive::idle(sh, g, 0.0);
-    let into = straight(sh, 0.0);
     let take_back = drive::control(g, 3);
     drive::tap(sh, g, drive::at(sh.out.layout, "c3"), 0.1);
     drive::tap(sh, g, drive::at(sh.out.layout, "d4"), 0.2);
+    // After the move: the moves panel (task 074) has its row.
+    let into = straight(sh, 0.3);
     sh.screen = shell::HOME;
     look(sh, g, 1.0, "home");
     let home_at = sh.out.layout.board;

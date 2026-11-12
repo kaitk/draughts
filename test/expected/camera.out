@@ -1,26 +1,26 @@
-at rest: 52.5° down, board turned 0.0°, bounds 191 160 898 x 616; 3 buttons:
-  1206 394 44 x 44
-  1206 458 44 x 44
-  1206 522 44 x 44
-the view tapped, 0.3 s on: 65.3° down, board turned 0.0°, bounds 220 98 841 x 678; 18 redraws
-  1 s on: 74.0° down, board turned 0.0°, bounds 246 84 788 x 692; 17 redraws more, still animating false
+at rest: 52.5° down, board turned 0.0°, bounds 239 226 802 x 550; 3 buttons:
+  1078 600 44 x 44
+  1142 600 44 x 44
+  1206 600 44 x 44
+the view tapped, 0.3 s on: 65.3° down, board turned 0.0°, bounds 249 146 782 x 630; 18 redraws
+  1 s on: 74.0° down, board turned 0.0°, bounds 256 100 769 x 676; 17 redraws more, still animating false
   a second later: 0 redraws, animating false
-tapped again: 52.5° down, board turned 0.0°, bounds 191 160 898 x 616
-zoomed: 52.5° down, board turned 0.0°, bounds 130 171 1020 x 699, 1.1 times the size; 35 redraws, animating false
-zoomed, the top view: 74.0° down, board turned 0.0°, bounds 201 66 877 x 771
-back: 52.5° down, board turned 0.0°, bounds 191 160 898 x 616, the same view as at first true
+tapped again: 52.5° down, board turned 0.0°, bounds 239 226 802 x 550
+zoomed: 52.5° down, board turned 0.0°, bounds 181 231 919 x 630, 1.1 times the size; 35 redraws, animating false
+zoomed, the top view: 74.0° down, board turned 0.0°, bounds 207 75 866 x 761
+back: 52.5° down, board turned 0.0°, bounds 239 226 802 x 550, the same view as at first true
 showcase on: lit true, dot false
-dragged 60 left and 30 down: 61.5° down, board turned 0.0°, bounds 191 160 898 x 616; eye 2.2 12.8 7.8; selected -1, pressed -1, the position the same true, dot true
+dragged 60 left and 30 down: 61.5° down, board turned 0.0°, bounds 239 226 802 x 550; eye 2.2 12.8 7.8; selected -1, pressed -1, the position the same true, dot true
 showcase off: lit false, the angle kept true, dot true
 c3 tapped through the angle: selected c3
 d4 tapped: moving true
 the move shown, the board turning: 55.8° down, board turned 113.3°, bounds 268 167 744 x 609, dot false
-turned: 52.5° down, board turned 180.0°, bounds 191 160 898 x 616; 41 redraws over the move and the turn, animating false, dot false, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8
-f6 at 510 499, e5 at 599 433 (low on the screen)
-black's move: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Be5,b6,d6,h6,a7,c7,e7,g7,b8,d8,f8,h8; 52.5° down, board turned 0.0°, bounds 191 160 898 x 616
-white's capture: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,f6:Bb6,d6,h6,a7,c7,e7,g7,b8,d8,f8,h8; 52.5° down, board turned 180.0°, bounds 191 160 898 x 616
+turned: 52.5° down, board turned 180.0°, bounds 239 226 802 x 550; 41 redraws over the move and the turn, animating false, dot false, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8
+f6 at 524 529, e5 at 603 470 (low on the screen)
+black's move: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Be5,b6,d6,h6,a7,c7,e7,g7,b8,d8,f8,h8; 52.5° down, board turned 0.0°, bounds 239 226 802 x 550
+white's capture: B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,f6:Bb6,d6,h6,a7,c7,e7,g7,b8,d8,f8,h8; 52.5° down, board turned 180.0°, bounds 239 226 802 x 550
 started over, turning back: 52.5° down, board turned 284.6°, bounds 268 173 744 x 603
-  turned: 52.5° down, board turned 0.0°, bounds 191 160 898 x 616, W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8
-against the computer (white): 52.5° down, board turned 0.0°, bounds 191 160 898 x 616, the flat layout turned true
-after its move: 52.5° down, board turned 0.0°, bounds 191 160 898 x 616, black to move true
+  turned: 52.5° down, board turned 0.0°, bounds 239 226 802 x 550, W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8
+against the computer (white): 52.5° down, board turned 0.0°, bounds 239 226 802 x 550, the flat layout turned true
+after its move: 52.5° down, board turned 0.0°, bounds 239 226 802 x 550, black to move true
 a puzzle: 3 buttons, 52.5° down, board turned 0.0°, bounds 191 160 898 x 616

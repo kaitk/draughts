@@ -48,9 +48,9 @@ struct Allowed {
 }
 
 let ALLOWED = [
-    // A small window's (gui::compact) menu rows are 72 dp, under the floor, accepted for
+    // A small window's (gui::compact) menu rows, the games row with them (task 074), are 72 dp, under the floor, accepted for
     // compact only (the user, 2026-11-09; rendering.md, "Compact").
-    Allowed { under: "the iPad's smallest window", what: "home", wrong: " 4 taps under 88 dp;" },
+    Allowed { under: "the iPad's smallest window", what: "home", wrong: " 5 taps under 88 dp;" },
     // Its game bar's three tiles are 72 x 64 dp, the same acceptance.
     Allowed { under: "the iPad's smallest window", what: "the game", wrong: " 3 taps under 88 dp;" },
 ];

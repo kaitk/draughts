@@ -599,8 +599,16 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
 - **Home** is a title menu (`prototypes/home.html`): the scene and the 3D board, and one glass column
   with the wordmark, then continue with whose game it goes back to ("A friend", "The
   computer · easy"; not shown while the game is one nobody set up and no move was
-  played: `shell::resume`, the rows below moving up), a friend, the computer with its level, and puzzles
-  with stars, then settings, each an icon and a word, in rows 88 dp tall, 2 dp apart. In
+  played: `shell::resume`, the rows below moving up), a friend, the computer with its level, puzzles
+  with stars, and the games played with the player's rating in their draughts once rated
+  ([the games screen](#the-games-screen)), then settings, each an icon and a word, in
+  rows 88 dp tall, 2 dp apart. The menu's height is reckoned without the games row: where
+  the row would shrink the board or leave the screen (a phone, a portrait tablet), the
+  menu keeps that height and its rows scroll under the wordmark down to the screen's
+  foot, the inset under the safe area too; the row below the last whole one shows, its
+  word at least (60 dp under it, the sheet taller where its rim and the inset lack that),
+  fading out over the foot's 72 dp while there are rows below. In a landscape that
+  scrolls the menu stands at the top. In
   portrait settings is instead a gear beside the wordmark, so the sheet leaves the board
   its room: the gear alone, 40 dp at 85%, with no tile, in an 88 dp tap reaching 8 dp over
   and under the row, clear until pressed and then lit round as a pressed row is
@@ -674,8 +682,9 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   choices take the width they need at the left, as home's menu does, the groups under the
   title row with the room left below them, and the board the rest, about two thirds, so from home the board only moves a little; in portrait the board is
   on top, as large as the rest leaves, and the two groups stand side by side under it.
-  **Game**: move hints (the draughts are chosen in home's setup and the puzzles'
-  library; the preview shows the player's). Last, the privacy note
+  **Game**: move hints, and the move list beside the game (off, the moves, the moves
+  marked; [the moves panel](#the-moves-panel)); the draughts are chosen in home's setup
+  and the puzzles' library, and the preview shows the player's. Last, the privacy note
   (`settings.privacy`, App Review Guideline 5.1.1(i)): the policy in one sentence, dim
   in the small face, with no link out, as the app has none. It sits at the group's title row's right end where it fits there in two lines
   at most (the stacked landscapes, which have no height to spare: one line in both
@@ -961,6 +970,43 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   the bar's tiles, the bar 52 dp taller (`panel::TAKEN_BAR_ROW`), white's catch at the
   left, black's at the right; compact, the bar's middle between back and settings, two
   rows. A catch's own glass shows once something is taken. A puzzle shows none.
+
+### The moves panel
+
+The game's moves (`game::moves_panel`): in landscape a glass panel under the play panel,
+as wide, down to the bottom margin, where at least four rows of 34 dp fit
+(`panel::under_right`); on the 3D board five rows, the camera's buttons a row under it,
+and the board shrinking to clear both, then as many rows more as leave the board that
+size (`panel::with_moves`; a wide desktop window, whose board its height holds, to the
+foot). On a desktop the 3D board's frame may be 2.0 times as wide as tall while the panel
+shows, not 1.7, so the panels stand further out where the window has room. A desktop's
+narrow play panel is as tall as its tiles need (`panel::narrow_play_h`), the hint beside
+undo move only where both words fit their halves on two lines (`gui::two_lines`), else
+the hint's row over undo move's tile. Each row is the move's number (small face, dim),
+then white's move and black's as from-to (`32-28`, `28x19`, `c3:e5`) in the body face,
+the latest lit with the glow at 22%, each followed by its mark ([ai](ai.md#judging-a-move)):
+a 16 dp star in the glow colour for the best, `?!` in autumn's gold, `?` orange, `??` the
+forced-capture red, nothing for a good or only move or one not judged yet. Every move is
+in the panel, a list scrolled within its glass (`gui::scroll_begin`), at its foot when a
+move is added or the panel shows again; rows past its top or foot fade out over 40 dp
+there while there are more (`gui::fade_edges`, as home's scrolling menu does). The player's setting (`moves`: off, the moves, the moves with marks) is
+settings' Move list row, under move hints, and the games screen's three tiles; off,
+there is no panel and the 3D board is as large as without it. No panel in portrait or on
+a phone in landscape, which have under four rows' room.
+
+### The games screen
+
+The games played (`src/shell/games.goose`), reached from home's games row and from who's
+playing's tile of three rising bars, beside the pencil. Back and the title head it, the three draughts as tiles
+at its right, each its name and the player's rating there (a row of their own under the
+head where they don't fit beside back). In landscape a panel at the left holds the
+rating (36 dp figures), the results against each level (the level's name and its
+rating at the player's skill there, then won, drawn, lost: a crown, `=`, an X, each with
+its count; left out where the height is short, a phone in landscape), and the move list's
+three tiles; at the right the games in that draughts, newest first, in a scrolling list
+of 88 dp rows: the result as a crown, `=`, or an X, the opponent ("Medium 1644", or "A
+friend") over the date, the rating's change, and the player's blunders as `?? n`. In
+portrait the panel is above the list. Only the rows in view are declared.
 
 ### Transitions
 

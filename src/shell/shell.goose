@@ -50,13 +50,17 @@ import .players;
 import .who;
 import .saved;
 import .roster;
+import .history;
+import .record;
+import .games;
 
 let HOME = 0;
 let GAME = 1;
 let SETTINGS = 2;
 let PICKER = 3;             // the puzzles to pick from
 let PUZZLE = 4;             // one puzzle
-let SCREENS = 5;
+let GAMES = 5;              // the games played (games.goose, task 074)
+let SCREENS = 6;
 
 // What sets the screens apart where the shell runs none of their code: whose board each
 // shows (board_of; home's setup shows its own), how blurred it shows the photograph,
@@ -77,6 +81,7 @@ let KINDS: Kind[SCREENS] = [
     Kind { board: SETTINGS, blur: 0.0, up: RETURN, with: 1 << HOME },                        // SETTINGS
     Kind { board: PUZZLE,   blur: 0.0, up: HOME,   with: 1 << PUZZLE },                      // PICKER
     Kind { board: PUZZLE,   blur: 1.0, up: PICKER, with: 1 << PICKER },                      // PUZZLE
+    Kind { board: PUZZLE,   blur: 0.0, up: HOME,   with: 0 },                                // GAMES
 ];
 
 let DURATION = 0.25;        // seconds a transition takes
@@ -171,6 +176,15 @@ struct Shell {
     // Home's 3D board as a drag on it left it: the showcase's swing and tilt (rig::drive),
     // kept while home stays open, eased back to rest as home is left.
     cam: rig::Rig = rig::Rig {},
+    // The game last written to the player's history, its marks perhaps still coming
+    // (record.goose), and the time now in seconds since the epoch where a test sets it,
+    // else -1 for the clock's.
+    kept: Kept = Kept {},
+    wall: f64  = -1.0,
+    // The games screen's: the playing player's games, read as it opens, and the draughts
+    // it shows.
+    games:         history::Game[..history::MAX_GAMES] = [],
+    games_variant: i64                                 = rules::INTERNATIONAL,
 }
 
 // The screen showing for this frame, taking the pointer and doing what it asks: `fresh`
@@ -182,6 +196,7 @@ fn screen_frame(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool, c
         SETTINGS => settings_screen(sh, g, area, now, fresh),
         PICKER => picker_screen(sh, g, area, now),
         PUZZLE => puzzle_screen(sh, g, area, now),
+        GAMES => games_screen(sh, g, area, now, fresh),
         _ => home_screen(sh, g, area, now),
     };
 }
@@ -214,6 +229,11 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: bo
             puzzle::panel_frame(sh.puzzle, g, p, now, over);
             l = p.board;
             if p.three { sh.went_view = p.view; }
+        },
+        GAMES => {
+            var variant = sh.games_variant;
+            games::frame(g, area, sh.prefs, sh.games, variant);
+            l = board::layout_at(-2.0 * area.z, 0.0, 0.5 * area.z, g.scale, l.n);
         },
         _ => {
             home::frame(over, g, l, rules::VARIANTS[board_of(sh, HOME).variant].size, area, sh.left, sh.prefs, room, resume(sh));
@@ -257,6 +277,7 @@ fn apply_prefs(sh: Shell&) {
     gm.b.king_look = king_look(sh);
     sh.puzzle.b.king_look = king_look(sh);
     gm.look = p.lookout;
+    gm.moves_shown = p.moves;
     gm.look_skill = if gm.computer >= 0 { gm.skill } else { p.skill[clamp(p.level, game::EASY, game::HARD)] };
 }
 
@@ -380,6 +401,7 @@ fn frame(sh: Shell&, g: gui::Gui&, width: f32, height: f32, now: f64, ready3d: b
     let fresh = sh.drawn != sh.screen;
     sh.drawn = sh.screen;
     let changed = declare(sh, g, gui::safe(g, width, height), now, fresh);
+    keep_marks(sh);
     let out .= sh.out;
     out.changed = changed || fresh;
     out.screen = sh.screen;
@@ -569,7 +591,9 @@ fn raise_in(sh: Shell&, room: float4, n: i64, u: f32, l: board::Layout&) -> view
 // `now` (panel::aim), else the flat board's.
 fn game_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
     let n = rules::VARIANTS[sh.game.b.variant].size;
-    var l = if settings::raised(sh.prefs) { panel::corners_in(area, n, u, panel::PITCH_PORTRAIT, true, true) }
+    var l = if settings::raised(sh.prefs) {
+                panel::corners_in(area, n, u, panel::PITCH_PORTRAIT, true, true, sh.prefs.moves != settings::MOVES_HIDDEN)
+            }
             else { panel::layout_in(area, n, u, true, true) };
     l.board.flip = sh.game.computer == rules::WHITE;
     panel::aim(l, sh.game.cam, now);
@@ -595,6 +619,7 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
     // A game against the computer ended: won or lost, the child meets a stronger or weaker
     // one next; drawn, the same, a game played on its level all the same.
     let gm .= sh.game;
+    if ev.over { keep_game(sh, ev.winner); }
     if ev.ended {
         let k = clamp(gm.level, game::EASY, game::HARD);
         sh.prefs.skill[k] = ai::adapt(sh.prefs.skill[k], k, ev.result, sh.prefs.played[k]);
@@ -625,6 +650,29 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
         return true;
     }
     return changed;
+}
+
+// The games played: the history read as the screen opens, the draughts it shows at first
+// the setup's. Its board lies off the screen, as the puzzles' library's.
+fn games_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) -> bool {
+    sh.out.over.clear();
+    if fresh {
+        read_history(sh, sh.games);
+        sh.games_variant = sh.prefs.variant;
+    }
+    var variant = sh.games_variant;
+    let ask = games::frame(g, area, sh.prefs, sh.games, variant);
+    sh.games_variant = variant;
+    sh.out.layout = board::layout_at(-2.0 * area.z, 0.0, 0.5 * area.z, g.scale, sh.out.layout.n);
+    if ask == games::CHANGED {
+        sh.changed = true;
+        apply_prefs(sh);
+    }
+    if ask == games::BACK {
+        go_to(sh, HOME, now);
+        sh.setup = home::NO_SETUP;
+    }
+    return ask != games::NOTHING;
 }
 
 // Where a puzzle puts the board and its panels, turned when black is to move, so the side
@@ -811,6 +859,7 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
         },
         home::EXIT => { sh.out.quit = true; },
         home::PLAYERS => { who::open(sh.who); },
+        home::GAMES => { go_to(sh, GAMES, now); },
         home::PLAY => { play(sh, now); },
         _ => {},
     }
@@ -852,6 +901,7 @@ fn who_card(sh: Shell&, g: gui::Gui&, area: float4) -> bool {
         who::SAVE => { edit_player(sh, index, w.picture, w.name); },
         who::AGAIN => { start_again(sh, index); },
         who::REMOVE => { remove_player(sh, index); },
+        who::GAMES => { go_to(sh, GAMES, 0.0); },
         _ => {},
     }
     return ask != who::NOTHING;

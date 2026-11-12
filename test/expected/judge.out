@@ -1,0 +1,39 @@
+W:W31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50:B1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20
+  31-26  best  loss 7  best 0  played -3
+  32-27  good  loss 10  best 0  played -4
+  33-28  best  loss 7  best 0  played -3
+  34-29  best  loss 0  best 0  played 0
+  35-30  best  loss 7  best 0  played -3
+  31-27  best  loss 7  best 0  played -3
+  32-28  best  loss 7  best 0  played -3
+  33-29  best  loss 7  best 0  played -3
+  34-30  best  loss 0  best 0  played 0
+W:Wh2,c3,g3:Be5,a7,h8
+  c3-b4  good  loss 20  best 29985  played 391
+  g3-f4  best  loss 0  best 29985  played 29985
+  c3-d4  ??  loss 493  best 29985  played 3
+  g3-h4  good  loss 46  best 29985  played 303
+forced c3:e5  only
+expected at -300, -100, 0, 100, 300, won: 47 269 500 731 953 1000
+loss 0: best, accuracy 100
+loss 9: best, accuracy 96
+loss 10: good, accuracy 96
+loss 49: good, accuracy 80
+loss 50: ?!, accuracy 80
+loss 99: ?!, accuracy 64
+loss 100: ?, accuracy 64
+loss 199: ?, accuracy 40
+loss 200: ??, accuracy 40
+loss 500: ??, accuracy 9
+skill 0 rated 500
+skill 8 rated 587
+skill 10 rated 763
+skill 25 rated 1362
+skill 30 rated 1384
+skill 40 rated 1644
+skill 60 rated 2127
+skill 90 rated 2716
+skill 100 rated 2721
+800 against 800: won 820, drawn 800, lost 780
+800 against 1644 (medium), 25 games: won 820, lost 800
+150 losing to 587 (easy): 147, at the floor: 100
