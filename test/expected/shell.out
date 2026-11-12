@@ -1,10 +1,10 @@
-start: home, sharp true, board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, glyphs 75, W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 0
+start: home, sharp true, board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, glyphs 77, W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 0
 the wordmark's piece: 1, crowned 1.0, no ring true
 the player's chip at vec4<f32> { 464.0, 24.0, 88.0, 88.0 }, faces 1
 continue: game, sharp false, board at vec4<f32> { 280.0, 40.0, 720.0, 11.52 }, glyphs 46, W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 0
-home: home, sharp true, board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, glyphs 75, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
+home: home, sharp true, board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, glyphs 77, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
 puzzles: puzzles, sharp true, board at vec4<f32> { -2560.0, 0.0, 640.0, 10.240001 }, glyphs 276, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
-back from the puzzles: home, sharp true, board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, glyphs 75, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
+back from the puzzles: home, sharp true, board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, glyphs 77, B:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 1
 settings: settings, board at vec4<f32> { -2560.0, 0.0, 640.0, 10.240001 }, sharp true, its first frame drawn true, the next false
 back from settings: home
 settings from the game: settings
@@ -16,7 +16,7 @@ play: game, 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,
 the computer's setup: tiles 14, pieces over the UI 2
 draughts tiles: 141.0 101.0 99.0, the first's name in the body face true
 play: game, 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, clock 2, computer 0, level 2, skill 90, number 0, turned true; picture = fox;season = by-date;background = photo;board = 2d;hints = mistakes;lookout = off;kings = auto;draughts = russian;level = hard;color = black;clock = 10+5;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 1;moves = marks;
-home: the computer's row notes hard; glyphs 86, turned true
+home: the computer's row notes hard; glyphs 88, turned true
 portrait: board vec4<f32> { 104.0, 128.0, 592.0, 9.472 }, sheet from 744.0, clear true
 portrait setup: board vec4<f32> { 202.0, 40.0, 396.0, 6.3360004 }, sheet from 476.0, clear true
 draughts tiles: 239.0 239.0 239.0, the first's name in the body face true
