@@ -714,10 +714,12 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   `board = 2d|3d`): its 3D tile plays the game on the 3D board (`settings::raised`,
   `src/shell/prefs.goose`; the game screen round it is under "Board and pieces"), and
   shows it on every screen with a board: home, the preview here (its kings' auto a
-  stack), and a puzzle. After them a third tile, on or off by itself, Turns with a
-  friend (`turn = on|off`, off by default): a friend's game turns the board to the side
+  stack), and a puzzle. After them a third tile, on or off by itself, Turns (with a
+  friend) (`turn = on|off`, off by default): a friend's game turns the board to the side
   to move after each move, the flat board at once and the 3D one easing round (the game
-  screen's "Against a friend"). Each
+  screen's "Against a friend"). Switched on, the preview turns once round to show it
+  (`Shell.demo`, twice the game's turn): the 3D board a full turn, the flat one showing
+  black's side for the middle half. Each
   setting is a dim 18 px name at the left of its tiles (above them in portrait); a tile
   has radius 16 px and is lit in the glow color at 22% with a 2 px glow border when on.
   Every tile, the language's and the seasons' too, is 88 px tall and wide at least; the title row is 100 px,

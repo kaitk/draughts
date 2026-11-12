@@ -176,6 +176,10 @@ struct Shell {
     // Home's 3D board as a drag on it left it: the showcase's swing and tilt (rig::drive),
     // kept while home stays open, eased back to rest as home is left.
     cam: rig::Rig = rig::Rig {},
+    // Settings' preview turning once round when Turns with a friend is switched on, to
+    // show what it does: the 3D board eases a full turn, the flat one shows black's side
+    // for the middle half of it.
+    demo: rig::Ease = rig::Ease { soft: true, .. },
     // The game last written to the player's history, its marks perhaps still coming
     // (record.goose), and the time now in seconds since the epoch where a test sets it,
     // else -1 for the clock's.
@@ -249,7 +253,8 @@ fn animating(sh: Shell&, g: gui::Gui&, now: f64) -> bool {
     return match sh.screen {
         GAME => game::animating(sh.game, g, now),
         PUZZLE => puzzle::animating(sh.puzzle, g, now),
-        _ => board::animating(shown(sh), now) || gui::animating(g) || rig::moving(sh.cam, now),
+        _ => board::animating(shown(sh), now) || gui::animating(g) || rig::moving(sh.cam, now)
+             || (sh.screen == SETTINGS && rig::moving(sh.demo, now)),
     };
 }
 
@@ -799,8 +804,18 @@ fn settings_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool
     if fresh { settings::stage(sh.preview, sh.prefs, now + (1.0 - progress(sh, now)) * DURATION); }
     let changed = board::update(sh.preview, now);
     var room = float4 { 0.0, 0.0, 0.0, 0.0 };
+    let turned_on = !sh.prefs.turns;
     let ask = settings::frame(sh.prefs, sh.out.over, g, sh.out.layout, area, strings::current, room);
+    if ask == settings::CHANGED && turned_on && sh.prefs.turns {
+        rig::put(sh.demo, 0.0);
+        rig::go(sh.demo, 360.0, now, 2.0 * rig::TURN);
+    }
+    let spin = if rig::moving(sh.demo, now) { rig::value(sh.demo, now) } else { 0.0 };
     sh.came_view = raise_in(sh, room, sh.out.layout.n, g.scale, sh.out.layout);
+    if spin != 0.0 {
+        if sh.came_view.rect.z > 0.0 { sh.came_view = view3d::turned(sh.came_view, view3d::Camera { turn: spin, .. }); }
+        else { sh.out.layout.flip = spin > 90.0 && spin < 270.0; }
+    }
     if ask == settings::CHANGED {
         apply_prefs(sh);
         settings::stage(sh.preview, sh.prefs, now);

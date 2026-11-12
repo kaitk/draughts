@@ -157,9 +157,15 @@ fn main() {
     drive::tap(sh, g, drive::tile(g, RAISED), 4.1);
     show(sh, "3D");
     // The Board row's third tile turns a friend's game's board, on and off, raised staying.
+    // Switched on, the preview turns once round to show it: half way at 0.7 s, back at 1.4.
     drive::tap(sh, g, drive::tile(g, TURNS), 4.15);
     print("turns tapped: on ", sh.prefs.turns, ", the game's ", sh.game.turns, ", raised ", settings::raised(sh.prefs));
-    drive::tap(sh, g, drive::tile(g, TURNS), 4.2);
+    let at = 4.15 + 0.04;
+    drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, at + 0.7);
+    print("  the preview 0.7 s on: turned ", round(sh.came_view.turn), "°, animating ", shell::animating(sh, g, at + 0.7));
+    drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, at + 1.5);
+    print("  1.5 s on: turned ", round(sh.came_view.turn), "°, still turning ", rig::moving(sh.demo, at + 1.5));
+    drive::tap(sh, g, drive::tile(g, TURNS), 6.0);
     print("  again: on ", sh.prefs.turns, ", the game's ", sh.game.turns);
     drive::tap(sh, g, drive::tile(g, MOVES), 4.3);
     show(sh, "all moves");

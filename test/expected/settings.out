@@ -78,6 +78,8 @@ after the pulse:
 summer: picture = fox;season = summer;background = photo;board = 2d;turn = off;hints = mistakes;lookout = off;kings = auto;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks; language -1, changed true, game's board hints moves false, kings 1
 3D: picture = fox;season = summer;background = photo;board = 3d;turn = off;hints = mistakes;lookout = off;kings = auto;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks; language -1, changed true, game's board hints moves false, kings 2
 turns tapped: on true, the game's true, raised true
+  the preview 0.7 s on: turned 188.0°, animating true
+  1.5 s on: turned 0.0°, still turning false
   again: on false, the game's false
 all moves: picture = fox;season = summer;background = photo;board = 3d;turn = off;hints = moves;lookout = off;kings = auto;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks; language -1, changed true, game's board hints moves true, kings 2
   preview 10x10, W:WK20,28,32,33,37,39,40,41,42,43,44:B7,8,10,11,12,17,23,24, selected 4,4, targets 1, stops 1, rings pulsing 0 still 0, kings drawn 2.0, animating false
