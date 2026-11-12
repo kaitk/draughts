@@ -1,6 +1,6 @@
 # 072: Keyboard and controller focus
 
-Status: in-progress (steps 1 to 6 built 2026-11-11; the board's look and a real gamepad to try)
+Status: in-progress (steps 1 to 6 built 2026-11-11, the board's look agreed 2026-11-12; a real gamepad to try)
 
 Every screen played with the keyboard alone, and later a gamepad, as a desktop game is
 expected to be: arrow keys move a visible focus between the controls, Enter presses the
@@ -88,7 +88,7 @@ The rest of step 5, in this order:
    and Shift and Tab step between groups (`gui::group`: the way out, the board, the play
    panel), each coming back to where it was. `test/game/board_keys`; `--keys` takes
    `tab` and `backtab`.
-   The look, proposed and shot, not yet agreed: a glow line just inside the square, its
+   The look, agreed with the user 2026-11-12: a glow line just inside the square, its
    corners rounded, over a faint dark seam (it vanished on a light square without it),
    in the flat board's pass and, on the 3D board, with the marks over the kept image, so
    a move of the cursor draws only those. Rejected: task 067's lit square, which the
@@ -101,25 +101,28 @@ the left stick (past half way, let go under a third) moves and repeats as the ar
 A presses as Enter and holds a hold tile, B goes back as Escape, LB and RB step between
 the groups as Shift and Tab and Tab. SDL's gamepad API from the program's C, as on every
 platform (Android's and iOS's SDL already carry it; iOS without HIDAPI, so no Bluetooth
-ask). Checked against SDL's virtual gamepad on the Mac, not yet with a real one. At rest
-on the Mac with no gamepad: no CPU over 20 s, as before. With one open SDL pumps every
-1 ms (docs/goose-findings.md, "no gamepad"): to measure with a real gamepad, and bound
-if it shows. No gamepad glyphs: the app shows no key's name anywhere to replace.
+ask). Checked against SDL's virtual gamepad on the Mac. No gamepad glyphs: the app shows
+no key's name anywhere to replace.
 
-The ngfx build's shaders (its `board.slang`, and the 3D marks it generates from gfx's
-GLSL) carry the cursor too, but weren't built: no goose-ngfx checkout or slangc on the
-Mac this ran on.
+At rest, 2026-11-12, on the Mac with a PS5 pad connected (CPU over 20 s idle, from
+`ps`): SDL reading it itself, every 1 ms, 1.0 s (none without the pad); SDL's reading
+off and the loop waking 30 times a second to read it, 0.37 s, of which SDL's HIDAPI
+thread taking the pad's streamed reports was most; HIDAPI off on Apple's systems (the
+GameController framework reads the pad), 0.30 s; its change handler waking the loop
+and no timed wakes, 0.01 s. Elsewhere (Android, Windows) the 30 wakes a second remain
+while a gamepad is connected, unmeasured (docs/goose-findings.md, "no gamepad").
+
+The ngfx build (scripts/ngfx.py, `NGFX` and `NGFX_SLANGC` set) built 2026-11-12 with the
+cursor: headless shots at 1280 × 800 match gfx's flat, and the 3D cursor draws.
 
 ## Next session
 
-1. The user agrees the board's cursor look (or changes it), from the shots.
-2. Try by hand on the Mac: the held-key repeat, Enter holding a hold tile, the board with
-   the keys flat and 3D, Tab; and a real gamepad, on the Mac and on a phone or the tablet
-   (A, B, the D-pad, the stick, the shoulders).
-3. Idle with a gamepad connected, on the Mac and a device; bound SDL's 1 ms pump if it
-   shows (`SDL_HINT_AUTO_UPDATE_JOYSTICKS` off, the program updating at its own pace).
-4. Build the ngfx variant once its toolchain is there, and look at the cursor in it.
-5. Merge `keys-board` into main.
+1. Try by hand on the Mac: the held-key repeat, Enter holding a hold tile, the board with
+   the keys flat and 3D, Tab; and the PS5 pad (A, B, the D-pad, the stick, the
+   shoulders), its first press after a long rest waking the app at once.
+2. A gamepad on a phone or the tablet, and its idle cost there (the 30 wakes a second
+   on Android); at the task's end with the other device numbers.
+3. Merge `keys-board` into main.
 
 ## Acceptance criteria
 
@@ -133,10 +136,10 @@ Mac this ran on.
       (`docs/architecture/rendering.md`), and the frame loop allocates nothing.
 - [x] A test drives the keys through home and a setup and checks the focus and the pick
       (`test/gui/focus`, `test/shell/home_keys`).
-- [ ] The board played with the keyboard (step 5), agreed with the user: built and
-      tested headless, the look shot, to agree.
+- [x] The board played with the keyboard (step 5), agreed with the user: built, tested
+      headless, the look agreed 2026-11-12.
 - [ ] A gamepad does all of it (with task 064): built, checked against SDL's virtual
-      gamepad; a real one to try.
+      gamepad, idle with a PS5 pad on the Mac at no cost; a real one's buttons to try.
 - [x] `docs/architecture/rendering.md` and `docs/decisions/rendering.md` updated, the
       Quit row recorded as narrowing the 2026-11-08 decision against a last row (and the
       board's keys, the groups, and the gamepad).

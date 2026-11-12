@@ -16,11 +16,14 @@ let REPEAT_RATE = 0.08;     // seconds between its repeats
 
 // The gamepad's buttons down this frame (pad.c's bits), 0 with none connected.
 extern fn draughts_pad() -> i64;
+extern fn draughts_pad_wakes() -> u8;
 let PAD_A = 1;
 let PAD_B = 2;
 let PAD_LB = 16;
 let PAD_RB = 32;
 let PAD_UP = 256;           // the D-pad or the stick; the next three after it
+let PAD_THERE = 1 << 31;    // a gamepad is connected
+let PAD_POLL = 1.0 / 30.0;  // seconds between the idle loop's reads of a connected gamepad
 
 // The arrow held, one of gui::STEP_UP..STEP_RIGHT or STEP_NONE, and when it next repeats;
 // the gamepad's buttons down last frame, and whether its B went down this frame.
@@ -77,6 +80,12 @@ fn keys(r: Repeat&, input: gui::Input&, now: f64) {
         input.tab = -1;
     }
     r.back = went & PAD_B != 0;
+}
+
+// Seconds until the idle loop next reads the gamepad (pad.c: SDL doesn't), or -1 with none
+// connected or one that wakes the loop itself (the Mac's and iOS's).
+fn pad_in(r: Repeat) -> f64 {
+    if r.buttons & PAD_THERE != 0 && draughts_pad_wakes() == 0 { PAD_POLL } else { -1.0 }
 }
 
 // Seconds until the held arrow's next repeat, or -1 with none held.

@@ -238,8 +238,8 @@ are in git history before that day.
   learns from; a cursor on the dark squares alone, whose up and down have two squares to
   choose from and so need a rule to learn. Enter as a tap keeps one path through
   `board::press` for the finger, the mouse, and the keys.
-- The board's cursor is a glow line just inside its square (2026-11-11, task 072, proposed
-  and shot; to be agreed with the user), as the focus ring is round a control, rather
+- The board's cursor is a glow line just inside its square (2026-11-11, task 072; agreed
+  with the user 2026-11-12), as the focus ring is round a control, rather
   than task 067's lit square, which the last move's tint already is. On the 3D board it
   is drawn with the marks over the kept image, so a move of it doesn't draw the board.
 - Groups and Tab (2026-11-11): the game's screen is three groups, the way out, the
@@ -249,6 +249,12 @@ are in git history before that day.
 - A gamepad through SDL's gamepad API in the program's C (2026-11-11), as the safe area
   is read: goose_gfx has none (docs/goose-findings.md). It feeds the same moves as the
   keys, so the screens know nothing of it. B is back, as Escape and Android's back are.
+- A gamepad at rest costs nothing (2026-11-12): SDL doesn't read the gamepads on its own,
+  the program does when its loop runs, and on Apple's systems the GameController
+  framework reads them, its change handler waking the loop. Rejected: SDL's own reading,
+  every millisecond while one is open (5% of a core idle on the Mac with a PS5 pad); the
+  loop waking 30 times a second on Apple's systems too (1.5%: each wake goes through
+  AppKit). Elsewhere the loop still wakes 30 times a second while one is connected.
 
 **The game screen**
 
