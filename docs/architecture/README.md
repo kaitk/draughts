@@ -83,8 +83,11 @@ renderer: `scene_gpu`, `draw_gpu`, `widgets_gpu`, `host_gpu` (opening the window
 presenting, the screenshot), `render3d_gpu` (a second file in namespace `render3d`), and
 `photo_gpu.h` for `photo.c`; `gpu` names the renderer's handle types and the few calls
 the drawers make themselves. gfx's are in `src/app/` and `src/render3d/`. goose-ngfx's
-are in `src/ngfx/`, which `scripts/ngfx.py` lays over them, for a build that draws
-through NoGraphicsAPI. Its shaders are gfx's GLSL written as Slang at each build
+are in `src/ngfx/` (`draw_ngfx` and so on), and `scripts/ngfx.py` builds an executable
+holding both: gfx's recorders compiled again under names of their own (`draw_gfx`), and in
+their place facades (`src/ngfx/`'s `draw_gpu`, ...) that call one or the other, as the
+renderer chosen at start says (`nx::ngfx_on`). The drawers hold gfx's handle types; `nx`
+gives goose-ngfx's calls those types. Its shaders are gfx's GLSL written as Slang at each build
 (`scripts/ngfx_2d_shaders.py` and `ngfx_3d_shaders.py`), so each shader has one source,
 and compiled ahead; `src/ngfx/shaders/` holds in Slang only what they include, the
 antialiasing and mip passes ngfx alone has, and SMAA's wrapper. The gfx build is what

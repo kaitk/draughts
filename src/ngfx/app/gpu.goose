@@ -1,45 +1,44 @@
-// The renderer's handles and the few calls every drawer makes, for goose-ngfx, in place of
-// src/app/gpu.goose (scripts/ngfx.py).
+// The renderer's handles and the few calls every drawer makes, in the build that holds
+// both renderers (scripts/ngfx.py lays this over src/app/gpu.goose): each call goes to
+// gfx's (gpu_gfx, src/app/gpu.goose compiled under that name) or goose-ngfx's (gpu_ngfx),
+// as nx::ngfx_on says, set once at start (host_gpu::open). The handles are gfx's types; under
+// ngfx they hold ngfx's ids (nx).
 namespace gpu;
 import std;
 import vec;
-import ngfx;
+import gfx;
 
-type Texture = ngfx::Texture;
-type Sampler = ngfx::Sampler;
-type Pipeline = ngfx::Pipeline;
-type Buffer = ngfx::Buffer;
+type Texture = gfx::Texture;
+type Sampler = gfx::Sampler;
+type Pipeline = gfx::Pipeline;
+type Buffer = gfx::Buffer;
 
-fn no_texture() -> Texture { ngfx::Texture { 0 } }
+fn no_texture() -> Texture { gfx::Texture { 0 } }
 
-fn release(t: Texture) { ngfx::release(t); }
-fn release(s: Sampler) { ngfx::release(s); }
+fn release(t: Texture) { if nx::ngfx_on { gpu_ngfx::release(t); } else { gpu_gfx::release(t); } }
+fn release(s: Sampler) { if nx::ngfx_on { gpu_ngfx::release(s); } else { gpu_gfx::release(s); } }
 
-// The screen's texture, and a pass into texture t cleared to `clear`, with no depth
-// target, and its end.
-fn screen() -> Texture { ngfx::screen() }
-fn begin_pass(t: Texture, clear: float4) { ngfx::begin_pass(t, ngfx::Texture { 0 }, clear); }
-fn end_pass() { ngfx::end_pass(); }
+fn screen() -> Texture { return if nx::ngfx_on { gpu_ngfx::screen() } else { gpu_gfx::screen() }; }
+fn begin_pass(t: Texture, clear: float4) { if nx::ngfx_on { gpu_ngfx::begin_pass(t, clear); } else { gpu_gfx::begin_pass(t, clear); } }
+fn end_pass() { if nx::ngfx_on { gpu_ngfx::end_pass(); } else { gpu_gfx::end_pass(); } }
 
-// A texture the passes draw into, RGBA8.
-fn target(width: i64, height: i64) -> Texture { ngfx::render_target(width, height, ngfx::RGBA8) }
-
-// A texture of one channel, sampled, holding px.
-fn texture_r8(width: i64, height: i64, px: const u8[:]) -> Texture {
-    let t = ngfx::texture2d(width, height, ngfx::R8, ngfx::SAMPLED);
-    ngfx::update_texture(t, px);
-    return t;
+fn target(width: i64, height: i64) -> Texture {
+    return if nx::ngfx_on { gpu_ngfx::target(width, height) } else { gpu_gfx::target(width, height) };
 }
 
-// Texture t's pixels read back into px, RGBA8; false if it can't.
-fn read_texture(t: Texture, px: u8[>..]&) -> bool { ngfx::read_texture(t, px) }
+fn texture_r8(width: i64, height: i64, px: const u8[:]) -> Texture {
+    return if nx::ngfx_on { gpu_ngfx::texture_r8(width, height, px) } else { gpu_gfx::texture_r8(width, height, px) };
+}
 
-// Submits what is drawn and waits for the GPU.
-fn flush() { ngfx::flush(); }
+fn read_texture(t: Texture, px: u8[>..]&) -> bool {
+    return if nx::ngfx_on { gpu_ngfx::read_texture(t, px) } else { gpu_gfx::read_texture(t, px) };
+}
 
-// Where the bench's pulse phase draws its passes: a texture the screen's size, made in t
-// once, as the screen is the window's image, which each flush would show without the UI.
+fn flush() { if nx::ngfx_on { gpu_ngfx::flush(); } else { gpu_gfx::flush(); } }
+
+// gfx's alone: ngfx's passes have their own full-screen vertex shader in each blob.
+fn full_vert() -> const u8[:] { gpu_gfx::full_vert() }
+
 fn bench_target(t: Texture&, size: int2) -> Texture {
-    if t.id == 0 { t = ngfx::render_target(size.x, size.y, ngfx::BGRA8); }
-    return t;
+    return if nx::ngfx_on { gpu_ngfx::bench_target(t, size) } else { gpu_gfx::bench_target(t, size) };
 }

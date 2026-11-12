@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
-"""Build Draughts on goose-ngfx (NoGraphicsAPI) instead of gfx, and optionally run it
-(task 065; a build option beside gfx's, which ships).
+"""Build Draughts holding both renderers, gfx and goose-ngfx (NoGraphicsAPI), one chosen
+when it starts (task 073), and optionally run it.
 
     python scripts/ngfx.py src/app/draughts.goose              build build/ngfx/draughts(.exe)
-    python scripts/ngfx.py src/app/draughts.goose --run -- --screen game
+    python scripts/ngfx.py src/app/draughts.goose --run -- --renderer gfx --screen game
                                                                build, and run it with those flags
 
-The gfx build is untouched. This copies the program (src/, strings/, assets/, and the
-backgrounds' JPEG and ASTC masters) into build/ngfx/tree/ and lays src/ngfx/ over it: the
-ngfx recorders in place of gfx's (src/ngfx/app/'s gpu, host_gpu, scene_gpu, draw_gpu,
-widgets_gpu, and photo_gpu.h over src/app/'s, src/ngfx/render3d/render3d_gpu.goose over
-src/render3d/'s), the drawers themselves shared. The root file gets the package's import, the sidecar the package's C
-headers, and the Slang shaders are compiled ahead into ngfx's blobs, which the app embeds,
-so it runs no shader compiler: the 2D shaders and the 3D board's, written from gfx's GLSL
-by ngfx_2d_shaders.py and ngfx_3d_shaders.py, and src/ngfx/shaders/, what they include and
-the shaders ngfx alone has. SMAA (third_party/smaa) comes with them: its shader, which
-smaa.slang includes, and its tables, which render3d embeds.
+The gfx-only build (Android's) is untouched. This copies the program (src/, strings/,
+assets/, the backgrounds' JPEG and ASTC masters, and SMAA's tables) into build/ngfx/tree/
+and lays src/ngfx/ over it. Each recorder twin then has three parts: gfx's, compiled under
+a name of its own (GFX_RECORDERS: src/app/draw_gpu.goose as draw_gfx, and so on, its
+namespace line rewritten), goose-ngfx's (src/ngfx/app/draw_ngfx.goose, ...), and in the
+gfx recorder's place a facade of the same name that calls one or the other as
+nx::ngfx_on says (src/ngfx/app/draw_gpu.goose, ...; render3d_gpu.goose and photo_gpu.h
+alike). The drawers are shared and hold gfx's handle types; nx gives goose-ngfx's calls
+those types. The root file gets the package's import and the halves', the sidecar the
+package's C headers, and the Slang shaders are compiled ahead into ngfx's blobs, which the
+app embeds, so it runs no shader compiler: the 2D shaders and the 3D board's, written from
+gfx's GLSL by ngfx_2d_shaders.py and ngfx_3d_shaders.py, and src/ngfx/shaders/, what they
+include and the shaders ngfx alone has. SMAA (third_party/smaa) comes with them: its
+shader, which smaa.slang includes, and its tables, which render3d embeds.
 
 Needs a goose-ngfx checkout (NGFX, else ../goose/goose-ngfx beside this repository),
 slangc 2026.18.2 or later (NGFX_SLANGC), and what ngfx's own build needs (its
@@ -66,7 +70,8 @@ def copy_if_changed(src, dst):
 
 def sync(src, dst, over=None):
     """dst/ as a copy of src/, each file copied if it changed; where over/ has a file of
-    the same path, that one instead. src/ngfx/ itself is left out."""
+    the same path, that one instead, and over/'s files with none in src/ too. src/ngfx/
+    itself is left out."""
     for f in src.rglob("*"):
         r = f.relative_to(src)
         if f.is_dir() or r.parts[0] == "ngfx":
@@ -74,6 +79,38 @@ def sync(src, dst, over=None):
         o = over / r if over else None
         (dst / r).parent.mkdir(parents=True, exist_ok=True)
         copy_if_changed(o if o and o.exists() else f, dst / r)
+    for o in over.rglob("*") if over else []:
+        r = o.relative_to(over)
+        if o.is_file() and not (src / r).exists():
+            (dst / r).parent.mkdir(parents=True, exist_ok=True)
+            copy_if_changed(o, dst / r)
+
+
+# gfx's recorders, compiled again beside goose-ngfx's under a name of their own, as the
+# overlay's recorders of the same name are facades that call one or the other: each file,
+# its copy's name, and its namespace's line before and after. A recorder never names its
+# own namespace, so the copy is the same code.
+GFX_RECORDERS = [
+    ("app/gpu.goose", "app/gpu_gfx.goose", "namespace gpu;", "namespace gpu_gfx;"),
+    ("app/host_gpu.goose", "app/host_gfx.goose", "namespace host_gpu;", "namespace host_gfx;"),
+    ("app/scene_gpu.goose", "app/scene_gfx.goose", "namespace scene_gpu;", "namespace scene_gfx;"),
+    ("app/draw_gpu.goose", "app/draw_gfx.goose", "namespace draw_gpu;", "namespace draw_gfx;"),
+    ("app/widgets_gpu.goose", "app/widgets_gfx.goose", "namespace widgets_gpu;", "namespace widgets_gfx;"),
+    ("render3d/render3d_gpu.goose", "render3d/render3d_gfx.goose", "namespace render3d;", "namespace render3d_gfx;"),
+    ("app/photo_gpu.h", "app/photo_gfx.h", None, None),
+]
+# The app's recorders' two halves, which the root file imports as it does every app file.
+HALVES = ["gpu_gfx", "gpu_ngfx", "host_gfx", "host_ngfx", "scene_gfx", "scene_ngfx", "draw_gfx", "draw_ngfx",
+          "widgets_gfx", "widgets_ngfx"]
+
+
+def gfx_recorders(tree):
+    for src, dst, before, after in GFX_RECORDERS:
+        text = (ROOT / "src" / src).read_text(encoding="utf-8")
+        if before:
+            assert text.count(before) == 1, f"{src}: not one '{before}'"
+            text = text.replace(before, after)
+        write_if_changed(tree / "src" / dst, text)
 
 
 def rel(frm, to):
@@ -84,8 +121,13 @@ def tree(program, tree=TREE):
     """build/ngfx/tree/ (or another): the program with src/ngfx/ laid over it; the root
     file's path."""
     sync(ROOT / "src", tree / "src", ROOT / "src/ngfx")
+    gfx_recorders(tree)
     for part in ["strings", "assets"]:
         sync(ROOT / part, tree / part)
+    # SMAA's tables, which gfx's 3D recorder embeds from there.
+    (tree / "third_party/smaa").mkdir(parents=True, exist_ok=True)
+    for name in ["area.bin", "search.bin"]:
+        copy_if_changed(ROOT / "third_party/smaa" / name, tree / "third_party/smaa" / name)
     masters = ROOT / "design/backgrounds/masters"
     if masters.exists():
         (tree / "design/backgrounds/masters").mkdir(parents=True, exist_ok=True)
@@ -95,10 +137,12 @@ def tree(program, tree=TREE):
     root = app / program.name
     text = (ROOT / "src/app" / program.name).read_text(encoding="utf-8")
     text = text.replace("import os;\n", f'import os;\nimport ngfx from "{rel(app, NGFX)}";\n', 1)
+    # Before the facades, whose globals may take the halves' (draw_gpu's shader blocks).
+    text = text.replace("import .draw_gpu;\n", "".join(f"import .{h};\n" for h in HALVES) + "import .draw_gpu;\n", 1)
     write_if_changed(root, text)
     build = (ROOT / "src/app/draughts.build").read_text(encoding="utf-8")
     includes = [rel(app, ROOT / "third_party/goose_gfx/third_party/nuklear/demo/common/filebrowser"),
-                rel(app, NGFX / "native")]
+                rel(app, NGFX / "native"), rel(app, ROOT / "third_party/goose_gfx/src/gfx")]
     build = re.sub(r"c_include\s*=\s*\[[^\]]*\];",
                    "c_include = [" + ", ".join(f'"{p}"' for p in includes) + "];", build)
     write_if_changed(app / "draughts.build", build)

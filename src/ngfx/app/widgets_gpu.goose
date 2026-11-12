@@ -1,66 +1,43 @@
-// Recording the UI's quads (widgets.goose) through goose-ngfx, in place of
-// src/app/widgets_gpu.goose (scripts/ngfx.py): its shaders, written from that file's GLSL
-// (scripts/ngfx_2d_shaders.py) and built ahead, and the quads copied into each frame's
-// memory that draws them as they come, an instanced draw per run of one pipeline pulling
-// them from there.
+// The UI's quads (widgets.goose) in the build that holds both renderers (scripts/ngfx.py
+// lays this over src/app/widgets_gpu.goose): gfx's recorder (widgets_gfx) or goose-ngfx's
+// (widgets_ngfx), as nx::ngfx_on says, each holding its own state.
 namespace widgets_gpu;
 import std;
 import vec;
-import ngfx;
 
 import gui from "../gui";
 
-// The quads' root (ui_base, ui_icons, and ui_faces alike) and compose's, as their
-// shaders' headers lay them out; `first`, the run's first quad, is the one field gfx's
-// shaders have no block for: gfx draws from a first instance, which SV_InstanceID leaves
-// out.
-struct Root {
-    quads: u64,
-    glass: u32, atlas: u32, thumbs: u32, badges: u32, smp: u32, first: u32,
-    view:  widgets::View,
-    theme: theme::Theme,
-}
-struct ComposeRoot { layer: u32, smp: u32, pad0: u32, pad1: u32 }
-
+// The chosen renderer's half is made; the other stays empty.
 struct Gpu {
-    pipelines: ngfx::Pipeline[3],
-    addr:      u64,              // this frame's quads in its memory
-    compose:   ngfx::Pipeline,
+    gfx_gpu:  widgets_gfx::Gpu,
+    ngfx_gpu: widgets_ngfx::Gpu,
 }
 
 fn new() -> Gpu {
-    let desc = ngfx::PipelineDesc { blend: ngfx::BLEND_PREMULTIPLIED };
-    return Gpu { pipelines: [ngfx::pipeline(embed_file("shaders/ui_base.blob"), desc),
-                             ngfx::pipeline(embed_file("shaders/ui_icons.blob"), desc),
-                             ngfx::pipeline(embed_file("shaders/ui_faces.blob"), desc)],
-                 addr: 0, compose: ngfx::pipeline(embed_file("shaders/compose.blob"), desc) };
+    if nx::ngfx_on { return Gpu { gfx_gpu: default<widgets_gfx::Gpu>(), ngfx_gpu: widgets_ngfx::new() }; }
+    return Gpu { gfx_gpu: widgets_gfx::new(), ngfx_gpu: default<widgets_ngfx::Gpu>() };
 }
 
-// Nothing: the quads go into each frame's memory.
-fn buffers(g: Gpu&, all: const gui::Quad[:]) {}
-
-// The first n of `all` into this frame's memory, changed or not: each frame that draws
-// them, as they come or into the kept layer, takes them anew.
-fn quads(g: Gpu&, all: const gui::Quad[:], n: i64, changed: bool) { g.addr = ngfx::frame_data(bytes_of(all[..n])); }
-
-fn begin_layer(layer: gpu::Texture) { ngfx::begin_pass(layer, ngfx::Texture { 0 }, float4 { 0.0, 0.0, 0.0, 0.0 }); }
-
-// Ends the layer's pass, what it wrote made visible to the screen's pass that samples it.
-fn end_layer() {
-    ngfx::end_pass();
-    ngfx::barrier(ngfx::TARGET_WRITE, ngfx::FRAGMENT_READ);
+fn buffers(g: Gpu&, all: const gui::Quad[:]) {
+    if nx::ngfx_on { widgets_ngfx::buffers(g.ngfx_gpu, all); } else { widgets_gfx::buffers(g.gfx_gpu, all); }
 }
+
+fn quads(g: Gpu&, all: const gui::Quad[:], n: i64, changed: bool) {
+    if nx::ngfx_on { widgets_ngfx::quads(g.ngfx_gpu, all, n, changed); } else { widgets_gfx::quads(g.gfx_gpu, all, n, changed); }
+}
+
+fn begin_layer(layer: gpu::Texture) { if nx::ngfx_on { widgets_ngfx::begin_layer(layer); } else { widgets_gfx::begin_layer(layer); } }
+fn end_layer() { if nx::ngfx_on { widgets_ngfx::end_layer(); } else { widgets_gfx::end_layer(); } }
 
 fn compose(g: Gpu&, layer: gpu::Texture, sampler: gpu::Sampler) {
-    ngfx::bind(g.compose);
-    ngfx::draw(ngfx::root(ComposeRoot { layer: ngfx::index(layer), smp: ngfx::index(sampler), pad0: 0, pad1: 0 }), 3);
+    if nx::ngfx_on { widgets_ngfx::compose(g.ngfx_gpu, layer, sampler); } else { widgets_gfx::compose(g.gfx_gpu, layer, sampler); }
 }
 
 fn run(g: Gpu&, p: i64, first: i64, count: i64, s: scene::Scene&, t: theme::Theme, view: widgets::View,
        atlas: gpu::Texture, thumbs: gpu::Texture, badges: gpu::Texture) {
-    ngfx::bind(g.pipelines[p]);
-    ngfx::draw_instanced(ngfx::root(Root { quads: g.addr, glass: ngfx::index(s.glass), atlas: ngfx::index(atlas),
-                                           thumbs: ngfx::index(thumbs), badges: ngfx::index(badges),
-                                           smp: ngfx::index(s.sampler), first: first as u32, view: view, theme: t }),
-                         6, count);
+    if nx::ngfx_on {
+        widgets_ngfx::run(g.ngfx_gpu, p, first, count, s, t, view, atlas, thumbs, badges);
+    } else {
+        widgets_gfx::run(g.gfx_gpu, p, first, count, s, t, view, atlas, thumbs, badges);
+    }
 }

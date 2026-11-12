@@ -34,7 +34,9 @@ find out by compiling, so the next session doesn't.
   between two fields: it wants "a reference, a slice, or storage".
 - Trailing parameters can take defaults, `a: f32 = 1.0` (`reference.md`, "Parameters");
   a call leaves them out.
-- A struct literal ending in `..` leaves the rest at defaults: `Move { from: f, .. }`.
+- A struct literal ending in `..` leaves the rest at defaults: `Move { from: f, .. }`, the
+  fields it skips anywhere in the struct, not only at its end, so a root's `padN` fields
+  stay out of every literal (goose-ngfx's tests, 2026-11-12).
 - `type Name = T;` names a long type, the same type under another name
   (`board::Overlay`, a limited array of pieces). A test file may hold state its helpers
   share in a top-level `var` (`var over: board::Overlay;` in `test/game/`).
@@ -194,6 +196,10 @@ find out by compiling, so the next session doesn't.
   the screens' tests print floats: keep the cuts where an output must stay byte-identical
   (settings' groups side by side, task 061). A stack's positions run on from its start
   as cuts do, so a column from the top matches them (2026-11-10).
+- A top-level `let` that takes another file's global (`let THEME_BLOCK =
+  draw_gfx::THEME_BLOCK;`) is "used before it is assigned" unless that file is imported
+  first: globals initialize in import order. The ngfx build imports the recorders' halves
+  before their facades for this (`scripts/ngfx.py`, 2026-11-12).
 - A top-level `let` built from a `var` (`let SUM = 2.0 * tap + 12.0;`) compiles and is
   computed once at start, before `main` sets the `var`: a size that changes at run time
   (`gui::tap()` on a desktop) and what is built from it are functions (2026-11-11).

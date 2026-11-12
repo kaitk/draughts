@@ -125,6 +125,25 @@ target, a pass's begin and end, the wait). `render3d_gpu` is a second file in na
 `render3d`, so the 3D board's callers didn't change. Both renderers in one executable,
 chosen at run time, waits on a branch of its own.
 
+Both renderers in one executable by facades in the ngfx overlay (2026-11-12, task 073,
+replacing the build option above on desktop and iOS). Goose has no function pointers,
+vtables, or conditional compilation, so the choice is an `if` at a seam, and Android stays
+gfx-only (NoGraphicsAPI doesn't build there), so nothing in the shared sources names
+ngfx's code. `scripts/ngfx.py`'s tree gives each twin three parts: gfx's recorder under a
+name of its own (`draw_gfx`: `src/app/draw_gpu.goose` copied with its namespace line
+rewritten, as a recorder never names its own namespace), goose-ngfx's (`draw_ngfx`, in
+`src/ngfx/`), and in their place a facade of the twin's name that calls one or the other
+as `nx::ngfx_on` says, set once at start; `render3d_gpu` and `photo_gpu.h` alike, the C
+twin by `#define`d names. The drawers, `render3d.goose` included, are unchanged, and the
+gfx-only build is as before. The drawers hold one handle type, gfx's: a handle is an id
+into the chosen renderer's tables, both renderers' handles an id alone, and `nx` gives
+goose-ngfx's calls gfx's types. gfx's 3D recorder names `render3d.goose`'s items as
+`render3d::` so it compiles in either namespace. Rejected: the recorders renamed apart in
+the repo with a facade per twin in every build, a forwarding one for Android's beside a
+dispatching one, twice the facades for no gain; and the dispatch written into the
+drawers' 52 call sites with a stub of goose-ngfx's C API linked on Android, which puts
+ngfx's code and blobs in the APK.
+
 The ngfx build's 2D shaders are written from gfx's GLSL at each build, as the 3D board's
 already were (2026-11-12, task 073): `scripts/ngfx_2d_shaders.py` beside
 `ngfx_3d_shaders.py`, both over one translation (`ngfx_glsl.py`) that keeps each stage's
