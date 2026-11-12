@@ -341,6 +341,13 @@
   .dline .cnt .dot { width: 18px; height: 18px; }
   .dline .cnt + .chev { margin-left: 0; }
   .dline .cnt + .chev svg { width: 24px; height: 24px; }
+  .dlist { display: flex; align-items: flex-end; padding: 8px 4px 8px 2px; cursor: pointer; font-size: 19px; }
+  .dlist .drows { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; height: 100%;
+    mask-image: linear-gradient(rgb(0 0 0 / 0.15), rgb(0 0 0 / 0.55) calc(100% - 62px), #000 calc(100% - 31px)); overflow: hidden; }
+  .dlist .mrow { grid-template-columns: 26px 1fr 1fr; column-gap: 2px; flex: none; }
+  .dlist .mv { min-width: 0; padding: 0 5px; }
+  .dlist .chev { position: absolute; right: 6px; top: 6px; display: grid; opacity: 0.7; }
+  .dlist .chev svg { width: 22px; height: 22px; stroke-width: 2.4; }
   .dline.on { box-shadow: inset 0 0 0 2px var(--glow); }
   .dline .tapzone { position: absolute; left: 0; right: 0; top: 0; border: 1.5px dashed rgb(255 255 255 / 0.35); border-radius: 12px; pointer-events: none; }
   .dsheet { --r: 0 32px 32px 0; border-radius: 0 32px 32px 0; display: flex; flex-direction: column; z-index: 6; }
@@ -539,11 +546,15 @@
       const w2 = (side - 12) / 2;
       L.tiles = [[sx + g, sy + g, w2, STACK, 'back'], [sx + g + w2 + 12, sy + g, w2, STACK, 'gear'],
                  [sx + g, sy + g + STACK + 12, side, STACK, 'restart']];
+      // Under them what each side has taken, then the line at the foot: the room left, at
+      // least a tap, holding the last moves' rows as the sheet shows them, the older faded.
       const foot = sy + g + 2 * STACK + 12;
-      L.line = [sx + g, foot + BACK_GAP, side, TAP];
-      L.tap = TAP;
-      L.taken = underLeft(sx + g, L.line[1] + TAP + 12, sy + sh - g, side);
-      L.spare = sy + sh - g - (L.taken ? L.taken.r[1] + L.taken.r[3] : L.line[1] + TAP);
+      L.taken = underLeft(sx + g, foot + BACK_GAP, sy + sh - g - TAP - 12, side);
+      const top = L.taken ? L.taken.r[1] + L.taken.r[3] + 12 : foot + BACK_GAP;
+      L.line = [sx + g, top, side, sy + sh - g - top];
+      L.tap = L.line[3];
+      L.spare = L.line[3] - TAP;
+      L.lineRows = Math.max(1, Math.floor((L.line[3] - 16) / 31));
     } else {
       // The column as built; the line in the catch's place, as tall as the room under the
       // column (a tap at most), as wide as the left side, the catch as counts in it. Its
@@ -595,7 +606,16 @@
     const i = shown - 1, no = Math.floor(i / 2) + 1;
     const last = `<span class="n num">${i % 2 ? `${no}…` : `${no}.`}</span><span class="mv num">${PLIES[i].m}${withMarks ? glyph(PLIES[i].k) : ''}</span>`;
     const counts = fit === 'slim' && !L.bar ? `<span class="cnt num">${dot('white')}${tookB}<span style="width:6px"></span>${dot('black')}${tookW}</span>` : '';
-    if (!open) {
+    if (!open && fit === 'row') {
+      // The last rows of the moves, the newest at the foot, the older fading out above it.
+      let rows = '';
+      const first = Math.max(0, (Math.floor(i / 2) - L.lineRows + 1) * 2);
+      for (let k = first; k <= i; k += 2) {
+        const cell = (j) => j <= i ? `<span class="mv${j === i ? ' lit' : ''}">${PLIES[j].m}${withMarks ? glyph(PLIES[j].k) : ''}</span>` : '<span></span>';
+        rows += `<div class="mrow num"><span class="n">${k / 2 + 1}</span>${cell(k)}${cell(k + 1)}</div>`;
+      }
+      html += box(L.line, 'button glass dlist', `<div class="drows">${rows}</div><span class="chev">${icon('fwd')}</span>`);
+    } else if (!open) {
       html += box(L.line, 'button glass dline', `${last}${counts}<span class="chev">${icon('fwd')}</span>`);
       if (L.tap > L.line[3] + 0.5) html += box([L.line[0], L.line[1], L.line[2], L.tap], 'safe', '', 'position:absolute;border-color:rgb(255 210 120 / 0.55);border-radius:14px');
     }
@@ -617,7 +637,7 @@
     const where = `${device === 'none' ? 'no insets' : device === 'a33' ? 'A33 (insets assumed)' : 'Pixel 7a'}, safe ${n(L.safe[2])} × ${n(L.safe[3])} dp`;
     let msg = `take d, ${fit}, ${where}: the built column leaves ${n(L.roomBuilt)} dp under it; `;
     if (open) msg += `the sheet ${n(L.sheet[2])} dp wide, ${L.sheetRows} rows, the board whole`;
-    else if (fit === 'row') msg += `the column 204, the line ${TAP} dp, the catch ${L.taken ? `${n(L.taken.r[3])} dp (${L.taken.two ? 'two rows' : 'one line'})` : 'none'}, ${n(L.spare)} spare`;
+    else if (fit === 'row') msg += `the column 204, the catch ${L.taken ? `${n(L.taken.r[3])} dp (${L.taken.two ? 'two rows' : 'one line'})` : 'none'}, the moves ${n(L.line[3])} dp at the foot, ${L.lineRows} rows`;
     else msg += `the line ${n(L.line[3])} dp tall${L.line[3] < TAP ? ` (${n(TAP - L.line[3])} under a tap)` : ''}, its tap ${n(L.tap)} to the safe foot, ${n(L.line[2])} wide`;
     return { html, br: L.board, b3: three ? L.board3 : null, note: msg };
   }
@@ -644,7 +664,7 @@
     for (const dev of ['pixel', 'a33']) for (const f of ['row', 'slim']) {
       const L = dLayout(1066, 480, dev, f, three);
       const cap = f === 'row'
-        ? `the line a tap (88); the catch ${L.taken ? `${n(L.taken.r[3])} dp, ${L.taken.two ? 'two rows' : 'one line'}` : 'none'}; ${n(L.spare)} dp spare`
+        ? `the catch ${L.taken ? `${n(L.taken.r[3])} dp, ${L.taken.two ? 'two rows' : 'one line'}` : 'none'}; under it the moves, ${n(L.line[3])} dp, ${L.lineRows} rows`
         : `the line ${n(L.line[3])} dp${L.line[3] < TAP ? `, ${n(TAP - L.line[3])} under a tap` : ''}; its tap ${n(L.tap)} to the safe foot`;
       let pair = '';
       for (const o of ['0', '1']) {
@@ -660,7 +680,7 @@
     document.getElementById('app').style.position = 'static';
     document.getElementById('app').innerHTML = `<h1>Take d: the moves on a phone in landscape, ${three ? '3D' : 'flat'} board</h1>` +
       `<p>1066 × 480 dp. Under the left column as built (336 dp) the Pixel 7a has ${n(dLayout(1066, 480, 'pixel', 'slim', three).roomBuilt)} dp and the A33 ${n(dLayout(1066, 480, 'a33', 'slim', three).roomBuilt)}: no tap-high line fits there beside what each side has taken. ` +
-      `row: back and settings side by side free 132 dp, so the line is a full tap and the catch stays under it. slim: the column kept, the line takes the catch's place at the room's height, the catch as counts in it. ` +
+      `row: back and settings side by side free 132 dp, so the catch fits under them and the moves at the foot, a tap or more, their last rows showing, the older faded. slim: the column kept, the line takes the catch's place at the room's height, the catch as counts in it. ` +
       `<a style="color:#9cf" href="?${q3}">${three ? 'Flat' : '3D'} board</a></p>${rows}`;
   }
 
