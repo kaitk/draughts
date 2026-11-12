@@ -130,7 +130,7 @@ fn aa_key() -> bool { gfx::key_pressed("A") }
 
 // The fork's borderless fullscreen at the desktop's resolution (kaitk/goose_gfx's
 // gfx.goose; the release's doesn't declare it, so it is declared here as keys.goose's
-// gamepad is, and gfx_fork.c stands in where the release's gfx or ngfx is linked).
+// gamepad is, and gfx_fork.c stands in where the release's gfx is linked).
 extern fn set_fullscreen(on: bool) -> bool = "gs_gfx_set_fullscreen";
 extern fn fullscreen() -> bool = "gs_gfx_fullscreen";
 

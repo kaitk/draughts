@@ -448,7 +448,7 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   the desktop's resolution, with no frame, and back (`host::fullscreen_key`, the fork's
   `set_fullscreen`); the layout takes the new size as it does a resize. Enter with Alt
   held doesn't press the focused control. `--size full` opens fullscreen. The ngfx build
-  has no fullscreen yet (`gfx_fork.c`'s stand-in).
+  switches too, its window being the fork's gfx's (`WINDOW_ONLY`).
 - **A gamepad** is the keys (`host::keys`): the D-pad or the left stick past half way
   moves (let go under a third), repeating as a held arrow does; A, the bottom button, is
   Enter, held too; B goes back as Escape does; the shoulder buttons are Shift and Tab
