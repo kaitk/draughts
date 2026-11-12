@@ -37,6 +37,7 @@ MODULES = [
     ("fade", FULL, ["shaders::FADE_FN", "scene_gpu::FADE_FRAG"], False),
     ("blur", FULL, ["scene_gpu::BLUR_FRAG"], False),
     ("shrink", FULL, ["scene_gpu::SHRINK_FRAG"], False),
+    ("board", FULL, [*THEMED, "draw_gpu::BOARD_FRAG"], False),
 ]
 
 # Hand-written, beside what is generated: SV_InstanceID counts from 0 whatever the draw's
