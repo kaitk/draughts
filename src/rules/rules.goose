@@ -138,6 +138,7 @@ struct Search {
     occ:   u64,     // every piece but the one moving
     first: i64,     // where this piece's captures start in the buffer
     best:  i64,     // the most pieces any capture so far takes, under the majority rule
+    all:   bool,    // every way kept, not one per end and pieces taken (`ways`)
 }
 
 // Whether a piece on sq can take anything, with `taken` already taken.
@@ -158,7 +159,8 @@ fn can_take(v: Variant&, s: Search&, sq: i64, king: bool, taken: u64) -> bool {
 }
 
 // Adds a finished capture, unless the same piece already has one with the same
-// end and the same pieces taken, or the majority rule rules it out.
+// end and the same pieces taken, or the majority rule rules it out. Keeping every way
+// (`ways`), a full buffer drops the rest rather than stopping.
 fn record(v: Variant&, s: Search&, to: i64, crowned: bool, taken: u64, path: Path&,
           out: Moves&) {
     if v.majority {
@@ -170,8 +172,12 @@ fn record(v: Variant&, s: Search&, to: i64, crowned: bool, taken: u64, path: Pat
             s.first = 0;
         }
     }
-    for i in s.first..out.len {
-        if out[i].to == to && out[i].captured == taken { return; }
+    if s.all {
+        guard out.len < MAX_MOVES else { return; }
+    } else {
+        for i in s.first..out.len {
+            if out[i].to == to && out[i].captured == taken { return; }
+        }
     }
     assert(out.len < MAX_MOVES);
     out.push(Move { from: s.from, to: to as u8, crowned: crowned, captured: taken, path: path });
@@ -247,7 +253,7 @@ fn captures(p: Position, v: Variant&, out: Moves&) {
                else { (opp << -step) & (empty << (-2 * step)) };
     }
     var movers = (own & ~p.kings & men) | (own & p.kings);
-    var s = Search { side: side, from: 0, opp: opp, occ: 0, first: 0, best: 1 };
+    var s = Search { side: side, from: 0, opp: opp, occ: 0, first: 0, best: 1, all: false };
     var path: Path = [];
     while movers != 0 {
         let from = ctz(movers);
@@ -268,8 +274,25 @@ fn can_take_from(p: Position, sq: i64) -> bool {
     let v .= VARIANTS[p.variant];
     guard sq >= 0 && p.pieces[p.side] & bit(sq) != 0 else { return false; }
     let s = Search { side: p.side, from: sq as u8, opp: p.pieces[1 - p.side],
-                     occ: occupied(p) & ~bit(sq), first: 0, best: 1 };
+                     occ: occupied(p) & ~bit(sq), first: 0, best: 1, all: false };
     return can_take(v, s, sq, p.kings & bit(sq) != 0, 0);
+}
+
+// Every way the side to move's piece on sq captures, into out, which it empties first:
+// generate keeps one way per end and pieces taken, which is one move, but a capture made
+// stop by stop may take any of them (board::follow). A king that can land on two squares
+// and take the same pieces on from either is two ways to one move. Under the majority
+// rule only this piece's longest captures, which are legal when the piece has a move at
+// all. Empty when the piece can't take.
+fn ways(p: Position, sq: i64, out: Moves&) {
+    out.clear();
+    let v .= VARIANTS[p.variant];
+    guard sq >= 0 && p.pieces[p.side] & bit(sq) != 0 else { return; }
+    var s = Search { side: p.side, from: sq as u8, opp: p.pieces[1 - p.side], occ: occupied(p) & ~bit(sq),
+                     first: 0, best: 1, all: true };
+    var path: Path = [];
+    path.push(sq as u8);
+    jump(v, s, sq, p.kings & bit(sq) != 0, false, 0, path, out);
 }
 
 fn quiet(p: Position, v: Variant&, out: Moves&) {

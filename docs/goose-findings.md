@@ -9,6 +9,34 @@ Pull requests the user opens, not yet opened (2026-11-11): the goose_gfx patches
 stack on which), to `aardappel/goose_gfx`; and `kaitk/NoGraphicsAPI`'s `astc-6x6`, ASTC
 6 × 6, to `sebbbi/NoGraphicsAPI`. An entry's "Upstream" line says what each proposes.
 
+## goose_gfx: no gamepad (2026-11-11)
+
+goose_gfx reads the keyboard, the mouse, and touch, but no gamepad: it never starts SDL's
+gamepad subsystem, and its event loop passes gamepad events over. goose_gfx `6cfa3de`,
+Goose v2026.4.
+
+- Here: no patch, for the reason the safe area has none (below): the program's own C
+  (`src/app/pad.c`) starts `SDL_INIT_GAMEPAD`, opens the first gamepad when
+  `SDL_HasGamepad` says one is there, and reads its buttons and left stick each frame,
+  through `dlsym` on the Mac. Checked against SDL's virtual gamepad on the Mac: the
+  buttons, the D-pad, the stick and its hysteresis, a gamepad going away.
+- SDL at rest with a gamepad open (2026-11-12): its event wait reads the gamepads every
+  1 ms while one is open (SDL_events.c's `EVENT_POLL_INTERVAL_NS`, the default for
+  games), and on the Mac its HIDAPI thread takes a PS5 pad's reports as they stream, so
+  the idle app used 1.0 s of CPU in 20 s (5% of a core; none without the pad). Now
+  `SDL_HINT_AUTO_UPDATE_JOYSTICKS` is off and `pad.c` calls `SDL_UpdateGamepads` itself,
+  when the loop runs; on the Mac and iOS `SDL_HINT_JOYSTICK_HIDAPI` is off too, so the
+  GameController framework reads the pad outside the process, and its
+  `valueChangedHandler` wakes the loop when the pad is used: 0.01 s in 20 s. Elsewhere
+  the idle loop wakes 30 times a second to read it (0.3 s in 20 s on the Mac, where
+  each wake goes through AppKit). An event watch keeps a press made and let go between
+  two reads.
+- Upstream: `gfx::gamepad_buttons() -> u32` and `gfx::gamepad_axis(i) -> f32` over the
+  first gamepad, its subsystem started with the window, and the gamepad's button events
+  counted as input where `frame()` reports input. Small. With it, the idle wait's cost
+  above: gfx would set the hints and wake on the GameController framework's handler
+  itself.
+
 ## Goose: no way to write `goose.h` for a build of one's own (2026-11-11)
 
 A package's C that takes a `u8[>..]&` includes `goose.h` (`gs_rref`, `gs_bld_append`),

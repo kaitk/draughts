@@ -10,6 +10,10 @@ home.computer = The computer
 home.puzzles = Puzzles
 home.settings = Settings
 home.quit = Quit
+continue.friend = A friend
+continue.easy = The computer · easy
+continue.medium = The computer · medium
+continue.hard = The computer · hard
 
 level.easy = easy
 level.medium = medium

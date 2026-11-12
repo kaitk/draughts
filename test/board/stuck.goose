@@ -85,7 +85,7 @@ fn line(gm: game::Game&, g: gui::Gui&, l: panel::Layout, t: const u8[:], now: f6
     if t[0] == 't' {
         for i in 1..a.len {
             drive::tap(gm, g, l, drive::at(l.board, t[a[i]..e[i]]), t0);
-            t0 += 0.1;
+            t0 += 0.25;     // past the hop to a stop (board::hop)
             state(gm.b, l.board, t[a[i]..e[i]], t0);
         }
     } else {

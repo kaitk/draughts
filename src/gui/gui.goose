@@ -14,6 +14,7 @@ import .focus;
 let MAX_QUADS = 512;
 let MAX_IDS = 32;
 let MAX_SPOTS = 128;        // the controls a frame offers the keys' focus (Spot)
+let MAX_GROUPS = 8;         // the groups they come in (gui::group)
 let PRESS = 0.12;           // seconds a button takes to go down or up
 
 // The layout's shorter side in dp: 800, or what the development flag --dp sets, to try
@@ -224,6 +225,7 @@ struct Input {
     step:     i64              = STEP_NONE, // an arrow key pressed this frame
     confirm:  bool             = false, // Enter or Space pressed this frame
     held:     bool             = false, // Enter or Space down this frame
+    tab:      i64              = 0,     // Tab pressed this frame, 1, or with Shift, -1: the next group (gui::group)
 }
 
 // A widget's state across frames: whether it is down and when that last changed.
@@ -272,6 +274,13 @@ struct Gui {
     focused: Spot              = Spot {},
     deaf:    bool              = false,
     ring:    bool              = false, // the focused control was just held: its next quad gets the ring
+    // The group controls are offered in now (gui::group), and the control each group had
+    // the focus on last, which Tab comes back to; the focused cell of a grid (gui::grid),
+    // y * cells + x, and the grid it is of.
+    group:       i64                = 0,
+    group_focus: i64[MAX_GROUPS]    = [0; MAX_GROUPS],
+    cell:        i64                = 0,
+    cell_of:     i64                = 0,
 }
 
 // The keys' focus ring (rendering.md, "Controls"): RING_W dp in the glow color, RING_GAP

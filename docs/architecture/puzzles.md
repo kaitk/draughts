@@ -169,8 +169,10 @@ whose puzzle it is. Their look is in [rendering](rendering.md#controls).
   jump. A tap or a drop on a stop leaves the piece waiting there for
   the next jump; it never plays the rest of the way by itself, which would solve the
   puzzle for the child. A tap or a drop on the last square plays the capture when one
-  capture alone goes there (or it ends just after the stops made), so the capture can
-  still be made in one go. Stops aren't misses; the capture is judged once played
+  way alone goes there (or it ends just after the stops made), so the capture can
+  still be made in one go. Any of a capture's ways counts, and a square the piece only
+  passes between stops is no tap at all, so a king's capture tapped square by square
+  keeps every star. Stops aren't misses; the capture is judged once played
   ([rendering](rendering.md#board-and-pieces)). A capture must take every piece it can,
   so one left partway is no move: while the piece waits, next wakes (unlit), and
   pressed it is a miss, the piece sliding back from its stop with the red ring and "try

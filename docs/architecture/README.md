@@ -220,7 +220,7 @@ returns.
 - **The saved game is one flat value** (`shell::Saved`): the screen, the variant, the
   position, where the game began, the last move, the undo history (a limited array),
   the clocks, and the computer's side, level, and skill, if it plays, with the game's
-  number for its seeds; written with Goose's `to_bytes` and an FNV-1a checksum after
+  number for its seeds, and whether anyone set the game up (home's Continue); written with Goose's `to_bytes` and an FNV-1a checksum after
   it, about 15 KB. `from_bytes` verifies the image's shape and the checksum its bytes; a
   file that fails either, or has another `VERSION`, is ignored and the app starts
   afresh. The pause is seen as the window losing focus: SDL runs the loop once more

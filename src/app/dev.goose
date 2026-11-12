@@ -145,7 +145,8 @@ fn pointer(dv: Dev&, f: flags::Flags&, input: gui::Input) -> gui::Input {
     if f.mouse.x >= 0.0 { i.at = f.mouse; }
     if dv.keyed < f.keys.len && host::frame_count() >= 3 {
         let k = f.keys[dv.keyed];
-        if k == flags::KEY_ENTER { i.confirm = true; } else { i.step = k; }
+        if k == flags::KEY_ENTER { i.confirm = true; }
+        else if k == flags::KEY_TAB { i.tab = 1; } else if k == flags::KEY_BACKTAB { i.tab = -1; } else { i.step = k; }
         dv.keyed++;
     }
     return i;

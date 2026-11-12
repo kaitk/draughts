@@ -10,10 +10,13 @@ import os;
 // game with its variant, undo history, clocks, and whom it is against at which skill, one
 // flat value (docs/architecture/README.md, "Game state is a value"). VERSION changes when
 // its layout does; an image of another layout doesn't verify, and the app starts afresh.
-let VERSION = 3;
+// Version 4 keeps `unset`, the game being one nobody set up, so home's Continue stays
+// hidden for it after a restart (issue 1).
+let VERSION = 4;
 
 struct Saved {
     version:   i64,
+    unset:     bool,
     screen:    i64,
     variant:   u8,
     start:     rules::Position,
@@ -43,7 +46,7 @@ fn checksum(data: const u8[:]) -> u64 {
 fn save(sh: Shell&) -> u8[>..] {
     let b .= sh.game.b;
     var one: Saved[>..] = [];
-    one.push(Saved { version: VERSION, screen: if sh.screen == GAMES { HOME } else { sh.screen }, variant: b.variant, start: b.start, pos: b.pos,
+    one.push(Saved { version: VERSION, unset: sh.unset, screen: if sh.screen == GAMES { HOME } else { sh.screen }, variant: b.variant, start: b.start, pos: b.pos,
                      last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.history,
                      clock:     sh.game.clock, computer: sh.game.computer, level: sh.game.level, skill: sh.game.skill,
                      number: sh.game.number, counted: sh.game.counted });
@@ -62,8 +65,10 @@ fn restore(sh: Shell&, file: const u8[:]) -> bool {
     var h: u64 = 0;
     for i in 8 { h |= (file[image.len + i] as u64) << (8 * i); }
     guard h == checksum(image) else { return false; }
-    let one, ok = from_bytes<Saved[>..]>(image);
-    guard ok && one.len == 1 else { return false; }
+    var one, ok = from_bytes<Saved[>..]>(image);
+    if !ok || one.len != 1 || one[0].version != VERSION {
+        guard old(image, one) else { return false; }
+    }
     let s .= one[0];
     guard s.version == VERSION && s.variant < rules::VARIANT_COUNT && s.start.variant == s.variant
           && s.pos.variant == s.variant && s.screen >= HOME && s.screen <= PUZZLE && s.computer >= -1
@@ -82,11 +87,45 @@ fn restore(sh: Shell&, file: const u8[:]) -> bool {
     gm.clock = s.clock;
     gm.counted = s.counted;
     gm.turn = b.pos.side;
+    sh.unset = s.unset;
     // A game kept after its end was put in the player's history then (Event.over).
     gm.kept = game::ended(gm);
     // A puzzle isn't kept; the puzzles to pick from come back instead.
     sh.screen = if s.screen == PUZZLE { PICKER } else { s.screen };
     apply_prefs(sh);
+    return true;
+}
+
+// Version 3's layout, before `unset`, read as version 4 with the game set up, which
+// every game kept then was or is played (temporary: drop it once the release after
+// 2026-11-12 has been out a while).
+struct Saved3 {
+    version:   i64,
+    screen:    i64,
+    variant:   u8,
+    start:     rules::Position,
+    pos:       rules::Position,
+    last_from: u8,
+    last_to:   u8,
+    has_last:  bool,
+    history:   board::Step[..board::MAX_HISTORY],
+    clock:     clock::Clock,
+    computer:  i64,
+    level:     i64,
+    skill:     i64,
+    number:    i64,
+    counted:   bool,
+}
+
+fn old(image: const u8[:], out: Saved[>..]&) -> bool {
+    let three, ok = from_bytes<Saved3[>..]>(image);
+    guard ok && three.len == 1 && three[0].version == 3 else { return false; }
+    let t .= three[0];
+    out = [];
+    out.push(Saved { version: VERSION, unset: false, screen: t.screen, variant: t.variant, start: t.start, pos: t.pos,
+                     last_from: t.last_from, last_to: t.last_to, has_last: t.has_last, history: t.history,
+                     clock: t.clock, computer: t.computer, level: t.level, skill: t.skill, number: t.number,
+                     counted: t.counted });
     return true;
 }
 
@@ -99,11 +138,12 @@ fn write_game(sh: Shell&) {
 }
 
 // Brings back the playing player's game from their file, where games are kept, the
-// screen too (at start); false, leaving the game as it is, with none.
+// screen too (at start); false, leaving the game as it is, with none, which is then one
+// nobody set up (`unset`).
 fn read_game(sh: Shell&) -> bool {
     let ps .= sh.players;
     guard ps.games && ps.list.len > 0 else { return false; }
     var saved: u8[>..] = [];
-    guard read_file(players::game_path(ps, ps.list[ps.playing].id), saved) else { return false; }
-    return restore(sh, saved);
+    sh.unset = !read_file(players::game_path(ps, ps.list[ps.playing].id), saved) || !restore(sh, saved);
+    return !sh.unset;
 }

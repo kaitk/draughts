@@ -26,7 +26,8 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   pieces each takes). A test explains in a comment what rule it shows and why the
   position shows it. Areas so far: `rules`, `board` (taps, hints, and a capture tapped
   stop by stop through the board package, a game and a puzzle alike, never played on
-  by itself: `steps`; a press or drop off the dark squares snapping to the nearest it
+  by itself: `steps`; any of a capture's ways tapped, a last square two ways reach, a tap on
+  the selected piece putting it down, and a tapped stop's hop: `ways`; a press or drop off the dark squares snapping to the nearest it
   could mean: `snap`, and several pieces that can capture under each draughts' rule:
   `several`; a capture to or past the far row, dropped on the turned board: `stuck`;
   the lookout's drained pieces, shaded crowning square, and the hint's ghost on the flat
@@ -37,9 +38,9 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   photo: `count`, whose `state` fills the board a moment on, so a pulse at its start,
   which is at full, shows as pulsing), `gui` (and the widget ids' ranges, one per
   screen, none running into the next: `ids`; `gui::stack`'s columns and rows: `stack`; the mouse's hover, its fade and turn, and none with `desktop_scale` 0: `hover`; the
-  keys' focus, its moves by the controls' rects, Enter, the mouse taking over, and
-  Enter held filling a hold tile: `focus`; a focused row scrolled into its list's view:
-  `scroll`; in `shell`, `home_keys`: a desktop's Quit row or the X, and home walked and
+  keys' focus, its moves by the controls' rects, Enter, the mouse taking over,
+  Enter held filling a hold tile, and Tab on a screen of one group: `focus`; a focused row scrolled into its list's view:
+  `scroll`; in `shell`, `continue_row`: Continue's note and its hidden first run; `home_keys`: a desktop's Quit row or the X, and home walked and
   pressed with the keys (`drive::key`); in
   `shell`, `rest_hover`: a mouse resting anywhere on home, settings, the game, and the
   puzzles asks for no frames), `game` (the game screen driven through
@@ -60,7 +61,9 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   hints at once, and the next stops lit after a second wrong square, on the flat and the
   3D board: `pips`; the lookout's eye and marks, held targets, the filter by skill, and
   traps answered as the worker would: `watch`; the hint's two presses, its ask and pips,
-  and each side's against a friend: `hint`; what each side has taken, men and kings apart,
+  and each side's against a friend: `hint`; the board with the keys, its
+  cursor, Enter as a tap, a mistake, off the edge and back, Tab between the groups, the
+  turned board, the computer's turn, Escape putting a piece down: `board_keys`; what each side has taken, men and kings apart,
   a king taken counting as a king, after captures by men and kings, undo, and its rows on
   the screen: `taken`), `shell`
   (home, the switch to the game and back, settings and their file, their taps and the

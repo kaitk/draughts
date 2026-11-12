@@ -15,6 +15,8 @@ let GO_PLAY = 99;
 let MAX_TAPS = 256;
 let MAX_KEYS = 16;
 let KEY_ENTER = 9;          // in keys: Enter, after gui's STEP_UP..STEP_RIGHT
+let KEY_TAB = 10;           // Tab, and Shift and Tab
+let KEY_BACKTAB = 11;
 
 struct Flags {
     width:      i64  = 1280, // --size WxH: the window, in points on the Mac
@@ -40,7 +42,7 @@ struct Flags {
     // --mouse X,Y: the pointer held at pixel X,Y of the window, to shoot the tile it
     // lights on a desktop (gui::hover); x < 0 the mouse's own
     mouse: float2 = float2 { -1.0, -1.0 },
-    // --keys up,down,left,right,enter (up to MAX_KEYS): pressed one a frame from the third
+    // --keys up,down,left,right,enter,tab,backtab (up to MAX_KEYS): pressed one a frame from the third
     // drawn frame, to shoot the keys' focus (gui::focus_keys)
     keys: i64[..MAX_KEYS] = [],
     // --density-floor F with --display-scale S: the scale's floor (gui::scale_of), S
@@ -167,7 +169,8 @@ fn parse(argv: u8[:][>..]) -> Flags {
             while rest.len > 0 && f.keys.len < MAX_KEYS {
                 let part, after, more = split_once(rest, ",");
                 let k = if part == "up" { gui::STEP_UP } else if part == "down" { gui::STEP_DOWN } else if part == "left" { gui::STEP_LEFT }
-                        else if part == "right" { gui::STEP_RIGHT } else if part == "enter" { KEY_ENTER } else { gui::STEP_NONE };
+                        else if part == "right" { gui::STEP_RIGHT } else if part == "enter" { KEY_ENTER }
+                        else if part == "tab" { KEY_TAB } else if part == "backtab" { KEY_BACKTAB } else { gui::STEP_NONE };
                 if k != gui::STEP_NONE { f.keys.push(k); }
                 rest = if more { after } else { "" };
             }

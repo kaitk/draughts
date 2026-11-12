@@ -5,8 +5,10 @@
 // star, as one dropped on its last square doesn't. Left partway, it is no move: next,
 // dim until solved, wakes while the piece waits, and pressed then the piece slides back
 // to its square with the red ring on the stop, and a star goes out; next does nothing
-// before. Puzzle 14's king takes three by 33 and 17, ending on 8 or 3; a tap off the
-// way (28) is a miss. Puzzle 10 has two doubles, 38 by 29 to 20 and by 27 to 16; the
+// before. A tap on a stop shows the piece hopping there. Puzzle 14's king takes three by
+// 33 and 17, ending on 8 or 3; a tap on 28, which the king passes on its way from 33 to
+// 17, is nothing at all, and costs no star (2026-11-11, issue 1); a tap off the way (34)
+// is a miss. Puzzle 10 has two doubles, 38 by 29 to 20 and by 27 to 16; the
 // first ends where it is taken back: a miss, and after the answer has shown, it slides back. Puzzle 31's man takes
 // two by 17 to 6; dropped on 17, the frame the finger lifts on asks for the one after,
 // which shows next awake, the man it jumped still there. Puzzles never show a selected
@@ -96,22 +98,25 @@ fn main() {
     drive::idle(sh, g, 0.0);
     tap(sh, g, 47, 0.1);
     tap(sh, g, 33, 0.2);
-    show(sh, g, "47, 33", 0.3);
-    tap(sh, g, 17, 0.3);
-    show(sh, g, "then 17", 0.4);
-    tap(sh, g, 8, 0.5);
+    show(sh, g, "47, 33, halfway through the hop", 0.3);
+    show(sh, g, "47, 33", 0.45);
+    tap(sh, g, 17, 0.5);
+    show(sh, g, "then 17", 0.75);
+    tap(sh, g, 8, 2.0);
     print("  the way shown from ", named(sh.puzzle.b.move.path[sh.puzzle.b.skip]), ", landing ",
-          sh.puzzle.b.since + board::duration(sh.puzzle.b.move) - 0.5, " s after the tap");
-    drive::idle(sh, g, 2.0);
-    show(sh, g, "then 8", 2.0);
+          floor(100.0 * (sh.puzzle.b.since + board::duration(sh.puzzle.b.move) - 2.0) + 0.5) / 100.0, " s after the tap");
+    drive::idle(sh, g, 3.0);
+    show(sh, g, "then 8", 3.0);
     print("  ", rules::fen(sh.puzzle.b.pos), ", kept stars ", sh.prefs.stars[rules::INTERNATIONAL][14]);
 
     shell::play_puzzle(sh, 8, 10.0);
     drive::idle(sh, g, 10.0);
     tap(sh, g, 47, 10.1);
     tap(sh, g, 33, 10.2);
-    tap(sh, g, 28, 10.3);
-    show(sh, g, "again: 47, 33, 28", 10.4);
+    tap(sh, g, 28, 10.5);
+    show(sh, g, "again: 47, 33, 28", 10.6);
+    tap(sh, g, 34, 10.7);
+    show(sh, g, "then 34", 10.8);
 
     // The first stop of the wrong double waits; its end plays it, a miss. Then the right
     // one dragged stop by stop solves it.
@@ -119,8 +124,8 @@ fn main() {
     drive::idle(sh, g, 20.0);
     tap(sh, g, 38, 20.1);
     tap(sh, g, 29, 20.2);
-    show(sh, g, "38, then 29", 20.3);
-    tap(sh, g, 20, 20.3);
+    show(sh, g, "38, then 29", 20.45);
+    tap(sh, g, 20, 20.5);
     print("  then 20: ", STATES[sh.puzzle.state], ", playing ", named(sh.puzzle.b.move.from), "x",
           named(sh.puzzle.b.move.to));
     // Taken back by 21x32: the answer shows, then both slide back.

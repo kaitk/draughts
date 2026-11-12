@@ -439,9 +439,10 @@ fn pick(v: View, b: board::Board&, l: board::Layout, p: float2) -> float2 {
 // `now` (0 brightest, 1 dimmest; they pulse every 1.4 s, as the flat board's do), y the
 // wrong move's flash, 0 to 1 (1 none), z the square of the hint's glow ring while it
 // pulses (-1 none) and w its strength. `next` is how lit the next stops' dots are while
-// they pulse (board::Board.flash.z), drawn over the image too. `pulsing` says whether any
-// of them shows; the scene's other parts then stay the same from frame to frame
-// (`changes` gives MARKS).
+// they pulse (board::Board.flash.z), drawn over the image too, as is the keys' cursor
+// (`cursor`, its square in the world's grid, or -1; board::Board.cursor), so moving it
+// draws only the marks over the image. `pulsing` says whether any of them shows; the
+// scene's other parts then stay the same from frame to frame (`changes` gives MARKS).
 let MAX_INSTANCES = 96;     // two for each of board::MAX_PIECES, as a stack takes
 let SEED_LIT: f32 = 1000.0;
 
@@ -458,6 +459,7 @@ struct Scene {
     lit:      float4[100]                 = [float4 { 0.0, 0.0, 0.0, 0.0 }; 100],
     pulse:    float4                      = float4 { 0.0, 1.0, -1.0, 0.0 },
     next:     f32                         = 1.0,
+    cursor:   f32                         = -1.0,
     pulsing:  bool                        = false,
 }
 
@@ -596,6 +598,8 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
     }
     // Nothing pulsing: the phase stays put, so time alone changes nothing.
     if !s.pulsing { s.pulse.x = 0.0; }
+    s.cursor = if b.cursor >= 0 { world_square(l, b.cursor) } else { -1.0 };
+    if s.cursor >= 0.0 { s.pulsing = true; }
 }
 
 // What a new frame's scene changes against the last one drawn: DRAW when anything the 3D
@@ -635,6 +639,8 @@ fn changes(was: Scene&, now: Scene&) -> i64 {
             rest = false;
         }
     }
-    guard rest else { return DRAW; }
-    return if same(was.pulse, now.pulse) && was.next == now.next { 0 } else { MARKS };
+    // The marks over the image test the depth kept with it, which a draw keeps only while
+    // they show: their coming draws the image again.
+    guard rest && (was.pulsing || !now.pulsing) else { return DRAW; }
+    return if same(was.pulse, now.pulse) && was.next == now.next && was.cursor == now.cursor { 0 } else { MARKS };
 }

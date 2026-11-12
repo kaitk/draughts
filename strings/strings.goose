@@ -44,6 +44,7 @@ let KEYS = [
     "settings.privacy",
     "game.lookout", "game.hint", "game.where_to",
     "home.quit",
+    "continue.friend", "continue.easy", "continue.medium", "continue.hard",
     "settings.moves", "moves.hidden", "moves.list", "moves.marks",
     "games.title", "games.rating", "games.computer", "games.friend", "games.none",
 ];
@@ -155,16 +156,20 @@ let GAME_LOOKOUT = 104;     // the lookout's toggle: the threats past the player
 let GAME_HINT = 105;        // the hint's tile
 let GAME_WHERE_TO = 106;    // and its word once it has lit the piece to move
 let HOME_QUIT = 107;        // a desktop's way out on home, the last row
-let SETTINGS_MOVES = 108;   // the moves panel's row (task 074): hidden, the list, or the list with marks
-let MOVES_HIDDEN = 109;
-let MOVES_LIST = 110;
-let MOVES_MARKS = 111;
-let GAMES_TITLE = 112;      // the games screen (task 074): its title,
-let GAMES_RATING = 113;     // the rating's heading,
-let GAMES_COMPUTER = 114;   // the levels' results' heading,
-let GAMES_FRIEND = 115;     // a game against a friend in the list,
-let GAMES_NONE = 116;       // and the list with no game yet
-let COUNT = 117;
+let CONTINUE_FRIEND = 108;  // continue's note: whose game it goes back to (home::menu)
+let CONTINUE_EASY = 109;    // the computer's, at each level
+let CONTINUE_MEDIUM = 110;
+let CONTINUE_HARD = 111;
+let SETTINGS_MOVES = 112;   // the moves panel's row (task 074): hidden, the list, or the list with marks
+let MOVES_HIDDEN = 113;
+let MOVES_LIST = 114;
+let MOVES_MARKS = 115;
+let GAMES_TITLE = 116;      // the games screen (task 074): its title,
+let GAMES_RATING = 117;     // the rating's heading,
+let GAMES_COMPUTER = 118;   // the levels' results' heading,
+let GAMES_FRIEND = 119;     // a game against a friend in the list,
+let GAMES_NONE = 120;       // and the list with no game yet
+let COUNT = 121;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

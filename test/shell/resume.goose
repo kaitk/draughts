@@ -2,7 +2,9 @@
 // screen, the position, where the game began, the last move's marks, and the undo
 // history come back from the image, and undo goes on working; a game of another variant
 // comes back with its own, its clocks, and whom it is against at which skill; an image
-// that is damaged, cut short, or of something else changes nothing.
+// that is damaged, cut short, or of something else changes nothing. Whether the game is
+// one nobody set up comes back too (issue 1); a version 3 image, from before that was
+// kept, reads as a game set up.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -73,4 +75,22 @@ fn main() {
     print("  variant ", gm.b.variant, ", ", rules::fen(gm.b.pos), ", clock ", gm.clock.kind, " left ", gm.clock.left[0],
           " ", gm.clock.left[1], " running ", gm.clock.running, ", computer ", gm.computer, ", level ", gm.level,
           ", skill ", gm.skill, ", number ", gm.number);
+
+    // Unset, kept with the game; a version 3 image of the same game reads as set up.
+    sh.unset = true;
+    var unset = shell::new(rules::RUSSIAN);
+    print("unset restored: ", shell::restore(unset, shell::save(sh)), ", unset ", unset.unset);
+    let b .= sh.game.b;
+    var three: shell::Saved3[>..] = [];
+    three.push(shell::Saved3 { version: 3, screen: shell::GAME, variant: b.variant, start: b.start, pos: b.pos,
+                               last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.history,
+                               clock: sh.game.clock, computer: sh.game.computer, level: sh.game.level,
+                               skill: sh.game.skill, number: sh.game.number, counted: sh.game.counted });
+    var old = to_bytes(three);
+    let h = shell::checksum(old);
+    for i in 8 { old.push(((h >> (8 * i)) & 0xFF) as u8); }
+    var migrated = shell::new(rules::RUSSIAN);
+    migrated.unset = true;
+    print("version 3 restored: ", shell::restore(migrated, old), ", unset ", migrated.unset);
+    show(migrated, "  as it was");
 }

@@ -9,6 +9,10 @@ home.computer = Arvutiga
 home.puzzles = Ülesanded
 home.settings = Seaded
 home.quit = Välju
+continue.friend = Sõbraga
+continue.easy = Arvutiga · kerge
+continue.medium = Arvutiga · keskmine
+continue.hard = Arvutiga · raske
 
 level.easy = kerge
 level.medium = keskmine

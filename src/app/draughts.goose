@@ -170,8 +170,8 @@ fn main() {
         // Android's back and Escape go back a screen, as the screen's own back or home
         // control does. On home's menu back leaves the app as the system's back would,
         // putting it in the background; Escape there ends the loop, closing the Mac's window.
-        if host::back() {
-            if shell::back(sh, now) { dirty = true; }
+        if host::back(h) {
+            if shell::put_down(sh, g) || shell::back(sh, now) { dirty = true; }
             else if on_android { host::leave(); }
             else { break; }
         }
@@ -269,6 +269,10 @@ fn main() {
         // An arrow held repeats (host's keys.goose), waking the loop when it is due.
         let repeat = host::repeat_in(h.repeat, now);
         if repeat >= 0.0 && (next < 0.0 || repeat < next) { next = repeat; }
+        // A gamepad connected is read when the loop runs (pad.c), so the loop wakes for it
+        // while the app is shown.
+        let polled = if hidden { -1.0 } else { host::pad_in(h.repeat) };
+        if polled >= 0.0 && (next < 0.0 || polled < next) { next = polled; }
         if next >= 0.0 && (wake_at < now || now + next < wake_at - 0.005) {
             host::wake_in((1000.0 * next) as i64 + 2);
             wake_at = now + next;

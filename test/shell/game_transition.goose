@@ -123,10 +123,11 @@ fn main() {
     var sh = shell::new(rules::RUSSIAN);
     sh.screen = shell::GAME;
     drive::idle(sh, g, 0.0);
-    let into = straight(sh, 0.0);
     let take_back = drive::control(g, 3);
     drive::tap(sh, g, drive::at(sh.out.layout, "c3"), 0.1);
     drive::tap(sh, g, drive::at(sh.out.layout, "d4"), 0.2);
+    // After the move: the moves panel (task 074) has its row.
+    let into = straight(sh, 0.3);
     sh.screen = shell::HOME;
     look(sh, g, 1.0, "home");
     let home_at = sh.out.layout.board;

@@ -1,0 +1,32 @@
+at rest: focus none, cursor -, chosen -, over -, wrong -, moves made 0, changed true
+down: the board: focus board, cursor e3, chosen -, over -, wrong -, moves made 0, changed true
+  resting: focus board, cursor e3, chosen -, over -, wrong -, moves made 0, changed false
+enter: chosen: focus board, cursor e3, chosen e3, over -, wrong -, moves made 0, changed true
+up: a light square: focus board, cursor e4, chosen e3, over -, wrong -, moves made 0, changed true
+  enter there: nothing: focus board, cursor e4, chosen e3, over -, wrong -, moves made 0, changed false
+left: its target: focus board, cursor d4, chosen e3, over d4, wrong -, moves made 0, changed true
+enter: played: focus board, cursor d4, chosen -, over -, wrong -, moves made 1, changed true
+left three: the edge: focus board, cursor a4, chosen -, over -, wrong -, moves made 1, changed false
+left: off the board: focus control 110, cursor -, chosen -, over -, wrong -, moves made 1, changed true
+right: back on its near edge: focus board, cursor a8, chosen -, over -, wrong -, moves made 1, changed true
+tab: focus control 113, cursor -, chosen -, over -, wrong -, moves made 1, changed true
+tab: focus control 110, cursor -, chosen -, over -, wrong -, moves made 1, changed false
+tab: focus board, cursor a8, chosen -, over -, wrong -, moves made 1, changed true
+shift tab: focus control 110, cursor -, chosen -, over -, wrong -, moves made 1, changed true
+tab: focus board, cursor a8, chosen -, over -, wrong -, moves made 1, changed true
+a new game, a piece chosen: focus board, cursor e3, chosen e3, over -, wrong -, moves made 0, changed false
+  put down: true, again: false
+a capture due: down: focus board, cursor c3, chosen -, over -, wrong -, moves made 0, changed true
+right four: focus board, cursor g3, chosen -, over -, wrong -, moves made 0, changed false
+enter: not the piece that must take: focus board, cursor g3, chosen -, over -, wrong g3, moves made 0, changed true
+turned: down: focus board, cursor d6, chosen -, over -, wrong -, moves made 0, changed true
+  up: focus board, cursor d5, chosen -, over -, wrong -, moves made 0, changed true
+  right: focus board, cursor c5, chosen -, over -, wrong -, moves made 0, changed true
+the computer's turn: down: focus board, cursor c6, chosen -, over -, wrong -, moves made 0, changed true
+  enter: focus board, cursor c6, chosen -, over -, wrong -, moves made 0, changed false
+3D, turned: down: focus board, cursor d6, chosen -, over -, wrong -, moves made 0, changed true
+  up: focus board, cursor d5, chosen -, over -, wrong -, moves made 0, changed true
+  right: focus board, cursor c5, chosen -, over -, wrong -, moves made 0, changed true
+  turned back: the same square: focus board, cursor c5, chosen -, over -, wrong -, moves made 0, changed false
+  up: focus board, cursor c6, chosen -, over -, wrong -, moves made 0, changed true
+the mouse moves: focus none, cursor -, chosen -, over -, wrong -, moves made 0, changed true
