@@ -305,6 +305,15 @@ came on 2026-11-09.
   leaves them too little room (2026-11-08).
 - The menu's rows close up from 2 dp apart to about 1 where the gear's reach doesn't fit
   (2026-11-10): the Pixel 7a in landscape had overlapped Continue's tap.
+- Continue's note says whose game it goes back to, "A friend" or "The computer · easy"
+  (2026-11-11, issue 1, `prototypes/issue-1.html` take a). The row isn't shown while the
+  game is one nobody set up (none kept: a fresh install, a new player) with no move
+  played, as Quit isn't where it doesn't fit (2026-11-12, take b; it replaces a's dim row
+  of 2026-11-11, which the user found weaker than none). Whether the game was set up is
+  kept with it (`Saved.unset`, version 4), so a restart doesn't bring the row back; a
+  version 3 image still reads, as a game set up, until that reading is dropped.
+  Rejected for now: continue going back to a puzzle too (c), which the shell doesn't
+  track and Puzzles already reaches.
 - The X closes the app (`exit.html`'s take b, chosen 2026-11-08 as a round glass button;
   made a bare X, `gear.html`'s `x=d`, on 2026-11-09 to match the bare gear). Rejected: a
   quiet last row, which would take the portrait board's room and lengthen the sheet
@@ -329,6 +338,11 @@ came on 2026-11-09.
 
 **Settings** (`prototypes/settings.html`, regrouped 2026-11-07)
 
+- No draughts row (2026-11-11, issue 1, `prototypes/issue-1.html` take a): home's setup
+  and the puzzles' library each choose the draughts, and here it read as if it changed
+  the game in progress. The preview shows the player's draughts. Rejected: the row kept
+  as "Draughts for new games and puzzles" (b), a third way to one choice; shown read-only
+  as the game's (c), a row that takes no tap among rows that do.
 - The tutorial's row (one tile, learn the moves) comes with the tutorial, taken out until
   then so the tablet's landscape shows both groups (2026-11-09).
 - The privacy note's place, at the group's title row or the glass's foot, so it moves no
@@ -448,6 +462,23 @@ Task 052, `prototypes/game-captured.html`'s take a in its `row` look, chosen 202
 - The 3D board lights a missed capture's next stops (2026-11-09); it never showed them
   before.
 - A puzzle's board makes captures by hand with none of the game's help (2026-11-08).
+- Issue 1 (2026-11-11), the board's taps:
+  - A capture made stop by stop may take any of its ways (`rules::ways`), not only the one
+    the move list keeps for each end and pieces taken: a king's other way was a miss and
+    cost a puzzle's stars. The move plays along the way tapped.
+  - An empty square the piece passes on its way to a next stop (a king's flight, or
+    squares past a jumped piece before the one it must land on) is no stop and no mistake:
+    a tap there does nothing (`board::passes`). Rejected: moving the piece there, which
+    the rules don't have as a stop.
+  - A last square further on plays the capture when every way going there takes the same
+    pieces, one move whichever way, as before (2026-11-12: the user kept that; a stricter
+    rule of one way alone, tried on 2026-11-11, is dropped).
+  - A tap on a stop shows the piece hopping there over the move's hop (`board::hop`); it
+    jumped before, on both boards (the issue saw the flat one, where taps are the way;
+    the 3D board fills from the same lists). A drop needs none.
+  - A tap on the selected piece puts it down (released without a drag), as Enter on it does. A tap on a piece
+    waiting on a stop still does nothing, so a child who taps the piece before each jump
+    keeps the stops.
 
 ## Fonts
 

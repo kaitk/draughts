@@ -2,11 +2,10 @@
 // was written, and a file that lacks a key or says something unknown leaves the default.
 // The language is the device's (shell/players.goose), kept apart from the player's file.
 // On the regrouped screen a tap applies at once and marks the settings changed for the
-// app to write: the language in the title row; the draughts a new game starts on, move
-// hints (which the game's board takes), a season, and the kings (which the game's board
+// app to write: the language in the title row; move hints (which the game's board takes), a season, and the kings (which the game's board
 // draws too); the Board row's 3D plays the game on the 3D board, whose kings are stacks
 // for auto. Each choice restages the board beside them: its size, its kings, and what the move hints show on
-// a fixed position, where white must capture with the man on d4 or the king on h6.
+// a fixed position (the player's draughts, chosen elsewhere: no row here since issue 1), where white must capture with the man on d4 or the king on h6.
 // With mistakes only, a wrong move's ring flashes and both capturing pieces pulse, then
 // both stay lit and still, so nothing animates after. The row of seasons is named Theme
 // (Teema): its switch, photograph or plain, is kept in the file as `background`, and with
@@ -29,19 +28,27 @@ import drive from "../drive";
 let BACK = 0;
 let ENGLISH = 1;
 let EESTI = 2;
-let INTERNATIONAL = 3;
-let BRAZILIAN = 4;
-let RUSSIAN = 5;
-let MISTAKES = 6;
-let MOVES = 7;
-let SUMMER = 10;
-let BY_DATE = 12;
-let PHOTO = 13;             // the theme's switch, under its name
-let PLAIN = 14;
-let RAISED = 16;
-let AUTO = 17;
-let STACK = 19;
-let TILES = 20;
+let MISTAKES = 3;
+let MOVES = 4;
+let SUMMER = 7;
+let BY_DATE = 9;
+let PHOTO = 10;             // the theme's switch, under its name
+let PLAIN = 11;
+let RAISED = 13;
+let AUTO = 14;
+let STACK = 16;
+let TILES = 17;
+
+// The player's draughts, chosen in home's setup or the puzzles' library (settings has no
+// row for them since issue 1): the preview is staged again with their size, as a
+// settings' change stages it (shell::settings_screen).
+fn draughts(sh: shell::Shell&, g: gui::Gui&, v: i64, now: f64) {
+    sh.prefs.variant = v;
+    sh.changed = true;
+    shell::apply_prefs(sh);
+    settings::stage(sh.preview, sh.prefs, now);
+    drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, now);
+}
 
 // The pictures the last frame declared, by look.z: the seasons' (0 to 3 their
 // photographs, 4 to 7 their fades), by the date's (-1), and the switch's (-2 the theme
@@ -149,7 +156,7 @@ fn main() {
     drive::tap(sh, g, drive::tile(g, MOVES), 4.3);
     show(sh, "all moves");
     preview(sh, 4.4);
-    drive::tap(sh, g, drive::tile(g, RUSSIAN), 4.5);
+    draughts(sh, g, rules::RUSSIAN, 4.5);
     show(sh, "Russian");
     preview(sh, 4.6);
     drive::tap(sh, g, drive::tile(g, STACK), 4.7);
@@ -158,11 +165,11 @@ fn main() {
     drive::tap(sh, g, drive::tile(g, MISTAKES), 4.9);
     show(sh, "mistakes only");
     preview(sh, 5.0);
-    drive::tap(sh, g, drive::tile(g, BRAZILIAN), 9.0);
+    draughts(sh, g, rules::BRAZILIAN, 9.0);
     show(sh, "Brazilian");
     drive::tap(sh, g, drive::tile(g, AUTO), 9.1);
     show(sh, "auto");
-    drive::tap(sh, g, drive::tile(g, INTERNATIONAL), 9.2);
+    draughts(sh, g, rules::INTERNATIONAL, 9.2);
     show(sh, "International");
     drive::tap(sh, g, drive::tile(g, EESTI), 9.3);
     show(sh, "Eesti");
@@ -193,7 +200,7 @@ fn main() {
     // Portrait: the board on top, the groups side by side under it.
     drive::size = float2 { 800.0, 1280.0 };
     drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 10.0);
-    let first = drive::rect(g, INTERNATIONAL);
+    let first = drive::rect(g, MISTAKES);
     let look = drive::rect(g, BY_DATE);
     print("portrait: board at ", sh.out.layout.board, ", the groups from ", first.y, ", clear ",
           sh.out.layout.board.y + sh.out.layout.board.z < first.y, ", look beside game ", look.x > first.x + first.z,

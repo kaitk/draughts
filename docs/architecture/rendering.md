@@ -597,7 +597,9 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   prototypes' balanced wrap. The strong side's count shows on a tie with another, so the words don't swap
   from one move to the next.
 - **Home** is a title menu (`prototypes/home.html`): the scene and the 3D board, and one glass column
-  with the wordmark, then continue, a friend, the computer with its level, and puzzles
+  with the wordmark, then continue with whose game it goes back to ("A friend", "The
+  computer · easy"; not shown while the game is one nobody set up and no move was
+  played: `shell::resume`, the rows below moving up), a friend, the computer with its level, and puzzles
   with stars, then settings, each an icon and a word, in rows 88 dp tall, 2 dp apart. In
   portrait settings is instead a gear beside the wordmark, so the sheet leaves the board
   its room: the gear alone, 40 dp at 85%, with no tile, in an 88 dp tap reaching 8 dp over
@@ -672,8 +674,8 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   choices take the width they need at the left, as home's menu does, the groups under the
   title row with the room left below them, and the board the rest, about two thirds, so from home the board only moves a little; in portrait the board is
   on top, as large as the rest leaves, and the two groups stand side by side under it.
-  **Game**: the draughts a new game starts on (international, Brazilian, Russian; the
-  setup can still change it) and move hints. Last, the privacy note
+  **Game**: move hints (the draughts are chosen in home's setup and the puzzles'
+  library; the preview shows the player's). Last, the privacy note
   (`settings.privacy`, App Review Guideline 5.1.1(i)): the policy in one sentence, dim
   in the small face, with no link out, as the app has none. It sits at the group's title row's right end where it fits there in two lines
   at most (the stacked landscapes, which have no height to spare: one line in both
@@ -761,10 +763,10 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   3"). Learn is open; the others open once
   half of Learn is solved, and until then each mark is plain with a lock badge, the name
   dim, and "Solve n more in Learn" in place of the bar, and a tap on it does nothing.
-  **The draughts switch** (`prototypes/puzzle-set.html`, take a) is settings' draughts tiles, International 10 × 10, Brazilian 8 × 8, Russian
+  **The draughts switch** (`prototypes/puzzle-set.html`, take a) is the setup's draughts tiles, International 10 × 10, Brazilian 8 × 8, Russian
   8 × 8 (each its name over its size, 88 dp tall, as wide as settings' tile would be,
   widened in proportion to fill a row), joined on one glass 4 dp round them and between,
-  the player's draughts lit. It is settings' draughts choice, one setting: a tap sets
+  the player's draughts lit. It is the setup's draughts choice, one setting: a tap sets
   new games' draughts too, saved as settings saves them, reads that draughts' set at
   once (`shell::load_set`), puts the list back at its top, and home's count follows; the
   lit tile takes a tap and changes nothing. It stands at the title row's right in
@@ -1194,7 +1196,7 @@ board's does and the backdrop over it as opaque as the blur.
   dot 30% of a square and a capture's stop on the way is a ring. With hints on mistakes
   only (the default, `docs/product.md`), there are no dots: a wrong move flashes a red
   ring on its square twice (0.6 s each), and the piece that must capture pulses; the
-piece stays selected. A tap or a drop on an empty square that isn't a move is wrong, as
+piece stays selected; a tap on it puts it down. A tap or a drop on an empty square that isn't a move is wrong, as
 is touching a piece that can't move because another must capture. Every piece with a
 legal capture pulses, never one of several. Under the majority rule a piece that could
 take, but fewer than another, can't move: touching it is wrong, and the pieces the legal
@@ -1218,14 +1220,17 @@ of a square round the piece on the side toward the eye, as the piece hides its f
 painted over the field (that pass blends premultiplied, the other marks adding with alpha
 0), as added light washed out on a light square. They change only with the count, so they
 cost a draw of the board then and nothing per frame. A capture of many jumps is tapped or dropped by its
-last square, when one capture alone goes there, or stop by stop (`board::follow`): a tap
+last square, when every way there takes the same pieces, or stop by stop (`board::follow`), along any of
+its ways (`rules::ways`, every way the selected piece takes, kept in `Board.ways` when it
+is selected; the move list keeps one way per move): a tap
 or a drop on the next stop of the selected piece's captures leaves the piece waiting
-there, lifted and selected, the pieces it jumped still on the board as the rules leave
+there, a tap showing it hop there over the move's hop, lifted and selected, the pieces it jumped still on the board as the rules leave
 them until the capture ends, the stops behind it ringed whatever the hints, and narrows
 the targets shown to the ways through it. The rest is never played by itself, in a game
 as in a puzzle: each next jump is the child's, by tap or by drag from the stop, and the
 move, once its last stop is reached, is shown from there. A last square several captures
-reach waits for the stops. In a game, a wrong square for a piece that must capture is a
+reach waits for the stops. An empty square the piece only passes on its way to a next
+stop is nothing at all, no stop and no mistake (`board::passes`). In a game, a wrong square for a piece that must capture is a
 miss that leaves a waiting piece on its stop (`board::missed`): the first in a turn
 pulses the pieces its captures have still to take, so a far-row square that a shorter
 capture would crown on, which the majority rule forbids, shows what to take instead

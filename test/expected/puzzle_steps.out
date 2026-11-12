@@ -1,9 +1,11 @@
+47, 33, halfway through the hop: puzzle 14 learn 3, playing, misses 0, stars 3, selected c1 drawn on d2, waits on f4, ringed targets wrong -, next awake
 47, 33: puzzle 14 learn 3, playing, misses 0, stars 3, selected c1 drawn on f4, waits on f4, ringed targets wrong -, next awake
 then 17: puzzle 14 learn 3, playing, misses 0, stars 3, selected c1 drawn on c7, waits on c7, ringed f4 targets wrong -, next awake
   the way shown from c7, landing 0.38 s after the tap
 then 8: puzzle 14 learn 3, solved, misses 0, stars 3, selected - drawn on -, waits on -, ringed targets wrong -, next awake lit
   B:WK8,46:B5, kept stars 3
-again: 47, 33, 28: puzzle 14 learn 3, playing, misses 1, stars 2, selected c1 drawn on c1, waits on -, ringed targets wrong e5, next dim
+again: 47, 33, 28: puzzle 14 learn 3, playing, misses 0, stars 3, selected c1 drawn on f4, waits on f4, ringed targets wrong -, next awake
+then 34: puzzle 14 learn 3, playing, misses 1, stars 2, selected c1 drawn on c1, waits on -, ringed targets wrong h4, next dim
 38, then 29: puzzle 10 learn 2, playing, misses 0, stars 3, selected e3 drawn on g5, waits on g5, ringed targets wrong -, next awake
   then 20: show, playing e3xi7
   slid back: puzzle 10 learn 2, playing, misses 1, stars 2, selected - drawn on -, waits on -, ringed targets wrong i7, next dim

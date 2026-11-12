@@ -142,6 +142,10 @@ struct Shell {
     back:    i64                = HOME,       // where settings goes back to
     setup:   i64                = home::NO_SETUP, // home's column: the menu, or a setup
     staged:  bool               = false,      // home shows `next`, having declared a setup this frame
+    // The game is one nobody set up, there being none kept (read_game: a fresh install, a
+    // new player), until a game is set up or a move played in it (resume). Kept with the
+    // game (saved.goose).
+    unset:   bool               = false,
     out:     Frame,                           // this frame's, for the app
     // Handed in by the app each frame (frame): whether the 3D board, when chosen, is
     // ready to draw (else it gets ready a step a frame, taps on it left alone), and
@@ -212,7 +216,7 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: bo
             if p.three { sh.went_view = p.view; }
         },
         _ => {
-            home::frame(over, g, l, rules::VARIANTS[board_of(sh, HOME).variant].size, area, sh.left, sh.prefs, room);
+            home::frame(over, g, l, rules::VARIANTS[board_of(sh, HOME).variant].size, area, sh.left, sh.prefs, room, resume(sh));
             l.flip = turned(sh, sh.left);
             sh.went_view = home_view(sh, raise_in(sh, room, l.n, g.scale, l), room, now);
         },
@@ -352,6 +356,15 @@ fn play(sh: Shell&, now: f64) {
     go_to(sh, GAME, now);
     sh.setup = home::NO_SETUP;
     sh.staged = false;
+    sh.unset = false;
+}
+
+// What home's continue goes back to: the game and whose it is; none while the game is
+// one nobody set up (`unset`) with no move played (issue 1).
+fn resume(sh: Shell&) -> home::Resume {
+    let gm .= sh.game;
+    let on = !sh.unset || gm.b.history.len > 0 || gm.computer >= 0;
+    return home::Resume { on: on, note: home::resume_note(gm.computer, gm.level) };
 }
 
 // One frame, after gui::begin, on a screen width × height pixels, each screen laid out in
@@ -767,7 +780,8 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     let card = sh.who.state != who::CLOSED && sh.setup == home::NO_SETUP;
     if card { gui::listen(g, false); }
     var room = float4 { 0.0, 0.0, 0.0, 0.0 };
-    let pick = home::frame(sh.out.over, g, sh.out.layout, rules::VARIANTS[b.variant].size, area, sh.setup, sh.prefs, room);
+    let pick = home::frame(sh.out.over, g, sh.out.layout, rules::VARIANTS[b.variant].size, area, sh.setup, sh.prefs, room,
+                           resume(sh));
     sh.out.layout.flip = flip;
     let v = raise_in(sh, room, sh.out.layout.n, g.scale, sh.out.layout);
     if !card && turn_home(sh, g, v, room, now) { changed = true; }

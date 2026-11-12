@@ -44,6 +44,7 @@ let KEYS = [
     "settings.privacy",
     "game.lookout", "game.hint", "game.where_to",
     "home.quit",
+    "continue.friend", "continue.easy", "continue.medium", "continue.hard",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -153,7 +154,11 @@ let GAME_LOOKOUT = 104;     // the lookout's toggle: the threats past the player
 let GAME_HINT = 105;        // the hint's tile
 let GAME_WHERE_TO = 106;    // and its word once it has lit the piece to move
 let HOME_QUIT = 107;        // a desktop's way out on home, the last row
-let COUNT = 108;
+let CONTINUE_FRIEND = 108;  // continue's note: whose game it goes back to (home::menu)
+let CONTINUE_EASY = 109;    // the computer's, at each level
+let CONTINUE_MEDIUM = 110;
+let CONTINUE_HARD = 111;
+let COUNT = 112;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

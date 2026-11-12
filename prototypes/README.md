@@ -18,6 +18,7 @@ jsDelivr CDN, so they need internet access. Start at [index.html](index.html).
 | `puzzle.html` | Takes on playing one puzzle (`?take=a` to `c`, `&state=play`, `wrong`, `hint`, `solved`), waiting for a pick (task 007) |
 | `profiles.html` | Takes on players, one per child (`?take=a` to `c`, `&state=home`, `pick`, `add`, `edit`, `hold`, `&n=1` to `4`, `&lang=et`): the face beside the name, who's playing on launch, faces on home; the player's sheet with its holds (task 038) |
 | `badges.html` | Takes on a player's picture (task 038): five badge styles at 64 and 112 dp over the photograph and glass (carved pieces, nature tokens, animal lines, coloured rims, at dusk; `?disc=wood`, `?pieces=both`), the carved one placed on home four ways (`?home=1` to `4`) and the first start's pick (`?home=first`), with an image prompt for finer art |
+| `issue-1.html` | Takes on two points of issue 1 (kaitk/draughts#1), side by side in a phone's portrait: what home's Continue continues (a, a note and the row dim with nothing to continue; b, no row on a first run; a's note with b's hidden row built; c, the last thing played, a puzzle too), and settings' Draughts row (a, removed, built; b, kept and named for new games and puzzles; c, shown read-only) |
 | `boards.html` | The four season boards in 2D and 3D, crowned and stacked kings, and 10×10 |
 
 Shared parts: `draughts.css` (theme tokens, glass, buttons, board, pieces, light) and
