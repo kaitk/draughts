@@ -1,6 +1,6 @@
 # 074: ngfx against gfx, uncapped, on Windows
 
-Status: in-progress (the runs done 2026-11-12; what ngfx's lower GPU time is, still open)
+Status: in-progress (the runs done 2026-11-12; where ngfx's lower GPU time comes from, still open)
 
 Task 070 measured both renderers uncapped on the Mac. This does the same on the Windows
 PC (RTX 4090), full screen, every antialiasing way of each, with memory: whether ngfx
@@ -82,26 +82,42 @@ here, where on the Mac it used more (task 065, 071).
   remaining gap is not the CPU.
 - **Presenting.** With vsync (as the app runs), both flip straight to the screen
   (Hardware: Independent Flip), show every frame at 165 Hz, and reach the display in
-  about 6 ms. Uncapped, gfx flips too, but Windows composes ngfx's window (Composed:
-  Copy with GPU GDI): DWM copies it, in its own process, so PresentMon's GPU busy leaves
-  that copy out of ngfx's time, and ngfx's uncapped rate is how fast it submits, not
-  what reaches the display. Why ngfx's immediate swapchain isn't flipped is open.
+  about 6 ms. Uncapped, in the batch above Windows composed ngfx's window (Composed:
+  Copy with GPU GDI), which leaves DWM's copy out of ngfx's GPU busy. Later the same
+  builds, old and new, flipped straight to the screen (Hardware: Legacy Flip), so it was
+  the desktop at the time, not NoGraphicsAPI's swapchain: neither its present-modes
+  struct, a transfer usage as SDL's, nor two images in place of three changed it. The
+  direct runs below are the fair GPU comparison.
 - **GPU busy depends on the clocks.** At 165 Hz the 4090 idles low: 1.89 ms busy for gfx
   and 2.49 for ngfx a 3D frame, against 0.5 and 0.23 uncapped. Comparing GPU time needs
   fixed clocks (`nvidia-smi -lgc`, which needs admin) or a GPU trace.
+
+### Both flipped straight to the screen
+
+Uncapped, three interleaved rounds, ngfx on NoGraphicsAPI at upstream's `main`
+(goose-ngfx `nographicsapi-main`; the build before gave the same rates). PresentMon's GPU
+busy P50, presented fps, and present to display:
+
+| run | gfx | ngfx |
+|---|---|---|
+| flat | 0.39 ms, 2,416 to 2,444 fps, 0.7 ms | 0.21 to 0.25 ms, 3,995 to 4,519 fps, 0.3 ms |
+| 3D msaa (gfx) / smaa (ngfx) | 0.50 ms, 1,957 to 1,967 fps, 0.9 ms | 0.36 to 0.37 ms, 2,625 to 2,676 fps, 0.3 ms |
+| 3D smaa both | 0.51 ms, 1,890 to 1,904 fps, 1.0 ms | as above |
+
+ngfx's frame takes 27% less of the GPU on the 3D board (SMAA on both) and about 40% less
+flat, and reaches the display 0.6 ms sooner (Legacy Flip against gfx's Independent Flip).
 
 ## Reading them
 
 - **The CPU is not a reason for ngfx.** Both take about 0.03 ms a frame to record. The
   game's own frame work is as small; changing the game to use less of the CPU through
   ngfx gains nothing measurable on this PC.
-- **The GPU may be.** Uncapped, ngfx's frames take about half of gfx's GPU time on both
-  boards (flat 0.14 against 0.39 ms; 3D with SMAA on both 0.23 against 0.51), and ngfx
-  presents 2.2 times gfx's frames flat and 1.4 times on the 3D board. But DWM's copy of
-  ngfx's window is outside its count, and nothing at 165 Hz needs either: both leave the
-  4090 almost idle. Before this is a reason for `auto`, a GPU trace of each (Nsight
-  Graphics is installed) should show where gfx's extra 0.25 ms goes: its screen kept as a
-  texture and copied to the window, SDL_GPU's barriers, or the MSAA resolve.
+- **The GPU is a modest reason.** Both flipped straight to the screen, ngfx's frame takes
+  27% less GPU time on the 3D board and 40% less flat, and presents 1.4 and 1.8 times
+  gfx's frames. Nothing at 165 Hz needs it on the 4090, which both leave almost idle; on
+  a weaker GPU it would be headroom. A GPU trace of each (Nsight Graphics is installed)
+  should show where gfx's extra 0.14 to 0.18 ms goes: likely its screen kept as a texture
+  and copied to the window, which ngfx draws straight into, and SDL_GPU's barriers.
 - **Memory is a reason.** ngfx holds 54 to 74 MB less GPU memory and 75 to 190 MB less
   private memory here. On the Mac it was the other way (task 071), so it is the platform's
   driver and NoGraphicsAPI's Vulkan backend, not ngfx in general.
@@ -109,7 +125,6 @@ here, where on the Mac it used more (task 065, 071).
 ## Next
 
 - A GPU trace of one 3D frame of each (Nsight Graphics), and the same with clocks fixed.
-- Why ngfx's immediate swapchain is composed by DWM rather than flipped.
 - The same runs on a laptop or integrated GPU, where the GPU is the limit and the gap
   would show at 60 Hz.
 
