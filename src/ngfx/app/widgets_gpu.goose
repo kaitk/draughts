@@ -1,7 +1,8 @@
 // Recording the UI's quads (widgets.goose) through goose-ngfx, in place of
-// src/app/widgets_gpu.goose (scripts/ngfx.py): src/ngfx/shaders/ui.slang and
-// compose.slang, built ahead, and the quads copied into each frame's memory that draws
-// them as they come, an instanced draw per run of one pipeline pulling them from there.
+// src/app/widgets_gpu.goose (scripts/ngfx.py): src/ngfx/shaders/ui.slang and compose,
+// written from gfx's COMPOSE_FRAG (scripts/ngfx_2d_shaders.py), built ahead, and the quads
+// copied into each frame's memory that draws them as they come, an instanced draw per run
+// of one pipeline pulling them from there.
 namespace widgets_gpu;
 import std;
 import vec;
@@ -9,14 +10,14 @@ import ngfx;
 
 import gui from "../gui";
 
-// ui.slang's and compose.slang's roots.
+// ui.slang's root, and compose's, as its header lays it out.
 struct Root {
     quads: u64,
     glass: u32, atlas: u32, thumbs: u32, badges: u32, smp: u32, first: u32,
     theme: theme::Theme,
     view:  widgets::View,
 }
-struct ComposeRoot { layer: u32, pad0: u32, pad1: u32, pad2: u32 }
+struct ComposeRoot { layer: u32, smp: u32, pad0: u32, pad1: u32 }
 
 struct Gpu {
     pipelines: ngfx::Pipeline[3],
@@ -49,7 +50,7 @@ fn end_layer() {
 
 fn compose(g: Gpu&, layer: gpu::Texture, sampler: gpu::Sampler) {
     ngfx::bind(g.compose);
-    ngfx::draw(ngfx::root(ComposeRoot { layer: ngfx::index(layer), pad0: 0, pad1: 0, pad2: 0 }), 3);
+    ngfx::draw(ngfx::root(ComposeRoot { layer: ngfx::index(layer), smp: ngfx::index(sampler), pad0: 0, pad1: 0 }), 3);
 }
 
 fn run(g: Gpu&, p: i64, first: i64, count: i64, s: scene::Scene&, t: theme::Theme, view: widgets::View,
