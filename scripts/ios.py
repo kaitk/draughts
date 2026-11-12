@@ -10,7 +10,7 @@
     scripts/ios.py src/app/draughts.goose --device --run
                                                  build for the attached iPhone, sign, install, start
     scripts/ios.py src/app/draughts.goose --device --run --ngfx
-                                                 the same on goose-ngfx (task 065), in its place
+                                                 the same holding both renderers (task 073), in its place
     scripts/ios.py src/app/draughts.goose --release [--upload]
                                                  build/ios/draughts/Draughts.ipa, signed for the
                                                  App Store, and uploaded to App Store Connect
@@ -434,8 +434,8 @@ def main():
     ap.add_argument("--console", action="store_true",
                     help="run, and stay attached to the program's output until it ends")
     ap.add_argument("--ngfx", action="store_true",
-                    help="draw through goose-ngfx (NGFX, NGFX_SLANGC; scripts/ngfx.py), "
-                         "in place of the gfx build, under its id; iOS 26 and later")
+                    help="hold both renderers, gfx and goose-ngfx (NGFX, NGFX_SLANGC; scripts/ngfx.py), "
+                         "one chosen at start, in place of the gfx build, under its id")
     ap.add_argument("--release", action="store_true",
                     help="build for the App Store: signed with the App Store profile, as an .ipa")
     ap.add_argument("--upload", action="store_true",
@@ -454,15 +454,15 @@ def main():
     out = ROOT / "build/ios" / name
     min_ios, label, ngfx_cmake = MIN_IOS, "", []
     if args.ngfx:
-        # The tree with src/ngfx/ laid over the program, its blobs made for iphoneos.
+        # The tree holding both renderers (scripts/ngfx.py), its blobs made for iphoneos.
         import ngfx
         program = ngfx.ios_tree(program)
         # The gfx build's id: the iPhone wouldn't verify a new id of the team (2026-11-11),
         # so this replaces the gfx build, keeping its data, and the gfx build goes back on
         # to compare.
         out, label = out.with_name(name + "-ngfx"), " ngfx"
-        # NoGraphicsAPI's Metal 4.
-        min_ios = "26.0"
+        # From MIN_IOS too: NoGraphicsAPI links Metal 4 weakly and fails at run time before
+        # iOS 26, where gfx draws (docs/decisions/README.md, the stack).
         ngfx_cmake = [f"-DGOOSE_NGFX={ngfx.NGFX}", f"-DGOOSE_H_DIR={goose_h(ngfx.NGFX)}"]
     plat = "release" if args.release else "device" if args.device else "sim"
     gen, native = out / "gen", out / plat / "native"
