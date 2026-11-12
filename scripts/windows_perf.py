@@ -8,6 +8,7 @@ scene (Russian, wood, the start).
     BOARDS=3d python scripts/windows_perf.py    one board; REST=0 leaves the rest out
     EXE=build/ngfx/draughts.exe FLAGS="--aa smaa" python scripts/windows_perf.py
                                                 another build, and flags added to each run
+    SIZE=1280x800 python scripts/windows_perf.py  a window in place of full screen
 
 Per board: the bench (--bench N) with PresentMon recording the app's presents, and of
 those between the bench's "presenting" and "presented" lines (stamped here as they
@@ -38,7 +39,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 EXE = (ROOT / os.environ.get("EXE", "build/windows/draughts.exe")).resolve()
-SCENE = ["--size", "full", "--screen", "game", "--theme", "wood", "--variant", "russian",
+SCENE = ["--size", os.environ.get("SIZE", "full"), "--screen", "game", "--theme", "wood", "--variant", "russian",
          *os.environ.get("FLAGS", "").split()]
 SESSION = "draughts_perf"
 
@@ -85,6 +86,32 @@ def peak_private_mb(p):
     return m.PeakPagefileUsage / (1 << 20)
 
 
+def bring_forward(pid, seconds=5):
+    """Puts the app's window in front once it shows. A process started by a script that
+    isn't in front doesn't get the foreground, and a legacy full-screen swapchain (the
+    ngfx build's, uncapped on NVIDIA) is then composed by DWM rather than flipped. A
+    tap of Alt lets SetForegroundWindow through."""
+    user32 = ctypes.WinDLL("user32")
+    found = []
+    proc = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+
+    def each(hwnd, _):
+        owner = wintypes.DWORD()
+        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(owner))
+        if owner.value == pid and user32.IsWindowVisible(hwnd):
+            found.append(hwnd)
+        return True
+    for _ in range(seconds * 20):
+        user32.EnumWindows(proc(each), 0)
+        if found:
+            user32.keybd_event(0x12, 0, 0, 0)
+            user32.keybd_event(0x12, 0, 2, 0)
+            user32.SetForegroundWindow(found[0])
+            return True
+        time.sleep(0.05)
+    return False
+
+
 def wait_for(lines, text, seconds):
     for _ in range(int(seconds * 10)):
         if any(text in line for _, line in lines):
@@ -103,6 +130,7 @@ def frames(board, n, work):
     out = work / f"presentmon-{board}.csv"
     launched = datetime.datetime.now()
     p, lines = launch(["--board", board, *SCENE, "--bench", str(n)])
+    bring_forward(p.pid)
     pm = subprocess.Popen([presentmon(), "--process_id", str(p.pid), "--output_file", str(out),
                            "--date_time", "--no_console_stats", "--session_name", SESSION,
                            "--stop_existing_session"],

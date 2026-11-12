@@ -17,36 +17,53 @@ gap is ngfx's or a fault in gfx.
 - **gfx's `NO_VSYNC` was held to the refresh full screen.** It asked for mailbox first,
   which NVIDIA's Vulkan driver holds to 165 Hz full screen (747 fps in a window). It asks
   for immediate first now (`kaitk/goose_gfx`'s `no-vsync-immediate`, in its `main`).
+- **ngfx's window has to be in front.** Uncapped, NVIDIA presents NoGraphicsAPI's
+  immediate swapchain the legacy way (Hardware: Legacy Flip), which flips only while the
+  window is in front; gfx's goes through DXGI's flip model (Independent Flip), which
+  flips either way. A process started by a script that isn't in front doesn't get the
+  foreground, so in unattended batches DWM copied ngfx's window (Composed: Copy with GPU
+  GDI, 12 ms to the display, the copy outside ngfx's GPU busy) in nearly every run, and
+  retrying didn't help. `scripts/windows_perf.py` now brings the app's window to the
+  front once it shows (a tap of Alt, then `SetForegroundWindow`). Not the cause, tried:
+  NoGraphicsAPI's present-modes struct, a transfer usage as SDL's, two images in place of
+  three. A likely one, untried: NoGraphicsAPI requires swapchain maintenance 1 and passes
+  a present fence with each present. With vsync, in a window or full screen, both flip
+  alike, so the app as run is unaffected.
 - `scripts/windows_perf.py` prints the bench's most private bytes (the process's peak
-  commit) and the 3D bench's CPU a frame.
+  commit) and the 3D bench's CPU a frame, and takes `SIZE=WxH` for a window.
 
 ## The runs
 
 Windows 11, RTX 4090 (driver 617.42), 2560 × 1440 at 165 Hz, mains power.
 `scripts/windows_perf.py 1000` with `FLAGS="--no-vsync --aa <way>"`: `--size full`, the
 game (Russian, wood, the start), `--bench 1000`, PresentMon recording the presents.
-Three rounds, configurations interleaved, medians; the rest (`--rest 25`) from the
-first round. gfx built from `kaitk/goose_gfx` `main` (`d9645b2`); ngfx at goose-ngfx
-`f6ffae3`, NoGraphicsAPI `e50736d`, its 3D way SMAA by default.
+Three rounds, configurations interleaved, medians, every run flipped straight to the
+screen; the rest (`--rest 25`) from an earlier batch of the same builds. gfx built from
+`kaitk/goose_gfx` `main` (`d9645b2`); ngfx at goose-ngfx `1cda46e`, NoGraphicsAPI
+`e50736d`, its 3D way SMAA by default.
 
 Presented fps (avg / 1% low, the app's own clock), waited frame P50 / P99 in ms (fill,
-submit, and GPU, each frame waited for), the CPU a frame to the submit, and PresentMon's
-GPU busy a frame (P50 / P99):
+submit, and GPU, each frame waited for), the CPU a frame to the submit, PresentMon's GPU
+busy a frame (P50 / P99), and present to display (P50):
 
-| run | fps | waited | cpu | GPU busy |
-|---|---|---|---|---|
-| gfx flat | 2,372 / 1,674 | 0.40 / 0.92 | 0.021 | 0.39 / 0.59 |
-| ngfx flat | 5,326 / 2,894 | 0.21 / 1.38 | 0.033 | 0.14 / 0.49 |
-| gfx 3D off | 2,117 / 1,190 | 0.33 / 0.75 | 0.033 | 0.46 / 0.70 |
-| gfx 3D msaa (its default) | 1,909 / 1,302 | 0.37 / 0.47 | 0.037 | 0.50 / 0.61 |
-| gfx 3D smaa | 1,825 / 1,227 | 0.37 / 0.49 | 0.045 | 0.51 / 0.64 |
-| ngfx 3D off | 2,723 / 1,925 | 0.18 / 0.52 | 0.022 | 0.19 / 0.56 |
-| ngfx 3D fxaa | 2,710 / 1,882 | 0.27 / 0.71 | 0.024 | 0.22 / 0.57 |
-| ngfx 3D smaa (its default) | 2,644 / 1,913 | 0.24 / 0.52 | 0.031 | 0.23 / 0.58 |
-| ngfx 3D ssaa | 2,612 / 1,755 | 0.36 / 0.97 | 0.024 | 0.35 / 0.69 |
+| run | fps | waited | cpu | GPU busy | to display |
+|---|---|---|---|---|---|
+| gfx flat | 2,422 / 1,781 | 0.42 / 0.85 | 0.020 | 0.39 / 0.52 | 0.7 |
+| ngfx flat | 4,386 / 2,445 | 0.25 / 0.49 | 0.030 | 0.23 / 0.33 | 0.3 |
+| gfx 3D off | 2,170 / 1,239 | 0.33 / 0.58 | 0.026 | 0.46 / 0.67 | 0.8 |
+| gfx 3D msaa (its default) | 1,976 / 1,434 | 0.37 / 0.87 | 0.030 | 0.50 / 0.56 | 0.9 |
+| gfx 3D smaa | 1,902 / 1,522 | 0.40 / 0.89 | 0.038 | 0.51 / 0.58 | 1.0 |
+| ngfx 3D off | 2,746 / 2,385 | 0.20 / 0.31 | 0.021 | 0.34 / 0.41 | 0.3 |
+| ngfx 3D fxaa | 2,727 / 2,395 | 0.31 / 0.42 | 0.024 | 0.36 / 0.41 | 0.3 |
+| ngfx 3D smaa (its default) | 2,660 / 2,289 | 0.24 / 0.30 | 0.031 | 0.36 / 0.42 | 0.3 |
+| ngfx 3D ssaa | 2,401 / 1,907 | 0.40 / 0.72 | 0.024 | 0.40 / 0.51 | 0.4 |
 
-The three runs of each agree within 3% (gfx 3D msaa 1,911 / 1,901 / 1,909 fps; ngfx 3D
-smaa 2,607 / 2,663 / 2,644).
+The three runs of each agree within 3% but ngfx flat's first (4,053 / 4,386 / 4,408 fps;
+gfx 3D msaa 1,976 / 1,970 / 1,976; ngfx 3D smaa 2,652 / 2,660 / 2,691). ngfx's frame takes
+29% less GPU time on the 3D board with SMAA on both (0.36 against 0.51 ms), 28% less at
+each one's default (SMAA against MSAA), 26% less with none, and 41% less flat; it presents
+1.8 times gfx's frames flat and 1.35 times on the 3D board at the defaults, and reaches the
+display 0.4 to 0.7 ms sooner.
 
 **gfx before upstream's upload buffer** (goose_gfx `v1` with this repository's patches,
 as shipped until `6a75d05`), the same way: flat 1,514 fps, cpu 0.160 ms; 3D off 736 fps,
@@ -82,41 +99,21 @@ here, where on the Mac it used more (task 065, 071).
   remaining gap is not the CPU.
 - **Presenting.** With vsync (as the app runs), both flip straight to the screen
   (Hardware: Independent Flip), show every frame at 165 Hz, and reach the display in
-  about 6 ms. Uncapped, in the batch above Windows composed ngfx's window (Composed:
-  Copy with GPU GDI), which leaves DWM's copy out of ngfx's GPU busy. Later the same
-  builds, old and new, flipped straight to the screen (Hardware: Legacy Flip), so it was
-  the desktop at the time, not NoGraphicsAPI's swapchain: neither its present-modes
-  struct, a transfer usage as SDL's, nor two images in place of three changed it. The
-  direct runs below are the fair GPU comparison.
+  about 6 ms full screen; in a window both are composed alike (Composed: Flip, 17.9 ms).
+  Uncapped, every run in the table flipped (above).
 - **GPU busy depends on the clocks.** At 165 Hz the 4090 idles low: 1.89 ms busy for gfx
-  and 2.49 for ngfx a 3D frame, against 0.5 and 0.23 uncapped. Comparing GPU time needs
+  and 2.49 for ngfx a 3D frame, against 0.5 and 0.36 uncapped. Comparing GPU time needs
   fixed clocks (`nvidia-smi -lgc`, which needs admin) or a GPU trace.
-
-### Both flipped straight to the screen
-
-Uncapped, three interleaved rounds, ngfx on NoGraphicsAPI at upstream's `main`
-(goose-ngfx `nographicsapi-main`; the build before gave the same rates). PresentMon's GPU
-busy P50, presented fps, and present to display:
-
-| run | gfx | ngfx |
-|---|---|---|
-| flat | 0.39 ms, 2,416 to 2,444 fps, 0.7 ms | 0.21 to 0.25 ms, 3,995 to 4,519 fps, 0.3 ms |
-| 3D msaa (gfx) / smaa (ngfx) | 0.50 ms, 1,957 to 1,967 fps, 0.9 ms | 0.36 to 0.37 ms, 2,625 to 2,676 fps, 0.3 ms |
-| 3D smaa both | 0.51 ms, 1,890 to 1,904 fps, 1.0 ms | as above |
-
-ngfx's frame takes 27% less of the GPU on the 3D board (SMAA on both) and about 40% less
-flat, and reaches the display 0.6 ms sooner (Legacy Flip against gfx's Independent Flip).
 
 ## Reading them
 
 - **The CPU is not a reason for ngfx.** Both take about 0.03 ms a frame to record. The
   game's own frame work is as small; changing the game to use less of the CPU through
   ngfx gains nothing measurable on this PC.
-- **The GPU is a modest reason.** Both flipped straight to the screen, ngfx's frame takes
-  27% less GPU time on the 3D board and 40% less flat, and presents 1.4 and 1.8 times
-  gfx's frames. Nothing at 165 Hz needs it on the 4090, which both leave almost idle; on
+- **The GPU is a modest reason.** ngfx's frame takes 26 to 29% less GPU time on the 3D
+  board and 41% less flat, and presents 1.35 and 1.8 times gfx's frames. Nothing at 165 Hz needs it on the 4090, which both leave almost idle; on
   a weaker GPU it would be headroom. A GPU trace of each (Nsight Graphics is installed)
-  should show where gfx's extra 0.14 to 0.18 ms goes: likely its screen kept as a texture
+  should show where gfx's extra 0.12 to 0.16 ms goes: likely its screen kept as a texture
   and copied to the window, which ngfx draws straight into, and SDL_GPU's barriers.
 - **Memory is a reason.** ngfx holds 54 to 74 MB less GPU memory and 75 to 190 MB less
   private memory here. On the Mac it was the other way (task 071), so it is the platform's
@@ -134,4 +131,5 @@ flat, and reaches the display 0.6 ms sooner (Legacy Flip against gfx's Independe
 - [x] Both builds' uncapped numbers, flat and 3D, every antialiasing way, recorded here
 - [x] Memory of each, GPU and process, recorded here
 - [x] The gap checked: the same picture, and what in gfx caused most of it (fixed)
+- [x] Both presenting straight to the screen in every run of the table
 - [ ] Where ngfx's lower GPU time comes from, from a trace
