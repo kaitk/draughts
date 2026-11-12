@@ -62,6 +62,20 @@ the headers, so the first one runs in the `draughts-jammy` box. The release stil
 only libc and libm, glibc 2.35, the oldest the Goose compiler runs on. Rejected: XWayland
 with the release's SDL (0.2.0, task 075), and only X11 for ngfx.
 
+NoGraphicsAPI on Apple's older systems by weak links (2026-11-12, task 077). The app runs
+from iOS 16, and Metal 4, which NoGraphicsAPI's Metal backend is written on, exists from
+macOS and iOS 26. The fork's `below-26` branch builds the backend for an older deployment
+target: Metal 4's symbols are linked weakly (an iOS 16 link has 12 weak imports of them
+and no strong one), the whole backend is marked available from 26 with
+`-Wunguarded-availability-new` an error in it, so the compiler proves nothing reaches
+Metal 4 but through a device, and `create_device` asks `@available(macOS 26, iOS 26, *)`
+first and returns `Error::unsupported` before it. One executable then holds both
+renderers on Apple too, and starts gfx where ngfx can't run (task 073). It is Apple's own
+pattern for a newer API. Rejected: ngfx in a library the app opens only on 26 (an
+embedded framework on iOS, signed and loaded by name), which adds a second binary, its
+signing, and a `dlopen` boundary for the same result. The Simulator's SDK declares no
+Metal 4 types, so a Simulator build leaves ngfx out.
+
 ## The code's layout
 
 Packages with no graphics, each run headless by its tests, and an app that feeds them the

@@ -1,6 +1,6 @@
 # 077: ngfx's antialiasing on Apple, and NoGraphicsAPI on older systems
 
-Status: in-progress (step 1 done 2026-11-12, step 2 on the Mac 2026-11-12; Windows and Linux to run)
+Status: in-progress (steps 1 and 3 done 2026-11-12, step 2 on the Mac; its Windows and Linux runs are the user's)
 
 ngfx exists in Draughts to show NoGraphicsAPI's author a real program on it and to back
 the pull requests (task 073, the user, 2026-11-12). Two gaps stand in the way on Apple.
@@ -185,6 +185,39 @@ Nothing is pushed yet: the fork's `msaa` and `ngfx`, goose-ngfx's `main`, and Dr
      default (its SMAA against gfx's MSAA): does MSAA close that? That decides Linux's
      `auto` (task 073's step 6).
 
+## Step 3: done (2026-11-12)
+
+The fork's `below-26` (`68a70eb`) on upstream `main`, merged into `ngfx` (`3338bfb`, after
+the MSAA merge); goose-ngfx `2adf0ff` follows it.
+
+- `CMakeLists.txt` takes a deployment target under 26 with a status line and a comment
+  why, and makes `-Wunguarded-availability-new` an error in the Metal backend.
+- `NoGraphicsAPIMetal.mm`: the error callback and `report_error` first, then one
+  `#pragma clang attribute push` marking everything after them available from macOS and
+  iOS 26 (functions, Objective-C methods, records, enums, aliases, globals); the old
+  `create_device` body is `create_metal4_device`, and `create_device`, outside the
+  pragma, calls it under `@available(macOS 26.0, iOS 26.0, *)` and otherwise reports
+  "Metal 4 requires macOS or iOS 26" and returns `Error::unsupported`. Every other entry
+  point needs the device that path made. (`API_AVAILABLE` doesn't expand inside the
+  pragma: the attribute is spelled out.)
+- `docs/building.md`: a paragraph on building below 26.
+
+Checked:
+- Built at macOS 13: no warning, so nothing reaches Metal 4 unguarded. The library's
+  Metal 4 classes are `weak external`; the strong ones left are classes older than 26.
+- The tests built at macOS 13 (`minos 13.0`) run on macOS 26.3.1 as upstream's do
+  (`test_msaa` passes on `ngfx`; the same timestamp tests fail as on upstream `main`).
+- A probe calling `create_device`, linked for an iOS 16 device: `minos 16.0`, 12 weak
+  imports of Metal 4 and no strong one. Built for macOS 13 and run on 26: `none`, the
+  device made.
+- Not run: the probe on a system before 26. The oldest Simulator runtime here is iOS
+  18.0, but the Simulator's SDK declares no Metal 4 types (`MTLTextureViewPool`,
+  `MTL4CounterHeap` unknown), so the backend doesn't compile for it: a Simulator build
+  of Draughts leaves ngfx out. A device on iOS 16 to 25, or a Mac before 26, checks it
+  (task 073's step 6).
+- The decision: [decisions](../docs/decisions/README.md#the-stack), weak links over a
+  library opened only on 26.
+
 ## Acceptance criteria
 
 - [x] gfx traced with `--aa off` beside ngfx's (`smaa` from task 071), the numbers here,
@@ -192,5 +225,6 @@ Nothing is pushed yet: the fork's `msaa` and `ngfx`, goose-ngfx's `main`, and Dr
 - [x] MSAA in the fork with memoryless (Metal) and transient (Vulkan) targets, its tests
       passing; the ngfx build's `--aa msaa` measured on the Mac against gfx's
 - [ ] The same on Windows and Linux, run by the user (above)
-- [ ] NoGraphicsAPI builds below 26 and fails at run time there, checked as above
+- [x] NoGraphicsAPI builds below 26 and fails at run time there, checked as above (but
+      on an older system, which needs a device: task 073's step 6)
 - [ ] `docs/goose-findings.md` and task 073 updated

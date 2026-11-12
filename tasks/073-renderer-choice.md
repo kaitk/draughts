@@ -218,7 +218,8 @@ next starts:
    (xcb, open) is where sebbbi said he'd merge Linux support once he has a Linux box, so
    the Linux draft offers itself as a base for that.
 4. **NoGraphicsAPI below macOS and iOS 26** (task 077, step 3): the fork builds there
-   and fails at run time; the decision for Apple in step 4 below.
+   and fails at run time; the decision for Apple in step 4 below. Done 2026-11-12: weak
+   links and `@available` ([decisions](../docs/decisions/README.md#the-stack)).
 5. **Both renderers in one executable** (step 4), on a branch `renderer-choice`, main
    untouched until step 7. The recorders are the seam: each renderer's `_gpu` files
    compiled side by side (renamed apart, or `gpu` and the recorders behind one interface
