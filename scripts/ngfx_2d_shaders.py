@@ -34,6 +34,7 @@ UI_VS = ["draw_gpu::SHARED_BLOCK", "widgets_gpu::VERT"]
 UI_FS = [*THEMED, "draw_gpu::MAN_BLOCK", "widgets_gpu::FRAG"]
 MODULES = [
     ("compose", FULL, ["widgets_gpu::COMPOSE_FRAG"], False),
+    ("fade", FULL, ["shaders::FADE_FN", "scene_gpu::FADE_FRAG"], False),
 ]
 
 # Hand-written, beside what is generated: SV_InstanceID counts from 0 whatever the draw's
