@@ -97,7 +97,7 @@ fn frame(g: gui::Gui&, area: float4, s: settings::Settings&, gs: history::Game[.
             right -= widths[i] + 10.0 * u;
         }
     }
-    let title = strings::get(strings::GAMES_TITLE);
+    let title = strings::get(strings::RESULTS_TITLE);
     let room = right - title_x;
     if gui::text_width(g, gui::LABEL, title) <= room {
         gui::text(g, gui::LABEL, float4 { title_x, head.y, room, head.w }, title, 1.0, 0.0, gui::LEFT);
@@ -140,14 +140,14 @@ fn rating_panel(g: gui::Gui&, r: float4, s: settings::Settings&, gs: history::Ga
     gui::panel(g, r);
     var c = gui::inset(r, IN * u);
     var t: Text = [];
-    gui::text(g, gui::SMALL, gui::cut_top(c, HEAD * u), strings::get(strings::GAMES_RATING), 0.66, 0.0, gui::LEFT);
+    gui::text(g, gui::SMALL, gui::cut_top(c, HEAD * u), strings::get(strings::RESULTS_RATING), 0.66, 0.0, gui::LEFT);
     t.clear();
     push_number(t, s.rating[variant]);
     gui::figures(g, gui::FIGURES, gui::cut_top(c, BIG * u), t[..], 1.0, gui::PLAIN, gui::LEFT);
     let wide = c.z > c.w;
     if levels {
         gui::cut_top(c, GAP * u);
-        gui::text(g, gui::SMALL, gui::cut_top(c, HEAD * u), strings::get(strings::GAMES_COMPUTER), 0.66, 0.0, gui::LEFT);
+        gui::text(g, gui::SMALL, gui::cut_top(c, HEAD * u), strings::get(strings::RESULTS_COMPUTER), 0.66, 0.0, gui::LEFT);
         let tot = history::totals(gs);
         for level in 3 {
             var row = gui::cut_top(c, LEVEL_ROW * u);
@@ -198,7 +198,7 @@ fn list(g: gui::Gui&, r: float4, gs: history::Game[..history::MAX_GAMES]&, varia
     var n = 0;
     for &x in gs { if x.variant == variant { n += 1; } }
     if n == 0 {
-        gui::text(g, gui::BODY, view, strings::get(strings::GAMES_NONE), 0.66, 0.0, gui::CENTER);
+        gui::text(g, gui::BODY, view, strings::get(strings::RESULTS_NONE), 0.66, 0.0, gui::CENTER);
         return;
     }
     let step = (ROW + ROW_GAP) * u;
@@ -257,7 +257,7 @@ fn row(g: gui::Gui&, r: float4, x: history::Game&) {
     var lines = gui::center(c, c.z, body + 4.0 * u + small);
     t.clear();
     if x.level == history::FRIEND {
-        push(t, strings::get(strings::GAMES_FRIEND));
+        push(t, strings::get(strings::RESULTS_FRIEND));
     } else {
         push(t, strings::get(strings::PICK_EASY + x.level));
         push(t, " ");

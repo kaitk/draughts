@@ -538,7 +538,7 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
     // The games: the player's rating in their draughts once they have one.
     var rating: u8[..16] = [];
     if s.rated[s.variant] > 0 { format(rating, s.rating[s.variant]); }
-    if gui::row(g, gui::HOME_IDS + 7, at[1 + rows], gui::LEVEL + 2, strings::get(strings::GAMES_TITLE), rating[..], false, true) {
+    if gui::row(g, gui::HOME_IDS + 7, at[1 + rows], gui::LEVEL + 2, strings::get(strings::RESULTS_TITLE), rating[..], false, true) {
         pick = GAMES;
     }
     if !gear {
