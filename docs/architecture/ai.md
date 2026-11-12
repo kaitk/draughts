@@ -421,11 +421,11 @@ stronger side's score over the weaker's, draws as halves, anchored at skill 0 = 
 
 | Skill | 0 | 8 | 12 | 16 | 20 | 25 | 30 | 40 | 50 | 60 | 90 | 100 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Rating | 500 | 587 | 940 | 983 | 1009 | 1362 | 1384 | 1644 | 1900 | 2127 | 2716 | 2800 |
+| Rating | 500 | 587 | 940 | 983 | 1009 | 1362 | 1384 | 1644 | 1900 | 2127 | 2716 | 2721 |
 
 Between them it is a straight line. The gaps jump where a skill first sees another ply
-(12, 25) and are small between; 100's is an estimate. Easy starts at 587, medium at
-1644, hard at 2716.
+(12, 25) and are small between, and past 90 nearly none (90 to 100, 5). Easy starts at
+587, medium at 1644, hard at 2716.
 
 A player's rating is Elo, per draughts, from 800 (`ai::rate`): after a game against the
 computer `R + K · (S − E)`, E the expected score against the computer's rating at the
