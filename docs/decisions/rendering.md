@@ -259,7 +259,12 @@ are in git history before that day.
   framework reads them, its change handler waking the loop. Rejected: SDL's own reading,
   every millisecond while one is open (5% of a core idle on the Mac with a PS5 pad); the
   loop waking 30 times a second on Apple's systems too (1.5%: each wake goes through
-  AppKit). Elsewhere the loop still wakes 30 times a second while one is connected.
+  AppKit). On Android too (2026-11-12): with SDL's HIDAPI off, Android reads the pad and
+  hands each change to SDL as it happens, and the event that makes ends the loop's wait;
+  a PS5 pad on a cable worked so on the tablet, plugged in mid-game and again later.
+  Windows still wakes 30 times a second while one is connected: an Xbox pad's XInput can
+  only be polled, and SDL reads a PS5 pad's reports in its own update; raw input, off by
+  default, could wake the loop, to try there with its cost measured first.
 
 **The game screen**
 

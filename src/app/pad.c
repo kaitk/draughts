@@ -12,8 +12,12 @@
 // GameController framework reads the gamepads (SDL's HIDAPI off: its own reading thread
 // took a PS5 pad's reports hundreds of times a second), and its change handler wakes the
 // loop when a button changes or a stick or the D-pad leaves the middle (draughts_wake_now),
-// so the idle loop sleeps until the gamepad is used. Elsewhere the loop wakes about 30
-// times a second while one is connected, to read it (draughts_pad_wakes; host's keys.goose,
+// so the idle loop sleeps until the gamepad is used. On Android the system reads them
+// too (SDL's HIDAPI off, as on Apple's systems): SDL's Java side hands each button, D-pad,
+// and stick change to the program as it happens, and the event SDL pushes for it ends the
+// loop's wait, so the idle loop sleeps there as well (Android filters a stick's jitter
+// around the middle by the device's flat range). Elsewhere the loop wakes about 30 times
+// a second while one is connected, to read it (draughts_pad_wakes; host's keys.goose,
 // PAD_POLL). A button pressed and let go between two reads isn't lost: an event watch keeps
 // the presses SDL's reading sends (pressed), and they count as down for one call. The
 // left stick past
@@ -175,7 +179,7 @@ static bool start(void) {
         return false;
 #endif
     set_hint("SDL_AUTO_UPDATE_JOYSTICKS", "0");
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(__ANDROID__)
     set_hint("SDL_JOYSTICK_HIDAPI", "0");
 #endif
     if (!init_sub(SDL_INIT_GAMEPAD)) return false;
@@ -205,6 +209,8 @@ int64_t draughts_pad(void) {
         if (!pad) return 0;
 #if defined(__APPLE__)
         wakes = watch_controllers();
+#elif defined(__ANDROID__)
+        wakes = true;
 #endif
     }
     // The buttons down now, and those pressed since the last call though let go again.

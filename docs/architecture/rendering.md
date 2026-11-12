@@ -451,8 +451,9 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   At rest it costs next to nothing. With no gamepad there's no work. With one, SDL
   doesn't read it on its own (it would every millisecond); the program reads it when
   its loop runs. On the Mac and iOS the system's GameController framework wakes the
-  loop when the gamepad is used, so the idle app sleeps. Elsewhere the idle loop wakes
-  30 times a second while one is connected, to read it. A press made and let go between
+  loop when the gamepad is used, and on Android the system's input events do (SDL's
+  HIDAPI off on all three), so the idle app sleeps. On Windows the idle loop wakes 30
+  times a second while one is connected, to read it. A press made and let go between
   two reads still counts.
 - **Icons** are line icons on a 24-unit grid with round strokes, in the Lucide style:
   undo, hint (a bulb), restart, back (an arrow left), next, star, crown, lock, and the

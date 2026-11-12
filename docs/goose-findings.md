@@ -27,9 +27,11 @@ Goose v2026.4.
   `SDL_HINT_AUTO_UPDATE_JOYSTICKS` is off and `pad.c` calls `SDL_UpdateGamepads` itself,
   when the loop runs; on the Mac and iOS `SDL_HINT_JOYSTICK_HIDAPI` is off too, so the
   GameController framework reads the pad outside the process, and its
-  `valueChangedHandler` wakes the loop when the pad is used: 0.01 s in 20 s. Elsewhere
-  the idle loop wakes 30 times a second to read it (0.3 s in 20 s on the Mac, where
-  each wake goes through AppKit). An event watch keeps a press made and let go between
+  `valueChangedHandler` wakes the loop when the pad is used: 0.01 s in 20 s. On Android,
+  HIDAPI off as well, Android's input events reach SDL from its Java side as they happen,
+  and the event SDL pushes for each ends the wait (2026-11-12). On Windows the idle loop
+  wakes 30 times a second to read it (on the Mac, before its handler, that cost 0.3 s in
+  20 s, each wake going through AppKit). An event watch keeps a press made and let go between
   two reads.
 - Upstream: `gfx::gamepad_buttons() -> u32` and `gfx::gamepad_axis(i) -> f32` over the
   first gamepad, its subsystem started with the window, and the gamepad's button events
