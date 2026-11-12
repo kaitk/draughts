@@ -9,7 +9,8 @@
 // leaves it for the nearest control that way, and an arrow back comes in on the near
 // edge, in line. Tab steps through the groups (the way out, the board, the play panel)
 // and back to the cell the cursor had. On the turned board (black at the bottom) the
-// arrows go as the screen shows it. On the computer's turn the cursor moves but Enter
+// arrows go as the screen shows it, and on the 3D board's hot-seat turn too, the cursor
+// keeping its square as the board turns. On the computer's turn the cursor moves but Enter
 // plays nothing. Escape with a piece chosen puts it down (board::put_down). The mouse
 // moving lets the keys go: the cursor is gone.
 import std;
@@ -33,6 +34,14 @@ fn key(gm: game::Game&, g: gui::Gui&, l: panel::Layout, step: i64, confirm: bool
     now += 0.5;
     gui::begin(g, gui::Input { at: at, step: step, confirm: confirm, tab: tab, .. }, l.board.scale, now);
     let ev, changed = game::frame(gm, g, l, now, drive::over);
+    return changed;
+}
+
+// A frame of the board's keys alone, the 3D board turned `degrees` (panel::board_keys).
+fn turn(gm: game::Game&, g: gui::Gui&, l: panel::Layout, step: i64, degrees: f32) -> bool {
+    now += 0.5;
+    gui::begin(g, gui::Input { at: float2 { -1.0, -1.0 }, step: step, .. }, l.board.scale, now);
+    let changed = panel::board_keys(g, l, gm.b, true, now, degrees);
     return changed;
 }
 
@@ -131,6 +140,23 @@ fn main() {
     rules::generate(gm.b.pos, gm.b.moves);
     state(gm, g, key(gm, g, turned, gui::STEP_DOWN, false), "the computer's turn: down");
     state(gm, g, key(gm, g, turned, none, true), "  enter");
+
+    // The 3D board's hot-seat turn: black to move, the board turned half round, up away
+    // from black; the turn back keeps the cursor on its square.
+    g = gui::Gui {};
+    gui::test_faces(g);
+    start(gm, opening, -1);
+    gm.b.pos.side = rules::BLACK;
+    rules::generate(gm.b.pos, gm.b.moves);
+    var three = l;
+    three.three = true;
+    three.view.rect = float4 { l.board.board.x, l.board.board.y, l.board.board.z, l.board.board.z };
+    turn(gm, g, three, none, 180.0);
+    state(gm, g, turn(gm, g, three, gui::STEP_DOWN, 180.0), "3D, turned: down");
+    state(gm, g, turn(gm, g, three, gui::STEP_UP, 180.0), "  up");
+    state(gm, g, turn(gm, g, three, gui::STEP_RIGHT, 180.0), "  right");
+    state(gm, g, turn(gm, g, three, none, 0.0), "  turned back: the same square");
+    state(gm, g, turn(gm, g, three, gui::STEP_UP, 0.0), "  up");
 
     // The mouse moves: the keys let go.
     state(gm, g, key(gm, g, turned, none, false, 0, float2 { 5.0, 5.0 }), "the mouse moves");

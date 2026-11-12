@@ -200,6 +200,9 @@ struct Board {
     // The keys' cursor (task 072, `keys`): the square the board's focus is on, numbered
     // y * size + x as Marks are (a light square too), or -1 while the keys aren't on it.
     cursor: i64,
+    // Whether board::keys last read the screen's cells turned (flipped, or the 3D board's
+    // hot-seat turn), so a turn keeps the cursor on its square.
+    cursor_flip: bool = false,
     // A press on a piece, and whether it became a drag.
     pressed:  i64,
     press_at: float2,
@@ -741,6 +744,9 @@ fn touch(b: Board&, flat: Layout, three: bool, view: view3d::View, input: gui::I
 fn keys(b: Board&, flat: Layout, g: gui::Gui&, id: i64, r: float4, mine: bool, now: f64) -> bool {
     let v .= rules::VARIANTS[b.variant];
     let n = v.size;
+    // The board turned (a hot-seat turn): the cursor keeps its square, now across the screen.
+    if flat.flip != b.cursor_flip && g.cell_of == id { g.cell = n * n - 1 - g.cell; }
+    b.cursor_flip = flat.flip;
     let cell, enter = gui::grid(g, id, r, n, home_cell(b, flat));
     gui::prefer(g, id);
     let was = b.cursor;

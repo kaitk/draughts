@@ -46,10 +46,14 @@ let GROUP_PLAY = 2;
 // The board's keys (board::keys) on screen l: the board offered to the keys' focus over
 // its bounds on screen, the flat board's own or the 3D view's, as the screen's first
 // choice, Enter on it a tap when `mine`. Returns whether anything changed.
-fn board_keys(g: gui::Gui&, l: Layout, b: board::Board&, mine: bool, now: f64) -> bool {
+// `turn` is the 3D board's hot-seat turn in degrees (rig::turn): past a quarter turn the
+// far side faces the player, so the arrows go as the turned board shows it.
+fn board_keys(g: gui::Gui&, l: Layout, b: board::Board&, mine: bool, now: f64, turn: f32 = 0.0) -> bool {
     gui::group(g, GROUP_BOARD);
     let r = if l.three { l.view.rect } else { float4 { l.board.board.x, l.board.board.y, l.board.board.z, l.board.board.z } };
-    return board::keys(b, l.board, g, BOARD_ID, r, mine, now);
+    var flat = l.board;
+    if l.three && turn > 90.0 && turn < 270.0 { flat.flip = !flat.flip; }
+    return board::keys(b, flat, g, BOARD_ID, r, mine, now);
 }
 
 // What the panel shows of the lookout and the hint: the lookout on; the hints left; how

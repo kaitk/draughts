@@ -545,7 +545,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         if moved { changed = true; }
         let mine = !held && !g.took && b.pos.side != gm.computer;
         if mine && board::touch(b, l.board, l.three, l.view, input, gm.grab, now) { changed = true; }
-        if panel::board_keys(g, l, b, mine, now) { changed = true; }
+        if panel::board_keys(g, l, b, mine, now, rig::turn(gm.cam, now)) { changed = true; }
     }
     // Against a friend the 3D board turns to face the side to move once a move has shown,
     // unless the game is over; against the computer it stays turned to the child.

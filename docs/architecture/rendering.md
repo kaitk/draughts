@@ -426,7 +426,7 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   choice, so the first arrow puts a cursor on the side to move's movable piece nearest
   the bottom middle. The arrows move the cursor a square at a time, light squares too,
   as the screen shows the board (a turned board's too, and the 3D board's from its rest
-  angle); Enter on a dark square is a tap there (`board::press`): it chooses a piece,
+  angle, turned with it in a game against a friend, the cursor keeping its square); Enter on a dark square is a tap there (`board::press`): it chooses a piece,
   then its target or a capture's next stop, and a wrong one is a mistake as a tap's is.
   Enter on a light square, or on the computer's turn, does nothing. With a piece chosen,
   the square under the cursor is what the lookout shows the move would leave open, as

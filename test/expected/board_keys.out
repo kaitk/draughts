@@ -24,4 +24,9 @@ turned: down: focus board, cursor d6, chosen -, over -, wrong -, moves made 0, c
   right: focus board, cursor c5, chosen -, over -, wrong -, moves made 0, changed true
 the computer's turn: down: focus board, cursor c6, chosen -, over -, wrong -, moves made 0, changed true
   enter: focus board, cursor c6, chosen -, over -, wrong -, moves made 0, changed false
+3D, turned: down: focus board, cursor d6, chosen -, over -, wrong -, moves made 0, changed true
+  up: focus board, cursor d5, chosen -, over -, wrong -, moves made 0, changed true
+  right: focus board, cursor c5, chosen -, over -, wrong -, moves made 0, changed true
+  turned back: the same square: focus board, cursor c5, chosen -, over -, wrong -, moves made 0, changed false
+  up: focus board, cursor c6, chosen -, over -, wrong -, moves made 0, changed true
 the mouse moves: focus none, cursor -, chosen -, over -, wrong -, moves made 0, changed true

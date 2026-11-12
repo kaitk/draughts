@@ -86,7 +86,9 @@ The rest of step 5, in this order:
    near edge in line. With a piece chosen the lookout reads the cursor's square as it
    reads the mouse's. Escape with a piece chosen puts it down (`shell::put_down`). Tab
    and Shift and Tab step between groups (`gui::group`: the way out, the board, the play
-   panel), each coming back to where it was. `test/game/board_keys`; `--keys` takes
+   panel), each coming back to where it was. On the 3D board's hot-seat turn the arrows
+   turn with it, past a quarter turn, and the cursor keeps its square (2026-11-12, the
+   user's find). `test/game/board_keys`; `--keys` takes
    `tab` and `backtab`.
    The look, agreed with the user 2026-11-12: a glow line just inside the square, its
    corners rounded, over a faint dark seam (it vanished on a light square without it),
