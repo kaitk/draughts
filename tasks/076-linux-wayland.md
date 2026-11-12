@@ -37,9 +37,11 @@ pushed: NoGraphicsAPI's `xlib-surface` and its merges into `ngfx` and `main`; go
 `window-only-x11` and its picks into `upstream-series` and `ngfx`, with `main` merged;
 goose-ngfx's `open_x11`; and in Draughts the submodule moved to that `main`, with
 `scripts/ngfx.py` and `src/ngfx/app/host_gpu.goose` taking Linux, uncommitted. The clones
-are in `../goose/` (goose-ngfx, goose_gfx). The ngfx build waits on slangc 2026.18.3 and
-the Vulkan SDK 1.4.363 in `~/slang` and `~/vulkansdk` (goose-ngfx's
-`docs/development.md`), which the user fetches or allows.
+are in `../goose/` (goose-ngfx, goose_gfx). The ngfx toolchain is on the Bazzite PC
+(2026-11-12): slangc 2026.18.3 in `~/slang/bin/`, the Vulkan SDK 1.4.363 in
+`~/vulkansdk/1.4.363.0/` (`source ~/vulkansdk/1.4.363.0/setup-env.sh`, with `spirv-val`),
+as goose-ngfx's `docs/development.md` sets them up; build in the `goose` distrobox (Fedora
+43, the X11 headers installed), not yet tried.
 
 ## Acceptance criteria
 
