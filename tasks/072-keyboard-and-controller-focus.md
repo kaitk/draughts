@@ -120,8 +120,12 @@ cursor: headless shots at 1280 × 800 match gfx's flat, and the 3D cursor draws.
 1. Try by hand on the Mac: the held-key repeat, Enter holding a hold tile, the board with
    the keys flat and 3D, Tab; and the PS5 pad (A, B, the D-pad, the stick, the
    shoulders), its first press after a long rest waking the app at once.
-2. A gamepad on a phone or the tablet, and its idle cost there (the 30 wakes a second
-   on Android); at the task's end with the other device numbers.
+2. A gamepad on Android, Windows, and the other platforms mustn't wake the loop at rest
+   either, as on the Mac and iOS (the user, 2026-11-12): replace the 30 wakes a second
+   with a wake when the gamepad is used. Android's SDL gets its buttons from Java
+   callbacks, which push events and may already wake the wait without HIDAPI; Windows
+   (XInput, RawInput, Windows.Gaming.Input) to find out. Then a gamepad on a phone or
+   the tablet, and its idle cost there, at the task's end with the other device numbers.
 3. Merge `keys-board` into main.
 
 ## Acceptance criteria
