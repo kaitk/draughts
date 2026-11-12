@@ -31,9 +31,12 @@ let AUTO_NGFX: bool[4] = [false, true, false, false];
 let OS_NAMES = ["macOS", "Windows", "Linux", "iOS"];
 let MARKER = "renderer-start.txt";
 
-// The marker's path, and whether to clear it at ngfx's first frame.
+// The marker's path, whether to clear it at ngfx's first frame, whether the window, opened
+// hidden, waits to be shown, and how many of ngfx's frames have ended.
 var marker_path: u8[..512] = [];
 var marker_set = false;
+var show_pending = false;
+var frames = 0;
 
 // --renderer's value, "auto" without it.
 fn renderer_flag() -> const u8[:] {
@@ -52,8 +55,11 @@ fn test_env(name: const u8[:], value: const u8[:]) -> bool {
 
 fn set_path() {
     var folder: u8[512] = [0; 512];
+    let dir = host::storage(folder);
     marker_path.resize(0);
-    marker_path.append(host::storage(folder));
+    // No storage folder, no marker: a path relative to wherever the app was started isn't one.
+    if dir.len == 0 { return; }
+    marker_path.append(dir);
     marker_path.append(MARKER);
 }
 
@@ -69,6 +75,8 @@ fn open(title: const u8[:], width: i64, height: i64, flags: i64, no_vsync: bool)
         delete_file(marker_path);
         ngfx_on = true;
         why = str("--renderer ngfx");
+    } else if wanted != "auto" {
+        why = str("--renderer ", wanted, " is none of auto, gfx, and ngfx: gfx");
     } else if !AUTO_NGFX[os] && !test_env("DRAUGHTS_AUTO_NGFX", "1") {
         why = str("auto: gfx first on ", OS_NAMES[os]);
     } else {
@@ -81,14 +89,13 @@ fn open(title: const u8[:], width: i64, height: i64, flags: i64, no_vsync: bool)
         } else if file_exists(marker_path) && read_file(marker_path, last) && last == found {
             why = str("auto: ngfx didn't reach its first frame at the last start on ", found);
         } else {
-            write_file_atomic(marker_path, found);
-            marker_set = true;
+            marker_set = marker_path.len > 0 && write_file_atomic(marker_path, found);
             // Hidden until ngfx draws into it, so a window that closes again is never seen.
             let opened = host_ngfx::try_open(title, width, height, flags | gfx::WINDOW_HIDDEN, no_vsync);
             if opened && !test_env("DRAUGHTS_RENDERER_TEST", "fail") {
                 ngfx_on = true;
                 why = str("auto: ", found);
-                draughts_show_window();
+                show_pending = true;
             } else {
                 // try_open closed what it opened when it failed.
                 if opened { host_ngfx::close(); }
@@ -109,12 +116,18 @@ fn open(title: const u8[:], width: i64, height: i64, flags: i64, no_vsync: bool)
 
 fn close() { if nx::ngfx_on { host_ngfx::close(); } else { host_gfx::close(); } }
 
-// The frame, and ngfx's marker cleared once its first frame was presented: its device
-// made, a frame drawn, submitted, and handed to the display.
+// The frame. The loop draws after each, so the first frame ngfx drew is presented by the
+// second: then the hidden window is shown, and the marker cleared (its device made, a frame
+// drawn, submitted, and handed to the display).
 fn frame() -> bool {
     if !nx::ngfx_on { return host_gfx::frame(); }
     let running = host_ngfx::frame();
-    if marker_set {
+    frames += 1;
+    if frames >= 2 && show_pending {
+        draughts_show_window();
+        show_pending = false;
+    }
+    if frames >= 2 && marker_set {
         delete_file(marker_path);
         marker_set = false;
     }

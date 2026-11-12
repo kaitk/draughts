@@ -717,5 +717,6 @@ fn release(g: Gpu&) {
                      g.occ, g.kept, g.bake, g.shrink, g.blur, own.mip, own.down, g.smaa_edges, g.smaa_weights,
                      g.smaa_blend];
     for p in pipelines { if p.id != 0 { nx::release(p); } }
+    own = default<Own>();
     g = default<Gpu>();
 }

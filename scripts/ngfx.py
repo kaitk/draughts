@@ -68,10 +68,10 @@ def copy_if_changed(src, dst):
     return shutil.copy2(src, dst)
 
 
-def sync(src, dst, over=None):
+def sync(src, dst, over=None, skip=()):
     """dst/ as a copy of src/, each file copied if it changed; where over/ has a file of
-    the same path, that one instead, and over/'s files with none in src/ too. src/ngfx/
-    itself is left out."""
+    the same path, that one instead, and over/'s files with none in src/ too, but those in
+    skip (paths in over/), which the caller writes. src/ngfx/ itself is left out."""
     for f in src.rglob("*"):
         r = f.relative_to(src)
         if f.is_dir() or r.parts[0] == "ngfx":
@@ -81,7 +81,7 @@ def sync(src, dst, over=None):
         copy_if_changed(o if o and o.exists() else f, dst / r)
     for o in over.rglob("*") if over else []:
         r = o.relative_to(over)
-        if o.is_file() and not (src / r).exists():
+        if o.is_file() and not (src / r).exists() and r.as_posix() not in skip:
             (dst / r).parent.mkdir(parents=True, exist_ok=True)
             copy_if_changed(o, dst / r)
 
@@ -104,6 +104,20 @@ HALVES = ["gpu_gfx", "gpu_ngfx", "host_gfx", "host_ngfx", "scene_gfx", "scene_ng
           "widgets_gfx", "widgets_ngfx"]
 
 
+def prune(tree):
+    """Removes from the tree's src/ what has no source any more (a file deleted or renamed
+    in src/ or src/ngfx/), so no stale header or blob is built in: what scripts/ngfx.py
+    writes itself stays (the gfx recorders' copies, renderer.c, and the blobs in
+    app/shaders/)."""
+    made = {dst for _, dst, _, _ in GFX_RECORDERS} | {"app/renderer.c"}
+    for f in (tree / "src").rglob("*"):
+        r = f.relative_to(tree / "src").as_posix()
+        if not f.is_file() or r in made or r.startswith("app/shaders/"):
+            continue
+        if not (ROOT / "src" / r).exists() and not (ROOT / "src/ngfx" / r).exists():
+            f.unlink()
+
+
 def gfx_recorders(tree):
     for src, dst, before, after in GFX_RECORDERS:
         text = (ROOT / "src" / src).read_text(encoding="utf-8")
@@ -120,8 +134,9 @@ def rel(frm, to):
 def tree(program, tree=TREE):
     """build/ngfx/tree/ (or another): the program with src/ngfx/ laid over it; the root
     file's path."""
-    sync(ROOT / "src", tree / "src", ROOT / "src/ngfx")
+    sync(ROOT / "src", tree / "src", ROOT / "src/ngfx", skip={"app/renderer.c"})
     gfx_recorders(tree)
+    prune(tree)
     for part in ["strings", "assets"]:
         sync(ROOT / part, tree / part)
     # SMAA's tables, which gfx's 3D recorder embeds from there.

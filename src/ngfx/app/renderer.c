@@ -78,9 +78,9 @@ int64_t draughts_ngfx_check(draughts_bytes out) {
 #define FREE_VULKAN(lib) dlclose(lib)
 #endif
 
-// The device extensions NoGraphicsAPI requires (its docs/vulkan-support.md).
-static const char *const needed[] = {"VK_EXT_descriptor_heap", "VK_KHR_device_address_commands",
-                                     "VK_KHR_shader_untyped_pointers", "VK_EXT_mesh_shader"};
+// The device extensions NoGraphicsAPI requires (its docs/vulkan-support.md;
+// VK_KHR_device_address_commands is optional there).
+static const char *const needed[] = {"VK_EXT_descriptor_heap", "VK_KHR_shader_untyped_pointers", "VK_EXT_mesh_shader"};
 
 static bool has_all(VkPhysicalDevice device, PFN_vkEnumerateDeviceExtensionProperties extensions) {
     VkExtensionProperties list[512];
@@ -94,10 +94,11 @@ static bool has_all(VkPhysicalDevice device, PFN_vkEnumerateDeviceExtensionPrope
     return true;
 }
 
-// NoGraphicsAPI's Vulkan backend needs a 1.4 loader and a 1.4 device with its four
+// NoGraphicsAPI's Vulkan backend needs a 1.4 loader and a 1.4 device with its three
 // extensions; the rest (swapchain maintenance with a surface, the core features) it checks
-// as it makes its device. Writes "GPU|driver|app" of the first device that passes, or why
-// none does, into out; returns its length, negative when ngfx can't run here.
+// as it makes its device. Writes "GPU|driver|app" of the device that passes, a discrete GPU
+// before any other as NoGraphicsAPI picks, or why none does, into out; returns its length,
+// negative when ngfx can't run here.
 int64_t draughts_ngfx_check(draughts_bytes out) {
     void *lib = LOAD_VULKAN();
     if (!lib) return -put(out, "no Vulkan loader");
@@ -131,13 +132,15 @@ int64_t draughts_ngfx_check(draughts_bytes out) {
     uint32_t count = 16;
     if (!devices || devices(instance, &count, list) < 0) count = 0;
     snprintf(text, sizeof text, "no Vulkan 1.4 GPU with VK_EXT_descriptor_heap and NoGraphicsAPI's other extensions");
-    bool ok = false;
-    for (uint32_t i = 0; i < count && !ok; ++i) {
+    bool ok = false, discrete = false;
+    for (uint32_t i = 0; i < count && !discrete; ++i) {
         VkPhysicalDeviceProperties p;
         properties(list[i], &p);
         if (p.apiVersion < v14 || !has_all(list[i], extensions)) continue;
+        if (ok && p.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) continue;
         snprintf(text, sizeof text, "%s|%08x|%s", p.deviceName, p.driverVersion, version);
         ok = true;
+        discrete = p.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
     }
     destroy(instance, 0);
     FREE_VULKAN(lib);
