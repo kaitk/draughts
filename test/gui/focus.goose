@@ -2,8 +2,7 @@
 // screen's primary control, or the first declared where none is; the arrows move it to
 // the nearest control that way, one in line before a nearer one off to the side, and
 // leave it where none lies that way; Enter presses the focused control, a click as a
-// release over it is, and with none focused focuses the primary as the first arrow does,
-// pressing nothing; a disabled control is never
+// release over it is, and with none focused focuses the primary and presses it; a disabled control is never
 // focused, the nearest that way taken past it; the focus is lit as the mouse's hover is
 // and ringed (one RING quad), the frames asked for only while that light moves; the mouse moving, a press, or the wheel lets it go; a control the next
 // frame doesn't declare (another screen) hands it to that screen's primary; a screen a
@@ -53,7 +52,7 @@ fn main() {
     let away = float2 { -1.0, -1.0 };
     var now = 0.0;
     screen(g, gui::STEP_NONE, false, away, now, true, "at rest");
-    screen(g, gui::STEP_NONE, true, away, now + 1.0, true, "enter with no focus: the primary, nothing pressed");
+    screen(g, gui::STEP_NONE, true, away, now + 1.0, true, "enter with no focus: the primary, pressed");
     screen(g, gui::STEP_NONE, false, float2 { -2.0, -2.0 }, now + 1.5, true, "the mouse moves: let go");
     now = 2.0;
     screen(g, gui::STEP_DOWN, false, away, now, true, "down: the primary");
@@ -70,7 +69,7 @@ fn main() {
     screen(g, gui::STEP_NONE, true, away, now + 10.0, true, "enter");
     screen(g, gui::STEP_NONE, false, away, now + 10.02, true, "  a frame on");
     screen(g, gui::STEP_NONE, false, float2 { 50.0, 50.0 }, now + 11.0, true, "the mouse moves over row 1");
-    screen(g, gui::STEP_NONE, true, float2 { 50.0, 50.0 }, now + 12.0, true, "enter, the mouse leading: the primary, nothing pressed");
+    screen(g, gui::STEP_NONE, true, float2 { 50.0, 50.0 }, now + 12.0, true, "enter, the mouse leading: the primary, pressed");
     screen(g, gui::STEP_NONE, false, float2 { 51.0, 50.0 }, now + 12.5, true, "the mouse moves: let go");
     screen(g, gui::STEP_UP, false, float2 { 50.0, 50.0 }, now + 13.0, true, "up: the primary again");
     screen(g, gui::STEP_NONE, false, float2 { 50.0, 50.0 }, now + 14.0, false, "  the pointer resting over row 1");

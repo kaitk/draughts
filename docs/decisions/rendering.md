@@ -230,11 +230,13 @@ are in git history before that day.
   outside the control. The hover's light alone was too faint, and on a lit control
   (Continue, a chosen tile) showed nothing; a stronger fill would be taken for a
   chosen tile.
-- Enter with nothing focused focuses the screen's primary, as the first arrow does, and
-  presses nothing (2026-11-12). It used to do nothing at all, so a gamepad's first press,
-  most often A, looked like the gamepad not working (a PS5 pad plugged in mid-game, on
-  the tablet and before on the Mac). Pressing the primary at once was rejected: a blind
-  first press would start a game or move a piece unseen.
+- Enter with nothing focused focuses the screen's primary and presses it at once
+  (2026-11-12): on the board, the cursor's first piece is chosen. It used to do nothing,
+  so a gamepad's first press, most often A, looked like the gamepad not working, even
+  after a finger's tap had let the focus go (a PS5 pad on the tablet, and before on the
+  Mac). This replaces focusing with the first press and pressing with the second, from
+  earlier that day: the user found a second press for a control already shown odd. A
+  blind first press on another screen presses its primary, a lit row as a rule.
 - The board takes the keys as one grid control with a cursor (2026-11-11, task 072):
   the cursor goes over every square, light ones too, one at a time, and Enter is a tap
   on its square. Rejected: a cursor that jumps only between the pieces that can move and
@@ -453,10 +455,11 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   blurred with home's rows that start a game. A Gemini review of the Estonian picked it
   too; History (Ajalugu) left out the rating, Statistics was dry for a child, and Progress
   (Areng) read as a school report. Its string keys are `results.*`.
-- Before the first move the panel shows row one waiting (2026-11-12): its number and a
-  faint glow where the first move will stand, rather than blank glass. Rejected: a line
-  such as "Moves appear here" (reading, and a string more), and no panel until the first
-  move (the board would shrink and shift as it is made).
+- Before the first move the panel says "No moves yet" (2026-11-12, the user, after
+  GoDraughts' panel), dim where the first row will be. It replaces row one waiting, from
+  earlier that day (its number and a faint glow where the first move would stand), which
+  read as an empty stub. Rejected: no panel until the first move (the board would shrink
+  and shift as it is made).
 
 ### Board and pieces
 

@@ -413,9 +413,9 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   control (`gui::Spot`, its id and rect, in a fixed array the frame fills), but not the
   controls of a screen a transition leaves or a whole-screen catch such as who's
   playing's dimmed home. The next frame's `gui::begin` moves the focus: the first arrow
-  key, or Enter with nothing focused (a gamepad's first press is most often A), focuses
-  the screen's primary control (a primary row, home's Continue, the board's cursor), or
-  the first declared, and that Enter presses nothing; later ones go to the nearest control that way, the gap that way plus
+  key focuses the screen's primary control (a primary row, home's Continue, the board's
+  cursor), or the first declared, and Enter with nothing focused (a gamepad's first press
+  is most often A) focuses it and presses it at once; later ones go to the nearest control that way, the gap that way plus
   twice the gap across, so one in line beats a nearer one off to the side, and the
   focus stays where none lies that way. A focused control the frame no longer declares
   (the screen changed) hands the focus to the new screen's primary. The mouse moving, a
@@ -992,9 +992,8 @@ forced-capture red, nothing for a good or only move or one not judged yet. Every
 in the panel, a list scrolled within its glass (`gui::scroll_begin`), at its foot when a
 move is added or the panel shows again; rows past its top or foot fade out over 40 dp
 there while there are more (`gui::fade_edges`, as home's scrolling menu does). Before
-the first move, row one waits: its number and a faint glow (10%, 52 dp) where the first
-move will stand, in white's half or black's, so the glass isn't blank and nothing moves
-when the move comes. The player's setting (`moves`: off, the moves, the moves with marks) is
+the first move it says so, "No moves yet" in the body face, dim, where the first row
+will be. The player's setting (`moves`: off, the moves, the moves with marks) is
 settings' Move list row, under move hints, and the results screen's three tiles; off,
 there is no panel and the 3D board is as large as without it. No panel in portrait or on
 a phone in landscape, which have under four rows' room.

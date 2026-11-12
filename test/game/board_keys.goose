@@ -1,7 +1,8 @@
 // The board played with the keys (board::keys, task 072), headless through the game's
 // frames: the board is one control to the keys' focus, a grid of its squares, and the
 // screen's first choice, so the first arrow puts its cursor on the side to move's movable
-// piece nearest the bottom middle; the arrows move the cursor a square at a time, light
+// piece nearest the bottom middle, and Enter with nothing focused puts it there and
+// presses at once; the arrows move the cursor a square at a time, light
 // squares too; Enter on a dark square is a tap there, so it chooses a piece and then its
 // target, and a piece that can't move while another must capture is a mistake as a tap
 // is; Enter on a light square does nothing; with a piece chosen, the square under the
@@ -80,6 +81,9 @@ fn main() {
     let opening = "W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8";
     start(gm, opening, -1);
     state(gm, g, key(gm, g, l, none, false), "at rest");
+    state(gm, g, key(gm, g, l, none, true), "enter with nothing focused: the board, chosen at once");
+    state(gm, g, key(gm, g, l, none, true), "  enter again: put down");
+    state(gm, g, key(gm, g, l, none, false, 0, float2 { 10.0, 10.0 }), "  the mouse moves: let go");
     state(gm, g, key(gm, g, l, gui::STEP_DOWN, false), "down: the board");
     state(gm, g, key(gm, g, l, none, false), "  resting");
     state(gm, g, key(gm, g, l, none, true), "enter: chosen");

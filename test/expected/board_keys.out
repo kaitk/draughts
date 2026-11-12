@@ -1,4 +1,7 @@
 at rest: focus none, cursor -, chosen -, over -, wrong -, moves made 0, changed true
+enter with nothing focused: the board, chosen at once: focus board, cursor e3, chosen e3, over -, wrong -, moves made 0, changed true
+  enter again: put down: focus board, cursor e3, chosen -, over -, wrong -, moves made 0, changed true
+  the mouse moves: let go: focus none, cursor -, chosen -, over -, wrong -, moves made 0, changed true
 down: the board: focus board, cursor e3, chosen -, over -, wrong -, moves made 0, changed true
   resting: focus board, cursor e3, chosen -, over -, wrong -, moves made 0, changed false
 enter: chosen: focus board, cursor e3, chosen e3, over -, wrong -, moves made 0, changed true

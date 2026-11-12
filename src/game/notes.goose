@@ -166,7 +166,6 @@ let MOVES_PAD = 12.0;       // dp round the rows inside the glass
 let MOVES_FADE = 40.0;      // dp at the list's top and foot over which rows past them fade
 let MOVES_LIST = gui::PANEL_IDS + 16;  // the list's id (gui::scroll_begin)
 let MOVES_NUMBER = 32.0;    // dp the moves' numbers take ("19." in the small face, 22)
-let MOVES_WAIT = 52.0;      // dp the glow of the move to come is wide, on an empty panel
 let MARK_GAP = 4.0;         // dp between a move and its mark
 let ORANGE = float4 { 1.0, 0.62, 0.25, 1.0 };
 
@@ -221,15 +220,10 @@ fn moves_panel(gm: Game&, g: gui::Gui&, l: panel::Layout) {
     gui::panel(g, r);
     let ns .= gm.notes;
     guard ns.len > 0 else {
-        // No move yet: row one waits, its number and a faint glow where the first move goes,
-        // as a score sheet would, so the glass isn't blank (2026-11-12).
+        // No move yet: a dim line where the first row will be, so the glass isn't blank.
         let inner = gui::inset(r, MOVES_PAD * u);
-        let y = inner.y;
-        gui::text(g, gui::SMALL, float4 { inner.x, y, MOVES_NUMBER * u, MOVES_ROW * u }, "1.", 0.55, 0.0, gui::LEFT);
-        let half = 0.5 * (inner.z - MOVES_NUMBER * u);
-        let side: f32 = if gm.b.pos.side == rules::BLACK { 1.0 } else { 0.0 };
-        let x = inner.x + MOVES_NUMBER * u + side * half;
-        gui::glow_fill(g, float4 { x - 6.0 * u, y + 3.0 * u, MOVES_WAIT * u, MOVES_ROW * u - 6.0 * u }, 0.1, 8.0 * u);
+        gui::text(g, gui::BODY, float4 { inner.x, inner.y, inner.z, MOVES_ROW * u }, strings::get(strings::MOVES_NONE),
+                  0.55, 0.0, gui::LEFT);
         return;
     }
     let v .= rules::VARIANTS[gm.b.variant];

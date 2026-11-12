@@ -47,6 +47,7 @@ let KEYS = [
     "continue.friend", "continue.easy", "continue.medium", "continue.hard",
     "settings.moves", "moves.hidden", "moves.list", "moves.marks",
     "results.title", "results.rating", "results.computer", "results.friend", "results.none",
+    "moves.none",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -164,12 +165,13 @@ let SETTINGS_MOVES = 112;   // the moves panel's row (task 074): hidden, the lis
 let MOVES_HIDDEN = 113;
 let MOVES_LIST = 114;
 let MOVES_MARKS = 115;
-let RESULTS_TITLE = 116;      // the results screen (task 074): its title,
-let RESULTS_RATING = 117;     // the rating's heading,
-let RESULTS_COMPUTER = 118;   // the levels' results' heading,
-let RESULTS_FRIEND = 119;     // a game against a friend in the list,
-let RESULTS_NONE = 120;       // and the list with no game yet
-let COUNT = 121;
+let RESULTS_TITLE = 116;    // the results screen (task 074): its title,
+let RESULTS_RATING = 117;   // the rating's heading,
+let RESULTS_COMPUTER = 118; // the levels' results' heading,
+let RESULTS_FRIEND = 119;   // a game against a friend in the list,
+let RESULTS_NONE = 120;     // and the list with no game yet
+let MOVES_NONE = 121;       // the moves panel before the first move
+let COUNT = 122;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

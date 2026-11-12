@@ -1,5 +1,5 @@
 at rest: focus 0, lit 0, rings 0, clicked nothing, acted false, animating false
-enter with no focus: the primary, nothing pressed: focus 2, lit 2, rings 1, clicked nothing, acted false, animating true
+enter with no focus: the primary, pressed: focus 2, lit 2, rings 1, clicked row 2, acted true, animating true
 the mouse moves: let go: focus 0, lit 0, rings 0, clicked nothing, acted false, animating true
 down: the primary: focus 2, lit 2, rings 1, clicked nothing, acted false, animating true
   a frame on: focus 2, lit 2, rings 1, clicked nothing, acted false, animating true
@@ -15,7 +15,7 @@ left: the tile in line: focus 11, lit 11, rings 1, clicked nothing, acted false,
 enter: focus 11, lit 11, rings 1, clicked tile 11, acted true, animating true
   a frame on: focus 11, lit 11, rings 1, clicked nothing, acted false, animating true
 the mouse moves over row 1: focus 0, lit 1, rings 0, clicked nothing, acted false, animating true
-enter, the mouse leading: the primary, nothing pressed: focus 2, lit 2, rings 1, clicked nothing, acted false, animating true
+enter, the mouse leading: the primary, pressed: focus 2, lit 2, rings 1, clicked row 2, acted true, animating true
 the mouse moves: let go: focus 0, lit 1, rings 0, clicked nothing, acted false, animating true
 up: the primary again: focus 2, lit 2, rings 1, clicked nothing, acted false, animating true
   the pointer resting over row 1: focus 2, lit 2, rings 1, clicked nothing, acted false, animating true

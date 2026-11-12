@@ -141,3 +141,4 @@ results.rating = Reiting
 results.computer = Arvuti vastu
 results.friend = Sõber
 results.none = Veel pole mänge
+moves.none = Veel pole käike

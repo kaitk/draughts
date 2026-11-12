@@ -142,3 +142,4 @@ results.rating = Rating
 results.computer = Against the computer
 results.friend = A friend
 results.none = No games yet
+moves.none = No moves yet
