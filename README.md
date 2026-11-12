@@ -37,12 +37,13 @@ Vulkan, or iOS 16 or later with Metal.
 | iPad Pro 11-inch (M5), in the Simulator | The Mac's M1 Pro | Apple GPU, Metal | iPadOS 26.4 | Runs full screen and in resized windows, both orientations; the smallest windows still to fit |
 | Mac with Apple silicon (M1 Pro) | Apple M1 Pro | Apple GPU, Metal | macOS | Runs in 2D and 3D; development and headless tests |
 | Windows PC | AMD Ryzen 7 5800X3D | NVIDIA GeForce RTX 4090, Vulkan | Windows 11 | Runs in 2D and 3D; development, headless tests, and Android builds |
+| Linux PC | AMD Ryzen 5 9600X | AMD Radeon RX 6800, Vulkan (RADV) | Bazzite 44, GNOME 50 | Runs in 2D and 3D, on Wayland and through XWayland |
 
 ## Implementation
 
 ### Performance
 
-Release builds in a game, 2026-11-10, frames as they reached the screen:
+Release builds in a game, 2026-11-10 (Linux 2026-11-12), frames as they reached the screen:
 
 | Device | Display | 3D board | Memory (2D / 3D) |
 | --- | --- | --- | --- |
@@ -51,6 +52,7 @@ Release builds in a game, 2026-11-10, frames as they reached the screen:
 | Galaxy A33 5G | 2400 × 1080, 90 Hz | 60 fps (45 fps 1% low) | 116 / 275 MB |
 | iPhone 13 mini | 2340 × 1080, 60 Hz | locked 60 fps | 59 / 204 MB |
 | Windows PC | 2560 × 1440, 165 Hz | locked 165 fps | 258 / 477 MB |
+| Linux PC, Wayland | 1920 × 1080, 60 Hz | 60 fps (58 fps 1% low) | 84 / 89 MB, without the GPU's |
 
 - **2D board:** locked to the display's rate on every device.
 - **At rest:** under 0.35% of one core, no GPU work.
@@ -61,7 +63,7 @@ Release builds in a game, 2026-11-10, frames as they reached the screen:
 ### How it works
 
 - **Goose compiled to C**, on [goose_gfx](https://github.com/aardappel/goose_gfx) and
-  SDL3's GPU API: Vulkan on Android and Windows, Metal on Apple. No engine, no Gradle, no
+  SDL3's GPU API: Vulkan on Android, Windows, and Linux, Metal on Apple. No engine, no Gradle, no
   Xcode project; one Python script per platform.
 - **Draws only on change.** A touch, a moving piece, or a clock's tick draws a frame;
   otherwise the app sleeps in the system's event wait
@@ -99,7 +101,8 @@ build/draughts
 ```
 
 On Windows, `python scripts/windows.py src/app/draughts.goose` builds the same app
-([development](docs/development.md#run-on-windows)).
+([development](docs/development.md#run-on-windows)), and on Linux
+`python3 scripts/linux.py src/app/draughts.goose` ([development](docs/development.md#run-on-linux)).
 
 On an Android device with USB debugging on, with the Android SDK, NDK r29, and a JDK:
 
