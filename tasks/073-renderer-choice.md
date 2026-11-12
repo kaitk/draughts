@@ -179,16 +179,42 @@ is trying ngfx and falling back, not a list of devices kept here:
   its speed over SMAA): `fxaa.slang`, its pipeline, and `--aa fxaa`, which now falls back
   to SMAA as any unknown name does; the A key goes SMAA, off, supersampling. `off`,
   `smaa`, and `ssaa` against the step's own shots: none over 3 of 255.
-- **Next, on its own branch** (steps 4 to 6): both renderers in one executable. The
-  recorders are the seam: each renderer's `_gpu` files compiled side by side (renamed
-  apart, or `gpu` and the recorders behind one interface chosen at start), the drawers
-  unchanged.
 - Building ngfx: `NGFX=~/projects/goose/goose-ngfx` and
   `NGFX_SLANGC=~/projects/goose/slang/bin/slangc` in every shell, then
   `python3 scripts/ngfx.py src/app/draughts.goose` (`build/ngfx/draughts`); gfx is
   `scripts/mac.py src/app/draughts.goose`. Both need `third_party/goose_gfx` and its
   SDL and nuklear checked out (`git submodule update --init` there, then the same in
   `third_party/goose_gfx`).
+
+## The way to the end (2026-11-12)
+
+What is left, in this order, each finished (committed, measured, recorded) before the
+next starts:
+
+1. **Where ngfx's Mac frame goes** (task 077, step 1): gfx traced without antialiasing
+   beside ngfx, done 2026-11-12: ngfx's frame takes 6% less GPU time than gfx's
+   without antialiasing, and the Mac's whole gap is SMAA against MSAA (task 077).
+2. **MSAA in ngfx** (task 077, step 2): the NoGraphicsAPI fork, then goose-ngfx, then
+   the ngfx build's `--aa msaa`, its default if it wins on the Mac. Windows and Linux
+   measured by the user (`scripts/windows_perf.py`, task 076's benches), with step 3's
+   Windows shots in the same sitting.
+3. **The pull requests, one at a time, sent by the user:** NoGraphicsAPI's
+   `linux-presentation` (ready), then its MSAA branch; goose_gfx's `window-only-linux`
+   after `window-only`. Each with its numbers from tasks 074, 076, and 077.
+4. **NoGraphicsAPI below macOS and iOS 26** (task 077, step 3): the fork builds there
+   and fails at run time; the decision for Apple in step 4 below.
+5. **Both renderers in one executable** (step 4), on a branch `renderer-choice`, main
+   untouched until step 7. The recorders are the seam: each renderer's `_gpu` files
+   compiled side by side (renamed apart, or `gpu` and the recorders behind one interface
+   chosen at start), the drawers unchanged; which, decided and recorded first. Windows
+   and Linux first (both link as they are), then the Mac, then iOS on the weak links.
+6. **Choosing** (step 5): `--renderer auto|gfx|ngfx`, the probe in a hidden window, the
+   crash marker keyed to GPU, driver, and app. `auto` by platform, from what was
+   measured, not a list of GPUs: Windows ngfx first (task 074); the Mac and iOS ngfx
+   first if MSAA brought its frame to gfx's or under, else gfx; Linux gfx first while
+   RADV runs ngfx slower (task 076), revisited after MSAA; Android always gfx.
+7. **Checked and merged** (step 6): every device in step 6, then `renderer-choice` into
+   main once the user has seen it; the decisions, architecture, and README updated.
 
 ## Acceptance criteria
 

@@ -663,7 +663,8 @@ How task 056 found which frames were late and why (2026-11-10):
   flush), so compare the loop's. ngfx's `GOOSE_NGFX_BENCH=1` stamps span both of a
   frame's submissions and the wait for a drawable between them: not a GPU time. An
   `xctrace record` can hang after its app exits, at 100% CPU and deaf to SIGINT: run each
-  under a watchdog that kills it after 2 minutes. The parsing scripts were one-offs.
+  under a watchdog that kills it after 2 minutes. `scripts/mac_gpu_time.py EXE --aa off`
+  records and reads one 3D bench this way (task 077, 2026-11-12).
 - **The iPhone:** Animation Hitches only (`scripts/ios_perf.py`; its tables
   `display-surface-swap`, `displayed-surfaces-interval`, `display-surface-queue`,
   `metal-command-buffer-completed`). Under Metal System Trace the app's loop runs at 120

@@ -1,6 +1,6 @@
 # 077: ngfx's antialiasing on Apple, and NoGraphicsAPI on older systems
 
-Status: todo
+Status: in-progress (step 1 done 2026-11-12)
 
 ngfx exists in Draughts to show NoGraphicsAPI's author a real program on it and to back
 the pull requests (task 073, the user, 2026-11-12). Two gaps stand in the way on Apple.
@@ -30,17 +30,41 @@ returning `Error::unsupported`), so the OS is the only thing the build-time stop
    GPU's Maximum state; the loop's frames' GPU union and the overlap. If gfx's off and
    SMAA match ngfx's, the renderers cost the same and MSAA is the gap. The runs take the
    screen: one batch, the user told first (memory: Mac shots in one batch).
-2. **MSAA in the NoGraphicsAPI fork** (`kaitk/NoGraphicsAPI`, a branch of its own on
-   upstream `main`, merged into the fork's `ngfx`): a sample count in `TextureDesc`, a
-   resolve target per color attachment when a pass ends, on Metal 4 and Vulkan. On Metal
-   the multisampled target memoryless (`MTLStorageModeMemoryless`), so it never leaves
-   tile memory, which gfx can't have (SDL picks the storage mode, rendering.md's GPU
-   memory); on Vulkan a transient, lazily allocated image. Then goose-ngfx's
-   `TextureDesc` and `PassDesc`, and `--aa msaa` in the ngfx build (render3d's ngfx
-   recorder: the pass at 1x into the 4× target, resolved into the image; SMAA's targets
-   not made). Its tests on the Mac and the Bazzite PC. Measured as step 1, against gfx's
-   MSAA, with the GPU memory at rest; if it wins, MSAA becomes ngfx's default as gfx's.
-   A pull request candidate: a missing feature with a measured gain.
+2. **MSAA in the NoGraphicsAPI fork** (`kaitk/NoGraphicsAPI`, a branch `msaa` of its own
+   on upstream `main`, merged into the fork's `ngfx`, which goose-ngfx's submodule
+   follows). What its API has today (`include/NoGraphicsAPI/NoGraphicsAPI.hpp`):
+   `TextureDesc` has no sample count; textures are placed in a `TextureHeap`
+   (`create_texture(commands, desc, heap, offset)`); `ColorAttachment` and
+   `DepthAttachment` take a load and a store op (`StoreOp` store or discard), no resolve;
+   the raster pipeline's desc names its color and depth formats but no sample count. So:
+   - `TextureDesc::sample_count` (1, 2, 4), checked against the device's caps
+     (`DeviceCaps` gains the supported counts).
+   - Transient attachments: a `TextureUsage` bit (or `MemoryType`) for a target that is
+     never stored. Metal can't place a memoryless texture in an `MTLHeap`, so it is
+     made from the device with `MTLStorageModeMemoryless`, outside the heap; on Vulkan
+     `TRANSIENT_ATTACHMENT` usage in `LAZILY_ALLOCATED` memory where the device has it
+     (desktop GPUs mostly don't: then ordinary device memory). Decide the shape so it
+     reads as NoGraphicsAPI's style (its `docs/` and `AGENTS.md` first).
+   - A resolve: `ColorAttachment::resolve_view` and a `StoreOp::resolve` (Metal 4's
+     `MTLStoreActionMultisampleResolve` with a resolve texture; Vulkan dynamic
+     rendering's `resolveImageView` with `VK_RESOLVE_MODE_AVERAGE_BIT`); depth stored
+     or discarded, no depth resolve needed here.
+   - The pipeline's sample count, on both backends.
+   - Tests beside its others (a 4× clear-and-resolve, a triangle edge resolved to a
+     known value), run on the Mac and on the Bazzite PC (task 076's way: built in the
+     `goose` box, run on the host).
+   Then goose-ngfx: `TextureDesc`'s samples, a transient render target, and `PassDesc`'s
+   resolve; its tests and a sample. Then the ngfx build's `--aa msaa`
+   (`src/ngfx/render3d/render3d_gpu.goose`): the pass drawn at 1x into a 4× color and
+   depth, both transient, resolved into the image, as gfx's recorder does
+   (`src/render3d/render3d_gpu.goose`, its kept depth and the pulsing marks included);
+   SMAA's targets not made. Shots against gfx's MSAA (a few levels of 255 apart at most
+   at the edges, the two resolving alike), then measured as step 1 (Metal System Trace,
+   the loop's frames, three traces each, interleaved with gfx's MSAA), with the GPU
+   memory at rest. If ngfx's MSAA frame is at or under gfx's, it becomes ngfx's default,
+   as on gfx; the A key and `--aa` take `msaa`. Windows and Linux measured by the user
+   (`scripts/windows_perf.py`, task 076's benches). A pull request candidate: a missing
+   feature, with a measured gain on a tiled GPU.
 3. **Building below 26 in the fork** (a branch of its own; offered upstream only if it
    reads as useful beyond Draughts, the user's call): `CMakeLists.txt` takes a deployment
    target under 26, with a comment why (the app checks at run time); device creation
@@ -53,10 +77,36 @@ returning `Error::unsupported`), so the OS is the only thing the build-time stop
    library loaded only on 26 (an embedded framework on iOS, signed and opened by name).
    It decides task 073's step 4 on Apple; record it there and in `docs/decisions/`.
 
+## Step 1: done (2026-11-12)
+
+gfx and ngfx at `main` (`b499e73`, goose-ngfx `82517d6`), the M1 Pro on mains power,
+`scripts/mac_gpu_time.py` (new: the trace, the loop phase, the union, the overlap),
+three rounds interleaved, every run at the GPU's Maximum state for 90 to 98% of the
+window. GPU ms a frame, the 3D board full screen (3600 × 2260):
+
+| build | ms a frame | overlap |
+|---|---|---|
+| gfx, off | 2.70 / 2.64 / 2.66 | × 1.29 to 1.37 |
+| ngfx, off | 2.49 / 2.51 / 2.49 | × 1.04 |
+| gfx, 4× MSAA (its default) | 3.01 / 3.00 / 3.02 | × 1.35 |
+| ngfx, SMAA (its default; task 071) | 3.35 to 3.39 | × 1.07 |
+| gfx, SMAA (task 071) | 3.47 to 3.50 | × 1.35 |
+
+gfx's MSAA matches task 070's 3.05, so the script reads as task 070's one-offs did.
+
+- **The renderers:** ngfx draws the same frame in 6% less GPU time (2.50 against 2.67),
+  and with SMAA on both 3% less. Nothing in ngfx itself is slower on the Mac.
+- **The whole gap is the antialiasing:** MSAA costs gfx 0.35 ms a frame on the tiled
+  GPU, SMAA costs either renderer 0.85 to 0.9. ngfx is slower at the defaults only
+  because NoGraphicsAPI has no MSAA. If ngfx's MSAA costs what gfx's does, its frame
+  comes to about 2.85 ms, 5% under gfx's; memoryless targets may take it lower.
+- **The overlap** (gfx's encoders running alongside each other, × 1.3, ngfx's hardly)
+  isn't a cost: ngfx is faster without it. Nothing to chase there.
+
 ## Acceptance criteria
 
-- [ ] gfx traced with `--aa off` and `smaa` beside ngfx's, the numbers here, and what the
-      gap is
+- [x] gfx traced with `--aa off` beside ngfx's (`smaa` from task 071), the numbers here,
+      and what the gap is: the antialiasing alone
 - [ ] MSAA in the fork with memoryless (Metal) and transient (Vulkan) targets, its tests
       passing; the ngfx build's `--aa msaa` measured on the Mac against gfx's
 - [ ] NoGraphicsAPI builds below 26 and fails at run time there, checked as above
