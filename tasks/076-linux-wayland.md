@@ -156,7 +156,11 @@ the samples' `cube` and `ui_todo` present 120 of 120 frames.
 **The release:** `CC=clang-20 scripts/linux.py src/app/draughts.goose --release` in the
 box: 12.0 MB (11,985,195 bytes), the executable 16.0 MB, linking only libc and libm,
 `GLIBC_2.35`. Extracted into a fresh folder and run on the host: Wayland, the app id, the
-3D game with c3-d4 played. Not uploaded (0.2.0 shipped its XWayland tarball).
+3D game with c3-d4 played. Built again from `c4cecb0` (11,985,194 bytes, SHA-256
+`b5cfe2ecbeb87ff0ee681124bc1ba085603d622c40d0e40f52257347f7f64b3e`) and, asked by the user,
+put on the draft `Draughts 0.2.0` in place of the XWayland tarball, its Linux paragraph
+saying it opens Wayland, else X11 (2026-11-12). The draft's target is still `7d68aaf`, the
+Windows zip's commit, which has none of this.
 
 **The glibc floor** stays 2.35. What asks for it is the build's own glibc (`hypotf@2.35`;
 `pthread_*`, `dlopen`, and `__libc_start_main@2.34`; `stat@2.33`), all of which older
