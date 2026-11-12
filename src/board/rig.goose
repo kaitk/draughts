@@ -77,6 +77,7 @@ struct Rig {
     swing:    Ease   = Ease {},
     tilt:     Ease   = Ease {},
     showcase: bool   = false,
+    across:   bool   = false,   // the top view and the zoom set for a friend's game that doesn't turn
     held:     bool   = false,
     last:     float2 = float2 { 0.0, 0.0 },
     ready:    bool   = false,
@@ -192,6 +193,29 @@ fn face(r: Rig&, side: i64, now: f64) -> bool {
     go(r.turn, r.turn.to + 180.0, now, TURN);
     settle(r, now, TURN);
     return true;
+}
+
+// Whether the board faces the far side (black) or is turning to, as the flat board shows
+// the turn: at once, where the 3D board eases round.
+fn faces_far(r: Rig&) -> bool {
+    let to = r.turn.to - 360.0 * floor(r.turn.to / 360.0);
+    return to == 180.0;
+}
+
+// A friend's game that doesn't turn the board begins in the top view, zoomed (2026-11-12):
+// the players sit at either side of the tablet, and looking down the board reads alike to
+// both. The camera buttons change them as ever. `friend` false for any other game: what
+// such a game set goes back to the view at rest, unzoomed.
+fn across_table(r: Rig&, friend: bool) {
+    if friend {
+        put(r.top, 1.0);
+        put(r.zoom, 1.0);
+        r.across = true;
+    } else if r.across {
+        put(r.top, 0.0);
+        put(r.zoom, 0.0);
+        r.across = false;
+    }
 }
 
 // A game begins on the board as it stands: the turn put afresh with its first frame (to

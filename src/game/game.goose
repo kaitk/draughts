@@ -138,6 +138,7 @@ struct Game {
     scratch:    rules::Moves    = [],
     judge:      bool            = true,
     moves_shown: i64            = 2,    // the moves panel: 0 hidden, 1 the moves, 2 with marks (settings::MOVES_*)
+    turns:       bool           = false, // a friend's game turns the board to the side to move (settings' `turns`)
     moves_seen:  i64            = -1,   // the moves the panel's list was last scrolled to the foot for
     judging:    i64             = 0,
     judge_ply:  i64             = 0,
@@ -223,6 +224,7 @@ fn start(gm: Game&, variant: u8, kind: i64, computer: i64, level: i64, skill: i6
     gm.watched = Watch {};
     new_hints(gm);
     rig::reset(gm.cam);
+    rig::across_table(gm.cam, computer < 0 && !gm.turns);
 }
 
 // A game's hints, all of them left, none shown or asked for.
@@ -594,10 +596,13 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         if mine && board::touch(b, l.board, l.three, l.view, input, gm.grab, now) { changed = true; }
         if panel::board_keys(g, l, b, mine, now, rig::turn(gm.cam, now)) { changed = true; }
     }
-    // Against a friend the 3D board turns to face the side to move once a move has shown,
-    // unless the game is over; against the computer it stays turned to the child.
-    if l.three && !frozen && gm.computer < 0 && !ended(gm) && !b.moving && b.pressed < 0 {
-        if rig::face(gm.cam, b.pos.side, now) { changed = true; }
+    // Against a friend, with the setting on, the board turns to face the side to move once
+    // a move has shown, unless the game is over: the 3D board eases round, the flat one
+    // turns at once (shell's game_layout, rig::faces_far). With it off, it faces white,
+    // turning back if it was set off mid-game. Against the computer it stays turned to
+    // the child.
+    if !frozen && gm.computer < 0 && !ended(gm) && !b.moving && b.pressed < 0 {
+        if rig::face(gm.cam, if gm.turns { b.pos.side } else { rules::WHITE }, now) { changed = true; }
     }
     // A move made or taken back, whichever way: the clocks follow it, and stop once the
     // side to move has none.

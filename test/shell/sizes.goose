@@ -394,12 +394,12 @@ fn small_window(g: gui::Gui&) {
     var glass = float4 { 0.0, 0.0, 0.0, 0.0 };
     for q in g.quads { if q.look.x == gui::GLASS { glass = q.rect; } }
     // Back, the two languages, the tabs, the theme's five, the switch's halves, the
-    // board's two, the kings' three.
+    // board's two and its turn, the kings' three.
     let season = drive::rect(g, 5);
     let half = drive::rect(g, 10);
     let foot = glass.y + glass.w;
-    let board = drive::rect(g, 12);
-    let kings = drive::rect(g, 14);
+    let board = drive::rect(g, 13);
+    let kings = drive::rect(g, 15);
     print("the iPad's smallest window, ", whole(drive::size.x / u), " x ", whole(drive::size.y / u), " dp: Look's ",
           drive::tiles(g), " tiles, the switch ", whole(half.z / u), " x ", whole(half.w / u), " dp a half, a season ",
           whole(season.z / u), " x ", whole(season.w / u), " dp, Board ending ", whole((foot - board.y - board.w) / u),

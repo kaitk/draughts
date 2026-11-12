@@ -48,6 +48,7 @@ let KEYS = [
     "settings.moves", "moves.hidden", "moves.list", "moves.marks",
     "results.title", "results.rating", "results.computer", "results.friend", "results.none",
     "moves.none",
+    "board.turns", "board.turns_note",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -171,7 +172,9 @@ let RESULTS_COMPUTER = 118; // the levels' results' heading,
 let RESULTS_FRIEND = 119;   // a game against a friend in the list,
 let RESULTS_NONE = 120;     // and the list with no game yet
 let MOVES_NONE = 121;       // the moves panel before the first move
-let COUNT = 122;
+let BOARD_TURNS = 122;      // the Board row's third tile: a friend's game turns the board,
+let BOARD_TURNS_NOTE = 123; // its note
+let COUNT = 124;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

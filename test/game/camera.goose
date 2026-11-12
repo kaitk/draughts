@@ -7,7 +7,10 @@
 // its angle kept once it is off, with the view button's dot, and a move tapped through
 // that angle; a game against a friend turning the board 180° after each move, keeping
 // its size (its bounds as at rest mid-turn), the showcase's angle easing back with it, black's move tapped through the turned board, and
-// a new game putting it back; against the computer no turn; a puzzle's buttons.
+// a new game putting it back (with settings' turn on); against the computer no turn; a
+// friend's game with the turn off in the top view, zoomed, not turning, and the view at
+// rest again against the computer; the flat board turned at once for black's turn with
+// the turn on; a puzzle's buttons.
 import std;
 import vec;
 import math;
@@ -107,6 +110,7 @@ fn main() {
     gui::test_faces(g);
     var sh = shell::new(rules::RUSSIAN);
     sh.prefs.board = settings::RAISED;
+    sh.prefs.turns = true;
     shell::apply_prefs(sh);
     game::start(sh.game, rules::RUSSIAN, clock::NONE, -1, game::MEDIUM, 40, 0);
     sh.screen = shell::GAME;
@@ -205,6 +209,35 @@ fn main() {
     }
     run(sh, g, now, now + 2.0);
     print("after its move: ", angle(sh.out.view), ", black to move ", sh.game.b.pos.side == rules::BLACK);
+
+    // A friend's game with the turn off (settings' default): the top view, zoomed, and no
+    // turn after a move; a game against the computer then goes back to the view at rest.
+    sh.prefs.turns = false;
+    shell::apply_prefs(sh);
+    game::start(sh.game, rules::RUSSIAN, clock::NONE, -1, game::MEDIUM, 40, 0);
+    drive::idle(sh, g, 41.0);
+    print("a friend's game, no turn: ", angle(sh.out.view), ", zoomed ", rig::zoomed(sh.game.cam));
+    play(sh, g, "c3", "d4", 42.0);
+    run(sh, g, 43.0, 44.0);
+    print("  after white's move: ", angle(sh.out.view), ", black to move ", sh.game.b.pos.side == rules::BLACK);
+    game::start(sh.game, rules::RUSSIAN, clock::NONE, rules::BLACK, game::MEDIUM, 40, 0);
+    drive::idle(sh, g, 45.0);
+    print("then against the computer: ", angle(sh.out.view), ", zoomed ", rig::zoomed(sh.game.cam));
+
+    // The flat board with the turn on: black's turn shows black at the bottom, at once.
+    sh.prefs.board = settings::FLAT;
+    sh.prefs.turns = true;
+    shell::apply_prefs(sh);
+    game::start(sh.game, rules::RUSSIAN, clock::NONE, -1, game::MEDIUM, 40, 0);
+    drive::idle(sh, g, 46.0);
+    print("flat, a friend's game turning: turned ", sh.out.layout.flip);
+    drive::tap(sh, g, drive::at(sh.out.layout, "c3"), 47.0);
+    drive::tap(sh, g, drive::at(sh.out.layout, "d4"), 47.1);
+    drive::idle(sh, g, 48.0);
+    drive::idle(sh, g, 48.1);
+    print("  after white's move: turned ", sh.out.layout.flip, ", black to move ", sh.game.b.pos.side == rules::BLACK);
+    sh.prefs.board = settings::RAISED;
+    shell::apply_prefs(sh);
 
     // A puzzle shares the layout and the buttons.
     shell::play_puzzle(sh, 0, 50.0);

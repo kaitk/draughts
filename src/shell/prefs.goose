@@ -71,6 +71,7 @@ struct Settings {
     season:           i64           = BY_DATE, // a theme (app/theme.goose), or BY_DATE
     plain:            bool          = false,   // the plain fade in place of the photograph (`background = plain`)
     board:            i64           = FLAT,    // the Board row's: flat, or raised (the 3D board)
+    turns:            bool          = false,   // and its third tile: a friend's game turns the board to the side to move (`turn = on`)
     hints:            i64           = board::MISTAKES,
     lookout:          bool          = false,   // the game's lookout, its eye on whose turn's line (`lookout = on`)
     kings:            i64           = AUTO,
@@ -136,6 +137,7 @@ fn parse(text: const u8[:]) -> Settings {
         }
         if key == "background" && value == "plain" { s.plain = true; }
         if key == "board" && value == "3d" { s.board = RAISED; }
+        if key == "turn" && value == "on" { s.turns = true; }
         if key == "hints" && value == "moves" { s.hints = board::MOVES; }
         if key == "lookout" && value == "on" { s.lookout = true; }
         if key == "kings" {
@@ -226,6 +228,7 @@ fn write(s: Settings, out: u8[>..]&) {
     out.append(season);
     out.append(if s.plain { "\nbackground = plain" } else { "\nbackground = photo" });
     out.append(if s.board == RAISED { "\nboard = 3d" } else { "\nboard = 2d" });
+    out.append(if s.turns { "\nturn = on" } else { "\nturn = off" });
     out.append(if s.hints == board::MOVES { "\nhints = moves" } else { "\nhints = mistakes" });
     out.append(if s.lookout { "\nlookout = on" } else { "\nlookout = off" });
     out.append("\nkings = ");

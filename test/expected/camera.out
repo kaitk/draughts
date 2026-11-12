@@ -23,4 +23,9 @@ started over, turning back: 52.5° down, board turned 278.1°, bounds 239 226 80
   turned: 52.5° down, board turned 0.0°, bounds 239 226 802 x 550, W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8
 against the computer (white): 52.5° down, board turned 0.0°, bounds 239 226 802 x 550, the flat layout turned true
 after its move: 52.5° down, board turned 0.0°, bounds 239 226 802 x 550, black to move true
+a friend's game, no turn: 74.0° down, board turned 0.0°, bounds 207 75 866 x 761, zoomed true
+  after white's move: 74.0° down, board turned 0.0°, bounds 207 75 866 x 761, black to move true
+then against the computer: 52.5° down, board turned 0.0°, bounds 239 226 802 x 550, zoomed false
+flat, a friend's game turning: turned false
+  after white's move: turned true, black to move true
 a puzzle: 3 buttons, 52.5° down, board turned 0.0°, bounds 191 160 898 x 616

@@ -184,6 +184,10 @@ masters present):
   listing, the App content forms, and the track. Testers can't install from Alpha
   until it passes; send them the opt-in link from the Testers tab then (Play doesn't
   mail them), and the 14 days start once 12 have opted in.
+- **Closed test running** (seen 2026-11-12): the review passed, testers sent feedback,
+  and the Dashboard's production-access steps tick "at least 12 testers opted in", the
+  14-day step still open. The Console shows only that the count is met, not who opted
+  in; asking the testers is the only way to find who hasn't.
 - **Production countries**, for later: all countries proposed, since the app is free,
   offline, and collects nothing, and the English listing stands in where there is no
   translation; draughts' players are mostly outside the English-speaking countries

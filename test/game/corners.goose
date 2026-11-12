@@ -196,6 +196,7 @@ fn main() {
     gui::test_faces(g);
     var sh = shell::new(rules::RUSSIAN);
     sh.prefs.board = settings::RAISED;
+    sh.prefs.turns = true;
     shell::apply_prefs(sh);
     sh.screen = shell::GAME;
     drive::idle(sh, g, 0.0);

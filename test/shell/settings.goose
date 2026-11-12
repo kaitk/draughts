@@ -37,9 +37,10 @@ let BY_DATE = 12;
 let PHOTO = 13;             // the theme's switch, under its name
 let PLAIN = 14;
 let RAISED = 16;
-let AUTO = 17;
-let STACK = 19;
-let TILES = 20;
+let TURNS = 17;             // the Board row's third tile, on or off by itself
+let AUTO = 18;
+let STACK = 20;
+let TILES = 21;
 
 // The player's draughts, chosen in home's setup or the puzzles' library (settings has no
 // row for them since issue 1): the preview is staged again with their size, as a
@@ -155,6 +156,11 @@ fn main() {
     show(sh, "summer");
     drive::tap(sh, g, drive::tile(g, RAISED), 4.1);
     show(sh, "3D");
+    // The Board row's third tile turns a friend's game's board, on and off, raised staying.
+    drive::tap(sh, g, drive::tile(g, TURNS), 4.15);
+    print("turns tapped: on ", sh.prefs.turns, ", the game's ", sh.game.turns, ", raised ", settings::raised(sh.prefs));
+    drive::tap(sh, g, drive::tile(g, TURNS), 4.2);
+    print("  again: on ", sh.prefs.turns, ", the game's ", sh.game.turns);
     drive::tap(sh, g, drive::tile(g, MOVES), 4.3);
     show(sh, "all moves");
     preview(sh, 4.4);

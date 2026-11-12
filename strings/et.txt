@@ -142,3 +142,5 @@ results.computer = Arvuti vastu
 results.friend = Sõber
 results.none = Veel pole mänge
 moves.none = Käike veel pole
+board.turns = Pöörab
+board.turns_note = sõbraga

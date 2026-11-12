@@ -278,6 +278,7 @@ fn apply_prefs(sh: Shell&) {
     sh.puzzle.b.king_look = king_look(sh);
     gm.look = p.lookout;
     gm.moves_shown = p.moves;
+    gm.turns = p.turns;
     gm.look_skill = if gm.computer >= 0 { gm.skill } else { p.skill[clamp(p.level, game::EASY, game::HARD)] };
 }
 
@@ -595,7 +596,7 @@ fn game_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
                 panel::corners_in(area, n, u, panel::PITCH_PORTRAIT, true, true, sh.prefs.moves != settings::MOVES_HIDDEN)
             }
             else { panel::layout_in(area, n, u, true, true) };
-    l.board.flip = sh.game.computer == rules::WHITE;
+    l.board.flip = sh.game.computer == rules::WHITE || (!l.three && flat_turned(sh));
     panel::aim(l, sh.game.cam, now);
     return l;
 }
@@ -913,8 +914,12 @@ fn who_card(sh: Shell&, g: gui::Gui&, area: float4) -> bool {
 fn turned(sh: Shell&, setup: i64) -> bool {
     return if setup == home::COMPUTER { sh.prefs.color == rules::BLACK }
            else if setup == home::FRIEND { false }
-           else { sh.game.computer == rules::WHITE };
+           else { sh.game.computer == rules::WHITE || (!settings::raised(sh.prefs) && flat_turned(sh)) };
 }
+
+// Whether a friend's game on the flat board shows black at the bottom, the board turned
+// to the side to move (settings' `turns`; game.goose's rig::face).
+fn flat_turned(sh: Shell&) -> bool { sh.game.computer < 0 && sh.game.turns && rig::faces_far(sh.game.cam) }
 
 // The board a screen shows (KINDS): settings their preview, a puzzle its own (and the
 // puzzles to pick from, which show it only in a transition with it), home's setup the
