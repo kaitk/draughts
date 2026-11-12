@@ -113,8 +113,8 @@ is trying ngfx and falling back, not a list of devices kept here:
   committed its gui work; the merge took `16d44ab` (task 072's focus ring, made on
   `ngfx`) to main, where it wasn't, its `g.ring = false` carried into `src/gui/focus.goose`,
   where main had moved the focus's code. The 82 tests pass, and the merge's shots match
-  the commit before it. Not yet: pushing main, then deleting `ngfx` locally and on
-  origin (to ask).
+  the commit before it. Main pushed and `ngfx` deleted locally and on origin
+  (2026-11-12), every commit of it in main by subject.
 - **Step 2 done**, one commit a twin: `host` (`cf7a17f`), `scene` (`6fb5cec`), `draw`
   (`69b635d`), `widgets` (`23e3619`), `draw3d` (`2c4e972`), `render` (`19fe8fa`),
   `photo.c` (`4fc3d44`), `render3d` (`553a407`). Each drawer is now what it draws and a
@@ -158,4 +158,5 @@ is trying ngfx and falling back, not a list of devices kept here:
 - [ ] `--renderer auto|gfx|ngfx`, `auto` picking ngfx where it runs and gfx elsewhere,
       and gfx after a start that didn't reach its first frame on ngfx
 - [ ] Checked on the Mac, the iPhone, Windows, and an Android device, recorded here
-- [ ] The decision and the architecture docs updated; the `ngfx` branch retired
+- [x] The `ngfx` branch retired
+- [ ] The decision and the architecture docs updated
