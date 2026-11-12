@@ -162,7 +162,7 @@ struct Board {
     // No count on the pieces that must capture: the computer is to move (game::frame).
     quiet: bool,
     // On mistakes only, the count shows from a mistake while a capture is due until the
-    // next right move or jump (`counting`); with move hints it always shows.
+    // capture ends (`counting`); with move hints it always shows.
     counted: bool,
     // The move being shown: the position before it, when it started, and where the
     // piece starts from if it was dropped there; `back`, a move shown sliding back.
