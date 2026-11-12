@@ -94,7 +94,8 @@ The targets this keeps open, each replacing or adding to `app/` alone:
   (`view3d`), tested headless.
 - **Other platforms on SDL:** iOS (UIKit, SDL_GPU on Metal; `ios/` and
   `scripts/ios.py`, [development](../development.md#run-on-ios)), and desktop Windows and Linux (SDL_GPU on
-  Vulkan; built by `scripts/windows.py` and `scripts/linux.py`): a build script and shims beside the Android ones (storage, locales, the
+  Vulkan, on Linux in a Wayland window, or X11's without Wayland; built by
+  `scripts/windows.py` and `scripts/linux.py`, which builds SDL itself): a build script and shims beside the Android ones (storage, locales, the
   launch cover, closing). On iOS the program's C calls SDL directly as on Android
   (`src/app/platform.h`), `draughts_platform` tells the app where it runs, home has no
   way out (`home::closable`), and nothing is drawn while the app hasn't focus: iOS ends

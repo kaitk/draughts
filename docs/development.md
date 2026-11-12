@@ -226,15 +226,41 @@ scripts/linux.py src/app/draughts.goose --run -- --board 3d --screen game
 ```
 
 As on Windows, `scripts/linux.py` builds goose_gfx from the submodule into a copy of the
-release (`build/linux/goose/`; delete it after the release changes) and links the
-release's SDL statically, so the program's C calls SDL directly (`src/app/platform.h`):
-a Linux executable exports none of SDL's functions for `dlsym` to find. `CC` picks the
-compiler for both gfx and Goose (`GOOSE_CC`). The settings and the saved game are in
-`~/.local/share/kaitk/draughts/`. The flags are the Mac's.
+release (`build/linux/goose/`; delete it after the release changes). It builds SDL too
+(task 076), from the submodule with `patches/SDL` applied, statically, with Wayland and X11,
+in place of the release's `libSDL3.a`, which has no Wayland
+([findings](goose-findings.md)). SDL opens Wayland where there is one and X11 otherwise
+(`SDL_VIDEO_DRIVER=x11` forces XWayland), loading the libraries of either at run time. The
+program's C calls SDL directly (`src/app/platform.h`): a Linux executable exports none of
+SDL's functions for `dlsym` to find. `CC` picks the compiler for gfx, SDL, and Goose
+(`GOOSE_CC`). The settings and the saved game are in `~/.local/share/kaitk/draughts/`. The
+flags are the Mac's.
 
-The release's SDL has no Wayland, so on a Wayland desktop the app runs through XWayland
-([findings](goose-findings.md)). On Fedora and Bazzite SELinux refuses TinyCC's code in
-memory, so `test/run_tests.py` fails every test there: run `test/run_tests.py --build`.
+Building SDL takes CMake and the Wayland and X11 headers, which Bazzite's host lacks: the
+first build, and the first after SDL's commit or a patch changes, runs in the
+`draughts-jammy` box (Desktop releases), and the host's builds link the
+`build/linux/SDL/libSDL3.a` it left. On Fedora and Bazzite SELinux refuses TinyCC's code
+in memory, so `test/run_tests.py` fails every test there: run `test/run_tests.py --build`.
+
+```sh
+distrobox enter draughts-jammy -- env CC=clang-20 scripts/linux.py src/app/draughts.goose
+scripts/linux.py src/app/draughts.goose               # then on the host, with its GCC
+```
+
+**ngfx on Linux.** `scripts/ngfx.py src/app/draughts.goose` builds `build/ngfx/draughts`
+with goose-ngfx's CMake, so in the `goose` box (Fedora 43, with the X11 and Wayland
+headers, slangc in `NGFX_SLANGC`, the Vulkan SDK's `setup-env.sh` sourced), and it runs
+on the host, whose Mesa 26.2 has `VK_EXT_descriptor_heap` (the box's 25.3 doesn't). It
+builds its shader compiler rather than `goose run`ning it, for SELinux. ngfx draws into
+gfx's window: on Wayland a `wl_surface`, through XWayland an X11 window
+(`ngfx::open_linux`). Windowed, `--frames` saves no screenshot under ngfx, since the
+window's image can't be read; `import -window Draughts shot.png` grabs an X11 window
+(ImageMagick, on the host), and nothing here grabs a Wayland one: the screenshot
+portal's non-interactive call waits on a permission dialog, and while it waits every
+SDL program's Wayland start stalls 50 s on the portal's settings, until
+`systemctl --user restart xdg-desktop-portal`. `WAYLAND_DEBUG=1` shows what a run
+presents: Mesa's `create_immed` buffers at the window's pixel size, and the
+`xdg_toplevel.set_app_id`.
 
 ## Test the rules
 
@@ -695,15 +721,20 @@ from the folder as it is; `install.sh` copies the executable to `~/.local/bin` a
 them, and `install.sh --remove` takes them away. The app id, which SDL gives the window
 (`src/app/display.c`), is the `.desktop` file's name and its `StartupWMClass`, so the
 window shows the menu's icon. SDL
-is linked in; the C library, libm, X11 or Wayland, and Vulkan's loader are the system's.
+is linked in; the C library, libm, Wayland or X11, and Vulkan's loader are the system's.
 The executable needs a glibc as new as the one it was built against, so a release is
-built in an Ubuntu 22.04 container (glibc 2.35, which the Goose release's `libSDL3.a`
-needs anyway), with Clang 20 from apt.llvm.org since 22.04's gcc 11 has no `#embed`:
+built in an Ubuntu 22.04 container (glibc 2.35, the oldest the Goose compiler itself runs
+on), with Clang 20 from apt.llvm.org since 22.04's gcc 11 has no `#embed`:
 
 ```sh
 distrobox create -n draughts-jammy -i ubuntu:22.04     # once; on Bazzite distrobox is there
 distrobox enter draughts-jammy
-sudo apt-get install -y curl gnupg python3 git cmake make binutils
+sudo apt-get install -y curl gnupg python3 git cmake ninja-build pkg-config binutils
+# SDL's: Wayland and X11 (both required), and the audio, IME, and input backends
+sudo apt-get install -y libwayland-dev libxkbcommon-dev libdecor-0-dev wayland-protocols \
+    libegl-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev \
+    libxss-dev libxtst-dev libasound2-dev libpulse-dev libpipewire-0.3-dev libjack-dev \
+    libsndio-dev libdbus-1-dev libibus-1.0-dev libudev-dev liburing-dev
 curl -s https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/llvm.gpg >/dev/null
 echo "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-20 main" | sudo tee /etc/apt/sources.list.d/llvm.list
 sudo apt-get update && sudo apt-get install -y clang-20
@@ -714,6 +745,12 @@ CC=clang-20 scripts/linux.py src/app/draughts.goose --release
 tail -1` says `GLIBC_2.35`: Ubuntu 22.04 and later, Debian 12, Fedora 36 and later, and
 SteamOS and Bazzite run it. Built on a newer system it asks for that system's glibc (on
 Ubuntu 26.04, 2.43, which Fedora 43's 2.42 refuses). Not signed; nothing on Linux asks.
+What asks for 2.35 is the build's own glibc (`hypotf`, and 2.34's `pthread_*` and `dl*`),
+which older glibcs have under older versions; but Goose itself needs 2.35, so the floor
+would drop only by making the C with Goose on a newer system and compiling it on the older
+one, as `scripts/android.py` and `ios.py` do (`native.goose_to_c`). Debian 11 (2.31, as
+the Steam Runtime's sniper) also has no libdecor, without which GNOME's Wayland window has
+no title bar (task 076).
 
 **The release.** With the zips at hand, tagged as the shared version (`native.VERSION_NAME`):
 

@@ -9,8 +9,8 @@ every change Draughts needs merged in. Each change is also a branch of its own o
 `main`, offered upstream one at a time (2026-11-12). Pull requests the user opens, not yet
 opened (2026-11-11): those branches (task 065 lists them, and which stack on which;
 `upstream-series` is all of them) to `aardappel/goose_gfx`; and `kaitk/NoGraphicsAPI`'s
-`astc-6x6`, ASTC 6 × 6, to `sebbbi/NoGraphicsAPI`. An entry's "Upstream" line says what
-each proposes.
+`astc-6x6`, ASTC 6 × 6, `vsync-option`, and `linux-presentation` (2026-11-12) to
+`sebbbi/NoGraphicsAPI`. An entry's "Upstream" line says what each proposes.
 
 ## Goose: the Linux release's SDL has no Wayland (2026-11-12)
 
@@ -21,11 +21,33 @@ upscaled by the compositor rather than drawn at the display's pixels, and the wi
 matched to its `.desktop` file by X11's `WM_CLASS` (SDL's app id, `src/app/display.c`)
 rather than Wayland's app id.
 
-- Here: XWayland; the release's tarball names its `.desktop` file by the app id with
-  `StartupWMClass` to match, so the menu's icon shows on the window either way.
+- Here: `scripts/linux.py` builds the submodule's SDL (3.4.16, the release's version) with
+  the Goose package's options and Wayland and X11 both required, in place of the
+  release's `libSDL3.a`, in the `draughts-jammy` box (task 076). On GNOME 50 the window is
+  Wayland's, libdecor's title bar on it, sharp at 125% and 150%; `SDL_VIDEO_DRIVER=x11`
+  still opens it through XWayland. The executable still needs only libc and libm.
 - Upstream: build the release's SDL with `SDL_WAYLAND=ON` (and libdecor dynamically
   loaded, as SDL does by default), which needs only the Wayland headers on the build
   machine; SDL loads `libwayland-client` at run time, so X11-only systems still run.
+
+## NoGraphicsAPI: no presenting on Linux (2026-11-12)
+
+NoGraphicsAPI's Vulkan backend presented on Win32 only; elsewhere a `DeviceDesc::window`
+was unsupported, so ngfx ran headless on Linux. Two more things stood in the way of a
+Wayland window: a Wayland surface's `currentExtent` is undefined (0xFFFFFFFF), which
+`recreate_swapchain` refused, and RADV lists 72 formats for a Wayland surface (each format
+in each of its color spaces), over the 64 `max_surface_formats` held, which it refused as
+well ("Required Vulkan device, memory, or display capabilities are unavailable").
+`sebbbi/NoGraphicsAPI` `ffd9f2a`, goose-ngfx v0.5.0.
+
+- Here: `kaitk/NoGraphicsAPI`'s `linux-presentation`: `DeviceDesc::display` and
+  `window_system` (`wayland`, the default, or `xlib`) make a Wayland or an Xlib surface;
+  `set_drawable_extent` gives a Wayland swapchain the window's size; 256 surface formats.
+  The fork's `ngfx` has it, and goose-ngfx's `ngfx::open_linux(display, window, kind, ...)`
+  takes gfx's three (task 076). Draughts' ngfx build presents on Wayland and on XWayland
+  on the RX 6800.
+- Upstream: `linux-presentation` to `sebbbi/NoGraphicsAPI` as one pull request, Wayland
+  first and X11 the fallback.
 
 ## Goose: TinyCC's run in memory fails under SELinux (2026-11-12)
 
@@ -114,7 +136,10 @@ of one executable. goose_gfx `v1`, Goose v2026.4.
 - Here: `kaitk/goose_gfx`'s `window-only` adds the flag `WINDOW_ONLY` (64): the
   window and no device; `gs_gfx_native_window()` (a `CAMetalLayer` from an SDL Metal
   view on Apple's systems, the `HWND` on Windows, the `ANativeWindow` on Android, none
-  headless); `gs_gfx_presented(shown)`, which the renderer calls each frame so a frame
+  headless); on Linux, `window-only-linux` stacked on it, the `wl_surface` on Wayland or
+  the X11 window's number, with `gs_gfx_native_display()` its `wl_display` or `Display*`
+  and `gs_gfx_native_kind()` which (`NATIVE_WAYLAND` 1, `NATIVE_X11` 2), whichever video
+  driver SDL chose; `gs_gfx_presented(shown)`, which the renderer calls each frame so a frame
   that showed nothing makes the next `frame()` wait; and `gs_gfx_needs_present()`, set
   when the window is exposed, shown, or resized. `screen_size()` is the window's size in
   pixels; the calls that need the device are misuses in this mode. The Goose side is the

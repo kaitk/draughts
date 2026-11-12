@@ -19,9 +19,11 @@ smaa.slang includes, and its tables, which render3d embeds.
 Needs a goose-ngfx checkout (NGFX, else ../goose/goose-ngfx beside this repository),
 slangc 2026.18.2 or later (NGFX_SLANGC), and what ngfx's own build needs (its
 docs/development.md: on Windows the Vulkan SDK and Visual Studio's Build Tools; on the
-Mac Xcode with its Metal toolchain). The program is built with the Goose release's copy
-whose gfx is built from the submodule (scripts/mac.py, scripts/windows.py), for gfx's
-WINDOW_ONLY: gfx's window, input, and events, with ngfx drawing into the window.
+Mac Xcode with its Metal toolchain; on Linux the Vulkan SDK and CMake, so in the goose
+distrobox on Bazzite). The program is built with the Goose release's copy whose gfx is
+built from the submodule (scripts/mac.py, windows.py, linux.py), for gfx's WINDOW_ONLY:
+gfx's window, input, and events, with ngfx drawing into the window, on Linux a Wayland
+surface or an X11 window, whichever SDL opened.
 """
 import argparse
 import os
@@ -36,6 +38,8 @@ import ngfx_3d_shaders
 
 if native.WINDOWS:
     import windows as platform_build
+elif sys.platform.startswith("linux"):
+    import linux as platform_build
 else:
     import mac as platform_build
 
@@ -134,8 +138,12 @@ def shaders(tree=TREE, sdk=None):
     tool = tools / "ngfx_shaders.goose"
     write_if_changed(tool, (ROOT / "tools/ngfx_shaders.goose.in").read_text(encoding="utf-8")
                      .replace("@NGFX@", rel(tools, NGFX)))
-    native.run(native.GOOSE, "run", tool.name, "--", out, *stale, cwd=tools,
-               env={"NGFX_METAL_SDK": sdk} if sdk else None)
+    env = {"NGFX_METAL_SDK": sdk} if sdk else None
+    if sys.platform.startswith("linux"):    # TinyCC can't run under SELinux (Fedora's, Bazzite's)
+        native.run(native.GOOSE, "build", "-o", tools / "ngfx_shaders", tool.name, cwd=tools)
+        native.run(tools / "ngfx_shaders", out, *stale, env=env)
+    else:
+        native.run(native.GOOSE, "run", tool.name, "--", out, *stale, cwd=tools, env=env)
 
 
 def check_setup():

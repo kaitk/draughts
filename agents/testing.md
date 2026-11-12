@@ -416,6 +416,26 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   display). `windows_perf.py` brings the window forward itself; check the present mode on
   every run of a batch, and never run two benches at once (2026-11-12, task 074).
 
+## Screenshots and windows on Linux
+
+- `--frames N` saves `draughts.png` from gfx's window; ngfx's window image can't be read,
+  so under ngfx only `GOOSE_GFX_HEADLESS=1` saves one. `import -window Draughts out.png`
+  (ImageMagick, on the Bazzite host) grabs an X11 window (`SDL_VIDEO_DRIVER=x11`). Don't
+  call the screenshot portal for a Wayland window: it waits on a permission dialog on the
+  user's screen and stalls every SDL program's Wayland start 50 s until
+  `systemctl --user restart xdg-desktop-portal` (2026-11-12, task 076).
+- `WAYLAND_DEBUG=1` shows what a Wayland run did: `set_app_id`, `preferred_scale` (120
+  is 1.0), `wp_viewport.set_destination` (the window's logical size), Mesa's
+  `create_immed` buffers (the swapchain's pixel size), and an `attach` on Mesa's queue for
+  each frame presented. That is how ngfx's presenting was checked.
+- A run is ended by `timeout -s KILL`: SIGTERM is a quit, which the app asks about first,
+  so a plain `timeout` never returns. Kill a stray one with `pkill -x draughts`; `pkill -f`
+  with its path also matches, and kills, the Bash tool's own shell.
+- `gdctl set -L -M HDMI-1 --primary --scale 1.25` sets GNOME's display scale (1.25, 1.5,
+  or back to 1) without asking and not persistently, for checking fractional scales.
+- `--bench` and `--rest` measure on the host; nothing CPU-heavy (a box's build) at the
+  same time.
+
 ## Rules
 
 - Add a test for behavior that could break unnoticed, not to cover lines. A new rule

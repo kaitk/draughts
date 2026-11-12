@@ -327,7 +327,8 @@ close, not byte-identical: Slang and SDL_GPU's shader compilers round differentl
   `msaa-resolve-without-store` on `screen-without-depth`; `end-on-device-lost` and
   `ios-run-loop-wait` on `draw-on-demand`; `window-only` on `ios-run-loop-wait`. All
   eight together are `upstream-series`. Since added (2026-11-12): `no-vsync-immediate` on
-  `main`; `gamepad-wake` on `ios-run-loop-wait` (task 072). Two conflicts were resolved: the compressed
+  `main`; `gamepad-wake` on `ios-run-loop-wait` (task 072); `window-only-linux` on
+  `window-only` (task 076). Two conflicts were resolved: the compressed
   upload's tight rows against `main`'s reused upload buffer, and `WINDOW_ONLY` beside the
   gamepads and cursors. `compressed-textures` gained its Goose side (the formats and
   `format_supported` in `gfx.goose`), which the patch here never had, so goose_gfx's

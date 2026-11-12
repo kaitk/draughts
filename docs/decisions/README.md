@@ -51,6 +51,17 @@ also brought upstream's commits past `v1`, among them one upload buffer reused i
 a transfer buffer per update, which cut the 3D board's CPU a frame from 0.27 to 0.03 ms
 on the RTX 4090 (task 074). SDL keeps its patches in `patches/SDL/`.
 
+SDL built by `scripts/linux.py` on Linux (2026-11-12), from the submodule with
+`patches/SDL` applied, Wayland and X11 both required, in place of the Goose release's
+`libSDL3.a`, which has X11 only. On GNOME's Wayland the window is then Wayland's: sharp at
+a fractional scale where XWayland's is scaled up, matched to its `.desktop` file by its
+app id, 9 to 19% more frames uncapped than through XWayland, and the frames' 1% lows
+higher still; ngfx presents into it as well (task 076). It costs about 15 MB of memory on
+GNOME, where libdecor's plugin loads GTK for the title bar, and the build needs CMake and
+the headers, so the first one runs in the `draughts-jammy` box. The release still needs
+only libc and libm, glibc 2.35, the oldest the Goose compiler runs on. Rejected: XWayland
+with the release's SDL (0.2.0, task 075), and only X11 for ngfx.
+
 ## The code's layout
 
 Packages with no graphics, each run headless by its tests, and an app that feeds them the

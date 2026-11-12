@@ -82,11 +82,9 @@ def copy_gfx(out):
     return gfx_src / "src"
 
 
-def copy_sources(out, sdl_src):
-    """goose_gfx's src/ under out, and SDL in sdl_src with
-    patches/SDL applied; SDL is large, so its copy is remade only when its commit or a
-    patch changes. Returns the two folders the CMake build takes."""
-    gfx_src = copy_gfx(out)
+def copy_sdl(sdl_src):
+    """SDL in sdl_src with patches/SDL applied; SDL is large, so its copy is remade only
+    when its commit or a patch changes. Returns sdl_src."""
     stamp, stamp_file = sdl_stamp(), sdl_src / ".draughts-stamp"
     if not stamp_file.exists() or stamp_file.read_text() != stamp:
         fresh = sdl_src.with_name("SDL_src.new")
@@ -100,7 +98,13 @@ def copy_sources(out, sdl_src):
         if sdl_src.exists():
             shutil.rmtree(sdl_src)
         fresh.rename(sdl_src)
-    return gfx_src, sdl_src
+    return sdl_src
+
+
+def copy_sources(out, sdl_src):
+    """goose_gfx's src/ under out, and SDL's patched copy in sdl_src (copy_sdl). Returns
+    the two folders the CMake build takes."""
+    return copy_gfx(out), copy_sdl(sdl_src)
 
 
 def app_names():

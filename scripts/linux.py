@@ -9,10 +9,16 @@
 
 As scripts/windows.py does on Windows: goose_gfx's sources from the submodule
 (kaitk/goose_gfx's main) are built into a copy of the Goose release (build/linux/goose/),
-whose goose then builds the program. SDL is the release's own libSDL3.a, linked
-statically; it opens X11 or Wayland and Vulkan's loader at run time. The C library and
-libm are the system's, so the executable runs on a glibc as new as the one it was built
-against, or newer: build a release on the oldest system it should run on.
+whose goose then builds the program. SDL is built here, statically, from the submodule
+with patches/SDL applied, in place of the release's libSDL3.a, which has no Wayland: it
+opens Wayland, or X11 where there is none, and Vulkan's loader, all at run time. The C
+library and libm are the system's, so the executable runs on a glibc as new as the one it
+was built against, or newer: build a release on the oldest system it should run on.
+
+Building SDL takes CMake and the Wayland and X11 development headers, which the
+draughts-jammy distrobox has (docs/development.md, "Desktop releases") and an immutable
+host such as Bazzite doesn't: run this once in the box, and the host's builds then link
+the SDL it made, until SDL's commit or a patch changes.
 
 A release (docs/development.md, "Desktop releases") is a folder, Draughts/, holding the
 executable, a .desktop file, the icon, and install.sh, which puts the three in ~/.local
@@ -35,12 +41,43 @@ RELEASE = Path(os.environ.get("GOOSE_RELEASE", native.ROOT / "build/goose-v2026.
 OUT = native.ROOT / "build/linux"
 # The release's libgoose_gfx.a holds these four.
 GFX_SOURCES = ["gfx_device", "gfx_resources", "gfx_pipeline", "gfx_draw"]
+# The Goose release's own SDL options (its pkg/gfx/CMakeLists.txt), with Wayland and X11
+# both required. SDL loads every library it uses at run time, the X11 and Wayland ones too.
+SDL_OPTIONS = ["-DSDL_SHARED=OFF", "-DSDL_STATIC=ON", "-DSDL_TEST_LIBRARY=OFF", "-DSDL_CAMERA=OFF",
+               "-DSDL_RENDER=OFF", "-DSDL_OPENGL=OFF", "-DSDL_OPENGLES=OFF", "-DSDL_KMSDRM=OFF",
+               "-DSDL_WAYLAND=ON", "-DSDL_X11=ON"]
 APP_ID = "io.github.kaitk.draughts"    # SDL's app id too (src/app/display.c)
 ICON = native.ROOT / f"linux/{APP_ID}.png"    # windows/draughts.ico's 256 px
 
 
+def sdl():
+    """build/linux/SDL/libSDL3.a, made again when SDL's commit or a patch changes."""
+    out = OUT / "SDL"
+    lib, stamp_file, stamp = out / "libSDL3.a", out / ".draughts-stamp", native.sdl_stamp()
+    if lib.exists() and stamp_file.exists() and stamp_file.read_text() == stamp:
+        return lib
+    if not shutil.which("cmake"):
+        sys.exit("SDL needs building, with CMake and the Wayland and X11 headers: run this once "
+                 "in the draughts-jammy distrobox (docs/development.md, \"Run on Linux\")")
+    src, build = native.copy_sdl(OUT / "SDL_src"), out / "build"
+    if build.exists():
+        shutil.rmtree(build)
+    generator = ["-G", "Ninja"] if shutil.which("ninja") else []
+    native.run("cmake", "-S", src, "-B", build, *generator, "-DCMAKE_BUILD_TYPE=Release", *SDL_OPTIONS)
+    # SDL's configure leaves out a video driver whose headers are missing, without failing.
+    config = next(build.glob("include-config-*/build_config/SDL_build_config.h")).read_text()
+    for driver in ["WAYLAND", "X11"]:
+        if f"#define SDL_VIDEO_DRIVER_{driver} 1" not in config:
+            sys.exit(f"SDL's configure found no {driver.title()} headers (docs/development.md)")
+    native.run("cmake", "--build", build)
+    shutil.copy2(build / "libSDL3.a", lib)
+    stamp_file.write_text(stamp)
+    return lib
+
+
 def patched_goose():
-    """build/linux/goose/: the release with libgoose_gfx.a rebuilt from the patched sources."""
+    """build/linux/goose/: the release with libgoose_gfx.a rebuilt from the patched sources,
+    and SDL built here (sdl())."""
     goose = OUT / "goose"
     if not goose.exists():
         if not (RELEASE / "goose").exists():
@@ -57,6 +94,7 @@ def patched_goose():
     lib = goose / "pkg/gfx/lib/libgoose_gfx.a"
     lib.unlink(missing_ok=True)
     native.run("ar", "rcs", lib, *[objs / f"{name}.o" for name in GFX_SOURCES])
+    shutil.copy2(sdl(), goose / "pkg/gfx/lib/libSDL3.a")
     return goose / "goose"
 
 

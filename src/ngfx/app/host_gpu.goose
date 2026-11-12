@@ -8,10 +8,13 @@ import gfx;
 import ngfx;
 
 // What patches/goose_gfx/0008 adds to gfx, which the release's gfx.goose doesn't
-// declare: open's flag for a window with no device, the window's native handle for ngfx,
+// declare: open's flag for a window with no device, the window's native handle for ngfx
+// (on Linux a Wayland surface or an X11 window, its display, and which of the two),
 // whether ngfx showed this frame, and whether the window wants one shown.
 let WINDOW_ONLY = 64;
 extern fn native_window() -> u64 = "gs_gfx_native_window";
+extern fn native_display() -> u64 = "gs_gfx_native_display";
+extern fn native_kind() -> i64 = "gs_gfx_native_kind";
 extern fn presented(shown: bool) = "gs_gfx_presented";
 extern fn needs_present() -> bool = "gs_gfx_needs_present";
 
@@ -22,7 +25,11 @@ extern fn needs_present() -> bool = "gs_gfx_needs_present";
 fn open(title: const u8[:], width: i64, height: i64, flags: i64, no_vsync: bool) {
     guard gfx::open(title, width, height, flags | WINDOW_ONLY) else { abort(str("gfx: ", gfx::error())); }
     let size = gfx::screen_size();
-    guard ngfx::open(native_window(), size.x, size.y, if no_vsync { ngfx::NO_VSYNC } else { 0 }) else { abort(str("ngfx: ", ngfx::error())); }
+    let sync = if no_vsync { ngfx::NO_VSYNC } else { 0 };
+    let display = native_display();    // Linux's, 0 elsewhere
+    let ok = if display != 0 { ngfx::open_linux(display, native_window(), native_kind(), size.x, size.y, sync) }
+             else { ngfx::open(native_window(), size.x, size.y, sync) };
+    guard ok else { abort(str("ngfx: ", ngfx::error())); }
 }
 
 fn close() {
