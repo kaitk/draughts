@@ -35,8 +35,8 @@ needs neither renderer over the other (the user, 2026-11-12).
   message (the user, 2026-11-11). The fallback matters there for GPUs with Vulkan but
   not ngfx's newer needs, `VK_EXT_descriptor_heap` above all.
 - **The hand-off.** The ngfx host opens gfx's window `WINDOW_ONLY` (patch 0008) and
-  aborts if `ngfx::open` fails. Falling back needs gfx to make its GPU device afterwards,
-  in the window it already opened.
+  aborts if `ngfx::open` fails. Falling back closes that window and lets gfx open its
+  own (step 5), rather than gfx making its device late in ngfx's window.
 
 ## How a device is told apart
 
@@ -93,16 +93,17 @@ is trying ngfx and falling back, not a list of devices kept here:
 5. **Choosing.** `--renderer auto|gfx|ngfx` (`auto` the default): `auto` tries ngfx and
    falls back to gfx in the same window; `ngfx` fails loudly where it can't run; Android
    is always gfx. The choice and why printed at start, for bug reports.
-   - **Order.** ngfx is tried before gfx makes any device: gfx opens the window
-     `WINDOW_ONLY`, `ngfx::open` runs, and only if it returns false does gfx make its
-     device in that window. Nothing of ngfx's (its device, instance, or surface) is left
-     open when gfx takes over, or Vulkan on Windows may refuse gfx a second swapchain on
-     the same window.
+   - **Order.** ngfx is tried first, in a hidden window of its own: gfx opens it
+     `WINDOW_ONLY` and hidden, `ngfx::open` runs, and if it returns false everything is
+     closed, the window too, and gfx starts as it does today, opening its own. No
+     hand-off of one window between the two (the user, 2026-11-12): gfx needs no late
+     device, and Vulkan never sees a second swapchain on a surface ngfx had; a window
+     opened twice before anything shows costs nothing seen.
    - **A device that passes but breaks.** The Vulkan extensions ngfx needs are new
      (2025 to 2026), and their drivers will have bugs that no check sees. `auto` writes a
      marker beside the settings before making ngfx's device and clears it after the
      first frame is shown; a start that finds the marker still there picks gfx and says
-     so. `--renderer ngfx` clears it, for trying again after a driver update. A failure
+     so. The marker names the GPU, its driver version, and the app's, as Firefox's DriverCrashGuard does, so a driver or app update tries ngfx again by itself; `--renderer ngfx` clears it too. A failure
      after the first frame (device lost) is not caught this way; record it if it shows.
    - **No setting in the UI.** The flag is for testing and bug reports; players get
      `auto`.
