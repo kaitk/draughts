@@ -254,14 +254,15 @@ Checked on the Mac (M1 Pro, macOS 26.3.1):
 
 ### Step 6 (task 073's checks), what is left
 
-- **The tablet** (gfx only): unlocked, the `rc` copy started on the 3D game, a screenshot,
-  `--bench 60` from logcat; then uninstalled (`adb uninstall io.github.kaitk.draughts.rc`).
-- **The iPhone 13 mini** (iOS 26): `scripts/ios.py src/app/draughts.goose --device --run
-  --ngfx` (signing asks the user's password), the start's line from the console (`auto:
-  gfx first on iOS`), then relaunched with `--renderer ngfx`; the same screens as the Mac.
-- **An iOS 16 to 25 device or a Mac before 26**, if one is at hand: `auto` and `--renderer
-  ngfx` both must say why ngfx can't run (`Metal 4 needs macOS or iOS 26`) and draw with
-  gfx; the binary must start at all (the weak links).
+- **The tablet** (gfx only), done 2026-11-12: the gfx-only APK as a beside-the-app copy
+  (`--id-suffix rc`, uninstalled after): the 3D game drawn as on the Mac, `--bench 60` 9.34
+  ms waited P50, 94.0 fps presented.
+- **The iPhone 13 mini** (iOS 26), done 2026-11-12: `scripts/ios.py ... --device --run
+  --ngfx` built at iOS 16, installed, and started; `auto` printed `renderer: gfx (auto: gfx
+  first on iOS)`, 3D `--bench 60` P50 9.43 ms, 119.9 fps; `--renderer ngfx` P50 15.72 ms
+  (the wait for a drawable, as before), 60.0 fps. The user then used it under ngfx.
+- **An iOS 16 to 25 device or a Mac before 26**: none at hand (the user, 2026-11-12), so
+  the old-system path stays unchecked.
 - **Windows (RTX 4090), the user**: `python scripts/ngfx.py src/app/draughts.goose`, then
   `build\ngfx\draughts.exe` alone (the line: `renderer: ngfx (auto: NVIDIA GeForce RTX
   4090|<driver>|0.2.0 <commit>)`), `--renderer gfx`, and with `DRAUGHTS_RENDERER_TEST=fail`
