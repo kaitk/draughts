@@ -26,10 +26,7 @@ fn open(title: const u8[:], width: i64, height: i64, flags: i64, no_vsync: bool)
     guard gfx::open(title, width, height, flags | WINDOW_ONLY) else { abort(str("gfx: ", gfx::error())); }
     let size = gfx::screen_size();
     let sync = if no_vsync { ngfx::NO_VSYNC } else { 0 };
-    let display = native_display();    // Linux's, 0 elsewhere
-    let ok = if display != 0 { ngfx::open_linux(display, native_window(), native_kind(), size.x, size.y, sync) }
-             else { ngfx::open(native_window(), size.x, size.y, sync) };
-    guard ok else { abort(str("ngfx: ", ngfx::error())); }
+    guard ngfx::open(native_window(), size.x, size.y, sync, native_display(), native_kind()) else { abort(str("ngfx: ", ngfx::error())); }
 }
 
 fn close() {

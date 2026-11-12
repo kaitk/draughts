@@ -43,7 +43,7 @@ well ("Required Vulkan device, memory, or display capabilities are unavailable")
 - Here: `kaitk/NoGraphicsAPI`'s `linux-presentation`: `DeviceDesc::display` and
   `window_system` (`wayland`, the default, or `xlib`) make a Wayland or an Xlib surface;
   `set_drawable_extent` gives a Wayland swapchain the window's size; 256 surface formats.
-  The fork's `ngfx` has it, and goose-ngfx's `ngfx::open_linux(display, window, kind, ...)`
+  The fork's `ngfx` has it, and goose-ngfx's `ngfx::open(window, w, h, flags, display, kind)`
   takes gfx's three (task 076). Draughts' ngfx build presents on Wayland and on XWayland
   on the RX 6800.
 - Upstream: `linux-presentation` to `sebbbi/NoGraphicsAPI` as one pull request, Wayland

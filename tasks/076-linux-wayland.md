@@ -65,8 +65,10 @@ and `window-only-x11`, which were never pushed, and is pushed now:
   (`76d8b29`) and `ngfx` (`bc34f35`), `main` (`15de5e0`) merging `upstream-series`;
   `test/api_check.py` passes but on `ngfx`, whose ASTC and BC constants were missing in
   `gfx.goose` before this.
-- **goose-ngfx** `de55ced`: `ngfx::open_linux(display, window, kind, w, h, flags)` in
-  place of `open_x11`, with `NATIVE_WAYLAND` and `NATIVE_X11` as gfx's, the swapchain
+- **goose-ngfx** `de55ced`, then `ngfx::open(window, w, h, flags, display, kind)` in place
+  of `open_x11` (the last two default to 0, so one call serves every platform; a separate
+  `open_linux` first made every caller choose between two, the user chose this
+  2026-11-12), with `NATIVE_WAYLAND` and `NATIVE_X11` as gfx's, the swapchain
   sized by `create_screen` on Wayland, and its four samples opening that way on Linux.
   Its tests built in the `goose` box (`run_tests.py --aot --cc clang`) and run on the
   host: all 26 pass, each test also under `GOOSE_NGFX_SYNC=full`, and `cube` and
@@ -75,7 +77,7 @@ and `window-only-x11`, which were never pushed, and is pushed now:
   findings), hence clang.
 - **Draughts:** `scripts/linux.py` builds SDL (above); `scripts/ngfx.py` builds on Linux,
   in the `goose` box, building its shader compiler instead of `goose run`ning it (SELinux),
-  and `host_gpu.goose` opens ngfx with `open_linux` where gfx gives a display.
+  and `host_gpu.goose` passes gfx's display and kind to `ngfx::open`.
 
 **SDL with Wayland.** The submodule's SDL (3.4.16, the Goose release's version) built with
 the Goose package's options and Wayland and X11 required, in the `draughts-jammy` box: 20

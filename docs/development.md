@@ -253,7 +253,7 @@ headers, slangc in `NGFX_SLANGC`, the Vulkan SDK's `setup-env.sh` sourced), and 
 on the host, whose Mesa 26.2 has `VK_EXT_descriptor_heap` (the box's 25.3 doesn't). It
 builds its shader compiler rather than `goose run`ning it, for SELinux. ngfx draws into
 gfx's window: on Wayland a `wl_surface`, through XWayland an X11 window
-(`ngfx::open_linux`). Windowed, `--frames` saves no screenshot under ngfx, since the
+(`ngfx::open` given gfx's display and kind). Windowed, `--frames` saves no screenshot under ngfx, since the
 window's image can't be read; `import -window Draughts shot.png` grabs an X11 window
 (ImageMagick, on the host), and nothing here grabs a Wayland one: the screenshot
 portal's non-interactive call waits on a permission dialog, and while it waits every
