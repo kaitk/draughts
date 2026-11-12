@@ -7,6 +7,10 @@
     python scripts/windows.py src/app/draughts.goose --release    build/windows/release/
                                                                   Draughts-VERSION-windows-x64.zip
 
+Every build puts windows/draughts.ico into the executable's resources afterwards
+(embed_icon), as a .rc file linked in would, which Goose's build has no key for: Explorer
+shows it, and SDL takes the first icon for the window and the taskbar.
+
 A release (docs/development.md, "Desktop releases") is the executable alone, as
 Draughts.exe, zipped: SDL and the C runtime are linked in, and Vulkan's loader is the
 system's. It is not signed.
@@ -26,6 +30,7 @@ import argparse
 import os
 import shutil
 import subprocess
+import struct
 import sys
 import zipfile
 from pathlib import Path
@@ -73,6 +78,46 @@ def patched_goose():
     return goose / "goose.exe"
 
 
+ICON = native.ROOT / "windows/draughts.ico"   # the iOS icon in a rounded square, 16 to 256 px
+
+
+def embed_icon(exe, ico=ICON):
+    """The .ico's images as the exe's RT_ICON resources 1..n and RT_GROUP_ICON 1 naming
+    them, through the system's resource update calls."""
+    import ctypes
+    from ctypes import wintypes
+    data = ico.read_bytes()
+    _, kind, count = struct.unpack_from("<HHH", data, 0)
+    if kind != 1:
+        sys.exit(f"{ico}: not an icon")
+    k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    k32.BeginUpdateResourceW.restype = wintypes.HANDLE
+    k32.BeginUpdateResourceW.argtypes = [wintypes.LPCWSTR, wintypes.BOOL]
+    k32.UpdateResourceW.restype = wintypes.BOOL
+    k32.UpdateResourceW.argtypes = [wintypes.HANDLE, ctypes.c_void_p, ctypes.c_void_p, wintypes.WORD,
+                                    ctypes.c_void_p, wintypes.DWORD]
+    k32.EndUpdateResourceW.restype = wintypes.BOOL
+    k32.EndUpdateResourceW.argtypes = [wintypes.HANDLE, wintypes.BOOL]
+
+    def update(h, kind, name, blob):
+        buf = ctypes.create_string_buffer(blob, len(blob))
+        if not k32.UpdateResourceW(h, kind, name, LANG, buf, len(blob)):
+            raise ctypes.WinError(ctypes.get_last_error())
+
+    RT_ICON, RT_GROUP_ICON, LANG = 3, 14, 0x0409
+    h = k32.BeginUpdateResourceW(str(exe), False)
+    if not h:
+        raise ctypes.WinError(ctypes.get_last_error())
+    group = struct.pack("<HHH", 0, 1, count)
+    for i in range(count):
+        w, ht, colors, _, planes, bits, size, offset = struct.unpack_from("<BBBBHHII", data, 6 + 16 * i)
+        update(h, RT_ICON, i + 1, data[offset:offset + size])
+        group += struct.pack("<BBBBHHIH", w, ht, colors, 0, planes, bits, size, i + 1)
+    update(h, RT_GROUP_ICON, 1, group)
+    if not k32.EndUpdateResourceW(h, False):
+        raise ctypes.WinError(ctypes.get_last_error())
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("program", type=Path)
@@ -83,6 +128,7 @@ def main():
     program = a.program.resolve()
     exe = OUT / f"{program.stem}.exe"
     native.run(patched_goose(), "build", "-o", exe, program.name, cwd=program.parent)
+    embed_icon(exe)
     if a.release:
         out = OUT / "release"
         out.mkdir(parents=True, exist_ok=True)

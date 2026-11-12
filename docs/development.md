@@ -616,7 +616,12 @@ source=Notarized Developer ID".
 **Windows.** `python scripts/windows.py src/app/draughts.goose --release` zips the
 executable alone as `Draughts.exe` into
 `build/windows/release/Draughts-VERSION-windows-x64.zip`: SDL and the C runtime are
-linked in, and Vulkan's loader is the system's. It is unsigned, so SmartScreen warns on
+linked in, and Vulkan's loader is the system's. Every Windows build carries the icon,
+`windows/draughts.ico` (the iOS icon in a rounded square, 16 to 256 px, made with
+ImageMagick's `-define icon:auto-resize`), put into the executable's resources after
+linking (`embed_icon`, the system's `UpdateResource`), since Goose's build file has no
+key for a `.rc`: Explorer shows it, and SDL takes the first icon for the window and the
+taskbar. It is unsigned, so SmartScreen warns on
 first run (More info → Run anyway); a code-signing certificate would end that.
 
 **The release.** With both zips at hand, tagged as the shared version (`native.VERSION_NAME`):
