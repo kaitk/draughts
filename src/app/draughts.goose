@@ -199,6 +199,12 @@ fn main() {
             render::toggle_aa(rd);
             dirty = true;
         }
+        // Alt and Enter, or F11, switch a desktop's window to fullscreen and back; the new
+        // size reaches the layout as a resize does.
+        if !out.typing && host::fullscreen_key() {
+            host::toggle_fullscreen();
+            dirty = true;
+        }
         // The keyboard: up while a name is typed, brought up again by each tap on the name.
         host::keyboard(h, out.typing, out.keyboard);
         // Home's way out ends the loop; the game is written below.

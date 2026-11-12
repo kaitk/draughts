@@ -444,6 +444,11 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   the game's and a puzzle's screen the way out, the board, and the play panel with the
   camera's buttons, coming back to the control each had last, the board to its cell. A
   screen of one group steps through its controls in the order declared.
+- **Fullscreen**: on a desktop, Alt and Enter or F11 switch the window to fullscreen at
+  the desktop's resolution, with no frame, and back (`host::fullscreen_key`, the fork's
+  `set_fullscreen`); the layout takes the new size as it does a resize. Enter with Alt
+  held doesn't press the focused control. `--size full` opens fullscreen. The ngfx build
+  has no fullscreen yet (`gfx_fork.c`'s stand-in).
 - **A gamepad** is the keys (`host::keys`): the D-pad or the left stick past half way
   moves (let go under a third), repeating as a held arrow does; A, the bottom button, is
   Enter, held too; B goes back as Escape does; the shoulder buttons are Shift and Tab

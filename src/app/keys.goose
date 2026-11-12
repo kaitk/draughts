@@ -136,9 +136,12 @@ fn keys(r: Repeat&, input: gui::Input&, now: f64) {
         }
     }
     input.step = step;
-    input.confirm = gfx::key_pressed("Return") || gfx::key_pressed("Keypad Enter") || gfx::key_pressed("Space")
+    // Enter with Alt is fullscreen's (host::fullscreen_key), not a press.
+    let alt = alt_held();
+    input.confirm = (!alt && (gfx::key_pressed("Return") || gfx::key_pressed("Keypad Enter"))) || gfx::key_pressed("Space")
                     || went & PAD_A != 0;
-    input.held = gfx::key_down("Return") || gfx::key_down("Keypad Enter") || gfx::key_down("Space") || down & PAD_A != 0;
+    input.held = (!alt && (gfx::key_down("Return") || gfx::key_down("Keypad Enter"))) || gfx::key_down("Space")
+                 || down & PAD_A != 0;
     if gfx::key_pressed("Tab") {
         input.tab = if gfx::key_down("Left Shift") || gfx::key_down("Right Shift") { -1 } else { 1 };
     } else if went & PAD_RB != 0 {

@@ -34,7 +34,8 @@ check each against Steamworks' pages when doing this.
 - [ ] Linux: a `scripts/linux.py` build that runs in the Steam Runtime (sniper), if Goose
       builds or ships for Linux.
 - [ ] Desktop play: the controls a mouse's size (done 2026-11-11, `gui::DESKTOP_DP`) and
-      the tile under the mouse lit (task 066); fullscreen by a setting and Alt+Enter, the window's size remembered,
+      the tile under the mouse lit (task 066); fullscreen by a setting and Alt+Enter (Alt+Enter
+      and F11 done 2026-11-12), the window's size remembered,
       a minimum window size, and every screen checked at 1080p, 1440p, and 4K with the
       mouse alone.
 - [ ] Controllers: every screen played with a gamepad alone, with a visible focus and

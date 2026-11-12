@@ -128,6 +128,22 @@ fn input(h: Host&, now: f64) -> gui::Input {
 // The A key, which switches the 3D board's antialiasing (task 071's comparison).
 fn aa_key() -> bool { gfx::key_pressed("A") }
 
+// The fork's borderless fullscreen at the desktop's resolution (kaitk/goose_gfx's
+// gfx.goose; the release's doesn't declare it, so it is declared here as keys.goose's
+// gamepad is, and gfx_fork.c stands in where the release's gfx or ngfx is linked).
+extern fn set_fullscreen(on: bool) -> bool = "gs_gfx_set_fullscreen";
+extern fn fullscreen() -> bool = "gs_gfx_fullscreen";
+
+// Alt and Enter, or F11, went down this frame: a desktop's way in and out of fullscreen.
+fn alt_held() -> bool { gfx::key_down("Left Alt") || gfx::key_down("Right Alt") }
+fn fullscreen_key() -> bool {
+    guard platform() == DESKTOP else { return false; }
+    return gfx::key_pressed("F11") || (alt_held() && (gfx::key_pressed("Return") || gfx::key_pressed("Keypad Enter")));
+}
+
+// Fullscreen if windowed, else back to the window.
+fn toggle_fullscreen() { set_fullscreen(!fullscreen()); }
+
 // Whether Android's back (SDL's "AC Back"; DraughtsActivity hands the system's back to
 // SDL as that key), Escape, or a gamepad's B (keys.goose) went down this frame.
 fn back(h: Host&) -> bool { gfx::key_pressed("AC Back") || gfx::key_pressed("Escape") || h.repeat.back }

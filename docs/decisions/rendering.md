@@ -253,6 +253,10 @@ are in git history before that day.
   board, and the play panel, which Tab and a gamepad's shoulder buttons step between,
   each coming back to where it was. Arrows alone would cross the board square by square
   to get from one panel to the other.
+- Fullscreen by Alt and Enter or F11 (2026-11-12), the keys Windows' and Linux's games
+  and browsers use, borderless at the desktop's resolution (the fork's `set_fullscreen`),
+  so switching changes no display mode. Enter with Alt is fullscreen's only, not a press
+  as well. A setting for it waits (task 064).
 - A gamepad through SDL's gamepad API in the program's C (2026-11-11), as the safe area
   is read: goose_gfx has none (docs/goose-findings.md). It feeds the same moves as the
   keys, so the screens know nothing of it. B is back, as Escape and Android's back are.

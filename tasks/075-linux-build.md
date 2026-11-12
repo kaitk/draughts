@@ -51,7 +51,7 @@ inside it.
       board's crash in WSLg either gone on the GPU or found and fixed. `--board 3d`
       headless and windowed; each `--aa` way.
 - [ ] Wayland and X11: SDL picks Wayland where there is one; also run with
-      `SDL_VIDEO_DRIVER=x11` (XWayland). Resizing, maximizing, `--size full`, a display
+      `SDL_VIDEO_DRIVER=x11` (XWayland). Resizing, maximizing, `--size full`, Alt+Enter and F11 in and out of fullscreen, a display
       scale of 125% or 150% (`draughts_display`'s scale and the layout), and the window
       closed by its X (the desktop asks before quitting, e4c15b9).
 - [ ] The icon: gfx names the app "Goose" (`SDL_HINT_APP_NAME`), and Wayland matches a
