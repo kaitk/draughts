@@ -460,7 +460,11 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
         let room = max(right.w, 0.0);
         stake(pl, g, gui::cut_top(right, min(56.0 * u, room)), min(min(if solved { 56.0 } else { 44.0 }, most), room / u),
               8.0, now);
-        if gui::labelled(g, panel::EYE_ID, next, gui::NEXT, 48.0, word, gui::HEADING, gui::STACKED, style, on) { ask = NEXT; }
+        // The arrow 48 dp where the tile holds it over the word with 4 dp to spare above and
+        // below; a desktop's shorter corner tile takes a smaller one, as the game's do.
+        let h .= g.faces[gui::HEADING];
+        let arrow = min(48.0, (next.w - h.ascent + h.descent) / u - 16.0);
+        if gui::labelled(g, panel::EYE_ID, next, gui::NEXT, arrow, word, gui::HEADING, gui::STACKED, style, on) { ask = NEXT; }
         return ask;
     }
     // Portrait: the goal at the left of the row and the stars at its right, over next.
