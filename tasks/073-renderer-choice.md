@@ -218,8 +218,8 @@ renderers in one executable), `c298f16` (iOS from 16.0), `db88532` (the choice a
   at gfx). The check before any window: on Apple `__builtin_available(macOS 26, iOS 26)`,
   `MTLCreateSystemDefaultDevice`, and `supportsFamily:` Apple7 and Metal4 through the
   Objective-C runtime; elsewhere the Vulkan loader (`vulkan-1.dll`, `libvulkan.so.1`),
-  `vkEnumerateInstanceVersion` at 1.4, an instance, and the first 1.4 device with the four
-  extensions. The marker's key is the GPU's name, the driver (Vulkan's `driverVersion`, the
+  `vkEnumerateInstanceVersion` at 1.4, an instance, and a 1.4 device (a discrete one first) with the three required
+  extensions (`VK_KHR_device_address_commands` is optional there). The marker's key is the GPU's name, the driver (Vulkan's `driverVersion`, the
   OS version on Apple), and the app's `VERSION_NAME` and commit, which `ngfx.py` writes into
   `renderer.c`. It goes when ngfx's first `present()` returns (headless reports none shown,
   so not on "shown").

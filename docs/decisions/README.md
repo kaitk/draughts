@@ -151,7 +151,7 @@ on the RTX 4090, task 074), gfx on the Mac and iOS (ngfx's MSAA frame 2% over gf
 M1 Pro, task 077) and on Linux (RADV ran ngfx 13% slower, task 076, to be measured again
 with MSAA); Android is gfx-only. Where it is ngfx, `auto` first asks what needs no window
 or device (macOS or iOS 26 and an Apple7 GPU with Metal 4; Vulkan's 1.4 loader and a
-1.4 GPU with NoGraphicsAPI's four extensions, `src/ngfx/app/renderer.c`), so a system
+1.4 GPU with NoGraphicsAPI's three required extensions, `src/ngfx/app/renderer.c`), so a system
 without them opens no window for ngfx at all. Then gfx's window opens hidden and
 `WINDOW_ONLY`, ngfx opens in it, and if it won't, both close and gfx starts as alone, so
 no window is handed from one renderer to the other. A marker beside the settings, naming
