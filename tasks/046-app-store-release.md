@@ -1,8 +1,8 @@
 # 046: Release on the App Store
 
 Status: in-progress (the listing and answers prepared, and the app meets the bundle's
-rules, 2026-11-09; the account's enrolment pending on a new personal Apple ID,
-2026-11-10; nothing submitted)
+rules, 2026-11-09; the account active, 2026-11-10; the app record made and 0.2.0 (1)
+uploaded for TestFlight, 2026-11-12; nothing submitted)
 
 Everything between task 043's development build and Draughts on the App Store for iPhone
 and iPad, in Games → Puzzle at 4+ (not the Kids category): no ads, no tracking, no
@@ -72,9 +72,11 @@ Each is a store rule the app doesn't meet yet:
       taps after a resize, and leaving and coming back all work. Small windows waste or
       lose room on three screens and the puzzles: task 050, done 2026-11-09 (archived),
       checked by the user in the simulator at the smallest window.
-- [ ] **A distribution build:** an `.ipa` signed with an App Store distribution
-      certificate and profile, uploaded with Transporter or `xcrun altool --upload-app`;
-      built with Xcode 26 and the iOS 26 SDK (required since 2026-04-28).
+- [x] **A distribution build**, 2026-11-12: `scripts/ios.py --release --upload` signs
+      with the Apple Distribution identity and the App Store profile, makes the `.ipa`,
+      and uploads it with `altool` and an API key (docs/development.md, "The App Store
+      build"); Xcode 26.4, the iOS 26.4 SDK. 0.2.0 (1) passed `altool --validate-app`
+      and was uploaded 2026-11-12.
 - [x] **No links out stays true:** no `SDL_OpenURL`, no rating prompt, no share sheet
       (checked 2026-11-09: none of `OpenURL`, `openURL`, `SKStoreReview`, `requestReview`,
       `UIActivityViewController`, `ACTION_SEND`, `ACTION_VIEW` in `src/`, `ios/`, `android/`,
@@ -109,13 +111,13 @@ Each is a store rule the app doesn't meet yet:
 
 ## What remains for the user
 
-- **App Store Connect:** register the bundle id (Certificates,
-  Identifiers & Profiles), then the app record: name "Draughts" (or the fallback),
-  English (U.K.), a SKU; App Information (category, URLs, content rights, the trader
+- **App Store Connect:** the bundle id, the App Store profile, an API key for uploads,
+  and the app record (name "Draughts", English (U.K.), iOS only, macOS addable later)
+  done 2026-11-12. Left: App Information (category, URLs, content rights, the trader
   status); the listing and answers pasted from `store/app-store.md`; the screenshots; the
   review contact (a phone, not shown publicly).
-- **Signing:** an App Store provisioning profile for the bundle id, beside the Apple
-  Distribution certificate already on the Mac (2026-11-10), neither in git.
+- **The version:** App Store Connect made the record's version 1.0; it must match the
+  build's `VERSION_NAME` (0.2.0) when submitting, so one of them changes.
 - **TestFlight** on the iPhone 13 mini (an internal tester, no beta review) before
   submitting.
 

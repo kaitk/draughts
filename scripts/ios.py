@@ -11,6 +11,9 @@
                                                  build for the attached iPhone, sign, install, start
     scripts/ios.py src/app/draughts.goose --device --run --ngfx
                                                  the same on goose-ngfx (task 065), in its place
+    scripts/ios.py src/app/draughts.goose --release [--upload]
+                                                 build/ios/draughts/Draughts.ipa, signed for the
+                                                 App Store, and uploaded to App Store Connect
 
 Steps, as scripts/android.py's: Goose writes the program's C and the runtime's C;
 goose_gfx's sources are copied from the submodule, and SDL is copied and
@@ -33,6 +36,7 @@ DRAUGHTS_IOS_DEVICE (a device's name, identifier, or UDID), DRAUGHTS_IOS_TEAM (t
 signing team's id or Apple ID, when the Mac has several development identities).
 """
 import argparse
+import hashlib
 import json
 import os
 import plistlib
@@ -51,6 +55,10 @@ from native import ROOT, VERSION_NAME, app_names, copy_sources, goose_to_c, run,
 # program gets BUNDLE_ID.<name>. CFBundleShortVersionString is native.VERSION_NAME.
 BUNDLE_ID = "io.github.kaitk.draughts.app"
 BUILD_NUMBER = "1"        # CFBundleVersion, raised for every upload
+# A release build's App Store profile and the upload's API key ids, outside the repo
+# (docs/development.md, "Release builds"); DRAUGHTS_IOS_PROFILE, DRAUGHTS_ASC_PROPERTIES.
+RELEASE_PROFILE = "~/.config/draughts/draughts-app-store.mobileprovision"
+UPLOAD_PROPERTIES = "~/.config/draughts/app-store-connect.properties"
 MIN_IOS = "16.0"
 # Each data stack's address space. Goose reserves 2 GB a stack by default, and the app
 # has 26 (goose build --stacks): 52 GB, more than an iOS process may map. 128 MB each is
@@ -146,6 +154,11 @@ def write_bundle(app, exe, app_id, title, device, min_ios=MIN_IOS, label=""):
     platform = "iPhoneOS" if device else "iPhoneSimulator"
     sdk = "iphoneos" if device else "iphonesimulator"
     sdk_version = run("xcrun", "--sdk", sdk, "--show-sdk-version", capture=True).strip()
+    sdk_build = run("xcrun", "--sdk", sdk, "--show-sdk-build-version", capture=True).strip()
+    # Xcode's version and build, as Xcode writes them ("2640", "17E192"): App Store
+    # Connect reads them to hold uploads to its minimum Xcode and SDK.
+    xcode = run("xcodebuild", "-version", capture=True).split()
+    major, minor = (xcode[1].split(".") + ["0", "0"])[:2]
     info = {
         "CFBundleDevelopmentRegion": "en",
         "CFBundleExecutable": title,
@@ -161,6 +174,12 @@ def write_bundle(app, exe, app_id, title, device, min_ios=MIN_IOS, label=""):
         "DTPlatformName": sdk,
         "DTSDKName": f"{sdk}{sdk_version}",
         "DTPlatformVersion": sdk_version,
+        "DTPlatformBuild": sdk_build,
+        "DTSDKBuild": sdk_build,
+        "DTXcode": f"{int(major):02d}{minor}0",
+        "DTXcodeBuild": xcode[-1],
+        "DTCompiler": "com.apple.compilers.llvm.clang.1_0",
+        "BuildMachineOSBuild": run("sw_vers", "-buildVersion", capture=True).strip(),
         "LSRequiresIPhoneOS": True,
         "MinimumOSVersion": min_ios,
         "UIDeviceFamily": [1, 2],
@@ -346,6 +365,63 @@ def provision(team, app_id, target):
         "-quiet", "build")
 
 
+def release_signing(app, out, app_id):
+    """Signs the bundle for the App Store: the App Store profile (RELEASE_PROFILE, or
+    DRAUGHTS_IOS_PROFILE), embedded, and the Apple Distribution identity whose certificate
+    the profile names; the entitlements the app needs from the profile's, without its
+    keychain wildcard. Neither file is in the repo."""
+    path = Path(os.environ.get("DRAUGHTS_IOS_PROFILE", RELEASE_PROFILE)).expanduser()
+    if not path.exists():
+        sys.exit(f"no App Store profile at {path} (docs/development.md, \"Release builds\")")
+    prof = plistlib.loads(run("security", "cms", "-D", "-i", path, capture=True).encode())
+    ents = prof["Entitlements"]
+    team = ents["com.apple.developer.team-identifier"]
+    if ents["application-identifier"] != f"{team}.{app_id}" or prof.get("ProvisionedDevices") \
+            or ents.get("get-task-allow"):
+        sys.exit(f"{path} isn't an App Store profile for {app_id}")
+    if prof["ExpirationDate"].timestamp() < time.time():
+        sys.exit(f"{path} expired: make another (Certificates, Identifiers & Profiles)")
+    # The profile's certificates' SHA-1s; the keychain's identity that is one of them.
+    certs = {hashlib.sha1(c).hexdigest().upper() for c in prof["DeveloperCertificates"]}
+    out_ids = run("security", "find-identity", "-v", "-p", "codesigning", capture=True)
+    sha1 = next((h for h in re.findall(r"([0-9A-F]{40}) \"Apple Distribution", out_ids)
+                 if h in certs), None)
+    if not sha1:
+        sys.exit(f"no Apple Distribution identity in the keychain for {path}'s certificate")
+    shutil.copy(path, app / "embedded.mobileprovision")
+    entitlements = out / "release-entitlements.plist"
+    with open(entitlements, "wb") as f:
+        plistlib.dump({k: ents[k] for k in ("application-identifier",
+                      "com.apple.developer.team-identifier", "get-task-allow",
+                      "beta-reports-active") if k in ents}, f)
+    run("codesign", "--force", "--sign", sha1, "--entitlements", entitlements, app)
+    run("codesign", "--verify", "--deep", "--strict", app)
+
+
+def ipa(app, out):
+    """The .ipa App Store Connect takes: the bundle in Payload/, zipped."""
+    work = out / "ipa"
+    if work.exists():
+        shutil.rmtree(work)
+    (work / "Payload").mkdir(parents=True)
+    run("ditto", app, work / "Payload" / app.name)
+    dest = out / app.with_suffix(".ipa").name
+    dest.unlink(missing_ok=True)
+    run("ditto", "-c", "-k", "--norsrc", "--keepParent", work / "Payload", dest)
+    return dest
+
+
+def upload(ipa_path):
+    """Uploads the .ipa to App Store Connect with the API key whose ids
+    UPLOAD_PROPERTIES holds; altool finds the key itself in ~/.private_keys/."""
+    props = Path(os.environ.get("DRAUGHTS_ASC_PROPERTIES", UPLOAD_PROPERTIES)).expanduser()
+    if not props.exists():
+        sys.exit(f"no {props}: key_id= and issuer_id= of an App Store Connect API key")
+    conf = dict(line.split("=", 1) for line in props.read_text().split() if "=" in line)
+    run("xcrun", "altool", "--upload-app", "-t", "ios", "-f", ipa_path,
+        "--apiKey", conf["key_id"], "--apiIssuer", conf["issuer_id"])
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("program", type=Path)
@@ -360,7 +436,17 @@ def main():
     ap.add_argument("--ngfx", action="store_true",
                     help="draw through goose-ngfx (NGFX, NGFX_SLANGC; scripts/ngfx.py), "
                          "in place of the gfx build, under its id; iOS 26 and later")
+    ap.add_argument("--release", action="store_true",
+                    help="build for the App Store: signed with the App Store profile, as an .ipa")
+    ap.add_argument("--upload", action="store_true",
+                    help="with --release, upload the .ipa to App Store Connect")
     args = ap.parse_args()
+    if args.release:
+        if args.run or args.shot or args.console or args.ngfx:
+            sys.exit("a release build can't be run here: TestFlight installs it")
+        args.device = True
+    elif args.upload:
+        sys.exit("--upload needs --release")
     program = args.program.resolve()
     name = program.stem
     app_id = BUNDLE_ID if name == "draughts" else f"{BUNDLE_ID}.{name}"
@@ -378,7 +464,7 @@ def main():
         # NoGraphicsAPI's Metal 4.
         min_ios = "26.0"
         ngfx_cmake = [f"-DGOOSE_NGFX={ngfx.NGFX}", f"-DGOOSE_H_DIR={goose_h(ngfx.NGFX)}"]
-    plat = "device" if args.device else "sim"
+    plat = "release" if args.release else "device" if args.device else "sim"
     gen, native = out / "gen", out / plat / "native"
 
     # 1. Goose to C.
@@ -403,7 +489,9 @@ def main():
     # 3. The bundle, signed.
     app = out / plat / f"{title}.app"
     write_bundle(app, native / "main", app_id, title, args.device, min_ios, label)
-    if args.device:
+    if args.release:
+        release_signing(app, out / plat, app_id)
+    elif args.device:
         # The development identity, its team's profile for the app on this device (made
         # once through Xcode if missing), embedded, and its entitlements signed in.
         sha1, team = identity()
@@ -431,6 +519,12 @@ def main():
                            cwd=ROOT).returncode != 0
     app.with_suffix(".commit").write_text(head + (" dirty" if dirty else "") + "\n")
     print(f"{app} ({sum(f.stat().st_size for f in app.rglob('*') if f.is_file()) // 1024} KB)")
+    if args.release:
+        dest = ipa(app, out)
+        print(f"{dest} ({dest.stat().st_size // 1024} KB), {VERSION_NAME} ({BUILD_NUMBER})")
+        if args.upload:
+            upload(dest)
+        return
 
     # 4. Install and start it on the device.
     flags = args.args.split()

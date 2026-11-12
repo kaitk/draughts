@@ -601,6 +601,35 @@ image on a drive kept elsewhere (on a Mac, `hdiutil create -encryption AES-256
 backup by restoring it to a scratch folder and running `keytool -list -keystore
 upload-key.jks` with the password from its properties file.
 
+### The App Store build
+
+```sh
+scripts/ios.py src/app/draughts.goose --release            # build/ios/draughts/Draughts.ipa
+scripts/ios.py src/app/draughts.goose --release --upload   # and upload it to App Store Connect
+```
+
+A release build is the device build signed for the App Store: the bundle in
+`build/ios/draughts/release/`, with the App Store profile embedded, signed by the Apple
+Distribution identity whose certificate the profile names, and zipped into `Payload/` as
+the `.ipa`. Its entitlements are the profile's but for its keychain wildcard:
+`get-task-allow` false and `beta-reports-active` true, which TestFlight needs. The
+Info.plist names the SDK and Xcode it was built with (`DTSDKBuild`, `DTXcode`), which App
+Store Connect checks against its minimum. Raise `BUILD_NUMBER` in `scripts/ios.py` for
+every upload; App Store Connect refuses one it has seen for the version. A build appears
+in App Store Connect's TestFlight tab once Apple has processed it, within an hour.
+
+Nothing of the signing or the upload is in the repo:
+
+| File | What it is |
+| --- | --- |
+| `~/.config/draughts/draughts-app-store.mobileprovision` | An App Store Connect distribution profile for the bundle id, made under Certificates, Identifiers & Profiles → Profiles with the Apple Distribution certificate; valid a year |
+| `~/.config/draughts/app-store-connect.properties` | `key_id=` and `issuer_id=` of an App Store Connect API team key (Users and Access → Integrations, Developer access is enough) |
+| `~/.private_keys/AuthKey_<key id>.p8` | The key itself, downloadable once, where `altool` looks for it |
+
+`DRAUGHTS_IOS_PROFILE` and `DRAUGHTS_ASC_PROPERTIES` point the script at others.
+`xcrun altool --validate-app -t ios -f build/ios/draughts/Draughts.ipa --apiKey <key id>
+--apiIssuer <issuer id>` has Apple check an `.ipa` without uploading it.
+
 ## Desktop releases
 
 The Mac, Windows, and Linux apps go out as files on a GitHub release, built on our own
