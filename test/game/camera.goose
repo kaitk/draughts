@@ -5,8 +5,8 @@
 // the zoom framing the playing field in the room clear of the panels and the buttons, in
 // the top view too; the showcase, whose drags turn and tip the camera and move no piece,
 // its angle kept once it is off, with the view button's dot, and a move tapped through
-// that angle; a game against a friend turning the board 180° after each move, the
-// showcase's angle easing back with it, black's move tapped through the turned board, and
+// that angle; a game against a friend turning the board 180° after each move, keeping
+// its size (its bounds as at rest mid-turn), the showcase's angle easing back with it, black's move tapped through the turned board, and
 // a new game putting it back; against the computer no turn; a puzzle's buttons.
 import std;
 import vec;

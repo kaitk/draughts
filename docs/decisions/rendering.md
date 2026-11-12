@@ -495,6 +495,12 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
 - Spring's default 3D look is `looks::elven`, chosen on the tablet on 2026-11-09. The
   defaults of `--wood`, `--marble`, and `--summer` were settled the same day (task 039),
   the other models kept beside them.
+- Against a friend the board's 180° turn keeps its size and eases on a sine over 0.7 s
+  (2026-11-12, tried on the tablet). It was a cubic ease, refitted at each angle: it
+  crept, then swung through the middle at 390° a second while shrinking to keep its
+  corners clear of the panels and growing back, which drew the eye. Fitted as at rest,
+  its corners pass over the panels for a moment. 1.1 s and 0.8 s were tried and felt
+  long once the size held still.
 
 **States and captures**
 

@@ -448,16 +448,18 @@ fn field_at(cam: view3d::Camera, n: i64, room: float4, f: float4, b: float4, k: 
     return v;
 }
 
-// The camera as the rig has it at `now` (board/rig.goose): fitted at the view's angle and
-// the board's turn as the layout places the board (so it shrinks mid-turn to keep clear
-// of the panels), zoomed by the zoom's share, then turned and tipped by the showcase,
-// which keeps the fit. At rest it is the rest view, turned. The flat layout stays.
+// The camera as the rig has it at `now` (board/rig.goose): fitted at the view's angle as
+// the layout places the board, zoomed by the zoom's share, then turned by the hot-seat
+// turn and tipped by the showcase, which keep the fit: the board stays its size through
+// a turn, its corners passing over the panels for a moment (2026-11-12; refitted at each
+// angle it shrank and grew back mid-turn, which drew the eye). At rest it is the rest
+// view, turned. The flat layout stays.
 fn aim(l: Layout&, r: rig::Rig&, now: f64) {
     guard l.three else { return; }
     let n = l.rest.n;
-    let fit = rig::base(r, l.pitch, now);
-    let half = fit.turn - 180.0 * floor(fit.turn / 180.0);
-    var v = if fit.pitch == l.pitch && half == 0.0 { l.rest } else { settle(l, fit, n) };
+    var fit = rig::base(r, l.pitch, now);
+    fit.turn = 0.0;
+    var v = if fit.pitch == l.pitch { l.rest } else { settle(l, fit, n) };
     let z = if l.room.z > 0.0 { rig::value(r.zoom, now) } else { 0.0 };
     if z > 0.0 {
         let q = zoomed(l, fit, n);

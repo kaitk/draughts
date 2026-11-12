@@ -13,7 +13,7 @@ import vec;
 
 let TOP_PITCH: f32 = 74.0;  // the top view's angle, degrees down
 let EASE = 0.6;             // seconds the view, the zoom, and the showcase's way back take
-let TURN = 0.7;             // and the hot-seat turn
+let TURN = 0.7;             // the hot-seat turn, on its gentler curve (soft)
 let SWING: f32 = 35.0;      // the showcase turns the board this far either way,
 let LOW:   f32 = 35.0;      // and tips it between these angles down
 let HIGH:  f32 = 80.0;
@@ -25,6 +25,8 @@ struct Ease {
     to:     f32 = 0.0,
     start:  f64 = 0.0,
     length: f64 = 0.0,
+    soft:   bool = false,   // on a sine curve, whose middle is half as fast again as its
+                            // average, not three times as the cubic's
 }
 
 // The ease's curve, 0..1 over 0..1: cubic in, then cubic out, as the prototype's.
@@ -34,10 +36,15 @@ fn curve(u: f64) -> f64 {
     return 1.0 - 0.5 * k * k * k;
 }
 
+// The soft ease's curve: a half cosine, gentle in and out (the hot-seat turn: on the cubic
+// over 0.7 s it crept, then swung through the middle at 390° a second, 2026-11-12).
+fn soft_curve(u: f64) -> f64 { 0.5 - 0.5 * cos(PI * u) }
+
 fn value(e: Ease, now: f64) -> f32 {
     guard e.length > 0.0 && now < e.start + e.length else { return e.to; }
     let u = clamp((now - e.start) / e.length, 0.0, 1.0);
-    return e.from + (e.to - e.from) * curve(u) as f32;
+    let k = if e.soft { soft_curve(u) } else { curve(u) };
+    return e.from + (e.to - e.from) * k as f32;
 }
 
 fn moving(e: Ease, now: f64) -> bool { e.from != e.to && e.length > 0.0 && now < e.start + e.length }
@@ -66,7 +73,7 @@ fn put(e: Ease&, v: f32) {
 struct Rig {
     top:      Ease   = Ease {},
     zoom:     Ease   = Ease {},
-    turn:     Ease   = Ease {},
+    turn:     Ease   = Ease { soft: true, .. },
     swing:    Ease   = Ease {},
     tilt:     Ease   = Ease {},
     showcase: bool   = false,

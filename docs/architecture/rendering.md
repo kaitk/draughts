@@ -1152,9 +1152,10 @@ board's does and the backdrop over it as opaque as the blur.
   while on, in which a drag anywhere off the UI turns the board ±35° and tips it 35° to
   80° down instead of moving pieces; off keeps the angle, and play goes on through it.
   **Against a friend** the board turns 180° after each move to face the side to move
-  (0.7 s, eased, once the move has shown), the light keeping its place on screen (the
-  renderer turns it with the board, `render3d::turn_light`, and draws the shadow map
-  again) and the board shrinking a little mid-turn to clear the panels; against the
+  (0.7 s on a sine ease, `rig::Ease.soft`, once the move has shown), the light keeping
+  its place on screen (the renderer turns it with the board, `render3d::turn_light`, and
+  draws the shadow map again) and the board keeping its size, fitted as at rest, its
+  corners passing over the panels mid-turn; against the
   computer it stays turned to the child. A new game or a hot-seat turn puts the showcase's
   angle back. The camera is plain data with its eases in `board/rig.goose` (`rig::Rig`);
   `panel::aim` fits it each frame (at rest, the rest view as it is), while the flat square
