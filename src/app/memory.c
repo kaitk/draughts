@@ -90,8 +90,25 @@ int64_t draughts_threads(draughts_text text) {
     vm_deallocate(mach_task_self(), (vm_address_t)threads, n * sizeof(thread_act_t));
     return len;
 }
+#elif defined(__linux__) && !defined(__ANDROID__)
+#include <stdio.h>
+
+// On Linux the footprint is the proportional set size, as Android's PSS: the pages the
+// process alone holds, and its share of those it shares.
+double draughts_footprint_mb(void) {
+    FILE *f = fopen("/proc/self/smaps_rollup", "r");
+    if (!f) return -1.0;
+    char line[128];
+    double kb = -1.0;
+    while (fgets(line, sizeof line, f))
+        if (sscanf(line, "Pss: %lf kB", &kb) == 1) break;
+    fclose(f);
+    return kb < 0.0 ? -1.0 : kb / 1024.0;
+}
 #else
 double draughts_footprint_mb(void) { return -1.0; }
+#endif
+#if !defined(__APPLE__)
 #include <stdint.h>
 typedef struct { uint8_t *data; int64_t len; } draughts_text;
 int64_t draughts_threads(draughts_text text) { (void)text; return 0; }
