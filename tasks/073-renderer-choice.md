@@ -95,6 +95,16 @@ is trying ngfx and falling back, not a list of devices kept here:
 5. **Choosing.** `--renderer auto|gfx|ngfx` (`auto` the default): `auto` tries ngfx and
    falls back to gfx in the same window; `ngfx` fails loudly where it can't run; Android
    is always gfx. The choice and why printed at start, for bug reports.
+   - **A check before any window** (the user, 2026-11-12): what can be asked without a
+     window or a device is asked first, and a system that fails it goes straight to gfx
+     with no window opened. Metal: macOS or iOS 26 (`@available`), then
+     `MTLCreateSystemDefaultDevice()` and `supportsFamily:` Apple7 and Metal4. Vulkan: the
+     loader's `vkEnumerateInstanceVersion` at 1.4, then a physical device whose
+     `vkEnumerateDeviceExtensionProperties` lists `VK_EXT_descriptor_heap`,
+     `VK_KHR_device_address_commands`, `VK_KHR_shader_untyped_pointers`, and
+     `VK_EXT_mesh_shader` (no device made). Only a system that passes opens the hidden
+     window below, for what needs a surface and a device (swapchain maintenance 1, the
+     core features, `ngfx::open` itself).
    - **Order.** ngfx is tried first, in a hidden window of its own: gfx opens it
      `WINDOW_ONLY` and hidden, `ngfx::open` runs, and if it returns false everything is
      closed, the window too, and gfx starts as it does today, opening its own. No
@@ -195,7 +205,8 @@ next starts:
    beside ngfx, done 2026-11-12: ngfx's frame takes 6% less GPU time than gfx's
    without antialiasing, and the Mac's whole gap is SMAA against MSAA (task 077).
 2. **MSAA in ngfx** (task 077, step 2): the NoGraphicsAPI fork, then goose-ngfx, then
-   the ngfx build's `--aa msaa`, its default if it wins on the Mac. Windows and Linux
+   the ngfx build's `--aa msaa`, its default if it wins on the Mac. Done on the Mac
+   2026-11-12: 2% over gfx's frame, 10% under SMAA's, and its default (task 077). Windows and Linux
    measured by the user (`scripts/windows_perf.py`, task 076's benches), with step 3's
    Windows shots in the same sitting.
 3. **The pull requests, one at a time, sent by the user:** NoGraphicsAPI's
