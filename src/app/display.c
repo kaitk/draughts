@@ -13,7 +13,10 @@
 // pixels a point, on a Mac's Retina screen 2.
 //
 // The GPU driver: Vulkan on Windows, as on Android, which SDL would otherwise pass over
-// for Direct3D 12 (docs/architecture/README.md).
+// for Direct3D 12 (docs/architecture/README.md). The app's id and name on Linux: Wayland's
+// app id and X11's window class, which the desktop matches to the menu's
+// io.github.kaitk.draughts.desktop for the window's icon, and the name gfx would give as
+// "Goose" (scripts/linux.py).
 
 #include "platform.h"
 #include <stdbool.h>
@@ -24,13 +27,20 @@ typedef struct { int x, y, w, h; } SDL_Rect;
 
 #if defined(_WIN32)
 extern bool SDL_SetHint(const char *name, const char *value);
+#elif defined(__linux__) && !defined(__ANDROID__)
+extern bool SDL_SetHintWithPriority(const char *name, const char *value, int priority);
+enum { SDL_HINT_OVERRIDE = 2 };    // over gfx's own SDL_SetHint of the name
 #endif
 
 // Asks SDL for the GPU driver the app draws with, before gfx opens the window: Vulkan on
-// Windows; elsewhere the platform's only one (Metal on Apple's, Vulkan on Android).
+// Windows; elsewhere the platform's only one (Metal on Apple's, Vulkan on Android and
+// Linux). On Linux it also names the app.
 void draughts_choose_gpu(void) {
 #if defined(_WIN32)
     SDL_SetHint("SDL_GPU_DRIVER", "vulkan");
+#elif defined(__linux__) && !defined(__ANDROID__)
+    SDL_SetHintWithPriority("SDL_APP_ID", "io.github.kaitk.draughts", SDL_HINT_OVERRIDE);
+    SDL_SetHintWithPriority("SDL_APP_NAME", "Draughts", SDL_HINT_OVERRIDE);
 #endif
 }
 

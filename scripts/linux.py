@@ -15,7 +15,8 @@ libm are the system's, so the executable runs on a glibc as new as the one it wa
 against, or newer: build a release on the oldest system it should run on.
 
 A release (docs/development.md, "Desktop releases") is a folder, Draughts/, holding the
-executable, a .desktop file, and the icon, tarred. It is not signed.
+executable, a .desktop file, the icon, and install.sh, which puts the three in ~/.local
+for the desktop's menu, tarred. It is not signed.
 
 The copy is made once; delete build/linux/goose/ after the release changes. The compiler
 is cc, or CC; the release is build/goose-v2026.4-linux-x64/, or GOOSE_RELEASE.
@@ -34,7 +35,8 @@ RELEASE = Path(os.environ.get("GOOSE_RELEASE", native.ROOT / "build/goose-v2026.
 OUT = native.ROOT / "build/linux"
 # The release's libgoose_gfx.a holds these four.
 GFX_SOURCES = ["gfx_device", "gfx_resources", "gfx_pipeline", "gfx_draw"]
-ICON = native.ROOT / "ios/icon-1024.png"
+APP_ID = "io.github.kaitk.draughts"    # SDL's app id too (src/app/display.c)
+ICON = native.ROOT / f"linux/{APP_ID}.png"    # windows/draughts.ico's 256 px
 
 
 def patched_goose():
@@ -58,18 +60,40 @@ def patched_goose():
     return goose / "goose"
 
 
-DESKTOP = """[Desktop Entry]
+DESKTOP = f"""[Desktop Entry]
 Type=Application
 Name=Draughts
 Exec=draughts
-Icon=draughts
+Icon={APP_ID}
+StartupWMClass={APP_ID}
 Categories=Game;BoardGame;
+"""
+
+# The executable to ~/.local/bin, and the .desktop file, its Exec made the full path, and
+# the icon where the desktop's menu finds them; run again to update, or with --remove.
+INSTALL = f"""#!/bin/sh
+set -e
+cd "$(dirname "$0")"
+data="${{XDG_DATA_HOME:-$HOME/.local/share}}"
+bin="$HOME/.local/bin/draughts"
+app="$data/applications/{APP_ID}.desktop"
+icon="$data/icons/hicolor/256x256/apps/{APP_ID}.png"
+if [ "$1" = --remove ]; then
+    rm -f "$bin" "$app" "$icon"
+    echo "Removed Draughts. Its settings and saved game stay in $data/kaitk/draughts/."
+    exit 0
+fi
+mkdir -p "$(dirname "$bin")" "$(dirname "$app")" "$(dirname "$icon")"
+cp draughts "$bin"
+sed "s|^Exec=.*|Exec=$bin|" {APP_ID}.desktop > "$app"
+cp {APP_ID}.png "$icon"
+echo "Installed Draughts in $bin, with the menu's entry and icon."
 """
 
 
 def release(exe):
     """build/linux/release/Draughts-VERSION-linux-x64.tar.gz: Draughts/ with the executable,
-    the .desktop file, and the icon."""
+    the .desktop file, the icon, and install.sh."""
     out = OUT / "release"
     folder = out / "Draughts"
     if folder.exists():
@@ -77,13 +101,14 @@ def release(exe):
     folder.mkdir(parents=True)
     shutil.copy2(exe, folder / "draughts")
     native.run("strip", folder / "draughts")
-    (folder / "draughts.desktop").write_text(DESKTOP)
-    shutil.copy2(ICON, folder / "draughts.png")
+    (folder / f"{APP_ID}.desktop").write_text(DESKTOP)
+    shutil.copy2(ICON, folder / ICON.name)
+    (folder / "install.sh").write_text(INSTALL)
     tarred = out / f"Draughts-{native.VERSION_NAME}-linux-x64.tar.gz"
     def owned(info):    # root's, 755 or 644, whatever the folder's own say (a Windows mount's 777)
         info.uid = info.gid = 0
         info.uname = info.gname = "root"
-        info.mode = 0o755 if info.isdir() or info.name.endswith("/draughts") else 0o644
+        info.mode = 0o755 if info.isdir() or info.name.endswith(("/draughts", ".sh")) else 0o644
         return info
 
     with tarfile.open(tarred, "w:gz") as t:

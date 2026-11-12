@@ -210,11 +210,13 @@ Mac's only. Android builds from Windows too (Run on Android, below).
 
 ## Run on Linux
 
-Built in WSL's Ubuntu 26.04 and an Ubuntu 22.04 chroot on 2026-11-12 (task 075), on Mesa's
-software Vulkan (llvmpipe); not yet on a Linux machine's GPU. It needs a C compiler that
-has `#embed` (GCC 15 or Clang 19 and later), Python 3, and Vulkan's loader:
+Built in WSL's Ubuntu 26.04 and an Ubuntu 22.04 chroot, and on the Bazzite PC (Fedora 44
+based, GNOME 50, an RX 6800 on RADV, GCC 16) on 2026-11-12 (task 075). It needs a C
+compiler that has `#embed` (GCC 15 or Clang 19 and later), Python 3, Vulkan's loader, and
+the submodules' own submodules (goose_gfx's SDL headers):
 
 ```sh
+git submodule update --init --recursive
 mkdir -p build && cd build
 curl -sLO https://github.com/aardappel/goose/releases/download/v2026.4/goose-v2026.4-linux-x64.tar.gz
 tar xzf goose-v2026.4-linux-x64.tar.gz && rm goose-v2026.4-linux-x64.tar.gz
@@ -229,6 +231,10 @@ release's SDL statically, so the program's C calls SDL directly (`src/app/platfo
 a Linux executable exports none of SDL's functions for `dlsym` to find. `CC` picks the
 compiler for both gfx and Goose (`GOOSE_CC`). The settings and the saved game are in
 `~/.local/share/kaitk/draughts/`. The flags are the Mac's.
+
+The release's SDL has no Wayland, so on a Wayland desktop the app runs through XWayland
+([findings](goose-findings.md)). On Fedora and Bazzite SELinux refuses TinyCC's code in
+memory, so `test/run_tests.py` fails every test there: run `test/run_tests.py --build`.
 
 ## Test the rules
 
@@ -681,8 +687,14 @@ certificate would end that. Tested on Windows 11 on 2026-11-12: the 0.1.1 zip is
 both boards.
 
 **Linux.** `scripts/linux.py src/app/draughts.goose --release` tars `Draughts/`, holding
-the executable `draughts` (stripped), `draughts.desktop`, and the icon `draughts.png`
-(`ios/icon-1024.png`), into `build/linux/release/Draughts-VERSION-linux-x64.tar.gz`. SDL
+the executable `draughts` (stripped), `io.github.kaitk.draughts.desktop`, the icon
+`io.github.kaitk.draughts.png` (`linux/`, the 256 px layer of `windows/draughts.ico`), and
+`install.sh`, into `build/linux/release/Draughts-VERSION-linux-x64.tar.gz`. The app runs
+from the folder as it is; `install.sh` copies the executable to `~/.local/bin` and the
+`.desktop` file (its `Exec` the full path) and the icon where the desktop's menu finds
+them, and `install.sh --remove` takes them away. The app id, which SDL gives the window
+(`src/app/display.c`), is the `.desktop` file's name and its `StartupWMClass`, so the
+window shows the menu's icon. SDL
 is linked in; the C library, libm, X11 or Wayland, and Vulkan's loader are the system's.
 The executable needs a glibc as new as the one it was built against, so a release is
 built in an Ubuntu 22.04 container (glibc 2.35, which the Goose release's `libSDL3.a`
