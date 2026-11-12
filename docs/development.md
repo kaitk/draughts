@@ -63,7 +63,7 @@ cd src/app
 
 The app is built, not run through `goose run`: the computer thinks on a worker thread
 (`src/app/think.goose`), and `goose run` refuses a program that starts one.
-`scripts/mac.py` builds goose_gfx's sources with `patches/goose_gfx/` applied into a copy
+`scripts/mac.py` builds goose_gfx's sources from the submodule into a copy
 of the release (`build/mac/goose/`), as the Android, iOS, and Windows builds do, then the
 program with that copy's `goose`: about 8 s, as long as a plain `goose build`. A plain
 `goose build` in `src/app` still works, but its gfx presents every frame, so at rest it
@@ -105,7 +105,7 @@ to close and leave recents after home's X), which `scripts/android.py` builds in
 embedded from `design/backgrounds/masters/` when they are there (the JPEGs, and the ASTC
 files `design/backgrounds/README.md` says how to make with astcenc); without them the
 board sits on the page color. goose caches the program's C by its source, so after
-adding or changing a master, touch `src/app/background.c`. The Mac's patched gfx takes the
+adding or changing a master, touch `src/app/background.c`. The Mac's gfx (the fork's) takes the
 ASTC files, which Apple silicon samples, and the JPEGs are left for a GPU without ASTC
 (an Intel Mac; a plain `goose build`, whose gfx has no compressed formats); Android
 embeds only the ASTC files ([rendering](architecture/rendering.md#scene-and-glass)). The
@@ -187,14 +187,14 @@ python scripts/windows.py src/app/draughts.goose --run -- --size full --board fl
 prints its line and leaves the app running, so close it (or kill it from a script) once
 the line is out; a `--bench` run quits by itself.
 
-`scripts/windows.py` builds goose_gfx with `patches/goose_gfx/` applied, as Android and
+`scripts/windows.py` builds goose_gfx from the submodule, as Android and
 iOS do, into a copy of the release (`build/windows/goose/`; delete it after the release
 changes), and builds the program with that copy's `goose`; about 10 s. SDL is the
 release's own, linked statically into the program, so the program's C calls SDL directly
 as on Android (`src/app/platform.h`). The app draws through Vulkan, as on Android
 (`draughts_choose_gpu` in `src/app/display.c`): the driver takes the SPIR-V compiled with
 the program and keeps what it makes of it, so a launch takes 1.25 s the first time and
-0.66 s after. The patched gfx draws only on change: idle at home the app takes no CPU (the
+0.66 s after. The fork's gfx draws only on change: idle at home the app takes no CPU (the
 release's gfx, 344 ms in 10 s), and `--frames N` counts the frames drawn, so a shot of a
 settled screen wants few (4 for a 2D screen, 95 for the 3D board once it has appeared). A
 plain `goose build` with the release's `goose.exe` works as on the Mac, redrawing every
@@ -363,7 +363,7 @@ needs a debuggable app: `--debuggable` marks the APK so (task 059). Not with `--
 version, the Goose-to-C step, the patched copies, and the launcher's names):
 
 1. Goose writes the program's C (`goose -o`) and the runtime's C (`goose --emit-runtime`).
-2. goose_gfx's `src/` is copied, and `patches/goose_gfx/*.patch` applied to the copy.
+2. goose_gfx's `src/` is copied from the submodule (`kaitk/goose_gfx`'s `main`).
    SDL is copied to `build/android/SDL_src/` and `patches/SDL/*.patch` applied, again only
    when SDL's commit or a patch changes.
 3. CMake with the NDK toolchain builds `android/CMakeLists.txt`: `libSDL3.so` and
@@ -439,7 +439,7 @@ scripts/ios.py src/app/draughts.goose --device --run            # on an attached
 1. Goose writes the program's C (`goose -o`, with `--stack-reserve 128M`: an iOS process
    can't map Goose's default 2 GB for each of the app's 26 data stacks) and the runtime's
    C.
-2. goose_gfx's `src/` is copied with `patches/goose_gfx/` applied, and SDL to
+2. goose_gfx's `src/` is copied, and SDL to
    `build/ios/SDL_src/` with `patches/SDL/` applied (`0005` lets SDL_GPU take the
    simulator's Metal device, `0006` keeps a rotation from stretching the picture).
 3. CMake with Ninja and Xcode's clang builds `ios/CMakeLists.txt` for the simulator's or

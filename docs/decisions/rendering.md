@@ -7,7 +7,7 @@ their reasons, what they rejected, and the measurements behind them. The heading
 ## Drawing
 
 The screen's pass has no depth target, and in the Android build gfx never cycles the
-screen (`patches/goose_gfx/0003`). Together they kept SDL from a second 64 MiB block after
+screen (the fork's `screen-without-depth`). Together they kept SDL from a second 64 MiB block after
 the first rotation, about 70 MB of graphics memory on the tablet, before SDL's blocks
 were sized to their resources ([GPU memory](#gpu-memory)).
 
@@ -535,7 +535,7 @@ The release at rest, idle 20 to 30 s:
 
 - **The tablet's frame** while the board moves (the first baseline, 1920 × 1200 at 90 Hz):
   the forward pass alone 10.9 ms at 1×, the whole budget; MSAA 4× adds 3.2 ms (6.3 ms
-  and 72 MB more without `patches/goose_gfx/0005`, which keeps the samples and the depth
+  and 72 MB more without the fork's `msaa-resolve-without-store`, which keeps the samples and the depth
   from being stored); the shadow map 2 ms on the frames that draw it; the CPU's part
   about 0.4 ms. It renders as the Mac does. After task 042's cuts (2026-11-10): the
   frame with the shadow map, as while a piece moves, 10.5 ms waited, the pass alone

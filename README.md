@@ -94,7 +94,7 @@ On a Mac with Apple silicon, from a clone with its submodule and the pinned Goos
 in `build/` ([docs/development.md](docs/development.md#toolchain) sets these up):
 
 ```sh
-scripts/mac.py src/app/draughts.goose    # build build/draughts with the patched gfx
+scripts/mac.py src/app/draughts.goose    # build build/draughts with the fork's gfx
 build/draughts
 ```
 

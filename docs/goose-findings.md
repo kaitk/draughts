@@ -4,10 +4,29 @@ Gaps found in Goose, goose_gfx, the SDL it pins, and goose-ngfx, with what we do
 each here and what could go upstream. Newest first. goose-ngfx is the user's, so its gaps
 are fixed there when Draughts needs them; the entries name what is still open.
 
-Pull requests the user opens, not yet opened (2026-11-11): the goose_gfx patches 0001 to
-0008 as branches of `kaitk/goose_gfx` on upstream `main` (task 065 lists them, and which
-stack on which), to `aardappel/goose_gfx`; and `kaitk/NoGraphicsAPI`'s `astc-6x6`, ASTC
-6 × 6, to `sebbbi/NoGraphicsAPI`. An entry's "Upstream" line says what each proposes.
+Draughts builds gfx from `kaitk/goose_gfx`'s `main` (the submodule): upstream `main` with
+every change Draughts needs merged in. Each change is also a branch of its own on upstream
+`main`, offered upstream one at a time (2026-11-12). Pull requests the user opens, not yet
+opened (2026-11-11): those branches (task 065 lists them, and which stack on which;
+`upstream-series` is all of them) to `aardappel/goose_gfx`; and `kaitk/NoGraphicsAPI`'s
+`astc-6x6`, ASTC 6 × 6, to `sebbbi/NoGraphicsAPI`. An entry's "Upstream" line says what
+each proposes.
+
+## goose_gfx and ngfx: NO_VSYNC capped full screen on Windows (2026-11-12)
+
+gfx's `NO_VSYNC` asks SDL_GPU for mailbox before immediate. Full screen on the RTX 4090
+(NVIDIA 617.42, Vulkan), mailbox is held to the display's refresh: the 3D bench presented
+165 fps with `--no-vsync`, 747 with immediate. ngfx's `NO_VSYNC` did nothing on Vulkan:
+NoGraphicsAPI fixes FIFO (`swapchain_present_mode`), and ngfx only turns a Metal layer's
+display sync off. goose_gfx `v1` and `main`, goose-ngfx v0.5.0, NoGraphicsAPI `a6e78ed`.
+
+- Here: `kaitk/goose_gfx`'s `no-vsync-immediate`, in its `main`, asks for immediate
+  first, then mailbox. In goose-ngfx, NoGraphicsAPI's `DeviceDesc` gains `vsync`
+  (immediate, else mailbox, else FIFO when false), and `ngfx::open`'s `NO_VSYNC` sets it
+  (task 074).
+- Upstream: `no-vsync-immediate`, on upstream `main`, also in `upstream-series` and the
+  fork's `ngfx`; `DeviceDesc::vsync` to `sebbbi/NoGraphicsAPI` from
+  `kaitk/NoGraphicsAPI`.
 
 ## Goose: no way to write `goose.h` for a build of one's own (2026-11-11)
 
@@ -30,7 +49,7 @@ events, time, and draw-on-demand wait. goose-ngfx copied gfx's platform half ove
 of its own instead, which puts two SDLs in one process and keeps the two renderers out
 of one executable. goose_gfx `v1`, Goose v2026.4.
 
-- Here: `patches/goose_gfx/0008-window-only.patch` adds the flag `WINDOW_ONLY` (64): the
+- Here: `kaitk/goose_gfx`'s `window-only` adds the flag `WINDOW_ONLY` (64): the
   window and no device; `gs_gfx_native_window()` (a `CAMetalLayer` from an SDL Metal
   view on Apple's systems, the `HWND` on Windows, the `ANativeWindow` on Android, none
   headless); `gs_gfx_presented(shown)`, which the renderer calls each frame so a frame
@@ -154,7 +173,7 @@ times a second. With patch 0002's idle wait the iPhone 13 mini's app at rest use
 a core, 8.8% on the main thread and about 2.4% on each of three others, though its loop
 passed once a second and drew nothing (task 057). SDL 3.4.16 (`fa2c02b`).
 
-- Here: `patches/goose_gfx/0007-wait-in-the-ios-run-loop.patch`. On iOS the idle wait
+- Here: `kaitk/goose_gfx`'s `ios-run-loop-wait`. On iOS the idle wait
   pumps once and, with no event queued, runs the main run loop itself
   (`CFRunLoopRunInMode(kCFRunLoopDefaultMode, timeout, true)`), which sleeps until a
   source fires (a touch, the system) or the timeout. An event pushed from another thread,
@@ -219,7 +238,7 @@ waiting, so a program drawing each frame ran about 12,000 frames a second on the
 A33, each submitting work; the Mali driver's per-submit records filled the native heap
 (550 MB) until malloc failed, while the screen stayed frozen. goose_gfx `6cfa3de`.
 
-- Here: `patches/goose_gfx/0006-end-on-device-lost.patch`: `gfx_sdl_fail`, which every
+- Here: `kaitk/goose_gfx`'s `end-on-device-lost`: `gfx_sdl_fail`, which every
   failed SDL call goes through, notes an error naming `DEVICE_LOST`, prints it once, and
   sets quit; `frame()` then returns false before presenting or submitting anything, as
   for a closed window. The app's loop ends, it writes the game, and SDL finishes the
@@ -294,7 +313,7 @@ cause in `error()`). A 2048² photograph is 16 MiB as RGBA8 against 1.8 MiB as A
 which the tablet's Mali, phones, and Apple silicon sample. goose_gfx `6cfa3de`,
 Goose v2026.4.
 
-- Here: `patches/goose_gfx/0004-compressed-textures.patch` adds the formats `BC1`, `BC3`,
+- Here: `kaitk/goose_gfx`'s `compressed-textures` adds the formats `BC1`, `BC3`,
   `BC7`, `ASTC_4x4`, `ASTC_5x5`, `ASTC_6x6`, `ASTC_8x8` (21 to 27, UNORM; sampled only,
   no mips generated, not read back), counts bytes in whole blocks
   (`SDL_CalculateGPUTextureFormatSize`), uploads tightly packed (`pixels_per_row` 0,
@@ -367,7 +386,7 @@ for MSAA is a transient multisampled target, `DONT_CARE` stores, and the resolve
 same pass, at about 1-2% of the cost of rendering without it. Cycling a clear can also keep
 a second copy of the 4x target for good. goose_gfx `6cfa3de`, Goose v2026.4.
 
-- Here: `patches/goose_gfx/0005-msaa-resolve-without-store.patch`, inside `begin_pass`
+- Here: `kaitk/goose_gfx`'s `msaa-resolve-without-store`, inside `begin_pass`
   only, so Goose code compiles against the release's `gfx.goose` unchanged. A color target
   with a resolve texture stores `RESOLVE` (samples discarded); a depth target of more than
   one sample stores `DONT_CARE` for depth and stencil (SDL asserts that a multisampled
@@ -394,7 +413,7 @@ a block rounded up to 64 MiB; the screen, its depth, and their copies and remake
 the first rotation needed a second such block: graphics 156.6 MB fresh, 207.5 MB after
 a rotation. goose_gfx `6cfa3de`, Goose v2026.4.
 
-- Here: `patches/goose_gfx/0003-screen-without-depth-or-cycling.patch` makes the screen's
+- Here: `kaitk/goose_gfx`'s `screen-without-depth` makes the screen's
   depth target the first time `screen_depth()` is called (so `begin_screen` still works;
   the POC uses it), and from then on with each resize; and clears the screen without
   cycling. Not cycling is safe: SDL's barrier orders the clear after the last frame's
@@ -538,7 +557,7 @@ acquires a swapchain image and blits the screen each frame, and without the pres
 vsync wait its loop would spin. There is no way to wait for an event instead. goose_gfx
 `6cfa3de`, Goose v2026.4.
 
-- Here: `patches/goose_gfx/0002-draw-on-demand.patch`. `frame()` presents only when
+- Here: `kaitk/goose_gfx`'s `draw-on-demand`. `frame()` presents only when
   something used the GPU since the last call or the window needs the screen again, and
   after a frame that drew nothing it waits for an event (up to 1 s) before reading
   events. On the tablet an idle program went from a present at every 90 Hz refresh to 5
@@ -547,7 +566,7 @@ vsync wait its loop would spin. There is no way to wait for an event instead. go
   the picture on resume: the first present after Android recreates the surface gets no
   image, so the patch keeps trying for up to 8 frames. The wait also needs the next
   entry's workaround, or it spins on Android, and on iOS its own (the iOS entry above).
-  Every build takes the patched gfx since 2026-11-10 (`scripts/mac.py`, as
+  Every build takes the fork's gfx since 2026-11-10 (`scripts/mac.py`, as
   `windows.py`): the Mac at rest went from 8.2% of a core, presenting at 120 Hz, to
   0.03%.
 - Upstream: the same in `gs_gfx_frame`, but opt-in, since a program that polls input
@@ -590,8 +609,8 @@ bars) while keeping a resizable window on the Mac.
 so `gfx::open` fails with "No supported SDL_GPU backend found!". Goose's GLSL never writes
 `gl_ClipDistance`.
 
-- Here: `patches/goose_gfx/0001-no-clip-distance.patch`, applied by `scripts/android.py`,
-  creates the device with properties and the feature off.
+- Here: `kaitk/goose_gfx`'s `no-clip-distance` creates the device with properties and the
+  feature off.
 - Upstream: the same change in goose_gfx, on every platform. Nothing in goose_gfx's API
   can use clip distances, so it costs nothing elsewhere.
 

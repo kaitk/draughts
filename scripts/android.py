@@ -8,7 +8,7 @@
                                                  beside it, signed with the upload key, for Play
 
 Steps: Goose writes the program's C and the runtime's C; goose_gfx's sources are copied
-and patches/goose_gfx applied, and SDL is copied and patches/SDL applied; CMake with the
+from the submodule (kaitk/goose_gfx's main), and SDL is copied and patches/SDL applied; CMake with the
 NDK builds
 libSDL3.so and libmain.so (android/CMakeLists.txt); javac and d8 compile SDL's Java
 glue from the patched copy and DraughtsActivity; aapt2 compiles android/res (the icon and the theme) and the

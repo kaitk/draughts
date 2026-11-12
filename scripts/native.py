@@ -67,14 +67,13 @@ def sdl_stamp():
 
 
 def copy_gfx(out):
-    """goose_gfx's src/ under out with patches/goose_gfx applied; returns that src/."""
+    """goose_gfx's src/ under out, from the submodule (kaitk/goose_gfx's main, which holds
+    every change Draughts needs); returns that src/."""
     gfx_src, fresh = out / "goose_gfx_src", out / "goose_gfx_src.new"
     if fresh.exists():
         shutil.rmtree(fresh)
-    # Fresh timestamps (shutil.copy), so ninja rebuilds what a removed patch restores.
+    # Fresh timestamps (shutil.copy), so ninja rebuilds what a new submodule commit changes.
     shutil.copytree(ROOT / "third_party/goose_gfx/src", fresh / "src", copy_function=shutil.copy)
-    for patch in sorted((ROOT / "patches/goose_gfx").glob("*.patch")):
-        run("patch", "-s", "-p1", "-i", patch, cwd=fresh)
     if gfx_src.exists():
         shutil.rmtree(gfx_src)
     fresh.rename(gfx_src)
@@ -82,7 +81,7 @@ def copy_gfx(out):
 
 
 def copy_sources(out, sdl_src):
-    """goose_gfx's src/ under out with patches/goose_gfx applied, and SDL in sdl_src with
+    """goose_gfx's src/ under out, and SDL in sdl_src with
     patches/SDL applied; SDL is large, so its copy is remade only when its commit or a
     patch changes. Returns the two folders the CMake build takes."""
     gfx_src = copy_gfx(out)

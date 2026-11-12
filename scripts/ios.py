@@ -13,7 +13,7 @@
                                                  the same on goose-ngfx (task 065), in its place
 
 Steps, as scripts/android.py's: Goose writes the program's C and the runtime's C;
-goose_gfx's sources are copied and patches/goose_gfx applied, and SDL is copied and
+goose_gfx's sources are copied from the submodule, and SDL is copied and
 patches/SDL applied; CMake with Ninja and Xcode's clang builds ios/CMakeLists.txt, one
 executable with SDL linked statically; the bundle is the executable, an Info.plist written
 here (the id, the version, full screen, the launch screen in the icon's background),

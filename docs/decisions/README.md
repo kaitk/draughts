@@ -41,6 +41,16 @@ Vulkan on Windows (2026-11-10). SDL would pick Direct3D 12 there, whose HLSL its
 compiler FXC took 5 s to compile at each launch; Vulkan takes the SPIR-V compiled with the
 program, as on Android. Rejected: Direct3D 12, SDL's default.
 
+goose_gfx from the user's fork (2026-11-12). The `third_party/goose_gfx` submodule follows
+`kaitk/goose_gfx`'s `main`: upstream `main` with every change Draughts needs merged in, each
+also a branch of its own on upstream `main` to offer upstream one at a time. It replaces
+patches in `patches/goose_gfx/` applied to upstream's `v1` at build time, which kept every
+change twice, as a patch here and as the fork's branch. The build takes only gfx's C from
+the submodule; the Goose side is still the release's, whose externs `main`'s C keeps. It
+also brought upstream's commits past `v1`, among them one upload buffer reused in place of
+a transfer buffer per update, which cut the 3D board's CPU a frame from 0.27 to 0.03 ms
+on the RTX 4090 (task 074). SDL keeps its patches in `patches/SDL/`.
+
 ## The code's layout
 
 Packages with no graphics, each run headless by its tests, and an app that feeds them the
