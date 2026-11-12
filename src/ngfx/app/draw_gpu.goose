@@ -1,7 +1,7 @@
 // Recording the board's draws (draw.goose) through goose-ngfx, in place of
-// src/app/draw_gpu.goose (scripts/ngfx.py): src/ngfx/shaders/board.slang and
-// pieces.slang, built ahead, and the pieces copied into each frame's memory, which their
-// draw pulls them from.
+// src/app/draw_gpu.goose (scripts/ngfx.py): its shaders, written from that file's GLSL
+// (scripts/ngfx_2d_shaders.py) and built ahead, and the pieces copied into each frame's
+// memory, which their draw pulls them from.
 namespace draw_gpu;
 import std;
 import vec;
@@ -9,9 +9,9 @@ import ngfx;
 
 import board from "../board";
 
-// board.slang's and pieces.slang's roots.
+// The board's and the pieces' roots, as their shaders' headers lay them out.
 struct BoardRoot { photo: u32, sharp: u32, smp: u32, unused: u32, theme: theme::Theme, u: draw::BoardUniforms }
-struct PieceRoot { pieces: u64, pad0: u32, pad1: u32, theme: theme::Theme, view: float4, time: float4, hole: float4 }
+struct PieceRoot { pieces: u64, pad0: u32, pad1: u32, view: draw::View, theme: theme::Theme, time: float4, hole: float4 }
 
 struct Gpu {
     board_pipeline: ngfx::Pipeline,
@@ -46,5 +46,5 @@ fn men(g: Gpu&, over: bool, t: theme::Theme, view: draw::View, time: float4, hol
     guard n > 0 else { return; }
     ngfx::bind(g.piece_pipeline);
     ngfx::draw_instanced(ngfx::root(PieceRoot { pieces: if over { g.overlay } else { g.pieces }, pad0: 0, pad1: 0,
-                                                theme: t, view: view.screen, time: time, hole: hole }), 6, n);
+                                                view: view, theme: t, time: time, hole: hole }), 6, n);
 }

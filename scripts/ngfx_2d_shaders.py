@@ -38,6 +38,8 @@ MODULES = [
     ("blur", FULL, ["scene_gpu::BLUR_FRAG"], False),
     ("shrink", FULL, ["scene_gpu::SHRINK_FRAG"], False),
     ("board", FULL, [*THEMED, "draw_gpu::BOARD_FRAG"], False),
+    ("pieces", ["draw_gpu::SHARED_BLOCK", "draw_gpu::STACK_BLOCK", "draw_gpu::PIECE_VERT"],
+     [*THEMED, "draw_gpu::MAN_BLOCK", "draw_gpu::STACK_BLOCK", "draw_gpu::PIECE_FRAG"], False),
 ]
 
 # Hand-written, beside what is generated: SV_InstanceID counts from 0 whatever the draw's
