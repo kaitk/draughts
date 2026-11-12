@@ -12,8 +12,9 @@ ngfx recorders in place of gfx's (src/ngfx/app/'s gpu, host_gpu, scene_gpu, draw
 widgets_gpu, and photo_gpu.h over src/app/'s, src/ngfx/render3d/render3d_gpu.goose over
 src/render3d/'s), the drawers themselves shared. The root file gets the package's import, the sidecar the package's C
 headers, and the Slang shaders are compiled ahead into ngfx's blobs, which the app embeds,
-so it runs no shader compiler: src/ngfx/shaders/, and the 3D board's, written from gfx's
-GLSL by ngfx_3d_shaders.py. SMAA (third_party/smaa) comes with them: its shader, which
+so it runs no shader compiler: the 2D shaders and the 3D board's, written from gfx's GLSL
+by ngfx_2d_shaders.py and ngfx_3d_shaders.py, and src/ngfx/shaders/, what they include and
+the shaders ngfx alone has. SMAA (third_party/smaa) comes with them: its shader, which
 smaa.slang includes, and its tables, which render3d embeds.
 
 Needs a goose-ngfx checkout (NGFX, else ../goose/goose-ngfx beside this repository),
@@ -34,6 +35,7 @@ import sys
 from pathlib import Path
 
 import native
+import ngfx_2d_shaders
 import ngfx_3d_shaders
 
 if native.WINDOWS:
@@ -110,16 +112,22 @@ def write_if_changed(path, text):
 
 def shaders(tree=TREE, sdk=None):
     """The Slang modules compiled into blobs in the tree's src/app/shaders/, where stale:
-    src/ngfx/shaders/ and the 3D board's, written from gfx's GLSL (ngfx_3d_shaders.py),
-    side by side in build/ngfx/shaders/. sdk names the SDK the metallibs are for
-    (NGFX_METAL_SDK, iphoneos for iOS and iPadOS), else the Mac's."""
+    src/ngfx/shaders/ and those written from gfx's GLSL (ngfx_2d_shaders.py,
+    ngfx_3d_shaders.py), side by side in build/ngfx/shaders/. sdk names the SDK the
+    metallibs are for (NGFX_METAL_SDK, iphoneos for iOS and iPadOS), else the Mac's."""
     gen = OUT / "shaders"
     gen.mkdir(parents=True, exist_ok=True)
-    for f in (ROOT / "src/ngfx/shaders").glob("*.slang"):
-        copy_if_changed(f, gen / f.name)
+    hand = {f.name: f for f in (ROOT / "src/ngfx/shaders").glob("*.slang")}
+    written = {**ngfx_2d_shaders.sources(), **ngfx_3d_shaders.sources()}
+    assert not hand.keys() & written.keys(), f"written and in src/ngfx/shaders/: {hand.keys() & written.keys()}"
+    for f in gen.glob("*.slang"):     # a module since deleted or renamed
+        if f.name not in hand and f.name not in written:
+            f.unlink()
+    for name, f in hand.items():
+        copy_if_changed(f, gen / name)
     smaa = ROOT / "third_party/smaa"
     copy_if_changed(smaa / "SMAA.hlsl", gen / "SMAA.hlsl")
-    for name, text in ngfx_3d_shaders.sources().items():
+    for name, text in written.items():
         write_if_changed(gen / name, text)
     src = sorted(gen.glob("*.slang"))
     out = tree / "src/app/shaders"
