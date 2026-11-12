@@ -63,8 +63,8 @@ fn new(kind: i64, plain: bool, f: flags::Flags&) -> Renderer {
 }
 
 // --aa, how the 3D pass is antialiased (task 071's comparison), by the names of the
-// renderer's ways (render3d::aa_named: off, msaa, and smaa on gfx; off, fxaa, smaa, and
-// ssaa on ngfx); render3d::AA without it or with a name it hasn't.
+// renderer's ways (render3d::aa_named: off, msaa, and smaa on gfx; off, smaa, and ssaa
+// on ngfx); render3d::AA without it or with a name it hasn't.
 fn aa_flag() -> i32 {
     let a = args();
     for i in 1..a.len - 1 {

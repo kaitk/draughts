@@ -671,7 +671,10 @@ screen on the M1 Pro 3.05 ms of GPU a frame against SMAA's 3.49, and on the Pixe
 Mali 11.4 ms a frame waited against 12.5 (none: 11.5), where 4× MSAA stays on the tile
 and SMAA's three passes each store a full-screen target. SMAA's one gain, half the
 pass's memory while drawing (49 MB against 98 at 2560 × 1600), mostly went with the
-targets given back at rest. The ngfx build keeps SMAA, as goose-ngfx has no MSAA.
+targets given back at rest. The ngfx build keeps SMAA, as goose-ngfx has no MSAA, and 2 × 2 supersampling to compare;
+its FXAA is gone (2026-11-12): it blurred the surfaces and dotted thin highlights, and
+its speed over SMAA, a few tenths of a millisecond (tasks 070 and 074), wasn't worth that
+look. Rejected: keeping it as a cheaper choice for slow GPUs, which take SMAA or none.
 
 ## The 3D board on devices
 

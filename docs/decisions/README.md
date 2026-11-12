@@ -126,8 +126,7 @@ to the GLSL, as task 063's to the UI's, was made again in Slang. The GLSL stays 
 source, as gfx is what ships everywhere. Rejected: the 3D board's one shared root, each
 uniform block a pointer into frame memory, for the 2D modules: each draw would copy its
 uniforms and then its root into frame memory, where one root holds both. Still by hand in
-`src/ngfx/shaders/`: what ngfx alone has (`down` for its 2× pass in place of MSAA, `mip`,
-`fxaa`) and `smaa`, which includes SMAA's own HLSL as gfx's `smaa.goose` wraps it in GLSL.
+`src/ngfx/shaders/`: what ngfx alone has (`down` for its 2× pass in place of MSAA, and `mip`) and `smaa`, which includes SMAA's own HLSL as gfx's `smaa.goose` wraps it in GLSL.
 
 ### The shell's frame and the panel's regions (2026-11-10)
 

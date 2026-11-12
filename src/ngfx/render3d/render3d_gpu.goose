@@ -1,6 +1,6 @@
 // Recording the 3D board's renderer (render3d.goose) through goose-ngfx, in place of
 // src/render3d/render3d_gpu.goose (scripts/ngfx.py): one forward pass at the size
-// antialiasing wants (NoGraphicsAPI has no multisampling), then SMAA, FXAA, or the 2 × 2
+// antialiasing wants (NoGraphicsAPI has no multisampling), then SMAA or the 2 × 2
 // supersampled pass shrunk. The shaders are gfx's GLSL in shaders.goose, written into
 // Slang by scripts/ngfx_3d_shaders.py (src/ngfx/shaders/r3d_*.slang), each module with
 // one root (Root) and its blob built ahead and embedded. In namespace render3d, as
@@ -20,12 +20,11 @@ let RGBA8 = ngfx::RGBA8;
 let RGBA8_SRGB = ngfx::RGBA8_SRGB;
 
 // What only ngfx's renderer holds: the nearest sampler SMAA reads with, the mips' and the
-// supersampled pass's shrinking pipelines, and FXAA's.
+// supersampled pass's shrinking pipelines.
 struct Own {
     point: ngfx::Sampler,
     mip:   ngfx::Pipeline,
     down:  ngfx::Pipeline,
-    fxaa:  ngfx::Pipeline,
 }
 
 fn gpu_flush() { ngfx::flush(); }
@@ -171,11 +170,9 @@ struct Root { frame: u64, u: u64, buf0: u64, buf1: u64, buf2: u64, verts: u64, t
 fn no_root() -> Root { Root { frame: 0, u: 0, buf0: 0, buf1: 0, buf2: 0, verts: 0, tex: [0; 8], smp: [0; 8] } }
 
 // How the 3D pass is antialiased, NoGraphicsAPI having no MSAA (task 065): not at all;
-// FXAA or SMAA 1x over the pass drawn at 1x; or the pass drawn at twice the size and
+// SMAA 1x over the pass drawn at 1x; or the pass drawn at twice the size and
 // shrunk (2 x 2 supersampling).
 let AA_OFF = 0;
-
-let AA_FXAA = 1;
 
 let AA_SMAA = 2;
 
@@ -184,21 +181,20 @@ let AA_SSAA = 3;
 let AA = AA_SMAA;
 
 // The pass's ways by the names --aa takes and the log prints (-1 for none), and the next
-// the A key switches to: SMAA, none, FXAA, and 2 × 2 supersampling in turn.
+// the A key switches to: SMAA, none, and 2 × 2 supersampling in turn.
 fn aa_named(name: const u8[:]) -> i32 {
     if name == "off" { return AA_OFF; }
-    if name == "fxaa" { return AA_FXAA; }
     if name == "smaa" { return AA_SMAA; }
     if name == "ssaa" { return AA_SSAA; }
     return -1;
 }
 
 fn aa_name(aa: i32) -> const u8[:] {
-    if aa == AA_FXAA { "fxaa" } else if aa == AA_SMAA { "smaa" } else if aa == AA_SSAA { "ssaa" } else { "off" }
+    if aa == AA_SMAA { "smaa" } else if aa == AA_SSAA { "ssaa" } else { "off" }
 }
 
 fn aa_next(aa: i32) -> i32 {
-    if aa == AA_SMAA { AA_OFF } else if aa == AA_OFF { AA_FXAA } else if aa == AA_FXAA { AA_SSAA } else { AA_SMAA }
+    if aa == AA_SMAA { AA_OFF } else if aa == AA_OFF { AA_SSAA } else { AA_SMAA }
 }
 
 // What a pass wrote, before what comes after reads or writes it again: between passes,
@@ -368,7 +364,6 @@ fn set_aa(g: Gpu&, aa: i32) {
 
 // What antialiasing by `aa` draws with, made once.
 fn aa_resources(g: Gpu&, aa: i32) {
-    if aa == AA_FXAA && g.own.fxaa.id == 0 { g.own.fxaa = module(embed_file("../app/shaders/fxaa.blob")); }
     if aa == AA_SMAA && g.smaa_edges.id == 0 {
         let smaa = embed_file("../app/shaders/smaa.blob");
         // The edges pass marks the pixels it finds an edge on with depth 0 (its triangle's
@@ -492,13 +487,11 @@ fn setup(g: Gpu&, aa: i32 = AA) {
 
 struct DownRoot { src: u32, pad0: u32, pad1: u32, pad2: u32 }
 
-struct FxaaRoot { color: u32, linear: u32, pad0: u32, pad1: u32, metrics: float4 }
-
 struct SmaaRoot { color: u32, edges: u32, weights: u32, area: u32, search: u32, linear: u32, point: u32, pad0: u32,
                   metrics: float4 }
 
-// The pass in g.color antialiased into `target` as g.aa says: shrunk (AA_SSAA), FXAA's
-// one pass, or SMAA's three (shaders/smaa.slang); with AA_OFF the pass drew into it.
+// The pass in g.color antialiased into `target` as g.aa says: shrunk (AA_SSAA) or
+// SMAA's three (shaders/smaa.slang); with AA_OFF the pass drew into it.
 fn antialias(g: Gpu&, target: ngfx::Texture, size: int2) {
     guard g.aa != AA_OFF else { return; }
     let metrics = float4 { 1.0 / size.x, 1.0 / size.y, size.x, size.y };
@@ -506,12 +499,6 @@ fn antialias(g: Gpu&, target: ngfx::Texture, size: int2) {
         ngfx::begin_pass(target, ngfx::Texture { 0 }, float4_0);
         ngfx::bind(g.own.down);
         ngfx::draw(ngfx::root(DownRoot { src: ngfx::index(g.color), pad0: 0, pad1: 0, pad2: 0 }), 3);
-        ngfx::end_pass();
-    } else if g.aa == AA_FXAA {
-        ngfx::begin_pass(target, ngfx::Texture { 0 }, float4_0);
-        ngfx::bind(g.own.fxaa);
-        ngfx::draw(ngfx::root(FxaaRoot { color: ngfx::index(g.color), linear: ngfx::index(g.linear), pad0: 0,
-                                         pad1: 0, metrics: metrics }), 3);
         ngfx::end_pass();
     } else {
         let r = SmaaRoot { color: ngfx::index(g.color), edges: ngfx::index(g.edges), weights: ngfx::index(g.weights),
@@ -682,7 +669,7 @@ fn warm(g: Gpu&, k: i64) {
         // edges for RG8.
         var into = ngfx::PassDesc {};
         into.color[0] = g.warm_color;
-        let post = [g.own.down, g.own.fxaa, g.smaa_blend];
+        let post = [g.own.down, g.smaa_blend];
         for q in post { if q.id != 0 { ngfx::prepare(q, into); } }
         // SMAA's weights test the depth its edges wrote (antialias).
         into.depth = g.warm_depth;
@@ -713,7 +700,7 @@ fn release(g: Gpu&) {
     let samplers = [g.linear, g.own.point, g.aniso, g.compare];
     for s in samplers { if s.id != 0 { ngfx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
-                     g.occ, g.kept, g.bake, g.shrink, g.blur, g.own.mip, g.own.down, g.own.fxaa, g.smaa_edges, g.smaa_weights,
+                     g.occ, g.kept, g.bake, g.shrink, g.blur, g.own.mip, g.own.down, g.smaa_edges, g.smaa_weights,
                      g.smaa_blend];
     for p in pipelines { if p.id != 0 { ngfx::release(p); } }
     g = default<Gpu>();

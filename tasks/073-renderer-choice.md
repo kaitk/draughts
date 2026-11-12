@@ -146,7 +146,7 @@ is trying ngfx and falling back, not a list of devices kept here:
   compose's sampler). The only hand-written part is the UI's `first`, added to
   `SV_InstanceID`; the variants' defines come from `widgets_gpu`'s `BASE`, `ICONS`, and
   `FACES`, and the quads' address is the GLSL's storage buffer as a root pointer, both
-  generated. `down`, `mip`, and `fxaa` are ngfx's own (gfx resolves MSAA, makes mips with
+  generated. `down`, `mip`, and `fxaa` were ngfx's own (gfx resolves MSAA, makes mips with
   SDL_GPU's blits, and has no FXAA); `smaa.slang` includes SMAA's own HLSL, as gfx's
   `smaa.goose` wraps it in GLSL, so neither is a port of the other. All four stay Slang.
 - **Checked** on the Mac after each module, the ngfx build's 26 shots against a baseline
@@ -167,8 +167,12 @@ is trying ngfx and falling back, not a list of devices kept here:
   (`GOOSE_GFX_HEADLESS=1`) at `--size 1280x800 ... --frames 20000`, against the same from a
   build of `a70b192` (`git archive` into a folder of its own, as `agents/testing.md`
   says), and the 3D game with each `--aa` way; flat identical and 3D none over 32 is the
-  pass. The generated shaders are the same text on every platform; what Windows adds is
+  pass (`off`, `smaa`, and `ssaa`: FXAA has since gone, below). The generated shaders are the same text on every platform; what Windows adds is
   slangc's SPIR-V of them and the Vulkan driver.
+- **FXAA removed** from the ngfx build (2026-11-12, the user: it looked ugly, not worth
+  its speed over SMAA): `fxaa.slang`, its pipeline, and `--aa fxaa`, which now falls back
+  to SMAA as any unknown name does; the A key goes SMAA, off, supersampling. `off`,
+  `smaa`, and `ssaa` against the step's own shots: none over 3 of 255.
 - **Next, on its own branch** (steps 4 to 6): both renderers in one executable. The
   recorders are the seam: each renderer's `_gpu` files compiled side by side (renamed
   apart, or `gpu` and the recorders behind one interface chosen at start), the drawers
