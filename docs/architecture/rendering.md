@@ -1285,7 +1285,9 @@ its ways (`rules::ways`, every way the selected piece takes, kept in `Board.ways
 is selected; the move list keeps one way per move): a tap
 or a drop on the next stop of the selected piece's captures leaves the piece waiting
 there, a tap showing it hop there over the move's hop, lifted and selected, the pieces it jumped still on the board as the rules leave
-them until the capture ends, the stops behind it ringed whatever the hints, and narrows
+them until the capture ends, but see-through (`board::TAKEN`, 0.35, going so over the hop that jumps
+each), so a king turning back past them still sees its way; a move played shows its captured pieces
+going see-through the same way as it hops over each, then fading out after its last hop, the stops behind it ringed whatever the hints, and narrows
 the targets shown to the ways through it. The rest is never played by itself, in a game
 as in a puzzle: each next jump is the child's, by tap or by drag from the stop, and the
 move, once its last stop is reached, is shown from there. A last square several captures

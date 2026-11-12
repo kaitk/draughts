@@ -17,6 +17,7 @@ import .rig;
 let MAX_PIECES = 48;        // 40 pieces on 10×10, the moving one, and margin
 let HOP = 0.2;              // seconds per square of a quiet move, per stop of a capture
 let FADE = 0.18;            // captured pieces fade out after the move
+let TAKEN = 0.35;           // a jumped piece's opacity until the capture ends, so a king's way back past it shows
 let PULSE = 2.8;            // must-capture rings pulse for two of their 1.4 s cycles
 let DRAG_START = 10.0;      // dp a press moves before it becomes a drag
 let SNAP = 0.9;             // squares from a square's center a press or drop off the dark squares still reaches
@@ -617,20 +618,42 @@ fn jumped(b: Board&) -> u64 {
     var out: u64 = 0;
     var a = b.selected;
     for s in b.steps {
-        let to_x = v.x_of[s] as i64;
-        let dx: i64 = if to_x > v.x_of[a] { 1 } else { -1 };
-        let dy: i64 = if v.y_of[s] > v.y_of[a] { 1 } else { -1 };
-        var x: i64 = v.x_of[a] + dx;
-        var y: i64 = v.y_of[a] + dy;
-        while x != to_x {
-            let q = rules::bit_at(v, x, y);
-            if them & rules::bit(q) != 0 { out |= rules::bit(q); }
-            x += dx;
-            y += dy;
-        }
+        out |= between(v, a, s) & them;
         a = s;
     }
     return out;
+}
+
+// The squares strictly between squares a and c on their diagonal.
+fn between(v: rules::Variant&, a: i64, c: i64) -> u64 {
+    let to_x = v.x_of[c] as i64;
+    let dx: i64 = if to_x > v.x_of[a] { 1 } else { -1 };
+    let dy: i64 = if v.y_of[c] > v.y_of[a] { 1 } else { -1 };
+    var out: u64 = 0;
+    var x: i64 = v.x_of[a] + dx;
+    var y: i64 = v.y_of[a] + dy;
+    while x != to_x {
+        out |= rules::bit(rules::bit_at(v, x, y));
+        x += dx;
+        y += dy;
+    }
+    return out;
+}
+
+// How opaque a captured piece on `m` is `t` into the move: it goes see-through (TAKEN) as
+// the mover hops over it, so a king's way back past it stays in view, and fades out
+// after the last hop.
+fn taken_alpha(v: rules::Variant&, mv: rules::Move&, m: u64, t: f64) -> f32 {
+    let fade_at = hops(mv) as f64 * HOP;
+    guard t <= fade_at else {
+        return (TAKEN * (1.0 - clamp((t - fade_at) / FADE, 0.0, 1.0))) as f32;
+    }
+    for i in mv.path.len - 1 {
+        guard between(v, mv.path[i], mv.path[i + 1]) & m != 0 else { continue; }
+        let u = ease(clamp(t / HOP - i, 0.0, 1.0));
+        return (1.0 - (1.0 - TAKEN) * u) as f32;
+    }
+    return 1.0;
 }
 
 // A tap or a drop on `sq`, an empty square that is no move for the selected piece: a
@@ -1059,10 +1082,12 @@ fn fill(b: Board&, l: Layout, now: f64) {
     // ring (`takes`), when `counting`. Partway through a capture, only on the piece
     // making it.
     let count_on = counting(b);
-    let fade_at = hops(b.move) as f64 * HOP;
     // A piece waiting partway through a capture made by hand is drawn on its stop; the
-    // pieces it has jumped stay until the capture ends, as the rules take them.
+    // pieces it has jumped stay until the capture ends, as the rules take them, but
+    // see-through (TAKEN), so a king's way back past them shows (2026-11-12).
     let waits = if b.moving || b.dragging { -1 } else { waiting(b) };
+    let taken = if !b.moving && b.selected >= 0 && b.steps.len > 0 { jumped(b) } else { 0 };
+    let hop_over = if hopping(b, now) { between(v, b.hop_from, b.hop_to) } else { 0 };
     for row in v.size {
         let y = if l.flip { row } else { v.size - 1 - row };
         for x in v.size {
@@ -1082,8 +1107,11 @@ fn fill(b: Board&, l: Layout, now: f64) {
             if b.dragging && sq == b.selected { continue; }
             if waits >= 0 && sq == b.selected { continue; }
             var alpha: f32 = 1.0;
-            if b.moving && b.move.captured & m != 0 && t > fade_at {
-                alpha = (1.0 - clamp((t - fade_at) / FADE, 0.0, 1.0)) as f32;
+            if b.moving && b.move.captured & m != 0 { alpha = taken_alpha(v, b.move, m, t); }
+            if taken & m != 0 {
+                // Going see-through as the piece hops over it, as in a move.
+                let u = if hop_over & m != 0 { ease(clamp((now - b.hop_at) / HOP, 0.0, 1.0)) } else { 1.0 };
+                alpha = (1.0 - (1.0 - TAKEN) * u) as f32;
             }
             let selected = sq == b.selected;
             add(b, center(l, v, sq), r, if selected { 1.1 * unit } else { 0.0 }, black,

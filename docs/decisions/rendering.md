@@ -534,6 +534,11 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
 - The 3D board lights a missed capture's next stops (2026-11-09); it never showed them
   before.
 - A puzzle's board makes captures by hand with none of the game's help (2026-11-08).
+- The pieces a capture has jumped go see-through (0.35) until it ends, on both boards, in a
+  game and a puzzle, made stop by stop or played as a move (2026-11-12, asked for puzzles:
+  a king's capture that turns back round had the taken pieces in its way). The rules keep
+  them on the board until the capture ends, so they stay, only faint. Before, they stayed
+  whole until the move ended and then faded out.
 - Issue 1 (2026-11-11), the board's taps:
   - A capture made stop by stop may take any of its ways (`rules::ways`), not only the one
     the move list keeps for each end and pieces taken: a king's other way was a miss and

@@ -27,7 +27,7 @@ h8 touched while c5 must capture: 3 instances
   from 3.2 s to 6 s at 20 fps: 51 frames change only the marks, 2 draw the board (the flash's end, the pulse's end), pulsing false
 capture moving true, W:W:Be3,h8
 c5 takes d4, the taken piece fading: 3 instances
-  foot -0.5 0.0 0.5 1.0; kind 0.0 0.0 0.0 1.0; state 0.5 0.0 0.0 0.0
+  foot -0.5 0.0 0.5 1.0; kind 0.0 0.0 0.0 1.0; state 0.18000000715255737 0.0 0.0 0.0
   foot 0.5 0.0 1.5 1.0; kind 1.0 0.0 0.0 2.0; state 1.0 0.0 0.0 0.0
   selected 0.0 0.0 0.0 0.0; last ; targets ; flash -1.0 1.0 0.0 0.0
   field 
