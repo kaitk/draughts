@@ -25,8 +25,9 @@
 // corners layout (panel::corners_in). A transition then moves and scales the one image
 // of it, drawn once through the larger end's view, from one end's bounds to the other's
 // (a puzzle's tile, which has no 3D board, crossfading it in or out).
-// Home's way out asks the app to stop (quit), which ends its loop. Android's back, and
-// Escape on the Mac, go back a screen as its own back control does (back).
+// Home's way out asks the app to stop (quit), which ends its loop; on a desktop it asks
+// first (home::ask_quit), as back on home's menu does there. Android's back, and Escape or
+// a gamepad's B on a desktop, go back a screen as its own back control does (back).
 // A game against the computer plays at the skill kept for its level, which each
 // finished game moves (ai::adapt). Tests run it headless. What is kept of the game is in
 // saved.goose, switching and changing players in roster.goose.
@@ -142,6 +143,7 @@ struct Shell {
     prefs:   settings::Settings = settings::Settings {},  // the playing player's, and the device's language
     players: players::Players   = players::Players {},
     who:     who::Who           = who::Who {},        // who's playing, over home's menu
+    quitting: bool              = false,      // a desktop's quit asks first, over home's menu (home::ask_quit)
     changed: bool               = false,      // prefs changed since the app last wrote them (Frame.save)
     drawn:   i64                = -1,         // the screen the last frame declared
     back:    i64                = HOME,       // where settings goes back to
@@ -339,14 +341,21 @@ fn play_puzzle(sh: Shell&, index: i64, now: f64 = 0.0) {
 // Android's back, or Escape on the Mac, at `now`: what the screen's own back or home
 // control does. A setup goes back to home's menu, the game, settings, and the puzzles to
 // pick from where their tiles go (home, or where settings came from), a puzzle to its
-// theme's page, a theme's page to the library. False, changing nothing, on home's menu,
-// which has no way back: there back leaves the app as the system's does, and Escape
-// closes the window. In a transition it acts on the screen come to, as a tap does.
+// theme's page, a theme's page to the library. On home's menu, which has no way back, a
+// desktop asks whether to quit (home::ask_quit), and back again cancels that; elsewhere
+// it is false, changing nothing: there back leaves the app as the system's does. In a
+// transition it acts on the screen come to, as a tap does.
 fn back(sh: Shell&, now: f64) -> bool {
     if sh.screen == HOME && sh.who.state != who::CLOSED {
         who::back(sh.who);
+    } else if sh.screen == HOME && sh.quitting {
+        sh.quitting = false;
     } else if sh.screen == HOME {
-        guard sh.setup != home::NO_SETUP else { return false; }
+        guard sh.setup != home::NO_SETUP else {
+            guard home::asks_quit() else { return false; }
+            sh.quitting = true;
+            return true;
+        }
         sh.setup = home::NO_SETUP;
     } else if sh.screen == PICKER && sh.theme >= 0 {
         sh.theme = -1;
@@ -840,15 +849,16 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     let b .= board_of(sh, HOME);
     if board::update(b, now) { changed = true; }
     let flip = turned(sh, sh.setup);
-    // Who's playing, over the menu: home under it takes no pointer.
+    // Who's playing, or the quit's question, over the menu: home under it takes no pointer.
     let card = sh.who.state != who::CLOSED && sh.setup == home::NO_SETUP;
-    if card { gui::listen(g, false); }
+    let asking = sh.quitting && !card;
+    if card || asking { gui::listen(g, false); }
     var room = float4 { 0.0, 0.0, 0.0, 0.0 };
     let pick = home::frame(sh.out.over, g, sh.out.layout, rules::VARIANTS[b.variant].size, area, sh.setup, sh.prefs, room,
                            resume(sh));
     sh.out.layout.flip = flip;
     let v = raise_in(sh, room, sh.out.layout.n, g.scale, sh.out.layout);
-    if !card && turn_home(sh, g, v, room, now) { changed = true; }
+    if !card && !asking && turn_home(sh, g, v, room, now) { changed = true; }
     sh.came_view = home_view(sh, v, room, now);
     if card {
         // Home's pieces over its UI (the wordmark's crown, the player's picture) draw
@@ -857,6 +867,14 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
         sh.out.over.clear();
         gui::listen(g, true);
         if who_card(sh, g, area) { changed = true; }
+    }
+    if asking {
+        sh.out.over.clear();
+        gui::listen(g, true);
+        let ask = home::ask_quit(g, area, gui::bleed(g, area, area));
+        if ask == home::EXIT { sh.out.quit = true; }
+        if ask == home::BACK { sh.quitting = false; }
+        if ask != home::NOTHING { changed = true; }
     }
     if pick != home::NOTHING { changed = true; }
     match pick {
@@ -873,7 +891,9 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
             sh.changed = true;
             apply_prefs(sh);
         },
-        home::EXIT => { sh.out.quit = true; },
+        home::EXIT => {
+            if home::asks_quit() { sh.quitting = true; } else { sh.out.quit = true; }
+        },
         home::PLAYERS => { who::open(sh.who); },
         home::RESULTS => { go_to(sh, RESULTS, now); },
         home::PLAY => { play(sh, now); },

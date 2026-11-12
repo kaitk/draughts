@@ -3,7 +3,11 @@ a desktop's landscape 400 dp tall, too short for it: the Quit row false
 a desktop in portrait, 800 x 1280: the X
 a touch screen, 1280 x 800: the X
 down from none, eight times (ids past HOME_IDS; the games 7): 1 2 3 4 7 5 6 6
-enter on Quit: quit true
+enter on Quit: quit false, asks true
+the question: focus 15 (quit 15)
+back: handled true, asks false
+back on the menu: handled true, asks true
+enter on the question: quit true
 on a friend: focus 2
 enter: setup true, focus 70
 enter on play: screen the game, focus on the game's panels true

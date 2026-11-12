@@ -169,7 +169,8 @@ fn main() {
         if input.wheel != 0.0 { dirty = true; }
         // Android's back and Escape go back a screen, as the screen's own back or home
         // control does. On home's menu back leaves the app as the system's back would,
-        // putting it in the background; Escape there ends the loop, closing the Mac's window.
+        // putting it in the background; on a desktop it asks whether to quit
+        // (home::ask_quit), and only where it doesn't ends the loop, closing the window.
         if host::back(h) {
             if shell::put_down(sh, g) || shell::back(sh, now) { dirty = true; }
             else if on_android { host::leave(); }

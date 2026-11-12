@@ -144,3 +144,6 @@ results.none = Veel pole mänge
 moves.none = Käike veel pole
 board.turns = Pöörab
 board.turns_note = (sõbraga)
+
+quit.ask = Kas soovid väljuda?
+quit.cancel = Tühista

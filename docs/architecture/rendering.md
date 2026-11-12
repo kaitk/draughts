@@ -111,7 +111,8 @@ margins, centered down the window (`panel::flat_frame`), so the board's top stil
 the panels'. Settings' preview, flat or 3D, stands with its top level with the game
 group's glass (`settings::level`), and home's column holds the menu or a setup 40 dp from
 its top, at least 440 dp wide (`home::DESKTOP_TOP`, `DESKTOP_COLUMN_W`), rather than
-centered down it. Each only moves things or widens the column on a desktop; a touch
+centered down it, the menu's rows 56 dp under the wordmark rather than 34
+(`home::DESKTOP_MARK_GAP`). Each only moves things or widens the column on a desktop; a touch
 screen's layout is unchanged. A desktop's tiles are thinner too: every size that is a
 tap, a tile's or a row's height and the least a tap is across, is `gui::tap()`, 88 dp on
 a touch screen and 64 on a desktop, and the room a tile sized to its words keeps either
@@ -633,7 +634,12 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   column, where it fits, the way out is instead a last row under settings, an X and Quit
   (`home::quit_row`), and the corner shows no X: one way out shown one of two ways, as
   settings is the gear or a row. A desktop's portrait sheet, a column too short for the
-  row, and every touch screen keep the X. In landscape it sits above the photograph,
+  row, and every touch screen keep the X. On a desktop the way out asks first
+  (`home::ask_quit`): over home dimmed, a glass card with "Quit Draughts?" over cancel
+  and quit, quit lit and the keys' first choice, so Enter or a gamepad's A answers it;
+  Escape or B cancels it, as a press outside the card does. Escape or B on the menu, which
+  has no way back, asks the same rather than closing the window at once. A touch screen
+  still closes at once. In landscape it sits above the photograph,
   clear of the board (28 dp right of its edge, 8 dp above its top; on a phone, where the
   board would reach it, the board moves down to 8 dp under it or narrows to 16 dp left of it,
   whichever leaves it larger); in portrait, where

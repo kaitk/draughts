@@ -359,6 +359,15 @@ came on 2026-11-09.
   The X shows only where the row doesn't (the portrait sheet, a column too short for it,
   a touch screen), as settings is the gear or a row, never both. Rejected: the row in
   the portrait sheet, for the reason above; both the row and the X at once.
+- On a desktop, quitting asks first (2026-11-12, the user): a card over home dimmed,
+  "Quit Draughts?" with cancel and quit, quit the keys' first choice, for Quit, the X,
+  and Escape or a gamepad's B on the menu, which had closed the window at once and was
+  easily pressed by a gamepad going back. It narrows the X's "at once, asking nothing" to
+  touch screens, where the X sits apart in a corner, Android's own back doesn't ask, and
+  the game is kept anyway. Rejected: asking on touch screens too, a dialog for a child
+  who meant to close it.
+- A desktop's menu rows stand 56 dp under the wordmark rather than 34 (2026-11-12, the
+  user): at a desktop's smaller scale 34 read as the rows crowding the title.
 - The board keeps 40 dp above and below, down to 24 where a setup's tall sheet near
   square would leave it under 40% of the width (2026-11-08).
 - The setups (2026-11-08): the child's colour against the computer, every tile 88 dp tall

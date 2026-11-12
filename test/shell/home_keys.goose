@@ -3,8 +3,9 @@
 // the X isn't shown; in portrait, in a landscape too short for the row, and on a touch
 // screen (desktop_scale 0) the X is, and no Quit row. The first arrow key focuses
 // Continue, the menu's primary row; down walks the rows to Quit and stops there; Enter on
-// Quit asks the app to stop (quit), as the X does. Enter on a friend opens its setup,
-// whose focus goes to play, its primary, and Enter there starts the game.
+// Quit asks first (home::ask_quit), the question's quit focused, and back cancels it, as
+// back on the menu asks it; Enter there asks the app to stop (quit). Enter on a friend
+// opens its setup, whose focus goes to play, its primary, and Enter there starts the game.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -64,7 +65,21 @@ fn main() {
     print("down from none, eight times (ids past HOME_IDS; the games 7):", walk[..]);
     now += 1.0;
     drive::key(sh, g, gui::STEP_NONE, true, now);
-    print("enter on Quit: quit ", sh.out.quit);
+    print("enter on Quit: quit ", sh.out.quit, ", asks ", sh.quitting);
+    // The question's buttons, its quit the keys' first choice; back (Escape, a gamepad's
+    // B) cancels it, and back on the menu asks again.
+    now += 1.0;
+    drive::idle(sh, g, now);
+    now += 1.0;
+    drive::idle(sh, g, now);
+    print("the question: focus ", g.focus - gui::HOME_IDS, " (quit 15)");
+    print("back: handled ", shell::back(sh, now), ", asks ", sh.quitting);
+    print("back on the menu: handled ", shell::back(sh, now), ", asks ", sh.quitting);
+    now += 1.0;
+    drive::idle(sh, g, now);
+    now += 1.0;
+    drive::key(sh, g, gui::STEP_NONE, true, now);
+    print("enter on the question: quit ", sh.out.quit);
 
     var fr = shell::new(rules::INTERNATIONAL);
     g = gui::Gui {};

@@ -12,7 +12,8 @@
 // the settings.
 //
 // A bare X in the screen's top right, with no disc until pressed, closes the app, at
-// once: the game is kept in any case. In portrait the board moves down and shrinks to clear it.
+// once on a touch screen: the game is kept in any case. On a desktop it asks first
+// (ask_quit), as Quit and the shell's back on the menu do. In portrait the board moves down and shrinks to clear it.
 // On a desktop's landscape column, where it fits, the way out is a last row, Quit, under
 // settings, and the X isn't shown (quit_row): one way out shown one of two ways, as
 // settings is the gear or a row.
@@ -75,6 +76,7 @@ fn row_h(small: bool) -> f32 { if small { min(ROW_COMPACT, gui::tap()) } else { 
 fn mark_h(small: bool) -> f32 { if small { MARK_COMPACT } else { MARK_H } }
 let MARK_H = 72.0;          // the wordmark's row
 let MARK_GAP = 34.0;        // under it in landscape; 14 beside settings' gear, down to 4
+let DESKTOP_MARK_GAP = 56.0; // under it on a desktop's column, where 34 read as the rows crowding it
 let GEAR_ICON = 40.0;       // settings' gear beside the wordmark, alone in a tap over its row's height
 let MARGIN = 16.0;          // dp the menu keeps from the screen's top and foot at least
 let EDGE = 24.0;            // the way out, a round tap in the top right, this far from both edges,
@@ -118,13 +120,13 @@ fn corner(area: float4, u: f32) -> float4 {
 // small window, none where the tap is no taller than the row (a desktop).
 fn reach(small: bool) -> f32 { max(0.0, 0.5 * (gui::tap() - mark_h(small))) }
 
-// The gap under the wordmark in dp: MARK_GAP with settings a row of its own; 14 beside
-// the gear, less where the area's `height` would leave the gear's reach over the
-// wordmark's row off the screen, but never under that reach, so the gear's tap keeps off
-// the first row's (a landscape phone at 480 dp less its gesture bar: row_gap gives way
-// instead).
+// The gap under the wordmark in dp: MARK_GAP with settings a row of its own,
+// DESKTOP_MARK_GAP on a desktop; 14 beside the gear, less where the area's `height`
+// would leave the gear's reach over the wordmark's row off the screen, but never under
+// that reach, so the gear's tap keeps off the first row's (a landscape phone at 480 dp
+// less its gesture bar: row_gap gives way instead).
 fn mark_gap(gear: bool, height: f32, u: f32, small: bool = false) -> f32 {
-    guard gear else { return MARK_GAP; }
+    guard gear else { return if gui::desktop_scale > 0.0 { DESKTOP_MARK_GAP } else { MARK_GAP }; }
     guard !small else { return reach(true); }
     return clamp(height / u - reach(false) - (MARK_H + rows * gui::tap() + (rows - 1) * ROW_GAP), reach(false), 14.0);
 }
@@ -554,6 +556,53 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
         gui::scroll_end(g);
     }
     return pick;
+}
+
+// Whether quitting asks first (ask_quit): on a desktop, where a gamepad's B or Escape on
+// the menu, or a slip onto Quit, would otherwise close the window at once. A touch
+// screen's X closes at once: the game is kept, and Android's own back doesn't ask either.
+fn asks_quit() -> bool { gui::desktop_scale > 0.0 }
+
+// The quit's question (asks_quit, 2026-11-12): over the dimmed home (`screen`, the whole
+// window), a glass card centered in the safe area `area`, the question over cancel and
+// quit side by side, quit lit and the keys' first choice, so Enter or A answers it and
+// Escape or B (the shell's back) cancels. A press outside the card cancels too. Returns
+// EXIT, BACK for cancel, or NOTHING.
+let ASK_PAD = 28.0;         // the card's sides, and between the question and the buttons
+let ASK_GAP = 12.0;         // between the buttons
+let ASK_BUTTON = 150.0;     // a button's width at least
+let ASK_ICON = 28.0;
+fn ask_quit(g: gui::Gui&, area: float4, screen: float4) -> i64 {
+    let u = g.scale;
+    gui::fill(g, screen, float4 { 0.0, 0.0, 0.0, 0.42 }, 0.0);
+    let outside, unused = gui::hold(g, gui::HOME_IDS + 12, screen, false);
+    let title = strings::get(strings::QUIT_ASK);
+    let cancel = strings::get(strings::QUIT_CANCEL);
+    let quit = strings::get(strings::HOME_QUIT);
+    let button = max(ASK_BUTTON * u, max(gui::labelled_width(g, ASK_ICON, cancel, gui::BODY),
+                                         gui::labelled_width(g, ASK_ICON, quit, gui::BODY)));
+    let pair = 2.0 * button + ASK_GAP * u;
+    let line = g.faces[gui::HEADING].ascent - g.faces[gui::HEADING].descent;
+    let width = min(max(pair, gui::text_width(g, gui::HEADING, title)) + 2.0 * ASK_PAD * u, area.z);
+    let height = line + (3.0 * ASK_PAD + gui::tap()) * u;
+    let r = gui::center(area, width, height);
+    gui::glass(g, r, 32.0);
+    gui::hold(g, gui::HOME_IDS + 13, r, false);
+    var c = gui::inset(r, ASK_PAD * u);
+    gui::text(g, gui::HEADING, gui::cut_top(c, line), title, 1.0, 0.0, gui::CENTER);
+    gui::cut_top(c, ASK_PAD * u);
+    var row = gui::center(gui::cut_top(c, gui::tap() * u), pair, gui::tap() * u);
+    var ask = NOTHING;
+    if gui::labelled(g, gui::HOME_IDS + 14, gui::cut_left(row, button), gui::BACK, ASK_ICON, cancel, gui::BODY, gui::MIDDLE) {
+        ask = BACK;
+    }
+    if gui::labelled(g, gui::HOME_IDS + 15, gui::cut_right(row, button), gui::CLOSE, ASK_ICON, quit, gui::BODY, gui::MIDDLE,
+                     gui::PRIMARY) {
+        ask = EXIT;
+    }
+    gui::prefer(g, gui::HOME_IDS + 15);
+    if ask == NOTHING && outside { ask = BACK; }
+    return ask;
 }
 
 // A choice's dim name, then a row of `count` tiles `h` dp tall cut from c; returns the

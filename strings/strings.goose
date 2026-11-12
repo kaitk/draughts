@@ -49,6 +49,7 @@ let KEYS = [
     "results.title", "results.rating", "results.computer", "results.friend", "results.none",
     "moves.none",
     "board.turns", "board.turns_note",
+    "quit.ask", "quit.cancel",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -174,7 +175,9 @@ let RESULTS_NONE = 120;     // and the list with no game yet
 let MOVES_NONE = 121;       // the moves panel before the first move
 let BOARD_TURNS = 122;      // the Board row's third tile: a friend's game turns the board,
 let BOARD_TURNS_NOTE = 123; // its note
-let COUNT = 124;
+let QUIT_ASK = 124;         // a desktop's quit asks first (home::ask_quit): the question,
+let QUIT_CANCEL = 125;      // and the button that keeps the app open
+let COUNT = 126;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];
