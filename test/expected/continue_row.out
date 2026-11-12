@@ -1,7 +1,7 @@
-a game read back: continue awake, note "A friend"
-a first run: continue dim, note "A friend"
-  a tap on it: home, setup 0
-the computer's game set up, easy: continue awake, note "The computer · easy"
-  back home, a tap on it: the game
-a new player's game: continue dim, note "A friend"
-a move played in it: continue awake, note "A friend"
+a game read back: continue shown, note "A friend"
+a first run: continue hidden, note "A friend"
+  a tap on the first row: home, setup 2 (2 Friend's)
+the computer's game set up, easy: continue shown, note "The computer · easy"
+  back home, a tap on the first row: the game
+a new player's game: continue hidden, note "A friend"
+a move played in it: continue shown, note "A friend"

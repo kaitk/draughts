@@ -1,8 +1,8 @@
 // Home's continue (shell::resume, home::Resume; issue 1, prototypes/issue-1.html take a):
 // its note says whose game it goes back to, a friend's or the computer's at its level.
-// While the game is one nobody set up (a fresh install's first run, a new player) and no
-// move was played in it, the row is dim and a tap on it does nothing; a game set up from
-// home's setup, or a move played, wakes it.
+// While the game is one nobody set up (none kept: a fresh install, a new player) and no
+// move was played in it, the row isn't shown, Friend's the first; a game set up from
+// home's setup, or a move played, shows it.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -19,7 +19,7 @@ let NAMES = ["home", "the game", "settings", "the puzzles", "a puzzle"];
 
 fn show(sh: shell::Shell&, what: const u8[:]) {
     let r = shell::resume(sh);
-    print(what, ": continue ", if r.on { "awake" } else { "dim" }, ", note \"",
+    print(what, ": continue ", if r.on { "shown" } else { "hidden" }, ", note \"",
           if r.note >= 0 { strings::get(r.note) } else { "" }, "\"");
 }
 
@@ -33,10 +33,12 @@ fn main() {
     sh.unset = true;
     show(sh, "a first run");
     drive::idle(sh, g, 0.0);
-    // Continue is home's first row, its first tile in landscape (settings a row of its own).
+    // Home's first tile in landscape (settings a row of its own): Friend's, with no Continue.
     drive::tap(sh, g, drive::tile(g, 0), 0.1);
     drive::idle(sh, g, 0.2);
-    print("  a tap on it: ", NAMES[sh.screen], ", setup ", sh.setup);
+    print("  a tap on the first row: ", NAMES[sh.screen], ", setup ", sh.setup, " (", home::FRIEND, " Friend's)");
+    shell::back(sh, 0.3);
+    drive::idle(sh, g, 0.6);
 
     sh.setup = home::COMPUTER;
     sh.prefs.level = 0;
@@ -47,7 +49,7 @@ fn main() {
     drive::idle(sh, g, 5.0);
     drive::tap(sh, g, drive::tile(g, 0), 5.1);
     drive::idle(sh, g, 5.2);
-    print("  back home, a tap on it: ", NAMES[sh.screen]);
+    print("  back home, a tap on the first row: ", NAMES[sh.screen]);
 
     sh.unset = true;
     sh.game = game::new(rules::INTERNATIONAL);

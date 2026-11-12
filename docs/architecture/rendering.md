@@ -566,8 +566,8 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   from one move to the next.
 - **Home** is a title menu (`prototypes/home.html`): the scene and the 3D board, and one glass column
   with the wordmark, then continue with whose game it goes back to ("A friend", "The
-  computer · easy"; dim, taking no tap, while the game is one nobody set up and no move
-  was played: `shell::resume`), a friend, the computer with its level, and puzzles
+  computer · easy"; not shown while the game is one nobody set up and no move was
+  played: `shell::resume`, the rows below moving up), a friend, the computer with its level, and puzzles
   with stars, then settings, each an icon and a word, in rows 88 dp tall, 2 dp apart. In
   portrait settings is instead a gear beside the wordmark, so the sheet leaves the board
   its room: the gear alone, 40 dp at 85%, with no tile, in an 88 dp tap reaching 8 dp over
@@ -1188,7 +1188,7 @@ of a square round the piece on the side toward the eye, as the piece hides its f
 painted over the field (that pass blends premultiplied, the other marks adding with alpha
 0), as added light washed out on a light square. They change only with the count, so they
 cost a draw of the board then and nothing per frame. A capture of many jumps is tapped or dropped by its
-last square, when one way alone goes there, or stop by stop (`board::follow`), along any of
+last square, when every way there takes the same pieces, or stop by stop (`board::follow`), along any of
 its ways (`rules::ways`, every way the selected piece takes, kept in `Board.ways` when it
 is selected; the move list keeps one way per move): a tap
 or a drop on the next stop of the selected piece's captures leaves the piece waiting

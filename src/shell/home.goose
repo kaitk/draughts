@@ -53,6 +53,9 @@ var closable = true;
 let PLAYERS = 10;           // who's playing
 
 let ROWS = 4;               // and settings, a fifth in landscape
+// The menu's rows shown: ROWS, or one fewer while there is no game to continue (frame
+// sets it from Resume before the layout; issue 1).
+var rows = ROWS;
 let ROW_GAP = 2.0;
 // A small window (gui::compact, task 050): the menu's rows and the wordmark's row lower,
 // the sheet's rim thinner, so the board keeps a room above it.
@@ -114,24 +117,24 @@ fn reach(small: bool) -> f32 { max(0.0, 0.5 * (gui::tap() - mark_h(small))) }
 fn mark_gap(gear: bool, height: f32, u: f32, small: bool = false) -> f32 {
     guard gear else { return MARK_GAP; }
     guard !small else { return reach(true); }
-    return clamp(height / u - reach(false) - (MARK_H + ROWS * gui::tap() + (ROWS - 1) * ROW_GAP), reach(false), 14.0);
+    return clamp(height / u - reach(false) - (MARK_H + rows * gui::tap() + (rows - 1) * ROW_GAP), reach(false), 14.0);
 }
 
 // The gap between the menu's rows in dp: ROW_GAP, less, down to none, where the gap
 // under the wordmark can't give way any further (mark_gap).
 fn row_gap(gear: bool, height: f32, u: f32, small: bool = false) -> f32 {
     guard gear && !small else { return ROW_GAP; }
-    let left = height / u - reach(false) - MARK_H - mark_gap(gear, height, u) - ROWS * gui::tap();
-    return clamp(left / (ROWS - 1), 0.0, ROW_GAP);
+    let left = height / u - reach(false) - MARK_H - mark_gap(gear, height, u) - rows * gui::tap();
+    return clamp(left / (rows - 1), 0.0, ROW_GAP);
 }
 
 // How tall the menu is in an area `height` tall, with settings a row of its own or the
 // gear beside the wordmark.
 fn menu_height(gear: bool, height: f32, u: f32, small: bool = false, quit: bool = false) -> f32 {
     let more = if quit { 2 } else { 1 };
-    let rows = if gear { ROWS } else { ROWS + more };
-    return (mark_h(small) + mark_gap(gear, height, u, small) + rows * row_h(small)
-            + (rows - 1) * row_gap(gear, height, u, small)) * u;
+    let n = if gear { rows } else { rows + more };
+    return (mark_h(small) + mark_gap(gear, height, u, small) + n * row_h(small)
+            + (n - 1) * row_gap(gear, height, u, small)) * u;
 }
 
 // Whether settings is the gear beside the wordmark: in portrait, and in a landscape too
@@ -329,8 +332,8 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, s: settings::Settings&
 // `setup` (FRIEND or COMPUTER) with the choices in s. Returns what was tapped.
 // What continue goes back to (issue 1, prototypes/issue-1.html, take a): whether there
 // is a game to go back to, one played or set up, and whose it is, a strings key for the
-// row's note (CONTINUE_FRIEND..), or -1 for none. On a first run there is none: the row
-// is dim and takes no tap.
+// row's note (CONTINUE_FRIEND..), or -1 for none. With none (a first run, a new player)
+// the row isn't shown, as Quit isn't where it doesn't fit.
 struct Resume {
     on:   bool = true,
     note: i64  = -1,
@@ -344,6 +347,7 @@ fn resume_note(computer: i64, level: i64) -> i64 {
 
 fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: float4, setup: i64,
          s: settings::Settings&, room3d: float4&, resume: Resume = Resume {}) -> i64 {
+    rows = if resume.on { ROWS } else { ROWS - 1 };
     let h = layout(g, n, area, setup, s);
     l = h.board;
     room3d = h.room3d;
@@ -425,12 +429,13 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
     // The wordmark, then the rows, settings as the next where it isn't the gear, and Quit
     // last with `quit`.
     let more = if quit { 2 } else { 1 };
-    let rows_n = if gear { ROWS } else { ROWS + more };
+    let first = ROWS - rows;    // the first row shown: Continue's, or Friend's without it
+    let rows_n = if gear { rows } else { rows + more };
     var items: gui::Item[ROWS + 3] = [gui::Item {}; ROWS + 3];
     var at:    float4[ROWS + 3]    = [float4 { 0.0, 0.0, 0.0, 0.0 }; ROWS + 3];
     items[0].size = mark_h(small) * u;
     for i in rows_n {
-        items[1 + i].size = (if i < ROWS { row_h(small) } else { gui::tap() }) * u;
+        items[1 + i].size = (if i < rows { row_h(small) } else { gui::tap() }) * u;
         items[1 + i].gap = (if i == 0 { below } else { apart }) * u;
     }
     gui::stack(c, items[..rows_n + 1], at);
@@ -457,23 +462,22 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
     gui::text(g, gui::TITLE, mark, name, 1.0, clamp(room, 0.0, spaced), gui::LEFT);
 
     // The menu.
-    let rows = [CONTINUE, FRIEND, COMPUTER, PUZZLES];
+    let ways = [CONTINUE, FRIEND, COMPUTER, PUZZLES];
     let icons = [gui::NEXT, gui::FRIEND, gui::COMPUTER, gui::PUZZLE];
     let keys = [strings::HOME_CONTINUE, strings::HOME_FRIEND, strings::HOME_COMPUTER, strings::HOME_PUZZLES];
-    for i in ROWS {
-        let r = at[1 + i];
+    for i in first..ROWS {
+        let r = at[1 + i - first];
         var stars: u8[..64] = [];
         let won, all = picker::totals(s.stars[puzzles::loaded]);
         strings::fill_in(stars, strings::PUZZLES_STARS, [won, all]);
-        let note = if i == 0 && resume.on && resume.note >= 0 { strings::get(resume.note) }
+        let note = if i == 0 && resume.note >= 0 { strings::get(resume.note) }
                    else if i == 2 { strings::get(LEVEL_NOTES[s.level]) } else if i == 3 && all > 0 { stars[..] } else { "" };
-        let on = i != 0 || resume.on;
-        if gui::row(g, gui::HOME_IDS + 1 + i, r, icons[i], strings::get(keys[i]), note, i == 0 && on, on) { pick = rows[i]; }
+        if gui::row(g, gui::HOME_IDS + 1 + i, r, icons[i], strings::get(keys[i]), note, i == 0, true) { pick = ways[i]; }
     }
     if !gear {
-        if gui::row(g, gui::HOME_IDS + 5, at[1 + ROWS], gui::GEAR, strings::get(strings::HOME_SETTINGS), "", false, true) { pick = SETTINGS; }
+        if gui::row(g, gui::HOME_IDS + 5, at[1 + rows], gui::GEAR, strings::get(strings::HOME_SETTINGS), "", false, true) { pick = SETTINGS; }
     }
-    if quit && gui::row(g, gui::HOME_IDS + 6, at[2 + ROWS], gui::CLOSE, strings::get(strings::HOME_QUIT), "", false, true) {
+    if quit && gui::row(g, gui::HOME_IDS + 6, at[2 + rows], gui::CLOSE, strings::get(strings::HOME_QUIT), "", false, true) {
         pick = EXIT;
     }
     return pick;

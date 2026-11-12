@@ -21,7 +21,6 @@ fn enter(sh: Shell&, index: i64, s: settings::Settings) {
     sh.game = game::new(sh.prefs.variant as u8);
     let screen = sh.screen;
     read_game(sh);
-    sh.unset = false;
     sh.screen = screen;
     sh.puzzle = puzzle::new();
     sh.theme = -1;
@@ -55,7 +54,6 @@ fn add_player(sh: Shell&, picture: i64, name: players::Name) -> bool {
     players::store(ps, id, s);
     let at = players::insert(ps, players::Player { id: id, picture: picture, name: name });
     enter(sh, at, s);
-    sh.unset = true;            // the new player's game is one nobody set up (shell::resume)
     return true;
 }
 

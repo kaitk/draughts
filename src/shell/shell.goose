@@ -142,8 +142,9 @@ struct Shell {
     back:    i64                = HOME,       // where settings goes back to
     setup:   i64                = home::NO_SETUP, // home's column: the menu, or a setup
     staged:  bool               = false,      // home shows `next`, having declared a setup this frame
-    // The game is one nobody set up, a fresh install's first run's or a new player's,
-    // until a game is set up or a move played in it (resume).
+    // The game is one nobody set up, there being none kept (read_game: a fresh install, a
+    // new player), until a game is set up or a move played in it (resume). Kept with the
+    // game (saved.goose).
     unset:   bool               = false,
     out:     Frame,                           // this frame's, for the app
     // Handed in by the app each frame (frame): whether the 3D board, when chosen, is
@@ -422,10 +423,7 @@ fn launch(sh: Shell&, prefs: settings::Settings, ps: players::Players&) {
 fn open(sh: Shell&, first: bool) {
     apply_prefs(sh);
     read_game(sh);
-    if first && sh.players.fresh {
-        who::first_run(sh.who, sh.players);
-        sh.unset = true;
-    }
+    if first && sh.players.fresh { who::first_run(sh.who, sh.players); }
 }
 
 // The puzzles are the set of the player's draughts (puzzles::set_of). The draughts
