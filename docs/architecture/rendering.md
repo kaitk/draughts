@@ -252,7 +252,7 @@ the theme can be overridden in settings. Values from the design boards:
 | Page under the scene | `#1c1410` | `#0b1622` | `#101a14` | `#20140f` |
 | Square surface | wood grain | soft mottling | faint fibre | plain sheen |
 
-Summer's sunset takes the summer photograph's evening sky, peach and dusky rose. The crown on a light piece is the dark piece's color.
+Summer's sunset takes the summer photograph's evening sky, peach and dusky rose. The crown on a light piece is the dark piece's color. The crown on a dark piece is gold (`#e9c46a`) on every theme, flat and 3D alike; in 3D a little glossier than the light piece's.
 
 Secondary text is the text color at 66%. The surfaces are faint, never busy: a few sines
 and value noise in the board shader. Wood is fine irregular streaks along the board and

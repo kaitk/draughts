@@ -427,6 +427,9 @@ Task 052, `prototypes/game-captured.html`'s take a in its `row` look, chosen 202
 - The pieces' occlusion of the field into a map only where squares changed (task 059):
   a texel a field pixel reads instead of the loop; the dropped bake drew shadow and
   occlusion with every shadow map.
+- A dark king's crown gold (`#e9c46a`) on the 3D board too, as on the flat one, rather
+  than the look's crown color, a deeper tone of the piece that was hard to see on the
+  dark kings on the tablet (2026-11-12).
 - The crown into a 256² map drawn once at setup (task 059): evaluated three times a pixel
   for its slope, it was a third of a frame with 16 kings on the Pixel 7a.
 - The renderer's backdrop kept as an image (task 059): its grade each frame was 7% of the

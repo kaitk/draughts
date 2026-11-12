@@ -459,8 +459,11 @@ let LIT_FRAG = """
                 float share = min(1.0, 0.006 / max(w, 1e-5));
                 n = normalize(n - vec3(grad.x, 0.0, -grad.y) * wall * 1.6 * share);
                 top_var += wall * (1.0 - wall) * share;
-                albedo = mix(albedo, crown_color.rgb, inside);
-                rough = mix(rough, 0.7, inside);
+                // A dark king's crown is the 2D piece's gold (#e9c46a, linear), a little
+                // glossy as gilt; a light king's the look's crown color.
+                vec3 fill = dark ? vec3(0.815, 0.552, 0.144) : crown_color.rgb;
+                albedo = mix(albedo, fill, inside);
+                rough = mix(rough, dark ? 0.45 : 0.7, inside);
                 ao *= 1.0 - 0.35 * inside;
                 // The face's edge round the deboss catches the light: a thin lighter lip.
                 float lip = smoothstep(-w, w, d) * (1.0 - smoothstep(0.0, 0.005 + w, d));
