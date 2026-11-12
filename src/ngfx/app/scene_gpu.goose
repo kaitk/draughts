@@ -1,12 +1,13 @@
 // Recording the scene's passes (scene.goose) through goose-ngfx, in place of
-// src/app/scene_gpu.goose (scripts/ngfx.py): the shaders are src/ngfx/shaders/ built
-// ahead, the pipelines made once and kept, and each pass's writes made visible to the
-// passes after it that sample them.
+// src/app/scene_gpu.goose (scripts/ngfx.py): the shaders are written from that file's
+// GLSL (scripts/ngfx_2d_shaders.py) and built ahead, the pipelines made once and kept,
+// and each pass's writes made visible to the passes after it that sample them.
 namespace scene_gpu;
 import std;
 import vec;
 import ngfx;
 
+// The shaders' roots, as their headers lay them out.
 struct ShrinkRoot { src: u32, smp: u32, pad0: u32, pad1: u32, from: float4, to: float4 }
 struct BlurRoot { src: u32, smp: u32, pad0: u32, pad1: u32, dir: float4 }
 struct FadeRoot { to: float4, top: float4, low: float4, light: float4 }
