@@ -123,7 +123,7 @@ cursor: headless shots at 1280 × 800 match gfx's flat, and the 3D cursor draws.
    the keys flat and 3D, Tab; and the PS5 pad (A, B, the D-pad, the stick, the
    shoulders), its first press after a long rest waking the app at once.
 2. The gamepad is goose_gfx's since 2026-11-12 (`src/app/pad.c` gone; the fork's
-   `gamepad-idle-wait` and `gamepad-wake`, opened with `SYSTEM_GAMEPADS`;
+   `gamepad-wake`, opened with `SYSTEM_GAMEPADS`;
    docs/decisions/rendering.md). On Windows with a PS5 pad, `--rest 25`: 0.14 s of CPU
    in 25 s (0.56%), the loop waking 26 times and drawing nothing, as the 0.4 to 0.6%
    before; gfx's window test drives SDL's virtual gamepad through the idle wait (a stir

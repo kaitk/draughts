@@ -48,7 +48,7 @@ doesn't declare them.
   20 s (5% of a core; none without the pad). The fork's gfx turns
   `SDL_HINT_AUTO_UPDATE_JOYSTICKS` off and reads the pads itself in `frame()`, and in its
   idle wait every 16 ms while focused, ending the wait only on a press or a stick moved a
-  quarter of its way (`gamepad-idle-wait`, `gamepad-wake`): 0.4 to 0.6% of a core on
+  quarter of its way (`gamepad-wake`): 0.4 to 0.6% of a core on
   Windows with a PS5 pad (0.56% with `gamepad-wake`, 2026-11-12). The program opens gfx
   with `SYSTEM_GAMEPADS` (`gamepad-wake`): HIDAPI off on Apple's systems and Android, so
   the system reads the pad and wakes the wait. On Apple's systems gfx sets each pad's
@@ -57,9 +57,10 @@ doesn't declare them.
   Mac); on Android, Android's input events reach SDL from its Java side as they happen, and
   end the wait. The Mac's, the tablet's and iOS's numbers with gfx's handler are to
   measure.
-- Upstream: `gamepad-idle-wait` (on `ios-run-loop-wait`) and `gamepad-wake` on it: gfx
-  reading the pads in `frame()` and its idle wait instead of SDL every millisecond, and
-  `SYSTEM_GAMEPADS`, opt-in as it trades the HID drivers' features for a free rest.
+- Upstream: `gamepad-wake`, one branch on `ios-run-loop-wait` (which needs
+  `draw-on-demand`'s idle wait first): gfx reading the pads in `frame()` and its idle wait
+  instead of SDL every millisecond, and `SYSTEM_GAMEPADS`, opt-in as it trades the HID
+  drivers' features for a free rest.
   Whether to also add `gamepad_*` to the release's `gfx.goose` is the next release's.
 
 ## Goose: no way to write `goose.h` for a build of one's own (2026-11-11)
