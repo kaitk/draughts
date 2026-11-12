@@ -51,6 +51,9 @@ struct Tex {
     __init(uint t_, uint s_) { t = t_; s = s_; }
 };
 vec4 glsl_texture(Tex t, vec2 uv) { return gpu_texture<Texture2D<float4>>(t.t).Sample(gpu_sampler(t.s), uv); }
+vec4 glsl_texture_lod(Tex t, vec2 uv, float lod) {
+    return gpu_texture<Texture2D<float4>>(t.t).SampleLevel(gpu_sampler(t.s), uv, lod);
+}
 vec4 glsl_texture_grad(Tex t, vec2 uv, vec2 dx, vec2 dy) {
     return gpu_texture<Texture2D<float4>>(t.t).SampleGrad(gpu_sampler(t.s), uv, dx, dy);
 }

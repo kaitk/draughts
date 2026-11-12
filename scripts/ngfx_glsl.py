@@ -140,6 +140,7 @@ class Stage:
         body = re.sub(r"\bnot\(", "glsl_not(", body)
         body = re.sub(r"\btexture\(", "glsl_texture(", body)
         body = re.sub(r"\btextureGrad\(", "glsl_texture_grad(", body)
+        body = re.sub(r"\btextureLod\(", "glsl_texture_lod(", body)
         body = re.sub(r"\btextureSize\(", "glsl_texture_size(", body)
         body = re.sub(r"\btexelFetch\(", "glsl_texel_fetch(", body)
         if fix:

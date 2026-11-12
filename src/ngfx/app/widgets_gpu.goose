@@ -1,8 +1,8 @@
 // Recording the UI's quads (widgets.goose) through goose-ngfx, in place of
-// src/app/widgets_gpu.goose (scripts/ngfx.py): src/ngfx/shaders/ui.slang and compose,
-// written from gfx's COMPOSE_FRAG (scripts/ngfx_2d_shaders.py), built ahead, and the quads
-// copied into each frame's memory that draws them as they come, an instanced draw per run
-// of one pipeline pulling them from there.
+// src/app/widgets_gpu.goose (scripts/ngfx.py): its shaders, written from that file's GLSL
+// (scripts/ngfx_2d_shaders.py) and built ahead, and the quads copied into each frame's
+// memory that draws them as they come, an instanced draw per run of one pipeline pulling
+// them from there.
 namespace widgets_gpu;
 import std;
 import vec;
@@ -10,12 +10,15 @@ import ngfx;
 
 import gui from "../gui";
 
-// ui.slang's root, and compose's, as its header lays it out.
+// The quads' root (ui_base, ui_icons, and ui_faces alike) and compose's, as their
+// shaders' headers lay them out; `first`, the run's first quad, is the one field gfx's
+// shaders have no block for: gfx draws from a first instance, which SV_InstanceID leaves
+// out.
 struct Root {
     quads: u64,
     glass: u32, atlas: u32, thumbs: u32, badges: u32, smp: u32, first: u32,
-    theme: theme::Theme,
     view:  widgets::View,
+    theme: theme::Theme,
 }
 struct ComposeRoot { layer: u32, smp: u32, pad0: u32, pad1: u32 }
 
@@ -58,6 +61,6 @@ fn run(g: Gpu&, p: i64, first: i64, count: i64, s: scene::Scene&, t: theme::Them
     ngfx::bind(g.pipelines[p]);
     ngfx::draw_instanced(ngfx::root(Root { quads: g.addr, glass: ngfx::index(s.glass), atlas: ngfx::index(atlas),
                                            thumbs: ngfx::index(thumbs), badges: ngfx::index(badges),
-                                           smp: ngfx::index(s.sampler), first: first as u32, theme: t, view: view }),
+                                           smp: ngfx::index(s.sampler), first: first as u32, view: view, theme: t }),
                          6, count);
 }
