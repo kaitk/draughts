@@ -95,9 +95,8 @@ Each is a store rule the app doesn't meet yet:
   personal one: the store's paid team, or another Apple ID's Personal Team). That team
   also holds the app's bundle id: the paid team found `io.github.kaitk.draughts` taken
   (2026-11-10), so iOS builds use `io.github.kaitk.draughts.app` (`BUNDLE_ID` in
-  `scripts/ios.py`) for now. After 2026-11-16, try registering the plain id again (Apple
-  may take days to free it); if it registers, switch back before creating the App Store
-  Connect record or uploading a build, either of which fixes the id for good. Android
+  `scripts/ios.py`), kept for good rather than waiting for Apple to free the plain one
+  (2026-11-12): the id is never shown, and Apple doesn't check it against the domain. Android
   keeps `io.github.kaitk.draughts` until its first Play upload fixes it. No Apple ID, team id, or device identifier
   goes into the repo.
 - **Signing with the paid team:** once its team shows in Xcode (Settings → Accounts),
@@ -110,8 +109,6 @@ Each is a store rule the app doesn't meet yet:
 
 ## What remains for the user
 
-- **The bundle id:** after 2026-11-16, try the plain `io.github.kaitk.draughts` again
-  (above), before the App Store Connect record.
 - **App Store Connect:** register the bundle id (Certificates,
   Identifiers & Profiles), then the app record: name "Draughts" (or the fallback),
   English (U.K.), a SKU; App Information (category, URLs, content rights, the trader

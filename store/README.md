@@ -145,10 +145,10 @@ opens logged out before giving it to a store.
 ## The app's identity
 
 The application id is `io.github.kaitk.draughts` (2026-11-08), set as `APP_ID` in
-`scripts/native.py`. The bundle id is `io.github.kaitk.draughts.app` for now (2026-11-10),
-`BUNDLE_ID` in `scripts/ios.py`: a free team on a locked Apple ID holds the plain one, and
-the app goes back to it if Apple frees it before the first upload to App Store Connect
-(`tasks/046-app-store-release.md`). The version is `VERSION_NAME` in `native.py`, shared by
+`scripts/native.py`. The bundle id is `io.github.kaitk.draughts.app`,
+`BUNDLE_ID` in `scripts/ios.py`: a free team on a locked Apple ID holds the plain one, so
+the suffixed one is kept for good (2026-11-12, `tasks/046-app-store-release.md`). Nobody
+checks a reverse-domain id against the domain, so nothing need be served at its address. The version is `VERSION_NAME` in `native.py`, shared by
 both platforms, with the build numbers `VERSION_CODE` in `scripts/android.py` and
 `BUILD_NUMBER` in `scripts/ios.py`.
 `docs/development.md`, "Release builds", says how the AAB is built and signed.

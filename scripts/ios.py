@@ -46,9 +46,8 @@ from pathlib import Path
 import icon
 from native import ROOT, VERSION_NAME, app_names, copy_sources, goose_to_c, run, sidecar
 
-# The bundle id (2026-11-10), for now not Android's native.APP_ID: a free team on a locked
-# Apple ID holds that one. Back to APP_ID if Apple frees it before the first upload to App
-# Store Connect, which fixes it for good (tasks/046-app-store-release.md). Another
+# The bundle id, not Android's native.APP_ID: a free team on a locked Apple ID holds that
+# one, and this one is kept for good (2026-11-12, tasks/046-app-store-release.md). Another
 # program gets BUNDLE_ID.<name>. CFBundleShortVersionString is native.VERSION_NAME.
 BUNDLE_ID = "io.github.kaitk.draughts.app"
 BUILD_NUMBER = "1"        # CFBundleVersion, raised for every upload
