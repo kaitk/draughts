@@ -160,3 +160,10 @@ is trying ngfx and falling back, not a list of devices kept here:
 - [ ] Checked on the Mac, the iPhone, Windows, and an Android device, recorded here
 - [x] The `ngfx` branch retired
 - [ ] The decision and the architecture docs updated
+
+## Later
+
+- Extra ngfx downloads on each GitHub release, beside the gfx ones and marked as for
+  recent GPUs and drivers, until this task's one executable makes them unneeded
+  (Windows first, for task 074's gain; Linux runs ngfx too, task 076). Not now (the
+  user, 2026-11-12).
