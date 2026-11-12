@@ -211,7 +211,12 @@ next starts:
    Windows shots in the same sitting.
 3. **The pull requests, one at a time, sent by the user:** NoGraphicsAPI's
    `linux-presentation` (ready), then its MSAA branch; goose_gfx's `window-only-linux`
-   after `window-only`. Each with its numbers from tasks 074, 076, and 077.
+   after `window-only`. Each with its numbers from tasks 074, 076, and 077. Drafted
+   2026-11-12 in `build/notes/prs/` (local), each with its title, description, numbers,
+   and what to check before sending: Linux's tests on Windows; MSAA's Windows and Linux
+   rows from task 077; `window-only-linux` after `window-only` is merged. Upstream's #10
+   (xcb, open) is where sebbbi said he'd merge Linux support once he has a Linux box, so
+   the Linux draft offers itself as a base for that.
 4. **NoGraphicsAPI below macOS and iOS 26** (task 077, step 3): the fork builds there
    and fails at run time; the decision for Apple in step 4 below.
 5. **Both renderers in one executable** (step 4), on a branch `renderer-choice`, main
