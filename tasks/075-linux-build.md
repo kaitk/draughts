@@ -88,6 +88,10 @@ host with GCC 16 (10 s) for development, and the release in the `draughts-jammy`
   none is late. The RX 6800 waits 0.34 to 0.42 ms for a 3D frame at 1080p against the
   4090's 0.33 to 0.40 at 1440p (task 074).
 
+- **The release:** uploaded to the draft `Draughts 0.2.0` (untagged, beside the Windows
+  zip; the Mac's zip still to come), with a Linux paragraph, `install.sh`, XWayland, and the
+  SHA-256 in the notes (2026-11-12). Wayland is task 076, after 0.2.0 (the user, 2026-11-12).
+
 ## Acceptance criteria
 
 - [x] `scripts/linux.py` builds the app with the fork's gfx, and `--run` runs it.
@@ -135,7 +139,7 @@ host with GCC 16 (10 s) for development, and the release in the `draughts-jammy`
       whichever the Bazzite PC has), then a Vulkan surface from SDL
       (`SDL_Vulkan_CreateSurface`) in goose-ngfx's layer, and the ngfx build
       (`scripts/ngfx.py`) run and compared with gfx as task 074 did on Windows.
-- [ ] The release: the tarball built in the distrobox, extracted into a fresh folder and run
+- [x] The release: the tarball built in the distrobox, extracted into a fresh folder and run
       on the host; uploaded to the GitHub draft `v0.2.0` (the Mac's zip and Windows' are
       its others) with a Linux paragraph and its SHA-256 in the notes, asked of the user
       first. Linux needs Vulkan (Mesa or NVIDIA's driver) and glibc 2.35.
