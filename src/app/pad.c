@@ -16,9 +16,12 @@
 // too (SDL's HIDAPI off, as on Apple's systems): SDL's Java side hands each button, D-pad,
 // and stick change to the program as it happens, and the event SDL pushes for it ends the
 // loop's wait, so the idle loop sleeps there as well (Android filters a stick's jitter
-// around the middle by the device's flat range). Elsewhere the loop wakes about 30 times
-// a second while one is connected, to read it (draughts_pad_wakes; host's keys.goose,
-// PAD_POLL). A button pressed and let go between two reads isn't lost: an event watch keeps
+// around the middle by the device's flat range). On Windows goose_gfx's idle wait reads
+// the gamepads itself (kaitk/goose_gfx), every 16 ms while the window has focus, and ends
+// the wait on a press or a stick moved a quarter of its way, not on a resting stick's
+// jitter, so the idle loop sleeps there too. Elsewhere (Linux, not yet checked) the loop
+// wakes about 30 times a second while one is connected, to read it (draughts_pad_wakes;
+// host's keys.goose, PAD_POLL). A button pressed and let go between two reads isn't lost: an event watch keeps
 // the presses SDL's reading sends (pressed), and they count as down for one call. The
 // left stick past
 // half way counts as the D-pad toward its larger axis, let go under a third (a little
@@ -209,7 +212,7 @@ int64_t draughts_pad(void) {
         if (!pad) return 0;
 #if defined(__APPLE__)
         wakes = watch_controllers();
-#elif defined(__ANDROID__)
+#elif defined(__ANDROID__) || defined(_WIN32)
         wakes = true;
 #endif
     }

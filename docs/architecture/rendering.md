@@ -452,9 +452,10 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   doesn't read it on its own (it would every millisecond); the program reads it when
   its loop runs. On the Mac and iOS the system's GameController framework wakes the
   loop when the gamepad is used, and on Android the system's input events do (SDL's
-  HIDAPI off on all three), so the idle app sleeps. On Windows the idle loop wakes 30
-  times a second while one is connected, to read it. A press made and let go between
-  two reads still counts.
+  HIDAPI off on all three), so the idle app sleeps. On Windows goose_gfx's idle wait
+  reads it every 16 ms while the window has focus and wakes the loop only when it is
+  used, not for a resting stick's jitter. A press made and let go between two reads
+  still counts.
 - **Icons** are line icons on a 24-unit grid with round strokes, in the Lucide style:
   undo, hint (a bulb), restart, back (an arrow left), next, star, crown, lock, and the
   puzzle themes' target, crown, and shield; the 3D camera's buttons' board from above, board

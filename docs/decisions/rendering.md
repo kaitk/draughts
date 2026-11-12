@@ -264,9 +264,14 @@ are in git history before that day.
   AppKit). On Android too (2026-11-12): with SDL's HIDAPI off, Android reads the pad and
   hands each change to SDL as it happens, and the event that makes ends the loop's wait;
   a PS5 pad on a cable worked so on the tablet, plugged in mid-game and again later.
-  Windows still wakes 30 times a second while one is connected: an Xbox pad's XInput can
-  only be polled, and SDL reads a PS5 pad's reports in its own update; raw input, off by
-  default, could wake the loop, to try there with its cost measured first.
+  On Windows (2026-11-12) nothing outside the program says a pad was used (an Xbox pad's
+  XInput can only be polled, and SDL reads a PS5 pad's reports in its own update), so
+  goose_gfx's idle wait reads the pads every 16 ms while the window has focus and ends
+  the wait only on a press or a stick moved a quarter of its way (the fork's
+  `gamepad-idle-wait`): 0.4 to 0.6% of a core idle with a PS5 pad, the loop waking once a
+  second. Rejected: the loop waking 30 times a second to read it (4.3%: each wake runs the
+  whole loop); the same wait on Apple's systems and Android, where the system wakes the
+  loop for nothing.
 
 **The game screen**
 

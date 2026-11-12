@@ -49,8 +49,11 @@ Goose v2026.4.
   `valueChangedHandler` wakes the loop when the pad is used: 0.01 s in 20 s. On Android,
   HIDAPI off as well, Android's input events reach SDL from its Java side as they happen,
   and the event SDL pushes for each ends the wait (2026-11-12). On Windows the idle loop
-  wakes 30 times a second to read it (on the Mac, before its handler, that cost 0.3 s in
-  20 s, each wake going through AppKit). An event watch keeps a press made and let go between
+  woke 30 times a second to read it, 4.3% of a core with a PS5 pad (on the Mac, before
+  its handler, it cost 0.3 s in 20 s, each wake going through AppKit); now the fork's
+  goose_gfx (`gamepad-idle-wait`, Windows and Linux) reads the pads in its idle wait
+  every 16 ms while focused and ends the wait only on a press or a stick moved a quarter
+  of its way, and `pad.c` counts the pad as one that wakes the loop: 0.4 to 0.6%. An event watch keeps a press made and let go between
   two reads.
 - Upstream: `gfx::gamepad_buttons() -> u32` and `gfx::gamepad_axis(i) -> f32` over the
   first gamepad, its subsystem started with the window, and the gamepad's button events
