@@ -421,9 +421,13 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   smaller at the tablet's landscape. With the setting at off the board is as before.
 - No panel in portrait or on a phone in landscape yet: the prototype found under four
   rows' room there.
-- The setting is on the games screen, not in settings: a Moves row in settings' game
-  group left the preview board at 0 dp at several tested sizes, and at the tablet's
-  landscape the groups ran past the foot.
+- The setting is a Move list row in settings' game group, under move hints (2026-11-12),
+  since issue 1 took the draughts' row out; it replaces the games screen as its place
+  (2026-11-11, when a third row there left the preview board at 0 dp at several sizes).
+  The tablet's settings are unchanged; where the game group shows alone its board is
+  smaller: a 16:9 phone in portrait 366 to 248 dp (282 to 163 with insets), the 4:3
+  tablet's landscape 402 to 305, a foldable's 373 to 242; a 20:9 phone at 540 dp, none.
+  The games screen keeps its three tiles too until the user has seen both.
 - The games screen is reached from who's playing (a tile beside the pencil): the
   player's sheet is a parent's place. Home's menu has no room for it on a phone.
 

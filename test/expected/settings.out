@@ -63,7 +63,7 @@ played_hard = 0
 games = 0
 moves = marks
 
-tiles 17 of 17, the kings' tiles' pieces 2: 1.0 and 2.0
+tiles 20 of 20, the kings' tiles' pieces 2: 1.0 and 2.0
 landscape: board at vec4<f32> { 701.45776, 133.45778, 533.0844, 8.529351 }, choices end at 663.11115, clear true
 opened, defaults:
   preview 10x10, W:WK20,28,32,33,37,39,40,41,42,43,44:B7,8,10,11,12,17,23,24, targets 0, stops 0, wrong ring at 53.0 flash 0.0, rings pulsing 2 still 0, kings drawn 1.0, animating true
@@ -82,6 +82,8 @@ stack: picture = fox;season = summer;background = photo;board = 3d;hints = moves
   preview 8x8, W:Wa1,c1,e1,g1,b2,f2,h2,c3,e3,d4,Kh6:Be5,g5,b6,a7,c7,b8,d8,h8, selected 3,3, targets 1, stops 1, rings pulsing 0 still 0, kings drawn 2.0, animating false
 mistakes only: picture = fox;season = summer;background = photo;board = 3d;hints = mistakes;lookout = off;kings = stack;draughts = russian;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks; language -1, changed true, game's board hints moves false, kings 2
   preview 8x8, W:Wa1,c1,e1,g1,b2,f2,h2,c3,e3,d4,Kh6:Be5,g5,b6,a7,c7,b8,d8,h8, targets 0, stops 0, wrong ring at 34.0 flash 0.06666667, rings pulsing 2 still 0, kings drawn 2.0, animating true
+moves panel off: moves 0, the game's 0, to write true
+marks: moves 2, the game's 2
 Brazilian: picture = fox;season = summer;background = photo;board = 3d;hints = mistakes;lookout = off;kings = stack;draughts = brazilian;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks; language -1, changed true, game's board hints moves false, kings 2
 auto: picture = fox;season = summer;background = photo;board = 3d;hints = mistakes;lookout = off;kings = auto;draughts = brazilian;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks; language -1, changed true, game's board hints moves false, kings 2
 International: picture = fox;season = summer;background = photo;board = 3d;hints = mistakes;lookout = off;kings = auto;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks; language -1, changed true, game's board hints moves false, kings 2
@@ -94,9 +96,9 @@ plain: photo shown false, read back plain true season -1, thumbnails 5 6 7 4 -1 
 photo: picture = fox;season = by-date;background = photo;board = 3d;hints = mistakes;lookout = off;kings = auto;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks; language 0, changed true, game's board hints moves false, kings 2
 photo: photo shown true
 in Estonian: Teema
-portrait: board at vec4<f32> { 160.52158, 190.74384, 478.95682, 7.6633096 }, the groups from 824.88904, clear true, look beside game true, tiles 17
+portrait: board at vec4<f32> { 160.52158, 190.74384, 478.95682, 7.6633096 }, the groups from 824.88904, clear true, look beside game true, tiles 20
 portrait stack: picture = fox;season = by-date;background = photo;board = 3d;hints = mistakes;lookout = off;kings = stack;draughts = international;level = easy;color = white;clock = none;skill_easy = 8;skill_medium = 40;skill_hard = 90;played_easy = 0;played_medium = 0;played_hard = 0;games = 0;moves = marks; language 0, changed true, game's board hints moves false, kings 2
 back: true
-a file's board = 3d: raised true, tiles 17 of 17
+a file's board = 3d: raised true, tiles 20 of 20
 kings stack taps: true; board key kept in the file: true
 the lookout: off by default true, on read back true, off read back true

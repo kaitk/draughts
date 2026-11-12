@@ -30,14 +30,16 @@ let ENGLISH = 1;
 let EESTI = 2;
 let MISTAKES = 3;
 let MOVES = 4;
-let SUMMER = 7;
-let BY_DATE = 9;
-let PHOTO = 10;             // the theme's switch, under its name
-let PLAIN = 11;
-let RAISED = 13;
-let AUTO = 14;
-let STACK = 16;
-let TILES = 17;
+let LIST_OFF = 5;           // the moves panel's row (task 074): off, the moves, marks
+let LIST_MARKS = 7;
+let SUMMER = 10;
+let BY_DATE = 12;
+let PHOTO = 13;             // the theme's switch, under its name
+let PLAIN = 14;
+let RAISED = 16;
+let AUTO = 17;
+let STACK = 19;
+let TILES = 20;
 
 // The player's draughts, chosen in home's setup or the puzzles' library (settings has no
 // row for them since issue 1): the preview is staged again with their size, as a
@@ -165,6 +167,11 @@ fn main() {
     drive::tap(sh, g, drive::tile(g, MISTAKES), 4.9);
     show(sh, "mistakes only");
     preview(sh, 5.0);
+    // The moves panel's row: off, then marks again; the game follows (apply_prefs).
+    drive::tap(sh, g, drive::tile(g, LIST_OFF), 5.1);
+    print("moves panel off: moves ", sh.prefs.moves, ", the game's ", sh.game.moves_shown, ", to write ", sh.changed);
+    drive::tap(sh, g, drive::tile(g, LIST_MARKS), 5.2);
+    print("marks: moves ", sh.prefs.moves, ", the game's ", sh.game.moves_shown);
     draughts(sh, g, rules::BRAZILIAN, 9.0);
     show(sh, "Brazilian");
     drive::tap(sh, g, drive::tile(g, AUTO), 9.1);

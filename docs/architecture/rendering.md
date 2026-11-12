@@ -674,8 +674,9 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   choices take the width they need at the left, as home's menu does, the groups under the
   title row with the room left below them, and the board the rest, about two thirds, so from home the board only moves a little; in portrait the board is
   on top, as large as the rest leaves, and the two groups stand side by side under it.
-  **Game**: move hints (the draughts are chosen in home's setup and the puzzles'
-  library; the preview shows the player's). Last, the privacy note
+  **Game**: move hints, and the move list beside the game (off, the moves, the moves
+  marked; [the moves panel](#the-moves-panel)); the draughts are chosen in home's setup
+  and the puzzles' library, and the preview shows the player's. Last, the privacy note
   (`settings.privacy`, App Review Guideline 5.1.1(i)): the policy in one sentence, dim
   in the small face, with no link out, as the app has none. It sits at the group's title row's right end where it fits there in two lines
   at most (the stacked landscapes, which have no height to spare: one line in both
@@ -972,9 +973,10 @@ then white's move and black's as from-to (`32-28`, `28x19`, `c3:e5`) in the body
 the latest lit with the glow at 22%, each followed by its mark ([ai](ai.md#judging-a-move)):
 a 16 dp star in the glow colour for the best, `?!` in autumn's gold, `?` orange, `??` the
 forced-capture red, nothing for a good or only move or one not judged yet. The last rows
-that fit show. The player's setting (`moves`: off, the moves, the moves with marks) is on
-the games screen; off, there is no panel and the 3D board is as large as without it. No
-panel in portrait or on a phone in landscape, which have under four rows' room.
+that fit show. The player's setting (`moves`: off, the moves, the moves with marks) is
+settings' Move list row, under move hints, and the games screen's three tiles; off,
+there is no panel and the 3D board is as large as without it. No panel in portrait or on
+a phone in landscape, which have under four rows' room.
 
 ### The games screen
 
