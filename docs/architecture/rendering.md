@@ -1513,6 +1513,8 @@ and the 99th percentile, against the display's 11.1 ms at 90 Hz or 16.7 ms at 60
 | iPhone 13 mini | 3D | 0.08% | 204 MB | 60 / 60 | 16.7 / 16.7 ms |
 | Windows PC, 2560 × 1440, 165 Hz | 2D | 0.00% | 258 MB | 165 / 165 | 6.1 / 6.1 ms |
 | Windows PC | 3D | 0.12% | 477 MB | 165 / 165 | 6.1 / 6.1 ms |
+| Linux PC, 1920 × 1080, 60 Hz | 2D | 0.01% | 68 MB | 60 / 59.6 | – |
+| Linux PC | 3D | 0.01% | 72 MB | 60 / 59.6 | – |
 
 The 2D board draws in one full-screen pass, the UI's glass over it, and holds the
 display's rate. The 3D board's frame takes about 9.2 ms of GPU work on the tablet and
@@ -1522,7 +1524,11 @@ iPhone, Instruments' Animation Hitches counts the frames in place of Android's
 compositor, and the app counts its own CPU time and memory footprint. On Windows, full
 screen (`--size full`), PresentMon counts the frames the display showed (none dropped;
 each flipped straight to the screen, 6 ms from present to display), and the app counts
-its CPU time and its memory as the private bytes.
+its CPU time and its memory as the private bytes. On Linux (the Bazzite PC, RADV, through XWayland), full screen,
+the app's own bench counts the frames presented and its memory as the PSS, which leaves out
+the GPU's own; there is no PresentMon to time a frame to the display. Uncapped
+(`--no-vsync`) the RX 6800 presents about 2,900 frames a second flat and 1,650 to 1,800 on
+the 3D board (task 075).
 
 ### When a frame reaches the screen
 
@@ -1588,12 +1594,17 @@ At rest, the board drawn and nothing changing, over 25 s (`--rest 25`):
 | Windows, full screen, flat board, a game | 0.18% | 27, none |
 | Windows, full screen, 3D board, a game | 0.06% | 27, none |
 | Windows, a clock running (10 s) | 0.16% | 22, 11 |
+| Linux (Ryzen 5 9600X, RX 6800), home | 0.01% (0.65% with the release's gfx, presenting at 60 Hz) | 26, none |
+| Linux, full screen, flat board, a game | 0.01% | 26, none |
+| Linux, full screen, 3D board, a game | 0.01% | 26, none |
+| Linux, a clock running | 0.05% | 51, 26 |
 
 A running clock costs a frame and its present each second, the timer's wake and the
 idle wait's end. With the release's gfx the Mac's footprint is 414 MB, with the
 patched one 321 MB, which also samples the photographs as ASTC instead of decoded JPEGs.
 On Windows, full screen at 2560 × 1440, the private bytes are 253 MB on the flat board
-and 476 MB on the 3D one.
+and 476 MB on the 3D one. On Linux the footprint is the PSS, 65 MB at home, 68 on the flat
+board, and 72 on the 3D one: the RX 6800 keeps the textures in its own memory, outside it.
 
 The 3D board's camera (the view, the zoom, the showcase's way back, a hot-seat turn) is an
 animation like a move: the 3D pass runs on each of its frames, about 36 for a 0.6 s ease

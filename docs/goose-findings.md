@@ -12,6 +12,33 @@ opened (2026-11-11): those branches (task 065 lists them, and which stack on whi
 `astc-6x6`, ASTC 6 × 6, to `sebbbi/NoGraphicsAPI`. An entry's "Upstream" line says what
 each proposes.
 
+## Goose: the Linux release's SDL has no Wayland (2026-11-12)
+
+The `libSDL3.a` in `goose-v2026.4-linux-x64` is built with X11 and offscreen video only:
+`SDL_VIDEO_DRIVER=wayland` says "wayland not available". On a Wayland desktop (Bazzite's
+GNOME 50) every Goose program runs through XWayland, so a fractional display scale is
+upscaled by the compositor rather than drawn at the display's pixels, and the window is
+matched to its `.desktop` file by X11's `WM_CLASS` (SDL's app id, `src/app/display.c`)
+rather than Wayland's app id.
+
+- Here: XWayland; the release's tarball names its `.desktop` file by the app id with
+  `StartupWMClass` to match, so the menu's icon shows on the window either way.
+- Upstream: build the release's SDL with `SDL_WAYLAND=ON` (and libdecor dynamically
+  loaded, as SDL does by default), which needs only the Wayland headers on the build
+  machine; SDL loads `libwayland-client` at run time, so X11-only systems still run.
+
+## Goose: TinyCC's run in memory fails under SELinux (2026-11-12)
+
+`goose run` (and `test/run_tests.py`'s default) compiles into memory with libtcc, whose
+`mprotect` to make the code executable SELinux refuses on Fedora's and Bazzite's
+enforcing default ("tcc: error: mprotect failed (did you mean to configure
+--with-selinux?)"), inside a distrobox too. Every test fails; built natively
+(`test/run_tests.py --build`) all 89 pass.
+
+- Here: `--build` on Fedora-based machines.
+- Upstream: libtcc built `--with-selinux` (`CONFIG_SELINUX`), which maps the code twice
+  from a temporary file, once writable and once executable, instead of `mprotect`.
+
 ## goose_gfx and ngfx: NO_VSYNC capped full screen on Windows (2026-11-12)
 
 gfx's `NO_VSYNC` asks SDL_GPU for mailbox before immediate. Full screen on the RTX 4090
