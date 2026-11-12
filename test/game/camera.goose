@@ -9,8 +9,8 @@
 // its size (its bounds as at rest mid-turn), the showcase's angle easing back with it, black's move tapped through the turned board, and
 // a new game putting it back (with settings' turn on); against the computer no turn; a
 // friend's game with the turn off in the top view, zoomed, not turning, and the view at
-// rest again against the computer; the flat board turned at once for black's turn with
-// the turn on; a puzzle's buttons.
+// rest again against the computer; the flat board turned for black's turn with the turn
+// on, its pieces fading out and in on the turned board; a puzzle's buttons.
 import std;
 import vec;
 import math;
@@ -234,7 +234,13 @@ fn main() {
     drive::tap(sh, g, drive::at(sh.out.layout, "c3"), 47.0);
     drive::tap(sh, g, drive::at(sh.out.layout, "d4"), 47.1);
     drive::idle(sh, g, 48.0);
-    drive::idle(sh, g, 48.1);
+    let began = sh.game.cam.turn.start;
+    drive::idle(sh, g, began + 0.1);
+    print("  0.1 s into the turn: turned ", sh.out.layout.flip, ", the pieces fading out, animating ",
+          shell::animating(sh, g, began + 0.1));
+    drive::idle(sh, g, began + 0.2);
+    print("  0.2 s: turned ", sh.out.layout.flip, ", fading in");
+    drive::idle(sh, g, began + 0.5);
     print("  after white's move: turned ", sh.out.layout.flip, ", black to move ", sh.game.b.pos.side == rules::BLACK);
     sh.prefs.board = settings::RAISED;
     shell::apply_prefs(sh);

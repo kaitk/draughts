@@ -510,7 +510,10 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   sizes, above); on a 20:9 phone at 540 dp the wider Board row puts settings in its two
   tabs, its board 237 to 447 dp. Rejected: a fourth camera button for it, which every
   layout round the 3D board would have had to make room for in friend games.
-  Replaces the turn on every friend game on the 3D board, from task 015.
+  Replaces the turn on every friend game on the 3D board, from task 015. The flat
+  board's turn fades its pieces out and in, 0.15 s each way: at once it was too quick to
+  follow. Rejected for now: the pieces swinging round the middle on arcs (a quarter turn
+  puts them over light squares), and the board shrinking and growing (it moves the board).
 
 **States and captures**
 

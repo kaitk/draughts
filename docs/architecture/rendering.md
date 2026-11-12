@@ -716,7 +716,7 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   shows it on every screen with a board: home, the preview here (its kings' auto a
   stack), and a puzzle. After them a third tile, on or off by itself, Turns (with a
   friend) (`turn = on|off`, off by default): a friend's game turns the board to the side
-  to move after each move, the flat board at once and the 3D one easing round (the game
+  to move after each move, the flat board's pieces fading across and the 3D one easing round (the game
   screen's "Against a friend"). Switched on, the preview turns once round to show it
   (`Shell.demo`, twice the game's turn): the 3D board a full turn, the flat one showing
   black's side for the middle half. Each
@@ -1164,7 +1164,8 @@ board's does and the backdrop over it as opaque as the blur.
   once the move has shown), the light keeping its place on screen (the renderer turns it
   with the board, `render3d::turn_light`, and draws the shadow map again) and the board
   keeping its size, fitted as at rest, its corners passing over the panels mid-turn; the
-  flat board turns at once then (`rig::faces_far`, the shell's `game_layout`). Against
+  flat board's pieces fade out over 0.15 s and in on the turned board over 0.15 s
+  (`shell::flat_fade`, `rig::faces_far`; the squares look the same turned). Against
   the computer it stays turned to the child. A new game or a hot-seat turn puts the showcase's
   angle back. The camera is plain data with its eases in `board/rig.goose` (`rig::Rig`);
   `panel::aim` fits it each frame (at rest, the rest view as it is), while the flat square

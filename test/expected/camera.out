@@ -27,5 +27,7 @@ a friend's game, no turn: 74.0° down, board turned 0.0°, bounds 207 75 866 x 7
   after white's move: 74.0° down, board turned 0.0°, bounds 207 75 866 x 761, black to move true
 then against the computer: 52.5° down, board turned 0.0°, bounds 239 226 802 x 550, zoomed false
 flat, a friend's game turning: turned false
+  0.1 s into the turn: turned false, the pieces fading out, animating true
+  0.2 s: turned true, fading in
   after white's move: turned true, black to move true
 a puzzle: 3 buttons, 52.5° down, board turned 0.0°, bounds 191 160 898 x 616

@@ -251,7 +251,7 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: bo
 fn animating(sh: Shell&, g: gui::Gui&, now: f64) -> bool {
     if sh.from >= 0 { return true; }
     return match sh.screen {
-        GAME => game::animating(sh.game, g, now),
+        GAME => game::animating(sh.game, g, now) || flat_fade(sh, now) <= 1.0,
         PUZZLE => puzzle::animating(sh.puzzle, g, now),
         _ => board::animating(shown(sh), now) || gui::animating(g) || rig::moving(sh.cam, now)
              || (sh.screen == SETTINGS && rig::moving(sh.demo, now)),
@@ -601,7 +601,7 @@ fn game_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
                 panel::corners_in(area, n, u, panel::PITCH_PORTRAIT, true, true, sh.prefs.moves != settings::MOVES_HIDDEN)
             }
             else { panel::layout_in(area, n, u, true, true) };
-    l.board.flip = sh.game.computer == rules::WHITE || (!l.three && flat_turned(sh));
+    l.board.flip = sh.game.computer == rules::WHITE || (!l.three && flat_turned(sh) != (flat_fade(sh, now) < 0.0));
     panel::aim(l, sh.game.cam, now);
     return l;
 }
@@ -936,6 +936,21 @@ fn turned(sh: Shell&, setup: i64) -> bool {
 // to the side to move (settings' `turns`; game.goose's rig::face).
 fn flat_turned(sh: Shell&) -> bool { sh.game.computer < 0 && sh.game.turns && rig::faces_far(sh.game.cam) }
 
+// The flat board's turn in a friend's game is a fade (2026-11-12; at once it was too
+// quick to follow): the pieces fade out over FLAT_FADE seconds still on the side they
+// were, then in on the turned board. Returns their opacity while it runs, negative while
+// they fade out (the board not yet turned), or 2 when no fade runs. The squares look the
+// same turned, so only the pieces change.
+let FLAT_FADE = 0.15;
+fn flat_fade(sh: Shell&, now: f64) -> f32 {
+    let t .= sh.game.cam.turn;
+    guard !settings::raised(sh.prefs) && sh.game.computer < 0 && t.length > 0.0 else { return 2.0; }
+    let e = now - t.start;
+    guard e >= 0.0 && e < 2.0 * FLAT_FADE else { return 2.0; }
+    if e < FLAT_FADE { return -(1.0 - e / FLAT_FADE) as f32; }
+    return ((e - FLAT_FADE) / FLAT_FADE) as f32;
+}
+
 // The board a screen shows (KINDS): settings their preview, a puzzle its own (and the
 // puzzles to pick from, which show it only in a transition with it), home's setup the
 // game its play starts, the other screens the game's.
@@ -955,6 +970,8 @@ fn shown(sh: Shell&) -> board::Board& { board_of(sh, sh.screen) }
 fn fill(sh: Shell&, now: f64) -> board::Board& {
     let b .= board_of(sh, sh.out.shows);
     board::fill(b, sh.out.layout, now);
+    let k = if which(sh.out.shows) == GAME { abs(flat_fade(sh, now)) } else { 2.0 };
+    if k < 1.0 { for &p in b.pieces { p.look.w *= k; } }
     let share = if sh.screen == GAME { sh.mix } else if sh.from == GAME { 1.0 - sh.mix } else { 0.0 };
     if share > 0.0 && which(sh.out.shows) == GAME { game::cheer(sh.game, sh.out.layout, now, share); }
     return b;
