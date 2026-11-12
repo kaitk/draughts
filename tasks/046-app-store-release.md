@@ -111,6 +111,11 @@ Each is a store rule the app doesn't meet yet:
 
 ## What remains for the user
 
+- **The store page first** (the user, 2026-11-12): make the listing look right in App
+  Store Connect (the text, the screenshots, how the page and its search row read) in a
+  session of its own, before anything is submitted. The version there is to be 0.2.0,
+  the uploaded build's (or the app raised to 1.0 on both stores).
+
 - **App Store Connect:** the bundle id, the App Store profile, an API key for uploads,
   and the app record (name "Draughts", English (U.K.), iOS only, macOS addable later)
   done 2026-11-12. Left: App Information (category, URLs, content rights, the trader
