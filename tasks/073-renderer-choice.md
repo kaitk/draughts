@@ -1,6 +1,6 @@
 # 073: One executable, the renderer chosen at run time
 
-Status: in-progress (steps 1 and 2 done on main 2026-11-11, step 3 on 2026-11-12; steps 4 to 6 on a branch of their own)
+Status: in-progress (steps 1 to 3 on main; steps 4 and 5 done on the branch `renderer-choice` 2026-11-12; step 6's device checks under way)
 
 Task 065 drew all of Draughts through goose-ngfx on its own branch, `ngfx`, as a
 build-time choice; tasks 070 and 071 brought it to gfx's frame time and memory on the Mac
@@ -195,6 +195,84 @@ is trying ngfx and falling back, not a list of devices kept here:
   `scripts/mac.py src/app/draughts.goose`. Both need `third_party/goose_gfx` and its
   SDL and nuklear checked out (`git submodule update --init` there, then the same in
   `third_party/goose_gfx`).
+
+## Steps 4 and 5 on `renderer-choice` (2026-11-12)
+
+The design, chosen with the user: facades in the ngfx overlay
+([decisions](../docs/decisions/README.md#the-codes-layout)). Commits: `3926908` (both
+renderers in one executable), `c298f16` (iOS from 16.0), `db88532` (the choice at start).
+
+- **The tree** (`scripts/ngfx.py`): gfx's recorders copied as `gpu_gfx`, `host_gfx`,
+  `scene_gfx`, `draw_gfx`, `widgets_gfx`, `render3d_gfx`, `photo_gfx.h`, their namespace
+  line rewritten; goose-ngfx's renamed in the repo (`src/ngfx/app/draw_ngfx.goose`, ...,
+  `render3d_ngfx.goose`); a facade of each twin's name over gfx's, calling one or the
+  other by `nx::ngfx_on` (`src/ngfx/render3d/nx.goose`: the flag, and goose-ngfx's calls on
+  gfx's handle types; in the render3d package, which the app's files see too). The halves
+  are imported before the facades (a facade's global takes `draw_gfx`'s shader blocks).
+  `render3d_ngfx` keeps its `Own` as a variable of its namespace, as `render3d::Gpu.own` is
+  gfx's, and drops its copies of `Mat`, `mul`, `ortho`, and `look_at`, gfx's being the same
+  math. gfx's 3D recorder names `render3d.goose`'s items as `render3d::` (62 places), the
+  only change to a shared source. SMAA's tables and SDL's Vulkan headers go into the tree.
+- **The choice** (`src/ngfx/app/host_gpu.goose`, `renderer.c`): as step 5 above says, with
+  `auto` by platform, ngfx first on Windows only now (task 077's MSAA left the Mac and iOS
+  at gfx). The check before any window: on Apple `__builtin_available(macOS 26, iOS 26)`,
+  `MTLCreateSystemDefaultDevice`, and `supportsFamily:` Apple7 and Metal4 through the
+  Objective-C runtime; elsewhere the Vulkan loader (`vulkan-1.dll`, `libvulkan.so.1`),
+  `vkEnumerateInstanceVersion` at 1.4, an instance, and the first 1.4 device with the four
+  extensions. The marker's key is the GPU's name, the driver (Vulkan's `driverVersion`, the
+  OS version on Apple), and the app's `VERSION_NAME` and commit, which `ngfx.py` writes into
+  `renderer.c`. It goes when ngfx's first `present()` returns (headless reports none shown,
+  so not on "shown").
+- **Apple's minimum OS**: NoGraphicsAPI's CMake takes `MACOSX_DEPLOYMENT_TARGET` when
+  CMake's target is unset (the fork's `below-26`, `f57ffae`), as Goose's package build leaves
+  it unset: a release build for macOS 13.3 then links Metal 4 weakly (11 weak imports, none
+  strong). `scripts/ios.py --ngfx` keeps `MIN_IOS` (16.0): its executable links at iOS 16
+  with the same 11 weak, built and linked here without signing.
+
+Checked on the Mac (M1 Pro, macOS 26.3.1):
+- **Shots**, headless, 1280 × 800, the 13 screens flat and 3D: the one executable with
+  `--renderer gfx` against main's gfx build, and with `--renderer ngfx` against main's ngfx
+  build (MSAA): within 3 of 255 everywhere but the puzzle's 3D board (2 to 8 pixels, its
+  known noise). The gfx-only build after the 3D recorder's qualified names, against main's:
+  the same (its binary differs: the names change the generated C).
+- **`--bench 60`**, headless, the game at 1280 × 800, five runs each, medians, waited P50 ms
+  / presented fps, main's build → the one executable: gfx flat 0.62 / 7,634 → 0.66 / 7,584,
+  3D 0.81 / 2,090 → 0.74 / 2,058; ngfx flat 0.54 / 3,938 → 0.49 / 3,776, 3D 0.81 / 1,374 →
+  0.95 / 1,396 (run-to-run spread; the facades' `if`s cost nothing measurable).
+- **Footprint** at `--rest 4`, headless: the same MB (gfx flat 51, 3D 130; ngfx 53, 141).
+  The executable is 17.9 MB against gfx's 15.4.
+- **The choice**, headless: `auto` takes gfx on the Mac; with `DRAUGHTS_AUTO_NGFX=1`, ngfx
+  ("Apple M1 Pro|26.3.1|0.2.0 c298f16"), the marker gone after its first frame; with
+  `DRAUGHTS_RENDERER_TEST=fail` gfx after closing everything, the marker left, and the
+  next start gfx without trying; `crash` leaves the marker and the next start takes gfx;
+  another key (an older app) tries ngfx again; `--renderer ngfx` clears the marker. In a
+  window: the same three starts exit cleanly, ngfx's hidden window shows on screen
+  (CoreGraphics' window list: 960 × 632 with its title bar), and after a failed ngfx open
+  gfx opens its own window and draws.
+- **Android**: the gfx-only APK builds; a beside-the-app copy (`--id-suffix rc`) is on the
+  tablet, waiting for it to be unlocked.
+
+### Step 6 (task 073's checks), what is left
+
+- **The tablet** (gfx only): unlocked, the `rc` copy started on the 3D game, a screenshot,
+  `--bench 60` from logcat; then uninstalled (`adb uninstall io.github.kaitk.draughts.rc`).
+- **The iPhone 13 mini** (iOS 26): `scripts/ios.py src/app/draughts.goose --device --run
+  --ngfx` (signing asks the user's password), the start's line from the console (`auto:
+  gfx first on iOS`), then relaunched with `--renderer ngfx`; the same screens as the Mac.
+- **An iOS 16 to 25 device or a Mac before 26**, if one is at hand: `auto` and `--renderer
+  ngfx` both must say why ngfx can't run (`Metal 4 needs macOS or iOS 26`) and draw with
+  gfx; the binary must start at all (the weak links).
+- **Windows (RTX 4090), the user**: `python scripts/ngfx.py src/app/draughts.goose`, then
+  `build\ngfx\draughts.exe` alone (the line: `renderer: ngfx (auto: NVIDIA GeForce RTX
+  4090|<driver>|0.2.0 <commit>)`), `--renderer gfx`, and with `DRAUGHTS_RENDERER_TEST=fail`
+  (gfx's own window after ngfx's closed); the marker is `%APPDATA%\kaitk\draughts\
+  renderer-start.txt`, deleted after. Then `EXE=build/ngfx/draughts.exe FLAGS="--renderer
+  ngfx" python scripts/windows_perf.py` and the same with `--renderer gfx`, against task
+  074's rows, and the 13 screens headless with each `--renderer` against main's builds.
+- **The Bazzite PC (RX 6800), the user**: the same in the `goose` box (`scripts/ngfx.py`)
+  and on the host: `auto` says `gfx first on Linux`; `--renderer ngfx` on Wayland and with
+  `SDL_VIDEO_DRIVER=x11`; `DRAUGHTS_AUTO_NGFX=1` exercises the Vulkan check and the hidden
+  window on Linux; task 076's benches with each `--renderer`.
 
 ## The way to the end (2026-11-12)
 
