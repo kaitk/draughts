@@ -124,7 +124,12 @@ cursor: headless shots at 1280 × 800 match gfx's flat, and the 3D cursor draws.
    either, as on the Mac and iOS (the user, 2026-11-12): replace the 30 wakes a second
    with a wake when the gamepad is used. Android's SDL gets its buttons from Java
    callbacks, which push events and may already wake the wait without HIDAPI; Windows
-   (XInput, RawInput, Windows.Gaming.Input) to find out. Then a gamepad on a phone or
+   (XInput, RawInput, Windows.Gaming.Input) to find out. A patch in `patches/SDL` is
+   fine where it is the easier way (the user, 2026-11-12): Android, iOS, and Windows build
+   SDL from source with those patches applied (scripts/native.py); the Mac's SDL is the
+   Goose binary's and can't be patched, but needs none. For example SDL's joystick
+   reading could push a wake event only when a button or an axis past a dead zone
+   changes, rather than the program polling. Then a gamepad on a phone or
    the tablet, and its idle cost there, at the task's end with the other device numbers.
 3. Merge `keys-board` into main.
 
