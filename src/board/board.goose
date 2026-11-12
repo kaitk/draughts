@@ -379,19 +379,20 @@ fn on_steps(b: Board&, m: rules::Move&) -> bool {
 // the next stop of any of them, it is kept, the piece waiting there to be tapped or
 // dragged on: the rest of the way is never played by itself, in a game as in a puzzle
 // (2026-11-09: a child whose first jump played the whole capture never learned its
-// way). A capture's last square further on is played only when one way alone goes
-// there (2026-11-11); one several reach waits for the stops. Returns the way to play
+// way). A capture's last square further on is played when every way going there takes
+// the same pieces, one move whichever way it goes; one reached by ways taking different
+// pieces waits for the stops. Returns the way to play
 // (in `ways`) or -1, and whether sq was taken as part of a way, so not a mistake.
 fn follow(b: Board&, sq: i64) -> i64, bool {
     guard b.selected >= 0 && sq >= 0 else { return -1, false; }
     let k = b.steps.len + 1;    // where sq stands in a way
     var end = -1;
-    var ends = 0;
+    var other = false;          // ways ending on sq take different pieces
     var vias = 0;
     for m, i in b.ways {
         guard on_steps(b, m) else { continue; }
         if m.to == sq {
-            ends++;
+            if end >= 0 && b.ways[end].captured != m.captured { other = true; }
             if end < 0 || (m.path.len == k + 1 && b.ways[end].path.len != k + 1) { end = i; }
         } else if m.path[k] == sq {
             vias++;
@@ -403,7 +404,7 @@ fn follow(b: Board&, sq: i64) -> i64, bool {
         return -1, true;
     }
     guard end >= 0 else { return -1, false; }
-    if ends > 1 { return -1, true; }
+    if other { return -1, true; }
     return end, false;
 }
 
