@@ -1,6 +1,6 @@
 # 073: One executable, the renderer chosen at run time
 
-Status: in-progress (steps 1 and 2 done on main 2026-11-11; steps 3 to 5 on a branch of their own)
+Status: in-progress (steps 1 and 2 done on main 2026-11-11; step 3 on main next; steps 4 to 6 on a branch of their own)
 
 Task 065 drew all of Draughts through goose-ngfx on its own branch, `ngfx`, as a
 build-time choice; tasks 070 and 071 brought it to gfx's frame time and memory on the Mac
@@ -8,9 +8,12 @@ and the iPhone. ngfx gains the user nothing measurable today (task 065, 070, 071
 branch is rebased by hand onto main (34 commits on 2026-11-11). This task brings it into
 main as a renderer the app picks when it starts: ngfx where the device has it, gfx
 everywhere else and on Android, and a flag to force either (the user, 2026-11-11).
-Main takes it as far as a build-time choice (steps 1 and 2); the run-time choice
-(steps 3 to 5) is built on a separate branch and not merged to main yet (the user,
-2026-11-11).
+Main takes it as far as a build-time choice with one copy of the drawing and its
+shaders (steps 1 to 3); the run-time choice (steps 4 to 6) is built on a separate branch
+and not merged to main yet (the user, 2026-11-11). Task 074 has since given Windows a
+measured reason: on the RTX 4090 ngfx takes 26 to 41% less GPU time a frame and 54 to
+74 MB less GPU memory, at the same CPU time, so `auto` on Windows is the case to get
+right first (the user, 2026-11-12).
 
 ## What stands in the way
 
@@ -18,7 +21,8 @@ Main takes it as far as a build-time choice (steps 1 and 2); the run-time choice
   `render`, `draw`, `widgets`, `scene`, `draw3d`, `photo.c`, and `render3d` each exist
   twice, alike but for the GPU calls. Only the 3D shaders are generated from one source
   (`scripts/ngfx_3d_shaders.py`). Every rendering change is made twice, as task 071's
-  were. Merged as it is, that cost moves onto main.
+  were. Merged as it is, that cost moves onto main. (Step 2 split the drawers; the 2D
+  shaders are still two copies, step 3.)
 - **Linking both.** NoGraphicsAPI's CMake refuses a deployment target under macOS or iOS
   26, and its Metal backend calls Metal 4's classes directly; the gfx build runs on iOS
   16 (`scripts/ios.py`'s `MIN_IOS`). On Windows ngfx imports `vulkan-1.dll` directly, which
@@ -63,14 +67,43 @@ is trying ngfx and falling back, not a list of devices kept here:
    for the 3D board) and recording it (a small module per renderer). Both builds stay
    as they are on screen, compared against shots before (flat identical, 3D within
    task 065's margins). One twin at a time, each its own commit.
-3. **Both in one executable.** Draughts' one SDL for both (as task 065 left it); ngfx's
+3. **The 2D shaders in one copy.** The recorders stay one per renderer: they share no
+   lines that are the same code (gfx binds buffers and uniforms, ngfx fills a root with
+   heap indices and frame memory), and a layer over both would be the cleverness the code
+   rules keep out. What is written twice is the shaders: `src/ngfx/shaders/`' `ui`,
+   `board`, `pieces`, `blur`, `shrink`, `fade`, and `compose` are hand ports of the GLSL
+   in `src/app/widgets_gpu.goose`, `draw_gpu.goose`, and `scene_gpu.goose` (about 1,000
+   lines of shader each way; `ui` alone 618 against about 610), and a change to one, as
+   task 063's to the UI's, has to be made again in the other. Write them from the GLSL at
+   build time as the 3D board's are, `scripts/ngfx_3d_shaders.py` taking the 2D strings
+   too (its root per module, the y flip, the GLSL names through `glsl.slang`), and delete
+   the hand ports; what can't be generated cleanly (the quads pulled from frame memory by
+   address, the three `ui_*` variants' defines) stays a small hand-written part beside the
+   generated body, named as such. The GLSL stays the source, as gfx is what ships
+   everywhere. Checked as step 2 was: ngfx's shots identical to before, or within task
+   065's margins where the generated code differs, and `--bench` and the Pixel's UI
+   cycles (task 063) not worse on gfx, which doesn't change.
+4. **Both in one executable.** Draughts' one SDL for both (as task 065 left it); ngfx's
    code loaded only where it can run: Metal 4 behind `@available` with weak links, or
    ngfx in a library the app opens only on macOS and iOS 26. Which of the two, decided
    here and recorded in `docs/decisions/`. Windows links both as they are.
-4. **Choosing.** `--renderer auto|gfx|ngfx` (`auto` the default): `auto` tries ngfx and
+5. **Choosing.** `--renderer auto|gfx|ngfx` (`auto` the default): `auto` tries ngfx and
    falls back to gfx in the same window; `ngfx` fails loudly where it can't run; Android
    is always gfx. The choice and why printed at start, for bug reports.
-5. **Checked**: the Mac and the iPhone pick ngfx; an iOS 16 to 25 device or an Intel Mac
+   - **Order.** ngfx is tried before gfx makes any device: gfx opens the window
+     `WINDOW_ONLY`, `ngfx::open` runs, and only if it returns false does gfx make its
+     device in that window. Nothing of ngfx's (its device, instance, or surface) is left
+     open when gfx takes over, or Vulkan on Windows may refuse gfx a second swapchain on
+     the same window.
+   - **A device that passes but breaks.** The Vulkan extensions ngfx needs are new
+     (2025 to 2026), and their drivers will have bugs that no check sees. `auto` writes a
+     marker beside the settings before making ngfx's device and clears it after the
+     first frame is shown; a start that finds the marker still there picks gfx and says
+     so. `--renderer ngfx` clears it, for trying again after a driver update. A failure
+     after the first frame (device lost) is not caught this way; record it if it shows.
+   - **No setting in the UI.** The flag is for testing and bug reports; players get
+     `auto`.
+6. **Checked**: the Mac and the iPhone pick ngfx; an iOS 16 to 25 device or an Intel Mac
    gfx; Windows on the RTX 4090 ngfx and with `--renderer gfx` gfx; the tablet, the
    Pixel 7a, and the A33 gfx; the shots, `--rest`, and `--bench` of each as task 065's.
 
@@ -102,7 +135,8 @@ is trying ngfx and falling back, not a list of devices kept here:
   122.2 MB, ngfx 139.3 → 139.3). poc/3d builds against the new render3d. Not run: the
   tablet, the iPhone, and Windows, as nothing on screen was meant to change; the iOS and
   Windows ngfx builds use the same overlay.
-- **Next, on its own branch** (steps 3 to 5): both renderers in one executable. The
+- **Next, on main**: step 3, the 2D shaders generated from the GLSL (2026-11-12).
+- **Then, on its own branch** (steps 4 to 6): both renderers in one executable. The
   recorders are the seam: each renderer's `_gpu` files compiled side by side (renamed
   apart, or `gpu` and the recorders behind one interface chosen at start), the drawers
   unchanged.
@@ -117,8 +151,11 @@ is trying ngfx and falling back, not a list of devices kept here:
 
 - [x] ngfx on main as a build option, the gfx build unchanged
 - [x] The drawing in one copy, both renderers' shots as before
+- [ ] The 2D shaders generated from gfx's GLSL, the hand ports gone, ngfx's shots as
+      before
 - [ ] One executable per platform holding both renderers, starting on Apple systems
       without Metal 4
-- [ ] `--renderer auto|gfx|ngfx`, `auto` picking ngfx where it runs and gfx elsewhere
+- [ ] `--renderer auto|gfx|ngfx`, `auto` picking ngfx where it runs and gfx elsewhere,
+      and gfx after a start that didn't reach its first frame on ngfx
 - [ ] Checked on the Mac, the iPhone, Windows, and an Android device, recorded here
 - [ ] The decision and the architecture docs updated; the `ngfx` branch retired

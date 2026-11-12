@@ -68,7 +68,7 @@ Open:
   where the frame fits but still drops (the iPhone).
 - Renderer: 065 NoGraphicsAPI through goose-ngfx, prototyped on the `ngfx` branch; 070
   ngfx against gfx uncapped on the Mac; 071 where the 3D board's memory goes, on both;
-  073 ngfx on main as a build option with the drawing in one copy, then on a branch one
+  073 ngfx on main as a build option with the drawing and its shaders in one copy, then on a branch one
   executable with both renderers, chosen at run time. 074 ngfx against gfx uncapped on Windows,
   with memory.
 - Docs: 062 the docs split as Plod's are, decisions for agents and architecture for
