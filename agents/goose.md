@@ -132,7 +132,7 @@ find out by compiling, so the next session doesn't.
   uploads embedded bytes that way, with no copy on a data stack. A function only a gfx
   patch adds gets a `__attribute__((weak))` stand-in in the program's C, so a plain
   `goose build`, which links the release's prebuilt gfx, still links; every build script
-  (`scripts/mac.py` too, since 2026-11-10) links the patched gfx, whose definition wins
+  (`scripts/mac.py` too, since 2026-11-10) links the fork's gfx, whose definition wins
   (2026-11-08).
 - A texture with mips that isn't square gets them only down to its shorter side's 1
   pixel (`render3d::baked`): `mips: 0`'s full chain ends in levels 0 pixels high, which
@@ -293,7 +293,7 @@ find out by compiling, so the next session doesn't.
 - The `goose` binary exports SDL's and gfx's symbols, so a desktop run sees the built-in
   gfx and nothing patched. A gfx patch that adds a function can't be called from code
   that also runs on the Mac; change behavior inside existing functions instead
-  (`patches/goose_gfx/0002-draw-on-demand.patch`).
+  (`kaitk/goose_gfx`'s `draw-on-demand`).
 
 ## Threads
 

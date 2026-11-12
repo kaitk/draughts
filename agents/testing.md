@@ -408,6 +408,11 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
 - `scripts/windows_perf.py` measures another build with `EXE=build/ngfx/draughts.exe`
   and adds flags to each run with `FLAGS`; PresentMon's GPU busy time is the one frame
   time both builds report alike, since both wait on the display.
+- Uncapped (`--no-vsync`), the ngfx build's swapchain flips only while its window is in
+  front (NVIDIA's legacy presenting); a process a background script starts doesn't get the
+  foreground, and DWM then copies ngfx's window (Composed: Copy with GPU GDI, 12 ms to the
+  display). `windows_perf.py` brings the window forward itself; check the present mode on
+  every run of a batch, and never run two benches at once (2026-11-12, task 074).
 
 ## Rules
 

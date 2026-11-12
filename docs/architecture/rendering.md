@@ -15,7 +15,7 @@ NoGraphicsAPI's ideas, inside SDL_GPU:
   window's size that `frame()` blits into the swapchain. Nothing tests depth, so the pass
   has no depth target (`gfx::begin_pass` with `Texture { 0 }`, not `begin_screen`). In the
   Android build gfx makes the screen's depth target only when a program asks for it, and
-  never cycles the screen (`patches/goose_gfx/0003-screen-without-depth-or-cycling.patch`,
+  never cycles the screen (`kaitk/goose_gfx`'s `screen-without-depth`,
   [findings](../goose-findings.md)): the GPU orders a frame's clear after the last
   frame's blit instead of SDL keeping a fresh copy for each frame in flight
   ([GPU memory](#gpu-memory)).
@@ -287,13 +287,13 @@ sunset almost flat.
 - **Loading** (`src/app/background.c`, the program's own C, a `c_sources` entry in its
   `.build` sidecar, which decodes into pixels and knows no graphics API, and the
   renderer's `src/app/photo.c`, which uploads them): gfx has no compressed formats, so
-  `patches/goose_gfx/0004-compressed-textures.patch` adds them and
+  `kaitk/goose_gfx`'s `compressed-textures` adds them and
   `gs_gfx_format_supported` ([findings](../goose-findings.md)); the Goose side compiles
   against the built-in `gfx.goose`, so `photo.c` calls gfx's C API itself (`gfx_api.h`),
   which also uploads the embedded bytes with no copy on the data stack: the pixels
   `background.c` hands over point into the embedded image. Where gfx and the GPU
   take ASTC 6 × 6 (Android, whose gfx is patched at build time), the texture is made from
-  the embedded blocks; elsewhere, or where a weak stand-in answers for an unpatched gfx
+  the embedded blocks; elsewhere, or where a weak stand-in answers for the release's own gfx
   (the Mac's `goose build`, which links the release's prebuilt `libgoose_gfx.a`), the
   JPEG is decoded with stb_image to RGBA (its NEON loops on for ARM, `STBI_NEON`; SSE2 on
   x86 by itself), into a texture of 16 MB. goose_gfx's `load_texture` reads only PNG and
@@ -1423,7 +1423,7 @@ depth target, a shadow map, albedo, normal, and roughness atlases with mips):
   16 MiB small block, plus about 10 MB that is the driver's own; EGL mtrack is the
   swapchain. A 4× MSAA target costs four times the screen's bytes, since SDL doesn't use
   Mali's lazily allocated (tile-only) memory for transient targets.
-  `patches/goose_gfx/0005-msaa-resolve-without-store.patch` keeps the samples and the
+  `kaitk/goose_gfx`'s `msaa-resolve-without-store` keeps the samples and the
   multisampled depth from being written out each frame, which saves bandwidth, not
   memory ([findings](../goose-findings.md)).
 
@@ -1452,7 +1452,7 @@ The release at rest, idle 20 to 30 s:
   12.13 ms, the pass alone 8.96, 90 fps on average and at the 1% low, none dropped; with
   16 crowned kings 9.0 ms waited. The flat board's frame 9.39 ms waited, none dropped. The
   GPU's clock stays near its top (1047 MHz) in both, so the frame times show the work.
-  MSAA 4× adds about 3.2 ms (6.3 ms and 72 MB more without `patches/goose_gfx/0005`, which
+  MSAA 4× adds about 3.2 ms (6.3 ms and 72 MB more without `kaitk/goose_gfx`'s `msaa-resolve-without-store`, which
   keeps the samples and the depth from being stored); the shadow map about 2 ms on the
   frames that draw it; the CPU's part about 0.4 ms. It renders as the Mac does.
 - **The Pixel 7a** (60 Hz), 1000 frames: waited P50 13.5 / P99 16.0 ms, and the
@@ -1541,9 +1541,9 @@ while gfx::frame() {
 }
 ```
 
-This is `patches/goose_gfx/0002-draw-on-demand.patch` ([findings](../goose-findings.md)),
+This is `kaitk/goose_gfx`'s `draw-on-demand` ([findings](../goose-findings.md)),
 applied in every build: `scripts/android.py`, `ios.py`, `mac.py`, and `windows.py` each
-build goose_gfx from its patched sources. The release's own gfx (a plain `goose build`)
+build goose_gfx from the fork's sources. The release's own gfx (a plain `goose build`)
 presents every frame at the display's rate. The patched `frame()`:
 
 - presents only if something used the GPU since the last call, or the window needs the
@@ -1559,7 +1559,7 @@ presents every frame at the display's rate. The patched `frame()`:
 - on iOS, waits in the main run loop itself (`CFRunLoopRunInMode`), as UIKit's SDL has no
   real wait and polls every millisecond; an event pushed from another thread (the wake
   timer's) signals a run loop source of gfx's own, which ends the wait
-  (`patches/goose_gfx/0007-wait-in-the-ios-run-loop.patch`). The Mac's and Windows' SDL
+  (`kaitk/goose_gfx`'s `ios-run-loop-wait`). The Mac's and Windows' SDL
   block in their system's event wait and wake it on a push themselves.
 
 At rest, the board drawn and nothing changing, over 25 s (`--rest 25`):

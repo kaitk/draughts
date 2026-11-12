@@ -20,9 +20,12 @@ work.
   builds and the upload key in `docs/development.md`
 - UI prototypes: `prototypes/` (see `prototypes/README.md`), checked in a browser with the
   `agent-browser` CLI
-- Gaps found in Goose, goose_gfx, or goose-ngfx: `docs/goose-findings.md`. A gap that blocks us gets a
-  patch in `patches/<package>/`, applied at build time to a copy of the sources (never in
-  the submodule), with its findings entry saying what to propose upstream
+- Gaps found in Goose, goose_gfx, or goose-ngfx: `docs/goose-findings.md`, each entry
+  saying what to propose upstream. A goose_gfx gap that blocks us is fixed in the user's
+  fork, `kaitk/goose_gfx`: a branch of its own on upstream `main` (offered upstream one at
+  a time) merged into the fork's `main`, which the `third_party/goose_gfx` submodule
+  follows. One in SDL gets a patch in `patches/SDL/`, applied at build time to a copy of
+  the sources
 
 Follow the recorded decisions in `docs/decisions/`. If a change contradicts one, record
 the new decision there, saying which it replaces, and update `docs/architecture/` to
@@ -49,8 +52,9 @@ would otherwise look up again:
   PNG masters do (`agents/design.md`, `design/backgrounds/README.md`). Ask when unsure
   (2026-11-08). The season backgrounds' JPEG and ASTC files, which the app embeds (about
   9.7 MB), are in git (2026-11-10).
-- Never edit the submodules. A gap in Goose or goose_gfx gets a patch and a findings entry
-  (above); for SDL, write only a note for the user, who decides about anything sent there.
+- Never edit the submodules' checkouts. A gap in goose_gfx goes to the fork's branches and
+  `main`, then the submodule's pointer moves (above); for SDL, write only a note for the
+  user, who decides about anything sent there.
 - The user maintains goose-ngfx and contributes to Goose and goose_gfx. Snowtime, a
   public time tracker (github.com/Snowhound/snowtime), is the model for this repo's layout
   (AGENTS.md, docs/, tasks/ with an archive, prototypes/ checked with agent-browser) and

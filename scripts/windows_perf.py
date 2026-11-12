@@ -8,6 +8,7 @@ scene (Russian, wood, the start).
     BOARDS=3d python scripts/windows_perf.py    one board; REST=0 leaves the rest out
     EXE=build/ngfx/draughts.exe FLAGS="--aa smaa" python scripts/windows_perf.py
                                                 another build, and flags added to each run
+    SIZE=1280x800 python scripts/windows_perf.py  a window in place of full screen
 
 Per board: the bench (--bench N) with PresentMon recording the app's presents, and of
 those between the bench's "presenting" and "presented" lines (stamped here as they
@@ -15,7 +16,7 @@ arrive) the frames that reached the display: frames per second on average and at
 low, the time each stayed on screen (P50, P99), how many were dropped (never shown) or
 held for more than one refresh, the GPU's busy time a frame, the latency from present
 to display, and how Windows presented them (composed by DWM, or flipped straight to the
-screen). Then the app at rest, its CPU time and private bytes as it counts them itself
+screen), and the most private bytes the app held through it. Then the app at rest, its CPU time and private bytes as it counts them itself
 (--rest 25).
 
 PresentMon (github.com/GameTechDev/PresentMon, its command line exe) is
@@ -32,11 +33,13 @@ import tempfile
 import threading
 import time
 import csv
+import ctypes
+from ctypes import wintypes
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 EXE = (ROOT / os.environ.get("EXE", "build/windows/draughts.exe")).resolve()
-SCENE = ["--size", "full", "--screen", "game", "--theme", "wood", "--variant", "russian",
+SCENE = ["--size", os.environ.get("SIZE", "full"), "--screen", "game", "--theme", "wood", "--variant", "russian",
          *os.environ.get("FLAGS", "").split()]
 SESSION = "draughts_perf"
 
@@ -64,6 +67,51 @@ def launch(flags):
     return p, lines
 
 
+class Memory(ctypes.Structure):
+    _fields_ = [(n, ctypes.c_size_t if n != "cb" and n != "PageFaultCount" else wintypes.DWORD)
+                for n in ("cb", "PageFaultCount", "PeakWorkingSetSize", "WorkingSetSize",
+                          "QuotaPeakPagedPoolUsage", "QuotaPagedPoolUsage",
+                          "QuotaPeakNonPagedPoolUsage", "QuotaNonPagedPoolUsage",
+                          "PagefileUsage", "PeakPagefileUsage", "PrivateUsage")]
+
+
+def peak_private_mb(p):
+    """The most private bytes (commit) the process held, read from its handle, which
+    Popen keeps open after it exits."""
+    m = Memory(cb=ctypes.sizeof(Memory))
+    k32 = ctypes.WinDLL("psapi")
+    k32.GetProcessMemoryInfo.argtypes = [wintypes.HANDLE, ctypes.POINTER(Memory), wintypes.DWORD]
+    if not k32.GetProcessMemoryInfo(int(p._handle), ctypes.byref(m), m.cb):
+        return None
+    return m.PeakPagefileUsage / (1 << 20)
+
+
+def bring_forward(pid, seconds=5):
+    """Puts the app's window in front once it shows. A process started by a script that
+    isn't in front doesn't get the foreground, and a legacy full-screen swapchain (the
+    ngfx build's, uncapped on NVIDIA) is then composed by DWM rather than flipped. A
+    tap of Alt lets SetForegroundWindow through."""
+    user32 = ctypes.WinDLL("user32")
+    found = []
+    proc = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+
+    def each(hwnd, _):
+        owner = wintypes.DWORD()
+        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(owner))
+        if owner.value == pid and user32.IsWindowVisible(hwnd):
+            found.append(hwnd)
+        return True
+    for _ in range(seconds * 20):
+        user32.EnumWindows(proc(each), 0)
+        if found:
+            user32.keybd_event(0x12, 0, 0, 0)
+            user32.keybd_event(0x12, 0, 2, 0)
+            user32.SetForegroundWindow(found[0])
+            return True
+        time.sleep(0.05)
+    return False
+
+
 def wait_for(lines, text, seconds):
     for _ in range(int(seconds * 10)):
         if any(text in line for _, line in lines):
@@ -82,6 +130,7 @@ def frames(board, n, work):
     out = work / f"presentmon-{board}.csv"
     launched = datetime.datetime.now()
     p, lines = launch(["--board", board, *SCENE, "--bench", str(n)])
+    bring_forward(p.pid)
     pm = subprocess.Popen([presentmon(), "--process_id", str(p.pid), "--output_file", str(out),
                            "--date_time", "--no_console_stats", "--session_name", SESSION,
                            "--stop_existing_session"],
@@ -133,8 +182,11 @@ def frames(board, n, work):
     print(f"gpu busy P50 {pct(gpu, 50):.2f} / P99 {pct(gpu, 99):.2f} ms; present to display "
           f"P50 {pct(latency, 50):.1f} ms; {', '.join(f'{m} {k}' for m, k in modes.items())}")
     for _, line in lines:
-        if f"{tag}: summary" in line:
+        if f"{tag}: summary" in line or f"{tag}: " in line and "shadow map: cpu" in line:
             print(line[line.index(tag):])
+    peak = peak_private_mb(p)
+    if peak is not None:
+        print(f"bench peak private bytes {peak:.1f} MB")
 
 
 def rest(board):

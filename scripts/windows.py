@@ -5,10 +5,10 @@
     python scripts/windows.py src/app/draughts.goose --run -- --board 3d
                                                                   build, and run it with those flags
 
-The release's own goose_gfx.lib is unpatched. This builds goose_gfx's sources with
-patches/goose_gfx applied, as Android and iOS do, into a copy of the release
-(build/windows/goose/), and builds the program with that copy's goose: its gfx draws
-only when something changed (0002), and so on. SDL is the release's own, linked
+The release's own goose_gfx.lib lacks Draughts' changes. This builds goose_gfx's sources
+from the submodule (kaitk/goose_gfx's main), as Android and iOS do, into a copy of the
+release (build/windows/goose/), and builds the program with that copy's goose: its gfx
+draws only when something changed (draw-on-demand), and so on. SDL is the release's own, linked
 statically; patches/SDL are for Android and iOS. The app draws through Vulkan there, as on
 Android (src/app/display.c).
 

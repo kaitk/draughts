@@ -4,12 +4,12 @@
     scripts/mac.py src/app/draughts.goose                     build build/draughts
     scripts/mac.py src/app/draughts.goose --run -- --board 3d build, and run it with those flags
 
-The release's own libgoose_gfx.a is unpatched: it presents every frame, so the app at rest
-spins at the display's rate. This builds goose_gfx's sources with patches/goose_gfx
-applied, as Android, iOS, and Windows (scripts/windows.py) do, into a copy of the release
-(build/mac/goose/), and builds the program with that copy's goose: its gfx presents only
-what was drawn and then waits for an event (0002), and samples ASTC where the GPU takes it
-(0004). SDL is the release's own libSDL3.a, which is goose_gfx's SDL submodule's commit.
+The release's own libgoose_gfx.a presents every frame, so the app at rest spins at the
+display's rate. This builds goose_gfx's sources from the submodule (kaitk/goose_gfx's
+main, with every change Draughts needs), as Android, iOS, and Windows (scripts/windows.py)
+do, into a copy of the release (build/mac/goose/), and builds the program with that copy's
+goose: its gfx presents only what was drawn and then waits for an event (draw-on-demand),
+and samples ASTC where the GPU takes it (compressed-textures). SDL is the release's own libSDL3.a, which is goose_gfx's SDL submodule's commit.
 
 The copy is made once; delete build/mac/goose/ after the release changes. The release is
 build/goose-v2026.4-macos-arm64/, or GOOSE_RELEASE.

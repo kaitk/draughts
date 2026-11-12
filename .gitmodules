@@ -1,3 +1,4 @@
 [submodule "third_party/goose_gfx"]
 	path = third_party/goose_gfx
-	url = https://github.com/aardappel/goose_gfx.git
+	url = https://github.com/kaitk/goose_gfx.git
+	branch = main

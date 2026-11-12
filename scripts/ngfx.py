@@ -20,7 +20,7 @@ Needs a goose-ngfx checkout (NGFX, else ../goose/goose-ngfx beside this reposito
 slangc 2026.18.2 or later (NGFX_SLANGC), and what ngfx's own build needs (its
 docs/development.md: on Windows the Vulkan SDK and Visual Studio's Build Tools; on the
 Mac Xcode with its Metal toolchain). The program is built with the Goose release's copy
-whose gfx has patches/goose_gfx applied (scripts/mac.py, scripts/windows.py), for gfx's
+whose gfx is built from the submodule (scripts/mac.py, scripts/windows.py), for gfx's
 WINDOW_ONLY: gfx's window, input, and events, with ngfx drawing into the window.
 """
 import argparse
@@ -166,7 +166,7 @@ def main():
     shaders()
     exe = OUT / f"{root.stem}{EXE}"
     # gfx from the patched sources, as the gfx build's: the window comes from gfx opened
-    # WINDOW_ONLY (patches/goose_gfx/0008), and ngfx draws into it.
+    # WINDOW_ONLY (kaitk/goose_gfx's window-only), and ngfx draws into it.
     native.run(platform_build.patched_goose(), "build", "-o", exe, root.name, cwd=root.parent)
     if a.run:
         sys.exit(subprocess.run([str(exe), *a.args]).returncode)
