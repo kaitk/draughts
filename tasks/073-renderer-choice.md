@@ -1,6 +1,6 @@
 # 073: One executable, the renderer chosen at run time
 
-Status: in-progress (steps 1 and 2 done on main 2026-11-11; step 3 on main next; steps 4 to 6 on a branch of their own)
+Status: in-progress (steps 1 and 2 done on main 2026-11-11, step 3 on 2026-11-12; steps 4 to 6 on a branch of their own)
 
 Task 065 drew all of Draughts through goose-ngfx on its own branch, `ngfx`, as a
 build-time choice; tasks 070 and 071 brought it to gfx's frame time and memory on the Mac
@@ -21,8 +21,8 @@ right first (the user, 2026-11-12).
   `render`, `draw`, `widgets`, `scene`, `draw3d`, `photo.c`, and `render3d` each exist
   twice, alike but for the GPU calls. Only the 3D shaders are generated from one source
   (`scripts/ngfx_3d_shaders.py`). Every rendering change is made twice, as task 071's
-  were. Merged as it is, that cost moves onto main. (Step 2 split the drawers; the 2D
-  shaders are still two copies, step 3.)
+  were. Merged as it is, that cost moves onto main. (Step 2 split the drawers, and step
+  3 writes the 2D shaders from the GLSL too.)
 - **Linking both.** NoGraphicsAPI's CMake refuses a deployment target under macOS or iOS
   26, and its Metal backend calls Metal 4's classes directly; the gfx build runs on iOS
   16 (`scripts/ios.py`'s `MIN_IOS`). On Windows ngfx imports `vulkan-1.dll` directly, which
@@ -107,7 +107,7 @@ is trying ngfx and falling back, not a list of devices kept here:
    gfx; Windows on the RTX 4090 ngfx and with `--renderer gfx` gfx; the tablet, the
    Pixel 7a, and the A33 gfx; the shots, `--rest`, and `--bench` of each as task 065's.
 
-## Where it stands (2026-11-11)
+## Where it stands (2026-11-12)
 
 - **Step 1 done.** `ngfx` merged into main (`088ca59`), after task 072's session
   committed its gui work; the merge took `16d44ab` (task 072's focus ring, made on
@@ -135,8 +135,41 @@ is trying ngfx and falling back, not a list of devices kept here:
   122.2 MB, ngfx 139.3 → 139.3). poc/3d builds against the new render3d. Not run: the
   tablet, the iPhone, and Windows, as nothing on screen was meant to change; the iOS and
   Windows ngfx builds use the same overlay.
-- **Next, on main**: step 3, the 2D shaders generated from the GLSL (2026-11-12).
-- **Then, on its own branch** (steps 4 to 6): both renderers in one executable. The
+- **Step 3 done** (2026-11-12), one commit a module after the generator's core: the
+  core split out of the 3D generator (`9b7de3d`, `scripts/ngfx_glsl.py`, its 3D output
+  byte for byte the same), then `compose` (`d09cf74`), `fade` (`f59b933`), `blur`
+  (`70243b2`), `shrink` (`8a198d9`), `board` (`cda0a91`), `pieces` (`4760c6b`), and the
+  three UI variants (`40b9746`), each written by `scripts/ngfx_2d_shaders.py` and its
+  hand port deleted, and `common.slang` trimmed to what `down` and `mip` use
+  (`ef185cf`). The roots are laid out from the GLSL ([decisions](../docs/decisions/README.md#the-codes-layout));
+  two recorders changed to match (the pieces' and the UI's `view` before `theme`, and
+  compose's sampler). The only hand-written part is the UI's `first`, added to
+  `SV_InstanceID`; the variants' defines come from `widgets_gpu`'s `BASE`, `ICONS`, and
+  `FACES`, and the quads' address is the GLSL's storage buffer as a root pointer, both
+  generated. `down`, `mip`, and `fxaa` are ngfx's own (gfx resolves MSAA, makes mips with
+  SDL_GPU's blits, and has no FXAA); `smaa.slang` includes SMAA's own HLSL, as gfx's
+  `smaa.goose` wraps it in GLSL, so neither is a port of the other. All four stay Slang.
+- **Checked** on the Mac after each module, the ngfx build's 26 shots against a baseline
+  taken at `a70b192`: flat identical every time; 3D within two runs' noise (pixels by at
+  most 3 of 255, but the puzzle's 3D board, which sparkles along the pieces' and the
+  board's edges from run to run: two baseline runs differ there by up to 40 at 2 pixels,
+  the modules' runs by up to 67 at 9, all single pixels on the board). gfx's binary is byte for byte the
+  baseline's, so its shots can't differ. Every `--aa` way of ngfx (off, fxaa, smaa,
+  ssaa) on the 3D game against the baseline: none over 32. `--bench 60` headless, the
+  game at 1280 × 800, five runs each, medians, ngfx baseline → step 3: flat waited P50
+  0.64 → 0.47 ms, presented 4,460 → 4,380 fps; 3D waited P50 0.81 → 0.89 ms, presented
+  1,336 → 1,339 fps (run-to-run spread: P50 0.39 to 0.82 ms in one build's flat runs).
+  Footprint at `--rest 4` headless, the same: ngfx flat 53 → 53 MB, 3D 140 → 140 and 141;
+  gfx (the same binary) 51 and 131 to 135. Built against goose-ngfx `82517d6` (its
+  `origin/main`, for `ngfx::open`'s display and kind).
+- **Windows ngfx, for the user**: `python scripts/ngfx.py src/app/draughts.goose`, then
+  the 13 screens above (their flags in `agents/testing.md`), flat and 3D, headless
+  (`GOOSE_GFX_HEADLESS=1`) at `--size 1280x800 ... --frames 20000`, against the same from a
+  build of `a70b192` (`git archive` into a folder of its own, as `agents/testing.md`
+  says), and the 3D game with each `--aa` way; flat identical and 3D none over 32 is the
+  pass. The generated shaders are the same text on every platform; what Windows adds is
+  slangc's SPIR-V of them and the Vulkan driver.
+- **Next, on its own branch** (steps 4 to 6): both renderers in one executable. The
   recorders are the seam: each renderer's `_gpu` files compiled side by side (renamed
   apart, or `gpu` and the recorders behind one interface chosen at start), the drawers
   unchanged.
@@ -151,7 +184,7 @@ is trying ngfx and falling back, not a list of devices kept here:
 
 - [x] ngfx on main as a build option, the gfx build unchanged
 - [x] The drawing in one copy, both renderers' shots as before
-- [ ] The 2D shaders generated from gfx's GLSL, the hand ports gone, ngfx's shots as
+- [x] The 2D shaders generated from gfx's GLSL, the hand ports gone, ngfx's shots as
       before
 - [ ] One executable per platform holding both renderers, starting on Apple systems
       without Metal 4

@@ -259,6 +259,18 @@ find out by compiling, so the next session doesn't.
   any other line (`    #ifdef PULSE`), or the compiler refuses the string; one GLSL text
   with an `#ifdef`, a define string put first in `embed_shader`, makes two shaders
   (`shaders::MARKS_PULSE`, 2026-11-09).
+- A GLSL change in `src/app/*_gpu.goose` or `src/render3d/shaders.goose` reaches the
+  ngfx build by itself: `scripts/ngfx_2d_shaders.py` and `ngfx_3d_shaders.py` write its
+  Slang at each build, over `ngfx_glsl.py`. What they need besides: a GLSL built-in no
+  shader called before (`textureLod` was the last) gets a rename in `ngfx_glsl.py`'s
+  `Stage.parse` and its `glsl_` function in `src/ngfx/shaders/glsl.slang`; a new 2D
+  pipeline gets a row in `ngfx_2d_shaders.py`'s `MODULES`, its strings named as the gfx
+  recorder's `embed_shader` call names them; a uniform block, texture, or storage buffer
+  added to a 2D shader moves its root, whose order the written file's header lists
+  (`build/ngfx/shaders/<module>.slang`) and the ngfx recorder's `*Root` struct follows.
+  The 2D roots take `vec4`-sized block fields only, and a global with an initializer
+  (`vec4 acc = vec4(0.0);`) is made `static`, as Slang reads a plain global as a uniform.
+  Build the ngfx build after any shader change: the tests compile neither (2026-11-12).
 - A `sampler2D` passed as a function's parameter crashes the Pixel 7a's Mali driver as
   it makes the pipeline (a null pointer in `spir2lir`'s `evaluate_address`, from
   `vkCreateGraphicsPipelines`), while the Mac and the iPhone take it. Read textures as

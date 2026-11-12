@@ -83,8 +83,12 @@ renderer: `scene_gpu`, `draw_gpu`, `widgets_gpu`, `host_gpu` (opening the window
 presenting, the screenshot), `render3d_gpu` (a second file in namespace `render3d`), and
 `photo_gpu.h` for `photo.c`; `gpu` names the renderer's handle types and the few calls
 the drawers make themselves. gfx's are in `src/app/` and `src/render3d/`. goose-ngfx's
-are in `src/ngfx/`, which `scripts/ngfx.py` lays over them, with its shaders built ahead
-from Slang, for a build that draws through NoGraphicsAPI. The gfx build is what ships.
+are in `src/ngfx/`, which `scripts/ngfx.py` lays over them, for a build that draws
+through NoGraphicsAPI. Its shaders are gfx's GLSL written as Slang at each build
+(`scripts/ngfx_2d_shaders.py` and `ngfx_3d_shaders.py`), so each shader has one source,
+and compiled ahead; `src/ngfx/shaders/` holds in Slang only what they include, the
+antialiasing and mip passes ngfx alone has, and SMAA's wrapper. The gfx build is what
+ships.
 
 The targets this keeps open, each replacing or adding to `app/` alone:
 

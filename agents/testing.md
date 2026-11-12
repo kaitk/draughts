@@ -390,6 +390,32 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   them), so nothing over 32 is the test. For the 3D renderer also each `--aa` way, and
   `--bench` and the footprint at `--rest` against a build of the commit before (task
   073, 2026-11-11).
+- That check's 13 screens, each run as `GOOSE_GFX_HEADLESS=1 <exe> --size 1280x800
+  --lang en --touch off <flags> --board flat|3d --frames 20000` in a folder of its own,
+  four at a time, with `F` for `--variant russian --fen W:Wc3,e3,Kh2:Bd4,f6`: home
+  `--screen home`; game `--screen game F`; taps `F --tap c3`; settings `--screen
+  settings`; stone `--screen game --theme stone F`; birch's settings `--screen settings
+  --theme birch`; sunset plain `--screen game --theme sunset --background plain F`; home
+  plain `--screen home --background plain`; puzzle `--puzzle 21 --tap f4 --tap e5`; win
+  `--variant russian --fen W:Wa1,c1,g1,b2,h2,e3:Bf4 --tap e3 --tap g5 --win 1.2`; held
+  `--go settings --hold 0.5`; portrait `--screen game --size 800x1280 F`; lookout
+  `--screen game --lookout on F`. The puzzle's 3D shot is the noisiest: two runs of one
+  ngfx build differ there by up to 40 to 67 of 255, at 2 to 9 single pixels along the
+  pieces' and the board's edges, so find where a pixel over 32 is (`-threshold 12.6%
+  -format %@` below) before blaming a change (2026-11-12).
+- On the Mac, Python has no PIL: compare shots with ImageMagick, `magick a.png b.png
+  -compose difference -composite -alpha off -separate -evaluate-sequence max`, then
+  `-format "%[fx:round(255*maxima)]" info:` for the largest difference and `-threshold
+  0.9%` or `12.6%` with `-format "%[fx:round(mean*w*h)]" info:` for the pixels over 2 or
+  32 (2026-11-12).
+- A change to the ngfx build alone (its recorders, `src/ngfx/shaders/`, the shader
+  generators) leaves gfx's binary byte for byte the same: `cmp build/draughts` against a
+  copy from before settles gfx's shots, `--bench`, and footprint (2026-11-12).
+- `--bench 60` and `--rest 4` run headless too, the game at 1280 × 800 (the shot list's
+  flags with `--board flat` or `3d`); `--rest` prints its line and keeps running, so take
+  `footprint PID` once the line is out and kill it. One build's flat waited P50 spreads
+  from 0.39 to 0.82 ms over five runs: compare medians of five runs, the builds taken in
+  turn (2026-11-12).
 - To compare the ngfx build with gfx, run both with the same flags in folders of their
   own and diff the PNGs (mean, max, pixels over 2, 8, and 32, and the box they're in).
   A one-off script in the scratchpad does it; settled, the flat board is within 1 of 255

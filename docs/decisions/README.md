@@ -111,6 +111,24 @@ target, a pass's begin and end, the wait). `render3d_gpu` is a second file in na
 `render3d`, so the 3D board's callers didn't change. Both renderers in one executable,
 chosen at run time, waits on a branch of its own.
 
+The ngfx build's 2D shaders are written from gfx's GLSL at each build, as the 3D board's
+already were (2026-11-12, task 073): `scripts/ngfx_2d_shaders.py` beside
+`ngfx_3d_shaders.py`, both over one translation (`ngfx_glsl.py`) that keeps each stage's
+GLSL as written in a namespace, its blocks, buffers, and samplers statics filled from the
+root, and negates y for NoGraphicsAPI's clip space. A 2D module's root is its own, laid
+out from the GLSL and written at the top of the file: the storage buffers' addresses,
+the textures' and their sampler's heap indices padded to 16 bytes, then the uniform
+blocks' fields, the vertex stage's first; the recorders fill it in that order. The one
+hand-written part is the UI's `first`, the run's first quad: gfx draws from a first
+instance, which `gl_InstanceIndex` counts and `SV_InstanceID` doesn't. Before,
+`src/ngfx/shaders/` held hand ports of seven 2D shaders (about 1,000 lines), and a change
+to the GLSL, as task 063's to the UI's, was made again in Slang. The GLSL stays the
+source, as gfx is what ships everywhere. Rejected: the 3D board's one shared root, each
+uniform block a pointer into frame memory, for the 2D modules: each draw would copy its
+uniforms and then its root into frame memory, where one root holds both. Still by hand in
+`src/ngfx/shaders/`: what ngfx alone has (`down` for its 2× pass in place of MSAA, `mip`,
+`fxaa`) and `smaa`, which includes SMAA's own HLSL as gfx's `smaa.goose` wraps it in GLSL.
+
 ### The shell's frame and the panel's regions (2026-11-10)
 
 - One screen table, `shell::KINDS`, and one `match` choosing each screen's code, in
