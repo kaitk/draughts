@@ -1,6 +1,6 @@
 # 072: Keyboard and controller focus
 
-Status: in-progress (steps 1 to 6 built 2026-11-11, the board's look agreed 2026-11-12; a real gamepad to try)
+Status: in-progress (steps 1 to 6 built 2026-11-11, the board's look agreed 2026-11-12; merged into main 2026-11-12; other platforms' gamepad wake to do)
 
 Every screen played with the keyboard alone, and later a gamepad, as a desktop game is
 expected to be: arrow keys move a visible focus between the controls, Enter presses the
@@ -133,7 +133,6 @@ cursor: headless shots at 1280 × 800 match gfx's flat, and the 3D cursor draws.
    reading could push a wake event only when a button or an axis past a dead zone
    changes, rather than the program polling. Then a gamepad on a phone or
    the tablet, and its idle cost there, at the task's end with the other device numbers.
-3. Merge `keys-board` into main.
 
 ## Acceptance criteria
 
