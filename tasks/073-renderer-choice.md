@@ -89,7 +89,9 @@ is trying ngfx and falling back, not a list of devices kept here:
 4. **Both in one executable.** Draughts' one SDL for both (as task 065 left it); ngfx's
    code loaded only where it can run: Metal 4 behind `@available` with weak links, or
    ngfx in a library the app opens only on macOS and iOS 26. Which of the two, decided
-   here and recorded in `docs/decisions/`. Windows links both as they are.
+   here and recorded in `docs/decisions/`; the weak links, by a NoGraphicsAPI fork
+   change that builds below 26 and fails at run time, are the user's lean (task 077,
+   2026-11-12). Windows links both as they are.
 5. **Choosing.** `--renderer auto|gfx|ngfx` (`auto` the default): `auto` tries ngfx and
    falls back to gfx in the same window; `ngfx` fails loudly where it can't run; Android
    is always gfx. The choice and why printed at start, for bug reports.
