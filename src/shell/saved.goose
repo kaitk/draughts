@@ -46,7 +46,7 @@ fn checksum(data: const u8[:]) -> u64 {
 fn save(sh: Shell&) -> u8[>..] {
     let b .= sh.game.b;
     var one: Saved[>..] = [];
-    one.push(Saved { version: VERSION, unset: sh.unset, screen: if sh.screen == GAMES { HOME } else { sh.screen }, variant: b.variant, start: b.start, pos: b.pos,
+    one.push(Saved { version: VERSION, unset: sh.unset, screen: if sh.screen == RESULTS { HOME } else { sh.screen }, variant: b.variant, start: b.start, pos: b.pos,
                      last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.history,
                      clock:     sh.game.clock, computer: sh.game.computer, level: sh.game.level, skill: sh.game.skill,
                      number: sh.game.number, counted: sh.game.counted });

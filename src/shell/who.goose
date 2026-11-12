@@ -27,7 +27,7 @@ let CREATE = 3;             // a new player with the sheet's picture and name
 let SAVE = 4;               // the sheet's picture and name for its player
 let AGAIN = 5;              // start the sheet's player again
 let REMOVE = 6;             // remove the sheet's player
-let GAMES = 7;              // the playing player's games (games.goose)
+let RESULTS = 7;            // the playing player's games (results.goose)
 
 let HOLD = 1.5;             // seconds start again and remove are held
 
@@ -200,7 +200,7 @@ fn picker(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i6
     }
     if glass_tile(g, gui::WHO_IDS + 4, games, gui::LEVEL + 2, gui::PLAIN) {
         w.state = CLOSED;
-        return GAMES, -1;
+        return RESULTS, -1;
     }
     return ask, -1;
 }

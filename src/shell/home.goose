@@ -51,7 +51,7 @@ let EXIT = 9;               // close the app
 // sets it at launch).
 var closable = true;
 let PLAYERS = 10;           // who's playing
-let GAMES = 11;             // the games played (games.goose, task 074)
+let RESULTS = 11;           // the games played (results.goose, task 074)
 
 let ROWS = 4;               // and settings, a fifth in landscape
 // The menu's rows shown: ROWS, or one fewer while there is no game to continue (frame
@@ -223,7 +223,7 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, s: settings::Settings&
     let small = setup == NO_SETUP && gui::compact(g, area);
     let clear = (EDGE + gui::tap() + 16.0) * u;
     let least_h = content_height(setup, landscape, height, u, small);
-    // With the menu, its games row: a row more where that leaves the board its size and
+    // With the menu, its results row: a row more where that leaves the board its size and
     // the menu on the screen, else the menu keeps its height and scrolls.
     let more_h = if setup == NO_SETUP { (row_h(small) + row_gap(gear_beside(landscape, height, u), height, u, small)) * u } else { 0.0 };
     var scroll = false;
@@ -475,11 +475,11 @@ fn player_chip(g: gui::Gui&, r: float4, s: settings::Settings&) -> bool {
 fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, apart: f32, s: settings::Settings&,
         small: bool = false, quit: bool = false, resume: Resume = Resume {}, scroll: bool = false, foot: f32 = 0.0) -> i64 {
     let u = g.scale;
-    // The wordmark, then the rows and the games row, settings as the next where it isn't
+    // The wordmark, then the rows and the results row, settings as the next where it isn't
     // the gear, and Quit last with `quit`.
     let more = if quit { 2 } else { 1 };
     let first = ROWS - rows;    // the first row shown: Continue's, or Friend's without it
-    let shown = rows + 1;       // with the games row
+    let shown = rows + 1;       // with the results row
     let rows_n = if gear { shown } else { shown + more };
     var items: gui::Item[ROWS + 4] = [gui::Item {}; ROWS + 4];
     var at:    float4[ROWS + 4]    = [float4 { 0.0, 0.0, 0.0, 0.0 }; ROWS + 4];
@@ -539,7 +539,7 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
     var rating: u8[..16] = [];
     if s.rated[s.variant] > 0 { format(rating, s.rating[s.variant]); }
     if gui::row(g, gui::HOME_IDS + 7, at[1 + rows], gui::LEVEL + 2, strings::get(strings::RESULTS_TITLE), rating[..], false, true) {
-        pick = GAMES;
+        pick = RESULTS;
     }
     if !gear {
         if gui::row(g, gui::HOME_IDS + 5, at[2 + rows], gui::GEAR, strings::get(strings::HOME_SETTINGS), "", false, true) { pick = SETTINGS; }

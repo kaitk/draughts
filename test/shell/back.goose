@@ -24,7 +24,7 @@ import drive from "../drive";
 fn name(sh: shell::Shell&) -> const u8[:] {
     let screen = sh.screen;
     if screen == shell::HOME { "home" } else if screen == shell::GAME { "the game" }
-    else if screen == shell::SETTINGS { "settings" } else if screen == shell::GAMES { "the games" }
+    else if screen == shell::SETTINGS { "settings" } else if screen == shell::RESULTS { "the results" }
     else if screen == shell::PICKER { if sh.theme >= 0 { "a theme" } else { "the puzzles" } } else { "a puzzle" }
 }
 
@@ -97,7 +97,7 @@ fn screens(o: i64, gear: i64) {
     check("settings from home", [gear]);
     check("settings from the game", [o, 1]);
     check("the puzzles", [3 + o]);
-    check("the games", [4 + o]);
+    check("the results", [4 + o]);
     check("a theme", [3 + o, drive::LEARN_ROW]);
     check("a puzzle", [3 + o, drive::LEARN_ROW, 1]);
     check("settings from a puzzle", [3 + o, drive::LEARN_ROW, 1, 1]);

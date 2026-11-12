@@ -603,8 +603,8 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   computer · easy"; not shown while the game is one nobody set up and no move was
   played: `shell::resume`, the rows below moving up), a friend, the computer with its level, puzzles
   with stars, and the games played with the player's rating in their draughts once rated
-  ([the games screen](#the-games-screen)), then settings, each an icon and a word, in
-  rows 88 dp tall, 2 dp apart. The menu's height is reckoned without the games row: where
+  ([the results screen](#the-results-screen)), then settings, each an icon and a word, in
+  rows 88 dp tall, 2 dp apart. The menu's height is reckoned without the results row: where
   the row would shrink the board or leave the screen (a phone, a portrait tablet), the
   menu keeps that height and its rows scroll under the wordmark down to the screen's
   foot, the inset under the safe area too; the row below the last whole one shows, its
@@ -995,13 +995,13 @@ there while there are more (`gui::fade_edges`, as home's scrolling menu does). B
 the first move, row one waits: its number and a faint glow (10%, 52 dp) where the first
 move will stand, in white's half or black's, so the glass isn't blank and nothing moves
 when the move comes. The player's setting (`moves`: off, the moves, the moves with marks) is
-settings' Move list row, under move hints, and the games screen's three tiles; off,
+settings' Move list row, under move hints, and the results screen's three tiles; off,
 there is no panel and the 3D board is as large as without it. No panel in portrait or on
 a phone in landscape, which have under four rows' room.
 
-### The games screen
+### The results screen
 
-The games played (`src/shell/games.goose`), reached from home's games row and from who's
+The games played (`src/shell/results.goose`), reached from home's results row and from who's
 playing's tile of three rising bars, beside the pencil. Back and the title head it, the three draughts as tiles
 at its right, each its name and the player's rating there (a row of their own under the
 head where they don't fit beside back). In landscape a panel at the left holds the

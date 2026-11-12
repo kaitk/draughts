@@ -4,9 +4,9 @@
 // first, in a scrolling list. Back and the title head it, the draughts as tiles at the
 // head's right, each with its rating. In landscape the rating and the setting stand in a
 // panel at the left and the games at the right; in portrait the panel is above the
-// games. Reached from who's playing (who.goose's games tile). Everything is read off the
+// games. Reached from who's playing (who.goose's results tile). Everything is read off the
 // history the shell read when the screen opened (record.goose); nothing allocates.
-namespace games;
+namespace results;
 import std;
 import vec;
 
@@ -26,10 +26,10 @@ let ROW_GAP = 8.0;
 let HEAD = 24.0;            // a heading's line in the small face
 let ICON = 40.0;            // a game's result
 
-let BACK_ID = gui::GAMES_IDS;
-let DRAUGHTS_ID = gui::GAMES_IDS + 1;   // the three draughts' tiles
-let MOVES_ID = gui::GAMES_IDS + 5;      // the moves panel's three
-let LIST = gui::GAMES_IDS + 10;         // the games' scrolling list
+let BACK_ID = gui::RESULTS_IDS;
+let DRAUGHTS_ID = gui::RESULTS_IDS + 1;   // the three draughts' tiles
+let MOVES_ID = gui::RESULTS_IDS + 5;      // the moves panel's three
+let LIST = gui::RESULTS_IDS + 10;         // the games' scrolling list
 
 type Text = u8[..64];
 

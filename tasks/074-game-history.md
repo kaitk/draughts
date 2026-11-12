@@ -30,7 +30,7 @@ GoDraughts rates them: was a move a blunder or not (2026-11-11). Three parts:
 ## What was built
 
 How it works now is in `docs/architecture/ai.md` ("Judging a move", "Ratings"),
-`rendering.md` ("The moves panel", "The games screen"), and `README.md` ("Players"); the
+`rendering.md` ("The moves panel", "The results screen"), and `README.md` ("Players"); the
 reasons in `docs/decisions/ai.md` and `rendering.md`, 2026-11-11.
 
 - `src/ai/judge.goose`: a move judged by the fall in the mover's expected result (one
@@ -43,11 +43,11 @@ reasons in `docs/decisions/ai.md` and `rendering.md`, 2026-11-11.
   the moves panel.
 - `src/shell/history.goose`, `record.goose`: `history-N.txt`, a game written when it ends
   and again once its marks are in; the rating moved by a game against the computer.
-- `src/shell/games.goose`: the games screen, from home's games row (its menu scrolling
+- `src/shell/results.goose`: the results screen, from home's results row (its menu scrolling
   where the row doesn't fit, 2026-11-12) and who's playing's new tile.
 - The `moves` setting (off, moves, marks; default marks) in the player's file, set in
   settings' game group (2026-11-12, after issue 1 took the draughts' row out) and, until
-  the user chooses, on the games screen too.
+  the user chooses, on the results screen too.
 - Tests: `test/ai/judge` (marks in known positions, the cut-offs, the ratings),
   `test/shell/history` (a game judged as played, written, its marks filled in, ratings,
   start again, the file capped), `test/shell/games` (the screen's taps and layouts).
@@ -131,7 +131,7 @@ the real ones.
 3. Portrait: nothing on a phone (the user, 2026-11-12); on a tablet a one-line strip of
    the last moves under the play row (the prototype's proposal, the board 12 dp
    smaller), or nothing (built)?
-4. ~~The games screen from who's playing only, or also a row on home?~~ A row on home,
+4. ~~The results screen from who's playing only, or also a row on home?~~ A row on home,
    the menu scrolling where it doesn't fit (the user, 2026-11-12).
 5. The setting's default: marks (built), or off for a new player, so a young child sees
    nothing unless a parent turns it on?
@@ -150,16 +150,16 @@ the real ones.
 - [x] `src/shell/history.goose`: a game's line written and read back, the file capped
 - [x] The worker judging moves (`game::JUDGE` asks), the game keeping its moves' marks
 - [x] The game's end recorded in the player's history, the rating updated
-- [x] The setting (in settings' game group, and on the games screen)
+- [x] The setting (in settings' game group, and on the results screen)
 - [x] The moves panel on the game screen (landscape, flat and 3D), scrolling
-- [x] Home's games row, the menu scrolling where it doesn't fit
+- [x] Home's results row, the menu scrolling where it doesn't fit
 - [x] A desktop's narrow play panel fitted to its tiles (Estonian's undo move spilled)
 - [ ] Take d on a phone in landscape
-- [x] The games screen
+- [x] The results screen
 - [ ] A summary at the panel's foot (each side's accuracy and marks counted), as the
       prototype has
 - [ ] The replay of a past game
-- [ ] The games screen in `test/shell/sizes`' sizes, with insets
+- [ ] The results screen in `test/shell/sizes`' sizes, with insets
 
 ## Acceptance criteria
 
@@ -167,7 +167,7 @@ the real ones.
 - [x] Every move of a game judged on the worker without slowing the computer's reply
 - [x] A finished game written to the player's history, its rating updated, start again
       clearing both
-- [x] The moves panel and the games screen built, every tap 88 dp, strings in English
+- [x] The moves panel and the results screen built, every tap 88 dp, strings in English
       and Estonian
 - [x] Headless tests: judging known blunders and best moves, the rating's update, the
       history file read and written back and capped

@@ -23,7 +23,7 @@ let MAX_GAMES = 200;
 let FRIEND = -1;            // Game.level for a game against a friend
 let DRAW = -1;              // Game.winner for a draw
 
-// One game as the games screen shows it; its moves are read only for a replay.
+// One game as the results screen shows it; its moves are read only for a replay.
 struct Game {
     time:     i64    = 0,       // seconds since the epoch, at its end
     variant:  i64    = 0,

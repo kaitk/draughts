@@ -74,7 +74,7 @@ fn write_kept(sh: Shell&, replace: bool) {
     write_file_atomic(path, history::with_game(text, line, replace));
 }
 
-// The playing player's games, oldest first, into out: for the games screen, on opening it.
+// The playing player's games, oldest first, into out: for the results screen, on opening it.
 fn read_history(sh: Shell&, out: history::Game[..history::MAX_GAMES]&) {
     out.clear();
     let ps .= sh.players;

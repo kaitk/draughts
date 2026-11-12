@@ -1,4 +1,4 @@
-// The games screen (shell/games.goose, task 074): reached from who's playing's games tile,
+// The results screen (shell/results.goose, task 074): reached from who's playing's results tile,
 // it reads the playing player's history; a draughts' tile shows that draughts' games and
 // rating; the move list's three tiles set the player's moves panel, written as settings
 // are, and the game follows it; back goes home. Laid out at the tablet's and a phone's
@@ -76,18 +76,18 @@ fn main() {
     drive::size = float2 { 1280.0, 800.0 };
     g.scale = gui::scale_of(drive::size.x, drive::size.y);
     gui::test_faces(g);
-    // From home: the chip opens who's playing, its games tile the screen.
+    // From home: the chip opens who's playing, its results tile the screen.
     drive::idle(sh, g, tick());
     let home = drive::tiles(g);
     drive::tap(sh, g, drive::tile(g, home - 2), tick());
     drive::tap(sh, g, drive::tile(g, drive::tiles(g) - 1), tick());
     drive::idle(sh, g, tick());
-    print("games tile tapped: screen ", sh.screen, " (games ", shell::GAMES, "), ", sh.games.len, " games read, showing ",
-          rules::VARIANT_NAMES[sh.games_variant]);
+    print("results tile tapped: screen ", sh.screen, " (results ", shell::RESULTS, "), ", sh.games.len, " games read, showing ",
+          rules::VARIANT_NAMES[sh.results_variant]);
     print("  ", check(g, float4 { 0.0, 0.0, drive::size.x, drive::size.y }));
     // Russian's tile (the third).
     drive::tap(sh, g, drive::tile(g, 3), tick());
-    print("Russian tapped: showing ", rules::VARIANT_NAMES[sh.games_variant], ", ", check(g, float4 { 0.0, 0.0, drive::size.x, drive::size.y }));
+    print("Russian tapped: showing ", rules::VARIANT_NAMES[sh.results_variant], ", ", check(g, float4 { 0.0, 0.0, drive::size.x, drive::size.y }));
     // The move list's Off (after back and the three draughts).
     drive::tap(sh, g, drive::tile(g, 4), tick());
     print("Off tapped: moves ", sh.prefs.moves, ", the game's ", sh.game.moves_shown, ", to write ", sh.changed);
@@ -105,7 +105,7 @@ fn main() {
         gui::short_dp = if i >= 2 { 480.0 } else { 800.0 };
         g.scale = gui::scale_of(size.x, size.y);
         gui::test_faces(g);
-        sh.screen = shell::GAMES;
+        sh.screen = shell::RESULTS;
         sh.drawn = -1;
         drive::idle(sh, g, tick());
         drive::idle(sh, g, tick());
