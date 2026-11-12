@@ -14,6 +14,9 @@ and not merged to main yet (the user, 2026-11-11). Task 074 has since given Wind
 measured reason: on the RTX 4090 ngfx takes 26 to 41% less GPU time a frame and 54 to
 74 MB less GPU memory, at the same CPU time, so `auto` on Windows is the case to get
 right first (the user, 2026-11-12).
+The reason is NoGraphicsAPI's, not the app's: Draughts as a real program on its API, to
+show its author and to back the pull requests (`docs/goose-findings.md`); the app itself
+needs neither renderer over the other (the user, 2026-11-12).
 
 ## What stands in the way
 
