@@ -599,8 +599,16 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
 - **Home** is a title menu (`prototypes/home.html`): the scene and the 3D board, and one glass column
   with the wordmark, then continue with whose game it goes back to ("A friend", "The
   computer · easy"; not shown while the game is one nobody set up and no move was
-  played: `shell::resume`, the rows below moving up), a friend, the computer with its level, and puzzles
-  with stars, then settings, each an icon and a word, in rows 88 dp tall, 2 dp apart. In
+  played: `shell::resume`, the rows below moving up), a friend, the computer with its level, puzzles
+  with stars, and the games played with the player's rating in their draughts once rated
+  ([the games screen](#the-games-screen)), then settings, each an icon and a word, in
+  rows 88 dp tall, 2 dp apart. The menu's height is reckoned without the games row: where
+  the row would shrink the board or leave the screen (a phone, a portrait tablet), the
+  menu keeps that height and its rows scroll under the wordmark down to the screen's
+  foot, the inset under the safe area too; the row below the last whole one shows, its
+  word at least (60 dp under it, the sheet taller where its rim and the inset lack that),
+  fading out over the foot's 72 dp while there are rows below. In a landscape that
+  scrolls the menu stands at the top. In
   portrait settings is instead a gear beside the wordmark, so the sheet leaves the board
   its room: the gear alone, 40 dp at 85%, with no tile, in an 88 dp tap reaching 8 dp over
   and under the row, clear until pressed and then lit round as a pressed row is
@@ -980,8 +988,8 @@ a phone in landscape, which have under four rows' room.
 
 ### The games screen
 
-The games played (`src/shell/games.goose`), reached from who's playing's tile of three
-rising bars, beside the pencil. Back and the title head it, the three draughts as tiles
+The games played (`src/shell/games.goose`), reached from home's games row and from who's
+playing's tile of three rising bars, beside the pencil. Back and the title head it, the three draughts as tiles
 at its right, each its name and the player's rating there (a row of their own under the
 head where they don't fit beside back). In landscape a panel at the left holds the
 rating (36 dp figures), the results against each level (the level's name and its

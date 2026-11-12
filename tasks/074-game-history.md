@@ -42,7 +42,8 @@ reasons in `docs/decisions/ai.md` and `rendering.md`, 2026-11-11.
   the moves panel.
 - `src/shell/history.goose`, `record.goose`: `history-N.txt`, a game written when it ends
   and again once its marks are in; the rating moved by a game against the computer.
-- `src/shell/games.goose`: the games screen, from who's playing's new tile.
+- `src/shell/games.goose`: the games screen, from home's games row (its menu scrolling
+  where the row doesn't fit, 2026-11-12) and who's playing's new tile.
 - The `moves` setting (off, moves, marks; default marks) in the player's file, set in
   settings' game group (2026-11-12, after issue 1 took the draughts' row out) and, until
   the user chooses, on the games screen too.
@@ -121,8 +122,8 @@ the real ones.
    it shows: worth it, or a smaller panel there?
 2. Portrait: a one-line strip of the last moves under the play row (the prototype's
    proposal, the board 12 dp smaller), or nothing (built)?
-3. The games screen from who's playing only (built), or also a row on home (fits the
-   tablet, not a phone in landscape)?
+3. ~~The games screen from who's playing only, or also a row on home?~~ A row on home,
+   the menu scrolling where it doesn't fit (the user, 2026-11-12).
 4. The setting's default: marks (built), or off for a new player, so a young child sees
    nothing unless a parent turns it on?
 5. Too many stars? Most moves come out best; a star only for a move that stood out (the

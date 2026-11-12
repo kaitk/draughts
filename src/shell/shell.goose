@@ -859,6 +859,7 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
         },
         home::EXIT => { sh.out.quit = true; },
         home::PLAYERS => { who::open(sh.who); },
+        home::GAMES => { go_to(sh, GAMES, now); },
         home::PLAY => { play(sh, now); },
         _ => {},
     }

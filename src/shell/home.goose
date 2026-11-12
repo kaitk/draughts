@@ -51,11 +51,20 @@ let EXIT = 9;               // close the app
 // sets it at launch).
 var closable = true;
 let PLAYERS = 10;           // who's playing
+let GAMES = 11;             // the games played (games.goose, task 074)
 
 let ROWS = 4;               // and settings, a fifth in landscape
 // The menu's rows shown: ROWS, or one fewer while there is no game to continue (frame
 // sets it from Resume before the layout; issue 1).
 var rows = ROWS;
+// The games played (task 074), a last row after the others (before settings and Quit
+// where they are rows). The menu's height is reckoned without it (menu_height); where it
+// fits with it the menu grows by a row, and where that would shrink the board or leave
+// the screen (a phone) the menu keeps its height and its rows scroll under the wordmark,
+// the lowest fading out at the foot to show there are more (layout's `scroll`, menu).
+let MENU_LIST = gui::HOME_IDS + 11;     // the rows' scrolling list's id (gui::scroll_begin)
+let FADE = 72.0;            // dp at the list's foot over which a row fades out
+let PEEK = 60.0;            // dp of the next row a scrolling menu shows, its word in it
 let ROW_GAP = 2.0;
 // A small window (gui::compact, task 050): the menu's rows and the wordmark's row lower,
 // the sheet's rim thinner, so the board keeps a room above it.
@@ -202,6 +211,7 @@ struct Home {
     small:   bool          = false,
     quit:    bool          = false,
     pair_w:  f32           = 0.0,
+    scroll:  bool          = false,
 }
 
 // Where home's parts go (Home), declaring nothing.
@@ -211,9 +221,30 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, s: settings::Settings&
     let height = area.w;
     let landscape = width >= height;
     let small = setup == NO_SETUP && gui::compact(g, area);
-    let content_h = content_height(setup, landscape, height, u, small);
-    let pair = paired(setup, landscape, height, u);
     let clear = (EDGE + gui::tap() + 16.0) * u;
+    let least_h = content_height(setup, landscape, height, u, small);
+    // With the menu, its games row: a row more where that leaves the board its size and
+    // the menu on the screen, else the menu keeps its height and scrolls.
+    let more_h = if setup == NO_SETUP { (row_h(small) + row_gap(gear_beside(landscape, height, u), height, u, small)) * u } else { 0.0 };
+    var scroll = false;
+    if more_h > 0.0 {
+        if landscape {
+            scroll = least_h + more_h > height - 2.0 * MARGIN * u;
+        } else {
+            let rim = (if small { RIM_COMPACT } else { 32.0 }) * u;
+            let kept, unused_y = sheet_board(width, height - least_h - 2.0 * rim, u, height, clear);
+            let grown, unused_z = sheet_board(width, height - least_h - more_h - 2.0 * rim, u, height, clear);
+            scroll = kept > grown + 0.5;
+        }
+    }
+    // Scrolling in portrait, the next row shows PEEK dp under the last whole one, through
+    // the sheet's rim and the inset under it, the sheet taller by what those lack.
+    var content_h = if scroll { least_h } else { least_h + more_h };
+    if scroll && !landscape {
+        let rim = if small { RIM_COMPACT } else { 32.0 };
+        content_h += max(0.0, PEEK - rim - g.insets.w / u) * u;
+    }
+    let pair = paired(setup, landscape, height, u);
     // The player's chip on the menu, in the way out's row at the board's side's left.
     let chip = setup == NO_SETUP;
     var side = area.x;          // where the board's side of the screen starts
@@ -245,6 +276,8 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, s: settings::Settings&
             content.y = min(max(content.y, area.y + 8.0 * u), area.y + height - content_h);
         }
         if desktop { content.y = max(area.y, min(area.y + DESKTOP_TOP * u, area.y + height - content_h)); }
+        // A scrolling menu at the top, its spare room at the foot where the next row shows.
+        if scroll { content.y = min(content.y, area.y + 8.0 * u); }
         let stage = float4 { w + 80.0 * u, 0.0, width - w - 80.0 * u, height };
         side = area.x + stage.x;
         var size = min(0.7 * height, stage.z - 80.0 * u);
@@ -302,14 +335,7 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, s: settings::Settings&
             gui::cut_top(content, (gui::tap() + HEAD_GAP) * u);
         }
         let stage_h = height - sheet_h;
-        let room = max(stage_h - 80.0 * u, min(stage_h - 48.0 * u, 0.4 * width));
-        var size = min(min(0.8 * width, 0.6 * height), room);
-        var y = 0.5 * (stage_h - size);
-        // The board, centered, clears the player's badge at the left as it clears the X.
-        if 0.5 * (width + size) > width - clear && y < clear {
-            y = clear;
-            size = min(size, stage_h - 24.0 * u - y);
-        }
+        var size, y = sheet_board(width, stage_h, u, height, clear);
         if chip && y < clear && 0.5 * (width - size) < named_end(g, s, width) && stage_h - 24.0 * u - clear >= size {
             y = clear;
         }
@@ -323,7 +349,28 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, s: settings::Settings&
     let gear = gear_beside(landscape, height, u);
     return Home { col: col, content: content, head: head, way: way, side: side, board: l, room3d: room3d, gear: gear,
                   below: mark_gap(gear, height, u, small), apart: row_gap(gear, height, u, small), small: small,
-                  quit: setup == NO_SETUP && quit_row(landscape, height, u, small), pair_w: pair_w };
+                  quit: setup == NO_SETUP && quit_row(landscape, height, u, small), pair_w: pair_w, scroll: scroll };
+}
+
+// Where a scrolling menu's list ends, in pixels: at the screen's foot, under the safe
+// area's (the inset's), so the row after the last that fits shows faded over the inset.
+fn foot(g: gui::Gui&, area: float4) -> f32 { area.y + area.w + g.insets.w }
+
+// The board's size and top above a portrait sheet, `stage_h` above it in an area
+// `height` tall: as large as 80% of the width and 60% of the height, keeping 40 dp above
+// and below (24 where that would leave it under 40% of the width), centered, and where
+// that reaches the way out's row (`clear` from the top) moved down under it and shrunk
+// to keep 24 dp above the sheet.
+fn sheet_board(width: f32, stage_h: f32, u: f32, height: f32, clear: f32) -> f32, f32 {
+    let room = max(stage_h - 80.0 * u, min(stage_h - 48.0 * u, 0.4 * width));
+    var size = min(min(0.8 * width, 0.6 * height), room);
+    var y = 0.5 * (stage_h - size);
+    // The board, centered, clears the player's badge at the left as it clears the X.
+    if 0.5 * (width + size) > width - clear && y < clear {
+        y = clear;
+        size = min(size, stage_h - 24.0 * u - y);
+    }
+    return size, y;
 }
 
 // Declares home for this frame in `area`, the screen's safe area, where layout puts its
@@ -355,7 +402,7 @@ fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: f
     gui::glass(g, gui::bleed(g, h.col, area), 32.0);
     over.clear();
     var pick = if setup != NO_SETUP { choose(over, g, h.content, setup == COMPUTER, h.pair_w, h.head, s) }
-               else { menu(over, g, h.content, h.gear, h.below, h.apart, s, h.small, h.quit, resume) };
+               else { menu(over, g, h.content, h.gear, h.below, h.apart, s, h.small, h.quit, resume, h.scroll, foot(g, area)) };
     // The player and the way out, declared last so the tiles before them keep their order.
     if setup == NO_SETUP && player_chip(g, player_spot(g, area, h.side, l.board, h.way, s), s) { pick = PLAYERS; }
     if closable && !h.quit && gui::bare_x(g, gui::HOME_IDS + 9, h.way, gui::CLOSE, CROSS) { pick = EXIT; }
@@ -420,22 +467,25 @@ fn player_chip(g: gui::Gui&, r: float4, s: settings::Settings&) -> bool {
     return clicked;
 }
 
-// The menu in c: the wordmark, `below` dp under it, the rows `apart` dp apart, and
-// settings, a row of its own or, `gear`, a gear at the wordmark's right (portrait, and a
-// short landscape).
+// The menu in c: the wordmark, `below` dp under it, the rows `apart` dp apart, the games
+// row last, and settings, a row of its own or, `gear`, a gear at the wordmark's right
+// (portrait, and a short landscape). With `scroll`, c is a row short of them: the rows
+// scroll under the wordmark down to `foot` (y in pixels, the screen's safe foot), the
+// lowest fading out while there are more below.
 fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, apart: f32, s: settings::Settings&,
-        small: bool = false, quit: bool = false, resume: Resume = Resume {}) -> i64 {
+        small: bool = false, quit: bool = false, resume: Resume = Resume {}, scroll: bool = false, foot: f32 = 0.0) -> i64 {
     let u = g.scale;
-    // The wordmark, then the rows, settings as the next where it isn't the gear, and Quit
-    // last with `quit`.
+    // The wordmark, then the rows and the games row, settings as the next where it isn't
+    // the gear, and Quit last with `quit`.
     let more = if quit { 2 } else { 1 };
     let first = ROWS - rows;    // the first row shown: Continue's, or Friend's without it
-    let rows_n = if gear { rows } else { rows + more };
-    var items: gui::Item[ROWS + 3] = [gui::Item {}; ROWS + 3];
-    var at:    float4[ROWS + 3]    = [float4 { 0.0, 0.0, 0.0, 0.0 }; ROWS + 3];
+    let shown = rows + 1;       // with the games row
+    let rows_n = if gear { shown } else { shown + more };
+    var items: gui::Item[ROWS + 4] = [gui::Item {}; ROWS + 4];
+    var at:    float4[ROWS + 4]    = [float4 { 0.0, 0.0, 0.0, 0.0 }; ROWS + 4];
     items[0].size = mark_h(small) * u;
     for i in rows_n {
-        items[1 + i].size = (if i < rows { row_h(small) } else { gui::tap() }) * u;
+        items[1 + i].size = (if i < shown { row_h(small) } else { gui::tap() }) * u;
         items[1 + i].gap = (if i == 0 { below } else { apart }) * u;
     }
     gui::stack(c, items[..rows_n + 1], at);
@@ -461,7 +511,17 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
     let room = (mark.z - gap - gui::text_width(g, gui::TITLE, name)) / max(1, name.len - 1);
     gui::text(g, gui::TITLE, mark, name, 1.0, clamp(room, 0.0, spaced), gui::LEFT);
 
-    // The menu.
+    // The rows, a list under the wordmark where the menu kept its height.
+    let end = at[rows_n].y + at[rows_n].w;
+    var listed = g.quads.len;
+    var past: f32 = 0.0;        // pixels of rows below the list's foot
+    if scroll {
+        let top = at[0].y + at[0].w;
+        let off = gui::scroll_begin(g, MENU_LIST, float4 { c.x - 24.0 * u, top, c.z + 48.0 * u, foot - top }, end - top);
+        for k in 1..rows_n + 1 { at[k].y -= off; }
+        past = end - off - foot;
+        listed = g.quads.len;
+    }
     let ways = [CONTINUE, FRIEND, COMPUTER, PUZZLES];
     let icons = [gui::NEXT, gui::FRIEND, gui::COMPUTER, gui::PUZZLE];
     let keys = [strings::HOME_CONTINUE, strings::HOME_FRIEND, strings::HOME_COMPUTER, strings::HOME_PUZZLES];
@@ -474,11 +534,30 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
                    else if i == 2 { strings::get(LEVEL_NOTES[s.level]) } else if i == 3 && all > 0 { stars[..] } else { "" };
         if gui::row(g, gui::HOME_IDS + 1 + i, r, icons[i], strings::get(keys[i]), note, i == 0, true) { pick = ways[i]; }
     }
-    if !gear {
-        if gui::row(g, gui::HOME_IDS + 5, at[1 + rows], gui::GEAR, strings::get(strings::HOME_SETTINGS), "", false, true) { pick = SETTINGS; }
+    // The games: the player's rating in their draughts once they have one.
+    var rating: u8[..16] = [];
+    if s.rated[s.variant] > 0 { format(rating, s.rating[s.variant]); }
+    if gui::row(g, gui::HOME_IDS + 7, at[1 + rows], gui::LEVEL + 2, strings::get(strings::GAMES_TITLE), rating[..], false, true) {
+        pick = GAMES;
     }
-    if quit && gui::row(g, gui::HOME_IDS + 6, at[2 + rows], gui::CLOSE, strings::get(strings::HOME_QUIT), "", false, true) {
+    if !gear {
+        if gui::row(g, gui::HOME_IDS + 5, at[2 + rows], gui::GEAR, strings::get(strings::HOME_SETTINGS), "", false, true) { pick = SETTINGS; }
+    }
+    if quit && gui::row(g, gui::HOME_IDS + 6, at[3 + rows], gui::CLOSE, strings::get(strings::HOME_QUIT), "", false, true) {
         pick = EXIT;
+    }
+    if scroll {
+        // The rows fade out over FADE dp at the foot while there are rows below it.
+        // Full across the band's lower 60% while a row is cut off, easing out over the
+        // last 16 dp of scrolling.
+        let band = FADE * u;
+        let depth = clamp(past / (16.0 * u), 0.0, 1.0);
+        for k in listed..g.quads.len {
+            let q = g.quads[k];
+            let t = 0.85 * clamp((q.rect.y + 0.5 * q.rect.w - (foot - band)) / (0.6 * band), 0.0, 1.0) * depth;
+            g.quads[k].extra.w = max(q.extra.w, t);
+        }
+        gui::scroll_end(g);
     }
     return pick;
 }
