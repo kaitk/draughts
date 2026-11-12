@@ -21,9 +21,25 @@ with X11 kept for X11 sessions.
 3. **NoGraphicsAPI (`kaitk/NoGraphicsAPI`):** `DeviceDesc` names the window system, and a
    Wayland surface is made beside the Xlib one (`xlib-surface`). On Wayland the surface's
    `currentExtent` is undefined (0xFFFFFFFF), so the swapchain takes the size the caller
-   gives (ngfx's resize).
+   gives (ngfx's resize). The pull request to `sebbbi/NoGraphicsAPI` offers Linux
+   presenting as one change: Wayland first, X11 the fallback where it stays cheap (the
+   user, 2026-11-12), so `xlib-surface` grows into that branch rather than going alone.
 4. **goose-ngfx:** one Linux open taking the display, the window, and the kind, in place
    of `open_x11`.
+
+5. **The glibc floor:** 2.35 (Ubuntu 22.04) came from the release's `libSDL3.a`, which
+   needs `hypotf@GLIBC_2.35`. With SDL built here, only the Goose runtime and the
+   program's own C set it: build in an older container (Debian 11's 2.31, the Steam
+   Runtime's sniper, for task 064) if the compiler there takes `#embed`.
+
+Started in a fresh session (the user, 2026-11-12). What task 075's session left local, not
+pushed: NoGraphicsAPI's `xlib-surface` and its merges into `ngfx` and `main`; goose_gfx's
+`window-only-x11` and its picks into `upstream-series` and `ngfx`, with `main` merged;
+goose-ngfx's `open_x11`; and in Draughts the submodule moved to that `main`, with
+`scripts/ngfx.py` and `src/ngfx/app/host_gpu.goose` taking Linux, uncommitted. The clones
+are in `../goose/` (goose-ngfx, goose_gfx). The ngfx build waits on slangc 2026.18.3 and
+the Vulkan SDK 1.4.363 in `~/slang` and `~/vulkansdk` (goose-ngfx's
+`docs/development.md`), which the user fetches or allows.
 
 ## Acceptance criteria
 
@@ -35,5 +51,7 @@ with X11 kept for X11 sessions.
 - [ ] The rest and bench numbers of task 075 again on Wayland, against XWayland's.
 - [ ] ngfx presents on Wayland and on X11 on the RX 6800 (the build of task 075 first),
       compared with gfx as task 074 did on Windows.
-- [ ] The fork branches offered upstream one at a time, as the others are; the finding
-      updated.
+- [ ] The fork branches offered upstream one at a time, as the others are, NoGraphicsAPI's
+      as one pull request for Wayland with the X11 fallback; the finding updated.
+- [ ] The glibc floor checked: lowered below 2.35 if the build allows, or 2.35 kept with
+      the reason.
