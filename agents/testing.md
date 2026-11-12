@@ -273,7 +273,9 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   mini in portrait `--size 1125x2436 --dp 500` (the density floor's 0.75 × 3 px a dp)
   with `--inset 0,66.7,0,45.3` (50 and 34 points), in landscape `2436x1125` with
   `66.7,0,66.7,30`; the 13" iPad in landscape `--size 1376x1032` (800 dp, 1.29 points a
-  dp) with `--inset 0,18.6,0,15.5` (24 and 20 points), the 11" `1210x834` with
+  dp) with `--inset 0,18.6,0,15.5` (24 and 20 points; but the app hides the status bar,
+  so the simulator's shots match `0,0,0,15.5`, 2026-11-12: at 2064 × 2752, game and
+  puzzles shots within 24 pixels of the simulator's), the 11" `1210x834` with
   `0,23,0,19.2`. `--inset` takes fractions, and the layout rounds them to pixels.
 - Insets are shot with `--inset L,T,R,B` in dp of the layout: at `--dp 540` a 1080 px
   phone is 2 px a dp, so the Pixel 7a's 118 px cutout is 59 dp and its 84 px gesture
