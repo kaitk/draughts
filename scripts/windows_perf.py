@@ -15,7 +15,7 @@ arrive) the frames that reached the display: frames per second on average and at
 low, the time each stayed on screen (P50, P99), how many were dropped (never shown) or
 held for more than one refresh, the GPU's busy time a frame, the latency from present
 to display, and how Windows presented them (composed by DWM, or flipped straight to the
-screen). Then the app at rest, its CPU time and private bytes as it counts them itself
+screen), and the most private bytes the app held through it. Then the app at rest, its CPU time and private bytes as it counts them itself
 (--rest 25).
 
 PresentMon (github.com/GameTechDev/PresentMon, its command line exe) is
@@ -32,6 +32,8 @@ import tempfile
 import threading
 import time
 import csv
+import ctypes
+from ctypes import wintypes
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -62,6 +64,25 @@ def launch(flags):
             lines.append((datetime.datetime.now(), line.rstrip()))
     threading.Thread(target=read, daemon=True).start()
     return p, lines
+
+
+class Memory(ctypes.Structure):
+    _fields_ = [(n, ctypes.c_size_t if n != "cb" and n != "PageFaultCount" else wintypes.DWORD)
+                for n in ("cb", "PageFaultCount", "PeakWorkingSetSize", "WorkingSetSize",
+                          "QuotaPeakPagedPoolUsage", "QuotaPagedPoolUsage",
+                          "QuotaPeakNonPagedPoolUsage", "QuotaNonPagedPoolUsage",
+                          "PagefileUsage", "PeakPagefileUsage", "PrivateUsage")]
+
+
+def peak_private_mb(p):
+    """The most private bytes (commit) the process held, read from its handle, which
+    Popen keeps open after it exits."""
+    m = Memory(cb=ctypes.sizeof(Memory))
+    k32 = ctypes.WinDLL("psapi")
+    k32.GetProcessMemoryInfo.argtypes = [wintypes.HANDLE, ctypes.POINTER(Memory), wintypes.DWORD]
+    if not k32.GetProcessMemoryInfo(int(p._handle), ctypes.byref(m), m.cb):
+        return None
+    return m.PeakPagefileUsage / (1 << 20)
 
 
 def wait_for(lines, text, seconds):
@@ -133,8 +154,11 @@ def frames(board, n, work):
     print(f"gpu busy P50 {pct(gpu, 50):.2f} / P99 {pct(gpu, 99):.2f} ms; present to display "
           f"P50 {pct(latency, 50):.1f} ms; {', '.join(f'{m} {k}' for m, k in modes.items())}")
     for _, line in lines:
-        if f"{tag}: summary" in line:
+        if f"{tag}: summary" in line or f"{tag}: " in line and "shadow map: cpu" in line:
             print(line[line.index(tag):])
+    peak = peak_private_mb(p)
+    if peak is not None:
+        print(f"bench peak private bytes {peak:.1f} MB")
 
 
 def rest(board):
