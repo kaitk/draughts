@@ -162,6 +162,11 @@ put on the draft `Draughts 0.2.0` in place of the XWayland tarball, its Linux pa
 saying it opens Wayland, else X11 (2026-11-12). The draft's target is still `7d68aaf`, the
 Windows zip's commit, which has none of this.
 
+**Played by the user** (2026-11-12), the uploaded tarball extracted, on Wayland and then
+through XWayland (`SDL_VIDEO_DRIVER=x11`): everything worked on both, the gamepad
+included; the Wayland run maximized (1280 × 837) and went full screen (1920 × 1080), and
+both quit cleanly.
+
 **The glibc floor** stays 2.35. What asks for it is the build's own glibc (`hypotf@2.35`;
 `pthread_*`, `dlopen`, and `__libc_start_main@2.34`; `stat@2.33`), all of which older
 glibcs have under older versions, so a build against 2.31 would ask for 2.31. But the

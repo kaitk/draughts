@@ -104,10 +104,11 @@ host with GCC 16 (10 s) for development, and the release in the `draughts-jammy`
 - [ ] Both boards played with the mouse in a real window, every screen visited; the 3D
       board's crash in WSLg either gone on the GPU or found and fixed. `--board 3d`
       headless and windowed; each `--aa` way.
-- [ ] Wayland and X11: SDL picks Wayland where there is one; also run with
+- [x] Wayland and X11: SDL picks Wayland where there is one; also run with
       `SDL_VIDEO_DRIVER=x11` (XWayland). Resizing, maximizing, `--size full`, Alt+Enter and F11 in and out of fullscreen, a display
       scale of 125% or 150% (`draughts_display`'s scale and the layout), and the window
-      closed by its X (the desktop asks before quitting, e4c15b9).
+      closed by its X (the desktop asks before quitting, e4c15b9). (Task 076, 2026-11-12:
+      the scales checked there, the rest played by the user on both.)
 - [x] The icon: gfx names the app "Goose" (`SDL_HINT_APP_NAME`), and Wayland matches a
       window to its `.desktop` file by app id, so the window and taskbar likely show a
       generic icon. Set `SDL_HINT_APP_ID` (or `SDL_SetAppMetadata`) to
