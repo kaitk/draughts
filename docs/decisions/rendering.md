@@ -230,6 +230,11 @@ are in git history before that day.
   outside the control. The hover's light alone was too faint, and on a lit control
   (Continue, a chosen tile) showed nothing; a stronger fill would be taken for a
   chosen tile.
+- Enter with nothing focused focuses the screen's primary, as the first arrow does, and
+  presses nothing (2026-11-12). It used to do nothing at all, so a gamepad's first press,
+  most often A, looked like the gamepad not working (a PS5 pad plugged in mid-game, on
+  the tablet and before on the Mac). Pressing the primary at once was rejected: a blind
+  first press would start a game or move a piece unseen.
 - The board takes the keys as one grid control with a cursor (2026-11-11, task 072):
   the cursor goes over every square, light ones too, one at a time, and Enter is a tap
   on its square. Rejected: a cursor that jumps only between the pieces that can move and

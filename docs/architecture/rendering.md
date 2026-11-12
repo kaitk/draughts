@@ -413,8 +413,9 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   control (`gui::Spot`, its id and rect, in a fixed array the frame fills), but not the
   controls of a screen a transition leaves or a whole-screen catch such as who's
   playing's dimmed home. The next frame's `gui::begin` moves the focus: the first arrow
-  key focuses the screen's primary control (a primary row, home's Continue), or the
-  first declared; later ones go to the nearest control that way, the gap that way plus
+  key, or Enter with nothing focused (a gamepad's first press is most often A), focuses
+  the screen's primary control (a primary row, home's Continue, the board's cursor), or
+  the first declared, and that Enter presses nothing; later ones go to the nearest control that way, the gap that way plus
   twice the gap across, so one in line beats a nearer one off to the side, and the
   focus stays where none lies that way. A focused control the frame no longer declares
   (the screen changed) hands the focus to the new screen's primary. The mouse moving, a

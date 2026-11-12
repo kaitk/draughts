@@ -561,13 +561,14 @@ fn inside(r: float4, p: float2) -> bool { p.x >= r.x && p.x < r.x + r.z && p.y >
 // Starts a frame: no quads yet, this frame's pointer and time, and the keys' focus moved
 // among the controls the last frame offered.
 fn begin(g: Gui&, input: Input, scale: f32, now: f64) {
-    focus_keys(g, input);
+    let woke = focus_keys(g, input);
     if !g.pointer.down && !g.pointer.pressed { g.active = 0; }
     if input.pressed { g.took = false; }
     g.acted = false;
     g.holding = false;
     g.input = input;
     g.pointer = input;
+    if woke { g.pointer.confirm = false; }
     g.scale = scale;
     g.now = now;
     g.quads.clear();

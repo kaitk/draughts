@@ -27,8 +27,11 @@ struct Spot {
 // nearest that way, or, from none, to the screen's primary control; on a grid it moves
 // the cell, leaving the grid for the nearest control that way past its edge; Tab moves it
 // to the next group (`tab`); a focused control the last frame didn't declare (the screen
-// changed) hands it to the new screen's primary.
-fn focus_keys(g: Gui&, input: Input) {
+// changed) hands it to the new screen's primary. Enter with nothing focused focuses the
+// primary as the first arrow does, and presses nothing: true then, and begin drops the
+// press. A gamepad's first press is most often A (a PS5 pad's cross), which otherwise did
+// nothing, as if the gamepad didn't work.
+fn focus_keys(g: Gui&, input: Input) -> bool {
     let moved = input.at.x != g.pointer.at.x || input.at.y != g.pointer.at.y;
     if input.pressed || input.wheel != 0.0 || moved { g.focus = 0; }
     let n = g.spots.len;
@@ -44,6 +47,8 @@ fn focus_keys(g: Gui&, input: Input) {
     } else if n > 0 && g.focus != 0 && spot_of(g, g.focus) < 0 {
         take_focus(g, g.spots[primary_spot(g)].id, float4 { 0.0, 0.0, 0.0, 0.0 }, STEP_NONE);
     }
+    let woke = n > 0 && input.confirm && g.focus == 0;
+    if woke { take_focus(g, g.spots[primary_spot(g)].id, float4 { 0.0, 0.0, 0.0, 0.0 }, STEP_NONE); }
     let at = spot_of(g, g.focus);
     g.focused = if at >= 0 { g.spots[at] } else { Spot {} };
     if at >= 0 && g.spots[at].group >= 0 && g.spots[at].group < MAX_GROUPS { g.group_focus[g.spots[at].group] = g.focus; }
@@ -51,6 +56,7 @@ fn focus_keys(g: Gui&, input: Input) {
     g.deaf = false;
     g.ring = false;
     g.group = 0;
+    return woke;
 }
 
 // Gives the focus to control id. A grid it comes to from another control by an arrow
