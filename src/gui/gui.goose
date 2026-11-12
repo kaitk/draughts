@@ -563,7 +563,10 @@ fn inside(r: float4, p: float2) -> bool { p.x >= r.x && p.x < r.x + r.z && p.y >
 fn begin(g: Gui&, input: Input, scale: f32, now: f64) {
     focus_keys(g, input);
     if !g.pointer.down && !g.pointer.pressed { g.active = 0; }
-    if input.pressed { g.took = false; }
+    // A press on the UI is the UI's until the frame after its release: kept no longer,
+    // or the board's keys, which need the pointer off it, stayed shut after a tap on a
+    // button until the next press (a gamepad's A on the board after a tap on settings).
+    if input.pressed || (!input.down && !input.released) { g.took = false; }
     g.acted = false;
     g.holding = false;
     g.input = input;

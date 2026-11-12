@@ -455,8 +455,8 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   blurred with home's rows that start a game. A Gemini review of the Estonian picked it
   too; History (Ajalugu) left out the rating, Statistics was dry for a child, and Progress
   (Areng) read as a school report. Its string keys are `results.*`.
-- Before the first move the panel says "No moves yet" (2026-11-12, the user, after
-  GoDraughts' panel), dim where the first row will be. It replaces row one waiting, from
+- Before the first move the panel says "No moves yet", "Käike veel pole" (2026-11-12,
+  the user, after GoDraughts' panel), dim where the first row will be. It replaces row one waiting, from
   earlier that day (its number and a faint glow where the first move would stand), which
   read as an empty stub. Rejected: no panel until the first move (the board would shrink
   and shift as it is made).
