@@ -2,7 +2,7 @@
 
 Status: in-progress (the listing and answers prepared, and the app meets the bundle's
 rules, 2026-11-09; the account active, 2026-11-10; the app record made and 0.2.0 (1)
-uploaded for TestFlight, 2026-11-12; nothing submitted)
+uploaded, the listing filled in, and 0.2.0 submitted for review, 2026-11-12)
 
 Everything between task 043's development build and Draughts on the App Store for iPhone
 and iPad, in Games → Puzzle at 4+ (not the Kids category): no ads, no tracking, no
@@ -111,10 +111,14 @@ Each is a store rule the app doesn't meet yet:
 
 ## What remains for the user
 
-- **The store page first** (the user, 2026-11-12): make the listing look right in App
-  Store Connect (the text, the screenshots, how the page and its search row read) in a
-  session of its own, before anything is submitted. The version there is to be 0.2.0,
-  the uploaded build's (or the app raised to 1.0 on both stores).
+- **Submitted** 2026-11-12: 0.2.0 (1), released manually after approval (Pending
+  Developer Release → Release This Version). The listing as in `store/app-store.md`; the
+  iPhone set `upload/app-store-0.3/iphone-6.3/` (1206 × 2622, the 2026-11-09 shots
+  scaled: the slot takes no 6.9" size now), the iPad set
+  `2026-11-12/upload/app-store/ipad-13-landscape/`, the product page's art
+  `apple-header-0.1/` (in `~/Downloads/draughts-store/`). Not yet: TestFlight on the
+  iPhone, and the iPhone shots retaken from today's app (Results, the move list), which
+  needs no new build.
 
 - **App Store Connect:** the bundle id, the App Store profile, an API key for uploads,
   and the app record (name "Draughts", English (U.K.), iOS only, macOS addable later)
@@ -135,4 +139,4 @@ Each is a store rule the app doesn't meet yet:
       run with them)
 - [x] The iPad layout in a resized window, or the app offered for iPhone only (task 050)
 - [ ] A distribution build uploaded and tried through TestFlight on a device
-- [ ] Submitted and approved, in Games → Puzzle at 4+
+- [ ] Submitted (2026-11-12) and approved, in Games → Puzzle at 4+
