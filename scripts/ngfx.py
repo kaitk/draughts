@@ -142,9 +142,16 @@ def tree(program, tree=TREE):
     write_if_changed(root, text)
     build = (ROOT / "src/app/draughts.build").read_text(encoding="utf-8")
     includes = [rel(app, ROOT / "third_party/goose_gfx/third_party/nuklear/demo/common/filebrowser"),
-                rel(app, NGFX / "native"), rel(app, ROOT / "third_party/goose_gfx/src/gfx")]
+                rel(app, NGFX / "native"), rel(app, ROOT / "third_party/goose_gfx/src/gfx"),
+                rel(app, ROOT / "third_party/goose_gfx/third_party/SDL/src/video/khronos")]
     build = re.sub(r"c_include\s*=\s*\[[^\]]*\];",
                    "c_include = [" + ", ".join(f'"{p}"' for p in includes) + "];", build)
+    # renderer.c, the check before a window and the window shown (src/ngfx/app/), with the
+    # app's version and commit, which key the crash marker.
+    build = build.replace('c_sources = ["', 'c_sources = ["renderer.c", "', 1)
+    commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+    renderer = (ROOT / "src/ngfx/app/renderer.c").read_text(encoding="utf-8")
+    write_if_changed(app / "renderer.c", renderer.replace("@VERSION@", f"{native.VERSION_NAME} {commit}"))
     write_if_changed(app / "draughts.build", build)
     return root
 

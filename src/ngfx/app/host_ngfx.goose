@@ -20,13 +20,20 @@ extern fn needs_present() -> bool = "gs_gfx_needs_present";
 
 // Opens gfx's window with `flags` (gfx's) and no device, and ngfx in it, presenting
 // without waiting for the display with `no_vsync` (ngfx's NO_VSYNC, the Metal layer's
-// display sync off; gfx's flag would mean nothing to a window with no device). Aborts if
-// it can't.
-fn open(title: const u8[:], width: i64, height: i64, flags: i64, no_vsync: bool) {
-    guard gfx::open(title, width, height, flags | WINDOW_ONLY) else { abort(str("gfx: ", gfx::error())); }
+// display sync off; gfx's flag would mean nothing to a window with no device). False, with
+// everything it opened closed, if either fails: the reason is gfx::error() or ngfx::error().
+fn try_open(title: const u8[:], width: i64, height: i64, flags: i64, no_vsync: bool) -> bool {
+    guard gfx::open(title, width, height, flags | WINDOW_ONLY) else { return false; }
     let size = gfx::screen_size();
     let sync = if no_vsync { ngfx::NO_VSYNC } else { 0 };
-    guard ngfx::open(native_window(), size.x, size.y, sync, native_display(), native_kind()) else { abort(str("ngfx: ", ngfx::error())); }
+    if ngfx::open(native_window(), size.x, size.y, sync, native_display(), native_kind()) { return true; }
+    gfx::close();
+    return false;
+}
+
+// The same, aborting if it can't (--renderer ngfx).
+fn open(title: const u8[:], width: i64, height: i64, flags: i64, no_vsync: bool) {
+    guard try_open(title, width, height, flags, no_vsync) else { abort(str("ngfx: ", ngfx::error(), gfx::error())); }
 }
 
 fn close() {

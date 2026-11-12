@@ -144,6 +144,24 @@ dispatching one, twice the facades for no gain; and the dispatch written into th
 drawers' 52 call sites with a stub of goose-ngfx's C API linked on Android, which puts
 ngfx's code and blobs in the APK.
 
+The renderer chosen at start (2026-11-12, task 073): `--renderer auto|gfx|ngfx`, `auto`
+the default and the only one players see (no setting). `auto` takes each platform's first
+choice as measured, not a list of GPUs: ngfx on Windows (26 to 41% less GPU time a frame
+on the RTX 4090, task 074), gfx on the Mac and iOS (ngfx's MSAA frame 2% over gfx's on the
+M1 Pro, task 077) and on Linux (RADV ran ngfx 13% slower, task 076, to be measured again
+with MSAA); Android is gfx-only. Where it is ngfx, `auto` first asks what needs no window
+or device (macOS or iOS 26 and an Apple7 GPU with Metal 4; Vulkan's 1.4 loader and a
+1.4 GPU with NoGraphicsAPI's four extensions, `src/ngfx/app/renderer.c`), so a system
+without them opens no window for ngfx at all. Then gfx's window opens hidden and
+`WINDOW_ONLY`, ngfx opens in it, and if it won't, both close and gfx starts as alone, so
+no window is handed from one renderer to the other. A marker beside the settings, naming
+the GPU, its driver (the OS version on Apple), and the app's version and commit, stands
+from before ngfx's device to its first frame presented, after Firefox's DriverCrashGuard:
+a start that finds it takes gfx until one of the three changes, and `--renderer ngfx`
+clears it. The choice and its reason are printed at start. Not caught: a device lost
+after the first frame. Rejected: one window handed from ngfx to gfx, which needs gfx's
+device made late and a second swapchain on a surface ngfx had.
+
 The ngfx build's 2D shaders are written from gfx's GLSL at each build, as the 3D board's
 already were (2026-11-12, task 073): `scripts/ngfx_2d_shaders.py` beside
 `ngfx_3d_shaders.py`, both over one translation (`ngfx_glsl.py`) that keeps each stage's

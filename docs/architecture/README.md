@@ -87,7 +87,12 @@ are in `src/ngfx/` (`draw_ngfx` and so on), and `scripts/ngfx.py` builds an exec
 holding both: gfx's recorders compiled again under names of their own (`draw_gfx`), and in
 their place facades (`src/ngfx/`'s `draw_gpu`, ...) that call one or the other, as the
 renderer chosen at start says (`nx::ngfx_on`). The drawers hold gfx's handle types; `nx`
-gives goose-ngfx's calls those types. Its shaders are gfx's GLSL written as Slang at each build
+gives goose-ngfx's calls those types. The choice is the host facade's
+(`src/ngfx/app/host_gpu.goose`): `--renderer gfx` or `ngfx`, or `auto`, each platform's
+first choice; where that is ngfx, a check that needs no window (`renderer.c`), then ngfx
+opened in a hidden window of gfx's, gfx starting alone if it won't, and a marker beside
+the settings that sends the next start to gfx if ngfx never presented a frame on this GPU,
+driver, and app. Its shaders are gfx's GLSL written as Slang at each build
 (`scripts/ngfx_2d_shaders.py` and `ngfx_3d_shaders.py`), so each shader has one source,
 and compiled ahead; `src/ngfx/shaders/` holds in Slang only what they include, the
 antialiasing and mip passes ngfx alone has, and SMAA's wrapper. The gfx build is what

@@ -435,6 +435,15 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   tiles at 80,522 and 143,522 (2026-11-11).
 - Changing the theme or board in a window writes `%APPDATA%\kaitk\draughts\player-1.txt`:
   copy the folder aside first and put it back after.
+- The build holding both renderers (`scripts/ngfx.py`, task 073) takes `--renderer
+  auto|gfx|ngfx` and prints `renderer: ... (why)` at start. Two environment variables test
+  the choice where `auto` wouldn't try ngfx: `DRAUGHTS_AUTO_NGFX=1` makes it try ngfx here
+  (on the Mac, say), and `DRAUGHTS_RENDERER_TEST=fail` makes ngfx's open fail after the
+  hidden window opened (gfx then starts alone), `crash` ends the program after ngfx opened,
+  before its first frame. The marker is `renderer-start.txt` in the app's storage folder
+  (on the Mac `~/Library/Application Support/kaitk/draughts/`); delete it after such a test.
+  Every path runs headless (`GOOSE_GFX_HEADLESS=1 ... --frames 300`): each start's line and
+  whether the marker is left say whether it chose as it should (2026-11-12).
 - `scripts/windows_perf.py` measures another build with `EXE=build/ngfx/draughts.exe`
   and adds flags to each run with `FLAGS`; PresentMon's GPU busy time is the one frame
   time both builds report alike, since both wait on the display.
