@@ -159,8 +159,8 @@ box: 12.0 MB (11,985,195 bytes), the executable 16.0 MB, linking only libc and l
 3D game with c3-d4 played. Built again from `c4cecb0` (11,985,194 bytes, SHA-256
 `b5cfe2ecbeb87ff0ee681124bc1ba085603d622c40d0e40f52257347f7f64b3e`) and, asked by the user,
 put on the draft `Draughts 0.2.0` in place of the XWayland tarball, its Linux paragraph
-saying it opens Wayland, else X11 (2026-11-12). The draft's target is still `7d68aaf`, the
-Windows zip's commit, which has none of this.
+saying it opens Wayland, else X11 (2026-11-12). The draft's target moved from `7d68aaf`, the
+Windows zip's commit, to the commit that records this, asked by the user.
 
 **Played by the user** (2026-11-12), the uploaded tarball extracted, on Wayland and then
 through XWayland (`SDL_VIDEO_DRIVER=x11`): everything worked on both, the gamepad
