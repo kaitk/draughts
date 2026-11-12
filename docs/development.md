@@ -627,8 +627,8 @@ first run (More info → Run anyway); a code-signing certificate would end that.
 **The release.** With both zips at hand, tagged as the shared version (`native.VERSION_NAME`):
 
 ```sh
-gh release create v0.1.1 build/mac/release/Draughts-0.1.1-macos-arm64.zip \
-    Draughts-0.1.1-windows-x64.zip --title "Draughts 0.1.1" --notes "..."
+gh release create v0.2.0 build/mac/release/Draughts-0.2.0-macos-arm64.zip \
+    Draughts-0.2.0-windows-x64.zip --title "Draughts 0.2.0" --notes "..."
 ```
 
 ## Time the 3D board
