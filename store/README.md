@@ -118,6 +118,11 @@ superseded. The older sets
 (`play/`, `apple-*`, `play-0.1/`, before the 3D board, the sixth theme, and the Russian
 puzzles) are superseded.
 
+The App Store's product-page art (2026-11-12, optional, changeable without a build):
+`apple-header-0.1/`, the same board rendered again at 6000 × 2930 and cropped to the
+Header's 5244 × 2950 and 3840 × 1646 and Search Results' 3840 × 2560, each with home's
+king and "Draughts" (`-name`) and without (`-plain`); its `README.md` says how.
+
 The icons: `icon/play-512.png` and `icon/apple-1024.png`, from `scripts/icon.py --store`.
 
 ## Placeholders
