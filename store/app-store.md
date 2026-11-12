@@ -254,6 +254,12 @@ git (retaken into `app-store-0.3/`, then 2026-11-10 into `2026-11-10/app-store/`
 7. `07-computer-summer`: the computer's setup
 
 Search results usually show an app's first three portrait screenshots, so those carry the board.
+**The iPhone slot changed** (seen 2026-11-12): App Store Connect's version page now asks
+for "iPhone with Dynamic Island (medium display)", 6.1" and 6.3", at 1206 × 2622 or
+1179 × 2556 (landscape the same turned), and refuses 1320 × 2868 there; it showed no
+6.9" slot. The 6.9" shots scaled to 1206 × 2622 (1207 wide, a pixel cropped) went in from
+`upload/app-store-0.3/iphone-6.3/`. Its tabs also listed "iPhone Duo".
+
 Landscape needs the simulator turned, which `simctl` can't do headless; portrait only.
 
 ## Estonian text (not entered: no App Store localization)

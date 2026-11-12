@@ -71,6 +71,7 @@ them):
 | `screenshots/play-0.3/phone/` | 1080 × 1920, 9:16, laid out at 548 dp (a 1080 px phone at the 0.75 density floor) | Play's phone slot | The app's headless copy, `--frames` |
 | `screenshots/play-0.3/tablet/` | 2560 × 1440, 16:9 | Play's 7" and 10" tablet slots | The app's headless copy, `--frames` |
 | `screenshots/app-store-0.3/iphone-6.9/` | 1320 × 2868 | The App Store's iPhone 6.9" set | An iPhone 16 Pro Max simulator, iOS 26.4, headless |
+| `upload/app-store-0.3/iphone-6.3/` | 1206 × 2622 | The App Store's iPhone slot as it is since 2026-11 (medium display, 6.1" and 6.3") | The 6.9" set scaled, `magick -resize 1207x2622^ -gravity center -extent 1206x2622` |
 | `screenshots/app-store-0.3/ipad-13/` | 2064 × 2752 | The App Store's iPad 13" set | An iPad Pro 13-inch (M4) simulator, iOS 26.4, headless |
 
 Upload from `~/Downloads/draughts-store/upload/`: the same sets flattened to 24-bit RGB
