@@ -1,7 +1,8 @@
 # 074: Games' history, marked moves, and a rating
 
-Status: in progress (designed, prototyped, and built on the `history` branch
-2026-11-11; the takes to choose, the screens to check on the Mac and the tablet)
+Status: in progress (built 2026-11-11 and 12 and merged into main 2026-11-12, checked
+on the Mac's desktop app by the user; left: a phone in landscape (take d), the replay,
+the tablet's and the A33's checks)
 
 A family asked for a history of the games played, minimal at first, and moves rated as
 GoDraughts rates them: was a move a blunder or not (2026-11-11). Three parts:
@@ -67,13 +68,15 @@ reasons in `docs/decisions/ai.md` and `rendering.md`, 2026-11-11.
 | 40 – 50 | 16 | 42 | 142 | 257 |
 | 50 – 60 | 16 | 53 | 131 | 227 |
 | 60 – 90 | 0 | 13 | 187 | 589 |
+| 90 – 100 | 62 | 73 | 65 | 5 |
 | 8 – 25 (check) | 0 | 7 | 193 | 700 |
 | 25 – 40 (check) | 18 | 37 | 145 | 260 |
 
 The chain 8 to 25 (849) was scaled to 775, between it and the direct match. Russian came
 out a little closer (0 – 8: 61, 37, 102, a gap of 72; 8 – 25: 440; 25 – 40: 212).
 Skill 0 overlooking three times as often (a child model) against skill 0: 46, 42, 112,
-about −120. 90 – 100 was still running; 100's 2800 is an estimate. A score near 0 or 1
+about −120. 90 – 100: 62, 73, 65, a gap of 5 (2026-11-12): past 90 skill adds little
+strength, so hard's ratings are 2716 to 2721. A score near 0 or 1
 over 200 games is a wide estimate (±60 or more).
 
 ### Judging's cost (2026-11-11)
@@ -87,9 +90,11 @@ to measure.
 
 ## Takes to choose
 
-The prototype: `prototypes/history.html` (`?view=game&take=a|b|c`, `view=games`,
-`view=replay`, `view=settings`, `view=entry&entry=home|sheet`). Built: take a, the entry
-from the player's card, the setting on the games screen.
+The prototype: `prototypes/history.html` (`?view=game&take=a|d`, `view=games`,
+`view=replay`, `view=settings`, `view=entry`). Built: take a, the entry from home, the
+setting in settings. Takes b and c, the setting on the player's sheet, and the entry as a
+tile on the player's sheet were removed from the prototype 2026-11-12 (in git history
+before that commit).
 
 Take d, a phone in landscape (`?view=game&take=d`, `&grid=1` for all of it side by side;
 2026-11-12): a line of the last move and its mark (`23. 41-36 ?!`) and a chevron under
@@ -118,20 +123,24 @@ the real ones.
 
 ## Open questions
 
-1. The panel's place: under the play panel (built), and the 3D board 11% smaller while
-   it shows: worth it, or a smaller panel there?
-2. Portrait: a one-line strip of the last moves under the play row (the prototype's
-   proposal, the board 12 dp smaller), or nothing (built)?
-3. ~~The games screen from who's playing only, or also a row on home?~~ A row on home,
+1. ~~The panel's place~~: under the play panel, scrolling through the whole game; on a
+   desktop the 3D frame wider while it shows and the panel as long as costs the board
+   nothing (the user, 2026-11-12).
+2. A phone in landscape: take d, `fit=row` with the moves under the captured pieces and
+   the earlier rows faded (the user's direction, 2026-11-12), to build.
+3. Portrait: nothing on a phone (the user, 2026-11-12); on a tablet a one-line strip of
+   the last moves under the play row (the prototype's proposal, the board 12 dp
+   smaller), or nothing (built)?
+4. ~~The games screen from who's playing only, or also a row on home?~~ A row on home,
    the menu scrolling where it doesn't fit (the user, 2026-11-12).
-4. The setting's default: marks (built), or off for a new player, so a young child sees
+5. The setting's default: marks (built), or off for a new player, so a young child sees
    nothing unless a parent turns it on?
-5. Too many stars? Most moves come out best; a star only for a move that stood out (the
+6. Too many stars? Most moves come out best; a star only for a move that stood out (the
    only good one) would be quieter.
-6. Ratings per draughts (built) or one for all; show the computer's rating beside its
+7. Ratings per draughts (built) or one for all; show the computer's rating beside its
    level in the setup ("Medium · 1644")?
-7. Dates are UTC; the local date needs the system's time zone (a small C call).
-8. A past game's replay (the prototype's `view=replay`): the moves are kept in the file,
+8. Dates are UTC; the local date needs the system's time zone (a small C call).
+9. A past game's replay (the prototype's `view=replay`): the moves are kept in the file,
    the screen isn't built.
 
 ## Native work
@@ -141,8 +150,11 @@ the real ones.
 - [x] `src/shell/history.goose`: a game's line written and read back, the file capped
 - [x] The worker judging moves (`game::JUDGE` asks), the game keeping its moves' marks
 - [x] The game's end recorded in the player's history, the rating updated
-- [x] The setting (on the games screen)
-- [x] The moves panel on the game screen (landscape, flat and 3D)
+- [x] The setting (in settings' game group, and on the games screen)
+- [x] The moves panel on the game screen (landscape, flat and 3D), scrolling
+- [x] Home's games row, the menu scrolling where it doesn't fit
+- [x] A desktop's narrow play panel fitted to its tiles (Estonian's undo move spilled)
+- [ ] Take d on a phone in landscape
 - [x] The games screen
 - [ ] A summary at the panel's foot (each side's accuracy and marks counted), as the
       prototype has
@@ -151,7 +163,7 @@ the real ones.
 
 ## Acceptance criteria
 
-- [ ] The prototype's takes compared and one chosen
+- [x] The prototype's takes compared and one chosen (a; d for a phone in landscape)
 - [x] Every move of a game judged on the worker without slowing the computer's reply
 - [x] A finished game written to the player's history, its rating updated, start again
       clearing both
@@ -160,5 +172,5 @@ the real ones.
 - [x] Headless tests: judging known blunders and best moves, the rating's update, the
       history file read and written back and capped
 - [ ] Checked on the Mac at the tablet's and a phone's sizes (headless shots taken
-      2026-11-11 at 1280 × 800, 800 × 1280, 1066 × 480), then on the tablet; the judging's
-      CPU on the A33
+      2026-11-11 at 1280 × 800, 800 × 1280, 1066 × 480; the desktop app by the user
+      2026-11-12), then on the tablet; the judging's CPU on the A33

@@ -13,16 +13,12 @@
      the child plays white against the computer at Medium and loses on move 55.
        ?view=game     the game screen as built (the flat board between the corner panels,
                       panel.goose's flat_corners) with the moves panel:
-                      &take=a  in the right column under the play panel (proposed): 388 dp
-                               at the tablet, 12 rows;
-                      &take=b  in the left column under what each side has taken: 290 dp,
-                               7 rows;
-                      &take=c  the play panel grown down the right column, the list
-                               between whose turn and the hint and undo move.
+                      &take=a  (built) the moves panel in the right column under the
+                               play panel: 388 dp at the tablet, 8 rows;
                       Portrait: a one-line strip of the last moves under the play row,
                       where it costs the board under 5% (12 dp at 800 × 1280); else none.
                       A phone in landscape (480 dp tall): no room under the play panel
-                      (52 dp), so no panel in any take; a note says so.
+                      (52 dp), so no panel in take a; a note says so.
                       &take=d  a phone in landscape only (else take a): a line of the
                                last move under the left column, opening a sheet over the
                                screen's left part (to the board's edge) with the moves,
@@ -37,12 +33,10 @@
                                three-button bar at the right, 60 dp: assumed, not
                                measured), none; &board=flat or 3d; &grid=1 sets both fits
                                closed and open on both phones side by side.
-       ?view=settings settings with the Moves row (Off, List, Marks) in the Game group;
-                      &place=sheet puts it on the player's sheet instead.
+       ?view=settings settings with the Moves row (Off, List, Marks) in the Game group.
        ?view=games    the games screen for the player: the rating, by level, the games.
        ?view=replay   one past game: its moves and marks, the board at a move (&ply=).
-       ?view=entry    where the games screen is reached from: &entry=home (a row on home)
-                      or sheet (a tile on the player's sheet).
+       ?view=entry    where the games screen is reached from: a Games row on home.
      &marks=on|off|hidden (the setting: the list with marks, the list alone, no panel);
      &state=early|late (6 moves, or 30 with the list scrolled to its end); &lang=et. */
   main { position: fixed; inset: 0; }
@@ -163,7 +157,7 @@
   .badge.best { background: var(--glow); }
   .badge svg { width: 60%; height: 60%; }
 
-  /* Screens with a title row: settings, the games, a replay, the player's sheet. */
+  /* Screens with a title row: settings, the games, a replay. */
   .page { position: fixed; inset: 0; display: flex; flex-direction: column; gap: 16px; padding: 24px; }
   .top { display: flex; align-items: center; gap: 18px; flex: none; min-height: 88px; }
   .top h1 { margin: 0; font-size: 34px; font-weight: 400; white-space: nowrap; }
@@ -269,7 +263,7 @@
   .preview { position: relative; container-type: size; display: flex; align-items: center; justify-content: center; gap: 20px; min-height: 0; }
   .preview .moves { flex: none; }
 
-  /* Home (entry=home): the menu column as in profiles.html, a Games row added. */
+  /* Home (the entry): the menu column as in profiles.html, a Games row added. */
   .menu { position: fixed; display: grid; align-content: center; --r: 0 32px 32px 0; border-radius: 0 32px 32px 0; }
   .menu .content { display: grid; gap: 2px; }
   .mark { display: flex; align-items: center; gap: 6px; height: 72px; margin-bottom: 20px; }
@@ -282,28 +276,6 @@
   .item.new { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.25); }
   .item small { margin-left: auto; font-size: 17px; color: var(--fg-dim); }
   #hboard { position: fixed; isolation: isolate; }
-  /* The player's sheet (entry=sheet), over home dimmed. */
-  .veil { position: fixed; inset: 0; z-index: 4; display: grid; place-items: center; padding: 16px; background: rgb(0 0 0 / 0.42); }
-  .sheetc { --r: 32px; display: grid; gap: 14px; padding: 20px 24px 24px; width: min(820px, 100%); max-height: 100%; overflow: auto; }
-  .sheetc .head { display: flex; align-items: center; gap: 16px; }
-  .sheetc .head h2 { margin: 0; font-size: 34px; font-weight: 400; }
-  .sheetc .head .end { margin-left: auto; }
-  .sheetc h3 { margin: 4px 4px 0; font-size: 18px; font-weight: 400; color: var(--fg-dim); letter-spacing: 0.03em; }
-  .pics { display: flex; gap: 10px; flex-wrap: wrap; }
-  .pics .tap { width: 96px; height: 96px; display: grid; place-items: center; border-radius: 20px; background: var(--button); }
-  .pics .tap .face { width: 74px; height: 74px; }
-  .pics .tap.on { background: color-mix(in srgb, var(--glow) 22%, transparent); box-shadow: inset 0 0 0 2px var(--glow); }
-  .gtile { display: flex; align-items: center; gap: 16px; height: 88px; padding: 0 20px; border-radius: 20px; color: var(--fg);
-    text-decoration: none; font-size: 26px; background: color-mix(in srgb, var(--glow) 16%, transparent); box-shadow: inset 0 0 0 1px var(--glow); }
-  .gtile .icon { width: 34px; height: 34px; stroke-width: 2.4; }
-  .gtile small { margin-left: auto; font-size: 18px; color: var(--fg-dim); text-align: right; }
-  .gtile .next { width: 26px; height: 26px; opacity: 0.6; margin-left: 4px; }
-  .holds { display: flex; gap: 12px; }
-  .hold { flex: 1; display: flex; align-items: center; justify-content: center; gap: 12px; height: 88px; border-radius: 20px;
-    font-size: 22px; background: var(--button); }
-  .hold .icon { width: 30px; height: 30px; stroke-width: 2.4; }
-  .hold small { display: block; font-size: 15px; color: var(--fg-dim); }
-  .hold.remove { color: color-mix(in srgb, var(--forced), var(--fg) 45%); }
 
   @media (orientation: portrait) {
     .gbody { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
@@ -378,7 +350,7 @@
   const P = new URLSearchParams(location.search);
   const get = (k, vals, def) => (vals.includes(P.get(k)) ? P.get(k) : def);
   const view = get('view', ['game', 'settings', 'games', 'replay', 'entry'], 'game');
-  const take = get('take', ['a', 'b', 'c', 'd'], 'a');
+  const take = get('take', ['a', 'd'], 'a');
   const open = P.get('open') === '1';
   const fit = get('fit', ['row', 'slim'], 'row');
   const device = get('device', ['pixel', 'a33', 'none'], 'pixel');
@@ -386,8 +358,6 @@
   if (P.has('bare')) document.body.classList.add('bare');
   const marks = get('marks', ['on', 'off', 'hidden'], 'on');
   const state = get('state', ['early', 'mid', 'late'], take === 'd' ? 'mid' : 'late');
-  const entry = get('entry', ['home', 'sheet'], 'home');
-  const place = get('place', ['settings', 'sheet'], 'settings');
   const lang = get('lang', ['en', 'et'], 'en');
   const icon = Draughts.icon;
   document.documentElement.lang = lang;
@@ -718,29 +688,14 @@
         `<div class="words">${T.turn[turn]}</div>${list || '<div class="space" style="flex:1"></div>'}<div class="duo">${hint}${undo}</div>`;
       const right = W - g - side;
       const ROWS = (h) => Math.floor((h - 24 - 36 - (withMarks ? 74 : 0)) / 31);
-      if (take === 'c' && panelOn) {
-        const h = H - 2 * g;
-        const listH = h - 34 - 72 - 16 - 30 - 132 - 24;
-        if (ROWS(listH + 24) >= 4) {
-          html += box([right, g, side, h], 'playp glass',
-            play(`<div class="moves" style="flex:1;min-height:0;padding:12px 0 12px">${movesInner(shown, shown - 1, withMarks)}</div>`));
-          note = `take c: the play panel ${h} dp, the list ${listH} dp, ${ROWS(listH + 24)} rows`;
+      html += box([right, g, side, playH], 'playp glass', play());
+      if (panelOn) {
+        const y = g + playH + 12, h = H - g - y;
+        if (ROWS(h) >= 4) {
+          html += box([right, y, side, h], 'moves glass', movesInner(shown, shown - 1, withMarks));
+          note += `take a: the panel ${Math.round(h)} dp tall, ${ROWS(h)} rows`;
         } else {
-          html += box([right, g, side, playH], 'playp glass', play());
-          note = `take c: no room for a list in the play panel (${listH} dp); none shown`;
-        }
-      } else {
-        html += box([right, g, side, playH], 'playp glass', play());
-        if (panelOn) {
-          const y = take === 'b' ? (takenFits ? takenY + takenH + 12 : g + left + 12) : g + playH + 12;
-          const x = take === 'b' ? g : right;
-          const h = H - g - y;
-          if (ROWS(h) >= 4) {
-            html += box([x, y, side, h], 'moves glass', movesInner(shown, shown - 1, withMarks));
-            note += `take ${take === 'd' ? 'a' : take}: the panel ${Math.round(h)} dp tall, ${ROWS(h)} rows`;
-          } else {
-            note += `Moves panel hidden: ${Math.round(h)} dp ${take === 'b' ? 'under the taken pieces' : 'under the play panel'}, under four rows`;
-          }
+          note += `Moves panel hidden: ${Math.round(h)} dp under the play panel, under four rows`;
         }
       }
     } else {
@@ -890,7 +845,7 @@
     const thumb = (s) => `<span class="thumb" style="background-image:url(../design/backgrounds/masters/${s}-01-2048.jpg)"></span>`;
     const game = `<section class="group glass"><h2>${icon('target')}${T.game}<small>${T.privacy}</small></h2>` +
       setting(T.draughts, t(true, `${T.intl}<small>10 × 10</small>`) + t(false, `${T.brazilian}<small>8 × 8</small>`) + t(false, `${T.russian}<small>8 × 8</small>`)) +
-      setting(T.hints, t(true, T.mistakes) + t(false, T.all)) + (place === 'settings' ? movesRow : '') + '</section>';
+      setting(T.hints, t(true, T.mistakes) + t(false, T.all)) + movesRow + '</section>';
     const look = `<section class="group glass"><h2>${icon('sun')}${T.look}</h2>` +
       setting(T.theme, ['winter', 'spring', 'summer', 'autumn'].map((s) => t(Draughts.settings.season === s, `${thumb(s)}${T[s]}`, 'pic')).join('') + t(false, `<span class="thumb" style="display:grid;place-items:center">${icon('sun')}</span>${T.bydate}`, 'pic')) +
       setting(T.board, t(true, `${T.flat}<small>2D</small>`) + t(false, `${T.raised}<small>3D</small>`)) +
@@ -921,35 +876,24 @@
   }
 
   // Where the games screen is reached from: home's menu with a Games row (the rating at
-  // its end), or the player's sheet with a Games tile (over home, dimmed).
+  // its end).
   function entryScreen() {
-    const gameRow = `<a class="item${entry === 'home' ? ' new' : ''}" href="?${new URLSearchParams({ ...Object.fromEntries(P), view: 'games' })}">${icon('games')}<span>${T.games}</span><small class="num">1043</small></a>`;
+    const gameRow = `<a class="item${' new'}" href="?${new URLSearchParams({ ...Object.fromEntries(P), view: 'games' })}">${icon('games')}<span>${T.games}</span><small class="num">1043</small></a>`;
     const items = `<a class="item primary" href="#">${icon('next')}<span>${T.continue}</span></a>` +
       `<a class="item" href="#">${icon('friend')}<span>${T.friend}</span></a>` +
       `<a class="item" href="#">${icon('computer')}<span>${T.computer}</span><small>${T.medium.toLowerCase()}</small></a>` +
       `<a class="item" href="#">${icon('puzzle')}<span>${T.puzzles}</span><small>23 / 64</small></a>` +
-      (entry === 'home' ? gameRow : '') +
+      gameRow +
       `<a class="item settings" href="#">${icon('gear')}<span>${T.settings}</span></a>`;
     // As home.goose: settings a row where the column fits, else the gear beside the
     // wordmark; where even that doesn't fit, no wordmark.
-    const full = 5 + (entry === 'home');
+    const full = 6;
     let rows = full, withMark = true;
     const colOf = () => (withMark ? (rows < full ? 86 : 100) : 0) + rows * 88 + (rows - 1) * 2;
     if (!landscape || colOf() > H - 48) rows--;
     if (colOf() > H - 32) withMark = false;
     const colH = colOf();
     let html = `<nav class="menu glass"><div class="content"><div class="mark">${face()}<h1>${T.app}</h1></div>${items}</div></nav><div id="hboard"></div>`;
-    if (entry === 'sheet') {
-      html += `<div class="veil"><div class="sheetc glass"><div class="head"><a class="button glass" href="#">${icon('back')}</a>${face()}<h2>Mia</h2>` +
-        `<div class="end"><a class="button glass primary" href="#">${icon('check')}</a></div></div>` +
-        `<a class="gtile" href="?${new URLSearchParams({ ...Object.fromEntries(P), view: 'games' })}">${icon('games')}<span>${T.games}</span><small class="num">${T.intl} 1043<br>${T.games_n(35)}</small>${icon('next', 'next')}</a>` +
-        `<h3>${T.picture}</h3><div class="pics">${[[FOX, '#d9793a', true], [HARE, '#6f9fcf'], [FOX, '#8c6142'], [HARE, '#8a74c4'], [FOX, '#5e9e5a'], [HARE, '#c46f86']].map(([s, c, on]) => `<span class="tap${on ? ' on' : ''}">${face(s, c)}</span>`).join('')}</div>` +
-        `<h3>${T.name}</h3><div class="hold" style="justify-content:flex-start;padding:0 20px;font-size:30px;background:rgb(0 0 0 / 0.18)">Mia</div>` +
-        (place === 'sheet' ? `<h3>${T.moves}</h3><div class="tiles">${[['hidden', T.off, T.offNote], ['off', T.list, T.listNote], ['on', T.withMarks, `<span class="glyphs">${glyph('*')}${glyph('?!')}${glyph('?')}${glyph('??')}</span>`]]
-          .map(([v, w, sm]) => `<a class="tile${marks === v ? ' on' : ''}" href="?${new URLSearchParams({ ...Object.fromEntries(P), marks: v })}">${w}<small>${sm}</small></a>`).join('')}</div>` : '') +
-        `<div class="holds"><div class="hold">${icon('restart')}<span>${T.again}<small>${T.hold}</small></span></div>` +
-        `<div class="hold remove">${icon('trash')}<span>${T.remove}<small>${T.hold}</small></span></div></div></div></div>`;
-    }
     document.getElementById('app').innerHTML = html;
     if (rows < full) {
       document.querySelector('.item.settings').remove();
@@ -1002,10 +946,10 @@
   const sel = (key, values, current) => `<select data-k="${key}" aria-label="${key}">${values.map((v) =>
     `<option${v === current ? ' selected' : ''}>${v}</option>`).join('')}</select>`;
   bar.insertAdjacentHTML('afterbegin', sel('view', ['game', 'settings', 'games', 'replay', 'entry'], view) +
-    sel('take', ['a', 'b', 'c', 'd'], take) + (take === 'd' ? sel('fit', ['row', 'slim'], fit) + sel('open', ['0', '1'], open ? '1' : '0') +
+    sel('take', ['a', 'd'], take) + (take === 'd' ? sel('fit', ['row', 'slim'], fit) + sel('open', ['0', '1'], open ? '1' : '0') +
       sel('device', ['pixel', 'a33', 'none'], device) + sel('board', ['flat', '3d'], three ? '3d' : 'flat') : '') +
     sel('marks', ['on', 'off', 'hidden'], marks) + sel('state', ['early', 'mid', 'late'], state) +
-    sel('entry', ['home', 'sheet'], entry) + sel('place', ['settings', 'sheet'], place) + sel('lang', ['en', 'et'], lang));
+    sel('lang', ['en', 'et'], lang));
   document.body.insertAdjacentHTML('beforeend', '<button class="proto-fold">Options</button>');
   document.querySelector('.proto-fold').onclick = () => document.body.classList.toggle('bar-open');
   bar.querySelectorAll('select[data-k]').forEach((s) => s.onchange = (e) => {
