@@ -1,7 +1,7 @@
 // Recording the 3D board's renderer (render3d.goose) through goose-ngfx, in place of
-// src/render3d/render3d_gpu.goose (scripts/ngfx.py): one forward pass at the size
-// antialiasing wants (NoGraphicsAPI has no multisampling), then SMAA or the 2 × 2
-// supersampled pass shrunk. The shaders are gfx's GLSL in shaders.goose, written into
+// src/render3d/render3d_gpu.goose (scripts/ngfx.py): one forward pass, into 4×
+// multisampled transient targets resolved into the picture as gfx's is, or at the size
+// antialiasing wants and then SMAA or the 2 × 2 supersampled pass shrunk. The shaders are gfx's GLSL in shaders.goose, written into
 // Slang by scripts/ngfx_3d_shaders.py (src/ngfx/shaders/r3d_*.slang), each module with
 // one root (Root) and its blob built ahead and embedded. In namespace render3d, as
 // render3d.goose, which holds what is drawn and when.
@@ -20,11 +20,13 @@ let RGBA8 = ngfx::RGBA8;
 let RGBA8_SRGB = ngfx::RGBA8_SRGB;
 
 // What only ngfx's renderer holds: the nearest sampler SMAA reads with, the mips' and the
-// supersampled pass's shrinking pipelines.
+// supersampled pass's shrinking pipelines, and a 4 × 4 depth warm() makes the kept depth's
+// pipelines on.
 struct Own {
-    point: ngfx::Sampler,
-    mip:   ngfx::Pipeline,
-    down:  ngfx::Pipeline,
+    point:     ngfx::Sampler,
+    mip:       ngfx::Pipeline,
+    down:      ngfx::Pipeline,
+    warm_kept: ngfx::Texture,
 }
 
 fn gpu_flush() { ngfx::flush(); }
@@ -71,6 +73,7 @@ fn board_pass(g: Gpu&, target: Texture, size: int2, backdrop: bool) {
     let clear = if backdrop { float4 { 0.11, 0.078, 0.063, 1.0 } } else { float4_0 };
     var pass = ngfx::PassDesc { depth: g.depth, color_value: clear };
     pass.color[0] = if g.aa != AA_OFF { g.color } else { target };
+    if g.aa == AA_MSAA { pass.resolve[0] = target; }
     ngfx::begin_pass(pass);
     if backdrop { draw_backdrop(g, f, 1.0); }
 
@@ -169,32 +172,45 @@ struct Root { frame: u64, u: u64, buf0: u64, buf1: u64, buf2: u64, verts: u64, t
 
 fn no_root() -> Root { Root { frame: 0, u: 0, buf0: 0, buf1: 0, buf2: 0, verts: 0, tex: [0; 8], smp: [0; 8] } }
 
-// How the 3D pass is antialiased, NoGraphicsAPI having no MSAA (task 065): not at all;
-// SMAA 1x over the pass drawn at 1x; or the pass drawn at twice the size and
-// shrunk (2 x 2 supersampling).
+// How the 3D pass is antialiased: not at all; SMAA 1x over the pass drawn at 1x; the
+// pass drawn at twice the size and shrunk (2 x 2 supersampling); or 4× multisampled into
+// transient targets, resolved as the pass ends (task 077).
 let AA_OFF = 0;
 
 let AA_SMAA = 2;
 
 let AA_SSAA = 3;
 
+let AA_MSAA = 4;
+
 let AA = AA_SMAA;
 
+let SAMPLES = 4;
+
 // The pass's ways by the names --aa takes and the log prints (-1 for none), and the next
-// the A key switches to: SMAA, none, and 2 × 2 supersampling in turn.
+// the A key switches to: MSAA, SMAA, none, and 2 × 2 supersampling in turn.
 fn aa_named(name: const u8[:]) -> i32 {
     if name == "off" { return AA_OFF; }
+    if name == "msaa" { return AA_MSAA; }
     if name == "smaa" { return AA_SMAA; }
     if name == "ssaa" { return AA_SSAA; }
     return -1;
 }
 
 fn aa_name(aa: i32) -> const u8[:] {
-    if aa == AA_SMAA { "smaa" } else if aa == AA_SSAA { "ssaa" } else { "off" }
+    if aa == AA_MSAA { "msaa" } else if aa == AA_SMAA { "smaa" } else if aa == AA_SSAA { "ssaa" } else { "off" }
 }
 
 fn aa_next(aa: i32) -> i32 {
-    if aa == AA_SMAA { AA_OFF } else if aa == AA_OFF { AA_SSAA } else { AA_SMAA }
+    if aa == AA_MSAA { AA_SMAA } else if aa == AA_SMAA { AA_OFF } else if aa == AA_OFF { AA_SSAA } else { AA_MSAA }
+}
+
+// A target of the pass: 4× and transient (cleared, never stored, and on Metal kept in
+// tile memory alone) with AA_MSAA, else one sample, `usage` alone.
+fn pass_target(g: Gpu&, w: i64, h: i64, format: i32, usage: i32) -> ngfx::Texture {
+    let msaa = g.aa == AA_MSAA;
+    return ngfx::texture(ngfx::TextureDesc { format: format, usage: if msaa { usage | ngfx::TRANSIENT } else { usage },
+                                             width: w as i32, height: h as i32, samples: if msaa { SAMPLES } else { 1 } });
 }
 
 // What a pass wrote, before what comes after reads or writes it again: between passes,
@@ -337,20 +353,24 @@ fn mip_chain(g: Gpu&, t: ngfx::Texture) {
 
 struct MipRoot { src: u32, level: u32, pad0: u32, pad1: u32 }
 
-// The pass's target (at twice the size for AA_SSAA) and its depth, and SMAA's, at
-// g.size, made for a draw after rest() gave them back.
+// The pass's target (at twice the size for AA_SSAA, 4× for AA_MSAA) and its depth, and
+// SMAA's, at g.size, made for a draw after rest() gave them back.
 fn pass_targets(g: Gpu&) {
     guard g.depth.id == 0 else { return; }
     let size = g.size;
     let k = scale(g);
-    if g.aa != AA_OFF { g.color = ngfx::render_target(size.x * k, size.y * k, ngfx::RGBA8); }
+    if g.aa == AA_MSAA {
+        g.color = pass_target(g, size.x, size.y, ngfx::RGBA8, ngfx::COLOR_TARGET);
+    } else if g.aa != AA_OFF {
+        g.color = ngfx::render_target(size.x * k, size.y * k, ngfx::RGBA8);
+    }
     if g.aa == AA_SMAA {
         g.edges = ngfx::render_target(size.x, size.y, ngfx::RG8);
         g.weights = ngfx::render_target(size.x, size.y, ngfx::RGBA8);
     }
     // 16-bit depth is plenty between NEAR 2 and FAR 40 for a scene 10 to 20 away (a step
     // about 0.003 at 20, under the marks' 0.004 lift).
-    g.depth = ngfx::texture2d(size.x * k, size.y * k, ngfx::DEPTH16, ngfx::DEPTH_TARGET);
+    g.depth = pass_target(g, size.x * k, size.y * k, ngfx::DEPTH16, ngfx::DEPTH_TARGET);
 }
 
 // The pass antialiased by `aa` (AA_OFF..) from the next draw on: its targets given back
@@ -395,7 +415,7 @@ fn depth_target(size: int2) -> ngfx::Texture {
 
 // Makes everything the renderer draws with: the meshes, the buffers, the pipelines, the
 // baked surfaces' and the photograph's targets. Then apply() puts a theme on it.
-// `aa` is how the pass is antialiased (AA_OFF..AA_SSAA).
+// `aa` is how the pass is antialiased (AA_OFF..AA_MSAA).
 fn setup(g: Gpu&, aa: i32 = AA) {
     g.aa = aa;
     g.wood = model3d::WOOD_MODEL;
@@ -491,9 +511,10 @@ struct SmaaRoot { color: u32, edges: u32, weights: u32, area: u32, search: u32, 
                   metrics: float4 }
 
 // The pass in g.color antialiased into `target` as g.aa says: shrunk (AA_SSAA) or
-// SMAA's three (shaders/smaa.slang); with AA_OFF the pass drew into it.
+// SMAA's three (shaders/smaa.slang); with AA_OFF the pass drew into it, and with AA_MSAA
+// resolved into it.
 fn antialias(g: Gpu&, target: ngfx::Texture, size: int2) {
-    guard g.aa != AA_OFF else { return; }
+    guard g.aa != AA_OFF && g.aa != AA_MSAA else { return; }
     let metrics = float4 { 1.0 / size.x, 1.0 / size.y, size.x, size.y };
     if g.aa == AA_SSAA {
         ngfx::begin_pass(target, ngfx::Texture { 0 }, float4_0);
@@ -647,15 +668,20 @@ fn show(g: Gpu&, from: float4, to: float4, alpha: f32, size: int2, grey: f32 = 0
 
 fn warm(g: Gpu&, k: i64) {
     if k == 0 {
-        g.warm_color = ngfx::render_target(4, 4, ngfx::RGBA8);
-        g.warm_depth = ngfx::texture2d(4, 4, ngfx::DEPTH16, ngfx::DEPTH_TARGET | ngfx::SAMPLED);
+        // The pass's pipelines for its targets (4× with AA_MSAA), the depth-only ones for
+        // a kept depth's 1x.
+        g.warm_color = pass_target(g, 4, 4, ngfx::RGBA8, ngfx::COLOR_TARGET);
+        g.warm_depth = pass_target(g, 4, 4, ngfx::DEPTH16, ngfx::DEPTH_TARGET);
+        g.own.warm_kept = depth_target(int2 { 4, 4 });
     }
     var pass = ngfx::PassDesc {};
     if k < 4 {
         pass.color[0] = g.warm_color;
         pass.depth = g.warm_depth;
+        // The backdrop is drawn in the pass too, and at 1x into the screen (below).
+        if k == 0 && g.aa == AA_MSAA { ngfx::prepare(g.backdrop, pass); }
     } else if k == 4 || k == 5 {
-        pass.depth = g.warm_depth;
+        pass.depth = g.own.warm_kept;
     } else if k == 9 {
         pass.color[0] = g.occ_map;
     } else {
@@ -664,9 +690,9 @@ fn warm(g: Gpu&, k: i64) {
     let p = [g.lit, g.fading, g.catcher, g.glow, g.shadow, g.depth_only, g.backdrop, g.show, g.pulse, g.occ,
              g.kept][k];
     ngfx::prepare(p, pass);
-    if k == WARM_STEPS - 1 {
+    if k == WARM_STEPS - 1 && g.aa != AA_MSAA {
         // The antialiasing's pipelines, for the RGBA8 targets they draw into, and SMAA's
-        // edges for RG8.
+        // edges for RG8 (none after a multisampled pass, and the warm targets are 4× then).
         var into = ngfx::PassDesc {};
         into.color[0] = g.warm_color;
         let post = [g.own.down, g.smaa_blend];
@@ -680,10 +706,14 @@ fn warm(g: Gpu&, k: i64) {
             ngfx::prepare(g.smaa_edges, into);
             ngfx::release(rg);
         }
+    }
+    if k == WARM_STEPS - 1 {
         ngfx::release(g.warm_color);
         ngfx::release(g.warm_depth);
+        ngfx::release(g.own.warm_kept);
         g.warm_color = ngfx::Texture { 0 };
         g.warm_depth = ngfx::Texture { 0 };
+        g.own.warm_kept = ngfx::Texture { 0 };
     }
 }
 
@@ -693,7 +723,7 @@ fn release(g: Gpu&) {
     ngfx::flush();
     let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.photo, g.shadow_map, g.occ_map,
                     g.crown_map, g.color, g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across,
-                    g.warm_color, g.warm_depth, g.edges, g.weights, g.area, g.search];
+                    g.warm_color, g.warm_depth, g.own.warm_kept, g.edges, g.weights, g.area, g.search];
     for t in textures { if t.id != 0 { ngfx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.instances, g.squares, g.marks, g.glows];
     for b in buffers { if b.id != 0 { ngfx::release(b); } }
