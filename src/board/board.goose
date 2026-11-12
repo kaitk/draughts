@@ -596,8 +596,8 @@ fn abandon(b: Board&, now: f64) -> bool {
 fn must_capture(b: Board&) -> bool { b.moves.len > 0 && b.moves[0].captured != 0 }
 
 // A wrong move ending on square `sq`: its ring flashes, and if a capture was due, the
-// pieces that must capture pulse and, on mistakes only, show their count until the next
-// right move or jump (`counting`).
+// pieces that must capture pulse and, on mistakes only, show their count until the
+// capture ends (`counting`).
 fn mistake(b: Board&, sq: i64, now: f64) {
     b.steps.clear();
     b.wrong = sq;
@@ -677,13 +677,10 @@ fn missed(b: Board&, sq: i64, now: f64) {
     if b.misses == 2 { b.kept_at = now; }
 }
 
-// A piece came to wait on a stop (`follow`): what it goes on to pulses from now. A right
-// jump hides the count a mistake showed (`counting`).
+// A piece came to wait on a stop (`follow`): what it goes on to pulses from now. The count
+// a mistake showed stays, counting down, until the capture ends (`counting`, 2026-11-12).
 fn kept(b: Board&, before: i64, now: f64) {
-    if b.steps.len > before {
-        b.kept_at = now;
-        b.counted = false;
-    }
+    if b.steps.len > before { b.kept_at = now; }
 }
 
 // A tap kept a stop (`kept`): the piece hops there from the square before it.
@@ -700,8 +697,9 @@ fn hopping(b: Board&, now: f64) -> bool {
 }
 
 // Whether the pieces that must capture show how many pieces they take (2026-11-09,
-// docs/product.md): with move hints always; on mistakes only from a mistake to the next
-// right move or jump, as showing the count up front gives the capture away. Never in a
+// docs/product.md): with move hints always; on mistakes only from a mistake until the
+// capture ends, counting down jump by jump, as showing the count up front gives the
+// capture away. Never in a
 // puzzle, on the computer's turn, or while a move is shown.
 fn counting(b: Board&) -> bool {
     guard !b.by_hand && !b.quiet && !b.moving && must_capture(b) else { return false; }

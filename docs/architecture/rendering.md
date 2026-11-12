@@ -1266,8 +1266,8 @@ takes more (`board::outnumbered`). The pulse belongs to the position the mistake
 in and ends once a move is played (`test/board/several`). A piece that must capture shows how many pieces its
 capture takes, at most (`board::takes`, `Piece.ring.z`), when `board::counting`: with
 move hints always; on mistakes only from a mistake while a capture is due (`mistake`
-sets `Board.counted`) to the next right move or jump (`start_move`, `kept`), so a
-second mistake partway through shows what is left (`test/game/pips`). One pip per piece on its ring, 28° apart and centred
+sets `Board.counted`) until the move is played (`start_move`), counting down jump by
+jump as the stops are made (`test/game/pips`). One pip per piece on its ring, 28° apart and centred
 over the top, light with a red rim (22% and 30% of the radius, on the ring at 1.24
 radii), and past five one larger red pip with the number (`prototypes/game.html?count=a`:
 the pips are counted, where a number needs a child who reads digits).

@@ -2,8 +2,8 @@
 // played through the game's frames and pointer (2026-11-09, docs/product.md). Showing
 // the count up front gave the capture away, so on mistakes only, the default, it is a
 // mistake's hint: no pips until a wrong move, a wrong square or a touch on a piece that
-// can't move because another must capture; from it to the next right move or jump they
-// show, then they hide until another mistake, which shows what is left of the capture.
+// can't move because another must capture; from it they show until the capture ends,
+// counting down jump by jump, and another mistake partway shows what is left.
 // A new turn starts with none. With move hints they show at once and count down. The 3D
 // board shows the same pips, from the same draw lists (view3d::Scene.lit's z).
 //

@@ -9,8 +9,8 @@
 //   majority rule only the pieces taking the most show it, each of them; in Russian each
 //   piece shows its own most. The computer's pieces show none, a friend's do. Partway
 //   through a capture only the piece making it shows what is left. On mistakes only, the
-//   rest of this test's hints, the count shows only from a wrong square to the next
-//   right jump (test/game/pips has it in full).
+//   rest of this test's hints, the count shows only from a wrong square, then to the
+//   capture's end (test/game/pips has it in full).
 // - No autocomplete: after a jump, tapped or dropped, the piece waits on its stop and
 //   each next jump is the child's, to the last.
 // - The last square tapped straight away plays the capture, the one capture going there.

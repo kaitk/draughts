@@ -523,7 +523,9 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   lone king on the turned board with a capture of four), and then the 3D board drew no
   pips, as its scene never read `ring.z`; both fixed that day. The count shows on mistakes
   only from a mistake while a capture is due (2026-11-09); it showed whatever the hints
-  before, which gave the capture away.
+  before, which gave the capture away. Once shown it stays to the capture's end,
+  counting down (2026-11-12, the user): hiding it at the next right jump, as from
+  2026-11-09, took away a count the child had already been given.
 - The must-capture pulse ends once a move is played (2026-11-09). It ran on through the
   move and rang the next side's capturers, so after a child's capture on the turned board
   the computer's man beside the child's pieces pulsed red as if it were the child's to

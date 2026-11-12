@@ -19,10 +19,11 @@ base.
   takes more, the pieces it takes; a second wrong square in the same capture lights its
   next stop). How many pieces a piece that must capture takes shows as pips a child
   counts without reading, but not which: with moves at once, counting down jump by jump;
-  with mistakes only as a mistake's hint, from a wrong move to the next right move or
-  jump, then again from the next mistake with what is left (2026-11-09; earlier that day
-  the pips showed whatever the setting, which gave the capture away before the child
-  looked for it). A capture of many jumps is played jump by jump by the child, never
+  with mistakes only as a mistake's hint, from a wrong move until the capture ends,
+  counting down jump by jump as with moves (2026-11-12; from 2026-11-09 they hid again
+  at the next right jump, so a child who had been shown the count lost it partway;
+  earlier on 2026-11-09 the pips showed whatever the setting, which gave the capture
+  away before the child looked for it). A capture of many jumps is played jump by jump by the child, never
   finished by the game (2026-11-09). Mistakes is the
   default; moves is on by default only in the first lessons that teach the basic ideas,
   and in the tutorial at the first start.

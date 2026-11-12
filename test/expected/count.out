@@ -49,8 +49,8 @@ two wrong squares
   e9: waits on e9, counts , wrong -, pulsing next playing -
   i1, wrong: waits on e9, counts e9 3 , wrong i1, pulsing b4 f4 b6 next playing -
   i1 again: waits on e9, counts e9 3 , wrong i1, pulsing next a5 (pulsing) playing -
-  a5: waits on a5, counts , wrong i1, pulsing next d2 (pulsing) playing -
-  a moment later: waits on a5, counts , wrong -, pulsing next d2 (lit) playing -
+  a5: waits on a5, counts a5 2 , wrong i1, pulsing next d2 (pulsing) playing -
+  a moment later: waits on a5, counts a5 2 , wrong -, pulsing next d2 (lit) playing -
   with move hints, from the first stop
   e9: waits on e9, counts e9 3 , wrong -, pulsing next a5 (pulsing) playing -
 take back mid-capture
