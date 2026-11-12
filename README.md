@@ -52,7 +52,7 @@ Release builds in a game, 2026-11-10 (Linux 2026-11-12), frames as they reached 
 | Galaxy A33 5G | 2400 × 1080, 90 Hz | 60 fps (45 fps 1% low) | 116 / 275 MB |
 | iPhone 13 mini | 2340 × 1080, 60 Hz | locked 60 fps | 59 / 204 MB |
 | Windows PC | 2560 × 1440, 165 Hz | locked 165 fps | 258 / 477 MB |
-| Linux PC, Wayland | 1920 × 1080, 60 Hz | 60 fps (58 fps 1% low) | 84 / 89 MB, not counting VRAM |
+| Linux PC, Wayland | 1920 × 1080, 60 Hz | 60 fps, timed by the app | 84 / 89 MB, not counting VRAM |
 
 - **2D board:** locked to the display's rate on every device.
 - **At rest:** under 0.35% of one core, no GPU work.
