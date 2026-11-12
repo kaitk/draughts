@@ -444,6 +444,14 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   310 dp to about 220). Replaces 2026-11-11's who's-playing only. A screen with no inset
   at its foot gives up 28 dp of board so the next row's word shows (a tablet in
   portrait, 479 to 451 dp).
+- The games screen is named Results, Tulemused in Estonian (2026-11-12): Games, Mängud,
+  blurred with home's rows that start a game. A Gemini review of the Estonian picked it
+  too; History (Ajalugu) left out the rating, Statistics was dry for a child, and Progress
+  (Areng) read as a school report. Its string keys are `results.*`.
+- Before the first move the panel shows row one waiting (2026-11-12): its number and a
+  faint glow where the first move will stand, rather than blank glass. Rejected: a line
+  such as "Moves appear here" (reading, and a string more), and no panel until the first
+  move (the board would shrink and shift as it is made).
 
 ### Board and pieces
 

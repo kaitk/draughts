@@ -990,7 +990,10 @@ a 16 dp star in the glow colour for the best, `?!` in autumn's gold, `?` orange,
 forced-capture red, nothing for a good or only move or one not judged yet. Every move is
 in the panel, a list scrolled within its glass (`gui::scroll_begin`), at its foot when a
 move is added or the panel shows again; rows past its top or foot fade out over 40 dp
-there while there are more (`gui::fade_edges`, as home's scrolling menu does). The player's setting (`moves`: off, the moves, the moves with marks) is
+there while there are more (`gui::fade_edges`, as home's scrolling menu does). Before
+the first move, row one waits: its number and a faint glow (10%, 52 dp) where the first
+move will stand, in white's half or black's, so the glass isn't blank and nothing moves
+when the move comes. The player's setting (`moves`: off, the moves, the moves with marks) is
 settings' Move list row, under move hints, and the games screen's three tiles; off,
 there is no panel and the 3D board is as large as without it. No panel in portrait or on
 a phone in landscape, which have under four rows' room.
