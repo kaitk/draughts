@@ -291,22 +291,29 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
         let cam = view3d::Camera { pitch: PITCH_LANDSCAPE, yaw: 0.0 };
         rest(l, settle(l, cam, n), s);
         guard game else { return l; }
-        // The moves panel shown: MOVES_3D rows under the play panel, beside the buttons'
-        // column, which the board clears as it clears the panels, shrinking for it.
         // The moves panel shown: MOVES_3D rows under the play panel, as wide, and the
         // buttons a row under it at the right edge, where both fit above the bottom margin;
-        // the board clears them as it clears the panels, shrinking for them.
+        // the board clears them as it clears the panels, shrinking for them. Then as many
+        // rows more as leave the board that size (a wide window's frame, whose board is
+        // held by its height, not by the panels: the user, 2026-11-12), found by halving.
         if moves {
-            under_right(l, area, s, float4 { 0.0, 0.0, 0.0, 0.0 }, MOVES_3D);
-            let below = l.moves.y + l.moves.w + m;
-            if l.moves.z > 0.0 && below + touch <= area.y + height - gap {
-                l.buttons = float4 { x1 - len, below, len, touch };
-                l.row = true;
-                l.keep[2] = l.buttons;
-                l.keep[4] = l.moves;
-                rest(l, settle(l, cam, n), s);
-            } else {
+            let lower = float4 { area.x, area.y, area.z, area.w - m - touch };
+            let base = with_moves(l, lower, s, MOVES_3D, len, touch, m, n);
+            if base.moves.z <= 0.0 {
                 l.moves = float4 { 0.0, 0.0, 0.0, 0.0 };
+            } else {
+                l = base;
+                let most = with_moves(l, lower, s, 0, len, touch, m, n);
+                var lo = MOVES_3D;
+                var hi = ((most.moves.w / s - 2.0 * game::MOVES_PAD) / game::MOVES_ROW) as i64;
+                if hi > lo && most.rest.k >= 0.995 * base.rest.k { l = most; }
+                else {
+                    while hi - lo > 1 {
+                        let mid = (lo + hi) / 2;
+                        let t = with_moves(base, lower, s, mid, len, touch, m, n);
+                        if t.rest.k >= 0.995 * base.rest.k { lo = mid; l = t; } else { hi = mid; }
+                    }
+                }
             }
         }
         // What each side has taken: a line at the top between the panels, which the board
@@ -647,6 +654,22 @@ fn flat_corners(area: float4, n: i64, s: f32, size: f32) -> Layout {
                      left: left, right: right, mode: CORNERS, .. };
     under_left(l, area, s, (if phone { TAKEN_PHONE } else { TAKEN_D }) * s);
     under_right(l, area, s, float4 { 0.0, 0.0, 0.0, 0.0 }, 0);
+    return l;
+}
+
+// The 3D landscape layout `l` with the moves panel `rows` rows under the play panel
+// (0 as many as `area` holds) and the camera's buttons, `len` by `touch`, a row `m` under
+// it at the right edge, the board settled clear of both; moves.z 0 where it doesn't fit.
+fn with_moves(l0: Layout, area: float4, s: f32, rows: i64, len: f32, touch: f32, m: f32, n: i64) -> Layout {
+    var l = l0;
+    l.moves = float4 { 0.0, 0.0, 0.0, 0.0 };
+    under_right(l, area, s, float4 { 0.0, 0.0, 0.0, 0.0 }, rows);
+    guard l.moves.z > 0.0 else { return l; }
+    l.buttons = float4 { l.right.x + l.right.z - len, l.moves.y + l.moves.w + m, len, touch };
+    l.row = true;
+    l.keep[2] = l.buttons;
+    l.keep[4] = l.moves;
+    rest(l, settle(l, view3d::Camera { pitch: PITCH_LANDSCAPE, yaw: 0.0 }, n), s);
     return l;
 }
 

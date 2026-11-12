@@ -976,12 +976,20 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
 The game's moves (`game::moves_panel`): in landscape a glass panel under the play panel,
 as wide, down to the bottom margin, where at least four rows of 34 dp fit
 (`panel::under_right`); on the 3D board five rows, the camera's buttons a row under it,
-and the board shrinking to clear both. Each row is the move's number (small face, dim),
+and the board shrinking to clear both, then as many rows more as leave the board that
+size (`panel::with_moves`; a wide desktop window, whose board its height holds, to the
+foot). On a desktop the 3D board's frame may be 2.0 times as wide as tall while the panel
+shows, not 1.7, so the panels stand further out where the window has room. A desktop's
+narrow play panel is as tall as its tiles need (`panel::narrow_play_h`), the hint beside
+undo move only where both words fit their halves on two lines (`gui::two_lines`), else
+the hint's row over undo move's tile. Each row is the move's number (small face, dim),
 then white's move and black's as from-to (`32-28`, `28x19`, `c3:e5`) in the body face,
 the latest lit with the glow at 22%, each followed by its mark ([ai](ai.md#judging-a-move)):
 a 16 dp star in the glow colour for the best, `?!` in autumn's gold, `?` orange, `??` the
-forced-capture red, nothing for a good or only move or one not judged yet. The last rows
-that fit show. The player's setting (`moves`: off, the moves, the moves with marks) is
+forced-capture red, nothing for a good or only move or one not judged yet. Every move is
+in the panel, a list scrolled within its glass (`gui::scroll_begin`), at its foot when a
+move is added or the panel shows again; rows past its top or foot fade out over 40 dp
+there while there are more (`gui::fade_edges`, as home's scrolling menu does). The player's setting (`moves`: off, the moves, the moves with marks) is
 settings' Move list row, under move hints, and the games screen's three tiles; off,
 there is no panel and the 3D board is as large as without it. No panel in portrait or on
 a phone in landscape, which have under four rows' room.

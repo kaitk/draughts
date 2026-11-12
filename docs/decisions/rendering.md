@@ -421,6 +421,10 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   smaller at the tablet's landscape. With the setting at off the board is as before.
 - No panel in portrait or on a phone in landscape yet: the prototype found under four
   rows' room there.
+- The panel scrolls through the whole game (2026-11-12): showing only its last five
+  rows on the 3D board left no way to see the rest (the user). On a desktop it runs on
+  where that costs the board nothing, and the 3D frame widens to 2.0 while it shows:
+  the board was cut by its zoom or shrank while the window had room at the sides.
 - The setting is a Move list row in settings' game group, under move hints (2026-11-12),
   since issue 1 took the draughts' row out; it replaces the games screen as its place
   (2026-11-11, when a third row there left the preview board at 0 dp at several sizes).
