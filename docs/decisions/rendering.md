@@ -501,6 +501,16 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   corners clear of the panels and growing back, which drew the eye. Fitted as at rest,
   its corners pass over the panels for a moment. 1.1 s and 0.8 s were tried and felt
   long once the size held still.
+- A friend's game doesn't turn the board by default, on either board, and on the 3D
+  board begins in the top view, zoomed (2026-11-12, the user). Two players sit at either
+  side of the tablet, so a board that turns every move makes the far one watch it spin,
+  and the top view reads alike from both sides where the angle at rest favours the near
+  one. Turning is settings' Turns with a friend, a third tile in the Board row, which
+  adds no row (a third row in the game group had left the preview board 0 dp at some
+  sizes, above); on a 20:9 phone at 540 dp the wider Board row puts settings in its two
+  tabs, its board 237 to 447 dp. Rejected: a fourth camera button for it, which every
+  layout round the 3D board would have had to make room for in friend games.
+  Replaces the turn on every friend game on the 3D board, from task 015.
 
 **States and captures**
 

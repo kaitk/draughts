@@ -714,7 +714,10 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   `board = 2d|3d`): its 3D tile plays the game on the 3D board (`settings::raised`,
   `src/shell/prefs.goose`; the game screen round it is under "Board and pieces"), and
   shows it on every screen with a board: home, the preview here (its kings' auto a
-  stack), and a puzzle. Each
+  stack), and a puzzle. After them a third tile, on or off by itself, Turns with a
+  friend (`turn = on|off`, off by default): a friend's game turns the board to the side
+  to move after each move, the flat board at once and the 3D one easing round (the game
+  screen's "Against a friend"). Each
   setting is a dim 18 px name at the left of its tiles (above them in portrait); a tile
   has radius 16 px and is lit in the glow color at 22% with a 2 px glow border when on.
   Every tile, the language's and the seasons' too, is 88 px tall and wide at least; the title row is 100 px,
@@ -1151,12 +1154,16 @@ board's does and the backdrop over it as opaque as the blur.
   board's scale; in the top view too), eased 0.6 s. **Showcase** toggles a mode, lit
   while on, in which a drag anywhere off the UI turns the board ±35° and tips it 35° to
   80° down instead of moving pieces; off keeps the angle, and play goes on through it.
-  **Against a friend** the board turns 180° after each move to face the side to move
-  (0.7 s on a sine ease, `rig::Ease.soft`, once the move has shown), the light keeping
-  its place on screen (the renderer turns it with the board, `render3d::turn_light`, and
-  draws the shadow map again) and the board keeping its size, fitted as at rest, its
-  corners passing over the panels mid-turn; against the
-  computer it stays turned to the child. A new game or a hot-seat turn puts the showcase's
+  **Against a friend** the game begins in the top view, zoomed (`rig::across_table`),
+  which reads alike from either side of the tablet, and the board stays put; the camera
+  buttons change both as ever, and the next game against the computer is back at the
+  view at rest. With settings' Turns on, it begins at rest instead and the board turns
+  180° after each move to face the side to move (0.7 s on a sine ease, `rig::Ease.soft`,
+  once the move has shown), the light keeping its place on screen (the renderer turns it
+  with the board, `render3d::turn_light`, and draws the shadow map again) and the board
+  keeping its size, fitted as at rest, its corners passing over the panels mid-turn; the
+  flat board turns at once then (`rig::faces_far`, the shell's `game_layout`). Against
+  the computer it stays turned to the child. A new game or a hot-seat turn puts the showcase's
   angle back. The camera is plain data with its eases in `board/rig.goose` (`rig::Rig`);
   `panel::aim` fits it each frame (at rest, the rest view as it is), while the flat square
   the board package plays on stays the rest view's, and picking goes through whatever
