@@ -136,7 +136,7 @@ def shaders(tree=TREE, sdk=None):
     for name in ["area", "search"]:
         copy_if_changed(smaa / f"{name}.bin", out / f"smaa_{name}.bin")
     newest = max(f.stat().st_mtime for f in [*src, gen / "SMAA.hlsl"])
-    parts = ["common.slang", "ui.slang", "glsl.slang", "r3d.slang", "r3d_frame.slang"]
+    parts = ["common.slang", "glsl.slang", "r3d.slang", "r3d_frame.slang"]
     stale = [f for f in src if f.name not in parts
              and (not (out / (f.stem + ".blob")).exists() or (out / (f.stem + ".blob")).stat().st_mtime < newest)]
     if not stale:

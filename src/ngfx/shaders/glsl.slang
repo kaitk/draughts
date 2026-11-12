@@ -1,7 +1,7 @@
 // The GLSL names the gfx shaders were written with, so their bodies carry over to Slang
 // as they are (task 065): its vector types, mix, fract, mod, not, and two-argument atan;
 // and its samplers, a texture and a sampler by their heap indices. Included by the
-// modules scripts/ngfx_2d_shaders.py writes, by r3d.slang, and by common.slang.
+// modules scripts/ngfx_2d_shaders.py writes and by r3d.slang.
 #pragma once
 #include <NoGraphicsAPI/shader.slang>
 
@@ -30,20 +30,6 @@ bool3 glsl_not(bool3 c) { return !c; }
 bool4 glsl_not(bool4 c) { return !c; }
 // GLSL's two-argument atan.
 float atan(float y, float x) { return atan2(y, x); }
-
-// A sampled texture by its heap index, and the sampler by its.
-float4 tex(uint t, uint s, float2 uv) {
-    return gpu_texture<Texture2D<float4>>(t).Sample(gpu_sampler(s), uv);
-}
-float4 tex_lod(uint t, uint s, float2 uv, float lod) {
-    return gpu_texture<Texture2D<float4>>(t).SampleLevel(gpu_sampler(s), uv, lod);
-}
-float4 fetch(uint t, int2 p) { return gpu_texture<Texture2D<float4>>(t).Load(int3(p, 0)); }
-int2 tex_size(uint t) {
-    uint w, h;
-    gpu_texture<Texture2D<float4>>(t).GetDimensions(w, h);
-    return int2(w, h);
-}
 
 // sampler2D: a texture and its sampler.
 struct Tex {
