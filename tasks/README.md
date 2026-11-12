@@ -60,7 +60,8 @@ cancelled. All are archived. The MVP in `docs/product.md` is built.
 Open:
 
 - Release: 029 Google Play, 046 the App Store (after 043, iOS), 036 the announcement
-  after the Play release.
+  after the Play release; 075 the Linux build and release, built in WSL, its checks on
+  the Bazzite PC.
 - Content and play: 037 the puzzle set by theme, 038 players, 074 the games' history,
   marked moves, and a rating (built on the `history` branch, its takes to choose).
 - The 3D board: 041 a carved spring board, 042 its frame cost (the idle wakeup left),

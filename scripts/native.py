@@ -13,6 +13,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 WINDOWS = sys.platform == "win32"
 GOOSE = Path(os.environ.get("GOOSE", ROOT / ("build/goose-v2026.4-windows-x64/goose.exe" if WINDOWS
+                                             else "build/goose-v2026.4-linux-x64/goose"
+                                             if sys.platform.startswith("linux")
                                              else "build/goose-v2026.4-macos-arm64/goose")))
 SDL = ROOT / "third_party/goose_gfx/third_party/SDL"
 # The application id on Android (2026-11-08): Play fixes it for good at the first upload.

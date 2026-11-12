@@ -1548,7 +1548,7 @@ while gfx::frame() {
 ```
 
 This is `kaitk/goose_gfx`'s `draw-on-demand` ([findings](../goose-findings.md)),
-applied in every build: `scripts/android.py`, `ios.py`, `mac.py`, and `windows.py` each
+applied in every build: `scripts/android.py`, `ios.py`, `mac.py`, `windows.py`, and `linux.py` each
 build goose_gfx from the fork's sources. The release's own gfx (a plain `goose build`)
 presents every frame at the display's rate. The patched `frame()`:
 

@@ -1,15 +1,17 @@
 # Development
 
-The app builds from a Mac (Apple silicon) and from Windows (x64):
+The app builds from a Mac (Apple silicon), from Windows (x64), and from Linux (x64):
 
 | Build | From | Command | Section |
 | --- | --- | --- | --- |
 | macOS app | Mac | `scripts/mac.py src/app/draughts.goose` | [Run on the Mac](#run-on-the-mac) |
 | Windows app | Windows | `python scripts/windows.py src/app/draughts.goose` | [Run on Windows](#run-on-windows) |
+| Linux app | Linux | `scripts/linux.py src/app/draughts.goose` | [Run on Linux](#run-on-linux) |
 | Android APK | Mac, Windows | `scripts/android.py src/app/draughts.goose --run` | [Run on Android](#run-on-android) |
 | Android release (APK and AAB for Play) | Mac, Windows, with an upload key | `scripts/android.py src/app/draughts.goose --release` | [Release builds](#release-builds) |
 | macOS release (signed, notarized zip) | Mac, with a Developer ID | `scripts/mac.py src/app/draughts.goose --release` | [Desktop releases](#desktop-releases) |
 | Windows release (zip) | Windows | `python scripts/windows.py src/app/draughts.goose --release` | [Desktop releases](#desktop-releases) |
+| Linux release (tar.gz) | Linux, in an Ubuntu 22.04 container | `CC=clang-20 scripts/linux.py src/app/draughts.goose --release` | [Desktop releases](#desktop-releases) |
 | iOS simulator, iPhone, iPad | Mac (Xcode) | `scripts/ios.py src/app/draughts.goose --run`, `--device --run` | [Run on iOS](#run-on-ios) |
 | Rules tests | Mac, Windows | `test/run_tests.py` | [Test the rules](#test-the-rules) |
 
@@ -205,6 +207,28 @@ frame.
 The flags are the Mac's. The settings and the saved game are in `%APPDATA%\kaitk\draughts\`.
 `test/run_tests.py` takes the Windows release by default there. The iOS script is the
 Mac's only. Android builds from Windows too (Run on Android, below).
+
+## Run on Linux
+
+Built in WSL's Ubuntu 26.04 and an Ubuntu 22.04 chroot on 2026-11-12 (task 075), on Mesa's
+software Vulkan (llvmpipe); not yet on a Linux machine's GPU. It needs a C compiler that
+has `#embed` (GCC 15 or Clang 19 and later), Python 3, and Vulkan's loader:
+
+```sh
+mkdir -p build && cd build
+curl -sLO https://github.com/aardappel/goose/releases/download/v2026.4/goose-v2026.4-linux-x64.tar.gz
+tar xzf goose-v2026.4-linux-x64.tar.gz && rm goose-v2026.4-linux-x64.tar.gz
+cd ..
+scripts/linux.py src/app/draughts.goose                # build/linux/draughts
+scripts/linux.py src/app/draughts.goose --run -- --board 3d --screen game
+```
+
+As on Windows, `scripts/linux.py` builds goose_gfx from the submodule into a copy of the
+release (`build/linux/goose/`; delete it after the release changes) and links the
+release's SDL statically, so the program's C calls SDL directly (`src/app/platform.h`):
+a Linux executable exports none of SDL's functions for `dlsym` to find. `CC` picks the
+compiler for both gfx and Goose (`GOOSE_CC`). The settings and the saved game are in
+`~/.local/share/kaitk/draughts/`. The flags are the Mac's.
 
 ## Test the rules
 
@@ -579,9 +603,9 @@ upload-key.jks` with the password from its properties file.
 
 ## Desktop releases
 
-The Mac and Windows apps go out as files on a GitHub release, built on our own machines
-rather than in CI, which would need the toolchain on its runners and the Apple
-credentials as secrets. Linux has no build yet.
+The Mac, Windows, and Linux apps go out as files on a GitHub release, built on our own
+machines rather than in CI, which would need the toolchain on its runners and the Apple
+credentials as secrets.
 
 **macOS.** `scripts/mac.py src/app/draughts.goose --release` builds for macOS 13.3 (the
 Goose release's prebuilt SDL and runtime are built for it; the shaders are Metal source
@@ -627,7 +651,30 @@ certificate would end that. Tested on Windows 11 on 2026-11-12: the 0.1.1 zip is
 (the executable 15.5 MB), and extracted alone it imports only system DLLs and plays on
 both boards.
 
-**The release.** With both zips at hand, tagged as the shared version (`native.VERSION_NAME`):
+**Linux.** `scripts/linux.py src/app/draughts.goose --release` tars `Draughts/`, holding
+the executable `draughts` (stripped), `draughts.desktop`, and the icon `draughts.png`
+(`ios/icon-1024.png`), into `build/linux/release/Draughts-VERSION-linux-x64.tar.gz`. SDL
+is linked in; the C library, libm, X11 or Wayland, and Vulkan's loader are the system's.
+The executable needs a glibc as new as the one it was built against, so a release is
+built in an Ubuntu 22.04 container (glibc 2.35, which the Goose release's `libSDL3.a`
+needs anyway), with Clang 20 from apt.llvm.org since 22.04's gcc 11 has no `#embed`:
+
+```sh
+distrobox create -n draughts-jammy -i ubuntu:22.04     # once; on Bazzite distrobox is there
+distrobox enter draughts-jammy
+sudo apt-get install -y curl gnupg python3 git cmake make binutils
+curl -s https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/llvm.gpg >/dev/null
+echo "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-20 main" | sudo tee /etc/apt/sources.list.d/llvm.list
+sudo apt-get update && sudo apt-get install -y clang-20
+CC=clang-20 scripts/linux.py src/app/draughts.goose --release
+```
+
+`objdump -T build/linux/release/Draughts/draughts | grep -o 'GLIBC_[0-9.]*' | sort -Vu |
+tail -1` says `GLIBC_2.35`: Ubuntu 22.04 and later, Debian 12, Fedora 36 and later, and
+SteamOS and Bazzite run it. Built on a newer system it asks for that system's glibc (on
+Ubuntu 26.04, 2.43, which Fedora 43's 2.42 refuses). Not signed; nothing on Linux asks.
+
+**The release.** With the zips at hand, tagged as the shared version (`native.VERSION_NAME`):
 
 ```sh
 gh release create v0.2.0 build/mac/release/Draughts-0.2.0-macos-arm64.zip \

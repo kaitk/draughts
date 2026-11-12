@@ -26,7 +26,9 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 EXPECTED = HERE / "expected"
 OUT = ROOT / "build" / "test"
-RELEASE = "goose-v2026.4-windows-x64/goose.exe" if os.name == "nt" else "goose-v2026.4-macos-arm64/goose"
+RELEASE = ("goose-v2026.4-windows-x64/goose.exe" if os.name == "nt" else
+           "goose-v2026.4-linux-x64/goose" if sys.platform.startswith("linux") else
+           "goose-v2026.4-macos-arm64/goose")
 GOOSE = os.environ.get("GOOSE", str(ROOT / "build" / RELEASE))
 TIMEOUT = 300
 # Directories under test/ that hold the tests' shared packages, not tests.
