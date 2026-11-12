@@ -8,6 +8,8 @@ The app builds from a Mac (Apple silicon) and from Windows (x64):
 | Windows app | Windows | `python scripts/windows.py src/app/draughts.goose` | [Run on Windows](#run-on-windows) |
 | Android APK | Mac, Windows | `scripts/android.py src/app/draughts.goose --run` | [Run on Android](#run-on-android) |
 | Android release (APK and AAB for Play) | Mac, Windows, with an upload key | `scripts/android.py src/app/draughts.goose --release` | [Release builds](#release-builds) |
+| macOS release (signed, notarized zip) | Mac, with a Developer ID | `scripts/mac.py src/app/draughts.goose --release` | [Desktop releases](#desktop-releases) |
+| Windows release (zip) | Windows | `python scripts/windows.py src/app/draughts.goose --release` | [Desktop releases](#desktop-releases) |
 | iOS simulator, iPhone, iPad | Mac (Xcode) | `scripts/ios.py src/app/draughts.goose --run`, `--device --run` | [Run on iOS](#run-on-ios) |
 | Rules tests | Mac, Windows | `test/run_tests.py` | [Test the rules](#test-the-rules) |
 
@@ -574,6 +576,55 @@ image on a drive kept elsewhere (on a Mac, `hdiutil create -encryption AES-256
 -srcfolder ~/.config/draughts ...`, its passphrase stored apart from the image). Check a
 backup by restoring it to a scratch folder and running `keytool -list -keystore
 upload-key.jks` with the password from its properties file.
+
+## Desktop releases
+
+The Mac and Windows apps go out as files on a GitHub release, built on our own machines
+rather than in CI, which would need the toolchain on its runners and the Apple
+credentials as secrets. Linux has no build yet.
+
+**macOS.** `scripts/mac.py src/app/draughts.goose --release` builds for macOS 13.3 (the
+Goose release's prebuilt SDL and runtime are built for it; the shaders are Metal source
+that SDL compiles on the user's Mac), wraps it in `build/mac/release/Draughts.app` (the
+id `io.github.kaitk.draughts`, the shared version, the launcher's name per language, the
+icon from `ios/icon-1024.png` in macOS's rounded square), signs it with the hardened
+runtime, has Apple's notary service check it, staples the ticket, and writes
+`Draughts-VERSION-macos-arm64.zip` beside it. Apple silicon only, as the Goose release is.
+It needs, once per Mac:
+
+1. A **Developer ID Application** certificate in the login keychain, which only the team's
+   Account Holder (the Apple ID that enrolled in the Developer Program) can create: in
+   Xcode, Settings → Accounts, add that Apple ID, choose the team, Manage Certificates →
+   + → Developer ID Application. A member's Apple ID gets "can only be done by the account
+   holder". Or on developer.apple.com, signed in as the Account Holder: Certificates → + →
+   Developer ID Application (the G2 Sub-CA), with a signing request from Keychain Access
+   (Certificate Assistant → Request a Certificate From a Certificate Authority, saved to
+   disk), then open the downloaded `.cer`. `security find-identity -v -p codesigning`
+   lists it as "Developer ID Application: NAME (TEAM)". Back up its private key with the
+   certificate (Keychain Access → Export, a `.p12`): a lost key means a new certificate.
+2. A **notarytool profile** in the keychain: an app-specific password for that Apple ID
+   (account.apple.com → Sign-In and Security → App-Specific Passwords), then
+   `xcrun notarytool store-credentials draughts-notary --apple-id APPLE_ID --team-id TEAM`,
+   which asks for the password.
+
+The script finds the identity by its name (or `DRAUGHTS_MAC_IDENTITY`) and uses the
+profile `draughts-notary` (or `DRAUGHTS_NOTARY_PROFILE`). Without the identity it signs
+the bundle ad hoc and stops before notarizing, enough to try the bundle on the Mac that
+built it. Notarizing takes a few minutes; `spctl --assess` at the end says "accepted,
+source=Notarized Developer ID".
+
+**Windows.** `python scripts/windows.py src/app/draughts.goose --release` zips the
+executable alone as `Draughts.exe` into
+`build/windows/release/Draughts-VERSION-windows-x64.zip`: SDL and the C runtime are
+linked in, and Vulkan's loader is the system's. It is unsigned, so SmartScreen warns on
+first run (More info → Run anyway); a code-signing certificate would end that.
+
+**The release.** With both zips at hand, tagged as the shared version (`native.VERSION_NAME`):
+
+```sh
+gh release create v0.1.1 build/mac/release/Draughts-0.1.1-macos-arm64.zip \
+    Draughts-0.1.1-windows-x64.zip --title "Draughts 0.1.1" --notes "..."
+```
 
 ## Time the 3D board
 

@@ -4,6 +4,12 @@
     python scripts/windows.py src/app/draughts.goose              build build/windows/draughts.exe
     python scripts/windows.py src/app/draughts.goose --run -- --board 3d
                                                                   build, and run it with those flags
+    python scripts/windows.py src/app/draughts.goose --release    build/windows/release/
+                                                                  Draughts-VERSION-windows-x64.zip
+
+A release (docs/development.md, "Desktop releases") is the executable alone, as
+Draughts.exe, zipped: SDL and the C runtime are linked in, and Vulkan's loader is the
+system's. It is not signed.
 
 The release's own goose_gfx.lib lacks Draughts' changes. This builds goose_gfx's sources
 from the submodule (kaitk/goose_gfx's main), as Android and iOS do, into a copy of the
@@ -21,6 +27,7 @@ import os
 import shutil
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 import native
@@ -70,11 +77,20 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("program", type=Path)
     ap.add_argument("--run", action="store_true", help="run it after building")
+    ap.add_argument("--release", action="store_true", help="Draughts.exe, zipped for a GitHub release")
     ap.add_argument("args", nargs="*", help="the program's flags, after --")
     a = ap.parse_args()
     program = a.program.resolve()
     exe = OUT / f"{program.stem}.exe"
     native.run(patched_goose(), "build", "-o", exe, program.name, cwd=program.parent)
+    if a.release:
+        out = OUT / "release"
+        out.mkdir(parents=True, exist_ok=True)
+        zipped = out / f"Draughts-{native.VERSION_NAME}-windows-x64.zip"
+        with zipfile.ZipFile(zipped, "w", zipfile.ZIP_DEFLATED) as z:
+            z.write(exe, "Draughts.exe")
+        print(zipped)
+        return
     if a.run:
         sys.exit(subprocess.run([str(exe), *a.args]).returncode)
 

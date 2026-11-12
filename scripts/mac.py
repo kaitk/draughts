@@ -3,6 +3,17 @@
 
     scripts/mac.py src/app/draughts.goose                     build build/draughts
     scripts/mac.py src/app/draughts.goose --run -- --board 3d build, and run it with those flags
+    scripts/mac.py src/app/draughts.goose --release           Draughts.app, signed and notarized,
+                                                              zipped for a GitHub release
+
+A release (docs/development.md, "Desktop releases") builds for MIN_MACOS, wraps the
+executable in build/mac/release/Draughts.app (Info.plist, the launcher's name per
+language, the icon from ios/icon-1024.png in macOS's rounded square), signs it with the
+keychain's "Developer ID Application" identity and the hardened runtime, has Apple's
+notary service check it (notarytool's keychain profile NOTARY_PROFILE), staples the
+ticket, and zips it as build/mac/release/Draughts-VERSION-macos-arm64.zip. Without the
+identity it signs ad hoc and stops before notarizing, which is enough to try the bundle
+on this Mac; DRAUGHTS_MAC_IDENTITY names an identity, DRAUGHTS_NOTARY_PROFILE a profile.
 
 The release's own libgoose_gfx.a presents every frame, so the app at rest spins at the
 display's rate. This builds goose_gfx's sources from the submodule (kaitk/goose_gfx's
@@ -16,6 +27,8 @@ build/goose-v2026.4-macos-arm64/, or GOOSE_RELEASE.
 """
 import argparse
 import os
+import plistlib
+import re
 import shutil
 import subprocess
 import sys
@@ -49,14 +62,119 @@ def patched_goose():
     return goose / "goose"
 
 
+MIN_MACOS = "13.3"            # a release's LSMinimumSystemVersion and deployment target: the
+                              # Goose release's libSDL3.a and runtime are built for 13.3
+NOTARY_PROFILE = os.environ.get("DRAUGHTS_NOTARY_PROFILE", "draughts-notary")
+CATEGORY = "public.app-category.board-games"
+
+
+def identity():
+    """The Developer ID Application identity to sign with, or None."""
+    if os.environ.get("DRAUGHTS_MAC_IDENTITY"):
+        return os.environ["DRAUGHTS_MAC_IDENTITY"]
+    found = native.run("security", "find-identity", "-v", "-p", "codesigning", capture=True)
+    m = re.search(r'"(Developer ID Application: [^"]+)"', found)
+    return m.group(1) if m else None
+
+
+def icns(out):
+    """Draughts.icns from the iOS icon: macOS's rounded square (824 of 1024, radius 185)
+    with a soft shadow under it, at every size iconutil takes."""
+    master = native.ROOT / "ios/icon-1024.png"
+    work = out / "icon"
+    shutil.rmtree(work, ignore_errors=True)
+    sets = work / "Draughts.iconset"
+    sets.mkdir(parents=True)
+    big = work / "1024.png"
+    native.run("magick", "-size", "1024x1024", "xc:none",
+               "(", master, "-resize", "824x824", "-alpha", "set",
+               "(", "-size", "824x824", "xc:none", "-fill", "white",
+               "-draw", "roundrectangle 0,0 823,823 185,185", ")",
+               "-compose", "DstIn", "-composite", "-compose", "Over", ")",
+               "(", "+clone", "-background", "black", "-shadow", "40x12+0+10", ")",
+               "+swap", "-background", "none", "-layers", "merge", "+repage",
+               "-gravity", "center", "-extent", "1024x1024", big)
+    for size in (16, 32, 128, 256, 512):
+        native.run("magick", big, "-resize", f"{size}x{size}", sets / f"icon_{size}x{size}.png")
+        native.run("magick", big, "-resize", f"{2 * size}x{2 * size}", sets / f"icon_{size}x{size}@2x.png")
+    native.run("iconutil", "-c", "icns", sets, "-o", work / "Draughts.icns")
+    return work / "Draughts.icns"
+
+
+def bundle(exe, out):
+    """build/mac/release/Draughts.app around exe."""
+    app = out / "Draughts.app"
+    shutil.rmtree(app, ignore_errors=True)
+    (app / "Contents/MacOS").mkdir(parents=True)
+    res = app / "Contents/Resources"
+    res.mkdir()
+    shutil.copy(exe, app / "Contents/MacOS/Draughts")
+    shutil.copy(icns(out), res / "Draughts.icns")
+    names = native.app_names()
+    for lang, name in names.items():
+        (res / f"{lang}.lproj").mkdir()
+        (res / f"{lang}.lproj/InfoPlist.strings").write_text(
+            f'CFBundleName = "{name}";\nCFBundleDisplayName = "{name}";\n', encoding="utf-8")
+    info = {
+        "CFBundleDevelopmentRegion": "en",
+        "CFBundleExecutable": "Draughts",
+        "CFBundleIdentifier": native.APP_ID,
+        "CFBundleInfoDictionaryVersion": "6.0",
+        "CFBundleName": names["en"],
+        "CFBundleDisplayName": names["en"],
+        "CFBundleLocalizations": sorted(names),
+        "CFBundlePackageType": "APPL",
+        "CFBundleShortVersionString": native.VERSION_NAME,
+        "CFBundleVersion": native.VERSION_NAME,
+        "CFBundleIconFile": "Draughts",
+        "LSMinimumSystemVersion": MIN_MACOS,
+        "LSApplicationCategoryType": CATEGORY,
+        "NSHighResolutionCapable": True,
+        "NSSupportsAutomaticGraphicsSwitching": True,
+    }
+    with open(app / "Contents/Info.plist", "wb") as f:
+        plistlib.dump(info, f)
+    return app
+
+
+def release(program):
+    """The signed, notarized Draughts.app, zipped (the module's docstring)."""
+    os.environ["MACOSX_DEPLOYMENT_TARGET"] = MIN_MACOS
+    out = OUT / "release"
+    out.mkdir(parents=True, exist_ok=True)
+    exe = out / "draughts"
+    native.run(patched_goose(), "build", "-o", exe, program.name, cwd=program.parent)
+    app = bundle(exe, out)
+    who = identity()
+    zipped = out / f"Draughts-{native.VERSION_NAME}-macos-arm64.zip"
+    zipped.unlink(missing_ok=True)
+    if not who:
+        native.run("codesign", "--force", "--sign", "-", app)
+        print(f"\nno Developer ID Application identity: {app} is signed ad hoc, not notarized,"
+              " and not zipped (docs/development.md, \"Desktop releases\")")
+        return
+    native.run("codesign", "--force", "--options", "runtime", "--timestamp", "--sign", who, app)
+    native.run("codesign", "--verify", "--strict", "--verbose=2", app)
+    native.run("ditto", "-c", "-k", "--keepParent", app, zipped)
+    native.run("xcrun", "notarytool", "submit", zipped, "--keychain-profile", NOTARY_PROFILE, "--wait")
+    native.run("xcrun", "stapler", "staple", app)
+    zipped.unlink()
+    native.run("ditto", "-c", "-k", "--keepParent", app, zipped)
+    native.run("spctl", "--assess", "--type", "execute", "--verbose", app)
+    print(f"\n{zipped}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("program", type=Path)
     ap.add_argument("-o", type=Path, help="the executable (build/<program> by default)")
     ap.add_argument("--run", action="store_true", help="run it after building")
+    ap.add_argument("--release", action="store_true", help="Draughts.app, signed, notarized, and zipped")
     ap.add_argument("args", nargs="*", help="the program's flags, after --")
     a = ap.parse_args()
     program = a.program.resolve()
+    if a.release:
+        return release(program)
     exe = (a.o or native.ROOT / "build" / program.stem).resolve()
     native.run(patched_goose(), "build", "-o", exe, program.name, cwd=program.parent)
     if a.run:
