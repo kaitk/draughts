@@ -23,6 +23,20 @@
                       where it costs the board under 5% (12 dp at 800 × 1280); else none.
                       A phone in landscape (480 dp tall): no room under the play panel
                       (52 dp), so no panel in any take; a note says so.
+                      &take=d  a phone in landscape only (else take a): a line of the
+                               last move under the left column, opening a sheet over the
+                               screen's left part (to the board's edge) with the moves,
+                               the board left whole and playable. &open=1 the sheet open;
+                               &fit=row (back and settings side by side, start over under
+                               them: the line a full tap, the captured pieces under it) or
+                               slim (the left column as built; the line in the captured
+                               pieces' place, as tall as the room under the column, the
+                               catch as counts in it); &device=pixel (the Pixel 7a's
+                               cutout at the left, 52 dp, and gesture bar, 37 dp, at
+                               480 dp), a33 (its cutout at the left, 36 dp, and its
+                               three-button bar at the right, 60 dp: assumed, not
+                               measured), none; &board=flat or 3d; &grid=1 sets both fits
+                               closed and open on both phones side by side.
        ?view=settings settings with the Moves row (Off, List, Marks) in the Game group;
                       &place=sheet puts it on the player's sheet instead.
        ?view=games    the games screen for the player: the rating, by level, the games.
@@ -311,6 +325,44 @@
   .short .gbody { grid-template-columns: 340px minmax(0, 1fr); gap: 16px; }
   .short .page { gap: 10px; padding: 16px 24px; }
   .short .stats { padding: 12px 16px; }
+
+  /* Take d, a phone in landscape: the line under the left column (a tap: the last move
+     and its mark, a chevron saying it opens) and the sheet it opens over the screen's left
+     part, running off the screen's left edge, top, and bottom (gui::bleed), its words in
+     the safe area. */
+  .dtile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 20px; }
+  .dtile svg { width: 32px; height: 32px; stroke-width: 2.2; }
+  .dline { display: flex; align-items: center; gap: 6px; padding: 0 8px 0 14px; font-size: 22px; white-space: nowrap; cursor: pointer; }
+  .dline .n { color: var(--fg-dim); font-size: 18px; }
+  .dline .mv { min-width: 0; padding: 0; }
+  .dline .chev { margin-left: auto; display: grid; flex: none; opacity: 0.8; }
+  .dline .chev svg { width: 28px; height: 28px; stroke-width: 2.4; }
+  .dline .cnt { display: flex; align-items: center; gap: 3px; margin-left: auto; font-size: 18px; }
+  .dline .cnt .dot { width: 18px; height: 18px; }
+  .dline .cnt + .chev { margin-left: 0; }
+  .dline .cnt + .chev svg { width: 24px; height: 24px; }
+  .dline.on { box-shadow: inset 0 0 0 2px var(--glow); }
+  .dline .tapzone { position: absolute; left: 0; right: 0; top: 0; border: 1.5px dashed rgb(255 255 255 / 0.35); border-radius: 12px; pointer-events: none; }
+  .dsheet { --r: 0 32px 32px 0; border-radius: 0 32px 32px 0; display: flex; flex-direction: column; z-index: 6; }
+  .dsheet .dhead { display: flex; align-items: center; gap: 10px; flex: none; height: 88px; padding: 0 12px 0 8px; font-size: 24px; cursor: pointer; }
+  .dsheet .dhead > svg { flex: none; width: 30px; height: 30px; stroke-width: 2.4; opacity: 0.85; }
+  .dsheet .moves { flex: 1; min-height: 0; padding: 0 4px 0 0; }
+  .dsheet .mrow { height: 34px; }
+  .dsheet .mv { height: 30px; }
+  .cut { position: fixed; z-index: 20; background: #000; pointer-events: none; }
+  .gbar { position: fixed; z-index: 20; height: 5px; width: 120px; border-radius: 3px; background: rgb(255 255 255 / 0.6); pointer-events: none; }
+  .safe { position: fixed; z-index: 19; border: 1px dashed rgb(255 255 255 / 0.28); pointer-events: none; }
+  /* &grid: the fits side by side, each a frame of this page at the phone's size. */
+  body.sheet-body { overflow: auto; background: #0d1219; }
+  .dgrid { padding: 16px 20px 40px; font: 14px system-ui, sans-serif; color: #ddd; }
+  .dgrid h1 { font: 400 22px var(--font); margin: 0 0 6px; }
+  .dgrid p { margin: 0 0 14px; max-width: 1100px; line-height: 1.45; color: #bbb; }
+  .dgrid .pair { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 22px; }
+  .dgrid .shot { display: grid; gap: 6px; }
+  .dgrid .shot a { color: #9cf; }
+  .dgrid .fr { overflow: hidden; border-radius: 10px; box-shadow: 0 0 0 1px #2a3442; }
+  .dgrid iframe { border: 0; transform-origin: 0 0; display: block; }
+  .bare .proto-bar, .bare .note, .bare .proto-fold { display: none !important; }
 </style>
 </head>
 <body>
@@ -319,9 +371,14 @@
   const P = new URLSearchParams(location.search);
   const get = (k, vals, def) => (vals.includes(P.get(k)) ? P.get(k) : def);
   const view = get('view', ['game', 'settings', 'games', 'replay', 'entry'], 'game');
-  const take = get('take', ['a', 'b', 'c'], 'a');
+  const take = get('take', ['a', 'b', 'c', 'd'], 'a');
+  const open = P.get('open') === '1';
+  const fit = get('fit', ['row', 'slim'], 'row');
+  const device = get('device', ['pixel', 'a33', 'none'], 'pixel');
+  const three = get('board', ['flat', '3d'], 'flat') === '3d';
+  if (P.has('bare')) document.body.classList.add('bare');
   const marks = get('marks', ['on', 'off', 'hidden'], 'on');
-  const state = get('state', ['early', 'late'], 'late');
+  const state = get('state', ['early', 'mid', 'late'], take === 'd' ? 'mid' : 'late');
   const entry = get('entry', ['home', 'sheet'], 'home');
   const place = get('place', ['settings', 'sheet'], 'settings');
   const lang = get('lang', ['en', 'et'], 'en');
@@ -386,7 +443,8 @@
     return { n: 10, white: [...w, ...W].map(alg), black: [...b, ...B].map(alg), kings: [...W, ...B].map(alg),
       last: i ? [alg(FROM[i - 1]), alg(TO[i - 1])] : [] };
   };
-  const shown = state === 'early' ? 12 : 60;     // plies in the game in progress
+  // Plies in the game in progress: mid ends on white's 23. 41-36 ?! (take d's default).
+  const shown = state === 'early' ? 12 : state === 'mid' ? 45 : 60;
 
   // A mark's glyph, and what a side's moves add up to: lichess's accuracy of each move's
   // loss of expected result (best 0, good about 0.02, ?! 0.07, ? 0.15, ?? 0.3), an only
@@ -441,6 +499,171 @@
     return `<span class="catch" style="width:${k ? x - size * 0.52 + size : 0}px;height:${size}px">${s}</span>`;
   }
 
+  // Take d's layout on a phone in landscape, in dp, the page W × H: the safe area less the
+  // device's insets (gui::safe), the flat board and the panels as panel.goose's
+  // flat_corners and corners_in place them (NARROW 192 panels, the phone's play panel
+  // CORNER_PLAY 368, left_h() 336, under_left's catch at TAKEN_PHONE 26), and the line,
+  // the catch, and the sheet by the fit. The insets at 480 dp (2.25 px a dp): the Pixel
+  // 7a's 118 px cutout and 84 px gesture bar (test/shell/sizes.goose); the A33's assumed,
+  // its notch about 80 px and its three-button bar 135 px (48 dp at its density), at the
+  // right in landscape.
+  const DEVICES = { pixel: [118 / 2.25, 0, 0, 84 / 2.25], a33: [80 / 2.25, 0, 135 / 2.25, 0], none: [0, 0, 0, 0] };
+  const LEFT_H = 336, PLAY_H = 368, SIDE = 192, TAP = 88, STACK = 96, GAP = 24, BACK_GAP = 12, ROW = 34;
+  function underLeft(x, under, limit, side) {   // panel::under_left at TAKEN_PHONE
+    const d = 26, room = limit - under, rows = 2.3 * d + 28, squeezed = (room - 16) / 2.3;
+    if (room >= rows) return { r: [x, under, side, rows], d, two: true };
+    if (squeezed >= 0.75 * d) return { r: [x, under, side, room], d: Math.min(d, squeezed), two: true };
+    const one = Math.min(d, room - 16);
+    return one > 0.5 * d ? { r: [x, under, side, one + 16], d: one, two: false } : null;
+  }
+  function dLayout(W, H, dev, fitting, raised) {
+    const [l, t, r, b] = DEVICES[dev];
+    const sx = l, sy = t, sw = W - l - r, sh = H - t - b, g = GAP, side = SIDE;
+    const L = { ins: [l, t, r, b], safe: [sx, sy, sw, sh] };
+    const B = Math.min(sh - 2 * g, sw - 2 * side - 4 * g);
+    L.board = [sx + (sw - B) / 2, sy + (sh - B) / 2, B, B];
+    L.play = [sx + sw - g - side, sy + g, side, Math.min(PLAY_H, sh - 2 * g)];
+    if (raised) {   // corners_in: the camera's buttons a row at the right edge, the board between the columns
+      const len = 3 * 48 + 16;
+      L.buttons = [sx + sw - g - len, sy + Math.min(g + L.play[3] + 12, sh - 48), len, 48];
+      L.board3 = [sx + g + side + 12, sy + g, sw - 2 * (g + side + 12), sh - 2 * g];
+    }
+    // The left side's right edge: the flat board's less a gap, or the 3D column's own.
+    const edge = raised ? sx + g + side : L.board[0] - 12;
+    const builtFoot = sy + g + Math.min(LEFT_H, sh - 2 * g);
+    L.roomBuilt = sy + sh - g - (builtFoot + BACK_GAP);   // under the column as built
+    L.gapToBoard = L.board[0] - (sx + g + side);
+    if (fitting === 'row') {
+      // Back and settings side by side (each a tile with its icon over its word), start
+      // over under them on its own: the column 204 dp in place of 336.
+      const w2 = (side - 12) / 2;
+      L.tiles = [[sx + g, sy + g, w2, STACK, 'back'], [sx + g + w2 + 12, sy + g, w2, STACK, 'gear'],
+                 [sx + g, sy + g + STACK + 12, side, STACK, 'restart']];
+      const foot = sy + g + 2 * STACK + 12;
+      L.line = [sx + g, foot + BACK_GAP, side, TAP];
+      L.tap = TAP;
+      L.taken = underLeft(sx + g, L.line[1] + TAP + 12, sy + sh - g, side);
+      L.spare = sy + sh - g - (L.taken ? L.taken.r[1] + L.taken.r[3] : L.line[1] + TAP);
+    } else {
+      // The column as built; the line in the catch's place, as tall as the room under the
+      // column (a tap at most), as wide as the left side, the catch as counts in it. Its
+      // tap runs on to the safe area's foot through the bottom margin.
+      L.back = [sx + g, sy + g, side, TAP];
+      L.panel = [sx + g, sy + g + TAP + BACK_GAP, side, builtFoot - (sy + g + TAP + BACK_GAP)];
+      const y = builtFoot + BACK_GAP;
+      L.line = [sx + g, y, edge - (sx + g), Math.min(TAP, L.roomBuilt)];
+      L.tap = sy + sh - y;
+      // On the 3D board the left side is only the column's width, too narrow for the
+      // counts: the catch goes to corners_in's fallback, a line at the top between the
+      // panels, the board shrinking under it.
+      if (raised) {
+        const x0 = sx + g + side + g;
+        L.bar = [x0, sy + g, L.play[0] - g - x0, 26 + 16];
+        L.board3 = [L.board3[0], L.board3[1] + 42 + 12, L.board3[2], L.board3[3] - 54];
+      }
+    }
+    // The sheet: from the screen's left edge to the board's edge (the 3D column's), top to
+    // bottom; inside it, the safe area less 16 dp: its head a tap, the moves, the foot.
+    L.sheet = [0, 0, (raised ? sx + g + side + 12 : L.board[0] - 12), H];
+    L.sheetIn = [sx + 16, sy + 12, L.sheet[2] - sx - 32, sh - 24];
+    L.sheetRows = Math.floor((L.sheetIn[3] - TAP - 36 - 76) / ROW);
+    return L;
+  }
+
+  // Take d's screen: the device's insets drawn (its cutout, its gesture bar, the safe area
+  // dashed), the panels, the line or the sheet, and the board, flat or 3D.
+  function takeD(ctx) {
+    const { pos, tookW, tookB, withMarks, turn, hint, undo, eye } = ctx;
+    const L = dLayout(W, H, device, fit, three);
+    const [il, , ir, ib] = L.ins;
+    let html = '';
+    if (device === 'pixel') html += `<div class="cut" style="left:${il / 2 - 11}px;top:${H / 2 - 11}px;width:22px;height:22px;border-radius:50%"></div>` +
+      `<div class="gbar" style="left:${il + (W - il - ir) / 2 - 60}px;top:${H - ib / 2 - 2}px"></div>`;
+    if (device === 'a33') html += `<div class="cut" style="left:0;top:${H / 2 - 16}px;width:${il * 0.6}px;height:32px;border-radius:0 18px 18px 0"></div>`;
+    if (device !== 'none') html += `<div class="safe" style="left:${L.safe[0]}px;top:${L.safe[1]}px;width:${L.safe[2]}px;height:${L.safe[3]}px"></div>`;
+    if (fit === 'row') {
+      const word = { back: T.back, gear: T.settings, restart: T.restart };
+      for (const [x, y, w, h, ic] of L.tiles) html += box([x, y, w, h], 'button glass dtile', `${icon(ic)}<span>${word[ic]}</span>`);
+      if (L.taken) html += box(L.taken.r, 'taken glass', L.taken.two
+        ? `<div class="caprow">${catchOf('white', tookB, L.taken.d)}</div><div class="caprow">${catchOf('black', tookW, L.taken.d)}</div>`
+        : `<div class="caprow">${catchOf('white', tookB, L.taken.d)}<span style="width:10px"></span>${catchOf('black', tookW, L.taken.d)}</div>`, 'padding:8px 16px');
+    } else {
+      html += box(L.back, 'button glass back', `${icon('back')}<span>${T.back}</span>`);
+      html += box(L.panel, 'panel glass', `${tile('gear', T.settings)}<div class="space"></div>${tile('restart', T.restart)}`);
+    }
+    // The line: the last move, its number, its mark, and the chevron (slim: the catch as counts).
+    const i = shown - 1, no = Math.floor(i / 2) + 1;
+    const last = `<span class="n num">${i % 2 ? `${no}…` : `${no}.`}</span><span class="mv num">${PLIES[i].m}${withMarks ? glyph(PLIES[i].k) : ''}</span>`;
+    const counts = fit === 'slim' && !L.bar ? `<span class="cnt num">${dot('white')}${tookB}<span style="width:6px"></span>${dot('black')}${tookW}</span>` : '';
+    if (!open) {
+      html += box(L.line, 'button glass dline', `${last}${counts}<span class="chev">${icon('fwd')}</span>`);
+      if (L.tap > L.line[3] + 0.5) html += box([L.line[0], L.line[1], L.line[2], L.tap], 'safe', '', 'position:absolute;border-color:rgb(255 210 120 / 0.55);border-radius:14px');
+    }
+    html += box(L.play, 'playp glass', `<div class="spot"><div class="piece ${turn === 'w' ? 'white' : 'black'}"></div>${eye}</div>` +
+      `<div class="words">${T.turn[turn]}</div><div class="space" style="flex:1"></div><div class="duo">${hint}${undo}</div>`);
+    if (L.bar) html += box(L.bar, 'taken glass', `<div class="caprow" style="justify-content:space-between">${catchOf('white', tookB, 26)}${catchOf('black', tookW, 26)}</div>`, 'padding:8px 16px');
+    if (three) {
+      const fb = ['view', 'zoom', 'showcase'].map((k, j) =>
+        `<span class="at" style="left:${j * 56}px;top:0;width:48px;height:48px;display:grid;place-items:center"><i style="width:40px;height:40px;border-radius:50%;background:var(--button);box-shadow:inset 0 0 0 1px rgb(255 255 255 / 0.15)"></i></span>`).join('');
+      html += box(L.buttons, '', fb);
+    }
+    if (open) {
+      const [sx0, sy0, sw0, sh0] = L.sheetIn;
+      html += box(L.sheet, 'glass dsheet', `<div style="position:absolute;left:${sx0}px;top:${sy0}px;width:${sw0}px;height:${sh0}px;display:flex;flex-direction:column">` +
+        `<div class="dhead">${icon('prev')}<span>${T.moves}</span></div>` +
+        `<div class="moves">${movesInner(shown, shown - 1, withMarks)}</div></div>`);
+    }
+    const n = (v) => Math.round(v);
+    const where = `${device === 'none' ? 'no insets' : device === 'a33' ? 'A33 (insets assumed)' : 'Pixel 7a'}, safe ${n(L.safe[2])} × ${n(L.safe[3])} dp`;
+    let msg = `take d, ${fit}, ${where}: the built column leaves ${n(L.roomBuilt)} dp under it; `;
+    if (open) msg += `the sheet ${n(L.sheet[2])} dp wide, ${L.sheetRows} rows, the board whole`;
+    else if (fit === 'row') msg += `the column 204, the line ${TAP} dp, the catch ${L.taken ? `${n(L.taken.r[3])} dp (${L.taken.two ? 'two rows' : 'one line'})` : 'none'}, ${n(L.spare)} spare`;
+    else msg += `the line ${n(L.line[3])} dp tall${L.line[3] < TAP ? ` (${n(TAP - L.line[3])} under a tap)` : ''}, its tap ${n(L.tap)} to the safe foot, ${n(L.line[2])} wide`;
+    return { html, br: L.board, b3: three ? L.board3 : null, note: msg };
+  }
+
+  // A 3D board's CSS stand-in fitted into r, its near edge on r's foot (game-captured.html's).
+  function fit3d(r) {
+    const el = document.getElementById('board'), wrap = document.getElementById('wrap3');
+    el.style.transform = 'perspective(170cqw) rotateX(40deg)';
+    const r0 = el.getBoundingClientRect();
+    const k = Math.min(r[2] / r0.width, r[3] / (r0.height * 1.04));
+    wrap.style.width = `${1000 * k}px`;
+    const r1 = el.getBoundingClientRect();
+    wrap.style.left = `${r[0] + (r[2] - r1.width) / 2 - r1.left}px`;
+    wrap.style.top = `${r[1] + r[3] - r1.height * 1.04 - r1.top}px`;
+  }
+
+  // &grid: both fits, closed and open, on both phones, each a frame of this page at
+  // 1066 × 480 dp, a caption giving the room.
+  function dGrid() {
+    document.body.classList.add('sheet-body');
+    const s = Math.min(0.62, (innerWidth - 60) / 2 / 1066);
+    const n = (v) => Math.round(v);
+    let rows = '';
+    for (const dev of ['pixel', 'a33']) for (const f of ['row', 'slim']) {
+      const L = dLayout(1066, 480, dev, f, three);
+      const cap = f === 'row'
+        ? `the line a tap (88); the catch ${L.taken ? `${n(L.taken.r[3])} dp, ${L.taken.two ? 'two rows' : 'one line'}` : 'none'}; ${n(L.spare)} dp spare`
+        : `the line ${n(L.line[3])} dp${L.line[3] < TAP ? `, ${n(TAP - L.line[3])} under a tap` : ''}; its tap ${n(L.tap)} to the safe foot`;
+      let pair = '';
+      for (const o of ['0', '1']) {
+        const q = new URLSearchParams(P); q.delete('grid'); q.set('device', dev); q.set('fit', f); q.set('open', o); q.set('bare', '1');
+        const u = `history.html?${q}`;
+        pair += `<div class="shot"><div>${dev === 'pixel' ? 'Pixel 7a' : 'A33 (insets assumed)'}, ${f}, ${o === '1' ? `open: the sheet ${n(L.sheet[2])} dp, ${L.sheetRows} rows` : `closed: ${cap}`} · <a href="${u.replace('&bare=1', '')}" target="_blank">open</a></div>` +
+          `<div class="fr" style="width:${n(1066 * s)}px;height:${n(480 * s)}px"><iframe src="${u}" width="1066" height="480" style="transform:scale(${s})"></iframe></div></div>`;
+      }
+      rows += `<div class="pair">${pair}</div>`;
+    }
+    const q3 = new URLSearchParams(P); q3.set('board', three ? 'flat' : '3d');
+    document.getElementById('app').className = 'dgrid';
+    document.getElementById('app').style.position = 'static';
+    document.getElementById('app').innerHTML = `<h1>Take d: the moves on a phone in landscape, ${three ? '3D' : 'flat'} board</h1>` +
+      `<p>1066 × 480 dp. Under the left column as built (336 dp) the Pixel 7a has ${n(dLayout(1066, 480, 'pixel', 'slim', three).roomBuilt)} dp and the A33 ${n(dLayout(1066, 480, 'a33', 'slim', three).roomBuilt)}: no tap-high line fits there beside what each side has taken. ` +
+      `row: back and settings side by side free 132 dp, so the line is a full tap and the catch stays under it. slim: the column kept, the line takes the catch's place at the room's height, the catch as counts in it. ` +
+      `<a style="color:#9cf" href="?${q3}">${three ? 'Flat' : '3D'} board</a></p>${rows}`;
+  }
+
   function gameScreen() {
     document.body.insertAdjacentHTML('afterbegin', '<div class="bgl"></div>');
     const pos = at(shown);
@@ -451,8 +674,12 @@
     const hint = `<button class="row button">${icon('hint')}<span>${T.hint}</span><span class="pips"><i></i><i></i><i></i></span></button>`;
     const undo = `<button class="row button">${icon('undo')}<span>${T.undo}</span></button>`;
     const eye = `<button class="eye" aria-label="${T.lookout}">${icon('eye')}</button>`;
-    let html = '', B, br;
-    if (landscape) {
+    let html = '', B, br, b3 = null;
+    if (landscape && take === 'd' && phone && panelOn) {
+      const d = takeD({ pos, tookW, tookB, withMarks, turn, hint, undo, eye });
+      html = d.html; br = d.br; b3 = d.b3; note = d.note;
+    } else if (landscape) {
+      if (take === 'd') note = 'take d is a phone\'s in landscape; here as take a. ';
       // panel.goose's flat_corners: the board a square of the height less the margins,
       // centered; the corner panels 232 dp (192 on a phone), the left 336 tall with back,
       // the play 352 (368 on a phone).
@@ -490,9 +717,9 @@
           const h = H - g - y;
           if (ROWS(h) >= 4) {
             html += box([x, y, side, h], 'moves glass', movesInner(shown, shown - 1, withMarks));
-            note = `take ${take}: the panel ${Math.round(h)} dp tall, ${ROWS(h)} rows`;
+            note += `take ${take === 'd' ? 'a' : take}: the panel ${Math.round(h)} dp tall, ${ROWS(h)} rows`;
           } else {
-            note = `Moves panel hidden: ${Math.round(h)} dp ${take === 'b' ? 'under the taken pieces' : 'under the play panel'}, under four rows`;
+            note += `Moves panel hidden: ${Math.round(h)} dp ${take === 'b' ? 'under the taken pieces' : 'under the play panel'}, under four rows`;
           }
         }
       }
@@ -527,9 +754,11 @@
         note = `portrait: a strip of the last moves, the board ${Math.round(B)} dp (${Math.round(full)} without it)`;
       } else if (panelOn) note = `portrait: no strip, it would cost the board over 5% (${Math.round(full)} to ${Math.round(withStrip)} dp)`;
     }
-    html += box(br, '', '<div id="board" style="width:100%"></div>');
+    if (b3) html += '<div id="wrap3" class="at" style="left:0;top:0;width:1000px;container-type:inline-size"><div id="board" style="width:100%"></div></div>';
+    else html += box(br, '', '<div id="board" style="width:100%"></div>');
     document.getElementById('app').innerHTML = html;
-    Draughts.board(document.getElementById('board'), { ...pos, view: '2d' });
+    Draughts.board(document.getElementById('board'), { ...pos, view: b3 ? '3d' : '2d' });
+    if (b3) fit3d(b3);
   }
 
   // The player's games: the rating per draughts with its last games, the computer's levels
@@ -732,8 +961,14 @@
   }
 
   Draughts.init();
-  ({ game: gameScreen, settings: settingsScreen, games: gamesScreen, replay: replayScreen, entry: entryScreen })[view]();
-  if (note) document.body.insertAdjacentHTML('beforeend', `<div class="note">${note}</div>`);
+  const gridD = view === 'game' && take === 'd' && P.has('grid');
+  if (gridD) dGrid();
+  else ({ game: gameScreen, settings: settingsScreen, games: gamesScreen, replay: replayScreen, entry: entryScreen })[view]();
+  if (note) document.body.insertAdjacentHTML('beforeend', `<div class="note"${take === 'd' && view === 'game' ? ' style="left:50%;bottom:auto;top:4px;transform:translateX(-50%);max-width:70vw"' : ''}>${note}</div>`);
+  // Take d: the line opens the sheet, its head closes it.
+  const goOpen = (v) => () => { P.set('open', v); location.search = P.toString(); };
+  document.querySelector('.dline')?.addEventListener('click', goOpen('1'));
+  document.querySelector('.dhead')?.addEventListener('click', goOpen('0'));
   document.title = `Draughts: history, ${view}${view === 'game' ? ` ${take}` : ''}${note ? `: ${note}` : ''}`;
   Draughts.paint();
   Draughts.syncGlass();
@@ -747,7 +982,9 @@
   const sel = (key, values, current) => `<select data-k="${key}" aria-label="${key}">${values.map((v) =>
     `<option${v === current ? ' selected' : ''}>${v}</option>`).join('')}</select>`;
   bar.insertAdjacentHTML('afterbegin', sel('view', ['game', 'settings', 'games', 'replay', 'entry'], view) +
-    sel('take', ['a', 'b', 'c'], take) + sel('marks', ['on', 'off', 'hidden'], marks) + sel('state', ['early', 'late'], state) +
+    sel('take', ['a', 'b', 'c', 'd'], take) + (take === 'd' ? sel('fit', ['row', 'slim'], fit) + sel('open', ['0', '1'], open ? '1' : '0') +
+      sel('device', ['pixel', 'a33', 'none'], device) + sel('board', ['flat', '3d'], three ? '3d' : 'flat') : '') +
+    sel('marks', ['on', 'off', 'hidden'], marks) + sel('state', ['early', 'mid', 'late'], state) +
     sel('entry', ['home', 'sheet'], entry) + sel('place', ['settings', 'sheet'], place) + sel('lang', ['en', 'et'], lang));
   document.body.insertAdjacentHTML('beforeend', '<button class="proto-fold">Options</button>');
   document.querySelector('.proto-fold').onclick = () => document.body.classList.toggle('bar-open');

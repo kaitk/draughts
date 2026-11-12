@@ -43,8 +43,9 @@ reasons in `docs/decisions/ai.md` and `rendering.md`, 2026-11-11.
 - `src/shell/history.goose`, `record.goose`: `history-N.txt`, a game written when it ends
   and again once its marks are in; the rating moved by a game against the computer.
 - `src/shell/games.goose`: the games screen, from who's playing's new tile.
-- The `moves` setting (off, moves, marks; default marks) in the player's file, set on the
-  games screen.
+- The `moves` setting (off, moves, marks; default marks) in the player's file, set in
+  settings' game group (2026-11-12, after issue 1 took the draughts' row out) and, until
+  the user chooses, on the games screen too.
 - Tests: `test/ai/judge` (marks in known positions, the cut-offs, the ratings),
   `test/shell/history` (a game judged as played, written, its marks filled in, ratings,
   start again, the file capped), `test/shell/games` (the screen's taps and layouts).
@@ -88,6 +89,31 @@ to measure.
 The prototype: `prototypes/history.html` (`?view=game&take=a|b|c`, `view=games`,
 `view=replay`, `view=settings`, `view=entry&entry=home|sheet`). Built: take a, the entry
 from the player's card, the setting on the games screen.
+
+Take d, a phone in landscape (`?view=game&take=d`, `&grid=1` for all of it side by side;
+2026-11-12): a line of the last move and its mark (`23. 41-36 ?!`) and a chevron under
+the left column; a tap opens a sheet from the screen's left edge to the board's edge (350
+dp on the Pixel 7a, 293 on the A33; on the 3D board the column's 280 and 264), the moves
+two a row, the last lit, each side's accuracy at its foot, 6 rows on the Pixel and 7 on
+the A33; its head, the line, or back closes it. The board stays whole and playable. The
+fit at 1066 × 480 dp: the left column as built (336 dp) leaves 47 dp under it on the Pixel
+(its 37 dp gesture bar) and 84 on the A33 (no bottom inset), where the captured pieces sit
+now. A tap-high line fits beside them on neither, so two ways:
+
+- `fit=row` (default): back and settings side by side (90 × 96 each, icon over word),
+  start over under them on its own; the column 204 dp, the line a full 88 dp tap, the
+  captured pieces still under it (Pixel 79 dp, two rows, 0 spare; A33 88, 28 spare). It
+  changes the left column's built order.
+- `fit=slim`: the column as built; the line in the captured pieces' place, as wide as the
+  left side (Pixel 273 dp, A33 233), as tall as the room (Pixel 47 dp, 41 under a tap;
+  A33 84, 4 under, which an 8 dp gap under the column in place of 12 would make up), its
+  tap running on through the bottom margin (71 and 108 dp). The captured pieces become
+  counts in it; on the 3D board, too narrow for them, they go to the line at the top
+  between the panels, the board shrinking under it.
+
+The A33's insets are assumed, not measured (a notch of about 80 px at the left, a
+three-button bar of 135 px at the right in landscape); `adb shell dumpsys window` gives
+the real ones.
 
 ## Open questions
 
