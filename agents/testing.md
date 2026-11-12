@@ -392,10 +392,12 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   own and diff the PNGs (mean, max, pixels over 2, 8, and 32, and the box they're in).
   A one-off script in the scratchpad does it; settled, the flat board is within 1 of 255
   everywhere and the 3D board differs along edges and in the wood's grain.
-- A real window is driven from Python with ctypes, no real cursor moved: find the app's
-  window by its process id (`EnumWindows`), post `WM_MOUSEMOVE`, `WM_LBUTTONDOWN`, and
-  `WM_LBUTTONUP` with client coordinates (SDL takes them; the draw-on-demand wait wakes
-  on them), resize with `SetWindowPos`, and grab the client area with
+- A real window is driven from Python with ctypes: find the app's window by its process
+  id (`EnumWindows`), click with real input (`ClientToScreen`, `SetCursorPos`, then
+  `mouse_event` down and up, after `SetForegroundWindow`), which moves the user's cursor.
+  Posted or sent `WM_LBUTTONDOWN`/`WM_LBUTTONUP` worked on 2026-11-11 and no longer do
+  on 2026-11-12, after the gamepad moved into goose_gfx's idle wait (the cause is not
+  pinned down); real clicks work. Resize with `SetWindowPos`, and grab the client area with
   `PIL.ImageGrab.grab(bbox=..., all_screens=True)` after `SetForegroundWindow`. Call
   `SetProcessDPIAware()` first. A game on the 3D board is played by clicking squares
   mapped through a homography of the field's four inner corners (at 1280 × 800 with the

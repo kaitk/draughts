@@ -622,7 +622,10 @@ ImageMagick's `-define icon:auto-resize`), put into the executable's resources a
 linking (`embed_icon`, the system's `UpdateResource`), since Goose's build file has no
 key for a `.rc`: Explorer shows it, and SDL takes the first icon for the window and the
 taskbar. It is unsigned, so SmartScreen warns on
-first run (More info → Run anyway); a code-signing certificate would end that.
+first run ("Windows protected your PC", More info → Run anyway); a code-signing
+certificate would end that. Tested on Windows 11 on 2026-11-12: the 0.1.1 zip is 11.8 MB
+(the executable 15.5 MB), and extracted alone it imports only system DLLs and plays on
+both boards.
 
 **The release.** With both zips at hand, tagged as the shared version (`native.VERSION_NAME`):
 
