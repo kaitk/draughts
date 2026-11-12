@@ -443,19 +443,18 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   the game's and a puzzle's screen the way out, the board, and the play panel with the
   camera's buttons, coming back to the control each had last, the board to its cell. A
   screen of one group steps through its controls in the order declared.
-- **A gamepad** is the keys (`src/app/pad.c`, `host::keys`): the D-pad or the left stick
-  past half way moves (let go under a third), repeating as a held arrow does; A, the
-  bottom button, is Enter, held too; B goes back as Escape does; the shoulder buttons
-  are Shift and Tab and Tab. The first gamepad connected is opened through SDL's own
-  gamepad API, on every platform, Android and iOS included; nothing else changes for it.
-  At rest it costs next to nothing. With no gamepad there's no work. With one, SDL
-  doesn't read it on its own (it would every millisecond); the program reads it when
-  its loop runs. On the Mac and iOS the system's GameController framework wakes the
-  loop when the gamepad is used, and on Android the system's input events do (SDL's
-  HIDAPI off on all three), so the idle app sleeps. On Windows goose_gfx's idle wait
-  reads it every 16 ms while the window has focus and wakes the loop only when it is
-  used, not for a resting stick's jitter. A press made and let go between two reads
-  still counts.
+- **A gamepad** is the keys (`host::keys`): the D-pad or the left stick past half way
+  moves (let go under a third), repeating as a held arrow does; A, the bottom button, is
+  Enter, held too; B goes back as Escape does; the shoulder buttons are Shift and Tab
+  and Tab. goose_gfx reads the gamepads, on every platform, Android and iOS included,
+  and the app takes the first one connected; nothing else changes for it. At rest it
+  costs next to nothing. With no gamepad there's no work. With one, SDL doesn't read it
+  on its own (it would every millisecond); gfx does each frame. The app opens gfx with
+  `SYSTEM_GAMEPADS`, so on the Mac and iOS the system's GameController framework reads
+  the pad and wakes gfx's idle wait when it is used, and on Android the system's input
+  events do, so the idle app sleeps. On Windows gfx's idle wait reads it every 16 ms
+  while the window has focus and wakes the loop only when it is used, not for a resting
+  stick's jitter. A press made and let go between two frames still counts.
 - **Icons** are line icons on a 24-unit grid with round strokes, in the Lucide style:
   undo, hint (a bulb), restart, back (an arrow left), next, star, crown, lock, and the
   puzzle themes' target, crown, and shield; the 3D camera's buttons' board from above, board

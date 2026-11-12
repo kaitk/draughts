@@ -62,7 +62,9 @@ struct Host {
 // the screen with the system's bars hidden on a phone or a tablet, or with `full`;
 // presenting without waiting for the display with `no_vsync`. Aborts if it can't.
 fn open(title: const u8[:], width: i64, height: i64, full: bool, no_vsync: bool) -> Host {
-    let flags = if platform() != DESKTOP || full { gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE } else { gfx::WINDOW_RESIZABLE };
+    // The system reads a gamepad where it can, and wakes the idle app when it is used.
+    let shown = if platform() != DESKTOP || full { gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE } else { gfx::WINDOW_RESIZABLE };
+    let flags = shown | SYSTEM_GAMEPADS;
     draughts_choose_gpu();
     host_gpu::open(title, width, height, flags, no_vsync);
     return Host { erase: gfx::scancode("Backspace"), enter: gfx::scancode("Return"), .. };
@@ -111,7 +113,8 @@ fn input(h: Host&, now: f64) -> gui::Input {
         keys(h.repeat, input, now);
         return input;
     }
-    h.repeat = Repeat { buttons: draughts_pad(), .. };
+    h.repeat = Repeat { stick: h.repeat.stick, .. };
+    h.repeat.buttons = pad_bits(h.repeat);
     let n = min(gfx::events_into(h.events), h.events.len);
     for e in h.events[..n] {
         guard input.typed.len < gui::MAX_TYPED else { break; }

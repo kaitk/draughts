@@ -2,11 +2,11 @@
 // upload through gfx's C API (its header's folder below; docs/architecture/rendering.md,
 // "Scene and glass"), what a Mac window shows while it resizes, the system's locales, the
 // app's storage folder, the window's safe area and display scale, the wake a running
-// clock asks for, a gamepad, and what the program tells Android (its first frame, and closing), and
+// clock asks for, stand-ins for the fork's gfx's gamepad functions, and what the program tells Android (its first frame, and closing), and
 // the freed memory malloc keeps, given back after the launch. scripts/android.py and
 // scripts/ios.py read c_sources and c_include from here too (scripts/native.py's
 // sidecar).
-c_sources = ["background.c", "display.c", "launch.c", "locale.c", "memory.c", "pad.c", "photo.c", "resize.c", "storage.c",
+c_sources = ["background.c", "display.c", "gfx_fork.c", "launch.c", "locale.c", "memory.c", "photo.c", "resize.c", "storage.c",
              "wake.c"];
 c_include = ["../../third_party/goose_gfx/third_party/nuklear/demo/common/filebrowser",
              "../../third_party/goose_gfx/src/gfx"];

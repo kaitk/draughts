@@ -1,6 +1,6 @@
 # 072: Keyboard and controller focus
 
-Status: in-progress (steps 1 to 6 built 2026-11-11, the board's look agreed 2026-11-12; merged into main 2026-11-12; other platforms' gamepad wake to do)
+Status: in-progress (steps 1 to 6 built 2026-11-11, the board's look agreed 2026-11-12; merged into main 2026-11-12; the gamepad in goose_gfx 2026-11-12, its rest on the Mac, the tablet and iOS to measure)
 
 Every screen played with the keyboard alone, and later a gamepad, as a desktop game is
 expected to be: arrow keys move a visible focus between the controls, Enter presses the
@@ -122,17 +122,15 @@ cursor: headless shots at 1280 × 800 match gfx's flat, and the 3D cursor draws.
 1. Try by hand on the Mac: the held-key repeat, Enter holding a hold tile, the board with
    the keys flat and 3D, Tab; and the PS5 pad (A, B, the D-pad, the stick, the
    shoulders), its first press after a long rest waking the app at once.
-2. A gamepad on Android, Windows, and the other platforms mustn't wake the loop at rest
-   either, as on the Mac and iOS (the user, 2026-11-12): replace the 30 wakes a second
-   with a wake when the gamepad is used. Android's SDL gets its buttons from Java
-   callbacks, which push events and may already wake the wait without HIDAPI; Windows
-   (XInput, RawInput, Windows.Gaming.Input) to find out. A patch in `patches/SDL` is
-   fine where it is the easier way (the user, 2026-11-12): Android, iOS, and Windows build
-   SDL from source with those patches applied (scripts/native.py); the Mac's SDL is the
-   Goose binary's and can't be patched, but needs none. For example SDL's joystick
-   reading could push a wake event only when a button or an axis past a dead zone
-   changes, rather than the program polling. Then a gamepad on a phone or
-   the tablet, and its idle cost there, at the task's end with the other device numbers.
+2. The gamepad is goose_gfx's since 2026-11-12 (`src/app/pad.c` gone; the fork's
+   `gamepad-idle-wait` and `gamepad-wake`, opened with `SYSTEM_GAMEPADS`;
+   docs/decisions/rendering.md). On Windows with a PS5 pad, `--rest 25`: 0.14 s of CPU
+   in 25 s (0.56%), the loop waking 26 times and drawing nothing, as the 0.4 to 0.6%
+   before; gfx's window test drives SDL's virtual gamepad through the idle wait (a stir
+   waits the full second, a press ends it at once, a stick pushed 200 ms in ends it at
+   204 to 215 ms). Built for Android; the Apple code only syntax-checked. To do by the
+   user: the pad's buttons, D-pad, stick, and shoulders by hand, and `--rest` with it on
+   the Mac (pad.c's 0.01 s in 20 s), the tablet, and iOS.
 
 ## Acceptance criteria
 

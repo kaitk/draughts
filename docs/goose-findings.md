@@ -30,36 +30,37 @@ display sync off. goose_gfx `v1` and `main`, goose-ngfx v0.5.0, NoGraphicsAPI `a
 
 ## goose_gfx: no gamepad (2026-11-11)
 
-goose_gfx reads the keyboard, the mouse, and touch, but no gamepad: it never starts SDL's
-gamepad subsystem, and its event loop passes gamepad events over. goose_gfx `6cfa3de`,
-Goose v2026.4.
+The release's goose_gfx (`v1`, which Goose v2026.4 carries) reads the keyboard, the mouse,
+and touch, but no gamepad. Upstream `main` has gamepads since `d623f66`: it starts SDL's
+gamepad subsystem, opens pads into four slots, and has `gamepad_down`, `pressed`, `axis`
+and the rest. The fork's `main` brings them (2026-11-12), but the release's `gfx.goose`
+doesn't declare them.
 
-- Here: no patch, for the reason the safe area has none (below): the program's own C
-  (`src/app/pad.c`) starts `SDL_INIT_GAMEPAD`, opens the first gamepad when
-  `SDL_HasGamepad` says one is there, and reads its buttons and left stick each frame,
-  through `dlsym` on the Mac. Checked against SDL's virtual gamepad on the Mac: the
-  buttons, the D-pad, the stick and its hysteresis, a gamepad going away.
-- SDL at rest with a gamepad open (2026-11-12): its event wait reads the gamepads every
-  1 ms while one is open (SDL_events.c's `EVENT_POLL_INTERVAL_NS`, the default for
-  games), and on the Mac its HIDAPI thread takes a PS5 pad's reports as they stream, so
-  the idle app used 1.0 s of CPU in 20 s (5% of a core; none without the pad). Now
-  `SDL_HINT_AUTO_UPDATE_JOYSTICKS` is off and `pad.c` calls `SDL_UpdateGamepads` itself,
-  when the loop runs; on the Mac and iOS `SDL_HINT_JOYSTICK_HIDAPI` is off too, so the
-  GameController framework reads the pad outside the process, and its
-  `valueChangedHandler` wakes the loop when the pad is used: 0.01 s in 20 s. On Android,
-  HIDAPI off as well, Android's input events reach SDL from its Java side as they happen,
-  and the event SDL pushes for each ends the wait (2026-11-12). On Windows the idle loop
-  woke 30 times a second to read it, 4.3% of a core with a PS5 pad (on the Mac, before
-  its handler, it cost 0.3 s in 20 s, each wake going through AppKit); now the fork's
-  goose_gfx (`gamepad-idle-wait`, Windows and Linux) reads the pads in its idle wait
-  every 16 ms while focused and ends the wait only on a press or a stick moved a quarter
-  of its way, and `pad.c` counts the pad as one that wakes the loop: 0.4 to 0.6%. An event watch keeps a press made and let go between
-  two reads.
-- Upstream: `gfx::gamepad_buttons() -> u32` and `gfx::gamepad_axis(i) -> f32` over the
-  first gamepad, its subsystem started with the window, and the gamepad's button events
-  counted as input where `frame()` reports input. Small. With it, the idle wait's cost
-  above: gfx would set the hints and wake on the GameController framework's handler
-  itself.
+- Here: `host::keys` declares gfx's gamepad functions itself (`src/app/keys.goose`), with
+  weak stand-ins in `src/app/gfx_fork.c` for a plain `goose build`, and takes the first
+  pad connected. gfx keeps a press let go between two frames as its edge. The stick as
+  the D-pad, past half way and let go under a third, stays in `keys.goose`. Until
+  2026-11-12 the program's own C (`src/app/pad.c`, since deleted) opened the pad through
+  SDL, alongside gfx.
+- At rest with a gamepad open: SDL's event wait reads the gamepads every 1 ms while one is
+  open (SDL_events.c's `EVENT_POLL_INTERVAL_NS`, the default for games), and on the Mac its
+  HIDAPI thread takes a PS5 pad's reports as they stream: the idle app used 1.0 s of CPU in
+  20 s (5% of a core; none without the pad). The fork's gfx turns
+  `SDL_HINT_AUTO_UPDATE_JOYSTICKS` off and reads the pads itself in `frame()`, and in its
+  idle wait every 16 ms while focused, ending the wait only on a press or a stick moved a
+  quarter of its way (`gamepad-idle-wait`, `gamepad-wake`): 0.4 to 0.6% of a core on
+  Windows with a PS5 pad (0.56% with `gamepad-wake`, 2026-11-12). The program opens gfx
+  with `SYSTEM_GAMEPADS` (`gamepad-wake`): HIDAPI off on Apple's systems and Android, so
+  the system reads the pad and wakes the wait. On Apple's systems gfx sets each pad's
+  GameController `valueChangedHandler`, which ends the wait when a button changes or a
+  stick leaves or comes back to the middle (pad.c's handler measured 0.01 s in 20 s on the
+  Mac); on Android, Android's input events reach SDL from its Java side as they happen, and
+  end the wait. The Mac's, the tablet's and iOS's numbers with gfx's handler are to
+  measure.
+- Upstream: `gamepad-idle-wait` (on `ios-run-loop-wait`) and `gamepad-wake` on it: gfx
+  reading the pads in `frame()` and its idle wait instead of SDL every millisecond, and
+  `SYSTEM_GAMEPADS`, opt-in as it trades the HID drivers' features for a free rest.
+  Whether to also add `gamepad_*` to the release's `gfx.goose` is the next release's.
 
 ## Goose: no way to write `goose.h` for a build of one's own (2026-11-11)
 

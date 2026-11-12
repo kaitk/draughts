@@ -134,6 +134,12 @@ find out by compiling, so the next session doesn't.
   `goose build`, which links the release's prebuilt gfx, still links; every build script
   (`scripts/mac.py` too, since 2026-11-10) links the fork's gfx, whose definition wins
   (2026-11-08).
+- Goose code reaches a gfx function the release's `gfx.goose` doesn't declare with an
+  extern of its own naming the C symbol, `extern fn pad_down(slot: i64, button: i64) ->
+  bool = "gs_gfx_gamepad_down";` (`src/app/keys.goose`), and a weak stand-in in the
+  program's C for a plain `goose build` (`src/app/gfx_fork.c`). A constant gfx adds is a
+  `let` of the program's (`host::SYSTEM_GAMEPADS`). The scripts build only gfx's C from
+  the submodule, never its `gfx.goose` (2026-11-12).
 - A texture with mips that isn't square gets them only down to its shorter side's 1
   pixel (`render3d::baked`): `mips: 0`'s full chain ends in levels 0 pixels high, which
   SDL blits anyway and the Galaxy A33's Mali-G68 loses the device on. A lost device shows

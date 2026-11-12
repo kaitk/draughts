@@ -272,6 +272,22 @@ are in git history before that day.
   second. Rejected: the loop waking 30 times a second to read it (4.3%: each wake runs the
   whole loop); the same wait on Apple's systems and Android, where the system wakes the
   loop for nothing.
+- goose_gfx owns the gamepad (2026-11-12), and `src/app/pad.c` is gone: this replaces
+  2026-11-11's gamepad in the program's C, and the program's half of the entry above
+  (its hints, its reads, its event watch, its GameController handler). The fork's gfx
+  already opened the pads and read them in its idle wait, so the pad was read twice. Now
+  gfx reads them each frame on every platform and keeps a press let go between frames
+  as its edges; its idle wait reads them every 16 ms unless the system wakes it, which
+  it does with the open flag `SYSTEM_GAMEPADS` (the fork's `gamepad-wake`): SDL's HIDAPI
+  off on Apple's systems and Android, and on Apple's a GameController change handler
+  ending the wait when a button changes or a stick leaves or comes back to the middle.
+  `host::keys` reads gfx's gamepad functions, declared in `keys.goose` as the release's
+  `gfx.goose` lacks them, and keeps the stick as the D-pad and its hysteresis: a menu's
+  wish, not gfx's, as a game reads the stick as a stick. The flag isn't gfx's default
+  either: the system's drivers know fewer pads and give less of them (a PlayStation
+  pad's touchpad, motion, and light bar), which a game may want; without it the 16 ms
+  read works everywhere for about 0.5% of a core. Windows idle with a PS5 pad, `--rest
+  25`: 0.56%, the loop waking once a second, as before.
 
 **The game screen**
 
