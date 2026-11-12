@@ -676,6 +676,16 @@ its FXAA is gone (2026-11-12): it blurred the surfaces and dotted thin highlight
 its speed over SMAA, a few tenths of a millisecond (tasks 070 and 074), wasn't worth that
 look. Rejected: keeping it as a cheaper choice for slow GPUs, which take SMAA or none.
 
+The ngfx build draws 4× MSAA by default too (2026-11-12, task 077), replacing its SMAA
+default above, now that NoGraphicsAPI's fork and goose-ngfx have multisampling: the pass
+into 4× color and depth that are transient (memoryless on Metal, never stored) and
+resolved into the picture as the pass ends, as gfx's is. On the M1 Pro at full screen
+its frame takes 3.05 ms of GPU against SMAA's 3.37, and while drawing it holds 12 MB less
+GPU memory at 1280 × 800 than SMAA or gfx's MSAA; it looks as gfx's does (within 11 of
+255 where SMAA differed by up to 119). It is still 2% over gfx's MSAA (2.99 ms), so the
+Mac's `auto` keeps gfx first (task 073). SMAA and 2 × 2 supersampling stay choices for
+comparing (`--aa`, the A key going MSAA, SMAA, none, supersampling).
+
 ## The 3D board on devices
 
 The measurements as they were taken, kept here as the architecture keeps only the

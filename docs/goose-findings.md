@@ -148,7 +148,7 @@ of one executable. goose_gfx `v1`, Goose v2026.4.
   choose its renderer at run time: gfx opens the window first, and then either another
   renderer or gfx's own device draws into it (the device claiming the window later).
 
-## ngfx: no MSAA, since NoGraphicsAPI has none (2026-11-11)
+## ngfx: no MSAA, since NoGraphicsAPI has none (2026-11-11; fixed in the fork 2026-11-12)
 
 NoGraphicsAPI's textures take no sample count and it has no resolve, so ngfx has neither
 (`docs/api.md` in goose-ngfx lists MSAA among what is gone). The 3D board's forward pass
@@ -161,6 +161,12 @@ v0.3.0, NoGraphicsAPI `0400414`.
 - Upstream: MSAA in NoGraphicsAPI (a sample count in `TextureDesc`, and a resolve, on
   Metal 4 and Vulkan), then in ngfx's `TextureDesc` and `PassDesc`: a branch of its own
   in the user's fork, `kaitk/NoGraphicsAPI`, to offer upstream (goose-ngfx `docs/design.md`).
+- Done in the fork (2026-11-12): the branch `msaa` on upstream `main` (`TextureDesc` and
+  the PSOs' `sample_count`, `TextureUsage::transient`, `ColorAttachment::resolve_view`, a
+  test), merged into `ngfx`; goose-ngfx's `TextureDesc.samples`, `TRANSIENT`, and
+  `PassDesc.resolve`. The ngfx build draws MSAA by default now
+  ([decisions](decisions/rendering.md)); SMAA stays a choice. Upstream: the `msaa` pull
+  request, once tested on Vulkan (task 077).
 
 ## ngfx: `generate_mips` takes no sRGB texture (2026-11-11)
 

@@ -183,7 +183,9 @@ let AA_SSAA = 3;
 
 let AA_MSAA = 4;
 
-let AA = AA_SMAA;
+// The default, as gfx's: on the M1 Pro 10% under SMAA's GPU time and 12 MB less GPU memory
+// while drawing (its targets memoryless), 2% over gfx's MSAA (task 077).
+let AA = AA_MSAA;
 
 let SAMPLES = 4;
 
