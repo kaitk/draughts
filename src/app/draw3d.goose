@@ -43,6 +43,8 @@ struct Drawer {
     wood:      i64                                   = -1, // --wood, --marble: -1 the renderer's own
     marble:    i64                                   = -1,
     summer:    i64                                   = 0,  // --summer: summer's variant (looks::SUMMERS)
+    autumn:    i64                                   = 0,  // --autumn, --winter: theirs (looks::AUTUMNS, WINTERS)
+    winter:    i64                                   = 0,
     spring:    i64                                   = -1, // --spring: spring's look, -1 the renderer's own
     size:      int2                                  = int2 { 0, 0 },
     scene:     view3d::Scene                         = view3d::Scene {}, // this frame's
@@ -149,10 +151,10 @@ fn bench_done(d: Drawer&) -> bool {
 }
 
 // The look for the app's theme, the season's: autumn's wood, winter's stone, spring's
-// birch, summer's sunset (its variant `summer`); the photograph is the theme's own.
-fn look_of(kind: i64, summer: i64) -> i64 {
-    return if kind == theme::STONE { looks::WINTER } else if kind == theme::BIRCH { looks::SPRING }
-           else if kind == theme::SUNSET { looks::summer_look(summer) } else { looks::AUTUMN };
+// birch, summer's sunset, or the variant d's flags pick; the photograph is the theme's own.
+fn look_of(kind: i64, d: Drawer&) -> i64 {
+    return if kind == theme::STONE { looks::winter_look(d.winter) } else if kind == theme::BIRCH { looks::SPRING }
+           else if kind == theme::SUNSET { looks::summer_look(d.summer) } else { looks::autumn_look(d.autumn) };
 }
 
 // The renderer set up: its meshes, buffers, pipelines, and the baked surfaces' targets.
@@ -168,7 +170,7 @@ fn set_up(d: Drawer&) {
 // The look for the app's theme `kind`, with its wood: --wood's model if given, else the
 // look's own, else the renderer's; each look's finish for its model (looks::finish_for).
 fn choose_look(d: Drawer&, kind: i64) -> i64 {
-    let look = look_of(kind, d.summer);
+    let look = look_of(kind, d);
     let shown = looks::shown(look, d.gpu.spring);
     let own = looks::wood_for(shown);
     let wood = if d.wood >= 0 { d.wood } else if own >= 0 { own } else { model3d::WOOD_MODEL };
@@ -287,7 +289,8 @@ fn cover(d: Drawer&) {
 fn drop(d: Drawer&) {
     guard d.ready else { return; }
     render3d::release(d.gpu);
-    d = Drawer { aa: d.aa, wood: d.wood, marble: d.marble, summer: d.summer, spring: d.spring, timed: d.timed, .. };
+    d = Drawer { aa: d.aa, wood: d.wood, marble: d.marble, summer: d.summer, autumn: d.autumn, winter: d.winter,
+                spring: d.spring, timed: d.timed, .. };
 }
 
 // The A key (task 071's comparison): the pass's antialiasing switched to the renderer's

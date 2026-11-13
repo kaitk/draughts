@@ -78,10 +78,13 @@ struct Flags {
     // --wood N and --marble N: the 3D board's wood (0..3) and winter frame's marble (0 the
     // slate, 1..4); --summer N summer's 3D look (0..5, looks::SUMMERS; 4 and 5 amber
     // stone); --spring N spring's (0 the birch, 1 the elven carved stone, 2 the Baltic
-    // folk carved oak)
+    // folk carved oak); --autumn N autumn's (0 the wood, 1..3 stone, looks::AUTUMNS) and
+    // --winter N winter's (0 the slate, 1..3 wood, looks::WINTERS)
     wood:   i64 = -1,
     marble: i64 = -1,
     summer: i64 = 0,
+    autumn: i64 = 0,
+    winter: i64 = 0,
     spring: i64 = -1,
     // --bench N: times N of the board's frames, then quits (draw3d.goose; the flat board's
     // in draughts.goose)
@@ -225,12 +228,15 @@ fn parse(argv: u8[:][>..]) -> Flags {
             let n, ok = parse_flt(v);
             if ok { f.win = max(n, 0.0); }
         }
-        if a == "--wood" || a == "--marble" || a == "--summer" || a == "--spring" {
+        if a == "--wood" || a == "--marble" || a == "--summer" || a == "--spring" || a == "--autumn"
+           || a == "--winter" {
             let n, ok = parse_int(v);
             if ok && a == "--wood" { f.wood = n; }
             if ok && a == "--marble" { f.marble = n; }
             if ok && a == "--summer" { f.summer = clamp(n, 0, looks::SUMMERS - 1); }
             if ok && a == "--spring" { f.spring = n; }
+            if ok && a == "--autumn" { f.autumn = clamp(n, 0, looks::AUTUMNS - 1); }
+            if ok && a == "--winter" { f.winter = clamp(n, 0, looks::WINTERS - 1); }
         }
         if a == "--rest" {
             let n, ok = parse_int(v);

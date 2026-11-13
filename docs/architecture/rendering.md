@@ -1261,8 +1261,10 @@ board's does and the backdrop over it as opaque as the blur.
   fibre relief (Liu, Dong, Hašan and Marschner, 2016), colored by Beer's law, under a
   finish per look (`looks::Finish`: varnish, sanding, pickling, caulking); winter's
   frame is a black marble, contours of a warped ramp with fine cracks (`looks::MARBLE`,
-  2). `--wood N`, `--marble N` (0 the slate), and `--summer N` show the other models and
-  variants kept beside the defaults. Warm, the bake takes 37 ms on the M1 Pro and 0.27 to 0.30 s on the
+  2). `--wood N`, `--marble N` (0 the slate), `--summer N`, `--autumn N` (autumn's
+  stone takes), and `--winter N` (winter's wood takes) show the other models and
+  variants kept beside the defaults; a look may have its own marble (`looks::marble_for`:
+  autumn's stone a dark brown one). Warm, the bake takes 37 ms on the M1 Pro and 0.27 to 0.30 s on the
   tablet; its pipeline's first compile there about 1 s.
 - **States**, in the theme's glow color: the selected piece lifts by 0.8% of the board
   and grows to 1.05 with a glow ring a little out from it (at 1.13 of the radius); with move hints on, a legal target is a glowing
