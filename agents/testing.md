@@ -104,7 +104,8 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   game played on from a replay's move, against the computer and a friend: its opponent,
   side, and numbering, the hint, undo, the lookout, start over, a win, every way back to
   the replay, and nothing of it kept, counted, or written, the game in progress's image
-  the same throughout (`play_here`; `sizes` places its button and label at every size), the
+  the same throughout (`play_here`; `sizes` places its button and the replay's note that
+  it doesn't count at every size), the
   moves' line, its catch, and its sheet at the Pixel 7a's, the A33's, and the iPhone 13
   mini's sizes with their insets, flat and 3D, the sheet opened and closed by taps, back,
   and the keys, the setting off and the moves alone, and a mark's tip on the tablet's

@@ -1109,6 +1109,21 @@ steps). It is dimmed at 35% and takes no tap at the end of a game that ended the
 legal move); everywhere else, the start included, it starts a game from the position
 shown (below).
 
+**The note** under it (`replay::note`, `Replay.note`) says that a game from here doesn't
+count and why ("A game from here doesn't count: it isn't saved and doesn't change your
+rating", `replay.no_count_why`): an info sign, a faint disc with an "i", and the words
+wrapped beside it in the small face, dim as settings' notes, at the glass's top, under
+the button (in portrait over the glass's other lines). It takes no tap. It must leave the
+list the rows it had without it, up to three (the move shown and one either side, as the
+list scrolls to keep it); in portrait the board gives way for it, down to 300 dp. Where
+the list would lose those rows, the note says only "A game from here doesn't count"
+(`replay.no_count`), one line in place of the game's line, which costs the list nothing:
+the results row the replay was opened from says what the game was (phones in landscape
+at 480 dp, a 9:16 phone's portrait at 480 dp with the Pixel's insets, the iPhone 13 mini's
+landscape). The whole note is one line on a tablet's portrait (the board 752 to 729 dp),
+two on the Pixel 7a in both orientations (its portrait board 492 to 472 dp), and two or three in a
+tablet's or a desktop's landscape column, where the list keeps 16 moves in view of 20.
+
 The title "Replay" sits between back and play from here where it fits. The game's line,
 its result sign (crown, `=`, X), the opponent and its rating, and the date in the small
 face, sits under the title where it fits on its own line, else at the top of the glass.
@@ -1162,16 +1177,8 @@ begun; the game in progress is set aside (`shell::park`, the image the app write
 hints and marks) and is still what the app writes as the game to resume, with home as its
 screen, while the game from the replay shows; leaving brings it back as it was
 (`unpark`). The way out goes back to the replay where it was left: back on the panel or
-the end's card, Escape, and Android's back. Settings go back to this game.
-
-**"Doesn't count"** (`panel::no_count`, `replay.no_count`) is a pill in the glow color,
-dark ink in the small face, centered on the way out's top edge: half in the margin above
-it, half over the glass's own margin, clear of its icons and words. The way out is
-`l.left` in every layout, so one rule places it everywhere: in landscape, flat and 3D,
-the left column's top, back there (the phone's back and settings side by side); in
-portrait the bar's top; on a desktop the framed column's top; in a small window the
-compact bar's. It takes no room of its own, and the board none. While the moves' sheet
-covers the way out in landscape, it goes with it.
+the end's card, Escape, and Android's back. Settings go back to this game. The game screen
+shows it as any game: the replay's note said it doesn't count before it began.
 
 ### Transitions
 

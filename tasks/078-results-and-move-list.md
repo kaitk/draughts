@@ -56,8 +56,8 @@ on from any move, a game that doesn't count.
 - [x] Play from here at any move but the end of a game that ended there: the same
       draughts, opponent, level and skill, side, and side to move; its game written
       nowhere, moving no rating, skill, or count, the game in progress kept and resumed as
-      it was; "Doesn't count" on it in every layout, the board's size unchanged (on a
-      phone still to check)
+      it was; the replay's note under the button saying it doesn't count and why, at
+      every size (on a phone still to check)
 
 ## Notes
 
@@ -144,6 +144,25 @@ on from any move, a game that doesn't count.
   Headless shots: `build/notes/078-play-from-here/` (the replay at the Pixel's landscape,
   portrait, Estonian, the end, the tablet; the game from move 39 at the Pixel's landscape
   flat and 3D, portrait in Estonian, the tablet, and a desktop).
+- The note in place of the game screen's pill (2026-11-13, the user found the pill on
+  the way out confusing): `replay::note`, under play from here at the glass's top, an
+  info sign (a faint disc with an "i") and the words in the small face; `replay.no_count`
+  now its short text ("A game from here doesn't count", "Siit mängitud mäng ei lähe
+  arvesse"), new `replay.no_count_why` the whole ("... it isn't saved and doesn't change
+  your rating", "... seda ei salvestata ja reiting ei muutu"). `panel::no_count` is gone;
+  `Game.no_count` stays. `test/shell/sizes` checks it inside the safe area and the glass,
+  clear of the board, the tiles, and every word, icon, and rule at every replay size:
+  whole at every tablet, desktop, foldable, 4:3, phone size at 540 dp, and a 20:9 phone's portrait at 480 dp (one line in a
+  tablet's portrait, two on the Pixel, three in a landscape column), short in the game's
+  line's place on the phones' landscape at 480 dp and the iPhone 13 mini's, and a 9:16
+  phone's portrait at 480 dp with insets. Its cost (`test/shell/replay`): the tablet's
+  landscape 20 to 16 moves in view, the Pixel's landscape at 540 dp 10 to 8; in portrait
+  the board instead: the tablet 752 to 729 dp, the Pixel 492 to 472, a 20:9 phone at 480
+  dp 432 to 390, the foldable 519 to 493, 4:3 587 to 561. Headless shots:
+  `build/notes/078-no-count-note/` (the Pixel's landscape and portrait in English and
+  Estonian, the tablet in both orientations and Estonian, a desktop, a 9:16 phone at 480
+  dp, the iPhone 13 mini's landscape with the short note, and the game from a replay with
+  no pill).
 - Left for A and B: the phones themselves; a tip in the sheet and the replay (the legend
   there for now); the line in a small window's compact bar (none).
 - Left for C: the prototype's

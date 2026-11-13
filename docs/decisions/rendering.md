@@ -601,9 +601,9 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
     and marks, 53 KB in all), which `shell::save` writes in its place. A second
     `game::Game` (132 KB) or a second game screen was rejected for its size and for every
     reader it would have to learn about.
-  - "Doesn't count" sits on the way out's top edge, half in the margin over it: the way
-    out is the same rect in every layout, so the label needs no room of its own and
-    moves no panel. White ink on the light glow colors (winter's) read faintly; dark ink,
+  - "Doesn't count" sits on the way out's top edge, half in the margin over it (replaced
+    the same day by the replay's note, below): the way out is the same rect in every
+    layout, so the label needs no room of its own and moves no panel. White ink on the light glow colors (winter's) read faintly; dark ink,
     as the replay's mark discs have, reads on all of them. In the play panel's whose-turn
     line it would have crowded a panel tuned to what it holds; a row of its own would
     have cost a phone's moves' line or the portrait board.
@@ -611,6 +611,25 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
     the same game. Doing so made the moves panel number a game by where it began
     (`game::first_ply`) rather than by its first note's side, which also numbers a game
     whose undo history dropped an odd number of moves right.
+- "Doesn't count" is a note on the replay, under play from here, no longer a pill on
+  the game screen's way out (2026-11-13, task 078, the user: "no need to put the
+  'doesn't count' on the back button, IMO confusing. Rather as an info bulletin next to
+  the button that triggers the replay run"). This replaces the pill on the way out's top
+  edge, from earlier that day: on back and settings it read as being about those
+  buttons, and the note belongs where the choice to play on is made, before the game
+  starts. The game itself still counts for nothing, as before.
+  - At the glass's top, right under the button in landscape: one rule for every layout,
+    and the head has no room beside the button on a phone. Its full text says why (not
+    saved, no rating changed), in the small face and dim as settings' notes, with an info
+    sign, a faint disc with an "i", as the gui has no info glyph.
+  - It leaves the list the rows it had, up to three (the move shown and one either side:
+    with fewer the list's scroll hides or fades the move shown); in portrait the board
+    gives way for it down to 300 dp, as the portrait glass was already at its least.
+    Where the list would lose rows, the short text takes the game's line's place, as the
+    results row it was opened from says what the game was; the short text over the list
+    left a phone's landscape two faded rows. Rejected: dropping it on small phones (the
+    iPhone 13 mini's landscape would have had none), and in the head in place of the
+    title (about 110 dp on a phone, five lines).
 - A phone's moves, where the panel has no room (2026-11-13, task 078's A, the user's
   choice from `prototypes/history.html`'s take d), replacing 2026-11-11's no panel in
   portrait or on a phone in landscape:
