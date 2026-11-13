@@ -107,9 +107,9 @@ fn first_move(sh: shell::Shell&) -> u8[>..] {
 // What the game on the game screen is: from where, against whom, and how.
 fn trial(sh: shell::Shell&) -> u8[>..] {
     let gm .= sh.game;
-    let r .= sh.replay;
+    let r .= sh.past.replay;
     let opponent = if gm.computer < 0 { str("a friend") } else { str("the computer as ", SIDES[gm.computer], " at level ", gm.level, ", skill ", gm.skill) };
-    return str("screen ", sh.screen, " (game ", shell::GAME, "), from the replay ", sh.trial, ", doesn't count ", gm.no_count,
+    return str("screen ", sh.screen, " (game ", shell::GAME, "), from the replay ", sh.past.trial, ", doesn't count ", gm.no_count,
                "; ", rules::VARIANT_NAMES[gm.b.variant], " against ", opponent, "; the replay's position ",
                rules::same(gm.b.pos, r.pos[r.ply]), ", ", SIDES[gm.b.pos.side], " to move; clock ", gm.clock.kind,
                "; moves ", gm.b.history.len);
@@ -188,7 +188,7 @@ fn main() {
     drive::idle(sh, g, tick());
     press(sh, g, results::ROW_ID);
     drive::idle(sh, g, tick());
-    let r .= sh.replay;
+    let r .= sh.past.replay;
     print("the newest game's replay: screen ", sh.screen, " (replay ", shell::REPLAY, "), move ", r.ply, " of ", r.plies.len,
           ", the game over there ", r.over);
 
@@ -199,7 +199,7 @@ fn main() {
     replay::go(r, r.plies.len, 0.0);
     drive::idle(sh, g, tick());
     drive::tap(sh, g, drive::middle(at), tick());
-    print("at the end, play from here tapped: playable ", replay::playable(r), ", screen ", sh.screen, ", from the replay ", sh.trial);
+    print("at the end, play from here tapped: playable ", replay::playable(r), ", screen ", sh.screen, ", from the replay ", sh.past.trial);
 
     // Move 30: white, the player, to move.
     replay::go(r, 30, 0.0);
@@ -236,7 +236,7 @@ fn main() {
     // Its back: the replay where it was left, the game in progress back as it was.
     press(sh, g, gui::PANEL_IDS);
     drive::idle(sh, g, tick());
-    print("back: screen ", sh.screen, ", move ", r.ply, ", from the replay ", sh.trial, "; the game in progress as it was: ",
+    print("back: screen ", sh.screen, ", move ", r.ply, ", from the replay ", sh.past.trial, "; the game in progress as it was: ",
           shell::save(sh) == saved, ", ", sh.game.b.history.len, " moves, the computer as ",
           SIDES[sh.game.computer]);
 
@@ -256,7 +256,7 @@ fn main() {
     // The system's back (Android's, or Escape) goes to the replay too.
     shell::back(sh, tick());
     drive::idle(sh, g, tick());
-    print("  the system's back: screen ", sh.screen, ", from the replay ", sh.trial);
+    print("  the system's back: screen ", sh.screen, ", from the replay ", sh.past.trial);
 
     // The Russian game against the computer: won from the replay, it counts for nothing.
     shell::open_replay(sh, 0, tick());
@@ -275,7 +275,7 @@ fn main() {
     // The card's back: the replay.
     drive::tap(sh, g, drive::control(g, drive::tiles(g) - 2), tick());
     drive::idle(sh, g, tick());
-    print("  the card's back: screen ", sh.screen, ", from the replay ", sh.trial);
+    print("  the card's back: screen ", sh.screen, ", from the replay ", sh.past.trial);
 
     print("after: ", kept(sh, path));
     print("the game in progress as it was: ", shell::save(sh) == saved, "; home's continue on: ", shell::resume(sh).on);

@@ -92,7 +92,7 @@ fn moves_foot(gm: Game&, g: gui::Gui&, r: float4, over: board::Overlay&) {
         x += d + 8.0 * u;
         s.clear();
         if t.accuracy[side] >= 0 {
-            push_number(s, t.accuracy[side]);
+            gui::push_number(s, t.accuracy[side]);
             s.push('%');
         } else {
             s.push('-');
@@ -177,7 +177,7 @@ fn rows_line(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) {
     for row in first..rows {
         let a = if row == rows - 1 { 1.0 } else { LINE_OLDER };
         line.clear();
-        push_number(line, first_number + row);
+        gui::push_number(line, first_number + row);
         gui::text(g, gui::SMALL, float4 { inner.x, y, LINE_NUMBER * u, LINE_ROW * u }, line[..], 0.55 * a, 0.0, gui::LEFT);
         for side in 2 {
             let i = 2 * row + side - off;
@@ -210,7 +210,7 @@ fn bar_line(gm: Game&, g: gui::Gui&, l: panel::Layout) {
     var mark:   u8   = 0;
     if ns.len > 0 {
         let n, black = row_of(gm, ns.len - 1);
-        push_number(number, n);
+        gui::push_number(number, n);
         if black {
             number.push(0xE2);
             number.push(0x80);
@@ -464,7 +464,7 @@ fn tip(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) -> bool
     let row = float4 { wx, y + TIP_PAD * u, cw, title };
     var move: Line = [];
     let number, black = row_of(gm, gm.tip);
-    push_number(move, number);
+    gui::push_number(move, number);
     if black {
         move.push(0xE2);
         move.push(0x80);

@@ -169,29 +169,14 @@ let MOVES_NUMBER = 32.0;    // dp the moves' numbers take ("19." in the small fa
 let MARK_GAP = 4.0;         // dp between a move and its mark
 let ORANGE = float4 { 1.0, 0.62, 0.25, 1.0 };
 
-type Line = u8[..24];
-
-fn push_number(out: Line&, n: i64) {
-    var digits: u8[..20] = [];
-    var k = max(n, 0);
-    loop {
-        digits.push(('0' + k % 10) as u8);
-        k /= 10;
-        guard k > 0 else { break; }
-    }
-    var i = digits.len - 1;
-    while i >= 0 {
-        out.push(digits[i]);
-        i -= 1;
-    }
-}
+type Line = gui::Text;
 
 fn push_square(out: Line&, v: rules::Variant&, b: i64) {
     if v.algebraic {
         out.push('a' + v.x_of[b]);
-        push_number(out, v.y_of[b] as i64 + 1);
+        gui::push_number(out, v.y_of[b] as i64 + 1);
     } else {
-        push_number(out, v.number_of[b]);
+        gui::push_number(out, v.number_of[b]);
     }
 }
 
@@ -219,11 +204,12 @@ fn shows_mark(mark: u8) -> bool {
 }
 
 // A move's mark in row r from x, in the body face's line, at opacity a: the best's star
-// 16 dp across, the others as text. Returns how wide it is, 0 for none.
+// MARK_STAR dp across, the others as text. Returns how wide it is (mark_width), 0 for none.
+let MARK_STAR = 16.0;
 fn mark_at(g: gui::Gui&, x: f32, r: float4, mark: u8, a: f32 = 1.0) -> f32 {
     let u = g.scale;
     if mark == ai::BEST {
-        let k = 16.0 * u;
+        let k = MARK_STAR * u;
         gui::glyph_icon(g, float4 { x, r.y + 0.5 * (r.w - k), k, k }, gui::STAR, gui::PLAIN, 0.0, 0.9 * a);
         return k;
     }
@@ -231,6 +217,13 @@ fn mark_at(g: gui::Gui&, x: f32, r: float4, mark: u8, a: f32 = 1.0) -> f32 {
     guard t.len > 0 else { return 0.0; }
     gui::colored(g, gui::BODY, float4 { x, r.y, r.z, r.w }, t, float4 { c.x, c.y, c.z, c.w * a }, gui::LEFT);
     return gui::text_width(g, gui::BODY, t);
+}
+
+// How wide mark_at draws a mark, 0 for none, for what is laid out round it first.
+fn mark_width(g: gui::Gui&, mark: u8) -> f32 {
+    if mark == ai::BEST { return MARK_STAR * g.scale; }
+    let t, c = mark_text(mark);
+    return if t.len > 0 { gui::text_width(g, gui::BODY, t) } else { 0.0 };
 }
 
 // Note 0's ply in the whole game, white's first move 0: the moves played before the
@@ -298,7 +291,7 @@ fn moves_list(gm: Game&, g: gui::Gui&, r: float4, id: i64, record: bool) {
         let y = inner.y - scrolled + row * MOVES_ROW * u;
         guard y + MOVES_ROW * u > view.y && y < view.y + view.w else { continue; }
         line.clear();
-        push_number(line, first_number + row);
+        gui::push_number(line, first_number + row);
         line.push('.');
         gui::text(g, gui::SMALL, float4 { inner.x, y, MOVES_NUMBER * u, MOVES_ROW * u }, line[..], 0.55, 0.0, gui::LEFT);
         for side in 2 {

@@ -54,7 +54,7 @@ fn press(sh: shell::Shell&, g: gui::Gui&, id: i64) { drive::tap(sh, g, drive::mi
 // What the replay shows: the move, the board's position, and whether it is the one the
 // game's moves give there.
 fn shown(sh: shell::Shell&) -> u8[>..] {
-    let r .= sh.replay;
+    let r .= sh.past.replay;
     let b .= r.b;
     let right = rules::same(b.pos, r.pos[r.ply]);
     var s = str("move ", r.ply, " of ", r.plies.len, ", the board ", if right { "right" } else { "WRONG" });
@@ -113,9 +113,9 @@ fn check(g: gui::Gui&, sh: shell::Shell&, safe: float4) -> u8[>..] {
     let board_in = b.x >= safe.x - 0.5 && b.y >= safe.y - 0.5 && b.x + b.z <= safe.x + safe.z + 0.5 && b.y + b.z <= safe.y + safe.w + 0.5;
     var moves = 0;
     for s in g.spots { if s.id >= replay::MOVE_ID { moves++; } }
-    let rows = floor(10.0 * sh.replay.rows + 0.5) / 10.0;
+    let rows = floor(10.0 * sh.past.replay.rows + 0.5) / 10.0;
     // The line saying a game from here doesn't count: over the board, as wide, on no tile.
-    let note = sh.replay.note;
+    let note = sh.past.replay.note;
     var over = abs(note.y + note.w - b.y) < 0.5 && abs(note.x - b.x) < 0.5 && abs(note.z - b.z) < 0.5;
     for i in n {
         let q = drive::rect(g, i);
@@ -127,7 +127,7 @@ fn check(g: gui::Gui&, sh: shell::Shell&, safe: float4) -> u8[>..] {
     let level = abs(back.w - play.w) < 0.5 && abs(back.y - play.y) < 0.5;
     return str(n, " tiles, smallest ", (least + 0.5) as i64, " dp, inside ", inside, ", apart ", apart, ", off the board ",
                off_board, "; board ", (b.z / g.scale + 0.5) as i64, " dp, inside ", board_in, "; the line ",
-               if sh.replay.why { "why" } else { "short" }, ", over the board ", over, ", inside ", within(note, safe),
+               if sh.past.replay.why { "why" } else { "short" }, ", over the board ", over, ", inside ", within(note, safe),
                "; back and play from here level ", level, "; ",
                moves, " moves listed, ", rows, " rows in view; quads ", g.quads.len);
 }
@@ -185,23 +185,23 @@ fn main() {
     // Home's games row opens the results.
     press(sh, g, gui::HOME_IDS + 7);
     drive::idle(sh, g, tick());
-    print("results: screen ", sh.screen, ", ", sh.games.len, " games");
+    print("results: screen ", sh.screen, ", ", sh.past.games.len, " games");
 
     // The first row, the newest game: its replay, at its end.
     press(sh, g, results::ROW_ID);
     drive::idle(sh, g, tick());
-    print("its row tapped: screen ", sh.screen, " (replay ", shell::REPLAY, "), ", rules::VARIANT_NAMES[sh.replay.game.variant],
+    print("its row tapped: screen ", sh.screen, " (replay ", shell::REPLAY, "), ", rules::VARIANT_NAMES[sh.past.replay.game.variant],
           ", ", shown(sh));
     let image = shell::save(sh);
     print("  the saved image on the replay is the one before: ", image == saved, ", screen kept as home");
     for name, k in ["the start", "back", "on", "the end"] {
         // Each step from the middle of the game.
-        replay::go(sh.replay, 45, 0.0);
+        replay::go(sh.past.replay, 45, 0.0);
         press(sh, g, replay::STEP_ID + k);
         print(name, ": ", shown(sh));
         drive::idle(sh, g, tick());
     }
-    replay::go(sh.replay, 0, 0.0);
+    replay::go(sh.past.replay, 0, 0.0);
     drive::idle(sh, g, tick());
     press(sh, g, replay::STEP_ID + 1);
     print("back at the start: ", shown(sh));
@@ -241,11 +241,11 @@ fn main() {
     // Back: the results as they were, then the Russian game, its captures' stops left out.
     press(sh, g, replay::BACK_ID);
     drive::idle(sh, g, tick());
-    print("back: screen ", sh.screen, ", showing ", rules::VARIANT_NAMES[sh.results_variant], ", ", sh.games.len, " games");
+    print("back: screen ", sh.screen, ", showing ", rules::VARIANT_NAMES[sh.past.variant], ", ", sh.past.games.len, " games");
     drive::tap(sh, g, drive::tile(g, 3), tick());
     press(sh, g, results::ROW_ID);
     drive::idle(sh, g, tick());
-    print("Russian's row: ", rules::VARIANT_NAMES[sh.replay.game.variant], ", ", shown(sh));
+    print("Russian's row: ", rules::VARIANT_NAMES[sh.past.replay.game.variant], ", ", shown(sh));
     // Escape or Android's back goes to the results too.
     shell::back(sh, tick());
     drive::idle(sh, g, tick());
@@ -294,7 +294,7 @@ fn main() {
             g.scale = gui::scale_of(s.size.x, s.size.y);
             g.insets = s.insets;
             gui::test_faces(g);
-            replay::go(sh.replay, 31, 0.0);
+            replay::go(sh.past.replay, 31, 0.0);
             drive::idle(sh, g, tick());
             drive::idle(sh, g, tick());
             print("  ", s.name, ": ", check(g, sh, gui::safe(g, s.size.x, s.size.y)));

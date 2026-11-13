@@ -46,7 +46,7 @@ fn keep_game(sh: Shell&, winner: i64) {
 fn keep_marks(sh: Shell&) {
     let k .= sh.kept;
     // A game from the replay is on the game screen: the kept game is set aside till it ends.
-    guard k.open && !sh.trial else { return; }
+    guard k.open && !sh.past.trial else { return; }
     let gm .= sh.game;
     guard gm.kept && gm.notes.len == k.plies else {
         k.open = false;

@@ -41,12 +41,14 @@ fn checksum(data: const u8[:]) -> u64 {
     return h;
 }
 
-// What is kept of the game on the game screen and the screen showing.
+// What is kept of the game on the game screen, and the screen it comes back on (KINDS'
+// `kept`: a puzzle's the puzzles to pick from, the results', a replay's, and how to play's
+// home).
 fn kept_of(sh: Shell&) -> Saved {
     let b .= sh.game.b;
-    return Saved { version: VERSION, unset: sh.unset, screen: if sh.screen == RESULTS || sh.screen == REPLAY { HOME } else { sh.screen }, variant: b.variant, start: b.start, pos: b.pos,
-                     last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.history,
-                     clock:     sh.game.clock, computer: sh.game.computer, level: sh.game.level, skill: sh.game.skill,
+    return Saved { version: VERSION, unset: sh.unset, screen: KINDS[sh.screen].kept, variant: b.variant, start: b.start,
+                   pos: b.pos, last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.history,
+                   clock: sh.game.clock, computer: sh.game.computer, level: sh.game.level, skill: sh.game.skill,
                    number: sh.game.number, counted: sh.game.counted };
 }
 
@@ -55,8 +57,8 @@ fn kept_of(sh: Shell&) -> Saved {
 // (Parked), with home as the screen: the game from the replay never is.
 fn save(sh: Shell&) -> u8[>..] {
     var one: Saved[>..] = [];
-    if sh.trial {
-        one.push(sh.parked.kept);
+    if sh.past.trial {
+        one.push(sh.past.parked.kept);
         one[0].screen = HOME;
     } else {
         one.push(kept_of(sh));
@@ -82,13 +84,14 @@ fn restore(sh: Shell&, file: const u8[:]) -> bool {
     }
     let s .= one[0];
     guard s.version == VERSION && s.variant < rules::VARIANT_COUNT && s.start.variant == s.variant
-          && s.pos.variant == s.variant && s.screen >= HOME && s.screen <= PUZZLE && s.computer >= -1
+          && s.pos.variant == s.variant && s.screen >= HOME && s.screen < SCREENS && s.computer >= -1
           && s.computer <= rules::BLACK && s.level >= game::EASY && s.level <= game::HARD
           && s.clock.kind >= 0 && s.clock.kind < clock::KINDS && s.skill >= 0 && s.skill <= 100
     else { return false; }
     bring_back(sh, s);
-    // A puzzle isn't kept; the puzzles to pick from come back instead.
-    sh.screen = if s.screen == PUZZLE { PICKER } else { s.screen };
+    // An image written before KINDS' `kept` may name a puzzle; the puzzles to pick from
+    // come back for it, as for any screen kept as another.
+    sh.screen = KINDS[s.screen].kept;
     apply_prefs(sh);
     return true;
 }
@@ -124,7 +127,7 @@ struct Parked {
 
 // Sets the game in progress aside, for the game screen to play another.
 fn park(sh: Shell&) {
-    let p .= sh.parked;
+    let p .= sh.past.parked;
     p.kept = kept_of(sh);
     p.hints = sh.game.hints;
     p.notes = sh.game.notes;
@@ -133,7 +136,7 @@ fn park(sh: Shell&) {
 
 // Brings the game set aside back to the game screen, as it was.
 fn unpark(sh: Shell&) {
-    let p .= sh.parked;
+    let p .= sh.past.parked;
     bring_back(sh, p.kept);
     let gm .= sh.game;
     gm.hints = p.hints;
