@@ -72,7 +72,8 @@ let SCREENS = 8;
 
 // What sets the screens apart where the shell runs none of their code: whose board each
 // shows (board_of; home's setup shows its own), how blurred it shows the photograph,
-// where back goes, and which switches to or from it are drawn as a transition. Their
+// where back goes, which switches to or from it are drawn as a transition, and the screen
+// a game kept on it comes back on (saved.goose). Their
 // code is chosen in the three functions after the table, its frame, its still frame,
 // and whether it moves: a new screen is a row here and an arm in each.
 struct Kind {
@@ -80,18 +81,19 @@ struct Kind {
     blur:  f32,     // 0 the photograph as it is, 1 blurred and dimmed
     up:    i64,     // where back goes: a screen, NO_WAY on home's menu, RETURN where it was opened from
     with:  i64,     // the screens it switches to and from through a transition, a bit each
+    kept:  i64,     // the screen a game kept while it shows comes back on
 }
 let NO_WAY = -1;
 let RETURN = -2;            // sh.back
 let KINDS: Kind[SCREENS] = [
-    Kind { board: GAME, blur: 0.0, up: NO_WAY, with: (1 << GAME) | (1 << SETTINGS) },        // HOME
-    Kind { board: GAME, blur: 1.0, up: HOME, with: 1 << HOME },                              // GAME
-    Kind { board: SETTINGS, blur: 0.0, up: RETURN, with: 1 << HOME },                        // SETTINGS
-    Kind { board: PUZZLE, blur: 0.0, up: HOME, with: 1 << PUZZLE },                          // PICKER
-    Kind { board: PUZZLE, blur: 1.0, up: PICKER, with: 1 << PICKER },                        // PUZZLE
-    Kind { board: PUZZLE, blur: 0.0, up: HOME, with: 0 },                                    // RESULTS
-    Kind { board: REPLAY, blur: 1.0, up: RESULTS, with: 0 },                                 // REPLAY
-    Kind { board: TUTORIAL, blur: 1.0, up: RETURN, with: 0 },                                // TUTORIAL
+    Kind { board: GAME, blur: 0.0, up: NO_WAY, with: (1 << GAME) | (1 << SETTINGS), kept: HOME },     // HOME
+    Kind { board: GAME, blur: 1.0, up: HOME, with: 1 << HOME, kept: GAME },                           // GAME
+    Kind { board: SETTINGS, blur: 0.0, up: RETURN, with: 1 << HOME, kept: SETTINGS },                 // SETTINGS
+    Kind { board: PUZZLE, blur: 0.0, up: HOME, with: 1 << PUZZLE, kept: PICKER },                     // PICKER
+    Kind { board: PUZZLE, blur: 1.0, up: PICKER, with: 1 << PICKER, kept: PICKER },                   // PUZZLE
+    Kind { board: PUZZLE, blur: 0.0, up: HOME, with: 0, kept: HOME },                                 // RESULTS
+    Kind { board: REPLAY, blur: 1.0, up: RESULTS, with: 0, kept: HOME },                              // REPLAY
+    Kind { board: TUTORIAL, blur: 1.0, up: RETURN, with: 0, kept: HOME },                             // TUTORIAL
 ];
 
 let DURATION = 0.25;        // seconds a transition takes
