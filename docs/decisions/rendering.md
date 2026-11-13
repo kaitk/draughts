@@ -611,7 +611,8 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
     the same game. Doing so made the moves panel number a game by where it began
     (`game::first_ply`) rather than by its first note's side, which also numbers a game
     whose undo history dropped an odd number of moves right.
-- "Doesn't count" is a note on the replay, under play from here, no longer a pill on
+- "Doesn't count" is a note on the replay, under play from here (replaced the same day by
+  a card behind an info sign, below), no longer a pill on
   the game screen's way out (2026-11-13, task 078, the user: "no need to put the
   'doesn't count' on the back button, IMO confusing. Rather as an info bulletin next to
   the button that triggers the replay run"). This replaces the pill on the way out's top
@@ -630,6 +631,30 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
     left a phone's landscape two faded rows. Rejected: dropping it on small phones (the
     iPhone 13 mini's landscape would have had none), and in the head in place of the
     title (about 110 dp on a phone, five lines).
+- Why a game from the replay doesn't count is a card behind an info sign beside play
+  from here, no longer a note at the glass's top (2026-11-13, task 078, as the user
+  agreed). This replaces the note under the button from earlier that day: on the Pixel
+  7a in landscape it left the list about three rows of moves, and its short form took
+  the game's line's place on small phones. The card costs the list nothing.
+  - The sign is an 88 dp tap of its own at the button's right (a 28 dp disc drawn in
+    it), not a spot on the button: a tap on the button always plays. It takes its width
+    from the head, so on a phone the title, back's width, and then the button's icon
+    give way first; where none of that fits, the button and the sign share a row, as the
+    button did alone. A sign on the button's corner, its tap over the button's, was
+    rejected for the taps it would take from the button; one at the glass's corner was
+    tried and dropped, as the game's line beside it ran under the sign on a small phone.
+  - The card is the mark tips' (`game::card`): the same glass, disc, head, and wrapped
+    line, and the same dismissal (the mouse on a desktop; on touch the next tap only
+    closes it), so the app explains things one way. It hangs under the sign's tap, not
+    its disc, to leave the button's word in view, and widens for its head where 320 dp
+    would shrink it.
+  - The game's line is back everywhere. In portrait the board takes back what it gave
+    the note (the tablet 729 to 752 dp, the Pixel 472 to 492).
+  - Rows in view in `test/shell/replay` (its faces, wider than the font), before and
+    after: the Pixel 7a's landscape 3.3 to 4.6, its portrait 3.0 to 3.6 (the board 472 to
+    492 dp), the tablet's landscape 7.9 to 9.7, its portrait 3.0 to 3.1 (the board 729 to
+    752), the iPhone 13 mini's landscape 3.1 to 2.9 (the sign takes the title's room,
+    and the game's line, back from the short note's place, heads the glass).
 - A phone's moves, where the panel has no room (2026-11-13, task 078's A, the user's
   choice from `prototypes/history.html`'s take d), replacing 2026-11-11's no panel in
   portrait or on a phone in landscape:
