@@ -1211,8 +1211,9 @@ The release at rest, idle 20 to 30 s:
   uniform, which would hold the 9 taps' registers in the A33's shader too.
 - **A desktop's shadow in 16 taps** (task 086, 2026-11-13, the user, replacing task
   081's 9 on a desktop): Castaño's 7 × 7 texel box in 16 hardware-compared taps
-  (`shaders::SHADOW_MANY`, `render3d::SHADOW_16`) on a desktop (the platform, not its
-  screen), 9 over 5 × 5 on a tablet, 4 over 3 × 3 on a phone as before
+  (`shaders::SHADOW_MANY`, `render3d::SHADOW_16`) on a desktop and on iOS, iPhones too
+  (the platform, not its screen: Apple's GPUs all afford them, the user, 2026-11-13), 9
+  over 5 × 5 on an Android tablet, 4 over 3 × 3 on an Android phone as before
   (`draw3d::screen_shadow`, `render3d::set_shadow`). The user, seeing the fitted map's
   edge a bit sharp, judged them in motion on the Mac: 16 "looks very good", 9 decent. The
   16 cost 0.5 to 0.6 M cycles a frame more than the 9 when forced on the A33 (10.6

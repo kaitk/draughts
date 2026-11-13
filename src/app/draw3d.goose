@@ -340,10 +340,10 @@ fn fewer_samples(d: Drawer&) {
     d.fresh = true;
 }
 
-// How the shadow is filtered for the screen (render3d::SHADOW_9..): in 4 taps on a phone,
-// where they cost the A33 half of the 9 (task 081); in 9 on a tablet, whose larger
-// pieces show the 4's stepped edges (task 084); in 16 on a desktop, whose GPU pays for a
-// softer edge (task 086). The board drawn again if it changes.
+// How the shadow is filtered for the device (render3d::SHADOW_9..): in 4 taps on an
+// Android phone, where they cost the A33 half of the 9 (task 081); in 9 on an Android
+// tablet, whose larger pieces show the 4's stepped edges (task 084); in 16 on a desktop
+// and on iOS, whose GPUs pay for a softer edge (task 086). The board drawn again if it changes.
 fn screen_shadow(d: Drawer&, look: i32) {
     guard look != d.look else { return; }
     d.look = look;
