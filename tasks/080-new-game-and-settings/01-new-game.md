@@ -2,7 +2,7 @@
 
 Status: in-progress
 
-Home's menu: Continue, New game, Puzzles, Games, Settings (Quit on a desktop). New game
+Home's menu: Continue, New game, Puzzles, Results, Settings (Quit on a desktop). New game
 opens the setup in the same column, as A friend and The computer do now, and the setup
 starts with whom to play: the computer (its level and the child's color) or a friend
 (whether the board turns to the side to move, prefs' `turns`, today the Board row's third
