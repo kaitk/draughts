@@ -332,13 +332,18 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
         guard game else { return l; }
         // A tablet squarer than 3:2: the moves panel above the board instead, between the
         // corner panels and level with them, down to the board at rest, which keeps its
-        // size; what each side has taken as counts in its head (`counts`), as a phone's
+        // size, a row short of it for the top view; what each side has taken as counts in its head (`counts`), as a phone's
         // moves' line shows them where it is short.
         if moves && !phone && narrow {
             let x0 = left.x + left.z + gap;
             let y = area.y + gap;
-            let top = float4 { x0, y, right.x - gap - x0, l.rest.rect.y - gap - y };
-            let rows = ((top.w / s - 2.0 * game::MOVES_PAD - game::LINE_HEAD) / game::MOVES_ROW) as i64;
+            // Down to the board at rest, a row shorter where the top view, whose board
+            // reaches higher, needs it, so that view shrinks less (the user, 2026-11-13).
+            let up = settle(l, view3d::Camera { pitch: rig::TOP_PITCH, yaw: 0.0 }, n);
+            let at_rest = l.rest.rect.y - gap - y;
+            let rows = ((at_rest / s - 2.0 * game::MOVES_PAD - game::LINE_HEAD) / game::MOVES_ROW) as i64;
+            let h = min(at_rest, max(up.rect.y - gap - y, at_rest - game::MOVES_ROW * s));
+            let top = float4 { x0, y, right.x - gap - x0, h };
             if rows >= MOVES_TOP_LEAST && !view3d::touches(l.rest, top, 0.5 * gap) {
                 l.moves = top;
                 l.keep[4] = top;

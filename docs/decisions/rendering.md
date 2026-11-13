@@ -637,7 +637,10 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   there), between the corner panels and level with their tops, down to the board at
   rest, which keeps its size, at least three rows; what each side has taken shows as
   counts at its head's right, as a phone's short moves' line has them. Where three
-  rows don't fit it goes under the way out as on other tablets.
+  rows don't fit it goes under the way out as on other tablets. It stops a row short of
+  the board at rest where the top view's board reaches higher (2026-11-13, the user), so
+  that view shrinks less; sized to clear the top view entirely, it fell back to the left
+  on 4:3.
 - The move list's setting is settings' alone (2026-11-13, task 078; the user: once is
   enough), replacing 2026-11-12's three tiles kept on the results screen too. There its
   words alone (Off, Moves, Marks) didn't say what each shows, so a line under the
