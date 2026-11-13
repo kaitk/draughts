@@ -8,8 +8,8 @@
 <script src="draughts.js"></script>
 <style>
   /* Who's playing as built (docs/architecture/rendering.md, "Players"), opened by home's
-     chip: a glass card over home dimmed by black at 42%, with back, the title, the
-     results' bars, and the pencil; a tile per player, their badge (home's king with an
+     chip: a glass card over home dimmed by black at 42%, with back, the title, and the
+     pencil; a tile per player, their badge (home's king with an
      animal in the crown's place) over the name, the one playing lit with the glow ring;
      then + while there are under four. Two and two where four don't fit a row. */
   body::after { content: ''; position: absolute; inset: 0; background: rgb(0 0 0 / 0.42); }
@@ -40,7 +40,7 @@
 <main class="screen who">
   <section class="card glass">
     <div class="head"><a class="tile" href="home.html" data-icon="back" aria-label="Back"></a><h1>Who's playing?</h1>
-      <a class="tile" href="results.html" data-icon="bars" aria-label="Results"></a><a class="tile" data-icon="pencil" aria-label="Edit"></a></div>
+<a class="tile" data-icon="pencil" aria-label="Edit"></a></div>
     <div class="players" id="players"></div>
   </section>
 </main>

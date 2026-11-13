@@ -27,7 +27,6 @@ let CREATE = 3;             // a new player with the sheet's picture and name
 let SAVE = 4;               // the sheet's picture and name for its player
 let AGAIN = 5;              // start the sheet's player again
 let REMOVE = 6;             // remove the sheet's player
-let RESULTS = 7;            // the playing player's games (results.goose)
 
 let HOLD = 1.5;             // seconds start again and remove are held
 
@@ -132,7 +131,7 @@ fn picker(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i6
     let title = strings::get(strings::PLAYERS_WHO);
     let room = area.z - 2.0 * (EDGE + PAD) * u;
     let tiles = per * t + (per - 1) * TILE_GAP;
-    let head = (3.0 * gui::tap() + 44.0) * u + gui::text_width(g, gui::LABEL, title);
+    let head = (2.0 * gui::tap() + 32.0) * u + gui::text_width(g, gui::LABEL, title);
     let width = min(max(tiles * u, head), room) + 2.0 * PAD * u;
     let height = (20.0 + gui::tap() + GAP + rows * th + (rows - 1) * TILE_GAP + 24.0) * u;
     let r = gui::center(area, width, height);
@@ -149,10 +148,6 @@ fn picker(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i6
         w.editing = !w.editing;
         ask = CHANGED;
     }
-    // The playing player's games (task 074): three rising bars, declared after the faces,
-    // so the faces' tiles keep their order.
-    gui::cut_right(row, 12.0 * u);
-    let games = gui::cut_right(row, gui::tap() * u);
     gui::cut_left(row, gui::PAD_WIDE * u);
     gui::cut_right(row, gui::PAD_WIDE * u);
     let face = gui::fitting(g, gui::LABEL, title, row.z);
@@ -197,10 +192,6 @@ fn picker(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i6
             guard i != ps.playing else { return CHANGED, i; }
             return SWITCH, i;
         }
-    }
-    if glass_tile(g, gui::WHO_IDS + 4, games, gui::LEVEL + 2, gui::PLAIN) {
-        w.state = CLOSED;
-        return RESULTS, -1;
     }
     return ask, -1;
 }

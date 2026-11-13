@@ -1070,8 +1070,7 @@ legend.
 
 ### The results screen
 
-The games played (`src/shell/results.goose`), reached from home's results row and from who's
-playing's tile of three rising bars, beside the pencil. Back and the title head it, the three draughts as tiles
+The games played (`src/shell/results.goose`), reached from home's results row. Back and the title head it, the three draughts as tiles
 at its right on one glass, 4 dp round them and between, as the puzzles' draughts switch,
 each its name and the player's rating there (a row of their own under the head where
 they don't fit beside back). In landscape a panel at the left holds the rating (36 dp

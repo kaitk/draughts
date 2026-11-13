@@ -1040,7 +1040,6 @@ fn who_card(sh: Shell&, g: gui::Gui&, area: float4) -> bool {
         who::SAVE => { edit_player(sh, index, w.picture, w.name); },
         who::AGAIN => { start_again(sh, index); },
         who::REMOVE => { remove_player(sh, index); },
-        who::RESULTS => { go_to(sh, RESULTS, 0.0); },
         _ => {},
     }
     return ask != who::NOTHING;
