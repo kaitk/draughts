@@ -62,17 +62,24 @@ Not repeated: the name's word (draughts), which Apple indexes anyway. No "kids",
 outside the Kids category would imply the audience (5.1.4(b)). No other app's name.
 "kabe" for people in Estonia searching the English storefront.
 
-### Description (2,354 of 4,000)
+### Description (2,795 of 4,000)
 
 ```text
 A calm draughts game to play and learn: big pieces, a flat 2D or a 3D board, and nothing to distract from the game.
 
+LEARN
+• New to draughts? How to play teaches it in short steps played on the board, for each kind of draughts, then leads on to the puzzles or a first game.
+
 PLAY
 • Play the computer at three levels: easy, medium, and hard. It adjusts a little after each game, so it stays a fair match.
-• Or play a friend on the same iPhone or iPad, taking turns (on one device, not online).
+• Or play a friend on the same iPhone or iPad, taking turns (on one device, not online), the board turning to whoever plays or staying put.
 • Three kinds of draughts: International on the 10 × 10 board, and Brazilian and Russian on 8 × 8.
 • Move by tapping a piece and its square, or by dragging it. Undo a move, or start over.
 • Play without a clock, or with 5 or 10 minutes each, plus 3 or 5 seconds a move.
+
+YOUR GAMES
+• Results keeps your past games and a rating against the computer.
+• Replay any of them move by move, each move marked from best to mistake, and play on from any move to try another line.
 
 PUZZLES
 • 166 puzzles: 74 for International draughts in six themes (Learn, Captures, Crowning, Shots, King shots, and Safe move), and 46 each for Russian and Brazilian draughts in four.
@@ -90,8 +97,8 @@ MOVE HINTS
 • Capturing is compulsory: the piece that must capture is marked, with a dot for each piece it will take.
 
 THE BOARD
-• A flat board, or a 3D one with light and shadow, which you can turn by hand on the home screen.
-• Four seasons, each a picture with its own board: autumn wood, winter stone, spring carved stone, and summer sunset.
+• A flat board, or a 3D one with light and soft shadows, which you can turn by hand.
+• Four seasons, each a picture with its own board in wood, stone, or carved.
 • The season follows the date, or stays on the one you choose; or a plain background in the colours of the board.
 
 FOR EVERYONE
@@ -101,6 +108,8 @@ FOR EVERYONE
 • No ads, no purchases, and no internet needed.
 
 Draughts runs on iPhone and iPad, in portrait and landscape.
+
+Draughts is open source, under the MIT or Apache 2.0 licence: github.com/kaitk/draughts
 ```
 
 Play's text (`listing-en.md`) with the devices named, and what the app leaves out cut
