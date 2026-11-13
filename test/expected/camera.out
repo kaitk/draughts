@@ -1,7 +1,7 @@
 at rest: 52.5° down, board turned 0.0°, bounds 239 226 802 x 550; 3 buttons:
-  1078 600 44 x 44
-  1142 600 44 x 44
-  1206 600 44 x 44
+  1054 600 44 x 44
+  1118 600 44 x 44
+  1182 600 44 x 44
 the view tapped, 0.3 s on: 65.3° down, board turned 0.0°, bounds 249 146 782 x 630; 18 redraws
   1 s on: 74.0° down, board turned 0.0°, bounds 256 100 769 x 676; 17 redraws more, still animating false
   a second later: 0 redraws, animating false

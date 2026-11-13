@@ -985,7 +985,7 @@ take b, `plain.html`'s fade b, and the like) are in git history only
 
 The game's moves (`game::moves_panel`): in landscape a glass panel under the play panel,
 as wide, down to the bottom margin, where at least four rows of 34 dp fit
-(`panel::under_right`); on the 3D board five rows, the camera's buttons a row under it,
+(`panel::under_right`); on the 3D board five rows, the camera's buttons a row centered under it,
 and the board shrinking to clear both, then as many rows more as leave the board that
 size (`panel::with_moves`; a wide desktop window, whose board its height holds, to the
 foot). On a desktop the 3D board's frame may be 2.0 times as wide as tall while the panel
@@ -1290,8 +1290,9 @@ board's does and the backdrop over it as opaque as the blur.
   buttons, the play; its camera 65° down (`panel::PITCH_PORTRAIT`),
   which fills more of the height (752 × 604 dp on the tablet).
   **The camera buttons** (`game3d.html`'s placement `a`):
-  round floating buttons at the right edge, a column under the play panel in landscape
-  (a row on a phone, where a column runs past the bottom margin) and above it in
+  round floating buttons under the play panel in landscape, a column at the right edge
+  (a row centered under the panel, or under the moves panel, where a column runs past
+  the bottom margin: a phone, a tablet), and at the right edge above the play in
   portrait (a row where a column would shrink the board): a shaded disc with a hairline
   and a line icon at the 2.4-unit stroke, no panel (`gui::floating`, the UI shader's
   `FLOAT` quad and its icons). A 56 dp touch area and a 44 dp disc on a tablet (its

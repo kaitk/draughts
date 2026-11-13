@@ -791,7 +791,10 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
 - The game screen round it, `prototypes/game3d.html`'s `corners` (2026-11-09). The flat
   game takes the same panels (task 054).
 - The portrait camera at 65° down (2026-11-09), and the camera buttons,
-  `prototypes/game3d.html`'s placement `a` (2026-11-09).
+  `prototypes/game3d.html`'s placement `a` (2026-11-09). Their row in landscape
+  centered under the play or moves panel, on the game and puzzle screens alike
+  (2026-11-13, the user): flush right it hung off the panel's edge; the column, where
+  it fits, stays at the right edge.
 - The pieces' occlusion of the field into a map only where squares changed (task 059):
   a texel a field pixel reads instead of the loop; the dropped bake drew shadow and
   occlusion with every shadow map.

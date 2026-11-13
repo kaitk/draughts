@@ -299,8 +299,9 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
         let left = float4 { area.x + gap, area.y + gap, side, min(left_h() * s, height - 2.0 * gap) };
         let play_tall = if phone { min(narrow_play_h() * s, height - 2.0 * gap) } else { tall };
         let right = float4 { area.x + width - gap - side, area.y + gap, side, play_tall };
-        // The buttons under the play panel at the right edge: a column where it fits above
-        // the bottom margin, else a row, as low as the safe area lets it.
+        // The buttons under the play panel: a column at the right edge where it fits above
+        // the bottom margin, else a row centered under the panel, as low as the safe area
+        // lets it (2026-11-13).
         let touch = (if phone { TOUCH_PHONE } else { TOUCH_TABLET }) * s;
         let disc = (if phone { DISC_PHONE } else { DISC_TABLET }) * s;
         let len = 3.0 * touch + 2.0 * BUTTON_GAP * s;
@@ -308,7 +309,7 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
         let y = right.y + right.w + m;
         let col = y + len <= area.y + height - gap;
         let buttons = if col { float4 { x1 - touch, y, touch, len } }
-                      else { float4 { x1 - len, min(y, area.y + height - touch), len, touch } };
+                      else { float4 { right.x + 0.5 * (right.z - len), min(y, area.y + height - touch), len, touch } };
         let box = float4 { area.x + gap, area.y + gap, width - 2.0 * gap, height - 2.0 * gap };
         var l = Layout { board: board::layout_at(0.0, 0.0, 1.0, s, n), left: left, right: right, three: true,
                          pitch: PITCH_LANDSCAPE, buttons: buttons, count: 3, row: !col, touch: touch, disc: disc,
@@ -757,7 +758,7 @@ fn with_moves(l0: Layout, area: float4, s: f32, rows: i64, len: f32, touch: f32,
     l.moves = float4 { 0.0, 0.0, 0.0, 0.0 };
     under_right(l, area, s, float4 { 0.0, 0.0, 0.0, 0.0 }, rows);
     guard l.moves.z > 0.0 else { return l; }
-    l.buttons = float4 { l.right.x + l.right.z - len, l.moves.y + l.moves.w + m, len, touch };
+    l.buttons = float4 { l.right.x + 0.5 * (l.right.z - len), l.moves.y + l.moves.w + m, len, touch };
     l.row = true;
     l.keep[2] = l.buttons;
     l.keep[4] = l.moves;
@@ -767,7 +768,7 @@ fn with_moves(l0: Layout, area: float4, s: f32, rows: i64, len: f32, touch: f32,
 
 // The moves panel under the play panel, as wide, down to the bottom margin (or `most`
 // rows, 0 for no limit), where it holds MOVES_LEAST rows, clear of `buttons` (the 3D
-// board's, at the right edge).
+// board's).
 let MOVES_LEAST = 4;
 let MOVES_3D = 5;
 fn moves_room(rows: i64, s: f32) -> f32 { (rows * game::MOVES_ROW + 2.0 * game::MOVES_PAD) * s }
