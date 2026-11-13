@@ -30,6 +30,9 @@ CELL = (160, 105)       # a picture's texels: scene::THUMB_W × THUMB_H
 PICTURE = (76.0, 50.0)  # the picture in dp, whose shape the crops take
 CORNER_SIZE = 2.9       # the corner's crop: the shot 290% of the picture's width,
 CORNER_AT = (0.03, 0.93)  # placed as CSS background-position places it
+# Where a board's carving shows little at the corner, its crop elsewhere: summer's carved
+# oak has only a small sun there, its tree of life in the near side's middle (2026-11-13).
+CROP_AT = {("summer", "carved"): (0.5, 0.97)}
 
 # By theme (autumn, winter, spring, summer): board3d's flags for each material, and which
 # material is the season's own (Auto), as looks::of has them.
@@ -55,15 +58,15 @@ def whole(shot, out):
         "-filter", "Lanczos", "-resize", f"{CELL[0]}x{CELL[1]}!", out)
 
 
-def corner(shot, out):
+def corner(shot, out, at=CORNER_AT):
     """The near left corner: the picture's window on the shot scaled to CORNER_SIZE of its
     width, at CORNER_AT, in the shot's pixels."""
     w, h = SHOT
     bw = CORNER_SIZE * PICTURE[0]
     bh = bw * h / w
     scale = w / bw
-    x = -CORNER_AT[0] * (PICTURE[0] - bw) * scale
-    y = -CORNER_AT[1] * (PICTURE[1] - bh) * scale
+    x = -at[0] * (PICTURE[0] - bw) * scale
+    y = -at[1] * (PICTURE[1] - bh) * scale
     cw, ch = PICTURE[0] * scale, PICTURE[1] * scale
     run("magick", shot, "-crop", f"{round(cw)}x{round(ch)}+{round(x)}+{round(y)}", "+repage",
         "-filter", "Lanczos", "-resize", f"{CELL[0]}x{CELL[1]}!", out)
@@ -81,7 +84,7 @@ def main():
         whole(WORK / f"{season}-{own}.png", WORK / f"{season}-0.png")
         cells.append(WORK / f"{season}-0.png")
         for k, m in enumerate(MATERIALS):
-            corner(WORK / f"{season}-{m}.png", WORK / f"{season}-{k + 1}.png")
+            corner(WORK / f"{season}-{m}.png", WORK / f"{season}-{k + 1}.png", CROP_AT.get((season, m), CORNER_AT))
             cells.append(WORK / f"{season}-{k + 1}.png")
         row = WORK / f"{season}-row.png"
         run("magick", *cells, "+append", row)

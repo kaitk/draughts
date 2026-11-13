@@ -464,15 +464,16 @@ came on 2026-11-09.
 - The photograph or the plain fade is a Background row of two pictures, first in Look
   (2026-11-13), replacing the switch beside the theme's name (2026-11-09) and its
   halves under the 88 dp floor in a name's column.
-- The language is a button in the title row, a languages icon (`GLOBES.f`: a script's
-  glyph and an A, after Lucide's with our own strokes), its code, and a chevron, opening
-  a small list (2026-11-13; the wireframe globe, `GLOBES.b`, was chosen first the same day
-  and replaced: a languages icon says the choice more plainly than the world does). It replaces the languages' tiles on
+- The language is a button in the title row, the Earth (`GLOBES.c`: a ring round three
+  filled continents), its code, and a chevron, opening a small list (2026-11-13). Chosen
+  on the Mac after two others the same day: the wireframe globe (`GLOBES.b`) and a
+  languages icon after Lucide's (`GLOBES.f`, a glyph and an A), which on the app's
+  screen read less well than the Earth. It replaces the languages' tiles on
   glass in the title row (2026-11-07), which took its width from the title as languages
   are added, and a Language section at the list's foot (the prototypes' `langui=foot`),
   out of sight below the fold. Rejected: the codes as two tiles in the title row
-  (`langui=seg`), the globes (a, as built; b, wireframe; c, the Earth; e, a globe in a
-  ring), a speech bubble with an A (d), and the glyphs in two bubbles (g) or with arrows
+  (`langui=seg`), the other globes (a, as built; b, wireframe; e, a globe in a
+  ring), the languages glyph and A (f), a speech bubble with an A (d), and the glyphs in two bubbles (g) or with arrows
   between them (h).
 
 **The puzzle picker** (`puzzles.html`'s take a, a library list, chosen 2026-11-09).
