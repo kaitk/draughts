@@ -713,8 +713,8 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
 - The raised board's material is one choice for every season (2026-11-13, task 080):
   Auto, the season's own look as before (autumn's wood, winter's stone, spring's carved
   stone, summer's wood), or Wood, Stone, or Carved, each season's board in it
-  (`looks::of`, the table in task 080's 03), kept as the player's `material`. One choice is simpler to
-  show and to say. Rejected: a material per season, each season remembering its own,
+  (`looks::of`, the table in task 080's 03), kept as the player's `material`. One
+  choice is simpler to show and to say. Rejected: a material per season, each season remembering its own,
   which settings would have had to show as each season's boards (take c), and which
   matters only to a child who likes one season's stone and another's wood. The seasons'
   flags still pick a look over it, for tuning. Replaces task 045's list of every
