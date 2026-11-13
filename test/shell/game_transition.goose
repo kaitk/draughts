@@ -191,11 +191,12 @@ fn main() {
     print("at home's place ", sh.out.layout.board == home_at);
 
     // A friend's setup, Brazilian (8 × 8, as the Russian game at home is); play.
-    drive::tap(sh, g, drive::tile(g, 1), 6.0);
-    drive::tap(sh, g, drive::tile(g, 2), 6.1);
+    drive::tap(sh, g, drive::tile(g, 1), 6.0);           // new game
+    drive::tap(sh, g, drive::tile(g, 1), 6.05);          // a friend
+    drive::tap(sh, g, drive::tile(g, 6), 6.1);           // Brazilian
     look(sh, g, 6.5, "a friend's setup");
     let setup_at = sh.out.layout.board;
-    let play = drive::tile(g, 7);
+    let play = drive::tile(g, 13);
     drive::frame(sh, g, play, true, true, false, 7.0);
     drive::frame(sh, g, play, false, false, true, 7.02);
     print("tapped play: ", screen(sh), ", the setup's board ", sh.out.layout.board == setup_at, ", a new game ",

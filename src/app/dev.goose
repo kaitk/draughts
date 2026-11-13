@@ -62,9 +62,11 @@ fn setup(f: flags::Flags&, sh: shell::Shell&, prefs: settings::Settings) {
     }
     sh.screen = if f.screen >= 0 { f.screen } else if fen.len > 0 || f.taps.len > 0 || f.clock >= 0 || f.computer >= 0 { shell::GAME } else { shell::HOME };
     sh.setup = f.setup;
-    // A setup the flags open shows the draughts, the child's color, and the level they
-    // give, with the settings file left as it is unless a tap in the setup writes it.
+    // A setup the flags open shows the opponent, the draughts, the child's color, and the
+    // level they give, with the settings file left as it is unless a tap in the setup
+    // writes it.
     if f.setup != home::NO_SETUP {
+        if f.friend >= 0 { sh.prefs.friend = f.friend == 1; }
         if f.variant >= 0 { sh.prefs.variant = f.variant; }
         if f.computer >= 0 { sh.prefs.color = 1 - f.computer; }
         if f.level >= 0 { sh.prefs.level = f.level; }

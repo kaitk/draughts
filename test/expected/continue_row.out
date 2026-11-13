@@ -1,7 +1,10 @@
 a game read back: continue shown, note "A friend"
 a first run: continue hidden, note "A friend"
-  a tap on the first row: home, setup 2 (2 Friend's)
+  new game: lit, its note's icon the computer
+  a tap on the first row: home, setup 2 (2 the setup)
 the computer's game set up, easy: continue shown, note "The computer · easy"
+  new game: outlined, its note's icon the computer, "easy"
+  a friend chosen last, new game: outlined, its note's icon a friend
   back home, a tap on the first row: the game
 a new player's game: continue hidden, note "A friend"
 a move played in it: continue shown, note "A friend"

@@ -7,7 +7,7 @@ import std;
 import strings from "../../strings";
 
 let NAMED = [
-    "language.name", "app.name", "home.continue", "home.friend", "home.computer",
+    "language.name", "app.name", "home.continue", "setup.friend", "home.new_game",
     "home.puzzles", "home.settings", "level.easy", "level.medium",
     "level.hard", "settings.theme", "settings.by_date", "settings.board",
     "settings.hints", "settings.kings", "season.winter", "season.spring",
@@ -45,7 +45,7 @@ fn main() {
     // The constants name the keys they index.
     assert(strings::KEYS.len == strings::COUNT);
     let ks = [strings::LANGUAGE_NAME, strings::APP_NAME, strings::HOME_CONTINUE,
-              strings::HOME_FRIEND, strings::HOME_COMPUTER, strings::HOME_PUZZLES,
+              strings::SETUP_FRIEND, strings::HOME_NEW_GAME, strings::HOME_PUZZLES,
               strings::HOME_SETTINGS, strings::LEVEL_EASY,
               strings::LEVEL_MEDIUM, strings::LEVEL_HARD, strings::SETTINGS_THEME,
               strings::SETTINGS_BY_DATE, strings::SETTINGS_BOARD, strings::SETTINGS_HINTS,

@@ -87,7 +87,7 @@ fn main() {
           r1(100.0 * sh.out.view.k / k0), "% of its size");
     print("let go: frames drawn at rest ", rest(sh, g, 3.0), ", ", angle(sh, 4.0));
     // Off the board: beside it in the stage, under its outline's foot, and on the column's
-    // glass between rows; a tap on the friend row opens the setup and back.
+    // glass between rows; a tap on the new game row opens the setup and back.
     let before = angle(sh, 8.0);
     let beside = float2 { 1250.0, mid.y };
     let foot = float2 { mid.x, 790.0 };
@@ -98,7 +98,7 @@ fn main() {
     let glass = float2 { row.x + 0.5 * row.z, row.y - 1.0 };
     drag(sh, g, glass, mid, 4, 9.0);
     drive::tap(sh, g, drive::tile(g, 1), 9.5);
-    let setup = sh.setup == home::FRIEND;
+    let setup = sh.setup == home::NEW_GAME;
     drive::tap(sh, g, drive::tile(g, 0), 9.6);
     print("drags off the board and a menu row tapped: the angle kept ", angle(sh, 10.0) == before, ", the setup opened ",
           setup, " and closed ", sh.setup == home::NO_SETUP);

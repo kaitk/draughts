@@ -80,10 +80,10 @@ fn main() {
     puzzles::load();
     drive::size = float2 { 1280.0, 800.0 };
     check("landscape", home::NO_SETUP);
-    check("landscape, the computer's setup", home::COMPUTER);
+    check("landscape, the setup", home::NEW_GAME);
     drive::size = float2 { 800.0, 1280.0 };
     check("portrait", home::NO_SETUP);
-    check("portrait, the computer's setup", home::COMPUTER);
+    check("portrait, the setup", home::NEW_GAME);
     drive::size = float2 { 600.0, 960.0 };
     check("portrait at 600 x 960", home::NO_SETUP);
 

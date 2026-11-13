@@ -4,8 +4,8 @@
 // screen (desktop_scale 0) the X is, and no Quit row. The first arrow key focuses
 // Continue, the menu's primary row; down walks the rows to Quit and stops there; Enter on
 // Quit asks first (home::ask_quit), the question's quit focused, and back cancels it, as
-// back on the menu asks it; Enter there asks the app to stop (quit). Enter on a friend
-// opens its setup, whose focus goes to play, its primary, and Enter there starts the game.
+// back on the menu asks it; Enter there asks the app to stop (quit). Enter on new game
+// opens the setup, whose focus goes to play, its primary, and Enter there starts the game.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -88,11 +88,11 @@ fn main() {
     drive::idle(fr, g, now);
     drive::key(fr, g, gui::STEP_DOWN, false, 1.0);
     drive::key(fr, g, gui::STEP_DOWN, false, 2.0);
-    print("on a friend: focus ", g.focus - gui::HOME_IDS);
+    print("on new game: focus ", g.focus - gui::HOME_IDS);
     drive::key(fr, g, gui::STEP_NONE, true, 3.0);
     drive::idle(fr, g, 3.02);
     drive::idle(fr, g, 3.04);
-    print("enter: setup ", fr.setup == home::FRIEND, ", focus ", g.focus - gui::HOME_IDS);
+    print("enter: setup ", fr.setup == home::NEW_GAME, ", focus ", g.focus - gui::HOME_IDS);
     drive::key(fr, g, gui::STEP_NONE, true, 4.0);
     for i in 200 { drive::idle(fr, g, 4.02 + 0.02 * i); }
     print("enter on play: screen ", if fr.screen == shell::GAME { "the game" } else { "still home" }, ", focus on the game's panels ",

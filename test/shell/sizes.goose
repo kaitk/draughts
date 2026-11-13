@@ -23,7 +23,8 @@
 // panel has the room and beside its icon where not. On the game, flat and 3D, what each
 // side has taken late in a game (task 052) lies inside the safe area clear of the tiles,
 // the camera buttons, and the board, and the flat screen's panels are the 3D one's
-// (task 054), or the line says how they differ; the iPad's smallest window too, with home's menu there.
+// (task 054), or the line says how they differ; the iPad's smallest window too, with home's menu
+// and the setup there, its choices scrolling between its head and play.
 //
 // A line with anything wrong fails the test unless the failure is on `ALLOWED` below,
 // with its reason: a regression shows as an exit, not only as a line in the diff.
@@ -50,7 +51,7 @@ struct Allowed {
 let ALLOWED = [
     // A small window's (gui::compact) menu rows, the results row with them (task 074), are 72 dp, under the floor, accepted for
     // compact only (the user, 2026-11-09; rendering.md, "Compact").
-    Allowed { under: "the iPad's smallest window", what: "home", wrong: " 5 taps under 88 dp;" },
+    Allowed { under: "the iPad's smallest window", what: "home", wrong: " 4 taps under 88 dp;" },
     // Its game bar's three tiles are 72 x 64 dp, the same acceptance.
     Allowed { under: "the iPad's smallest window", what: "the game", wrong: " 3 taps under 88 dp;" },
 ];
@@ -106,6 +107,19 @@ fn listed(g: gui::Gui&, n: i64) -> bool {
     return false;
 }
 
+// The part of the n-th tile that shows: in a scrolling list, only what lies in its view
+// (the last list declared); a row scrolled under the setup's play is hidden there.
+fn seen(g: gui::Gui&, n: i64) -> float4 {
+    let r = drive::rect(g, n);
+    guard listed(g, n) else { return r; }
+    let v = g.scroll.view;
+    let x = max(r.x, v.x);
+    let y = max(r.y, v.y);
+    let w = min(r.x + r.z, v.x + v.z) - x;
+    let h = min(r.y + r.w, v.y + v.w) - y;
+    return if w > 0.0 && h > 0.0 { float4 { x, y, w, h } } else { float4 { 0.0, 0.0, 0.0, 0.0 } };
+}
+
 // What the last frame declared on screen `what`: its tiles, the smallest tap across and
 // down, the board, and anything out of place. `board_shows` when the screen has a board,
 // `card` when the win's card sits on it.
@@ -125,7 +139,7 @@ fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool,
     var half = float2 { 0.0, 0.0 };
     for i in n {
         let r = drive::rect(g, i);
-        let tap = style(g, i) < gui::CLOCK_RUN;
+        let tap = style(g, i) < gui::CLOCK_RUN || style(g, i) > gui::CLOCK_WARN;
         let switched = sh.screen == shell::SETTINGS && sw.z > 0.0 && inside(r, sw);
         if switched { half = float2 { r.z, r.w }; }
         if tap && !switched {
@@ -135,7 +149,7 @@ fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool,
         // A list's rows past the safe area's foot scroll into it (the puzzles' library).
         let below = listed(g, i) && r.y >= safe.y && r.x >= safe.x && r.x + r.z <= safe.x + safe.z;
         if !inside(r, safe) && !below { format(wrong, " tile ", i, " off the safe area;"); }
-        for j in i { if overlaps(r, drive::rect(g, j)) { format(wrong, " tiles ", j, " and ", i, " overlap;"); } }
+        for j in i { if overlaps(seen(g, i), seen(g, j)) { format(wrong, " tiles ", j, " and ", i, " overlap;"); } }
         if board_shows && b.z > 0.0 && overlaps(r, b) && !(card && i >= n - 2) { format(wrong, " tile ", i, " on the board;"); }
         if tap && !switched && (r.z < gui::TAP * u - 0.5 || r.w < gui::TAP * u - 0.5) { small++; }
     }
@@ -259,10 +273,11 @@ fn screens(g: gui::Gui&) {
     at_rest(home, g);
     report("home", g, home, true, false);
     chip(g, home);
-    var friend = showing(shell::HOME, home::FRIEND);
+    var friend = showing(shell::HOME, home::NEW_GAME);
+    friend.prefs.friend = true;
     at_rest(friend, g);
     report("a friend's setup", g, friend, true, false);
-    var computer = showing(shell::HOME, home::COMPUTER);
+    var computer = showing(shell::HOME, home::NEW_GAME);
     at_rest(computer, g);
     report("the computer's setup", g, computer, true, false);
     var plain = showing(shell::GAME, home::NO_SETUP);
@@ -394,12 +409,12 @@ fn small_window(g: gui::Gui&) {
     var glass = float4 { 0.0, 0.0, 0.0, 0.0 };
     for q in g.quads { if q.look.x == gui::GLASS { glass = q.rect; } }
     // Back, the two languages, the tabs, the theme's five, the switch's halves, the
-    // board's two and its turn, the kings' three.
+    // board's two, the kings' three.
     let season = drive::rect(g, 5);
     let half = drive::rect(g, 10);
     let foot = glass.y + glass.w;
     let board = drive::rect(g, 13);
-    let kings = drive::rect(g, 15);
+    let kings = drive::rect(g, 14);
     print("the iPad's smallest window, ", whole(drive::size.x / u), " x ", whole(drive::size.y / u), " dp: Look's ",
           drive::tiles(g), " tiles, the switch ", whole(half.z / u), " x ", whole(half.w / u), " dp a half, a season ",
           whole(season.z / u), " x ", whole(season.w / u), " dp, Board ending ", whole((foot - board.y - board.w) / u),
@@ -408,6 +423,11 @@ fn small_window(g: gui::Gui&) {
     var home = showing(shell::HOME, home::NO_SETUP);
     at_rest(home, g);
     report("home", g, home, true, false);
+    // The setup, too short for its column: its choices scroll between the head and play.
+    var setup = showing(shell::HOME, home::NEW_GAME);
+    at_rest(setup, g);
+    report("the setup", g, setup, true, false);
+    print("  the setup's choices scroll ", whole(g.scroll.max / u), " dp");
     head("the iPad's smallest window, the game:");
     var plain = showing(shell::GAME, home::NO_SETUP);
     at_rest(plain, g);

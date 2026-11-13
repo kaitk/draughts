@@ -313,6 +313,19 @@ let FRAG = """
             d = min(d, abs(length(p - 12.0) - 3.0));
             return k == 38 ? min(d, seg(p, vec2(3.5, 3.5), vec2(20.5, 20.5))) : d;
         }
+        if (k == 39) {          // a new game: a plus in a ring
+            float d = min(abs(length(p - 12.0) - 8.5), seg(p, vec2(12.0, 8.0), vec2(12.0, 16.0)));
+            return min(d, seg(p, vec2(8.0, 12.0), vec2(16.0, 12.0)));
+        }
+        if (k == 40) {          // the board turns: two arcs chasing round, each with its arrowhead
+            float d = min(arc(p, vec2(12.0), 8.0, 0.0, 2.3561945), arc(p, vec2(12.0), 8.0, 3.1415927, 2.3561945));
+            d = min(d, min(seg(p, vec2(18.0, 2.5), vec2(18.0, 6.7)), seg(p, vec2(18.0, 6.7), vec2(13.8, 6.7))));
+            return min(d, min(seg(p, vec2(6.0, 21.5), vec2(6.0, 17.3)), seg(p, vec2(6.0, 17.3), vec2(10.2, 17.3))));
+        }
+        if (k == 41) {          // the board stays: a board with an arrow up it
+            float d = min(abs(box(p, vec2(12.0), vec2(8.0), 2.5)), seg(p, vec2(12.0, 16.5), vec2(12.0, 7.5)));
+            return min(d, min(seg(p, vec2(8.5, 11.0), vec2(12.0, 7.5)), seg(p, vec2(12.0, 7.5), vec2(15.5, 11.0))));
+        }
         return 1e9;
     }
     // A player's badge's animal (badges/badges.goose): its signed distance at f, in a
@@ -406,14 +419,15 @@ let FRAG = """
             return;
         }
         // style: plain, primary, toggle on, toggle off, quiet, row, primary row, choice on
-        // and off, clock running, waiting, and low
+        // and off, clock running, waiting, low, and warning, and the outlined row
         if (kind == 1) {
             // A glass tile: white at 10%, 14 points more pressed and scaled to 0.96; an
             // inset light border and top highlight; a small shadow. A primary tile is the
             // glow color at 22%. A toggle has no highlight: on, the glow color at 26%
             // with a glow border; off, white at 8% with a border at 18%; a quiet tile
-            // too. A menu row has no border or shadow: clear, or the glow color at 24%. A
-            // choice has no shadow either: on, the glow color at 22% with a 2 dp glow
+            // too. A menu row has no shadow, nor a border unless outlined (1 dp at 25%):
+            // clear, or the glow color at 24%. A choice has no shadow either: on, the
+            // glow color at 22% with a 2 dp glow
             // border; off, white at 10% with a border at 12%. A clock has no shadow either:
             // running, the glow color at 18% with a 2 dp glow border; waiting, white at 6%
             // with a border at 12%; under a minute, autumn's gold at 16% with a 2 dp gold
@@ -439,7 +453,7 @@ let FRAG = """
             bool bare = v_look.z > 0.5;         // a bare icon's press: white at 10%, a faint ring
             float fa = bare ? 0.10 * pr : ((style == 1 ? 0.22 : style == 2 ? 0.26 : style == 3 || style == 4 ? 0.08
                         : style == 5 ? 0.0 : style == 6 ? 0.24 : style == 7 ? 0.22 : style == 9 ? 0.18
-                        : style == 10 ? 0.06 : style == 11 || style == 12 ? 0.16 : 0.10) + 0.14 * pr);
+                        : style == 10 ? 0.06 : style == 11 || style == 12 ? 0.16 : style == 13 ? 0.0 : 0.10) + 0.14 * pr);
             // The mouse over it on a desktop (task 066), extra.z's fraction 0..1 (ON_BOARD
             // and CLIP add whole numbers): a lit tile's own glow a little brighter; any
             // other the glow at 8%, about a third of a chosen tile's, over its own fill,
@@ -455,7 +469,7 @@ let FRAG = """
             }
             bool wide = style == 7 || style == 9 || style == 11 || style == 12;
             float ea = style == 5 || style == 6 ? 0.0 : style == 2 || wide ? 1.0 : style == 8 || style == 10 ? 0.12
-                       : style >= 3 ? 0.18 : 0.2;
+                       : style == 13 ? 0.25 : style >= 3 ? 0.18 : 0.2;
             if (bare) ea = 0.22 * pr;
             float edge = ea * (1.0 - cover(d + (wide ? 2.0 : 1.0) * u));
             vec3 ec = style == 11 ? red : style == 12 ? gold : style == 2 || style == 7 || style == 9 ? glow.rgb : vec3(1.0);

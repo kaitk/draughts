@@ -57,8 +57,10 @@ struct Flags {
     // --screen home|game|settings|puzzles: where the run opens (home unless a position,
     // taps, a clock, or the computer are given)
     screen: i64 = -1,
-    // --screen friend|computer: home with that setup open (home::FRIEND, COMPUTER)
+    // --screen friend|computer|setup: home with the setup open (home::NEW_GAME), against
+    // a friend or the computer, or as the player's file has it
     setup:  i64 = home::NO_SETUP,
+    friend: i64 = -1,       // 1 for --screen friend, 0 for computer
     puzzle: i64 = -1,       // --puzzle ID: that puzzle, its taps on its board
     // --variant international|brazilian|russian: a new game of that draughts, and the
     // puzzles' set; with a setup open, its choice
@@ -201,8 +203,9 @@ fn parse(argv: u8[:][>..]) -> Flags {
         if a == "--screen" {
             f.screen = if v == "game" { shell::GAME } else if v == "settings" { shell::SETTINGS }
                        else if v == "puzzles" { shell::PICKER } else if v == "results" { shell::RESULTS } else { shell::HOME };
-            if v == "friend" { f.setup = home::FRIEND; }
-            if v == "computer" { f.setup = home::COMPUTER; }
+            if v == "friend" || v == "computer" || v == "setup" { f.setup = home::NEW_GAME; }
+            if v == "friend" { f.friend = 1; }
+            if v == "computer" { f.friend = 0; }
         }
         if a == "--puzzle" {
             let n, ok = parse_int(v);

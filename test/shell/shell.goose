@@ -3,11 +3,12 @@
 // stands and home on the panel returns home with the game kept; puzzles opens the
 // puzzles to pick from, its back home (test/shell/puzzles.goose has the rest), and home
 // notes the stars won of those there are; settings opens settings, with their own board beside them, and its back
-// returns where it came from, home or the game. A friend and the computer open a setup in home's column whose
-// choices are kept in the settings and whose play starts that game over the old one;
+// returns where it came from, home or the game. New game opens the setup in home's column,
+// whose choices, a friend or the computer at a level first, are kept in the settings and
+// whose play starts that game over the old one;
 // against the computer playing white the board is turned, the game takes the skill kept
 // for its level and the number of games against the computer so far, which goes up, and
-// home notes the level.
+// home's new game notes the level.
 // Home and the setup lay out in landscape and portrait, the board clear of the column.
 // The setup's draughts tiles are thirds of their row in portrait; in landscape, where a
 // third is too narrow for "International" in the body face, each takes its name's width
@@ -29,12 +30,12 @@ import drive from "../drive";
 let W = 1280.0;
 let H = 800.0;
 
-// A setup's three draughts tiles' widths, rounded, and whether the first's name has its
+// The setup's three draughts tiles' widths (after back and whom to play's four), rounded, and whether the first's name has its
 // face's room (gui::pick).
 fn draughts_widths(g: gui::Gui&) -> u8[>..] {
     let name = gui::text_width(g, gui::BODY, strings::get(strings::VARIANT_INTERNATIONAL));
-    return str(round(drive::rect(g, 1).z), " ", round(drive::rect(g, 2).z), " ", round(drive::rect(g, 3).z),
-               ", the first's name in the body face ", name <= drive::rect(g, 1).z - 8.0);
+    return str(round(drive::rect(g, 5).z), " ", round(drive::rect(g, 6).z), " ", round(drive::rect(g, 7).z),
+               ", the first's name in the body face ", name <= drive::rect(g, 5).z - 8.0);
 }
 
 fn screen(sh: shell::Shell&) -> const u8[:] {
@@ -95,7 +96,7 @@ fn main() {
     drive::frame(sh, g, off, false, false, false, 2.0);
     switch(sh, g, drive::tile(g, 0), 2.0);                // home
     show(sh, g, "home");
-    switch(sh, g, drive::tile(g, 3), 2.5);                // puzzles
+    switch(sh, g, drive::tile(g, 2), 2.5);                // puzzles
     show(sh, g, "puzzles");
     switch(sh, g, drive::tile(g, 0), 3.0);                // back
     show(sh, g, "back from the puzzles");
@@ -118,41 +119,43 @@ fn main() {
     show(sh, g, "back from settings");
     switch(sh, g, drive::tile(g, 0), 5.4);                // home
 
-    // A friend's setup: back, the three draughts, the clock, play. Russian and 5+3 are
-    // kept in the settings; play starts that game over the one there was.
-    drive::tap(sh, g, drive::tile(g, 1), 6.0);
+    // The setup: back, whom to play's four, the three draughts, the pieces or the board's
+    // turning, the clock, play. A friend, Russian, and 5+3 are kept in the settings; play
+    // starts that game over the one there was.
+    drive::tap(sh, g, drive::tile(g, 1), 5.9);            // new game
+    drive::tap(sh, g, drive::tile(g, 1), 6.0);            // a friend
     var tiles = 0;
     for q in g.quads { if q.look.x == gui::BUTTON { tiles++; } }
     var minis = 0;
     for q in g.quads { if q.look.x == gui::MINI { minis++; } }
     print("a friend's setup: ", screen(sh), ", tiles ", tiles, ", small boards ", minis, ", ", prefs(sh));
-    drive::tap(sh, g, drive::tile(g, 3), 6.1);            // Russian
-    drive::tap(sh, g, drive::tile(g, 5), 6.2);            // 5+3
+    drive::tap(sh, g, drive::tile(g, 7), 6.1);            // Russian
+    drive::tap(sh, g, drive::tile(g, 11), 6.2);           // 5+3
     print("Russian, 5+3: changed ", sh.changed, ", ", prefs(sh));
     sh.changed = false;
     drive::tap(sh, g, drive::tile(g, 0), 6.3);            // back
     print("back: setup ", sh.setup, ", ", screen(sh));
-    drive::tap(sh, g, drive::tile(g, 1), 6.4);            // a friend
-    switch(sh, g, drive::tile(g, 7), 6.5);                // play
+    drive::tap(sh, g, drive::tile(g, 1), 6.4);            // new game, a friend kept
+    switch(sh, g, drive::tile(g, 13), 6.5);               // play
     print("play: ", screen(sh), ", ", game_of(sh));
 
-    // The computer's setup adds the level and the child's color. Black, hard, 10+5:
-    // the computer plays white and the board is turned.
+    // The computer at a level takes the child's color in place of the board's turning.
+    // Hard, black, 10+5: the computer plays white and the board is turned.
     switch(sh, g, drive::tile(g, 0), 7.0);                // home
-    drive::tap(sh, g, drive::tile(g, 2), 7.5);            // the computer
+    drive::tap(sh, g, drive::tile(g, 1), 7.4);            // new game
+    drive::tap(sh, g, drive::tile(g, 4), 7.5);            // hard
     tiles = 0;
     for q in g.quads { if q.look.x == gui::BUTTON { tiles++; } }
     print("the computer's setup: tiles ", tiles, ", pieces over the UI ", sh.out.over.len);
     print("draughts tiles: ", draughts_widths(g));
-    drive::tap(sh, g, drive::tile(g, 6), 7.6);            // hard
-    drive::tap(sh, g, drive::tile(g, 8), 7.7);            // black
-    drive::tap(sh, g, drive::tile(g, 11), 7.8);           // 10+5
-    switch(sh, g, drive::tile(g, 12), 7.9);               // play
+    drive::tap(sh, g, drive::tile(g, 9), 7.7);            // black
+    drive::tap(sh, g, drive::tile(g, 12), 7.8);           // 10+5
+    switch(sh, g, drive::tile(g, 13), 7.9);               // play
     print("play: ", screen(sh), ", ", game_of(sh), "; ", prefs(sh));
     switch(sh, g, drive::tile(g, 0), 8.4);                // home
     var note = 0;
     for q in g.quads { if q.look.x == gui::TEXT { note++; } }
-    print("home: the computer's row notes hard; glyphs ", note, ", turned ", sh.out.layout.flip);
+    print("home: new game notes hard; glyphs ", note, ", turned ", sh.out.layout.flip);
 
     // Home in portrait: the board above the sheet; the setup too.
     sh.screen = shell::HOME;
@@ -163,7 +166,7 @@ fn main() {
     for q in g.quads { if q.look.x == gui::GLASS && sheet.z == 0.0 { sheet = q.rect; } }
     print("portrait: board ", sh.out.layout.board, ", sheet from ", sheet.y, ", clear ",
           sh.out.layout.board.y + sh.out.layout.board.z < sheet.y);
-    sh.setup = home::COMPUTER;
+    sh.setup = home::NEW_GAME;
     gui::begin(g, gui::Input {}, 1.0, 9.1);
     shell::frame(sh, g, H, W, 9.1);
     sheet.z = 0.0;

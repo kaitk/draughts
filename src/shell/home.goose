@@ -1,15 +1,18 @@
 // Home, the title menu (prototypes/home.html; rendering.md, "Home"): the sharp
 // photograph, the board as the game stands, and one glass column with the wordmark, then
-// continue, a friend, the computer with its level, puzzles, and settings, each an icon
-// and a word. In landscape the column stands at the left, its left edge off the screen;
-// in portrait it is a sheet along the bottom, and settings is a gear alone beside the
-// wordmark, so the sheet leaves the board its room. Puzzles notes the stars won of those
-// there are.
+// continue, new game with the last opponent, puzzles, the games played, and settings,
+// each an icon and a word. In landscape the column stands at the left, its left edge off
+// the screen; in portrait it is a sheet along the bottom, and settings is a gear alone
+// beside the wordmark, so the sheet leaves the board its room. Puzzles notes the stars
+// won of those there are.
 //
-// A friend and the computer open a new game's setup in the same column: back and the
-// title, then a row of tiles per choice, lit as in settings: the draughts, the level and
-// the child's color against the computer, the clock; then play. The choices are kept in
-// the settings.
+// New game opens the setup in the same column (prototypes/new-game.html, take c): back
+// and the title, then a row of tiles per choice, lit as in settings: whom to play (a
+// friend, or the computer easy, medium, or hard), the draughts, the child's color
+// against the computer or for a friend whether the board turns, the clock; then play.
+// Both opponents have the same rows, so the column never jumps. The choices are kept in
+// the settings. Where they don't fit the column they scroll, play pinned under them, or,
+// in a phone's landscape, in the head row in the title's place (choose).
 //
 // A bare X in the screen's top right, with no disc until pressed, closes the app, at
 // once on a touch screen: the game is kept in any case. On a desktop it asks first
@@ -34,16 +37,15 @@ import game from "../game";
 import strings from "../../strings";
 import puzzles from "../puzzles";
 
-// What home asks for: the shared asks (gui::ASK_NOTHING..), and home's own. FRIEND and
-// COMPUTER are also which setup is open (Shell.setup), NO_SETUP when none is.
+// What home asks for: the shared asks (gui::ASK_NOTHING..), and home's own. NEW_GAME is
+// also whether the setup is open (Shell.setup), NO_SETUP when it isn't.
 let NO_SETUP = 0;
 let NOTHING = gui::ASK_NOTHING;
 let SETTINGS = gui::ASK_SETTINGS;
 let BACK = gui::ASK_BACK;   // from a setup to the menu
 let CHANGED = gui::ASK_CHANGED; // a choice in the setup
 let CONTINUE = 1;
-let FRIEND = 2;             // a friend's setup
-let COMPUTER = 4;           // the computer's setup
+let NEW_GAME = 2;           // the setup
 let PLAY = 6;               // a new game as the setup stands
 let PUZZLES = 8;
 let EXIT = 9;               // close the app
@@ -54,7 +56,7 @@ var closable = true;
 let PLAYERS = 10;           // who's playing
 let RESULTS = 11;           // the games played (results.goose, task 074)
 
-let ROWS = 4;               // and settings, a fifth in landscape
+let ROWS = 3;               // continue, new game, puzzles; the games and settings after them
 // The menu's rows shown: ROWS, or one fewer while there is no game to continue (frame
 // sets it from Resume before the layout; issue 1).
 var rows = ROWS;
@@ -91,16 +93,18 @@ let CHIP_PAD = 40.0;        // and the tap's end, this past the name's
 // The setup's parts, in dp: back and the title, and play are gui::tap() tall, the tiles
 // with their icon over their word gui::stacked().
 let HEAD_GAP = 18.0;
-let GROUP_H = 34.0;         // a choice's dim name over its tiles
+let GROUP_H = 34.0;         // a choice's dim name over its tiles,
+let FIRST_GROUP_H = 26.0;   // the first's, under the head's gap
 let BOARD_TILE_H = 128.0;   // a draughts tile: its board at the start, name, and size
 let MINI_SIZE = 64.0;       // that board
 let TILE_GAP = 10.0;
 let PLAY_GAP = 18.0;
+let PLAY_UP_GAP = 12.0;     // between back and play where play is in the head row
+let SETUP_MARGIN = 8.0;     // the least the setup keeps from the safe area's top and foot before it scrolls
+let SETUP_LIST = gui::HOME_IDS + 16; // the setup's choices' scrolling list's id
 let COLUMN_W = 360.0;       // the column's content in landscape;
 let GEAR_W = 440.0;         // the menu's with the gear beside the wordmark;
-let PAIR_W = 330.0;         // each of two side by side where one is too tall (a phone),
-let PAIR_LEAST = 290.0;     // narrowing to this to keep clear of the way out
-let PAIR_GAP = 24.0;
+let SETUP_W = 400.0;        // the setup's, its first row's four tiles each a tap wide
 // On a desktop (gui::desktop_scale) the column's content starts DESKTOP_TOP dp from the
 // top rather than centered down it, and is DESKTOP_COLUMN_W dp wide at least: centered on
 // a large window the menu floated in the column's middle, and the setup's choices were
@@ -109,6 +113,7 @@ let DESKTOP_TOP = 40.0;
 let DESKTOP_COLUMN_W = 440.0;
 
 let LEVEL_KEYS = [strings::PICK_EASY, strings::PICK_MEDIUM, strings::PICK_HARD];
+// New game's note: the last opponent, the computer's level or a friend.
 let LEVEL_NOTES = [strings::LEVEL_EASY, strings::LEVEL_MEDIUM, strings::LEVEL_HARD];
 
 // Where the way out is in the safe area `area`: its top right.
@@ -161,36 +166,32 @@ fn quit_row(landscape: bool, height: f32, u: f32, small: bool = false) -> bool {
     return menu_height(false, height, u, small, true) <= height - 2.0 * MARGIN * u;
 }
 
-// How tall a setup's column is (FRIEND or COMPUTER): its groups, back and the title before
-// them (unless not `headed`) and play after, or, `paired`, two columns side by side, the
-// first with back, the title, and the first half of the groups, the second with the rest
-// and play.
-fn setup_height(setup: i64, paired: bool, u: f32, headed: bool = true) -> f32 {
-    let groups = if setup == COMPUTER { 4 } else { 2 };
-    let head: f32 = if headed { gui::tap() + HEAD_GAP } else { 0.0 };
-    let play: f32 = PLAY_GAP + gui::tap();
-    guard paired else { return (head + groups * GROUP_H + BOARD_TILE_H + (groups - 1) * gui::stacked() + play) * u; }
-    let first = head + groups / 2 * GROUP_H + BOARD_TILE_H + (groups / 2 - 1) * gui::stacked();
-    let second = groups / 2 * GROUP_H + groups / 2 * gui::stacked() + play;
-    return max(first, second) * u;
+// How tall the setup's choices are in dp: their groups, each a dim name over its tiles.
+fn choices_height() -> f32 { FIRST_GROUP_H + 3.0 * GROUP_H + 3.0 * gui::stacked() + BOARD_TILE_H }
+
+// How tall the setup's column is unscrolled: back and the title, the choices, and play.
+fn setup_height(u: f32) -> f32 { (gui::tap() + HEAD_GAP + choices_height() + PLAY_GAP + gui::tap()) * u }
+
+// Whether the setup's play moves into its head row in the title's place, the choices
+// scrolling under it to the screen's foot: in a phone's landscape, too short for the
+// column (prototypes/new-game.html), where play pinned under the choices would leave
+// them a view under 300 dp tall (the Pixel 7a's 288). Elsewhere play stays under them.
+fn play_up(area: float4, u: f32) -> bool {
+    return area.z >= area.w && gui::phone(area, u) && setup_height(u) > area.w - 2.0 * SETUP_MARGIN * u;
 }
 
-// Whether a setup's column is two side by side: in a landscape too short for one.
-fn paired(setup: i64, landscape: bool, height: f32, u: f32) -> bool {
-    return landscape && setup != NO_SETUP && setup_height(setup, false, u) > height - 2.0 * MARGIN * u;
-}
-
-// How tall the column's content is: the menu, or a setup (FRIEND or COMPUTER).
+// How tall the column's content is: the menu, or the setup, no taller than the safe
+// area less its margins, where the choices scroll.
 fn content_height(setup: i64, landscape: bool, height: f32, u: f32, small: bool = false) -> f32 {
     if setup == NO_SETUP {
         return menu_height(gear_beside(landscape, height, u), height, u, small, quit_row(landscape, height, u, small));
     }
-    return setup_height(setup, paired(setup, landscape, height, u), u);
+    return min(setup_height(u), height - 2.0 * SETUP_MARGIN * u);
 }
 
 // Where home's parts go in `area`, the screen's safe area (layout): the column or sheet's
-// glass (`col`) and its content, the menu or the setup `setup` (FRIEND or COMPUTER);
-// back and the title where they share a row with the way out (`head`); the way out;
+// glass (`col`) and its content, the menu or the setup (`setup` NEW_GAME); back and the
+// title where they share a row with the way out (`head`); the way out;
 // where the board's side of the screen starts (`side`, for the player's chip); the board
 // of n × n squares, and `room3d`, where a 3D board may go instead (wider than tall, it
 // fits there as large as it can): across the stage less 40 dp each side (24 in
@@ -198,7 +199,7 @@ fn content_height(setup: i64, landscape: bool, height: f32, u: f32, small: bool 
 // out, or the flat board's square where that leaves under half of it. With the menu: the
 // gear beside the wordmark or settings a row, the gap under the wordmark and between the
 // rows in dp, `small`, a small window's rows, and `quit`, the way out a last row
-// (quit_row); with a setup, two columns `pair_w` dp wide each, or 0 for one.
+// (quit_row); with the setup, `up`, play in the head row (play_up).
 struct Home {
     col:     float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
     content: float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
@@ -212,7 +213,7 @@ struct Home {
     apart:   f32           = 0.0,
     small:   bool          = false,
     quit:    bool          = false,
-    pair_w:  f32           = 0.0,
+    up:      bool          = false,
     scroll:  bool          = false,
 }
 
@@ -246,13 +247,10 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, s: settings::Settings&
         let rim = if small { RIM_COMPACT } else { 32.0 };
         content_h += max(0.0, PEEK - rim - g.insets.w / u) * u;
     }
-    let pair = paired(setup, landscape, height, u);
+    let up = setup != NO_SETUP && play_up(area, u);
     // The player's chip on the menu, in the way out's row at the board's side's left.
     let chip = setup == NO_SETUP;
     var side = area.x;          // where the board's side of the screen starts
-    // Two columns, each 330 dp, narrower where the second would reach the way out (a
-    // 16:9 phone with its camera's cutout at a side), in dp; 0 for one column.
-    let pair_w = if pair { clamp((width - clear) / u * 0.5 - 0.5 * (40.0 + PAIR_GAP), PAIR_LEAST, PAIR_W) } else { 0.0 };
     var col = float4 { 0.0, 0.0, 0.0, 0.0 };
     var content = col;
     var head = col;             // back and the title, where they share a row with the way out
@@ -260,18 +258,19 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, s: settings::Settings&
     var l = board::layout_at(0.0, 0.0, 0.0, u, n);
     var room3d = col;
     if landscape {
-        // The column, its left corners off the screen, 360 dp of content (a setup too
-        // tall for that, two columns of 300 side by side); the board in the rest, 70% of
-        // the height at most, 40 dp from the column. Where the board would reach the way
-        // out (a phone), it moves down to 8 dp under it or narrows to 16 dp left of it,
-        // whichever leaves it larger.
-        let narrow = if pair { 2.0 * pair_w + PAIR_GAP } else if setup == NO_SETUP && gear_beside(true, height, u) { GEAR_W }
-                     else { COLUMN_W };
+        // The column, its left corners off the screen, 360 dp of content (the setup's 400);
+        // the board in the rest, 70% of the height at most, 40 dp from the column. Where
+        // the board would reach the way out (a phone), it moves down to 8 dp under it or
+        // narrows to 16 dp left of it, whichever leaves it larger.
+        let narrow: f32 = if setup != NO_SETUP { SETUP_W } else if gear_beside(true, height, u) { GEAR_W } else { COLUMN_W };
         let desktop = gui::desktop_scale > 0.0;
-        let wide = if desktop && !pair { max(narrow, DESKTOP_COLUMN_W) } else { narrow };
+        let wide = if desktop { max(narrow, DESKTOP_COLUMN_W) } else { narrow };
         let w = wide * u;
         col = float4 { area.x - 32.0 * u, area.y, w + 112.0 * u, height };
         content = gui::center(float4 { area.x + 40.0 * u, area.y, w, height }, w, content_h);
+        // Play in the head row, the column from MARGIN under the top down to the safe
+        // area's foot, where the choices' list runs on to the screen's.
+        if up { content = float4 { content.x, area.y + MARGIN * u, w, height - MARGIN * u }; }
         // The gear reaches 8 dp over the wordmark's row: on the screen, where the menu
         // has under 8 dp above it (a 16:9 phone less its gesture bar).
         if setup == NO_SETUP && gear_beside(true, height, u) {
@@ -318,14 +317,16 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, s: settings::Settings&
         // moving down to 16 dp under the way out where it would reach it, and shrinking to
         // keep 24 dp above the sheet. It keeps 40 dp above and below, less, down to 24,
         // where a tall setup's sheet near square would leave it under 40% of the width.
-        // Where a setup's sheet would reach the way out (the computer's on a short phone),
-        // the sheet takes the height, 8 dp under its top at least, its margins above and
-        // below shrinking to 8 dp to fit; back, the title, and the way out share its first
-        // row, and the board, with no room left, isn't shown.
+        // Where the setup's sheet would reach the way out (a short phone), the sheet takes
+        // the height, 8 dp under its top at least, its margins above and below shrinking
+        // to 8 dp to fit, and where even that is too short (a small window) the choices
+        // scroll; back, the title, and the way out share its first row, and the board,
+        // with no room left, isn't shown.
         var rim = (if small { RIM_COMPACT } else { 32.0 }) * u;
         var sheet_h = content_h + 2.0 * rim;
         let full = setup != NO_SETUP && height - sheet_h < clear;
         if full {
+            content_h = min(content_h, height - 3.0 * SETUP_MARGIN * u);
             rim = clamp(0.5 * (height - 8.0 * u - content_h), 8.0 * u, 32.0 * u);
             sheet_h = content_h + 2.0 * rim;
         }
@@ -334,7 +335,7 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, s: settings::Settings&
         if full {
             head = float4 { content.x, content.y, content.z - (gui::tap() + 16.0) * u, gui::tap() * u };
             way = float4 { content.x + content.z - gui::tap() * u, content.y, gui::tap() * u, gui::tap() * u };
-            gui::cut_top(content, (gui::tap() + HEAD_GAP) * u);
+            gui::cut_top(content, gui::tap() * u);
         }
         let stage_h = height - sheet_h;
         var size, y = sheet_board(width, stage_h, u, height, clear);
@@ -351,7 +352,7 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, s: settings::Settings&
     let gear = gear_beside(landscape, height, u);
     return Home { col: col, content: content, head: head, way: way, side: side, board: l, room3d: room3d, gear: gear,
                   below: mark_gap(gear, height, u, small), apart: row_gap(gear, height, u, small), small: small,
-                  quit: setup == NO_SETUP && quit_row(landscape, height, u, small), pair_w: pair_w, scroll: scroll };
+                  quit: setup == NO_SETUP && quit_row(landscape, height, u, small), up: up, scroll: scroll };
 }
 
 // Where a scrolling menu's list ends, in pixels: at the screen's foot, under the safe
@@ -378,7 +379,7 @@ fn sheet_board(width: f32, stage_h: f32, u: f32, height: f32, clear: f32) -> f32
 // Declares home for this frame in `area`, the screen's safe area, where layout puts its
 // parts, its pieces over the UI put in `over`, and sets l to where the board of n × n
 // squares goes and `room3d` to where a 3D board may go instead: the menu, or the setup
-// `setup` (FRIEND or COMPUTER) with the choices in s. Returns what was tapped.
+// (`setup` NEW_GAME) with the choices in s. Returns what was tapped.
 // What continue goes back to (issue 1, prototypes/issue-1.html, take a): whether there
 // is a game to go back to, one played or set up, and whose it is, a strings key for the
 // row's note (CONTINUE_FRIEND..), or -1 for none. With none (a first run, a new player)
@@ -403,7 +404,7 @@ fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: f
     // The column or sheet runs on past the safe area to the screen's edges.
     gui::glass(g, gui::bleed(g, h.col, area), 32.0);
     over.clear();
-    var pick = if setup != NO_SETUP { choose(over, g, h.content, setup == COMPUTER, h.pair_w, h.head, s) }
+    var pick = if setup != NO_SETUP { choose(over, g, h.content, h.head, h.up, foot(g, area), s) }
                else { menu(over, g, h.content, h.gear, h.below, h.apart, s, h.small, h.quit, resume, h.scroll, foot(g, area)) };
     // The player and the way out, declared last so the tiles before them keep their order.
     if setup == NO_SETUP && player_chip(g, player_spot(g, area, h.side, l.board, h.way, s), s) { pick = PLAYERS; }
@@ -525,17 +526,24 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
         for k in 1..rows_n + 1 { at[k].y -= off; }
         listed = g.quads.len;
     }
-    let ways = [CONTINUE, FRIEND, COMPUTER, PUZZLES];
-    let icons = [gui::NEXT, gui::FRIEND, gui::COMPUTER, gui::PUZZLE];
-    let keys = [strings::HOME_CONTINUE, strings::HOME_FRIEND, strings::HOME_COMPUTER, strings::HOME_PUZZLES];
+    let ways = [CONTINUE, NEW_GAME, PUZZLES];
+    let icons = [gui::NEXT, gui::NEW_GAME, gui::PUZZLE];
+    let keys = [strings::HOME_CONTINUE, strings::HOME_NEW_GAME, strings::HOME_PUZZLES];
     for i in first..ROWS {
         let r = at[1 + i - first];
         var stars: u8[..64] = [];
         let won, all = picker::totals(s.stars[puzzles::loaded]);
         strings::fill_in(stars, strings::PUZZLES_STARS, [won, all]);
+        // New game notes the opponent its setup keeps, the computer's icon and level or a
+        // friend's; it is outlined under continue, and lit in its place where continue
+        // isn't shown (a first run), the keys' first choice then.
+        let opponent = if s.friend { strings::LEVEL_FRIEND } else { LEVEL_NOTES[s.level] };
         let note = if i == 0 && resume.note >= 0 { strings::get(resume.note) }
-                   else if i == 2 { strings::get(LEVEL_NOTES[s.level]) } else if i == 3 && all > 0 { stars[..] } else { "" };
-        if gui::row(g, gui::HOME_IDS + 1 + i, r, icons[i], strings::get(keys[i]), note, i == 0, true) { pick = ways[i]; }
+                   else if i == 1 { strings::get(opponent) } else if i == 2 && all > 0 { stars[..] } else { "" };
+        let mark = if i != 1 { gui::NO_ICON } else if s.friend { gui::FRIEND } else { gui::COMPUTER };
+        if gui::row(g, gui::HOME_IDS + 1 + i, r, icons[i], strings::get(keys[i]), note, i == first, true, i == 1, mark) {
+            pick = ways[i];
+        }
     }
     // The games: the player's rating in their draughts once they have one.
     var rating: u8[..16] = [];
@@ -605,12 +613,12 @@ fn ask_quit(g: gui::Gui&, area: float4, screen: float4) -> i64 {
     return ask;
 }
 
-// A choice's dim name, then a row of `count` tiles `h` dp tall cut from c; returns the
-// row.
-fn group(g: gui::Gui&, c: float4&, key: i64, h: f32) -> float4 {
+// A choice's dim name, `name_h` dp over a row of tiles `h` dp tall, cut from c; returns
+// the row.
+fn group(g: gui::Gui&, c: float4&, key: i64, h: f32, name_h: f32 = GROUP_H) -> float4 {
     let u = g.scale;
-    var name = gui::cut_top(c, GROUP_H * u);
-    gui::cut_top(name, 10.0 * u);
+    var name = gui::cut_top(c, name_h * u);
+    gui::cut_top(name, (name_h - 24.0) * u);
     gui::cut_left(name, 4.0 * u);
     gui::text(g, gui::SMALL, name, strings::get(key), 0.66, 0.04 * gui::FACE_DP[gui::SMALL] as f32 * u, gui::LEFT);
     return gui::cut_top(c, h * u);
@@ -631,8 +639,8 @@ fn draughts_width(g: gui::Gui&, k: i64, least: f32) -> f32 {
 // Draughts i's tile in the row: a third of it when every name fits a third with room
 // either side; else each tile its name's width and an even share of the rest, so a long
 // name keeps the body face ("Rahvusvaheline", 130 dp, beside a landscape third of 113),
-// each at least a tap wide. Thirds too where the names leave no room to share (two
-// columns on a phone): a name too wide for its third then takes the small face.
+// each at least a tap wide. Thirds too where the names leave no room to share: a name too
+// wide for its third then takes the small face.
 fn draughts_tile(g: gui::Gui&, row: float4, i: i64) -> float4 {
     let u = g.scale;
     let count = settings::DRAUGHTS.len;
@@ -658,35 +666,82 @@ fn draughts_tile(g: gui::Gui&, row: float4, i: i64) -> float4 {
     return float4 { x, row.y, draughts_width(g, i, least) + share, row.w };
 }
 
-// The setup in c: back and the title, the choices, play.
-fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, computer: bool, pair_w: f32, apart: float4,
+// Play in r, a primary row: its icon and word centered.
+fn play_row(g: gui::Gui&, r: float4) -> bool {
+    let u = g.scale;
+    let word = strings::get(strings::SETUP_PLAY);
+    let w = 34.0 * u + 18.0 * u + gui::text_width(g, gui::LABEL, word) + 36.0 * u;
+    let tapped = gui::row(g, gui::HOME_IDS + 70, r, gui::NO_ICON, "", "", true, true);
+    var mid = gui::center(r, w, r.w);
+    gui::cut_left(mid, 18.0 * u);
+    gui::glyph_icon(g, gui::center(gui::cut_left(mid, 34.0 * u), 34.0 * u, 34.0 * u), gui::NEXT, gui::ROW_PRIMARY, 0.0, 0.85);
+    gui::cut_left(mid, 18.0 * u);
+    gui::text(g, gui::LABEL, mid, word, 1.0, 0.0, gui::LEFT);
+    return tapped;
+}
+
+// The setup in `content`: back and the title at its top, or in `apart` where that is set,
+// beside the way out; the choices; and play, pinned at the foot. Where the choices don't
+// fit between them, they scroll in a list between the head and play, the lowest fading
+// out at its foot while there are more below. With `up`, play is in the head row in the
+// title's place, and the list runs on down to `foot` (y in pixels, the screen's foot).
+// Every tile is declared in one order whatever the layout: back, whom to play, the
+// draughts, the pieces or the board's turning, the clock, play.
+fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, apart: float4, up: bool, foot: f32,
           s: settings::Settings&) -> i64 {
     let u = g.scale;
     var ask = NOTHING;
-    // One column, or two side by side, pair_w dp each where it isn't 0: back, the title,
-    // the draughts and the level in the first; the child's pieces, the clock, and play in
-    // the second. Back and the title are at the column's top, or in `apart` where that is
-    // set, beside the way out.
-    let pair = pair_w > 0.0;
-    var c = if pair { float4 { content.x, content.y, pair_w * u, content.w } } else { content };
-    let second = float4 { content.x + (pair_w + PAIR_GAP) * u, content.y, pair_w * u, content.w };
+    var c = content;
     var head = apart;
-    if apart.z <= 0.0 {
-        head = gui::cut_top(c, gui::tap() * u);
-        gui::cut_top(c, HEAD_GAP * u);
-    }
+    if apart.z <= 0.0 { head = gui::cut_top(c, gui::tap() * u); }
     let back = gui::cut_left(head, gui::tap() * u);
     if gui::tile(g, gui::HOME_IDS + 20, back, gui::BACK, gui::PLAIN, 16.0) { ask = BACK; }
-    gui::cut_left(head, 14.0 * u);
-    gui::glyph_icon(g, gui::center(gui::cut_left(head, 36.0 * u), 36.0 * u, 36.0 * u),
-                    if computer { gui::COMPUTER } else { gui::FRIEND }, gui::PLAIN, 0.0, 0.85);
-    gui::cut_left(head, 14.0 * u);
-    // The title in a smaller face where it is too wide for the column (two side by side).
-    let title = strings::get(if computer { strings::HOME_COMPUTER } else { strings::HOME_FRIEND });
-    gui::text(g, gui::fitting(g, gui::LABEL, title, head.z), head, title, 1.0, 0.0, gui::LEFT);
+    var play = head;
+    if up {
+        gui::cut_left(play, PLAY_UP_GAP * u);
+    } else {
+        gui::cut_left(head, 14.0 * u);
+        gui::glyph_icon(g, gui::center(gui::cut_left(head, 36.0 * u), 36.0 * u, 36.0 * u), gui::NEW_GAME, gui::PLAIN, 0.0, 0.85);
+        gui::cut_left(head, 14.0 * u);
+        // The title in a smaller face where it is too wide for its room.
+        let title = strings::get(strings::HOME_NEW_GAME);
+        gui::text(g, gui::fitting(g, gui::LABEL, title, head.z), head, title, 1.0, 0.0, gui::LEFT);
+        play = gui::cut_bottom(c, gui::tap() * u);
+        gui::cut_bottom(c, PLAY_GAP * u);
+    }
+
+    // The choices, a list where they don't fit: from under the head, its gap in it, down to
+    // play's gap, or to the screen's foot with play up.
+    let inner = (HEAD_GAP + choices_height()) * u;
+    let scroll = up || inner > c.w + 0.5;
+    let bottom = if up { foot } else { c.y + c.w };
+    let view = float4 { c.x - 24.0 * u, c.y, c.z + 48.0 * u, bottom - c.y };
+    var off: f32 = 0.0;
+    if scroll { off = gui::scroll_begin(g, SETUP_LIST, view, inner); }
+    let listed = g.quads.len;
+    var list = float4 { c.x, c.y - off, c.z, inner };
+    gui::cut_top(list, HEAD_GAP * u);
+
+    // Whom to play: a friend, or the computer at a level, its icon and one to three pips.
+    let against = group(g, list, strings::SETUP_AGAINST, gui::stacked(), FIRST_GROUP_H);
+    for i in 4 {
+        let on = if i == 0 { s.friend } else { !s.friend && s.level == i - 1 };
+        let label = strings::get(if i == 0 { strings::SETUP_FRIEND } else { LEVEL_KEYS[i - 1] });
+        let tapped, pic = gui::pick(g, gui::HOME_IDS + 40 + i, across(against, 4, i, u), 30.0, label, "", on, true);
+        let w: f32 = if i == 0 { 24.0 } else { 70.0 };
+        var mark = gui::center(pic, w * u, pic.w);
+        gui::glyph_icon(g, gui::center(gui::cut_left(mark, 24.0 * u), 24.0 * u, 24.0 * u),
+                        if i == 0 { gui::FRIEND } else { gui::COMPUTER }, gui::PLAIN, 0.0, 0.85);
+        if i > 0 { gui::pips(g, gui::cut_right(mark, 40.0 * u), i, 1.0); }
+        if tapped {
+            s.friend = i == 0;
+            if i > 0 { s.level = i - 1; }
+            ask = CHANGED;
+        }
+    }
 
     // The draughts, each with its board at the start.
-    let kinds = group(g, c, strings::SETUP_DRAUGHTS, BOARD_TILE_H);
+    let kinds = group(g, list, strings::SETUP_DRAUGHTS, BOARD_TILE_H);
     for v, i in settings::DRAUGHTS {
         let tapped, pic = gui::pick(g, gui::HOME_IDS + 30 + i, draughts_tile(g, kinds, i), MINI_SIZE,
                                     strings::get(settings::DRAUGHTS_KEYS[i]), strings::get(settings::DRAUGHTS_SIZES[i]),
@@ -698,21 +753,10 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, computer: bool, 
             ask = CHANGED;
         }
     }
-    if computer {
-        // The level, with one to three pips.
-        let levels = group(g, c, strings::SETUP_LEVEL, gui::stacked());
-        for i in 3 {
-            let tapped, pic = gui::pick(g, gui::HOME_IDS + 40 + i, across(levels, 3, i, u), 10.0, strings::get(LEVEL_KEYS[i]), "",
-                                        s.level == i, true);
-            gui::pips(g, pic, i + 1, 1.0);
-            if tapped {
-                s.level = i;
-                ask = CHANGED;
-            }
-        }
-        if pair { c = second; }
+
+    if !s.friend {
         // The child's pieces, each tile showing one.
-        let colors = group(g, c, strings::SETUP_COLOR, gui::stacked());
+        let colors = group(g, list, strings::SETUP_COLOR, gui::stacked());
         for i in 2 {
             let tapped, pic = gui::pick(g, gui::HOME_IDS + 50 + i, across(colors, 2, i, u), 30.0,
                                         strings::get(if i == 0 { strings::COLOR_WHITE } else { strings::COLOR_BLACK }), "",
@@ -723,10 +767,33 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, computer: bool, 
                 ask = CHANGED;
             }
         }
+    } else {
+        // The board for a friend's game: turning to the side to move after each move, or
+        // staying (settings' `turns`), each with its icon over its word and note where the
+        // tile holds all three (a touch screen's 88 dp), without it where not (a desktop's).
+        let turning = group(g, list, strings::SETUP_BOARD, gui::stacked());
+        let words = g.faces[gui::BODY].ascent - g.faces[gui::BODY].descent + g.faces[gui::SMALL].ascent
+                    - g.faces[gui::SMALL].descent;
+        let icon: f32 = if words + 42.0 * u <= turning.w { 30.0 } else { 0.0 };
+        for i in 2 {
+            let turns = i == 0;
+            let tapped, pic = gui::pick(g, gui::HOME_IDS + 52 + i, across(turning, 2, i, u), icon,
+                                        strings::get(if turns { strings::BOARD_TURNS } else { strings::BOARD_STAYS }),
+                                        strings::get(if turns { strings::BOARD_TURNS_NOTE } else { strings::BOARD_STAYS_NOTE }),
+                                        s.turns == turns, true);
+            if icon > 0.0 {
+                gui::glyph_icon(g, gui::center(pic, 30.0 * u, 30.0 * u), if turns { gui::TURNS } else { gui::STAYS }, gui::PLAIN,
+                                0.0, 0.85);
+            }
+            if tapped {
+                s.turns = turns;
+                ask = CHANGED;
+            }
+        }
     }
-    if pair && !computer { c = second; }
+
     // The clock.
-    let clocks = group(g, c, strings::SETUP_CLOCK, gui::stacked());
+    let clocks = group(g, list, strings::SETUP_CLOCK, gui::stacked());
     let labels = [-1, strings::CLOCK_BLITZ, strings::CLOCK_RAPID];
     let notes = [strings::CLOCK_NONE, strings::CLOCK_BLITZ_NOTE, strings::CLOCK_RAPID_NOTE];
     for i in 3 {
@@ -739,20 +806,10 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, computer: bool, 
             ask = CHANGED;
         }
     }
-    gui::cut_top(c, PLAY_GAP * u);
-    var play = gui::cut_top(c, gui::tap() * u);
-    // Two columns end on one line: play at the bottom of the second, level with the
-    // first's last tile, where the first is the taller.
-    if pair { play.y = max(play.y, content.y + content.w - gui::tap() * u); }
-    let word = strings::get(strings::SETUP_PLAY);
-    // Play: the row's icon and word centered.
-    let w = 34.0 * u + 18.0 * u + gui::text_width(g, gui::LABEL, word) + 36.0 * u;
-    if gui::row(g, gui::HOME_IDS + 70, play, gui::NO_ICON, "", "", true, true) { ask = PLAY; }
-    var mid = gui::center(play, w, play.w);
-    gui::cut_left(mid, 18.0 * u);
-    gui::glyph_icon(g, gui::center(gui::cut_left(mid, 34.0 * u), 34.0 * u, 34.0 * u), gui::NEXT, gui::ROW_PRIMARY, 0.0,
-                    0.85);
-    gui::cut_left(mid, 18.0 * u);
-    gui::text(g, gui::LABEL, mid, word, 1.0, 0.0, gui::LEFT);
+    if scroll {
+        gui::fade_edges(g, listed, view, 0.0, c.y + inner - off - bottom, FADE * u);
+        gui::scroll_end(g);
+    }
+    if play_row(g, play) { ask = PLAY; }
     return ask;
 }
