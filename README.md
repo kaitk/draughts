@@ -32,7 +32,7 @@ Vulkan, or iOS 16 or later with Metal.
 | --- | --- | --- | --- | --- |
 | Galaxy Tab A11+ (SM-X230) | MediaTek MT6878 | Mali-G615 MC2, Vulkan 1.3 | Android 16 | Plays in 2D and 3D; the main test device |
 | Pixel 7a | Google Tensor G2 | Mali-G710 MC7, Vulkan | Android 17 | Plays in 2D and 3D |
-| Galaxy A33 5G (SM-A336B) | Samsung Exynos 1280 | Mali-G68 MP4, Vulkan 1.3 | Android 16 | Plays in 2D at 90 Hz and 3D at 60 while it moves; the weakest tried |
+| Galaxy A33 5G (SM-A336B) | Samsung Exynos 1280 | Mali-G68 MP4, Vulkan 1.3 | Android 16 | Plays in 2D at 90 Hz and 3D at 75 on average while it moves, at 2× MSAA; the weakest tried |
 | iPhone 13 mini | Apple A15 Bionic | Apple GPU, Metal | iOS 26 | Runs, a development build |
 | iPad Pro 11-inch (M5), in the Simulator | The Mac's M1 Pro | Apple GPU, Metal | iPadOS 26.4 | Runs full screen and in resized windows, both orientations; the smallest windows still to fit |
 | Mac with Apple silicon (M1 Pro) | Apple M1 Pro | Apple GPU, Metal | macOS | Runs in 2D and 3D; development and headless tests |
@@ -43,13 +43,14 @@ Vulkan, or iOS 16 or later with Metal.
 
 ### Performance
 
-Release builds in a game, 2026-11-10 (Linux 2026-11-12), frames as they reached the screen:
+Release builds in a game, 2026-11-10 (Linux 2026-11-12, the A33's 3D frames 2026-11-13),
+frames as they reached the screen:
 
 | Device | Display | 3D board | Memory (2D / 3D) |
 | --- | --- | --- | --- |
 | Galaxy Tab A11+ | 1920 × 1200, 90 Hz | locked 90 fps | 137 / 295 MB |
 | Pixel 7a | 2400 × 1080, 60 Hz | locked 60 fps | 159 / 324 MB |
-| Galaxy A33 5G | 2400 × 1080, 90 Hz | 60 fps (45 fps 1% low) | 116 / 275 MB |
+| Galaxy A33 5G | 2400 × 1080, 90 Hz | 75 fps (45 fps 1% low) | 116 / 275 MB |
 | iPhone 13 mini | 2340 × 1080, 60 Hz | locked 60 fps | 59 / 204 MB |
 | Windows PC | 2560 × 1440, 165 Hz | locked 165 fps (uncapped 1,980) | 258 / 477 MB |
 | Linux PC, Wayland | 1920 × 1080, 60 Hz | locked 60 fps (uncapped 3,600) | 84 / 89 MB, not counting VRAM |

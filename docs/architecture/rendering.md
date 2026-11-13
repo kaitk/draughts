@@ -1712,7 +1712,7 @@ and the 99th percentile, against the display's 11.1 ms at 90 Hz or 16.7 ms at 60
 | Pixel 7a, 2400 × 1080, 60 Hz | 2D | 0.08% | 159 MB | 60 / 60 | 16.7 / 16.7 ms |
 | Pixel 7a | 3D | 0.04% | 324 MB | 60 / 60 | 16.7 / 16.7 ms |
 | Galaxy A33 5G, 2400 × 1080, 90 Hz | 2D | 0.04% | 116 MB | 90 / 90 | 11.1 / 11.1 ms |
-| Galaxy A33 5G | 3D | 0.04% | 275 MB | 60 / 45 | 22.2 / 22.2 ms |
+| Galaxy A33 5G | 3D | 0.04% | 275 MB | 75 / 45 | 11.1 / 22.2 ms |
 | iPhone 13 mini, 2340 × 1080, 60 Hz | 2D | 0.08% | 59 MB | 60 / 60 | 16.7 / 16.7 ms |
 | iPhone 13 mini | 3D | 0.08% | 204 MB | 60 / 60 | 16.7 / 16.7 ms |
 | Windows PC, 2560 × 1440, 165 Hz | 2D | 0.00% | 258 MB | 165 / 165 | 6.1 / 6.1 ms |
@@ -1722,7 +1722,9 @@ and the 99th percentile, against the display's 11.1 ms at 90 Hz or 16.7 ms at 60
 
 The 2D board draws in one full-screen pass, the UI's glass over it, and holds the
 display's rate. The 3D board's frame takes about 9.2 ms of GPU work on the tablet and
-holds its 90 Hz; the Galaxy A33's 23 ms holds a steady 60 on its 90 Hz display. The 3D
+holds its 90 Hz. The Galaxy A33's 15 to 16 ms (at 4×; it draws 2× MSAA, below) shows 75
+frames a second on its 90 Hz display, 19% of them for two refreshes (task 081, 2026-11-13,
+a test build of the release's code beside it; its idle and memory from 2026-11-10). The 3D
 board's extra memory is GPU memory: 180 to 230 MB against about 36 MB in 2D. On the
 iPhone, Instruments' Animation Hitches counts the frames in place of Android's
 compositor, and the app counts its own CPU time and memory footprint. On Windows, full
