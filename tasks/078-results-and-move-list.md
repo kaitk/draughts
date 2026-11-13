@@ -56,9 +56,8 @@ on from any move, a game that doesn't count.
 - [x] Play from here at any move but the end of a game that ended there: the same
       draughts, opponent, level and skill, side, and side to move; its game written
       nowhere, moving no rating, skill, or count, the game in progress kept and resumed as
-      it was; the replay's info sign beside the button opening a card that says it
-      doesn't count and why, at every size, costing the list no rows (on a phone still
-      to check)
+      it was; a line under the replay's board saying it doesn't count (and why where
+      that fits), at every size, costing the list no rows (on a phone still to check)
 
 ## Notes
 
@@ -188,6 +187,30 @@ on from any move, a game that doesn't count.
   both orientations, open, and Estonian, the iPhone 13 mini's landscape, a 9:16 phone's
   landscape at 480 dp in English and Estonian open). The desktop's hover wasn't shot:
   headless, `--touch off --mouse` drew the touch layout.
+- The info sign into a line under the board (2026-11-13; the user disliked the sign and
+  the head it crowded on the Pixel 7a's landscape in Estonian): `replay::info`, `why`,
+  `whys`, `close_why`, `INFO_ID`, `WORDS`, the `--tip why` flag, `gui::labelled`'s
+  `NO_ICON` word alone, and `shell::back`'s closing of the card are gone; `game::card` is
+  folded back into `game::tip`, the mark tip being its only user. `replay::disclaimer`
+  draws the line in `Layout.note`, 26 dp under the board, as wide, `replay.no_count_why`
+  where it fits on one line, else `replay.no_count`. The head is the one before the sign,
+  with play from here's word given back's side room and both tiles going the same way
+  (beside, or both stacked on a phone), the title giving way first; on the tablet's
+  column the button is a row over the glass again. Focus groups back to the head 0, the
+  steps 1, the list 2 (Tab 3 presses to the list). Boards in dp (`test/shell/replay`),
+  before and after: the Pixel 7a's landscape at 540 dp 450 to 424 and portrait 492 to
+  478; at 480 dp 395 to 369 and 432 to 418; the tablet's landscape 752 to 726 and
+  portrait 752 to 738; the iPhone 13 mini's landscape 422 to 396 (portrait 452 to 438);
+  a 9:16 phone's landscape at 480 dp 329, unchanged (the board held by the column's
+  width). Rows in view kept or gained everywhere (in Estonian the foldable's and 4:3's
+  portrait 0.7 to 1.7, the tablet's portrait 2.1 to 3.1, the sign's room back to the
+  title). The line says why on the tablet (landscape and portrait), the short text on
+  every phone. `test/shell/sizes` checks the line inside the safe area, under the board
+  and as wide, clear of the tiles and every other icon and word, and back and play from
+  here a tap at least, as tall, apart, at every replay size. Headless shots:
+  `build/notes/078-disclaimer/` (the Pixel's landscape and portrait in English and
+  Estonian, the tablet both ways, the iPhone 13 mini's landscape, a 9:16 phone's
+  landscape at 480 dp in Estonian).
 - Left for A and B: the phones themselves; a tip in the sheet and the replay (the legend
   there for now); the line in a small window's compact bar (none).
 - Left for C: the prototype's

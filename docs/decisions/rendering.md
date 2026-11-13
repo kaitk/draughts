@@ -668,8 +668,8 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
     iPhone 13 mini's landscape would have had none), and in the head in place of the
     title (about 110 dp on a phone, five lines).
 - Why a game from the replay doesn't count is a card behind an info sign beside play
-  from here, no longer a note at the glass's top (2026-11-13, task 078, as the user
-  agreed). This replaces the note under the button from earlier that day: on the Pixel
+  from here (replaced the same day by a line under the board, below), no longer a note at
+  the glass's top (2026-11-13, task 078, as the user agreed). This replaces the note under the button from earlier that day: on the Pixel
   7a in landscape it left the list about three rows of moves, and its short form took
   the game's line's place on small phones. The card costs the list nothing.
   - The sign is an 88 dp tap of its own at the button's right (a 28 dp disc drawn in
@@ -691,6 +691,29 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
     492 dp), the tablet's landscape 7.9 to 9.7, its portrait 3.0 to 3.1 (the board 729 to
     752), the iPhone 13 mini's landscape 3.1 to 2.9 (the sign takes the title's room,
     and the game's line, back from the short note's place, heads the glass).
+- A game from the replay not counting is a line under the board, no longer a card behind
+  an info sign (2026-11-13, task 078). This replaces the info sign from earlier that day:
+  the user disliked the sign and the head it crowded (on the Pixel 7a's landscape in
+  Estonian back shrank to its arrow over its word, play from here to its words alone on
+  two lines, the title went, and the open card covered the board), and a line by the
+  board needs no tap to be read.
+  - One line in the small face, dim as settings' notes, as wide as the board and centered
+    under it: why (not saved, no rating changed) where that fits on the line (the
+    tablet), else only that it doesn't count (the phones). Under the board rather than
+    over it: over, it would sit between the head and the board in portrait and read as
+    the head's; under, it reads as a caption of the position a game would start from.
+  - The board gives way for it, not the list: in landscape by the line's 26 dp (the Pixel
+    7a at 540 dp 450 to 424 dp, the tablet 752 to 726, the iPhone 13 mini 422 to 396), in
+    portrait by 14 dp, the line taking the 12 dp gap over the steps (the Pixel 492 to 478,
+    the tablet 752 to 738). The list keeps every row the sign's removal gave it.
+  - The head is back as before the sign (back, the title, play from here with its icon),
+    with two changes so its tiles look right in Estonian: play from here keeps back's
+    room at its sides (it had 8 dp, its word against the tile's right edge while the
+    icon's own margin widened its left), and the two tiles go the same way, both icon
+    beside word or both stacked, the title giving way before either stacks. Rejected:
+    keeping the title and stacking the button beside a wide back (the tablet's column),
+    which made the two tiles look unrelated; there the button takes a row over the glass
+    again.
 - A phone's moves, where the panel has no room (2026-11-13, task 078's A, the user's
   choice from `prototypes/history.html`'s take d), replacing 2026-11-11's no panel in
   portrait or on a phone in landscape:
