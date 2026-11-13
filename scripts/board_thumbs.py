@@ -96,6 +96,9 @@ def main():
     run(ASTCENC, "-cl", master, OUT / "boards-6x6.astc", "6x6", "-thorough", "-esw", "rgb1")
     for f in ("boards.jpg", "boards-6x6.astc"):
         print(f, (OUT / f).stat().st_size, "bytes")
+    # background.c #embeds the atlas, and the build keeps its object while the .c file is
+    # unchanged: touch it, or the app goes on showing the old pictures (2026-11-13).
+    (ROOT / "src/app/background.c").touch()
 
 
 if __name__ == "__main__":
