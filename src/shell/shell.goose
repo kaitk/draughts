@@ -365,6 +365,18 @@ fn go_to(sh: Shell&, to: i64, now: f64) {
     sh.screen = to;
 }
 
+// Goes back up to screen `to` at `now`: home, come back to, shows its menu.
+fn go_up(sh: Shell&, to: i64, now: f64) {
+    go_to(sh, to, now);
+    if to == HOME { sh.setup = home::NO_SETUP; }
+}
+
+// Opens settings at `now` from screen `from`, where their back goes.
+fn open_settings(sh: Shell&, from: i64, now: f64) {
+    go_to(sh, SETTINGS, now);
+    sh.back = from;
+}
+
 // Opens puzzle `index` of puzzles::all at `now`: from the puzzles to pick from through
 // a transition, from another puzzle at once.
 fn play_puzzle(sh: Shell&, index: i64, now: f64 = 0.0) {
@@ -395,8 +407,7 @@ fn back(sh: Shell&, now: f64) -> bool {
     }
     // How to play goes back where it was opened from, its end's card too.
     if sh.screen == TUTORIAL {
-        go_to(sh, sh.lesson_from, now);
-        if sh.lesson_from == HOME { sh.setup = home::NO_SETUP; }
+        go_up(sh, sh.lesson_from, now);
         return true;
     }
     if sh.screen == HOME && sh.who.state != who::CLOSED {
@@ -414,9 +425,7 @@ fn back(sh: Shell&, now: f64) -> bool {
         sh.theme = -1;
     } else {
         let up = KINDS[sh.screen].up;
-        go_to(sh, if up == RETURN { sh.back } else { up }, now);
-        // Home, come back to, shows its menu.
-        if up == HOME { sh.setup = home::NO_SETUP; }
+        if up == RETURN { go_to(sh, sh.back, now); } else { go_up(sh, up, now); }
     }
     return true;
 }
@@ -685,10 +694,7 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
         p.lookout = sh.game.look;
         sh.changed = true;
     }
-    // Drawn through the camera as this frame left it: a button tapped, a showcase drag, or
-    // the board facing the side to move shows at once.
-    panel::aim(l, sh.game.cam, now);
-    if l.three { sh.came_view = l.view; }
+    aimed(sh, l, sh.game.cam, now);
     // A game from the replay counts for nothing: its end and start over change nothing
     // kept, and its way out goes back to the replay.
     if sh.trial {
@@ -697,8 +703,7 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
             return true;
         }
         if ev.go == game::SETTINGS {
-            go_to(sh, SETTINGS, now);
-            sh.back = GAME;
+            open_settings(sh, GAME, now);
             return true;
         }
         return changed;
@@ -727,13 +732,11 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
     }
     if ev.ended || ev.restarted { apply_prefs(sh); }
     if ev.go == game::HOME {
-        go_to(sh, HOME, now);
-        sh.setup = home::NO_SETUP;
+        go_up(sh, HOME, now);
         return true;
     }
     if ev.go == game::SETTINGS {
-        go_to(sh, SETTINGS, now);
-        sh.back = GAME;
+        open_settings(sh, GAME, now);
         return true;
     }
     return changed;
@@ -755,8 +758,7 @@ fn results_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool)
     sh.results_variant = variant;
     sh.out.layout = board::layout_at(-2.0 * area.z, 0.0, 0.5 * area.z, g.scale, sh.out.layout.n);
     if ask == results::BACK {
-        go_to(sh, HOME, now);
-        sh.setup = home::NO_SETUP;
+        go_up(sh, HOME, now);
     }
     if ask >= 0 {
         sh.results_at = if g.scroll.id == results::LIST { g.scroll.offset } else { 0.0 };
@@ -823,13 +825,28 @@ fn leave_trial(sh: Shell&, now: f64) {
 // to move plays from the bottom: round the 3D board when it is chosen, as the game's.
 fn puzzle_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
     let pl .= sh.puzzle;
-    let n = rules::VARIANTS[pl.b.variant].size;
-    // A puzzle keeps its own play panel's height in a small window for now (task 050).
+    return side_layout(sh, area, u, pl.b.variant, puzzle::current(pl).start.side == rules::BLACK, pl.cam, now);
+}
+
+// The puzzle's layout, which how to play shares, for a board of `variant`, turned with
+// `flip`, seen through camera `cam` at `now`: round the 3D board when it is chosen, else
+// the flat board with its panels beside it. It keeps its own play panel's height in a
+// small window for now (task 050).
+fn side_layout(sh: Shell&, area: float4, u: f32, variant: u8, flip: bool, cam: rig::Rig&, now: f64) -> panel::Layout {
+    let n = rules::VARIANTS[variant].size;
     var l = if settings::raised(sh.prefs) { panel::corners_in(area, n, u, panel::PITCH_PORTRAIT, false) }
             else { panel::puzzle_in(area, n, u) };
-    l.board.flip = puzzle::current(pl).start.side == rules::BLACK;
-    panel::aim(l, pl.cam, now);
+    l.board.flip = flip;
+    panel::aim(l, cam, now);
     return l;
+}
+
+// After a screen round a board has taken its frame: the board drawn through camera `cam`
+// as the frame left it (a button tapped, a showcase drag, the board facing the side to
+// move shows at once), and the 3D board's view, where it is one, for the transition.
+fn aimed(sh: Shell&, l: panel::Layout&, cam: rig::Rig&, now: f64) {
+    panel::aim(l, cam, now);
+    if l.three { sh.came_view = l.view; }
 }
 
 // The puzzle for this frame. Returns whether anything on screen changed.
@@ -838,8 +855,7 @@ fn puzzle_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     var l = puzzle_layout(sh, area, g.scale, now);
     sh.out.layout = l.board;
     let ev, changed = puzzle::frame(pl, g, l, now, sh.out.over);
-    panel::aim(l, pl.cam, now);
-    if l.three { sh.came_view = l.view; }
+    aimed(sh, l, pl.cam, now);
     // Solved: the stars kept are the most it has won.
     if ev.solved {
         let id = puzzle::current(pl).id;
@@ -850,8 +866,7 @@ fn puzzle_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     }
     if ev.go == puzzle::PUZZLES { go_to(sh, PICKER, now); }
     if ev.go == puzzle::SETTINGS {
-        go_to(sh, SETTINGS, now);
-        sh.back = PUZZLE;
+        open_settings(sh, PUZZLE, now);
     }
     if ev.go == puzzle::NEXT {
         // On inside the theme, and after its last back to the library.
@@ -881,12 +896,7 @@ fn learn(sh: Shell&, from: i64, now: f64) {
 
 // Where how to play puts the board and its panels: a puzzle's layout.
 fn tutorial_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
-    let ls .= sh.lesson;
-    let n = rules::VARIANTS[ls.b.variant].size;
-    var l = if settings::raised(sh.prefs) { panel::corners_in(area, n, u, panel::PITCH_PORTRAIT, false) }
-            else { panel::puzzle_in(area, n, u) };
-    panel::aim(l, ls.cam, now);
-    return l;
+    return side_layout(sh, area, u, sh.lesson.b.variant, false, sh.lesson.cam, now);
 }
 
 // How to play for this frame: the steps played kept in the player's file, and the end's
@@ -897,8 +907,7 @@ fn tutorial_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     var l = tutorial_layout(sh, area, g.scale, now);
     sh.out.layout = l.board;
     let ev, changed = tutorial::frame(ls, g, l, area, gui::bleed(g, area, area), now, sh.out.over);
-    panel::aim(l, ls.cam, now);
-    if l.three { sh.came_view = l.view; }
+    aimed(sh, l, ls.cam, now);
     let v = clamp(ls.variant as i64, 0, rules::VARIANT_COUNT - 1);
     if ev.learned > sh.prefs.learned[v] {
         sh.prefs.learned[v] = ev.learned;
@@ -906,12 +915,10 @@ fn tutorial_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     }
     match ev.go {
         tutorial::BACK => {
-            go_to(sh, sh.lesson_from, now);
-            if sh.lesson_from == HOME { sh.setup = home::NO_SETUP; }
+            go_up(sh, sh.lesson_from, now);
         },
         tutorial::SETTINGS => {
-            go_to(sh, SETTINGS, now);
-            sh.back = TUTORIAL;
+            open_settings(sh, TUTORIAL, now);
         },
         tutorial::PUZZLES => {
             load_set(sh);
@@ -924,8 +931,7 @@ fn tutorial_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
             sh.setup = home::NEW_GAME;
         },
         tutorial::HOME => {
-            go_to(sh, HOME, now);
-            sh.setup = home::NO_SETUP;
+            go_up(sh, HOME, now);
         },
         _ => {},
     }
@@ -956,8 +962,7 @@ fn picker_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
         load_set(sh);
         sh.changed = true;
     } else if pick == picker::BACK {
-        go_to(sh, HOME, now);
-        sh.setup = home::NO_SETUP;
+        go_up(sh, HOME, now);
     } else if pick >= 0 {
         play_puzzle(sh, pick, now);
     }
@@ -1080,8 +1085,7 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     if pick != home::NOTHING { changed = true; }
     match pick {
         home::SETTINGS => {
-            go_to(sh, SETTINGS, now);
-            sh.back = HOME;
+            open_settings(sh, HOME, now);
         },
         home::CONTINUE => { go_to(sh, GAME, now); },
         home::PUZZLES => { go_to(sh, PICKER, now); },
