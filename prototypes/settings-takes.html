@@ -11,8 +11,8 @@
      game's setup and the raised board's material added: Auto (the season's own), Wood, Stone,
      or Carved. Every take is one list that scrolls, no tabs, each setting's name over its
      tiles: Look first (what is changed most, beside the preview that shows it), then
-     Game, then the language and the privacy note at the foot. Back and the title stay
-     pinned over it. In landscape the list is a column at the left, its glass off the
+     Game, then the privacy note at the foot. Back, the title, and the language stay
+     pinned over it (&langui). Background comes before Theme (the user, 2026-11-13). In landscape the list is a column at the left, its glass off the
      screen's edge as home's, and the preview the rest; in portrait the preview is a band
      at the top, smaller on a phone, the list under it.
        &take=a  a Material row under Board (Auto, Wood, Stone, Carved, each a picture of the
@@ -24,6 +24,9 @@
                 the season it changes); the other takes' choice is one for every season
        &season=autumn|winter|spring|summer|date  &plain=on  &view=2d|3d
        &mat=auto|wood|stone|carved (per season in take c: &mat_autumn= and so on)
+       &langui=menu|seg|foot  the language: a globe and its code in the title row
+                opening a list (&open=1 shows it open), the codes as two tiles there, or
+                a section at the list's foot
        &device=tablet|pixel|iphone; ?grid=1 the tablet and the phones, both ways
      The boards' pictures are build/board3d's --shot, in prototypes/shots/ (local, out of
      git; README.md), each season's wood, stone, and carved as task 080, 03's table. A missing shot shows hatched and the CSS board stands in. */
@@ -40,6 +43,23 @@
   .top h1 { margin: 0; font-size: 34px; font-weight: 400; }
   .top .back { display: flex; align-items: center; justify-content: center; width: 88px; height: 88px; border-radius: 22px; flex: none;
     color: var(--fg); background: var(--button); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.2); text-decoration: none; }
+  .kp { position: relative; width: 34px; height: 38px; }
+  .kp .piece { --u: 3px; inset: 4px 0 0; }
+  .tile.pic .kp { margin-top: 4px; }
+  .top { position: relative; }
+  .langbtn, .langseg .tile { margin-left: auto; }
+  .langseg { margin-left: auto; display: flex; gap: 6px; }
+  .langseg .tile { min-width: 72px; font-size: 19px; letter-spacing: 0.04em; }
+  .langbtn { display: flex; align-items: center; gap: 8px; height: 88px; padding: 0 14px 0 16px; border: 0; border-radius: 22px; cursor: pointer;
+    color: var(--fg); font: inherit; font-size: 20px; letter-spacing: 0.05em; background: var(--button); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16); }
+  .langbtn .icon { width: 28px; height: 28px; stroke-width: 2; opacity: 0.85; }
+  .langbtn .chev { width: 20px; height: 20px; stroke-width: 2.4; opacity: 0.7; }
+  .langpop { position: absolute; right: 0; top: 92px; z-index: 10; --r: 20px; border-radius: 20px; padding: 6px; display: grid; gap: 2px; min-width: 220px; }
+  .langpop[hidden] { display: none; }
+  .langpop a { display: flex; align-items: center; gap: 14px; height: 72px; padding: 0 16px; border-radius: 14px; color: var(--fg); text-decoration: none; font-size: 22px; }
+  .langpop a b { font-weight: 400; font-size: 16px; letter-spacing: 0.05em; color: var(--fg-dim); width: 26px; }
+  .langpop a.on { background: color-mix(in srgb, var(--glow) 20%, transparent); }
+  .langpop .tick { margin-left: auto; color: var(--glow); }
   .top .back svg { width: 32px; height: 32px; stroke-width: 2.4; }
   .stage { position: fixed; display: grid; place-items: center; }
   .stage .shot { display: block; object-fit: cover;
@@ -102,7 +122,7 @@
     return `?${p}`;
   };
   const icon = Draughts.icon;
-  const take = get('take', ['a', 'b', 'c'], 'a');
+  const take = get('take', ['a', 'b', 'c'], 'b');
   const SEASONS = ['winter', 'spring', 'summer', 'autumn'];
   const NAME = { winter: 'Winter', spring: 'Spring', summer: 'Summer', autumn: 'Autumn' };
   const themePick = get('season', [...SEASONS, 'date'], 'date');
@@ -113,6 +133,7 @@
   const hints = get('assist', ['mistakes', 'moves'], 'mistakes');
   const moves = get('moves', ['off', 'list', 'marks'], 'list');
   const lang = get('lang', ['en', 'et'], 'en');
+  const langUi = get('langui', ['menu', 'seg', 'foot'], 'menu');
   // The material: one for every season (takes a and b), or each season its own (take c).
   const matOf = (s) => get(take === 'c' ? `mat_${s}` : 'mat', ['auto', 'wood', 'stone', 'carved'], 'auto');
   const OWN = { autumn: 'wood', winter: 'stone', spring: 'carved', summer: 'wood' };
@@ -167,8 +188,11 @@
     const background = setting('Background',
       tile(bg === 'photo', { plain: null }, `<span class="thumb" style="background-image:url(${photo(season)})"></span>Photo`, 'pic') +
       tile(bg === 'plain', { plain: 'on' }, `<span class="thumb" style="background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--page), #fff 22%), var(--page))"></span>Plain`, 'pic'));
+    // The crown's and the stack's tiles each show their king, as the app's (settings.goose).
+    const kp = (stack) => `<span class="kp${stack ? ' stack' : ''}"><span class="piece white king"></span></span>`;
     const kings = setting('Kings',
-      tile(king === 'auto', { king: 'auto' }, 'Auto') + tile(king === 'crown', { king: 'crown' }, 'Crown') + tile(king === 'stack', { king: 'stack' }, 'Stack'));
+      tile(king === 'auto', { king: 'auto' }, 'Auto') + tile(king === 'crown', { king: 'crown' }, `${kp(false)}Crown`, 'pic') +
+      tile(king === 'stack', { king: 'stack' }, `${kp(true)}Stack`, 'pic'));
     const flatThumb = '<span class="thumb" style="background: rgb(255 255 255 / 0.06)"><span class="mini2d" data-mini></span></span>';
     let board;
     if (take === 'b') {
@@ -193,7 +217,7 @@
           tile(m === 'carved', { [key]: 'carved' }, `${boardThumb(season, 'carved')}Carved`, 'pic'));
       }
     }
-    return `<section><h2>${icon('sun')}Look</h2>${theme}${background}${board}${kings}</section>`;
+    return `<section><h2>${icon('sun')}Look</h2>${background}${theme}${board}${kings}</section>`;
   }
 
   function game() {
@@ -205,9 +229,20 @@
         `<div class="notes">${NOTE[moves]}</div>`) + '</section>';
   }
 
+  // The language: in the title row, a globe and the code opening a list (menu), or the
+  // codes side by side (seg); or a section at the list's foot (foot), as before.
+  const LANGS = [['en', 'EN', 'English'], ['et', 'ET', 'Eesti']];
+  function langTop() {
+    if (langUi === 'seg') return `<div class="langseg">${LANGS.map(([k, code]) => tile(lang === k, { lang: k }, code)).join('')}</div>`;
+    if (langUi === 'menu') return `<button class="langbtn" id="langbtn">${icon('globe')}${LANGS.find(([k]) => k === lang)[1]}` +
+      `<svg class="icon chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>` +
+      `<div class="langpop glass" id="langpop" hidden>${LANGS.map(([k, code, name]) =>
+        `<a class="${lang === k ? 'on' : ''}" href="${link({ lang: k })}"><b>${code}</b>${name}${lang === k ? '<span class="tick">✓</span>' : ''}</a>`).join('')}</div>`;
+    return '';
+  }
   function foot() {
-    return `<section><h2>${icon('globe')}Language</h2><div class="tiles">` +
-      tile(lang === 'en', { lang: 'en' }, 'English') + tile(lang === 'et', { lang: 'et' }, 'Eesti') + '</div></section>' +
+    return (langUi === 'foot' ? `<section><h2>${icon('globe')}Language</h2><div class="tiles">` +
+      tile(lang === 'en', { lang: 'en' }, 'English') + tile(lang === 'et', { lang: 'et' }, 'Eesti') + '</div></section>' : '') +
       `<section><div class="privacy">${icon('shield')}Privacy: Draughts collects nothing. Everything stays on this device.</div></section>`;
   }
 
@@ -216,7 +251,7 @@
     const cw = 480;
     const bands = `<div class="bands">${il ? `<i style="left:0;top:0;bottom:0;width:${il}px"></i>` : ''}${ir ? `<i style="right:0;top:0;bottom:0;width:${ir}px"></i>` : ''}` +
       `${it ? `<i style="left:0;right:0;top:0;height:${it}px"></i>` : ''}</div>`;
-    app.innerHTML = `<nav class="col glass ${land ? 'land' : 'port'}"><div class="top"><a class="back" href="new-game.html">${icon('back')}</a><h1>Settings</h1></div>` +
+    app.innerHTML = `<nav class="col glass ${land ? 'land' : 'port'}"><div class="top"><a class="back" href="new-game.html">${icon('back')}</a><h1>Settings</h1>${langTop()}</div>` +
       `<div class="scroll">${look()}${game()}${foot()}</div></nav><div class="stage"></div>${bands}`;
     const col = app.querySelector('.col'), stage = app.querySelector('.stage');
     if (land) {
@@ -262,7 +297,15 @@
       `${over > 0 ? `scrolls ${over} dp` : 'fits'}; the preview ${Math.round(sr.width)} × ${Math.round(sr.height)} dp${standin}.</div>`);
     Draughts.syncGlass();
   }
-  if (!P.has('grid')) render();
+  if (!P.has('grid')) {
+    render();
+    const btn = document.getElementById('langbtn'), pop = document.getElementById('langpop');
+    if (btn) {
+      btn.onclick = (e) => { e.stopPropagation(); pop.hidden = !pop.hidden; Draughts.syncGlass(); };
+      document.addEventListener('click', () => { pop.hidden = true; });
+      if (P.has('open')) { pop.hidden = false; Draughts.syncGlass(); }
+    }
+  }
 </script>
 </body>
 </html>
