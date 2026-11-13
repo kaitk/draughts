@@ -94,7 +94,7 @@ fn main() {
     gui::test_faces(g);
     var sh = shell::new(rules::INTERNATIONAL);
     drive::idle(sh, g, 0.0);
-    drive::tap(sh, g, drive::tile(g, 3), 0.1);              // puzzles
+    drive::tap(sh, g, drive::tile(g, 2), 0.1);              // puzzles
     drive::idle(sh, g, 0.5);
     show(sh, "puzzles");
     print("  ", picker(g), ", marks ", icons(g, gui::BOOK), " ", icons(g, gui::JUMPS), " ", icons(g, gui::CROWN), " ",

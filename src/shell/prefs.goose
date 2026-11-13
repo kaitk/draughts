@@ -3,7 +3,8 @@
 // written. They are kept across runs as a small text file per player, one `key = value`
 // per line, which the app reads at start and writes after a change (players.goose): the
 // player's picture and name, whether they have had the first start, the screen's
-// choices but the language, which is the device's, a new game's setup, the computer's
+// choices but the language, which is the device's, a new game's setup (the opponent,
+// and for a friend whether the board turns), the computer's
 // skill at each level, which moves after each game against it, how many games ended on
 // each level, how many games against it began, and the stars won in each puzzle
 // (`stars.international = 1:3 4:2`, by puzzle id, the ids being a set's own, so each
@@ -71,16 +72,19 @@ struct Settings {
     season:           i64           = BY_DATE, // a theme (app/theme.goose), or BY_DATE
     plain:            bool          = false,   // the plain fade in place of the photograph (`background = plain`)
     board:            i64           = FLAT,    // the Board row's: flat, or raised (the 3D board)
-    turns:            bool          = false,   // and its third tile: a friend's game turns the board to the side to move (`turn = on`)
+    turns:            bool          = false,   // the setup's: a friend's game turns the board to the side to move (`turn = on`)
     hints:            i64           = board::MISTAKES,
     lookout:          bool          = false,   // the game's lookout, its eye on whose turn's line (`lookout = on`)
     kings:            i64           = AUTO,
     language:         i64           = SYSTEM, // strings::EN.., or SYSTEM; the device's, in settings.txt
-    // A new game's setup, kept for the next one.
-    variant: i64 = DEFAULT_DRAUGHTS,
-    level:   i64 = 0,           // easy (the user's call, 2026-11-09)
-    color:   i64 = rules::WHITE, // the child's pieces against the computer
-    clock:   i64 = 0,           // none
+    // A new game's setup, kept for the next one: against a friend or the computer
+    // (`opponent = friend|computer`, the computer by default), the draughts, the level,
+    // the child's pieces, the clock.
+    friend:  bool = false,
+    variant: i64  = DEFAULT_DRAUGHTS,
+    level:   i64  = 0,          // easy (the user's call, 2026-11-09)
+    color:   i64  = rules::WHITE, // the child's pieces against the computer
+    clock:   i64  = 0,          // none
     // The computer's skill at each level (ai::adapt), the games that ended on each, and
     // the games against it so far.
     skill:  i64[3] = ai::LEVEL_SKILL,
@@ -146,6 +150,7 @@ fn parse(text: const u8[:]) -> Settings {
         if key == "language" {
             for name, i in strings::LANGUAGES { if value == name { s.language = i; } }
         }
+        if key == "opponent" && value == "friend" { s.friend = true; }
         if key == "draughts" {
             let v, known = rules::variant_named(value);
             for d in DRAUGHTS { if known && v == d { s.variant = d; } }
@@ -233,6 +238,7 @@ fn write(s: Settings, out: u8[>..]&) {
     out.append(if s.lookout { "\nlookout = on" } else { "\nlookout = off" });
     out.append("\nkings = ");
     out.append(KING_NAMES[s.kings]);
+    out.append(if s.friend { "\nopponent = friend" } else { "\nopponent = computer" });
     out.append("\ndraughts = ");
     for v in DRAUGHTS { if s.variant == v { out.append(rules::VARIANT_NAMES[v]); } }
     out.append("\nlevel = ");

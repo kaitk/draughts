@@ -14,7 +14,7 @@ let LANGUAGES = ["en", "et"];
 // The keys, as the files name them; the constants below index KEYS.
 let KEYS = [
     "language.name", "app.name",
-    "home.continue", "home.friend", "home.computer", "home.puzzles", "home.settings",
+    "home.continue", "setup.friend", "home.new_game", "home.puzzles", "home.settings",
     "level.easy", "level.medium", "level.hard",
     "settings.game", "settings.look", "settings.tutorial",
     "settings.theme", "settings.by_date", "settings.board", "settings.hints", "settings.kings",
@@ -25,7 +25,7 @@ let KEYS = [
     "tutorial.learn",
     "nav.back", "game.start_over", "game.undo_move",
     "turn.white", "turn.black", "won.white", "won.black",
-    "setup.draughts", "setup.level", "setup.color", "setup.clock", "setup.play",
+    "setup.draughts", "setup.against", "setup.color", "setup.clock", "setup.play",
     "variant.international", "variant.brazilian", "variant.russian", "size.10", "size.8",
     "pick.easy", "pick.medium", "pick.hard",
     "color.white", "color.black",
@@ -57,12 +57,13 @@ let KEYS = [
     "mark.inaccuracy", "mark.inaccuracy_tip",
     "mark.mistake", "mark.mistake_tip",
     "mark.blunder", "mark.blunder_tip",
+    "board.stays", "board.stays_note", "setup.board", "level.friend",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
 let HOME_CONTINUE = 2;
-let HOME_FRIEND = 3;
-let HOME_COMPUTER = 4;
+let SETUP_FRIEND = 3;       // the setup's first tile to play against
+let HOME_NEW_GAME = 4;
 let HOME_PUZZLES = 5;
 let HOME_SETTINGS = 6;
 let LEVEL_EASY = 7;
@@ -98,7 +99,7 @@ let TURN_BLACK = 36;
 let WON_WHITE = 37;
 let WON_BLACK = 38;
 let SETUP_DRAUGHTS = 39;
-let SETUP_LEVEL = 40;
+let SETUP_AGAINST = 40;     // the setup's first row: a friend, or the computer at a level
 let SETUP_COLOR = 41;
 let SETUP_CLOCK = 42;
 let SETUP_PLAY = 43;
@@ -180,7 +181,7 @@ let RESULTS_COMPUTER = 118; // the levels' results' heading,
 let RESULTS_FRIEND = 119;   // a game against a friend in the list,
 let RESULTS_NONE = 120;     // and the list with no game yet
 let MOVES_NONE = 121;       // the moves panel before the first move
-let BOARD_TURNS = 122;      // the Board row's third tile: a friend's game turns the board,
+let BOARD_TURNS = 122;      // a friend's setup: the board turns to who plays,
 let BOARD_TURNS_NOTE = 123; // its note
 let QUIT_ASK = 124;         // a desktop's quit asks first (home::ask_quit): the question,
 let QUIT_CANCEL = 125;      // and the button that keeps the app open
@@ -199,7 +200,11 @@ let MARK_MISTAKE = 137;
 let MARK_MISTAKE_TIP = 138;
 let MARK_BLUNDER = 139;
 let MARK_BLUNDER_TIP = 140;
-let COUNT = 141;
+let BOARD_STAYS = 141;      // or stays, the same for both,
+let BOARD_STAYS_NOTE = 142; // its note,
+let SETUP_BOARD = 143;      // and the row's name
+let LEVEL_FRIEND = 144;     // home's new game's note for a friend, as LEVEL_EASY.. for the computer
+let COUNT = 145;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

@@ -250,7 +250,7 @@ what a child makes their own; the rest belongs to the device.
 | --- | --- | --- |
 | Badge (one of six, each its own colour; one a player has isn't offered to another) and name | yes | |
 | Look: theme (and photograph or plain), kings, board; move hints | yes | |
-| A new game's setup: draughts, level, colour, clock | yes | |
+| A new game's setup: the opponent (a friend, or the computer's level), draughts, colour or turning, clock | yes | |
 | The computer's skill per level and the games against it | yes | |
 | The games played, the rating by draughts, and the moves panel's setting | yes | |
 | Puzzle stars | yes | |

@@ -89,18 +89,18 @@ fn check(what: const u8[:], path: i64[:]) {
 }
 
 // Each screen, reached from home's menu, whose rows start at tile `o` (after the gear in
-// portrait) and whose settings is tile `gear`.
+// portrait) and whose settings is tile `gear`; a friend's setup by its first tile.
 fn screens(o: i64, gear: i64) {
-    check("a friend's setup", [1 + o]);
-    check("the computer's setup", [2 + o]);
+    check("the computer's setup", [1 + o]);
+    check("a friend's setup", [1 + o, 1]);
     check("the game", [o]);
     check("settings from home", [gear]);
     check("settings from the game", [o, 1]);
-    check("the puzzles", [3 + o]);
-    check("the results", [4 + o]);
-    check("a theme", [3 + o, drive::LEARN_ROW]);
-    check("a puzzle", [3 + o, drive::LEARN_ROW, 1]);
-    check("settings from a puzzle", [3 + o, drive::LEARN_ROW, 1, 1]);
+    check("the puzzles", [2 + o]);
+    check("the results", [3 + o]);
+    check("a theme", [2 + o, drive::LEARN_ROW]);
+    check("a puzzle", [2 + o, drive::LEARN_ROW, 1]);
+    check("settings from a puzzle", [2 + o, drive::LEARN_ROW, 1, 1]);
 }
 
 fn main() {
@@ -118,7 +118,7 @@ fn main() {
     drive::idle(sh, g, 0.6);
     print("home's menu: back ", went, ", unchanged ", state(sh) == before);
 
-    screens(0, 5);
+    screens(0, 4);
     // Portrait, where the game's and a puzzle's back leads the bar above the board.
     drive::size = float2 { 800.0, 1280.0 };
     print("portrait:");

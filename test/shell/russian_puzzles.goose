@@ -84,7 +84,7 @@ fn main() {
     sh.prefs.variant = rules::RUSSIAN;
     drive::idle(sh, g, 0.0);
     show(sh, "home");
-    drive::tap(sh, g, drive::tile(g, 3), 0.1);              // puzzles
+    drive::tap(sh, g, drive::tile(g, 2), 0.1);              // puzzles
     drive::idle(sh, g, 0.5);
     show(sh, "puzzles");
     print("  ", library(g));
@@ -120,7 +120,7 @@ fn main() {
     show(sh, "draughts international");
     let won_i, all_i = picker::totals(sh.prefs.stars[puzzles::loaded]);
     print("  home's count: ", won_i, " / ", all_i);
-    drive::tap(sh, g, drive::tile(g, 3), 5.1);
+    drive::tap(sh, g, drive::tile(g, 2), 5.1);
     drive::idle(sh, g, 5.5);
     show(sh, "puzzles");
     var themes = 0;

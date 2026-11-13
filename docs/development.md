@@ -117,7 +117,8 @@ board's logic is the `board/` package, the UI layer `gui/`, the game screen `gam
 the screens around it `shell/` (home, and which screen shows), each tested headless
 (`test/board/`, `test/gui/`, `test/game/`, `test/shell/`). The app opens at home; `--fen`,
 `--tap` (`c3`, or `d10` on 10 × 10), or `--screen game` open the game screen,
-`--screen settings` settings, `--screen friend` or `computer` home's setup, `--screen
+`--screen settings` settings, `--screen setup` home's setup as the player's file has it
+(`friend` or `computer` with that opponent chosen), `--screen
 puzzles` the puzzles to pick from, and `--puzzle ID` that puzzle, whose taps go to its
 board (`--puzzle 21 --tap f4 --tap e5`). `--go settings` (or `home`, `game`, `play`,
 `puzzles`, `puzzle`) switches there on the second frame through its transition, once
@@ -135,11 +136,11 @@ e3 --tap g5 --win 1.2 --frames 3000`. `--variant
 international|brazilian|russian` starts a new game of that draughts (else the setup's
 last choice), `--clock 5+3|10+5` with a clock, and `--computer white|black` against
 the computer playing that side (the board turned when it plays white), at `--level
-easy|medium|hard` (else the setup's last choice). With `--screen friend` or
+easy|medium|hard` (else the setup's last choice). With `--screen setup`, `friend`, or
 `computer` those three set the setup's choices instead, the child playing the side
 `--computer` doesn't, and leave the player's file alone unless a tap in the setup writes
 it: `--screen computer --variant russian --computer white --frames 12` shows the
-computer's setup for Russian with the child on black. A `--frames` run doesn't wait for the
+setup against the computer for Russian with the child on black. A `--frames` run doesn't wait for the
 display, nor for events (it wakes each frame's idle wait at once, `draughts_wake_now`), so a
 screenshot of the computer's reply, which comes after a pause of under a second, takes
 some thousands of frames, about 2 s: `--variant russian --computer black --tap c3

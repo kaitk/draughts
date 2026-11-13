@@ -72,8 +72,10 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   round, the game's clock and the computer frozen, a won game's way home, the screen
   reached as opened straight: `transition`, `game_transition`, `puzzle_transition`),
   home's setup and play, the setup's board (each
-  draughts' start, turned for black, the game in progress back on the menu, the game play
-  starts, `setup`), the puzzles' library and a theme's page and a puzzle played through
+  draughts' start, turned for black, a friend's board turning once round for Turns, the
+  game in progress back on the menu, the game play starts, and the setup laid out at the
+  tablet's, the Pixel 7a's, and the iPhone 13 mini's sizes, where play is and how far the
+  choices scroll, `setup`), the puzzles' library and a theme's page and a puzzle played through
   its misses, hint, reply, and stars, a black puzzle on the turned board, next after a
   theme's last (`puzzles`), a wrong move's answer shown before it slides back, and a
   wrong move with none sliding back as before (`puzzle_answer`, which reads its own

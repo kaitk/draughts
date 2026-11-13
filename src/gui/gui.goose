@@ -81,6 +81,7 @@ let CLOCK_RUN = 9;          // the running clock: the glow color at 18%, a 2 dp 
 let CLOCK_IDLE = 10;        // a clock that waits: white at 6%, a border at 12%
 let CLOCK_LOW = 11;         // the running clock at 20 seconds or under: the forced-capture red
 let CLOCK_WARN = 12;        // the running clock under a minute: autumn's gold
+let ROW_OUTLINE = 13;       // a menu row with a 1 dp border at 25% (home's new game beside continue)
 
 // The line icons the shader knows (rendering.md, "Controls").
 let NO_ICON = 0;
@@ -120,6 +121,9 @@ let ZOOM_OUT = 35;
 let SHOWCASE = 36;          // and the showcase, a board on an orbit
 let EYE = 37;               // the lookout on: an open eye
 let EYE_OFF = 38;           // and off: the eye struck through
+let NEW_GAME = 39;          // home's new game: a plus in a ring
+let TURNS = 40;             // the setup's board turning to who plays: two arcs chasing round,
+let STAYS = 41;             // and staying: a board with an arrow up it
 
 // Text faces (rendering.md, "Fonts"): one size each, in dp, baked by the app at the
 // screen's pixel size.
@@ -885,14 +889,15 @@ fn glyph_icon(g: Gui&, r: float4, icon: i64, style: i64, p: f32, a: f32, stroke:
 }
 
 // A menu row (prototypes/home.html): an icon, a label, and a note at the right in
-// the dimmer small face, in a 20 dp rounded row that lights while pressed. A row that
-// is off is drawn at 40% and can't be pressed. True when it is tapped.
+// the dimmer small face, in a 20 dp rounded row that lights while pressed, `outlined`
+// with a faint border; the note may have an icon before its word (`note_icon`). A row
+// that is off is drawn at 40% and can't be pressed. True when it is tapped.
 fn row(g: Gui&, id: i64, r: float4, icon: i64, label: const u8[:], note: const u8[:], primary: bool,
-       on: bool) -> bool {
+       on: bool, outlined: bool = false, note_icon: i64 = NO_ICON) -> bool {
     let u = g.scale;
     let clicked, p = hold_if(g, id, r, on);
     if primary { prefer(g, id); }
-    let style = if primary { ROW_PRIMARY } else { ROW };
+    let style = if primary { ROW_PRIMARY } else if outlined { ROW_OUTLINE } else { ROW };
     add(g, Quad { rect: r, look: float4 { BUTTON, 20.0 * u, 0.0, p }, extra: float4 { u, style, hover(g, id), 0.0 } });
     let a: f32 = if on { 1.0 } else { 0.4 };
     var c = r;
@@ -902,8 +907,17 @@ fn row(g: Gui&, id: i64, r: float4, icon: i64, label: const u8[:], note: const u
     cut_left(c, 18.0 * u);
     text(g, LABEL, c, label, a, 0.0, LEFT);
     text(g, SMALL, c, note, 0.66 * a, 0.0, RIGHT);
+    if note_icon != NO_ICON {
+        // The note's icon, NOTE_ICON dp, NOTE_ICON_GAP left of its word (or alone).
+        let w = text_width(g, SMALL, note);
+        let x = c.x + c.z - w - (if note.len > 0 { NOTE_ICON_GAP * u } else { 0.0 }) - NOTE_ICON * u;
+        glyph_icon(g, float4 { x, c.y + 0.5 * (c.w - NOTE_ICON * u), NOTE_ICON * u, NOTE_ICON * u }, note_icon, style, 0.0,
+                   0.66 * a, 2.0);
+    }
     return clicked;
 }
+let NOTE_ICON = 20.0;
+let NOTE_ICON_GAP = 6.0;
 
 // A choice tile (prototypes/settings.html): a picture of size `pic` (centered across)
 // with a label under it, lit in the glow color when on. The picture is a season's

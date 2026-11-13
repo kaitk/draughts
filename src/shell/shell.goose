@@ -1,8 +1,8 @@
 // The app's screens, with no graphics: home, the game, settings, and the puzzles, and
 // which one shows (docs/architecture/rendering.md, "Home", "Game screen";
 // docs/architecture/puzzles.md, "The screen"). Each frame it declares the screen showing
-// and switches when that asks: home's continue opens the game, a friend and the computer
-// open a new game's setup in home's column, whose play starts the game; puzzles opens
+// and switches when that asks: home's continue opens the game, new game opens
+// the setup in home's column, whose play starts the game; puzzles opens
 // the puzzles to pick from, and a pick plays that puzzle, whose next plays the one after;
 // settings opens from home, the game, and a puzzle, and goes back where it came from.
 // It holds the settings, puts them where they act (apply_prefs), and
@@ -178,7 +178,7 @@ struct Shell {
     // Home's 3D board as a drag on it left it: the showcase's swing and tilt (rig::drive),
     // kept while home stays open, eased back to rest as home is left.
     cam: rig::Rig = rig::Rig {},
-    // Settings' preview turning once round when Turns with a friend is switched on, to
+    // The setup's board turning once round when a friend's board is switched to Turns, to
     // show what it does: the 3D board eases a full turn, the flat one shows black's side
     // for the middle half of it.
     demo: rig::Ease = rig::Ease { soft: true, .. },
@@ -256,7 +256,7 @@ fn animating(sh: Shell&, g: gui::Gui&, now: f64) -> bool {
         GAME => game::animating(sh.game, g, now) || flat_fade(sh, now) <= 1.0,
         PUZZLE => puzzle::animating(sh.puzzle, g, now),
         _ => board::animating(shown(sh), now) || gui::animating(g) || rig::moving(sh.cam, now)
-             || (sh.screen == SETTINGS && rig::moving(sh.demo, now)),
+             || (sh.screen == HOME && rig::moving(sh.demo, now)),
     };
 }
 
@@ -380,7 +380,7 @@ fn put_down(sh: Shell&, g: gui::Gui&) -> bool {
 // Against the computer it is counted, for the computer's seeds.
 fn play(sh: Shell&, now: f64) {
     let p .= sh.prefs;
-    let computer = if sh.setup == home::COMPUTER { 1 - p.color } else { -1 };
+    let computer = if p.friend { -1 } else { 1 - p.color };
     game::start(sh.game, p.variant as u8, p.clock, computer, p.level, p.skill[p.level], p.games);
     if computer >= 0 {
         p.games += 1;
@@ -809,18 +809,8 @@ fn settings_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool
     if fresh { settings::stage(sh.preview, sh.prefs, now + (1.0 - progress(sh, now)) * DURATION); }
     let changed = board::update(sh.preview, now);
     var room = float4 { 0.0, 0.0, 0.0, 0.0 };
-    let turned_on = !sh.prefs.turns;
     let ask = settings::frame(sh.prefs, sh.out.over, g, sh.out.layout, area, strings::current, room);
-    if ask == settings::CHANGED && turned_on && sh.prefs.turns {
-        rig::put(sh.demo, 0.0);
-        rig::go(sh.demo, 360.0, now, 2.0 * rig::TURN);
-    }
-    let spin = if rig::moving(sh.demo, now) { rig::value(sh.demo, now) } else { 0.0 };
     sh.came_view = raise_in(sh, room, sh.out.layout.n, g.scale, sh.out.layout);
-    if spin != 0.0 {
-        if sh.came_view.rect.z > 0.0 { sh.came_view = view3d::turned(sh.came_view, view3d::Camera { turn: spin, .. }); }
-        else { sh.out.layout.flip = spin > 90.0 && spin < 270.0; }
-    }
     if ask == settings::CHANGED {
         apply_prefs(sh);
         settings::stage(sh.preview, sh.prefs, now);
@@ -850,12 +840,25 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     let asking = sh.quitting && !card;
     if card || asking { gui::listen(g, false); }
     var room = float4 { 0.0, 0.0, 0.0, 0.0 };
+    let still = !sh.prefs.turns;
     let pick = home::frame(sh.out.over, g, sh.out.layout, rules::VARIANTS[b.variant].size, area, sh.setup, sh.prefs, room,
                            resume(sh));
     sh.out.layout.flip = flip;
     let v = raise_in(sh, room, sh.out.layout.n, g.scale, sh.out.layout);
     if !card && !asking && turn_home(sh, g, v, room, now) { changed = true; }
     sh.came_view = home_view(sh, v, room, now);
+    // A friend's board switched to turning, the setup's board turns once round to show it
+    // (Shell.demo, twice the game's turn): the 3D board a full turn, the flat one showing
+    // black's side for the middle half.
+    if pick == home::CHANGED && still && sh.prefs.turns {
+        rig::put(sh.demo, 0.0);
+        rig::go(sh.demo, 360.0, now, 2.0 * rig::TURN);
+    }
+    if sh.setup != home::NO_SETUP && rig::moving(sh.demo, now) {
+        let spin = rig::value(sh.demo, now);
+        if sh.came_view.rect.z > 0.0 { sh.came_view = view3d::turned(sh.came_view, view3d::Camera { turn: spin, .. }); }
+        else { sh.out.layout.flip = spin > 90.0 && spin < 270.0; }
+    }
     if card {
         // Home's pieces over its UI (the wordmark's crown, the player's picture) draw
         // after all the UI, so they would sit on the card: under it, home shows without
@@ -880,8 +883,7 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
         },
         home::CONTINUE => { go_to(sh, GAME, now); },
         home::PUZZLES => { go_to(sh, PICKER, now); },
-        home::FRIEND => { sh.setup = home::FRIEND; },
-        home::COMPUTER => { sh.setup = home::COMPUTER; },
+        home::NEW_GAME => { sh.setup = home::NEW_GAME; },
         home::BACK => { sh.setup = home::NO_SETUP; },
         home::CHANGED => {
             sh.changed = true;
@@ -940,11 +942,10 @@ fn who_card(sh: Shell&, g: gui::Gui&, area: float4) -> bool {
 }
 
 // Whether home's board is turned with its column showing `setup`, for a child playing
-// black against the computer: in the game as it stands on the menu, and in the
-// computer's setup when black is chosen.
+// black against the computer: in the game as it stands on the menu, and in the setup
+// when the computer and black are chosen.
 fn turned(sh: Shell&, setup: i64) -> bool {
-    return if setup == home::COMPUTER { sh.prefs.color == rules::BLACK }
-           else if setup == home::FRIEND { false }
+    return if setup == home::NEW_GAME { !sh.prefs.friend && sh.prefs.color == rules::BLACK }
            else { sh.game.computer == rules::WHITE || (!settings::raised(sh.prefs) && flat_turned(sh)) };
 }
 

@@ -3,27 +3,27 @@ landscape: the way out at vec4<f32> { 1168.0, 24.0, 88.0, 88.0 } (24.0 dp from t
   held: pressed 1.0, quit false
   released over it: quit true
   home asks for EXIT: true
-landscape, the computer's setup: the way out at vec4<f32> { 1168.0, 24.0, 88.0, 88.0 } (24.0 dp from the right, 24.0 from the top, 88.0 across), the board at vec4<f32> { 580.0, 120.0, 560.0, 8.96 }, clear of the board true, of the column true, the board's gap under it 8.0 dp, beside it 28.0 dp
-  a tap just left of it and just under it: quit false, home, setup 4
+landscape, the setup: the way out at vec4<f32> { 1168.0, 24.0, 88.0, 88.0 } (24.0 dp from the right, 24.0 from the top, 88.0 across), the board at vec4<f32> { 600.0, 120.0, 560.0, 8.96 }, clear of the board true, of the column true, the board's gap under it 8.0 dp, beside it 8.0 dp
+  a tap just left of it and just under it: quit false, home, setup 2
   held: pressed 1.0, quit false
   released over it: quit true
   home asks for EXIT: true
-portrait: the way out at vec4<f32> { 688.0, 24.0, 88.0, 88.0 } (24.0 dp from the right, 24.0 from the top, 88.0 across), the board at vec4<f32> { 104.0, 128.0, 592.0, 9.472 }, clear of the board true, of the column true, the board's gap under it 16.0 dp, beside it -8.0 dp
+portrait: the way out at vec4<f32> { 688.0, 24.0, 88.0, 88.0 } (24.0 dp from the right, 24.0 from the top, 88.0 across), the board at vec4<f32> { 80.0, 128.0, 640.0, 10.240001 }, clear of the board true, of the column true, the board's gap under it 16.0 dp, beside it -32.0 dp
   a tap just left of it and just under it: quit false, home, setup 0
   held: pressed 1.0, quit false
   released over it: quit true
   home asks for EXIT: true
-portrait, the computer's setup: the way out at vec4<f32> { 688.0, 24.0, 88.0, 88.0 } (24.0 dp from the right, 24.0 from the top, 88.0 across), the board at vec4<f32> { 202.0, 40.0, 396.0, 6.3360004 }, clear of the board true, of the column true, the board's gap under it -72.0 dp, beside it 90.0 dp
-  a tap just left of it and just under it: quit false, home, setup 4
+portrait, the setup: the way out at vec4<f32> { 688.0, 24.0, 88.0, 88.0 } (24.0 dp from the right, 24.0 from the top, 88.0 across), the board at vec4<f32> { 198.0, 40.0, 404.0, 6.464 }, clear of the board true, of the column true, the board's gap under it -72.0 dp, beside it 86.0 dp
+  a tap just left of it and just under it: quit false, home, setup 2
   held: pressed 1.0, quit false
   released over it: quit true
   home asks for EXIT: true
-portrait at 600 x 960: the way out at vec4<f32> { 516.0, 18.0, 66.0, 66.0 } (24.0 dp from the right, 24.0 from the top, 88.0 across), the board at vec4<f32> { 78.0, 96.0, 444.0, 7.1040006 }, clear of the board true, of the column true, the board's gap under it 16.0 dp, beside it -8.0 dp
+portrait at 600 x 960: the way out at vec4<f32> { 516.0, 18.0, 66.0, 66.0 } (24.0 dp from the right, 24.0 from the top, 88.0 across), the board at vec4<f32> { 60.0, 96.0, 480.0, 7.6800003 }, clear of the board true, of the column true, the board's gap under it 16.0 dp, beside it -32.0 dp
   a tap just left of it and just under it: quit false, home, setup 0
   held: pressed 1.0, quit false
   released over it: quit true
   home asks for EXIT: true
 a game under way, the way out: quit true
 the next start restores it: true, screen 0, W:Wc3,e3:Bd6,f6, quit false
-not closable: tiles 7 of 8
+not closable: tiles 6 of 7
   a tap where the way out was: quit false, screen 0, setup 0

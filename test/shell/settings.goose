@@ -37,10 +37,9 @@ let BY_DATE = 12;
 let PHOTO = 13;             // the theme's switch, under its name
 let PLAIN = 14;
 let RAISED = 16;
-let TURNS = 17;             // the Board row's third tile, on or off by itself
-let AUTO = 18;
-let STACK = 20;
-let TILES = 21;
+let AUTO = 17;
+let STACK = 19;
+let TILES = 20;
 
 // The player's draughts, chosen in home's setup or the puzzles' library (settings has no
 // row for them since issue 1): the preview is staged again with their size, as a
@@ -109,7 +108,7 @@ fn main() {
     var out: u8[>..] = [];
     settings::write(settings::Settings {}, out);
     print("defaults:\n", out);
-    let s = settings::parse("season = winter\nhints = moves\nkings = stack\nlanguage = et\nboard = 3d\ndraughts = brazilian\nlevel = easy\ncolor = black\nclock = 10+5\n");
+    let s = settings::parse("season = winter\nhints = moves\nkings = stack\nlanguage = et\nboard = 3d\ndraughts = brazilian\nopponent = friend\nturn = on\nlevel = easy\ncolor = black\nclock = 10+5\n");
     out.clear();
     settings::write(s, out);
     print("read back:\n", out, "and the language, the device's: ", s.language);
@@ -119,7 +118,7 @@ fn main() {
     let again = settings::parse("kings = crown\n");
     print("kings crown reads back: ", again.kings == board::CROWN, ", draws ", settings::king_look(again),
           "; auto draws ", settings::king_look(settings::Settings {}));
-    let odd = settings::parse("season = monsoon\nhints\nkings = tower\nlanguage = xx\n  board =  2d  \ndraughts = english\nlevel = 4\ncolor = red\nclock = 3+2\n");
+    let odd = settings::parse("season = monsoon\nhints\nkings = tower\nlanguage = xx\n  board =  2d  \ndraughts = english\nopponent = robot\nlevel = 4\ncolor = red\nclock = 3+2\n");
     out.clear();
     settings::write(odd, out);
     print("unknown values and a line without one:\n", out);
@@ -156,17 +155,6 @@ fn main() {
     show(sh, "summer");
     drive::tap(sh, g, drive::tile(g, RAISED), 4.1);
     show(sh, "3D");
-    // The Board row's third tile turns a friend's game's board, on and off, raised staying.
-    // Switched on, the preview turns once round to show it: half way at 0.7 s, back at 1.4.
-    drive::tap(sh, g, drive::tile(g, TURNS), 4.15);
-    print("turns tapped: on ", sh.prefs.turns, ", the game's ", sh.game.turns, ", raised ", settings::raised(sh.prefs));
-    let at = 4.15 + 0.04;
-    drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, at + 0.7);
-    print("  the preview 0.7 s on: turned ", round(sh.came_view.turn), "°, animating ", shell::animating(sh, g, at + 0.7));
-    drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, at + 1.5);
-    print("  1.5 s on: turned ", round(sh.came_view.turn), "°, still turning ", rig::moving(sh.demo, at + 1.5));
-    drive::tap(sh, g, drive::tile(g, TURNS), 6.0);
-    print("  again: on ", sh.prefs.turns, ", the game's ", sh.game.turns);
     drive::tap(sh, g, drive::tile(g, MOVES), 4.3);
     show(sh, "all moves");
     preview(sh, 4.4);
