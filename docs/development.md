@@ -121,7 +121,8 @@ the screens around it `shell/` (home, and which screen shows), each tested headl
 puzzles` the puzzles to pick from, `--screen results` the results, `--screen replay` the
 replay of the newest game in the history, at its end or at `--ply N` (0 the start;
 `--history FILE` reads the games from a history file in place of the player's, for
-shots: `--history games.txt --screen replay --ply 39 --frames 12`), and `--puzzle ID` that puzzle, whose taps go to its
+shots: `--history games.txt --screen replay --ply 39 --frames 12`; `--go here` then plays
+from that move, as the replay's play from here does), and `--puzzle ID` that puzzle, whose taps go to its
 board (`--puzzle 21 --tap f4 --tap e5`). `--go settings` (or `home`, `game`, `play`,
 `puzzles`, `puzzle`) switches there on the second frame through its transition, once
 any `--tap`s have played out, and `--hold 0.4` keeps a transition at 40% of the way, for

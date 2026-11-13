@@ -1082,18 +1082,29 @@ opens the game's replay.
 In landscape the steps (to the start, back one, on one, to the end; chevrons, the first
 and last at a bar) are a column of four tap-square tiles at the board's left, up to 16
 dp apart and centered on the board; the board takes the safe area's height less the 24 dp
-margins, unless the column at its right would be under 300 dp; the column holds back
-and the title over a glass. In portrait back and the title head the screen, the board
-under them as wide as the screen allows with 220 dp left for the glass, the steps a row
-of four under it, then the glass. The Pixel 7a's landscape gives the board 395 dp and the
-column 447; its portrait, the board 432; the tablet's landscape, the board 752 and the
-column 356. A step that would change nothing (back at the start, on at the end) is
-dimmed at 35% but keeps its tap and the keys' focus.
+margins, unless the column at its right would be under 300 dp; the column holds a head
+of back, the title, and play from here over a glass. In portrait that head tops the
+screen, the board under it as wide as the screen allows with 220 dp left for the glass,
+the steps a row of four under it, then the glass. The Pixel 7a's landscape gives the
+board 395 dp and the column 447; its portrait, the board 432; the tablet's landscape, the
+board 752 and the column 356. A step that would change nothing (back at the start, on at
+the end) is dimmed at 35% but keeps its tap and the keys' focus.
 
-The title "Replay" has a pill beside it, "Doesn't count", in the glow color at 20%
-(under the title where both don't fit on one line). The game's line, its result sign
-(crown, `=`, X), the opponent and its rating, and the date in the small face, sits under
-them where it fits on its own line, else at the top of the glass. The glass holds, in
+**Play from here** is a tile in the glow color at 22% (`gui::PRIMARY`), a tap tall, the
+opponent's icon (the computer's head, or two figures for a friend's game) beside its
+word, at the head's right end. Where that is too wide it puts the icon over the word
+(the word in a smaller face, down to the small one, where the room is narrower); on a
+phone the title then gives up its place, then back its width (its arrow over its word in
+a tap's square). Where none of that fits, a tablet's narrow column (356 dp), it is a row
+of its own across the column, over the glass (in portrait over the glass, under the
+steps). It is dimmed at 35% and takes no tap at the end of a game that ended there (no
+legal move); everywhere else, the start included, it starts a game from the position
+shown (below).
+
+The title "Replay" sits between back and play from here where it fits. The game's line,
+its result sign (crown, `=`, X), the opponent and its rating, and the date in the small
+face, sits under the title where it fits on its own line, else at the top of the glass.
+The glass holds, in
 order: what the move shown was (the mover's piece, "20. 33-29" or "20… 22x24" for black,
 its mark, and the mark's tip from `strings/` running on to a second line, in a smaller
 face if it needs; "The start" at move 0), a rule, each side's piece and accuracy heading
@@ -1116,7 +1127,7 @@ shown, then Up and Down) shows it, and follows the move shown as Left and Right 
 Back, Escape, and Android's back go to the results as they were left, their draughts and
 scroll kept.
 
-The replay counts for nothing: its board and moves are its own (`shell.replay`), never
+The replay only shows a game: its board and moves are its own (`shell.replay`), never
 the game's, so the game to continue, its saved image (which keeps home, not the replay,
 as its screen), the history file, and the ratings stay as they were. Opening it reads
 the game's line from the history file again (`history::line_of`, as `games_of` numbers
@@ -1124,6 +1135,35 @@ the games) and plays its moves out from the draughts' start with the rules into 
 buffers: 513 positions and 512 moves with their marks. A move is matched by its text as
 `rules::format_move` writes it, or by its first and last squares alone; the list stops at
 the first move that doesn't match. A frame then allocates nothing.
+
+#### A game played from a replay
+
+Play from here (`shell::play_from_here`) opens the game screen on a game from the
+position the replay shows: the same draughts, the same opponent (the computer at the
+past game's level and skill, or a friend), the player on the same side, so the board
+turns as it did, and the side to move as there. It has no clock: the history keeps none.
+Its moves are numbered on from the replay's (`game::Game.ply0`, `game::first_ply`): from
+move 30, white's first is "16.", from move 11 black's is "6…". It plays as any game does:
+the computer answers, and the hint, undo, the lookout, the moves panel, its line and
+sheet, and the end's cards work. Start over, on the panel or the card, goes back to the
+replay's position, not the draughts' start, so a line can be tried again.
+
+It counts for nothing (`shell.trial`, `Game.no_count`). Its end writes nothing to the
+history and moves no rating, no level's skill or games played there, and no count of games
+begun; the game in progress is set aside (`shell::park`, the image the app writes and its
+hints and marks) and is still what the app writes as the game to resume, with home as its
+screen, while the game from the replay shows; leaving brings it back as it was
+(`unpark`). The way out goes back to the replay where it was left: back on the panel or
+the end's card, Escape, and Android's back. Settings go back to this game.
+
+**"Doesn't count"** (`panel::no_count`, `replay.no_count`) is a pill in the glow color,
+dark ink in the small face, centered on the way out's top edge: half in the margin above
+it, half over the glass's own margin, clear of its icons and words. The way out is
+`l.left` in every layout, so one rule places it everywhere: in landscape, flat and 3D,
+the left column's top, back there (the phone's back and settings side by side); in
+portrait the bar's top; on a desktop the framed column's top; in a small window the
+compact bar's. It takes no room of its own, and the board none. While the moves' sheet
+covers the way out in landscape, it goes with it.
 
 ### Transitions
 

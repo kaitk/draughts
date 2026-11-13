@@ -211,5 +211,9 @@ Asked for: a history of games and moves rated as GoDraughts rates them (task 074
   lidraughts uses Glicko-2. A child's few games a week against a fixed opponent gain
   little from a deviation, and Elo's one number is what a parent knows. Kept per
   draughts, as FMJD's lists are. K 40 for the first 20 games is FMJD's for juniors.
+- **A game played on from a replay's move counts for nothing** (2026-11-13, task 078,
+  the user's correction): no rating, no skill adapted, no games played or begun, nothing
+  in the history. It is for trying a line again, not a game against the computer's
+  current skill: it plays at the past game's skill.
 - **The computer rated from self-play**, not by guess, anchored at 500 for skill 0 so
   easy's start (587) sits under a new player's 800, as GoDraughts shows "Easy 800".

@@ -541,6 +541,43 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
     top of the glass; the prototype's card on the tablet (result, opponent, date, side,
     "Rating then: 1031 → 1023") was left out for now, as the results row says the
     rating's change already.
+- A replay plays on from any move (2026-11-13, task 078, the user's correction): "my
+  whole point was to let the game be replayed at any point and THAT doesn't count and
+  isn't stored or used for AI toughness changes or rating". This replaces the replay's
+  own "Doesn't count" pill by its title (2026-11-13, task 078's C): the replay only
+  shows, so it needs no label; the game played from it is what doesn't count, and says so.
+  - Play from here stands in the replay's head, at its right end, as back stands at its
+    left: one row the screen already has, which costs the board nothing and the list a
+    line at most (the game's line then heads the glass). On a phone the title, then back's
+    width, give way before the button leaves the head; on the tablet's narrow column it
+    is a row over the glass, which has rows to spare (26 moves in view to 20). A row on
+    every screen, over or under the list, was rejected: tried first, it took a 9:16
+    phone's landscape at 480 dp from 6 moves in view to 2 and its portrait board from 284
+    to 184 dp. By the steps there is no room on a phone, whose column of steps already
+    spans the board.
+  - The game from it keeps everything of the past game a player would expect: draughts,
+    opponent, level and skill, side, the side to move. No clock, since the history keeps
+    no clock setting; recording one was more than this needed.
+  - Start over goes back to the replay's position, not the draughts' start: trying a line
+    again is the point of playing from a move, and leaving is one tap on back.
+  - Back goes to the replay, not home: the game was opened from there, and the replay
+    keeps the move it showed, so another line can be tried from the next move.
+  - The game in progress is set aside rather than replaced: the game screen, the worker,
+    and the app's 3D board all read `shell.game`, so the game from the replay takes that
+    place and the other waits in `shell.parked` (the saved image, 15 KB, with its hints
+    and marks, 53 KB in all), which `shell::save` writes in its place. A second
+    `game::Game` (132 KB) or a second game screen was rejected for its size and for every
+    reader it would have to learn about.
+  - "Doesn't count" sits on the way out's top edge, half in the margin over it: the way
+    out is the same rect in every layout, so the label needs no room of its own and
+    moves no panel. White ink on the light glow colors (winter's) read faintly; dark ink,
+    as the replay's mark discs have, reads on all of them. In the play panel's whose-turn
+    line it would have crowded a panel tuned to what it holds; a row of its own would
+    have cost a phone's moves' line or the portrait board.
+  - Its moves are numbered on from the replay's (`Game.ply0`): "16." from move 30 reads as
+    the same game. Doing so made the moves panel number a game by where it began
+    (`game::first_ply`) rather than by its first note's side, which also numbers a game
+    whose undo history dropped an odd number of moves right.
 - A phone's moves, where the panel has no room (2026-11-13, task 078's A, the user's
   choice from `prototypes/history.html`'s take d), replacing 2026-11-11's no panel in
   portrait or on a phone in landscape:

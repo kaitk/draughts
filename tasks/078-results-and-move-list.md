@@ -20,6 +20,12 @@ The user's review of task 074's results screen at the Pixel 7a's landscape size
 
 Task 074 carries the rest of the history's work; this one these points.
 
+The user's correction of C (2026-11-13): "the way 'replay doesn't count' is done seems
+odd here? my whole point was to let the game be replayed at any point and THAT doesn't
+count and isn't stored or used for AI toughness changes or rating (the only place where
+that text would be needed)." So the replay only shows, and "Play from here" plays the game
+on from any move, a game that doesn't count.
+
 ## Steps
 
 - [x] 1 and 2 fixed in the app: the tiles readable, the setting only in settings with a
@@ -32,6 +38,10 @@ Task 074 carries the rest of the history's work; this one these points.
       Mac at the Pixel's, the A33's, and the iPhone's sizes (2026-11-13, notes)
 - [ ] A and B checked on a phone (the Pixel 7a, the A33, the iPhone 13 mini)
 - [x] The legend under the replay's list
+- [x] Play from here: the replay's pill gone, a button playing on from the move shown, a
+      game that counts for nothing and says so on its way out; checked on the Mac at the
+      Pixel's sizes, the tablet's, and a desktop's (2026-11-13, notes)
+- [ ] Play from here checked on a phone
 
 ## Acceptance criteria
 
@@ -43,6 +53,11 @@ Task 074 carries the rest of the history's work; this one these points.
       opens, a tip on the always-shown panel)
 - [x] A past game's moves listed and replayed on a board, touching neither resume nor the
       results (on a phone still to check)
+- [x] Play from here at any move but the end of a game that ended there: the same
+      draughts, opponent, level and skill, side, and side to move; its game written
+      nowhere, moving no rating, skill, or count, the game in progress kept and resumed as
+      it was; "Doesn't count" on it in every layout, the board's size unchanged (on a
+      phone still to check)
 
 ## Notes
 
@@ -97,6 +112,38 @@ Task 074 carries the rest of the history's work; this one these points.
   Headless shots: `build/notes/078-phone/` (Pixel, A33, iPhone, flat and 3D, sheets open
   and closed, the list alone, the tablet's tip). Built with the ngfx build too (the icons'
   shader).
+- Play from here (2026-11-13, the user's correction): `shell::play_from_here` and
+  `leave_trial` (`src/shell/shell.goose`), the game in progress set aside in
+  `shell.parked` (`saved.goose`'s `Parked`: its image, hints, and marks, 53 KB; the shell
+  went from 532 to 586 KB, where a second `game::Game` would have added 132), the label
+  `panel::no_count`, the button and its fit `replay::play_fit`. How it works in
+  `docs/architecture/rendering.md` ("A game's replay", "A game played from a replay"),
+  why in `docs/decisions/rendering.md` and `ai.md`. New string `replay.play` ("Play from
+  here", "Mängi siit edasi"); dev flag `--go here`. Choices:
+  - The button: the replay's head, at its right end, its icon (the computer's head or a
+    friend's two figures) beside its word, or over it in a smaller face; on a phone the
+    title, then back's width, give way first; on the tablet's 356 dp column a row over
+    the glass. In the head at every phone size `test/shell/sizes` has, the title beside it
+    but on a 9:16 phone's landscape at 480 dp (no title; in Estonian back a square too);
+    a row on the tablet's landscape (with its bar too, in English), the foldable's and
+    4:3's landscape, and the iPads'. Dimmed at the end of a game that ended there.
+  - Clocks: none, as the history keeps no clock setting.
+  - Start over: back to the replay's position, to try the line again; leaving is back.
+  - Back (the panel's, the end card's, Escape, Android's): the replay, at the move it
+    showed. Settings return to the game.
+  - The moves list numbers on from the replay's move (`Game.ply0`): from move 30 "16.",
+    from move 11 "6…". The panel numbers a game from where it began (`game::first_ply`),
+    which also fixed a game whose history dropped an odd number of moves.
+  - The label: a pill in the glow color with dark ink, centered on the way out's top
+    edge (`l.left` in every layout), half in the margin above it: 135 × 25 dp in English,
+    152 in Estonian; no panel moves and the board keeps its size at every size.
+  - Room in the replay (`test/shell/replay`): the tablet's landscape 26 to 20 moves in
+    view (the row), the Pixel's landscape at 540 dp 14 to 10 and portrait 12 to 8 (the
+    game's line now heads the glass), a 9:16 phone's portrait at 480 dp 4 to 2; every
+    board as before.
+  Headless shots: `build/notes/078-play-from-here/` (the replay at the Pixel's landscape,
+  portrait, Estonian, the end, the tablet; the game from move 39 at the Pixel's landscape
+  flat and 3D, portrait in Estonian, the tablet, and a desktop).
 - Left for A and B: the phones themselves; a tip in the sheet and the replay (the legend
   there for now); the line in a small window's compact bar (none).
 - Left for C: the prototype's
