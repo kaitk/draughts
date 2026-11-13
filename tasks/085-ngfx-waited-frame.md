@@ -56,11 +56,17 @@ On the M1 Pro (2026-11-13), the 3D bench full screen at 3600 × 2260:
   and 3.22. The iPhone's compositor runs each frame, which would explain its 14.7 ms: not
   yet checked there.
 - Not the cause: the pass barrier (off in the build: only read from the environment), the
-  other barriers (all dropped: 15.5 ms), memoryless storage, a 16 × 16 tile. The cause
-  likely lies in NoGraphicsAPI's Metal 4 MSAA path (its `MTL4` pass or pipeline), which
-  SDL_GPU's Metal 3 path doesn't share; not established without GPU counters.
-- A forced 32 × 32 tile on the MSAA pass faulted the GPU (three restarts, "MMU interrupt",
-  signature 674, not task 008's hang): never force a tile size there. Runs without any
-  barrier are as unsafe.
+  other barriers (all dropped: 15.5 ms), memoryless storage, a 16 × 16 tile. The Metal 4
+  MSAA path is our own: `kaitk/NoGraphicsAPI`'s `msaa` branch (b29bd71, merged into its
+  `ngfx`), which sets the textures' sample count and `MTLTextureType2DMultisample`, the
+  pipelines' `rasterSampleCount`, memoryless transient attachments made from the device
+  outside the heaps and the residency sets, untracked hazards, and the resolve through
+  `MTLStoreActionMultisampleResolve` on a shared, reused `MTL4RenderPassDescriptor`.
+  Start there: the cause is likely in that branch, not in NoGraphicsAPI or the driver;
+  not established without GPU counters.
+- A forced 32 × 32 tile on the MSAA pass, an experiment in a scratch copy of that branch,
+  faulted the GPU (three restarts, "MMU interrupt", signature 674, not goose-ngfx task
+  008's hang, signature 544): never force a tile size there, and don't drop the barriers.
+  The pass barrier's default stays as it is.
 
 A fallback: SMAA as ngfx's anti-aliasing on Apple, which the slowdown doesn't touch.
