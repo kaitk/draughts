@@ -381,6 +381,31 @@ came on 2026-11-09.
   a new player (2026-11-09).
 - The language is only in settings (2026-11-07): kids who can't read yet don't need it on
   home, and a tablet set to one language can still play in another.
+- One New game row, the opponent chosen in the setup (2026-11-13, task 080,
+  `prototypes/new-game.html` take c). It replaces the A friend and The computer rows of
+  2026-11-07 and the setups of 2026-11-08: a friend's game on a tablet is rare (it was the
+  only way to play before the computer player), and two rows made the rarer choice as
+  prominent as the common one. The setup's first row is whom to play, A friend, Easy,
+  Medium, Hard, the computer's level folded into it, so the two opponents' setups have
+  the same rows (the pieces, or the board's turning for a friend) and the column never
+  jumps; the opponent is kept (`opponent = friend|computer`), so a child who always plays
+  the computer taps New game and Play. New game notes the kept opponent, as the
+  computer's row noted its level, and is outlined under Continue, lit in its place on a
+  first run. The column widens to 400 dp so the four tiles are a tap wide each. Where it
+  is too short, the choices scroll with Play pinned under them, and in a phone's
+  landscape Play moves into the head row in the title's place: it replaces the two
+  paired columns of 2026-11-08, which a 400 dp first row doesn't fit. Rejected: take a,
+  an Opponent row of its own over the level's, which made the column overflow the
+  tablet's landscape; take b, the opponent as a two-part switch in the head row beside
+  back, crushed on a phone's landscape where Play needs that row.
+- Whether a friend's game turns the board is the setup's (2026-11-13, task 080), its
+  last-but-one row for a friend, Turns "to who plays" or Stays "for both", Stays the
+  default as before. It replaces settings' Board row's third tile (2026-11-12): the
+  turning is a choice about that game, not a look, and in settings it read as if it
+  always applied. The setup's board turns once round when Turns is chosen, as settings'
+  preview did. Settings' Board row is flat or raised again, which on a 20:9 phone at
+  540 dp in portrait puts both groups back on one page (the preview 228 dp) where the
+  wider row had needed the tabs.
 
 **Settings** (`prototypes/settings.html`, regrouped 2026-11-07)
 
@@ -557,7 +582,8 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   sizes, above); on a 20:9 phone at 540 dp the wider Board row puts settings in its two
   tabs, its board 237 to 447 dp. Rejected: a fourth camera button for it, which every
   layout round the 3D board would have had to make room for in friend games.
-  Replaces the turn on every friend game on the 3D board, from task 015. The flat
+  Replaces the turn on every friend game on the 3D board, from task 015. (The tile moved
+  into home's setup on 2026-11-13, under **Home**.) The flat
   board's turn fades its pieces out and in, 0.15 s each way: at once it was too quick to
   follow. Rejected for now: the pieces swinging round the middle on arcs (a quarter turn
   puts them over light squares), and the board shrinking and growing (it moves the board).

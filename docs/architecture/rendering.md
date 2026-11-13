@@ -119,7 +119,7 @@ a touch screen and 64 on a desktop, and the room a tile sized to its words keeps
 side of them is `gui::side()`, 16 dp and 12 (back keeps 4 more). The panels' heights are
 sums of their rows, gaps, and insets (`panel::corner_h`, `left_h`, `bar_h`, `play_h`, settings'
 `head_row_h`), so they follow. A tile with its icon or picture over its word (the hint,
-undo move, a puzzle's next, settings' rows, the setup's level, pieces, and clock) is
+undo move, a puzzle's next, settings' rows, the setup's opponent, pieces, and clock) is
 `gui::stacked()`, at least 72 dp: below that undo move's word no longer takes two lines
 and a picture overruns its tile. The play's corner panel is as tall as the clocks over
 undo move's tall tile need where that is more than its touch height (314 dp on a
@@ -607,7 +607,10 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
 - **Home** is a title menu (`prototypes/home.html`): the scene and the 3D board, and one glass column
   with the wordmark, then continue with whose game it goes back to ("A friend", "The
   computer · easy"; not shown while the game is one nobody set up and no move was
-  played: `shell::resume`, the rows below moving up), a friend, the computer with its level, puzzles
+  played: `shell::resume`, the rows below moving up), new game with the opponent its setup
+  keeps at the row's end (the computer's icon and the level, or the friend's icon and "a
+  friend"; outlined under continue, 1 dp at 25%, and lit in continue's place where that
+  isn't shown, the keys' first choice then; a ring with a plus for its icon), puzzles
   with stars, and the games played with the player's rating in their draughts once rated
   ([the results screen](#the-results-screen)), then settings, each an icon and a word, in
   rows 88 dp tall, 2 dp apart. The menu's height is reckoned without the results row: where
@@ -653,23 +656,32 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   below it, down to 24 where a setup's tall sheet near square would leave it under 40%
   of the width. A board under 128 dp isn't shown (a setup on a short phone;
   `board::SMALLEST`, the same for settings' preview): its squares would be under 13 dp
-  on 10 × 10. The pieces on its tiles still are. A friend
-  and the computer open a new game's setup in the same column: back (88 dp) and the title, then
-  a row of tiles per choice, lit as in settings, each with its dim name above it: which
-  draughts (international 10 × 10, the default, Brazilian 8 × 8, or Russian 8 × 8, each
-  with a small board at the start), the level against the computer (easy, the default for a new player, medium, hard, with one to three pips), the child's pieces against the computer (white, the default,
-  or black, each tile showing its piece), and the clock (none with a
-  stopwatch, 5 min +3 s a move, 10 min +5 s a move); then play, a primary row. Every tile
-  is 88 dp tall at least. In a
-  landscape too short for the column (a phone), it becomes two columns of 330 dp side by
-  side: back, the title, the draughts, and the level in the first; the child's pieces,
-  the clock, and play in the second, the title in a smaller face if it needs it, play at
-  the second's bottom, level with the first's last tile so both columns end on one line; down to
-  290 dp each where the second would reach the X (a 16:9 phone less its cutout at a
-  side). In portrait, where the sheet would reach the X (the computer's on a 9:16 phone
-  at 480 dp), the sheet takes the height, 8 dp under its top at least, its margins above
-  and below the content shrinking from 32 dp to fit, and back, the title (in a smaller
-  face where it needs one), and the X share its first row; no board shows. The
+  on 10 × 10. The pieces on its tiles still are. New game
+  opens the setup in the same column (`prototypes/new-game.html`, take c): back (88 dp),
+  a ring with a plus, and the title "New game", then a row of tiles per choice, lit as
+  in settings, each with its dim name above it: whom to play (a friend, or the computer
+  easy, medium, or hard, each with the computer's icon and one to three pips; the
+  computer at easy is the default for a new player, the file's `opponent =
+  friend|computer`), which draughts (international, the default, Brazilian, or Russian,
+  each with a small board at the start and its size), against the computer the child's
+  pieces (white, the default, or black, each tile showing its piece) and with a friend
+  the board (Turns "to who plays" or Stays "for both", each with its icon; the file's
+  `turn = on|off`, off by default), and the clock (none with a stopwatch, 5 min +3 s a
+  move, 10 min +5 s a move); then play, a primary row. Both opponents have the same
+  rows, so choosing one moves nothing. Every tile is 88 dp tall and wide at least: in
+  landscape the column is 400 dp, so whom to play's four tiles are 93 dp each. Where the
+  column is too short for the choices (732 dp unscrolled), they scroll in a list between
+  the head and play, pinned under them, the lowest fading out at the list's foot while
+  there are more below, as home's menu does (the iPad's smallest window); in a phone's
+  landscape play moves into the head row beside back in the title's place, and the list
+  runs on from under it to the screen's foot (`home::play_up`: the Pixel 7a's choices
+  scroll 102 dp in a 436 dp view, the iPhone 13 mini's 142 in 396). In portrait, where
+  the sheet would reach the X (a 9:16 phone at 480 dp), the sheet takes the height, 8 dp
+  under its top at least, its margins above and below the content shrinking from 32 dp
+  to fit, and back, the title (in a smaller face where it needs one), and the X share its
+  first row; no board shows. Switched to Turns, the setup's board turns once round to
+  show it (`Shell.demo`, twice the game's turn): the 3D board a full turn, the flat one
+  showing black's side for the middle half. The
   choices are kept for next time in the player's file, and play replaces a saved game
   without asking. Beside a setup the board is the game play will start: the chosen
   draughts at its start, 10 × 10 or 8 × 8, turned when the child plays black against
@@ -685,7 +697,7 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   third with 16 dp either side; else, as in landscape, each takes its name's width and
   an even share of the rest, each at least 88 dp wide; thirds again where
   the names leave nothing to share. A tile's word still too wide for it, as a
-  translation's may be, takes the small face. Home's computer row notes the kept level. The language is
+  translation's may be, takes the small face. The language is
   only in settings: kids who can't read yet don't need it on home, and a
   tablet set to one language can still play in another. In portrait the column is a sheet below the
   board. **Settings** (`prototypes/settings.html`): back and the
@@ -725,12 +737,8 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   `board = 2d|3d`): its 3D tile plays the game on the 3D board (`settings::raised`,
   `src/shell/prefs.goose`; the game screen round it is under "Board and pieces"), and
   shows it on every screen with a board: home, the preview here (its kings' auto a
-  stack), and a puzzle. After them a third tile, on or off by itself, Turns (with a
-  friend) (`turn = on|off`, off by default): a friend's game turns the board to the side
-  to move after each move, the flat board's pieces fading across and the 3D one easing round (the game
-  screen's "Against a friend"). Switched on, the preview turns once round to show it
-  (`Shell.demo`, twice the game's turn): the 3D board a full turn, the flat one showing
-  black's side for the middle half. Each
+  stack), and a puzzle. Whether a friend's game turns the board is chosen in home's
+  setup. Each
   setting is a dim 18 px name at the left of its tiles (above them in portrait); a tile
   has radius 16 px and is lit in the glow color at 22% with a 2 px glow border when on.
   Every tile, the language's and the seasons' too, is 88 px tall and wide at least; the title row is 100 px,
@@ -1171,7 +1179,7 @@ board's does and the backdrop over it as opaque as the blur.
   **Against a friend** the game begins in the top view, zoomed (`rig::across_table`),
   which reads alike from either side of the tablet, and the board stays put; the camera
   buttons change both as ever, and the next game against the computer is back at the
-  view at rest. With settings' Turns on, it begins at rest instead and the board turns
+  view at rest. With the setup's Turns, it begins at rest instead and the board turns
   180° after each move to face the side to move (0.7 s on a sine ease, `rig::Ease.soft`,
   once the move has shown), the light keeping its place on screen (the renderer turns it
   with the board, `render3d::turn_light`, and draws the shadow map again) and the board
