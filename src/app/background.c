@@ -1,5 +1,6 @@
 // The season's photograph: the images built into the program, as pixels for the renderer
-// (docs/architecture/rendering.md, "Scene and glass"), which photo.c uploads. Where the
+// (docs/architecture/rendering.md, "Scene and glass"), which photo.c uploads; and
+// settings' board pictures, one small atlas loaded the same way (design/boards/). Where the
 // renderer takes ASTC, the compressed image is handed over as it is stored, with nothing
 // decoded or copied; elsewhere the JPEG is decoded with stb_image and scaled down. No
 // graphics API here: a renderer brings its own upload (photo.h).
@@ -80,6 +81,13 @@ static const unsigned char summer[] = {
 #else
 static const unsigned char summer[] = { 0 };
 #endif
+#if __has_embed("../../design/boards/boards.jpg")
+static const unsigned char boards[] = {
+#embed "../../design/boards/boards.jpg"
+    , 0 };
+#else
+static const unsigned char boards[] = { 0 };
+#endif
 #endif
 #if __has_embed("../../design/backgrounds/masters/autumn-01-2048-6x6.astc")
 static const unsigned char autumn_astc[] = {
@@ -110,16 +118,28 @@ static const unsigned char summer_astc[] = {
 static const unsigned char summer_astc[] = { 0 };
 #endif
 
-// By theme: wood (autumn), stone (winter), birch (spring), sunset (summer).
-#if !ASTC_ONLY
-static const unsigned char *const jpegs[4] = { autumn, winter, spring, summer };
-static const int64_t jpeg_lengths[4] = { sizeof autumn - 1, sizeof winter - 1,
-                                         sizeof spring - 1, sizeof summer - 1 };
+#if __has_embed("../../design/boards/boards-6x6.astc")
+static const unsigned char boards_astc[] = {
+#embed "../../design/boards/boards-6x6.astc"
+    , 0 };
+#else
+static const unsigned char boards_astc[] = { 0 };
 #endif
-static const unsigned char *const astcs[4] = { autumn_astc, winter_astc, spring_astc,
-                                               summer_astc };
-static const int64_t astc_lengths[4] = { sizeof autumn_astc - 1, sizeof winter_astc - 1,
-                                         sizeof spring_astc - 1, sizeof summer_astc - 1 };
+
+// By theme: wood (autumn), stone (winter), birch (spring), sunset (summer); then BOARDS,
+// settings' board pictures in one atlas (scripts/board_thumbs.py), which is taken whole.
+enum { BOARDS = 4, IMAGES = 5 };
+#if !ASTC_ONLY
+static const unsigned char *const jpegs[IMAGES] = { autumn, winter, spring, summer, boards };
+static const int64_t jpeg_lengths[IMAGES] = { sizeof autumn - 1, sizeof winter - 1,
+                                              sizeof spring - 1, sizeof summer - 1,
+                                              sizeof boards - 1 };
+#endif
+static const unsigned char *const astcs[IMAGES] = { autumn_astc, winter_astc, spring_astc,
+                                                    summer_astc, boards_astc };
+static const int64_t astc_lengths[IMAGES] = { sizeof autumn_astc - 1, sizeof winter_astc - 1,
+                                              sizeof spring_astc - 1, sizeof summer_astc - 1,
+                                              sizeof boards_astc - 1 };
 
 // Gives back the pages of an embedded image once it is uploaded or decoded. They are clean
 // pages of the program's file (on Android mapped from the APK), read again if needed, but
@@ -196,6 +216,12 @@ static bool jpeg(int64_t kind, int size, draughts_pixels *out) {
     if (!px) return false;
     int side = w < h ? w : h;
     unsigned char *owned = 0;
+    if (kind == BOARDS) {
+        // The atlas whole, as it is stored.
+        *out = (draughts_pixels){ .data = px, .len = (int64_t)w * h * 4, .width = w, .height = h,
+                                  .format = DRAUGHTS_RGBA8, .owned = px };
+        return true;
+    }
     if (side == size && w == h) {
         owned = px;
     } else if (side > size) {           // it only scales down
@@ -221,7 +247,7 @@ static bool jpeg(int64_t kind, int size, draughts_pixels *out) {
 
 bool draughts_photo_pixels(int64_t kind, int64_t decoded, bool astc_sampled, draughts_pixels *out) {
     *out = (draughts_pixels){ 0 };
-    if (kind < 0 || kind > 3 || decoded < 1 || decoded > 4096) return false;
+    if (kind < 0 || kind >= IMAGES || decoded < 1 || decoded > 4096) return false;
     if (astc_sampled && astc(kind, out)) return true;
     return jpeg(kind, (int)decoded, out);
 }

@@ -51,6 +51,8 @@ fn setup(f: flags::Flags&, sh: shell::Shell&, prefs: settings::Settings) {
         sh.changed = true;
     }
     if f.board >= 0 { sh.prefs.board = f.board; }
+    if f.material >= 0 { sh.prefs.material = f.material; }
+    sh.prefs.languages_open = f.languages;
     if f.lookout >= 0 { sh.prefs.lookout = f.lookout == 1; }
     if f.moves >= 0 { sh.prefs.moves = f.moves; }
     if f.hints >= 0 { sh.prefs.hints = f.hints; }

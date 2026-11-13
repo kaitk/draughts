@@ -143,6 +143,35 @@ fn shown(which: i64, spring: i64) -> i64 {
     return SPRING;
 }
 
+// The raised board's material, one for every season (settings' Board row, the player's
+// `material`; task 080): the season's own (AUTO), or its wood, stone, or carved board.
+// settings::MATERIAL_AUTO.. number them the same.
+let MATERIAL_AUTO = 0;
+let MATERIAL_WOOD = 1;
+let MATERIAL_STONE = 2;
+let MATERIAL_CARVED = 3;
+let MATERIALS = 4;
+// Each season's wood, stone, and carved look, by season (AUTUMN..SUMMER), the flags that
+// pick them in 03's table: autumn's maple and walnut (--autumn 0), sandstone and porphyry
+// (3), and rust vines in weathered stone (2); winter's limed ash (--winter 1), the slate
+// (0), and the Nordic band (2); spring's birch (--spring 0), ivory and jade (3), and the
+// elven stone (1); summer's sunset wood (--summer 0), the amber granite (6), and its signs
+// carved (4).
+let BY_MATERIAL = [[AUTUMN, AUTUMN_PORPHYRY, AUTUMN_CARVED], [WINTER_WOOD, WINTER, WINTER_CARVED],
+                   [SPRING, SPRING_STONE, SPRING_ELVEN], [SUMMER, SUMMER_STONE, SUMMER_AMBER]];
+// What Auto is in each season, its look before the choice: autumn's wood, winter's stone,
+// spring's carved stone, summer's wood.
+let OWN_MATERIAL = [MATERIAL_WOOD, MATERIAL_STONE, MATERIAL_CARVED, MATERIAL_WOOD];
+
+// The look the raised board shows in `season` (AUTUMN..SUMMER) made of `material`
+// (MATERIAL_AUTO..): one the renderer bakes as it is, spring's birch included (draw3d
+// shows it with Gpu.spring 0).
+fn of(season: i64, material: i64) -> i64 {
+    let s = clamp(season, 0, COUNT - 1);
+    let m = if material <= MATERIAL_AUTO || material >= MATERIALS { OWN_MATERIAL[s] } else { material };
+    return BY_MATERIAL[s][m - 1];
+}
+
 // The look for summer's variant n (0 to SUMMERS - 1).
 fn summer_look(n: i64) -> i64 {
     if n <= 0 { return SUMMER; }

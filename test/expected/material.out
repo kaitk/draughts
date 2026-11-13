@@ -1,0 +1,6 @@
+autumn: auto 0 wood 0 stone 13 carved 12
+winter: auto 1 wood 14 stone 1 carved 15
+spring: auto 9 wood 2 stone 17 carved 9
+summer: auto 3 wood 3 stone 18 carved 7
+an unknown material is auto: true, true
+every look keeps its season's photograph: true

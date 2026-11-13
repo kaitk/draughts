@@ -1,8 +1,8 @@
 // Home to settings and back through their transition (task 022), headless: settings
 // from home starts it, and while it runs the shell asks for frames, home fading out
 // under settings, both drifting the way the board goes, which eases from home's place
-// to the preview's: right in landscape; in portrait, where settings' title row comes
-// above it, down a little as it shrinks. The board is home's all the way, the game's
+// to the preview's, up in both orientations: settings' preview is beside the list in
+// landscape and in a band at the top in portrait (task 080). The board is home's all the way, the game's
 // pieces on its squares, and settings show their preview once it is there: one set of
 // pieces, never faint, ever on screen. Back shows home's board from its first frame.
 // Both screens' UI and their pieces over it are hidden where the board passes (the
@@ -73,19 +73,19 @@ fn main() {
     print("tapped settings: ", screen(sh), ", from home ", sh.from == shell::HOME, ", drawn ", first, " with home's board ",
           sh.out.layout.board == home_at, " at ", round(100.0 * sh.mix), "%, its pieces ", shell::fill(sh, 1.02).pieces.len,
           ", hole ", hole(sh));
-    var x = home_at.x;
-    var right = true;
+    var y = home_at.y;
+    var up = true;
     for i in 1..5 {
         let t = 1.02 + 0.0625 * i;
         look(sh, g, t, "  ");
-        if sh.out.layout.board.x < x { right = false; }
-        x = sh.out.layout.board.x;
+        if sh.out.layout.board.y > y { up = false; }
+        y = sh.out.layout.board.y;
     }
     look(sh, g, 1.3, "ended");
     look(sh, g, 1.4, "  ");
     look(sh, g, 5.3, "after the flash and the pulse");
     look(sh, g, 5.4, "idle");
-    print("the board went right all the way ", right);
+    print("the board went up all the way ", up);
     let settings_at = sh.out.layout.board;
     let back_at = drive::tile(g, 0);
     // At rest it is where settings opened straight put it.
@@ -132,8 +132,8 @@ fn main() {
     look(sh, g, 7.5, "idle");
     print("at home's place ", sh.out.layout.board == home_at);
 
-    // Portrait: settings' gear beside the wordmark; the board shrinks and goes down a
-    // little, under settings' title row.
+    // Portrait: settings' gear beside the wordmark; the board shrinks and goes up into
+    // settings' band.
     drive::size = float2 { 800.0, 1280.0 };
     g = gui::Gui {};
     gui::test_faces(g);
@@ -142,16 +142,16 @@ fn main() {
     let gear = drive::tile(g, 0);
     let low = p.out.layout.board.y;
     drive::tap(p, g, gear, 1.0);
-    var down = true;
-    var y = low;
+    var up_p = true;
+    var at_y = low;
     for i in 1..5 {
         let t = 1.02 + 0.0625 * i;
         look(p, g, t, "  ");
-        if p.out.layout.board.y < y { down = false; }
-        y = p.out.layout.board.y;
+        if p.out.layout.board.y > at_y { up_p = false; }
+        at_y = p.out.layout.board.y;
     }
     look(p, g, 1.3, "ended");
     look(p, g, 5.3, "after the flash and the pulse");
     look(p, g, 5.4, "idle");
-    print("the board went down all the way ", down, ", from ", round(low), " to ", round(p.out.layout.board.y));
+    print("the board went up all the way ", up_p, ", from ", round(low), " to ", round(p.out.layout.board.y));
 }

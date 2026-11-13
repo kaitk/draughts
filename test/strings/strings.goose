@@ -12,10 +12,11 @@ let NAMED = [
     "level.hard", "settings.theme", "settings.by_date", "settings.board",
     "settings.hints", "settings.kings", "season.winter", "season.spring",
     "season.summer", "season.autumn", "hints.mistakes", "hints.moves", "board.flat",
-    "board.raised", "settings.game", "settings.look", "settings.tutorial", "board.flat_note",
-    "board.raised_note", "kings.auto", "kings.crown", "kings.stack",
+    "board.raised", "settings.game", "settings.look", "settings.tutorial",
+    "kings.auto", "kings.crown", "kings.stack",
     "tutorial.learn", "players.who", "players.new", "players.picture", "players.name", "players.start_again",
-    "players.remove", "players.hold",
+    "players.remove", "players.hold", "settings.background", "background.photo", "background.plain",
+    "material.wood", "material.stone", "material.carved", "material.auto",
 ];
 
 fn main() {
@@ -53,10 +54,12 @@ fn main() {
               strings::SEASON_SUMMER, strings::SEASON_AUTUMN, strings::HINTS_MISTAKES,
               strings::HINTS_MOVES, strings::BOARD_FLAT, strings::BOARD_RAISED,
               strings::SETTINGS_GAME, strings::SETTINGS_LOOK, strings::SETTINGS_TUTORIAL,
-              strings::BOARD_FLAT_NOTE, strings::BOARD_RAISED_NOTE, strings::KINGS_AUTO,
+              strings::KINGS_AUTO,
               strings::KINGS_CROWN, strings::KINGS_STACK,
               strings::TUTORIAL_LEARN, strings::PLAYERS_WHO, strings::PLAYERS_NEW, strings::PLAYERS_PICTURE,
-              strings::PLAYERS_NAME, strings::PLAYERS_START_AGAIN, strings::PLAYERS_REMOVE, strings::PLAYERS_HOLD];
+              strings::PLAYERS_NAME, strings::PLAYERS_START_AGAIN, strings::PLAYERS_REMOVE, strings::PLAYERS_HOLD,
+              strings::SETTINGS_BACKGROUND, strings::BACKGROUND_PHOTO, strings::BACKGROUND_PLAIN,
+              strings::MATERIAL_WOOD, strings::MATERIAL_STONE, strings::MATERIAL_CARVED, strings::MATERIAL_AUTO];
     var wrong = 0;
     for k, i in ks {
         if strings::KEYS[k] != NAMED[i] {

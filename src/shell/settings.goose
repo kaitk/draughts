@@ -1,20 +1,19 @@
-// Settings (prototypes/settings.html; rendering.md, "Settings"): back and the title,
-// the language at the title row's right end, and the choices as words in two glass
-// groups by what they change. Game: move hints, and the moves panel beside the game (off,
-// the moves, or the moves marked; task 074; the draughts are chosen in home's setup
-// and the puzzles' library); the tutorial's row comes with the tutorial (task 026).
-// Look: the theme (one season, or by the date; and under its name a two-part switch,
-// the season's photograph or the plain fade in its place), the board (flat or raised;
-// whether a friend's game turns it is chosen in home's setup), and the kings (auto,
-// crown, or stack). Beside them is home's board as the choices make it: the player's
-// draughts' size, the kings, and what the move hints show, on a fixed position. In landscape the choices
-// take the width they need at the left and the board the rest (near square, each
-// setting's name above its tiles, so the rows fit the height); in portrait the board is
-// on top and the groups stand side by side under it, each setting's name above its
-// tiles. Where the groups don't fit so (a phone), one shows at a time: two tiles, Game
-// and Look, choose which, in the title row in landscape and under it in portrait. A
-// tap applies at once; there is no save button. The game's group also holds the privacy
-// note (`note_lines`), beside its title or at its foot.
+// Settings (prototypes/settings.html; rendering.md, "Settings"; task 080, take b): back,
+// the title, and the language pinned at the top, and under them one list that scrolls,
+// on one glass: Look (the background, the photograph or the plain fade; the theme, a
+// season or by the date; the board, flat, or raised in the season's own material or its
+// wood, stone, or carved board, each a picture; the kings, auto, crown, or stack), then
+// Game (move hints, and the moves panel beside the game with a line saying what the
+// chosen one shows), then the privacy note. The draughts are chosen in home's setup and
+// the puzzles' library, whether a friend's game turns the board in home's setup. The
+// preview beside the list is home's board as the choices make it: the player's draughts'
+// size, the kings, and what the move hints show, on a fixed position. In landscape the
+// list is a column at the left, its glass running off the screen's edge as home's, and
+// the preview the rest; in portrait the preview is a band at the top and the list a sheet
+// under it. The list fades out at its foot while there is more below, as home's does. The
+// language is a button at the title row's right end, a globe, its code, and a chevron,
+// opening a small glass list of the languages over the screen. A tap applies at once;
+// there is no save button.
 // The values, the file they are kept in, and its keys are in prefs.goose.
 namespace settings;
 import std;
@@ -27,8 +26,8 @@ import game from "../game";
 import strings from "../../strings";
 import .prefs;
 
-// What the screen asks for (gui::ASK_NOTHING..): SHOWN when the other group shows (a
-// phone's tabs).
+// What the screen asks for (gui::ASK_NOTHING..): SHOWN when the language list opens or
+// closes.
 let NOTHING = gui::ASK_NOTHING;
 let BACK = gui::ASK_BACK;
 let CHANGED = gui::ASK_CHANGED;
@@ -80,156 +79,96 @@ fn stage(b: board::Board&, s: Settings&, now: f64) {
     }
 }
 
-// The screen's parts, in dp.
-let PAD_X = 32.0;
-let PAD_Y = 24.0;
-// In landscape under a top inset (an iPad's status bar), the page's top padding gives up
-// to 12 dp, the bar already keeping the head from the screen's edge: with it both groups
-// fit in the 13" and 11" iPad's landscape, 1 and 5 dp short with the full padding
-// (2026-11-09).
-let TOP_RISE = 12.0;
-let LANG_IN = 6.0;          // the language's glass round its tiles
-fn head_row_h() -> f32 { gui::tap() + 2.0 * LANG_IN } // back (a tap, as the tabs), the title, and the language on its glass
-let HEAD_GAP = 14.0;        // under them in landscape; 16 in portrait, as round the board
-let SIDE_GAP = 24.0;        // between the choices and the board in landscape
-let GROUP_GAP = 10.0;
-let GROUP_PAD = 20.0;       // a group's sides; 12 above, 14 below
-let TITLE_H = 34.0;         // a group's icon and title
-let NAME_W = 120.0;         // a setting's name, at the left of its tiles (most landscapes)
-let NAME_H = 28.0;          // and above them in portrait
-let ROW_GAP = 10.0;
+// The screen's parts, in dp (prototypes/settings.html).
+let COLUMN_W = 480.0;       // the list in landscape: five tiles a tap wide, TILE_GAP apart
+let COLUMN_IN = 32.0;       // the column's glass round it, its left edge off the screen
+let TOP = 16.0;             // above the title row
+let HEAD_GAP = 8.0;         // under it, where the list's view starts
+let SIDE = 24.0;            // portrait: the sheet's room either side of the list,
+let SIDE_PHONE = 16.0;      // a phone's
+// Portrait: the preview's band at the top, a share of the safe area's height: the list
+// scrolls, and the board needn't be large to show the look.
+let BAND = 0.4;
+let BAND_PHONE = 0.3;
+let SECTION_TOP = 6.0;      // above a section's title,
+let SECTION_H = 40.0;       // its icon and title,
+let SECTION_END = 14.0;     // under its last row, and again under the rule after it
+let NAME_H = 34.0;          // a setting's dim name over its tiles
 let TILE_GAP = 10.0;
-let THUMB_W = 62.0;         // a season's thumbnail
-let THUMB_H = 40.0;
-// The theme's tiles in a small window (gui::compact, task 050): 48 dp tall, a smaller
-// thumbnail with its word beside it, and the switch's halves as low, so Theme, Board, and
-// Kings show in the smallest window without scrolling. Under the gui::tap() floor, as the
-// game's compact tiles are.
-let SLIM_H = 48.0;
-let SLIM_THUMB_W = 40.0;
-let SLIM_THUMB_H = 26.0;
-// The theme's switch, photograph or plain (prototypes/plain.html, take b): two halves
-// side by side. Where the name is above the tiles, beside it at the line's right end,
-// each half a tap square. Where the name is at the left of the tiles (most landscapes),
-// under it in the name's column, in the row's tap: two halves a tap wide need 180 dp across
-// where the column has 120, and a taller row would leave the tablet's landscape, which
-// has 8 dp to spare over its navigation bar, one group at a time (2026-11-09). Where the
-// choices' 55% of the page has the width (16:9 and wider), the names' column widens to
-// the switch's 180 dp, so each half is a tap wide; the rows keep their height. Either way
-// the halves are only as tall as their thumbnail and SWITCH_PAD above and below it, no
-// taller than the row's tiles: 60 dp where they are a tap wide (the user, 2026-11-10).
-let SWITCH_GAP = 4.0;
-let SWITCH_PAD = 10.0;
-let SWITCH_NAME = 20.0;     // the name's line above the switch in the name's column
-fn wide_name_w() -> f32 { 2.0 * gui::tap() + SWITCH_GAP } // the names' column as wide as the switch
+// A row of pictures closes its gaps down to this before it wraps: the five across a phone
+// in portrait (the iPhone 13 mini's 468 dp, 7 dp apart).
+let LEAST_GAP = 2.0;
+let PIC_W = 76.0;           // a picture tile's picture (scene::THUMB_W × THUMB_H's shape)
+let PIC_H = 50.0;
+let PIC_IN = 6.0;           // gui::choice's room round it
+let MINI_BOARD = 40.0;      // the flat board's tile: a small board at the start on a faint picture
+let KING_PIC = 34.0;        // the crown's and the stack's tiles: their king
+let NOTE_TOP = 6.0;         // between the move list's tiles and their note
+let SHIELD = 22.0;          // the privacy note's shield,
+let SHIELD_GAP = 10.0;      // and its gap to the words
+let FOOT_GAP = 16.0;        // under the privacy note, over the screen's inset
+let FADE = 72.0;            // dp at the list's foot over which a row fades out, as home's
 let SLACK = 0.5;            // px a row may pass its width by without wrapping
-// The smallest board the groups side by side may leave on a phone (its shorter side under
-// gui::PHONE): 45% of the page, but no more than 220 dp, 45% of a 553 dp phone's. A larger
-// screen keeps both groups side by side as long as they fit, the board as large as the
-// rest leaves and none under board::SMALLEST (a foldable's is 206 dp, a near-square
-// window's none; task 050, the user 2026-11-09).
-let BOTH_BOARD = 220.0;
 // The preview's share of the room it is given, each way: the rest a margin round it.
 // preview_room's 0.03 is half of what is left.
 let PREVIEW_SHARE = 0.94;
 
-// The settings in order, the first two in the game's group, the rest in the look's:
-// each one's name, how many tiles, and how tall they are. Row 0 was the draughts' (taken
-// out 2026-11-11, issue 1) and is the moves panel's now (task 074), shown under the hints.
-let MOVES_ROW = 0;
-let HINTS_ROW = 1;
-let THEME_ROW = 2;
-let BOARD_ROW = 3;
-let KINGS_ROW = 4;
-let GAME_ROWS = 2;
-let ROW_NAMES = [strings::SETTINGS_MOVES, strings::SETTINGS_HINTS,
-                 strings::SETTINGS_THEME, strings::SETTINGS_BOARD, strings::SETTINGS_KINGS];
-let ROW_TILES = [3, 2, 5, 2, 3];
-let GROUP_ICONS = [gui::TARGET, gui::SUN];
-let GROUP_TITLES = [strings::SETTINGS_GAME, strings::SETTINGS_LOOK];
+// The settings in the list's order, each one's name and how many tiles; the first four
+// are the look's, the last two the game's.
+let BACKGROUND_ROW = 0;
+let THEME_ROW = 1;
+let BOARD_ROW = 2;
+let KINGS_ROW = 3;
+let HINTS_ROW = 4;
+let MOVES_ROW = 5;
+let ROWS = 6;
+let LOOK_ROWS = 4;
+let ROW_NAMES = [strings::SETTINGS_BACKGROUND, strings::SETTINGS_THEME, strings::SETTINGS_BOARD, strings::SETTINGS_KINGS,
+                 strings::SETTINGS_HINTS, strings::SETTINGS_MOVES];
+let ROW_TILES = [2, 5, 5, 3, 2, 3];
+let MOST_TILES = 5;
+let SECTION_ICONS = [gui::SUN, gui::TARGET];
+let SECTION_TITLES = [strings::SETTINGS_LOOK, strings::SETTINGS_GAME];
 
-// The rows a group shows: the game's move hints and moves panel, and the look's
-// background, board, and kings. Row k of a group is `group_row`. The draughts' row isn't
-// shown (2026-11-11, issue 1, prototypes/issue-1.html take a): home's setup and the
-// puzzles' library each choose the draughts, and here it read as if it changed the game
-// in progress. The moves panel's row took its number (task 074), after the hints'.
-fn group_rows(group: i64) -> i64 { return if group == 0 { GAME_ROWS } else { ROW_TILES.len - GAME_ROWS }; }
+// The Board row's tiles: flat, then raised in the season's own material (MATERIAL_AUTO)
+// and in each other one, tile i the material i - 1.
+let FLAT_TILE = 0;
+let BOARD_WORDS = [strings::BOARD_FLAT, strings::BOARD_RAISED, strings::MATERIAL_WOOD, strings::MATERIAL_STONE,
+                   strings::MATERIAL_CARVED];
+// The pictures the widgets draw (gui::PICTURE's look.z): the theme shown's photograph and
+// fade, its board pictures (its own raised board whole, then its wood's, stone's, and
+// carved board's near corner, from -4 down), and the faint picture under the flat board.
+let PHOTO_PIC = -2;
+let FADE_PIC = -3;
+let BOARD_PIC = -4;
+let FLAT_PIC = -8;
 
-fn group_row(group: i64, k: i64) -> i64 { return if group == 0 { [HINTS_ROW, MOVES_ROW][k] } else { GAME_ROWS + k }; }
+// Ids, from gui::SETTINGS_IDS: back 0, the language button 1, the languages' rows from 2,
+// the catch round their list 6 and under it 7, the tiles from 10 (10 a row), the list 70.
+let LANGUAGE_ID = gui::SETTINGS_IDS + 1;
+let LANGUAGE_ROWS = gui::SETTINGS_IDS + 2;
+let OUTSIDE_ID = gui::SETTINGS_IDS + 6;
+let POPUP_ID = gui::SETTINGS_IDS + 7;
+let LIST = gui::SETTINGS_IDS + 70;
 
-// How the rows fit the page (layout): the names' width at the left of their tiles, NAME_W
-// or wide_name_w() where the landscape has the width, and whether the theme's tiles are slim
-// (a small window, gui::compact).
-struct Fit {
-    name_w: f32  = NAME_W,
-    slim:   bool = false,
-}
-
-// How tall a row's tiles are: gui::stacked(), as most hold two rows, a picture or a note
-// with the word, and the rows keep one height (the floor for small hands on a touch
-// screen; 56 to 72 dp until 2026-11-08); SLIM_H for the theme's in a small window.
-fn row_h(f: Fit, row: i64) -> f32 { if f.slim && row == THEME_ROW { SLIM_H } else { gui::stacked() } }
-
-// The switch's tap ids, photograph and plain, after the rows' (SETTINGS_IDS + 10 + 10 ×
-// row + i).
-let SWITCH_ID = gui::SETTINGS_IDS + 60;
-
-// How wide the line of the theme's name and its switch beside it wants to be.
-fn switch_line(g: gui::Gui&) -> f32 {
-    let u = g.scale;
-    return gui::text_width(g, gui::SMALL, strings::get(ROW_NAMES[THEME_ROW])) + (14.0 + 2.0 * gui::tap() + SWITCH_GAP) * u;
-}
-
-// A half's thumbnail, as wide as w (pixels) leaves it, at most the tiles' own.
-fn switch_pic(f: Fit, g: gui::Gui&, w: f32) -> float2 {
-    let u = g.scale;
-    let pic = min((if f.slim { SLIM_THUMB_W } else { THUMB_W }) * u, w - gui::PAD * u);
-    return float2 { pic, pic * THUMB_H / THUMB_W };
-}
-
-// How tall the switch is, in pixels, `across` pixels wide: its thumbnails and SWITCH_PAD
-// above and below them, no taller than the theme's tiles; SLIM_H in a small window.
-fn switch_h(f: Fit, g: gui::Gui&, across: f32) -> f32 {
-    let u = g.scale;
-    if f.slim { return SLIM_H * u; }    // the compact tiles' floor
-    let pic = switch_pic(f, g, 0.5 * (across - SWITCH_GAP * u));
-    return min(row_h(f, THEME_ROW) * u, pic.y + 2.0 * SWITCH_PAD * u);
-}
-
-// The theme's switch in r, its halves side by side: the season's photograph and its
-// plain fade, the one chosen lit. True when a tap changed s.
-fn switch(s: Settings&, f: Fit, g: gui::Gui&, r: float4) -> bool {
-    let u = g.scale;
-    let w = 0.5 * (r.z - SWITCH_GAP * u);
-    let pic = switch_pic(f, g, w);
-    var changed = false;
-    for k in 2 {
-        let half = float4 { r.x + k * (w + SWITCH_GAP * u), r.y, w, r.w };
-        let plain = k == 1;
-        // The theme shown's photograph (-2) or fade (-3), as the widgets draw them.
-        if gui::picture(g, SWITCH_ID + k, half, if plain { -3 } else { -2 }, pic,
-                        s.plain == plain) {
-            changed = s.plain != plain;
-            s.plain = plain;
-        }
-    }
-    return changed;
-}
+// Whether a row's tiles are pictures (gui::choice) rather than words.
+fn pictured(row: i64) -> bool { row <= BOARD_ROW }
 
 // Tile i of a row's word.
 fn word(row: i64, i: i64) -> i64 {
-    if row == MOVES_ROW { return [strings::MOVES_HIDDEN, strings::MOVES_LIST, strings::MOVES_MARKS][i]; }
-    if row == HINTS_ROW { return [strings::HINTS_MISTAKES, strings::HINTS_MOVES][i]; }
+    if row == BACKGROUND_ROW { return [strings::BACKGROUND_PHOTO, strings::BACKGROUND_PLAIN][i]; }
     if row == THEME_ROW { return if i == BY_DATE_TILE { strings::SETTINGS_BY_DATE } else { SEASON_KEYS[i] }; }
-    if row == BOARD_ROW { return [strings::BOARD_FLAT, strings::BOARD_RAISED][i]; }
-    return KING_KEYS[i];
+    if row == BOARD_ROW { return BOARD_WORDS[i]; }
+    if row == KINGS_ROW { return KING_KEYS[i]; }
+    if row == HINTS_ROW { return [strings::HINTS_MISTAKES, strings::HINTS_MOVES][i]; }
+    return [strings::MOVES_HIDDEN, strings::MOVES_LIST, strings::MOVES_MARKS][i];
 }
 
 // What the move list's tile i shows, said under its row for the chosen one: its words
 // alone (Off, Moves, Marks) didn't say (task 078).
 let MOVES_NOTES = [strings::MOVES_HIDDEN_NOTE, strings::MOVES_LIST_NOTE, strings::MOVES_MARKS_NOTE];
 
-// How many lines the move list's notes take at most at width w, so the row keeps one
+// How many lines the move list's notes take at most at width w, so the list keeps one
 // height whichever is chosen.
 fn moves_note_lines(g: gui::Gui&, w: f32) -> i64 {
     var n = 0;
@@ -237,192 +176,191 @@ fn moves_note_lines(g: gui::Gui&, w: f32) -> i64 {
     return n;
 }
 
-// Tile i of a row's note under its word, or "".
-fn note(row: i64, i: i64) -> const u8[:] {
-    if row == BOARD_ROW { return strings::get([strings::BOARD_FLAT_NOTE, strings::BOARD_RAISED_NOTE][i]); }
-    return "";
-}
-
-// How wide tile i of a row is: its words with gui::side() either side, at least a tap; a
-// season's, its thumbnail or label and 6 dp either side, at least a tap too.
-fn tile_width(f: Fit, g: gui::Gui&, row: i64, i: i64) -> f32 {
+// How wide tile i of a row is, at least a tap: a picture tile its picture or its word in
+// the small face, whichever is wider, and PIC_IN either side; a word's its word with
+// gui::side() either side.
+fn tile_width(g: gui::Gui&, row: i64, i: i64) -> f32 {
     let u = g.scale;
     let label = strings::get(word(row, i));
-    if row == THEME_ROW && f.slim {
-        return max(gui::tap() * u, gui::choice_beside_width(g, float2 { SLIM_THUMB_W * u, SLIM_THUMB_H * u }, label));
+    if pictured(row) { return max(gui::tap() * u, max(PIC_W * u, gui::text_width(g, gui::SMALL, label)) + 2.0 * PIC_IN * u); }
+    return max(gui::tap() * u, gui::text_width(g, gui::BODY, label) + 2.0 * gui::side() * u);
+}
+
+// Whether tile i of a row is the one chosen in s.
+fn chosen(s: Settings&, row: i64, i: i64) -> bool {
+    if row == BACKGROUND_ROW { return s.plain == (i == 1); }
+    if row == THEME_ROW { return s.season == (if i == BY_DATE_TILE { BY_DATE } else { SEASON_KINDS[i] }); }
+    if row == BOARD_ROW { return if i == FLAT_TILE { s.board == FLAT } else { s.board == RAISED && s.material == i - 1 }; }
+    if row == KINGS_ROW { return s.kings == i; }
+    if row == HINTS_ROW { return s.hints == i; }
+    return s.moves == i;
+}
+
+// Chooses tile i of a row in s.
+fn choose(s: Settings&, row: i64, i: i64) {
+    if row == BACKGROUND_ROW { s.plain = i == 1; }
+    if row == THEME_ROW { s.season = if i == BY_DATE_TILE { BY_DATE } else { SEASON_KINDS[i] }; }
+    if row == BOARD_ROW {
+        s.board = if i == FLAT_TILE { FLAT } else { RAISED };
+        if i != FLAT_TILE { s.material = i - 1; }
     }
-    if row == THEME_ROW { return max(gui::tap() * u, max(THUMB_W * u, gui::text_width(g, gui::SMALL, label)) + gui::PAD * u); }
-    let w = gui::text_width(g, gui::BODY, label);
-    return max(gui::tap() * u, max(w, gui::text_width(g, gui::SMALL, note(row, i))) + 2.0 * gui::side() * u);
+    if row == KINGS_ROW { s.kings = i; }
+    if row == HINTS_ROW { s.hints = i; }
+    if row == MOVES_ROW { s.moves = i; }
+}
+
+// The picture tile i of a row shows (the widgets' look.z): the background's the theme
+// shown's photograph or fade; a season's its photograph, or with plain its fade (4 on), by
+// the date's the glow's tint with a sun (-1); the board's the theme shown's.
+fn picture_of(s: Settings&, row: i64, i: i64) -> i64 {
+    if row == BACKGROUND_ROW { return if i == 0 { PHOTO_PIC } else { FADE_PIC }; }
+    if row == THEME_ROW {
+        let kind = if i == BY_DATE_TILE { BY_DATE } else { SEASON_KINDS[i] };
+        return if kind >= 0 && s.plain { kind + 4 } else { kind };
+    }
+    return if i == FLAT_TILE { FLAT_PIC } else { BOARD_PIC - (i - 1) };
 }
 
 // Declares tile i of a row in r. True when a tap changed s.
-fn tile(s: Settings&, f: Fit, over: board::Overlay&, g: gui::Gui&, row: i64, i: i64, r: float4) -> bool {
+fn tile(s: Settings&, over: board::Overlay&, g: gui::Gui&, row: i64, i: i64, r: float4) -> bool {
     let u = g.scale;
     let id = gui::SETTINGS_IDS + 10 + 10 * row + i;
     let label = strings::get(word(row, i));
-    if row == THEME_ROW {
-        let kind = if i == BY_DATE_TILE { BY_DATE } else { SEASON_KINDS[i] };
-        // A season's thumbnail: its photograph, or with plain its fade (the widgets' 4 on).
-        let pic = if kind >= 0 && s.plain { kind + 4 } else { kind };
-        let size = if f.slim { float2 { SLIM_THUMB_W * u, SLIM_THUMB_H * u } } else { float2 { THUMB_W * u, THUMB_H * u } };
-        guard gui::choice(g, id, r, pic, size, label, s.season == kind, true, f.slim) else { return false; }
-        s.season = kind;
-        return true;
+    let on = chosen(s, row, i);
+    var tapped = false;
+    if pictured(row) {
+        let size = float2 { PIC_W * u, PIC_H * u };
+        tapped = gui::choice(g, id, r, picture_of(s, row, i), size, label, on, true);
+        let pic = gui::choice_picture(g, r, size);
+        // The flat board: a small board at the start; the raised one in the season's own
+        // material says so.
+        if row == BOARD_ROW && i == FLAT_TILE { gui::mini(g, pic, MINI_BOARD * u, 8, 3, 1.0); }
+        if row == BOARD_ROW && i == FLAT_TILE + 1 { gui::tag(g, pic, strings::get(strings::MATERIAL_AUTO)); }
+    } else {
+        // The crown's and the stack's tiles each show their king.
+        let king = row == KINGS_ROW && i != AUTO;
+        let picked, pic = gui::pick(g, id, r, if king { KING_PIC } else { 0.0 }, label, "", on, true);
+        if king { game::put(over, pic, 15.0 * u, rules::WHITE, i, 1.0, false); }
+        tapped = picked;
     }
-    let on = if row == MOVES_ROW { s.moves == i } else if row == HINTS_ROW { s.hints == i }
-             else if row == BOARD_ROW { s.board == i } else { s.kings == i };
-    // The crown's and the stack's tiles each show their king.
-    let king = row == KINGS_ROW && i != AUTO;
-    let tapped, pic = gui::pick(g, id, r, if king { 34.0 } else { 0.0 }, label, note(row, i), on, true);
-    if king { game::put(over, pic, 15.0 * u, rules::WHITE, i, 1.0, false); }
     guard tapped else { return false; }
-    if row == MOVES_ROW { s.moves = i; }
-    if row == HINTS_ROW { s.hints = i; }
-    if row == BOARD_ROW { s.board = i; }
-    if row == KINGS_ROW { s.kings = i; }
+    choose(s, row, i);
     return true;
 }
 
-// Where a row's tiles go, from r's top left, wrapping at its width, into `at`. Returns
-// how tall they are. A row as wide as r, as group_width makes it, doesn't wrap for a
-// rounding difference: SLACK.
-let MOST_TILES = 5;
-fn lay(f: Fit, g: gui::Gui&, row: i64, r: float4, at: float4[:]) -> f32 {
+// Where a row's tiles go, from r's top left across its width, into `at`; returns how tall
+// they are. They keep TILE_GAP apart on one line; a row of pictures that doesn't fit so
+// closes its gaps down to LEAST_GAP first; else they wrap.
+fn lay(g: gui::Gui&, row: i64, r: float4, at: float4[:]) -> f32 {
     let u = g.scale;
-    let h = row_h(f, row) * u;
+    let h = gui::stacked() * u;
+    let n = ROW_TILES[row];
+    var sum: f32 = 0.0;
+    for i in n { sum += min(tile_width(g, row, i), r.z); }
+    var gap = TILE_GAP * u;
+    if pictured(row) && sum + (n - 1) * gap > r.z + SLACK { gap = max(LEAST_GAP * u, (r.z - sum) / (n - 1)); }
+    if sum + (n - 1) * gap > r.z + SLACK { gap = TILE_GAP * u; }
     var x: f32 = 0.0;
     var y: f32 = 0.0;
-    // The theme's five where they don't fit one line (a small window): a grid of equal
-    // tiles three across (two where three don't fit), not a ragged wrap (task 050).
-    if row == THEME_ROW {
-        var all = -TILE_GAP * u;
-        for i in ROW_TILES[row] { all += tile_width(f, g, row, i) + TILE_GAP * u; }
-        if all > r.z + SLACK {
-            let cols = if 3.0 * gui::tap() * u + 2.0 * TILE_GAP * u <= r.z { 3 } else { 2 };
-            let w = (r.z - (cols - 1) * TILE_GAP * u) / cols;
-            let lines = (ROW_TILES[row] + cols - 1) / cols;
-            for i in ROW_TILES[row] {
-                at[i] = float4 { r.x + (i % cols) * (w + TILE_GAP * u), r.y + (i / cols) * (h + TILE_GAP * u), w, h };
-            }
-            return lines * h + (lines - 1) * TILE_GAP * u;
-        }
-    }
-    for i in ROW_TILES[row] {
-        let w = min(tile_width(f, g, row, i), r.z);
+    for i in n {
+        let w = min(tile_width(g, row, i), r.z);
         if x > 0.0 && x + w > r.z + SLACK {
             x = 0.0;
             y += h + TILE_GAP * u;
         }
         at[i] = float4 { r.x + x, r.y + y, w, h };
-        x += w + TILE_GAP * u;
+        x += w + gap;
     }
     return y + h;
 }
 
-// Where a group's settings go (rows_at): each row's dim name, its tiles, and the theme's
-// switch; and how tall they are together.
+// Where the list's parts go (list_at), from its top: each section's title and the rule
+// after it, each setting's dim name and its tiles, the move list's note, the privacy
+// note (its shield at its left), and how tall it all is.
 struct Row {
     name:  float4             = float4 { 0.0, 0.0, 0.0, 0.0 },
-    says:  float4             = float4 { 0.0, 0.0, 0.0, 0.0 },  // the move list's note
-    sw:    float4             = float4 { 0.0, 0.0, 0.0, 0.0 },
     tiles: float4[MOST_TILES] = [float4 { 0.0, 0.0, 0.0, 0.0 }; MOST_TILES],
 }
-struct Rows {
-    row: Row[3] = [Row {}; 3],
-    h:   f32    = 0.0,
+struct List {
+    title:   float4[2] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 2],
+    rule:    float4[2] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 2],
+    row:     Row[ROWS] = [Row {}; ROWS],
+    says:    float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
+    privacy: float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
+    h:       f32       = 0.0,
 }
 
-// A group's settings from r's top left, as wide as r, each its dim name and its tiles:
-// the name at the left when `aside`, else above them; under the move list's tiles, a
-// line saying what the chosen one shows.
-fn rows_at(f: Fit, g: gui::Gui&, group: i64, r: float4, aside: bool) -> Rows {
+// The list from r's top left, as wide as r.
+fn list_at(g: gui::Gui&, r: float4) -> List {
     let u = g.scale;
-    var rs = Rows {};
+    let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
+    var l = List {};
     var y = r.y;
-    for k in group_rows(group) {
-        let row = group_row(group, k);
-        let at .= rs.row[k];
-        if k > 0 { y += ROW_GAP * u; }
-        let left = (f.name_w + 14.0) * u;
-        // The theme's row: its name on a line of its own, the switch under it, the two
-        // centered down the row at the left of the tiles; or where the name is above the
-        // tiles, beside it at the line's right end, the line as tall as the switch.
-        let switched = row == THEME_ROW;
-        let across = if aside { f.name_w * u } else { (2.0 * gui::tap() + SWITCH_GAP) * u };
-        let sh = switch_h(f, g, across);
-        let line: f32 = if switched { sh + SWITCH_GAP * u } else { NAME_H * u };
-        let tiles = if aside { float4 { r.x + left, y, r.z - left, 0.0 } }
-                    else { float4 { r.x, y + line, r.z, 0.0 } };
-        let h = lay(f, g, row, tiles, at.tiles);
-        at.name = float4 { r.x, y, f.name_w * u, if aside { h } else { NAME_H * u - 6.0 * u } };
-        let top = y + max(0.0, 0.5 * (h - SWITCH_NAME * u - sh));
-        if switched {
-            at.sw = float4 { r.x, top + SWITCH_NAME * u, across, sh };
-            if aside { at.name = float4 { r.x, top, across, SWITCH_NAME * u }; }
-            else {
-                at.name = float4 { r.x, y, r.z, sh };
-                at.sw = float4 { r.x + r.z - across, y, across, sh };
-            }
+    for section in 2 {
+        y += SECTION_TOP * u;
+        l.title[section] = float4 { r.x, y, r.z, SECTION_H * u };
+        y += SECTION_H * u;
+        let first = if section == 0 { 0 } else { LOOK_ROWS };
+        let end = if section == 0 { LOOK_ROWS } else { ROWS };
+        for row in first..end {
+            let at .= l.row[row];
+            at.name = float4 { r.x + 4.0 * u, y + (NAME_H - 24.0) * u, r.z - 4.0 * u, 24.0 * u };
+            y += NAME_H * u;
+            y += lay(g, row, float4 { r.x, y, r.z, 0.0 }, at.tiles);
         }
-        y += if aside { h } else { line + h };
-        if row == MOVES_ROW {
-            // Beside the tiles, centered down them, where the room at their right holds it
-            // in their height (the groups' width is the look's, wider: most landscapes);
-            // else under them, which makes the group taller.
-            let small = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
-            let end = at.tiles[ROW_TILES[row] - 1];
-            let x = end.x + end.z + NOTE_GAP * u;
-            let room = tiles.x + tiles.z - x;
-            let beside = moves_note_lines(g, room);
-            if h <= row_h(f, row) * u + 0.5 && room >= NOTE_LEAST * u && beside * small <= h {
-                at.says = float4 { x, end.y + 0.5 * (h - beside * small), room, beside * small };
-            } else {
-                let n = moves_note_lines(g, tiles.z);
-                at.says = float4 { tiles.x, y + NOTE_TOP * u, tiles.z, n * small };
-                y += NOTE_TOP * u + n * small;
-            }
+        if section == 1 {
+            let n = moves_note_lines(g, r.z - 8.0 * u);
+            l.says = float4 { r.x + 4.0 * u, y + NOTE_TOP * u, r.z - 8.0 * u, n * line };
+            y += NOTE_TOP * u + n * line;
         }
+        y += SECTION_END * u;
+        l.rule[section] = float4 { r.x, y, r.z, max(1.0, floor(u + 0.5)) };
+        y += l.rule[section].w + SECTION_END * u;
     }
-    rs.h = y - r.y;
-    return rs;
+    let text_x = (4.0 + SHIELD + SHIELD_GAP) * u;
+    let n = note_lines(g, strings::get(strings::SETTINGS_PRIVACY), float4 { 0.0, 0.0, r.z - text_x, 0.0 }, false);
+    l.privacy = float4 { r.x + text_x, y, r.z - text_x, n * line };
+    y += n * line + FOOT_GAP * u;
+    l.h = y - r.y;
+    return l;
 }
 
-// Declares a group's settings where rows_at put them. True when a tap changed s.
-fn rows(s: Settings&, f: Fit, over: board::Overlay&, g: gui::Gui&, group: i64, rs: Rows&) -> bool {
+// Declares the list where list_at put it. True when a tap changed s.
+fn list(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: List&) -> bool {
     let u = g.scale;
     var changed = false;
-    for k in group_rows(group) {
-        let row = group_row(group, k);
-        let at .= rs.row[k];
-        for i in ROW_TILES[row] { if tile(s, f, over, g, row, i, at.tiles[i]) { changed = true; } }
-        gui::text(g, gui::SMALL, at.name, strings::get(ROW_NAMES[row]), 0.66, 0.03 * gui::FACE_DP[gui::SMALL] as f32 * u,
-                  gui::LEFT);
-        if row == MOVES_ROW { note_lines(g, strings::get(MOVES_NOTES[s.moves]), at.says, true); }
-        if row == THEME_ROW {
-            s.switch_at = at.sw;
-            if switch(s, f, g, at.sw) { changed = true; }
+    for section in 2 {
+        var title = l.title[section];
+        gui::glyph_icon(g, gui::center(gui::cut_left(title, 30.0 * u), 28.0 * u, 28.0 * u), SECTION_ICONS[section],
+                        gui::PLAIN, 0.0, 0.85);
+        gui::cut_left(title, gui::PAD * u);
+        gui::text(g, gui::HEADING, title, strings::get(SECTION_TITLES[section]), 1.0, 0.0, gui::LEFT);
+        let first = if section == 0 { 0 } else { LOOK_ROWS };
+        let end = if section == 0 { LOOK_ROWS } else { ROWS };
+        for row in first..end {
+            let at .= l.row[row];
+            gui::text(g, gui::SMALL, at.name, strings::get(ROW_NAMES[row]), 0.66, 0.03 * gui::FACE_DP[gui::SMALL] as f32 * u,
+                      gui::LEFT);
+            for i in ROW_TILES[row] { if tile(s, over, g, row, i, at.tiles[i]) { changed = true; } }
         }
+        gui::fill(g, l.rule[section], float4 { 1.0, 1.0, 1.0, 0.1 }, 0.0);
     }
+    note_lines(g, strings::get(MOVES_NOTES[clamp(s.moves, 0, 2)]), l.says, true);
+    // The privacy note (App Review Guideline 5.1.1(i); store/app-store.md): what the app
+    // collects, nothing, dim as the settings' names, under its shield. No link out: the
+    // app opens none.
+    let p = l.privacy;
+    let icon = SHIELD * u;
+    gui::glyph_icon(g, float4 { p.x - (SHIELD + SHIELD_GAP) * u, p.y, icon, icon }, gui::SHIELD, gui::PLAIN, 0.0, NOTE_A);
+    note_lines(g, strings::get(strings::SETTINGS_PRIVACY), p, true);
     return changed;
 }
 
-// The privacy note (App Review Guideline 5.1.1(i); store/app-store.md): what the app
-// collects, nothing, in the small face and dim as the settings' names, in the game's
-// group. At its title row's right end where it fits there in two lines at most (most
-// landscapes, where both groups stack and the height is short; one line in English and
-// Estonian on the tablet and the iPad), the row as tall as they are; otherwise at the
-// glass's foot, wrapped to its width, where the game's group, as tall as the look's
-// (portrait, a phone's tabs), has room to spare. No link out: the app opens none.
+// The notes' opacity: the move list's and the privacy note, dim as the settings' names.
 let NOTE_A = 0.66;
-let NOTE_GAP = 24.0;        // between the group's title and the note beside it
-let NOTE_BESIDE = 2;        // the most lines the note takes beside the title
-let NOTE_TOP = 8.0;         // between the move list's tiles and their note
-let NOTE_LEAST = 120.0;     // the least width the move list's note takes beside its tiles
 
-// Text s, the privacy note or the move list's, wrapped at whole words to r's width,
-// `align`ed in it: how many lines, each a small face's height; drawn from r's top when
-// `draw`.
+// Text s wrapped at whole words to r's width, `align`ed in it: how many lines, each a
+// small face's height; drawn from r's top when `draw`.
 fn note_lines(g: gui::Gui&, s: const u8[:], r: float4, draw: bool, align: i64 = gui::LEFT) -> i64 {
     let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
     var n = 0;
@@ -447,399 +385,227 @@ fn note_lines(g: gui::Gui&, s: const u8[:], r: float4, draw: bool, align: i64 = 
     return n;
 }
 
-// How wide the note may be beside the title of a game's group glass w wide.
-fn note_room(g: gui::Gui&, w: f32) -> f32 {
-    return w - (2.0 * GROUP_PAD + 30.0 + 12.0 + NOTE_GAP) * g.scale
-           - gui::text_width(g, gui::HEADING, strings::get(GROUP_TITLES[0]));
+// The language button (prototypes/settings.html, &langui=menu, the globe b): a tile a tap
+// tall holding a wireframe globe, the shown language's code, and a chevron down; its list
+// below it, each language a row a tap tall: its code, its name in itself, and a tick on
+// the one shown.
+let GLOBE = 28.0;
+let CHEVRON = 20.0;
+let BUTTON_IN = 16.0;       // the button's room at its left, 14 at its right,
+let BUTTON_GAP = 8.0;       // and between its parts
+let POPUP_W = 220.0;        // the list's least width,
+let POPUP_GAP = 4.0;        // its gap under the button,
+let POPUP_IN = 6.0;         // its glass round its rows,
+let ROW_IN = 16.0;          // a row's room either side,
+let CODE_W = 40.0;          // its code's cell,
+let TICK = 24.0;            // and its tick
+
+// A language's code as its button and list show it, "EN", from strings::LANGUAGES.
+fn code(lang: i64) -> u8[..8] {
+    var c: u8[..8] = [];
+    for ch in strings::LANGUAGES[lang] { if c.len < 8 { c.push(if ch >= 'a' && ch <= 'z' { ch - 32 } else { ch }); } }
+    return c;
 }
 
-// How many lines the note takes beside the title of a game's group glass w wide; 0 where
-// it goes at the foot.
-fn note_beside(g: gui::Gui&, w: f32, titled: bool) -> i64 {
-    guard titled else { return 0; }
-    let n = note_lines(g, strings::get(strings::SETTINGS_PRIVACY), float4 { 0.0, 0.0, note_room(g, w), 0.0 }, false);
-    return if n <= NOTE_BESIDE { n } else { 0 };
-}
-
-// How tall a group's title row is: as tall as the note beside it, at least TITLE_H.
-fn title_height(g: gui::Gui&, group: i64, w: f32) -> f32 {
-    let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
-    let n = if group == 0 { note_beside(g, w, true) } else { 0 };
-    return max(TITLE_H * g.scale, n * line);
-}
-
-// How tall the note is at the foot of a game's group glass w wide, with the gap above it;
-// 0 where it goes in the title row.
-fn note_height(g: gui::Gui&, w: f32, titled: bool) -> f32 {
-    let u = g.scale;
-    guard note_beside(g, w, titled) == 0 else { return 0.0; }
-    let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
-    let n = note_lines(g, strings::get(strings::SETTINGS_PRIVACY), float4 { 0.0, 0.0, w - 2.0 * GROUP_PAD * u, 0.0 }, false);
-    return ROW_GAP * u + n * line;
-}
-
-// How tall a group's glass is at width w; with no title row where a tab names it.
-fn group_height(f: Fit, g: gui::Gui&, group: i64, w: f32, aside: bool, titled: bool = true) -> f32 {
-    let u = g.scale;
-    let h = rows_at(f, g, group, float4 { 0.0, 0.0, w - 2.0 * GROUP_PAD * u, 0.0 }, aside).h;
-    let title: f32 = if titled { title_height(g, group, w) + ROW_GAP * u } else { 0.0 };
-    let note:  f32 = if group == 0 { note_height(g, w, titled) } else { 0.0 };
-    return (12.0 + 14.0) * u + title + h + note;
-}
-
-// How wide a group's glass wants to be with its rows unwrapped, the names at their left
-// when `aside`.
-fn group_width(f: Fit, g: gui::Gui&, group: i64, aside: bool) -> f32 {
-    let u = g.scale;
+// How wide the language button is: the globe, the widest code in the body face, the
+// chevron, and their room.
+fn language_width(g: gui::Gui&) -> f32 {
     var widest: f32 = 0.0;
-    for k in group_rows(group) {
-        let row = group_row(group, k);
-        var w = -TILE_GAP * u;
-        for i in ROW_TILES[row] { w += tile_width(f, g, row, i) + TILE_GAP * u; }
-        widest = max(widest, w);
-        // The theme's name and its switch beside it, where the name is above the tiles.
-        if row == THEME_ROW && !aside { widest = max(widest, switch_line(g)); }
+    for i in strings::LANGUAGES.len {
+        let c = code(i);
+        widest = max(widest, gui::text_width(g, gui::BODY, c[..]));
     }
-    let names = if aside { f.name_w + 14.0 } else { 0.0 };
-    return widest + (names + 2.0 * GROUP_PAD) * u;
+    return (BUTTON_IN + GLOBE + CHEVRON + 2.0 * BUTTON_GAP + 14.0) * g.scale + widest;
 }
 
-// A group's glass in r: its icon and title (unless a tab names it), then its settings.
-// Where r reaches the edge of `area`, the safe area, the glass runs on to the screen's.
-// Where its content, `content` pixels tall, is taller than r (a small window), the
-// glass stays and the rows scroll inside it (task 050). True when a tap changed s.
-let LIST = gui::SETTINGS_IDS + 70;             // the group's scrolling list's id (gui::scroll_begin), plus the group
-fn group(s: Settings&, f: Fit, over: board::Overlay&, g: gui::Gui&, group: i64, r: float4, area: float4, aside: bool,
-         titled: bool = true, content: f32 = 0.0) -> bool {
+// The language button in r, `shown` the language showing; true when tapped.
+fn language_button(g: gui::Gui&, r: float4, shown: i64, open: bool) -> bool {
     let u = g.scale;
-    let glass = gui::bleed(g, r, area);
-    gui::glass(g, glass, 24.0);
-    var c = float4 { r.x + GROUP_PAD * u, r.y + 12.0 * u, r.z - 2.0 * GROUP_PAD * u, r.w - 26.0 * u };
-    let scrolls = content > r.w + 0.5;
-    if scrolls {
-        let top = r.y + 2.0 * u;
-        c.y -= gui::scroll_begin(g, LIST + group, float4 { glass.x, top, glass.z, glass.y + glass.w - top }, content);
-        c.w = content - 26.0 * u;
+    gui::glass(g, r, 22.0);
+    let tapped, p = gui::hold(g, LANGUAGE_ID, r);
+    gui::add(g, gui::Quad { rect: r, look: float4 { gui::BUTTON, 22.0 * u, 0.0, p },
+                            extra: float4 { u, if open { gui::CHOSEN } else { gui::PLAIN }, gui::hover(g, LANGUAGE_ID), 0.0 } });
+    var c = r;
+    gui::cut_left(c, BUTTON_IN * u);
+    gui::glyph_icon(g, gui::center(gui::cut_left(c, GLOBE * u), GLOBE * u, GLOBE * u), gui::GLOBE, gui::PLAIN, p, 0.85);
+    gui::cut_left(c, BUTTON_GAP * u);
+    gui::cut_right(c, 14.0 * u);
+    gui::glyph_icon(g, gui::center(gui::cut_right(c, CHEVRON * u), CHEVRON * u, CHEVRON * u), gui::CHEVRON_DOWN, gui::PLAIN, p,
+                    0.7);
+    gui::cut_right(c, BUTTON_GAP * u);
+    let shown_code = code(shown);
+    gui::text(g, gui::BODY, c, shown_code[..], 1.0, 0.05 * gui::FACE_DP[gui::BODY] as f32 * u, gui::LEFT);
+    return tapped;
+}
+
+// Where the language list goes under the button `button`, its right edge with the
+// button's.
+fn popup_rect(g: gui::Gui&, button: float4) -> float4 {
+    let u = g.scale;
+    var w = POPUP_W * u;
+    for i in strings::LANGUAGES.len {
+        w = max(w, (2.0 * ROW_IN + CODE_W + TICK + 2.0 * POPUP_IN + 14.0) * u
+                   + gui::text_width(g, gui::BODY, strings::name_of(i)));
     }
-    if titled {
-        var title = gui::cut_top(c, title_height(g, group, r.z));
-        gui::cut_top(c, ROW_GAP * u);
-        gui::glyph_icon(g, gui::center(gui::cut_left(title, 30.0 * u), 30.0 * u, 30.0 * u), GROUP_ICONS[group],
-                        gui::PLAIN, 0.0, 0.85);
-        gui::cut_left(title, gui::PAD * u);
-        gui::text(g, gui::HEADING, title, strings::get(GROUP_TITLES[group]), 1.0, 0.0, gui::LEFT);
-        let n = if group == 0 { note_beside(g, r.z, true) } else { 0 };
-        if n > 0 {
-            // Right-aligned beside the title, centered down its row.
-            let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
-            let room = note_room(g, r.z);
-            note_lines(g, strings::get(strings::SETTINGS_PRIVACY), float4 { title.x + title.z - room, title.y + 0.5 * (title.w - n * line), room, 0.0 }, true,
-                       gui::RIGHT);
+    let h = strings::LANGUAGES.len * gui::tap() * u + 2.0 * POPUP_IN * u;
+    return float4 { button.x + button.z - w, button.y + button.w + POPUP_GAP * u, w, h };
+}
+
+// The language list over the screen `screen`, under the button: a tap on a language
+// switches to it, one outside closes the list. Returns CHANGED, SHOWN, or NOTHING.
+fn languages(s: Settings&, g: gui::Gui&, button: float4, screen: float4, shown: i64) -> i64 {
+    let u = g.scale;
+    let outside, unused_o = gui::hold(g, OUTSIDE_ID, screen, false);
+    let r = popup_rect(g, button);
+    gui::glass(g, r, 20.0);
+    gui::hold(g, POPUP_ID, r, false);
+    var ask = NOTHING;
+    var rows = gui::inset(r, POPUP_IN * u);
+    for i in strings::LANGUAGES.len {
+        let row = gui::cut_top(rows, gui::tap() * u);
+        let id = LANGUAGE_ROWS + i;
+        let tapped, p = gui::hold(g, id, row);
+        let on = i == shown;
+        gui::add(g, gui::Quad { rect: row, look: float4 { gui::BUTTON, 14.0 * u, 0.0, p },
+                                extra: float4 { u, if on { gui::ROW_PRIMARY } else { gui::ROW }, gui::hover(g, id), 0.0 } });
+        var c = row;
+        gui::cut_left(c, ROW_IN * u);
+        gui::cut_right(c, ROW_IN * u);
+        let lang_code = code(i);
+        gui::text(g, gui::SMALL, gui::cut_left(c, CODE_W * u), lang_code[..], NOTE_A, 0.05 * gui::FACE_DP[gui::SMALL] as f32 * u,
+                  gui::LEFT);
+        if on { gui::glyph_icon(g, gui::center(gui::cut_right(c, TICK * u), TICK * u, TICK * u), gui::CHECK, gui::ON, 0.0, 1.0); }
+        gui::text(g, gui::BODY, c, strings::name_of(i), 1.0, 0.0, gui::LEFT);
+        if tapped {
+            s.languages_open = false;
+            if on { return SHOWN; }
+            s.language = i;
+            return CHANGED;
         }
     }
-    var rs = rows_at(f, g, group, c, aside);
-    let changed = rows(s, f, over, g, group, rs);
-    if group == 0 && note_beside(g, r.z, titled) == 0 {
-        // At the glass's foot, below the rows however much taller the glass is.
-        let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
-        let n = note_lines(g, strings::get(strings::SETTINGS_PRIVACY), c, false);
-        note_lines(g, strings::get(strings::SETTINGS_PRIVACY), float4 { c.x, c.y + c.w - n * line, c.z, 0.0 }, true);
+    if outside {
+        s.languages_open = false;
+        ask = SHOWN;
     }
-    if scrolls { gui::scroll_end(g); }
-    return changed;
+    return ask;
 }
 
-// A language's tile width: its name in itself with gui::side() either side, at least a tap.
-fn language_width(g: gui::Gui&, lang: i64) -> f32 {
-    return max(gui::tap() * g.scale, gui::text_width(g, gui::BODY, strings::name_of(lang)) + 2.0 * gui::side() * g.scale);
-}
-
-// How wide the language's glass is: a globe, unless `globe` is false, then a tile per
-// language, 8 dp apart, inside the glass's LANG_IN sides.
-fn languages_width(g: gui::Gui&, globe: bool = true) -> f32 {
-    var w = (if globe { 52.0 } else { 4.0 }) * g.scale;
-    for i in strings::LANGUAGES.len { w += language_width(g, i) + 8.0 * g.scale; }
-    return w;
-}
-
-// How wide a group's tab must be: its icon and its title.
-fn tab_width(g: gui::Gui&, group: i64) -> f32 {
-    return gui::labelled_width(g, 30.0, strings::get(GROUP_TITLES[group]), gui::HEADING) + 16.0 * g.scale;
-}
-
-// The two tabs, Game and Look, side by side in r, the shown group's lit. Each on glass,
-// as back is: a plain tile alone (white at 10%) was hard to read over a bright photograph
-// (autumn's sunlit trees on a phone, 2026-11-09). True when a tap changed the group shown.
-fn tabs(s: Settings&, g: gui::Gui&, r: float4) -> bool {
-    let u = g.scale;
-    var changed = false;
-    let w = 0.5 * (r.z - TILE_GAP * u);
-    for k in 2 {
-        let t = float4 { r.x + k * (w + TILE_GAP * u), r.y, w, r.w };
-        gui::glass(g, t, 22.0);
-        if gui::labelled(g, gui::SETTINGS_IDS + 8 + k, t, GROUP_ICONS[k], 30.0, strings::get(GROUP_TITLES[k]), gui::HEADING, gui::MIDDLE,
-                         if s.group == k { gui::CHOSEN } else { gui::PLAIN }) {
-            changed = s.group != k;
-            s.group = k;
-        }
-    }
-    return changed;
-}
-
-// The title row in r: back, the title, and at its right end the language on glass, each
-// named in itself, with `shown` lit. With `tabbed`, the tabs instead of the title (a
-// phone's landscape); without, the title, and where it doesn't fit beside them in the
-// row labels' face (a phone's portrait), back is the arrow over the word in a tap
-// square, and where the title still doesn't fit in the headings' face (480 dp across),
-// the language's glass leaves out its globe; the title then takes a smaller face where it
-// is too wide for its room, or none where even that is. Returns BACK, CHANGED, SHOWN, or
-// NOTHING.
-fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, tabbed: bool = false) -> i64 {
+// The title row in r: back, the title, and the language button at its right end. Where
+// the title doesn't fit beside a worded back in the row labels' face (a phone's
+// portrait), back is the arrow over the word in a tap square; the title then takes a
+// smaller face where it is too wide for its room, or none where even that is. Returns
+// BACK, SHOWN (the language list opened or closed), or NOTHING; sets `button` to where the
+// language button is.
+fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, button: float4&) -> i64 {
     let u = g.scale;
     var row = r;
     var ask = NOTHING;
     let title = strings::get(strings::HOME_SETTINGS);
     let wide = gui::back_width(g, strings::get(strings::NAV_BACK));
-    let stacked = !tabbed && r.z - wide - 40.0 * u - languages_width(g) < gui::text_width(g, gui::LABEL, title);
-    let globe = !stacked || r.z - (gui::tap() + 40.0) * u - languages_width(g) >= gui::text_width(g, gui::HEADING, title);
+    let lw = language_width(g);
+    let stacked = r.z - wide - 40.0 * u - lw < gui::text_width(g, gui::LABEL, title);
     let bw = if stacked { gui::tap() * u } else { wide };
     let back = gui::center(gui::cut_left(row, bw), bw, gui::tap() * u);
     if gui::back(g, gui::SETTINGS_IDS, back, strings::get(strings::NAV_BACK), stacked) { ask = BACK; }
     gui::cut_left(row, 20.0 * u);
-    let w = languages_width(g, globe);
-    let glass = gui::center(gui::cut_right(row, w), w, head_row_h() * u);
-    gui::glass(g, glass, 20.0);
-    var c = gui::inset(glass, LANG_IN * u);
-    if globe {
-        gui::cut_left(c, 8.0 * u);
-        gui::glyph_icon(g, gui::center(gui::cut_left(c, 28.0 * u), 28.0 * u, 28.0 * u), gui::GLOBE, gui::PLAIN, 0.0,
-                        0.85);
-        gui::cut_left(c, gui::PAD * u);
-    }
-    for i in strings::LANGUAGES.len {
-        let tapped, pic = gui::pick(g, gui::SETTINGS_IDS + 1 + i, gui::cut_left(c, language_width(g, i)), 0.0, strings::name_of(i), "",
-                                    shown == i, true);
-        gui::cut_left(c, 8.0 * u);
-        if tapped {
-            s.language = i;
-            ask = CHANGED;
-        }
+    button = gui::center(gui::cut_right(row, lw), lw, gui::tap() * u);
+    if language_button(g, button, shown, s.languages_open) {
+        s.languages_open = !s.languages_open;
+        ask = SHOWN;
     }
     gui::cut_right(row, 20.0 * u);
-    if tabbed {
-        if tabs(s, g, gui::center(row, row.z, gui::tap() * u)) { ask = SHOWN; }
-        return ask;
-    }
     let face = gui::fitting(g, gui::LABEL, title, row.z);
     if gui::text_width(g, face, title) <= row.z { gui::text(g, face, row, title, 1.0, 0.0, gui::LEFT); }
     return ask;
 }
 
-// Where a 3D preview may go on the page left beside the choices: PREVIEW_SHARE of it each way,
-// as the flat square takes PREVIEW_SHARE of its shorter side; nothing where the flat preview
-// isn't shown (`size` 0).
+// Where a 3D preview may go in `page`: PREVIEW_SHARE of it each way, as the flat square
+// takes PREVIEW_SHARE of its shorter side; nothing where the flat preview isn't shown
+// (`size` 0).
 fn preview_room(page: float4, size: f32) -> float4 {
     guard size > 0.0 else { return float4 { page.x + 0.5 * page.z, page.y + 0.5 * page.w, 0.0, 0.0 }; }
     return float4 { page.x + 0.03 * page.z, page.y + 0.03 * page.w, PREVIEW_SHARE * page.z, PREVIEW_SHARE * page.w };
 }
 
-// Where the screen's parts go in `area`, the screen's safe area (layout): the title row
-// (`head`), the tabs under it (TABS_UNDER), each group's glass and where it runs on to
-// the screen's edges (`bleed`), how the groups lay out their rows (`aside`, `titled`,
-// and `content`, the height a scrolling group's rows take), and the preview, `board` and
-// `room3d` where a 3D preview goes instead, as large as it fits (the same share of the
-// page beside the choices as the flat square's). Of the groups one at a time, only the
-// shown one's glass. Three layouts, each taken where the one before doesn't fit, so a
-// window that widens goes through them in order (task 050): the groups stacked at the
-// left of the board (COLUMN, landscape); the board on top and the groups side by side
-// under it (BOTH: portrait, and a near-square landscape); one group at a time with tabs
-// (a phone, a small window), in the title row in landscape (TABS_BESIDE), else under it
-// (TABS_UNDER).
-let COLUMN = 0;
-let BOTH = 1;
-let TABS_BESIDE = 2;
-let TABS_UNDER = 3;
+// Where the screen's parts go in `area`, the screen's safe area (layout): the glass, the
+// column at the left in landscape or the sheet under the preview's band in portrait,
+// before it runs on to the screen's edges (gui::bleed); the title row (`head`); the list,
+// its content's left and width (`list`, x and z) and its view, from under the title row
+// to the screen's foot (`view`); and the preview, `board`, and `room3d` where a 3D
+// preview goes instead.
 struct Page {
-    kind:    i64           = COLUMN,
-    head:    float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
-    tabs:    float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
-    glass:   float4[2]     = [float4 { 0.0, 0.0, 0.0, 0.0 }; 2],
-    bleed:   float4[2]     = [float4 { 0.0, 0.0, 0.0, 0.0 }; 2],
-    aside:   bool          = true,
-    titled:  bool          = true,
-    content: f32           = 0.0,
-    board:   board::Layout = board::layout_at(0.0, 0.0, 0.0, 1.0, 8),
-    room3d:  float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
-    fit:     Fit           = Fit {},
-}
-
-// The preview in what the page leaves it: PREVIEW_SHARE of its shorter side, centered,
-// none under board::SMALLEST (or where `shown` is false); and the 3D preview's room.
-fn preview(p: Page&, page: float4, u: f32, n: i64, shown: bool = true) {
-    var size = PREVIEW_SHARE * min(page.z, page.w);
-    if !shown || size < board::SMALLEST * u { size = 0.0; }
-    p.board = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
-    p.room3d = preview_room(page, size);
-}
-
-// On a desktop the preview's top level with the game group's glass at `top`, flat or 3D
-// (task 068): centered down the page it stood lower than the groups beside it, which
-// start under the title row (the user, 2026-11-11). Its size stays; it only moves up.
-fn level(p: Page&, top: f32, u: f32, n: i64) {
-    let b = p.board.board;
-    if b.z > 0.0 && top < b.y { p.board = board::layout_at(b.x, top, b.z, u, n); }
-    guard p.room3d.z > 0.0 else { return; }
-    let r = view3d::fit(view3d::Camera {}, n, p.room3d, view3d::MIDDLE).rect;
-    if top < r.y { p.room3d = float4 { r.x, top, r.z, r.w }; }
+    glass:  float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
+    head:   float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
+    list:   float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
+    view:   float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
+    board:  board::Layout = board::layout_at(0.0, 0.0, 0.0, 1.0, 8),
+    room3d: float4        = float4 { 0.0, 0.0, 0.0, 0.0 },
 }
 
 // Where the screen's parts go in `area` (Page). It declares nothing and changes nothing.
 fn layout(s: Settings&, g: gui::Gui&, area: float4) -> Page {
     let u = g.scale;
-    let landscape = area.z >= area.w;
     let n = rules::VARIANTS[s.variant].size;
-    var page = float4 { area.x + PAD_X * u, area.y + PAD_Y * u, area.z - 2.0 * PAD_X * u, area.w - 2.0 * PAD_Y * u };
-    var p = Page { bleed: [area, area], fit: Fit { slim: gui::compact(g, area), .. }, .. };
-    let phone = gui::phone(area, u);
-    var w: f32 = 0.0;
-    var tabbed = true;
-    if landscape {
-        // The choices as wide as they want, at most 55% of the page, wrapping beyond, each
-        // setting's name at the left of its tiles; the board in the rest, centered. Near
-        // square, where the wrapped rows would run past the page's foot, the names go
-        // above the tiles instead, as in portrait, and the rows need less width; where
-        // that runs past it too, the names go back to the left and the rows take the width
-        // they want unwrapped (a foldable), as long as the board keeps its least beside
-        // them (a phone: the choices at most 70% of the page). Over a bottom inset (a
-        // gesture or hidden navigation bar) the groups may run on through the page's foot,
-        // as long as the look's tiles end above the inset and as far from the screen's
-        // edge as they would with none: `room` gains up to that foot, 38 dp.
-        let head_w = gui::back_width(g, strings::get(strings::NAV_BACK)) + 40.0 * u + languages_width(g)
-                     + gui::text_width(g, gui::LABEL, strings::get(strings::HOME_SETTINGS));
-        let rise = min(g.insets.y, TOP_RISE * u);
-        page.y -= rise;
-        page.w += rise;
-        let foot = min(g.insets.w, (PAD_Y + 14.0) * u);
-        let room = page.w - (head_row_h() + HEAD_GAP) * u + foot;
-        w = min(max(max(group_width(p.fit, g, 0, true), group_width(p.fit, g, 1, true)), head_w), 0.55 * page.z);
-        if group_height(p.fit, g, 0, w, true) + GROUP_GAP * u + group_height(p.fit, g, 1, w, true) > room {
-            p.aside = false;
-            w = min(max(max(group_width(p.fit, g, 0, false), group_width(p.fit, g, 1, false)), head_w), 0.55 * page.z);
-        }
-        if group_height(p.fit, g, 0, w, p.aside) + GROUP_GAP * u + group_height(p.fit, g, 1, w, p.aside) > room {
-            p.aside = true;
-            w = max(max(group_width(p.fit, g, 0, true), group_width(p.fit, g, 1, true)), head_w);
-        }
-        let widest = if phone { 0.7 * page.z } else { page.z - (SIDE_GAP + board::SMALLEST) * u };
-        tabbed = group_height(p.fit, g, 0, w, p.aside) + GROUP_GAP * u + group_height(p.fit, g, 1, w, p.aside) > room
-                 || w > widest;
-        if !tabbed && p.aside && w + (wide_name_w() - NAME_W) * u <= 0.55 * page.z {
-            w += (wide_name_w() - NAME_W) * u;
-            p.fit.name_w = wide_name_w();
-        }
+    var p = Page {};
+    var page = area;
+    if area.z >= area.w {
+        // The column, COLUMN_W of list with COLUMN_IN round it, its left corners off the
+        // screen; the preview in the rest.
+        let x = area.x + COLUMN_IN * u;
+        p.glass = float4 { area.x - COLUMN_IN * u, area.y, (COLUMN_W + 3.0 * COLUMN_IN) * u, area.w };
+        p.head = float4 { x, area.y + TOP * u, COLUMN_W * u, gui::tap() * u };
+        let right = p.glass.x + p.glass.z;
+        page = float4 { right, area.y, area.x + area.z - right, area.w };
+    } else {
+        // The preview's band at the top, the sheet under it, its lower corners off the
+        // screen.
+        let phone = gui::phone(area, u);
+        let band = floor((if phone { BAND_PHONE } else { BAND }) * area.w + 0.5);
+        let side = (if phone { SIDE_PHONE } else { SIDE }) * u;
+        p.glass = float4 { area.x, area.y + band, area.z, area.w - band + 32.0 * u };
+        p.head = float4 { area.x + side, area.y + band + TOP * u, area.z - 2.0 * side, gui::tap() * u };
+        page = float4 { area.x, area.y, area.z, band };
     }
-    if landscape && !tabbed {
-        let side = gui::cut_left(page, w);
-        gui::cut_left(page, SIDE_GAP * u);
-        preview(p, page, u, n);
-        // The title row, then the groups under it, the room left below them (2026-11-11:
-        // centered down the rest they floated on a large desktop window), or running on
-        // into the foot where they are taller; the look's glass ends below its kings there
-        // rather than running on to the screen's bottom edge, which left it mostly empty
-        // below (the user, 2026-11-09).
-        let items = [gui::Item { size: head_row_h() * u, .. },
-                     gui::Item { size: group_height(p.fit, g, 0, side.z, p.aside), gap: HEAD_GAP * u, .. },
-                     gui::Item { size: group_height(p.fit, g, 1, side.z, p.aside), gap: GROUP_GAP * u, .. },
-                     gui::Item { grow: 1.0, .. }];
-        var at: float4[4] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4];
-        gui::stack(side, items, at);
-        p.head = at[0];
-        p.glass = [at[1], at[2]];
-        p.bleed[1] = float4 { area.x, area.y, area.z, area.w + g.insets.w };   // no bleed at the foot
-        if gui::desktop_scale > 0.0 { level(p, at[1].y, u, n); }
-        return p;
-    }
-    // The title row, the board as large as the rest leaves, and the groups side by side
-    // along the bottom, as tall as the taller: each as wide as it wants unwrapped where
-    // both fit the width, centered, else sharing it in proportion to what each wants. A
-    // phone keeps them while the board has 45% of the width, or BOTH_BOARD; a larger
-    // screen as long as they fit under the title row, the board left out under its least
-    // (near square, the user 2026-11-09). Else one group at a time.
-    p.fit.name_w = NAME_W;
-    p.aside = false;
-    let want0 = group_width(p.fit, g, 0, false);
-    let want1 = group_width(p.fit, g, 1, false);
-    let across = page.z - GROUP_GAP * u;
-    let unwrapped = want0 + want1 <= across;
-    let w0 = if unwrapped { want0 } else { across * want0 / (want0 + want1) };
-    let w1 = if unwrapped { want1 } else { across - w0 };
-    let h = max(group_height(p.fit, g, 0, w0, false), group_height(p.fit, g, 1, w1, false));
-    let left = page.w - (head_row_h() + 32.0) * u - h;
-    let both = if phone { PREVIEW_SHARE * min(page.z, left) >= min(0.45 * page.z, BOTH_BOARD * u) } else { left >= 0.0 };
-    if both {
-        p.kind = BOTH;
-        p.head = gui::cut_top(page, head_row_h() * u);
-        gui::cut_top(page, gui::PAD_WIDE * u);
-        let groups = gui::cut_bottom(page, h);
-        gui::cut_bottom(page, gui::PAD_WIDE * u);
-        preview(p, page, u, n);
-        let x = groups.x + floor(0.5 * (groups.z - w0 - w1 - GROUP_GAP * u) + 0.5);
-        p.glass = [float4 { x, groups.y, w0, h }, float4 { x + w0 + GROUP_GAP * u, groups.y, w1, h }];
-        return p;
-    }
-    p.titled = false;
-    if landscape {
-        // One group at a time, tabs for the two in the title row in place of the title,
-        // the names at the left (a phone's landscape): the shown group as tall as the
-        // taller, centered down the rest.
-        p.kind = TABS_BESIDE;
-        p.aside = true;
-        let tabs_w = gui::back_width(g, strings::get(strings::NAV_BACK)) + 40.0 * u + languages_width(g)
-                     + tab_width(g, 0) + tab_width(g, 1) + TILE_GAP * u;
-        w = max(max(group_width(p.fit, g, 0, true), group_width(p.fit, g, 1, true)), tabs_w);
-        var side = gui::cut_left(page, w);
-        gui::cut_left(page, SIDE_GAP * u);
-        preview(p, page, u, n);
-        p.head = gui::cut_top(side, head_row_h() * u);
-        gui::cut_top(side, HEAD_GAP * u);
-        let gh = max(group_height(p.fit, g, 0, side.z, true, false), group_height(p.fit, g, 1, side.z, true, false));
-        p.glass[s.group] = gui::center(side, side.z, gh);
-        return p;
-    }
-    // One group at a time across the width, tabs for the two under the title row; the
-    // shown group's own height, the board taking the rest: the game's glass as tall as the
-    // look's ended in empty glass under its rows (2026-11-09). Taller than the room (a
-    // small window), it takes the room, the board none, and its rows scroll.
-    p.kind = TABS_UNDER;
-    p.head = gui::cut_top(page, head_row_h() * u);
-    gui::cut_top(page, gui::PAD_WIDE * u);
-    p.tabs = gui::cut_top(page, gui::tap() * u);
-    gui::cut_top(page, GROUP_GAP * u);
-    let one = group_height(p.fit, g, s.group, page.z, false, false);
-    let fits = one <= page.w;
-    p.content = one;
-    p.glass[s.group] = gui::cut_bottom(page, one);
-    gui::cut_bottom(page, gui::PAD_WIDE * u);
-    preview(p, page, u, n, fits);
+    let top = p.head.y + p.head.w + HEAD_GAP * u;
+    p.list = float4 { p.head.x, top, p.head.z, 0.0 };
+    p.view = float4 { p.glass.x, top, p.glass.z, area.y + area.w + g.insets.w - top };
+    var size = PREVIEW_SHARE * min(page.z, page.w);
+    if size < board::SMALLEST * u { size = 0.0; }
+    p.board = board::layout_at(page.x + 0.5 * (page.z - size), page.y + 0.5 * (page.w - size), size, u, n);
+    p.room3d = preview_room(page, size);
     return p;
 }
 
 // Declares the screen for this frame in `area`, the screen's safe area, where layout puts
 // its parts, with `shown` the language showing, and sets l to where the preview goes, and
 // `room3d` to where a 3D preview goes instead. The kings' tiles put their pieces in
-// `over`. Returns BACK, CHANGED after a tap changed s, SHOWN after a tab, or NOTHING.
+// `over`. Returns BACK, CHANGED after a tap changed s, SHOWN after the language list
+// opened or closed, or NOTHING.
 fn frame(s: Settings&, over: board::Overlay&, g: gui::Gui&, l: board::Layout&, area: float4, shown: i64,
          room3d: float4&) -> i64 {
+    let u = g.scale;
     over.clear();
-    s.switch_at = float4 { 0.0, 0.0, 0.0, 0.0 };
     let p = layout(s, g, area);
     l = p.board;
     room3d = p.room3d;
-    var ask = head(s, g, p.head, shown, p.kind == TABS_BESIDE);
-    if p.kind == TABS_UNDER && tabs(s, g, p.tabs) { ask = SHOWN; }
-    for k in 2 {
-        guard p.glass[k].z > 0.0 else { continue; }
-        if group(s, p.fit, over, g, k, p.glass[k], p.bleed[k], p.aside, p.titled, p.content) { ask = CHANGED; }
+    gui::glass(g, gui::bleed(g, p.glass, area), 32.0);
+    var button = float4 { 0.0, 0.0, 0.0, 0.0 };
+    var ask = head(s, g, p.head, shown, button);
+    // The list, under the title row down to the screen's foot, the inset under the safe
+    // area too, so its last row clears the inset once scrolled to the end.
+    let at = list_at(g, p.list);
+    let content = at.h + g.insets.w;
+    let off = gui::scroll_begin(g, LIST, p.view, content);
+    let listed = g.quads.len;
+    let laid = list_at(g, float4 { p.list.x, p.list.y - off, p.list.z, 0.0 });
+    if list(s, over, g, laid) { ask = CHANGED; }
+    gui::fade_edges(g, listed, p.view, 0.0, p.view.y + content - off - (p.view.y + p.view.w), FADE * u);
+    gui::scroll_end(g);
+    if s.languages_open {
+        let e = g.insets;
+        let screen = float4 { area.x - e.x, area.y - e.y, area.z + e.x + e.z, area.w + e.y + e.w };
+        let picked = languages(s, g, button, screen, shown);
+        if picked != NOTHING { ask = picked; }
     }
     return ask;
 }

@@ -29,12 +29,15 @@ let SHARP_SIZE = 2048;
 let GLASS_SIZE = 256;
 let GLASS_SIGMA = 3.9;
 
-// A season's thumbnail in settings: the photograph's middle at the picture's 104 × 64
-// shape, about a texel to a pixel at 1.5 pixels per dp; the four stacked in one texture,
-// and under them the four plain fades (THUMBS slots in all).
+// A season's thumbnail in settings: the photograph's middle at the picture's 76 × 50 dp
+// shape, about a texel to a pixel at 2.1 pixels per dp (the densest screen's); the four
+// stacked in one texture, under them the four plain fades, and under those the board
+// pictures, BOARD_PICTURES a season by theme (THUMBS slots in all).
 let THUMB_W = 160;
-let THUMB_H = 98;
-let THUMBS = 8;
+let THUMB_H = 105;
+let SEASON_SLOTS = 8;
+let BOARD_PICTURES = 4;
+let THUMBS = SEASON_SLOTS + 4 * BOARD_PICTURES;
 
 struct Scene {
     photo:   gpu::Texture,     // the blurred copy, or a 1×1 stand-in when there is none
@@ -92,7 +95,7 @@ fn release(s: Scene&) {
 // The four seasons' thumbnails stacked, by theme, top to bottom, in one texture: each
 // photograph's middle at the thumbnail's shape, shrunk on the GPU, one at a time; a
 // season without a photograph is black. Under them the four plain fades, by theme, as
-// the plain background paints them at the thumbnail's shape. A decoded JPEG (about 125 ms for the four on the
+// the plain background paints them at the thumbnail's shape, and the board pictures. A decoded JPEG (about 125 ms for the four on the
 // tablet) is scaled to SIZE on the way, so its texture is small. The app makes this in
 // the first frame after the launch's first that draws nothing, rather than when settings
 // first open.
@@ -123,6 +126,26 @@ fn thumbs() -> gpu::Texture {
     }
     scene_gpu::end();
     scene_gpu::done(fade);
+    // The board pictures (design/boards/, scripts/board_thumbs.py): an atlas of cells the
+    // slots' size, a row a season by theme, each copied into its slot as it is.
+    let boards = render3d::draughts_photo(BOARDS, SIZE);
+    if boards.id != 0 {
+        let copy = scene_gpu::shrinker();
+        scene_gpu::begin(t, false);
+        let cell: f32 = 1.0 / BOARD_PICTURES;
+        for k in 4 * BOARD_PICTURES {
+            let row = k / BOARD_PICTURES;
+            let col = k % BOARD_PICTURES;
+            scene_gpu::shrink(copy, sampler, boards, float4 { col * cell, row * cell, cell, cell },
+                              float4 { 0.0, (SEASON_SLOTS + k) * THUMB_H, THUMB_W, THUMB_H });
+        }
+        scene_gpu::end();
+        scene_gpu::done(copy);
+    }
+    scene_gpu::let_go(boards);
     gpu::release(sampler);
     return t;
 }
+
+// The board pictures' atlas among the built-in images (background.c's BOARDS).
+let BOARDS = 4;

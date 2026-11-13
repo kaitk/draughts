@@ -367,8 +367,13 @@ fn play_puzzle(sh: Shell&, index: i64, now: f64 = 0.0) {
 // it is false, changing nothing: there back leaves the app as the system's does. In a
 // transition it acts on the screen come to, as a tap does.
 fn back(sh: Shell&, now: f64) -> bool {
-    // The game's moves' sheet, or a mark's tip, closes first (task 078).
+    // The game's moves' sheet, or a mark's tip, closes first (task 078); so does settings'
+    // language list.
     if sh.screen == GAME && game::close_sheet(sh.game) { return true; }
+    if sh.screen == SETTINGS && sh.prefs.languages_open {
+        sh.prefs.languages_open = false;
+        return true;
+    }
     // A game from the replay goes back to it.
     if sh.screen == GAME && sh.trial {
         leave_trial(sh, now);

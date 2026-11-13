@@ -42,10 +42,12 @@ struct Drawer {
     n:         i64                                   = 0,
     wood:      i64                                   = -1, // --wood, --marble: -1 the renderer's own
     marble:    i64                                   = -1,
-    summer:    i64                                   = 0,  // --summer: summer's variant (looks::SUMMERS)
-    autumn:    i64                                   = 0,  // --autumn, --winter: theirs (looks::AUTUMNS, WINTERS)
-    winter:    i64                                   = 0,
-    spring:    i64                                   = -1, // --spring: spring's look, -1 the renderer's own
+    summer:    i64                                   = -1, // --summer: summer's variant (looks::SUMMERS), -1 not given
+    autumn:    i64                                   = -1, // --autumn, --winter: theirs (looks::AUTUMNS, WINTERS)
+    winter:    i64                                   = -1,
+    spring:    i64                                   = -1, // --spring: spring's look (looks::SPRINGS)
+    want:      i64                                   = looks::MATERIAL_AUTO, // the material asked for (want_material)
+    material:  i64                                   = looks::MATERIAL_AUTO, // and the one the board is set up with
     size:      int2                                  = int2 { 0, 0 },
     scene:     view3d::Scene                         = view3d::Scene {}, // this frame's
     drawn:     view3d::Scene                         = view3d::Scene {}, // the last one drawn
@@ -150,12 +152,21 @@ fn bench_done(d: Drawer&) -> bool {
     return true;
 }
 
-// The look for the app's theme, the season's: autumn's wood, winter's stone, spring's
-// birch, summer's sunset, or the variant d's flags pick; the photograph is the theme's own.
+// The look for the app's theme, the season's (theme::WOOD.. number the seasons as
+// looks::AUTUMN.. do), in the material asked for (looks::of), or the variant d's flags
+// pick for that season, which the material doesn't override; the photograph is the
+// theme's own.
 fn look_of(kind: i64, d: Drawer&) -> i64 {
-    return if kind == theme::STONE { looks::winter_look(d.winter) } else if kind == theme::BIRCH { looks::SPRING }
-           else if kind == theme::SUNSET { looks::summer_look(d.summer) } else { looks::autumn_look(d.autumn) };
+    if kind == theme::STONE && d.winter >= 0 { return looks::winter_look(d.winter); }
+    if kind == theme::SUNSET && d.summer >= 0 { return looks::summer_look(d.summer); }
+    if kind == theme::WOOD && d.autumn >= 0 { return looks::autumn_look(d.autumn); }
+    if kind == theme::BIRCH && d.spring >= 0 { return looks::shown(looks::SPRING, d.spring); }
+    return looks::of(kind, d.want);
 }
+
+// The raised board's material from now on (settings::MATERIAL_AUTO..): a new one prepares
+// the board again, as a new theme does.
+fn want_material(d: Drawer&, material: i64) { d.want = material; }
 
 // The renderer set up: its meshes, buffers, pipelines, and the baked surfaces' targets.
 fn set_up(d: Drawer&) {
@@ -171,6 +182,9 @@ fn set_up(d: Drawer&) {
 // look's own, else the renderer's; each look's finish for its model (looks::finish_for).
 fn choose_look(d: Drawer&, kind: i64) -> i64 {
     let look = look_of(kind, d);
+    // Spring's birch is spring's look 0 to the renderer, whose own is the elven stone
+    // (looks::shown); every other look is shown as it is.
+    if look == looks::SPRING { d.gpu.spring = 0; }
     let shown = looks::shown(look, d.gpu.spring);
     let own = looks::wood_for(shown);
     let wood = if d.wood >= 0 { d.wood } else if own >= 0 { own } else { model3d::WOOD_MODEL };
@@ -184,8 +198,8 @@ fn choose_look(d: Drawer&, kind: i64) -> i64 {
 // pipelines made. Only the targets the size of the screen are left for its first frame
 // (render3d::targets).
 fn ready(d: Drawer&, kind: i64, n: i64, plain: bool) -> bool {
-    return d.ready && d.kind == kind && d.n == n && d.plain == plain && d.themed == model3d::THEME_STEPS
-           && d.warmed == render3d::WARM_STEPS;
+    return d.ready && d.kind == kind && d.material == d.want && d.n == n && d.plain == plain
+           && d.themed == model3d::THEME_STEPS && d.warmed == render3d::WARM_STEPS;
 }
 
 // The theme's steps that put its photograph on (render3d::photo_part), from the first:
@@ -232,12 +246,13 @@ fn prepare(d: Drawer&, kind: i64, n: i64, plain: bool, now: f64) {
     let t0 = clock();
     if !d.ready {
         set_up(d);
-    } else if d.kind != kind || d.n != n || d.plain != plain || d.themed < model3d::THEME_STEPS {
-        if d.kind != kind || d.n != n {
-            // A new theme (or one changed partway) starts its steps again, the image
-            // shown meanwhile easing grey.
+    } else if d.kind != kind || d.material != d.want || d.n != n || d.plain != plain || d.themed < model3d::THEME_STEPS {
+        if d.kind != kind || d.material != d.want || d.n != n {
+            // A new theme or material (or one changed partway) starts its steps again,
+            // the image shown meanwhile easing grey.
             if shows(d) && d.grey_to < 1.0 { grey_towards(d, 1.0, now); }
             d.kind = kind;
+            d.material = d.want;
             d.n = n;
             d.themed = 0;
         }
@@ -290,7 +305,7 @@ fn drop(d: Drawer&) {
     guard d.ready else { return; }
     render3d::release(d.gpu);
     d = Drawer { aa: d.aa, wood: d.wood, marble: d.marble, summer: d.summer, autumn: d.autumn, winter: d.winter,
-                spring: d.spring, timed: d.timed, .. };
+                spring: d.spring, want: d.want, timed: d.timed, .. };
 }
 
 // The A key (task 071's comparison): the pass's antialiasing switched to the renderer's

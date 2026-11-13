@@ -7,10 +7,10 @@ when it starts (task 073), and optionally run it.
                                                                build, and run it with those flags
 
 The gfx-only build (Android's) is untouched. This copies the program (src/, strings/,
-assets/, the backgrounds' JPEG and ASTC masters, and SMAA's tables) into build/ngfx/tree/
-and lays src/ngfx/ over it. Each recorder twin then has three parts: gfx's, compiled under
-a name of its own (GFX_RECORDERS: src/app/draw_gpu.goose as draw_gfx, and so on, its
-namespace line rewritten), goose-ngfx's (src/ngfx/app/draw_ngfx.goose, ...), and in the
+assets/, the backgrounds' JPEG and ASTC masters, the board pictures' atlas, and SMAA's
+tables) into build/ngfx/tree/ and lays src/ngfx/ over it. Each recorder twin then has
+three parts: gfx's, compiled under a name of its own (GFX_RECORDERS: src/app/draw_gpu.goose
+as draw_gfx, and so on, its namespace line rewritten), goose-ngfx's (src/ngfx/app/draw_ngfx.goose, ...), and in the
 gfx recorder's place a facade of the same name that calls one or the other as
 nx::ngfx_on says (src/ngfx/app/draw_gpu.goose, ...; render3d_gpu.goose and photo_gpu.h
 alike). The drawers are shared and hold gfx's handle types; nx gives goose-ngfx's calls
@@ -148,6 +148,12 @@ def tree(program, tree=TREE):
         (tree / "design/backgrounds/masters").mkdir(parents=True, exist_ok=True)
         for f in [*masters.glob("*-2048.jpg"), *masters.glob("*-2048-6x6.astc")]:
             copy_if_changed(f, tree / "design/backgrounds/masters" / f.name)
+    # Settings' board pictures (scripts/board_thumbs.py), embedded the same way.
+    boards = ROOT / "design/boards"
+    if boards.exists():
+        (tree / "design/boards").mkdir(parents=True, exist_ok=True)
+        for f in [*boards.glob("*.jpg"), *boards.glob("*.astc")]:
+            copy_if_changed(f, tree / "design/boards" / f.name)
     app = tree / "src/app"
     root = app / program.name
     text = (ROOT / "src/app" / program.name).read_text(encoding="utf-8")

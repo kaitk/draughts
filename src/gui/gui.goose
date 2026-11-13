@@ -965,6 +965,29 @@ fn choice(g: Gui&, id: i64, r: float4, kind: i64, pic: float2, label: const u8[:
     return clicked;
 }
 
+// Where choice puts its picture of size `pic` in a tile r (not `beside`): at the top of
+// the tile less 6 dp round, centered across.
+fn choice_picture(g: Gui&, r: float4, pic: float2) -> float4 {
+    var c = inset(r, 6.0 * g.scale);
+    return center(cut_top(c, pic.y), pic.x, pic.y);
+}
+
+// A small tag in a picture's bottom right corner (settings' raised board's "auto"):
+// the word in the small face scaled to TAG_FACE dp, white on a dark pill TAG_H dp tall,
+// TAG_IN dp in from the picture's edges.
+let TAG_FACE = 10.5;
+let TAG_H = 14.0;
+let TAG_IN = 3.0;
+let TAG_SIDE = 4.0;
+fn tag(g: Gui&, picture: float4, word: const u8[:]) {
+    let u = g.scale;
+    let k = TAG_FACE / FACE_DP[SMALL] as f32;
+    let w = k * text_width(g, SMALL, word) + 2.0 * TAG_SIDE * u;
+    let r = float4 { picture.x + picture.z - TAG_IN * u - w, picture.y + picture.w - (TAG_IN + TAG_H) * u, w, TAG_H * u };
+    fill(g, r, float4 { 0.0, 0.0, 0.0, 0.55 }, 5.0 * u);
+    write(g, SMALL, r, word, float4 { 1.0, 1.0, 1.0, 1.0 }, true, 0.0, CENTER, false, k);
+}
+
 // How wide a slim choice (`beside`) wants to be for its picture and label.
 fn choice_beside_width(g: Gui&, pic: float2, label: const u8[:]) -> f32 {
     return pic.x + (BESIDE_GAP + 12.0) * g.scale + text_width(g, SMALL, label);
@@ -1240,32 +1263,34 @@ fn figures(g: Gui&, face: i64, r: float4, s: const u8[:], a: f32, style: i64, al
     write(g, face, r, s, float4 { c.x, c.y, c.z, a }, own, 0.0, align, true);
 }
 
+// Text as the functions above draw it; `k` scales the face's glyphs down for a tag
+// smaller than any face (tag), the atlas's glyphs drawn smaller.
 fn write(g: Gui&, face: i64, r: float4, s: const u8[:], color: float4, own: bool, spacing: f32, align: i64,
-         tabular: bool) {
+         tabular: bool, k: f32 = 1.0) {
     let f .= g.faces[face];
     let cell = if tabular { figure_width(g, face) } else { 0.0 };
     var w: f32 = 0.0;
     var i = 0;
     while i < s.len {
         let c, next = next_char(s, i);
-        let adv = f.glyphs[glyph_of(f, c)].advance;
+        let adv = k * f.glyphs[glyph_of(f, c)].advance;
         w += (if tabular && c >= '0' && c <= '9' { cell } else { adv }) + spacing;
         i = next;
     }
     w -= spacing;
     var x = if align == LEFT { r.x } else if align == CENTER { r.x + 0.5 * (r.z - w) } else { r.x + r.z - w };
-    let top = floor(r.y + 0.5 * (r.w - (f.ascent - f.descent)) + 0.5);
+    let top = floor(r.y + 0.5 * (r.w - k * (f.ascent - f.descent)) + 0.5);
     let tint: f32 = if own { 1.0 } else { 0.0 };
     i = 0;
     while i < s.len {
         let c, next = next_char(s, i);
         let gl .= f.glyphs[glyph_of(f, c)];
         let digit = tabular && c >= '0' && c <= '9';
-        let step = if digit { cell } else { gl.advance };
+        let step = if digit { cell } else { k * gl.advance };
         let shift = if digit { 0.5 * (cell - gl.advance) } else { 0.0 };
-        let at = floor(x + shift + 0.5);
+        let at = if k == 1.0 { floor(x + shift + 0.5) } else { x + shift };
         if gl.box.z > gl.box.x {
-            add(g, Quad { rect: float4 { at + gl.box.x, top + gl.box.y, gl.box.z - gl.box.x, gl.box.w - gl.box.y },
+            add(g, Quad { rect: float4 { at + k * gl.box.x, top + k * gl.box.y, k * (gl.box.z - gl.box.x), k * (gl.box.w - gl.box.y) },
                           color: color,
                           look:  float4 { TEXT, gl.uv.x, gl.uv.y, gl.uv.z },
                           extra: float4 { g.scale, gl.uv.w, tint, 0.0 } });

@@ -101,6 +101,10 @@ fn has_thumbs(r: Renderer&) -> bool { r.w.thumbs.id != 0 }
 // Submits what is drawn and waits for the GPU (the benches).
 fn wait() { gpu::flush(); }
 
+// The raised board's material (settings::MATERIAL_AUTO..), the player's: a new one makes
+// the 3D board ready again (draw3d::want_material).
+fn material(r: Renderer&, m: i64) { draw3d::want_material(r.d3, m); }
+
 // The 3D board: whether it is ready on n squares for the theme and background drawn (it
 // gets ready a step a frame as it is drawn, draw3d::prepare), whether an image of it
 // shows, whether it is fading in at `now`, and whether it asks for the next frame (just

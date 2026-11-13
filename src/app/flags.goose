@@ -1,8 +1,8 @@
 // The app's development flags, for trying it and for screenshots (docs/development.md,
 // "Run on the Mac"): each is `--name value` but --reset-skill and --no-vsync, which take
 // none. A field left at its default means the flag wasn't given, and the player's settings or the
-// app's default hold. --theme, --hints, --lang, --background, and --board override the
-// settings for the run without changing them, unless a tap in settings writes them.
+// app's default hold. --theme, --hints, --lang, --background, --board, and --material
+// override the settings for the run without changing them, unless a tap in settings writes them.
 namespace flags;
 import std;
 import vec;
@@ -30,6 +30,7 @@ struct Flags {
     lookout:    i64  = -1,  // --lookout on|off: the player's lookout, 1 on, 0 off
     moves:      i64  = -1,  // --moves off|list|marks: the player's move list (settings::MOVES_*)
     sheet:      bool = false, // --sheet on: the game's moves' sheet open once the taps have played (task 078)
+    languages:  bool = false, // --languages open: settings' language list open (task 080)
     tip:        i64  = -1,  // --tip N: the tip of the game's move N (from 1) shown once the taps have played
     // --hints moves: the selected piece's targets (board::MOVES); mistakes only by default
     hints: i64 = -1,
@@ -90,14 +91,19 @@ struct Flags {
     // --wood N and --marble N: the 3D board's wood (0..3) and winter frame's marble (0 the
     // slate, 1..4); --summer N summer's 3D look (0..6, looks::SUMMERS; 4 and 5 amber
     // stone); --spring N spring's (0 the birch, 1 the elven carved stone, 2 the Baltic
-    // folk carved oak); --autumn N autumn's (0 the wood, 1..3 stone, looks::AUTUMNS) and
-    // --winter N winter's (0 the slate, 1..3 wood, looks::WINTERS)
+    // folk carved oak, 3 the plain stone); --autumn N autumn's (0 the wood, 1..3 stone,
+    // looks::AUTUMNS) and --winter N winter's (0 the slate, 1..3 wood, looks::WINTERS).
+    // Each, given, picks its season's look over the player's material, for tuning; -1 not
+    // given
     wood:   i64 = -1,
     marble: i64 = -1,
-    summer: i64 = 0,
-    autumn: i64 = 0,
-    winter: i64 = 0,
+    summer: i64 = -1,
+    autumn: i64 = -1,
+    winter: i64 = -1,
     spring: i64 = -1,
+    // --material auto|wood|stone|carved: the raised board's material for the run
+    // (settings::MATERIAL_AUTO..), as settings' Board row sets it
+    material: i64 = -1,
     // --bench N: times N of the board's frames, then quits (draw3d.goose; the flat board's
     // in draughts.goose)
     bench: i64 = 0,
@@ -149,10 +155,12 @@ fn parse(argv: u8[:][>..]) -> Flags {
         if a == "--background" && v == "plain" { f.background = 1; }
         if a == "--board" && v == "3d" { f.board = settings::RAISED; }
         if a == "--board" && v == "flat" { f.board = settings::FLAT; }
+        if a == "--material" { for name, k in settings::MATERIAL_NAMES { if v == name { f.material = k; } } }
         if a == "--lookout" && v == "on" { f.lookout = 1; }
         if a == "--lookout" && v == "off" { f.lookout = 0; }
         if a == "--moves" && v == "off" { f.moves = settings::MOVES_HIDDEN; }
         if a == "--sheet" && v == "on" { f.sheet = true; }
+        if a == "--languages" && v == "open" { f.languages = true; }
         if a == "--tip" {
             let n, ok = parse_int(v);
             if ok && n >= 1 { f.tip = n - 1; }

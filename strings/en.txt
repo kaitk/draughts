@@ -27,6 +27,9 @@ settings.by_date = By date
 settings.board = Board
 settings.hints = Move hints
 settings.kings = Kings
+settings.background = Background
+background.photo = Photo
+background.plain = Plain
 settings.privacy = Privacy: Draughts collects nothing. Everything stays on this device.
 
 season.winter = Winter
@@ -38,9 +41,11 @@ hints.mistakes = Mistakes only
 hints.moves = All moves
 
 board.flat = Flat
-board.flat_note = 2D
 board.raised = Raised
-board.raised_note = 3D
+material.wood = Wood
+material.stone = Stone
+material.carved = Carved
+material.auto = auto
 
 kings.auto = Auto
 kings.crown = Crown

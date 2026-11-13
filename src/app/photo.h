@@ -22,7 +22,8 @@ typedef struct {
 
 // Theme `kind`'s photograph into `out`, or false when it isn't built in: the ASTC image as
 // stored where the GPU samples ASTC (`astc_sampled`), else the JPEG's middle square
-// decoded and scaled to `decoded` × `decoded` (at most 4096).
+// decoded and scaled to `decoded` × `decoded` (at most 4096). Kind 4 is settings' board
+// pictures' atlas, decoded whole.
 bool draughts_photo_pixels(int64_t kind, int64_t decoded, bool astc_sampled, draughts_pixels *out);
 
 // Gives back what the pixels hold, once they are uploaded.

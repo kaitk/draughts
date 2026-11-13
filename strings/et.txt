@@ -26,6 +26,9 @@ settings.by_date = Tänane
 settings.board = Kabelaud
 settings.hints = Vihjed
 settings.kings = Tammid
+settings.background = Taust
+background.photo = Foto
+background.plain = Lihtne
 settings.privacy = Privaatsus: Kabe ei kogu midagi. Kõik jääb sellesse seadmesse.
 
 season.winter = Talv
@@ -37,9 +40,11 @@ hints.mistakes = Ainult vead
 hints.moves = Kõik käigud
 
 board.flat = Lame
-board.flat_note = 2D
 board.raised = Ruumiline
-board.raised_note = 3D
+material.wood = Puit
+material.stone = Kivi
+material.carved = Nikerdatud
+material.auto = teema järgi
 
 kings.auto = Laua järgi
 kings.crown = Kroon

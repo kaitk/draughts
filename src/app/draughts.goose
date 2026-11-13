@@ -185,6 +185,7 @@ fn main() {
         // to flat, it is all given back once settings is left, so switching flat and 3D
         // there and back doesn't prepare it again each time.
         let want = shell::board3d(sh);
+        render::material(rd, sh.prefs.material);
         let ready3d = want != shell::WANTED || render::ready3d(rd, shell::board_n(sh));
         let shown3d = render::shown3d(rd);
         if want == shell::WANTED && (!ready3d || !shown3d || render::appearing3d(rd, now)) { dirty = true; }

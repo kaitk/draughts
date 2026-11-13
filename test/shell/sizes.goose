@@ -4,10 +4,7 @@
 // side (gui::short_dp, the phone scale's floor), with a 9:16 phone at 480, the tightest.
 // On each, every tile lies inside the screen and no two overlap; the board lies inside
 // it too, clear of the tiles (the win card's excepted, which sits on the board); every
-// tile that takes a tap keeps the 88 dp a small hand needs (the clocks only show), but
-// settings' theme switch, whose halves are given on their own: 88 dp square beside the
-// theme's name where it is above the tiles, under it in the name's column where it is
-// at their left, where they don't fit (shell/settings.goose). A line
+// tile that takes a tap keeps the 88 dp a small hand needs (the clocks only show). A line
 // per screen gives its tiles, the smallest tap across and down in dp, and the board in
 // dp (0 where none shows), so a layout that moves shows here. The words are the test
 // faces' (each character half its face wide), wider than the real font's, so a word
@@ -16,9 +13,9 @@
 // its gesture bar at the bottom): every tile and the board inside the safe area, but a
 // scrolling list's rows past its foot (the puzzles' library on a 9:16 phone); and
 // the 16:10 tablet with its hidden navigation bar at the bottom, and the 13" and 11"
-// iPad's landscape with their status bar and home indicator, settings keeping both
-// groups on each. Then a phone's tabs:
-// settings' Look tab and the puzzles' crown each show their own tiles. A puzzle's turn
+// iPad's landscape with their status bar and home indicator, settings declaring its
+// whole list on each. Then on a phone settings' language list opens over the screen and
+// the puzzles' crown shows its own tiles. A puzzle's turn
 // piece lies in its panel clear of the tiles, icons, and words, over the goal where the
 // panel has the room and beside its icon where not. On the game, flat and 3D, what each
 // side has taken late in a game (task 052) lies inside the safe area clear of the tiles,
@@ -138,14 +135,10 @@ fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool,
     var wrong:  u8[>..] = [];
     let b = float4 { sh.out.layout.board.x, sh.out.layout.board.y, sh.out.layout.board.z, sh.out.layout.board.z };
     var small = 0;
-    let sw = sh.prefs.switch_at;
-    var half = float2 { 0.0, 0.0 };
     for i in n {
         let r = drive::rect(g, i);
         let tap = style(g, i) < gui::CLOCK_RUN || style(g, i) > gui::CLOCK_WARN;
-        let switched = sh.screen == shell::SETTINGS && sw.z > 0.0 && inside(r, sw);
-        if switched { half = float2 { r.z, r.w }; }
-        if tap && !switched {
+        if tap {
             narrow = min(narrow, r.z);
             low = min(low, r.w);
         }
@@ -154,11 +147,10 @@ fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool,
         if !inside(r, safe) && !below { format(wrong, " tile ", i, " off the safe area;"); }
         for j in i { if overlaps(seen(g, i), seen(g, j)) { format(wrong, " tiles ", j, " and ", i, " overlap;"); } }
         if board_shows && b.z > 0.0 && overlaps(r, b) && !(card && i >= n - 2) { format(wrong, " tile ", i, " on the board;"); }
-        if tap && !switched && (r.z < gui::TAP * u - 0.5 || r.w < gui::TAP * u - 0.5) { small++; }
+        if tap && (r.z < gui::TAP * u - 0.5 || r.w < gui::TAP * u - 0.5) { small++; }
     }
     if small > 0 { format(wrong, " ", small, " taps under 88 dp;"); }
     format(line, ", smallest ", whole(narrow / u), " x ", whole(low / u), " dp");
-    if half.x > 0.0 { format(line, ", the theme's switch ", whole(half.x / u), " x ", whole(half.y / u), " dp a half"); }
     if board_shows {
         format(line, ", board ", whole(b.z / u), " dp");
         if b.z > 0.0 && !inside(b, safe) { wrong.append(" the board off the safe area;"); }
@@ -463,9 +455,8 @@ fn same(a: float4, b: float4) -> bool {
 }
 
 // The 11" iPad's smallest window (task 050), 374 x 484 pt at 2 px a point with the
-// density floor, a 499 x 645 dp compact layout: settings' Look tab, its theme's tiles
-// slim, and how far above the glass's foot the Board and Kings rows end (negative: below
-// it, reached by scrolling).
+// density floor, a 499 x 645 dp compact layout: settings' list, a season's tile, how far
+// it scrolls, and the preview over it.
 fn small_window(g: gui::Gui&) {
     drive::size = float2 { 748.0, 968.0 };
     gui::display_scale = 2.0;
@@ -473,21 +464,13 @@ fn small_window(g: gui::Gui&) {
     gui::test_faces(g);
     let u = g.scale;
     var settings = showing(shell::SETTINGS, home::NO_SETUP);
-    settings.prefs.group = 1;
     at_rest(settings, g);
-    var glass = float4 { 0.0, 0.0, 0.0, 0.0 };
-    for q in g.quads { if q.look.x == gui::GLASS { glass = q.rect; } }
-    // Back, the two languages, the tabs, the theme's five, the switch's halves, the
-    // board's two, the kings' three.
-    let season = drive::rect(g, 5);
-    let half = drive::rect(g, 10);
-    let foot = glass.y + glass.w;
-    let board = drive::rect(g, 13);
-    let kings = drive::rect(g, 14);
-    print("the iPad's smallest window, ", whole(drive::size.x / u), " x ", whole(drive::size.y / u), " dp: Look's ",
-          drive::tiles(g), " tiles, the switch ", whole(half.z / u), " x ", whole(half.w / u), " dp a half, a season ",
-          whole(season.z / u), " x ", whole(season.w / u), " dp, Board ending ", whole((foot - board.y - board.w) / u),
-          " dp above the glass's foot, Kings ", whole((foot - kings.y - kings.w) / u));
+    // Back, the language, the background's two, then the theme's five.
+    let season = drive::rect(g, 4);
+    print("the iPad's smallest window, ", whole(drive::size.x / u), " x ", whole(drive::size.y / u), " dp: settings' ",
+          drive::tiles(g), " tiles, a season ", whole(season.z / u), " x ", whole(season.w / u), " dp, the list scrolling ",
+          whole(g.scroll.max / u), " dp in a view ", whole(g.scroll.view.w / u), " dp tall, the preview ",
+          whole(settings.out.layout.board.z / u), " dp");
     head("the iPad's smallest window, home:");
     var home = showing(shell::HOME, home::NO_SETUP);
     at_rest(home, g);
@@ -522,17 +505,18 @@ fn handover() {
     }
 }
 
-// A phone's tabs, at 480 dp: settings' Look tab shows the look's tiles in place of the
-// game's, and the puzzles' Learn row opens Learn's page.
+// On a phone at 480 dp: settings' language button, after back, opens the list of the
+// languages over the screen, a row each after the screen's tiles, and the puzzles' Learn
+// row opens Learn's page.
 fn tabs(g: gui::Gui&) {
     var settings = showing(shell::SETTINGS, home::NO_SETUP);
     at_rest(settings, g);
-    let game_tiles = drive::tiles(g);
-    // Back, the two languages, then the tabs.
-    drive::tap(settings, g, drive::tile(g, 4), 2.0);
+    let shut = drive::tiles(g);
+    drive::tap(settings, g, drive::tile(g, 1), 2.0);
     drive::idle(settings, g, 2.1);
-    print("settings' Look tab: group ", settings.prefs.group, ", tiles ", game_tiles, " then ", drive::tiles(g),
+    print("settings' language list: open ", settings.prefs.languages_open, ", tiles ", shut, " then ", drive::tiles(g),
           ", changed ", settings.changed);
+    report("settings, the language list open", g, settings, true, false);
     var picker = showing(shell::PICKER, home::NO_SETUP);
     at_rest(picker, g);
     let rows = drive::tiles(g);
@@ -605,9 +589,8 @@ fn main() {
         }
     }
     // The Galaxy tablet's hidden navigation bar, 72 px (48 dp) at the bottom, in both
-    // orientations: every tile inside the safe area, and settings in landscape still
-    // shows both groups, its look's glass running on over the bar (as many tiles as
-    // with no inset, not one group's and the tabs).
+    // orientations: every tile inside the safe area, and settings declares its whole
+    // list, its glass running on over the bar (as many tiles as with no inset).
     gui::short_dp = 800.0;
     for lang in [strings::EN, strings::ET] {
         strings::use(lang);
@@ -627,12 +610,12 @@ fn main() {
             at_rest(inset, g);
             let shown = drive::tiles(g);
             print("  settings: ", shown, " tiles, ", both, " with no inset: ",
-                  if shown == both { "both groups" } else { "one group" });
+                  if shown == both { "the whole list" } else { "part of it" });
             if shown != both { failures++; }
         }
     }
     // The 13" and 11" iPad in landscape with the status bar and the home indicator, in
-    // pixels at 2 a point (24 and 20 points): settings shows both groups there too.
+    // pixels at 2 a point (24 and 20 points): settings declares its whole list there too.
     for lang in [strings::EN, strings::ET] {
         strings::use(lang);
         print(strings::LANGUAGES[lang], ", the iPads in landscape with their bars:");
@@ -651,7 +634,7 @@ fn main() {
             at_rest(inset, g);
             let shown = drive::tiles(g);
             print("  settings: ", shown, " tiles, ", both, " with no inset: ",
-                  if shown == both { "both groups" } else { "one group" });
+                  if shown == both { "the whole list" } else { "part of it" });
             if shown != both { failures++; }
         }
     }

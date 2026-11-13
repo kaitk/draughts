@@ -35,6 +35,14 @@ let BY_DATE_TILE = 4;
 let FLAT = 0;                   // the 2D board
 let RAISED = 1;                 // the 3D board (task 015)
 let SYSTEM = -1;                // the language the system's locales pick
+// The raised board's material, as the file names it (`material = auto|wood|stone|carved`,
+// task 080), one for every season, numbered as looks::MATERIAL_AUTO..: the season's own
+// (auto), or its wood, stone, or carved board. The flat board has none.
+let MATERIAL_AUTO = 0;
+let MATERIAL_WOOD = 1;
+let MATERIAL_STONE = 2;
+let MATERIAL_CARVED = 3;
+let MATERIAL_NAMES = ["auto", "wood", "stone", "carved"];
 // Kings: AUTO, board::CROWN, or board::STACK, as the file names them. Auto is a crown
 // on the flat board and a stack on the raised one.
 let AUTO = 0;
@@ -72,6 +80,7 @@ struct Settings {
     season:           i64           = BY_DATE, // a theme (app/theme.goose), or BY_DATE
     plain:            bool          = false,   // the plain fade in place of the photograph (`background = plain`)
     board:            i64           = FLAT,    // the Board row's: flat, or raised (the 3D board)
+    material:         i64           = MATERIAL_AUTO, // and the raised board's material
     turns:            bool          = false,   // the setup's: a friend's game turns the board to the side to move (`turn = on`)
     hints:            i64           = board::MISTAKES,
     lookout:          bool          = false,   // the game's lookout, its eye on whose turn's line (`lookout = on`)
@@ -98,11 +107,8 @@ struct Settings {
     // The stars won in each puzzle, 1 to 3, by its set's variant (puzzles::set_of) and
     // its id; 0 for one not solved.
     stars: u8[puzzles::MAX_PUZZLES + 1][rules::VARIANT_COUNT] = [[0; puzzles::MAX_PUZZLES + 1]; rules::VARIANT_COUNT],
-    // The group a phone's settings show, 0 the game's or 1 the look's. Not in the file.
-    group: i64 = 0,
-    // Where the theme's switch was declared last (both halves), for the tests. Not in the
-    // file.
-    switch_at: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
+    // Whether settings' language list is open (settings::head). Not in the file.
+    languages_open: bool = false,
 }
 
 // How the flat board draws kings: auto is a crown there.
@@ -141,6 +147,9 @@ fn parse(text: const u8[:]) -> Settings {
         }
         if key == "background" && value == "plain" { s.plain = true; }
         if key == "board" && value == "3d" { s.board = RAISED; }
+        if key == "material" {
+            for name, i in MATERIAL_NAMES { if value == name { s.material = i; } }
+        }
         if key == "turn" && value == "on" { s.turns = true; }
         if key == "hints" && value == "moves" { s.hints = board::MOVES; }
         if key == "lookout" && value == "on" { s.lookout = true; }
@@ -233,6 +242,8 @@ fn write(s: Settings, out: u8[>..]&) {
     out.append(season);
     out.append(if s.plain { "\nbackground = plain" } else { "\nbackground = photo" });
     out.append(if s.board == RAISED { "\nboard = 3d" } else { "\nboard = 2d" });
+    out.append("\nmaterial = ");
+    out.append(MATERIAL_NAMES[clamp(s.material, 0, MATERIAL_NAMES.len - 1)]);
     out.append(if s.turns { "\nturn = on" } else { "\nturn = off" });
     out.append(if s.hints == board::MOVES { "\nhints = moves" } else { "\nhints = mistakes" });
     out.append(if s.lookout { "\nlookout = on" } else { "\nlookout = off" });
