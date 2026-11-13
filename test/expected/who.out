@@ -52,10 +52,10 @@ en:
   phone landscape, typing: 11 tiles, smallest 88 x 88 dp, card at 16 dp, 686 x 370 dp, all in place
   phone portrait, 1 players, who's playing: 4 tiles, smallest 88 x 88 dp, card at 388 dp, 448 x 290 dp, all in place
   phone portrait, a new player: 9 tiles, smallest 88 x 88 dp, card at 254 dp, 406 x 558 dp, all in place
-  phone portrait, typing: 9 tiles, smallest 88 x 88 dp, card at 16 dp, 406 x 558 dp, all in place
+  phone portrait, typing: 3 tiles, smallest 88 x 88 dp, card at 16 dp, 406 x 272 dp, all in place
   phone portrait, 4 players, who's playing: 6 tiles, smallest 88 x 88 dp, card at 310 dp, 448 x 447 dp, all in place
   phone portrait, a sheet: 11 tiles, smallest 88 x 88 dp, card at 205 dp, 448 x 656 dp, all in place
-  phone portrait, typing: 11 tiles, smallest 88 x 88 dp, card at 16 dp, 448 x 656 dp, all in place
+  phone portrait, typing: 5 tiles, smallest 88 x 88 dp, card at 16 dp, 448 x 370 dp, all in place
 et:
   tablet landscape, 1 players, who's playing: 4 tiles, smallest 88 x 88 dp, card at 242 dp, 421 x 316 dp, all in place
   tablet landscape, a new player: 9 tiles, smallest 88 x 88 dp, card at 183 dp, 758 x 434 dp, all in place
@@ -77,7 +77,7 @@ et:
   phone landscape, typing: 11 tiles, smallest 88 x 88 dp, card at 16 dp, 716 x 370 dp, all in place
   phone portrait, 1 players, who's playing: 4 tiles, smallest 88 x 88 dp, card at 388 dp, 421 x 290 dp, all in place
   phone portrait, a new player: 9 tiles, smallest 88 x 88 dp, card at 254 dp, 421 x 558 dp, all in place
-  phone portrait, typing: 9 tiles, smallest 88 x 88 dp, card at 16 dp, 421 x 558 dp, all in place
+  phone portrait, typing: 3 tiles, smallest 88 x 88 dp, card at 16 dp, 421 x 272 dp, all in place
   phone portrait, 4 players, who's playing: 6 tiles, smallest 88 x 88 dp, card at 310 dp, 421 x 447 dp, all in place
   phone portrait, a sheet: 11 tiles, smallest 88 x 88 dp, card at 205 dp, 448 x 656 dp, all in place
-  phone portrait, typing: 11 tiles, smallest 88 x 88 dp, card at 16 dp, 448 x 656 dp, all in place
+  phone portrait, typing: 5 tiles, smallest 88 x 88 dp, card at 16 dp, 448 x 370 dp, all in place

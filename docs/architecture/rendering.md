@@ -916,8 +916,10 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   characters the faces draw, a steady caret while typing; and for a player already
   there, start again and, while there is another player, remove. On a phone in
   landscape the badges stand at the left, three by two, and the name and the holds at
-  the right. While the name is typed the card stands 16 dp from the top, clear of the
-  keyboard. Done adds a new player and switches to them, every setting at its default,
+  the right. While the name is typed the card stands 16 dp from the top, the head shows
+  the name as it is typed (for a new player too), and on a phone in portrait the
+  pictures step aside so the field sits above the keyboard (a tester's phone had it
+  under). Done adds a new player and switches to them, every setting at its default,
   or saves the badge and name; for a new player, and on a fresh install's first sheet,
   the card then asks "Do you know how to play?": their badge (104 dp, lit), the question,
   and Show me (the finger, lit, the keys' first) beside I know how (a check), 240 × 150

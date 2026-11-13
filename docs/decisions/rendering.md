@@ -514,6 +514,12 @@ tablet shows it as the game does).
   349 at 540 dp).
 - A badge is home's king with its animal in the crown's place (2026-11-09, `badges.html`
   direction 1).
+- While a name is typed on a phone in portrait the sheet hides its pictures, and the
+  head shows the name as typed, a new player's too (2026-11-13, a tester's phone hid the
+  field under the keyboard). Only there: a tablet's keyboard leaves room, and in a
+  phone's landscape the field stays beside the pictures, the head showing the name if
+  the keyboard covers it. Reading the keyboard's height was set aside: SDL doesn't give
+  it on Android, and the card doesn't scroll.
 
 ### How to play
 

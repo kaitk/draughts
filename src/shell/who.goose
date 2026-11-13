@@ -248,6 +248,9 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
     let edit = w.target >= 0 && !w.first;
     let holds = if !edit { 0 } else if ps.list.len > 1 { 2 } else { 1 };
     let wide = area.z > area.w && area.w < gui::PHONE * u;
+    // A phone in portrait drops the pictures while the name is typed, so the name's
+    // field comes up clear of the keyboard.
+    let bare = w.typing && !wide && gui::phone(area, u);
     let room = area.z / u - 2.0 * (EDGE + PAD);
     let pic, cols = pictures(room, wide);
     let grid_w = cols * pic + (cols - 1) * PIC_GAP;
@@ -256,7 +259,8 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
     var both = hold_width(g, strings::PLAYERS_START_AGAIN) + gui::PAD * u;
     if holds == 2 { both += hold_width(g, strings::PLAYERS_REMOVE); }
     // The head: back, the face (editing) and the name or the title, done.
-    let title = if edit { w.name[..] } else { strings::get(strings::PLAYERS_NEW) };
+    // The name while it is typed, so it shows where the keyboard covers the field.
+    let title = if edit || (w.typing && w.name.len > 0) { w.name[..] } else { strings::get(strings::PLAYERS_NEW) };
     let head = (2.0 * gui::tap() + 32.0 + (if edit { 72.0 } else { 0.0 })) * u + gui::text_width(g, gui::LABEL, title);
     var content: f32 = 0.0;
     var right:   f32 = 0.0;   // wide: the right column's width
@@ -270,7 +274,7 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
     let holds_h = if holds == 0 { 0.0 } else if stacked && holds == 2 { 2.0 * gui::tap() + ROW_GAP } else { gui::tap() };
     let name_h = TITLE_H + ROW_GAP + gui::tap() + (if holds > 0 { ROW_GAP + holds_h } else { 0.0 });
     let pics_h = TITLE_H + ROW_GAP + grid_h;
-    let body = if wide { max(pics_h, name_h) } else { pics_h + GAP + name_h };
+    let body = if wide { max(pics_h, name_h) } else if bare { name_h } else { pics_h + GAP + name_h };
     let height = (20.0 + gui::tap() + GAP + body + 24.0) * u;
     var r = gui::center(area, content + 2.0 * PAD * u, height);
     // Clear of the keyboard while the name is typed.
@@ -301,13 +305,14 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
     if wide {
         left = gui::cut_left(rest, grid_w * u);
         gui::cut_left(rest, 24.0 * u);
-    } else {
+    } else if !bare {
         left = gui::cut_top(rest, pics_h * u);
         gui::cut_top(rest, GAP * u);
     }
-    heading(g, left, strings::PLAYERS_PICTURE);
+    if !bare { heading(g, left, strings::PLAYERS_PICTURE); }
     let cells = gui::cut_top(left, grid_h * u);
-    for a in players::ANIMALS.len {
+    let shown = if bare { 0 } else { players::ANIMALS.len };
+    for a in shown {
         let cell = float4 { cells.x + (a % cols) * (pic + PIC_GAP) * u, cells.y + (a / cols) * (pic + PIC_GAP) * u,
                             pic * u, pic * u };
         let free = !players::taken(ps, a, w.target);
