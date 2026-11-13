@@ -590,6 +590,9 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   earlier that day (its number and a faint glow where the first move would stand), which
   read as an empty stub. Rejected: no panel until the first move (the board would shrink
   and shift as it is made).
+- "No moves yet" is centered, in the panel across its first row and in a phone's moves'
+  line, and the line has no chevron and takes no tap until the first move (2026-11-13,
+  the user: the arrow opened an empty list). Replaces 2026-11-12's words at the left.
 - The move list's setting is settings' alone (2026-11-13, task 078; the user: once is
   enough), replacing 2026-11-12's three tiles kept on the results screen too. There its
   words alone (Off, Moves, Marks) didn't say what each shows, so a line under the

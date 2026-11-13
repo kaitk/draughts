@@ -266,7 +266,7 @@ fn moves_list(gm: Game&, g: gui::Gui&, r: float4, id: i64, record: bool) {
     guard ns.len > 0 else {
         let inner = gui::inset(r, MOVES_PAD * u);
         gui::text(g, gui::BODY, float4 { inner.x, inner.y, inner.z, MOVES_ROW * u }, strings::get(strings::MOVES_NONE),
-                  0.55, 0.0, gui::LEFT);
+                  0.55, 0.0, gui::CENTER);
         return;
     }
     let v .= rules::VARIANTS[gm.b.variant];

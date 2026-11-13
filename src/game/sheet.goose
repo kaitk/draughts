@@ -104,20 +104,31 @@ fn moves_foot(gm: Game&, g: gui::Gui&, r: float4, over: board::Overlay&) {
 
 // The moves' line where the layout has one and the setting shows the moves; true when
 // tapped, which opens the sheet. A tile (landscape), or a bare tap round a pill (the
-// portrait bar). Offered to the keys with the way out.
+// portrait bar). Offered to the keys with the way out. Before the first move there is
+// no list to open: no tap, no chevron, its words centered.
 fn moves_line(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) -> bool {
     guard l.line_as != panel::LINE_NONE && gm.moves_shown != 0 else { return false; }
     let u = g.scale;
     gui::group(g, panel::GROUP_OUT);
-    let clicked, p = gui::hold(g, LINE_ID, l.line_tap);
+    let any = gm.notes.len > 0;
+    var clicked = false;
+    var p: f32 = 0.0;
+    if any {
+        let c, q = gui::hold(g, LINE_ID, l.line_tap);
+        clicked = c;
+        p = q;
+    }
+    let lit = if any { gui::hover(g, LINE_ID) } else { 0.0 };
     if l.line_as == panel::LINE_BAR {
-        gui::add(g, gui::Quad { rect: l.line_tap, look: float4 { gui::BUTTON, 22.0 * u, 0.0, p },
-                                extra: float4 { u, gui::ROW, gui::hover(g, LINE_ID), 0.0 } });
+        if any {
+            gui::add(g, gui::Quad { rect: l.line_tap, look: float4 { gui::BUTTON, 22.0 * u, 0.0, p },
+                                    extra: float4 { u, gui::ROW, lit, 0.0 } });
+        }
         bar_line(gm, g, l);
         return clicked;
     }
     gui::add(g, gui::Quad { rect: l.line, look: float4 { gui::BUTTON, 22.0 * u, 0.0, p },
-                            extra: float4 { u, gui::PLAIN, gui::hover(g, LINE_ID), 0.0 } });
+                            extra: float4 { u, gui::PLAIN, lit, 0.0 } });
     rows_line(gm, g, l, over);
     return clicked;
 }
@@ -130,7 +141,10 @@ fn rows_line(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) {
     let u = g.scale;
     let r = l.line;
     let k = LINE_CHEVRON * u;
-    gui::glyph_icon(g, float4 { r.x + r.z - 8.0 * u - k, r.y + 8.0 * u, k, k }, gui::FWD, gui::PLAIN, 0.0, 0.8);
+    let ns .= gm.notes;
+    if ns.len > 0 {
+        gui::glyph_icon(g, float4 { r.x + r.z - 8.0 * u - k, r.y + 8.0 * u, k, k }, gui::FWD, gui::PLAIN, 0.0, 0.8);
+    }
     var inner = float4 { r.x + 12.0 * u, r.y + 8.0 * u, r.z - 24.0 * u, r.w - 16.0 * u };
     if l.counts {
         let head = gui::cut_top(inner, 26.0 * u);
@@ -139,11 +153,9 @@ fn rows_line(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) {
         panel::count_at(g, over, gm.taken, rules::WHITE, float4 { head.x + w + 14.0 * u, head.y, head.z - w - 14.0 * u, head.w },
                         d, false);
     }
-    let ns .= gm.notes;
     guard ns.len > 0 else {
         let none = strings::get(strings::MOVES_NONE);
-        let room = float4 { inner.x, inner.y + inner.w - LINE_ROW * u, inner.z - k, LINE_ROW * u };
-        gui::text(g, gui::fitting(g, gui::BODY, none, room.z), room, none, 0.55, 0.0, gui::LEFT);
+        gui::text(g, gui::fitting(g, gui::BODY, none, inner.z), inner, none, 0.55, 0.0, gui::CENTER);
         return;
     }
     let v .= rules::VARIANTS[gm.b.variant];
@@ -204,7 +216,7 @@ fn bar_line(gm: Game&, g: gui::Gui&, l: panel::Layout) {
         if marks { mark = ns[ns.len - 1].mark; }
     }
     let none = strings::get(strings::MOVES_NONE);
-    let face = if ns.len > 0 { gui::BODY } else { gui::fitting(g, gui::BODY, none, l.line.z - 2.0 * edge - k - 12.0 * u) };
+    let face = if ns.len > 0 { gui::BODY } else { gui::fitting(g, gui::BODY, none, l.line.z - 2.0 * edge) };
     let nw = if ns.len > 0 { gui::text_width(g, gui::SMALL, number[..]) + 6.0 * u } else { 0.0 };
     let mw = if ns.len > 0 { gui::text_width(g, gui::BODY, move[..]) } else { gui::text_width(g, face, none) };
     var kw: f32 = 0.0;
@@ -214,7 +226,7 @@ fn bar_line(gm: Game&, g: gui::Gui&, l: panel::Layout) {
         kw = gui::text_width(g, gui::BODY, t);
     }
     let gap = if kw > 0.0 { MARK_GAP * u } else { 0.0 };
-    let w = min(l.line.z, edge + nw + mw + gap + kw + 6.0 * u + k + 8.0 * u);
+    let w = if ns.len > 0 { min(l.line.z, edge + nw + mw + gap + kw + 6.0 * u + k + 8.0 * u) } else { min(l.line.z, 2.0 * edge + mw) };
     let pill = gui::center(l.line, w, l.line.w);
     gui::fill(g, pill, float4 { 1.0, 1.0, 1.0, 0.1 }, 14.0 * u);
     var x = pill.x + edge;
@@ -226,6 +238,7 @@ fn bar_line(gm: Game&, g: gui::Gui&, l: panel::Layout) {
         if kw > 0.0 { mark_at(g, x, pill, mark); }
     } else {
         gui::text(g, face, float4 { x, pill.y, mw, pill.w }, none, 0.6, 0.0, gui::LEFT);
+        return;
     }
     let chevron = if gm.sheet { gui::CHEVRON_DOWN } else { gui::CHEVRON_UP };
     gui::glyph_icon(g, float4 { pill.x + pill.z - 8.0 * u - k, pill.y + 0.5 * (pill.w - k), k, k }, chevron, gui::PLAIN, 0.0, 0.8);

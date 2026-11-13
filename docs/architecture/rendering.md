@@ -1038,8 +1038,9 @@ forced-capture red, nothing for a good or only move or one not judged yet. Every
 in the panel, a list scrolled within its glass (`gui::scroll_begin`), at its foot when a
 move is added or the panel shows again; rows past its top or foot fade out over 40 dp
 there while there are more (`gui::fade_edges`, as home's scrolling menu does). Before
-the first move it says so, "No moves yet" in the body face, dim, where the first row
-will be. The player's setting (`moves`: off, the moves, the moves with marks) is
+the first move it says so, "No moves yet" in the body face, dim, centered across where
+the first row will be; a phone's moves' line says it centered too, with no chevron and
+no tap, as there is no list to open. The player's setting (`moves`: off, the moves, the moves with marks) is
 settings' Move list row, under move hints, a line in the small face, dim, saying what the
 chosen tile shows: beside the tiles where the group's width leaves room, else under them;
 off, there is no panel and the 3D board is as large as without it.
