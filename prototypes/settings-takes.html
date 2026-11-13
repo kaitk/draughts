@@ -179,12 +179,13 @@
   }
   const setting = (name, tiles, extra = '') => `<div class="setting"><h3>${name}</h3><div class="tiles">${tiles}</div>${extra}</div>`;
   // A board's picture for a tile: its shot, or a hatched stand-in for one not yet made.
-  // &thumb=corner (the default): a board's tile shows its near left corner close up, the
-  // frame's carving or grain and a piece or two; &thumb=whole the whole board.
+  // &thumb=corner (the default): a material's tile shows the board's near left corner
+  // close up, the frame's carving or grain and a piece or two; &thumb=whole the whole
+  // board. Raised always shows the whole board, as flat against raised is its point.
   const zoom = get('thumb', ['corner', 'whole'], 'corner') === 'corner';
-  function boardThumb(s, m, tag = '') {
+  function boardThumb(s, m, tag = '', whole = false) {
     if (!made(s, m)) return `<span class="thumb todo">${NAME[s]}'s<br>${m}<br>to make</span>`;
-    return `<span class="thumb${zoom ? ' corner' : ''}" style="background-image:url(${shot(s, m)})">${tag ? `<span class="tag">${tag}</span>` : ''}</span>`;
+    return `<span class="thumb${zoom && !whole ? ' corner' : ''}" style="background-image:url(${shot(s, m)})">${tag ? `<span class="tag">${tag}</span>` : ''}</span>`;
   }
 
   function look() {
@@ -211,7 +212,7 @@
       const m = matOf(season);
       board = setting(`Board <small>· ${NAME[season]}'s shown</small>`,
         tile(view === '2d', { view: '2d' }, `${flatThumb}Flat`, 'pic') +
-        tile(view === '3d' && m === 'auto', { view: '3d', mat: 'auto' }, `${boardThumb(season, OWN[season], 'auto')}Raised`, 'pic') +
+        tile(view === '3d' && m === 'auto', { view: '3d', mat: 'auto' }, `${boardThumb(season, OWN[season], 'auto', true)}Raised`, 'pic') +
         tile(view === '3d' && m === 'wood', { view: '3d', mat: 'wood' }, `${boardThumb(season, 'wood')}Wood`, 'pic') +
         tile(view === '3d' && m === 'stone', { view: '3d', mat: 'stone' }, `${boardThumb(season, 'stone')}Stone`, 'pic') +
         tile(view === '3d' && m === 'carved', { view: '3d', mat: 'carved' }, `${boardThumb(season, 'carved')}Carved`, 'pic'));
@@ -256,7 +257,7 @@
     e: '<circle cx="12" cy="12" r="6.5"/><path d="M5.5 12h13"/><ellipse cx="12" cy="12" rx="2.8" ry="6.5"/><ellipse cx="12" cy="12" rx="11" ry="3.6" transform="rotate(-24 12 12)"/>',
   };
   const NAMES_G = { a: 'a, as built', b: 'b, wireframe', c: 'c, the Earth', d: 'd, speech', e: 'e, in a ring' };
-  const globePick = get('globe', Object.keys(GLOBES), 'a');
+  const globePick = get('globe', Object.keys(GLOBES), 'b');  // b chosen (2026-11-13)
   const globeSvg = (k) => `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${GLOBES[k]}</svg>`;
   function langTop() {
     if (langUi === 'seg') return `<div class="langseg">${LANGS.map(([k, code]) => tile(lang === k, { lang: k }, code)).join('')}</div>`;
