@@ -9,6 +9,12 @@
 // panel (panel.goose), V prints its values; A cycles the antialiasing (MSAA, SMAA, none) and
 // Z a 4× zoom on the board's near left corner, magnified without filtering, which a drag
 // pans (task 071), the label at the top left naming both. Nothing of the app's shell.
+// J, or --jump T, switches to the jump (task 082, New game's icon): one light man on c3
+// capturing a dark one on d4, the board otherwise empty, the camera turning freely round
+// the jump with the mouse wheel moving it nearer or farther; the light man flies along a
+// high arc (--arc H squares, 1 by default) to e5 as the slider at the bottom goes from 0 to
+// 1, Left and Right nudge it by 0.01, and each release of the mouse, or V, prints the
+// camera and the slider as the flags that give that shot again.
 //
 //   cd poc/3d
 //   ../../build/goose-v2026.4-macos-arm64/goose build -o ../../build/board3d board3d.goose
@@ -24,6 +30,8 @@
 //   ../../build/board3d --panel                   # the tuning panel shown; --plain no finish
 //   ../../build/board3d --bench 200
 //   ../../build/board3d --zoom 4 --aa smaa [--full]  # the antialiasing a pixel at a time
+//   ../../build/board3d --jump 0.5                # the jump, halfway; J switches it
+//   ../../build/board3d --shot out.png --jump 0.5 --yaw 30 --pitch 35 --distance 8
 //
 // --shot draws one frame headless (no window) into a PNG; --bench times frames.
 //
@@ -64,6 +72,16 @@ let LONG_PRESS_SLOP: f32 = 12.0;
 
 struct Camera { yaw: f32, pitch: f32, free: bool }
 
+// The jump (J, --jump T): the light man from c3 over the dark one on d4 to e5, at `jump_t`
+// of the way, `arc` squares up at its height; the camera looks at the jump's middle from
+// `distance` (the mouse wheel; --distance), the whole board's DISTANCE otherwise.
+var jumping = false;
+var jump_t:   f32 = 0.5;
+var arc:      f32 = 1.0;
+var distance: f32 = DISTANCE;
+let JUMP_DISTANCE: f32 = 8.0;
+var jump_ui = default<ui::Context>();
+
 // The position: the 3D reference's, dark pieces on the far rows and light on the near,
 // one light king, one light piece selected. Each piece is (row, col, dark, king,
 // selected); row 0 is the far side, and pieces stand on the dark squares.
@@ -92,6 +110,10 @@ var king_crown = false;
 // squares the field's occlusion reads (top, foot, radius, occupied), no marks, and where
 // the selected piece stands; the shadow map follows.
 fn place(g: render3d::Gpu&) {
+    if jumping {
+        place_jump(g);
+        return;
+    }
     var inst:    float4[..64] = [];
     var squares: float4[100]  = [float4_0; 100];
     var marks:   float4[100]  = [float4 { 0.0, 0.0, 0.0, -1.0 }; 100];
@@ -126,6 +148,78 @@ fn place(g: render3d::Gpu&) {
     render3d::place(g, inst[..inst.len], fades[..0], squares[..], marks[..], lit[..], selected, 0.0, true);
 }
 
+// The jump's two men: the dark one on d4 (row 4, column 3), the light one at jump_t of the
+// way from c3 (row 5, column 2) to e5 (row 3, column 4), lifted by the arc's sine; the
+// field's occlusion sees it on the square it is over, but d4's, which stays the dark man's.
+fn place_jump(g: render3d::Gpu&) {
+    var inst:    float4[..4] = [];
+    var squares: float4[100] = [float4_0; 100];
+    var marks:   float4[100] = [float4 { 0.0, 0.0, 0.0, -1.0 }; 100];
+    var lit:     float4[100] = [float4_0; 100];
+    var fades:   f32[1]      = [0.0];
+    inst.push(float4 { 3.0 - 3.5, 0.0, 4.0 - 3.5, 1.0 });
+    inst.push(float4 { 1.0, 0.0, 0.0, 0.0 });
+    squares[4 * 8 + 3] = float4 { HEIGHT, 0.0, RADIUS, 1.0 };
+    let col = 2.0 + 2.0 * jump_t;
+    let row = 5.0 - 2.0 * jump_t;
+    let lift = arc * sin(PI * jump_t);
+    inst.push(float4 { col - 3.5, lift, row - 3.5, 1.0 });
+    inst.push(float4 { 0.0, 0.0, 0.0, 1.0 });
+    let sq = (floor(row + 0.5) as i64) * 8 + floor(col + 0.5) as i64;
+    if sq != 4 * 8 + 3 { squares[sq] = float4 { lift + HEIGHT, lift, RADIUS, 1.0 }; }
+    render3d::place(g, inst[..inst.len], fades[..0], squares[..], marks[..], lit[..], float4_0, 0.0, true);
+}
+
+// What the camera looks at: the jump's middle, or the board's.
+fn target() -> float3 { if jumping { float3 { -0.5, 0.3, 0.5 } } else { float3 { 0.0, -0.15, 1.1 } } }
+
+// The jump's slider at the bottom of the screen, `scale` pixels to the ui's unit, run each
+// frame; returns whether jump_t changed and whether there was input to draw the ui again
+// for. It allocates (ui's input and text), as the tuning panel does: a tool on the Mac.
+fn jump_frame(scale: f32, input: bool) -> bool, bool {
+    if jump_ui.id == 0 {
+        jump_ui = ui::create(16.0, scale);
+        guard jump_ui.id != 0 else { abort(str("ui: ", ui::error())); }
+    }
+    let c = jump_ui;
+    ui::input_from_gfx(c);
+    let was = jump_t;
+    let ss = gfx::screen_size();
+    let w: f32 = 520.0;
+    let x = 0.5 * (ss.x / scale - w);
+    let y = ss.y / scale - 64.0;
+    if ui::begin(c, "jump", ui::rect(x, y, w, 48.0), ui::WINDOW_NO_SCROLLBAR) {
+        let ratios: f32[2] = [0.3, 0.7];
+        ui::layout_row(c, ui::DYNAMIC, 30.0, ratios);
+        var text: u8[>..] = [];
+        text.append("jump ");
+        panel::num(text, jump_t);
+        text.append(" (J)");
+        ui::label(c, text, ui::TEXT_LEFT);
+        ui::slider_float(c, 0.0, jump_t, 1.0, 0.01);
+    }
+    ui::end(c);
+    return jump_t != was, input;
+}
+
+// The camera and the jump as the flags that give the shot again.
+fn print_jump(cam: Camera) {
+    var line: u8[>..] = [];
+    line.append("jump: --jump ");
+    panel::num(line, jump_t);
+    line.append(" --yaw ");
+    panel::num(line, cam.yaw);
+    line.append(" --pitch ");
+    panel::num(line, cam.pitch);
+    line.append(" --distance ");
+    panel::num(line, distance);
+    if arc != 1.0 {
+        line.append(" --arc ");
+        panel::num(line, arc);
+    }
+    print(line);
+}
+
 fn radians32(d: f32) -> f32 { d * PI / 180.0 }
 
 // The zoom (Z, --zoom N): the screen shows a 1/zoom crop of the view round `centre` (in
@@ -142,8 +236,8 @@ var label = default<ui::Context>();
 fn view_of(cam: Camera, size: int2) -> gfx::mat4 {
     let yaw = radians32(cam.yaw);
     let pitch = radians32(cam.pitch);
-    let target = float3 { 0.0, -0.15, 1.1 };
-    let eye = target + float3 { sin(yaw) * cos(pitch), sin(pitch), cos(yaw) * cos(pitch) } * DISTANCE;
+    let target = target();
+    let eye = target + float3 { sin(yaw) * cos(pitch), sin(pitch), cos(yaw) * cos(pitch) } * distance;
     let aspect = size.x as f32 / size.y;
     let proj = gfx::perspective(radians32(FOV), aspect, 2.0, 40.0);
     return gfx::mul(proj, gfx::look_at(eye, target, float3 { 0.0, 1.0, 0.0 }));
@@ -152,7 +246,7 @@ fn view_of(cam: Camera, size: int2) -> gfx::mat4 {
 fn eye_of(cam: Camera) -> float3 {
     let yaw = radians32(cam.yaw);
     let pitch = radians32(cam.pitch);
-    return float3 { 0.0, -0.15, 1.1 } + float3 { sin(yaw) * cos(pitch), sin(pitch), cos(yaw) * cos(pitch) } * DISTANCE;
+    return target() + float3 { sin(yaw) * cos(pitch), sin(pitch), cos(yaw) * cos(pitch) } * distance;
 }
 
 // Where the board's near left corner is in the full view's clip space.
@@ -354,6 +448,15 @@ fn main() {
         winter = clamp(flag_f32(argv, "--winter", 0.0) as i64, 0, looks::WINTERS - 1);
         which = looks::WINTER;
     }
+    // --jump T: the jump at T of the way (J switches it), --arc H its height in squares,
+    // --distance D the camera's.
+    if flag_str(argv, "--jump") > 0 {
+        jumping = true;
+        jump_t = clamp(flag_f32(argv, "--jump", 0.5), 0.0, 1.0);
+        distance = JUMP_DISTANCE;
+    }
+    arc = max(flag_f32(argv, "--arc", 1.0), 0.0);
+    distance = clamp(flag_f32(argv, "--distance", distance), 3.0, 40.0);
     let ki = flag_str(argv, "--king");
     if ki > 0 && argv[ki] == "crown" { king_crown = true; }
 
@@ -391,7 +494,7 @@ fn main() {
         gfx::save_png(g.frame_albedo, str(argv[maps], "-frame.png"));
         gfx::save_png(g.plan_albedo, str(argv[maps], "-plan.png"));
     }
-    var cam = Camera { flag_f32(argv, "--yaw", 0.0), flag_f32(argv, "--pitch", PITCH), false };
+    var cam = Camera { flag_f32(argv, "--yaw", 0.0), flag_f32(argv, "--pitch", PITCH), jumping };
     centre = corner(cam);
     // --turn D (with --shot): the board turned D degrees under the light, as the game's
     // hot-seat turn does (render3d::turn_light), the camera with it.
@@ -479,10 +582,37 @@ fn main() {
             if panel::frame(tuning, now, n > 0) { ui_dirty = true; }
             if panel::settle(tuning, g, now) { dirty = true; }
         }
-        // The mouse over the panel, or dragging on it, is the panel's.
-        let mine = !panel::wants_mouse(tuning);
+        // The jump's slider and keys.
+        if jumping {
+            let moved, input = jump_frame(ui_scale, n > 0);
+            if input { ui_dirty = true; }
+            var t = jump_t;
+            if gfx::key_pressed("Left") { t = floor((t - 0.01) * 100.0 + 0.5) / 100.0; }
+            if gfx::key_pressed("Right") { t = floor((t + 0.01) * 100.0 + 0.5) / 100.0; }
+            jump_t = clamp(t, 0.0, 1.0);
+            if moved || t != jump_t || gfx::key_pressed("Left") || gfx::key_pressed("Right") {
+                place(g);
+                dirty = true;
+            }
+            let wheel = gfx::mouse_wheel();
+            if wheel != 0.0 {
+                distance = clamp(distance * pow(0.92 as f32, wheel), 3.0, 40.0);
+                dirty = true;
+            }
+        }
+        if gfx::key_pressed("J") {
+            jumping = !jumping;
+            distance = if jumping { JUMP_DISTANCE } else { DISTANCE };
+            cam.free = cam.free || jumping;
+            place(g);
+            dirty = true;
+        }
+        if jumping && gfx::key_pressed("V") { print_jump(cam); }
+        // The mouse over the panel or the jump's slider, or dragging on either, is theirs.
+        let mine = !panel::wants_mouse(tuning) && !(jumping && ui::wants_mouse(jump_ui));
         for i in n {
             let e = events[i];
+            if jumping && e.kind == gfx::EVENT_MOUSE_BUTTON && !e.down && e.button == gfx::MOUSE_LEFT { print_jump(cam); }
             if e.kind == gfx::EVENT_MOUSE_BUTTON && e.down && e.clicks == 2 && mine {
                 cam.free = !cam.free;
                 dirty = true;
@@ -556,6 +686,7 @@ fn main() {
         }
         if gfx::key_pressed("R") {
             cam = Camera { 0.0, PITCH, cam.free };
+            distance = if jumping { JUMP_DISTANCE } else { DISTANCE };
             centre = corner(cam);
             dirty = true;
         }
@@ -597,16 +728,17 @@ fn main() {
             let c = clock();
             // Under the panel the board goes into the kept image, so that the panel's
             // own changes cost only the copy.
-            draw(g, cam, if tuning.shown { gfx::Texture { 0 } } else { gfx::screen() });
-            if !tuning.shown { draw_label(ui_scale); }
+            draw(g, cam, if tuning.shown || jumping { gfx::Texture { 0 } } else { gfx::screen() });
+            if !tuning.shown && !jumping { draw_label(ui_scale); }
             cpu += clock() - c;
             drawn++;
         }
-        if tuning.shown && (dirty || ui_dirty) {
+        if (tuning.shown || jumping) && (dirty || ui_dirty) {
             gfx::begin_pass(gfx::screen(), gfx::Texture { 0 }, float4 { 0.0, 0.0, 0.0, 1.0 });
             render3d::copy(g);
             gfx::end_pass();
-            panel::draw(tuning);
+            if tuning.shown { panel::draw(tuning); }
+            if jumping { ui::render(jump_ui); }
         }
         dirty = false;
         ui_dirty = false;
