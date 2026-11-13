@@ -1020,8 +1020,53 @@ the first move it says so, "No moves yet" in the body face, dim, where the first
 will be. The player's setting (`moves`: off, the moves, the moves with marks) is
 settings' Move list row, under move hints, a line in the small face, dim, saying what the
 chosen tile shows: beside the tiles where the group's width leaves room, else under them;
-off, there is no panel and the 3D board is as large as without it. No panel in portrait or on
-a phone in landscape, which have under four rows' room.
+off, there is no panel and the 3D board is as large as without it.
+
+On the panel a marked move explains itself in a tip (`game::tips`, `game::tip`): glass
+320 dp wide above the move (under it where the safe area's top is too near), the mark in
+a 46 dp disc in its color (the star on faint white), its name (the `mark.*_tip` string's
+words before the colon, in the heading face) with the move at the right ("20. 33-29",
+"20… 22x24" for black), and the rest of the string under them, its first letter a
+capital, wrapped. Under the mouse (a desktop) it shows while the pointer is on the marked
+move, its words and its mark. On touch a tap on the move shows it; the next tap anywhere
+only closes it and goes no further (no tile or square takes it), unless it lands on
+another marked move, which the tip moves to; a tap on the same move closes it, as does
+back. The tip coming and going is a change, drawn once each; pieces over the UI under it
+are left out.
+
+Where the panel has no room, on a phone in landscape and in portrait, the moves show as
+a line that opens a sheet (`src/game/sheet.goose`; the layouts' `line`, `line_tap`,
+`sheet`). On a phone in landscape (`panel::row_fit`) back and settings stand side by
+side over start over, each its icon over its word (90 × 96 dp on a phone), a column 204
+dp tall in place of 336; what each side has taken goes under it as before, and the rest
+of the left column down to the bottom margin is the line, a tile a tap tall at least
+(the Pixel 7a's 134 dp, the iPhone 13 mini's 106): the last rows of the moves as the
+sheet lists them, 31 dp each, the newest at the foot, the earlier at 60%, the last move
+lit, and a chevron in its top right corner. Where what each side has taken has no room
+above a tap, the tiles are a tap tall and its counts (a piece and a number for each
+side) head the line. The boards keep their size: the flat board's place is unchanged,
+and the 3D board clears the whole column as it cleared the panel and the catch. In
+portrait the last move sits in the bar's row between what each side has taken
+(`panel::bar_tiles`), a pill 40 dp tall ("12… c7-d6 ?" and a chevron up), its tap 200 dp
+across from the tiles' foot to the board's top (92 dp), costing the board nothing; the
+catches stand either side of the tap, as pieces where both rows fit their side at 70%,
+else as counts. A small window's compact bar has no line.
+
+The line's tap opens the sheet. In landscape it runs from the screen's left edge to the
+board's (to the 3D column's edge on the 3D board), top to bottom, over the left column,
+which isn't declared while it shows; the board and the play panel stay whole and
+playable. In portrait it rises from the foot to the board's middle, under a black layer
+at 38% over the rest of the screen, declared deaf to the pointer and the keys, and the
+pieces over the UI under the sheet are left out. Inside, 16 dp from its sides: its head,
+a tap tall (a chevron left, or down in portrait, and "Move list"), which closes it; every
+move two a row as the panel lists them, scrolled to the last; and, where marks show,
+each side's piece and accuracy under a rule, then the legend (`game::legend`): the star,
+`?!`, `?`, and `??` with their words (`mark.best` ...), dim, two to a line, or all four on
+one where they fit. The dim layer and back close it too. With the keys the line is
+offered with the way out; Enter on it opens the sheet and moves the focus to its head,
+Enter there closes it and gives the focus back to the line. With the setting off there
+is no line and the left column is as built; with the moves alone, no marks, accuracy, or
+legend.
 
 ### The results screen
 
@@ -1035,7 +1080,98 @@ player's skill there, then won, drawn, lost: a crown, `=`, an X, each with its c
 left out where the panel can't hold them in the height); at the right the games in that draughts, newest first, in a scrolling list
 of 88 dp rows: the result as a crown, `=`, or an X, the opponent ("Medium 1644", or "A
 friend") over the date, the rating's change, and the player's blunders as `?? n`. In
-portrait the panel is above the list. Only the rows in view are declared.
+portrait the panel is above the list. Only the rows in view are declared. Each row is a
+tap, the whole of it, its blunders' count too, lit under the mouse and by a press: it
+opens the game's replay.
+
+#### A game's replay
+
+`src/shell/replay.goose` shows a finished game at any of its moves, opened at its end.
+In landscape the steps (to the start, back one, on one, to the end; chevrons, the first
+and last at a bar) are a column of four tap-square tiles at the board's left, up to 16
+dp apart and centered on the board; the board takes the safe area's height less the 24 dp
+margins, unless the column at its right would be under 300 dp; the column holds a head
+of back, the title, and play from here over a glass. In portrait that head tops the
+screen, the board under it as wide as the screen allows with 220 dp left for the glass,
+the steps a row of four under it, then the glass. The Pixel 7a's landscape gives the
+board 395 dp and the column 447; its portrait, the board 432; the tablet's landscape, the
+board 752 and the column 356. A step that would change nothing (back at the start, on at
+the end) is dimmed at 35% but keeps its tap and the keys' focus.
+
+**Play from here** is a tile in the glow color at 22% (`gui::PRIMARY`), a tap tall, the
+opponent's icon (the computer's head, or two figures for a friend's game) beside its
+word, at the head's right end. Where that is too wide it puts the icon over the word
+(the word in a smaller face, down to the small one, where the room is narrower); on a
+phone the title then gives up its place, then back its width (its arrow over its word in
+a tap's square). Where none of that fits, a tablet's narrow column (356 dp), it is a row
+of its own across the column, over the glass (in portrait over the glass, under the
+steps). It is dimmed at 35% and takes no tap at the end of a game that ended there (no
+legal move); everywhere else, the start included, it starts a game from the position
+shown (below).
+
+The title "Replay" sits between back and play from here where it fits. The game's line,
+its result sign (crown, `=`, X), the opponent and its rating, and the date in the small
+face, sits under the title where it fits on its own line, else at the top of the glass.
+The glass holds, in
+order: what the move shown was (the mover's piece, "20. 33-29" or "20… 22x24" for black,
+its mark, and the mark's tip from `strings/` running on to a second line, in a smaller
+face if it needs; "The start" at move 0), a rule, each side's piece and accuracy heading
+its column, and the moves in a scrolling list of 34 dp rows as the moves panel draws
+them: the number, white's and black's move with their marks, and under the list the
+marks' legend (`game::legend`). The move shown is lit in
+the glow color, the moves after it at 55%; the list scrolls to keep the move shown in
+view, with a row clear of either edge, whenever it changes. A move is a tap, the half
+row: it jumps there. The rows are under the 88 dp rule: a miss shows the neighbouring
+move, which the steps put right. On the board, the last move's square is marked as the
+game's is, and its mark sits in a disc at the square's top right corner once the piece
+has arrived: the star on the glow color, `?!` gold, `?` orange, `??` red.
+
+The board takes no taps; it is always the flat one, with no hint, undo, or turn panel.
+A step on plays that one move on the board as the game does (`board::start_move`); any
+other step or a jump shows its position at once. With the keys, Left and Right step back
+and on from wherever the focus is (`gui::claim_sideways`: the screen takes them, and the
+focus doesn't move for them); the focus come to a move (Tab to the list lands on the move
+shown, then Up and Down) shows it, and follows the move shown as Left and Right step.
+Back, Escape, and Android's back go to the results as they were left, their draughts and
+scroll kept.
+
+The replay only shows a game: its board and moves are its own (`shell.replay`), never
+the game's, so the game to continue, its saved image (which keeps home, not the replay,
+as its screen), the history file, and the ratings stay as they were. Opening it reads
+the game's line from the history file again (`history::line_of`, as `games_of` numbers
+the games) and plays its moves out from the draughts' start with the rules into fixed
+buffers: 513 positions and 512 moves with their marks. A move is matched by its text as
+`rules::format_move` writes it, or by its first and last squares alone; the list stops at
+the first move that doesn't match. A frame then allocates nothing.
+
+#### A game played from a replay
+
+Play from here (`shell::play_from_here`) opens the game screen on a game from the
+position the replay shows: the same draughts, the same opponent (the computer at the
+past game's level and skill, or a friend), the player on the same side, so the board
+turns as it did, and the side to move as there. It has no clock: the history keeps none.
+Its moves are numbered on from the replay's (`game::Game.ply0`, `game::first_ply`): from
+move 30, white's first is "16.", from move 11 black's is "6…". It plays as any game does:
+the computer answers, and the hint, undo, the lookout, the moves panel, its line and
+sheet, and the end's cards work. Start over, on the panel or the card, goes back to the
+replay's position, not the draughts' start, so a line can be tried again.
+
+It counts for nothing (`shell.trial`, `Game.no_count`). Its end writes nothing to the
+history and moves no rating, no level's skill or games played there, and no count of games
+begun; the game in progress is set aside (`shell::park`, the image the app writes and its
+hints and marks) and is still what the app writes as the game to resume, with home as its
+screen, while the game from the replay shows; leaving brings it back as it was
+(`unpark`). The way out goes back to the replay where it was left: back on the panel or
+the end's card, Escape, and Android's back. Settings go back to this game.
+
+**"Doesn't count"** (`panel::no_count`, `replay.no_count`) is a pill in the glow color,
+dark ink in the small face, centered on the way out's top edge: half in the margin above
+it, half over the glass's own margin, clear of its icons and words. The way out is
+`l.left` in every layout, so one rule places it everywhere: in landscape, flat and 3D,
+the left column's top, back there (the phone's back and settings side by side); in
+portrait the bar's top; on a desktop the framed column's top; in a small window the
+compact bar's. It takes no room of its own, and the board none. While the moves' sheet
+covers the way out in landscape, it goes with it.
 
 ### Transitions
 

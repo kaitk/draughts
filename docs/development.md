@@ -119,7 +119,11 @@ the screens around it `shell/` (home, and which screen shows), each tested headl
 `--tap` (`c3`, or `d10` on 10 × 10), or `--screen game` open the game screen,
 `--screen settings` settings, `--screen setup` home's setup as the player's file has it
 (`friend` or `computer` with that opponent chosen), `--screen
-puzzles` the puzzles to pick from, and `--puzzle ID` that puzzle, whose taps go to its
+puzzles` the puzzles to pick from, `--screen results` the results, `--screen replay` the
+replay of the newest game in the history, at its end or at `--ply N` (0 the start;
+`--history FILE` reads the games from a history file in place of the player's, for
+shots: `--history games.txt --screen replay --ply 39 --frames 12`; `--go here` then plays
+from that move, as the replay's play from here does), and `--puzzle ID` that puzzle, whose taps go to its
 board (`--puzzle 21 --tap f4 --tap e5`). `--go settings` (or `home`, `game`, `play`,
 `puzzles`, `puzzle`) switches there on the second frame through its transition, once
 any `--tap`s have played out, and `--hold 0.4` keeps a transition at 40% of the way, for
@@ -147,8 +151,10 @@ some thousands of frames, about 2 s: `--variant russian --computer black --tap c
 --tap d4 --frames 5000`. The settings are in the app's storage folder (on the Mac
 `~/Library/Application Support/kaitk/draughts/`): `settings.txt` the device's (the
 language, who plays), `player-N.txt` each player's ([players](architecture/README.md#players));
-`--theme`, `--hints`, `--lang`, `--background`, `--board`, and `--lookout on|off` override them for a run
-without changing them. `--board 3d` plays a run on the 3D board at once, as settings'
+`--theme`, `--hints`, `--lang`, `--background`, `--board`, `--lookout on|off`, and
+`--moves off|list|marks` override them for a run without changing them; once `--tap`'s
+moves have played and been judged, `--sheet on` opens the game's moves' sheet and `--tip
+N` shows move N's mark's tip on the moves panel. `--board 3d` plays a run on the 3D board at once, as settings'
 Board row's 3D does, and `--board flat` on the flat one; `--background plain` shows the
 plain fade in place of the photograph, and `--background photo` the photograph. `--wood N`
 (0 to 3) and `--marble N` (0 the slate, 1 to 4) pick the 3D board's wood and winter

@@ -107,7 +107,10 @@ On a worker the frame loop draws as it would without the computer
   ends; taken back and ended again, it doesn't count again. A game started over or
   replaced before it ends doesn't count. A draw counts as 0 and leaves the skill. Play again on the end's card and start
   over during a game begin a new game at the level's skill as it is then, adapted by the
-  game just ended, and count it for the seeds as home's play does.
+  game just ended, and count it for the seeds as home's play does. A game played on from
+  a replay's move (rendering's "A game played from a replay") plays at the past game's
+  level and skill and counts for nothing: it moves no skill, no games played, and no
+  count of games, its start over too.
 - **The default level** for a new player, and for settings read fresh, is easy; a
   player's saved level stays.
 
@@ -431,4 +434,5 @@ A player's rating is Elo, per draughts, from 800 (`ai::rate`): after a game agai
 computer `R + K · (S − E)`, E the expected score against the computer's rating at the
 game's skill, S 1, ½, or 0, K 40 over the player's first 20 rated games of that
 draughts and 20 after, never under 100. A friend's game on one tablet has no second
-rated player, and moves no rating.
+rated player, and moves no rating. Nor does a game played on from a replay's move, which
+isn't written to the history either.

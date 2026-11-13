@@ -7,8 +7,10 @@ namespace flags;
 import std;
 import vec;
 
-// --go play: a new game from home's setup, as its play starts one.
+// --go play: a new game from home's setup, as its play starts one; --go here: the
+// replay's play from here, a game from the move it shows.
 let GO_PLAY = 99;
+let GO_HERE = 98;
 
 // The most --tap flags kept: two taps a move, room for the longest count a shot plays
 // to its end from a position (Russian's 60 moves each, 120 plies, takes 240).
@@ -26,6 +28,9 @@ struct Flags {
     background: i64  = -1,  // --background photo|plain: 0 the photograph, 1 the plain fade
     board:      i64  = -1,  // --board 3d|flat: settings::RAISED or settings::FLAT
     lookout:    i64  = -1,  // --lookout on|off: the player's lookout, 1 on, 0 off
+    moves:      i64  = -1,  // --moves off|list|marks: the player's move list (settings::MOVES_*)
+    sheet:      bool = false, // --sheet on: the game's moves' sheet open once the taps have played (task 078)
+    tip:        i64  = -1,  // --tip N: the tip of the game's move N (from 1) shown once the taps have played
     // --hints moves: the selected piece's targets (board::MOVES); mistakes only by default
     hints: i64 = -1,
     // --lang CODE: a language with a file in strings/, else the system's
@@ -54,14 +59,18 @@ struct Flags {
     // game's board or the puzzle's
     taps:   u8[..3][..MAX_TAPS],
     frames: i64 = -1,       // --frames N: stop after N frames and save draughts.png
-    // --screen home|game|settings|puzzles: where the run opens (home unless a position,
-    // taps, a clock, or the computer are given)
+    // --screen home|game|settings|puzzles|results|replay: where the run opens (home unless
+    // a position, taps, a clock, or the computer are given); replay the newest game's
     screen: i64 = -1,
     // --screen friend|computer|setup: home with the setup open (home::NEW_GAME), against
     // a friend or the computer, or as the player's file has it
     setup:  i64 = home::NO_SETUP,
     friend: i64 = -1,       // 1 for --screen friend, 0 for computer
     puzzle: i64 = -1,       // --puzzle ID: that puzzle, its taps on its board
+    // --history FILE: the games the results screen and a replay read, in place of the
+    // playing player's history (a history file's lines, shell/history.goose)
+    history: u8[..512],
+    ply:     i64 = -1,      // --ply N: a replay at its Nth move (0 the start), else at its end
     // --variant international|brazilian|russian: a new game of that draughts, and the
     // puzzles' set; with a setup open, its choice
     variant: i64 = -1,
@@ -70,9 +79,10 @@ struct Flags {
     // setup open, the child playing the other
     computer: i64 = -1,
     level:    i64 = -1,     // --level easy|medium|hard: the computer's, else the setup's last
-    // --go home|settings|game|play|puzzles|puzzle: switches there on the second frame,
-    // through its transition, once any taps have played out: game as continue does, play
-    // as the setup's play (GO_PLAY), puzzle from the puzzles to pick from to --puzzle ID
+    // --go home|settings|game|play|here|puzzles|puzzle: switches there on the second
+    // frame, through its transition, once any taps have played out: game as continue
+    // does, play as the setup's play (GO_PLAY), here as the replay's play from here
+    // (GO_HERE, with --screen replay), puzzle from the puzzles to pick from to --puzzle ID
     // or the first
     go:   i64 = -1,
     hold: f64 = -1.0,       // --hold T: keeps a transition at T of the way, 0..1
@@ -141,6 +151,14 @@ fn parse(argv: u8[:][>..]) -> Flags {
         if a == "--board" && v == "flat" { f.board = settings::FLAT; }
         if a == "--lookout" && v == "on" { f.lookout = 1; }
         if a == "--lookout" && v == "off" { f.lookout = 0; }
+        if a == "--moves" && v == "off" { f.moves = settings::MOVES_HIDDEN; }
+        if a == "--sheet" && v == "on" { f.sheet = true; }
+        if a == "--tip" {
+            let n, ok = parse_int(v);
+            if ok && n >= 1 { f.tip = n - 1; }
+        }
+        if a == "--moves" && v == "list" { f.moves = settings::MOVES_LIST; }
+        if a == "--moves" && v == "marks" { f.moves = settings::MOVES_MARKS; }
         if a == "--keep" && v == "off" { f.keep = false; }
         if a == "--hints" && v == "moves" { f.hints = board::MOVES; }
         if a == "--lang" { f.lang = strings::pick(v); }
@@ -202,10 +220,19 @@ fn parse(argv: u8[:][>..]) -> Flags {
         }
         if a == "--screen" {
             f.screen = if v == "game" { shell::GAME } else if v == "settings" { shell::SETTINGS }
-                       else if v == "puzzles" { shell::PICKER } else if v == "results" { shell::RESULTS } else { shell::HOME };
+                       else if v == "puzzles" { shell::PICKER } else if v == "results" { shell::RESULTS }
+                       else if v == "replay" { shell::REPLAY } else { shell::HOME };
             if v == "friend" || v == "computer" || v == "setup" { f.setup = home::NEW_GAME; }
             if v == "friend" { f.friend = 1; }
             if v == "computer" { f.friend = 0; }
+        }
+        if a == "--history" && v.len < 512 {
+            f.history.clear();
+            f.history.append(v);
+        }
+        if a == "--ply" {
+            let n, ok = parse_int(v);
+            if ok { f.ply = n; }
         }
         if a == "--puzzle" {
             let n, ok = parse_int(v);
@@ -220,7 +247,7 @@ fn parse(argv: u8[:][>..]) -> Flags {
         if a == "--level" { for name, k in settings::LEVEL_NAMES { if v == name { f.level = k; } } }
         if a == "--go" {
             f.go = if v == "settings" { shell::SETTINGS } else if v == "game" { shell::GAME }
-                   else if v == "play" { GO_PLAY } else if v == "puzzles" { shell::PICKER }
+                   else if v == "play" { GO_PLAY } else if v == "here" { GO_HERE } else if v == "puzzles" { shell::PICKER }
                    else if v == "puzzle" { shell::PUZZLE } else { shell::HOME };
         }
         if a == "--hold" {

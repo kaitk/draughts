@@ -30,6 +30,7 @@ import .clock;
 import .pace;
 import .ending;
 import .notes;
+import .sheet;
 
 let STEP = 2.0;             // seconds: the longest gap between two frames the clock counts
 let PAUSE = [0.8, 0.6, 0.45];   // seconds from the computer's turn to its move without a clock, by level
@@ -131,20 +132,36 @@ struct Game {
     // number less one when the history dropped its oldest, what they were last brought in
     // line with, a buffer for finding a move; whether moves are judged, the judge's ask
     // id, or 0, and the note it is for.
-    notes:      Notes           = [],
-    notes_from: i64             = 0,
-    notes_len:  i64             = -1,
-    notes_pos:  rules::Position = rules::Position { pieces: [0, 0], kings: 0, side: 0, variant: 0 },
-    scratch:    rules::Moves    = [],
-    judge:      bool            = true,
-    moves_shown: i64            = 2,    // the moves panel: 0 hidden, 1 the moves, 2 with marks (settings::MOVES_*)
-    turns:       bool           = false, // a friend's game turns the board to the side to move (settings' `turns`)
-    moves_seen:  i64            = -1,   // the moves the panel's list was last scrolled to the foot for
-    judging:    i64             = 0,
-    judge_ply:  i64             = 0,
+    notes:       Notes           = [],
+    notes_from:  i64             = 0,
+    notes_len:   i64             = -1,
+    notes_pos:   rules::Position = rules::Position { pieces: [0, 0], kings: 0, side: 0, variant: 0 },
+    scratch:     rules::Moves    = [],
+    judge:       bool            = true,
+    moves_shown: i64             = 2,   // the moves panel: 0 hidden, 1 the moves, 2 with marks (settings::MOVES_*)
+    turns:       bool            = false, // a friend's game turns the board to the side to move (settings' `turns`)
+    moves_seen:  i64             = -1,  // the moves the panel's list was last scrolled to the foot for
+    judging:     i64             = 0,
+    judge_ply:   i64             = 0,
     // Whether the game's end was given to the shell for the player's history (Event.over):
     // any game, once.
     kept: bool = false,
+    // Task 078 (sheet.goose): the moves' sheet open; the note whose mark's tip shows, or -1,
+    // and whether under the mouse; the marked move a touch went down on, or -1, and whether
+    // the tip shown then took that press; the marked moves as the panel last showed them.
+    sheet:     bool                   = false,
+    tip:       i64                    = -1,
+    tip_hover: bool                   = false,
+    tip_press: i64                    = -1,
+    tip_took:  bool                   = false,
+    refocus:   bool                   = false,  // the sheet closed by the keys: the line takes the focus back
+    marks_at:  MarkAt[..MAX_MARKS_AT] = [],
+    // A game played on from a past game's move (the replay's play from here, 2026-11-13):
+    // the moves played before its start, which its moves' numbers go on from, and that
+    // it counts for nothing, which the way out's label says (panel::no_count). The shell
+    // keeps it out of the history, the ratings, the computer's skill, and the game kept.
+    ply0:     i64  = 0,
+    no_count: bool = false,
 }
 
 // The pieces of each color taken so far (task 052): the start's pieces less those on the
@@ -222,9 +239,21 @@ fn start(gm: Game&, variant: u8, kind: i64, computer: i64, level: i64, skill: i6
     gm.asking = 0;
     gm.judging = 0;
     gm.watched = Watch {};
+    gm.ply0 = 0;
+    gm.no_count = false;
     new_hints(gm);
     rig::reset(gm.cam);
     rig::across_table(gm.cam, computer < 0 && !gm.turns);
+}
+
+// The game started (start) from position p instead, `ply` moves into the game it comes
+// from, counting for nothing: a past game played on from its replay's move. Start over
+// goes back to p.
+fn start_from(gm: Game&, p: rules::Position, ply: i64) {
+    board::set(gm.b, p);
+    gm.turn = p.side;
+    gm.ply0 = ply;
+    gm.no_count = true;
 }
 
 // A game's hints, all of them left, none shown or asked for.
@@ -490,6 +519,15 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     var changed = board::update(b, now) || input.pressed || input.released;
     var ev = Event {};
     over.clear();
+    // A mark's tip first: a tap that only closes it goes no further.
+    if tips(gm, g, l) { changed = true; }
+    // The moves' sheet (task 078): in landscape it covers the way out, which isn't
+    // declared; in portrait (`cover`) a dim layer covers the rest of the screen, which is
+    // declared deaf to the pointer and the keys.
+    if l.line_as == panel::LINE_NONE || gm.moves_shown == 0 { gm.sheet = false; }
+    let open = gm.sheet;
+    let cover = open && l.line_as == panel::LINE_BAR;
+    if cover { gui::listen(g, false); }
     if !frozen && gm.seen >= 0.0 && clock::tick(gm.clock, min(now - gm.seen, STEP)) { changed = true; }
     gm.seen = if frozen { -1.0 } else { now };
 
@@ -498,12 +536,28 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     let side = if won >= 0 { won } else { b.pos.side as i64 };
     var note = panel::Note {};
     countdown(gm, note);
+    let beside = open && !cover;
     let pick = panel::game(g, l, gm.clock, side, won >= 0, drawn(gm) != rules::NO_DRAW, note, gm.asking != 0,
-                           pulse(gm, now), over, help(gm));
+                           pulse(gm, now), over, help(gm), !beside);
+    if gm.no_count && !beside { panel::no_count(g, l); }
     if count_taken(gm) { changed = true; }
     if keep_notes(gm) { changed = true; }
+    gm.marks_at.clear();
     moves_panel(gm, g, l);
-    panel::taken(g, l, gm.taken, over);
+    if beside {
+        // A press on the sheet is the UI's, never the board's.
+        gui::take(g, gui::bleed(g, l.sheet, l.area));
+    } else {
+        panel::taken(g, l, gm.taken, over);
+        if moves_line(gm, g, l, over) {
+            gm.sheet = true;
+            changed = true;
+        }
+        if gm.refocus {
+            g.focus = LINE_ID;
+            gm.refocus = false;
+        }
+    }
     var undone = false;
     match pick {
         // Partway through a capture, take back only takes the capture back to its start.
@@ -589,7 +643,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
             changed = true;
         }
         if ask == panel::BACK { ev.go = HOME; }
-    } else {
+    } else if !cover {
         let held, moved = board::showcase(gm.cam, g, input, l.three, l.pitch, now);
         if moved { changed = true; }
         let mine = !held && !g.took && b.pos.side != gm.computer;
@@ -635,6 +689,17 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
         gm.shown = shown;
         changed = true;
     }
+    // The sheet over everything, and a mark's tip over that.
+    if cover {
+        gui::listen(g, true);
+        dim_under(over, l.sheet.y);
+    }
+    if open && moves_sheet(gm, g, l, over) {
+        gm.sheet = false;
+        gm.refocus = g.focus == SHEET_HEAD;
+        changed = true;
+    }
+    if tip(gm, g, l, over) { changed = true; }
     return ev, changed;
 }
 
@@ -706,10 +771,13 @@ fn still(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     let draw = drawn(gm);
     panel::game(g, l, gm.clock, side, won >= 0, draw != rules::NO_DRAW, note, gm.asking != 0, pulse(gm, now), over,
                 help(gm));
+    if gm.no_count { panel::no_count(g, l); }
     // Counted here too: a transition declares a game before its first frame of its own.
     count_taken(gm);
     panel::taken(g, l, gm.taken, over);
+    gm.marks_at.clear();
     moves_panel(gm, g, l);
+    moves_line(gm, g, l, over);
     panel::camera(g, l, gm.cam, now);
     if gm.won_at >= 0.0 { celebrate(gm, g, l, won, now, over); }
     if gm.drawn_at >= 0.0 { settle(gm, g, l, draw, now, over); }

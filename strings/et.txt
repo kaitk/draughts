@@ -163,6 +163,10 @@ mark.mistake = viga
 mark.mistake_tip = Viga: see käik vähendas võiduvõimalust
 mark.blunder = suur viga
 mark.blunder_tip = Suur viga: see käik kaotas suure osa võiduvõimalusest
+replay.title = Kordus
+replay.no_count = Ei lähe arvesse
+replay.start = Algseis, enne esimest käiku
+replay.play = Mängi siit edasi
 
 quit.ask = Kas soovid väljuda?
 quit.cancel = Tühista

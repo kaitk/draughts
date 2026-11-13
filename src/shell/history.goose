@@ -184,6 +184,25 @@ fn games_of(text: const u8[:], out: Game[..MAX_GAMES]&) {
     }
 }
 
+// The line of game `index` as games_of numbers a file's games (oldest first, the last
+// MAX_GAMES), and whether there is one: for a replay, which needs its moves.
+fn line_of(text: const u8[:], index: i64) -> const u8[:], bool {
+    var n = 0;
+    for l in split(text, '\n') {
+        let g, ok = parse_game(l);
+        if ok { n += 1; }
+    }
+    let want = max(n - MAX_GAMES, 0) + index;
+    var k = 0;
+    for l in split(text, '\n') {
+        let g, ok = parse_game(l);
+        guard ok else { continue; }
+        if k == want { return l, true; }
+        k += 1;
+    }
+    return text[..0], false;
+}
+
 // A player's numbers over their games: against each level won, drawn, lost, and against
 // a friend the games played; by draughts.
 struct Totals {

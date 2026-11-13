@@ -532,6 +532,111 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   as the puzzles' draughts switch does (2026-11-13, task 078): alone they were faint
   glass on a bright photograph (a phone in landscape over winter's snow). The same fix
   as settings' tabs, each on glass (2026-11-09).
+- A past game replays on a screen of its own, opened by a touch anywhere on its results
+  row, its `??` count too (2026-11-13, task 078's C, from the prototype's `view=replay`).
+  The row's count opening a tip instead was rejected: a row with two targets is a miss
+  waiting to happen for a child, and a key at the column's head is to say what `??`
+  counts (task 078's B).
+  - Landscape puts the steps in a column of four taps at the board's left, the column at
+    its right for back, the title, and the list (chosen from the prototype); under the
+    board would cost it a tap's height on a phone. Portrait puts them in a row under the
+    board. The board gives way only where the column would be under 300 dp (a 9:16
+    phone's landscape: 329 dp) or the glass under 220 dp in portrait (a 9:16 phone at 480
+    dp: 284; 300 dp, the prototype's, left it 204).
+  - It opens at the game's end, its list at its foot as the moves panel's is: the row
+    stands for the game as it ended. Opening at the start was rejected as a step away
+    from what was tapped.
+  - The list's moves are 34 dp taps, under the 88 dp rule: a miss only shows the
+    neighbouring move, which the steps put right, and 88 dp rows would show four moves
+    on a phone. They are drawn as the moves panel's rows, no tiles, so `test/shell/sizes`
+    counts the steps and back as the screen's taps.
+  - The keys: Left and Right step the moves from anywhere, as a chess site's replay does,
+    rather than moving the focus by the controls' rects, which left them dead ends from
+    the column of steps (`gui::claim_sideways`). The focus on a move shows it, so Up and
+    Down in the list step a whole move.
+  - It counts for nothing: it has a board and moves of its own, never the game's, so no
+    flag is needed to keep it out of the history, the ratings, or the game to continue.
+    A step on plays the move on the board as the game does; a jump shows its position at
+    once, as playing every move between would take seconds.
+  - The board is the flat one even with the 3D board chosen, as the prototype has it:
+    the replay is a page for reading moves, and a 3D board would leave less room for the
+    list. The positions are played out with the rules once, as the replay opens, from
+    the moves the history keeps; the file keeps no positions, as the moves give them.
+  - The game's line goes under the title where it fits beside nothing else, else at the
+    top of the glass; the prototype's card on the tablet (result, opponent, date, side,
+    "Rating then: 1031 → 1023") was left out for now, as the results row says the
+    rating's change already.
+- A replay plays on from any move (2026-11-13, task 078, the user's correction): "my
+  whole point was to let the game be replayed at any point and THAT doesn't count and
+  isn't stored or used for AI toughness changes or rating". This replaces the replay's
+  own "Doesn't count" pill by its title (2026-11-13, task 078's C): the replay only
+  shows, so it needs no label; the game played from it is what doesn't count, and says so.
+  - Play from here stands in the replay's head, at its right end, as back stands at its
+    left: one row the screen already has, which costs the board nothing and the list a
+    line at most (the game's line then heads the glass). On a phone the title, then back's
+    width, give way before the button leaves the head; on the tablet's narrow column it
+    is a row over the glass, which has rows to spare (26 moves in view to 20). A row on
+    every screen, over or under the list, was rejected: tried first, it took a 9:16
+    phone's landscape at 480 dp from 6 moves in view to 2 and its portrait board from 284
+    to 184 dp. By the steps there is no room on a phone, whose column of steps already
+    spans the board.
+  - The game from it keeps everything of the past game a player would expect: draughts,
+    opponent, level and skill, side, the side to move. No clock, since the history keeps
+    no clock setting; recording one was more than this needed.
+  - Start over goes back to the replay's position, not the draughts' start: trying a line
+    again is the point of playing from a move, and leaving is one tap on back.
+  - Back goes to the replay, not home: the game was opened from there, and the replay
+    keeps the move it showed, so another line can be tried from the next move.
+  - The game in progress is set aside rather than replaced: the game screen, the worker,
+    and the app's 3D board all read `shell.game`, so the game from the replay takes that
+    place and the other waits in `shell.parked` (the saved image, 15 KB, with its hints
+    and marks, 53 KB in all), which `shell::save` writes in its place. A second
+    `game::Game` (132 KB) or a second game screen was rejected for its size and for every
+    reader it would have to learn about.
+  - "Doesn't count" sits on the way out's top edge, half in the margin over it: the way
+    out is the same rect in every layout, so the label needs no room of its own and
+    moves no panel. White ink on the light glow colors (winter's) read faintly; dark ink,
+    as the replay's mark discs have, reads on all of them. In the play panel's whose-turn
+    line it would have crowded a panel tuned to what it holds; a row of its own would
+    have cost a phone's moves' line or the portrait board.
+  - Its moves are numbered on from the replay's (`Game.ply0`): "16." from move 30 reads as
+    the same game. Doing so made the moves panel number a game by where it began
+    (`game::first_ply`) rather than by its first note's side, which also numbers a game
+    whose undo history dropped an odd number of moves right.
+- A phone's moves, where the panel has no room (2026-11-13, task 078's A, the user's
+  choice from `prototypes/history.html`'s take d), replacing 2026-11-11's no panel in
+  portrait or on a phone in landscape:
+  - Landscape (`fit=row`, as directed 2026-11-12): back and settings side by side over
+    start over free 132 dp of the left column, so what each side has taken stays under
+    it and a line a tap tall or more fits at the foot; the board keeps its size. The
+    other fit, `slim` (the column as built, the line as tall as the 47 dp left under it,
+    the catch as counts in it), was under a tap on the Pixel 7a and moved the catch to
+    the 3D board's top. Where the catch has no room (the iPhone 13 mini at its points,
+    354 dp tall) the tiles are a tap high and the catch counts at the line's head, as
+    prototyped; at its density floor (470 dp) it isn't needed.
+  - The line opens a sheet over the screen's left part, to the board's edge, rather than
+    a screen of its own: the board stays whole and playable beside the list.
+  - Portrait (`port=bar`): only the last move, in the bar's row between the catches,
+    costing the board nothing. The strip under the play row (`port=strip`) showed more
+    moves but took the iPhone's board from 256 to 192 dp. It applies to a tablet's
+    portrait too (task 074's open question 3): no panel had room there either, and it
+    costs nothing. The sheet rises from the foot to the board's middle under a dim layer,
+    which takes the taps above it: the board half hidden shouldn't be played.
+  - The catches beside the portrait line are pieces where both fit their side at 70%,
+    the least a row takes them, else counts: at full size, as prototyped, a tablet's
+    late game turned to counts though its pieces fit.
+  - Pieces over the UI draw over everything, the dim layer too: those under the sheet are
+    left out, those above it kept whole. Faded with the layer, a catch's pieces showed
+    each other through.
+- Marks explained (2026-11-13, task 078's B, the user's choice: both). A legend at the
+  foot of a list one opens (the phone's sheet, the replay): nothing to find or dismiss,
+  for a child who doesn't know a mark can be touched, at the cost of one or two rows. A
+  tip on the always-shown panel (a tablet's, a desktop's): there a legend would take
+  rows from a panel that is always on screen. The tip's touch is the whole move, under
+  the 88 dp rule as the rows take no other tap, and it names the move it explains, so a
+  miss is plain; the next tap only closes it, so a tap meant to close it never plays or
+  presses something under it. No new strings: the tip's name is its `mark.*_tip` text up
+  to the colon. The tip isn't in the sheets or the replay for now (their legend says it).
 
 ### Board and pieces
 

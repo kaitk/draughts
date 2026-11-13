@@ -57,6 +57,8 @@ let KEYS = [
     "mark.inaccuracy", "mark.inaccuracy_tip",
     "mark.mistake", "mark.mistake_tip",
     "mark.blunder", "mark.blunder_tip",
+    "replay.title", "replay.no_count", "replay.start",
+    "replay.play",
     "board.stays", "board.stays_note", "setup.board", "level.friend",
 ];
 let LANGUAGE_NAME = 0;
@@ -200,11 +202,15 @@ let MARK_MISTAKE = 137;
 let MARK_MISTAKE_TIP = 138;
 let MARK_BLUNDER = 139;
 let MARK_BLUNDER_TIP = 140;
-let BOARD_STAYS = 141;      // or stays, the same for both,
-let BOARD_STAYS_NOTE = 142; // its note,
-let SETUP_BOARD = 143;      // and the row's name
-let LEVEL_FRIEND = 144;     // home's new game's note for a friend, as LEVEL_EASY.. for the computer
-let COUNT = 145;
+let REPLAY_TITLE = 141;     // a past game's replay (task 078): its title,
+let REPLAY_NO_COUNT = 142;  // the label on a game played from a replay's move, which counts for nothing,
+let REPLAY_START = 143;     // the line over its list at the start, before the first move,
+let REPLAY_PLAY = 144;      // and its button that plays on from the move shown (2026-11-13)
+let BOARD_STAYS = 145;      // or stays, the same for both,
+let BOARD_STAYS_NOTE = 146; // its note,
+let SETUP_BOARD = 147;      // and the row's name
+let LEVEL_FRIEND = 148;     // home's new game's note for a friend, as LEVEL_EASY.. for the computer
+let COUNT = 149;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

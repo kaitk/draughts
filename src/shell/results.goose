@@ -5,7 +5,8 @@
 // rating, joined on one glass as the puzzles' switch is. In landscape the rating stands in
 // a panel at the left and the games at the right; in portrait the panel is above the
 // games. The moves panel's setting is settings' alone (2026-11-13). Reached from who's playing (who.goose's results tile). Everything is read off the
-// history the shell read when the screen opened (record.goose); nothing allocates.
+// history the shell read when the screen opened (record.goose); nothing allocates. A
+// game's row opens its replay (replay.goose).
 namespace results;
 import std;
 import vec;
@@ -28,6 +29,7 @@ let ICON = 40.0;            // a game's result
 let BACK_ID = gui::RESULTS_IDS;
 let DRAUGHTS_ID = gui::RESULTS_IDS + 1;   // the three draughts' tiles
 let LIST = gui::RESULTS_IDS + 10;         // the games' scrolling list
+let ROW_ID = gui::RESULTS_IDS + 11;       // a game's row, by its place in the list (MAX_GAMES of them)
 
 type Text = u8[..64];
 
@@ -58,7 +60,8 @@ fn push(t: Text&, s: const u8[:]) { for c in s { if t.len < 64 { t.push(c); } } 
 fn variant_of(i: i64) -> i64 { settings::DRAUGHTS[i] }
 
 // The screen for the player's settings s and games gs, showing draughts `variant` (one of
-// settings::DRAUGHTS), which a tile changes. Returns what it asks for.
+// settings::DRAUGHTS), which a tile changes. Returns what it asks for: a game's index in
+// gs, 0 or more, for its row tapped (its replay, task 078).
 fn frame(g: gui::Gui&, area: float4, s: settings::Settings&, gs: history::Game[..history::MAX_GAMES]&,
          variant: i64&) -> i64 {
     let u = g.scale;
@@ -129,8 +132,8 @@ fn frame(g: gui::Gui&, area: float4, s: settings::Settings&, gs: history::Game[.
     if wide { gui::cut_left(c, GAP * u); } else { gui::cut_top(c, GAP * u); }
     if wide { side.w = min(side.w, panel_h); }
     rating_panel(g, side, s, gs, variant, levels);
-    list(g, c, gs, variant);
-    return ask;
+    let opened = list(g, c, gs, variant);
+    return if opened >= 0 { opened } else { ask };
 }
 
 fn panel_height(g: gui::Gui&, levels: bool) -> f32 {
@@ -182,8 +185,9 @@ fn rating_panel(g: gui::Gui&, r: float4, s: settings::Settings&, gs: history::Ga
 }
 
 // The games of the draughts shown, newest first, in r: only the rows in view are
-// declared.
-fn list(g: gui::Gui&, r: float4, gs: history::Game[..history::MAX_GAMES]&, variant: i64) {
+// declared. Each row is a tap, the whole of it, its blunders' count too (2026-11-13):
+// returns the index in gs of the game whose row was tapped, or -1.
+fn list(g: gui::Gui&, r: float4, gs: history::Game[..history::MAX_GAMES]&, variant: i64) -> i64 {
     let u = g.scale;
     gui::panel(g, r);
     let view = gui::inset(r, 12.0 * u);
@@ -191,30 +195,34 @@ fn list(g: gui::Gui&, r: float4, gs: history::Game[..history::MAX_GAMES]&, varia
     for &x in gs { if x.variant == variant { n += 1; } }
     if n == 0 {
         gui::text(g, gui::BODY, view, strings::get(strings::RESULTS_NONE), 0.66, 0.0, gui::CENTER);
-        return;
+        return -1;
     }
     let step = (ROW + ROW_GAP) * u;
     let off = gui::scroll_begin(g, LIST, view, n * step - ROW_GAP * u);
     let first = max((off / step) as i64, 0);
     let last = min(((off + view.w) / step) as i64 + 1, n);
+    var opened = -1;
     var k = 0;
     var i = gs.len - 1;
     while i >= 0 && k < last {
         let x .= gs[i];
         i -= 1;
         guard x.variant == variant else { continue; }
-        if k >= first { row(g, float4 { view.x, view.y + k * step - off, view.z, ROW * u }, x); }
+        if k >= first && row(g, ROW_ID + k, float4 { view.x, view.y + k * step - off, view.z, ROW * u }, x) { opened = i + 1; }
         k += 1;
     }
     gui::scroll_end(g);
+    return opened;
 }
 
 // One game: its result as a sign (a crown won, = drawn, an X lost; against a friend the
 // winner's piece colour is not shown, only whether the game was drawn), the opponent
-// and the date, the rating's change, and the player's blunders.
-fn row(g: gui::Gui&, r: float4, x: history::Game&) {
+// and the date, the rating's change, and the player's blunders. A tap, lit under the
+// mouse and by a press: true when tapped.
+fn row(g: gui::Gui&, id: i64, r: float4, x: history::Game&) -> bool {
     let u = g.scale;
-    gui::fill(g, r, float4 { 1.0, 1.0, 1.0, 0.06 }, 18.0 * u);
+    let clicked, p = gui::hold(g, id, r);
+    gui::fill(g, r, float4 { 1.0, 1.0, 1.0, 0.06 + 0.06 * gui::hover(g, id) + 0.08 * p }, 18.0 * u);
     var c = gui::inset(r, 16.0 * u);
     let res = if x.level == history::FRIEND { if x.winner == history::DRAW { 0 } else { 1 } } else { history::result(x) };
     let sign = gui::cut_left(c, ICON * u);
@@ -265,4 +273,5 @@ fn row(g: gui::Gui&, r: float4, x: history::Game&) {
     t.push('-');
     push_two(t, d);
     gui::text(g, gui::SMALL, gui::cut_top(lines, small), t[..], 0.66, 0.0, gui::LEFT);
+    return clicked;
 }

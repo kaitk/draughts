@@ -212,15 +212,58 @@ fn mark_text(mark: u8) -> const u8[:], float4 {
     return "", gui::GOLD;
 }
 
+// Whether a mark shows after its move: the best's star, ?!, ?, and ??; a good or only
+// move, or one not judged yet, shows none.
+fn shows_mark(mark: u8) -> bool {
+    return mark == ai::BEST || mark == ai::INACCURACY || mark == ai::MISTAKE || mark == ai::BLUNDER;
+}
+
+// A move's mark in row r from x, in the body face's line, at opacity a: the best's star
+// 16 dp across, the others as text. Returns how wide it is, 0 for none.
+fn mark_at(g: gui::Gui&, x: f32, r: float4, mark: u8, a: f32 = 1.0) -> f32 {
+    let u = g.scale;
+    if mark == ai::BEST {
+        let k = 16.0 * u;
+        gui::glyph_icon(g, float4 { x, r.y + 0.5 * (r.w - k), k, k }, gui::STAR, gui::PLAIN, 0.0, 0.9 * a);
+        return k;
+    }
+    let t, c = mark_text(mark);
+    guard t.len > 0 else { return 0.0; }
+    gui::colored(g, gui::BODY, float4 { x, r.y, r.z, r.w }, t, float4 { c.x, c.y, c.z, c.w * a }, gui::LEFT);
+    return gui::text_width(g, gui::BODY, t);
+}
+
+// Note 0's ply in the whole game, white's first move 0: the moves played before the
+// game's start (one played on from a replay's move, Game.ply0), those the history dropped,
+// and one for a game set up with black to move, which leaves white's half of its first
+// row empty.
+fn first_ply(gm: Game&) -> i64 {
+    let black: i64 = if gm.ply0 == 0 && gm.b.start.side == rules::BLACK { 1 } else { 0 };
+    return gm.ply0 + gm.notes_from + black;
+}
+
+// The number of note i's row, and whether the move is black's half of it.
+fn row_of(gm: Game&, i: i64) -> i64, bool {
+    let a = first_ply(gm) + i;
+    return a / 2 + 1, a % 2 == 1;
+}
+
 // The panel in l.moves, if the layout has room for it and the setting shows it.
 fn moves_panel(gm: Game&, g: gui::Gui&, l: panel::Layout) {
     guard gm.moves_shown != 0 && l.moves.z > 0.0 && l.moves.w > 0.0 else { return; }
+    gui::panel(g, l.moves);
+    moves_list(gm, g, l.moves, MOVES_LIST, true);
+}
+
+// The moves as rows in r, a list scrolled within it (`id`, gui::scroll_begin): every
+// move, at its foot (the latest) when a move is added or the list is shown again; the
+// rows past either edge fade out there. With `record`, the marked moves' rects go to
+// gm.marks_at, for their tips (sheet.goose). Before the first move it says so, dim, where
+// the first row will be, so the glass isn't blank.
+fn moves_list(gm: Game&, g: gui::Gui&, r: float4, id: i64, record: bool) {
     let u = g.scale;
-    let r = l.moves;
-    gui::panel(g, r);
     let ns .= gm.notes;
     guard ns.len > 0 else {
-        // No move yet: a dim line where the first row will be, so the glass isn't blank.
         let inner = gui::inset(r, MOVES_PAD * u);
         gui::text(g, gui::BODY, float4 { inner.x, inner.y, inner.z, MOVES_ROW * u }, strings::get(strings::MOVES_NONE),
                   0.55, 0.0, gui::LEFT);
@@ -228,21 +271,19 @@ fn moves_panel(gm: Game&, g: gui::Gui&, l: panel::Layout) {
     }
     let v .= rules::VARIANTS[gm.b.variant];
     let marks = gm.moves_shown == 2;
-    // Black first (a game set up from a position) leaves white's half of row one empty.
-    let off: i64 = if ns[0].before.side == rules::BLACK { 1 } else { 0 };
-    let first_number = (gm.notes_from + off) / 2 + 1;
+    // Black first leaves white's half of row one empty.
+    let off = first_ply(gm) % 2;
+    let first_number = first_ply(gm) / 2 + 1;
     let rows = (ns.len + off + 1) / 2;
     let inner = gui::inset(r, MOVES_PAD * u);
     let half = 0.5 * (inner.z - MOVES_NUMBER * u);
-    // Every move, a list scrolled within the glass, at its foot (the latest) when a move
-    // is added or the list is shown again; the rows past either edge fade out there.
     let view = float4 { r.x, r.y + 4.0 * u, r.z, r.w - 8.0 * u };
     let content = rows * MOVES_ROW * u + 2.0 * (MOVES_PAD - 4.0) * u;
-    if g.scroll.id != MOVES_LIST || gm.moves_seen != ns.len {
-        gui::scroll_set(g, MOVES_LIST, content);
+    if g.scroll.id != id || gm.moves_seen != ns.len {
+        gui::scroll_set(g, id, content);
         gm.moves_seen = ns.len;
     }
-    let scrolled = gui::scroll_begin(g, MOVES_LIST, view, content);
+    let scrolled = gui::scroll_begin(g, id, view, content);
     let listed = g.quads.len;
     var line: Line = [];
     for row in 0..rows {
@@ -264,14 +305,16 @@ fn moves_panel(gm: Game&, g: gui::Gui&, l: panel::Layout) {
             }
             gui::text(g, gui::BODY, cell, line[..], 1.0, 0.0, gui::LEFT);
             guard marks else { continue; }
-            let at = cell.x + w + MARK_GAP * u;
-            if n.mark == ai::BEST {
-                let k = 16.0 * u;
-                gui::glyph_icon(g, float4 { at, cell.y + 0.5 * (cell.w - k), k, k }, gui::STAR, gui::PLAIN, 0.0, 0.9);
-                continue;
+            let mw = mark_at(g, cell.x + w + MARK_GAP * u, cell, n.mark);
+            // The whole move is its mark's touch, its words and its mark, as far as the
+            // view shows it.
+            let mid = y + 0.5 * MOVES_ROW * u;
+            if record && mw > 0.0 && mid > view.y && mid < view.y + view.w && gm.marks_at.len < MAX_MARKS_AT {
+                let top = max(y, view.y);
+                let bottom = min(y + MOVES_ROW * u, view.y + view.w);
+                gm.marks_at.push(MarkAt { rect: float4 { cell.x - 6.0 * u, top, w + (MARK_GAP + 12.0) * u + mw, bottom - top },
+                                          ply: i });
             }
-            let t, c = mark_text(n.mark);
-            if t.len > 0 { gui::colored(g, gui::BODY, float4 { at, cell.y, cell.z, cell.w }, t, c, gui::LEFT); }
         }
     }
     gui::fade_edges(g, listed, view, scrolled, content - scrolled - view.w, MOVES_FADE * u);

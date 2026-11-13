@@ -45,7 +45,8 @@ fn keep_game(sh: Shell&, winner: i64) {
 // game is no longer the one that ended.
 fn keep_marks(sh: Shell&) {
     let k .= sh.kept;
-    guard k.open else { return; }
+    // A game from the replay is on the game screen: the kept game is set aside till it ends.
+    guard k.open && !sh.trial else { return; }
     let gm .= sh.game;
     guard gm.kept && gm.notes.len == k.plies else {
         k.open = false;
@@ -74,12 +75,20 @@ fn write_kept(sh: Shell&, replace: bool) {
     write_file_atomic(path, history::with_game(text, line, replace));
 }
 
+// The file the results screen and a replay read the games from: the playing player's
+// history, or the app's --history for screenshots; empty with no files.
+fn history_of(sh: Shell&) -> u8[>..] {
+    guard sh.history_file.len == 0 else { return str(sh.history_file[..]); }
+    let ps .= sh.players;
+    guard players::files(ps) && ps.list.len > 0 else { return str(""); }
+    return players::history_path(ps, ps.list[ps.playing].id);
+}
+
 // The playing player's games, oldest first, into out: for the results screen, on opening it.
 fn read_history(sh: Shell&, out: history::Game[..history::MAX_GAMES]&) {
     out.clear();
-    let ps .= sh.players;
-    guard players::files(ps) && ps.list.len > 0 else { return; }
-    let path = players::history_path(ps, ps.list[ps.playing].id);
+    let path = history_of(sh);
+    guard path.len > 0 else { return; }
     var text: u8[>..] = [];
     guard file_exists(path) && read_file(path, text) else { return; }
     history::games_of(text, out);

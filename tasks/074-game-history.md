@@ -1,8 +1,8 @@
 # 074: Games' history, marked moves, and a rating
 
 Status: in progress (built 2026-11-11 and 12 and merged into main 2026-11-12, checked
-on the Mac's desktop app by the user; left: a phone in landscape (take d), the replay,
-the tablet's and the A33's checks)
+on the Mac's desktop app by the user; take d and the replay built in task 078; left: the
+tablet's and the A33's checks)
 
 A family asked for a history of the games played, minimal at first, and moves rated as
 GoDraughts rates them: was a move a blunder or not (2026-11-11). Three parts:
@@ -127,11 +127,12 @@ the real ones.
 1. ~~The panel's place~~: under the play panel, scrolling through the whole game; on a
    desktop the 3D frame wider while it shows and the panel as long as costs the board
    nothing (the user, 2026-11-12).
-2. A phone in landscape: take d, `fit=row` with the moves under the captured pieces and
-   the earlier rows faded (the user's direction, 2026-11-12), to build.
-3. Portrait: nothing on a phone (the user, 2026-11-12); on a tablet a one-line strip of
-   the last moves under the play row (the prototype's proposal, the board 12 dp
-   smaller), or nothing (built)?
+2. ~~A phone in landscape~~: take d, `fit=row` with the moves under the captured pieces
+   and the earlier rows faded (the user's direction, 2026-11-12), built in task 078.
+3. ~~Portrait~~: the last move in the bar's row between what each side has taken, its tap
+   opening the moves as a sheet from the foot, on a phone and a tablet alike, costing
+   the board nothing (the user's choice for a phone, task 078, 2026-11-13; built for a
+   tablet's portrait too, which had no panel either).
 4. ~~The results screen from who's playing only, or also a row on home?~~ A row on home,
    the menu scrolling where it doesn't fit (the user, 2026-11-12).
 5. The setting's default: marks (built), or off for a new player, so a young child sees
@@ -141,8 +142,7 @@ the real ones.
 7. Ratings per draughts (built) or one for all; show the computer's rating beside its
    level in the setup ("Medium · 1644")?
 8. Dates are UTC; the local date needs the system's time zone (a small C call).
-9. A past game's replay (the prototype's `view=replay`): the moves are kept in the file,
-   the screen isn't built.
+9. ~~A past game's replay~~: built in task 078 (2026-11-13), from a results row.
 
 ## Native work
 
@@ -156,11 +156,12 @@ the real ones.
 - [x] The moves panel on the game screen (landscape, flat and 3D), scrolling
 - [x] Home's results row, the menu scrolling where it doesn't fit
 - [x] A desktop's narrow play panel fitted to its tiles (Estonian's undo move spilled)
-- [ ] Take d on a phone in landscape
+- [x] Take d on a phone in landscape, and the last move in portrait's bar (task 078,
+      2026-11-13)
 - [x] The results screen
 - [ ] A summary at the panel's foot (each side's accuracy and marks counted), as the
       prototype has
-- [ ] The replay of a past game
+- [x] The replay of a past game (task 078's C, 2026-11-13)
 - [ ] The results screen in `test/shell/sizes`' sizes, with insets
 
 ## Acceptance criteria

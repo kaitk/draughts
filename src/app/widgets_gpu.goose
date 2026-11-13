@@ -308,21 +308,33 @@ let FRAG = """
             d = min(d, min(seg(p, vec2(20.7, 18.2), vec2(20.5, 14.5)), seg(p, vec2(20.5, 14.5), vec2(16.9, 15.3))));
             return min(d, min(seg(p, vec2(3.3, 18.2), vec2(3.5, 14.5)), seg(p, vec2(3.5, 14.5), vec2(7.1, 15.3))));
         }
+        if (k == 43 || k == 44) {   // the moves' chevrons up and down (task 078): a chevron right turned
+            vec2 q = k == 43 ? vec2(24.0 - p.y, p.x) : vec2(p.y, p.x);
+            return min(seg(q, vec2(9.0, 6.0), vec2(15.0, 12.0)), seg(q, vec2(15.0, 12.0), vec2(9.0, 18.0)));
+        }
         if (k == 37 || k == 38) {   // the lookout: Lucide's eye, its lids two arcs, its pupil; off, struck through
             float d = min(arc(p, vec2(12.0, 15.64), 10.64, -2.7925, 2.4435), arc(p, vec2(12.0, 8.36), 10.64, 0.3491, 2.4435));
             d = min(d, abs(length(p - 12.0) - 3.0));
             return k == 38 ? min(d, seg(p, vec2(3.5, 3.5), vec2(20.5, 20.5))) : d;
         }
-        if (k == 39) {          // a new game: a plus in a ring
+        if (k >= 39 && k <= 42) {   // a replay's steps: Lucide's chevrons, first and last at a bar
+            float s = k == 39 || k == 40 ? 1.0 : -1.0;
+            float x = k == 39 ? 2.0 : k == 42 ? -2.0 : 0.0;
+            vec2 a = vec2(12.0 + 3.0 * s + x, 6.0);
+            vec2 b = vec2(12.0 - 3.0 * s + x, 12.0);
+            float d = min(seg(p, a, b), seg(p, b, vec2(a.x, 18.0)));
+            return k == 39 || k == 42 ? min(d, seg(p, vec2(12.0 - 5.0 * s, 6.0), vec2(12.0 - 5.0 * s, 18.0))) : d;
+        }
+        if (k == 45) {          // a new game: a plus in a ring
             float d = min(abs(length(p - 12.0) - 8.5), seg(p, vec2(12.0, 8.0), vec2(12.0, 16.0)));
             return min(d, seg(p, vec2(8.0, 12.0), vec2(16.0, 12.0)));
         }
-        if (k == 40) {          // the board turns: two arcs chasing round, each with its arrowhead
+        if (k == 46) {          // the board turns: two arcs chasing round, each with its arrowhead
             float d = min(arc(p, vec2(12.0), 8.0, 0.0, 2.3561945), arc(p, vec2(12.0), 8.0, 3.1415927, 2.3561945));
             d = min(d, min(seg(p, vec2(18.0, 2.5), vec2(18.0, 6.7)), seg(p, vec2(18.0, 6.7), vec2(13.8, 6.7))));
             return min(d, min(seg(p, vec2(6.0, 21.5), vec2(6.0, 17.3)), seg(p, vec2(6.0, 17.3), vec2(10.2, 17.3))));
         }
-        if (k == 41) {          // the board stays: a board with an arrow up it
+        if (k == 47) {          // the board stays: a board with an arrow up it
             float d = min(abs(box(p, vec2(12.0), vec2(8.0), 2.5)), seg(p, vec2(12.0, 16.5), vec2(12.0, 7.5)));
             return min(d, min(seg(p, vec2(8.5, 11.0), vec2(12.0, 7.5)), seg(p, vec2(12.0, 7.5), vec2(15.5, 11.0))));
         }
