@@ -29,7 +29,10 @@
 // first (home::ask_quit), as back on home's menu does there. Android's back, and Escape or
 // a gamepad's B on a desktop, go back a screen as its own back control does (back).
 // A game against the computer plays at the skill kept for its level, which each
-// finished game moves (ai::adapt). Tests run it headless. What is kept of the game is in
+// finished game moves (ai::adapt). A replay's play from here plays a past game on from
+// the move shown on the game screen, the game in progress set aside meanwhile
+// (play_from_here): that game counts for nothing, and its way out goes back to the
+// replay. Tests run it headless. What is kept of the game is in
 // saved.goose, switching and changing players in roster.goose.
 namespace shell;
 import std;
@@ -200,6 +203,11 @@ struct Shell {
     replay:     replay::Replay,
     replayed:   bool = false,
     results_at: f32  = 0.0,
+    // The game on the game screen is one played from the replay (play_from_here), the
+    // game in progress set aside in `parked` until it ends: it isn't written to the
+    // history, moves no rating or skill, and isn't kept; the parked game is (save).
+    trial:  bool = false,
+    parked: Parked,
     // A file the games are read from in place of the playing player's history, for
     // screenshots (the app's --history), or empty.
     history_file: u8[..512] = [],
@@ -277,7 +285,7 @@ fn new(variant: u8) -> Shell {
     let g = game::new(variant);
     let l = panel::layout(1.0, 1.0, rules::VARIANTS[variant].size).board;
     var sh = Shell { game: g, preview: board::new(variant), next: board::new(variant), out: Frame { layout: l, .. },
-                     puzzle: puzzle::new(), went: l, came: l, replay: replay::new(), .. };
+                     puzzle: puzzle::new(), went: l, came: l, replay: replay::new(), parked: default<Parked>(), .. };
     // One player, the fox, until the app reads the players (players::load).
     sh.players.list.push(players::Player { id: 1, .. });
     apply_prefs(sh);
@@ -361,6 +369,11 @@ fn play_puzzle(sh: Shell&, index: i64, now: f64 = 0.0) {
 fn back(sh: Shell&, now: f64) -> bool {
     // The game's moves' sheet, or a mark's tip, closes first (task 078).
     if sh.screen == GAME && game::close_sheet(sh.game) { return true; }
+    // A game from the replay goes back to it.
+    if sh.screen == GAME && sh.trial {
+        leave_trial(sh, now);
+        return true;
+    }
     if sh.screen == HOME && sh.who.state != who::CLOSED {
         who::back(sh.who);
     } else if sh.screen == HOME && sh.quitting {
@@ -646,6 +659,20 @@ fn game_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, frozen: bool) -
     // the board facing the side to move shows at once.
     panel::aim(l, sh.game.cam, now);
     if l.three { sh.came_view = l.view; }
+    // A game from the replay counts for nothing: its end and start over change nothing
+    // kept, and its way out goes back to the replay.
+    if sh.trial {
+        if ev.go == game::HOME {
+            leave_trial(sh, now);
+            return true;
+        }
+        if ev.go == game::SETTINGS {
+            go_to(sh, SETTINGS, now);
+            sh.back = GAME;
+            return true;
+        }
+        return changed;
+    }
     // A game against the computer ended: won or lost, the child meets a stronger or weaker
     // one next; drawn, the same, a game played on its level all the same.
     let gm .= sh.game;
@@ -729,7 +756,37 @@ fn replay_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool) 
     sh.out.over.clear();
     let ask = replay::frame(r, g, area, sh.out.layout, sh.out.over, now, fresh);
     if ask == replay::BACK { go_to(sh, RESULTS, now); }
+    if ask == replay::PLAY { play_from_here(sh, now); }
     return moved || ask != replay::NOTHING;
+}
+
+// Play from here on the replay: a game from the position at the move shown, of the same
+// draughts, against the same opponent (the computer at the game's level and skill, or a
+// friend), the player on the same side and the side to move as there, with no clock (the
+// history keeps none), and its moves numbered on from the replay's. The game in progress
+// is set aside (park) and comes back as it was when this one is left (leave_trial).
+fn play_from_here(sh: Shell&, now: f64) {
+    let r .= sh.replay;
+    guard replay::playable(r) && r.pos.len > r.ply else { return; }
+    if !sh.trial { park(sh); }
+    sh.trial = true;
+    let x .= r.game;
+    let gm .= sh.game;
+    let computer = if x.level == history::FRIEND { -1 } else { 1 - x.side };
+    let level = if x.level == history::FRIEND { sh.prefs.level } else { clamp(x.level, game::EASY, game::HARD) };
+    game::start(gm, x.variant as u8, clock::NONE, computer, level, x.skill, sh.prefs.games);
+    game::start_from(gm, r.pos[r.ply], r.ply + replay::offset(r));
+    apply_prefs(sh);
+    go_to(sh, GAME, now);
+}
+
+// A game from the replay left (its back, or the system's): the game in progress back as
+// it was, and the replay where it was left.
+fn leave_trial(sh: Shell&, now: f64) {
+    guard sh.trial else { return; }
+    unpark(sh);
+    sh.trial = false;
+    go_to(sh, REPLAY, now);
 }
 
 // Where a puzzle puts the board and its panels, turned when black is to move, so the side

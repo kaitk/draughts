@@ -233,12 +233,19 @@ fn mark_at(g: gui::Gui&, x: f32, r: float4, mark: u8, a: f32 = 1.0) -> f32 {
     return gui::text_width(g, gui::BODY, t);
 }
 
-// The number of note i's row, and whether the move is black's half of it: a game set up
-// from a position with black to move leaves white's half of row one empty.
+// Note 0's ply in the whole game, white's first move 0: the moves played before the
+// game's start (one played on from a replay's move, Game.ply0), those the history dropped,
+// and one for a game set up with black to move, which leaves white's half of its first
+// row empty.
+fn first_ply(gm: Game&) -> i64 {
+    let black: i64 = if gm.ply0 == 0 && gm.b.start.side == rules::BLACK { 1 } else { 0 };
+    return gm.ply0 + gm.notes_from + black;
+}
+
+// The number of note i's row, and whether the move is black's half of it.
 fn row_of(gm: Game&, i: i64) -> i64, bool {
-    let ns .= gm.notes;
-    let off: i64 = if ns.len > 0 && ns[0].before.side == rules::BLACK { 1 } else { 0 };
-    return (gm.notes_from + off) / 2 + 1 + (i + off) / 2, (i + off) % 2 == 1;
+    let a = first_ply(gm) + i;
+    return a / 2 + 1, a % 2 == 1;
 }
 
 // The panel in l.moves, if the layout has room for it and the setting shows it.
@@ -264,9 +271,9 @@ fn moves_list(gm: Game&, g: gui::Gui&, r: float4, id: i64, record: bool) {
     }
     let v .= rules::VARIANTS[gm.b.variant];
     let marks = gm.moves_shown == 2;
-    // Black first (a game set up from a position) leaves white's half of row one empty.
-    let off: i64 = if ns[0].before.side == rules::BLACK { 1 } else { 0 };
-    let first_number = (gm.notes_from + off) / 2 + 1;
+    // Black first leaves white's half of row one empty.
+    let off = first_ply(gm) % 2;
+    let first_number = first_ply(gm) / 2 + 1;
     let rows = (ns.len + off + 1) / 2;
     let inner = gui::inset(r, MOVES_PAD * u);
     let half = 0.5 * (inner.z - MOVES_NUMBER * u);

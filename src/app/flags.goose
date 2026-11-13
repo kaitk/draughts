@@ -7,8 +7,10 @@ namespace flags;
 import std;
 import vec;
 
-// --go play: a new game from home's setup, as its play starts one.
+// --go play: a new game from home's setup, as its play starts one; --go here: the
+// replay's play from here, a game from the move it shows.
 let GO_PLAY = 99;
+let GO_HERE = 98;
 
 // The most --tap flags kept: two taps a move, room for the longest count a shot plays
 // to its end from a position (Russian's 60 moves each, 120 plies, takes 240).
@@ -75,9 +77,10 @@ struct Flags {
     // setup open, the child playing the other
     computer: i64 = -1,
     level:    i64 = -1,     // --level easy|medium|hard: the computer's, else the setup's last
-    // --go home|settings|game|play|puzzles|puzzle: switches there on the second frame,
-    // through its transition, once any taps have played out: game as continue does, play
-    // as the setup's play (GO_PLAY), puzzle from the puzzles to pick from to --puzzle ID
+    // --go home|settings|game|play|here|puzzles|puzzle: switches there on the second
+    // frame, through its transition, once any taps have played out: game as continue
+    // does, play as the setup's play (GO_PLAY), here as the replay's play from here
+    // (GO_HERE, with --screen replay), puzzle from the puzzles to pick from to --puzzle ID
     // or the first
     go:   i64 = -1,
     hold: f64 = -1.0,       // --hold T: keeps a transition at T of the way, 0..1
@@ -238,7 +241,7 @@ fn parse(argv: u8[:][>..]) -> Flags {
         if a == "--level" { for name, k in settings::LEVEL_NAMES { if v == name { f.level = k; } } }
         if a == "--go" {
             f.go = if v == "settings" { shell::SETTINGS } else if v == "game" { shell::GAME }
-                   else if v == "play" { GO_PLAY } else if v == "puzzles" { shell::PICKER }
+                   else if v == "play" { GO_PLAY } else if v == "here" { GO_HERE } else if v == "puzzles" { shell::PICKER }
                    else if v == "puzzle" { shell::PUZZLE } else { shell::HOME };
         }
         if a == "--hold" {

@@ -41,15 +41,26 @@ fn checksum(data: const u8[:]) -> u64 {
     return h;
 }
 
-// The image of what is kept, then its checksum (8 bytes, little-endian), for the app to
-// write.
-fn save(sh: Shell&) -> u8[>..] {
+// What is kept of the game on the game screen and the screen showing.
+fn kept_of(sh: Shell&) -> Saved {
     let b .= sh.game.b;
-    var one: Saved[>..] = [];
-    one.push(Saved { version: VERSION, unset: sh.unset, screen: if sh.screen == RESULTS || sh.screen == REPLAY { HOME } else { sh.screen }, variant: b.variant, start: b.start, pos: b.pos,
+    return Saved { version: VERSION, unset: sh.unset, screen: if sh.screen == RESULTS || sh.screen == REPLAY { HOME } else { sh.screen }, variant: b.variant, start: b.start, pos: b.pos,
                      last_from: b.last.from, last_to: b.last.to, has_last: b.has_last, history: b.history,
                      clock:     sh.game.clock, computer: sh.game.computer, level: sh.game.level, skill: sh.game.skill,
-                     number: sh.game.number, counted: sh.game.counted });
+                   number: sh.game.number, counted: sh.game.counted };
+}
+
+// The image of what is kept, then its checksum (8 bytes, little-endian), for the app to
+// write. While a game played from a replay shows, the game set aside for it is kept
+// (Parked), with home as the screen: the game from the replay never is.
+fn save(sh: Shell&) -> u8[>..] {
+    var one: Saved[>..] = [];
+    if sh.trial {
+        one.push(sh.parked.kept);
+        one[0].screen = HOME;
+    } else {
+        one.push(kept_of(sh));
+    }
     var image = to_bytes(one);
     let h = checksum(image);
     for i in 8 { image.push(((h >> (8 * i)) & 0xFF) as u8); }
@@ -75,6 +86,15 @@ fn restore(sh: Shell&, file: const u8[:]) -> bool {
           && s.computer <= rules::BLACK && s.level >= game::EASY && s.level <= game::HARD
           && s.clock.kind >= 0 && s.clock.kind < clock::KINDS && s.skill >= 0 && s.skill <= 100
     else { return false; }
+    bring_back(sh, s);
+    // A puzzle isn't kept; the puzzles to pick from come back instead.
+    sh.screen = if s.screen == PUZZLE { PICKER } else { s.screen };
+    apply_prefs(sh);
+    return true;
+}
+
+// The game as s keeps it, in place of the game on the game screen.
+fn bring_back(sh: Shell&, s: Saved&) {
     // The game as started, then its board and clocks as they were.
     let gm .= sh.game;
     game::start(gm, s.variant, s.clock.kind, s.computer, s.level, s.skill, s.number);
@@ -90,10 +110,37 @@ fn restore(sh: Shell&, file: const u8[:]) -> bool {
     sh.unset = s.unset;
     // A game kept after its end was put in the player's history then (Event.over).
     gm.kept = game::ended(gm);
-    // A puzzle isn't kept; the puzzles to pick from come back instead.
-    sh.screen = if s.screen == PUZZLE { PICKER } else { s.screen };
+}
+
+// The game in progress set aside while a game played from a replay shows (play_from_here):
+// what is kept of it, and what that leaves out and the game would lose, its hints left
+// and its moves' marks (notes.goose), so it comes back as it was.
+struct Parked {
+    kept:       Saved,
+    hints:      i64[2]      = [0, 0],
+    notes:      game::Notes = [],
+    notes_from: i64         = 0,
+}
+
+// Sets the game in progress aside, for the game screen to play another.
+fn park(sh: Shell&) {
+    let p .= sh.parked;
+    p.kept = kept_of(sh);
+    p.hints = sh.game.hints;
+    p.notes = sh.game.notes;
+    p.notes_from = sh.game.notes_from;
+}
+
+// Brings the game set aside back to the game screen, as it was.
+fn unpark(sh: Shell&) {
+    let p .= sh.parked;
+    bring_back(sh, p.kept);
+    let gm .= sh.game;
+    gm.hints = p.hints;
+    gm.notes = p.notes;
+    gm.notes_from = p.notes_from;
+    gm.notes_len = -1;
     apply_prefs(sh);
-    return true;
 }
 
 // Version 3's layout, before `unset`, read as version 4 with the game set up, which

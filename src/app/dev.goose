@@ -106,6 +106,7 @@ fn before(dv: Dev&, f: flags::Flags&, sh: shell::Shell&, now: f64) {
             shell::play(sh, now);
             sh.changed = false;
         }
+        else if dv.go == flags::GO_HERE { shell::play_from_here(sh, now); }
         else if dv.go == shell::PUZZLE { shell::play_puzzle(sh, max(puzzles::find(puzzles::all, f.puzzle), 0), now); }
         else { shell::go_to(sh, dv.go, now); }
         dv.go = -1;

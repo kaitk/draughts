@@ -24,6 +24,9 @@
 // side has taken late in a game (task 052) lies inside the safe area clear of the tiles,
 // the camera buttons, and the board, and the flat screen's panels are the 3D one's
 // (task 054), or the line says how they differ; the iPad's smallest window too, with home's menu there.
+// A replay's play from here stands in its head where it fits there, else in a row over
+// the glass; the game it starts, flat and 3D, shows "Doesn't count" on the way out's top
+// edge, inside the safe area, clear of the board, the icons, and the words.
 //
 // A line with anything wrong fails the test unless the failure is on `ALLOWED` below,
 // with its reason: a regression shows as an exit, not only as a line in the diff.
@@ -299,6 +302,17 @@ fn screens(g: gui::Gui&) {
     replay::go(past.replay, 31, 0.0);
     at_rest(past, g);
     report("a replay", g, past, true, false);
+    play_here(g, past);
+    // Play from here at that move: the game played on from it, its label on the way out,
+    // flat and 3D.
+    shell::play_from_here(past, 0.0);
+    at_rest(past, g);
+    report("a game from a replay", g, past, true, false);
+    no_count(g, past, false);
+    past.prefs.board = settings::RAISED;
+    shell::apply_prefs(past);
+    at_rest(past, g);
+    no_count(g, past, true);
     // Black to move with no move left: white has won, and the card comes at once.
     var won = showing(shell::GAME, home::NO_SETUP);
     won.game = game::new(rules::RUSSIAN);
@@ -309,6 +323,53 @@ fn screens(g: gui::Gui&) {
     drive::idle(won, g, 0.0);
     drive::idle(won, g, 3.0);
     report("the win", g, won, true, true);
+}
+
+// Where the replay's play from here stands: in its head (level with back) or a row over
+// the glass, its size, and whether the title shows beside it.
+fn play_here(g: gui::Gui&, sh: shell::Shell&) {
+    let u = g.scale;
+    var play = float4 { 0.0, 0.0, 0.0, 0.0 };
+    var back = float4 { 0.0, 0.0, 0.0, 0.0 };
+    for sp in g.spots {
+        if sp.id == replay::PLAY_ID { play = sp.rect; }
+        if sp.id == replay::BACK_ID { back = sp.rect; }
+    }
+    var titled = false;
+    let name = strings::get(strings::REPLAY_TITLE);
+    for q in g.quads { if q.look.x == gui::TEXT && q.rect.y >= back.y && q.rect.y < back.y + back.w && q.rect.x > back.x + back.z && q.rect.x < play.x { titled = true; } }
+    let where = if abs(play.y - back.y) < 0.5 { "in the head" } else { "a row over the glass" };
+    print("  play from here: ", where, ", ", whole(play.z / u), " x ", whole(play.w / u), " dp",
+          if where == "in the head" { if titled { ", the title beside it" } else { ", no title" } } else { "" },
+          if back.w > back.z + 0.5 || back.z < gui::TAP * u + 0.5 { ", back a square" } else { "" });
+    check("play from here", if play.z <= 0.0 { " none;" } else { "" });
+    let unused = name;
+}
+
+// The label on a game from a replay, flat or 3D (`raised`): its size, and whether it lies
+// inside the safe area clear of the board, the camera's buttons, and every icon and word
+// but its own.
+fn no_count(g: gui::Gui&, sh: shell::Shell&, raised: bool) {
+    let u = g.scale;
+    let safe = gui::safe(g, drive::size.x, drive::size.y);
+    var pill = float4 { 0.0, 0.0, 0.0, 0.0 };
+    for q in g.quads {
+        if q.look.x == gui::FILL && q.look.z == 1.0 && abs(q.rect.w - panel::no_count_h(g)) < 0.5 { pill = q.rect; }
+    }
+    var wrong: u8[>..] = [];
+    if pill.z <= 0.0 { wrong.append(" none;"); }
+    if pill.z > 0.0 && !inside(pill, safe) { wrong.append(" off the safe area;"); }
+    let l = sh.out.layout.board;
+    let on = if raised { view3d::touches(sh.out.view, pill, 0.0) } else { overlaps(pill, float4 { l.x, l.y, l.z, l.z }) };
+    if pill.z > 0.0 && on { wrong.append(" on the board;"); }
+    for q, n in g.quads {
+        let kind = q.look.x;
+        guard kind == gui::ICON || kind == gui::TEXT || drive::camera_disc(g, n) else { continue; }
+        if pill.z > 0.0 && overlaps(pill, q.rect) && !inside(q.rect, pill) { wrong.append(" on an icon or a word;"); break; }
+    }
+    print("  the label, ", if raised { "3D" } else { "flat" }, ": ", whole(pill.z / u), " x ", whole(pill.w / u), " dp",
+          if wrong.len > 0 { ";" } else { ", in place" }, wrong);
+    check(if raised { "the label, 3D" } else { "the label, flat" }, wrong[..]);
 }
 
 // What each side has taken late in a game, 14 white men and a white king and 12 black

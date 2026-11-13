@@ -1,15 +1,21 @@
 // A past game replayed (task 078's C, prototypes/history.html's replay view), opened from
 // its row on the results screen: the board at a move beside the game's whole move list,
-// to step through and nothing else. It counts for nothing: it has its own board and
-// moves, never the game's, so it doesn't become the game to continue, and nothing of it
-// is written to the history or moves a rating.
+// to step through, and play from here, which plays the game on from the move shown. The
+// replay only shows: it has its own board and moves, never the game's, so it doesn't
+// become the game to continue, and nothing of it is written to the history or moves a
+// rating. The game played from it is the shell's (shell::play_from_here), and counts for
+// nothing either.
 //   Landscape: the steps a column of four taps at the board's left (to the start, back,
-//   on, to the end), the board the height less the margins, and at its right back and
-//   the title over a glass holding what the move shown was and the list.
-//   Portrait: back and the title, the board, the steps a row under it, then the glass.
-// The head says it is a replay that doesn't count and what the game was (the result,
-// the opponent and its rating, the date), on the title's second line where it fits, else
-// at the glass's top. Over the list a line names the move shown with its mark and the
+//   on, to the end), the board the height less the margins, and at its right back, the
+//   title, and play from here over a glass holding what the move shown was and the list.
+//   Portrait: back, the title, and play from here, the board, the steps a row under it,
+//   then the glass.
+// Play from here stands at the head's right end, its icon beside its word, or over it
+// where that is too wide; where the head has no room for it beside back and the title (the
+// tablet's narrow column), it is a row of its own over the glass. It is dimmed at the end
+// of a game that ended there. The head says what the game was (the result, the opponent
+// and its rating, the date) on the title's second line where it fits, else at the glass's
+// top. Over the list a line names the move shown with its mark and the
 // mark's tip; each side's accuracy heads its column. The list's moves are taps that jump
 // there, 34 dp rows under the 88 dp rule, as a miss only shows the next move, which the
 // steps put right. The board takes no moves; its last move's mark sits in a disc at its
@@ -23,6 +29,7 @@ import vec;
 let NOTHING = gui::ASK_NOTHING;
 let BACK = gui::ASK_BACK;
 let SHOWN = gui::ASK_SHOWN;         // another move shown
+let PLAY = 1;                       // play from here: a game from the move shown
 
 let MAX_PLIES = board::MAX_HISTORY;
 let POSITIONS = 513;        // MAX_PLIES + 1: the start and the position after each move
@@ -43,6 +50,7 @@ let MARK_GAP = 4.0;
 let BACK_ID = gui::REPLAY_IDS;
 let STEP_ID = gui::REPLAY_IDS + 1;  // the four steps
 let LIST = gui::REPLAY_IDS + 5;     // the list's scroll
+let PLAY_ID = gui::REPLAY_IDS + 6;  // play from here
 let MOVE_ID = gui::REPLAY_IDS + 10; // a move's tap, by its index in the game
 
 // A move of the game as the list and the board need it, with its mark.
@@ -58,6 +66,7 @@ struct Replay {
     plies: Ply[..MAX_PLIES]             = [],
     pos:   rules::Position[..POSITIONS] = [],
     ply:   i64                          = 0,    // the moves shown played: 0 the start
+    over:  bool                         = false, // the last position has no move: the game ended there
     b:     board::Board,
     // The move the keys' focus was on last frame (its tap's id), or 0; and the move the
     // list last scrolled to show, -1 none yet.
@@ -111,6 +120,8 @@ fn open(r: Replay&, g: history::Game, line: const u8[:]) {
         p = rules::play(p, legal[i]);
         r.pos.push(p);
     }
+    rules::generate(p, legal);
+    r.over = legal.len == 0;
     board::reset(r.b, variant);
     r.b.quiet = true;
     r.b.by_hand = true;
@@ -193,43 +204,55 @@ fn game_width(g: gui::Gui&, x: history::Game&) -> f32 {
     return 28.0 * g.scale + gui::text_width(g, gui::SMALL, t[..]);
 }
 
-// "Doesn't count" on a pill tinted with the glow color, from r's left; its width.
-fn pill(g: gui::Gui&, r: float4) -> f32 {
-    let u = g.scale;
-    let s = strings::get(strings::REPLAY_NO_COUNT);
-    let small = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
-    let w = gui::text_width(g, gui::SMALL, s) + 20.0 * u;
-    let p = float4 { r.x, r.y + 0.5 * (r.w - small - 8.0 * u), w, small + 8.0 * u };
-    gui::glow_fill(g, p, 0.2, 0.5 * p.w);
-    gui::text(g, gui::SMALL, p, s, 1.0, 0.0, gui::CENTER);
-    return w;
-}
-
-fn pill_width(g: gui::Gui&) -> f32 {
-    return gui::text_width(g, gui::SMALL, strings::get(strings::REPLAY_NO_COUNT)) + 20.0 * g.scale;
-}
-
-// The title, the pill, and the game's line in r, the head's right of back. Returns
-// whether the game's line is in it, which it is where it fits on a line of its own under
-// the title and the pill side by side.
+// The title and the game's line in r, between back and play from here. Returns whether
+// the game's line is in it, which it is where it fits on a line of its own under the
+// title. Where even the title has no room, neither shows, and the glass's top has the game.
 fn title(g: gui::Gui&, r: float4, x: history::Game&) -> bool {
     let u = g.scale;
     let name = strings::get(strings::REPLAY_TITLE);
+    guard gui::text_width(g, gui::LABEL, name) <= r.z else { return false; }
     let label = g.faces[gui::LABEL].ascent - g.faces[gui::LABEL].descent;
     let small = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
     let gap = 6.0 * u;
     let second = small + 8.0 * u;
-    let name_w = gui::text_width(g, gui::LABEL, name);
-    let one = name_w + 12.0 * u + pill_width(g) <= r.z;
-    let line = one && game_width(g, x) <= r.z;
-    var c = gui::center(r, r.z, label + gap + second);
+    let line = game_width(g, x) <= r.z;
+    var c = gui::center(r, r.z, label + (if line { gap + second } else { 0.0 }));
     let top = gui::cut_top(c, label);
     gui::text(g, gui::LABEL, top, name, 1.0, 0.0, gui::LEFT);
     gui::cut_top(c, gap);
-    if one { pill(g, float4 { top.x + name_w + 12.0 * u, top.y, r.z, top.w }); }
-    else { pill(g, c); }
     if line { game_line(g, c, x); }
     return line;
+}
+
+// Whether the move shown can be played on from: any but the end of a game that ended
+// there.
+fn playable(r: Replay&) -> bool { r.ply < r.plies.len || !r.over }
+
+// How play from here fits in the head, `head` pixels across: its icon beside its word
+// (gui::MIDDLE), or over it (gui::STACKED, the word in a smaller face where the room
+// left is narrower than it, down to the small face), or not (0: a row of its own); its
+// width there; whether the title keeps its place beside it; and whether back is its
+// arrow over its word in a tap's square. On a phone the title gives its room up, then
+// back its width, before the button goes to a row, which would cost the list or the
+// board most of what a phone has (the game's line then heads the glass).
+fn play_fit(g: gui::Gui&, head: f32, phone: bool) -> i64, f32, bool, bool {
+    let u = g.scale;
+    let word = strings::get(strings::REPLAY_PLAY);
+    let wide = gui::back_width(g, strings::get(strings::NAV_BACK));
+    let name = gui::text_width(g, gui::LABEL, strings::get(strings::REPLAY_TITLE)) + GAP * u;
+    let beside = gui::labelled_width(g, 34.0, word, gui::HEADING);
+    let over = max(gui::tap() * u, gui::text_width(g, gui::HEADING, word) + 2.0 * gui::LABEL_PAD * u);
+    let least = max(gui::tap() * u, gui::text_width(g, gui::SMALL, word) + 2.0 * gui::LABEL_PAD * u);
+    for k in 3 {
+        let titled = k == 0;
+        let square = k == 2;
+        guard titled || phone else { continue; }
+        let back = (if square { gui::tap() * u } else { wide }) + gui::PAD_WIDE * u;
+        let room = head - back - (if titled { name } else { 0.0 });
+        if room >= beside { return gui::MIDDLE, beside, titled, square; }
+        if room >= least { return gui::STACKED, min(room, over), titled, square; }
+    }
+    return 0, 0.0, true, false;
 }
 
 // One step's tap, dimmed where it would change nothing (at the start or the end),
@@ -325,15 +348,17 @@ fn shown_line(r: Replay&, g: gui::Gui&, box: float4, over: board::Overlay&) {
 }
 
 // The steps' rects and where the board goes (x, y, size) and the head and the glass, for
-// a safe area: landscape when it is wider than tall.
+// a safe area: landscape when it is wider than tall. With `row`, play from here is a row
+// of its own over the glass (`play`), else in the head.
 struct Layout {
     head:  float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
     board: float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
     glass: float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
     steps: float4[4] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4],
+    play:  float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
 }
 
-fn layout(area: float4, u: f32) -> Layout {
+fn layout(area: float4, u: f32, row: bool = false) -> Layout {
     var o = Layout {};
     var c = gui::inset(area, EDGE * u);
     let tap = gui::tap() * u;
@@ -347,17 +372,26 @@ fn layout(area: float4, u: f32) -> Layout {
         var col = float4 { x, c.y, c.x + c.z - x, c.w };
         o.head = gui::cut_top(col, tap);
         gui::cut_top(col, GAP * u);
+        if row {
+            o.play = gui::cut_top(col, tap);
+            gui::cut_top(col, GAP * u);
+        }
         o.glass = col;
     } else {
         o.head = gui::cut_top(c, tap);
         gui::cut_top(c, GAP * u);
-        let size = max(min(c.z, c.w - tap - (2.0 * GAP + MIN_LIST) * u), 0.0);
+        let extra = if row { tap + GAP * u } else { 0.0 };
+        let size = max(min(c.z, c.w - tap - extra - (2.0 * GAP + MIN_LIST) * u), 0.0);
         o.board = float4 { c.x + 0.5 * (c.z - size), c.y, size, size };
         gui::cut_top(c, size + GAP * u);
-        let row = gui::cut_top(c, tap);
+        let steps = gui::cut_top(c, tap);
         gui::cut_top(c, GAP * u);
-        let w = (row.z - 3.0 * GAP * u) / 4.0;
-        for i in 4 { o.steps[i] = float4 { row.x + i * (w + GAP * u), row.y, w, tap }; }
+        let w = (steps.z - 3.0 * GAP * u) / 4.0;
+        for i in 4 { o.steps[i] = float4 { steps.x + i * (w + GAP * u), steps.y, w, tap }; }
+        if row {
+            o.play = gui::cut_top(c, tap);
+            gui::cut_top(c, GAP * u);
+        }
         o.glass = c;
     }
     return o;
@@ -384,7 +418,10 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     }
     r.focused = g.focus;
 
-    let o = layout(area, u);
+    // Play from here in the head where it fits there, else a row of its own.
+    var o = layout(area, u);
+    let arrange, play_w, titled, square = play_fit(g, o.head.z, gui::phone(area, u));
+    if arrange == 0 { o = layout(area, u, true); }
     let v .= rules::VARIANTS[r.game.variant];
     l = board::layout_at(o.board.x, o.board.y, o.board.z, u, v.size);
     l.flip = turned(r);
@@ -399,13 +436,21 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
         if i == 2 { gui::prefer(g, STEP_ID + i); }
     }
 
-    // The head: back, the title, the pill, and the game where it fits.
+    // The head: back, the title and the game where it fits, and play from here.
     gui::group(g, 0);
     var head = o.head;
     let back = strings::get(strings::NAV_BACK);
-    if gui::back(g, BACK_ID, gui::cut_left(head, gui::back_width(g, back)), back) { ask = BACK; }
+    let back_w = if square { gui::tap() * u } else { gui::back_width(g, back) };
+    if gui::back(g, BACK_ID, gui::cut_left(head, back_w), back, square) { ask = BACK; }
     gui::cut_left(head, gui::PAD_WIDE * u);
-    let in_head = title(g, head, r.game);
+    let at = if arrange == 0 { o.play } else { gui::cut_right(head, play_w) };
+    if arrange != 0 { gui::cut_right(head, GAP * u); }
+    let icon = if r.game.level == history::FRIEND { gui::FRIEND } else { gui::COMPUTER };
+    if gui::labelled(g, PLAY_ID, at, icon, 34.0, strings::get(strings::REPLAY_PLAY), gui::HEADING,
+                     if arrange == 0 { gui::MIDDLE } else { arrange }, gui::PRIMARY, playable(r)) {
+        ask = PLAY;
+    }
+    let in_head = titled && title(g, head, r.game);
 
     // The glass: the game where the head had no room for it, the move shown, each side's
     // accuracy, and the list.

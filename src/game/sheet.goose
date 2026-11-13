@@ -148,8 +148,8 @@ fn rows_line(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) {
     }
     let v .= rules::VARIANTS[gm.b.variant];
     let marks = gm.moves_shown == 2;
-    let off: i64 = if ns[0].before.side == rules::BLACK { 1 } else { 0 };
-    let first_number = (gm.notes_from + off) / 2 + 1;
+    let off = first_ply(gm) % 2;
+    let first_number = first_ply(gm) / 2 + 1;
     let rows = (ns.len + off + 1) / 2;
     let fit = max(1, (inner.w / (LINE_ROW * u)) as i64);
     let first = max(0, rows - fit);
