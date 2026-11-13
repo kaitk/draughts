@@ -471,7 +471,9 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   arrows for undo, restart, and back) confused. The landscape layout is taken only where
   its flat board fills at least about 2/3 of the height less the margins
   (`panel::landscape`); a wider-than-tall window short of that, near square, keeps the
-  portrait layout, the bar above the board and the play below it, as does the 3D board. At 800 dp tall the hand-over is at about 981 dp across; every
+  portrait layout, the bar above the board and the play below it, as does the 3D board.
+  The bar's three tiles stand alone on glass's tint, a tap tall, with no panel behind
+  them (compact's icons keep theirs). At 800 dp tall the hand-over is at about 981 dp across; every
   device's landscape passes, the foldable's closest at 69%. **The game's controls are the
   3D screen's**: in landscape the flat board between the 3D screen's short corner panels
   (`panel::flat_corners`; "Board and pieces", 3D board, the game screen round it), back
@@ -1018,8 +1020,9 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   rest clears it (it then clears it too in the top view and the zoom, which are a few %
   smaller on the tablet), else under the left panel as on the flat screen (a phone, whose
   board reaches the top margin), the board never smaller at rest; portrait, a row under
-  the bar's tiles, the bar 52 dp taller (`panel::TAKEN_BAR_ROW`), white's catch at the
-  left, black's at the right; compact, the bar's middle between back and settings, two
+  the bar's tiles on a strip of glass of its own, 42 dp tall, 10 under them, the bar
+  52 dp taller (`panel::TAKEN_BAR_ROW`), white's catch at the left, black's at the
+  right, the moves' line's pill in its middle; compact, the bar's middle between back and settings, two
   rows. A catch's own glass shows once something is taken. A puzzle shows none.
 
 ### The moves panel

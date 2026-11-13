@@ -44,5 +44,5 @@ six of Learn solved: tiles 11, locks 0, lit 1, stars won 6, out 0
 Learn's last solved: puzzle 20, B:WK1,47:B27, solved, misses 0, stars 3, moves left 1
 next: picker library
 restored: true, picker
-portrait: board vec4<f32> { 24.0, 222.0, 752.0, 12.032001 }, next at vec4<f32> { 44.0, 1098.0, 712.0, 88.0 }
+portrait: board vec4<f32> { 24.0, 206.0, 752.0, 12.032001 }, next at vec4<f32> { 44.0, 1082.0, 712.0, 88.0 }
 portrait Learn: tiles 13, the first vec4<f32> { 260.0, 140.0, 96.0, 96.0 }, the fifth vec4<f32> { 260.0, 278.0, 96.0, 96.0 }, at least 88 dp true, the last ends at 512.0

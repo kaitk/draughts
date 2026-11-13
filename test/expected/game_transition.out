@@ -47,10 +47,10 @@ won: true, winner 0, the card's back 100.0, on the board 5 quads and 1 piece
   26.27: home, the board dimmed 0.0%, lifted 0.0 px, the card's back -1.0, over the UI 1, on the board 0 quads and 0 piece, hole none
   26.3325: home, the board dimmed 0.0%, lifted 0.0 px, the card's back -1.0, over the UI 1, on the board 0 quads and 0 piece, hole none
 portrait home 0.0: home, board 80.0,128.0 640.0 10x10, mix 100.0%, blur 0.0%, quads 73 faded 9 mostly 9, pieces 40 faint 0, over the UI 1, hole none, drawn true, animating false
-   1.0825: game, board 71.0,147.0 658.0 10x10, mix 16.0%, blur 16.0%, quads 150 faded 150 mostly 86, pieces 40 faint 0, over the UI 2, hole the board, drawn true, animating true
-   1.145: game, board 52.0,188.0 696.0 10x10, mix 50.0%, blur 50.0%, quads 150 faded 150 mostly 9, pieces 40 faint 0, over the UI 2, hole the board, drawn true, animating true
-   1.2075: game, board 33.0,229.0 735.0 10x10, mix 84.0%, blur 84.0%, quads 150 faded 150 mostly 73, pieces 40 faint 0, over the UI 2, hole the board, drawn true, animating true
-   1.27: game, board 24.0,248.0 752.0 10x10, mix 100.0%, blur 100.0%, quads 77 faded 0 mostly 0, pieces 40 faint 0, over the UI 1, hole none, drawn true, animating false
-idle 1.4: game, board 24.0,248.0 752.0 10x10, mix 100.0%, blur 100.0%, quads 77 faded 0 mostly 0, pieces 40 faint 0, over the UI 1, hole none, drawn false, animating false
-the board went down and grew all the way true, from 80.0,128.0 640.0 to 24.0,248.0 752.0
+   1.0825: game, board 71.0,144.0 658.0 10x10, mix 16.0%, blur 16.0%, quads 153 faded 153 mostly 89, pieces 40 faint 0, over the UI 2, hole the board, drawn true, animating true
+   1.145: game, board 52.0,180.0 696.0 10x10, mix 50.0%, blur 50.0%, quads 153 faded 153 mostly 9, pieces 40 faint 0, over the UI 2, hole the board, drawn true, animating true
+   1.2075: game, board 33.0,216.0 735.0 10x10, mix 84.0%, blur 84.0%, quads 153 faded 153 mostly 73, pieces 40 faint 0, over the UI 2, hole the board, drawn true, animating true
+   1.27: game, board 24.0,232.0 752.0 10x10, mix 100.0%, blur 100.0%, quads 80 faded 0 mostly 0, pieces 40 faint 0, over the UI 1, hole none, drawn true, animating false
+idle 1.4: game, board 24.0,232.0 752.0 10x10, mix 100.0%, blur 100.0%, quads 80 faded 0 mostly 0, pieces 40 faint 0, over the UI 1, hole none, drawn false, animating false
+the board went down and grew all the way true, from 80.0,128.0 640.0 to 24.0,232.0 752.0
 the game as opened straight true

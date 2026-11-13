@@ -28,7 +28,7 @@ the game (the game, setup 0): back true -> home, setup 0, in a transition false,
   its first tile (the arrow) -> the same
 settings from home (settings, setup 0): back true -> home, setup 0, in a transition false, the board at vec4<f32> { 80.0, 128.0, 640.0, 10.240001 }, the game W:Wc3,e3:Bd6,f6
   its first tile (the arrow) -> the same
-settings from the game (settings, setup 0): back true -> the game, setup 0, in a transition false, the board at vec4<f32> { 24.0, 248.0, 752.0, 12.032001 }, the game W:Wc3,e3:Bd6,f6
+settings from the game (settings, setup 0): back true -> the game, setup 0, in a transition false, the board at vec4<f32> { 24.0, 232.0, 752.0, 12.032001 }, the game W:Wc3,e3:Bd6,f6
   its first tile (the arrow) -> the same
 the puzzles (the puzzles, setup 0): back true -> home, setup 0, in a transition false, the board at vec4<f32> { 80.0, 128.0, 640.0, 10.240001 }, the game W:Wc3,e3:Bd6,f6
   its first tile (the arrow) -> the same
@@ -38,7 +38,7 @@ a theme (a theme, setup 0): back true -> the puzzles, setup 0, in a transition f
   its first tile (the arrow) -> the same
 a puzzle (a puzzle, setup 0): back true -> a theme, setup 0, in a transition false, the board at vec4<f32> { -1600.0, 0.0, 400.0, 6.4 }, the game W:Wc3,e3:Bd6,f6
   its first tile (the arrow) -> the same
-settings from a puzzle (settings, setup 0): back true -> a puzzle, setup 0, in a transition false, the board at vec4<f32> { 24.0, 222.0, 752.0, 12.032001 }, the game W:Wc3,e3:Bd6,f6
+settings from a puzzle (settings, setup 0): back true -> a puzzle, setup 0, in a transition false, the board at vec4<f32> { 24.0, 206.0, 752.0, 12.032001 }, the game W:Wc3,e3:Bd6,f6
   its first tile (the arrow) -> the same
 in the transition to the game: back true
   then home, in a transition true

@@ -607,6 +607,13 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   moves' line) sits on glass's tint alone, `gui::under_tile`, with no border, highlight,
   or shadow of the glass's (2026-11-13, the user: such tiles looked too glassy). On full
   glass it was edged twice and shadowed twice; now it looks as a tile on a panel does.
+- A panel only where it holds what isn't a tile (2026-11-13, the user): the portrait
+  bar loses its panel, its three tiles each on glass's tint as in landscape, the game's
+  row under them (what each side has taken, the moves' pill) a strip of glass of its
+  own, 42 dp, showing once it holds something. The bar is 32 dp shorter: the 4:3
+  tablet's portrait board grows from 670 to 710 dp, a foldable's from 586 to 626; the
+  others move up. A small window's compact bar keeps its panel, its icons and catches
+  sharing it.
 - The moves panel stands under the way out on a tablet and a desktop (2026-11-13, the
   user: the screen was right-heavy, and moves usually sit at the left), 16 dp under its
   tiles, 24 on a desktop. It replaces task 074's take a, the panel under the play panel;

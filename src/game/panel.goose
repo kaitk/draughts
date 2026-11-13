@@ -95,8 +95,8 @@ let BOARD = 720.0;          // dp: the board the panels narrow for, the tablet's
 // touch screen), its icons over their words where the bar is narrow, a third of it
 // under STACK_W; the bar's width its tiles don't take, its glass's ends and two gaps; and
 // the play below the board, whose turn or the clocks over the hint and undo move.
-fn bar_h() -> f32 { gui::tap() + 2.0 * IN_ACROSS }
-fn bar_stacked_h() -> f32 { stack_h() + 2.0 * IN_ACROSS }
+fn bar_h() -> f32 { gui::tap() }
+fn bar_stacked_h() -> f32 { stack_h() }
 let STACK_W = 170.0;
 let BAR_SPARE = 2.0 * IN_ALONG + 2.0 * gui::PAD_WIDE;
 fn play_h() -> f32 { 2.0 * IN_ACROSS + CLOCK_H + gui::PAD + gui::tap() }
@@ -188,7 +188,7 @@ let LINE_NONE = 0;
 let LINE_ROWS = 1;
 let LINE_BAR = 2;
 let LINE_TAP_W = 200.0;     // dp: the portrait line's tap across, from the tiles' foot to the board
-let LINE_PILL_H = 40.0;     // dp: the portrait line's pill
+let LINE_PILL_IN = 4.0;     // dp: the portrait line's pill inside the row's strip, above and below
 
 // What each side has taken (task 052, prototypes/game-captured.html's take a, its `row`
 // look): the app's pieces small, each covering about half the one before, the kings after
@@ -209,7 +209,8 @@ let TAKEN_STACK = 5;        // two rows, no glass of their own (compact's bar)
 let TAKEN_D = 32.0;
 let TAKEN_PHONE = 26.0;
 let TAKEN_COMPACT = 22.0;
-let TAKEN_BAR_ROW = 52.0;   // dp: the portrait bar's row for them, 36 under a 16 dp gap
+let TAKEN_BAR_ROW = 52.0;   // dp: the portrait bar's row for them, its strip of glass 42 under a 10 dp gap
+let TAKEN_STRIP_GAP = 10.0;
 let TAKEN_STEP: f32 = 0.52; // of a piece: from one to the next in a row
 let TAKEN_GAP:  f32 = 0.3;  // of a piece: before the kings, and between two rows
 let TAKEN_PAD = 16.0;       // dp: either side inside their glass
@@ -864,7 +865,7 @@ fn taken_under(l: Layout&, left: float4, limit: f32, s: f32, d: f32) {
 // The portrait bar's tiles and, in a game, what each side has taken: a row under the
 // tiles; compact, the bar's middle between back and settings. With `moves` (not compact)
 // the moves' line in that row's middle (task 078, the prototype's `port=bar`): a pill
-// LINE_PILL_H tall, its tap LINE_TAP_W across from the tiles' foot to the board's top,
+// LINE_PILL_IN inside the row's strip, its tap LINE_TAP_W across from the tiles' foot to the board's top,
 // the catches either side of it.
 fn bar_tiles(l: Layout&, bar: Bar, game: bool, phone: bool, s: f32, moves: bool = false) {
     l.stacked = bar.stacked;
@@ -879,12 +880,13 @@ fn bar_tiles(l: Layout&, bar: Bar, game: bool, phone: bool, s: f32, moves: bool 
         l.taken_d = TAKEN_COMPACT * s;
         return;
     }
+    // No panel behind the tiles (2026-11-13): each stands alone on glass's tint, as in
+    // landscape; in a game the row under them is a strip of glass of its own.
     let row = if game { TAKEN_BAR_ROW * s } else { 0.0 };
-    l.tiles = inside(float4 { l.left.x, l.left.y, l.left.z, l.left.w - row }, WIDE_IN, s);
+    l.tiles = float4 { l.left.x, l.left.y, l.left.z, l.left.w - row };
     guard game else { return; }
-    let h = (TAKEN_BAR_ROW - WIDE_IN.y) * s;
-    l.taken = float4 { l.left.x + WIDE_IN.x * s, l.left.y + l.left.w - WIDE_IN.y * s - h, l.left.z - 2.0 * WIDE_IN.x * s,
-                       h };
+    let h = (TAKEN_BAR_ROW - TAKEN_STRIP_GAP) * s;
+    l.taken = float4 { l.left.x, l.left.y + l.left.w - h, l.left.z, h };
     l.taken_as = TAKEN_ROW;
     l.taken_d = (if phone { TAKEN_PHONE } else { TAKEN_D }) * s;
     guard moves else { return; }
@@ -892,7 +894,8 @@ fn bar_tiles(l: Layout&, bar: Bar, game: bool, phone: bool, s: f32, moves: bool 
     let w = LINE_TAP_W * s;
     let top = l.tiles.y + l.tiles.w;
     l.line_tap = float4 { mid - 0.5 * w, top, w, l.left.y + l.left.w + bar.gap - top };
-    l.line = float4 { mid - 0.5 * w + 12.0 * s, l.taken.y + 0.5 * (l.taken.w - LINE_PILL_H * s), w - 24.0 * s, LINE_PILL_H * s };
+    let pill = l.taken.w - 2.0 * LINE_PILL_IN * s;
+    l.line = float4 { mid - 0.5 * w + 12.0 * s, l.taken.y + LINE_PILL_IN * s, w - 24.0 * s, pill };
     l.line_as = LINE_BAR;
 }
 
@@ -1083,8 +1086,10 @@ fn leave(g: gui::Gui&, l: Layout) -> i64 {
         if gui::back(g, gui::PANEL_IDS, o.tiles[0], strings::get(OUT_WORDS[0]), l.out_row) { chosen = BACK; }
         gui::under_tile(g, o.tiles[1], 22.0);
         gui::under_tile(g, o.tiles[2], 22.0);
-    } else {
+    } else if l.mode == COMPACT {
         gui::panel(g, l.left);
+    } else {
+        for t in o.tiles { gui::under_tile(g, t, 22.0); }
     }
     for i in 3 {
         guard i > 0 || !columns(l) else { continue; }
@@ -1591,23 +1596,27 @@ fn taken(g: gui::Gui&, l: Layout, t: Taken, over: board::Overlay&) {
         return;
     }
     if l.taken_as == TAKEN_ROW {
+        // On a strip of glass of its own where it holds something, or the moves' line.
         // White's catch (black's pieces) at the left, black's at the right, each in at
         // most its half less a gap; beside the moves' line (task 078) in its side of the
         // line's tap, as pieces where both fit there as small as a row takes them
         // (TAKEN_LEAST), else as counts.
-        let y = r.y + 0.5 * (r.w - d);
-        var half = 0.5 * (r.z - TAKEN_GAP * d);
+        guard any || l.line_as == LINE_BAR else { return; }
+        gui::glass(g, l.taken, 0.5 * l.taken.w / u);
+        let strip = float4 { l.taken.x + edge, l.taken.y, l.taken.z - 2.0 * edge, l.taken.w };
+        let y = strip.y + 0.5 * (strip.w - d);
+        var half = 0.5 * (strip.z - TAKEN_GAP * d);
         if l.line_as == LINE_BAR {
-            half = l.line_tap.x - TAKEN_GAP * d - r.x;
+            half = l.line_tap.x - TAKEN_GAP * d - strip.x;
             let least = TAKEN_LEAST * d;
             if row_len(t, rules::BLACK, least) > half || row_len(t, rules::WHITE, least) > half {
-                count_at(g, over, t, rules::BLACK, float4 { r.x, r.y, half, r.w }, d, false);
-                count_at(g, over, t, rules::WHITE, float4 { r.x + r.z - half, r.y, half, r.w }, d, true);
+                count_at(g, over, t, rules::BLACK, float4 { strip.x, strip.y, half, strip.w }, d, false);
+                count_at(g, over, t, rules::WHITE, float4 { strip.x + strip.z - half, strip.y, half, strip.w }, d, true);
                 return;
             }
         }
-        catch_row(over, t, rules::BLACK, float4 { r.x, y, half, d }, false);
-        catch_row(over, t, rules::WHITE, float4 { r.x + r.z - half, y, half, d }, true);
+        catch_row(over, t, rules::BLACK, float4 { strip.x, y, half, d }, false);
+        catch_row(over, t, rules::WHITE, float4 { strip.x + strip.z - half, y, half, d }, true);
         return;
     }
     guard any else { return; }
