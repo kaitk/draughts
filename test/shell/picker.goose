@@ -50,20 +50,28 @@ fn report(what: const u8[:], g: gui::Gui&) {
     var narrow: f32     = 1.0e9;
     var low:    f32     = 1.0e9;
     var wrong:  u8[>..] = [];
+    var below = 0;
     for i in n {
         let r = drive::rect(g, i);
         narrow = min(narrow, r.z);
         low = min(low, r.w);
-        if r.x < safe.x - 0.5 || r.y < safe.y - 0.5 || r.x + r.z > safe.x + safe.z + 0.5 || r.y + r.w > safe.y + safe.w + 0.5 {
+        // A row past the foot of the list, which scrolls to it (a phone's landscape since
+        // How to play's row, task 026), is counted apart.
+        let across = r.x >= safe.x - 0.5 && r.x + r.z <= safe.x + safe.z + 0.5;
+        if across && r.y >= safe.y - 0.5 && r.y + r.w > safe.y + safe.w + 0.5 {
+            below++;
+        } else if r.x < safe.x - 0.5 || r.y < safe.y - 0.5 || !across || r.y + r.w > safe.y + safe.w + 0.5 {
             format(wrong, " tile ", i, " off the screen;");
         }
         for j in i { if overlaps(r, drive::rect(g, j)) { format(wrong, " tiles ", j, " and ", i, " overlap;"); } }
         if r.z < gui::TAP * u - 0.5 || r.w < gui::TAP * u - 0.5 { format(wrong, " tile ", i, " under 88 dp;"); }
     }
+    var scrolled: u8[>..] = [];
+    if below > 0 { format(scrolled, ", ", below, " below the foot (the list scrolls)"); }
     print("  ", what, ": ", n, " tiles, lit ", lit(g), ", locks ", icons(g, gui::LOCK), ", stars ", icons(g, gui::STAR), ", back ", dp(drive::rect(g, 0), u), ", the first ",
           dp(drive::rect(g, 1), u), ", the last ", dp(drive::rect(g, n - 1), u), ", smallest ",
           floor(narrow / u + 0.5) as i64, " x ", floor(low / u + 0.5) as i64, " dp",
-          if wrong.len > 0 { str(";", wrong) } else { str(", all in place") });
+          scrolled[..], if wrong.len > 0 { str(";", wrong) } else { str(", all in place") });
 }
 
 fn screens(g: gui::Gui&, stars: i64[:]) {

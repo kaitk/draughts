@@ -76,6 +76,19 @@ fn setup(f: flags::Flags&, sh: shell::Shell&, prefs: settings::Settings) {
         if f.ply >= 0 { replay::go(sh.replay, f.ply, 0.0); }
         if sh.screen != shell::REPLAY { sh.screen = shell::RESULTS; }
     }
+    // How to play in the flags' draughts (else the player's), at --step's step or its end;
+    // a new player's question over home.
+    if sh.screen == shell::TUTORIAL {
+        if f.variant >= 0 { sh.prefs.variant = f.variant; }
+        shell::learn(sh, shell::HOME, 0.0);
+        let v = sh.prefs.variant as u8;
+        if f.step >= 1 { tutorial::open(sh.lesson, v, f.step - 1); }
+        if f.step == flags::STEP_END {
+            tutorial::open(sh.lesson, v, tutorial::count(v) - 1);
+            sh.lesson.state = tutorial::END;
+        }
+    }
+    if f.ask { sh.who.state = who::ASKING; }
     sh.setup = f.setup;
     // A setup the flags open shows the opponent, the draughts, the child's color, and the
     // level they give, with the settings file left as it is unless a tap in the setup
@@ -155,6 +168,14 @@ fn after_shell(dv: Dev&, f: flags::Flags&, sh: shell::Shell&, g: gui::Gui&, r: r
         dv.tapped++;
         dirty = true;
         // Next was declared before this tap, which may have left a piece waiting.
+        g.acted = true;
+    }
+    if dv.tapped < f.taps.len && sh.screen == shell::TUTORIAL && tutorial::ready(sh.lesson) {
+        let v .= rules::VARIANTS[sh.lesson.b.variant];
+        let sq, ok = rules::parse_square(v, f.taps[dv.tapped]);
+        if ok { tutorial::tap(sh.lesson, l, board::center(l, v, sq), now); }
+        dv.tapped++;
+        dirty = true;
         g.acted = true;
     }
     if f.bench > 0 && sh.out.raised && d3.draws > 0 && now > 2.0 && d3.bench.n == 0 { d3.bench.n = f.bench; }

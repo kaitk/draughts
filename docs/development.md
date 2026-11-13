@@ -119,7 +119,9 @@ the screens around it `shell/` (home, and which screen shows), each tested headl
 `--tap` (`c3`, or `d10` on 10 × 10), or `--screen game` open the game screen,
 `--screen settings` settings, `--screen setup` home's setup as the player's file has it
 (`friend` or `computer` with that opponent chosen), `--screen
-puzzles` the puzzles to pick from, `--screen results` the results, `--screen replay` the
+puzzles` the puzzles to pick from, `--screen results` the results, `--screen tutorial` how to play at `--step N`'s
+step (from 1; `--step end` its end's card), its `--tap`s on its board, `--screen ask` a
+new player's question over home, `--screen replay` the
 replay of the newest game in the history, at its end or at `--ply N` (0 the start;
 `--history FILE` reads the games from a history file in place of the player's, for
 shots: `--history games.txt --screen replay --ply 39 --frames 12`; `--go here` then plays

@@ -608,7 +608,11 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   played: `shell::resume`, the rows below moving up), new game with the opponent its setup
   keeps at the row's end (the computer's icon and the level, or the friend's icon and "a
   friend"; outlined under continue, 1 dp at 25%, and lit in continue's place where that
-  isn't shown, the keys' first choice then; a ring with a plus for its icon), puzzles
+  isn't shown, the keys' first choice then; a ring with a plus for its icon), or in
+  continue's place, lit, **How to play** with the draughts it teaches at its end, for a
+  player who was asked whether they know how to play (a new player, a fresh install's
+  first) and hasn't said they do, finished their draughts' tutorial, or begun a game
+  against the computer (`shell::resume`'s `learn`; [how to play](#how-to-play)), puzzles
   with stars, and the games played with the player's rating in their draughts once rated
   ([the results screen](#the-results-screen)), then settings, each an icon and a word, in
   rows 88 dp tall, 2 dp apart. The menu's height is reckoned without the results row: where
@@ -782,6 +786,11 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   3"). Learn is open; the others open once
   half of Learn is solved, and until then each mark is plain with a lock badge, the name
   dim, and "Solve n more in Learn" in place of the bar, and a tap on it does nothing.
+  Over the themes, across the columns, **How to play**'s row (104 dp, a tap on a phone):
+  the finger on a disc of the glow at 40%, its name, the steps played of the switch's
+  draughts' tutorial ("n / total steps", a check before it once all are), and a bar of
+  them; it opens the tutorial there, and nothing waits on it. On a phone in landscape the
+  list scrolls to the last themes' rows.
   **The draughts switch** (`puzzle-set.html`, take a) is the setup's draughts tiles, International 10 × 10, Brazilian 8 × 8, Russian
   8 × 8 (each its name over its size, 88 dp tall, as wide as settings' tile would be,
   widened in proportion to fill a row), joined on one glass 4 dp round them and between,
@@ -844,6 +853,30 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   too short for the piece over the goal (a phone's), it stands beside the goal's icon, up
   to 20 px apart, the words under both (`puzzle.html`'s take c with `turn=a`; over the goal elsewhere, as the game shows
   it).
+- **How to play** (`src/shell/tutorial.goose`, `prototypes/tutorial.html`): the rules
+  one at a time, each a step played on the board in a puzzle's layout, the moves shown
+  (the only place they show by default, [product](../product.md)). Its left panel is a
+  puzzle's (back, settings, start over, which plays the step again); the right one holds
+  the steps as dots (12 dp, 8 apart, smaller where they don't fit the panel; those played
+  at 60% of the glow, this one lit), the rule's name (the menu rows' face), its line (the
+  body face, the small one where it runs past the panel, wrapped at its spaces,
+  `gui::wrapped`), and next, dim and taking no tap until the step is played, then lit
+  with a check and what the move showed in the line's place; in portrait next stands at
+  the panel's right. Where nothing must be taken the piece to move glows as a puzzle's
+  hint does; where something must, the pieces that must take pulse red as after a wrong
+  tap. The first step is the game's turns: a move, the other side's answer 0.6 s after it
+  lands (f8-e7), and a move again. International and Brazilian have nine steps (move, jump
+  to take, you must take, keep jumping, take the most, become a king, kings fly, kings
+  take from afar, win), Russian ten (choose any capture in place of take the most, and
+  crowned on the way); each a position on the board's lower left, the same on both sizes
+  but the crowning step's. The last step's next is done: a glass card over the dimmed
+  screen, a crowned light piece, "You know the moves!", Puzzles (lit; the Learn theme's
+  first puzzle without stars, in the draughts learned) and New game (home's setup) side
+  by side, 240 × 150 dp, or one over the other where they don't fit, and Home under them.
+  Back goes where it was opened from (home, or the puzzles' library), and a tutorial
+  played partway opens at its next step. Each step played is kept in the player's file
+  (`learned.<draughts> = n`). Its icon is a finger tapping, a ring over its tip
+  (`gui::HOW`).
 
 - **Players** (`profiles.html`, take a; what a player
   holds and the files: [players](README.md#players)). On home's menu the player's chip
@@ -881,7 +914,12 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   landscape the badges stand at the left, three by two, and the name and the holds at
   the right. While the name is typed the card stands 16 dp from the top, clear of the
   keyboard. Done adds a new player and switches to them, every setting at its default,
-  or saves the badge and name. Start again and remove are **holds** of 1.5 s: a 4 dp
+  or saves the badge and name; for a new player, and on a fresh install's first sheet,
+  the card then asks "Do you know how to play?": their badge (104 dp, lit), the question,
+  and Show me (the finger, lit, the keys' first) beside I know how (a check), 240 × 150
+  dp, one over the other where they don't fit. Show me opens how to play in the player's
+  draughts; I know how is kept (`how_to_play = known`) and keeps home's How to play row
+  away; back or a tap outside closes it unanswered. Start again and remove are **holds** of 1.5 s: a 4 dp
   ring 2 dp inside the tile fills clockwise from its top's middle (the glow color for
   start again, the forced-capture red for remove, whose icon and word are that red
   toward the text color), frames running only while it is held; let go early and

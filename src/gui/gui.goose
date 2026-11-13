@@ -130,6 +130,7 @@ let CHEVRON_DOWN = 44;      // FWD and PREV, the replay's, point right and left
 let NEW_GAME = 45;          // home's new game: a plus in a ring
 let TURNS = 46;             // the setup's board turning to who plays: two arcs chasing round,
 let STAYS = 47;             // and staying: a board with an arrow up it
+let HOW = 48;               // how to play: a finger tapping, a ring over its tip (task 026)
 
 // Text faces (rendering.md, "Fonts"): one size each, in dp, baked by the app at the
 // screen's pixel size.
@@ -325,12 +326,14 @@ let WHO_IDS = 500;          // who's playing, and a player's sheet
 let PICKER_IDS = 600;       // the puzzles to pick from: the library, a theme's page, its puzzles
 let RESULTS_IDS = 1300;     // the games played (task 074), a row a game from 11 past the base
 let REPLAY_IDS = 1600;      // a past game's replay (task 078), a move a tap from 10 past the base
+let TUTORIAL_IDS = 2200;    // how to play (task 026): its panel and its end's card
 
 // One scrolling list a frame (task 050; rendering.md, "Scrolling"): what scroll_begin
 // keeps across frames. A plain drag and the wheel, no fling.
 let SCROLL_ID = 9000;       // the drag's id while it holds the pointer
-let IDS = [PANEL_IDS, CARD_IDS, HOME_IDS, SETTINGS_IDS, WHO_IDS, PICKER_IDS, RESULTS_IDS, REPLAY_IDS, SCROLL_ID];
-let IDS_SPAN = [20, 2, 71, 72, 43, 600, 211, 522, 1];
+let IDS = [PANEL_IDS, CARD_IDS, HOME_IDS, SETTINGS_IDS, WHO_IDS, PICKER_IDS, RESULTS_IDS, REPLAY_IDS, TUTORIAL_IDS,
+           SCROLL_ID];
+let IDS_SPAN = [20, 2, 71, 72, 50, 600, 211, 522, 10, 1];
 let SLOP = 10.0;            // dp a press moves before it is a drag, not a tap
 let CLIP = 4.0;             // added to a quad's extra.z: drawn only inside the list's view
 let WHEEL = 40.0;           // dp a wheel's step scrolls
@@ -1218,6 +1221,38 @@ fn text_width(g: Gui&, face: i64, s: const u8[:]) -> f32 {
 // pixels after each character. Glyphs land on whole pixels.
 fn text(g: Gui&, face: i64, r: float4, s: const u8[:], a: f32, spacing: f32, align: i64) {
     write(g, face, r, s, float4 { 1.0, 1.0, 1.0, a }, false, spacing, align, false);
+}
+
+// Text s in face `face` broken at its spaces into lines as wide as r at most, from r's
+// top down, each lined up by `align`, at opacity a, a line `step` times the face's height
+// below the last; a word wider than r alone on its line. Returns the height the lines
+// take; with `draw` false it only measures (the tutorial's lines, task 026).
+fn wrapped(g: Gui&, face: i64, r: float4, s: const u8[:], a: f32, align: i64, step: f32 = 1.25, draw: bool = true) -> f32 {
+    let f .= g.faces[face];
+    let lh = f.ascent - f.descent;
+    var y = r.y;
+    var rest = s;
+    var lines = 0;
+    while rest.len > 0 {
+        // The longest run of whole words that fits, else the first word alone.
+        var end = rest.len;
+        if text_width(g, face, rest) > r.z {
+            end = -1;
+            for i in 1..rest.len {
+                guard rest[i] == ' ' else { continue; }
+                if text_width(g, face, rest[..i]) > r.z { if end < 0 { end = i; } break; }
+                end = i;
+            }
+            if end < 0 { end = rest.len; }
+        }
+        if draw { text(g, face, float4 { r.x, y, r.z, lh }, rest[..end], a, 0.0, align); }
+        y += step * lh;
+        lines++;
+        var next = end;
+        while next < rest.len && rest[next] == ' ' { next++; }
+        rest = rest[next..];
+    }
+    return if lines > 0 { (lines - 1) * step * lh + lh } else { 0.0 };
 }
 
 // Text as text() draws it at full opacity, over a soft dark halo, for a title bare on the

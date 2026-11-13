@@ -2,7 +2,7 @@ loaded: true, the set international of 74
 a Brazilian player's set: brazilian, a Russian's: russian, an English one's: international
 home: home, the set russian of 46
 puzzles: picker, the set russian of 46, library
-  tiles 8, locks 3, marks 1 1 1 1 0
+  tiles 9, locks 3, marks 1 1 1 1 0
 learn tapped: picker, the set russian of 46, learn
   tiles 13
 the ninth: puzzle, the set russian of 46, puzzle 9, W:Wh4,a5:Bg5,h6,c7,e7,g7, playing, stars 3, waits on -
@@ -15,5 +15,5 @@ home again: home, the set russian of 46
 draughts international: home, the set international of 74
   home's count: 0 / 222
 puzzles: picker, the set international of 74, library
-  back and a row per theme of the set: true, king shots' mark 1
+  back, a row per theme of the set, and how to play: true, king shots' mark 1
   kept: stars.russian = 9:3

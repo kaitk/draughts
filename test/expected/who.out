@@ -4,7 +4,9 @@ the card's tiles: 4
 + tapped: the sheet; *1 fox; season -1, game 10 after 0, picture hare
 the name tapped: the sheet (typing); *1 fox; season -1, game 10 after 0, keyboard asked 1
 typed: 'Mia', the sheet; *1 fox; season -1, game 10 after 0
-done: closed; 1 fox, *2 owl Mia; season -1, game 10 after 0, changed true
+done: the question; 1 fox, *2 owl Mia; season -1, game 10 after 0, changed true
+  asked true, the question's tiles 2
+I know how: closed; 1 fox, *2 owl Mia; season -1, game 10 after 0, knows true, home's first row how to play false
 the fox's face: closed; *1 fox, 2 owl Mia; season -1, game 10 after 0, changed true
 the pencil: who's playing (editing); *1 fox, 2 owl Mia; season -1, game 10 after 0
 Mia's face: the sheet (editing); *1 fox, 2 owl Mia; season -1, game 10 after 0, the sheet's tiles 11
@@ -26,7 +28,9 @@ back: closed (editing); *1 fox; season -1, game 10 after 0
 a tap outside the card: closed; *1 fox; season -1, game 10 after 0
 first run: the sheet; *1 fox; season -1, game 10 after 0, tiles 9
 home's pieces over the sheet: 0
-a frog, done: closed; *1 frog; season -1, game 10 after 0, changed true
+a frog, done: the question; *1 frog; season -1, game 10 after 0, changed true
+show me: screen 7 (how to play 7), step 0 of 9, knows false
+back: screen 0, home's first row how to play true
 en:
   tablet landscape, 1 players, who's playing: 4 tiles, smallest 88 x 88 dp, card at 242 dp, 466 x 316 dp, all in place
   tablet landscape, a new player: 9 tiles, smallest 88 x 88 dp, card at 183 dp, 758 x 434 dp, all in place

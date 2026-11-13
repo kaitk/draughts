@@ -338,6 +338,16 @@ let FRAG = """
             float d = min(abs(box(p, vec2(12.0), vec2(8.0), 2.5)), seg(p, vec2(12.0, 16.5), vec2(12.0, 7.5)));
             return min(d, min(seg(p, vec2(8.5, 11.0), vec2(12.0, 7.5)), seg(p, vec2(12.0, 7.5), vec2(15.5, 11.0))));
         }
+        if (k == 48) {          // how to play (task 026): a finger tapping, a ring over its tip
+            float d = min(seg(p, vec2(10.0, 13.0), vec2(10.0, 6.5)), arc(p, vec2(11.6, 6.5), 1.6, 3.1415927, 3.1415927));
+            d = min(d, seg(p, vec2(13.2, 6.5), vec2(13.2, 12.0)));
+            d = min(d, min(arc(p, vec2(14.8, 11.5), 1.6, 3.1415927, 3.1415927), seg(p, vec2(16.4, 11.5), vec2(16.4, 12.5))));
+            d = min(d, min(arc(p, vec2(17.95, 12.75), 1.57, 3.3, 3.1415927), seg(p, vec2(19.5, 13.0), vec2(19.5, 15.5))));
+            d = min(d, min(arc(p, vec2(13.5, 15.5), 6.0, 0.0, 1.5707963), seg(p, vec2(13.5, 21.5), vec2(12.5, 21.5))));
+            d = min(d, min(arc(p, vec2(12.5, 16.0), 5.5, 1.5707963, 0.927), seg(p, vec2(8.1, 19.3), vec2(5.4, 15.7))));
+            d = min(d, min(arc(p, vec2(6.55, 14.75), 1.49, 2.45, 3.1415927), seg(p, vec2(7.7, 13.8), vec2(10.0, 15.5))));
+            return min(d, arc(p, vec2(11.6, 6.5), 4.4, 3.1415927, 3.1415927));
+        }
         return 1e9;
     }
     // A player's badge's animal (badges/badges.goose): its signed distance at f, in a

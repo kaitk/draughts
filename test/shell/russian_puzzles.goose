@@ -47,7 +47,7 @@ fn icons(g: gui::Gui&, icon: i64) -> i64 {
     return n;
 }
 
-// The library as the last frame declared it: its tiles (back and a row per theme), locks,
+// The library as the last frame declared it: its tiles (back, a row per theme, how to play), locks,
 // and each theme's mark.
 fn library(g: gui::Gui&) -> u8[>..] {
     return str("tiles ", drive::tiles(g), ", locks ", icons(g, gui::LOCK), ", marks ", icons(g, gui::BOOK), " ",
@@ -125,7 +125,7 @@ fn main() {
     show(sh, "puzzles");
     var themes = 0;
     for t in puzzles::THEMES { if puzzles::theme_count(puzzles::all, t) > 0 { themes++; } }
-    print("  back and a row per theme of the set: ", drive::tiles(g) == themes + drive::LEARN_ROW, ", king shots' mark ",
+    print("  back, a row per theme of the set, and how to play: ", drive::tiles(g) == themes + drive::LEARN_ROW + 1, ", king shots' mark ",
           icons(g, gui::KING));
     print("  kept: ", kept(sh));
 }

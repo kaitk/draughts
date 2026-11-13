@@ -13,7 +13,9 @@
 // over its levels, each a glass row of the level's mark and name beside its tiles, or
 // over them where the two don't fit side by side; a level's tiles split into rows as even
 // as they go. Each tile shows the stars won, the first without stars lit. Every tap is
-// a tap (gui::tap()) at least. The sharp photograph shows behind it, and no board.
+// a tap (gui::tap()) at least. Over the themes, across the columns, How to play (task 026,
+// prototypes/tutorial.html entry b): its mark, its name, the steps played of the
+// switch's draughts' tutorial, and a bar of them; it is never needed to open a theme. The sharp photograph shows behind it, and no board.
 namespace picker;
 import std;
 import vec;
@@ -28,6 +30,7 @@ let NOTHING = gui::ASK_NOTHING;
 let BACK = gui::ASK_BACK;   // home
 let SHOWN = gui::ASK_SHOWN; // a theme's page opened or left: drawn again
 let SWITCHED = -10;         // other draughts chosen on the library's switch
+let LEARN = -11;            // how to play, the library's first row (task 026)
 
 let MARKS = [gui::BOOK, gui::JUMPS, gui::CROWN, gui::TARGET, gui::KING, gui::SHIELD];
 let NAMES = [strings::THEME_LEARN, strings::THEME_CAPTURES, strings::THEME_CROWNING, strings::THEME_SHOTS,
@@ -93,8 +96,9 @@ fn line_h(g: gui::Gui&, face: i64) -> f32 { g.faces[face].ascent - g.faces[face]
 // a puzzle's board grows out of and shrinks back into. Returns BACK, SHOWN (having set
 // `theme`), SWITCHED (having set `variant`, the player's draughts, from the library's
 // switch), the index in puzzles::all of a puzzle tapped, or NOTHING.
-fn frame(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, spot: float4&, variant: i64&) -> i64 {
-    if theme < 0 { return library(g, area, stars, at, theme, spot, variant); }
+fn frame(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, spot: float4&, variant: i64&,
+         learned: i64 = 0, steps: i64 = 0) -> i64 {
+    if theme < 0 { return library(g, area, stars, at, theme, spot, variant, learned, steps); }
     return page(g, area, stars, at, theme, spot);
 }
 
@@ -186,6 +190,46 @@ fn theme_row(g: gui::Gui&, r: float4, theme: i64, stars: const u8[:], phone: boo
     return tapped && opened;
 }
 
+// How to play's row in the library: its mark (the finger on a disc of the glow at 40%), its
+// name, the steps played ("✓ n / total steps"), and a bar of them. True when tapped.
+fn learn_row(g: gui::Gui&, r: float4, learned: i64, steps: i64, phone: bool) -> bool {
+    let u = g.scale;
+    gui::glass(g, r, 22.0);
+    let tapped = gui::tile(g, gui::PICKER_IDS + 8, r, gui::NO_ICON, gui::ROW, 22.0);
+    var c = r;
+    gui::cut_left(c, (if phone { 12.0 } else { 20.0 }) * u);
+    gui::cut_right(c, (if phone { 18.0 } else { 26.0 }) * u);
+    let m = min(if phone { 56.0 } else { 72.0 }, r.w / u - 16.0) * u;
+    let disc = gui::center(gui::cut_left(c, m), m, m);
+    gui::glow_fill(g, disc, 0.4, 0.5 * m);
+    let s = 0.57 * m;
+    gui::glyph_icon(g, gui::center(disc, s, s), gui::HOW, gui::PLAIN, 0.0, 1.0);
+    gui::cut_left(c, (if phone { 18.0 } else { 22.0 }) * u);
+    let name_h = line_h(g, gui::LABEL);
+    let tall = name_h + 18.0 * u;
+    var b = float4 { c.x, c.y + 0.5 * (c.w - tall), c.z, tall };
+    var top = gui::cut_top(b, name_h);
+    gui::cut_top(b, 10.0 * u);
+    var n: u8[..64] = [];
+    let done = clamp(learned, 0, steps);
+    strings::fill_in(n, strings::HOW_STEP_COUNT, [done, steps]);
+    let w = gui::text_width(g, gui::BODY, n[..]);
+    gui::text(g, gui::BODY, gui::cut_right(top, w), n[..], 0.66, 0.0, gui::RIGHT);
+    if done >= steps && steps > 0 {
+        gui::cut_right(top, 6.0 * u);
+        let k = 22.0 * u;
+        gui::glyph_icon(g, gui::center(gui::cut_right(top, k), k, k), gui::CHECK, gui::ON, 0.0, 1.0);
+    }
+    gui::cut_right(top, gui::PAD * u);
+    let name = strings::get(strings::HOW_TITLE);
+    gui::text(g, gui::fitting(g, gui::LABEL, name, top.z), top, name, 1.0, 0.0, gui::LEFT);
+    let bar = gui::cut_top(b, 8.0 * u);
+    gui::fill(g, bar, float4 { 1.0, 1.0, 1.0, 0.14 }, 4.0 * u);
+    let k = (done as f32) / max(1, steps);
+    if k > 0.0 { gui::glow_fill(g, float4 { bar.x, bar.y, bar.z * k, bar.w }, 1.0, 4.0 * u); }
+    return tapped;
+}
+
 // The draughts switch (prototypes/puzzle-set.html, take a): settings' draughts tiles, each
 // its name over its board's size, joined on one glass, 4 dp round them and between.
 let SWITCH_PAD = 4.0;
@@ -249,7 +293,7 @@ fn title_width(g: gui::Gui&) -> f32 { gui::text_width(g, gui::LABEL, strings::ge
 // portrait, a small window) in a row of its own under the title. A tap on the switch
 // sets `variant` and returns SWITCHED, the list back at its top.
 fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, spot: float4&,
-           variant: i64&) -> i64 {
+           variant: i64&, learned: i64, steps: i64) -> i64 {
     let u = g.scale;
     let landscape = area.z >= area.w;
     let phone = gui::phone(area, u);
@@ -273,15 +317,18 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     // foldable, a 9:16 phone), down to the gui::tap() a tap wants; where even that doesn't
     // fit, they keep their height and scroll.
     var row_h = (if phone { 96.0 } else { 124.0 }) * u;
-    let fit = floor((page.w - head - (rows - 1) * gap) / rows);
+    // How to play's row over them, across the columns.
+    let learn_h = (if phone { gui::tap() } else { 104.0 }) * u;
+    let first = learn_h + gap;
+    let fit = floor((page.w - head - first - (rows - 1) * gap) / rows);
     if !landscape && fit >= gui::tap() * u { row_h = min(row_h, fit); }
-    let one = rows * row_h + (rows - 1) * gap;
+    let one = first + rows * row_h + (rows - 1) * gap;
     // Two columns in landscape where two fit the width (a tablet, a wide window) or one
     // doesn't fit the height (a phone); one in portrait, scrolling where it must.
     let wide = page.z >= 2.0 * NARROWEST * u + gap;
     let cols = if landscape && rows > 1 && (wide || head + one > page.w) { 2 } else { 1 };
     let per = (rows + cols - 1) / cols;
-    let h = head + per * row_h + (per - 1) * gap;
+    let h = head + first + per * row_h + (per - 1) * gap;
     let y = if landscape { page.y + max(0.0, floor(0.5 * (page.w - h) + 0.5)) } else { page.y };
     // Where the title and the rows start below back (a tablet's landscape), they take the
     // whole width and center on it; else they keep clear of back's column, centered on
@@ -309,11 +356,11 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     // under the title row, shown down to the screen's foot.
     let list_top = y + head;
     let view = float4 { area.x, list_top, area.z, g.insets.w + area.y + area.w - list_top };
-    let off = gui::scroll_begin(g, LIBRARY_LIST, view, per * row_h + (per - 1) * gap + gui::PAD_WIDE * u);
+    let off = gui::scroll_begin(g, LIBRARY_LIST, view, first + per * row_h + (per - 1) * gap + gui::PAD_WIDE * u);
     var k = 0;
     for t in puzzles::THEMES {
         guard puzzles::theme_count(puzzles::all, t) > 0 else { continue; }
-        let r = float4 { x + (k / per) * (col_w + gap), list_top - off + (k % per) * (row_h + gap), col_w, row_h };
+        let r = float4 { x + (k / per) * (col_w + gap), list_top - off + first + (k % per) * (row_h + gap), col_w, row_h };
         k++;
         if at >= 0 && puzzles::all.list[at].theme == t { spot = float4 { r.x, r.y, r.w, r.w }; }
         if theme_row(g, r, t, stars, phone) {
@@ -321,6 +368,8 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
             pick = SHOWN;
         }
     }
+    // How to play over them, declared after them so the themes' tiles keep their order.
+    if learn_row(g, float4 { x, list_top - off, w, learn_h }, learned, steps, phone) { pick = LEARN; }
     gui::scroll_end(g);
     return pick;
 }

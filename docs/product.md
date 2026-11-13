@@ -26,7 +26,7 @@ base.
   away before the child looked for it). A capture of many jumps is played jump by jump by the child, never
   finished by the game (2026-11-09). Mistakes is the
   default; moves is on by default only in the first lessons that teach the basic ideas,
-  and in the tutorial at the first start.
+  and in How to play, the tutorial a new player is offered.
 - In a game, help shows the danger, never the answer, unless asked (2026-11-09). The
   **lookout** (Estonian *Valvur*), a round eye toggle at the end of whose turn's line,
   off until the player turns it on and remembered per player, marks what the player's

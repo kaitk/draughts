@@ -58,6 +58,7 @@ import .history;
 import .record;
 import .results;
 import .replay;
+import .tutorial;
 
 let HOME = 0;
 let GAME = 1;
@@ -66,7 +67,8 @@ let PICKER = 3;             // the puzzles to pick from
 let PUZZLE = 4;             // one puzzle
 let RESULTS = 5;            // the games played (results.goose, task 074)
 let REPLAY = 6;             // a past game replayed (replay.goose, task 078)
-let SCREENS = 7;
+let TUTORIAL = 7;           // how to play (tutorial.goose, task 026)
+let SCREENS = 8;
 
 // What sets the screens apart where the shell runs none of their code: whose board each
 // shows (board_of; home's setup shows its own), how blurred it shows the photograph,
@@ -74,7 +76,7 @@ let SCREENS = 7;
 // code is chosen in the three functions after the table, its frame, its still frame,
 // and whether it moves: a new screen is a row here and an arm in each.
 struct Kind {
-    board: i64,     // GAME the game's, SETTINGS the preview, PUZZLE the puzzle's, REPLAY the replay's
+    board: i64,     // GAME the game's, SETTINGS the preview, PUZZLE the puzzle's, REPLAY the replay's, TUTORIAL its own
     blur:  f32,     // 0 the photograph as it is, 1 blurred and dimmed
     up:    i64,     // where back goes: a screen, NO_WAY on home's menu, RETURN where it was opened from
     with:  i64,     // the screens it switches to and from through a transition, a bit each
@@ -82,13 +84,14 @@ struct Kind {
 let NO_WAY = -1;
 let RETURN = -2;            // sh.back
 let KINDS: Kind[SCREENS] = [
-    Kind { board: GAME,     blur: 0.0, up: NO_WAY, with: (1 << GAME) | (1 << SETTINGS) },    // HOME
-    Kind { board: GAME,     blur: 1.0, up: HOME,   with: 1 << HOME },                        // GAME
+    Kind { board: GAME, blur: 0.0, up: NO_WAY, with: (1 << GAME) | (1 << SETTINGS) },        // HOME
+    Kind { board: GAME, blur: 1.0, up: HOME, with: 1 << HOME },                              // GAME
     Kind { board: SETTINGS, blur: 0.0, up: RETURN, with: 1 << HOME },                        // SETTINGS
-    Kind { board: PUZZLE,   blur: 0.0, up: HOME,   with: 1 << PUZZLE },                      // PICKER
-    Kind { board: PUZZLE,   blur: 1.0, up: PICKER, with: 1 << PICKER },                      // PUZZLE
-    Kind { board: PUZZLE,   blur: 0.0, up: HOME,   with: 0 },                                // RESULTS
-    Kind { board: REPLAY,   blur: 1.0, up: RESULTS, with: 0 },                               // REPLAY
+    Kind { board: PUZZLE, blur: 0.0, up: HOME, with: 1 << PUZZLE },                          // PICKER
+    Kind { board: PUZZLE, blur: 1.0, up: PICKER, with: 1 << PICKER },                        // PUZZLE
+    Kind { board: PUZZLE, blur: 0.0, up: HOME, with: 0 },                                    // RESULTS
+    Kind { board: REPLAY, blur: 1.0, up: RESULTS, with: 0 },                                 // REPLAY
+    Kind { board: TUTORIAL, blur: 1.0, up: RETURN, with: 0 },                                // TUTORIAL
 ];
 
 let DURATION = 0.25;        // seconds a transition takes
@@ -101,27 +104,27 @@ struct Frame {
     changed: bool = false,          // anything on screen changed
     screen:  i64  = HOME,           // the screen showing
     // The screen whose board shows: in a transition between home and settings, home's.
-    shows:   i64           = HOME,
-    layout:  board::Layout,          // where the board is
-    over:    board::Overlay = [],    // the screen's pieces over the UI
+    shows:  i64 = HOME,
+    layout: board::Layout,           // where the board is
+    over:   board::Overlay = [],     // the screen's pieces over the UI
     // How blurred the photograph is: 0 as it is (home, settings, the puzzles to pick
     // from), 1 blurred and dimmed (the game, a puzzle), between in a transition.
-    blur:    f32 = 0.0,
+    blur: f32 = 0.0,
     // Where the UI is hidden for the board passing in a transition (x, y, size, corner
     // radius; size 0 at rest), `tall` pixels tall (0 as tall as wide; the 3D board's
     // bounds are wider).
-    hole:    float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
-    tall:    f32    = 0.0,
+    hole: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
+    tall: f32    = 0.0,
     // The 3D board this frame (settings::raised, on a screen showing a board), and the
     // view the app draws it through, `layout` then the flat square it plays on
     // (view3d::square); where on screen the view's bounds (view.rect) go and how opaque:
     // the bounds and 1 at rest, moving between the ends' in a transition, which `hold`s
     // the image as drawn once.
-    raised:  bool         = false,
-    view:    view3d::View = view3d::View {},
-    place:   float4       = float4 { 0.0, 0.0, 0.0, 0.0 },
-    fade:    f32          = 1.0,
-    hold:    bool         = false,
+    raised: bool         = false,
+    view:   view3d::View = view3d::View {},
+    place:  float4       = float4 { 0.0, 0.0, 0.0, 0.0 },
+    fade:   f32          = 1.0,
+    hold:   bool         = false,
     // A player's name typed (who's playing): the keyboard up, and brought up again each
     // time `keyboard` counts a tap on the name.
     typing:   bool = false,
@@ -130,8 +133,8 @@ struct Frame {
     // is its own (the language, the season's photograph). Once a transition is over for
     // a change made by the tap that started it: the write flushes to disk, 13 to 17 ms on
     // the tablet, too long for the frame that starts it moving.
-    save:    bool = false,
-    quit:    bool = false,          // home's way out was tapped: the app stops (stays set)
+    save: bool = false,
+    quit: bool = false,             // home's way out was tapped: the app stops (stays set)
 }
 
 // What the app does with the 3D board before a frame (board3d): it is chosen, so the app
@@ -142,35 +145,39 @@ let KEPT = 1;
 let DROPPED = 2;
 
 struct Shell {
-    screen:  i64 = HOME,
-    game:    game::Game,
-    preview: board::Board,                    // the board beside settings, as they make it
-    next:    board::Board,                    // the board beside home's setup: the game its play starts
-    prefs:   settings::Settings = settings::Settings {},  // the playing player's, and the device's language
-    players: players::Players   = players::Players {},
-    who:     who::Who           = who::Who {},        // who's playing, over home's menu
-    quitting: bool              = false,      // a desktop's quit asks first, over home's menu (home::ask_quit)
-    changed: bool               = false,      // prefs changed since the app last wrote them (Frame.save)
-    drawn:   i64                = -1,         // the screen the last frame declared
-    back:    i64                = HOME,       // where settings goes back to
-    setup:   i64                = home::NO_SETUP, // home's column: the menu, or a setup
-    staged:  bool               = false,      // home shows `next`, having declared a setup this frame
+    screen:   i64 = HOME,
+    game:     game::Game,
+    preview:  board::Board,                   // the board beside settings, as they make it
+    next:     board::Board,                   // the board beside home's setup: the game its play starts
+    prefs:    settings::Settings = settings::Settings {}, // the playing player's, and the device's language
+    players:  players::Players   = players::Players {},
+    who:      who::Who           = who::Who {},       // who's playing, over home's menu
+    quitting: bool               = false,     // a desktop's quit asks first, over home's menu (home::ask_quit)
+    changed:  bool               = false,     // prefs changed since the app last wrote them (Frame.save)
+    drawn:    i64                = -1,        // the screen the last frame declared
+    back:     i64                = HOME,      // where settings goes back to
+    setup:    i64                = home::NO_SETUP, // home's column: the menu, or a setup
+    staged:   bool               = false,     // home shows `next`, having declared a setup this frame
     // The game is one nobody set up, there being none kept (read_game: a fresh install, a
     // new player), until a game is set up or a move played in it (resume). Kept with the
     // game (saved.goose).
-    unset:   bool               = false,
-    out:     Frame,                           // this frame's, for the app
+    unset: bool = false,
+    out:   Frame,                             // this frame's, for the app
     // Handed in by the app each frame (frame): whether the 3D board, when chosen, is
     // ready to draw (else it gets ready a step a frame, taps on it left alone), and
     // whether an image of it shows meanwhile (else a still mark in its place:
     // gui::waiting's words).
-    ready3d:   bool         = true,
-    shown3d:   bool         = true,
+    ready3d: bool = true,
+    shown3d: bool = true,
     // Each end's 3D view this frame, rect.z 0 for none (raise).
     went_view: view3d::View = view3d::View {},
     came_view: view3d::View = view3d::View {},
-    puzzle: puzzle::Play,                     // the puzzle playing, or last played
-    theme:  i64 = -1,                         // the theme the picker shows, -1 its library
+    puzzle:    puzzle::Play,                  // the puzzle playing, or last played
+    // How to play (task 026), and the screen it was opened from, where its back goes:
+    // home (its row, or a new player's question) or the puzzles' library.
+    lesson:      tutorial::Lesson,
+    lesson_from: i64 = HOME,
+    theme:       i64 = -1,                    // the theme the picker shows, -1 its library
     // A transition: the screen it leaves, or -1, and when it began; and this frame, how
     // far it has gone, eased, 0..1, and where the screen left and the one come to put the
     // board. `left` is home's column as home had it when left, a setup whose play
@@ -196,7 +203,7 @@ struct Shell {
     // The results screen's: the playing player's games, read as it opens, and the draughts
     // it shows.
     games:           history::Game[..history::MAX_GAMES] = [],
-    results_variant: i64                                = rules::INTERNATIONAL,
+    results_variant: i64                                 = rules::INTERNATIONAL,
     // A past game replayed (replay.goose), with its own board: nothing of it reaches the
     // game, the history, or the ratings. Back from it, the results show as they were
     // left (`replayed`, their list's scroll kept in `results_at`).
@@ -224,6 +231,7 @@ fn screen_frame(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool, c
         PUZZLE => puzzle_screen(sh, g, area, now),
         RESULTS => results_screen(sh, g, area, now, fresh),
         REPLAY => replay_screen(sh, g, area, now, fresh),
+        TUTORIAL => tutorial_screen(sh, g, area, now),
         _ => home_screen(sh, g, area, now),
     };
 }
@@ -248,7 +256,8 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: bo
         PICKER => {
             var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
             var variant = sh.prefs.variant;
-            picker::frame(g, area, sh.prefs.stars[puzzles::loaded], sh.puzzle.index, sh.theme, spot, variant);
+            picker::frame(g, area, sh.prefs.stars[puzzles::loaded], sh.puzzle.index, sh.theme, spot, variant,
+                          learned(sh), tutorial::count(sh.prefs.variant as u8));
             l = in_tile(sh, spot, g.scale);
         },
         PUZZLE => {
@@ -276,6 +285,7 @@ fn animating(sh: Shell&, g: gui::Gui&, now: f64) -> bool {
     return match sh.screen {
         GAME => game::animating(sh.game, g, now) || flat_fade(sh, now) <= 1.0,
         PUZZLE => puzzle::animating(sh.puzzle, g, now),
+        TUTORIAL => tutorial::animating(sh.lesson, g, now),
         _ => board::animating(shown(sh), now) || gui::animating(g) || rig::moving(sh.cam, now)
              || (sh.screen == HOME && rig::moving(sh.demo, now)),
     };
@@ -285,7 +295,8 @@ fn new(variant: u8) -> Shell {
     let g = game::new(variant);
     let l = panel::layout(1.0, 1.0, rules::VARIANTS[variant].size).board;
     var sh = Shell { game: g, preview: board::new(variant), next: board::new(variant), out: Frame { layout: l, .. },
-                     puzzle: puzzle::new(), went: l, came: l, replay: replay::new(), parked: default<Parked>(), .. };
+                     puzzle: puzzle::new(), lesson: tutorial::new(), went: l, came: l, replay: replay::new(),
+                     parked: default<Parked>(), .. };
     // One player, the fox, until the app reads the players (players::load).
     sh.players.list.push(players::Player { id: 1, .. });
     apply_prefs(sh);
@@ -304,6 +315,7 @@ fn apply_prefs(sh: Shell&) {
     gm.b.hints = p.hints;
     gm.b.king_look = king_look(sh);
     sh.puzzle.b.king_look = king_look(sh);
+    sh.lesson.b.king_look = king_look(sh);
     gm.look = p.lookout;
     gm.moves_shown = p.moves;
     gm.turns = p.turns;
@@ -379,6 +391,12 @@ fn back(sh: Shell&, now: f64) -> bool {
         leave_trial(sh, now);
         return true;
     }
+    // How to play goes back where it was opened from, its end's card too.
+    if sh.screen == TUTORIAL {
+        go_to(sh, sh.lesson_from, now);
+        if sh.lesson_from == HOME { sh.setup = home::NO_SETUP; }
+        return true;
+    }
     if sh.screen == HOME && sh.who.state != who::CLOSED {
         who::back(sh.who);
     } else if sh.screen == HOME && sh.quitting {
@@ -405,7 +423,7 @@ fn back(sh: Shell&, now: f64) -> bool {
 // is put down, as a desktop's Escape lets go of what it holds, rather than the screen
 // left (back). False, changing nothing, with none chosen or one partway through a capture.
 fn put_down(sh: Shell&, g: gui::Gui&) -> bool {
-    guard (sh.screen == GAME || sh.screen == PUZZLE) && g.focus == panel::BOARD_ID else { return false; }
+    guard (sh.screen == GAME || sh.screen == PUZZLE || sh.screen == TUTORIAL) && g.focus == panel::BOARD_ID else { return false; }
     return board::put_down(shown(sh));
 }
 
@@ -433,7 +451,12 @@ fn play(sh: Shell&, now: f64) {
 fn resume(sh: Shell&) -> home::Resume {
     let gm .= sh.game;
     let on = !sh.unset || gm.b.history.len > 0 || gm.computer >= 0;
-    return home::Resume { on: on, note: home::resume_note(gm.computer, gm.level) };
+    // A new player, asked whether they know how to play (`first_start_done`), who hasn't
+    // learned their draughts, nor said they know how, nor begun a game against the
+    // computer: How to play in continue's place (task 026).
+    let p .= sh.prefs;
+    let learn = !on && p.first_start_done && !p.knows && p.games == 0 && learned(sh) < tutorial::count(p.variant as u8);
+    return home::Resume { on: on, note: home::resume_note(gm.computer, gm.level), learn: learn };
 }
 
 // One frame, after gui::begin, on a screen width × height pixels, each screen laid out in
@@ -640,8 +663,8 @@ fn raise_in(sh: Shell&, room: float4, n: i64, u: f32, l: board::Layout&) -> view
 fn game_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
     let n = rules::VARIANTS[sh.game.b.variant].size;
     var l = if settings::raised(sh.prefs) {
-                panel::corners_in(area, n, u, panel::PITCH_PORTRAIT, true, true, sh.prefs.moves != settings::MOVES_HIDDEN)
-            }
+        panel::corners_in(area, n, u, panel::PITCH_PORTRAIT, true, true, sh.prefs.moves != settings::MOVES_HIDDEN)
+    }
             else { panel::layout_in(area, n, u, true, true, sh.prefs.moves != settings::MOVES_HIDDEN) };
     l.board.flip = sh.game.computer == rules::WHITE || (!l.three && flat_turned(sh) != (flat_fade(sh, now) < 0.0));
     panel::aim(l, sh.game.cam, now);
@@ -840,6 +863,73 @@ fn puzzle_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     return changed || ev.go != puzzle::STAY;
 }
 
+// How many steps of the player's draughts' tutorial they have played.
+fn learned(sh: Shell&) -> i64 { sh.prefs.learned[clamp(sh.prefs.variant, 0, rules::VARIANT_COUNT - 1)] }
+
+// Opens how to play in the player's draughts (task 026), from `from` (HOME or PICKER),
+// where its back goes: at the step after those played, or the first once all are.
+fn learn(sh: Shell&, from: i64, now: f64) {
+    let v = sh.prefs.variant as u8;
+    let done = learned(sh);
+    tutorial::open(sh.lesson, v, if done < tutorial::count(v) { done } else { 0 });
+    sh.lesson_from = from;
+    apply_prefs(sh);
+    go_to(sh, TUTORIAL, now);
+}
+
+// Where how to play puts the board and its panels: a puzzle's layout.
+fn tutorial_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
+    let ls .= sh.lesson;
+    let n = rules::VARIANTS[ls.b.variant].size;
+    var l = if settings::raised(sh.prefs) { panel::corners_in(area, n, u, panel::PITCH_PORTRAIT, false) }
+            else { panel::puzzle_in(area, n, u) };
+    panel::aim(l, ls.cam, now);
+    return l;
+}
+
+// How to play for this frame: the steps played kept in the player's file, and the end's
+// ways on, the Learn theme's first open puzzle, home's setup, or home. Returns whether
+// anything on screen changed.
+fn tutorial_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
+    let ls .= sh.lesson;
+    var l = tutorial_layout(sh, area, g.scale, now);
+    sh.out.layout = l.board;
+    let ev, changed = tutorial::frame(ls, g, l, area, gui::bleed(g, area, area), now, sh.out.over);
+    panel::aim(l, ls.cam, now);
+    if l.three { sh.came_view = l.view; }
+    let v = clamp(ls.variant as i64, 0, rules::VARIANT_COUNT - 1);
+    if ev.learned > sh.prefs.learned[v] {
+        sh.prefs.learned[v] = ev.learned;
+        sh.changed = true;
+    }
+    match ev.go {
+        tutorial::BACK => {
+            go_to(sh, sh.lesson_from, now);
+            if sh.lesson_from == HOME { sh.setup = home::NO_SETUP; }
+        },
+        tutorial::SETTINGS => {
+            go_to(sh, SETTINGS, now);
+            sh.back = TUTORIAL;
+        },
+        tutorial::PUZZLES => {
+            load_set(sh);
+            var i = picker::first_open(sh.prefs.stars[puzzles::loaded], puzzles::LEARN);
+            if i < 0 { i = picker::level_nth(puzzles::LEARN, 0, 0); }
+            if i >= 0 { play_puzzle(sh, i, now); } else { go_to(sh, PICKER, now); }
+        },
+        tutorial::NEW_GAME => {
+            go_to(sh, HOME, now);
+            sh.setup = home::NEW_GAME;
+        },
+        tutorial::HOME => {
+            go_to(sh, HOME, now);
+            sh.setup = home::NO_SETUP;
+        },
+        _ => {},
+    }
+    return changed || ev.go != tutorial::STAY;
+}
+
 // The board of the puzzle playing, small in its tile on the puzzles to pick from, which
 // it grows out of and shrinks back into in a transition.
 fn in_tile(sh: Shell&, spot: float4, scale: f32) -> board::Layout {
@@ -854,7 +944,9 @@ fn picker_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     sh.out.over.clear();
     var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
     var variant = sh.prefs.variant;
-    let pick = picker::frame(g, area, sh.prefs.stars[puzzles::loaded], sh.puzzle.index, sh.theme, spot, variant);
+    let pick = picker::frame(g, area, sh.prefs.stars[puzzles::loaded], sh.puzzle.index, sh.theme, spot, variant,
+                             learned(sh), tutorial::count(sh.prefs.variant as u8));
+    if pick == picker::LEARN { learn(sh, PICKER, now); }
     if pick == picker::SWITCHED {
         // The library's switch is settings' draughts: new games' too, saved as settings
         // saves it, and home's count over the set it shows. The next frame shows it.
@@ -973,7 +1065,7 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
         // them.
         sh.out.over.clear();
         gui::listen(g, true);
-        if who_card(sh, g, area) { changed = true; }
+        if who_card(sh, g, area, now) { changed = true; }
     }
     if asking {
         sh.out.over.clear();
@@ -1002,6 +1094,7 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
         },
         home::PLAYERS => { who::open(sh.who); },
         home::RESULTS => { go_to(sh, RESULTS, now); },
+        home::LEARN => { learn(sh, HOME, now); },
         home::PLAY => { play(sh, now); },
         _ => {},
     }
@@ -1034,15 +1127,29 @@ fn turn_home(sh: Shell&, g: gui::Gui&, v: view3d::View, room: float4, now: f64) 
 // Who's playing over home for this frame, doing what it asks: switching to a player,
 // adding one, saving one's picture and name, starting one again, removing one. Returns
 // whether anything on screen changed.
-fn who_card(sh: Shell&, g: gui::Gui&, area: float4) -> bool {
+fn who_card(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     let ask, index = who::frame(sh.who, sh.players, g, area, gui::bleed(g, area, area));
     let w .= sh.who;
     match ask {
         who::SWITCH => { switch_player(sh, index); },
         who::CREATE => { add_player(sh, w.picture, w.name); },
         who::SAVE => { edit_player(sh, index, w.picture, w.name); },
+        _ => {},
+    }
+    // A new player, or a fresh install's first, is being asked whether they know how to
+    // play: asked, whatever they answer (home's How to play row, resume).
+    if w.state == who::ASKING && !sh.prefs.first_start_done {
+        sh.prefs.first_start_done = true;
+        sh.changed = true;
+    }
+    match ask {
         who::AGAIN => { start_again(sh, index); },
         who::REMOVE => { remove_player(sh, index); },
+        who::LEARN => { learn(sh, HOME, now); },
+        who::KNOWN => {
+            sh.prefs.knows = true;
+            sh.changed = true;
+        },
         _ => {},
     }
     return ask != who::NOTHING;
@@ -1081,7 +1188,8 @@ fn flat_fade(sh: Shell&, now: f64) -> f32 {
 fn board_of(sh: Shell&, screen: i64) -> board::Board& {
     let kind = which(screen);
     return if screen == HOME && sh.staged { sh.next } else if kind == SETTINGS { sh.preview }
-           else if kind == PUZZLE { sh.puzzle.b } else if kind == REPLAY { sh.replay.b } else { sh.game.b };
+           else if kind == PUZZLE { sh.puzzle.b } else if kind == REPLAY { sh.replay.b }
+           else if kind == TUTORIAL { sh.lesson.b } else { sh.game.b };
 }
 fn which(screen: i64) -> i64 { KINDS[screen].board }
 

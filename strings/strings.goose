@@ -63,6 +63,19 @@ let KEYS = [
     "settings.background", "background.photo", "background.plain",
     "material.wood", "material.stone", "material.carved", "material.auto",
     "replay.no_count_why",
+    "how.title", "how.ask", "how.show", "how.known", "how.steps", "how.done", "how.finish", "how.step_count",
+    "how.home", "how.move_reply", "how.move_again",
+    "how.move", "how.move_line", "how.move_well",
+    "how.jump", "how.jump_line", "how.jump_well",
+    "how.must", "how.must_line", "how.must_well",
+    "how.chain", "how.chain_line", "how.chain_well",
+    "how.most", "how.most_line", "how.most_well",
+    "how.any", "how.any_line", "how.any_well",
+    "how.king", "how.king_line", "how.king_well",
+    "how.fly", "how.fly_line", "how.fly_well",
+    "how.afar", "how.afar_line", "how.afar_well",
+    "how.way", "how.way_line", "how.way_well",
+    "how.win", "how.win_line", "how.win_well",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -219,7 +232,21 @@ let MATERIAL_STONE = 151;
 let MATERIAL_CARVED = 152;
 let MATERIAL_AUTO = 153;    // and the tag on Raised, the theme's own board
 let REPLAY_NO_COUNT_WHY = 154; // the replay's note in full, why a game from it doesn't count (2026-11-13)
-let COUNT = 155;
+let HOW_TITLE = 155;       // how to play (task 026): home's row, the library's, the tutorial's
+let HOW_ASK = 156;         // a new player's question, and its answers
+let HOW_SHOW = 157;
+let HOW_KNOWN = 158;
+let HOW_STEPS = 159;       // "{} short steps", under show me
+let HOW_DONE = 160;        // the end's card
+let HOW_FINISH = 161;      // the last step's next
+let HOW_STEP_COUNT = 162;  // "{} / {} steps", the library's row
+let HOW_HOME = 163;        // the end's way home
+let HOW_MOVE_REPLY = 164;  // the first step's lines while the other side moves, and after
+let HOW_MOVE_AGAIN = 165;
+// The steps, three keys each from HOW_STEP: the rule's name, its line, and what is said
+// once it is played; in the order tutorial::STEPS names them.
+let HOW_STEP = 166;
+let COUNT = 199;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

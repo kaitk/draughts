@@ -55,6 +55,7 @@ let EXIT = 9;               // close the app
 var closable = true;
 let PLAYERS = 10;           // who's playing
 let RESULTS = 11;           // the games played (results.goose, task 074)
+let LEARN = 12;             // how to play (task 026)
 
 let ROWS = 3;               // continue, new game, puzzles; the games and settings after them
 // The menu's rows shown: ROWS, or one fewer while there is no game to continue (frame
@@ -383,10 +384,21 @@ fn sheet_board(width: f32, stage_h: f32, u: f32, height: f32, clear: f32) -> f32
 // What continue goes back to (issue 1, prototypes/issue-1.html, take a): whether there
 // is a game to go back to, one played or set up, and whose it is, a strings key for the
 // row's note (CONTINUE_FRIEND..), or -1 for none. With none (a first run, a new player)
-// the row isn't shown, as Quit isn't where it doesn't fit.
+// the row isn't shown, as Quit isn't where it doesn't fit; but for a new player who
+// hasn't learned the player's draughts (`learn`, task 026, prototypes/tutorial.html entry
+// b), How to play shows in its place, lit, its note the draughts it teaches. It goes once
+// the tutorial is done, a game is played or set up, or the player said they know how; a
+// player never asked (one from before the question) doesn't see it.
 struct Resume {
-    on:   bool = true,
-    note: i64  = -1,
+    on:    bool = true,
+    note:  i64  = -1,
+    learn: bool = false,
+}
+
+// The name of draughts `variant`, a strings key.
+fn draughts_key(variant: i64) -> i64 {
+    for v, i in settings::DRAUGHTS { if v == variant { return settings::DRAUGHTS_KEYS[i]; } }
+    return settings::DRAUGHTS_KEYS[0];
 }
 
 // The note for a game against the computer at `level`, or a friend for computer -1.
@@ -397,7 +409,7 @@ fn resume_note(computer: i64, level: i64) -> i64 {
 
 fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: float4, setup: i64,
          s: settings::Settings&, room3d: float4&, resume: Resume = Resume {}) -> i64 {
-    rows = if resume.on { ROWS } else { ROWS - 1 };
+    rows = if resume.on || resume.learn { ROWS } else { ROWS - 1 };
     let h = layout(g, n, area, setup, s);
     l = h.board;
     room3d = h.room3d;
@@ -541,6 +553,12 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
         let note = if i == 0 && resume.note >= 0 { strings::get(resume.note) }
                    else if i == 1 { strings::get(opponent) } else if i == 2 && all > 0 { stars[..] } else { "" };
         let mark = if i != 1 { gui::NO_ICON } else if s.friend { gui::FRIEND } else { gui::COMPUTER };
+        // How to play in continue's place (Resume.learn).
+        if i == 0 && !resume.on {
+            if gui::row(g, gui::HOME_IDS + 1, r, gui::HOW, strings::get(strings::HOW_TITLE),
+                        strings::get(draughts_key(s.variant)), true, true) { pick = LEARN; }
+            continue;
+        }
         if gui::row(g, gui::HOME_IDS + 1 + i, r, icons[i], strings::get(keys[i]), note, i == first, true, i == 1, mark) {
             pick = ways[i];
         }

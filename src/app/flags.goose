@@ -10,6 +10,7 @@ import vec;
 // --go play: a new game from home's setup, as its play starts one; --go here: the
 // replay's play from here, a game from the move it shows.
 let GO_PLAY = 99;
+let STEP_END = 0;           // --step end
 let GO_HERE = 98;
 
 // The most --tap flags kept: two taps a move, room for the longest count a shot plays
@@ -68,6 +69,10 @@ struct Flags {
     setup:  i64 = home::NO_SETUP,
     friend: i64 = -1,       // 1 for --screen friend, 0 for computer
     puzzle: i64 = -1,       // --puzzle ID: that puzzle, its taps on its board
+    // --step N: how to play's step N (from 1), its taps on its board; --step end its end's
+    // card (STEP_END). --screen tutorial opens it, --screen ask a new player's question.
+    step: i64  = -1,
+    ask:  bool = false,
     // --history FILE: the games the results screen and a replay read, in place of the
     // playing player's history (a history file's lines, shell/history.goose)
     history: u8[..512],
@@ -229,7 +234,9 @@ fn parse(argv: u8[:][>..]) -> Flags {
         if a == "--screen" {
             f.screen = if v == "game" { shell::GAME } else if v == "settings" { shell::SETTINGS }
                        else if v == "puzzles" { shell::PICKER } else if v == "results" { shell::RESULTS }
-                       else if v == "replay" { shell::REPLAY } else { shell::HOME };
+                       else if v == "replay" { shell::REPLAY } else if v == "tutorial" { shell::TUTORIAL }
+                       else { shell::HOME };
+            if v == "ask" { f.ask = true; }
             if v == "friend" || v == "computer" || v == "setup" { f.setup = home::NEW_GAME; }
             if v == "friend" { f.friend = 1; }
             if v == "computer" { f.friend = 0; }
@@ -245,6 +252,11 @@ fn parse(argv: u8[:][>..]) -> Flags {
         if a == "--puzzle" {
             let n, ok = parse_int(v);
             if ok { f.puzzle = n; }
+        }
+        if a == "--step" {
+            let n, ok = parse_int(v);
+            if ok && n >= 1 { f.step = n; }
+            if v == "end" { f.step = STEP_END; }
         }
         if a == "--variant" {
             let named, known = rules::variant_named(v);

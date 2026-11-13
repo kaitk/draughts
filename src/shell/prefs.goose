@@ -107,6 +107,11 @@ struct Settings {
     // The stars won in each puzzle, 1 to 3, by its set's variant (puzzles::set_of) and
     // its id; 0 for one not solved.
     stars: u8[puzzles::MAX_PUZZLES + 1][rules::VARIANT_COUNT] = [[0; puzzles::MAX_PUZZLES + 1]; rules::VARIANT_COUNT],
+    // How to play (task 026): the steps played in each draughts' tutorial (`learned.russian
+    // = 4`), all of them once it is done; and whether the player said they know how to
+    // play when asked as a new player (`how_to_play = known`), which keeps home's row away.
+    learned: i64[rules::VARIANT_COUNT] = [0; rules::VARIANT_COUNT],
+    knows:   bool                      = false,
     // Whether settings' language list is open (settings::head). Not in the file.
     languages_open: bool = false,
 }
@@ -142,6 +147,7 @@ fn parse(text: const u8[:]) -> Settings {
         }
         if key == "name" { players::set_name(s.name, value); }
         if key == "first_start" && value == "done" { s.first_start_done = true; }
+        if key == "how_to_play" && value == "known" { s.knows = true; }
         if key == "season" {
             for name, i in SEASON_NAMES { if value == name { s.season = SEASON_KINDS[i]; } }
         }
@@ -194,6 +200,7 @@ fn parse(text: const u8[:]) -> Settings {
         if has_of && rated_known && number {
             if kind == "rating" { s.rating[rated_v] = max(n, ai::LEAST_RATING); }
             if kind == "rated" && n >= 0 { s.rated[rated_v] = n; }
+            if kind == "learned" && n >= 0 { s.learned[rated_v] = n; }
         }
         var set = -1;
         if key == "stars" { set = rules::INTERNATIONAL; }
@@ -236,6 +243,7 @@ fn write(s: Settings, out: u8[>..]&) {
         out.append(s.name[..]);
     }
     if s.first_start_done { out.append("\nfirst_start = done"); }
+    if s.knows { out.append("\nhow_to_play = known"); }
     out.append("\nseason = ");
     var season = "by-date";
     for kind, i in SEASON_KINDS { if s.season == kind { season = SEASON_NAMES[i]; } }
@@ -266,6 +274,10 @@ fn write(s: Settings, out: u8[>..]&) {
         guard s.rated[v] > 0 else { continue; }
         format(out, "\nrating.", rules::VARIANT_NAMES[v], " = ", s.rating[v]);
         format(out, "\nrated.", rules::VARIANT_NAMES[v], " = ", s.rated[v]);
+    }
+    for v in rules::VARIANT_COUNT {
+        guard s.learned[v] > 0 else { continue; }
+        format(out, "\nlearned.", rules::VARIANT_NAMES[v], " = ", s.learned[v]);
     }
     for set, v in s.stars {
         var first = true;

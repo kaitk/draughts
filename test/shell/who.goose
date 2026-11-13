@@ -39,7 +39,7 @@ fn listed(sh: shell::Shell&) -> u8[>..] {
 }
 
 fn state(sh: shell::Shell&) -> u8[>..] {
-    let states = ["closed", "who's playing", "the sheet"];
+    let states = ["closed", "who's playing", "the sheet", "the question"];
     return str(states[sh.who.state], if sh.who.editing { " (editing)" } else { "" }, if sh.who.typing { " (typing)" } else { "" },
                "; ", listed(sh), "; season ", sh.prefs.season, ", game ", rules::VARIANTS[sh.game.b.variant].size,
                " after ", sh.game.b.history.len);
@@ -172,6 +172,11 @@ fn main() {
     print("typed: '", sh.who.name[..], "', ", state(sh));
     drive::tap(sh, g, card_tile(g, sheet, 1), tick());
     print("done: ", state(sh), ", changed ", sh.changed);
+    // The question (task 026): asked once it shows; I know how closes it.
+    let asked = home_tiles(sh, g, t);
+    print("  asked ", sh.prefs.first_start_done, ", the question's tiles ", drive::tiles(g) - asked);
+    drive::tap(sh, g, card_tile(g, asked, 1), tick());
+    print("I know how: ", state(sh), ", knows ", sh.prefs.knows, ", home's first row how to play ", shell::resume(sh).learn);
     sh.changed = false;
     // A tap on the player's game, then back to the fox through the card.
     drive::tap(sh, g, drive::tile(g, home - 2), tick());
@@ -215,6 +220,7 @@ fn main() {
 
     // A fresh install's first run.
     var fresh = shell::new(rules::INTERNATIONAL);
+    fresh.unset = true;         // no game kept, as on a fresh install (shell::read_game)
     who::first_run(fresh.who, fresh.players);
     drive::idle(fresh, g, tick());
     let at = home_tiles(fresh, g, t);
@@ -224,6 +230,15 @@ fn main() {
     drive::tap(fresh, g, card_tile(g, at, 2 + 4), tick());
     drive::tap(fresh, g, card_tile(g, at, 1), tick());
     print("a frog, done: ", state(fresh), ", changed ", fresh.changed);
+    // Show me: how to play in the player's draughts, from its first step; its back goes home,
+    // where How to play is the first row.
+    let q = home_tiles(fresh, g, t);
+    drive::tap(fresh, g, card_tile(g, q, 0), tick());
+    print("show me: screen ", fresh.screen, " (how to play ", shell::TUTORIAL, "), step ", fresh.lesson.step, " of ",
+          tutorial::count(fresh.lesson.variant), ", knows ", fresh.prefs.knows);
+    shell::back(fresh, tick());
+    drive::idle(fresh, g, tick());
+    print("back: screen ", fresh.screen, ", home's first row how to play ", shell::resume(fresh).learn);
 
     // The layouts.
     var many = shell::new(rules::INTERNATIONAL);

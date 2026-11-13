@@ -11,6 +11,11 @@
 // pictures stand at the left, three by two, and the name and the holds at the right.
 // While the name is typed the card stands at the top of the screen, clear of the
 // keyboard.
+//
+// Done on a new player's sheet, and on a fresh install's first, asks "do you know how to
+// play?" (task 026, prototypes/tutorial.html, ask a): the player's face over the question
+// and two answers, show me (how to play, lit) and I know how; back or a tap outside
+// closes it unanswered, and home's How to play row stays for them (shell::resume).
 namespace who;
 import std;
 import vec;
@@ -18,6 +23,7 @@ import vec;
 let CLOSED = 0;
 let PICKING = 1;            // who's playing
 let SHEET = 2;              // a player's sheet
+let ASKING = 3;             // a new player's "do you know how to play?" (task 026)
 
 // What the card asks the shell for.
 let NOTHING = gui::ASK_NOTHING;
@@ -27,6 +33,8 @@ let CREATE = 3;             // a new player with the sheet's picture and name
 let SAVE = 4;               // the sheet's picture and name for its player
 let AGAIN = 5;              // start the sheet's player again
 let REMOVE = 6;             // remove the sheet's player
+let LEARN = 8;              // how to play, from the question
+let KNOWN = 9;              // the player knows how
 
 let HOLD = 1.5;             // seconds start again and remove are held
 
@@ -99,6 +107,8 @@ fn frame(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4, screen: flo
     var index = -1;
     if w.state == SHEET {
         ask, index = sheet(w, ps, g, area);
+    } else if w.state == ASKING {
+        ask = asking(w, ps, g, area);
     } else {
         ask, index = picker(w, ps, g, area);
     }
@@ -327,7 +337,7 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
     if done {
         players::trimmed(w.name);
         w.typing = false;
-        w.state = if edit { PICKING } else { CLOSED };
+        w.state = if edit { PICKING } else { ASKING };
         guard w.target >= 0 else { return CREATE, -1; }
         return SAVE, w.target;
     }
@@ -408,4 +418,50 @@ fn hold(g: gui::Gui&, id: i64, r: float4, icon: i64, key: i64, red: bool) -> boo
     else { gui::text(g, gui::BODY, gui::cut_top(t, body), word, 1.0, 0.0, gui::LEFT); }
     gui::text(g, gui::SMALL, t, note, 0.66, 0.0, gui::LEFT);
     return fired;
+}
+
+// The question for the player playing, a player just added or a fresh install's first:
+// their face, "do you know how to play?", and the two answers, side by side where they
+// fit, else one over the other. Returns LEARN, KNOWN, or NOTHING.
+let ANSWER_W = 240.0;
+let ANSWER_H = 150.0;
+let ANSWER_GAP = 16.0;
+fn asking(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64 {
+    let u = g.scale;
+    let title = strings::get(strings::HOW_ASK);
+    let room = area.z - 2.0 * EDGE * u;
+    let pair = (2.0 * ANSWER_W + ANSWER_GAP) * u;
+    let beside = pair + 2.0 * PAD * u <= room;
+    let tile_w = if beside { ANSWER_W * u } else { min(room - 2.0 * PAD * u, 2.0 * ANSWER_W * u) };
+    let tile_h = (if beside { ANSWER_H } else { 1.5 * gui::tap() }) * u;
+    let tiles_w = if beside { pair } else { tile_w };
+    let tiles_h = if beside { tile_h } else { 2.0 * tile_h + ANSWER_GAP * u };
+    let line = g.faces[gui::LABEL].ascent - g.faces[gui::LABEL].descent;
+    let fs = 104.0 * u;
+    let width = min(max(tiles_w, gui::text_width(g, gui::LABEL, title)) + 2.0 * PAD * u, room);
+    let height = (28.0 + 18.0 + 24.0 + 28.0) * u + fs + line + tiles_h;
+    let r = gui::center(area, width, height);
+    card(g, r);
+    var c = gui::inset(r, PAD * u);
+    gui::cut_top(c, 4.0 * u);
+    let p .= ps.list[ps.playing];
+    gui::face(g, gui::center(gui::cut_top(c, fs), fs, fs), p.picture, 1.0, true);
+    gui::cut_top(c, 18.0 * u);
+    gui::text(g, gui::fitting(g, gui::LABEL, title, c.z), gui::cut_top(c, line), title, 1.0, 0.0, gui::CENTER);
+    gui::cut_top(c, 24.0 * u);
+    var tiles = gui::center(gui::cut_top(c, tiles_h), tiles_w, tiles_h);
+    let a = if beside { gui::cut_left(tiles, tile_w) } else { gui::cut_top(tiles, tile_h) };
+    let b = if beside { gui::cut_right(tiles, tile_w) } else { gui::cut_bottom(tiles, tile_h) };
+    let arrange = if beside { gui::STACKED } else { gui::MIDDLE };
+    let size: f32 = if beside { 52.0 } else { 36.0 };
+    if gui::labelled(g, gui::WHO_IDS + 43, a, gui::HOW, size, strings::get(strings::HOW_SHOW), gui::LABEL, arrange,
+                     gui::CHOSEN) {
+        w.state = CLOSED;
+        return LEARN;
+    }
+    if gui::labelled(g, gui::WHO_IDS + 44, b, gui::CHECK, size, strings::get(strings::HOW_KNOWN), gui::LABEL, arrange) {
+        w.state = CLOSED;
+        return KNOWN;
+    }
+    return NOTHING;
 }

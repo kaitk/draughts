@@ -510,6 +510,33 @@ tablet shows it as the game does).
 - A badge is home's king with its animal in the crown's place (2026-11-09, `badges.html`
   direction 1).
 
+### How to play
+
+Task 026, `prototypes/tutorial.html`, 2026-11-13 (replaces task 019's first start,
+`first-start.html`: which draughts, learn the moves or just play, then the tutorial, on
+pages of their own before home):
+
+- A new player is asked "Do you know how to play?" right after their sheet's done, on
+  the card (take a), with two answers: Show me and I know how. The tutorial teaches the
+  player's own draughts (International for a new one) rather than asking which first
+  (take b put the setup's draughts row on the card, take c a card of its own after Show
+  me): one question, and the library's switch reaches the others. A fresh install's first
+  player is asked the same way, so there are no pages of a first start apart from it.
+- How to play lives in two places (entry b): lit in continue's place on home while a
+  player asked hasn't learned their draughts, nor said they know how, nor begun a game,
+  and always as the puzzles' library's first row, across the columns. A row on home
+  always (entry a) cost a row for something done once; the library alone (entry c) hid
+  it from a new player. Settings' tutorial row, taken out on 2026-11-09, doesn't come back:
+  the library's row, switched by draughts, is it.
+- Each step is played on the board, the moves shown, and next lights once it is played.
+  The first step has the other side answer and the child move again, so the turns show. The end hands over to the puzzles' Learn theme or a new game.
+- The icon is a finger tapping with a ring over its tip (take `tap`), chosen over a
+  piece's dotted path, the diagonal arrow, a graduation cap, and a question mark: it is
+  the gesture the steps ask for, reads without words, and isn't the Learn puzzles' book
+  nor the hint's bulb.
+- Russian draughts' tutorial has its own steps where its rules differ: any capture may be
+  chosen, and a man crowned in the middle of a capture goes on as a king.
+
 ### The lookout and the hint
 
 `prototypes/coach.html`, round 3, take a, chosen 2026-11-09. In compact, the hint and undo
