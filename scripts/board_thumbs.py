@@ -30,9 +30,9 @@ CELL = (160, 105)       # a picture's texels: scene::THUMB_W × THUMB_H
 PICTURE = (76.0, 50.0)  # the picture in dp, whose shape the crops take
 CORNER_SIZE = 2.9       # the corner's crop: the shot 290% of the picture's width,
 CORNER_AT = (0.03, 0.93)  # placed as CSS background-position places it
-# Where a board's carving shows little at the corner, its crop elsewhere: summer's carved
-# oak has only a small sun there, its tree of life in the near side's middle (2026-11-13).
-CROP_AT = {("summer", "carved"): (0.5, 0.97)}
+# A board's crop elsewhere than the corner, by (season, material): none, every tile at the
+# corner (2026-11-13: summer's carved oak at its tree of life was tried and set back).
+CROP_AT = {}
 
 # By theme (autumn, winter, spring, summer): board3d's flags for each material, and which
 # material is the season's own (Auto), as looks::of has them.
