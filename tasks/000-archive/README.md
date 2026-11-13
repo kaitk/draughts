@@ -221,3 +221,6 @@ and the commit that last has it.
   the 232 dp board came from the prototype's 375 pt iPhone; the app lays the iPhone 13
   mini out at 500 dp, its landscape board 422 dp, and the user found it fine on the phone.
   `079-narrow-landscape-panels.md`, `1b14eb7`
+- 082: New game's icon. Done 2026-11-13: a light piece mid-jump over a dark one, flat
+  isometric discs with a gap cut between them and an arc from behind, in the app and the
+  home prototype. `082-new-game-icon.md`, `1e21ead`
