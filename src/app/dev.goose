@@ -70,10 +70,10 @@ fn setup(f: flags::Flags&, sh: shell::Shell&, prefs: settings::Settings) {
     if f.history.len > 0 { sh.history_file.append(f.history[..]); }
     if sh.screen == shell::REPLAY {
         sh.screen = shell::RESULTS;
-        shell::read_history(sh, sh.games);
-        sh.results_variant = if sh.games.len > 0 { sh.games[sh.games.len - 1].variant } else { sh.prefs.variant };
-        shell::open_replay(sh, sh.games.len - 1, 0.0);
-        if f.ply >= 0 { replay::go(sh.replay, f.ply, 0.0); }
+        shell::read_history(sh, sh.past.games);
+        sh.past.variant = if sh.past.games.len > 0 { sh.past.games[sh.past.games.len - 1].variant } else { sh.prefs.variant };
+        shell::open_replay(sh, sh.past.games.len - 1, 0.0);
+        if f.ply >= 0 { replay::go(sh.past.replay, f.ply, 0.0); }
         if sh.screen != shell::REPLAY { sh.screen = shell::RESULTS; }
     }
     // How to play in the flags' draughts (else the player's), at --step's step or its end;

@@ -82,12 +82,12 @@ fn main() {
     for s in g.spots { if s.id == gui::HOME_IDS + 7 { row = s.rect; } }
     drive::tap(sh, g, drive::middle(row), tick());
     drive::idle(sh, g, tick());
-    print("games row tapped: screen ", sh.screen, " (results ", shell::RESULTS, "), ", sh.games.len, " games read, showing ",
-          rules::VARIANT_NAMES[sh.results_variant]);
+    print("games row tapped: screen ", sh.screen, " (results ", shell::RESULTS, "), ", sh.past.games.len, " games read, showing ",
+          rules::VARIANT_NAMES[sh.past.variant]);
     print("  ", check(g, float4 { 0.0, 0.0, drive::size.x, drive::size.y }));
     // Russian's tile (the third).
     drive::tap(sh, g, drive::tile(g, 3), tick());
-    print("Russian tapped: showing ", rules::VARIANT_NAMES[sh.results_variant], ", ", check(g, float4 { 0.0, 0.0, drive::size.x, drive::size.y }));
+    print("Russian tapped: showing ", rules::VARIANT_NAMES[sh.past.variant], ", ", check(g, float4 { 0.0, 0.0, drive::size.x, drive::size.y }));
     drive::tap(sh, g, drive::tile(g, 0), tick());
     drive::idle(sh, g, tick());
     print("back: screen ", sh.screen);

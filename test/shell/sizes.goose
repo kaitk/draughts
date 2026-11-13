@@ -304,19 +304,19 @@ fn screens(g: gui::Gui&) {
     report("a puzzle", g, one, true, false);
     turn_piece(g, one);
     // A past game replayed, at its 31st move.
-    var past = showing(shell::REPLAY, home::NO_SETUP);
+    var replayed = showing(shell::REPLAY, home::NO_SETUP);
     let line = drive::past_line(rules::INTERNATIONAL, 90, 1762826400);
     let gone, read = history::parse_game(line[..]);
-    replay::open(past.replay, gone, line[..]);
-    replay::go(past.replay, 31, 0.0);
-    at_rest(past, g);
-    report("a replay", g, past, true, false);
-    play_here(g, past);
-    no_count(g, past);
+    replay::open(replayed.past.replay, gone, line[..]);
+    replay::go(replayed.past.replay, 31, 0.0);
+    at_rest(replayed, g);
+    report("a replay", g, replayed, true, false);
+    play_here(g, replayed);
+    no_count(g, replayed);
     // Play from here at that move: the game played on from it.
-    shell::play_from_here(past, 0.0);
-    at_rest(past, g);
-    report("a game from a replay", g, past, true, false);
+    shell::play_from_here(replayed, 0.0);
+    at_rest(replayed, g);
+    report("a game from a replay", g, replayed, true, false);
     // Black to move with no move left: white has won, and the card comes at once.
     var won = showing(shell::GAME, home::NO_SETUP);
     won.game = game::new(rules::RUSSIAN);
@@ -375,7 +375,7 @@ fn play_here(g: gui::Gui&, sh: shell::Shell&) {
 fn no_count(g: gui::Gui&, sh: shell::Shell&) {
     let u = g.scale;
     let safe = gui::safe(g, drive::size.x, drive::size.y);
-    let note = sh.replay.note;
+    let note = sh.past.replay.note;
     let l = sh.out.layout.board;
     let b = float4 { l.x, l.y, l.z, l.z };
     var wrong: u8[>..] = [];
@@ -393,7 +393,7 @@ fn no_count(g: gui::Gui&, sh: shell::Shell&) {
         if overlaps(note, q.rect) { wrong.append(" on an icon or a word;"); break; }
     }
     if words == 0 { wrong.append(" no words;"); }
-    print("  the line over the board", if sh.replay.why { ", why" } else { ", short" }, ": ",
+    print("  the line over the board", if sh.past.replay.why { ", why" } else { ", short" }, ": ",
           whole(note.z / u), " x ", whole(note.w / u), " dp", if wrong.len > 0 { ";" } else { ", in place" }, wrong);
     check("the line", wrong[..]);
 }

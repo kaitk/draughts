@@ -57,8 +57,8 @@ fn kept_of(sh: Shell&) -> Saved {
 // (Parked), with home as the screen: the game from the replay never is.
 fn save(sh: Shell&) -> u8[>..] {
     var one: Saved[>..] = [];
-    if sh.trial {
-        one.push(sh.parked.kept);
+    if sh.past.trial {
+        one.push(sh.past.parked.kept);
         one[0].screen = HOME;
     } else {
         one.push(kept_of(sh));
@@ -127,7 +127,7 @@ struct Parked {
 
 // Sets the game in progress aside, for the game screen to play another.
 fn park(sh: Shell&) {
-    let p .= sh.parked;
+    let p .= sh.past.parked;
     p.kept = kept_of(sh);
     p.hints = sh.game.hints;
     p.notes = sh.game.notes;
@@ -136,7 +136,7 @@ fn park(sh: Shell&) {
 
 // Brings the game set aside back to the game screen, as it was.
 fn unpark(sh: Shell&) {
-    let p .= sh.parked;
+    let p .= sh.past.parked;
     bring_back(sh, p.kept);
     let gm .= sh.game;
     gm.hints = p.hints;
