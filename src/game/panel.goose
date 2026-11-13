@@ -1064,33 +1064,6 @@ fn leave(g: gui::Gui&, l: Layout) -> i64 {
     return chosen;
 }
 
-// "Doesn't count" on a game played on from a replay's move (game::Game.no_count): a pill
-// in the glow color centered on the way out's top edge, half in the margin above it and
-// half over the glass's own margin, clear of its tiles. The way out is l.left in every
-// layout (the landscape column, back at its top; the portrait bar; the compact bar), so
-// the label takes no room of its own and the board none.
-fn no_count(g: gui::Gui&, l: Layout) {
-    let u = g.scale;
-    let s = strings::get(strings::REPLAY_NO_COUNT);
-    let h = no_count_h(g);
-    let w = min(gui::text_width(g, gui::SMALL, s) + 24.0 * u, l.left.z);
-    let p = no_count_at(l, w, h);
-    gui::glow_fill(g, p, 1.0, 0.5 * h);
-    // Dark ink, as the replay's marks have on their discs: white on the light glow colors
-    // (winter's ice blue) read faintly.
-    gui::colored(g, gui::fitting(g, gui::SMALL, s, w - 12.0 * u), p, s, float4 { 0.1, 0.07, 0.03, 1.0 }, gui::CENTER);
-}
-
-// The label's height: the small face's line and 4 dp above and below it.
-fn no_count_h(g: gui::Gui&) -> f32 {
-    return g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent + 8.0 * g.scale;
-}
-
-// Where the label goes, w by h pixels, in l.
-fn no_count_at(l: Layout, w: f32, h: f32) -> float4 {
-    return float4 { l.left.x + 0.5 * (l.left.z - w), l.left.y - 0.5 * h, w, h };
-}
-
 // Where the way out's tiles go: back, settings, start over; in landscape the glass under
 // back that holds the other two; and how each tile lays out its icon and word (gui::MIDDLE,
 // STACKED, or ICON alone).

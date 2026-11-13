@@ -164,9 +164,10 @@ mark.mistake_tip = Viga: see käik vähendas võiduvõimalust
 mark.blunder = suur viga
 mark.blunder_tip = Suur viga: see käik kaotas suure osa võiduvõimalusest
 replay.title = Kordus
-replay.no_count = Ei lähe arvesse
+replay.no_count = Siit mängitud mäng ei lähe arvesse
 replay.start = Algseis, enne esimest käiku
 replay.play = Mängi siit edasi
+replay.no_count_why = Siit mängitud mäng ei lähe arvesse: seda ei salvestata ja reiting ei muutu
 
 quit.ask = Kas soovid väljuda?
 quit.cancel = Tühista

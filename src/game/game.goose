@@ -158,7 +158,7 @@ struct Game {
     marks_at:  MarkAt[..MAX_MARKS_AT] = [],
     // A game played on from a past game's move (the replay's play from here, 2026-11-13):
     // the moves played before its start, which its moves' numbers go on from, and that
-    // it counts for nothing, which the way out's label says (panel::no_count). The shell
+    // it counts for nothing, which the replay's note says before it starts. The shell
     // keeps it out of the history, the ratings, the computer's skill, and the game kept.
     ply0:     i64  = 0,
     no_count: bool = false,
@@ -539,7 +539,6 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     let beside = open && !cover;
     let pick = panel::game(g, l, gm.clock, side, won >= 0, drawn(gm) != rules::NO_DRAW, note, gm.asking != 0,
                            pulse(gm, now), over, help(gm), !beside);
-    if gm.no_count && !beside { panel::no_count(g, l); }
     if count_taken(gm) { changed = true; }
     if keep_notes(gm) { changed = true; }
     gm.marks_at.clear();
@@ -771,7 +770,6 @@ fn still(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     let draw = drawn(gm);
     panel::game(g, l, gm.clock, side, won >= 0, draw != rules::NO_DRAW, note, gm.asking != 0, pulse(gm, now), over,
                 help(gm));
-    if gm.no_count { panel::no_count(g, l); }
     // Counted here too: a transition declares a game before its first frame of its own.
     count_taken(gm);
     panel::taken(g, l, gm.taken, over);

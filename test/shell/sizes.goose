@@ -26,8 +26,10 @@
 // (task 054), or the line says how they differ; the iPad's smallest window too, with home's menu
 // and the setup there, its choices scrolling between its head and play.
 // A replay's play from here stands in its head where it fits there, else in a row over
-// the glass; the game it starts, flat and 3D, shows "Doesn't count" on the way out's top
-// edge, inside the safe area, clear of the board, the icons, and the words.
+// the glass; under it, the note that a game from there doesn't count lies inside the
+// safe area and the glass, clear of the board, the tiles, and every icon and word but
+// its own, or is left out where the list has no room for it. The game play from here
+// starts is laid out as any game.
 //
 // A line with anything wrong fails the test unless the failure is on `ALLOWED` below,
 // with its reason: a regression shows as an exit, not only as a line in the diff.
@@ -318,16 +320,11 @@ fn screens(g: gui::Gui&) {
     at_rest(past, g);
     report("a replay", g, past, true, false);
     play_here(g, past);
-    // Play from here at that move: the game played on from it, its label on the way out,
-    // flat and 3D.
+    no_count(g, past);
+    // Play from here at that move: the game played on from it.
     shell::play_from_here(past, 0.0);
     at_rest(past, g);
     report("a game from a replay", g, past, true, false);
-    no_count(g, past, false);
-    past.prefs.board = settings::RAISED;
-    shell::apply_prefs(past);
-    at_rest(past, g);
-    no_count(g, past, true);
     // Black to move with no move left: white has won, and the card comes at once.
     var won = showing(shell::GAME, home::NO_SETUP);
     won.game = game::new(rules::RUSSIAN);
@@ -361,30 +358,37 @@ fn play_here(g: gui::Gui&, sh: shell::Shell&) {
     let unused = name;
 }
 
-// The label on a game from a replay, flat or 3D (`raised`): its size, and whether it lies
-// inside the safe area clear of the board, the camera's buttons, and every icon and word
-// but its own.
-fn no_count(g: gui::Gui&, sh: shell::Shell&, raised: bool) {
+// The replay's note that a game from it doesn't count: its size in dp and lines, or
+// none; whether it lies inside the safe area and the glass, clear of the board, every
+// tile, and every icon, word, and fill not its own.
+fn no_count(g: gui::Gui&, sh: shell::Shell&) {
     let u = g.scale;
     let safe = gui::safe(g, drive::size.x, drive::size.y);
-    var pill = float4 { 0.0, 0.0, 0.0, 0.0 };
-    for q in g.quads {
-        if q.look.x == gui::FILL && q.look.z == 1.0 && abs(q.rect.w - panel::no_count_h(g)) < 0.5 { pill = q.rect; }
+    let note = sh.replay.note;
+    guard note.z > 0.0 else {
+        print("  the note: none, no room");
+        return;
     }
+    var glass = float4 { 0.0, 0.0, 0.0, 0.0 };
+    for q in g.quads { if q.look.x == gui::GLASS && inside(note, q.rect) { glass = q.rect; } }
     var wrong: u8[>..] = [];
-    if pill.z <= 0.0 { wrong.append(" none;"); }
-    if pill.z > 0.0 && !inside(pill, safe) { wrong.append(" off the safe area;"); }
+    if !inside(note, safe) { wrong.append(" off the safe area;"); }
+    if glass.z <= 0.0 { wrong.append(" off the glass;"); }
     let l = sh.out.layout.board;
-    let on = if raised { view3d::touches(sh.out.view, pill, 0.0) } else { overlaps(pill, float4 { l.x, l.y, l.z, l.z }) };
-    if pill.z > 0.0 && on { wrong.append(" on the board;"); }
-    for q, n in g.quads {
+    if overlaps(note, float4 { l.x, l.y, l.z, l.z }) { wrong.append(" on the board;"); }
+    for i in drive::tiles(g) { if overlaps(note, drive::rect(g, i)) { wrong.append(" on a tile;"); break; } }
+    for q in g.quads {
         let kind = q.look.x;
-        guard kind == gui::ICON || kind == gui::TEXT || drive::camera_disc(g, n) else { continue; }
-        if pill.z > 0.0 && overlaps(pill, q.rect) && !inside(q.rect, pill) { wrong.append(" on an icon or a word;"); break; }
+        guard kind == gui::ICON || kind == gui::TEXT || kind == gui::FILL else { continue; }
+        guard !inside(q.rect, note) else { continue; }
+        if overlaps(note, q.rect) { wrong.append(" on an icon, a word, or a rule;"); break; }
     }
-    print("  the label, ", if raised { "3D" } else { "flat" }, ": ", whole(pill.z / u), " x ", whole(pill.w / u), " dp",
+    let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
+    let k = sh.replay.kind;
+    print("  the note", if k == replay::NOTE_SHORT { ", short: " } else if k == replay::NOTE_INSTEAD { ", short, for the game's line: " } else { ": " },
+          whole(note.z / u), " x ", whole(note.w / u), " dp, ", whole(note.w / line), if whole(note.w / line) == 1 { " line" } else { " lines" },
           if wrong.len > 0 { ";" } else { ", in place" }, wrong);
-    check(if raised { "the label, 3D" } else { "the label, flat" }, wrong[..]);
+    check("the note", wrong[..]);
 }
 
 // What each side has taken late in a game, 14 white men and a white king and 12 black

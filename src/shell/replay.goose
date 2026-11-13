@@ -13,7 +13,10 @@
 // Play from here stands at the head's right end, its icon beside its word, or over it
 // where that is too wide; where the head has no room for it beside back and the title (the
 // tablet's narrow column), it is a row of its own over the glass. It is dimmed at the end
-// of a game that ended there. The head says what the game was (the result, the opponent
+// of a game that ended there. Under it, at the glass's top, a note with an info sign says
+// that a game played from here doesn't count and why; where the list would lose too much
+// to it, only that it doesn't, or that in place of the game's line (frame). In portrait
+// the board gives way for it. The head says what the game was (the result, the opponent
 // and its rating, the date) on the title's second line where it fits, else at the glass's
 // top. Over the list a line names the move shown with its mark and the
 // mark's tip; each side's accuracy heads its column. The list's moves are taps that jump
@@ -39,6 +42,7 @@ let GAP = 12.0;             // between the parts
 let BESIDE = 24.0;          // between the board and the column at its right
 let MIN_SIDE = 300.0;       // the column at the board's right, at least, in landscape
 let MIN_LIST = 220.0;       // the glass under the steps, at least, in portrait
+let MIN_BOARD = 300.0;      // the least board in portrait that gives way to the note
 let IN = 16.0;              // inside the glass
 let ROW = 34.0;             // a row of the list
 let NUMBER = 40.0;          // the moves' numbers ("100." in the small face)
@@ -46,6 +50,18 @@ let LINE = 26.0;            // a line of the move shown
 let DISC = 9.0;             // dp: the radius of a side's piece by its accuracy and the move shown
 let FADE = 40.0;            // dp at the list's top and foot over which rows past them fade
 let MARK_GAP = 4.0;
+let INFO = 18.0;            // dp: the note's info sign, a disc
+let INFO_GAP = 8.0;         // between the sign and the note's words
+let NOTE_GAP = 8.0;         // under the note
+let NOTE_LIST = 3.0;        // the list's rows the note leaves it, where it had them: the move shown and one either side,
+let BRIEF_LIST = 2.0;       // and the short one where the whole has no room: the move shown and one more
+
+// Which note the glass has (frame): none, why a game from here doesn't count, only that it
+// doesn't, or that in the game's line's place.
+let NOTE_NONE = 0;
+let NOTE_WHY = 1;
+let NOTE_SHORT = 2;
+let NOTE_INSTEAD = 3;
 
 let BACK_ID = gui::REPLAY_IDS;
 let STEP_ID = gui::REPLAY_IDS + 1;  // the four steps
@@ -72,6 +88,10 @@ struct Replay {
     // list last scrolled to show, -1 none yet.
     focused: i64 = 0,
     seen:    i64 = -1,
+    // Where the last frame put the note that a game from here doesn't count, and which
+    // (NOTE_NONE..): for the layout's tests.
+    note: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
+    kind: i64    = 0,
 }
 
 fn new() -> Replay { Replay { b: board::new(rules::INTERNATIONAL), .. } }
@@ -224,6 +244,11 @@ fn title(g: gui::Gui&, r: float4, x: history::Game&) -> bool {
     return line;
 }
 
+// Whether the title in a room w pixels wide has the game's line under it (title).
+fn titles(g: gui::Gui&, w: f32, x: history::Game&) -> bool {
+    return gui::text_width(g, gui::LABEL, strings::get(strings::REPLAY_TITLE)) <= w && game_width(g, x) <= w;
+}
+
 // Whether the move shown can be played on from: any but the end of a game that ended
 // there.
 fn playable(r: Replay&) -> bool { r.ply < r.plies.len || !r.over }
@@ -347,9 +372,39 @@ fn shown_line(r: Replay&, g: gui::Gui&, box: float4, over: board::Overlay&) {
     gui::text(g, gui::fitting(g, gui::BODY, rest, second.z), second, rest, 0.8, 0.0, gui::LEFT);
 }
 
+// The note that a game played from here doesn't count (2026-11-13, the user: next to the
+// button that starts it): an info sign, a faint disc with an "i", and the words wrapped
+// beside it in the small face, dim as settings' notes (settings::note_lines): why it
+// doesn't count, or with `short` only that it doesn't, where the list has no room for
+// more. Its height at r's top, r.z wide; drawn when `draw`.
+fn note(g: gui::Gui&, r: float4, draw: bool, short: bool = false) -> f32 {
+    let u = g.scale;
+    let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
+    let k = INFO * u;
+    let at = (INFO + INFO_GAP) * u;
+    let s = strings::get(if short { strings::REPLAY_NO_COUNT } else { strings::REPLAY_NO_COUNT_WHY });
+    let n = settings::note_lines(g, s, float4 { r.x + at, r.y, r.z - at, 0.0 }, draw);
+    if draw {
+        let sign = float4 { r.x, r.y + max(0.5 * (line - k), 0.0), k, k };
+        gui::fill(g, sign, float4 { 1.0, 1.0, 1.0, 0.16 }, 0.5 * k);
+        gui::text(g, gui::SMALL, sign, "i", settings::NOTE_A, 0.0, gui::CENTER);
+    }
+    return max(n * line, k);
+}
+
+// The glass's height above and under its list, inside its margins, `w` wide: the game's
+// line where the head hasn't it, the move shown, the rule, the sides' heads, the legend.
+fn above_list(g: gui::Gui&, w: f32, in_head: bool) -> f32 {
+    let u = g.scale;
+    let game = if in_head { 0.0 } else { (LINE + 6.0) * u };
+    return game + (2.0 * LINE + 8.0 + ROW) * u + max(1.0, u) + game::legend_h(g, w);
+}
+
 // The steps' rects and where the board goes (x, y, size) and the head and the glass, for
 // a safe area: landscape when it is wider than tall. With `row`, play from here is a row
-// of its own over the glass (`play`), else in the head.
+// of its own over the glass (`play`), else in the head. In portrait the glass is MIN_LIST
+// tall at least, or `need` pixels where the board stays MIN_BOARD with that: the room
+// for the note and the list's rows it must keep (frame).
 struct Layout {
     head:  float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
     board: float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
@@ -358,7 +413,7 @@ struct Layout {
     play:  float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
 }
 
-fn layout(area: float4, u: f32, row: bool = false) -> Layout {
+fn layout(area: float4, u: f32, row: bool = false, need: f32 = 0.0) -> Layout {
     var o = Layout {};
     var c = gui::inset(area, EDGE * u);
     let tap = gui::tap() * u;
@@ -381,7 +436,10 @@ fn layout(area: float4, u: f32, row: bool = false) -> Layout {
         o.head = gui::cut_top(c, tap);
         gui::cut_top(c, GAP * u);
         let extra = if row { tap + GAP * u } else { 0.0 };
-        let size = max(min(c.z, c.w - tap - extra - (2.0 * GAP + MIN_LIST) * u), 0.0);
+        let room = c.w - tap - extra - 2.0 * GAP * u;
+        let bare = max(min(c.z, room - MIN_LIST * u), 0.0);
+        let given = min(c.z, room - max(MIN_LIST * u, need));
+        let size = if given >= bare || given >= MIN_BOARD * u { given } else { bare };
         o.board = float4 { c.x + 0.5 * (c.z - size), c.y, size, size };
         gui::cut_top(c, size + GAP * u);
         let steps = gui::cut_top(c, tap);
@@ -422,6 +480,19 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     var o = layout(area, u);
     let arrange, play_w, titled, square = play_fit(g, o.head.z, gui::phone(area, u));
     if arrange == 0 { o = layout(area, u, true); }
+    // What the head leaves the title (the board's size changes neither), and whether the
+    // game's line fits under it there.
+    let back = strings::get(strings::NAV_BACK);
+    let back_w = if square { gui::tap() * u } else { gui::back_width(g, back) };
+    let room = o.head.z - back_w - gui::PAD_WIDE * u - (if arrange != 0 { play_w + GAP * u } else { 0.0 });
+    let in_head = titled && titles(g, room, r.game);
+    // The note leaves the list what it had without it, up to NOTE_LIST rows. In portrait
+    // the board gives way for it, down to MIN_BOARD.
+    let inner = o.glass.z - 2.0 * IN * u;
+    let above = 2.0 * IN * u + above_list(g, inner, in_head);
+    let keep = clamp(o.glass.w - above, 0.0, NOTE_LIST * ROW * u);
+    let note_h = note(g, float4 { 0.0, 0.0, inner, 0.0 }, false) + NOTE_GAP * u;
+    if area.z <= area.w { o = layout(area, u, arrange == 0, above + note_h + keep); }
     let v .= rules::VARIANTS[r.game.variant];
     l = board::layout_at(o.board.x, o.board.y, o.board.z, u, v.size);
     l.flip = turned(r);
@@ -439,8 +510,6 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     // The head: back, the title and the game where it fits, and play from here.
     gui::group(g, 0);
     var head = o.head;
-    let back = strings::get(strings::NAV_BACK);
-    let back_w = if square { gui::tap() * u } else { gui::back_width(g, back) };
     if gui::back(g, BACK_ID, gui::cut_left(head, back_w), back, square) { ask = BACK; }
     gui::cut_left(head, gui::PAD_WIDE * u);
     let at = if arrange == 0 { o.play } else { gui::cut_right(head, play_w) };
@@ -450,13 +519,28 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
                      if arrange == 0 { gui::MIDDLE } else { arrange }, gui::PRIMARY, playable(r)) {
         ask = PLAY;
     }
-    let in_head = titled && title(g, head, r.game);
+    if titled { title(g, head, r.game); }
 
     // The glass: the game where the head had no room for it, the move shown, each side's
     // accuracy, and the list.
     gui::panel(g, o.glass);
     var c = gui::inset(o.glass, IN * u);
-    if !in_head {
+    // The note under play from here, where the list keeps what it must with it: why a game
+    // from here doesn't count, else only that it doesn't; where even that would take the
+    // list's rows, it stands in the game's line's place (the results row the replay was
+    // opened from says what the game was).
+    let rows = c.w - above_list(g, c.z, in_head);
+    let brief = note(g, c, false, true) + NOTE_GAP * u;
+    r.kind = if rows - note_h >= keep - 0.5 { NOTE_WHY }
+             else if rows - brief >= min(keep, BRIEF_LIST * ROW * u) - 0.5 { NOTE_SHORT }
+             else if !in_head { NOTE_INSTEAD } else { NOTE_NONE };
+    r.note = float4 { 0.0, 0.0, 0.0, 0.0 };
+    if r.kind != NOTE_NONE {
+        r.note = gui::cut_top(c, (if r.kind == NOTE_WHY { note_h } else { brief }) - NOTE_GAP * u);
+        note(g, r.note, true, r.kind != NOTE_WHY);
+        gui::cut_top(c, NOTE_GAP * u);
+    }
+    if !in_head && r.kind != NOTE_INSTEAD {
         game_line(g, gui::cut_top(c, LINE * u), r.game);
         gui::cut_top(c, 6.0 * u);
     }
