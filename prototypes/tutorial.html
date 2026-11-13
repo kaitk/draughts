@@ -385,7 +385,7 @@
       `<a class="item new" href="new-game.html?view=setup">${icon('newgame')}<span>New game</span><small>${icon('computer')}easy</small></a>` +
       `<a class="item" href="${link({ view: 'library' })}">${icon('puzzle')}<span>Puzzles</span><small>${fresh ? '0' : '23'} / 64</small></a>` +
       (entry === 'a' ? learnRow(false) : '') +
-      `<a class="item" href="results.html">${icon('star')}<span>Games</span><small>${fresh ? '0' : '12'}</small></a>` +
+      `<a class="item" href="results.html">${icon('bars')}<span>Results</span>${fresh ? '' : '<small>800</small>'}</a>` +
       `<a class="item settings" href="settings.html">${icon('gear')}<span>Settings</span></a></nav>` +
       `<div class="stage"><a class="chip" href="${link({ view: 'players' })}">${badge(fresh ? 'hare' : 'fox')}` +
       `<span class="glass">${fresh ? 'Mia' : 'Alex'}</span></a><div id="board"></div></div>` +
