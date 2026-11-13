@@ -12,6 +12,27 @@ opened (2026-11-11): those branches (task 065 lists them, and which stack on whi
 `astc-6x6`, ASTC 6 × 6, `vsync-option`, and `linux-presentation` (2026-11-12) to
 `sebbbi/NoGraphicsAPI`. An entry's "Upstream" line says what each proposes.
 
+## Goose: `embed_shader` drops `mediump`, so no shader runs in fp16 (2026-11-13)
+
+Goose's own GLSL compiler (`shaderc.c`, its SPIR-V from cute_spirv) parses `mediump` on a
+declaration and drops it: a fragment shader with `mediump vec3` and `mediump float`
+locals compiles to SPIR-V with no `RelaxedPrecision` decoration, where glslang
+(`glslangValidator -V`) gives the same source twelve. A `precision mediump float;`
+statement is an error ("unexpected token at global scope"), and so are
+`GL_EXT_shader_explicit_arithmetic_types_float16`'s `float16_t` and `f16vec3`
+("expected ';'"). `RelaxedPrecision` is how a Vulkan driver is told a value may be 16-bit,
+and needs no device feature; the explicit types would also need `shaderFloat16`, which
+SDL_GPU doesn't enable. Mali GPUs run fp16 at twice fp32's rate and in half the registers:
+the A33's lit shader is more than half its 3D frame, and held 64 registers on the
+tablet's G615 (task 059).
+
+- Here: nothing; task 081's fp16 step waits for it. The Metal and HLSL translations may
+  keep `float` (SPIRV-Cross's MSL leaves `RelaxedPrecision` out by default), so the Mac's
+  shots can't show fp16's rounding: check it with screenshots on an Android device.
+- Upstream: `mediump` (and `lowp`) on a variable, parameter, function result, or
+  interface variable decorates it and the operations computed into it `RelaxedPrecision`,
+  as glslang does for Vulkan; `precision` statements accepted, setting the default.
+
 ## Goose: the Linux release's SDL has no Wayland (2026-11-12)
 
 The `libSDL3.a` in `goose-v2026.4-linux-x64` is built with X11 and offscreen video only:
