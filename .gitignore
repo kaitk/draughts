@@ -16,3 +16,6 @@ design/tabletops/*.png
 upload-key.properties
 # The previews' images, copied by store/preview/build.py from outside git
 store/preview/img/
+
+# Shots of the 3D boards for the prototypes, made with build/board3d --shot (prototypes/README.md)
+prototypes/shots/

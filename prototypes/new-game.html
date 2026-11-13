@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draughts: new game</title>
+<link rel="stylesheet" href="draughts.css">
+<script src="draughts.js"></script>
+<style>
+  /* One New game row on home, the opponent chosen in the setup (task 080, 01). Home's
+     menu: Continue, New game, Puzzles, Games, Settings. New game turns the column into the
+     setup, which starts with whom to play; a friend's game also chooses whether the board
+     turns to the side to move (settings' Board row's third tile until now).
+       ?view=home|setup   &vs=computer|friend (the opponent chosen, kept from last time)
+       &take=a  an Opponent row first, then the computer's Level and Your pieces or a
+                friend's Board row; the column scrolls where it runs past the foot, Play
+                pinned under it
+       &take=b  the opponent as a two-part switch in the head row, beside back, in place
+                of the title
+       &take=c  one row for whom and how strong: A friend, Easy, Medium, Hard; under it
+                Your pieces or the Board row, so both setups have the same rows
+       &word=new|play  the home row's word;  &note=on|off  the last opponent at its end
+       &device=tablet|pixel|iphone (insets; by default from the window's size)
+       ?grid=1  the tablet, the Pixel 7a, and the iPhone 13 mini side by side, both ways
+     Sizes are the app's dp: taps 88, the setup's tiles 88 (a draughts tile 128), a
+     choice's dim name 34 over its tiles, the column 360 wide (400 in take c, four tiles a
+     tap wide). A note at the foot gives each layout's room. */
+  .bands { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+  .bands i { position: absolute; background: rgb(0 0 0 / 0.35); }
+  .col { position: fixed; display: flex; flex-direction: column; justify-content: center; }
+  .col.land { left: 0; top: 0; bottom: 0; border-radius: 0 32px 32px 0; --r: 0 32px 32px 0; }
+  .col.port { left: 0; right: 0; bottom: 0; border-radius: 32px 32px 0 0; --r: 32px 32px 0 0; justify-content: flex-start; }
+  .scroll { flex: 0 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: none; overscroll-behavior: contain; }
+  .scroll::-webkit-scrollbar { display: none; }
+  .scroll.more { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 56px), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 56px), transparent); }
+  .foot { flex: none; padding-top: 18px; }
+  .stage { position: fixed; display: grid; place-items: center; }
+  #board { isolation: isolate; }
+
+  /* Home's menu. */
+  .mark { display: flex; align-items: center; gap: 14px; height: 72px; margin-bottom: 20px; }
+  .mark .piece { position: relative; inset: auto; width: 56px; height: 56px; --u: 5px; flex: none; }
+  .mark h1 { margin: 0; font-size: 64px; font-weight: 400; letter-spacing: 0.06em; }
+  .mark .gear { margin-left: auto; color: var(--fg); display: grid; place-items: center; width: 88px; height: 88px; }
+  .mark .gear svg { width: 40px; height: 40px; stroke-width: 2.4; opacity: 0.85; }
+  .items { display: grid; gap: 2px; }
+  body.phone .mark h1 { font-size: 50px; }
+  body.phone .mark .piece { width: 48px; height: 48px; --u: 4.3px; }
+  body.phone .mark { gap: 10px; margin-bottom: 14px; }
+  /* A phone in landscape: Play moves up into the head row, beside back, so the choices
+     under it keep the column's height to scroll in (the title goes; the menu's New game
+     row said it). */
+  .head .play { flex: 1; height: 88px; margin: 0; }
+  .item { display: flex; align-items: center; gap: 18px; height: 88px; padding: 0 18px; border-radius: 20px;
+    color: var(--fg); text-decoration: none; font-size: 30px; white-space: nowrap; }
+  .item:hover { background: rgb(255 255 255 / 0.08); }
+  .item .icon { width: 34px; height: 34px; stroke-width: 2.4; opacity: 0.85; flex: none; }
+  .item.primary { background: color-mix(in srgb, var(--glow) 24%, transparent); }
+  .item.new { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.25); }
+  .item small { margin-left: auto; font-size: 17px; color: var(--fg-dim); display: flex; align-items: center; gap: 6px; }
+  .item small .icon { width: 20px; height: 20px; stroke-width: 2; }
+
+  /* The setup. */
+  .head { flex: none; display: flex; align-items: center; gap: 12px; height: 88px; margin-bottom: 18px; font-size: 34px; }
+  .head .back { display: flex; align-items: center; justify-content: center; width: 88px; height: 88px; flex: none; border-radius: 22px;
+    color: var(--fg); background: var(--button); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.2); text-decoration: none; }
+  .head .back svg { width: 32px; height: 32px; stroke-width: 2.4; }
+  .head > .icon { width: 36px; height: 36px; opacity: 0.85; }
+  .head .switch { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 0; padding: 4px; border-radius: 22px;
+    background: rgb(255 255 255 / 0.06); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.14); }
+  .head .switch .pick { min-height: 80px; border-radius: 18px; background: none; box-shadow: none; font-size: 19px; }
+  .head .switch .pick.on { background: color-mix(in srgb, var(--glow) 22%, transparent); box-shadow: inset 0 0 0 2px var(--glow); }
+  .choose h2 { display: flex; align-items: flex-end; height: 34px; margin: 0; padding: 0 4px 6px; font-size: 18px; font-weight: 400;
+    color: var(--fg-dim); letter-spacing: 0.04em; }
+  .choose h2:first-child { height: 26px; }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .tiles.two { grid-template-columns: repeat(2, 1fr); }
+  .tiles.four { grid-template-columns: repeat(4, 1fr); }
+  .pick { display: grid; justify-items: center; align-content: center; gap: 4px; min-height: 88px; padding: 6px 4px;
+    border: 0; border-radius: 16px; cursor: pointer; color: var(--fg); font: inherit; font-size: 20px; text-decoration: none;
+    background: var(--button); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12); }
+  .pick.on { background: color-mix(in srgb, var(--glow) 22%, transparent); box-shadow: inset 0 0 0 2px var(--glow); }
+  .pick small { font-size: 15px; color: var(--fg-dim); }
+  .pick.on small { color: var(--fg); }
+  .pick .icon { width: 30px; height: 30px; opacity: 0.85; }
+  .pick .pips { display: flex; gap: 5px; height: 30px; align-items: center; }
+  .pick .pips i { width: 10px; height: 10px; border-radius: 50%; background: currentColor; opacity: 0.25; }
+  .pick .pips i.full { opacity: 0.9; }
+  .pick .with { display: flex; align-items: center; gap: 6px; height: 30px; }
+  .pick .with .icon { width: 24px; height: 24px; }
+  .pick .dot { width: 30px; height: 30px; border-radius: 50%; }
+  .pick .dot.w { background: radial-gradient(circle at 50% 35%, #fffaf0, var(--w-face) 70%); box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.2); }
+  .pick .dot.b { background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--b-face), #fff 18%), var(--b-face) 70%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.25); }
+  .pick.board-tile { min-height: 128px; }
+  .pick .mini { width: 64px; margin-bottom: 2px; }
+  .pick .mini .board { isolation: isolate; }
+  .play { justify-content: center; }
+  .stage .turnnote { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); font-size: 16px; color: var(--fg-dim); white-space: nowrap; }
+
+  /* The grid of devices. */
+  .grid { position: fixed; inset: 0; overflow: auto; padding: 16px; display: flex; flex-wrap: wrap; gap: 18px; align-content: flex-start;
+    background: #15120f; z-index: 20; }
+  .grid figure { margin: 0; display: grid; gap: 6px; }
+  .grid figcaption { font: 14px/1.2 system-ui, sans-serif; color: #cfc6b8; }
+  .grid .fr { overflow: hidden; border-radius: 10px; box-shadow: 0 0 0 1px #3a332b; }
+  .grid iframe { border: 0; transform-origin: 0 0; display: block; }
+  .note { position: fixed; left: 8px; bottom: 6px; z-index: 30; max-width: 70vw; padding: 4px 8px; border-radius: 6px;
+    font: 12px/1.3 system-ui, sans-serif; color: #f4ede2; background: rgb(0 0 0 / 0.55); pointer-events: none; }
+  body.bare .note, body.bare .switcher { display: none; }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+  const P = new URLSearchParams(location.search);
+  const get = (k, vals, def) => (vals.includes(P.get(k)) ? P.get(k) : def);
+  const link = (changes) => { const p = new URLSearchParams(location.search); for (const [k, v] of Object.entries(changes)) p.set(k, v); return `?${p}`; };
+  const icon = Draughts.icon;
+  const take = get('take', ['a', 'b', 'c'], 'c');
+  const view = get('view', ['home', 'setup'], 'home');
+  const vs = get('vs', ['computer', 'friend'], 'computer');
+  const word = get('word', ['new', 'play'], 'new');
+  const lastNote = get('note', ['on', 'off'], 'on');
+  const v = get('v', ['intl', 'brazilian', 'russian'], 'intl');
+  const level = get('level', ['easy', 'medium', 'hard'], 'medium');
+  const color = get('color', ['white', 'black'], 'white');
+  const clock = get('clock', ['none', '5', '10'], 'none');
+  const turns = get('turns', ['on', 'off'], 'on');
+  if (P.has('bare')) document.body.classList.add('bare');
+
+  // Two icons of this page's own: the board turning, and the board staying.
+  Draughts.ICONS.turns = '<path d="M20 12a8 8 0 0 1-13.7 5.7"/><path d="M4 12a8 8 0 0 1 13.7-5.7"/><path d="M18 2.5v4.2h-4.2"/><path d="M6 21.5v-4.2h4.2"/>';
+  Draughts.ICONS.stays = '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 16.5v-9"/><path d="M8.5 11 12 7.5l3.5 3.5"/>';
+  Draughts.ICONS.newgame = '<circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M8 12h8"/>';
+
+  // The device's insets, [left, top, right, bottom] in dp, as history.html's.
+  const W = innerWidth, H = innerHeight, land = W > H, short0 = Math.min(W, H);
+  const device = get('device', ['tablet', 'pixel', 'iphone'], short0 <= 400 ? 'iphone' : short0 < 600 ? 'pixel' : 'tablet');
+  const INSETS = {
+    land: { tablet: [0, 0, 0, 0], pixel: [52, 0, 0, 37], iphone: [50, 0, 50, 21] },
+    port: { tablet: [0, 0, 0, 0], pixel: [0, 52, 0, 37], iphone: [0, 50, 0, 34] },
+  };
+  const [il, it, ir, ib] = INSETS[land ? 'land' : 'port'][device];
+  const phone = device !== 'tablet';
+  const short = land && H - it - ib < 600;
+  if (phone) document.body.classList.add('phone');
+
+  // ?grid=1: every device both ways, each an iframe at its size in dp, scaled to fit.
+  if (P.has('grid')) {
+    const sizes = [['Tablet', 'tablet', 1280, 800], ['Tablet', 'tablet', 800, 1280], ['Pixel 7a', 'pixel', 1067, 480],
+      ['Pixel 7a', 'pixel', 480, 1067], ['iPhone 13 mini', 'iphone', 812, 375], ['iPhone 13 mini', 'iphone', 375, 812]];
+    const p = new URLSearchParams(location.search); p.delete('grid'); p.set('bare', '1');
+    const k = +(P.get('scale') || 0.42);
+    document.body.insertAdjacentHTML('beforeend', `<div class="grid">${sizes.map(([name, dev, w, h]) => {
+      p.set('device', dev);
+      return `<figure><figcaption>${name}, ${w} × ${h} dp</figcaption><div class="fr" style="width:${w * k}px;height:${h * k}px">` +
+        `<iframe src="?${p}" style="width:${w}px;height:${h}px;transform:scale(${k})"></iframe></div></figure>`;
+    }).join('')}</div>`);
+    Draughts.init();
+  } else render();
+
+  function render() {
+    const cw = take === 'c' && view === 'setup' ? 400 : view === 'home' && short ? 440 : 360;
+    const app = document.getElementById('app');
+    const bands = `<div class="bands">${il ? `<i style="left:0;top:0;bottom:0;width:${il}px"></i>` : ''}${ir ? `<i style="right:0;top:0;bottom:0;width:${ir}px"></i>` : ''}` +
+      `${it ? `<i style="left:0;right:0;top:0;height:${it}px"></i>` : ''}${ib ? `<i style="left:0;right:0;bottom:0;height:${ib}px;background:none;border-top:0"></i>` : ''}</div>`;
+    const content = view === 'home' ? menu() : setup();
+    app.innerHTML = `<nav class="col glass ${land ? 'land' : 'port'}">${content}</nav><div class="stage"><div id="board"></div></div>${bands}`;
+    const col = app.querySelector('.col'), stage = app.querySelector('.stage');
+    let note = '';
+    if (land) {
+      const width = il + cw + 80;
+      Object.assign(col.style, { width: `${width}px`, padding: `${it + 24}px 40px ${ib + 24}px ${il + 40}px` });
+      Object.assign(stage.style, { left: `${width}px`, top: `${it}px`, right: `${ir}px`, bottom: `${ib}px` });
+    } else {
+      Object.assign(col.style, { padding: `24px ${ir + 24}px ${ib + 20}px ${il + 24}px`, maxHeight: `${Math.round(0.72 * H)}px` });
+      if (cw > W - 48) col.style.paddingLeft = col.style.paddingRight = '16px';
+    }
+    // The menu's or the setup's rows scroll where they run past the column; the fade at
+    // the foot shows there are more (as home's Games row does on a phone, task 074).
+    const scroll = col.querySelector('.scroll');
+    const fade = () => scroll.classList.toggle('more', scroll.scrollTop + scroll.clientHeight < scroll.scrollHeight - 2);
+    scroll.addEventListener('scroll', fade);
+    fade();
+    if (!land) {
+      const sheet = col.getBoundingClientRect().height;
+      Object.assign(stage.style, { left: `${il}px`, right: `${ir}px`, top: `${it}px`, bottom: `${sheet}px` });
+    }
+    Draughts.init();
+    const sr = stage.getBoundingClientRect();
+    const size = Math.max(0, Math.min(sr.width * (land ? 0.86 : 0.9), sr.height * 0.86));
+    const el = document.getElementById('board');
+    el.style.width = `${size}px`;
+    stage.style.display = size < 120 ? 'none' : '';
+    const n = view === 'setup' && v !== 'intl' ? 8 : 10;
+    Draughts.board(el, view === 'setup'
+      ? { ...Draughts.start(n), view: '2d' }
+      : { view: '2d', n: 10, ...Draughts.start(10) });
+    for (const m of document.querySelectorAll('.mini[data-n]')) Draughts.board(m, { ...Draughts.start(+m.dataset.n), view: '2d' });
+    const over = scroll.scrollHeight - scroll.clientHeight;
+    const cs = getComputedStyle(col);
+    const used = [...col.children].reduce((a, c) => a + c.getBoundingClientRect().height, 0);
+    const spare = Math.round(col.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - used);
+    note = `${{ tablet: 'Tablet', pixel: 'Pixel 7a', iphone: 'iPhone 13 mini' }[device]} ${W} × ${H} dp, safe ${W - il - ir} × ${H - it - ib}. ` +
+      `${view === 'home' ? 'Menu' : `Take ${take}, ${vs}`}: ${over > 0 ? `scrolls ${over} dp` : `fits${land ? `, ${spare} dp to spare` : ''}`}; ` +
+      `the board ${Math.round(size)} dp${size < 120 ? ' (hidden)' : ''}.`;
+    document.body.insertAdjacentHTML('beforeend', `<div class="note">${note}</div>`);
+    Draughts.syncGlass();
+  }
+
+  // Home: the wordmark, then Continue, New game, Puzzles, Games, Settings. Settings is the
+  // gear beside the wordmark in portrait and where the landscape is too short for it as a
+  // row (a phone), as built.
+  function menu() {
+    const rows = 5, mark = 92, rowH = 88, gap = 2;
+    const gear = !land || mark + rows * rowH + (rows - 1) * gap > H - it - ib - 48;
+    const lastOpp = vs === 'friend' ? `${icon('friend')}a friend` : `${icon('computer')}${level}`;
+    return `<div class="scroll"><div class="mark"><div class="piece white king"></div><h1>Draughts</h1>` +
+      `${gear ? `<a class="gear" href="settings-takes.html">${icon('gear')}</a>` : ''}</div><div class="items">` +
+      `<a class="item primary" href="#">${icon('next')}<span>Continue</span></a>` +
+      `<a class="item new" href="${link({ view: 'setup' })}">${icon(word === 'new' ? 'newgame' : 'next')}<span>${word === 'new' ? 'New game' : 'Play'}</span>` +
+      `${lastNote === 'on' ? `<small>${lastOpp}</small>` : ''}</a>` +
+      `<a class="item" href="#">${icon('puzzle')}<span>Puzzles</span><small>23 / 64</small></a>` +
+      `<a class="item" href="#">${icon('star')}<span>Games</span><small>1043</small></a>` +
+      `${gear ? '' : `<a class="item" href="settings-takes.html">${icon('gear')}<span>Settings</span></a>`}</div></div>`;
+  }
+
+  function setup() {
+    const tile = (k, val, on, inner, cls = '') => `<a class="pick ${cls}${on ? ' on' : ''}" href="${link({ [k]: val })}">${inner}</a>`;
+    const pips = (n) => `<span class="pips">${[0, 1, 2].map((i) => `<i class="${i < n ? 'full' : ''}"></i>`).join('')}</span>`;
+    const group = (name, tiles, cls = '') => `<h2>${name}</h2><div class="tiles ${cls}">${tiles}</div>`;
+    const comp = vs === 'computer';
+    const draughts = group('Draughts',
+      tile('v', 'intl', v === 'intl', '<span class="mini" data-n="10"></span>International<small>10 × 10</small>', 'board-tile') +
+      tile('v', 'brazilian', v === 'brazilian', '<span class="mini" data-n="8"></span>Brazilian<small>8 × 8</small>', 'board-tile') +
+      tile('v', 'russian', v === 'russian', '<span class="mini" data-n="8"></span>Russian<small>8 × 8</small>', 'board-tile'));
+    const levels = group('Level',
+      tile('level', 'easy', level === 'easy', `${pips(1)}Easy`) +
+      tile('level', 'medium', level === 'medium', `${pips(2)}Medium`) +
+      tile('level', 'hard', level === 'hard', `${pips(3)}Hard`));
+    const pieces = group('Your pieces',
+      tile('color', 'white', color === 'white', '<span class="dot w"></span>White') +
+      tile('color', 'black', color === 'black', '<span class="dot b"></span>Black'), 'two');
+    // A friend's game: the board turns to the side to move after each move, or stays (and
+    // the 3D one starts in the top view, which reads alike from either side).
+    const turning = group('The board',
+      tile('turns', 'on', turns === 'on', `${icon('turns')}Turns<small>to who plays</small>`) +
+      tile('turns', 'off', turns === 'off', `${icon('stays')}Stays<small>for both</small>`), 'two');
+    const clocks = group('Clock',
+      tile('clock', 'none', clock === 'none', `${icon('clock')}<small>No clock</small>`) +
+      tile('clock', '5', clock === '5', '5 min<small>+3 s a move</small>') +
+      tile('clock', '10', clock === '10', '10 min<small>+5 s a move</small>'));
+    const back = `<a class="back" href="${link({ view: 'home' })}" aria-label="Back">${icon('back')}</a>`;
+    let head, body;
+    if (take === 'a') {
+      head = `<div class="head">${back}${icon('newgame')}New game</div>`;
+      body = group('Opponent',
+        tile('vs', 'computer', comp, `${icon('computer')}The computer`) +
+        tile('vs', 'friend', !comp, `${icon('friend')}A friend`), 'two') +
+        draughts + (comp ? levels + pieces : turning) + clocks;
+    } else if (take === 'b') {
+      head = `<div class="head">${back}<div class="switch">` +
+        tile('vs', 'computer', comp, `${icon('computer')}The computer`) +
+        tile('vs', 'friend', !comp, `${icon('friend')}A friend`) + '</div></div>';
+      body = draughts + (comp ? levels + pieces : turning) + clocks;
+    } else {
+      head = `<div class="head">${back}${icon('newgame')}New game</div>`;
+      const lv = (k, n, name) => tile('vs', 'computer', comp && level === k, `<span class="with">${icon('computer')}${pips(n)}</span>${name}`)
+        .replace(`href="${link({ vs: 'computer' })}"`, `href="${link({ vs: 'computer', level: k })}"`);
+      body = group('Play against',
+        tile('vs', 'friend', !comp, `<span class="with">${icon('friend')}</span>A friend`) +
+        lv('easy', 1, 'Easy') + lv('medium', 2, 'Medium') + lv('hard', 3, 'Hard'), 'four') +
+        draughts + (comp ? pieces : turning) + clocks;
+    }
+    const play = `<a class="item primary play" href="game.html">${icon('next')}<span>Play</span></a>`;
+    if (short) {
+      head = head.replace(/(<\/a>)(<svg[^]*?<\/svg>New game|<div class="switch">)/, (m, a, rest) => rest.startsWith('<div') ? `${a}${rest}` : `${a}${play}`);
+      if (take === 'b') head = head.replace('</div></div>', `</div>${play.replace('<span>Play</span>', '')}</div>`);
+      return `${head}<div class="scroll"><div class="choose">${body}</div></div>`;
+    }
+    return `${head}<div class="scroll"><div class="choose">${body}</div></div>` +
+      `<div class="foot"><a class="item primary play" href="game.html">${icon('next')}<span>Play</span></a></div>`;
+  }
+</script>
+</body>
+</html>

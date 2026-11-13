@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draughts: settings takes</title>
+<link rel="stylesheet" href="draughts.css">
+<script src="draughts.js"></script>
+<style>
+  /* Settings looked at afresh (task 080, 02 and 03), the board's turning gone to the new
+     game's setup and the raised board's material added: Auto (the season's own), Wood, or
+     Stone. Every take is one list that scrolls, no tabs, each setting's name over its
+     tiles: Look first (what is changed most, beside the preview that shows it), then
+     Game, then the language and the privacy note at the foot. Back and the title stay
+     pinned over it. In landscape the list is a column at the left, its glass off the
+     screen's edge as home's, and the preview the rest; in portrait the preview is a band
+     at the top, smaller on a phone, the list under it.
+       &take=a  a Material row under Board (Auto, Wood, Stone, each a picture of the
+                theme's season's board), shown only while the board is raised
+       &take=b  the material folded into the Board row: Flat, Raised (the season's own),
+                Wood, Stone; no row that means nothing on a flat board
+       &take=c  the seasons as their boards: the Theme row's tiles show each season's board
+                as chosen, and the material is chosen per season (the row under it names
+                the season it changes); the other takes' choice is one for every season
+       &season=autumn|winter|spring|summer|date  &plain=on  &view=2d|3d
+       &mat=auto|wood|stone (per season in take c: &mat_autumn= and so on)
+       &device=tablet|pixel|iphone; ?grid=1 the tablet and the phones, both ways
+     The boards' pictures are build/board3d's --shot, in prototypes/shots/ (local, out of
+     git; README.md). Autumn's stone and winter's wood aren't made yet: their tiles say so
+     and the preview stands in with the CSS board. */
+  .bands { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+  .bands i { position: absolute; background: rgb(0 0 0 / 0.35); }
+  .col { position: fixed; display: flex; flex-direction: column; }
+  .col.land { left: 0; top: 0; bottom: 0; border-radius: 0 32px 32px 0; --r: 0 32px 32px 0; }
+  .col.port { left: 0; right: 0; bottom: 0; border-radius: 32px 32px 0 0; --r: 32px 32px 0 0; }
+  .scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: none; overscroll-behavior: contain; }
+  .scroll::-webkit-scrollbar { display: none; }
+  .scroll.more { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 56px), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 56px), transparent); }
+  .top { flex: none; display: flex; align-items: center; gap: 16px; height: 88px; margin-bottom: 8px; }
+  .top h1 { margin: 0; font-size: 34px; font-weight: 400; }
+  .top .back { display: flex; align-items: center; justify-content: center; width: 88px; height: 88px; border-radius: 22px; flex: none;
+    color: var(--fg); background: var(--button); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.2); text-decoration: none; }
+  .top .back svg { width: 32px; height: 32px; stroke-width: 2.4; }
+  .stage { position: fixed; display: grid; place-items: center; }
+  .stage .shot { display: block; object-fit: cover;
+    -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 78%, transparent 100%);
+    mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 78%, transparent 100%); }
+  /* A phone: the five theme tiles in one row across 448 dp. */
+  body.phone .tiles { gap: 2px; }
+  .stage .standin { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); padding: 4px 10px; border-radius: 8px;
+    font: 13px system-ui, sans-serif; background: rgb(0 0 0 / 0.55); white-space: nowrap; }
+  #board { isolation: isolate; }
+  #board.view-3d { isolation: auto; }
+
+  section { padding: 6px 0 14px; }
+  section + section { border-top: 1px solid rgb(255 255 255 / 0.1); padding-top: 14px; }
+  section > h2 { display: flex; align-items: center; gap: 12px; margin: 0 0 4px; font-size: 24px; font-weight: 400; }
+  section > h2 .icon { width: 28px; height: 28px; stroke-width: 2; opacity: 0.85; }
+  .setting h3 { display: flex; align-items: flex-end; gap: 8px; height: 34px; margin: 0; padding: 0 4px 6px; font-size: 18px; font-weight: 400;
+    color: var(--fg-dim); letter-spacing: 0.03em; }
+  .setting h3 small { font-size: 15px; opacity: 0.8; }
+  .tiles { display: flex; gap: 10px; flex-wrap: wrap; }
+  .tile { display: grid; justify-items: center; align-content: center; gap: 3px; min-width: 88px; min-height: 88px; padding: 4px 14px 6px;
+    border: 0; border-radius: 16px; cursor: pointer; color: var(--fg); font: inherit; font-size: 20px; text-decoration: none;
+    background: var(--button); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12); }
+  .tile small { font-size: 14px; color: var(--fg-dim); }
+  .tile.on { background: color-mix(in srgb, var(--glow) 22%, transparent); box-shadow: inset 0 0 0 2px var(--glow); }
+  .tile.on small { color: var(--fg); }
+  .tile.pic { padding: 5px 5px 6px; font-size: 16px; gap: 4px; }
+  .tile .thumb { width: 76px; height: 50px; border-radius: 11px; background: center / cover; display: grid; place-items: center; position: relative; overflow: hidden; }
+  .tile .thumb .icon { width: 26px; height: 26px; }
+  .tile .thumb.todo { background: repeating-linear-gradient(135deg, rgb(255 255 255 / 0.06) 0 8px, rgb(255 255 255 / 0.12) 8px 16px);
+    font: 11px/1.1 system-ui, sans-serif; color: var(--fg-dim); text-align: center; }
+  .tile .thumb .mini2d { width: 44px; }
+  .tile.wide .thumb { width: 92px; height: 60px; }
+  .tile .thumb .tag { position: absolute; right: 3px; bottom: 3px; padding: 0 4px; border-radius: 5px; font: 10px/14px system-ui, sans-serif;
+    background: rgb(0 0 0 / 0.55); color: #fff; }
+  .notes { margin: 6px 4px 0; font-size: 16px; color: var(--fg-dim); min-height: 20px; }
+  .privacy { display: flex; gap: 10px; align-items: flex-start; margin: 4px 4px 8px; font-size: 16px; line-height: 1.35; color: var(--fg-dim); }
+  .privacy .icon { width: 22px; height: 22px; flex: none; margin-top: 1px; }
+  .glyph { font: 600 13px system-ui, sans-serif; padding: 0 4px; border-radius: 5px; background: rgb(255 255 255 / 0.15); color: var(--fg); }
+
+  .grid { position: fixed; inset: 0; overflow: auto; padding: 16px; display: flex; flex-wrap: wrap; gap: 18px; align-content: flex-start;
+    background: #15120f; z-index: 20; }
+  .grid figure { margin: 0; display: grid; gap: 6px; }
+  .grid figcaption { font: 14px/1.2 system-ui, sans-serif; color: #cfc6b8; }
+  .grid .fr { overflow: hidden; border-radius: 10px; box-shadow: 0 0 0 1px #3a332b; }
+  .grid iframe { border: 0; transform-origin: 0 0; display: block; }
+  .note { position: fixed; left: 8px; bottom: 6px; z-index: 30; max-width: 70vw; padding: 4px 8px; border-radius: 6px;
+    font: 12px/1.3 system-ui, sans-serif; color: #f4ede2; background: rgb(0 0 0 / 0.55); pointer-events: none; }
+  body.bare .note, body.bare .switcher { display: none; }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+  const P = new URLSearchParams(location.search);
+  const get = (k, vals, def) => (vals.includes(P.get(k)) ? P.get(k) : def);
+  const link = (changes) => {
+    const p = new URLSearchParams(location.search);
+    for (const [k, v] of Object.entries(changes)) if (v === null) p.delete(k); else p.set(k, v);
+    return `?${p}`;
+  };
+  const icon = Draughts.icon;
+  const take = get('take', ['a', 'b', 'c'], 'a');
+  const SEASONS = ['winter', 'spring', 'summer', 'autumn'];
+  const NAME = { winter: 'Winter', spring: 'Spring', summer: 'Summer', autumn: 'Autumn' };
+  const themePick = get('season', [...SEASONS, 'date'], 'date');
+  const season = Draughts.settings.season;   // the season shown: the theme's, or today's
+  const view = get('view', ['2d', '3d'], '3d');
+  const bg = Draughts.settings.plain === 'on' ? 'plain' : 'photo';
+  const king = get('king', ['auto', 'crown', 'stack'], 'auto');
+  const hints = get('assist', ['mistakes', 'moves'], 'mistakes');
+  const moves = get('moves', ['off', 'list', 'marks'], 'list');
+  const lang = get('lang', ['en', 'et'], 'en');
+  // The material: one for every season (takes a and b), or each season its own (take c).
+  const matOf = (s) => get(take === 'c' ? `mat_${s}` : 'mat', ['auto', 'wood', 'stone'], 'auto');
+  const OWN = { autumn: 'wood', winter: 'stone', spring: 'stone', summer: 'wood' };
+  const MADE = { 'autumn-stone': false, 'winter-wood': false };
+  const shown = (s) => (matOf(s) === 'auto' ? OWN[s] : matOf(s));
+  const shot = (s, m) => `shots/${s}-${m}.jpg`;
+  const made = (s, m) => MADE[`${s}-${m}`] !== false;
+  if (P.has('bare')) document.body.classList.add('bare');
+
+  const W = innerWidth, H = innerHeight, land = W > H, short0 = Math.min(W, H);
+  const device = get('device', ['tablet', 'pixel', 'iphone'], short0 <= 400 ? 'iphone' : short0 < 600 ? 'pixel' : 'tablet');
+  const INSETS = {
+    land: { tablet: [0, 0, 0, 0], pixel: [52, 0, 0, 37], iphone: [50, 0, 50, 21] },
+    port: { tablet: [0, 0, 0, 0], pixel: [0, 52, 0, 37], iphone: [0, 50, 0, 34] },
+  };
+  const [il, it, ir, ib] = INSETS[land ? 'land' : 'port'][device];
+  const phone = device !== 'tablet';
+  if (phone) document.body.classList.add('phone');
+
+  if (P.has('grid')) {
+    const sizes = [['Tablet', 'tablet', 1280, 800], ['Tablet', 'tablet', 800, 1280], ['Pixel 7a', 'pixel', 1067, 480],
+      ['Pixel 7a', 'pixel', 480, 1067], ['iPhone 13 mini', 'iphone', 812, 375], ['iPhone 13 mini', 'iphone', 375, 812]];
+    const p = new URLSearchParams(location.search); p.delete('grid'); p.set('bare', '1');
+    const k = +(P.get('scale') || 0.42);
+    document.body.insertAdjacentHTML('beforeend', `<div class="grid">${sizes.map(([name, dev, w, h]) => {
+      p.set('device', dev);
+      return `<figure><figcaption>${name}, ${w} × ${h} dp</figcaption><div class="fr" style="width:${w * k}px;height:${h * k}px">` +
+        `<iframe src="?${p}" style="width:${w}px;height:${h}px;transform:scale(${k})"></iframe></div></figure>`;
+    }).join('')}</div>`);
+    Draughts.init();
+  }
+
+  function tile(on, changes, inner, cls = '') {
+    return `<a class="tile ${cls}${on ? ' on' : ''}" href="${link(changes)}">${inner}</a>`;
+  }
+  const setting = (name, tiles, extra = '') => `<div class="setting"><h3>${name}</h3><div class="tiles">${tiles}</div>${extra}</div>`;
+  // A board's picture for a tile: its shot, or a hatched stand-in for one not yet made.
+  function boardThumb(s, m, tag = '') {
+    if (!made(s, m)) return `<span class="thumb todo">${NAME[s]}'s<br>${m}<br>to make</span>`;
+    return `<span class="thumb" style="background-image:url(${shot(s, m)})">${tag ? `<span class="tag">${tag}</span>` : ''}</span>`;
+  }
+
+  function look() {
+    const photo = (s) => `../design/backgrounds/masters/${s}-01-2048.jpg`;
+    // The theme: the seasons, or by the date. In take c each season's tile is its board as
+    // chosen (the shot carries the season's photograph behind it).
+    const seasonTile = (s) => take === 'c'
+      ? tile(themePick === s, { season: s }, `${boardThumb(s, shown(s))}${NAME[s]}`, 'pic')
+      : tile(themePick === s, { season: s }, `<span class="thumb" style="background-image:url(${photo(s)})"></span>${NAME[s]}`, 'pic');
+    const theme = setting('Theme', SEASONS.map(seasonTile).join('') +
+      tile(themePick === 'date', { season: null }, `<span class="thumb" style="background: color-mix(in srgb, var(--glow) 18%, rgb(255 255 255 / 0.06))">${icon('sun')}</span>By date`, 'pic'));
+    const background = setting('Background',
+      tile(bg === 'photo', { plain: null }, `<span class="thumb" style="background-image:url(${photo(season)})"></span>Photo`, 'pic') +
+      tile(bg === 'plain', { plain: 'on' }, `<span class="thumb" style="background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--page), #fff 22%), var(--page))"></span>Plain`, 'pic'));
+    const kings = setting('Kings',
+      tile(king === 'auto', { king: 'auto' }, 'Auto') + tile(king === 'crown', { king: 'crown' }, 'Crown') + tile(king === 'stack', { king: 'stack' }, 'Stack'));
+    const flatThumb = '<span class="thumb" style="background: rgb(255 255 255 / 0.06)"><span class="mini2d" data-mini></span></span>';
+    let board;
+    if (take === 'b') {
+      // Flat, or raised: the season's own, wood, or stone.
+      const m = matOf(season);
+      board = setting(`Board <small>· ${NAME[season]}'s shown</small>`,
+        tile(view === '2d', { view: '2d' }, `${flatThumb}Flat`, 'pic') +
+        tile(view === '3d' && m === 'auto', { view: '3d', mat: 'auto' }, `${boardThumb(season, OWN[season], 'auto')}Raised`, 'pic') +
+        tile(view === '3d' && m === 'wood', { view: '3d', mat: 'wood' }, `${boardThumb(season, 'wood')}Wood`, 'pic') +
+        tile(view === '3d' && m === 'stone', { view: '3d', mat: 'stone' }, `${boardThumb(season, 'stone')}Stone`, 'pic'));
+    } else {
+      board = setting('Board',
+        tile(view === '2d', { view: '2d' }, 'Flat<small>2D</small>') + tile(view === '3d', { view: '3d' }, 'Raised<small>3D</small>'));
+      if (view === '3d') {
+        const m = matOf(season), key = take === 'c' ? `mat_${season}` : 'mat';
+        const name = take === 'c' ? `${NAME[season]}'s board` : `Material <small>· ${NAME[season]}'s shown</small>`;
+        board += setting(name,
+          tile(m === 'auto', { [key]: 'auto' }, `${boardThumb(season, OWN[season])}Auto<small>${OWN[season]}</small>`, 'pic') +
+          tile(m === 'wood', { [key]: 'wood' }, `${boardThumb(season, 'wood')}Wood`, 'pic') +
+          tile(m === 'stone', { [key]: 'stone' }, `${boardThumb(season, 'stone')}Stone`, 'pic'));
+      }
+    }
+    return `<section><h2>${icon('sun')}Look</h2>${theme}${background}${board}${kings}</section>`;
+  }
+
+  function game() {
+    const NOTE = { off: 'No move list during a game', list: "The game's moves, listed during play", marks: 'The moves, each marked by how good it was' };
+    return `<section><h2>${icon('target')}Game</h2>` +
+      setting('Move hints', tile(hints === 'mistakes', { assist: 'mistakes' }, 'Mistakes only') + tile(hints === 'moves', { assist: 'moves' }, 'All moves')) +
+      setting('Move list', tile(moves === 'off', { moves: 'off' }, 'Off') + tile(moves === 'list', { moves: 'list' }, 'Moves') +
+        tile(moves === 'marks', { moves: 'marks' }, 'Marks<small><span class="glyph">!</span> <span class="glyph">?</span></small>'),
+        `<div class="notes">${NOTE[moves]}</div>`) + '</section>';
+  }
+
+  function foot() {
+    return `<section><h2>${icon('globe')}Language</h2><div class="tiles">` +
+      tile(lang === 'en', { lang: 'en' }, 'English') + tile(lang === 'et', { lang: 'et' }, 'Eesti') + '</div></section>' +
+      `<section><div class="privacy">${icon('shield')}Privacy: Draughts collects nothing. Everything stays on this device.</div></section>`;
+  }
+
+  function render() {
+    const app = document.getElementById('app');
+    const cw = 480;
+    const bands = `<div class="bands">${il ? `<i style="left:0;top:0;bottom:0;width:${il}px"></i>` : ''}${ir ? `<i style="right:0;top:0;bottom:0;width:${ir}px"></i>` : ''}` +
+      `${it ? `<i style="left:0;right:0;top:0;height:${it}px"></i>` : ''}</div>`;
+    app.innerHTML = `<nav class="col glass ${land ? 'land' : 'port'}"><div class="top"><a class="back" href="new-game.html">${icon('back')}</a><h1>Settings</h1></div>` +
+      `<div class="scroll">${look()}${game()}${foot()}</div></nav><div class="stage"></div>${bands}`;
+    const col = app.querySelector('.col'), stage = app.querySelector('.stage');
+    if (land) {
+      const width = Math.min(il + cw + 64, Math.round(W * 0.6));
+      Object.assign(col.style, { width: `${width}px`, padding: `${it + 16}px 32px ${ib}px ${il + 32}px` });
+      Object.assign(stage.style, { left: `${width}px`, top: `${it}px`, right: `${ir}px`, bottom: `${ib}px` });
+    } else {
+      // Portrait: the preview a band at the top, 40% of the height on a tablet and 30% on
+      // a phone (the list scrolls; the board needn't be large to show the look).
+      const band = Math.round((H - it) * (phone ? 0.3 : 0.4));
+      Object.assign(col.style, { top: `${it + band}px`, padding: `16px ${ir + (phone ? 16 : 24)}px ${ib}px ${il + (phone ? 16 : 24)}px` });
+      Object.assign(stage.style, { left: `${il}px`, right: `${ir}px`, top: `${it}px`, height: `${band + 24}px` });
+    }
+    const scroll = col.querySelector('.scroll');
+    const fade = () => scroll.classList.toggle('more', scroll.scrollTop + scroll.clientHeight < scroll.scrollHeight - 2);
+    scroll.addEventListener('scroll', fade);
+    Draughts.init();
+    fade();
+    // The preview: the raised board as its shot (the real renderer's), or the flat board.
+    const sr = stage.getBoundingClientRect();
+    let standin = '';
+    if (view === '3d') {
+      const m = shown(season);
+      const w = Math.min(sr.width * 0.92, (sr.height - 24) * 0.92 * 4 / 3);
+      if (made(season, m)) stage.innerHTML = `<img class="shot" src="${shot(season, m)}" style="width:${w}px;height:${w * 0.75}px">`;
+      else {
+        stage.innerHTML = `<div id="board"></div><span class="standin">${NAME[season]}'s ${m} isn't made yet: the CSS board stands in</span>`;
+        const el = document.getElementById('board');
+        el.style.width = `${Math.min(sr.width, sr.height) * 0.7}px`;
+        Draughts.board(el, { ...Draughts.start(10), view: '3d', theme: m === 'stone' ? 'stone' : 'wood' });
+        standin = ' (stand-in)';
+      }
+    } else {
+      stage.innerHTML = '<div id="board"></div>';
+      const el = document.getElementById('board');
+      el.style.width = `${Math.min(sr.width, sr.height) * 0.86}px`;
+      Draughts.board(el, { ...Draughts.start(10), view: '2d' });
+    }
+    for (const m of document.querySelectorAll('[data-mini]')) Draughts.board(m, { ...Draughts.start(8), view: '2d' });
+    const over = scroll.scrollHeight - scroll.clientHeight;
+    const name = { tablet: 'Tablet', pixel: 'Pixel 7a', iphone: 'iPhone 13 mini' }[device];
+    document.body.insertAdjacentHTML('beforeend', `<div class="note">${name} ${W} × ${H} dp. Take ${take}: the list ` +
+      `${over > 0 ? `scrolls ${over} dp` : 'fits'}; the preview ${Math.round(sr.width)} × ${Math.round(sr.height)} dp${standin}.</div>`);
+    Draughts.syncGlass();
+  }
+  if (!P.has('grid')) render();
+</script>
+</body>
+</html>
