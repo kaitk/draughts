@@ -27,6 +27,22 @@ let SUMMER_SERPENTINE = 8;
 // stone, 2 the Baltic folk oak.
 let SPRING_ELVEN = 9;
 let SPRING_BALTIC = 10;
+// Autumn's and winter's other material (task 080, 2026-11-13): autumn's stone and winter's
+// wood beside the season's own, each its takes. Autumn's: 0 autumn() the wood, 1
+// AUTUMN_STONE travertine and red jasper in a dark brown marble, 2 AUTUMN_CARVED the same
+// field in a weathered stone frame carved with vines in rust leaves, 3 AUTUMN_PORPHYRY
+// golden sandstone and porphyry in a speckled dark stone. Winter's: 0 winter() the slate,
+// 1 WINTER_WOOD limed ash and smoked oak, 2 WINTER_CARVED the same in a smoked oak frame
+// carved with a Nordic band, 3 WINTER_STAINED birch and blue-grey stained birch. --autumn
+// N and --winter N pick them.
+let AUTUMNS = 4;
+let WINTERS = 4;
+let AUTUMN_STONE = 11;
+let AUTUMN_CARVED = 12;
+let AUTUMN_PORPHYRY = 13;
+let WINTER_WOOD = 14;
+let WINTER_CARVED = 15;
+let WINTER_STAINED = 16;
 
 struct Theme {
     photo: i64,             // the season's photograph, src/app/background.c's kind
@@ -96,6 +112,12 @@ fn get(which: i64) -> Theme {
     if which == SUMMER_SERPENTINE { return summer_serpentine(); }
     if which == SPRING_ELVEN { return elven(); }
     if which == SPRING_BALTIC { return baltic(); }
+    if which == AUTUMN_STONE { return autumn_stone(); }
+    if which == AUTUMN_CARVED { return autumn_carved(); }
+    if which == AUTUMN_PORPHYRY { return autumn_porphyry(); }
+    if which == WINTER_WOOD { return winter_wood(); }
+    if which == WINTER_CARVED { return winter_carved(); }
+    if which == WINTER_STAINED { return winter_stained(); }
     return autumn();
 }
 
@@ -114,10 +136,15 @@ fn summer_look(n: i64) -> i64 {
     return COUNT + min(n, SUMMERS - 1) - 1;
 }
 
+// The look for autumn's variant n (0 to AUTUMNS - 1) and winter's (0 to WINTERS - 1).
+fn autumn_look(n: i64) -> i64 { if n <= 0 { AUTUMN } else { AUTUMN_STONE + min(n, AUTUMNS - 1) - 1 } }
+fn winter_look(n: i64) -> i64 { if n <= 0 { WINTER } else { WINTER_WOOD + min(n, WINTERS - 1) - 1 } }
+
 // The wood's model a look is made with by default, -1 for any (the one chosen). The app's
 // and the prototype's --wood overrides it. The user's values (2026-11-09): summer and its
 // amber stone wood 2, spring's two carved looks wood 3.
 fn wood_for(look: i64) -> i64 {
+    if look == WINTER_WOOD || look == WINTER_CARVED || look == WINTER_STAINED { return 2; }
     if look == SUMMER_OAK || look == SPRING_ELVEN || look == SPRING_BALTIC { return 3; }
     if look == SUMMER || look == SUMMER_AMBER || look == SUMMER_PICKLED || look == SUMMER_TEAK { return 2; }
     return -1;
@@ -128,6 +155,8 @@ fn wood_for(look: i64) -> i64 {
 fn finish_for(look: i64, wood: i64) -> Finish {
     guard wood == wood_for(look) else { return finish(wood); }
     if look == SUMMER_PICKLED { return PICKLED; }
+    if look == WINTER_WOOD || look == WINTER_CARVED { return LIMED; }
+    if look == WINTER_STAINED { return COOL; }
     if look == SUMMER_TEAK { return OILED; }
     if look == SUMMER || look == SUMMER_AMBER { return TUNED; }
     if look == SPRING_ELVEN || look == SPRING_BALTIC { return SPRING_FINISH; }
@@ -405,6 +434,11 @@ let OILED = Finish { varnish: 0.3, sanding: 0.3, grain: 1.0, rings: 1.0, warmth:
 let SPRING_FINISH = Finish { varnish: 0.335, sanding: 1.0, grain: 1.0, rings: 1.0, warmth: 0.0, pickle: 0.0,
                              caulk: 1.0 };
 
+// Winter's limed ash: white in the pores and the grain, as frost in it, the color cooled,
+// a satin matte; and its stained birch, cooled, a little varnished.
+let LIMED = Finish { varnish: 0.1, sanding: 0.3, grain: 1.0, rings: 1.0, warmth: -0.3, pickle: 0.3, caulk: 1.0 };
+let COOL = Finish { varnish: 0.4, sanding: 0.6, grain: 1.0, rings: 1.0, warmth: -0.4, pickle: 0.0, caulk: 1.0 };
+
 fn finish(wood: i64) -> Finish {
     if wood == 2 { return TUNED; }
     if wood == 3 { return VARNISHED; }
@@ -416,6 +450,8 @@ fn finish(wood: i64) -> Finish {
 // Winter's frame is 2, as the user tuned it in the panel (2026-11-09).
 let MARBLES = 5;
 let MARBLE = 2;
+// Autumn's stone frame's own marble, past the ones M cycles (marble_for).
+let EMPERADOR = 5;
 
 struct Marble {
     base: float4,   // the stone (sRGB), w: its clouding
@@ -456,8 +492,23 @@ fn marble(which: i64) -> Marble {
                         form: float4 { 0.008, 0.25, 0.2, 1.0 },
                         veins: 1.0, wave: 1.2, polish: 0.8, tint: 0.0 };
     }
+    // Dark brown with golden cream veins and a network of fine cracks, as Emperador
+    // Dark is: autumn's stone frame.
+    if which == EMPERADOR {
+        return Marble { base: float4 { 0.2, 0.125, 0.085, 0.4 }, vein: float4 { 0.62, 0.48, 0.32, 0.2 },
+                        form: float4 { 0.014, 0.6, 0.4, 0.0 },
+                        veins: 0.85, wave: 1.4, polish: 0.75, tint: 0.0 };
+    }
     return Marble { base: float4_0, vein: float4_0, form: float4_0, veins: 1.0, wave: 1.0, polish: 0.5,
                     tint: 0.0 };
+}
+
+// The marble a look's stone frame is made of: its own (autumn's: EMPERADOR, or 0 its own
+// figure), else the one chosen (--marble, M), winter's.
+fn marble_for(look: i64, chosen: i64) -> i64 {
+    if look == AUTUMN_STONE { return EMPERADOR; }
+    if look == AUTUMN_CARVED || look == AUTUMN_PORPHYRY { return 0; }
+    return chosen;
 }
 
 // Spring's looks (task 041, the app's and the prototype's --spring): 0 the birch, 1 the
@@ -589,6 +640,131 @@ fn summer_serpentine() -> Theme {
     return t;
 }
 
+// Autumn 1, stone: honed travertine light squares, warm honey with a soft clouding, and
+// polished red jasper dark ones, mottled with pale veins, a deep brown inlay, in a solid
+// block of dark brown marble with golden veins (EMPERADOR, marble_for); cream travertine
+// and rust-brown stone pieces. Autumn's light, its forest's rust and amber in stone.
+fn autumn_stone() -> Theme {
+    var t = autumn();
+    t.light_sq = float4 { 0.9, 0.79, 0.62, 0.4 };
+    t.light_fig = float4 { 0.6, 0.16, 0.08, 0.0 };
+    t.dark_sq = float4 { 0.52, 0.24, 0.13, 0.28 };
+    t.dark_fig = float4 { 0.7, 0.28, 0.12, 0.0 };
+    t.inlay = float4 { 0.22, 0.12, 0.08, 0.35 };
+    t.inlay_fig = float4 { 0.6, 0.2, 0.1, 0.0 };
+    t.frame = float4 { 0.3, 0.19, 0.13, 0.4 };
+    t.frame_fig = float4 { 0.6, 0.2, 0.2, 0.0 };
+    t.surface = float4 { 0.04, 0.0, 0.4, 0.5 };
+    t.frame_surface = float4 { 0.0, 0.5, 0.0, 0.1 };
+    t.stone = float4 { 0.1, 0.16, 0.12, 0.0 };
+    t.light_ring = float4 { 0.2, 4.0, 0.0, 0.0 };
+    t.dark_ring = float4 { 0.3, 6.0, 0.12, 0.0 };
+    t.frame_ring = float4_0;
+    t.light_piece = float4 { 0.92, 0.85, 0.72, 0.5 };
+    t.dark_piece = float4 { 0.34, 0.17, 0.11, 0.36 };
+    t.piece_fig = float4 { 0.04, 0.2, 0.0, 0.45 };
+    t.crown = float4 { 0.34, 0.17, 0.11, 0.0 };
+    t.build = float4 { 1.0, 0.0, 1.0, 0.0 };
+    return t;
+}
+
+// Autumn 2: the same field in a weathered brown stone frame, mitred, speckled and
+// coarse, the elven vines carved along it (AUTUMN_VINES) with their leaves turned rust
+// and gold, a little moss in the cuts.
+fn autumn_carved() -> Theme {
+    var t = autumn_stone();
+    t.frame = float4 { 0.4, 0.3, 0.23, 0.55 };
+    t.frame_fig = float4 { 0.8, 0.4, 0.2, 0.0 };
+    t.frame_surface = float4 { 0.0, 2.0, 0.0, 0.1 };
+    t.stone = float4 { 0.06, 0.12, 0.15, 0.6 };
+    t.frame_ring = float4 { 0.3, 8.0, 0.0, 0.0 };
+    t.build = float4 { 0.0, 0.5, 0.0, 1.0 };
+    t.fill = float4 { 0.72, 0.38, 0.14, 0.7 };
+    return t;
+}
+
+// Autumn 3: golden sandstone and deep red-brown porphyry, a speckled dark stone frame,
+// mitred, with its own clouding (no marble); sandstone and porphyry pieces.
+fn autumn_porphyry() -> Theme {
+    var t = autumn_stone();
+    t.light_sq = float4 { 0.88, 0.73, 0.5, 0.48 };
+    t.light_fig = float4 { 0.6, 0.2, 0.14, 0.0 };
+    t.light_ring = float4 { 0.1, 9.0, 0.0, 0.0 };
+    t.dark_sq = float4 { 0.4, 0.17, 0.15, 0.3 };
+    t.dark_fig = float4 { 0.6, 0.2, 0.2, 0.0 };
+    t.dark_ring = float4 { 0.25, 14.0, 0.0, 0.0 };
+    t.frame = float4 { 0.3, 0.22, 0.17, 0.5 };
+    t.frame_fig = float4 { 0.7, 0.3, 0.3, 0.0 };
+    t.frame_surface = float4 { 0.0, 1.5, 0.0, 0.2 };
+    t.stone = float4 { 0.04, 0.16, 0.15, 1.0 };
+    t.frame_ring = float4 { 0.2, 8.0, 0.0, 0.0 };
+    t.build = float4 { 0.0, 0.5, 0.0, 0.0 };
+    t.light_piece = float4 { 0.9, 0.8, 0.64, 0.5 };
+    t.dark_piece = float4 { 0.3, 0.14, 0.13, 0.36 };
+    t.crown = float4 { 0.3, 0.14, 0.13, 0.0 };
+    return t;
+}
+
+// Winter 1, wood: limed ash light squares, pale and cool, their open grain filled white
+// as frost (LIMED), smoked oak dark ones, grey with the same white in their grain, a
+// mitred frame of dark blue-grey stained oak limed the same; ivory and smoked dark pieces.
+// Winter's light; wood 2's rings (wood_for).
+fn winter_wood() -> Theme {
+    var t = winter();
+    t.light_sq = float4 { 0.8, 0.77, 0.72, 0.5 };
+    t.light_fig = float4 { 0.3, 0.3, 0.35, 1.0 };
+    t.dark_sq = float4 { 0.36, 0.33, 0.31, 0.5 };
+    t.dark_fig = float4 { 0.3, 0.35, 0.4, 1.0 };
+    t.inlay = float4 { 0.16, 0.17, 0.2, 0.5 };
+    t.inlay_fig = float4 { 0.3, 0.3, 0.3, 1.0 };
+    t.frame = float4 { 0.3, 0.31, 0.34, 0.55 };
+    t.frame_fig = float4 { 0.3, 0.35, 0.5, 1.0 };
+    t.surface = float4 { 0.06, 0.7, 0.4, 0.9 };
+    t.frame_surface = float4 { 1.0, 3.0, 1.0, 0.1 };
+    t.stone = float4_0;
+    t.light_ring = float4 { 0.07, 0.4, 0.5, 0.45 };
+    t.dark_ring = float4 { 0.07, 0.4, 0.5, 0.4 };
+    t.frame_ring = float4 { 0.07, 0.4, 0.7, 0.8 };
+    t.light_piece = float4 { 0.88, 0.86, 0.82, 0.52 };
+    t.dark_piece = float4 { 0.22, 0.23, 0.25, 0.34 };
+    t.piece_fig = float4 { 0.03, 0.15, 0.3, 0.4 };
+    t.crown = float4 { 0.22, 0.23, 0.25, 0.0 };
+    t.edge = float4_0;
+    t.build = float4 { 0.0, 1.0, 0.0, 0.0 };
+    return t;
+}
+
+// Winter 2: the same field in a smoked oak frame carved along its top with a Nordic band
+// (NORDIC: the folk band, its sun wheels read as snowflakes), the cut showing pale wood.
+fn winter_carved() -> Theme {
+    var t = winter_wood();
+    t.frame = float4 { 0.2, 0.2, 0.22, 0.55 };
+    t.build = float4 { 0.0, 1.0, 0.0, 1.0 };
+    t.fill = float4 { 0.86, 0.86, 0.84, 1.0 };
+    return t;
+}
+
+// Winter 3: pale birch light squares and birch stained a slate blue-grey, the winter
+// board's own colors in wood, in a deep blue-grey stained frame; satin (COOL).
+fn winter_stained() -> Theme {
+    var t = winter_wood();
+    t.light_sq = float4 { 0.84, 0.81, 0.74, 0.45 };
+    t.light_fig = float4 { 0.15, 0.35, 0.4, 1.0 };
+    t.dark_sq = float4 { 0.4, 0.44, 0.5, 0.45 };
+    t.dark_fig = float4 { 0.15, 0.3, 0.35, 1.0 };
+    t.inlay = float4 { 0.15, 0.18, 0.24, 0.5 };
+    t.frame = float4 { 0.22, 0.26, 0.32, 0.55 };
+    t.frame_fig = float4 { 0.2, 0.25, 0.35, 1.0 };
+    t.surface = float4 { 0.06, 0.4, 0.45, 0.6 };
+    t.frame_surface = float4 { 0.4, 1.5, 0.4, 0.3 };
+    t.light_ring = float4 { 0.09, 0.35, 0.18, 0.08 };
+    t.dark_ring = float4 { 0.09, 0.35, 0.22, 0.08 };
+    t.frame_ring = float4 { 0.08, 0.35, 0.3, 0.15 };
+    t.dark_piece = float4 { 0.2, 0.235, 0.28, 0.34 };
+    t.crown = float4 { 0.2, 0.235, 0.28, 0.0 };
+    return t;
+}
+
 // A carved frame's carving and the look's tints (the prototype's tuning panel, P): what
 // a carved look (Theme.build.w) bakes into its frame and how it tints its surfaces.
 struct Carving {
@@ -617,11 +793,20 @@ let AMBER_TUNED = Carving { motif: 2, depth: 0.02, scale: 3.0, moss: 0.5, amber:
 let AMBER = Carving { motif: 2, depth: 0.02, scale: 12.0, moss: 0.5, amber: 0.55, lichen: 0.5, warmth: 0.0,
                       jade: 0.5 };
 
+// Autumn's carved stone: the elven vines, little moss, the leaves rust (Theme.fill);
+// winter's Nordic band: the folk band cut into smoked oak, its sun wheels as snowflakes.
+let AUTUMN_VINES = Carving { motif: 0, depth: 0.023, scale: 23.685, moss: 0.15, amber: 0.0, lichen: 0.0, warmth: 0.0,
+                             jade: 0.5 };
+let NORDIC = Carving { motif: 1, depth: 0.015, scale: 6.0, moss: 0.0, amber: 0.0, lichen: 0.0, warmth: 0.0,
+                       jade: 0.5 };
+
 // A carved look's own carving (shown()'s look), ELVEN for one that isn't carved.
 fn carving_for(look: i64) -> Carving {
     if look == SPRING_BALTIC { return BALTIC; }
     if look == SUMMER_AMBER { return AMBER_TUNED; }
     if look == SUMMER_SERPENTINE { return AMBER; }
+    if look == AUTUMN_CARVED { return AUTUMN_VINES; }
+    if look == WINTER_CARVED { return NORDIC; }
     return ELVEN;
 }
 

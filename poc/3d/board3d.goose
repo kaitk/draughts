@@ -18,6 +18,8 @@
 //   ../../build/board3d --wood 0                  # the wood's model: 0 to 3 (each look has its own)
 //   ../../build/board3d --theme winter --marble 1 # the frame's marble: 0 the slate, 1 to 4
 //   ../../build/board3d --summer 2                # summer's variant: 0 to 5 (looks::SUMMERS), 4 and 5 amber
+//   ../../build/board3d --autumn 1                # autumn's: 0 the wood, 1 to 3 stone (looks::AUTUMNS)
+//   ../../build/board3d --winter 1                # winter's: 0 the slate, 1 to 3 wood (looks::WINTERS)
 //   ../../build/board3d --theme spring --spring 1 # spring's look: 0 the birch, 1 elven, 2 Baltic (the default)
 //   ../../build/board3d --panel                   # the tuning panel shown; --plain no finish
 //   ../../build/board3d --bench 200
@@ -208,12 +210,37 @@ fn draw_label(scale: f32) {
 }
 
 // The wood's model --wood or W chose, -1 for each look's own (looks::wood_for), and
-// summer's variant (--summer, S).
+// summer's variant (--summer, S), autumn's and winter's (--autumn, --winter).
 var wood_chosen: i64 = -1;
 var summer:      i64 = 0;
+var autumn:      i64 = 0;
+var winter:      i64 = 0;
 
-// The look for a season: summer's its variant's.
-fn look_of(season: i64) -> i64 { if season == looks::SUMMER { looks::summer_look(summer) } else { season } }
+// The look for a season: summer's, autumn's and winter's their variant's.
+fn look_of(season: i64) -> i64 {
+    if season == looks::SUMMER { return looks::summer_look(summer); }
+    if season == looks::AUTUMN { return looks::autumn_look(autumn); }
+    if season == looks::WINTER { return looks::winter_look(winter); }
+    return season;
+}
+
+// A season's variants (looks::SUMMERS, AUTUMNS, WINTERS; 1 for spring, whose looks G
+// switches), the one chosen, and choosing one.
+fn variants(season: i64) -> i64 {
+    if season == looks::SUMMER { return looks::SUMMERS; }
+    if season == looks::AUTUMN { return looks::AUTUMNS; }
+    if season == looks::WINTER { return looks::WINTERS; }
+    return 1;
+}
+fn variant(season: i64) -> i64 {
+    return if season == looks::SUMMER { summer } else if season == looks::AUTUMN { autumn }
+           else if season == looks::WINTER { winter } else { 0 };
+}
+fn set_variant(season: i64, v: i64) {
+    if season == looks::SUMMER { summer = v; }
+    if season == looks::AUTUMN { autumn = v; }
+    if season == looks::WINTER { winter = v; }
+}
 
 // Puts look `which` on the board, with its own wood's model and finish if it has one,
 // timed.
@@ -317,6 +344,15 @@ fn main() {
     if si2 > 0 {
         summer = clamp(flag_f32(argv, "--summer", 0.0) as i64, 0, looks::SUMMERS - 1);
         which = looks::SUMMER;
+    }
+    // --autumn N, --winter N: autumn's and winter's variant (and the season).
+    if flag_str(argv, "--autumn") > 0 {
+        autumn = clamp(flag_f32(argv, "--autumn", 0.0) as i64, 0, looks::AUTUMNS - 1);
+        which = looks::AUTUMN;
+    }
+    if flag_str(argv, "--winter") > 0 {
+        winter = clamp(flag_f32(argv, "--winter", 0.0) as i64, 0, looks::WINTERS - 1);
+        which = looks::WINTER;
     }
     let ki = flag_str(argv, "--king");
     if ki > 0 && argv[ki] == "crown" { king_crown = true; }
@@ -606,24 +642,27 @@ fn bench_frames(g: render3d::Gpu&, cam_in: Camera, n: i64, headless: bool) {
         print("bench: marble ", m, " baked in ", ms, " ms");
     }
     render3d::tune(g, g.wood, g.finish, chosen, looks::marble(chosen));
-    // In summer, each variant's bake (the plan and the frame map, their mips, waited
-    // for), twice, the second timed, with its own wood; then the chosen one again.
-    if looks::get(g.look).photo == looks::get(looks::SUMMER).photo {
-        let kept = summer;
-        for v in looks::SUMMERS {
+    // In summer, autumn and winter, each variant's bake (the plan and the frame map, their
+    // mips, waited for), twice, the second timed, with its own wood; then the chosen one
+    // again. A look's photograph is its season's.
+    let season = looks::get(g.look).photo;
+    let count = variants(season);
+    if count > 1 {
+        let kept = variant(season);
+        for v in count {
             var ms: f64 = 0.0;
             for k in 2 {
-                summer = (v + 1) % looks::SUMMERS;
-                apply(g, look_of(looks::SUMMER));
-                summer = v;
+                set_variant(season, (v + 1) % count);
+                apply(g, look_of(season));
+                set_variant(season, v);
                 let c = clock();
-                apply(g, look_of(looks::SUMMER));
+                apply(g, look_of(season));
                 ms = (clock() - c) * 1000.0;
             }
-            print("bench: summer ", v, " baked in ", ms, " ms");
+            print("bench: season ", season, " variant ", v, " baked in ", ms, " ms");
         }
-        summer = kept;
-        apply(g, look_of(looks::SUMMER));
+        set_variant(season, kept);
+        apply(g, look_of(season));
     }
     // On spring, each of its looks' bakes (the plan and the frame map, waited for; task
     // 041), twice, the second timed; then the chosen one again.

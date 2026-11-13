@@ -152,7 +152,9 @@ Board row's 3D does, and `--board flat` on the flat one; `--background plain` sh
 plain fade in place of the photograph, and `--background photo` the photograph. `--wood N`
 (0 to 3) and `--marble N` (0 the slate, 1 to 4) pick the 3D board's wood and winter
 frame's marble for the run, and `--summer N` (0 to 5) and `--spring N` (0 the
-birch, 1 the carved stone, 2 the carved oak) summer's and spring's 3D looks.
+birch, 1 the carved stone, 2 the carved oak) summer's and spring's 3D looks; `--autumn N`
+(0 the wood, 1 to 3 stone) and `--winter N` (0 the slate, 1 to 3 wood) autumn's and
+winter's, the other material's takes (task 080).
 `--reset-skill`, which takes no value, puts the playing player back to easy with the
 computer's skill at every level at its start, and writes that to their file; stars and
 games stay. `--no-vsync`, which takes no value either, presents without waiting for the

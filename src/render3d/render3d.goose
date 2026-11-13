@@ -437,7 +437,15 @@ fn turn_light(g: Gpu&, turn: f32) {
 
 // Whether the frame is marble: a stone frame with a marble chosen. Its rounded edge
 // then keeps the marble, not the slate's steel-blue round.
-fn marbled(g: Gpu&, t: looks::Theme&) -> bool { g.marble > 0 && t.frame_fig.w < 0.5 && t.build.w < 0.5 }
+fn marbled(g: Gpu&, t: looks::Theme&) -> bool { marble_of(g) > 0 && t.frame_fig.w < 0.5 && t.build.w < 0.5 }
+
+// The marble the shown look's stone frame is made of (looks::marble_for), and its look:
+// the chosen one's (g.stone, which the panel tunes) unless the look has its own.
+fn marble_of(g: Gpu&) -> i64 { looks::marble_for(looks::shown(g.look, g.spring), g.marble) }
+fn stone_of(g: Gpu&) -> looks::Marble {
+    let m = marble_of(g);
+    return if m == g.marble { g.stone } else { looks::marble(m) };
+}
 
 // The look `which` as g shows it: spring's chosen look with its carving.
 fn look(g: Gpu&, which: i64) -> looks::Theme { looks::variant(which, g.spring, g.carving) }

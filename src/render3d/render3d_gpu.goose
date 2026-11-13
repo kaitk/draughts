@@ -273,8 +273,8 @@ fn bake(g: render3d::Gpu&, albedo: gfx::Texture, normal: gfx::Texture, w: i64, h
     if y1 >= 0 { gfx::scissor(0, y0, w, y1 - y0); }
     gfx::bind(g.bake);
     let fi = g.finish;
-    let m = g.stone;
-    gfx::uniforms(gfx::FRAGMENT, 0, render3d::Bake { float4 { mode, g.wood, g.n, g.marble },
+    let m = render3d::stone_of(g);
+    gfx::uniforms(gfx::FRAGMENT, 0, render3d::Bake { float4 { mode, g.wood, g.n, render3d::marble_of(g) },
                                            float4 { w, h, extent.x, extent.y },
                                            t.light_sq, t.light_fig, t.dark_sq, t.dark_fig,
                                            t.inlay, t.inlay_fig, t.frame, t.frame_fig,
