@@ -8,7 +8,7 @@
 <script src="draughts.js"></script>
 <style>
   /* One New game row on home, the opponent chosen in the setup (task 080, 01). Home's
-     menu: Continue, New game, Puzzles, Games, Settings. New game turns the column into the
+     menu: Continue, New game, Puzzles, Results, Settings. New game turns the column into the
      setup, which starts with whom to play; a friend's game also chooses whether the board
      turns to the side to move (settings' Board row's third tile until now).
        ?view=home|setup   &vs=computer|friend (the opponent chosen, kept from last time)
@@ -116,7 +116,6 @@
   const P = new URLSearchParams(location.search);
   const get = (k, vals, def) => (vals.includes(P.get(k)) ? P.get(k) : def);
   const link = (changes) => { const p = new URLSearchParams(location.search); for (const [k, v] of Object.entries(changes)) p.set(k, v); return `?${p}`; };
-  const icon = Draughts.icon;
   const take = get('take', ['a', 'b', 'c'], 'c');
   const view = get('view', ['home', 'setup'], 'home');
   const vs = get('vs', ['computer', 'friend'], 'computer');
@@ -130,9 +129,11 @@
   if (P.has('bare')) document.body.classList.add('bare');
 
   // Two icons of this page's own: the board turning, and the board staying.
-  Draughts.ICONS.turns = '<path d="M20 12a8 8 0 0 1-13.7 5.7"/><path d="M4 12a8 8 0 0 1 13.7-5.7"/><path d="M18 2.5v4.2h-4.2"/><path d="M6 21.5v-4.2h4.2"/>';
-  Draughts.ICONS.stays = '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 16.5v-9"/><path d="M8.5 11 12 7.5l3.5 3.5"/>';
-  Draughts.ICONS.newgame = '<circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M8 12h8"/>';
+  const MORE = {};
+  MORE.turns = '<path d="M20 12a8 8 0 0 1-13.7 5.7"/><path d="M4 12a8 8 0 0 1 13.7-5.7"/><path d="M18 2.5v4.2h-4.2"/><path d="M6 21.5v-4.2h4.2"/>';
+  MORE.stays = '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 16.5v-9"/><path d="M8.5 11 12 7.5l3.5 3.5"/>';
+  MORE.newgame = '<circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M8 12h8"/>';
+  const icon = (n) => (MORE[n] ? `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${MORE[n]}</svg>` : Draughts.icon(n));
 
   // The device's insets, [left, top, right, bottom] in dp, as history.html's.
   const W = innerWidth, H = innerHeight, land = W > H, short0 = Math.min(W, H);
@@ -178,7 +179,7 @@
       if (cw > W - 48) col.style.paddingLeft = col.style.paddingRight = '16px';
     }
     // The menu's or the setup's rows scroll where they run past the column; the fade at
-    // the foot shows there are more (as home's Games row does on a phone, task 074).
+    // the foot shows there are more (as home's Results row does on a phone, task 074).
     const scroll = col.querySelector('.scroll');
     const fade = () => scroll.classList.toggle('more', scroll.scrollTop + scroll.clientHeight < scroll.scrollHeight - 2);
     scroll.addEventListener('scroll', fade);
@@ -209,7 +210,7 @@
     Draughts.syncGlass();
   }
 
-  // Home: the wordmark, then Continue, New game, Puzzles, Games, Settings. Settings is the
+  // Home: the wordmark, then Continue, New game, Puzzles, Results, Settings. Settings is the
   // gear beside the wordmark in portrait and where the landscape is too short for it as a
   // row (a phone), as built.
   function menu() {
@@ -222,7 +223,7 @@
       `<a class="item new" href="${link({ view: 'setup' })}">${icon(word === 'new' ? 'newgame' : 'next')}<span>${word === 'new' ? 'New game' : 'Play'}</span>` +
       `${lastNote === 'on' ? `<small>${lastOpp}</small>` : ''}</a>` +
       `<a class="item" href="#">${icon('puzzle')}<span>Puzzles</span><small>23 / 64</small></a>` +
-      `<a class="item" href="#">${icon('star')}<span>Games</span><small>1043</small></a>` +
+      `<a class="item" href="results.html">${icon('bars')}<span>Results</span><small>800</small></a>` +
       `${gear ? '' : `<a class="item" href="settings-takes.html">${icon('gear')}<span>Settings</span></a>`}</div></div>`;
   }
 
