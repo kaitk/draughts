@@ -1168,6 +1168,13 @@ The release at rest, idle 20 to 30 s:
 - **2× MSAA before 60 Hz** (task 081, 2026-11-13): the same timing first drops the pass to
   2× MSAA, on a display of any rate, and asks for 60 Hz only if the board is still that
   slow at 2× (see "gfx keeps 4× MSAA" above).
+- **The shadow map's pass culls back faces** (task 084, 2026-11-13), as the lit pass does;
+  it culled nothing before. The look is the same (a few single pixels along the shadows'
+  edges), and the A33's frame with the shadow map waits about 0.15 ms less, about 1% of it.
+  Front-face culling, which usually lets the depth bias shrink, was rejected: the pieces'
+  undersides lie within a shadow texel of their feet, so with `shadow()`'s offsets as they
+  are it left acne bands on the pieces' feet or rims at a depth bias from −2 to 1, and
+  pulled the shadows off the pieces at 4.
 - **Open:** at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the
   flat board's 0.3, outside the app's own work, as the Mac shows no draw at rest.
 

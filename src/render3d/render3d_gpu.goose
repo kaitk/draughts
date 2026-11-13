@@ -466,7 +466,7 @@ fn setup(g: render3d::Gpu&, samples: i32 = SAMPLES) {
     g.fading = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true,
                                                                  blend: gfx::BLEND_ALPHA });
     g.shadow = gfx::pipeline(lit_vs, embed_shader("frag", shaders::EMPTY_FRAG),
-                             gfx::PipelineDesc { depth_test: true, depth_write: true,
+                             gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true,
                                                  depth_bias: 1.0, depth_bias_slope: 1.5 });
     g.backdrop = gfx::pipeline(full, embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::FADE_FN,
                                                   shaders::BACKDROP_FRAG),
