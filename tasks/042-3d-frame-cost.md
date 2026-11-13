@@ -358,6 +358,31 @@ backdrop included (PSNR 38 dB, autumn after summer on the game); the same before
 change. Something of the old theme's state (its harmonics, its look's choice) may carry
 over.
 
+## Where the A33's frame goes (2026-11-13)
+
+Main's build of the day, autumn's wood, `--bench 300` (1000 for the first line), thermal
+status 0. The governor holds the Mali-G68 at 500 to 700 MHz of its 897 under the bench,
+whatever the work, so a frame's waited ms swing with the clock between runs; cycles are
+waited ms × the clock sampled during the run (a rough measure: the wait has a fixed part).
+
+- Against 2026-11-10 (waited P50 23.2 / P99 26.0 ms, the pass 17.1): 18.2 / 20.3 ms, the
+  pass 16.6, presented 59.7 fps on average and 52.4 at the 1% low. Faster, not slower.
+- **Antialiasing** (`--aa`): no AA about 9 M cycles a frame, 4× MSAA 11 to 12.6 M, SMAA
+  about 12 M. Unlike the Pixel's (free), the A33's MSAA costs 20 to 25%.
+- **Throwaway builds** (each its own `--id-suffix`, two runs each, alternated):
+
+| Build | Clock | Waited P50 | Pass | Cycles | P99 | Presented 1% low |
+| --- | --- | --- | --- | --- | --- | --- |
+| 4× MSAA (as shipped) | 686 to 691 MHz | 16.2 to 18.2 ms | 14.5 to 16.7 | 11.1 to 12.6 M | 19.1 to 21.3 | 55 to 60 fps |
+| 2× MSAA (`SAMPLES = 2`) | 577 to 610 | 14.6 to 14.9 | 13.4 to 13.5 | 8.6 to 8.9 M | 17.8 to 21.7 | 64 to 65 |
+| `LIT_FRAG` a constant | 497 to 517 | 9.9 | 9.9 | 4.9 to 5.1 M | 12.6 to 13.5 | 81 |
+| `shadow()` 1.0 (map still drawn) | 619 to 658 | 15.9 | 14.3 | 9.8 to 10.5 M | 19.1 to 22.9 | 57 to 58 |
+
+The lit shader is more than half the frame (about 6.5 M of 12 M cycles); its shadow's 9
+taps about 1.5 to 2 M of that, 15% of the frame, and the rest the lighting, the noise,
+and the frame's mapping. 2× MSAA saves a quarter; the user moved the board with it and it
+looked fine, a fallback for devices that miss 60 fps (2026-11-13).
+
 ## Acceptance criteria
 
 - [ ] Each candidate tried is measured on the tablet with `--bench 300` (task 015's
