@@ -162,6 +162,12 @@ clears it. The choice and its reason are printed at start. Not caught: a device 
 after the first frame. Rejected: one window handed from ngfx to gfx, which needs gfx's
 device made late and a second swapchain on a surface ngfx had.
 
+`auto` takes ngfx first on the Mac and iOS too (2026-11-13, task 085), replacing gfx
+there above: with NoGraphicsAPI's Metal root hint gone, ngfx's 3D frame is about 5% under
+gfx's on the M1 Pro (2.89 to 2.94 ms of GPU against 3.05 to 3.12, full screen) and the
+iPhone 13 mini (8.62 to 8.68 against 9.00 to 9.07), and the flat board waits 2.0 ms
+against 2.1 to 2.2 headless on the Mac. Linux stays gfx.
+
 The ngfx build's 2D shaders are written from gfx's GLSL at each build, as the 3D board's
 already were (2026-11-12, task 073): `scripts/ngfx_2d_shaders.py` beside
 `ngfx_3d_shaders.py`, both over one translation (`ngfx_glsl.py`) that keeps each stage's

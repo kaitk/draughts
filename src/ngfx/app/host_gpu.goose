@@ -25,9 +25,10 @@ extern fn draughts_show_window();
 
 // auto's first choice per system (renderer.c's draughts_os: macOS, Windows, Linux, iOS),
 // from what was measured: Windows ngfx, 26 to 41% less GPU time a frame on the RTX 4090
-// (task 074); the Mac and iOS gfx, ngfx's MSAA frame 2% over gfx's on the M1 Pro (task
-// 077); Linux gfx, RADV running ngfx 13% slower (task 076), until MSAA is measured there.
-let AUTO_NGFX: bool[4] = [false, true, false, false];
+// (task 074); the Mac and iOS ngfx, its 3D frame about 5% under gfx's on the M1 Pro and
+// the iPhone 13 mini (task 085); Linux gfx, RADV running ngfx 13% slower (task 076),
+// until MSAA is measured there.
+let AUTO_NGFX: bool[4] = [true, true, false, true];
 let OS_NAMES = ["macOS", "Windows", "Linux", "iOS"];
 let MARKER = "renderer-start.txt";
 
