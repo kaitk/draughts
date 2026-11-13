@@ -28,16 +28,19 @@ Task 074 carries the rest of the history's work; this one these points.
       (2026-11-13, below)
 - [x] C built: a past game's replay, checked on the Mac at the Pixel's sizes and the
       tablet's (2026-11-13, notes)
-- [ ] A and B built (the phone's move line, the marks' tips and legend), checked on the
-      Mac at the Pixel's and the iPhone's sizes, then on a phone
-- [ ] The legend under the replay's list, once A and B are in
+- [x] A and B built (the phone's move line, the marks' tips and legend), checked on the
+      Mac at the Pixel's, the A33's, and the iPhone's sizes (2026-11-13, notes)
+- [ ] A and B checked on a phone (the Pixel 7a, the A33, the iPhone 13 mini)
+- [x] The legend under the replay's list
 
 ## Acceptance criteria
 
 - [x] The results screen's head readable on every season's background
 - [x] The move list's setting in one place, its choices explained
-- [ ] A phone in landscape shows the last move and opens the list; portrait as chosen
-- [ ] A mark explains itself on a touch and under the mouse
+- [x] A phone in landscape shows the last move and opens the list; portrait as chosen
+      (on a phone still to check)
+- [x] A mark explains itself on a touch and under the mouse (a legend in the lists one
+      opens, a tip on the always-shown panel)
 - [x] A past game's moves listed and replayed on a board, touching neither resume nor the
       results (on a phone still to check)
 
@@ -63,7 +66,40 @@ Task 074 carries the rest of the history's work; this one these points.
   Headless shots at the Pixel's landscape and portrait, the tablet, Estonian, the start,
   and Left with the keys: `build/notes/078-replay/`, taken from a history of the
   prototype's game (`--history`, `--screen replay --ply 39`).
-- Left for C: the legend of the marks under the list (after A and B); the prototype's
+- A and B (2026-11-13): `src/game/sheet.goose`, the layouts in `panel.goose`
+  (`row_fit`, `bar_tiles`, `portrait_sheet`); how it works in
+  `docs/architecture/rendering.md` ("The moves panel"), why in `docs/decisions/rendering.md`.
+  No new strings: the sheet's head is `settings.moves` ("Move list"), the legend
+  `mark.*`, the tip `mark.*_tip` split at its colon. Two chevron icons more
+  (`gui::CHEVRON_UP`, `CHEVRON_DOWN`, 43 and 44); the line and the sheet use the
+  replay's `FWD` and `PREV`. Dev flags `--moves off|list|marks`, `--sheet on`, `--tip N`.
+  Room at the sizes (`test/shell/moves_line`), safe area in dp:
+  - Pixel 7a, 540 dp (1141 × 498 landscape, 540 × 1099 portrait): the column 204 dp
+    (back and settings 90 × 96 each), the catch 88 (two rows), the line 192 × 134 (three
+    rows of 31 dp); the flat board 450 dp as before, the 3D
+    board 656 dp across with the line and without; the sheet 334 dp wide (228 on the 3D
+    board), 8 rows; portrait the line's tap 200 × 92 dp, the board 492 as before, the
+    sheet 540 × 562 dp (618 on the 3D board), 10 rows.
+  - Galaxy A33, 512 dp, insets assumed (80 px notch, 135 px bar): the line 192 × 148, the
+    board 464, the sheet 274 dp wide.
+  - iPhone 13 mini at its density floor, 500 dp (949 × 470 landscape): the catch fits as
+    on the Pixel and the line is 106 dp tall, the board 422 dp, the sheet 252 dp. Only at
+    its points (375 dp, 712 × 354, the prototype's size) do the tiles go to a tap high and
+    the catch to counts at the line's head, as prototyped; its portrait there is compact,
+    with no line.
+  - The frame's quads at most 239 of 512 (portrait, the sheet open, the 3D board).
+  - Portrait's catch beside the line: pieces where both rows fit their side at 70%
+    (`TAKEN_LEAST`), else counts; a phone's late game (27 taken) shows counts, a
+    tablet's pieces.
+  - The legend under the replay's list costs it two rows on a phone (one where the four
+    marks fit one line, a wide portrait): 30 moves in view to 26 on the tablet, 8 to 4 on
+    a 9:16 phone's portrait at 480 dp (`test/shell/replay`).
+  Headless shots: `build/notes/078-phone/` (Pixel, A33, iPhone, flat and 3D, sheets open
+  and closed, the list alone, the tablet's tip). Built with the ngfx build too (the icons'
+  shader).
+- Left for A and B: the phones themselves; a tip in the sheet and the replay (the legend
+  there for now); the line in a small window's compact bar (none).
+- Left for C: the prototype's
   game card on the tablet ("Rating then: 1031 → 1023") left out; a game begun from a set
   position (`first=black`, the dev flag `--fen`) doesn't replay, as the history keeps no
   start, and its list stops at its first move; the 3D board chosen still replays on the

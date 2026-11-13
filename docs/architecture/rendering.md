@@ -1012,8 +1012,53 @@ the first move it says so, "No moves yet" in the body face, dim, where the first
 will be. The player's setting (`moves`: off, the moves, the moves with marks) is
 settings' Move list row, under move hints, a line in the small face, dim, saying what the
 chosen tile shows: beside the tiles where the group's width leaves room, else under them;
-off, there is no panel and the 3D board is as large as without it. No panel in portrait or on
-a phone in landscape, which have under four rows' room.
+off, there is no panel and the 3D board is as large as without it.
+
+On the panel a marked move explains itself in a tip (`game::tips`, `game::tip`): glass
+320 dp wide above the move (under it where the safe area's top is too near), the mark in
+a 46 dp disc in its color (the star on faint white), its name (the `mark.*_tip` string's
+words before the colon, in the heading face) with the move at the right ("20. 33-29",
+"20… 22x24" for black), and the rest of the string under them, its first letter a
+capital, wrapped. Under the mouse (a desktop) it shows while the pointer is on the marked
+move, its words and its mark. On touch a tap on the move shows it; the next tap anywhere
+only closes it and goes no further (no tile or square takes it), unless it lands on
+another marked move, which the tip moves to; a tap on the same move closes it, as does
+back. The tip coming and going is a change, drawn once each; pieces over the UI under it
+are left out.
+
+Where the panel has no room, on a phone in landscape and in portrait, the moves show as
+a line that opens a sheet (`src/game/sheet.goose`; the layouts' `line`, `line_tap`,
+`sheet`). On a phone in landscape (`panel::row_fit`) back and settings stand side by
+side over start over, each its icon over its word (90 × 96 dp on a phone), a column 204
+dp tall in place of 336; what each side has taken goes under it as before, and the rest
+of the left column down to the bottom margin is the line, a tile a tap tall at least
+(the Pixel 7a's 134 dp, the iPhone 13 mini's 106): the last rows of the moves as the
+sheet lists them, 31 dp each, the newest at the foot, the earlier at 60%, the last move
+lit, and a chevron in its top right corner. Where what each side has taken has no room
+above a tap, the tiles are a tap tall and its counts (a piece and a number for each
+side) head the line. The boards keep their size: the flat board's place is unchanged,
+and the 3D board clears the whole column as it cleared the panel and the catch. In
+portrait the last move sits in the bar's row between what each side has taken
+(`panel::bar_tiles`), a pill 40 dp tall ("12… c7-d6 ?" and a chevron up), its tap 200 dp
+across from the tiles' foot to the board's top (92 dp), costing the board nothing; the
+catches stand either side of the tap, as pieces where both rows fit their side at 70%,
+else as counts. A small window's compact bar has no line.
+
+The line's tap opens the sheet. In landscape it runs from the screen's left edge to the
+board's (to the 3D column's edge on the 3D board), top to bottom, over the left column,
+which isn't declared while it shows; the board and the play panel stay whole and
+playable. In portrait it rises from the foot to the board's middle, under a black layer
+at 38% over the rest of the screen, declared deaf to the pointer and the keys, and the
+pieces over the UI under the sheet are left out. Inside, 16 dp from its sides: its head,
+a tap tall (a chevron left, or down in portrait, and "Move list"), which closes it; every
+move two a row as the panel lists them, scrolled to the last; and, where marks show,
+each side's piece and accuracy under a rule, then the legend (`game::legend`): the star,
+`?!`, `?`, and `??` with their words (`mark.best` ...), dim, two to a line, or all four on
+one where they fit. The dim layer and back close it too. With the keys the line is
+offered with the way out; Enter on it opens the sheet and moves the focus to its head,
+Enter there closes it and gives the focus back to the line. With the setting off there
+is no line and the left column is as built; with the moves alone, no marks, accuracy, or
+legend.
 
 ### The results screen
 
@@ -1053,7 +1098,8 @@ order: what the move shown was (the mover's piece, "20. 33-29" or "20… 22x24" 
 its mark, and the mark's tip from `strings/` running on to a second line, in a smaller
 face if it needs; "The start" at move 0), a rule, each side's piece and accuracy heading
 its column, and the moves in a scrolling list of 34 dp rows as the moves panel draws
-them: the number, white's and black's move with their marks. The move shown is lit in
+them: the number, white's and black's move with their marks, and under the list the
+marks' legend (`game::legend`). The move shown is lit in
 the glow color, the moves after it at 55%; the list scrolls to keep the move shown in
 view, with a row clear of either edge, whenever it changes. A move is a tap, the half
 row: it jumps there. The rows are under the 88 dp rule: a miss shows the neighbouring

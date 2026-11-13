@@ -149,8 +149,10 @@ some thousands of frames, about 2 s: `--variant russian --computer black --tap c
 --tap d4 --frames 5000`. The settings are in the app's storage folder (on the Mac
 `~/Library/Application Support/kaitk/draughts/`): `settings.txt` the device's (the
 language, who plays), `player-N.txt` each player's ([players](architecture/README.md#players));
-`--theme`, `--hints`, `--lang`, `--background`, `--board`, `--lookout on|off`, and `--moves off|list|marks` override them for a run
-without changing them. `--board 3d` plays a run on the 3D board at once, as settings'
+`--theme`, `--hints`, `--lang`, `--background`, `--board`, `--lookout on|off`, and
+`--moves off|list|marks` override them for a run without changing them; once `--tap`'s
+moves have played and been judged, `--sheet on` opens the game's moves' sheet and `--tip
+N` shows move N's mark's tip on the moves panel. `--board 3d` plays a run on the 3D board at once, as settings'
 Board row's 3D does, and `--board flat` on the flat one; `--background plain` shows the
 plain fade in place of the photograph, and `--background photo` the photograph. `--wood N`
 (0 to 3) and `--marble N` (0 the slate, 1 to 4) pick the 3D board's wood and winter

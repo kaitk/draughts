@@ -541,6 +541,40 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
     top of the glass; the prototype's card on the tablet (result, opponent, date, side,
     "Rating then: 1031 → 1023") was left out for now, as the results row says the
     rating's change already.
+- A phone's moves, where the panel has no room (2026-11-13, task 078's A, the user's
+  choice from `prototypes/history.html`'s take d), replacing 2026-11-11's no panel in
+  portrait or on a phone in landscape:
+  - Landscape (`fit=row`, as directed 2026-11-12): back and settings side by side over
+    start over free 132 dp of the left column, so what each side has taken stays under
+    it and a line a tap tall or more fits at the foot; the board keeps its size. The
+    other fit, `slim` (the column as built, the line as tall as the 47 dp left under it,
+    the catch as counts in it), was under a tap on the Pixel 7a and moved the catch to
+    the 3D board's top. Where the catch has no room (the iPhone 13 mini at its points,
+    354 dp tall) the tiles are a tap high and the catch counts at the line's head, as
+    prototyped; at its density floor (470 dp) it isn't needed.
+  - The line opens a sheet over the screen's left part, to the board's edge, rather than
+    a screen of its own: the board stays whole and playable beside the list.
+  - Portrait (`port=bar`): only the last move, in the bar's row between the catches,
+    costing the board nothing. The strip under the play row (`port=strip`) showed more
+    moves but took the iPhone's board from 256 to 192 dp. It applies to a tablet's
+    portrait too (task 074's open question 3): no panel had room there either, and it
+    costs nothing. The sheet rises from the foot to the board's middle under a dim layer,
+    which takes the taps above it: the board half hidden shouldn't be played.
+  - The catches beside the portrait line are pieces where both fit their side at 70%,
+    the least a row takes them, else counts: at full size, as prototyped, a tablet's
+    late game turned to counts though its pieces fit.
+  - Pieces over the UI draw over everything, the dim layer too: those under the sheet are
+    left out, those above it kept whole. Faded with the layer, a catch's pieces showed
+    each other through.
+- Marks explained (2026-11-13, task 078's B, the user's choice: both). A legend at the
+  foot of a list one opens (the phone's sheet, the replay): nothing to find or dismiss,
+  for a child who doesn't know a mark can be touched, at the cost of one or two rows. A
+  tip on the always-shown panel (a tablet's, a desktop's): there a legend would take
+  rows from a panel that is always on screen. The tip's touch is the whole move, under
+  the 88 dp rule as the rows take no other tap, and it names the move it explains, so a
+  miss is plain; the next tap only closes it, so a tap meant to close it never plays or
+  presses something under it. No new strings: the tip's name is its `mark.*_tip` text up
+  to the colon. The tip isn't in the sheets or the replay for now (their legend says it).
 
 ### Board and pieces
 

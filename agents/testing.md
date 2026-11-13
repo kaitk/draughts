@@ -98,7 +98,11 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   on each screen against its own back tile, which must be the arrow, in landscape and
   portrait (`back`), a past game's replay from its results row, its steps, a jump, the
   keys, and nothing of it written or reaching the game in progress, at the sizes
-  (`replay`; `drive::past_line` makes a history line of a game played out by rule), and every screen at a
+  (`replay`; `drive::past_line` makes a history line of a game played out by rule), the
+  moves' line, its catch, and its sheet at the Pixel 7a's, the A33's, and the iPhone 13
+  mini's sizes with their insets, flat and 3D, the sheet opened and closed by taps, back,
+  and the keys, the setting off and the moves alone, and a mark's tip on the tablet's
+  panel by touch and under the mouse (`moves_line`), and every screen at a
   foldable, 4:3, and a 20:9 phone in both orientations, and the phone's layout at 540
   and 480 dp (`gui::short_dp`, with a 9:16 phone at 480), its tiles on the screen and
   apart, every tap 88 dp at least, the phones again with the Pixel 7a's insets in both
