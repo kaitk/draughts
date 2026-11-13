@@ -210,7 +210,7 @@ fn settings_line(g: gui::Gui&) {
     drive::tap(list, g, drive::middle(ll.line_tap), 30.0);
     // The legend's words, in the small face, are the frame's last quads but the list's.
     var words = 0;
-    for q in g.quads { if q.look.x == gui::TEXT && q.rect.y > ll.sheet_in.y + ll.sheet_in.w - game::legend_h() * u { words++; } }
+    for q in g.quads { if q.look.x == gui::TEXT && q.rect.y > ll.sheet_in.y + ll.sheet_in.w - game::legend_h(g, ll.sheet_in.z) { words++; } }
     print("  the list alone: line ", ll.line_as, ", sheet ", if list.game.sheet { "open" } else { "closed" }, ", ", words,
           " glyphs at its foot");
 }

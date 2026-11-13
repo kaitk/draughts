@@ -33,24 +33,46 @@ struct MarkAt {
 }
 let MAX_MARKS_AT = 64;
 
-// The legend's height in dp (legend).
-fn legend_h() -> f32 { LEGEND_TOP + 2.0 * LEGEND_ROW + 4.0 }
+// The legend's marks, in its order.
+let LEGEND: u8[4] = [ai::BEST, ai::INACCURACY, ai::MISTAKE, ai::BLUNDER];
+let LEGEND_GAP = 18.0;      // dp after a mark's word where all four share a line
+
+// Whether the legend's four marks and their words fit one line w pixels wide.
+fn legend_one(g: gui::Gui&, w: f32) -> bool {
+    let u = g.scale;
+    var need: f32 = 0.0;
+    for m in LEGEND { need += (LEGEND_GLYPH + LEGEND_GAP) * u + gui::text_width(g, gui::SMALL, legend_word(m)); }
+    return need <= w;
+}
+
+fn legend_word(m: u8) -> const u8[:] { strings::get(strings::MARK_ONLY + 2 * (m as i64 - ai::ONLY)) }
+
+// The legend's height in pixels in a room w pixels wide (legend): one line where its
+// four marks fit it, else two.
+fn legend_h(g: gui::Gui&, w: f32) -> f32 {
+    let lines: f32 = if legend_one(g, w) { 1.0 } else { 2.0 };
+    return (LEGEND_TOP + lines * LEGEND_ROW + (lines - 1.0) * 4.0 + 4.0) * g.scale;
+}
 
 // The marks explained (task 078's B, the user's choice of both): the best's star, ?!, ?,
-// and ?? each with its word (strings::MARK_BEST..), two to a line under a rule, at the
-// top of r, legend_h() dp tall, dim. The moves' sheet has it at its foot; a past game's
-// replay can show it under its list the same way.
+// and ?? each with its word (strings::MARK_BEST..), dim, under a rule at the top of r, all
+// four on one line where they fit r's width, else two to a line; legend_h(g, r.z) pixels
+// tall. The moves' sheet has it at its foot, a past game's replay under its list.
 fn legend(g: gui::Gui&, r: float4) {
     let u = g.scale;
     gui::fill(g, float4 { r.x, r.y, r.z, max(1.0, u) }, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
-    let marks: u8[4] = [ai::BEST, ai::INACCURACY, ai::MISTAKE, ai::BLUNDER];
+    let one = legend_one(g, r.z);
     let half = 0.5 * r.z;
-    for m, i in marks {
-        let cell = float4 { r.x + (i % 2) * half, r.y + (LEGEND_TOP + (i / 2) * (LEGEND_ROW + 4.0)) * u, half, LEGEND_ROW * u };
+    var x = r.x;
+    for m, i in LEGEND {
+        let word = legend_word(m);
+        let ww = gui::text_width(g, gui::SMALL, word);
+        let cell = if one { float4 { x, r.y + LEGEND_TOP * u, (LEGEND_GLYPH + LEGEND_GAP) * u + ww, LEGEND_ROW * u } }
+                   else { float4 { r.x + (i % 2) * half, r.y + (LEGEND_TOP + (i / 2) * (LEGEND_ROW + 4.0)) * u, half, LEGEND_ROW * u } };
         mark_at(g, cell.x + 2.0 * u, cell, m, 0.9);
-        let word = strings::get(strings::MARK_ONLY + 2 * (m as i64 - ai::ONLY));
-        let room = float4 { cell.x + LEGEND_GLYPH * u, cell.y, half - (LEGEND_GLYPH + 6.0) * u, cell.w };
+        let room = float4 { cell.x + LEGEND_GLYPH * u, cell.y, cell.z - (LEGEND_GLYPH + 6.0) * u, cell.w };
         gui::text(g, gui::SMALL, room, word, 0.7, 0.0, gui::LEFT);
+        x += cell.z;
     }
 }
 
@@ -251,7 +273,7 @@ fn moves_sheet(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&)
               word, 1.0, 0.0, gui::LEFT);
     if clicked { closed = true; }
     if gm.moves_shown == 2 {
-        legend(g, gui::cut_bottom(room, legend_h() * u));
+        legend(g, gui::cut_bottom(room, legend_h(g, room.z)));
         moves_foot(gm, g, gui::cut_bottom(room, FOOT_H * u), over);
     }
     moves_list(gm, g, room, SHEET_LIST, false);

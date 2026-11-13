@@ -434,7 +434,9 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
         }
         gui::text(g, gui::BODY, float4 { at + (2.0 * DISC + 8.0) * u, heads.y, half, heads.w }, t[..], 1.0, 0.0, gui::LEFT);
     }
-    list(r, g, float4 { o.glass.x, c.y, o.glass.z, o.glass.y + o.glass.w - c.y - 4.0 * u }, c.x, c.z, now, ask);
+    // The marks explained at the glass's foot, under the list (task 078's B).
+    game::legend(g, gui::cut_bottom(c, game::legend_h(g, c.z)));
+    list(r, g, float4 { o.glass.x, c.y, o.glass.z, c.w }, c.x, c.z, now, ask);
 
     // The last move's mark on the board, once it stands on its square.
     if r.ply > 0 && !r.b.moving { badge(g, l, v, r.plies[r.ply - 1]); }
