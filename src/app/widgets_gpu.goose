@@ -186,14 +186,16 @@ let FRAG = """
             vec2 a = abs(q);
             return min(d, seg(vec2(max(a.x, a.y), min(a.x, a.y)), vec2(6.0, 0.0), vec2(10.0, 0.0)));
         }
-        if (k == 13) {          // the languages (2026-11-13, after Lucide's, our own strokes): a script's
-                                // glyph at the top left, a bar, its tick, a sweeping stroke and its foot
-                                // (each curve three segments), and an A at the bottom right
-            float d = min(seg(p, vec2(2.5, 5.5), vec2(13.0, 5.5)), seg(p, vec2(7.5, 3.0), vec2(7.5, 5.5)));
-            d = min(d, min(seg(p, vec2(10.6, 5.5), vec2(9.8, 8.8)), seg(p, vec2(9.8, 8.8), vec2(7.6, 12.0))));
-            d = min(d, min(seg(p, vec2(7.6, 12.0), vec2(3.5, 14.7)), seg(p, vec2(6.2, 9.4), vec2(8.2, 12.0))));
-            d = min(d, min(seg(p, vec2(8.2, 12.0), vec2(11.2, 14.0)), seg(p, vec2(12.5, 21.5), vec2(17.0, 11.0))));
-            return min(d, min(seg(p, vec2(17.0, 11.0), vec2(21.5, 21.5)), seg(p, vec2(14.3, 17.6), vec2(19.7, 17.6))));
+        if (k == 13) {          // the languages (2026-11-13): the Earth, a ring round three continents,
+                                // each filled, smooth unions of discs kept inside the ring
+            vec2 c1 = vec2(length(p - vec2(6.6, 8.4)) - 2.7, length(p - vec2(7.8, 11.4)) - 1.7);
+            vec2 c2 = vec2(length(p - vec2(15.6, 13.8)) - 2.6, length(p - vec2(14.4, 16.6)) - 1.7);
+            float h1 = clamp(0.5 + 0.5 * (c1.y - c1.x) / 1.5, 0.0, 1.0);
+            float h2 = clamp(0.5 + 0.5 * (c2.y - c2.x) / 1.5, 0.0, 1.0);
+            float b1 = mix(c1.y, c1.x, h1) - 1.5 * h1 * (1.0 - h1);
+            float b2 = mix(c2.y, c2.x, h2) - 1.5 * h2 * (1.0 - h2);
+            float land = max(min(min(b1, b2), length(p - vec2(16.4, 5.5)) - 1.1), length(p - 12.0) - 7.6);
+            return min(abs(length(p - 12.0) - 9.0), land + 1.2);
         }
         if (k == 14) {          // home: a house with a door
             float d = min(seg(p, vec2(3.5, 10.5), vec2(12.0, 3.5)), seg(p, vec2(12.0, 3.5), vec2(20.5, 10.5)));
