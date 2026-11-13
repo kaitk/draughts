@@ -1429,6 +1429,31 @@ let BAKE_FRAG = """
     // moss gathers), the fill's share (Theme.fill), and how deep the amber is over the
     // cut there (0..1, its glow).
     struct Carve { float h; float hollow; float foot; float fill; float glow; };
+    // A plain stone's weathering (motif 3): a sparse network of hairline cracks, the
+    // edges of a warped cell field shown only where a broad noise lets them through, so
+    // they run and stop as real ones do. x: the crack (0..1), every edge a texel soft for
+    // the mips; y: near it, where moss settles.
+    vec2 cracks(vec2 q, float seed) {
+        const float CELLS = 1.7;      // cells a world unit (a square is 1)
+        vec2 p = q * CELLS + 0.4 * vec2(fbm(q * 2.0 + seed), fbm(q * 2.0 + seed + 5.2));
+        vec2 i = floor(p);
+        float f1 = 9.0;
+        float f2 = 9.0;
+        for (int k = 0; k < 9; k++) {
+            vec2 id = i + vec2(float(k % 3) - 1.0, float(k / 3) - 1.0);
+            vec2 c = id + vec2(h12(id + seed), h12(id + seed + 2.7)) - p;
+            float d = dot(c, c);
+            if (d < f1) { f2 = f1; f1 = d; } else if (d < f2) { f2 = d; }
+        }
+        float e = sqrt(f2) - sqrt(f1);
+        float texel = CELLS * size.z / size.x;
+        float w = 0.008 + 0.012 * vnoise(p * 3.0);
+        float show = smoothstep(0.58, 0.68, fbm(q * 0.9 + seed + 9.0));
+        float line = 1.0 - smoothstep(w, w + 1.5 * texel, e);
+        float near = 1.0 - smoothstep(w, 0.12, e);
+        return vec2(line, near) * show;
+    }
+
     // q: x across from the band's start, y along; band: the mitred piece (0 the near
     // side, 1 the far, 2 and 3 the sides along z).
     Carve carving(vec2 q, float band) {
@@ -1437,6 +1462,15 @@ let BAKE_FRAG = """
         float along = q.y - 5.2;
         bool top = across < 0.55;
         float motif = carve_more.x;
+        if (motif > 2.5) {
+            // 3: no motif, a plain stone weathered: its cracks, moss gathering in and
+            // along them.
+            vec2 c = cracks(q, 7.3 * band + 1.0);
+            r.hollow = 0.6 * c.x;
+            r.h = -carve.x * c.x;
+            r.foot = 0.7 * c.y;
+            return r;
+        }
         if (!top && motif > 0.5) return r;
         float mid = top ? TOP_MID : SIDE_MID;
         float rc = top ? TOP_MID - TOP_AT : 0.5;

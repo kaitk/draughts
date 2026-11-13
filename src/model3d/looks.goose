@@ -123,7 +123,12 @@ fn get(which: i64) -> Theme {
     if which == WINTER_WOOD { return winter_wood(); }
     if which == WINTER_CARVED { return winter_carved(); }
     if which == WINTER_STAINED { return winter_stained(); }
-    if which == SPRING_STONE { return plain(elven()); }
+    if which == SPRING_STONE {
+        // The elven stone's ivory with finer, clearer veins than the carved one's.
+        var t = plain(elven());
+        t.stone = float4 { 0.2, t.stone.y, t.stone.z, t.stone.w };
+        return t;
+    }
     if which == SUMMER_STONE { return plain(summer_amber()); }
     return autumn();
 }
@@ -784,7 +789,8 @@ struct Carving {
     // The motif (shaders::BAKE_FRAG's carving): 0 vines in relief, a shallow outline cut
     // round them, on the top and the outer face; 1 the folk band cut in (diamonds,
     // zigzags, a meander, a sun wheel in the corners, a tree of life mid-side); 2 signs
-    // cut in (sun signs, trees of life, runic marks), for amber
+    // cut in (sun signs, trees of life, runic marks), for amber; 3 none, only the moss
+    // along the edges and the lichen (a plain stone weathered, task 080)
     motif:  i64,
     depth:  f32,    // how deep the cut is, world units (a square is 1)
     scale:  f32,    // the motifs' repeats per side
@@ -803,6 +809,13 @@ let BALTIC = Carving { motif: 2, depth: 0.015, scale: 3.0, moss: 0.0, amber: 0.6
                        jade: 0.62 };
 let AMBER_TUNED = Carving { motif: 2, depth: 0.02, scale: 3.0, moss: 0.5, amber: 0.55, lichen: 0.085, warmth: 0.0,
                             jade: 0.5 };
+// The plain stones' weathering (motif 3, nothing cut; the user 2026-11-13: moss and
+// lichen so the plain stone isn't bare, then better as a whole, cracks and veins): hairline
+// cracks with moss in them, spring's mossier, summer's with a little lichen.
+let MOSSY = Carving { motif: 3, depth: 0.006, scale: 1.0, moss: 0.8, amber: 0.0, lichen: 0.0, warmth: 0.52,
+                      jade: 0.64 };
+let WEATHERED = Carving { motif: 3, depth: 0.006, scale: 1.0, moss: 0.5, amber: 0.0, lichen: 0.08, warmth: 0.0,
+                          jade: 0.5 };
 let AMBER = Carving { motif: 2, depth: 0.02, scale: 12.0, moss: 0.5, amber: 0.55, lichen: 0.5, warmth: 0.0,
                       jade: 0.5 };
 
@@ -816,7 +829,9 @@ let NORDIC = Carving { motif: 1, depth: 0.015, scale: 6.0, moss: 0.0, amber: 0.0
 // A carved look's own carving (shown()'s look), ELVEN for one that isn't carved.
 fn carving_for(look: i64) -> Carving {
     if look == SPRING_BALTIC { return BALTIC; }
-    if look == SUMMER_AMBER || look == SUMMER_STONE { return AMBER_TUNED; }
+    if look == SUMMER_AMBER { return AMBER_TUNED; }
+    if look == SPRING_STONE { return MOSSY; }
+    if look == SUMMER_STONE { return WEATHERED; }
     if look == SUMMER_SERPENTINE { return AMBER; }
     if look == AUTUMN_CARVED { return AUTUMN_VINES; }
     if look == WINTER_CARVED { return NORDIC; }
@@ -847,10 +862,12 @@ fn variant(which: i64, spring: i64, c: Carving) -> Theme {
     return t;
 }
 
-// A carved stone look without its carving: the frame one solid block, no joint, no band.
+// A carved stone look without its carving: no band cut, only its weathering.
 fn plain(t_in: Theme) -> Theme {
     var t = t_in;
-    t.build = float4 { 1.0, 0.0, t.build.z, 0.0 };
+    // Mitred bands with no joint drawn, as the carved frame, so its moss and lichen
+    // (carving_for: motif 3) follow the profile; nothing cut.
+    t.build = float4 { 0.0, 0.0, t.build.z, 1.0 };
     return t;
 }
 
