@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draughts: a new game</title>
+<link rel="stylesheet" href="draughts.css">
+<script src="draughts.js"></script>
+<style>
+  /* Home's setup for a game against the computer as built (docs/architecture/rendering.md,
+     "Home"): in home's column, back and the title, then a row of tiles per choice, each
+     with its dim name above it, then play; beside it the board the game will start on.
+     A phone in landscape: two columns. Portrait: a sheet under the board. */
+  .home { display: grid; grid-template-columns: 440px 1fr; padding: 0; }
+  .menu { --r: 0 32px 32px 0; display: grid; align-content: center; gap: 6px 24px;
+    margin-left: calc(-1 * var(--il)); padding: 24px 32px 24px calc(32px + var(--il)); }
+  .head { display: flex; align-items: center; gap: 16px; font-size: 34px; margin-bottom: 4px; }
+  .head .tile { padding: 0; }
+  .head > .icon { width: 36px; height: 36px; opacity: 0.85; }
+  h2 { margin-top: 6px; font-size: 18px; color: var(--fg-dim); }
+  .tiles { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 10px; }
+  .tiles .tile { min-width: 0; font-size: 20px; border-radius: 16px; }
+  .tile .board { width: 56px; }
+  .tile > .piece { width: 34px; }
+  .part { display: contents; }
+  .pips { display: flex; gap: 5px; }
+  .pips i { width: 10px; height: 10px; border-radius: 50%; background: currentColor; opacity: 0.25; }
+  .pips i.full { opacity: 0.9; }
+  .play { margin-top: 14px; min-height: 88px; font-size: 30px; justify-content: center; }
+  .play .icon { width: 34px; height: 34px; }
+  .stage { display: grid; place-items: center; padding: 40px; }
+  #board { width: min(100%, var(--h) - 32px); }
+  @container (max-height: 599px) and (orientation: landscape) {
+    .home { grid-template-columns: 704px 1fr; }
+    .menu { grid-template-columns: 1fr 1fr; align-content: start; }
+    .part { display: grid; gap: 6px; align-content: start; }
+    .head { font-size: 28px; }
+    .tiles .tile { min-height: 72px; }
+  }
+  @container (orientation: portrait) {
+    .home { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+    .stage { grid-row: 1; padding: 24px; }
+    #board { width: min(100%, var(--h) - 760px); }
+    .menu { --r: 32px 32px 0 0; margin: 0 calc(-1 * var(--ir)) calc(-1 * var(--ib)) calc(-1 * var(--il));
+      padding: 24px calc(32px + var(--ir)) calc(24px + var(--ib)) calc(32px + var(--il)); }
+  }
+</style>
+</head>
+<body>
+<main class="screen home">
+  <nav class="menu glass">
+    <div class="part">
+    <div class="head"><a class="tile" href="home.html" data-icon="back" aria-label="Back"></a><span data-icon="computer"></span>The computer</div>
+    <h2>Draughts</h2>
+    <div class="tiles">
+      <a class="tile col on"><span class="board" data-n="10"></span>International<small>10 × 10</small></a>
+      <a class="tile col"><span class="board" data-n="8"></span>Brazilian<small>8 × 8</small></a>
+      <a class="tile col"><span class="board" data-n="8"></span>Russian<small>8 × 8</small></a>
+    </div>
+    <h2>Level</h2>
+    <div class="tiles">
+      <a class="tile col on"><span class="pips"><i class="full"></i><i></i><i></i></span>Easy</a>
+      <a class="tile col"><span class="pips"><i class="full"></i><i class="full"></i><i></i></span>Medium</a>
+      <a class="tile col"><span class="pips"><i class="full"></i><i class="full"></i><i class="full"></i></span>Hard</a>
+    </div>
+    </div>
+    <div class="part">
+    <h2>Your pieces</h2>
+    <div class="tiles">
+      <a class="tile on"><span class="piece solo white"></span>White</a>
+      <a class="tile"><span class="piece solo black"></span>Black</a>
+    </div>
+    <h2>Clock</h2>
+    <div class="tiles">
+      <a class="tile col on" data-icon="clock"><small>No clock</small></a>
+      <a class="tile col">5 min<small>+3 s a move</small></a>
+      <a class="tile col">10 min<small>+5 s a move</small></a>
+    </div>
+    <a class="tile primary play" href="game.html" data-icon="next">Play</a>
+    </div>
+  </nav>
+  <div class="stage"><div id="board"></div></div>
+</main>
+<script>
+  for (const el of document.querySelectorAll('[data-n]')) Draughts.board(el, { ...Draughts.start(+el.dataset.n), view: 'flat' });
+  Draughts.board(document.getElementById('board'), Draughts.start(10));
+  Draughts.init();
+</script>
+</body>
+</html>

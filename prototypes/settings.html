@@ -7,135 +7,106 @@
 <link rel="stylesheet" href="draughts.css">
 <script src="draughts.js"></script>
 <style>
-  /* Settings, reached from home and the game. The choices are words, in three groups by
-     what they change and how often: the game (which draughts a new game starts on, move
-     hints, the tutorial), the look (background, board, kings), and the language, set
-     once; a tap applies at once, there is no save. Beside them one preview shows what the
-     choices make: the board as it will be (its size, flat or raised, the kings, and what
-     the move hints show), over the season's photograph. The kings' tiles show their king.
-     The language is in the title row. In portrait the board is on top and game and look
-     stand side by side under it. */
-  /* Landscape: the choices take the width they need, at the left as home's menu does,
-     and the board takes the rest, so going from home the board only moves a little. */
-  .settings { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; height: 100%; padding: 24px 32px; }
-  .side { display: grid; grid-template-rows: auto 1fr; gap: 14px; min-height: 0; }
-  .top { display: flex; align-items: center; gap: 20px; }
-  /* The language, set once, in the title row's right end. */
-  .lang { --r: 20px; display: flex; align-items: center; gap: 8px; margin-left: auto; padding: 6px 6px 6px 14px; }
-  .lang .tile { min-height: 48px; min-width: 76px; }
-  .lang > .icon { width: 28px; height: 28px; opacity: 0.85; margin-right: 4px; }
-  .top h1 { margin: 0; font-size: 34px; font-weight: 400; }
-  .groups { display: grid; gap: 10px; align-content: center; }
+  /* Settings as built (docs/architecture/rendering.md, "Settings"): back, the title, and
+     the language on glass in the title row; the choices in two glass groups, game and
+     look, each setting's dim name at the left of its tiles; beside them the preview, the
+     board as the choices make it (mistakes only: a wrong move's ring, the king that must
+     capture pulsing). Portrait: the board on top, the groups side by side under it. A
+     phone: one group at a time, chosen by two tiles in the title row. */
+  .settings { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; }
+  .side { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+  .top .end { --r: 24px; display: flex; align-items: center; gap: 6px; padding: 0 0 0 14px; }
+  .top .end .icon { width: 28px; height: 28px; opacity: 0.85; }
+  .tabs { display: none; gap: 10px; }
   .group { --r: 24px; display: grid; gap: 10px; padding: 12px 20px 14px; }
-  .group h2 { margin: 0 0 2px; display: flex; align-items: center; gap: 12px; font-size: 24px; font-weight: 400; }
-  .group h2 .icon { width: 30px; height: 30px; stroke-width: 2; opacity: 0.85; }
-  .group.inline { grid-template-columns: 134px 1fr; align-items: center; gap: 14px; padding: 10px 20px; }
-  .group.inline h2 { margin: 0; }
-  /* A setting: its name at the left, its tiles to the right. */
+  .group h2 { display: flex; align-items: center; gap: 12px; font-size: 24px; }
+  .group h2 .icon { width: 30px; height: 30px; opacity: 0.85; }
+  .group h2 small { margin-left: auto; max-width: 300px; font-size: 15px; line-height: 1.2; }
   .setting { display: grid; grid-template-columns: 120px 1fr; align-items: center; gap: 14px; }
-  .setting h3 { margin: 0; font-size: 18px; font-weight: 400; color: var(--fg-dim); letter-spacing: 0.03em; }
-  .tiles { display: flex; gap: 10px; flex-wrap: wrap; }
-  .tile { display: grid; justify-items: center; align-content: center; gap: 2px; min-width: 88px; min-height: 56px; padding: 4px 16px 6px;
-    border: 0; border-radius: 16px; cursor: pointer; color: var(--fg); font: inherit; font-size: 19px; text-decoration: none;
-    background: var(--button); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12); }
-  .tile small { font-size: 13px; color: var(--fg-dim); }
-  .tile.on { background: color-mix(in srgb, var(--glow) 22%, transparent); box-shadow: inset 0 0 0 2px var(--glow); }
-  .tile.pic { min-width: 0; padding: 4px 4px 5px; font-size: 13px; }
-  .tile .thumb { width: 62px; height: 40px; border-radius: 11px; background: center / cover; display: grid; place-items: center; }
-  .tile .thumb .icon { width: 26px; height: 26px; }
-  .tile.action { display: flex; align-items: center; justify-content: center; gap: 10px; }
-  .tile.action .icon { width: 26px; height: 26px; }
-
-  /* The preview: the board as the choices make it, and a king close up. */
-  .preview { container-type: size; display: grid; place-items: center; min-height: 0; }
-  .preview #board { width: calc(min(100cqw, 100cqh) * 0.94); }
-  .preview .board:not(.view-3d) { isolation: isolate; }  /* isolation would flatten 3D */
-  /* A king as each style draws it top down: a crown on the face, or two plain discs. */
-  .kp { position: relative; width: 34px; height: 38px; }
-  .kp .piece { --u: 3px; inset: 4px 0 0; }
-  @media (orientation: portrait) {
-    /* Portrait: the title row, the board as large as the rest leaves, and game and look
-       side by side under it, each name above its tiles. */
-    .settings { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr) auto; gap: 16px; }
+  .setting h3 { font-size: 18px; color: var(--fg-dim); }
+  .tiles { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .tiles .tile { flex-direction: column; gap: 2px; padding: 4px 14px; border-radius: 16px; font-size: 20px; }
+  .tiles .tile small { font-size: 15px; }
+  .note { max-width: 190px; font-size: 15px; line-height: 1.2; }
+  .pic { padding: 4px !important; font-size: 15px !important; }
+  .thumb { width: 62px; height: 40px; border-radius: 11px; background: center / cover; display: grid; place-items: center; }
+  .thumb .icon { width: 26px; height: 26px; }
+  .switch { display: flex; gap: 2px; margin-top: 6px; }
+  .switch .tile { min-width: 58px; min-height: 40px; padding: 0; font-size: 15px; border-radius: 12px; }
+  .kp { width: 30px; }
+  .stack { display: grid; }
+  .preview { display: grid; place-items: center; min-height: 0; container-type: size; }
+  #board { width: min(100cqw, 100cqh); }
+  @container (orientation: portrait) {
+    .settings { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr) auto; }
     .side { display: contents; }
-    .top { order: -2; }
     .preview { order: -1; }
-    .groups { grid-template-columns: 1fr 1fr; align-items: start; }
+    .top { order: -2; }
+    .groups { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
     .group { height: 100%; align-content: start; }
     .setting { grid-template-columns: 1fr; gap: 6px; }
+  }
+  @container (max-height: 599px) or (max-width: 599px) {
+    .top h1 { display: none; }
+    .tabs { display: flex; }
+    .groups { display: block; }
+    .group.game { display: none; }
+    .top .end { margin-left: auto; }
+  }
+  @container (max-width: 599px) {
+    .top { flex-wrap: wrap; }
+    .tabs { order: 3; width: 100%; }
+    .tabs .tile { flex: 1; }
+    .settings { grid-template-columns: minmax(0, 1fr); }
+    .top .tile.back { flex-direction: column; gap: 2px; padding: 0; font-size: 20px; }
+    .top .end .icon { display: none; }
   }
 </style>
 </head>
 <body>
-<main class="settings">
+<main class="screen settings">
   <div class="side">
-    <div class="top"><a class="button glass" href="home.html" data-icon="back" aria-label="Back"></a><h1>Settings</h1>
-      <div class="lang glass" id="lang"></div></div>
-    <div class="groups" id="groups"></div>
+    <div class="top">
+      <a class="tile glass back" href="home.html" data-icon="back">Back</a><h1>Settings</h1>
+      <div class="tabs"><a class="tile glass" data-icon="target">Game</a><a class="tile glass on" data-icon="sun">Look</a></div>
+      <div class="end glass" data-icon="globe"><a class="tile on">English</a><a class="tile">Eesti</a></div>
+    </div>
+    <div class="groups">
+      <section class="group glass game">
+        <h2 data-icon="target">Game<small>Privacy: Draughts collects nothing. Everything stays on this device.</small></h2>
+        <div class="setting"><h3>Move hints</h3><div class="tiles">
+          <a class="tile on">Mistakes only</a><a class="tile">All moves</a></div></div>
+        <div class="setting"><h3>Move list</h3><div class="tiles">
+          <a class="tile">Off</a><a class="tile">Moves</a><a class="tile on">Marks</a>
+          <small class="note">The moves, each marked by how good it was</small></div></div>
+      </section>
+      <section class="group glass look">
+        <h2 data-icon="sun">Look</h2>
+        <div class="setting"><div><h3>Theme</h3><div class="switch"><a class="tile on">Photo</a><a class="tile">Plain</a></div></div>
+          <div class="tiles" id="themes"></div></div>
+        <div class="setting"><h3>Board</h3><div class="tiles">
+          <a class="tile on">Flat<small>2D</small></a><a class="tile">Raised<small>3D</small></a>
+          <a class="tile">Turns<small>(with a friend)</small></a></div></div>
+        <div class="setting"><h3>Kings</h3><div class="tiles">
+          <a class="tile on">Auto</a><a class="tile"><span class="piece solo white king kp"></span>Crown</a>
+          <a class="tile"><span class="stack"><span class="piece solo white king kp"></span></span>Stack</a></div></div>
+      </section>
+    </div>
   </div>
   <div class="preview"><div id="board"></div></div>
 </main>
 <script>
-  Draughts.init();
-  const S = Draughts.settings, params = new URLSearchParams(location.search);
-  const now = params.get('season') === null;
-  const v = params.get('v') || 'intl';
-  const photo = (s) => `../design/backgrounds/masters/${s}-01-2048.jpg`;
-  // A choice reloads the page with it in the query, as the switcher does.
-  const go = (key, value) => {
-    const p = new URLSearchParams(location.search);
-    if (value === null) p.delete(key); else p.set(key, value);
-    if (key === 'season') p.delete('theme');
-    location.search = p.toString();
-  };
-  const tile = (on, key, value, label, cls = '') =>
-    `<button class="tile ${cls}${on ? ' on' : ''}" data-k="${key}" data-v="${value}">${label}</button>`;
-  const setting = (title, tiles) => `<div class="setting"><h3>${title}</h3><div class="tiles">${tiles}</div></div>`;
-  const group = (iconName, title, body, cls = '') =>
-    `<section class="group glass ${cls}"><h2>${Draughts.icon(iconName)}${title}</h2>${body}</section>`;
-  // A king as the style draws it: the painter draws a king inside .stack as two plain discs.
-  const king = (stack) => `<span class="kp${stack ? ' stack' : ''}"><span class="piece white king"></span></span>`;
-  const seasons = [['winter', 'Winter'], ['spring', 'Spring'], ['summer', 'Summer'], ['autumn', 'Autumn']];
-  document.getElementById('groups').innerHTML =
-    group('target', 'Game',
-      setting('Draughts',
-        tile(v === 'intl', 'v', 'intl', 'International<small>10 × 10</small>') +
-        tile(v === 'brazilian', 'v', 'brazilian', 'Brazilian<small>8 × 8</small>') +
-        tile(v === 'russian', 'v', 'russian', 'Russian<small>8 × 8</small>')) +
-      setting('Move hints',
-        tile(S.assist === 'mistakes', 'assist', 'mistakes', 'Mistakes only') +
-        tile(S.assist === 'moves', 'assist', 'moves', 'All moves')) +
-      setting('Tutorial',
-        `<a class="tile action" href="first-start.html?page=1&v=${v}">${Draughts.icon('hint')}Learn the moves</a>`)) +
-    group('sun', 'Look',
-      setting('Background',
-        seasons.map(([s, name]) => tile(!now && S.season === s, 'season', s, `<span class="thumb" style="background-image: url(${photo(s)})"></span>${name}`, 'pic')).join('') +
-        tile(now, 'season', '', `<span class="thumb" style="background: color-mix(in srgb, var(--glow) 18%, rgb(255 255 255 / 0.06))">${Draughts.icon('sun')}</span>By the date`, 'pic'))) +
-      setting('Board',
-        tile(S.view === '2d', 'view', '2d', 'Flat<small>2D</small>') +
-        tile(S.view === '3d', 'view', '3d', 'Raised<small>3D</small>')) +
-      setting('Kings',
-        tile(S.king === 'auto', 'king', 'auto', 'Auto') +
-        tile(S.king === 'crown', 'king', 'crown', `${king(false)}Crown`) +
-        tile(S.king === 'stack', 'king', 'stack', `${king(true)}Stack`)));
-  document.getElementById('lang').innerHTML = Draughts.icon('globe') +
-    tile(params.get('lang') !== 'et', 'lang', 'en', 'English') + tile(params.get('lang') === 'et', 'lang', 'et', 'Eesti');
-  document.querySelectorAll('button.tile').forEach((t) => t.onclick = () => go(t.dataset.k, t.dataset.v || null));
-  // The preview: the game's position, where white must capture. With all moves, d4 is
-  // selected and its capture shown; with mistakes only, a wrong move to c5 has flashed
-  // and the king that must capture pulses.
-  const moves = S.assist === 'moves';
-  Draughts.board(document.getElementById('board'), {
-    n: v === 'intl' ? 10 : 8,
+  const D = Draughts;
+  document.getElementById('themes').innerHTML = ['winter', 'spring', 'summer', 'autumn'].map((s) =>
+    `<a class="tile pic" href="?season=${s}"><span class="thumb" style="background-image:url(../design/backgrounds/masters/${s}-01-2048.jpg)"></span>${s[0].toUpperCase() + s.slice(1)}</a>`).join('') +
+    `<a class="tile pic on"><span class="thumb">${D.icon('sun')}</span>By date</a>`;
+  // The preview's fixed position: white must capture, with the man on d4 or the king on h6.
+  D.board(document.getElementById('board'), {
     white: ['a1', 'c1', 'e1', 'g1', 'b2', 'f2', 'h2', 'c3', 'e3', 'd4', 'h6'],
     black: ['b8', 'd8', 'f8', 'h8', 'a7', 'c7', 'b6', 'e5', 'g5'],
-    kings: ['h6'],
-    forced: ['h6'],
-    ...(moves ? { selected: 'd4', via: ['f6'], targets: ['h4'] } : { error: ['c5'] }),
-    last: ['h4', 'g5'],
+    kings: ['h6'], forced: ['h6', 'd4'], error: ['c5'], last: ['h4', 'g5'],
   });
-  Draughts.paint();
-  Draughts.syncGlass();
+  D.init();
 </script>
 </body>
 </html>

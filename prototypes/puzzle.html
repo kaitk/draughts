@@ -3,315 +3,76 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Draughts: puzzle</title>
+<title>Draughts: a puzzle</title>
 <link rel="stylesheet" href="draughts.css">
 <script src="draughts.js"></script>
 <style>
-  /* Playing one puzzle (task 007), in three takes for the user to pick from. Each keeps
-     the game screen's layout (game.html): the board in the middle, the way out on the
-     left (back to the puzzles, settings, start over), the play on the right (the goal,
-     the stars at stake, and the one big tile where take back is in a game). Every
-     control is an icon and a word. In portrait the way out is a bar above the board and
-     the play is below it.
-       a: the goal as the side to move, the theme's icon, and words; a hint tile (it
-          lights the piece to move); a miss or the hint costs a star; solved shows the
-          card over the dimmed board, again or next.
-       b: the goal drawn as the pieces to take, which dim as they go; the hint tile only
-          after a miss, free; the theme's ten as dots on the left with next, to go on at
-          any time; solved shows the card.
-       c: no hint tile, as in a game: after two misses the piece to move glows by
-          itself; next is the big tile, dim until solved, then lit, and the stars fill
-          in the panel with no card over the board.
-     A wrong move plays, then slides back by itself: its square flashes the red ring, a
-     ghost of the piece fades there, and a star goes out.
-     ?take=a|b|c and ?state=play|wrong|hint|solved, also from the switcher.
-     Take c was built. Whose puzzle it is shows as the game's turn piece (2026-11-09), so
-     a child who can't read knows the side they play: in portrait the 52 px piece leads
-     the goal's row; in landscape two takes, ?turn=a|b (with ?side=white|black):
-       a: the 72 px piece over the goal, as it stands over "White's turn" in a game;
-          where the panel is too short for that (a phone in landscape), as b.
-       b: the piece beside the goal's icon in one row, the words under both. */
-  .game {
-    --gap: 24px;
-    --side: 232px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--gap);
-    height: 100%;
-    padding: var(--gap);
+  /* One puzzle as built (docs/architecture/rendering.md, "A puzzle"): the game's layout,
+     its left side the game's; on the right whose puzzle it is as the turn piece, the
+     goal's icon over its words, who moves, the three stars at stake, and next at the
+     bottom, dim until the puzzle is solved. Portrait: the goal and the stars in a row
+     under the board, next across the width under them. */
+  .game { display: grid; grid-template-columns: var(--side) minmax(0, 1fr) var(--side); gap: 24px; --side: 232px; }
+  .col { display: flex; flex-direction: column; gap: 12px; }
+  #board { place-self: center; width: min(var(--h), 100%); }
+  .way { display: flex; flex-direction: column; gap: 20px; padding: 20px; }
+  .way .tile { justify-content: flex-start; }
+  .play { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px 16px 16px; height: 504px; text-align: center; }
+  .play > .piece { width: 72px; margin-bottom: 8px; }
+  .goal .icon { width: 40px; height: 40px; color: var(--glow); }
+  .goal b { display: block; font-weight: 400; }
+  .stars { display: flex; gap: 6px; color: var(--glow); }
+  .stars .icon { width: 44px; height: 44px; }
+  .next { margin-top: auto; width: 100%; flex-direction: column; min-height: 132px; gap: 8px; font-size: 26px; }
+  .next .icon { width: 48px; height: 48px; }
+  @container (max-height: 599px) and (orientation: landscape) {
+    .game { --side: 192px; }
+    .way .tile, .col > .tile { flex-direction: column; gap: 4px; justify-content: center; min-height: 96px; font-size: 20px; padding: 0; }
+    .play { height: auto; flex: 1; }
+    .play > .piece { width: 52px; margin: 0; }
+    .stars .icon { width: 34px; height: 34px; }
+    .next { min-height: 96px; }
   }
-  #board { flex: none; width: min(100vh - 2 * var(--gap), 100vw - 2 * var(--side) - 4 * var(--gap)); }
-  .panel {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    flex: none;
-    width: var(--side);
-    height: min(100vh - 2 * var(--gap), 100vw - 2 * var(--side) - 4 * var(--gap));
-    padding: 20px 16px;
+  @container (orientation: portrait) {
+    .game { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr) auto; }
+    .col.left { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .way { display: contents; }
+    .way > .copy, .way::after { display: none; }
+    .left .tile { flex-direction: column; gap: 4px; justify-content: center; min-height: 96px; min-width: 0; padding: 0; font-size: 20px; }
+    .way .tile { background: var(--glass-tint); }
+    #board { width: min(var(--w), 100%); }
+    .play { height: auto; display: grid; grid-template-columns: auto 1fr auto; text-align: left; gap: 12px 16px; }
+    .play > .piece { width: 52px; margin: 0; }
+    .goal { display: flex; align-items: center; gap: 12px; }
+    .next { grid-column: span 3; flex-direction: row; min-height: 88px; }
   }
-  .panel .space { flex: 1; }
-  .left { order: -1; }
-
-  /* A control: a glass tile, its icon and its word, as in the game. The big one sits
-     where take back is in a game. */
-  .row { display: flex; align-items: center; justify-content: flex-start; gap: 12px; min-height: 72px;
-    padding: 0 14px; font-size: 24px; text-align: left; white-space: nowrap; }
-  .row.button svg { flex: none; width: 34px; height: 34px; stroke-width: 2.2; }
-  .row.big { flex-direction: column; justify-content: center; gap: 8px; min-height: 132px; font-size: 26px; }
-  .row.big svg { width: 48px; height: 48px; }
-  .row.lit { background: color-mix(in srgb, var(--glow) 22%, transparent);
-    box-shadow: inset 0 0 0 2px var(--glow), 0 0 22px -4px color-mix(in srgb, var(--glow) 60%, transparent); }
-  .row.off { opacity: 0.35; pointer-events: none; }
-
-  /* The goal: the side to move with its glow ring, as whose turn is in a game, and the
-     theme's icon with a few words. */
-  .goal { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 14px 0 4px;
-    text-align: center; font-size: 26px; }
-  .goal .piece { --u: 7px; position: relative; inset: auto; flex: none; width: 72px; height: 72px;
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--glow) 80%, transparent),
-      0 0 22px 4px color-mix(in srgb, var(--glow) 45%, transparent); }
-  .what { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; white-space: nowrap; }
-  .what > svg { flex: none; width: 40px; height: 40px; stroke-width: 2; color: var(--glow); }
-  .what.big { flex-direction: column; gap: 8px; font-size: 28px; }
-  .what.big > svg { width: 72px; height: 72px; stroke-width: 1.8; }
-  .lead { display: flex; align-items: center; justify-content: center; gap: 20px; }
-  .lead > svg { flex: none; width: 72px; height: 72px; stroke-width: 1.8; color: var(--glow); }
-  .words { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .words .side { font-size: 17px; opacity: 0.66; }
-
-  /* After a miss: the goal's words give way to "try again" for a moment. */
-  .again { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 16px;
-    border-radius: 16px; white-space: nowrap; font-size: 24px;
-    background: color-mix(in srgb, var(--forced) 16%, transparent); }
-  .again svg { flex: none; width: 30px; height: 30px; stroke-width: 2.2; }
-
-  /* The goal drawn (take b): the pieces to take, each dimming as it is taken. */
-  .take { display: flex; justify-content: center; gap: 14px; }
-  .take .piece { --u: 4px; position: relative; inset: auto; flex: none; width: 48px; height: 48px; box-shadow: none; }
-  .take .piece.gone { opacity: 0.3; }
-
-  /* The stars at stake: three, in the glow color, one going out with each miss. */
-  .stake { display: flex; justify-content: center; gap: 8px; color: var(--glow); }
-  .stake svg { width: 44px; height: 44px; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--glow) 50%, transparent)); }
-  .stake svg.off { color: rgb(255 255 255 / 0.3); filter: none; stroke-width: 1.5; }
-  .stake.won svg:not(.off) { width: 56px; height: 56px; animation: pop 600ms cubic-bezier(.2, 1.6, .4, 1) both; }
-  .stake.won svg:nth-child(2) { animation-delay: 150ms; }
-  .stake.won svg:nth-child(3) { animation-delay: 300ms; }
-
-  /* The theme's ten (take b): solved ones a star, this one a ring, the rest dim. */
-  .ten { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 6px 4px; justify-items: center; }
-  .ten i { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
-    background: rgb(255 255 255 / 0.12); color: var(--glow); }
-  .ten i svg { width: 24px; height: 24px; filter: drop-shadow(0 0 4px color-mix(in srgb, var(--glow) 50%, transparent)); }
-  .ten i.done { background: none; }
-  .ten i.now { box-shadow: 0 0 0 3px var(--glow), 0 0 12px color-mix(in srgb, var(--glow) 50%, transparent);
-    background: color-mix(in srgb, var(--glow) 20%, transparent); }
-
-  /* On the board: the hint's piece to move pulses a ring in the glow color, as one that
-     must capture pulses red; a miss leaves a fading ghost of the piece where it went. */
-  .piece.hinted::after {
-    content: '';
-    position: absolute;
-    inset: -14%;
-    border-radius: 50%;
-    border: calc(0.9 * var(--u)) solid var(--glow);
-    box-shadow: 0 0 calc(3 * var(--u)) color-mix(in srgb, var(--glow) 70%, transparent),
-      inset 0 0 calc(1.2 * var(--u)) color-mix(in srgb, var(--glow) 40%, transparent);
-    animation: pulse 1.4s ease-in-out infinite;
-  }
-  .piece.ghost { opacity: 0.35; animation: fade 1.2s ease-in both; }
-  @keyframes fade { from { opacity: 0.8; } to { opacity: 0.35; } }
-
-  /* Solved (takes a and b): stars over the dimmed board, with again and
-     next as icons and words. */
-  .solved #board { filter: brightness(0.55); }
-  .card { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2;
-    display: grid; justify-items: center; gap: 28px; padding: 40px 48px; }
-  .card .stars { display: flex; gap: 14px; color: var(--glow); }
-  .card .stars svg { width: 84px; height: 84px; filter: drop-shadow(0 0 14px color-mix(in srgb, var(--glow) 60%, transparent));
-    animation: pop 600ms cubic-bezier(.2, 1.6, .4, 1) both; }
-  .card .stars svg:nth-child(2) { transform: translateY(-18px) scale(1.15); animation-delay: 150ms; }
-  .card .stars svg:nth-child(3) { animation-delay: 300ms; }
-  .card .actions { display: flex; gap: 20px; }
-  .card .row { justify-content: center; min-width: 200px; min-height: 88px; padding: 0 22px; }
-  @keyframes pop { from { opacity: 0; scale: 0.3; } to { opacity: 1; scale: 1; } }
-  .spark { position: fixed; z-index: 1; width: 10px; height: 10px; border-radius: 50%; background: var(--glow);
-    box-shadow: 0 0 12px var(--glow); animation: drift 2.4s ease-out 2 both; opacity: 0; pointer-events: none; }
-  @keyframes drift { 0% { opacity: 0; transform: translateY(0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-160px); } }
-
-  @media (orientation: portrait) {
-    .game { --top: 104px; --bottom: 280px; flex-direction: column; }
-    #board { width: min(100vw - 2 * var(--gap), 100vh - var(--top) - var(--bottom) - 4 * var(--gap)); }
-    .panel { display: grid; gap: 12px 16px; align-content: start; height: auto; padding: 16px 20px;
-      width: min(100vw - 2 * var(--gap), 100vh - var(--top) - var(--bottom) - 4 * var(--gap)); }
-    .panel .space { display: none; }
-    .left { grid-template-columns: repeat(3, 1fr); }
-    .left .row { justify-content: center; }
-    .left .ten, .left .next { display: none; }
-    .right { grid-template-columns: 1fr auto; align-items: center; }
-    .right > .row, .right > .strip { grid-column: 1 / -1; }
-    .goal { flex-direction: row; justify-content: flex-start; padding: 0 6px; }
-    .goal .piece { width: 52px; height: 52px; --u: 5px; }
-    .what.big { flex-direction: row; gap: 12px; }
-    .what.big > svg { width: 48px; height: 48px; }
-    .lead { gap: 12px; }
-    .lead > svg { width: 48px; height: 48px; }
-    .what.big:has(.lead) { gap: 12px; }
-    .words { align-items: flex-start; }
-    .stake { padding-right: 6px; }
-    .stake.won svg:not(.off) { width: 52px; height: 52px; }
-    .row.big { flex-direction: row; min-height: 80px; }
-    .row.big svg { width: 36px; height: 36px; }
-    /* Take b's ten and next move under the goal, in one row. */
-    .strip { display: flex; align-items: center; gap: 16px; }
-    .strip .ten { display: flex; flex: 1; justify-content: space-between; padding: 0 6px; }
-    .strip .row { flex: none; }
-    .card { padding: 36px 40px; }
-  }
-  @media (orientation: landscape) { .strip { display: none; } }
 </style>
 </head>
 <body data-screen="board">
-<main class="game" id="game">
+<main class="screen game">
+  <div class="col left">
+    <a class="tile glass" href="puzzles.html" data-icon="back">Back</a>
+    <div class="glass way">
+      <a class="tile" href="settings.html" data-icon="gear">Settings</a>
+      <a class="tile" data-icon="restart">Start over</a>
+    </div>
+  </div>
   <div id="board"></div>
-  <aside class="panel glass left" id="out"></aside>
-  <aside class="panel glass right" id="play"></aside>
+  <div class="col">
+    <div class="glass play">
+      <span class="piece solo white ring"></span>
+      <div class="goal" data-icon="target"><span><b>Win 2 men</b><small>White to move</small></span></div>
+      <div class="stars" id="stars"></div>
+      <a class="tile next dim" data-icon="next">Next</a>
+    </div>
+  </div>
 </main>
 <script>
-  const params = new URLSearchParams(location.search);
-  const TAKES = ['a', 'b', 'c'];
-  const STATES = ['play', 'wrong', 'hint', 'solved'];
-  const take = TAKES.includes(params.get('take')) ? params.get('take') : 'a';
-  const TURNS = ['a', 'b'];
-  const turn = TURNS.includes(params.get('turn')) ? params.get('turn') : 'a';
-  const side = params.get('side') === 'black' ? 'black' : 'white';
-  const state = STATES.includes(params.get('state')) ? params.get('state') : 'play';
-  const I = Draughts.icon;
-
-  // The words, as strings/en.txt would give them.
-  const W = { puzzles: 'Puzzles', settings: 'Settings', restart: 'Start over', hint: 'Hint', next: 'Next',
-    again: 'Again', retry: 'Try again', goal: 'Capture 2', capture: 'Capture', solved: 'Solved' };
-
-  const row = (icon, word, cls = '', href = '') =>
-    `<button class="row button ${cls}"${href ? ` onclick="location.href='${href}'"` : ''}>${I(icon)}${word}</button>`;
-  // n of three stars still at stake (or earned).
-  const stake = (n, cls = '') => `<div class="stake ${cls}">${[0, 1, 2].map((k) =>
-    I(k < n ? 'star' : 'starOff', k < n ? '' : 'off')).join('')}</div>`;
-  // The theme's ten: three solved, this one (the fourth), and when solved, the fifth next.
-  const ten = () => `<div class="ten">${Array.from({ length: 10 }, (_, i) => {
-    const done = i < 3 || (i === 3 && state === 'solved');
-    const now = state === 'solved' ? i === 4 : i === 3;
-    return `<i class="${done ? 'done' : ''} ${now ? 'now' : ''}">${done ? I('star') : ''}</i>`;
-  }).join('')}</div>`;
-  const who = '<div class="piece white"></div>';
-  const what = (big = false) => `<div class="what ${big ? 'big' : ''}">${I('target')}<span>${W.goal}</span></div>`;
-  const retry = `<div class="again">${I('undo')}<span>${W.retry}</span></div>`;
-
-  // Stars at stake in each state: a: a miss or the hint costs one; b: a miss costs one,
-  // the hint is free; c: a miss costs one, and the glow comes after two.
-  const left = { a: { play: 3, wrong: 2, hint: 2, solved: 3 }, b: { play: 3, wrong: 2, hint: 2, solved: 3 },
-    c: { play: 3, wrong: 2, hint: 1, solved: 3 } }[take][state];
-
-  let out = row('puzzle', W.puzzles, '', 'puzzle-set.html') + row('gear', W.settings, '', 'settings.html');
-  let play = '';
-  if (take === 'a') {
-    out += '<div class="space"></div>' + row('restart', W.restart);
-    play = `<div class="goal">${who}${state === 'wrong' ? retry : what()}</div>${stake(left)}` +
-      '<div class="space"></div>' + row('hint', W.hint, `big ${state === 'hint' ? 'lit' : ''}`);
-  } else if (take === 'b') {
-    out += ten() + row('next', W.next, 'next') + '<div class="space"></div>' + row('restart', W.restart);
-    const gone = state === 'solved' ? 'gone' : '';
-    play = `<div class="goal">${state === 'wrong' ? retry : `<div class="what">${I('target')}<span>${W.capture}</span></div>`}` +
-      `<div class="take"><div class="piece black ${gone}"></div><div class="piece black ${gone}"></div></div></div>` +
-      stake(left) + `<div class="strip">${ten()}${row('next', W.next)}</div>` + '<div class="space"></div>' +
-      (state === 'wrong' || state === 'hint' ? row('hint', W.hint, `big ${state === 'hint' ? 'lit' : ''}`) : '');
-  } else {
-    out += '<div class="space"></div>' + row('restart', W.restart);
-    // Whose puzzle it is: the game's turn piece, and the words under the goal's.
-    const disc = `<div class="piece ${side}"></div>`;
-    const words = state === 'wrong' ? retry : `<div class="words"><span>${state === 'solved' ? W.solved : W.goal}</span>` +
-      `<span class="side">${side === 'black' ? 'Black' : 'White'} to move</span></div>`;
-    // Take a's column needs the panel's room for the piece too (rendering.md's sizes).
-    const room = innerHeight - 2 * 24 - 40;
-    const short = room < 14 + 72 + 16 + 72 + 8 + 62 + 16 + 56 + (innerHeight - 48 < 420 ? 96 : 132);
-    const beside = matchMedia('(orientation: portrait)').matches || turn === 'b' || short;
-    const top = beside ? `<div class="what big"><div class="lead">${disc}${I('target')}</div>${words}</div>`
-      : `${disc}<div class="what big">${I('target')}${words}</div>`;
-    play = `<div class="goal">${top}</div>${stake(left, state === 'solved' ? 'won' : '')}` +
-      '<div class="space"></div>' + row('next', W.next, `big ${state === 'solved' ? 'lit' : 'off'}`, 'puzzle-set.html');
-  }
-  document.getElementById('out').innerHTML = out;
-  document.getElementById('play').innerHTML = play;
-
-  // Solved, takes a and b: the card over the dimmed board.
-  const game = document.getElementById('game');
-  if (state === 'solved' && take !== 'c') {
-    game.classList.add('solved');
-    game.insertAdjacentHTML('beforeend', `<div class="card glass"><div class="stars">${I('star').repeat(3)}</div>` +
-      `<div class="actions">${row('restart', W.again)}${row('next', W.next, 'primary', 'puzzle-set.html')}</div></div>`);
-  }
-
-  Draughts.init();
-
-  // The puzzle (theme 1, capture, number 4): white to move takes two, c3 over d4 and
-  // f6 to g7, after black's e7-f6. e3 over d4 to c5 takes only one and is the miss shown.
-  const pos = {
-    white: ['a1', 'g1', 'c3', 'e3', 'g3'],
-    black: ['d4', 'f6', 'a7', 'd8', 'h8'],
-    last: ['e7', 'f6'],
-  };
-  if (state === 'solved') Object.assign(pos, {
-    white: ['a1', 'g1', 'e3', 'g3', 'g7'], black: ['a7', 'd8', 'h8'], last: ['c3', 'e5', 'g7'] });
-  if (state === 'wrong') pos.error = ['c5'];
-  const boardEl = document.getElementById('board');
-  Draughts.board(boardEl, pos);
-  const square = (name) => boardEl.querySelectorAll('.sq')[(8 - +name.slice(1)) * 8 + name.charCodeAt(0) - 97];
-  // The miss, slid back: a ghost of e3's piece fades on c5 under the red ring.
-  if (state === 'wrong') square('c5').insertAdjacentHTML('afterbegin', '<div class="piece white ghost"></div>');
-  // The hint: the piece to move glows (in c, by itself after two misses).
-  if (state === 'hint') square('c3').querySelector('.piece').classList.add('hinted');
-  Draughts.paint();
-
-  // The card sits over the board's middle, which in portrait isn't the screen's.
-  const place = () => {
-    const card = document.querySelector('.card');
-    if (!card) return;
-    const r = boardEl.getBoundingClientRect();
-    card.style.left = `${r.left + r.width / 2}px`;
-    card.style.top = `${r.top + r.height / 2}px`;
-    Draughts.syncGlass();
-  };
-  place();
-  addEventListener('resize', place);
-
-  // Sparks over the board when solved, then the screen is still.
-  if (state === 'solved') {
-    const r = boardEl.getBoundingClientRect();
-    for (let i = 0; i < 14; i++) {
-      const s = document.createElement('div');
-      s.className = 'spark';
-      s.style.left = `${r.left + r.width * (0.15 + Math.random() * 0.7)}px`;
-      s.style.top = `${r.top + r.height * (0.35 + Math.random() * 0.5)}px`;
-      s.style.animationDelay = `${Math.random() * 2.4}s`;
-      document.body.appendChild(s);
-    }
-  }
-
-  // The take and the state, from the switcher.
-  const bar = document.querySelector('.proto-bar');
-  const select = (key, values, current) => `<select data-own="${key}" aria-label="${key}">${values.map((v) =>
-    `<option${v === current ? ' selected' : ''}>${v}</option>`).join('')}</select>`;
-  bar.insertAdjacentHTML('afterbegin', select('take', TAKES, take) + select('state', STATES, state) +
-    select('turn', TURNS, turn));
-  bar.querySelectorAll('[data-own]').forEach((s) => {
-    s.onchange = (e) => {
-      e.stopPropagation();
-      params.set(s.dataset.own, s.value);
-      location.search = params.toString();
-    };
+  document.getElementById('stars').innerHTML = Draughts.icon('star').repeat(3);
+  Draughts.board(document.getElementById('board'), {
+    white: ['a1', 'f2', 'c3', 'e3', 'g3'], black: ['d6', 'h6', 'b8', 'f6', 'g7'],
   });
+  Draughts.init();
 </script>
 </body>
 </html>

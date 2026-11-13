@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draughts: who's playing</title>
+<link rel="stylesheet" href="draughts.css">
+<script src="draughts.js"></script>
+<style>
+  /* Who's playing as built (docs/architecture/rendering.md, "Players"), opened by home's
+     chip: a glass card over home dimmed by black at 42%, with back, the title, the
+     results' bars, and the pencil; a tile per player, their badge (home's king with an
+     animal in the crown's place) over the name, the one playing lit with the glow ring;
+     then + while there are under four. Two and two where four don't fit a row. */
+  body::after { content: ''; position: absolute; inset: 0; background: rgb(0 0 0 / 0.42); }
+  .who { z-index: 1; display: grid; place-items: center; }
+  .card { display: grid; gap: 20px; padding: 24px; }
+  .head { display: flex; align-items: center; gap: 16px; }
+  .head h1 { flex: 1; font-size: 34px; }
+  .head .tile { padding: 0; }
+  .players { display: grid; grid-auto-flow: column; grid-auto-columns: 156px; gap: 16px; }
+  .player { flex-direction: column; gap: 8px; min-height: 0; padding: 14px 10px; font-size: 24px; }
+  .badge { position: relative; display: grid; place-items: center; width: 72%; aspect-ratio: 1; }
+  .badge .piece { position: absolute; inset: 0; }
+  .badge img { position: relative; z-index: 2; width: 56%; opacity: 0.8; }
+  .player.on .badge .piece { box-shadow: 0 0 0 4px var(--glow), 0 0 22px color-mix(in srgb, var(--glow) 50%, transparent); }
+  .player .icon { width: 48px; height: 48px; }
+  @container (max-width: 760px) {
+    .players { grid-auto-flow: row; grid-template-columns: repeat(2, 120px); grid-auto-columns: auto; justify-content: center; }
+    .head { gap: 8px; }
+    .head h1 { font-size: 24px; }
+  }
+  @container (max-height: 599px) {
+    .players { grid-auto-columns: 120px; }
+    .player { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+<main class="screen who">
+  <section class="card glass">
+    <div class="head"><a class="tile" href="home.html" data-icon="back" aria-label="Back"></a><h1>Who's playing?</h1>
+      <a class="tile" href="results.html" data-icon="bars" aria-label="Results"></a><a class="tile" data-icon="pencil" aria-label="Edit"></a></div>
+    <div class="players" id="players"></div>
+  </section>
+</main>
+<script>
+  document.getElementById('players').innerHTML = [['fox', 'Alex'], ['owl', 'Sam'], ['bear', 'Grandad']].map(([a, n], i) =>
+    `<a class="tile player${i ? '' : ' on'}" href="home.html"><span class="badge"><span class="piece solo white"></span>` +
+    `<img src="../assets/badges/${a}.svg" alt=""></span>${n}</a>`).join('') + `<a class="tile player">${Draughts.icon('plus')}</a>`;
+  Draughts.init();
+</script>
+</body>
+</html>

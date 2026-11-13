@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draughts: puzzles</title>
+<link rel="stylesheet" href="draughts.css">
+<script src="draughts.js"></script>
+<style>
+  /* The puzzles' library as built (docs/architecture/rendering.md, "Puzzle picker"): back,
+     the title bare on the photograph over a dark halo, the draughts switch (the setup's
+     tiles joined on one glass), and a glass row per theme: its mark on a disc of the
+     glow, its name, its stars, and a bar of them. Two columns in landscape, one in
+     portrait, where the switch goes under the title. */
+  .lib { display: flex; flex-direction: column; gap: 20px; }
+  .top h1 { text-shadow: 0 0 6px rgb(0 0 0 / 0.5), 0 2px 4px rgb(0 0 0 / 0.5); }
+  .joined .tile { flex-direction: column; gap: 0; font-size: 20px; border-radius: 22px; }
+  .joined .tile small { font-size: 15px; }
+  .rows { flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 420px)); justify-content: center; align-content: center; gap: 16px 24px; }
+  .theme { --r: 24px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 20px; min-height: 124px; padding: 0 24px; }
+  .disc { grid-row: span 2; width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center;
+    background: color-mix(in srgb, var(--glow) 20%, transparent); }
+  .disc .icon { width: 38px; height: 38px; }
+  .theme b { font-weight: 400; font-size: 30px; align-self: end; }
+  .theme small { align-self: end; display: flex; align-items: center; gap: 6px; }
+  .theme small .icon { width: 16px; height: 16px; color: var(--glow); }
+  .bar { grid-column: 2 / 4; align-self: start; height: 8px; border-radius: 4px; background: rgb(255 255 255 / 0.12); }
+  .bar i { display: block; height: 100%; border-radius: inherit; background: var(--glow); }
+  @container (max-height: 599px) and (orientation: landscape) {
+    .theme { min-height: 96px; }
+    .disc { width: 60px; height: 60px; }
+    .rows { gap: 12px 16px; }
+  }
+  @container (orientation: portrait) {
+    .top { flex-wrap: wrap; }
+    .top .end { width: 100%; margin: 0; }
+    .joined .tile { flex: 1; min-width: 0; }
+    .rows { grid-template-columns: minmax(0, 600px); }
+    .theme { min-height: 96px; }
+  }
+</style>
+</head>
+<body>
+<main class="screen lib">
+  <div class="top">
+    <a class="tile glass" href="home.html" data-icon="back">Back</a><h1>Puzzles</h1>
+    <div class="end joined glass"><a class="tile on">International<small>10 × 10</small></a>
+      <a class="tile">Brazilian<small>8 × 8</small></a><a class="tile">Russian<small>8 × 8</small></a></div>
+  </div>
+  <div class="rows" id="rows"></div>
+</main>
+<script>
+  const THEMES = [['book', 'Learn', 26, 36], ['captures', 'Captures', 21, 45], ['crown', 'Crowning', 12, 36],
+    ['target', 'Shots', 9, 45], ['crown', 'King shots', 3, 30], ['shield', 'Safe move', 22, 30]];
+  document.getElementById('rows').innerHTML = THEMES.map(([ic, name, n, all]) =>
+    `<a class="theme glass" href="puzzle.html"><span class="disc">${Draughts.icon(ic)}</span><b>${name}</b>` +
+    `<small>${Draughts.icon('star')}${n} / ${all}</small><span class="bar"><i style="width:${100 * n / all}%"></i></span></a>`).join('');
+  Draughts.init();
+</script>
+</body>
+</html>
