@@ -24,7 +24,7 @@ a foldable, portrait, 1768 x 2208:
   the game: 5 tiles, smallest 227 x 88 dp, board 527 dp, all in place
   the game on the clock: 7 tiles, smallest 227 x 88 dp, board 527 dp, all in place
   taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels the 3D screen's
-  settings: 21 tiles, smallest 88 x 88 dp, the theme's switch 88 x 60 dp a half, board 232 dp, all in place
+  settings: 21 tiles, smallest 88 x 88 dp, the theme's switch 88 x 60 dp a half, board 196 dp, all in place
   the puzzles: 10 tiles, smallest 134 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
@@ -56,7 +56,7 @@ a foldable, portrait, 1768 x 2208:
   the game: 5 tiles, smallest 227 x 88 dp, board 595 dp, all in place
   the game on the clock: 7 tiles, smallest 227 x 88 dp, board 595 dp, all in place
   taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels the 3D screen's
-  settings: 21 tiles, smallest 88 x 88 dp, the theme's switch 88 x 60 dp a half, board 296 dp, all in place
+  settings: 21 tiles, smallest 88 x 88 dp, the theme's switch 88 x 60 dp a half, board 259 dp, all in place
   the puzzles: 10 tiles, smallest 134 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
@@ -184,7 +184,7 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp:
   the game: 5 tiles, smallest 99 x 88 dp, board 373 dp, all in place
   the game on the clock: 7 tiles, smallest 99 x 88 dp, board 373 dp, all in place
   taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels the 3D screen's
-  settings: 10 tiles, smallest 88 x 88 dp, board 248 dp, all in place
+  settings: 10 tiles, smallest 88 x 88 dp, board 224 dp, all in place
   the puzzles: 10 tiles, smallest 114 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
@@ -217,7 +217,7 @@ a foldable, portrait, 1768 x 2208:
   the game: 5 tiles, smallest 227 x 88 dp, board 527 dp, all in place
   the game on the clock: 7 tiles, smallest 227 x 88 dp, board 527 dp, all in place
   taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels the 3D screen's
-  settings: 21 tiles, smallest 88 x 88 dp, the theme's switch 88 x 60 dp a half, board 232 dp, all in place
+  settings: 21 tiles, smallest 88 x 88 dp, the theme's switch 88 x 60 dp a half, board 196 dp, all in place
   the puzzles: 10 tiles, smallest 135 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
@@ -249,7 +249,7 @@ a foldable, portrait, 1768 x 2208:
   the game: 5 tiles, smallest 227 x 88 dp, board 595 dp, all in place
   the game on the clock: 7 tiles, smallest 227 x 88 dp, board 595 dp, all in place
   taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels the 3D screen's
-  settings: 21 tiles, smallest 88 x 88 dp, the theme's switch 88 x 60 dp a half, board 296 dp, all in place
+  settings: 21 tiles, smallest 88 x 88 dp, the theme's switch 88 x 60 dp a half, board 259 dp, all in place
   the puzzles: 10 tiles, smallest 135 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
@@ -377,7 +377,7 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp:
   the game: 5 tiles, smallest 95 x 88 dp, board 373 dp, all in place
   the game on the clock: 7 tiles, smallest 95 x 88 dp, board 373 dp, all in place
   taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels the 3D screen's
-  settings: 10 tiles, smallest 88 x 88 dp, board 248 dp, all in place
+  settings: 10 tiles, smallest 88 x 88 dp, board 224 dp, all in place
   the puzzles: 10 tiles, smallest 100 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
@@ -474,7 +474,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp, insets 0, 118, 0, 84 px:
   the game: 5 tiles, smallest 99 x 88 dp, board 432 dp, all in place
   the game on the clock: 7 tiles, smallest 99 x 88 dp, board 432 dp, all in place
   taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels the 3D screen's
-  settings: 10 tiles, smallest 88 x 88 dp, board 364 dp, all in place
+  settings: 10 tiles, smallest 88 x 88 dp, board 340 dp, all in place
   the puzzles: 10 tiles, smallest 114 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
@@ -522,7 +522,7 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp, insets 0, 118, 0, 84 px:
   the game: 5 tiles, smallest 99 x 88 dp, board 284 dp, all in place
   the game on the clock: 7 tiles, smallest 99 x 88 dp, board 284 dp, all in place
   taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels the 3D screen's
-  settings: 10 tiles, smallest 88 x 88 dp, board 163 dp, all in place
+  settings: 10 tiles, smallest 88 x 88 dp, board 140 dp, all in place
   the puzzles: 10 tiles, smallest 114 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
@@ -619,7 +619,7 @@ a 20:9 phone, portrait, 1080 x 2400 at 480 dp, insets 0, 118, 0, 84 px:
   the game: 5 tiles, smallest 95 x 88 dp, board 432 dp, all in place
   the game on the clock: 7 tiles, smallest 95 x 88 dp, board 432 dp, all in place
   taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels the 3D screen's
-  settings: 10 tiles, smallest 88 x 88 dp, board 364 dp, all in place
+  settings: 10 tiles, smallest 88 x 88 dp, board 340 dp, all in place
   the puzzles: 10 tiles, smallest 100 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
@@ -667,7 +667,7 @@ a 9:16 phone, portrait, 1080 x 1920 at 480 dp, insets 0, 118, 0, 84 px:
   the game: 5 tiles, smallest 95 x 88 dp, board 284 dp, all in place
   the game on the clock: 7 tiles, smallest 95 x 88 dp, board 284 dp, all in place
   taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels the 3D screen's
-  settings: 10 tiles, smallest 88 x 88 dp, board 163 dp, all in place
+  settings: 10 tiles, smallest 88 x 88 dp, board 140 dp, all in place
   the puzzles: 10 tiles, smallest 100 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
@@ -701,7 +701,7 @@ en, the tablet with its navigation bar:
   the game: 5 tiles, smallest 227 x 88 dp, board 752 dp, all in place
   the game on the clock: 7 tiles, smallest 227 x 88 dp, board 752 dp, all in place
   taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels the 3D screen's
-  settings: 21 tiles, smallest 88 x 88 dp, the theme's switch 88 x 60 dp a half, board 451 dp, all in place
+  settings: 21 tiles, smallest 88 x 88 dp, the theme's switch 88 x 60 dp a half, board 415 dp, all in place
   the puzzles: 10 tiles, smallest 134 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
@@ -736,7 +736,7 @@ et, the tablet with its navigation bar:
   the game: 5 tiles, smallest 227 x 88 dp, board 752 dp, all in place
   the game on the clock: 7 tiles, smallest 227 x 88 dp, board 752 dp, all in place
   taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels the 3D screen's
-  settings: 21 tiles, smallest 88 x 88 dp, the theme's switch 88 x 60 dp a half, board 451 dp, all in place
+  settings: 21 tiles, smallest 88 x 88 dp, the theme's switch 88 x 60 dp a half, board 415 dp, all in place
   the puzzles: 10 tiles, smallest 135 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place

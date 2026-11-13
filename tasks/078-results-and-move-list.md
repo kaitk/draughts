@@ -22,7 +22,7 @@ Task 074 carries the rest of the history's work; this one these points.
 
 ## Steps
 
-- [ ] 1 and 2 fixed in the app: the tiles readable, the setting only in settings with a
+- [x] 1 and 2 fixed in the app: the tiles readable, the setting only in settings with a
       line saying what each choice shows
 - [ ] A, B, and C prototyped in `prototypes/history.html`, for the user to choose
 - [ ] The chosen takes built, checked on the Mac at the Pixel's and the iPhone's sizes,
@@ -30,9 +30,18 @@ Task 074 carries the rest of the history's work; this one these points.
 
 ## Acceptance criteria
 
-- [ ] The results screen's head readable on every season's background
-- [ ] The move list's setting in one place, its choices explained
+- [x] The results screen's head readable on every season's background
+- [x] The move list's setting in one place, its choices explained
 - [ ] A phone in landscape shows the last move and opens the list; portrait as chosen
 - [ ] A mark explains itself on a touch and under the mouse
 - [ ] A past game's moves listed and replayed on a board, touching neither resume nor the
       results
+
+## Notes
+
+- 1 and 2 (2026-11-13): the draughts' tiles on one glass as the puzzles' switch; the move
+  list's line beside its tiles where the group's width leaves room. Under them always,
+  the tablet's landscape preview went from 242 to 137 dp; beside, it keeps its size in
+  every stacked landscape, and portrait's board gives up 24 to 36 dp (`test/shell/sizes`).
+  The results panel's freed room shows the levels on a phone in landscape. Checked on
+  the Mac at the Pixel 7a's landscape (four themes) and portrait, and the tablet's size.

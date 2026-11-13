@@ -1,7 +1,7 @@
 // The results screen (shell/results.goose, task 074): reached from who's playing's results tile,
 // it reads the playing player's history; a draughts' tile shows that draughts' games and
-// rating; the move list's three tiles set the player's moves panel, written as settings
-// are, and the game follows it; back goes home. Laid out at the tablet's and a phone's
+// rating; the draughts' tiles stand on one glass; back goes home. The move list's setting
+// is settings' alone (2026-11-13). Laid out at the tablet's and a phone's
 // size in both orientations: every tile at least a tap, inside the safe area, none over
 // another; the frame's quads under gui::MAX_QUADS with a full list.
 import std;
@@ -88,11 +88,6 @@ fn main() {
     // Russian's tile (the third).
     drive::tap(sh, g, drive::tile(g, 3), tick());
     print("Russian tapped: showing ", rules::VARIANT_NAMES[sh.results_variant], ", ", check(g, float4 { 0.0, 0.0, drive::size.x, drive::size.y }));
-    // The move list's Off (after back and the three draughts).
-    drive::tap(sh, g, drive::tile(g, 4), tick());
-    print("Off tapped: moves ", sh.prefs.moves, ", the game's ", sh.game.moves_shown, ", to write ", sh.changed);
-    drive::tap(sh, g, drive::tile(g, 6), tick());
-    print("Marks tapped: moves ", sh.prefs.moves, ", the game's ", sh.game.moves_shown);
     drive::tap(sh, g, drive::tile(g, 0), tick());
     drive::idle(sh, g, tick());
     print("back: screen ", sh.screen);

@@ -679,10 +679,6 @@ fn results_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool)
     let ask = results::frame(g, area, sh.prefs, sh.games, variant);
     sh.results_variant = variant;
     sh.out.layout = board::layout_at(-2.0 * area.z, 0.0, 0.5 * area.z, g.scale, sh.out.layout.n);
-    if ask == results::CHANGED {
-        sh.changed = true;
-        apply_prefs(sh);
-    }
     if ask == results::BACK {
         go_to(sh, HOME, now);
         sh.setup = home::NO_SETUP;

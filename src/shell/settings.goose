@@ -230,6 +230,18 @@ fn word(row: i64, i: i64) -> i64 {
     return KING_KEYS[i];
 }
 
+// What the move list's tile i shows, said under its row for the chosen one: its words
+// alone (Off, Moves, Marks) didn't say (task 078).
+let MOVES_NOTES = [strings::MOVES_HIDDEN_NOTE, strings::MOVES_LIST_NOTE, strings::MOVES_MARKS_NOTE];
+
+// How many lines the move list's notes take at most at width w, so the row keeps one
+// height whichever is chosen.
+fn moves_note_lines(g: gui::Gui&, w: f32) -> i64 {
+    var n = 0;
+    for k in MOVES_NOTES { n = max(n, note_lines(g, strings::get(k), float4 { 0.0, 0.0, w, 0.0 }, false)); }
+    return n;
+}
+
 // Tile i of a row's note under its word, or "".
 fn note(row: i64, i: i64) -> const u8[:] {
     if row == BOARD_ROW { return strings::get([strings::BOARD_FLAT_NOTE, strings::BOARD_RAISED_NOTE, strings::BOARD_TURNS_NOTE][i]); }
@@ -318,6 +330,7 @@ fn lay(f: Fit, g: gui::Gui&, row: i64, r: float4, at: float4[:]) -> f32 {
 // switch; and how tall they are together.
 struct Row {
     name:  float4             = float4 { 0.0, 0.0, 0.0, 0.0 },
+    says:  float4             = float4 { 0.0, 0.0, 0.0, 0.0 },  // the move list's note
     sw:    float4             = float4 { 0.0, 0.0, 0.0, 0.0 },
     tiles: float4[MOST_TILES] = [float4 { 0.0, 0.0, 0.0, 0.0 }; MOST_TILES],
 }
@@ -327,7 +340,8 @@ struct Rows {
 }
 
 // A group's settings from r's top left, as wide as r, each its dim name and its tiles:
-// the name at the left when `aside`, else above them.
+// the name at the left when `aside`, else above them; under the move list's tiles, a
+// line saying what the chosen one shows.
 fn rows_at(f: Fit, g: gui::Gui&, group: i64, r: float4, aside: bool) -> Rows {
     let u = g.scale;
     var rs = Rows {};
@@ -358,6 +372,23 @@ fn rows_at(f: Fit, g: gui::Gui&, group: i64, r: float4, aside: bool) -> Rows {
             }
         }
         y += if aside { h } else { line + h };
+        if row == MOVES_ROW {
+            // Beside the tiles, centered down them, where the room at their right holds it
+            // in their height (the groups' width is the look's, wider: most landscapes);
+            // else under them, which makes the group taller.
+            let small = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
+            let end = at.tiles[ROW_TILES[row] - 1];
+            let x = end.x + end.z + NOTE_GAP * u;
+            let room = tiles.x + tiles.z - x;
+            let beside = moves_note_lines(g, room);
+            if h <= row_h(f, row) * u + 0.5 && room >= NOTE_LEAST * u && beside * small <= h {
+                at.says = float4 { x, end.y + 0.5 * (h - beside * small), room, beside * small };
+            } else {
+                let n = moves_note_lines(g, tiles.z);
+                at.says = float4 { tiles.x, y + NOTE_TOP * u, tiles.z, n * small };
+                y += NOTE_TOP * u + n * small;
+            }
+        }
     }
     rs.h = y - r.y;
     return rs;
@@ -373,6 +404,7 @@ fn rows(s: Settings&, f: Fit, over: board::Overlay&, g: gui::Gui&, group: i64, r
         for i in ROW_TILES[row] { if tile(s, f, over, g, row, i, at.tiles[i]) { changed = true; } }
         gui::text(g, gui::SMALL, at.name, strings::get(ROW_NAMES[row]), 0.66, 0.03 * gui::FACE_DP[gui::SMALL] as f32 * u,
                   gui::LEFT);
+        if row == MOVES_ROW { note_lines(g, strings::get(MOVES_NOTES[s.moves]), at.says, true); }
         if row == THEME_ROW {
             s.switch_at = at.sw;
             if switch(s, f, g, at.sw) { changed = true; }
@@ -391,11 +423,13 @@ fn rows(s: Settings&, f: Fit, over: board::Overlay&, g: gui::Gui&, group: i64, r
 let NOTE_A = 0.66;
 let NOTE_GAP = 24.0;        // between the group's title and the note beside it
 let NOTE_BESIDE = 2;        // the most lines the note takes beside the title
+let NOTE_TOP = 8.0;         // between the move list's tiles and their note
+let NOTE_LEAST = 120.0;     // the least width the move list's note takes beside its tiles
 
-// The note wrapped at whole words to r's width, `align`ed in it: how many lines, each a
-// small face's height; drawn from r's top when `draw`.
-fn note_lines(g: gui::Gui&, r: float4, draw: bool, align: i64 = gui::LEFT) -> i64 {
-    let s = strings::get(strings::SETTINGS_PRIVACY);
+// Text s, the privacy note or the move list's, wrapped at whole words to r's width,
+// `align`ed in it: how many lines, each a small face's height; drawn from r's top when
+// `draw`.
+fn note_lines(g: gui::Gui&, s: const u8[:], r: float4, draw: bool, align: i64 = gui::LEFT) -> i64 {
     let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
     var n = 0;
     var start = 0;
@@ -429,7 +463,7 @@ fn note_room(g: gui::Gui&, w: f32) -> f32 {
 // it goes at the foot.
 fn note_beside(g: gui::Gui&, w: f32, titled: bool) -> i64 {
     guard titled else { return 0; }
-    let n = note_lines(g, float4 { 0.0, 0.0, note_room(g, w), 0.0 }, false);
+    let n = note_lines(g, strings::get(strings::SETTINGS_PRIVACY), float4 { 0.0, 0.0, note_room(g, w), 0.0 }, false);
     return if n <= NOTE_BESIDE { n } else { 0 };
 }
 
@@ -446,7 +480,7 @@ fn note_height(g: gui::Gui&, w: f32, titled: bool) -> f32 {
     let u = g.scale;
     guard note_beside(g, w, titled) == 0 else { return 0.0; }
     let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
-    let n = note_lines(g, float4 { 0.0, 0.0, w - 2.0 * GROUP_PAD * u, 0.0 }, false);
+    let n = note_lines(g, strings::get(strings::SETTINGS_PRIVACY), float4 { 0.0, 0.0, w - 2.0 * GROUP_PAD * u, 0.0 }, false);
     return ROW_GAP * u + n * line;
 }
 
@@ -505,7 +539,7 @@ fn group(s: Settings&, f: Fit, over: board::Overlay&, g: gui::Gui&, group: i64, 
             // Right-aligned beside the title, centered down its row.
             let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
             let room = note_room(g, r.z);
-            note_lines(g, float4 { title.x + title.z - room, title.y + 0.5 * (title.w - n * line), room, 0.0 }, true,
+            note_lines(g, strings::get(strings::SETTINGS_PRIVACY), float4 { title.x + title.z - room, title.y + 0.5 * (title.w - n * line), room, 0.0 }, true,
                        gui::RIGHT);
         }
     }
@@ -514,8 +548,8 @@ fn group(s: Settings&, f: Fit, over: board::Overlay&, g: gui::Gui&, group: i64, 
     if group == 0 && note_beside(g, r.z, titled) == 0 {
         // At the glass's foot, below the rows however much taller the glass is.
         let line = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
-        let n = note_lines(g, c, false);
-        note_lines(g, float4 { c.x, c.y + c.w - n * line, c.z, 0.0 }, true);
+        let n = note_lines(g, strings::get(strings::SETTINGS_PRIVACY), c, false);
+        note_lines(g, strings::get(strings::SETTINGS_PRIVACY), float4 { c.x, c.y + c.w - n * line, c.z, 0.0 }, true);
     }
     if scrolls { gui::scroll_end(g); }
     return changed;

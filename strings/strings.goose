@@ -50,6 +50,7 @@ let KEYS = [
     "moves.none",
     "board.turns", "board.turns_note",
     "quit.ask", "quit.cancel",
+    "moves.hidden_note", "moves.list_note", "moves.marks_note",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -177,7 +178,10 @@ let BOARD_TURNS = 122;      // the Board row's third tile: a friend's game turns
 let BOARD_TURNS_NOTE = 123; // its note
 let QUIT_ASK = 124;         // a desktop's quit asks first (home::ask_quit): the question,
 let QUIT_CANCEL = 125;      // and the button that keeps the app open
-let COUNT = 126;
+let MOVES_HIDDEN_NOTE = 126; // settings' move list: what the chosen tile shows, under the row
+let MOVES_LIST_NOTE = 127;
+let MOVES_MARKS_NOTE = 128;
+let COUNT = 129;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

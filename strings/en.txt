@@ -145,6 +145,9 @@ results.none = No games yet
 moves.none = No moves yet
 board.turns = Turns
 board.turns_note = (with a friend)
+moves.hidden_note = No move list during a game
+moves.list_note = The game's moves, listed during play
+moves.marks_note = The moves, each marked by how good it was
 
 quit.ask = Quit Draughts?
 quit.cancel = Cancel

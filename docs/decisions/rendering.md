@@ -494,6 +494,19 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   earlier that day (its number and a faint glow where the first move would stand), which
   read as an empty stub. Rejected: no panel until the first move (the board would shrink
   and shift as it is made).
+- The move list's setting is settings' alone (2026-11-13, task 078; the user: once is
+  enough), replacing 2026-11-12's three tiles kept on the results screen too. There its
+  words alone (Off, Moves, Marks) didn't say what each shows, so a line under the
+  chosen one says it ("The moves, each marked by how good it was"), in the small face
+  and dim as the privacy note: beside the tiles, centered down them, where the group's
+  width leaves room (the look's rows are wider, so most landscapes), else under them.
+  Under them always cost the stacked landscapes their preview board (the tablet's
+  242 to 137 dp), so beside is first. The results screen's freed panel shows the levels'
+  results on a phone in landscape too, where the move list's row had crowded them out.
+- The results screen's draughts tiles stand on one glass, 4 dp round them and between,
+  as the puzzles' draughts switch does (2026-11-13, task 078): alone they were faint
+  glass on a bright photograph (a phone in landscape over winter's snow). The same fix
+  as settings' tabs, each on glass (2026-11-09).
 
 ### Board and pieces
 

@@ -7,11 +7,11 @@ home 768 x 1024 at 800 dp: raised true, bounds 136 128 529 x 363 (146:100), on s
 home 2400 x 1080 at 540 dp: raised true, bounds 613 120 494 x 339 (146:100), on screen true, tiles touched 0 of 8, flat square in the middle true, drawn as placed true
 home 1080 x 2400 at 540 dp: raised true, bounds 24 175 492 x 337 (146:100), on screen true, tiles touched 0 of 8, flat square in the middle true, drawn as placed true
 settings 1280 x 800 at 800 dp: raised true, bounds 726 227 506 x 347 (146:100), on screen true, tiles touched 0 of 21, flat square in the middle true, drawn as placed true
-settings 800 x 1280 at 800 dp: raised true, bounds 54 167 692 x 474 (146:100), on screen true, tiles touched 0 of 21, flat square in the middle true, drawn as placed true
-settings 1768 x 2208 at 800 dp: raised true, bounds 231 147 339 x 232 (146:100), on screen true, tiles touched 0 of 21, flat square in the middle true, drawn as placed true
+settings 800 x 1280 at 800 dp: raised true, bounds 65 155 670 x 460 (146:100), on screen true, tiles touched 0 of 21, flat square in the middle true, drawn as placed true
+settings 1768 x 2208 at 800 dp: raised true, bounds 257 146 285 x 196 (146:100), on screen true, tiles touched 0 of 21, flat square in the middle true, drawn as placed true
 settings 2208 x 1768 at 800 dp: raised true, bounds 718 317 242 x 166 (146:100), on screen true, tiles touched 0 of 21, flat square in the middle true, drawn as placed true
 settings 1024 x 768 at 800 dp: raised true, bounds 720 295 305 x 209 (146:100), on screen true, tiles touched 0 of 21, flat square in the middle true, drawn as placed true
-settings 768 x 1024 at 800 dp: raised true, bounds 184 149 431 x 296 (146:100), on screen true, tiles touched 0 of 21, flat square in the middle true, drawn as placed true
+settings 768 x 1024 at 800 dp: raised true, bounds 211 148 378 x 259 (146:100), on screen true, tiles touched 0 of 21, flat square in the middle true, drawn as placed true
 settings 2400 x 1080 at 540 dp: raised true, bounds 755 133 400 x 275 (146:100), on screen true, tiles touched 0 of 10, flat square in the middle true, drawn as placed true
 settings 1080 x 2400 at 540 dp: raised true, bounds 46 390 447 x 307 (146:100), on screen true, tiles touched 0 of 10, flat square in the middle true, drawn as placed true
 flat home: raised false

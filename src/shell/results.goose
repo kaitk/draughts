@@ -1,10 +1,10 @@
 // The games played (task 074, prototypes/history.html's games view): the playing
 // player's rating in a draughts, their wins, draws, and losses against each of the
-// computer's levels, the moves panel's setting, and their games in that draughts, newest
-// first, in a scrolling list. Back and the title head it, the draughts as tiles at the
-// head's right, each with its rating. In landscape the rating and the setting stand in a
-// panel at the left and the games at the right; in portrait the panel is above the
-// games. Reached from who's playing (who.goose's results tile). Everything is read off the
+// computer's levels, and their games in that draughts, newest first, in a scrolling list.
+// Back and the title head it, the draughts as tiles at the head's right, each with its
+// rating, joined on one glass as the puzzles' switch is. In landscape the rating stands in
+// a panel at the left and the games at the right; in portrait the panel is above the
+// games. The moves panel's setting is settings' alone (2026-11-13). Reached from who's playing (who.goose's results tile). Everything is read off the
 // history the shell read when the screen opened (record.goose); nothing allocates.
 namespace results;
 import std;
@@ -12,7 +12,6 @@ import vec;
 
 let NOTHING = gui::ASK_NOTHING;
 let BACK = gui::ASK_BACK;
-let CHANGED = gui::ASK_CHANGED;     // the moves panel's setting
 let SHOWN = gui::ASK_SHOWN;         // another draughts shown
 
 let EDGE = 24.0;            // dp from the safe area's edges
@@ -28,7 +27,6 @@ let ICON = 40.0;            // a game's result
 
 let BACK_ID = gui::RESULTS_IDS;
 let DRAUGHTS_ID = gui::RESULTS_IDS + 1;   // the three draughts' tiles
-let MOVES_ID = gui::RESULTS_IDS + 5;      // the moves panel's three
 let LIST = gui::RESULTS_IDS + 10;         // the games' scrolling list
 
 type Text = u8[..64];
@@ -70,32 +68,40 @@ fn frame(g: gui::Gui&, area: float4, s: settings::Settings&, gs: history::Game[.
     gui::cut_top(c, GAP * u);
     let back = strings::get(strings::NAV_BACK);
     if gui::back(g, BACK_ID, gui::cut_left(head, gui::back_width(g, back)), back) { ask = BACK; }
-    // The draughts at the head's right, each its name and rating, as wide as its words;
-    // where they don't fit beside back (a phone in portrait), a row of their own under the
-    // head, sharing its width.
+    // The draughts at the head's right, each its name and rating, as wide as its words,
+    // joined on one glass as the puzzles' switch is (picker::switch), its rim round them
+    // and between: plain tiles alone were faint glass on a bright photograph (a phone in
+    // landscape over winter's snow, 2026-11-13). Where they don't fit beside back (a phone
+    // in portrait), a row of their own under the head, sharing its width.
+    let rim = picker::SWITCH_PAD * u;
     var t:      Text   = [];
     var widths: f32[3] = [0.0; 3];
-    var all:    f32    = 0.0;
+    var all = 4.0 * rim;
     for i in 3 {
         let name = strings::get(settings::DRAUGHTS_KEYS[i]);
         widths[i] = max(gui::tap() * u, gui::text_width(g, gui::BODY, name) + 2.0 * gui::side() * u);
-        all += widths[i] + (if i > 0 { 10.0 * u } else { 0.0 });
+        all += widths[i];
     }
     let title_x = head.x + gui::back_width(g, back) + gui::PAD_WIDE * u;
     let own_row = title_x + all > head.x + head.z;
     var tiles: float4[3] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 3];
     var right = head.x + head.z;
     if own_row {
-        let line = gui::cut_top(c, gui::tap() * u);
+        let line = gui::cut_top(c, picker::switch_row_h() * u);
         gui::cut_top(c, GAP * u);
-        let w = (line.z - 20.0 * u) / 3.0;
-        for i in 3 { tiles[i] = float4 { line.x + i * (w + 10.0 * u), line.y, w, line.w }; }
+        gui::glass(g, line, 22.0);
+        let w = (line.z - 4.0 * rim) / 3.0;
+        for i in 3 { tiles[i] = float4 { line.x + rim + i * (w + rim), line.y + rim, w, line.w - 2.0 * rim }; }
     } else {
+        // The glass round the head's height, its rim above and below it.
+        gui::glass(g, float4 { right - all, head.y - rim, all, head.w + 2.0 * rim }, 22.0);
+        right -= rim;
         for k in 3 {
             let i = 2 - k;
             tiles[i] = float4 { right - widths[i], head.y, widths[i], head.w };
-            right -= widths[i] + 10.0 * u;
+            right -= widths[i] + rim;
         }
+        right -= GAP * u;
     }
     let title = strings::get(strings::RESULTS_TITLE);
     let room = right - title_x;
@@ -114,28 +120,29 @@ fn frame(g: gui::Gui&, area: float4, s: settings::Settings&, gs: history::Game[.
         }
     }
 
+    // The levels' results where the panel holds them in the height left (all but a
+    // short window's landscape); the list takes what the panel doesn't.
     let wide = c.z > c.w;
-    let levels = c.w >= 560.0 * u || !wide;
+    let levels = !wide || panel_height(g, true) <= c.w;
     let panel_h = panel_height(g, levels);
     var side = if wide { gui::cut_left(c, min(SIDE * u, 0.42 * c.z)) } else { gui::cut_top(c, min(panel_h, c.w - (2.0 * ROW + ROW_GAP + 24.0) * u)) };
     if wide { gui::cut_left(c, GAP * u); } else { gui::cut_top(c, GAP * u); }
     if wide { side.w = min(side.w, panel_h); }
-    if rating_panel(g, side, s, gs, variant, levels) { ask = CHANGED; }
+    rating_panel(g, side, s, gs, variant, levels);
     list(g, c, gs, variant);
     return ask;
 }
 
 fn panel_height(g: gui::Gui&, levels: bool) -> f32 {
     let u = g.scale;
-    var h = 2.0 * IN + HEAD + BIG + GAP + HEAD + gui::stacked();
+    var h: f32 = 2.0 * IN + HEAD + BIG;
     if levels { h += GAP + HEAD + 3.0 * LEVEL_ROW; }
     return h * u;
 }
 
-// The rating, the levels' results, and the moves panel's setting in r. True when the
-// setting changed.
+// The rating and the levels' results in r.
 fn rating_panel(g: gui::Gui&, r: float4, s: settings::Settings&, gs: history::Game[..history::MAX_GAMES]&,
-                variant: i64, levels: bool) -> bool {
+                variant: i64, levels: bool) {
     let u = g.scale;
     gui::panel(g, r);
     var c = gui::inset(r, IN * u);
@@ -172,21 +179,6 @@ fn rating_panel(g: gui::Gui&, r: float4, s: settings::Settings&, gs: history::Ga
             }
         }
     }
-    gui::cut_top(c, GAP * u);
-    gui::text(g, gui::SMALL, gui::cut_top(c, HEAD * u), strings::get(strings::SETTINGS_MOVES), 0.66, 0.0, gui::LEFT);
-    let row = gui::cut_top(c, gui::stacked() * u);
-    let keys = [strings::MOVES_HIDDEN, strings::MOVES_LIST, strings::MOVES_MARKS];
-    let w = (row.z - 2.0 * 10.0 * u) / 3.0;
-    var changed = false;
-    for i in 3 {
-        let tr = float4 { row.x + i * (w + 10.0 * u), row.y, w, row.w };
-        let tapped, unused = gui::pick(g, MOVES_ID + i, tr, 0.0, strings::get(keys[i]), "", s.moves == i, true);
-        if tapped && s.moves != i {
-            s.moves = i;
-            changed = true;
-        }
-    }
-    return changed;
 }
 
 // The games of the draughts shown, newest first, in r: only the rows in view are

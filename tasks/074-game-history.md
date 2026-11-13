@@ -46,8 +46,9 @@ reasons in `docs/decisions/ai.md` and `rendering.md`, 2026-11-11.
 - `src/shell/results.goose`: the results screen, from home's results row (its menu scrolling
   where the row doesn't fit, 2026-11-12) and who's playing's new tile.
 - The `moves` setting (off, moves, marks; default marks) in the player's file, set in
-  settings' game group (2026-11-12, after issue 1 took the draughts' row out) and, until
-  the user chooses, on the results screen too.
+  settings' game group (2026-11-12, after issue 1 took the draughts' row out), there
+  alone since 2026-11-13 (task 078: the results screen's tiles taken out, a line saying
+  what the chosen one shows).
 - Tests: `test/ai/judge` (marks in known positions, the cut-offs, the ratings),
   `test/shell/history` (a game judged as played, written, its marks filled in, ratings,
   start again, the file capped), `test/shell/games` (the screen's taps and layouts).
@@ -150,7 +151,8 @@ the real ones.
 - [x] `src/shell/history.goose`: a game's line written and read back, the file capped
 - [x] The worker judging moves (`game::JUDGE` asks), the game keeping its moves' marks
 - [x] The game's end recorded in the player's history, the rating updated
-- [x] The setting (in settings' game group, and on the results screen)
+- [x] The setting (in settings' game group; on the results screen too until 2026-11-13,
+      task 078)
 - [x] The moves panel on the game screen (landscape, flat and 3D), scrolling
 - [x] Home's results row, the menu scrolling where it doesn't fit
 - [x] A desktop's narrow play panel fitted to its tiles (Estonian's undo move spilled)

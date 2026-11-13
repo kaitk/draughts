@@ -144,6 +144,9 @@ results.none = Veel pole mänge
 moves.none = Käike veel pole
 board.turns = Pöörab
 board.turns_note = (sõbraga)
+moves.hidden_note = Mängu ajal käike ei näidata
+moves.list_note = Käikude loend mängu ajal
+moves.marks_note = Käigud koos hinnanguga, kui hea iga käik oli
 
 quit.ask = Kas soovid väljuda?
 quit.cancel = Tühista

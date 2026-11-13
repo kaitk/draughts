@@ -1,10 +1,8 @@
 results tile tapped: screen 5 (results 5), 32 games read, showing international
-  7 tiles, smallest 88 dp, inside true, apart true, quads 351
-Russian tapped: showing russian, 7 tiles, smallest 88 dp, inside true, apart true, quads 212
-Off tapped: moves 0, the game's 0, to write true
-Marks tapped: moves 2, the game's 2
+  4 tiles, smallest 88 dp, inside true, apart true, quads 327
+Russian tapped: showing russian, 4 tiles, smallest 88 dp, inside true, apart true, quads 188
 back: screen 0
-tablet landscape: 7 tiles, smallest 88 dp, inside true, apart true, quads 351
-tablet portrait: 7 tiles, smallest 88 dp, inside true, apart true, quads 373
-phone landscape: 7 tiles, smallest 88 dp, inside true, apart true, quads 200
-phone portrait: 7 tiles, smallest 88 dp, inside true, apart true, quads 269
+tablet landscape: 4 tiles, smallest 88 dp, inside true, apart true, quads 327
+tablet portrait: 4 tiles, smallest 88 dp, inside true, apart true, quads 375
+phone landscape: 4 tiles, smallest 88 dp, inside true, apart true, quads 245
+phone portrait: 4 tiles, smallest 88 dp, inside true, apart true, quads 274

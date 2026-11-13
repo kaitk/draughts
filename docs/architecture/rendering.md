@@ -1010,20 +1010,21 @@ move is added or the panel shows again; rows past its top or foot fade out over 
 there while there are more (`gui::fade_edges`, as home's scrolling menu does). Before
 the first move it says so, "No moves yet" in the body face, dim, where the first row
 will be. The player's setting (`moves`: off, the moves, the moves with marks) is
-settings' Move list row, under move hints, and the results screen's three tiles; off,
-there is no panel and the 3D board is as large as without it. No panel in portrait or on
+settings' Move list row, under move hints, a line in the small face, dim, saying what the
+chosen tile shows: beside the tiles where the group's width leaves room, else under them;
+off, there is no panel and the 3D board is as large as without it. No panel in portrait or on
 a phone in landscape, which have under four rows' room.
 
 ### The results screen
 
 The games played (`src/shell/results.goose`), reached from home's results row and from who's
 playing's tile of three rising bars, beside the pencil. Back and the title head it, the three draughts as tiles
-at its right, each its name and the player's rating there (a row of their own under the
-head where they don't fit beside back). In landscape a panel at the left holds the
-rating (36 dp figures), the results against each level (the level's name and its
-rating at the player's skill there, then won, drawn, lost: a crown, `=`, an X, each with
-its count; left out where the height is short, a phone in landscape), and the move list's
-three tiles; at the right the games in that draughts, newest first, in a scrolling list
+at its right on one glass, 4 dp round them and between, as the puzzles' draughts switch,
+each its name and the player's rating there (a row of their own under the head where
+they don't fit beside back). In landscape a panel at the left holds the rating (36 dp
+figures) and the results against each level (the level's name and its rating at the
+player's skill there, then won, drawn, lost: a crown, `=`, an X, each with its count;
+left out where the panel can't hold them in the height); at the right the games in that draughts, newest first, in a scrolling list
 of 88 dp rows: the result as a crown, `=`, or an X, the opponent ("Medium 1644", or "A
 friend") over the date, the rating's change, and the player's blunders as `?? n`. In
 portrait the panel is above the list. Only the rows in view are declared.
