@@ -141,8 +141,7 @@ the real ones.
 7. Ratings per draughts (built) or one for all; show the computer's rating beside its
    level in the setup ("Medium · 1644")?
 8. Dates are UTC; the local date needs the system's time zone (a small C call).
-9. A past game's replay (the prototype's `view=replay`): the moves are kept in the file,
-   the screen isn't built.
+9. ~~A past game's replay~~: built in task 078 (2026-11-13), from a results row.
 
 ## Native work
 
@@ -160,7 +159,7 @@ the real ones.
 - [x] The results screen
 - [ ] A summary at the panel's foot (each side's accuracy and marks counted), as the
       prototype has
-- [ ] The replay of a past game
+- [x] The replay of a past game (task 078's C, 2026-11-13)
 - [ ] The results screen in `test/shell/sizes`' sizes, with insets
 
 ## Acceptance criteria

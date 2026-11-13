@@ -26,8 +26,11 @@ Task 074 carries the rest of the history's work; this one these points.
       line saying what each choice shows
 - [x] A, B, and C prototyped in `prototypes/history.html`, for the user to choose
       (2026-11-13, below)
-- [ ] The chosen takes built, checked on the Mac at the Pixel's and the iPhone's sizes,
-      then on a phone
+- [x] C built: a past game's replay, checked on the Mac at the Pixel's sizes and the
+      tablet's (2026-11-13, notes)
+- [ ] A and B built (the phone's move line, the marks' tips and legend), checked on the
+      Mac at the Pixel's and the iPhone's sizes, then on a phone
+- [ ] The legend under the replay's list, once A and B are in
 
 ## Acceptance criteria
 
@@ -35,8 +38,8 @@ Task 074 carries the rest of the history's work; this one these points.
 - [x] The move list's setting in one place, its choices explained
 - [ ] A phone in landscape shows the last move and opens the list; portrait as chosen
 - [ ] A mark explains itself on a touch and under the mouse
-- [ ] A past game's moves listed and replayed on a board, touching neither resume nor the
-      results
+- [x] A past game's moves listed and replayed on a board, touching neither resume nor the
+      results (on a phone still to check)
 
 ## Notes
 
@@ -46,6 +49,25 @@ Task 074 carries the rest of the history's work; this one these points.
   every stacked landscape, and portrait's board gives up 24 to 36 dp (`test/shell/sizes`).
   The results panel's freed room shows the levels on a phone in landscape. Checked on
   the Mac at the Pixel 7a's landscape (four themes) and portrait, and the tablet's size.
+- C (2026-11-13): `src/shell/replay.goose`, opened from a results row (the whole row);
+  how it works in `docs/architecture/rendering.md` ("A game's replay"), why in
+  `docs/decisions/rendering.md`. The steps, back, and the moves are offered to the keys'
+  focus; Left and Right step from anywhere (`gui::claim_sideways`, new), and the focus on
+  a move shows it. New strings `replay.title`, `replay.no_count`, `replay.start`; four
+  chevron icons (`gui::FIRST`..`LAST`). Room at the sizes (`test/shell/replay`): the
+  Pixel 7a's landscape (480 dp, its cutout and bar) the board 395 dp, the column 447 dp,
+  12 moves listed in view; its portrait the board 432 dp; a 20:9 phone at 540 dp 450
+  (landscape) and 492 (portrait); the tablet's landscape 752 with 30 moves in view; a
+  9:16 phone at 480 dp 329 and 284. A frame's quads at most 347 of 512 (a foldable's
+  landscape, Estonian). `test/shell/sizes` checks it at every size, all in place.
+  Headless shots at the Pixel's landscape and portrait, the tablet, Estonian, the start,
+  and Left with the keys: `build/notes/078-replay/`, taken from a history of the
+  prototype's game (`--history`, `--screen replay --ply 39`).
+- Left for C: the legend of the marks under the list (after A and B); the prototype's
+  game card on the tablet ("Rating then: 1031 → 1023") left out; a game begun from a set
+  position (`first=black`, the dev flag `--fen`) doesn't replay, as the history keeps no
+  start, and its list stops at its first move; the 3D board chosen still replays on the
+  flat one.
 
 ## Takes to choose
 

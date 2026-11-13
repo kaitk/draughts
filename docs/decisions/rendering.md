@@ -507,6 +507,40 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   as the puzzles' draughts switch does (2026-11-13, task 078): alone they were faint
   glass on a bright photograph (a phone in landscape over winter's snow). The same fix
   as settings' tabs, each on glass (2026-11-09).
+- A past game replays on a screen of its own, opened by a touch anywhere on its results
+  row, its `??` count too (2026-11-13, task 078's C, from the prototype's `view=replay`).
+  The row's count opening a tip instead was rejected: a row with two targets is a miss
+  waiting to happen for a child, and a key at the column's head is to say what `??`
+  counts (task 078's B).
+  - Landscape puts the steps in a column of four taps at the board's left, the column at
+    its right for back, the title, and the list (chosen from the prototype); under the
+    board would cost it a tap's height on a phone. Portrait puts them in a row under the
+    board. The board gives way only where the column would be under 300 dp (a 9:16
+    phone's landscape: 329 dp) or the glass under 220 dp in portrait (a 9:16 phone at 480
+    dp: 284; 300 dp, the prototype's, left it 204).
+  - It opens at the game's end, its list at its foot as the moves panel's is: the row
+    stands for the game as it ended. Opening at the start was rejected as a step away
+    from what was tapped.
+  - The list's moves are 34 dp taps, under the 88 dp rule: a miss only shows the
+    neighbouring move, which the steps put right, and 88 dp rows would show four moves
+    on a phone. They are drawn as the moves panel's rows, no tiles, so `test/shell/sizes`
+    counts the steps and back as the screen's taps.
+  - The keys: Left and Right step the moves from anywhere, as a chess site's replay does,
+    rather than moving the focus by the controls' rects, which left them dead ends from
+    the column of steps (`gui::claim_sideways`). The focus on a move shows it, so Up and
+    Down in the list step a whole move.
+  - It counts for nothing: it has a board and moves of its own, never the game's, so no
+    flag is needed to keep it out of the history, the ratings, or the game to continue.
+    A step on plays the move on the board as the game does; a jump shows its position at
+    once, as playing every move between would take seconds.
+  - The board is the flat one even with the 3D board chosen, as the prototype has it:
+    the replay is a page for reading moves, and a 3D board would leave less room for the
+    list. The positions are played out with the rules once, as the replay opens, from
+    the moves the history keeps; the file keeps no positions, as the moves give them.
+  - The game's line goes under the title where it fits beside nothing else, else at the
+    top of the glass; the prototype's card on the tablet (result, opponent, date, side,
+    "Rating then: 1031 → 1023") was left out for now, as the results row says the
+    rating's change already.
 
 ### Board and pieces
 

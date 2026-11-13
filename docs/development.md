@@ -118,7 +118,10 @@ the screens around it `shell/` (home, and which screen shows), each tested headl
 (`test/board/`, `test/gui/`, `test/game/`, `test/shell/`). The app opens at home; `--fen`,
 `--tap` (`c3`, or `d10` on 10 × 10), or `--screen game` open the game screen,
 `--screen settings` settings, `--screen friend` or `computer` home's setup, `--screen
-puzzles` the puzzles to pick from, and `--puzzle ID` that puzzle, whose taps go to its
+puzzles` the puzzles to pick from, `--screen results` the results, `--screen replay` the
+replay of the newest game in the history, at its end or at `--ply N` (0 the start;
+`--history FILE` reads the games from a history file in place of the player's, for
+shots: `--history games.txt --screen replay --ply 39 --frames 12`), and `--puzzle ID` that puzzle, whose taps go to its
 board (`--puzzle 21 --tap f4 --tap e5`). `--go settings` (or `home`, `game`, `play`,
 `puzzles`, `puzzle`) switches there on the second frame through its transition, once
 any `--tap`s have played out, and `--hold 0.4` keeps a transition at 40% of the way, for

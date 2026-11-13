@@ -1027,7 +1027,57 @@ player's skill there, then won, drawn, lost: a crown, `=`, an X, each with its c
 left out where the panel can't hold them in the height); at the right the games in that draughts, newest first, in a scrolling list
 of 88 dp rows: the result as a crown, `=`, or an X, the opponent ("Medium 1644", or "A
 friend") over the date, the rating's change, and the player's blunders as `?? n`. In
-portrait the panel is above the list. Only the rows in view are declared.
+portrait the panel is above the list. Only the rows in view are declared. Each row is a
+tap, the whole of it, its blunders' count too, lit under the mouse and by a press: it
+opens the game's replay.
+
+#### A game's replay
+
+`src/shell/replay.goose` shows a finished game at any of its moves, opened at its end.
+In landscape the steps (to the start, back one, on one, to the end; chevrons, the first
+and last at a bar) are a column of four tap-square tiles at the board's left, up to 16
+dp apart and centered on the board; the board takes the safe area's height less the 24 dp
+margins, unless the column at its right would be under 300 dp; the column holds back
+and the title over a glass. In portrait back and the title head the screen, the board
+under them as wide as the screen allows with 220 dp left for the glass, the steps a row
+of four under it, then the glass. The Pixel 7a's landscape gives the board 395 dp and the
+column 447; its portrait, the board 432; the tablet's landscape, the board 752 and the
+column 356. A step that would change nothing (back at the start, on at the end) is
+dimmed at 35% but keeps its tap and the keys' focus.
+
+The title "Replay" has a pill beside it, "Doesn't count", in the glow color at 20%
+(under the title where both don't fit on one line). The game's line, its result sign
+(crown, `=`, X), the opponent and its rating, and the date in the small face, sits under
+them where it fits on its own line, else at the top of the glass. The glass holds, in
+order: what the move shown was (the mover's piece, "20. 33-29" or "20… 22x24" for black,
+its mark, and the mark's tip from `strings/` running on to a second line, in a smaller
+face if it needs; "The start" at move 0), a rule, each side's piece and accuracy heading
+its column, and the moves in a scrolling list of 34 dp rows as the moves panel draws
+them: the number, white's and black's move with their marks. The move shown is lit in
+the glow color, the moves after it at 55%; the list scrolls to keep the move shown in
+view, with a row clear of either edge, whenever it changes. A move is a tap, the half
+row: it jumps there. The rows are under the 88 dp rule: a miss shows the neighbouring
+move, which the steps put right. On the board, the last move's square is marked as the
+game's is, and its mark sits in a disc at the square's top right corner once the piece
+has arrived: the star on the glow color, `?!` gold, `?` orange, `??` red.
+
+The board takes no taps; it is always the flat one, with no hint, undo, or turn panel.
+A step on plays that one move on the board as the game does (`board::start_move`); any
+other step or a jump shows its position at once. With the keys, Left and Right step back
+and on from wherever the focus is (`gui::claim_sideways`: the screen takes them, and the
+focus doesn't move for them); the focus come to a move (Tab to the list lands on the move
+shown, then Up and Down) shows it, and follows the move shown as Left and Right step.
+Back, Escape, and Android's back go to the results as they were left, their draughts and
+scroll kept.
+
+The replay counts for nothing: its board and moves are its own (`shell.replay`), never
+the game's, so the game to continue, its saved image (which keeps home, not the replay,
+as its screen), the history file, and the ratings stay as they were. Opening it reads
+the game's line from the history file again (`history::line_of`, as `games_of` numbers
+the games) and plays its moves out from the draughts' start with the rules into fixed
+buffers: 513 positions and 512 moves with their marks. A move is matched by its text as
+`rules::format_move` writes it, or by its first and last squares alone; the list stops at
+the first move that doesn't match. A frame then allocates nothing.
 
 ### Transitions
 

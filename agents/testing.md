@@ -96,7 +96,9 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   alone while the panels answer, then ready (`wait3d`), the computer's skill moving
   across games, home's X closing the app and where it sits, Android's back and Escape
   on each screen against its own back tile, which must be the arrow, in landscape and
-  portrait (`back`), and every screen at a
+  portrait (`back`), a past game's replay from its results row, its steps, a jump, the
+  keys, and nothing of it written or reaching the game in progress, at the sizes
+  (`replay`; `drive::past_line` makes a history line of a game played out by rule), and every screen at a
   foldable, 4:3, and a 20:9 phone in both orientations, and the phone's layout at 540
   and 480 dp (`gui::short_dp`, with a 9:16 phone at 480), its tiles on the screen and
   apart, every tap 88 dp at least, the phones again with the Pixel 7a's insets in both
