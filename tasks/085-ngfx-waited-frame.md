@@ -146,3 +146,9 @@ loop phase (agents/testing.md, "The iPhone"), alternated, ngfx first, two runs e
 ngfx was 14.65 and 14.76 ms of GPU, waited 17.18 to 17.69 (task 084): the per-sample
 shading explains all of it, and ngfx's frame is now about 4% under gfx's. Whether `auto`
 should put ngfx first on iOS or the Mac is for task 073's comparison.
+
+ngfx against gfx after the fix, full screen on the M1 Pro (2026-11-13), one build of HEAD
+before task 086's shadow commits holding both renderers, `scripts/mac_gpu_time.py`,
+alternated, three runs each: ngfx 2.92, 2.94, 2.89 ms of GPU a frame (Maximum 96 to 98%);
+gfx 3.12, 3.05 (Maximum 92 to 99%) and 3.38 (Medium 55%, not comparable). At the same
+clock state ngfx's frame is about 5% under gfx's, as on the iPhone.
