@@ -103,6 +103,10 @@ let SHADOW_SIZE = 1024;
 
 let PHOTO_SIZE = 512;
 
+// SHADOW_BAKED's field visibility map over the plan's extent (shaders::FIELD_SHADOW_FRAG):
+// 125 texels a square on 8 × 8.
+let FIELD_SHADOW_SIZE = 1024;
+
 // The pieces' occlusion of the field (shaders::OCC_FRAG), over the plan's extent: 62
 // texels a square on 8 × 8, for a falloff a piece's radius wide that rises steeply at
 // its foot.
@@ -184,6 +188,11 @@ struct Gpu {
     fading:         Pipeline,  // the lit pass for a fading piece, blended
     shadow:         Pipeline,
     few_shadow:     bool,           // lit and fading filter the shadow in 4 taps, not 9 (set_shadow)
+    shadow_way:     i32,            // SHADOW_NOW.. (shadow_way, the prototype's H key)
+    field_shadow:   Texture,        // SHADOW_BAKED's field visibility over the plan, R8
+    field_bake:     Pipeline,       // and what bakes it from the shadow map
+    field_raw:      Texture,        // the bake before its noise is smoothed (field_blur)
+    field_blur:     Pipeline,
     backdrop:       Pipeline,
     catcher:        Pipeline,
     glow:           Pipeline,
@@ -420,11 +429,56 @@ fn theme_end(g: Gpu&, which: i64, n: i64) {
 fn light(g: Gpu&) {
     let t = look(g, g.look);
     let l = model3d::spin(normalize(float3 { t.key.x, t.key.y, t.key.z }), g.turn);
+    g.frame.light_dir = model3d::f4(l, t.key.w);
+    if g.shadow_way >= SHADOW_FIT {
+        g.frame.light_view_proj = plan_light(l);
+        return;
+    }
     let light_view = look_at(l * 20.0, float3_0, float3 { 0.0, 1.0, 0.0 });
     let reach: f32 = 6.6;
     let light_proj = ortho(-reach, reach, -reach, reach, 5.0, 35.0);
     g.frame.light_view_proj = mul(light_proj, light_view);
-    g.frame.light_dir = model3d::f4(l, t.key.w);
+}
+
+// The shadow's ways (task 086's prototype, poc/3d's H key; the app keeps SHADOW_NOW):
+// the light's square view as above; the map fitted to the board (plan_light); and that
+// with the field's shadow baked from it into a map over the plan when the pieces move
+// (shaders::FIELD_SHADOW_FRAG), the field reading one texel of it a pixel.
+let SHADOW_NOW = 0;
+let SHADOW_FIT = 1;
+let SHADOW_BAKED = 2;
+let SHADOW_WAYS = 3;
+fn shadow_way_name(way: i32) -> const u8[:] {
+    if way == SHADOW_FIT { "fit" } else if way == SHADOW_BAKED { "baked" } else { "now" }
+}
+
+// The board's half width the fitted map covers: the frame's outer edge (mesh's 4.6) and
+// a little more, for its sides' feet, which the light's slant moves out by up to 0.45.
+let PLAN_REACH: f32 = 5.1;
+
+// The key light's map projected along the light onto the board's plane: a point's map
+// texel is where the light's ray through it meets y = 0, its depth how far along the
+// ray, so the field and the frame fill the map at one texel size, square, with nothing
+// round them (the square view's 13.2 wide, slanted 1.25× across the field, gave the
+// field 2.1× fewer texels). An oblique, affine projection; its handedness is the square
+// view's, so the shadow pass culls the same faces.
+fn plan_light(l: float3) -> Mat {
+    let k = 1.0 / PLAN_REACH;
+    let a: f32 = -1.0 / 14.0;          // depth: 0.5 at the origin, nearer the light lower
+    var m = default<Mat>();
+    m.c0 = float4 { k, 0.0, a * l.x, 0.0 };
+    m.c1 = float4 { -k * l.x / l.y, k * l.z / l.y, a * l.y, 0.0 };
+    m.c2 = float4 { 0.0, -k, a * l.z, 0.0 };
+    m.c3 = float4 { 0.0, 0.0, 0.5, 1.0 };
+    return m;
+}
+
+// The shadow drawn `way` (SHADOW_NOW..) from the next frame: the light again, the
+// shadow map drawn again, and the recorder's own part (set_shadow_way).
+fn shadow_way(g: Gpu&, way: i32) {
+    g.shadow_way = way;
+    light(g);
+    g.shadow_dirty = true;
 }
 
 // The board turned `turn` degrees under the light (a hot-seat turn, view3d::Camera.turn):

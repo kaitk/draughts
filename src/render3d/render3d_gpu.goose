@@ -74,6 +74,7 @@ fn shadow_pass(g: render3d::Gpu&) {
     gfx::uniforms(gfx::VERTEX, 0, f);
     draw_meshes(g, 1.0);
     gfx::end_pass();
+    if g.shadow_way == render3d::SHADOW_BAKED { field_shadow_pass(g); }
 }
 
 // draw()'s one pass into `target` of `size`, with the `backdrop` or clear, multisampled
@@ -102,6 +103,7 @@ fn board_pass(g: render3d::Gpu&, target: Texture, size: int2, backdrop: bool) {
     gfx::bind_texture(gfx::FRAGMENT, 4, g.shadow_map, g.compare);
     gfx::bind_texture(gfx::FRAGMENT, 5, g.occ_map, g.linear);
     gfx::bind_texture(gfx::FRAGMENT, 6, g.crown_map, g.linear);
+    if g.shadow_way == render3d::SHADOW_BAKED { gfx::bind_texture(gfx::FRAGMENT, 7, g.field_shadow, g.linear); }
     gfx::uniforms(gfx::VERTEX, 0, f);
     gfx::uniforms(gfx::FRAGMENT, 0, f);
     draw_meshes(g, 0.0);
@@ -354,8 +356,16 @@ fn set_aa(g: render3d::Gpu&, aa: i32, samples: i32 = SAMPLES) {
 // with `few` (shaders::SHADOW_FEW) or in 9.
 fn lit_pipelines(g: render3d::Gpu&, few: bool) {
     let lit_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::LIT_VERT);
-    let lit_fs = if few { embed_shader("frag", shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG) }
-                 else { embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG) };
+    let baked = g.shadow_way == render3d::SHADOW_BAKED;
+    let lit_fs = if baked && few {
+                     embed_shader("frag", shaders::SHADOW_BAKED, shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME,
+                                  shaders::FIELD_SHADOW_DECL, shaders::LIT_FRAG)
+                 } else if baked {
+                     embed_shader("frag", shaders::SHADOW_BAKED, shaders::FS_SET, shaders::FRAME, shaders::FIELD_SHADOW_DECL,
+                                  shaders::LIT_FRAG)
+                 } else if few {
+                     embed_shader("frag", shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG)
+                 } else { embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG) };
     g.lit = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true });
     g.fading = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true,
                                                                  blend: gfx::BLEND_ALPHA });
@@ -371,6 +381,50 @@ fn set_shadow(g: render3d::Gpu&, few: bool) {
     gfx::release(g.lit);
     gfx::release(g.fading);
     lit_pipelines(g, few);
+}
+
+// The shadow drawn `way` (render3d::SHADOW_NOW..) from the next draw on, the board drawn
+// again by the caller (task 086's prototype, poc/3d's H key): SHADOW_BAKED's map and
+// bake made the first time it is chosen, the lit pipelines made again.
+fn set_shadow_way(g: render3d::Gpu&, way: i32) {
+    guard way != g.shadow_way else { return; }
+    render3d::shadow_way(g, way);
+    if way == render3d::SHADOW_BAKED && g.field_bake.id == 0 {
+        g.field_shadow = gfx::texture(gfx::TextureDesc { format: gfx::R8, usage: gfx::COLOR_TARGET | gfx::SAMPLED,
+                                                         width: render3d::FIELD_SHADOW_SIZE,
+                                                         height: render3d::FIELD_SHADOW_SIZE });
+        g.field_bake = gfx::pipeline(embed_shader("vert", shaders::FULL_VERT),
+                                     embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::FIELD_SHADOW_FRAG));
+        g.field_raw = gfx::texture(gfx::TextureDesc { format: gfx::R8, usage: gfx::COLOR_TARGET | gfx::SAMPLED,
+                                                      width: render3d::FIELD_SHADOW_SIZE,
+                                                      height: render3d::FIELD_SHADOW_SIZE });
+        g.field_blur = gfx::pipeline(embed_shader("vert", shaders::FULL_VERT), embed_shader("frag", shaders::FIELD_BLUR_FRAG));
+    }
+    guard g.lit.id != 0 else { return; }
+    gfx::flush();
+    gfx::release(g.lit);
+    gfx::release(g.fading);
+    lit_pipelines(g, g.few_shadow);
+}
+
+// SHADOW_BAKED's field visibility baked from the shadow map just drawn.
+fn field_shadow_pass(g: render3d::Gpu&) {
+    var pass = gfx::PassDesc { clear_color: false };
+    pass.color[0] = g.field_raw;
+    gfx::begin_pass(pass);
+    gfx::bind(g.field_bake);
+    gfx::bind_texture(gfx::FRAGMENT, 0, g.shadow_map, g.compare);
+    gfx::bind_texture(gfx::FRAGMENT, 1, g.shadow_map, g.linear);
+    gfx::uniforms(gfx::FRAGMENT, 0, g.frame);
+    gfx::draw(3);
+    gfx::end_pass();
+    var blur = gfx::PassDesc { clear_color: false };
+    blur.color[0] = g.field_shadow;
+    gfx::begin_pass(blur);
+    gfx::bind(g.field_blur);
+    gfx::bind_texture(gfx::FRAGMENT, 0, g.field_raw, g.linear);
+    gfx::draw(3);
+    gfx::end_pass();
 }
 
 struct Metrics { m: float4 }
@@ -665,14 +719,15 @@ fn warm(g: render3d::Gpu&, k: i64) {
 fn release(g: render3d::Gpu&) {
     let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.photo, g.shadow_map, g.occ_map, g.crown_map, g.color,
                     g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across, g.warm_color, g.warm_depth,
-                    g.own.warm_kept, g.edges, g.weights, g.area, g.search];
+                    g.own.warm_kept, g.edges, g.weights, g.area, g.search, g.field_shadow, g.field_raw];
     for t in textures { if t.id != 0 { gfx::release(t); } }
     let buffers = [g.board_vb, g.board_ib, g.piece_vb, g.piece_ib, g.instances, g.squares, g.marks, g.glows];
     for b in buffers { if b.id != 0 { gfx::release(b); } }
     let samplers = [g.linear, g.aniso, g.compare];
     for s in samplers { if s.id != 0 { gfx::release(s); } }
     let pipelines = [g.lit, g.fading, g.shadow, g.backdrop, g.catcher, g.glow, g.pulse, g.depth_only, g.copy, g.show,
-                     g.occ, g.kept, g.bake, g.shrink, g.blur, g.smaa_edges, g.smaa_weights, g.smaa_blend];
+                     g.occ, g.kept, g.bake, g.shrink, g.blur, g.smaa_edges, g.smaa_weights, g.smaa_blend,
+                     g.field_bake, g.field_blur];
     for p in pipelines { if p.id != 0 { gfx::release(p); } }
     gfx::flush();
     g = default<render3d::Gpu>();

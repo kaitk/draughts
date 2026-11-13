@@ -66,7 +66,8 @@ Open:
   the Bazzite PC.
 - Content and play: 037 the puzzle set by theme, 038 players, 074 the games' history,
   marked moves, and a rating (built on the `history` branch, its takes to choose).
-- The 3D board: 041 a carved spring board, 042 its frame cost (the idle wakeup left).
+- The 3D board: 041 a carved spring board, 042 its frame cost (the idle wakeup left), 086
+  better shadows at a phone's cost (the fitted map and the baked field prototyped).
 - Menus: 080 one New game row on home with the opponent chosen in the setup, settings
   as one scrolling list, and the 3D board's material (wood, stone, carved, or auto).
 - Frames: 055 both boards locked to the display's rate on every device, 056 even pacing
