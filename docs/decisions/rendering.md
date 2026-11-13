@@ -603,6 +603,10 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   panel under it, and those looked lighter). It replaces 2026-11-09's back over a panel
   of settings and start over; back is still the same control in the same corner on
   every screen. The column is 288 dp, not 336. A phone's moves' line has the same glass.
+- A tile standing without a panel (back on every screen, the way out in landscape, the
+  moves' line) sits on glass's tint alone, `gui::under_tile`, with no border, highlight,
+  or shadow of the glass's (2026-11-13, the user: such tiles looked too glassy). On full
+  glass it was edged twice and shadowed twice; now it looks as a tile on a panel does.
 - The moves panel stands under the way out on a tablet and a desktop (2026-11-13, the
   user: the screen was right-heavy, and moves usually sit at the left), 16 dp under its
   tiles, 24 on a desktop. It replaces task 074's take a, the panel under the play panel;

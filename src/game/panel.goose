@@ -1081,8 +1081,8 @@ fn leave(g: gui::Gui&, l: Layout) -> i64 {
     gui::group(g, GROUP_OUT);
     if columns(l) {
         if gui::back(g, gui::PANEL_IDS, o.tiles[0], strings::get(OUT_WORDS[0]), l.out_row) { chosen = BACK; }
-        gui::glass(g, o.tiles[1], 22.0);
-        gui::glass(g, o.tiles[2], 22.0);
+        gui::under_tile(g, o.tiles[1], 22.0);
+        gui::under_tile(g, o.tiles[2], 22.0);
     } else {
         gui::panel(g, l.left);
     }

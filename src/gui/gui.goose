@@ -722,6 +722,15 @@ fn glass(g: Gui&, r: float4, radius: f32) {
                   extra: float4 { g.scale, 0.0, 0.0, 0.0 } });
 }
 
+// Glass's tint alone under a tile that stands without a panel (the way back, the game's
+// way out in landscape, the moves' line): no border, highlight, or shadow of its own, so
+// the tile looks as it does on a panel rather than doubly edged (the user, 2026-11-13).
+fn under_tile(g: Gui&, r: float4, radius: f32) {
+    take(g, r);
+    add(g, Quad { rect: r, look: float4 { GLASS, radius * g.scale, 0.0, 0.0 },
+                  extra: float4 { g.scale, 1.0, 0.0, 0.0 } });
+}
+
 // A plain rounded rect, such as a rule; `radius` in pixels.
 fn fill(g: Gui&, r: float4, color: float4, radius: f32) {
     add(g, Quad { rect: r, color: color, look: float4 { FILL, radius, 0.0, 0.0 },
@@ -1084,7 +1093,7 @@ fn back_width(g: Gui&, label: const u8[:]) -> f32 {
 // The way back in r, on its own glass, or with `stacked` the arrow over the word in a
 // tap's square where a page has no room for it wider; true when tapped.
 fn back(g: Gui&, id: i64, r: float4, label: const u8[:], stacked: bool = false) -> bool {
-    glass(g, r, 22.0);
+    under_tile(g, r, 22.0);
     return labelled(g, id, r, BACK, BACK_ICON, label, HEADING, if stacked { STACKED } else { MIDDLE });
 }
 

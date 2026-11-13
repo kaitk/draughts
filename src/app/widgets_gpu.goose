@@ -414,6 +414,13 @@ let FRAG = """
             // there (screen.z 2), dimmed and saturated, under the theme's tint, with a
             // light border and top highlight, and a soft shadow outside it.
             float d = box(p, c, h, r);
+            // Bare (extra.y 1): only the tint, under a tile standing alone, which brings
+            // its own border, highlight, and shadow, so it looks as it does on a panel.
+            bool bare = v_extra.y > 0.5;
+            if (bare && d >= 0.5) {
+                result = vec4(0.0);
+                return;
+            }
             // Outside it only the shadow, under nothing (its cover 0); more than 3 dp
             // inside it no highlight (2 dp down, 1 dp in), border, or shadow: each the
             // same as below, without the parts that are 0 there.
@@ -431,6 +438,11 @@ let FRAG = """
             g = mix(g, glass.rgb, glass.a);
             if (inner) {
                 result = vec4(g, 1.0);
+                return;
+            }
+            if (bare) {
+                float b = cover(d);
+                result = vec4(g * b, b);
                 return;
             }
             g = mix(g, vec3(1.0), 0.12 * top_line(p, c, h, r, u));
