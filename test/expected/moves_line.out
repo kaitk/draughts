@@ -9,7 +9,7 @@ the Pixel 7a, landscape, 540 dp, safe 1141 x 498 dp:
 the Pixel 7a, portrait, 540 dp, safe 540 x 1099 dp:
   portrait, flat: the bar's line 182,214 176x34, its tap 200x76 dp, the sheet 540x578 dp, the board 492 dp; the tap under 88 dp;
     a tap on it: open, 7 tiles (6 closed), the head 508x88 dp, 238 quads; its head: closed; back: closed, on the game; the keys: open, the head focused, then closed, the line focused
-  portrait, 3D: the bar's line 182,206 176x34, its tap 200x76 dp, the sheet 540x634 dp, the 3D board 492 dp; the tap under 88 dp;
+  portrait, 3D: the bar's line 182,236 176x34, its tap 200x76 dp, the sheet 540x604 dp, the 3D board 492 dp; the tap under 88 dp;
     a tap on it: open, 7 tiles (6 closed), the head 508x88 dp, 242 quads; its head: closed; back: closed, on the game; the keys: open, the head focused, then closed, the line focused
 the Galaxy A33 (insets assumed), landscape, 512 dp, safe 1036 x 512 dp:
   landscape, flat: the line 24,340 192x148, its tap 192x148 dp, the column 24,24 192x204, the catch 24,240 192x88, the sheet 274x512 dp, the board 464 dp, in place
@@ -19,7 +19,7 @@ the Galaxy A33 (insets assumed), landscape, 512 dp, safe 1036 x 512 dp:
 the Galaxy A33 (insets assumed), portrait, 512 dp, safe 512 x 1036 dp:
   portrait, flat: the bar's line 168,196 176x34, its tap 200x76 dp, the sheet 512x546 dp, the board 464 dp; the tap under 88 dp;
     a tap on it: open, 7 tiles (6 closed), the head 480x88 dp, 238 quads; its head: closed; back: closed, on the game; the keys: open, the head focused, then closed, the line focused
-  portrait, 3D: the bar's line 168,185 176x34, its tap 200x76 dp, the sheet 512x602 dp, the 3D board 464 dp; the tap under 88 dp;
+  portrait, 3D: the bar's line 168,215 176x34, its tap 200x76 dp, the sheet 512x572 dp, the 3D board 464 dp; the tap under 88 dp;
     a tap on it: open, 7 tiles (6 closed), the head 480x88 dp, 242 quads; its head: closed; back: closed, on the game; the keys: open, the head focused, then closed, the line focused
 the iPhone 13 mini, landscape, 500 dp, safe 949 x 470 dp:
   landscape, flat: the line 24,340 192x106, its tap 192x106 dp, the column 24,24 192x204, the catch 24,240 192x88, the sheet 252x470 dp, the board 422 dp, in place
@@ -29,7 +29,7 @@ the iPhone 13 mini, landscape, 500 dp, safe 949 x 470 dp:
 the iPhone 13 mini, portrait, 500 dp, safe 500 x 971 dp:
   portrait, flat: the bar's line 162,169 176x34, its tap 200x76 dp, the sheet 500x513 dp, the board 452 dp; the tap under 88 dp;
     a tap on it: open, 7 tiles (6 closed), the head 468x88 dp, 238 quads; its head: closed; back: closed, on the game; the keys: open, the head focused, then closed, the line focused
-  portrait, 3D: the bar's line 162,158 176x34, its tap 200x76 dp, the sheet 500x569 dp, the 3D board 452 dp; the tap under 88 dp;
+  portrait, 3D: the bar's line 162,188 176x34, its tap 200x76 dp, the sheet 500x539 dp, the 3D board 452 dp; the tap under 88 dp;
     a tap on it: open, 7 tiles (6 closed), the head 468x88 dp, 242 quads; its head: closed; back: closed, on the game; the keys: open, the head focused, then closed, the line focused
 the iPhone 13 mini at its points, landscape, 375 dp, safe 712 x 354 dp:
   landscape, flat: the line 24,224 192x106, its tap 192x106 dp, the column 24,24 192x188, the catch as counts, the sheet 228x354 dp, the board 232 dp, in place

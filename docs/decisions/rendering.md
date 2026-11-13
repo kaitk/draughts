@@ -641,6 +641,10 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   the board at rest where the top view's board reaches higher (2026-11-13, the user), so
   that view shrinks less; sized to clear the top view entirely, it fell back to the left
   on 4:3.
+- In portrait the camera buttons are always a row at the right edge under the board
+  (2026-11-13, the user: a column there, beside nothing, looked like wasted space). It
+  replaces a column wherever the board kept its width beside it; the board keeps its
+  size, the screen's stack centered down the safe area 32 dp higher or lower.
 - The move list's setting is settings' alone (2026-11-13, task 078; the user: once is
   enough), replacing 2026-11-12's three tiles kept on the results screen too. There its
   words alone (Off, Moves, Marks) didn't say what each shows, so a line under the

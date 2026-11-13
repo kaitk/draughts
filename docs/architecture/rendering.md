@@ -1341,7 +1341,7 @@ board's does and the backdrop over it as opaque as the blur.
   **The camera buttons** (`game3d.html`'s placement `a`):
   round floating buttons under the play panel in landscape, a column at the right edge
   (a row centered under the panel where a column runs past the bottom margin: a phone), and at the right edge above the play in
-  portrait (a row where a column would shrink the board): a shaded disc with a hairline
+  portrait, a row: a shaded disc with a hairline
   and a line icon at the 2.4-unit stroke, no panel (`gui::floating`, the UI shader's
   `FLOAT` quad and its icons). A 56 dp touch area and a 44 dp disc on a tablet (its
   shorter side 600 dp or more), 48/40 on a phone in landscape, 52/42 in portrait. The

@@ -430,12 +430,12 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
     let disc = (if phone { DISC_PHONE_PORTRAIT } else { DISC_TABLET }) * s;
     let len = 2.0 * touch + BUTTON_GAP * s;
     // The bar, the board, the buttons between the board and the play at the right edge,
-    // the play, centered down the safe area: the buttons a column where the board keeps
-    // the width beside it, else a row, which takes less of the height.
+    // the play, centered down the safe area: the buttons a row, which takes the least of
+    // the height (2026-11-13, the user: a column there, beside nothing, looked wasted).
     let b = view3d::bounds(cam, n);
     let w = width - 2.0 * gap;
     let room = height - top - bottom - 3.0 * gap - 2.0 * m;
-    let col = w * b.w / b.z <= room - len;
+    let col = false;
     let tall = if col { len } else { touch };
     let h = min(w * b.w / b.z, room - tall);
     let x = area.x + gap;
