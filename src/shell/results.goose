@@ -4,9 +4,9 @@
 // Back and the title head it, the draughts as tiles at the head's right, each with its
 // rating, joined on one glass as the puzzles' switch is. In landscape the rating stands in
 // a panel at the left and the games at the right; in portrait the panel is above the
-// games. The moves panel's setting is settings' alone (2026-11-13). Reached from who's playing (who.goose's results tile). Everything is read off the
-// history the shell read when the screen opened (record.goose); nothing allocates. A
-// game's row opens its replay (replay.goose).
+// games. Reached from home's Results row. Everything is read off the history the shell
+// read when the screen opened (record.goose); nothing allocates. A game's row opens its
+// replay (replay.goose).
 namespace results;
 import std;
 import vec;

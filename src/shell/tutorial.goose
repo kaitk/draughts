@@ -62,6 +62,9 @@ let SETTINGS = gui::ASK_SETTINGS;
 let PUZZLES = 1;            // the end's: the Learn theme's first open puzzle
 let NEW_GAME = 2;           // home's setup, the draughts learned chosen
 let HOME = 3;
+// What its panel asks for, besides BACK, SETTINGS, and gui::ASK_RESTART.
+let NEXT = 4;               // the panel's next was tapped
+let CAMERA = 5;             // a camera button was
 
 // The ids: next is the panel's (panel::EYE_ID, as a puzzle's); the end's card's own.
 let CARD = gui::TUTORIAL_IDS;
@@ -87,10 +90,12 @@ struct Lesson {
     at:      f64      = 0.0,   // when the child's move lands (REPLY)
     grab:    float2   = float2 { 0.0, 0.0 }, // on the 3D board, a held piece against the finger (board::touch)
     cam:     rig::Rig = rig::Rig {},          // and the camera its buttons move
+    steps:   i64[..MAX_STEPS] = [],           // steps(variant), as it was opened
 }
 
 fn new() -> Lesson {
     var ls = Lesson { b: board::new(rules::INTERNATIONAL), .. };
+    steps(rules::INTERNATIONAL, ls.steps);
     ls.b.hints = board::MOVES;
     ls.b.by_hand = true;
     return ls;
@@ -115,11 +120,7 @@ fn count(variant: u8) -> i64 {
 }
 
 // The step showing, as STEPS name it.
-fn current(ls: Lesson&) -> i64 {
-    var all: i64[..MAX_STEPS] = [];
-    steps(ls.variant, all);
-    return all[clamp(ls.step, 0, all.len - 1)];
-}
+fn current(ls: Lesson&) -> i64 { ls.steps[clamp(ls.step, 0, ls.steps.len - 1)] }
 
 // A step's position in `variant`.
 fn start_of(s: i64, variant: u8) -> rules::Position {
@@ -132,7 +133,8 @@ fn start_of(s: i64, variant: u8) -> rules::Position {
 // Opens `variant`'s tutorial at step `step` (0 the first), the camera at rest.
 fn open(ls: Lesson&, variant: u8, step: i64 = 0) {
     ls.variant = variant;
-    ls.step = clamp(step, 0, count(variant) - 1);
+    steps(variant, ls.steps);
+    ls.step = clamp(step, 0, ls.steps.len - 1);
     rig::reset(ls.cam);
     restart(ls);
 }
@@ -147,7 +149,7 @@ fn restart(ls: Lesson&) {
 }
 
 // Whether this is the tutorial's last step.
-fn last(ls: Lesson&) -> bool { ls.step == count(ls.variant) - 1 }
+fn last(ls: Lesson&) -> bool { ls.step == ls.steps.len - 1 }
 
 // The first step's answer in the board's moves, or -1.
 fn reply(ls: Lesson&) -> i64 {
@@ -257,14 +259,12 @@ fn animating(ls: Lesson&, g: gui::Gui&, now: f64) -> bool {
     return board::animating(ls.b, now) || gui::animating(g) || ls.state == REPLY || rig::moving(ls.cam, now);
 }
 
-let NEXT = 4;               // the panel's next was tapped
-let CAMERA = 5;             // a camera button was
 
 // The steps as dots, `most` dp across and `most_gap` apart from r's left, smaller where
 // they wouldn't fit r's width: those played lit at 60%, this one lit.
 fn dots(ls: Lesson&, g: gui::Gui&, r: float4, most: f32, most_gap: f32) {
     let u = g.scale;
-    let n = count(ls.variant);
+    let n = ls.steps.len;
     let k = min(1.0, (r.z / u + most_gap) / (n * (most + most_gap)));
     let d = most * k;
     let gap = most_gap * k;
