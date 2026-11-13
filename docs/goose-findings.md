@@ -9,8 +9,23 @@ every change Draughts needs merged in. Each change is also a branch of its own o
 `main`, offered upstream one at a time (2026-11-12). Pull requests the user opens, not yet
 opened (2026-11-11): those branches (task 065 lists them, and which stack on which;
 `upstream-series` is all of them) to `aardappel/goose_gfx`; and `kaitk/NoGraphicsAPI`'s
-`astc-6x6`, ASTC 6 × 6, `vsync-option`, and `linux-presentation` (2026-11-12) to
-`sebbbi/NoGraphicsAPI`. An entry's "Upstream" line says what each proposes.
+`astc-6x6`, ASTC 6 × 6, `vsync-option`, `linux-presentation` (2026-11-12), and
+`metal-root-hint` (2026-11-13) to `sebbbi/NoGraphicsAPI`. An entry's "Upstream" line says what each proposes.
+
+## NoGraphicsAPI: Metal's root alignment hint shades every sample of an MSAA pass (2026-11-13)
+
+`GPU_ROOT` on Metal loads each shader's root through `__builtin_assume((ptr & 15) == 0)`
+on the constant root pointer. With it, Apple's compiler runs a multisampled pipeline's
+fragment shader once per sample: ngfx's 4× pass for the 3D board took 11.8 ms against
+gfx's 2.1 on the M1 Pro (headless, 3600 × 2260), 15 ms of GPU a frame full screen, and
+14.7 ms on the iPhone 13 mini against gfx's 9. Single-sample pipelines lost about 20%.
+Task 085 has the counters and a standalone repro.
+
+- Here: `kaitk/NoGraphicsAPI`'s `metal-root-hint`, on upstream `main`, drops the hint on
+  Metal (the alignment argument stays for Vulkan); merged into `ngfx`, which goose-ngfx
+  follows. ngfx's 4× pass now takes what gfx's does.
+- Upstream: the `metal-root-hint` pull request. `__builtin_assume_aligned` isn't an
+  alternative: it doesn't compile on a `constant` pointer.
 
 ## Goose: `embed_shader` drops `mediump`, so no shader runs in fp16 (2026-11-13)
 
