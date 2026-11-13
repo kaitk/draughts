@@ -248,11 +248,19 @@ fn row_of(gm: Game&, i: i64) -> i64, bool {
     return a / 2 + 1, a % 2 == 1;
 }
 
-// The panel in l.moves, if the layout has room for it and the setting shows it.
+// The panel in l.moves, if the layout has room for it and the setting shows it: a head,
+// "Move list" over a rule, as a phone's moves' line has, and the list under it.
 fn moves_panel(gm: Game&, g: gui::Gui&, l: panel::Layout) {
     guard gm.moves_shown != 0 && l.moves.z > 0.0 && l.moves.w > 0.0 else { return; }
+    let u = g.scale;
     gui::panel(g, l.moves);
-    moves_list(gm, g, l.moves, MOVES_LIST, true);
+    var room = l.moves;
+    let head = gui::cut_top(room, (MOVES_PAD + LINE_HEAD) * u);
+    let words = float4 { head.x + MOVES_PAD * u, head.y + MOVES_PAD * u, head.z - 2.0 * MOVES_PAD * u, LINE_HEAD * u };
+    let word = strings::get(strings::SETTINGS_MOVES);
+    gui::text(g, gui::fitting(g, gui::SMALL, word, words.z), words, word, 0.7, 0.0, gui::LEFT);
+    gui::fill(g, float4 { words.x, words.y + words.w - 2.0 * u, words.z, max(1.0, u) }, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
+    moves_list(gm, g, room, MOVES_LIST, true);
 }
 
 // The moves as rows in r, a list scrolled within it (`id`, gui::scroll_begin): every

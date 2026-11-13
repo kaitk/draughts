@@ -16,7 +16,8 @@ let SHEET_DIM = gui::PANEL_IDS + 8;     // and the dim layer over the screen abo
 let SHEET_LIST = gui::PANEL_IDS + 9;    // its list's id (gui::scroll_begin)
 let LINE_ROW = 31.0;        // dp a row in the landscape line
 let LINE_NUMBER = 26.0;     // dp its numbers take
-let LINE_CHEVRON = 20.0;    // dp: the line's chevron, in its top right corner
+let LINE_HEAD = 30.0;       // dp: the line's head, "Move list" and a chevron over a rule,
+let LINE_CHEVRON = 20.0;    // dp: the chevron at its right
 let LINE_OLDER: f32 = 0.6;  // the line's rows before the last, faded
 let SHADE:      f32 = 0.38;   // the dim layer's black over what the portrait sheet leaves
 let SHEET_R = 28.0;         // dp: the sheet's corners where it ends on the screen
@@ -133,19 +134,24 @@ fn moves_line(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) 
     return clicked;
 }
 
-// The landscape line's inside: the last rows of the moves as the sheet lists them, the
-// newest at its foot, the earlier faded, the last move lit; a chevron in its top right
-// corner; and where the layout has no room for what each side has taken, its counts at
+// The landscape line's inside: a head naming the sheet it opens, "Move list" and a
+// chevron over a rule (none before the first move); the last rows of the moves as the
+// sheet lists them, the newest at its foot, the earlier faded, the last move lit; and where the layout has no room for what each side has taken, its counts at
 // the head.
 fn rows_line(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) {
     let u = g.scale;
     let r = l.line;
     let k = LINE_CHEVRON * u;
     let ns .= gm.notes;
-    if ns.len > 0 {
-        gui::glyph_icon(g, float4 { r.x + r.z - 8.0 * u - k, r.y + 8.0 * u, k, k }, gui::FWD, gui::PLAIN, 0.0, 0.8);
-    }
     var inner = float4 { r.x + 12.0 * u, r.y + 8.0 * u, r.z - 24.0 * u, r.w - 16.0 * u };
+    if ns.len > 0 {
+        let head = gui::cut_top(inner, LINE_HEAD * u);
+        let word = strings::get(strings::SETTINGS_MOVES);
+        let room = float4 { head.x, head.y, head.z - k - 4.0 * u, head.w };
+        gui::text(g, gui::fitting(g, gui::SMALL, word, room.z), room, word, 0.7, 0.0, gui::LEFT);
+        gui::glyph_icon(g, float4 { head.x + head.z - k + 4.0 * u, head.y + 0.5 * (head.w - k), k, k }, gui::FWD, gui::PLAIN, 0.0, 0.8);
+        gui::fill(g, float4 { head.x, head.y + head.w - 2.0 * u, head.z, max(1.0, u) }, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
+    }
     if l.counts {
         let head = gui::cut_top(inner, 26.0 * u);
         let d = 18.0 * u;

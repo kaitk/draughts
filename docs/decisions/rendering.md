@@ -593,6 +593,11 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
 - "No moves yet" is centered, in the panel across its first row and in a phone's moves'
   line, and the line has no chevron and takes no tap until the first move (2026-11-13,
   the user: the arrow opened an empty list). Replaces 2026-11-12's words at the left.
+- The moves' line in landscape and the moves panel have a head, "Move list" over a
+  rule, the line's with its chevron at the right (2026-11-13, the user's pick of three
+  tried on the Mac). It replaces the chevron alone in the line's top right corner, which
+  sat apart from everything in it. Rejected: the chevron beside the last move (the
+  rows lost its width, and white's mark ran into black's move).
 - The move list's setting is settings' alone (2026-11-13, task 078; the user: once is
   enough), replacing 2026-11-12's three tiles kept on the results screen too. There its
   words alone (Off, Moves, Marks) didn't say what each shows, so a line under the

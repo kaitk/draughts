@@ -1035,7 +1035,7 @@ then white's move and black's as from-to (`32-28`, `28x19`, `c3:e5`) in the body
 the latest lit with the glow at 22%, each followed by its mark ([ai](ai.md#judging-a-move)):
 a 16 dp star in the glow colour for the best, `?!` in autumn's gold, `?` orange, `??` the
 forced-capture red, nothing for a good or only move or one not judged yet. Every move is
-in the panel, a list scrolled within its glass (`gui::scroll_begin`), at its foot when a
+in the panel under a head, "Move list" in the small face, dim, over a faint rule, a list scrolled within its glass (`gui::scroll_begin`), at its foot when a
 move is added or the panel shows again; rows past its top or foot fade out over 40 dp
 there while there are more (`gui::fade_edges`, as home's scrolling menu does). Before
 the first move it says so, "No moves yet" in the body face, dim, centered across where
@@ -1065,7 +1065,8 @@ dp tall in place of 336; what each side has taken goes under it as before, and t
 of the left column down to the bottom margin is the line, a tile a tap tall at least
 (the Pixel 7a's 134 dp, the iPhone 13 mini's 106): the last rows of the moves as the
 sheet lists them, 31 dp each, the newest at the foot, the earlier at 60%, the last move
-lit, and a chevron in its top right corner. Where what each side has taken has no room
+lit, under a head 30 dp tall naming the sheet it opens, "Move list" in the small face
+and a chevron at its right, over a faint rule, as the panel's head is. Where what each side has taken has no room
 above a tap, the tiles are a tap tall and its counts (a piece and a number for each
 side) head the line. The boards keep their size: the flat board's place is unchanged,
 and the 3D board clears the whole column as it cleared the panel and the catch. In
