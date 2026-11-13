@@ -9,6 +9,21 @@ tutorial row comes back with it (taken out 2026-11-09 so the tablet's landscape 
 groups; the game group has room for it there only if the look's rows stay as they are),
 and its tile opens the tutorial again.
 
+## The take (2026-11-13)
+
+`prototypes/tutorial.html`, from `?view=players` (+, the sheet, done) on: a new player
+(and a fresh install's first) is asked "do you know how to play?" before home (`&ask=a`
+the two answers, teaching the player's draughts; `b` with the setup's draughts row on
+the card; `c` a card of the draughts after Show me). The steps, one rule each, are
+played on the board with the moves shown and any legal move taken (International and
+Brazilian 9: move, jump to take, must take, keep jumping, take the most, king, kings fly,
+kings take from afar, win; Russian 10, choose any capture in place of take the most, and
+crowned on the way). The end hands over to Puzzles (the Learn theme's first) or New game,
+the draughts kept. Where it lives later, `&entry=`: `a` a How to play row on home; `b`
+How to play in Continue's place while a new player has nothing to continue, then the
+puzzles' library's first row; `c` that row only. Proposed: ask a, entry b. Settings'
+tutorial row isn't drawn: the library's row, switched by draughts, replaces it.
+
 ## Work
 
 - The pages as a shell screen, shown on the first launch only (a flag in `settings.txt`).

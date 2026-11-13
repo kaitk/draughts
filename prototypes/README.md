@@ -16,6 +16,7 @@ no build step. Fonts load from the jsDelivr CDN, so they need internet access. S
 | `replay.html` | A past game at move 20, with the whole list and the marks' legend |
 | `players.html` | Who's playing, over home |
 | `settings.html` | Settings beside the preview board; one group at a time on a phone |
+| `tutorial.html` | Take: how to play, played on the board step by step per draughts; the new player's "do you know how to play?" (`&ask=a\|b\|c`), the end's way on to puzzles or a new game, and where it lives later (`&entry=a\|b\|c`) |
 
 Every page takes the same few parameters, none needed:
 

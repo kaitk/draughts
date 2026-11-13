@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draughts: how to play</title>
+<link rel="stylesheet" href="draughts.css">
+<script src="draughts.js"></script>
+<style>
+  /* How to play (task 026): the tutorial, how a new player reaches it, and where it lives
+     afterwards. Views by ?view=, each linking on to the next:
+       home     home's menu with the tutorial's entry, by &entry=:
+                  a  a How to play row on home, always, under Puzzles
+                  b  How to play in Continue's place, primary, while the player has no
+                     game to continue and hasn't done the tutorial (&fresh=1, the
+                     default here); later it lives in the puzzles' library as in c
+                  c  no row on home: the first row of the puzzles' library
+       players  who's playing, + for a new player
+       sheet    the new player's sheet; done goes on to ask
+       ask      "Do you know how to play?" over the dimmed photograph, by &ask=:
+                  a  the two answers; the tutorial teaches the player's draughts (their
+                     setup's, International for a new player)
+                  b  the setup's draughts row on the card above the two answers
+                  c  the two answers; Show me goes on to pick, a card of the draughts
+       pick     which draughts to learn (ask c)
+       step     the tutorial, &step=1.., one rule a step, played on the board: tap the
+                piece and a lit square (move hints show the moves here, as nowhere
+                else by default); next lights once the move is played
+       done     you know the moves: on to the puzzles' first theme or a new game
+       library  the puzzles' library with How to play as its first row (entry b, c)
+     &v=intl|brazilian|russian, the draughts taught (Russian has no take-the-most step
+     and crowns in the middle of a capture). Every page's ?device=, ?season=, ?board=3d. */
+  body.dim::after { content: ''; position: absolute; inset: 0; background: rgb(0 0 0 / 0.42); }
+  .badge { position: relative; display: grid; place-items: center; flex: none; aspect-ratio: 1; }
+  .badge .piece { position: absolute; inset: 0; }
+  .badge img { position: relative; z-index: 2; width: 56%; opacity: 0.8; }
+  .badge.on .piece { box-shadow: 0 0 0 4px var(--glow), 0 0 22px color-mix(in srgb, var(--glow) 50%, transparent); }
+
+  /* Home, as home.html with task 080's rows. */
+  .home { display: grid; grid-template-columns: 440px 1fr; padding: 0; }
+  .menu { --r: 0 32px 32px 0; display: flex; flex-direction: column; justify-content: center; gap: 2px;
+    margin-left: calc(-1 * var(--il)); padding: 24px 32px 24px calc(32px + var(--il)); }
+  .mark { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .mark .piece { width: 56px; }
+  .mark h1 { font-size: 64px; letter-spacing: 0.06em; }
+  .gear { display: none; margin-left: auto; }
+  .gear .icon { width: 40px; height: 40px; opacity: 0.85; }
+  .item { display: flex; align-items: center; gap: 18px; min-height: 88px; padding: 0 18px; border-radius: 20px; font-size: 30px; }
+  .item .icon { width: 34px; height: 34px; opacity: 0.85; }
+  .item.primary { background: color-mix(in srgb, var(--glow) 24%, transparent); }
+  .item.new { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.25); }
+  .item small { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+  .item small .icon { width: 20px; height: 20px; }
+  .item.learn small { color: var(--fg); }
+  .stage { position: relative; display: grid; place-items: center; padding: 112px 40px 40px; }
+  #board { width: min(100%, var(--h) - 88px); }
+  .chip { position: absolute; left: 24px; top: 24px; display: flex; align-items: center; }
+  .chip .badge { width: 64px; margin: 12px; }
+  .chip span:last-child { --r: 22px; padding: 10px 16px 10px 28px; margin-left: -24px; font-size: 30px; }
+  .x { position: absolute; right: calc(24px + var(--ir)); top: calc(24px + var(--it)); width: 88px; height: 88px;
+    display: grid; place-items: center; opacity: 0.8; }
+  .x .icon { width: 34px; height: 34px; stroke-width: 2.8; }
+  @container (orientation: portrait) {
+    .home { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+    .stage { grid-row: 1; padding: 112px 24px 24px; }
+    .home #board { width: clamp(128px, var(--h) - 620px, 100%); }
+    .menu { --r: 32px 32px 0 0; justify-content: start; max-height: calc(var(--h) * 0.62);
+      overflow: hidden; margin: 0 calc(-1 * var(--ir)) calc(-1 * var(--ib)) calc(-1 * var(--il));
+      padding: 24px calc(32px + var(--ir)) calc(24px + var(--ib)) calc(32px + var(--il)); }
+    .gear { display: block; }
+    .item.settings { display: none; }
+  }
+  @container (max-height: 599px) and (orientation: landscape) {
+    .menu { justify-content: start; overflow: hidden; }
+    .mark { margin-bottom: 0; }
+    .mark h1 { font-size: 48px; }
+    .gear { display: block; }
+    .item.settings { display: none; }
+  }
+
+  /* A card over the dimmed photograph: players, the sheet, ask, pick, done. */
+  .over { z-index: 1; display: grid; place-items: center; }
+  .card { display: grid; gap: 20px; padding: 24px; max-width: 100%; }
+  .head { display: flex; align-items: center; gap: 16px; }
+  .head h1 { flex: 1; font-size: 34px; }
+  .head .tile { padding: 0; }
+  .head .badge { width: 64px; }
+  .players { display: grid; grid-auto-flow: column; grid-auto-columns: 156px; gap: 16px; }
+  .player { flex-direction: column; gap: 8px; min-height: 0; padding: 14px 10px; font-size: 24px; }
+  .player .badge { width: 72%; }
+  .player .icon { width: 48px; height: 48px; }
+  .badges { display: grid; grid-template-columns: repeat(6, 104px); gap: 12px; }
+  .badges .badge { width: 100%; }
+  .badges .badge.taken { opacity: 0.3; }
+  .field { display: flex; align-items: center; min-height: 88px; padding: 0 24px; border-radius: 22px; font-size: 30px;
+    background: rgb(0 0 0 / 0.22); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.2); }
+  .field::after { content: ''; width: 3px; height: 34px; margin-left: 2px; background: var(--fg); }
+
+  /* Ask, pick, and done: a big face or king over a question and two or three big answers. */
+  .ask { justify-items: center; text-align: center; padding: 32px; gap: 24px; }
+  .ask > .badge { width: 104px; }
+  .ask > .piece { width: 88px; }
+  .ask h1 { font-size: 40px; }
+  .answers { display: grid; grid-auto-flow: column; grid-auto-columns: 260px; gap: 16px; }
+  .answer { flex-direction: column; gap: 10px; min-height: 176px; padding: 16px; font-size: 30px; white-space: normal; }
+  .answer .icon { width: 56px; height: 56px; }
+  .answer span { display: grid; gap: 4px; justify-items: center; }
+  .answer small { font-size: 18px; }
+  .answer.primary small { color: var(--fg); }
+  .kinds { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; }
+  .kind { flex-direction: column; gap: 6px; min-height: 0; padding: 14px 10px; font-size: 22px; }
+  .kind .mini { width: 72px; }
+  .kind small { font-size: 15px; }
+  .ask.wide .kind .mini { width: 132px; }
+  .ask.wide .kinds { grid-template-columns: repeat(3, 220px); }
+  .ask .home-link { min-height: 72px; font-size: 22px; background: none; box-shadow: none; color: var(--fg-dim); }
+  .label { justify-self: start; font-size: 18px; color: var(--fg-dim); letter-spacing: 0.04em; margin-bottom: -10px; }
+  @container (max-width: 860px) {
+    .badges { grid-template-columns: repeat(3, 104px); justify-content: center; }
+    .players { grid-auto-flow: row; grid-template-columns: repeat(2, 120px); grid-auto-columns: auto; justify-content: center; }
+    .ask.wide .kinds { grid-template-columns: repeat(3, 1fr); }
+    .ask.wide .kind .mini { width: 88px; }
+  }
+  @container (orientation: portrait) {
+    .answers { grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: min(400px, var(--w) - 48px); }
+    .answer { flex-direction: row; justify-content: flex-start; min-height: 112px; padding: 0 24px; gap: 20px; text-align: left; }
+    .answer span { justify-items: start; }
+    .ask h1 { font-size: 34px; }
+  }
+  @container (max-height: 599px) and (orientation: landscape) {
+    .ask { padding: 20px 24px; gap: 14px; }
+    .ask > .badge, .ask > .piece { width: 64px; }
+    .ask h1 { font-size: 30px; }
+    .answer { min-height: 128px; }
+    .ask:has(.kinds) > .badge { display: none; }
+    .ask:has(.kinds) .answer { min-height: 96px; flex-direction: row; gap: 16px; }
+    .ask:has(.kinds) .answer span { justify-items: start; }
+    .answer .icon { width: 44px; height: 44px; }
+    .kind .mini { width: 48px; }
+    .kind { padding: 8px; font-size: 20px; }
+    .ask.wide .kind .mini { width: 96px; }
+    .badges { grid-template-columns: repeat(6, 80px); }
+    .players { grid-auto-columns: 120px; }
+  }
+
+  /* A step: the puzzle's layout. Left: back and start over; right: the steps as dots,
+     the rule's name and line, and next, dim until the move is played. */
+  .game { display: grid; grid-template-columns: var(--side) minmax(0, 1fr) var(--side); gap: 24px; --side: 232px; }
+  .col { display: flex; flex-direction: column; gap: 12px; }
+  .game #board { place-self: center; width: min(var(--h), 100%); }
+  .way { display: flex; flex-direction: column; gap: 20px; padding: 20px; }
+  .way .tile { justify-content: flex-start; }
+  .kindnote { display: flex; align-items: center; gap: 12px; padding: 0 4px; font-size: 20px; }
+  .kindnote .mini { width: 44px; }
+  .rule { display: flex; flex-direction: column; gap: 14px; padding: 20px 20px 16px; height: 504px; }
+  .dots { display: flex; flex-wrap: wrap; gap: 8px; }
+  .dots i { width: 12px; height: 12px; border-radius: 50%; background: rgb(255 255 255 / 0.22); }
+  .dots i.done { background: color-mix(in srgb, var(--glow) 60%, transparent); }
+  .dots i.now { background: var(--glow); box-shadow: 0 0 10px 2px color-mix(in srgb, var(--glow) 50%, transparent); }
+  .rule h2 { font-size: 32px; line-height: 1.1; }
+  .rule p { font-size: 21px; line-height: 1.35; color: var(--fg-dim); }
+  .rule p.well { color: var(--fg); }
+  .rule p.well .icon { width: 24px; height: 24px; color: var(--glow); vertical-align: -4px; margin-right: 6px; stroke-width: 3; }
+  .next { margin-top: auto; width: 100%; flex-direction: column; min-height: 132px; gap: 8px; font-size: 26px; }
+  .next .icon { width: 48px; height: 48px; }
+  .next.primary { box-shadow: inset 0 0 0 2px var(--glow); }
+  .board .piece.taken { opacity: 0.35; }
+  .board .p3.taken { opacity: 0.35; }
+  .board .piece.ring { animation: ring 1.6s ease-in-out infinite; }
+  @keyframes ring { 50% { box-shadow: 0 0 0 2px color-mix(in srgb, var(--glow) 40%, transparent), 0 0 10px 2px color-mix(in srgb, var(--glow) 25%, transparent); } }
+  .board .sq, .board .p3 { cursor: pointer; }
+  @container (max-height: 599px) and (orientation: landscape) {
+    .game { --side: 200px; }
+    .way .tile, .col > .tile { flex-direction: column; gap: 4px; justify-content: center; min-height: 96px; font-size: 20px; padding: 0; }
+    .kindnote { display: none; }
+    .rule { height: auto; flex: 1; gap: 8px; padding: 14px; }
+    .rule h2 { font-size: 26px; }
+    .rule p { font-size: 18px; }
+    .next { min-height: 88px; }
+  }
+  @container (orientation: portrait) {
+    .game { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr) auto; }
+    .col.left { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .way { display: contents; }
+    .kindnote { display: none; }
+    .left .tile { flex-direction: column; gap: 4px; justify-content: center; min-height: 96px; min-width: 0; padding: 0; font-size: 20px; }
+    .way .tile { background: var(--glass-tint); }
+    .game #board { width: min(var(--w), 100%); }
+    .rule { height: auto; display: grid; grid-template-columns: 1fr 200px; gap: 10px 20px; }
+    .rule .dots, .rule h2, .rule p { grid-column: 1; }
+    .next { grid-column: 2; grid-row: 1 / span 3; min-height: 0; height: 100%; }
+  }
+
+  /* The puzzles' library, as puzzles.html, with How to play as a row across the top. */
+  .lib { display: flex; flex-direction: column; gap: 20px; }
+  .top h1 { text-shadow: 0 0 6px rgb(0 0 0 / 0.5), 0 2px 4px rgb(0 0 0 / 0.5); }
+  .joined .tile { flex-direction: column; gap: 0; font-size: 20px; border-radius: 22px; }
+  .joined .tile small { font-size: 15px; }
+  .rows { flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 420px)); justify-content: center; align-content: center; gap: 16px 24px; }
+  .theme { --r: 24px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 20px; min-height: 124px; padding: 0 24px; }
+  .theme.learn { grid-column: 1 / -1; min-height: 104px; }
+  .theme.learn .disc { background: color-mix(in srgb, var(--glow) 40%, transparent); }
+  .disc { grid-row: span 2; width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center;
+    background: color-mix(in srgb, var(--glow) 20%, transparent); }
+  .disc .icon { width: 38px; height: 38px; }
+  .theme b { font-weight: 400; font-size: 30px; align-self: end; }
+  .theme small { align-self: end; display: flex; align-items: center; gap: 6px; }
+  .theme small .icon { width: 16px; height: 16px; color: var(--glow); }
+  .bar { grid-column: 2 / 4; align-self: start; height: 8px; border-radius: 4px; background: rgb(255 255 255 / 0.12); }
+  .bar i { display: block; height: 100%; border-radius: inherit; background: var(--glow); }
+  @container (max-height: 599px) and (orientation: landscape) {
+    .theme { min-height: 88px; }
+    .theme.learn { min-height: 88px; }
+    .disc { width: 56px; height: 56px; }
+    .rows { gap: 10px 16px; }
+  }
+  @container (orientation: portrait) {
+    .top { flex-wrap: wrap; }
+    .top .end { width: 100%; margin: 0; }
+    .joined .tile { flex: 1; min-width: 0; }
+    .rows { grid-template-columns: minmax(0, 600px); }
+    .theme { min-height: 96px; }
+  }
+
+  .note { position: fixed; left: 8px; bottom: 6px; z-index: 30; max-width: 70vw; padding: 4px 8px; border-radius: 6px;
+    font: 12px/1.3 system-ui, sans-serif; color: #f4ede2; background: rgb(0 0 0 / 0.55); pointer-events: none; }
+</style>
+</head>
+<body>
+<main id="app" class="screen"></main>
+<script>
+  const P = new URLSearchParams(location.search);
+  const get = (k, vals, def) => (vals.includes(P.get(k)) ? P.get(k) : def);
+  const link = (changes) => { const p = new URLSearchParams(location.search); for (const [k, v] of Object.entries(changes)) p.set(k, v); return `?${p}`; };
+  // Icons of this page's own beside the shared ones.
+  const MORE = {
+    newgame: '<circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M8 12h8"/>',
+    check: '<path d="M4.5 12.5 10 18 19.5 6.5"/>',
+    // How to play: a man's step on the diagonal, its arrow.
+    learn: '<circle class="solid" cx="7" cy="17" r="3.4"/><path d="M10 14l8-8"/><path d="M12 6h6v6"/>',
+  };
+  const icon = (n) => (MORE[n] ? `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${MORE[n]}</svg>` : Draughts.icon(n));
+  const view = get('view', ['home', 'players', 'sheet', 'ask', 'pick', 'step', 'done', 'library'], 'home');
+  const entry = get('entry', ['a', 'b', 'c'], 'b');
+  const askTake = get('ask', ['a', 'b', 'c'], 'a');
+  const fresh = P.get('fresh') !== '0';
+  const v = get('v', ['intl', 'brazilian', 'russian'], 'intl');
+  const N = v === 'intl' ? 10 : 8;
+  const KINDS = { intl: ['International', '10 × 10'], brazilian: ['Brazilian', '8 × 8'], russian: ['Russian', '8 × 8'] };
+
+
+  const badge = (a, on = false, cls = '') => `<span class="badge${on ? ' on' : ''} ${cls}"><span class="piece solo white"></span>` +
+    `<img src="../assets/badges/${a}.svg" alt=""></span>`;
+  const mini = (n) => `<span class="mini" data-n="${n}"></span>`;
+  const app = document.getElementById('app');
+
+  // ---- The rules, enough for the steps: white moves up the board; men take backwards
+  // too and kings fly, in all three; International and Brazilian take the most, and
+  // crown a man only where its capture ends; Russian crowns it on the way, and it goes
+  // on jumping as a king. Taken pieces stay on the board until the move ends.
+  const RULES = { majority: v !== 'russian', crownOnTheWay: v === 'russian' };
+  const at = (sq) => [sq.charCodeAt(0) - 97, +sq.slice(1) - 1];
+  const nm = (x, y) => String.fromCharCode(97 + x) + (y + 1);
+  const inside = (x, y) => x >= 0 && y >= 0 && x < N && y < N;
+  const DIRS = [[1, 1], [-1, 1], [1, -1], [-1, -1]];
+  function captures(pos, from) {
+    const me = pos.get(from), out = [];
+    const board = new Map(pos); board.delete(from);
+    const enemy = (sq, taken) => board.has(sq) && !board.get(sq).white && !taken.includes(sq);
+    (function jump(sq, king, taken, path) {
+      const [x, y] = at(sq);
+      let any = false;
+      for (const [dx, dy] of DIRS) {
+        if (!king) {
+          const m = nm(x + dx, y + dy), l = nm(x + 2 * dx, y + 2 * dy);
+          if (!inside(x + 2 * dx, y + 2 * dy) || !enemy(m, taken) || board.has(l)) continue;
+          any = true;
+          jump(l, RULES.crownOnTheWay && y + 2 * dy === N - 1, [...taken, m], [...path, l]);
+        } else {
+          let k = 1;
+          while (inside(x + k * dx, y + k * dy) && !board.has(nm(x + k * dx, y + k * dy))) k++;
+          const m = nm(x + k * dx, y + k * dy);
+          if (!inside(x + k * dx, y + k * dy) || !enemy(m, taken)) continue;
+          const lands = [];
+          for (let j = k + 1; inside(x + j * dx, y + j * dy) && !board.has(nm(x + j * dx, y + j * dy)); j++) lands.push(nm(x + j * dx, y + j * dy));
+          // A king must land where it can go on taking, if any landing lets it.
+          const goesOn = lands.filter((l) => { const t = [...taken, m]; const n0 = out.length; jump(l, true, t, [...path, l]);
+            const more = out.slice(n0).some((s) => s.taken.length > t.length); out.length = n0; return more; });
+          for (const l of (goesOn.length ? goesOn : lands)) { any = true; jump(l, true, [...taken, m], [...path, l]); }
+        }
+      }
+      if (!any && taken.length) out.push({ path, taken, king: king || me.king || at(sq)[1] === N - 1 });
+    })(from, me.king, [], [from]);
+    return out;
+  }
+  function legal(pos) {
+    let caps = [];
+    for (const [sq, p] of pos) if (p.white) caps.push(...captures(pos, sq));
+    if (caps.length) {
+      const most = Math.max(...caps.map((c) => c.taken.length));
+      return RULES.majority ? caps.filter((c) => c.taken.length === most) : caps;
+    }
+    const moves = [];
+    for (const [sq, p] of pos) {
+      if (!p.white) continue;
+      const [x, y] = at(sq);
+      for (const [dx, dy] of DIRS) {
+        if (!p.king && dy < 0) continue;
+        for (let k = 1; inside(x + k * dx, y + k * dy) && !pos.has(nm(x + k * dx, y + k * dy)); k++) {
+          const to = nm(x + k * dx, y + k * dy);
+          moves.push({ path: [sq, to], taken: [], king: p.king || y + k * dy === N - 1 });
+          if (!p.king) break;
+        }
+      }
+    }
+    return moves;
+  }
+
+  // ---- The steps: one rule each, a position, its name and line, and what is said once
+  // it is played. Squares as on the board, a1 at white's bottom left; F is the far row.
+  const F = N;
+  const STEPS = [
+    { title: 'Move', line: 'Tap your piece, then a lit square. A piece steps one square forward on the diagonal.',
+      well: 'That is a move. Then it is the other side’s turn.', white: ['c3'], black: ['f8', 'h8'] },
+    { title: 'Jump to take', line: 'A dark piece is next to yours. Jump over it onto the empty square behind it.',
+      well: 'You took it!', white: ['d4'], black: ['e5', 'b8'] },
+    { title: 'You must take', line: 'If you can take, you have to. The piece that must take pulses red.',
+      well: 'Right: taking comes first.', white: ['c3', 'g3'], black: ['d4', 'h8'] },
+    { title: 'Keep jumping', line: 'After a jump, jump again if you can, backwards too. One move can take many.',
+      well: 'Three in one move!', white: ['a3'], black: ['b4', 'd6', 'f6', 'b8'] },
+    v === 'russian'
+      ? { title: 'Choose any', line: 'Both of your pieces can take. Take with either; once you start, jump to the end.',
+        well: 'Either was right in Russian draughts.', white: ['b2', 'f2'], black: ['c3', 'g3', 'g5'] }
+      : { title: 'Take the most', line: 'Both of your pieces can take. Take with the one that takes more.',
+        well: 'Two is more than one.', white: ['b2', 'f2'], black: ['c3', 'g3', 'g5'] },
+    { title: 'Become a king', line: 'Reach the far side and your piece becomes a king.',
+      well: 'A king! It wears a crown.', white: [`c${F - 1}`], black: ['g5'] },
+    { title: 'Kings fly', line: 'A king moves any number of squares on a diagonal, forward or back.',
+      well: 'Kings go far.', white: ['d4'], black: ['a7'], kings: ['d4'] },
+    { title: 'Kings take from afar', line: 'A king takes a piece far along its line, and lands on any free square behind it.',
+      well: 'Taken from across the board.', white: ['a1'], black: ['d4'], kings: ['a1'] },
+    ...(v === 'russian' ? [{ title: 'Crowned on the way', line: 'Reach the far side in a capture and you are a king at once: go on jumping as a king.',
+      well: 'Crowned, and on as a king.', white: ['b6'], black: ['c7', 'f6'] }] : []),
+    { title: 'Win', line: 'Take all the other side’s pieces, or leave them no move. Take the last one!',
+      well: 'You won!', white: ['e3', 'c1'], black: ['f4'] },
+  ];
+
+  document.body.classList.toggle('dim', ['players', 'sheet', 'ask', 'pick', 'done'].includes(view));
+  if (view === 'step') document.body.dataset.screen = 'board';
+  ({ home, players, sheet, ask, pick, step, done, library })[view]();
+  Draughts.init();
+  for (const m of document.querySelectorAll('.mini[data-n]')) Draughts.board(m, { ...Draughts.start(+m.dataset.n), view: '2d' });
+  Draughts.sync();
+
+  function home() {
+    app.className = 'screen home';
+    const learnRow = (primary) => `<a class="item ${primary ? 'primary learn' : ''}" href="${link({ view: 'step', step: 1 })}">` +
+      `${icon('learn')}<span>How to play</span>${primary ? `<small>${KINDS[v][0]}</small>` : ''}</a>`;
+    const first = entry === 'b' && fresh ? learnRow(true)
+      : fresh ? '' : `<a class="item primary" href="game.html">${icon('next')}<span>Continue</span></a>`;
+    app.innerHTML = `<nav class="menu glass">` +
+      `<div class="mark"><span class="piece solo white king"></span><h1>Draughts</h1>` +
+      `<a class="gear" href="settings.html" data-icon="gear" aria-label="Settings"></a></div>` + first +
+      `<a class="item new" href="new-game.html?view=setup">${icon('newgame')}<span>New game</span><small>${icon('computer')}easy</small></a>` +
+      `<a class="item" href="${link({ view: 'library' })}">${icon('puzzle')}<span>Puzzles</span><small>${fresh ? '0' : '23'} / 64</small></a>` +
+      (entry === 'a' ? learnRow(false) : '') +
+      `<a class="item" href="results.html">${icon('star')}<span>Games</span><small>${fresh ? '0' : '12'}</small></a>` +
+      `<a class="item settings" href="settings.html">${icon('gear')}<span>Settings</span></a></nav>` +
+      `<div class="stage"><a class="chip" href="${link({ view: 'players' })}">${badge(fresh ? 'hare' : 'fox')}` +
+      `<span class="glass">${fresh ? 'Mia' : 'Alex'}</span></a><div id="board"></div></div>` +
+      `<a class="x" data-icon="x" aria-label="Close"></a>`;
+    Draughts.board(document.getElementById('board'), Draughts.start(10));
+    note(`Entry ${entry}${entry === 'b' ? (fresh ? ', a new player' : ', later (fresh=0)') : ''}. ` +
+      `${entry === 'a' ? 'A row on home, always.' : entry === 'b' ? 'Primary in Continue’s place until done; then in the library.' : 'Only in the puzzles’ library.'}`);
+  }
+
+  function players() {
+    app.className = 'screen over';
+    app.innerHTML = `<section class="card glass"><div class="head"><a class="tile" href="${link({ view: 'home' })}" data-icon="back"></a>` +
+      `<h1>Who’s playing?</h1><a class="tile" href="results.html" data-icon="bars"></a><a class="tile" data-icon="pencil"></a></div>` +
+      `<div class="players">${[['fox', 'Alex'], ['owl', 'Sam'], ['bear', 'Grandad']].map(([a, n], i) =>
+        `<a class="tile player" href="${link({ view: 'home', fresh: 0 })}">${badge(a, !i)}${n}</a>`).join('')}` +
+      `<a class="tile player" href="${link({ view: 'sheet' })}">${icon('plus')}</a></div></section>`;
+    note('+ opens the new player’s sheet.');
+  }
+
+  function sheet() {
+    app.className = 'screen over';
+    const taken = ['fox', 'owl', 'bear'];
+    app.innerHTML = `<section class="card glass"><div class="head"><a class="tile" href="${link({ view: 'players' })}" data-icon="back"></a>` +
+      `${badge('hare')}<h1>New player</h1><a class="tile primary" href="${link({ view: 'ask' })}">${icon('check')}</a></div>` +
+      `<div class="badges">${['fox', 'hare', 'bear', 'owl', 'frog', 'hedgehog'].map((a) =>
+        badge(a, a === 'hare', taken.includes(a) ? 'taken' : '')).join('')}</div><div class="field">Mia</div></section>`;
+    note('As built; done (the check) now goes on to “Do you know how to play?”');
+  }
+
+  // The handover: right after a new player is added (and on a fresh install, for its
+  // first player), before home.
+  function ask() {
+    app.className = 'screen over';
+    const kinds = askTake === 'b' ? `<span class="label">Draughts</span><div class="kinds">${Object.entries(KINDS).map(([k, [name, size]]) =>
+      `<a class="tile kind${k === v ? ' on' : ''}" href="${link({ v: k })}">${mini(k === 'intl' ? 10 : 8)}${name}<small>${size}</small></a>`).join('')}</div>` : '';
+    const show = askTake === 'c' ? link({ view: 'pick' }) : link({ view: 'step', step: 1 });
+    app.innerHTML = `<section class="card glass ask">${badge('hare', true)}<h1>Mia, do you know how to play?</h1>${kinds}` +
+      `<div class="answers"><a class="tile answer primary" href="${show}">${icon('learn')}<span>Show me` +
+      `<small>${STEPS.length} short steps</small></span></a>` +
+      `<a class="tile answer" href="${link({ view: 'home', fresh: 1 })}">${icon('check')}<span>I know how<small>Home</small></span></a></div></section>`;
+    note(`Ask ${askTake}: ${askTake === 'a' ? 'teaches the player’s draughts (International for a new one).' :
+      askTake === 'b' ? 'the setup’s draughts row on the card.' : 'Show me goes on to a card of the draughts.'}`);
+  }
+
+  function pick() {
+    app.className = 'screen over';
+    app.innerHTML = `<section class="card glass ask wide"><div class="head" style="width:100%"><a class="tile" href="${link({ view: 'ask' })}" data-icon="back"></a>` +
+      `<h1>Which draughts?</h1></div><div class="kinds">${Object.entries(KINDS).map(([k, [name, size]]) =>
+        `<a class="tile kind${k === v ? ' on' : ''}" href="${link({ v: k })}">${mini(k === 'intl' ? 10 : 8)}${name}<small>${size}</small></a>`).join('')}</div>` +
+      `<a class="tile answer primary" style="min-height:96px;flex-direction:row;width:min(100%,400px)" href="${link({ view: 'step', step: 1 })}">${icon('next')}Start</a></section>`;
+  }
+
+  function step() {
+    app.className = 'screen game';
+    const i = Math.max(1, Math.min(STEPS.length, +P.get('step') || 1)) - 1, s = STEPS[i];
+    const last = i === STEPS.length - 1;
+    app.innerHTML = `<div class="col left"><a class="tile glass" href="${link({ view: P.get('from') || 'home' })}" data-icon="back">Back</a>` +
+      `<div class="glass way"><a class="tile" id="again" data-icon="restart">Again</a>` +
+      `<div class="kindnote">${mini(N)}<span>${KINDS[v][0]}<br><small>${KINDS[v][1]}</small></span></div></div></div>` +
+      `<div id="board"></div><div class="col"><div class="glass rule">` +
+      `<div class="dots">${STEPS.map((_, k) => `<i class="${k < i ? 'done' : k === i ? 'now' : ''}"></i>`).join('')}</div>` +
+      `<h2>${s.title}</h2><p id="line">${s.line}</p>` +
+      `<a class="tile next dim" id="next" href="${last ? link({ view: 'done' }) : link({ step: i + 2 })}">${icon(last ? 'check' : 'next')}${last ? 'Done' : 'Next'}</a></div></div>`;
+
+    // The step's play: tap a piece (the ones that can move are ringed, or pulse red where
+    // they must take), then a lit square, stop by stop through a capture.
+    const el = document.getElementById('board');
+    let pos, moves, sel, k, cands, finished, err = null;
+    function reset() {
+      pos = new Map();
+      for (const sq of s.white) pos.set(sq, { white: true, king: (s.kings || []).includes(sq) });
+      for (const sq of s.black) pos.set(sq, { white: false, king: (s.kings || []).includes(sq) });
+      moves = legal(pos); sel = null; k = 0; cands = []; finished = false;
+      document.getElementById('line').className = '';
+      document.getElementById('line').textContent = s.line;
+      document.getElementById('next').classList.replace('primary', 'dim');
+      draw();
+    }
+    function draw() {
+      const show = new Map(pos);
+      let taken = [], at0 = sel;
+      if (k > 0) {
+        const c = cands[0], p = show.get(c.path[0]);
+        show.delete(c.path[0]);
+        const crowned = p.king || (RULES.crownOnTheWay && c.path.slice(1, k + 1).some((q) => +q.slice(1) === N));
+        show.set(c.path[k], { ...p, king: crowned });
+        taken = c.taken.slice(0, k);
+        at0 = c.path[k];
+      }
+      const forced = moves.some((m) => m.taken.length);
+      const movers = [...new Set(moves.map((m) => m.path[0]))];
+      const targets = sel ? [...new Set(cands.map((m) => m.path[k + 1]).filter(Boolean))] : [];
+      const opts = { n: N, white: [], black: [], kings: [], selected: at0, targets, error: err ? [err] : [],
+        forced: forced && !sel && !finished ? movers : [] };
+      for (const [sq, p] of show) { opts[p.white ? 'white' : 'black'].push(sq); if (p.king) opts.kings.push(sq); }
+      Draughts.board(el, opts);
+      for (const sq of taken) pieceAt(sq)?.classList.add('taken');
+      if (!forced && !sel && !finished) for (const sq of movers) pieceAt(sq)?.classList.add('ring');
+    }
+    function pieceAt(sq) {
+      const [x, y] = at(sq);
+      return el.querySelector(`.p3[data-x="${x}"][data-y="${N - 1 - y}"]`) ||
+        el.querySelectorAll('.sq')[(N - 1 - y) * N + x]?.querySelector('.piece');
+    }
+    function squareOf(t) {
+      const p3 = t.closest('.p3');
+      if (p3) return nm(+p3.dataset.x, N - 1 - +p3.dataset.y);
+      const sqEl = t.closest('.sq');
+      if (!sqEl) return null;
+      const idx = [...sqEl.parentNode.children].indexOf(sqEl);
+      return nm(idx % N, N - 1 - Math.floor(idx / N));
+    }
+    function wrong(sq) { err = sq; draw(); setTimeout(() => { err = null; draw(); }, 600); }
+    el.addEventListener('click', (e) => {
+      const sq = squareOf(e.target);
+      if (!sq || finished) return;
+      const next = sel ? cands.filter((m) => m.path[k + 1] === sq) : [];
+      if (next.length) {
+        cands = next; k++;
+        if (cands.every((m) => m.path.length === k + 1)) {
+          const m = cands[0], p = pos.get(m.path[0]);
+          pos.delete(m.path[0]);
+          for (const t of m.taken) pos.delete(t);
+          pos.set(m.path[k], { ...p, king: m.king });
+          sel = null; k = 0; cands = []; finished = true; moves = [];
+          const line = document.getElementById('line');
+          line.className = 'well';
+          line.innerHTML = `${icon('check')}${s.well}`;
+          document.getElementById('next').classList.replace('dim', 'primary');
+        }
+        return draw();
+      }
+      if (k > 0) return wrong(sq);
+      const mine = moves.filter((m) => m.path[0] === sq);
+      if (mine.length) { sel = sq; cands = mine; return draw(); }
+      wrong(sq);
+    });
+    document.getElementById('again').addEventListener('click', reset);
+    reset();
+  }
+
+  // The handover at the end: the puzzles' first theme or a new game, the draughts kept.
+  function done() {
+    app.className = 'screen over';
+    app.innerHTML = `<section class="card glass ask"><span class="piece solo white king"></span>` +
+      `<h1>You know the moves!</h1>` +
+      `<div class="answers"><a class="tile answer primary" href="puzzle.html">${icon('puzzle')}<span>Puzzles<small>Learn, the first of 36</small></span></a>` +
+      `<a class="tile answer" href="new-game.html?view=setup">${icon('newgame')}<span>New game<small>The computer, easy</small></span></a></div>` +
+      `<a class="tile home-link" href="${link({ view: 'home', fresh: 0 })}">${icon('back')}Home</a></section>`;
+    note('Puzzles opens the Learn theme’s first puzzle, in the draughts just learned; New game opens the setup with it chosen.');
+  }
+
+  function library() {
+    app.className = 'screen lib';
+    const THEMES = [['book', 'Learn', 0, 36], ['captures', 'Captures', 0, 45], ['crown', 'Crowning', 0, 36],
+      ['target', 'Shots', 0, 45], ['crown', 'King shots', 0, 30], ['shield', 'Safe move', 0, 30]];
+    app.innerHTML = `<div class="top"><a class="tile glass" href="${link({ view: 'home' })}" data-icon="back">Back</a><h1>Puzzles</h1>` +
+      `<div class="end joined glass">${Object.entries(KINDS).map(([k, [name, size]]) =>
+        `<a class="tile${k === v ? ' on' : ''}" href="${link({ v: k })}">${name}<small>${size}</small></a>`).join('')}</div></div>` +
+      `<div class="rows"><a class="theme glass learn" href="${link({ view: 'step', step: 1, from: 'library' })}"><span class="disc">${icon('learn')}</span>` +
+      `<b>How to play</b><small>${icon('check')}5 / ${STEPS.length} steps</small><span class="bar"><i style="width:${500 / STEPS.length}%"></i></span></a>` +
+      THEMES.map(([ic, name, n, all]) => `<a class="theme glass" href="puzzle.html"><span class="disc">${icon(ic)}</span><b>${name}</b>` +
+        `<small>${icon('star')}${n} / ${all}</small><span class="bar"><i style="width:${100 * n / all}%"></i></span></a>`).join('') + '</div>';
+    note('How to play as the library’s first row, for the draughts the switch shows.');
+  }
+
+  function note(text) { if (!P.has('bare')) document.body.insertAdjacentHTML('beforeend', `<div class="note">${text}</div>`); }
+</script>
+</body>
+</html>
