@@ -29,7 +29,8 @@
        done     you know the moves: on to the puzzles' first theme or a new game
        library  the puzzles' library with How to play as its first row (entry b, c)
      &v=intl|brazilian|russian, the draughts taught (Russian has no take-the-most step
-     and crowns in the middle of a capture). Every page's ?device=, ?season=, ?board=3d. */
+     and crowns in the middle of a capture). &icon=tap|path|step|cap|ask, how to play's
+     icon (takes, by the script's LEARN). Every page's ?device=, ?season=, ?board=3d. */
   body.dim::after { content: ''; position: absolute; inset: 0; background: rgb(0 0 0 / 0.42); }
   .badge { position: relative; display: grid; place-items: center; flex: none; aspect-ratio: 1; }
   .badge .piece { position: absolute; inset: 0; }
@@ -236,9 +237,26 @@
   const MORE = {
     newgame: '<circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M8 12h8"/>',
     check: '<path d="M4.5 12.5 10 18 19.5 6.5"/>',
-    // How to play: a man's step on the diagonal, its arrow.
-    learn: '<circle class="solid" cx="7" cy="17" r="3.4"/><path d="M10 14l8-8"/><path d="M12 6h6v6"/>',
   };
+  // How to play's icon, one for Show me, home's row, and the library's row; no app icon
+  // exists for it yet. Takes by &icon=:
+  //   tap   a finger tapping, rings round its tip (the default: what the steps ask)
+  //   path  a man and the lit target it steps to, dots between
+  //   step  a man and an arrow up the diagonal
+  //   cap   a graduation cap
+  //   ask   a man with a question mark on it
+  const LEARN = {
+    path: '<circle class="solid" cx="6.5" cy="17.5" r="3.3"/><circle class="solid" cx="11" cy="13" r="1.1"/>' +
+      '<circle class="solid" cx="14" cy="10" r="1.1"/><circle cx="18" cy="6" r="2.6"/>',
+    step: '<circle class="solid" cx="7" cy="17" r="3.4"/><path d="M10 14l8-8"/><path d="M12 6h6v6"/>',
+    tap: '<path d="M10 13V6.5a1.6 1.6 0 0 1 3.2 0V12"/><path d="M13.2 11.5a1.6 1.6 0 0 1 3.2 0v1"/>' +
+      '<path d="M16.4 12.5a1.6 1.6 0 0 1 3.1.5v2.5a6 6 0 0 1-6 6h-1a5.5 5.5 0 0 1-4.4-2.2l-2.7-3.6a1.5 1.5 0 0 1 2.3-1.9L10 15.5"/>' +
+      '<path d="M7.2 6.5a4.4 4.4 0 0 1 8.8 0"/>',
+    cap: '<path d="M2 9.5 12 5l10 4.5-10 4.5z"/><path d="M6 11.6V16c0 1.6 2.7 3 6 3s6-1.4 6-3v-4.4"/><path d="M22 9.5v5.5"/>',
+    ask: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.5"/><circle class="solid" cx="12" cy="17" r="1.15"/>',
+  };
+  const iconTake = get('icon', Object.keys(LEARN), 'tap');
+  MORE.learn = LEARN[iconTake];
   const icon = (n) => (MORE[n] ? `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${MORE[n]}</svg>` : Draughts.icon(n));
   const view = get('view', ['home', 'players', 'sheet', 'ask', 'pick', 'step', 'done', 'library'], 'home');
   const entry = get('entry', ['a', 'b', 'c'], 'b');
@@ -320,8 +338,11 @@
   // it is played. Squares as on the board, a1 at white's bottom left; F is the far row.
   const F = N;
   const STEPS = [
-    { title: 'Move', line: 'Tap your piece, then a lit square. A piece steps one square forward on the diagonal.',
-      well: 'That is a move. Then it is the other side’s turn.', white: ['c3'], black: ['f8', 'h8'] },
+    // Move: your move, the other side's (scripted, after a pause, its squares lit), and
+    // yours again; next lights after the second.
+    { title: 'Move', line: 'Your move: tap your piece, then a lit square. A piece steps one square forward on the diagonal.',
+      reply: ['f8', 'e7'], waiting: 'Now the other side moves…', again: 'Your turn again. Move a piece forward.',
+      well: 'That is the game: you move, then they move.', white: ['c3'], black: ['f8', 'h8'] },
     { title: 'Jump to take', line: 'A dark piece is next to yours. Jump over it onto the empty square behind it.',
       well: 'You took it!', white: ['d4'], black: ['e5', 'b8'] },
     { title: 'You must take', line: 'If you can take, you have to. The piece that must take pulses red.',
@@ -432,12 +453,12 @@
     // The step's play: tap a piece (the ones that can move are ringed, or pulse red where
     // they must take), then a lit square, stop by stop through a capture.
     const el = document.getElementById('board');
-    let pos, moves, sel, k, cands, finished, err = null;
+    let pos, moves, sel, k, cands, finished, err = null, lit = [], replied = false;
     function reset() {
       pos = new Map();
       for (const sq of s.white) pos.set(sq, { white: true, king: (s.kings || []).includes(sq) });
       for (const sq of s.black) pos.set(sq, { white: false, king: (s.kings || []).includes(sq) });
-      moves = legal(pos); sel = null; k = 0; cands = []; finished = false;
+      moves = legal(pos); sel = null; k = 0; cands = []; finished = false; lit = []; replied = false;
       document.getElementById('line').className = '';
       document.getElementById('line').textContent = s.line;
       document.getElementById('next').classList.replace('primary', 'dim');
@@ -457,7 +478,7 @@
       const forced = moves.some((m) => m.taken.length);
       const movers = [...new Set(moves.map((m) => m.path[0]))];
       const targets = sel ? [...new Set(cands.map((m) => m.path[k + 1]).filter(Boolean))] : [];
-      const opts = { n: N, white: [], black: [], kings: [], selected: at0, targets, error: err ? [err] : [],
+      const opts = { n: N, white: [], black: [], kings: [], selected: at0, targets, error: err ? [err] : [], last: sel ? [] : lit,
         forced: forced && !sel && !finished ? movers : [] };
       for (const [sq, p] of show) { opts[p.white ? 'white' : 'black'].push(sq); if (p.king) opts.kings.push(sq); }
       Draughts.board(el, opts);
@@ -490,7 +511,20 @@
           for (const t of m.taken) pos.delete(t);
           pos.set(m.path[k], { ...p, king: m.king });
           sel = null; k = 0; cands = []; finished = true; moves = [];
+          lit = [m.path[0], m.path[k]];
           const line = document.getElementById('line');
+          if (s.reply && !replied) {
+            // The other side answers after a pause, then it is the player's move again.
+            line.textContent = s.waiting;
+            setTimeout(() => {
+              const [from, to] = s.reply, b = pos.get(from);
+              pos.delete(from); pos.set(to, b);
+              lit = [from, to]; replied = true; finished = false; moves = legal(pos);
+              line.textContent = s.again;
+              draw();
+            }, 700);
+            return draw();
+          }
           line.className = 'well';
           line.innerHTML = `${icon('check')}${s.well}`;
           document.getElementById('next').classList.replace('dim', 'primary');
@@ -531,7 +565,10 @@
     note('How to play as the library’s first row, for the draughts the switch shows.');
   }
 
-  function note(text) { if (!P.has('bare')) document.body.insertAdjacentHTML('beforeend', `<div class="note">${text}</div>`); }
+  function note(text) {
+    if (['home', 'ask', 'pick', 'library'].includes(view)) text += ` Icon: ${iconTake}.`;
+    if (!P.has('bare')) document.body.insertAdjacentHTML('beforeend', `<div class="note">${text}</div>`);
+  }
 </script>
 </body>
 </html>

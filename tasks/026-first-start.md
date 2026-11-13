@@ -24,6 +24,12 @@ How to play in Continue's place while a new player has nothing to continue, then
 puzzles' library's first row; `c` that row only. Proposed: ask a, entry b. Settings'
 tutorial row isn't drawn: the library's row, switched by draughts, replaces it.
 
+The user liked the steps (2026-11-13) and asked for the other side's move in the first
+step: now your move, the other side's after a pause with its squares lit, and yours
+again before next lights. How to play's icon, which the app doesn't have yet, has takes
+(`&icon=tap|path|step|cap|ask`); proposed: tap, a finger tapping, which is what the
+steps ask.
+
 ## Work
 
 - The pages as a shell screen, shown on the first launch only (a flag in `settings.txt`).
