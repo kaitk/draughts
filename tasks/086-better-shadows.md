@@ -154,6 +154,31 @@ judge.
 - Arm, "Mali GPU Best Practices": depth comparison samplers for hardware PCF, 16-bit
   depth.
 
+## Measured on the A33 (2026-11-13)
+
+A throwaway app build beside the Play app (`--id-suffix shadows`, `draw3d::set_up` reading
+`--shadows now|fit|baked` and calling `set_shadow_way`; not committed), `--board 3d
+--screen game --theme wood --bench 300`, a phone's 4 taps (the field's and the pieces'
+in `now` and `fit`, the pieces' in `baked`), the ways alternated, thermal status 0
+before and after every run. Cycles are the waited P50 × the GPU clock sampled through
+that phase. "Moving" is the bench's first phase (the shadow map, and in `baked` the
+bake, drawn every frame); "at rest" its second (the board pass alone).
+
+| Way | Moving | At rest | Moving's P99, presented 1% low |
+| --- | --- | --- | --- |
+| now | 16.77, 17.41 ms: 10.24, 10.64 M | 15.43, 16.03 ms: 9.43, 9.80 M | 19.4, 20.2 ms; 52, 57 fps |
+| fit | 15.33 at 702 MHz, 16.80 ms: 10.76, 10.26 M | 14.26, 15.38 ms: 10.01, 9.40 M | 17.3, 21.0 ms; 57, 55 fps |
+| baked | 29.42 to 29.48 ms: 17.98 to 18.01 M (3 runs) | 15.10 to 15.18 ms: 9.22 to 9.27 M | 32.1 to 33.6 ms; 32 to 35 fps |
+
+- `fit` costs what `now` does, as it should: the same taps on another projection.
+- `baked` saves 0.2 to 0.5 M cycles at rest on a phone: the field's 4 taps were cheap
+  already. On a tablet or desktop, the field's 9 taps go, so more.
+- The whole-map bake costs about 8.7 M cycles, 14 ms at 611 MHz, on every frame a piece
+  moves: a move would play at about 34 fps. Before it can ship, the bake has to shrink to
+  about the shadow map's own cost (1 to 1.3 M): only the squares a moving piece's
+  shadow covers (old and new, about 1/16 of the field for one sliding piece), and fewer
+  texels or taps (a 512² map, a cheaper blocker search).
+
 ## What is left
 
 - Measure on a quiet Mac and on the A33: the bake's GPU time on a frame a piece moves
