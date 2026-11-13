@@ -1,4 +1,4 @@
-panels vec4<f32> { 24.0, 24.0, 232.0, 288.0 } vec4<f32> { 1024.0, 24.0, 232.0, 352.0 }, board vec4<f32> { 280.0, 40.0, 720.0, 11.52 }
+panels vec4<f32> { 24.0, 24.0, 232.0, 204.0 } vec4<f32> { 1024.0, 24.0, 232.0, 352.0 }, board vec4<f32> { 280.0, 40.0, 720.0, 11.52 }
 over the UI: white 1.0 1.0; 
 turn after c3-d4: black 1.0 1.0; 
 two moves: W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,e3,g3,d4:Be5,b6,d6,h6,a7,c7,e7,g7,b8,d8,f8,h8, history 2, last f6-e5

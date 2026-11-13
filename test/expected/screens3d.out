@@ -22,14 +22,14 @@ puzzle: raised true, bounds 191 160 898 x 616, tiles 4 on screen true, touched 0
   wrong move i1-h2 slid back: misses 1, fading instances 1, flash true
   misses 2, hint on e7, glow rings in the world's grid at 3.4 
 black to move: turned true, raised true
-won: B:Wa1,g5:B, winning piece on g5, card 499 364 281 x 255 inside the 3D bounds true, centered across them true, clear of the winning piece true
+won: B:Wa1,g5:B, winning piece on g5, card 493 346 295 x 263 inside the 3D bounds true, centered across them true, clear of the winning piece true
   dim 0.45, instances left lit 1 of 2
   home to the game 1.0: raised true, hold true, placed 480 139 760 x 521, fade 1.0
-  home to the game 1.05: raised true, hold true, placed 453 146 767 x 526, fade 1.0
-  home to the game 1.1: raised true, hold true, placed 390 163 785 x 538, fade 1.0
-  home to the game 1.15: raised true, hold true, placed 315 183 805 x 552, fade 1.0
-  home to the game 1.2: raised true, hold true, placed 252 200 822 x 564, fade 1.0
-  home to the game 1.25: raised true, hold false, placed 225 207 830 x 569, fade 1.0
+  home to the game 1.05: raised true, hold true, placed 451 144 771 x 529, fade 1.0
+  home to the game 1.1: raised true, hold true, placed 383 154 798 x 547, fade 1.0
+  home to the game 1.15: raised true, hold true, placed 302 166 831 x 570, fade 1.0
+  home to the game 1.2: raised true, hold true, placed 234 176 858 x 588, fade 1.0
+  home to the game 1.25: raised true, hold false, placed 205 180 869 x 596, fade 1.0
   views drawn through 1, the flat layout steady true, at rest placed at the game's bounds true, the game's larger than home's true
 picker: raised false
   tile to the puzzle 1.07: raised true, placed 539 260 179 x 123, fade 0.1, hole as tall as the image true

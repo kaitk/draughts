@@ -8,6 +8,6 @@ crowned, then taken as a king: W:Wa1:Bg3,e5; white pieces taken: 10 men, 1 kings
 undone: B:Wa1,Kf6:Bg3,g7; white pieces taken: 10 men, 0 kings; black: 10 men, 0 kings
 the game, before: white pieces taken 11 + 0 kings, black 10 + 0 kings, 21 small pieces shown
 as the capture shows: moving true, white pieces taken 11 + 0 kings, black 10 + 0 kings
-once shown: white pieces taken 11 + 0 kings, black 10 + 1 kings; shown white 11 (0 kings) at 354.0; black 11 (1 kings) at 396.0; inside true under the left panel true
-on a turned board: black 11 (1 kings) at 354.0; white 11 (0 kings) at 396.0; inside true
+once shown: white pieces taken 11 + 0 kings, black 10 + 1 kings; shown white 11 (0 kings) at 270.0; black 11 (1 kings) at 312.0; inside true under the left panel true
+on a turned board: black 11 (1 kings) at 270.0; white 11 (0 kings) at 312.0; inside true
 a new game in its transition: white pieces taken 0 + 0 kings, black 0 + 0 kings, 0 small pieces shown

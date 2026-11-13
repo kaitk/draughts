@@ -5,19 +5,19 @@ a foldable, landscape, 2208 x 1768:
   home's chip, named: 320 dp wide, board 479 dp, mirroring the X on the board's side, off the column and the board
   a friend's setup: 15 tiles, smallest 88 x 88 dp, board 439 dp, all in place
   the computer's setup: 15 tiles, smallest 88 x 88 dp, board 439 dp, all in place
-  the game: 5 tiles, smallest 160 x 88 dp, board 519 dp, all in place
-  the game on the clock: 7 tiles, smallest 160 x 88 dp, board 519 dp, all in place
-  taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels 192 x 288 and 192 x 368 dp, the 3D screen's 232 x 288 and 232 x 352; a puzzle's panels the game's, its play 504 dp tall
+  the game: 5 tiles, smallest 90 x 88 dp, board 519 dp, all in place
+  the game on the clock: 7 tiles, smallest 90 x 88 dp, board 519 dp, all in place
+  taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels 192 x 204 and 192 x 368 dp, the 3D screen's 232 x 204 and 232 x 352; a puzzle's panels the game's, its play 504 dp tall
   settings: 22 tiles, smallest 88 x 88 dp, board 428 dp, all in place
   the puzzles: 11 tiles, smallest 102 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 519 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 519 dp, all in place
   the turn piece: 72 dp, over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 527 dp, all in place
   play from here: 184 x 88 dp, back 104 x 88, 12 dp apart, no title, both stacked
   the line over the board, short: 527 x 26 dp, in place
-  a game from a replay: 5 tiles, smallest 160 x 88 dp, board 519 dp, all in place
+  a game from a replay: 5 tiles, smallest 90 x 88 dp, board 519 dp, all in place
   the win: 7 tiles, smallest 88 x 88 dp, board 519 dp, card buttons 88 x 88 dp, all in place
 a foldable, portrait, 1768 x 2208:
   home: 7 tiles, smallest 88 x 88 dp, board 473 dp, all in place
@@ -45,20 +45,20 @@ a foldable, portrait, 1768 x 2208:
   home's chip, named: 320 dp wide, board 547 dp, mirroring the X on the board's side, off the column and the board
   a friend's setup: 15 tiles, smallest 88 x 88 dp, board 507 dp, all in place
   the computer's setup: 15 tiles, smallest 88 x 88 dp, board 507 dp, all in place
-  the game: 5 tiles, smallest 160 x 88 dp, board 587 dp, all in place
-  the game on the clock: 7 tiles, smallest 160 x 88 dp, board 587 dp, all in place
-  taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels 192 x 288 and 192 x 368 dp, the 3D screen's 232 x 288 and 232 x 352; a puzzle's panels the game's, its play 504 dp tall
+  the game: 5 tiles, smallest 90 x 88 dp, board 587 dp, all in place
+  the game on the clock: 7 tiles, smallest 90 x 88 dp, board 587 dp, all in place
+  taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels 192 x 204 and 192 x 368 dp, the 3D screen's 232 x 204 and 232 x 352; a puzzle's panels the game's, its play 504 dp tall
   settings: 22 tiles, smallest 88 x 88 dp, board 491 dp, all in place
   the puzzles: 11 tiles, smallest 102 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 587 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 587 dp, all in place
   the turn piece: 72 dp, over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 595 dp, all in place
   play from here: 184 x 88 dp, back 104 x 88, 12 dp apart, no title, both stacked
   the line over the board, short: 595 x 26 dp, in place
-  a game from a replay: 5 tiles, smallest 160 x 88 dp, board 587 dp, all in place
-  the win: 7 tiles, smallest 91 x 88 dp, board 587 dp, card buttons 91 x 88 dp, all in place
+  a game from a replay: 5 tiles, smallest 90 x 88 dp, board 587 dp, all in place
+  the win: 7 tiles, smallest 90 x 88 dp, board 587 dp, card buttons 91 x 88 dp, all in place
 4:3, portrait, 1536 x 2048:
   home: 7 tiles, smallest 88 x 88 dp, board 541 dp, all in place
   home's chip: 88 dp wide, board 541 dp, mirroring the X on the board's side, off the column and the board
@@ -85,19 +85,19 @@ a 20:9 phone, landscape, 2400 x 1080:
   home's chip, named: 320 dp wide, board 560 dp, mirroring the X on the board's side, off the column and the board
   a friend's setup: 15 tiles, smallest 88 x 88 dp, board 560 dp, all in place
   the computer's setup: 15 tiles, smallest 88 x 88 dp, board 560 dp, all in place
-  the game: 5 tiles, smallest 94 x 88 dp, board 752 dp, all in place
-  the game on the clock: 7 tiles, smallest 94 x 88 dp, board 752 dp, all in place
+  the game: 5 tiles, smallest 94 x 96 dp, board 752 dp, all in place
+  the game on the clock: 7 tiles, smallest 94 x 96 dp, board 752 dp, all in place
   taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels the 3D screen's; a puzzle's panels the game's, its play 504 dp tall
   settings: 22 tiles, smallest 88 x 88 dp, board 752 dp, all in place
   the puzzles: 11 tiles, smallest 102 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 200 x 88 dp, board 752 dp, all in place
+  a puzzle: 4 tiles, smallest 110 x 96 dp, board 752 dp, all in place
   the turn piece: 72 dp, over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 726 dp, all in place
   play from here: 254 x 88 dp, back 134 x 88, 492 dp apart, the title between
   the line over the board, why: 726 x 26 dp, in place
-  a game from a replay: 5 tiles, smallest 94 x 88 dp, board 752 dp, all in place
+  a game from a replay: 5 tiles, smallest 94 x 96 dp, board 752 dp, all in place
   the win: 7 tiles, smallest 94 x 88 dp, board 752 dp, card buttons 112 x 88 dp, all in place
 a 20:9 phone, portrait, 1080 x 2400:
   home: 7 tiles, smallest 88 x 88 dp, board 640 dp, all in place
@@ -132,7 +132,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp:
   the puzzles: 11 tiles, smallest 102 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 492 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 492 dp, all in place
   the turn piece: 72 dp, over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 466 dp, all in place
   play from here: 254 x 88 dp, back 134 x 88, 174 dp apart, the title between
@@ -172,7 +172,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp:
   the puzzles: 11 tiles, smallest 102 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 432 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 432 dp, all in place
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 406 dp, all in place
   play from here: 254 x 88 dp, back 223 x 88, 12 dp apart, no title
@@ -212,7 +212,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp:
   the puzzles: 11 tiles, smallest 102 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 373 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 373 dp, all in place
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 381 dp, all in place
   play from here: 184 x 88 dp, back 104 x 88, 12 dp apart, no title, both stacked
@@ -246,19 +246,19 @@ a foldable, landscape, 2208 x 1768:
   home's chip, named: 320 dp wide, board 479 dp, mirroring the X on the board's side, off the column and the board
   a friend's setup: 15 tiles, smallest 88 x 88 dp, board 439 dp, all in place
   the computer's setup: 15 tiles, smallest 88 x 88 dp, board 439 dp, all in place
-  the game: 5 tiles, smallest 160 x 88 dp, board 519 dp, all in place
-  the game on the clock: 7 tiles, smallest 160 x 88 dp, board 519 dp, all in place
-  taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels 192 x 288 and 192 x 368 dp, the 3D screen's 232 x 288 and 232 x 352; a puzzle's panels the game's, its play 504 dp tall
+  the game: 5 tiles, smallest 90 x 88 dp, board 519 dp, all in place
+  the game on the clock: 7 tiles, smallest 90 x 88 dp, board 519 dp, all in place
+  taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels 192 x 204 and 192 x 368 dp, the 3D screen's 232 x 204 and 232 x 352; a puzzle's panels the game's, its play 504 dp tall
   settings: 22 tiles, smallest 88 x 88 dp, board 428 dp, all in place
   the puzzles: 11 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 519 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 519 dp, all in place
   the turn piece: 72 dp, over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 527 dp, all in place
   play from here: 200 x 88 dp, back 88 x 88, 12 dp apart, no title, both stacked
   the line over the board, short: 527 x 26 dp, in place
-  a game from a replay: 5 tiles, smallest 160 x 88 dp, board 519 dp, all in place
+  a game from a replay: 5 tiles, smallest 90 x 88 dp, board 519 dp, all in place
   the win: 7 tiles, smallest 88 x 88 dp, board 519 dp, card buttons 88 x 88 dp, all in place
 a foldable, portrait, 1768 x 2208:
   home: 7 tiles, smallest 88 x 88 dp, board 473 dp, all in place
@@ -286,20 +286,20 @@ a foldable, portrait, 1768 x 2208:
   home's chip, named: 320 dp wide, board 547 dp, mirroring the X on the board's side, off the column and the board
   a friend's setup: 15 tiles, smallest 88 x 88 dp, board 507 dp, all in place
   the computer's setup: 15 tiles, smallest 88 x 88 dp, board 507 dp, all in place
-  the game: 5 tiles, smallest 160 x 88 dp, board 587 dp, all in place
-  the game on the clock: 7 tiles, smallest 160 x 88 dp, board 587 dp, all in place
-  taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels 192 x 288 and 192 x 368 dp, the 3D screen's 232 x 288 and 232 x 352; a puzzle's panels the game's, its play 504 dp tall
+  the game: 5 tiles, smallest 90 x 88 dp, board 587 dp, all in place
+  the game on the clock: 7 tiles, smallest 90 x 88 dp, board 587 dp, all in place
+  taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels 192 x 204 and 192 x 368 dp, the 3D screen's 232 x 204 and 232 x 352; a puzzle's panels the game's, its play 504 dp tall
   settings: 22 tiles, smallest 88 x 88 dp, board 491 dp, all in place
   the puzzles: 11 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 587 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 587 dp, all in place
   the turn piece: 72 dp, over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 595 dp, all in place
   play from here: 200 x 88 dp, back 88 x 88, 12 dp apart, no title, both stacked
   the line over the board, short: 595 x 26 dp, in place
-  a game from a replay: 5 tiles, smallest 160 x 88 dp, board 587 dp, all in place
-  the win: 7 tiles, smallest 91 x 88 dp, board 587 dp, card buttons 91 x 88 dp, all in place
+  a game from a replay: 5 tiles, smallest 90 x 88 dp, board 587 dp, all in place
+  the win: 7 tiles, smallest 90 x 88 dp, board 587 dp, card buttons 91 x 88 dp, all in place
 4:3, portrait, 1536 x 2048:
   home: 7 tiles, smallest 88 x 88 dp, board 541 dp, all in place
   home's chip: 88 dp wide, board 541 dp, mirroring the X on the board's side, off the column and the board
@@ -326,19 +326,19 @@ a 20:9 phone, landscape, 2400 x 1080:
   home's chip, named: 320 dp wide, board 560 dp, mirroring the X on the board's side, off the column and the board
   a friend's setup: 15 tiles, smallest 88 x 88 dp, board 560 dp, all in place
   the computer's setup: 15 tiles, smallest 88 x 88 dp, board 560 dp, all in place
-  the game: 5 tiles, smallest 94 x 88 dp, board 752 dp, all in place
-  the game on the clock: 7 tiles, smallest 94 x 88 dp, board 752 dp, all in place
+  the game: 5 tiles, smallest 94 x 96 dp, board 752 dp, all in place
+  the game on the clock: 7 tiles, smallest 94 x 96 dp, board 752 dp, all in place
   taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels the 3D screen's; a puzzle's panels the game's, its play 504 dp tall
   settings: 22 tiles, smallest 88 x 88 dp, board 752 dp, all in place
   the puzzles: 11 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 200 x 88 dp, board 752 dp, all in place
+  a puzzle: 4 tiles, smallest 110 x 96 dp, board 752 dp, all in place
   the turn piece: 72 dp, over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 726 dp, all in place
   play from here: 278 x 88 dp, back 158 x 88, 444 dp apart, the title between
   the line over the board, why: 726 x 26 dp, in place
-  a game from a replay: 5 tiles, smallest 94 x 88 dp, board 752 dp, all in place
+  a game from a replay: 5 tiles, smallest 94 x 96 dp, board 752 dp, all in place
   the win: 7 tiles, smallest 94 x 88 dp, board 752 dp, card buttons 112 x 88 dp, all in place
 a 20:9 phone, portrait, 1080 x 2400:
   home: 7 tiles, smallest 88 x 88 dp, board 640 dp, all in place
@@ -373,7 +373,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp:
   the puzzles: 11 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 492 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 492 dp, all in place
   the turn piece: 72 dp, over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 466 dp, all in place
   play from here: 278 x 88 dp, back 158 x 88, 126 dp apart, the title between
@@ -413,7 +413,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp:
   the puzzles: 11 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 432 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 432 dp, all in place
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 406 dp, all in place
   play from here: 278 x 88 dp, back 199 x 88, 12 dp apart, no title
@@ -453,7 +453,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp:
   the puzzles: 11 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 373 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 373 dp, all in place
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 381 dp, all in place
   play from here: 200 x 88 dp, back 88 x 88, 12 dp apart, no title, both stacked
@@ -494,7 +494,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 118, 0, 0, 84 px:
   the puzzles: 11 tiles, smallest 102 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 450 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 450 dp, all in place
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 424 dp, all in place
   play from here: 254 x 88 dp, back 134 x 88, 157 dp apart, the title between
@@ -514,7 +514,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 0, 0, 118, 84 px:
   the puzzles: 11 tiles, smallest 102 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 450 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 450 dp, all in place
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 424 dp, all in place
   play from here: 254 x 88 dp, back 134 x 88, 157 dp apart, the title between
@@ -554,7 +554,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   the puzzles: 11 tiles, smallest 102 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 395 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 395 dp, all in place
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 369 dp, all in place
   play from here: 254 x 88 dp, back 208 x 88, 12 dp apart, no title
@@ -574,7 +574,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   the puzzles: 11 tiles, smallest 102 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 395 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 395 dp, all in place
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 369 dp, all in place
   play from here: 254 x 88 dp, back 208 x 88, 12 dp apart, no title
@@ -614,7 +614,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   the puzzles: 11 tiles, smallest 102 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 321 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 321 dp, all in place
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 329 dp, all in place
   play from here: 184 x 88 dp, back 104 x 88, 12 dp apart, no title, both stacked
@@ -634,7 +634,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   the puzzles: 11 tiles, smallest 102 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 321 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 321 dp, all in place
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 329 dp, all in place
   play from here: 184 x 88 dp, back 104 x 88, 12 dp apart, no title, both stacked
@@ -675,7 +675,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 118, 0, 0, 84 px:
   the puzzles: 11 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 450 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 450 dp, all in place
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 424 dp, all in place
   play from here: 278 x 88 dp, back 255 x 88, 12 dp apart, no title
@@ -695,7 +695,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 540 dp, insets 0, 0, 118, 84 px:
   the puzzles: 11 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 450 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 450 dp, all in place
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 424 dp, all in place
   play from here: 278 x 88 dp, back 255 x 88, 12 dp apart, no title
@@ -735,7 +735,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   the puzzles: 11 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 395 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 395 dp, all in place
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 369 dp, all in place
   play from here: 278 x 88 dp, back 184 x 88, 12 dp apart, no title
@@ -755,7 +755,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   the puzzles: 11 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 395 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 395 dp, all in place
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 369 dp, all in place
   play from here: 278 x 88 dp, back 184 x 88, 12 dp apart, no title
@@ -795,7 +795,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 118, 0, 0, 84 px:
   the puzzles: 11 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 321 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 321 dp, all in place
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 329 dp, all in place
   play from here: 200 x 88 dp, back 88 x 88, 12 dp apart, no title, both stacked
@@ -815,7 +815,7 @@ a 9:16 phone, landscape, 1920 x 1080 at 480 dp, insets 0, 0, 118, 84 px:
   the puzzles: 11 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 88 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 321 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 321 dp, all in place
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 329 dp, all in place
   play from here: 200 x 88 dp, back 88 x 88, 12 dp apart, no title, both stacked
@@ -849,19 +849,19 @@ en, the tablet with its navigation bar:
   home's chip, named: 320 dp wide, board 526 dp, mirroring the X on the board's side, off the column and the board
   a friend's setup: 15 tiles, smallest 88 x 88 dp, board 526 dp, all in place
   the computer's setup: 15 tiles, smallest 88 x 88 dp, board 526 dp, all in place
-  the game: 5 tiles, smallest 94 x 88 dp, board 704 dp, all in place
-  the game on the clock: 7 tiles, smallest 94 x 88 dp, board 704 dp, all in place
+  the game: 5 tiles, smallest 94 x 96 dp, board 704 dp, all in place
+  the game on the clock: 7 tiles, smallest 94 x 96 dp, board 704 dp, all in place
   taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels the 3D screen's; a puzzle's panels the game's, its play 504 dp tall
   settings: 22 tiles, smallest 88 x 88 dp, board 692 dp, all in place
   the puzzles: 11 tiles, smallest 102 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 200 x 88 dp, board 704 dp, all in place
+  a puzzle: 4 tiles, smallest 110 x 96 dp, board 704 dp, all in place
   the turn piece: 72 dp, over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 678 dp, all in place
   play from here: 254 x 88 dp, back 164 x 88, 12 dp apart, no title
   the line over the board, why: 678 x 26 dp, in place
-  a game from a replay: 5 tiles, smallest 94 x 88 dp, board 704 dp, all in place
+  a game from a replay: 5 tiles, smallest 94 x 96 dp, board 704 dp, all in place
   the win: 7 tiles, smallest 94 x 88 dp, board 704 dp, card buttons 110 x 88 dp, all in place
   settings: 22 tiles, 22 with no inset: the whole list
 1200 x 1920, insets 0, 0, 0, 72 px:
@@ -892,19 +892,19 @@ et, the tablet with its navigation bar:
   home's chip, named: 320 dp wide, board 526 dp, mirroring the X on the board's side, off the column and the board
   a friend's setup: 15 tiles, smallest 88 x 88 dp, board 526 dp, all in place
   the computer's setup: 15 tiles, smallest 88 x 88 dp, board 526 dp, all in place
-  the game: 5 tiles, smallest 94 x 88 dp, board 704 dp, all in place
-  the game on the clock: 7 tiles, smallest 94 x 88 dp, board 704 dp, all in place
+  the game: 5 tiles, smallest 94 x 96 dp, board 704 dp, all in place
+  the game on the clock: 7 tiles, smallest 94 x 96 dp, board 704 dp, all in place
   taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels the 3D screen's; a puzzle's panels the game's, its play 504 dp tall
   settings: 22 tiles, smallest 88 x 88 dp, board 692 dp, all in place
   the puzzles: 11 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 200 x 88 dp, board 704 dp, all in place
+  a puzzle: 4 tiles, smallest 110 x 96 dp, board 704 dp, all in place
   the turn piece: 72 dp, over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 678 dp, all in place
   play from here: 209 x 88 dp, back 209 x 88, 12 dp apart, no title, both stacked
   the line over the board, why: 678 x 26 dp, in place
-  a game from a replay: 5 tiles, smallest 94 x 88 dp, board 704 dp, all in place
+  a game from a replay: 5 tiles, smallest 94 x 96 dp, board 704 dp, all in place
   the win: 7 tiles, smallest 94 x 88 dp, board 704 dp, card buttons 110 x 88 dp, all in place
   settings: 22 tiles, 22 with no inset: the whole list
 1200 x 1920, insets 0, 0, 0, 72 px:
@@ -935,20 +935,20 @@ en, the iPads in landscape with their bars:
   home's chip, named: 320 dp wide, board 536 dp, mirroring the X on the board's side, off the column and the board
   a friend's setup: 15 tiles, smallest 88 x 88 dp, board 507 dp, all in place
   the computer's setup: 15 tiles, smallest 88 x 88 dp, board 507 dp, all in place
-  the game: 5 tiles, smallest 160 x 88 dp, board 587 dp, all in place
-  the game on the clock: 7 tiles, smallest 160 x 88 dp, board 587 dp, all in place
-  taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels 192 x 288 and 192 x 368 dp, the 3D screen's 232 x 288 and 232 x 352; a puzzle's panels the game's, its play 504 dp tall
+  the game: 5 tiles, smallest 90 x 88 dp, board 587 dp, all in place
+  the game on the clock: 7 tiles, smallest 90 x 88 dp, board 587 dp, all in place
+  taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels 192 x 204 and 192 x 368 dp, the 3D screen's 232 x 204 and 232 x 352; a puzzle's panels the game's, its play 504 dp tall
   settings: 22 tiles, smallest 88 x 88 dp, board 491 dp, all in place
   the puzzles: 11 tiles, smallest 102 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 587 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 587 dp, all in place
   the turn piece: 72 dp, over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 595 dp, all in place
   play from here: 184 x 88 dp, back 104 x 88, 12 dp apart, no title, both stacked
   the line over the board, short: 595 x 26 dp, in place
-  a game from a replay: 5 tiles, smallest 160 x 88 dp, board 587 dp, all in place
-  the win: 7 tiles, smallest 91 x 88 dp, board 587 dp, card buttons 91 x 88 dp, all in place
+  a game from a replay: 5 tiles, smallest 90 x 88 dp, board 587 dp, all in place
+  the win: 7 tiles, smallest 90 x 88 dp, board 587 dp, card buttons 91 x 88 dp, all in place
   settings: 22 tiles, 22 with no inset: the whole list
 2420 x 1668, insets 0, 48, 0, 40 px:
   home: 7 tiles, smallest 88 x 88 dp, board 530 dp, all in place
@@ -956,20 +956,20 @@ en, the iPads in landscape with their bars:
   home's chip, named: 320 dp wide, board 530 dp, mirroring the X on the board's side, off the column and the board
   a friend's setup: 15 tiles, smallest 88 x 88 dp, board 530 dp, all in place
   the computer's setup: 15 tiles, smallest 88 x 88 dp, board 530 dp, all in place
-  the game: 5 tiles, smallest 160 x 88 dp, board 681 dp, all in place
-  the game on the clock: 7 tiles, smallest 160 x 88 dp, board 681 dp, all in place
-  taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels 192 x 288 and 192 x 368 dp, the 3D screen's 232 x 288 and 232 x 352; a puzzle's panels the game's, its play 504 dp tall
+  the game: 5 tiles, smallest 90 x 88 dp, board 681 dp, all in place
+  the game on the clock: 7 tiles, smallest 90 x 88 dp, board 681 dp, all in place
+  taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels 192 x 204 and 192 x 368 dp, the 3D screen's 232 x 204 and 232 x 352; a puzzle's panels the game's, its play 504 dp tall
   settings: 22 tiles, smallest 88 x 88 dp, board 580 dp, all in place
   the puzzles: 11 tiles, smallest 102 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 681 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 681 dp, all in place
   the turn piece: 72 dp, over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 684 dp, all in place
   play from here: 184 x 88 dp, back 109 x 88, 12 dp apart, no title, both stacked
   the line over the board, why: 684 x 26 dp, in place
-  a game from a replay: 5 tiles, smallest 160 x 88 dp, board 681 dp, all in place
-  the win: 7 tiles, smallest 106 x 88 dp, board 681 dp, card buttons 106 x 88 dp, all in place
+  a game from a replay: 5 tiles, smallest 90 x 88 dp, board 681 dp, all in place
+  the win: 7 tiles, smallest 90 x 88 dp, board 681 dp, card buttons 106 x 88 dp, all in place
   settings: 22 tiles, 22 with no inset: the whole list
 et, the iPads in landscape with their bars:
 2752 x 2064, insets 0, 48, 0, 40 px:
@@ -978,20 +978,20 @@ et, the iPads in landscape with their bars:
   home's chip, named: 320 dp wide, board 536 dp, mirroring the X on the board's side, off the column and the board
   a friend's setup: 15 tiles, smallest 88 x 88 dp, board 507 dp, all in place
   the computer's setup: 15 tiles, smallest 88 x 88 dp, board 507 dp, all in place
-  the game: 5 tiles, smallest 160 x 88 dp, board 587 dp, all in place
-  the game on the clock: 7 tiles, smallest 160 x 88 dp, board 587 dp, all in place
-  taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels 192 x 288 and 192 x 368 dp, the 3D screen's 232 x 288 and 232 x 352; a puzzle's panels the game's, its play 504 dp tall
+  the game: 5 tiles, smallest 90 x 88 dp, board 587 dp, all in place
+  the game on the clock: 7 tiles, smallest 90 x 88 dp, board 587 dp, all in place
+  taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels 192 x 204 and 192 x 368 dp, the 3D screen's 232 x 204 and 232 x 352; a puzzle's panels the game's, its play 504 dp tall
   settings: 22 tiles, smallest 88 x 88 dp, board 491 dp, all in place
   the puzzles: 11 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 587 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 587 dp, all in place
   the turn piece: 72 dp, over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 595 dp, all in place
   play from here: 200 x 88 dp, back 88 x 88, 12 dp apart, no title, both stacked
   the line over the board, short: 595 x 26 dp, in place
-  a game from a replay: 5 tiles, smallest 160 x 88 dp, board 587 dp, all in place
-  the win: 7 tiles, smallest 91 x 88 dp, board 587 dp, card buttons 91 x 88 dp, all in place
+  a game from a replay: 5 tiles, smallest 90 x 88 dp, board 587 dp, all in place
+  the win: 7 tiles, smallest 90 x 88 dp, board 587 dp, card buttons 91 x 88 dp, all in place
   settings: 22 tiles, 22 with no inset: the whole list
 2420 x 1668, insets 0, 48, 0, 40 px:
   home: 7 tiles, smallest 88 x 88 dp, board 530 dp, all in place
@@ -999,20 +999,20 @@ et, the iPads in landscape with their bars:
   home's chip, named: 320 dp wide, board 530 dp, mirroring the X on the board's side, off the column and the board
   a friend's setup: 15 tiles, smallest 88 x 88 dp, board 530 dp, all in place
   the computer's setup: 15 tiles, smallest 88 x 88 dp, board 530 dp, all in place
-  the game: 5 tiles, smallest 160 x 88 dp, board 681 dp, all in place
-  the game on the clock: 7 tiles, smallest 160 x 88 dp, board 681 dp, all in place
-  taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels 192 x 288 and 192 x 368 dp, the 3D screen's 232 x 288 and 232 x 352; a puzzle's panels the game's, its play 504 dp tall
+  the game: 5 tiles, smallest 90 x 88 dp, board 681 dp, all in place
+  the game on the clock: 7 tiles, smallest 90 x 88 dp, board 681 dp, all in place
+  taken late in a game: flat 27 pieces, 1 a king, in place; 3D 27 pieces, 1 a king, in place; the panels 192 x 204 and 192 x 368 dp, the 3D screen's 232 x 204 and 232 x 352; a puzzle's panels the game's, its play 504 dp tall
   settings: 22 tiles, smallest 88 x 88 dp, board 580 dp, all in place
   the puzzles: 11 tiles, smallest 88 x 88 dp, all in place
   the puzzles' Learn: 13 tiles, smallest 96 x 88 dp, all in place
   the puzzles' Shots: 21 tiles, smallest 96 x 88 dp, all in place
-  a puzzle: 4 tiles, smallest 160 x 88 dp, board 681 dp, all in place
+  a puzzle: 4 tiles, smallest 90 x 96 dp, board 681 dp, all in place
   the turn piece: 72 dp, over the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 684 dp, all in place
   play from here: 205 x 88 dp, back 88 x 88, 12 dp apart, no title, both stacked
   the line over the board, why: 684 x 26 dp, in place
-  a game from a replay: 5 tiles, smallest 160 x 88 dp, board 681 dp, all in place
-  the win: 7 tiles, smallest 106 x 88 dp, board 681 dp, card buttons 106 x 88 dp, all in place
+  a game from a replay: 5 tiles, smallest 90 x 88 dp, board 681 dp, all in place
+  the win: 7 tiles, smallest 90 x 88 dp, board 681 dp, card buttons 106 x 88 dp, all in place
   settings: 22 tiles, 22 with no inset: the whole list
 settings' language list: open true, tiles 22 then 24, changed false
   settings, the language list open: 24 tiles, smallest 88 x 88 dp, board 301 dp, all in place

@@ -10,12 +10,12 @@ up: a light square: focus board, cursor e4, chosen e3, over -, wrong -, moves ma
 left: its target: focus board, cursor d4, chosen e3, over d4, wrong -, moves made 0, changed true
 enter: played: focus board, cursor d4, chosen -, over -, wrong -, moves made 1, changed true
 left three: the edge: focus board, cursor a4, chosen -, over -, wrong -, moves made 1, changed false
-left: off the board: focus control 110, cursor -, chosen -, over -, wrong -, moves made 1, changed true
+left: off the board: focus control 111, cursor -, chosen -, over -, wrong -, moves made 1, changed true
 right: back on its near edge: focus board, cursor a8, chosen -, over -, wrong -, moves made 1, changed true
 tab: focus control 113, cursor -, chosen -, over -, wrong -, moves made 1, changed true
-tab: focus control 110, cursor -, chosen -, over -, wrong -, moves made 1, changed false
+tab: focus control 111, cursor -, chosen -, over -, wrong -, moves made 1, changed false
 tab: focus board, cursor a8, chosen -, over -, wrong -, moves made 1, changed true
-shift tab: focus control 110, cursor -, chosen -, over -, wrong -, moves made 1, changed true
+shift tab: focus control 111, cursor -, chosen -, over -, wrong -, moves made 1, changed true
 tab: focus board, cursor a8, chosen -, over -, wrong -, moves made 1, changed true
 a new game, a piece chosen: focus board, cursor e3, chosen e3, over -, wrong -, moves made 0, changed false
   put down: true, again: false

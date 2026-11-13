@@ -230,10 +230,17 @@ struct Taken {
 // with the board as wide as the screen less the gaps and as tall as its perspective at
 // PITCH_PORTRAIT makes it, steeper than landscape's to fill more of the height. A puzzle
 // shares it.
-// The left corner column's height in dp: back, settings, and start over, each a tile of
-// its own on glass, BACK_GAP apart (288 on a touch screen). Where their icons go over
-// their words (way_out) the two under back share what is left of it.
-fn left_h() -> f32 { 3.0 * gui::tap() + 2.0 * BACK_GAP }
+// The left corner column's height in dp: on a touch screen, a phone's or a tablet's,
+// back and settings side by side over start over, each its icon over its word (220 dp,
+// out_row); on a desktop the three under each other, BACK_GAP apart, where their
+// icons go over their words (way_out) the two under back sharing what is left of it.
+fn left_h() -> f32 {
+    guard !out_row() else { return 2.0 * stack_h() + BACK_GAP; }
+    return 3.0 * gui::tap() + 2.0 * BACK_GAP;
+}
+// Whether the way out stands two tiles over one in landscape: on a touch screen, where
+// the column's height costs the 3D board its size (the user, 2026-11-13).
+fn out_row() -> bool { gui::desktop_scale <= 0.0 }
 // The play's corner panel's height in dp: room for three tiles with their icons over
 // their words, as the left column once had (352 on a touch screen), or for the clocks
 // over undo move's tall tile, which is more where the tap is smaller (a desktop).
@@ -313,7 +320,7 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
         let box = float4 { area.x + gap, area.y + gap, width - 2.0 * gap, height - 2.0 * gap };
         var l = Layout { board: board::layout_at(0.0, 0.0, 1.0, s, n), left: left, right: right, three: true,
                          pitch: PITCH_LANDSCAPE, buttons: buttons, count: 3, row: !col, touch: touch, disc: disc,
-                         box: box, room: box, gap: gap, mode: CORNERS, area: safe, .. };
+                         box: box, room: box, gap: gap, mode: CORNERS, area: safe, out_row: out_row(), .. };
         l.keep = [left, right, buttons, float4 { 0.0, 0.0, 0.0, 0.0 }, float4 { 0.0, 0.0, 0.0, 0.0 }];
         let cam = view3d::Camera { pitch: PITCH_LANDSCAPE, yaw: 0.0 };
         rest(l, settle(l, cam, n), s);
@@ -746,7 +753,7 @@ fn flat_corners(area: float4, n: i64, s: f32, size: f32, moves: bool) -> Layout 
     let left = float4 { area.x + gap, area.y + gap, side, min(left_h() * s, height - 2.0 * gap) };
     let right = float4 { area.x + width - gap - side, area.y + gap, side, play_tall };
     var l = Layout { board: board::layout_at(area.x + (width - size) / 2.0, area.y + (height - size) / 2.0, size, s, n),
-                     left: left, right: right, mode: CORNERS, .. };
+                     left: left, right: right, mode: CORNERS, out_row: out_row(), .. };
     let d = (if phone { TAKEN_PHONE } else { TAKEN_D }) * s;
     if moves && !phone { under(l, l.left, area, s, 0); }
     if l.moves.z > 0.0 { taken_under(l, l.right, area.y + area.w - GAP * s, s, d); }

@@ -611,6 +611,11 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   while the moves panel shows, and the 3D board's camera buttons stay a column at the
   right, so the board is larger (the tablet's 802 to 832 dp across in the transition).
   A phone keeps its moves' line.
+- On every touch screen in landscape, a tablet's as a phone's, the way out is back and
+  settings side by side over start over, each its icon over its word, a column 204 dp
+  tall (2026-11-13, the user: the board fits better). The desktop keeps the three under
+  each other, its tiles shorter. With the moves panel the tablet's 3D board is about
+  861 dp across, 898 without it, where the three under each other left 830.
 - The move list's setting is settings' alone (2026-11-13, task 078; the user: once is
   enough), replacing 2026-11-12's three tiles kept on the results screen too. There its
   words alone (Off, Moves, Marks) didn't say what each shows, so a line under the
