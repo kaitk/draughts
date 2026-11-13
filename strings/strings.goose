@@ -51,6 +51,12 @@ let KEYS = [
     "board.turns", "board.turns_note",
     "quit.ask", "quit.cancel",
     "moves.hidden_note", "moves.list_note", "moves.marks_note",
+    "mark.only", "mark.only_tip",
+    "mark.best", "mark.best_tip",
+    "mark.good", "mark.good_tip",
+    "mark.inaccuracy", "mark.inaccuracy_tip",
+    "mark.mistake", "mark.mistake_tip",
+    "mark.blunder", "mark.blunder_tip",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -181,7 +187,19 @@ let QUIT_CANCEL = 125;      // and the button that keeps the app open
 let MOVES_HIDDEN_NOTE = 126; // settings' move list: what the chosen tile shows, under the row
 let MOVES_LIST_NOTE = 127;
 let MOVES_MARKS_NOTE = 128;
-let COUNT = 129;
+let MARK_ONLY = 129;  // a mark's word (the list's legend), then its _TIP line (the popover); in ai::judge's order from ONLY
+let MARK_ONLY_TIP = 130;
+let MARK_BEST = 131;
+let MARK_BEST_TIP = 132;
+let MARK_GOOD = 133;
+let MARK_GOOD_TIP = 134;
+let MARK_INACCURACY = 135;
+let MARK_INACCURACY_TIP = 136;
+let MARK_MISTAKE = 137;
+let MARK_MISTAKE_TIP = 138;
+let MARK_BLUNDER = 139;
+let MARK_BLUNDER_TIP = 140;
+let COUNT = 141;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

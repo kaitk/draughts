@@ -63,7 +63,9 @@ Open:
   after the Play release; 075 the Linux build and release, built in WSL, its checks on
   the Bazzite PC.
 - Content and play: 037 the puzzle set by theme, 038 players, 074 the games' history,
-  marked moves, and a rating (built on the `history` branch, its takes to choose).
+  marked moves, and a rating (built on the `history` branch, its takes to choose); 078
+  the results screen's replay, the move line on phones, and the marks explained; 079 the
+  game screen's side panels on a narrow landscape phone.
 - The 3D board: 041 a carved spring board, 042 its frame cost (the idle wakeup left),
   045 board styles to choose from.
 - Frames: 055 both boards locked to the display's rate on every device, 056 even pacing

@@ -130,15 +130,15 @@ change it made when played ("Rating then: 1031 → 1023").
 - Pixel 7a in portrait: the head, the board 416 dp (432 would leave the list 284), the
   steps a row of four under it (99 × 88 each), the list 432 × 300 dp with 5 rows.
 
-### Open questions
+### Chosen (the user, 2026-11-13)
 
-1. Portrait: the strip (several moves, but the iPhone's board 25% smaller) or the bar's
-   line (only the last move, no cost)?
-2. Marks: the tip, the legend, or both (the legend in the sheet and the replay, the tip
-   under the mouse)?
-3. The results list: does a touch on the `??` count show its tip, as prototyped, or open
-   the game like the rest of the row, with the column's head as the only key?
-4. The replay in landscape: the steps at the board's left, as prototyped (the left thumb,
-   apart from the list), or a row under the list?
-5. The iPhone 13 mini's landscape board is 232 dp because two 192 dp panels share the
-   width: narrower panels there would be a change to the game screen, outside this task.
+1. Portrait: the bar's line (only the last move, no cost to the board).
+2. Marks: both. The legend at the foot of the lists one opens (the phone's sheet, the
+   replay); the tip on the always-shown moves panel (tablet, desktop), under the mouse or
+   a touch.
+3. The results list: a touch anywhere on a row, its `??` count too, opens the game; the
+   column's head is the key.
+4. The replay in landscape: the steps at the board's left, as prototyped.
+5. The iPhone's narrow landscape board: task 079.
+
+The marks' words and tips are in `strings/` as `mark.*` and `mark.*_tip` (2026-11-13).
