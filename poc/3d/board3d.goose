@@ -17,7 +17,7 @@
 //   ../../build/board3d --theme winter --king crown
 //   ../../build/board3d --wood 0                  # the wood's model: 0 to 3 (each look has its own)
 //   ../../build/board3d --theme winter --marble 1 # the frame's marble: 0 the slate, 1 to 4
-//   ../../build/board3d --summer 2                # summer's variant: 0 to 5 (looks::SUMMERS), 4 and 5 amber
+//   ../../build/board3d --summer 2                # summer's variant: 0 to 6 (looks::SUMMERS), 4 and 5 amber, 6 its plain stone
 //   ../../build/board3d --autumn 1                # autumn's: 0 the wood, 1 to 3 stone (looks::AUTUMNS)
 //   ../../build/board3d --winter 1                # winter's: 0 the slate, 1 to 3 wood (looks::WINTERS)
 //   ../../build/board3d --theme spring --spring 1 # spring's look: 0 the birch, 1 elven, 2 Baltic (the default)

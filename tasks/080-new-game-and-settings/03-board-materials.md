@@ -1,20 +1,23 @@
-# 03: Wood, stone, or auto for the 3D board
+# 03: Wood, stone, or carved for the 3D board
 
 Status: in-progress
 
-A choice for the raised board: Wood, Stone, or Auto, the season's own (the user,
-2026-11-13). It replaces task 045, which listed every alternative look; this offers two
-per season. The flat board doesn't change.
+A choice for the raised board: Wood, Stone, Carved, or Auto, the season's own (the user,
+2026-11-13: first wood, stone, or auto; then three for every season, Carved the season's
+best carved board whether wood or stone, wood plain wood and stone plain stone). It
+replaces task 045, which listed every alternative look. The flat board doesn't change.
 
-| Season | Auto | Wood | Stone |
-| --- | --- | --- | --- |
-| Autumn | wood | maple and walnut in cherry (`looks::autumn`) | **new**: `--autumn 1` to 3 |
-| Winter | stone | **new**: `--winter 1` to 3 | slate in marble (`looks::winter`) |
-| Spring | stone | Baltic carved oak (`SPRING_BALTIC`) | elven carved stone (`SPRING_ELVEN`) |
-| Summer | wood | `looks::summer` | amber-carved granite (`SUMMER_AMBER`), to finish |
+| Season | Auto | Wood | Stone | Carved |
+| --- | --- | --- | --- | --- |
+| Autumn | wood | maple and walnut in cherry (`--autumn 0`) | sandstone and porphyry, a solid speckled frame (`--autumn 3`) | rust vines in weathered stone (`--autumn 2`) |
+| Winter | stone | limed ash and smoked oak (`--winter 1`) | slate in marble (`--winter 0`) | the same wood, a Nordic band in smoked oak (`--winter 2`) |
+| Spring | carved | the birch (`--spring 0`) | ivory and jade, uncarved (`--spring 3`) | the elven stone (`--spring 1`) |
+| Summer | wood | `--summer 0` | the amber granite, uncarved (`--summer 6`) | amber signs in granite (`--summer 4`) |
 
-Spring's wood could be the birch (`looks::spring`) instead of the Baltic oak; the user
-to choose.
+The user's picks, 2026-11-13: winter's wood and carved both; autumn's 2 and 3, with no
+seams at the frame's corners (stone shows none). Proposed, for the user to confirm:
+spring's wood the birch and its carved the elven stone, the Baltic oak (`--spring 2`) left
+out or in its place; Auto as today's defaults.
 
 To decide: one choice for every season (Wood shows each season's wood), or one per
 season (settings shows the theme season's two boards, each season remembers its own).
@@ -98,3 +101,15 @@ panel's marble tunes winter's, not autumn 1's own); the takes' bake on the A33 (
 - [ ] Summer's stone finished
 - [ ] The choice in settings (per 02's take) and the player's file; Auto as today's looks
 - [ ] Bake time of the new looks on the A33
+
+## Three for every season (2026-11-13)
+
+- Autumn 2 and 3 lost their corners' seams: autumn 3's frame is one solid block
+  (`build.x` 1), autumn 2 keeps the mitred bands its carving needs with no joint drawn
+  (`build.y` 0), as the elven frame.
+- Spring's and summer's plain stones, `SPRING_STONE` (`--spring 3`) and `SUMMER_STONE`
+  (`--summer 6`): their carved looks through `looks::plain` (the frame one solid block,
+  no carving), keeping the carved looks' tints (`looks::variant`) and their own frame
+  figure rather than winter's marble (`marble_for`).
+- Shots: the scratchpad's `looks/new/plainstones.jpg` (carved beside plain) and
+  `seamless.jpg` (autumn 2 and 3 with corner crops). `model3d` and `shell` tests pass.

@@ -76,7 +76,7 @@ struct Flags {
     hold: f64 = -1.0,       // --hold T: keeps a transition at T of the way, 0..1
     win:  f64 = -1.0,       // --win T: keeps a win at T seconds into its celebration
     // --wood N and --marble N: the 3D board's wood (0..3) and winter frame's marble (0 the
-    // slate, 1..4); --summer N summer's 3D look (0..5, looks::SUMMERS; 4 and 5 amber
+    // slate, 1..4); --summer N summer's 3D look (0..6, looks::SUMMERS; 4 and 5 amber
     // stone); --spring N spring's (0 the birch, 1 the elven carved stone, 2 the Baltic
     // folk carved oak); --autumn N autumn's (0 the wood, 1..3 stone, looks::AUTUMNS) and
     // --winter N winter's (0 the slate, 1..3 wood, looks::WINTERS)
