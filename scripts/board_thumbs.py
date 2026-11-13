@@ -38,7 +38,7 @@ SEASONS = [
     ("winter", {"wood": ["--winter", "1"], "stone": ["--winter", "0"], "carved": ["--winter", "2"]}, "stone"),
     ("spring", {"wood": ["--theme", "spring", "--spring", "0"], "stone": ["--theme", "spring", "--spring", "3"],
                 "carved": ["--theme", "spring", "--spring", "1"]}, "carved"),
-    ("summer", {"wood": ["--summer", "0"], "stone": ["--summer", "6"], "carved": ["--summer", "4"]}, "wood"),
+    ("summer", {"wood": ["--summer", "0"], "stone": ["--summer", "6"], "carved": ["--summer", "7"]}, "wood"),
 ]
 MATERIALS = ["wood", "stone", "carved"]
 

@@ -17,7 +17,7 @@ let COUNT = 4;
 // round sand and terracotta, 4 SUMMER_AMBER and 5 SUMMER_SERPENTINE a granite frame
 // carved with sun signs and trees of life filled with amber (task 041). T cycles the
 // seasons; --summer N and S pick the variant.
-let SUMMERS = 7;
+let SUMMERS = 8;
 let SUMMER_OAK = 4;
 let SUMMER_PICKLED = 5;
 let SUMMER_TEAK = 6;
@@ -48,6 +48,9 @@ let WINTER_STAINED = 16;
 // carving, their frames one solid block. --spring 3 and --summer 6.
 let SPRING_STONE = 17;
 let SUMMER_STONE = 18;
+// Summer's carved board (the user, 2026-11-13: spring's Baltic oak, which had no place,
+// tuned for summer in place of the amber granite): --summer 7.
+let SUMMER_CARVED = 19;
 
 struct Theme {
     photo: i64,             // the season's photograph, src/app/background.c's kind
@@ -117,6 +120,7 @@ fn get(which: i64) -> Theme {
     if which == SUMMER_SERPENTINE { return summer_serpentine(); }
     if which == SPRING_ELVEN { return elven(); }
     if which == SPRING_BALTIC { return baltic(); }
+    if which == SUMMER_CARVED { return summer_carved(); }
     if which == AUTUMN_STONE { return autumn_stone(); }
     if which == AUTUMN_CARVED { return autumn_carved(); }
     if which == AUTUMN_PORPHYRY { return autumn_porphyry(); }
@@ -158,7 +162,7 @@ let MATERIALS = 4;
 // elven stone (1); summer's sunset wood (--summer 0), the amber granite (6), and its signs
 // carved (4).
 let BY_MATERIAL = [[AUTUMN, AUTUMN_PORPHYRY, AUTUMN_CARVED], [WINTER_WOOD, WINTER, WINTER_CARVED],
-                   [SPRING, SPRING_STONE, SPRING_ELVEN], [SUMMER, SUMMER_STONE, SUMMER_AMBER]];
+                   [SPRING, SPRING_STONE, SPRING_ELVEN], [SUMMER, SUMMER_STONE, SUMMER_CARVED]];
 // What Auto is in each season, its look before the choice: autumn's wood, winter's stone,
 // spring's carved stone, summer's wood.
 let OWN_MATERIAL = [MATERIAL_WOOD, MATERIAL_STONE, MATERIAL_CARVED, MATERIAL_WOOD];
@@ -175,6 +179,7 @@ fn of(season: i64, material: i64) -> i64 {
 // The look for summer's variant n (0 to SUMMERS - 1).
 fn summer_look(n: i64) -> i64 {
     if n <= 0 { return SUMMER; }
+    if n >= 7 { return SUMMER_CARVED; }
     if n >= 6 { return SUMMER_STONE; }
     return COUNT + min(n, SUMMERS - 1) - 1;
 }
@@ -188,7 +193,7 @@ fn winter_look(n: i64) -> i64 { if n <= 0 { WINTER } else { WINTER_WOOD + min(n,
 // amber stone wood 2, spring's two carved looks wood 3.
 fn wood_for(look: i64) -> i64 {
     if look == WINTER_WOOD || look == WINTER_CARVED || look == WINTER_STAINED { return 2; }
-    if look == SUMMER_OAK || look == SPRING_ELVEN || look == SPRING_STONE || look == SPRING_BALTIC { return 3; }
+    if look == SUMMER_OAK || look == SPRING_ELVEN || look == SPRING_STONE || look == SPRING_BALTIC || look == SUMMER_CARVED { return 3; }
     if look == SUMMER || look == SUMMER_AMBER || look == SUMMER_STONE || look == SUMMER_PICKLED || look == SUMMER_TEAK { return 2; }
     return -1;
 }
@@ -202,7 +207,7 @@ fn finish_for(look: i64, wood: i64) -> Finish {
     if look == WINTER_STAINED { return COOL; }
     if look == SUMMER_TEAK { return OILED; }
     if look == SUMMER || look == SUMMER_AMBER || look == SUMMER_STONE { return TUNED; }
-    if look == SPRING_ELVEN || look == SPRING_STONE || look == SPRING_BALTIC { return SPRING_FINISH; }
+    if look == SPRING_ELVEN || look == SPRING_STONE || look == SPRING_BALTIC || look == SUMMER_CARVED { return SPRING_FINISH; }
     return VARNISHED;
 }
 
@@ -636,6 +641,31 @@ fn baltic() -> Theme {
     return t;
 }
 
+// Summer 7, carved: the Baltic oak (baltic()) under summer's light and backdrop, its
+// frame a warmer, redder oiled oak with the amber signs, summer's sand and terracotta
+// squares in its open-grained wood, summer's cream and dusky pieces.
+fn summer_carved() -> Theme {
+    let b = baltic();
+    var t = summer();
+    t.light_sq = float4 { 0.95, 0.82, 0.66, 0.45 };
+    t.light_fig = b.light_fig;
+    t.dark_sq = float4 { 0.56, 0.31, 0.22, 0.42 };
+    t.dark_fig = b.dark_fig;
+    t.inlay = float4 { 0.24, 0.12, 0.08, 0.5 };
+    t.inlay_fig = b.inlay_fig;
+    t.frame = float4 { 0.4, 0.21, 0.12, 0.55 };
+    t.frame_fig = b.frame_fig;
+    t.surface = b.surface;
+    t.frame_surface = b.frame_surface;
+    t.light_ring = b.light_ring;
+    t.dark_ring = b.dark_ring;
+    t.frame_ring = b.frame_ring;
+    t.piece_fig = b.piece_fig;
+    t.build = b.build;
+    t.fill = b.fill;
+    return t;
+}
+
 // Summer 4, amber stone: a grey-green granite frame, speckled, with soft lichen patches,
 // carved along its top with sun signs, a tree of life in the middle of the far and near
 // sides and small runic marks between (our own strokes), the cuts filled with amber;
@@ -828,6 +858,9 @@ struct Carving {
     lichen: f32,    // 0..1: lichen patches on the stone
     warmth: f32,    // -1..1: the light stone or wood toward grey-white (-) or warm (+)
     jade:   f32,    // 0..1: the dark squares pale (0) to deep (1), 0.5 as the look has it
+    // The folk band's runs between its diamonds (motif 1): 0 zigzags and a meander by
+    // turns, 1 zigzags with their crosses only, 2 the meander only, 3 none.
+    pattern: i64 = 0,
 }
 
 // The user's values for the carved looks (2026-11-09): spring's elven stone and Baltic oak,
@@ -852,12 +885,14 @@ let AMBER = Carving { motif: 2, depth: 0.02, scale: 12.0, moss: 0.5, amber: 0.55
 // winter's Nordic band: the folk band cut into smoked oak, its sun wheels as snowflakes.
 let AUTUMN_VINES = Carving { motif: 0, depth: 0.023, scale: 23.685, moss: 0.15, amber: 0.0, lichen: 0.0, warmth: 0.0,
                              jade: 0.5 };
-let NORDIC = Carving { motif: 1, depth: 0.015, scale: 6.0, moss: 0.0, amber: 0.0, lichen: 0.0, warmth: 0.0,
-                       jade: 0.5 };
+// The user's values (2026-11-13, the panel): zigzags with their crosses only, a shallow
+// cut, its fill a little glossy, the dark squares deeper.
+let NORDIC = Carving { motif: 1, depth: 0.003, scale: 6.0, moss: 0.0, amber: 0.41, lichen: 0.0, warmth: 0.14,
+                       jade: 1.0, pattern: 1 };
 
 // A carved look's own carving (shown()'s look), ELVEN for one that isn't carved.
 fn carving_for(look: i64) -> Carving {
-    if look == SPRING_BALTIC { return BALTIC; }
+    if look == SPRING_BALTIC || look == SUMMER_CARVED { return BALTIC; }
     if look == SUMMER_AMBER { return AMBER_TUNED; }
     if look == SPRING_STONE { return MOSSY; }
     if look == SUMMER_STONE { return WEATHERED; }

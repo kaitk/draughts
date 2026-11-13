@@ -186,12 +186,14 @@ let FRAG = """
             vec2 a = abs(q);
             return min(d, seg(vec2(max(a.x, a.y), min(a.x, a.y)), vec2(6.0, 0.0), vec2(10.0, 0.0)));
         }
-        if (k == 13) {          // the language: a wireframe globe, a meridian ellipse and the axis, three parallels
-            vec2 q = p - 12.0;
-            float d = min(abs(length(q) - 9.0), abs(length(q / vec2(4.0, 9.0)) - 1.0) * 4.0);
-            d = min(d, seg(p, vec2(12.0, 3.0), vec2(12.0, 21.0)));
-            d = min(d, min(seg(p, vec2(4.2, 7.5), vec2(19.8, 7.5)), seg(p, vec2(4.2, 16.5), vec2(19.8, 16.5))));
-            return min(d, seg(p, vec2(3.0, 12.0), vec2(21.0, 12.0)));
+        if (k == 13) {          // the languages (2026-11-13, after Lucide's, our own strokes): a script's
+                                // glyph at the top left, a bar, its tick, a sweeping stroke and its foot
+                                // (each curve three segments), and an A at the bottom right
+            float d = min(seg(p, vec2(2.5, 5.5), vec2(13.0, 5.5)), seg(p, vec2(7.5, 3.0), vec2(7.5, 5.5)));
+            d = min(d, min(seg(p, vec2(10.6, 5.5), vec2(9.8, 8.8)), seg(p, vec2(9.8, 8.8), vec2(7.6, 12.0))));
+            d = min(d, min(seg(p, vec2(7.6, 12.0), vec2(3.5, 14.7)), seg(p, vec2(6.2, 9.4), vec2(8.2, 12.0))));
+            d = min(d, min(seg(p, vec2(8.2, 12.0), vec2(11.2, 14.0)), seg(p, vec2(12.5, 21.5), vec2(17.0, 11.0))));
+            return min(d, min(seg(p, vec2(17.0, 11.0), vec2(21.5, 21.5)), seg(p, vec2(14.3, 17.6), vec2(19.7, 17.6))));
         }
         if (k == 14) {          // home: a house with a door
             float d = min(seg(p, vec2(3.5, 10.5), vec2(12.0, 3.5)), seg(p, vec2(12.0, 3.5), vec2(20.5, 10.5)));

@@ -16,7 +16,7 @@ fn main() {
                  [looks::winter_look(0), looks::winter_look(1), looks::winter_look(0), looks::winter_look(2)],
                  [looks::shown(looks::SPRING, looks::SPRING_LOOK), looks::shown(looks::SPRING, 0),
                   looks::shown(looks::SPRING, 3), looks::shown(looks::SPRING, 1)],
-                 [looks::summer_look(0), looks::summer_look(0), looks::summer_look(6), looks::summer_look(4)]];
+                 [looks::summer_look(0), looks::summer_look(0), looks::summer_look(6), looks::summer_look(7)]];
     var line: u8[>..] = [];
     for name, s in SEASONS {
         line.clear();

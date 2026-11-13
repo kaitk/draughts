@@ -12,7 +12,7 @@ replaces task 045, which listed every alternative look. The flat board doesn't c
 | Autumn | wood | maple and walnut in cherry (`--autumn 0`) | sandstone and porphyry, a solid speckled frame (`--autumn 3`) | rust vines in weathered stone (`--autumn 2`) |
 | Winter | stone | limed ash and smoked oak (`--winter 1`) | slate in marble (`--winter 0`) | the same wood, a Nordic band in smoked oak (`--winter 2`) |
 | Spring | carved | the birch (`--spring 0`) | ivory and jade, uncarved, veined and cracked (`--spring 3`) | the elven stone (`--spring 1`) |
-| Summer | wood | `--summer 0` | the amber granite, uncarved (`--summer 6`) | amber signs in granite (`--summer 4`) |
+| Summer | wood | `--summer 0` | the amber granite, uncarved (`--summer 6`) | the Baltic oak tuned for summer, amber signs in a red oiled oak (`--summer 7`; the amber granite `--summer 4` before 2026-11-13) |
 
 The user's picks, 2026-11-13: winter's wood and carved both; autumn's 2 and 3, with no
 seams at the frame's corners (stone shows none); spring 0, 1, and 3, the birch the wood

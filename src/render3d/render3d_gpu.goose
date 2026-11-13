@@ -286,7 +286,7 @@ fn bake(g: render3d::Gpu&, albedo: gfx::Texture, normal: gfx::Texture, w: i64, h
                                            m.base, m.vein, m.form, t.seam,
                                            float4 { g.carving.depth, g.carving.scale, g.carving.moss, t.build.w },
                                            looks::MOSS,
-                                           float4 { g.carving.motif, g.carving.amber, g.carving.lichen, 0.0 },
+                                           float4 { g.carving.motif, g.carving.amber, g.carving.lichen, g.carving.pattern },
                                            t.fill, looks::LICHEN });
     gfx::draw(3);
     gfx::end_pass();

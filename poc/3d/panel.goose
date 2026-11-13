@@ -117,9 +117,10 @@ fn frame(p: Panel&, now: f64, input: bool) -> bool {
         slider(c, "waviness", p.stone.wave, 0.0, 2.5);
         slider(c, "polish", p.stone.polish, 0.0, 1.0);
         slider(c, "tint", p.stone.tint, 0.0, 1.0);
-        heading(c, "Carving (spring 1, 2; summer 4, 5)");
+        heading(c, "Carving (spring 1, 2, 3; summer 4, 5, 6; autumn 2; winter 2)");
         variant(c, "spring", p.spring, looks::SPRINGS - 1);
-        variant(c, "motif", p.carving.motif, 2);
+        variant(c, "motif", p.carving.motif, 3);
+        variant(c, "pattern", p.carving.pattern, 3);
         slider(c, "depth", p.carving.depth, 0.0, 0.04);
         slider(c, "scale", p.carving.scale, 3.0, 24.0);
         slider(c, "moss", p.carving.moss, 0.0, 1.0);
@@ -252,6 +253,6 @@ fn print_values(p: Panel&) {
     num(e, k.warmth);
     e.append(", jade: ");
     num(e, k.jade);
-    e.append(" }");
+    format(e, ", pattern: ", k.pattern, " }");
     print(e);
 }

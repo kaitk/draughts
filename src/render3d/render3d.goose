@@ -92,7 +92,7 @@ struct Bake {
     seam:          float4,  // looks::Theme.seam
     carve:         float4,  // looks::Carving: depth, repeats per side, moss; w 1 carved
     moss:          float4,  // looks::MOSS
-    carve_more:    float4,  // looks::Carving: motif, amber, lichen
+    carve_more:    float4,  // looks::Carving: motif, amber, lichen, the folk band's pattern
     fill:          float4,  // looks::Theme.fill
     lichen:        float4,  // looks::LICHEN
 }

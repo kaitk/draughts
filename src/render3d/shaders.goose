@@ -1350,7 +1350,11 @@ let BAKE_FRAG = """
     // on band `side` (0 the near side, 1 the far, 2 and 3 those along z), its corner's arc
     // of radius rc: the cut strokes' signed distance. Diamonds at n steps from the side's
     // middle to the corner's medallion (n from the repeats per side), a tree there on the
-    // far and near sides; zigzags and a meander between them by turns.
+    // far and near sides; between them the runs carve_more.w picks (looks::Carving.pattern):
+    // 0 zigzags and a meander by turns, 1 zigzags only, 2 the meander only, 3 none. A
+    // zigzag starts and ends on the band's middle, a whole number of its periods, so it
+    // runs into the diamonds' points as one chain (2026-11-13: clipped at a peak, its ends
+    // stopped short of the diamond as stubs).
     float folk(float x, float y, float rc, float side) {
         float xc = C_INNER + rc * 0.25 * PI;
         float n = max(floor(carve.y * 0.5 + 0.5), 2.0);
@@ -1365,13 +1369,17 @@ let BAKE_FRAG = """
                 : (j < 0.5 && trees ? tree(vec2(e.x, e.y * up), 0.165) - CUT_W : diamond(e, 0.15));
         d = min(d, m);
         float g = min(floor(u / step_), n - 1.0);
-        float lo = g * step_ + (g < 0.5 && trees ? 0.2 : 0.175);
-        float hi = (g + 1.0) * step_ - (g > n - 1.5 ? 0.2 : 0.175);
+        float kind = carve_more.w;
+        bool zig = kind < 0.5 ? mod(g, 2.0) < 0.5 : kind < 1.5;
+        // A zigzag meets a diamond at its point (0.15 out); a meander, a tree, or the
+        // corner's wheel keeps a gap.
+        float lo = g * step_ + (g < 0.5 && trees ? 0.2 : zig ? 0.15 : 0.175);
+        float hi = (g + 1.0) * step_ - (g > n - 1.5 ? 0.2 : zig ? 0.15 : 0.175);
         float span = hi - lo;
-        if (span > 0.05) {
+        if (span > 0.05 && kind < 2.5) {
             float t = u - lo;
-            float pat = mod(g, 2.0) < 0.5 ? zigzag(t, y, 0.08, span / max(floor(span / 0.17 + 0.5), 1.0))
-                                          : meander(t, y, 0.078, span / max(floor(span / 0.2 + 0.5), 1.0));
+            float len = span / max(floor(span / (zig ? 0.17 : 0.2) + 0.5), 1.0);
+            float pat = zig ? zigzag(t + 0.25 * len, y, 0.08, len) : meander(t, y, 0.078, len);
             d = min(d, max(pat, max(lo - u, u - hi)));
         }
         return d;
