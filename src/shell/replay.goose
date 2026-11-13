@@ -34,7 +34,7 @@ let SHOWN = gui::ASK_SHOWN;         // another move shown
 let PLAY = 1;                       // play from here: a game from the move shown
 
 let MAX_PLIES = board::MAX_HISTORY;
-let POSITIONS = 513;        // MAX_PLIES + 1: the start and the position after each move
+let POSITIONS = MAX_PLIES + 1; // the start and the position after each move
 
 let EDGE = 24.0;            // dp from the safe area's edges
 let GAP = 12.0;             // between the parts
@@ -42,12 +42,12 @@ let BESIDE = 24.0;          // between the board and the column at its right
 let MIN_SIDE = 300.0;       // the column at the board's right, at least, in landscape
 let MIN_LIST = 220.0;       // the glass under the steps, at least, in portrait
 let IN = 16.0;              // inside the glass
-let ROW = 34.0;             // a row of the list
+let ROW = game::MOVES_ROW;  // a row of the list, as the moves panel's
 let NUMBER = 40.0;          // the moves' numbers ("100." in the small face)
 let LINE = 26.0;            // a line of the move shown
 let DISC = 9.0;             // dp: the radius of a side's piece by its accuracy and the move shown
-let FADE = 40.0;            // dp at the list's top and foot over which rows past them fade
-let MARK_GAP = 4.0;
+let FADE = game::MOVES_FADE; // dp at the list's top and foot over which rows past them fade
+let MARK_GAP = game::MARK_GAP;
 let NOTE = 26.0;            // dp: the line under the board saying a game from here doesn't count
 
 let BACK_ID = gui::REPLAY_IDS;
@@ -55,6 +55,11 @@ let STEP_ID = gui::REPLAY_IDS + 1;  // the four steps
 let LIST = gui::REPLAY_IDS + 5;     // the list's scroll
 let PLAY_ID = gui::REPLAY_IDS + 6;  // play from here
 let MOVE_ID = gui::REPLAY_IDS + 10; // a move's tap, by its index in the game
+
+// The keys' groups (gui::group), in Tab's order: the head, the steps, the list.
+let GROUP_HEAD = 0;
+let GROUP_STEPS = 1;
+let GROUP_LIST = 2;
 
 // A move of the game as the list and the board need it, with its mark.
 struct Ply {
@@ -168,29 +173,18 @@ fn go(r: Replay&, ply: i64, now: f64) -> bool {
 fn turned(r: Replay&) -> bool { r.game.level != history::FRIEND && r.game.side == rules::BLACK }
 
 // The game's line: the opponent and its rating, and the date.
-fn game_text(t: results::Text&, g: history::Game&) {
+fn game_text(t: gui::Text&, g: history::Game&) {
     t.clear();
-    if g.level == history::FRIEND {
-        results::push(t, strings::get(strings::RESULTS_FRIEND));
-    } else {
-        results::push(t, strings::get(strings::PICK_EASY + g.level));
-        results::push(t, " ");
-        results::push_number(t, ai::skill_rating(g.skill));
-    }
-    results::push(t, " · ");
-    let y, m, d = history::date(g.time);
-    results::push_number(t, y);
-    t.push('-');
-    results::push_two(t, m);
-    t.push('-');
-    results::push_two(t, d);
+    results::opponent(t, g);
+    gui::push(t, " · ");
+    results::date(t, g);
 }
 
 // The game's result as the results list signs it, `k` dp across in r's left: a crown won,
 // = drawn, an X lost (against a friend a crown for a game won by either side).
 fn result_sign(g: gui::Gui&, r: float4, x: history::Game&, k: f32) {
     let u = g.scale;
-    let res = if x.level == history::FRIEND { if x.winner == history::DRAW { 0 } else { 1 } } else { history::result(x) };
+    let res = results::outcome(x);
     let icon = float4 { r.x, r.y + 0.5 * (r.w - k * u), k * u, k * u };
     if res > 0 { gui::glyph_icon(g, icon, gui::CROWN, gui::PLAIN, 0.0, 0.9); }
     if res == 0 { gui::text(g, gui::BODY, icon, "=", 0.8, 0.0, gui::CENTER); }
@@ -200,14 +194,14 @@ fn result_sign(g: gui::Gui&, r: float4, x: history::Game&, k: f32) {
 // The game's line in r: its sign and its text, dimmed.
 fn game_line(g: gui::Gui&, r: float4, x: history::Game&) {
     let u = g.scale;
-    var t: results::Text = [];
+    var t: gui::Text = [];
     game_text(t, x);
     result_sign(g, r, x, 20.0);
     gui::text(g, gui::SMALL, float4 { r.x + 28.0 * u, r.y, r.z - 28.0 * u, r.w }, t[..], 0.66, 0.0, gui::LEFT);
 }
 
 fn game_width(g: gui::Gui&, x: history::Game&) -> f32 {
-    var t: results::Text = [];
+    var t: gui::Text = [];
     game_text(t, x);
     return 28.0 * g.scale + gui::text_width(g, gui::SMALL, t[..]);
 }
@@ -288,25 +282,11 @@ fn number_of(r: Replay&, i: i64) -> i64, bool {
 
 fn as_move(p: Ply&) -> rules::Move { rules::Move { from: p.from, to: p.to, captured: p.captured, .. } }
 
-// The width of a move's mark after it in the list, 0 for none.
+// The width of a move's mark after it in the list, its gap before it, 0 for none; the
+// mark drawn as the moves panel draws it (game::mark_at).
 fn mark_width(g: gui::Gui&, mark: u8) -> f32 {
-    let u = g.scale;
-    if mark == ai::BEST { return MARK_GAP * u + 16.0 * u; }
-    let t, c = game::mark_text(mark);
-    return if t.len > 0 { MARK_GAP * u + gui::text_width(g, gui::BODY, t) } else { 0.0 };
-}
-
-// A move's mark from x in row r, as the moves panel draws it: a star for the best, ?! ?
-// ?? in their colors, nothing for a good or only move.
-fn mark_at(g: gui::Gui&, x: f32, r: float4, mark: u8, a: f32) {
-    let u = g.scale;
-    if mark == ai::BEST {
-        let k = 16.0 * u;
-        gui::glyph_icon(g, float4 { x, r.y + 0.5 * (r.w - k), k, k }, gui::STAR, gui::PLAIN, 0.0, 0.9 * a);
-        return;
-    }
-    let t, c = game::mark_text(mark);
-    if t.len > 0 { gui::colored(g, gui::BODY, float4 { x, r.y, r.z, r.w }, t, float4 { c.x, c.y, c.z, a }, gui::LEFT); }
+    let w = game::mark_width(g, mark);
+    return if w > 0.0 { MARK_GAP * g.scale + w } else { 0.0 };
 }
 
 // What the move shown was, in r (two lines): the mover's piece, its number and move, its
@@ -324,17 +304,17 @@ fn shown_line(r: Replay&, g: gui::Gui&, box: float4, over: board::Overlay&) {
     panel::piece(over, float4 { box.x, box.y, 2.0 * DISC * u, LINE * u }, DISC * u, side, 0, 1.0, 0.0);
     var x = box.x + (2.0 * DISC + 10.0) * u;
     let v .= rules::VARIANTS[r.game.variant];
-    var t: results::Text = [];
+    var t: gui::Text = [];
     let n, black = number_of(r, i);
-    results::push_number(t, n);
-    results::push(t, if black { "… " } else { ". " });
+    gui::push_number(t, n);
+    gui::push(t, if black { "… " } else { ". " });
     var m: game::Line = [];
     let mv = as_move(p);
     game::notation(m, v, mv);
-    results::push(t, m[..]);
+    gui::push(t, m[..]);
     gui::text(g, gui::BODY, float4 { x, first.y, box.z, first.w }, t[..], 1.0, 0.0, gui::LEFT);
     x += gui::text_width(g, gui::BODY, t[..]);
-    mark_at(g, x + MARK_GAP * u, first, p.mark, 1.0);
+    game::mark_at(g, x + MARK_GAP * u, first, p.mark, 1.0);
     x += mark_width(g, p.mark) + 8.0 * u;
     guard p.mark >= ai::ONLY && p.mark <= ai::BLUNDER else { return; }
     let tip = strings::get(strings::MARK_ONLY_TIP + 2 * ((p.mark as i64) - ai::ONLY));
@@ -451,7 +431,7 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     l.flip = turned(r);
 
     // The steps.
-    gui::group(g, 1);
+    gui::group(g, GROUP_STEPS);
     let icons = [gui::FIRST, gui::PREV, gui::FWD, gui::LAST];
     for i in 4 {
         let to = if i == 0 { 0 } else if i == 1 { r.ply - 1 } else if i == 2 { r.ply + 1 } else { n };
@@ -461,7 +441,7 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     }
 
     // The head: back, the title and the game where they fit, and play from here.
-    gui::group(g, 0);
+    gui::group(g, GROUP_HEAD);
     var head = o.head;
     if gui::back(g, BACK_ID, gui::cut_left(head, back_w), strings::get(strings::NAV_BACK), arrange == gui::STACKED) { ask = BACK; }
     let at = gui::cut_right(head, play_w);
@@ -491,14 +471,14 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     gui::fill(g, gui::cut_top(c, max(1.0, u)), float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
     let half = 0.5 * (c.z - NUMBER * u);
     let heads = gui::cut_top(c, ROW * u);
-    var t: results::Text = [];
+    var t: gui::Text = [];
     for side in 2 {
         let at = heads.x + NUMBER * u + side * half;
         panel::piece(over, float4 { at, heads.y, 2.0 * DISC * u, heads.w }, DISC * u, side, 0, 1.0, 0.0);
         t.clear();
         let acc = r.game.accuracy[side];
         if acc >= 0 {
-            results::push_number(t, acc);
+            gui::push_number(t, acc);
             t.push('%');
         } else {
             t.push('-');
@@ -534,18 +514,18 @@ fn list(r: Replay&, g: gui::Gui&, view: float4, left: f32, width: f32, now: f64,
         gui::scroll_set(g, LIST, at);
         r.seen = r.ply;
     }
-    gui::group(g, 2);
+    gui::group(g, GROUP_LIST);
     let scrolled = gui::scroll_begin(g, LIST, view, content);
     let listed = g.quads.len;
     let v .= rules::VARIANTS[r.game.variant];
-    var t: results::Text = [];
+    var t: gui::Text = [];
     var m: game::Line    = [];
     for row in rows {
         let y = view.y + 4.0 * u - scrolled + row * row_h;
         guard y + row_h > view.y && y < view.y + view.w else { continue; }
         let num, unused = number_of(r, max(2 * row - off, 0));
         t.clear();
-        results::push_number(t, num);
+        gui::push_number(t, num);
         t.push('.');
         gui::text(g, gui::SMALL, float4 { left, y, NUMBER * u, row_h }, t[..], 0.55, 0.0, gui::LEFT);
         for side in 2 {
@@ -572,7 +552,7 @@ fn list(r: Replay&, g: gui::Gui&, view: float4, left: f32, width: f32, now: f64,
             // Moves after the one shown are dimmed: not yet played on the board.
             let a: f32 = if i < r.ply { 1.0 } else { 0.55 };
             gui::text(g, gui::BODY, cell, m[..], a, 0.0, gui::LEFT);
-            mark_at(g, cell.x + w + MARK_GAP * u, cell, p.mark, a);
+            game::mark_at(g, cell.x + w + MARK_GAP * u, cell, p.mark, a);
             if clicked && go(r, i + 1, now) { ask = SHOWN; }
         }
     }

@@ -31,31 +31,6 @@ let DRAUGHTS_ID = gui::RESULTS_IDS + 1;   // the three draughts' tiles
 let LIST = gui::RESULTS_IDS + 10;         // the games' scrolling list
 let ROW_ID = gui::RESULTS_IDS + 11;       // a game's row, by its place in the list (MAX_GAMES of them)
 
-type Text = u8[..64];
-
-fn push_number(t: Text&, n: i64) {
-    if n < 0 { t.push('-'); }
-    var digits: u8[..20] = [];
-    var k = abs(n);
-    loop {
-        digits.push(('0' + k % 10) as u8);
-        k /= 10;
-        guard k > 0 else { break; }
-    }
-    var i = digits.len - 1;
-    while i >= 0 {
-        t.push(digits[i]);
-        i -= 1;
-    }
-}
-
-fn push_two(t: Text&, n: i64) {
-    if n < 10 { t.push('0'); }
-    push_number(t, n);
-}
-
-fn push(t: Text&, s: const u8[:]) { for c in s { if t.len < 64 { t.push(c); } } }
-
 // The draughts' tile i shows: International, Brazilian, Russian (settings' order).
 fn variant_of(i: i64) -> i64 { settings::DRAUGHTS[i] }
 
@@ -77,7 +52,7 @@ fn frame(g: gui::Gui&, area: float4, s: settings::Settings&, gs: history::Game[.
     // landscape over winter's snow, 2026-11-13). Where they don't fit beside back (a phone
     // in portrait), a row of their own under the head, sharing its width.
     let rim = picker::SWITCH_PAD * u;
-    var t:      Text   = [];
+    var t:      gui::Text = [];
     var widths: f32[3] = [0.0; 3];
     var all = 4.0 * rim;
     for i in 3 {
@@ -114,7 +89,7 @@ fn frame(g: gui::Gui&, area: float4, s: settings::Settings&, gs: history::Game[.
     for i in 3 {
         let v = variant_of(i);
         t.clear();
-        push_number(t, s.rating[v]);
+        gui::push_number(t, s.rating[v]);
         let tapped, unused = gui::pick(g, DRAUGHTS_ID + i, tiles[i], 0.0, strings::get(settings::DRAUGHTS_KEYS[i]), t[..],
                                        variant == v, true);
         if tapped && variant != v {
@@ -149,10 +124,10 @@ fn rating_panel(g: gui::Gui&, r: float4, s: settings::Settings&, gs: history::Ga
     let u = g.scale;
     gui::panel(g, r);
     var c = gui::inset(r, IN * u);
-    var t: Text = [];
+    var t: gui::Text = [];
     gui::text(g, gui::SMALL, gui::cut_top(c, HEAD * u), strings::get(strings::RESULTS_RATING), 0.66, 0.0, gui::LEFT);
     t.clear();
-    push_number(t, s.rating[variant]);
+    gui::push_number(t, s.rating[variant]);
     gui::figures(g, gui::FIGURES, gui::cut_top(c, BIG * u), t[..], 1.0, gui::PLAIN, gui::LEFT);
     let wide = c.z > c.w;
     if levels {
@@ -162,9 +137,9 @@ fn rating_panel(g: gui::Gui&, r: float4, s: settings::Settings&, gs: history::Ga
         for level in 3 {
             var row = gui::cut_top(c, LEVEL_ROW * u);
             t.clear();
-            push(t, strings::get(strings::PICK_EASY + level));
-            push(t, " ");
-            push_number(t, ai::skill_rating(s.skill[level]));
+            gui::push(t, strings::get(strings::PICK_EASY + level));
+            gui::push(t, " ");
+            gui::push_number(t, ai::skill_rating(s.skill[level]));
             gui::text(g, gui::BODY, row, t[..], 1.0, 0.0, gui::LEFT);
             // Won, drawn, lost, each a sign and a count, from the right.
             let base = (variant * 3 + level) * 3;
@@ -176,7 +151,7 @@ fn rating_panel(g: gui::Gui&, r: float4, s: settings::Settings&, gs: history::Ga
                 if k == 1 { gui::text(g, gui::BODY, icon, "=", 0.8, 0.0, gui::CENTER); }
                 if k == 2 { gui::glyph_icon(g, icon, gui::CLOSE, gui::PLAIN, 0.0, 0.6); }
                 t.clear();
-                push_number(t, tot.computer[base + k]);
+                gui::push_number(t, tot.computer[base + k]);
                 gui::text(g, gui::BODY, float4 { at.x + 24.0 * u, at.y, at.z - 24.0 * u, at.w }, t[..], 1.0, 0.0,
                           gui::LEFT);
             }
@@ -224,22 +199,22 @@ fn row(g: gui::Gui&, id: i64, r: float4, x: history::Game&) -> bool {
     let clicked, p = gui::hold(g, id, r);
     gui::fill(g, r, float4 { 1.0, 1.0, 1.0, 0.06 + 0.06 * gui::hover(g, id) + 0.08 * p }, 18.0 * u);
     var c = gui::inset(r, 16.0 * u);
-    let res = if x.level == history::FRIEND { if x.winner == history::DRAW { 0 } else { 1 } } else { history::result(x) };
+    let res = outcome(x);
     let sign = gui::cut_left(c, ICON * u);
     let icon = gui::center(sign, ICON * u, ICON * u);
     if res > 0 { gui::glyph_icon(g, gui::inset(icon, 4.0 * u), gui::CROWN, gui::PLAIN, 0.0, 1.0); }
     if res == 0 { gui::text(g, gui::LABEL, icon, "=", 0.9, 0.0, gui::CENTER); }
     if res < 0 { gui::glyph_icon(g, gui::inset(icon, 8.0 * u), gui::CLOSE, gui::PLAIN, 0.0, 0.6); }
     gui::cut_left(c, 16.0 * u);
-    var t: Text = [];
+    var t: gui::Text = [];
     // The player's blunders, at the right: ?? and a count.
     let side = if x.level == history::FRIEND { -1 } else { x.side };
     var blunders = 0;
     for s in 2 { if side < 0 || s == side { blunders += x.marks[s * ai::MARKS + ai::BLUNDER]; } }
     let marks = gui::cut_right(c, 64.0 * u);
     t.clear();
-    push(t, "?? ");
-    push_number(t, blunders);
+    gui::push(t, "?? ");
+    gui::push_number(t, blunders);
     gui::colored(g, gui::SMALL, marks, t[..], float4 { gui::RED.x, gui::RED.y, gui::RED.z, if blunders > 0 { 1.0 } else { 0.35 } },
                  gui::RIGHT);
     // The rating's change.
@@ -248,7 +223,7 @@ fn row(g: gui::Gui&, id: i64, r: float4, x: history::Game&) -> bool {
         t.clear();
         let d = x.after - x.before;
         if d > 0 { t.push('+'); }
-        push_number(t, d);
+        gui::push_number(t, d);
         gui::text(g, gui::BODY, change, t[..], 1.0, 0.0, gui::RIGHT);
     }
     // The opponent over the date.
@@ -256,22 +231,41 @@ fn row(g: gui::Gui&, id: i64, r: float4, x: history::Game&) -> bool {
     let small = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
     var lines = gui::center(c, c.z, body + 4.0 * u + small);
     t.clear();
-    if x.level == history::FRIEND {
-        push(t, strings::get(strings::RESULTS_FRIEND));
-    } else {
-        push(t, strings::get(strings::PICK_EASY + x.level));
-        push(t, " ");
-        push_number(t, ai::skill_rating(x.skill));
-    }
+    opponent(t, x);
     gui::text(g, gui::BODY, gui::cut_top(lines, body), t[..], 1.0, 0.0, gui::LEFT);
     gui::cut_top(lines, 4.0 * u);
-    let y, m, d = history::date(x.time);
     t.clear();
-    push_number(t, y);
-    t.push('-');
-    push_two(t, m);
-    t.push('-');
-    push_two(t, d);
+    date(t, x);
     gui::text(g, gui::SMALL, gui::cut_top(lines, small), t[..], 0.66, 0.0, gui::LEFT);
     return clicked;
+}
+
+// How a past game reads, here and on its replay (replay.goose).
+
+// The result its sign shows: 1 won, 0 drawn, -1 lost; against a friend, whose winner's
+// colour isn't shown, 1 for a game either side won.
+fn outcome(x: history::Game&) -> i64 {
+    guard x.level != history::FRIEND else { return if x.winner == history::DRAW { 0 } else { 1 }; }
+    return history::result(x);
+}
+
+// The opponent: a friend, or the computer's level and its rating.
+fn opponent(t: gui::Text&, x: history::Game&) {
+    guard x.level != history::FRIEND else {
+        gui::push(t, strings::get(strings::RESULTS_FRIEND));
+        return;
+    }
+    gui::push(t, strings::get(strings::PICK_EASY + x.level));
+    gui::push(t, " ");
+    gui::push_number(t, ai::skill_rating(x.skill));
+}
+
+// The day it was played, year-month-day.
+fn date(t: gui::Text&, x: history::Game&) {
+    let y, m, d = history::date(x.time);
+    gui::push_number(t, y);
+    gui::push(t, "-");
+    gui::push_two(t, m);
+    gui::push(t, "-");
+    gui::push_two(t, d);
 }

@@ -10,6 +10,7 @@ namespace gui;
 import std;
 import vec;
 import .focus;
+import .words;
 
 let MAX_QUADS = 512;
 let MAX_IDS = 32;
