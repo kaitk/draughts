@@ -308,6 +308,10 @@ let FRAG = """
             d = min(d, min(seg(p, vec2(20.7, 18.2), vec2(20.5, 14.5)), seg(p, vec2(20.5, 14.5), vec2(16.9, 15.3))));
             return min(d, min(seg(p, vec2(3.3, 18.2), vec2(3.5, 14.5)), seg(p, vec2(3.5, 14.5), vec2(7.1, 15.3))));
         }
+        if (k == 43 || k == 44) {   // the moves' chevrons up and down (task 078): a chevron right turned
+            vec2 q = k == 43 ? vec2(24.0 - p.y, p.x) : vec2(p.y, p.x);
+            return min(seg(q, vec2(9.0, 6.0), vec2(15.0, 12.0)), seg(q, vec2(15.0, 12.0), vec2(9.0, 18.0)));
+        }
         if (k == 37 || k == 38) {   // the lookout: Lucide's eye, its lids two arcs, its pupil; off, struck through
             float d = min(arc(p, vec2(12.0, 15.64), 10.64, -2.7925, 2.4435), arc(p, vec2(12.0, 8.36), 10.64, 0.3491, 2.4435));
             d = min(d, abs(length(p - 12.0) - 3.0));

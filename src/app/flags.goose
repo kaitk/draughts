@@ -26,6 +26,9 @@ struct Flags {
     background: i64  = -1,  // --background photo|plain: 0 the photograph, 1 the plain fade
     board:      i64  = -1,  // --board 3d|flat: settings::RAISED or settings::FLAT
     lookout:    i64  = -1,  // --lookout on|off: the player's lookout, 1 on, 0 off
+    moves:      i64  = -1,  // --moves off|list|marks: the player's move list (settings::MOVES_*)
+    sheet:      bool = false, // --sheet on: the game's moves' sheet open once the taps have played (task 078)
+    tip:        i64  = -1,  // --tip N: the tip of the game's move N (from 1) shown once the taps have played
     // --hints moves: the selected piece's targets (board::MOVES); mistakes only by default
     hints: i64 = -1,
     // --lang CODE: a language with a file in strings/, else the system's
@@ -140,6 +143,14 @@ fn parse(argv: u8[:][>..]) -> Flags {
         if a == "--board" && v == "flat" { f.board = settings::FLAT; }
         if a == "--lookout" && v == "on" { f.lookout = 1; }
         if a == "--lookout" && v == "off" { f.lookout = 0; }
+        if a == "--moves" && v == "off" { f.moves = settings::MOVES_HIDDEN; }
+        if a == "--sheet" && v == "on" { f.sheet = true; }
+        if a == "--tip" {
+            let n, ok = parse_int(v);
+            if ok && n >= 1 { f.tip = n - 1; }
+        }
+        if a == "--moves" && v == "list" { f.moves = settings::MOVES_LIST; }
+        if a == "--moves" && v == "marks" { f.moves = settings::MOVES_MARKS; }
         if a == "--keep" && v == "off" { f.keep = false; }
         if a == "--hints" && v == "moves" { f.hints = board::MOVES; }
         if a == "--lang" { f.lang = strings::pick(v); }

@@ -124,6 +124,8 @@ let FIRST = 39;             // a replay's steps (task 078): to the start, a chev
 let PREV = 40;              // back one, a chevron left,
 let FWD = 41;               // on one, a chevron right,
 let LAST = 42;              // and to the end, a chevron at a bar
+let CHEVRON_UP = 43;        // the moves' line and sheet (task 078): a chevron up, and down;
+let CHEVRON_DOWN = 44;      // FWD and PREV, the replay's, point right and left
 
 // Text faces (rendering.md, "Fonts"): one size each, in dp, baked by the app at the
 // screen's pixel size.

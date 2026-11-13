@@ -359,6 +359,8 @@ fn play_puzzle(sh: Shell&, index: i64, now: f64 = 0.0) {
 // it is false, changing nothing: there back leaves the app as the system's does. In a
 // transition it acts on the screen come to, as a tap does.
 fn back(sh: Shell&, now: f64) -> bool {
+    // The game's moves' sheet, or a mark's tip, closes first (task 078).
+    if sh.screen == GAME && game::close_sheet(sh.game) { return true; }
     if sh.screen == HOME && sh.who.state != who::CLOSED {
         who::back(sh.who);
     } else if sh.screen == HOME && sh.quitting {
@@ -622,7 +624,7 @@ fn game_layout(sh: Shell&, area: float4, u: f32, now: f64) -> panel::Layout {
     var l = if settings::raised(sh.prefs) {
                 panel::corners_in(area, n, u, panel::PITCH_PORTRAIT, true, true, sh.prefs.moves != settings::MOVES_HIDDEN)
             }
-            else { panel::layout_in(area, n, u, true, true) };
+            else { panel::layout_in(area, n, u, true, true, sh.prefs.moves != settings::MOVES_HIDDEN) };
     l.board.flip = sh.game.computer == rules::WHITE || (!l.three && flat_turned(sh) != (flat_fade(sh, now) < 0.0));
     panel::aim(l, sh.game.cam, now);
     return l;

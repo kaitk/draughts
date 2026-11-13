@@ -16,9 +16,10 @@ extern fn draughts_footprint_mb() -> f64;
 extern fn draughts_threads(out: u8[:]) -> i64;
 
 struct Dev {
-    go:     i64 = -1,           // --go's screen, -1 once switched
-    tapped: i64 = 0,            // --tap's taps played so far
-    keyed:  i64 = 0,            // --keys' keys pressed so far
+    go:     i64  = -1,          // --go's screen, -1 once switched
+    tapped: i64  = 0,           // --tap's taps played so far
+    shown:  bool = false,       // --sheet's sheet and --tip's tip shown
+    keyed:  i64  = 0,           // --keys' keys pressed so far
     // --bench N on the flat board: N whole frames, from the shell's fill to the GPU done,
     // each waited for (cpu: up to the submit); then N as the loop draws them, frame to
     // frame. In seconds; draw3d::Bench times the 3D board.
@@ -51,6 +52,7 @@ fn setup(f: flags::Flags&, sh: shell::Shell&, prefs: settings::Settings) {
     }
     if f.board >= 0 { sh.prefs.board = f.board; }
     if f.lookout >= 0 { sh.prefs.lookout = f.lookout == 1; }
+    if f.moves >= 0 { sh.prefs.moves = f.moves; }
     if f.hints >= 0 { sh.prefs.hints = f.hints; }
     if f.background >= 0 { sh.prefs.plain = f.background == 1; }
     let fen .= f.fen;
@@ -131,6 +133,14 @@ fn after_shell(dv: Dev&, f: flags::Flags&, sh: shell::Shell&, g: gui::Gui&, r: r
             board::release(b, l, p, now);
         }
         dv.tapped++;
+        dirty = true;
+    }
+    // --sheet and --tip once the taps have played and the moves are judged.
+    if !dv.shown && (f.sheet || f.tip >= 0) && dv.tapped >= f.taps.len && !b.moving && sh.screen == shell::GAME
+       && game::all_judged(sh.game) {
+        sh.game.sheet = f.sheet;
+        sh.game.tip = f.tip;
+        dv.shown = true;
         dirty = true;
     }
     if dv.tapped < f.taps.len && sh.screen == shell::PUZZLE && puzzle::ready(sh.puzzle) {
