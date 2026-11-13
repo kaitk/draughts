@@ -525,15 +525,16 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     // accuracy, and the list.
     gui::panel(g, o.glass);
     var c = gui::inset(o.glass, IN * u);
-    // The note under play from here, where the list keeps what it must with it: why a game
-    // from here doesn't count, else only that it doesn't; where even that would take the
-    // list's rows, it stands in the game's line's place (the results row the replay was
-    // opened from says what the game was).
+    // The note under play from here: why a game from here doesn't count, where the list
+    // keeps what it must with it; else only that it doesn't, in the game's line's place,
+    // which costs the list nothing (the results row the replay was opened from says what
+    // the game was); else, the game's line in the head, only that it doesn't over the list
+    // where that keeps BRIEF_LIST rows.
     let rows = c.w - above_list(g, c.z, in_head);
     let brief = note(g, c, false, true) + NOTE_GAP * u;
     r.kind = if rows - note_h >= keep - 0.5 { NOTE_WHY }
-             else if rows - brief >= min(keep, BRIEF_LIST * ROW * u) - 0.5 { NOTE_SHORT }
-             else if !in_head { NOTE_INSTEAD } else { NOTE_NONE };
+             else if !in_head { NOTE_INSTEAD }
+             else if rows - brief >= min(keep, BRIEF_LIST * ROW * u) - 0.5 { NOTE_SHORT } else { NOTE_NONE };
     r.note = float4 { 0.0, 0.0, 0.0, 0.0 };
     if r.kind != NOTE_NONE {
         r.note = gui::cut_top(c, (if r.kind == NOTE_WHY { note_h } else { brief }) - NOTE_GAP * u);

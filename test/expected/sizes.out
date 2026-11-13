@@ -176,7 +176,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp:
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 432 dp, all in place
   play from here: in the head, 184 x 88 dp, the title beside it
-  the note, short: 431 x 18 dp, 1 line, in place
+  the note, short, for the game's line: 431 x 18 dp, 1 line, in place
   a game from a replay: 6 tiles, smallest 90 x 88 dp, board 432 dp, all in place
   the win: 8 tiles, smallest 88 x 88 dp, board 432 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, portrait, 1080 x 2400 at 480 dp:
@@ -417,7 +417,7 @@ a 20:9 phone, landscape, 2400 x 1080 at 480 dp:
   the turn piece: 72 dp, beside the goal's icon, side 0.0, ring 1.0, in place
   a replay: 6 tiles, smallest 88 x 88 dp, board 432 dp, all in place
   play from here: in the head, 187 x 88 dp, the title beside it
-  the note, short: 431 x 18 dp, 1 line, in place
+  the note, short, for the game's line: 431 x 18 dp, 1 line, in place
   a game from a replay: 6 tiles, smallest 90 x 88 dp, board 432 dp, all in place
   the win: 8 tiles, smallest 88 x 88 dp, board 432 dp, card buttons 88 x 88 dp, all in place
 a 20:9 phone, portrait, 1080 x 2400 at 480 dp:
