@@ -569,7 +569,10 @@ measuring there:
   (kHz, 0 at rest) and `gpu_busy` (a percentage); `gpu_freq_table` lists 265 to 1047 MHz,
   and `gpu_model` says Mali-G720 MC12, whatever the hardware is. The devfreq node's
   `cur_freq` is denied. The 3D bench runs near 1047 MHz, so its frame times show the
-  work, unlike the Pixel 7a's (2026-11-10). Old commits for a bench install beside the
+  work, unlike the Pixel 7a's (2026-11-10). The A33 has the same `gpu_clock` node (104 to 897 MHz,
+  readable), but its governor holds 500 to 700 MHz under the 3D bench whatever the work:
+  compare cycles there, waited ms × the clock sampled during the run (task 081,
+  2026-11-13). Old commits for a bench install beside the
   app as their own `--id-suffix` builds, one each, built from a checkout of the commit
   (task 059); `kings = crown` goes into a debuggable build's `files/player-1.txt` with
   `run-as`.
