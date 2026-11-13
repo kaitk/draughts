@@ -1,7 +1,7 @@
 // The 3D board's shaders, GLSL 450 that embed_shader compiles with the program. One
 // forward pass draws everything lit: the board and the pieces share one fragment shader
-// (GGX after Filament, wrap diffuse, Filament's specular antialiasing, 9 weighted
-// hardware-compared shadow taps over 5 × 5 texels, analytic occlusion, an ambient of nine spherical
+// (GGX after Filament, wrap diffuse, Filament's specular antialiasing, 4 weighted
+// hardware-compared shadow taps over 3 × 3 texels, analytic occlusion, an ambient of nine spherical
 // harmonics taken from the photograph, a mild tonemap). The wood is baked once at
 // startup by the bake shader into textures with mips.
 //
@@ -221,9 +221,10 @@ let LIT_FRAG = """
     }
 
     // The key light's shadow, from a point pushed off the surface along its normal: a
-    // 5 × 5 texel box with bilinear edges in 9 hardware-compared taps, their places and
+    // 3 × 3 texel box with bilinear edges in 4 hardware-compared taps, their places and
     // weights from where the point falls in its texel (Castaño's filter, as The Witness
-    // has it); the 16 taps 1.25 texels apart it replaced covered the same 5 texels.
+    // has it). Its 5 × 5 box in 9 taps cost the A33 twice as much for edges a little
+    // softer than a phone's pieces show (task 081).
     float shadow(vec3 p, vec3 n) {
         float nl = clamp(dot(n, light_dir.xyz), 0.0, 1.0);
         vec3 q = p + n * (0.004 + 0.012 * (1.0 - nl));
@@ -234,17 +235,15 @@ let LIT_FRAG = """
         vec2 base = floor(uv + 0.5);
         vec2 f = uv + 0.5 - base;
         base = (base - 0.5) / size;
-        vec3 w0 = vec3(4.0 - 3.0 * f.x, 7.0, 1.0 + 3.0 * f.x);
-        vec3 u = vec3((3.0 - 2.0 * f.x) / w0.x - 2.0, (3.0 + f.x) / 7.0, f.x / w0.z + 2.0) / size.x;
-        vec3 w1 = vec3(4.0 - 3.0 * f.y, 7.0, 1.0 + 3.0 * f.y);
-        vec3 v = vec3((3.0 - 2.0 * f.y) / w1.x - 2.0, (3.0 + f.y) / 7.0, f.y / w1.z + 2.0) / size.y;
-        float sum = 0.0;
-        for (int j = 0; j < 3; j++) {
-            for (int i = 0; i < 3; i++) {
-                sum += w0[i] * w1[j] * texture(shadow_map, vec3(base + vec2(u[i], v[j]), z));
-            }
-        }
-        return sum * (1.0 / 144.0);
+        vec2 w0 = 3.0 - 2.0 * f;
+        vec2 w1 = 1.0 + 2.0 * f;
+        vec2 o0 = ((2.0 - f) / w0 - 1.0) / size;
+        vec2 o1 = (f / w1 + 1.0) / size;
+        float sum = w0.x * w0.y * texture(shadow_map, vec3(base + vec2(o0.x, o0.y), z))
+                  + w1.x * w0.y * texture(shadow_map, vec3(base + vec2(o1.x, o0.y), z))
+                  + w0.x * w1.y * texture(shadow_map, vec3(base + vec2(o0.x, o1.y), z))
+                  + w1.x * w1.y * texture(shadow_map, vec3(base + vec2(o1.x, o1.y), z));
+        return sum * (1.0 / 16.0);
     }
 
     // The frame's short inner wall's occlusion of the field, as a long wall: too sharp
