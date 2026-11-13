@@ -179,6 +179,24 @@ bake, drawn every frame); "at rest" its second (the board pass alone).
   shadow covers (old and new, about 1/16 of the field for one sliding piece), and fewer
   texels or taps (a 512² map, a cheaper blocker search).
 
+## The user's look on the Mac (2026-11-13)
+
+`baked` looks best but costs too much as it is; `fit` with the phone's 4 taps not much
+better than `now`, its edge harsher; `fit` with the desktop's 9 looks good. Two flaws
+seen there were bugs of their own, fixed in the app and the prototype:
+
+- **A dark patch under a jumping piece, in every way** (the jump at 0.25): the field's
+  occlusion was centered on the square a piece is over, so a moving piece's snapped from
+  square to square, here onto the light square beside d4, and its 3 × 3 squares cut it
+  off in a straight line. Now centered where the piece is, over 5 × 5 squares
+  (`view3d::Scene.squares` two float4s a square).
+- **A light dot in the raised piece's shadow, in `fit`** (the jump at 0.23 and 0.24): the
+  shadow pass culled back faces (task 084), and the light leaked through a texel where
+  the top curves away from it. Both faces drawn, as ngfx did; the same leaks were 500 to
+  800 single pixels of the full board's shot in `now` too. On the A33 the shadow map's
+  share of a moving frame grew 0.81 to 0.84 M → 0.96 to 1.01 M cycles (`now`, 4 taps,
+  three runs against the two above).
+
 ## What is left
 
 - Measure on a quiet Mac and on the A33: the bake's GPU time on a frame a piece moves

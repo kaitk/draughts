@@ -119,6 +119,7 @@ let CROWN_SIZE = 256;
 let MAX_INSTANCES = 96;     // view3d::MAX_INSTANCES: two for each of board::MAX_PIECES
 
 let SQUARES = 100;          // the field's squares, 10 × 10 at most
+let SQUARE_ENTRIES = 2 * SQUARES;   // the occlusion's two float4s a square (place's `squares`)
 
 // Everything on the GPU, made by setup() (the targets again on a resize).
 struct Gpu {
@@ -146,8 +147,8 @@ struct Gpu {
     crown_map:      Texture,           // the crown's distance (shaders::CROWN_FRAG), drawn at setup
     occ_map:        Texture,           // the pieces' occlusion of the field (occlusion())
     occ_n:          i64,                    // the squares a side it was drawn for, 0 none yet
-    occ_squares:    float4[SQUARES],        // the squares it was drawn from
-    squares_now:    float4[SQUARES],        // and the ones place() last gave
+    occ_squares:    float4[SQUARE_ENTRIES], // the squares it was drawn from
+    squares_now:    float4[SQUARE_ENTRIES], // and the ones place() last gave
     marks:          Buffer,
     glows:          Buffer,      // the field's glow rings and lit squares
     marked:         bool,             // whether the board's pass has marks to draw
@@ -595,8 +596,8 @@ fn place(g: Gpu&, inst: const float4[:], alphas: const f32[:], squares: const fl
     let fading = min(alphas.len, g.instance_count);
     g.solid = g.instance_count - fading;
     for i in fading { g.alphas[i] = alphas[i]; }
-    gpu_update(g.squares, bytes_of(squares[..min(squares.len, SQUARES)]));
-    for i in SQUARES { g.squares_now[i] = if i < squares.len { squares[i] } else { float4_0 }; }
+    gpu_update(g.squares, bytes_of(squares[..min(squares.len, SQUARE_ENTRIES)]));
+    for i in SQUARE_ENTRIES { g.squares_now[i] = if i < squares.len { squares[i] } else { float4_0 }; }
     gpu_update(g.marks, bytes_of(marks[..min(marks.len, SQUARES)]));
     if lit.len > 0 { gpu_update(g.glows, bytes_of(lit[..min(lit.len, SQUARES)])); }
     // What MARKS_FRAG without PULSE draws: the selected piece's ring, a last move's tint,
@@ -640,10 +641,13 @@ fn draw(g: Gpu&, view_proj: Mat, eye: float3, out: Texture, size: int2, shadow_e
 }
 
 // The pieces' occlusion of the field drawn into g.occ_map where the squares changed since
-// it was drawn (all of it the first time and for a new board size): a square's piece
-// darkens the field within one square of its own (shaders::OCC_FRAG's 3 × 3), so the
-// changed squares and one round them, scissored. A moving piece redraws about 3 × 3
-// squares of the 64; a still board, nothing. Recording only, before the board's pass.
+// it was drawn (all of it the first time and for a new board size): a square's piece,
+// anywhere over it, darkens the field within OCC_REACH squares of its own
+// (shaders::OCC_FRAG's 5 × 5), so the changed squares and that many round them,
+// scissored. A moving piece redraws about 6 × 6 squares of the 64; a still board,
+// nothing. Recording only, before the board's pass.
+let OCC_REACH = 2;
+fn same4(a: float4, b: float4) -> bool { a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w }
 fn occlusion(g: Gpu&) {
     let n = g.n;
     var c0 = n;
@@ -657,15 +661,14 @@ fn occlusion(g: Gpu&) {
         r1 = n - 1;
     } else {
         for i in n * n {
-            let a = g.occ_squares[i];
-            let b = g.squares_now[i];
-            guard a.x != b.x || a.y != b.y || a.z != b.z || a.w != b.w else { continue; }
+            guard !same4(g.occ_squares[2 * i], g.squares_now[2 * i])
+                  || !same4(g.occ_squares[2 * i + 1], g.squares_now[2 * i + 1]) else { continue; }
             let row = i / n;
             let col = i % n;
-            c0 = min(c0, col - 1);
-            c1 = max(c1, col + 1);
-            r0 = min(r0, row - 1);
-            r1 = max(r1, row + 1);
+            c0 = min(c0, col - OCC_REACH);
+            c1 = max(c1, col + OCC_REACH);
+            r0 = min(r0, row - OCC_REACH);
+            r1 = max(r1, row + OCC_REACH);
         }
         guard c1 >= 0 else { return; }
         c0 = max(c0, 0);

@@ -111,7 +111,7 @@ var king_crown = false;
 
 // Puts the position on the GPU: the instances (two float4s each: foot and scale; dark, 1
 // crowned or 0.5 a stack's upper disc, 1 selected or 2 a stack's lower disc, seed), the
-// squares the field's occlusion reads (top, foot, radius, occupied), no marks, and where
+// squares the field's occlusion reads (top, foot, radius, occupied; then the piece's middle), no marks, and where
 // the selected piece stands; the shadow map follows.
 fn place(g: render3d::Gpu&) {
     if jumping {
@@ -119,7 +119,7 @@ fn place(g: render3d::Gpu&) {
         return;
     }
     var inst:    float4[..64] = [];
-    var squares: float4[100]  = [float4_0; 100];
+    var squares: float4[200]  = [float4_0; 200];
     var marks:   float4[100]  = [float4 { 0.0, 0.0, 0.0, -1.0 }; 100];
     var lit:     float4[100]  = [float4_0; 100];
     var fades:   f32[1]       = [0.0];
@@ -146,7 +146,8 @@ fn place(g: render3d::Gpu&) {
             inst.push(float4 { x, lift, z, scale });
             inst.push(float4 { dark, 0.0, if sel { 1.0 } else { 0.0 }, seed });
         }
-        squares[p[0] * 8 + p[1]] = float4 { top, lift, RADIUS * scale, 1.0 };
+        squares[2 * (p[0] * 8 + p[1])] = float4 { top, lift, RADIUS * scale, 1.0 };
+        squares[2 * (p[0] * 8 + p[1]) + 1] = float4 { x, z, 0.0, 0.0 };
         if sel { selected = float4 { x, lift, z, RADIUS * scale }; }
     }
     render3d::place(g, inst[..inst.len], fades[..0], squares[..], marks[..], lit[..], selected, 0.0, true);
@@ -154,23 +155,28 @@ fn place(g: render3d::Gpu&) {
 
 // The jump's two men: the dark one on d4 (row 4, column 3), the light one at jump_t of the
 // way from c3 (row 5, column 2) to e5 (row 3, column 4), lifted by the arc's sine; the
-// field's occlusion sees it on the square it is over, but d4's, which stays the dark man's.
+// field's occlusion sees it where it is, kept on the square it is over, but d4's, which
+// stays the dark man's.
 fn place_jump(g: render3d::Gpu&) {
     var inst:    float4[..4] = [];
-    var squares: float4[100] = [float4_0; 100];
+    var squares: float4[200] = [float4_0; 200];
     var marks:   float4[100] = [float4 { 0.0, 0.0, 0.0, -1.0 }; 100];
     var lit:     float4[100] = [float4_0; 100];
     var fades:   f32[1]      = [0.0];
     inst.push(float4 { 3.0 - 3.5, 0.0, 4.0 - 3.5, 1.0 });
     inst.push(float4 { 1.0, 0.0, 0.0, 0.0 });
-    squares[4 * 8 + 3] = float4 { HEIGHT, 0.0, RADIUS, 1.0 };
+    squares[2 * (4 * 8 + 3)] = float4 { HEIGHT, 0.0, RADIUS, 1.0 };
+    squares[2 * (4 * 8 + 3) + 1] = float4 { 3.0 - 3.5, 4.0 - 3.5, 0.0, 0.0 };
     let col = 2.0 + 2.0 * jump_t;
     let row = 5.0 - 2.0 * jump_t;
     let lift = arc * sin(PI * jump_t);
     inst.push(float4 { col - 3.5, lift, row - 3.5, 1.0 });
     inst.push(float4 { 0.0, 0.0, 0.0, 1.0 });
     let sq = (floor(row + 0.5) as i64) * 8 + floor(col + 0.5) as i64;
-    if sq != 4 * 8 + 3 { squares[sq] = float4 { lift + HEIGHT, lift, RADIUS, 1.0 }; }
+    if sq != 4 * 8 + 3 {
+        squares[2 * sq] = float4 { lift + HEIGHT, lift, RADIUS, 1.0 };
+        squares[2 * sq + 1] = float4 { col - 3.5, row - 3.5, 0.0, 0.0 };
+    }
     render3d::place(g, inst[..inst.len], fades[..0], squares[..], marks[..], lit[..], float4_0, 0.0, true);
 }
 

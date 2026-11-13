@@ -505,9 +505,10 @@ fn setup(g: render3d::Gpu&, samples: i32 = SAMPLES, few: bool = false) {
 
     var empty: float4[render3d::SQUARES] = [float4_0; render3d::SQUARES];
     var none:  float4[render3d::SQUARES] = [float4 { 0.0, 0.0, 0.0, -1.0 }; render3d::SQUARES];
+    var no_squares: float4[render3d::SQUARE_ENTRIES] = [float4_0; render3d::SQUARE_ENTRIES];
     g.instances = gfx::buffer(gfx::BUFFER_STORAGE, render3d::MAX_INSTANCES * 32, bytes_of(empty[..2]));
     g.instance_count = 0;
-    g.squares = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(empty));
+    g.squares = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(no_squares));
     g.marks = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(none));
     g.glows = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(empty));
 
@@ -540,8 +541,11 @@ fn setup(g: render3d::Gpu&, samples: i32 = SAMPLES, few: bool = false) {
     let lit_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::LIT_VERT);
     let quad_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::QUAD_VERT);
     lit_pipelines(g, few);
+    // Both faces into the shadow map, as ngfx's: with the back ones culled, the light leaked
+    // through a texel where a piece's top curves away from it, its front faces' edges
+    // there meeting almost end-on (a light dot in the shadow, task 086).
     g.shadow = gfx::pipeline(lit_vs, embed_shader("frag", shaders::EMPTY_FRAG),
-                             gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true,
+                             gfx::PipelineDesc { cull: gfx::CULL_NONE, depth_test: true, depth_write: true,
                                                  depth_bias: 1.0, depth_bias_slope: 1.5 });
     g.backdrop = gfx::pipeline(full, embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::FADE_FN,
                                                   shaders::BACKDROP_FRAG),

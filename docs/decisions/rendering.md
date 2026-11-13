@@ -879,7 +879,11 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   it fits, stays at the right edge.
 - The pieces' occlusion of the field into a map only where squares changed (task 059):
   a texel a field pixel reads instead of the loop; the dropped bake drew shadow and
-  occlusion with every shadow map.
+  occlusion with every shadow map. A piece's occlusion is centered where it is, not on
+  the square it is over, and reaches over 5 × 5 squares (task 086, 2026-11-13): a
+  moving piece's snapped from square to square, at times onto a square beside it, and
+  the 3 × 3 cut it off in a straight line. Two float4s a square for it; a jump's piece
+  over the one it takes leaves it the square (the lower foot keeps it).
 - A dark king's crown gold (`#e9c46a`) on the 3D board too, as on the flat one, rather
   than the look's crown color, a deeper tone of the piece that was hard to see on the
   dark kings on the tablet (2026-11-12).
@@ -1168,9 +1172,17 @@ The release at rest, idle 20 to 30 s:
 - **2× MSAA before 60 Hz** (task 081, 2026-11-13): the same timing first drops the pass to
   2× MSAA, on a display of any rate, and asks for 60 Hz only if the board is still that
   slow at 2× (see "gfx keeps 4× MSAA" above).
-- **The shadow map's pass culls back faces** (task 084, 2026-11-13), as the lit pass does;
-  it culled nothing before. The look is the same (a few single pixels along the shadows'
-  edges), and the A33's frame with the shadow map waits about 0.15 ms less, about 1% of it.
+- **The shadow map's pass culls nothing** (task 086, 2026-11-13, replacing task 084's
+  back-face culling), as ngfx's never did. With the back faces culled, the light leaked
+  through single texels where a piece's top curves away from it: the front faces' edges
+  before and behind that fold meet almost end-on to the light, and rounding leaves a
+  sample between them. The leaks were 084's "few single pixels" (500 to 800 of a
+  1920 × 1200 shot of the full board, every one lighter than with both faces), and with
+  the map fitted to the board (task 086's prototype) one showed as a light dot in a raised
+  piece's shadow. Drawing both faces changes nothing else, as the nearer face wins the
+  depth test, and costs the A33 about 0.15 M cycles on a frame the pieces move (the map's
+  share 0.81 to 0.84 M → 0.96 to 1.01 M), nothing at rest. Task 084's record: culling back
+  faces saved the A33's frame with the shadow map about 0.15 ms, about 1% of it.
   Front-face culling, which usually lets the depth bias shrink, was rejected: the pieces'
   undersides lie within a shadow texel of their feet, so with `shadow()`'s offsets as they
   are it left acne bands on the pieces' feet or rims at a depth bias from −2 to 1, and

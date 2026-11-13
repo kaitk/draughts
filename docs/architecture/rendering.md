@@ -1389,9 +1389,9 @@ board's does and the backdrop over it as opaque as the blur.
   **Drawn** by `src/render3d/` (the prototype's renderer, shared with `poc/3d/`) from
   `src/app/draw3d.goose`, the meshes, looks, harmonics, and the bake's steps from
   `src/model3d/`, which has no graphics: the shadow map only when the pieces move, and the pieces'
-  occlusion of the field (each piece a cylinder over the 3 × 3 squares round it) into a
-  512² map only where squares changed, a moving piece about 3 × 3 squares of it (a texel
-  a field pixel reads); a crowned king's crown read from its
+  occlusion of the field (each piece a cylinder where it stands, between squares while it
+  moves, over the 5 × 5 squares round it) into a 512² map only where squares changed, a
+  moving piece about 6 × 6 squares of it (a texel a field pixel reads); a crowned king's crown read from its
   signed distance drawn once at setup into a 256² map (`shaders::CROWN_FRAG`); one 4× multisampled
   forward pass (the board's shadow, the lit board and pieces, the key light's shadow on them
   from a 1024² map filtered in 9 taps over 5 × 5 texels, 4 over 3 × 3 on a phone

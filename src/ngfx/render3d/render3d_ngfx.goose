@@ -450,9 +450,10 @@ fn setup(g: Gpu&, aa: i32 = AA, few: bool = false) {
 
     var empty: float4[render3d::SQUARES] = [float4_0; render3d::SQUARES];
     var none:  float4[render3d::SQUARES] = [float4 { 0.0, 0.0, 0.0, -1.0 }; render3d::SQUARES];
+    var no_squares: float4[render3d::SQUARE_ENTRIES] = [float4_0; render3d::SQUARE_ENTRIES];
     g.instances = nx::buffer(render3d::MAX_INSTANCES * 32, bytes_of(empty[..2]));
     g.instance_count = 0;
-    g.squares = nx::buffer(bytes_of(empty));
+    g.squares = nx::buffer(bytes_of(no_squares));
     g.marks = nx::buffer(bytes_of(none));
     g.glows = nx::buffer(bytes_of(empty));
 

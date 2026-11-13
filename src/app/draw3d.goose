@@ -502,7 +502,7 @@ fn bench_pulse(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, 
     if bn.i == 3 * bn.n {
         view3d::fill(d.scene, b, l, v, now);
         let s .= d.scene;
-        for i in 100 { if s.squares[i].w > 0.5 { s.field[i].z = 1.0; } }
+        for i in 100 { if s.squares[2 * i].w > 0.5 { s.field[i].z = 1.0; } }
         s.pulsing = true;
         d.upload.clear();
         for x in s.inst { d.upload.push(x); }

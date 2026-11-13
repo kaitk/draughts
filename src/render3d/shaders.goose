@@ -640,12 +640,13 @@ let LIT_FRAG = """
 
 // The pieces' occlusion of the field into its map (render3d::occlusion), over the plan's
 // extent as the plan is laid (BAKE_FRAG's mode 0), OCC_SIZE texels a side: each piece
-// in the 3 × 3 squares round as a cylinder, the share of the cosine-weighted sky its
+// over the 5 × 5 squares round, where it is, as a cylinder, the share of the cosine-weighted sky its
 // angle across and its height take. Only the texels whose squares changed are drawn
 // again (a scissor), so a moving piece redraws a few squares' worth, not the field.
 let OCC_FRAG = """
     layout(location = 0) out vec4 result;
-    // Per square: the top of what stands there, its foot, its radius, 1 if a piece.
+    // Two a square: the top of what stands over it, its foot, its radius, 1 if a piece;
+    // then its middle's x and z, wherever over the square it is (a moving piece).
     layout(std430, set = 2, binding = 0) readonly buffer Squares { vec4 squares[]; };
     const float OCC_SIZE = 512.0;   // render3d::OCC_SIZE
     void main() {
@@ -654,13 +655,15 @@ let OCC_FRAG = """
         int n = int(params.w + 0.5);
         float u = 2.0 * FIELD / params.w;
         ivec2 c = ivec2(floor((xz + FIELD) / u));
-        for (int dy = -1; dy <= 1; dy++) {
-            for (int dx = -1; dx <= 1; dx++) {
+        // Two squares round (render3d::OCC_REACH): a piece at its square's edge darkens
+        // the field more than a square past it.
+        for (int dy = -2; dy <= 2; dy++) {
+            for (int dx = -2; dx <= 2; dx++) {
                 ivec2 q = c + ivec2(dx, dy);
                 if (q.x < 0 || q.y < 0 || q.x >= n || q.y >= n) continue;
-                vec4 s = squares[q.y * n + q.x];
+                vec4 s = squares[2 * (q.y * n + q.x)];
                 if (s.w < 0.5) continue;
-                float rho = length(xz - ((vec2(q) + 0.5) * u - FIELD));
+                float rho = length(xz - squares[2 * (q.y * n + q.x) + 1].xy);
                 float r = s.z;
                 float occ;
                 if (rho > r) {

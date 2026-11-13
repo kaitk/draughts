@@ -417,9 +417,11 @@ fn pick(v: View, b: board::Board&, l: board::Layout, p: float2) -> float2 {
 // carry that the prototype's position didn't: opacity (a captured piece fading), the
 // must-capture ring (1 pulsing, 2 still), the glow ring tight round it (0 to 1), the
 // selected glow (0 to 1); then board::Piece.win as it is (a win's dim, its lit square).
-// `squares` is the prototype's for the field's occlusion, one float4 a square of the
-// world's grid, row * n + column, row 0 the far side: the top, the foot, the radius,
-// and 1 when a piece stands there. `marks` and `flash` are board::fill's, numbered by the
+// `squares` is the field's occlusion, two float4s a square of the world's grid
+// (row * n + column, row 0 the far side) for the piece over it: the top, the foot, the
+// radius, and 1 when a piece is there; then where its middle is (x, z), as a moving
+// piece is between squares. A jump's piece over the one it takes leaves it the square
+// (the lower foot keeps it). `marks` and `flash` are board::fill's, numbered by the
 // world's grid too; `selected` the selected piece's foot and radius (w 0 for none), as
 // the prototype's glow ring takes it; `dim` the board's under a win. `field` is the
 // marks as the renderer's field pass reads them (shaders::MARKS_FRAG), a float4 a square
@@ -450,7 +452,7 @@ struct Scene {
     view:     View                        = View {},
     inst:     float4[..2 * MAX_INSTANCES] = [],
     state:    float4[..2 * MAX_INSTANCES] = [],
-    squares:  float4[100]                 = [float4 { 0.0, 0.0, 0.0, 0.0 }; 100],
+    squares:  float4[200]                 = [float4 { 0.0, 0.0, 0.0, 0.0 }; 200],
     marks:    board::Marks                = board::Marks {},
     flash:    float4                      = float4 { -1.0, 0.0, 0.0, 0.0 },
     selected: float4                      = float4 { 0.0, 0.0, 0.0, 0.0 },
@@ -490,8 +492,8 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
     s.view = v;
     s.inst.clear();
     s.state.clear();
+    for i in 200 { s.squares[i] = float4 { 0.0, 0.0, 0.0, 0.0 }; }
     for i in 100 {
-        s.squares[i] = float4 { 0.0, 0.0, 0.0, 0.0 };
         s.field[i] = float4 { 0.0, 0.0, 0.0, -1.0 };
         s.lit[i] = float4 { 0.0, 0.0, 0.0, 0.0 };
     }
@@ -545,8 +547,11 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
         // The field's occlusion under it, once it is more there than gone.
         let col = floor((xz.x + FIELD) / u) as i64;
         let row = floor((xz.y + FIELD) / u) as i64;
-        if p.look.w > 0.5 && col >= 0 && row >= 0 && col < n && row < n {
-            s.squares[row * n + col] = float4 { top, lift, RADIUS * scale, 1.0 };
+        let k = 2 * (row * n + col);
+        if p.look.w > 0.5 && col >= 0 && row >= 0 && col < n && row < n
+           && (s.squares[k].w < 0.5 || lift < s.squares[k].y) {
+            s.squares[k] = float4 { top, lift, RADIUS * scale, 1.0 };
+            s.squares[k + 1] = float4 { xz.x, xz.y, 0.0, 0.0 };
         }
         if glow > 0.0 { s.selected = float4 { xz.x, lift, xz.y, RADIUS * scale }; }
         if p.ring.x > 0.5 && col >= 0 && row >= 0 && col < n && row < n {
@@ -635,7 +640,8 @@ fn changes(was: Scene&, now: Scene&) -> i64 {
                && same_bits(was.marks.target, now.marks.target) && same_bits(was.marks.via, now.marks.via)
                && same_bits(was.marks.next, now.marks.next) && same_bits(was.marks.shade, now.marks.shade);
     for i in 100 {
-        if rest && (!same(was.squares[i], now.squares[i]) || !same(was.field[i], now.field[i]) || !same(was.lit[i], now.lit[i])) {
+        if rest && (!same(was.squares[2 * i], now.squares[2 * i]) || !same(was.squares[2 * i + 1], now.squares[2 * i + 1])
+                    || !same(was.field[i], now.field[i]) || !same(was.lit[i], now.lit[i])) {
             rest = false;
         }
     }
