@@ -23,6 +23,12 @@ Continue), drawn in `prototypes/draughts.js` (`newPair` .. `newJump`), in the ic
   showed: two stacked coin-like pieces in outline).
 - h, a jump: a solid piece on the board, an outlined one higher up (empty inside, nothing
   showing through it), a short arc rising into it, as the app icon's jump.
+- i (2026-11-13), from the user's sketch over the 3D prototype's jump (`poc/3d`, `--jump`):
+  flat isometric discs, the outlined piece mid-jump in front of the solid one, overlapping
+  its top right, an arc from behind flattening into it. The solid runs under the outline,
+  so the two merge: a gap or a cut leaves a thin light line where they meet, which reads
+  badly. Drafts of the way there (top-down, side, and isometric takes A..N) are local, in
+  `build/notes/082-minimal/`.
 
 ## What drawing them taught
 
