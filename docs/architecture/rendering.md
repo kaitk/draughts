@@ -319,7 +319,7 @@ sunset almost flat.
   13.7 with the JPEGs too, 6.0 without the ASTC): ASTC hardly compresses (3 to 5%).
 - **One size for every screen**: 2048 everywhere, at 1.87 MB as ASTC in SDL's shared
   16 MiB block. Larger tablets stretch it 1.25 to 1.41×.
-- **The plain background** (`prototypes/plain.html`, fade b): in place of
+- **The plain background** (`plain.html`, fade b): in place of
   the photograph, a fade matched to the season's board, chosen in settings (the Theme
   row's switch, below; the player's file's `background = photo|plain`, photo by default).
   The season still picks the board, by the date or as chosen; only the photograph goes.
@@ -381,8 +381,8 @@ the prototype tried, kept for 3D:
 
 ### Controls
 
-The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
-`gear.html`, `exit.html`, `puzzles.html`, `chip.html`) are in git history only
+`prototypes/` holds one page per screen as built. The takes named below by file (`back.html`'s
+take b, `plain.html`'s fade b, and the like) are in git history only
 ([where](../decisions/rendering.md#controls)).
 
 - **Buttons** are glass tiles: white at 10%, 24% while pressed (and scaled to 0.96),
@@ -722,7 +722,7 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   portrait, where the row wraps, the four seasons keep one row and by the date goes
   under them, in the same order at every size. With the theme's name, a
   two-part switch, the season's photograph or its plain fade, the one chosen lit
-  (`settings::switch`, `prototypes/plain.html` place b): where the names are above the
+  (`settings::switch`, `plain.html` place b): where the names are above the
   tiles (portrait, near square, a phone), beside the name at the line's right end, each
   half 88 dp square, the line 92 dp tall; where the names are at the tiles' left (most
   landscapes), under the name in its 120 dp column, within the row's 88 dp: each half
@@ -794,11 +794,11 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   mark (the theme's icon, a book, two men and a jump, a crown, a target, a crowned ring,
   on a disc of the glow color at 20%), its name, its stars as home counts them, a star in
   the glow color before "n / total" (three a puzzle), and a bar of them in the glow color
-  over a faint track (`prototypes/puzzle-set.html`'s take b, without its Continue row and "Next: Easy
+  over a faint track (`puzzle-set.html`'s take b, without its Continue row and "Next: Easy
   3"). Learn is open; the others open once
   half of Learn is solved, and until then each mark is plain with a lock badge, the name
   dim, and "Solve n more in Learn" in place of the bar, and a tap on it does nothing.
-  **The draughts switch** (`prototypes/puzzle-set.html`, take a) is the setup's draughts tiles, International 10 × 10, Brazilian 8 × 8, Russian
+  **The draughts switch** (`puzzle-set.html`, take a) is the setup's draughts tiles, International 10 × 10, Brazilian 8 × 8, Russian
   8 × 8 (each its name over its size, 88 dp tall, as wide as settings' tile would be,
   widened in proportion to fill a row), joined on one glass 4 dp round them and between,
   the player's draughts lit. It is the setup's draughts choice, one setting: a tap sets
@@ -831,7 +831,7 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   level's label is its mark alone, the spacing as on a phone in landscape. Back on a
   page (and Android's back) goes to the library, and from the library home; next on a
   puzzle goes on inside its theme and after its last back to the library. Behind it the
-  sharp photograph and no board. **A puzzle** (`prototypes/puzzle.html`, take c): the game screen's layout, the left side the game's, its back going to the
+  sharp photograph and no board. **A puzzle** (`puzzle.html`'s take c): the game screen's layout, the left side the game's, its back going to the
   theme's page; on the right whose puzzle it is as the game's turn piece (72 px, its
   side's color, the glow ring while it is the child's turn, none once solved), so a child
   who can't read knows the side they play, then the goal's icon in the glow color over its
@@ -858,10 +858,10 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
   board. In portrait the goal and the stars share a row under the board, over next
   across the width, the turn piece at 52 px leading the goal. Where a landscape panel is
   too short for the piece over the goal (a phone's), it stands beside the goal's icon, up
-  to 20 px apart, the words under both (`prototypes/puzzle.html?take=c&turn=a`; over the goal elsewhere, as the game shows
+  to 20 px apart, the words under both (`puzzle.html`'s take c with `turn=a`; over the goal elsewhere, as the game shows
   it).
 
-- **Players** (`prototypes/profiles.html`, take a; what a player
+- **Players** (`profiles.html`, take a; what a player
   holds and the files: [players](README.md#players)). On home's menu the player's chip
   opens who's playing: their badge (64 dp, centred in the first 88 dp) and their name
   beside it in the row labels' 30 dp face on a small glass pill (`gui::glass`, 22 dp
@@ -928,7 +928,7 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
 
 ### The lookout and the hint
 
-`prototypes/coach.html`, round 3, take a; what they show is in
+`coach.html`, round 3, take a; what they show is in
 `docs/product.md` and [ai](ai.md#the-lookout).
 
 - **The eye** (`panel::eye`): the lookout's toggle, a floating disc as the 3D board's
@@ -974,7 +974,7 @@ The prototypes named below by file alone (`back.html`, `win.html`, `draw.html`,
 
 ### What each side has taken
 
-`prototypes/game-captured.html`'s take a in its `row` look.
+`game-captured.html`'s take a in its `row` look.
 
 - **Counts** (`game::taken`): the variant's start pieces of each color less those on the
   board, men and kings apart; a piece of the side not moving that was a king before a
@@ -1287,7 +1287,7 @@ board's does and the backdrop over it as opaque as the blur.
   frame's instances filled from the flat board's draw lists (`board::fill`), so the two
   views follow one state and one animation. The world follows the flat layout the board
   package plays on, so a turned board turns the 3D one. **The game screen round it**
-  (`panel::corners_in`, `prototypes/game3d.html`'s `corners`): in
+  (`panel::corners_in`, `game3d.html`'s `corners`): in
   landscape the two panels are short glass panels in the top corners, 232 × 352 dp (192
   wide on a phone, under 600 dp), on the left back on its own tile over a panel of
   settings and start over (the column's bounds the panel's were, so the board's fit is
@@ -1297,7 +1297,7 @@ board's does and the backdrop over it as opaque as the blur.
   board's order, the bar, the board as wide as the screen less the margins, the camera
   buttons, the play; its camera 65° down (`panel::PITCH_PORTRAIT`),
   which fills more of the height (752 × 604 dp on the tablet).
-  **The camera buttons** (`prototypes/game3d.html`'s placement `a`):
+  **The camera buttons** (`game3d.html`'s placement `a`):
   round floating buttons at the right edge, a column under the play panel in landscape
   (a row on a phone, where a column runs past the bottom margin) and above it in
   portrait (a row where a column would shrink the board): a shaded disc with a hairline
@@ -1427,7 +1427,7 @@ move hints always; on mistakes only from a mistake while a capture is due (`mist
 sets `Board.counted`) until the move is played (`start_move`), counting down jump by
 jump as the stops are made (`test/game/pips`). One pip per piece on its ring, 28° apart and centred
 over the top, light with a red rim (22% and 30% of the radius, on the ring at 1.24
-radii), and past five one larger red pip with the number (`prototypes/game.html?count=a`:
+radii), and past five one larger red pip with the number (`game.html`'s `count=a`:
 the pips are counted, where a number needs a child who reads digits).
 It counts pieces, not stops or the squares a flying king could land on; under the
 majority rule every piece that takes the most shows it, and in Russian each piece its own

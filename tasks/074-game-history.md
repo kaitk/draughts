@@ -91,7 +91,7 @@ to measure.
 
 ## Takes to choose
 
-The prototype: `prototypes/history.html` (`?view=game&take=a|d`, `view=games`,
+The prototype (removed 2026-11-13, in git history at 086f47d): `prototypes/history.html` (`?view=game&take=a|d`, `view=games`,
 `view=replay`, `view=settings`, `view=entry`). Built: take a, the entry from home, the
 setting in settings. Takes b and c, the setting on the player's sheet, and the entry as a
 tile on the player's sheet were removed from the prototype 2026-11-12 (in git history

@@ -32,7 +32,7 @@ belongs to the tablet.
 
 ## The takes
 
-`prototypes/profiles.html?take=a|b|c`, with `&state=home`, `pick`, `add`, `edit`, or
+`prototypes/profiles.html?take=a|b|c` (removed 2026-11-13, in git history at 086f47d), with `&state=home`, `pick`, `add`, `edit`, or
 `hold`, `&n=1` to `4` players, and `&lang=et`. Shots of all three at the tablet's and a
 phone's size in both orientations were checked with `agent-browser` (1280 × 800, 800 ×
 1280, 1040 × 480, 480 × 1040), every tap 88 dp.
@@ -141,7 +141,7 @@ The user's answers to the open questions below:
 
 Changed while building (2026-11-09):
 
-- **The badges are pieces (chosen 2026-11-09, `badges.html` direction 1).** Each badge
+- **The badges are pieces (chosen 2026-11-09, `badges.html` direction 1; removed 2026-11-13, in git history at 086f47d).** Each badge
   is home's king as the light pieces are drawn now (and later ivory, stone, the 3D
   board, through the shared `man_top`), the animal in the crown's place and colour,
   simple and bold as the crown is, with at most a faint inner shadow along its upper

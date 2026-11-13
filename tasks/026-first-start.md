@@ -2,7 +2,7 @@
 
 Status: todo (after the MVP's menus, 2026-11-07: not in the MVP's scope)
 
-Bring the first start to `prototypes/first-start.html` (task 019): which draughts (two
+Bring the first start to `prototypes/first-start.html` (task 019; removed 2026-11-13, in git history at 086f47d): which draughts (two
 cards with the starting position: international, the default once it exists, and
 Russian), learn the moves or just play, the tutorial, and what to play first. Settings'
 tutorial row comes back with it (taken out 2026-11-09 so the tablet's landscape fits both

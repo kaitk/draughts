@@ -154,7 +154,7 @@ on from any move, a game that doesn't count.
 
 ## Takes to choose
 
-The prototype is `prototypes/history.html` (2026-11-13). The device's insets follow the
+The prototype is `prototypes/history.html` (2026-11-13; removed 2026-11-13, in git history at 086f47d; `prototypes/game.html`, `results.html`, and `replay.html` show what was built). The device's insets follow the
 window's size unless `&device=pixel`, `iphone`, `a33`, or `none` names them: the Pixel 7a
 at 1066 × 480 dp (its 52 dp cutout and 37 dp gesture bar), the iPhone 13 mini at 812 ×
 375 pt (50 at each side and 21 at the foot in landscape; 50 at the top and 34 at the foot

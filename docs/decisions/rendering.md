@@ -209,6 +209,14 @@ The prototypes `back.html`, `win.html`, `draw.html`, `gear.html`, `exit.html`,
 `puzzles.html`, and `chip.html` were removed on 2026-11-10 once built or superseded; they
 are in git history before that day.
 
+On 2026-11-13 the prototypes were cut to one plain page per screen as built, a base to
+copy for a new idea, because the takes, switches, and option panels had piled up and made
+the pages slow and buggy. Every take these decisions name (`badges.html`, `boards.html`,
+`coach.html`, `first-start.html`, `game-captured.html`, `game3d.html`, `history.html`,
+`issue-1.html`, `plain.html`, `profiles.html`, `puzzle-set.html`, and the takes and
+parameters of the old `game.html`, `home.html`, `settings.html`, and `puzzle.html`) is
+in git history at 086f47d.
+
 - The tile under the mouse lights on a desktop (task 066, 2026-11-11), as a faint form of
   the chosen tile's glow (the glow at 8%, about a third of chosen's 22%, and a 1 dp
   border at 40%), whatever the tile's style, so the mouse shows in the theme's color

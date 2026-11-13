@@ -347,7 +347,7 @@ which Russian has none of either, are not in Brazilian's set.
 ### Choosing the set on the puzzles screen (prototype, 2026-11-09)
 
 Today the library shows `puzzles::set_of` the variant in settings, so changing the set is
-a trip to settings. `prototypes/puzzle-set.html` draws the choice on the library itself,
+a trip to settings. `prototypes/puzzle-set.html` (removed 2026-11-13, in git history at 086f47d) draws the choice on the library itself,
 and the library reworked with it. The count is stars throughout, as home's ("0 / 222" is
 International's 74 × 3; Russian's 46 make 138); Brazilian shows International's set and
 stars. Checked with agent-browser at 1280×800, 390×844, and 499×645: nothing past the
