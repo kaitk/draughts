@@ -8,7 +8,9 @@
 // G spring's look: the birch, the elven stone or the Baltic oak (task 041); P shows the tuning
 // panel (panel.goose), V prints its values; A cycles the antialiasing (MSAA, SMAA, none) and
 // Z a 4× zoom on the board's near left corner, magnified without filtering, which a drag
-// pans (task 071), the label at the top left naming both. Nothing of the app's shell.
+// pans (task 071), the label at the top left naming both; H cycles the shadow's looks (task
+// 086's softer ones: render3d::SHADOW_9..), the label and the jump's panel naming it.
+// Nothing of the app's shell.
 // J, or --jump T, switches to the jump (task 082, New game's icon): one light man on c3
 // capturing a dark one on d4, the board otherwise empty, the camera turning freely round
 // the jump with the mouse wheel moving it nearer or farther; the light man flies along a
@@ -33,6 +35,7 @@
 //   ../../build/board3d --jump 0.5                # the jump, halfway; J switches it
 //   ../../build/board3d --shot out.png --jump 0.5 --yaw 30 --pitch 35 --distance 8
 //   ../../build/board3d --shadow few              # the shadow in 4 taps, a phone's
+//   ../../build/board3d --jump 0.5 --shadows disc  # task 086's looks: 9, 9wide, 16, 4, disc; H cycles
 //
 // --shot draws one frame headless (no window) into a PNG; --bench times frames.
 //
@@ -192,16 +195,18 @@ fn jump_frame(scale: f32, input: bool) -> bool, bool {
     ui::input_from_gfx(c);
     let was = jump_t;
     let ss = gfx::screen_size();
-    let w: f32 = 520.0;
+    let w: f32 = 640.0;
     let x = 0.5 * (ss.x / scale - w);
     let y = ss.y / scale - 64.0;
     if ui::begin(c, "jump", ui::rect(x, y, w, 48.0), ui::WINDOW_NO_SCROLLBAR) {
-        let ratios: f32[2] = [0.3, 0.7];
+        let ratios: f32[2] = [0.45, 0.55];
         ui::layout_row(c, ui::DYNAMIC, 30.0, ratios);
         var text: u8[>..] = [];
         text.append("jump ");
         panel::num(text, jump_t);
-        text.append(" (J)");
+        text.append(" (J)  shadow ");
+        text.append(render3d::shadow_look_name(shadow_look));
+        text.append(" (H)");
         ui::label(c, text, ui::TEXT_LEFT);
         ui::slider_float(c, 0.0, jump_t, 1.0, 0.01);
     }
@@ -236,6 +241,10 @@ fn radians32(d: f32) -> f32 { d * PI / 180.0 }
 var zoom:   i32    = 1;
 var centre: float2 = float2 { 0.0, 0.0 };
 var aa:     i32    = render3d::AA;
+
+// The shadow's look (H, --shadows 9|9wide|16|4|disc; task 086): render3d::SHADOW_9, the
+// app's on a tablet or a desktop, or one tried against it.
+var shadow_look: i32 = render3d::SHADOW_9;
 var nearest = gfx::Sampler { 0 };
 var label = default<ui::Context>();
 
@@ -302,9 +311,10 @@ fn draw_label(scale: f32) {
         guard label.id != 0 else { abort(str("ui: ", ui::error())); }
     }
     ui::input_from_gfx(label);   // also starts the ui's frame
-    if ui::begin(label, "aa", ui::rect(12.0, 12.0, 300.0, 44.0), ui::WINDOW_NO_INPUT | ui::WINDOW_NO_SCROLLBAR) {
+    if ui::begin(label, "aa", ui::rect(12.0, 12.0, 460.0, 44.0), ui::WINDOW_NO_INPUT | ui::WINDOW_NO_SCROLLBAR) {
         ui::layout_row_dynamic(label, 26.0, 1);
-        ui::label(label, str(aa_name(aa), " (A)   ", zoom, "x (Z)"), ui::TEXT_LEFT);
+        ui::label(label, str(aa_name(aa), " (A)   ", zoom, "x (Z)   shadow ", render3d::shadow_look_name(shadow_look), " (H)"),
+                  ui::TEXT_LEFT);
     }
     ui::end(label);
     ui::render(label);
@@ -472,6 +482,13 @@ fn main() {
     // --shadow few: the shadow in 4 taps, as a phone's app draws it (render3d::set_shadow).
     let fi = flag_str(argv, "--shadow");
     render3d::setup(g, samples, fi > 0 && argv[fi] == "few");
+    if fi > 0 && argv[fi] == "few" { shadow_look = render3d::SHADOW_4; }
+    let wi = flag_str(argv, "--shadows");
+    if wi > 0 {
+        let names = ["9", "9wide", "16", "4", "disc"];
+        for name, i in names { if argv[wi] == name { shadow_look = i as i32; } }
+    }
+    render3d::set_shadow_look(g, shadow_look);
     nearest = gfx::sampler(gfx::NEAREST, gfx::CLAMP);
     // --aa msaa|smaa|off (A cycles), --zoom N (Z switches between 1 and 4).
     let ai = flag_str(argv, "--aa");
@@ -704,6 +721,12 @@ fn main() {
                  else { render3d::AA_MSAA };
             render3d::set_aa(g, aa);
             print("antialiasing: ", aa_name(aa));
+            dirty = true;
+        }
+        if gfx::key_pressed("H") {
+            shadow_look = (shadow_look + 1) % render3d::SHADOW_LOOKS;
+            render3d::set_shadow_look(g, shadow_look);
+            print("shadow: ", render3d::shadow_look_name(shadow_look));
             dirty = true;
         }
         if gfx::key_pressed("Z") {

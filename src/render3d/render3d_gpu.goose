@@ -102,6 +102,7 @@ fn board_pass(g: render3d::Gpu&, target: Texture, size: int2, backdrop: bool) {
     gfx::bind_texture(gfx::FRAGMENT, 4, g.shadow_map, g.compare);
     gfx::bind_texture(gfx::FRAGMENT, 5, g.occ_map, g.linear);
     gfx::bind_texture(gfx::FRAGMENT, 6, g.crown_map, g.linear);
+    if g.shadow_look == render3d::SHADOW_DISC { gfx::bind_storage_buffer(gfx::FRAGMENT, 0, g.squares); }
     gfx::uniforms(gfx::VERTEX, 0, f);
     gfx::uniforms(gfx::FRAGMENT, 0, f);
     draw_meshes(g, 0.0);
@@ -353,24 +354,39 @@ fn set_aa(g: render3d::Gpu&, aa: i32, samples: i32 = SAMPLES) {
 // The lit pass's pipelines, the board's and a fading piece's, their shadow in 4 taps
 // with `few` (shaders::SHADOW_FEW) or in 9.
 fn lit_pipelines(g: render3d::Gpu&, few: bool) {
+    lit_look(g, if few { render3d::SHADOW_4 } else { render3d::SHADOW_9 });
+}
+
+// The lit pipelines with the shadow `look` (SHADOW_9..; task 086's prototype tries the
+// others).
+fn lit_look(g: render3d::Gpu&, look: i32) {
     let lit_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::LIT_VERT);
-    let lit_fs = if few { embed_shader("frag", shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG) }
+    let lit_fs = if look == render3d::SHADOW_4 { embed_shader("frag", shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG) }
+                 else if look == render3d::SHADOW_9_WIDE { embed_shader("frag", shaders::SHADOW_SPREAD, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG) }
+                 else if look == render3d::SHADOW_16 { embed_shader("frag", shaders::SHADOW_WIDE, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG) }
+                 else if look == render3d::SHADOW_DISC { embed_shader("frag", shaders::SHADOW_FEW, shaders::SHADOW_DISC, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG) }
                  else { embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG) };
     g.lit = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true, depth_write: true });
     g.fading = gfx::pipeline(lit_vs, lit_fs, gfx::PipelineDesc { cull: gfx::CULL_BACK, depth_test: true,
                                                                  blend: gfx::BLEND_ALPHA });
-    g.few_shadow = few;
+    g.few_shadow = look >= render3d::SHADOW_4;
+    g.shadow_look = look;
 }
 
 // The shadow in 4 taps (`few`, a phone's) or in 9 from the next draw on: the lit
 // pipelines made again if it changes, the board drawn again by the caller. Never in the
 // frame loop's steady state: only when the screen turns from a phone's to a larger one.
 fn set_shadow(g: render3d::Gpu&, few: bool) {
-    guard g.lit.id != 0 && few != g.few_shadow else { return; }
+    set_shadow_look(g, if few { render3d::SHADOW_4 } else { render3d::SHADOW_9 });
+}
+
+// The shadow drawn `look` (SHADOW_9..) from the next draw on, as set_shadow.
+fn set_shadow_look(g: render3d::Gpu&, look: i32) {
+    guard g.lit.id != 0 && look != g.shadow_look else { return; }
     gfx::flush();
     gfx::release(g.lit);
     gfx::release(g.fading);
-    lit_pipelines(g, few);
+    lit_look(g, look);
 }
 
 struct Metrics { m: float4 }

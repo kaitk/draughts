@@ -180,13 +180,48 @@ code), the 9 and the 4 taps as they were, the depth bias unchanged: shots at 256
 with 4 taps showed no acne. `baked` and the square view are gone from the code. The
 decision is in `docs/decisions/rendering.md`.
 
+## Softer than `fit`: the second round (2026-11-13)
+
+The user found `fit` a bit sharp. `poc/3d/board3d.goose`'s **H** key and `--shadows
+9|9wide|16|4|disc` cycle the lit shader's looks (`render3d::SHADOW_9..`,
+`render3d::set_shadow_look`; the app keeps `9`, or `4` on a phone), the label and the
+jump's panel naming it; `build/board3d --jump 0.25 --shadows 16` is the jump with its
+slider:
+
+- `9`: the app's, 9 taps over 5 × 5 texels.
+- `9wide`: the same 9 taps over a grid of 1.5 texels (`shaders::SHADOW_SPREAD`), a 7.5
+  texel box. Each tap still compares only the map's own 2 × 2 texels, so the edge
+  stipples: a still shot at the jump shows it plainly. Kept to be seen, not to ship.
+- `16`: Castaño's 7 × 7 box in 16 taps (`shaders::SHADOW_WIDE`): smooth and softer. A
+  tablet and a desktop only, where the 9 run now and the A33 never pays.
+- `4`: a phone's, 4 taps over 3 × 3.
+- `disc`: a phone's 4 taps on the pieces and the frame, the field's shadow from the
+  pieces analytic (`shaders::SHADOW_DISC`, `disc_shadow()`): each piece a solid cylinder
+  from the squares buffer as `OCC_FRAG` reads it, where the ray from the pixel toward the
+  light comes nearest its axis between foot and top, a penumbra widening with how far up
+  the ray that is (`DISC_SOFT` 0.06), over the 3 × 3 squares round where a piece half its
+  height up would cast. Crisp at a standing piece's foot, soft under a raised one, nothing
+  of the map's texels on the field. The frame's own thin shadow on the field goes (the
+  wall's occlusion stays); a piece raised over a square past the 3 × 3 would lose its
+  shadow, which a jump's arc of 1 doesn't reach. Discs only: a phone-only path.
+
+On the A33, the throwaway build as above (`draw3d::set_up` reading `--shadows`, not
+committed), the two alternated, thermal status 0 before and after every run, the GPU at
+611 MHz throughout:
+
+| Look | Moving | At rest |
+| --- | --- | --- |
+| 4 | 17.39, 17.05 ms: 10.62, 10.42 M | 15.78, 15.87 ms: 9.64, 9.69 M |
+| disc | 18.21, 17.70 ms: 11.13, 10.82 M | 16.64, 16.06 ms: 10.16, 9.81 M |
+
+The disc costs 0.1 to 0.5 M cycles a frame more than the 4 taps it replaces on the field,
+within the A33's 1 M of headroom; the 4 taps' runs match the earlier `fit` (10.3 to 10.8
+M moving, 9.4 to 10.0 M at rest).
+
 ## What is left
 
-- An ngfx build's shot of the 3D board, once task 085's session, working on ngfx in the
-  same checkout, is done: ngfx shares `render3d::light`, so it should match gfx's.
-- The user found `fit` a bit sharp. If that is to change: wider taps in texels on a
-  tablet and a desktop, where the 9 cost the A33 nothing (they don't run there), or an
-  analytic soft disc on a phone's field.
+- The user's look at the second round in motion, on the Mac (`16` against `9`) and the
+  A33 (`disc` against `4`), and what goes into the app.
 - The quiet Mac's timings were never taken (the Mac stayed busy); the A33's decided it.
 
 ## Acceptance criteria
@@ -197,5 +232,6 @@ decision is in `docs/decisions/rendering.md`.
 - [x] GPU timings of each way on the A33, recorded here (2026-11-13; the Mac stayed busy)
 - [x] The user's pick from the ways, seen in motion on the Mac and the A33: `fit`
       (2026-11-13)
-- [ ] The pick in the app on both renderers, phones included, its decision recorded
-      (gfx done 2026-11-13; ngfx shares the code, its shot left)
+- [x] The pick in the app on both renderers, phones included, its decision recorded
+      (2026-11-13: ngfx's shot of the 3D board at 1280 × 800 matches gfx's pixel for
+      pixel)

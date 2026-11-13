@@ -101,6 +101,21 @@ struct Bake {
 // filter spreads over 5 of its texels), at a quarter of the memory.
 let SHADOW_SIZE = 1024;
 
+// The lit shader's shadow looks (task 086's second round, poc/3d's H key; the app draws
+// SHADOW_9, or SHADOW_4 on a phone): 9 taps over 5 × 5 texels; the same over 7.5; 16
+// over 7 × 7; a phone's 4 over 3 × 3; and those 4 on the pieces and the frame with the
+// field's shadow from the pieces as analytic discs (shaders::SHADOW_DISC).
+let SHADOW_9 = 0;
+let SHADOW_9_WIDE = 1;
+let SHADOW_16 = 2;
+let SHADOW_4 = 3;
+let SHADOW_DISC = 4;
+let SHADOW_LOOKS = 5;
+fn shadow_look_name(look: i32) -> const u8[:] {
+    if look == SHADOW_9_WIDE { "9 wide" } else if look == SHADOW_16 { "16" } else if look == SHADOW_4 { "4" }
+    else if look == SHADOW_DISC { "disc" } else { "9" }
+}
+
 let PHOTO_SIZE = 512;
 
 // The pieces' occlusion of the field (shaders::OCC_FRAG), over the plan's extent: 62
@@ -185,6 +200,7 @@ struct Gpu {
     fading:         Pipeline,  // the lit pass for a fading piece, blended
     shadow:         Pipeline,
     few_shadow:     bool,           // lit and fading filter the shadow in 4 taps, not 9 (set_shadow)
+    shadow_look:    i32,            // SHADOW_9.., the lit pipelines' filter (set_shadow_look)
     backdrop:       Pipeline,
     catcher:        Pipeline,
     glow:           Pipeline,
