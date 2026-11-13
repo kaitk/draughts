@@ -11,13 +11,13 @@ replaces task 045, which listed every alternative look. The flat board doesn't c
 | --- | --- | --- | --- | --- |
 | Autumn | wood | maple and walnut in cherry (`--autumn 0`) | sandstone and porphyry, a solid speckled frame (`--autumn 3`) | rust vines in weathered stone (`--autumn 2`) |
 | Winter | stone | limed ash and smoked oak (`--winter 1`) | slate in marble (`--winter 0`) | the same wood, a Nordic band in smoked oak (`--winter 2`) |
-| Spring | carved | the birch (`--spring 0`) | ivory and jade, uncarved (`--spring 3`) | the elven stone (`--spring 1`) |
+| Spring | carved | the birch (`--spring 0`) | ivory and jade, uncarved, veined and cracked (`--spring 3`) | the elven stone (`--spring 1`) |
 | Summer | wood | `--summer 0` | the amber granite, uncarved (`--summer 6`) | amber signs in granite (`--summer 4`) |
 
 The user's picks, 2026-11-13: winter's wood and carved both; autumn's 2 and 3, with no
-seams at the frame's corners (stone shows none). Proposed, for the user to confirm:
-spring's wood the birch and its carved the elven stone, the Baltic oak (`--spring 2`) left
-out or in its place; Auto as today's defaults.
+seams at the frame's corners (stone shows none); spring 0, 1, and 3, the birch the wood
+(bare wood is the better wood); Auto kept, today's defaults (winter's stone). The Baltic
+oak (`--spring 2`) is liked but has no place yet.
 
 To decide: one choice for every season (Wood shows each season's wood), or one per
 season (settings shows the theme season's two boards, each season remembers its own).
@@ -113,3 +113,16 @@ panel's marble tunes winter's, not autumn 1's own); the takes' bake on the A33 (
   figure rather than winter's marble (`marble_for`).
 - Shots: the scratchpad's `looks/new/plainstones.jpg` (carved beside plain) and
   `seamless.jpg` (autumn 2 and 3 with corner crops). `model3d` and `shell` tests pass.
+
+## The plain stone weathered (2026-11-13)
+
+The uncarved stones read bare. Moss and lichen alone (the carving pass's, with a motif 3
+that cuts nothing) gave faint moss and lichen as spots; the user asked for the stone made
+better as a whole, cracks or veins. Now `BAKE_FRAG`'s `cracks`: a warped cell field's
+edges (1.7 cells a world unit), shown only where a broad noise lets them (so they run and
+stop), 0.008 to 0.02 wide, a texel and a half soft, cut 0.006 deep; the moss settles in
+and beside them (`looks::MOSSY`, moss 0.8, no lichen; summer's `WEATHERED`, moss 0.5,
+lichen 0.08). Spring's plain stone has clearer veins (`stone.x` 0.2, the carved one's
+0.07), on its ivory squares too. A first take at 3.2 cells and twice the width read as
+crazy paving. Shots: the scratchpad's `looks/new/sp3view.jpg` (with a low-angle crop),
+`su6m.png`.
