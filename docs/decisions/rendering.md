@@ -691,8 +691,9 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
     492 dp), the tablet's landscape 7.9 to 9.7, its portrait 3.0 to 3.1 (the board 729 to
     752), the iPhone 13 mini's landscape 3.1 to 2.9 (the sign takes the title's room,
     and the game's line, back from the short note's place, heads the glass).
-- A game from the replay not counting is a line under the board, no longer a card behind
-  an info sign (2026-11-13, task 078). This replaces the info sign from earlier that day:
+- A game from the replay not counting is a line under the board (replaced the same day
+  by a line over it, below), no longer a card behind an info sign (2026-11-13, task
+  078). This replaces the info sign from earlier that day:
   the user disliked the sign and the head it crowded (on the Pixel 7a's landscape in
   Estonian back shrank to its arrow over its word, play from here to its words alone on
   two lines, the title went, and the open card covered the board), and a line by the
@@ -714,6 +715,32 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
     keeping the title and stacking the button beside a wide back (the tablet's column),
     which made the two tiles look unrelated; there the button takes a row over the glass
     again.
+- The replay's line is over the board, not under it, everywhere (2026-11-13, task 078;
+  the user: "it absolutely must be above (in fact I'd put it above everywhere I
+  think)"). This replaces the line under the board from earlier that day, whose reason,
+  that over it would read as the head's in portrait, the user weighed the other way: the
+  line is read before the board, as what the position shown is for.
+  - It costs what it did: in landscape the board gives way by its 26 dp, the two
+    centered in the height; in portrait it takes the 12 dp gap under the head, the board
+    giving 14 dp. Boards and rows in view (`test/shell/replay`) are unchanged by the move
+    alone: the Pixel 7a's landscape 424 dp, 4.6 rows, its portrait 478, 3.6; the tablet's
+    landscape 726 and portrait 738, 3.1 rows; the iPhone 13 mini's landscape 396, 2.9.
+  - Where the title has given way, back and play from here fill the head with 12 dp
+    between them (the user, of the gap the title left: "there is a bit too much space
+    there, if it's an easy fix let's do it"): in halves where the button's word fits in
+    its half, else the button as wide as its word needs and back the rest, both still the
+    same way and a tap tall. Halves everywhere would set the button's word in a
+    smaller face in Estonian while back had room to spare. With the room the gap held,
+    the iPhone 13 mini's landscape now has its tiles icon beside word, as the Pixel 7a's
+    portrait in Estonian has.
+  - Play from here never takes a row of its own (the user, of the tablet's landscape:
+    "agree this is odd, why can't the replay info be below it instead?"): it shares the
+    head with back everywhere, stacking with it where side by side they don't fit, as on
+    a phone, and the game's line heads the glass where the title has no room. This
+    replaces the tablet's row over the glass from earlier that day. The tablet's 356 dp
+    column fits both side by side in its font; its list goes from 9.7 to 12.6 rows in
+    view in the tests' faces (10.6 to 12.6 in English), the foldable's and 4:3's
+    landscape 9.7 to 12.6.
 - A phone's moves, where the panel has no room (2026-11-13, task 078's A, the user's
   choice from `prototypes/history.html`'s take d), replacing 2026-11-11's no panel in
   portrait or on a phone in landscape:

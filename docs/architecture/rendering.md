@@ -1073,17 +1073,17 @@ opens the game's replay.
 In landscape the steps (to the start, back one, on one, to the end; chevrons, the first
 and last at a bar) are a column of four tap-square tiles at the board's left, up to 16
 dp apart and centered on the board; the board takes the safe area's height less the 24 dp
-margins and the line under it (below), unless the column at its right would be under
+margins and the line over it (below), unless the column at its right would be under
 300 dp; the board and its line are centered in the height. The column holds a head of
 back, the title, and play from here over a glass. In portrait that head tops the screen,
-the board under it as wide as the screen allows with 220 dp left for the glass, its line
-under it in place of the gap over the steps, the steps a row of four, then the glass.
+the line under it in place of the gap over the board, the board as wide as the screen
+allows with 220 dp left for the glass, the steps a row of four, then the glass.
 The Pixel 7a's landscape (540 dp) gives the board 424 dp; its portrait 478; the tablet's
 landscape 726 and its portrait 738; the iPhone 13 mini's landscape 396. A step that would
 change nothing (back at the start, on at the end) is dimmed at 35% but keeps its tap and
 the keys' focus.
 
-**The line under the board** (`replay::disclaimer`, `Layout.note`) says that a game from
+**The line over the board** (`replay::disclaimer`, `Layout.note`) says that a game from
 here doesn't count: 26 dp tall, as wide as the board, its words centered in the small
 face at 66%, as settings' notes. Where it fits on that line it says why, "A game from
 here doesn't count: it isn't saved and doesn't change your rating"
@@ -1091,20 +1091,21 @@ here doesn't count: it isn't saved and doesn't change your rating"
 (`replay.no_count`: the phones), drawn smaller where even that is wider than the board.
 It takes no tap. The board gives way for it: in landscape by its height (nothing where
 the board is held by the column's width, a 9:16 phone's), in portrait by its height less
-the gap it takes, so the glass keeps every row it had.
+the gap under the head it takes, so the glass keeps every row it had.
 
 **Play from here** is a tile in the glow color at 22% (`gui::PRIMARY`), a tap tall, the
 opponent's icon (the computer's head, or two figures for a friend's game) beside its
 word, at the head's right end, the word keeping back's room at the tile's sides so the
 two tiles match. Back and the button go the same way, both icon beside word or both icon
-over word. Where the head is too narrow the title gives up its place first; then on a
-phone both stack, back its arrow over its word in a tap's square and the button its icon
-over its word (in a smaller face, down to the small one, where the room is narrower: a
-9:16 phone's landscape at 480 dp, the iPhone 13 mini's landscape); elsewhere, a tablet's
-narrow column, the button is a row of its own across the column, over the glass, which
-has rows to spare (in portrait over the glass, under the steps). It is dimmed at 35% and
-takes no tap at the end of a game that ended there (no legal move); everywhere else, the
-start included, it starts a game from the position shown (below).
+over word, and always share the head. Where the head is too narrow the title gives up its
+place first; the two tiles then fill the head with 12 dp between them, in halves where
+the button's word fits in its half, else the button as wide as its word needs and back
+the rest (the tablet's 356 dp landscape column, the iPhone 13 mini's landscape, the Pixel
+7a's portrait in Estonian). Where side by side they don't fit, both stack, icon over word
+(the button's word in a smaller face, down to the small one, where its room is narrower):
+a 9:16 phone's landscape at 480 dp. It is dimmed at 35% and takes no tap at the end of a
+game that ended there (no legal move); everywhere else, the start included, it starts a
+game from the position shown (below).
 
 The title "Replay" sits between back and play from here where it fits. The game's line,
 its result sign (crown, `=`, X), the opponent and its rating, and the date in the small
@@ -1160,7 +1161,7 @@ hints and marks) and is still what the app writes as the game to resume, with ho
 screen, while the game from the replay shows; leaving brings it back as it was
 (`unpark`). The way out goes back to the replay where it was left: back on the panel or
 the end's card, Escape, and Android's back. Settings go back to this game. The game screen
-shows it as any game: the replay's line under its board said it doesn't count before it
+shows it as any game: the replay's line over its board said it doesn't count before it
 began.
 
 ### Transitions

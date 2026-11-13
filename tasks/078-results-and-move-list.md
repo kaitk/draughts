@@ -211,6 +211,28 @@ on from any move, a game that doesn't count.
   `build/notes/078-disclaimer/` (the Pixel's landscape and portrait in English and
   Estonian, the tablet both ways, the iPhone 13 mini's landscape, a 9:16 phone's
   landscape at 480 dp in Estonian).
+- The line over the board, and the head without gaps or a row (2026-11-13; the user: the
+  line "absolutely must be above", the gap where the title went "a bit too much space",
+  and the tablet's row "odd"). `Layout.note` is now right over the board: in landscape
+  the board and the line still centered in the height, in portrait the line in the gap
+  under the head. `replay::play_fit` keeps play from here in the head everywhere
+  (`Layout.play` and the row are gone): the title gives way first, then the two tiles
+  fill the head with 12 dp between them, in halves where the button's word fits in its
+  half, else the button as wide as its word and back the rest; they stack together where
+  side by side they don't fit. Boards in dp unchanged (`test/shell/replay`, test faces):
+  the Pixel 7a's landscape at 540 dp 424, portrait 478; the tablet's landscape 726,
+  portrait 738; the iPhone 13 mini's landscape 396. Rows in view, before and after: the
+  Pixel's landscape 4.6 and 4.6, portrait 3.6 and 3.6 (4.5 and 4.5 in Estonian); the
+  tablet's landscape 10.6 to 12.6 (9.7 to 12.6 in Estonian), portrait 3.1 and 3.1; the
+  iPhone 13 mini's landscape 2.9 and 2.9; the foldable's and 4:3's landscape 9.7 to 12.6.
+  In the real font the tablet's column holds both tiles icon beside word, and so does the
+  iPhone 13 mini's landscape, which stacked before; a 9:16 phone's landscape at 480 dp
+  stacks both, side by side. `test/shell/sizes` checks the line right over the board,
+  and back and play from here in the head, a tap, as tall, apart, the same way;
+  `test/shell/replay` the line over the board on no tile and the two tiles level, at
+  every size. Headless shots: `build/notes/078-disclaimer-above/` (the Pixel's landscape
+  and portrait in English and Estonian, the tablet both ways, the iPhone 13 mini's
+  landscape, a 9:16 phone's landscape at 480 dp in Estonian).
 - Left for A and B: the phones themselves; a tip in the sheet and the replay (the legend
   there for now); the line in a small window's compact bar (none).
 - Left for C: the prototype's
