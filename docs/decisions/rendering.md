@@ -616,6 +616,17 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   tall (2026-11-13, the user: the board fits better). The desktop keeps the three under
   each other, its tiles shorter. With the moves panel the tablet's 3D board is about
   861 dp across, 898 without it, where the three under each other left 830.
+- A tablet squarer than 3:2 in landscape (4:3, a foldable) takes a phone's narrow
+  panels, 192 dp, on the 3D board (2026-11-13, the user: its board looked small). Its
+  board is held by the width between the panels, not the height: 4:3's grows from 693
+  to 762 dp, a foldable's from 628 to 697. Measured and set aside: the play panel only as
+  tall as it holds (+6 dp) and the camera buttons in a row (none). The camera buttons
+  keep a tablet's size.
+- There the moves panel stands above the 3D board (2026-11-13, the user: tons of room
+  there), between the corner panels and level with their tops, down to the board at
+  rest, which keeps its size, at least three rows; what each side has taken shows as
+  counts at its head's right, as a phone's short moves' line has them. Where three
+  rows don't fit it goes under the way out as on other tablets.
 - The move list's setting is settings' alone (2026-11-13, task 078; the user: once is
   enough), replacing 2026-11-12's three tiles kept on the results screen too. There its
   words alone (Off, Moves, Marks) didn't say what each shows, so a line under the

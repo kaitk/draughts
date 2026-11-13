@@ -242,8 +242,10 @@ fn row_of(gm: Game&, i: i64) -> i64, bool {
 }
 
 // The panel in l.moves, if the layout has room for it and the setting shows it: a head,
-// "Move list" over a rule, as a phone's moves' line has, and the list under it.
-fn moves_panel(gm: Game&, g: gui::Gui&, l: panel::Layout) {
+// "Move list" over a rule, as a phone's moves' line has, with what each side has taken
+// as counts at its right where the layout puts them there (`counts`, the panel above a
+// 4:3 tablet's 3D board), and the list under it.
+fn moves_panel(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) {
     guard gm.moves_shown != 0 && l.moves.z > 0.0 && l.moves.w > 0.0 else { return; }
     let u = g.scale;
     gui::panel(g, l.moves);
@@ -253,6 +255,12 @@ fn moves_panel(gm: Game&, g: gui::Gui&, l: panel::Layout) {
     let word = strings::get(strings::SETTINGS_MOVES);
     gui::text(g, gui::fitting(g, gui::SMALL, word, words.z), words, word, 0.7, 0.0, gui::LEFT);
     gui::fill(g, float4 { words.x, words.y + words.w - 2.0 * u, words.z, max(1.0, u) }, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
+    if l.counts {
+        let d = 18.0 * u;
+        let row = float4 { words.x, words.y, words.z, words.w - 2.0 * u };
+        let w = panel::count_at(g, over, gm.taken, rules::WHITE, row, d, true);
+        panel::count_at(g, over, gm.taken, rules::BLACK, float4 { row.x, row.y, row.z - w - 14.0 * u, row.w }, d, true);
+    }
     moves_list(gm, g, room, MOVES_LIST, true);
 }
 

@@ -89,6 +89,7 @@ let MID_GAP = 12.0;         // dp: either side of the short form between side-by
 
 let SIDE = 232.0;           // dp: each panel's width in landscape,
 let NARROW = 192.0;         // narrowing to this near square
+let SQUARISH: f32 = 1.5;    // a landscape narrower than this, width to height, takes NARROW panels (3D)
 let BOARD = 720.0;          // dp: the board the panels narrow for, the tablet's at 16:10
 // Portrait, in dp: the bar above the board, its row of tiles inside its glass (120 on a
 // touch screen), its icons over their words where the bar is narrow, a third of it
@@ -301,10 +302,13 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
         let area = framed_in(area, s, if game && moves { FRAME_WIDE_MOVES } else { FRAME_WIDE_3D });
         let width = area.z;
         let height = area.w;
-        let side = (if phone { NARROW } else { SIDE }) * s;
+        // A tablet squarer than 3:2 (4:3, a foldable) takes a phone's NARROW panels: its
+        // board is held by the width between them, not by the height (+10% on 4:3).
+        let narrow = phone || width < SQUARISH * height;
+        let side = (if narrow { NARROW } else { SIDE }) * s;
         let tall = min(corner_h() * s, height - 2.0 * gap);
         let left = float4 { area.x + gap, area.y + gap, side, min(left_h() * s, height - 2.0 * gap) };
-        let play_tall = if phone { min(narrow_play_h() * s, height - 2.0 * gap) } else { tall };
+        let play_tall = if narrow { min(narrow_play_h() * s, height - 2.0 * gap) } else { tall };
         let right = float4 { area.x + width - gap - side, area.y + gap, side, play_tall };
         // The buttons under the play panel: a column at the right edge where it fits above
         // the bottom margin, else a row centered under the panel, as low as the safe area
@@ -325,13 +329,30 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
         let cam = view3d::Camera { pitch: PITCH_LANDSCAPE, yaw: 0.0 };
         rest(l, settle(l, cam, n), s);
         guard game else { return l; }
-        // The moves panel shown (not on a phone, whose moves are a line, task 078):
+        // A tablet squarer than 3:2: the moves panel above the board instead, between the
+        // corner panels and level with them, down to the board at rest, which keeps its
+        // size; what each side has taken as counts in its head (`counts`), as a phone's
+        // moves' line shows them where it is short.
+        if moves && !phone && narrow {
+            let x0 = left.x + left.z + gap;
+            let y = area.y + gap;
+            let top = float4 { x0, y, right.x - gap - x0, l.rest.rect.y - gap - y };
+            let rows = ((top.w / s - 2.0 * game::MOVES_PAD - game::LINE_HEAD) / game::MOVES_ROW) as i64;
+            if rows >= MOVES_TOP_LEAST && !view3d::touches(l.rest, top, 0.5 * gap) {
+                l.moves = top;
+                l.keep[4] = top;
+                l.counts = true;
+                l.taken_as = TAKEN_NONE;
+                return l;
+            }
+        }
+        // Else the moves panel shown (not on a phone, whose moves are a line, task 078):
         // MOVES_3D rows under the way out, as wide, where they fit
         // above the bottom margin; the board clears it as it clears the panels, shrinking
         // for it. Then as many rows more as leave the board that size (a wide window's
         // frame, whose board is held by its height, not by the panels: the user,
         // 2026-11-12), found by halving.
-        if moves && !phone {
+        if moves && !phone && l.moves.z <= 0.0 {
             let lower = area;
             let base = with_moves(l, lower, s, MOVES_3D, n);
             if base.moves.z <= 0.0 {
@@ -777,6 +798,7 @@ fn with_moves(l0: Layout, area: float4, s: f32, rows: i64, n: i64) -> Layout {
 // The moves panel under `column` (the way out), as wide, down to the bottom margin (or
 // `most` rows, 0 for no limit), where it holds MOVES_LEAST rows.
 let MOVES_LEAST = 4;
+let MOVES_TOP_LEAST = 3;     // above the 3D board, where it costs the board nothing
 let MOVES_GAP = 16.0;           // dp between the way out and the moves panel, set off from its tiles,
 let MOVES_GAP_DESKTOP = 24.0;   // more where the mouse leaves room (a desktop)
 let MOVES_3D = 5;

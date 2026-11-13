@@ -1027,7 +1027,10 @@ take b, `plain.html`'s fade b, and the like) are in git history only
 The game's moves (`game::moves_panel`): in landscape on a tablet or a desktop a glass
 panel under the way out's tiles, as wide, 16 dp under them (24 on a desktop), down to the
 bottom margin, where at least four rows of 34 dp fit (`panel::under`); on a phone the
-moves' line instead. On the 3D board five rows, the camera's buttons staying a column
+moves' line instead. On a tablet squarer than 3:2 (`panel::SQUARISH`: 4:3, a foldable),
+whose 3D board takes a phone's narrow panels, the panel stands above the 3D board between
+the corner panels, level with their tops, down to the board at rest, at least three
+rows, with what each side has taken as counts at its head's right (`Layout.counts`). On the 3D board five rows, the camera's buttons staying a column
 under the play panel, and the board shrinking to clear them, then as many rows more as leave the board that
 size (`panel::with_moves`; a wide desktop window, whose board its height holds, to the
 foot). On a desktop the 3D board's frame may be 2.0 times as wide as tall while the panel

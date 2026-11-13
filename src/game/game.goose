@@ -542,7 +542,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     if count_taken(gm) { changed = true; }
     if keep_notes(gm) { changed = true; }
     gm.marks_at.clear();
-    moves_panel(gm, g, l);
+    moves_panel(gm, g, l, over);
     if beside {
         // A press on the sheet is the UI's, never the board's.
         gui::take(g, gui::bleed(g, l.sheet, l.area));
@@ -774,7 +774,7 @@ fn still(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     count_taken(gm);
     panel::taken(g, l, gm.taken, over);
     gm.marks_at.clear();
-    moves_panel(gm, g, l);
+    moves_panel(gm, g, l, over);
     moves_line(gm, g, l, over);
     panel::camera(g, l, gm.cam, now);
     if gm.won_at >= 0.0 { celebrate(gm, g, l, won, now, over); }
