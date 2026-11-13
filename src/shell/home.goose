@@ -786,15 +786,15 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, apart: float4, u
             }
         }
     } else {
-        // The board for a friend's game: turning to the side to move after each move, or
-        // staying (settings' `turns`), each with its icon over its word and note where the
+        // The board for a friend's game: staying, the default, first, or turning to the
+        // side to move after each move (settings' `turns`), each with its icon over its word and note where the
         // tile holds all three (a touch screen's 88 dp), without it where not (a desktop's).
         let turning = group(g, list, strings::SETUP_BOARD, gui::stacked());
         let words = g.faces[gui::BODY].ascent - g.faces[gui::BODY].descent + g.faces[gui::SMALL].ascent
                     - g.faces[gui::SMALL].descent;
         let icon: f32 = if words + 42.0 * u <= turning.w { 30.0 } else { 0.0 };
         for i in 2 {
-            let turns = i == 0;
+            let turns = i == 1;
             let tapped, pic = gui::pick(g, gui::HOME_IDS + 52 + i, across(turning, 2, i, u), icon,
                                         strings::get(if turns { strings::BOARD_TURNS } else { strings::BOARD_STAYS }),
                                         strings::get(if turns { strings::BOARD_TURNS_NOTE } else { strings::BOARD_STAYS_NOTE }),

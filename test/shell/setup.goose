@@ -73,13 +73,13 @@ fn each_draughts(sh: shell::Shell&, g: gui::Gui&, now: f64) {
 }
 
 // The setup's tiles: back 0, whom to play 1 (a friend) to 4 (hard), the draughts 5 to 7,
-// the child's pieces or the board's turning 8 and 9, the clock 10 to 12, play 13.
+// the child's pieces 8 and 9 or the board staying 8 and turning 9, the clock 10 to 12, play 13.
 let FRIEND = 1;
 let EASY = 2;
 let WHITE = 8;
 let BLACK = 9;
-let TURNS = 8;
-let STAYS = 9;
+let TURNS = 9;
+let STAYS = 8;
 let PLAY = 13;
 
 fn main() {

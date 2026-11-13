@@ -407,8 +407,8 @@ came on 2026-11-09.
   tablet's landscape; take b, the opponent as a two-part switch in the head row beside
   back, crushed on a phone's landscape where Play needs that row.
 - Whether a friend's game turns the board is the setup's (2026-11-13, task 080), its
-  last-but-one row for a friend, Turns "to who plays" or Stays "for both", Stays the
-  default as before. It replaces settings' Board row's third tile (2026-11-12): the
+  last-but-one row for a friend, Stays "for both" or Turns "to who plays", Stays the
+  default as before and, since 2026-11-13 (the user), the first of the two. It replaces settings' Board row's third tile (2026-11-12): the
   turning is a choice about that game, not a look, and in settings it read as if it
   always applied. The setup's board turns once round when Turns is chosen, as settings'
   preview did. Settings' Board row is flat or raised again, which on a 20:9 phone at
