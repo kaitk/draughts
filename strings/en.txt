@@ -148,6 +148,23 @@ results.rating = Rating
 results.computer = Against the computer
 results.friend = A friend
 results.none = No games yet
+
+# A date as the language writes it: {d} the day, {dd} the day in two figures, {mm} the
+# month in two figures, {mon} its short name (month.*), {y} the year.
+date.format = {d} {mon} {y}
+month.jan = Jan
+month.feb = Feb
+month.mar = Mar
+month.apr = Apr
+month.may = May
+month.jun = Jun
+month.jul = Jul
+month.aug = Aug
+month.sep = Sep
+month.oct = Oct
+month.nov = Nov
+month.dec = Dec
+
 moves.none = No moves yet
 board.turns = Turns
 board.turns_note = to who plays

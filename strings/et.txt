@@ -147,6 +147,23 @@ results.rating = Reiting
 results.computer = Arvuti vastu
 results.friend = Sõber
 results.none = Veel pole mänge
+
+# A date as the language writes it: {d} the day, {dd} the day in two figures, {mm} the
+# month in two figures, {mon} its short name (month.*), {y} the year.
+date.format = {dd}.{mm}.{y}
+month.jan = jaan
+month.feb = veebr
+month.mar = märts
+month.apr = apr
+month.may = mai
+month.jun = juuni
+month.jul = juuli
+month.aug = aug
+month.sep = sept
+month.oct = okt
+month.nov = nov
+month.dec = dets
+
 moves.none = Käike veel pole
 board.turns = Pöörab
 board.turns_note = käija poole

@@ -1,0 +1,19 @@
+en 2026-11-13: 13 Nov 2026
+en 2026-11-3: 3 Nov 2026
+en 2027-1-1: 1 Jan 2027
+en 2025-12-31: 31 Dec 2025
+en 2028-2-29: 29 Feb 2028
+en months: Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
+et 2026-11-13: 13.11.2026
+et 2026-11-3: 03.11.2026
+et 2027-1-1: 01.01.2027
+et 2025-12-31: 31.12.2025
+et 2028-2-29: 29.02.2028
+et months: jaan veebr märts apr mai juuni juuli aug sept okt nov dets
+"{d}/{dd}/{mm}/{mon}/{y}": "7/07/03/Mar/2026"
+"{y}-{mm}-{dd}": "2026-03-07"
+"{x} {d": "{x} {d"
+"{}{d}}": "{}7}"
+"": ""
+Easy 500 · 13 Nov 2026
+64: 13 N

@@ -1,5 +1,5 @@
 // Words built in a fixed buffer, for a label made of numbers and text (a rating, a move's
-// number, a date) with nothing allocated in a frame. Part of the gui's namespace.
+// number) with nothing allocated in a frame. Part of the gui's namespace.
 namespace gui;
 import std;
 
@@ -20,12 +20,6 @@ fn push_number(t: Text&, n: i64) {
         t.push(digits[i]);
         i -= 1;
     }
-}
-
-// n in two figures at least: a month's or a day's.
-fn push_two(t: Text&, n: i64) {
-    if n >= 0 && n < 10 { push(t, "0"); }
-    push_number(t, n);
 }
 
 // s, as much of it as fits.

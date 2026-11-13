@@ -5,6 +5,7 @@
 // system's preferred locales (pick()).
 namespace strings;
 import std;
+import .date;
 
 // The languages, by their codes as locales name them.
 let EN = 0;
@@ -76,6 +77,9 @@ let KEYS = [
     "how.afar", "how.afar_line", "how.afar_well",
     "how.way", "how.way_line", "how.way_well",
     "how.win", "how.win_line", "how.win_well",
+    "date.format",
+    "month.jan", "month.feb", "month.mar", "month.apr", "month.may", "month.jun",
+    "month.jul", "month.aug", "month.sep", "month.oct", "month.nov", "month.dec",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -246,7 +250,9 @@ let HOW_MOVE_AGAIN = 165;
 // The steps, three keys each from HOW_STEP: the rule's name, its line, and what is said
 // once it is played; in the order tutorial::STEPS names them.
 let HOW_STEP = 166;
-let COUNT = 199;
+let DATE_FORMAT = 199;      // a date's pattern (date.goose), and the months' short names
+let MONTH_JAN = 200;        // from January, MONTH_JAN + month - 1
+let COUNT = 212;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

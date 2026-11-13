@@ -53,7 +53,7 @@ fn frame(g: gui::Gui&, area: float4, s: settings::Settings&, gs: history::Game[.
     // in portrait), a row of their own under the head, sharing its width.
     let rim = picker::SWITCH_PAD * u;
     var t:      gui::Text = [];
-    var widths: f32[3] = [0.0; 3];
+    var widths: f32[3]    = [0.0; 3];
     var all = 4.0 * rim;
     for i in 3 {
         let name = strings::get(settings::DRAUGHTS_KEYS[i]);
@@ -260,12 +260,8 @@ fn opponent(t: gui::Text&, x: history::Game&) {
     gui::push_number(t, ai::skill_rating(x.skill));
 }
 
-// The day it was played, year-month-day.
+// The day it was played, as the language writes a date.
 fn date(t: gui::Text&, x: history::Game&) {
     let y, m, d = history::date(x.time);
-    gui::push_number(t, y);
-    gui::push(t, "-");
-    gui::push_two(t, m);
-    gui::push(t, "-");
-    gui::push_two(t, d);
+    strings::date(t, y, m, d);
 }
