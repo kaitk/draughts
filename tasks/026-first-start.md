@@ -54,7 +54,8 @@ tablet's landscape, a phone's landscape and portrait.
 - [x] Headless tests: every step's legal moves per draughts, the whole tutorial played
       by taps (`test/shell/tutorial`), the question (`test/shell/who`)
 - [ ] Checked on the tablet
-- [ ] The Estonian lines reviewed (`agents/writing.md`, "Reviewing a translation")
+- [x] The Estonian lines reviewed (`agents/writing.md`, "Reviewing a translation";
+      2026-11-13, Gemini through `agy`: 7 of 44 changed, the rest kept)
 
 ## References
 
