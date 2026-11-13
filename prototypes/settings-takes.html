@@ -27,7 +27,7 @@
        &langui=menu|seg|foot  the language: a globe and its code in the title row
                 opening a list (&open=1 shows it open), the codes as two tiles there, or
                 a section at the list's foot
-       &globe=a|b|c|d|e (the language's icon; &globes=1 all of them)  &thumb=corner|whole
+       &globe=a..h (the language's icon; &globes=1 all of them)  &thumb=corner|whole
        &device=tablet|pixel|iphone; ?grid=1 the tablet and the phones, both ways
      The boards' pictures are build/board3d's --shot, in prototypes/shots/ (local, out of
      git; README.md), each season's wood, stone, and carved as task 080, 03's table. A missing shot shows hatched and the CSS board stands in. */
@@ -55,7 +55,7 @@
     color: var(--fg); font: inherit; font-size: 20px; letter-spacing: 0.05em; background: var(--button); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16); }
   .langbtn .icon { width: 28px; height: 28px; stroke-width: 2; opacity: 0.85; }
   .langbtn .chev { width: 20px; height: 20px; stroke-width: 2.4; opacity: 0.7; }
-  .globes { position: absolute; top: 24px; left: 50%; transform: translateX(-50%); display: flex; gap: 14px; padding: 14px;
+  .globes { position: absolute; top: 24px; left: 50%; transform: translateX(-50%); display: flex; flex-wrap: wrap; justify-content: center; width: 640px; gap: 14px; padding: 14px;
     border-radius: 22px; background: rgb(0 0 0 / 0.45); z-index: 6; }
   .globes a { display: grid; justify-items: center; gap: 6px; color: var(--fg); text-decoration: none; }
   .globes a .langbtn { pointer-events: none; }
@@ -256,7 +256,21 @@
     d: '<path d="M4 4.5h16a1.5 1.5 0 0 1 1.5 1.5v10a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5v-3.5H4A1.5 1.5 0 0 1 2.5 16V6A1.5 1.5 0 0 1 4 4.5z"/><path d="M8.5 14.5 12 7l3.5 7.5"/><path d="M9.7 12h4.6"/>',
     e: '<circle cx="12" cy="12" r="6.5"/><path d="M5.5 12h13"/><ellipse cx="12" cy="12" rx="2.8" ry="6.5"/><ellipse cx="12" cy="12" rx="11" ry="3.6" transform="rotate(-24 12 12)"/>',
   };
-  const NAMES_G = { a: 'a, as built', b: 'b, wireframe', c: 'c, the Earth', d: 'd, speech', e: 'e, in a ring' };
+  // Languages, after Lucide's (2026-11-13: the user, a languages icon rather than the
+  // globe), our own strokes: f a script's glyph (a bar, a sweeping stroke and its foot)
+  // with an A below it to the right; g the same two in two speech bubbles, one behind
+  // the other; h an A and the glyph with two arrows between them, back and forth.
+  GLOBES.f = '<path d="M2.5 5.5h10.5"/><path d="M7.5 3v2.5"/><path d="M10.6 5.5c-.6 4-3 7.2-7.1 9.2"/><path d="M6.2 9.4c1.3 2 3 3.6 5 4.6"/>' +
+    '<path d="M12.5 21.5 17 11l4.5 10.5"/><path d="M14.3 17.6h5.4"/>';
+  GLOBES.g = '<path d="M3.5 2.5h8a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5H8L5 14v-2.5H3.5A1.5 1.5 0 0 1 2 10V4a1.5 1.5 0 0 1 1.5-1.5z"/>' +
+    '<path d="M4.5 5h6"/><path d="M9.2 5c-.4 2-1.6 3.4-3.6 4.4"/>' +
+    '<path d="M12.5 9.5h8a1.5 1.5 0 0 1 1.5 1.5v6.5a1.5 1.5 0 0 1-1.5 1.5H19v2.5L16 19h-3.5a1.5 1.5 0 0 1-1.5-1.5"/>' +
+    '<path d="M14 17l2.5-5.5L19 17"/><path d="M14.9 15.2h3.2"/>';
+  GLOBES.h = '<path d="M2.5 12 6 3.5 9.5 12"/><path d="M3.9 8.8h4.2"/>' +
+    '<path d="M13.5 13.5h8"/><path d="M17.3 11.5v2"/><path d="M19.8 13.5c-.5 3.3-2.5 5.9-5.8 7.5"/><path d="M16 16.6c1 1.6 2.4 2.9 4 3.7"/>' +
+    '<path d="M6 16.5c0 2.5 1.8 4 4.5 4h1.5"/><path d="m10.5 18.5 2 2-2 2"/><path d="M18 7.5c0-2.5-1.8-4-4.5-4H12"/><path d="m13.5 5.5-2-2 2-2"/>';
+  const NAMES_G = { a: 'a, as built', b: 'b, wireframe', c: 'c, the Earth', d: 'd, speech', e: 'e, in a ring',
+    f: 'f, glyph and A', g: 'g, two bubbles', h: 'h, A to and fro' };
   const globePick = get('globe', Object.keys(GLOBES), 'b');  // b chosen (2026-11-13)
   const globeSvg = (k) => `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${GLOBES[k]}</svg>`;
   function langTop() {
