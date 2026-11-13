@@ -702,7 +702,14 @@ How task 056 found which frames were late and why (2026-11-10):
 - **The iPhone:** Animation Hitches only (`scripts/ios_perf.py`; its tables
   `display-surface-swap`, `displayed-surfaces-interval`, `display-surface-queue`,
   `metal-command-buffer-completed`). Under Metal System Trace the app's loop runs at 120
-  on the 60 Hz panel, and the display tables hold only the first half second.
+  on the 60 Hz panel, and the display tables hold only the first half second. The GPU's
+  time a frame does come from Metal System Trace (task 084, 2026-11-13): launch the bench
+  with `ios_perf.launch(..., console=True)` and attach with its `record(udid, "Metal System
+  Trace", ...)`, then take the union of the app's `metal-gpu-intervals` between the
+  `ca-client-present-request` rows that bound the loop phase. Attaching misses the first
+  presents, so count the phase from the end (presents −2N to −N). The loop phase then
+  presented every 16.7 ms. `scripts/ios_perf.py N --renderer ngfx` passes flags to the app;
+  Animation Hitches has no GPU durations.
 - **Android:** Perfetto, its config on stdin (`/data/local/tmp` isn't readable to it):
   `adb shell "perfetto --txt -c - -o /data/misc/perfetto-traces/x.pftrace --background"
   < config.pbtx`, with `linux.ftrace` (atrace `gfx view sched freq`, `atrace_apps` the

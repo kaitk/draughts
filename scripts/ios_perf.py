@@ -2,8 +2,10 @@
 """The iPhone's rows of the README's performance table, as scripts/device_perf.sh takes
 an Android device's: both boards in the same game scene (Russian, wood, the start).
 
-    scripts/ios_perf.py [frames]        default 1000; the development build installed
-                                        (scripts/ios.py src/app/draughts.goose --device --run)
+    scripts/ios_perf.py [frames] [flags...]
+                                        default 1000; the development build installed
+                                        (scripts/ios.py src/app/draughts.goose --device --run);
+                                        flags go to the app, as --renderer ngfx
 
 Per board: the bench (--bench N) with Instruments' Animation Hitches recorded through it,
 and from its displayed-surfaces table the frames that reached the display between the
@@ -32,7 +34,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from ios import BUNDLE_ID as APP_ID, device  # noqa: E402
 from native import ROOT  # noqa: E402
 
-SCENE = ["--screen", "game", "--theme", "wood", "--variant", "russian"]
+SCENE = ["--screen", "game", "--theme", "wood", "--variant", "russian", *sys.argv[2:]]
 HZ = 60.0   # the iPhone 13 mini's display; ProMotion phones would need theirs read
 
 
