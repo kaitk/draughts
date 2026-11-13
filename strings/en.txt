@@ -170,9 +170,10 @@ mark.mistake_tip = Mistake: this move lowered the chance to win
 mark.blunder = a blunder
 mark.blunder_tip = Blunder: this move lost much of the chance to win
 replay.title = Replay
-replay.no_count = Doesn't count
+replay.no_count = A game from here doesn't count
 replay.start = The start, before the first move
 replay.play = Play from here
+replay.no_count_why = A game from here doesn't count: it isn't saved and doesn't change your rating
 
 quit.ask = Quit Draughts?
 quit.cancel = Cancel

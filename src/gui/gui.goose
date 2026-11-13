@@ -1023,9 +1023,9 @@ fn labelled(g: Gui&, id: i64, r: float4, icon: i64, size: f32, label: const u8[:
                   extra: float4 { u, style, hover(g, id), 0.0 } });
     let s = size * u;
     // The word keeps LABEL_PAD from the tile's sides, in a smaller face where it is too
-    // wide for its own.
+    // wide for its own. With NO_ICON the word stands alone.
     if arrange == STACKED {
-        let gap = 8.0 * u;
+        let gap = if icon == NO_ICON { 0.0 } else { 8.0 * u };
         let room = r.z - 2.0 * LABEL_PAD * u;
         // A word too wide for one line goes on two where the tile is tall enough for them,
         // broken at a space ("Undo move" in a narrow tile); else it takes a smaller face;
@@ -1043,7 +1043,7 @@ fn labelled(g: Gui&, id: i64, r: float4, icon: i64, size: f32, label: const u8[:
         let line = g.faces[shown].ascent - g.faces[shown].descent;
         let lines: f32 = if cut >= 0 { 2.0 } else { 1.0 };
         var c = center(r, r.z, s + gap + lines * line);
-        glyph_icon(g, center(cut_top(c, s), s, s), icon, PLAIN, p, a);
+        if icon != NO_ICON { glyph_icon(g, center(cut_top(c, s), s, s), icon, PLAIN, p, a); }
         cut_top(c, gap);
         if cut >= 0 {
             text(g, shown, cut_top(c, line), label[..cut], a, 0.0, CENTER);

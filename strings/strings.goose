@@ -62,6 +62,7 @@ let KEYS = [
     "board.stays", "board.stays_note", "setup.board", "level.friend",
     "settings.background", "background.photo", "background.plain",
     "material.wood", "material.stone", "material.carved", "material.auto",
+    "replay.no_count_why",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -217,7 +218,8 @@ let MATERIAL_WOOD = 150;    // the raised board's materials, its Board row's til
 let MATERIAL_STONE = 151;
 let MATERIAL_CARVED = 152;
 let MATERIAL_AUTO = 153;    // and the tag on Raised, the theme's own board
-let COUNT = 154;
+let REPLAY_NO_COUNT_WHY = 154; // the replay's note in full, why a game from it doesn't count (2026-11-13)
+let COUNT = 155;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

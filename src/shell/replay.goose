@@ -13,7 +13,9 @@
 // Play from here stands at the head's right end, its icon beside its word, or over it
 // where that is too wide; where the head has no room for it beside back and the title (the
 // tablet's narrow column), it is a row of its own over the glass. It is dimmed at the end
-// of a game that ended there. The head says what the game was (the result, the opponent
+// of a game that ended there. Beside it an info sign's tap (why) opens a card saying that a
+// game played from here doesn't count and why, as the moves panel's mark tips do; it costs
+// the list nothing. The head says what the game was (the result, the opponent
 // and its rating, the date) on the title's second line where it fits, else at the glass's
 // top. Over the list a line names the move shown with its mark and the
 // mark's tip; each side's accuracy heads its column. The list's moves are taps that jump
@@ -46,11 +48,13 @@ let LINE = 26.0;            // a line of the move shown
 let DISC = 9.0;             // dp: the radius of a side's piece by its accuracy and the move shown
 let FADE = 40.0;            // dp at the list's top and foot over which rows past them fade
 let MARK_GAP = 4.0;
+let INFO = 28.0;            // dp: the info sign, a disc in its tap
 
 let BACK_ID = gui::REPLAY_IDS;
 let STEP_ID = gui::REPLAY_IDS + 1;  // the four steps
 let LIST = gui::REPLAY_IDS + 5;     // the list's scroll
 let PLAY_ID = gui::REPLAY_IDS + 6;  // play from here
+let INFO_ID = gui::REPLAY_IDS + 7;  // the info sign beside it
 let MOVE_ID = gui::REPLAY_IDS + 10; // a move's tap, by its index in the game
 
 // A move of the game as the list and the board need it, with its mark.
@@ -72,6 +76,15 @@ struct Replay {
     // list last scrolled to show, -1 none yet.
     focused: i64 = 0,
     seen:    i64 = -1,
+    // The card saying why a game from here doesn't count (why): open; open while the
+    // mouse is on the info sign (a desktop); a press taken to close it. Where the last
+    // frame put the sign's tap and the card, the card only while open.
+    why:       bool   = false,
+    why_hover: bool   = false,
+    why_took:  bool   = false,
+    info:      float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
+    card:      float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
+    rows:      f32    = 0.0,    // the list's rows in view, for the layout's tests
 }
 
 fn new() -> Replay { Replay { b: board::new(rules::INTERNATIONAL), .. } }
@@ -128,6 +141,9 @@ fn open(r: Replay&, g: history::Game, line: const u8[:]) {
     r.ply = -1;
     r.focused = 0;
     r.seen = -1;
+    r.why = false;
+    r.why_hover = false;
+    r.why_took = false;
     go(r, r.plies.len, 0.0);
 }
 
@@ -210,7 +226,7 @@ fn game_width(g: gui::Gui&, x: history::Game&) -> f32 {
 fn title(g: gui::Gui&, r: float4, x: history::Game&) -> bool {
     let u = g.scale;
     let name = strings::get(strings::REPLAY_TITLE);
-    guard gui::text_width(g, gui::LABEL, name) <= r.z else { return false; }
+    guard gui::text_width(g, gui::LABEL, name) <= r.z + 0.5 else { return false; }
     let label = g.faces[gui::LABEL].ascent - g.faces[gui::LABEL].descent;
     let small = g.faces[gui::SMALL].ascent - g.faces[gui::SMALL].descent;
     let gap = 6.0 * u;
@@ -224,25 +240,34 @@ fn title(g: gui::Gui&, r: float4, x: history::Game&) -> bool {
     return line;
 }
 
+// Whether the title in a room w pixels wide has the game's line under it (title).
+fn titles(g: gui::Gui&, w: f32, x: history::Game&) -> bool {
+    return gui::text_width(g, gui::LABEL, strings::get(strings::REPLAY_TITLE)) <= w + 0.5 && game_width(g, x) <= w;
+}
+
 // Whether the move shown can be played on from: any but the end of a game that ended
 // there.
 fn playable(r: Replay&) -> bool { r.ply < r.plies.len || !r.over }
 
-// How play from here fits in the head, `head` pixels across: its icon beside its word
-// (gui::MIDDLE), or over it (gui::STACKED, the word in a smaller face where the room
-// left is narrower than it, down to the small face), or not (0: a row of its own); its
-// width there; whether the title keeps its place beside it; and whether back is its
-// arrow over its word in a tap's square. On a phone the title gives its room up, then
-// back its width, before the button goes to a row, which would cost the list or the
+// How play from here fits in the head, `head` pixels across, the info sign's tap at its
+// right: its icon beside its word (gui::MIDDLE), or over it (gui::STACKED, the word in a
+// smaller face where the room left is narrower than it, down to the small face), or its
+// word alone on two lines (WORDS), or not (0: a row of its own); its width there; whether
+// the title keeps its place beside it; and whether back is its arrow over its word in a
+// tap's square. On a phone the title gives its room up, then back its width, then the
+// button its icon, before the button goes to a row, which would cost the list or the
 // board most of what a phone has (the game's line then heads the glass).
-fn play_fit(g: gui::Gui&, head: f32, phone: bool) -> i64, f32, bool, bool {
+let WORDS = 3;
+fn play_fit(g: gui::Gui&, all: f32, phone: bool) -> i64, f32, bool, bool {
     let u = g.scale;
+    let head = all - gui::tap() * u;
     let word = strings::get(strings::REPLAY_PLAY);
     let wide = gui::back_width(g, strings::get(strings::NAV_BACK));
     let name = gui::text_width(g, gui::LABEL, strings::get(strings::REPLAY_TITLE)) + GAP * u;
+    let pads = 2.0 * gui::LABEL_PAD * u;
     let beside = gui::labelled_width(g, 34.0, word, gui::HEADING);
-    let over = max(gui::tap() * u, gui::text_width(g, gui::HEADING, word) + 2.0 * gui::LABEL_PAD * u);
-    let least = max(gui::tap() * u, gui::text_width(g, gui::SMALL, word) + 2.0 * gui::LABEL_PAD * u);
+    let over = max(gui::tap() * u, gui::text_width(g, gui::HEADING, word) + pads);
+    let least = max(gui::tap() * u, gui::text_width(g, gui::SMALL, word) + pads);
     for k in 3 {
         let titled = k == 0;
         let square = k == 2;
@@ -251,6 +276,11 @@ fn play_fit(g: gui::Gui&, head: f32, phone: bool) -> i64, f32, bool, bool {
         let room = head - back - (if titled { name } else { 0.0 });
         if room >= beside { return gui::MIDDLE, beside, titled, square; }
         if room >= least { return gui::STACKED, min(room, over), titled, square; }
+    }
+    if phone {
+        let room = head - gui::tap() * u - gui::PAD_WIDE * u;
+        let two = max(gui::tap() * u, gui::two_lines(g, gui::SMALL, word) + pads);
+        if room >= two { return WORDS, min(room, max(gui::tap() * u, gui::two_lines(g, gui::HEADING, word) + pads)), false, true; }
     }
     return 0, 0.0, true, false;
 }
@@ -347,9 +377,94 @@ fn shown_line(r: Replay&, g: gui::Gui&, box: float4, over: board::Overlay&) {
     gui::text(g, gui::fitting(g, gui::BODY, rest, second.z), second, rest, 0.8, 0.0, gui::LEFT);
 }
 
+// Why a game played from here doesn't count (2026-11-13: beside the button that starts
+// it, in a card so it costs the list nothing), before anything else this frame takes the
+// pointer, as the moves panel's mark tips (game::tips). On a desktop the card shows while
+// the mouse is on the info sign. A tap on the sign (info) or Enter on it opens it; then
+// the next tap anywhere only closes it and goes no further, Enter on the sign closes it,
+// and so does the keys' focus leaving the sign or back (close_why). Returns whether it
+// opened or closed.
+fn whys(r: Replay&, g: gui::Gui&) -> bool {
+    let was = r.why;
+    let i = g.input;
+    if r.why && !r.why_hover && g.focus != 0 && g.focus != INFO_ID { r.why = false; }
+    if gui::desktop_scale > 0.0 {
+        if g.focus == 0 && gui::inside(r.info, i.at) {
+            r.why = true;
+            r.why_hover = true;
+        } else if r.why_hover {
+            r.why = false;
+            r.why_hover = false;
+        }
+    }
+    if i.pressed && r.why && !r.why_hover {
+        r.why_took = true;
+        g.input.pressed = false;
+        g.pointer.pressed = false;
+        g.took = true;
+    }
+    if i.released && r.why_took {
+        r.why = false;
+        r.why_took = false;
+    }
+    return r.why != was;
+}
+
+// Back (Android's, Escape) on the replay: closes the card a tap or Enter opened before it
+// leaves the screen. True when it closed it.
+fn close_why(r: Replay&) -> bool {
+    guard r.why && !r.why_hover else { return false; }
+    r.why = false;
+    return true;
+}
+
+// The info sign in its tap r: a faint disc with an "i", the glow color's with a dark "i"
+// while the card is open (dark ink reads on every season's glow); nothing else drawn
+// until pressed (gui::bare). A tap or Enter opens the
+// card, or closes it where a tap or Enter opened it.
+fn info(r: Replay&, g: gui::Gui&, at: float4) {
+    let u = g.scale;
+    r.info = at;
+    let clicked, p = gui::bare(g, INFO_ID, at);
+    let k = INFO * u * (1.0 - 0.04 * p);
+    let disc = gui::center(at, k, k);
+    if r.why {
+        gui::glow_fill(g, disc, 1.0, 0.5 * k);
+        gui::colored(g, gui::BODY, disc, "i", float4 { 0.1, 0.07, 0.03, 1.0 }, gui::CENTER);
+    } else {
+        gui::fill(g, disc, float4 { 1.0, 1.0, 1.0, 0.2 + 0.1 * gui::hover(g, INFO_ID) }, 0.5 * k);
+        gui::text(g, gui::BODY, disc, "i", 0.95, 0.0, gui::CENTER);
+    }
+    if clicked && !r.why_hover { r.why = !r.why; }
+}
+
+// The card, under the info sign's tap, clear of play from here beside it: "A game from
+// here doesn't count" over why (replay.no_count_why's words after its colon), an "i" in
+// its disc at the left; wider than a mark's tip where its head needs it on one line.
+fn why(r: Replay&, g: gui::Gui&, area: float4, over: board::Overlay&) {
+    r.card = float4 { 0.0, 0.0, 0.0, 0.0 };
+    guard r.why else { return; }
+    let head = strings::get(strings::REPLAY_NO_COUNT);
+    let wide = gui::text_width(g, gui::HEADING, head) / g.scale + 3.0 * game::TIP_PAD + game::TIP_DISC + 2.0;
+    let box, disc = game::card(g, area, r.info, head, strings::get(strings::REPLAY_NO_COUNT_WHY), "", over,
+                               max(wide, game::TIP_W));
+    gui::fill(g, disc, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.5 * disc.z);
+    gui::text(g, gui::HEADING, disc, "i", 1.0, 0.0, gui::CENTER);
+    r.card = box;
+}
+
+// The glass's height above and under its list, inside its margins, `w` wide: the game's
+// line where the head hasn't it, the move shown, the rule, the sides' heads, the legend.
+fn above_list(g: gui::Gui&, w: f32, in_head: bool) -> f32 {
+    let u = g.scale;
+    let game = if in_head { 0.0 } else { (LINE + 6.0) * u };
+    return game + (2.0 * LINE + 8.0 + ROW) * u + max(1.0, u) + game::legend_h(g, w);
+}
+
 // The steps' rects and where the board goes (x, y, size) and the head and the glass, for
 // a safe area: landscape when it is wider than tall. With `row`, play from here is a row
-// of its own over the glass (`play`), else in the head.
+// of its own over the glass (`play`), else in the head. In portrait the glass is MIN_LIST
+// tall at least.
 struct Layout {
     head:  float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
     board: float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
@@ -405,6 +520,10 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     let u = g.scale;
     var ask = NOTHING;
     let n = r.plies.len;
+    // Why a game from here doesn't count, first: a tap that only closes its card goes no
+    // further.
+    let was_why = r.why;
+    whys(r, g);
     // The keys: Left and Right step from anywhere, the focus on a move following the move
     // shown; the focus come to a move (Up and Down in the list) shows it.
     gui::claim_sideways(g);
@@ -418,16 +537,24 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     }
     r.focused = g.focus;
 
-    // Play from here in the head where it fits there, else a row of its own.
+    // Play from here and the info sign's tap at its right in the head where they fit
+    // there, else a row of their own.
     var o = layout(area, u);
+    let tap = gui::tap() * u;
     let arrange, play_w, titled, square = play_fit(g, o.head.z, gui::phone(area, u));
     if arrange == 0 { o = layout(area, u, true); }
+    // What the head leaves the title (the board's size changes neither), and whether the
+    // game's line fits under it there.
+    let back = strings::get(strings::NAV_BACK);
+    let back_w = if square { tap } else { gui::back_width(g, back) };
+    let room = o.head.z - back_w - gui::PAD_WIDE * u - (if arrange != 0 { play_w + tap + GAP * u } else { 0.0 });
+    let in_head = titled && titles(g, room, r.game);
     let v .= rules::VARIANTS[r.game.variant];
     l = board::layout_at(o.board.x, o.board.y, o.board.z, u, v.size);
     l.flip = turned(r);
 
     // The steps.
-    gui::group(g, 1);
+    gui::group(g, 2);
     let icons = [gui::FIRST, gui::PREV, gui::FWD, gui::LAST];
     for i in 4 {
         let to = if i == 0 { 0 } else if i == 1 { r.ply - 1 } else if i == 2 { r.ply + 1 } else { n };
@@ -436,21 +563,32 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
         if i == 2 { gui::prefer(g, STEP_ID + i); }
     }
 
-    // The head: back, the title and the game where it fits, and play from here.
+    // The head: back, the title and the game where it fits, and play from here with the
+    // info sign at its right, there or in its row.
     gui::group(g, 0);
     var head = o.head;
-    let back = strings::get(strings::NAV_BACK);
-    let back_w = if square { gui::tap() * u } else { gui::back_width(g, back) };
     if gui::back(g, BACK_ID, gui::cut_left(head, back_w), back, square) { ask = BACK; }
     gui::cut_left(head, gui::PAD_WIDE * u);
-    let at = if arrange == 0 { o.play } else { gui::cut_right(head, play_w) };
-    if arrange != 0 { gui::cut_right(head, GAP * u); }
-    let icon = if r.game.level == history::FRIEND { gui::FRIEND } else { gui::COMPUTER };
-    if gui::labelled(g, PLAY_ID, at, icon, 34.0, strings::get(strings::REPLAY_PLAY), gui::HEADING,
-                     if arrange == 0 { gui::MIDDLE } else { arrange }, gui::PRIMARY, playable(r)) {
+    var line = if arrange == 0 { o.play } else { head };
+    let sign = gui::cut_right(line, tap);
+    let at = if arrange == 0 { line } else { gui::cut_right(line, play_w) };
+    if arrange != 0 {
+        gui::cut_right(line, GAP * u);
+        head = line;
+    }
+    let words = arrange == WORDS;
+    let icon = if words { gui::NO_ICON } else if r.game.level == history::FRIEND { gui::FRIEND } else { gui::COMPUTER };
+    let how = if arrange == 0 { gui::MIDDLE } else if words { gui::STACKED } else { arrange };
+    if gui::labelled(g, PLAY_ID, at, icon, if words { 0.0 } else { 34.0 }, strings::get(strings::REPLAY_PLAY), gui::HEADING,
+                     how, gui::PRIMARY, playable(r)) {
         ask = PLAY;
     }
-    let in_head = titled && title(g, head, r.game);
+    if titled { title(g, head, r.game); }
+
+    // The sign is a group of its own, which Tab comes to after the head's: Left and Right
+    // are the replay's.
+    gui::group(g, 1);
+    info(r, g, sign);
 
     // The glass: the game where the head had no room for it, the move shown, each side's
     // accuracy, and the list.
@@ -481,10 +619,14 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     }
     // The marks explained at the glass's foot, under the list (task 078's B).
     game::legend(g, gui::cut_bottom(c, game::legend_h(g, c.z)));
+    r.rows = c.w / (ROW * u);
     list(r, g, float4 { o.glass.x, c.y, o.glass.z, c.w }, c.x, c.z, now, ask);
 
-    // The last move's mark on the board, once it stands on its square.
+    // The last move's mark on the board, once it stands on its square; the card over all.
     if r.ply > 0 && !r.b.moving { badge(g, l, v, r.plies[r.ply - 1]); }
+    if ask == PLAY { r.why = false; }
+    why(r, g, area, over);
+    if r.why != was_why && ask == NOTHING { ask = SHOWN; }
     return ask;
 }
 
@@ -507,7 +649,7 @@ fn list(r: Replay&, g: gui::Gui&, view: float4, left: f32, width: f32, now: f64,
         gui::scroll_set(g, LIST, at);
         r.seen = r.ply;
     }
-    gui::group(g, 2);
+    gui::group(g, 3);
     let scrolled = gui::scroll_begin(g, LIST, view, content);
     let listed = g.quads.len;
     let v .= rules::VARIANTS[r.game.variant];

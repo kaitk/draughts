@@ -56,8 +56,9 @@ on from any move, a game that doesn't count.
 - [x] Play from here at any move but the end of a game that ended there: the same
       draughts, opponent, level and skill, side, and side to move; its game written
       nowhere, moving no rating, skill, or count, the game in progress kept and resumed as
-      it was; "Doesn't count" on it in every layout, the board's size unchanged (on a
-      phone still to check)
+      it was; the replay's info sign beside the button opening a card that says it
+      doesn't count and why, at every size, costing the list no rows (on a phone still
+      to check)
 
 ## Notes
 
@@ -144,6 +145,49 @@ on from any move, a game that doesn't count.
   Headless shots: `build/notes/078-play-from-here/` (the replay at the Pixel's landscape,
   portrait, Estonian, the end, the tablet; the game from move 39 at the Pixel's landscape
   flat and 3D, portrait in Estonian, the tablet, and a desktop).
+- The note in place of the game screen's pill (2026-11-13, the user found the pill on
+  the way out confusing): `replay::note`, under play from here at the glass's top, an
+  info sign (a faint disc with an "i") and the words in the small face; `replay.no_count`
+  now its short text ("A game from here doesn't count", "Siit mängitud mäng ei lähe
+  arvesse"), new `replay.no_count_why` the whole ("... it isn't saved and doesn't change
+  your rating", "... seda ei salvestata ja reiting ei muutu"). `panel::no_count` is gone;
+  `Game.no_count` stays. `test/shell/sizes` checks it inside the safe area and the glass,
+  clear of the board, the tiles, and every word, icon, and rule at every replay size:
+  whole at every tablet, desktop, foldable, 4:3, phone size at 540 dp, and a 20:9 phone's portrait at 480 dp (one line in a
+  tablet's portrait, two on the Pixel, three in a landscape column), short in the game's
+  line's place on the phones' landscape at 480 dp and the iPhone 13 mini's, and a 9:16
+  phone's portrait at 480 dp with insets. Its cost (`test/shell/replay`): the tablet's
+  landscape 20 to 16 moves in view, the Pixel's landscape at 540 dp 10 to 8; in portrait
+  the board instead: the tablet 752 to 729 dp, the Pixel 492 to 472, a 20:9 phone at 480
+  dp 432 to 390, the foldable 519 to 493, 4:3 587 to 561. Headless shots:
+  `build/notes/078-no-count-note/` (the Pixel's landscape and portrait in English and
+  Estonian, the tablet in both orientations and Estonian, a desktop, a 9:16 phone at 480
+  dp, the iPhone 13 mini's landscape with the short note, and the game from a replay with
+  no pill).
+- The note into a card behind an info sign (2026-11-13; on the Pixel 7a's landscape the
+  note left the list about three rows): `replay::info`, an 88 dp tap at play from here's
+  right with a 28 dp disc, opens `replay::why`, the mark tips' card (`game::card`, split
+  out of `game::tip`, now with a width) under it: `replay.no_count` over
+  `replay.no_count_why`'s words after its colon. Touch, Enter, Escape and back, and the
+  mouse dismiss it as the mark tip. The short note in the game's line's place is gone; the
+  game's line is back everywhere, and the portrait board takes back what it gave. The
+  sign's width comes out of the head: on a 9:16 phone's landscape at 480 dp the button
+  then loses its icon, its word alone on two lines (`replay::WORDS`, `gui::labelled` with
+  `NO_ICON`), as a row would leave that list nothing; a sign at the glass's top right
+  corner was tried for it and dropped (the game's line ran under it). The sign is focus
+  group 1 (the steps 2, the list 3), so Tab takes 4 presses to the list from nothing.
+  `--tip why` opens the card for shots. Rows in view (`test/shell/replay`, its faces),
+  before and after: the Pixel's landscape 3.3 to 4.6, portrait 3.0 to 3.6 (board 472 to
+  492 dp); the tablet's landscape 7.9 to 9.7, portrait 3.0 to 3.1 (board 729 to 752);
+  the iPhone 13 mini's landscape 3.1 to 2.9 (the game's line back in the glass); a 9:16
+  phone's landscape at 480 dp 1.8 to 2.1. In Estonian, test faces, the tablet's portrait
+  drops 3.0 to 2.1 and 4:3's and the foldable's portrait 1.7 to 0.7, the sign taking the
+  room that held the game's line under the title (the board takes back 23 to 26 dp); the
+  real font's shots keep the title. Headless shots: `build/notes/078-no-count-tip/` (the
+  Pixel's landscape and portrait in English and Estonian, closed and open, the tablet in
+  both orientations, open, and Estonian, the iPhone 13 mini's landscape, a 9:16 phone's
+  landscape at 480 dp in English and Estonian open). The desktop's hover wasn't shot:
+  headless, `--touch off --mouse` drew the touch layout.
 - Left for A and B: the phones themselves; a tip in the sheet and the replay (the legend
   there for now); the line in a small window's compact bar (none).
 - Left for C: the prototype's

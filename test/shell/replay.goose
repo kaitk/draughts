@@ -43,6 +43,11 @@ fn spot(g: gui::Gui&, id: i64) -> float4 {
     return float4 { -100.0, -100.0, 1.0, 1.0 };
 }
 
+// Whether r, a rect with some size, lies inside a.
+fn within(r: float4, a: float4) -> bool {
+    return r.z > 0.0 && r.x >= a.x - 0.5 && r.y >= a.y - 0.5 && r.x + r.z <= a.x + a.z + 0.5 && r.y + r.w <= a.y + a.w + 0.5;
+}
+
 fn press(sh: shell::Shell&, g: gui::Gui&, id: i64) { drive::tap(sh, g, drive::middle(spot(g, id)), tick()); }
 
 // What the replay shows: the move, the board's position, and whether it is the one the
@@ -107,9 +112,10 @@ fn check(g: gui::Gui&, sh: shell::Shell&, safe: float4) -> u8[>..] {
     let board_in = b.x >= safe.x - 0.5 && b.y >= safe.y - 0.5 && b.x + b.z <= safe.x + safe.z + 0.5 && b.y + b.z <= safe.y + safe.w + 0.5;
     var moves = 0;
     for s in g.spots { if s.id >= replay::MOVE_ID { moves++; } }
+    let rows = floor(10.0 * sh.replay.rows + 0.5) / 10.0;
     return str(n, " tiles, smallest ", (least + 0.5) as i64, " dp, inside ", inside, ", apart ", apart, ", off the board ",
                off_board, "; board ", (b.z / g.scale + 0.5) as i64, " dp, inside ", board_in, "; ", moves,
-               " moves listed; quads ", g.quads.len);
+               " moves listed, ", rows, " rows in view; quads ", g.quads.len);
 }
 
 struct Size {
@@ -220,6 +226,37 @@ fn main() {
     drive::idle(sh, g, tick());
     print("Left: focus on move ", g.focus - replay::MOVE_ID + 1, ", ", shown(sh));
 
+    // Why a game from here doesn't count: the info sign's tap opens its card; the next tap,
+    // on a step, only closes it; Tab to the sign and Enter opens it, Enter again closes
+    // it; opened again, back closes it and stays on the replay.
+    drive::idle(sh, g, tick());
+    let at = sh.replay.ply;
+    press(sh, g, replay::INFO_ID);
+    drive::idle(sh, g, tick());
+    print("the sign tapped: card open ", sh.replay.why, ", inside the safe area ", within(sh.replay.card, gui::safe(g, drive::size.x, drive::size.y)));
+    press(sh, g, replay::STEP_ID);
+    drive::idle(sh, g, tick());
+    print("a step tapped: card open ", sh.replay.why, ", the move shown kept ", sh.replay.ply == at);
+    drive::key(sh, g, gui::STEP_NONE, false, tick());
+    tabs = 0;
+    while tabs < 5 && g.focus != replay::INFO_ID {
+        tab(sh, g);
+        tabs++;
+    }
+    drive::idle(sh, g, tick());
+    print("Tab ", tabs, " times: focus on the sign ", g.focus == replay::INFO_ID);
+    drive::key(sh, g, gui::STEP_NONE, true, tick());
+    drive::idle(sh, g, tick());
+    print("Enter: card open ", sh.replay.why);
+    drive::key(sh, g, gui::STEP_NONE, true, tick());
+    drive::idle(sh, g, tick());
+    print("Enter again: card open ", sh.replay.why);
+    drive::key(sh, g, gui::STEP_NONE, true, tick());
+    drive::idle(sh, g, tick());
+    shell::back(sh, tick());
+    drive::idle(sh, g, tick());
+    print("Enter, then back: card open ", sh.replay.why, ", screen ", sh.screen, " (replay ", shell::REPLAY, ")");
+
     // Back: the results as they were, then the Russian game, its captures' stops left out.
     press(sh, g, replay::BACK_ID);
     drive::idle(sh, g, tick());
@@ -257,6 +294,10 @@ fn main() {
                insets: float4 { 118.0, 0.0, 0.0, 84.0 } },
         Size { name: "a 9:16 phone portrait at 480 dp", size: float2 { 1080.0, 1920.0 }, dp: 480.0,
                insets: float4 { 0.0, 118.0, 0.0, 84.0 } },
+        Size { name: "the iPhone 13 mini landscape", size: float2 { 2436.0, 1125.0 }, dp: 500.0,
+               insets: float4 { 150.0, 0.0, 150.0, 67.5 } },
+        Size { name: "the iPhone 13 mini portrait", size: float2 { 1125.0, 2436.0 }, dp: 500.0,
+               insets: float4 { 0.0, 150.0, 0.0, 102.0 } },
         Size { name: "a foldable landscape", size: float2 { 2208.0, 1768.0 }, dp: 800.0, insets: float4 { 0.0, 0.0, 0.0, 0.0 } },
         Size { name: "a foldable portrait", size: float2 { 1768.0, 2208.0 }, dp: 800.0, insets: float4 { 0.0, 0.0, 0.0, 0.0 } },
         Size { name: "4:3 landscape", size: float2 { 2048.0, 1536.0 }, dp: 800.0, insets: float4 { 0.0, 0.0, 0.0, 0.0 } },
