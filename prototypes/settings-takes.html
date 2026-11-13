@@ -8,26 +8,25 @@
 <script src="draughts.js"></script>
 <style>
   /* Settings looked at afresh (task 080, 02 and 03), the board's turning gone to the new
-     game's setup and the raised board's material added: Auto (the season's own), Wood, or
-     Stone. Every take is one list that scrolls, no tabs, each setting's name over its
+     game's setup and the raised board's material added: Auto (the season's own), Wood, Stone,
+     or Carved. Every take is one list that scrolls, no tabs, each setting's name over its
      tiles: Look first (what is changed most, beside the preview that shows it), then
      Game, then the language and the privacy note at the foot. Back and the title stay
      pinned over it. In landscape the list is a column at the left, its glass off the
      screen's edge as home's, and the preview the rest; in portrait the preview is a band
      at the top, smaller on a phone, the list under it.
-       &take=a  a Material row under Board (Auto, Wood, Stone, each a picture of the
+       &take=a  a Material row under Board (Auto, Wood, Stone, Carved, each a picture of the
                 theme's season's board), shown only while the board is raised
        &take=b  the material folded into the Board row: Flat, Raised (the season's own),
-                Wood, Stone; no row that means nothing on a flat board
+                Wood, Stone, Carved; no row that means nothing on a flat board
        &take=c  the seasons as their boards: the Theme row's tiles show each season's board
                 as chosen, and the material is chosen per season (the row under it names
                 the season it changes); the other takes' choice is one for every season
        &season=autumn|winter|spring|summer|date  &plain=on  &view=2d|3d
-       &mat=auto|wood|stone (per season in take c: &mat_autumn= and so on)
+       &mat=auto|wood|stone|carved (per season in take c: &mat_autumn= and so on)
        &device=tablet|pixel|iphone; ?grid=1 the tablet and the phones, both ways
      The boards' pictures are build/board3d's --shot, in prototypes/shots/ (local, out of
-     git; README.md); autumn's stone and winter's wood are --autumn 1 and --winter 1 (task
-     080, 03). A missing shot shows hatched and the CSS board stands in. */
+     git; README.md), each season's wood, stone, and carved as task 080, 03's table. A missing shot shows hatched and the CSS board stands in. */
   .bands { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
   .bands i { position: absolute; background: rgb(0 0 0 / 0.35); }
   .col { position: fixed; display: flex; flex-direction: column; }
@@ -44,8 +43,8 @@
   .top .back svg { width: 32px; height: 32px; stroke-width: 2.4; }
   .stage { position: fixed; display: grid; place-items: center; }
   .stage .shot { display: block; object-fit: cover;
-    -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 78%, transparent 100%);
-    mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 78%, transparent 100%); }
+    -webkit-mask-image: radial-gradient(ellipse 62% 62% at 50% 50%, #000 80%, transparent 100%);
+    mask-image: radial-gradient(ellipse 62% 62% at 50% 50%, #000 80%, transparent 100%); }
   /* A phone: the five theme tiles in one row across 448 dp. */
   body.phone .tiles { gap: 2px; }
   .stage .standin { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); padding: 4px 10px; border-radius: 8px;
@@ -115,9 +114,9 @@
   const moves = get('moves', ['off', 'list', 'marks'], 'list');
   const lang = get('lang', ['en', 'et'], 'en');
   // The material: one for every season (takes a and b), or each season its own (take c).
-  const matOf = (s) => get(take === 'c' ? `mat_${s}` : 'mat', ['auto', 'wood', 'stone'], 'auto');
-  const OWN = { autumn: 'wood', winter: 'stone', spring: 'stone', summer: 'wood' };
-  const MADE = {};  // every board's shot is made (autumn's stone and winter's wood: --autumn 1, --winter 1)
+  const matOf = (s) => get(take === 'c' ? `mat_${s}` : 'mat', ['auto', 'wood', 'stone', 'carved'], 'auto');
+  const OWN = { autumn: 'wood', winter: 'stone', spring: 'carved', summer: 'wood' };
+  const MADE = {};  // every board's shot is made (task 080, 03's table gives each one's flag)
   const shown = (s) => (matOf(s) === 'auto' ? OWN[s] : matOf(s));
   const shot = (s, m) => `shots/${s}-${m}.jpg`;
   const made = (s, m) => MADE[`${s}-${m}`] !== false;
@@ -179,7 +178,8 @@
         tile(view === '2d', { view: '2d' }, `${flatThumb}Flat`, 'pic') +
         tile(view === '3d' && m === 'auto', { view: '3d', mat: 'auto' }, `${boardThumb(season, OWN[season], 'auto')}Raised`, 'pic') +
         tile(view === '3d' && m === 'wood', { view: '3d', mat: 'wood' }, `${boardThumb(season, 'wood')}Wood`, 'pic') +
-        tile(view === '3d' && m === 'stone', { view: '3d', mat: 'stone' }, `${boardThumb(season, 'stone')}Stone`, 'pic'));
+        tile(view === '3d' && m === 'stone', { view: '3d', mat: 'stone' }, `${boardThumb(season, 'stone')}Stone`, 'pic') +
+        tile(view === '3d' && m === 'carved', { view: '3d', mat: 'carved' }, `${boardThumb(season, 'carved')}Carved`, 'pic'));
     } else {
       board = setting('Board',
         tile(view === '2d', { view: '2d' }, 'Flat<small>2D</small>') + tile(view === '3d', { view: '3d' }, 'Raised<small>3D</small>'));
@@ -189,7 +189,8 @@
         board += setting(name,
           tile(m === 'auto', { [key]: 'auto' }, `${boardThumb(season, OWN[season])}Auto<small>${OWN[season]}</small>`, 'pic') +
           tile(m === 'wood', { [key]: 'wood' }, `${boardThumb(season, 'wood')}Wood`, 'pic') +
-          tile(m === 'stone', { [key]: 'stone' }, `${boardThumb(season, 'stone')}Stone`, 'pic'));
+          tile(m === 'stone', { [key]: 'stone' }, `${boardThumb(season, 'stone')}Stone`, 'pic') +
+          tile(m === 'carved', { [key]: 'carved' }, `${boardThumb(season, 'carved')}Carved`, 'pic'));
       }
     }
     return `<section><h2>${icon('sun')}Look</h2>${theme}${background}${board}${kings}</section>`;
