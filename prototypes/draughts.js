@@ -165,6 +165,13 @@ const Draughts = (() => {
     clock: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M9.5 2.5h5"/>',
     pencil: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
+    // New game's icon, its takes (home.html ?newgame=): as built, a plus in a ring; a, a
+    // light and a dark piece side by side; b, a piece with a plus at its
+    // shoulder; c, a small board, its dark squares filled.
+    newNow: '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
+    newPair: '<circle cx="6.5" cy="12" r="5.5"/><circle cx="6.5" cy="12" r="2.4"/><path class="solid" fill-rule="evenodd" d="M12 12a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0 -11 0M14.5 12a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M15.7 12a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0"/>',
+    newBadge: '<circle cx="10" cy="14" r="7.5"/><circle cx="10" cy="14" r="3.5"/><path d="M19.5 1.5v6M16.5 4.5h6"/>',
+    newBoard: '<rect x="3" y="3" width="18" height="18" rx="2"/><rect class="solid" x="7.5" y="3" width="4.5" height="4.5"/><rect class="solid" x="16.5" y="3" width="4.5" height="4.5"/><rect class="solid" x="3" y="7.5" width="4.5" height="4.5"/><rect class="solid" x="12" y="7.5" width="4.5" height="4.5"/><rect class="solid" x="7.5" y="12" width="4.5" height="4.5"/><rect class="solid" x="16.5" y="12" width="4.5" height="4.5"/><rect class="solid" x="3" y="16.5" width="4.5" height="4.5"/><rect class="solid" x="12" y="16.5" width="4.5" height="4.5"/>',
     up: '<path d="M6 15l6-6 6 6"/>',
     left: '<path d="M15 6l-6 6 6 6"/>',
     right: '<path d="M9 6l6 6-6 6"/>',

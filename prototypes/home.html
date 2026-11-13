@@ -11,7 +11,8 @@
      board, a glass column at the left with the wordmark and rows of an icon and a word,
      88 dp tall; the player's chip at the board's top left, a bare X at the screen's top
      right. Portrait: the board on top, the column a sheet under it, settings a gear
-     beside the wordmark. */
+     beside the wordmark. New game is outlined under Continue, its note the opponent the
+     setup keeps; ?newgame=a|b|c tries a new icon for it (2026-11-13). */
   .home { display: grid; grid-template-columns: 440px 1fr; padding: 0; }
   .menu { --r: 0 32px 32px 0; display: flex; flex-direction: column; justify-content: center; gap: 2px;
     margin-left: calc(-1 * var(--il)); padding: 24px 32px 24px calc(32px + var(--il)); }
@@ -23,7 +24,10 @@
   .item { display: flex; align-items: center; gap: 18px; min-height: 88px; padding: 0 18px; border-radius: 20px; font-size: 30px; }
   .item .icon { width: 34px; height: 34px; opacity: 0.85; }
   .item.primary { background: color-mix(in srgb, var(--glow) 24%, transparent); }
-  .item small { margin-left: auto; }
+  .item small { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .item small .icon { width: 24px; height: 24px; opacity: 0.66; }
+  .item.outlined { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.25); }
+  /* ?newgame=a|b|c: a take on New game's icon (draughts.js, newPair, newBadge, newBoard). */
   .stage { position: relative; display: grid; place-items: center; padding: 112px 40px 40px; }
   #board { width: min(100%, var(--h) - 88px); }
   .chip { position: absolute; left: 24px; top: 24px; display: flex; align-items: center; }
@@ -62,9 +66,8 @@
   <nav class="menu glass">
     <div class="mark"><span class="piece solo white king"></span><h1>Draughts</h1>
       <a class="gear" href="settings.html" data-icon="gear" aria-label="Settings"></a></div>
-    <a class="item primary" href="game.html" data-icon="next">Continue</a>
-    <a class="item" href="setup.html" data-icon="friend">A friend</a>
-    <a class="item" href="setup.html" data-icon="computer">The computer<small>easy</small></a>
+    <a class="item primary" href="game.html" data-icon="next">Continue<small>easy</small></a>
+    <a class="item outlined new-game" href="setup.html" data-icon="newNow">New game<small><span data-icon="computer"></span>easy</small></a>
     <a class="item" href="puzzles.html" data-icon="puzzle">Puzzles<small>93 / 222</small></a>
     <a class="item results" href="results.html" data-icon="bars">Results<small>800</small></a>
     <a class="item settings" href="settings.html" data-icon="gear">Settings</a>
@@ -77,6 +80,10 @@
   <a class="x" data-icon="x" aria-label="Close"></a>
 </main>
 <script>
+  {
+    const take = { a: 'newPair', b: 'newBadge', c: 'newBoard' }[new URLSearchParams(location.search).get('newgame')];
+    if (take) document.querySelector('.new-game').dataset.icon = take;
+  }
   Draughts.board(document.getElementById('board'), Draughts.start(8));
   Draughts.init();
 </script>
