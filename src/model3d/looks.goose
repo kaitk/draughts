@@ -17,7 +17,7 @@ let COUNT = 4;
 // round sand and terracotta, 4 SUMMER_AMBER and 5 SUMMER_SERPENTINE a granite frame
 // carved with sun signs and trees of life filled with amber (task 041). T cycles the
 // seasons; --summer N and S pick the variant.
-let SUMMERS = 6;
+let SUMMERS = 7;
 let SUMMER_OAK = 4;
 let SUMMER_PICKLED = 5;
 let SUMMER_TEAK = 6;
@@ -43,6 +43,11 @@ let AUTUMN_PORPHYRY = 13;
 let WINTER_WOOD = 14;
 let WINTER_CARVED = 15;
 let WINTER_STAINED = 16;
+// The carved stones' plain siblings (task 080, the user 2026-11-13: each season a wood,
+// a stone, and a carved board): spring's elven stone and summer's amber granite with no
+// carving, their frames one solid block. --spring 3 and --summer 6.
+let SPRING_STONE = 17;
+let SUMMER_STONE = 18;
 
 struct Theme {
     photo: i64,             // the season's photograph, src/app/background.c's kind
@@ -118,6 +123,8 @@ fn get(which: i64) -> Theme {
     if which == WINTER_WOOD { return winter_wood(); }
     if which == WINTER_CARVED { return winter_carved(); }
     if which == WINTER_STAINED { return winter_stained(); }
+    if which == SPRING_STONE { return plain(elven()); }
+    if which == SUMMER_STONE { return plain(summer_amber()); }
     return autumn();
 }
 
@@ -127,12 +134,14 @@ fn shown(which: i64, spring: i64) -> i64 {
     guard which == SPRING else { return which; }
     if spring == 1 { return SPRING_ELVEN; }
     if spring == 2 { return SPRING_BALTIC; }
+    if spring == 3 { return SPRING_STONE; }
     return SPRING;
 }
 
 // The look for summer's variant n (0 to SUMMERS - 1).
 fn summer_look(n: i64) -> i64 {
     if n <= 0 { return SUMMER; }
+    if n >= 6 { return SUMMER_STONE; }
     return COUNT + min(n, SUMMERS - 1) - 1;
 }
 
@@ -145,8 +154,8 @@ fn winter_look(n: i64) -> i64 { if n <= 0 { WINTER } else { WINTER_WOOD + min(n,
 // amber stone wood 2, spring's two carved looks wood 3.
 fn wood_for(look: i64) -> i64 {
     if look == WINTER_WOOD || look == WINTER_CARVED || look == WINTER_STAINED { return 2; }
-    if look == SUMMER_OAK || look == SPRING_ELVEN || look == SPRING_BALTIC { return 3; }
-    if look == SUMMER || look == SUMMER_AMBER || look == SUMMER_PICKLED || look == SUMMER_TEAK { return 2; }
+    if look == SUMMER_OAK || look == SPRING_ELVEN || look == SPRING_STONE || look == SPRING_BALTIC { return 3; }
+    if look == SUMMER || look == SUMMER_AMBER || look == SUMMER_STONE || look == SUMMER_PICKLED || look == SUMMER_TEAK { return 2; }
     return -1;
 }
 
@@ -158,8 +167,8 @@ fn finish_for(look: i64, wood: i64) -> Finish {
     if look == WINTER_WOOD || look == WINTER_CARVED { return LIMED; }
     if look == WINTER_STAINED { return COOL; }
     if look == SUMMER_TEAK { return OILED; }
-    if look == SUMMER || look == SUMMER_AMBER { return TUNED; }
-    if look == SPRING_ELVEN || look == SPRING_BALTIC { return SPRING_FINISH; }
+    if look == SUMMER || look == SUMMER_AMBER || look == SUMMER_STONE { return TUNED; }
+    if look == SPRING_ELVEN || look == SPRING_STONE || look == SPRING_BALTIC { return SPRING_FINISH; }
     return VARNISHED;
 }
 
@@ -507,13 +516,13 @@ fn marble(which: i64) -> Marble {
 // figure), else the one chosen (--marble, M), winter's.
 fn marble_for(look: i64, chosen: i64) -> i64 {
     if look == AUTUMN_STONE { return EMPERADOR; }
-    if look == AUTUMN_CARVED || look == AUTUMN_PORPHYRY { return 0; }
+    if look == AUTUMN_CARVED || look == AUTUMN_PORPHYRY || look == SPRING_STONE || look == SUMMER_STONE { return 0; }
     return chosen;
 }
 
 // Spring's looks (task 041, the app's and the prototype's --spring): 0 the birch, 1 the
 // elven carved stone, 2 the Baltic folk carved oak.
-let SPRINGS = 3;
+let SPRINGS = 4;
 // The look spring shows by default is the elven stone (chosen on the tablet, 2026-11-09,
 // over the Baltic oak); --spring 0 is still the birch, 2 the Baltic oak.
 let SPRING_LOOK = 1;
@@ -678,13 +687,15 @@ fn autumn_carved() -> Theme {
     t.frame_surface = float4 { 0.0, 2.0, 0.0, 0.1 };
     t.stone = float4 { 0.06, 0.12, 0.15, 0.6 };
     t.frame_ring = float4 { 0.3, 8.0, 0.0, 0.0 };
-    t.build = float4 { 0.0, 0.5, 0.0, 1.0 };
+    // Mitred for the carving's bands, but no joint drawn: a stone frame shows no seam at
+    // its corners (the user, 2026-11-13), as the elven one.
+    t.build = float4 { 0.0, 0.0, 0.0, 1.0 };
     t.fill = float4 { 0.72, 0.38, 0.14, 0.7 };
     return t;
 }
 
 // Autumn 3: golden sandstone and deep red-brown porphyry, a speckled dark stone frame,
-// mitred, with its own clouding (no marble); sandstone and porphyry pieces.
+// one block, with its own clouding (no marble); sandstone and porphyry pieces.
 fn autumn_porphyry() -> Theme {
     var t = autumn_stone();
     t.light_sq = float4 { 0.88, 0.73, 0.5, 0.48 };
@@ -698,7 +709,9 @@ fn autumn_porphyry() -> Theme {
     t.frame_surface = float4 { 0.0, 1.5, 0.0, 0.2 };
     t.stone = float4 { 0.04, 0.16, 0.15, 1.0 };
     t.frame_ring = float4 { 0.2, 8.0, 0.0, 0.0 };
-    t.build = float4 { 0.0, 0.5, 0.0, 0.0 };
+    // One solid block with the field cut out: a stone frame shows no seam at its corners
+    // (the user, 2026-11-13).
+    t.build = float4 { 1.0, 0.0, 0.0, 0.0 };
     t.light_piece = float4 { 0.9, 0.8, 0.64, 0.5 };
     t.dark_piece = float4 { 0.3, 0.14, 0.13, 0.36 };
     t.crown = float4 { 0.3, 0.14, 0.13, 0.0 };
@@ -803,7 +816,7 @@ let NORDIC = Carving { motif: 1, depth: 0.015, scale: 6.0, moss: 0.0, amber: 0.0
 // A carved look's own carving (shown()'s look), ELVEN for one that isn't carved.
 fn carving_for(look: i64) -> Carving {
     if look == SPRING_BALTIC { return BALTIC; }
-    if look == SUMMER_AMBER { return AMBER_TUNED; }
+    if look == SUMMER_AMBER || look == SUMMER_STONE { return AMBER_TUNED; }
     if look == SUMMER_SERPENTINE { return AMBER; }
     if look == AUTUMN_CARVED { return AUTUMN_VINES; }
     if look == WINTER_CARVED { return NORDIC; }
@@ -817,8 +830,11 @@ let LICHEN = float4 { 0.72, 0.74, 0.58, 0.0 };
 // The theme for `which` with spring's look `spring` (SPRING_LOOK..) and, for a carved
 // look, its carving's tints: what the renderer bakes and lights.
 fn variant(which: i64, spring: i64, c: Carving) -> Theme {
-    var t = get(shown(which, spring));
-    guard t.build.w > 0.5 else { return t; }
+    let look = shown(which, spring);
+    var t = get(look);
+    // The plain stones keep their carved siblings' tints, so the two differ only in the
+    // carving.
+    guard t.build.w > 0.5 || look == SPRING_STONE || look == SUMMER_STONE else { return t; }
     let warm = float4 { 1.0 + 0.05 * c.warmth, 1.0 + 0.005 * c.warmth, 1.0 - 0.07 * c.warmth, 1.0 };
     t.light_sq *= warm;
     t.frame *= warm;
@@ -828,6 +844,13 @@ fn variant(which: i64, spring: i64, c: Carving) -> Theme {
     t.inlay = deepen(t.inlay, e);
     t.dark_piece = deepen(t.dark_piece, e);
     t.crown = deepen(t.crown, e);
+    return t;
+}
+
+// A carved stone look without its carving: the frame one solid block, no joint, no band.
+fn plain(t_in: Theme) -> Theme {
+    var t = t_in;
+    t.build = float4 { 1.0, 0.0, t.build.z, 0.0 };
     return t;
 }
 
