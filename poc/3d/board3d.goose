@@ -8,9 +8,7 @@
 // G spring's look: the birch, the elven stone or the Baltic oak (task 041); P shows the tuning
 // panel (panel.goose), V prints its values; A cycles the antialiasing (MSAA, SMAA, none) and
 // Z a 4× zoom on the board's near left corner, magnified without filtering, which a drag
-// pans (task 071), the label at the top left naming both; H cycles the shadow's ways (task
-// 086: the app's, the map fitted to the board, and the field's shadow baked from it), the
-// label and the jump's panel naming it. Nothing of the app's shell.
+// pans (task 071), the label at the top left naming both. Nothing of the app's shell.
 // J, or --jump T, switches to the jump (task 082, New game's icon): one light man on c3
 // capturing a dark one on d4, the board otherwise empty, the camera turning freely round
 // the jump with the mouse wheel moving it nearer or farther; the light man flies along a
@@ -35,7 +33,6 @@
 //   ../../build/board3d --jump 0.5                # the jump, halfway; J switches it
 //   ../../build/board3d --shot out.png --jump 0.5 --yaw 30 --pitch 35 --distance 8
 //   ../../build/board3d --shadow few              # the shadow in 4 taps, a phone's
-//   ../../build/board3d --jump 0.5 --shadows baked # task 086's ways: now, fit, baked; H cycles
 //
 // --shot draws one frame headless (no window) into a PNG; --bench times frames.
 //
@@ -195,18 +192,16 @@ fn jump_frame(scale: f32, input: bool) -> bool, bool {
     ui::input_from_gfx(c);
     let was = jump_t;
     let ss = gfx::screen_size();
-    let w: f32 = 640.0;
+    let w: f32 = 520.0;
     let x = 0.5 * (ss.x / scale - w);
     let y = ss.y / scale - 64.0;
     if ui::begin(c, "jump", ui::rect(x, y, w, 48.0), ui::WINDOW_NO_SCROLLBAR) {
-        let ratios: f32[2] = [0.45, 0.55];
+        let ratios: f32[2] = [0.3, 0.7];
         ui::layout_row(c, ui::DYNAMIC, 30.0, ratios);
         var text: u8[>..] = [];
         text.append("jump ");
         panel::num(text, jump_t);
-        text.append(" (J)  shadow ");
-        text.append(render3d::shadow_way_name(shadow_way));
-        text.append(" (H)");
+        text.append(" (J)");
         ui::label(c, text, ui::TEXT_LEFT);
         ui::slider_float(c, 0.0, jump_t, 1.0, 0.01);
     }
@@ -241,10 +236,6 @@ fn radians32(d: f32) -> f32 { d * PI / 180.0 }
 var zoom:   i32    = 1;
 var centre: float2 = float2 { 0.0, 0.0 };
 var aa:     i32    = render3d::AA;
-
-// The shadow's way (H, --shadows now|fit|baked; task 086): render3d::SHADOW_NOW, the app's,
-// or one of the ways tried against it.
-var shadow_way: i32 = render3d::SHADOW_NOW;
 var nearest = gfx::Sampler { 0 };
 var label = default<ui::Context>();
 
@@ -311,10 +302,9 @@ fn draw_label(scale: f32) {
         guard label.id != 0 else { abort(str("ui: ", ui::error())); }
     }
     ui::input_from_gfx(label);   // also starts the ui's frame
-    if ui::begin(label, "aa", ui::rect(12.0, 12.0, 460.0, 44.0), ui::WINDOW_NO_INPUT | ui::WINDOW_NO_SCROLLBAR) {
+    if ui::begin(label, "aa", ui::rect(12.0, 12.0, 300.0, 44.0), ui::WINDOW_NO_INPUT | ui::WINDOW_NO_SCROLLBAR) {
         ui::layout_row_dynamic(label, 26.0, 1);
-        ui::label(label, str(aa_name(aa), " (A)   ", zoom, "x (Z)   shadow ", render3d::shadow_way_name(shadow_way), " (H)"),
-                  ui::TEXT_LEFT);
+        ui::label(label, str(aa_name(aa), " (A)   ", zoom, "x (Z)"), ui::TEXT_LEFT);
     }
     ui::end(label);
     ui::render(label);
@@ -488,10 +478,6 @@ fn main() {
     if ai > 0 && argv[ai] == "smaa" { aa = render3d::AA_SMAA; }
     if ai > 0 && argv[ai] == "off" { aa = render3d::AA_OFF; }
     render3d::set_aa(g, aa);
-    let wi = flag_str(argv, "--shadows");
-    if wi > 0 && argv[wi] == "fit" { shadow_way = render3d::SHADOW_FIT; }
-    if wi > 0 && argv[wi] == "baked" { shadow_way = render3d::SHADOW_BAKED; }
-    render3d::set_shadow_way(g, shadow_way);
     zoom = clamp(flag_f32(argv, "--zoom", 1.0) as i32, 1, 16);
     // --wood N, --marble N: the wood's model with its finish, and the winter frame's
     // marble (0 the slate); --plain takes the finish off (looks::PLAIN), to compare.
@@ -718,12 +704,6 @@ fn main() {
                  else { render3d::AA_MSAA };
             render3d::set_aa(g, aa);
             print("antialiasing: ", aa_name(aa));
-            dirty = true;
-        }
-        if gfx::key_pressed("H") {
-            shadow_way = (shadow_way + 1) % render3d::SHADOW_WAYS;
-            render3d::set_shadow_way(g, shadow_way);
-            print("shadow: ", render3d::shadow_way_name(shadow_way));
             dirty = true;
         }
         if gfx::key_pressed("Z") {

@@ -63,87 +63,6 @@ let FS_SET = "#define FRAME_SET 3\n";
 // LIT_FRAG's shadow in 4 taps, not 9 (shadow()): a phone's (render3d::set_shadow).
 let SHADOW_FEW = "#define SHADOW_FEW 1\n";
 
-// LIT_FRAG with the field's shadow from the baked map (render3d::SHADOW_BAKED, task 086's
-// prototype): the define first, the map's binding after FRAME.
-let SHADOW_BAKED = "#define SHADOW_BAKED 1\n";
-let FIELD_SHADOW_DECL = "layout(set = 2, binding = 7) uniform sampler2D field_shadow;\n";
-
-// The field's key-light visibility over the plan (render3d::SHADOW_BAKED), baked from the
-// fitted shadow map (render3d::plan_light) each time it is drawn, so it may filter
-// generously: PCSS (Fernando, 2005). A search of the map round the texel finds how far
-// along the light its blockers stand, the penumbra widens with that distance (SOFT a
-// unit), and that disc is filtered in hardware-compared taps on a Vogel spiral turned
-// per texel by interleaved gradient noise (Jimenez, 2014), fixed to the board, so it
-// doesn't crawl as the camera turns. A piece's foot is sharp, its far rim soft, and a
-// raised piece's shadow softer the higher it is.
-let FIELD_SHADOW_FRAG = """
-    layout(location = 0) out vec4 result;
-    layout(set = 2, binding = 0) uniform sampler2DShadow shadow_map;
-    layout(set = 2, binding = 1) uniform sampler2D shadow_depth;
-    const float FIELD_SHADOW_SIZE = 1024.0; // render3d::FIELD_SHADOW_SIZE
-    const float PLAN_REACH = 5.1;           // render3d::PLAN_REACH
-    const float DEPTH_SPAN = 14.0;          // render3d::plan_light's depth: 14 units
-    const float SOFT = 0.12;                // the penumbra's width a unit from its caster
-    const float SEARCH = 0.18;              // the blockers' search radius, world units
-    const int BLOCKERS = 16;
-    const int TAPS = 32;
-    vec2 spiral(int i, int count, float turn) {
-        float r = sqrt((float(i) + 0.5) / float(count));
-        float a = float(i) * 2.39996323 + turn;
-        return r * vec2(cos(a), sin(a));
-    }
-    void main() {
-        vec2 xz = gl_FragCoord.xy / FIELD_SHADOW_SIZE * (2.0 * INNER) - INNER;
-        vec3 l = light_dir.xyz;
-        vec3 q = vec3(xz.x, 0.004 + 0.012 * (1.0 - l.y), xz.y);
-        vec4 s = light_view_proj * vec4(q, 1.0);
-        vec2 uv = vec2(s.x * 0.5 + 0.5, 0.5 - s.y * 0.5);
-        float z = s.z - 0.0005;
-        float unit = 0.5 / PLAN_REACH;      // uv a world unit, on the plane
-        float texel = 1.0 / float(textureSize(shadow_depth, 0).x);
-        float turn = 6.2831853 * fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
-        float sum = 0.0;
-        float found = 0.0;
-        for (int i = 0; i < BLOCKERS; i++) {
-            float d = textureLod(shadow_depth, uv + spiral(i, BLOCKERS, turn) * (SEARCH * unit), 0.0).r;
-            if (d < z) {
-                sum += d;
-                found += 1.0;
-            }
-        }
-        if (found < 0.5) {
-            result = vec4(1.0);
-            return;
-        }
-        float along = (z - sum / found) * DEPTH_SPAN;
-        float radius = max(0.5 * SOFT * along * unit, 1.5 * texel);
-        float lit = 0.0;
-        for (int i = 0; i < TAPS; i++) {
-            lit += texture(shadow_map, vec3(uv + spiral(i, TAPS, turn) * radius, z));
-        }
-        result = vec4(lit / float(TAPS));
-    }
-    """;
-
-// FIELD_SHADOW_FRAG's noise smoothed: 9 bilinear taps 1.5 texels apart, about 5 × 5
-// texels, into the map the field reads.
-let FIELD_BLUR_FRAG = """
-    layout(location = 0) out vec4 result;
-    layout(set = 2, binding = 0) uniform sampler2D raw;
-    void main() {
-        vec2 texel = 1.0 / vec2(textureSize(raw, 0));
-        vec2 uv = gl_FragCoord.xy * texel;
-        float sum = 0.0;
-        for (int j = -1; j <= 1; j++) {
-            for (int i = -1; i <= 1; i++) {
-                float w = (2.0 - abs(float(i))) * (2.0 - abs(float(j)));
-                sum += w * textureLod(raw, uv + vec2(i, j) * (1.5 * texel), 0.0).r;
-            }
-        }
-        result = vec4(sum / 16.0);
-    }
-    """;
-
 // The board (one mesh) and the pieces (one lathe mesh, per instance from a storage
 // buffer of two vec4s: the foot and scale; dark, crown, selected or stacked, seed).
 // draw.z: how opaque (a fading piece is drawn alone, blended); draw.w: the first
@@ -601,14 +520,7 @@ let LIT_FRAG = """
         micro = nol > 0.0 && mat < 0.5 ? micro * micro : 1.0;
         // A piece's lip and groove are finer than a shadow texel: its lookups start a
         // little toward the light, so they leave them to the baked occlusion.
-    #ifdef SHADOW_BAKED
-        // The field's shadow baked over the plan (FIELD_SHADOW_FRAG): one texel.
-        float key = mat < 0.5 ? texture(field_shadow, (p.xz + INNER) / (2.0 * INNER)).r
-                              : shadow(mat > 1.5 ? p + l * 0.03 : p, n);
-        float vis = key * micro;
-    #else
         float vis = shadow(mat > 1.5 ? p + l * 0.03 : p, n) * micro;
-    #endif
         vec3 light = light_color.rgb * light_dir.w;
         vec3 direct = (albedo * (diff / PI) + spec) * light * vis;
         // The photograph's light: diffuse from the harmonics, specular from them along

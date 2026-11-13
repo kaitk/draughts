@@ -1198,6 +1198,24 @@ The release at rest, idle 20 to 30 s:
   (`pace_3d`), which decides only after the board has drawn too slowly for a while, so a
   phone would start on the 9 and the Pixel 7a keep them; and one shader branching on a
   uniform, which would hold the 9 taps' registers in the A33's shader too.
+- **The shadow map fitted to the board** (task 086, 2026-11-13, the user, replacing a
+  square view ±6.6 along the light): the map projected along the light onto the board's
+  plane (`render3d::plan_light`), an oblique, affine map, so the field and the frame fill
+  it at one square texel size, 2.1× the texels the field had, the 9 and the 4 taps as
+  they were. A piece's shadow steps half as far as it moves, which the user judged in
+  motion on the Mac and the A33: "a bit too sharp but not too bad, and while moving
+  there is a ton less artifacts". It costs the A33 what the square view did (10.3 to
+  10.8 M cycles a moving frame against 10.2 to 10.6, at rest 9.4 to 10.0 against 9.4 to
+  9.8, within the runs' spread), and showed no acne with the depth bias unchanged.
+  Rejected: the field's shadow baked when the pieces move (contact-hardening PCSS into a
+  map over the plan, one tap a field pixel), the best look, but the whole map's bake
+  cost the A33 8.7 M cycles a moving frame (34 fps), and the user would rather not bake;
+  a wider filter, PCF on a rotated disc, and PCSS per pixel, too many taps for the A33 or
+  noise sliding as the camera turns; VSM, EVSM, and MSM, a blur over a 4 to 16 MB map on
+  every change for what the field's taps alone need; soft shadow volumes, drawn again on
+  every frame the camera moves and too much overdraw on a tiler; analytic disc shadows,
+  discs only, kept in mind for a phone. The candidates and sources are in task 086's
+  file.
 - **Open:** at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the
   flat board's 0.3, outside the app's own work, as the Mac shows no draw at rest.
 

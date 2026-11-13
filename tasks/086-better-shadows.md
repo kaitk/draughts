@@ -94,41 +94,14 @@ analytic disc stays an option for the phone alone, and the existing occlusion ma
    occlusion map's is, to the squares a moving piece's shadow covers, and its search
    ends at once where no blocker is found (most texels).
 
-## The prototype (poc/3d, gfx only)
+## The prototype (removed)
 
-`poc/3d/board3d.goose`'s **H** key cycles the shadow's ways, and `--shadows now|fit|baked`
-starts with one; the label at the top left (and the jump's panel at the bottom) names
-the way. `now` is the app's shadow (9 taps; `--shadow few` the phone's 4); `fit` the
-fitted map with the same 9 taps; `baked` the fitted map with the field's shadow baked
-(PCSS, 16 blocker taps and 32 Vogel taps turned by interleaved gradient noise fixed to
-the board, then a 9-tap smoothing pass into an R8 1024² map), the pieces and frame on 9
-taps of the fitted map. To compare in motion:
-
-```sh
-cd poc/3d
-../../build/goose-v2026.4-macos-arm64/goose build -o ../../build/board3d board3d.goose
-../../build/board3d --jump 0.5    # J the jump, its slider at the bottom (Left, Right nudge it),
-                                  # the mouse turns the camera, H cycles now → fit → baked
-../../build/board3d               # the full board; a drag turns it, H cycles
-../../build/board3d --shadow few  # now as a phone draws it, to compare with fit and baked
-```
-
-The code: `render3d::SHADOW_NOW..SHADOW_BAKED`, `shadow_way`, `plan_light`, and
-`FIELD_SHADOW_SIZE` in `src/render3d/render3d.goose`; `set_shadow_way` and
-`field_shadow_pass` in `src/render3d/render3d_gpu.goose` (gfx's recorder only: the ngfx
-build doesn't have the ways); `SHADOW_BAKED`, `FIELD_SHADOW_DECL`, `FIELD_SHADOW_FRAG`,
-and `FIELD_BLUR_FRAG` in `src/render3d/shaders.goose`. The app never calls
-`set_shadow_way`, so it draws `now`, its shots unchanged (to 1 of 255 on 165 pixels of a
-1920 × 1200 shot, the run-to-run noise). The bake redraws the whole map each time; the
-tuning constants are `SOFT` (the penumbra's width a unit from its caster, 0.12) and
-`SEARCH` (0.18) in `FIELD_SHADOW_FRAG`.
-
-Stills (2026-11-13, `build/notes/shadows/`, not in git; `way-*-jump.png` at `--jump 0.5
---yaw 30 --pitch 35 --distance 8`, `ways1.png` their crops side by side, `ways-board.png`
-the full board's at 1920 × 1200): `fit` shows the same shadow with finer steps; `baked`
-a smooth shadow, sharp at a resting piece's foot and soft round the raised piece's,
-without the grain the bake had before its smoothing pass. Motion is for the user to
-judge.
+`poc/3d/board3d.goose`'s **H** key and `--shadows now|fit|baked` cycled the ways (commit
+91bed8f): `now` the square view, `fit` the map fitted to the board, `baked` that with the
+field's shadow baked from it (PCSS, 16 blocker taps and 32 Vogel taps turned by
+interleaved gradient noise fixed to the board, a 9-tap smoothing pass, into an R8 1024²
+map; `SOFT` 0.12, `SEARCH` 0.18). Once the user picked `fit`, the ways went and the app
+draws `fit` alone; that commit has the bake's code if it is wanted again.
 
 ## Sources
 
@@ -197,30 +170,32 @@ seen there were bugs of their own, fixed in the app and the prototype:
   share of a moving frame grew 0.81 to 0.84 M → 0.96 to 1.01 M cycles (`now`, 4 taps,
   three runs against the two above).
 
+## Taken into the app (2026-11-13)
+
+The user's pick: `fit`, seen in motion on the Mac (9 taps) and the A33 (4 taps), against
+`now` on each: "a bit too sharp but not too bad, and while moving there is a ton less
+artifacts". `render3d::light` projects with `plan_light` on both renderers (it is shared
+code), the 9 and the 4 taps as they were, the depth bias unchanged: shots at 2560 × 1600
+(wood and winter's slate, the board at rest and the jump at 6 units) and 1080 × 2400
+with 4 taps showed no acne. `baked` and the square view are gone from the code. The
+decision is in `docs/decisions/rendering.md`.
+
 ## What is left
 
-- Measure on a quiet Mac and on the A33: the bake's GPU time on a frame a piece moves
-  (`--shadow-every` in the prototype stands for every frame moving), and the lit pass's
-  saving at rest and while the camera turns, against `now`'s 9 and 4 taps.
-- The user's verdict in motion on the Mac and the tablet: `fit` alone, `baked`, and
-  `SOFT` and `SEARCH`.
-- If `baked` is chosen: bake only the squares a moving piece's shadow covers (as
-  `occlusion()` does for the occlusion map), port it to the ngfx build (a module for the
-  bake and the blur in `scripts/ngfx_3d_shaders.py`, `r3d_lit_baked`), give the pieces 4
-  taps on a phone and check them in motion, check depth bias for acne with the fitted
-  map's finer depth (14 units over 16 bits, not 30), and record the decision in
-  `docs/decisions/rendering.md` and `docs/architecture/rendering.md`.
-- If neither pays on the A33: the analytic disc shadow on the field for phones only,
-  over the fitted map's pieces.
-
-To start the next session: "Continue task 086 (tasks/086-better-shadows.md): measure the
-prototype's ways on a quiet Mac and on the A33, then take the user's pick into the app."
+- An ngfx build's shot of the 3D board, once task 085's session, working on ngfx in the
+  same checkout, is done: ngfx shares `render3d::light`, so it should match gfx's.
+- The user found `fit` a bit sharp. If that is to change: wider taps in texels on a
+  tablet and a desktop, where the 9 cost the A33 nothing (they don't run there), or an
+  analytic soft disc on a phone's field.
+- The quiet Mac's timings were never taken (the Mac stayed busy); the A33's decided it.
 
 ## Acceptance criteria
 
 - [x] The candidates weighed for this scene, with sources (2026-11-13)
 - [x] The best prototyped in poc/3d behind H and `--shadows`, the app's default unchanged
       (2026-11-13)
-- [ ] GPU timings of each way on a quiet Mac and on the A33, recorded here
-- [ ] The user's pick from the ways, seen in motion on the Mac and the tablet
+- [x] GPU timings of each way on the A33, recorded here (2026-11-13; the Mac stayed busy)
+- [x] The user's pick from the ways, seen in motion on the Mac and the A33: `fit`
+      (2026-11-13)
 - [ ] The pick in the app on both renderers, phones included, its decision recorded
+      (gfx done 2026-11-13; ngfx shares the code, its shot left)

@@ -1394,7 +1394,8 @@ board's does and the backdrop over it as opaque as the blur.
   moving piece about 6 × 6 squares of it (a texel a field pixel reads); a crowned king's crown read from its
   signed distance drawn once at setup into a 256² map (`shaders::CROWN_FRAG`); one 4× multisampled
   forward pass (the board's shadow, the lit board and pieces, the key light's shadow on them
-  from a 1024² map filtered in 9 taps over 5 × 5 texels, 4 over 3 × 3 on a phone
+  from a 1024² map fitted to the board, projected along the light onto its plane,
+  filtered in 9 taps over 5 × 5 texels, 4 over 3 × 3 on a phone
   (`gui::phone`), the fading ones blended
   after, the field's marks that hold still added) into a kept image the screen's size,
   clear but for the board, drawn only when the 3D board's scene changed
