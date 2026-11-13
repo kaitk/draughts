@@ -54,7 +54,7 @@ from native import ROOT, VERSION_NAME, app_names, copy_sources, goose_to_c, run,
 # one, and this one is kept for good (2026-11-12, tasks/046-app-store-release.md). Another
 # program gets BUNDLE_ID.<name>. CFBundleShortVersionString is native.VERSION_NAME.
 BUNDLE_ID = "io.github.kaitk.draughts.app"
-BUILD_NUMBER = "1"        # CFBundleVersion, raised for every upload
+BUILD_NUMBER = "2"        # CFBundleVersion, raised for every upload
 # A release build's App Store profile and the upload's API key ids, outside the repo
 # (docs/development.md, "Release builds"); DRAUGHTS_IOS_PROFILE, DRAUGHTS_ASC_PROPERTIES.
 RELEASE_PROFILE = "~/.config/draughts/draughts-app-store.mobileprovision"

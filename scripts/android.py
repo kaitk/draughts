@@ -56,7 +56,7 @@ PLATFORM = Path(os.environ.get("ANDROID_PLATFORM", SDK / "platforms/android-36")
 # which lets `adb shell am start -n ID/.DraughtsActivity` work, and needs no change if the
 # id ever does before the first upload. The versionName is native.VERSION_NAME.
 ACTIVITY = "io.github.kaitk.draughts.DraughtsActivity"
-VERSION_CODE = 3          # raised for every upload to Play
+VERSION_CODE = 4          # raised for every upload to Play
 MIN_SDK = "29"
 TARGET_SDK = "36"         # what Play requires of new apps and updates from 2026-08-31
 UPLOAD_KEY = Path(os.environ.get("DRAUGHTS_UPLOAD_KEY",
