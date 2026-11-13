@@ -99,7 +99,7 @@ panel's marble tunes winter's, not autumn 1's own); the takes' bake on the A33 (
 - [ ] Autumn's stone and winter's wood made; shots of all eight boards; the user's pick
 - [ ] Summer's stone finished
 - [x] The choice in settings (per 02's take) and the player's file; Auto as today's looks
-- [ ] Bake time of the new looks on the A33
+- [x] Bake time of the new looks on the A33
 
 ## Three for every season (2026-11-13)
 
@@ -135,4 +135,36 @@ the table above (`test/model3d/material` checks it against the flags' looks); th
 the board again on a change, as on a new theme. `--autumn`, `--winter`, `--spring`, and
 `--summer`, given, pick their season's look over it; `--material` sets it for a run.
 Shots of each material raised in autumn and winter (the session's scratchpad,
-`settings/tablet-*-wood.png` and the like). Its bake on the A33 is still step 4.
+`settings/tablet-*-wood.png` and the like). Its bake on the A33: below.
+
+## The bake on the A33 (2026-11-13)
+
+Main's build of the day, beside the Play app (`--id-suffix dev`), portrait 1080 × 2400,
+`--board 3d --screen game --theme T --material M --bench 50`, each look run twice from a
+force-stop (the two runs within about 50 ms). In ms, the second run's: the plan's and the
+frame map's bake warm (the pipeline made), the whole preparation cold (the bench's
+"prepared"), and its longest step.
+
+| Season | Material | Plan | Frame map | Prepared | Longest step |
+| --- | --- | --- | --- | --- | --- |
+| Autumn | wood (auto) | 258 | 125 | 2,255 | 1,100 |
+| Autumn | stone | 441 | 461 | 2,732 | 1,107 |
+| Autumn | carved | 423 | 328 | 2,665 | 1,143 |
+| Winter | wood | 261 | 132 | 2,282 | 1,104 |
+| Winter | stone (auto) | 415 | 120 | 2,385 | 1,152 |
+| Winter | carved | 260 | 187 | 2,366 | 1,158 |
+| Spring | wood | 261 | 122 | 2,292 | 1,150 |
+| Spring | stone | 447 | 380 | 2,738 | 1,145 |
+| Spring | carved (auto) | 495 | 328 | 2,712 | 1,151 |
+| Summer | wood (auto) | 301 | 137 | 2,298 | 1,111 |
+| Summer | stone | 473 | 496 | 2,825 | 1,110 |
+| Summer | carved | 385 | 283 | 2,573 | 1,153 |
+
+The longest step is the bake's pipeline compile, 1.1 s whatever the look (task 042 had
+about 1.3 s), during which nothing on screen changes; the looks differ only in the bake
+itself. The woods are the cheapest (2.3 s in all); the new stones the dearest, autumn's
+and summer's solid speckled frames about 0.5 s more than a wood (2.7 to 2.8 s), the
+carved ones between. No look is more than about 0.6 s slower than today's defaults.
+The frame afterwards (waited, P50) is 14 to 16 ms on the stones and the carved looks
+and 17.5 to 18.3 on every wood, the same textures' sizes, so the wood's shading,
+not the bake. Memory isn't measured: every look bakes into the same targets.
