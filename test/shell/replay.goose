@@ -107,9 +107,10 @@ fn check(g: gui::Gui&, sh: shell::Shell&, safe: float4) -> u8[>..] {
     let board_in = b.x >= safe.x - 0.5 && b.y >= safe.y - 0.5 && b.x + b.z <= safe.x + safe.z + 0.5 && b.y + b.z <= safe.y + safe.w + 0.5;
     var moves = 0;
     for s in g.spots { if s.id >= replay::MOVE_ID { moves++; } }
+    let rows = floor(10.0 * sh.replay.rows + 0.5) / 10.0;
     return str(n, " tiles, smallest ", (least + 0.5) as i64, " dp, inside ", inside, ", apart ", apart, ", off the board ",
                off_board, "; board ", (b.z / g.scale + 0.5) as i64, " dp, inside ", board_in, "; ", moves,
-               " moves listed; quads ", g.quads.len);
+               " moves listed, ", rows, " rows in view; quads ", g.quads.len);
 }
 
 struct Size {
@@ -257,6 +258,10 @@ fn main() {
                insets: float4 { 118.0, 0.0, 0.0, 84.0 } },
         Size { name: "a 9:16 phone portrait at 480 dp", size: float2 { 1080.0, 1920.0 }, dp: 480.0,
                insets: float4 { 0.0, 118.0, 0.0, 84.0 } },
+        Size { name: "the iPhone 13 mini landscape", size: float2 { 2436.0, 1125.0 }, dp: 500.0,
+               insets: float4 { 150.0, 0.0, 150.0, 67.5 } },
+        Size { name: "the iPhone 13 mini portrait", size: float2 { 1125.0, 2436.0 }, dp: 500.0,
+               insets: float4 { 0.0, 150.0, 0.0, 102.0 } },
         Size { name: "a foldable landscape", size: float2 { 2208.0, 1768.0 }, dp: 800.0, insets: float4 { 0.0, 0.0, 0.0, 0.0 } },
         Size { name: "a foldable portrait", size: float2 { 1768.0, 2208.0 }, dp: 800.0, insets: float4 { 0.0, 0.0, 0.0, 0.0 } },
         Size { name: "4:3 landscape", size: float2 { 2048.0, 1536.0 }, dp: 800.0, insets: float4 { 0.0, 0.0, 0.0, 0.0 } },

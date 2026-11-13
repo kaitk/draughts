@@ -92,6 +92,7 @@ struct Replay {
     // (NOTE_NONE..): for the layout's tests.
     note: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
     kind: i64    = 0,
+    rows: f32    = 0.0,     // the list's rows in view, for the layout's tests
 }
 
 fn new() -> Replay { Replay { b: board::new(rules::INTERNATIONAL), .. } }
@@ -566,6 +567,7 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     }
     // The marks explained at the glass's foot, under the list (task 078's B).
     game::legend(g, gui::cut_bottom(c, game::legend_h(g, c.z)));
+    r.rows = c.w / (ROW * u);
     list(r, g, float4 { o.glass.x, c.y, o.glass.z, c.w }, c.x, c.z, now, ask);
 
     // The last move's mark on the board, once it stands on its square.
