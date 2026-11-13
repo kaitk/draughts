@@ -464,16 +464,16 @@ came on 2026-11-09.
 - The photograph or the plain fade is a Background row of two pictures, first in Look
   (2026-11-13), replacing the switch beside the theme's name (2026-11-09) and its
   halves under the 88 dp floor in a name's column.
-- The language is a button in the title row, a wireframe globe (`GLOBES.b`), its code,
-  and a chevron, opening a small list (2026-11-13). Tried in the app the same day and set
-  back: a languages icon after Lucide's (`GLOBES.f`, a glyph and an A) and the Earth
-  (`GLOBES.c`, a ring round three continents). It replaces the languages' tiles on
+- The language is a button in the title row, the globe as it was (`GLOBES.a`), its code,
+  and a chevron, opening a small list (2026-11-13). It replaces the languages' tiles on
   glass in the title row (2026-11-07), which took its width from the title as languages
   are added, and a Language section at the list's foot (the prototypes' `langui=foot`),
-  out of sight below the fold. Rejected: the codes as two tiles in the title row
-  (`langui=seg`), the other globes (a, as built; c, the Earth; e, a globe in a
-  ring), the languages glyph and A (f), a speech bubble with an A (d), and the glyphs in two bubbles (g) or with arrows
-  between them (h).
+  out of sight below the fold. Tried in the app the same day and set back: a wireframe
+  globe (`GLOBES.b`), a languages icon after Lucide's (`GLOBES.f`, a glyph and an A), and
+  the Earth (`GLOBES.c`, a ring round three continents). Rejected in the prototype: the
+  codes as two tiles in the title row (`langui=seg`), a globe in a ring (e), a speech
+  bubble with an A (d), and the glyphs in two bubbles (g) or with arrows between them
+  (h).
 
 **The puzzle picker** (`puzzles.html`'s take a, a library list, chosen 2026-11-09).
 Rejected: b's large theme tiles, which shrink long Estonian names and hold the fewest

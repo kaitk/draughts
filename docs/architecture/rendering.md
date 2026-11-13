@@ -740,8 +740,7 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   button in the row labels' 30 dp face, back is the arrow over the word in an 88 dp
   square; a title still too wide takes a smaller face, or none.
   **The language** is a button at the title row's right end, on glass as back is: a
-  wireframe globe (`gui::GLOBE`: a circle, a meridian ellipse and the axis, three
-  parallels), the language shown's code ("EN", "ET", from `strings::LANGUAGES`) in the
+  globe (`gui::GLOBE`: a circle, the equator, and one meridian), the language shown's code ("EN", "ET", from `strings::LANGUAGES`) in the
   body face, and a chevron down, lit while its list is open. A tap opens a small glass
   list under it, right-aligned with it, over the screen: each language a row 88 dp tall,
   its code dim, its name in itself, and a tick in the glow color on the one shown, which

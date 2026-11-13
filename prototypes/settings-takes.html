@@ -271,7 +271,7 @@
     '<path d="M6 16.5c0 2.5 1.8 4 4.5 4h1.5"/><path d="m10.5 18.5 2 2-2 2"/><path d="M18 7.5c0-2.5-1.8-4-4.5-4H12"/><path d="m13.5 5.5-2-2 2-2"/>';
   const NAMES_G = { a: 'a, as built', b: 'b, wireframe', c: 'c, the Earth', d: 'd, speech', e: 'e, in a ring',
     f: 'f, glyph and A', g: 'g, two bubbles', h: 'h, A to and fro' };
-  const globePick = get('globe', Object.keys(GLOBES), 'b');  // b, kept after f and c were tried in the app (2026-11-13)
+  const globePick = get('globe', Object.keys(GLOBES), 'a');  // a, the globe as it was, kept after b, f, and c were tried in the app (2026-11-13)
   const globeSvg = (k) => `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${GLOBES[k]}</svg>`;
   function langTop() {
     if (langUi === 'seg') return `<div class="langseg">${LANGS.map(([k, code]) => tile(lang === k, { lang: k }, code)).join('')}</div>`;

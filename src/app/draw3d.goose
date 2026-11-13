@@ -165,8 +165,17 @@ fn look_of(kind: i64, d: Drawer&) -> i64 {
 }
 
 // The raised board's material from now on (settings::MATERIAL_AUTO..): a new one prepares
-// the board again, as a new theme does.
-fn want_material(d: Drawer&, material: i64) { d.want = material; }
+// the board again, as a new theme does. The image shown turns grey at once, not when the
+// steps start: from the flat board straight to a material, the old one's image showed in
+// colour for a frame or two before it greyed (2026-11-13).
+fn want_material(d: Drawer&, material: i64) {
+    if material != d.want && material != d.material && shows(d) {
+        d.grey_from = 1.0;
+        d.grey_to = 1.0;
+        d.grey_at = -1.0;
+    }
+    d.want = material;
+}
 
 // The renderer set up: its meshes, buffers, pipelines, and the baked surfaces' targets.
 fn set_up(d: Drawer&) {

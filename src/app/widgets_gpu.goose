@@ -186,12 +186,10 @@ let FRAG = """
             vec2 a = abs(q);
             return min(d, seg(vec2(max(a.x, a.y), min(a.x, a.y)), vec2(6.0, 0.0), vec2(10.0, 0.0)));
         }
-        if (k == 13) {          // the language: a wireframe globe, a meridian ellipse and the axis, three parallels
+        if (k == 13) {          // the language: a globe
             vec2 q = p - 12.0;
-            float d = min(abs(length(q) - 9.0), abs(length(q / vec2(4.0, 9.0)) - 1.0) * 4.0);
-            d = min(d, seg(p, vec2(12.0, 3.0), vec2(12.0, 21.0)));
-            d = min(d, min(seg(p, vec2(4.2, 7.5), vec2(19.8, 7.5)), seg(p, vec2(4.2, 16.5), vec2(19.8, 16.5))));
-            return min(d, seg(p, vec2(3.0, 12.0), vec2(21.0, 12.0)));
+            float d = min(abs(length(q) - 9.0), seg(p, vec2(3.0, 12.0), vec2(21.0, 12.0)));
+            return min(d, abs(length(q / vec2(3.8, 9.0)) - 1.0) * 3.8);
         }
         if (k == 14) {          // home: a house with a door
             float d = min(seg(p, vec2(3.5, 10.5), vec2(12.0, 3.5)), seg(p, vec2(12.0, 3.5), vec2(20.5, 10.5)));
