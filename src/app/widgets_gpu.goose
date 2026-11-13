@@ -96,6 +96,18 @@ let FRAG = """
         vec2 e1 = c + r * vec2(cos(a0 + sweep), sin(a0 + sweep));
         return min(length(p - e0), length(p - e1));
     }
+    // A draughts piece's 12 by 5 ellipse round the origin, signed (Quilez's estimate), and
+    // a whole flat disc, its top round c and 3 high, for New game's icon.
+    float ellipse(vec2 q) {
+        vec2 r = vec2(6.0, 2.5);
+        float k0 = length(q / r);
+        return k0 * (k0 - 1.0) / max(length(q / (r * r)), 1e-4);
+    }
+    float disc(vec2 p, vec2 c) {
+        vec2 q = p - c;
+        float side = max(abs(q.x) - 6.0, abs(q.y - 1.5) - 1.5);
+        return min(min(ellipse(q), ellipse(q - vec2(0.0, 3.0))), side);
+    }
     // Eight rays from radius a to b round the origin: the four axes and the diagonals.
     float rays(vec2 q, float a, float b) {
         vec2 s = abs(q);
@@ -325,9 +337,20 @@ let FRAG = """
             float d = min(seg(p, a, b), seg(p, b, vec2(a.x, 18.0)));
             return k == 39 || k == 42 ? min(d, seg(p, vec2(12.0 - 5.0 * s, 6.0), vec2(12.0 - 5.0 * s, 18.0))) : d;
         }
-        if (k == 45) {          // a new game: a plus in a ring
-            float d = min(abs(length(p - 12.0) - 8.5), seg(p, vec2(12.0, 8.0), vec2(12.0, 16.0)));
-            return min(d, seg(p, vec2(8.0, 12.0), vec2(16.0, 12.0)));
+        if (k == 45) {          // a new game: a light piece mid-jump over a dark one (task 082)
+            // Flat discs seen from above at an angle: tops ellipses 12 by 5, 3 high. The dark
+            // one solid round (10.5, 15), cut 2.6 clear of the light one, outlined round
+            // (15, 9), and an arc rising into it from behind.
+            float st = disc(p, vec2(10.5, 15.0));
+            float wt = disc(p, vec2(15.0, 9.0));
+            st = max(st, 2.6 - wt);
+            float d = abs(ellipse(p - vec2(15.0, 9.0)));
+            d = min(d, min(seg(p, vec2(9.0, 9.0), vec2(9.0, 12.0)), seg(p, vec2(21.0, 9.0), vec2(21.0, 12.0))));
+            vec2 q = p - vec2(15.0, 12.0);
+            d = min(d, q.y >= 0.0 ? abs(ellipse(q)) : min(length(p - vec2(9.0, 12.0)), length(p - vec2(21.0, 12.0))));
+            const vec2 c[5] = vec2[](vec2(1.5, 12.0), vec2(2.24, 11.28), vec2(3.32, 10.39), vec2(4.82, 9.62), vec2(6.8, 9.3));
+            for (int i = 0; i < 4; i++) d = min(d, seg(p, c[i], c[i + 1]));
+            return min(d, st + 1.2);
         }
         if (k == 46) {          // the board turns: two arcs chasing round, each with its arrowhead
             float d = min(arc(p, vec2(12.0), 8.0, 0.0, 2.3561945), arc(p, vec2(12.0), 8.0, 3.1415927, 2.3561945));

@@ -57,6 +57,12 @@ pieces (chosen 2026-11-07); the design boards still set the layout, glass, and c
   ImageMagick's built-in SVG renderer drops stroked paths, and the Mac has no `rsvg`.
   For an icon, show the central 72 of its 108 dp in circle and squircle masks at 48 and
   82 px (the tablet's launcher size).
+- A UI icon (task 082, New game's): judge it at the row's 34 dp, not large. Where a solid
+  shape meets an outline, either let it run under the outline or cut a clear gap (about
+  1.5 units); a hairline between them reads badly. An outlined isometric disc needs about
+  2.5 units in its top ellipse and 3 in its side, or it fills in. ChatGPT is useful for
+  ideas but places things loosely; the 3D prototype's `--jump` (poc/3d) gives a real pose
+  to draw from.
 
 ## What has been tried and set aside (2026-11-07)
 

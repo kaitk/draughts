@@ -1,6 +1,6 @@
 # 082: New game's icon
 
-Status: in-progress
+Status: done
 
 Home's New game row has a plus in a ring (`gui::NEW_GAME`), a generic "add" that the
 players' plus already uses. The user wants an icon about draughts, and isn't happy with
@@ -48,7 +48,14 @@ Continue), drawn in `prototypes/draughts.js` (`newPair` .. `newJump`), in the ic
 
 ## Acceptance criteria
 
-- [ ] The user picks an icon in the prototype
-- [ ] It is drawn for the app (`gui::NEW_GAME`, its glyph where home's icons are drawn) and
+- [x] The user picks an icon in the prototype
+- [x] It is drawn for the app (`gui::NEW_GAME`, its glyph where home's icons are drawn) and
   checked on the Mac at home's row size
-- [ ] The takes left in `prototypes/home.html` and `draughts.js` are removed once built
+- [x] The takes left in `prototypes/home.html` and `draughts.js` are removed once built
+
+## Outcome (2026-11-13)
+
+The user picked take j: i's placement with a 1.6-unit gap cut round the outlined piece.
+Drawn for the app as icon 45 in `widgets_gpu.goose` (two signed ellipses per disc), checked
+on the Mac's home at row size; the prototype's `newGame` is the same shape and its takes
+are gone. The lessons are in `agents/design.md`.
