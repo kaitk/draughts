@@ -7,7 +7,7 @@ no build step. Fonts load from the jsDelivr CDN, so they need internet access. S
 
 | Page | Shows |
 | --- | --- |
-| `home.html` | Home: the title menu beside the board, the player's chip, the X; `?newgame=a\|b\|c` tries New game's icon (two pieces, a piece and a plus, a small board) |
+| `home.html` | Home: the title menu beside the board, the player's chip, the X; `?newgame=a..g` tries New game's icon (two pieces, a piece and a plus, a small board, the app icon's board and piece, two pieces from the side, the angled board, it with a piece) |
 | `setup.html` | Home's setup for a game against the computer |
 | `game.html` | The game screen on move 20 of one game: the way out, the catch, whose turn with the lookout, the hint and undo, the moves panel (a line on a phone, the last move in portrait) |
 | `puzzles.html` | The puzzles' library: the draughts switch and a row per theme |

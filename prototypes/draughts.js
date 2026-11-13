@@ -167,10 +167,16 @@ const Draughts = (() => {
     plus: '<path d="M12 5v14M5 12h14"/>',
     // New game's icon, its takes (home.html ?newgame=): as built, a plus in a ring; a, a
     // light and a dark piece side by side; b, a piece with a plus at its
-    // shoulder; c, a small board, its dark squares filled.
+    // shoulder; c, a small board, its dark squares filled; d, the app icon's board with
+    // its dark piece, no arc or king; e, two pieces seen from the side, one behind the other; f, the app
+    // icon's board as c is, its dark squares filled, no piece or arc; g, f with a light piece.
     newNow: '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
     newPair: '<circle cx="6.5" cy="12" r="5.5"/><circle cx="6.5" cy="12" r="2.4"/><path class="solid" fill-rule="evenodd" d="M12 12a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0 -11 0M14.5 12a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M15.7 12a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0"/>',
     newBadge: '<circle cx="10" cy="14" r="7.5"/><circle cx="10" cy="14" r="3.5"/><path d="M19.5 1.5v6M16.5 4.5h6"/>',
+    newPieces: '<mask id="ng-e"><rect x="0" y="0" width="24" height="24" fill="white"/><ellipse cx="8.2" cy="14.6" rx="8.7" ry="5.2" fill="black"/><rect x="-0.5" y="14.6" width="17.4" height="3.2" fill="black"/><ellipse cx="8.2" cy="17.8" rx="8.7" ry="5.2" fill="black"/></mask><g mask="url(#ng-e)"><ellipse cx="15.8" cy="8.2" rx="7" ry="3.5"/><ellipse cx="15.8" cy="8.2" rx="3.5" ry="1.75"/><path d="M8.8 8.2v3.2a7 3.5 0 0 0 14 0v-3.2"/></g><ellipse cx="8.2" cy="14.6" rx="7" ry="3.5"/><ellipse cx="8.2" cy="14.6" rx="3.5" ry="1.75"/><path d="M1.2 14.6v3.2a7 3.5 0 0 0 14 0v-3.2"/>',
+    newIso: '<path d="M1 13.5 12 7.5 23 13.5 12 19.5z"/><path d="M1 13.5v2.3l11 6 11-6v-2.3"/><ellipse class="solid" cx="12" cy="11.6" rx="4.6" ry="2.4"/><path class="solid" d="M7.4 11.6v1.6a4.6 2.4 0 0 0 9.2 0v-1.6a4.6 2.4 0 0 1-9.2 0z"/>',
+    newIsoBoard: '<path d="M1.5 12L12 6L22.5 12L12 18z"/><path class="solid" d="M1.5 12L5 10L8.5 12L5 14zM8.5 16L12 14L15.5 16L12 18zM8.5 12L12 10L15.5 12L12 14zM8.5 8L12 6L15.5 8L12 10zM15.5 12L19 10L22.5 12L19 14z"/><path d="M1.5 12v2.6L12 20.6L22.5 14.6V12M12 18v2.6"/>',
+    newIsoPiece: '<mask id="ng-g"><rect x="0" y="0" width="24" height="24" fill="white"/><ellipse cx="15.5" cy="8.8" rx="4.4" ry="2.6" fill="black"/><rect x="11.1" y="8.8" width="8.8" height="2.4" fill="black"/><ellipse cx="15.5" cy="11.2" rx="4.4" ry="2.6" fill="black"/></mask><g mask="url(#ng-g)"><path d="M1.5 12L12 6L22.5 12L12 18z"/><path class="solid" d="M1.5 12L5 10L8.5 12L5 14zM8.5 16L12 14L15.5 16L12 18zM8.5 12L12 10L15.5 12L12 14zM8.5 8L12 6L15.5 8L12 10zM15.5 12L19 10L22.5 12L19 14z"/><path d="M1.5 12v2.6L12 20.6L22.5 14.6V12M12 18v2.6"/></g><ellipse cx="15.5" cy="8.8" rx="3.2" ry="1.6"/><path d="M12.3 8.8v1.8a3.2 1.6 0 0 0 6.4 0v-1.8"/>',
     newBoard: '<rect x="3" y="3" width="18" height="18" rx="2"/><rect class="solid" x="7.5" y="3" width="4.5" height="4.5"/><rect class="solid" x="16.5" y="3" width="4.5" height="4.5"/><rect class="solid" x="3" y="7.5" width="4.5" height="4.5"/><rect class="solid" x="12" y="7.5" width="4.5" height="4.5"/><rect class="solid" x="7.5" y="12" width="4.5" height="4.5"/><rect class="solid" x="16.5" y="12" width="4.5" height="4.5"/><rect class="solid" x="3" y="16.5" width="4.5" height="4.5"/><rect class="solid" x="12" y="16.5" width="4.5" height="4.5"/>',
     up: '<path d="M6 15l6-6 6 6"/>',
     left: '<path d="M15 6l-6 6 6 6"/>',
