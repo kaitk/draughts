@@ -1209,6 +1209,21 @@ The release at rest, idle 20 to 30 s:
   (`pace_3d`), which decides only after the board has drawn too slowly for a while, so a
   phone would start on the 9 and the Pixel 7a keep them; and one shader branching on a
   uniform, which would hold the 9 taps' registers in the A33's shader too.
+- **A desktop's shadow in 16 taps** (task 086, 2026-11-13, the user, replacing task
+  081's 9 on a desktop): Castaño's 7 × 7 texel box in 16 hardware-compared taps
+  (`shaders::SHADOW_MANY`, `render3d::SHADOW_16`) on a desktop (the platform, not its
+  screen), 9 over 5 × 5 on a tablet, 4 over 3 × 3 on a phone as before
+  (`draw3d::screen_shadow`, `render3d::set_shadow`). The user, seeing the fitted map's
+  edge a bit sharp, judged them in motion on the Mac: 16 "looks very good", 9 decent. The
+  16 cost 0.5 to 0.6 M cycles a frame more than the 9 when forced on the A33 (10.6
+  against 10.1 M at rest), which no desktop's GPU feels; a phone keeps the 4, which save
+  the A33 7% of its frame, and a tablet's 9. A phone is still told by its screen, not
+  timed: the slow-device timing stays rejected as above. Rejected: the 9 taps over a
+  1.5-texel grid (a 7.5-texel box for the 9's cost), which stippled along every edge, as
+  each tap still compares only the map's own 2 × 2 texels; and an analytic shadow of each
+  piece's cylinder on a phone's field (0.1 to 0.5 M cycles over the 4 taps on the A33,
+  soft and contact-hardening), which works for discs alone, not chess pieces, and reads
+  the squares buffer, which holds one piece a square.
 - **The shadow map fitted to the board** (task 086, 2026-11-13, the user, replacing a
   square view ±6.6 along the light): the map projected along the light onto the board's
   plane (`render3d::plan_light`), an oblique, affine map, so the field and the frame fill

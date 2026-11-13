@@ -76,10 +76,10 @@ fn pass_targets(g: Gpu&) { if nx::ngfx_on { render3d_ngfx::pass_targets(g); } el
 fn set_aa(g: Gpu&, aa: i32, samples: i32 = SAMPLES) {
     if nx::ngfx_on { render3d_ngfx::set_aa(g, aa, samples); } else { render3d_gfx::set_aa(g, aa, samples); }
 }
-fn setup(g: Gpu&, samples: i32 = SAMPLES, few: bool = false) {
-    if nx::ngfx_on { render3d_ngfx::setup(g, render3d_ngfx::AA, few); } else { render3d_gfx::setup(g, samples, few); }
+fn setup(g: Gpu&, samples: i32 = SAMPLES, look: i32 = SHADOW_9) {
+    if nx::ngfx_on { render3d_ngfx::setup(g, render3d_ngfx::AA, look); } else { render3d_gfx::setup(g, samples, look); }
 }
-fn set_shadow(g: Gpu&, few: bool) { if nx::ngfx_on { render3d_ngfx::set_shadow(g, few); } else { render3d_gfx::set_shadow(g, few); } }
+fn set_shadow(g: Gpu&, look: i32) { if nx::ngfx_on { render3d_ngfx::set_shadow(g, look); } else { render3d_gfx::set_shadow(g, look); } }
 fn draw_depth(g: Gpu&) { if nx::ngfx_on { render3d_ngfx::draw_depth(g); } else { render3d_gfx::draw_depth(g); } }
 fn marks_over(g: Gpu&, pulse: float4, next: f32, cursor: f32, to: float4, alpha: f32, size: int2) {
     if nx::ngfx_on {

@@ -1,6 +1,6 @@
 # 086: Better shadows for the 3D board at a phone's cost
 
-Status: in progress
+Status: done
 
 The pieces' shadows come from one 1024² 16-bit shadow map of the key light, drawn only
 when the pieces move, and filtered in the lit shader on every pixel of every drawn frame:
@@ -182,35 +182,30 @@ decision is in `docs/decisions/rendering.md`.
 
 ## Softer than `fit`: the second round (2026-11-13)
 
-The user found `fit` a bit sharp. `poc/3d/board3d.goose`'s **H** key and `--shadows
-9|16|4|disc` cycle the lit shader's looks (`render3d::SHADOW_9..`,
-`render3d::set_shadow_look`; the app keeps `9`, or `4` on a phone), the label and the
-jump's panel naming it; `build/board3d --jump 0.25 --shadows 16` is the jump with its
-slider:
+The user found `fit` a bit sharp. `poc/3d/board3d.goose`'s **H** key and `--shadows`
+cycled the lit shader's looks, the label and the jump's panel naming it (commit
+2945672; `build/board3d --jump 0.25` is the jump with its slider):
 
 - `9`: the app's, 9 taps over 5 × 5 texels.
-- `16`: Castaño's 7 × 7 box in 16 taps (`shaders::SHADOW_WIDE`): smooth and softer. A
-  tablet and a desktop only, where the 9 run now and the A33 never pays.
+- `16`: Castaño's 7 × 7 box in 16 taps: smooth and softer.
+- `9wide`: the 9 taps over a grid of 1.5 texels, a 7.5-texel box: each tap still
+  compares only the map's own 2 × 2 texels, so the edge stippled.
 - `4`: a phone's, 4 taps over 3 × 3.
 - `disc`: a phone's 4 taps on the pieces and the frame, the field's shadow from the
-  pieces analytic (`shaders::SHADOW_DISC`, `disc_shadow()`): each piece a solid cylinder
-  from the squares buffer as `OCC_FRAG` reads it, where the ray from the pixel toward the
-  light comes nearest its axis between foot and top, a penumbra widening with how far up
-  the ray that is (`DISC_SOFT` 0.06), over the 3 × 3 squares round where a piece half its
-  height up would cast. Crisp at a standing piece's foot, soft under a raised one, nothing
-  of the map's texels on the field. The frame's own thin shadow on the field goes (the
-  wall's occlusion stays); a piece raised over a square past the 3 × 3 would lose its
-  shadow, which a jump's arc of 1 doesn't reach. Discs only: a phone-only path.
+  pieces analytic: each piece a solid cylinder from the squares buffer as `OCC_FRAG`
+  reads it, where the ray from the pixel toward the light comes nearest its axis between
+  foot and top, a penumbra widening with how far up the ray that is, over the 3 × 3
+  squares round where a piece half its height up would cast. Crisp at a standing piece's
+  foot, soft under a raised one; discs only.
 
 On the A33, the throwaway build as above (`draw3d::set_up` reading `--shadows`, not
-committed), the two alternated, thermal status 0 before and after every run, the GPU at
+committed), each pair alternated, thermal status 0 before and after every run, the GPU at
 611 MHz throughout:
 
 | Look | Moving | At rest |
 | --- | --- | --- |
 | 4 | 17.39, 17.05 ms: 10.62, 10.42 M | 15.78, 15.87 ms: 9.64, 9.69 M |
 | disc | 18.21, 17.70 ms: 11.13, 10.82 M | 16.64, 16.06 ms: 10.16, 9.81 M |
-
 | 9 | 18.09, 18.05 ms: 11.05, 11.03 M | 16.54, 16.52 ms: 10.11, 10.09 M |
 | 16 | 19.01, 19.03 ms: 11.62, 11.62 M | 17.37, 17.42 ms: 10.61, 10.64 M |
 
@@ -220,9 +215,14 @@ M moving, 9.4 to 10.0 M at rest). The 16 taps cost 0.5 to 0.6 M more than the 9 
 on the A33, which runs neither in the app: their cost in cycles a pixel, which a tablet's
 and a desktop's faster GPUs pay less of in time).
 
-The user's look on the Mac: `16` looks very good, `9` decent; `9wide` (the 9 taps over a
-1.5-texel grid) stippled along every edge and went. The disc is a cylinder's shadow worked
-out by hand, no good for chess pieces or other meshes.
+The user's look on the Mac: `16` looks very good, `9` decent, `9wide` full of artifacts;
+the disc is a cylinder's shadow worked out by hand, no good for chess pieces or other
+meshes. **Taken into the app:** 16 taps on a desktop (the platform), 9 on a tablet, 4 on a
+phone (`draw3d::screen_shadow`, `render3d::set_shadow(look)`, ngfx's `r3d_lit_many`);
+the prototype's H and `--shadow 9|16|4` cycle them. `9wide` and the disc are gone from
+the code. The decision is in `docs/decisions/rendering.md`. On the Mac, the app's shot
+at 1280 × 800 with 16 taps differs from its 9's along the shadows' edges (6,162 pixels
+over 0.5%), and ngfx's matches gfx's as at 9.
 
 **The jump's shadow and occlusion drop out over the taken piece's square** (the user, at
 0.26 to 0.81 of the jump): the squares buffer holds one piece a square, the lowest
@@ -233,8 +233,9 @@ The shadow map's looks keep its shadow, as any mesh casts there.
 
 ## What is left
 
-- The user's look at the second round in motion, on the Mac (`16` against `9`) and the
-  A33 (`disc` against `4`), and what goes into the app.
+- Not this task's, seen in the prototype: the jump's occlusion blob popping off and on
+  over the taken piece's square (above). The squares buffer would need the moving piece
+  in an entry of its own.
 - The quiet Mac's timings were never taken (the Mac stayed busy); the A33's decided it.
 
 ## Acceptance criteria
@@ -246,5 +247,8 @@ The shadow map's looks keep its shadow, as any mesh casts there.
 - [x] The user's pick from the ways, seen in motion on the Mac and the A33: `fit`
       (2026-11-13)
 - [x] The pick in the app on both renderers, phones included, its decision recorded
-      (2026-11-13: ngfx's shot of the 3D board at 1280 × 800 matches gfx's pixel for
-      pixel)
+      (2026-11-13: ngfx's shot of the 3D board at 1280 × 800 matches gfx's, 1,190
+      pixels of a million over 0.5% apart and none over 3%, the rounding they show at 9
+      taps too)
+- [x] A softer filter where the GPU affords it: 16 taps on a desktop, seen in motion on
+      the Mac (2026-11-13)

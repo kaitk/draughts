@@ -8,8 +8,9 @@
 // G spring's look: the birch, the elven stone or the Baltic oak (task 041); P shows the tuning
 // panel (panel.goose), V prints its values; A cycles the antialiasing (MSAA, SMAA, none) and
 // Z a 4× zoom on the board's near left corner, magnified without filtering, which a drag
-// pans (task 071), the label at the top left naming both; H cycles the shadow's looks (task
-// 086's softer ones: render3d::SHADOW_9..), the label and the jump's panel naming it.
+// pans (task 071), the label at the top left naming both; H cycles the shadow's filter
+// (render3d::SHADOW_9..: a tablet's, a desktop's, a phone's), the label and the jump's
+// panel naming it.
 // Nothing of the app's shell.
 // J, or --jump T, switches to the jump (task 082, New game's icon): one light man on c3
 // capturing a dark one on d4, the board otherwise empty, the camera turning freely round
@@ -34,8 +35,7 @@
 //   ../../build/board3d --zoom 4 --aa smaa [--full]  # the antialiasing a pixel at a time
 //   ../../build/board3d --jump 0.5                # the jump, halfway; J switches it
 //   ../../build/board3d --shot out.png --jump 0.5 --yaw 30 --pitch 35 --distance 8
-//   ../../build/board3d --shadow few              # the shadow in 4 taps, a phone's
-//   ../../build/board3d --jump 0.5 --shadows disc  # task 086's looks: 9, 16, 4, disc; H cycles
+//   ../../build/board3d --shadow 4                # the shadow in 4 taps, a phone's; 9 a tablet's, 16 a desktop's; H cycles
 //
 // --shot draws one frame headless (no window) into a PNG; --bench times frames.
 //
@@ -242,9 +242,8 @@ var zoom:   i32    = 1;
 var centre: float2 = float2 { 0.0, 0.0 };
 var aa:     i32    = render3d::AA;
 
-// The shadow's look (H, --shadows 9|16|4|disc; task 086): render3d::SHADOW_9, the
-// app's on a tablet or a desktop, or one tried against it.
-var shadow_look: i32 = render3d::SHADOW_9;
+// The shadow's filter (H, --shadow 9|16|4): render3d::SHADOW_16, the app's on a desktop.
+var shadow_look: i32 = render3d::SHADOW_16;
 var nearest = gfx::Sampler { 0 };
 var label = default<ui::Context>();
 
@@ -479,16 +478,14 @@ fn main() {
 
     let t0 = clock();
     var g = default<render3d::Gpu>();
-    // --shadow few: the shadow in 4 taps, as a phone's app draws it (render3d::set_shadow).
+    // --shadow 9|16|4: the shadow's filter, a tablet's, a desktop's, or a phone's
+    // (render3d::set_shadow; H cycles).
     let fi = flag_str(argv, "--shadow");
-    render3d::setup(g, samples, fi > 0 && argv[fi] == "few");
-    if fi > 0 && argv[fi] == "few" { shadow_look = render3d::SHADOW_4; }
-    let wi = flag_str(argv, "--shadows");
-    if wi > 0 {
-        let names = ["9", "16", "4", "disc"];
-        for name, i in names { if argv[wi] == name { shadow_look = i as i32; } }
+    if fi > 0 {
+        let names = ["9", "16", "4"];
+        for name, i in names { if argv[fi] == name { shadow_look = i as i32; } }
     }
-    render3d::set_shadow_look(g, shadow_look);
+    render3d::setup(g, samples, shadow_look);
     nearest = gfx::sampler(gfx::NEAREST, gfx::CLAMP);
     // --aa msaa|smaa|off (A cycles), --zoom N (Z switches between 1 and 4).
     let ai = flag_str(argv, "--aa");
@@ -725,7 +722,7 @@ fn main() {
         }
         if gfx::key_pressed("H") {
             shadow_look = (shadow_look + 1) % render3d::SHADOW_LOOKS;
-            render3d::set_shadow_look(g, shadow_look);
+            render3d::set_shadow(g, shadow_look);
             print("shadow: ", render3d::shadow_look_name(shadow_look));
             dirty = true;
         }

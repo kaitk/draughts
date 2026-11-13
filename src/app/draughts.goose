@@ -151,9 +151,11 @@ fn main() {
         // --touch off --display-scale 1 on a Retina Mac draws its 2560 × 1440 pixels).
         if !mobile && f.touch != 1 { gui::desktop_scale = if f.display_scale >= 0.0 { f.display_scale } else { display[4] }; }
         let scale = gui::scale_of(size.x, size.y);
-        // A phone's 3D board filters its shadow in 4 taps, a tablet's or a desktop's in 9
-        // (draw3d::phone_shadow): as the layouts tell a phone, by its shorter side in dp.
-        render::phone_shadow(rd, mobile && gui::phone(float4 { 0.0, 0.0, size.x, size.y }, scale));
+        // The 3D board filters its shadow in 4 taps on a phone (as the layouts tell one, by
+        // its shorter side in dp), in 9 on a tablet, in 16 on a desktop (draw3d::screen_shadow).
+        let phone = mobile && gui::phone(float4 { 0.0, 0.0, size.x, size.y }, scale);
+        render::screen_shadow(rd, if !mobile { render3d::SHADOW_16 } else if phone { render3d::SHADOW_4 }
+                                  else { render3d::SHADOW_9 });
         let e = if f.inset.x < 0.0 { float4 { display[0], display[1], display[2], display[3] } }
                 else { float4 { floor(f.inset.x * scale + 0.5), floor(f.inset.y * scale + 0.5),
                                 floor(f.inset.z * scale + 0.5), floor(f.inset.w * scale + 0.5) } };

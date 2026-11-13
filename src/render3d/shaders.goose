@@ -1,7 +1,8 @@
 // The 3D board's shaders, GLSL 450 that embed_shader compiles with the program. One
 // forward pass draws everything lit: the board and the pieces share one fragment shader
 // (GGX after Filament, wrap diffuse, Filament's specular antialiasing, 9 weighted
-// hardware-compared shadow taps over 5 × 5 texels, 4 over 3 × 3 on a phone, analytic occlusion, an ambient of nine spherical
+// hardware-compared shadow taps over 5 × 5 texels on a tablet, 16 over 7 × 7 on a
+// desktop, 4 over 3 × 3 on a phone, analytic occlusion, an ambient of nine spherical
 // harmonics taken from the photograph, a mild tonemap). The wood is baked once at
 // startup by the bake shader into textures with mips.
 //
@@ -60,14 +61,10 @@ let FRAME = """
 let VS_SET = "#define FRAME_SET 1\n";
 let FS_SET = "#define FRAME_SET 3\n";
 
-// LIT_FRAG's shadow in 4 taps, not 9 (shadow()): a phone's (render3d::set_shadow).
+// LIT_FRAG's shadow in 4 taps or in 16, not 9 (shadow()): a phone's and a desktop's
+// (render3d::set_shadow).
 let SHADOW_FEW = "#define SHADOW_FEW 1\n";
-
-// Task 086's softer looks, tried in poc/3d (render3d::SHADOW_16..): Castaño's 7 × 7 box
-// in 16 taps; and, with SHADOW_FEW, the field's shadow from the pieces as analytic discs
-// (disc_shadow()).
-let SHADOW_WIDE = "#define SHADOW_WIDE 1\n";
-let SHADOW_DISC = "#define SHADOW_DISC 1\n";
+let SHADOW_MANY = "#define SHADOW_MANY 1\n";
 
 // The board (one mesh) and the pieces (one lathe mesh, per instance from a storage
 // buffer of two vec4s: the foot and scale; dark, crown, selected or stacked, seed).
@@ -174,10 +171,6 @@ let LIT_FRAG = """
     // The crown's distance over ±CROWN_SPAN of the piece's radius (CROWN_FRAG).
     layout(set = 2, binding = 6) uniform sampler2D crown_map;
     const float CROWN_SPAN = 0.6;       // render3d::crown_map
-    #ifdef SHADOW_DISC
-    // The field's squares as OCC_FRAG reads them (render3d::Gpu.squares).
-    layout(std430, set = 2, binding = 7) readonly buffer Squares { vec4 squares[]; };
-    #endif
 
     const float FRAME_SPAN = 10.4;   // the frame map's side in world units
 
@@ -238,7 +231,8 @@ let LIT_FRAG = """
     // weights from where the point falls in its texel (Castaño's filter, as The Witness
     // has it); the 16 taps 1.25 texels apart it replaced covered the same 5 texels. On a
     // phone (SHADOW_FEW first) a 3 × 3 box in 4 taps: half the A33's cost of the 9 (task
-    // 081), its edges stepped where a tablet's or a desktop's larger pieces show them.
+    // 081), its edges stepped where a tablet's or a desktop's larger pieces show them. On
+    // a desktop (SHADOW_MANY) a 7 × 7 box in 16 taps, softer (task 086).
     float shadow(vec3 p, vec3 n) {
         float nl = clamp(dot(n, light_dir.xyz), 0.0, 1.0);
         vec3 q = p + n * (0.004 + 0.012 * (1.0 - nl));
@@ -260,8 +254,8 @@ let LIT_FRAG = """
                   + w1.x * w1.y * texture(shadow_map, vec3(base + vec2(o1.x, o1.y), z));
         return sum * (1.0 / 16.0);
     #else
-    #ifdef SHADOW_WIDE
-        // A 7 × 7 box in 16 taps (Castaño's, as The Witness has it).
+    #ifdef SHADOW_MANY
+        // A desktop's: a 7 × 7 box in 16 taps, softer (task 086).
         vec4 w0 = vec4(5.0 * f.x - 6.0, 11.0 * f.x - 28.0, -(11.0 * f.x + 17.0), -(5.0 * f.x + 1.0));
         vec4 u = vec4((4.0 * f.x - 5.0) / w0.x - 3.0, (4.0 * f.x - 16.0) / w0.y - 1.0,
                       -(7.0 * f.x + 5.0) / w0.z + 1.0, -f.x / w0.w + 3.0) / size.x;
@@ -290,40 +284,6 @@ let LIT_FRAG = """
     #endif
     #endif
     }
-
-    #ifdef SHADOW_DISC
-    // The pieces' shadow on the field, each a solid cylinder (foot to top, its radius)
-    // from the squares buffer: where the ray from p toward the light comes nearest its
-    // axis, between foot and top, measured across the cylinder's level there, and a
-    // penumbra that widens with how far up the ray that is (DISC_SOFT, as a light about
-    // 7° across), so a raised piece's shadow softens and a standing one's is crisp at its
-    // foot. The 3 × 3 squares round where a piece half its height up would cast onto p:
-    // a resting piece's shadow reaches under half a square past its own.
-    const float DISC_SOFT = 0.06;
-    float disc_shadow(vec3 p) {
-        vec3 l = light_dir.xyz;
-        vec2 dir = l.xz / l.y;          // across the board a unit up the ray
-        int n = int(params.w + 0.5);
-        float u = 2.0 * FIELD / params.w;
-        ivec2 c = ivec2(floor((p.xz + dir * (0.5 * HEIGHT) + FIELD) / u));
-        float dd = 1.0 / dot(dir, dir);
-        float vis = 1.0;
-        for (int dy = -1; dy <= 1; dy++) {
-            for (int dx = -1; dx <= 1; dx++) {
-                ivec2 q = c + ivec2(dx, dy);
-                if (q.x < 0 || q.y < 0 || q.x >= n || q.y >= n) continue;
-                vec4 s = squares[2 * (q.y * n + q.x)];
-                if (s.w < 0.5) continue;
-                vec2 d0 = p.xz - squares[2 * (q.y * n + q.x) + 1].xy;
-                float y = clamp(-dot(d0, dir) * dd, s.y, s.x);
-                float gap = length(d0 + dir * y) - s.z;
-                float pen = 0.01 + DISC_SOFT * y / l.y;
-                vis = min(vis, smoothstep(-pen, pen, gap));
-            }
-        }
-        return vis;
-    }
-    #endif
 
     // The frame's short inner wall's occlusion of the field, as a long wall: too sharp
     // (FRAME_TOP across) for the pieces' map, and two square roots.
@@ -581,11 +541,7 @@ let LIT_FRAG = """
         micro = nol > 0.0 && mat < 0.5 ? micro * micro : 1.0;
         // A piece's lip and groove are finer than a shadow texel: its lookups start a
         // little toward the light, so they leave them to the baked occlusion.
-    #ifdef SHADOW_DISC
-        float vis = (mat < 0.5 ? disc_shadow(p) : shadow(mat > 1.5 ? p + l * 0.03 : p, n)) * micro;
-    #else
         float vis = shadow(mat > 1.5 ? p + l * 0.03 : p, n) * micro;
-    #endif
         vec3 light = light_color.rgb * light_dir.w;
         vec3 direct = (albedo * (diff / PI) + spec) * light * vis;
         // The photograph's light: diffuse from the harmonics, specular from them along

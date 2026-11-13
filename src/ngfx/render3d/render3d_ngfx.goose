@@ -209,23 +209,26 @@ fn frame_addr(g: Gpu&) -> u64 {
     return ngfx::frame_data(bytes_of(one));
 }
 
-// The lit pass's pipelines, the board's and a fading piece's, their shadow in 4 taps
-// with `few` (r3d_lit_few, shaders::SHADOW_FEW) or in 9.
-fn lit_pipelines(g: Gpu&, few: bool) {
-    let lit = if few { embed_file("../app/shaders/r3d_lit_few.blob") } else { embed_file("../app/shaders/r3d_lit.blob") };
+// The lit pass's pipelines, the board's and a fading piece's, their shadow filtered as
+// `look` says (render3d::SHADOW_9..): in 4 taps (r3d_lit_few, shaders::SHADOW_FEW), 16
+// (r3d_lit_many, shaders::SHADOW_MANY), or 9.
+fn lit_pipelines(g: Gpu&, look: i32) {
+    let lit = if look == render3d::SHADOW_4 { embed_file("../app/shaders/r3d_lit_few.blob") }
+              else if look == render3d::SHADOW_16 { embed_file("../app/shaders/r3d_lit_many.blob") }
+              else { embed_file("../app/shaders/r3d_lit.blob") };
     g.lit = nx::pipeline(lit, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true });
     g.fading = nx::pipeline(lit, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, blend: ngfx::BLEND_ALPHA });
-    g.few_shadow = few;
+    g.shadow_look = look;
 }
 
-// The shadow in 4 taps (`few`, a phone's) or in 9 from the next draw on: the lit
-// pipelines made again if it changes (render3d_gpu.goose's set_shadow).
-fn set_shadow(g: Gpu&, few: bool) {
-    guard g.lit.id != 0 && few != g.few_shadow else { return; }
+// The shadow filtered as `look` says from the next draw on: the lit pipelines made
+// again if it changes (render3d_gpu.goose's set_shadow).
+fn set_shadow(g: Gpu&, look: i32) {
+    guard g.lit.id != 0 && look != g.shadow_look else { return; }
     ngfx::flush();
     nx::release(g.lit);
     nx::release(g.fading);
-    lit_pipelines(g, few);
+    lit_pipelines(g, look);
 }
 
 // float4s in this frame's memory: a root's uniform blocks.
@@ -419,9 +422,9 @@ fn depth_target(size: int2) -> nx::Texture {
 
 // Makes everything the renderer draws with: the meshes, the buffers, the pipelines, the
 // baked surfaces' and the photograph's targets. Then apply() puts a theme on it.
-// `aa` is how the pass is antialiased (AA_OFF..AA_MSAA); `few` the shadow in 4 taps,
-// not 9: a phone's (set_shadow).
-fn setup(g: Gpu&, aa: i32 = AA, few: bool = false) {
+// `aa` is how the pass is antialiased (AA_OFF..AA_MSAA); `look` how the shadow is
+// filtered (render3d::SHADOW_9..; set_shadow).
+fn setup(g: Gpu&, aa: i32 = AA, look: i32 = render3d::SHADOW_9) {
     g.aa = aa;
     g.wood = model3d::WOOD_MODEL;
     g.finish = looks::finish(model3d::WOOD_MODEL);
@@ -485,7 +488,7 @@ fn setup(g: Gpu&, aa: i32 = AA, few: bool = false) {
 
     let depth = embed_file("../app/shaders/r3d_depth.blob");
     let marks = embed_file("../app/shaders/r3d_marks.blob");
-    lit_pipelines(g, few);
+    lit_pipelines(g, look);
     g.shadow = nx::pipeline(depth, ngfx::PipelineDesc { depth_test: true, depth_write: true, depth_bias: 1.0,
                                                           depth_bias_slope: 1.5 });
     g.backdrop = module(embed_file("../app/shaders/r3d_backdrop.blob"), blend);
