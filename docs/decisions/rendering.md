@@ -598,6 +598,19 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   tried on the Mac). It replaces the chevron alone in the line's top right corner, which
   sat apart from everything in it. Rejected: the chevron beside the last move (the
   rows lost its width, and white's mark ran into black's move).
+- In landscape the way out's three tiles stand alone, each on its own glass, as wide as
+  the column, 12 dp apart (2026-11-13, the user: back stood wider than the two in the
+  panel under it, and those looked lighter). It replaces 2026-11-09's back over a panel
+  of settings and start over; back is still the same control in the same corner on
+  every screen. The column is 288 dp, not 336. A phone's moves' line has the same glass.
+- The moves panel stands under the way out on a tablet and a desktop (2026-11-13, the
+  user: the screen was right-heavy, and moves usually sit at the left), 16 dp under its
+  tiles, 24 on a desktop. It replaces task 074's take a, the panel under the play panel;
+  take b, rejected then for its 290 dp beside what each side has taken, has the column's
+  freed 48 dp now. What each side has taken goes under the play panel on the flat board
+  while the moves panel shows, and the 3D board's camera buttons stay a column at the
+  right, so the board is larger (the tablet's 802 to 832 dp across in the transition).
+  A phone keeps its moves' line.
 - The move list's setting is settings' alone (2026-11-13, task 078; the user: once is
   enough), replacing 2026-11-12's three tiles kept on the results screen too. There its
   words alone (Off, Moves, Marks) didn't say what each shows, so a line under the

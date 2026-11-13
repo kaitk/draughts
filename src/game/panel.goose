@@ -81,7 +81,7 @@ let WIDE_IN = float2 { IN_ALONG, IN_ACROSS };
 // words want.
 fn stack_h() -> f32 { gui::stacked() + 8.0 }
 fn tall_h() -> f32 { 1.5 * gui::stacked() }
-let BACK_GAP = 12.0;        // dp: back over the left panel in landscape
+let BACK_GAP = 12.0;        // dp between the way out's tiles in landscape
 let CLOCK_H = 72.0;
 let CLOCK_GAP = 10.0;        // dp: between the clocks in a column
 let SHORT_GAP = 36.0;       // dp: the clocks' gap holding the countdown's short line in a corner panel
@@ -230,10 +230,10 @@ struct Taken {
 // with the board as wide as the screen less the gaps and as tall as its perspective at
 // PITCH_PORTRAIT makes it, steeper than landscape's to fill more of the height. A puzzle
 // shares it.
-// The left corner column's height in dp: back and, BACK_GAP under it, its glass of two
-// rows, IN_ALONG above, between, and below them (336 on a touch screen). Where their
-// icons go over their words (way_out) the taller tiles share the glass, evenly apart.
-fn left_h() -> f32 { 3.0 * gui::tap() + BACK_GAP + 3.0 * IN_ALONG }
+// The left corner column's height in dp: back, settings, and start over, each a tile of
+// its own on glass, BACK_GAP apart (288 on a touch screen). Where their icons go over
+// their words (way_out) the two under back share what is left of it.
+fn left_h() -> f32 { 3.0 * gui::tap() + 2.0 * BACK_GAP }
 // The play's corner panel's height in dp: room for three tiles with their icons over
 // their words, as the left column once had (352 on a touch screen), or for the clocks
 // over undo move's tall tile, which is more where the tap is smaller (a desktop).
@@ -318,26 +318,27 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
         let cam = view3d::Camera { pitch: PITCH_LANDSCAPE, yaw: 0.0 };
         rest(l, settle(l, cam, n), s);
         guard game else { return l; }
-        // The moves panel shown: MOVES_3D rows under the play panel, as wide, and the
-        // buttons a row under it at the right edge, where both fit above the bottom margin;
-        // the board clears them as it clears the panels, shrinking for them. Then as many
-        // rows more as leave the board that size (a wide window's frame, whose board is
-        // held by its height, not by the panels: the user, 2026-11-12), found by halving.
-        if moves {
-            let lower = float4 { area.x, area.y, area.z, area.w - m - touch };
-            let base = with_moves(l, lower, s, MOVES_3D, len, touch, m, n);
+        // The moves panel shown (not on a phone, whose moves are a line, task 078):
+        // MOVES_3D rows under the way out, as wide, where they fit
+        // above the bottom margin; the board clears it as it clears the panels, shrinking
+        // for it. Then as many rows more as leave the board that size (a wide window's
+        // frame, whose board is held by its height, not by the panels: the user,
+        // 2026-11-12), found by halving.
+        if moves && !phone {
+            let lower = area;
+            let base = with_moves(l, lower, s, MOVES_3D, n);
             if base.moves.z <= 0.0 {
                 l.moves = float4 { 0.0, 0.0, 0.0, 0.0 };
             } else {
                 l = base;
-                let most = with_moves(l, lower, s, 0, len, touch, m, n);
+                let most = with_moves(l, lower, s, 0, n);
                 var lo = MOVES_3D;
                 var hi = ((most.moves.w / s - 2.0 * game::MOVES_PAD) / game::MOVES_ROW) as i64;
                 if hi > lo && most.rest.k >= 0.995 * base.rest.k { l = most; }
                 else {
                     while hi - lo > 1 {
                         let mid = (lo + hi) / 2;
-                        let t = with_moves(base, lower, s, mid, len, touch, m, n);
+                        let t = with_moves(base, lower, s, mid, n);
                         if t.rest.k >= 0.995 * base.rest.k { lo = mid; l = t; } else { hi = mid; }
                     }
                 }
@@ -368,7 +369,7 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
             return l;
         }
         var under = l;
-        under_left(under, area, s, d);
+        if l.moves.z > 0.0 { under.taken_as = TAKEN_NONE; } else { under_left(under, area, s, d); }
         // Narrowed to clear the board's near edge, the bounds' widest, down to 3/4.
         under.taken.z = min(under.taken.z, l.rest.rect.x - 0.5 * gap - under.taken.x);
         if under.taken.z >= 0.75 * left.z && under.taken_as != TAKEN_NONE && !view3d::touches(l.rest, under.taken, 0.5 * gap)
@@ -626,7 +627,7 @@ fn layout_in(area: float4, n: i64, s: f32, small: bool = true, game: bool = fals
     let phone = gui::phone(area, s);   // NARROW panels
     if landscape(area, s) {
         let framed = flat_frame(area, s);
-        var l = flat_corners(framed, n, s, landscape_board(framed, s));
+        var l = flat_corners(framed, n, s, landscape_board(framed, s), game && moves);
         l.area = area;
         if game && moves && phone && l.moves.z <= 0.0 {
             row_fit(l, framed, s, TAKEN_PHONE * s, l.board.board.x - BACK_GAP * s);
@@ -731,9 +732,10 @@ fn portrait_bar(area: float4, s: f32, small: bool, game: bool, wide: bool) -> Ba
 // panels in the top corners, corner_h() tall, NARROW on a phone, else SIDE, but no wider
 // than the flat layout's panels (side_of), so the board keeps its size and place (near
 // square they narrow for it, where the 3D board's stay SIDE); a narrowed play panel
-// CORNER_PLAY tall, as a phone's, for the hint over undo move. Under the left one, what
-// each side has taken, on its own glass.
-fn flat_corners(area: float4, n: i64, s: f32, size: f32) -> Layout {
+// CORNER_PLAY tall, as a phone's, for the hint over undo move. Under the left one the
+// moves panel, with `moves` (the setting shows them), where it has room (not on a phone, whose moves are a line, task 078), what each side has taken then under the right one, on
+// its own glass; else what each side has taken under the left one.
+fn flat_corners(area: float4, n: i64, s: f32, size: f32, moves: bool) -> Layout {
     let width = area.z;
     let height = area.w;
     let gap = GAP * s;
@@ -745,42 +747,38 @@ fn flat_corners(area: float4, n: i64, s: f32, size: f32) -> Layout {
     let right = float4 { area.x + width - gap - side, area.y + gap, side, play_tall };
     var l = Layout { board: board::layout_at(area.x + (width - size) / 2.0, area.y + (height - size) / 2.0, size, s, n),
                      left: left, right: right, mode: CORNERS, .. };
-    under_left(l, area, s, (if phone { TAKEN_PHONE } else { TAKEN_D }) * s);
-    under_right(l, area, s, float4 { 0.0, 0.0, 0.0, 0.0 }, 0);
+    let d = (if phone { TAKEN_PHONE } else { TAKEN_D }) * s;
+    if moves && !phone { under(l, l.left, area, s, 0); }
+    if l.moves.z > 0.0 { taken_under(l, l.right, area.y + area.w - GAP * s, s, d); }
+    else { under_left(l, area, s, d); }
     return l;
 }
 
-// The 3D landscape layout `l` with the moves panel `rows` rows under the play panel
-// (0 as many as `area` holds) and the camera's buttons, `len` by `touch`, a row `m` under
-// it at the right edge, the board settled clear of both; moves.z 0 where it doesn't fit.
-fn with_moves(l0: Layout, area: float4, s: f32, rows: i64, len: f32, touch: f32, m: f32, n: i64) -> Layout {
+// The 3D landscape layout `l` with the moves panel `rows` rows under the way out (0 as
+// many as `area` holds), the camera's buttons where they were under the play panel, the
+// board settled clear of all; moves.z 0 where it doesn't fit.
+fn with_moves(l0: Layout, area: float4, s: f32, rows: i64, n: i64) -> Layout {
     var l = l0;
     l.moves = float4 { 0.0, 0.0, 0.0, 0.0 };
-    under_right(l, area, s, float4 { 0.0, 0.0, 0.0, 0.0 }, rows);
+    under(l, l.left, area, s, rows);
     guard l.moves.z > 0.0 else { return l; }
-    l.buttons = float4 { l.right.x + 0.5 * (l.right.z - len), l.moves.y + l.moves.w + m, len, touch };
-    l.row = true;
-    l.keep[2] = l.buttons;
     l.keep[4] = l.moves;
     rest(l, settle(l, view3d::Camera { pitch: PITCH_LANDSCAPE, yaw: 0.0 }, n), s);
     return l;
 }
 
-// The moves panel under the play panel, as wide, down to the bottom margin (or `most`
-// rows, 0 for no limit), where it holds MOVES_LEAST rows, clear of `buttons` (the 3D
-// board's).
+// The moves panel under `column` (the way out), as wide, down to the bottom margin (or
+// `most` rows, 0 for no limit), where it holds MOVES_LEAST rows.
 let MOVES_LEAST = 4;
+let MOVES_GAP = 16.0;           // dp between the way out and the moves panel, set off from its tiles,
+let MOVES_GAP_DESKTOP = 24.0;   // more where the mouse leaves room (a desktop)
 let MOVES_3D = 5;
 fn moves_room(rows: i64, s: f32) -> f32 { (rows * game::MOVES_ROW + 2.0 * game::MOVES_PAD) * s }
-fn under_right(l: Layout&, area: float4, s: f32, buttons: float4, most: i64) {
+fn under(l: Layout&, column: float4, area: float4, s: f32, most: i64) {
     let gap = GAP * s;
-    let right = l.right;
-    let x = right.x;
-    var w = right.z;
-    if buttons.z > 0.0 && buttons.x < right.x + right.z && buttons.x + buttons.z > right.x {
-        w = buttons.x - BUTTON_GAP * s - x;
-    }
-    let y = right.y + right.w + BACK_GAP * s;
+    let x = column.x;
+    let w = column.z;
+    let y = column.y + column.w + (if gui::desktop_scale > 0.0 { MOVES_GAP_DESKTOP } else { MOVES_GAP }) * s;
     let h = area.y + area.w - gap - y;
     var rows = ((h / s - 2.0 * game::MOVES_PAD) / game::MOVES_ROW) as i64;
     if most > 0 { rows = min(rows, most); }
@@ -806,8 +804,11 @@ fn overlaps(a: float4, b: float4) -> bool { a.x < b.x + b.z && b.x < a.x + a.z &
 fn under_left(l: Layout&, area: float4, s: f32, d: f32) { under_left_to(l, area.y + area.w - GAP * s, s, d); }
 
 // The same down to `limit`, a y in pixels.
-fn under_left_to(l: Layout&, limit: f32, s: f32, d: f32) {
-    let left = l.left;
+fn under_left_to(l: Layout&, limit: f32, s: f32, d: f32) { taken_under(l, l.left, limit, s, d); }
+
+// The same under `left`, a corner panel (the play panel's where the moves panel has the
+// left one's).
+fn taken_under(l: Layout&, left: float4, limit: f32, s: f32, d: f32) {
     let side = left.z;
     let under = left.y + left.w + BACK_GAP * s;
     let room = limit - under;
@@ -1031,14 +1032,14 @@ fn clock_of(g: gui::Gui&, r: float4, c: clock::Clock&, side: i64, ring: f32, ove
 }
 
 // The way out: back, settings, and start over at the bottom, far from what plays. In
-// landscape back is its own glass tile at the top of `left` (rendering.md, "Controls", The
-// way back) and the panel under it holds the other two; in portrait the three are a bar above
+// landscape each is a glass tile of its own down `left`, as back is on every screen
+// (rendering.md, "Controls", The way back), with no panel behind them; in portrait the three are a bar above
 // the board, back first. Back goes where the screen's way out goes (home from the game,
 // the theme's page from a puzzle). Returns BACK, SETTINGS, RESTART, or NOTHING.
 let OUT_WORDS = [strings::NAV_BACK, strings::HOME_SETTINGS, strings::GAME_START_OVER];
 fn leave(g: gui::Gui&, l: Layout) -> i64 {
     // The words' widths, measured first, where they are shown: not the compact bar's icons,
-    // nor back's on its own glass tile in landscape, which measures its word itself.
+    // nor back's in landscape, which measures its word itself.
     var words: f32[3] = [0.0, 0.0, 0.0];
     if l.mode != COMPACT {
         let first = if columns(l) { 1 } else { 0 };
@@ -1051,7 +1052,8 @@ fn leave(g: gui::Gui&, l: Layout) -> i64 {
     gui::group(g, GROUP_OUT);
     if columns(l) {
         if gui::back(g, gui::PANEL_IDS, o.tiles[0], strings::get(OUT_WORDS[0]), l.out_row) { chosen = BACK; }
-        if o.glass.z > 0.0 { gui::panel(g, o.glass); }
+        gui::glass(g, o.tiles[1], 22.0);
+        gui::glass(g, o.tiles[2], 22.0);
     } else {
         gui::panel(g, l.left);
     }
@@ -1065,12 +1067,10 @@ fn leave(g: gui::Gui&, l: Layout) -> i64 {
     return chosen;
 }
 
-// Where the way out's tiles go: back, settings, start over; in landscape the glass under
-// back that holds the other two; and how each tile lays out its icon and word (gui::MIDDLE,
-// STACKED, or ICON alone).
+// Where the way out's tiles go: back, settings, start over; and how each tile lays out
+// its icon and word (gui::MIDDLE, STACKED, or ICON alone).
 struct Out {
     tiles:   float4[3] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 3],
-    glass:   float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
     arrange: i64       = gui::MIDDLE,
 }
 
@@ -1093,19 +1093,15 @@ fn way_out(l: Layout, words: f32[3], u: f32) -> Out {
     if columns(l) {
         var column = l.left;
         o.tiles[0] = gui::cut_top(column, gui::tap() * u);
-        gui::cut_top(column, BACK_GAP * u);
-        o.glass = column;
-        // Each icon beside its word, or, where a word doesn't fit so in a narrowed panel,
-        // both icons over their words in taller rows.
-        var left = inside(column, TALL_IN, u);
+        // Each icon beside its word, or, where a word doesn't fit so in a narrowed column,
+        // both icons over their words, as tall as the column leaves them.
         for i in 1..3 {
-            if labelled_width(u, 34.0, words[i]) > left.z { o.arrange = gui::STACKED; }
+            if labelled_width(u, 34.0, words[i]) > column.z { o.arrange = gui::STACKED; }
         }
-        // The two evenly apart, as far from each other as from the glass's ends.
-        let h = (if o.arrange == gui::MIDDLE { gui::tap() } else { stack_h() }) * u;
-        let apart = max(0.0, (column.w - 2.0 * h) / 3.0);
-        o.tiles[1] = float4 { left.x, column.y + apart, left.z, h };
-        o.tiles[2] = float4 { left.x, column.y + 2.0 * apart + h, left.z, h };
+        let want = (if o.arrange == gui::MIDDLE { gui::tap() } else { stack_h() }) * u;
+        let h = max(0.0, min(want, 0.5 * (column.w - 2.0 * BACK_GAP * u)));
+        o.tiles[1] = float4 { column.x, column.y + BACK_GAP * u, column.z, h };
+        o.tiles[2] = float4 { column.x, column.y + 2.0 * BACK_GAP * u + h, column.z, h };
         return o;
     }
     if l.mode == COMPACT {

@@ -491,9 +491,9 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   (`panel::CORNER_PUZZLE`) for the piece over the goal, the stars, and next's tall tile,
   less where the screen is shorter (395 dp on a phone at 480 dp, the piece then beside
   the goal's icon); in portrait it keeps the bar and play below. The panels hold: on the
-  left back (see "The way back" below) on its own glass tile, 88 px tall, over a panel
-  12 px under it holding settings and start over, 20 px above, between, and below them;
-  88 px rows (the floor for
+  left back (see "The way back" below), settings, and start over, each a glass tile of
+  its own as wide as the column, 12 px apart, with no panel behind them, so all three
+  are shaded alike; 88 px rows (the floor for
   small hands) with 34 px icons and 24 px words (in a narrowed panel, where a word doesn't fit beside its icon,
   both icons over their words in 96 px rows sharing the same glass, evenly apart); on the right whose turn it is (a 72 px piece of its color with
   the glow ring, 4 px of the glow color at 80% and a 22 px glow, over "White's turn"),
@@ -520,7 +520,7 @@ take b, `plain.html`'s fade b, and the like) are in git history only
 - **The way back** (`back.html`'s take b): one
   control on every screen that leaves, a glass tile with the arrow and "Back" side by side
   (34 px icon, 24 px word, 20 px either side, 88 px tall and at least as wide), in the
-  top-left corner: over the left panel on the game and a puzzle in
+  top-left corner: heading the left column on the game and a puzzle in
   landscape, first in the bar above the board in portrait, beside the title on the
   puzzles' library and a theme's page (at the left in landscape, in the head in
   portrait), and at the start of settings' title row. It goes where the screen's way out
@@ -1008,7 +1008,8 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   phone, 22 compact, each a step of 0.52 of a piece after the one before, the kings after
   a gap of 0.3; a row too long for its room takes smaller pieces, to 70%, then closes up.
 - **Placed** by the game's layouts (`Layout.taken`, `taken_as`): flat landscape, on
-  glass under the left corner panel, black's catch (the white pieces) over white's, the
+  glass under the left corner panel (under the play panel where the moves panel has the
+  left one's foot), black's catch (the white pieces) over white's, the
   other way on a turned board, one line where a short phone has no height for two; 3D
   landscape, one line on glass as wide as it holds above the board, at the top between
   the corner panels, white's catch at the left, black's at the right, where the board at
@@ -1021,10 +1022,11 @@ take b, `plain.html`'s fade b, and the like) are in git history only
 
 ### The moves panel
 
-The game's moves (`game::moves_panel`): in landscape a glass panel under the play panel,
-as wide, down to the bottom margin, where at least four rows of 34 dp fit
-(`panel::under_right`); on the 3D board five rows, the camera's buttons a row centered under it,
-and the board shrinking to clear both, then as many rows more as leave the board that
+The game's moves (`game::moves_panel`): in landscape on a tablet or a desktop a glass
+panel under the way out's tiles, as wide, 16 dp under them (24 on a desktop), down to the
+bottom margin, where at least four rows of 34 dp fit (`panel::under`); on a phone the
+moves' line instead. On the 3D board five rows, the camera's buttons staying a column
+under the play panel, and the board shrinking to clear them, then as many rows more as leave the board that
 size (`panel::with_moves`; a wide desktop window, whose board its height holds, to the
 foot). On a desktop the 3D board's frame may be 2.0 times as wide as tall while the panel
 shows, not 1.7, so the panels stand further out where the window has room. A desktop's
@@ -1321,9 +1323,8 @@ board's does and the backdrop over it as opaque as the blur.
   package plays on, so a turned board turns the 3D one. **The game screen round it**
   (`panel::corners_in`, `game3d.html`'s `corners`): in
   landscape the two panels are short glass panels in the top corners, 232 × 352 dp (192
-  wide on a phone, under 600 dp), on the left back on its own tile over a panel of
-  settings and start over (the column's bounds the panel's were, so the board's fit is
-  unchanged), the turn or the clocks and undo move on the right; the board as large as clears them by 12 dp, its
+  wide on a phone, under 600 dp), on the left back, settings, and start over, each its
+  own tile, 288 dp down, the turn or the clocks and undo move on the right; the board as large as clears them by 12 dp, its
   near edge on the bottom margin (898 × 616 dp on the tablet). The flat game screen takes
   the same panels ("Game screen"); `Layout.corners` marks them, flat or 3D. In portrait the flat
   board's order, the bar, the board as wide as the screen less the margins, the camera
@@ -1331,8 +1332,7 @@ board's does and the backdrop over it as opaque as the blur.
   which fills more of the height (752 × 604 dp on the tablet).
   **The camera buttons** (`game3d.html`'s placement `a`):
   round floating buttons under the play panel in landscape, a column at the right edge
-  (a row centered under the panel, or under the moves panel, where a column runs past
-  the bottom margin: a phone, a tablet), and at the right edge above the play in
+  (a row centered under the panel where a column runs past the bottom margin: a phone), and at the right edge above the play in
   portrait (a row where a column would shrink the board): a shaded disc with a hairline
   and a line icon at the 2.4-unit stroke, no panel (`gui::floating`, the UI shader's
   `FLOAT` quad and its icons). A 56 dp touch area and a 44 dp disc on a tablet (its

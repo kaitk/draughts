@@ -128,6 +128,7 @@ fn moves_line(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) 
         bar_line(gm, g, l);
         return clicked;
     }
+    gui::glass(g, l.line, 22.0);
     gui::add(g, gui::Quad { rect: l.line, look: float4 { gui::BUTTON, 22.0 * u, 0.0, p },
                             extra: float4 { u, gui::PLAIN, lit, 0.0 } });
     rows_line(gm, g, l, over);

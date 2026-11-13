@@ -3,7 +3,7 @@ the Pixel 7a, landscape, 540 dp, safe 1141 x 498 dp:
     a tap on it: open, 3 tiles (6 closed), the head 302x88 dp, 195 quads, a tap on the board takes up a piece; its head: closed; back: closed, on the game; the keys: open, the head focused, then closed, the line focused
   landscape, 3D: the line 24,340 192x134, its tap 192x134 dp, the column 24,24 192x204, the catch 24,240 192x88, the sheet 228x498 dp, the 3D board 656 dp, in place
     a tap on it: open, 3 tiles (6 closed), the head 196x88 dp, 201 quads; its head: closed; back: closed, on the game; the keys: open, the head focused, then closed, the line focused
-  the setting off: line 0, the column 24,24 192x336, 5 tiles
+  the setting off: line 0, the column 24,24 192x288, 5 tiles
   the 3D board 656 dp across with the line, 656 with the setting off
   the list alone: line 1, sheet open, 0 glyphs at its foot
 the Pixel 7a, portrait, 540 dp, safe 540 x 1099 dp:
@@ -40,7 +40,7 @@ the iPhone 13 mini at its points, portrait, 375 dp, safe 375 x 728 dp:
   portrait, flat: no line
   portrait, 3D: no line
 the tablet's panel: 9 marked moves in view, notes 0 and 2
-  a touch on note 0: tip 0, 320x108 dp at 943,324, in the safe area, clear of its move
+  a touch on note 0: tip 0, 320x108 dp at 12,264, in the safe area, clear of its move
   a tap on settings: tip -1, on the game
   then note 0, then note 2: tip 2
   note 2 again: tip -1
