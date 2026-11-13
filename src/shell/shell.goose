@@ -369,6 +369,8 @@ fn play_puzzle(sh: Shell&, index: i64, now: f64 = 0.0) {
 fn back(sh: Shell&, now: f64) -> bool {
     // The game's moves' sheet, or a mark's tip, closes first (task 078).
     if sh.screen == GAME && game::close_sheet(sh.game) { return true; }
+    // The replay's card saying why a game from it doesn't count, likewise.
+    if sh.screen == REPLAY && replay::close_why(sh.replay) { return true; }
     // A game from the replay goes back to it.
     if sh.screen == GAME && sh.trial {
         leave_trial(sh, now);

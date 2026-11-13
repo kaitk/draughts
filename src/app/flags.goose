@@ -31,6 +31,7 @@ struct Flags {
     moves:      i64  = -1,  // --moves off|list|marks: the player's move list (settings::MOVES_*)
     sheet:      bool = false, // --sheet on: the game's moves' sheet open once the taps have played (task 078)
     tip:        i64  = -1,  // --tip N: the tip of the game's move N (from 1) shown once the taps have played
+    why:        bool = false, // --tip why: the replay's card saying why a game from it doesn't count, open
     // --hints moves: the selected piece's targets (board::MOVES); mistakes only by default
     hints: i64 = -1,
     // --lang CODE: a language with a file in strings/, else the system's
@@ -157,6 +158,7 @@ fn parse(argv: u8[:][>..]) -> Flags {
             let n, ok = parse_int(v);
             if ok && n >= 1 { f.tip = n - 1; }
         }
+        if a == "--tip" && v == "why" { f.why = true; }
         if a == "--moves" && v == "list" { f.moves = settings::MOVES_LIST; }
         if a == "--moves" && v == "marks" { f.moves = settings::MOVES_MARKS; }
         if a == "--keep" && v == "off" { f.keep = false; }

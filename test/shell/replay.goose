@@ -43,6 +43,11 @@ fn spot(g: gui::Gui&, id: i64) -> float4 {
     return float4 { -100.0, -100.0, 1.0, 1.0 };
 }
 
+// Whether r, a rect with some size, lies inside a.
+fn within(r: float4, a: float4) -> bool {
+    return r.z > 0.0 && r.x >= a.x - 0.5 && r.y >= a.y - 0.5 && r.x + r.z <= a.x + a.z + 0.5 && r.y + r.w <= a.y + a.w + 0.5;
+}
+
 fn press(sh: shell::Shell&, g: gui::Gui&, id: i64) { drive::tap(sh, g, drive::middle(spot(g, id)), tick()); }
 
 // What the replay shows: the move, the board's position, and whether it is the one the
@@ -220,6 +225,37 @@ fn main() {
     drive::key(sh, g, gui::STEP_LEFT, false, tick());
     drive::idle(sh, g, tick());
     print("Left: focus on move ", g.focus - replay::MOVE_ID + 1, ", ", shown(sh));
+
+    // Why a game from here doesn't count: the info sign's tap opens its card; the next tap,
+    // on a step, only closes it; Tab to the sign and Enter opens it, Enter again closes
+    // it; opened again, back closes it and stays on the replay.
+    drive::idle(sh, g, tick());
+    let at = sh.replay.ply;
+    press(sh, g, replay::INFO_ID);
+    drive::idle(sh, g, tick());
+    print("the sign tapped: card open ", sh.replay.why, ", inside the safe area ", within(sh.replay.card, gui::safe(g, drive::size.x, drive::size.y)));
+    press(sh, g, replay::STEP_ID);
+    drive::idle(sh, g, tick());
+    print("a step tapped: card open ", sh.replay.why, ", the move shown kept ", sh.replay.ply == at);
+    drive::key(sh, g, gui::STEP_NONE, false, tick());
+    tabs = 0;
+    while tabs < 5 && g.focus != replay::INFO_ID {
+        tab(sh, g);
+        tabs++;
+    }
+    drive::idle(sh, g, tick());
+    print("Tab ", tabs, " times: focus on the sign ", g.focus == replay::INFO_ID);
+    drive::key(sh, g, gui::STEP_NONE, true, tick());
+    drive::idle(sh, g, tick());
+    print("Enter: card open ", sh.replay.why);
+    drive::key(sh, g, gui::STEP_NONE, true, tick());
+    drive::idle(sh, g, tick());
+    print("Enter again: card open ", sh.replay.why);
+    drive::key(sh, g, gui::STEP_NONE, true, tick());
+    drive::idle(sh, g, tick());
+    shell::back(sh, tick());
+    drive::idle(sh, g, tick());
+    print("Enter, then back: card open ", sh.replay.why, ", screen ", sh.screen, " (replay ", shell::REPLAY, ")");
 
     // Back: the results as they were, then the Russian game, its captures' stops left out.
     press(sh, g, replay::BACK_ID);

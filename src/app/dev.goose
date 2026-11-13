@@ -72,6 +72,7 @@ fn setup(f: flags::Flags&, sh: shell::Shell&, prefs: settings::Settings) {
         sh.results_variant = if sh.games.len > 0 { sh.games[sh.games.len - 1].variant } else { sh.prefs.variant };
         shell::open_replay(sh, sh.games.len - 1, 0.0);
         if f.ply >= 0 { replay::go(sh.replay, f.ply, 0.0); }
+        sh.replay.why = f.why;
         if sh.screen != shell::REPLAY { sh.screen = shell::RESULTS; }
     }
     sh.setup = f.setup;
