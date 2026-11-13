@@ -26,8 +26,8 @@
        &mat=auto|wood|stone (per season in take c: &mat_autumn= and so on)
        &device=tablet|pixel|iphone; ?grid=1 the tablet and the phones, both ways
      The boards' pictures are build/board3d's --shot, in prototypes/shots/ (local, out of
-     git; README.md). Autumn's stone and winter's wood aren't made yet: their tiles say so
-     and the preview stands in with the CSS board. */
+     git; README.md); autumn's stone and winter's wood are --autumn 1 and --winter 1 (task
+     080, 03). A missing shot shows hatched and the CSS board stands in. */
   .bands { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
   .bands i { position: absolute; background: rgb(0 0 0 / 0.35); }
   .col { position: fixed; display: flex; flex-direction: column; }
@@ -117,7 +117,7 @@
   // The material: one for every season (takes a and b), or each season its own (take c).
   const matOf = (s) => get(take === 'c' ? `mat_${s}` : 'mat', ['auto', 'wood', 'stone'], 'auto');
   const OWN = { autumn: 'wood', winter: 'stone', spring: 'stone', summer: 'wood' };
-  const MADE = { 'autumn-stone': false, 'winter-wood': false };
+  const MADE = {};  // every board's shot is made (autumn's stone and winter's wood: --autumn 1, --winter 1)
   const shown = (s) => (matOf(s) === 'auto' ? OWN[s] : matOf(s));
   const shot = (s, m) => `shots/${s}-${m}.jpg`;
   const made = (s, m) => MADE[`${s}-${m}`] !== false;
