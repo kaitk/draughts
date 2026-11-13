@@ -54,7 +54,9 @@ reviewed the structure, 049 added the draws, 051 polished what preparing the sto
 windows, 048 found no forced capture behind a report (covered by tests), 039 baked the 3D
 board's wood, 040 added the lookout and the hint, 054 gave the flat game screen the 3D one's
 controls, 052 showed what each side has taken, 044 added the plain background, 057 made the app
-rest on every platform, 059 profiled and reworked the 3D renderer, 063 made the UI's shader fast in itself, and 061 carried out the code review's refactors; 016 (tabletop pictures) and 033 (an icon per season) were
+rest on every platform, 059 profiled and reworked the 3D renderer, 063 made the UI's shader fast in itself, 061 carried out the code review's refactors, and 078 added
+the replay, the move list on phones, and the marks explained; 016 (tabletop pictures), 033 (an
+icon per season), and 079 (a narrow landscape's panels) were
 cancelled. All are archived. The MVP in `docs/product.md` is built.
 
 Open:
@@ -63,9 +65,7 @@ Open:
   after the Play release; 075 the Linux build and release, built in WSL, its checks on
   the Bazzite PC.
 - Content and play: 037 the puzzle set by theme, 038 players, 074 the games' history,
-  marked moves, and a rating (built on the `history` branch, its takes to choose); 078
-  the results screen's replay, the move line on phones, and the marks explained; 079 the
-  game screen's side panels on a narrow landscape phone.
+  marked moves, and a rating (built on the `history` branch, its takes to choose).
 - The 3D board: 041 a carved spring board, 042 its frame cost (the idle wakeup left).
 - Menus: 080 one New game row on home with the opponent chosen in the setup, settings
   as one scrolling list, and the 3D board's material (wood, stone, carved, or auto).

@@ -209,3 +209,15 @@ and the commit that last has it.
 - 045: Board styles to choose from. Cancelled 2026-11-13: folded into task 080's
   material, wood, stone, carved, or auto, one choice for every season.
   `045-board-styles.md`, `b317740`
+- 078: The results screen, the move list on phones, and the marks explained. Done
+  2026-11-13: the results' draughts tiles on one glass and the move list's setting in
+  settings alone; a phone's last move as a line in landscape and a pill in portrait's bar,
+  each opening the list; the marks' legend in the lists one opens and a tip on the
+  always-shown panel; a past game's replay from its results row, with play from here at
+  any move, a game that counts for nothing, said by a line over the board. Checked on the
+  Mac at the Pixel's, A33's, iPhone's, and the tablet's sizes, and on the iPhone 13 mini
+  by the user. `078-results-and-move-list.md`, `1b14eb7`
+- 079: The game screen's side panels on a narrow landscape phone. Cancelled 2026-11-13:
+  the 232 dp board came from the prototype's 375 pt iPhone; the app lays the iPhone 13
+  mini out at 500 dp, its landscape board 422 dp, and the user found it fine on the phone.
+  `079-narrow-landscape-panels.md`, `1b14eb7`
