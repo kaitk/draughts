@@ -22,10 +22,10 @@
 // the camera buttons, and the board, and the flat screen's panels are the 3D one's
 // (task 054), or the line says how they differ; the iPad's smallest window too, with home's menu
 // and the setup there, its choices scrolling between its head and play.
-// A replay's play from here stands in its head where it fits there, beside back, both a
-// tap at least and as tall, else in a row over the glass; the line saying a game from
-// there doesn't count lies inside the safe area right under the board, as wide, clear of
-// the tiles and every icon and word but its own. The game play from here starts is laid
+// A replay's play from here stands in its head beside back, both a tap at least, as tall,
+// and the same way, icon beside or over word; the line saying a game from there doesn't
+// count lies inside the safe area right over the board, as wide, clear of the tiles and
+// every icon and word but its own. The game play from here starts is laid
 // out as any game.
 //
 // A line with anything wrong fails the test unless the failure is on `ALLOWED` below,
@@ -329,8 +329,21 @@ fn screens(g: gui::Gui&) {
     report("the win", g, won, true, true);
 }
 
-// Where the replay's play from here stands: in its head (level with back) or a row over
-// the glass, its size, whether the title shows beside it, and whether it has its icon.
+// Whether the tile in r has its icon over its word (stacked) rather than beside it.
+fn stacked(g: gui::Gui&, r: float4) -> bool {
+    var icon = float4 { 0.0, 0.0, 0.0, 0.0 };
+    var word = float4 { 0.0, 0.0, 0.0, 0.0 };
+    for q in g.quads {
+        guard inside(q.rect, r) else { continue; }
+        if q.look.x == gui::ICON { icon = q.rect; }
+        if q.look.x == gui::TEXT { word = q.rect; }
+    }
+    return word.y >= icon.y + icon.w - 0.5;
+}
+
+// The replay's head: back and play from here, their sizes, whether the title shows
+// between them, and whether both stack their icon over their word. Both in the head, a
+// tap at least each, as tall, level, apart, the same way.
 fn play_here(g: gui::Gui&, sh: shell::Shell&) {
     let u = g.scale;
     var play = float4 { 0.0, 0.0, 0.0, 0.0 };
@@ -340,28 +353,24 @@ fn play_here(g: gui::Gui&, sh: shell::Shell&) {
         if sp.id == replay::BACK_ID { back = sp.rect; }
     }
     var titled = false;
-    let name = strings::get(strings::REPLAY_TITLE);
     for q in g.quads { if q.look.x == gui::TEXT && q.rect.y >= back.y && q.rect.y < back.y + back.w && q.rect.x > back.x + back.z && q.rect.x < play.x { titled = true; } }
-    var icon = false;
-    for q in g.quads { if q.look.x == gui::ICON && inside(q.rect, play) { icon = true; } }
-    let where = if abs(play.y - back.y) < 0.5 { "in the head" } else { "a row over the glass" };
-    // Back and play from here in the head: a tap at least each, as tall, level, apart.
+    let up = stacked(g, play);
     var wrong: u8[>..] = [];
     if play.z <= 0.0 { wrong.append(" none;"); }
+    if abs(play.y - back.y) > 0.5 { wrong.append(" not in the head;"); }
     if min(min(play.z, play.w), min(back.z, back.w)) < gui::tap() * u - 0.5 { wrong.append(" under a tap;"); }
     if abs(play.w - back.w) > 0.5 { wrong.append(" not as tall as back;"); }
     if overlaps(play, back) { wrong.append(" on back;"); }
-    print("  play from here: ", where, ", ", whole(play.z / u), " x ", whole(play.w / u), " dp, back ",
-          whole(back.z / u), " x ", whole(back.w / u),
-          if where == "in the head" { if titled { ", the title beside it" } else { ", no title" } } else { "" },
-          if back.w > back.z + 0.5 || back.z < gui::TAP * u + 0.5 { ", back a square" } else { "" },
-          if icon { "" } else { ", its word alone" }, if wrong.len > 0 { ";" } else { "" }, wrong);
+    if up != stacked(g, back) { wrong.append(" not the same way as back;"); }
+    print("  play from here: ", whole(play.z / u), " x ", whole(play.w / u), " dp, back ", whole(back.z / u), " x ",
+          whole(back.w / u), ", ", whole((play.x - back.x - back.z) / u), " dp apart",
+          if titled { ", the title between" } else { ", no title" }, if up { ", both stacked" } else { "" },
+          if wrong.len > 0 { ";" } else { "" }, wrong);
     check("play from here", wrong[..]);
-    let unused = name;
 }
 
 // The replay's line saying a game from there doesn't count: its size in dp and whether
-// it says why; inside the safe area, right under or over the board and as wide, and clear
+// it says why; inside the safe area, right over the board and as wide, and clear
 // of every tile and every icon and word not its own.
 fn no_count(g: gui::Gui&, sh: shell::Shell&) {
     let u = g.scale;
@@ -372,9 +381,8 @@ fn no_count(g: gui::Gui&, sh: shell::Shell&) {
     var wrong: u8[>..] = [];
     if note.z <= 0.0 { wrong.append(" none;"); }
     if !inside(note, safe) { wrong.append(" off the safe area;"); }
-    let under = abs(note.y - (b.y + b.w)) < 0.5;
     let over = abs(note.y + note.w - b.y) < 0.5;
-    if !(under || over) || abs(note.x - b.x) > 0.5 || abs(note.z - b.z) > 0.5 { wrong.append(" not by the board;"); }
+    if !over || abs(note.x - b.x) > 0.5 || abs(note.z - b.z) > 0.5 { wrong.append(" not over the board;"); }
     if overlaps(note, b) { wrong.append(" on the board;"); }
     for i in drive::tiles(g) { if overlaps(note, drive::rect(g, i)) { wrong.append(" on a tile;"); break; } }
     var words = 0;
@@ -385,7 +393,7 @@ fn no_count(g: gui::Gui&, sh: shell::Shell&) {
         if overlaps(note, q.rect) { wrong.append(" on an icon or a word;"); break; }
     }
     if words == 0 { wrong.append(" no words;"); }
-    print("  the line ", if under { "under" } else { "over" }, " the board", if sh.replay.why { ", why" } else { ", short" }, ": ",
+    print("  the line over the board", if sh.replay.why { ", why" } else { ", short" }, ": ",
           whole(note.z / u), " x ", whole(note.w / u), " dp", if wrong.len > 0 { ";" } else { ", in place" }, wrong);
     check("the line", wrong[..]);
 }

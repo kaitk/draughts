@@ -11,19 +11,19 @@
 //   Portrait: back, the title, and play from here, the board, the steps a row under it,
 //   then the glass.
 // Play from here stands at the head's right end, its icon beside its word, or over it
-// where that is too wide; where the head has no room for it beside back and the title (the
-// tablet's narrow column), it is a row of its own over the glass. It is dimmed at the end
-// of a game that ended there. A line in the small face under the board says that a game
-// played from here doesn't count (disclaimer), and why where that fits on it; the board
-// gives way for it. The head says what the game was (the result, the opponent
-// and its rating, the date) on the title's second line where it fits, else at the glass's
-// top. Over the list a line names the move shown with its mark and the
-// mark's tip; each side's accuracy heads its column. The list's moves are taps that jump
-// there, 34 dp rows under the 88 dp rule, as a miss only shows the next move, which the
-// steps put right. The board takes no moves; its last move's mark sits in a disc at its
-// square's corner. Left and Right step the moves from anywhere (gui::claim_sideways);
-// the keys' focus on a move shows it. The positions are played out from the moves once,
-// as it opens, into fixed buffers; a frame allocates nothing.
+// where that is too wide, back the same way; where the title has no room between them,
+// the two fill the head. It is dimmed at the end of a game that ended there. A line in
+// the small face over the board says that a game played from here doesn't count
+// (disclaimer), and why where that fits on it; the board gives way for it. The head says
+// what the game was (the result, the opponent and its rating, the date) on the title's
+// second line where it fits, else at the glass's top. Over the list a line names the move
+// shown with its mark and the mark's tip; each side's accuracy heads its column. The
+// list's moves are taps that jump there, 34 dp rows under the 88 dp rule, as a miss only
+// shows the next move, which the steps put right. The board takes no moves; its last
+// move's mark sits in a disc at its square's corner. Left and Right step the moves from
+// anywhere (gui::claim_sideways); the keys' focus on a move shows it. The positions are
+// played out from the moves once, as it opens, into fixed buffers; a frame allocates
+// nothing.
 namespace replay;
 import std;
 import vec;
@@ -232,42 +232,36 @@ fn title(g: gui::Gui&, r: float4, x: history::Game&) -> bool {
     return line;
 }
 
-// Whether the title in a room w pixels wide has the game's line under it (title).
-fn titles(g: gui::Gui&, w: f32, x: history::Game&) -> bool {
-    return gui::text_width(g, gui::LABEL, strings::get(strings::REPLAY_TITLE)) <= w + 0.5 && game_width(g, x) <= w;
-}
-
 // Whether the move shown can be played on from: any but the end of a game that ended
 // there.
 fn playable(r: Replay&) -> bool { r.ply < r.plies.len || !r.over }
 
-// How play from here fits in the head, `head` pixels across: its icon beside its word
-// (gui::MIDDLE), or over it (gui::STACKED, the word in a smaller face where the room
-// left is narrower than it, down to the small face), or not (0: a row of its own); its
-// width there; whether the title keeps its place beside it; and whether back is its
-// arrow over its word in a tap's square. The two tiles go the same way, both beside or
-// both stacked, so they match. The title gives its room up first; then on a phone both
-// stack, before the button goes to a row, which would cost the list or the board most
-// of what a phone has (the game's line then heads the glass); elsewhere, where the list
-// has rows to spare, the button takes the row.
-fn play_fit(g: gui::Gui&, head: f32, phone: bool) -> i64, f32, bool, bool {
+// How back and play from here share the head, `head` pixels across: both icon beside
+// word (gui::MIDDLE) or both icon over word (gui::STACKED, play from here's word in a
+// smaller face where its room is narrower than it, down to the small face), so they
+// match; back's width and play from here's; and whether the title stands between them.
+// The title gives its room up first; then the two tiles fill the head with GAP between
+// them, in halves where play from here's word fits in its half, else it takes what it
+// needs and back the rest, so no gap opens where the title was. They stack where side by
+// side they don't fit. The game's line then heads the glass.
+fn play_fit(g: gui::Gui&, head: f32) -> i64, f32, f32, bool {
     let u = g.scale;
     let word = strings::get(strings::REPLAY_PLAY);
-    let wide = gui::back_width(g, strings::get(strings::NAV_BACK)) + gui::PAD_WIDE * u;
-    let square = gui::tap() * u + gui::PAD_WIDE * u;
+    let wide = gui::back_width(g, strings::get(strings::NAV_BACK));
+    let tap = gui::tap() * u;
     let name = gui::text_width(g, gui::LABEL, strings::get(strings::REPLAY_TITLE)) + GAP * u;
     // Beside, the word keeps back's room at the sides (gui::back_width), so the two tiles
     // match: LABEL_PAD alone left the word against the tile's right edge, the icon's own
     // margin making its left look wider.
     let beside = (2.0 * (gui::side() + 4.0) + 34.0 + 12.0) * u + gui::text_width(g, gui::HEADING, word);
-    let over = max(gui::tap() * u, gui::text_width(g, gui::HEADING, word) + 2.0 * gui::LABEL_PAD * u);
-    let least = max(gui::tap() * u, gui::text_width(g, gui::SMALL, word) + 2.0 * gui::LABEL_PAD * u);
-    if head - wide - name >= beside { return gui::MIDDLE, beside, true, false; }
-    if head - wide >= beside { return gui::MIDDLE, beside, false, false; }
-    guard phone else { return 0, 0.0, true, false; }
-    let room = head - square;
-    if room >= least { return gui::STACKED, min(room, over), false, true; }
-    return 0, 0.0, true, false;
+    let over = max(tap, gui::text_width(g, gui::HEADING, word) + 2.0 * gui::LABEL_PAD * u);
+    if head - wide - gui::PAD_WIDE * u - name >= beside { return gui::MIDDLE, wide, beside, true; }
+    let room = head - GAP * u;
+    let arrange = if room >= wide + beside { gui::MIDDLE } else { gui::STACKED };
+    let need = if arrange == gui::MIDDLE { beside } else { over };
+    let least = if arrange == gui::MIDDLE { wide } else { tap };
+    let play = max(min(max(0.5 * room, need), room - least), tap);
+    return arrange, max(room - play, tap), play, false;
 }
 
 // One step's tap, dimmed where it would change nothing (at the start or the end),
@@ -362,11 +356,11 @@ fn shown_line(r: Replay&, g: gui::Gui&, box: float4, over: board::Overlay&) {
     gui::text(g, gui::fitting(g, gui::BODY, rest, second.z), second, rest, 0.8, 0.0, gui::LEFT);
 }
 
-// The line under the board in r saying that a game played from here doesn't count
-// (2026-11-13: by the board, where it needs no tap): in the small face, dim as settings'
-// notes, centered; with why (replay.no_count_why) where that fits on the line, else only
-// that it doesn't (replay.no_count), its glyphs drawn smaller where even that is wider
-// than the line. Returns whether it said why.
+// The line over the board in r saying that a game played from here doesn't count
+// (2026-11-13: by the board, where it needs no tap; over it, read before the board): in
+// the small face, dim as settings' notes, centered; with why (replay.no_count_why) where
+// that fits on the line, else only that it doesn't (replay.no_count), its glyphs drawn
+// smaller where even that is wider than the line. Returns whether it said why.
 fn disclaimer(g: gui::Gui&, r: float4) -> bool {
     let why = strings::get(strings::REPLAY_NO_COUNT_WHY);
     let full = gui::text_width(g, gui::SMALL, why) <= r.z;
@@ -385,10 +379,9 @@ fn above_list(g: gui::Gui&, w: f32, in_head: bool) -> f32 {
 }
 
 // The steps' rects and where the board goes (x, y, size) and the head and the glass, for
-// a safe area: landscape when it is wider than tall. With `row`, play from here is a row
-// of its own over the glass (`play`), else in the head. Under the board a NOTE dp line
+// a safe area: landscape when it is wider than tall. Over the board a NOTE dp line
 // (`note`), which the board gives way for: in landscape by its height, the two centered
-// in the height; in portrait by its height less the gap over the steps, which it takes,
+// in the height; in portrait by its height less the gap under the head, which it takes,
 // so the glass keeps its room, MIN_LIST tall at least.
 struct Layout {
     head:  float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
@@ -396,17 +389,16 @@ struct Layout {
     note:  float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
     glass: float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
     steps: float4[4] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4],
-    play:  float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
 }
 
-fn layout(area: float4, u: f32, row: bool = false) -> Layout {
+fn layout(area: float4, u: f32) -> Layout {
     var o = Layout {};
     var c = gui::inset(area, EDGE * u);
     let tap = gui::tap() * u;
     let note = NOTE * u;
     if c.z > c.w {
         let size = max(min(c.w - note, c.z - tap - (GAP + BESIDE + MIN_SIDE) * u), 0.0);
-        o.board = float4 { c.x + tap + GAP * u, c.y + 0.5 * (c.w - size - note), size, size };
+        o.board = float4 { c.x + tap + GAP * u, c.y + 0.5 * (c.w - size - note) + note, size, size };
         let gap = clamp((size - 4.0 * tap) / 3.0, 0.0, 16.0 * u);
         let top = o.board.y + 0.5 * (size - 4.0 * tap - 3.0 * gap);
         for i in 4 { o.steps[i] = float4 { c.x, top + i * (tap + gap), tap, tap }; }
@@ -414,29 +406,20 @@ fn layout(area: float4, u: f32, row: bool = false) -> Layout {
         var col = float4 { x, c.y, c.x + c.z - x, c.w };
         o.head = gui::cut_top(col, tap);
         gui::cut_top(col, GAP * u);
-        if row {
-            o.play = gui::cut_top(col, tap);
-            gui::cut_top(col, GAP * u);
-        }
         o.glass = col;
     } else {
         o.head = gui::cut_top(c, tap);
-        gui::cut_top(c, GAP * u);
-        let extra = if row { tap + GAP * u } else { 0.0 };
-        let size = max(min(c.z, c.w - tap - extra - (2.0 * GAP + MIN_LIST) * u) - (note - GAP * u), 0.0);
+        let size = max(min(c.z, c.w - tap - (3.0 * GAP + MIN_LIST) * u) - (note - GAP * u), 0.0);
+        gui::cut_top(c, note);
         o.board = float4 { c.x + 0.5 * (c.z - size), c.y, size, size };
-        gui::cut_top(c, size + note);
+        gui::cut_top(c, size + GAP * u);
         let steps = gui::cut_top(c, tap);
         gui::cut_top(c, GAP * u);
         let w = (steps.z - 3.0 * GAP * u) / 4.0;
         for i in 4 { o.steps[i] = float4 { steps.x + i * (w + GAP * u), steps.y, w, tap }; }
-        if row {
-            o.play = gui::cut_top(c, tap);
-            gui::cut_top(c, GAP * u);
-        }
         o.glass = c;
     }
-    o.note = float4 { o.board.x, o.board.y + o.board.w, o.board.z, note };
+    o.note = float4 { o.board.x, o.board.y - note, o.board.z, note };
     return o;
 }
 
@@ -461,17 +444,8 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     }
     r.focused = g.focus;
 
-    // Play from here in the head where it fits there, else a row of its own.
-    var o = layout(area, u);
-    let tap = gui::tap() * u;
-    let arrange, play_w, titled, square = play_fit(g, o.head.z, gui::phone(area, u));
-    if arrange == 0 { o = layout(area, u, true); }
-    // What the head leaves the title (the board's size changes neither), and whether the
-    // game's line fits under it there.
-    let back = strings::get(strings::NAV_BACK);
-    let back_w = if square { tap } else { gui::back_width(g, back) };
-    let room = o.head.z - back_w - gui::PAD_WIDE * u - (if arrange != 0 { play_w + GAP * u } else { 0.0 });
-    let in_head = titled && titles(g, room, r.game);
+    let o = layout(area, u);
+    let arrange, back_w, play_w, titled = play_fit(g, o.head.z);
     let v .= rules::VARIANTS[r.game.variant];
     l = board::layout_at(o.board.x, o.board.y, o.board.z, u, v.size);
     l.flip = turned(r);
@@ -486,21 +460,21 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
         if i == 2 { gui::prefer(g, STEP_ID + i); }
     }
 
-    // The head: back, the title and the game where it fits, and play from here.
+    // The head: back, the title and the game where they fit, and play from here.
     gui::group(g, 0);
     var head = o.head;
-    if gui::back(g, BACK_ID, gui::cut_left(head, back_w), back, square) { ask = BACK; }
-    gui::cut_left(head, gui::PAD_WIDE * u);
-    let at = if arrange == 0 { o.play } else { gui::cut_right(head, play_w) };
-    if arrange != 0 { gui::cut_right(head, GAP * u); }
+    if gui::back(g, BACK_ID, gui::cut_left(head, back_w), strings::get(strings::NAV_BACK), arrange == gui::STACKED) { ask = BACK; }
+    let at = gui::cut_right(head, play_w);
     let icon = if r.game.level == history::FRIEND { gui::FRIEND } else { gui::COMPUTER };
-    if gui::labelled(g, PLAY_ID, at, icon, 34.0, strings::get(strings::REPLAY_PLAY), gui::HEADING,
-                     if arrange == 0 { gui::MIDDLE } else { arrange }, gui::PRIMARY, playable(r)) {
+    if gui::labelled(g, PLAY_ID, at, icon, 34.0, strings::get(strings::REPLAY_PLAY), gui::HEADING, arrange, gui::PRIMARY,
+                     playable(r)) {
         ask = PLAY;
     }
-    if titled { title(g, head, r.game); }
+    gui::cut_left(head, gui::PAD_WIDE * u);
+    gui::cut_right(head, GAP * u);
+    let in_head = titled && title(g, head, r.game);
 
-    // Under the board, that a game from here doesn't count; not a tap.
+    // Over the board, that a game from here doesn't count; not a tap.
     r.note = o.note;
     r.why = disclaimer(g, o.note);
 

@@ -6,9 +6,9 @@
 // (from and to alone) still replays. Nothing of it reaches the game in progress (its
 // saved image the same on the replay as before), the history file, or the ratings. Then
 // the layouts at the sizes test/shell/sizes uses: every tile at least a tap, inside the
-// safe area and apart, the board clear of them, the line saying a game from here doesn't
-// count under the board and inside the safe area, with why or without, and the frame's
-// quads under gui::MAX_QUADS.
+// safe area and apart, the board clear of them, back and play from here as tall and
+// level, the line saying a game from here doesn't count over the board, on no tile, and
+// inside the safe area, with why or without, and the frame's quads under gui::MAX_QUADS.
 import std;
 import vec;
 import os;
@@ -114,12 +114,21 @@ fn check(g: gui::Gui&, sh: shell::Shell&, safe: float4) -> u8[>..] {
     var moves = 0;
     for s in g.spots { if s.id >= replay::MOVE_ID { moves++; } }
     let rows = floor(10.0 * sh.replay.rows + 0.5) / 10.0;
-    // The line saying a game from here doesn't count: under the board, as wide.
+    // The line saying a game from here doesn't count: over the board, as wide, on no tile.
     let note = sh.replay.note;
-    let under = abs(note.y - (b.y + b.z)) < 0.5 && abs(note.x - b.x) < 0.5 && abs(note.z - b.z) < 0.5;
+    var over = abs(note.y + note.w - b.y) < 0.5 && abs(note.x - b.x) < 0.5 && abs(note.z - b.z) < 0.5;
+    for i in n {
+        let q = drive::rect(g, i);
+        if note.x < q.x + q.z - 0.5 && q.x < note.x + note.z - 0.5 && note.y < q.y + q.w - 0.5 && q.y < note.y + note.w - 0.5 { over = false; }
+    }
+    // Back and play from here: as tall, level.
+    let back = spot(g, replay::BACK_ID);
+    let play = spot(g, replay::PLAY_ID);
+    let level = abs(back.w - play.w) < 0.5 && abs(back.y - play.y) < 0.5;
     return str(n, " tiles, smallest ", (least + 0.5) as i64, " dp, inside ", inside, ", apart ", apart, ", off the board ",
                off_board, "; board ", (b.z / g.scale + 0.5) as i64, " dp, inside ", board_in, "; the line ",
-               if sh.replay.why { "why" } else { "short" }, ", under the board ", under, ", inside ", within(note, safe), "; ",
+               if sh.replay.why { "why" } else { "short" }, ", over the board ", over, ", inside ", within(note, safe),
+               "; back and play from here level ", level, "; ",
                moves, " moves listed, ", rows, " rows in view; quads ", g.quads.len);
 }
 
