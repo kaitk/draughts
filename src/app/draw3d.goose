@@ -36,6 +36,7 @@ struct Drawer {
     ready:     bool                                  = false,
     aa:        i32                                   = render3d::AA, // --aa and the A key: render3d's AA_OFF..
     samples:   i32                                   = render3d::SAMPLES, // MSAA's, fewer on a slow device
+    few_shadow: bool                                 = false, // the shadow in 4 taps, a phone's (phone_shadow)
     drawn_at:  f64                                   = 0.0,   // when the pass last drew (rest)
     kind:      i64                                   = -1, // the app's theme the board was set up with
     plain:     bool                                  = false, // and whether behind it the plain fade
@@ -181,7 +182,7 @@ fn want_material(d: Drawer&, material: i64) {
 // The renderer set up: its meshes, buffers, pipelines, and the baked surfaces' targets.
 fn set_up(d: Drawer&) {
     let t0 = clock();
-    render3d::setup(d.gpu);
+    render3d::setup(d.gpu, render3d::SAMPLES, d.few_shadow);
     render3d::set_aa(d.gpu, d.aa, d.samples);
     render3d::choose(d.gpu, d.wood, d.marble, d.spring);
     d.ready = true;
@@ -314,7 +315,7 @@ fn cover(d: Drawer&) {
 fn drop(d: Drawer&) {
     guard d.ready else { return; }
     render3d::release(d.gpu);
-    d = Drawer { aa: d.aa, samples: d.samples, wood: d.wood, marble: d.marble, summer: d.summer, autumn: d.autumn, winter: d.winter,
+    d = Drawer { aa: d.aa, samples: d.samples, few_shadow: d.few_shadow, wood: d.wood, marble: d.marble, summer: d.summer, autumn: d.autumn, winter: d.winter,
                 spring: d.spring, want: d.want, timed: d.timed, .. };
 }
 
@@ -336,6 +337,18 @@ fn fewer_samples(d: Drawer&) {
     print("3D board: too slow for the display, ", d.samples, "x MSAA");
     guard d.ready && d.aa == render3d::AA_MSAA else { return; }
     render3d::set_aa(d.gpu, d.aa, d.samples);
+    d.fresh = true;
+}
+
+// A phone's screen (gui::phone) or a larger one: the shadow filtered in 4 taps on a
+// phone, where they cost the A33 half of the 9 (task 081), and in 9 on a tablet or a
+// desktop, whose larger pieces show the 4's stepped edges (task 084). The board drawn
+// again if it changes.
+fn phone_shadow(d: Drawer&, phone: bool) {
+    guard phone != d.few_shadow else { return; }
+    d.few_shadow = phone;
+    guard d.ready else { return; }
+    render3d::set_shadow(d.gpu, phone);
     d.fresh = true;
 }
 

@@ -32,6 +32,7 @@
 //   ../../build/board3d --zoom 4 --aa smaa [--full]  # the antialiasing a pixel at a time
 //   ../../build/board3d --jump 0.5                # the jump, halfway; J switches it
 //   ../../build/board3d --shot out.png --jump 0.5 --yaw 30 --pitch 35 --distance 8
+//   ../../build/board3d --shadow few              # the shadow in 4 taps, a phone's
 //
 // --shot draws one frame headless (no window) into a PNG; --bench times frames.
 //
@@ -462,7 +463,9 @@ fn main() {
 
     let t0 = clock();
     var g = default<render3d::Gpu>();
-    render3d::setup(g, samples);
+    // --shadow few: the shadow in 4 taps, as a phone's app draws it (render3d::set_shadow).
+    let fi = flag_str(argv, "--shadow");
+    render3d::setup(g, samples, fi > 0 && argv[fi] == "few");
     nearest = gfx::sampler(gfx::NEAREST, gfx::CLAMP);
     // --aa msaa|smaa|off (A cycles), --zoom N (Z switches between 1 and 4).
     let ai = flag_str(argv, "--aa");

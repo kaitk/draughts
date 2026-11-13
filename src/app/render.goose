@@ -82,6 +82,9 @@ fn toggle_aa(r: Renderer&) { draw3d::toggle_aa(r.d3); }
 // The 3D board too slow for the display: fewer samples (draw3d::fewer_samples).
 fn fewer_samples(r: Renderer&) { draw3d::fewer_samples(r.d3); }
 
+// A phone's screen or a larger one: the 3D board's shadow filter (draw3d::phone_shadow).
+fn phone_shadow(r: Renderer&, phone: bool) { draw3d::phone_shadow(r.d3, phone); }
+
 // Whether it draws theme `kind` with its photograph, or with `plain` the fade.
 fn shows_theme(r: Renderer&, kind: i64, plain: bool) -> bool { r.d.kind == kind && r.d.scene.plain == plain }
 

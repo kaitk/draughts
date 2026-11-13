@@ -1175,6 +1175,17 @@ The release at rest, idle 20 to 30 s:
   undersides lie within a shadow texel of their feet, so with `shadow()`'s offsets as they
   are it left acne bands on the pieces' feet or rims at a depth bias from −2 to 1, and
   pulled the shadows off the pieces at 4.
+- **The pieces' shadow filtered by screen** (task 081, 2026-11-13, replacing its 4 taps
+  on every device): 9 hardware-compared taps over 5 × 5 texels of the 1024² map on a
+  tablet and a desktop, 4 over 3 × 3 on a phone (`gui::phone`, under 600 dp across the
+  shorter side, as the layouts tell a phone). The 4 taps save the A33 7% of its frame,
+  and their stills differed from the 9's only along the edges; in motion, on a tablet's
+  and a desktop's larger pieces, their texel steps crawl along each edge. One shader, the
+  phone's with `SHADOW_FEW` defined; the lit pipelines are made again only when the
+  screen crosses the line (`render3d::set_shadow`). Rejected: the slow-device timing
+  (`pace_3d`), which decides only after the board has drawn too slowly for a while, so a
+  phone would start on the 9 and the Pixel 7a keep them; and one shader branching on a
+  uniform, which would hold the 9 taps' registers in the A33's shader too.
 - **Open:** at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the
   flat board's 0.3, outside the app's own work, as the Mac shows no draw at rest.
 

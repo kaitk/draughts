@@ -35,6 +35,7 @@ LIT_VS = ["VS_SET", "FRAME", "LIT_VERT"]
 QUAD_VS = ["VS_SET", "FRAME", "QUAD_VERT"]
 MODULES = [
     ("r3d_lit", LIT_VS, ["FS_SET", "FRAME", "LIT_FRAG"]),
+    ("r3d_lit_few", LIT_VS, ["SHADOW_FEW", "FS_SET", "FRAME", "LIT_FRAG"]),
     ("r3d_depth", LIT_VS, ["EMPTY_FRAG"]),
     ("r3d_crown", FULL, ["CROWN_FN", "CROWN_FRAG"]),
     ("r3d_occ", FULL, ["FS_SET", "FRAME", "OCC_FRAG"]),

@@ -183,6 +183,7 @@ struct Gpu {
     lit:            Pipeline,
     fading:         Pipeline,  // the lit pass for a fading piece, blended
     shadow:         Pipeline,
+    few_shadow:     bool,           // lit and fading filter the shadow in 4 taps, not 9 (set_shadow)
     backdrop:       Pipeline,
     catcher:        Pipeline,
     glow:           Pipeline,
