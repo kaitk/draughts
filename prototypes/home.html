@@ -27,7 +27,7 @@
   .item small { margin-left: auto; display: flex; align-items: center; gap: 8px; }
   .item small .icon { width: 24px; height: 24px; opacity: 0.66; }
   .item.outlined { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.25); }
-  /* ?newgame=a..j: a take on New game's icon (draughts.js, newPair, newBadge, newBoard, newIso, newPieces, newIsoBoard, newIsoPiece, newJump, newOver, newOverOpen). */
+  /* ?newgame=a..j: a take on New game's icon (draughts.js, newPair, newBadge, newBoard, newIso, newPieces, newIsoBoard, newIsoPiece, newJump, newOver, newOverGap). */
   .stage { position: relative; display: grid; place-items: center; padding: 112px 40px 40px; }
   #board { width: min(100%, var(--h) - 88px); }
   .chip { position: absolute; left: 24px; top: 24px; display: flex; align-items: center; }
@@ -81,7 +81,7 @@
 </main>
 <script>
   {
-    const take = { a: 'newPair', b: 'newBadge', c: 'newBoard', d: 'newIso', e: 'newPieces', f: 'newIsoBoard', g: 'newIsoPiece', h: 'newJump', i: 'newOver', j: 'newOverOpen' }[new URLSearchParams(location.search).get('newgame')];
+    const take = { a: 'newPair', b: 'newBadge', c: 'newBoard', d: 'newIso', e: 'newPieces', f: 'newIsoBoard', g: 'newIsoPiece', h: 'newJump', i: 'newOver', j: 'newOverGap' }[new URLSearchParams(location.search).get('newgame')];
     if (take) document.querySelector('.new-game').dataset.icon = take;
   }
   Draughts.board(document.getElementById('board'), Draughts.start(8));
