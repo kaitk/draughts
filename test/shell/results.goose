@@ -76,13 +76,13 @@ fn main() {
     drive::size = float2 { 1280.0, 800.0 };
     g.scale = gui::scale_of(drive::size.x, drive::size.y);
     gui::test_faces(g);
-    // From home: the chip opens who's playing, its results tile the screen.
+    // From home: its games row opens the screen.
     drive::idle(sh, g, tick());
-    let home = drive::tiles(g);
-    drive::tap(sh, g, drive::tile(g, home - 2), tick());
-    drive::tap(sh, g, drive::tile(g, drive::tiles(g) - 1), tick());
+    var row = float4 { -100.0, -100.0, 1.0, 1.0 };
+    for s in g.spots { if s.id == gui::HOME_IDS + 7 { row = s.rect; } }
+    drive::tap(sh, g, drive::middle(row), tick());
     drive::idle(sh, g, tick());
-    print("results tile tapped: screen ", sh.screen, " (results ", shell::RESULTS, "), ", sh.games.len, " games read, showing ",
+    print("games row tapped: screen ", sh.screen, " (results ", shell::RESULTS, "), ", sh.games.len, " games read, showing ",
           rules::VARIANT_NAMES[sh.results_variant]);
     print("  ", check(g, float4 { 0.0, 0.0, drive::size.x, drive::size.y }));
     // Russian's tile (the third).

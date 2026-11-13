@@ -168,10 +168,8 @@ fn main() {
     g.scale = gui::scale_of(drive::size.x, drive::size.y);
     gui::test_faces(g);
     drive::idle(sh, g, tick());
-    // Home's chip opens who's playing, its results tile the results.
-    let home = drive::tiles(g);
-    drive::tap(sh, g, drive::tile(g, home - 2), tick());
-    drive::tap(sh, g, drive::tile(g, drive::tiles(g) - 1), tick());
+    // Home's games row opens the results.
+    press(sh, g, gui::HOME_IDS + 7);
     drive::idle(sh, g, tick());
     print("results: screen ", sh.screen, ", ", sh.games.len, " games");
 

@@ -1,6 +1,6 @@
 home's chip at vec4<f32> { 464.0, 24.0, 88.0, 88.0 }, the way out at vec4<f32> { 1168.0, 24.0, 88.0, 88.0 }
 chip tapped: who's playing; *1 fox; season -1, game 10 after 0
-the card's tiles: 5
+the card's tiles: 4
 + tapped: the sheet; *1 fox; season -1, game 10 after 0, picture hare
 the name tapped: the sheet (typing); *1 fox; season -1, game 10 after 0, keyboard asked 1
 typed: 'Mia', the sheet; *1 fox; season -1, game 10 after 0
@@ -28,52 +28,52 @@ first run: the sheet; *1 fox; season -1, game 10 after 0, tiles 9
 home's pieces over the sheet: 0
 a frog, done: closed; *1 frog; season -1, game 10 after 0, changed true
 en:
-  tablet landscape, 1 players, who's playing: 5 tiles, smallest 88 x 88 dp, card at 242 dp, 566 x 316 dp, all in place
+  tablet landscape, 1 players, who's playing: 4 tiles, smallest 88 x 88 dp, card at 242 dp, 466 x 316 dp, all in place
   tablet landscape, a new player: 9 tiles, smallest 88 x 88 dp, card at 183 dp, 758 x 434 dp, all in place
   tablet landscape, typing: 9 tiles, smallest 88 x 88 dp, card at 16 dp, 758 x 434 dp, all in place
-  tablet landscape, 4 players, who's playing: 7 tiles, smallest 88 x 88 dp, card at 242 dp, 708 x 316 dp, all in place
+  tablet landscape, 4 players, who's playing: 6 tiles, smallest 88 x 88 dp, card at 242 dp, 708 x 316 dp, all in place
   tablet landscape, a sheet: 11 tiles, smallest 88 x 88 dp, card at 134 dp, 758 x 532 dp, all in place
   tablet landscape, typing: 11 tiles, smallest 88 x 88 dp, card at 16 dp, 758 x 532 dp, all in place
-  tablet portrait, 1 players, who's playing: 5 tiles, smallest 88 x 88 dp, card at 482 dp, 566 x 316 dp, all in place
+  tablet portrait, 1 players, who's playing: 4 tiles, smallest 88 x 88 dp, card at 482 dp, 466 x 316 dp, all in place
   tablet portrait, a new player: 9 tiles, smallest 88 x 88 dp, card at 423 dp, 758 x 434 dp, all in place
   tablet portrait, typing: 9 tiles, smallest 88 x 88 dp, card at 16 dp, 758 x 434 dp, all in place
-  tablet portrait, 4 players, who's playing: 7 tiles, smallest 88 x 88 dp, card at 482 dp, 708 x 316 dp, all in place
+  tablet portrait, 4 players, who's playing: 6 tiles, smallest 88 x 88 dp, card at 482 dp, 708 x 316 dp, all in place
   tablet portrait, a sheet: 11 tiles, smallest 88 x 88 dp, card at 374 dp, 758 x 532 dp, all in place
   tablet portrait, typing: 11 tiles, smallest 88 x 88 dp, card at 16 dp, 758 x 532 dp, all in place
-  phone landscape, 1 players, who's playing: 5 tiles, smallest 88 x 88 dp, card at 95 dp, 566 x 290 dp, all in place
+  phone landscape, 1 players, who's playing: 4 tiles, smallest 88 x 88 dp, card at 95 dp, 466 x 290 dp, all in place
   phone landscape, a new player: 9 tiles, smallest 88 x 88 dp, card at 55 dp, 656 x 370 dp, all in place
   phone landscape, typing: 9 tiles, smallest 88 x 88 dp, card at 16 dp, 656 x 370 dp, all in place
-  phone landscape, 4 players, who's playing: 7 tiles, smallest 88 x 88 dp, card at 95 dp, 566 x 290 dp, all in place
+  phone landscape, 4 players, who's playing: 6 tiles, smallest 88 x 88 dp, card at 95 dp, 564 x 290 dp, all in place
   phone landscape, a sheet: 11 tiles, smallest 88 x 88 dp, card at 55 dp, 686 x 370 dp, all in place
   phone landscape, typing: 11 tiles, smallest 88 x 88 dp, card at 16 dp, 686 x 370 dp, all in place
-  phone portrait, 1 players, who's playing: 5 tiles, smallest 88 x 88 dp, card at 388 dp, 448 x 290 dp, all in place
+  phone portrait, 1 players, who's playing: 4 tiles, smallest 88 x 88 dp, card at 388 dp, 448 x 290 dp, all in place
   phone portrait, a new player: 9 tiles, smallest 88 x 88 dp, card at 254 dp, 406 x 558 dp, all in place
   phone portrait, typing: 9 tiles, smallest 88 x 88 dp, card at 16 dp, 406 x 558 dp, all in place
-  phone portrait, 4 players, who's playing: 7 tiles, smallest 88 x 88 dp, card at 310 dp, 448 x 447 dp, all in place
+  phone portrait, 4 players, who's playing: 6 tiles, smallest 88 x 88 dp, card at 310 dp, 448 x 447 dp, all in place
   phone portrait, a sheet: 11 tiles, smallest 88 x 88 dp, card at 205 dp, 448 x 656 dp, all in place
   phone portrait, typing: 11 tiles, smallest 88 x 88 dp, card at 16 dp, 448 x 656 dp, all in place
 et:
-  tablet landscape, 1 players, who's playing: 5 tiles, smallest 88 x 88 dp, card at 242 dp, 521 x 316 dp, all in place
+  tablet landscape, 1 players, who's playing: 4 tiles, smallest 88 x 88 dp, card at 242 dp, 421 x 316 dp, all in place
   tablet landscape, a new player: 9 tiles, smallest 88 x 88 dp, card at 183 dp, 758 x 434 dp, all in place
   tablet landscape, typing: 9 tiles, smallest 88 x 88 dp, card at 16 dp, 758 x 434 dp, all in place
-  tablet landscape, 4 players, who's playing: 7 tiles, smallest 88 x 88 dp, card at 242 dp, 708 x 316 dp, all in place
+  tablet landscape, 4 players, who's playing: 6 tiles, smallest 88 x 88 dp, card at 242 dp, 708 x 316 dp, all in place
   tablet landscape, a sheet: 11 tiles, smallest 88 x 88 dp, card at 134 dp, 758 x 532 dp, all in place
   tablet landscape, typing: 11 tiles, smallest 88 x 88 dp, card at 16 dp, 758 x 532 dp, all in place
-  tablet portrait, 1 players, who's playing: 5 tiles, smallest 88 x 88 dp, card at 482 dp, 521 x 316 dp, all in place
+  tablet portrait, 1 players, who's playing: 4 tiles, smallest 88 x 88 dp, card at 482 dp, 421 x 316 dp, all in place
   tablet portrait, a new player: 9 tiles, smallest 88 x 88 dp, card at 423 dp, 758 x 434 dp, all in place
   tablet portrait, typing: 9 tiles, smallest 88 x 88 dp, card at 16 dp, 758 x 434 dp, all in place
-  tablet portrait, 4 players, who's playing: 7 tiles, smallest 88 x 88 dp, card at 482 dp, 708 x 316 dp, all in place
+  tablet portrait, 4 players, who's playing: 6 tiles, smallest 88 x 88 dp, card at 482 dp, 708 x 316 dp, all in place
   tablet portrait, a sheet: 11 tiles, smallest 88 x 88 dp, card at 374 dp, 758 x 532 dp, all in place
   tablet portrait, typing: 11 tiles, smallest 88 x 88 dp, card at 16 dp, 758 x 532 dp, all in place
-  phone landscape, 1 players, who's playing: 5 tiles, smallest 88 x 88 dp, card at 95 dp, 521 x 290 dp, all in place
+  phone landscape, 1 players, who's playing: 4 tiles, smallest 88 x 88 dp, card at 95 dp, 421 x 290 dp, all in place
   phone landscape, a new player: 9 tiles, smallest 88 x 88 dp, card at 55 dp, 656 x 370 dp, all in place
   phone landscape, typing: 9 tiles, smallest 88 x 88 dp, card at 16 dp, 656 x 370 dp, all in place
-  phone landscape, 4 players, who's playing: 7 tiles, smallest 88 x 88 dp, card at 95 dp, 564 x 290 dp, all in place
+  phone landscape, 4 players, who's playing: 6 tiles, smallest 88 x 88 dp, card at 95 dp, 564 x 290 dp, all in place
   phone landscape, a sheet: 11 tiles, smallest 88 x 88 dp, card at 55 dp, 716 x 370 dp, all in place
   phone landscape, typing: 11 tiles, smallest 88 x 88 dp, card at 16 dp, 716 x 370 dp, all in place
-  phone portrait, 1 players, who's playing: 5 tiles, smallest 88 x 88 dp, card at 388 dp, 448 x 290 dp, all in place
+  phone portrait, 1 players, who's playing: 4 tiles, smallest 88 x 88 dp, card at 388 dp, 421 x 290 dp, all in place
   phone portrait, a new player: 9 tiles, smallest 88 x 88 dp, card at 254 dp, 421 x 558 dp, all in place
   phone portrait, typing: 9 tiles, smallest 88 x 88 dp, card at 16 dp, 421 x 558 dp, all in place
-  phone portrait, 4 players, who's playing: 7 tiles, smallest 88 x 88 dp, card at 310 dp, 448 x 447 dp, all in place
+  phone portrait, 4 players, who's playing: 6 tiles, smallest 88 x 88 dp, card at 310 dp, 421 x 447 dp, all in place
   phone portrait, a sheet: 11 tiles, smallest 88 x 88 dp, card at 205 dp, 448 x 656 dp, all in place
   phone portrait, typing: 11 tiles, smallest 88 x 88 dp, card at 16 dp, 448 x 656 dp, all in place
