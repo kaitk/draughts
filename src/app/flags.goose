@@ -54,12 +54,16 @@ struct Flags {
     // game's board or the puzzle's
     taps:   u8[..3][..MAX_TAPS],
     frames: i64 = -1,       // --frames N: stop after N frames and save draughts.png
-    // --screen home|game|settings|puzzles: where the run opens (home unless a position,
-    // taps, a clock, or the computer are given)
+    // --screen home|game|settings|puzzles|results|replay: where the run opens (home unless
+    // a position, taps, a clock, or the computer are given); replay the newest game's
     screen: i64 = -1,
     // --screen friend|computer: home with that setup open (home::FRIEND, COMPUTER)
     setup:  i64 = home::NO_SETUP,
     puzzle: i64 = -1,       // --puzzle ID: that puzzle, its taps on its board
+    // --history FILE: the games the results screen and a replay read, in place of the
+    // playing player's history (a history file's lines, shell/history.goose)
+    history: u8[..512],
+    ply:     i64 = -1,      // --ply N: a replay at its Nth move (0 the start), else at its end
     // --variant international|brazilian|russian: a new game of that draughts, and the
     // puzzles' set; with a setup open, its choice
     variant: i64 = -1,
@@ -197,9 +201,18 @@ fn parse(argv: u8[:][>..]) -> Flags {
         }
         if a == "--screen" {
             f.screen = if v == "game" { shell::GAME } else if v == "settings" { shell::SETTINGS }
-                       else if v == "puzzles" { shell::PICKER } else if v == "results" { shell::RESULTS } else { shell::HOME };
+                       else if v == "puzzles" { shell::PICKER } else if v == "results" { shell::RESULTS }
+                       else if v == "replay" { shell::REPLAY } else { shell::HOME };
             if v == "friend" { f.setup = home::FRIEND; }
             if v == "computer" { f.setup = home::COMPUTER; }
+        }
+        if a == "--history" && v.len < 512 {
+            f.history.clear();
+            f.history.append(v);
+        }
+        if a == "--ply" {
+            let n, ok = parse_int(v);
+            if ok { f.ply = n; }
         }
         if a == "--puzzle" {
             let n, ok = parse_int(v);

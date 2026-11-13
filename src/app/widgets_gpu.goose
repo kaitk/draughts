@@ -313,6 +313,14 @@ let FRAG = """
             d = min(d, abs(length(p - 12.0) - 3.0));
             return k == 38 ? min(d, seg(p, vec2(3.5, 3.5), vec2(20.5, 20.5))) : d;
         }
+        if (k >= 39 && k <= 42) {   // a replay's steps: Lucide's chevrons, first and last at a bar
+            float s = k == 39 || k == 40 ? 1.0 : -1.0;
+            float x = k == 39 ? 2.0 : k == 42 ? -2.0 : 0.0;
+            vec2 a = vec2(12.0 + 3.0 * s + x, 6.0);
+            vec2 b = vec2(12.0 - 3.0 * s + x, 12.0);
+            float d = min(seg(p, a, b), seg(p, b, vec2(a.x, 18.0)));
+            return k == 39 || k == 42 ? min(d, seg(p, vec2(12.0 - 5.0 * s, 6.0), vec2(12.0 - 5.0 * s, 18.0))) : d;
+        }
         return 1e9;
     }
     // A player's badge's animal (badges/badges.goose): its signed distance at f, in a

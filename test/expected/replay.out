@@ -1,0 +1,50 @@
+results: screen 5, 3 games
+its row tapped: screen 6 (replay 6), international, move 80 of 80, the board right, last h4-j2
+  the saved image on the replay is the one before: true, screen kept as home
+the start: move 0 of 80, the board right
+back: move 44 of 80, the board right, last a9-b8
+on: move 46 of 80, the board right, moving, last c7-e5
+the end: move 80 of 80, the board right, last h4-j2
+back at the start: move 0 of 80, the board right
+on from the start: move 1 of 80, the board right, moving, last h4-g5
+  once played: move 1 of 80, the board right, last h4-g5
+to the end: move 80 of 80, the board right, last h4-j2
+  again: move 80 of 80, the board right, last h4-j2
+move 75 tapped: move 75 of 80, the board right, last b6-c7
+Left: move 74 of 80, the board right, last j6-i5
+Right: move 75 of 80, the board right, moving, last b6-c7
+Tab 3 times: focus on move 75, move 75 of 80, the board right, last b6-c7
+Down: focus on move 77, move 77 of 80, the board right, last c7-b8
+Left: focus on move 76, move 76 of 80, the board right, last i5-h4
+back: screen 5, showing international, 3 games
+Russian's row: russian, move 40 of 40, the board right, last a7-c5
+back: screen 5
+the history file as it was: true; the ratings as they were: true; the game in progress as it was: true
+en:
+  tablet landscape: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 752 dp, inside true; 30 moves listed; quads 327
+  tablet portrait: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 752 dp, inside true; 10 moves listed; quads 177
+  tablet landscape, its bar: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 704 dp, inside true; 30 moves listed; quads 325
+  a 20:9 phone landscape at 540 dp, cutout left: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 450 dp, inside true; 16 moves listed; quads 219
+  a 20:9 phone landscape at 480 dp, cutout right: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 395 dp, inside true; 12 moves listed; quads 189
+  a 20:9 phone portrait at 540 dp: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 492 dp, inside true; 16 moves listed; quads 219
+  a 20:9 phone portrait at 480 dp: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 432 dp, inside true; 12 moves listed; quads 189
+  a 9:16 phone landscape at 480 dp: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 329 dp, inside true; 10 moves listed; quads 175
+  a 9:16 phone portrait at 480 dp: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 284 dp, inside true; 8 moves listed; quads 162
+  a foldable landscape: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 527 dp, inside true; 32 moves listed; quads 340
+  a foldable portrait: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 519 dp, inside true; 8 moves listed; quads 163
+  4:3 landscape: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 595 dp, inside true; 32 moves listed; quads 340
+  4:3 portrait: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 587 dp, inside true; 8 moves listed; quads 163
+et:
+  tablet landscape: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 752 dp, inside true; 30 moves listed; quads 334
+  tablet portrait: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 752 dp, inside true; 10 moves listed; quads 184
+  tablet landscape, its bar: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 704 dp, inside true; 28 moves listed; quads 316
+  a 20:9 phone landscape at 540 dp, cutout left: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 450 dp, inside true; 16 moves listed; quads 226
+  a 20:9 phone landscape at 480 dp, cutout right: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 395 dp, inside true; 12 moves listed; quads 196
+  a 20:9 phone portrait at 540 dp: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 492 dp, inside true; 16 moves listed; quads 226
+  a 20:9 phone portrait at 480 dp: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 432 dp, inside true; 12 moves listed; quads 196
+  a 9:16 phone landscape at 480 dp: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 329 dp, inside true; 10 moves listed; quads 182
+  a 9:16 phone portrait at 480 dp: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 284 dp, inside true; 8 moves listed; quads 169
+  a foldable landscape: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 527 dp, inside true; 32 moves listed; quads 347
+  a foldable portrait: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 519 dp, inside true; 8 moves listed; quads 170
+  4:3 landscape: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 595 dp, inside true; 32 moves listed; quads 347
+  4:3 portrait: 5 tiles, smallest 88 dp, inside true, apart true, off the board true; board 587 dp, inside true; 8 moves listed; quads 170

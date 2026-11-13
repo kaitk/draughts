@@ -155,3 +155,26 @@ fn tap(sh: shell::Shell&, g: gui::Gui&, p: float2, now: f64) {
     frame(sh, g, p, false, false, true, now + 0.02);
     idle(sh, g, now + 0.04);
 }
+
+// A history line (shell/history.goose) of a game played out by rule against the
+// computer's medium, the player white, lost: at most `plies` moves, each the legal move
+// (7k + 3) mod their count, so captures come in, and marks cycling through
+// ai::ONLY..BLUNDER. For the replays (test/shell/replay, sizes).
+fn past_line(variant: u8, plies: i64, time: i64) -> u8[>..] {
+    var p = rules::start(variant);
+    var legal: rules::Moves = [];
+    var moves: u8[>..]      = [];
+    var marks: u8[>..]      = [];
+    for k in plies {
+        rules::generate(p, legal);
+        guard legal.len > 0 else { break; }
+        let m = legal[(7 * k + 3) % legal.len];
+        if k > 0 { moves.push(' '); }
+        rules::format_move(moves, variant, m);
+        marks.push(('1' + k % 6) as u8);
+        p = rules::play(p, m);
+    }
+    return str("time=", time, "\tdraughts=", rules::VARIANT_NAMES[variant],
+               "\tagainst=computer\tlevel=1\tskill=40\tside=white\twinner=black\trating=812>796\taccuracy=87,91\tmarks=",
+               marks, "\tmoves=", moves);
+}

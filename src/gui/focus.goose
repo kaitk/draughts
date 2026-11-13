@@ -27,7 +27,8 @@ struct Spot {
 // nearest that way, or, from none, to the screen's primary control; on a grid it moves
 // the cell, leaving the grid for the nearest control that way past its edge; Tab moves it
 // to the next group (`tab`); a focused control the last frame didn't declare (the screen
-// changed) hands it to the new screen's primary. Enter with nothing focused focuses the
+// changed) hands it to the new screen's primary. Left and Right a screen claimed
+// (claim_sideways) move nothing here. Enter with nothing focused focuses the
 // primary and presses it in the same frame (on the board, its cursor's first square): a
 // gamepad's first press is most often A (a PS5 pad's cross), and one that only showed the
 // focus read as a press lost.
@@ -35,9 +36,11 @@ fn focus_keys(g: Gui&, input: Input) {
     let moved = input.at.x != g.pointer.at.x || input.at.y != g.pointer.at.y;
     if input.pressed || input.wheel != 0.0 || moved { g.focus = 0; }
     let n = g.spots.len;
+    let sideways = g.sideways && (input.step == STEP_LEFT || input.step == STEP_RIGHT);
+    g.sideways = false;
     if n > 0 && input.tab != 0 {
         take_focus(g, next_group(g, input.tab), float4 { 0.0, 0.0, 0.0, 0.0 }, STEP_NONE);
-    } else if n > 0 && input.step != STEP_NONE {
+    } else if n > 0 && input.step != STEP_NONE && !sideways {
         let at = spot_of(g, g.focus);
         if at < 0 {
             take_focus(g, g.spots[primary_spot(g)].id, float4 { 0.0, 0.0, 0.0, 0.0 }, STEP_NONE);
@@ -222,6 +225,11 @@ fn grid(g: Gui&, id: i64, r: float4, cells: i64, home: i64) -> i64, bool {
     guard g.focus == id && g.cell_of == id else { return -1, false; }
     return clamp(g.cell, 0, cells * cells - 1), g.pointer.confirm;
 }
+
+// Takes Left and Right for the screen's own this frame and the next (a replay steps
+// its moves with them): the next frame's begin moves no focus for them, and the screen
+// reads them in `g.pointer.step`. Called each frame that wants them.
+fn claim_sideways(g: Gui&) { g.sideways = !g.deaf; }
 
 // Marks control id, just offered, as the screen's primary one (its first choice).
 fn prefer(g: Gui&, id: i64) {

@@ -120,6 +120,10 @@ let ZOOM_OUT = 35;
 let SHOWCASE = 36;          // and the showcase, a board on an orbit
 let EYE = 37;               // the lookout on: an open eye
 let EYE_OFF = 38;           // and off: the eye struck through
+let FIRST = 39;             // a replay's steps (task 078): to the start, a chevron at a bar,
+let PREV = 40;              // back one, a chevron left,
+let FWD = 41;               // on one, a chevron right,
+let LAST = 42;              // and to the end, a chevron at a bar
 
 // Text faces (rendering.md, "Fonts"): one size each, in dp, baked by the app at the
 // screen's pixel size.
@@ -277,10 +281,14 @@ struct Gui {
     // The group controls are offered in now (gui::group), and the control each group had
     // the focus on last, which Tab comes back to; the focused cell of a grid (gui::grid),
     // y * cells + x, and the grid it is of.
-    group:       i64                = 0,
-    group_focus: i64[MAX_GROUPS]    = [0; MAX_GROUPS],
-    cell:        i64                = 0,
-    cell_of:     i64                = 0,
+    group:       i64             = 0,
+    group_focus: i64[MAX_GROUPS] = [0; MAX_GROUPS],
+    cell:        i64             = 0,
+    cell_of:     i64             = 0,
+    // Left and Right taken by the screen for its own (claim_sideways, a replay's steps):
+    // set by the frame that declares it, read by the next frame's begin, which then moves
+    // no focus for them and leaves them in `pointer.step`.
+    sideways: bool = false,
 }
 
 // The keys' focus ring (rendering.md, "Controls"): RING_W dp in the glow color, RING_GAP
@@ -309,13 +317,14 @@ let HOME_IDS = 300;         // home's menu and a new game's setup
 let SETTINGS_IDS = 400;
 let WHO_IDS = 500;          // who's playing, and a player's sheet
 let PICKER_IDS = 600;       // the puzzles to pick from: the library, a theme's page, its puzzles
-let RESULTS_IDS = 1300;     // the games played (task 074)
+let RESULTS_IDS = 1300;     // the games played (task 074), a row a game from 11 past the base
+let REPLAY_IDS = 1600;      // a past game's replay (task 078), a move a tap from 10 past the base
 
 // One scrolling list a frame (task 050; rendering.md, "Scrolling"): what scroll_begin
 // keeps across frames. A plain drag and the wheel, no fling.
 let SCROLL_ID = 9000;       // the drag's id while it holds the pointer
-let IDS = [PANEL_IDS, CARD_IDS, HOME_IDS, SETTINGS_IDS, WHO_IDS, PICKER_IDS, RESULTS_IDS, SCROLL_ID];
-let IDS_SPAN = [20, 2, 71, 72, 43, 600, 11, 1];
+let IDS = [PANEL_IDS, CARD_IDS, HOME_IDS, SETTINGS_IDS, WHO_IDS, PICKER_IDS, RESULTS_IDS, REPLAY_IDS, SCROLL_ID];
+let IDS_SPAN = [20, 2, 71, 72, 43, 600, 211, 522, 1];
 let SLOP = 10.0;            // dp a press moves before it is a drag, not a tap
 let CLIP = 4.0;             // added to a quad's extra.z: drawn only inside the list's view
 let WHEEL = 40.0;           // dp a wheel's step scrolls

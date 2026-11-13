@@ -57,6 +57,7 @@ let KEYS = [
     "mark.inaccuracy", "mark.inaccuracy_tip",
     "mark.mistake", "mark.mistake_tip",
     "mark.blunder", "mark.blunder_tip",
+    "replay.title", "replay.no_count", "replay.start",
 ];
 let LANGUAGE_NAME = 0;
 let APP_NAME = 1;
@@ -199,7 +200,10 @@ let MARK_MISTAKE = 137;
 let MARK_MISTAKE_TIP = 138;
 let MARK_BLUNDER = 139;
 let MARK_BLUNDER_TIP = 140;
-let COUNT = 141;
+let REPLAY_TITLE = 141;     // a past game's replay (task 078): its title,
+let REPLAY_NO_COUNT = 142;  // the label saying it changes nothing,
+let REPLAY_START = 143;     // and the line over its list at the start, before the first move
+let COUNT = 144;
 
 // The current language's strings, as views into its file.
 var table: const u8[:][COUNT];

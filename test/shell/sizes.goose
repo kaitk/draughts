@@ -291,6 +291,14 @@ fn screens(g: gui::Gui&) {
     at_rest(one, g);
     report("a puzzle", g, one, true, false);
     turn_piece(g, one);
+    // A past game replayed, at its 31st move.
+    var past = showing(shell::REPLAY, home::NO_SETUP);
+    let line = drive::past_line(rules::INTERNATIONAL, 90, 1762826400);
+    let gone, read = history::parse_game(line[..]);
+    replay::open(past.replay, gone, line[..]);
+    replay::go(past.replay, 31, 0.0);
+    at_rest(past, g);
+    report("a replay", g, past, true, false);
     // Black to move with no move left: white has won, and the card comes at once.
     var won = showing(shell::GAME, home::NO_SETUP);
     won.game = game::new(rules::RUSSIAN);
