@@ -19,7 +19,7 @@
                       where it costs the board under 5% (12 dp at 800 × 1280); else none.
                       A phone in landscape (480 dp tall): no room under the play panel
                       (52 dp), so no panel in take a; a note says so.
-                      &take=d  a phone in landscape only (else take a): a line of the
+                      &take=d  a phone (else take a). In landscape a line of the
                                last move under the left column, opening a sheet over the
                                screen's left part (to the board's edge) with the moves,
                                the board left whole and playable. &open=1 the sheet open;
@@ -27,15 +27,30 @@
                                them: the line a full tap, the captured pieces under it) or
                                slim (the left column as built; the line in the captured
                                pieces' place, as tall as the room under the column, the
-                               catch as counts in it); &device=pixel (the Pixel 7a's
-                               cutout at the left, 52 dp, and gesture bar, 37 dp, at
-                               480 dp), a33 (its cutout at the left, 36 dp, and its
-                               three-button bar at the right, 60 dp: assumed, not
-                               measured), none; &board=flat or 3d; &grid=1 sets both fits
-                               closed and open on both phones side by side.
+                               catch as counts in it; on the iPhone 13 mini the tiles 88
+                               high and the catch as counts at the line's head, task 078);
+                               &device=pixel (the Pixel 7a's cutout at the left, 52 dp,
+                               and gesture bar, 37 dp, at 480 dp), a33 (its cutout at the
+                               left, 36 dp, and its three-button bar at the right, 60 dp:
+                               assumed, not measured), iphone (812 × 375: 50 at each side,
+                               21 at the foot; portrait 50 at the top, 34 at the foot),
+                               none; by default from the window's size; &board=flat or 3d;
+                               &grid=1 sets both fits closed and open on the phones side
+                               by side. In portrait (task 078's A) the last move in a tap
+                               that opens the moves as a sheet from the foot: &port=strip
+                               (a strip under the play row) or bar (in the bar between
+                               what each side has taken); &open=1.
+       Marks explained (task 078's B), anywhere a mark shows: &explain=pop (a tip on a
+                      touch of the marked move, or under the mouse) or legend (the
+                      marks' words at the list's foot); &tip=N pins ply N's tip open,
+                      &tip=foot the foot's ??, &tip=games the results' first ??.
        ?view=settings settings with the Moves row (Off, List, Marks) in the Game group.
        ?view=games    the games screen for the player: the rating, by level, the games.
-       ?view=replay   one past game: its moves and marks, the board at a move (&ply=).
+       ?view=replay   one past game (task 078's C), from its row on the results screen:
+                      the board at a move (&ply=0..110) beside the whole list, the steps
+                      (to the start, back, on, to the end) a column at the board's left in
+                      landscape and a row under it in portrait, a move's tap jumping
+                      there; "Doesn't count" by the title.
        ?view=entry    where the games screen is reached from: a Games row on home.
      &marks=on|off|hidden (the setting: the list with marks, the list alone, no panel);
      &state=early|late (6 moves, or 30 with the list scrolled to its end); &lang=et. */
@@ -342,6 +357,111 @@
   .dgrid .fr { overflow: hidden; border-radius: 10px; box-shadow: 0 0 0 1px #2a3442; }
   .dgrid iframe { border: 0; transform-origin: 0 0; display: block; }
   .bare .proto-bar, .bare .note, .bare .proto-fold { display: none !important; }
+
+  /* Task 078. A: the iPhone's line with the catch as counts at its head; portrait's
+     strip and the bar's line, and the sheet from the foot. */
+  .dlist.cin { flex-direction: column; align-items: stretch; }
+  .dlist .dcnt { display: flex; align-items: center; gap: 3px; height: 24px; padding: 0 30px 0 8px; font-size: 17px; flex: none; }
+  .dlist .dcnt .dot { width: 18px; height: 18px; }
+  .dlist.cin .drows { height: auto; flex: 1; }
+  /* A phone in portrait (the game as built there): the bar's tiles icon over word, hint
+     and undo move side by side. */
+  .phone .bar .row { flex-direction: column; justify-content: center; gap: 4px; padding: 0 4px; font-size: 20px; }
+  .phone .bar { padding: 16px 16px 12px; gap: 12px; }
+  .phone .prow .duo { grid-template-columns: 1fr 1fr; }
+  .phone .prow .duo .row { font-size: 21px; padding: 0 10px; gap: 8px; }
+  .phone .prow .duo .row .pips { gap: 5px; margin-left: 2px; }
+  .phone .prow .duo .row .pips i { width: 9px; height: 9px; }
+  .phone .prow .turnline { justify-content: flex-start; padding-left: 6px; }
+  .pbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
+  .pbar > :last-child { justify-self: end; }
+  .pline { display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 6px 0 14px; border-radius: 14px; cursor: pointer;
+    font-size: 21px; white-space: nowrap; background: var(--button); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12); }
+  .pline .n { color: var(--fg-dim); font-size: 17px; }
+  .pline .mv { min-width: 0; padding: 0; height: auto; }
+  .pline .chev, .pstrip .chev { display: grid; opacity: 0.8; }
+  .pline .chev svg { width: 24px; height: 24px; stroke-width: 2.4; }
+  .pcnt { display: flex; align-items: center; gap: 4px; font-size: 18px; }
+  .pstrip { cursor: pointer; justify-content: flex-end; padding: 0 10px 0 18px; mask-image: none; }
+  .pstrip .sline { display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex: 1; min-width: 0; overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent 12px, #000 120px); }
+  .pstrip .sline > * { flex: none; }
+  .pstrip .chev svg { width: 28px; height: 28px; stroke-width: 2.4; }
+  .scrim { z-index: 5; background: rgb(0 0 0 / 0.38); cursor: pointer; }
+  .psheet { --r: 32px 32px 0 0; border-radius: 32px 32px 0 0; z-index: 6; }
+  .psheet .moves { flex: 1; min-height: 0; padding: 0 4px; }
+  .psheet .mrow { height: 34px; }
+  .psheet .dhead { display: flex; align-items: center; gap: 10px; height: 88px; padding: 0 12px 0 8px; font-size: 24px; cursor: pointer; flex: none; }
+  .psheet .dhead > svg { width: 30px; height: 30px; stroke-width: 2.4; opacity: 0.85; }
+
+  /* B: a mark's tip, and the legend take at a list's foot. A move with a mark is its
+     touch (the whole move, not the glyph alone). */
+  [data-mk] { cursor: help; }
+  .tip { position: fixed; z-index: 30; display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px 14px 14px; --r: 20px;
+    border-radius: 20px; font-size: 19px; line-height: 1.3; pointer-events: none; box-shadow: 0 10px 30px -8px rgb(0 0 0 / 0.6); }
+  .tip .tglyph { flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%;
+    font: 700 21px var(--font); color: #1a1208; letter-spacing: -0.02em; }
+  .tglyph.q0 { background: #ffd75a; } .tglyph.q1 { background: #ff9a3c; } .tglyph.q2 { background: var(--forced); color: #fff; }
+  .tglyph.best { background: var(--glow); } .tglyph svg { width: 26px; height: 26px; }
+  .tip .tt { display: flex; align-items: center; gap: 10px; }
+  .tip .tt b { font-size: 22px; font-weight: 400; }
+  .tip .tmv { display: flex; align-items: center; gap: 4px; margin-left: auto; color: var(--fg-dim); font-size: 17px; white-space: nowrap; }
+  .tip .tmv .dot { width: 16px; height: 16px; }
+  .tip p { margin: 4px 0 0; color: var(--fg); }
+  .tip .tw { flex: 1; min-width: 0; }
+  .legend { flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; padding-top: 6px; margin-top: 4px;
+    border-top: 1px solid rgb(255 255 255 / 0.12); font-size: 16px; color: var(--fg-dim); }
+  .legend > span { display: flex; align-items: center; gap: 6px; height: 24px; white-space: nowrap; }
+  .legend .mk { min-width: 20px; text-align: center; }
+  .mfoot.one .sum { gap: 6px; }
+  .mfoot.one .sum b { min-width: 0; margin-right: 14px; }
+  .lhead { display: flex; align-items: baseline; margin: 4px 8px 10px !important; }
+  .lhead .lkey { margin-left: auto; padding-right: 8px; font-size: 16px; }
+
+  /* C: a past game's replay. */
+  .rsteps { display: flex; }
+  .rsteps.col { flex-direction: column; }
+  .rsteps.row { gap: 12px; }
+  .rsteps .button { flex: 1; min-width: 88px; min-height: 88px; border-radius: 22px; }
+  .rsteps.col .button { flex: none; height: 88px; }
+  .rsteps .button svg { width: 38px; height: 38px; }
+  .rsteps .button[disabled] { opacity: 0.35; }
+  .rhead { display: flex; align-items: center; gap: 16px; }
+  .rhead .back { flex: none; height: 88px; padding: 0 22px 0 16px; }
+  .rtitle { display: grid; gap: 2px; min-width: 0; }
+  .rname { display: flex; align-items: center; gap: 10px; font-size: 30px; line-height: 1; }
+  .rname svg { width: 30px; height: 30px; stroke-width: 2.2; opacity: 0.9; }
+  .rtitle small { display: flex; align-items: center; gap: 6px; font-size: 17px; color: var(--fg-dim); white-space: nowrap; overflow: hidden; }
+  .rtitle small .res { width: 24px; height: 24px; }
+  .pill { margin-left: 4px; padding: 3px 10px 4px; border-radius: 999px; font-size: 16px; white-space: nowrap;
+    background: color-mix(in srgb, var(--glow) 18%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--glow) 70%, transparent); }
+  .rinfo { --r: 24px; display: flex; flex-direction: column; gap: 12px; padding: 16px 18px; }
+  .rgame .result { display: flex; align-items: center; gap: 12px; font-size: 22px; }
+  .rgame .result > span:last-child { display: grid; gap: 2px; }
+  .rgame .result small .dot { margin-left: -2px; }
+  .rgame .result small { display: flex; align-items: center; gap: 6px; font-size: 17px; color: var(--fg-dim); }
+  .rgame .result small .dot { width: 18px; height: 18px; }
+  .rgame .res { width: 48px; height: 48px; }
+  .rrate { margin-top: 6px; font-size: 18px; color: var(--fg-dim); }
+  .rnow { display: flex; align-items: flex-start; gap: 8px; font-size: 19px; line-height: 1.3; min-height: 50px; }
+  .rnow .dot { margin-top: 2px; }
+  .rnow .nw .num { margin-right: 2px; }
+  .rnow .said { color: var(--fg); }
+  .rnow b { font-weight: 400; }
+  .rinfo.side .rgame .result { align-items: flex-start; }
+  .rinfo.side .rnow { margin-top: auto; padding-top: 10px; border-top: 1px solid rgb(255 255 255 / 0.12); }
+  .rinfo.port { gap: 6px; padding: 12px 14px 8px; }
+  .rinfo.port .rnow { padding: 0 4px 6px; border-bottom: 1px solid rgb(255 255 255 / 0.12); }
+  .rinfo.port .moves { flex: 1; min-height: 0; padding: 0; }
+  .rinfo:not(.side):not(.port) .rnow { padding-top: 10px; border-top: 1px solid rgb(255 255 255 / 0.12); }
+  .mhead.acc { height: 34px; }
+  .mhead .hacc { display: flex; align-items: center; gap: 6px; margin-left: 8px; font-size: 18px; color: var(--fg); }
+  .mhead .hacc b { font-weight: 400; }
+  .mlist.tap .mrow { height: 34px; }
+  .mlist.tap .mv { cursor: pointer; height: 30px; }
+  .mlist.tap .mv:hover { background: rgb(255 255 255 / 0.1); }
+  .mlist.tap .mv.lit:hover { background: color-mix(in srgb, var(--glow) 24%, transparent); }
+  .badge { cursor: help; }
 </style>
 </head>
 <body>
@@ -353,7 +473,13 @@
   const take = get('take', ['a', 'd'], 'a');
   const open = P.get('open') === '1';
   const fit = get('fit', ['row', 'slim'], 'row');
-  const device = get('device', ['pixel', 'a33', 'none'], 'pixel');
+  // The device's insets: by the window's size unless named (an iPhone's 375 dp short side,
+  // a phone's under 600, else none).
+  const short0 = Math.min(innerWidth, innerHeight);
+  const device = get('device', ['pixel', 'a33', 'iphone', 'none'], short0 <= 400 ? 'iphone' : short0 < 600 ? 'pixel' : 'none');
+  const port = get('port', ['strip', 'bar'], 'strip');
+  const explain = get('explain', ['pop', 'legend'], 'pop');
+  const tipAt = P.get('tip');
   const three = get('board', ['flat', '3d'], 'flat') === '3d';
   if (P.has('bare')) document.body.classList.add('bare');
   const marks = get('marks', ['on', 'off', 'hidden'], 'on');
@@ -397,7 +523,30 @@
     half: '<circle cx="12" cy="12" r="8.5"/><path class="solid" d="M12 3.5a8.5 8.5 0 0 0 0 17z"/>',
     ring: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/>',
     target: '<circle cx="12" cy="12" r="7"/><circle class="solid" cx="12" cy="12" r="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>',
+    first: '<path d="M6 5v14"/><path d="M18 5l-7 7 7 7"/>',
+    last: '<path d="M18 5v14"/><path d="M6 5l7 7-7 7"/>',
+    up: '<path d="M5 15l7-7 7 7"/>',
+    down: '<path d="M5 9l7 7 7-7"/>',
+    replay: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path class="solid" d="M10 8.5v7l5.5-3.5z"/>',
   });
+
+  // Task 078's words (English only; Estonian falls back to them): what each mark the moves
+  // panel shows means, said for a child, a long line for the tip and a short one for the
+  // legend; a good move and an only move show no mark, so need none. The replay's words.
+  const MARKS = {
+    '*': { name: 'Best move', says: 'No move here was better.', short: 'best',
+      names: 'Best moves', all: 'Moves no other move beat.' },
+    '?!': { name: 'Inaccuracy', says: 'There was a better move.', short: 'not the best',
+      names: 'Inaccuracies', all: 'Moves where there was a better one.' },
+    '?': { name: 'Mistake', says: 'This move gave away some of the chance to win.', short: 'a mistake',
+      names: 'Mistakes', all: 'Moves that gave away some of the chance to win.' },
+    '??': { name: 'Blunder', says: 'This move lost much of the chance to win.', short: 'a blunder',
+      names: 'Blunders', all: 'Moves that lost much of the chance to win.' },
+  };
+  const R = { replay: 'Replay', noCount: 'Doesn’t count', lookBack: 'A look back at a finished game', as: 'as',
+    whenPlayed: 'when it was played', start: 'The start', good: 'A good move.',
+    only: 'The only move there was.', lostTo: 'Lost to', moves55: '55 moves', blunders: 'blunders',
+    ratingThen: 'Rating then:', counts: 'This game was counted when it ended; replaying it changes nothing.' };
   const FOX = '<path class="f" d="M3 3.5 8.5 8h7L21 3.5l-.6 8.6Q19 18.6 12 21.5 5 18.6 3.6 12.1z"/><circle class="e" cx="8.8" cy="12.6" r="1.25"/><circle class="e" cx="15.2" cy="12.6" r="1.25"/><circle class="e" cx="12" cy="18.6" r="1.4"/>';
   const HARE = '<ellipse class="f" cx="8.6" cy="6.4" rx="2.3" ry="5.4" transform="rotate(-10 8.6 6.4)"/><ellipse class="f" cx="15.4" cy="6.4" rx="2.3" ry="5.4" transform="rotate(10 15.4 6.4)"/><circle class="f" cx="12" cy="15.2" r="6.6"/><circle class="e" cx="9.5" cy="14.4" r="1.15"/><circle class="e" cx="14.5" cy="14.4" r="1.15"/><path class="e" d="M10.8 17.2h2.4L12 18.6z"/>';
   const face = (svg = FOX, c = '#d9793a', size) =>
@@ -442,19 +591,36 @@
   const dot = (c) => `<span class="dot"><span class="piece ${c}"></span></span>`;
   const sumLine = (n, side) => {
     const t = tally(n, side);
-    const one = (k) => `<span class="${t.c[k] ? '' : 'zero'}">${glyph(k)}<span class="num">${t.c[k]}</span></span>`;
+    const one = (k) => `<span class="${t.c[k] ? '' : 'zero'}" data-mk="${k}" data-ply="-1">${glyph(k)}<span class="num">${t.c[k]}</span></span>`;
     return `<div class="sum">${dot(side ? 'black' : 'white')}<b class="num">${t.acc}%</b><span class="cnt">${one('??')}${one('?')}${one('?!')}</span></div>`;
   };
 
   // The moves panel's inside: the heads (a piece for each side), the rows, and the foot.
-  function movesInner(n, lit, withMarks, foot = withMarks) {
+  // A move with a shown mark carries it (data-mk) for its tip (task 078's B). opts: one
+  // (the foot's two sides on one line, where the height is short), acc (each side's
+  // accuracy in the head beside its piece, the replay's), tap (the rows a replay's taps).
+  const shownMark = (k) => (k in MARKS ? k : '');
+  function legend() {
+    return `<div class="legend">${Object.keys(MARKS).map((k) => `<span>${glyph(k)}<span>${MARKS[k].short}</span></span>`).join('')}</div>`;
+  }
+  function movesInner(n, lit, withMarks, foot = withMarks, opts = {}) {
     let rows = '';
     for (let i = 0; i < n; i += 2) {
-      const cell = (j) => j < n ? `<span class="mv${j === lit ? ' lit' : ''}${j > lit ? ' dim' : ''}" data-ply="${j}">${PLIES[j].m}${withMarks ? glyph(PLIES[j].k) : ''}</span>` : '<span></span>';
+      const cell = (j) => {
+        if (j >= n) return '<span></span>';
+        const mk = withMarks ? shownMark(PLIES[j].k) : '';
+        return `<span class="mv${j === lit ? ' lit' : ''}${j > lit ? ' dim' : ''}" data-ply="${j}"${mk ? ` data-mk="${mk}"` : ''}>${PLIES[j].m}${withMarks ? glyph(PLIES[j].k) : ''}</span>`;
+      };
       rows += `<div class="mrow num"><span class="n">${i / 2 + 1}</span>${cell(i)}${cell(i + 1)}</div>`;
     }
-    return `<div class="mhead"><span></span>${dot('white')}${dot('black')}</div><div class="mlist">${rows}</div>` +
-      (foot ? `<div class="mfoot">${sumLine(n, 0)}${sumLine(n, 1)}</div>` : '');
+    const head = opts.acc
+      ? `<div class="mhead acc"><span></span><span class="hacc">${dot('white')}<b class="num">${tally(n, 0).acc}%</b></span><span class="hacc">${dot('black')}<b class="num">${tally(n, 1).acc}%</b></span></div>`
+      : `<div class="mhead"><span></span>${dot('white')}${dot('black')}</div>`;
+    const oneFoot = () => { const a = tally(n, 0), b = tally(n, 1);
+      return `<div class="mfoot one"><div class="sum">${dot('white')}<b class="num">${a.acc}%</b>${dot('black')}<b class="num">${b.acc}%</b></div></div>`; };
+    return `${head}<div class="mlist${opts.tap ? ' tap' : ''}">${rows}</div>` +
+      (foot ? (opts.one ? oneFoot() : `<div class="mfoot">${sumLine(n, 0)}${sumLine(n, 1)}</div>`) : '') +
+      (withMarks && explain === 'legend' ? legend() : '');
   }
   const scrollLists = () => document.querySelectorAll('.mlist').forEach((l) => {
     const lit = l.querySelector('.lit');
@@ -484,7 +650,13 @@
   // 7a's 118 px cutout and 84 px gesture bar (test/shell/sizes.goose); the A33's assumed,
   // its notch about 80 px and its three-button bar 135 px (48 dp at its density), at the
   // right in landscape.
-  const DEVICES = { pixel: [118 / 2.25, 0, 0, 84 / 2.25], a33: [80 / 2.25, 0, 135 / 2.25, 0], none: [0, 0, 0, 0] };
+  // The iPhone 13 mini at 812 × 375 pt: its notch's side and the other kept clear alike
+  // (50 pt each) and the home indicator's 21 pt in landscape; 50 at the top and 34 at the
+  // foot in portrait. PORTRAIT holds each device's insets turned upright.
+  const DEVICES = { pixel: [118 / 2.25, 0, 0, 84 / 2.25], a33: [80 / 2.25, 0, 135 / 2.25, 0], iphone: [50, 0, 50, 21], none: [0, 0, 0, 0] };
+  const PORTRAIT = { pixel: [0, 118 / 2.25, 0, 84 / 2.25], a33: [0, 80 / 2.25, 0, 135 / 2.25], iphone: [0, 50, 0, 34], none: [0, 0, 0, 0] };
+  const insetsOf = (dev, land) => (land ? DEVICES : PORTRAIT)[dev];
+  const DEVNAME = { pixel: 'Pixel 7a', a33: 'A33 (insets assumed)', iphone: 'iPhone 13 mini', none: 'no insets' };
   const LEFT_H = 336, PLAY_H = 368, SIDE = 192, TAP = 88, STACK = 96, GAP = 24, BACK_GAP = 12, ROW = 34;
   function underLeft(x, under, limit, side) {   // panel::under_left at TAKEN_PHONE
     const d = 26, room = limit - under, rows = 2.3 * d + 28, squeezed = (room - 16) / 2.3;
@@ -513,18 +685,24 @@
     if (fitting === 'row') {
       // Back and settings side by side (each a tile with its icon over its word), start
       // over under them on its own: the column 204 dp in place of 336.
-      const w2 = (side - 12) / 2;
-      L.tiles = [[sx + g, sy + g, w2, STACK, 'back'], [sx + g + w2 + 12, sy + g, w2, STACK, 'gear'],
-                 [sx + g, sy + g + STACK + 12, side, STACK, 'restart']];
       // Under them what each side has taken, then the line at the foot: the room left, at
       // least a tap, holding the last moves' rows as the sheet shows them, the older faded.
-      const foot = sy + g + 2 * STACK + 12;
-      L.taken = underLeft(sx + g, foot + BACK_GAP, sy + sh - g - TAP - 12, side);
-      const top = L.taken ? L.taken.r[1] + L.taken.r[3] + 12 : foot + BACK_GAP;
+      // Where the catch doesn't fit (the iPhone 13 mini's 354 dp), the tiles a tap high
+      // (88, not 96) and the catch as counts at the line's head.
+      const w2 = (side - 12) / 2, at = (st) => {
+        const foot = sy + g + 2 * st + 12;
+        return { st, foot, taken: underLeft(sx + g, foot + BACK_GAP, sy + sh - g - TAP - 12, side) };
+      };
+      let k = at(STACK);
+      if (!k.taken) { k = at(TAP); L.countsIn = true; }
+      L.tiles = [[sx + g, sy + g, w2, k.st, 'back'], [sx + g + w2 + 12, sy + g, w2, k.st, 'gear'],
+                 [sx + g, sy + g + k.st + 12, side, k.st, 'restart']];
+      L.taken = k.taken;
+      const top = L.taken ? L.taken.r[1] + L.taken.r[3] + 12 : k.foot + BACK_GAP;
       L.line = [sx + g, top, side, sy + sh - g - top];
       L.tap = L.line[3];
       L.spare = L.line[3] - TAP;
-      L.lineRows = Math.max(1, Math.floor((L.line[3] - 16) / 31));
+      L.lineRows = Math.max(1, Math.floor((L.line[3] - 16 - (L.countsIn ? 26 : 0)) / 31));
     } else {
       // The column as built; the line in the catch's place, as tall as the room under the
       // column (a tap at most), as wide as the left side, the catch as counts in it. Its
@@ -548,7 +726,24 @@
     L.sheet = [0, 0, (raised ? sx + g + side + 12 : L.board[0] - 12), H];
     L.sheetIn = [sx + 16, sy + 12, L.sheet[2] - sx - 32, sh - 24];
     L.sheetRows = Math.floor((L.sheetIn[3] - TAP - 36 - 76) / ROW);
+    // Under five rows (the iPhone), the foot's two sides on one line.
+    if (L.sheetRows < 5) { L.oneFoot = true; L.sheetRows = Math.floor((L.sheetIn[3] - TAP - 36 - 42) / ROW); }
     return L;
+  }
+
+  // The iPhone's notch and home indicator, and the safe area dashed, over any screen.
+  function deviceMarks(dev, land, skipSafe) {
+    const [l, t, r, b] = insetsOf(dev, land);
+    let s = '';
+    if (dev === 'iphone') s += land
+      ? `<div class="cut" style="left:0;top:${H / 2 - 80}px;width:30px;height:160px;border-radius:0 20px 20px 0"></div>` +
+        `<div class="gbar" style="left:${W / 2 - 70}px;width:140px;top:${H - 9}px"></div>`
+      : `<div class="cut" style="left:${W / 2 - 80}px;top:0;width:160px;height:32px;border-radius:0 0 20px 20px"></div>` +
+        `<div class="gbar" style="left:${W / 2 - 67}px;width:134px;top:${H - 13}px"></div>`;
+    if (dev === 'pixel' && !land) s += `<div class="cut" style="left:${W / 2 - 11}px;top:${t / 2 - 11}px;width:22px;height:22px;border-radius:50%"></div>` +
+      `<div class="gbar" style="left:${W / 2 - 60}px;top:${H - b / 2 - 2}px"></div>`;
+    if (dev !== 'none' && !skipSafe) s += `<div class="safe" style="left:${l}px;top:${t}px;width:${W - l - r}px;height:${H - t - b}px"></div>`;
+    return s;
   }
 
   // Take d's screen: the device's insets drawn (its cutout, its gesture bar, the safe area
@@ -561,7 +756,7 @@
     if (device === 'pixel') html += `<div class="cut" style="left:${il / 2 - 11}px;top:${H / 2 - 11}px;width:22px;height:22px;border-radius:50%"></div>` +
       `<div class="gbar" style="left:${il + (W - il - ir) / 2 - 60}px;top:${H - ib / 2 - 2}px"></div>`;
     if (device === 'a33') html += `<div class="cut" style="left:0;top:${H / 2 - 16}px;width:${il * 0.6}px;height:32px;border-radius:0 18px 18px 0"></div>`;
-    if (device !== 'none') html += `<div class="safe" style="left:${L.safe[0]}px;top:${L.safe[1]}px;width:${L.safe[2]}px;height:${L.safe[3]}px"></div>`;
+    html += deviceMarks(device, true);
     if (fit === 'row') {
       const word = { back: T.back, gear: T.settings, restart: T.restart };
       for (const [x, y, w, h, ic] of L.tiles) html += box([x, y, w, h], 'button glass dtile', `${icon(ic)}<span>${word[ic]}</span>`);
@@ -584,7 +779,8 @@
         const cell = (j) => j <= i ? `<span class="mv${j === i ? ' lit' : ''}">${PLIES[j].m}${withMarks ? glyph(PLIES[j].k) : ''}</span>` : '<span></span>';
         rows += `<div class="mrow num"><span class="n">${k / 2 + 1}</span>${cell(k)}${cell(k + 1)}</div>`;
       }
-      html += box(L.line, 'button glass dlist', `<div class="drows">${rows}</div><span class="chev">${icon('fwd')}</span>`);
+      const cin = L.countsIn ? `<span class="dcnt num">${dot('white')}${tookB}<span style="width:8px"></span>${dot('black')}${tookW}</span>` : '';
+      html += box(L.line, `button glass dlist${L.countsIn ? ' cin' : ''}`, `${cin}<div class="drows">${rows}</div><span class="chev">${icon('fwd')}</span>`);
     } else if (!open) {
       html += box(L.line, 'button glass dline', `${last}${counts}<span class="chev">${icon('fwd')}</span>`);
       if (L.tap > L.line[3] + 0.5) html += box([L.line[0], L.line[1], L.line[2], L.tap], 'safe', '', 'position:absolute;border-color:rgb(255 210 120 / 0.55);border-radius:14px');
@@ -601,15 +797,88 @@
       const [sx0, sy0, sw0, sh0] = L.sheetIn;
       html += box(L.sheet, 'glass dsheet', `<div style="position:absolute;left:${sx0}px;top:${sy0}px;width:${sw0}px;height:${sh0}px;display:flex;flex-direction:column">` +
         `<div class="dhead">${icon('prev')}<span>${T.moves}</span></div>` +
+        `<div class="moves">${movesInner(shown, shown - 1, withMarks, withMarks, { one: L.oneFoot })}</div></div>`);
+    }
+    const n = (v) => Math.round(v);
+    const where = `${DEVNAME[device]}, safe ${n(L.safe[2])} × ${n(L.safe[3])} dp`;
+    let msg = `take d, ${fit}, ${where}: the built column leaves ${n(L.roomBuilt)} dp under it; `;
+    if (open) msg += `the sheet ${n(L.sheet[2])} dp wide, ${L.sheetRows} rows, the board whole`;
+    else if (fit === 'row') msg += `the column ${n(L.tiles[2][1] + L.tiles[2][3] - L.tiles[0][1])}, the catch ${L.taken ? `${n(L.taken.r[3])} dp (${L.taken.two ? 'two rows' : 'one line'})` : 'as counts in the line'}, the moves ${n(L.line[3])} dp at the foot, ${L.lineRows} rows, the board ${n(L.board[2])}`;
+    else msg += `the line ${n(L.line[3])} dp tall${L.line[3] < TAP ? ` (${n(TAP - L.line[3])} under a tap)` : ''}, its tap ${n(L.tap)} to the safe foot, ${n(L.line[2])} wide`;
+    return { html, br: L.board, b3: three ? L.board3 : null, note: msg };
+  }
+
+  // Take d on a phone in portrait (task 078's A): the portrait game as built (the bar of
+  // three tiles and the catch, 172 dp; the board; the play row, 204) with the last move
+  // in one of two places, a tap of 88 dp that opens the moves as a sheet from the foot:
+  //   port=strip  a strip under the play row, 56 dp, the last moves on one line, the
+  //               newest at the right by the chevron; its tap runs 8 dp up into the gap
+  //               and on into the bottom margin. It costs the board only what the
+  //               screen's slack doesn't hold.
+  //   port=bar    in the bar's second row, between what each side has taken: no height
+  //               of its own, its tap from the tiles' foot to the board's top (92 dp).
+  // The sheet (&open=1) rises from the foot to the board's middle, a dim scrim above it;
+  // its head, the scrim, or the line closes it.
+  function takeP(ctx) {
+    const { tookW, tookB, withMarks, turn, hint, undo, eye } = ctx;
+    const [l, t, r, b] = insetsOf(device, false);
+    const sx = l, sy = t, sw = W - l - r, sh = H - t - b, g = 24, top = 172, bottom = 204, w = sw - 2 * g;
+    const STRIP = 56, SGAP = 8, strip = port === 'strip';
+    const room = sh - 2 * g - top - g - g - bottom;
+    const full = Math.min(w, room);
+    const B = strip ? Math.min(w, room - SGAP - STRIP) : full;
+    const total = top + g + B + g + bottom + (strip ? SGAP + STRIP : 0);
+    const y0 = sy + (sh - total) / 2;
+    const i = shown - 1, no = Math.floor(i / 2) + 1;
+    const last = `<span class="n num">${i % 2 ? `${no}…` : `${no}.`}</span><span class="mv num">${PLIES[i].m}${withMarks ? glyph(PLIES[i].k) : ''}</span>`;
+    let html = deviceMarks(device, false), tapR;
+    const bx = sx + g;
+    if (strip) {
+      html += box([bx, y0, w, top], 'bar glass',
+        `<a class="row button back" href="#">${icon('back')}<span>${T.back}</span></a>${tile('gear', T.settings)}${tile('restart', T.restart)}` +
+        `<div class="caprow" style="grid-column:1/3">${catchOf('black', tookW, 32)}</div><div class="caprow end">${catchOf('white', tookB, 32)}</div>`);
+    } else {
+      // The catch beside the line: as pieces where both fit beside it, else as counts.
+      const inner = w - 40, lineW = 176, pw = (k) => (k ? 32 + (k - 1) * 32 * 0.52 : 0);
+      const pieces = pw(tookW) + pw(tookB) + lineW + 24 <= inner;
+      const cw = (c, k) => pieces ? catchOf(c, k, 32) : `<span class="pcnt num">${dot(c)}${k}</span>`;
+      html += box([bx, y0, w, top], 'bar glass',
+        `<a class="row button back" href="#">${icon('back')}<span>${T.back}</span></a>${tile('gear', T.settings)}${tile('restart', T.restart)}` +
+        `<div class="caprow pbar" style="grid-column:1/4">${cw('black', tookW)}<span class="pline">${last}<span class="chev">${icon(open ? 'down' : 'up')}</span></span>${cw('white', tookB)}</div>`);
+      // The tap: the row's width less the catches, from under the tiles to the board.
+      tapR = [bx + 20 + inner / 2 - lineW / 2 - 12, y0 + 16 + 88, lineW + 24, top - 104 + g];
+    }
+    const br = [sx + (sw - B) / 2, y0 + top + g, B, B];
+    const py = br[1] + B + g;
+    html += box([bx, py, w, bottom], 'prow glass',
+      `<div class="turnline"><div class="piece ${turn === 'w' ? 'white' : 'black'}"></div><span style="font-size:24px">${T.turn[turn]}</span>${eye}</div>` +
+      `<div class="duo short">${hint}${undo}</div>`);
+    if (strip) {
+      let s = '';
+      const from = Math.max(0, shown - 8 - (shown % 2));
+      for (let j = from; j < shown; j++) {
+        if (j % 2 === 0) s += `<span class="n">${j / 2 + 1}.</span>`;
+        s += `<span class="mv${j === shown - 1 ? ' lit' : ''}">${PLIES[j].m}${withMarks ? glyph(PLIES[j].k) : ''}</span>`;
+      }
+      const sy0 = py + bottom + SGAP;
+      html += box([bx, sy0, w, STRIP], 'strip glass num pstrip', `<span class="sline">${s}</span><span class="chev">${icon(open ? 'down' : 'up')}</span>`);
+      tapR = [bx, sy0 - SGAP, w, Math.min(STRIP + SGAP + g, sy + sh - (sy0 - SGAP))];
+    }
+    if (!open) html += box(tapR, 'safe', '', 'position:absolute;border-color:rgb(255 210 120 / 0.55);border-radius:14px');
+    let rows = 0;
+    if (open) {
+      const top0 = br[1] + B / 2, ih = sy + sh - 12 - (top0 + 8);
+      rows = Math.floor((ih - TAP - 36 - 76) / ROW);
+      html += `<div class="scrim at" style="left:0;top:0;width:${W}px;height:${top0}px"></div>`;
+      html += box([0, top0, W, H - top0 + 40], 'glass psheet', `<div style="position:absolute;left:${sx + 16}px;top:8px;width:${sw - 32}px;height:${ih}px;display:flex;flex-direction:column">` +
+        `<div class="dhead">${icon('down')}<span>${T.moves}</span></div>` +
         `<div class="moves">${movesInner(shown, shown - 1, withMarks)}</div></div>`);
     }
     const n = (v) => Math.round(v);
-    const where = `${device === 'none' ? 'no insets' : device === 'a33' ? 'A33 (insets assumed)' : 'Pixel 7a'}, safe ${n(L.safe[2])} × ${n(L.safe[3])} dp`;
-    let msg = `take d, ${fit}, ${where}: the built column leaves ${n(L.roomBuilt)} dp under it; `;
-    if (open) msg += `the sheet ${n(L.sheet[2])} dp wide, ${L.sheetRows} rows, the board whole`;
-    else if (fit === 'row') msg += `the column 204, the catch ${L.taken ? `${n(L.taken.r[3])} dp (${L.taken.two ? 'two rows' : 'one line'})` : 'none'}, the moves ${n(L.line[3])} dp at the foot, ${L.lineRows} rows`;
-    else msg += `the line ${n(L.line[3])} dp tall${L.line[3] < TAP ? ` (${n(TAP - L.line[3])} under a tap)` : ''}, its tap ${n(L.tap)} to the safe foot, ${n(L.line[2])} wide`;
-    return { html, br: L.board, b3: three ? L.board3 : null, note: msg };
+    let msg = `portrait, ${port}, ${DEVNAME[device]}, safe ${n(sw)} × ${n(sh)} dp: `;
+    if (open) msg += `the sheet from the board's middle, ${rows} rows`;
+    else msg += `the board ${n(B)} dp (${n(full)} without the line; ${n(Math.min(w, room))} is its room), the tap ${n(tapR[2])} × ${n(tapR[3])}`;
+    return { html, br, note: msg };
   }
 
   // A 3D board's CSS stand-in fitted into r, its near edge on r's foot (game-captured.html's).
@@ -631,17 +900,18 @@
     const s = Math.min(0.62, (innerWidth - 60) / 2 / 1066);
     const n = (v) => Math.round(v);
     let rows = '';
-    for (const dev of ['pixel', 'a33']) for (const f of ['row', 'slim']) {
-      const L = dLayout(1066, 480, dev, f, three);
+    for (const dev of ['pixel', 'a33', 'iphone']) for (const f of (dev === 'iphone' ? ['row'] : ['row', 'slim'])) {
+      const fw = dev === 'iphone' ? 812 : 1066, fh = dev === 'iphone' ? 375 : 480;
+      const L = dLayout(fw, fh, dev, f, three);
       const cap = f === 'row'
-        ? `the catch ${L.taken ? `${n(L.taken.r[3])} dp, ${L.taken.two ? 'two rows' : 'one line'}` : 'none'}; under it the moves, ${n(L.line[3])} dp, ${L.lineRows} rows`
+        ? `the catch ${L.taken ? `${n(L.taken.r[3])} dp, ${L.taken.two ? 'two rows' : 'one line'}` : 'as counts in the line'}; under it the moves, ${n(L.line[3])} dp, ${L.lineRows} rows`
         : `the line ${n(L.line[3])} dp${L.line[3] < TAP ? `, ${n(TAP - L.line[3])} under a tap` : ''}; its tap ${n(L.tap)} to the safe foot`;
       let pair = '';
       for (const o of ['0', '1']) {
         const q = new URLSearchParams(P); q.delete('grid'); q.set('device', dev); q.set('fit', f); q.set('open', o); q.set('bare', '1');
         const u = `history.html?${q}`;
-        pair += `<div class="shot"><div>${dev === 'pixel' ? 'Pixel 7a' : 'A33 (insets assumed)'}, ${f}, ${o === '1' ? `open: the sheet ${n(L.sheet[2])} dp, ${L.sheetRows} rows` : `closed: ${cap}`} · <a href="${u.replace('&bare=1', '')}" target="_blank">open</a></div>` +
-          `<div class="fr" style="width:${n(1066 * s)}px;height:${n(480 * s)}px"><iframe src="${u}" width="1066" height="480" style="transform:scale(${s})"></iframe></div></div>`;
+        pair += `<div class="shot"><div>${DEVNAME[dev]}, ${f}, ${o === '1' ? `open: the sheet ${n(L.sheet[2])} dp, ${L.sheetRows} rows` : `closed: ${cap}`} · <a href="${u.replace('&bare=1', '')}" target="_blank">open</a></div>` +
+          `<div class="fr" style="width:${n(fw * s)}px;height:${n(fh * s)}px"><iframe src="${u}" width="${fw}" height="${fh}" style="transform:scale(${s})"></iframe></div></div>`;
       }
       rows += `<div class="pair">${pair}</div>`;
     }
@@ -668,6 +938,9 @@
     if (landscape && take === 'd' && phone && panelOn) {
       const d = takeD({ pos, tookW, tookB, withMarks, turn, hint, undo, eye });
       html = d.html; br = d.br; b3 = d.b3; note = d.note;
+    } else if (!landscape && take === 'd' && phone && panelOn) {
+      const d = takeP({ tookW, tookB, withMarks, turn, hint, undo, eye });
+      html = d.html; br = d.br; note = d.note;
     } else if (landscape) {
       if (take === 'd') note = 'take d is a phone\'s in landscape; here as take a. ';
       // panel.goose's flat_corners: the board a square of the height less the margins,
@@ -761,7 +1034,7 @@
       `<span class="who"><span>${lvl ? `${T[lvl]} · ${rr}` : T.friend}</span><small>${when}</small></span>` +
       `<span class="side">${dot(side === 'w' ? 'white' : 'black')}</span>` +
       `<span class="chg num ${lvl ? (chg >= 0 ? 'up' : 'down') : 'none'}">${lvl ? (chg >= 0 ? '+' : '−') + Math.abs(chg) : '–'}</span>` +
-      `<span class="bl num${bl ? '' : ' zero'}"><i class="mk q2">??</i> ${bl}</span></a>`).join('');
+      `<span class="bl num${bl ? '' : ' zero'}" data-mk="??" data-ply="-1"><i class="mk q2">??</i> ${bl}</span></a>`).join('');
     const dr = (k, r, on) => `<button class="tile${on ? ' on' : ''}">${T[k]}<small class="num">${r}</small></button>`;
     document.getElementById('app').innerHTML = `<div class="page">
       <div class="top"><a class="button glass back" href="?${new URLSearchParams({ ...Object.fromEntries(P), view: 'entry' })}">${icon('back')}<span>${T.back}</span></a>
@@ -771,45 +1044,100 @@
         <section class="card glass stats"><div class="rate"><h2>${T.rating} · ${T.intl}</h2>
           <div class="rating num"><span class="big">1043</span><span class="delta">+12</span><span class="of">${T.last20}</span></div>${spark}</div>
           <div class="levels"><h2>${T.vsComputer}</h2>${lvRow('easy', 590, 14, 2, 1)}${lvRow('medium', 1050, 6, 2, 5)}${lvRow('hard', 1500, 0, 1, 4)}</div></section>
-        <section class="card glass list"><h2 style="margin:4px 8px 10px">${T.recent} · ${T.games_n(35)}</h2><div class="scroll">${rows}</div></section>
+        <section class="card glass list"><h2 class="lhead">${T.recent} · ${T.games_n(35)}<span class="lkey"><i class="mk q2">??</i> ${R.blunders}</span></h2><div class="scroll">${rows}</div></section>
       </div></div>`;
   }
 
-  // A past game: the summary and each side's accuracy, the board at a move with its mark,
-  // the moves with the chosen one lit, and steps back and on.
-  let ply = Math.max(1, Math.min(PLIES.length, +(P.get('ply') || 39)));
+  // A past game (task 078's C), opened from its row on the results screen: the board at a
+  // move beside the whole list, to step through and nothing else. Its head says it is a
+  // replay that counts for nothing (it doesn't become the game to continue, and the
+  // results and rating keep what the game gave when it ended); the board takes no moves.
+  //   Landscape: the steps a column of four taps at the board's left (to the start, back,
+  //   on, to the end), the board the height less the margins, at its right back and the
+  //   title, then the game (the result, the opponent, the date, the rating it moved) and
+  //   what the move shown was, over the list (tall) or beside it (a phone).
+  //   Portrait: back and the title, the board, the steps a row under it, then the move
+  //   shown and the list.
+  // The list's rows are taps (a move jumps the board there): 34 dp, under the 88 dp rule,
+  // as a miss shows the neighbouring move, which the steps put right. Each side's
+  // accuracy heads its column. &ply=0..110 the move shown (0 the start).
+  let ply = Math.max(0, Math.min(PLIES.length, +(P.get('ply') ?? 39)));
+  function nowLine(p) {
+    if (!p) return `<span class="nw">${R.start}</span>`;
+    const j = p - 1, no = Math.floor(j / 2) + 1, k = PLIES[j].k, mk = shownMark(k);
+    const said = mk ? `<b>${MARKS[mk].name}:</b> ${MARKS[mk].says.replace(/^./, (c) => c.toLowerCase())}` : k === '=' ? R.only : R.good;
+    return `${dot(j % 2 ? 'black' : 'white')}<span class="nw"><span class="num">${no}${j % 2 ? '…' : '.'} ${PLIES[j].m}</span>${glyph(k)} <span class="said">${said}</span></span>`;
+  }
   function replayScreen() {
     document.body.insertAdjacentHTML('afterbegin', '<div class="bgl"></div>');
-    const n = PLIES.length, g = 24;
-    const steps = `<div class="steps"><button class="button" data-step="-1"${ply <= 1 ? ' disabled' : ''}>${icon('prev')}</button>` +
-      `<button class="button" data-step="1"${ply >= n ? ' disabled' : ''}>${icon('fwd')}</button></div>`;
-    const acc = (side) => sumLine(n, side);
-    let html = '', br;
+    const n = PLIES.length, g = 24, STEP = 88;
+    const [l, t, r, b] = insetsOf(device, landscape);
+    const sx = l, sy = t, sw = W - l - r, sh = H - t - b;
+    const stepBtn = (k, ic) => `<button class="button" data-step="${k}">${icon(ic)}</button>`;
+    const steps = stepBtn('start', 'first') + stepBtn(-1, 'prev') + stepBtn(1, 'fwd') + stepBtn('end', 'last');
+    const backTo = `?${new URLSearchParams({ ...Object.fromEntries(P), view: 'games', ply: '' })}`.replace('&ply=', '');
+    // The head: back, the title with its "doesn't count" pill, and under them what the
+    // game was (where no card of its own says so, the phones) or what a replay is.
+    const pill = `<span class="pill">${R.noCount}</span>`;
+    const head = (sub) => `<a class="button back" href="${backTo}">${icon('back')}<span>${T.back}</span></a>` +
+      `<span class="rtitle"><span class="rname">${icon('replay')}${R.replay}${sub ? pill : ''}</span><small>${sub || pill}</small></span>`;
+    const short = `${res('lost')}${R.lostTo} ${T.medium} · 1050 · ${T.today}`;
+    const game = `<div class="rgame"><div class="result">${res('lost')}<span><span>${R.lostTo} ${T.medium} · 1050</span>` +
+      `<small>${T.today} 18:05 · ${R.moves55} · ${R.as} ${dot('white')}</small></span></div>` +
+      `<div class="rrate num">${R.ratingThen} 1031 → 1023 (−8)</div></div>`;
+    const now = `<div class="rnow">${nowLine(ply)}</div>`;
+    const list = (cls) => box(cls.r, `moves glass rlist ${cls.c || ''}`, movesInner(n, ply - 1, true, false, { acc: true, tap: true }));
+    let html = deviceMarks(device, landscape), br;
     if (landscape) {
-      const side = phone ? 192 : 232, B = H - 2 * g;
-      br = [(W - B) / 2, g, B, B];
-      html += box([g, g, side, 88], 'button glass back', `${icon('back')}<span>${T.back}</span>`);
-      html += box([g, g + 100, side, Math.min(H - 2 * g - 100, phone ? 300 : 400)], 'rsum glass',
-        `<div class="result">${res('lost')}<span>${T.lost}</span></div><div class="meta">${T.medium} · 1050<br>${T.today} 18:05 · 55 ${T.move === 'move' ? 'moves' : 'käiku'}</div>` +
-        `<div class="acc">${acc(0)}${acc(1)}</div><div class="chg num">${T.rating} 1031 → 1023 <span>(−8)</span></div>`);
-      html += box([W - g - side, g, side, H - 2 * g], 'moves glass', movesInner(n, ply - 1, true, false) + steps);
+      const B = sh - 2 * g;
+      const stx = sx + g, bx = stx + STEP + 12, colX = bx + B + g, colW = sx + sw - g - colX, colH = B;
+      const gap = Math.min(16, (B - 4 * STEP) / 3), sy0 = sy + g + (B - 4 * STEP - 3 * gap) / 2;
+      html += box([stx, sy0, STEP, 4 * STEP + 3 * gap], 'rsteps col', steps, `gap:${gap}px`);
+      br = [bx, sy + g, B, B];
+      const tall = colH >= 560;
+      html += box([colX, sy + g, colW, 88], 'rhead', head(tall ? '' : short));
+      const y = sy + g + 88 + 12, rest = colH - 100;
+      if (tall) {
+        const infoH = 186;
+        html += box([colX, y, colW, infoH], 'glass rinfo', game + now);
+        html += list({ r: [colX, y + infoH + 12, colW, rest - infoH - 12] });
+        note = `replay, landscape, ${DEVNAME[device]}: the board ${Math.round(B)} dp, the list ${Math.round(colW)} × ${Math.round(rest - infoH - 12)}`;
+      } else {
+        html += box([colX, y, colW, rest], 'glass rinfo port', `${now}<div class="moves">${movesInner(n, ply - 1, true, false, { acc: true, tap: true })}</div>`);
+        note = `replay, landscape, ${DEVNAME[device]}: the board ${Math.round(B)} dp, the list ${Math.round(colW)} × ${Math.round(rest)}, the game in the head`;
+      }
     } else {
-      const w = W - 2 * g, top = 104, B = Math.min(w, H - 2 * g - top - g - g - 300);
-      const y0 = g;
-      html += box([g, y0, w, top], 'rbar glass', `<a class="button back" href="#" style="margin:8px">${icon('back')}<span>${T.back}</span></a>` +
-        `${res('lost')}<span style="display:grid"><span style="font-size:24px">${T.lost}</span><span class="meta">${T.medium} · 1050 · ${T.today}</span></span>` +
-        `<div class="acc2">${acc(0)}${acc(1)}</div>`);
-      br = [(W - B) / 2, y0 + top + g, B, B];
-      const ly = y0 + top + g + B + g;
-      html += box([g, ly, w, H - g - ly], 'moves glass', movesInner(n, ply - 1, true, false) + steps);
+      const w = sw - 2 * g, minList = 300;
+      const B = Math.min(w, sh - 2 * g - 88 - 12 - 12 - STEP - 12 - minList);
+      const y0 = sy + g;
+      html += box([sx + g, y0, w, 88], 'rhead', head(short));
+      br = [sx + (sw - B) / 2, y0 + 100, B, B];
+      const stY = br[1] + B + 12;
+      html += box([sx + g, stY, w, STEP], 'rsteps row', steps);
+      const ly = stY + STEP + 12;
+      html += box([sx + g, ly, w, sy + sh - g - ly], 'glass rinfo port', `${now}<div class="moves">${movesInner(n, ply - 1, true, false, { acc: true, tap: true })}</div>`);
+      note = `replay, portrait, ${DEVNAME[device]}: the board ${Math.round(B)} dp, the list ${Math.round(w)} × ${Math.round(sy + sh - g - ly)}`;
     }
     html += box(br, '', '<div id="board" style="width:100%"></div>', `--bw:${br[2]}px`);
     document.getElementById('app').innerHTML = html;
     drawReplay();
-    document.querySelectorAll('[data-step]').forEach((b) => b.onclick = () => {
-      ply = Math.max(1, Math.min(n, ply + +b.dataset.step));
-      P.set('ply', ply); history.replaceState(null, '', `?${P}`);
-      replayScreen.redraw();
+    document.querySelectorAll('[data-step]').forEach((bt) => bt.onclick = () => {
+      const k = bt.dataset.step;
+      goPly(k === 'start' ? 0 : k === 'end' ? n : ply + +k);
+    });
+    document.querySelectorAll('.rlist .mv, .rinfo .mv').forEach((m) => m.addEventListener('click', () => goPly(+m.dataset.ply + 1)));
+    stepsState();
+  }
+  function goPly(p) {
+    ply = Math.max(0, Math.min(PLIES.length, p));
+    P.set('ply', ply); history.replaceState(null, '', `?${P}`);
+    replayScreen.redraw();
+  }
+  function stepsState() {
+    const n = PLIES.length;
+    document.querySelectorAll('[data-step]').forEach((bt) => {
+      const k = bt.dataset.step;
+      bt.disabled = (k === 'start' || k === '-1') ? ply <= 0 : ply >= n;
     });
   }
   function drawReplay() {
@@ -817,19 +1145,18 @@
     el.className = ''; el.innerHTML = '';
     const pos = at(ply);
     Draughts.board(el, { ...pos, view: '2d' });
-    const k = PLIES[ply - 1].k;
+    const k = ply ? PLIES[ply - 1].k : '';
     if (k && k !== '=') {
       const to = pos.last[1], x = to.charCodeAt(0) - 97, y = +to.slice(1) - 1;
       const sq = el.querySelectorAll('.sq')[(9 - y) * 10 + x];
-      sq.insertAdjacentHTML('beforeend', `<span class="badge ${k === '*' ? 'best' : { '?!': 'q0', '?': 'q1', '??': 'q2' }[k]}">${k === '*' ? icon('star') : k}</span>`);
+      sq.insertAdjacentHTML('beforeend', `<span class="badge ${k === '*' ? 'best' : { '?!': 'q0', '?': 'q1', '??': 'q2' }[k]}" data-mk="${k}" data-ply="${ply - 1}">${k === '*' ? icon('star') : k}</span>`);
     }
   }
   replayScreen.redraw = () => {
-    const n = PLIES.length;
     drawReplay();
     document.querySelectorAll('.mv').forEach((m) => { const j = +m.dataset.ply; m.classList.toggle('lit', j === ply - 1); m.classList.toggle('dim', j > ply - 1); });
-    const [b0, b1] = document.querySelectorAll('[data-step]');
-    b0.disabled = ply <= 1; b1.disabled = ply >= n;
+    document.querySelectorAll('.rnow').forEach((e) => { e.innerHTML = nowLine(ply); });
+    stepsState(); hideTip();
     scrollLists(); Draughts.paint();
   };
 
@@ -929,10 +1256,12 @@
   if (gridD) dGrid();
   else ({ game: gameScreen, settings: settingsScreen, games: gamesScreen, replay: replayScreen, entry: entryScreen })[view]();
   if (note) document.body.insertAdjacentHTML('beforeend', `<div class="note"${take === 'd' && view === 'game' ? ' style="left:50%;bottom:auto;top:4px;transform:translateX(-50%);max-width:70vw"' : ''}>${note}</div>`);
-  // Take d: the line opens the sheet, its head closes it.
+  // Take d: the line opens the sheet (landscape's line or rows, portrait's strip or the
+  // bar's line), its head or the scrim closes it.
   const goOpen = (v) => () => { P.set('open', v); location.search = P.toString(); };
-  document.querySelector('.dline')?.addEventListener('click', goOpen('1'));
-  document.querySelector('.dhead')?.addEventListener('click', goOpen('0'));
+  document.querySelectorAll('.dline, .dlist, .pstrip, .pline').forEach((e) => e.addEventListener('click', goOpen(open ? '0' : '1')));
+  document.querySelectorAll('.dhead, .scrim').forEach((e) => e.addEventListener('click', goOpen('0')));
+  wireTips();
   document.title = `Draughts: history, ${view}${view === 'game' ? ` ${take}` : ''}${note ? `: ${note}` : ''}`;
   Draughts.paint();
   Draughts.syncGlass();
@@ -940,14 +1269,71 @@
   requestAnimationFrame(() => { Draughts.paint(); Draughts.syncGlass(); scrollLists(); });
   addEventListener('load', () => document.fonts.ready.then(() => { scrollLists(); Draughts.syncGlass(); }));
 
+  // A mark's tip (task 078's B), shown over the mark's move. Under the mouse, a move or a
+  // count with a mark shows it while the pointer is on it. On touch, a tap on a move with
+  // a mark shows it (in the game's panel or sheet, whose rows take no other tap; a
+  // replay's tap jumps there, its line under the board saying the same); the next tap
+  // anywhere only closes it, unless it is on another mark, which it moves to. &tip=N shows
+  // ply N's (1-based) at load, &tip=foot the foot's ??, &tip=games the results' first ??.
+  let tipFor = null, tipHover = false;
+  function hideTip() { document.querySelector('.tip')?.remove(); tipFor = null; }
+  function showTip(a, hover) {
+    hideTip();
+    const k = a.dataset.mk, j = +a.dataset.ply, m = MARKS[k];
+    const no = Math.floor(j / 2) + 1;
+    const mv = j >= 0 ? `<span class="tmv num">${dot(j % 2 ? 'black' : 'white')}${no}${j % 2 ? '…' : '.'} ${PLIES[j].m}</span>` : '';
+    const chip = `<span class="tglyph ${k === '*' ? 'best' : { '?!': 'q0', '?': 'q1', '??': 'q2' }[k]}">${k === '*' ? icon('star') : k}</span>`;
+    document.body.insertAdjacentHTML('beforeend', `<div class="tip glass" role="tooltip">${chip}<div class="tw"><div class="tt"><b>${j >= 0 ? m.name : m.names}</b>${mv}</div><p>${j >= 0 ? m.says : m.all}</p></div></div>`);
+    const tip = document.querySelector('.tip'), ar = a.getBoundingClientRect();
+    const [il, , ir] = insetsOf(device, landscape);   // kept in the safe area
+    const tw = Math.min(320, W - il - ir - 24); tip.style.width = `${tw}px`;
+    const th = tip.offsetHeight;
+    const x = Math.max(il + 12, Math.min(W - ir - tw - 12, ar.left + ar.width / 2 - tw / 2));
+    const y = ar.top - th - 10 >= 8 ? ar.top - th - 10 : ar.bottom + 10;
+    tip.style.left = `${x}px`; tip.style.top = `${y}px`;
+    tipFor = a; tipHover = hover;
+    Draughts.syncGlass();
+  }
+  function wireTips() {
+    const inReplay = view === 'replay';
+    document.addEventListener('pointerover', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      const a = e.target.closest('[data-mk]');
+      if (a && a !== tipFor) showTip(a, true);
+      else if (!a && tipFor && tipHover) hideTip();
+    });
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('[data-mk]');
+      const touchTip = a && !(inReplay && a.classList.contains('mv')) && !e.target.closest('.dlist, .pstrip, .pline');
+      if (touchTip) {
+        e.preventDefault(); e.stopPropagation();
+        if (a === tipFor && !tipHover) hideTip(); else showTip(a, false);
+      } else if (tipFor && !tipHover) {
+        e.preventDefault(); e.stopPropagation(); hideTip();
+      }
+    }, true);
+    if (tipAt) {
+      const a = tipAt === 'games' ? document.querySelector('.bl[data-mk]:not(.zero)')
+        : tipAt === 'foot' ? document.querySelector('.mfoot [data-mk="??"]')
+        : [...document.querySelectorAll(`[data-ply="${+tipAt - 1}"][data-mk]`)].find((e) => e.offsetParent);
+      if (a) setTimeout(() => {
+        const l = a.closest('.mlist');
+        if (l) { const r = a.getBoundingClientRect(), lr = l.getBoundingClientRect();
+          if (r.top < lr.top + 20 || r.bottom > lr.bottom - 6) l.scrollTop += r.top - lr.top - lr.height / 2; }
+        showTip(a, false);
+      }, 500);
+    }
+  }
+
   // The takes, from the switcher (its 2D/3D view is left out: view here is the screen).
   const bar = document.querySelector('.proto-bar');
   bar.querySelector('[data-key="view"]')?.remove();
   const sel = (key, values, current) => `<select data-k="${key}" aria-label="${key}">${values.map((v) =>
     `<option${v === current ? ' selected' : ''}>${v}</option>`).join('')}</select>`;
   bar.insertAdjacentHTML('afterbegin', sel('view', ['game', 'settings', 'games', 'replay', 'entry'], view) +
-    sel('take', ['a', 'd'], take) + (take === 'd' ? sel('fit', ['row', 'slim'], fit) + sel('open', ['0', '1'], open ? '1' : '0') +
-      sel('device', ['pixel', 'a33', 'none'], device) + sel('board', ['flat', '3d'], three ? '3d' : 'flat') : '') +
+    sel('take', ['a', 'd'], take) + (take === 'd' ? sel('fit', ['row', 'slim'], fit) + sel('port', ['strip', 'bar'], port) + sel('open', ['0', '1'], open ? '1' : '0') +
+      sel('board', ['flat', '3d'], three ? '3d' : 'flat') : '') + sel('device', ['pixel', 'a33', 'iphone', 'none'], device) +
+    sel('explain', ['pop', 'legend'], explain) +
     sel('marks', ['on', 'off', 'hidden'], marks) + sel('state', ['early', 'mid', 'late'], state) +
     sel('lang', ['en', 'et'], lang));
   document.body.insertAdjacentHTML('beforeend', '<button class="proto-fold">Options</button>');
