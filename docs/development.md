@@ -123,13 +123,12 @@ puzzles` the puzzles to pick from, `--screen results` the results, `--screen rep
 replay of the newest game in the history, at its end or at `--ply N` (0 the start;
 `--history FILE` reads the games from a history file in place of the player's, for
 shots: `--history games.txt --screen replay --ply 39 --frames 12`; `--go here` then plays
-from that move, as the replay's play from here does, and `--tip why` opens its card saying
-why a game from there doesn't count), and `--puzzle ID` that puzzle, whose taps go to its
-board (`--puzzle 21 --tap f4 --tap e5`). `--go settings` (or `home`, `game`, `play`,
-`puzzles`, `puzzle`) switches there on the second frame through its transition, once
-any `--tap`s have played out, and `--hold 0.4` keeps a transition at 40% of the way, for
-a screenshot: `--go settings --hold 0.5 --frames 12`, or `--screen settings --go home
---hold 0.5 --frames 12` for the way back. `game` goes as continue does, `play` as the
+from that move, as the replay's play from here does), and `--puzzle ID` that puzzle,
+whose taps go to its board (`--puzzle 21 --tap f4 --tap e5`). `--go settings` (or
+`home`, `game`, `play`, `puzzles`, `puzzle`) switches there on the second frame through
+its transition, once any `--tap`s have played out, and `--hold 0.4` keeps a transition
+at 40% of the way, for a screenshot: `--go settings --hold 0.5 --frames 12`, or
+`--screen settings --go home --hold 0.5 --frames 12` for the way back. `game` goes as continue does, `play` as the
 setup's play (`--screen friend --variant russian --go play`; it leaves the player's file
 alone), `puzzle` from the puzzles to pick from (`--screen puzzles --go puzzle --puzzle
 21`), and `puzzles` back to them (`--puzzle 21 --go puzzles`). `--hold 1` ends the

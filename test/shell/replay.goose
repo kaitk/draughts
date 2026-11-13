@@ -6,8 +6,9 @@
 // (from and to alone) still replays. Nothing of it reaches the game in progress (its
 // saved image the same on the replay as before), the history file, or the ratings. Then
 // the layouts at the sizes test/shell/sizes uses: every tile at least a tap, inside the
-// safe area and apart, the board clear of them, and the frame's quads under
-// gui::MAX_QUADS.
+// safe area and apart, the board clear of them, the line saying a game from here doesn't
+// count under the board and inside the safe area, with why or without, and the frame's
+// quads under gui::MAX_QUADS.
 import std;
 import vec;
 import os;
@@ -113,9 +114,13 @@ fn check(g: gui::Gui&, sh: shell::Shell&, safe: float4) -> u8[>..] {
     var moves = 0;
     for s in g.spots { if s.id >= replay::MOVE_ID { moves++; } }
     let rows = floor(10.0 * sh.replay.rows + 0.5) / 10.0;
+    // The line saying a game from here doesn't count: under the board, as wide.
+    let note = sh.replay.note;
+    let under = abs(note.y - (b.y + b.z)) < 0.5 && abs(note.x - b.x) < 0.5 && abs(note.z - b.z) < 0.5;
     return str(n, " tiles, smallest ", (least + 0.5) as i64, " dp, inside ", inside, ", apart ", apart, ", off the board ",
-               off_board, "; board ", (b.z / g.scale + 0.5) as i64, " dp, inside ", board_in, "; ", moves,
-               " moves listed, ", rows, " rows in view; quads ", g.quads.len);
+               off_board, "; board ", (b.z / g.scale + 0.5) as i64, " dp, inside ", board_in, "; the line ",
+               if sh.replay.why { "why" } else { "short" }, ", under the board ", under, ", inside ", within(note, safe), "; ",
+               moves, " moves listed, ", rows, " rows in view; quads ", g.quads.len);
 }
 
 struct Size {
@@ -223,37 +228,6 @@ fn main() {
     drive::key(sh, g, gui::STEP_LEFT, false, tick());
     drive::idle(sh, g, tick());
     print("Left: focus on move ", g.focus - replay::MOVE_ID + 1, ", ", shown(sh));
-
-    // Why a game from here doesn't count: the info sign's tap opens its card; the next tap,
-    // on a step, only closes it; Tab to the sign and Enter opens it, Enter again closes
-    // it; opened again, back closes it and stays on the replay.
-    drive::idle(sh, g, tick());
-    let at = sh.replay.ply;
-    press(sh, g, replay::INFO_ID);
-    drive::idle(sh, g, tick());
-    print("the sign tapped: card open ", sh.replay.why, ", inside the safe area ", within(sh.replay.card, gui::safe(g, drive::size.x, drive::size.y)));
-    press(sh, g, replay::STEP_ID);
-    drive::idle(sh, g, tick());
-    print("a step tapped: card open ", sh.replay.why, ", the move shown kept ", sh.replay.ply == at);
-    drive::key(sh, g, gui::STEP_NONE, false, tick());
-    tabs = 0;
-    while tabs < 5 && g.focus != replay::INFO_ID {
-        tab(sh, g);
-        tabs++;
-    }
-    drive::idle(sh, g, tick());
-    print("Tab ", tabs, " times: focus on the sign ", g.focus == replay::INFO_ID);
-    drive::key(sh, g, gui::STEP_NONE, true, tick());
-    drive::idle(sh, g, tick());
-    print("Enter: card open ", sh.replay.why);
-    drive::key(sh, g, gui::STEP_NONE, true, tick());
-    drive::idle(sh, g, tick());
-    print("Enter again: card open ", sh.replay.why);
-    drive::key(sh, g, gui::STEP_NONE, true, tick());
-    drive::idle(sh, g, tick());
-    shell::back(sh, tick());
-    drive::idle(sh, g, tick());
-    print("Enter, then back: card open ", sh.replay.why, ", screen ", sh.screen, " (replay ", shell::REPLAY, ")");
 
     // Back: the results as they were, then the Russian game, its captures' stops left out.
     press(sh, g, replay::BACK_ID);

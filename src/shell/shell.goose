@@ -374,8 +374,6 @@ fn back(sh: Shell&, now: f64) -> bool {
         sh.prefs.languages_open = false;
         return true;
     }
-    // The replay's card saying why a game from it doesn't count, likewise.
-    if sh.screen == REPLAY && replay::close_why(sh.replay) { return true; }
     // A game from the replay goes back to it.
     if sh.screen == GAME && sh.trial {
         leave_trial(sh, now);

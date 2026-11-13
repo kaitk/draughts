@@ -370,10 +370,14 @@ fn tips(gm: Game&, g: gui::Gui&, l: panel::Layout) -> bool {
     return gm.tip != was;
 }
 
-// The tip, over the marked move it explains as the panel showed it this frame (card):
-// the mark in its colored disc, its name (the tip's words before their colon), the move
-// ("20. 33-29"), and the tip's line (strings::MARK_*_TIP) under them. Returns whether it
-// went, its move no longer in view.
+// The tip, over the marked move it explains as the panel showed it this frame (above it,
+// or under it where the safe area's top is too near): the mark in its colored disc, its
+// name (the tip's words before their colon), the move ("20. 33-29"), and the tip's line
+// (strings::MARK_*_TIP) under them, wrapped. Pieces over the UI under it go. Returns
+// whether it went, its move no longer in view.
+let TIP_W = 320.0;
+let TIP_PAD = 14.0;
+let TIP_DISC = 46.0;
 fn tip(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) -> bool {
     guard gm.tip >= 0 else { return false; }
     var at = float4 { 0.0, 0.0, 0.0, 0.0 };
@@ -384,59 +388,15 @@ fn tip(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) -> bool
     }
     let u = g.scale;
     let n .= gm.notes[gm.tip];
+    let a = l.area;
+    let tw = min(TIP_W * u, a.z - 24.0 * u);
+    // The name, and the line with its first letter a capital.
     let s = strings::get(strings::MARK_ONLY_TIP + 2 * (n.mark as i64 - ai::ONLY));
-    var move: Line = [];
-    let number, black = row_of(gm, gm.tip);
-    push_number(move, number);
-    if black {
-        move.push(0xE2);
-        move.push(0x80);
-        move.push(0xA6);
-    } else {
-        move.push('.');
-    }
-    move.push(' ');
-    var played: Line = [];
-    notation(played, rules::VARIANTS[gm.b.variant], n.move);
-    move.append(played[..]);
-    let unused, disc = card(g, l.area, at, s, s, move[..], over);
-    // The mark in its disc: the best's star on faint white, the others' glyphs on their color.
-    if n.mark == ai::BEST {
-        gui::fill(g, disc, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.5 * disc.z);
-        let k = 26.0 * u;
-        gui::glyph_icon(g, gui::center(disc, k, k), gui::STAR, gui::PLAIN, 0.0, 1.0);
-    } else {
-        let t, c = mark_text(n.mark);
-        gui::fill(g, disc, c, 0.5 * disc.z);
-        let ink = if n.mark == ai::BLUNDER { float4 { 1.0, 1.0, 1.0, 1.0 } } else { float4 { 0.1, 0.07, 0.03, 1.0 } };
-        gui::colored(g, gui::HEADING, disc, t, ink, gui::CENTER);
-    }
-    return false;
-}
-
-// A tip's card in the area `a` (the safe area) for `at`, what it explains: glass `wide` dp
-// wide (TIP_W unless given) as far as a has room, above it, or under it where a's top is
-// too near, centered on it as far as a lets it. At its left a TIP_DISC dp disc's place,
-// which the caller fills (returned after the card); beside it a name in the heading face,
-// `head`'s words before their first colon (all of them where it has none), with `aside`
-// at the right in the small face, dim; under them `line`'s words after its first colon
-// (`line` whole where it has none), the first letter a capital, wrapped, four lines at
-// most. Pieces over the UI under it go. The game's mark tips and the replay's card saying
-// why a game from it doesn't count (replay::why) are such cards.
-let TIP_W = 320.0;
-let TIP_PAD = 14.0;
-let TIP_DISC = 46.0;
-fn card(g: gui::Gui&, a: float4, at: float4, head: const u8[:], line: const u8[:], aside: const u8[:],
-        over: board::Overlay&, wide: f32 = TIP_W) -> float4, float4 {
-    let u = g.scale;
-    let tw = min(wide * u, a.z - 24.0 * u);
     var cut = -1;
-    for c, i in head { if c == ':' && cut < 0 { cut = i; } }
-    let name = if cut >= 0 { head[..cut] } else { head };
-    var colon = -1;
-    for c, i in line { if c == ':' && colon < 0 { colon = i; } }
+    for c, i in s { if c == ':' && cut < 0 { cut = i; } }
+    let name = if cut >= 0 { s[..cut] } else { s };
     var said: u8[..160] = [];
-    said.append(trim(if colon >= 0 { line[colon + 1..] } else { line }));
+    if cut >= 0 { said.append(trim(s[cut + 1..])); }
     if said.len > 0 && said[0] >= 'a' && said[0] <= 'z' { said[0] = said[0] - 32; }
     // Broken greedily into lines of the words' room, four at most.
     let cw = tw - (3.0 * TIP_PAD + TIP_DISC) * u;
@@ -468,17 +428,42 @@ fn card(g: gui::Gui&, a: float4, at: float4, head: const u8[:], line: const u8[:
     let box = float4 { x, y, tw, th };
     gui::glass(g, box, 20.0);
     clear_under(over, box);
+    // The mark in its disc: the best's star on faint white, the others' glyphs on their color.
     let disc = float4 { x + TIP_PAD * u, y + TIP_PAD * u, TIP_DISC * u, TIP_DISC * u };
-    // The name, the aside at the right, and the line under them.
+    if n.mark == ai::BEST {
+        gui::fill(g, disc, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.5 * disc.z);
+        let k = 26.0 * u;
+        gui::glyph_icon(g, gui::center(disc, k, k), gui::STAR, gui::PLAIN, 0.0, 1.0);
+    } else {
+        let t, c = mark_text(n.mark);
+        gui::fill(g, disc, c, 0.5 * disc.z);
+        let ink = if n.mark == ai::BLUNDER { float4 { 1.0, 1.0, 1.0, 1.0 } } else { float4 { 0.1, 0.07, 0.03, 1.0 } };
+        gui::colored(g, gui::HEADING, disc, t, ink, gui::CENTER);
+    }
+    // The name, the move at the right, and the line under them.
     let wx = disc.x + disc.z + TIP_PAD * u;
     let row = float4 { wx, y + TIP_PAD * u, cw, title };
-    let mw = if aside.len > 0 { gui::text_width(g, gui::SMALL, aside) + 10.0 * u } else { 0.0 };
-    if aside.len > 0 { gui::text(g, gui::SMALL, row, aside, 0.66, 0.0, gui::RIGHT); }
-    gui::text(g, gui::fitting(g, gui::HEADING, name, cw - mw), row, name, 1.0, 0.0, gui::LEFT);
+    var move: Line = [];
+    let number, black = row_of(gm, gm.tip);
+    push_number(move, number);
+    if black {
+        move.push(0xE2);
+        move.push(0x80);
+        move.push(0xA6);
+    } else {
+        move.push('.');
+    }
+    move.push(' ');
+    var played: Line = [];
+    notation(played, rules::VARIANTS[gm.b.variant], n.move);
+    move.append(played[..]);
+    let mw = gui::text_width(g, gui::SMALL, move[..]);
+    gui::text(g, gui::SMALL, row, move[..], 0.66, 0.0, gui::RIGHT);
+    gui::text(g, gui::fitting(g, gui::HEADING, name, cw - mw - 10.0 * u), row, name, 1.0, 0.0, gui::LEFT);
     var ly = row.y + title + 6.0 * u;
     for k in lines {
         gui::text(g, gui::BODY, float4 { wx, ly, cw, lh }, said[starts[k]..ends[k]], 1.0, 0.0, gui::LEFT);
         ly += lh;
     }
-    return box, disc;
+    return false;
 }

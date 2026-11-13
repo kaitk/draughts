@@ -22,10 +22,11 @@
 // the camera buttons, and the board, and the flat screen's panels are the 3D one's
 // (task 054), or the line says how they differ; the iPad's smallest window too, with home's menu
 // and the setup there, its choices scrolling between its head and play.
-// A replay's play from here stands in its head where it fits there, else in a row over
-// the glass; the info sign's tap beside it is a tap at least, inside the safe area, clear
-// of the board, the tiles, and every icon and word but its own, and its card, open, lies
-// inside the safe area. The game play from here starts is laid out as any game.
+// A replay's play from here stands in its head where it fits there, beside back, both a
+// tap at least and as tall, else in a row over the glass; the line saying a game from
+// there doesn't count lies inside the safe area right under the board, as wide, clear of
+// the tiles and every icon and word but its own. The game play from here starts is laid
+// out as any game.
 //
 // A line with anything wrong fails the test unless the failure is on `ALLOWED` below,
 // with its reason: a regression shows as an exit, not only as a line in the diff.
@@ -344,55 +345,49 @@ fn play_here(g: gui::Gui&, sh: shell::Shell&) {
     var icon = false;
     for q in g.quads { if q.look.x == gui::ICON && inside(q.rect, play) { icon = true; } }
     let where = if abs(play.y - back.y) < 0.5 { "in the head" } else { "a row over the glass" };
-    print("  play from here: ", where, ", ", whole(play.z / u), " x ", whole(play.w / u), " dp",
+    // Back and play from here in the head: a tap at least each, as tall, level, apart.
+    var wrong: u8[>..] = [];
+    if play.z <= 0.0 { wrong.append(" none;"); }
+    if min(min(play.z, play.w), min(back.z, back.w)) < gui::tap() * u - 0.5 { wrong.append(" under a tap;"); }
+    if abs(play.w - back.w) > 0.5 { wrong.append(" not as tall as back;"); }
+    if overlaps(play, back) { wrong.append(" on back;"); }
+    print("  play from here: ", where, ", ", whole(play.z / u), " x ", whole(play.w / u), " dp, back ",
+          whole(back.z / u), " x ", whole(back.w / u),
           if where == "in the head" { if titled { ", the title beside it" } else { ", no title" } } else { "" },
           if back.w > back.z + 0.5 || back.z < gui::TAP * u + 0.5 { ", back a square" } else { "" },
-          if icon { "" } else { ", its word alone" });
-    check("play from here", if play.z <= 0.0 { " none;" } else { "" });
+          if icon { "" } else { ", its word alone" }, if wrong.len > 0 { ";" } else { "" }, wrong);
+    check("play from here", wrong[..]);
     let unused = name;
 }
 
-// The replay's info sign beside play from here and its card saying why a game from there
-// doesn't count: the sign's tap in dp, at least a tap, inside the safe area, and clear of
-// every other tile, the board, and every icon and word not its own; then the card opened,
-// its size in dp, inside the safe area.
+// The replay's line saying a game from there doesn't count: its size in dp and whether
+// it says why; inside the safe area, right under or over the board and as wide, and clear
+// of every tile and every icon and word not its own.
 fn no_count(g: gui::Gui&, sh: shell::Shell&) {
     let u = g.scale;
     let safe = gui::safe(g, drive::size.x, drive::size.y);
-    var sign = float4 { 0.0, 0.0, 0.0, 0.0 };
-    for sp in g.spots { if sp.id == replay::INFO_ID { sign = sp.rect; } }
-    var wrong: u8[>..] = [];
-    if sign.z <= 0.0 { wrong.append(" none;"); }
-    if min(sign.z, sign.w) < gui::tap() * u - 0.5 { wrong.append(" under a tap;"); }
-    if !inside(sign, safe) { wrong.append(" off the safe area;"); }
+    let note = sh.replay.note;
     let l = sh.out.layout.board;
-    if overlaps(sign, float4 { l.x, l.y, l.z, l.z }) { wrong.append(" on the board;"); }
-    var own = 0;
-    for i in drive::tiles(g) {
-        let r = drive::rect(g, i);
-        if abs(r.x - sign.x) < 0.5 && abs(r.y - sign.y) < 0.5 { own++; continue; }
-        if overlaps(sign, r) { wrong.append(" on a tile;"); break; }
-    }
-    if own != 1 { wrong.append(" not a tile;"); }
+    let b = float4 { l.x, l.y, l.z, l.z };
+    var wrong: u8[>..] = [];
+    if note.z <= 0.0 { wrong.append(" none;"); }
+    if !inside(note, safe) { wrong.append(" off the safe area;"); }
+    let under = abs(note.y - (b.y + b.w)) < 0.5;
+    let over = abs(note.y + note.w - b.y) < 0.5;
+    if !(under || over) || abs(note.x - b.x) > 0.5 || abs(note.z - b.z) > 0.5 { wrong.append(" not by the board;"); }
+    if overlaps(note, b) { wrong.append(" on the board;"); }
+    for i in drive::tiles(g) { if overlaps(note, drive::rect(g, i)) { wrong.append(" on a tile;"); break; } }
+    var words = 0;
     for q in g.quads {
         let kind = q.look.x;
         guard kind == gui::ICON || kind == gui::TEXT else { continue; }
-        guard !inside(q.rect, sign) else { continue; }
-        if overlaps(sign, q.rect) { wrong.append(" on an icon or a word;"); break; }
+        if inside(q.rect, note) { words++; continue; }
+        if overlaps(note, q.rect) { wrong.append(" on an icon or a word;"); break; }
     }
-    print("  the info sign: ", whole(sign.z / u), " x ", whole(sign.w / u), " dp", if wrong.len > 0 { ";" } else { ", in place" }, wrong);
-    check("the info sign", wrong[..]);
-    // Its card, open.
-    sh.replay.why = true;
-    at_rest(sh, g);
-    let card = sh.replay.card;
-    var bad: u8[>..] = [];
-    if card.z <= 0.0 { bad.append(" none;"); }
-    if !inside(card, safe) { bad.append(" off the safe area;"); }
-    print("  its card: ", whole(card.z / u), " x ", whole(card.w / u), " dp", if bad.len > 0 { ";" } else { ", in place" }, bad);
-    check("its card", bad[..]);
-    sh.replay.why = false;
-    at_rest(sh, g);
+    if words == 0 { wrong.append(" no words;"); }
+    print("  the line ", if under { "under" } else { "over" }, " the board", if sh.replay.why { ", why" } else { ", short" }, ": ",
+          whole(note.z / u), " x ", whole(note.w / u), " dp", if wrong.len > 0 { ";" } else { ", in place" }, wrong);
+    check("the line", wrong[..]);
 }
 
 // What each side has taken late in a game, 14 white men and a white king and 12 black
