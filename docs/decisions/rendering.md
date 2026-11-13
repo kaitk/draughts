@@ -378,6 +378,11 @@ came on 2026-11-09.
   touch screens, where the X sits apart in a corner, Android's own back doesn't ask, and
   the game is kept anyway. Rejected: asking on touch screens too, a dialog for a child
   who meant to close it.
+- On iOS home has no way out, neither the X nor a row (2026-11-09, task 043): Apple's
+  guidelines say an app never quits itself, the system's home gesture leaves it, and an
+  app that ends its own process looks like a crash and risks App Review. The game is
+  written when the app goes to the background, so nothing is lost. Rejected: the X
+  ending the process, as on Android.
 - A desktop's menu rows stand 56 dp under the wordmark rather than 34 (2026-11-12, the
   user): at a desktop's smaller scale 34 read as the rows crowding the title.
 - The board keeps 40 dp above and below, down to 24 where a setup's tall sheet near
