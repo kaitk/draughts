@@ -8,7 +8,7 @@
 
 A release (docs/development.md, "Desktop releases") builds for MIN_MACOS, wraps the
 executable in build/mac/release/Draughts.app (Info.plist, the launcher's name per
-language, the icon from ios/icon-1024.png in macOS's rounded square), signs it with the
+language, the icon from ios/icon-1024.png compiled by actool), signs it with the
 keychain's "Developer ID Application" identity and the hardened runtime, has Apple's
 notary service check it (notarytool's keychain profile NOTARY_PROFILE), staples the
 ticket, and zips it as build/mac/release/Draughts-VERSION-macos-arm64.zip. Without the
@@ -26,6 +26,7 @@ The copy is made once; delete build/mac/goose/ after the release changes. The re
 build/goose-v2026.4-macos-arm64/, or GOOSE_RELEASE.
 """
 import argparse
+import json
 import os
 import plistlib
 import re
@@ -77,28 +78,32 @@ def identity():
     return m.group(1) if m else None
 
 
-def icns(out):
-    """Draughts.icns from the iOS icon: macOS's rounded square (824 of 1024, radius 185)
-    with a soft shadow under it, at every size iconutil takes."""
-    master = native.ROOT / "ios/icon-1024.png"
+def app_icon(out):
+    """Assets.car and AppIcon.icns from the iOS icon, compiled by actool from an Icon
+    Composer .icon. macOS 26 masks Assets.car's full-bleed icon to its squircle itself; an
+    .icns alone, though drawn in the old rounded square, it sets on a grey plate. actool's
+    AppIcon.icns is the squircle for macOS 13 to 15."""
     work = out / "icon"
     shutil.rmtree(work, ignore_errors=True)
-    sets = work / "Draughts.iconset"
-    sets.mkdir(parents=True)
-    big = work / "1024.png"
-    native.run("magick", "-size", "1024x1024", "xc:none",
-               "(", master, "-resize", "824x824", "-alpha", "set",
-               "(", "-size", "824x824", "xc:none", "-fill", "white",
-               "-draw", "roundrectangle 0,0 823,823 185,185", ")",
-               "-compose", "DstIn", "-composite", "-compose", "Over", ")",
-               "(", "+clone", "-background", "black", "-shadow", "40x12+0+10", ")",
-               "+swap", "-background", "none", "-layers", "merge", "+repage",
-               "-gravity", "center", "-extent", "1024x1024", big)
-    for size in (16, 32, 128, 256, 512):
-        native.run("magick", big, "-resize", f"{size}x{size}", sets / f"icon_{size}x{size}.png")
-        native.run("magick", big, "-resize", f"{2 * size}x{2 * size}", sets / f"icon_{size}x{size}@2x.png")
-    native.run("iconutil", "-c", "icns", sets, "-o", work / "Draughts.icns")
-    return work / "Draughts.icns"
+    icon = work / "AppIcon.icon"
+    (icon / "Assets").mkdir(parents=True)
+    shutil.copy(native.ROOT / "ios/icon-1024.png", icon / "Assets/icon.png")
+    (icon / "icon.json").write_text(json.dumps({
+        "fill": "automatic",
+        "groups": [{
+            "layers": [{"glass": False, "image-name": "icon.png", "name": "icon"}],
+            "shadow": {"kind": "neutral", "opacity": 0.5},
+            "translucency": {"enabled": False, "value": 0.5},
+        }],
+        "supported-platforms": {"squares": "shared"},
+    }, indent=2))
+    compiled = work / "compiled"
+    compiled.mkdir()
+    native.run("xcrun", "actool", icon, "--compile", compiled, "--app-icon", "AppIcon",
+               "--platform", "macosx", "--target-device", "mac",
+               "--minimum-deployment-target", MIN_MACOS,
+               "--output-partial-info-plist", work / "partial.plist")
+    return compiled / "Assets.car", compiled / "AppIcon.icns"
 
 
 def bundle(exe, out):
@@ -109,7 +114,8 @@ def bundle(exe, out):
     res = app / "Contents/Resources"
     res.mkdir()
     shutil.copy(exe, app / "Contents/MacOS/Draughts")
-    shutil.copy(icns(out), res / "Draughts.icns")
+    for f in app_icon(out):
+        shutil.copy(f, res / f.name)
     names = native.app_names()
     for lang, name in names.items():
         (res / f"{lang}.lproj").mkdir()
@@ -126,7 +132,8 @@ def bundle(exe, out):
         "CFBundlePackageType": "APPL",
         "CFBundleShortVersionString": native.VERSION_NAME,
         "CFBundleVersion": native.VERSION_NAME,
-        "CFBundleIconFile": "Draughts",
+        "CFBundleIconFile": "AppIcon",
+        "CFBundleIconName": "AppIcon",
         "LSMinimumSystemVersion": MIN_MACOS,
         "LSApplicationCategoryType": CATEGORY,
         "NSHighResolutionCapable": True,

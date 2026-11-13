@@ -688,8 +688,10 @@ credentials as secrets.
 Goose release's prebuilt SDL and runtime are built for it; the shaders are Metal source
 that SDL compiles on the user's Mac), wraps it in `build/mac/release/Draughts.app` (the
 id `io.github.kaitk.draughts`, the shared version, the launcher's name per language, the
-icon from `ios/icon-1024.png` in macOS's rounded square), signs it with the hardened
-runtime, has Apple's notary service check it, staples the ticket, and writes
+icon from `ios/icon-1024.png`, made an Icon Composer `.icon` that `actool` compiles
+into `Assets.car` and an `AppIcon.icns`, as macOS 26 sets an icon given only as `.icns`
+on a grey plate), signs it with the hardened runtime, has Apple's notary service check
+it, staples the ticket, and writes
 `Draughts-VERSION-macos-arm64.zip` beside it. Apple silicon only, as the Goose release is.
 It needs, once per Mac:
 
