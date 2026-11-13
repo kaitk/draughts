@@ -199,7 +199,11 @@ release build (`docs/development.md`, "Run on iOS").
 | Notes | Below |
 
 ```text
-Draughts is a board game for all ages, simple enough for young children. It has no network code, no accounts, no ads, no purchases, no links out of the app, and no third-party SDKs; everything a player makes (an optional name, settings, stars, a saved game) stays in the app's container. The 3D board is chosen in Settings → Board. Puzzles open from the home screen; solving half of Learn opens the other themes.
+Draughts is a board game for all ages, simple enough for young children. It is open source (MIT or Apache 2.0), written by one developer in Goose, a small systems language, with the code at https://github.com/kaitk/draughts.
+
+It has no network code, no accounts, no ads, no purchases, no links out of the app, and no third-party SDKs; everything a player makes (an optional name, settings, stars, saved and past games) stays in the app's container.
+
+On first start the app asks whether the player knows how to play; "No" starts a short lesson played on the board. New game on the home screen chooses the computer or a friend on the same device. The 3D board is chosen in Settings → Board. Puzzles open from the home screen; solving half of Learn opens the other themes. Results on the home screen lists past games, which can be replayed move by move.
 ```
 
 ## Builds and the account
