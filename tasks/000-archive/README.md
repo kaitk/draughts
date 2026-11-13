@@ -206,5 +206,6 @@ and the commit that last has it.
   glow (the glow at 8% and a 1 dp border at 40%; a lit tile's own glow 6% brighter),
   fading over the press's 0.12 s, never on Android or with `--touch on`; a resting mouse
   draws nothing (`test/gui/hover`, `test/shell/rest_hover`). `066-mouse-hover.md`, `6dfe01f`
-- 045: Board styles to choose from. Cancelled 2026-11-13: folded into task 080's wood,
-  stone, or auto choice, two boards per season. `045-board-styles.md`, `b317740`
+- 045: Board styles to choose from. Cancelled 2026-11-13: folded into task 080's
+  material, wood, stone, carved, or auto, one choice for every season.
+  `045-board-styles.md`, `b317740`

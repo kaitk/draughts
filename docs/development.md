@@ -151,17 +151,22 @@ some thousands of frames, about 2 s: `--variant russian --computer black --tap c
 --tap d4 --frames 5000`. The settings are in the app's storage folder (on the Mac
 `~/Library/Application Support/kaitk/draughts/`): `settings.txt` the device's (the
 language, who plays), `player-N.txt` each player's ([players](architecture/README.md#players));
-`--theme`, `--hints`, `--lang`, `--background`, `--board`, `--lookout on|off`, and
-`--moves off|list|marks` override them for a run without changing them; once `--tap`'s
+`--theme`, `--hints`, `--lang`, `--background`, `--board`, `--material`, `--lookout
+on|off`, and `--moves off|list|marks` override them for a run without changing them; once `--tap`'s
 moves have played and been judged, `--sheet on` opens the game's moves' sheet and `--tip
 N` shows move N's mark's tip on the moves panel. `--board 3d` plays a run on the 3D board at once, as settings'
-Board row's 3D does, and `--board flat` on the flat one; `--background plain` shows the
+Board row's Raised does, and `--board flat` on the flat one; `--material
+wood|stone|carved|auto` picks the 3D board's material, as the Board row's Wood, Stone,
+Carved, and Raised do; `--languages open` opens settings' language list for a shot;
+`--background plain` shows the
 plain fade in place of the photograph, and `--background photo` the photograph. `--wood N`
 (0 to 3) and `--marble N` (0 the slate, 1 to 4) pick the 3D board's wood and winter
 frame's marble for the run, and `--summer N` (0 to 5) and `--spring N` (0 the
 birch, 1 the carved stone, 2 the carved oak) summer's and spring's 3D looks; `--autumn N`
 (0 the wood, 1 to 3 stone) and `--winter N` (0 the slate, 1 to 3 wood) autumn's and
-winter's, the other material's takes (task 080).
+winter's, the other material's takes (task 080); each, given, picks its season's look
+over the material. `scripts/board_thumbs.py` shoots each season's wood, stone, and carved
+board with `build/board3d --shot` and these flags for settings' board pictures.
 `--reset-skill`, which takes no value, puts the playing player back to easy with the
 computer's skill at every level at its start, and writes that to their file; stars and
 games stay. `--no-vsync`, which takes no value either, presents without waiting for the

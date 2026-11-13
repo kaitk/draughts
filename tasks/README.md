@@ -68,7 +68,7 @@ Open:
   game screen's side panels on a narrow landscape phone.
 - The 3D board: 041 a carved spring board, 042 its frame cost (the idle wakeup left).
 - Menus: 080 one New game row on home with the opponent chosen in the setup, settings
-  looked at afresh, and wood, stone, or auto for the 3D board (045 folded into it).
+  as one scrolling list, and the 3D board's material (wood, stone, carved, or auto).
 - Frames: 055 both boards locked to the display's rate on every device, 056 even pacing
   where the frame fits but still drops (the iPhone).
 - Renderer: 065 NoGraphicsAPI through goose-ngfx, prototyped on the `ngfx` branch; 070

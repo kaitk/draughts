@@ -66,8 +66,10 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   turned board, the computer's turn, Escape putting a piece down: `board_keys`; what each side has taken, men and kings apart,
   a king taken counting as a king, after captures by men and kings, undo, and its rows on
   the screen: `taken`), `shell`
-  (home, the switch to the game and back, settings and their file, their taps and the
-  board beside them, the transitions between home and settings, home and the game, and
+  (home, the switch to the game and back, settings and their file, their taps, the
+  material and the language list, and the board beside them, settings laid out at the
+  tablet's, the Pixel 7a's, and the iPhone 13 mini's sizes both ways in both languages,
+  every tap 88 dp and the preview at least `board::SMALLEST`: `settings_sizes`, the transitions between home and settings, home and the game, and
   the puzzles to pick from and a puzzle (their frames, the end, a tap during them, turning
   round, the game's clock and the computer frozen, a won game's way home, the screen
   reached as opened straight: `transition`, `game_transition`, `puzzle_transition`),
@@ -114,7 +116,7 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   apart, every tap 88 dp at least, the phones again with the Pixel 7a's insets in both
   orientations (the cutout at either side in landscape), every tile and the board inside
   the safe area, the 16:10 tablet with its 72 px hidden navigation bar and the 13" and 11" iPad's
-  landscape with their bars (settings keeps both groups on each), and a phone's tabs in settings and the puzzles:
+  landscape with their bars (settings declares its whole list on each), and on a phone settings' language list open and the puzzles' crown:
   `sizes`, which exits non-zero on any failure not on its `ALLOWED` list (each entry with
   its reason; add one only for a failure the user accepted, never to pass a regression); the title's and the clock's faces holding every character drawn in them, the
   app's name in every language and every clock time: `faces`), `strings` (every language
@@ -129,7 +131,8 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   each one's rate over 4000 seeds through `ai::notice` and `ai::overlooked`, no search
   needed (`overlook`), and draws scored 0, steered into when behind and clear of when ahead (`draws`)), `model3d`
   (the 3D board's bake in steps, every row of each surface once, and the photograph's
-  light as harmonics: `plan`), and `puzzles` (the puzzle file's format and refusals, what `puzzles::check`
+  light as harmonics: `plan`; each season's look for each material, as the flags pick
+  them: `material`), and `puzzles` (the puzzle file's format and refusals, what `puzzles::check`
   refuses beyond the format, what a move does to each goal, and every built-in puzzle
   passing `puzzles::check`, with its counts by theme and level: `set` International's,
   `russian_set` Russian's, `brazilian_set` Brazilian's). A new puzzle is checked with
@@ -209,6 +212,11 @@ sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
   `--screen friend --variant brazilian`, or `--screen computer --variant russian
   --computer white` for the child on black (`docs/development.md`). Add `--lang en`
   when the Mac's settings name another language (2026-11-08).
+- `--keys` that end in `enter` on settings press whatever the focus reached, and a
+  setting changed that way is written to the player's file on the Mac: `right,right,enter`
+  meant for the language button chose Plain instead (2026-11-13). Open settings' language
+  list with `--languages open`, and pick the board with `--board` and `--material`; copy
+  the player's file aside before any run that taps or presses Enter in settings.
 - To check that a change leaves the look alone, take the same shots before and after
   and `cmp` them: home, the game, settings, both orientations, a setup, a clocked game
   with taps, and one against the computer. Two runs of a shot are byte-identical except

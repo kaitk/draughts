@@ -441,6 +441,36 @@ came on 2026-11-09.
   glass as tall as the look's had ended in empty glass under its rows.
 - Back over its word in portrait (2026-11-08, 2026-11-09): at 548 dp "Settings" had
   61 dp beside the worded back and the language, and "Seaded" 45 and was left out.
+- One list that scrolls, no tabs (2026-11-13, task 080, `prototypes/settings-takes.html`
+  take b): Look (Background, Theme, Board, Kings), then Game (Move hints, Move list), then
+  the privacy note, under back, the title, and the language pinned above it, fading at its
+  foot as home's menu does. In landscape a 480 dp column at the left whose glass runs off
+  the screen's edge, the preview the rest; in portrait the preview a band at the top, 40%
+  of the height on a tablet and 30% on a phone, the list under it. It replaces the two
+  glass groups (2026-11-07) and every layout made to fit them: the names at the tiles'
+  left, the groups side by side, the phone's Game and Look tabs (2026-11-09), the slim
+  theme tiles of a small window, the look group's glass ending over a bottom inset, and
+  the preview levelled with the game group on a desktop. A list
+  that scrolls where scrolling is plain to see packs nothing behind tabs, and the preview
+  needn't be large to show the look. Rejected: take a, a Material row under Board shown
+  only while the board is raised, a row that comes and goes; take c, the seasons' tiles
+  as their boards with a material per season, which hid the photographs the theme is
+  chosen by.
+- The board's material folded into the Board row (2026-11-13, take b): Flat, Raised (the
+  season's own, tagged "auto"), Wood, Stone, Carved, each a picture of the theme shown's
+  board, the materials' pictures its near left corner close up (a frame's grain or
+  carving, where the whole board at 76 × 50 dp showed none), Raised's whole to set it
+  against Flat. No row that means nothing on a flat board.
+- The photograph or the plain fade is a Background row of two pictures, first in Look
+  (2026-11-13), replacing the switch beside the theme's name (2026-11-09) and its
+  halves under the 88 dp floor in a name's column.
+- The language is a button in the title row, a wireframe globe (`GLOBES.b`), its code,
+  and a chevron, opening a small list (2026-11-13). It replaces the languages' tiles on
+  glass in the title row (2026-11-07), which took its width from the title as languages
+  are added, and a Language section at the list's foot (the prototypes' `langui=foot`),
+  out of sight below the fold. Rejected: the codes as two tiles in the title row
+  (`langui=seg`), and the other globes (a, as built; c, the Earth; d, a speech bubble; e,
+  a globe in a ring).
 
 **The puzzle picker** (`puzzles.html`'s take a, a library list, chosen 2026-11-09).
 Rejected: b's large theme tiles, which shrink long Estonian names and hold the fewest
@@ -680,6 +710,20 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
 - Spring's default 3D look is `looks::elven`, chosen on the tablet on 2026-11-09. The
   defaults of `--wood`, `--marble`, and `--summer` were settled the same day (task 039),
   the other models kept beside them.
+- The raised board's material is one choice for every season (2026-11-13, task 080):
+  Auto, the season's own look as before (autumn's wood, winter's stone, spring's carved
+  stone, summer's wood), or Wood, Stone, or Carved, each season's board in it
+  (`looks::of`, the table in task 080's 03), kept as the player's `material`. One choice is simpler to
+  show and to say. Rejected: a material per season, each season remembering its own,
+  which settings would have had to show as each season's boards (take c), and which
+  matters only to a child who likes one season's stone and another's wood. The seasons'
+  flags still pick a look over it, for tuning. Replaces task 045's list of every
+  alternative look to choose from.
+- Settings' board pictures are shots of the 3D board baked into one 640 × 420 atlas in
+  git (2026-11-13, `scripts/board_thumbs.py`; 81 KB as JPEG, 117 KB as ASTC), loaded with
+  the seasons' thumbnails into their texture. Rejected: drawing each thumbnail with the
+  renderer at run time, which would bake every season's look in every material, and a
+  second texture for them, a binding more in the UI's shader and its ngfx root.
 - Against a friend the board's 180° turn keeps its size and eases on a sine over 0.7 s
   (2026-11-12, tried on the tablet). It was a cubic ease, refitted at each angle: it
   crept, then swung through the middle at 390° a second while shrinking to keep its

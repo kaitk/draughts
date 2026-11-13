@@ -108,8 +108,7 @@ so on a wide screen the panels stay near the board. A MacBook's full screen (172
 screen's 85%, its panels moved in from the edges. Where the width holds the flat board
 under the height (a 1280 × 800 window), its frame is only as tall as the board and its
 margins, centered down the window (`panel::flat_frame`), so the board's top still meets
-the panels'. Settings' preview, flat or 3D, stands with its top level with the game
-group's glass (`settings::level`), and home's column holds the menu or a setup 40 dp from
+the panels'. Home's column holds the menu or a setup 40 dp from
 its top, at least 440 dp wide (`home::DESKTOP_TOP`, `DESKTOP_COLUMN_W`), rather than
 centered down it, the menu's rows 56 dp under the wordmark rather than 34
 (`home::DESKTOP_MARK_GAP`). Each only moves things or widens the column on a desktop; a touch
@@ -117,8 +116,8 @@ screen's layout is unchanged. A desktop's tiles are thinner too: every size that
 tap, a tile's or a row's height and the least a tap is across, is `gui::tap()`, 88 dp on
 a touch screen and 64 on a desktop, and the room a tile sized to its words keeps either
 side of them is `gui::side()`, 16 dp and 12 (back keeps 4 more). The panels' heights are
-sums of their rows, gaps, and insets (`panel::corner_h`, `left_h`, `bar_h`, `play_h`, settings'
-`head_row_h`), so they follow. A tile with its icon or picture over its word (the hint,
+sums of their rows, gaps, and insets (`panel::corner_h`, `left_h`, `bar_h`, `play_h`), so
+they follow. A tile with its icon or picture over its word (the hint,
 undo move, a puzzle's next, settings' rows, the setup's opponent, pieces, and clock) is
 `gui::stacked()`, at least 72 dp: below that undo move's word no longer takes two lines
 and a picture overruns its tile. The play's corner panel is as tall as the clocks over
@@ -144,14 +143,8 @@ reach the window; `patches/SDL/0002` keeps them in, so the safe area is the cuto
 bars while shown, the system's tappable elements at the sides and the bottom (a
 navigation bar, shown or hidden), and the gesture bar at the bottom (on the Pixel 7a 0,
 118, 0, 84 px in portrait; on the Galaxy Tab A11+ 0, 0, 0, 72, its hidden
-navigation bar). Settings in landscape lets its two groups run over a bottom inset: the
-fit counts up to 38 dp of it (the page's foot and the look group's bottom pad), the
-look's glass ending below its tiles there, its tiles still above the inset
-and as far from the screen's edge as with none; so the tablet keeps both groups
-beside the board rather than the Game and Look tabs. Under a top inset in landscape (an
-iPad's status bar) the page's top padding gives up to 12 dp of its 24, the bar already
-keeping the head from the edge, so the 13" and 11" iPad keep both groups too, 1 and 5 dp
-short with the full padding. A
+navigation bar). Settings' list runs on over a bottom inset to the screen's foot, its
+last row clearing the inset once scrolled to the end. A
 change of the insets or the scale counts as a change, as a new size does, and the screen
 is laid out and drawn again (see "Frames and battery"). When the screen turns, the new
 insets and the new size arrive a frame or two apart, the insets first; the layout
@@ -180,11 +173,9 @@ is about 350 dp wide, home's board about 160 dp.
   middle holds what each side has taken ("What each side has taken"). Home's menu
   rows are 72 dp, the wordmark's row 64 with 12 under it (the gear's reach, so its 88 dp
   tap keeps off Continue's), the sheet's rim 20, which leaves
-  the board about 240 dp above the sheet. Settings' theme tiles are slim
-  (`settings::SLIM_H`, `gui::choice`'s `beside`): 48 dp tall, a 40 × 26 dp thumbnail with
-  its word beside it, the switch's halves 88 × 48 beside the name, so the Look tab shows
-  Theme and Board whole and the top of Kings without scrolling. All are under the 88 dp
-  floor, in compact only. A single puzzle keeps its layout (`small: false`).
+  the board about 240 dp above the sheet. These are under the 88 dp floor, in compact
+  only; settings keeps its 88 dp tiles and scrolls (its preview 182 dp in the band). A
+  single puzzle keeps its layout (`small: false`).
 - **Scrolling** (`gui::scroll_begin`, `scroll_end`): one vertical list a frame, its offset
   kept in `gui::Gui` by the list's id, so another list starts at its top. A press in the
   list's view is a tap until it moves 10 dp up or down (`gui::SLOP`); then it is a drag
@@ -195,7 +186,7 @@ is about 350 dp wide, home's board about 160 dp.
   draw; the pointer reaches the list only inside it. The puzzle library's rows scroll under
   the switch, in either orientation, and a theme's levels under the title row in
   portrait, down to the screen's foot; a switch of draughts puts the library at its top;
-  settings' shown group scrolls inside its glass where the tabs leave it too little room.
+  settings' list under its title row down to the screen's foot.
   `test/gui/scroll` checks a tap, a wobble under the slop, a drag, the ends, the wheel, and
   a press outside the view.
 - **The window control** (iPadOS 26's three dots at a window's top left, about 22 to 60
@@ -308,7 +299,14 @@ sunset almost flat.
   (`madvise(MADV_DONTNEED)`: clean pages of the APK, but counted while resident).
   Settings' thumbnails shrink each season's photograph on the GPU in turn (the JPEG path
   decodes and scales to 512 first), waiting for the GPU after each so only one is alive
-  at a time. The JPEG and ASTC masters are in git, and
+  at a time, into one texture of 160 × 105 px slots (`scene::thumbs`, the 76 × 50 dp
+  picture at about 2.1 px a dp, the densest screen's): the four photographs, the four
+  plain fades, and settings' sixteen board pictures, each season's raised board whole
+  and its wood's, stone's, and carved board's near corner. Those come from one atlas,
+  `design/boards/boards.jpg` and `boards-6x6.astc` (640 × 420, 81 and 117 KB, in git),
+  made by `scripts/board_thumbs.py` from `build/board3d --shot` with each look's flags,
+  embedded and uploaded as the photographs are and copied into their slots as they are.
+  The texture is 1.6 MB (RGBA8, 160 × 2520). The JPEG and ASTC masters are in git, and
   `src/app/background.c` embeds them with C23 `#embed` under `__has_embed`, so a checkout
   that lacks them still builds and shows the page color, and one without the ASTC files
   decodes the JPEGs everywhere. Android embeds only the ASTC files and compiles no stb_image
@@ -320,8 +318,9 @@ sunset almost flat.
 - **One size for every screen**: 2048 everywhere, at 1.87 MB as ASTC in SDL's shared
   16 MiB block. Larger tablets stretch it 1.25 to 1.41×.
 - **The plain background** (`plain.html`, fade b): in place of
-  the photograph, a fade matched to the season's board, chosen in settings (the Theme
-  row's switch, below; the player's file's `background = photo|plain`, photo by default).
+  the photograph, a fade matched to the season's board, chosen in settings (the
+  Background row's Plain, below; the player's file's `background = photo|plain`, photo by
+  default).
   The season still picks the board, by the date or as chosen; only the photograph goes.
   From the theme's page color at the top to a deep tone of its frame at the foot, with a
   faint light of its dark square behind the middle (wider than tall, as the board sits
@@ -341,7 +340,7 @@ sunset almost flat.
   to 0.8, as the flat game's). With it no photograph is decoded, uploaded, or held, and no
   blurred copies are made: the scene is 1 × 1 stand-ins, and choosing it loads in the
   frame after the lit tile as a season does. Settings' thumbnails still shrink each
-  photograph once (the switch's photograph half shows the season's), with the four fades
+  photograph once (the Background row's Photo shows the season's), with the four fades
   drawn under them in the same texture. Where the photograph is decoded (the Mac) the
   fade saves its 16 MB texture and copies; where it is ASTC (Android) they sit in SDL's
   shared block, so the fade saves about 3 MB inside that block and the photograph's
@@ -530,9 +529,8 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   same. Taking a move back is "Undo move" ("Võta käik tagasi"), so it says it is about
   the move, not the screen. On a theme's page in landscape where the levels
   wouldn't fit the height beside a worded back (Shots on a phone with its insets), back
-  is 88 px square with the arrow over the word. On a phone in landscape settings' title
-  row (back, the tabs, the language) is wider for it, so the preview board beside it is
-  smaller. Home's setups and who's playing keep their square arrow.
+  is 88 px square with the arrow over the word. Home's setups and who's playing keep
+  their square arrow.
 - **Clocks**: each side's piece and its time, m:ss in 36 px tabular figures, in a tile
   of radius 20 px; black's on top, as black's side of the board is (white's on a turned
   board, so the child's clock is the nearer one). The running clock is
@@ -700,93 +698,80 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   translation's may be, takes the small face. The language is
   only in settings: kids who can't read yet don't need it on home, and a
   tablet set to one language can still play in another. In portrait the column is a sheet below the
-  board. **Settings** (`prototypes/settings.html`): back and the
-  title, with the language at the title row's right end on glass, each named in itself;
-  the choices as words in two glass groups (radius 24 px, icon and title in 24 px) by
-  what they change; and beside them one preview of what they make. In landscape the
-  choices take the width they need at the left, as home's menu does, the groups under the
-  title row with the room left below them, and the board the rest, about two thirds, so from home the board only moves a little; in portrait the board is
-  on top, as large as the rest leaves, and the two groups stand side by side under it.
-  **Game**: move hints, and the move list beside the game (off, the moves, the moves
-  marked; [the moves panel](#the-moves-panel)); the draughts are chosen in home's setup
-  and the puzzles' library, and the preview shows the player's. Last, the privacy note
-  (`settings.privacy`, App Review Guideline 5.1.1(i)): the policy in one sentence, dim
-  in the small face, with no link out, as the app has none. It sits at the group's title row's right end where it fits there in two lines
-  at most (the stacked landscapes, which have no height to spare: one line in both
-  languages on the tablet and the iPad), else at the glass's foot, wrapped, where the
-  game's group is as tall as the look's (portrait, a phone's tabs), so it moves no
-  layout.
-  **Look**: the theme (the row's name, "Theme") as
-  thumbnails of the four photographs (62 × 40 px), or of their plain fades when the
-  plain background is chosen, and, last, a tile for by the date, so on a phone in
-  portrait, where the row wraps, the four seasons keep one row and by the date goes
-  under them, in the same order at every size. With the theme's name, a
-  two-part switch, the season's photograph or its plain fade, the one chosen lit
-  (`settings::switch`, `plain.html` place b): where the names are above the
-  tiles (portrait, near square, a phone), beside the name at the line's right end, each
-  half 88 dp square, the line 92 dp tall; where the names are at the tiles' left (most
-  landscapes), under the name in its 120 dp column, within the row's 88 dp: each half
-  58 × 68 dp, under the 88 dp floor. Two 88 dp halves need 180 dp across, and a taller
-  row leaves the tablet's landscape, which has 8 dp to spare over its navigation bar,
-  one group at a time (`test/shell/sizes` gives the halves on their own). Where the
-  choices' 55% of the page has 60 dp more than they want (16:9 and wider: the Play
-  tablet shot at 2560 × 1440), every name's column widens to the switch's 180 dp, so
-  each half is 88 × 68 dp; the rows keep their height, and the board beside them is 56
-  dp smaller there (583 dp); and kings (auto, crown, or stack, the last two each with its
-  king drawn on the tile). Between them the Board row, flat or raised (the file's
-  `board = 2d|3d`): its 3D tile plays the game on the 3D board (`settings::raised`,
-  `src/shell/prefs.goose`; the game screen round it is under "Board and pieces"), and
-  shows it on every screen with a board: home, the preview here (its kings' auto a
-  stack), and a puzzle. Whether a friend's game turns the board is chosen in home's
-  setup. Each
-  setting is a dim 18 px name at the left of its tiles (above them in portrait); a tile
-  has radius 16 px and is lit in the glow color at 22% with a 2 px glow border when on.
-  Every tile, the language's and the seasons' too, is 88 px tall and wide at least; the title row is 100 px,
-  the language's glass round its 88 px tiles.
+  board. **Settings** (`prototypes/settings-takes.html`'s take b): back, the title, and the
+  language pinned at the top, and under them one list on one glass that scrolls, with
+  the fade at its foot home's menu and the setup use (72 dp, while there is more below).
+  In landscape the list is a column at the left, 480 dp of tiles with 32 dp of glass
+  either side, its left corners off the screen as home's column's are, and the preview the
+  rest of the screen; in portrait the preview is a band at the top, 40% of the safe area's
+  height on a tablet and 30% on a phone (its shorter side under 600 dp), and the list a
+  sheet under it, 24 dp of glass either side of the tiles (16 on a phone), its lower
+  corners off the screen. The title row is 16 dp under the glass's top, 88 dp tall, and
+  the list's view starts 8 dp under it and runs to the screen's foot, the inset under the
+  safe area too, so the last row clears the inset once scrolled to the end. The list:
+  **Look**, a section's icon and title (24 dp) over the rows Background (Photo, Plain:
+  the theme shown's photograph or its plain fade), Theme (the four seasons, then By date,
+  so the seasons keep their order at every size), Board (Flat, Raised, Wood, Stone,
+  Carved), and Kings (Auto; Crown and Stack each with its king drawn on the tile); a rule;
+  **Game**, Move hints and the Move list (off, the moves, the moves marked; [the moves
+  panel](#the-moves-panel)), with a line under the move list saying what the chosen one
+  shows, as tall as the longest of the three so the list keeps its height; a rule; and the
+  privacy note (`settings.privacy`, App Review Guideline 5.1.1(i)), the policy in one
+  sentence beside a shield, dim in the small face, with no link out, as the app has none.
+  The draughts are chosen in home's setup and the puzzles' library, and the preview shows
+  the player's; whether a friend's game turns the board is chosen in home's setup. Each
+  setting is a dim name in the small face over its tiles; a tile has radius 16 dp and is
+  lit in the glow color at 22% with a 2 dp glow border when on. Every tile is 88 dp tall
+  and wide at least. The pictured rows (Background, Theme, Board) show a 76 × 50 dp
+  picture over the tile's word (`gui::choice`), each tile its picture or its word,
+  whichever is wider, with 6 dp either side; their gaps are 10 dp, closing down to 2 dp
+  before the row wraps, so the five keep one line on a phone in portrait (7 dp apart on
+  the iPhone 13 mini's 468 dp, 5 dp in Estonian, whose "Nikerdatud" widens its tile).
+  The Board row's pictures are the theme shown's boards (`settings::BOARD_PIC`): Flat a
+  small board at the start on a faint ground; Raised the season's own raised board whole,
+  a small "auto" tag in its corner (`gui::tag`, the small face at 10.5 dp on a dark pill);
+  Wood, Stone, and Carved that season's board in that material at the board's near left
+  corner close up, a frame's grain or carving and a piece or two. Flat plays on the flat
+  board; Raised on the 3D board in the season's own material, and Wood, Stone, and Carved
+  in that material, for every season (the file's `board = 2d|3d` and `material =
+  auto|wood|stone|carved`; [the 3D board's looks](#board-and-pieces)). The 3D board is
+  shown on every screen with a board: home, the preview here (its kings' auto a stack),
+  and a puzzle. Where the title doesn't fit beside the worded back and the language
+  button in the row labels' 30 dp face, back is the arrow over the word in an 88 dp
+  square; a title still too wide takes a smaller face, or none.
+  **The language** is a button at the title row's right end, on glass as back is: a
+  wireframe globe (`gui::GLOBE`: a circle, a meridian ellipse and the axis, three
+  parallels), the language shown's code ("EN", "ET", from `strings::LANGUAGES`) in the
+  body face, and a chevron down, lit while its list is open. A tap opens a small glass
+  list under it, right-aligned with it, over the screen: each language a row 88 dp tall,
+  its code dim, its name in itself, and a tick in the glow color on the one shown, which
+  is lit. A tap on one switches to it and closes the list; a tap anywhere outside it, or
+  back, closes it and does nothing else. `--languages open` opens it for a shot.
   The preview is the board as the choices make it: its size, the kings,
   and what the move hints show (all moves: the selected piece's capture; mistakes only:
   a wrong move's red ring and the piece that must capture pulsing), over the season's
-  photograph. It is home's board: opening settings moves it aside, and back moves it
-  home (see "Transitions").
+  photograph: the flat board a square of 94% of the room's shorter side, centered, none
+  under 128 dp (`board::SMALLEST`), the 3D board as large as 94% of the room each way
+  holds it. It is home's board: opening settings moves it into the preview's room, and
+  back moves it home (see "Transitions").
   Natively (`src/shell/settings.goose`) the preview is a board of its own on one fixed
   position, the same on every board size and a square in from the corner on 10 × 10:
   white must capture two, with the man on d4 or the king on h6. With all moves d4 is
   selected and its capture shown, target and stop; with mistakes only, a wrong move to
   c5 flashes and both capturing pieces pulse as in a game, then the ring and the pulse
   stay lit and still, so the screen draws nothing more until the next tap. Each tap
-  sets the preview up again. The choices take the width their words want, at most 55% of
-  the page, and wrap beyond it; near square (4:3, a foldable), where the wrapped rows
-  would run past the page's foot, each setting's name goes above its tiles, as in
-  portrait, and the column narrows to its widest row; where that runs past
-  the foot too, the names go back to the left and the rows take the width they want,
-  unwrapped (a foldable), as long as the board keeps 128 dp beside them (a phone: the
-  choices at most 70% of the page). Where that doesn't fit, the board goes on top and the
-  groups side by side under it, as in portrait, so a window that widens goes from portrait
-  to landscape without tabs between: the hand-over is at
-  about 870 × 800 dp, and from about 800 × 930 dp to square the groups leave the board
-  under 128 dp, and none shows. Where even that doesn't fit (a phone, a small window), one group shows at a time:
-  two tiles, the game's and the look's icon and title, each on glass as back is (a plain
-  tile alone is hard to read over a bright photograph), the shown one lit, choose which,
-  in the title row in place of the title in landscape and in a row under it in portrait
-  (on a phone, its shorter side under 600 dp, where the groups side by side would leave
-  the board under 45% of the width, or under 220 dp, 45% of a 553 dp phone's; a larger
-  screen keeps them side by side as long as they fit under the title row, so the
-  foldable's and 4:3's portraits show both with a 206 and 269 dp board), and the
-  group's glass, without its title row, is as tall as the taller of the two so the board
-  stays put; in portrait it is its own group's height and the board takes the rest, larger
-  on the game's tab; where the group is taller than the room under the tabs (a small
-  window), its glass takes the room down to the foot, no board, and its rows scroll inside
-  it ("Small windows"). Side by side, each group is as wide as it wants unwrapped where
-  both fit the page, centered, else they share the width in proportion to what each
-  wants. Where the theme's five wrap, they are an even grid three across (two where three
-  don't fit), not a ragged wrap; in a small window slim tiles ("Small windows"). A board under 128 dp isn't shown, as on home (a 9:16 phone at 480 dp). In
-  portrait, where the title doesn't fit beside the worded back and the language in the
-  row labels' 30 dp face (a phone), back is the arrow over the word in an 88 dp square, which leaves 107 dp; at
-  480 dp, where that leaves under the headings' 24 dp face, the language's glass also
-  leaves out its globe, which leaves 87 dp, "Settings" 80 in that face. A title still too
-  wide takes a smaller face, or none. The tiles' notes and the thumbnails' labels are in the 17 px
-  face, which makes them a little wider than the prototype's 13 px, so the landscape
-  board is about 550 px where the prototype's is 590.
+  sets the preview up again. Measured headless (`test/shell/settings_sizes`, the test
+  faces' words, wider than the real font's):
+
+  | Size | The list | Its view, how far it scrolls | Preview: flat, 3D board |
+  | --- | --- | --- | --- |
+  | Tablet 1280 × 800 dp | column, 544 dp of glass | 688 dp, 267 | 692 dp, 692 × 474 |
+  | Tablet 800 × 1280 dp | sheet from 512 dp | 656 dp, 282 | 481 dp, 702 × 481 |
+  | Pixel 7a 1200 × 540 dp, insets 59, 0, 0, 42 | column | 428 dp, 569 | 468 dp, 561 × 385 |
+  | Pixel 7a 540 × 1200 dp, insets 0, 59, 0, 42 | sheet from 330 dp | 700 dp, 298 | 310 dp, 452 × 310 |
+  | iPhone 13 mini 1083 × 500 dp, insets 67, 0, 67, 28 | column | 388 dp, 595 | 381 dp, 381 × 261 |
+  | iPhone 13 mini 500 × 1083 dp, insets 0, 67, 0, 45 | sheet from 291 dp | 613 dp, 387 | 274 dp, 399 × 274 |
+
   **Puzzle picker** (`puzzles.html`'s take a, a library list): two views, a library of the themes and a theme's page. The library
   is back, the title, the draughts switch, and one glass row per theme (the glass panel a
   level's row on a theme's page is, lit only while pressed: a plain tile barely shows
@@ -1178,8 +1163,9 @@ covers the way out in landscape, it goes with it.
 Three switches take 0.25 s each way, eased (smoothstep), rather than switching at once:
 home and settings, home and the game (continue, a setup's play, and the game's home), and
 the puzzles to pick from and a puzzle. The board slides and resizes from one screen's
-place to the other's. To settings it moves right in landscape; in portrait it goes down a
-little as it shrinks under settings' title row. Into the game it grows into the game's
+place to the other's. To settings it moves up into the preview's room, right of the
+list's column in landscape and the band at the top in portrait, growing in landscape and
+shrinking in portrait. Into the game it grows into the game's
 place, left in landscape and down in portrait. A puzzle's board grows out of its tile on
 the puzzles to pick from, and shrinks back into it; at rest there the board isn't shown.
 The screen left fades out and the one come to fades in, both drifting 40 dp the way the
@@ -1399,6 +1385,19 @@ board's does and the backdrop over it as opaque as the blur.
   Spring's default is ivory stone with a carved vine band on the frame and jade dark
   squares (`looks::elven`, `--spring 1`); the Baltic
   carved oak is `--spring 2`, the birch `--spring 0`. Summer keeps its default wood look.
+  **The material**, one for every season, settings' Board row (the player's `material =
+  auto|wood|stone|carved`, auto by default), picks each season's look (`looks::of`):
+
+  | Season | Auto | Wood | Stone | Carved |
+  | --- | --- | --- | --- | --- |
+  | Autumn | wood | maple and walnut in cherry (`--autumn 0`) | sandstone and porphyry in a solid speckled frame (`--autumn 3`) | rust vines in weathered stone (`--autumn 2`) |
+  | Winter | stone | limed ash and smoked oak (`--winter 1`) | slate in black marble (`--winter 0`) | the same wood, a Nordic band in smoked oak (`--winter 2`) |
+  | Spring | carved | the birch (`--spring 0`) | ivory and jade, uncarved, veined and cracked (`--spring 3`) | the elven stone (`--spring 1`) |
+  | Summer | wood | the sunset wood (`--summer 0`) | the amber granite, uncarved (`--summer 6`) | amber signs in granite (`--summer 4`) |
+
+  A season's flag, given, picks its look over the material, for tuning. A new material
+  prepares the board again as a new theme does (`draw3d::want_material`), the old image
+  easing grey meanwhile; the flat board has none.
   **The wood and the stone are baked** once into 2048² maps (the plan and the frame map,
   with mips; `shaders::BAKE_FRAG`) at getting ready and on a theme change, never a frame.
   The wood is growth rings round a wandering pith axis with pores along the fibres and a

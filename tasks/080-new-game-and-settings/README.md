@@ -21,10 +21,10 @@ user choosing; then built.
 - `01-new-game.md`: home's one New game row, the setup with the opponent and the turning
 - `02-settings.md`: settings reworked, scrolling where it helps, the preview smaller on a
   small screen
-- `03-board-materials.md`: wood, stone, or auto for the 3D board, two new looks (autumn's
-  stone, winter's wood) and summer's stone finished; replaces task 045
+- `03-board-materials.md`: wood, stone, carved, or auto for the 3D board, two new looks
+  (autumn's stone, winter's wood) and summer's stone finished; replaces task 045
 
 ## Acceptance criteria
 
 - [ ] The three subtasks done
-- [ ] `docs/architecture/` and `docs/decisions/` say what changed and why
+- [x] `docs/architecture/` and `docs/decisions/` say what changed and why

@@ -19,10 +19,9 @@ seams at the frame's corners (stone shows none); spring 0, 1, and 3, the birch t
 (bare wood is the better wood); Auto kept, today's defaults (winter's stone). The Baltic
 oak (`--spring 2`) is liked but has no place yet.
 
-To decide: one choice for every season (Wood shows each season's wood), or one per
-season (settings shows the theme season's two boards, each season remembers its own).
-One choice is simpler to show and to say; per season matters only if a child likes
-autumn's stone but spring's wood.
+Decided (2026-11-13): one choice for every season, Wood showing each season's wood
+(settings' take b). Per season mattered only if a child likes autumn's stone but
+spring's wood.
 
 Steps:
 
@@ -99,7 +98,7 @@ panel's marble tunes winter's, not autumn 1's own); the takes' bake on the A33 (
 
 - [ ] Autumn's stone and winter's wood made; shots of all eight boards; the user's pick
 - [ ] Summer's stone finished
-- [ ] The choice in settings (per 02's take) and the player's file; Auto as today's looks
+- [x] The choice in settings (per 02's take) and the player's file; Auto as today's looks
 - [ ] Bake time of the new looks on the A33
 
 ## Three for every season (2026-11-13)
@@ -126,3 +125,14 @@ lichen 0.08). Spring's plain stone has clearer veins (`stone.x` 0.2, the carved 
 0.07), on its ivory squares too. A first take at 3.2 cells and twice the width read as
 crazy paving. Shots: the scratchpad's `looks/new/sp3view.jpg` (with a low-angle crop),
 `su6m.png`.
+
+## The choice built (2026-11-13)
+
+Settings' Board row: Flat, Raised (Auto), Wood, Stone, Carved; the player's `material =
+auto|wood|stone|carved`, auto by default. `looks::of(season, material)` gives the look by
+the table above (`test/model3d/material` checks it against the flags' looks); the app's
+3D drawer asks for it with each frame's material (`draw3d::want_material`) and prepares
+the board again on a change, as on a new theme. `--autumn`, `--winter`, `--spring`, and
+`--summer`, given, pick their season's look over it; `--material` sets it for a run.
+Shots of each material raised in autumn and winter (the session's scratchpad,
+`settings/tablet-*-wood.png` and the like). Its bake on the A33 is still step 4.
