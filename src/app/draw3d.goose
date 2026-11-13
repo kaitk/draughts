@@ -35,6 +35,7 @@ struct Drawer {
     gpu:       render3d::Gpu                         = default<render3d::Gpu>(),
     ready:     bool                                  = false,
     aa:        i32                                   = render3d::AA, // --aa and the A key: render3d's AA_OFF..
+    samples:   i32                                   = render3d::SAMPLES, // MSAA's, fewer on a slow device
     drawn_at:  f64                                   = 0.0,   // when the pass last drew (rest)
     kind:      i64                                   = -1, // the app's theme the board was set up with
     plain:     bool                                  = false, // and whether behind it the plain fade
@@ -181,7 +182,7 @@ fn want_material(d: Drawer&, material: i64) {
 fn set_up(d: Drawer&) {
     let t0 = clock();
     render3d::setup(d.gpu);
-    render3d::set_aa(d.gpu, d.aa);
+    render3d::set_aa(d.gpu, d.aa, d.samples);
     render3d::choose(d.gpu, d.wood, d.marble, d.spring);
     d.ready = true;
     d.setup_ms = (clock() - t0) * 1000.0;
@@ -313,7 +314,7 @@ fn cover(d: Drawer&) {
 fn drop(d: Drawer&) {
     guard d.ready else { return; }
     render3d::release(d.gpu);
-    d = Drawer { aa: d.aa, wood: d.wood, marble: d.marble, summer: d.summer, autumn: d.autumn, winter: d.winter,
+    d = Drawer { aa: d.aa, samples: d.samples, wood: d.wood, marble: d.marble, summer: d.summer, autumn: d.autumn, winter: d.winter,
                 spring: d.spring, want: d.want, timed: d.timed, .. };
 }
 
@@ -323,7 +324,18 @@ fn toggle_aa(d: Drawer&) {
     d.aa = render3d::aa_next(d.aa);
     print("3D board: antialiasing ", render3d::aa_name(d.aa));
     guard d.ready else { return; }
-    render3d::set_aa(d.gpu, d.aa);
+    render3d::set_aa(d.gpu, d.aa, d.samples);
+    d.fresh = true;
+}
+
+// A device whose ready 3D board can't keep up with its display (src/app/display.c): MSAA
+// at render3d::FEW_SAMPLES from now on, the board drawn again with it.
+fn fewer_samples(d: Drawer&) {
+    guard d.samples > render3d::FEW_SAMPLES else { return; }
+    d.samples = render3d::FEW_SAMPLES;
+    print("3D board: too slow for the display, ", d.samples, "x MSAA");
+    guard d.ready && d.aa == render3d::AA_MSAA else { return; }
+    render3d::set_aa(d.gpu, d.aa, d.samples);
     d.fresh = true;
 }
 

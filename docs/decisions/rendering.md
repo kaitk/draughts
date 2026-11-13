@@ -1057,6 +1057,19 @@ its FXAA is gone (2026-11-12): it blurred the surfaces and dotted thin highlight
 its speed over SMAA, a few tenths of a millisecond (tasks 070 and 074), wasn't worth that
 look. Rejected: keeping it as a cheaper choice for slow GPUs, which take SMAA or none.
 
+2× MSAA for a slow device (2026-11-13, task 081), in part replacing gfx's 4× above: on
+Android, once 60 frames of the ready 3D board average over 1.25 refreshes of the display,
+the pass draws 2× from then on (`render3d::FEW_SAMPLES`), and only if 60 more frames at 2×
+are still that slow does the app ask for 60 Hz (the rule below, which came first before). The
+Galaxy A33's Mali-G68 draws 2× a quarter cheaper than 4× (task 042), unlike the Pixel 7a's
+G710, where MSAA is free, and the user moved the board at 2× on the A33 and found it fine.
+The same timing as the 60 Hz rule, so one measure decides both, and the Pixel 7a (60 frames
+on its 60 Hz display) and the tablet (90 on 90) keep 4×. Fewer samples come first, as
+they keep the display's rate where 60 Hz gives it up. Rejected: a list of slow GPUs (the
+measure finds them, as `auto` does for the renderer); SMAA or none as the fallback (SMAA
+costs more than 4× MSAA on Mali, none shows the edges); deciding again later, back to 4×
+when the board would keep up (a pass's targets made again mid-game, for a gain no one sees).
+
 The ngfx build draws 4× MSAA by default too (2026-11-12, task 077), replacing its SMAA
 default above, now that NoGraphicsAPI's fork and goose-ngfx have multisampling: the pass
 into 4× color and depth that are transient (memoryless on Metal, never stored) and
@@ -1152,6 +1165,9 @@ The release at rest, idle 20 to 30 s:
   of the shadow map's pass and its 9 taps on every lit pixel; fp16 for colors, the
   harmonics, the tonemap, and the varyings (no shader uses 16-bit yet); MSAA 4× read
   again at 2,208 triangles a piece; a lower render scale for the 3D pass, last.
+- **2× MSAA before 60 Hz** (task 081, 2026-11-13): the same timing first drops the pass to
+  2× MSAA, on a display of any rate, and asks for 60 Hz only if the board is still that
+  slow at 2× (see "gfx keeps 4× MSAA" above).
 - **Open:** at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the
   flat board's 0.3, outside the app's own work, as the Mac shows no draw at rest.
 

@@ -178,6 +178,11 @@ struct Blur { dir: float4 }
 
 let SAMPLES = 4;
 
+// The pass's samples on a device whose ready 3D board can't keep up with its display
+// (task 081, src/app/display.c): on the Galaxy A33's Mali-G68 2× draws a quarter faster
+// than 4×, and the user found the moving board fine at it.
+let FEW_SAMPLES = 2;
+
 // How the pass is antialiased (set_aa, the app's --aa and its A key, task 071): 4×
 // multisampled, or drawn at 1x and SMAA 1x after it (smaa.goose), or neither. The
 // values are the ngfx build's.
@@ -316,13 +321,14 @@ fn pass_targets(g: render3d::Gpu&) {
                                               samples: g.own.samples });
 }
 
-// The pass antialiased by `aa` (AA_MSAA..) from the next draw on: its targets given back
-// (made again for the new way by the next draw), SMAA's pipelines and tables made the
-// first time it is chosen. The app calls it after setup() and on its A key.
-fn set_aa(g: render3d::Gpu&, aa: i32) {
+// The pass antialiased by `aa` (AA_MSAA..) from the next draw on, MSAA at `samples`:
+// its targets given back (made again for the new way by the next draw), SMAA's pipelines
+// and tables made the first time it is chosen. The app calls it after setup(), on its A
+// key, and for fewer samples.
+fn set_aa(g: render3d::Gpu&, aa: i32, samples: i32 = SAMPLES) {
     render3d::give_back(g);
     g.aa = aa;
-    g.own.samples = if aa == AA_MSAA { SAMPLES } else { 1 };
+    g.own.samples = if aa == AA_MSAA { samples } else { 1 };
     guard aa == AA_SMAA && g.smaa_edges.id == 0 else { return; }
     // The edges pass marks the pixels it finds an edge on with depth 0 (its triangle's z;
     // where it finds none it discards, leaving the cleared 1), and the weights pass, drawn

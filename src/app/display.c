@@ -110,21 +110,23 @@ int64_t draughts_display(draughts_floats out) {
     return 1;
 }
 
-// The display at 60 Hz while the 3D board draws, on a device whose 3D board can't keep up
-// with a faster display (task 056). On a 90 Hz display, such as the Galaxy A33's, a 3D
-// board that draws 60 frames a second shows them two refreshes and one in turn; at 60 Hz
-// each shows for one. A device that holds its display's rate keeps it.
+// A 3D board too slow for its display: first fewer samples, then the display at 60 Hz while
+// it draws (tasks 056 and 081). On a 90 Hz display, such as the Galaxy A33's, a 3D board
+// that draws 60 frames a second shows them two refreshes and one in turn; at 60 Hz each
+// shows for one. A device that holds its display's rate keeps both.
 //
 // draughts_pace_3d(drawing, now) is called each pass of the loop, drawing 1 when the pass
 // drew the 3D board, ready and shown (its preparing steps are long by design), and not
-// in --bench's waited phases. The gaps between passes that drew it one after the other are timed
-// at the display's own rate: after SLOW_AFTER of them, if they average over a quarter
-// more than a refresh and the display is faster than 60, the app asks for 60 whenever the
-// 3D board draws, from then on, and for the display's own rate (0) otherwise. Android
-// only (ANativeWindow_setFrameRate, API 30, looked up as the app runs from 29), and only
-// when the rate or the surface changed: a new surface, after the app was in the
-// background, starts with no rate of its own. Some displays ignore it: the Galaxy A33's
-// "High" motion smoothness holds 90 Hz whatever an app asks.
+// in --bench's waited phases. The gaps between passes that drew it one after the other are
+// timed at the display's own rate. After SLOW_AFTER of them, if they average over a
+// quarter more than a refresh, it returns 1, once: the app draws the pass at 2× MSAA from
+// then on, which the A33's Mali-G68 draws a quarter faster than 4× (task 081), and the gaps
+// are timed again. Found slow a second time on a display faster than 60, the app asks for
+// 60 whenever the 3D board draws, from then on, and for the display's own rate (0)
+// otherwise. Android only (ANativeWindow_setFrameRate, API 30, looked up as the app runs
+// from 29), and only when the rate or the surface changed: a new surface, after the app
+// was in the background, starts with no rate of its own. Some displays ignore it: the
+// Galaxy A33's "High" motion smoothness holds 90 Hz whatever an app asks.
 #if defined(__ANDROID__)
 #include <dlfcn.h>
 typedef struct ANativeWindow ANativeWindow;
@@ -167,24 +169,31 @@ static void ask_rate(float hz) {
     }
 }
 
-void draughts_pace_3d(int64_t drawing, double now) {
+int64_t draughts_pace_3d(int64_t drawing, double now) {
+    // 0: timed for fewer samples; 1: at fewer, timed for 60 Hz; 2: 60 Hz asked; 3: at
+    // fewer on a 60 Hz display, timed no more.
     static int slow, timed;
     static double last = -1.0, sum;
-    if (!the_window()) return;
+    if (!the_window()) return 0;
+    int64_t fewer = 0;
     // A gap over 0.1 s is a hitch (a season's photograph loading), not the board's pace.
-    if (!slow && drawing && last >= 0.0 && now - last < 0.1) {
+    if (slow < 2 && drawing && last >= 0.0 && now - last < 0.1) {
         sum += now - last;
         if (++timed == SLOW_AFTER) {
             const SDL_DisplayMode *mode = SDL_GetCurrentDisplayMode(SDL_GetDisplayForWindow(window));
             float hz = mode ? mode->refresh_rate : 0.0f;
-            slow = hz > 61.0f && sum / SLOW_AFTER > 1.25 / hz;
+            if (hz > 0.0f && sum / SLOW_AFTER > 1.25 / hz) {
+                fewer = slow == 0;
+                slow = slow == 1 ? 2 : hz > 61.0f ? 1 : 3;
+            }
             timed = 0;
             sum = 0.0;
         }
     }
     last = drawing ? now : -1.0;
-    ask_rate(slow && drawing ? 60.0f : 0.0f);
+    ask_rate(slow == 2 && drawing ? 60.0f : 0.0f);
+    return fewer;
 }
 #else
-void draughts_pace_3d(int64_t drawing, double now) { (void)drawing; (void)now; }
+int64_t draughts_pace_3d(int64_t drawing, double now) { (void)drawing; (void)now; return 0; }
 #endif

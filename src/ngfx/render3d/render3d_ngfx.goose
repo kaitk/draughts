@@ -359,8 +359,9 @@ fn pass_targets(g: Gpu&) {
 
 // The pass antialiased by `aa` (AA_OFF..) from the next draw on: its targets given back
 // (made again for the new way by the next draw), the way's pipelines and tables made the
-// first time it is chosen. The app's A key (task 071).
-fn set_aa(g: Gpu&, aa: i32) {
+// first time it is chosen. The app's A key (task 071). It draws SAMPLES whatever `samples`
+// says: fewer are asked for only on Android, which the ngfx build isn't built for.
+fn set_aa(g: Gpu&, aa: i32, samples: i32 = SAMPLES) {
     render3d::give_back(g);
     g.aa = aa;
     aa_resources(g, aa);

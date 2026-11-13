@@ -42,9 +42,11 @@ extern fn draughts_leave();
 // Gives back to the system the memory malloc keeps for freed blocks; Android only
 // (memory.c).
 extern fn draughts_release_memory();
-// Asks Android's display for 60 Hz while the 3D board draws, if its frames can't keep up
-// with a faster display; drawing is 1 when this pass drew it (display.c). Nothing elsewhere.
-extern fn draughts_pace_3d(drawing: i64, now: f64);
+// Times the 3D board's frames against the display: 1, once, when they first can't keep up
+// (the pass then draws fewer samples); found so again, asks Android's display for 60 Hz
+// while the 3D board draws. drawing is 1 when this pass drew it (display.c). Nothing
+// elsewhere.
+extern fn draughts_pace_3d(drawing: i64, now: f64) -> i64;
 
 // What the host keeps between frames: the safe area and scale as last read, the events
 // read for typed text, and whether the keyboard is up, for which tap on the name.
@@ -169,4 +171,4 @@ fn first_frame() { draughts_first_frame(); }
 fn close_app() { draughts_close(); }
 fn leave() { draughts_leave(); }
 fn release_memory() { draughts_release_memory(); }
-fn pace_3d(drawing: bool, now: f64) { draughts_pace_3d(if drawing { 1 } else { 0 }, now); }
+fn pace_3d(drawing: bool, now: f64) -> bool { draughts_pace_3d(if drawing { 1 } else { 0 }, now) != 0 }

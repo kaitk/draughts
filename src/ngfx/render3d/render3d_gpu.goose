@@ -33,6 +33,9 @@ let AA_OFF = 0;
 let AA_SMAA = 2;
 let AA_MSAA = 4;
 let AA = AA_MSAA;
+// MSAA's samples, and gfx's fewer for a slow device (render3d_gpu.goose's FEW_SAMPLES).
+let SAMPLES = 4;
+let FEW_SAMPLES = 2;
 fn aa_named(name: const u8[:]) -> i32 { return if nx::ngfx_on { render3d_ngfx::aa_named(name) } else { render3d_gfx::aa_named(name) }; }
 fn aa_name(aa: i32) -> const u8[:] { return if nx::ngfx_on { render3d_ngfx::aa_name(aa) } else { render3d_gfx::aa_name(aa) }; }
 fn aa_next(aa: i32) -> i32 { return if nx::ngfx_on { render3d_ngfx::aa_next(aa) } else { render3d_gfx::aa_next(aa) }; }
@@ -70,7 +73,9 @@ fn occ_pass(g: Gpu&, x0: i64, y0: i64, x1: i64, y1: i64) {
 }
 fn kept_pass(g: Gpu&) { if nx::ngfx_on { render3d_ngfx::kept_pass(g); } else { render3d_gfx::kept_pass(g); } }
 fn pass_targets(g: Gpu&) { if nx::ngfx_on { render3d_ngfx::pass_targets(g); } else { render3d_gfx::pass_targets(g); } }
-fn set_aa(g: Gpu&, aa: i32) { if nx::ngfx_on { render3d_ngfx::set_aa(g, aa); } else { render3d_gfx::set_aa(g, aa); } }
+fn set_aa(g: Gpu&, aa: i32, samples: i32 = SAMPLES) {
+    if nx::ngfx_on { render3d_ngfx::set_aa(g, aa, samples); } else { render3d_gfx::set_aa(g, aa, samples); }
+}
 fn setup(g: Gpu&) { if nx::ngfx_on { render3d_ngfx::setup(g); } else { render3d_gfx::setup(g); } }
 fn draw_depth(g: Gpu&) { if nx::ngfx_on { render3d_ngfx::draw_depth(g); } else { render3d_gfx::draw_depth(g); } }
 fn marks_over(g: Gpu&, pulse: float4, next: f32, cursor: f32, to: float4, alpha: f32, size: int2) {

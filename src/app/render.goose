@@ -79,6 +79,9 @@ fn aa_flag() -> i32 {
 // The A key: the 3D board's antialiasing switched (draw3d::toggle_aa).
 fn toggle_aa(r: Renderer&) { draw3d::toggle_aa(r.d3); }
 
+// The 3D board too slow for the display: fewer samples (draw3d::fewer_samples).
+fn fewer_samples(r: Renderer&) { draw3d::fewer_samples(r.d3); }
+
 // Whether it draws theme `kind` with its photograph, or with `plain` the fade.
 fn shows_theme(r: Renderer&, kind: i64, plain: bool) -> bool { r.d.kind == kind && r.d.scene.plain == plain }
 

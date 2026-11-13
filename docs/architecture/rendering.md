@@ -1677,13 +1677,16 @@ The release at rest, idle 20 to 30 s:
   in 1.66 s, the first frame 0.35 s. Its Mali-G68 lost the device on a texture's mip level
   0 pixels high ([findings](../goose-findings.md)); the bake's mips end at the shorter
   side's 1 pixel (`render3d::baked`).
-- **60 Hz for a slow 3D board**: on Android, once 60 frames of the ready 3D board average
-  over 1.25 refreshes of a display faster than 60 Hz, the app asks for 60 Hz on its
-  surface (`ANativeWindow_setFrameRate`, `src/app/display.c`) whenever the 3D board draws,
+- **A slow 3D board: 2× MSAA, then 60 Hz**: on Android, once 60 frames of the ready 3D
+  board average over 1.25 refreshes of the display (`src/app/display.c`), the pass draws
+  2× MSAA in place of 4× from then on (`render3d::FEW_SAMPLES`, `draw3d::fewer_samples`).
+  If 60 more frames are still that slow and the display is faster than 60 Hz, the app asks
+  for 60 Hz on its surface (`ANativeWindow_setFrameRate`) whenever the 3D board draws,
   and for the display's own rate otherwise: 60 frames on a 90 Hz display show two
-  refreshes and one in turn. A device that holds its display's rate keeps it. The Galaxy
-  A33 ignores it: its "High" motion smoothness holds 90 Hz whatever an app asks. The
-  tablet's frames fit its 90 Hz; the Pixel 7a's display is at 60 already.
+  refreshes and one in turn. A device that holds its display's rate keeps both. The
+  Galaxy A33 takes 2×, and ignores 60 Hz: its "High" motion smoothness holds 90 Hz
+  whatever an app asks. The tablet's frames fit its 90 Hz and the Pixel 7a's its 60, so
+  both keep 4×. The log says `3D board: too slow for the display, 2x MSAA` when it drops.
 - **Where the moving 3D frame goes** (Streamline on the Pixel 7a): GPU active 4.70M cycles
   a frame, fragment-bound (the tiler 3% of the GPU's time), not bandwidth-bound (0.6
   GB/s), little overdraw. The lit fragment shader holds 64 registers (half occupancy on

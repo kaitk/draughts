@@ -252,12 +252,13 @@ fn main() {
             dirty = false;
             dev::drawn(dv, f);
         }
-        // The display at 60 Hz while the 3D board draws, on a device whose 3D board is too slow
-        // for its faster display (task 056): a 90 Hz display shows 60 frames a second two
-        // refreshes and one in turn, where at 60 each shows for one.
-        // The 3D bench's frames that wait for each are left out (dev::waited3d).
+        // A 3D board too slow for its display draws fewer samples, and if still too slow
+        // the display goes to 60 Hz while it draws (tasks 056 and 081, display.c): a 90 Hz
+        // display shows 60 frames a second two refreshes and one in turn, where at 60
+        // each shows for one. The 3D bench's frames that wait for each are left out
+        // (dev::waited3d).
         let paced = drew && out.raised && ready3d && shown3d && !dev::waited3d(rd);
-        if on_android { host::pace_3d(paced, now); }
+        if on_android && host::pace_3d(paced, now) { render::fewer_samples(rd); }
         // Settings' thumbnails load in the first frame that draws nothing once the launch's
         // first frame is on screen, so settings' first opening doesn't wait for them; the
         // next frame shows the screen again unchanged, then the app is idle. The launch's
