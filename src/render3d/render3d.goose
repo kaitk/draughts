@@ -102,17 +102,15 @@ struct Bake {
 let SHADOW_SIZE = 1024;
 
 // The lit shader's shadow looks (task 086's second round, poc/3d's H key; the app draws
-// SHADOW_9, or SHADOW_4 on a phone): 9 taps over 5 × 5 texels; the same over 7.5; 16
-// over 7 × 7; a phone's 4 over 3 × 3; and those 4 on the pieces and the frame with the
+// SHADOW_9, or SHADOW_4 on a phone): 9 taps over 5 × 5 texels; 16 over 7 × 7; a phone's 4 over 3 × 3; and those 4 on the pieces and the frame with the
 // field's shadow from the pieces as analytic discs (shaders::SHADOW_DISC).
 let SHADOW_9 = 0;
-let SHADOW_9_WIDE = 1;
-let SHADOW_16 = 2;
-let SHADOW_4 = 3;
-let SHADOW_DISC = 4;
-let SHADOW_LOOKS = 5;
+let SHADOW_16 = 1;
+let SHADOW_4 = 2;
+let SHADOW_DISC = 3;
+let SHADOW_LOOKS = 4;
 fn shadow_look_name(look: i32) -> const u8[:] {
-    if look == SHADOW_9_WIDE { "9 wide" } else if look == SHADOW_16 { "16" } else if look == SHADOW_4 { "4" }
+    if look == SHADOW_16 { "16" } else if look == SHADOW_4 { "4" }
     else if look == SHADOW_DISC { "disc" } else { "9" }
 }
 

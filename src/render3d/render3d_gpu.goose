@@ -362,7 +362,6 @@ fn lit_pipelines(g: render3d::Gpu&, few: bool) {
 fn lit_look(g: render3d::Gpu&, look: i32) {
     let lit_vs = embed_shader("vert", shaders::VS_SET, shaders::FRAME, shaders::LIT_VERT);
     let lit_fs = if look == render3d::SHADOW_4 { embed_shader("frag", shaders::SHADOW_FEW, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG) }
-                 else if look == render3d::SHADOW_9_WIDE { embed_shader("frag", shaders::SHADOW_SPREAD, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG) }
                  else if look == render3d::SHADOW_16 { embed_shader("frag", shaders::SHADOW_WIDE, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG) }
                  else if look == render3d::SHADOW_DISC { embed_shader("frag", shaders::SHADOW_FEW, shaders::SHADOW_DISC, shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG) }
                  else { embed_shader("frag", shaders::FS_SET, shaders::FRAME, shaders::LIT_FRAG) };

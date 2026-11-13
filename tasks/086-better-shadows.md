@@ -183,15 +183,12 @@ decision is in `docs/decisions/rendering.md`.
 ## Softer than `fit`: the second round (2026-11-13)
 
 The user found `fit` a bit sharp. `poc/3d/board3d.goose`'s **H** key and `--shadows
-9|9wide|16|4|disc` cycle the lit shader's looks (`render3d::SHADOW_9..`,
+9|16|4|disc` cycle the lit shader's looks (`render3d::SHADOW_9..`,
 `render3d::set_shadow_look`; the app keeps `9`, or `4` on a phone), the label and the
 jump's panel naming it; `build/board3d --jump 0.25 --shadows 16` is the jump with its
 slider:
 
 - `9`: the app's, 9 taps over 5 × 5 texels.
-- `9wide`: the same 9 taps over a grid of 1.5 texels (`shaders::SHADOW_SPREAD`), a 7.5
-  texel box. Each tap still compares only the map's own 2 × 2 texels, so the edge
-  stipples: a still shot at the jump shows it plainly. Kept to be seen, not to ship.
 - `16`: Castaño's 7 × 7 box in 16 taps (`shaders::SHADOW_WIDE`): smooth and softer. A
   tablet and a desktop only, where the 9 run now and the A33 never pays.
 - `4`: a phone's, 4 taps over 3 × 3.
@@ -214,9 +211,25 @@ committed), the two alternated, thermal status 0 before and after every run, the
 | 4 | 17.39, 17.05 ms: 10.62, 10.42 M | 15.78, 15.87 ms: 9.64, 9.69 M |
 | disc | 18.21, 17.70 ms: 11.13, 10.82 M | 16.64, 16.06 ms: 10.16, 9.81 M |
 
+| 9 | 18.09, 18.05 ms: 11.05, 11.03 M | 16.54, 16.52 ms: 10.11, 10.09 M |
+| 16 | 19.01, 19.03 ms: 11.62, 11.62 M | 17.37, 17.42 ms: 10.61, 10.64 M |
+
 The disc costs 0.1 to 0.5 M cycles a frame more than the 4 taps it replaces on the field,
 within the A33's 1 M of headroom; the 4 taps' runs match the earlier `fit` (10.3 to 10.8
-M moving, 9.4 to 10.0 M at rest).
+M moving, 9.4 to 10.0 M at rest). The 16 taps cost 0.5 to 0.6 M more than the 9 (forced
+on the A33, which runs neither in the app: their cost in cycles a pixel, which a tablet's
+and a desktop's faster GPUs pay less of in time).
+
+The user's look on the Mac: `16` looks very good, `9` decent; `9wide` (the 9 taps over a
+1.5-texel grid) stippled along every edge and went. The disc is a cylinder's shadow worked
+out by hand, no good for chess pieces or other meshes.
+
+**The jump's shadow and occlusion drop out over the taken piece's square** (the user, at
+0.26 to 0.81 of the jump): the squares buffer holds one piece a square, the lowest
+(`view3d::fill`, and the prototype's `place_jump` the same), so while the jumping piece is
+over d4 it is in neither the field's occlusion (`OCC_FRAG`, the dark blob under a raised
+piece, which pops off and on at those two points in every look) nor the disc's shadow.
+The shadow map's looks keep its shadow, as any mesh casts there.
 
 ## What is left
 

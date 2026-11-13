@@ -63,10 +63,9 @@ let FS_SET = "#define FRAME_SET 3\n";
 // LIT_FRAG's shadow in 4 taps, not 9 (shadow()): a phone's (render3d::set_shadow).
 let SHADOW_FEW = "#define SHADOW_FEW 1\n";
 
-// Task 086's softer looks, tried in poc/3d (render3d::SHADOW_9_WIDE..): the 9 taps over
-// a grid of 1.5 texels, a 7.5-texel box; Castaño's 7 × 7 box in 16 taps; and, with
-// SHADOW_FEW, the field's shadow from the pieces as analytic discs (disc_shadow()).
-let SHADOW_SPREAD = "#define SHADOW_SPREAD 1.5\n";
+// Task 086's softer looks, tried in poc/3d (render3d::SHADOW_16..): Castaño's 7 × 7 box
+// in 16 taps; and, with SHADOW_FEW, the field's shadow from the pieces as analytic discs
+// (disc_shadow()).
 let SHADOW_WIDE = "#define SHADOW_WIDE 1\n";
 let SHADOW_DISC = "#define SHADOW_DISC 1\n";
 
@@ -245,10 +244,6 @@ let LIT_FRAG = """
         vec3 q = p + n * (0.004 + 0.012 * (1.0 - nl));
         vec4 s = light_view_proj * vec4(q, 1.0);
         vec2 size = vec2(textureSize(shadow_map, 0));
-    #ifdef SHADOW_SPREAD
-        // The 9 taps' grid in coarser texels: each tap still compares the map's own 2 × 2.
-        size /= SHADOW_SPREAD;
-    #endif
         vec2 uv = vec2(s.x * 0.5 + 0.5, 0.5 - s.y * 0.5) * size;
         float z = s.z - 0.0005;
         vec2 base = floor(uv + 0.5);

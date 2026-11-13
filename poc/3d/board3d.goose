@@ -35,7 +35,7 @@
 //   ../../build/board3d --jump 0.5                # the jump, halfway; J switches it
 //   ../../build/board3d --shot out.png --jump 0.5 --yaw 30 --pitch 35 --distance 8
 //   ../../build/board3d --shadow few              # the shadow in 4 taps, a phone's
-//   ../../build/board3d --jump 0.5 --shadows disc  # task 086's looks: 9, 9wide, 16, 4, disc; H cycles
+//   ../../build/board3d --jump 0.5 --shadows disc  # task 086's looks: 9, 16, 4, disc; H cycles
 //
 // --shot draws one frame headless (no window) into a PNG; --bench times frames.
 //
@@ -242,7 +242,7 @@ var zoom:   i32    = 1;
 var centre: float2 = float2 { 0.0, 0.0 };
 var aa:     i32    = render3d::AA;
 
-// The shadow's look (H, --shadows 9|9wide|16|4|disc; task 086): render3d::SHADOW_9, the
+// The shadow's look (H, --shadows 9|16|4|disc; task 086): render3d::SHADOW_9, the
 // app's on a tablet or a desktop, or one tried against it.
 var shadow_look: i32 = render3d::SHADOW_9;
 var nearest = gfx::Sampler { 0 };
@@ -485,7 +485,7 @@ fn main() {
     if fi > 0 && argv[fi] == "few" { shadow_look = render3d::SHADOW_4; }
     let wi = flag_str(argv, "--shadows");
     if wi > 0 {
-        let names = ["9", "9wide", "16", "4", "disc"];
+        let names = ["9", "16", "4", "disc"];
         for name, i in names { if argv[wi] == name { shadow_look = i as i32; } }
     }
     render3d::set_shadow_look(g, shadow_look);

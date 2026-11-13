@@ -248,9 +248,11 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
     let edit = w.target >= 0 && !w.first;
     let holds = if !edit { 0 } else if ps.list.len > 1 { 2 } else { 1 };
     let wide = area.z > area.w && area.w < gui::PHONE * u;
-    // A phone in portrait drops the pictures while the name is typed, so the name's
-    // field comes up clear of the keyboard.
+    // While the name is typed on a phone its field comes up clear of the keyboard: in
+    // portrait the pictures step aside, in landscape the card is the head alone, the
+    // field in the title's place.
     let bare = w.typing && !wide && gui::phone(area, u);
+    let line = w.typing && wide;
     let room = area.z / u - 2.0 * (EDGE + PAD);
     let pic, cols = pictures(room, wide);
     let grid_w = cols * pic + (cols - 1) * PIC_GAP;
@@ -275,7 +277,7 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
     let name_h = TITLE_H + ROW_GAP + gui::tap() + (if holds > 0 { ROW_GAP + holds_h } else { 0.0 });
     let pics_h = TITLE_H + ROW_GAP + grid_h;
     let body = if wide { max(pics_h, name_h) } else if bare { name_h } else { pics_h + GAP + name_h };
-    let height = (20.0 + gui::tap() + GAP + body + 24.0) * u;
+    let height = (if line { 20.0 + gui::tap() + 24.0 } else { 20.0 + gui::tap() + GAP + body + 24.0 }) * u;
     var r = gui::center(area, content + 2.0 * PAD * u, height);
     // Clear of the keyboard while the name is typed.
     if w.typing { r.y = min(r.y, area.y + EDGE * u); }
@@ -292,6 +294,10 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
     let done = glass_tile(g, gui::WHO_IDS + 21, gui::cut_right(row, gui::tap() * u), gui::CHECK, gui::PRIMARY);
     gui::cut_left(row, gui::PAD_WIDE * u);
     gui::cut_right(row, gui::PAD_WIDE * u);
+    if line {
+        if field(w, g, row) { ask = CHANGED; }
+        return finish(w, edit, done, ask);
+    }
     if edit {
         gui::face(g, gui::center(gui::cut_left(row, 56.0 * u), 56.0 * u, 56.0 * u), w.picture, 1.0, false);
         gui::cut_left(row, gui::PAD_WIDE * u);
@@ -339,6 +345,11 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
             return REMOVE, w.target;
         }
     }
+    return finish(w, edit, done, ask);
+}
+
+// The sheet's answer: done creates or saves, else ask.
+fn finish(w: Who&, edit: bool, done: bool, ask: i64) -> i64, i64 {
     if done {
         players::trimmed(w.name);
         w.typing = false;
