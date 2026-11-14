@@ -916,7 +916,7 @@ fn rate(e: ai::Engine&, pz: puzzles::Puzzle&) -> Rating {
 
 // One number from the parts, on the players' rating scale. The computer as judge
 // weighs most; the shape and the motif's level after it. Checked against kabe.ee's five
-// (tools/calibration/kabe.txt), which it must place medium to hard and in their
+// (tools/calibration/adult_beginners.txt), which it must place medium to hard and in their
 // author's order, and the course, which is the floor.
 fn blend(r: Rating&) -> i64 {
     let weigh = log2(max(r.legal, 2) / 2.0);

@@ -365,7 +365,7 @@ tools/library.py merge merged.txt find-*.txt                       # each puzzle
 tools/library.py split merged.txt 10 rate-in
 for i in 0 1 2 3 4 5 6 7 8 9; do build/puzzles rate rate-in-$i.txt > rate-out-$i.txt & done; wait
 tools/library.py assemble src/puzzles/library-international.txt international rate-out-*.txt
-build/puzzles rate tools/calibration/kabe.txt                      # the estimate's calibration
+build/puzzles rate tools/calibration/adult_beginners.txt           # the estimate's calibration
 ```
 
 Trap puzzles, where the move a player is used to making is there and loses
