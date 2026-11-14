@@ -425,23 +425,34 @@ fn goal(pl: Play&, g: gui::Gui&, r: float4, icon_size: f32, stacked: bool, now: 
             panel::piece(over, gui::center(gui::cut_left(c, d), d, d), 0.5 * d, pz.start.side, 0, 1.0, turn_ring(pl));
             gui::cut_left(c, gui::PAD * u);
         }
-        icon = gui::center(gui::cut_left(c, s), s, s);
-        gui::cut_left(c, gui::PAD * u);
+        // In the row the pill takes the goal's icon's place while it shows (a portrait
+        // phone's row is too narrow for both beside the stars).
+        if !again {
+            icon = gui::center(gui::cut_left(c, s), s, s);
+            gui::cut_left(c, gui::PAD * u);
+        }
     }
-    gui::glyph_icon(g, icon, goal_icon(pz), gui::ON, 0.0, 1.0);
+    if stacked || !again { gui::glyph_icon(g, icon, goal_icon(pz), gui::ON, 0.0, 1.0); }
     if again {
-        // A pill in the forced-capture red at 16%: the undo arrow and "try again".
+        // A pill in the forced-capture red at 16%: the undo arrow and "try again", the
+        // arrow left out where the word wouldn't fit beside it in the label face.
         let said = strings::get(strings::PUZZLE_TRY_AGAIN);
-        let face = gui::fitting(g, gui::HEADING, said, c.z - 72.0 * u);
-        let w = min(c.z, 30.0 * u + 10.0 * u + gui::text_width(g, face, said) + 32.0 * u);
+        let arrow_w = (30.0 + 10.0) * u;
+        let ends = 2.0 * gui::PAD_WIDE * u;
+        var face = gui::fitting(g, gui::HEADING, said, c.z - ends - arrow_w);
+        let arrow = face < gui::SMALL && gui::text_width(g, face, said) <= c.z - ends - arrow_w;
+        if !arrow { face = gui::fitting(g, gui::HEADING, said, c.z - ends); }
+        let w = min(c.z, ends + (if arrow { arrow_w } else { 0.0 }) + gui::text_width(g, face, said));
         let pill = if stacked { gui::center(gui::cut_top(c, 48.0 * u), w, 48.0 * u) }
                    else { gui::center(float4 { c.x, c.y, w, c.w }, w, 48.0 * u) };
         gui::fill(g, pill, float4 { gui::RED.x, gui::RED.y, gui::RED.z, 0.16 }, 16.0 * u);
         var inner = pill;
         gui::cut_left(inner, gui::PAD_WIDE * u);
-        gui::glyph_icon(g, gui::center(gui::cut_left(inner, 30.0 * u), 30.0 * u, 30.0 * u), gui::UNDO, gui::PLAIN, 0.0,
-                        1.0);
-        gui::cut_left(inner, 10.0 * u);
+        if arrow {
+            gui::glyph_icon(g, gui::center(gui::cut_left(inner, 30.0 * u), 30.0 * u, 30.0 * u), gui::UNDO, gui::PLAIN,
+                            0.0, 1.0);
+            gui::cut_left(inner, 10.0 * u);
+        }
         gui::text(g, face, inner, said, 1.0, 0.0, gui::LEFT);
         return;
     }

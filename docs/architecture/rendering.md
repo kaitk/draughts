@@ -869,8 +869,9 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   which is no move, and the piece slides back from its stop as a wrong move does. There is no hint tile, as in a game. A wrong move plays,
   then 0.35 s after it lands slides back along its way, the pieces it took fading back
   in, while its square flashes the red ring over a ghost of the piece fading from 80%;
-  the goal gives way for 2 s to "try again" in a pill of the forced-capture red at 16%,
-  and a star goes out. When the other side would answer the wrong move by taking
+  the goal gives way for 2 s to "try again" in a pill of the forced-capture red at 16%
+  (in portrait's row the pill takes the goal's icon's place too, and leaves out its undo
+  arrow where the word would otherwise take the small face), and a star goes out. When the other side would answer the wrong move by taking
   something back ([puzzles](puzzles.md#the-screen)), that answer plays first, 0.4 s
   after the move lands, animated as a reply is; it holds 0.8 s after it lands, slides
   back along its way without the red ring, and the wrong move then slides back as
