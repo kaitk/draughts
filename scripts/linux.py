@@ -103,9 +103,18 @@ cd "$(dirname "$0")"
 data="${{XDG_DATA_HOME:-$HOME/.local/share}}"
 bin="$HOME/.local/bin/draughts"
 app="$data/applications/{APP_ID}.desktop"
-icon="$data/icons/hicolor/256x256/apps/{APP_ID}.png"
+icons="$data/icons/hicolor"
+icon="$icons/256x256/apps/{APP_ID}.png"
+# GNOME trusts an icon-theme.cache that another app left in $icons and so misses ours;
+# rebuild it, or, without the tool, make it stale by touching the folder.
+refresh() {{
+    if [ -f "$icons/icon-theme.cache" ]; then
+        gtk-update-icon-cache -q -t -f "$icons" 2>/dev/null || touch "$icons"
+    fi
+}}
 if [ "$1" = --remove ]; then
     rm -f "$bin" "$app" "$icon"
+    refresh
     echo "Removed Draughts. Its settings and saved game stay in $data/kaitk/draughts/."
     exit 0
 fi
@@ -113,6 +122,7 @@ mkdir -p "$(dirname "$bin")" "$(dirname "$app")" "$(dirname "$icon")"
 cp draughts "$bin"
 sed "s|^Exec=.*|Exec=$bin|" {APP_ID}.desktop > "$app"
 cp {APP_ID}.png "$icon"
+refresh
 echo "Installed Draughts in $bin, with the menu's entry and icon."
 """
 
