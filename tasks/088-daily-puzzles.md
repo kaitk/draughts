@@ -408,6 +408,15 @@ From `build/library/sample-30.md` (International's library, `--library N`):
 - Most of the rest, and the trap puzzles: pretty good, and the estimate accurate; the
   hardest needed several hints. No puzzle was named as bad or misplaced.
 
+## Proposed: say the day's shape on the puzzle screen (2026-11-14)
+
+The user's thought: on a daily puzzle's screen, something should say which is the
+warm-up and which is a bit harder. The library's tiles show it with the level's bars,
+but the puzzle screen shows only today's dots. Ways to try in `prototypes/puzzle.html`
+before building: the dots drawn as the tiles' rising bars (one, two, three), the one
+playing lit; or a small word under the goal ("Warm-up", "A bit harder"), strings in
+both languages. To prototype and choose first.
+
 ## Acceptance criteria
 
 - [x] The UI takes above prototyped, checked on the tablet's and a phone's sizes in both
