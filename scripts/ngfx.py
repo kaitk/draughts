@@ -21,7 +21,7 @@ gfx's GLSL by ngfx_2d_shaders.py and ngfx_3d_shaders.py, and src/ngfx/shaders/, 
 include and the shaders ngfx alone has. SMAA (third_party/smaa) comes with them: its
 shader, which smaa.slang includes, and its tables, which render3d embeds.
 
-Needs a goose-ngfx checkout (NGFX, else ../goose/goose-ngfx beside this repository),
+Needs a goose-ngfx checkout (NGFX, else ../goose-ngfx or ../goose/goose-ngfx beside this repository),
 slangc 2026.18.2 or later (NGFX_SLANGC), and what ngfx's own build needs (its
 docs/development.md: on Windows the Vulkan SDK and Visual Studio's Build Tools; on the
 Mac Xcode with its Metal toolchain; on Linux the Vulkan SDK and CMake, so in the goose
@@ -52,7 +52,10 @@ else:
 ROOT = native.ROOT
 OUT = ROOT / "build/ngfx"
 TREE = OUT / "tree"
-NGFX = Path(os.environ.get("NGFX", ROOT.parent / "goose/goose-ngfx")).resolve()
+# The checkout NGFX names, else one beside this repository (../goose-ngfx, or ../goose/goose-ngfx).
+NGFX = Path(os.environ.get("NGFX") or next(
+    (p for p in (ROOT.parent / "goose-ngfx", ROOT.parent / "goose/goose-ngfx") if p.exists()),
+    ROOT.parent / "goose-ngfx")).resolve()
 EXE = ".exe" if native.WINDOWS else ""
 
 
@@ -228,7 +231,7 @@ def shaders(tree=TREE, sdk=None):
 
 def check_setup():
     if not (NGFX / "ngfx.goose").exists():
-        sys.exit(f"no goose-ngfx checkout at {NGFX}: set NGFX")
+        sys.exit(f"no goose-ngfx checkout at {NGFX}: clone it beside this repository or set NGFX")
     if not os.environ.get("NGFX_SLANGC"):
         sys.exit("set NGFX_SLANGC to slangc 2026.18.2 or later (goose-ngfx's docs/development.md)")
 

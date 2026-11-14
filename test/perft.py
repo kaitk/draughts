@@ -22,6 +22,11 @@ import random
 import subprocess
 import sys
 import time
+from pathlib import Path
+
+# tools/perft.goose built natively (scripts/test.sh), .exe on Windows.
+PERFT = str(Path(__file__).resolve().parent.parent / "build" /
+            ("perft.exe" if sys.platform == "win32" else "perft"))
 
 DIRS = [(-1, 1), (1, 1), (-1, -1), (1, -1)]
 
@@ -258,7 +263,7 @@ def compare(v, games, plies, seed=1):
     for board, side in positions:
         f = fen(v, board, side)
         want = sorted(move_text(v, m) for m in moves(v, board, side))
-        got = subprocess.run(["build/perft", v.name, "1", f, "--moves"], capture_output=True,
+        got = subprocess.run([PERFT, v.name, "1", f, "--moves"], capture_output=True,
                              text=True, check=True).stdout.split("\n")
         got = sorted(l for l in got if l)
         if got != want:
@@ -272,7 +277,7 @@ def same_moves(v, board, side):
     """Whether build/perft gives the position's moves as this generator does."""
     f = fen(v, board, side)
     want = sorted(move_text(v, m) for m in moves(v, board, side))
-    got = subprocess.run(["build/perft", v.name, "1", f, "--moves"], capture_output=True,
+    got = subprocess.run([PERFT, v.name, "1", f, "--moves"], capture_output=True,
                          text=True, check=True).stdout.split("\n")
     if sorted(l for l in got if l) != want:
         print(f"differs at {f}")

@@ -10,8 +10,14 @@
 # GOOSE and ANDROID_NDK override the tools, as in scripts/android.py.
 set -e
 root=$(cd "$(dirname "$0")/.." && pwd)
-GOOSE=${GOOSE:-$root/build/goose-v2026.4-macos-arm64/goose}
-SDK=${ANDROID_HOME:-$HOME/Library/Android/sdk}
+# The pinned release, and Android Studio's default SDK, on each host.
+case $(uname -s) in
+    Darwin) release=goose-v2026.4-macos-arm64/goose sdk=$HOME/Library/Android/sdk ;;
+    Linux) release=goose-v2026.4-linux-x64/goose sdk=$HOME/Android/Sdk ;;
+    *) release=goose-v2026.4-windows-x64/goose.exe sdk=$LOCALAPPDATA/Android/Sdk ;;
+esac
+GOOSE=${GOOSE:-$root/build/$release}
+SDK=${ANDROID_HOME:-$sdk}
 NDK=${ANDROID_NDK:-$SDK/ndk/29.0.14206865}
 CC=$(ls -d "$NDK"/toolchains/llvm/prebuilt/*/bin | head -1)/aarch64-linux-android29-clang
 

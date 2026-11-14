@@ -46,8 +46,10 @@ from pathlib import Path
 from native import (APP_ID, ROOT, VERSION_NAME, WINDOWS, app_names, copy_sources, goose_to_c,
                     run, sidecar)
 
+# Android Studio's default SDK on each host, unless ANDROID_HOME names one.
 SDK = Path(os.environ.get("ANDROID_HOME", Path(os.environ.get("LOCALAPPDATA", "")) / "Android/Sdk"
-                          if WINDOWS else Path.home() / "Library/Android/sdk"))
+                          if WINDOWS else Path.home() / "Android/Sdk"
+                          if sys.platform.startswith("linux") else Path.home() / "Library/Android/sdk"))
 NDK = Path(os.environ.get("ANDROID_NDK", SDK / "ndk/29.0.14206865"))
 BUILD_TOOLS = Path(os.environ.get("ANDROID_BUILD_TOOLS", SDK / "build-tools/36.0.0"))
 PLATFORM = Path(os.environ.get("ANDROID_PLATFORM", SDK / "platforms/android-36"))

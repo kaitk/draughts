@@ -14,7 +14,12 @@
 set -e
 root=$(cd "$(dirname "$0")/.." && pwd)
 cd "$root"
-GOOSE=${GOOSE:-$root/build/goose-v2026.4-macos-arm64/goose}
+case $(uname -s) in
+    Darwin) release=goose-v2026.4-macos-arm64/goose ;;
+    Linux) release=goose-v2026.4-linux-x64/goose ;;
+    *) release=goose-v2026.4-windows-x64/goose.exe ;;
+esac
+GOOSE=${GOOSE:-$root/build/$release}
 export GOOSE
 
 test/run_tests.py

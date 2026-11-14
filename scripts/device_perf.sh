@@ -29,7 +29,7 @@ await() { adb logcat -m 1 -e "$1" >/dev/null; }
 apk=$(adb shell pm path $P | sed -n 's/^package://p' | tr -d '\r' | head -1)
 sum=$(adb shell sha256sum "$apk" | cut -d' ' -f1)
 built="$(dirname "$0")/../build/android/draughts/draughts-release.apk"
-if [ -f "$built" ] && [ "$(shasum -a 256 "$built" | cut -d' ' -f1)" = "$sum" ]; then
+if [ -f "$built" ] && [ "$( (sha256sum "$built" 2>/dev/null || shasum -a 256 "$built") | cut -d' ' -f1)" = "$sum" ]; then
   echo "build: the release built here from $(cat "${built%.apk}.commit" 2>/dev/null || echo 'an unrecorded commit'), sha256 $(echo $sum | cut -c1-12)"
 else
   echo "build: not the release built here (sha256 $(echo $sum | cut -c1-12)), installed $(adb shell dumpsys package $P | sed -n 's/^ *lastUpdateTime=//p' | tr -d '\r')"
