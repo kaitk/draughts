@@ -93,6 +93,10 @@ On the screen (2026-11-14, prototyped and chosen):
   heads the library and the locked Today ends it; once it opens, Today heads the list and
   How to play is a tile beside the title in landscape, the list's last row in portrait.
 - No "one more" after the day's set: the moon ends the day.
+- Today's row's head, its mark and words, opens a puzzle (2026-11-14): the first
+  unsolved, or the first once all are, as a replay for stars. A tap there did nothing,
+  though the mark looks like a theme row's, which opens. The head is a tile of its own
+  beside or over the puzzles' tiles, never round them, so their taps stay apart.
 - The day's shape on the puzzle screen (2026-11-14): the warm-up and the stretch are
   named by a word under the goal's lines, in the small face and the glow ("Warm-up", "A
   bit harder"); the middle ones, at the player's level, say nothing. Where the word

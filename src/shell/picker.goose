@@ -28,7 +28,8 @@ let LEARN_ID = BACK_ID + 1;         // How to play, a row or a tile
 let THEME_IDS = LEARN_ID + 1;       // the themes' rows, one a theme
 let SWITCH_IDS = THEME_IDS + puzzles::THEMES; // the draughts switch's tiles (settings::DRAUGHTS)
 let TODAY_IDS = SWITCH_IDS + 3;     // today's tiles
-let LIBRARY_LIST = TODAY_IDS + puzzles::MAX_DAILY; // the scrolling lists (gui::scroll_begin): the library,
+let TODAY_ID = TODAY_IDS + puzzles::MAX_DAILY; // Today's row's head, its mark and words (today_row)
+let LIBRARY_LIST = TODAY_ID + 1;    // the scrolling lists (gui::scroll_begin): the library,
 let PAGE_LIST = LIBRARY_LIST + 1;   // and a theme's page, plus the theme
 let PUZZLE_IDS = PAGE_LIST + puzzles::THEMES; // a puzzle's tile, by its index in puzzles::all
 let IDS_END = PUZZLE_IDS + puzzles::MAX_PUZZLES;
@@ -439,8 +440,10 @@ fn today_tile(g: gui::Gui&, k: i64, r: float4, level: i64, won: i64, lit: bool) 
     return tapped;
 }
 
-// Today's row in r, open: its mark, its name and note, and its tiles. Sets `spot` to the
-// tile of puzzle `at`, or of one tapped. Returns the place of the one tapped, or -1.
+// Today's row in r, open: its mark, its name and note, and its tiles. The head, the mark
+// and the words, is a tile of its own that opens today's lit puzzle, the first unsolved,
+// or the first once all are. Sets `spot` to the tile of puzzle `at`, or of one tapped or
+// opened. Returns the place of the one tapped or opened, or -1.
 fn today_row(g: gui::Gui&, r: float4, t: settings::Today&, at: i64, spot: float4&, phone: bool) -> i64 {
     let u = g.scale;
     gui::glass(g, r, 22.0);
@@ -453,11 +456,16 @@ fn today_row(g: gui::Gui&, r: float4, t: settings::Today&, at: i64, spot: float4
     let beside = today_beside(g, r.z, n, phone);
     var head = if beside { c } else { gui::cut_top(c, learn_dp(phone) * u) };
     let m = mark_dp(phone) * u;
-    today_mark(g, gui::cut_left(head, m), m, if done >= n { gui::MOON } else { gui::TODAY }, true);
+    let mark_at = gui::cut_left(head, m);
     gui::cut_left(head, mark_gap(phone) * u);
     var lines = c;
     if beside { lines = gui::cut_right(head, tiles_w(n, u)); }
     else { gui::cut_bottom(lines, TODAY_FOOT * u); }
+    // The head's tile: the row left of the tiles beside it, or over them, clear of them.
+    let press = if beside { float4 { r.x, r.y, lines.x - TODAY_GAP * u - r.x, r.w } }
+                else { float4 { r.x, r.y, r.z, lines.y - r.y } };
+    let opened = gui::tile(g, TODAY_ID, press, gui::NO_ICON, gui::ROW, 22.0);
+    today_mark(g, mark_at, m, if done >= n { gui::MOON } else { gui::TODAY }, true);
     var note: u8[..64] = [];
     if done >= n { note.append(strings::get(strings::DAILY_TOMORROW)); }
     else { strings::fill_in(note, strings::DAILY_LEFT, [n - done]); }
@@ -469,7 +477,7 @@ fn today_row(g: gui::Gui&, r: float4, t: settings::Today&, at: i64, spot: float4
     if !beside { per, unused_lines = today_lines(r.z, n, phone, u); }
     var lit = -1;
     for k in n { if lit < 0 && t.stars[k] == 0 { lit = k; } }
-    var pick = -1;
+    var pick = if opened && n > 0 { max(lit, 0) } else { -1 };
     let side = gui::tap() * u;
     for k in n {
         let line = k / per;
@@ -481,10 +489,8 @@ fn today_row(g: gui::Gui&, r: float4, t: settings::Today&, at: i64, spot: float4
         let y = if beside { lines.y + floor(0.5 * (lines.w - side) + 0.5) } else { lines.y + line * (side + TODAY_GAP * u) };
         let tr = float4 { x, y, side, side };
         if k == at { spot = tr; }
-        if today_tile(g, k, tr, slot_level(k, n), t.stars[k], k == lit) {
-            pick = k;
-            spot = tr;
-        }
+        if today_tile(g, k, tr, slot_level(k, n), t.stars[k], k == lit) { pick = k; }
+        if k == pick { spot = tr; }
     }
     return pick;
 }

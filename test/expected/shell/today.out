@@ -11,10 +11,12 @@ tile 0: the puzzle, today's 0, its dots 0 solved 1 this 3 to come
   solved: the puzzle, today's 0, its dots 1 solved 0 this 3 to come; day 20406, 420c:3 480c:0 460c:0 700c:0; rating 491 after 1, 4 had
   next: the puzzle, today's 1, its dots 1 solved 1 this 2 to come
   back: the library, today's 1, its dots 0 solved 0 this 0 to come, the library: 4 tiles, lit 1, calendar 1, moon 0, locks 0, how to play's mark 1
+  Today's head: the puzzle, today's 1, its dots 1 solved 1 this 2 to come
   played again with a miss: won 2; day 20406, 420c:3 480c:0 460c:0 700c:0; rating 491 after 1, 4 had
   the fourth: the puzzle, today's 3, its dots 3 solved 1 this 0 to come
   solved: the puzzle, today's 3, its dots 4 solved 0 this 0 to come; day 20406, 420c:3 480c:1 460c:3 700c:3; rating 571 after 4, 4 had
   next after the last: the library, today's 3, its dots 0 solved 0 this 0 to come, the library: 4 tiles, lit -1, calendar 0, moon 1, locks 0, how to play's mark 1
+  Today's head: the puzzle, today's 0, its dots 4 solved 0 this 0 to come
   home: dots 0 filled 0 not, check 1
 5 a day chosen: day 20406, 420c:3 480c:1 460c:3 700c:3; rating 571 after 4, 4 had
 the next day: day 20407, 440c:0 520c:0 620c:0 680c:0 900c:0; rating 571 after 4, 9 had
@@ -23,7 +25,7 @@ a Shots puzzle solved, the day after: day 20408, 300c:0 490s:0 630s:0 660c:0 850
 started again: day -1,; rating 0 after 0, 0 had, 5 a day
 a file from before ids: today's 4 read, 4 the same puzzles; had 2 of 2 the same
 the tablet, landscape, 4 a day:
-  the library: 15 tiles, Today's 4, all in place
+  the library: 16 tiles, Today's 4, all in place
   a daily puzzle: 4 tiles, 4 dots, all in place
   on the 3D board: 4 tiles, 4 dots, all in place
     3D, the second: no word
@@ -35,7 +37,7 @@ the tablet, landscape, 4 a day:
     flat, the last: the harder one's word, in place
     flat, a course puzzle: no word
 the tablet, portrait, 4 a day:
-  the library: 15 tiles, Today's 4, all in place
+  the library: 16 tiles, Today's 4, all in place
   a daily puzzle: 4 tiles, 4 dots, all in place
   on the 3D board: 4 tiles, 4 dots, all in place
     3D, the second: no word
@@ -47,7 +49,7 @@ the tablet, portrait, 4 a day:
     flat, the last: the harder one's word, in place
     flat, a course puzzle: no word
 a 20:9 phone at 480 dp, landscape, 4 a day:
-  the library: 15 tiles, Today's 4, the list scrolls, all in place
+  the library: 16 tiles, Today's 4, the list scrolls, all in place
   a daily puzzle: 4 tiles, 4 dots, all in place
   on the 3D board: 4 tiles, 4 dots, all in place
     3D, the second: no word
@@ -59,7 +61,7 @@ a 20:9 phone at 480 dp, landscape, 4 a day:
     flat, the last: the harder one's word, in place
     flat, a course puzzle: no word
 a 20:9 phone at 480 dp, portrait, 4 a day:
-  the library: 15 tiles, Today's 4, the list scrolls, all in place
+  the library: 16 tiles, Today's 4, the list scrolls, all in place
   a daily puzzle: 4 tiles, 4 dots, all in place
   on the 3D board: 4 tiles, 4 dots, all in place
     3D, the second: no word
@@ -71,7 +73,7 @@ a 20:9 phone at 480 dp, portrait, 4 a day:
     flat, the last: the harder one's word, in place
     flat, a course puzzle: no word
 the tablet, landscape, 10 a day:
-  the library: 21 tiles, Today's 10, all in place
+  the library: 22 tiles, Today's 10, all in place
   a daily puzzle: 4 tiles, 10 dots, all in place
   on the 3D board: 4 tiles, 10 dots, all in place
     3D, the second: no word
@@ -83,7 +85,7 @@ the tablet, landscape, 10 a day:
     flat, the last: the harder one's word, in place
     flat, a course puzzle: no word
 the tablet, portrait, 10 a day:
-  the library: 21 tiles, Today's 10, all in place
+  the library: 22 tiles, Today's 10, all in place
   a daily puzzle: 4 tiles, 10 dots, all in place
   on the 3D board: 4 tiles, 10 dots, all in place
     3D, the second: no word
@@ -95,7 +97,7 @@ the tablet, portrait, 10 a day:
     flat, the last: the harder one's word, in place
     flat, a course puzzle: no word
 a 20:9 phone at 480 dp, landscape, 10 a day:
-  the library: 21 tiles, Today's 10, the list scrolls, all in place
+  the library: 22 tiles, Today's 10, the list scrolls, all in place
   a daily puzzle: 4 tiles, 10 dots, all in place
   on the 3D board: 4 tiles, 10 dots, all in place
     3D, the second: no word
@@ -107,7 +109,7 @@ a 20:9 phone at 480 dp, landscape, 10 a day:
     flat, the last: the harder one's word, in place
     flat, a course puzzle: no word
 a 20:9 phone at 480 dp, portrait, 10 a day:
-  the library: 21 tiles, Today's 10, the list scrolls, all in place
+  the library: 22 tiles, Today's 10, the list scrolls, all in place
   a daily puzzle: 4 tiles, 10 dots, all in place
   on the 3D board: 4 tiles, 10 dots, all in place
     3D, the second: no word

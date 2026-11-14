@@ -5,8 +5,9 @@
 // a new day picks today's four at the player's rating, seeded from the course's stars,
 // from Captures alone while no Shots puzzle is solved, marks them had, and keeps them in
 // the player's file; the same day keeps them, home and the library shown again. A daily
-// puzzle opens from its tile in Today's row and plays on the puzzle screen with today's
-// dots over next; its first solve keeps its stars and moves the rating, a replay the same
+// puzzle opens from its tile in Today's row, and the row's head (its mark and words)
+// opens the first unsolved, or the first once all are; it plays on the puzzle screen
+// with today's dots over next; its first solve keeps its stars and moves the rating, a replay the same
 // day keeps the most stars and leaves the rating; next goes through today's set and after
 // the last back to the library, whose mark turns to the moon, and home shows a check in
 // place of the dots. The next day picks four more, none had before, from Shots too once one
@@ -242,6 +243,15 @@ fn library(sh: shell::Shell&, g: gui::Gui&, now: f64) {
 fn home(sh: shell::Shell&, g: gui::Gui&, now: f64) {
     sh.screen = shell::HOME;
     drive::idle(sh, g, now);
+}
+
+// Today's head in the library, its mark and words: the row's tile round the calendar or
+// the moon.
+fn head(g: gui::Gui&) -> float4 {
+    var mark = float4 { 0.0, 0.0, 0.0, 0.0 };
+    for q in g.quads { if q.look.x == gui::ICON && (q.look.z == gui::TODAY || q.look.z == gui::MOON) { mark = q.rect; } }
+    for q in g.quads { if q.look.x == gui::BUTTON && inside(mark, q.rect) { return q.rect; } }
+    return float4 { 0.0, 0.0, 0.0, 0.0 };
 }
 
 // Taps today's tile k in the library and waits out the transition.
@@ -520,6 +530,12 @@ fn main() {
     drive::tap(sh, g, drive::tile(g, 0), 8.0);
     drive::idle(sh, g, 9.0);
     print("  back: ", playing(sh, g), ", the library: ", library_line(sh, g));
+    // Today's head opens the lit one, the first unsolved.
+    drive::tap(sh, g, drive::middle(head(g)), 9.1);
+    drive::idle(sh, g, 9.5);
+    print("  Today's head: ", playing(sh, g));
+    drive::tap(sh, g, drive::tile(g, 0), 9.6);
+    drive::idle(sh, g, 9.95);
     open(sh, g, 0, 10.0);
     solve(sh, g, 1, 12.0);
     print("  played again with a miss: won ", sh.puzzle.won, "; ", record(sh));
@@ -534,6 +550,10 @@ fn main() {
     print("  solved: ", playing(sh, g), "; ", record(sh));
     next(sh, g, 34.0);
     print("  next after the last: ", playing(sh, g), ", the library: ", library_line(sh, g));
+    // All solved, Today's head opens the first.
+    drive::tap(sh, g, drive::middle(head(g)), 35.0);
+    drive::idle(sh, g, 35.5);
+    print("  Today's head: ", playing(sh, g));
     home(sh, g, 36.0);
     print("  home: ", home_line(g));
 
