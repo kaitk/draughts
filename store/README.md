@@ -61,9 +61,8 @@ the `scripts/` that made them. The made-up player has Learn solved, so 04 shows 
 library with Today open, two of the day's four solved, and home's Puzzles row its dots.
 Play's and the iPad's shots ran the headless copy with each run's own folder as the
 storage folder; the iPhone's, the simulator. The tablet's and the iPad's 04 were retaken
-from `3bf526b`, which centres the library's rows below back; the iPad's is in its
-`upload/`, the tablet's left out, as its switch stands past the rows' right edge
-(`check.txt`). It supersedes
+from `c912e34`, which centres the library's rows below back and ends its title row with
+them; every shot is in its `upload/`. It supersedes
 the 2026-11-10 set, never approved. Until it is approved, the sets below stay current.
 
 The current sets, outside git, taken 2026-11-09 from `main` at `78c7029`, each scene in
