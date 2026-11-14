@@ -5,11 +5,26 @@
 namespace drive;
 import std;
 import vec;
+import os;
 import rules from "../../src/rules";
 import board from "../../src/board";
 import gui from "../../src/gui";
 import game from "../../src/game";
 import shell from "../../src/shell";
+
+// Whether a test prints the coordinates, sizes, and quad counts it measured besides its
+// checks: with DRAUGHTS_TEST_VERBOSE=1 in the environment (test/run_tests.py --dump). By
+// default a layout test prints each invariant passed or failed, and what guards
+// behaviour (which tiles show, in what order), so a copy edit or a few dp moved needs no
+// re-bless.
+var verbose = verbose_env();
+fn verbose_env() -> bool {
+    var v: u8[>..] = [];
+    return env("DRAUGHTS_TEST_VERBOSE", v) && v == "1";
+}
+
+// "ok" or "WRONG", for a check's line.
+fn ok(pass: bool) -> const u8[:] { if pass { "ok" } else { "WRONG" } }
 
 // The pieces the game screen puts over the UI, which the shell holds in the app.
 var over: board::Overlay;

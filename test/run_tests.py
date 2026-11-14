@@ -10,9 +10,14 @@ for SLOW's, whose search TinyCC's code takes 9 to 28 s over, which each build at
 build/test/<area>/<name>/ and runs that instead, which is what the app ships.
 Every failure is reported, with a count per area at the end.
 
+--dump runs them with DRAUGHTS_TEST_VERBOSE=1, which makes the layout tests print the
+coordinates, sizes, and quad counts they measured besides their checks (test/drive's
+`verbose`), and writes each one's stdout to build/test/dump/<area>/<name>.out, comparing
+nothing: diff two dumps to see a layout change by the pixel.
+
 GOOSE names the compiler (default: the pinned release under build/).
 
-    test/run_tests.py [-j JOBS] [--build | --tinycc] [--bless] [-v] [AREA | NAME ...]
+    test/run_tests.py [-j JOBS] [--build | --tinycc] [--bless | --dump] [-v] [AREA | NAME ...]
 """
 
 import argparse
@@ -28,6 +33,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 EXPECTED = HERE / "expected"
 OUT = ROOT / "build" / "test"
+DUMP = OUT / "dump"
 RELEASE = ("goose-v2026.4-windows-x64/goose.exe" if os.name == "nt" else
            "goose-v2026.4-linux-x64/goose" if sys.platform.startswith("linux") else
            "goose-v2026.4-macos-arm64/goose")
@@ -108,8 +114,12 @@ def main():
     ap.add_argument("--build", action="store_true", help="build each natively and run that")
     ap.add_argument("--tinycc", action="store_true", help="run SLOW's through TinyCC too")
     ap.add_argument("--bless", action="store_true", help="write each run's stdout as expected")
+    ap.add_argument("--dump", action="store_true", help="run verbose, writing each stdout to build/test/dump/")
     ap.add_argument("-v", "--verbose", action="store_true", help="print the passes too")
     args = ap.parse_args()
+    if args.dump:
+        os.environ["DRAUGHTS_TEST_VERBOSE"] = "1"
+        DUMP.mkdir(parents=True, exist_ok=True)
 
     tests = find_tests(args.names)
     key = lambda t: f"{t.parent.name}/{t.stem}"
@@ -137,6 +147,9 @@ def main():
         problem, detail = None, ""
         if code != 0:
             problem, detail = f"exit {code}", out + err
+        elif args.dump:
+            (DUMP / t.parent.name).mkdir(exist_ok=True)
+            (DUMP / t.parent.name / f"{t.stem}.out").write_bytes((got + "\n").encode("utf-8"))
         elif args.bless:
             if not expected.exists() or expected.read_text(encoding="utf-8").rstrip("\n") != got:
                 expected.parent.mkdir(exist_ok=True)

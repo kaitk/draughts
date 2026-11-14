@@ -169,15 +169,16 @@ fn report(what: const u8[:], g: gui::Gui&, sh: shell::Shell&, board_shows: bool,
         if tap && (t.z < gui::TAP * u - 0.5 || t.w < gui::TAP * u - 0.5) { small++; }
     }
     if small > 0 { format(wrong, " ", small, " taps under 88 dp;"); }
-    format(line, ", smallest ", whole(narrow / u), " x ", whole(low / u), " dp");
+    if drive::verbose { format(line, ", smallest ", whole(narrow / u), " x ", whole(low / u), " dp"); }
     if board_shows {
-        format(line, ", board ", whole(b.z / u), " dp");
+        if drive::verbose { format(line, ", board ", whole(b.z / u), " dp"); }
+        else { line.append(if b.z > 0.0 { ", a board" } else { ", no board" }); }
         if b.z > 0.0 && !inside(b, safe) { wrong.append(" the board off the safe area;"); }
     }
     if card {
         // The card's two buttons, on the board.
         let back = drive::rect(g, n - 2);
-        format(line, ", card buttons ", whole(back.z / u), " x ", whole(back.w / u), " dp");
+        if drive::verbose { format(line, ", card buttons ", whole(back.z / u), " x ", whole(back.w / u), " dp"); }
         if !inside(back, b) { wrong.append(" the card off the board;"); }
     }
     line.append(if wrong.len > 0 { ";" } else { ", all in place" });
@@ -205,7 +206,8 @@ fn chip(g: gui::Gui&, sh: shell::Shell&) {
         for q in g.quads { if q.look.x == gui::GLASS { col = q.rect; break; } }
         let b = sh.out.layout.board;
         let sq = float4 { b.x, b.y, b.z, b.z };
-        var line = str("  home's chip", if named { ", named" } else { "" }, ": ", whole(c.z / u), " dp wide, board ", whole(b.z / u), " dp");
+        var line = str("  home's chip", if named { ", named" } else { "" }, ":");
+        if drive::verbose { format(line, " ", whole(c.z / u), " dp wide, board ", whole(b.z / u), " dp"); }
         var wrong: u8[>..] = [];
         if overlaps(c, col) { wrong.append(" on the column;"); }
         if overlaps(c, way) { wrong.append(" on the way out;"); }
@@ -219,7 +221,7 @@ fn chip(g: gui::Gui&, sh: shell::Shell&) {
         // The name's glass pill: inside the chip's tap, none without a name or where the
         // chip is round, its badge alone, for want of room (home::player_spot).
         let round = c.z < gui::TAP * u + 0.5;
-        if named && round { line.append(", round"); }
+        if named && round { line.append(if drive::verbose { ", round" } else { " round" }); }
         var pills = 0;
         for q in g.quads {
             guard q.look.x == gui::GLASS && q.rect.z < c.z else { continue; }
@@ -227,7 +229,9 @@ fn chip(g: gui::Gui&, sh: shell::Shell&) {
             if q.rect.x < c.x || q.rect.x + q.rect.z > c.x + c.z { wrong.append(" the pill outside the chip;"); }
         }
         if pills != (if named && !round { 1 } else { 0 }) { wrong.append(" the pill wrong;"); }
-        line.append(if wrong.len > 0 { ";" } else { ", mirroring the X on the board's side, off the column and the board" });
+        let comma = drive::verbose || (named && round);
+        line.append(if wrong.len > 0 { ";" } else if comma { ", mirroring the X on the board's side, off the column and the board" }
+                    else { " mirroring the X on the board's side, off the column and the board" });
         line.append(wrong);
         print(line);
         check(if named { "home's chip, named" } else { "home's chip" }, wrong[..]);
@@ -264,7 +268,9 @@ fn turn_piece(g: gui::Gui&, sh: shell::Shell&) {
     if !inside(disc, gui::safe(g, drive::size.x, drive::size.y)) { wrong.append(" off the safe area;"); }
     if !inside(disc, panel) { wrong.append(" off the panel;"); }
     let where = if disc.y + disc.w <= goal.y + 0.5 { "over" } else { "beside" };
-    print("  the turn piece: ", whole(2.0 * r / u), " dp, ", where, " the goal's icon, side ", p.look.x, ", ring ",
+    var size: u8[..16] = [];
+    if drive::verbose { format(size, whole(2.0 * r / u), " dp, "); }
+    print("  the turn piece: ", size[..], where, " the goal's icon, side ", p.look.x, ", ring ",
           p.ring.y, if wrong.len > 0 { ";" } else { ", in place" }, wrong);
     check("the turn piece", wrong[..]);
 }
@@ -379,10 +385,15 @@ fn play_here(g: gui::Gui&, sh: shell::Shell&) {
     if abs(play.w - back.w) > 0.5 { wrong.append(" not as tall as back;"); }
     if overlaps(play, back) { wrong.append(" on back;"); }
     if up != stacked(g, back) { wrong.append(" not the same way as back;"); }
-    print("  play from here: ", whole(play.z / u), " x ", whole(play.w / u), " dp, back ", whole(back.z / u), " x ",
-          whole(back.w / u), ", ", whole((play.x - back.x - back.z) / u), " dp apart",
-          if titled { ", the title between" } else { ", no title" }, if up { ", both stacked" } else { "" },
-          if wrong.len > 0 { ";" } else { "" }, wrong);
+    if drive::verbose {
+        print("  play from here: ", whole(play.z / u), " x ", whole(play.w / u), " dp, back ", whole(back.z / u), " x ",
+              whole(back.w / u), ", ", whole((play.x - back.x - back.z) / u), " dp apart",
+              if titled { ", the title between" } else { ", no title" }, if up { ", both stacked" } else { "" },
+              if wrong.len > 0 { ";" } else { "" }, wrong);
+    } else {
+        print("  play from here: beside back", if titled { ", the title between" } else { ", no title" },
+              if up { ", both stacked" } else { "" }, if wrong.len > 0 { ";" } else { ", in place" }, wrong);
+    }
     check("play from here", wrong[..]);
 }
 
@@ -410,8 +421,10 @@ fn no_count(g: gui::Gui&, sh: shell::Shell&) {
         if overlaps(note, q.rect) { wrong.append(" on an icon or a word;"); break; }
     }
     if words == 0 { wrong.append(" no words;"); }
-    print("  the line over the board", if sh.past.replay.why { ", why" } else { ", short" }, ": ",
-          whole(note.z / u), " x ", whole(note.w / u), " dp", if wrong.len > 0 { ";" } else { ", in place" }, wrong);
+    var size: u8[..32] = [];
+    if drive::verbose { format(size, ": ", whole(note.z / u), " x ", whole(note.w / u), " dp"); }
+    print("  the line over the board", if sh.past.replay.why { ", why" } else { ", short" }, size[..],
+          if wrong.len > 0 { ";" } else { ", in place" }, wrong);
     check("the line", wrong[..]);
 }
 
@@ -466,6 +479,7 @@ fn taken(g: gui::Gui&) {
     let alike = if wide { same(fl.left, c3.left) && same(fl.right, c3.right) }
                 else { same(sized(fl.left), sized(c3.left)) && same(sized(fl.right), sized(c3.right)) };
     if alike { line.append("; the panels the 3D screen's"); }
+    else if !drive::verbose { line.append("; the panels apart from the 3D screen's"); }
     else {
         format(line, "; the panels ", whole(fl.left.z / u), " x ", whole(fl.left.w / u), " and ", whole(fl.right.z / u), " x ",
                whole(fl.right.w / u), " dp, the 3D screen's ", whole(c3.left.z / u), " x ", whole(c3.left.w / u), " and ",
@@ -477,8 +491,8 @@ fn taken(g: gui::Gui&) {
         let pz = panel::puzzle_in(safe, n, u);
         let at = same(pz.left, fl.left)
                  && same(float4 { pz.right.x, pz.right.y, pz.right.z, 0.0 }, float4 { fl.right.x, fl.right.y, fl.right.z, 0.0 });
-        format(line, "; a puzzle's panels ", if at { "the game's" } else { "apart from the game's" }, ", its play ",
-               whole(pz.right.w / u), " dp tall");
+        format(line, "; a puzzle's panels ", if at { "the game's" } else { "apart from the game's" });
+        if drive::verbose { format(line, ", its play ", whole(pz.right.w / u), " dp tall"); }
         check("a puzzle's panels", if at { "" } else { "apart from the game's" });
     }
     print(line);
@@ -503,10 +517,16 @@ fn small_window(g: gui::Gui&) {
     at_rest(settings, g);
     // Back, the language, the background's two, then the theme's five.
     let season = drive::rect(g, 4);
-    print("the iPad's smallest window, ", whole(drive::size.x / u), " x ", whole(drive::size.y / u), " dp: settings' ",
-          drive::tiles(g), " tiles, a season ", whole(season.z / u), " x ", whole(season.w / u), " dp, the list scrolling ",
-          whole(g.scroll.max / u), " dp in a view ", whole(g.scroll.view.w / u), " dp tall, the preview ",
-          whole(settings.out.layout.board.z / u), " dp");
+    if drive::verbose {
+        print("the iPad's smallest window, ", whole(drive::size.x / u), " x ", whole(drive::size.y / u), " dp: settings' ",
+              drive::tiles(g), " tiles, a season ", whole(season.z / u), " x ", whole(season.w / u), " dp, the list scrolling ",
+              whole(g.scroll.max / u), " dp in a view ", whole(g.scroll.view.w / u), " dp tall, the preview ",
+              whole(settings.out.layout.board.z / u), " dp");
+    } else {
+        print("the iPad's smallest window: settings' ", drive::tiles(g), " tiles, the list ",
+              if g.scroll.max > 0.0 { "scrolling" } else { "still" }, ", ",
+              if settings.out.layout.board.z > 0.0 { "a preview" } else { "no preview" });
+    }
     head("the iPad's smallest window, home:");
     var home = showing(shell::HOME, home::NO_SETUP);
     at_rest(home, g);
@@ -515,7 +535,8 @@ fn small_window(g: gui::Gui&) {
     var setup = showing(shell::HOME, home::NEW_GAME);
     at_rest(setup, g);
     report("the setup", g, setup, true, false);
-    print("  the setup's choices scroll ", whole(g.scroll.max / u), " dp");
+    if drive::verbose { print("  the setup's choices scroll ", whole(g.scroll.max / u), " dp"); }
+    else { print("  the setup's choices ", if g.scroll.max > 0.0 { "scroll" } else { "don't scroll" }); }
     head("the iPad's smallest window, the game:");
     var plain = showing(shell::GAME, home::NO_SETUP);
     at_rest(plain, g);
@@ -535,9 +556,14 @@ fn handover() {
         let c3 = panel::corners_in(area, 10, 1.0);
         let wide = panel::columns(fl);
         let wide3 = panel::columns(c3);
-        print("the game at ", whole(w as f32), " x 800 dp: ", if wide { "landscape" } else { "portrait" }, ", board ",
-              whole(fl.board.board.z), " dp; 3D ", if wide3 { "landscape" } else { "portrait" }, ", ", whole(c3.view.rect.z),
-              " x ", whole(c3.view.rect.w), " dp");
+        if drive::verbose {
+            print("the game at ", whole(w as f32), " x 800 dp: ", if wide { "landscape" } else { "portrait" }, ", board ",
+                  whole(fl.board.board.z), " dp; 3D ", if wide3 { "landscape" } else { "portrait" }, ", ", whole(c3.view.rect.z),
+                  " x ", whole(c3.view.rect.w), " dp");
+        } else {
+            print("the game at ", whole(w as f32), " x 800 dp: ", if wide { "landscape" } else { "portrait" }, "; 3D ",
+                  if wide3 { "landscape" } else { "portrait" });
+        }
     }
 }
 
