@@ -1,11 +1,11 @@
 // Android's back, and Escape on the Mac (shell::back), headless: on each screen it does
 // what the screen's own back control does, the first tile each declares, which is the
-// arrow (prototypes/back.html, take b: the arrow and "Back" wherever the game, a puzzle,
-// the puzzles, and settings leave), 88 dp at least, in landscape and in portrait. A setup
-// goes back to home's menu, the game, settings opened from home, and the puzzles to pick
-// from go home, settings opened from the game or a puzzle go back to it, a puzzle to its
-// theme's page, and a theme's page to the library of themes. Each screen is reached twice by the same taps, left once by back and once
-// by its tile, and the two must end alike: the screen, home's column, and where the
+// arrow and "Back" (prototypes/back.html), 88 dp at least, in landscape and in portrait.
+// A setup goes back to home's menu, the game, settings opened from home, and the puzzles
+// to pick from go home, settings opened from the game or a puzzle go back to it, a puzzle
+// to its theme's page, and a theme's page to the library of themes. Each screen is
+// reached twice by the same taps, left once by back and once by its tile, and the two
+// must end alike: the screen, home's column, and where the
 // board rests. On home's menu back changes nothing and says so (false), for the app to
 // hand it to the system. In a transition it turns round, as a tap on the screen come to
 // does. The board's rect prints verbose (DRAUGHTS_TEST_VERBOSE); by default the test

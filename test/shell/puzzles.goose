@@ -10,8 +10,9 @@
 // misses the piece to move glows. In a shot, a right move is answered by the
 // line's reply after a pause, and the capture after it solves the puzzle. A black-to-move
 // puzzle shows on the turned board, its panel saying "Black to move" beside a black turn
-// piece lit until it is solved, and is solved by taps there. Settings opened from a puzzle go back to it as it was; a puzzle isn't saved
-// with the game, which brings back the picker instead. Stars are kept under
+// piece lit until it is solved, and is solved by taps there. Settings opened from a
+// puzzle go back to it as it was; a puzzle isn't saved with the game, which brings back
+// the picker instead. Stars are kept under
 // `stars.international`, and an older file's `stars` is read as it. Half of Learn solved
 // opens the other themes. Next after a theme's last puzzle goes back to the library. In
 // portrait the theme's tiles keep 88 dp. Where squares, the board, and tiles lie prints

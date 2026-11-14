@@ -1,9 +1,9 @@
-// Home to settings and back through their transition (task 022), headless: settings
+// Home to settings and back through their transition, headless: settings
 // from home starts it, and while it runs the shell asks for frames, home fading out
 // under settings, both drifting the way the board goes, which eases from home's place
 // to the preview's, up in both orientations: settings' preview is beside the list in
-// landscape and in a band at the top in portrait (task 080). The board is home's all the way, the game's
-// pieces on its squares, and settings show their preview once it is there: one set of
+// landscape and in a band at the top in portrait. The board is home's all the way, the
+// game's pieces on its squares, and settings show their preview once it is there: one set of
 // pieces, never faint, ever on screen. Back shows home's board from its first frame.
 // Both screens' UI and their pieces over it are hidden where the board passes (the
 // hole, the board's rect while the transition runs, none at rest).

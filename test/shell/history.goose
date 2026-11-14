@@ -1,4 +1,4 @@
-// The games played (task 074): each move of a game judged on the worker (answered here
+// The games played: each move of a game judged on the worker (answered here
 // at once with ai::judge, as think.goose's worker would) and listed with its mark; a
 // finished game written to the player's history-N.txt, once when it ends and again over
 // its own line once its last moves are judged; the rating moved by a game against the

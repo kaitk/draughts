@@ -185,7 +185,7 @@ fn main() {
     // Return is done, as the check is: the player is added and the question comes.
     type_text(sh, g, [gui::ENTER], tick());
     print("typed, Return: '", sh.who.name[..], "', ", state(sh), ", changed ", sh.changed);
-    // The question (task 026): asked once it shows; I know how closes it.
+    // The question: asked once it shows; I know how closes it.
     let asked = home_tiles(sh, g, t);
     print("  asked ", sh.prefs.first_start_done, ", the question's tiles ", drive::tiles(g) - asked);
     drive::tap(sh, g, card_tile(g, asked, 1), tick());

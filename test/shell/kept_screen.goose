@@ -1,8 +1,7 @@
 // The screen a kept game comes back on (saved.goose, shell::KINDS' `kept`): the app
 // writes the game whatever screen shows as it is paused or quits, so each screen's image
 // must restore, the game in it as it was, on the screen it comes back to. A puzzle comes
-// back as the puzzles to pick from; the results, a replay, and how to play as home. How
-// to play's image once failed to restore at all (2026-11-13), losing the game.
+// back as the puzzles to pick from; the results, a replay, and how to play as home.
 import std;
 import vec;
 import rules from "../../src/rules";

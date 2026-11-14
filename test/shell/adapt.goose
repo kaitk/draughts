@@ -2,13 +2,13 @@
 // in the settings, which a game against the computer plays at throughout. A game the
 // child wins moves its level's skill up a step (ai::adapt), one the computer wins down a
 // step, and the settings file keeps it; the steps are larger over a player's first
-// games on a level, and a win in the very first game larger still. A game started over before it ends moves no skill. A draw counts
-// as a game played on its level and leaves its skill. Play again on
-// the card, or start over, begins a new game at its level's skill as it is now, and
-// counts it as home's play does. A skill in the file stays within its level's band, and
-// a file from before the games per level were kept starts a skill still where its level
-// started then afresh, as does one on a level no game has ended on yet. A game restored after the level's skill moved still plays at its
-// own.
+// games on a level, and a win in the very first game larger still. A game started over
+// before it ends moves no skill. A draw counts as a game played on its level and leaves
+// its skill. Play again on the card, or start over, begins a new game at its level's
+// skill as it is now, and counts it as home's play does. A skill in the file stays within
+// its level's band, and a file from before the games per level were kept starts a skill
+// still where its level started then afresh, as does one on a level no game has ended on
+// yet. A game restored after the level's skill moved still plays at its own.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -180,8 +180,8 @@ fn main() {
     let moved = settings::parse("skill_easy = 6\nskill_medium = 40\n");
     print("  and another: skills ", moved.skill[0], " ", moved.skill[1], " ", moved.skill[2], ", played ",
           moved.played[0], " ", moved.played[1], " ", moved.played[2]);
-    // Easy at its start before 2026-11-11, 0, with no game ended on it: today's start. A
-    // level with games ended keeps its skill.
+    // Easy at an older file's start, 0, with no game ended on it: today's start. A level
+    // with games ended keeps its skill.
     let unplayed = settings::parse("skill_easy = 0\nplayed_easy = 0\nskill_medium = 33\nplayed_medium = 2\n");
     print("  no games on easy yet: skills ", unplayed.skill[0], " ", unplayed.skill[1], ", played ",
           unplayed.played[0], " ", unplayed.played[1]);

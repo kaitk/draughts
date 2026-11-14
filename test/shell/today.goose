@@ -1,4 +1,4 @@
-// The daily puzzles in the shell (shell/today.goose, task 088), headless, on a test
+// The daily puzzles in the shell (shell/today.goose), headless, on a test
 // library of 200 one-move captures written as the generated file is, difficulties 300 to
 // 2290, Captures and Shots by turns. Today is locked until Learn is solved, all of it: the
 // library ends with its locked row, home notes the puzzles solved in the set. Once open,
@@ -572,7 +572,7 @@ fn main() {
     homes(text, g);
 }
 
-// The built-in International library's first lines (2026-11-14), before it had ids: the
+// The built-in International library's first lines from before it had ids: the
 // line a player's file then named a puzzle by, and its position.
 let OLD_LINES = [0, 12, 40, 55, 70];
 let OLD_FENS = ["B:W16,21,26,28,32,33,42:B15,20,24,25,29,30,34", "B:W23,31,32,35,36,40,41:B8,11,12,13,14,17,19",

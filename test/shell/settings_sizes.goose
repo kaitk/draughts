@@ -1,4 +1,4 @@
-// Settings laid out at the devices' sizes (task 080, take b), headless: the tablet's
+// Settings laid out at the devices' sizes, headless: the tablet's
 // landscape and portrait (1280 x 800 and 800 x 1280 dp), the Pixel 7a's at 540 dp with
 // its cutout and gesture bar, and the iPhone 13 mini's at 500 dp with its notch and home
 // indicator, each both ways, in English and Estonian. In landscape the list is a 480 dp
@@ -9,8 +9,8 @@
 // language list opened from the title row, its rows; verbose (DRAUGHTS_TEST_VERBOSE) the
 // column's width or the sheet's top, the list's view and how far it scrolls, the picture
 // rows' gaps, the smallest tap, the preview's flat board and the 3D board's room, and the
-// language rows' size, in dp. Every tap is 88 dp at least, every tile and the language list inside the safe area
-// across, and the preview at least board::SMALLEST where it shows; a line with anything
+// language rows' size, in dp. Every tap is 88 dp at least, every tile and the language
+// list inside the safe area across, and the preview at least board::SMALLEST where it shows; a line with anything
 // wrong fails the test. The words are the test faces' (each character half its face
 // wide), wider than the real font's.
 import std;
@@ -28,7 +28,7 @@ import drive from "../drive";
 
 let LANGUAGE = 1;           // the language button, after back
 let FIRST_TILE = 2;         // the list's first tile: the Background row's Photo
-let TILES = 26;             // the tiles of the list's rows, puzzles a day's four too (task 088), and back and the language
+let TILES = 26;             // the list's rows' tiles, puzzles a day's four too, back, language
 
 fn whole(x: f32) -> i64 { floor(x + 0.5) as i64 }
 

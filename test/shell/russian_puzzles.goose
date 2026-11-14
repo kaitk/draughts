@@ -48,8 +48,8 @@ fn icons(g: gui::Gui&, icon: i64) -> i64 {
     return n;
 }
 
-// The library as the last frame declared it: its tiles (back, a row per theme, how to play), locks,
-// and each theme's mark.
+// The library as the last frame declared it: its tiles (back, a row per theme, how to
+// play), locks, and each theme's mark.
 fn library(g: gui::Gui&) -> u8[>..] {
     return str("tiles ", drive::tiles(g), ", locks ", icons(g, gui::LOCK), ", marks ", icons(g, gui::BOOK), " ",
                icons(g, gui::JUMPS), " ", icons(g, gui::CROWN), " ", icons(g, gui::TARGET), " ", icons(g, gui::KING));

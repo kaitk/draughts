@@ -1,4 +1,4 @@
-// Home's 3D board turned by a drag on it (2026-11-09), through the shell on the tablet's
+// Home's 3D board turned by a drag on it, through the shell on the tablet's
 // landscape at 1280 × 800 (a dp a pixel): a drag that starts inside the board's outline
 // on screen moves the game's showcase camera (rig::drive: 0.3° a dp, ±35° round, 35° to
 // 80° down), drawing only while it moves and nothing once let go, the angle kept while

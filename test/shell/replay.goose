@@ -1,4 +1,4 @@
-// A past game's replay (shell/replay.goose, task 078's C): a game's row on the results
+// A past game's replay (shell/replay.goose): a game's row on the results
 // screen opens it at the game's end; the steps go to the start, back, on (the move played
 // on the board), and to the end; a move tapped in the list jumps there; Left and Right
 // step from anywhere, the keys' focus on a move shows it and follows the steps; back
@@ -302,8 +302,8 @@ fn main() {
     drive::key(sh, g, gui::STEP_RIGHT, false, tick());
     print("Right: ", shown(sh));
     drive::idle(sh, g, tick());
-    // Tab to the list (the steps' group first): the move the focus comes to shows; Down a move on; Left back one,
-    // the focus following.
+    // Tab to the list (the steps' group first): the move the focus comes to shows; Down a
+    // move on; Left back one, the focus following.
     drive::key(sh, g, gui::STEP_NONE, false, tick());
     var tabs = 0;
     while tabs < 4 && !(g.focus >= replay::MOVE_ID) {

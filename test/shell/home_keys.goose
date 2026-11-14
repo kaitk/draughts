@@ -1,4 +1,4 @@
-// Home with the keys and a desktop's Quit row (task 072), headless. On a desktop
+// Home with the keys and a desktop's Quit row, headless. On a desktop
 // (desktop_scale above 0) in landscape the way out is a last row, Quit, under settings, and
 // the X isn't shown; in portrait, in a landscape too short for the row, and on a touch
 // screen (desktop_scale 0) the X is, and no Quit row. The first arrow key focuses

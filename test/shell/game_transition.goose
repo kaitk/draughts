@@ -148,7 +148,7 @@ fn main() {
     let take_back = drive::control(g, 3);
     drive::tap(sh, g, drive::at(sh.out.layout, "c3"), 0.1);
     drive::tap(sh, g, drive::at(sh.out.layout, "d4"), 0.2);
-    // After the move: the moves panel (task 074) has its row.
+    // After the move: the moves panel has its row.
     let into = straight(sh, 0.3);
     sh.screen = shell::HOME;
     look(sh, g, 1.0, "home");

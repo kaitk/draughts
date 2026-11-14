@@ -1,4 +1,4 @@
-// How to play (shell/tutorial.goose, task 026), headless at the tablet's landscape: each
+// How to play (shell/tutorial.goose), headless at the tablet's landscape: each
 // draughts' steps with their positions and every legal move in them, so a step can only
 // be played as it teaches; then the whole tutorial played through the shell by taps, the
 // first step's answer between the child's two moves, next lit only once a step is played,

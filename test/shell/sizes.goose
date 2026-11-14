@@ -1,4 +1,4 @@
-// Every screen at other proportions than the tablet's (task 030), headless: a foldable's
+// Every screen at other proportions than the tablet's, headless: a foldable's
 // near-square inner screen, a 4:3 tablet, and a 20:9 phone, each in both orientations,
 // in English and Estonian; and the phone's layout at 540 and 480 dp across its shorter
 // side (gui::short_dp, the phone scale's floor), with a 9:16 phone at 480, the tightest.
@@ -18,10 +18,10 @@
 // the puzzles' crown shows its own tiles. A puzzle's turn
 // piece lies in its panel clear of the tiles, icons, and words, over the goal where the
 // panel has the room and beside its icon where not. On the game, flat and 3D, what each
-// side has taken late in a game (task 052) lies inside the safe area clear of the tiles,
-// the camera buttons, and the board, and the flat screen's panels are the 3D one's
-// (task 054), or the line says how they differ; the iPad's smallest window too, with home's menu
-// and the setup there, its choices scrolling between its head and play.
+// side has taken late in a game lies inside the safe area clear of the tiles, the camera
+// buttons, and the board, and the flat screen's panels are the 3D one's, or the line
+// says how they differ; the iPad's smallest window too, with home's menu and the setup
+// there, its choices scrolling between its head and play.
 // A replay's play from here stands in its head beside back, both a tap at least, as tall,
 // and the same way, icon beside or over word; the line saying a game from there doesn't
 // count lies inside the safe area right over the board, as wide, clear of the tiles and
@@ -52,8 +52,8 @@ struct Allowed {
 }
 
 let ALLOWED = [
-    // A small window's (gui::compact) menu rows, the results row with them (task 074), are 72 dp, under the floor, accepted for
-    // compact only (the user, 2026-11-09; rendering.md, "Compact").
+    // A small window's (gui::compact) menu rows, the results row with them, are 72 dp,
+    // under the floor, accepted for compact only (rendering.md, "Compact").
     Allowed { under: "the iPad's smallest window", what: "home", wrong: " 4 taps under 88 dp;" },
     // Its game bar's three tiles are 72 x 64 dp, the same acceptance.
     Allowed { under: "the iPad's smallest window", what: "the game", wrong: " 3 taps under 88 dp;" },
@@ -429,9 +429,9 @@ fn no_count(g: gui::Gui&, sh: shell::Shell&) {
 }
 
 // What each side has taken late in a game, 14 white men and a white king and 12 black
-// men, on the game screen flat and 3D (task 052): how many pieces show and how many are
+// men, on the game screen flat and 3D: how many pieces show and how many are
 // kings, each inside the safe area and clear of every tile, camera button, and the
-// board; then whether the flat screen's panels are the 3D screen's (task 054).
+// board; then whether the flat screen's panels are the 3D screen's.
 fn taken(g: gui::Gui&) {
     let w = drive::size.x;
     let h = drive::size.y;
@@ -504,7 +504,7 @@ fn same(a: float4, b: float4) -> bool {
     return abs(a.x - b.x) < 0.5 && abs(a.y - b.y) < 0.5 && abs(a.z - b.z) < 0.5 && abs(a.w - b.w) < 0.5;
 }
 
-// The 11" iPad's smallest window (task 050), 374 x 484 pt at 2 px a point with the
+// The 11" iPad's smallest window, 374 x 484 pt at 2 px a point with the
 // density floor, a 499 x 645 dp compact layout: settings' list, a season's tile, how far
 // it scrolls, and the preview over it.
 fn small_window(g: gui::Gui&) {

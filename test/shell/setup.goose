@@ -155,7 +155,7 @@ fn turning(sh: shell::Shell&, g: gui::Gui&, now: f64) {
           shell::animating(sh, g, now + 2.7));
 }
 
-// The setup laid out where it fits and where not (prototypes/new-game.html, take c), the
+// The setup laid out where it fits and where not (prototypes/new-game.html), the
 // computer's and a friend's, on the tablet's landscape and portrait (1280 x 800 and 800 x
 // 1280 dp), the Pixel 7a's at 540 dp with its insets (cutout and gesture bar) in both
 // orientations, and the iPhone 13 mini's (500 dp, its notch and home indicator): where

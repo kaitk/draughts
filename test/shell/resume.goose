@@ -3,8 +3,8 @@
 // history come back from the image, and undo goes on working; a game of another variant
 // comes back with its own, its clocks, and whom it is against at which skill; an image
 // that is damaged, cut short, or of something else changes nothing. Whether the game is
-// one nobody set up comes back too (issue 1); a version 3 image, from before that was
-// kept, reads as a game set up.
+// one nobody set up comes back too; a version 3 image, which doesn't keep that, reads as
+// a game set up.
 import std;
 import vec;
 import rules from "../../src/rules";

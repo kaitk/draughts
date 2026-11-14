@@ -1,9 +1,8 @@
 // A long game's win on a 2560 x 1440 desktop: an International game of 119 plies against
 // the computer, every move marked (two glyphs each), the move list full of rows, then
-// the win's card over the board. The UI's quads (gui::MAX_QUADS) must hold them all: at
-// 512 the list took them and the card's panel, words, and buttons were dropped unseen,
-// its crowned piece (an overlay, not a quad) left alone on the board (2026-11-14). On
-// the flat and the 3D board: whether the frames stayed under the limit and the card's
+// the win's card over the board. The UI's quads (gui::MAX_QUADS) must hold them all, the
+// card's panel, words, and buttons too, not only its crowned piece (an overlay). On the
+// flat and the 3D board: whether the frames stayed under the limit and the card's
 // quads are on the board; the quad counts themselves verbose (DRAUGHTS_TEST_VERBOSE).
 import std;
 import vec;

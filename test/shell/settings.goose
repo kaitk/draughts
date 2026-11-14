@@ -1,7 +1,7 @@
 // Settings (shell/settings.goose), headless: the file they are kept in reads back what
 // was written, and a file that lacks a key or says something unknown leaves the default.
 // The language is the device's (shell/players.goose), kept apart from the player's file.
-// On the screen, one list that scrolls under the title row (task 080), a tap applies at
+// On the screen, one list that scrolls under the title row, a tap applies at
 // once and marks the settings changed for the app to write: the language from the list
 // its button opens in the title row; move hints (which the game's board takes), a season,
 // and the kings (which the game's board draws too); the Board row's Raised plays the game
@@ -9,7 +9,7 @@
 // Wood, Stone, and Carved on the 3D board in that material, kept in the file as
 // `material`; Flat keeps the material for the next raised board. Each choice restages the
 // board beside them: its size, its kings, and what the move hints show on a fixed position
-// (the player's draughts, chosen elsewhere: no row here since issue 1), where white must
+// (the player's draughts, chosen elsewhere), where white must
 // capture with the man on d4 or the king on h6. With mistakes only, a wrong move's ring
 // flashes and both capturing pieces pulse, then both stay lit and still, so nothing
 // animates after. The Background row's Plain is kept in the file as `background`, and with
@@ -17,7 +17,7 @@
 // their fades. In landscape the board is right of the list; in portrait above it. The
 // language list closes on a tap outside it and on back, which then stays on settings.
 // The game's lookout, off for a new player, is kept in the file too, and the puzzles a
-// day (task 088), chosen in the Game section's last row. The list's and the board's rects,
+// day, chosen in the Game section's last row. The list's and the board's rects,
 // in pixels, and a language row's height in dp print verbose (DRAUGHTS_TEST_VERBOSE); by
 // default whether the list scrolls and the checks they stand for.
 import std;
@@ -50,9 +50,9 @@ let AUTO = 14;
 let STACK = 16;
 let MISTAKES = 17;
 let MOVES = 18;
-let LIST_OFF = 19;          // the moves panel's row (task 074): off, the moves, marks
+let LIST_OFF = 19;          // the moves panel's row: off, the moves, marks
 let LIST_MARKS = 21;
-let DAILY_10 = 25;          // puzzles a day (task 088): 3, 4, 5, 10
+let DAILY_10 = 25;          // puzzles a day: 3, 4, 5, 10
 let TILES = 26;
 let ENGLISH = 26;           // the language list's rows, after the screen's tiles
 let EESTI = 27;
@@ -73,7 +73,7 @@ fn seen(sh: shell::Shell&, g: gui::Gui&, n: i64, now: f64) -> float2 {
 fn tap(sh: shell::Shell&, g: gui::Gui&, n: i64, now: f64) { drive::tap(sh, g, seen(sh, g, n, now), now); }
 
 // The player's draughts, chosen in home's setup or the puzzles' library (settings has no
-// row for them since issue 1): the preview is staged again with their size, as a
+// row for them): the preview is staged again with their size, as a
 // settings' change stages it (shell::settings_screen).
 fn draughts(sh: shell::Shell&, g: gui::Gui&, v: i64, now: f64) {
     sh.prefs.variant = v;

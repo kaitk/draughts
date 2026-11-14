@@ -1,4 +1,4 @@
-// The puzzles' library and each theme's page (shell/picker.goose, take a), headless, at
+// The puzzles' library and each theme's page (shell/picker.goose), headless, at
 // the tablet's size (1920 × 1200, 800 dp across its shorter side) and a 20:9 phone's at
 // 480 dp, in both orientations: each screen's taps, where the first and the last lie in
 // dp and the smallest across and down (printed verbose, DRAUGHTS_TEST_VERBOSE), how many
@@ -69,8 +69,8 @@ fn report(what: const u8[:], g: gui::Gui&) {
         let r = drive::rect(g, i);
         narrow = min(narrow, r.z);
         low = min(low, r.w);
-        // A row past the foot of the list, which scrolls to it (a phone's landscape since
-        // How to play's row, task 026), is counted apart.
+        // A row past the foot of the list, which scrolls to it (a phone's landscape), is
+        // counted apart.
         let across = r.x >= safe.x - 0.5 && r.x + r.z <= safe.x + safe.z + 0.5;
         if across && r.y >= safe.y - 0.5 && r.y + r.w > safe.y + safe.w + 0.5 {
             below++;

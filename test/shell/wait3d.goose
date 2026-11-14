@@ -1,5 +1,5 @@
 // The 3D board chosen but not ready yet (the app gets it ready a step a frame and says so
-// in sh.ready3d, task 042), headless. With no image of it yet (sh.shown3d false) a still
+// in sh.ready3d), headless. With no image of it yet (sh.shown3d false) a still
 // mark, glass round the words "Preparing 3D…", shows in the middle of where the board goes,
 // on the game, home, and settings alike, and nothing in the shell animates for it (the
 // app draws its steps); a tap on a piece is left alone while the UI's tiles still answer.

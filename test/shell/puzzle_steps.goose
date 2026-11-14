@@ -7,9 +7,9 @@
 // to its square with the red ring on the stop, and a star goes out; next does nothing
 // before. A tap on a stop shows the piece hopping there. Puzzle 14's king takes three by
 // 33 and 17, ending on 8 or 3; a tap on 28, which the king passes on its way from 33 to
-// 17, is nothing at all, and costs no star (2026-11-11, issue 1); a tap off the way (34)
-// is a miss. Puzzle 10 has two doubles, 38 by 29 to 20 and by 27 to 16; the
-// first ends where it is taken back: a miss, and after the answer has shown, it slides back. Puzzle 31's man takes
+// 17, is nothing at all, and costs no star; a tap off the way (34) is a miss. Puzzle 10
+// has two doubles, 38 by 29 to 20 and by 27 to 16; the first ends where it is taken
+// back: a miss, and after the answer has shown, it slides back. Puzzle 31's man takes
 // two by 17 to 6; dropped on 17, the frame the finger lifts on asks for the one after,
 // which shows next awake, the man it jumped still there. Puzzles never show a selected
 // piece's targets, even with move hints on in settings and in Learn.

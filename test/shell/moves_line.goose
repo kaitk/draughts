@@ -1,5 +1,5 @@
-// The moves where the moves panel has no room, and a mark's tip (task 078,
-// prototypes/history.html's take d and B), on a Russian game of twelve moves each, its
+// The moves where the moves panel has no room, and a mark's tip
+// (prototypes/history.html), on a Russian game of twelve moves each, its
 // moves' marks set by hand (judging off), on the flat and the 3D board.
 //
 // On the Pixel 7a (540 dp, its 118 px cutout and 84 px gesture bar), the Galaxy A33 (512

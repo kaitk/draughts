@@ -1,4 +1,4 @@
-// A replay's play from here (task 078, the user's correction of 2026-11-13): at the move
+// A replay's play from here: at the move
 // a replay shows, its button starts a game from that position, of the same draughts,
 // against the same opponent (the computer at the game's level and skill, or a friend),
 // the player on the same side, the side to move as there, with no clock, its moves

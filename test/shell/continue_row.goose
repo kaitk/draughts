@@ -1,4 +1,4 @@
-// Home's continue (shell::resume, home::Resume; issue 1, prototypes/issue-1.html take a):
+// Home's continue (shell::resume, home::Resume; prototypes/issue-1.html):
 // its note says whose game it goes back to, a friend's or the computer's at its level.
 // While the game is one nobody set up (none kept: a fresh install, a new player) and no
 // move was played in it, the row isn't shown, New game's the first and lit in its place;

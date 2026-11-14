@@ -1,6 +1,6 @@
 // A wrong move's answer (shell/puzzle.goose, puzzles::answer), headless, driven through
-// the pointer. International's Captures puzzle 32 as it was, its man on 39, had two
-// doubles: 27x38x29, which lands safe, and 39x28x37, which 21x32x41 takes back. The
+// the pointer. A position from International's Captures puzzle 32, its man on 39, has
+// two doubles: 27x38x29, which lands safe, and 39x28x37, which 21x32x41 takes back. The
 // second is wrong; black's double back plays 0.4 s after it lands, as a reply does,
 // holds 0.8 s, and slides back; then the wrong move slides back with the red ring on
 // its square, a miss, and the puzzle is at its start again. A wrong move nothing

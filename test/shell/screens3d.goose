@@ -1,4 +1,4 @@
-// Every screen with a board on the 3D board (settings::raised, task 015), headless.
+// Every screen with a board on the 3D board (settings::raised), headless.
 // Home's board and settings' preview fitted into the room each gives it: their bounds in
 // dp at the tablet's size, a foldable, 4:3, and a 20:9 phone at 540 dp, in both
 // orientations, inside the screen, clear of every tile (the column, the player's chip,

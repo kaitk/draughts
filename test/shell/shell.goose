@@ -2,10 +2,10 @@
 // the app opens at home with the board beside the menu; continue opens the game as it
 // stands and home on the panel returns home with the game kept; puzzles opens the
 // puzzles to pick from, its back home (test/shell/puzzles.goose has the rest), and home
-// notes the stars won of those there are; settings opens settings, with their own board beside them, and its back
-// returns where it came from, home or the game. New game opens the setup in home's column,
-// whose choices, a friend or the computer at a level first, are kept in the settings and
-// whose play starts that game over the old one;
+// notes the stars won of those there are; settings opens settings, with their own board
+// beside them, and its back returns where it came from, home or the game. New game opens
+// the setup in home's column, whose choices, a friend or the computer at a level first,
+// are kept in the settings and whose play starts that game over the old one;
 // against the computer playing white the board is turned, the game takes the skill kept
 // for its level and the number of games against the computer so far, which goes up, and
 // home's new game notes the level.
@@ -33,8 +33,8 @@ import drive from "../drive";
 let W = 1280.0;
 let H = 800.0;
 
-// The setup's three draughts tiles' widths (after back and whom to play's four), rounded, and whether the first's name has its
-// face's room (gui::pick).
+// The setup's three draughts tiles' widths (after back and whom to play's four), rounded,
+// and whether the first's name has its face's room (gui::pick).
 // Verbose, the widths; else whether they are equal or the first is the widest.
 fn draughts_widths(g: gui::Gui&) -> u8[>..] {
     let name = gui::text_width(g, gui::BODY, strings::get(strings::VARIANT_INTERNATIONAL));

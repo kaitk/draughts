@@ -1,4 +1,4 @@
-// The mouse's hover on every screen (task 066), headless at a desktop's 1280 × 800 with
+// The mouse's hover on every screen, headless at a desktop's 1280 × 800 with
 // desktop_scale 1: the pointer rests at each point of a 20 px grid, and two frames after
 // it came there the screen asks for no more (shell::animating false, nothing changed),
 // so a mouse resting anywhere, over a tile, the board, or nothing, draws nothing. Prints

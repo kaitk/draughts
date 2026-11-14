@@ -1,8 +1,7 @@
-// The results screen (shell/results.goose, task 074): reached from who's playing's results tile,
+// The results screen (shell/results.goose): reached from who's playing's results tile,
 // it reads the playing player's history; a draughts' tile shows that draughts' games and
 // rating; the draughts' tiles stand on one glass; back goes home. The move list's setting
-// is settings' alone (2026-11-13). Laid out at the tablet's and a phone's
-// size in both orientations: every tile at least a tap, inside the safe area, none over
+// is settings' alone. Laid out at the tablet's and a phone's size in both orientations: every tile at least a tap, inside the safe area, none over
 // another; the frame's quads under gui::MAX_QUADS with a full list. Sizes in dp and the
 // quad counts are printed verbose (DRAUGHTS_TEST_VERBOSE) and checked by default.
 import std;
