@@ -820,22 +820,20 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   the player's draughts lit. It is the setup's draughts choice, one setting: a tap sets
   new games' draughts too, saved as settings saves them, reads that draughts' set at
   once (`shell::load_set`), puts the list back at its top, and home's count follows; the
-  lit tile takes a tap and changes nothing. It stands at the title row's right in
-  landscape where the title and the switch fit the width beside back, else (portrait,
-  the compact window) in a row of its own under the title. The title
-  "Puzzles" stands in the title row (beside back in portrait), bare on the photograph
+  lit tile takes a tap and changes nothing. It stands at the title row's right, ending
+  with the rows where they are narrower than the page (a desktop's window), where back,
+  the title, and the switch fit the width (a tablet either way), else (a phone's
+  portrait, the compact window) in a row of its own under the title. The title row tops
+  the page as settings' does (2026-11-14, a proposal): back at the page's left, the title
+  "Puzzles" 20 dp after it, bare on the photograph
   over a soft dark halo (`gui::shadowed`: eight dark copies 2 dp round it at 20% and one
   2 dp down at 35%), as it sits partly over spring's and autumn's birch bark at the
   tablet's and iPad's sizes. The rows are one column at most 600 dp wide in portrait, and two in
-  landscape where two columns of 420 dp fit beside back (the tablet, a wide window) or
+  landscape where two columns of 420 dp fit (the tablet, a wide window) or
   one doesn't fit the height (phones); in portrait under the switch's row they give up
   height to fit the page (a foldable, a 9:16 phone), down to 88 dp, and where even that
   doesn't fit (a small window, a 9:16 phone with its insets) they keep it and scroll, in
-  either orientation. They center on the screen:
-  in a tablet's landscape the title and the rows start below back, so they take the
-  whole width; where only the title row reaches up beside back (Today's row open), the
-  title row keeps clear of back and the rows under it still take the whole width; in a phone's, where
-  the rows reach back's height, they center as far as clearing back allows. A row opens the theme's
+  either orientation. They start under the title row and center across the page. A row opens the theme's
   page: back (at the left in landscape, in the head in portrait), the theme's mark,
   name, and count, over its levels as glass rows, each its level's mark (three rising
   bars, one to three filled) and name beside its tiles, 96 dp on the tablet and 88 on a

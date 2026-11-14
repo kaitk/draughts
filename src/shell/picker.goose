@@ -55,6 +55,7 @@ let COLUMN = 600.0;         // dp a column of the library takes at most
 let NARROWEST = 420.0;      // and at least where it goes to two in landscape for the width
 let MARGIN = 24.0;          // dp round the library and a theme's page, and between back's column and the rest,
 let MARGIN_PHONE = 16.0;    // round them on a phone
+let HEAD_GAP = 20.0;        // dp between back and the library's title, as settings' head
 let LIBRARY_LIST = gui::PICKER_IDS + 100;     // the scrolling lists' ids (gui::scroll_begin): the library,
 let PAGE_LIST = gui::PICKER_IDS + 110;        // and a theme's page, plus the theme
 
@@ -535,14 +536,8 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let u = g.scale;
     let landscape = area.z >= area.w;
     let phone = gui::phone(area, u);
-    var page = gui::inset(area, (if phone { MARGIN_PHONE } else { MARGIN }) * u);
+    let page = gui::inset(area, (if phone { MARGIN_PHONE } else { MARGIN }) * u);
     var pick = NOTHING;
-    let whole = page;           // the rows center on the screen, not on what back leaves
-    if landscape {
-        var column = gui::cut_left(page, back_w(g));
-        if back(g, gui::cut_top(column, gui::tap() * u)) { pick = BACK; }
-        gui::cut_left(page, MARGIN * u);
-    }
     let gap = gui::PAD * u;
     let opened = today_open(stars);
     let n_today = today.picked.list.len;
@@ -551,10 +546,15 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let how_w = if how_tile { (16.0 + gui::tap()) * u } else { 0.0 };
     let sw_w = switch_width(g);
     let sw_h = switch_row_h() * u;
-    // The title, How to play's tile, and the switch along one row.
-    let along = title_width(g) + how_w + 24.0 * u + sw_w;
-    let beside = landscape && along <= page.z;
-    let head = if beside { sw_h + gap } else { gui::tap() * u + gap + sw_h + gap };
+    let rim = SWITCH_PAD * u;
+    // The head row tops the page as settings' does (rendering.md, "The way back"): back at
+    // its left, the title HEAD_GAP after it, How to play's tile after the title, and the
+    // switch at the row's right, its glass's rim above and below the row, where they all
+    // fit; else the switch takes a row of its own under the head, as wide as the rows.
+    let bw = back_w(g);
+    let along = bw + HEAD_GAP * u + title_width(g) + how_w + 24.0 * u + sw_w;
+    let beside = along <= page.z;
+    let head = if beside { gui::tap() * u + gap } else { gui::tap() * u + gap + sw_h + gap };
     // A variant's set may leave a theme out (Russian's has no king shots): its row too.
     var rows = 0;
     for t in puzzles::THEMES { if puzzles::theme_count(puzzles::all, t) > 0 { rows++; } }
@@ -579,39 +579,24 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let wide = page.z >= 2.0 * NARROWEST * u + gap;
     let cols = if landscape && rows > 1 && (wide || head + one > page.w) { 2 } else { 1 };
     let per = (rows + cols - 1) / cols;
-    // Where the title and the rows start below back (a tablet's landscape), they take the
-    // whole width and center on it; else they keep clear of back's column, centered on
-    // the screen as far as that allows (a phone's landscape, back beside the rows).
-    let y0 = if landscape { page.y + max(0.0, floor(0.5 * (page.w - (head + first + per * row_h + (per - 1) * gap + end)) + 0.5)) }
-             else { page.y };
-    // On a tablet where only the title row reaches up beside back (Today open, 16:9 or
-    // 4:3), the rows under it start below back's foot and take the whole width, centered
-    // on it, and the title row alone keeps clear of back.
-    let back_foot = whole.y + gui::tap() * u + gap;
-    let room = if landscape && (y0 >= back_foot || !phone && y0 + head >= back_foot) { whole } else { page };
-    let top_room = if landscape && y0 < back_foot { page } else { room };
-    let col_w = min((room.z - (cols - 1) * gap) / cols, COLUMN * u);
+    // The rows start under the head and center across the page.
+    let col_w = min((page.z - (cols - 1) * gap) / cols, COLUMN * u);
     let w = cols * col_w + (cols - 1) * gap;
     if opened {
         first_h = today_h(g, w, n_today, phone);
         first = first_h + gap;
     }
-    let h = head + first + per * row_h + (per - 1) * gap + end;
-    let y = if landscape { page.y + max(0.0, floor(0.5 * (page.w - h) + 0.5)) } else { page.y };
-    let x = max(room.x, whole.x + floor(0.5 * (whole.z - w) + 0.5));
-    // The title row as wide as the rows, or as the title and the switch beside it want.
-    let top_wanted = if beside { min(top_room.z, max(w, along)) } else { w };
-    let top_x = max(top_room.x, min(x, whole.x + floor(0.5 * (whole.z - top_wanted) + 0.5)));
-    // It ends with the rows where its title and switch fit before their right edge.
-    let top_need = if beside { along } else { 0.0 };
-    let top_w = min(min(top_wanted, top_room.x + top_room.z - top_x), max(x + w, top_x + top_need) - top_x);
-    var top = float4 { top_x, y, top_w, if beside { sw_h } else { gui::tap() * u } };
-    if !landscape {
-        if back(g, gui::cut_left(top, back_w(g))) { pick = BACK; }
-        gui::cut_left(top, 20.0 * u);
-    }
-    let sw = if beside { gui::cut_right(top, sw_w) } else { float4 { x, y + gui::tap() * u + gap, w, sw_h } };
-    if beside { gui::cut_right(top, 24.0 * u); }
+    let y = page.y;
+    let x = page.x + floor(0.5 * (page.z - w) + 0.5);
+    var top = float4 { page.x, y, page.z, gui::tap() * u };
+    if back(g, gui::cut_left(top, bw)) { pick = BACK; }
+    gui::cut_left(top, HEAD_GAP * u);
+    // The switch ends with the rows where they are narrower than the page (a desktop's
+    // window), so it doesn't stand apart from them at the page's right.
+    let sw_x = clamp(x + w - sw_w, page.x + along - sw_w, page.x + page.z - sw_w);
+    let sw = if beside { float4 { sw_x, top.y - rim, sw_w, sw_h } }
+             else { float4 { x, y + gui::tap() * u + gap, w, sw_h } };
+    if beside { top.z = sw_x - 24.0 * u - top.x; }
     if how_tile {
         // How to play's tile after the title, as far along as the title's words.
         let tw = min(title_width(g), top.z - how_w);
