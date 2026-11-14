@@ -42,7 +42,7 @@ Draughts is open source, under the MIT or Apache 2.0 licence: the code is here, 
 SHA-256:
 - `Draughts-0.5.0-windows-x64.zip`: `28727f176106a5e7a3ba3c5fe497d13c6de616ac30baa6c01c7c10a6987053ad`
 - `Draughts-0.5.0-macos-arm64.zip`: `7d6c08fa249a773a2eafa429fdfb348307fb67c8f6f0796e342c750314c91d1f`
-- `Draughts-0.5.0-linux-x64.tar.gz`: `01222033915f49242af1b26f2adc6a046176fc75fd28c160bd537dea6d1355b8`
+- `Draughts-0.5.0-linux-x64.tar.gz`: `2c7db053ad3c526d4ba7a06dcacf10df648718970507fe080cd99b037a7a05c4`
 ```
 
 ### Play, en-GB (469 of 500)
