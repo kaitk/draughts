@@ -317,16 +317,14 @@ fn animating(pl: Play&, g: gui::Gui&, now: f64) -> bool {
 }
 
 let RESTART_ASK = gui::ASK_RESTART;
-let DOT = 14.0;             // today's dots over next (task 088), dp across,
-let DOT_GAP = 7.0;          // and apart,
-let DOT_ABOVE = 8.0;        // and above next
+let DOT_ABOVE = 8.0;        // dp: today's dots (picker::dots, task 088) above next
 
 // Whether today's dots show: one of today's puzzles playing.
 fn shows_dots(pl: Play&) -> bool { pl.daily >= 0 && pl.day_n > 0 }
 
 // Today's dots in r, this one ringed.
 fn day_dots(pl: Play&, g: gui::Gui&, r: float4) {
-    picker::dots(g, r, pl.day_n, pl.day_won[..], pl.daily, DOT * g.scale, DOT_GAP * g.scale);
+    picker::dots(g, r, pl.day_n, pl.day_won[..], pl.daily);
 }
 let CAMERA = 4;             // a camera button was tapped (panel_frame)
 
@@ -475,7 +473,7 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
         // Today's dots over next.
         if shows_dots(pl) {
             gui::cut_bottom(right, DOT_ABOVE * u);
-            day_dots(pl, g, gui::cut_bottom(right, DOT * u));
+            day_dots(pl, g, gui::cut_bottom(right, picker::DOT * u));
         }
         // Next keeps a gap from the stars round the 3D board too, where they shrink to it.
         if l.three { gui::cut_top(right, 8.0 * u); gui::cut_bottom(right, 8.0 * u); }
@@ -521,12 +519,12 @@ fn panel_frame(pl: Play&, g: gui::Gui&, l: panel::Layout, now: f64, over: board:
     // Today's dots over next where the bar has the room, else at next's left.
     var row = float4 { right.x, right.y, right.z, gui::tap() * u };
     if shows_dots(pl) {
-        if right.w >= (gui::tap() + DOT + DOT_ABOVE) * u {
-            day_dots(pl, g, gui::cut_top(right, DOT * u));
+        if right.w >= (gui::tap() + picker::DOT + DOT_ABOVE) * u {
+            day_dots(pl, g, gui::cut_top(right, picker::DOT * u));
             gui::cut_top(right, DOT_ABOVE * u);
             row = float4 { right.x, right.y, right.z, gui::tap() * u };
         } else {
-            let w = (pl.day_n * DOT + (pl.day_n - 1) * DOT_GAP + 2.0 * gui::PAD) * u;
+            let w = (pl.day_n * picker::DOT + (pl.day_n - 1) * picker::DOT_GAP + 2.0 * gui::PAD) * u;
             day_dots(pl, g, gui::cut_left(row, w));
         }
     }

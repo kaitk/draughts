@@ -94,11 +94,15 @@ fn solved_all(stars: const u8[:]) -> i64, i64 {
 // stretch 3 (puzzles::target's shape).
 fn slot_level(k: i64, n: i64) -> i64 { if k == 0 { 1 } else if k == n - 1 { 3 } else { 2 } }
 
-// Today's dots (task 088): n of them `d` pixels across and `gap` apart, centered in r,
+// Today's dots (task 088): n of them DOT dp across and DOT_GAP apart, centered in r,
 // those with stars in `won` filled in the glow, puzzle `ring` (or none, -1) ringed in it,
 // the rest dim; home's note and over a daily puzzle's next. Smaller where r is narrower
 // than they want (ten over a phone's next).
-fn dots(g: gui::Gui&, r: float4, n: i64, won: const u8[:], ring: i64, size: f32, space: f32) {
+let DOT = 14.0;
+let DOT_GAP = 7.0;
+fn dots(g: gui::Gui&, r: float4, n: i64, won: const u8[:], ring: i64) {
+    let size = DOT * g.scale;
+    let space = DOT_GAP * g.scale;
     let k_fit = min(1.0, r.z / max(1.0, n * size + (n - 1) * space));
     let d = floor(size * k_fit + 0.5);
     let gap = space * k_fit;
@@ -111,6 +115,9 @@ fn dots(g: gui::Gui&, r: float4, n: i64, won: const u8[:], ring: i64, size: f32,
         else { gui::fill(g, c, float4 { 1.0, 1.0, 1.0, 0.3 }, 0.5 * d); }
     }
 }
+
+// How wide n of today's dots want to be, at u pixels a dp.
+fn dots_w(n: i64, u: f32) -> f32 { (n * DOT + (n - 1) * DOT_GAP) * u }
 
 // How many of today's puzzles are solved.
 fn today_solved(t: settings::Today&) -> i64 {

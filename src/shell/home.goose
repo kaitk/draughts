@@ -590,8 +590,6 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
 
 // Today's puzzles at the right of the Puzzles row r, as gui::row puts its note: a dot
 // each, filled in the glow once solved, or a check once all are.
-let DOT = 14.0;
-let DOT_GAP = 7.0;
 let DONE = 26.0;
 fn today_dots(g: gui::Gui&, r: float4, t: settings::Today&) {
     let u = g.scale;
@@ -604,8 +602,7 @@ fn today_dots(g: gui::Gui&, r: float4, t: settings::Today&) {
         gui::glyph_icon(g, gui::center(gui::cut_right(c, k), k, k), gui::CHECK, gui::ON, 0.0, 1.0);
         return;
     }
-    let w = (n * DOT + (n - 1) * DOT_GAP) * u;
-    picker::dots(g, gui::cut_right(c, w), n, t.stars[..], -1, DOT * u, DOT_GAP * u);
+    picker::dots(g, gui::cut_right(c, picker::dots_w(n, u)), n, t.stars[..], -1);
 }
 
 // Whether quitting asks first (ask_quit): on a desktop, where a gamepad's B or Escape on

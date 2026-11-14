@@ -70,7 +70,7 @@ fn today_tiles(g: gui::Gui&, out: float4[..16]&) {
 // one ringed, and the rest.
 fn dots(g: gui::Gui&, out: float4[..16]&) -> i64, i64, i64 {
     out.clear();
-    let d = puzzle::DOT * g.scale;
+    let d = picker::DOT * g.scale;
     var lit = 0;
     var ringed = 0;
     var dim = 0;
