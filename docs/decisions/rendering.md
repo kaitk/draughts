@@ -60,6 +60,10 @@ facade per recorder in the gfx build too.
   cap in `gui::safe` rather than a width per screen, so an ultrawide works.
 - A large desktop window (`gui::large`, 1700 × 1000 dp) centers the replay and results
   and sets their words a face larger (the next baked face, not scaled glyphs), 2026-11-14.
+- On a desktop, home's menu notes (the opponent, the level, the rating, new puzzles
+  tomorrow) are in the body face at 80% rather than the small face at 66% (2026-11-14):
+  the desktop's scale ceiling leaves the small face about 13 px at 1080p, which a TV
+  across a room can't read. Rejected for now: a larger layout when a controller is in use.
 - On a desktop in landscape the replay's back is a row over the board at its left, as
   every screen has back at the top left (2026-11-14). The tablet keeps its layout: the
   row would cost its board 14%.

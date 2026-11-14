@@ -601,8 +601,8 @@ fn today_dots(g: gui::Gui&, r: float4, t: settings::Today&) {
         // The label's end as gui::row puts it: after its side, its icon, and their gap.
         let label = r.x + (18.0 + 34.0 + 18.0) * u + gui::text_width(g, gui::LABEL, strings::get(strings::HOME_PUZZLES));
         let note = strings::get(strings::DAILY_HOME_TOMORROW);
-        if label + TOMORROW_GAP * u + gui::text_width(g, gui::SMALL, note) <= c.x + c.z {
-            gui::text(g, gui::SMALL, c, note, 0.66, 0.0, gui::RIGHT);
+        if label + TOMORROW_GAP * u + gui::text_width(g, gui::note_face(), note) <= c.x + c.z {
+            gui::text(g, gui::note_face(), c, note, gui::note_a(), 0.0, gui::RIGHT);
         }
         return;
     }

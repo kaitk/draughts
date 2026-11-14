@@ -943,8 +943,14 @@ fn glyph_icon(g: Gui&, r: float4, icon: i64, style: i64, p: f32, a: f32, stroke:
                   extra: float4 { g.scale, style, 0.0, 0.0 } });
 }
 
+// A menu row's note: the dimmer small face, on a desktop the body face and less dim, as
+// a desktop's scale ceiling leaves the small face about 13 px at 1080p, too small for a
+// TV across a room.
+fn note_face() -> i64 { if desktop_scale > 0.0 { BODY } else { SMALL } }
+fn note_a() -> f32 { if desktop_scale > 0.0 { 0.8 } else { 0.66 } }
+
 // A menu row (prototypes/home.html): an icon, a label, and a note at the right in
-// the dimmer small face, in a 20 dp rounded row that lights while pressed, `outlined`
+// the dimmer note face (note_face), in a 20 dp rounded row that lights while pressed, `outlined`
 // with a faint border; the note may have an icon before its word (`note_icon`). A row
 // that is off is drawn at 40% and can't be pressed. True when it is tapped.
 fn row(g: Gui&, id: i64, r: float4, icon: i64, label: const u8[:], note: const u8[:], primary: bool,
@@ -961,13 +967,13 @@ fn row(g: Gui&, id: i64, r: float4, icon: i64, label: const u8[:], note: const u
     glyph_icon(g, center(cut_left(c, 34.0 * u), 34.0 * u, 34.0 * u), icon, style, 0.0, 0.85 * a);
     cut_left(c, 18.0 * u);
     text(g, LABEL, c, label, a, 0.0, LEFT);
-    text(g, SMALL, c, note, 0.66 * a, 0.0, RIGHT);
+    text(g, note_face(), c, note, note_a() * a, 0.0, RIGHT);
     if note_icon != NO_ICON {
         // The note's icon, NOTE_ICON dp, NOTE_ICON_GAP left of its word (or alone).
-        let w = text_width(g, SMALL, note);
+        let w = text_width(g, note_face(), note);
         let x = c.x + c.z - w - (if note.len > 0 { NOTE_ICON_GAP * u } else { 0.0 }) - NOTE_ICON * u;
         glyph_icon(g, float4 { x, c.y + 0.5 * (c.w - NOTE_ICON * u), NOTE_ICON * u, NOTE_ICON * u }, note_icon, style, 0.0,
-                   0.66 * a, 2.0);
+                   note_a() * a, 2.0);
     }
     return clicked;
 }
