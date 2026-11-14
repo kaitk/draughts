@@ -15,6 +15,7 @@ import vec;
 let NOTHING = gui::ASK_NOTHING;
 let BACK = gui::ASK_BACK;
 let SHOWN = gui::ASK_SHOWN;         // another draughts shown
+let REPLAY = gui::ASK_OWN;          // a game's row tapped: its replay (task 078)
 
 let EDGE = 24.0;            // dp from the safe area's edges
 let GAP = 16.0;             // between the head and the panels, and between the panels
@@ -52,10 +53,10 @@ let ROW_ID = gui::RESULTS_IDS + 11;       // a game's row, by its place in the l
 fn variant_of(i: i64) -> i64 { settings::DRAUGHTS[i] }
 
 // The screen for the player's settings s and games gs, showing draughts `variant` (one of
-// settings::DRAUGHTS), which a tile changes. Returns what it asks for: a game's index in
-// gs, 0 or more, for its row tapped (its replay, task 078).
+// settings::DRAUGHTS), which a tile changes. Returns what it asks for, and for REPLAY the
+// game's index in gs.
 fn frame(g: gui::Gui&, area: float4, s: settings::Settings&, gs: history::Game[..history::MAX_GAMES]&,
-         variant: i64&) -> i64 {
+         variant: i64&) -> i64, i64 {
     let u = g.scale;
     var ask = NOTHING;
     let big = gui::large(area, u);
@@ -134,7 +135,8 @@ fn frame(g: gui::Gui&, area: float4, s: settings::Settings&, gs: history::Game[.
     if wide { side.w = min(side.w, panel_h); }
     rating_panel(g, side, s, gs, variant, levels, lk);
     let opened = list(g, c, gs, variant, lk);
-    return if opened >= 0 { opened } else { ask };
+    if opened >= 0 { return REPLAY, opened; }
+    return ask, -1;
 }
 
 fn panel_height(g: gui::Gui&, levels: bool, lk: Look) -> f32 {

@@ -28,13 +28,13 @@ let ASKING = 3;             // a new player's "do you know how to play?" (task 0
 // What the card asks the shell for.
 let NOTHING = gui::ASK_NOTHING;
 let CHANGED = gui::ASK_CHANGED; // only the card changed
-let SWITCH = 2;             // to the player at the index given
-let CREATE = 3;             // a new player with the sheet's picture and name
-let SAVE = 4;               // the sheet's picture and name for its player
-let AGAIN = 5;              // start the sheet's player again
-let REMOVE = 6;             // remove the sheet's player
-let LEARN = 8;              // how to play, from the question
-let KNOWN = 9;              // the player knows how
+let SWITCH = gui::ASK_OWN;  // to the player at the index given
+let CREATE = gui::ASK_OWN + 1; // a new player with the sheet's picture and name
+let SAVE = gui::ASK_OWN + 2; // the sheet's picture and name for its player
+let AGAIN = gui::ASK_OWN + 3; // start the sheet's player again
+let REMOVE = gui::ASK_OWN + 4; // remove the sheet's player
+let LEARN = gui::ASK_OWN + 5; // how to play, from the question
+let KNOWN = gui::ASK_OWN + 6; // the player knows how
 
 let HOLD = 1.5;             // seconds start again and remove are held
 

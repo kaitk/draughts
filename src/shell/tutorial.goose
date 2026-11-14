@@ -59,12 +59,12 @@ let REPLY_PAUSE = 0.6;      // seconds from the child's move landing to the answ
 let STAY = gui::ASK_NOTHING;
 let BACK = gui::ASK_BACK;   // where it was opened from
 let SETTINGS = gui::ASK_SETTINGS;
-let PUZZLES = 1;            // the end's: the Learn theme's first open puzzle
-let NEW_GAME = 2;           // home's setup, the draughts learned chosen
-let HOME = 3;
+let PUZZLES = gui::ASK_OWN; // the end's: the Learn theme's first open puzzle
+let NEW_GAME = gui::ASK_OWN + 1; // home's setup, the draughts learned chosen
+let HOME = gui::ASK_OWN + 2;
 // What its panel asks for, besides BACK, SETTINGS, and gui::ASK_RESTART.
-let NEXT = 4;               // the panel's next was tapped
-let CAMERA = 5;             // a camera button was
+let NEXT = gui::ASK_OWN + 3; // the panel's next was tapped
+let CAMERA = gui::ASK_OWN + 4; // a camera button was
 
 // The ids: next is the panel's (panel::EYE_ID, as a puzzle's); the end's card's own.
 let CARD = gui::TUTORIAL_IDS;

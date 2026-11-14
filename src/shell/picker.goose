@@ -34,18 +34,16 @@ import gui from "../gui";
 import strings from "../../strings";
 import puzzles from "../puzzles";
 
-// What the screen asks for: these, or the index in puzzles::all of a puzzle tapped, and
-// so all negative, the shared asks (gui::ASK_NOTHING..) and its own.
+// What the screen asks for: the shared asks (gui::ASK_NOTHING..) and its own, on from
+// gui::ASK_OWN; frame returns which puzzle beside PUZZLE and TODAY.
 let NOTHING = gui::ASK_NOTHING;
 let BACK = gui::ASK_BACK;   // home
 let SHOWN = gui::ASK_SHOWN; // a theme's page opened or left: drawn again
-let SWITCHED = -10;         // other draughts chosen on the library's switch
-let LEARN = -11;            // how to play, the library's first row (task 026)
-let TODAY = -100;           // today's puzzle k tapped is TODAY - k (task 088), k under puzzles::MAX_DAILY
+let SWITCHED = gui::ASK_OWN; // other draughts chosen on the library's switch
+let LEARN = gui::ASK_OWN + 1; // how to play, the library's first row (task 026)
+let PUZZLE = gui::ASK_OWN + 2; // a puzzle tapped, by its index in puzzles::all
+let TODAY = gui::ASK_OWN + 3; // one of today's puzzles tapped, by its place in them (task 088)
 let TODAY_IDS = gui::PICKER_IDS + 30;          // today's tiles, one id each
-
-// The place in today's puzzles of a pick that is one of their tiles (TODAY - k), else -1.
-fn today_pick(pick: i64) -> i64 { if pick <= TODAY && pick > TODAY - puzzles::MAX_DAILY { TODAY - pick } else { -1 } }
 
 let MARKS = [gui::BOOK, gui::JUMPS, gui::CROWN, gui::TARGET, gui::KING, gui::SHIELD];
 let NAMES = [strings::THEME_LEARN, strings::THEME_CAPTURES, strings::THEME_CROWNING, strings::THEME_SHOTS,
@@ -163,15 +161,20 @@ fn line_h(g: gui::Gui&, face: i64) -> f32 { g.faces[face].ascent - g.faces[face]
 // puzzle tapped, or else of puzzle `at` (an index in puzzles::all, or -1 for none), which
 // a puzzle's board grows out of and shrinks back into. Returns BACK, SHOWN (having set
 // `theme`), SWITCHED (having set `variant`, the player's draughts, from the library's
-// switch), the index in puzzles::all of a puzzle tapped, or NOTHING.
+// switch), LEARN, PUZZLE with the index in puzzles::all of the puzzle tapped, or NOTHING,
+// and the puzzle (-1 for none).
 //
 // With `today`, the player's daily puzzles in the set (task 088), and `today_at` the one
 // playing (its place in them, or -1), whose tile the board grows out of: a tap on one
-// returns TODAY - its place.
+// returns TODAY and its place.
 fn frame(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, spot: float4&, variant: i64&,
-         learned: i64, steps: i64, today: settings::Today&, today_at: i64) -> i64 {
-    if theme < 0 { return library(g, area, stars, at, theme, spot, variant, learned, steps, today, today_at); }
-    return page(g, area, stars, at, theme, spot);
+         learned: i64, steps: i64, today: settings::Today&, today_at: i64) -> i64, i64 {
+    if theme < 0 {
+        let pick, item = library(g, area, stars, at, theme, spot, variant, learned, steps, today, today_at);
+        return pick, item;
+    }
+    let pick, item = page(g, area, stars, at, theme, spot);
+    return pick, item;
 }
 
 // Back (gui::back) in r: the arrow and "Back" on a glass tile, side by side or, `stacked`,
@@ -532,12 +535,13 @@ fn learn_tile(g: gui::Gui&, r: float4) -> bool {
 // play's row, or Today's once it is open (frame), and under them Today's locked row, or
 // in portrait How to play's once Today is open.
 fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, spot: float4&,
-           variant: i64&, learned: i64, steps: i64, today: settings::Today&, today_at: i64) -> i64 {
+           variant: i64&, learned: i64, steps: i64, today: settings::Today&, today_at: i64) -> i64, i64 {
     let u = g.scale;
     let landscape = area.z >= area.w;
     let phone = gui::phone(area, u);
     let page = gui::inset(area, (if phone { MARGIN_PHONE } else { MARGIN }) * u);
     var pick = NOTHING;
+    var item = -1;
     let gap = gui::PAD * u;
     let opened = today_open(stars);
     let n_today = today.picked.list.len;
@@ -644,14 +648,17 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let end_row = float4 { x, list_top - off + first + per * row_h + (per - 1) * gap + gap, w, learn_h };
     if opened {
         let tapped = today_row(g, float4 { x, list_top - off, w, first_h }, today, today_at, spot, phone);
-        if tapped >= 0 { pick = TODAY - tapped; }
+        if tapped >= 0 {
+            pick = TODAY;
+            item = tapped;
+        }
         if !landscape && learn_row(g, end_row, learned, steps, phone) { pick = LEARN; }
     } else {
         if learn_row(g, float4 { x, list_top - off, w, learn_h }, learned, steps, phone) { pick = LEARN; }
         today_locked(g, end_row, stars, phone);
     }
     gui::scroll_end(g);
-    return pick;
+    return pick, item;
 }
 
 // One puzzle's tile: its stars, lit if it is the first without them. True when tapped.
@@ -714,7 +721,7 @@ fn tightest(t: i64, w: f32, short: bool, phone: bool, u: f32) -> f32 {
 // with its insets), in landscape the mark and count stand under back in place of the
 // head, and in portrait each level's label is its mark alone beside its tiles, spaced as
 // on a phone in landscape.
-fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, spot: float4&) -> i64 {
+fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, spot: float4&) -> i64, i64 {
     let u = g.scale;
     let t = theme;
     let landscape = area.z >= area.w;
@@ -722,6 +729,7 @@ fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, sp
     let short = landscape && area.w < gui::PHONE * u;
     var room = gui::inset(area, (if phone { MARGIN_PHONE } else { MARGIN }) * u);
     var pick = NOTHING;
+    var item = -1;
     var column = room;
     if landscape {
         // Back as wide as its word wants, or a tap with the word under the arrow where the
@@ -846,12 +854,13 @@ fn page(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, sp
             let r = float4 { left + (k % per) * (side + gap), c.y + row * (side + gap), side, side };
             if i == at && pick == NOTHING { spot = r; }
             if tile(g, i, r, stars[puzzles::all.list[i].id], i == lit) {
-                pick = i;
+                pick = PUZZLE;
+                item = i;
                 spot = r;
             }
         }
     }
     if scrolls { gui::scroll_end(g); }
     if pick == SHOWN { theme = -1; }
-    return pick;
+    return pick, item;
 }

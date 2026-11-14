@@ -43,7 +43,7 @@ import vec;
 let NOTHING = gui::ASK_NOTHING;
 let BACK = gui::ASK_BACK;
 let SHOWN = gui::ASK_SHOWN;         // another move shown
-let PLAY = 1;                       // play from here: a game from the move shown
+let PLAY = gui::ASK_OWN;            // play from here: a game from the move shown
 
 let MAX_PLIES = board::MAX_HISTORY;
 let POSITIONS = MAX_PLIES + 1; // the start and the position after each move

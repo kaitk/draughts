@@ -315,8 +315,10 @@ let RING_W = 2.0;
 let RING_GAP = 3.0;
 
 // What a screen's frame asks for (gui is what every screen imports): the asks the screens
-// share, numbered once, here. They are negative: a screen's own asks are 0 and up, as is
-// the index of a puzzle the puzzles to pick from return.
+// share, numbered once, here. They are negative: a screen's own asks are numbered on from
+// ASK_OWN, one each. Which item an ask is of (a puzzle, a player, a game) comes back
+// beside it, never in it.
+let ASK_OWN = 0;
 let ASK_NOTHING = -1;
 let ASK_BACK = -2;          // the screen's back: home, the menu, the puzzles, where it came from
 let ASK_SETTINGS = -3;

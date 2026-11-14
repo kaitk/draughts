@@ -58,7 +58,7 @@ let GLOW_AFTER = 2;         // misses before the piece to move glows
 let STAY = gui::ASK_NOTHING;
 let PUZZLES = gui::ASK_BACK;
 let SETTINGS = gui::ASK_SETTINGS;
-let NEXT = 3;
+let NEXT = gui::ASK_OWN;
 
 // What a frame tells the shell: where to go, and whether the puzzle was solved this frame,
 // for the shell to keep its stars (Play.won).
@@ -345,7 +345,7 @@ fn slot_h(pl: Play&, g: gui::Gui&) -> f32 {
 fn day_dots(pl: Play&, g: gui::Gui&, r: float4) {
     picker::dots(g, r, pl.day_n, pl.day_won[..], pl.daily);
 }
-let CAMERA = 4;             // a camera button was tapped (panel_frame)
+let CAMERA = gui::ASK_OWN + 1; // a camera button was tapped (panel_frame)
 
 // The goal's icon and words.
 fn goal_icon(pz: puzzles::Puzzle&) -> i64 {

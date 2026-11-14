@@ -35,15 +35,15 @@ fn results_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool)
     }
     sh.past.replayed = false;
     var variant = sh.past.variant;
-    let ask = results::frame(g, area, sh.prefs, sh.past.games, variant);
+    let ask, game = results::frame(g, area, sh.prefs, sh.past.games, variant);
     sh.past.variant = variant;
     sh.out.layout = board::layout_at(-2.0 * area.z, 0.0, 0.5 * area.z, g.scale, sh.out.layout.n);
     if ask == results::BACK {
         go_up(sh, HOME, now);
     }
-    if ask >= 0 {
+    if ask == results::REPLAY {
         sh.past.at = if g.scroll.id == results::LIST { g.scroll.offset } else { 0.0 };
-        open_replay(sh, ask, now);
+        open_replay(sh, game, now);
     }
     return ask != results::NOTHING;
 }

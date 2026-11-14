@@ -838,9 +838,10 @@ fn in_tile(sh: Shell&, spot: float4, scale: f32) -> board::Layout {
 
 // The puzzles to pick from declared in `area`, as the screen and a transition's still
 // frame both show them: `spot` the tile the board grows out of, `variant` the switch's.
-fn declare_picker(sh: Shell&, g: gui::Gui&, area: float4, spot: float4&, variant: i64&) -> i64 {
-    return picker::frame(g, area, sh.prefs.stars[puzzles::loaded], sh.puzzle.index, sh.theme, spot, variant, learned(sh),
-                         tutorial::count(sh.prefs.variant as u8), today_of(sh), sh.puzzle.daily);
+fn declare_picker(sh: Shell&, g: gui::Gui&, area: float4, spot: float4&, variant: i64&) -> i64, i64 {
+    let pick, item = picker::frame(g, area, sh.prefs.stars[puzzles::loaded], sh.puzzle.index, sh.theme, spot, variant,
+                                   learned(sh), tutorial::count(sh.prefs.variant as u8), today_of(sh), sh.puzzle.daily);
+    return pick, item;
 }
 
 // The puzzles to pick from for this frame. Returns whether anything on screen changed.
@@ -848,8 +849,7 @@ fn picker_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     sh.out.over.clear();
     var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
     var variant = sh.prefs.variant;
-    let pick = declare_picker(sh, g, area, spot, variant);
-    let daily = picker::today_pick(pick);
+    let pick, item = declare_picker(sh, g, area, spot, variant);
     if pick == picker::LEARN { learn(sh, PICKER, now); }
     if pick == picker::SWITCHED {
         // The library's switch is settings' draughts: new games' too, saved as settings
@@ -859,14 +859,14 @@ fn picker_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
         sh.changed = true;
     } else if pick == picker::BACK {
         go_up(sh, HOME, now);
-    } else if pick >= 0 {
-        play_puzzle(sh, pick, now);
-    } else if daily >= 0 {
-        play_daily(sh, daily, now);
+    } else if pick == picker::PUZZLE {
+        play_puzzle(sh, item, now);
+    } else if pick == picker::TODAY {
+        play_daily(sh, item, now);
     }
     // No board at rest: it lies off the screen. Coming from a puzzle, or going to one,
     // it is the puzzle's, in its tile.
-    if sh.from == PUZZLE || pick >= 0 || daily >= 0 { sh.out.layout = in_tile(sh, spot, g.scale); }
+    if sh.from == PUZZLE || pick == picker::PUZZLE || pick == picker::TODAY { sh.out.layout = in_tile(sh, spot, g.scale); }
     else { sh.out.layout = board::layout_at(-2.0 * area.z, 0.0, 0.5 * area.z, g.scale, sh.out.layout.n); }
     return pick != picker::NOTHING;
 }

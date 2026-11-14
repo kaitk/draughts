@@ -39,25 +39,26 @@ import game from "../game";
 import strings from "../../strings";
 import puzzles from "../puzzles";
 
-// What home asks for: the shared asks (gui::ASK_NOTHING..), and home's own. NEW_GAME is
-// also whether the setup is open (Shell.setup), NO_SETUP when it isn't.
-let NO_SETUP = 0;
+// What home asks for: the shared asks (gui::ASK_NOTHING..), and home's own, on from
+// gui::ASK_OWN. NEW_GAME is also whether the setup is open (Shell.setup), NO_SETUP when
+// it isn't.
 let NOTHING = gui::ASK_NOTHING;
 let SETTINGS = gui::ASK_SETTINGS;
 let BACK = gui::ASK_BACK;   // from a setup to the menu
 let CHANGED = gui::ASK_CHANGED; // a choice in the setup
-let CONTINUE = 1;
-let NEW_GAME = 2;           // the setup
-let PLAY = 6;               // a new game as the setup stands
-let PUZZLES = 8;
-let EXIT = 9;               // close the app
+let CONTINUE = gui::ASK_OWN;
+let NEW_GAME = gui::ASK_OWN + 1; // the setup
+let PLAY = gui::ASK_OWN + 2; // a new game as the setup stands
+let PUZZLES = gui::ASK_OWN + 3;
+let EXIT = gui::ASK_OWN + 4; // close the app
+let PLAYERS = gui::ASK_OWN + 5; // who's playing
+let RESULTS = gui::ASK_OWN + 6; // the games played (results.goose, task 074)
+let LEARN = gui::ASK_OWN + 7; // how to play (task 026)
+let NO_SETUP = NOTHING;
 
 // Whether home shows its way out: not on iOS, where an app never closes itself (the app
 // sets it at launch).
 var closable = true;
-let PLAYERS = 10;           // who's playing
-let RESULTS = 11;           // the games played (results.goose, task 074)
-let LEARN = 12;             // how to play (task 026)
 
 let ROWS = 3;               // continue, new game, puzzles; the games and settings after them
 // The menu's rows shown: ROWS, or one fewer while there is no game to continue (frame

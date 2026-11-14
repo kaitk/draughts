@@ -20,7 +20,7 @@ ended 5.46: home, board 580.0,120.0 560.0 8x8, mix 100.0%, blur 0.0%, quads 80 f
 idle 5.6: home, board 580.0,120.0 560.0 8x8, mix 100.0%, blur 0.0%, quads 80 faded 0 mostly 0, pieces 24 faint 0, over the UI 1, hole none, drawn false, animating false
 at home's place true
 a friend's setup 6.5: home, board 600.0,120.0 560.0 8x8, mix 100.0%, blur 0.0%, quads 225 faded 0 mostly 0, small boards 3, pieces 24 faint 0, over the UI 0, hole none, drawn false, animating false
-tapped play: game, the setup's board true, a new game true, setup 0
+tapped play: game, the setup's board true, a new game true, setup -1
    7.0825: game, board 550.0,108.0 585.0 8x8, mix 16.0%, blur 16.0%, quads 313 faded 313 mostly 88, small boards 3, pieces 24 faint 0, over the UI 1, hole the board, drawn true, animating true
    7.145: game, board 440.0,80.0 640.0 8x8, mix 50.0%, blur 50.0%, quads 313 faded 313 mostly 0, small boards 3, pieces 24 faint 0, over the UI 1, hole the board, drawn true, animating true
    7.2075: game, board 330.0,53.0 695.0 8x8, mix 84.0%, blur 84.0%, quads 313 faded 313 mostly 225, small boards 3, pieces 24 faint 0, over the UI 1, hole the board, drawn true, animating true
