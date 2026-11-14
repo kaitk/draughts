@@ -361,8 +361,9 @@ power-of-two RGBA took 16 MiB.
   frame without focus). The second's release cost every move after a pause +4 ms on the
   M1 Pro and +13 ms on the iPhone 13 mini, and allocations on every turn, for memory no
   other app wanted while ours was in front; the headless 3D game at 1280 × 800 holds 171
-  MB at rest against 144 (ngfx, memoryless 4× targets, 153 against 146). Rejected: a
-  longer delay.
+  MB at rest against 144 (ngfx, memoryless 4× targets, 153 against 146). On the iPhone 13
+  mini the 3D game left for the app switcher and for other apps four times, once over 10 s,
+  and came back each time, not ended for the release's GPU work. Rejected: a longer delay.
 - A phone bakes the plan and the frame map at 1024 texels a side (2026-11-14), each texel
   the average of the full bake's 2 × 2 samples (`BAKE_FRAG`'s `tone.w`): its field spans
   about a thousand pixels, so 2048 gave two texels a pixel. Baked at 1024 plainly, the
