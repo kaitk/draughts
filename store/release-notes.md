@@ -4,6 +4,34 @@ Each version's notes for the GitHub release (the desktop builds) and the stores'
 new": Play's in en-GB and et (500 characters each), the App Store's in en-GB alone (no
 App Store localization yet, `app-store.md`). Newest first.
 
+## 0.5.1 (2026-11-14, pre-release, Windows and Linux)
+
+### GitHub release
+
+```markdown
+A pre-release for Windows and Linux: the replay shows more, and a few fixes.
+
+**Better**
+
+- **The replay shows each move** on the board, shaded at every stop with its start faded, in dots and numbers.
+- **The best move, when asked.** The bulb shows the move that was best from that position; tap the line saying what was best to see it there.
+- **Marks closer to lidraughts'**, from its curve and cut-offs, with the judge's best move as the hint.
+- **Desktop windows** get a larger replay and results, the replay's back in its own row over the board, and a layout capped for ultrawide screens.
+- The win's card says who won.
+- A long game's move list no longer hides the win's card.
+- A desktop's player sheet stays in place while a name is typed, and Return does what done does.
+
+**Windows** (64-bit, Windows 10 or 11): download `Draughts-0.5.1-windows-x64.zip`, extract it, and run `Draughts.exe`. Nothing to install. Your graphics driver must support Vulkan, which current NVIDIA, AMD, and Intel drivers do. The app is not signed yet, so on the first run Windows shows "Windows protected your PC": choose **More info**, then **Run anyway**.
+
+**Linux** (64-bit, glibc 2.35 or later: Ubuntu 22.04, Debian 12, Fedora 36, SteamOS, and their successors): download `Draughts-0.5.1-linux-x64.tar.gz`, extract it, and run `Draughts/draughts`. To add it to your applications menu, run `Draughts/install.sh` (`install.sh --remove` takes it away). Your graphics driver must support Vulkan, which Mesa and NVIDIA's driver do.
+
+**macOS, Android, iPhone/iPad:** 0.5.0 for now.
+
+SHA-256:
+- `Draughts-0.5.1-windows-x64.zip`: `WINSHA`
+- `Draughts-0.5.1-linux-x64.tar.gz`: `LINSHA`
+```
+
 ## 0.5.0 (2026-11-13)
 
 ### GitHub release
