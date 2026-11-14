@@ -1154,6 +1154,11 @@ comparing (`--aa`, the A key going MSAA, SMAA, none, supersampling).
 
 ## The 3D board on devices
 
+A new player starts on the 3D board on a desktop and on the flat board on a phone or a
+tablet (2026-11-14, `settings::default_board`): a desktop's window has room for it, so
+there was no reason to start there flat. A player's file keeps the board they had, and
+`board = 2d` is now read as flat rather than left to the default.
+
 The measurements as they were taken, kept here as the architecture keeps only the
 current ones. Taken with the app's `--bench 300`, `scripts/idle_cpu.sh`, and
 `dumpsys meminfo` on 2026-11-09; the three Android devices again on 2026-11-10 with

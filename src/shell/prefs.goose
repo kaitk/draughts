@@ -34,6 +34,9 @@ let BY_DATE = -1;
 let BY_DATE_TILE = 4;
 let FLAT = 0;                   // the 2D board
 let RAISED = 1;                 // the 3D board (task 015)
+// A new player's board: the 3D board on a desktop, whose window has room for it, and the
+// flat one on a phone or a tablet (the app sets it at launch, 2026-11-14).
+var default_board = FLAT;
 let SYSTEM = -1;                // the language the system's locales pick
 // The raised board's material, as the file names it (`material = auto|wood|stone|carved`,
 // task 080), one for every season, numbered as looks::MATERIAL_AUTO..: the season's own
@@ -151,9 +154,16 @@ fn photo_shown(s: Settings) -> bool { !s.plain }
 // How the 3D board draws kings: auto is a stack of two plain discs there.
 fn raised_king_look(s: Settings) -> i64 { if s.kings == board::CROWN { board::CROWN } else { board::STACK } }
 
+// A new player's settings: the defaults, with this device's board.
+fn defaults() -> Settings {
+    var s = Settings {};
+    s.board = default_board;
+    return s;
+}
+
 // The settings a file holds; what it lacks or doesn't know stays at the default.
 fn parse(text: const u8[:]) -> Settings {
-    var s = Settings {};
+    var s = defaults();
     var skill_read = [false; 3];
     var played_read = [false; 3];
     var rest = text;
@@ -175,6 +185,7 @@ fn parse(text: const u8[:]) -> Settings {
         }
         if key == "background" && value == "plain" { s.plain = true; }
         if key == "board" && value == "3d" { s.board = RAISED; }
+        if key == "board" && value == "2d" { s.board = FLAT; }
         if key == "material" {
             for name, i in MATERIAL_NAMES { if value == name { s.material = i; } }
         }

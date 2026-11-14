@@ -49,7 +49,7 @@ fn add_player(sh: Shell&, picture: i64, name: players::Name) -> bool {
     write_game(sh);
     players::delete_game(ps, id);
     players::delete_history(ps, id);
-    var s = settings::Settings {};
+    var s = settings::defaults();
     s.picture = picture;
     s.name = name;
     players::store(ps, id, s);

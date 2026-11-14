@@ -752,7 +752,8 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   corner close up, a frame's grain or carving and a piece or two. Flat plays on the flat
   board; Raised on the 3D board in the season's own material, and Wood, Stone, and Carved
   in that material, for every season (the file's `board = 2d|3d` and `material =
-  auto|wood|stone|carved`; [the 3D board's looks](#board-and-pieces)). The 3D board is
+  auto|wood|stone|carved`; [the 3D board's looks](#board-and-pieces)). A new player starts
+  on Raised on a desktop and on Flat on a phone or a tablet. The 3D board is
   shown on every screen with a board: home, the preview here (its kings' auto a stack),
   and a puzzle. Where the title doesn't fit beside the worded back and the language
   button in the row labels' 30 dp face, back is the arrow over the word in an 88 dp

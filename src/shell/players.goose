@@ -221,7 +221,7 @@ fn load(ps: Players&, dir: const u8[:], games: bool) -> settings::Settings {
         }
     }
     if ps.list.len == 0 {
-        s = settings::Settings {};
+        s = settings::defaults();
         ps.list.push(Player { id: 1, .. });
         store(ps, 1, s);
     }

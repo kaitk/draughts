@@ -70,6 +70,8 @@ fn main() {
     var folder: u8[512] = [0; 512];
     let dir = host::storage(folder);
     var players_read = players::Players {};
+    // A new player starts on the 3D board on a desktop, on the flat one elsewhere.
+    if host::platform() == host::DESKTOP { settings::default_board = settings::RAISED; }
     let prefs = players::load(players_read, dir, keep);
     if kind < 0 { kind = theme_for(prefs.season); }
     var locales: u8[256] = [0; 256];
