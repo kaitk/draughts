@@ -4,19 +4,14 @@
 // it directly (platform.h); on the Mac SDL is in the goose binary, so its functions are
 // looked up once.
 //
-// The safe area: on Android SDL fills it from the window's insets, the display cutout,
-// the system bars while shown, and the bottom gesture bar (patches/SDL/0002: the back
-// gesture's side strips and the top swipe-down strip left out), in the window's pixels;
-// on iOS from the view's safeAreaInsets (the notch and the home indicator), in points;
-// on the Mac a window's safe area is all of it. The display scale: on Android
-// densityDpi / 160 (2.625 on the Pixel 7a, 1.5 on the Tab A11+), on iOS the screen's
-// pixels a point, on a Mac's Retina screen 2.
+// The safe area: on Android the window's insets, cutout, shown system bars, and bottom
+// gesture bar (patches/SDL/0002 leaves out the gestures' side and top strips), in pixels;
+// on iOS the view's safeAreaInsets, in points; on the Mac all of the window. The display
+// scale: densityDpi / 160 on Android, pixels a point on Apple's.
 //
-// The GPU driver: Vulkan on Windows, as on Android, which SDL would otherwise pass over
-// for Direct3D 12 (docs/architecture/README.md). The app's id and name on Linux: Wayland's
-// app id and X11's window class, which the desktop matches to the menu's
-// io.github.kaitk.draughts.desktop for the window's icon, and the name gfx would give as
-// "Goose" (scripts/linux.py).
+// The GPU driver: Vulkan on Windows, which SDL would otherwise pass over for Direct3D 12.
+// On Linux the app's id and name (Wayland's app id, X11's window class), which the desktop
+// matches to io.github.kaitk.draughts.desktop for the icon; gfx would say "Goose".
 
 #include "platform.h"
 #include <stdbool.h>
@@ -111,22 +106,17 @@ int64_t draughts_display(draughts_floats out) {
 }
 
 // A 3D board too slow for its display: first fewer samples, then the display at 60 Hz while
-// it draws (tasks 056 and 081). On a 90 Hz display, such as the Galaxy A33's, a 3D board
-// that draws 60 frames a second shows them two refreshes and one in turn; at 60 Hz each
-// shows for one. A device that holds its display's rate keeps both.
+// it draws. On a 90 Hz display 60 frames a second show two refreshes and one in turn; at
+// 60 Hz each shows for one.
 //
-// draughts_pace_3d(drawing, now) is called each pass of the loop, drawing 1 when the pass
-// drew the 3D board, ready and shown (its preparing steps are long by design), and not
-// in --bench's waited phases. The gaps between passes that drew it one after the other are
-// timed at the display's own rate. After SLOW_AFTER of them, if they average over a
-// quarter more than a refresh, it returns 1, once: the app draws the pass at 2× MSAA from
-// then on, which the A33's Mali-G68 draws a quarter faster than 4× (task 081), and the gaps
-// are timed again. Found slow a second time on a display faster than 60, the app asks for
-// 60 whenever the 3D board draws, from then on, and for the display's own rate (0)
-// otherwise. Android only (ANativeWindow_setFrameRate, API 30, looked up as the app runs
-// from 29), and only when the rate or the surface changed: a new surface, after the app
-// was in the background, starts with no rate of its own. Some displays ignore it: the
-// Galaxy A33's "High" motion smoothness holds 90 Hz whatever an app asks.
+// draughts_pace_3d(drawing, now) is called each pass of the loop, `drawing` 1 when the
+// pass drew the 3D board, ready and shown. The gaps between passes that drew it are timed;
+// after SLOW_AFTER of them, averaging over a quarter more than a refresh, it returns 1,
+// once (the app then draws fewer samples), and times again. Found slow a second time on a
+// display faster than 60, it asks for 60 Hz whenever the 3D board draws. Android only
+// (ANativeWindow_setFrameRate, API 30, looked up since the app runs from 29), asked again
+// when the surface changes: a new surface starts with no rate of its own. Some displays
+// ignore it.
 #if defined(__ANDROID__)
 #include <dlfcn.h>
 typedef struct ANativeWindow ANativeWindow;

@@ -1,8 +1,5 @@
-// Drawing the UI layer's quads (gui/): one storage buffer of quads and one instanced
-// draw, each quad worked out in the fragment shader as a signed-distance shape
-// (docs/architecture/rendering.md, "UI layer", "Scene and glass", "Controls"). What is
-// drawn and when is this file's; the shaders and GPU calls are the backend's, `be.widgets`
-// (widgets_gpu.goose on gfx; gpu.goose).
+// The UI's quads (gui/): one storage buffer and instanced draws, each quad a
+// signed-distance shape in the fragment shader (docs/architecture/rendering.md, "UI layer").
 namespace widgets;
 import std;
 import vec;
@@ -12,10 +9,9 @@ import .scene;
 import .theme;
 import badges from "../badges";
 
-// width, height in pixels, z: 1 when there is a photograph, w: the hole's height (0 as
-// tall as wide); and the board's rect (x, y, size, corner radius) where a transition
-// hides the UI, size 0 at rest.
-// clip: the scrolling list's view (gui::scroll_begin), where quads marked gui::CLIP show.
+// screen: width, height in pixels, z: 0 page color, 1 photograph, 2 plain fade, w: the
+// hole's height (0 as tall as wide). hole: the board's rect (x, y, size, corner radius)
+// where a transition hides the UI, size 0 at rest. clip: where gui::CLIP quads show.
 struct View { screen: float4, hole: float4, clip: float4 }
 
 struct Widgets {
@@ -23,8 +19,8 @@ struct Widgets {
     atlas:  gpu::Texture,     // the text's glyphs (text.goose), or 0 before they're baked
     thumbs: gpu::Texture,     // the seasons' thumbnails (scene.goose), or 0 until loaded
     badges: gpu::Texture,     // the badges' animals' distances, baked at start
-    // The UI kept while it stands still (prepare()): the last frame's quads (upload, count),
-    // view, theme, and textures; the layer they were drawn into, and whether it holds them.
+    // The UI kept while it stands still (prepare): the last frame's quads, view, theme,
+    // and textures, and the layer they were drawn into.
     layer:   gpu::Texture,
     layer_w: i64,
     layer_h: i64,
@@ -60,20 +56,16 @@ fn new<B>(be: B&) -> Widgets {
     return w;
 }
 
-// The badges' animals as badges::atlas bakes them (about 54 KB, a few ms), the distance
-// texture the shader carves from, made once at start.
+// The badges' animals' distance texture, which the shader carves from.
 fn bake_badges<B>(be: B&) -> gpu::Texture {
     let px = badges::atlas();
     return be.texture_r8(badges::CELL, badges::COUNT * badges::CELL, px[..]);
 }
 
-// Before the frame's passes (copies and passes can't run inside one), with what frame()
-// will take: the quads copied to the GPU when they changed. The UI stands still on most
-// frames that draw (the board moving, a pulse), and its quads cost a quarter of the 3D
-// frame on the Pixel 7a (task 059): once they, the view, the theme, and the textures are
-// the same as the last frame's, they are drawn once into a layer the screen's size,
-// which frame() then lays with a fetch a pixel. While they change, frame() draws them as
-// they come, so a moving UI pays no layer.
+// Before the frame's passes, as copies can't run inside one: uploads the quads when they
+// changed. The UI stands still on most frames that draw, so once the quads, view, theme,
+// and textures match the last frame's they are drawn once into a screen-sized layer,
+// which frame() lays with one fetch a pixel; a changing UI is drawn as it comes.
 fn prepare<B>(be: B&, w: Widgets&, quads: const gui::Quad[:], clip: float4, s: scene::Scene&, t: theme::Theme, width: f32,
            height: f32, hole: float4, tall: f32 = 0.0) {
     let n = quads.len;
@@ -111,9 +103,8 @@ fn prepare<B>(be: B&, w: Widgets&, quads: const gui::Quad[:], clip: float4, s: s
     w.kept = true;
 }
 
-// Draws the frame's quads in the open pass, over what is there, none inside `hole` but
-// those on the board (gui::on_board), `tall` pixels tall (0: as tall as wide): the kept
-// layer when prepare() drew them into it.
+// Draws the frame's quads in the open pass, none inside `hole` but those on the board
+// (gui::on_board), or the kept layer.
 fn frame<B>(be: B&, w: Widgets&, quads: const gui::Quad[:], clip: float4, s: scene::Scene&, t: theme::Theme, width: f32,
          height: f32, hole: float4, tall: f32 = 0.0) {
     guard quads.len > 0 else { return; }
@@ -135,16 +126,15 @@ fn same_bytes(a: const u8[:], b: const u8[:]) -> bool {
     return true;
 }
 
-// The text's coverage, R8, `size` texels, as the UI's glyph texture in place of the last
-// (text::bake): the quads drawn again.
+// The text's coverage (text::bake) as the glyph texture, in place of the last.
 fn atlas<B>(be: B&, w: Widgets&, px: const u8[:], size: int2) {
     if w.atlas.id != 0 { be.release(w.atlas); }
     w.atlas = be.texture_r8(size.x, size.y, px);
     w.stale = true;
 }
 
-// The `n` uploaded quads in the open pass, in runs of one pipeline (FRAG), in order; the
-// glyphs and the thumbnails the glass copy until there are any.
+// The `n` uploaded quads, in order, in runs of one pipeline; the glass copy stands in for
+// textures not made yet.
 fn draw_quads<B>(be: B&, w: Widgets&, n: i64, s: scene::Scene&, t: theme::Theme, view: View) {
     let atlas = if w.atlas.id != 0 { w.atlas } else { s.glass };
     let thumbs = if w.thumbs.id != 0 { w.thumbs } else { s.glass };
@@ -158,7 +148,6 @@ fn draw_quads<B>(be: B&, w: Widgets&, n: i64, s: scene::Scene&, t: theme::Theme,
     }
 }
 
-// Which of the three pipelines draws quad `q`.
 fn pipeline_of(q: gui::Quad) -> i64 {
     let kind = q.look.x as i64;
     return if kind == gui::ICON { 1 } else if kind == gui::FACE { 2 } else { 0 };

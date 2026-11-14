@@ -1,39 +1,24 @@
-// The season's photograph (docs/architecture/rendering.md, "Scene and glass"): sharp
-// behind home, and blurred once on the GPU when the season is picked behind the 2D game.
-// The program's C (background.c) makes the sharp texture: the built-in ASTC image where
-// the GPU samples it, else the JPEG decoded. A shrinking pass averages it down to a small
-// copy, and two passes of a Gaussian, across and then down, blur that into the texture
-// the board pass samples behind the game. A season whose image isn't built in has no
-// photograph, and the board pass shows the page color. Glass panels sample a copy
-// blurred further, made at the same time. With the plain background (task 044) nothing
-// is decoded, uploaded, or held: the board pass and the glass draw the fade
-// (shaders::FADE_FN in src/render3d/) from the theme's colors. What is drawn is this
-// file's; the passes' shaders and GPU calls are the backend's, `be.scene` (scene_gpu.goose
-// on gfx; gpu.goose).
+// The season's photograph, sharp behind home, and its copies blurred once on the GPU for
+// the game and the glass (docs/architecture/rendering.md, "Scene and glass"). With the
+// plain background nothing is loaded and the fade (shaders::FADE_FN) is drawn instead.
 namespace scene;
 import std;
 import vec;
 
-// The blurred copy's side. The photograph is cover-cropped to the screen by its long
-// side, so the blur is a fraction of that: 14 px at 1280 px (rendering.md) is a sigma
-// of 5.6 texels here, at any screen size. Scaled up, a blurred image this size shows
-// no texels.
+// The blurred copy's side. The photograph is cover-cropped by the screen's long side, so
+// the blur is a fraction of it: 14 px at 1280 px is a sigma of 5.6 texels here.
 let SIZE = 512;
 
-// The sharp photograph's side where the JPEG is decoded: as it is stored, about a texel
-// to a pixel across a 1920 px screen. 16 MB of graphics memory as RGBA8, 1.8 MB as the
-// ASTC image (6 × 6 blocks), which keeps the size it is stored at.
+// The sharp photograph's side where the JPEG is decoded; the ASTC image keeps its own.
 let SHARP_SIZE = 2048;
 
-// The glass copy's side, and its blur: the one a 24 px blur is at 1280 px (rendering.md,
-// "Scene and glass"), 4.8 texels here, of which the 512 px copy already has 2.8.
+// The glass copy's side, and its blur: 24 px at 1280 px is 4.8 texels here, of which the
+// 512 px copy already has 2.8.
 let GLASS_SIZE = 256;
 let GLASS_SIGMA = 3.9;
 
-// A season's thumbnail in settings: the photograph's middle at the picture's 76 × 50 dp
-// shape, about a texel to a pixel at 2.1 pixels per dp (the densest screen's); the four
-// stacked in one texture, under them the four plain fades, and under those the board
-// pictures, BOARD_PICTURES a season by theme (THUMBS slots in all).
+// Settings' thumbnails in one texture: the four seasons' photographs at the picture's
+// 76 × 50 dp shape, under them the four plain fades, then the board pictures.
 let THUMB_W = 160;
 let THUMB_H = 105;
 let SEASON_SLOTS = 8;
@@ -49,8 +34,6 @@ struct Scene {
     plain:   bool,             // the plain background chosen: no photograph, the fade
 }
 
-// The photograph of theme `kind` (theme::WOOD..SUNSET), and its blurred copies; with
-// `plain`, none.
 fn load<B>(be: B&, kind: i64, plain: bool = false) -> Scene {
     let sampler = be.scene.sampler();
     let sharp = if plain { gpu::no_texture() } else { be.r3d.photo(kind, SHARP_SIZE) };
@@ -83,7 +66,6 @@ fn load<B>(be: B&, kind: i64, plain: bool = false) -> Scene {
     return Scene { photo: blurred, sharp: sharp, glass: glass, sampler: sampler, has: true, plain: false };
 }
 
-// Releases the scene's textures, for another season's.
 fn release<B>(be: B&, s: Scene&) {
     be.release(s.photo);
     if s.has {
@@ -93,13 +75,7 @@ fn release<B>(be: B&, s: Scene&) {
     be.release(s.sampler);
 }
 
-// The four seasons' thumbnails stacked, by theme, top to bottom, in one texture: each
-// photograph's middle at the thumbnail's shape, shrunk on the GPU, one at a time; a
-// season without a photograph is black. Under them the four plain fades, by theme, as
-// the plain background paints them at the thumbnail's shape, and the board pictures. A decoded JPEG (about 125 ms for the four on the
-// tablet) is scaled to SIZE on the way, so its texture is small. The app makes this in
-// the first frame after the launch's first that draws nothing, rather than when settings
-// first open.
+// Settings' thumbnails (THUMB_W..THUMBS above); a season without a photograph is black.
 fn thumbs<B>(be: B&) -> gpu::Texture {
     let t = be.target(THUMB_W, THUMBS * THUMB_H);
     let sampler = be.scene.sampler();
@@ -114,8 +90,7 @@ fn thumbs<B>(be: B&) -> gpu::Texture {
                               float4 { 0.0, kind * THUMB_H, THUMB_W, THUMB_H });
         }
         be.scene.end();
-        // One photograph at a time: as ASTC (1.8 MB) it sits in SDL's shared 16 MiB
-        // block, and four at once took a second block that stayed.
+        // One photograph at a time: four at once would take SDL a second 16 MiB block that stays.
         be.scene.let_go(photo);
     }
     be.scene.done(shrink);
@@ -127,8 +102,7 @@ fn thumbs<B>(be: B&) -> gpu::Texture {
     }
     be.scene.end();
     be.scene.done(fade);
-    // The board pictures (design/boards/, scripts/board_thumbs.py): an atlas of cells the
-    // slots' size, a row a season by theme, each copied into its slot as it is.
+    // The board pictures (scripts/board_thumbs.py): an atlas of slot-sized cells, a row a season.
     let boards = be.r3d.photo(BOARDS, SIZE);
     if boards.id != 0 {
         let copy = be.scene.shrinker();

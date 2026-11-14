@@ -1,10 +1,6 @@
-// The system's preferred locales, through SDL, for the string table to pick a language
-// from (strings/strings.goose). SDL reads them from macOS's settings and, on Android,
-// from the Java side, and on iOS from NSLocale. On Android and iOS the program links SDL
-// and calls it directly (platform.h);
-// on the Mac the program's C is linked on its own and SDL is in the goose binary, so a
-// direct call wouldn't link, and SDL's two functions are looked up when called. And the
-// local date, for the daily puzzles (draughts_local_day, at the end).
+// The system's preferred locales through SDL, for the string table to pick a language
+// from (strings/strings.goose), and the local date for the daily puzzles. Where SDL isn't
+// linked into the program its functions are looked up (platform.h).
 
 #include "platform.h"
 #include <stdint.h>
@@ -49,9 +45,8 @@ int64_t draughts_locales(draughts_text out) {
     return n;
 }
 
-// The local date as days since the epoch (1970-01-01 is 0), for the daily puzzles
-// (task 088): the time now moved by the zone's offset, daylight saving's too, over a
-// day's seconds. Windows' struct tm has no tm_gmtoff: there the offset is the local
+// The local date as days since the epoch (1970-01-01 is 0): the time now moved by the
+// zone's offset, daylight saving's too, over a day's seconds. Windows' struct tm has no tm_gmtoff: there the offset is the local
 // time's fields read back as UTC, less now.
 #include <time.h>
 

@@ -1,9 +1,6 @@
-// Stand-ins for the gamepad and fullscreen functions of the fork's goose_gfx
-// (kaitk/goose_gfx, which every build script links), which host declares itself
-// (keys.goose, host.goose): the release's gfx (a plain `goose build`) has none, and with
-// these it still links, a gamepad never connected and the window never fullscreen. The
-// fork's own definitions take their place. Without gfx_api.h, which the goose-ngfx
-// build's c_include doesn't reach (scripts/ngfx.py).
+// Weak stand-ins for the goose_gfx fork's gamepad and fullscreen functions, so a plain
+// `goose build` against the release's gfx still links; the fork's definitions win in
+// every build script's link. No gfx_api.h: the goose-ngfx build's c_include lacks it.
 
 #include <stdint.h>
 

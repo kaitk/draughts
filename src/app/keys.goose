@@ -1,17 +1,9 @@
-// The keys' side of the platform (task 072; rendering.md, "Keys"): the arrows, Enter,
-// Space, and Tab read into gui::Input, and a gamepad's the same way: the D-pad or the left
-// stick moves as the arrows do, A (the bottom button) as Enter, the shoulder buttons as
-// Tab and Shift and Tab, between a screen's groups, and B goes back as Escape does (back).
-// An arrow or the D-pad held repeats, REPEAT_DELAY seconds after its press and then every
-// REPEAT_RATE, as a desktop's lists do: gfx reports a key's first press only. The main
-// loop's wake timer counts the next repeat (repeat_in), so a held arrow repeats in an idle
-// loop too. Part of host, in its namespace.
+// The keys and a gamepad read into gui::Input (rendering.md, "Keys"): the D-pad or left
+// stick as the arrows, A as Enter, the shoulders as Tab and Shift-Tab, B as Escape. gfx
+// reports a key's first press only, so a held arrow repeats here, woken by the loop's timer.
 //
-// The gamepad is goose_gfx's (the fork's, docs/goose-findings.md, "goose_gfx: no
-// gamepad"), which reads it and wakes its idle wait when it is used, opened with
-// SYSTEM_GAMEPADS (host::open). The release's gfx.goose doesn't declare its gamepad
-// functions, so they are declared here; gfx_fork.c stands in for them where the release's
-// own gfx is linked.
+// The gamepad functions are the goose_gfx fork's, which the release's gfx.goose doesn't
+// declare; gfx_fork.c stands in for them where the release's gfx is linked.
 namespace host;
 import std;
 import gfx;
@@ -44,25 +36,20 @@ let PAD_THERE = 1 << 31;    // a gamepad is connected
 let STICK_ON = 0.5;         // the stick's way out that counts as the D-pad
 let STICK_OFF = 0.33;       // and under which it is let go again
 
-// The arrow held, one of gui::STEP_UP..STEP_RIGHT or STEP_NONE, and when it next repeats;
-// the gamepad's bits last frame, and whether its B went down this frame; the stick's
-// direction bit last frame, for its hysteresis.
 struct Repeat {
-    step:    i64  = 0,
+    step:    i64  = 0,      // the arrow held (gui::STEP_*), and when it next repeats
     at:      f64  = 0.0,
-    buttons: i64  = 0,
-    back:    bool = false,
-    stick:   i64  = 0,
+    buttons: i64  = 0,      // the gamepad's bits last frame
+    back:    bool = false,  // its B went down this frame
+    stick:   i64  = 0,      // the stick's direction bit last frame, for hysteresis
 }
 
-// Whether the gamepad in slot has button down, or pressed since the last frame though let
-// go again (gfx keeps the press).
+// Down, or pressed since the last frame though let go again.
 fn pad_button(slot: i64, button: i64) -> bool { pad_down(slot, button) || pad_pressed(slot, button) }
 
-// The first gamepad connected's buttons this frame as the bits above, PAD_THERE while one
-// is; 0 with none. The left stick past STICK_ON counts as the D-pad toward its larger
-// axis, let go under STICK_OFF (a little hysteresis, so a stick resting near the
-// threshold doesn't flicker).
+// The first connected gamepad's buttons as the bits above; 0 with none. The left stick
+// counts as the D-pad toward its larger axis, with hysteresis so a stick resting near the
+// threshold doesn't flicker.
 fn pad_bits(r: Repeat&) -> i64 {
     var slot = -1;
     for s in PAD_SLOTS {
@@ -95,13 +82,12 @@ fn pad_bits(r: Repeat&) -> i64 {
     if far > STICK_ON {
         dir = want;
     } else if r.stick != 0 && far > STICK_OFF {
-        dir = r.stick;              // held past STICK_OFF: as it was
+        dir = r.stick;
     }
     r.stick = dir;
     return bits | dir;
 }
 
-// The arrow key that names step.
 fn arrow(step: i64) -> const u8[:] {
     return match step {
         gui::STEP_UP => "Up",
@@ -111,11 +97,10 @@ fn arrow(step: i64) -> const u8[:] {
     };
 }
 
-// The gamepad's bit for step: the D-pad's (or the stick's) that way.
 fn pad_bit(step: i64) -> i64 { PAD_UP << (step - gui::STEP_UP) }
 
-// The keys' moves into input: an arrow or the D-pad pressed this frame, or the one held
-// when its repeat is due; Enter, Space, or A pressed, and held; Tab, or a shoulder button.
+// An arrow pressed this frame, or the one held when its repeat is due; Enter, Space, or
+// A; Tab, or a shoulder button.
 fn keys(r: Repeat&, input: gui::Input&, now: f64) {
     let down = pad_bits(r);
     let went = down & ~r.buttons;

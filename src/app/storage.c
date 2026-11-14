@@ -1,9 +1,6 @@
-// The app's own storage folder, through SDL's SDL_GetPrefPath: on Android the app's
-// internal files folder, on the Mac ~/Library/Application Support/kaitk/draughts/. The
-// settings and the saved game are kept there. As in locale.c, on the Mac SDL is in the
-// goose binary and is looked up when called; on Android and iOS the program links SDL
-// (platform.h). On iOS it is Library/Application Support/kaitk/draughts/ in the app's
-// container.
+// The app's storage folder for the settings and the saved games, through SDL_GetPrefPath:
+// on Android the app's internal files folder, on Apple's Library/Application
+// Support/kaitk/draughts/. SDL is looked up where it isn't linked in (platform.h).
 
 #include "platform.h"
 #include <stdint.h>

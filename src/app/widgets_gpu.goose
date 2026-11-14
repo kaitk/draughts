@@ -1,6 +1,4 @@
-// Recording the UI's quads (widgets.goose) through gfx: their shaders, the three
-// pipelines and the composing one, and the quads' storage buffer, updated when they
-// change. On goose-ngfx, widgets_ngfx (src/ngfx/); the drawer calls `be.widgets`.
+// Recording the UI's quads (widgets.goose) through gfx; on goose-ngfx, widgets_ngfx.
 namespace widgets_gpu;
 import std;
 import vec;
@@ -29,11 +27,8 @@ let VERT = """
         vec4 rect = q[i];
         vec4 look = q[i + 2];
         vec4 extra = q[i + 3];
-        // Room round the rect for the shadow, as far as each reaches, and a pixel more for
-        // the edge's antialiasing (task 063): glass's (12 dp down, 32 blur, -14 spread)
-        // 6 dp above, 18 to the sides, 30 below; a tile's (6 down, 14 blur, -8 spread) 0,
-        // 6, and 12; a face 12 dp and its glow 26 dp round it, a floating disc 6 dp and
-        // its dot.
+        // Room round the rect for each kind's shadow or glow, and a pixel more for the
+        // edge's antialiasing.
         int kind = int(look.x);
         float u = extra.x;
         // left, top, right, bottom; a glyph is drawn exactly over its rect, a texel to a pixel.
@@ -50,11 +45,9 @@ let VERT = """
     }
     """;
 
-// FRAG is built three times (task 063), each kind in one of them, so no pixel pays for
-// another's registers: together the icons' or the faces' paths took the whole shader to
-// 64 registers, half occupancy on Mali, where each set alone fits 32. draw_quads() draws
-// the quads in runs of one pipeline, in their order: gui::ICON's in the second,
-// gui::FACE's in the third, the rest in the first.
+// FRAG is built three times, each kind in one of them, so no pixel pays for another's
+// registers. draw_quads() draws the quads in runs of one pipeline, in their order:
+// gui::ICON's in the second, gui::FACE's in the third, the rest in the first.
 let BASE = "#define UI_BASE\n";
 let ICONS = "#define UI_ICONS\n";
 let FACES = "#define UI_FACES\n";
@@ -320,7 +313,7 @@ let FRAG = """
             d = min(d, min(seg(p, vec2(20.7, 18.2), vec2(20.5, 14.5)), seg(p, vec2(20.5, 14.5), vec2(16.9, 15.3))));
             return min(d, min(seg(p, vec2(3.3, 18.2), vec2(3.5, 14.5)), seg(p, vec2(3.5, 14.5), vec2(7.1, 15.3))));
         }
-        if (k == 43 || k == 44) {   // the moves' chevrons up and down (task 078): a chevron right turned
+        if (k == 43 || k == 44) {   // the moves' chevrons up and down: a chevron right turned
             vec2 q = k == 43 ? vec2(24.0 - p.y, p.x) : vec2(p.y, p.x);
             return min(seg(q, vec2(9.0, 6.0), vec2(15.0, 12.0)), seg(q, vec2(15.0, 12.0), vec2(9.0, 18.0)));
         }
@@ -337,7 +330,7 @@ let FRAG = """
             float d = min(seg(p, a, b), seg(p, b, vec2(a.x, 18.0)));
             return k == 39 || k == 42 ? min(d, seg(p, vec2(12.0 - 5.0 * s, 6.0), vec2(12.0 - 5.0 * s, 18.0))) : d;
         }
-        if (k == 45) {          // a new game: a light piece mid-jump over a dark one (task 082)
+        if (k == 45) {          // a new game: a light piece mid-jump over a dark one
             // Flat discs seen from above at an angle: tops ellipses 12 by 5, 3 high. The dark
             // one solid round (10.5, 15), cut 2.6 clear of the light one, outlined round
             // (15, 9), and an arc rising into it from behind.
@@ -361,7 +354,7 @@ let FRAG = """
             float d = min(abs(box(p, vec2(12.0), vec2(8.0), 2.5)), seg(p, vec2(12.0, 16.5), vec2(12.0, 7.5)));
             return min(d, min(seg(p, vec2(8.5, 11.0), vec2(12.0, 7.5)), seg(p, vec2(12.0, 7.5), vec2(15.5, 11.0))));
         }
-        if (k == 48) {          // how to play (task 026): a finger tapping, a ring over its tip
+        if (k == 48) {          // how to play: a finger tapping, a ring over its tip
             float d = min(seg(p, vec2(10.0, 13.0), vec2(10.0, 6.5)), arc(p, vec2(11.6, 6.5), 1.6, 3.1415927, 3.1415927));
             d = min(d, seg(p, vec2(13.2, 6.5), vec2(13.2, 12.0)));
             d = min(d, min(arc(p, vec2(14.8, 11.5), 1.6, 3.1415927, 3.1415927), seg(p, vec2(16.4, 11.5), vec2(16.4, 12.5))));
@@ -371,7 +364,7 @@ let FRAG = """
             d = min(d, min(arc(p, vec2(6.55, 14.75), 1.49, 2.45, 3.1415927), seg(p, vec2(7.7, 13.8), vec2(10.0, 15.5))));
             return min(d, arc(p, vec2(11.6, 6.5), 4.4, 3.1415927, 3.1415927));
         }
-        if (k == 49) {          // the daily puzzles (task 088): a calendar, its rings, and today's dot
+        if (k == 49) {          // the daily puzzles: a calendar, its rings, and today's dot
             float d = abs(box(p, vec2(12.0, 12.75), vec2(8.5, 7.75), 3.0));
             d = min(d, seg(p, vec2(3.5, 10.0), vec2(20.5, 10.0)));
             d = min(d, min(seg(p, vec2(8.0, 3.0), vec2(8.0, 7.0)), seg(p, vec2(16.0, 3.0), vec2(16.0, 7.0))));
@@ -397,10 +390,9 @@ let FRAG = """
         float v = textureLod(badges, vec2(t.x, (float(k) + t.y) / BADGE_COUNT), 0.0).r;
         return (v * 255.0 - 128.0) / 127.0 * BADGE_SPREAD * 2.0 * BADGE_HALF / BADGE_CELL;
     }
-    // A player's badge (task 038): home's king as the light pieces are now (draw's
-    // man_top), the animal in the crown's place and colour, flat and bold as the crown is,
-    // with only a faint shadow inside its upper edge, as if set a hair into the top. f in
-    // the piece's radii, w a pixel in them. The one place the badge is drawn.
+    // A player's badge: a light man's top (draw's man_top) with the animal in the crown's
+    // place and colour, a faint shadow inside its upper edge as if set a hair into the
+    // top. f in the piece's radii, w a pixel in them.
     vec3 badge(int k, vec2 f, float w) {
         float r = length(f);
         vec3 col = man_top(w_face.rgb, f, r, f / max(r, 0.001), false);
@@ -487,18 +479,9 @@ let FRAG = """
         // style: plain, primary, toggle on, toggle off, quiet, row, primary row, choice on
         // and off, clock running, waiting, low, and warning, and the outlined row
         if (kind == 1) {
-            // A glass tile: white at 10%, 14 points more pressed and scaled to 0.96; an
-            // inset light border and top highlight; a small shadow. A primary tile is the
-            // glow color at 22%. A toggle has no highlight: on, the glow color at 26%
-            // with a glow border; off, white at 8% with a border at 18%; a quiet tile
-            // too. A menu row has no shadow, nor a border unless outlined (1 dp at 25%):
-            // clear, or the glow color at 24%. A choice has no shadow either: on, the
-            // glow color at 22% with a 2 dp glow
-            // border; off, white at 10% with a border at 12%. A clock has no shadow either:
-            // running, the glow color at 18% with a 2 dp glow border; waiting, white at 6%
-            // with a border at 12%; under a minute, autumn's gold at 16% with a 2 dp gold
-            // border; low, the forced-capture red at 16% with a 2 dp red border. color.a
-            // dims a tile. Under the mouse (extra.z), as below.
+            // A glass tile: a fill (white, the glow color, gold, or red by style), more
+            // opaque and scaled down when pressed (look.w); a border and a top highlight;
+            // a small shadow unless a row, choice, or clock (style 5 on). color.a dims it.
             float pr = v_look.w;
             bool flat = style >= 5;
             if (!flat) h *= 1.0 - 0.04 * pr;
@@ -520,10 +503,9 @@ let FRAG = """
             float fa = bare ? 0.10 * pr : ((style == 1 ? 0.22 : style == 2 ? 0.26 : style == 3 || style == 4 ? 0.08
                         : style == 5 ? 0.0 : style == 6 ? 0.24 : style == 7 ? 0.22 : style == 9 ? 0.18
                         : style == 10 ? 0.06 : style == 11 || style == 12 ? 0.16 : style == 13 ? 0.0 : 0.10) + 0.14 * pr);
-            // The mouse over it on a desktop (task 066), extra.z's fraction 0..1 (ON_BOARD
-            // and CLIP add whole numbers): a lit tile's own glow a little brighter; any
-            // other the glow at 8%, about a third of a chosen tile's, over its own fill,
-            // and a 1 dp glow border at 40% below.
+            // The mouse over it, extra.z's fraction 0..1 (ON_BOARD and CLIP add whole
+            // numbers): a lit tile's own glow a little brighter; any other a faint glow
+            // over its fill and a 1 dp glow border below.
             float hv = mod(v_extra.z, 2.0);
             if (lit) fa += 0.06 * hv;
             vec4 tile = vec4(fc * fa, fa);
@@ -551,8 +533,8 @@ let FRAG = """
     #endif
     #ifdef UI_ICONS
         if (kind == 2) {
-            // A line icon: strokes 2.4 units (look.y sets another) of its 24-unit grid wide, as the prototypes'
-            // SVGs draw them, round caps, in the text color.
+            // A line icon: strokes 2.4 units of its 24-unit grid wide (look.y sets another),
+            // round caps, in the text color.
             vec2 q = (p - v_rect.xy) / v_rect.zw * 24.0;
             float px = 24.0 / v_rect.z;         // one pixel in grid units
             float d = icon(int(v_look.z), q) - (r > 0.0 ? 0.5 * r : 1.2);     // look.y: the stroke, if set
@@ -569,8 +551,7 @@ let FRAG = """
             // 0 to 3) or its plain fade (4 to 7), a board picture (8 on, four a theme:
             // its own raised board whole, then its wood's, stone's, and carved board's
             // corner), the theme shown's photograph (-2) or fade (-3) or board picture
-            // (-4 to -7); for -1 the glow at 18% mixed into white at 6% (CSS color-mix),
-            // which leaves it 23% opaque, and for -8 white at 6% (the flat board's).
+            // (-4 to -7); for -1 a faint glow tint, and for -8 white at 6% (the flat board's).
             float a = cover(box(p, c, h, r)) * v_color.a;
             int k = int(v_look.z);
             if (k == -2) k = theme_index();
@@ -652,11 +633,9 @@ let FRAG = """
     #endif
     #ifdef UI_BASE
         if (kind == 9) {
-            // A floating button (the 3D board's camera, prototypes/game3d.html's `.ctl`): a
-            // disc of black at 30% with an inset 1 px hairline of white at 22% and a soft
-            // shadow 2 dp down, no panel; pressed, black at 42%; lit, the glow color at 30%
-            // over it. A gold dot (the glow color) on its rim at the upper right with look.z
-            // from 2.
+            // A floating button (the 3D board's camera): a dark disc with a white hairline
+            // and a soft shadow, darker pressed, glowing lit; a dot of the glow color on its
+            // rim at the upper right with look.z from 2.
             float rad = h.x;
             float d = length(p - c) - rad;
             float pr = v_look.w;

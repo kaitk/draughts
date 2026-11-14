@@ -1,19 +1,16 @@
-// The development flags (flags.goose, docs/development.md "Run on the Mac"): those that
-// set up the shell at launch (setup), and those that act while the loop runs: --mouse's pointer, --tap's taps, --go's switch, --win's and --hold's moments, --bench's
-// start and end (its frames timed in bench.goose), --rest's CPU and footprint, and
-// --frames' count and screenshot. The loop
-// calls in at fixed points of a frame, and with none of these flags given each call does
-// nothing.
+// The development flags that act on the shell (flags.goose, docs/development.md "Run on
+// the Mac"). The loop calls in at fixed points of a frame; with none of them given, each
+// call does nothing.
 namespace dev;
 import std;
 import vec;
 
-// Ends the next frame()'s wait at once: an event pushed now (wake.c).
+// Ends the next frame()'s wait at once.
 extern fn draughts_wake_now();
-// The process's CPU time in seconds and its memory footprint in MB (memory.c), for --rest.
+// The process's CPU time in seconds and its memory footprint in MB, for --rest.
 extern fn draughts_cpu_seconds() -> f64;
 extern fn draughts_footprint_mb() -> f64;
-// Each thread's name and CPU time so far, on Apple platforms (memory.c), for --rest.
+// Each thread's name and CPU time so far, on Apple platforms, for --rest.
 extern fn draughts_threads(out: u8[:]) -> i64;
 
 struct Dev {
@@ -31,10 +28,8 @@ struct Dev {
 
 fn new(f: flags::Flags&) -> Dev { Dev { go: f.go, .. } }
 
-// At launch, once the shell has the player's settings (`prefs`, as read) and before the
-// saved game is brought back: the game, the settings, the position, the screen, the
-// setup, and the puzzle the flags give. The settings they set apply for the run and are
-// written only if a tap there writes them.
+// At launch, before the saved game is brought back: the game, settings, position,
+// screen, setup, and puzzle the flags give. Their settings are written only if a tap writes them.
 fn setup(f: flags::Flags&, sh: shell::Shell&, prefs: settings::Settings) {
     if f.clock >= 0 || f.computer >= 0 {
         let lv = if f.level >= 0 { f.level } else { prefs.level };
@@ -88,18 +83,15 @@ fn setup(f: flags::Flags&, sh: shell::Shell&, prefs: settings::Settings) {
     }
     if f.ask { sh.who.state = who::ASKING; }
     sh.setup = f.setup;
-    // A setup the flags open shows the opponent, the draughts, the child's color, and the
-    // level they give, with the settings file left as it is unless a tap in the setup
-    // writes it.
+    // The settings file stays as it is unless a tap in the setup writes it.
     if f.setup != home::NO_SETUP {
         if f.friend >= 0 { sh.prefs.friend = f.friend == 1; }
         if f.variant >= 0 { sh.prefs.variant = f.variant; }
         if f.computer >= 0 { sh.prefs.color = 1 - f.computer; }
         if f.level >= 0 { sh.prefs.level = f.level; }
     }
-    // The puzzles the flags open are of their draughts' set, loaded at launch: the
-    // library's switch lights those draughts, and home doesn't load the player's set back
-    // on the way.
+    // The puzzles are of the flags' draughts, loaded at launch, so home doesn't load the
+    // player's set back on the way.
     let to_puzzles = sh.screen == shell::PICKER || sh.screen == shell::PUZZLE || f.go == shell::PICKER
                      || f.go == shell::PUZZLE || f.puzzle >= 0 || f.library >= 1;
     if f.variant >= 0 && to_puzzles { sh.prefs.variant = f.variant; }
@@ -109,10 +101,9 @@ fn setup(f: flags::Flags&, sh: shell::Shell&, prefs: settings::Settings) {
     if f.library >= 1 { shell::play_library(sh, f.library - 1); }
 }
 
-// --puzzler: the player named `name` playing, made if there is none, their draughts' Learn
-// solved and a puzzle of each other theme, their puzzle rating `rating`, and today's record
-// cleared, all written to their file at once. The run's own screens may still show the
-// player as read before it; the next start shows them as written.
+// --puzzler: the player named `name` playing, made if there is none, their Learn solved
+// and a puzzle of each other theme, their puzzle rating `rating`, and today's record
+// cleared, all written at once; the run's own screens may still show them as read.
 fn puzzler(sh: shell::Shell&, name: const u8[:], rating: i64, variant: i64) {
     let ps .= sh.players;
     var n: players::Name = [];
@@ -144,16 +135,14 @@ fn puzzler(sh: shell::Shell&, name: const u8[:], rating: i64, variant: i64) {
     sh.changed = true;
 }
 
-// After the system's back, before the shell's frame. A switch the flags ask for waits for
-// their taps to have played out, and for the win they lead to, if any, held at --win's
-// moment (which must be past: the celebration's start is kept as a time, never before
-// 0). Then --hold keeps a transition at its moment, and --win the end's.
+// Before the shell's frame: --go's switch, once the taps have played out and any win they
+// lead to has reached --win's moment; then --hold keeps a transition at its moment, and
+// --win the end's.
 fn before(dv: Dev&, f: flags::Flags&, sh: shell::Shell&, now: f64) {
     if dv.go >= 0 && host::frame_count() >= 2 && dv.tapped >= f.taps.len && !sh.game.b.moving
        && (f.win < 0.0 || ((sh.game.won_at >= 0.0 || sh.game.drawn_at >= 0.0) && now > f.win)) {
         if dv.go == flags::GO_PLAY {
-            // As the setup's play, leaving settings.txt as it is: the count of games
-            // against the computer and the choices the flags gave aren't written.
+            // As the setup's play, leaving settings.txt as it is.
             shell::play(sh, now);
             sh.changed = false;
         }
@@ -167,10 +156,7 @@ fn before(dv: Dev&, f: flags::Flags&, sh: shell::Shell&, now: f64) {
     if f.win >= 0.0 && sh.game.drawn_at >= 0.0 { sh.game.drawn_at = now - f.win; }
 }
 
-// After the shell's frame and the settings' writes: --tap's next tap, on the game's board
-// when it is the child's turn or on a puzzle's when it takes one. True when it tapped,
-// a change to draw. --bench then starts timing: the 3D board 2 s after the launch,
-// settled, and the flat board's frames (bench::start).
+// After the shell's frame: --tap's next tap, true when it tapped; then --bench's start.
 fn after_shell(dv: Dev&, f: flags::Flags&, sh: shell::Shell&, g: gui::Gui&, r: render::Renderer&, now: f64) -> bool {
     let d3 .= r.d3;
     var dirty = false;
@@ -216,8 +202,7 @@ fn after_shell(dv: Dev&, f: flags::Flags&, sh: shell::Shell&, g: gui::Gui&, r: r
     return dirty;
 }
 
-// The frame's pointer, held where --mouse puts it for a hovered tile's shot, and --keys'
-// next key from the third drawn frame on.
+// The pointer, held where --mouse puts it, and --keys' next key from the third drawn frame on.
 fn pointer(dv: Dev&, f: flags::Flags&, input: gui::Input) -> gui::Input {
     var i = input;
     if f.mouse.x >= 0.0 { i.at = f.mouse; }
@@ -230,19 +215,15 @@ fn pointer(dv: Dev&, f: flags::Flags&, input: gui::Input) -> gui::Input {
     return i;
 }
 
-// Whether the 3D board's bench waits for each frame now, so the display's pacing leaves
-// it out (bench::waited3d).
+// Whether the 3D bench waits for each frame now, so the display's pacing leaves it out.
 fn waited3d(dv: Dev&) -> bool { bench::waited3d(dv.bench) }
 
-// At the frame's end, whether drawn or not; true when the loop should end: --frames'
-// count reached, or a bench done.
+// At the frame's end; true when the loop should end: --frames' count reached, or a bench done.
 fn after(dv: Dev&, f: flags::Flags&, r: render::Renderer&, drew: bool, size: int2, now: f64) -> bool {
     if f.frames > 0 && host::frame_count() >= f.frames { return true; }
-    // A --frames run counts frames, not seconds: none waits for an event, so the
-    // computer's reply or a transition is the same number of frames as without the wait.
+    // --frames counts frames, so nothing waits for an event.
     if f.frames > 0 { draughts_wake_now(); }
-    // --rest S: the app at rest from 12 s after the launch for S seconds, its CPU time
-    // and footprint printed once (memory.c).
+    // --rest S: the app at rest from 12 s after the launch for S seconds, CPU time and footprint printed once.
     if f.rest > 0 && dv.rest_at < 0.0 && now > 12.0 {
         dv.rest_at = now;
         dv.rest_cpu = draughts_cpu_seconds();
@@ -267,8 +248,7 @@ fn after(dv: Dev&, f: flags::Flags&, r: render::Renderer&, drew: bool, size: int
     return bench::done(dv.bench, f, r, size);
 }
 
-// After the loop: --frames' screenshot, and what the 3D board's preparing and drawing
-// took.
+// After the loop: --frames' screenshot, and what the 3D board's preparing and drawing took.
 fn end(f: flags::Flags&, r: render::Renderer&) {
     let d3 .= r.d3;
     if f.frames > 0 { host::screenshot("draughts.png"); }

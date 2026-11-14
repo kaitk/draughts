@@ -1,12 +1,6 @@
-// The platform the app runs on, all the main loop asks of it but drawing
-// (docs/architecture/README.md, "A frame"): the window, the frame's end and its clock,
-// the screen's size and focus, the pointer, the keys and typed text, and the screenshot,
-// through gfx's platform half; and the program's own C for what gfx doesn't give: the
-// safe area and the display's scale, the wake timer, the storage folder, the locales,
-// Android's launch cover, back, and close, the memory malloc keeps, and the display's
-// rate under the 3D board. Drawing is render.goose's; opening the window, presenting, and
-// the screenshot are the renderer's (backend::open, and each backend's `host`: host_gpu.goose's
-// on gfx).
+// The platform: all the main loop asks of it but drawing, through gfx's platform half
+// and the program's own C for what gfx doesn't give. Opening the window, presenting, and
+// the screenshot are the backend's (backend::open; host_gpu.goose on gfx).
 namespace host;
 import std;
 import vec;
@@ -19,40 +13,34 @@ let DESKTOP = 0;
 let ANDROID = 1;
 let IOS = 2;
 
-// Which platform the program runs on: DESKTOP, ANDROID, or IOS (launch.c).
+// DESKTOP, ANDROID, or IOS.
 extern fn draughts_platform() -> i64;
-// The system's preferred locales, "et-EE,en-US" (locale.c); returns how many bytes.
+// The system's preferred locales, "et-EE,en-US"; returns how many bytes.
 extern fn draughts_locales(out: u8[:]) -> i64;
-// The local date as days since the epoch, for the daily puzzles (locale.c).
+// The local date as days since the epoch.
 extern fn draughts_local_day() -> i64;
-// The app's storage folder, ending in a separator (storage.c); returns how many bytes.
+// The app's storage folder, ending in a separator; returns how many bytes.
 extern fn draughts_storage(out: u8[:]) -> i64;
-// The insets around the window's safe area in pixels (left, top, right, bottom) and the
-// display's scale, into out[0..5] (display.c); 0, leaving out as it is, without a window.
+// The safe area's insets in pixels (left, top, right, bottom) and the display's scale,
+// into out[0..5]; 0, leaving out as it is, without a window.
 extern fn draughts_display(out: f32[:]) -> i64;
-// Asks SDL for Vulkan on Windows, before the window opens (display.c).
+// Asks SDL for Vulkan on Windows, before the window opens.
 extern fn draughts_choose_gpu();
-// Wakes the loop in ms milliseconds, where frame() waits for events (wake.c).
+// Wakes the loop in ms milliseconds, where frame() waits for events.
 extern fn draughts_wake_in(ms: i64);
-// Tells Android the first frame is on screen, to lift the splash and the cover (launch.c).
+// Tells Android the first frame is on screen, to lift the splash and the cover.
 extern fn draughts_first_frame();
-// Closes the app on Android and takes it out of recents, as home's way out asks; on the
-// Mac the window closes as the program returns (launch.c).
+// Closes the app on Android and takes it out of recents; elsewhere the program's return does.
 extern fn draughts_close();
-// Android's back where the app has no way back (home's menu): the system's back, which
-// puts the app in the background; nothing on the Mac (launch.c).
+// The system's back on Android, putting the app in the background.
 extern fn draughts_leave();
-// Gives back to the system the memory malloc keeps for freed blocks; Android only
-// (memory.c).
+// Gives the memory malloc keeps for freed blocks back to the system; Android only.
 extern fn draughts_release_memory();
-// Times the 3D board's frames against the display: 1, once, when they first can't keep up
-// (the pass then draws fewer samples); found so again, asks Android's display for 60 Hz
-// while the 3D board draws. drawing is 1 when this pass drew it (display.c). Nothing
-// elsewhere.
+// Android: times the 3D board's frames against the display; 1, once, when they first
+// can't keep up, and if still slow asks for 60 Hz while it draws. `drawing` is 1 when
+// this pass drew it.
 extern fn draughts_pace_3d(drawing: i64, now: f64) -> i64;
 
-// What the host keeps between frames: the safe area and scale as last read, the events
-// read for typed text, and whether the keyboard is up, for which tap on the name.
 struct Host {
     display:   f32[5]         = [0.0; 5],
     events:    gfx::Event[64] = [default<gfx::Event>(); 64],
@@ -64,9 +52,7 @@ struct Host {
     repeat:    Repeat         = Repeat {}, // the arrow held (keys.goose)
 }
 
-// Opens the window, `title` and width × height where the platform has windows; filling
-// the screen with the system's bars hidden on a phone or a tablet, or with `full`;
-// presenting without waiting for the display with `no_vsync`. Aborts if it can't.
+// Opens the window, filling the screen on a phone or a tablet or with `full`. Aborts if it can't.
 fn open(title: const u8[:], width: i64, height: i64, full: bool, no_vsync: bool) -> Host {
     // The system reads a gamepad where it can, and wakes the idle app when it is used.
     let shown = if platform() != DESKTOP || full { gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE } else { gfx::WINDOW_RESIZABLE };
@@ -78,43 +64,33 @@ fn open(title: const u8[:], width: i64, height: i64, full: bool, no_vsync: bool)
 
 fn close() { backend::with() { be => be.host.close() } }
 
-// Ends the frame, presenting what its pass drew, and waits for an event when nothing
-// did; false once the window is asked to close, or the GPU device is lost, and the loop
-// ends.
+// Presents what the frame's pass drew, or waits for an event when nothing did; false
+// once the window is asked to close or the GPU device is lost.
 fn frame() -> bool { backend::with() { be => be.host.frame() } }
 
-// Whether the window wants a frame drawn though nothing changed (exposed, shown or
-// resized).
+// Whether the window wants a frame drawn though nothing changed (shown or resized).
 fn exposed() -> bool { backend::with() { be => be.host.exposed() } }
 
 // The frames presented so far: the first is on screen once the second frame() returns.
 fn frame_count() -> i64 { gfx::frame_count() }
 
-// Seconds since the window opened.
 fn time() -> f64 { gfx::time() }
 
-// The screen's size in pixels.
 fn screen_size() -> int2 { gfx::screen_size() }
 
-// Whether the window had the keyboard's focus at the last frame().
 fn focused() -> bool { gfx::focused() }
 
 fn platform() -> i64 { draughts_platform() }
 
-// The safe area's insets in pixels and the display's scale, read into h.display: a few
-// fields in SDL, read each frame, since turning the screen moves them.
 fn read_display(h: Host&) { draughts_display(h.display); }
 
-// The pointer this frame and, but while the keyboard is up, the keys' moves; with it up
-// the characters typed, Backspace, and Return. A quick tap can press and release within one frame, which mouse_down never
-// sees; pressed and released catch it.
+// The pointer and the keys' moves, or with the keyboard up what is typed. A quick tap can
+// press and release within one frame, which mouse_down never sees; pressed and released do.
 fn input(h: Host&, now: f64) -> gui::Input {
     var input = gui::Input { at: gfx::mouse_pos(), down: gfx::mouse_down(gfx::MOUSE_LEFT),
                              pressed: gfx::mouse_pressed(gfx::MOUSE_LEFT),
                              released: gfx::mouse_released(gfx::MOUSE_LEFT), wheel: gfx::mouse_wheel() };
-    // The arrow keys and a gamepad move the UI's focus, repeating while held, and Enter,
-    // Space, or the gamepad's A presses it (gui::focus_keys, keys.goose), not while a name
-    // is typed, where the keys edit it; a gamepad's buttons held then stay held after.
+    // While a name is typed the keys edit it, and a gamepad's buttons held then stay held after.
     guard h.text_on else {
         keys(h.repeat, input, now);
         return input;
@@ -131,30 +107,25 @@ fn input(h: Host&, now: f64) -> gui::Input {
     return input;
 }
 
-// The A key, which switches the 3D board's antialiasing (task 071's comparison).
 fn aa_key() -> bool { gfx::key_pressed("A") }
 
-// The fork's borderless fullscreen at the desktop's resolution (kaitk/goose_gfx's
-// gfx.goose; the release's doesn't declare it, so it is declared here as keys.goose's
-// gamepad is, and gfx_fork.c stands in where the release's gfx is linked).
+// The goose_gfx fork's borderless fullscreen, which the release's gfx.goose doesn't
+// declare (gfx_fork.c stands in where the release's gfx is linked).
 extern fn set_fullscreen(on: bool) -> bool = "gs_gfx_set_fullscreen";
 extern fn fullscreen() -> bool = "gs_gfx_fullscreen";
 
-// Alt and Enter, or F11, went down this frame: a desktop's way in and out of fullscreen.
+// Alt and Enter, or F11, on a desktop.
 fn alt_held() -> bool { gfx::key_down("Left Alt") || gfx::key_down("Right Alt") }
 fn fullscreen_key() -> bool {
     guard platform() == DESKTOP else { return false; }
     return gfx::key_pressed("F11") || (alt_held() && (gfx::key_pressed("Return") || gfx::key_pressed("Keypad Enter")));
 }
 
-// Fullscreen if windowed, else back to the window.
 fn toggle_fullscreen() { set_fullscreen(!fullscreen()); }
 
-// Whether Android's back (SDL's "AC Back"; DraughtsActivity hands the system's back to
-// SDL as that key), Escape, or a gamepad's B (keys.goose) went down this frame.
+// Android's back (DraughtsActivity hands it to SDL as "AC Back"), Escape, or a gamepad's B.
 fn back(h: Host&) -> bool { gfx::key_pressed("AC Back") || gfx::key_pressed("Escape") || h.repeat.back }
 
-// The keyboard up while `typing`, brought up again by each new `tap` on the name.
 fn keyboard(h: Host&, typing: bool, tap: i64) {
     guard typing != h.text_on || (typing && tap != h.keyboard) else { return; }
     gfx::text_input(false);
@@ -163,10 +134,8 @@ fn keyboard(h: Host&, typing: bool, tap: i64) {
     h.keyboard = tap;
 }
 
-// Saves the screen as last shown to `path`, a PNG.
 fn screenshot(path: const u8[:]) { backend::with() { be => be.host.screenshot(path) } }
 
-// The app's storage folder into `out`, and the system's locales; each returns its bytes.
 fn storage(out: u8[:]) -> const u8[:] { out[..draughts_storage(out)] }
 fn locales(out: u8[:]) -> const u8[:] { out[..draughts_locales(out)] }
 fn local_day() -> i64 { draughts_local_day() }

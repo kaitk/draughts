@@ -1,13 +1,9 @@
 // Wakes the frame loop at a given time, for a running clock to show its next second on
-// time (docs/architecture/rendering.md, "Frames and battery"). goose_gfx's patched
-// frame() (patches/goose_gfx/0002) waits up to a second for an event after a frame that
-// drew nothing, so a clock drawn once a second slipped by a frame each second and
-// skipped a second about every two and a half minutes. An SDL timer pushes an event of
-// the program's own type when the time shown changes, which ends the wait; goose_gfx
-// ignores the event. Every build takes the patched gfx (scripts/android.py, ios.py,
-// mac.py, windows.py); with the release's own (a plain `goose build`) frame() doesn't
-// wait, and the event changes nothing. On the Mac SDL's functions are looked up with
-// dlsym (platform.h).
+// time (docs/architecture/rendering.md, "Frames and battery"). The goose_gfx fork's
+// frame() waits up to a second for an event after a frame that drew nothing; an SDL timer
+// pushes an event of the program's own type, which ends the wait and gfx ignores. With
+// the release's gfx frame() doesn't wait, and the event changes nothing. SDL is looked up
+// where it isn't linked in (platform.h).
 
 #include "platform.h"
 #include <stdbool.h>

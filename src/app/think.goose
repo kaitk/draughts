@@ -1,15 +1,12 @@
 // The computer thinks on a worker thread, so the frame loop never waits for it
-// (docs/architecture/ai.md, "Thinking on a worker"). The game asks for a move
-// (game::Ask) and the loop puts the ask on its queue; the worker finds the move in steps
-// and, between steps, looks for a newer ask: take back, start over, or leaving the game
-// asks for something else or for nothing (id 0), and the search under way is dropped.
-// It answers with a Thought, which the game takes only if its ask is still open. Idle,
-// the worker waits on the queue and uses no CPU.
+// (docs/architecture/ai.md, "Thinking on a worker"). Between search steps the worker
+// looks for a newer ask, which drops the search under way; the game takes an answer only
+// if its ask is still open.
 namespace think;
 import std;
 import os;
 
-// Nodes between looks at the queue: about 2 ms on the tablet's big cores.
+// Nodes between looks at the queue.
 let NODES = 10000;
 
 // The move for the ask `id`, and what finding it took.
@@ -28,9 +25,8 @@ struct Thought {
     has_best: bool = false,
 }
 
-// The engine is the worker's own, made once, at the first search: a root can't cross to a
-// thread. The lookout's traps need none, so a game against a friend with the lookout on
-// has the thread but not the engine's 6 MB.
+// The engine is the worker's own, since a root can't cross to a thread, made at the first
+// search: the lookout's traps need none.
 thread_fn worker() {
     var e = ai::Engine { .. };
     var made = false;
@@ -51,9 +47,7 @@ thread_fn worker() {
             ai::init(e);
             made = true;
         }
-        // A played move judged (task 074), or the hint: the move that judging finds
-        // best, so a hint followed is never marked down. Dropped for any newer ask as a
-        // search is.
+        // The hint is the move judging finds best, so a hint followed is never marked down.
         if ask.kind == game::JUDGE || ask.kind == game::HINT {
             ai::judge_start(e, ask.past, ask.pos);
             var newer = false;
@@ -109,10 +103,8 @@ struct Thinker {
     sent:   i64 = 0,        // the ask it has last been given
 }
 
-// Each frame: gives the worker the game's ask when it changed (the computer's move or the
-// hint's, or the lookout's traps, game::open_ask), and the game the answer when one has
-// come. True when a hint's answer came, or traps to mark, which nothing else draws: the
-// app draws it, and the frame after.
+// Gives the worker the game's ask when it changed, and the game an answer that came. True
+// when a hint or traps came, which nothing else would draw.
 fn frame(t: Thinker&, gm: game::Game&) -> bool {
     if game::open_ask(gm) != t.sent {
         let ask = game::ask_for(gm);

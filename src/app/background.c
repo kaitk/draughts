@@ -1,19 +1,11 @@
-// The season's photograph: the images built into the program, as pixels for the renderer
-// (docs/architecture/rendering.md, "Scene and glass"), which photo.c uploads; and
-// settings' board pictures, one small atlas loaded the same way (design/boards/). Where the
-// renderer takes ASTC, the compressed image is handed over as it is stored, with nothing
-// decoded or copied; elsewhere the JPEG is decoded with stb_image and scaled down. No
-// graphics API here: a renderer brings its own upload (photo.h).
+// The season's photographs and settings' board pictures, built into the program, as
+// pixels for the renderer's upload (photo.h; docs/architecture/rendering.md, "Scene and
+// glass"). Where the GPU samples ASTC the stored blocks are handed over as they are;
+// elsewhere the JPEG is decoded with stb_image and scaled down.
 //
-// Android embeds only the ASTC files and has no JPEG decoder: every Vulkan GPU the app
-// targets samples ASTC LDR, and the JPEGs would add 2.2 MB to the APK. A GPU without it
-// gets no photograph, the page color, as a checkout without the images does. An iPhone
-// or iPad embeds only the ASTC files for the same reasons (every Apple GPU since the A8
-// samples ASTC); the iOS simulator keeps the JPEGs, as its GPU may not.
-//
-// The JPEG and ASTC masters are in git (design/backgrounds/README.md). Each is still
-// embedded only if its file is there, so a checkout without them builds, with no
-// photograph, and the app shows the page color.
+// Android and iOS devices embed only the ASTC files, which every GPU they target samples;
+// the iOS simulator keeps the JPEGs. An image whose file is missing is left out, and the
+// app shows the page color.
 
 #include "platform.h"
 #if defined(__ANDROID__) || (DRAUGHTS_IOS && !TARGET_OS_SIMULATOR)
@@ -143,8 +135,7 @@ static const int64_t astc_lengths[IMAGES] = { sizeof autumn_astc - 1, sizeof win
 
 // Gives back the pages of an embedded image once it is uploaded or decoded. They are clean
 // pages of the program's file (on Android mapped from the APK), read again if needed, but
-// count in the process's memory while resident: 5 MB once the thumbnails read all four.
-// Windows has no madvise for an image's pages, and keeps them.
+// count in the process's memory while resident. Windows has no madvise for an image's pages, and keeps them.
 static void forget(const unsigned char *data, int64_t len) {
 #if defined(_WIN32)
     (void)data;

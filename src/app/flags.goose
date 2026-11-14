@@ -1,8 +1,6 @@
-// The app's development flags, for trying it and for screenshots (docs/development.md,
-// "Run on the Mac"): each is `--name value` but --reset-skill and --no-vsync, which take
-// none. A field left at its default means the flag wasn't given, and the player's settings or the
-// app's default hold. --theme, --hints, --lang, --background, --board, and --material
-// override the settings for the run without changing them, unless a tap in settings writes them.
+// The development flags, for trying the app and for screenshots (docs/development.md,
+// "Run on the Mac"): each `--name value`, but --reset-skill and --no-vsync. A field at its
+// default means not given. Flags that set settings hold for the run without writing them.
 namespace flags;
 import std;
 import vec;
@@ -13,8 +11,7 @@ let GO_PLAY = 99;
 let STEP_END = 0;           // --step end
 let GO_HERE = 98;
 
-// The most --tap flags kept: two taps a move, room for the longest count a shot plays
-// to its end from a position (Russian's 60 moves each, 120 plies, takes 240).
+// The most --tap flags kept: room for Russian's 60 moves each played to the end, two taps a move.
 let MAX_TAPS = 256;
 let MAX_KEYS = 16;
 let KEY_ENTER = 9;          // in keys: Enter, after gui's STEP_UP..STEP_RIGHT
@@ -30,8 +27,8 @@ struct Flags {
     board:      i64  = -1,  // --board 3d|flat: settings::RAISED or settings::FLAT
     lookout:    i64  = -1,  // --lookout on|off: the player's lookout, 1 on, 0 off
     moves:      i64  = -1,  // --moves off|list|marks: the player's move list (settings::MOVES_*)
-    sheet:      bool = false, // --sheet on: the game's moves' sheet open once the taps have played (task 078)
-    languages:  bool = false, // --languages open: settings' language list open (task 080)
+    sheet:      bool = false, // --sheet on: the game's moves' sheet open once the taps have played
+    languages:  bool = false, // --languages open: settings' language list open
     tip:        i64  = -1,  // --tip N: the tip of the game's move N (from 1) shown once the taps have played
     // --hints moves: the selected piece's targets (board::MOVES); mistakes only by default
     hints: i64 = -1,
@@ -49,8 +46,8 @@ struct Flags {
     // --mouse X,Y: the pointer held at pixel X,Y of the window, to shoot the tile it
     // lights on a desktop (gui::hover); x < 0 the mouse's own
     mouse: float2 = float2 { -1.0, -1.0 },
-    // --keys up,down,left,right,enter,tab,backtab (up to MAX_KEYS): pressed one a frame from the third
-    // drawn frame, to shoot the keys' focus (gui::focus_keys)
+    // --keys up,down,left,right,enter,tab,backtab (up to MAX_KEYS): one a frame from the
+    // third drawn frame, to shoot the keys' focus
     keys: i64[..MAX_KEYS] = [],
     // --density-floor F with --display-scale S: the scale's floor (gui::scale_of), S
     // standing for the display's (the Mac's is left out: its windows are in points)
@@ -95,13 +92,9 @@ struct Flags {
     go:   i64 = -1,
     hold: f64 = -1.0,       // --hold T: keeps a transition at T of the way, 0..1
     win:  f64 = -1.0,       // --win T: keeps a win at T seconds into its celebration
-    // --wood N and --marble N: the 3D board's wood (0..3) and winter frame's marble (0 the
-    // slate, 1..4); --summer N summer's 3D look (0..7, looks::SUMMERS; 4 and 5 amber
-    // stone); --spring N spring's (0 the birch, 1 the elven carved stone, 2 the Baltic
-    // folk carved oak, 3 the plain stone); --autumn N autumn's (0 the wood, 1..3 stone,
-    // looks::AUTUMNS) and --winter N winter's (0 the slate, 1..3 wood, looks::WINTERS).
-    // Each, given, picks its season's look over the player's material, for tuning; -1 not
-    // given
+    // --wood N, --marble N, --summer N, --spring N, --autumn N, --winter N: a season's 3D
+    // look by its index (looks::SUMMERS, AUTUMNS, WINTERS; wood 0..3, marble 0..4,
+    // spring 0..3) over the player's material, for tuning; -1 not given
     wood:   i64 = -1,
     marble: i64 = -1,
     summer: i64 = -1,
@@ -111,33 +104,25 @@ struct Flags {
     // --material auto|wood|stone|carved: the raised board's material for the run
     // (settings::MATERIAL_AUTO..), as settings' Board row sets it
     material: i64 = -1,
-    // --bench N: times N of the board's frames, then quits (bench.goose, the 3D board's
-    // and the flat board's)
+    // --bench N: times N of the board's frames, then quits (bench.goose)
     bench: i64 = 0,
     // --keep off: the UI and the 3D backdrop drawn as they come each frame, never kept as
     // layers (widgets::prepare, render3d::keep_backdrop), to measure their work alone
     keep: bool = true,
     // --rest S: the CPU time and memory footprint over S seconds at rest, printed once
-    // (draughts.goose; where Instruments can't measure them, the iPhone)
     rest: i64 = 0,
     // --reset-skill: the playing player back to easy, the computer's skill at every level
     // at its start with the first steps to come, kept in their file; stars and games stay
     reset_skill: bool,
-    // --puzzler NAME:RATING: a player of that name (made if there is none) playing, their
-    // draughts' Learn solved so Today opens and a puzzle of each other theme so every
-    // theme is picked from, their puzzle rating RATING, and today's
-    // record cleared so the day's puzzles are picked at it, in --variant's draughts if
-    // given (then the player's from now on); kept in their file. For
-    // trying the daily puzzles at a level on a device.
+    // --puzzler NAME:RATING: that player playing, made if there is none, their Learn solved
+    // and a puzzle of each other theme, their puzzle rating RATING, and today's record
+    // cleared, in --variant's draughts if given; kept in their file (dev::puzzler)
     puzzler_name:   u8[..32] = [],
     puzzler_rating: i64      = -1,
-    // --aa off|msaa|smaa (ngfx's build also ssaa): how the 3D pass is antialiased, by the
-    // renderer's names for its ways, which the renderer chosen reads (render::new, its
-    // aa_named; task 071's comparison); render3d::AA without it or with a name it hasn't
+    // --aa off|msaa|smaa (ngfx also ssaa): the 3D pass's antialiasing (render3d::aa_named);
+    // render3d::AA without it or with a name the renderer hasn't
     aa: u8[..8] = [],
     // --no-vsync: presents without waiting for the display, to measure frames uncapped
-    // (task 070): gfx's NO_VSYNC, or ngfx's in its build; both turn the Metal layer's
-    // display sync off
     no_vsync: bool,
 }
 

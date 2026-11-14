@@ -23,9 +23,8 @@ struct Theme {
     kind:    float4,    // x: the square surface (WOOD..SUNSET)
     glass:   float4,    // the glass tint, w: its opacity
     text:    float4,    // the text and icons; w: how much the glass copy is dimmed to
-    // The plain background in place of the photograph (task 044), in linear light: the
-    // page at the top, a deep tone of the frame at the foot, and a faint light of the
-    // dark square behind the middle (src/render3d/shaders.goose, FADE_FN).
+    // The plain background in place of the photograph, in linear light: top, foot, and
+    // the light behind the middle (src/render3d/shaders.goose, FADE_FN).
     fade_top:   float4,
     fade_low:   float4,
     fade_light: float4,
@@ -43,8 +42,7 @@ fn linear(hex: i64) -> float4 {
     return float4 { model3d::linear(c.x), model3d::linear(c.y), model3d::linear(c.z), 1.0 };
 }
 
-// The plain background's colors, by theme: prototypes/draughts.js's PLAIN, take b
-// (the user's choice, 2026-11-09).
+// The plain background's colors, by theme.
 let FADE_TOP = [0x1e1510, 0x0c1724, 0x101b15, 0x21150f];
 let FADE_LOW = [0x4a2c1a, 0x2c3a4c, 0x2f3d30, 0x4f2e28];
 

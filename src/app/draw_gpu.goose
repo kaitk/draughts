@@ -1,7 +1,5 @@
-// Recording the board's draws (draw.goose) through gfx: the board's and the pieces'
-// shaders, their pipelines, and the pieces' storage buffers. The widgets' shaders take
-// THEME_BLOCK, SHARED_BLOCK, and MAN_BLOCK from here. On goose-ngfx, draw_ngfx beside it
-// (src/ngfx/); the drawer calls whichever its backend holds (`be.draw`, render.goose).
+// Recording the board's draws (draw.goose) through gfx; on goose-ngfx, draw_ngfx. The
+// widgets' shaders take THEME_BLOCK, SHARED_BLOCK, and MAN_BLOCK from here.
 namespace draw_gpu;
 import std;
 import vec;
@@ -118,9 +116,8 @@ let BOARD_FRAG = """
             float h = hash(vec2(cell));
             float a = 0.0;
             if (k == 0) {
-                // Wood: no regular stripes, which read as bands from afar; fine
-                // irregular streaks along the board's height, a broad soft figure, and
-                // each square's own tone, all barely there.
+                // Wood: fine irregular streaks along the board's height, a broad soft
+                // figure, and each square's own tone, all barely there.
                 vec2 m = px / u + 41.0 * h;
                 float fine = noise(vec2(m.x * 2.6, m.y * 0.08)) - 0.5;
                 float broad = noise(m * vec2(0.35, 0.06)) - 0.5;
@@ -211,8 +208,8 @@ let MAN_BLOCK = """
         if (t <= 0.0 || t >= 1.0) return 0.0;
         return -dy * sin(6.2831853 * t);
     }
-    // The top is flat and matte, as a turned disc's is: one color and one height, with a
-    // narrow groove cut into it at 70% of the radius and only the outer edge rounded.
+    // A flat matte top with a narrow groove at 70% of the radius and only the outer edge
+    // rounded.
     vec3 man_top(vec3 face, vec2 f, float r, vec2 dir, bool black) {
         vec3 col = tint(face, -0.02 * f.y);
         float l = shoulder(r, 0.86, 1.0, dir.y);
@@ -305,8 +302,7 @@ let PIECE_FRAG = """
             over(red, op * fill(abs(r - rr) - 0.06, w));
         }
     }
-    // How many pieces a piece that must capture takes (prototypes/game.html?count=a): one
-    // pip per piece on its ring, 28 degrees apart and centred over the top, light with a
+    // How many pieces a piece that must capture takes: one pip per piece on its ring, 28 degrees apart and centred over the top, light with a
     // red rim; past five, one larger red pip with the number. Over everything of the
     // piece, so a stacked king's upper disc doesn't hide them.
     float seg(vec2 p, vec2 a, vec2 b) {
@@ -351,9 +347,8 @@ let PIECE_FRAG = """
         over(light, fill(t * s - 0.035, w));
     }
     // The lookout's piece in danger, or its crowning ghost king (board::DRAINED): the color
-    // drained, a little darker, and tinted red for danger (CSS grayscale(1)
-    // brightness(0.66) contrast(0.85), prototypes/coach.html's `drain`, then the red); a
-    // hint's ghost (board::LIGHT) lighter.
+    // greyed, darkened, its contrast lowered, and tinted red; a hint's ghost (board::LIGHT)
+    // lighter.
     vec3 marked(vec3 c, float k) {
         if (k > 0.5) {
             float grey = dot(c, vec3(0.2126, 0.7152, 0.0722)) * 0.66;
@@ -378,9 +373,8 @@ let PIECE_FRAG = """
             over(glow.rgb, 0.4 * v_win.y * fill(max(q.x, q.y), w));
         }
         // The side to move: a ring an eighth of the radius wide in the glow color at 80%
-        // right round the disc, and a soft glow, under the piece and its shadow (CSS
-        // `0 0 0 4px` and `0 0 22px 4px` on a 64 px disc); fainter as y falls, which
-        // pulses it while the computer thinks.
+        // right round the disc, and a soft glow, under the piece and its shadow; fainter as
+        // y falls, which pulses it while the computer thinks.
         if (v_ring.y > 0.0) {
             float rr = length(p);
             over(glow.rgb, v_ring.y * 0.45 * (1.0 - smoothstep(-0.34, 0.34, rr - 1.125)));
@@ -411,11 +405,6 @@ let PIECE_FRAG = """
             float foot = clamp((f.y - sqrt(max(1.0 - f.x * f.x, 0.0))) / depth, 0.0, 1.0);
             vec3 sc = sidec * (0.8 + 0.25 * sqrt(max(1.0 - f.x * f.x, 0.0))) * (1.0 - 0.25 * foot);
             over(marked(sc, v_ring.w), fill(length(vec2(f.x, sy)) - 1.0, w));
-            // The top is flat and matte, as a turned disc's is: one color and one height,
-            // with a narrow groove cut into it at 70% of the radius and only the outer
-            // edge rounded. The light from above catches the outer edge's upper side
-            // softly; in the groove, which is concave, it catches the wall that faces it,
-            // nearer the center on the top half, and leaves the far wall in shade.
             vec3 col = man_top(face, f, r, dir, black);
             if (v_look.y > 0.5 && !stack) {
                 vec3 cc = black ? vec3(0.914, 0.769, 0.416) : crown_w.rgb;

@@ -1,12 +1,6 @@
-// The renderer: all the app draws, behind one call a frame (docs/architecture/README.md,
-// "A frame"). It holds every drawer and what they keep on the GPU: the flat board, its
-// pieces, and the season's photograph with its blurred copies (draw, scene), the 3D
-// board (draw3d over render3d), the UI's quads with the text's and the badges' textures
-// and the seasons' thumbnails (widgets). The app hands it plain values (Frame) and the
-// bytes it builds (the glyphs, the badges), and holds no GPU handle of its own. The
-// drawers are renderer-free and record through a backend (gpu.goose): each call here that
-// reaches the GPU runs them in backend::with, which hands them the backend chosen at start,
-// gfx's alone (src/app/backend.goose) or gfx's or goose-ngfx's (src/ngfx/backend.goose).
+// The renderer: every drawer and what it keeps on the GPU, behind one call a frame
+// (docs/architecture/README.md, "A frame"). The drawers are renderer-free; each call here
+// that reaches the GPU runs them in backend::with, with the backend chosen at start.
 namespace render;
 import std;
 import vec;
@@ -21,13 +15,7 @@ struct Renderer {
     t:  text::Text,
 }
 
-// What a frame draws, all of it the app's: the board the screen shows as board::fill left
-// it (its pieces, the squares' marks, the flash, a win's dim), where it goes, the pieces
-// over the UI, and the UI's quads, with the scrolling list's view (gui's scroll.view);
-// the 3D board when `raised`, through `view`, `which` board it is (the shell's which()),
-// held as drawn while `hold` (a transition), its bounds put at `place` as opaque as
-// `fade`; the photograph's blur, the hole the board leaves in the UI in a transition
-// (`tall` pixels tall, 0 as tall as wide); the time and the screen's size.
+// What a frame draws, as shell::Frame describes it.
 struct Frame {
     board:  board::Board&,
     layout: board::Layout,
@@ -47,9 +35,6 @@ struct Frame {
     size:   int2,
 }
 
-// The renderer for the app's theme `kind`, with its photograph or the `plain` fade
-// behind, the 3D board's looks as the development flags pick them (`f`, flags.goose).
-// With --bench, the photograph's load is timed and printed.
 fn new(kind: i64, plain: bool, f: flags::Flags&) -> Renderer { backend::with() { be => made(be, kind, plain, f) } }
 
 fn made<B>(be: B&, kind: i64, plain: bool, f: flags::Flags&) -> Renderer {
@@ -67,26 +52,19 @@ fn made<B>(be: B&, kind: i64, plain: bool, f: flags::Flags&) -> Renderer {
     return r;
 }
 
-// The A key: the 3D board's antialiasing switched (draw3d::toggle_aa).
 fn toggle_aa(r: Renderer&) { backend::with() { be => draw3d::toggle_aa(be, r.d3) } }
 
-// The 3D board too slow for the display: fewer samples (draw3d::fewer_samples).
 fn fewer_samples(r: Renderer&) { backend::with() { be => draw3d::fewer_samples(be, r.d3) } }
 
-// The 3D board's shadow filter for the screen (draw3d::screen_shadow).
 fn screen_shadow(r: Renderer&, look: i32) { backend::with() { be => draw3d::screen_shadow(be, r.d3, look) } }
 
-// The 3D board's surfaces baked for a phone's screen, or a larger one (draw3d::screen_bake).
 fn screen_bake(r: Renderer&, small: bool) { draw3d::screen_bake(r.d3, small); }
 
-// Whether it draws theme `kind` with its photograph, or with `plain` the fade.
 fn shows_theme(r: Renderer&, kind: i64, plain: bool) -> bool { r.d.kind == kind && r.d.scene.plain == plain }
 
-// Swaps the theme and its photograph for `kind`'s, or with `plain` none.
 fn reload(r: Renderer&, kind: i64, plain: bool) { backend::with() { be => draw::reload(be, r.d, kind, plain) } }
 
-// Bakes the text's faces at `scale` pixels per dp into g's glyph tables and their
-// texture, unless they are baked at that scale; true when it baked.
+// Bakes the text's faces at `scale` pixels per dp, unless baked at it; true when it baked.
 fn upload_text(r: Renderer&, g: gui::Gui&, scale: f32) -> bool {
     guard text::stale(r.t, scale) else { return false; }
     let px, size = text::bake(r.t, g, scale);
@@ -94,32 +72,27 @@ fn upload_text(r: Renderer&, g: gui::Gui&, scale: f32) -> bool {
     return true;
 }
 
-// The seasons' thumbnails for settings (scene::thumbs), made once; whether they are.
+// The seasons' thumbnails for settings, made once.
 fn thumbs(r: Renderer&) { if r.w.thumbs.id == 0 { r.w.thumbs = backend::with() { be => scene::thumbs(be) }; } }
 fn has_thumbs(r: Renderer&) -> bool { r.w.thumbs.id != 0 }
 
-// Submits what is drawn and waits for the GPU (the benches).
+// Submits what is drawn and waits for the GPU.
 fn wait() { backend::with() { be => be.flush() } }
 
-// The raised board's material (settings::MATERIAL_AUTO..), the player's: a new one makes
-// the 3D board ready again (draw3d::want_material).
+// The player's material for the 3D board (settings::MATERIAL_AUTO..); a new one prepares it again.
 fn material(r: Renderer&, m: i64) { draw3d::want_material(r.d3, m); }
 
-// The 3D board: whether it is ready on n squares for the theme and background drawn (it
-// gets ready a step a frame as it is drawn, draw3d::prepare), whether an image of it
-// shows, whether it is fading in at `now`, and whether it asks for the next frame (just
-// made ready, or easing grey or back).
+// moving3d: just made ready, or easing grey or back, so the next frame draws too.
 fn ready3d(r: Renderer&, n: i64) -> bool { draw3d::ready(r.d3, r.d.kind, n, r.d.scene.plain) }
 fn shown3d(r: Renderer&) -> bool { draw3d::shows(r.d3) }
 fn appearing3d(r: Renderer&, now: f64) -> bool { draw3d::appearing(r.d3, now) }
 fn moving3d(r: Renderer&) -> bool { r.d3.fresh || draw3d::greying(r.d3) }
 
-// At a frame's end: the 3D board's pass gives back its targets unless the board is
-// `shown` (draw3d::rest).
+// At a frame's end: the 3D pass gives back its targets unless the board is `shown`.
 fn rest(r: Renderer&, shown: bool) { backend::with() { be => draw3d::rest(be, r.d3, shown) } }
 
-// Gives back all the 3D board holds, if anything, and puts the flat game's cover back
-// under a resizing window (resize.c).
+// Gives back all the 3D board holds, and puts the flat game's cover back under a
+// resizing window (resize.c).
 fn drop3d(r: Renderer&) {
     guard r.d3.ready else { return; }
     backend::with() { be => dropped(be, r) }
@@ -130,11 +103,8 @@ fn dropped<B>(be: B&, r: Renderer&) {
     draw::cover(be, r.d);
 }
 
-// Draws the frame and ends its pass; frame() presents it (host.goose). The copies and
-// the passes into textures come first, as none may run inside the screen's pass: the
-// UI's quads (and its kept layer), the 3D board's image, the pieces. Then the screen's
-// pass: the photograph and the board's squares, the pieces, the UI, and the pieces over
-// the UI; on the 3D board, the photograph, its image laid over it, and the UI likewise.
+// Draws the frame and ends its pass; host::frame presents it. Copies and passes into
+// textures come first, as none may run inside the screen's pass.
 fn frame(r: Renderer&, f: Frame&) { backend::with() { be => draw_frame(be, r, f) } }
 
 fn draw_frame<B>(be: B&, r: Renderer&, f: Frame&) {
@@ -145,8 +115,7 @@ fn draw_frame<B>(be: B&, r: Renderer&, f: Frame&) {
         draw3d::frame(be, r.d3, f.board, f.layout, f.view, f.now, f.size, r.d.kind, r.d.scene.plain, f.which, f.hold);
     }
     draw::upload(be, r.d, f.board, f.over, f.layout, width, height, !f.raised);
-    // No depth target: nothing tests depth, and asking for the screen's would make gfx
-    // keep a window-sized one (patches/goose_gfx/0003).
+    // No depth target: nothing tests depth, and asking would make gfx keep a window-sized one.
     be.begin_pass(be.screen(), r.d.colors.page);
     if f.raised {
         draw::photo(be, r.d, f.blur, f.now, width, height, draw3d::shows(r.d3) && !draw3d::appearing(r.d3, f.now));

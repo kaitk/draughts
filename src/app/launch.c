@@ -1,24 +1,16 @@
 // What the program tells DraughtsActivity (android/java/), from the program's thread.
 //
-// draughts_first_frame: the first frame is on screen, so it lifts the splash and the
-// cover in the icon's background colour it keeps over SDL's surface until then: without
-// them the surface shows black between Android's splash and the first frame (task 028).
-// Called once.
+// draughts_first_frame: the first frame is on screen, so the activity lifts the splash
+// and the cover it keeps over SDL's surface, which shows black until then. Called once.
 //
-// draughts_close: home's way out was tapped and the game is written, so the activity
-// finishes and takes its card out of recents (finishAndRemoveTask), just before the
-// program returns. SDL then finds the activity finishing and leaves it; the next start
-// is a fresh process that restores the game.
+// draughts_close: home's way out, the game written: the activity finishes and leaves
+// recents (finishAndRemoveTask) just before the program returns.
 //
-// draughts_leave: Android's back on home's menu, which has no way back: the activity
-// moves its task to the background (leaveApp), as the system's back does for an app's
-// first screen, the process and the activity kept. Handing the back on to the activity's
-// onBackPressed (SDL_SendAndroidBackButton) finished it on Android 17 instead, taking
-// the card out of recents (the Pixel 7a, 2026-11-08).
+// draughts_leave: Android's back on home's menu: the activity moves its task to the
+// background (leaveApp), as the system's back does for an app's first screen. Passing the
+// back on (SDL_SendAndroidBackButton) would finish the activity instead.
 //
-// On the Mac there is nothing to tell: the window closes as the program returns. On iOS
-// neither: an app never closes itself there (home hides its way out), and the system
-// takes the launch screen down at the first frame by itself.
+// Nothing to tell on the Mac or iOS.
 //
 // draughts_platform: which platform the program runs on, which Goose can't ask
 // (docs/goose-findings.md): 0 a desktop, 1 Android, 2 iOS.

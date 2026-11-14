@@ -1,8 +1,5 @@
-// Drawing the board: one full-screen pass for the blurred photograph and the squares
-// with their marks, worked out per pixel; then every piece in one instanced draw that
-// pulls its piece from GPU memory (docs/architecture/rendering.md, "Look"). The board is
-// flat; only the pieces have a soft light. What is drawn is this file's; the shaders and
-// GPU calls are the backend's, `be.draw` (draw_gpu.goose on gfx; gpu.goose).
+// The flat board: one full-screen pass for the photograph and the squares with their
+// marks, then every piece in one instanced draw (docs/architecture/rendering.md, "Look").
 namespace draw;
 import std;
 import vec;
@@ -22,13 +19,11 @@ struct BoardUniforms {
 
 struct View { screen: float4 }     // width, height, the disc's side depth in radii
 
-// What a Mac window shows around its last frame while its edge is dragged (resize.c;
-// rendering.md, "Window resizing"): whether it shows one at all (only the Mac does), and
-// the pixels of a texture of the cover's side, RGBA8, or with none `page`'s color.
+// What a Mac window shows around its last frame while its edge is dragged (resize.c):
+// a texture's RGBA8 pixels, or with none the page's color.
 extern fn draughts_resize_covers() -> bool;
 extern fn draughts_resize_cover(px: const u8[:], r: f32, g: f32, b: f32);
 
-// The cover from texture t (its pixels read back), or with t 0 the page's color.
 fn cover_with<B>(be: B&, t: gpu::Texture, page: float4) {
     guard draughts_resize_covers() else { return; }
     var px: u8[>..] = [];
@@ -36,7 +31,6 @@ fn cover_with<B>(be: B&, t: gpu::Texture, page: float4) {
     draughts_resize_cover(px[..], page.x, page.y, page.z);
 }
 
-// The scene's blurred photograph when it has one, else the page color.
 fn cover<B>(be: B&, d: Drawer&) {
     cover_with(be, if d.scene.has && !d.scene.plain { d.scene.photo } else { gpu::no_texture() }, d.colors.page);
 }
@@ -50,11 +44,9 @@ struct Drawer {
     over_upload: board::Piece[board::OVER],     // the pieces drawn over the UI
     over_count:  i64,
     view:        View,
-    load_ms:     f64,              // the photograph's load and blurs at new(), waited for when `timed`
+    load_ms:     f64,              // the photograph's load and blurs, waited for when `timed`
 }
 
-// The drawer for theme `kind`, its photograph or with `plain` none; with `timed` the
-// photograph's load waited for and timed (--bench), load_ms.
 fn new<B>(be: B&, kind: i64, plain: bool, timed: bool = false) -> Drawer {
     be.draw.init();
     let t0 = clock();
@@ -75,8 +67,8 @@ fn new<B>(be: B&, kind: i64, plain: bool, timed: bool = false) -> Drawer {
     return d;
 }
 
-// Copies the board's pieces (with `flat`; the 3D board draws its own) for board() to
-// draw, and those in `over` for overlay() to draw over the UI, before the screen's pass.
+// Before the screen's pass: the board's pieces (`flat`; the 3D board draws its own) and
+// those drawn over the UI.
 fn upload<B>(be: B&, d: Drawer&, b: board::Board&, over: const board::Piece[:], l: board::Layout, width: f32, height: f32,
           flat: bool) {
     if flat {
@@ -96,11 +88,10 @@ fn pieces_over<B>(be: B&, d: Drawer&, over: const board::Piece[:], l: board::Lay
     d.view = View { screen: float4 { width, height, 0.0055 * across / 0.39, 0.0 } };
 }
 
-// Draws the board as fill() left it, its pieces as upload() copied them, into the
-// screen's open pass. `blur` 0 shows the photograph as it is (home, settings), 1 blurred
-// and dimmed (the game), and between mixes the two (a transition).
+// Into the screen's open pass. `blur` 0 shows the photograph sharp, 1 blurred and dimmed,
+// between mixes the two.
 fn board<B>(be: B&, d: Drawer&, b: board::Board&, l: board::Layout, blur: f32, now: f64, width: f32, height: f32) {
-    // Dimmed to 0.8 blurred; the ends exact, so a screen at rest draws as it always has.
+    // Dimmed to 0.8 blurred, the ends exact.
     let k = clamp(blur, 0.0, 1.0);
     let bright: f32 = if k <= 0.0 { 1.0 } else if k >= 1.0 { 0.8 } else { 1.0 - 0.2 * k };
     be.draw.board(d.scene, d.colors, BoardUniforms {
@@ -112,10 +103,9 @@ fn board<B>(be: B&, d: Drawer&, b: board::Board&, l: board::Layout, blur: f32, n
                   b.pieces.len);
 }
 
-// The photograph alone behind a 3D board (draw3d.goose), in the screen's open pass,
-// `blur` as board() takes it; with blur 1 and `covered` (the renderer's own backdrop
-// fully shown over it) nothing, the pass only cleared. While the 3D board gets ready or
-// fades in, the photograph shows as on the flat board, so only the board appears.
+// The photograph alone behind the 3D board; nothing at blur 1 when `covered` by the 3D
+// pass's own backdrop. While that board gets ready or fades in, this shows as on the flat
+// board, so only the board appears.
 fn photo<B>(be: B&, d: Drawer&, blur: f32, now: f64, width: f32, height: f32, covered: bool = true) {
     guard blur < 1.0 || !covered else { return; }
     let k = clamp(blur, 0.0, 1.0);
@@ -136,11 +126,10 @@ fn backdrop(d: Drawer&, k: f32) -> f32 {
     return if d.scene.has { k } else { -1.0 };
 }
 
-// Swaps the theme and its scene for theme `kind`'s, its photograph or with `plain` none.
 fn reload<B>(be: B&, d: Drawer&, kind: i64, plain: bool) {
     scene::release(be, d.scene);
-    // The old scene is freed once the GPU is done with it; waiting (about a frame) lets
-    // the new one take its place in SDL's shared block rather than open another.
+    // The old scene is freed once the GPU is done with it; waiting lets the new one take
+    // its place in SDL's shared block rather than open another.
     be.flush();
     d.scene = scene::load(be, kind, plain);
     d.kind = kind;
@@ -148,8 +137,7 @@ fn reload<B>(be: B&, d: Drawer&, kind: i64, plain: bool) {
     cover(be, d);
 }
 
-// Draws the pieces upload() was given for over the UI, in the open pass, none inside
-// `hole` (`tall` pixels tall, 0 as tall as wide) but those on the board.
+// The pieces over the UI, none inside `hole` but those on the board.
 fn overlay<B>(be: B&, d: Drawer&, now: f64, hole: float4, tall: f32 = 0.0) {
     guard d.over_count > 0 else { return; }
     be.draw.men(true, d.colors, d.view, float4 { now as f32, tall, 0.0, 0.0 }, hole, d.over_count);

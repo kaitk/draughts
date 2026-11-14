@@ -1,6 +1,4 @@
-// Recording the scene's passes (scene.goose) through gfx: its shaders, its pipelines,
-// made for each use and released after, and the passes into its textures. The
-// drawer calls them on `be.scene` (render.goose): on goose-ngfx, scene_ngfx's (src/ngfx/).
+// Recording the scene's passes (scene.goose) through gfx. On goose-ngfx: scene_ngfx.
 namespace scene_gpu;
 import std;
 import vec;
@@ -21,7 +19,7 @@ let FADE_FRAG = """
 
 struct Fade { to: float4, top: float4, low: float4, light: float4 }
 
-// The blur and the shrink are the 3D board's too, one text each (src/render3d/shaders.goose).
+// The blur's and the shrink's shaders are the 3D board's too (src/render3d/shaders.goose).
 struct Blur { dir: float4 }
 
 struct Shrink { from: float4, to: float4 }
@@ -42,7 +40,6 @@ fn fader(g: Gpu&) -> gpu::Pipeline {
     gfx::pipeline(gpu::full_vert(), embed_shader("frag", shaders::FADE_FN, FADE_FRAG), gfx::PipelineDesc {})
 }
 
-// A pipeline the passes are done with.
 fn done(g: Gpu&, p: gpu::Pipeline) { gfx::release(p); }
 
 // A pass into `dst`, cleared to black with `clear`, else keeping what it holds.
@@ -64,7 +61,6 @@ fn shrink(g: Gpu&, p: gpu::Pipeline, sampler: gpu::Sampler, src: gpu::Texture, f
     gfx::draw(3);
 }
 
-// One blur pass from src into dst, in direction dir (Blur's fields).
 fn blur(g: Gpu&, p: gpu::Pipeline, sampler: gpu::Sampler, src: gpu::Texture, dst: gpu::Texture, dir: float4) {
     begin(g, dst, true);
     gfx::bind(p);
@@ -74,8 +70,7 @@ fn blur(g: Gpu&, p: gpu::Pipeline, sampler: gpu::Sampler, src: gpu::Texture, dst
     gfx::end_pass();
 }
 
-// The plain fade into the part `to` (pixels) of the open pass's target, in a theme's
-// colors.
+// The plain fade into the part `to` (pixels) of the open pass's target.
 fn fade(g: Gpu&, p: gpu::Pipeline, to: float4, top: float4, low: float4, light: float4) {
     gfx::viewport(to.x, to.y, to.z, to.w);
     gfx::bind(p);

@@ -1,18 +1,14 @@
-// The renderer's upload of the season's photograph (docs/architecture/rendering.md,
-// "Scene and glass"): the pixels background.c hands over, made into a texture through the
-// renderer's C API, gfx's here (render3d::photo), goose-ngfx's in src/ngfx/photo_ngfx.c,
-// so the embedded ASTC blocks reach the GPU with no copy on the program's data stack.
-// goose_gfx has no compressed formats of its own and reads only PNG and BMP, from a file
-// (docs/goose-findings.md).
+// The season's photograph made into a texture through gfx's C API, so the embedded ASTC
+// blocks reach the GPU with no copy on the program's data stack (goose-ngfx's upload is
+// src/ngfx/photo_ngfx.c).
 
 #include <stdint.h>
 #include "photo.h"
 #include "gfx_api.h"
 
-// What patches/goose_gfx/0004-compressed-textures.patch adds to gfx: its number for
-// ASTC in 6 × 6 blocks, and whether the GPU samples a format. A gfx without the patch
-// (the Mac's, built into Goose) has neither, and this weak stand-in says no, so the
-// JPEG is decoded there; the patched gfx's own definition takes its place.
+// The goose_gfx fork's number for ASTC in 6 × 6 blocks, and whether the GPU samples a
+// format. The release's gfx has neither: this weak stand-in says no, so the JPEG is
+// decoded there.
 enum { ASTC_6x6 = 26 };
 __attribute__((weak)) uint8_t gs_gfx_format_supported(int32_t format, int32_t usage) {
     (void)format;
@@ -20,7 +16,6 @@ __attribute__((weak)) uint8_t gs_gfx_format_supported(int32_t format, int32_t us
     return 0;
 }
 
-// Whether the GPU samples ASTC in 6 × 6 blocks.
 static bool photo_astc_sampled(void) { return gs_gfx_format_supported(ASTC_6x6, GS_GFX_SAMPLED); }
 
 // A texture holding the pixels, its handle's id, or 0.
@@ -54,7 +49,6 @@ uint32_t draughts_photo_with(int64_t kind, int64_t decoded, bool astc, uint32_t 
     return t;
 }
 
-// gfx's.
 uint32_t draughts_photo_id(int64_t kind, int64_t decoded) {
     return draughts_photo_with(kind, decoded, photo_astc_sampled(), photo_upload);
 }

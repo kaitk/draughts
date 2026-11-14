@@ -1,11 +1,6 @@
-// Text (docs/architecture/rendering.md, "Fonts"): Libertinus Sans baked by the `ui`
-// package's atlas, one face per size gui uses, at the screen's pixel size, so a glyph is
-// drawn a texel to a pixel. The title and the figures hold only the characters they draw
-// (shell::face_chars). The glyphs' boxes and places go into gui's tables, and the atlas's
-// coverage, one byte a texel and only the rows the glyphs reach, to the renderer, which
-// makes it the texture the UI shader samples (render::upload_text); the atlas is
-// destroyed. Nothing else of `ui` is used. Baked at start, and again only when the
-// layout's scale changes.
+// Libertinus Sans baked by `ui`'s atlas, one face per size gui uses, at the screen's
+// pixel size so a glyph is drawn a texel to a pixel (docs/architecture/rendering.md,
+// "Fonts"). Baked again only when the layout's scale changes.
 namespace text;
 import std;
 import vec;
@@ -19,7 +14,6 @@ let LINE = 1.14;
 
 struct Text { scale: f32 = 0.0 }
 
-// Whether the faces need baking at `scale` pixels per dp: they aren't baked at it yet.
 fn stale(t: Text&, scale: f32) -> bool { scale != t.scale }
 
 // Bakes the faces at `scale` pixels per dp into g's glyph tables. Returns the coverage,
@@ -37,16 +31,15 @@ fn bake(t: Text&, g: gui::Gui&, scale: f32) -> u8[>..], int2 {
             fonts[face] = ui::add_font_from_memory(atlas, ttf, height, ui::FontConfig {}, all);
             continue;
         }
-        // The set's runs of consecutive characters, each a range.
-        var some: u32[..2 * gui::MAX_CHARS] = [];
+        var runs: u32[..2 * gui::MAX_CHARS] = [];
         for c in set {
-            if some.len > 0 && some[some.len - 1] + 1 == c { some[some.len - 1] = c; }
+            if runs.len > 0 && runs[runs.len - 1] + 1 == c { runs[runs.len - 1] = c; }
             else {
-                some.push(c);
-                some.push(c);
+                runs.push(c);
+                runs.push(c);
             }
         }
-        fonts[face] = ui::add_font_from_memory(atlas, ttf, height, ui::FontConfig {}, some);
+        fonts[face] = ui::add_font_from_memory(atlas, ttf, height, ui::FontConfig {}, runs);
     }
     guard ui::bake(atlas) else { abort(str("ui: ", ui::error())); }
     let size = ui::atlas_size(atlas);
@@ -78,8 +71,7 @@ fn bake(t: Text&, g: gui::Gui&, scale: f32) -> u8[>..], int2 {
             gl.uv.w = gl.uv.w / h;
         }
     }
-    // The coverage is the RGBA image's alpha (Nuklear bakes white glyphs): moved to the
-    // front of the same buffer, one byte a texel, rather than copied.
+    // The coverage is the RGBA image's alpha (Nuklear bakes white glyphs), packed in place.
     var px = ui::atlas_pixels(atlas);
     let n = size.x * h;
     for i in n { px[i] = px[4 * i + 3]; }

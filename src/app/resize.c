@@ -1,17 +1,12 @@
 // What a Mac window shows while its edge is dragged (docs/architecture/rendering.md,
-// "Window resizing"). Cocoa keeps the main thread in its own loop until the mouse comes
-// up, so the app draws nothing new, and the Metal layer would stretch its last frame to
-// the window. Instead the layer keeps that frame's shape, scaled to fit, and the window's
-// content view, under it, shows the season's blurred photograph (or the page color),
-// cover-cropped as the board pass crops it. Core Animation does both on its own while
-// the loop is held; once the app draws the new size, its frame fills the window again.
-// Nothing changes at rest: the layers are set once, and again on a season change.
+// "Window resizing"). Cocoa holds the main thread until the mouse comes up, and the Metal
+// layer would stretch the last frame; instead it keeps the frame's shape, scaled to fit,
+// over the content view's layer, which shows the season's blurred photograph (or the
+// page color) cover-cropped as the board pass crops it. The layers are set once, and
+// again on a season change. Nothing elsewhere.
 //
-// Elsewhere it does nothing: Android and iOS don't block the loop while a window
-// resizes, and Windows' modal size loop shows the last frame unscaled, not stretched. SDL,
-// Objective-C, and Core Graphics are looked up with dlsym, as the program's C is linked
-// on the Mac with no undefined symbols (platform.h). The scene comes as pixels, read back
-// by the renderer only where a cover is shown (draughts_resize_covers), and kept here.
+// SDL, Objective-C, and Core Graphics are looked up with dlsym (platform.h). The scene's
+// pixels are read back by the renderer only where a cover is shown (draughts_resize_covers).
 
 #include "platform.h"
 #include <stdbool.h>

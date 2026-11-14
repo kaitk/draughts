@@ -1,19 +1,9 @@
-// --bench N (measuring, task 015; docs/development.md, "Time the 3D board"): the main
-// loop calls frame() here in place of render::frame while the flag is given, so the
-// drawing itself holds nothing of the measuring. Each frame of the bench asks the 3D
-// board for what it times (draw3d's `fresh`: the image and its shadow map drawn again;
-// `again`: the image alone) and times it apart before the frame's own drawing, which then
-// finds the image drawn.
-//
-// The 3D board, 2 s after the launch, once drawn: N frames drawing the board and its
-// shadow map, as while a piece moves, each submitted and waited for; N drawing the board
-// alone, waited for; N as the loop draws them, frame to frame; then N as a pulsing ring
-// draws them, a ring round every piece: the kept depth's pass, waited for, and the
-// screen's part (the backdrop, the image, the rings over it), waited for, and that part
-// without the rings. Its first frame is drawn and waited for apart too. The flat board:
-// N whole frames, render::frame to the GPU done, each waited for (cpu: up to the submit);
-// then N as the loop draws them, frame to frame. The lines it prints are what
-// scripts/device_perf.sh, ios_perf.py, windows_perf.py, and mac_gpu_time.py read.
+// --bench N (docs/development.md, "Time the 3D board"): the loop calls frame() here in
+// place of render::frame, so the drawing holds nothing of the measuring. The 3D board,
+// once drawn 2 s after the launch, times N frames with its shadow map, N without, N as
+// the loop draws them, and N with a pulsing ring round every piece; the flat board N
+// whole frames, then N as the loop draws them. scripts/device_perf.sh, ios_perf.py,
+// windows_perf.py, and mac_gpu_time.py read the lines it prints.
 namespace bench;
 import std;
 import vec;
@@ -68,20 +58,17 @@ fn spread(line: u8[>..]&, xs: f64[..1024]&) {
            floor(percentile(xs, 99) * 100.0 + 0.5) / 100.0, " ms");
 }
 
-// After the shell's frame: the 3D board's bench starts 2 s after the launch, settled,
-// once the board has drawn; the flat board's frames are timed from then while it shows.
-// True while it times frames, which the loop draws then whether or not anything changed.
+// Starts the bench once it is due; true while it times frames, which the loop then draws
+// whether or not anything changed.
 fn start(b: Bench&, f: flags::Flags&, raised: bool, draws3d: i64, now: f64) -> bool {
     if f.bench > 0 && raised && draws3d > 0 && now > 2.0 && b.d3.n == 0 { b.d3.n = f.bench; }
     b.flat_on = f.bench > 0 && !raised && now > 2.0 && b.flat.i < 2 * f.bench;
     return b.d3.n > 0 || b.flat_on;
 }
 
-// Whether the 3D board's bench waits for each frame now: its first two phases do, slower
-// than the loop draws them, and aren't paced.
+// Whether the 3D bench waits for each frame now: its first two phases do, and aren't paced.
 fn waited3d(b: Bench&) -> bool { b.d3.n > 0 && b.d3.i < 2 * b.d3.n }
 
-// The 3D board drawn ahead of render::frame, as it would draw it (render.goose).
 fn draw3d_now(r: render::Renderer&, fr: render::Frame&) {
     backend::with() { be => draw3d::frame(be, r.d3, fr.board, fr.layout, fr.view, fr.now, fr.size, r.d.kind, r.d.scene.plain, fr.which, fr.hold) }
 }
@@ -112,8 +99,7 @@ fn frame(b: Bench&, f: flags::Flags&, r: render::Renderer&, fr: render::Frame&) 
         }
         bn.i++;
     } else if phase == 2 {
-        // The presented frames' start and end, for the compositor's count of them
-        // (scripts/device_perf.sh).
+        // The presented frames' start and end, for scripts/device_perf.sh.
         let t0 = clock();
         if bn.i == 2 * bn.n { print("bench3d: presenting"); }
         if bn.i > 2 * bn.n { bn.gap.push(t0 - bn.last); }
@@ -145,10 +131,9 @@ fn frame(b: Bench&, f: flags::Flags&, r: render::Renderer&, fr: render::Frame&) 
     fl.i++;
 }
 
-// The bench's last phase: its first frame draws the board with a pulsing ring round every
-// piece and keeps its depth; each frame then times the kept depth's pass, and the
-// screen's part of a pulsing frame with the rings and without, each waited for, drawn
-// where the backend's bench_target says.
+// The last phase: the first frame draws a pulsing ring round every piece and keeps its
+// depth; each frame then times the kept depth's pass, and the screen's part with the
+// rings and without, each waited for, drawn where be.bench_target says.
 fn pulse(b: Bench&, r: render::Renderer&, fr: render::Frame&) { backend::with() { be => pulse_on(be, b, r, fr) } }
 
 fn pulse_on<B>(be: B&, b: Bench&, r: render::Renderer&, fr: render::Frame&) {
@@ -193,8 +178,7 @@ fn pulse_on<B>(be: B&, b: Bench&, r: render::Renderer&, fr: render::Frame&) {
     bn.i++;
 }
 
-// At the frame's end: whether a bench has timed all its frames, printed then, and the
-// loop should end.
+// Whether a bench has timed all its frames, printed then, and the loop should end.
 fn done(b: Bench&, f: flags::Flags&, r: render::Renderer&, size: int2) -> bool {
     let bn .= b.d3;
     if bn.n > 0 && bn.i >= PHASES * bn.n {
