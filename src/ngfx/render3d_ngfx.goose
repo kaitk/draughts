@@ -1,9 +1,9 @@
 // Recording the 3D board's renderer (render3d.goose) through goose-ngfx, beside gfx's
-// recorder in the build that holds both (scripts/ngfx.py; render3d_gpu.goose there picks
-// one): one forward pass, into 4× multisampled transient targets resolved into the
+// recorder (src/render3d/render3d_gpu.goose) in the build that holds both
+// (src/ngfx/draughts_ngfx.goose): one forward pass, into 4× multisampled transient targets resolved into the
 // picture as gfx's is, or at the size antialiasing wants and then SMAA or the 2 × 2
 // supersampled pass shrunk. The shaders are gfx's GLSL in shaders.goose, written into
-// Slang by scripts/ngfx_3d_shaders.py (src/ngfx/shaders/r3d_*.slang), each module with one
+// Slang by scripts/ngfx_3d_shaders.py (build/ngfx/shaders/r3d_*.slang), each module with one
 // root (Root) and its blob built ahead and embedded. The handles render3d.goose holds are
 // gfx's types (nx).
 namespace render3d_ngfx;
@@ -20,9 +20,10 @@ type Pipeline = render3d::Pipeline;
 type Mat = render3d::Mat;
 type Gpu = render3d::Gpu;
 
-// What only ngfx's renderer holds, beside Gpu (whose `own` is gfx's): the nearest
-// sampler SMAA reads with, the mips' and the supersampled pass's shrinking pipelines, and a
-// 4 × 4 depth warm() makes the kept depth's pipelines on.
+// What only ngfx's renderer holds beside Gpu, the first parameter of each of its calls,
+// which render3d.goose makes on it as on gfx's render3d::Own: the nearest sampler SMAA reads
+// with, the mips' and the supersampled pass's shrinking pipelines, and a 4 × 4 depth warm()
+// makes the kept depth's pipelines on.
 struct Own {
     point:     nx::Sampler,
     mip:       nx::Pipeline,
@@ -30,63 +31,65 @@ struct Own {
     warm_kept: nx::Texture,
 }
 
-var own = Own { point: gfx::Sampler { 0 }, mip: gfx::Pipeline { 0 }, down: gfx::Pipeline { 0 }, warm_kept: gfx::Texture { 0 } };
+// Theme `kind`'s photograph through goose-ngfx's C (photo_ngfx.c), or 0 when it isn't built in.
+extern fn draughts_photo_ngfx_id(kind: i64, decoded: i64) -> u32;
+fn photo(own: Own&, kind: i64, decoded: i64) -> Texture { Texture { draughts_photo_ngfx_id(kind, decoded) } }
 
-fn gpu_flush() { ngfx::flush(); }
-fn gpu_release(t: Texture) { nx::release(t); }
-fn gpu_target(w: i64, h: i64) -> Texture { nx::render_target(w, h, ngfx::RGBA8) }
-fn gpu_clear(t: Texture, color: float4) {
+fn gpu_flush(own: Own&) { ngfx::flush(); }
+fn gpu_release(own: Own&, t: Texture) { nx::release(t); }
+fn gpu_target(own: Own&, w: i64, h: i64) -> Texture { nx::render_target(w, h, ngfx::RGBA8) }
+fn gpu_clear(own: Own&, t: Texture, color: float4) {
     nx::begin_pass(t, nx::Texture { 0 }, color);
     ngfx::end_pass();
 }
 // Waits for the GPU, then releases two textures it was reading.
-fn gpu_release_waited(a: Texture, b: Texture) {
+fn gpu_release_waited(own: Own&, a: Texture, b: Texture) {
     ngfx::flush();
     nx::release(a);
     nx::release(b);
 }
-fn gpu_update(b: Buffer, bytes: const u8[:]) { nx::update_buffer(b, bytes); }
-fn gpu_mipped(w: i64, h: i64, format: i32, mips: i64) -> Texture {
+fn gpu_update(own: Own&, b: Buffer, bytes: const u8[:]) { nx::update_buffer(b, bytes); }
+fn gpu_mipped(own: Own&, w: i64, h: i64, format: i32, mips: i64) -> Texture {
     return nx::texture(ngfx::TextureDesc { format: format, usage: ngfx::COLOR_TARGET | ngfx::SAMPLED,
                                              width: w as i32, height: h as i32, mips: mips as i32 });
 }
 
 // The photograph's pipelines made ahead for its target (theme_step).
-fn photo_pipelines(g: Gpu&) {
+fn photo_pipelines(own: Own&, g: Gpu&) {
     nx::prepare(g.shrink, g.small, nx::Texture { 0 });
     nx::prepare(g.blur, g.small, nx::Texture { 0 });
 }
 
 // The shadow map, from the key light.
-fn shadow_pass(g: Gpu&) {
+fn shadow_pass(own: Own&, g: Gpu&) {
     nx::begin_pass(nx::PassDesc { depth: g.shadow_map });
     nx::bind(g.shadow);
-    draw_meshes(g, frame_addr(g), 1.0);
+    draw_meshes(own, g, frame_addr(own, g), 1.0);
     ngfx::end_pass();
     settle();
 }
 
 // draw()'s one pass, at the scale antialiasing draws it at, then antialiased into
 // `target` of `size`.
-fn board_pass(g: Gpu&, target: Texture, size: int2, backdrop: bool) {
+fn board_pass(own: Own&, g: Gpu&, target: Texture, size: int2, backdrop: bool) {
     // The pass at the scale it is drawn at: its block's screen is the target's.
-    let k = scale(g);
+    let k = scale(own, g);
     g.frame.screen = float4 { size.x * k, size.y * k, g.frame.screen.z, 0.0 };
-    let f = frame_addr(g);
+    let f = frame_addr(own, g);
     let clear = if backdrop { float4 { 0.11, 0.078, 0.063, 1.0 } } else { float4_0 };
     var pass = nx::PassDesc { depth: g.depth, color_value: clear };
     pass.color[0] = if g.aa != AA_OFF { g.color } else { target };
     if g.aa == AA_MSAA { pass.resolve[0] = target; }
     nx::begin_pass(pass);
-    if backdrop { draw_backdrop(g, f, 1.0); }
+    if backdrop { draw_backdrop(own, g, f, 1.0); }
 
     nx::bind(g.lit);
-    draw_meshes(g, f, 0.0);
+    draw_meshes(own, g, f, 0.0);
     // The fading pieces, each alone at its opacity, over what stands behind them.
     if g.solid < g.instance_count {
         nx::bind(g.fading);
         for i in g.solid..g.instance_count {
-            var r = lit_root(g, f, g.piece_vb);
+            var r = lit_root(own, g, f, g.piece_vb);
             r.u = blocks([float4 { 1.0, 0.0, g.alphas[i - g.solid], i }]);
             nx::draw_indexed(ngfx::root(r), g.piece_ib, 4, g.piece_count);
         }
@@ -114,18 +117,18 @@ fn board_pass(g: Gpu&, target: Texture, size: int2, backdrop: bool) {
     ngfx::end_pass();
     settle();
     g.frame.screen = float4 { size.x, size.y, g.frame.screen.z, 0.0 };
-    antialias(g, target, size);
+    antialias(own, g, target, size);
 }
 
 // The occlusion map's texels x0..x1, y0..y1 drawn again from the field's squares.
-fn occ_pass(g: Gpu&, x0: i64, y0: i64, x1: i64, y1: i64) {
+fn occ_pass(own: Own&, g: Gpu&, x0: i64, y0: i64, x1: i64, y1: i64) {
     var pass = nx::PassDesc { clear_color: false };
     pass.color[0] = g.occ_map;
     nx::begin_pass(pass);
     ngfx::scissor(x0, y0, x1 - x0, y1 - y0);
     nx::bind(g.occ);
     var r = no_root();
-    r.frame = frame_addr(g);
+    r.frame = frame_addr(own, g);
     r.buf0 = nx::address(g.squares);
     ngfx::draw(ngfx::root(r), 3);
     ngfx::end_pass();
@@ -133,11 +136,11 @@ fn occ_pass(g: Gpu&, x0: i64, y0: i64, x1: i64, y1: i64) {
 }
 
 // The backdrop at full opacity into the kept one.
-fn kept_pass(g: Gpu&) {
+fn kept_pass(own: Own&, g: Gpu&) {
     var pass = nx::PassDesc { clear_color: false };
     pass.color[0] = g.kept_backdrop;
     nx::begin_pass(pass);
-    draw_backdrop(g, frame_addr(g), 1.0);
+    draw_backdrop(own, g, frame_addr(own, g), 1.0);
     ngfx::end_pass();
     settle();
 }
@@ -173,7 +176,7 @@ let SAMPLES = 4;
 
 // The pass's ways by the names --aa takes and the log prints (-1 for none), and the next
 // the A key switches to: MSAA, SMAA, none, and 2 × 2 supersampling in turn.
-fn aa_named(name: const u8[:]) -> i32 {
+fn aa_named(own: Own&, name: const u8[:]) -> i32 {
     if name == "off" { return AA_OFF; }
     if name == "msaa" { return AA_MSAA; }
     if name == "smaa" { return AA_SMAA; }
@@ -181,17 +184,17 @@ fn aa_named(name: const u8[:]) -> i32 {
     return -1;
 }
 
-fn aa_name(aa: i32) -> const u8[:] {
+fn aa_name(own: Own&, aa: i32) -> const u8[:] {
     if aa == AA_MSAA { "msaa" } else if aa == AA_SMAA { "smaa" } else if aa == AA_SSAA { "ssaa" } else { "off" }
 }
 
-fn aa_next(aa: i32) -> i32 {
+fn aa_next(own: Own&, aa: i32) -> i32 {
     if aa == AA_MSAA { AA_SMAA } else if aa == AA_SMAA { AA_OFF } else if aa == AA_OFF { AA_SSAA } else { AA_MSAA }
 }
 
 // A target of the pass: 4× and transient (cleared, never stored, and on Metal kept in
 // tile memory alone) with AA_MSAA, else one sample, `usage` alone.
-fn pass_target(g: Gpu&, w: i64, h: i64, format: i32, usage: i32) -> nx::Texture {
+fn pass_target(own: Own&, g: Gpu&, w: i64, h: i64, format: i32, usage: i32) -> nx::Texture {
     let msaa = g.aa == AA_MSAA;
     return nx::texture(ngfx::TextureDesc { format: format, usage: if msaa { usage | ngfx::TRANSIENT } else { usage },
                                              width: w as i32, height: h as i32, samples: if msaa { SAMPLES } else { 1 } });
@@ -204,7 +207,7 @@ fn settle() {
 }
 
 // The frame's block as it is now, in this frame's memory, for a root.
-fn frame_addr(g: Gpu&) -> u64 {
+fn frame_addr(own: Own&, g: Gpu&) -> u64 {
     let one: render3d::Frame[1] = [g.frame];
     return ngfx::frame_data(bytes_of(one));
 }
@@ -212,10 +215,10 @@ fn frame_addr(g: Gpu&) -> u64 {
 // The lit pass's pipelines, the board's and a fading piece's, their shadow filtered as
 // `look` says (render3d::SHADOW_9..): in 4 taps (r3d_lit_few, shaders::SHADOW_FEW), 16
 // (r3d_lit_many, shaders::SHADOW_MANY), or 9.
-fn lit_pipelines(g: Gpu&, look: i32) {
-    let lit = if look == render3d::SHADOW_4 { embed_file("../app/shaders/r3d_lit_few.blob") }
-              else if look == render3d::SHADOW_16 { embed_file("../app/shaders/r3d_lit_many.blob") }
-              else { embed_file("../app/shaders/r3d_lit.blob") };
+fn lit_pipelines(own: Own&, g: Gpu&, look: i32) {
+    let lit = if look == render3d::SHADOW_4 { embed_file("../../build/ngfx/blobs/r3d_lit_few.blob") }
+              else if look == render3d::SHADOW_16 { embed_file("../../build/ngfx/blobs/r3d_lit_many.blob") }
+              else { embed_file("../../build/ngfx/blobs/r3d_lit.blob") };
     g.lit = nx::pipeline(lit, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true });
     g.fading = nx::pipeline(lit, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, blend: ngfx::BLEND_ALPHA });
     g.shadow_look = look;
@@ -223,12 +226,12 @@ fn lit_pipelines(g: Gpu&, look: i32) {
 
 // The shadow filtered as `look` says from the next draw on: the lit pipelines made
 // again if it changes (render3d_gpu.goose's set_shadow).
-fn set_shadow(g: Gpu&, look: i32) {
+fn set_shadow(own: Own&, g: Gpu&, look: i32) {
     guard g.lit.id != 0 && look != g.shadow_look else { return; }
     ngfx::flush();
     nx::release(g.lit);
     nx::release(g.fading);
-    lit_pipelines(g, look);
+    lit_pipelines(own, g, look);
 }
 
 // float4s in this frame's memory: a root's uniform blocks.
@@ -248,7 +251,7 @@ fn module(blob: const u8[:], desc: ngfx::PipelineDesc = ngfx::PipelineDesc {}) -
 // Part k of photograph(), each short enough for a frame (theme_step): 0 the photograph
 // decoded or uploaded and shrunk, 1 blurred across, 2 blurred down, read back, and its
 // harmonics taken into sh.
-fn photo_part(g: Gpu&, kind: i64, grey: f32, sh: float4[9]&, k: i64) {
+fn photo_part(own: Own&, g: Gpu&, kind: i64, grey: f32, sh: float4[9]&, k: i64) {
     g.photo_gen++;
     let s: f32 = 1.0 / render3d::PHOTO_SIZE;
     if k == 0 && g.plain {
@@ -258,7 +261,7 @@ fn photo_part(g: Gpu&, kind: i64, grey: f32, sh: float4[9]&, k: i64) {
         return;
     }
     if k == 0 {
-        let sharp = render3d::draughts_photo(kind, 2048);
+        let sharp = photo(own, kind, 2048);
         g.no_photo = sharp.id == 0;
         if g.no_photo {
             // No photograph built in: the page under the scene, and a dim ambient.
@@ -284,15 +287,15 @@ fn photo_part(g: Gpu&, kind: i64, grey: f32, sh: float4[9]&, k: i64) {
     }
     guard !g.no_photo else { return; }
     if k == 1 {
-        blur(g, g.small, g.across, float4 { s, 0.0, 5.6, s });
+        blur(own, g, g.small, g.across, float4 { s, 0.0, 5.6, s });
         return;
     }
-    blur(g, g.across, g.photo, float4 { 0.0, s, 5.6, s });
+    blur(own, g, g.across, g.photo, float4 { 0.0, s, 5.6, s });
     let px = nx::read_pixels(g.photo);
     sh = model3d::harmonics(px, render3d::PHOTO_SIZE, grey);
 }
 
-fn blur(g: Gpu&, from: nx::Texture, to: nx::Texture, dir: float4) {
+fn blur(own: Own&, g: Gpu&, from: nx::Texture, to: nx::Texture, dir: float4) {
     nx::begin_pass(to, nx::Texture { 0 }, float4_0);
     nx::bind(g.blur);
     var r = no_root();
@@ -306,7 +309,7 @@ fn blur(g: Gpu&, from: nx::Texture, to: nx::Texture, dir: float4) {
 // Bakes one surface of the theme into its albedo-and-roughness and normal targets, and
 // their mips. Bake.mode: x the surface (0 the plan, 1 the frame map), y the wood's model,
 // z the squares per side, w the marble (a stone frame's only).
-fn bake(g: Gpu&, albedo: nx::Texture, normal: nx::Texture, w: i64, h: i64, mode: f32,
+fn bake(own: Own&, g: Gpu&, albedo: nx::Texture, normal: nx::Texture, w: i64, h: i64, mode: f32,
         extent: float2, t: looks::Theme&, y0: i64 = 0, y1: i64 = -1, mips: bool = true) {
     // Not cleared: the bake writes every texel. Only rows y0 to y1 when given
     // (theme_step's bands), the mips after the last.
@@ -340,13 +343,13 @@ fn bake(g: Gpu&, albedo: nx::Texture, normal: nx::Texture, w: i64, h: i64, mode:
     ngfx::end_pass();
     settle();
     guard mips else { return; }
-    mip_chain(g, albedo);
-    mip_chain(g, normal);
+    mip_chain(own, g, albedo);
+    mip_chain(own, g, normal);
 }
 
 // The texture's mips from its first level, a pass a level (shaders/mip.slang): an sRGB
 // one averaged in linear light, which ngfx's generate_mips can't write.
-fn mip_chain(g: Gpu&, t: nx::Texture) {
+fn mip_chain(own: Own&, g: Gpu&, t: nx::Texture) {
     let levels = nx::texture_info(t).mips as i64;
     for level in 1..levels {
         var pass = nx::PassDesc { mip: level as i32, clear_color: false };
@@ -363,12 +366,12 @@ struct MipRoot { src: u32, level: u32, pad0: u32, pad1: u32 }
 
 // The pass's target (at twice the size for AA_SSAA, 4× for AA_MSAA) and its depth, and
 // SMAA's, at g.size, made for a draw after rest() gave them back.
-fn pass_targets(g: Gpu&) {
+fn pass_targets(own: Own&, g: Gpu&) {
     guard g.depth.id == 0 else { return; }
     let size = g.size;
-    let k = scale(g);
+    let k = scale(own, g);
     if g.aa == AA_MSAA {
-        g.color = pass_target(g, size.x, size.y, ngfx::RGBA8, ngfx::COLOR_TARGET);
+        g.color = pass_target(own, g, size.x, size.y, ngfx::RGBA8, ngfx::COLOR_TARGET);
     } else if g.aa != AA_OFF {
         g.color = nx::render_target(size.x * k, size.y * k, ngfx::RGBA8);
     }
@@ -378,23 +381,23 @@ fn pass_targets(g: Gpu&) {
     }
     // 16-bit depth is plenty between NEAR 2 and FAR 40 for a scene 10 to 20 away (a step
     // about 0.003 at 20, under the marks' 0.004 lift).
-    g.depth = pass_target(g, size.x * k, size.y * k, ngfx::DEPTH16, ngfx::DEPTH_TARGET);
+    g.depth = pass_target(own, g, size.x * k, size.y * k, ngfx::DEPTH16, ngfx::DEPTH_TARGET);
 }
 
 // The pass antialiased by `aa` (AA_OFF..) from the next draw on: its targets given back
 // (made again for the new way by the next draw), the way's pipelines and tables made the
 // first time it is chosen. The app's A key (task 071). It draws SAMPLES whatever `samples`
 // says: fewer are asked for only on Android, which the ngfx build isn't built for.
-fn set_aa(g: Gpu&, aa: i32, samples: i32 = SAMPLES) {
-    render3d::give_back(g);
+fn set_aa(own: Own&, g: Gpu&, aa: i32, samples: i32 = SAMPLES) {
+    render3d::give_back(own, g);
     g.aa = aa;
-    aa_resources(g, aa);
+    aa_resources(own, g, aa);
 }
 
 // What antialiasing by `aa` draws with, made once.
-fn aa_resources(g: Gpu&, aa: i32) {
+fn aa_resources(own: Own&, g: Gpu&, aa: i32) {
     if aa == AA_SMAA && g.smaa_edges.id == 0 {
-        let smaa = embed_file("../app/shaders/smaa.blob");
+        let smaa = embed_file("../../build/ngfx/blobs/smaa.blob");
         // The edges pass marks the pixels it finds an edge on with depth 0 (its triangle's
         // z; where it finds none it discards, leaving the cleared 1), and the weights pass,
         // drawn at the same z, tests it equal: the early depth test skips the pixels with
@@ -408,14 +411,14 @@ fn aa_resources(g: Gpu&, aa: i32) {
                                         ngfx::PipelineDesc { depth_test: true, depth_compare: ngfx::COMPARE_EQUAL });
         g.smaa_blend = nx::pipeline(smaa, "blend_vertex", "blend_fragment", ngfx::PipelineDesc {});
         g.area = nx::texture2d(160, 560, ngfx::RG8, ngfx::SAMPLED);
-        nx::update_texture(g.area, embed_file("../app/shaders/smaa_area.bin"));
+        nx::update_texture(g.area, embed_file("../../third_party/smaa/area.bin"));
         g.search = nx::texture2d(64, 16, ngfx::R8, ngfx::SAMPLED);
-        nx::update_texture(g.search, embed_file("../app/shaders/smaa_search.bin"));
+        nx::update_texture(g.search, embed_file("../../third_party/smaa/search.bin"));
     }
 }
 
 // How many times the size the pass is drawn at: 2 for AA_SSAA.
-fn scale(g: Gpu&) -> i64 { return if g.aa == AA_SSAA { 2 } else { 1 }; }
+fn scale(own: Own&, g: Gpu&) -> i64 { return if g.aa == AA_SSAA { 2 } else { 1 }; }
 
 // The kept depth: 1x, 16-bit as the pass's, sampled by the pulsing marks.
 fn depth_target(size: int2) -> nx::Texture {
@@ -424,9 +427,10 @@ fn depth_target(size: int2) -> nx::Texture {
 
 // Makes everything the renderer draws with: the meshes, the buffers, the pipelines, the
 // baked surfaces' and the photograph's targets. Then apply() puts a theme on it.
-// `aa` is how the pass is antialiased (AA_OFF..AA_MSAA); `look` how the shadow is
-// filtered (render3d::SHADOW_9..; set_shadow).
-fn setup(g: Gpu&, aa: i32 = AA, look: i32 = render3d::SHADOW_9) {
+// Antialiased as AA says (set_aa changes it), whatever `samples` says, as set_aa; `look`
+// how the shadow is filtered (render3d::SHADOW_9..; set_shadow).
+fn setup(own: Own&, g: Gpu&, samples: i32 = SAMPLES, look: i32 = render3d::SHADOW_9) {
+    let aa: i32 = AA;
     g.aa = aa;
     g.wood = model3d::WOOD_MODEL;
     g.finish = looks::finish(model3d::WOOD_MODEL);
@@ -463,14 +467,14 @@ fn setup(g: Gpu&, aa: i32 = AA, look: i32 = render3d::SHADOW_9) {
     g.glows = nx::buffer(bytes_of(empty));
 
     let blend = ngfx::PipelineDesc { blend: ngfx::BLEND_ALPHA };
-    g.bake = module(embed_file("../app/shaders/r3d_bake.blob"));
-    g.shrink = module(embed_file("../app/shaders/r3d_shrink.blob"));
-    g.blur = module(embed_file("../app/shaders/r3d_blur.blob"));
-    g.copy = module(embed_file("../app/shaders/r3d_copy.blob"));
-    own.mip = module(embed_file("../app/shaders/mip.blob"));
-    own.down = module(embed_file("../app/shaders/down.blob"));
-    aa_resources(g, aa);
-    g.show = module(embed_file("../app/shaders/r3d_show.blob"), ngfx::PipelineDesc { blend: ngfx::BLEND_PREMULTIPLIED });
+    g.bake = module(embed_file("../../build/ngfx/blobs/r3d_bake.blob"));
+    g.shrink = module(embed_file("../../build/ngfx/blobs/r3d_shrink.blob"));
+    g.blur = module(embed_file("../../build/ngfx/blobs/r3d_blur.blob"));
+    g.copy = module(embed_file("../../build/ngfx/blobs/r3d_copy.blob"));
+    own.mip = module(embed_file("../../build/ngfx/blobs/mip.blob"));
+    own.down = module(embed_file("../../build/ngfx/blobs/down.blob"));
+    aa_resources(own, g, aa);
+    g.show = module(embed_file("../../build/ngfx/blobs/r3d_show.blob"), ngfx::PipelineDesc { blend: ngfx::BLEND_PREMULTIPLIED });
     g.side = 0;         // the plan and the frame map made by apply(), at its side and as the look's frame wants
     g.frame_rows = 0;
     g.photo = nx::render_target(render3d::PHOTO_SIZE, render3d::PHOTO_SIZE, ngfx::RGBA8);
@@ -480,27 +484,27 @@ fn setup(g: Gpu&, aa: i32 = AA, look: i32 = render3d::SHADOW_9) {
     g.shadow_map = nx::texture2d(render3d::SHADOW_SIZE, render3d::SHADOW_SIZE, ngfx::DEPTH16, ngfx::DEPTH_TARGET | ngfx::SAMPLED);
     g.occ_map = nx::render_target(render3d::OCC_SIZE, render3d::OCC_SIZE, ngfx::R8);
     g.occ_n = 0;
-    g.occ = module(embed_file("../app/shaders/r3d_occ.blob"));
-    g.kept = module(embed_file("../app/shaders/r3d_kept.blob"), blend);
+    g.occ = module(embed_file("../../build/ngfx/blobs/r3d_occ.blob"));
+    g.kept = module(embed_file("../../build/ngfx/blobs/r3d_kept.blob"), blend);
     g.linear = nx::sampler(ngfx::LINEAR, ngfx::CLAMP);
     own.point = nx::sampler(ngfx::NEAREST, ngfx::CLAMP);
     g.aniso = nx::sampler(ngfx::SamplerDesc { max_anisotropy: 8.0 });
     g.compare = nx::shadow_sampler();
 
-    let depth = embed_file("../app/shaders/r3d_depth.blob");
-    let marks = embed_file("../app/shaders/r3d_marks.blob");
-    lit_pipelines(g, look);
+    let depth = embed_file("../../build/ngfx/blobs/r3d_depth.blob");
+    let marks = embed_file("../../build/ngfx/blobs/r3d_marks.blob");
+    lit_pipelines(own, g, look);
     g.shadow = nx::pipeline(depth, ngfx::PipelineDesc { depth_test: true, depth_write: true, depth_bias: 1.0,
                                                           depth_bias_slope: 1.5 });
-    g.backdrop = module(embed_file("../app/shaders/r3d_backdrop.blob"), blend);
-    g.catcher = nx::pipeline(embed_file("../app/shaders/r3d_catcher.blob"),
+    g.backdrop = module(embed_file("../../build/ngfx/blobs/r3d_backdrop.blob"), blend);
+    g.catcher = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_catcher.blob"),
                                ngfx::PipelineDesc { depth_test: true, blend: ngfx::BLEND_ALPHA });
     g.glow = nx::pipeline(marks, ngfx::PipelineDesc { depth_test: true, blend: ngfx::BLEND_PREMULTIPLIED });
-    g.pulse = nx::pipeline(embed_file("../app/shaders/r3d_pulse.blob"), ngfx::PipelineDesc { blend: ngfx::BLEND_ADD });
+    g.pulse = nx::pipeline(embed_file("../../build/ngfx/blobs/r3d_pulse.blob"), ngfx::PipelineDesc { blend: ngfx::BLEND_ADD });
     g.depth_only = nx::pipeline(depth, ngfx::PipelineDesc { cull: ngfx::CULL_BACK, depth_test: true, depth_write: true });
     // The crown's distance, once: a small pipeline made, drawn, and given back.
     g.crown_map = nx::render_target(render3d::CROWN_SIZE, render3d::CROWN_SIZE, ngfx::R16F);
-    let crown = module(embed_file("../app/shaders/r3d_crown.blob"));
+    let crown = module(embed_file("../../build/ngfx/blobs/r3d_crown.blob"));
     nx::begin_pass(g.crown_map, nx::Texture { 0 }, float4_0);
     nx::bind(crown);
     ngfx::draw(ngfx::root(no_root()), 3);
@@ -521,7 +525,7 @@ struct SmaaRoot { color: u32, edges: u32, weights: u32, area: u32, search: u32, 
 // The pass in g.color antialiased into `target` as g.aa says: shrunk (AA_SSAA) or
 // SMAA's three (shaders/smaa.slang); with AA_OFF the pass drew into it, and with AA_MSAA
 // resolved into it.
-fn antialias(g: Gpu&, target: nx::Texture, size: int2) {
+fn antialias(own: Own&, g: Gpu&, target: nx::Texture, size: int2) {
     guard g.aa != AA_OFF && g.aa != AA_MSAA else { return; }
     let metrics = float4 { 1.0 / size.x, 1.0 / size.y, size.x, size.y };
     if g.aa == AA_SSAA {
@@ -552,7 +556,7 @@ fn antialias(g: Gpu&, target: nx::Texture, size: int2) {
 
 // The lit module's root (r3d_lit.slang's header): the frame, the instances, the vertices,
 // and its seven textures.
-fn lit_root(g: Gpu&, f: u64, vb: nx::Buffer) -> Root {
+fn lit_root(own: Own&, g: Gpu&, f: u64, vb: nx::Buffer) -> Root {
     var r = no_root();
     r.frame = f;
     r.buf0 = nx::address(g.instances);
@@ -570,11 +574,11 @@ fn lit_root(g: Gpu&, f: u64, vb: nx::Buffer) -> Root {
 // The board and the opaque pieces' depth at 1x into g.kept_depth, as the pass above drew
 // them (the fading pieces write none there either): only the vertices and a 16-bit
 // target, no shading.
-fn draw_depth(g: Gpu&) {
+fn draw_depth(own: Own&, g: Gpu&) {
     if g.kept_depth.id == 0 { g.kept_depth = depth_target(g.size); }
     nx::begin_pass(nx::PassDesc { depth: g.kept_depth });
     nx::bind(g.depth_only);
-    draw_meshes(g, frame_addr(g), 0.0);
+    draw_meshes(own, g, frame_addr(own, g), 0.0);
     ngfx::end_pass();
     settle();
 }
@@ -585,7 +589,7 @@ fn draw_depth(g: Gpu&) {
 // phases (view3d::Scene.pulse), `next` how lit a capture's next stops are (Scene.next),
 // `cursor` the keys' cursor's square in the world's grid, or -1 (Scene.cursor).
 // The field's marks are the ones place() gave the image.
-fn marks_over(g: Gpu&, pulse: float4, next: f32, cursor: f32, to: float4, alpha: f32, size: int2) {
+fn marks_over(own: Own&, g: Gpu&, pulse: float4, next: f32, cursor: f32, to: float4, alpha: f32, size: int2) {
     guard g.kept_depth.id != 0 && to.z > 0.0 else { return; }
     // The image's clip space moved and scaled into `to`, depth left as it was.
     let k = to.z / g.size.x;
@@ -597,7 +601,7 @@ fn marks_over(g: Gpu&, pulse: float4, next: f32, cursor: f32, to: float4, alpha:
                       c2: float4 { 0.0, 0.0, 1.0, 0.0 }, c3: float4 { sx, sy, 0.0, 1.0 } };
     let keep = g.frame.view_proj;
     g.frame.view_proj = render3d::mul(place, keep);
-    let f = frame_addr(g);
+    let f = frame_addr(own, g);
     g.frame.view_proj = keep;
     nx::bind(g.pulse);
     var r = no_root();
@@ -613,13 +617,13 @@ fn marks_over(g: Gpu&, pulse: float4, next: f32, cursor: f32, to: float4, alpha:
 
 // The opaque pieces as instances, then the board, front to back: the field under the
 // pieces fails the depth test before it is shaded. From the light when `light` is 1.
-fn draw_meshes(g: Gpu&, f: u64, light: f32) {
+fn draw_meshes(own: Own&, g: Gpu&, f: u64, light: f32) {
     if g.solid > 0 {
-        var r = lit_root(g, f, g.piece_vb);
+        var r = lit_root(own, g, f, g.piece_vb);
         r.u = blocks([float4 { 1.0, light, 1.0, 0.0 }]);
         nx::draw_indexed_instanced(ngfx::root(r), g.piece_ib, 4, g.piece_count, g.solid);
     }
-    var r = lit_root(g, f, g.board_vb);
+    var r = lit_root(own, g, f, g.board_vb);
     r.u = blocks([float4 { 0.0, light, 1.0, 0.0 }]);
     nx::draw_indexed(ngfx::root(r), g.board_ib, 4, g.board_count);
 }
@@ -627,7 +631,7 @@ fn draw_meshes(g: Gpu&, f: u64, light: f32) {
 // The blurred photograph, graded, or the plain fade dimmed as the flat game dims what is
 // behind it (draw::frame's 0.8), at opacity `alpha` over the open pass's target; `f` the
 // frame's block, its screen the target's size.
-fn draw_backdrop(g: Gpu&, f: u64, alpha: f32) {
+fn draw_backdrop(own: Own&, g: Gpu&, f: u64, alpha: f32) {
     nx::bind(g.backdrop);
     var r = no_root();
     r.frame = f;
@@ -640,10 +644,10 @@ fn draw_backdrop(g: Gpu&, f: u64, alpha: f32) {
 // The backdrop draw() leaves out without one, over the open pass's target of `size`
 // (gfx's screen) at opacity `alpha`: under show()'s image, or fading in over the app's
 // own photograph in a transition.
-fn backdrop(g: Gpu&, alpha: f32, size: int2) {
+fn backdrop(own: Own&, g: Gpu&, alpha: f32, size: int2) {
     g.frame.screen = float4 { size.x, size.y, g.frame.screen.z, 0.0 };
     guard render3d::kept_current(g, size) else {
-        draw_backdrop(g, frame_addr(g), alpha);
+        draw_backdrop(own, g, frame_addr(own, g), alpha);
         return;
     }
     nx::bind(g.kept);
@@ -655,7 +659,7 @@ fn backdrop(g: Gpu&, alpha: f32, size: int2) {
 
 // Draws the kept image (draw() into g.image with its backdrop) over the open pass's
 // target as it is: the prototype, under its tuning panel.
-fn copy(g: Gpu&) {
+fn copy(own: Own&, g: Gpu&) {
     nx::bind(g.copy);
     var r = no_root();
     slot(r, 0, g.image, g.linear);
@@ -666,7 +670,7 @@ fn copy(g: Gpu&) {
 // target of `size`: its rect `from` into the rect `to`, both x, y, width, height in
 // pixels, at opacity `alpha`, `grey` of the way to grey and dimmer (shaders::SHOW_FRAG).
 // The same rect is the image as drawn, texel for texel.
-fn show(g: Gpu&, from: float4, to: float4, alpha: f32, size: int2, grey: f32 = 0.0) {
+fn show(own: Own&, g: Gpu&, from: float4, to: float4, alpha: f32, size: int2, grey: f32 = 0.0) {
     nx::bind(g.show);
     var r = no_root();
     r.u = blocks([from, to, float4 { size.x, size.y, alpha, grey }]);
@@ -674,12 +678,12 @@ fn show(g: Gpu&, from: float4, to: float4, alpha: f32, size: int2, grey: f32 = 0
     ngfx::draw(ngfx::root(r), 6);
 }
 
-fn warm(g: Gpu&, k: i64) {
+fn warm(own: Own&, g: Gpu&, k: i64) {
     if k == 0 {
         // The pass's pipelines for its targets (4× with AA_MSAA), the depth-only ones for
         // a kept depth's 1x.
-        g.warm_color = pass_target(g, 4, 4, ngfx::RGBA8, ngfx::COLOR_TARGET);
-        g.warm_depth = pass_target(g, 4, 4, ngfx::DEPTH16, ngfx::DEPTH_TARGET);
+        g.warm_color = pass_target(own, g, 4, 4, ngfx::RGBA8, ngfx::COLOR_TARGET);
+        g.warm_depth = pass_target(own, g, 4, 4, ngfx::DEPTH16, ngfx::DEPTH_TARGET);
         own.warm_kept = depth_target(int2 { 4, 4 });
     }
     var pass = nx::PassDesc {};
@@ -727,7 +731,7 @@ fn warm(g: Gpu&, k: i64) {
 
 // Everything setup() and the frames made given back (the app's board back to flat): the
 // targets, surfaces, buffers, samplers, and pipelines. g is set up again from scratch.
-fn release(g: Gpu&) {
+fn release(own: Own&, g: Gpu&) {
     ngfx::flush();
     let textures = [g.plan_albedo, g.plan_normal, g.frame_albedo, g.frame_normal, g.photo, g.shadow_map, g.occ_map,
                     g.crown_map, g.color, g.depth, g.image, g.kept_backdrop, g.kept_depth, g.small, g.across,

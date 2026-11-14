@@ -1,5 +1,5 @@
 // Recording the board's draws (draw.goose) through goose-ngfx, beside gfx's
-// src/app/draw_gpu.goose in the build that holds both (scripts/ngfx.py): its shaders, written from that file's GLSL
+// src/app/draw_gpu.goose in the build that holds both (draughts_ngfx.goose): its shaders, written from that file's GLSL
 // (scripts/ngfx_2d_shaders.py) and built ahead, and the pieces copied into each frame's
 // memory, which their draw pulls them from.
 namespace draw_ngfx;
@@ -20,9 +20,9 @@ struct Gpu {
     overlay:        u64,
 }
 
-fn new() -> Gpu {
-    return Gpu { board_pipeline: nx::pipeline(embed_file("shaders/board.blob")),
-                 piece_pipeline: nx::pipeline(embed_file("shaders/pieces.blob"),
+fn init(g: Gpu&) {
+    g = Gpu { board_pipeline: nx::pipeline(embed_file("../../build/ngfx/blobs/board.blob")),
+                 piece_pipeline: nx::pipeline(embed_file("../../build/ngfx/blobs/pieces.blob"),
                                                 ngfx::PipelineDesc { blend: ngfx::BLEND_PREMULTIPLIED }),
                  pieces: 0, overlay: 0 };
 }
@@ -31,10 +31,10 @@ fn new() -> Gpu {
 fn buffers(g: Gpu&, all: const board::Piece[:], over: const board::Piece[:]) {}
 
 // The first n of `all` into this frame's memory, the board's or those over the UI.
-fn pieces(g: Gpu&, all: const board::Piece[:], n: i64) {
+fn upload(g: Gpu&, all: const board::Piece[:], n: i64) {
     if n > 0 { g.pieces = ngfx::frame_data(bytes_of(all[..n])); }
 }
-fn over(g: Gpu&, all: const board::Piece[:], n: i64) { g.overlay = ngfx::frame_data(bytes_of(all[..n])); }
+fn upload_over(g: Gpu&, all: const board::Piece[:], n: i64) { g.overlay = ngfx::frame_data(bytes_of(all[..n])); }
 
 fn board(g: Gpu&, sc: scene::Scene&, t: theme::Theme, u: draw::BoardUniforms) {
     nx::bind(g.board_pipeline);

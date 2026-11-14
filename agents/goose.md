@@ -198,8 +198,21 @@ find out by compiling, so the next session doesn't.
   as cuts do, so a column from the top matches them (2026-11-10).
 - A top-level `let` that takes another file's global (`let THEME_BLOCK =
   draw_gfx::THEME_BLOCK;`) is "used before it is assigned" unless that file is imported
-  first: globals initialize in import order. The ngfx build imports the recorders' halves
-  before their facades for this (`scripts/ngfx.py`, 2026-11-12).
+  first: globals initialize in import order (2026-11-12).
+- One choice at run time over code compiled per type, the renderer's seam
+  (`src/app/backend.goose`, 2026-11-14): `fn with<F>() { if on { F(&a) } else { F(&b) } }`
+  runs a block `{ be => f(be) }` checked once per argument's type, so `f` and all it calls
+  are generic and call `be`'s functions directly. A HOF needs its `<F>`; it returns the
+  block's value as that `if` expression (`return F(x)` of a block with no value is
+  "cannot return a valueless expression"). `&` passes a fixed-size global by reference into
+  an untyped block parameter; a generic function takes it as `<B>(be: B&)`, as an untyped
+  parameter would copy it. `x.f()` looks for `f` in the namespace of x's type first, so
+  `be.draw.board(...)` reaches `draw_gpu::board` or `draw_ngfx::board` by the field's type;
+  a field of the same name hides the function (`field compose is not callable`).
+- A second root can run the same program: the program in a package's entry
+  (`src/app/app.goose`, `fn run()`), which another directory's root declares
+  (`import app from "../app";`) beside its own files; `fn main` stays in each root, as
+  an imported file's `main` is ignored (2026-11-14).
 - A top-level `let` built from a `var` (`let SUM = 2.0 * tap + 12.0;`) compiles and is
   computed once at start, before `main` sets the `var`: a size that changes at run time
   (`gui::tap()` on a desktop) and what is built from it are functions (2026-11-11).

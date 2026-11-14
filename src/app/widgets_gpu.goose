@@ -1,6 +1,6 @@
 // Recording the UI's quads (widgets.goose) through gfx: their shaders, the three
 // pipelines and the composing one, and the quads' storage buffer, updated when they
-// change. The goose-ngfx build's src/ngfx/app/widgets_gpu.goose takes this file's place.
+// change. On goose-ngfx, widgets_ngfx (src/ngfx/); the drawer calls `be.widgets`.
 namespace widgets_gpu;
 import std;
 import vec;
@@ -727,10 +727,10 @@ struct Gpu {
     compose:   gfx::Pipeline,
 }
 
-fn new() -> Gpu {
+fn init(g: Gpu&) {
     let vert = embed_shader("vert", draw_gpu::SHARED_BLOCK, VERT);
     let desc = gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED };
-    return Gpu {
+    g = Gpu {
         pipelines: [gfx::pipeline(vert, embed_shader("frag", BASE, shaders::FADE_FN, draw_gpu::THEME_BLOCK, draw_gpu::SHARED_BLOCK,
                                                      draw_gpu::MAN_BLOCK, FRAG), desc),
                     gfx::pipeline(vert, embed_shader("frag", ICONS, shaders::FADE_FN, draw_gpu::THEME_BLOCK, draw_gpu::SHARED_BLOCK,
@@ -746,16 +746,16 @@ fn new() -> Gpu {
 fn buffers(g: Gpu&, all: const gui::Quad[:]) { g.quads = gfx::buffer(gfx::BUFFER_STORAGE, bytes_of(all)); }
 
 // The first n of `all` into the buffer when they `changed`; it keeps them otherwise.
-fn quads(g: Gpu&, all: const gui::Quad[:], n: i64, changed: bool) {
+fn upload(g: Gpu&, all: const gui::Quad[:], n: i64, changed: bool) {
     if changed { gfx::update_buffer(g.quads, bytes_of(all[..n])); }
 }
 
 // A pass into the kept layer, cleared to nothing, and its end.
-fn begin_layer(layer: gpu::Texture) { gfx::begin_pass(layer, gfx::Texture { 0 }, float4 { 0.0, 0.0, 0.0, 0.0 }); }
-fn end_layer() { gfx::end_pass(); }
+fn begin_layer(g: Gpu&, layer: gpu::Texture) { gfx::begin_pass(layer, gfx::Texture { 0 }, float4 { 0.0, 0.0, 0.0, 0.0 }); }
+fn end_layer(g: Gpu&) { gfx::end_pass(); }
 
 // The kept layer laid over the open pass.
-fn compose(g: Gpu&, layer: gpu::Texture, sampler: gpu::Sampler) {
+fn compose_layer(g: Gpu&, layer: gpu::Texture, sampler: gpu::Sampler) {
     gfx::bind(g.compose);
     gfx::bind_texture(gfx::FRAGMENT, 0, layer, sampler);
     gfx::draw(3);

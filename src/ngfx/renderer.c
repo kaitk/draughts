@@ -1,9 +1,9 @@
 // What the build holding both renderers asks before it opens a window (task 073): whether
 // this system can run NoGraphicsAPI at all, from what can be asked without a window or a
 // device, and which GPU and driver it would run on, for the crash marker's key; and the
-// window shown once ngfx has opened it hidden. scripts/ngfx.py adds this file to the
-// sidecar's c_sources, with the app's version written in for @VERSION@.
+// window shown once ngfx has opened it hidden. In draughts_ngfx.build's c_sources.
 #include "platform.h"
+#include "draughts_version.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -11,8 +11,9 @@
 
 typedef struct { uint8_t *data; int64_t len; } draughts_bytes;
 
-// The app's version and the commit it was built from (scripts/ngfx.py).
-static const char version[] = "@VERSION@";
+// The app's version and the commit it was built from (DRAUGHTS_VERSION, which
+// scripts/ngfx.py writes into build/ngfx/draughts_version.h).
+static const char version[] = DRAUGHTS_VERSION;
 
 // Which system this is: 0 macOS, 1 Windows, 2 Linux, 3 iOS.
 int64_t draughts_os(void) {

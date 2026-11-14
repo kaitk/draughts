@@ -1,17 +1,13 @@
 // goose-ngfx's calls on gfx's handle types, for the ngfx recorders of the build that holds
-// both renderers (scripts/ngfx.py). The drawers hold one type of handle, gfx's: a texture,
-// sampler, pipeline, or buffer is an id into the tables of the renderer chosen at start
-// (ngfx_on), and both renderers' handles are an id alone. Only what takes or makes a
-// handle is here; the rest of goose-ngfx is called as it is. In the render3d package, which
-// the app's recorders see too.
+// both renderers (draughts_ngfx.goose). The drawers hold one type of handle, gfx's: a
+// texture, sampler, pipeline, or buffer is an id into the tables of the renderer chosen at
+// start (backend::ngfx_on), and both renderers' handles are an id alone. Only what takes or
+// makes a handle is here; the rest of goose-ngfx is called as it is.
 namespace nx;
 import std;
 import vec;
 import gfx;
 import ngfx;
-
-// Whether ngfx draws, else gfx: set once at start (host_gpu::open), read by every facade.
-var ngfx_on = false;
 
 type Texture = gfx::Texture;
 type Sampler = gfx::Sampler;

@@ -30,7 +30,7 @@ struct Times {
     over:  f64[..1024]  = [],
     plain: f64[..1024]  = [],
     last:  f64          = 0.0,
-    into:  gpu::Texture = gpu::Texture { 0 },  // where the pulse phase draws (gpu::bench_target)
+    into:  gpu::Texture = gpu::Texture { 0 },  // where the pulse phase draws (be.bench_target)
 }
 
 let PHASES = 4;
@@ -83,7 +83,7 @@ fn waited3d(b: Bench&) -> bool { b.d3.n > 0 && b.d3.i < 2 * b.d3.n }
 
 // The 3D board drawn ahead of render::frame, as it would draw it (render.goose).
 fn draw3d_now(r: render::Renderer&, fr: render::Frame&) {
-    draw3d::frame(r.d3, fr.board, fr.layout, fr.view, fr.now, fr.size, r.d.kind, r.d.scene.plain, fr.which, fr.hold);
+    backend::with() { be => draw3d::frame(be, r.d3, fr.board, fr.layout, fr.view, fr.now, fr.size, r.d.kind, r.d.scene.plain, fr.which, fr.hold) }
 }
 
 // render::frame, the bench's phase timed around it or ahead of it.
@@ -148,8 +148,10 @@ fn frame(b: Bench&, f: flags::Flags&, r: render::Renderer&, fr: render::Frame&) 
 // The bench's last phase: its first frame draws the board with a pulsing ring round every
 // piece and keeps its depth; each frame then times the kept depth's pass, and the
 // screen's part of a pulsing frame with the rings and without, each waited for, drawn
-// where gpu::bench_target says.
-fn pulse(b: Bench&, r: render::Renderer&, fr: render::Frame&) {
+// where the backend's bench_target says.
+fn pulse(b: Bench&, r: render::Renderer&, fr: render::Frame&) { backend::with() { be => pulse_on(be, b, r, fr) } }
+
+fn pulse_on<B>(be: B&, b: Bench&, r: render::Renderer&, fr: render::Frame&) {
     let d .= r.d3;
     let bn .= b.d3;
     let size = fr.size;
@@ -160,31 +162,31 @@ fn pulse(b: Bench&, r: render::Renderer&, fr: render::Frame&) {
         s.pulsing = true;
         d.upload.clear();
         for x in s.inst { d.upload.push(x); }
-        render3d::place(d.gpu, d.upload[..d.upload.len], d.alphas[..0], s.squares[..], s.field[..], s.lit[..],
+        render3d::place(be.r3d, d.gpu, d.upload[..d.upload.len], d.alphas[..0], s.squares[..], s.field[..], s.lit[..],
                         s.selected, s.dim, true);
         let m = view3d::matrix(fr.view, size.x, size.y);
-        render3d::draw(d.gpu, render3d::Mat { c0: m.c0, c1: m.c1, c2: m.c2, c3: m.c3 }, fr.view.eye, gpu::no_texture(),
+        render3d::draw(be.r3d, d.gpu, render3d::Mat { c0: m.c0, c1: m.c1, c2: m.c2, c3: m.c3 }, fr.view.eye, gpu::no_texture(),
                        size, false, false, true);
         d.drawn = d.scene;
         d.draws++;
         d.redraw = true;
-        render::wait();
+        be.flush();
     }
-    let into = gpu::bench_target(bn.into, size);
+    let into = be.bench_target(bn.into, size);
     let t0 = clock();
-    render3d::draw_depth(d.gpu);
-    render::wait();
+    be.r3d.draw_depth(d.gpu);
+    be.flush();
     let t1 = clock();
     for rings in 2 {
         let t2 = clock();
-        gpu::begin_pass(into, float4 { 0.0, 0.0, 0.0, 1.0 });
-        render3d::backdrop(d.gpu, 1.0, size);
-        render3d::show(d.gpu, float4 { 0.0, 0.0, size.x, size.y }, float4 { 0.0, 0.0, size.x, size.y }, 1.0, size);
+        be.begin_pass(into, float4 { 0.0, 0.0, 0.0, 1.0 });
+        be.r3d.backdrop(d.gpu, 1.0, size);
+        be.r3d.show(d.gpu, float4 { 0.0, 0.0, size.x, size.y }, float4 { 0.0, 0.0, size.x, size.y }, 1.0, size);
         if rings == 0 {
-            render3d::marks_over(d.gpu, d.scene.pulse, d.scene.next, -1.0, float4 { 0.0, 0.0, size.x, size.y }, 1.0, size);
+            be.r3d.marks_over(d.gpu, d.scene.pulse, d.scene.next, -1.0, float4 { 0.0, 0.0, size.x, size.y }, 1.0, size);
         }
-        gpu::end_pass();
-        render::wait();
+        be.end_pass();
+        be.flush();
         if rings == 0 { bn.over.push(clock() - t2); } else { bn.plain.push(clock() - t2); }
     }
     bn.depth.push(t1 - t0);
@@ -200,7 +202,7 @@ fn done(b: Bench&, f: flags::Flags&, r: render::Renderer&, size: int2) -> bool {
         // The bake again, warm: its pipeline made.
         for k in 2 {
             let t0 = clock();
-            render3d::bake_surfaces(d.gpu, k == 0, k == 1);
+            backend::with() { be => render3d::bake_surfaces(be.r3d, d.gpu, k == 0, k == 1) }
             print("bench3d: bake warm, ", if k == 0 { "plan" } else { "frame map" }, " ", (clock() - t0) * 1000.0, " ms");
         }
         var longest = 0.0;

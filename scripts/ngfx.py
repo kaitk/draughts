@@ -6,20 +6,16 @@ when it starts (task 073), and optionally run it.
     python scripts/ngfx.py src/app/draughts.goose --run -- --renderer gfx --screen game
                                                                build, and run it with those flags
 
-The gfx-only build (Android's) is untouched. This copies the program (src/, strings/,
-assets/, the backgrounds' JPEG and ASTC masters, the board pictures' atlas, and SMAA's
-tables) into build/ngfx/tree/ and lays src/ngfx/ over it. Each recorder twin then has
-three parts: gfx's, compiled under a name of its own (GFX_RECORDERS: src/app/draw_gpu.goose
-as draw_gfx, and so on, its namespace line rewritten), goose-ngfx's (src/ngfx/app/draw_ngfx.goose, ...), and in the
-gfx recorder's place a facade of the same name that calls one or the other as
-nx::ngfx_on says (src/ngfx/app/draw_gpu.goose, ...; render3d_gpu.goose and photo_gpu.h
-alike). The drawers are shared and hold gfx's handle types; nx gives goose-ngfx's calls
-those types. The root file gets the package's import and the halves', the sidecar the
-package's C headers, and the Slang shaders are compiled ahead into ngfx's blobs, which the
-app embeds, so it runs no shader compiler: the 2D shaders and the 3D board's, written from
-gfx's GLSL by ngfx_2d_shaders.py and ngfx_3d_shaders.py, and src/ngfx/shaders/, what they
-include and the shaders ngfx alone has. SMAA (third_party/smaa) comes with them: its
-shader, which smaa.slang includes, and its tables, which render3d embeds.
+The program is src/ngfx/draughts_ngfx.goose, the second root beside the gfx build's
+src/app/draughts.goose: the same app (src/app/app.goose), gfx's backend and goose-ngfx's,
+and src/ngfx/backend.goose, which chooses one at start. The gfx-only build is untouched.
+This makes what that root needs from outside the repository, all in build/ngfx/: a link
+to the goose-ngfx checkout (goose-ngfx, which the root declares its package from), the
+app's version and commit for the crash marker (draughts_version.h), and the Slang shaders
+compiled ahead into ngfx's blobs (blobs/), which the app embeds, so it runs no shader
+compiler: the 2D shaders and the 3D board's, written from gfx's GLSL into shaders/ by
+ngfx_2d_shaders.py and ngfx_3d_shaders.py, and src/ngfx/shaders/, what they include and
+the shaders ngfx alone has, with SMAA's (third_party/smaa), which smaa.slang includes.
 
 Needs a goose-ngfx checkout (NGFX, else ../goose-ngfx or ../goose/goose-ngfx beside this repository),
 slangc 2026.18.2 or later (NGFX_SLANGC), and what ngfx's own build needs (its
@@ -32,7 +28,6 @@ surface or an X11 window, whichever SDL opened.
 """
 import argparse
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -51,11 +46,13 @@ else:
 
 ROOT = native.ROOT
 OUT = ROOT / "build/ngfx"
-TREE = OUT / "tree"
+ROOTFILE = ROOT / "src/ngfx/draughts_ngfx.goose"
+BLOBS = OUT / "blobs"
 # The checkout NGFX names, else one beside this repository (../goose-ngfx, or ../goose/goose-ngfx).
 NGFX = Path(os.environ.get("NGFX") or next(
     (p for p in (ROOT.parent / "goose-ngfx", ROOT.parent / "goose/goose-ngfx") if p.exists()),
     ROOT.parent / "goose-ngfx")).resolve()
+LINK = OUT / "goose-ngfx"
 EXE = ".exe" if native.WINDOWS else ""
 
 
@@ -71,125 +68,40 @@ def copy_if_changed(src, dst):
     return shutil.copy2(src, dst)
 
 
-def sync(src, dst, over=None, skip=()):
-    """dst/ as a copy of src/, each file copied if it changed; where over/ has a file of
-    the same path, that one instead, and over/'s files with none in src/ too, but those in
-    skip (paths in over/), which the caller writes. src/ngfx/ itself is left out."""
-    for f in src.rglob("*"):
-        r = f.relative_to(src)
-        if f.is_dir() or r.parts[0] == "ngfx":
-            continue
-        o = over / r if over else None
-        (dst / r).parent.mkdir(parents=True, exist_ok=True)
-        copy_if_changed(o if o and o.exists() else f, dst / r)
-    for o in over.rglob("*") if over else []:
-        r = o.relative_to(over)
-        if o.is_file() and not (src / r).exists() and r.as_posix() not in skip:
-            (dst / r).parent.mkdir(parents=True, exist_ok=True)
-            copy_if_changed(o, dst / r)
-
-
-# gfx's recorders, compiled again beside goose-ngfx's under a name of their own, as the
-# overlay's recorders of the same name are facades that call one or the other: each file,
-# its copy's name, and its namespace's line before and after. A recorder never names its
-# own namespace, so the copy is the same code.
-GFX_RECORDERS = [
-    ("app/gpu.goose", "app/gpu_gfx.goose", "namespace gpu;", "namespace gpu_gfx;"),
-    ("app/host_gpu.goose", "app/host_gfx.goose", "namespace host_gpu;", "namespace host_gfx;"),
-    ("app/scene_gpu.goose", "app/scene_gfx.goose", "namespace scene_gpu;", "namespace scene_gfx;"),
-    ("app/draw_gpu.goose", "app/draw_gfx.goose", "namespace draw_gpu;", "namespace draw_gfx;"),
-    ("app/widgets_gpu.goose", "app/widgets_gfx.goose", "namespace widgets_gpu;", "namespace widgets_gfx;"),
-    ("render3d/render3d_gpu.goose", "render3d/render3d_gfx.goose", "namespace render3d;", "namespace render3d_gfx;"),
-    ("app/photo_gpu.h", "app/photo_gfx.h", None, None),
-]
-# The app's recorders' two halves, which the root file imports as it does every app file.
-HALVES = ["gpu_gfx", "gpu_ngfx", "host_gfx", "host_ngfx", "scene_gfx", "scene_ngfx", "draw_gfx", "draw_ngfx",
-          "widgets_gfx", "widgets_ngfx"]
-
-
-def prune(tree):
-    """Removes from the tree's src/ what has no source any more (a file deleted or renamed
-    in src/ or src/ngfx/), so no stale header or blob is built in: what scripts/ngfx.py
-    writes itself stays (the gfx recorders' copies, renderer.c, and the blobs in
-    app/shaders/)."""
-    made = {dst for _, dst, _, _ in GFX_RECORDERS} | {"app/renderer.c"}
-    for f in (tree / "src").rglob("*"):
-        r = f.relative_to(tree / "src").as_posix()
-        if not f.is_file() or r in made or r.startswith("app/shaders/"):
-            continue
-        if not (ROOT / "src" / r).exists() and not (ROOT / "src/ngfx" / r).exists():
-            f.unlink()
-
-
-def gfx_recorders(tree):
-    for src, dst, before, after in GFX_RECORDERS:
-        text = (ROOT / "src" / src).read_text(encoding="utf-8")
-        if before:
-            assert text.count(before) == 1, f"{src}: not one '{before}'"
-            text = text.replace(before, after)
-        write_if_changed(tree / "src" / dst, text)
+def write_if_changed(path, text):
+    if not path.exists() or path.read_text(encoding="utf-8") != text:
+        path.write_bytes(text.encode())
 
 
 def rel(frm, to):
     return os.path.relpath(to, frm).replace("\\", "/")
 
 
-def tree(program, tree=TREE):
-    """build/ngfx/tree/ (or another): the program with src/ngfx/ laid over it; the root
-    file's path."""
-    sync(ROOT / "src", tree / "src", ROOT / "src/ngfx", skip={"app/renderer.c"})
-    gfx_recorders(tree)
-    prune(tree)
-    for part in ["strings", "assets"]:
-        sync(ROOT / part, tree / part)
-    # SMAA's tables, which gfx's 3D recorder embeds from there.
-    (tree / "third_party/smaa").mkdir(parents=True, exist_ok=True)
-    for name in ["area.bin", "search.bin"]:
-        copy_if_changed(ROOT / "third_party/smaa" / name, tree / "third_party/smaa" / name)
-    masters = ROOT / "design/backgrounds/masters"
-    if masters.exists():
-        (tree / "design/backgrounds/masters").mkdir(parents=True, exist_ok=True)
-        for f in [*masters.glob("*-2048.jpg"), *masters.glob("*-2048-6x6.astc")]:
-            copy_if_changed(f, tree / "design/backgrounds/masters" / f.name)
-    # Settings' board pictures (scripts/board_thumbs.py), embedded the same way.
-    boards = ROOT / "design/boards"
-    if boards.exists():
-        (tree / "design/boards").mkdir(parents=True, exist_ok=True)
-        for f in [*boards.glob("*.jpg"), *boards.glob("*.astc")]:
-            copy_if_changed(f, tree / "design/boards" / f.name)
-    app = tree / "src/app"
-    root = app / program.name
-    text = (ROOT / "src/app" / program.name).read_text(encoding="utf-8")
-    text = text.replace("import os;\n", f'import os;\nimport ngfx from "{rel(app, NGFX)}";\n', 1)
-    # Before the facades, whose globals may take the halves' (draw_gpu's shader blocks).
-    text = text.replace("import .draw_gpu;\n", "".join(f"import .{h};\n" for h in HALVES) + "import .draw_gpu;\n", 1)
-    write_if_changed(root, text)
-    build = (ROOT / "src/app/draughts.build").read_text(encoding="utf-8")
-    includes = [rel(app, ROOT / "third_party/goose_gfx/third_party/nuklear/demo/common/filebrowser"),
-                rel(app, NGFX / "native"), rel(app, ROOT / "third_party/goose_gfx/src/gfx"),
-                rel(app, ROOT / "third_party/goose_gfx/third_party/SDL/src/video/khronos")]
-    build = re.sub(r"c_include\s*=\s*\[[^\]]*\];",
-                   "c_include = [" + ", ".join(f'"{p}"' for p in includes) + "];", build)
-    # renderer.c, the check before a window and the window shown (src/ngfx/app/), with the
-    # app's version and commit, which key the crash marker.
-    build = build.replace('c_sources = ["', 'c_sources = ["renderer.c", "', 1)
+def prepare():
+    """build/ngfx/'s link to the checkout (a junction on Windows, which needs no rights) and
+    draughts_version.h; and a check that the root's sidecar has all of the app's C."""
+    OUT.mkdir(parents=True, exist_ok=True)
+    if not LINK.exists() or LINK.resolve() != NGFX:
+        if LINK.is_symlink() or LINK.exists():
+            LINK.unlink() if LINK.is_symlink() else os.rmdir(LINK)
+        if native.WINDOWS:
+            import _winapi
+            _winapi.CreateJunction(str(NGFX), str(LINK))
+        else:
+            LINK.symlink_to(NGFX, target_is_directory=True)
     commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
-    renderer = (ROOT / "src/ngfx/app/renderer.c").read_text(encoding="utf-8")
-    write_if_changed(app / "renderer.c", renderer.replace("@VERSION@", f"{native.VERSION_NAME} {commit}"))
-    write_if_changed(app / "draughts.build", build)
-    return root
+    write_if_changed(OUT / "draughts_version.h", f'#define DRAUGHTS_VERSION "{native.VERSION_NAME} {commit}"\n')
+    app = {p.name for p in native.sidecar(ROOT / "src/app/draughts.goose", "c_sources")}
+    ours = {p.name for p in native.sidecar(ROOTFILE, "c_sources")}
+    assert app <= ours, f"src/ngfx/draughts_ngfx.build lacks the app's {sorted(app - ours)}"
 
 
-def write_if_changed(path, text):
-    if not path.exists() or path.read_text(encoding="utf-8") != text:
-        path.write_bytes(text.encode())
-
-
-def shaders(tree=TREE, sdk=None):
-    """The Slang modules compiled into blobs in the tree's src/app/shaders/, where stale:
+def shaders(sdk=None):
+    """The Slang modules compiled into blobs in build/ngfx/blobs/, where stale:
     src/ngfx/shaders/ and those written from gfx's GLSL (ngfx_2d_shaders.py,
     ngfx_3d_shaders.py), side by side in build/ngfx/shaders/. sdk names the SDK the
-    metallibs are for (NGFX_METAL_SDK, iphoneos for iOS and iPadOS), else the Mac's."""
+    metallibs are for (NGFX_METAL_SDK, iphoneos for iOS and iPadOS), else the Mac's; the
+    blobs of another SDK's are all made again."""
     gen = OUT / "shaders"
     gen.mkdir(parents=True, exist_ok=True)
     hand = {f.name: f for f in (ROOT / "src/ngfx/shaders").glob("*.slang")}
@@ -205,11 +117,13 @@ def shaders(tree=TREE, sdk=None):
     for name, text in written.items():
         write_if_changed(gen / name, text)
     src = sorted(gen.glob("*.slang"))
-    out = tree / "src/app/shaders"
+    out = BLOBS
     out.mkdir(parents=True, exist_ok=True)
-    # SMAA's tables, which render3d embeds beside the blobs.
-    for name in ["area", "search"]:
-        copy_if_changed(smaa / f"{name}.bin", out / f"smaa_{name}.bin")
+    made_for = out / "sdk.txt"
+    if not made_for.exists() or made_for.read_text() != (sdk or ""):
+        for f in out.glob("*.blob"):
+            f.unlink()
+        made_for.write_text(sdk or "")
     newest = max(f.stat().st_mtime for f in [*src, gen / "SMAA.hlsl"])
     parts = ["common.slang", "glsl.slang", "r3d.slang", "r3d_frame.slang"]
     stale = [f for f in src if f.name not in parts
@@ -236,29 +150,30 @@ def check_setup():
         sys.exit("set NGFX_SLANGC to slangc 2026.18.2 or later (goose-ngfx's docs/development.md)")
 
 
-def ios_tree(program):
-    """The tree for iOS and iPadOS (scripts/ios.py --ngfx): build/ngfx/ios/tree/, its
-    blobs' metallibs compiled for iphoneos, as a Mac's don't load there. Its root file."""
+def ios_root():
+    """The root for iOS and iPadOS (scripts/ios.py --ngfx), its blobs' metallibs compiled
+    for iphoneos, as a Mac's don't load there (the next Mac build compiles them again)."""
     check_setup()
-    tree_dir = OUT / "ios/tree"
-    root = tree(program.resolve(), tree_dir)
-    shaders(tree_dir, "iphoneos")
-    return root
+    prepare()
+    shaders("iphoneos")
+    return ROOTFILE
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("program", type=Path)
+    ap.add_argument("program", type=Path, help="the gfx build's root, src/app/draughts.goose")
     ap.add_argument("--run", action="store_true", help="run it after building")
     ap.add_argument("args", nargs="*", help="the program's flags, after --")
     a = ap.parse_args()
     check_setup()
-    root = tree(a.program.resolve())
+    if a.program.resolve() != ROOT / "src/app/draughts.goose":
+        sys.exit(f"{a.program}: only src/app/draughts.goose has a twin holding both renderers")
+    prepare()
     shaders()
-    exe = OUT / f"{root.stem}{EXE}"
+    exe = OUT / f"draughts{EXE}"
     # gfx from the patched sources, as the gfx build's: the window comes from gfx opened
     # WINDOW_ONLY (kaitk/goose_gfx's window-only), and ngfx draws into it.
-    native.run(platform_build.patched_goose(), "build", "-o", exe, root.name, cwd=root.parent)
+    native.run(platform_build.patched_goose(), "build", "-o", exe, ROOTFILE.name, cwd=ROOTFILE.parent)
     if a.run:
         sys.exit(subprocess.run([str(exe), *a.args]).returncode)
 

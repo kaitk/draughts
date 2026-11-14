@@ -1,5 +1,5 @@
 // Recording the UI's quads (widgets.goose) through goose-ngfx, beside gfx's
-// src/app/widgets_gpu.goose in the build that holds both (scripts/ngfx.py): its shaders, written from that file's GLSL
+// src/app/widgets_gpu.goose in the build that holds both (draughts_ngfx.goose): its shaders, written from that file's GLSL
 // (scripts/ngfx_2d_shaders.py) and built ahead, and the quads copied into each frame's
 // memory that draws them as they come, an instanced draw per run of one pipeline pulling
 // them from there.
@@ -28,12 +28,12 @@ struct Gpu {
     compose:   nx::Pipeline,
 }
 
-fn new() -> Gpu {
+fn init(g: Gpu&) {
     let desc = ngfx::PipelineDesc { blend: ngfx::BLEND_PREMULTIPLIED };
-    return Gpu { pipelines: [nx::pipeline(embed_file("shaders/ui_base.blob"), desc),
-                             nx::pipeline(embed_file("shaders/ui_icons.blob"), desc),
-                             nx::pipeline(embed_file("shaders/ui_faces.blob"), desc)],
-                 addr: 0, compose: nx::pipeline(embed_file("shaders/compose.blob"), desc) };
+    g = Gpu { pipelines: [nx::pipeline(embed_file("../../build/ngfx/blobs/ui_base.blob"), desc),
+                             nx::pipeline(embed_file("../../build/ngfx/blobs/ui_icons.blob"), desc),
+                             nx::pipeline(embed_file("../../build/ngfx/blobs/ui_faces.blob"), desc)],
+                 addr: 0, compose: nx::pipeline(embed_file("../../build/ngfx/blobs/compose.blob"), desc) };
 }
 
 // Nothing: the quads go into each frame's memory.
@@ -41,17 +41,17 @@ fn buffers(g: Gpu&, all: const gui::Quad[:]) {}
 
 // The first n of `all` into this frame's memory, changed or not: each frame that draws
 // them, as they come or into the kept layer, takes them anew.
-fn quads(g: Gpu&, all: const gui::Quad[:], n: i64, changed: bool) { g.addr = ngfx::frame_data(bytes_of(all[..n])); }
+fn upload(g: Gpu&, all: const gui::Quad[:], n: i64, changed: bool) { g.addr = ngfx::frame_data(bytes_of(all[..n])); }
 
-fn begin_layer(layer: gpu::Texture) { nx::begin_pass(layer, nx::Texture { 0 }, float4 { 0.0, 0.0, 0.0, 0.0 }); }
+fn begin_layer(g: Gpu&, layer: gpu::Texture) { nx::begin_pass(layer, nx::Texture { 0 }, float4 { 0.0, 0.0, 0.0, 0.0 }); }
 
 // Ends the layer's pass, what it wrote made visible to the screen's pass that samples it.
-fn end_layer() {
+fn end_layer(g: Gpu&) {
     ngfx::end_pass();
     ngfx::barrier(ngfx::TARGET_WRITE, ngfx::FRAGMENT_READ);
 }
 
-fn compose(g: Gpu&, layer: gpu::Texture, sampler: gpu::Sampler) {
+fn compose_layer(g: Gpu&, layer: gpu::Texture, sampler: gpu::Sampler) {
     nx::bind(g.compose);
     ngfx::draw(ngfx::root(ComposeRoot { layer: nx::index(layer), smp: nx::index(sampler), pad0: 0, pad1: 0 }), 3);
 }

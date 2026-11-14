@@ -12,7 +12,7 @@ r3d.slang, the stage's inputs, outputs, uniform blocks, storage buffers and samp
 become statics filled from one root (r3d.slang's Root) at the entry points, and the
 position's y is negated for NoGraphicsAPI's clip space, which leaves the picture as gfx
 draws it (ngfx_glsl.py, which ngfx_2d_shaders.py shares). The root's layout per module is
-written at the top of each file, which src/ngfx/render3d/render3d_gpu.goose fills to
+written at the top of each file, which src/ngfx/render3d_ngfx.goose fills to
 match.
 """
 import re

@@ -454,9 +454,9 @@ def main():
     out = ROOT / "build/ios" / name
     min_ios, label, ngfx_cmake = MIN_IOS, "", []
     if args.ngfx:
-        # The tree holding both renderers (scripts/ngfx.py), its blobs made for iphoneos.
+        # The root holding both renderers (scripts/ngfx.py), its blobs made for iphoneos.
         import ngfx
-        program = ngfx.ios_tree(program)
+        program = ngfx.ios_root()
         # The gfx build's id: the iPhone wouldn't verify a new id of the team (2026-11-11),
         # so this replaces the gfx build, keeping its data, and the gfx build goes back on
         # to compare.

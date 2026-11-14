@@ -8,7 +8,7 @@ calls sources() at every build; on its own it prints them into a folder to read:
 
 Each pipeline becomes one Slang module (ngfx_glsl.py), its stages' GLSL put together as
 the gfx recorder's embed_shader calls put it. Its root is its own, written at the top of
-the file, which the module's recorder in src/ngfx/app/ fills to match: the storage
+the file, which the module's recorder in src/ngfx/ fills to match: the storage
 buffers' addresses, the textures' heap indices and their one sampler's, padded to 16
 bytes, then the uniform blocks' fields, each block once, the vertex stage's first.
 """

@@ -5,9 +5,11 @@
 // taken, the shadow map, and one forward pass into a picture, antialiased.
 //
 // This file is what it draws and when: the state, the theme's steps, what is stale, and
-// each frame's order. Recording it is the renderer's, in the same namespace:
-// render3d_gpu.goose, gfx's (its shaders in shaders.goose and smaa.goose), or in the
-// build scripts/ngfx.py makes goose-ngfx's, src/ngfx/render3d/render3d_gpu.goose.
+// each frame's order. Recording it is the renderer's, through `o`, what the renderer
+// alone holds: render3d::Own and render3d_gpu.goose's calls on it, gfx's (its shaders in
+// shaders.goose and smaa.goose), or render3d_ngfx::Own in the build that holds both
+// (src/ngfx/render3d_ngfx.goose). Each function that records is generic over o's type, so
+// each call (`o.bake(g, ...)`) resolves to one renderer's at compile time.
 //
 // The one package besides app/ that draws, and only the app and tools/board_shot import
 // it; the game's packages stay headless (docs/architecture/README.md).
@@ -31,14 +33,6 @@ import math;
 import .render3d_gpu;
 
 import model3d from "../model3d";
-
-// Theme `kind`'s photograph, or 0 when it isn't built in: the ASTC image as stored, or
-// the JPEG decoded and scaled down to `decoded` square (src/app/photo.c and
-// background.c, which the app and tools/board_shot both compile). Declared once, here; the app's
-// scene calls it too.
-extern fn draughts_photo_id(kind: i64, decoded: i64) -> u32;
-
-fn draughts_photo(kind: i64, decoded: i64) -> Texture { Texture { draughts_photo_id(kind, decoded) } }
 
 // Laid out as the shaders' blocks (shaders::FRAME), std140: all vec4s and mat4s, each
 // a multiple of 16 bytes, so the two match field for field when their sizes do
@@ -261,7 +255,6 @@ struct Gpu {
     turn:           f32,            // the board's turn (view3d::View.turn), the light turned with it
     bake_ms:        f64,            // the last bake's time and the photograph's (measuring)
     photo_ms:       f64,
-    own:            Own,            // what only this renderer holds (render3d_gpu.goose)
 }
 
 // The plain fade behind the 3D game: dimmed to 0.8, as the flat game's background is.
@@ -271,44 +264,44 @@ let PLAIN_DIM = 0.8;
 // on the GPU, two passes of a Gaussian of sigma 5.6 texels), and its harmonics, taken
 // `grey` of the way to grey. Decodes the photograph, so only at setup and on a theme
 // change, never in the frame loop.
-fn photograph(g: Gpu&, kind: i64, grey: f32, sh: float4[9]&) {
-    for k in 3 { photo_part(g, kind, grey, sh, k); }
+fn photograph<O>(o: O&, g: Gpu&, kind: i64, grey: f32, sh: float4[9]&) {
+    for k in 3 { o.photo_part(g, kind, grey, sh, k); }
 }
 
 // Bakes the plan and the frame map (or one of them), and waits for them: at setup, on a
 // theme change, a new board size, and when the wood's model, its finish or the marble
 // switches.
-fn bake_surfaces(g: Gpu&, plan: bool = true, frame: bool = true) {
+fn bake_surfaces<O>(o: O&, g: Gpu&, plan: bool = true, frame: bool = true) {
     let t = look(g, g.look);
     if plan {
-        bake(g, g.plan_albedo, g.plan_normal, g.side, g.side, 0.0, model3d::plan_extent(), t);
+        o.bake(g, g.plan_albedo, g.plan_normal, g.side, g.side, 0.0, model3d::plan_extent(), t);
     }
     if frame {
-        full_frame(g);
+        full_frame(o, g);
         let rows = g.frame_rows;
-        bake(g, g.frame_albedo, g.frame_normal, g.side, rows, 1.0, model3d::frame_extent(rows, g.side), t);
-        flat_frame(g);
+        o.bake(g, g.frame_albedo, g.frame_normal, g.side, rows, 1.0, model3d::frame_extent(rows, g.side), t);
+        flat_frame(o, g);
     }
-    gpu_flush();
+    o.gpu_flush();
 }
 
 // A target with its mips for a baked surface, down to the level whose shorter side is 1
 // pixel. The full chain runs to the longer side's 1: a mitred frame map's (2048 × 1152)
 // last level would be 1 × 0 in SDL's mip blits, a zero-height blit that loses the device
 // on a Mali-G68 (the Galaxy A33; docs/goose-findings.md). Nothing samples that far down.
-fn baked(w: i64, h: i64, format: i32) -> Texture {
+fn baked<O>(o: O&, w: i64, h: i64, format: i32) -> Texture {
     var mips = 1;
     while min(w, h) >> mips > 0 { mips++; }
-    return gpu_mipped(w, h, format, mips);
+    return o.gpu_mipped(w, h, format, mips);
 }
 
 // The kept image at `size`, made again only when the size changes; the pass's own
 // targets when draw() needs them (pass_targets), the kept backdrop and depth when it
 // keeps them.
-fn targets(g: Gpu&, size: int2) {
-    give_back(g);
-    if g.image.id != 0 { gpu_release(g.image); }
-    g.image = gpu_target(size.x, size.y);
+fn targets<O>(o: O&, g: Gpu&, size: int2) {
+    give_back(o, g);
+    if g.image.id != 0 { o.gpu_release(g.image); }
+    g.image = o.gpu_target(size.x, size.y);
     g.kept_for[0] = float4_0;
     g.size = size;
 }
@@ -319,15 +312,15 @@ fn targets(g: Gpu&, size: int2) {
 // next draw() keeps it again. The kept image shows the board until it changes; the next
 // draw() makes the rest again. Not inside a pass: it submits what was recorded, as
 // released textures are freed after the next submit is done, and none comes at rest.
-fn rest(g: Gpu&) {
-    give_back(g);
-    gpu_flush();
+fn rest<O>(o: O&, g: Gpu&) {
+    give_back(o, g);
+    o.gpu_flush();
 }
 
 // rest()'s releases, also before a resize's new targets.
-fn give_back(g: Gpu&) {
+fn give_back<O>(o: O&, g: Gpu&) {
     let held = [g.color, g.depth, g.edges, g.weights, g.kept_depth, g.kept_backdrop];
-    for t in held { if t.id != 0 { gpu_release(t); } }
+    for t in held { if t.id != 0 { o.gpu_release(t); } }
     g.color = Texture { 0 };
     g.edges = Texture { 0 };
     g.weights = Texture { 0 };
@@ -348,19 +341,19 @@ fn resting(g: Gpu&) -> bool {
 // its ambient, and fills the frame's block with its light and colors. Only what changed
 // is done again; outside the frame loop's steady state: at setup, on a theme change, a
 // new board size.
-fn apply(g: Gpu&, which: i64, n: i64, photo: i64 = -1) {
-    if theme_begin(g, which, n) {
+fn apply<O>(o: O&, g: Gpu&, which: i64, n: i64, photo: i64 = -1) {
+    if theme_begin(o, g, which, n) {
         let t0 = clock();
-        bake_surfaces(g);
+        bake_surfaces(o, g);
         g.bake_ms = (clock() - t0) * 1000.0;
     }
-    theme_photo(g, which, photo);
-    theme_end(g, which, n);
+    theme_photo(o, g, which, photo);
+    theme_end(o, g, which, n);
 }
 
 // apply()'s start: the look's carving taken, and for a new look or board size the frame
 // map's targets as its frame wants. Whether the surfaces are to be baked.
-fn theme_begin(g: Gpu&, which: i64, n: i64) -> bool {
+fn theme_begin<O>(o: O&, g: Gpu&, which: i64, n: i64) -> bool {
     own_carving(g, looks::shown(which, g.spring));
     let side = if g.want_side > 0 { g.want_side } else { model3d::BAKE_SIDE };
     guard which != g.look || n != g.n || side != g.side else { return false; }
@@ -369,98 +362,98 @@ fn theme_begin(g: Gpu&, which: i64, n: i64) -> bool {
     g.look = which;
     g.n = n;
     if side != g.side {
-        if g.side != 0 { gpu_release_waited(g.plan_albedo, g.plan_normal); }
-        g.plan_albedo = baked(side, side, RGBA8_SRGB);
-        g.plan_normal = baked(side, side, RGBA8);
+        if g.side != 0 { o.gpu_release_waited(g.plan_albedo, g.plan_normal); }
+        g.plan_albedo = baked(o, side, side, RGBA8_SRGB);
+        g.plan_normal = baked(o, side, side, RGBA8);
         g.side = side;
         // The frame map's width is the side too: made again below.
         if g.frame_rows != 0 {
-            gpu_release_waited(g.frame_albedo, g.frame_normal);
+            o.gpu_release_waited(g.frame_albedo, g.frame_normal);
             g.frame_rows = 0;
         }
     }
     let rows = model3d::frame_rows(t, side);
     if rows != g.frame_rows {
         if g.frame_rows != 0 {
-            gpu_release_waited(g.frame_albedo, g.frame_normal);
+            o.gpu_release_waited(g.frame_albedo, g.frame_normal);
         }
-        g.frame_albedo = baked(side, rows, RGBA8_SRGB);
-        g.frame_normal = baked(side, rows, RGBA8);
+        g.frame_albedo = baked(o, side, rows, RGBA8_SRGB);
+        g.frame_normal = baked(o, side, rows, RGBA8);
         g.frame_rows = rows;
         g.frame_flat = false;
     }
-    full_frame(g);
+    full_frame(o, g);
     return true;
 }
 
 // A flat marble frame's normal is the same everywhere (BAKE_FRAG writes it so, and its
 // mips are it too): once baked, its map, 22 MB with mips, is given back for a 4 × 4 of
 // that value, which samples the same. full_frame() makes the map again to bake into.
-fn flat_frame(g: Gpu&) {
+fn flat_frame<O>(o: O&, g: Gpu&) {
     let t = look(g, g.look);
     guard !g.frame_flat && marbled(g, t) else { return; }
-    gpu_release(g.frame_normal);
-    g.frame_normal = gpu_target(4, 4);
+    o.gpu_release(g.frame_normal);
+    g.frame_normal = o.gpu_target(4, 4);
     let half: f32 = 128.0 / 255.0;
-    gpu_clear(g.frame_normal, float4 { half, half, 1.0, 1.0 });
+    o.gpu_clear(g.frame_normal, float4 { half, half, 1.0, 1.0 });
     g.frame_flat = true;
 }
 
-fn full_frame(g: Gpu&) {
+fn full_frame<O>(o: O&, g: Gpu&) {
     guard g.frame_flat else { return; }
-    gpu_release(g.frame_normal);
-    g.frame_normal = baked(g.side, g.frame_rows, RGBA8);
+    o.gpu_release(g.frame_normal);
+    g.frame_normal = baked(o, g.side, g.frame_rows, RGBA8);
     g.frame_flat = false;
 }
 
 // apply()'s photograph (`photo`, -1 the look's own) blurred and its ambient taken, when
 // it is another than the one shown.
-fn theme_photo(g: Gpu&, which: i64, photo: i64) {
+fn theme_photo<O>(o: O&, g: Gpu&, which: i64, photo: i64) {
     let t = look(g, which);
     let kind = if photo >= 0 { photo } else { t.photo };
     guard kind != g.photo_kind || g.frame.light_dir.w == 0.0 else { return; }
     g.photo_kind = kind;
     let t0 = clock();
     var sh: float4[9] = [float4_0; 9];
-    photograph(g, kind, t.ambient.z, sh);
+    photograph(o, g, kind, t.ambient.z, sh);
     g.frame.sh = sh;
-    gpu_flush();
+    o.gpu_flush();
     g.photo_ms = (clock() - t0) * 1000.0;
 }
 
 // Step k (0 to model3d::THEME_STEPS - 1) of putting a theme on, as apply(which, n, photo)
 // does at once, as model3d::step plans it. Recording only; the frame's submit runs it.
-fn theme_step(g: Gpu&, which: i64, n: i64, photo: i64, k: i64) {
+fn theme_step<O>(o: O&, g: Gpu&, which: i64, n: i64, photo: i64, k: i64) {
     let t = look(g, g.look);
     let rows = g.frame_rows;
     let st = model3d::step(k, rows, g.side);
     if st.what == model3d::BEGIN {
         // A new look or size is baked whatever theme_begin finds: the steps bake in turn.
-        theme_begin(g, which, n);
+        theme_begin(o, g, which, n);
     } else if st.what == model3d::PIPELINE || st.what == model3d::PLAN {
-        bake(g, g.plan_albedo, g.plan_normal, g.side, g.side, 0.0, model3d::plan_extent(), t, st.y0, st.y1, st.mips);
+        o.bake(g, g.plan_albedo, g.plan_normal, g.side, g.side, 0.0, model3d::plan_extent(), t, st.y0, st.y1, st.mips);
     } else if st.what == model3d::FRAME {
-        bake(g, g.frame_albedo, g.frame_normal, g.side, rows, 1.0, model3d::frame_extent(rows, g.side), t, st.y0,
+        o.bake(g, g.frame_albedo, g.frame_normal, g.side, rows, 1.0, model3d::frame_extent(rows, g.side), t, st.y0,
              st.y1, st.mips);
     } else if st.what == model3d::PHOTO_PIPELINES {
-        photo_pipelines(g);
+        o.photo_pipelines(g);
     } else {
         let part = st.part;
         let lk = look(g, which);
         let kind = if photo >= 0 { photo } else { lk.photo };
         var sh = g.frame.sh;
-        photo_part(g, kind, lk.ambient.z, sh, part);
+        o.photo_part(g, kind, lk.ambient.z, sh, part);
         g.frame.sh = sh;
         if part == 2 {
             g.photo_kind = kind;
-            theme_end(g, which, n);
+            theme_end(o, g, which, n);
         }
     }
 }
 
 // apply()'s end: the key light, and the look's colors in the frame's block.
-fn theme_end(g: Gpu&, which: i64, n: i64) {
-    flat_frame(g);
+fn theme_end<O>(o: O&, g: Gpu&, which: i64, n: i64) {
+    flat_frame(o, g);
     let t = look(g, which);
     // The key light, from the upper left; the photograph's ambient.
     light(g);
@@ -559,15 +552,15 @@ fn choose(g: Gpu&, wood: i64, marble: i64, spring: i64 = -1) {
 fn set_bake(g: Gpu&, side: i64) { g.want_side = side; }
 
 // Switches the wood's model, with its finish, and bakes the surfaces again.
-fn set_wood(g: Gpu&, model: i64) {
+fn set_wood<O>(o: O&, g: Gpu&, model: i64) {
     choose(g, model, -1);
-    bake_surfaces(g);
+    bake_surfaces(o, g);
 }
 
 // Sets the wood's model and finish, and the marble and its look (the prototype's tuning
 // panel), baking again only the surfaces they show on: the wood's where the look has
 // wood, the frame map where its frame is stone.
-fn tune(g: Gpu&, wood: i64, finish: looks::Finish, marble: i64, stone: looks::Marble) {
+fn tune<O>(o: O&, g: Gpu&, wood: i64, finish: looks::Finish, marble: i64, stone: looks::Marble) {
     let t = look(g, g.look);
     let wood_changed = wood != g.wood || finish != g.finish;
     let marble_changed = marble != g.marble || stone != g.stone;
@@ -577,7 +570,7 @@ fn tune(g: Gpu&, wood: i64, finish: looks::Finish, marble: i64, stone: looks::Ma
     g.stone = stone;
     let plan = wood_changed && t.light_fig.w > 0.5;
     let frame = (wood_changed && t.frame_fig.w > 0.5) || (marble_changed && t.frame_fig.w < 0.5 && t.build.w < 0.5);
-    if plan || frame { bake_surfaces(g, plan, frame); }
+    if plan || frame { bake_surfaces(o, g, plan, frame); }
     g.frame.edge = model3d::linear4(t.edge);
     if marbled(g, t) { g.frame.edge.w = 0.0; }
 }
@@ -594,7 +587,7 @@ fn own_carving(g: Gpu&, id: i64) {
 // look on again, its surfaces baked, when it shows: spring's look switched (with the
 // new look's own carving, and its own wood if it has one), or a carved look's carving
 // changed.
-fn carve(g: Gpu&, spring: i64, c: looks::Carving) {
+fn carve<O>(o: O&, g: Gpu&, spring: i64, c: looks::Carving) {
     let s = clamp(spring, 0, looks::SPRINGS - 1);
     guard s != g.spring || c != g.carving else { return; }
     let was = looks::shown(g.look, g.spring);
@@ -615,7 +608,7 @@ fn carve(g: Gpu&, spring: i64, c: looks::Carving) {
     }
     let which = g.look;
     g.look = -1;
-    apply(g, which, g.n);
+    apply(o, g, which, g.n);
 }
 
 // Puts the pieces on the GPU: `inst` two float4s an instance (view3d::Scene.inst), the
@@ -625,18 +618,18 @@ fn carve(g: Gpu&, spring: i64, c: looks::Carving) {
 // (view3d::Scene's, row * n + column); `selected` the selected piece's foot and radius
 // (w 0 for none); `dim` the board's under a win. The shadow map is drawn again with the
 // next frame when `moved`.
-fn place(g: Gpu&, inst: const float4[:], alphas: const f32[:], squares: const float4[:], marks: const float4[:],
+fn place<O>(o: O&, g: Gpu&, inst: const float4[:], alphas: const f32[:], squares: const float4[:], marks: const float4[:],
          lit: const float4[:], selected: float4, dim: f32, moved: bool) {
     let count = min(inst.len, 2 * MAX_INSTANCES);
-    if count > 0 { gpu_update(g.instances, bytes_of(inst[..count])); }
+    if count > 0 { o.gpu_update(g.instances, bytes_of(inst[..count])); }
     g.instance_count = count / 2;
     let fading = min(alphas.len, g.instance_count);
     g.solid = g.instance_count - fading;
     for i in fading { g.alphas[i] = alphas[i]; }
-    gpu_update(g.squares, bytes_of(squares[..min(squares.len, SQUARE_ENTRIES)]));
+    o.gpu_update(g.squares, bytes_of(squares[..min(squares.len, SQUARE_ENTRIES)]));
     for i in SQUARE_ENTRIES { g.squares_now[i] = if i < squares.len { squares[i] } else { float4_0 }; }
-    gpu_update(g.marks, bytes_of(marks[..min(marks.len, SQUARES)]));
-    if lit.len > 0 { gpu_update(g.glows, bytes_of(lit[..min(lit.len, SQUARES)])); }
+    o.gpu_update(g.marks, bytes_of(marks[..min(marks.len, SQUARES)]));
+    if lit.len > 0 { o.gpu_update(g.glows, bytes_of(lit[..min(lit.len, SQUARES)])); }
     // What MARKS_FRAG without PULSE draws: the selected piece's ring, a last move's tint,
     // a target or a stop, a still must-capture ring, a glow ring, a lit square, a
     // count's pips, or a crowning square's shade. With none, the board's pass leaves its quad out.
@@ -659,22 +652,22 @@ fn place(g: Gpu&, inst: const float4[:], alphas: const f32[:], squares: const fl
 // (premultiplied), for show() to lay over a backdrop drawn apart (backdrop(), or the
 // app's photograph). With `keep_depth` the board's depth is kept too, at 1x, for
 // marks_over. Recording only; the caller's frame submits it.
-fn draw(g: Gpu&, view_proj: Mat, eye: float3, out: Texture, size: int2, shadow_every: bool = false,
+fn draw<O>(o: O&, g: Gpu&, view_proj: Mat, eye: float3, out: Texture, size: int2, shadow_every: bool = false,
         backdrop: bool = true, keep_depth: bool = false) {
-    if size.x != g.size.x || size.y != g.size.y { targets(g, size); }
-    pass_targets(g);
+    if size.x != g.size.x || size.y != g.size.y { targets(o, g, size); }
+    o.pass_targets(g);
     let target = if out.id == 0 { g.image } else { out };
     g.frame.view_proj = view_proj;
     g.frame.eye = model3d::f4(eye, 1.0);
     g.frame.screen = float4 { size.x, size.y, g.frame.screen.z, 0.0 };
-    keep_backdrop(g, size);
+    keep_backdrop(o, g, size);
     if g.shadow_dirty || shadow_every {
-        shadow_pass(g);
+        o.shadow_pass(g);
         g.shadow_dirty = false;
     }
-    occlusion(g);
-    board_pass(g, target, size, backdrop);
-    if keep_depth { draw_depth(g); }
+    occlusion(o, g);
+    o.board_pass(g, target, size, backdrop);
+    if keep_depth { o.draw_depth(g); }
 }
 
 // The pieces' occlusion of the field drawn into g.occ_map where the squares changed since
@@ -685,7 +678,7 @@ fn draw(g: Gpu&, view_proj: Mat, eye: float3, out: Texture, size: int2, shadow_e
 // nothing. Recording only, before the board's pass.
 let OCC_REACH = 2;
 fn same4(a: float4, b: float4) -> bool { a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w }
-fn occlusion(g: Gpu&) {
+fn occlusion<O>(o: O&, g: Gpu&) {
     let n = g.n;
     var c0 = n;
     var r0 = n;
@@ -722,7 +715,7 @@ fn occlusion(g: Gpu&) {
     let y0 = if r0 == 0 { 0 } else { max(floor((r0 * u + at) * k) as i64 - 1, 0) };
     let x1 = if c1 == n - 1 { OCC_SIZE } else { min(ceil(((c1 + 1) * u + at) * k) as i64 + 1, OCC_SIZE) };
     let y1 = if r1 == n - 1 { OCC_SIZE } else { min(ceil(((r1 + 1) * u + at) * k) as i64 + 1, OCC_SIZE) };
-    occ_pass(g, x0, y0, x1, y1);
+    o.occ_pass(g, x0, y0, x1, y1);
     g.occ_squares = g.squares_now;
     g.occ_n = n;
 }
@@ -733,10 +726,10 @@ fn occlusion(g: Gpu&) {
 // (task 059: 7% of the Pixel 7a's GPU cycles a frame). Before draw()'s passes, which
 // come with every change but the photograph's alone; till the next, backdrop() draws
 // it as it was. Recording only.
-fn keep_backdrop(g: Gpu&, size: int2) {
+fn keep_backdrop<O>(o: O&, g: Gpu&, size: int2) {
     guard !g.live && !kept_current(g, size) else { return; }
-    if g.kept_backdrop.id == 0 { g.kept_backdrop = gpu_target(size.x, size.y); }
-    kept_pass(g);
+    if g.kept_backdrop.id == 0 { g.kept_backdrop = o.gpu_target(size.x, size.y); }
+    o.kept_pass(g);
     g.kept_for = backdrop_key(g, size);
 }
 

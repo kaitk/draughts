@@ -36,7 +36,7 @@ let PIECES: i32[5][23] = [
 // 0.5 a stack's upper disc, 1 selected or 2 a stack's lower disc, seed), the squares the
 // field's occlusion reads (top, foot, radius, occupied; then the piece's middle), no
 // marks, and where the selected piece stands.
-fn place(g: render3d::Gpu&) {
+fn place(r3d: render3d::Own&, g: render3d::Gpu&) {
     var inst:    float4[..64] = [];
     var squares: float4[200]  = [float4_0; 200];
     var marks:   float4[100]  = [float4 { 0.0, 0.0, 0.0, -1.0 }; 100];
@@ -66,7 +66,7 @@ fn place(g: render3d::Gpu&) {
         squares[2 * (p[0] * 8 + p[1]) + 1] = float4 { x, z, 0.0, 0.0 };
         if sel { selected = float4 { x, lift, z, view3d::RADIUS * scale }; }
     }
-    render3d::place(g, inst[..inst.len], fades[..0], squares[..], marks[..], lit[..], selected, 0.0, true);
+    render3d::place(r3d, g, inst[..inst.len], fades[..0], squares[..], marks[..], lit[..], selected, 0.0, true);
 }
 
 // The index of the flag's value in argv, or -1.
@@ -109,8 +109,10 @@ fn main() {
     defer gfx::close();
 
     var g = default<render3d::Gpu>();
-    render3d::setup(g, render3d::SAMPLES, render3d::SHADOW_16);
-    render3d::set_aa(g, render3d::AA);
+    // What gfx's 3D recorder holds beside the Gpu, the first argument of render3d's calls that record.
+    var r3d = default<render3d::Own>();
+    render3d::setup(r3d, g, render3d::SAMPLES, render3d::SHADOW_16);
+    render3d::set_aa(r3d, g, render3d::AA);
     render3d::choose(g, -1, looks::MARBLE, looks::SPRING_LOOK);
     // As draw3d::choose_look: spring's birch is spring's look 0 to the renderer, and each
     // look takes its own wood's model and that model's finish.
@@ -120,13 +122,13 @@ fn main() {
     let own = looks::wood_for(shown);
     render3d::choose(g, if own >= 0 { own } else { model3d::WOOD_MODEL }, -1);
     g.finish = looks::finish_for(shown, g.wood);
-    render3d::apply(g, look, 8);
-    place(g);
+    render3d::apply(r3d, g, look, 8);
+    place(r3d, g);
 
     let pitch = view3d::PITCH * PI / 180.0;
     let eye = view3d::TARGET + float3 { 0.0, sin(pitch), cos(pitch) } * view3d::DISTANCE;
     let proj = gfx::perspective(view3d::FOV * PI / 180.0, w as f32 / h, view3d::NEAR, view3d::FAR);
-    render3d::draw(g, gfx::mul(proj, gfx::look_at(eye, view3d::TARGET, float3 { 0.0, 1.0, 0.0 })), eye,
+    render3d::draw(r3d, g, gfx::mul(proj, gfx::look_at(eye, view3d::TARGET, float3 { 0.0, 1.0, 0.0 })), eye,
                    gfx::screen(), gfx::screen_size());
     guard gfx::screenshot(argv[1]) else { abort(str("could not save ", argv[1])); }
 }

@@ -1,7 +1,7 @@
 // Recording the board's draws (draw.goose) through gfx: the board's and the pieces'
 // shaders, their pipelines, and the pieces' storage buffers. The widgets' shaders take
-// THEME_BLOCK, SHARED_BLOCK, and MAN_BLOCK from here. The goose-ngfx build's
-// src/ngfx/app/draw_gpu.goose takes this file's place.
+// THEME_BLOCK, SHARED_BLOCK, and MAN_BLOCK from here. On goose-ngfx, draw_ngfx beside it
+// (src/ngfx/); the drawer calls whichever its backend holds (`be.draw`, render.goose).
 namespace draw_gpu;
 import std;
 import vec;
@@ -442,11 +442,11 @@ struct Gpu {
     overlay:        gfx::Buffer,
 }
 
-fn new() -> Gpu {
+fn init(g: Gpu&) {
     let board_fs = embed_shader("frag", shaders::FADE_FN, THEME_BLOCK, SHARED_BLOCK, BOARD_FRAG);
     let piece_vs = embed_shader("vert", SHARED_BLOCK, STACK_BLOCK, PIECE_VERT);
     let piece_fs = embed_shader("frag", shaders::FADE_FN, THEME_BLOCK, SHARED_BLOCK, MAN_BLOCK, STACK_BLOCK, PIECE_FRAG);
-    return Gpu { board_pipeline: gfx::pipeline(gpu::full_vert(), board_fs, gfx::PipelineDesc {}),
+    g = Gpu { board_pipeline: gfx::pipeline(gpu::full_vert(), board_fs, gfx::PipelineDesc {}),
                  piece_pipeline: gfx::pipeline(piece_vs, piece_fs, gfx::PipelineDesc { blend: gfx::BLEND_PREMULTIPLIED }),
                  pieces: gfx::Buffer { 0 }, overlay: gfx::Buffer { 0 } };
 }
@@ -459,8 +459,8 @@ fn buffers(g: Gpu&, all: const board::Piece[:], over: const board::Piece[:]) {
 
 // The board's pieces, the first n of `all`, and those over the UI likewise; each buffer
 // updated whole, so SDL can cycle it.
-fn pieces(g: Gpu&, all: const board::Piece[:], n: i64) { gfx::update_buffer(g.pieces, bytes_of(all)); }
-fn over(g: Gpu&, all: const board::Piece[:], n: i64) { gfx::update_buffer(g.overlay, bytes_of(all)); }
+fn upload(g: Gpu&, all: const board::Piece[:], n: i64) { gfx::update_buffer(g.pieces, bytes_of(all)); }
+fn upload_over(g: Gpu&, all: const board::Piece[:], n: i64) { gfx::update_buffer(g.overlay, bytes_of(all)); }
 
 // The board pass's one triangle with uniforms u, in the open pass.
 fn board(g: Gpu&, sc: scene::Scene&, t: theme::Theme, u: draw::BoardUniforms) {

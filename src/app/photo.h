@@ -29,4 +29,8 @@ bool draughts_photo_pixels(int64_t kind, int64_t decoded, bool astc_sampled, dra
 // Gives back what the pixels hold, once they are uploaded.
 void draughts_photo_done(draughts_pixels *p);
 
+// Theme `kind`'s photograph uploaded by `upload` (photo.c), the ASTC image tried first when
+// `astc`; the texture's id, or 0.
+uint32_t draughts_photo_with(int64_t kind, int64_t decoded, bool astc, uint32_t (*upload)(const draughts_pixels *));
+
 #endif

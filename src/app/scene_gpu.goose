@@ -1,10 +1,13 @@
 // Recording the scene's passes (scene.goose) through gfx: its shaders, its pipelines,
 // made for each use and released after, and the passes into its textures. The
-// goose-ngfx build's src/ngfx/app/scene_gpu.goose takes this file's place.
+// drawer calls them on `be.scene` (render.goose): on goose-ngfx, scene_ngfx's (src/ngfx/).
 namespace scene_gpu;
 import std;
 import vec;
 import gfx;
+
+// Nothing kept: gfx's pipelines are made for each use.
+struct Gpu {}
 
 // The plain fade in a pass's part `to` (pixels: origin, size), from the theme's colors.
 let FADE_FRAG = """
@@ -23,37 +26,37 @@ struct Blur { dir: float4 }
 
 struct Shrink { from: float4, to: float4 }
 
-fn sampler() -> gpu::Sampler { gfx::sampler(gfx::LINEAR, gfx::CLAMP) }
+fn sampler(g: Gpu&) -> gpu::Sampler { gfx::sampler(gfx::LINEAR, gfx::CLAMP) }
 
 // A 1×1 black texture, the stand-in for a photograph there is none of.
-fn black() -> gpu::Texture {
+fn black(g: Gpu&) -> gpu::Texture {
     let none = gfx::texture2d(1, 1);
     var px: u8[4] = [0; 4];
     gfx::update_texture(none, px);
     return none;
 }
 
-fn shrinker() -> gpu::Pipeline { gfx::pipeline(gpu::full_vert(), embed_shader("frag", shaders::SHRINK_FRAG), gfx::PipelineDesc {}) }
-fn blurrer() -> gpu::Pipeline { gfx::pipeline(gpu::full_vert(), embed_shader("frag", shaders::BLUR_FRAG), gfx::PipelineDesc {}) }
-fn fader() -> gpu::Pipeline {
+fn shrinker(g: Gpu&) -> gpu::Pipeline { gfx::pipeline(gpu::full_vert(), embed_shader("frag", shaders::SHRINK_FRAG), gfx::PipelineDesc {}) }
+fn blurrer(g: Gpu&) -> gpu::Pipeline { gfx::pipeline(gpu::full_vert(), embed_shader("frag", shaders::BLUR_FRAG), gfx::PipelineDesc {}) }
+fn fader(g: Gpu&) -> gpu::Pipeline {
     gfx::pipeline(gpu::full_vert(), embed_shader("frag", shaders::FADE_FN, FADE_FRAG), gfx::PipelineDesc {})
 }
 
 // A pipeline the passes are done with.
-fn done(p: gpu::Pipeline) { gfx::release(p); }
+fn done(g: Gpu&, p: gpu::Pipeline) { gfx::release(p); }
 
 // A pass into `dst`, cleared to black with `clear`, else keeping what it holds.
-fn begin(dst: gpu::Texture, clear: bool) {
+fn begin(g: Gpu&, dst: gpu::Texture, clear: bool) {
     var desc = gfx::PassDesc { clear_color: clear, .. };
     desc.color[0] = dst;
     gfx::begin_pass(desc);
 }
 
-fn end() { gfx::end_pass(); }
+fn end(g: Gpu&) { gfx::end_pass(); }
 
 // Draws src's part `from` (uv origin and size) shrunk into the part `to` (pixels) of the
 // open pass's target.
-fn shrink(p: gpu::Pipeline, sampler: gpu::Sampler, src: gpu::Texture, from: float4, to: float4) {
+fn shrink(g: Gpu&, p: gpu::Pipeline, sampler: gpu::Sampler, src: gpu::Texture, from: float4, to: float4) {
     gfx::viewport(to.x, to.y, to.z, to.w);
     gfx::bind(p);
     gfx::bind_texture(gfx::FRAGMENT, 0, src, sampler);
@@ -62,8 +65,8 @@ fn shrink(p: gpu::Pipeline, sampler: gpu::Sampler, src: gpu::Texture, from: floa
 }
 
 // One blur pass from src into dst, in direction dir (Blur's fields).
-fn blur(p: gpu::Pipeline, sampler: gpu::Sampler, src: gpu::Texture, dst: gpu::Texture, dir: float4) {
-    begin(dst, true);
+fn blur(g: Gpu&, p: gpu::Pipeline, sampler: gpu::Sampler, src: gpu::Texture, dst: gpu::Texture, dir: float4) {
+    begin(g, dst, true);
     gfx::bind(p);
     gfx::bind_texture(gfx::FRAGMENT, 0, src, sampler);
     gfx::uniforms(gfx::FRAGMENT, 0, Blur { dir: dir });
@@ -73,7 +76,7 @@ fn blur(p: gpu::Pipeline, sampler: gpu::Sampler, src: gpu::Texture, dst: gpu::Te
 
 // The plain fade into the part `to` (pixels) of the open pass's target, in a theme's
 // colors.
-fn fade(p: gpu::Pipeline, to: float4, top: float4, low: float4, light: float4) {
+fn fade(g: Gpu&, p: gpu::Pipeline, to: float4, top: float4, low: float4, light: float4) {
     gfx::viewport(to.x, to.y, to.z, to.w);
     gfx::bind(p);
     gfx::uniforms(gfx::FRAGMENT, 0, Fade { to: to, top: top, low: low, light: light });
@@ -82,7 +85,7 @@ fn fade(p: gpu::Pipeline, to: float4, top: float4, low: float4, light: float4) {
 
 // Releases a texture the pass before drew from, if any, and waits for the GPU: a released
 // texture is freed only once the GPU is done with it, so the next is made in its place.
-fn let_go(t: gpu::Texture) {
+fn let_go(g: Gpu&, t: gpu::Texture) {
     if t.id != 0 { gfx::release(t); }
     gfx::flush();
 }

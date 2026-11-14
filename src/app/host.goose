@@ -5,7 +5,8 @@
 // safe area and the display's scale, the wake timer, the storage folder, the locales,
 // Android's launch cover, back, and close, the memory malloc keeps, and the display's
 // rate under the 3D board. Drawing is render.goose's; opening the window, presenting, and
-// the screenshot are the renderer's (host_gpu.goose).
+// the screenshot are the renderer's (backend::open, and each backend's `host`: host_gpu.goose's
+// on gfx).
 namespace host;
 import std;
 import vec;
@@ -71,20 +72,20 @@ fn open(title: const u8[:], width: i64, height: i64, full: bool, no_vsync: bool)
     let shown = if platform() != DESKTOP || full { gfx::WINDOW_FULLSCREEN | gfx::WINDOW_RESIZABLE } else { gfx::WINDOW_RESIZABLE };
     let flags = shown | SYSTEM_GAMEPADS;
     draughts_choose_gpu();
-    host_gpu::open(title, width, height, flags, no_vsync);
+    backend::open(title, width, height, flags, no_vsync);
     return Host { erase: gfx::scancode("Backspace"), enter: gfx::scancode("Return"), pad_enter: gfx::scancode("Keypad Enter"), .. };
 }
 
-fn close() { host_gpu::close(); }
+fn close() { backend::with() { be => be.host.close() } }
 
 // Ends the frame, presenting what its pass drew, and waits for an event when nothing
 // did; false once the window is asked to close, or the GPU device is lost, and the loop
 // ends.
-fn frame() -> bool { host_gpu::frame() }
+fn frame() -> bool { backend::with() { be => be.host.frame() } }
 
 // Whether the window wants a frame drawn though nothing changed (exposed, shown or
 // resized).
-fn exposed() -> bool { host_gpu::exposed() }
+fn exposed() -> bool { backend::with() { be => be.host.exposed() } }
 
 // The frames presented so far: the first is on screen once the second frame() returns.
 fn frame_count() -> i64 { gfx::frame_count() }
@@ -163,7 +164,7 @@ fn keyboard(h: Host&, typing: bool, tap: i64) {
 }
 
 // Saves the screen as last shown to `path`, a PNG.
-fn screenshot(path: const u8[:]) { host_gpu::screenshot(path); }
+fn screenshot(path: const u8[:]) { backend::with() { be => be.host.screenshot(path) } }
 
 // The app's storage folder into `out`, and the system's locales; each returns its bytes.
 fn storage(out: u8[:]) -> const u8[:] { out[..draughts_storage(out)] }

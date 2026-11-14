@@ -1,8 +1,8 @@
 // Drawing the UI layer's quads (gui/): one storage buffer of quads and one instanced
 // draw, each quad worked out in the fragment shader as a signed-distance shape
 // (docs/architecture/rendering.md, "UI layer", "Scene and glass", "Controls"). What is
-// drawn and when is this file's; the shaders and GPU calls are the renderer's
-// (widgets_gpu.goose).
+// drawn and when is this file's; the shaders and GPU calls are the backend's, `be.widgets`
+// (widgets_gpu.goose on gfx; gpu.goose).
 namespace widgets;
 import std;
 import vec;
@@ -19,7 +19,6 @@ import badges from "../badges";
 struct View { screen: float4, hole: float4, clip: float4 }
 
 struct Widgets {
-    gpu:    widgets_gpu::Gpu,  // the pipelines (FRAG's three: the base kinds, the icons, the faces) and the quads on the GPU
     upload: gui::Quad[gui::MAX_QUADS],
     atlas:  gpu::Texture,     // the text's glyphs (text.goose), or 0 before they're baked
     thumbs: gpu::Texture,     // the seasons' thumbnails (scene.goose), or 0 until loaded
@@ -38,9 +37,9 @@ struct Widgets {
     live:    bool,              // the app's --keep off: drawn as they come each frame, never kept
 }
 
-fn new() -> Widgets {
+fn new<B>(be: B&) -> Widgets {
+    be.widgets.init();
     var w = Widgets {
-        gpu:     widgets_gpu::new(),
         upload:  [gui::Quad {}; gui::MAX_QUADS],
         atlas:   gpu::no_texture(),
         thumbs:  gpu::no_texture(),
@@ -56,16 +55,16 @@ fn new() -> Widgets {
         stale:   true,
         live:    false,
     };
-    widgets_gpu::buffers(w.gpu, w.upload);
-    w.badges = bake_badges();
+    be.widgets.buffers(w.upload);
+    w.badges = bake_badges(be);
     return w;
 }
 
 // The badges' animals as badges::atlas bakes them (about 54 KB, a few ms), the distance
 // texture the shader carves from, made once at start.
-fn bake_badges() -> gpu::Texture {
+fn bake_badges<B>(be: B&) -> gpu::Texture {
     let px = badges::atlas();
-    return gpu::texture_r8(badges::CELL, badges::COUNT * badges::CELL, px[..]);
+    return be.texture_r8(badges::CELL, badges::COUNT * badges::CELL, px[..]);
 }
 
 // Before the frame's passes (copies and passes can't run inside one), with what frame()
@@ -75,7 +74,7 @@ fn bake_badges() -> gpu::Texture {
 // the same as the last frame's, they are drawn once into a layer the screen's size,
 // which frame() then lays with a fetch a pixel. While they change, frame() draws them as
 // they come, so a moving UI pays no layer.
-fn prepare(w: Widgets&, quads: const gui::Quad[:], clip: float4, s: scene::Scene&, t: theme::Theme, width: f32,
+fn prepare<B>(be: B&, w: Widgets&, quads: const gui::Quad[:], clip: float4, s: scene::Scene&, t: theme::Theme, width: f32,
            height: f32, hole: float4, tall: f32 = 0.0) {
     let n = quads.len;
     let view = view_of(clip, s, width, height, hole, tall);
@@ -86,7 +85,7 @@ fn prepare(w: Widgets&, quads: const gui::Quad[:], clip: float4, s: scene::Scene
     if same && n > 0 { same = same_bytes(bytes_of(quads[..n]), bytes_of(w.upload[..n])); }
     if !same {
         for i in n { w.upload[i] = quads[i]; }
-        if n > 0 { widgets_gpu::quads(w.gpu, w.upload, n, true); }
+        if n > 0 { be.widgets.upload(w.upload, n, true); }
         w.count = n;
         w.view = view;
         w.theme = t;
@@ -96,33 +95,33 @@ fn prepare(w: Widgets&, quads: const gui::Quad[:], clip: float4, s: scene::Scene
         return;
     }
     guard !w.kept && n > 0 else { return; }
-    widgets_gpu::quads(w.gpu, w.upload, n, false);
+    be.widgets.upload(w.upload, n, false);
     guard !w.live else { return; }
     let lw = width as i64;
     let lh = height as i64;
     if w.layer.id == 0 || w.layer_w != lw || w.layer_h != lh {
-        if w.layer.id != 0 { gpu::release(w.layer); }
-        w.layer = gpu::target(lw, lh);
+        if w.layer.id != 0 { be.release(w.layer); }
+        w.layer = be.target(lw, lh);
         w.layer_w = lw;
         w.layer_h = lh;
     }
-    widgets_gpu::begin_layer(w.layer);
-    draw_quads(w, n, s, t, view);
-    widgets_gpu::end_layer();
+    be.widgets.begin_layer(w.layer);
+    draw_quads(be, w, n, s, t, view);
+    be.widgets.end_layer();
     w.kept = true;
 }
 
 // Draws the frame's quads in the open pass, over what is there, none inside `hole` but
 // those on the board (gui::on_board), `tall` pixels tall (0: as tall as wide): the kept
 // layer when prepare() drew them into it.
-fn frame(w: Widgets&, quads: const gui::Quad[:], clip: float4, s: scene::Scene&, t: theme::Theme, width: f32,
+fn frame<B>(be: B&, w: Widgets&, quads: const gui::Quad[:], clip: float4, s: scene::Scene&, t: theme::Theme, width: f32,
          height: f32, hole: float4, tall: f32 = 0.0) {
     guard quads.len > 0 else { return; }
     if w.kept {
-        widgets_gpu::compose(w.gpu, w.layer, s.sampler);
+        be.widgets.compose_layer(w.layer, s.sampler);
         return;
     }
-    draw_quads(w, quads.len, s, t, view_of(clip, s, width, height, hole, tall));
+    draw_quads(be, w, quads.len, s, t, view_of(clip, s, width, height, hole, tall));
 }
 
 fn view_of(clip: float4, s: scene::Scene&, width: f32, height: f32, hole: float4, tall: f32) -> View {
@@ -138,15 +137,15 @@ fn same_bytes(a: const u8[:], b: const u8[:]) -> bool {
 
 // The text's coverage, R8, `size` texels, as the UI's glyph texture in place of the last
 // (text::bake): the quads drawn again.
-fn atlas(w: Widgets&, px: const u8[:], size: int2) {
-    if w.atlas.id != 0 { gpu::release(w.atlas); }
-    w.atlas = gpu::texture_r8(size.x, size.y, px);
+fn atlas<B>(be: B&, w: Widgets&, px: const u8[:], size: int2) {
+    if w.atlas.id != 0 { be.release(w.atlas); }
+    w.atlas = be.texture_r8(size.x, size.y, px);
     w.stale = true;
 }
 
 // The `n` uploaded quads in the open pass, in runs of one pipeline (FRAG), in order; the
 // glyphs and the thumbnails the glass copy until there are any.
-fn draw_quads(w: Widgets&, n: i64, s: scene::Scene&, t: theme::Theme, view: View) {
+fn draw_quads<B>(be: B&, w: Widgets&, n: i64, s: scene::Scene&, t: theme::Theme, view: View) {
     let atlas = if w.atlas.id != 0 { w.atlas } else { s.glass };
     let thumbs = if w.thumbs.id != 0 { w.thumbs } else { s.glass };
     var start = 0;
@@ -154,7 +153,7 @@ fn draw_quads(w: Widgets&, n: i64, s: scene::Scene&, t: theme::Theme, view: View
         let p = pipeline_of(w.upload[start]);
         var end = start + 1;
         while end < n && pipeline_of(w.upload[end]) == p { end++; }
-        widgets_gpu::run(w.gpu, p, start, end - start, s, t, view, atlas, thumbs, w.badges);
+        be.widgets.run(p, start, end - start, s, t, view, atlas, thumbs, w.badges);
         start = end;
     }
 }

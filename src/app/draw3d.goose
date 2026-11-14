@@ -101,11 +101,11 @@ fn want_material(d: Drawer&, material: i64) {
 }
 
 // The renderer set up: its meshes, buffers, pipelines, and the baked surfaces' targets.
-fn set_up(d: Drawer&) {
+fn set_up<B>(be: B&, d: Drawer&) {
     let t0 = clock();
-    render3d::setup(d.gpu, render3d::SAMPLES, d.look);
+    be.r3d.setup(d.gpu, render3d::SAMPLES, d.look);
     render3d::set_bake(d.gpu, d.side);
-    render3d::set_aa(d.gpu, d.aa, d.samples);
+    be.r3d.set_aa(d.gpu, d.aa, d.samples);
     render3d::choose(d.gpu, d.wood, d.marble, d.spring);
     d.ready = true;
     d.setup_ms = (clock() - t0) * 1000.0;
@@ -172,13 +172,13 @@ fn greying(d: Drawer&) -> bool { d.grey_at >= 0.0 }
 // pipeline made, the bake in bands, the photograph's pipelines, the photograph in three
 // parts); the pass's pipelines in render3d::WARM_STEPS. What the first frame on the 3D
 // board did at once before (about 1.1 s on the Pixel 7a by task 015's numbers). A new
-// theme or size takes the theme's steps again. Each step is waited for (gpu::flush), so
+// theme or size takes the theme's steps again. Each step is waited for (be.flush), so
 // its GPU work stays in its own frame, and timed (prep_ms).
-fn prepare(d: Drawer&, kind: i64, n: i64, plain: bool, now: f64) {
+fn prepare<B>(be: B&, d: Drawer&, kind: i64, n: i64, plain: bool, now: f64) {
     guard !ready(d, kind, n, plain) else { return; }
     let t0 = clock();
     if !d.ready {
-        set_up(d);
+        set_up(be, d);
     } else if d.kind != kind || d.material != d.want || d.n != n || d.plain != plain || d.themed < model3d::THEME_STEPS {
         if d.kind != kind || d.material != d.want || d.n != n {
             // A new theme or material (or one changed partway) starts its steps again,
@@ -199,20 +199,20 @@ fn prepare(d: Drawer&, kind: i64, n: i64, plain: bool, now: f64) {
         d.gpu.plain = plain;
         d.gpu.fade = [t.fade_top, t.fade_low, t.fade_light];
         let look = if d.themed == 0 { choose_look(d, kind) } else { d.gpu.look };
-        render3d::theme_step(d.gpu, look, n, kind, d.themed);
+        render3d::theme_step(be.r3d, d.gpu, look, n, kind, d.themed);
         d.themed++;
     } else {
-        render3d::warm(d.gpu, d.warmed);
+        be.r3d.warm(d.gpu, d.warmed);
         d.warmed++;
     }
-    gpu::flush();
+    be.flush();
     let ms = (clock() - t0) * 1000.0;
     d.apply_ms += ms;
     if d.prep_ms.len < 48 { d.prep_ms.push(ms); }
     // Done: the next frame draws the board, its shadow map too.
     if ready(d, kind, n, plain) {
         d.fresh = true;
-        cover(d);
+        cover(be, d);
     }
 }
 
@@ -220,45 +220,45 @@ fn prepare(d: Drawer&, kind: i64, n: i64, plain: bool, now: f64) {
 // rendering.md, "Window resizing"): this board's graded backdrop, which the flat game's
 // blurred photograph doesn't match, drawn once at the cover's side.
 let COVER = 512;    // resize.c's SIDE
-fn cover(d: Drawer&) {
+fn cover<B>(be: B&, d: Drawer&) {
     guard draw::draughts_resize_covers() else { return; }
-    let t = gpu::target(COVER, COVER);
+    let t = be.target(COVER, COVER);
     let screen = d.gpu.frame.screen;
-    gpu::begin_pass(t, float4 { 0.0, 0.0, 0.0, 1.0 });
-    render3d::backdrop(d.gpu, 1.0, int2 { COVER, COVER });
-    gpu::end_pass();
+    be.begin_pass(t, float4 { 0.0, 0.0, 0.0, 1.0 });
+    be.r3d.backdrop(d.gpu, 1.0, int2 { COVER, COVER });
+    be.end_pass();
     d.gpu.frame.screen = screen;
-    draw::cover_with(t, float4 { 0.0, 0.0, 0.0, 1.0 });
-    gpu::release(t);
+    draw::cover_with(be, t, float4 { 0.0, 0.0, 0.0, 1.0 });
+    be.release(t);
 }
 
 // Everything the 3D board holds on the GPU given back (the board back to flat), the
 // flags kept; the next frame that needs it prepares it again.
-fn drop(d: Drawer&) {
+fn drop<B>(be: B&, d: Drawer&) {
     guard d.ready else { return; }
-    render3d::release(d.gpu);
+    be.r3d.release(d.gpu);
     d = Drawer { aa: d.aa, samples: d.samples, look: d.look, side: d.side, wood: d.wood, marble: d.marble, summer: d.summer, autumn: d.autumn, winter: d.winter,
                 spring: d.spring, want: d.want, .. };
 }
 
 // The A key (task 071's comparison): the pass's antialiasing switched to the renderer's
 // next way (render3d::aa_next), the board drawn again with it.
-fn toggle_aa(d: Drawer&) {
-    d.aa = render3d::aa_next(d.aa);
-    print("3D board: antialiasing ", render3d::aa_name(d.aa));
+fn toggle_aa<B>(be: B&, d: Drawer&) {
+    d.aa = be.r3d.aa_next(d.aa);
+    print("3D board: antialiasing ", be.r3d.aa_name(d.aa));
     guard d.ready else { return; }
-    render3d::set_aa(d.gpu, d.aa, d.samples);
+    be.r3d.set_aa(d.gpu, d.aa, d.samples);
     d.fresh = true;
 }
 
 // A device whose ready 3D board can't keep up with its display (src/app/display.c): MSAA
 // at render3d::FEW_SAMPLES from now on, the board drawn again with it.
-fn fewer_samples(d: Drawer&) {
+fn fewer_samples<B>(be: B&, d: Drawer&) {
     guard d.samples > render3d::FEW_SAMPLES else { return; }
     d.samples = render3d::FEW_SAMPLES;
     print("3D board: too slow for the display, ", d.samples, "x MSAA");
     guard d.ready && d.aa == render3d::AA_MSAA else { return; }
-    render3d::set_aa(d.gpu, d.aa, d.samples);
+    be.r3d.set_aa(d.gpu, d.aa, d.samples);
     d.fresh = true;
 }
 
@@ -266,11 +266,11 @@ fn fewer_samples(d: Drawer&) {
 // Android phone, where they cost the A33 half of the 9 (task 081); in 9 on an Android
 // tablet, whose larger pieces show the 4's stepped edges (task 084); in 16 on a desktop
 // and on iOS, whose GPUs pay for a softer edge (task 086). The board drawn again if it changes.
-fn screen_shadow(d: Drawer&, look: i32) {
+fn screen_shadow<B>(be: B&, d: Drawer&, look: i32) {
     guard look != d.look else { return; }
     d.look = look;
     guard d.ready else { return; }
-    render3d::set_shadow(d.gpu, look);
+    be.r3d.set_shadow(d.gpu, look);
     d.fresh = true;
 }
 
@@ -292,9 +292,9 @@ fn screen_bake(d: Drawer&, small: bool) {
 // while the board is on screen, so a move made after a pause draws at once, and given back
 // (render3d::rest) once it isn't: a screen without it, or the app in the background. The
 // next draw makes them again.
-fn rest(d: Drawer&, shown: bool) {
+fn rest<B>(be: B&, d: Drawer&, shown: bool) {
     guard d.ready && !shown && !render3d::resting(d.gpu) else { return; }
-    render3d::rest(d.gpu);
+    render3d::rest(be.r3d, d.gpu);
 }
 
 // Draws the frame board::fill left in b, on the flat layout l, seen through v, into the
@@ -302,7 +302,7 @@ fn rest(d: Drawer&, shown: bool) {
 // the `plain` fade behind it, the screen `size`. `which` tells the boards apart (the
 // game's, a puzzle's, settings' preview). While `hold` (a transition) the image is drawn
 // again only for another view or board.
-fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f64, size: int2, kind: i64,
+fn frame<B>(be: B&, d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f64, size: int2, kind: i64,
          plain: bool, which: i64 = 0, hold: bool = false) {
     d.gpu.live = d.live;
     d.redraw = false;
@@ -310,7 +310,7 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
     if !ready(d, kind, l.n, plain) {
         // A step of getting ready instead; the image already shown (a theme changing)
         // stays, else the shell's still mark shows.
-        prepare(d, kind, l.n, plain, now);
+        prepare(be, d, kind, l.n, plain, now);
         d.frames++;
         return;
     }
@@ -363,11 +363,11 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
         }
     }
     render3d::turn_light(d.gpu, v.turn);
-    render3d::place(d.gpu, d.upload[..d.upload.len], d.alphas[..d.alphas.len], s.squares[..], s.field[..], s.lit[..],
-                    s.selected, s.dim, d.shadow);
+    render3d::place(be.r3d, d.gpu, d.upload[..d.upload.len], d.alphas[..d.alphas.len], s.squares[..], s.field[..],
+                    s.lit[..], s.selected, s.dim, d.shadow);
     let m = view3d::matrix(v, size.x, size.y);
     let vp = render3d::Mat { c0: m.c0, c1: m.c1, c2: m.c2, c3: m.c3 };
-    render3d::draw(d.gpu, vp, v.eye, gpu::no_texture(), size, false, false, s.pulsing);
+    render3d::draw(be.r3d, d.gpu, vp, v.eye, gpu::no_texture(), size, false, false, s.pulsing);
     d.drawn = d.scene;
     if d.appear_at < 0.0 { d.appear_at = now; }
     // A new theme's first image: back from grey.
@@ -379,13 +379,13 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
 // puzzle, 0 behind home and settings, between in a transition), then the board, the
 // bounds it was drawn at (the view's rect) put at `place`, as opaque as `fade`. Both
 // fade in over APPEAR from the board's first image at `now`; with none yet, nothing.
-fn show(d: Drawer&, blur: f32, place: float4, fade0: f32, size: int2, now: f64) {
+fn show<B>(be: B&, d: Drawer&, blur: f32, place: float4, fade0: f32, size: int2, now: f64) {
     guard shows(d) else { return; }
     let k0 = clamp((now - d.appear_at) / APPEAR, 0.0, 1.0) as f32;
     let grey = grey(d, now);
     if d.grey_at >= 0.0 && now >= d.grey_at + grey_span(d) { d.grey_at = -1.0; }
     let fade = fade0 * k0;
-    if blur > 0.0 { render3d::backdrop(d.gpu, min(blur, 1.0) * k0, size); }
+    if blur > 0.0 { be.r3d.backdrop(d.gpu, min(blur, 1.0) * k0, size); }
     guard fade > 0.0 else { return; }
     // The whole image, the board's soft shadow round it too, moved and scaled as its
     // bounds are: at rest exactly as drawn.
@@ -393,6 +393,6 @@ fn show(d: Drawer&, blur: f32, place: float4, fade0: f32, size: int2, now: f64) 
     guard r.z > 0.0 else { return; }
     let k = place.z / r.z;
     let whole = float4 { place.x - r.x * k, place.y - r.y * k, size.x * k, size.y * k };
-    render3d::show(d.gpu, float4 { 0.0, 0.0, size.x, size.y }, whole, min(fade, 1.0), size, grey);
-    if d.drawn.pulsing { render3d::marks_over(d.gpu, d.drawn.pulse, d.drawn.next, d.drawn.cursor, whole, min(fade, 1.0), size); }
+    be.r3d.show(d.gpu, float4 { 0.0, 0.0, size.x, size.y }, whole, min(fade, 1.0), size, grey);
+    if d.drawn.pulsing { be.r3d.marks_over(d.gpu, d.drawn.pulse, d.drawn.next, d.drawn.cursor, whole, min(fade, 1.0), size); }
 }

@@ -1,5 +1,7 @@
-// photo.c's upload through goose-ngfx's C API, beside gfx's src/app/photo_gpu.h in the
-// build that holds both (scripts/ngfx.py; photo_gpu.h there picks one).
+// The season's photograph uploaded through goose-ngfx's C API (render3d_ngfx::photo),
+// beside gfx's in src/app/photo.c in the build that holds both (draughts_ngfx.goose).
+#include <stdint.h>
+#include "photo.h"
 #include "ngfx_api.h"
 
 // Whether the GPU samples ASTC in 6 × 6 blocks.
@@ -17,4 +19,8 @@ static uint32_t photo_upload(const draughts_pixels *p) {
         t.id = 0;
     }
     return t.id;
+}
+
+uint32_t draughts_photo_ngfx_id(int64_t kind, int64_t decoded) {
+    return draughts_photo_with(kind, decoded, photo_astc_sampled(), photo_upload);
 }
