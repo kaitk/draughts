@@ -517,8 +517,11 @@ whenever a frame drops more than before (2026-11-14).
   edge case gets a position in `test/rules/`, checked against `test/perft.py moves`.
 - An expected output changes only with a reason in the commit. Read the diff
   `--bless` makes before committing it.
-- Tests run through TinyCC by default and with `--build` natively. A difference
-  between the two is a compiler finding (`agents/goose.md`).
+- Tests run through TinyCC by default, but for `SLOW`'s in `test/run_tests.py`, built
+  at -O2; `--build` builds all, `--tinycc` runs all through TinyCC. A difference between
+  the two is a compiler finding (`agents/goose.md`). A test that takes TinyCC's code more
+  than about 5 s goes in `SLOW`: through TinyCC the whole run took 60 s, `aim` alone
+  28 s, and with the six slowest built 20 s (2026-11-14).
 
 ## On the tablet
 

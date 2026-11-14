@@ -2,15 +2,17 @@
 """Runs the tests under test/<area>/, as goose-http's and plod's runners do.
 
 Each test/<area>/<name>.goose is a program. Its stdout must be
-test/expected/<area>/<name>.out, and it must exit 0. By default every test runs in
-batches through the compiler's TinyCC, a `goose --multi-test` run per batch,
-in a few seconds. --build builds each with `goose build` (C at -O2) into
+test/expected/<area>/<name>.out, and it must exit 0. By default the tests run in
+batches through the compiler's TinyCC, a `goose --multi-test` run per batch, but
+for SLOW's, whose search TinyCC's code takes 9 to 28 s over, which each build at
+-O2 at once beside the batches: about 20 s on a 10-core M-series Mac, against
+60 s all through TinyCC (--tinycc). --build builds each with `goose build` (C at -O2) into
 build/test/<area>/<name>/ and runs that instead, which is what the app ships.
 Every failure is reported, with a count per area at the end.
 
 GOOSE names the compiler (default: the pinned release under build/).
 
-    test/run_tests.py [-j JOBS] [--build] [--bless] [-v] [AREA | NAME ...]
+    test/run_tests.py [-j JOBS] [--build | --tinycc] [--bless] [-v] [AREA | NAME ...]
 """
 
 import argparse
@@ -33,6 +35,16 @@ GOOSE = os.environ.get("GOOSE", str(ROOT / "build" / RELEASE))
 TIMEOUT = 300
 # Directories under test/ that hold the tests' shared packages, not tests.
 PACKAGES = {"drive"}
+# The tests TinyCC's code runs longest, by area/name (seconds through TinyCC, and built
+# at -O2 then run, on an M-series Mac, 2026-11-14): built at -O2 by default.
+SLOW = {
+    "game/aim",         # 28, 8
+    "game/camera",      # 12, 8
+    "game/pace",        # 12, 3
+    "ai/blunders",      # 11, 2
+    "ai/levels",        # 9, 2
+    "puzzles/library",  # 9, 2
+}
 # What `goose --multi-test` ends each file's part of stdout and stderr with.
 MULTIMARK = "==== goose --multi-test: exit"
 
@@ -69,6 +81,8 @@ def multi_test(files):
 
 def build_and_run(test):
     work = OUT / test.parent.name / test.stem
+    if work.is_file():          # an executable of the old flat build/test/<name>/
+        work.unlink()
     work.mkdir(parents=True, exist_ok=True)
     exe = work / test.stem
     code, out, err = run([GOOSE, "build", "-o", exe, test.relative_to(ROOT).as_posix()])
@@ -92,26 +106,32 @@ def main():
     ap.add_argument("names", nargs="*", metavar="AREA | NAME")
     ap.add_argument("-j", "--jobs", type=int, default=os.cpu_count() or 1)
     ap.add_argument("--build", action="store_true", help="build each natively and run that")
+    ap.add_argument("--tinycc", action="store_true", help="run SLOW's through TinyCC too")
     ap.add_argument("--bless", action="store_true", help="write each run's stdout as expected")
     ap.add_argument("-v", "--verbose", action="store_true", help="print the passes too")
     args = ap.parse_args()
 
     tests = find_tests(args.names)
+    key = lambda t: f"{t.parent.name}/{t.stem}"
+    built = (tests if args.build else [] if args.tinycc else
+             [t for t in tests if key(t) in SLOW])
+    batched = [t for t in tests if t not in built]
     with concurrent.futures.ThreadPoolExecutor(args.jobs) as pool:
-        if args.build:
-            results = dict(zip(tests, pool.map(build_and_run, tests)))
-        else:
-            files = [t.relative_to(ROOT).as_posix() for t in tests]
-            size = max(1, -(-len(files) // args.jobs))
-            done = {}
-            for part in pool.map(multi_test, [files[i:i + size] for i in range(0, len(files), size)]):
-                done.update(part)
-            results = {t: done[t.relative_to(ROOT).as_posix()] for t in tests}
+        # The builds go in first, the longest work, then the batches fill the other workers.
+        builds = [pool.submit(build_and_run, t) for t in built]
+        files = [t.relative_to(ROOT).as_posix() for t in batched]
+        workers = max(1, args.jobs - len(built))
+        size = max(1, -(-len(files) // workers))
+        done = {}
+        for part in pool.map(multi_test, [files[i:i + size] for i in range(0, len(files), size)]):
+            done.update(part)
+        results = {t: done[t.relative_to(ROOT).as_posix()] for t in batched}
+        results.update(zip(built, (f.result() for f in builds)))
 
     failed = set()
     for t in tests:
         code, out, err = results[t]
-        name = f"{t.parent.name}/{t.stem}"
+        name = key(t)
         expected = EXPECTED / t.parent.name / f"{t.stem}.out"
         got = out.rstrip("\n")
         problem, detail = None, ""
@@ -142,7 +162,8 @@ def main():
         n = sum(1 for t in tests if t.parent.name == area)
         bad = sum(1 for t in failed if t.parent.name == area)
         print(f"== {area}: {n - bad} passed" + (f", {bad} failed" if bad else ""))
-    how = "built at -O2" if args.build else "through TinyCC"
+    how = ("built at -O2" if args.build else
+           f"through TinyCC, {len(built)} built at -O2" if built else "through TinyCC")
     print(f"== {len(tests)} tests {how}: " + (f"{len(failed)} failed" if failed else "all passed"))
     sys.exit(1 if failed else 0)
 

@@ -282,16 +282,21 @@ presents: Mesa's `create_immed` buffers at the window's pixel size, and the
 ## Test the rules
 
 ```sh
-test/run_tests.py           # test/<area>/*.goose against test/expected/<area>/, through TinyCC
-test/run_tests.py --build   # the same, each built natively at -O2
+test/run_tests.py           # test/<area>/*.goose against test/expected/<area>/: about 20 s
+test/run_tests.py --build   # the same, each built natively at -O2: about 90 s
+test/run_tests.py --tinycc  # the same, each through TinyCC: about 60 s
 test/run_tests.py --bless   # write each test's output as its expected output
 scripts/test.sh             # the app's shaders, the tests, then perft and the random-game check
 ```
 
+By default the tests run in batches through Goose's TinyCC, but for the few whose search
+takes TinyCC's code 9 to 28 s (`SLOW` in `test/run_tests.py`), which build at -O2 beside
+the batches. The times are a 10-core M-series Mac's.
+
 `scripts/test.sh` also builds `tools/perft.goose` into `build/perft`, which counts moves
 from a position (`build/perft russian 9`, `build/perft international 8 FEN --divide`), and
 runs `test/perft.py compare`: random games, with every position's legal moves checked
-against an independent Python generator. It takes about 20 seconds. On an M-series Mac
+against an independent Python generator. All of it takes about 50 seconds. On an M-series Mac
 the native perft runs at 12 to 16 million positions a second.
 
 ## Time the computer player
