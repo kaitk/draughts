@@ -122,7 +122,10 @@ Tuned by eye on the Mac and a 27" screen (task 068, the user, 2026-11-11):
   everything down); the board gives up that row and its top is level with the glass's, the title and play from here staying
   at the column's head. The tablet's landscape kept as it was: there a row over the board
   would cost it 100 dp of its 726 (14%), the board being the point of the screen, and
-  the user had found the tablet fine.
+  the user had found the tablet fine. The same day the row went to every desktop window
+  in landscape, large or not: in a 1160 × 940 window the column (300 dp) had back and
+  play from here stacked side by side in 64 dp tiles, their words crammed and play from
+  here's running past its tile (the user: fix them).
 - The replay's move shown and best move (2026-11-14, task 087, the user's choices among
   prototypes/replay.html's takes): the way in glow dots with a larger one at each stop,
   the squares' numbers at its stops, and the best move as the game's hint (a ring on its

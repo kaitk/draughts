@@ -112,7 +112,10 @@ marks are made up and disagree with the engine's in places (the engine finds 15-
       level with back (first under the row, which pushed everything down: the user moved
       it up); the board's top level with the glass's, the title and play from here at the
       column's head. Board 943 dp at 1280 × 800 (was 980; its line the short one there,
-      kept clear of back) and 1476 at 2560 × 1440 and 3440 × 1440 (was 1513). Not the tablet: a row there would cost its board
+      kept clear of back) and 1476 at 2560 × 1440 and 3440 × 1440 (was 1513). Then on
+      every desktop window in landscape: at 1160 × 940 back and play from here had been
+      stacked and crammed in the 300 dp column; now play from here is 246 × 64 dp, its
+      icon beside its word, as on the large windows. `test/shell/replay` checks 1160 × 940. Not the tablet: a row there would cost its board
       100 dp of 726. Shot on Windows at 2560 × 1440, 1280 × 800, 3440 × 1440
       (`--touch off`) and the tablet at move 60: right.
 - [ ] Home's menu glass on an ultrawide runs from the window's edge to the capped area's
