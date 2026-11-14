@@ -131,6 +131,10 @@ struct Flags {
     // trying the daily puzzles at a level on a device.
     puzzler_name:   u8[..32] = [],
     puzzler_rating: i64      = -1,
+    // --aa off|msaa|smaa (ngfx's build also ssaa): how the 3D pass is antialiased, by the
+    // renderer's names for its ways (render3d::aa_named, task 071's comparison);
+    // render3d::AA without it or with a name the renderer hasn't
+    aa: i32 = render3d::AA,
     // --no-vsync: presents without waiting for the display, to measure frames uncapped
     // (task 070): gfx's NO_VSYNC, or ngfx's in its build; both turn the Metal layer's
     // display sync off
@@ -316,6 +320,7 @@ fn parse(argv: u8[:][>..]) -> Flags {
             let n, ok = parse_int(v);
             if ok { f.rest = clamp(n, 1, 600); }
         }
+        if a == "--aa" && render3d::aa_named(v) >= 0 { f.aa = render3d::aa_named(v); }
         if a == "--bench" {
             let n, ok = parse_int(v);
             if ok { f.bench = clamp(n, 1, 1000); }

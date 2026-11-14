@@ -51,7 +51,7 @@ struct Frame {
 // With --bench, the photograph's load is timed and printed.
 fn new(kind: i64, plain: bool, f: flags::Flags&) -> Renderer {
     var r = Renderer { d: draw::new(kind, plain, f.bench > 0),
-                      d3: draw3d::Drawer { aa: aa_flag(), wood: f.wood, marble: f.marble, summer: f.summer, autumn: f.autumn,
+                      d3: draw3d::Drawer { aa: f.aa, wood: f.wood, marble: f.marble, summer: f.summer, autumn: f.autumn,
                                            winter: f.winter, spring: f.spring,
                                            timed: f.bench > 0, live: !f.keep, .. },
                       w: widgets::new(), t: text::Text {} };
@@ -61,19 +61,6 @@ fn new(kind: i64, plain: bool, f: flags::Flags&) -> Renderer {
               " ms (decoded or uploaded, shrunk, blurred, waited for)");
     }
     return r;
-}
-
-// --aa, how the 3D pass is antialiased (task 071's comparison), by the names of the
-// renderer's ways (render3d::aa_named: off, msaa, and smaa on gfx; off, msaa, smaa, and
-// ssaa on ngfx); render3d::AA without it or with a name it hasn't.
-fn aa_flag() -> i32 {
-    let a = args();
-    for i in 1..a.len - 1 {
-        guard a[i] == "--aa" else { continue; }
-        let aa = render3d::aa_named(a[i + 1]);
-        if aa >= 0 { return aa; }
-    }
-    return render3d::AA;
 }
 
 // The A key: the 3D board's antialiasing switched (draw3d::toggle_aa).
