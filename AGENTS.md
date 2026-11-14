@@ -52,9 +52,8 @@ would otherwise look up again:
   PNG masters do (`agents/design.md`, `design/backgrounds/README.md`). Ask when unsure
   (2026-11-08). The season backgrounds' JPEG and ASTC files, which the app embeds (about
   9.7 MB), are in git (2026-11-10).
-- Never edit the submodules' checkouts. A gap in goose_gfx goes to the fork's branches and
-  `main`, then the submodule's pointer moves (above); for SDL, write only a note for the
-  user, who decides about anything sent there.
+- Never edit the submodules' checkouts: a goose_gfx gap goes through the fork (above); for
+  SDL, write only a note for the user, who decides about anything sent there.
 - The user maintains goose-ngfx and contributes to Goose and goose_gfx. Snowtime, a
   public time tracker (github.com/Snowhound/snowtime), is the model for this repo's layout
   (AGENTS.md, docs/, tasks/ with an archive, prototypes/ checked with agent-browser) and
