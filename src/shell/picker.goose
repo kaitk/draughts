@@ -576,7 +576,9 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     // the screen, back's clearance mirrored on the right, rather than pushed against it,
     // where they still fit the height that way (Today's tiles may wrap when narrower).
     let clear = page.x - whole.x;
-    let mirrored = float4 { page.x, page.y, max(0.0, whole.z - 2.0 * clear), page.w };
+    // At 4:3 the mirrored room is narrower than two columns: then two of the narrowest,
+    // centered as far as back allows.
+    let mirrored = float4 { page.x, page.y, min(page.z, max(whole.z - 2.0 * clear, 2.0 * NARROWEST * u + gap)), page.w };
     let mirror_w = cols * min((mirrored.z - (cols - 1) * gap) / cols, COLUMN * u) + (cols - 1) * gap;
     let mirror_first = if opened { today_h(g, mirror_w, n_today, phone) + gap } else { first };
     let mirror_fits = mirrored.z >= 2.0 * NARROWEST * u + gap &&
