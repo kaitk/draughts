@@ -51,15 +51,18 @@ Store's rules are in `app-store.md`, "Screenshots".
 
 ## Screenshots and the feature graphic
 
-A new set, taken 2026-11-10 from `main` at `cc18fec` for the lookout and the hint, the
-captured pieces, the library's switch, and settings' glass tabs, waits for the user's
-approval in `2026-11-10/`: `play/phone/`, `play/tablet/`, `app-store/iphone-6.9/` (and
-`-raw/`), and `app-store/ipad-13/`, with the names and sizes below; its own `upload/` of
-flattened copies; a contact sheet per device type (`contact-*.png`); `check.txt`, each
-image against the rules; and the `scripts/` that made them. Its Play shots ran the
-headless copy with each run's own folder as the storage folder, so the made-up player
-never touched the Mac's files, and the phone's Look tab from `--xlook 1`, a flag in the
-copy only, in place of a second build. Until it is approved, the sets below stay current.
+A new set, taken 2026-11-14 from `main` at `e7ee00e` for the daily puzzles (task 087)
+and the last days' layouts, waits for the user's approval in `2026-11-14/`:
+`play/phone/`, `play/tablet/`, `app-store/iphone-6.9/` (and `-raw/`), and
+`app-store/ipad-13-landscape/`, with the names and sizes below; its own `upload/` of
+flattened copies, with the iPhone 6.3" scale; a contact sheet per device type
+(`contact-*.png`); `check.txt`, each image against the rules and what was seen in it; and
+the `scripts/` that made them. The made-up player has Learn solved, so 04 shows the
+library with Today open, two of the day's four solved, and home's Puzzles row its dots.
+Play's and the iPad's shots ran the headless copy with each run's own folder as the
+storage folder; the iPhone's, the simulator. The tablet's and the iPad's 04 are left out
+of its `upload/`: the library there is no longer centred (`check.txt`). It supersedes
+the 2026-11-10 set, never approved. Until it is approved, the sets below stay current.
 
 The current sets, outside git, taken 2026-11-09 from `main` at `78c7029`, each scene in
 English and Estonian, with 04 and 06 retaken from `503e27a` for settings' new layout and
