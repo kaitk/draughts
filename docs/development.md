@@ -50,6 +50,11 @@ brew install cmake ninja     # for iOS and Android
 
 Android's SDK, NDK, and JDK: [Set up on the Mac](#set-up-on-the-mac) under Run on Android.
 
+`scripts/clean.py` deletes what builds, tests, and shots left in `build/` (`-n` lists it
+first, with sizes), keeping what is slow to get again: the fetched releases (Goose's,
+astcenc, bundletool, PresentMon), `build/notes/`, SDL as Linux builds it, and iOS's
+provisioning project. The scripts make the rest again when they next run.
+
 When the Goose release changes, bring the fork's `main` to the upstream commit whose
 `src/`, `gfx.goose`, and `CMakeLists.txt` match the release's `pkg/gfx/`, merge its
 branches again, and move the submodule to it, so Android and desktop compile the same gfx
