@@ -31,7 +31,9 @@
 //   holds five taps, else the glass's line for it as a thin tile. The glass says what was
 //   best after a marked move, and the best next move, or the move that is forced, or that
 //   the game ended. A desktop's large window centers the steps, the board, and a column
-//   of at most LARGE_COL dp, the column's words half again as large.
+//   of at most LARGE_COL dp, the column's words half again as large; back stands at its
+//   top left over the board's left edge, as on every other screen, the board under it
+//   level with the glass, the column's head keeping the title and play from here.
 namespace replay;
 import std;
 import math;
@@ -341,7 +343,9 @@ fn playable(r: Replay&) -> bool { r.ply < r.plies.len || !r.over }
 // them, in halves where play from here's word fits in its half, else it takes what it
 // needs and back the rest, so no gap opens where the title was. They stack where side by
 // side they don't fit. The game's line then heads the glass.
-fn play_fit(g: gui::Gui&, head: f32) -> i64, f32, f32, bool {
+// With back elsewhere (`with_back` false: over the board on a desktop's large window),
+// the head holds the title and play from here alone, back's width still returned.
+fn play_fit(g: gui::Gui&, head: f32, with_back: bool = true) -> i64, f32, f32, bool {
     let u = g.scale;
     let word = strings::get(strings::REPLAY_PLAY);
     let wide = gui::back_width(g, strings::get(strings::NAV_BACK));
@@ -352,6 +356,11 @@ fn play_fit(g: gui::Gui&, head: f32) -> i64, f32, f32, bool {
     // margin making its left look wider.
     let beside = (2.0 * (gui::side() + 4.0) + 34.0 + 12.0) * u + gui::text_width(g, gui::HEADING, word);
     let over = max(tap, gui::text_width(g, gui::HEADING, word) + 2.0 * gui::LABEL_PAD * u);
+    guard with_back else {
+        let fits = head >= beside;
+        let play = if fits { beside } else { min(over, head) };
+        return if fits { gui::MIDDLE } else { gui::STACKED }, wide, play, head - name >= play;
+    }
     if head - wide - gui::PAD_WIDE * u - name >= beside { return gui::MIDDLE, wide, beside, true; }
     let room = head - GAP * u;
     let arrange = if room >= wide + beside { gui::MIDDLE } else { gui::STACKED };
@@ -575,7 +584,11 @@ fn disclaimer(g: gui::Gui&, r: float4, face: i64 = gui::SMALL) -> bool {
 // step tile, BULB_GAP further down, where the board's side holds five taps (`five`: the
 // tablet, a desktop); else it is the glass's line. A desktop's large window (`big`)
 // keeps the column LARGE_SIDE dp at least and LARGE_COL at most, the steps, the board,
-// and the column centered as one, and its line over the board LARGE times as tall.
+// and the column centered as one, and its line over the board LARGE times as tall; over
+// the line a head row of its own (`back`, from the board's left edge, as wide), the board
+// giving up its height and GAP, its top level with the glass's, the column's head level
+// with back (2026-11-14: back had been at the column's head, top right, where no other
+// screen has it).
 struct Layout {
     head:  float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
     board: float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
@@ -583,6 +596,7 @@ struct Layout {
     glass: float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
     steps: float4[4] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4],
     bulb:  float4    = float4 { 0.0, 0.0, 0.0, 0.0 },
+    back:  float4    = float4 { 0.0, 0.0, 0.0, 0.0 }, // back's row over the board (big), else none
     five:  bool      = false,
 }
 
@@ -594,11 +608,13 @@ fn layout(area: float4, u: f32, big: bool = false) -> Layout {
     let note = NOTE * k * u;
     if c.z > c.w {
         let least = (if big { LARGE_SIDE } else { MIN_SIDE }) * u;
-        let size = max(min(c.w - note, c.z - tap - (GAP + BESIDE) * u - least), 0.0);
+        let row = if big { tap + GAP * u } else { 0.0 };
+        let size = max(min(c.w - row - note, c.z - tap - (GAP + BESIDE) * u - least), 0.0);
         var col = c.z - tap - (GAP + BESIDE) * u - size;
         if big { col = min(col, LARGE_COL * u); }
         let x0 = c.x + 0.5 * (c.z - (tap + (GAP + BESIDE) * u + size + col));
-        o.board = float4 { x0 + tap + GAP * u, c.y + 0.5 * (c.w - size - note) + note, size, size };
+        let y0 = c.y + 0.5 * (c.w - row - size - note);
+        o.board = float4 { x0 + tap + GAP * u, y0 + row + note, size, size };
         o.five = size >= 5.0 * tap + 4.0 * GAP * u;
         let n: f32 = if o.five { 5.0 } else { 4.0 };
         let extra = if o.five { BULB_GAP * u } else { 0.0 };
@@ -607,10 +623,16 @@ fn layout(area: float4, u: f32, big: bool = false) -> Layout {
         for i in 4 { o.steps[i] = float4 { x0, top + i * (tap + gap), tap, tap }; }
         if o.five { o.bulb = float4 { x0, top + 4.0 * (tap + gap) + extra, tap, tap }; }
         let x = o.board.x + size + BESIDE * u;
-        var column = float4 { x, c.y, col, c.w };
-        o.head = gui::cut_top(column, tap);
-        gui::cut_top(column, GAP * u);
-        o.glass = column;
+        if big {
+            o.back = float4 { o.board.x, y0, size, tap };
+            o.head = float4 { x, y0, col, tap };
+            o.glass = float4 { x, o.board.y, col, size };
+        } else {
+            var column = float4 { x, c.y, col, c.w };
+            o.head = gui::cut_top(column, tap);
+            gui::cut_top(column, GAP * u);
+            o.glass = column;
+        }
     } else {
         o.head = gui::cut_top(c, tap);
         let size = max(min(c.z, c.w - tap - (3.0 * GAP + MIN_LIST) * u) - (note - GAP * u), 0.0);
@@ -654,7 +676,7 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     r.focused = g.focus;
 
     let o = layout(area, u, big);
-    let arrange, back_w, play_w, titled = play_fit(g, o.head.z);
+    let arrange, back_w, play_w, titled = play_fit(g, o.head.z, !big);
     let v .= rules::VARIANTS[r.game.variant];
     l = board::layout_at(o.board.x, o.board.y, o.board.z, u, v.size);
     l.flip = turned(r);
@@ -674,14 +696,15 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     // The head: back, the title and the game where they fit, and play from here.
     gui::group(g, GROUP_HEAD);
     var head = o.head;
-    if gui::back(g, BACK_ID, gui::cut_left(head, back_w), strings::get(strings::NAV_BACK), arrange == gui::STACKED) { ask = BACK; }
+    let back_at = if big { float4 { o.back.x, o.back.y, back_w, o.back.w } } else { gui::cut_left(head, back_w) };
+    if gui::back(g, BACK_ID, back_at, strings::get(strings::NAV_BACK), !big && arrange == gui::STACKED) { ask = BACK; }
     let at = gui::cut_right(head, play_w);
     let icon = if r.game.level == history::FRIEND { gui::FRIEND } else { gui::COMPUTER };
     if gui::labelled(g, PLAY_ID, at, icon, 34.0, strings::get(strings::REPLAY_PLAY), gui::HEADING, arrange, gui::PRIMARY,
                      playable(r)) {
         ask = PLAY;
     }
-    gui::cut_left(head, gui::PAD_WIDE * u);
+    if !big { gui::cut_left(head, gui::PAD_WIDE * u); }
     gui::cut_right(head, GAP * u);
     let in_head = titled && title(g, head, r.game);
 

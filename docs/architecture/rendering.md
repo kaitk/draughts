@@ -1227,6 +1227,12 @@ leave the legend out for the list's rows.
 as one, the column at least 420 dp and at most 760, and draws the column's words a face
 larger (the body face in the label's, the small in the heading's) and its sizes 1.5
 times; the line over the board too. The steps are 64 dp taps, their icons half the tile.
+Back stands at the top left there, as on every other screen: in a head row of its own
+over the line over the board, its left edge at the board's (`Layout.back`). The board
+gives up that row's height and the gap under it, so its top and the glass's are level;
+the column's head, level with back, keeps the title, the game's line, and play from
+here. The tablet's landscape keeps back at the column's head: a row over its board would
+take 100 dp of the 726 it has.
 
 The board takes no taps; it is always the flat one, with no hint, undo, or turn panel.
 A step on plays that one move on the board as the game does (`board::start_move`); any

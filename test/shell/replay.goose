@@ -476,9 +476,17 @@ fn main() {
         let e = replay::EDGE * g.scale;
         let left = o.steps[0].x - safe.x - e;
         let right = safe.x + safe.z - e - (o.glass.x + o.glass.z);
+        // Back at the top left, over the board's left edge and above the line over it; the
+        // board's top level with the glass's; play from here at the column's head.
+        let back = spot(g, replay::BACK_ID);
+        let play = spot(g, replay::PLAY_ID);
+        let b = sh.out.layout.board;
+        let note = sh.past.replay.note;
+        let top_left = abs(back.x - b.x) < 0.5 && back.y + back.w <= note.y + 0.5 && back.x + back.z <= b.x + b.z;
         print("  a desktop's ", d.x as i64, " x ", d.y as i64, ": ", check(g, sh, safe), "; large ", big, ", words ",
               sh.past.replay.k, " times, the column ", (o.glass.z / g.scale + 0.5) as i64, " dp, centered ",
-              abs(left - right) < 1.0);
+              abs(left - right) < 1.0, "; back at the top left over the board ", top_left, ", the board's and glass's tops level ",
+              abs(b.y - o.glass.y) < 0.5, ", play from here at the column's head ", play.x >= o.glass.x - 0.5 && play.y < b.y);
     }
     gui::desktop_scale = 0.0;
 }
