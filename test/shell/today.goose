@@ -18,7 +18,9 @@
 // Then the layouts at the tablet's size and a 20:9 phone's at 480 dp in both orientations,
 // four and ten a day: the library (every tap 88 dp at least, none off the screen nor over
 // another, Today's tiles in the picker's ids) and a daily puzzle (its dots on the screen,
-// clear of every tile).
+// clear of every tile); and the slot's word under the goal, "Warm-up" on the first and
+// "A bit harder" on the last, none on the middle ones nor a course puzzle, inside its
+// panel, over nothing, and next as on the middle one, round the 3D board and flat.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -208,6 +210,83 @@ fn check(g: gui::Gui&, what: const u8[:], extra: const u8[:]) {
           if wrong.len > 0 { str(";", wrong) } else { str(", all in place") });
 }
 
+// The slot's word under a daily puzzle's goal: its glyphs in the glow (gui::GLOW_TEXT),
+// how many and where, and what's wrong: outside the glass panel next is on, or over a
+// tile, an icon, or other text; next where it was on the middle puzzle.
+fn word(g: gui::Gui&, next_was: const u8[:]) -> u8[>..] {
+    let u = g.scale;
+    let next = drive::rect(g, 3);
+    var n = 0;
+    var box = float4 { 0.0, 0.0, 0.0, 0.0 };
+    for q in g.quads {
+        guard q.look.x == gui::TEXT && abs(q.extra.z - gui::GLOW_TEXT) < 0.01 else { continue; }
+        if n == 0 { box = q.rect; }
+        else {
+            let x1 = max(box.x + box.z, q.rect.x + q.rect.z);
+            let y1 = max(box.y + box.w, q.rect.y + q.rect.w);
+            box.x = min(box.x, q.rect.x);
+            box.y = min(box.y, q.rect.y);
+            box.z = x1 - box.x;
+            box.w = y1 - box.y;
+        }
+        n++;
+    }
+    // The goal's icon and the first star, which the word may push down or shrink.
+    var goal = float4 { 0.0, 0.0, 0.0, 0.0 };
+    var star = float4 { 0.0, 0.0, 0.0, 0.0 };
+    for q in g.quads {
+        guard q.look.x == gui::ICON else { continue; }
+        if q.look.z == gui::TARGET && goal.z == 0.0 { goal = q.rect; }
+        if (q.look.z == gui::STAR || q.look.z == gui::STAR_OFF) && star.z == 0.0 { star = q.rect; }
+    }
+    var out: u8[>..] = [];
+    format(out, "goal ", dp(goal, u), ", a star ", dp(star, u), ", ");
+    guard n > 0 else {
+        format(out, "no word, next ", dp(next, u));
+        return out;
+    }
+    format(out, n, " glyphs in the glow at ", dp(box, u), ", next ", dp(next, u));
+    var wrong: u8[>..] = [];
+    var inside = false;
+    for q in g.quads {
+        guard q.look.x == gui::GLASS && next.x >= q.rect.x && next.x + next.z <= q.rect.x + q.rect.z && next.y >= q.rect.y &&
+              next.y + next.w <= q.rect.y + q.rect.w else { continue; }
+        if box.x >= q.rect.x && box.x + box.z <= q.rect.x + q.rect.z && box.y >= q.rect.y && box.y + box.w <= q.rect.y + q.rect.w {
+            inside = true;
+        }
+    }
+    if !inside { format(wrong, " outside its panel;"); }
+    for i in drive::tiles(g) { if overlaps(box, drive::rect(g, i)) { format(wrong, " on tile ", i, ";"); } }
+    var others = 0;
+    for q in g.quads {
+        let mine = q.look.x == gui::TEXT && abs(q.extra.z - gui::GLOW_TEXT) < 0.01;
+        guard !mine && (q.look.x == gui::TEXT || q.look.x == gui::ICON) && overlaps(box, q.rect) else { continue; }
+        others++;
+    }
+    if others > 0 { format(wrong, " over ", others, " other glyphs or icons;"); }
+    if dp(next, u) != next_was { format(wrong, " next moved;"); }
+    if wrong.len > 0 { format(out, ";", wrong); } else { format(out, ", in place"); }
+    return out;
+}
+
+// Today's first, a middle one, and the last on the puzzle screen, the board `board`, and
+// what each shows of the slot's word; a course puzzle shows none.
+fn slots(sh: shell::Shell&, g: gui::Gui&, count: i64, board: i64, now: f64) {
+    sh.prefs.board = board;
+    shell::apply_prefs(sh);
+    var next_was: u8[>..] = [];
+    for k in [1, 0, count - 1] {
+        shell::play_daily(sh, k, now + k as f64);
+        drive::idle(sh, g, now + k as f64 + 1.0);
+        if k == 1 { next_was = dp(drive::rect(g, 3), g.scale); }
+        let which = if k == 0 { "the first" } else if k == 1 { "the second" } else { "the last" };
+        print("    ", if board == settings::RAISED { "3D, " } else { "flat, " }, which, ": ", word(g, next_was[..]));
+    }
+    shell::play_puzzle(sh, 0, now + 20.0);
+    drive::idle(sh, g, now + 21.0);
+    print("    ", if board == settings::RAISED { "3D, " } else { "flat, " }, "a course puzzle: ", word(g, next_was[..]));
+}
+
 fn layouts(text: const u8[:], g: gui::Gui&, count: i64) {
     let sizes = [float2 { 1920.0, 1200.0 }, float2 { 1200.0, 1920.0 }, float2 { 2400.0, 1080.0 }, float2 { 1080.0, 2400.0 }];
     let names = ["the tablet, landscape", "the tablet, portrait", "a 20:9 phone at 480 dp, landscape",
@@ -241,6 +320,9 @@ fn layouts(text: const u8[:], g: gui::Gui&, count: i64) {
         each.clear();
         format(each, ", ", at.len, " dots from ", dp(at[0], g.scale), ", next ", dp(drive::rect(g, 3), g.scale));
         check(g, "on the 3D board", each[..]);
+        // The slot's word, round the 3D board and on the flat one.
+        slots(sh, g, count, settings::RAISED, 4.0);
+        slots(sh, g, count, settings::FLAT, 30.0);
     }
     gui::short_dp = 800.0;
 }
