@@ -398,23 +398,24 @@ Left: grabs need a core that makes the forcing exchange, and Russian's bigger ca
 better generator than baits in camps; the share of traps the children meet is
 unmeasured.
 
-## The user's look at the 30 (2026-11-14, under way)
+## The user's look at the 30 (2026-11-14)
 
 From `build/library/sample-30.md` (International's library, `--library N`):
 
 - 33 (341, crown in 1): easy but a very clever puzzle; a warm-up of the kind wanted.
 - 60 (350, take 2 in 1): fits its estimate, ok.
 - 491 (710, take 3 in 2): liked.
-- The rest to come.
+- Most of the rest, and the trap puzzles: pretty good, and the estimate accurate; the
+  hardest needed several hints. No puzzle was named as bad or misplaced.
 
 ## Acceptance criteria
 
 - [x] The UI takes above prototyped, checked on the tablet's and a phone's sizes in both
       orientations, and chosen; the choice recorded in `docs/decisions/puzzles.md`
-- [ ] A generation sample: a few hundred International puzzles from `find` at scale and
+- [x] A generation sample: a few hundred International puzzles from `find` at scale and
       from the computer's games, with how many pass the checks, how long each costs,
       and a look at a random 30 by the user for quality
-- [ ] The difficulty estimate on the sample, its spread, and the user's 30 ordered by it
+- [x] The difficulty estimate on the sample, its spread, and the user's 30 ordered by it
       against how hard the user finds them
 - [x] The library generated for International, Russian, and Brazilian, embedded, tested
       headless as the sets are (`test/puzzles/`), with the size in this file
