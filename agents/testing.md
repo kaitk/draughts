@@ -21,6 +21,14 @@ Badge art: `tools/badge_trace.py <animal> <png>` traces a black-on-white silhoue
 `assets/badges/<animal>.svg`, its viewBox fitted round the shape's enclosing circle so it
 sits inside the piece's inner ring; then `test/run_tests.py --bless badges`.
 
+The layout tests print their checks by default, passed or WRONG, and which tiles show in
+what order, not pixels: a copy edit or a few dp moved needs no re-bless. Their coordinates,
+dp sizes, and quad counts print only with `DRAUGHTS_TEST_VERBOSE=1` (`drive::verbose`),
+which `test/run_tests.py --dump [NAME]` sets, writing each output to `build/test/dump/`:
+dump before and after a change and diff the two to see whether a layout moved by a pixel.
+A test's verbose output is what its golden output was before the switch (2026-11-14).
+`shell` names both a test and the area, so `--bless shell` blesses the whole area.
+
 A frame driven through `test/drive` that drops UI quads past `gui::MAX_QUADS` prints
 `gui: N quads dropped`, so any test's output shows it; the app prints the same line
 whenever a frame drops more than before (2026-11-14).
