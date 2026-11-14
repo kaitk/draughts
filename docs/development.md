@@ -725,7 +725,7 @@ linked in, and Vulkan's loader is the system's. Every Windows build carries the 
 ImageMagick's `-define icon:auto-resize`), put into the executable's resources after
 linking (`embed_icon`, the system's `UpdateResource`), since Goose's build file has no
 key for a `.rc`: Explorer shows it, and SDL takes the first icon for the window and the
-taskbar. It is unsigned, so SmartScreen warns on
+taskbar. The release's executable is marked a GUI program (`gui_subsystem`, the PE header's subsystem set after linking, as Goose's build links a console one), so started from Explorer it opens no console window; dev builds keep the console for their output. It is unsigned, so SmartScreen warns on
 first run ("Windows protected your PC", More info → Run anyway); a code-signing
 certificate would end that. Tested on Windows 11 on 2026-11-12: the 0.1.1 zip is 11.8 MB
 (the executable 15.5 MB), and extracted alone it imports only system DLLs and plays on

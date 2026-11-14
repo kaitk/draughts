@@ -118,6 +118,22 @@ def embed_icon(exe, ico=ICON):
         raise ctypes.WinError(ctypes.get_last_error())
 
 
+def gui_subsystem(exe):
+    """Mark the exe a GUI program (IMAGE_SUBSYSTEM_WINDOWS_GUI), so that started from
+    Explorer it opens no console window; Goose's build links a console one and has no key
+    for this. The entry point stays main; its prints then go nowhere unless redirected, so
+    only the release gets it."""
+    data = bytearray(exe.read_bytes())
+    pe = struct.unpack_from("<I", data, 0x3C)[0]
+    if data[pe:pe + 4] != b"PE\0\0":
+        sys.exit(f"{exe}: not a PE file")
+    at = pe + 24 + 68  # Subsystem, in the optional header after the COFF header
+    if struct.unpack_from("<H", data, at)[0] not in (2, 3):
+        sys.exit(f"{exe}: unexpected subsystem")
+    struct.pack_into("<H", data, at, 2)
+    exe.write_bytes(data)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("program", type=Path)
@@ -130,6 +146,7 @@ def main():
     native.run(patched_goose(), "build", "-o", exe, program.name, cwd=program.parent)
     embed_icon(exe)
     if a.release:
+        gui_subsystem(exe)
         out = OUT / "release"
         out.mkdir(parents=True, exist_ok=True)
         zipped = out / f"Draughts-{native.VERSION_NAME}-windows-x64.zip"

@@ -28,7 +28,7 @@ A pre-release for Windows and Linux: the replay shows more, and a few fixes.
 **macOS, Android, iPhone/iPad:** 0.5.0 for now.
 
 SHA-256:
-- `Draughts-0.5.1-windows-x64.zip`: `38e9f44ce0dad44b53cc782663c45feed4c4e796896e59fa35b4d0714c94bf11`
+- `Draughts-0.5.1-windows-x64.zip`: `07b18cb52fee172e6deb53098aedefc1ed37f2b9cd18735d46fbf572c10fe763`
 - `Draughts-0.5.1-linux-x64.tar.gz`: `3a971b04bf8656f338b2a1259767b7a0964fb9a36ac4cb392ebcd6d3faa3cb39`
 ```
 
