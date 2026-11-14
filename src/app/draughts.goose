@@ -291,13 +291,15 @@ fn main() {
             host::release_memory();
             released = true;
         }
-        // A running clock is drawn when the time it shows changes, the computer's move
-        // played when it is due, and the 3D board's pass gives back its targets a second
-        // after it last drew (draw3d::rest); a timer wakes the loop then, rather than
-        // whenever the idle wait ends (wake.c).
-        let resting = if !drew && !hidden { render::rest(rd, now) } else { -1.0 };
+        // The 3D board's pass keeps its targets while the board is on screen and gives
+        // them back once a screen without it shows, or the app on a phone or tablet goes
+        // to the background, which it loses focus before (draw3d::rest; Android runs the
+        // loop once more then, iOS draws nothing from then on).
+        render::rest(rd, out.raised && !(mobile && !host::focused()));
+        // A running clock is drawn when the time it shows changes and the computer's move
+        // played when it is due; a timer wakes the loop then, rather than whenever the
+        // idle wait ends (wake.c).
         var next = shell::wake_in(sh, now, HINT_POLL);
-        if resting >= 0.0 && (next < 0.0 || resting < next) { next = resting; }
         // An arrow held repeats (host's keys.goose), waking the loop when it is due.
         let repeat = host::repeat_in(h.repeat, now);
         if repeat >= 0.0 && (next < 0.0 || repeat < next) { next = repeat; }

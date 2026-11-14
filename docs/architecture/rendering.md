@@ -1495,12 +1495,14 @@ board's does and the backdrop over it as opaque as the blur.
   The renderer's backdrop is kept too, drawn at full opacity into its own image the
   screen's size when its size, photograph, look, or fade changed, and laid with a fetch
   a pixel (`render3d::keep_backdrop`); between a change and the next 3D draw it is graded live.
-  **At rest** the board keeps only its image and what it is drawn from: a second after the
-  pass last drew, at a frame that draws nothing, the pass's targets (the 4× MSAA color
-  and depth), the kept backdrop, and the kept depth go back (`render3d::rest`, with a
-  wake for it), and the next draw makes them again; a frame drawn meanwhile grades the
-  backdrop live. That first draw costs about 4 ms more on the M1 Pro at 2560 × 1600 and
-  13 ms on the iPhone 13 mini, the GPU's first touch of the new memory. A flat marble
+  **Off the screen** the board keeps only its image and what it is drawn from: while it
+  shows, the pass's targets (the 4× MSAA color and depth), the kept backdrop, and the
+  kept depth stay, so a move after a pause draws at once; once a screen without the board
+  shows, or the app on a phone or tablet goes to the background (it loses focus first),
+  they go back at the frame's end (`draw3d::rest`, `render3d::rest`), and the next draw
+  makes them again, about 4 ms more on the M1 Pro at 2560 × 1600 and 13 ms on the iPhone
+  13 mini, the GPU's first touch of the new memory; a frame drawn meanwhile grades the
+  backdrop live. A flat marble
   frame (winter's) keeps its normal map, the same value everywhere, as a 4 × 4.
   The board's ambient light (nine spherical harmonics) comes from the blurred
   photograph; with the plain fade, from the fade painted 64 texels square on the CPU,

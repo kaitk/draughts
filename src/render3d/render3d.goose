@@ -23,7 +23,7 @@
 // (marks_over), against a 1x depth of the board kept with the image. No post pass, no
 // discard, nothing temporal. Nothing is made or released while drawing but the targets
 // on a resize, and the pass's targets, the kept backdrop, and the kept depth again after
-// rest() gave them back once the app drew nothing for a while.
+// rest() gave them back once the board left the screen or the app went to the background.
 namespace render3d;
 import std;
 import vec;
@@ -311,12 +311,12 @@ fn targets(g: Gpu&, size: int2) {
     g.size = size;
 }
 
-// Gives back what only drawing the board needs once the app is at rest: the pass's
-// targets, the depth kept for the pulsing marks, and the kept backdrop, which the
-// screen's frames grade live from the photograph till the next draw() keeps it again.
-// The kept image shows the board until it changes; the next draw() makes the rest again.
-// Not while drawing: it submits what was recorded, as released textures are freed after
-// the next submit is done, and none comes at rest.
+// Gives back what only drawing the board needs once it is off the screen or the app is
+// going to the background: the pass's targets, the depth kept for the pulsing marks, and
+// the kept backdrop, which the screen's frames grade live from the photograph till the
+// next draw() keeps it again. The kept image shows the board until it changes; the next
+// draw() makes the rest again. Not inside a pass: it submits what was recorded, as
+// released textures are freed after the next submit is done, and none comes at rest.
 fn rest(g: Gpu&) {
     give_back(g);
     gpu_flush();

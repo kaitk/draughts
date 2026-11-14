@@ -37,7 +37,6 @@ struct Drawer {
     aa:        i32                                   = render3d::AA, // --aa and the A key: render3d's AA_OFF..
     samples:   i32                                   = render3d::SAMPLES, // MSAA's, fewer on a slow device
     look:      i32                                   = render3d::SHADOW_9, // how the shadow is filtered (screen_shadow)
-    drawn_at:  f64                                   = 0.0,   // when the pass last drew (rest)
     kind:      i64                                   = -1, // the app's theme the board was set up with
     plain:     bool                                  = false, // and whether behind it the plain fade
     which:     i64                                   = -1, // the board drawn (the shell's which())
@@ -273,19 +272,13 @@ fn screen_shadow(d: Drawer&, look: i32) {
     d.fresh = true;
 }
 
-// How long the 3D board's pass keeps its targets after it last drew: a hover or a drag
-// draws it again soon, and a move seconds later makes them again once (render3d::rest).
-let REST = 1.0;
-
-// At rest, a frame that draws nothing: what only drawing the board needs given back once
-// it hasn't drawn for REST (render3d::rest), made again by the next draw. The seconds
-// till then, for a wake, or -1 with nothing to give back.
-fn rest(d: Drawer&, now: f64) -> f64 {
-    guard d.ready && !render3d::resting(d.gpu) && !d.drawn.pulsing else { return -1.0; }
-    let left = d.drawn_at + REST - now;
-    guard left <= 0.0 else { return left; }
+// What only drawing the board needs (the pass's targets, the kept backdrop and depth) kept
+// while the board is on screen, so a move made after a pause draws at once, and given back
+// (render3d::rest) once it isn't: a screen without it, or the app in the background. The
+// next draw makes them again.
+fn rest(d: Drawer&, shown: bool) {
+    guard d.ready && !shown && !render3d::resting(d.gpu) else { return; }
     render3d::rest(d.gpu);
-    return -1.0;
 }
 
 // Draws the frame board::fill left in b, on the flat layout l, seen through v, into the
@@ -305,7 +298,8 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
         d.frames++;
         return;
     }
-    var force = d.fresh;
+    // Back on screen after rest() with marks pulsing: the depth they test is drawn again.
+    var force = d.fresh || (d.drawn.pulsing && render3d::resting(d.gpu));
     let again = d.again;
     d.fresh = false;
     d.again = false;
@@ -359,7 +353,6 @@ fn frame(d: Drawer&, b: board::Board&, l: board::Layout, v: view3d::View, now: f
     let vp = render3d::Mat { c0: m.c0, c1: m.c1, c2: m.c2, c3: m.c3 };
     render3d::draw(d.gpu, vp, v.eye, gpu::no_texture(), size, false, false, s.pulsing);
     d.drawn = d.scene;
-    d.drawn_at = now;
     if d.appear_at < 0.0 { d.appear_at = now; }
     // A new theme's first image: back from grey.
     if d.grey_to > 0.0 { grey_towards(d, 0.0, now); }

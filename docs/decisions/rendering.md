@@ -1109,7 +1109,22 @@ The 3D game at rest in winter: the Mac (1280 × 800 window) 356 → 225 MB on gf
 first draw after a rest: +4 ms on the M1 Pro, +13 ms on the iPhone (one 60 Hz refresh
 late, at the start of a response, never inside an animation). A second, not at once:
 a hover or a drag draws again within it. A flat marble frame's normal map, constant,
-is a 4 × 4 (22 MB). Not done: the plan's normal as RG8 (it would need a second bake
+is a 4 × 4 (22 MB).
+
+The 3D board keeps the pass's targets while it is on screen (2026-11-14, replacing the
+second at rest above): they go back once a screen without the board shows, or the app on
+a phone or tablet goes to the background, never while the game sits still. Every move
+after a pause of a second paid the remade targets' first touch, +4 ms on the M1 Pro and
++13 ms on the iPhone 13 mini, a refresh late at the start of the move, and the targets
+made and given back again and again cost allocations on every turn, for memory no other
+app wanted while ours was in front. The headless 3D game at 1280 × 800 on the Mac now holds
+171 MB at rest against 144 (the 4× color and depth, the kept depth and backdrop). What a
+background app holds is what the system weighs, and that is unchanged. iOS gives them back
+at the first frame without focus, before it is in the background, where no GPU work may be
+submitted. Rejected: a longer delay (another number to tune, the same first touch after
+it).
+
+Not done: the plan's normal as RG8 (it would need a second bake
 pipeline, the frame's normal uses all four channels), the plan and frame maps without
 their top level (the anisotropic filter samples it on the tilted board), the photograph's
 two 512² working copies (2 MB). Apple's memoryless storage for the MSAA targets would
