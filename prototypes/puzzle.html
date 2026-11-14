@@ -43,39 +43,115 @@
     .left .tile { flex-direction: column; gap: 4px; justify-content: center; min-height: 96px; min-width: 0; padding: 0; font-size: 20px; }
     .way .tile { background: var(--glass-tint); }
     #board { width: min(var(--w), 100%); }
-    .play { height: auto; display: grid; grid-template-columns: auto 1fr auto; text-align: left; gap: 12px 16px; }
+    .play { height: auto; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; text-align: left; gap: 12px 16px; }
     .play > .piece { width: 52px; margin: 0; }
     .goal { display: flex; align-items: center; gap: 12px; }
+    .goal { min-width: 0; }
+    .goal .icon { flex: none; }
+    .goal > span { min-width: 0; overflow: hidden; }
+    .goal b, .goal small { display: block; white-space: nowrap; }
     .next { grid-column: span 3; flex-direction: row; min-height: 88px; }
+    /* Today's dots (or bars) at next's left, their width and 12 dp each side, as built. */
+    .play .foot { grid-column: 1 / -1; display: flex; align-items: center; }
+    .today { flex: none; margin: 0; padding: 0 12px; }
+    .today + .next { flex: 1; min-width: 0; width: auto; margin-top: 0; }
   }
+  /* Today's dots as built (picker::dots): the solved filled in the glow, this one a glow
+     ring, the others white at 30%; shrunk by --k to fit the panel (ten on a phone). */
+  .foot { display: contents; }
+  .today { --k: 1; display: flex; justify-content: center; }
+  .today .dots { gap: calc(7px * var(--k)); }
+  .today .dots i { width: calc(14px * var(--k)); height: calc(14px * var(--k)); box-shadow: none; background: rgb(255 255 255 / 0.3); }
+  .today .dots i.on { background: var(--glow); }
+  .today .dots i.now { background: none; box-shadow: inset 0 0 0 3px var(--glow); }
+  /* ?shape=bars: a group of rising bars per puzzle, the tiles' level mark without its
+     unlit bars (one the warm-up, two the middle ones, three the stretch); filled in the
+     glow when solved, this one white in a ring of the glow as a chosen tile, the others
+     white at 30%. */
+  .shape { display: inline-flex; align-items: end; gap: calc(12px * var(--k)); }
+  .shape i { display: flex; align-items: end; gap: calc(3px * var(--k)); }
+  .shape b { width: calc(8px * var(--k)); border-radius: calc(2px * var(--k) + 1px); background: rgb(255 255 255 / 0.3); }
+  .shape b:nth-child(1) { height: 10px; } .shape b:nth-child(2) { height: 18px; } .shape b:nth-child(3) { height: 26px; }
+  .shape i.on b { background: var(--glow); }
+  .shape i.now { margin: calc(-6px * var(--k)) 0; padding: calc(6px * var(--k)); border-radius: calc(8px * var(--k));
+    box-shadow: inset 0 0 0 2px var(--glow); background: color-mix(in srgb, var(--glow) 22%, transparent); }
+  .shape i.now b { background: var(--fg); }
+  /* ?shape=word: the slot's word under the goal's line, in the small face and the glow. */
+  .goal .slot { display: block; font-size: 17px; color: var(--glow); margin-top: 2px; white-space: nowrap; }
 </style>
 </head>
 <body data-screen="board">
 <main class="screen game">
   <div class="col left">
-    <a class="tile glass" href="puzzles.html" data-icon="back">Back</a>
+    <a class="tile glass" href="puzzles.html" data-icon="back" data-t="back">Back</a>
     <div class="glass way">
-      <a class="tile" href="settings.html" data-icon="gear">Settings</a>
-      <a class="tile" data-icon="restart">Start over</a>
+      <a class="tile" href="settings.html" data-icon="gear" data-t="settings">Settings</a>
+      <a class="tile" data-icon="restart" data-t="restart">Start over</a>
     </div>
   </div>
   <div id="board"></div>
   <div class="col">
     <div class="glass play">
       <span class="piece solo white ring"></span>
-      <div class="goal" data-icon="target"><span><b>Win 2 men</b><small>White to move</small></span></div>
+      <div class="goal" data-icon="target"><span><b data-t="goal">Win 2 men</b><small data-t="turn">White to move</small></span></div>
       <div class="stars" id="stars"></div>
-      <a class="tile next dim" data-icon="next">Next</a>
+      <div class="foot"><a class="tile next dim" data-icon="next" data-t="next">Next</a></div>
     </div>
   </div>
 </main>
 <script>
   document.getElementById('stars').innerHTML = Draughts.icon('star').repeat(3);
-  // ?daily=1, one of today's puzzles: back goes to the library, and today's dots stand over next (this one the third of four).
-  if (Draughts.params.get('daily') === '1') {
-    document.querySelector('.left .tile[href]').href = 'puzzles.html';
-    document.querySelector('.next').insertAdjacentHTML('beforebegin', `<span class="today">${Draughts.dots(2, 4, 2)}</span>`);
+  // ?daily=1, one of today's puzzles: back goes to the library, and today's dots stand
+  // over next (at its left in portrait). Takes for the day's shape (task 088), with
+  // ?daily=1: &shape=bars the dots as the Today tiles' rising bars, &shape=word the slot's
+  // word under the goal's line, &shape=both; &slot=0..n-1 the one playing (1), those
+  // before it solved; &n=4|10 puzzles a day (4); &lang=et the page in Estonian.
+  const P = Draughts.params, et = P.get('lang') === 'et';
+  const WORDS = {
+    en: { back: 'Back', settings: 'Settings', restart: 'Start over', next: 'Next', goal: 'Win 2 men', turn: 'White to move',
+      slot: ['Warm-up', 'Your level', 'A bit harder'] },
+    et: { back: 'Tagasi', settings: 'Seaded', restart: 'Alusta uuesti', next: 'Edasi', goal: 'Võida 2 nuppu', turn: 'Valgete käik',
+      slot: ['Soojendus', 'Sinu tasemel', 'Veidi raskem'] },
+  }[et ? 'et' : 'en'];
+  if (et) {
+    document.documentElement.lang = 'et';
+    document.querySelectorAll('[data-t]').forEach((e) => { e.textContent = WORDS[e.dataset.t]; });
   }
+  if (P.get('daily') === '1') {
+    document.querySelector('.left .tile[href]').href = 'puzzles.html';
+    const shape = P.get('shape'), n = P.get('n') === '10' ? 10 : 4;
+    const slot = Math.min(n - 1, Math.max(0, Number(P.get('slot') ?? 1)));
+    const level = (k) => (k === 0 ? 1 : k === n - 1 ? 3 : 2);   // picker::slot_level
+    const bars = () => `<span class="shape">${Array.from({ length: n }, (_, k) =>
+      `<i class="${k < slot ? 'on' : k === slot ? 'now' : ''}">${'<b></b>'.repeat(level(k))}</i>`).join('')}</span>`;
+    const today = shape === 'bars' || shape === 'both' ? bars() : Draughts.dots(slot, n, slot);
+    document.querySelector('.next').insertAdjacentHTML('beforebegin', `<span class="today">${today}</span>`);
+    if (shape === 'word' || shape === 'both') {
+      document.querySelector('.goal small').insertAdjacentHTML('afterend', `<span class="slot">${WORDS.slot[level(slot) - 1]}</span>`);
+    }
+    // Shrunk to fit the panel where they don't (ten on a phone), as picker::dots does. At
+    // next's left in portrait the dots keep their size, as built, however narrow that
+    // leaves next; the bars (wider) take at most 45% of the row and shrink to it.
+    const t = document.querySelector('.today'), mark = t.firstElementChild, play = document.querySelector('.play');
+    const fit = () => {
+      t.style.setProperty('--k', 1);
+      const portrait = getComputedStyle(t.parentElement).display === 'flex';
+      if (portrait && mark.className !== 'shape') return;
+      const room = portrait ? 0.45 * t.parentElement.clientWidth - 24 : play.clientWidth - 32;
+      t.style.setProperty('--k', Math.min(1, room / mark.scrollWidth));
+    };
+    new ResizeObserver(fit).observe(play);
+  }
+  // Each line of the goal in the face that fits its room, smaller where it doesn't, as
+  // gui::fitting does (portrait, where the goal shares its row with the stars).
+  const fitWords = () => document.querySelectorAll('.goal b, .goal small, .goal .slot').forEach((e) => {
+    e.style.fontSize = '';
+    const play = document.querySelector('.play'), portrait = getComputedStyle(play).display === 'grid';
+    const box = portrait ? e.parentElement.clientWidth : play.clientWidth - 32;
+    let px = parseFloat(getComputedStyle(e).fontSize);
+    while (e.scrollWidth > box && px > 12) e.style.fontSize = `${--px}px`;
+  });
+  new ResizeObserver(fitWords).observe(document.querySelector('.goal'));
   Draughts.board(document.getElementById('board'), {
     white: ['a1', 'f2', 'c3', 'e3', 'g3'], black: ['d6', 'h6', 'b8', 'f6', 'g7'],
   });

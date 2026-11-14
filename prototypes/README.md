@@ -11,7 +11,7 @@ no build step. Fonts load from the jsDelivr CDN, so they need internet access. S
 | `setup.html` | Home's setup for a game against the computer |
 | `game.html` | The game screen on move 20 of one game: the way out, the catch, whose turn with the lookout, the hint and undo, the moves panel (a line on a phone, the last move in portrait) |
 | `puzzles.html` | The puzzles' library: the draughts switch, a Today row heading it with today's puzzles as tiles (each its level's bars and stars; How to play a tile beside the title, the last row in portrait; the moon when all are solved), and a row per theme; `?today=N` solved of 4, `?locked=1` (How to play first, Today locked last) |
-| `puzzle.html` | One puzzle in the game's layout; `?daily=1` one of today's, today's dots over next |
+| `puzzle.html` | One puzzle in the game's layout; `?daily=1` one of today's, today's dots over next (at its left in portrait); takes for the day's shape: `&shape=bars` (the dots as the Today tiles' rising bars), `&shape=word` (the slot's word under the goal), `&shape=both`; `&slot=0..n-1` the one playing (1), `&n=4\|10` puzzles a day, `&lang=et` in Estonian |
 | `results.html` | The results: the rating per draughts, by level, the games played |
 | `replay.html` | A past game at move 20, its steps working, with the whole list and the marks' legend; task 087's move shown (a faded piece where it started, its way in dots, the squares it stood on shaded) and best move (as the hint, on the board only when asked for); `?ply=60` a king's capture; a desktop's larger column |
 | `players.html` | Who's playing, over home |
