@@ -43,7 +43,18 @@ let SWITCHED = gui::ASK_OWN; // other draughts chosen on the library's switch
 let LEARN = gui::ASK_OWN + 1; // how to play, the library's first row (task 026)
 let PUZZLE = gui::ASK_OWN + 2; // a puzzle tapped, by its index in puzzles::all
 let TODAY = gui::ASK_OWN + 3; // one of today's puzzles tapped, by its place in them (task 088)
-let TODAY_IDS = gui::PICKER_IDS + 30;          // today's tiles, one id each
+
+// The widget ids, from gui::PICKER_IDS, each on from the one before by as many as it
+// takes, so no two meet; test/gui/ids keeps IDS_END inside the picker's range.
+let BACK_ID = gui::PICKER_IDS;
+let LEARN_ID = BACK_ID + 1;         // How to play, a row or a tile
+let THEME_IDS = LEARN_ID + 1;       // the themes' rows, one a theme
+let SWITCH_IDS = THEME_IDS + puzzles::THEMES; // the draughts switch's tiles (settings::DRAUGHTS)
+let TODAY_IDS = SWITCH_IDS + 3;     // today's tiles
+let LIBRARY_LIST = TODAY_IDS + puzzles::MAX_DAILY; // the scrolling lists (gui::scroll_begin): the library,
+let PAGE_LIST = LIBRARY_LIST + 1;   // and a theme's page, plus the theme
+let PUZZLE_IDS = PAGE_LIST + puzzles::THEMES; // a puzzle's tile, by its index in puzzles::all
+let IDS_END = PUZZLE_IDS + puzzles::MAX_PUZZLES;
 
 let MARKS = [gui::BOOK, gui::JUMPS, gui::CROWN, gui::TARGET, gui::KING, gui::SHIELD];
 let NAMES = [strings::THEME_LEARN, strings::THEME_CAPTURES, strings::THEME_CROWNING, strings::THEME_SHOTS,
@@ -54,8 +65,6 @@ let NARROWEST = 420.0;      // and at least where it goes to two in landscape fo
 let MARGIN = 24.0;          // dp round the library and a theme's page, and between back's column and the rest,
 let MARGIN_PHONE = 16.0;    // round them on a phone
 let HEAD_GAP = 20.0;        // dp between back and the library's title, as settings' head
-let LIBRARY_LIST = gui::PICKER_IDS + 100;     // the scrolling lists' ids (gui::scroll_begin): the library,
-let PAGE_LIST = gui::PICKER_IDS + 110;        // and a theme's page, plus the theme
 
 // How many of a theme's puzzles have stars.
 fn solved(stars: const u8[:], theme: i64) -> i64 {
@@ -180,7 +189,7 @@ fn frame(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&, s
 // Back (gui::back) in r: the arrow and "Back" on a glass tile, side by side or, `stacked`,
 // one over the other.
 fn back(g: gui::Gui&, r: float4, stacked: bool = false) -> bool {
-    return gui::back(g, gui::PICKER_IDS, r, strings::get(strings::NAV_BACK), stacked);
+    return gui::back(g, BACK_ID, r, strings::get(strings::NAV_BACK), stacked);
 }
 
 // How wide back is.
@@ -224,7 +233,7 @@ fn theme_row(g: gui::Gui&, r: float4, theme: i64, stars: const u8[:], phone: boo
     // A glass card as a level's on a theme's page, lit only while pressed: a plain tile
     // (white at 10%) barely shows over the sharp photograph.
     gui::glass(g, r, 22.0);
-    let tapped = gui::tile(g, gui::PICKER_IDS + 10 + theme, r, gui::NO_ICON, gui::ROW, 22.0);
+    let tapped = gui::tile(g, THEME_IDS + theme, r, gui::NO_ICON, gui::ROW, 22.0);
     var c = r;
     gui::cut_left(c, (if phone { 12.0 } else { 20.0 }) * u);
     gui::cut_right(c, (if phone { 18.0 } else { 26.0 }) * u);
@@ -270,7 +279,7 @@ fn theme_row(g: gui::Gui&, r: float4, theme: i64, stars: const u8[:], phone: boo
 fn learn_row(g: gui::Gui&, r: float4, learned: i64, steps: i64, phone: bool) -> bool {
     let u = g.scale;
     gui::glass(g, r, 22.0);
-    let tapped = gui::tile(g, gui::PICKER_IDS + 8, r, gui::NO_ICON, gui::ROW, 22.0);
+    let tapped = gui::tile(g, LEARN_ID, r, gui::NO_ICON, gui::ROW, 22.0);
     var c = r;
     gui::cut_left(c, (if phone { 12.0 } else { 20.0 }) * u);
     gui::cut_right(c, (if phone { 18.0 } else { 26.0 }) * u);
@@ -309,7 +318,6 @@ fn learn_row(g: gui::Gui&, r: float4, learned: i64, steps: i64, phone: bool) -> 
 // its name over its board's size, joined on one glass, 4 dp round them and between.
 let SWITCH_PAD = 4.0;
 fn switch_row_h() -> f32 { gui::tap() + 2.0 * SWITCH_PAD } // its tiles, a tap tall, and the glass round them
-let SWITCH_IDS = gui::PICKER_IDS + 20;
 
 // How wide draughts tile i wants to be: as settings' tiles, its words with gui::side()
 // either side, at least a tap.
@@ -525,7 +533,7 @@ fn today_locked(g: gui::Gui&, r: float4, stars: const u8[:], phone: bool) {
 // landscape): its mark on glass, a tap square. True when tapped.
 fn learn_tile(g: gui::Gui&, r: float4) -> bool {
     gui::glass(g, r, 22.0);
-    return gui::tile(g, gui::PICKER_IDS + 8, r, gui::HOW, gui::ROW, 22.0);
+    return gui::tile(g, LEARN_ID, r, gui::HOW, gui::ROW, 22.0);
 }
 
 // The library: back, the title, the draughts switch, and a row per theme the set has.
@@ -605,7 +613,7 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     } else {
         let r = gui::cut_left(top, gui::tap() * u);
         gui::under_tile(g, r, 22.0);
-        if gui::tile(g, gui::PICKER_IDS, r, gui::BACK, gui::PLAIN, 22.0) { pick = BACK; }
+        if gui::tile(g, BACK_ID, r, gui::BACK, gui::PLAIN, 22.0) { pick = BACK; }
     }
     gui::cut_left(top, HEAD_GAP * u);
     // The switch at the row's right, ending with the rows.
@@ -664,7 +672,7 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
 // One puzzle's tile: its stars, lit if it is the first without them. True when tapped.
 fn tile(g: gui::Gui&, i: i64, r: float4, won: i64, lit: bool) -> bool {
     let u = g.scale;
-    let tapped, pic = gui::pick(g, gui::PICKER_IDS + 400 + i, r, 0.0, "", "", lit, true);
+    let tapped, pic = gui::pick(g, PUZZLE_IDS + i, r, 0.0, "", "", lit, true);
     let star: f32 = 20.0;
     for k in 3 {
         let cell = gui::cell(r, 3, 1, star * u, star * u, 2.0 * u, k);

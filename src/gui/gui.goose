@@ -330,15 +330,16 @@ let ASK_RESTART = -6;
 // screen numbers its widgets from its base, inside its own range, so two screens declared
 // in one frame (a transition) never share an id. IDS, under SCROLL_ID below, lists the
 // bases in order, IDS_SPAN how many ids each range holds; test/gui/ids checks no range
-// runs into the next.
+// runs into the next, and that each screen's named ids, each on from the one before,
+// end inside its range (the screen's IDS_END).
 let PANEL_IDS = 110;        // the game's and a puzzle's panels: the bar, the play, the camera's buttons
 let CARD_IDS = 200;         // the game's end cards
 let HOME_IDS = 300;         // home's menu and a new game's setup
 let SETTINGS_IDS = 400;
 let WHO_IDS = 500;          // who's playing, and a player's sheet
 let PICKER_IDS = 600;       // the puzzles to pick from: the library, a theme's page, its puzzles
-let RESULTS_IDS = 1300;     // the games played (task 074), a row a game from 11 past the base
-let REPLAY_IDS = 1600;      // a past game's replay (task 078), a move a tap from 10 past the base
+let RESULTS_IDS = 1300;     // the games played (task 074)
+let REPLAY_IDS = 1600;      // a past game's replay (task 078)
 let TUTORIAL_IDS = 2200;    // how to play (task 026): its panel and its end's card
 
 // One scrolling list a frame (task 050; rendering.md, "Scrolling"): what scroll_begin

@@ -453,7 +453,7 @@ fn main() {
     var sh = fresh(text);
     print("the library: ", puzzles::library.list.len, " puzzles");
     print("Today's tiles' ids ", picker::TODAY_IDS, " to ", picker::TODAY_IDS + puzzles::MAX_DAILY - 1, ", the picker's ", gui::PICKER_IDS,
-          " to ", gui::PICKER_IDS + gui::IDS_SPAN[5] - 1, ", How to play's ", gui::PICKER_IDS + 8);
+          " to ", gui::PICKER_IDS + gui::IDS_SPAN[5] - 1, ", How to play's ", picker::LEARN_ID);
 
     // Locked: one Learn puzzle short of all.
     let learn = puzzles::theme_count(puzzles::all, puzzles::LEARN);

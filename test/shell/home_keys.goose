@@ -24,8 +24,8 @@ fn way(g: gui::Gui&) -> const u8[:] {
     var quit = false;
     var x = false;
     for s in g.spots {
-        if s.id == gui::HOME_IDS + 6 { quit = true; }
-        if s.id == gui::HOME_IDS + 9 { x = true; }
+        if s.id == home::QUIT_ROW_ID { quit = true; }
+        if s.id == home::CROSS_ID { x = true; }
     }
     if quit && x { return "both"; }
     return if quit { "the Quit row" } else if x { "the X" } else { "none" };
@@ -63,7 +63,7 @@ fn main() {
         drive::key(sh, g, gui::STEP_DOWN, false, now);
         format(walk, " ", g.focus - gui::HOME_IDS);
     }
-    print("down from none, eight times (ids past HOME_IDS; the games 7):", walk[..]);
+    print("down from none, eight times (ids past HOME_IDS; the games ", home::RESULTS_ID - gui::HOME_IDS, "):", walk[..]);
     now += 1.0;
     drive::key(sh, g, gui::STEP_NONE, true, now);
     print("enter on Quit: quit ", sh.out.quit, ", asks ", sh.quitting);
@@ -73,7 +73,7 @@ fn main() {
     drive::idle(sh, g, now);
     now += 1.0;
     drive::idle(sh, g, now);
-    print("the question: focus ", g.focus - gui::HOME_IDS, " (quit 15)");
+    print("the question: focus ", g.focus - gui::HOME_IDS, " (quit ", home::QUIT_ID - gui::HOME_IDS, ")");
     print("back: handled ", shell::back(sh, now), ", asks ", sh.quitting);
     print("back on the menu: handled ", shell::back(sh, now), ", asks ", sh.quitting);
     now += 1.0;

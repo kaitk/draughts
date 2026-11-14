@@ -61,6 +61,31 @@ let NO_SETUP = NOTHING;
 var closable = true;
 
 let ROWS = 3;               // continue, new game, puzzles; the games and settings after them
+
+// The widget ids, from gui::HOME_IDS, each on from the one before by as many as it takes,
+// so no two meet; test/gui/ids keeps IDS_END inside home's range.
+let GEAR_ID = gui::HOME_IDS;        // settings' gear beside the wordmark
+let ROW_IDS = GEAR_ID + 1;          // the menu's first ROWS rows (continue or How to play, new game, puzzles),
+let RESULTS_ID = ROW_IDS + ROWS;    // the games,
+let SETTINGS_ID = RESULTS_ID + 1;   // settings,
+let QUIT_ROW_ID = SETTINGS_ID + 1;  // and Quit as rows
+let CHIP_ID = QUIT_ROW_ID + 1;      // the player's chip
+let CROSS_ID = CHIP_ID + 1;         // the way out, the X
+let MENU_LIST = CROSS_ID + 1;       // the rows' scrolling list (gui::scroll_begin)
+let QUIT_OUTSIDE_ID = MENU_LIST + 1; // a desktop's quit question: round its card,
+let QUIT_CARD_ID = QUIT_OUTSIDE_ID + 1; // the card,
+let QUIT_CANCEL_ID = QUIT_CARD_ID + 1; // cancel,
+let QUIT_ID = QUIT_CANCEL_ID + 1;   // and quit
+let SETUP_LIST = QUIT_ID + 1;       // the setup's choices' scrolling list
+let SETUP_BACK_ID = SETUP_LIST + 1;
+let AGAINST_IDS = SETUP_BACK_ID + 1; // the setup's tiles: whom to play, four,
+let DRAUGHTS_IDS = AGAINST_IDS + 4; // the draughts (settings::DRAUGHTS), three,
+let COLOR_IDS = DRAUGHTS_IDS + 3;   // the child's color, two,
+let TURNS_IDS = COLOR_IDS + 2;      // or a friend's board turning or not,
+let CLOCK_IDS = TURNS_IDS + 2;      // the clocks, three,
+let PLAY_ID = CLOCK_IDS + 3;        // and play
+let IDS_END = PLAY_ID + 1;
+
 // The menu's rows shown: ROWS, or one fewer while there is no game to continue (frame
 // sets it from Resume before the layout; issue 1).
 var rows = ROWS;
@@ -69,7 +94,6 @@ var rows = ROWS;
 // fits with it the menu grows by a row, and where that would shrink the board or leave
 // the screen (a phone) the menu keeps its height and its rows scroll under the wordmark,
 // the lowest fading out at the foot to show there are more (layout's `scroll`, menu).
-let MENU_LIST = gui::HOME_IDS + 11;     // the rows' scrolling list's id (gui::scroll_begin)
 let FADE = 72.0;            // dp at the list's foot over which a row fades out
 let PEEK = 60.0;            // dp of the next row a scrolling menu shows, its word in it
 let ROW_GAP = 2.0;
@@ -105,7 +129,6 @@ let TILE_GAP = 10.0;
 let PLAY_GAP = 18.0;
 let PLAY_UP_GAP = 12.0;     // between back and play where play is in the head row
 let SETUP_MARGIN = 8.0;     // the least the setup keeps from the safe area's top and foot before it scrolls
-let SETUP_LIST = gui::HOME_IDS + 16; // the setup's choices' scrolling list's id
 let COLUMN_W = 360.0;       // the column's content in landscape;
 let GEAR_W = 440.0;         // the menu's with the gear beside the wordmark;
 let SETUP_W = 400.0;        // the setup's, its first row's four tiles each a tap wide
@@ -423,7 +446,7 @@ fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: f
                else { menu(over, g, h.content, h.gear, h.below, h.apart, s, h.small, h.quit, resume, h.scroll, foot(g, area)) };
     // The player and the way out, declared last so the tiles before them keep their order.
     if setup == NO_SETUP && player_chip(g, player_spot(g, area, h.side, l.board, h.way, s), s) { pick = PLAYERS; }
-    if closable && !h.quit && gui::bare_x(g, gui::HOME_IDS + 9, h.way, gui::CLOSE, CROSS) { pick = EXIT; }
+    if closable && !h.quit && gui::bare_x(g, CROSS_ID, h.way, gui::CLOSE, CROSS) { pick = EXIT; }
     return pick;
 }
 
@@ -473,7 +496,7 @@ fn player_chip(g: gui::Gui&, r: float4, s: settings::Settings&) -> bool {
         let pill = gui::center(float4 { r.x + (gui::tap() + CHIP_GAP - CHIP_PILL) * u, r.y, w, r.w }, w, CHIP_PILL_H * u);
         gui::glass(g, pill, CHIP_RADIUS);
     }
-    let clicked, p = gui::bare(g, gui::HOME_IDS + 8, r);
+    let clicked, p = gui::bare(g, CHIP_ID, r);
     let k = 1.0 - 0.04 * p;
     var c = r;
     let f = CHIP_FACE * u * k;
@@ -519,7 +542,7 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
     var pick = NOTHING;
     if gear {
         let r = gui::center(gui::cut_right(mark, gui::tap() * u), gui::tap() * u, gui::tap() * u);
-        if gui::icon_button(g, gui::HOME_IDS, r, gui::GEAR, GEAR_ICON) { pick = SETTINGS; }
+        if gui::icon_button(g, GEAR_ID, r, gui::GEAR, GEAR_ICON) { pick = SETTINGS; }
         mark.z += 0.5 * (gui::tap() - GEAR_ICON) * u;
     }
     // The name spaced out, less where the gear leaves it too little room (a phone).
@@ -560,11 +583,11 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
         let mark = if i != 1 { gui::NO_ICON } else if s.friend { gui::FRIEND } else { gui::COMPUTER };
         // How to play in continue's place (Resume.learn).
         if i == 0 && !resume.on {
-            if gui::row(g, gui::HOME_IDS + 1, r, gui::HOW, strings::get(strings::HOW_TITLE),
+            if gui::row(g, ROW_IDS, r, gui::HOW, strings::get(strings::HOW_TITLE),
                         strings::get(draughts_key(s.variant)), true, true) { pick = LEARN; }
             continue;
         }
-        if gui::row(g, gui::HOME_IDS + 1 + i, r, icons[i], strings::get(keys[i]), note, i == first, true, i == 1, mark) {
+        if gui::row(g, ROW_IDS + i, r, icons[i], strings::get(keys[i]), note, i == first, true, i == 1, mark) {
             pick = ways[i];
         }
         if i == 2 && daily { today_dots(g, r, s.today[set]); }
@@ -572,13 +595,13 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
     // The games: the player's rating in their draughts once they have one.
     var rating: u8[..16] = [];
     if s.rated[s.variant] > 0 { format(rating, s.rating[s.variant]); }
-    if gui::row(g, gui::HOME_IDS + 7, at[1 + rows], gui::LEVEL + 2, strings::get(strings::RESULTS_TITLE), rating[..], false, true) {
+    if gui::row(g, RESULTS_ID, at[1 + rows], gui::LEVEL + 2, strings::get(strings::RESULTS_TITLE), rating[..], false, true) {
         pick = RESULTS;
     }
     if !gear {
-        if gui::row(g, gui::HOME_IDS + 5, at[2 + rows], gui::GEAR, strings::get(strings::HOME_SETTINGS), "", false, true) { pick = SETTINGS; }
+        if gui::row(g, SETTINGS_ID, at[2 + rows], gui::GEAR, strings::get(strings::HOME_SETTINGS), "", false, true) { pick = SETTINGS; }
     }
-    if quit && gui::row(g, gui::HOME_IDS + 6, at[3 + rows], gui::CLOSE, strings::get(strings::HOME_QUIT), "", false, true) {
+    if quit && gui::row(g, QUIT_ROW_ID, at[3 + rows], gui::CLOSE, strings::get(strings::HOME_QUIT), "", false, true) {
         pick = EXIT;
     }
     if scroll {
@@ -634,7 +657,7 @@ let ASK_ICON = 28.0;
 fn ask_quit(g: gui::Gui&, area: float4, screen: float4) -> i64 {
     let u = g.scale;
     gui::fill(g, screen, float4 { 0.0, 0.0, 0.0, 0.42 }, 0.0);
-    let outside, unused = gui::hold(g, gui::HOME_IDS + 12, screen, false);
+    let outside, unused = gui::hold(g, QUIT_OUTSIDE_ID, screen, false);
     let title = strings::get(strings::QUIT_ASK);
     let cancel = strings::get(strings::QUIT_CANCEL);
     let quit = strings::get(strings::HOME_QUIT);
@@ -646,20 +669,20 @@ fn ask_quit(g: gui::Gui&, area: float4, screen: float4) -> i64 {
     let height = line + (3.0 * ASK_PAD + gui::tap()) * u;
     let r = gui::center(area, width, height);
     gui::glass(g, r, 32.0);
-    gui::hold(g, gui::HOME_IDS + 13, r, false);
+    gui::hold(g, QUIT_CARD_ID, r, false);
     var c = gui::inset(r, ASK_PAD * u);
     gui::text(g, gui::HEADING, gui::cut_top(c, line), title, 1.0, 0.0, gui::CENTER);
     gui::cut_top(c, ASK_PAD * u);
     var row = gui::center(gui::cut_top(c, gui::tap() * u), pair, gui::tap() * u);
     var ask = NOTHING;
-    if gui::labelled(g, gui::HOME_IDS + 14, gui::cut_left(row, button), gui::BACK, ASK_ICON, cancel, gui::BODY, gui::MIDDLE) {
+    if gui::labelled(g, QUIT_CANCEL_ID, gui::cut_left(row, button), gui::BACK, ASK_ICON, cancel, gui::BODY, gui::MIDDLE) {
         ask = BACK;
     }
-    if gui::labelled(g, gui::HOME_IDS + 15, gui::cut_right(row, button), gui::CLOSE, ASK_ICON, quit, gui::BODY, gui::MIDDLE,
+    if gui::labelled(g, QUIT_ID, gui::cut_right(row, button), gui::CLOSE, ASK_ICON, quit, gui::BODY, gui::MIDDLE,
                      gui::PRIMARY) {
         ask = EXIT;
     }
-    gui::prefer(g, gui::HOME_IDS + 15);
+    gui::prefer(g, QUIT_ID);
     if ask == NOTHING && outside { ask = BACK; }
     return ask;
 }
@@ -722,7 +745,7 @@ fn play_row(g: gui::Gui&, r: float4) -> bool {
     let u = g.scale;
     let word = strings::get(strings::SETUP_PLAY);
     let w = 34.0 * u + 18.0 * u + gui::text_width(g, gui::LABEL, word) + 36.0 * u;
-    let tapped = gui::row(g, gui::HOME_IDS + 70, r, gui::NO_ICON, "", "", true, true);
+    let tapped = gui::row(g, PLAY_ID, r, gui::NO_ICON, "", "", true, true);
     var mid = gui::center(r, w, r.w);
     gui::cut_left(mid, 18.0 * u);
     gui::glyph_icon(g, gui::center(gui::cut_left(mid, 34.0 * u), 34.0 * u, 34.0 * u), gui::NEXT, gui::ROW_PRIMARY, 0.0, 0.85);
@@ -746,7 +769,7 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, apart: float4, u
     var head = apart;
     if apart.z <= 0.0 { head = gui::cut_top(c, gui::tap() * u); }
     let back = gui::cut_left(head, gui::tap() * u);
-    if gui::tile(g, gui::HOME_IDS + 20, back, gui::BACK, gui::PLAIN, 16.0) { ask = BACK; }
+    if gui::tile(g, SETUP_BACK_ID, back, gui::BACK, gui::PLAIN, 16.0) { ask = BACK; }
     var play = head;
     if up {
         gui::cut_left(play, PLAY_UP_GAP * u);
@@ -778,7 +801,7 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, apart: float4, u
     for i in 4 {
         let on = if i == 0 { s.friend } else { !s.friend && s.level == i - 1 };
         let label = strings::get(if i == 0 { strings::SETUP_FRIEND } else { LEVEL_KEYS[i - 1] });
-        let tapped, pic = gui::pick(g, gui::HOME_IDS + 40 + i, across(against, 4, i, u), 30.0, label, "", on, true);
+        let tapped, pic = gui::pick(g, AGAINST_IDS + i, across(against, 4, i, u), 30.0, label, "", on, true);
         let w: f32 = if i == 0 { 24.0 } else { 70.0 };
         var mark = gui::center(pic, w * u, pic.w);
         gui::glyph_icon(g, gui::center(gui::cut_left(mark, 24.0 * u), 24.0 * u, 24.0 * u),
@@ -794,7 +817,7 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, apart: float4, u
     // The draughts, each with its board at the start.
     let kinds = group(g, list, strings::SETUP_DRAUGHTS, BOARD_TILE_H);
     for v, i in settings::DRAUGHTS {
-        let tapped, pic = gui::pick(g, gui::HOME_IDS + 30 + i, draughts_tile(g, kinds, i), MINI_SIZE,
+        let tapped, pic = gui::pick(g, DRAUGHTS_IDS + i, draughts_tile(g, kinds, i), MINI_SIZE,
                                     strings::get(settings::DRAUGHTS_KEYS[i]), strings::get(settings::DRAUGHTS_SIZES[i]),
                                     s.variant == v, true);
         let n = rules::VARIANTS[v].size;
@@ -809,7 +832,7 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, apart: float4, u
         // The child's pieces, each tile showing one.
         let colors = group(g, list, strings::SETUP_COLOR, gui::stacked());
         for i in 2 {
-            let tapped, pic = gui::pick(g, gui::HOME_IDS + 50 + i, across(colors, 2, i, u), 30.0,
+            let tapped, pic = gui::pick(g, COLOR_IDS + i, across(colors, 2, i, u), 30.0,
                                         strings::get(if i == 0 { strings::COLOR_WHITE } else { strings::COLOR_BLACK }), "",
                                         s.color == i, true);
             game::put(over, pic, 15.0 * u, i, 0, 1.0, false);
@@ -828,7 +851,7 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, apart: float4, u
         let icon: f32 = if words + 42.0 * u <= turning.w { 30.0 } else { 0.0 };
         for i in 2 {
             let turns = i == 1;
-            let tapped, pic = gui::pick(g, gui::HOME_IDS + 52 + i, across(turning, 2, i, u), icon,
+            let tapped, pic = gui::pick(g, TURNS_IDS + i, across(turning, 2, i, u), icon,
                                         strings::get(if turns { strings::BOARD_TURNS } else { strings::BOARD_STAYS }),
                                         strings::get(if turns { strings::BOARD_TURNS_NOTE } else { strings::BOARD_STAYS_NOTE }),
                                         s.turns == turns, true);
@@ -849,7 +872,7 @@ fn choose(over: board::Overlay&, g: gui::Gui&, content: float4, apart: float4, u
     let notes = [strings::CLOCK_NONE, strings::CLOCK_BLITZ_NOTE, strings::CLOCK_RAPID_NOTE];
     for i in 3 {
         let label = if labels[i] >= 0 { strings::get(labels[i]) } else { "" };
-        let tapped, pic = gui::pick(g, gui::HOME_IDS + 60 + i, across(clocks, 3, i, u), if i == 0 { 26.0 } else { 0.0 }, label,
+        let tapped, pic = gui::pick(g, CLOCK_IDS + i, across(clocks, 3, i, u), if i == 0 { 26.0 } else { 0.0 }, label,
                                     strings::get(notes[i]), s.clock == i, true);
         if i == 0 { gui::glyph_icon(g, gui::center(pic, 26.0 * u, 26.0 * u), gui::CLOCK, gui::PLAIN, 0.0, 0.85); }
         if tapped {

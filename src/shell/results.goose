@@ -44,10 +44,13 @@ fn look_of(big: bool) -> Look {
     return Look { body: gui::LABEL, small: gui::BODY, k: 1.25, side: 480.0, row: 96.0 };
 }
 
+// The widget ids, from gui::RESULTS_IDS, each on from the one before by as many as it
+// takes, so no two meet; test/gui/ids keeps IDS_END inside the range.
 let BACK_ID = gui::RESULTS_IDS;
-let DRAUGHTS_ID = gui::RESULTS_IDS + 1;   // the three draughts' tiles
-let LIST = gui::RESULTS_IDS + 10;         // the games' scrolling list
-let ROW_ID = gui::RESULTS_IDS + 11;       // a game's row, by its place in the list (MAX_GAMES of them)
+let DRAUGHTS_ID = BACK_ID + 1;      // the three draughts' tiles
+let LIST = DRAUGHTS_ID + 3;         // the games' scrolling list
+let ROW_ID = LIST + 1;              // a game's row, by its place in the list
+let IDS_END = ROW_ID + history::MAX_GAMES;
 
 // The draughts' tile i shows: International, Brazilian, Russian (settings' order).
 fn variant_of(i: i64) -> i64 { settings::DRAUGHTS[i] }

@@ -80,7 +80,7 @@ fn main() {
     // From home: its games row opens the screen.
     drive::idle(sh, g, tick());
     var row = float4 { -100.0, -100.0, 1.0, 1.0 };
-    for s in g.spots { if s.id == gui::HOME_IDS + 7 { row = s.rect; } }
+    for s in g.spots { if s.id == home::RESULTS_ID { row = s.rect; } }
     drive::tap(sh, g, drive::middle(row), tick());
     drive::idle(sh, g, tick());
     print("games row tapped: screen ", sh.screen, " (results ", shell::RESULTS, "), ", sh.past.games.len, " games read, showing ",

@@ -8,5 +8,11 @@ games: 1300 to 1510
 replay: 1600 to 2121
 tutorial: 2200 to 2209
 scroll: 9000 to 9000
-the largest theme: 20 puzzles, room for 200
+home: its named ids take 31 of 71
+settings: its named ids take 42 of 81
+who: its named ids take 22 of 50
+picker: its named ids take 178 of 600
+games: its named ids take 205 of 211
+replay: its named ids take 522 of 522
+tutorial: its named ids take 5 of 10
 no range runs into another

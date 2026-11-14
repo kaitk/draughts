@@ -98,7 +98,7 @@ fn main() {
     sh.prefs.first_start_done = true;
     drive::idle(sh, g, tick());
     print("home's first row how to play: ", shell::resume(sh).learn);
-    press(sh, g, gui::HOME_IDS + 1);
+    press(sh, g, home::ROW_IDS);
     settle(sh, g, 0.5);
     print("how to play: screen ", sh.screen, " (", shell::TUTORIAL, "), ", state(sh));
     // Next takes no tap before the step is played.

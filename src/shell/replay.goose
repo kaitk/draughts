@@ -82,14 +82,17 @@ let LARGE_COL = 760.0;
 let LARGE_SIDE = 420.0;
 let LARGE = 1.5;
 
+// The widget ids, from gui::REPLAY_IDS, each on from the one before by as many as it
+// takes, so no two meet; test/gui/ids keeps IDS_END inside the range.
 let BACK_ID = gui::REPLAY_IDS;
-let STEP_ID = gui::REPLAY_IDS + 1;  // the four steps
-let LIST = gui::REPLAY_IDS + 5;     // the list's scroll
-let PLAY_ID = gui::REPLAY_IDS + 6;  // play from here
-let BULB_ID = gui::REPLAY_IDS + 7;  // the best move shown: the fifth step tile,
-let BEST_LINE_ID = gui::REPLAY_IDS + 8; // or the glass's line for it
-let WAS_ID = gui::REPLAY_IDS + 9;   // the line saying what was best: back to it, shown
-let MOVE_ID = gui::REPLAY_IDS + 10; // a move's tap, by its index in the game
+let STEP_ID = BACK_ID + 1;          // the four steps
+let LIST = STEP_ID + 4;             // the list's scroll
+let PLAY_ID = LIST + 1;             // play from here
+let BULB_ID = PLAY_ID + 1;          // the best move shown: the fifth step tile,
+let BEST_LINE_ID = BULB_ID + 1;     // or the glass's line for it
+let WAS_ID = BEST_LINE_ID + 1;      // the line saying what was best: back to it, shown
+let MOVE_ID = WAS_ID + 1;           // a move's tap, by its index in the game
+let IDS_END = MOVE_ID + MAX_PLIES;
 
 // The keys' groups (gui::group), in Tab's order: the head, the steps, the list.
 let GROUP_HEAD = 0;

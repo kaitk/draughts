@@ -255,7 +255,7 @@ fn main() {
     gui::test_faces(g);
     drive::idle(sh, g, tick());
     // Home's games row opens the results.
-    press(sh, g, gui::HOME_IDS + 7);
+    press(sh, g, home::RESULTS_ID);
     drive::idle(sh, g, tick());
     print("results: screen ", sh.screen, ", ", sh.past.games.len, " games");
 

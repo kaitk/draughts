@@ -67,11 +67,13 @@ let NEXT = gui::ASK_OWN + 3; // the panel's next was tapped
 let CAMERA = gui::ASK_OWN + 4; // a camera button was
 
 // The ids: next is the panel's (panel::EYE_ID, as a puzzle's); the end's card's own.
+// Each on from the one before; test/gui/ids keeps IDS_END inside the range.
 let CARD = gui::TUTORIAL_IDS;
-let CARD_PUZZLES = gui::TUTORIAL_IDS + 1;
-let CARD_NEW_GAME = gui::TUTORIAL_IDS + 2;
-let CARD_HOME = gui::TUTORIAL_IDS + 3;
-let CARD_OUTSIDE = gui::TUTORIAL_IDS + 4;
+let CARD_PUZZLES = CARD + 1;
+let CARD_NEW_GAME = CARD_PUZZLES + 1;
+let CARD_HOME = CARD_NEW_GAME + 1;
+let CARD_OUTSIDE = CARD_HOME + 1;
+let IDS_END = CARD_OUTSIDE + 1;
 
 // What a frame tells the shell: where to go, and the steps played so far when one was
 // played this frame (else -1), for the player's file.

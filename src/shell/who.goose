@@ -36,6 +36,23 @@ let REMOVE = gui::ASK_OWN + 4; // remove the sheet's player
 let LEARN = gui::ASK_OWN + 5; // how to play, from the question
 let KNOWN = gui::ASK_OWN + 6; // the player knows how
 
+// The widget ids, from gui::WHO_IDS, each on from the one before by as many as it takes,
+// so no two meet; test/gui/ids keeps IDS_END inside who's range.
+let OUTSIDE_ID = gui::WHO_IDS;      // round the card,
+let CARD_ID = OUTSIDE_ID + 1;       // the card,
+let BACK_ID = CARD_ID + 1;          // its back,
+let EDIT_ID = BACK_ID + 1;          // its pencil,
+let FACE_IDS = EDIT_ID + 1;         // and the players' faces, then the new player's
+let SHEET_BACK_ID = FACE_IDS + players::MAX_PLAYERS + 1; // a player's sheet: back,
+let DONE_ID = SHEET_BACK_ID + 1;    // done,
+let PICTURE_IDS = DONE_ID + 1;      // the pictures, one an animal,
+let NAME_ID = PICTURE_IDS + players::ANIMALS.len; // the name,
+let AGAIN_ID = NAME_ID + 1;         // start again,
+let REMOVE_ID = AGAIN_ID + 1;       // and remove
+let SHOW_ID = REMOVE_ID + 1;        // the question's show me,
+let KNOWN_ID = SHOW_ID + 1;         // and I know how
+let IDS_END = KNOWN_ID + 1;
+
 let HOLD = 1.5;             // seconds start again and remove are held
 
 // The parts, in dp: the head, the name's field, and the holds are gui::tap() tall.
@@ -102,7 +119,7 @@ fn grid(ps: players::Players&, area: float4, u: f32) -> i64, i64, i64 {
 fn frame(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4, screen: float4) -> i64, i64 {
     gui::fill(g, screen, float4 { 0.0, 0.0, 0.0, 0.42 }, 0.0);
     // A tap on the dimmed home outside the card closes it.
-    let outside, unused = gui::hold(g, gui::WHO_IDS, screen, false);
+    let outside, unused = gui::hold(g, OUTSIDE_ID, screen, false);
     var ask = NOTHING;
     var index = -1;
     if w.state == SHEET {
@@ -123,7 +140,7 @@ fn frame(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4, screen: flo
 // The card's glass in r, which takes a press on it so it never reaches the dimmed home.
 fn card(g: gui::Gui&, r: float4) {
     gui::glass(g, r, 32.0);
-    gui::hold(g, gui::WHO_IDS + 1, r, false);
+    gui::hold(g, CARD_ID, r, false);
 }
 
 // A glass round tile a tap across with an icon, as settings' back: true when tapped.
@@ -150,11 +167,11 @@ fn picker(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i6
     var ask = NOTHING;
     var row = gui::cut_top(c, gui::tap() * u);
     gui::cut_top(c, GAP * u);
-    if glass_tile(g, gui::WHO_IDS + 2, gui::cut_left(row, gui::tap() * u), gui::BACK, gui::PLAIN) {
+    if glass_tile(g, BACK_ID, gui::cut_left(row, gui::tap() * u), gui::BACK, gui::PLAIN) {
         w.state = CLOSED;
         ask = CHANGED;
     }
-    if glass_tile(g, gui::WHO_IDS + 3, gui::cut_right(row, gui::tap() * u), gui::PENCIL, if w.editing { gui::ON } else { gui::PLAIN }) {
+    if glass_tile(g, EDIT_ID, gui::cut_right(row, gui::tap() * u), gui::PENCIL, if w.editing { gui::ON } else { gui::PLAIN }) {
         w.editing = !w.editing;
         ask = CHANGED;
     }
@@ -169,7 +186,7 @@ fn picker(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i6
         let x0 = c.x + 0.5 * (c.z - (in_line * t + (in_line - 1) * TILE_GAP) * u);
         let tr = float4 { x0 + (i % per) * (t + TILE_GAP) * u, c.y + line * (th + TILE_GAP) * u, t * u, th * u };
         let add = i == ps.list.len;
-        let tapped = gui::tile(g, gui::WHO_IDS + 10 + i, tr, gui::NO_ICON, if w.editing && !add { gui::QUIET } else { gui::ROW }, 24.0);
+        let tapped = gui::tile(g, FACE_IDS + i, tr, gui::NO_ICON, if w.editing && !add { gui::QUIET } else { gui::ROW }, 24.0);
         var inner = gui::inset(tr, gui::PAD * u);
         let fs = 0.72 * t * u;
         let fr = gui::center(gui::cut_top(inner, fs), fs, fs);
@@ -291,12 +308,12 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
 
     var row = gui::cut_top(c, gui::tap() * u);
     gui::cut_top(c, GAP * u);
-    if glass_tile(g, gui::WHO_IDS + 20, gui::cut_left(row, gui::tap() * u), gui::BACK, gui::PLAIN) {
+    if glass_tile(g, SHEET_BACK_ID, gui::cut_left(row, gui::tap() * u), gui::BACK, gui::PLAIN) {
         w.state = if w.first { CLOSED } else { PICKING };
         w.typing = false;
         ask = CHANGED;
     }
-    let done = glass_tile(g, gui::WHO_IDS + 21, gui::cut_right(row, gui::tap() * u), gui::CHECK, gui::PRIMARY) || entered;
+    let done = glass_tile(g, DONE_ID, gui::cut_right(row, gui::tap() * u), gui::CHECK, gui::PRIMARY) || entered;
     gui::cut_left(row, gui::PAD_WIDE * u);
     gui::cut_right(row, gui::PAD_WIDE * u);
     if line {
@@ -327,7 +344,7 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
         let cell = float4 { cells.x + (a % cols) * (pic + PIC_GAP) * u, cells.y + (a / cols) * (pic + PIC_GAP) * u,
                             pic * u, pic * u };
         let free = !players::taken(ps, a, w.target);
-        let tapped, unused = gui::pick(g, gui::WHO_IDS + 30 + a, cell, 0.0, "", "", a == w.picture, free);
+        let tapped, unused = gui::pick(g, PICTURE_IDS + a, cell, 0.0, "", "", a == w.picture, free);
         let s = (pic - 22.0) * u;
         gui::face(g, gui::center(cell, s, s), a, if free { 1.0 } else { 0.3 }, false);
         if tapped && a != w.picture {
@@ -343,8 +360,8 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
         var hr = gui::cut_top(rest, holds_h * u);
         let first = if stacked || holds == 1 { gui::cut_top(hr, gui::tap() * u) } else { gui::cut_left(hr, 0.5 * (hr.z - gui::PAD * u)) };
         if stacked { gui::cut_top(hr, ROW_GAP * u); } else { gui::cut_left(hr, gui::PAD * u); }
-        if hold(g, gui::WHO_IDS + 41, first, gui::RESTART, strings::PLAYERS_START_AGAIN, false) { ask = AGAIN; }
-        if holds == 2 && hold(g, gui::WHO_IDS + 42, hr, gui::TRASH, strings::PLAYERS_REMOVE, true) {
+        if hold(g, AGAIN_ID, first, gui::RESTART, strings::PLAYERS_START_AGAIN, false) { ask = AGAIN; }
+        if holds == 2 && hold(g, REMOVE_ID, hr, gui::TRASH, strings::PLAYERS_REMOVE, true) {
             w.state = PICKING;
             w.typing = false;
             return REMOVE, w.target;
@@ -396,7 +413,7 @@ fn field(w: Who&, g: gui::Gui&, r: float4) -> bool {
     let u = g.scale;
     var changed = false;
     gui::fill(g, r, float4 { 0.0, 0.0, 0.0, 0.18 }, 20.0 * u);
-    if gui::tile(g, gui::WHO_IDS + 40, r, gui::NO_ICON, if w.typing { gui::CHOSEN } else { gui::QUIET }, 20.0) {
+    if gui::tile(g, NAME_ID, r, gui::NO_ICON, if w.typing { gui::CHOSEN } else { gui::QUIET }, 20.0) {
         w.typing = true;
         w.keyboard++;
         changed = true;
@@ -476,12 +493,12 @@ fn asking(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64 {
     let b = if beside { gui::cut_right(tiles, tile_w) } else { gui::cut_bottom(tiles, tile_h) };
     let arrange = if beside { gui::STACKED } else { gui::MIDDLE };
     let size: f32 = if beside { 52.0 } else { 36.0 };
-    if gui::labelled(g, gui::WHO_IDS + 43, a, gui::HOW, size, strings::get(strings::HOW_SHOW), gui::LABEL, arrange,
+    if gui::labelled(g, SHOW_ID, a, gui::HOW, size, strings::get(strings::HOW_SHOW), gui::LABEL, arrange,
                      gui::CHOSEN) {
         w.state = CLOSED;
         return LEARN;
     }
-    if gui::labelled(g, gui::WHO_IDS + 44, b, gui::CHECK, size, strings::get(strings::HOW_KNOWN), gui::LABEL, arrange) {
+    if gui::labelled(g, KNOWN_ID, b, gui::CHECK, size, strings::get(strings::HOW_KNOWN), gui::LABEL, arrange) {
         w.state = CLOSED;
         return KNOWN;
     }

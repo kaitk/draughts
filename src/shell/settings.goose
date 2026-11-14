@@ -145,13 +145,16 @@ let FADE_PIC = -3;
 let BOARD_PIC = -4;
 let FLAT_PIC = -8;
 
-// Ids, from gui::SETTINGS_IDS: back 0, the language button 1, the languages' rows from 2,
-// the catch round their list 6 and under it 7, the tiles from 10 (10 a row), the list 80.
-let LANGUAGE_ID = gui::SETTINGS_IDS + 1;
-let LANGUAGE_ROWS = gui::SETTINGS_IDS + 2;
-let OUTSIDE_ID = gui::SETTINGS_IDS + 6;
-let POPUP_ID = gui::SETTINGS_IDS + 7;
-let LIST = gui::SETTINGS_IDS + 80;
+// The widget ids, from gui::SETTINGS_IDS, each on from the one before by as many as it
+// takes, so no two meet; test/gui/ids keeps IDS_END inside settings' range.
+let BACK_ID = gui::SETTINGS_IDS;
+let LANGUAGE_ID = BACK_ID + 1;      // the language button,
+let LANGUAGE_ROWS = LANGUAGE_ID + 1; // the languages' rows,
+let OUTSIDE_ID = LANGUAGE_ROWS + strings::LANGUAGES.len; // the catch round their list,
+let POPUP_ID = OUTSIDE_ID + 1;      // and under it
+let TILE_IDS = POPUP_ID + 1;        // the rows' tiles, MOST_TILES a row
+let LIST = TILE_IDS + ROWS * MOST_TILES;
+let IDS_END = LIST + 1;
 
 // Whether a row's tiles are pictures (gui::choice) rather than words.
 fn pictured(row: i64) -> bool { row <= BOARD_ROW }
@@ -235,7 +238,7 @@ fn picture_of(s: Settings&, row: i64, i: i64) -> i64 {
 // Declares tile i of a row in r. True when a tap changed s.
 fn tile(s: Settings&, over: board::Overlay&, g: gui::Gui&, row: i64, i: i64, r: float4) -> bool {
     let u = g.scale;
-    let id = gui::SETTINGS_IDS + 10 + 10 * row + i;
+    let id = TILE_IDS + MOST_TILES * row + i;
     let words = label(row, i);
     let label = words[..];
     let on = chosen(s, row, i);
@@ -519,7 +522,7 @@ fn head(s: Settings&, g: gui::Gui&, r: float4, shown: i64, button: float4&) -> i
     let stacked = r.z - wide - 40.0 * u - lw < gui::text_width(g, gui::LABEL, title);
     let bw = if stacked { gui::tap() * u } else { wide };
     let back = gui::center(gui::cut_left(row, bw), bw, gui::tap() * u);
-    if gui::back(g, gui::SETTINGS_IDS, back, strings::get(strings::NAV_BACK), stacked) { ask = BACK; }
+    if gui::back(g, BACK_ID, back, strings::get(strings::NAV_BACK), stacked) { ask = BACK; }
     gui::cut_left(row, 20.0 * u);
     button = gui::center(gui::cut_right(row, lw), lw, gui::tap() * u);
     if language_button(g, button, shown, s.languages_open) {

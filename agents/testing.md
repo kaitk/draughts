@@ -46,7 +46,7 @@ whenever a frame drops more than before (2026-11-14).
   and two wrong squares, and take back mid-capture, on a child's position read from a
   photo: `count`, whose `state` fills the board a moment on, so a pulse at its start,
   which is at full, shows as pulsing), `gui` (and the widget ids' ranges, one per
-  screen, none running into the next: `ids`; `gui::stack`'s columns and rows: `stack`; the mouse's hover, its fade and turn, and none with `desktop_scale` 0: `hover`; the
+  screen, none running into the next, and each screen's named ids (`home::IDS_END`..) ending inside its own: `ids`; `gui::stack`'s columns and rows: `stack`; the mouse's hover, its fade and turn, and none with `desktop_scale` 0: `hover`; the
   keys' focus, its moves by the controls' rects, Enter, the mouse taking over,
   Enter held filling a hold tile, and Tab on a screen of one group: `focus`; a focused row scrolled into its list's view:
   `scroll`; in `shell`, `continue_row`: Continue's note and its hidden first run; `kept_screen`: a game kept on each screen restored, on the screen it comes back on; `home_keys`: a desktop's Quit row or the X, and home walked and
