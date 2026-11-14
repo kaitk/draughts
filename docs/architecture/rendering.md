@@ -404,7 +404,8 @@ What they show is in `docs/product.md` and [ai](ai.md#the-lookout).
 apart (kings from the undo history), once a move has shown. They are drawn as piece
 instances over the UI (`panel::taken`): on glass under the left corner panel in flat
 landscape, above the board between the corner panels in 3D landscape where it clears,
-under the bar in portrait. A puzzle shows none.
+under the bar in portrait, each side's on a card of its own once it has taken something.
+A puzzle shows none.
 
 ### The moves panel
 
@@ -416,7 +417,7 @@ orange, `??` red. The glass grows a row a move up to its room. A marked move exp
 itself in a tip (`game::tip`), under the mouse or on a tap.
 
 On a phone the moves show as a line that opens a sheet (`src/game/sheet.goose`): in
-landscape the left column's foot, in portrait a pill in the bar. The sheet lists every
+landscape the left column's foot, in portrait a pill of glass in the bar's row, between the catches. The sheet lists every
 move, each side's accuracy, and the marks' legend (`game::legend`). With the setting off
 there is no panel or line.
 

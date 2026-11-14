@@ -163,7 +163,6 @@ let LINE_NONE = 0;
 let LINE_ROWS = 1;          // a tile at the left column's foot holding the last moves (a phone in landscape)
 let LINE_BAR = 2;           // the last move in the portrait bar's row
 let LINE_TAP_W = 200.0;     // dp: the portrait line's tap across, from the tiles' foot to the board
-let LINE_PILL_IN = 4.0;     // dp: the portrait line's pill inside the row's strip, above and below
 
 // What each side has taken: small pieces, each covering about half the one before, the
 // kings after a gap. A piece is TAKEN_D dp, TAKEN_PHONE on a phone, TAKEN_COMPACT in a
@@ -177,8 +176,9 @@ let TAKEN_STACK = 5;        // two rows, no glass of their own (compact's bar)
 let TAKEN_D = 32.0;
 let TAKEN_PHONE = 26.0;
 let TAKEN_COMPACT = 22.0;
-let TAKEN_BAR_ROW = 52.0;   // dp: the portrait bar's row for them, its strip of glass 42 under a 10 dp gap
-let TAKEN_STRIP_GAP = 10.0;
+let TAKEN_BAR_ROW = 52.0;   // dp: the portrait bar's row: its cards 42 tall under a 10 dp gap
+let TAKEN_CARD_GAP = 10.0;
+let TAKEN_CARD_PAD = 10.0;  // dp: either side inside a side's card in that row
 let TAKEN_STEP: f32 = 0.52; // of a piece: from one to the next in a row
 let TAKEN_GAP:  f32 = 0.3;  // of a piece: before the kings, and between two rows
 let TAKEN_PAD = 16.0;       // dp: either side inside their glass
@@ -782,11 +782,12 @@ fn bar_tiles(l: Layout&, bar: Bar, game: bool, phone: bool, s: f32, moves: bool 
         l.taken_d = TAKEN_COMPACT * s;
         return;
     }
-    // In a game the row under the tiles is a strip of glass of its own.
+    // In a game a row under the tiles: each side's catch on a card of its own, the moves'
+    // line between.
     let row = if game { TAKEN_BAR_ROW * s } else { 0.0 };
     l.tiles = float4 { l.left.x, l.left.y, l.left.z, l.left.w - row };
     guard game else { return; }
-    let h = (TAKEN_BAR_ROW - TAKEN_STRIP_GAP) * s;
+    let h = (TAKEN_BAR_ROW - TAKEN_CARD_GAP) * s;
     l.taken = float4 { l.left.x, l.left.y + l.left.w - h, l.left.z, h };
     l.taken_as = TAKEN_ROW;
     l.taken_d = (if phone { TAKEN_PHONE } else { TAKEN_D }) * s;
@@ -795,8 +796,7 @@ fn bar_tiles(l: Layout&, bar: Bar, game: bool, phone: bool, s: f32, moves: bool 
     let w = LINE_TAP_W * s;
     let top = l.tiles.y + l.tiles.w;
     l.line_tap = float4 { mid - 0.5 * w, top, w, l.left.y + l.left.w + bar.gap - top };
-    let pill = l.taken.w - 2.0 * LINE_PILL_IN * s;
-    l.line = float4 { mid - 0.5 * w + 12.0 * s, l.taken.y + LINE_PILL_IN * s, w - 24.0 * s, pill };
+    l.line = float4 { mid - 0.5 * w + 12.0 * s, l.taken.y, w - 24.0 * s, l.taken.w };
     l.line_as = LINE_BAR;
 }
 
@@ -1487,26 +1487,31 @@ fn taken(g: gui::Gui&, l: Layout, t: Taken, over: board::Overlay&) {
         return;
     }
     if l.taken_as == TAKEN_ROW {
-        // On a strip of glass of its own where it holds something, or the moves' line.
-        // White's catch (black's pieces) at the left, black's at the right, each in at
-        // most its half less a gap; beside the moves' line in its side of the line's tap,
-        // as pieces where both fit there at TAKEN_LEAST, else as counts.
-        guard any || l.line_as == LINE_BAR else { return; }
-        gui::glass(g, l.taken, 0.5 * l.taken.w / u);
-        let strip = float4 { l.taken.x + edge, l.taken.y, l.taken.z - 2.0 * edge, l.taken.w };
+        // Each side's catch on a card of its own, as wide as it, where it has taken
+        // something: white's (black's pieces) at the left, black's at the right, each in
+        // at most its half less a gap; beside the moves' line in its side of the line's
+        // tap, as pieces where both fit there at TAKEN_LEAST, else as counts.
+        let inset = TAKEN_CARD_PAD * u;
+        let strip = float4 { l.taken.x + inset, l.taken.y, l.taken.z - 2.0 * inset, l.taken.w };
         let y = strip.y + 0.5 * (strip.w - d);
         var half = 0.5 * (strip.z - TAKEN_GAP * d);
+        var counts = false;
         if l.line_as == LINE_BAR {
             half = l.line_tap.x - TAKEN_GAP * d - strip.x;
             let least = TAKEN_LEAST * d;
-            if row_len(t, rules::BLACK, least) > half || row_len(t, rules::WHITE, least) > half {
-                count_at(g, over, t, rules::BLACK, float4 { strip.x, strip.y, half, strip.w }, d, false);
-                count_at(g, over, t, rules::WHITE, float4 { strip.x + strip.z - half, strip.y, half, strip.w }, d, true);
-                return;
-            }
+            counts = row_len(t, rules::BLACK, least) > half || row_len(t, rules::WHITE, least) > half;
         }
-        catch_row(over, t, rules::BLACK, float4 { strip.x, y, half, d }, false);
-        catch_row(over, t, rules::WHITE, float4 { strip.x + strip.z - half, y, half, d }, true);
+        for k in 2 {
+            let c = if k == 0 { rules::BLACK } else { rules::WHITE };
+            guard t.men[c] + t.kings[c] > 0 else { continue; }
+            let right = c == rules::WHITE;
+            let w = if counts { count_w(g, t, c, d) } else { min(row_len(t, c, d), half) };
+            let x = if right { strip.x + strip.z - w } else { strip.x };
+            gui::glass(g, float4 { x - inset, l.taken.y, w + 2.0 * inset, l.taken.w }, 0.5 * l.taken.w / u);
+            let at = float4 { if right { strip.x + strip.z - half } else { strip.x }, strip.y, half, strip.w };
+            if counts { count_at(g, over, t, c, at, d, right); }
+            else { catch_row(over, t, c, float4 { at.x, y, half, d }, right); }
+        }
         return;
     }
     guard any else { return; }
@@ -1535,10 +1540,7 @@ fn taken(g: gui::Gui&, l: Layout, t: Taken, over: board::Overlay&) {
 // it, from r's left, or ending at its right (`right`). Returns how wide it is.
 fn count_at(g: gui::Gui&, over: board::Overlay&, t: Taken, c: i64, r: float4, d: f32, right: bool) -> f32 {
     let u = g.scale;
-    var s: u8[..8] = [];
-    let n = t.men[c] + t.kings[c];
-    if n >= 10 { s.push(('0' + (n / 10) % 10) as u8); }
-    s.push(('0' + n % 10) as u8);
+    let s = count_text(t, c);
     let tw = gui::text_width(g, gui::BODY, s[..s.len]);
     let gap = 6.0 * u;
     let w = d + gap + tw;
@@ -1546,6 +1548,21 @@ fn count_at(g: gui::Gui&, over: board::Overlay&, t: Taken, c: i64, r: float4, d:
     piece(over, float4 { x, r.y + 0.5 * (r.w - d), d, d }, 0.5 * d, c, 0, 1.0, 0.0);
     gui::text(g, gui::BODY, float4 { x + d + gap, r.y, tw, r.w }, s[..s.len], 1.0, 0.0, gui::LEFT);
     return w;
+}
+
+// The number of pieces of color `c` taken, as text.
+fn count_text(t: Taken, c: i64) -> u8[..8] {
+    var s: u8[..8] = [];
+    let n = t.men[c] + t.kings[c];
+    if n >= 10 { s.push(('0' + (n / 10) % 10) as u8); }
+    s.push(('0' + n % 10) as u8);
+    return s;
+}
+
+// How wide count_at draws the pieces of color `c` taken, d across.
+fn count_w(g: gui::Gui&, t: Taken, c: i64, d: f32) -> f32 {
+    let s = count_text(t, c);
+    return d + 6.0 * g.scale + gui::text_width(g, gui::BODY, s[..s.len]);
 }
 
 // How long a row of the pieces of color `c` taken is at its usual spacing, d across each.

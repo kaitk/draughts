@@ -267,6 +267,11 @@ words would crowd whose turn (2026-11-10).
 
 Task 052, `game-captured.html` take a in its `row` look (2026-11-09).
 
+In portrait each side's catch is on a glass card of its own, as wide as it, only once it
+has taken something, with the last move's pill on glass between (2026-11-14, the user):
+the tiles above stand without a bar, so the row under them shouldn't have one either.
+Replaces one strip of glass across the bar's width under both catches and the pill.
+
 ### The moves panel and the results screen
 
 Task 074 (2026-11-11) and 078 (2026-11-13):

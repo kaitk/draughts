@@ -223,7 +223,7 @@ fn bar_line(gm: Game&, g: gui::Gui&, l: panel::Layout) {
     let gap = if kw > 0.0 { MARK_GAP * u } else { 0.0 };
     let w = if ns.len > 0 { min(l.line.z, edge + nw + mw + gap + kw + 6.0 * u + k + 8.0 * u) } else { min(l.line.z, 2.0 * edge + mw) };
     let pill = gui::center(l.line, w, l.line.w);
-    gui::fill(g, pill, float4 { 1.0, 1.0, 1.0, 0.1 }, 14.0 * u);
+    gui::glass(g, pill, 0.5 * pill.w / u);
     var x = pill.x + edge;
     if ns.len > 0 {
         gui::text(g, gui::SMALL, float4 { x, pill.y, nw, pill.w }, number[..], 0.6, 0.0, gui::LEFT);
