@@ -223,8 +223,8 @@ the estimated difficulty, the theme and level, the goal in the solver's moves, t
 position, and its one line. `puzzles::load_library` reads only an index at start and when
 the player's draughts change (`shell::sync_puzzles`): each line's difficulty, theme, and
 place, at most `MAX_LIBRARY` (4,096); a day's puzzles are read from their lines
-(`puzzles::entry_of`) into a fixed table of at most `MAX_DAILY` (10) when the day or the
-set changes, never while a screen is drawn.
+(`puzzles::entry_of`) into a fixed table of at most `MAX_DAILY` (10) when the day, the
+set, or the player changes, never while a screen is drawn.
 
 **Made offline**, every position our own: `tools/puzzles.goose batch` places men in
 game-like camps for a table of kinds (a capture to find, shots of two to four moves, the

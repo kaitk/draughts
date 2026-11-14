@@ -5,33 +5,42 @@
 // library, seeds the rating from the course's stars where it has none, picks the day's
 // puzzles from the themes the player has opened, marks them had, and keeps them in the
 // player's file (settings::Today); they are read from the library into a small table when
-// the day or the set changes, never per frame. A daily puzzle plays on the puzzle screen;
-// its first solve moves the rating, and replays the same day win stars only. Part of the
-// shell's namespace.
+// the day, the set, or the player changes, never per frame. A daily puzzle plays on the
+// puzzle screen; its first solve moves the rating, and replays the same day win stars
+// only. Part of the shell's namespace.
 namespace shell;
 import std;
 import vec;
 
-// Today's puzzles as read from the library: the set and the day read, and the puzzles in
-// the order they are played.
+// Today's puzzles as read from the library: the set, the day, and the player (their id)
+// read, and the puzzles in the order they are played. A set of -1 has it read again.
 struct Daily {
-    set:  i64                                   = -1,
-    day:  i64                                   = -1,
-    list: puzzles::Puzzle[..puzzles::MAX_DAILY] = [],
+    set:    i64                                   = -1,
+    day:    i64                                   = -1,
+    player: i64                                   = -1,
+    list:   puzzles::Puzzle[..puzzles::MAX_DAILY] = [],
+}
+
+// The playing player's id, which with the date picks their puzzles; 0 with no players
+// read (a test's shell).
+fn playing_id(sh: Shell&) -> i64 {
+    let ps .= sh.players;
+    return if ps.playing < ps.list.len { ps.list[ps.playing].id } else { 0 };
 }
 
 // The player's daily puzzles in the set shown.
 fn today_of(sh: Shell&) -> settings::Today& { return sh.prefs.today[puzzles::loaded]; }
 
 // Today's puzzles ready for home and the library to show: a new day picked where the day
-// differs from the one kept, and the table read where the day or the set changed. Only
-// while home or the library shows, the day known, and Today open.
+// differs from the one kept, and the table read where the day, the set, or the player
+// changed. Only while home or the library shows, the day known, and Today open.
 fn sync_daily(sh: Shell&) {
     guard sh.screen == HOME || sh.screen == PICKER else { return; }
     let set = puzzles::loaded;
     guard sh.day >= 0 && picker::today_open(sh.prefs.stars[set]) else { return; }
     if today_of(sh).day != sh.day { new_day(sh); }
-    guard sh.daily.set != set || sh.daily.day != today_of(sh).day else { return; }
+    let d .= sh.daily;
+    guard d.set != set || d.day != today_of(sh).day || d.player != playing_id(sh) else { return; }
     // A record the library can't read (a library changed since) is picked again.
     if !read_daily(sh) {
         new_day(sh);
@@ -59,12 +68,12 @@ fn new_day(sh: Shell&) {
         p.puzzle_rating[set] = puzzles::first_puzzle_rating(won, all);
     }
     let t .= p.today[set];
-    let player = sh.players.list[sh.players.playing].id;
-    puzzles::pick(puzzles::library, sh.day, player, p.puzzle_rating[set], opened_themes(p.stars[set]), p.seen[set],
+    puzzles::pick(puzzles::library, sh.day, playing_id(sh), p.puzzle_rating[set], opened_themes(p.stars[set]), p.seen[set],
                   p.daily_count, t.picked);
     t.day = sh.day;
     t.stars = [0; puzzles::MAX_DAILY];
     for i in t.picked.list { p.seen[set][i / 64] |= rules::bit(i % 64); }
+    sh.daily.set = -1;
     sh.changed = true;
 }
 
@@ -75,6 +84,7 @@ fn read_daily(sh: Shell&) -> bool {
     d.list.clear();
     d.set = puzzles::loaded;
     d.day = t.day;
+    d.player = playing_id(sh);
     let text = sh.library_text;
     for i in t.picked.list {
         let pz .= d.list.push(default<puzzles::Puzzle>());
