@@ -1,6 +1,6 @@
 # 087: The replay's move shown, the best move, and the desktop's results
 
-Status: in progress (the width cap built 2026-11-14; the replay's takes to choose)
+Status: in progress (the width cap built 2026-11-14; the replay's look chosen, to build)
 
 The user's notes on the results and the replay (2026-11-14):
 

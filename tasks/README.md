@@ -66,7 +66,7 @@ Open:
   the Bazzite PC.
 - Content and play: 037 the puzzle set by theme, 038 players, 074 the games' history,
   marked moves, and a rating (built on the `history` branch, its takes to choose).
-  087 the replay's move shown and best move (prototyped, takes to choose), the desktop's
+  087 the replay's move shown and best move (prototyped and chosen, to build), the desktop's
   results, and a desktop window capped at 1.9 times its height (built).
 - The 3D board: 041 a carved spring board, 042 its frame cost (the idle wakeup left).
 - Menus: 080 one New game row on home with the opponent chosen in the setup, settings
