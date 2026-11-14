@@ -1,6 +1,7 @@
-"""What scripts/android.py and scripts/ios.py share: the paths and the app's id and
-version, the steps from a Goose program to C, the patched copies of goose_gfx and SDL,
-and the launcher's name per language. Not run by itself.
+"""What the build scripts share: the paths and the app's id and version, the steps from a
+Goose program to C, the patched copies of goose_gfx and SDL (android.py, ios.py), the
+release's copy with gfx rebuilt (mac.py, linux.py, windows.py), and the launcher's name
+per language. Not run by itself.
 """
 import hashlib
 import os
@@ -80,6 +81,40 @@ def copy_gfx(out):
         shutil.rmtree(gfx_src)
     fresh.rename(gfx_src)
     return gfx_src / "src"
+
+
+# The Goose release's gfx library (libgoose_gfx.a, goose_gfx.lib) holds these four.
+GFX_SOURCES = ["gfx_device", "gfx_resources", "gfx_pipeline", "gfx_draw"]
+
+
+def patched_goose(out, release, exe, lib, compile, archive, obj=".o", section="Toolchain"):
+    """out/goose/: a copy of the Goose release whose gfx library (pkg/gfx/lib/<lib>) is
+    rebuilt from the submodule's sources, as the desktop scripts (mac.py, linux.py,
+    windows.py) build with. compile(c, o) and archive(lib, objs) give the platform's
+    commands. The library is rebuilt only when the sources (gfx's and SDL's version) or the
+    commands change: a stamp beside it holds their hash. Returns the copy's goose."""
+    goose = out / "goose"
+    if not goose.exists():
+        if not (release / exe).exists():
+            sys.exit(f"no Goose release at {release} (docs/development.md, {section})")
+        shutil.copytree(release, goose, symlinks=not WINDOWS)
+    src = copy_gfx(out)
+    shutil.copytree(src / "gfx", goose / "pkg/gfx/src/gfx", dirs_exist_ok=True)
+    objs, target = out / "obj", goose / "pkg/gfx/lib" / lib
+    stamp = hashlib.sha256(repr([compile(Path("c"), Path("o")), archive(Path("lib"), [])]).encode())
+    for f in sorted(p for p in src.rglob("*") if p.is_file()):
+        stamp.update(f.relative_to(src).as_posix().encode() + f.read_bytes())
+    stamp.update((SDL / "include/SDL3/SDL_version.h").read_bytes())
+    stamp_file = target.with_name(lib + ".draughts-stamp")
+    if target.exists() and stamp_file.exists() and stamp_file.read_text() == stamp.hexdigest():
+        return goose / exe
+    objs.mkdir(exist_ok=True)
+    for name in GFX_SOURCES:
+        run(*compile(src / "gfx" / f"{name}.c", objs / f"{name}{obj}"))
+    target.unlink(missing_ok=True)
+    run(*archive(target, [objs / f"{name}{obj}" for name in GFX_SOURCES]))
+    stamp_file.write_text(stamp.hexdigest())
+    return goose / exe
 
 
 def copy_sdl(sdl_src):

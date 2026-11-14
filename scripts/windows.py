@@ -39,8 +39,6 @@ import native
 
 RELEASE = Path(os.environ.get("GOOSE_RELEASE", native.ROOT / "build/goose-v2026.4-windows-x64"))
 OUT = native.ROOT / "build/windows"
-# The release's goose_gfx.lib holds these four, built against the static CRT (/MT).
-GFX_SOURCES = ["gfx_device", "gfx_resources", "gfx_pipeline", "gfx_draw"]
 
 
 def llvm_bin():
@@ -58,24 +56,16 @@ def llvm_bin():
 
 
 def patched_goose():
-    """build/windows/goose/: the release with goose_gfx.lib rebuilt from the patched sources."""
-    goose = OUT / "goose"
-    if not goose.exists():
-        if not (RELEASE / "goose.exe").exists():
-            sys.exit(f"no Goose release at {RELEASE} (docs/development.md, Run on Windows)")
-        shutil.copytree(RELEASE, goose)
-    src = native.copy_gfx(OUT)
-    shutil.copytree(src / "gfx", goose / "pkg/gfx/src/gfx", dirs_exist_ok=True)
-    llvm, objs = llvm_bin(), OUT / "obj"
-    objs.mkdir(exist_ok=True)
-    sdl_include = native.SDL / "include"
-    for name in GFX_SOURCES:
-        native.run(llvm / "clang-cl.exe", "/nologo", "/O2", "/MT", "/DNDEBUG",
-                   "/D_CRT_SECURE_NO_WARNINGS", "/utf-8", "/W3", f"/I{sdl_include}", "/c",
-                   src / "gfx" / f"{name}.c", f"/Fo{objs / name}.obj")
-    native.run(llvm / "llvm-lib.exe", "/nologo", f"/out:{goose / 'pkg/gfx/lib/goose_gfx.lib'}",
-               *[objs / f"{name}.obj" for name in GFX_SOURCES])
-    return goose / "goose.exe"
+    """build/windows/goose/: the release with goose_gfx.lib rebuilt from the patched sources,
+    against the static CRT (/MT), as the release's own is."""
+    llvm = llvm_bin()
+    return native.patched_goose(
+        OUT, RELEASE, "goose.exe", "goose_gfx.lib",
+        lambda c, o: [llvm / "clang-cl.exe", "/nologo", "/O2", "/MT", "/DNDEBUG",
+                      "/D_CRT_SECURE_NO_WARNINGS", "/utf-8", "/W3", f"/I{native.SDL / 'include'}",
+                      "/c", c, f"/Fo{o}"],
+        lambda lib, objs: [llvm / "llvm-lib.exe", "/nologo", f"/out:{lib}", *objs],
+        obj=".obj", section="Run on Windows")
 
 
 ICON = native.ROOT / "windows/draughts.ico"   # the iOS icon in a rounded square, 16 to 256 px

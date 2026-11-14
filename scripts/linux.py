@@ -39,14 +39,12 @@ import native
 
 RELEASE = Path(os.environ.get("GOOSE_RELEASE", native.ROOT / "build/goose-v2026.4-linux-x64"))
 OUT = native.ROOT / "build/linux"
-# The release's libgoose_gfx.a holds these four.
-GFX_SOURCES = ["gfx_device", "gfx_resources", "gfx_pipeline", "gfx_draw"]
 # The Goose release's own SDL options (its pkg/gfx/CMakeLists.txt), with Wayland and X11
 # both required. SDL loads every library it uses at run time, the X11 and Wayland ones too.
 SDL_OPTIONS = ["-DSDL_SHARED=OFF", "-DSDL_STATIC=ON", "-DSDL_TEST_LIBRARY=OFF", "-DSDL_CAMERA=OFF",
                "-DSDL_RENDER=OFF", "-DSDL_OPENGL=OFF", "-DSDL_OPENGLES=OFF", "-DSDL_KMSDRM=OFF",
                "-DSDL_WAYLAND=ON", "-DSDL_X11=ON"]
-APP_ID = "io.github.kaitk.draughts"    # SDL's app id too (src/app/display.c)
+APP_ID = native.APP_ID    # SDL's app id too (src/app/display.c)
 ICON = native.ROOT / f"linux/{APP_ID}.png"    # windows/draughts.ico's 256 px
 
 
@@ -78,24 +76,14 @@ def sdl():
 def patched_goose():
     """build/linux/goose/: the release with libgoose_gfx.a rebuilt from the patched sources,
     and SDL built here (sdl())."""
-    goose = OUT / "goose"
-    if not goose.exists():
-        if not (RELEASE / "goose").exists():
-            sys.exit(f"no Goose release at {RELEASE} (docs/development.md, Run on Linux)")
-        shutil.copytree(RELEASE, goose, symlinks=True)
-    src = native.copy_gfx(OUT)
-    shutil.copytree(src / "gfx", goose / "pkg/gfx/src/gfx", dirs_exist_ok=True)
-    cc, objs = os.environ.get("CC", "cc"), OUT / "obj"
-    objs.mkdir(exist_ok=True)
-    for name in GFX_SOURCES:
-        native.run(cc, "-O2", "-DNDEBUG", "-fPIC", "-Wall", "-Wno-missing-field-initializers",
-                   f"-I{native.SDL / 'include'}", "-c", src / "gfx" / f"{name}.c",
-                   "-o", objs / f"{name}.o")
-    lib = goose / "pkg/gfx/lib/libgoose_gfx.a"
-    lib.unlink(missing_ok=True)
-    native.run("ar", "rcs", lib, *[objs / f"{name}.o" for name in GFX_SOURCES])
-    shutil.copy2(sdl(), goose / "pkg/gfx/lib/libSDL3.a")
-    return goose / "goose"
+    cc = os.environ.get("CC", "cc")
+    goose = native.patched_goose(
+        OUT, RELEASE, "goose", "libgoose_gfx.a",
+        lambda c, o: [cc, "-O2", "-DNDEBUG", "-fPIC", "-Wall", "-Wno-missing-field-initializers",
+                      f"-I{native.SDL / 'include'}", "-c", c, "-o", o],
+        lambda lib, objs: ["ar", "rcs", lib, *objs], section="Run on Linux")
+    shutil.copy2(sdl(), goose.parent / "pkg/gfx/lib/libSDL3.a")
+    return goose
 
 
 DESKTOP = f"""[Desktop Entry]

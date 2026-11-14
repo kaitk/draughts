@@ -39,28 +39,14 @@ import native
 
 RELEASE = Path(os.environ.get("GOOSE_RELEASE", native.ROOT / "build/goose-v2026.4-macos-arm64"))
 OUT = native.ROOT / "build/mac"
-# The release's libgoose_gfx.a holds these four.
-GFX_SOURCES = ["gfx_device", "gfx_resources", "gfx_pipeline", "gfx_draw"]
 
 
 def patched_goose():
     """build/mac/goose/: the release with libgoose_gfx.a rebuilt from the patched sources."""
-    goose = OUT / "goose"
-    if not goose.exists():
-        if not (RELEASE / "goose").exists():
-            sys.exit(f"no Goose release at {RELEASE} (docs/development.md, Toolchain)")
-        shutil.copytree(RELEASE, goose, symlinks=True)
-    src = native.copy_gfx(OUT)
-    shutil.copytree(src / "gfx", goose / "pkg/gfx/src/gfx", dirs_exist_ok=True)
-    objs = OUT / "obj"
-    objs.mkdir(exist_ok=True)
-    for name in GFX_SOURCES:
-        native.run("clang", "-c", "-O2", "-DNDEBUG", "-I", native.SDL / "include",
-                   src / "gfx" / f"{name}.c", "-o", objs / f"{name}.o")
-    lib = goose / "pkg/gfx/lib/libgoose_gfx.a"
-    lib.unlink(missing_ok=True)
-    native.run("ar", "rcs", lib, *[objs / f"{name}.o" for name in GFX_SOURCES])
-    return goose / "goose"
+    return native.patched_goose(
+        OUT, RELEASE, "goose", "libgoose_gfx.a",
+        lambda c, o: ["clang", "-c", "-O2", "-DNDEBUG", "-I", native.SDL / "include", c, "-o", o],
+        lambda lib, objs: ["ar", "rcs", lib, *objs])
 
 
 MIN_MACOS = "13.3"            # a release's LSMinimumSystemVersion and deployment target: the

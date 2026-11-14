@@ -68,8 +68,10 @@ cd src/app
 The app is built, not run through `goose run`: the computer thinks on a worker thread
 (`src/app/think.goose`), and `goose run` refuses a program that starts one.
 `scripts/mac.py` builds goose_gfx's sources from the submodule into a copy
-of the release (`build/mac/goose/`), as the Android, iOS, and Windows builds do, then the
-program with that copy's `goose`: about 8 s, as long as a plain `goose build`. A plain
+of the release (`build/mac/goose/`), as the Android, iOS, Windows, and Linux builds do,
+then the program with that copy's `goose`: about 13 s on an M-series Mac, as long as a
+plain `goose build`. The gfx sources are compiled again only when they, SDL's version,
+or their flags change (`native.patched_goose`, a stamp beside the library). A plain
 `goose build` in `src/app` still works, but its gfx presents every frame, so at rest it
 spins at the display's rate ([rendering](architecture/rendering.md#frames-and-battery)).
 Run the app from `src/app`, where `--frames` saves `draughts.png`; the flags follow the
