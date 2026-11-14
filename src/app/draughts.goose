@@ -64,7 +64,7 @@ fn main() {
     // The game as it was when the app was last paused (shell::restore; nothing changes
     // for a missing or damaged file). A run with flags that set up a game or take a
     // screenshot neither reads nor writes it.
-    let keep = f.screen < 0 && f.puzzle < 0 && f.go < 0 && f.win < 0.0 && f.fen.len == 0 && f.taps.len == 0 && f.frames < 0 && f.variant < 0 && f.clock < 0 && f.computer < 0;
+    let keep = f.screen < 0 && f.puzzle < 0 && f.library < 0 && f.go < 0 && f.win < 0.0 && f.fen.len == 0 && f.taps.len == 0 && f.frames < 0 && f.variant < 0 && f.clock < 0 && f.computer < 0;
     // The players, their settings, and their games, kept in the app's storage folder
     // (shell/players.goose): the playing player's settings with the device's language.
     var folder: u8[512] = [0; 512];

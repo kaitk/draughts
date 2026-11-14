@@ -114,6 +114,21 @@ fn play_daily(sh: Shell&, k: i64, now: f64 = 0.0) {
     go_to(sh, PUZZLE, now);
 }
 
+// Library puzzle i (an index into puzzles::library) on the puzzle screen, outside today's
+// set, for looking the library over (the app's --library flag): its replies, stars, and
+// hint as any puzzle's, no dots, and nothing kept: no place in today's record to keep
+// stars in, no rating moved, next back to the library.
+fn play_library(sh: Shell&, i: i64, now: f64 = 0.0) {
+    // A run's flags open it before home or the library has read the library.
+    if sh.library != puzzles::loaded || sh.library_text.len == 0 { load_library(sh); }
+    var pz = default<puzzles::Puzzle>();
+    guard puzzles::entry_of(sh.library_text, puzzles::library, i, pz) else { return; }
+    puzzle::open_daily(sh.puzzle, pz, puzzles::MAX_DAILY);
+    sh.puzzle.day_n = 0;
+    sh.theme = -1;
+    go_to(sh, PUZZLE, now);
+}
+
 // Today's puzzle at place k solved with `won` stars: the most kept, and its first solve
 // moves the puzzle rating by the library's difficulty of it.
 fn daily_solved(sh: Shell&, k: i64, won: i64) {

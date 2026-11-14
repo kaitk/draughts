@@ -104,11 +104,12 @@ fn setup(f: flags::Flags&, sh: shell::Shell&, prefs: settings::Settings) {
     // library's switch lights those draughts, and home doesn't load the player's set back
     // on the way.
     let to_puzzles = sh.screen == shell::PICKER || sh.screen == shell::PUZZLE || f.go == shell::PICKER
-                     || f.go == shell::PUZZLE || f.puzzle >= 0;
+                     || f.go == shell::PUZZLE || f.puzzle >= 0 || f.library >= 1;
     if f.variant >= 0 && to_puzzles { sh.prefs.variant = f.variant; }
     if f.puzzle >= 0 && puzzles::find(puzzles::all, f.puzzle) >= 0 && f.go != shell::PUZZLE {
         shell::play_puzzle(sh, puzzles::find(puzzles::all, f.puzzle));
     }
+    if f.library >= 1 { shell::play_library(sh, f.library - 1); }
 }
 
 // After the system's back, before the shell's frame. A switch the flags ask for waits for
