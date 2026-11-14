@@ -7,13 +7,13 @@ a line without its id: false
 an id given twice: false
 an id past the index: false
 the last id: true, at 0
-day 20000, player 1, rating 1200, 3 a day: 890s 1150s 1400c
-day 20000, player 1, rating 1200, 4 a day: 890s 1210s 1170s 1380c
-day 20000, player 1, rating 1200, 5 a day: 890s 1120c 1150s 1300c 1480c
-day 20000, player 1, rating 1200, 10 a day: 890s 1110s 1150s 1210s 1130s 1220c 1280c 1180c 1240c 1380c
+day 20000, player 1, rating 1200, 3 a day: 890s 1180c 1400c
+day 20000, player 1, rating 1200, 4 a day: 890s 1100c 1290s 1380c
+day 20000, player 1, rating 1200, 5 a day: 890s 1240c 1180c 1200c 1480c
+day 20000, player 1, rating 1200, 10 a day: 890s 1140c 1150s 1210s 1170s 1180c 1260c 1160c 1240c 1380c
 the same day again: true
 the next day: 940c 1250s 1150s 1380c
-another player: 1020c 1100c 1180c 1420c
+another player: 1020c 1110s 1180c 1420c
 rating 600, captures only: 440c 500c 680c 840c
 all but two had: 1900c 700c
 first rating: no stars 350, half 650, all 950

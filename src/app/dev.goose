@@ -50,7 +50,7 @@ fn setup(f: flags::Flags&, sh: shell::Shell&, prefs: settings::Settings) {
         sh.prefs.played = [0; 3];
         sh.changed = true;
     }
-    if f.puzzler_rating > 0 { puzzler(sh, f.puzzler_name[..], f.puzzler_rating); }
+    if f.puzzler_rating > 0 { puzzler(sh, f.puzzler_name[..], f.puzzler_rating, f.variant); }
     if f.board >= 0 { sh.prefs.board = f.board; }
     if f.material >= 0 { sh.prefs.material = f.material; }
     sh.prefs.languages_open = f.languages;
@@ -117,7 +117,7 @@ fn setup(f: flags::Flags&, sh: shell::Shell&, prefs: settings::Settings) {
 // solved and a puzzle of each other theme, their puzzle rating `rating`, and today's record
 // cleared, all written to their file at once. The run's own screens may still show the
 // player as read before it; the next start shows them as written.
-fn puzzler(sh: shell::Shell&, name: const u8[:], rating: i64) {
+fn puzzler(sh: shell::Shell&, name: const u8[:], rating: i64, variant: i64) {
     let ps .= sh.players;
     var n: players::Name = [];
     players::set_name(n, name);
@@ -125,6 +125,8 @@ fn puzzler(sh: shell::Shell&, name: const u8[:], rating: i64) {
     for p, i in ps.list { if p.name == n { at = i; } }
     if at < 0 { guard shell::add_player(sh, players::free_picture(ps, -1), n) else { return; } }
     else { shell::switch_player(sh, at); }
+    // The run's --variant, if given, is the player's draughts from now on.
+    if variant >= 0 { sh.prefs.variant = variant; }
     let set = puzzles::set_of(sh.prefs.variant as u8);
     var course = puzzles::Set { list: [] };
     var err: u8[>..] = [];

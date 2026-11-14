@@ -126,7 +126,8 @@ struct Flags {
     // --puzzler NAME:RATING: a player of that name (made if there is none) playing, their
     // draughts' Learn solved so Today opens and a puzzle of each other theme so every
     // theme is picked from, their puzzle rating RATING, and today's
-    // record cleared so the day's puzzles are picked at it; kept in their file. For
+    // record cleared so the day's puzzles are picked at it, in --variant's draughts if
+    // given (then the player's from now on); kept in their file. For
     // trying the daily puzzles at a level on a device.
     puzzler_name:   u8[..32] = [],
     puzzler_rating: i64      = -1,

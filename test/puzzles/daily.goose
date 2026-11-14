@@ -5,7 +5,8 @@
 // id given twice, and one past the index's room. A day's pick is the same for the same day and player, differs between
 // days and between players, keeps the day's shape (a warm-up under the rating, the
 // middle at it, a stretch over it), keeps to the themes given and skips the puzzles
-// already had, and never takes one twice in a day; a library with too few gives fewer.
+// already had, never takes one twice in a day, and mixes the day's themes (s and c by
+// turns where both are near); a library with too few gives fewer.
 // The rating starts from the course's stars, moves a long way on the first puzzles and
 // less later, up on a solve of a hard one and less on an easy one, and a solve with one
 // star at its level lowers it.

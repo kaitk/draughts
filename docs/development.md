@@ -392,7 +392,8 @@ stars and hint as any puzzle's, nothing kept: no rating moved, no day's record.
 `--puzzler NAME:RATING` sets up a player for trying the day's puzzles at a level: the
 player of that name (made if there is none) playing, their draughts' Learn solved and a
 puzzle of each other theme, their puzzle rating RATING, and today's record cleared,
-written to their file; the next start picks the day at that rating. On Android, through
+in `--variant`'s draughts if given (then the player's), written to their file; the next
+start picks the day at that rating. On Android, through
 the intent's args: `adb shell am start -S -n io.github.kaitk.draughts/.DraughtsActivity
 --es args "'--puzzler Hard:1800'"`, then start the app again.
 

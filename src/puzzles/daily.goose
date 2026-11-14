@@ -21,6 +21,7 @@ let STRETCH = 250;
 let NEAR = 60;              // library puzzles nearest a slot's target that one is picked from, at most
 let WINDOW = 75;            // how far from the target they may be, once FEW are found
 let FEW = 8;
+let VARIETY = 200;          // how far from the target a theme the day hasn't had yet may be
 
 // The puzzle rating, Elo's, on the scale the library's difficulties are estimated on.
 let FIRST_PUZZLE_RATING = 350;   // a player with no star in the course
@@ -192,10 +193,14 @@ fn is_seen(seen: u64[SEEN_WORDS]&, id: i64) -> bool { seen[id / 64] & rules::bit
 // puzzles in the themes of `themes` (a bit per theme) not yet had (`seen`, by id) nor
 // picked today, it takes one of the NEAR nearest the target within WINDOW of it (or of
 // the FEW nearest, where the library is sparse), by the hash of the day, player, and
-// slot, and keeps its id. Fewer than n when the library has too few left.
+// slot, and keeps its id. A day mixes its themes: a theme it hasn't had yet is taken
+// first, among the nearest, else within VARIETY of the target, else any (the hard end
+// is mostly shots, its rarer themes used up first). Fewer than n when the library has
+// too few left.
 fn pick(lib: Library&, day: i64, player: i64, rating: i64, themes: u64, seen: u64[SEEN_WORDS]&, n: i64, out: Day&) {
     out.list.clear();
     let count = min(n, MAX_DAILY);
+    var used: u64 = 0;          // the themes the day has so far
     for slot in count {
         let t = target(rating, slot, count);
         // The first at or past the target, the list being sorted by difficulty.
@@ -205,12 +210,17 @@ fn pick(lib: Library&, day: i64, player: i64, rating: i64, themes: u64, seen: u6
             let mid = (lo + hi) / 2;
             if lib.list[mid].difficulty < t { lo = mid + 1; } else { hi = mid; }
         }
-        // Walk out both ways from there, nearest first, keeping NEAR candidates.
-        var near: i64[NEAR] = [0; NEAR];
+        // Walk out both ways from there, nearest first: the NEAR nearest (within WINDOW
+        // of the target once FEW are found), and of them, or of those within VARIETY,
+        // the ones whose theme the day hasn't had yet.
+        var near:  i64[NEAR] = [0; NEAR];
+        var fresh: i64[NEAR] = [0; NEAR];
         var found = 0;
+        var fresh_n = 0;
+        var fresh_close = 0;    // fresh ones also among the nearest
         var a = lo - 1;
         var b = lo;
-        while found < NEAR && (a >= 0 || b < lib.list.len) {
+        while (found < NEAR || fresh_n < NEAR) && (a >= 0 || b < lib.list.len) {
             var i = -1;
             if a < 0 {
                 i = b;
@@ -225,18 +235,34 @@ fn pick(lib: Library&, day: i64, player: i64, rating: i64, themes: u64, seen: u6
                 i = b;
                 b++;
             }
-            guard found < FEW || abs(lib.list[i].difficulty - t) <= WINDOW else { break; }
+            let off = abs(lib.list[i].difficulty - t);
+            let close = found < NEAR && (found < FEW || off <= WINDOW);
+            guard close || off <= VARIETY else { break; }
             let id = lib.list[i].id;
             guard themes & rules::bit(lib.list[i].theme) != 0 && !is_seen(seen, id) else { continue; }
             var taken = false;
             for x in out.list { if x == id { taken = true; } }
             guard !taken else { continue; }
-            near[found] = i;
-            found++;
+            let new_theme = used & rules::bit(lib.list[i].theme) == 0;
+            if new_theme && fresh_n < NEAR {
+                fresh[fresh_n] = i;
+                fresh_n++;
+                if close { fresh_close = fresh_n; }
+            }
+            if close {
+                near[found] = i;
+                found++;
+            }
         }
-        guard found > 0 else { continue; }
+        guard found > 0 || fresh_n > 0 else { continue; }
+        // A theme new to the day among the nearest; else one within VARIETY; else any.
         let h = mix(mix((day as u64) * 1000003 + (player as u64)) + (slot as u64));
-        out.list.push(lib.list[near[(h % (found as u64)) as i64]].id);
+        var i = 0;
+        if fresh_close > 0 { i = fresh[(h % (fresh_close as u64)) as i64]; }
+        else if fresh_n > 0 { i = fresh[(h % (fresh_n as u64)) as i64]; }
+        else { i = near[(h % (found as u64)) as i64]; }
+        out.list.push(lib.list[i].id);
+        used |= rules::bit(lib.list[i].theme);
     }
 }
 
