@@ -39,11 +39,11 @@ the computer's turn: black's clock 299.2, runs 1, asking true
   14.2075: game, in the transition true, black's clock 298.18, runs 1, asking false
   14.27: game, in the transition false, black's clock 298.18, runs 1, asking true
   a little after: black's clock 297.45, runs 1, asking true
-won: true, winner 0, the card's back 100.0, on the board 5 quads and 1 piece
+won: true, winner 0, the card's back 100.0, on the board 15 quads and 1 piece
   at rest: the board dimmed 45.0%, lifted 4.0 px
-  26.0825: home, the board dimmed 38.0%, lifted 3.0 px, the card's back 84.0, over the UI 21, on the board 5 quads and 1 piece, hole the board
-  26.145: home, the board dimmed 23.0%, lifted 2.0 px, the card's back 50.0, over the UI 21, on the board 5 quads and 1 piece, hole the board
-  26.2075: home, the board dimmed 7.0%, lifted 1.0 px, the card's back 16.0, over the UI 21, on the board 5 quads and 1 piece, hole the board
+  26.0825: home, the board dimmed 38.0%, lifted 3.0 px, the card's back 84.0, over the UI 21, on the board 15 quads and 1 piece, hole the board
+  26.145: home, the board dimmed 23.0%, lifted 2.0 px, the card's back 50.0, over the UI 21, on the board 15 quads and 1 piece, hole the board
+  26.2075: home, the board dimmed 7.0%, lifted 1.0 px, the card's back 16.0, over the UI 21, on the board 15 quads and 1 piece, hole the board
   26.27: home, the board dimmed 0.0%, lifted 0.0 px, the card's back -1.0, over the UI 1, on the board 0 quads and 0 piece, hole none
   26.3325: home, the board dimmed 0.0%, lifted 0.0 px, the card's back -1.0, over the UI 1, on the board 0 quads and 0 piece, hole none
 portrait home 0.0: home, board 80.0,128.0 640.0 10x10, mix 100.0%, blur 0.0%, quads 73 faded 9 mostly 9, pieces 40 faint 0, over the UI 1, hole none, drawn true, animating false

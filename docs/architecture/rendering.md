@@ -569,7 +569,8 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   no narrower than 88 px, so it stays near half the board; where it would cover the
   winning piece, as on a phone's board, it moves into the half away from it) slides up 28 px as it fades in (0.7 s, easing out), back and restart (primary,
   112 × 88 px) on it, and from 1.2 s the winner's piece, crowned, with its ring fades in
-  above them (0.5 s). The screen is still from 1.7 s, or once the glow has passed the
+  above them (0.5 s), who won ("White wins", as the panel says it) in the label face
+  between them, which makes the card taller by the words (2026-11-14). The screen is still from 1.7 s, or once the glow has passed the
   winner's farthest piece (up to 1.77 s on 10 × 10); the frame then is drawn at rest,
   and none after. A win with no winning piece to lift (a flag while the last move still
   shows, a position set up already won) starts at the dim, still from 0.8 s. The dim is

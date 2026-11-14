@@ -22,7 +22,7 @@ puzzle: raised true, bounds 191 160 898 x 616, tiles 4 on screen true, touched 0
   wrong move i1-h2 slid back: misses 1, fading instances 1, flash true
   misses 2, hint on e7, glow rings in the world's grid at 3.4 
 black to move: turned true, raised true
-won: B:Wa1,g5:B, winning piece on g5, card 493 346 295 x 263 inside the 3D bounds true, centered across them true, clear of the winning piece true
+won: B:Wa1,g5:B, winning piece on g5, card 493 324 295 x 308 inside the 3D bounds true, centered across them true, clear of the winning piece true
   dim 0.45, instances left lit 1 of 2
   home to the game 1.0: raised true, hold true, placed 480 139 760 x 521, fade 1.0
   home to the game 1.05: raised true, hold true, placed 451 144 771 x 529, fade 1.0

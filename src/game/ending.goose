@@ -196,13 +196,20 @@ fn celebrate(gm: Game&, g: gui::Gui&, pl: panel::Layout, won: i64, now: f64, ove
     let t = moment(gm, now);
     guard t >= CARD_AT else { return panel::NOTHING; }
     let u = pl.board.scale;
-    // The piece, a 28 dp gap, the buttons (card_size).
+    // The piece, who won in the label face as the draw's card says "Draw", a 28 dp gap,
+    // the buttons (card_size).
     let fit, button, width = card_size(pl.board);
+    let head .= g.faces[gui::LABEL];
+    let say = head.ascent - head.descent;
     let first = g.quads.len;
-    let card = card_at(gm, pl, width, ((40.0 + 40.0 + 104.0 + 28.0) * fit + gui::tap()) * u, gm.won_on);
+    let card = card_at(gm, pl, width, ((40.0 + 40.0 + 104.0 + 28.0 - 10.0 + 28.0) * fit + gui::tap()) * u + say,
+                       gm.won_on);
     gui::panel(g, card);
     var c = gui::inset(card, 40.0 * fit * u);
     var spot = gui::cut_top(c, 104.0 * fit * u);
+    gui::cut_top(c, (28.0 - 10.0) * fit * u);
+    let words = strings::get(if won == 0 { strings::WON_WHITE } else { strings::WON_BLACK });
+    gui::text(g, gui::fitting(g, gui::LABEL, words, c.z), gui::cut_top(c, say), words, 1.0, 0.0, gui::CENTER);
     gui::cut_top(c, 28.0 * fit * u);
     let ask, drop = card_end(g, gui::cut_top(c, gui::tap() * u), fit, button, u, first, ease_out(span(t, CARD_AT, CARD_AT + 0.7)));
     spot.y += drop;
