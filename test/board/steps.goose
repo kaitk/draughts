@@ -1,15 +1,14 @@
 // A capture of many jumps tapped stop by stop (board::follow): a tap on the next stop of
 // the selected piece's captures is kept, the piece waiting on it and the stops behind it
-// ringed, whatever the hints, and narrows the targets shown with hints on moves; a tap
-// on a capture's last square plays it. The rest of the way is never played by itself,
-// in a game as in a puzzle (`by_hand`), even when one way goes on from a stop
-// (2026-11-09). In a game a tap off every way is a mistake that leaves the piece on its
-// stop; selecting the piece again forgets the stops, and a drag dropped on a stop keeps
-// it. The king of puzzle 14 (W:W46,K47:B5,12,22,38) takes 38, 22, and 12 by 33 and 17,
-// ending on 8 or 3; a man of puzzle 4 takes two by 28 alone. A last square two captures
-// reach (W:WK9:B18,28,29,32, the king to 15 by 22 and 33 or by 27 and 38, taking 28 or
-// 32) plays neither, nor is it a mistake: the piece stays selected for its stops, in a
-// game as in a puzzle.
+// ringed, whatever the hints, and narrows the targets shown with hints on moves; a tap on
+// a capture's last square plays it. The rest of the way is never played by itself, in a
+// game as in a puzzle (`by_hand`), even when one way goes on from a stop. In a game a tap
+// off every way is a mistake that leaves the piece on its stop; selecting the piece again
+// forgets the stops, and a drag dropped on a stop keeps it. The king of puzzle 14
+// (W:W46,K47:B5,12,22,38) takes 38, 22, and 12 by 33 and 17, ending on 8 or 3; a man of
+// puzzle 4 takes two by 28 alone. A last square two captures reach (W:WK9:B18,28,29,32,
+// the king to 15 by 22 and 33 or by 27 and 38, taking 28 or 32) plays neither, nor is it
+// a mistake: the piece stays selected for its stops, in a game as in a puzzle.
 import std;
 import vec;
 import rules from "../../src/rules";

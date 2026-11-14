@@ -1,11 +1,9 @@
-// A capture played as a child plays it, through the game's frames and pointer, from a
-// real case (2026-11-09): a child on black against the computer, the board turned, had a
-// lone king that pulsed must-capture, and nothing said how far its capture went; once he
-// played the first jump, the game played the rest, so he never learned the way.
+// A capture played as a child plays it, through the game's frames and pointer: black
+// against the computer, the board turned, a lone king that must capture.
 //
-// - The count: a piece that must capture shows how many pieces it takes, at most, as
-//   pips on its ring (Piece.ring.z), shown here with move hints: pieces, not stops or
-//   squares a flying king could land on. A man's double shows 2; the child's king 4. Under the
+// - The count: a piece that must capture shows how many pieces it takes, at most, as pips
+//   on its ring (Piece.ring.z), shown here with move hints: pieces, not stops or squares
+//   a flying king could land on. A man's double shows 2; the child's king 4. Under the
 //   majority rule only the pieces taking the most show it, each of them; in Russian each
 //   piece shows its own most. The computer's pieces show none, a friend's do. Partway
 //   through a capture only the piece making it shows what is left. On mistakes only, the
@@ -19,10 +17,10 @@
 //   so on for the rest of the capture.
 // - Take back mid-capture takes the capture back to its start, no move taken back.
 //
-// The child's position, read from a photo of the tablet (white men on j2, b4, d4, f4,
-// e5, h6, white kings on b6 and b10, black's king on j4, seen on the left edge on the
-// turned board): the king takes h6, b6, b4, and f4, ending on g5, its only move
-// (test/perft.py moves international gives "35 29 21 24 31 33").
+// The position (white men on j2, b4, d4, f4, e5, h6, white kings on b6 and b10, black's
+// king on j4, seen on the left edge on the turned board): the king takes h6, b6, b4, and
+// f4, ending on g5, its only move (test/perft.py moves international gives "35 29 21 24
+// 31 33").
 import std;
 import vec;
 import rules from "../../src/rules";

@@ -1,4 +1,4 @@
-// The 3D board's camera as data (src/board/rig.goose, task 015's camera buttons): the
+// The 3D board's camera as data (src/board/rig.goose, the camera buttons): the
 // view button cycling the rest angle and the top view, eased over 0.6 s; the showcase's
 // drags turning and tipping the camera within their range, its mode off keeping the
 // angle, the view button's dot while the board is off its rest angle and its tap easing

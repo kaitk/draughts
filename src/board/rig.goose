@@ -1,11 +1,7 @@
-// The 3D board's camera on the game screen and a puzzle (task 015, prototypes/game3d.html,
-// placement a), as plain data with no graphics: where the camera buttons have put it and
-// where it is easing to. The view goes from the rest angle to the top one and back, the
-// zoom frames the playing field, the showcase turns and tips the board under a drag, and
-// in a game against a friend the board turns 180° to face the side to move. Each is an
-// `Ease`, a value easing from one end to the other over a fixed time, read at any moment
-// by `value`; nothing here knows the screen, which board/panel.goose fits the camera into
-// (panel::aim). Tests run it headless.
+// The 3D board's camera as plain data: the view (rest angle to top), the zoom, the
+// showcase's turn and tip under a drag, and the hot-seat turn to face the side to move.
+// Each is an `Ease` read at any moment by `value`; nothing here knows the screen, which
+// board/panel.goose fits the camera into (panel::aim).
 namespace rig;
 import std;
 import math;
@@ -25,19 +21,17 @@ struct Ease {
     to:     f32 = 0.0,
     start:  f64 = 0.0,
     length: f64 = 0.0,
-    soft:   bool = false,   // on a sine curve, whose middle is half as fast again as its
-                            // average, not three times as the cubic's
+    soft:   bool = false,   // on soft_curve, whose middle is gentler than curve's
 }
 
-// The ease's curve, 0..1 over 0..1: cubic in, then cubic out, as the prototype's.
+// Cubic in, then cubic out, 0..1 over 0..1.
 fn curve(u: f64) -> f64 {
     if u < 0.5 { return 4.0 * u * u * u; }
     let k = 2.0 - 2.0 * u;
     return 1.0 - 0.5 * k * k * k;
 }
 
-// The soft ease's curve: a half cosine, gentle in and out (the hot-seat turn: on the cubic
-// over 0.7 s it crept, then swung through the middle at 390° a second, 2026-11-12).
+// A half cosine: its middle is 1.5 times its average speed, the cubic's 3 times.
 fn soft_curve(u: f64) -> f64 { 0.5 - 0.5 * cos(PI * u) }
 
 fn value(e: Ease, now: f64) -> f32 {
@@ -64,12 +58,11 @@ fn put(e: Ease&, v: f32) {
     e.length = 0.0;
 }
 
-// The camera: the view (0 the rest angle, 1 the top view), the zoom (0 the board at rest,
-// 1 the field framed), the board's turn in degrees (the hot-seat turn, adding 180 each
-// time), and the showcase's turn (`swing`, degrees round) and tip (`tilt`, degrees added
-// to the view's angle). `showcase` while its mode is on, when a drag on the board moves
-// the camera (`held` from a press to its release, the pointer last at `last`, in pixels).
-// `ready` once the turn has been put where the game stands, which a new game undoes.
+// The camera: the view (0 the rest angle, 1 the top view), the zoom (0 at rest, 1 the
+// field framed), the board's turn in degrees (180 more each hot-seat turn), and the
+// showcase's turn (`swing`, degrees round) and tip (`tilt`, degrees added to the view's
+// angle). `held` from a showcase press to its release, the pointer last at `last`, in
+// pixels. `ready` once the turn has been put where the game stands.
 struct Rig {
     top:      Ease   = Ease {},
     zoom:     Ease   = Ease {},
@@ -92,21 +85,19 @@ fn turn(r: Rig&, now: f64) -> f32 {
     return t - 360.0 * floor(t / 360.0);
 }
 
-// The camera the board is fitted for at `now`: the view's angle and the board's turn, as
-// the board's bounds follow them (panel::aim).
+// The camera the board is fitted for at `now`: the view's angle and the board's turn.
 fn base(r: Rig&, rest: f32, now: f64) -> view3d::Camera {
     return view3d::Camera { pitch: pitch(r, rest, now), yaw: 0.0, turn: turn(r, now) };
 }
 
 // The camera drawn through at `now`: the fitted one turned and tipped by the showcase,
-// which keeps the fit, as the prototype's does.
+// which keeps the fit.
 fn camera(r: Rig&, rest: f32, now: f64) -> view3d::Camera {
     return view3d::Camera { pitch: pitch(r, rest, now) + value(r.tilt, now), yaw: value(r.swing, now),
                             turn: turn(r, now) };
 }
 
-// Whether the board is off its rest angle, turned or tipped by the showcase and left so:
-// the view button shows its dot, and its tap brings the board back first.
+// Whether the showcase has left the board turned or tipped.
 fn off_rest(r: Rig&) -> bool { r.swing.to != 0.0 || r.tilt.to != 0.0 }
 
 // Whether the view is the top one, or easing to it.
@@ -174,10 +165,9 @@ fn settle(r: Rig&, now: f64, length: f64 = EASE) {
     if r.tilt.to != 0.0 || moving(r.tilt, now) { go(r.tilt, 0.0, now, length); }
 }
 
-// The board faces `side` (0 the near side, white; 1 the far one, black) at `now`: turned
-// at once the first time (`ready`), else, when it faces the other one, turning 180° more
-// over TURN, the showcase's angle easing back with it. Returns whether it turned, for the
-// frame to be drawn.
+// The board faces `side` (0 white, near; 1 black, far): at once the first time
+// (`ready`), else turning 180° more over TURN, the showcase easing back with it. Returns
+// whether it turned.
 fn face(r: Rig&, side: i64, now: f64) -> bool {
     let want: f32 = if side == 1 { 180.0 } else { 0.0 };
     guard r.ready else {
@@ -195,17 +185,15 @@ fn face(r: Rig&, side: i64, now: f64) -> bool {
     return true;
 }
 
-// Whether the board faces the far side (black) or is turning to, as the flat board shows
-// the turn: at once, where the 3D board eases round.
+// Whether the board faces the far side (black) or is turning to.
 fn faces_far(r: Rig&) -> bool {
     let to = r.turn.to - 360.0 * floor(r.turn.to / 360.0);
     return to == 180.0;
 }
 
-// A friend's game that doesn't turn the board begins in the top view, zoomed (2026-11-12):
-// the players sit at either side of the tablet, and looking down the board reads alike to
-// both. The camera buttons change them as ever. `friend` false for any other game: what
-// such a game set goes back to the view at rest, unzoomed.
+// A friend's game that doesn't turn the board begins in the top view, zoomed: from top
+// down the board reads alike to players on either side. `friend` false for any other
+// game puts back what such a game set.
 fn across_table(r: Rig&, friend: bool) {
     if friend {
         put(r.top, 1.0);
@@ -218,9 +206,8 @@ fn across_table(r: Rig&, friend: bool) {
     }
 }
 
-// A game begins on the board as it stands: the turn put afresh with its first frame (to
-// face the near side, or as a friend's game stands), the showcase off and its angle at
-// rest at once. The view and the zoom stay as chosen.
+// A new game: the turn put afresh with its first frame, the showcase off and at rest.
+// The view and the zoom stay as chosen.
 fn reset(r: Rig&) {
     r.ready = false;
     put(r.turn, 0.0);

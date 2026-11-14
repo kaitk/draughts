@@ -1,4 +1,4 @@
-// The 3D board's camera and picking (src/board/view3d.goose, task 015): the camera at
+// The 3D board's camera and picking (src/board/view3d.goose): the camera at
 // rest and its bounds' proportions, its fit into a box, its matrix agreeing with the
 // projection the picking inverts, and taps through the perspective: every dark square's
 // middle and points just inside the field's corners and edges hit their squares, on 8 × 8

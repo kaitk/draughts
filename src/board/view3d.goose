@@ -1,30 +1,22 @@
-// The 3D board as plain math, with no graphics (task 015): its camera, the camera's fit
-// into a rectangle of the screen, a tap turned into a square by a ray through the
-// perspective, and each frame's instance data, filled from the same draw lists the flat
-// board draws (board::fill), so both views follow one state and one animation. The app
-// draws what `Scene` holds; tests run all of it headless.
+// The 3D board as plain math, with no graphics: its camera and fit on screen, a tap
+// turned into a square through the perspective, and each frame's instance data, filled
+// from the flat board's draw lists (board::fill) so both views share one state.
 //
-// World units are the renderer's (src/model3d/mesh.goose): the playing field spans -4..4 in x and
-// z whatever the draughts, so a square is 8 / n; y is up, the field's top y = 0; +z is
-// the near side, the bottom of the screen. The world is laid out as the flat board shows
-// it: x and z follow the flat layout's x and y (`to_world`, `to_flat`), so a turned board
-// (board::Layout.flip) turns the 3D one too, and the light keeps its place on screen.
+// World units: the field spans -4..4 in x and z, so a square is 8 / n; y is up, the
+// field's top at 0; +z is the near side. x and z follow the flat layout's x and y
+// (`to_world`), so a turned flat board turns the 3D one too.
 //
-// The camera's image is fitted into a screen rectangle by a scale and a shift in clip
-// space, as prototypes/game3d.html does, so the perspective stays the native one at every
-// size. A `View` holds the camera and that fit, in pixels: a point at view-space x, y and
-// depth d lands at c + k (x / d, -y / d).
-//
-// Nothing here allocates: the outline's points and a frame's instances are fixed arrays.
+// The image is fitted into a screen rectangle by a scale and a shift in clip space, so
+// the perspective is the same at every size: a point at view-space x, y and depth d lands
+// at c + k (x / d, -y / d).
 namespace view3d;
 import std;
 import math;
 import vec;
 import rules from "../rules";
 
-// The camera (the 3D board's prototype's, 2026-11-07): 52.5° down, a 31° field of view, 14.75 away from a
-// point a little in front of the field's middle, fitted there to the 3D reference's field
-// corners. NEAR and FAR are its depth range.
+// The camera at rest: PITCH degrees down, FOV degrees of view, DISTANCE from TARGET, a
+// point a little in front of the field's middle. NEAR and FAR are its depth range.
 let FOV:      f32 = 31.0;
 let DISTANCE: f32 = 14.75;
 let PITCH:    f32 = 52.5;
@@ -40,10 +32,8 @@ let FRAME_W   = mesh::FRAME_W;
 let FRAME_TOP = mesh::FRAME_TOP;
 let BOTTOM    = mesh::BOTTOM;
 
-// A piece on 8 × 8, where a square is 1: 88% of a square across, its height 33% of its
-// diameter; a 10 × 10 board's pieces are scaled by its smaller square (`unit`). The
-// selected piece lifts LIFT and grows to GROW: the 2D board's lift of 1.1% of the board
-// (board::fill) is LIFT here, so any 2D lift maps by the same ratio (`lift_of`).
+// A piece where a square is 1, scaled by `unit` on 10 × 10. The selected piece lifts
+// LIFT and grows to GROW; the 2D board's FLAT_LIFT maps to LIFT (`lift_of`).
 let RADIUS    = mesh::RADIUS;
 let HEIGHT    = mesh::HEIGHT;
 let LIFT:      f32 = 0.07;
@@ -52,11 +42,9 @@ let FLAT_LIFT: f32 = 0.011;   // the 2D board's selected lift, of the board's si
 let FLAT_DRAG: f32 = 0.016;   // and a dragged piece's (board::fill)
 let FLAT_DISC: f32 = 0.39;    // the 2D disc's radius, of a square
 
-// The camera's angles, in degrees: pitch down from level, yaw round the board (0 seen
-// from the near side, 180 from the far one), both about TARGET; and the board's turn
-// about its own middle under a camera and a light that keep their place on screen (a
-// hot-seat game's, 180 facing the far side), which turns the camera the other way round
-// the field's middle (`spin`).
+// The camera's angles, in degrees: pitch down from level and yaw round the board, both
+// about TARGET; and the board's turn about its middle, done by turning the camera the
+// other way (`spin`) so the light keeps its place on screen.
 struct Camera {
     pitch: f32 = PITCH,
     yaw:   f32 = 0.0,
@@ -65,8 +53,7 @@ struct Camera {
 
 // The camera fitted into the screen: its eye and axes, k pixels per unit of x / depth,
 // and c, the pixel the view's axis goes through. `rect` is the board's bounds on screen
-// at the camera's angles before any turn; `n` its squares per side; `turn` the board's
-// (Camera.turn), by which the renderer turns its light too.
+// before any turn; `turn` is Camera.turn, by which the renderer turns its light too.
 struct View {
     eye:   float3 = float3 { 0.0, 0.0, 0.0 },
     right: float3 = float3 { 1.0, 0.0, 0.0 },
@@ -99,9 +86,7 @@ fn place(v: View&, cam: Camera) {
     v.turn = cam.turn;
 }
 
-// p turned `degrees` about the y axis through the field's middle: the camera's part of
-// the board's turn (Camera.turn), and the light's in the renderer (render3d::light). At
-// 0 it is p exactly.
+// p turned `degrees` about the y axis through the field's middle; exactly p at 0.
 fn spin(p: float3, degrees: f32) -> float3 {
     let a = radians(degrees);
     let c = cos(a);
@@ -109,8 +94,7 @@ fn spin(p: float3, degrees: f32) -> float3 {
     return float3 { c * p.x + s * p.z, p.y, c * p.z - s * p.x };
 }
 
-// The view of `cam` with the fit k, c (as fit() made it for the camera's angles at rest;
-// a turn keeps the fit, as the prototype's inspection does).
+// The view of `cam` keeping `fitted`'s k and c.
 fn turned(fitted: View, cam: Camera) -> View {
     var v = fitted;
     place(v, cam);
@@ -140,9 +124,8 @@ fn on_plane(v: View, p: float2, h: f32) -> float2, bool {
     return float2 { v.eye.x + d.x * t, v.eye.z + d.z * t }, true;
 }
 
-// The view's matrix for a screen `width` × `height` pixels: the camera's view and its
-// perspective with the fit in it, to SDL_GPU's clip space (depth 0 at NEAR, 1 at FAR,
-// y up), as gfx::perspective times gfx::look_at, scaled and shifted in clip space.
+// The view's matrix for a screen `width` × `height` pixels, to SDL_GPU's clip space
+// (depth 0 at NEAR, 1 at FAR, y up), with the fit in it.
 fn matrix(v: View, width: f32, height: f32) -> Mat {
     // The view: right, up, and back (-ahead) as rows, the eye at the origin.
     let s = v.right;
@@ -162,11 +145,9 @@ fn matrix(v: View, width: f32, height: f32) -> Mat {
 fn mul(m: Mat, x: float4) -> float4 { m.c0 * x.x + m.c1 * x.y + m.c2 * x.z + m.c3 * x.w }
 fn mul(a: Mat, b: Mat) -> Mat { Mat { c0: mul(a, b.c0), c1: mul(a, b.c1), c2: mul(a, b.c2), c3: mul(a, b.c3) } }
 
-// What bounds the board on screen: the frame's outline at its top and its foot, round
-// its corners (a quarter circle of FRAME_W each), and a lifted king's top over each
-// corner square, so a piece on the far row never pokes past the bounds. With `field`,
-// the playing field alone, what the zoom frames: its corners, and a lifted king's top
-// over each of them, so every square and every piece's top is inside.
+// What bounds the board on screen: the frame's rounded outline at its top and foot, and
+// a lifted king's top over each corner square. With `field`, the playing field's corners
+// at the foot and at a lifted king's top, what the zoom frames.
 type Outline = float3[..80];
 
 fn outline(n: i64, pts: Outline&, field: bool = false) {
@@ -234,10 +215,8 @@ fn fit(cam: Camera, n: i64, box: float4, align: i64, most: f32 = 1.0e9) -> View 
     return v;
 }
 
-// The flat layout the board package plays on under a 3D board seen through v: a square of
-// the bounds' height in their middle, at s pixels a dp (the game screen's, home's,
-// settings', and a puzzle's), which taps reach through the perspective (pick) and which
-// the world follows (to_world).
+// The flat layout the board plays on under a 3D board seen through v, at s pixels a dp:
+// a square of the bounds' height in their middle.
 fn square(v: View, s: f32) -> board::Layout {
     let r = v.rect;
     let size = min(r.z, r.w);
@@ -323,8 +302,7 @@ fn touches(v: View, r: float4, gap: f32, field: bool = false) -> bool {
     return true;
 }
 
-// The squares' flat layout and the world: a flat point (pixels on the board::Layout the
-// board package plays on) and the world's x, z on the field's plane.
+// A flat point (pixels on l) as world x, z on the field's plane, and back.
 fn to_world(l: board::Layout, p: float2) -> float2 {
     let u = unit(l.n);
     return float2 { (p.x - l.inner.x) / l.inner.w * u - FIELD, (p.y - l.inner.y) / l.inner.w * u - FIELD };
@@ -362,13 +340,10 @@ fn hit_piece(o: float3, d: float3, xz: float2, y0: f32, y1: f32, r: f32) -> f32 
     return best;
 }
 
-// A tap at pixel p on the 3D board, as a point on the flat layout l for the board
-// package's press, drag, and release (board::press): on a piece's top or side, its
+// Pixel p on the 3D board as a point on the flat layout l: on a piece's top or side, its
 // square's center, so a tap on a piece's face picks its square and not the one behind
-// it; else where the ray meets the field. While a piece is held (pressed or dragged), the
-// plane of the dragged piece's top, so the piece stays under the finger. The pieces are
-// the board's at rest: the selected one lifted and grown, a stacked king two discs high,
-// a piece waiting partway through a capture on its stop.
+// it; else where the ray meets the field. While a piece is held, the plane of its lifted
+// top, so it stays under the finger.
 fn pick(v: View, b: board::Board&, l: board::Layout, p: float2) -> float2 {
     let vr .= rules::VARIANTS[b.variant];
     let u = unit(l.n);
@@ -409,41 +384,37 @@ fn pick(v: View, b: board::Board&, l: board::Layout, p: float2) -> float2 {
 
 // A frame of the 3D board, filled from the flat board's draw lists (fill below).
 //
-// `inst` is the renderer's storage buffer (src/render3d/), two float4s an instance: the foot (x, y, z) and the
-// scale; then dark (0 or 1), 1 for a crowned disc or 0.5 a stack's upper disc, 1 for the
-// selected piece or 2 a stack's lower disc, and a seed for its figure. A stacked king is
-// two instances. `state` runs beside it, two float4s an instance, what the 2D pieces
-// carry that the prototype's position didn't: opacity (a captured piece fading), the
-// must-capture ring (1 pulsing, 2 still), the glow ring tight round it (0 to 1), the
-// selected glow (0 to 1); then board::Piece.win as it is (a win's dim, its lit square).
+// `inst` is the renderer's storage buffer, two float4s an instance: the foot (x, y, z)
+// and the scale; then dark (0 or 1), 1 for a crowned disc or 0.5 a stack's upper disc, 1
+// for the selected piece or 2 a stack's lower disc, and a seed for its figure. A stacked
+// king is two instances. `state` runs beside it, two float4s an instance: opacity (a
+// captured piece fading), the must-capture ring (1 pulsing, 2 still), the glow ring
+// tight round it (0 to 1), the selected glow (0 to 1); then board::Piece.win as it is.
 // `squares` is the field's occlusion, two float4s a square of the world's grid
 // (row * n + column, row 0 the far side) for the piece over it: the top, the foot, the
 // radius, and 1 when a piece is there; then where its middle is (x, z), as a moving
 // piece is between squares. A jump's piece over the one it takes leaves it the square
 // (the lower foot keeps it). `marks` and `flash` are board::fill's, numbered by the
-// world's grid too; `selected` the selected piece's foot and radius (w 0 for none), as
-// the prototype's glow ring takes it; `dim` the board's under a win. `field` is the
-// marks as the renderer's field pass reads them (shaders::MARKS_FRAG), a float4 a square
-// of the world's grid: x the last move's tint (1), y a target's dot (1) or a stop's ring
-// (2), z the must-capture ring, 1 pulsing or 2 still, w 0 on a wrong move's flashing
-// square, 1 on a lookout's crowning square (shaded), else -1. A drained piece (the
-// lookout's danger, the crowning ghost king) has a seed below 0, -1 less its seed. `lit` runs beside it, a float4 a square too: x the glow ring tight
-// round the piece standing there (a puzzle's hint, a win's wave), 0 to 1; y the square
-// lit by a win's glow passing, 0 to 1; z how many pieces the piece standing there takes,
-// shown as pips on the field (board::Piece.ring.z), 0 for none; w a capture's next stop
-// (board::Marks.next), 1 lit still, 2 while it pulses, 0 none. Under a win's dim the
-// winning piece alone stays lit: its seed (kind's w) is SEED_LIT more, which the shaders
-// take off again for its figure.
+// world's grid too; `selected` the selected piece's foot and radius (w 0 for none);
+// `dim` the board's under a win. `field` is the marks as shaders::MARKS_FRAG reads them,
+// a float4 a square of the world's grid: x the last move's tint (1), y a target's dot (1)
+// or a stop's ring (2), z the must-capture ring, 1 pulsing or 2 still, w 0 on a wrong
+// move's flashing square, 1 on a lookout's crowning square (shaded), else -1. A drained
+// piece (the lookout's danger, the crowning ghost king) has a seed below 0, -1 less its
+// seed. `lit` runs beside it, a float4 a square too: x the glow ring tight round the
+// piece standing there, 0 to 1; y the square lit by a win's glow passing, 0 to 1; z how
+// many pieces the piece standing there takes (board::Piece.ring.z), 0 for none; w a
+// capture's next stop (board::Marks.next), 1 lit still, 2 while it pulses, 0 none. Under
+// a win's dim the winning piece alone stays lit: its seed (kind's w) is SEED_LIT more,
+// which the shaders take off again for its figure.
 //
-// What moves while nothing else does, `pulse`, is drawn over the kept image each frame
-// rather than with the board (render3d::marks_over): x the must-capture rings' phase at
-// `now` (0 brightest, 1 dimmest; they pulse every 1.4 s, as the flat board's do), y the
-// wrong move's flash, 0 to 1 (1 none), z the square of the hint's glow ring while it
-// pulses (-1 none) and w its strength. `next` is how lit the next stops' dots are while
-// they pulse (board::Board.flash.z), drawn over the image too, as is the keys' cursor
-// (`cursor`, its square in the world's grid, or -1; board::Board.cursor), so moving it
-// draws only the marks over the image. `pulsing` says whether any of them shows; the
-// scene's other parts then stay the same from frame to frame (`changes` gives MARKS).
+// What moves while nothing else does is drawn over the kept image each frame
+// (render3d::marks_over): `pulse` x the must-capture rings' phase at `now` (0 brightest,
+// 1 dimmest), y the wrong move's flash, 0 to 1 (1 none), z the square of the hint's glow
+// ring while it pulses (-1 none) and w its strength; `next`, how lit the next stops' dots
+// are while they pulse (board::Board.flash.z); and the keys' `cursor`, its square in the
+// world's grid or -1. `pulsing` says whether any of them shows; the scene's other parts
+// then stay the same from frame to frame (`changes` gives MARKS).
 let MAX_INSTANCES = 96;     // two for each of board::MAX_PIECES, as a stack takes
 let SEED_LIT: f32 = 1000.0;
 
@@ -482,11 +453,8 @@ fn mark_world(l: board::Layout, from: u32[4]&, to: u32[4]&) {
     }
 }
 
-// Fills s for the frame board::fill left in b, on the flat layout l, seen through v.
-// Each 2D piece becomes one instance, or two for a stacked king, at its place, lift,
-// and size as the 2D board animates them: a move along its stops with its hop, a drag,
-// a captured piece fading, a win's lift and growth; the must-capture ring's pulse at
-// `now`.
+// Fills s for the frame board::fill left in b, on the flat layout l, seen through v:
+// each 2D piece becomes one instance, or two for a stacked king.
 fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
     s.view = v;
     s.inst.clear();
@@ -496,12 +464,10 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
         s.field[i] = float4 { 0.0, 0.0, 0.0, -1.0 };
         s.lit[i] = float4 { 0.0, 0.0, 0.0, 0.0 };
     }
-    // The must-capture ring: brightest still, fading to 0.4 and back while it pulses.
+    // The must-capture ring pulses every 1.4 s, as the flat board's.
     let phase = (0.5 - 0.5 * cos(2.0 * PI * now / 1.4)) as f32;
     s.pulse = float4 { phase, 1.0, -1.0, 0.0 };
     s.pulsing = false;
-    // A hint's glow ring pulses for its first PULSE, round the one piece board::fill
-    // says (Board.pulsed): the piece to move, or the game's hint's ghost.
     s.selected = float4 { 0.0, 0.0, 0.0, 0.0 };
     let n = l.n;
     let u = unit(n);
@@ -514,13 +480,10 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
         let lift = lift_of(l, p.at.w);
         let dark = p.look.x;
         let hint = i == b.pulsed;
-        // A drained piece (the lookout's, board::DRAINED) has its seed below 0, which the
-        // shaders take as the mark, its figure from the seed's size.
         let lit_seed = i + (if b.dim > 0.0 && p.win.x <= 0.0 { SEED_LIT } else { 0.0 });
         let seed = if p.ring.w > 0.5 { -1.0 - lit_seed } else { lit_seed };
         let upper = if p.ring.w > 0.5 { seed - 0.5 } else { seed + 0.5 };
-        // The hint's pulsing ring is left out of the state, so its pulse alone draws only
-        // the marks over the image.
+        // The pulsing hint ring stays out of the state: it is drawn over the image.
         let ring_y = if hint && p.ring.y > 0.0 { 1.0 } else { p.ring.y };
         let fx = float4 { p.look.w, p.ring.x, ring_y, glow };
         var top = lift + HEIGHT * scale;
@@ -577,8 +540,6 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
     s.flash = b.flash;
     if b.flash.x >= 0.0 { s.flash.x = world_square(l, b.flash.x as i64); }
     s.dim = b.dim;
-    // The next stops' dots pulse as the flat board's do, over the image, then stay lit
-    // with the field's still marks.
     let has_next = (s.marks.next[0] | s.marks.next[1] | s.marks.next[2] | s.marks.next[3]) != 0;
     let next_pulses = has_next && b.flash.z < 1.0;
     s.next = if next_pulses { b.flash.z } else { 1.0 };
@@ -588,7 +549,6 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
         if s.marks.last[w] & bit != 0 { s.field[i].x = 1.0; }
         if s.marks.target[w] & bit != 0 { s.field[i].y = 1.0; }
         if s.marks.via[w] & bit != 0 { s.field[i].y = 2.0; }
-        // The lookout's crowning square, shaded (field.w 1; 0 is a wrong move's flash).
         if s.marks.shade[w] & bit != 0 { s.field[i].w = 1.0; }
         if s.marks.next[w] & bit != 0 {
             s.lit[i].w = if next_pulses { 2.0 } else { 1.0 };
@@ -606,11 +566,9 @@ fn fill(s: Scene&, b: board::Board&, l: board::Layout, v: View, now: f64) {
     if s.cursor >= 0.0 { s.pulsing = true; }
 }
 
-// What a new frame's scene changes against the last one drawn: DRAW when anything the 3D
-// board shows differs, so it is drawn again; SHADOW when the pieces stand or lift
-// differently, so the shadow map is drawn again too; MARKS when only `pulse` does (a ring
-// pulsing, a flash), so only the marks over the kept image are drawn with it. Nothing for
-// the same scene: the board isn't drawn, though the UI over it may be.
+// What a new frame's scene changes against the last one drawn: DRAW the board again;
+// SHADOW the shadow map too (the pieces moved); MARKS only the marks over the kept image.
+// 0 for the same scene.
 let DRAW = 1;
 let SHADOW = 2;
 let MARKS = 4;
@@ -644,8 +602,8 @@ fn changes(was: Scene&, now: Scene&) -> i64 {
             rest = false;
         }
     }
-    // The marks over the image test the depth kept with it, which a draw keeps only while
-    // they show: their coming draws the image again.
+    // A draw keeps the depth the marks over the image test only while they show: their
+    // coming draws the image again.
     guard rest && (was.pulsing || !now.pulsing) else { return DRAW; }
     return if same(was.pulse, now.pulse) && was.next == now.next && was.cursor == now.cursor { 0 } else { MARKS };
 }

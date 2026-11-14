@@ -1,6 +1,6 @@
 // The pieces a capture has jumped stay on the board until it ends, as the rules take
 // them, but see-through (board::TAKEN), so a king that turns back past them still shows
-// its way (2026-11-12). Tapped stop by stop, a jumped piece goes see-through as the piece
+// its way. Tapped stop by stop, a jumped piece goes see-through as the piece
 // hops over it and is whole again once the capture is taken back; played as a move, each
 // goes see-through as the mover hops over it, then all fade out after the last hop. The
 // king of puzzle 14 (W:W46,K47:B5,12,22,38) takes 38, 22, and 12 by 33 and 17, ending on 8.

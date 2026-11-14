@@ -1,10 +1,6 @@
 // The board on screen, with no graphics: where it goes, which square a point is on,
-// what a tap or a drag does, how a move animates, and what to draw each frame. The app
-// (app/draughts.goose) feeds it input and time and draws what it fills in; tests run it
-// headless. Values are from docs/architecture/rendering.md ("Look").
-//
-// Nothing here allocates: the legal moves and the draw lists are fixed buffers in the
-// `Board` the caller owns.
+// what a tap or a drag does, how a move animates, and what to draw each frame. Nothing
+// here allocates: the moves and draw lists are fixed buffers in the caller's `Board`.
 namespace board;
 import std;
 import math;
@@ -25,30 +21,27 @@ let DRAG_START = 10.0;      // dp a press moves before it becomes a drag
 let SNAP = 0.9;             // squares from a square's center a press or drop off the dark squares still reaches
 let FLASH = 1.2;            // a wrong move's red ring flashes twice, 0.6 s each
 
-// Move hints (docs/product.md): mistakes only, the default, marks a wrong move and pulses
-// the pieces that must capture, and a second wrong square in a capture lights its next
-// stop; moves also shows the selected piece's targets.
+// Move hints: mistakes only marks a wrong move and pulses the pieces that must capture;
+// moves also shows the selected piece's targets.
 let MISTAKES = 0;
 let MOVES = 1;
 
-// How a king is drawn (rendering.md, "Kings"): a crown on its face, or a stack of two
-// plain discs. A piece's look.y is 0 for a man or one of these.
+// How a king is drawn: a crown on its face, or a stack of two plain discs. A piece's
+// look.y is 0 for a man or one of these.
 let CROWN = 1;
 let STACK = 2;
 
-// Where the board goes, in pixels. `scale` is pixels per dp: the prototypes' 800 px short
-// side. The screens place it: the game's panels beside it (board/panel.goose), or alone.
+// Where the board goes, in pixels. `scale` is pixels per dp.
 struct Layout {
     scale: f32,
     board: float4,      // x, y, size of the board; w: the corner radius
     inner: float4,      // x, y, size of the squares inside the board's thin lip; w: one square
     n:     i64,         // squares per side
-    flip:  bool,        // turned, black playing up the screen: a child playing black
+    flip:  bool,        // turned, black playing up the screen
 }
 
-// dp: a board beside a screen's controls (home's, a setup's, settings' preview) smaller
-// than this isn't shown, where a phone leaves it too little room: its squares would be
-// under 13 dp on 10 × 10, too small to read a position from.
+// dp: a board beside a screen's controls smaller than this isn't shown; its squares
+// would be under 13 dp on 10 × 10, too small to read.
 let SMALLEST = 128.0;
 
 // A board of side `size` at x, y.
@@ -87,8 +80,7 @@ fn center(l: Layout, v: rules::Variant&, b: i64) -> float2 {
     return float2 { l.inner.x + (x + 0.5) * l.inner.w, l.inner.y + (row + 0.5) * l.inner.w };
 }
 
-// One piece to draw: where, how big, how high, and its state. The app copies these into
-// the storage buffer the piece shader pulls from.
+// One piece to draw, as the piece shader reads it.
 struct Piece {
     at:   float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // x, y center in pixels, radius, lift in pixels
     look: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // black (0 or 1), 0 or CROWN or STACK, selected glow 0..1, opacity
@@ -96,12 +88,10 @@ struct Piece {
     win:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 },  // a win (game::cheer): x dimmed by, 0..1; y its square lit, 0..1; z the square's half side in radii; w: over the UI, 1 on the board (a win's card's piece)
 }
 
-// Pieces over the UI: two clocks and the winner, or both pieces twice for a draw, and
-// what each side has taken (two sides' 20 on 10 × 10), at most; a transition holds two
-// screens' at once.
+// Pieces over the UI: clocks, the winner or a draw's pieces, and what each side has
+// taken; a transition holds two screens' at once.
 let OVER = 96;
 
-// The pieces a screen shows over the UI this frame (game::put), drawn after it.
 type Overlay = Piece[..OVER];
 
 // What the board shader marks, one bit per square numbered y * size + x.
@@ -113,10 +103,8 @@ struct Marks {
     shade:  u32[4] = [0; 4],    // the lookout's crowning squares, shaded under a dark ghost king
 }
 
-// The lookout's and the hint's looks of a piece (Piece.ring.w): a piece in danger, or the
-// ghost king on a crowning square, drained of color and a little darker, solid and still;
-// the hint's ghost on its square, light (docs/architecture/rendering.md, "The lookout and
-// the hint").
+// Piece.ring.w: drained of color (a piece in danger, a crowning ghost king), or light
+// (the hint's ghost).
 let DRAINED = 1.0;
 let LIGHT = -1.0;
 let GHOST_KING = 0.62;      // the crowning ghost king's opacity
@@ -129,34 +117,21 @@ struct Board {
     pos:      rules::Position,
     moves:    rules::Moves,     // the legal moves of pos
     selected: i64,              // a bit, or -1
-    // The selected piece's ways (`select`): its captures, every way to each (rules::ways),
-    // or its quiet moves. A capture made stop by stop follows any of them (`follow`).
+    // The selected piece's captures, every way to each (rules::ways), or its quiet
+    // moves. A capture made stop by stop follows any of them (`follow`).
     ways:  rules::Ways,
     steps: rules::Path,         // the stops of a capture tapped so far, after the selected piece's square
-    // A tap that kept a stop shows the piece hopping there from the square before
-    // (`hop_from`, a bit) from `hop_at`, as a move's hop: a drop needs none, the finger
-    // carried it (2026-11-11, issue 1).
+    // A tap that kept a stop: the piece hops there from `hop_from` (a bit) since `hop_at`.
     hop_at:   f64,
     hop_from: i64,
     hop_to:   i64,
-    // A press on the selected piece where it stands: let go without a drag, it is put
-    // down, nothing selected (2026-11-11, issue 1).
-    again: bool,
-    // A puzzle's board: a capture is made stop by stop as in a game (`follow`), but
-    // nothing shows the way: no count on the pieces that must capture, no pieces to
-    // take after a wrong square, and no next stop after two.
+    again: bool,                // a press on the selected piece: let go without a drag, it is put down
+    // A puzzle's board: nothing shows the way (no counts, no pieces to take, no next stop).
     by_hand: bool,
-    // When the piece last came to wait on a stop, or a second wrong square lit the next
-    // stops: the squares it goes on to pulse from then, when they are shown (next_shown).
-    kept_at: f64,
-    // Wrong squares in this turn's capture (`missed`): the first pulses what to take,
-    // the second lights the next stop.
-    misses: i64,
-    // No count on the pieces that must capture: the computer is to move (game::frame).
-    quiet: bool,
-    // On mistakes only, the count shows from a mistake while a capture is due until the
-    // capture ends (`counting`); with move hints it always shows.
-    counted: bool,
+    kept_at: f64,               // when the next stops started pulsing (next_shown)
+    misses: i64,                // wrong squares in this turn's capture (`missed`)
+    quiet: bool,                // no counts: the computer is to move
+    counted: bool,              // on mistakes only, a mistake has shown the counts (`counting`)
     // The move being shown: the position before it, when it started, and where the
     // piece starts from if it was dropped there; `back`, a move shown sliding back.
     moving:    bool,
@@ -170,9 +145,7 @@ struct Board {
     last:      rules::Way,
     has_last:  bool,
     pulse_end: f64,
-    // The pieces the legal captures take, pulsing beside the pieces that must take them,
-    // after a tap on a piece that could take but fewer (the majority rule): the reason.
-    outtaken: u64,
+    outtaken: u64,              // pieces pulsing beside the capturers: what they must take
     hints:    i64,              // MISTAKES or MOVES
     wrong:    i64,              // the square of the last wrong move, a bit, or -1
     wrong_at: f64,
@@ -180,53 +153,39 @@ struct Board {
     ghost_of: float2,           // its side (0 or 1) and whether it is a king
     glow:     i64,              // the piece a hint shows with a glow ring, a bit, or -1
     glow_at:  f64,
-    // A game's hint, its second step: a light ghost of the piece on the square it goes to,
-    // a bit, or -1; its ring pulses from `ghost_at` as the glow's does.
+    // A hint's second step: a light ghost of the piece on the square it goes to (a bit,
+    // or -1), its ring pulsing from `ghost_at`; `hint_via`, its capture's stops between.
     hint_to:  i64,
     ghost_at: f64,
-    // The stops between of a hint's capture, ringed while its ghost shows (a replay's
-    // best move, task 087): bits.
     hint_via: u64,
-    // A replay's look of the last move (task 087): every square it stood on shaded, where
-    // it started, each stop, and where it ended, and a faded piece where it started,
-    // `trace_a` of TRACE_GHOST as it fades in once the piece has arrived.
+    // A replay's last move: every square it stood on shaded, and a ghost where it started
+    // at `trace_a` of TRACE_GHOST.
     trace:   bool,
     trace_a: f32 = 1.0,
-    // The lookout (game::watch): the side to move's pieces in danger, drained (a held
-    // piece's on the square it was taken from), and the other side's crowning squares,
-    // shaded under a dark ghost king. Cleared by a move, set again once it has shown.
+    // The lookout: the side to move's pieces in danger, and the other side's crowning
+    // squares. Cleared by a move.
     danger: u64,
     crowns: u64,
-    shows:  i64,                // counts the positions shown (show, start_move): the marks were cleared
-    // The piece whose glow ring pulses this frame (fill), or -1: the 3D board draws its
-    // pulse over the kept image.
-    pulsed:    i64,
+    shows:  i64,                // counts the positions shown: the lookout's marks were cleared
+    pulsed:    i64,             // the piece whose glow ring pulses this frame, or -1
     king_look: i64,             // CROWN or STACK
-    // A picture rather than a game (settings' preview): once a wrong move's ring has
-    // flashed, it stays, and once the pieces that must capture have pulsed, their rings
-    // stay, lit and still (`held`), so the picture needs no frames after.
+    // A picture rather than a game: a flashed ring and pulsed capture rings stay lit and
+    // still (`held`), so it needs no frames after.
     still: bool,
     held:  bool,
-    // The square of the selected piece's move under the finger while it drags the piece,
-    // or under the mouse with the piece selected by a tap, or -1: what the lookout shows
-    // the move would leave open (`target_at`, set by touch).
-    over: i64,
-    // The keys' cursor (task 072, `keys`): the square the board's focus is on, numbered
-    // y * size + x as Marks are (a light square too), or -1 while the keys aren't on it.
+    over: i64,                  // the selected piece's target under the pointer, or -1 (`target_at`)
+    // The keys' cursor, numbered y * size + x as Marks are (a light square too), or -1.
     cursor: i64,
-    // Whether board::keys last read the screen's cells turned (flipped, or the 3D board's
-    // hot-seat turn), so a turn keeps the cursor on its square.
-    cursor_flip: bool = false,
-    // A press on a piece, and whether it became a drag.
+    cursor_flip: bool = false,  // whether `keys` last read the cells turned
     pressed:  i64,
     press_at: float2,
     dragging: bool,
     drag_at:  float2,
-    // Filled by fill() for the app to draw.
+    // Filled by fill().
     pieces: Piece[..MAX_PIECES],
     marks:  Marks,
     flash:  float4,             // x: the wrong move's square (y * size + x) or -1; y: its flash, 0..1; z: marks.next's dots, 0..1; w: the keys' cursor's square + 1, or 0
-    dim:    f32,                // the board dimmed by, 0..1, under a win (game::cheer)
+    dim:    f32,                // the board dimmed by, 0..1, under a win
 }
 
 fn new(variant: u8) -> Board {
@@ -289,7 +248,7 @@ fn undo(b: Board&) -> bool {
     return true;
 }
 
-// The game's past for draws at its position (rules/draw.goose), from its record.
+// The game's past for draws at its position, from its record.
 fn past(b: Board&) -> rules::Past& { rules::record_past(b.rec, b.pos) }
 
 // The side that has won, the other having no move left, or -1 while the game goes on
@@ -314,12 +273,10 @@ fn ghost_on(b: Board&, to: i64, now: f64) {
     b.glow_at = -1.0;
 }
 
-// Takes back the last move, m, as a mistake: the piece slides back along its way and
-// the pieces it took fade back in, while its square flashes the red ring over a fading
-// ghost of it. Not a `mistake`, it slides back without them: a puzzle's answer that
-// showed why a move was wrong, before the move itself. The board keeps only the last
-// move it played, so the caller passes m: after one move is taken back, the move under
-// it is the caller's to know. False when there is no move to take back.
+// Takes back the last move, m, sliding the piece back along its way while the pieces it
+// took fade back in; as a `mistake`, its square flashes the red ring over a fading ghost
+// of it. The caller passes m: the board keeps only the last move it played. False when
+// there is no move to take back.
 fn slide_back(b: Board&, m: rules::Move, now: f64, mistake: bool = true) -> bool {
     guard b.rec.history.len > 0 else { return false; }
     let side = 1 - b.pos.side;
@@ -367,17 +324,13 @@ fn on_steps(b: Board&, m: rules::Way&) -> bool {
     return true;
 }
 
-// What a tap or a drop on `sq` does for the selected piece, among its ways that make
-// the stops tapped so far: every way, so a king's capture may land on any square the
-// rules allow between its jumps (2026-11-11, issue 1: a stop on a way the move list
-// didn't keep was a mistake). One ending just after them on sq is played. Else, if sq is
-// the next stop of any of them, it is kept, the piece waiting there to be tapped or
-// dragged on: the rest of the way is never played by itself, in a game as in a puzzle
-// (2026-11-09: a child whose first jump played the whole capture never learned its
-// way). A capture's last square further on is played when every way going there takes
-// the same pieces, one move whichever way it goes; one reached by ways taking different
-// pieces waits for the stops. Returns the way to play
-// (in `ways`) or -1, and whether sq was taken as part of a way, so not a mistake.
+// What a tap or a drop on `sq` does for the selected piece, among its ways that make the
+// stops tapped so far (every way, so a king may land on any square the rules allow
+// between jumps). A way ending just after them on sq is played. Else, if sq is the next
+// stop of any, it is kept and the piece waits there: the rest of a capture is never
+// played by itself. A last square further on is played when every way there takes the
+// same pieces. Returns the way to play (in `ways`) or -1, and whether sq was taken as
+// part of a way, so not a mistake.
 fn follow(b: Board&, sq: i64) -> i64, bool {
     guard b.selected >= 0 && sq >= 0 else { return -1, false; }
     let k = b.steps.len + 1;    // where sq stands in a way
@@ -406,8 +359,7 @@ fn follow(b: Board&, sq: i64) -> i64, bool {
 // Whether sq is an empty square the selected piece passes on its way to a next stop,
 // strictly between where it stands and the stop on their diagonal: a king's flight, or
 // the squares beyond a piece it jumps before the one it must land on. A tap there is no
-// stop and no mistake, nothing at all (2026-11-11, issue 1: such taps cost a puzzle's
-// stars).
+// stop and no mistake, nothing at all.
 fn passes(b: Board&, sq: i64) -> bool {
     guard b.selected >= 0 && empty(b, sq) else { return false; }
     let v .= rules::VARIANTS[b.variant];
@@ -446,9 +398,8 @@ fn reachable(b: Board&) -> u64 {
     return r;
 }
 
-// The square p is on or, when it is on a light square or just off the board, which is
-// no square to play, the nearest of `want` within SNAP squares: a finger on a small
-// board often lands a little off. A press or drop on a dark square is never moved.
+// The square p is on or, on a light square or just off the board, the nearest of `want`
+// within SNAP squares: a finger on a small board often lands a little off.
 fn snap(l: Layout, v: rules::Variant&, p: float2, want: u64) -> i64 {
     let sq = hit(l, v, p);
     guard sq < 0 else { return sq; }
@@ -505,12 +456,11 @@ fn start_move(b: Board&, i: i64, now: f64) {
     b.kept_at = -1.0;
     b.misses = 0;
     b.counted = false;
-    // The must-capture pulse belongs to the position the mistake was made in: left on, it
-    // would ring the next side's capturers, the computer's pieces after the child's move.
+    // The must-capture pulse belongs to the position before: left on, it would ring the
+    // next side's capturers.
     b.pulse_end = 0.0;
     b.outtaken = 0;
-    // A move starts from its square unless release says it was dropped elsewhere; a
-    // move played by code (the computer's) must not start from the last drop.
+    // Only release sets it: a move played by code must not start from the last drop.
     b.dropped = false;
     b.skip = 0;
 }
@@ -536,10 +486,8 @@ fn play_way(b: Board&, i: i64, now: f64) {
     b.last = b.move;
 }
 
-// Leaves a capture made by hand unfinished, which is no move (a capture takes every
-// piece it can): the piece slides back from the stop it waits on to its square, which
-// flashes the red ring over a fading ghost of it, as slide_back. False when no piece
-// waits.
+// Leaves a capture made by hand unfinished, which is no move: the piece slides back from
+// the stop it waits on, as slide_back's mistake. False when no piece waits.
 fn abandon(b: Board&, now: f64) -> bool {
     let at = waiting(b);
     guard at >= 0 && !b.moving else { return false; }
@@ -630,12 +578,9 @@ fn taken_alpha(v: rules::Variant&, mv: rules::Way&, m: u64, t: f64) -> f32 {
 
 // A tap or a drop on `sq`, an empty square that is no move for the selected piece: a
 // mistake. If the piece must capture, in a game the first such square in a turn also
-// pulses the pieces its captures have still to take, so a child sees what it must take:
-// a far-row square a capture only passes, or one a shorter capture ends on that the
-// majority rule forbids, looks like a move. The second lights the next stops as target
-// dots (next_shown) for the rest of the capture. A piece waiting on a stop stays there:
-// the jumps it made were right (2026-11-09). A puzzle shows neither and forgets the
-// stops; its own hint comes after two misses (shell/puzzle.goose).
+// pulses the pieces its captures have still to take, and the second lights the next
+// stops (next_shown). A piece waiting on a stop stays there: the jumps it made were
+// right. A puzzle shows neither and forgets the stops.
 fn missed(b: Board&, sq: i64, now: f64) {
     let made = b.steps;
     mistake(b, sq, now);
@@ -652,8 +597,7 @@ fn missed(b: Board&, sq: i64, now: f64) {
     if b.misses == 2 { b.kept_at = now; }
 }
 
-// A piece came to wait on a stop (`follow`): what it goes on to pulses from now. The count
-// a mistake showed stays, counting down, until the capture ends (`counting`, 2026-11-12).
+// A piece came to wait on a stop (`follow`): what it goes on to pulses from now.
 fn kept(b: Board&, before: i64, now: f64) {
     if b.steps.len > before { b.kept_at = now; }
 }
@@ -671,11 +615,9 @@ fn hopping(b: Board&, now: f64) -> bool {
     b.hop_at >= 0.0 && now < b.hop_at + HOP && waiting(b) == b.hop_to && !b.dragging
 }
 
-// Whether the pieces that must capture show how many pieces they take (2026-11-09,
-// docs/product.md): with move hints always; on mistakes only from a mistake until the
-// capture ends, counting down jump by jump, as showing the count up front gives the
-// capture away. Never in a
-// puzzle, on the computer's turn, or while a move is shown.
+// Whether the pieces that must capture show how many pieces they take: with move hints
+// always; on mistakes only from a mistake until the capture ends, as a count up front
+// gives the capture away. Never in a puzzle, on the computer's turn, or mid-move.
 fn counting(b: Board&) -> bool {
     guard !b.by_hand && !b.quiet && !b.moving && must_capture(b) else { return false; }
     return b.hints == MOVES || b.counted;
@@ -695,8 +637,7 @@ fn unwind(b: Board&) -> bool {
 }
 
 // A tap on the piece on `sq`, which could take but fewer than the pieces that must
-// capture (the majority rule): a mistake, and the pieces their captures take pulse too,
-// so the child sees the other piece takes more.
+// capture (the majority rule): a mistake, and what their captures take pulses too.
 fn outnumbered(b: Board&, sq: i64, now: f64) {
     mistake(b, sq, now);
     for m in b.moves { b.outtaken |= m.captured; }
@@ -708,11 +649,9 @@ fn empty(b: Board&, sq: i64) -> bool {
 
 // A finger or the mouse goes down at p. On a piece that can move: select it (and it may
 // be dragged). On a target of the selected piece: play that move; on the next stop of
-// its captures, keep it (`follow`). On the stop a piece waits on, partway through a
-// capture made by hand: that piece, which may be dragged on. On another empty square
-// while a piece is selected, or on a piece that can't move because another must capture:
-// a mistake. Elsewhere: deselect. A press off the dark squares goes to the nearest of
-// those it could mean, within SNAP (`snap`).
+// its captures, keep it (`follow`). On the stop a piece waits on: that piece, which may
+// be dragged on. On another empty square while a piece is selected, or on a piece that
+// can't move because another must capture: a mistake. Elsewhere: deselect.
 fn press(b: Board&, l: Layout, p: float2, now: f64) {
     guard !b.moving else { return; }
     let v .= rules::VARIANTS[b.variant];
@@ -774,7 +713,6 @@ fn drag(b: Board&, l: Layout, p: float2) -> bool {
 // The pointer goes up at p. A drag dropped on a target plays the move from there, on a
 // capture's next stop keeps it, and on another empty square is a mistake. Either way but
 // a move, the piece goes back, still selected: to its square, or to the stop it waits on.
-// A drop off the dark squares goes to the nearest target or stop within SNAP (`snap`).
 fn release(b: Board&, l: Layout, p: float2, now: f64) {
     let was = b.dragging;
     let again = b.again;
@@ -803,12 +741,10 @@ fn release(b: Board&, l: Layout, p: float2, now: f64) {
     }
 }
 
-// The pointer on the board this frame (gui's input): a press, a drag, a release, as
-// press and the rest take them, on the board laid out `flat`. On the 3D board (three) a
-// tap reaches the flat layout through the perspective (view3d::pick through `view`); a
-// piece held moves on the plane of its lifted top, kept where the finger took it
-// (`grab`, the screen's own), so a press doesn't drag it before the finger moves. The
-// game and a puzzle share it. Returns whether a drag moved a piece.
+// The pointer on the board this frame, on the board laid out `flat`. On the 3D board
+// (`three`) a point reaches the flat layout through view3d::pick; a held piece keeps the
+// offset where the finger took it (`grab`, the caller's), so a press doesn't move it.
+// Returns whether a drag moved a piece.
 fn touch(b: Board&, flat: Layout, three: bool, view: view3d::View, input: gui::Input, grab: float2&, now: f64) -> bool {
     let at = if three { view3d::pick(view, b, flat, input.at) } else { input.at };
     if input.pressed {
@@ -819,28 +755,19 @@ fn touch(b: Board&, flat: Layout, three: bool, view: view3d::View, input: gui::I
     var moved = false;
     if input.down && drag(b, flat, held) { moved = true; }
     if input.released { release(b, flat, held, now); }
-    // The square under a held piece, or under the mouse over a piece selected by a tap, for
-    // the lookout: a finger lifted from a tap rests on the piece, so on touch it is only
-    // while a drag goes.
+    // A finger lifted from a tap was resting on the piece: only the mouse hovers.
     b.over = if b.dragging { target_at(b, flat, held) }
              else if !input.down && b.pressed < 0 { target_at(b, flat, at) } else { -1 };
     return moved;
 }
 
-// The keys on the board (task 072; rendering.md, "Keys"): the board offered to gui's focus
-// as a grid of its squares over `r` (the flat board's own rect, or the 3D board's bounds on
-// screen), group and screen's first choice as the caller has set them; the arrows move its
-// cursor square by square (Board.cursor, which fill() marks), and Enter on a dark square
-// is a tap there (`press`, so a piece chosen and its target, a capture stop by stop, and a
-// mistake are what they are for a finger), when `mine` (the player's turn, the board at
-// rest). With a piece chosen, the square under the cursor is what the lookout shows the
-// move would leave open, as under the mouse (Board.over). The cursor comes first to the
-// chosen piece, or the player's movable piece nearest the bottom middle. Returns whether
-// anything changed.
+// The keys on the board: a grid of its squares over `r` in gui's focus. The arrows move
+// the cursor, and Enter on a dark square is a tap there (`press`) when `mine`, the
+// player's turn. Returns whether anything changed.
 fn keys(b: Board&, flat: Layout, g: gui::Gui&, id: i64, r: float4, mine: bool, now: f64) -> bool {
     let v .= rules::VARIANTS[b.variant];
     let n = v.size;
-    // The board turned (a hot-seat turn): the cursor keeps its square, now across the screen.
+    // The board turned: the cursor keeps its square, now across the screen.
     if flat.flip != b.cursor_flip && g.cell_of == id { g.cell = n * n - 1 - g.cell; }
     b.cursor_flip = flat.flip;
     let cell, enter = gui::grid(g, id, r, n, home_cell(b, flat));
@@ -860,8 +787,8 @@ fn keys(b: Board&, flat: Layout, g: gui::Gui&, id: i64, r: float4, mine: bool, n
         let steps = b.steps.len;
         let wrong_at = b.wrong_at;
         press(b, flat, p, now);
-        // A key's press has no release: nothing is held for a drag, and Enter on the chosen
-        // piece puts it down, as a tap on it does (release).
+        // A key's press has no release: nothing is held, and Enter on the chosen piece
+        // puts it down as a tap does.
         b.pressed = -1;
         b.dragging = false;
         if b.again { put_down(b); }
@@ -871,8 +798,8 @@ fn keys(b: Board&, flat: Layout, g: gui::Gui&, id: i64, r: float4, mine: bool, n
     return b.cursor != was || acted;
 }
 
-// Puts the chosen piece down, unless it is partway through a capture made by hand (take
-// back goes there: unwind). False with none chosen.
+// Puts the chosen piece down, unless it is partway through a capture (that is `unwind`).
+// False with none chosen.
 fn put_down(b: Board&) -> bool {
     guard b.selected >= 0 && b.steps.len == 0 && !b.moving else { return false; }
     b.selected = -1;
@@ -882,9 +809,8 @@ fn put_down(b: Board&) -> bool {
     return true;
 }
 
-// The cell the board's focus takes first (gui::grid's home), y * size + x from the board's
-// top left on screen: the piece chosen, waiting on a stop, or else the side to move's
-// movable piece nearest the bottom middle, or the bottom middle.
+// The cell the board's focus takes first, y * size + x from the top left on screen: the
+// piece chosen, else the movable piece nearest the bottom middle, else the bottom middle.
 fn home_cell(b: Board&, l: Layout) -> i64 {
     let v .= rules::VARIANTS[b.variant];
     let n = v.size;
@@ -907,10 +833,9 @@ fn home_cell(b: Board&, l: Layout) -> i64 {
     return cr * n + cx;
 }
 
-// The showcase (rig.goose): while its mode is on, a drag on the 3D board anywhere off the
-// UI (g.took) turns and tips the board, not a piece (rig::drive). The game and a puzzle
-// share it, before the pieces take the pointer (touch). Returns whether the showcase had
-// the pointer, and whether the board moved.
+// The showcase mode: a drag on the 3D board off the UI turns and tips the board, not a
+// piece. Call before `touch`. Returns whether it had the pointer, and whether the board
+// moved.
 fn showcase(cam: rig::Rig&, g: gui::Gui&, input: gui::Input, three: bool, pitch: f32, now: f64) -> bool, bool {
     guard !g.took && three && cam.showcase else { return false, false; }
     return true, rig::drive(cam, input.at, input.down, input.pressed, input.released, g.scale, pitch, now);
@@ -933,9 +858,9 @@ fn animating(b: Board&, now: f64) -> bool {
     || hopping(b, now)
 }
 
-// Whether the squares the selected piece's capture goes on to are shown: in a game, not
-// a puzzle, which leaves the way to the child; with move hints, once it waits on a
-// stop, and on mistakes only after a second wrong square in the capture (`missed`).
+// Whether the squares the selected piece's capture goes on to are shown: never in a
+// puzzle; with move hints once it waits on a stop, on mistakes only after a second
+// wrong square (`missed`).
 fn next_shown(b: Board&) -> bool {
     guard !b.by_hand && !b.moving && b.selected >= 0 && must_capture(b) else { return false; }
     return (b.hints == MOVES && waiting(b) >= 0) || b.misses >= 2;
@@ -980,7 +905,7 @@ fn update(b: Board&, now: f64) -> bool {
     return ended;
 }
 
-// Eased in and out (smoothstep), t in 0..1: a hop, a transition, the end cards' fades.
+// Smoothstep, t in 0..1.
 fn ease(t: f64) -> f64 { t * t * (3.0 - 2.0 * t) }
 
 fn set_bit(bits: u32[4]&, n: i64) { bits[n / 32] |= (1 as u32) << (n % 32); }
@@ -1039,7 +964,6 @@ fn fill(b: Board&, l: Layout, now: f64) {
     // A move sliding back is the move played backward.
     let t = if b.back { max(duration(b.move) - (now - b.since), 0.0) } else { now - b.since };
     let pulsing = now < b.pulse_end;
-    // The hint's ring: full, fading to a third and back every 1.4 s, then full and still.
     let glowing = ring_at(b.glow_at, now);
     b.pulsed = -1;
     // The lookout's marks show on a board at rest.
@@ -1051,13 +975,9 @@ fn fill(b: Board&, l: Layout, now: f64) {
         for i in b.moves.len { must |= rules::bit(b.moves[i].from); }
     }
     if pulsing { must |= b.outtaken; }
-    // How many pieces each piece that must capture takes, at most, as pips round its
-    // ring (`takes`), when `counting`. Partway through a capture, only on the piece
-    // making it.
     let count_on = counting(b);
-    // A piece waiting partway through a capture made by hand is drawn on its stop; the
-    // pieces it has jumped stay until the capture ends, as the rules take them, but
-    // see-through (TAKEN), so a king's way back past them shows (2026-11-12).
+    // A piece waiting partway through a capture is drawn on its stop; the pieces it has
+    // jumped stay until the capture ends, as the rules take them, but see-through.
     let waits = if b.moving || b.dragging { -1 } else { waiting(b) };
     let taken = if !b.moving && b.selected >= 0 && b.steps.len > 0 { jumped(b) } else { 0 };
     let hop_over = if hopping(b, now) { between(v, b.hop_from, b.hop_to) } else { 0 };
@@ -1082,7 +1002,6 @@ fn fill(b: Board&, l: Layout, now: f64) {
             var alpha: f32 = 1.0;
             if b.moving && b.move.captured & m != 0 { alpha = taken_alpha(v, b.move, m, t); }
             if taken & m != 0 {
-                // Going see-through as the piece hops over it, as in a move.
                 let u = if hop_over & m != 0 { ease(clamp((now - b.hop_at) / HOP, 0.0, 1.0)) } else { 1.0 };
                 alpha = (1.0 - (1.0 - TAKEN) * u) as f32;
             }
@@ -1095,7 +1014,6 @@ fn fill(b: Board&, l: Layout, now: f64) {
         }
     }
     if b.hint_to >= 0 && !b.moving && b.glow >= 0 {
-        // The hint's second step: a light, see-through ghost of the piece where it goes.
         add(b, center(l, v, b.hint_to), r, 0.0, b.pos.side == rules::BLACK, b.pos.kings & rules::bit(b.glow) != 0, 0.0,
             GHOST_HINT, 0.0);
         if b.pieces.len > 0 {
@@ -1144,13 +1062,11 @@ fn fill(b: Board&, l: Layout, now: f64) {
         if count_on { show_takes(b, b.selected); }
         if danger & rules::bit(b.selected) != 0 { drain(b); }
     } else if waits >= 0 {
-        // A man that has passed the far row is crowned on it only where crowning goes on
-        // mid-capture (Russian); in International it stays a man (rules.md).
+        // A man past the far row is crowned only where crowning goes on mid-capture.
         var king = b.pos.kings & rules::bit(b.selected) != 0;
         if v.crowning == rules::CROWN_CONTINUES {
             for st in b.steps { if v.promotion[b.pos.side] & rules::bit(st) != 0 { king = true; } }
         }
-        // Hopping there from the square before, over the piece it jumps, as a move's hop.
         var at = center(l, v, waits);
         var lift = 1.1 * unit;
         if hopping(b, now) {
@@ -1178,16 +1094,12 @@ fn fill(b: Board&, l: Layout, now: f64) {
     }
     b.flash = float4 { -1.0, 1.0, 0.0, b.cursor + 1 };
     if next_shown(b) {
-        // Where the selected piece's capture goes on to: dots that pulse as the hint's
-        // ring does, then stay lit.
         var r = reachable(b);
         while r != 0 {
             mark(b, b.marks.next, ctz(r));
             r &= r - 1;
         }
-        b.flash.z = if b.kept_at >= 0.0 && now < b.kept_at + PULSE {
-            (0.65 + 0.35 * cos(2.0 * PI * (now - b.kept_at) / (0.5 * PULSE))) as f32
-        } else { 1.0 };
+        b.flash.z = ring_at(b.kept_at, now);
     }
     if b.wrong >= 0 {
         // Held, the ring stays as bright as its flash gets.
@@ -1196,7 +1108,7 @@ fn fill(b: Board&, l: Layout, now: f64) {
         b.flash.y = t as f32;
     }
     if b.selected >= 0 && !b.moving {
-        // The stops tapped so far are ringed whatever the hints: the child chose them.
+        // The stops tapped so far are ringed whatever the hints.
         for s in b.steps { if s != waits { mark(b, b.marks.via, s); } }
         for i in b.ways.len {
             let m .= b.ways[i];

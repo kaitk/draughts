@@ -1,10 +1,11 @@
-// Several pieces that can capture, tapped on the board as a game does. Under the
-// majority rule (International, Brazilian) only the captures taking the most pieces are
-// legal: every piece that has one may be selected and played, and after a mistake all of
-// them pulse, never just one, with the pieces the selected one must take. A piece that could take, but fewer, is a mistake: its square
-// flashes, and the pieces that take more pulse with the pieces they take, so a child sees
-// why (rules::can_take_from tells it from a piece with no capture at all). In Russian any
-// capture may be chosen. Each position's moves were checked with test/perft.py moves.
+// Several pieces that can capture, tapped on the board as a game does. Under the majority
+// rule (International, Brazilian) only the captures taking the most pieces are legal:
+// every piece that has one may be selected and played, and after a mistake all of them
+// pulse, never just one, with the pieces the selected one must take. A piece that could
+// take, but fewer, is a mistake: its square flashes, and the pieces that take more pulse
+// with the pieces they take, so a child sees why (rules::can_take_from tells it from a
+// piece with no capture at all). In Russian any capture may be chosen. Each position's
+// moves were checked with test/perft.py moves.
 //
 // - equal: c3 takes d4 and h4 takes g5, one each: both legal.
 // - more: c3 takes d4 and f6, h2 only g3: only c3.
@@ -13,9 +14,8 @@
 // - shared stop: c3 and g3 both jump to e5 and on over f6 to g7, two each.
 // - turned: the child on black against the computer, the board turned, i9 (seen lower
 //   left) and c5 (middle right) each take one: the rings, the squares tapped, and the
-//   moves agree. The pulse a mistake starts ends once a move is played: it used to run
-//   on and ring the computer's capturers, white h8 seen lower left beside the child's
-//   pieces (reported 2026-11-09).
+//   moves agree. The pulse a mistake starts ends once a move is played, so it never rings
+//   the computer's capturers (white h8, seen lower left beside the child's pieces).
 import std;
 import vec;
 import rules from "../../src/rules";

@@ -1,4 +1,4 @@
-// The 3D board's frame from the game's state (view3d::fill, task 015), headless: it is
+// The 3D board's frame from the game's state (view3d::fill), headless: it is
 // filled from the same draw lists the flat board draws (board::fill), so both follow one
 // state and one animation. A selected man lifted and grown, with its glow; a stacked king
 // two instances; a crowned king one; the last move's squares and the targets in the

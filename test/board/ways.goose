@@ -1,10 +1,10 @@
 // A capture tapped stop by stop may take any of its ways, not only the one the move list
-// keeps (rules::ways, board::follow; 2026-11-11, issue 1: a king's other way cost a
-// puzzle's stars). The Russian king on c1 takes b2, d2, b4, and d4 round either way and
-// is back on c1, one move whose kept way goes by a3 first; tapped by e3, c5, and a3, the
-// move plays, shown along the way tapped. Its last square, c1, which both ways reach
-// taking the same pieces, plays the move at once. A tap on the selected piece puts it down, a drag from it still
-// plays; and a tap on a stop shows the piece hopping there over the HOP, then resting.
+// keeps (rules::ways, board::follow). The Russian king on c1 takes b2, d2, b4, and d4
+// round either way and is back on c1, one move whose kept way goes by a3 first; tapped by
+// e3, c5, and a3, the move plays, shown along the way tapped. Its last square, c1, which
+// both ways reach taking the same pieces, plays the move at once. A tap on the selected
+// piece puts it down, a drag from it still plays; and a tap on a stop shows the piece
+// hopping there over the HOP, then resting.
 import std;
 import vec;
 import rules from "../../src/rules";

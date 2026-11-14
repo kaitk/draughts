@@ -1,19 +1,16 @@
 // A capture that reaches the far row, dropped and tapped in a game against the computer,
-// the child on black and the board turned (reported 2026-11-09: in International a black
-// man's capture that looked like it crowned wasn't taken, only take back helped). Each
-// line is from the position afresh: "t" taps squares, "d" drags the piece from where it
-// is drawn to each square in turn, through the game's frames.
+// the child on black and the board turned. Each line is from the position afresh: "t"
+// taps squares, "d" drags the piece from where it is drawn to each square in turn,
+// through the game's frames.
 //
 // - alone: e3 takes d2 and crowns on c1, tapped or dropped on c1.
 // - on, one way: from c1 the capture goes on over b2 to a3 (International crowns only a
 //   man that stops on the far row): c1 is a stop the man waits on, a3 then plays the
-//   rest, and a3 alone plays the whole of it (2026-11-09: c1 alone played it before).
+//   rest, and a3 alone plays the whole of it.
 // - on, two ways: c3 by e1 and g3, then to e5 or i5. e1 is only a stop. The piece waits
-//   on it, as in a puzzle; with hints on mistakes nothing shows where it goes on. It used
-//   to go back to c3 with e1 ringed, and picked up again it forgot e1, so a drop on g3
-//   was wrong and on e1 did nothing: dropped, such a capture was made only by its last
-//   square. With move hints, the squares it goes on to (g3) pulse, then g3's next, e5
-//   and i5 (the pulse, and through the shell).
+//   on it, as in a puzzle; with hints on mistakes nothing shows where it goes on, and a
+//   drop on g3 then goes on from e1. With move hints, the squares it goes on to (g3)
+//   pulse, then g3's next, e5 and i5 (the pulse, and through the shell).
 // - majority: e3 to c1 takes one, e3 by g5 to e7 two, so c1 is no move. The drop is
 //   wrong, and the pieces e3 must take, f4 and f6, pulse beside it.
 // - a king takes to the far row; and in Russian a man crowned on the far row mid-capture

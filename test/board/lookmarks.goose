@@ -5,7 +5,7 @@
 // ring pulses as the puzzles' hint's does and then stays, lit. On the 3D board a
 // drained piece's seed is below 0, the shaded square's field.w 1, and only one ring
 // pulses at a time, drawn over the kept image (Scene.pulse). A move clears them all.
-// The prototype's king position (Russian): black's d2 crowns on e1; c5 in danger.
+// A king position (Russian): black's d2 crowns on e1; c5 in danger.
 import std;
 import vec;
 import math;
