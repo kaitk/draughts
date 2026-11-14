@@ -16,8 +16,7 @@ The app builds from a Mac (Apple silicon), from Windows (x64), and from Linux (x
 | Rules tests | Mac, Windows | `test/run_tests.py` | [Test the rules](#test-the-rules) |
 
 The Toolchain table below is the Mac's; Windows lists its own under Run on Windows and Run
-on Android. The tablet is a Galaxy Tab A11+ (SM-X230, Android 16, MediaTek MT6878 with a
-Mali-G615 MC2, Vulkan 1.3).
+on Android.
 
 ## Toolchain
 
@@ -26,7 +25,7 @@ The Mac's, tested 2026-11-07 on macOS 26.3.1:
 | Tool | Where | Version |
 | --- | --- | --- |
 | Goose | `build/goose-v2026.4-macos-arm64/`, from the [release](https://github.com/aardappel/goose/releases/tag/v2026.4); `GOOSE` overrides it | v2026.4, with gfx, ui, and audio built in |
-| goose_gfx | `third_party/goose_gfx` submodule, with SDL and Nuklear as its submodules | `6cfa3de`, the commit v2026.4's gfx package matches |
+| goose_gfx | `third_party/goose_gfx` submodule, with SDL and Nuklear as its submodules | `15de5e0`, the [kaitk/goose_gfx](https://github.com/kaitk/goose_gfx) fork's `main`, which the submodule follows: each change Draughts needs is a branch of its own on upstream's `main` (offered upstream one at a time), merged into the fork's `main` |
 | Android SDK | `~/Library/Android/sdk`; `ANDROID_HOME` overrides it | platform 36, build-tools 36.0.0, platform-tools |
 | Android NDK | `$ANDROID_HOME/ndk/29.0.14206865`; `ANDROID_NDK` overrides it | r29 |
 | JDK | `javac` on `PATH` | OpenJDK 21 |
@@ -51,9 +50,10 @@ brew install cmake ninja     # for iOS and Android
 
 Android's SDK, NDK, and JDK: [Set up on the Mac](#set-up-on-the-mac) under Run on Android.
 
-When the Goose release changes, pin goose_gfx to the commit whose `src/`, `gfx.goose`, and
-`CMakeLists.txt` match the release's `pkg/gfx/`, so Android and desktop compile the same
-gfx layer.
+When the Goose release changes, bring the fork's `main` to the upstream commit whose
+`src/`, `gfx.goose`, and `CMakeLists.txt` match the release's `pkg/gfx/`, merge its
+branches again, and move the submodule to it, so Android and desktop compile the same gfx
+layer with the same changes.
 
 ## Run on the Mac
 
