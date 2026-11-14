@@ -27,9 +27,10 @@ whenever a frame drops more than before (2026-11-14).
 
 ## What each kind of test is for
 
-- `test/<area>/<name>.goose` with `test/expected/<name>.out`: `expected/` is flat, so a
-  name must be unique across the areas (a `test/shell/keys` overwrote `test/ai/keys`'s
-  output, 2026-11-11). One program per behavior,
+- `test/<area>/<name>.goose` with `test/expected/<area>/<name>.out`: `expected/`
+  mirrors the areas, since a flat one let a `test/shell/keys` overwrite `test/ai/keys`'s
+  output (2026-11-11); a name on the command line still runs every area's test of that
+  name. One program per behavior,
   printing what a reader can check by eye (positions as FEN, moves sorted, how many
   pieces each takes). A test explains in a comment what rule it shows and why the
   position shows it. Areas so far: `rules`, `board` (taps, hints, and a capture tapped
@@ -147,7 +148,7 @@ whenever a frame drops more than before (2026-11-14).
   passing `puzzles::check`, with its counts by theme and level: `set` International's,
   `russian_set` Russian's, `brazilian_set` Brazilian's). A new puzzle is checked with
   `build/puzzles FILE` (the engine's view too) and `test/perft.py puzzles` before
-  `test/expected/set.out`, `russian_set.out`, or `brazilian_set.out` is blessed. With no FILE, `build/puzzles` checks the set built into
+  `test/expected/puzzles/set.out`, `russian_set.out`, or `brazilian_set.out` is blessed. With no FILE, `build/puzzles` checks the set built into
   it, so rebuild it after a set changes, or an old build checks the old set. In tiny positions the engine sees the
   game's end, so a Learn puzzle of a few men can fail its view (a right move scored as
   lost, or another move winning sooner) though the solver passes it: add men, or pick

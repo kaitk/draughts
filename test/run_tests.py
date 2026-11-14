@@ -2,10 +2,10 @@
 """Runs the tests under test/<area>/, as goose-http's and plod's runners do.
 
 Each test/<area>/<name>.goose is a program. Its stdout must be
-test/expected/<name>.out, and it must exit 0. By default every test runs in
+test/expected/<area>/<name>.out, and it must exit 0. By default every test runs in
 batches through the compiler's TinyCC, a `goose --multi-test` run per batch,
 in a few seconds. --build builds each with `goose build` (C at -O2) into
-build/test/<name>/ and runs that instead, which is what the app ships.
+build/test/<area>/<name>/ and runs that instead, which is what the app ships.
 Every failure is reported, with a count per area at the end.
 
 GOOSE names the compiler (default: the pinned release under build/).
@@ -68,7 +68,7 @@ def multi_test(files):
 
 
 def build_and_run(test):
-    work = OUT / test.stem
+    work = OUT / test.parent.name / test.stem
     work.mkdir(parents=True, exist_ok=True)
     exe = work / test.stem
     code, out, err = run([GOOSE, "build", "-o", exe, test.relative_to(ROOT).as_posix()])
@@ -112,13 +112,14 @@ def main():
     for t in tests:
         code, out, err = results[t]
         name = f"{t.parent.name}/{t.stem}"
-        expected = EXPECTED / f"{t.stem}.out"
+        expected = EXPECTED / t.parent.name / f"{t.stem}.out"
         got = out.rstrip("\n")
         problem, detail = None, ""
         if code != 0:
             problem, detail = f"exit {code}", out + err
         elif args.bless:
             if not expected.exists() or expected.read_text(encoding="utf-8").rstrip("\n") != got:
+                expected.parent.mkdir(exist_ok=True)
                 expected.write_bytes((got + "\n").encode("utf-8"))
                 print(f"blessed {expected.relative_to(ROOT)}")
         elif not expected.exists():

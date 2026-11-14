@@ -282,7 +282,7 @@ presents: Mesa's `create_immed` buffers at the window's pixel size, and the
 ## Test the rules
 
 ```sh
-test/run_tests.py           # test/<area>/*.goose against test/expected/, through TinyCC
+test/run_tests.py           # test/<area>/*.goose against test/expected/<area>/, through TinyCC
 test/run_tests.py --build   # the same, each built natively at -O2
 test/run_tests.py --bless   # write each test's output as its expected output
 scripts/test.sh             # the app's shaders, the tests, then perft and the random-game check
