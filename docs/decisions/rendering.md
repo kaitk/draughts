@@ -535,10 +535,12 @@ themes a screen, and c's library beside the theme, which needs two scrolling pan
 - In a tablet's landscape the rows take the whole width (2026-11-09); they had kept clear
   of back's column too, which pushed them against the right edge: 183 dp left of them, 27
   right at 16:9.
-- The title row tops the page as settings' does (2026-11-14, a proposal on branch
-  `ui-header` for the user to pick, one header for every page): back at the page's left,
-  the title 20 dp after it, the switch at the row's right wherever the three fit (a
-  tablet's portrait too), and the rows under it, centered across the page. It replaces
+- The title row tops the rows as settings' tops its list (2026-11-14, chosen by the
+  user): as wide as the rows and lined up with their left edge, back there, the title
+  20 dp after it, the switch at the row's right wherever the three fit; where the worded
+  back doesn't fit beside them (a tablet's portrait), back keeps only its arrow in a
+  tap's square rather than the switch dropping a row, which a phone's portrait still
+  does. The rows start under it, centered across the page. It replaces
   back alone in a column at the left in landscape with the title under it beside the
   switch, the rows centered down the screen (a desktop's window left a large gap under
   back), and in portrait the title row inset to the centered column.

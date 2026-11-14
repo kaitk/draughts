@@ -547,14 +547,18 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     let sw_w = switch_width(g);
     let sw_h = switch_row_h() * u;
     let rim = SWITCH_PAD * u;
-    // The head row tops the page as settings' does (rendering.md, "The way back"): back at
-    // its left, the title HEAD_GAP after it, How to play's tile after the title, and the
-    // switch at the row's right, its glass's rim above and below the row, where they all
-    // fit; else the switch takes a row of its own under the head, as wide as the rows.
-    let bw = back_w(g);
-    let along = bw + HEAD_GAP * u + title_width(g) + how_w + 24.0 * u + sw_w;
-    let beside = along <= page.z;
-    let head = if beside { gui::tap() * u + gap } else { gui::tap() * u + gap + sw_h + gap };
+    // The head row tops the rows, as wide as they are and lined up with them, as settings'
+    // head tops its list (rendering.md, "The way back"): back at its left, the title
+    // HEAD_GAP after it, How to play's tile after the title, and the switch at the row's
+    // right, its glass's rim above and below the row. Where they don't fit, back gives up
+    // its word for a tap's square; where even that doesn't, the switch takes a row of its
+    // own under the head, as wide as the rows. Guessed here against the rows' width in
+    // portrait (one column) and the page's in landscape, where the head's height only
+    // matters on a phone, whose rows take the page's width; settled once it is known.
+    let rest = HEAD_GAP * u + title_width(g) + how_w + 24.0 * u + sw_w;
+    let guess_w = if landscape { page.z } else { min(page.z, COLUMN * u) };
+    var beside = gui::tap() * u + rest <= guess_w;
+    var head = if beside { gui::tap() * u + gap } else { gui::tap() * u + gap + sw_h + gap };
     // A variant's set may leave a theme out (Russian's has no king shots): its row too.
     var rows = 0;
     for t in puzzles::THEMES { if puzzles::theme_count(puzzles::all, t) > 0 { rows++; } }
@@ -588,12 +592,20 @@ fn library(g: gui::Gui&, area: float4, stars: const u8[:], at: i64, theme: i64&,
     }
     let y = page.y;
     let x = page.x + floor(0.5 * (page.z - w) + 0.5);
-    var top = float4 { page.x, y, page.z, gui::tap() * u };
-    if back(g, gui::cut_left(top, bw)) { pick = BACK; }
+    let worded = back_w(g) + rest <= w;
+    beside = worded || gui::tap() * u + rest <= w;
+    head = if beside { gui::tap() * u + gap } else { gui::tap() * u + gap + sw_h + gap };
+    var top = float4 { x, y, w, gui::tap() * u };
+    if worded || !beside {
+        if back(g, gui::cut_left(top, back_w(g))) { pick = BACK; }
+    } else {
+        let r = gui::cut_left(top, gui::tap() * u);
+        gui::under_tile(g, r, 22.0);
+        if gui::tile(g, gui::PICKER_IDS, r, gui::BACK, gui::PLAIN, 22.0) { pick = BACK; }
+    }
     gui::cut_left(top, HEAD_GAP * u);
-    // The switch ends with the rows where they are narrower than the page (a desktop's
-    // window), so it doesn't stand apart from them at the page's right.
-    let sw_x = clamp(x + w - sw_w, page.x + along - sw_w, page.x + page.z - sw_w);
+    // The switch at the row's right, ending with the rows.
+    let sw_x = x + w - sw_w;
     let sw = if beside { float4 { sw_x, top.y - rim, sw_w, sw_h } }
              else { float4 { x, y + gui::tap() * u + gap, w, sw_h } };
     if beside { top.z = sw_x - 24.0 * u - top.x; }
