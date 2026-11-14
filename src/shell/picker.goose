@@ -44,6 +44,9 @@ let LEARN = -11;            // how to play, the library's first row (task 026)
 let TODAY = -100;           // today's puzzle k tapped is TODAY - k (task 088), k under puzzles::MAX_DAILY
 let TODAY_IDS = gui::PICKER_IDS + 30;          // today's tiles, one id each
 
+// The place in today's puzzles of a pick that is one of their tiles (TODAY - k), else -1.
+fn today_pick(pick: i64) -> i64 { if pick <= TODAY && pick > TODAY - puzzles::MAX_DAILY { TODAY - pick } else { -1 } }
+
 let MARKS = [gui::BOOK, gui::JUMPS, gui::CROWN, gui::TARGET, gui::KING, gui::SHIELD];
 let NAMES = [strings::THEME_LEARN, strings::THEME_CAPTURES, strings::THEME_CROWNING, strings::THEME_SHOTS,
              strings::THEME_KING_SHOTS, strings::THEME_SAFE_MOVE];

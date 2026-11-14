@@ -842,7 +842,7 @@ fn picker_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
     var variant = sh.prefs.variant;
     let pick = declare_picker(sh, g, area, spot, variant);
-    let daily = pick <= picker::TODAY && pick > picker::TODAY - puzzles::MAX_DAILY;
+    let daily = picker::today_pick(pick);
     if pick == picker::LEARN { learn(sh, PICKER, now); }
     if pick == picker::SWITCHED {
         // The library's switch is settings' draughts: new games' too, saved as settings
@@ -854,12 +854,12 @@ fn picker_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
         go_up(sh, HOME, now);
     } else if pick >= 0 {
         play_puzzle(sh, pick, now);
-    } else if daily {
-        play_daily(sh, picker::TODAY - pick, now);
+    } else if daily >= 0 {
+        play_daily(sh, daily, now);
     }
     // No board at rest: it lies off the screen. Coming from a puzzle, or going to one,
     // it is the puzzle's, in its tile.
-    if sh.from == PUZZLE || pick >= 0 || daily { sh.out.layout = in_tile(sh, spot, g.scale); }
+    if sh.from == PUZZLE || pick >= 0 || daily >= 0 { sh.out.layout = in_tile(sh, spot, g.scale); }
     else { sh.out.layout = board::layout_at(-2.0 * area.z, 0.0, 0.5 * area.z, g.scale, sh.out.layout.n); }
     return pick != picker::NOTHING;
 }
