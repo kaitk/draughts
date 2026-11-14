@@ -528,28 +528,32 @@ struct Kind {
     theirs: i64,
     kings:  i64,
     first:  i64,
+    share:  i64,            // batch keeps PER times this many: the hard kinds more, so the library reaches far past the course
 }
 
 // The kinds batch runs, easy to hard: more men round a motif make it harder to see, and
 // more moves harder to read.
 let KINDS: Kind[] = [
-    Kind { name: "capture-8", goal: "take 2", k: 1, mine: 8, theirs: 8, kings: 0, first: SHOT },
-    Kind { name: "capture-13", goal: "take 3", k: 1, mine: 13, theirs: 13, kings: 0, first: SHOT },
-    Kind { name: "shot2-10", goal: "take 2", k: 2, mine: 10, theirs: 10, kings: 0, first: SHOT },
-    Kind { name: "shot2-15", goal: "take 2", k: 2, mine: 15, theirs: 15, kings: 0, first: SHOT },
-    Kind { name: "shot3-12", goal: "take 3", k: 2, mine: 12, theirs: 12, kings: 0, first: SHOT },
-    Kind { name: "shot3m-12", goal: "take 2", k: 3, mine: 12, theirs: 12, kings: 0, first: SHOT },
-    Kind { name: "shot3m-16", goal: "take 3", k: 3, mine: 16, theirs: 16, kings: 0, first: SHOT },
-    Kind { name: "shot4m-14", goal: "take 2", k: 4, mine: 14, theirs: 14, kings: 0, first: SHOT },
-    Kind { name: "tempo-10", goal: "take 1", k: 2, mine: 10, theirs: 10, kings: 0, first: TEMPO },
-    Kind { name: "crown1-7", goal: "crown", k: 1, mine: 7, theirs: 7, kings: 0, first: SHOT },
-    Kind { name: "crown2-8", goal: "crown", k: 2, mine: 8, theirs: 8, kings: 0, first: SHOT },
-    Kind { name: "crown3-9", goal: "crown", k: 3, mine: 9, theirs: 9, kings: 0, first: SHOT },
-    Kind { name: "king1-8", goal: "take 3", k: 1, mine: 8, theirs: 9, kings: 1, first: SHOT },
-    Kind { name: "king2-9", goal: "take 2", k: 2, mine: 9, theirs: 10, kings: 1, first: SHOT },
-    Kind { name: "king3-10", goal: "take 2", k: 3, mine: 10, theirs: 11, kings: 1, first: SHOT },
-    Kind { name: "safe-10", goal: "safe", k: 1, mine: 10, theirs: 10, kings: 0, first: SHOT },
-    Kind { name: "safe-15", goal: "safe", k: 1, mine: 15, theirs: 15, kings: 0, first: SHOT },
+    Kind { name: "capture-8", goal: "take 2", k: 1, mine: 8, theirs: 8, kings: 0, first: SHOT, share: 1 },
+    Kind { name: "capture-13", goal: "take 3", k: 1, mine: 13, theirs: 13, kings: 0, first: SHOT, share: 1 },
+    Kind { name: "shot2-10", goal: "take 2", k: 2, mine: 10, theirs: 10, kings: 0, first: SHOT, share: 1 },
+    Kind { name: "shot2-15", goal: "take 2", k: 2, mine: 15, theirs: 15, kings: 0, first: SHOT, share: 3 },
+    Kind { name: "shot3-12", goal: "take 3", k: 2, mine: 12, theirs: 12, kings: 0, first: SHOT, share: 3 },
+    Kind { name: "shot3m-12", goal: "take 2", k: 3, mine: 12, theirs: 12, kings: 0, first: SHOT, share: 3 },
+    Kind { name: "shot3m-14", goal: "take 2", k: 3, mine: 14, theirs: 14, kings: 0, first: SHOT, share: 3 },
+    Kind { name: "shot4m-14", goal: "take 2", k: 4, mine: 14, theirs: 14, kings: 0, first: SHOT, share: 3 },
+    Kind { name: "shot3t-12", goal: "take 3", k: 3, mine: 12, theirs: 12, kings: 0, first: SHOT, share: 3 },
+    Kind { name: "shot4m-12", goal: "take 2", k: 4, mine: 12, theirs: 12, kings: 0, first: SHOT, share: 3 },
+    Kind { name: "tempo-10", goal: "take 1", k: 2, mine: 10, theirs: 10, kings: 0, first: TEMPO, share: 1 },
+    Kind { name: "crown1-7", goal: "crown", k: 1, mine: 7, theirs: 7, kings: 0, first: SHOT, share: 1 },
+    Kind { name: "crown2-8", goal: "crown", k: 2, mine: 8, theirs: 8, kings: 0, first: SHOT, share: 1 },
+    Kind { name: "crown3-9", goal: "crown", k: 3, mine: 9, theirs: 9, kings: 0, first: SHOT, share: 3 },
+    Kind { name: "king1-8", goal: "take 3", k: 1, mine: 8, theirs: 9, kings: 1, first: SHOT, share: 1 },
+    Kind { name: "king2-9", goal: "take 2", k: 2, mine: 9, theirs: 10, kings: 1, first: SHOT, share: 1 },
+    Kind { name: "king3-10", goal: "take 2", k: 3, mine: 10, theirs: 11, kings: 1, first: SHOT, share: 3 },
+    Kind { name: "king3-12", goal: "take 2", k: 3, mine: 12, theirs: 13, kings: 1, first: SHOT, share: 3 },
+    Kind { name: "safe-10", goal: "safe", k: 1, mine: 10, theirs: 10, kings: 0, first: SHOT, share: 1 },
+    Kind { name: "safe-15", goal: "safe", k: 1, mine: 15, theirs: 15, kings: 0, first: SHOT, share: 3 },
 ];
 
 // Runs every kind (KINDS; on 8x8 its men scaled to the board, the safe move and the
@@ -571,7 +575,7 @@ fn batch(seed: u64, per: i64, seconds: f64) {
         var found = 0;
         var dups = 0;
         let begun = time();
-        while found < per && time() - begun < seconds {
+        while found < per * kind.share && time() - begun < seconds * kind.share {
             let p = placed(r, mine, theirs, kind.kings, rules::Position { pieces: [0, 0], kings: 0, side: 0, variant: variant });
             guard popcount(p.pieces[0]) == mine && popcount(p.pieces[1]) == theirs else { continue; }
             var pz = puzzle_of(p, kind.goal, kind.k);
