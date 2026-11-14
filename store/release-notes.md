@@ -18,20 +18,22 @@ Draughts is open source, under the MIT or Apache 2.0 licence: the code is here, 
 
 **New**
 
-- **Daily puzzles.** Once Learn is solved, a few puzzles a day (4 by default; 3, 5, or 10 in settings) at the player's own level: a warm-up, two at their level, and one a bit harder. They come from a library of over 7,000 puzzles for International, Russian, and Brazilian draughts, among them traps that punish a careless move, reaching well past the course to ones that make a grown-up think. Home shows today's puzzles as dots, and the library's Today's puzzles row holds them; a new set comes each day, and none repeats.
-- **A puzzle rating** per player and draughts, started from the stars won in the course, moves fast at first and settles with time.
+- **Daily puzzles.** Once Learn is solved in any draughts, a few puzzles a day in each (4 by default; 3, 5, or 10 in settings) at the player's own level: a warm-up, two at their level, and one a bit harder. They come from a library of over 7,000 puzzles for International, Russian, and Brazilian draughts, among them traps that punish a careless move, reaching well past the course to ones that make a grown-up think. Home shows today's puzzles as dots, and the library's Today's puzzles row holds them; a new set comes each day, and none repeats.
+- **A puzzle rating** per player and draughts, started from the stars won in the course (or the best rating the player has in another draughts), moves fast at first and settles with time.
 
 **Better**
 
 - **The computer plays stronger:** it now weighs men running for the crown, kings on the main road, kings that are stuck, and how the men are spread across the board.
-- **The replay shows each move** on the board, shaded at every stop with its start faded, and the best move when asked: tap the line saying what was best to see it there. Marks are closer to lidraughts'.
+- **The replay shows each move** on the board, shaded at every stop with its start faded, and compares it with the best: the bulb, or the line saying what was best, shows the position before the move with the move played and the best one side by side, and play from here plays from there. Marks are closer to lidraughts'.
 - On a phone held upright, what each side has taken sits on a card of its own beside the last move, in place of one wide bar.
 - The game's move list is only as tall as its moves.
 - Results show each game's blunders, and their list fits the games played.
 - The puzzles' title sits beside back, and the library stays centred on a tablet's wide screen.
 - The win's card says who won, and a long game's move list no longer hides it.
 - Desktop windows get a larger replay and results and a layout capped for ultrawide screens, and a new player starts on the 3D board.
-- The 3D board takes less memory on phones.
+- The 3D board takes less memory on phones, and turns under a drag in settings as on the home screen.
+- A finished game is no longer offered to continue.
+- A puzzle solved with the keys or a controller puts the focus on next.
 
 **Windows** (64-bit, Windows 10 or 11): download `Draughts-0.8.0-windows-x64.zip`, extract it, and run `Draughts.exe`. Nothing to install. Your graphics driver must support Vulkan, which current NVIDIA, AMD, and Intel drivers do. The app is not signed yet, so on the first run Windows shows "Windows protected your PC": choose **More info**, then **Run anyway**.
 
@@ -42,9 +44,9 @@ Draughts is open source, under the MIT or Apache 2.0 licence: the code is here, 
 **Android and iPhone/iPad:** from Google Play and the App Store.
 
 SHA-256:
-- `Draughts-0.8.0-windows-x64.zip`: (to come)
+- `Draughts-0.8.0-windows-x64.zip`: `aff4f5a35234418ec00ce4f24bff9f9804ebbf6a625113a7f60d56916ec56aad`
 - `Draughts-0.8.0-macos-arm64.zip`: `ed6a19aa9bfb49447540c2aef4ad7e1a778f3f70646bf633d4c48adbcff977c4`
-- `Draughts-0.8.0-linux-x64.tar.gz`: `ecb79ff9a1b16250ce6a8707fac0f5587374fcb3d8a36143085888f19f9412d4`
+- `Draughts-0.8.0-linux-x64.tar.gz`: `014e5881f34c161f1ccf7c0c0849bc5f8b5637b960b41eabbedaa2343d3d0783`
 ```
 
 ### Play, en-GB (399 of 500)
