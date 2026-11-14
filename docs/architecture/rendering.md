@@ -1146,7 +1146,8 @@ player's skill there, then won, drawn, lost: a crown, `=`, an X, each with its c
 left out where the panel can't hold them in the height); at the right the games in that draughts, newest first, in a scrolling list
 (its glass as tall as its rows where a few don't fill the height, one row's height with
 none, so a few games don't stand in a tall empty panel) of 88 dp rows: the result as a crown, `=`, or an X, the opponent ("Medium 1644", or "A
-friend") over the date, the rating's change, and the player's blunders as `?? n`. In
+friend") over the date, the rating's change, and the player's blunders as `?? n` in the rating's face (red where n is
+above 0, else dim white at 66%: red at 35% didn't read on the glass, 2026-11-14). In
 portrait the panel is above the list. Only the rows in view are declared. Each row is a
 tap, the whole of it, its blunders' count too, lit under the mouse and by a press: it
 opens the game's replay.

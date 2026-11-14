@@ -248,8 +248,10 @@ fn row(g: gui::Gui&, id: i64, r: float4, x: history::Game&, lk: Look) -> bool {
     t.clear();
     gui::push(t, "?? ");
     gui::push_number(t, blunders);
-    gui::colored(g, lk.small, marks, t[..], float4 { gui::RED.x, gui::RED.y, gui::RED.z, if blunders > 0 { 1.0 } else { 0.35 } },
-                 gui::RIGHT);
+    // In the rating's face: red where there are blunders, else the dates' dim white, which
+    // reads on the glass (red at 35% didn't, 2026-11-14).
+    if blunders > 0 { gui::colored(g, lk.body, marks, t[..], float4 { gui::RED.x, gui::RED.y, gui::RED.z, 1.0 }, gui::RIGHT); }
+    else { gui::text(g, lk.body, marks, t[..], 0.66, 0.0, gui::RIGHT); }
     // The rating's change.
     let change = gui::cut_right(c, 72.0 * ku);
     if x.level != history::FRIEND {
