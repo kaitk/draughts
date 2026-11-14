@@ -347,7 +347,9 @@ on a phone or a tablet. Pictured rows show a 76 × 50 dp picture over the word
 (`gui::choice`). In landscape the list is a 480 dp column at the left and the preview the
 rest; in portrait the preview is a band on top. The preview is home's board moved there
 (see [Transitions](#transitions)), set to one fixed capture position that shows what the
-move hints do. The language button opens a small list of the languages in themselves.
+move hints do; the 3D preview turns under a drag as home's board does (see [Board and
+pieces](#board-and-pieces)). The language button opens a small list of the languages in
+themselves.
 `test/shell/settings_sizes` checks the sizes.
 
 **The puzzles** (`prototypes/puzzles.html`): a library of themes and a theme's page. The
@@ -525,8 +527,10 @@ the flat board's draw lists (`board::fill`), so both views follow one state.
   Turns it starts at rest and the board turns 180° after each move, the light keeping its
   place on screen (`render3d::turn_light`).
 - **Every screen with a board** shows the 3D board when chosen: home and settings fit it
-  into their room (`view3d::square`); a drag on home's board moves the showcase camera
-  (`rig::drive`), eased back to rest on leaving (`shell::home_view`).
+  into their room (`view3d::square`); a drag that starts on their board, off the UI,
+  moves the showcase camera (`rig::drive`, `shell::drag_board`), drawing only on the
+  frames it moves. The two screens share the camera (`Shell.cam`), eased back to rest over
+  the transition whenever either is left (`shell::dragged_view`), so each opens at rest.
 - **Drawn** by `src/render3d/` from `src/app/draw3d.goose`, meshes, looks, and the bake
   from `src/model3d/` (no graphics). The shadow map is drawn only when pieces move; the
   pieces' occlusion of the field goes into a 512² map only where squares changed; a

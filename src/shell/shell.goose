@@ -163,8 +163,9 @@ struct Shell {
     went:  board::Layout,
     came:  board::Layout,
     left:  i64 = home::NO_SETUP,
-    // Home's 3D board as a drag on it left it: the showcase's swing and tilt (rig::drive),
-    // kept while home stays open, eased back to rest as home is left.
+    // Home's and settings' 3D board as a drag on it left it: the showcase's swing and tilt
+    // (rig::drive), kept while the screen stays open, eased back to rest as it is left, so
+    // either screen opens at rest.
     cam: rig::Rig = rig::Rig {},
     // The setup's board turning once round when a friend's board is switched to Turns, to
     // show what it does: the 3D board eases a full turn, the flat one shows black's side
@@ -222,7 +223,7 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: bo
         },
         SETTINGS => {
             settings::frame(sh.prefs, over, g, l, area, strings::current, room);
-            sh.went_view = raise_in(sh, room, l.n, g.scale, l);
+            sh.went_view = dragged_view(sh, raise_in(sh, room, l.n, g.scale, l), room, now);
         },
         PICKER => {
             var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
@@ -244,7 +245,7 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: bo
         HOME => {
             home::frame(over, g, l, rules::VARIANTS[board_of(sh, HOME).variant].size, area, sh.left, sh.prefs, room, resume(sh));
             l.flip = turned(sh, sh.left);
-            sh.went_view = home_view(sh, raise_in(sh, room, l.n, g.scale, l), room, now);
+            sh.went_view = dragged_view(sh, raise_in(sh, room, l.n, g.scale, l), room, now);
         },
         // The replay and how to play switch through no transition (KINDS' `with`).
         _ => no_screen(screen),
@@ -330,10 +331,8 @@ fn progress(sh: Shell&, now: f64) -> f64 {
 fn go_to(sh: Shell&, to: i64, now: f64) {
     let p = progress(sh, now);
     let back = sh.from == to && p < 1.0;
-    if sh.screen == HOME {
-        sh.left = sh.setup;
-        rig::settle(sh.cam, now, DURATION);
-    }
+    if sh.screen == HOME { sh.left = sh.setup; }
+    if sh.screen == HOME || sh.screen == SETTINGS { rig::settle(sh.cam, now, DURATION); }
     sh.from = if animates(sh.screen, to) { sh.screen } else { -1 };
     sh.since = if back { now - (1.0 - p) * DURATION } else { now };
     sh.screen = to;
@@ -885,14 +884,18 @@ fn settings_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64, fresh: bool
     let changed = board::update(sh.preview, now);
     var room = float4 { 0.0, 0.0, 0.0, 0.0 };
     let ask = settings::frame(sh.prefs, sh.out.over, g, sh.out.layout, area, strings::current, room);
-    sh.came_view = raise_in(sh, room, sh.out.layout.n, g.scale, sh.out.layout);
+    let v = raise_in(sh, room, sh.out.layout.n, g.scale, sh.out.layout);
+    // The preview turns under a drag as home's board does; the choices, the language
+    // list, and their glass take their presses first (g.took).
+    let moved = drag_board(sh, g, v, room, now);
+    sh.came_view = dragged_view(sh, v, room, now);
     if ask == settings::CHANGED {
         apply_prefs(sh);
         settings::stage(sh.preview, sh.prefs, now);
         sh.changed = true;
     }
     if ask == settings::BACK { go_to(sh, sh.back, now); }
-    return changed || ask != settings::NOTHING;
+    return changed || moved || ask != settings::NOTHING;
 }
 
 // Home for this frame. Returns whether anything on screen changed.
@@ -920,8 +923,8 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
                            resume(sh));
     sh.out.layout.flip = flip;
     let v = raise_in(sh, room, sh.out.layout.n, g.scale, sh.out.layout);
-    if !card && !asking && turn_home(sh, g, v, room, now) { changed = true; }
-    sh.came_view = home_view(sh, v, room, now);
+    if !card && !asking && drag_board(sh, g, v, room, now) { changed = true; }
+    sh.came_view = dragged_view(sh, v, room, now);
     // A friend's board switched to turning, the setup's board turns once round to show it
     // (Shell.demo, twice the game's turn): the 3D board a full turn, the flat one showing
     // black's side for the middle half.
@@ -975,25 +978,27 @@ fn home_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     return changed;
 }
 
-// Home's 3D board v (raise_in, fitted into `room`) seen as the drags on it left it,
-// turned and tipped by the showcase's camera (rig::camera): no larger than at rest, and
-// smaller where its bounds at that angle would leave the room, in its middle.
-fn home_view(sh: Shell&, v: view3d::View, room: float4, now: f64) -> view3d::View {
+// Home's or settings' 3D board v (raise_in, fitted into `room`) seen as the drags on it
+// left it, turned and tipped by the showcase's camera (rig::camera, Shell.cam): no larger
+// than at rest, and smaller where its bounds at that angle would leave the room, in its
+// middle.
+fn dragged_view(sh: Shell&, v: view3d::View, room: float4, now: f64) -> view3d::View {
     let cam = rig::camera(sh.cam, view3d::PITCH, now);
     guard v.rect.z > 0.0 && (cam.yaw != 0.0 || cam.pitch != view3d::PITCH) else { return v; }
     return view3d::fit(cam, v.n, room, view3d::MIDDLE, v.k);
 }
 
-// A drag that starts on home's 3D board v, inside its outline as drawn and off the UI,
-// turns and tips it as the game's showcase does (rig::drive, its range and rate); a press
-// anywhere else does nothing new. Not in a transition, nor before the 3D board is ready.
-// Returns whether it moved.
-fn turn_home(sh: Shell&, g: gui::Gui&, v: view3d::View, room: float4, now: f64) -> bool {
+// A drag that starts on home's or settings' 3D board v, inside its outline as drawn and
+// off the UI, turns and tips it as the game's showcase does (rig::drive, its range and
+// rate); a press anywhere else does nothing new. Not in a transition, nor before the 3D
+// board is ready. Called after the screen's UI is declared, so a press its controls took
+// (g.took) never moves the board. Returns whether it moved.
+fn drag_board(sh: Shell&, g: gui::Gui&, v: view3d::View, room: float4, now: f64) -> bool {
     let r .= sh.cam;
     let input .= g.input;
     if input.pressed || v.rect.z <= 0.0 || sh.from >= 0 || waiting3d(sh) { r.held = false; }
     guard v.rect.z > 0.0 && sh.from < 0 && !waiting3d(sh) else { return false; }
-    let on = input.pressed && !g.took && view3d::on_board(home_view(sh, v, room, now), input.at);
+    let on = input.pressed && !g.took && view3d::on_board(dragged_view(sh, v, room, now), input.at);
     guard on || r.held else { return false; }
     return rig::drive(r, input.at, input.down, on, input.released, g.scale, view3d::PITCH, now);
 }

@@ -248,6 +248,11 @@ fed389b.
   tile saying what it shows.
 - The language is a button in the title row, the globe, its code and a chevron opening a
   list (2026-11-13), replacing tiles that grew with each language.
+- A drag on the 3D preview turns and tips it as on home (2026-11-14): one camera for both
+  screens (`Shell.cam`), eased back to rest whenever either is left, so each opens at
+  rest. The choices take their presses first, so a tap on one never moves the board and a
+  drag from the board never presses one. Rejected: the angle carried between home and
+  settings, which would leave a turned board in a screen opened to change something else.
 
 **The puzzle picker**
 
