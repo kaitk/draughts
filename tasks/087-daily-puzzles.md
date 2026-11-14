@@ -216,10 +216,9 @@ games at skill 90 and 300,000 nodes a move, ten processes at once, 6.5 min on th
 
 Of the positions `find` places, between 1 in 25,000 and 1 in 2 million pass every check;
 the solver's exact search is the cost, and the most men and moves cost most. The games
-are a poor source as built: of 286 swings the solver forces, 7 pass the checks (most have
-a second right move somewhere, or end with a capture due), at 5 min a puzzle, so the
-full library is from `batch` alone, and the games wait on a looser check (a puzzle of the
-moves up to the second right move).
+are a poor source as built: of 286 swings the solver forces, 7 pass the checks (which check
+the rest fail is not yet counted), at 5 min a puzzle, so the full library is from `batch`
+alone until the games' failures are looked into.
 
 ## Difficulty estimate (2026-11-14)
 
