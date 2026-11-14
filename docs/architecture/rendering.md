@@ -624,7 +624,9 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   player who was asked whether they know how to play (a new player, a fresh install's
   first) and hasn't said they do, finished their draughts' tutorial, or begun a game
   against the computer (`shell::resume`'s `learn`; [how to play](#how-to-play)), puzzles
-  with stars, and the games played with the player's rating in their draughts once rated
+  with the puzzles solved in the player's draughts ("31 / 74") until Today opens, then
+  today's dots, filled as each is solved, a check once all are
+  ([daily puzzles](puzzles.md#daily-puzzles)), and the games played with the player's rating in their draughts once rated
   ([the results screen](#the-results-screen)), then settings, each an icon and a word, in
   rows 88 dp tall, 2 dp apart. The menu's height is reckoned without the results row: where
   the row would shrink the board or leave the screen (a phone, a portrait tablet), the
@@ -802,6 +804,16 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   draughts' tutorial ("n / total steps", a check before it once all are), and a bar of
   them; it opens the tutorial there, and nothing waits on it. On a phone in landscape the
   list scrolls to the last themes' rows.
+  **Today** ([daily puzzles](puzzles.md#daily-puzzles)): until Learn is solved, a locked
+  row ends the list across the columns, its mark plain with the lock, "Solve n more in
+  Learn". Once it opens, Today's row heads the list across the columns instead of How to
+  play: a calendar on its disc, "Today", "n to go" under it, and today's puzzles as tiles
+  88 dp square in the row, each its slot's rising bars (one for the warm-up, two for the
+  middle, three for the stretch) over its stars won, the first unsolved one lit; a tile
+  opens its puzzle. The tiles stand beside the title and note where they fit, else in
+  even lines under them (portrait). Once all are solved the mark is the moon and the note
+  "New puzzles tomorrow". How to play then is a tile with its mark beside the title in
+  landscape, and the list's last row in portrait, where the title row has no room.
   **The draughts switch** (`puzzle-set.html`, take a) is the setup's draughts tiles, International 10 × 10, Brazilian 8 × 8, Russian
   8 × 8 (each its name over its size, 88 dp tall, as wide as settings' tile would be,
   widened in proportion to fill a row), joined on one glass 4 dp round them and between,
@@ -843,7 +855,10 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   men", "Win a man", "Become a king", "Stay safe") and under them, in the small face,
   whose puzzle it is ("White to move", "Black to move"), the three stars at stake, 44 px, and at
   the bottom next, the tall tile, at 35% and taking no tap until the puzzle is solved,
-  then lit as a chosen tile. While a piece waits partway through a capture, next is at
+  then lit as a chosen tile. A daily puzzle shows today's dots over next (the solved
+  filled, the others dim, this one a glow ring), at next's left in portrait where the bar
+  has no room above it, shrunk to fit ten on a phone; next goes through today's set, and
+  after its last to the library. While a piece waits partway through a capture, next is at
   full strength, unlit, and pressed then it is a miss: the capture is left unfinished,
   which is no move, and the piece slides back from its stop as a wrong move does. There is no hint tile, as in a game. A wrong move plays,
   then 0.35 s after it lands slides back along its way, the pieces it took fading back

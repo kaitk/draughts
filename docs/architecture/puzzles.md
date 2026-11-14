@@ -184,7 +184,8 @@ whose puzzle it is. Their look is in [rendering](rendering.md#controls).
   tile. No puzzle shows a selected piece's targets, whatever the move hints setting: the
   child is to find the move ([product](../product.md)). The selection, the
   glow, and a wrong move's flash still show.
-- **Themes**: Learn is open; the others open once half of Learn is solved,
+- **Themes**: Learn is open; the others open once half of Learn is solved, and Today
+  ([daily puzzles](#daily-puzzles)) once all of it is,
   and inside a theme everything is open. A theme's page lights its first puzzle without
   stars.
 - **Next** opens the puzzle after it in its theme, and after the theme's last the
@@ -202,6 +203,70 @@ whose puzzle it is. Their look is in [rendering](rendering.md#controls).
   every way to the puzzles starts, reads the other set then (`shell::sync_puzzles`), and
   the picker starts at its library. A puzzle or the picker reached from settings keeps
   the set it had until home.
+
+## Daily puzzles
+
+A few puzzles a day from a large library, at the player's level, once the player's
+draughts' Learn is solved. The course above stays: it teaches the motifs in order, keeps
+its stars by id, opens Today, and seeds the rating.
+
+**The library** is a file per draughts, `src/puzzles/library-international.txt`,
+`library-russian.txt`, and `library-brazilian.txt`, built into the program, one puzzle a
+line, sorted by difficulty:
+
+```text
+variant international
+737 | shots 1 | take 2 in 2 | W:W23,29,30,...:B3,5,7,... | 23-18 12x23 29x18x27x38
+```
+
+the estimated difficulty, the theme and level, the goal in the solver's moves, the
+position, and its one line. `puzzles::load_library` reads only an index at start and when
+the player's draughts change (`shell::sync_puzzles`): each line's difficulty, theme, and
+place, at most `MAX_LIBRARY` (4,096); a day's puzzles are read from their lines
+(`puzzles::entry_of`) into a fixed table of at most `MAX_DAILY` (10) when the day or the
+set changes, never while a screen is drawn.
+
+**Made offline**, every position our own: `tools/puzzles.goose batch` places men in
+game-like camps for a table of kinds (a capture to find, shots of two to four moves, the
+free tempo, crowning, a king's shots, the safe move, among 8 to 15 men a side), keeps
+those with exactly one right move at each turn that pass every check above, keeps each
+once by its position and by its line, the course's included, and turns a third for
+black. Each puzzle's theme and level are read off its line: a safe move, a crown, a
+king's capture, men given or a free tempo (shots), else a capture. `tools/puzzles.goose
+games` takes positions from the computer's own games, where the material is even and the
+side that just moved thought its move even, and the game then won men. `tools/puzzles.goose
+rate` estimates each difficulty, and `tools/library.py` joins, dedups, and writes the file
+([development](../development.md#daily-puzzles)).
+
+**The difficulty** is estimated on the rating's scale, with no play data: how many of the
+computer's skills 0, 5, ..., 100 (searching as a hint does) miss the right first move,
+the line's shape (the solver's moves, men given, the moves to weigh at the first turn, a
+first move forced as a capture, moves that look as good to a shallow search, the pieces
+on the board, and a line that lets the other side crown), and the motif's level. The
+course rates 280 to about 1,300 and is the floor; the library reaches well past it.
+
+**The day** is picked by `puzzles::pick` from the local day (days since the epoch by
+the local date, which the app reads from the system and passes to the shell), the
+player's number, the puzzle rating at the day's start, the themes opened (Captures, and
+each theme with a puzzle solved in the course), and the puzzles already had: n puzzles
+(the setting, 3, 4, 5, or 10; 4 by default), the first a warm-up 250 under the rating,
+the last a stretch 250 over it, those between at it; each one of the 60 nearest its
+target within 75 of it, chosen by a hash of the day, player, and slot. The same day gives
+the same set all day; a missed day's puzzles are gone. Picked puzzles are marked had, so
+none comes again.
+
+**The puzzle rating**, per player and draughts, is Elo's against the puzzle's difficulty:
+stars are the score (3 = 1.0, 2 = 0.6, 1 = 0.3), the step 96 at first, falling by 6 a
+puzzle to 24, so a child's rating climbs fast while it is new. It starts from the course,
+350 plus 600 times the share of its stars won. Only a puzzle's first solve moves it; a
+daily puzzle may be played again the same day for stars. It isn't shown on the puzzle
+screen.
+
+**Kept** in the player's file beside the stars: `puzzle_rating.international = 812 14`
+(the rating and the puzzles that moved it), `seen.international = 0:3 5:80` (the
+library's puzzles had, by word of 64), `daily.international = 20406 1203:3 877:0 ...`
+(the day, and each of its puzzles with the stars won, 0 unsolved), and `daily_count =
+4`. Starting again clears them but the count.
 
 ## Checks
 

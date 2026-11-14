@@ -342,6 +342,29 @@ puzzle's stars).
 `test/puzzles/` runs the same checks on every puzzle without the engine
 ([puzzles](architecture/puzzles.md#checks)).
 
+## Daily puzzles
+
+The daily libraries are generated, rated, and assembled per draughts
+([puzzles](architecture/puzzles.md#daily-puzzles)); about an hour for International on
+ten processes, less for the 8×8 draughts:
+
+```sh
+goose build -o build/puzzles tools/puzzles.goose
+for s in 100 101 102 103 104 105 106 107 108 109; do               # PER a kind, SECONDS a kind
+  build/puzzles --variant international batch $s 12 120 > find-$s.txt 2> find-$s.log &
+done; wait                                                         # each kind's pass rates on stderr
+build/puzzles games 11 60 90 300000 > games-11.txt                 # from the computer's games (few pass)
+tools/library.py merge merged.txt find-*.txt                       # each puzzle once
+tools/library.py split merged.txt 10 rate-in
+for i in 0 1 2 3 4 5 6 7 8 9; do build/puzzles rate rate-in-$i.txt > rate-out-$i.txt & done; wait
+tools/library.py assemble src/puzzles/library-international.txt international rate-out-*.txt
+build/puzzles rate tools/calibration/kabe.txt                      # the estimate's calibration
+```
+
+`rate` prints each puzzle's difficulty, then the misses and which skills found it (100
+down to 0), and the shape: moves, men given, moves to weigh, forced, rivals, pieces, a
+crown let, level.
+
 ## Run on Android
 
 A device needs Developer options with **USB debugging** on; a Samsung, also **Auto
