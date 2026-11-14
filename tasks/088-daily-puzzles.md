@@ -296,6 +296,26 @@ finds the rest, keeping those whose first turn has a tempting wrong move that a 
 search plays (`rate`'s rivals are the start of this). To do once the library as built has
 been tested with the children, rather than generating more now.
 
+What the libraries already have (`build/puzzles tempt FILE`, 2026-11-14): at the first
+turn, a wrong move of a habit's kind that loses material with best play over the
+puzzle's moves and two plies more.
+
+| Draughts | Crown trap | Bigger capture | Grab (wins at a glance) | Run to the far row | Any trap | Give to win |
+|---|---|---|---|---|---|---|
+| International (3,292) | 0 | 0 | 22 | 3 | 25 | 1,251 |
+| Russian (2,094) | 0 | 2 | 4 | 4 | 8 | 666 |
+| Brazilian (1,863) | 0 | 0 | 3 | 7 | 10 | 463 |
+
+Give to win (the right move looks like giving men while a wrong one looks no worse) is
+already common, a shot's nature: 38% of International's, most of those from 900 up. The
+traps proper are rare: under 1% each, and no crown trap at all. So targeted generation is
+wanted for them: `find` with the trap as a filter (a tempting wrong move at the first turn
+that loses), and cores for the classic ones (a king made at once and caught, the bigger
+capture in Russian's free choice that walks into a shot, the man that runs home and is
+taken), aiming at some, not most: a few hundred per draughts across the bands. A first
+pass that counted any wrong move of a habit's kind, losing or not, found grabs in 35% of
+International's, but most were captures in crown puzzles, wrong only by the goal.
+
 ## Acceptance criteria
 
 - [x] The UI takes above prototyped, checked on the tablet's and a phone's sizes in both

@@ -716,13 +716,18 @@ struct Rating {
 // The move the computer at `skill` rates best at p, nothing overlooked and no gift, as
 // a hint is found; its scores stay in e.
 fn rated_best(e: ai::Engine&, p: rules::Position, skill: i64, nodes: i64) -> rules::Move {
-    ai::helping(e, true);
+    e.overlooks = 0;
+    e.gifts = false;
     e.node_limit = nodes;
     ai::start(e, p, skill, 1);
     while !ai::step(e, 1 << 30) {}
-    let m = ai::best(e);
-    ai::helping(e, false);
-    return m;
+    e.overlooks = 100;
+    e.gifts = true;
+    // The best its main search scored, the first in move order among equals.
+    guard e.moves.len > 1 else { return e.moves[e.chosen]; }
+    var k = -1;
+    for i in e.moves.len { if e.main_exact[i] && (k < 0 || e.main_score[i] > e.main_score[k]) { k = i; } }
+    return e.moves[if k >= 0 { k } else { e.chosen }];
 }
 
 fn same_ply(m: rules::Move, want: puzzles::Ply) -> bool { m.from == want.from && m.to == want.to && m.captured == want.captured }
@@ -904,6 +909,124 @@ fn print_rating(r: Rating&, entry_text: const u8[:]) {
           entry_text);
 }
 
+// The habits a puzzle can catch (task 088, "the obvious move is wrong"): at the first
+// turn, a wrong move of a kind a player is used to making that loses material with best
+// play over the puzzle's moves and two plies more (a trap): it crowns; it captures more
+// than the right move; it wins material at a glance (the move, the reply, and the
+// captures due); it runs a man to the row before crowning. And give to win: the right
+// move looks like giving men at that glance while a wrong one looks no worse, the shot
+// a player must see past.
+let TEMPT_KINDS = 6;
+let TEMPT_NAMES = ["crown trap", "bigger trap", "grab trap", "give to win", "run trap", "any trap"];
+
+// The squares a side's man stands on one step from crowning.
+fn before_crown(v: rules::Variant&, side: i64) -> u64 {
+    var m: u64 = 0;
+    let y = if side == rules::WHITE { v.size - 2 } else { 1 };
+    for x in v.size {
+        let b = rules::bit_at(v, x, y);
+        if b >= 0 { m |= rules::bit(b); }
+    }
+    return m;
+}
+
+// Which of the kinds pz's first turn has, a bit each.
+fn tempts(s: puzzles::Solver&, pz: puzzles::Puzzle&) -> i64 {
+    let p = pz.start;
+    let v .= rules::VARIANTS[p.variant];
+    puzzles::begin(s, pz);
+    var legal: rules::Moves = [];
+    let right = puzzles::as_played(p, pz.lines[0].plies[0], legal);
+    let right_glance = puzzles::value(s, puzzles::after(p, right), 1, -puzzles::WON - 1, puzzles::WON + 1);
+    let near = before_crown(v, p.side);
+    rules::generate(p, legal);
+    var all: puzzles::Short[..rules::MAX_MOVES] = [];
+    for m in legal { all.push(puzzles::short(m)); }
+    var kinds = 0;
+    for m in all {
+        guard !(m.from == right.from && m.to == right.to && m.captured == right.captured) else { continue; }
+        guard puzzles::judge(s, p, m, pz.moves) == puzzles::WRONG else { continue; }
+        let q = puzzles::after(p, m);
+        let glance = puzzles::value(s, q, 1, -puzzles::WON - 1, puzzles::WON + 1);
+        var k = 0;
+        if right_glance < 0 && glance >= right_glance && glance >= 0 { k |= 8; }
+        let deep = puzzles::value(s, q, 2 * pz.moves + 1, -puzzles::WON - 1, puzzles::WON + 1);
+        if deep < 0 {
+            if m.crowned { k |= 1; }
+            if popcount(m.captured) > popcount(right.captured) { k |= 2; }
+            if glance >= 1 { k |= 4; }
+            if p.kings & rules::bit(m.from) == 0 && near & rules::bit(m.to) != 0 && !m.crowned { k |= 16; }
+            if k & 23 != 0 { k |= 32; }
+        }
+        kinds |= k;
+    }
+    return kinds;
+}
+
+// Catalogs a library file (difficulty | theme level | goal in moves | position | line):
+// per kind, how many puzzles have it, by difficulty band; then a few examples of each
+// by their line number (--library N).
+fn tempt_file(path: const u8[:]) {
+    var text: u8[>..] = [];
+    guard read_file(path, text) else { abort(str("can't read ", path)); }
+    var lib = puzzles::Library { list: [] };
+    guard puzzles::index_library(text, lib) else { abort("not a library"); }
+    var s = puzzles::Solver { moves: [], stack: [] };
+    let BANDS = 5;           // under 600, 600-899, 900-1199, 1200-1499, 1500 and over
+    var count:    i64[TEMPT_KINDS * 5] = [0; TEMPT_KINDS * 5];
+    var band_n:   i64[5]               = [0; 5];
+    var any_n:    i64[5]               = [0; 5];
+    var trap_n:   i64[5]               = [0; 5];
+    var examples: u8[>..]              = [];
+    var shown:    i64[TEMPT_KINDS]     = [0; TEMPT_KINDS];
+    var pz = puzzle_of(rules::start(lib.variant), "win", 1);
+    for e, i in lib.list {
+        guard puzzles::entry_of(text, lib, i, pz) else { continue; }
+        let band = clamp((e.difficulty - 300) / 300, 0, BANDS - 1);
+        band_n[band]++;
+        let k = tempts(s, pz);
+        if k & 8 != 0 { any_n[band]++; }
+        if k & 32 != 0 { trap_n[band]++; }
+        for t in TEMPT_KINDS {
+            guard k & (1 << t) != 0 else { continue; }
+            count[t * BANDS + band]++;
+            if shown[t] < 4 && (t != 3 || i % 7 == 3) {
+                shown[t]++;
+                format(examples, "  ", TEMPT_NAMES[t], ": --library ", i + 1, " (", e.difficulty, ", ",
+                       puzzles::THEME_NAMES[e.theme], ")\n");
+            }
+        }
+    }
+    print(path, ": ", lib.list.len, " puzzles; bands under 600, 600-899, 900-1199, 1200-1499, 1500+");
+    var line: u8[>..] = [];
+    for b in BANDS { format(line, " ", band_n[b]); }
+    print("  puzzles:", line);
+    for t in TEMPT_KINDS {
+        line.clear();
+        var total = 0;
+        for b in BANDS {
+            format(line, " ", count[t * BANDS + b]);
+            total += count[t * BANDS + b];
+        }
+        print("  ", TEMPT_NAMES[t], ": ", total, " =", line);
+    }
+    line.clear();
+    var tot = 0;
+    for b in BANDS {
+        format(line, " ", any_n[b]);
+        tot += any_n[b];
+    }
+    print("  give to win (again): ", tot, " =", line);
+    line.clear();
+    tot = 0;
+    for b in BANDS {
+        format(line, " ", trap_n[b]);
+        tot += trap_n[b];
+    }
+    print("  some trap: ", tot, " =", line);
+    print(examples);
+}
+
 fn main() {
     // The flags first, wherever they are; the words left are the command.
     let all = args();
@@ -965,6 +1088,10 @@ fn main() {
         let nodes, ok_d = parse_int(if argv.len >= 6 { argv[5] } else { "300000" });
         guard ok_s && ok_n && ok_k && ok_d else { abort("games SEED [GAMES [SKILL [NODES]]]"); }
         games(seed as u64, n, skill, nodes);
+        return;
+    }
+    if argv.len >= 3 && argv[1] == "tempt" {
+        tempt_file(argv[2]);
         return;
     }
     if argv.len >= 3 && argv[1] == "rate" {
