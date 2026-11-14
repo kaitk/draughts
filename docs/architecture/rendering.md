@@ -354,9 +354,9 @@ move hints do. The language button opens a small list of the languages in themse
 library has back, the title, the draughts switch (the setup's choice, one setting), and a
 glass row per theme with its mark, stars, and a bar; locked themes show what unlocks them.
 How to play's row, and Today's row once open, head the list
-([daily puzzles](puzzles.md#daily-puzzles)). Today's row holds a tile per puzzle, and its
-head, the mark and words, is a tile that opens the first unsolved, or the first once
-all are (`picker::today_row`). Rows are one column in portrait and two in
+([daily puzzles](puzzles.md#daily-puzzles)). Today's row holds a tile per puzzle, and the
+row itself is a tile round them that opens the first unsolved, or the first once all are
+(`picker::today_row`). Rows are one column in portrait and two in
 landscape where they fit, scrolling where they don't. A theme's page lists its levels as
 rows of tiles with 0 to 3 stars.
 

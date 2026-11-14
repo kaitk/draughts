@@ -456,9 +456,9 @@ fn today_tile(g: gui::Gui&, k: i64, r: float4, level: i64, won: i64, lit: bool) 
     return tapped;
 }
 
-// Today's row in r, open: its mark, its name and note, and its tiles. The head, the mark
-// and the words, is a tile of its own that opens today's lit puzzle, the first unsolved,
-// or the first once all are. Sets `spot` to the tile of puzzle `at`, or of one tapped or
+// Today's row in r, open: its mark, its name and note, and its tiles. The row is a tile
+// that opens today's lit puzzle, the first unsolved, or the first once all are; each
+// puzzle's tile inside it opens its own. Sets `spot` to the tile of puzzle `at`, or of one tapped or
 // opened. Returns the place of the one tapped or opened, or -1.
 fn today_row(g: gui::Gui&, r: float4, t: settings::Today&, at: i64, spot: float4&, phone: bool) -> i64 {
     let u = g.scale;
@@ -477,10 +477,9 @@ fn today_row(g: gui::Gui&, r: float4, t: settings::Today&, at: i64, spot: float4
     var lines = c;
     if beside { lines = gui::cut_right(head, tiles_w(n, u)); }
     else { gui::cut_bottom(lines, TODAY_FOOT * u); }
-    // The head's tile: the row left of the tiles beside it, or over them, clear of them.
-    let press = if beside { float4 { r.x, r.y, lines.x - TODAY_GAP * u - r.x, r.w } }
-                else { float4 { r.x, r.y, r.z, lines.y - r.y } };
-    let opened = gui::tile(g, TODAY_ID, press, gui::NO_ICON, gui::ROW, 22.0);
+    // The row's tile, the whole row: the puzzles' tiles, declared after it, take the
+    // presses and the hover over them (gui::hold, the last under the pointer).
+    let opened = gui::tile(g, TODAY_ID, r, gui::NO_ICON, gui::ROW, 22.0);
     today_mark(g, mark_at, m, if done >= n { gui::MOON } else { gui::TODAY }, true);
     var note: u8[..64] = [];
     if done >= n { note.append(strings::get(strings::DAILY_TOMORROW)); }

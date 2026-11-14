@@ -102,10 +102,11 @@ On the screen (2026-11-14, prototyped and chosen):
   doesn't start at the floor of a course not played; its large first steps correct it.
   Rejected: seeding from the draughts' own course alone, which puts a player who
   learned elsewhere back on the easiest puzzles.
-- Today's row's head, its mark and words, opens a puzzle (2026-11-14): the first
-  unsolved, or the first once all are, as a replay for stars. A tap there did nothing,
-  though the mark looks like a theme row's, which opens. The head is a tile of its own
-  beside or over the puzzles' tiles, never round them, so their taps stay apart.
+- Today's row opens a puzzle (2026-11-14): the first unsolved, or the first once all
+  are, as a replay for stars. A tap there did nothing, though the mark looks like a theme
+  row's, which opens. The whole row is the tile, lit whole under the mouse; the puzzles'
+  tiles inside it, declared after it, take the presses over them. A tile over the head
+  alone, clear of the puzzles' tiles, was built first and lit only the row's left.
 - The day's shape on the puzzle screen (2026-11-14): the warm-up and the stretch are
   named by a word under the goal's lines, in the small face and the glow ("Warm-up", "A
   bit harder"); the middle ones, at the player's level, say nothing. Where the word

@@ -11,12 +11,12 @@ tile 0: the puzzle, today's 0, its dots 0 solved 1 this 3 to come
   solved: the puzzle, today's 0, its dots 1 solved 0 this 3 to come; day 20406, 420c:3 480c:0 460c:0 700c:0; rating 491 after 1, 4 had
   next: the puzzle, today's 1, its dots 1 solved 1 this 2 to come
   back: the library, today's 1, its dots 0 solved 0 this 0 to come, the library: 4 tiles, lit 1, calendar 1, moon 0, locks 0, how to play's mark 1
-  Today's head: the puzzle, today's 1, its dots 1 solved 1 this 2 to come
+  Today's row by its mark: the puzzle, today's 1, its dots 1 solved 1 this 2 to come
   played again with a miss: won 2; day 20406, 420c:3 480c:0 460c:0 700c:0; rating 491 after 1, 4 had
   the fourth: the puzzle, today's 3, its dots 3 solved 1 this 0 to come
   solved: the puzzle, today's 3, its dots 4 solved 0 this 0 to come; day 20406, 420c:3 480c:1 460c:3 700c:3; rating 571 after 4, 4 had
   next after the last: the library, today's 3, its dots 0 solved 0 this 0 to come, the library: 4 tiles, lit -1, calendar 0, moon 1, locks 0, how to play's mark 1
-  Today's head: the puzzle, today's 0, its dots 4 solved 0 this 0 to come
+  Today's row by its corner: the puzzle, today's 0, its dots 4 solved 0 this 0 to come
   home: dots 0 filled 0 not, check 1
 5 a day chosen: day 20406, 420c:3 480c:1 460c:3 700c:3; rating 571 after 4, 4 had
 the next day: day 20407, 440c:0 520c:0 620c:0 680c:0 900c:0; rating 571 after 4, 9 had

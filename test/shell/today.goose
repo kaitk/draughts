@@ -5,8 +5,8 @@
 // a new day picks today's four at the player's rating, seeded from the course's stars,
 // from Captures alone while no Shots puzzle is solved, marks them had, and keeps them in
 // the player's file; the same day keeps them, home and the library shown again. A daily
-// puzzle opens from its tile in Today's row, and the row's head (its mark and words)
-// opens the first unsolved, or the first once all are; it plays on the puzzle screen
+// puzzle opens from its tile in Today's row, and the rest of the row, its mark, words, and
+// corners, opens the first unsolved, or the first once all are; it plays on the puzzle screen
 // with today's dots over next; its first solve keeps its stars and moves the rating, a replay the same
 // day keeps the most stars and leaves the rating; next goes through today's set and after
 // the last back to the library, whose mark turns to the moon, and home shows a check in
@@ -60,6 +60,13 @@ fn library_text() -> u8[>..] {
 fn overlaps(a: float4, b: float4) -> bool {
     let e: f32 = 0.5;
     return a.x + e < b.x + b.z && b.x + e < a.x + a.z && a.y + e < b.y + b.w && b.y + e < a.y + a.w;
+}
+
+// Whether a lies wholly inside b: a tile in the Today row's own, declared after it, which
+// takes the presses over it (gui::hold, the last under the pointer).
+fn within(a: float4, b: float4) -> bool {
+    let e: f32 = 0.5;
+    return a.x >= b.x - e && a.y >= b.y - e && a.x + a.z <= b.x + b.z + e && a.y + a.w <= b.y + b.w + e;
 }
 
 fn dp(r: float4, u: f32) -> u8[>..] {
@@ -247,8 +254,7 @@ fn home(sh: shell::Shell&, g: gui::Gui&, now: f64) {
     drive::idle(sh, g, now);
 }
 
-// Today's head in the library, its mark and words: the row's tile round the calendar or
-// the moon.
+// Today's row in the library: its tile round the calendar or the moon, the whole row.
 fn head(g: gui::Gui&) -> float4 {
     var mark = float4 { 0.0, 0.0, 0.0, 0.0 };
     for q in g.quads { if q.look.x == gui::ICON && (q.look.z == gui::TODAY || q.look.z == gui::MOON) { mark = q.rect; } }
@@ -314,7 +320,10 @@ fn check(g: gui::Gui&, what: const u8[:], extra: const u8[:]) {
         } else if !across || r.y < safe.y - 0.5 || r.y + r.w > safe.y + safe.w + 0.5 {
             format(wrong, " tile ", i, " off the screen;");
         }
-        for j in i { if overlaps(r, drive::rect(g, j)) { format(wrong, " tiles ", j, " and ", i, " overlap;"); } }
+        for j in i {
+            let q = drive::rect(g, j);
+            if overlaps(r, q) && !within(r, q) { format(wrong, " tiles ", j, " and ", i, " overlap;"); }
+        }
         if r.z < gui::TAP * u - 0.5 || r.w < gui::TAP * u - 0.5 { format(wrong, " tile ", i, " under 88 dp;"); }
     }
     var at: float4[..16] = [];
@@ -532,10 +541,11 @@ fn main() {
     drive::tap(sh, g, drive::tile(g, 0), 8.0);
     drive::idle(sh, g, 9.0);
     print("  back: ", playing(sh, g), ", the library: ", library_line(sh, g));
-    // Today's head opens the lit one, the first unsolved.
-    drive::tap(sh, g, drive::middle(head(g)), 9.1);
+    // Today's row by its mark opens the lit one, the first unsolved; tile 0 in it opens
+    // its own (below).
+    drive::tap(sh, g, float2 { head(g).x + 40.0 * g.scale, drive::middle(head(g)).y }, 9.1);
     drive::idle(sh, g, 9.5);
-    print("  Today's head: ", playing(sh, g));
+    print("  Today's row by its mark: ", playing(sh, g));
     drive::tap(sh, g, drive::tile(g, 0), 9.6);
     drive::idle(sh, g, 9.95);
     open(sh, g, 0, 10.0);
@@ -552,10 +562,11 @@ fn main() {
     print("  solved: ", playing(sh, g), "; ", record(sh));
     next(sh, g, 34.0);
     print("  next after the last: ", playing(sh, g), ", the library: ", library_line(sh, g));
-    // All solved, Today's head opens the first.
-    drive::tap(sh, g, drive::middle(head(g)), 35.0);
+    // All solved, Today's row by its bottom right corner, past the tiles, opens the first.
+    let row = head(g);
+    drive::tap(sh, g, float2 { row.x + row.z - 4.0 * g.scale, row.y + row.w - 4.0 * g.scale }, 35.0);
     drive::idle(sh, g, 35.5);
-    print("  Today's head: ", playing(sh, g));
+    print("  Today's row by its corner: ", playing(sh, g));
     home(sh, g, 36.0);
     print("  home: ", home_line(g));
 
