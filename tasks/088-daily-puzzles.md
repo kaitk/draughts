@@ -398,6 +398,15 @@ Left: grabs need a core that makes the forcing exchange, and Russian's bigger ca
 better generator than baits in camps; the share of traps the children meet is
 unmeasured.
 
+## The user's look at the 30 (2026-11-14, under way)
+
+From `build/library/sample-30.md` (International's library, `--library N`):
+
+- 33 (341, crown in 1): easy but a very clever puzzle; a warm-up of the kind wanted.
+- 60 (350, take 2 in 1): fits its estimate, ok.
+- 491 (710, take 3 in 2): liked.
+- The rest to come.
+
 ## Acceptance criteria
 
 - [x] The UI takes above prototyped, checked on the tablet's and a phone's sizes in both
