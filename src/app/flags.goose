@@ -123,6 +123,13 @@ struct Flags {
     // --reset-skill: the playing player back to easy, the computer's skill at every level
     // at its start with the first steps to come, kept in their file; stars and games stay
     reset_skill: bool,
+    // --puzzler NAME:RATING: a player of that name (made if there is none) playing, their
+    // draughts' Learn solved so Today opens and a puzzle of each other theme so every
+    // theme is picked from, their puzzle rating RATING, and today's
+    // record cleared so the day's puzzles are picked at it; kept in their file. For
+    // trying the daily puzzles at a level on a device.
+    puzzler_name:   u8[..32] = [],
+    puzzler_rating: i64      = -1,
     // --no-vsync: presents without waiting for the display, to measure frames uncapped
     // (task 070): gfx's NO_VSYNC, or ngfx's in its build; both turn the Metal layer's
     // display sync off
@@ -255,6 +262,15 @@ fn parse(argv: u8[:][>..]) -> Flags {
         if a == "--puzzle" {
             let n, ok = parse_int(v);
             if ok { f.puzzle = n; }
+        }
+        if a == "--puzzler" {
+            let name, rating_text, has = split_once(v, ':');
+            let n, ok = parse_int(rating_text);
+            if has && ok && n > 0 && name.len > 0 && name.len <= 32 {
+                f.puzzler_name.clear();
+                f.puzzler_name.append(name);
+                f.puzzler_rating = n;
+            }
         }
         if a == "--library" {
             let n, ok = parse_int(v);

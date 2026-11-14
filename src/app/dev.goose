@@ -50,6 +50,7 @@ fn setup(f: flags::Flags&, sh: shell::Shell&, prefs: settings::Settings) {
         sh.prefs.played = [0; 3];
         sh.changed = true;
     }
+    if f.puzzler_rating > 0 { puzzler(sh, f.puzzler_name[..], f.puzzler_rating); }
     if f.board >= 0 { sh.prefs.board = f.board; }
     if f.material >= 0 { sh.prefs.material = f.material; }
     sh.prefs.languages_open = f.languages;
@@ -110,6 +111,38 @@ fn setup(f: flags::Flags&, sh: shell::Shell&, prefs: settings::Settings) {
         shell::play_puzzle(sh, puzzles::find(puzzles::all, f.puzzle));
     }
     if f.library >= 1 { shell::play_library(sh, f.library - 1); }
+}
+
+// --puzzler: the player named `name` playing, made if there is none, their draughts' Learn
+// solved and a puzzle of each other theme, their puzzle rating `rating`, and today's record
+// cleared, all written to their file at once. The run's own screens may still show the
+// player as read before it; the next start shows them as written.
+fn puzzler(sh: shell::Shell&, name: const u8[:], rating: i64) {
+    let ps .= sh.players;
+    var n: players::Name = [];
+    players::set_name(n, name);
+    var at = -1;
+    for p, i in ps.list { if p.name == n { at = i; } }
+    if at < 0 { guard shell::add_player(sh, players::free_picture(ps, -1), n) else { return; } }
+    else { shell::switch_player(sh, at); }
+    let set = puzzles::set_of(sh.prefs.variant as u8);
+    var course = puzzles::Set { list: [] };
+    var err: u8[>..] = [];
+    guard puzzles::parse(puzzles::file(set), course, err) else { return; }
+    // Learn solved opens Today, and a puzzle solved in each other theme opens it to the
+    // day's pick (shell::opened_themes), so every theme's puzzles come.
+    var seen_theme: bool[puzzles::THEMES] = [false; puzzles::THEMES];
+    for pz in course.list {
+        guard pz.theme == puzzles::LEARN || !seen_theme[pz.theme] else { continue; }
+        seen_theme[pz.theme] = true;
+        sh.prefs.stars[set][pz.id] = 3;
+    }
+    sh.prefs.puzzle_rating[set] = rating;
+    sh.prefs.puzzle_rated[set] = 30;
+    sh.prefs.today[set] = settings::Today {};
+    players::store(ps, ps.list[ps.playing].id, sh.prefs);
+    sh.daily.set = -1;
+    sh.changed = true;
 }
 
 // After the system's back, before the shell's frame. A switch the flags ask for waits for
