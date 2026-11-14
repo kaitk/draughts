@@ -12,6 +12,7 @@ import std;
 import rules from "../rules";
 import .solve;
 import .check;
+import .daily;
 
 let MAX_PUZZLES = 150;      // ids a variant's set may use, 1 to this
 let MAX_LINES = 4;          // lines a puzzle lists

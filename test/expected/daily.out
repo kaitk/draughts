@@ -1,0 +1,17 @@
+index: true, 200 puzzles
+entry 5: true, id 6, shots, W:W31,32,36,37,38,41,42,47:B6,10,11,15,16,24,33,34, 1 ply
+a line that isn't one: false
+day 20000, player 1, rating 1200, 3 a day: 890s 1150s 1400c
+day 20000, player 1, rating 1200, 4 a day: 890s 1210s 1170s 1380c
+day 20000, player 1, rating 1200, 5 a day: 890s 1120c 1150s 1300c 1480c
+day 20000, player 1, rating 1200, 10 a day: 890s 1110s 1150s 1210s 1130s 1220c 1280c 1180c 1240c 1380c
+the same day again: true
+the next day: 940c 1250s 1150s 1380c
+another player: 1020c 1100c 1180c 1420c
+rating 600, captures only: 440c 500c 680c 840c
+all but two had: 1900c 700c
+first rating: no stars 350, half 650, all 950
+eight three-star solves at 1100 from 650: 739 819 889 949 1000 1042 1077 1106
+settled, three stars at 1600: 1222; at 800: 1202
+one star at its level: 1195; two: 1202
+never under 139
