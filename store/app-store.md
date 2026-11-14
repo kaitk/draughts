@@ -46,10 +46,10 @@ read 2026-11-09: name 2 to 30 characters, subtitle 30, promotional text 170 (cha
 without a new version), description 4000, keywords 100 bytes with each keyword over 2
 characters, What's New 4000 (from the second version), review notes 4000 bytes.
 
-### Promotional text (160 of 170)
+### Promotional text (156 of 170)
 
 ```text
-Play draughts on a 2D or 3D board against the computer or a friend on one device, and solve 166 puzzles. International, Brazilian, and Russian. No ads, offline.
+New: daily puzzles at your level, from over 7,000 for International, Russian, and Brazilian draughts, and a stronger computer. No ads, no accounts, offline.
 ```
 
 ### Keywords (88 of 100 bytes)
@@ -62,7 +62,7 @@ Not repeated: the name's word (draughts), which Apple indexes anyway. No "kids",
 outside the Kids category would imply the audience (5.1.4(b)). No other app's name.
 "kabe" for people in Estonia searching the English storefront.
 
-### Description (2,795 of 4,000)
+### Description (3,220 of 4,000)
 
 ```text
 A calm draughts game to play and learn: big pieces, a flat 2D or a 3D board, and nothing to distract from the game.
@@ -82,7 +82,9 @@ YOUR GAMES
 • Replay any of them move by move, each move marked from best to mistake, and play on from any move to try another line.
 
 PUZZLES
-• 166 puzzles: 74 for International draughts in six themes (Learn, Captures, Crowning, Shots, King shots, and Safe move), and 46 each for Russian and Brazilian draughts in four.
+• Daily puzzles: once Learn is solved, a few puzzles a day at your level (4 by default; 3, 5, or 10 in settings): a warm-up, two at your level, and one a bit harder. They come from over 7,000 for International, Russian, and Brazilian draughts, among them traps that punish a careless move, and none repeats.
+• A puzzle rating for each player and kind of draughts, which moves fast at first and settles with time.
+• The course: 166 puzzles, 74 for International draughts in six themes (Learn, Captures, Crowning, Shots, King shots, and Safe move), and 46 each for Russian and Brazilian draughts in four.
 • Each theme goes from easy to harder, and some puzzles are played with black.
 • Learn comes first and shows the rules in action; the other themes open once half of it is solved.
 • Up to three stars a puzzle, one fewer for each mistake; a solved puzzle can be played again for all three.
