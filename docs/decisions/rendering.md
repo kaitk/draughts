@@ -103,6 +103,13 @@ Tuned by eye on the Mac and a 27" screen (task 068, the user, 2026-11-11):
   the 36 dp between them read loose. The left column is then 16 dp shorter than the play
   panel on a touch screen; the corners already differ in a puzzle and on a phone.
 
+- No desktop window lays out wider than 1.9 times its height (2026-11-14, task 087; the
+  user: the game should work on an ultrawide, not look perfect): on a 3440 × 1440
+  window home's menu, the results' list, and settings ran across the whole width. One
+  cap in `gui::safe` covers every screen, rather than a width per screen; a 16:9 or 16:10
+  screen is unchanged. Not blurring the photograph there (the user's option): it is
+  magnified 1.68×, softer than on a 27" screen (1.25×) but less than on a 4K one (1.9×).
+
 ### Small windows
 
 iPadOS 26's resizable windows got the compact layout (2026-11-09, task 050). Headless, the

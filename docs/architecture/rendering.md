@@ -112,7 +112,13 @@ the panels'. Home's column holds the menu or a setup 40 dp from
 its top, at least 440 dp wide (`home::DESKTOP_TOP`, `DESKTOP_COLUMN_W`), rather than
 centered down it, the menu's rows 56 dp under the wordmark rather than 34
 (`home::DESKTOP_MARK_GAP`). Each only moves things or widens the column on a desktop; a touch
-screen's layout is unchanged. A desktop's tiles are thinner too: every size that is a
+screen's layout is unchanged. No desktop window lays out wider than 1.9 times its height
+(`gui::WIDEST`): `gui::safe` keeps the middle of an ultrawide's full window (3440 × 1440
+lays out 2736 px across, 352 left each side), the photograph still filling the window
+and glass at the area's edge carried on over the room beside it (`gui::bleed`,
+`Gui.side`); 16:9 and 16:10 are under it, and a touch screen is never narrowed. The
+square 2048 px photograph is magnified 1.68× there, less than on a 4K 16:9 screen.
+A desktop's tiles are thinner too: every size that is a
 tap, a tile's or a row's height and the least a tap is across, is `gui::tap()`, 88 dp on
 a touch screen and 64 on a desktop, and the room a tile sized to its words keeps either
 side of them is `gui::side()`, 16 dp and 12 (back keeps 4 more). The panels' heights are

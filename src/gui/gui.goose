@@ -277,6 +277,9 @@ struct Gui {
     // phone's camera cutout and gesture bar). Taps and words stay inside (safe); the
     // photograph, and glass that runs off the screen (bleed), reach the edges.
     insets: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
+    // On a desktop, the room beside the safe area each side where the window is wider
+    // than WIDEST times its height, in pixels (safe sets it); bleed carries glass over it.
+    side: f32 = 0.0,
     // The screen's one vertical scroll (scroll_begin): which list, its offset in pixels,
     // the press it may become a drag from, and whether it has.
     scroll: Scroll = Scroll {},
@@ -476,10 +479,20 @@ fn side() -> f32 { if desktop_scale > 0.0 { DESKTOP_SIDE } else { WORD_SIDE } }
 let PHONE = 600.0;
 fn phone(area: float4, s: f32) -> bool { min(area.z, area.w) < PHONE * s }
 
-// The safe area of a screen width × height pixels: where the screens lay out.
+// On a desktop, no screen lays out wider than WIDEST times its height: an ultrawide
+// screen's full window (21:9, 2.4) keeps the middle at 1.9, the photograph still filling
+// it, so the panels stay by the board and lists keep a readable width; 16:9 and 16:10
+// are under it (task 087, 2026-11-14).
+let WIDEST = 1.9;
+
+// The safe area of a screen width × height pixels: where the screens lay out. On a
+// desktop, its middle WIDEST × its height at most (g.side the room left each side).
 fn safe(g: Gui&, width: f32, height: f32) -> float4 {
     let e = g.insets;
-    return float4 { e.x, e.y, width - e.x - e.z, height - e.y - e.w };
+    let w = width - e.x - e.z;
+    let h = height - e.y - e.w;
+    g.side = if desktop_scale > 0.0 { max(0.0, (w - WIDEST * h) * 0.5) } else { 0.0 };
+    return float4 { e.x + g.side, e.y, w - 2.0 * g.side, h };
 }
 
 // r, laid out in the safe area `area`, carried on to the screen's edges on each side
@@ -488,14 +501,14 @@ fn bleed(g: Gui&, r: float4, area: float4) -> float4 {
     let e = g.insets;
     var b = r;
     if r.x <= area.x + 0.5 {
-        b.x -= e.x;
-        b.z += e.x;
+        b.x -= e.x + g.side;
+        b.z += e.x + g.side;
     }
     if r.y <= area.y + 0.5 {
         b.y -= e.y;
         b.w += e.y;
     }
-    if r.x + r.z >= area.x + area.z - 0.5 { b.z += e.z; }
+    if r.x + r.z >= area.x + area.z - 0.5 { b.z += e.z + g.side; }
     if r.y + r.w >= area.y + area.w - 0.5 { b.w += e.w; }
     return b;
 }
