@@ -6,14 +6,21 @@
 // with an icon and a word. In portrait the left side is a bar of three above the board,
 // back first, and the right one is below it: whose turn or the clocks side by side, over
 // undo move across the width. Start over sits far from undo move so it isn't hit for it.
-// layout() places the board and the two panels, for every screen that has them.
+// layout() places the board and the two panels, for every screen that has them: the game,
+// a puzzle, the lessons, a replay, how to play. Part of the board package, the board on
+// screen and where it goes, so the screens build on it and it on nothing of theirs.
 namespace panel;
 import std;
 import vec;
 
 import gui from "../gui";
-import board from "../board";
 import strings from "../../strings";
+
+// The moves' rows (game/notes.goose, the moves panel) and the moves' line's head
+// (game/sheet.goose), which the layouts size the moves panel by.
+let MOVES_ROW = 34.0;       // dp a row
+let MOVES_PAD = 12.0;       // dp round the rows inside the glass
+let LINE_HEAD = 30.0;       // dp: the line's head, "Move list" and a chevron over a rule
 
 // What the panels' tiles ask for: the shared asks (gui::ASK_NOTHING..), and the panel's own.
 let NOTHING = gui::ASK_NOTHING;
@@ -341,8 +348,8 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
             // reaches higher, needs it, so that view shrinks less (the user, 2026-11-13).
             let up = settle(l, view3d::Camera { pitch: rig::TOP_PITCH, yaw: 0.0 }, n);
             let at_rest = l.rest.rect.y - gap - y;
-            let rows = ((at_rest / s - 2.0 * game::MOVES_PAD - game::LINE_HEAD) / game::MOVES_ROW) as i64;
-            let h = min(at_rest, max(up.rect.y - gap - y, at_rest - game::MOVES_ROW * s));
+            let rows = ((at_rest / s - 2.0 * MOVES_PAD - LINE_HEAD) / MOVES_ROW) as i64;
+            let h = min(at_rest, max(up.rect.y - gap - y, at_rest - MOVES_ROW * s));
             let top = float4 { x0, y, right.x - gap - x0, h };
             if rows >= MOVES_TOP_LEAST && !view3d::touches(l.rest, top, 0.5 * gap) {
                 l.moves = top;
@@ -367,7 +374,7 @@ fn corners_in(area: float4, n: i64, s: f32, portrait_pitch: f32 = PITCH_PORTRAIT
                 l = base;
                 let most = with_moves(l, lower, s, 0, n);
                 var lo = MOVES_3D;
-                var hi = ((most.moves.w / s - 2.0 * game::MOVES_PAD) / game::MOVES_ROW) as i64;
+                var hi = ((most.moves.w / s - 2.0 * MOVES_PAD) / MOVES_ROW) as i64;
                 if hi > lo && most.rest.k >= 0.995 * base.rest.k { l = most; }
                 else {
                     while hi - lo > 1 {
@@ -808,14 +815,14 @@ let MOVES_TOP_LEAST = 3;     // above the 3D board, where it costs the board not
 let MOVES_GAP = 16.0;           // dp between the way out and the moves panel, set off from its tiles,
 let MOVES_GAP_DESKTOP = 24.0;   // more where the mouse leaves room (a desktop)
 let MOVES_3D = 5;
-fn moves_room(rows: i64, s: f32) -> f32 { (rows * game::MOVES_ROW + 2.0 * game::MOVES_PAD) * s }
+fn moves_room(rows: i64, s: f32) -> f32 { (rows * MOVES_ROW + 2.0 * MOVES_PAD) * s }
 fn under(l: Layout&, column: float4, area: float4, s: f32, most: i64) {
     let gap = GAP * s;
     let x = column.x;
     let w = column.z;
     let y = column.y + column.w + (if gui::desktop_scale > 0.0 { MOVES_GAP_DESKTOP } else { MOVES_GAP }) * s;
     let h = area.y + area.w - gap - y;
-    var rows = ((h / s - 2.0 * game::MOVES_PAD) / game::MOVES_ROW) as i64;
+    var rows = ((h / s - 2.0 * MOVES_PAD) / MOVES_ROW) as i64;
     if most > 0 { rows = min(rows, most); }
     guard rows >= MOVES_LEAST else { return; }
     l.moves = float4 { x, y, w, moves_room(rows, s) };
@@ -1045,14 +1052,22 @@ fn piece(over: board::Overlay&, spot: float4, r: f32, side: i64, king: i64, a: f
                              ring: float4 { 0.0, ring, 0.0, 0.0 } });
 }
 
+// What the clocks show, as the game's clock has it (game::clocks): whether there are any,
+// the side whose clock runs, or -1, and each side's style (gui::CLOCK_*) and time.
+struct Clocks {
+    on:      bool       = false,
+    running: i64        = -1,
+    style:   i64[2]     = [0, 0],
+    text:    u8[..8][2] = [[], []],
+}
+
 // One side's clock in r: its piece and its time, lit while it runs (gold under a
 // minute, red at 20 seconds or under), faint while it waits; its piece's ring as strong
 // as `ring`.
-fn clock_of(g: gui::Gui&, r: float4, c: clock::Clock&, side: i64, ring: f32, over: board::Overlay&) {
+fn clock_of(g: gui::Gui&, r: float4, c: Clocks&, side: i64, ring: f32, over: board::Overlay&) {
     let u = g.scale;
     let runs = c.running == side;
-    let style = if clock::low(c, side) { gui::CLOCK_LOW } else if clock::warn(c, side) { gui::CLOCK_WARN }
-                else if runs { gui::CLOCK_RUN } else { gui::CLOCK_IDLE };
+    let style = c.style[side];
     gui::clock_tile(g, r, style);
     var room = r;
     gui::cut_left(room, 14.0 * u);
@@ -1060,8 +1075,7 @@ fn clock_of(g: gui::Gui&, r: float4, c: clock::Clock&, side: i64, ring: f32, ove
     let spot = gui::cut_left(room, 44.0 * u);
     piece(over, spot, 22.0 * u, side, 0,
           if runs { 1.0 } else { 0.7 }, ring);
-    var t: u8[..8] = [];
-    clock::text(clock::shown(c, side), t);
+    let t = c.text[side];
     // A clock narrowed for the lookout's eye beside it takes a smaller face where its
     // time doesn't fit.
     let face = if gui::text_width(g, gui::FIGURES, t) <= room.z { gui::FIGURES } else { gui::fitting(g, gui::LABEL, t, room.z) };
@@ -1408,7 +1422,7 @@ fn portrait_play(l: Layout, w: Words, on: Shows, u: f32) -> Play {
 // board's corner panel. Pieces shown on the panels go into `over`. The lookout's eye and
 // the hint's tile (`help`) go on the play panel. Returns the tile tapped this frame, if
 // any. Without `out` the way out is left undeclared: the moves' sheet covers it (task 078).
-fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: bool, note: Note&, thinking: bool,
+fn game(g: gui::Gui&, l: Layout, c: Clocks, side: i64, won: bool, drawn: bool, note: Note&, thinking: bool,
         glow: f32, over: board::Overlay&, help: Help = Help {}, out: bool = true) -> i64 {
     let u = g.scale;
     let turn_key = if drawn { strings::DRAW }
@@ -1418,7 +1432,7 @@ fn game(g: gui::Gui&, l: Layout, c: clock::Clock&, side: i64, won: bool, drawn: 
     let line = note.line[..note.line.len];
     let hint_word = strings::get(if help.stage == 1 { strings::GAME_WHERE_TO } else { strings::GAME_HINT });
     let name = strings::get(strings::GAME_LOOKOUT);
-    let on = Shows { clocks: clock::on(c), counting: note.of > 0, drawn: drawn };
+    let on = Shows { clocks: c.on, counting: note.of > 0, drawn: drawn };
     // The words the mode's layout reads, measured first; only those, as this runs each frame.
     var w = Words {};
     if on.clocks && on.counting {

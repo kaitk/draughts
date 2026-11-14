@@ -222,6 +222,22 @@ uniforms and then its root into frame memory, where one root holds both. Still b
   two layout results written into the player's `Settings` and read back through it, a
   side channel.
 
+### The panels in the board package (2026-11-14)
+
+The panels' layout (`panel`, `src/board/panel.goose`) is part of the board package, the
+board on screen and where it goes, beside `board::Layout`. It had been a file of `game/`,
+though a puzzle, the lessons, a replay, and how to play lay out by it too, and it reached
+back into `game` for the moves panel's row sizes while `game` imported it. Now the row
+sizes are the panel's (`panel::MOVES_ROW`, `MOVES_PAD`, `LINE_HEAD`), and `panel::game`
+takes what the clocks show (`panel::Clocks`, made by `game::clocks`) rather than the
+game's clock, so the board package builds on nothing of the screens'. Rejected: a package
+of its own, which every program and test declaring `game` (seventy-odd roots) would have
+to declare too; and `shell/`, which `game` can't import. The landscape 3D layout's
+special cases (the moves panel above the board on a squarish tablet, its rows found by
+halving on a wide window, a phone's moves' line) stay as they were: the rows are an
+inverse of the 3D board's fit (`settle`), which no closed rule gives, and the golden
+layouts must not move.
+
 ## Players
 
 Up to four players share one tablet, local only: no accounts, no network, no passwords

@@ -16,7 +16,6 @@ let SHEET_DIM = gui::PANEL_IDS + 8;     // and the dim layer over the screen abo
 let SHEET_LIST = gui::PANEL_IDS + 9;    // its list's id (gui::scroll_begin)
 let LINE_ROW = 31.0;        // dp a row in the landscape line
 let LINE_NUMBER = 26.0;     // dp its numbers take
-let LINE_HEAD = 30.0;       // dp: the line's head, "Move list" and a chevron over a rule,
 let LINE_CHEVRON = 20.0;    // dp: the chevron at its right
 let LINE_OLDER: f32 = 0.6;  // the line's rows before the last, faded
 let SHADE:      f32 = 0.38;   // the dim layer's black over what the portrait sheet leaves
@@ -147,7 +146,7 @@ fn rows_line(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) {
     let ns .= gm.notes;
     var inner = float4 { r.x + 12.0 * u, r.y + 8.0 * u, r.z - 24.0 * u, r.w - 16.0 * u };
     if ns.len > 0 {
-        let head = gui::cut_top(inner, LINE_HEAD * u);
+        let head = gui::cut_top(inner, panel::LINE_HEAD * u);
         let word = strings::get(strings::SETTINGS_MOVES);
         let room = float4 { head.x, head.y, head.z - k - 4.0 * u, head.w };
         gui::text(g, gui::fitting(g, gui::SMALL, word, room.z), room, word, 0.7, 0.0, gui::LEFT);

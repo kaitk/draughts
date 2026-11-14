@@ -14,6 +14,7 @@ import gui from "../gui";
 import model3d from "../model3d";
 import .view3d;
 import .rig;
+import .panel;
 
 let MAX_PIECES = 48;        // 40 pieces on 10×10, the moving one, and margin
 let HOP = 0.2;              // seconds per square of a quiet move, per stop of a capture
@@ -36,7 +37,7 @@ let CROWN = 1;
 let STACK = 2;
 
 // Where the board goes, in pixels. `scale` is pixels per dp: the prototypes' 800 px short
-// side. The screens place it: the game's panels beside it (game/panel.goose), or alone.
+// side. The screens place it: the game's panels beside it (board/panel.goose), or alone.
 struct Layout {
     scale: f32,
     board: float4,      // x, y, size of the board; w: the corner radius

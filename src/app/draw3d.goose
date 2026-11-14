@@ -7,7 +7,7 @@
 // Draw on demand: the board is drawn into a kept image only when its scene changed
 // (view3d::changes: the board, and the shadow map when the pieces stand differently or
 // the board turns under the light), or the screen's size or the theme did; the camera
-// moving (game/panel.goose's aim) changes the view, so it is drawn only while it moves.
+// moving (board/panel.goose's aim) changes the view, so it is drawn only while it moves.
 // Each drawn frame then lays the image over the backdrop, under the UI. A frame that
 // changes only the UI (a clock's second, a pressed tile) costs that copy, not the 3D
 // pass. The marks that pulse (a must-capture ring, a wrong move's flash, a hint's ring)

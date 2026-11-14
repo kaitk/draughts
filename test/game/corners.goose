@@ -1,4 +1,4 @@
-// The game screen round the 3D board (game/panel.goose's corners_in, task 015's
+// The game screen round the 3D board (board/panel.goose's corners_in, task 015's
 // `corners`), headless: in landscape the panels in the top corners and the board as
 // large as clears them by half a gap, its near edge on the bottom margin; in portrait
 // the flat board's order. At the tablet's size, a foldable, 4:3, and a 20:9 and a 9:16

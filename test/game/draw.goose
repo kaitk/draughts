@@ -177,7 +177,7 @@ fn shape(g: gui::Gui&, name: const u8[:], l: panel::Layout, counting: bool) {
     }
     gui::begin(g, gui::Input { at: drive::AWAY, .. }, l.board.scale, 0.0);
     drive::over.clear();
-    panel::game(g, l, c, 0, false, false, n, false, 1.0, drive::over);
+    panel::game(g, l, game::clocks(c), 0, false, false, n, false, 1.0, drive::over);
     var s: u8[>..] = [];
     format(s, name, ":");
     for q in g.quads {

@@ -52,7 +52,7 @@ draws its HUD:
   it out as a signed-distance shape: glass with its shadow, a tile with its shadow (plain,
   primary, or a toggle on or off), a line icon as distances to its strokes' segments and
   arcs. `game/` is the game screen with no graphics, tested headless in
-  `test/game/`: it declares the panel (`src/game/panel.goose`) and the celebration, does what
+  `test/game/`: it declares the panel (`src/board/panel.goose`) and the celebration, does what
   their buttons ask, and hands the pointer to the board only when a press didn't land on
   the UI. Pieces shown on the UI (the side to move, the winner) are drawn after it by the
   piece pipeline from a second small storage buffer, so they look exactly like the

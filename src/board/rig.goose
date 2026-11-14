@@ -4,7 +4,7 @@
 // zoom frames the playing field, the showcase turns and tips the board under a drag, and
 // in a game against a friend the board turns 180° to face the side to move. Each is an
 // `Ease`, a value easing from one end to the other over a fixed time, read at any moment
-// by `value`; nothing here knows the screen, which game/panel.goose fits the camera into
+// by `value`; nothing here knows the screen, which board/panel.goose fits the camera into
 // (panel::aim). Tests run it headless.
 namespace rig;
 import std;

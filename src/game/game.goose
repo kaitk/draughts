@@ -25,7 +25,6 @@ import board from "../board";
 import gui from "../gui";
 import ai from "../ai";
 import strings from "../../strings";
-import .panel;
 import .clock;
 import .pace;
 import .ending;
@@ -275,6 +274,18 @@ fn restart(gm: Game&, now: f64 = 0.0) {
     rig::settle(gm.cam, now);
 }
 
+// What the panels show of clock c: each side's time, gold under a minute and red at 20
+// seconds or under, lit while it runs.
+fn clocks(c: clock::Clock&) -> panel::Clocks {
+    var cs = panel::Clocks { on: clock::on(c), running: c.running, .. };
+    for side in 2 {
+        cs.style[side] = if clock::low(c, side) { gui::CLOCK_LOW } else if clock::warn(c, side) { gui::CLOCK_WARN }
+                         else if c.running == side { gui::CLOCK_RUN } else { gui::CLOCK_IDLE };
+        clock::text(clock::shown(c, side), cs.text[side]);
+    }
+    return cs;
+}
+
 // The side that has won, or -1 while the game goes on: the other side has no move left
 // (once the move has shown), or its time ran out.
 fn winner(gm: Game&) -> i64 {
@@ -521,7 +532,7 @@ fn frame(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     var note = panel::Note {};
     countdown(gm, note);
     let beside = open && !cover;
-    let pick = panel::game(g, l, gm.clock, side, won >= 0, drawn(gm) != rules::NO_DRAW, note, gm.asking != 0,
+    let pick = panel::game(g, l, clocks(gm.clock), side, won >= 0, drawn(gm) != rules::NO_DRAW, note, gm.asking != 0,
                            pulse(gm, now), over, help(gm), !beside);
     if count_taken(gm) { changed = true; }
     if keep_notes(gm) { changed = true; }
@@ -752,7 +763,7 @@ fn still(gm: Game&, g: gui::Gui&, l: panel::Layout, now: f64, over: board::Overl
     var note = panel::Note {};
     countdown(gm, note);
     let draw = drawn(gm);
-    panel::game(g, l, gm.clock, side, won >= 0, draw != rules::NO_DRAW, note, gm.asking != 0, pulse(gm, now), over,
+    panel::game(g, l, clocks(gm.clock), side, won >= 0, draw != rules::NO_DRAW, note, gm.asking != 0, pulse(gm, now), over,
                 help(gm));
     // Counted here too: a transition declares a game before its first frame of its own.
     count_taken(gm);

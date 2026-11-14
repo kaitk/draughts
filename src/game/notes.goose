@@ -165,8 +165,6 @@ fn all_judged(gm: Game&) -> bool {
 // where marks show: a star in the glow color for the best, ?! gold, ? orange, ?? the
 // forced-capture red, nothing for a good or only move or one not yet judged. Nothing
 // allocates: each line is built in a fixed buffer.
-let MOVES_ROW = 34.0;       // dp a row
-let MOVES_PAD = 12.0;       // dp round the rows inside the glass
 let MOVES_FADE = 40.0;      // dp at the list's top and foot over which rows past them fade
 let MOVES_LIST = gui::PANEL_IDS + 16;  // the list's id (gui::scroll_begin)
 let MOVES_NUMBER = 32.0;    // dp the moves' numbers take ("19." in the small face, 22)
@@ -256,12 +254,12 @@ fn moves_panel(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&)
     guard gm.moves_shown != 0 && l.moves.z > 0.0 && l.moves.w > 0.0 else { return; }
     let u = g.scale;
     let rows = max(1, (gm.notes.len + first_ply(gm) % 2 + 1) / 2);
-    let tall = (MOVES_PAD + LINE_HEAD + rows * MOVES_ROW + 2.0 * MOVES_PAD) * u;
+    let tall = (panel::MOVES_PAD + panel::LINE_HEAD + rows * panel::MOVES_ROW + 2.0 * panel::MOVES_PAD) * u;
     let box = float4 { l.moves.x, l.moves.y, l.moves.z, min(l.moves.w, tall) };
     gui::panel(g, box);
     var room = box;
-    let head = gui::cut_top(room, (MOVES_PAD + LINE_HEAD) * u);
-    let words = float4 { head.x + MOVES_PAD * u, head.y + MOVES_PAD * u, head.z - 2.0 * MOVES_PAD * u, LINE_HEAD * u };
+    let head = gui::cut_top(room, (panel::MOVES_PAD + panel::LINE_HEAD) * u);
+    let words = float4 { head.x + panel::MOVES_PAD * u, head.y + panel::MOVES_PAD * u, head.z - 2.0 * panel::MOVES_PAD * u, panel::LINE_HEAD * u };
     let word = strings::get(strings::SETTINGS_MOVES);
     gui::text(g, gui::fitting(g, gui::SMALL, word, words.z), words, word, 0.7, 0.0, gui::LEFT);
     gui::fill(g, float4 { words.x, words.y + words.w - 2.0 * u, words.z, max(1.0, u) }, float4 { 1.0, 1.0, 1.0, 0.12 }, 0.0);
@@ -283,8 +281,8 @@ fn moves_list(gm: Game&, g: gui::Gui&, r: float4, id: i64, record: bool) {
     let u = g.scale;
     let ns .= gm.notes;
     guard ns.len > 0 else {
-        let inner = gui::inset(r, MOVES_PAD * u);
-        gui::text(g, gui::BODY, float4 { inner.x, inner.y, inner.z, MOVES_ROW * u }, strings::get(strings::MOVES_NONE),
+        let inner = gui::inset(r, panel::MOVES_PAD * u);
+        gui::text(g, gui::BODY, float4 { inner.x, inner.y, inner.z, panel::MOVES_ROW * u }, strings::get(strings::MOVES_NONE),
                   0.55, 0.0, gui::CENTER);
         return;
     }
@@ -294,10 +292,10 @@ fn moves_list(gm: Game&, g: gui::Gui&, r: float4, id: i64, record: bool) {
     let off = first_ply(gm) % 2;
     let first_number = first_ply(gm) / 2 + 1;
     let rows = (ns.len + off + 1) / 2;
-    let inner = gui::inset(r, MOVES_PAD * u);
+    let inner = gui::inset(r, panel::MOVES_PAD * u);
     let half = 0.5 * (inner.z - MOVES_NUMBER * u);
     let view = float4 { r.x, r.y + 4.0 * u, r.z, r.w - 8.0 * u };
-    let content = rows * MOVES_ROW * u + 2.0 * (MOVES_PAD - 4.0) * u;
+    let content = rows * panel::MOVES_ROW * u + 2.0 * (panel::MOVES_PAD - 4.0) * u;
     if g.scroll.id != id || gm.moves_seen != ns.len {
         gui::scroll_set(g, id, content);
         gm.moves_seen = ns.len;
@@ -306,17 +304,17 @@ fn moves_list(gm: Game&, g: gui::Gui&, r: float4, id: i64, record: bool) {
     let listed = g.quads.len;
     var line: Line = [];
     for row in 0..rows {
-        let y = inner.y - scrolled + row * MOVES_ROW * u;
-        guard y + MOVES_ROW * u > view.y && y < view.y + view.w else { continue; }
+        let y = inner.y - scrolled + row * panel::MOVES_ROW * u;
+        guard y + panel::MOVES_ROW * u > view.y && y < view.y + view.w else { continue; }
         line.clear();
         gui::push_number(line, first_number + row);
         line.push('.');
-        gui::text(g, gui::SMALL, float4 { inner.x, y, MOVES_NUMBER * u, MOVES_ROW * u }, line[..], 0.55, 0.0, gui::LEFT);
+        gui::text(g, gui::SMALL, float4 { inner.x, y, MOVES_NUMBER * u, panel::MOVES_ROW * u }, line[..], 0.55, 0.0, gui::LEFT);
         for side in 2 {
             let i = 2 * row + side - off;
             guard i >= 0 && i < ns.len else { continue; }
             let n .= ns[i];
-            let cell = float4 { inner.x + MOVES_NUMBER * u + side * half, y, half, MOVES_ROW * u };
+            let cell = float4 { inner.x + MOVES_NUMBER * u + side * half, y, half, panel::MOVES_ROW * u };
             notation(line, v, n.move);
             let w = gui::text_width(g, gui::BODY, line[..]);
             if i == ns.len - 1 {
@@ -327,10 +325,10 @@ fn moves_list(gm: Game&, g: gui::Gui&, r: float4, id: i64, record: bool) {
             let mw = mark_at(g, cell.x + w + MARK_GAP * u, cell, n.mark);
             // The whole move is its mark's touch, its words and its mark, as far as the
             // view shows it.
-            let mid = y + 0.5 * MOVES_ROW * u;
+            let mid = y + 0.5 * panel::MOVES_ROW * u;
             if record && mw > 0.0 && mid > view.y && mid < view.y + view.w && gm.marks_at.len < MAX_MARKS_AT {
                 let top = max(y, view.y);
-                let bottom = min(y + MOVES_ROW * u, view.y + view.w);
+                let bottom = min(y + panel::MOVES_ROW * u, view.y + view.w);
                 gm.marks_at.push(MarkAt { rect: float4 { cell.x - 6.0 * u, top, w + (MARK_GAP + 12.0) * u + mw, bottom - top },
                                           ply: i });
             }

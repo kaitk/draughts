@@ -10,6 +10,7 @@ import std;
 import vec;
 import math;
 import rules from "../../src/rules";
+import strings from "../../strings";
 import gui from "../../src/gui";
 import board from "../../src/board";
 import model3d from "../../src/model3d";
