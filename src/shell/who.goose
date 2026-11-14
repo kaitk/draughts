@@ -243,16 +243,21 @@ fn hold_width(g: gui::Gui&, key: i64) -> f32 {
 fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64 {
     let u = g.scale;
     var ask = NOTHING;
-    // The characters typed this frame go into the name before the head shows it.
-    if typed(w, g) { ask = CHANGED; }
+    // The characters typed this frame go into the name before the head shows it; Return
+    // is done.
+    let changed, entered = typed(w, g);
+    if changed { ask = CHANGED; }
     let edit = w.target >= 0 && !w.first;
     let holds = if !edit { 0 } else if ps.list.len > 1 { 2 } else { 1 };
     let wide = area.z > area.w && area.w < gui::PHONE * u;
+    // An on-screen keyboard is up while the name is typed on a touch screen; a desktop's
+    // sheet stays as it is, where it is.
+    let keys = w.typing && gui::desktop_scale <= 0.0;
     // While the name is typed on a phone its field comes up clear of the keyboard: in
     // portrait the pictures step aside, in landscape the card is the head alone, the
     // field in the title's place.
-    let bare = w.typing && !wide && gui::phone(area, u);
-    let line = w.typing && wide;
+    let bare = keys && !wide && gui::phone(area, u);
+    let line = keys && wide;
     let room = area.z / u - 2.0 * (EDGE + PAD);
     let pic, cols = pictures(room, wide);
     let grid_w = cols * pic + (cols - 1) * PIC_GAP;
@@ -262,7 +267,7 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
     if holds == 2 { both += hold_width(g, strings::PLAYERS_REMOVE); }
     // The head: back, the face (editing) and the name or the title, done.
     // The name while it is typed, so it shows where the keyboard covers the field.
-    let title = if edit || (w.typing && w.name.len > 0) { w.name[..] } else { strings::get(strings::PLAYERS_NEW) };
+    let title = if edit || (keys && w.name.len > 0) { w.name[..] } else { strings::get(strings::PLAYERS_NEW) };
     let head = (2.0 * gui::tap() + 32.0 + (if edit { 72.0 } else { 0.0 })) * u + gui::text_width(g, gui::LABEL, title);
     var content: f32 = 0.0;
     var right:   f32 = 0.0;   // wide: the right column's width
@@ -280,7 +285,7 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
     let height = (if line { 20.0 + gui::tap() + 24.0 } else { 20.0 + gui::tap() + GAP + body + 24.0 }) * u;
     var r = gui::center(area, content + 2.0 * PAD * u, height);
     // Clear of the keyboard while the name is typed.
-    if w.typing { r.y = min(r.y, area.y + EDGE * u); }
+    if keys { r.y = min(r.y, area.y + EDGE * u); }
     card(g, r);
     var c = float4 { r.x + PAD * u, r.y + 20.0 * u, r.z - 2.0 * PAD * u, r.w - 44.0 * u };
 
@@ -291,7 +296,7 @@ fn sheet(w: Who&, ps: players::Players&, g: gui::Gui&, area: float4) -> i64, i64
         w.typing = false;
         ask = CHANGED;
     }
-    let done = glass_tile(g, gui::WHO_IDS + 21, gui::cut_right(row, gui::tap() * u), gui::CHECK, gui::PRIMARY);
+    let done = glass_tile(g, gui::WHO_IDS + 21, gui::cut_right(row, gui::tap() * u), gui::CHECK, gui::PRIMARY) || entered;
     gui::cut_left(row, gui::PAD_WIDE * u);
     gui::cut_right(row, gui::PAD_WIDE * u);
     if line {
@@ -369,18 +374,19 @@ fn heading(g: gui::Gui&, c: float4&, key: i64) {
     gui::text(g, gui::SMALL, r, strings::get(key), 0.66, 0.03 * gui::FACE_DP[gui::SMALL] as f32 * u, gui::LEFT);
 }
 
-// While the keyboard is up the characters typed go into the name, Return closing it.
-// True when any came.
-fn typed(w: Who&, g: gui::Gui&) -> bool {
+// While the keyboard is up the characters typed go into the name, Return closing it and
+// standing for done. Whether any came, and whether Return did.
+fn typed(w: Who&, g: gui::Gui&) -> bool, bool {
     var changed = false;
+    var entered = false;
     for c in g.input.typed {
         guard w.typing else { break; }
         if c == gui::ERASE { players::erase_char(w.name); }
-        else if c == gui::ENTER { w.typing = false; }
+        else if c == gui::ENTER { w.typing = false; entered = true; }
         else { players::add_char(w.name, c); }
         changed = true;
     }
-    return changed;
+    return changed, entered;
 }
 
 // The name's field in r: a pencil, then the name, or "Name" faint while there is none and

@@ -3,8 +3,7 @@ chip tapped: who's playing; *1 fox; season -1, game 10 after 0
 the card's tiles: 4
 + tapped: the sheet; *1 fox; season -1, game 10 after 0, picture hare
 the name tapped: the sheet (typing); *1 fox; season -1, game 10 after 0, keyboard asked 1
-typed: 'Mia', the sheet; *1 fox; season -1, game 10 after 0
-done: the question; 1 fox, *2 owl Mia; season -1, game 10 after 0, changed true
+typed, Return: 'Mia', the question; 1 fox, *2 owl Mia; season -1, game 10 after 0, changed true
   asked true, the question's tiles 2
 I know how: closed; 1 fox, *2 owl Mia; season -1, game 10 after 0, knows true, home's first row how to play false
 the fox's face: closed; *1 fox, 2 owl Mia; season -1, game 10 after 0, changed true
@@ -81,3 +80,7 @@ et:
   phone portrait, 4 players, who's playing: 6 tiles, smallest 88 x 88 dp, card at 310 dp, 421 x 447 dp, all in place
   phone portrait, a sheet: 11 tiles, smallest 88 x 88 dp, card at 205 dp, 448 x 656 dp, all in place
   phone portrait, typing: 5 tiles, smallest 88 x 88 dp, card at 16 dp, 448 x 370 dp, all in place
+desktop:
+  small window, 1 players, who's playing: 4 tiles, smallest 64 x 64 dp, card at 174 dp, 418 x 292 dp a tap under 88 dp;
+  small window, a new player: 9 tiles, smallest 64 x 64 dp, card at 127 dp, 758 x 386 dp a tap under 88 dp;
+  small window, typing: 9 tiles, smallest 64 x 64 dp, card at 127 dp, 758 x 386 dp a tap under 88 dp;

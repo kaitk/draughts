@@ -51,13 +51,14 @@ extern fn draughts_pace_3d(drawing: i64, now: f64) -> i64;
 // What the host keeps between frames: the safe area and scale as last read, the events
 // read for typed text, and whether the keyboard is up, for which tap on the name.
 struct Host {
-    display:  f32[5]         = [0.0; 5],
-    events:   gfx::Event[64] = [default<gfx::Event>(); 64],
-    erase:    i64            = 0,
-    enter:    i64            = 0,
-    text_on:  bool           = false,
-    keyboard: i64            = 0,
-    repeat:   Repeat         = Repeat {}, // the arrow held (keys.goose)
+    display:   f32[5]         = [0.0; 5],
+    events:    gfx::Event[64] = [default<gfx::Event>(); 64],
+    erase:     i64            = 0,
+    enter:     i64            = 0,
+    pad_enter: i64            = 0,
+    text_on:   bool           = false,
+    keyboard:  i64            = 0,
+    repeat:    Repeat         = Repeat {}, // the arrow held (keys.goose)
 }
 
 // Opens the window, `title` and width × height where the platform has windows; filling
@@ -69,7 +70,7 @@ fn open(title: const u8[:], width: i64, height: i64, full: bool, no_vsync: bool)
     let flags = shown | SYSTEM_GAMEPADS;
     draughts_choose_gpu();
     host_gpu::open(title, width, height, flags, no_vsync);
-    return Host { erase: gfx::scancode("Backspace"), enter: gfx::scancode("Return"), .. };
+    return Host { erase: gfx::scancode("Backspace"), enter: gfx::scancode("Return"), pad_enter: gfx::scancode("Keypad Enter"), .. };
 }
 
 fn close() { host_gpu::close(); }
@@ -122,7 +123,7 @@ fn input(h: Host&, now: f64) -> gui::Input {
         guard input.typed.len < gui::MAX_TYPED else { break; }
         if e.kind == gfx::EVENT_TEXT { input.typed.push(e.codepoint); }
         if e.kind == gfx::EVENT_KEY && e.down && e.scancode == h.erase { input.typed.push(gui::ERASE); }
-        if e.kind == gfx::EVENT_KEY && e.down && e.scancode == h.enter { input.typed.push(gui::ENTER); }
+        if e.kind == gfx::EVENT_KEY && e.down && (e.scancode == h.enter || e.scancode == h.pad_enter) { input.typed.push(gui::ENTER); }
     }
     return input;
 }

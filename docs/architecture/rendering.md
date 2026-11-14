@@ -913,14 +913,16 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   and done (a primary tile, a check); the six badges 88 to 112 dp in a row of six where
   they fit, else three by two, those other players have at 30%; the name in a field
   88 dp tall that brings up the keyboard (SDL's text input) and takes up to 12
-  characters the faces draw, a steady caret while typing; and for a player already
-  there, start again and, while there is another player, remove. On a phone in
-  landscape the badges stand at the left, three by two, and the name and the holds at
-  the right. While the name is typed the card stands 16 dp from the top, the head shows
-  the name as it is typed (for a new player too), and on a phone the field sits above
-  the keyboard (a tester's phone had it under): in portrait the pictures step aside, in
-  landscape the card is its head alone, the field in the title's place between back and
-  done. Done adds a new player and switches to them, every setting at its default,
+  characters the faces draw, a steady caret while typing, Return (or the keypad's Enter)
+  doing what done does; and for a player already there, start again and, while there is
+  another player, remove. On a phone in landscape the badges stand at the left, three by
+  two, and the name and the holds at the right. While the name is typed on a touch
+  screen the card stands 16 dp from the top, the head shows the name as it is typed (for
+  a new player too), and on a phone the field sits above the keyboard (a tester's phone
+  had it under): in portrait the pictures step aside, in landscape the card is its head
+  alone, the field in the title's place between back and done; a desktop, with no
+  keyboard on screen, leaves the sheet as it is. Done adds a new player and switches to
+  them, every setting at its default,
   or saves the badge and name; for a new player, and on a fresh install's first sheet,
   the card then asks "Do you know how to play?": their badge (104 dp, lit), the question,
   and Show me (the finger, lit, the keys' first) beside I know how (a check), 240 × 150

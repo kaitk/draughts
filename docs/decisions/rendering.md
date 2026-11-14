@@ -518,8 +518,10 @@ tablet shows it as the game does).
   tester's phone hid it): in portrait the sheet hides its pictures; in landscape, where
   the head and the name's title alone put the field near the keyboard's top, the card is
   the head with the field in the title's place. The head shows the name as typed, a new
-  player's too. A tablet's keyboard leaves room, so its sheet stays whole. Reading the keyboard's height was set aside: SDL doesn't give
-  it on Android, and the card doesn't scroll.
+  player's too. A tablet's keyboard leaves room, so its sheet stays whole. A desktop has
+  no keyboard on screen, so its sheet doesn't move at all (2026-11-14: it had jumped to
+  the top as the name was tapped). Reading the keyboard's height was set aside: SDL
+  doesn't give it on Android, and the card doesn't scroll.
 
 ### How to play
 

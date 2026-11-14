@@ -168,10 +168,9 @@ fn main() {
     drive::tap(sh, g, card_tile(g, sheet, 8), tick());
     print("the name tapped: ", state(sh), ", keyboard asked ", sh.who.keyboard);
     type_text(sh, g, [0x4D, 0x69, 0x61, 0x78, gui::ERASE], tick());
+    // Return is done, as the check is: the player is added and the question comes.
     type_text(sh, g, [gui::ENTER], tick());
-    print("typed: '", sh.who.name[..], "', ", state(sh));
-    drive::tap(sh, g, card_tile(g, sheet, 1), tick());
-    print("done: ", state(sh), ", changed ", sh.changed);
+    print("typed, Return: '", sh.who.name[..], "', ", state(sh), ", changed ", sh.changed);
     // The question (task 026): asked once it shows; I know how closes it.
     let asked = home_tiles(sh, g, t);
     print("  asked ", sh.prefs.first_start_done, ", the question's tiles ", drive::tiles(g) - asked);
@@ -260,4 +259,15 @@ fn main() {
             layouts(many, g, names[k], 1, t);
         }
     }
+
+    // A desktop's window as small as a phone's landscape: no keyboard comes up there, so
+    // while the name is typed the sheet stays whole and where it was.
+    strings::use(strings::EN);
+    print("desktop:");
+    gui::desktop_scale = 1.0;
+    drive::size = float2 { 1066.0, 480.0 };
+    g.scale = gui::scale_of(drive::size.x, drive::size.y);
+    gui::test_faces(g);
+    layouts(sh, g, "small window", -1, t);
+    gui::desktop_scale = 0.0;
 }
