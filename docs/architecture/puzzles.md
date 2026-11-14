@@ -270,7 +270,9 @@ each theme with a puzzle solved in the course), and the puzzles already had: n p
 the last a stretch 250 over it, those between at it, a theme the day hasn't had yet taken first (within 200 of the target) so a hard day, mostly shots, still mixes; each one of the 60 nearest its
 target within 75 of it, chosen by a hash of the day, player, and slot. The same day gives
 the same set all day; a missed day's puzzles are gone. Picked puzzles are marked had, so
-none comes again.
+none comes again. The puzzle screen names the warm-up and the stretch under the goal
+("Warm-up", "A bit harder"); the puzzles between say nothing
+([rendering](rendering.md)).
 
 **The puzzle rating**, per player and draughts, is Elo's against the puzzle's difficulty:
 stars are the score (3 = 1.0, 2 = 0.6, 1 = 0.3), the step 96 at first, falling by 6 a

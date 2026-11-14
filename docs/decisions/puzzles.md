@@ -107,3 +107,10 @@ On the screen (2026-11-14, prototyped and chosen):
   heads the library and the locked Today ends it; once it opens, Today heads the list and
   How to play is a tile beside the title in landscape, the list's last row in portrait.
 - No "one more" after the day's set: the moon ends the day.
+- The day's shape on the puzzle screen (2026-11-14): the warm-up and the stretch are
+  named by a word under the goal's lines, in the small face and the glow ("Warm-up", "A
+  bit harder"); the middle ones, at the player's level, say nothing. Where the word
+  leaves a short panel (round the 3D board) too little room, the goal's icon and the
+  piece beside it shrink rather than the stars. Rejected: today's dots drawn as the
+  tiles' rising bars, which need a key for a child and grow too thin at 10 a day on a
+  phone in portrait.

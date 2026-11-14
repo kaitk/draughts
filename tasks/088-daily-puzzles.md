@@ -408,7 +408,7 @@ From `build/library/sample-30.md` (International's library, `--library N`):
 - Most of the rest, and the trap puzzles: pretty good, and the estimate accurate; the
   hardest needed several hints. No puzzle was named as bad or misplaced.
 
-## Proposed: say the day's shape on the puzzle screen (2026-11-14)
+## Chosen and built: say the day's shape on the puzzle screen (2026-11-14)
 
 The user's thought: on a daily puzzle's screen, something should say which is the
 warm-up and which is a bit harder. The library's tiles show it with the level's bars,
@@ -444,6 +444,18 @@ and 3, 4 and 10 a day, English and Estonian:
   for its words beside the piece, icon, and stars (shrunk to 12 px here); in landscape
   its panels overflow the 375 dp height. Ten dots at next's left in portrait leave next
   68 dp wide on the iPhone (173 on the Pixel). To check in the built app.
+
+Chosen (2026-11-14): the word take (`docs/decisions/puzzles.md`). Built: strings
+`daily.warmup` and `daily.stretch`; `puzzle::slot_word` under the goal's lines in
+landscape and portrait, flat and 3D, drawn by `gui::glow_text` (glyphs whose `extra.z`
+is 0.5, which the UI shader draws in the glow). In a landscape panel too short for it
+the goal's icon and the piece beside it give up the word's 19 dp, so the stars keep
+their size: round the 3D board on the tablet the row is 53 dp in place of 72 (the stars
+would otherwise fall from 33 dp to 14), on a 20:9 phone at 480 dp also 53 (from 44 to
+30). Next keeps its size everywhere (`test/shell/today`: tablet 200 x 132 flat, 200 x 96
+3D; phone 160 x 96). Checked headless on the Mac at the tablet's, the Pixel 7a's, and
+the iPhone 13 mini's sizes both ways, flat and 3D, English and Estonian: the word fits
+in every one, "Veidi raskem" in the full small face. The tablet is left.
 
 ## Acceptance criteria
 

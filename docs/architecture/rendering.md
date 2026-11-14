@@ -859,7 +859,12 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   then lit as a chosen tile. A daily puzzle shows today's dots over next (the solved
   filled, the others dim, this one a glow ring), at next's left in portrait where the bar
   has no room above it, shrunk to fit ten on a phone; next goes through today's set, and
-  after its last to the library. While a piece waits partway through a capture, next is at
+  after its last to the library. Under whose puzzle it is, the day's first says
+  "Warm-up" and its last "A bit harder", in the small face and the glow color
+  (`gui::glow_text`, its glyphs' `extra.z` 0.5); the middle ones say nothing. In a
+  landscape panel too short for the word and the stars (round the 3D board), the goal's
+  icon and the turn piece beside it give up the word's height, so the stars keep their
+  size. While a piece waits partway through a capture, next is at
   full strength, unlit, and pressed then it is a miss: the capture is left unfinished,
   which is no move, and the piece slides back from its stop as a wrong move does. There is no hint tile, as in a game. A wrong move plays,
   then 0.35 s after it lands slides back along its way, the pieces it took fading back
