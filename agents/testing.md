@@ -8,10 +8,14 @@ symlink to the main checkout's `build/goose-v2026.4-macos-arm64`, not a symlink 
 whole `build/`: the tests and tools write `build/perft`, `build/test/`, and the like,
 which would overwrite the main checkout's while another session uses them.
 
-The tests never compile the app's shaders: after any change to a shader (`src/app/*.goose`'s
-embedded GLSL), build the app itself (`docs/development.md`, "Run on the Mac") and check
-it succeeds. A shader with a stray parenthesis passed both test runs and kept the app
-from building (2026-11-09).
+`scripts/test.sh` first runs `goose check` on the app, which compiles every shader its
+`embed_shader` calls reach, as its build does (a GLSL error is a Goose compile error at
+type checking), in half a second: a shader with a stray parenthesis once passed both test
+runs and kept the app from building (2026-11-09). `test/run_tests.py` alone compiles no
+app shader, so after a shader change run `scripts/test.sh` or build the app. The check
+caught a stray parenthesis, an undeclared name, and a vec3 given to a vec2 with the
+build's own errors (2026-11-14). It leaves out the program's own C (`src/app/*.c`), which
+only a build compiles.
 
 Badge art: `tools/badge_trace.py <animal> <png>` traces a black-on-white silhouette into
 `assets/badges/<animal>.svg`, its viewBox fitted round the shape's enclosing circle so it

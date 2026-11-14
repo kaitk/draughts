@@ -1,13 +1,15 @@
 #!/bin/sh
 # Every check of the rules, stopping at the first that fails:
 #
-# 1. test/run_tests.py: the programs under test/<area>/ against their golden output.
-# 2. tools/perft.goose, built natively: move counts from each start position
+# 1. goose check of the app: every shader its embed_shader calls compile, as the app's
+#    build compiles them (a GLSL error is a Goose compile error), in half a second.
+# 2. test/run_tests.py: the programs under test/<area>/ against their golden output.
+# 3. tools/perft.goose, built natively: move counts from each start position
 #    against published values (International, English, Brazilian) and against
 #    test/perft.py's (Russian).
-# 3. test/perft.py compare: random games, every position's moves against the
+# 4. test/perft.py compare: random games, every position's moves against the
 #    independent Python generator.
-# 4. test/perft.py puzzles: every puzzle's lines played by it, each position's moves
+# 5. test/perft.py puzzles: every puzzle's lines played by it, each position's moves
 #    checked against build/perft, for each variant's set.
 #
 # GOOSE names the compiler (default: the pinned release under build/).
@@ -21,6 +23,9 @@ case $(uname -s) in
 esac
 GOOSE=${GOOSE:-$root/build/$release}
 export GOOSE
+
+(cd src/app && "$GOOSE" check draughts.goose)
+echo "== app checked, its shaders compiled"
 
 test/run_tests.py
 

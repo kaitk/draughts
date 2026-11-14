@@ -285,7 +285,7 @@ presents: Mesa's `create_immed` buffers at the window's pixel size, and the
 test/run_tests.py           # test/<area>/*.goose against test/expected/, through TinyCC
 test/run_tests.py --build   # the same, each built natively at -O2
 test/run_tests.py --bless   # write each test's output as its expected output
-scripts/test.sh             # all of the above, then perft and the random-game check
+scripts/test.sh             # the app's shaders, the tests, then perft and the random-game check
 ```
 
 `scripts/test.sh` also builds `tools/perft.goose` into `build/perft`, which counts moves
