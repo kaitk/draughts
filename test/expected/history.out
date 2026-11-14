@@ -3,11 +3,11 @@ after f6-e5: c3-d4 best, f6-e5 ??,
 taken back: c3-d4 best, 
 ended: c3-d4 best, f6-e5 ??, d4:f6 only,  waiting for marks true, tally accuracy 100 9
 all judged: c3-d4 best, f6-e5 ??, d4:f6 only,  still waiting false
-  history-1.txt: time=1762819200	draughts=russian	against=friend	winner=white	accuracy=100,9	marks=261	moves=c3-d4 f6-e5 d4:f6
+  history-1.txt: time=1762819200	draughts=russian	against=friend	winner=white	accuracy=100,9	marks=261	moves=c3-d4 f6-e5 d4:f6	best=c3-b4 f6-g5 -
 rating after a friend's game: 800, rated 0
 won against easy: rating 809, rated 1, international untouched 800
-  history-1.txt: time=1762819200	draughts=russian	against=friend	winner=white	accuracy=100,9	marks=261	moves=c3-d4 f6-e5 d4:f6
-  history-1.txt: time=1762819200	draughts=russian	against=computer	level=0	skill=8	side=white	winner=white	rating=800>809	accuracy=-1,-1	marks=1	moves=c3:e5
+  history-1.txt: time=1762819200	draughts=russian	against=friend	winner=white	accuracy=100,9	marks=261	moves=c3-d4 f6-e5 d4:f6	best=c3-b4 f6-g5 -
+  history-1.txt: time=1762819200	draughts=russian	against=computer	level=0	skill=8	side=white	winner=white	rating=800>809	accuracy=-1,-1	marks=1	moves=c3:e5	best=-
 lost to easy: rating 778, rated 2, h2-g3 only, f4:h2 only, 
   read: 2025-11-11 russian level -1 side 0 winner 0 result 1 rating 0>0 plies 3 blunders 0 1
   read: 2025-11-11 russian level 0 side 0 winner 0 result 1 rating 800>809 plies 1 blunders 0 0

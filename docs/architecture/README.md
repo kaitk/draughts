@@ -277,7 +277,9 @@ so a change rewrites only that player's and no section parser is needed:
   (`src/shell/history.goose`): tab-separated `key=value` fields, the time, the draughts,
   the opponent (the computer's level and skill, or a friend), the player's side, the
   winner, the rating before and after, each side's accuracy, a digit a move for its mark,
-  and the moves in PDN. A game is written when it ends, and its line again once its last
+  the moves in PDN, and the best move from the position before each as the judge found
+  it (`best=`, `-` for an only move or one not judged; none in lines written before
+  2026-11-14), for the replay (task 087). A game is written when it ends, and its line again once its last
   moves are judged (`src/shell/record.goose`). The player's file keeps `moves =
   hidden|list|marks` and, per draughts with rated games, `rating.<draughts>` and
   `rated.<draughts>`.

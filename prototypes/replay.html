@@ -29,7 +29,8 @@
      - On a phone (landscape under 600 dp, and portrait), where a fifth tile doesn't fit
        the steps (a column of four is 400 dp of the Pixel's 432; a row of five would be
        under 88 dp each), the bulb leaves the steps: the glass's line for the best move
-       becomes a tile a tap tall, the bulb at its left, lit while the move shows.
+       becomes a thin tile, 44 dp (its tap a whole 88 dp round it: nothing under it
+       takes taps), the bulb at its left, lit while the move shows.
      Portrait: the head, the game's line, the line over the board, the board, the steps
      in a row, the glass. */
   .rep { --k: 1; --tap: 88px; --col: 1fr; display: grid; grid-template-columns: var(--tap) auto minmax(300px, var(--col)); gap: 24px; }
@@ -95,9 +96,9 @@
   @container (max-height: 599px), (orientation: portrait) {
     #besttile, .steps .sep { display: none; }
     .note .why { display: none; }
-    .say.ask { min-height: var(--tap); margin-top: 10px; padding: 0 14px; border-radius: 20px; color: var(--fg);
+    .say.ask { min-height: 44px; margin-top: 10px; padding: 0 12px; border-radius: 14px; color: var(--fg);
       background: rgb(255 255 255 / 0.1); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.2); }
-    .say.ask .icon { width: 30px; height: 30px; }
+    .say.ask .icon { width: 24px; height: 24px; }
     .say.ask.on { background: color-mix(in srgb, var(--glow) 22%, transparent); box-shadow: inset 0 0 0 2px var(--glow); }
   }
   @container (max-height: 599px) and (orientation: landscape) {

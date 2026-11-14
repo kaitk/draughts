@@ -120,6 +120,7 @@ let DRAINED = 1.0;
 let LIGHT = -1.0;
 let GHOST_KING = 0.62;      // the crowning ghost king's opacity
 let GHOST_HINT = 0.5;       // the hint's ghost's
+let TRACE_GHOST = 0.3;      // a replay's last move: the piece where it started
 
 // A position the game was in, for undo, with the move that led to it.
 struct Step {
@@ -191,6 +192,12 @@ struct Board {
     // a bit, or -1; its ring pulses from `ghost_at` as the glow's does.
     hint_to:  i64,
     ghost_at: f64,
+    // The stops between of a hint's capture, ringed while its ghost shows (a replay's
+    // best move, task 087): bits.
+    hint_via: u64,
+    // A replay's look of the last move (task 087): every square it stood on shaded, where
+    // it started, each stop, and where it ended, and a faded piece where it started.
+    trace: bool,
     // The lookout (game::watch): the side to move's pieces in danger, drained (a held
     // piece's on the square it was taken from), and the other side's crowning squares,
     // shaded under a dark ghost king. Cleared by a move, set again once it has shown.
@@ -252,6 +259,7 @@ fn show(b: Board&, p: rules::Position) {
     b.ghost = false;
     b.glow = -1;
     b.hint_to = -1;
+    b.hint_via = 0;
     b.danger = 0;
     b.crowns = 0;
     b.over = -1;
@@ -526,6 +534,7 @@ fn start_move(b: Board&, i: i64, now: f64) {
     b.steps.clear();
     b.glow = -1;
     b.hint_to = -1;
+    b.hint_via = 0;
     b.danger = 0;
     b.crowns = 0;
     b.over = -1;
@@ -1127,6 +1136,11 @@ fn fill(b: Board&, l: Layout, now: f64) {
             b.pieces[b.pieces.len - 1].ring.w = LIGHT;
             glow_ring(b, ring_at(b.ghost_at, now), b.ghost_at, now);
         }
+        var via = b.hint_via;
+        while via != 0 {
+            mark(b, b.marks.via, ctz(via));
+            via &= via - 1;
+        }
     }
     if b.ghost && b.wrong >= 0 {
         // The ghost fades from 0.8 out over the flash, slowly at first.
@@ -1186,6 +1200,15 @@ fn fill(b: Board&, l: Layout, now: f64) {
     if b.has_last && !b.moving {
         mark(b, b.marks.last, b.last.from);
         mark(b, b.marks.last, b.last.to);
+        if b.trace {
+            for s in b.last.path { mark(b, b.marks.last, s); }
+            // Where it started, the mover at TRACE_GHOST: a man that crowned there was a man.
+            let from = rules::bit(b.last.from);
+            if (b.pos.pieces[rules::WHITE] | b.pos.pieces[rules::BLACK]) & from == 0 {
+                let king = b.pos.kings & rules::bit(b.last.to) != 0 && !b.last.crowned;
+                add(b, center(l, v, b.last.from), r, 0.0, b.pos.side == rules::WHITE, king, 0.0, TRACE_GHOST, 0.0);
+            }
+        }
     }
     b.flash = float4 { -1.0, 1.0, 0.0, b.cursor + 1 };
     if next_shown(b) {

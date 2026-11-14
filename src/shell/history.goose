@@ -67,6 +67,13 @@ fn format_game(out: u8[>..]&, g: Game&, notes: game::Notes&) {
         if i > 0 { out.push(' '); }
         rules::format_move(out, g.variant as u8, n.move);
     }
+    // The best move from the position before each, `-` for none (an only move, or one
+    // not judged): what a replay shows when asked (task 087).
+    out.append("\tbest=");
+    for &n, i in notes {
+        if i > 0 { out.push(' '); }
+        if n.has_best { rules::format_move(out, g.variant as u8, n.best); } else { out.push('-'); }
+    }
 }
 
 fn side_named(v: const u8[:]) -> i64 { if v == "black" { 1 } else { 0 } }
@@ -135,18 +142,21 @@ fn parse_game(line: const u8[:]) -> Game, bool {
     return g, has_time && has_variant && has_winner;
 }
 
-// The moves of a line, as text, space-separated, and its marks, a digit a move: for a
-// replay.
-fn moves_of(line: const u8[:]) -> const u8[:], const u8[:] {
+// The moves of a line, as text, space-separated, its marks, a digit a move, and the best
+// move from the position before each, space-separated, `-` for none (empty in a line
+// written before 2026-11-14): for a replay.
+fn moves_of(line: const u8[:]) -> const u8[:], const u8[:], const u8[:] {
     var moves: const u8[:] = line[..0];
     var marks: const u8[:] = line[..0];
+    var best:  const u8[:] = line[..0];
     for field in split(line, '\t') {
         let k, v, ok = split_once(field, '=');
         guard ok else { continue; }
         if k == "moves" { moves = v; }
         if k == "marks" { marks = v; }
+        if k == "best" { best = v; }
     }
-    return moves, marks;
+    return moves, marks, best;
 }
 
 // The file's text with `line` added last, the oldest dropped past MAX_GAMES, or the last

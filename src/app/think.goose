@@ -24,6 +24,8 @@ struct Thought {
     pieces:  u64,           // the lookout's traps: the pieces they would win
     mark:    i64 = 0,       // JUDGE: the move's mark (ai::ONLY..BLUNDER) and its loss
     loss:    i64 = 0,
+    best:    rules::Move = rules::Move { .. },  // JUDGE: the best move from the position, if has_best
+    has_best: bool = false,
 }
 
 // The engine is the worker's own, made once, at the first search: a root can't cross to a
@@ -65,7 +67,8 @@ thread_fn worker() {
             }
             let v = ai::verdict(e, ask.move);
             qput(Thought { id: ask.id, move: ask.move, found: true, close: 0, nodes: e.nodes, seconds: clock() - began,
-                           kind: ask.kind, pieces: 0, mark: v.mark, loss: v.loss });
+                           kind: ask.kind, pieces: 0, mark: v.mark, loss: v.loss, best: v.best_move,
+                           has_best: v.has_best });
             ask = qget<game::Ask>();
             continue;
         }
@@ -114,7 +117,7 @@ fn frame(t: Thinker&, gm: game::Game&) -> bool {
     let th, got = qpoll<Thought>();
     guard got && th.found else { return false; }
     if th.kind == game::TRAPS { return game::trapped(gm, th.id, th.pieces); }
-    if th.kind == game::JUDGE { return game::judged(gm, th.id, th.mark, th.loss); }
+    if th.kind == game::JUDGE { return game::judged(gm, th.id, th.mark, th.loss, th.best, th.has_best); }
     if th.kind == game::HINT {
         game::hinted(gm, th.id, th.move);
         return true;

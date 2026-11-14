@@ -61,12 +61,14 @@ let GROUP_HEAD = 0;
 let GROUP_STEPS = 1;
 let GROUP_LIST = 2;
 
-// A move of the game as the list and the board need it, with its mark.
+// A move of the game as the list and the board need it, with its mark, and the best move
+// from the position before it as the judge found it (none for an only move, one not
+// judged, or a game written before the history kept them).
 struct Ply {
-    captured: u64 = 0,
-    from:     u8  = 0,
-    to:       u8  = 0,
-    mark:     u8  = 0,          // ai::NOT_JUDGED..BLUNDER
+    move:     rules::Move = rules::Move { .. },
+    best:     rules::Move = rules::Move { .. },
+    has_best: bool        = false,
+    mark:     u8          = 0,          // ai::NOT_JUDGED..BLUNDER
 }
 
 struct Replay {
@@ -117,9 +119,10 @@ fn open(r: Replay&, g: history::Game, line: const u8[:]) {
     let variant = g.variant as u8;
     var p = rules::start(variant);
     r.pos.push(p);
-    let moves, marks = history::moves_of(line);
+    let moves, marks, best = history::moves_of(line);
     var legal: rules::Moves = [];
     var said:  u8[>..]      = [];
+    let bests = split(best, ' ');
     for word in split(moves, ' ') {
         guard word.len > 0 else { continue; }
         guard r.plies.len < MAX_PLIES else { break; }
@@ -129,7 +132,16 @@ fn open(r: Replay&, g: history::Game, line: const u8[:]) {
         let k = r.plies.len;
         let c = if k < marks.len { (marks[k] as i64) - '0' } else { 0 };
         let mark = if c >= 0 && c < ai::MARKS { c } else { ai::NOT_JUDGED };
-        r.plies.push(Ply { captured: legal[i].captured, from: legal[i].from, to: legal[i].to, mark: mark as u8 });
+        var ply = Ply { move: legal[i], mark: mark as u8, .. };
+        // The best move's word, if the line has one for this move: a legal move of p.
+        if k < bests.len && bests[k] != "-" {
+            let j = find(legal, variant, bests[k], said);
+            if j >= 0 {
+                ply.best = legal[j];
+                ply.has_best = true;
+            }
+        }
+        r.plies.push(ply);
         p = rules::play(p, legal[i]);
         r.pos.push(p);
     }
@@ -138,6 +150,7 @@ fn open(r: Replay&, g: history::Game, line: const u8[:]) {
     board::reset(r.b, variant);
     r.b.quiet = true;
     r.b.by_hand = true;
+    r.b.trace = true;
     r.ply = -1;
     r.focused = 0;
     r.seen = -1;
@@ -153,7 +166,7 @@ fn go(r: Replay&, ply: i64, now: f64) -> bool {
     let from = if one { r.ply } else { k };
     board::set(r.b, r.pos[from]);
     if one {
-        let m = r.plies[r.ply];
+        let m = r.plies[r.ply].move;
         var at = -1;
         for x, i in r.b.moves {
             if at < 0 && x.from == m.from && x.to == m.to && x.captured == m.captured { at = i; }
@@ -162,7 +175,7 @@ fn go(r: Replay&, ply: i64, now: f64) -> bool {
         else { board::set(r.b, r.pos[k]); }
     }
     if k > 0 && !one {
-        r.b.last = rules::Move { from: r.plies[k - 1].from, to: r.plies[k - 1].to, .. };
+        r.b.last = r.plies[k - 1].move;
         r.b.has_last = true;
     }
     r.ply = k;
@@ -280,7 +293,7 @@ fn number_of(r: Replay&, i: i64) -> i64, bool {
     return k / 2 + 1, k % 2 == 1;
 }
 
-fn as_move(p: Ply&) -> rules::Move { rules::Move { from: p.from, to: p.to, captured: p.captured, .. } }
+fn as_move(p: Ply&) -> rules::Move { p.move }
 
 // The width of a move's mark after it in the list, its gap before it, 0 for none; the
 // mark drawn as the moves panel draws it (game::mark_at).
@@ -566,7 +579,7 @@ fn badge(g: gui::Gui&, l: board::Layout, v: rules::Variant&, p: Ply&) {
     let u = g.scale;
     guard p.mark == ai::BEST || p.mark == ai::INACCURACY || p.mark == ai::MISTAKE || p.mark == ai::BLUNDER else { return; }
     let sq = l.inner.w;
-    let at = board::center(l, v, p.to);
+    let at = board::center(l, v, p.move.to);
     let d = clamp(0.46 * sq, 22.0 * u, 34.0 * u);
     let r = float4 { at.x + 0.6 * sq - d, at.y - 0.62 * sq, d, d };
     if p.mark == ai::BEST {

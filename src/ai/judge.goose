@@ -45,6 +45,10 @@ struct Verdict {
     loss:   i64 = 0,        // the fall in the expected result, thousandths (at least, for a bound)
     best:   i64 = 0,        // the best move's score, hundredths of a man for the mover
     played: i64 = 0,        // the played move's, or its upper bound
+    // The move the search found best from the position, for a replay (task 087); none
+    // where the position had one move.
+    best_move: rules::Move = rules::Move { .. },
+    has_best:  bool        = false,
 }
 
 // The mover's expected result, in thousandths, of a score from its side.
@@ -105,12 +109,17 @@ fn verdict(e: Engine&, played: rules::Move&) -> Verdict {
     guard k >= 0 else { return Verdict {}; }
     guard e.moves.len > 1 else { return Verdict { mark: ONLY, .. }; }
     var best = -INF;
+    var at = k;
     for i in e.root_count {
-        if e.exact[i] && e.score[i] > best { best = e.score[i]; }
+        if e.exact[i] && e.score[i] > best {
+            best = e.score[i];
+            at = i;
+        }
     }
     let played_score = e.score[k];
     let loss = max(expected(best) - expected(played_score), 0);
-    return Verdict { mark: mark_of(loss), loss: loss, best: best, played: played_score };
+    return Verdict { mark: mark_of(loss), loss: loss, best: best, played: played_score, best_move: e.moves[at],
+                     has_best: true };
 }
 
 // The verdict at once, for tests and tools.

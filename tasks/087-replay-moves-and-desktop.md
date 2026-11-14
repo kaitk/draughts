@@ -70,19 +70,43 @@ marks are made up and disagree with the engine's in places (the engine finds 15-
       game (unchanged: its frame already held the panels by the board), the results,
       settings, the replay. The photograph is magnified 1.68× there, sharp enough; no
       blur.
-- [ ] The best move per position kept in the history: `judge` has it (the root move with
-      the best exact score), the line needs a field (`best=`, a move per ply, empty where
-      forced or not judged). Games already written have none: the replay then shows no
-      best move.
-- [ ] The replay's board: the faded piece, the shaded stops, the dots, after the move's
-      animation; the best move as the hint's ghost and rings (`board::ghost_on`,
-      `glow_on`) while asked for, with the bulb tile in the steps' column.
+- [x] The best move per position kept in the history (2026-11-14): `ai::Verdict.best_move`
+      and `has_best` (the root move with the best exact score), carried by the worker's
+      `Thought` to `game::judged` into `Note.best`, written as `best=` (a move per ply,
+      `-` for an only move or one not judged), read by `history::moves_of` into
+      `replay::Ply.best`. Older lines have none: the replay then shows no best move.
+      `test/expected/history.out` blessed with the field.
+- [x] The replay's board, its part in the board (2026-11-14): `Board.trace` (set by
+      `replay::open`) shades every square of the last move's path and draws the piece at
+      `TRACE_GHOST` (30%) where it started; `Board.hint_via` rings a hint's stops while
+      its ghost shows (cleared by `show` and `start_move`). Shot on Windows at 1280 × 800
+      (`--screen replay --ply 15`, a capture): right.
+- [ ] The replay's dots and numbers, drawn as UI over the board after the move's
+      animation, as `replay::badge` draws the mark: glow discs along the path from square
+      centre to centre, clear of the end pieces (0.42 of a square), 0.3 of a square apart,
+      a larger one at each stop; the squares' numbers (`rules::format_square`) at the
+      path's squares, and at the best move's while it shows, top left, bold, 20% of a
+      square and 11 dp at least, over a dark halo (`gui::shadowed` is the halo's model).
+- [ ] The best move on the board while asked for: `Replay.best` (off at first, kept
+      through the steps); each frame at rest, where `plies[ply].has_best`,
+      `board::glow_on(from)`, `ghost_on(to)`, `hint_via` the stops between; off, glow and
+      hint_to -1. The bulb: a fifth step tile under the four, 8 dp further, where a
+      landscape board holds five taps (the tablet, a desktop); else the glass's best
+      line is the toggle, a thin 44 dp tile with its tap 88 dp (phones, portrait). A
+      `--best` dev flag for shots.
 - [ ] The replay's glass: the best-was and best-next lines (strings in English and
       Estonian).
 - [ ] A desktop's replay and results as the prototype: a capped column and list, larger
       words.
 - [ ] Home's menu glass on an ultrawide runs from the window's edge to the capped area's
       (352 px wider at 3440): fine for now, maybe not bled there later.
+
+Then the glass's lines (the best was, best next, forced, the game ended; strings in
+`strings/en.txt` and `et.txt`, `replay.*`), the desktop's replay column (at most 760
+dp, larger faces) and results (at most 1640 dp), `test/shell/replay` checks (the best
+moves read, the bulb's place at test/shell/sizes' sizes, taps 88 dp), and the docs
+(`docs/architecture/rendering.md`'s replay and results sections, a decision in
+`docs/decisions/rendering.md`).
 
 ## Acceptance criteria
 

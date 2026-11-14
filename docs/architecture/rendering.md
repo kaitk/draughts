@@ -1182,8 +1182,10 @@ marks' legend (`game::legend`). The move shown is lit in
 the glow color, the moves after it at 55%; the list scrolls to keep the move shown in
 view, with a row clear of either edge, whenever it changes. A move is a tap, the half
 row: it jumps there. The rows are under the 88 dp rule: a miss shows the neighbouring
-move, which the steps put right. On the board, the last move's square is marked as the
-game's is, and its mark sits in a disc at the square's top right corner once the piece
+move, which the steps put right. On the board, every square the last move stood on is
+shaded as the game shades its two (where it started, each stop of a capture, where it
+ended; not the squares it passed over), with the piece faded to 30% where it started
+(`Board.trace`, task 087), and its mark sits in a disc at the square's top right corner once the piece
 has arrived: the star on the glow color, `?!` gold, `?` orange, `??` red.
 
 The board takes no taps; it is always the flat one, with no hint, undo, or turn panel.

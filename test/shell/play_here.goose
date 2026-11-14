@@ -58,7 +58,7 @@ fn answer(sh: shell::Shell&, e: ai::Engine&) -> bool {
     guard a.id != 0 else { return false; }
     if a.kind == game::JUDGE {
         let v = ai::judge(e, a.past, a.pos, a.move);
-        game::judged(gm, a.id, v.mark, v.loss);
+        game::judged(gm, a.id, v.mark, v.loss, v.best_move, v.has_best);
         return true;
     }
     if a.kind == game::HINT {

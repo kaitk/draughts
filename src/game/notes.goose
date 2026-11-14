@@ -15,6 +15,10 @@ struct Note {
     move:   rules::Move     = rules::Move { .. },
     mark:   u8              = 0,        // ai::NOT_JUDGED, ONLY, BEST..
     loss:   i16             = 0,        // the fall in the mover's expected result, thousandths
+    // The best move from `before` as the judge found it, for the history (a replay shows
+    // it); none for an only move or one not judged.
+    best:     rules::Move   = rules::Move { .. },
+    has_best: bool          = false,
 }
 
 type Notes = Note[..board::MAX_HISTORY];
@@ -110,15 +114,17 @@ fn judge_ask(gm: Game&) -> Ask {
                  move: gm.notes[i].move };
 }
 
-// The worker's verdict on the ask `id`: the note's mark. One for an ask no longer open is
-// ignored. True when a mark was set.
-fn judged(gm: Game&, id: i64, mark: i64, loss: i64) -> bool {
+// The worker's verdict on the ask `id`: the note's mark, and the best move where there
+// was a choice. One for an ask no longer open is ignored. True when a mark was set.
+fn judged(gm: Game&, id: i64, mark: i64, loss: i64, best: rules::Move, has_best: bool) -> bool {
     guard id != 0 && id == gm.judging else { return false; }
     gm.judging = 0;
     guard gm.judge_ply < gm.notes.len else { return false; }
     let n .= gm.notes[gm.judge_ply];
     n.mark = mark as u8;
     n.loss = clamp(loss, 0, 1000) as i16;
+    n.best = best;
+    n.has_best = has_best;
     return true;
 }
 
