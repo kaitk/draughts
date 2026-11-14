@@ -45,3 +45,10 @@ How the Estonian review ran (2026-11-08); repeat it for new strings or another l
   English "either" is *ükskõik kumb* or *mõlemad*: bare *kumbki* reads as "neither"
   (2026-11-13). The tightest labels are "Rahvusvaheline" (the setups' tiles size to their
   words, `home::draughts_tile`) and "Kuupäev"/"Tänane" on settings' background tile.
+- Measure a candidate against the row as laid out, not a fixed budget: the Today row's
+  title also decides whether its tiles stand beside it (`picker::today_beside`), so a
+  longer title can move them under it at one size while fitting at all others. A
+  scratch Goose program printing the rows' rects at the layout tests' sizes, and a
+  Python reader of the font's `hmtx`, gave every case in a minute (task 088, 2026-11-14).
+  Give Gemini each key's room in dp: it chose wording by it ("Homme jälle" over "Homme
+  uued" for 5 dp), so check its arithmetic against the real layout before taking it.

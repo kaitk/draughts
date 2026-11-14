@@ -625,7 +625,8 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   first) and hasn't said they do, finished their draughts' tutorial, or begun a game
   against the computer (`shell::resume`'s `learn`; [how to play](#how-to-play)), puzzles
   with the puzzles solved in the player's draughts ("31 / 74") until Today opens, then
-  today's dots, filled as each is solved, a check once all are
+  today's dots, filled as each is solved, a check once all are, with "New tomorrow" before
+  it in the small face where it stays 16 dp clear of the row's word (everywhere so far)
   ([daily puzzles](puzzles.md#daily-puzzles)), and the games played with the player's rating in their draughts once rated
   ([the results screen](#the-results-screen)), then settings, each an icon and a word, in
   rows 88 dp tall, 2 dp apart. The menu's height is reckoned without the results row: where
@@ -807,12 +808,12 @@ take b, `plain.html`'s fade b, and the like) are in git history only
   **Today** ([daily puzzles](puzzles.md#daily-puzzles)): until Learn is solved, a locked
   row ends the list across the columns, its mark plain with the lock, "Solve n more in
   Learn". Once it opens, Today's row heads the list across the columns instead of How to
-  play: a calendar on its disc, "Today", "n to go" under it, and today's puzzles as tiles
+  play: a calendar on its disc, "Today’s puzzles", "n to go" under it, and today's puzzles as tiles
   88 dp square in the row, each its slot's rising bars (one for the warm-up, two for the
   middle, three for the stretch) over its stars won, the first unsolved one lit; a tile
   opens its puzzle. The tiles stand beside the title and note where they fit, else in
   even lines under them (portrait). Once all are solved the mark is the moon and the note
-  "New puzzles tomorrow". How to play then is a tile with its mark beside the title in
+  "New ones tomorrow". How to play then is a tile with its mark beside the title in
   landscape, and the list's last row in portrait, where the title row has no room.
   **The draughts switch** (`puzzle-set.html`, take a) is the setup's draughts tiles, International 10 × 10, Brazilian 8 × 8, Russian
   8 × 8 (each its name over its size, 88 dp tall, as wide as settings' tile would be,

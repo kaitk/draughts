@@ -457,6 +457,26 @@ would otherwise fall from 33 dp to 14), on a 20:9 phone at 480 dp also 53 (from 
 the iPhone 13 mini's sizes both ways, flat and 3D, English and Estonian: the word fits
 in every one, "Veidi raskem" in the full small face. The tablet is left.
 
+## The strings reviewed (2026-11-14)
+
+Gemini proposed and Claude checked, as `agents/writing.md` says. Taken: the Today row's
+title "Today’s puzzles" / "Tänased ülesanded" (bare "Täna" said too little), its
+all-solved note "New ones tomorrow" / "Homme uued" (no "ülesanded" twice under the new
+title), and home's new note `daily.home_tomorrow` "New tomorrow" / "Homme uued" before
+the check. Kept: "{} to go" / "Veel {}", "Puzzles a day" / "Ülesandeid päevas",
+"Warm-up" / "Soojendus", "A bit harder" / "Veidi raskem". Turned down: "Pähkel" for the
+stretch (an idiom a young child may not know, and not the English), "Soojenduseks"
+(wider, no gain), "Homme jälle" for home (says "again", not "new"; "Homme uued" fits).
+
+Measured in Libertinus Sans against the rows laid out at every size the layout tests
+use (19 sizes, 3, 4, 5, and 10 a day): "Tänased ülesanded" (235 dp) fits the title
+without shrinking everywhere, 109 dp to spare at the tightest (a 480 dp phone in
+portrait); only on a 9:16 phone at 480 dp in landscape with 5 a day do the tiles go
+under the head (the row 104 dp to 192) where "Täna" kept them beside it. Home's note
+needs its row's word, 16 dp, the note, 4 dp, and the check: the tightest row is 360 dp
+(landscape), where "Homme uued" (95 dp) has 96, and "New tomorrow" (106) has 135, so
+it shows at every size.
+
 ## Acceptance criteria
 
 - [x] The UI takes above prototyped, checked on the tablet's and a phone's sizes in both
