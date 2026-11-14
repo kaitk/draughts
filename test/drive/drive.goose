@@ -147,8 +147,8 @@ fn frame(sh: shell::Shell&, g: gui::Gui&, at: float2, down: bool, pressed: bool,
     return changed;
 }
 
-// A frame that dropped quads past gui::MAX_QUADS says so, in any test's output: a
-// control missing unseen (2026-11-14, test/shell/long_game).
+// A frame that dropped quads past gui::MAX_QUADS says so in any test's output, so a
+// missing control can't go unseen.
 fn dropped(g: gui::Gui&) {
     if g.dropped > 0 { print("gui: ", g.dropped, " quads dropped past gui::MAX_QUADS"); }
 }

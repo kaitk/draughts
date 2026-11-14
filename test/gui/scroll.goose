@@ -1,4 +1,4 @@
-// A scrolling list (gui::scroll_begin, task 050): ten 88 px rows in a 300 px view. A tap
+// A scrolling list (gui::scroll_begin): ten 88 px rows in a 300 px view. A tap
 // on a row is still a tap, also one that wobbles under the slop; a press that moves past
 // the slop is a drag that scrolls the list and clicks nothing, and the frames draw while
 // it lasts; the offset stops at the list's ends; the wheel scrolls it; a press outside

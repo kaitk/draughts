@@ -1,4 +1,4 @@
-// The mouse's hover on a desktop (task 066), headless: the tile under the pointer lights
+// The mouse's hover on a desktop, headless: the tile under the pointer lights
 // from the frame after it is found there, over gui::PRESS, eased, and fades out when the
 // pointer leaves; one left mid-fade turns from where it is; the frames are asked for
 // only while the hover moves or fades, never for a pointer resting or moving within one

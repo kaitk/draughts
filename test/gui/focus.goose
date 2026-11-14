@@ -1,10 +1,11 @@
-// The keys' focus (gui::focus_keys, task 072), headless: the first arrow key focuses the
-// screen's primary control, or the first declared where none is; the arrows move it to
-// the nearest control that way, one in line before a nearer one off to the side, and
-// leave it where none lies that way; Enter presses the focused control, a click as a
-// release over it is, and with none focused focuses the primary and presses it; a disabled control is never
-// focused, the nearest that way taken past it; the focus is lit as the mouse's hover is
-// and ringed (one RING quad), the frames asked for only while that light moves; the mouse moving, a press, or the wheel lets it go; a control the next
+// The keys' focus (gui::focus_keys), headless: the first arrow key focuses the screen's
+// primary control, or the first declared where none is; the arrows move it to the
+// nearest control that way, one in line before a nearer one off to the side, and leave
+// it where none lies that way; Enter presses the focused control, a click as a release
+// over it is, and with none focused focuses the primary and presses it; a disabled
+// control is never focused, the nearest that way taken past it; the focus is lit as the
+// mouse's hover is and ringed (one RING quad), the frames asked for only while that
+// light moves; the mouse moving, a press, or the wheel lets it go; a control the next
 // frame doesn't declare (another screen) hands it to that screen's primary; a screen a
 // transition leaves (listen off) offers none; and Enter held on a focused hold tile fills
 // its ring as a held press does, Enter pressed alone never firing it, let go early
