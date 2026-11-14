@@ -46,7 +46,7 @@ fn main() {
     puzzles::load();
     layout("a desktop, 1280 x 800", float2 { 1280.0, 800.0 }, 1.0);
     // The headless layout is 800 dp on the shorter side; a desktop's small window is fewer.
-    print("a desktop's landscape 400 dp tall, too short for it: the Quit row ", home::quit_row(true, 400.0, 1.0));
+    print("a desktop's landscape 400 dp tall, too short for it: the Quit row ", home::quit_row(true, home::ROWS, 400.0, 1.0));
     layout("a desktop in portrait, 800 x 1280", float2 { 800.0, 1280.0 }, 1.0);
     layout("a touch screen, 1280 x 800", float2 { 1280.0, 800.0 }, 0.0);
 

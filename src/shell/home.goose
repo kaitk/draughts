@@ -86,9 +86,6 @@ let CLOCK_IDS = TURNS_IDS + 2;      // the clocks, three,
 let PLAY_ID = CLOCK_IDS + 3;        // and play
 let IDS_END = PLAY_ID + 1;
 
-// The menu's rows shown: ROWS, or one fewer while there is no game to continue (frame
-// sets it from Resume before the layout; issue 1).
-var rows = ROWS;
 // The games played (task 074), a last row after the others (before settings and Quit
 // where they are rows). The menu's height is reckoned without it (menu_height); where it
 // fits with it the menu grows by a row, and where that would shrink the board or leave
@@ -157,7 +154,7 @@ fn reach(small: bool) -> f32 { max(0.0, 0.5 * (gui::tap() - mark_h(small))) }
 // would leave the gear's reach over the wordmark's row off the screen, but never under
 // that reach, so the gear's tap keeps off the first row's (a landscape phone at 480 dp
 // less its gesture bar: row_gap gives way instead).
-fn mark_gap(gear: bool, height: f32, u: f32, small: bool = false) -> f32 {
+fn mark_gap(gear: bool, rows: i64, height: f32, u: f32, small: bool = false) -> f32 {
     guard gear else { return if gui::desktop_scale > 0.0 { DESKTOP_MARK_GAP } else { MARK_GAP }; }
     guard !small else { return reach(true); }
     return clamp(height / u - reach(false) - (MARK_H + rows * gui::tap() + (rows - 1) * ROW_GAP), reach(false), 14.0);
@@ -165,32 +162,32 @@ fn mark_gap(gear: bool, height: f32, u: f32, small: bool = false) -> f32 {
 
 // The gap between the menu's rows in dp: ROW_GAP, less, down to none, where the gap
 // under the wordmark can't give way any further (mark_gap).
-fn row_gap(gear: bool, height: f32, u: f32, small: bool = false) -> f32 {
+fn row_gap(gear: bool, rows: i64, height: f32, u: f32, small: bool = false) -> f32 {
     guard gear && !small else { return ROW_GAP; }
-    let left = height / u - reach(false) - MARK_H - mark_gap(gear, height, u) - rows * gui::tap();
+    let left = height / u - reach(false) - MARK_H - mark_gap(gear, rows, height, u) - rows * gui::tap();
     return clamp(left / (rows - 1), 0.0, ROW_GAP);
 }
 
 // How tall the menu is in an area `height` tall, with settings a row of its own or the
 // gear beside the wordmark.
-fn menu_height(gear: bool, height: f32, u: f32, small: bool = false, quit: bool = false) -> f32 {
+fn menu_height(gear: bool, rows: i64, height: f32, u: f32, small: bool = false, quit: bool = false) -> f32 {
     let more = if quit { 2 } else { 1 };
     let n = if gear { rows } else { rows + more };
-    return (mark_h(small) + mark_gap(gear, height, u, small) + n * row_h(small)
-            + (n - 1) * row_gap(gear, height, u, small)) * u;
+    return (mark_h(small) + mark_gap(gear, rows, height, u, small) + n * row_h(small)
+            + (n - 1) * row_gap(gear, rows, height, u, small)) * u;
 }
 
 // Whether settings is the gear beside the wordmark: in portrait, and in a landscape too
 // short for the menu with it as a row (a phone).
-fn gear_beside(landscape: bool, height: f32, u: f32) -> bool {
-    return !landscape || menu_height(false, height, u) > height - 2.0 * MARGIN * u;
+fn gear_beside(landscape: bool, rows: i64, height: f32, u: f32) -> bool {
+    return !landscape || menu_height(false, rows, height, u) > height - 2.0 * MARGIN * u;
 }
 
 // Whether the way out is Quit, a last row under settings: on a desktop (gui::desktop_scale),
 // where home shows its way out, in landscape with settings a row and room for one more.
-fn quit_row(landscape: bool, height: f32, u: f32, small: bool = false) -> bool {
-    guard closable && gui::desktop_scale > 0.0 && landscape && !gear_beside(true, height, u) else { return false; }
-    return menu_height(false, height, u, small, true) <= height - 2.0 * MARGIN * u;
+fn quit_row(landscape: bool, rows: i64, height: f32, u: f32, small: bool = false) -> bool {
+    guard closable && gui::desktop_scale > 0.0 && landscape && !gear_beside(true, rows, height, u) else { return false; }
+    return menu_height(false, rows, height, u, small, true) <= height - 2.0 * MARGIN * u;
 }
 
 // How tall the setup's choices are in dp: their groups, each a dim name over its tiles.
@@ -209,9 +206,9 @@ fn play_up(area: float4, u: f32) -> bool {
 
 // How tall the column's content is: the menu, or the setup, no taller than the safe
 // area less its margins, where the choices scroll.
-fn content_height(setup: i64, landscape: bool, height: f32, u: f32, small: bool = false) -> f32 {
+fn content_height(setup: i64, rows: i64, landscape: bool, height: f32, u: f32, small: bool = false) -> f32 {
     if setup == NO_SETUP {
-        return menu_height(gear_beside(landscape, height, u), height, u, small, quit_row(landscape, height, u, small));
+        return menu_height(gear_beside(landscape, rows, height, u), rows, height, u, small, quit_row(landscape, rows, height, u, small));
     }
     return min(setup_height(u), height - 2.0 * SETUP_MARGIN * u);
 }
@@ -245,17 +242,17 @@ struct Home {
 }
 
 // Where home's parts go (Home), declaring nothing.
-fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, s: settings::Settings&) -> Home {
+fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, rows: i64, s: settings::Settings&) -> Home {
     let u = g.scale;
     let width = area.z;
     let height = area.w;
     let landscape = width >= height;
     let small = setup == NO_SETUP && gui::compact(g, area);
     let clear = (EDGE + gui::tap() + 16.0) * u;
-    let least_h = content_height(setup, landscape, height, u, small);
+    let least_h = content_height(setup, rows, landscape, height, u, small);
     // With the menu, its results row: a row more where that leaves the board its size and
     // the menu on the screen, else the menu keeps its height and scrolls.
-    let more_h = if setup == NO_SETUP { (row_h(small) + row_gap(gear_beside(landscape, height, u), height, u, small)) * u } else { 0.0 };
+    let more_h = if setup == NO_SETUP { (row_h(small) + row_gap(gear_beside(landscape, rows, height, u), rows, height, u, small)) * u } else { 0.0 };
     var scroll = false;
     if more_h > 0.0 {
         if landscape {
@@ -289,7 +286,7 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, s: settings::Settings&
         // the board in the rest, 70% of the height at most, 40 dp from the column. Where
         // the board would reach the way out (a phone), it moves down to 8 dp under it or
         // narrows to 16 dp left of it, whichever leaves it larger.
-        let narrow: f32 = if setup != NO_SETUP { SETUP_W } else if gear_beside(true, height, u) { GEAR_W } else { COLUMN_W };
+        let narrow: f32 = if setup != NO_SETUP { SETUP_W } else if gear_beside(true, rows, height, u) { GEAR_W } else { COLUMN_W };
         let desktop = gui::desktop_scale > 0.0;
         let wide = if desktop { max(narrow, DESKTOP_COLUMN_W) } else { narrow };
         let w = wide * u;
@@ -300,7 +297,7 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, s: settings::Settings&
         if up { content = float4 { content.x, area.y + MARGIN * u, w, height - MARGIN * u }; }
         // The gear reaches 8 dp over the wordmark's row: on the screen, where the menu
         // has under 8 dp above it (a 16:9 phone less its gesture bar).
-        if setup == NO_SETUP && gear_beside(true, height, u) {
+        if setup == NO_SETUP && gear_beside(true, rows, height, u) {
             content.y = min(max(content.y, area.y + 8.0 * u), area.y + height - content_h);
         }
         if desktop { content.y = max(area.y, min(area.y + DESKTOP_TOP * u, area.y + height - content_h)); }
@@ -376,10 +373,10 @@ fn layout(g: gui::Gui&, n: i64, area: float4, setup: i64, s: settings::Settings&
             float4 { area.x + 24.0 * u, area.y + top, width - 48.0 * u, y + size - top }
         } else { float4 { area.x + 0.5 * (width - size), area.y + y, size, size } };
     }
-    let gear = gear_beside(landscape, height, u);
+    let gear = gear_beside(landscape, rows, height, u);
     return Home { col: col, content: content, head: head, way: way, side: side, board: l, room3d: room3d, gear: gear,
-                  below: mark_gap(gear, height, u, small), apart: row_gap(gear, height, u, small), small: small,
-                  quit: setup == NO_SETUP && quit_row(landscape, height, u, small), up: up, scroll: scroll };
+                  below: mark_gap(gear, rows, height, u, small), apart: row_gap(gear, rows, height, u, small), small: small,
+                  quit: setup == NO_SETUP && quit_row(landscape, rows, height, u, small), up: up, scroll: scroll };
 }
 
 // Where a scrolling menu's list ends, in pixels: at the screen's foot, under the safe
@@ -421,6 +418,9 @@ struct Resume {
     learn: bool = false,
 }
 
+// The menu's rows shown: ROWS, or one fewer while there is no game to continue (issue 1).
+fn rows_of(resume: Resume) -> i64 { if resume.on || resume.learn { ROWS } else { ROWS - 1 } }
+
 // The name of draughts `variant`, a strings key.
 fn draughts_key(variant: i64) -> i64 {
     for v, i in settings::DRAUGHTS { if v == variant { return settings::DRAUGHTS_KEYS[i]; } }
@@ -435,8 +435,7 @@ fn resume_note(computer: i64, level: i64) -> i64 {
 
 fn frame(over: board::Overlay&, g: gui::Gui&, l: board::Layout&, n: i64, area: float4, setup: i64,
          s: settings::Settings&, room3d: float4&, resume: Resume = Resume {}) -> i64 {
-    rows = if resume.on || resume.learn { ROWS } else { ROWS - 1 };
-    let h = layout(g, n, area, setup, s);
+    let h = layout(g, n, area, setup, rows_of(resume), s);
     l = h.board;
     room3d = h.room3d;
     // The column or sheet runs on past the safe area to the screen's edges.
@@ -519,6 +518,7 @@ fn menu(over: board::Overlay&, g: gui::Gui&, c: float4, gear: bool, below: f32, 
     // The wordmark, then the rows and the results row, settings as the next where it isn't
     // the gear, and Quit last with `quit`.
     let more = if quit { 2 } else { 1 };
+    let rows = rows_of(resume);
     let first = ROWS - rows;    // the first row shown: Continue's, or Friend's without it
     let shown = rows + 1;       // with the results row
     let rows_n = if gear { shown } else { shown + more };
