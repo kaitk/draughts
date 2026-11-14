@@ -1,0 +1,51 @@
+# scripts/test.sh on Linux, then the app built as scripts/linux.py builds it, on the
+# Ubuntu 22.04 a Linux release is built on (docs/development.md, "Desktop releases").
+name: Test
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Fetch the pinned Goose release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p build && cd build
+          gh release download v2026.4 -R aardappel/goose -p 'goose-v2026.4-linux-x64.tar.gz'
+          tar -xzf goose-v2026.4-linux-x64.tar.gz && rm goose-v2026.4-linux-x64.tar.gz
+
+      # SDL's Wayland and X11 (both required), its audio, IME, and input backends, CMake for
+      # it, and Clang 20 from apt.llvm.org, since 22.04's gcc 11 has no #embed.
+      - name: Install the Linux build's packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build pkg-config binutils \
+              libwayland-dev libxkbcommon-dev libdecor-0-dev wayland-protocols \
+              libegl-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev \
+              libxss-dev libxtst-dev libasound2-dev libpulse-dev libpipewire-0.3-dev libjack-dev \
+              libsndio-dev libdbus-1-dev libibus-1.0-dev libudev-dev liburing-dev
+          curl -s https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor \
+              | sudo tee /etc/apt/trusted.gpg.d/llvm.gpg >/dev/null
+          echo "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-20 main" \
+              | sudo tee /etc/apt/sources.list.d/llvm.list
+          sudo apt-get update
+          sudo apt-get install -y clang-20
+
+      - name: Test
+        run: scripts/test.sh
+
+      - name: Build the app
+        env:
+          CC: clang-20
+        run: scripts/linux.py src/app/draughts.goose

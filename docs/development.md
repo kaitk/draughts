@@ -13,7 +13,7 @@ The app builds from a Mac (Apple silicon), from Windows (x64), and from Linux (x
 | Windows release (zip) | Windows | `python scripts/windows.py src/app/draughts.goose --release` | [Desktop releases](#desktop-releases) |
 | Linux release (tar.gz) | Linux, in an Ubuntu 22.04 container | `CC=clang-20 scripts/linux.py src/app/draughts.goose --release` | [Desktop releases](#desktop-releases) |
 | iOS simulator, iPhone, iPad | Mac (Xcode) | `scripts/ios.py src/app/draughts.goose --run`, `--device --run` | [Run on iOS](#run-on-ios) |
-| Rules tests | Mac, Windows | `test/run_tests.py` | [Test the rules](#test-the-rules) |
+| Rules tests | Mac, Windows, Linux | `scripts/test.sh` | [Test the rules](#test-the-rules) |
 
 The Toolchain table below is the Mac's; Windows lists its own under Run on Windows and Run
 on Android.
@@ -298,6 +298,11 @@ scripts/test.sh             # the app's shaders, the tests, then perft and the r
 By default the tests run in batches through Goose's TinyCC, but for the few whose search
 takes TinyCC's code 9 to 28 s (`SLOW` in `test/run_tests.py`), which build at -O2 beside
 the batches. The times are a 10-core M-series Mac's.
+
+GitHub Actions runs `scripts/test.sh` on every push and pull request
+(`.github/workflows/test.yml`), on Ubuntu 22.04 with the Goose Linux release and the
+submodules, then builds the app with `scripts/linux.py` and Clang 20, with the packages
+Desktop releases lists, so a C error in the program's own C fails it too.
 
 `scripts/test.sh` also builds `tools/perft.goose` into `build/perft`, which counts moves
 from a position (`build/perft russian 9`, `build/perft international 8 FEN --divide`), and
