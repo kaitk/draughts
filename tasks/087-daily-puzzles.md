@@ -1,6 +1,6 @@
 # 087: Daily puzzles from a large generated library, at the player's level
 
-Status: todo
+Status: in-progress
 
 Children who have solved every puzzle in the themed sets (task 037: 74 International,
 and Russian's and Brazilian's) ask for more. Adding them by hand doesn't scale, and a
@@ -180,6 +180,92 @@ a new `daily.html`), checked with `agent-browser`, then chosen. The proposals:
 - A daily puzzle's screen shows today's dots over next (`puzzle.html?daily=1`); the
   prototype places them only for the tablet's landscape, so the build fits them into
   the puzzle's corner panels and portrait bar as the screen's other parts are.
+
+## Generation sample (2026-11-14)
+
+`tools/puzzles.goose batch SEED PER SECONDS` runs a table of kinds (`KINDS`: the goal,
+moves, men in each camp, kings, and how a take in more moves starts), keeps each puzzle
+once by its position and by its line (the course's own among them), turns a third for
+black, and tags each puzzle's theme and level from its line (`motif`: the safe move, a
+crown, a king's capture, men given or a free tempo, else a capture). `games SEED GAMES
+SKILL NODES` plays the computer against itself from four random plies and keeps, one a
+game, a position where the material is even, the side that just moved scored its move
+within 60 of even, and the game then won n men within four moves: tried as "take n" in
+the fewest moves that force it, any quiet first move allowed. Lines may now run to 16
+plies (`puzzles::MAX_PLIES`, 8 before), which kabe.ee's warm-up needs.
+
+The sample: four `batch` seeds (6 a kind, 60 s a kind at most) and six `games` runs of 60
+games at skill 90 and 300,000 nodes a move, ten processes at once, 6.5 min on the Mac:
+374 International puzzles, 112 of them black to move, none kept twice across the runs.
+
+| Kind | Tried | Sound | Kept | s a puzzle |
+|---|---|---|---|---|
+| capture-8 (take 2 in 1, 8 v 8) | 1,011,217 | 26 | 24 | 0.12 |
+| capture-13 (take 3 in 1) | 53,203,786 | 25 | 24 | 7.9 |
+| shot2-10 (take 2 in 2) | 869,170 | 25 | 24 | 0.12 |
+| shot2-15 | 33,747,315 | 24 | 24 | 5.5 |
+| shot3-12 (take 3 in 2) | 19,337,558 | 24 | 24 | 2.8 |
+| shot3m-12 (take 2 in 3) | 20,961,126 | 28 | 23 | 4.7 |
+| shot3m-16 (take 3 in 3) | 51,838,312 | 0 | 0 | none in 240 s |
+| shot4m-14 (take 2 in 4) | 21,365,088 | 11 | 9 | 26.7 |
+| tempo-10 (take 1 in 2, a free tempo) | 1,528,590 | 34 | 24 | 0.23 |
+| crown1-7, crown2-8, crown3-9 | 5,392,620 | 86 | 72 | 0.09 to 0.36 |
+| king1-8, king2-9, king3-10 (a king) | 9,073,081 | 73 | 72 | 0.11 to 1.2 |
+| safe-10, safe-15 | 45,448,748 | 64 | 47 | 8.5, 1.5 |
+| games: 360 games, 11,038 swings | 11,038 | 7 | 7 | 325 |
+
+Of the positions `find` places, between 1 in 25,000 and 1 in 2 million pass every check;
+the solver's exact search is the cost, and the most men and moves cost most. The games
+are a poor source as built: of 286 swings the solver forces, 7 pass the checks (most have
+a second right move somewhere, or end with a capture due), at 5 min a puzzle, so the
+full library is from `batch` alone, and the games wait on a looser check (a puzzle of the
+moves up to the second right move).
+
+## Difficulty estimate (2026-11-14)
+
+`tools/puzzles.goose rate FILE` scores each puzzle, about 0.75 s each:
+
+- **The computer as judge**: of skills 0, 5, ..., 100 (`ai::think` as a hint searches,
+  nothing overlooked), how many don't find the right first move, times 5, and 20 more
+  if full skill with 4 M nodes misses it too. A skill finds it when it would play it, or
+  scores it as well as any move and better than one. The count, not the lowest skill
+  that finds it: shallow skills that score every move alike find quiet moves by luck.
+  The engine plays for material, so a crown puzzle counts 50 misses at most.
+- **Shape**: the solver's moves, men given, moves at the first turn (log), a first move
+  forced as a capture (easier), moves skill 30 scores as well as the right one (rivals),
+  pieces on the board (log), and a line that lets the other side crown.
+- **Motif level**: 1 to 3, from `motif`.
+
+Blended (`blend`): 400 + 10 misses + 50 (moves - 1) + 30 given + 60 log2(moves to weigh
+/ 2) + 10 rivals + 50 log2(pieces / 6) + 40 (level - 1) + 80 if it lets a crown - 120
+if forced.
+
+kabe.ee's five, transcribed from the page's diagrams into `tools/calibration/kabe.txt`
+and checked by playing its solutions (the page's no. 2 has a man on h8, not a king; it
+writes a capture by its ends, "f6:h6" for f6:d8:a5:d2:h6), as win puzzles, the line the
+author's:
+
+| No. | Author's label | Estimate | Misses |
+|---|---|---|---|
+| 1 | warm-up | 1149 | 25 |
+| 2 | | 1365 | 45 |
+| 3 | already harder | 1569 | 40 |
+| 4 | here you have to think | 1571 | 50 |
+| 5 | | 1904 | 60 |
+
+In the author's order and medium to hard, though 3 and 4 are two points apart. Only no. 1
+is a puzzle our solver checks (win in 6); the others' wins are endgames past its reach.
+
+The course is the floor: International's 74 rate 280 to 1316, by level 1, 2, 3 a mean of
+430, 697, 986; Russian's and Brazilian's 280 to 1260. The sample rates 341 to 2308,
+median 737: captures 425, crowning 720, king shots 743, safe move 806, shots 792 at the
+median; 24 of 374 over 1400. The full library weights the hard kinds three times (a
+kind's `share`) and adds take 3 in 3, take 2 in 4 among 12, and a king's take 2 in 3
+among 25, so its range reaches past kabe.ee's.
+
+The 30 random sample puzzles by the estimate, for a look (open each with
+`build/draughts --variant international --fen FEN`), are in `build/library/sample-30.md`,
+local.
 
 ## Acceptance criteria
 
