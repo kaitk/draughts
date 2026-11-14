@@ -23,7 +23,15 @@
        says which was best instead.
      - A desktop's large window: the board, the steps, and a column of at most 760 dp
        centered as one, the column's words half again as large, taps 64 dp (task 069).
-     Portrait: the head, the board, the steps in a row, the glass. */
+     - The squares' numbers at the move's stops (and the best move's, while it shows),
+       small in each square's top left corner, as the move list writes them; ?nums=0
+       leaves them out.
+     - On a phone (landscape under 600 dp, and portrait), where a fifth tile doesn't fit
+       the steps (a column of four is 400 dp of the Pixel's 432; a row of five would be
+       under 88 dp each), the bulb leaves the steps: the glass's line for the best move
+       becomes a tile a tap tall, the bulb at its left, lit while the move shows.
+     Portrait: the head, the game's line, the line over the board, the board, the steps
+     in a row, the glass. */
   .rep { --k: 1; --tap: 88px; --col: 1fr; display: grid; grid-template-columns: var(--tap) auto minmax(300px, var(--col)); gap: 24px; }
   .steps { display: flex; flex-direction: column; justify-content: center; gap: 16px; }
   .steps .tile { padding: 0; min-width: var(--tap); min-height: var(--tap); }
@@ -47,6 +55,8 @@
   .say .icon { flex: none; width: calc(22px * var(--k)); height: calc(22px * var(--k)); color: var(--glow); }
   .say[hidden] { display: none; }
   .say.ask { cursor: pointer; }
+  .num { position: absolute; z-index: 3; left: 6%; top: 3%; font: 700 max(11px, calc(2 * var(--u))) / 1 var(--font);
+    color: rgb(255 255 255 / 0.9); text-shadow: 0 0 calc(0.5 * var(--u)) rgb(0 0 0 / 0.75); pointer-events: none; }
   .say.ask.on .icon { fill: color-mix(in srgb, var(--glow) 35%, transparent); }
   .rule { border-bottom: 1px solid rgb(255 255 255 / 0.12); margin-top: 10px; }
   .acc { display: grid; grid-template-columns: calc(30px * var(--k)) 1fr 1fr; padding: 8px 0 4px; font-size: calc(17px * var(--k)); }
@@ -81,6 +91,15 @@
   .mover > div { position: absolute; width: 10%; height: 10%; left: 0; top: 0; }
   .piece.gone { visibility: hidden; }
 
+  /* A phone: the bulb in the glass, the line over the board short. */
+  @container (max-height: 599px), (orientation: portrait) {
+    #besttile, .steps .sep { display: none; }
+    .note .why { display: none; }
+    .say.ask { min-height: var(--tap); margin-top: 10px; padding: 0 14px; border-radius: 20px; color: var(--fg);
+      background: rgb(255 255 255 / 0.1); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.2); }
+    .say.ask .icon { width: 30px; height: 30px; }
+    .say.ask.on { background: color-mix(in srgb, var(--glow) 22%, transparent); box-shadow: inset 0 0 0 2px var(--glow); }
+  }
   @container (max-height: 599px) and (orientation: landscape) {
     .top h1 { display: none; }
     .gline { display: none; }
@@ -88,14 +107,18 @@
     .say.better { display: none; }
   }
   @container (orientation: portrait) {
-    .rep { grid-template-columns: 1fr; grid-template-rows: auto auto auto minmax(0, 1fr); gap: 16px; }
+    .rep { grid-template-columns: 1fr; grid-template-rows: auto auto auto auto minmax(0, 1fr); gap: 12px; }
     .col { display: contents; }
-    .top { order: -1; }
-    .gline { order: -1; }
+    .top { order: -3; }
+    .top h1 { display: none; }
+    .gline { order: -2; }
+    .mid { order: -1; }
+    .list { order: 1; }
+    .legend { display: none; }
     .steps { flex-direction: row; justify-content: space-between; }
     .steps .tile { flex: 1; }
     .steps .sep { display: none; }
-    #board { width: min(var(--w), var(--h) - 88px - 88px - 260px - 64px); }
+    #board { width: min(var(--w), var(--h) - 88px - 22px - 26px - 88px - 300px - 48px); }
   }
   /* A desktop's large window (draughts.css caps its width at 1.9 times its height). */
   @container (min-width: 1700px) and (min-height: 1000px) {
@@ -112,7 +135,7 @@
     <a class="tile glass" data-icon="right" data-go="on"></a><a class="tile glass" data-icon="last" data-go="last"></a>
     <span class="sep"></span><a class="tile glass" data-icon="hint" id="besttile" title="Best move"></a>
   </div>
-  <div class="mid"><div class="note" id="note">A game from here doesn't count: it isn't saved and doesn't change your rating</div><div id="board"></div></div>
+  <div class="mid"><div class="note" id="note">A game from here doesn't count<span class="why">: it isn't saved and doesn't change your rating</span></div><div id="board"></div></div>
   <div class="col">
     <div class="top"><a class="tile glass" href="results.html" data-icon="back">Back</a><h1>Replay</h1>
       <a class="tile primary" data-icon="computer">Play from here</a></div>
@@ -193,6 +216,8 @@
   }
 
   let ply = +Q.get('ply') || 39, best = false;
+  const NUMS = Q.get('nums') !== '0';
+  const num = (cell, n) => { if (NUMS) cell.insertAdjacentHTML('beforeend', `<span class="num ind">${n}</span>`); };
   const anims = [];
 
   // Board el at ply k. moving: the move into k plays first, its piece
@@ -210,7 +235,7 @@
     if (g) {
       const w = ways(g.m), from = w[0], to = w[w.length - 1];
       // The squares it stood on, its last a little more.
-      for (const s of w) sq(s).insertAdjacentHTML('afterbegin', `<div class="shade ind${s === to ? ' end' : ''}"></div>`);
+      for (const s of w) { sq(s).insertAdjacentHTML('afterbegin', `<div class="shade ind${s === to ? ' end' : ''}"></div>`); num(sq(s), s); }
       sq(from).insertAdjacentHTML('beforeend', `<div class="piece ghost ind ${pieceOf(POS[k - 1][from])}"></div>`);
       const disc = { '*': ['var(--glow)', D.icon('star')], '?!': ['#ffd75a', '?!'], '?': ['#ff9a3c', '?'], '??': ['var(--forced)', '??'] }[MARK[k - 1]];
       if (disc) sq(to).insertAdjacentHTML('beforeend', `<span class="mark ind" style="--c: ${disc[0]}; color: #fff">${disc[1]}</span>`);
@@ -221,6 +246,7 @@
     if (b && best) {
       const w = ways(b), from = w[0], to = w[w.length - 1];
       sq(from).insertAdjacentHTML('beforeend', '<div class="ringmark ind"></div>');
+      for (const s of w) if (!sq(s).querySelector('.num')) num(sq(s), s);
       sq(to).insertAdjacentHTML('beforeend', `<div class="piece hintghost ${pieceOf(p[from])}"></div><div class="ringmark ind"></div>`);
       for (const s of w.slice(1, -1)) sq(s).insertAdjacentHTML('beforeend', '<div class="target via ind"></div>');
     }

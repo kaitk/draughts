@@ -37,6 +37,19 @@ Settled with the user (2026-11-14):
 - A forced move shows no best move on the board; the glass says "Black must take:
   22x33x24" (or "has one move").
 - `?ply=60` opens at black's king capture (30x39x50), where the stops show.
+
+Proposed, for the user (2026-11-14):
+
+- The squares' numbers at the move's stops (30, 39, 50) and at the best move's while it
+  shows, as the move list writes them, small and bold in each square's top left corner
+  over a dark halo, 20% of a square and 11 dp at least, fading in with the rest;
+  `?nums=0` leaves them out. Russian and Brazilian would show `c3` the same way.
+- On a phone (landscape under 600 dp, and portrait) the bulb leaves the steps, where a
+  fifth tile doesn't fit (a column of four is 400 dp of the Pixel's 432 in landscape;
+  in portrait a row of five would be under 88 dp each), and the glass's line for the best
+  move becomes a tile a tap tall, the bulb at its left, lit in the glow while the move
+  shows. The tablet and a desktop keep the bulb under the steps. The line over the board
+  is the short one there, and portrait drops the marks' legend for the moves' rows.
 - The glass: under the move shown, after a ?!, ?, or ?? move, "The best was 31-26" with
   the star; then the line for the next move ("Best next for white: 31-26", or forced,
   or "The game ended here").
