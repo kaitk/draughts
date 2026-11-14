@@ -43,7 +43,7 @@ let SCALE = 250.0;
 // position that is a fall of 0.23 and more, a blunder whatever the bound.
 let JUDGE_MARGIN = 250;
 let JUDGE_SKILL = 100;      // the depth it sees: hard's at its top
-let JUDGE_LIMIT = 300000;   // nodes after which it begins no new iteration: about 0.1 s on the tablet's big cores
+let JUDGE_LIMIT = 300000;   // the most nodes it takes (the node limit): about 0.1 s on the tablet's big cores
 
 struct Verdict {
     mark:   i64 = NOT_JUDGED,

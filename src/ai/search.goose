@@ -78,7 +78,8 @@ fn init(e: Engine&) {
 
 // Sets up a search of p, which has at least two moves: `depth` plies of free moves and
 // `extra` more of forced captures, root moves within `margin` of the best scored
-// exactly, and no new iteration begun after `limit` nodes.
+// exactly, and at most `limit` nodes once an iteration has finished: the iteration under
+// way when they run out is dropped, and the last finished one answers.
 // The game's draw counts at p (e.root_draw) and the keys of its positions before p
 // (e.past) are the caller's: ai::start sets them.
 fn begin(e: Engine&, p: rules::Position, depth: i64, extra: i64, margin: i64, limit: i64) {
@@ -132,7 +133,8 @@ fn run(e: Engine&, budget: i64) -> i64 {
     var used = 0;
     while e.searching && used < budget {
         if e.mode == ENTER {
-            // A new iteration may stop at the node limit; the first always finishes.
+            // The node limit stops the search in the middle of an iteration, which is then
+            // dropped; the first iteration always finishes.
             if e.nodes >= e.limit && e.finished > 0 {
                 e.searching = false;
                 break;

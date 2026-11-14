@@ -41,8 +41,9 @@ let FIRST_STEP = 8;         // how far it moves over a player's first games agai
 let FIRST_GAMES = 3;        // how many games that is
 let FIRST_WIN = 16;         // how far a win in a player's very first game against a level moves it
 
-// The most nodes a search begins a new iteration after. It bounds hard's reply time:
-// see tasks and docs/architecture/ai.md for the speed on the tablet.
+// The most nodes a search takes once its first iteration has finished: the iteration
+// under way then is dropped. It bounds hard's reply time: see tasks and
+// docs/architecture/ai.md for the speed on the tablet.
 let NODE_LIMIT = 800000;
 
 // The widest margin: well under a man, so positional terms never pass off a move that

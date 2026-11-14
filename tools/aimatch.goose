@@ -3,7 +3,7 @@
 //
 //   goose build -o build/aimatch tools/aimatch.goose
 //   build/aimatch russian|international|brazilian SKILL_A SKILL_B GAMES [--fens PLY] [--nodes A B]
-//                 [--overlooks A B] [--hangs]
+//                 [--overlooks A B] [--hangs] [--from G]
 //
 // Each pair of games starts from the same position with colors swapped. A game is
 // drawn by the variant's rules (rules/draw.goose), which the engine sees, or after 300
@@ -17,7 +17,9 @@
 // win a man or more, when another move loses less that way (a minimax over material,
 // the move and then captures only, four plies), unless its own search shows the
 // material coming back (a sacrifice it sees). Tense: the side to move must capture, or
-// the other side could capture were it its turn; quiet: neither.
+// the other side could capture were it its turn; quiet: neither. --from plays games G to
+// G + GAMES - 1, with their seeds and colors, so a long match splits into runs side by side
+// whose counts add up.
 import std;
 import os;
 import rules from "../src/rules";
@@ -91,6 +93,7 @@ fn main() {
     var overlooks_a = 100;
     var overlooks_b = 100;
     var hangs = false;
+    var from = 0;
     var k = 5;
     while k + 1 < a.len {
         if a[k] == "--fens" {
@@ -102,6 +105,10 @@ fn main() {
             let y, oky = parse_int(a[k + 2]);
             if okx && oky { limit_a = x; limit_b = y; }
             k += 3;
+        } else if a[k] == "--from" {
+            let n, ok = parse_int(a[k + 1]);
+            if ok { from = n; }
+            k += 2;
         } else if a[k] == "--overlooks" && k + 2 < a.len {
             let x, okx = parse_int(a[k + 1]);
             let y, oky = parse_int(a[k + 2]);
@@ -123,7 +130,7 @@ fn main() {
     // By side (A, B) and position (quiet, tense): moves with a choice, men hung.
     var chances:    i64[4] = [0; 4];
     var hung_moves: i64[4] = [0; 4];
-    for g in games {
+    for g in from..from + games {
         // A plays white in even games.
         let a_side: u8 = if g % 2 == 0 { rules::WHITE } else { rules::BLACK };
         var p = rules::start(variant);
