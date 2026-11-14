@@ -156,6 +156,24 @@ a new `daily.html`), checked with `agent-browser`, then chosen. The proposals:
 7. **Before Learn is half solved**: the Today row is locked as the other themes are,
    "Solve n more in Learn".
 
+## Chosen so far (2026-11-14)
+
+- Home's Puzzles row: today's dots alone (`home.html?daily=a`).
+- No streak of days, anywhere: it makes a missed day a loss, which pushes a child rather
+  than inviting one. Kept behind `?streak=1` in the prototypes only.
+- The library: today's puzzles as tiles inside the Today row, each its level's bars and
+  its stars, a tile opening its puzzle (`puzzles.html?daily=b`); the row's mark turns to
+  the moon and its note to "New puzzles tomorrow" once all are solved. Today's own page
+  (`daily.html`) is then not needed.
+- How to play and Today share the first row: while Today is locked, its locked row and
+  How to play's stand side by side; once it opens, Today takes the whole row, and How to
+  play becomes a tile with its mark beside the title in landscape, and ends the list in
+  portrait, where the title row has no room.
+- Today opens once Learn is solved, all of it, not half: Learn is the rules, which a daily
+  puzzle may use. Gating on the other themes too was rejected as too strict (a young
+  child would stall on Safe move); the daily pick keeps to the themes opened instead.
+- Open: one more after the day's set; the level's bars on the tiles; puzzles a day.
+
 ## Acceptance criteria
 
 - [ ] The UI takes above prototyped, checked on the tablet's and a phone's sizes in both

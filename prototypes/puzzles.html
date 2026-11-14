@@ -30,6 +30,11 @@
   .wide.locked .disc { background: rgb(255 255 255 / 0.1); }
   .wide.locked b, .wide.locked .disc .icon { opacity: 0.45; }
   .wide .dots, .wide .streak { grid-row: span 2; }
+  .theme.locked .disc { background: rgb(255 255 255 / 0.1); }
+  .theme.locked b, .theme.locked .disc .icon { opacity: 0.45; }
+  .theme .note { grid-column: 2; align-self: start; }
+  .top .how { padding: 0; }
+  .theme.how-end { display: none; }
   .wide .end { grid-row: span 2; display: flex; align-items: center; gap: 22px; }
   .wide .dots i { width: 18px; height: 18px; }
   .wide .streak { font-size: 26px; }
@@ -50,11 +55,14 @@
     .rows { gap: 12px 16px; }
   }
   @container (orientation: portrait) {
-    .top { flex-wrap: wrap; }
+    .top { flex-wrap: wrap; flex: none; }
     .top .end { width: 100%; margin: 0; }
     .joined .tile { flex: 1; min-width: 0; }
     .rows { grid-template-columns: minmax(0, 600px); }
     .theme { min-height: 96px; }
+    .rows { align-content: start; }
+    .top .how { display: none; }
+    .theme.how-end { display: grid; }
     .mini { grid-column: 1 / -1; grid-row: auto; justify-content: space-between; padding-bottom: 16px; }
   }
 </style>
@@ -75,33 +83,41 @@
     `<a class="theme glass" href="puzzle.html"><span class="disc">${Draughts.icon(ic)}</span><b>${name}</b>` +
     `<small>${Draughts.icon('star')}${n} / ${all}</small><span class="bar"><i style="width:${100 * n / all}%"></i></span></a>`).join('');
   const rows = document.getElementById('rows'), P = Draughts.params, icon = Draughts.icon;
-  rows.insertAdjacentHTML('afterbegin', `<a class="theme glass wide" href="tutorial.html"><span class="disc">${icon('hint')}</span>` +
-    `<b>How to play</b><small>${icon('check')}8 / 8 steps</small><span class="bar"><i style="width:100%"></i></span></a>`);
-  // Task 087's takes: ?daily=a a Today row heading the library, its dots and the streak,
-  // opening today's page (daily.html); ?daily=b the row with today's puzzles in it as
-  // tiles, each its level's bars and its stars, a tile opening its puzzle.
-  // ?today=N solved (2) of 4; ?locked=1 before half of Learn is solved.
+  const howRow = (wide) => `<a class="theme glass${wide ? ' wide' : ''}" href="tutorial.html"><span class="disc">${icon('hint')}</span>` +
+    `<b>How to play</b><small>${icon('check')}8 / 8 steps</small><span class="bar"><i style="width:100%"></i></span></a>`;
+  // Task 087's takes: ?daily=a a Today row heading the library, its dots, opening today's
+  // page (daily.html); ?daily=b the row with today's puzzles in it as tiles, each its
+  // level's bars and its stars, a tile opening its puzzle. ?today=N solved (2) of 4;
+  // ?streak=1 adds the days in a row. ?locked=1 before Learn is solved: How to play and
+  // the locked Today share a row. Once Today opens, How to play is a tile beside the title.
   const daily = P.get('daily'), today = Number(P.get('today') ?? 2), locked = P.get('locked') === '1';
-  const STARS = [3, 2, 0, 0], LEVEL = [1, 2, 2, 3];
+  const streak = P.get('streak') === '1' ? `<span class="streak">${icon('flame')}5</span>` : '';
+  const STARS = [3, 2, 1, 2], LEVEL = [1, 2, 2, 3];
+  const left = today >= 4 ? 'New puzzles tomorrow' : `${4 - today} to go`;
   let row = '';
   if (locked && (daily === 'a' || daily === 'b')) {
-    row = `<a class="theme glass wide locked"><span class="disc">${icon('lock')}</span><b>Today</b>` +
-      `<small class="note">Solve 4 more in Learn</small></a>`;
+    row = `<a class="theme glass locked"><span class="disc">${icon('lock')}</span><b>Today</b>` +
+      `<small class="note">Solve 10 more in Learn</small></a>` + howRow(false);
   } else if (daily === 'a') {
     row = `<a class="theme glass wide" href="daily.html?today=${today}"><span class="disc">${icon('today')}</span><b>Today</b>` +
-      `<span class="end"><span class="streak">${icon('flame')}5</span>${Draughts.dots(today, 4)}</span>` +
-      `<small class="note">${today >= 4 ? 'New puzzles tomorrow' : `${4 - today} to go`}</small></a>`;
+      `<span class="end">${streak}${Draughts.dots(today, 4)}</span><small class="note">${left}</small></a>`;
   } else if (daily === 'b') {
     const tiles = LEVEL.map((lv, i) => {
-      const won = i < today ? STARS[i] || 1 : 0, lit = i === today ? ' on' : '';
+      const won = i < today ? STARS[i] : 0, lit = i === today ? ' on' : '';
       return `<a class="tile${lit}" href="puzzle.html?daily=1"><span class="rise">${[1, 2, 3].map((k) =>
         `<i class="${k <= lv ? 'on' : ''}" style="height:${6 * k}px"></i>`).join('')}</span>` +
         `<span class="st">${[0, 1, 2].map((k) => icon(k < won ? 'star' : 'starOff')).join('')}</span></a>`;
     }).join('');
-    row = `<div class="theme glass wide"><span class="disc">${icon('today')}</span><b>Today</b>` +
-      `<span class="mini">${tiles}</span><small class="note"><span class="streak">${icon('flame')}5</span></small></div>`;
+    row = `<div class="theme glass wide"><span class="disc">${icon(today >= 4 ? 'moon' : 'today')}</span><b>Today</b>` +
+      `<span class="mini">${tiles}</span><small class="note">${streak || left}</small></div>`;
   }
-  if (row) rows.insertAdjacentHTML('afterbegin', row);
+  if (row && !locked) {
+    document.querySelector('.top h1').insertAdjacentHTML('afterend',
+      `<a class="tile glass how" href="tutorial.html" data-icon="hint" aria-label="How to play"></a>`);
+  }
+  rows.insertAdjacentHTML('afterbegin', row || howRow(true));
+  // In portrait, where the title row has no room for it, How to play ends the list.
+  if (row && !locked) rows.insertAdjacentHTML('beforeend', howRow(false).replace('class="theme glass"', 'class="theme glass how-end"'));
   Draughts.init();
 </script>
 </body>
