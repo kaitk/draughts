@@ -31,12 +31,12 @@ and the ngfx build is a second root (`src/ngfx/draughts_ngfx.goose`) over the sa
 gfx's in `src/app/` and `src/render3d/` under their names and goose-ngfx's in `src/ngfx/`,
 each taking its state as its first parameter (`render3d::Own`, held by the backend, not
 `render3d::Gpu`); the photograph's upload is `photo.c`'s for gfx and `photo_ngfx.c`'s for
-goose-ngfx over one shared `draughts_photo_with`. Goose: 153 lines fewer, Python 85. The
-gfx executable is 128 bytes larger, and nothing moved in `--bench 60` headless at 1280 ×
-800 (medians of eight runs, the builds in turn, before → after): gfx's flat waited P50 0.62
-→ 0.60 ms, 3D 0.70 → 0.67; goose-ngfx's flat 0.64 → 0.64, 3D 0.74 → 0.75; the frame's CPU
-time 0.07 → 0.06 ms flat on gfx, the rest the same to 0.001 ms. Shots of home and the
-game, flat and 3D, on both renderers match the commit before within 1 of 255.
+goose-ngfx over one shared `draughts_photo_with`. Goose: 150 lines fewer, Python 85. The
+gfx executable is 16 KB smaller, and nothing moved in `--bench 60` headless at 1280 × 800
+(medians of eight runs, the builds in turn, before → after): gfx's flat waited P50 0.59 →
+0.58 ms, 3D 1.28 → 1.27; goose-ngfx's flat 0.68 → 0.67, 3D 1.36 → 1.36; the frame's CPU
+time the same to 0.002 ms on both. Shots of home and the game, flat and 3D, on both
+renderers match the commit before within 1 of 255.
 
 Rejected: the split at `render::frame`, one renderer interface with each renderer drawing
 the whole frame, which duplicates the shared drawers (`draw3d`, `draw`, `scene`,
