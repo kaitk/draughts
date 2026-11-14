@@ -917,6 +917,13 @@ Task 074, `prototypes/history.html`, 2026-11-11 (proposed, the user to choose):
   presses something under it. No new strings: the tip's name is its `mark.*_tip` text up
   to the colon. The tip isn't in the sheets or the replay for now (their legend says it).
 
+- The moves panel's glass is only as tall as what it holds, growing a row a move up to
+  the room the layout keeps, then scrolling (2026-11-14, a proposal from the screens'
+  consistency review, the user to pick from its before and after shots). It replaces the
+  glass down to the bottom margin from the start, which stood mostly empty, "No moves
+  yet" at its top, for the first moves of every game. The layout keeps the same room, so
+  the board doesn't move as the glass grows.
+
 ### Board and pieces
 
 **The flat board**

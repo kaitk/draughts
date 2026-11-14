@@ -251,12 +251,17 @@ fn row_of(gm: Game&, i: i64) -> i64, bool {
 // The panel in l.moves, if the layout has room for it and the setting shows it: a head,
 // "Move list" over a rule, as a phone's moves' line has, with what each side has taken
 // as counts at its right where the layout puts them there (`counts`, the panel above a
-// 4:3 tablet's 3D board), and the list under it.
+// 4:3 tablet's 3D board), and the list under it. The glass is only as tall as its rows
+// (one, saying there are no moves yet, before the first), growing a row a move up to the
+// room the layout keeps for it (l.moves), then scrolling.
 fn moves_panel(gm: Game&, g: gui::Gui&, l: panel::Layout, over: board::Overlay&) {
     guard gm.moves_shown != 0 && l.moves.z > 0.0 && l.moves.w > 0.0 else { return; }
     let u = g.scale;
-    gui::panel(g, l.moves);
-    var room = l.moves;
+    let rows = max(1, (gm.notes.len + first_ply(gm) % 2 + 1) / 2);
+    let tall = (MOVES_PAD + LINE_HEAD + rows * MOVES_ROW + 2.0 * MOVES_PAD) * u;
+    let box = float4 { l.moves.x, l.moves.y, l.moves.z, min(l.moves.w, tall) };
+    gui::panel(g, box);
+    var room = box;
     let head = gui::cut_top(room, (MOVES_PAD + LINE_HEAD) * u);
     let words = float4 { head.x + MOVES_PAD * u, head.y + MOVES_PAD * u, head.z - 2.0 * MOVES_PAD * u, LINE_HEAD * u };
     let word = strings::get(strings::SETTINGS_MOVES);

@@ -1081,7 +1081,9 @@ in the panel under a head, "Move list" in the small face, dim, over a faint rule
 move is added or the panel shows again; rows past its top or foot fade out over 40 dp
 there while there are more (`gui::fade_edges`, as home's scrolling menu does). Before
 the first move it says so, "No moves yet" in the body face, dim, centered across where
-the first row will be; a phone's moves' line says it centered too, with no chevron and
+the first row will be. The glass is only as tall as its head and rows (one row before
+the first move), growing a row a move until it reaches the room the layout keeps for it,
+then scrolling; the layout, and so the board, are the same either way. A phone's moves' line says it centered too, with no chevron and
 no tap, as there is no list to open. The player's setting (`moves`: off, the moves, the moves with marks) is
 settings' Move list row, under move hints, a line in the small face, dim, saying what the
 chosen tile shows: beside the tiles where the group's width leaves room, else under them;
