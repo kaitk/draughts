@@ -1305,6 +1305,14 @@ The release at rest, idle 20 to 30 s:
   every frame the camera moves and too much overdraw on a tiler; analytic disc shadows,
   discs only, kept in mind for a phone. The candidates and sources are in task 086's
   file.
+- **Three shadow filters kept** (2026-11-14, reviewed): 4, 9, and 16 taps stay, each
+  measured or judged for its own screens above. Two would put the Android tablet on one
+  of its neighbours: the 4, whose texel steps crawl along a tablet's larger pieces (task
+  081), or the 16, 0.5 to 0.6 M cycles a frame over the 9 on a Mali (forced on the A33,
+  task 086), which the tablet's Mali-G615 MC2 would pay too. They cost one `#ifdef` in
+  `shadow()` and one written Slang module each on ngfx; only one lit pipeline pair is
+  ever made (`render3d::set_shadow`). Rejected: one filter for phones and tablets alike
+  by screen size alone, untimed on the tablet.
 - **Open:** at rest the tablet's 3D board spends about 2.7 ms CPU a wakeup against the
   flat board's 0.3, outside the app's own work, as the Mac shows no draw at rest.
 
