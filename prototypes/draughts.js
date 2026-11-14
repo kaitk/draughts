@@ -17,8 +17,8 @@ const Draughts = (() => {
   // Devices in dp, landscape, with the safe area's insets (top, right, bottom, left); a
   // portrait turns them. The Pixel 7a: its cutout and gesture bar; the iPhone 13 mini at
   // its points. A desktop in dp (gui::DESKTOP_DP, 0.75 points a dp, up to 0.9 on a
-  // 1440-point screen): a MacBook's 1512 × 982 points, a 27" 2560 × 1440, and a 34"
-  // ultrawide's 3440 × 1440. Without ?device= the window is the screen, with no insets.
+  // 1440-point screen): a MacBook's 1512 Ã— 982 points, a 27" 2560 Ã— 1440, and a 34"
+  // ultrawide's 3440 Ã— 1440. Without ?device= the window is the screen, with no insets.
   const DEVICES = {
     tablet: [1280, 800, [0, 0, 0, 0], [0, 0, 0, 0]],
     pixel: [1066, 480, [0, 0, 37, 52], [52, 0, 37, 0]],
