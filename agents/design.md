@@ -61,8 +61,8 @@ pieces (chosen 2026-11-07); the design boards still set the layout, glass, and c
   shape meets an outline, either let it run under the outline or cut a clear gap (about
   1.5 units); a hairline between them reads badly. An outlined isometric disc needs about
   2.5 units in its top ellipse and 3 in its side, or it fills in. ChatGPT is useful for
-  ideas but places things loosely; the 3D prototype's `--jump` (poc/3d) gives a real pose
-  to draw from.
+  ideas but places things loosely; the 3D prototype's `--jump` gave a real pose to draw
+  from (`poc/3d/board3d.goose`, in the history before 2026-11-14).
 
 ## What has been tried and set aside (2026-11-07)
 

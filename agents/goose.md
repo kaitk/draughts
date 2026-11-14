@@ -289,7 +289,7 @@ find out by compiling, so the next session doesn't.
   `constant`, `kernel`); `vec3 thread = ...` in the marble's bake did (2026-11-09).
 - gfx ui's slider (Nuklear's) drags only from its knob, which stands at the value; a
   press on the track elsewhere only steps it. Injected input for a `--frames` check
-  grabs the knob (`poc/3d/board3d.goose --frames N --panel`); `ui::widget_bounds` right
+  grabs the knob; `ui::widget_bounds` right
   before a widget gives its bounds in ui units, times `ui::scale` for pixels (2026-11-09).
 - A storage buffer block must hold one runtime-sized array (`vec4 squares[];`), not a
   sized one, or embed_shader refuses it for HLSL.

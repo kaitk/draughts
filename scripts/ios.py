@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build a Goose program into an iOS app, without an Xcode project, and optionally run it.
 
-    scripts/ios.py poc/poc.goose                 build build/ios/<name>/sim/<Name>.app
+    scripts/ios.py src/app/draughts.goose        build build/ios/<name>/sim/<Name>.app
     scripts/ios.py src/app/draughts.goose --run  build, install in the simulator, and start it
     scripts/ios.py src/app/draughts.goose --run --args "--screen game"
                                                  the same, with development flags

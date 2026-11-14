@@ -60,8 +60,8 @@ the rest. Below, `app/` means `src/app/`, and so on.
 packages hand it flat, fixed-size data and take back the pointer and the time; nothing
 outside `app/` (and `android/`, the build scripts) knows what draws or what it runs on.
 One package is drawing code outside `app/`: `render3d/`, the 3D board's renderer, which
-the app and the 3D prototype (`poc/3d/`) share. Its recording (`render3d_gpu`) imports
-gfx, and only those two programs import it; no package of the game does. What the 3D board
+the app and `tools/board_shot.goose` (settings' board pictures) share. Its recording
+(`render3d_gpu`) imports gfx, and only those two programs import it; no package of the game does. What the 3D board
 is but drawing, its meshes, looks, light, and the plan of its bake, is `model3d/`, which
 imports no gfx and is tested headless.
 
@@ -129,7 +129,7 @@ The targets this keeps open, each replacing or adding to `app/` alone:
 | `src/game/` | The game screen: its panels and where they and the board go (`panel::layout`, round the 3D board `panel::corners_in`, each a `Layout` with its mode: landscape, corners, portrait, or compact), the clocks, the computer's turn (asking for a move and playing the answer), the celebration, the moves as played with their marks and their panel (`notes.goose`), and the pieces it puts over the UI |
 | `src/shell/` | The screens and which one shows: home and a new game's setup with the board of the game it starts, the game, settings with their preview board, the puzzles to pick from and the puzzle playing ([puzzles.md](puzzles.md#the-screen)); the pieces the screen showing puts over the UI (`Frame.over`, which the app draws); who's playing over home and a player's sheet; the players, their settings files, their saved games, and their games played with the results screen |
 | `src/model3d/` | The 3D board but its drawing, with no graphics: the meshes, the themes as data (`looks`), the photograph's light as spherical harmonics, the plain fade's ambient, and the plan of a theme's bake in steps |
-| `src/render3d/` | The 3D board's renderer, shared by the app and `poc/3d/`: its shaders, the meshes and surfaces on the GPU, the surfaces' bake, the photograph's blur, the shadow map, and the multisampled pass ([rendering.md](rendering.md#board-and-pieces)) |
+| `src/render3d/` | The 3D board's renderer, shared by the app and `tools/board_shot.goose`: its shaders, the meshes and surfaces on the GPU, the surfaces' bake, the photograph's blur, the shadow map, and the multisampled pass ([rendering.md](rendering.md#board-and-pieces)) |
 | `src/badges/` | The players' animal badges: their SVGs from `assets/badges/` baked at startup into a distance-field atlas |
 | `src/app/` | The program: the main loop, the platform (`host`), the renderer (`render`) over the GPU drawing of the board, the pieces, and the UI's quads, the season's photograph and its blurs, the font atlas, the themes, the computer's worker thread, and its C (storage folder, locales, the clock's wake timer, the JPEG decoder and the photograph's upload) |
 | `tools/` | Programs for development: perft, the computer's benchmark and matches, a terminal game against it, and the puzzles' checks |

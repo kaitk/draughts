@@ -158,7 +158,6 @@ third_party/  goose_gfx, as a submodule, with SDL and Nuklear
 store/        the Play and App Store listings, their previews, and the privacy policy
 design/       the icon's, backgrounds', and tabletops' sources and how they were made
 prototypes/   HTML prototypes of the UI, compared before building in Goose
-poc/          small programs that tried one thing, such as frame pacing
 docs/         product scope, architecture, decisions, development
 tasks/        the work, one file per task
 ```

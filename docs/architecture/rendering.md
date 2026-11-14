@@ -310,7 +310,7 @@ sunset almost flat.
   plain fades, and settings' sixteen board pictures, each season's raised board whole
   and its wood's, stone's, and carved board's near corner. Those come from one atlas,
   `design/boards/boards.jpg` and `boards-6x6.astc` (640 × 420, 81 and 117 KB, in git),
-  made by `scripts/board_thumbs.py` from `build/board3d --shot` with each look's flags,
+  made by `scripts/board_thumbs.py` from `tools/board_shot.goose`'s shot of each look,
   embedded and uploaded as the photographs are and copied into their slots as they are.
   The texture is 1.6 MB (RGBA8, 160 × 2520). The JPEG and ASTC masters are in git, and
   `src/app/background.c` embeds them with C23 `#embed` under `__has_embed`, so a checkout
@@ -1409,7 +1409,7 @@ board's does and the backdrop over it as opaque as the blur.
   piece covers the shadow above it. The crown is a signed-distance polygon in that shader. The UI's line icons are
   drawn the same way, as distances to their strokes' segments and arcs, not baked into
   the font atlas: crisp at any size, no texture.
-- **3D board** (prototyped in `poc/3d/`): the board in perspective, 52.5° down with a 31°
+- **3D board**: the board in perspective, 52.5° down with a 31°
   field of view, its image fitted into a rectangle of the screen by a scale and a shift
   in clip space, so the perspective is the native one at every size. Its bounds are
   about 1.46 times as wide as tall, the far edge 69% of the near one. Natively
@@ -1476,7 +1476,7 @@ board's does and the backdrop over it as opaque as the blur.
   frame's `screen.z`), lights the squares the glow passes and rings the pieces it lifts;
   its card is centered in the 3D board's bounds on screen and keeps clear of the winning
   piece's top where the perspective shows it (`game::card_area`, `game::winning_spot`).
-  **Drawn** by `src/render3d/` (the prototype's renderer, shared with `poc/3d/`) from
+  **Drawn** by `src/render3d/` (shared with `tools/board_shot.goose`) from
   `src/app/draw3d.goose`, the meshes, looks, harmonics, and the bake's steps from
   `src/model3d/`, which has no graphics: the shadow map only when the pieces move, and the pieces'
   occlusion of the field (each piece a cylinder where it stands, between squares while it

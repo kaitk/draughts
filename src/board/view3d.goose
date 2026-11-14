@@ -22,7 +22,7 @@ import math;
 import vec;
 import rules from "../rules";
 
-// The camera (poc/3d/board3d.goose): 52.5° down, a 31° field of view, 14.75 away from a
+// The camera (the 3D board's prototype's, 2026-11-07): 52.5° down, a 31° field of view, 14.75 away from a
 // point a little in front of the field's middle, fitted there to the 3D reference's field
 // corners. NEAR and FAR are its depth range.
 let FOV:      f32 = 31.0;

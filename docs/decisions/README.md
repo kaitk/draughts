@@ -91,6 +91,13 @@ level keeps what isn't the program's Goose.
 prototype (`poc/3d/`) share (2026-11-09). It imports gfx, and no package of the game
 imports it.
 
+`poc/` is gone (2026-11-14): its proofs of concept (Goose on Android, an idle frame) had
+served, and the 3D prototype's one remaining use, settings' board pictures, is
+`tools/board_shot.goose`, which shoots each look with the app's renderer and `looks::of`,
+pixel for pixel as the prototype did; the prototype's panel, jump, and zoom stay in git's
+history. Its frame pacing check is `tools/pace.goose`. This replaces the prototype's share
+of `render3d/` above.
+
 The main loop sees two halves of what it runs on, `app/host` and `app/render`
 (2026-11-10). Before, `main` called gfx's platform half and its drawing half directly, the
 screen's pass began in the drawers and ended in `main`, gfx handles lived in the app's

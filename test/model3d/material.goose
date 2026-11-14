@@ -1,6 +1,6 @@
 // The raised board's material (looks::of, task 080): each season's look for Auto, Wood,
 // Stone, and Carved, as the flags of 03's table pick them, so the settings' choice shows
-// the board a tuning run of board3d or the app shows. Auto is the season's own look,
+// the board tools/board_shot or the app shows. Auto is the season's own look,
 // the one it had before the choice (autumn's wood, winter's stone, spring's carved, and
 // summer's wood), and a material the file doesn't know is Auto too.
 import std;

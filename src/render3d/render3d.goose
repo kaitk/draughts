@@ -1,5 +1,5 @@
 // The 3D board's renderer (task 015), shared by the app (src/app/draw3d.goose) and the
-// prototype (poc/3d/board3d.goose): the meshes and the themes (src/model3d/, which holds
+// board pictures' shooter (tools/board_shot.goose): the meshes and the themes (src/model3d/, which holds
 // all of the board but drawing) put on the GPU, the surfaces baked there in the steps
 // model3d plans, the season's photograph blurred into the backdrop with its ambient
 // taken, the shadow map, and one forward pass into a picture, antialiased.
@@ -9,7 +9,7 @@
 // render3d_gpu.goose, gfx's (its shaders in shaders.goose and smaa.goose), or in the
 // build scripts/ngfx.py makes goose-ngfx's, src/ngfx/render3d/render3d_gpu.goose.
 //
-// The one package besides app/ that draws, and only the app and the prototype import
+// The one package besides app/ that draws, and only the app and tools/board_shot import
 // it; the game's packages stay headless (docs/architecture/README.md).
 // What it draws comes as data: the camera's matrix and eye (view3d::matrix), the
 // instances and the field's occlusion and marks (view3d::Scene, laid out as the shaders
@@ -34,7 +34,7 @@ import model3d from "../model3d";
 
 // Theme `kind`'s photograph, or 0 when it isn't built in: the ASTC image as stored, or
 // the JPEG decoded and scaled down to `decoded` square (src/app/photo.c and
-// background.c, which the app and poc/3d both compile). Declared once, here; the app's
+// background.c, which the app and tools/board_shot both compile). Declared once, here; the app's
 // scene calls it too.
 extern fn draughts_photo_id(kind: i64, decoded: i64) -> u32;
 

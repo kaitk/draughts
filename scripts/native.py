@@ -19,7 +19,7 @@ GOOSE = Path(os.environ.get("GOOSE", ROOT / ("build/goose-v2026.4-windows-x64/go
                                              else "build/goose-v2026.4-macos-arm64/goose")))
 SDL = ROOT / "third_party/goose_gfx/third_party/SDL"
 # The application id on Android (2026-11-08): Play fixes it for good at the first upload.
-# iOS has its own, scripts/ios.py's BUNDLE_ID. Another program (a prototype in poc/) gets
+# iOS has its own, scripts/ios.py's BUNDLE_ID. Another program (tools/pace.goose) gets
 # APP_ID.<name>, so it installs beside the app.
 APP_ID = "io.github.kaitk.draughts"
 # The version people see: Android's versionName and iOS's CFBundleShortVersionString.

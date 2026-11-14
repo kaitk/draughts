@@ -171,7 +171,8 @@ birch, 1 the carved stone, 2 the carved oak) summer's and spring's 3D looks; `--
 (0 the wood, 1 to 3 stone) and `--winter N` (0 the slate, 1 to 3 wood) autumn's and
 winter's, the other material's takes (task 080); each, given, picks its season's look
 over the material. `scripts/board_thumbs.py` shoots each season's wood, stone, and carved
-board with `build/board3d --shot` and these flags for settings' board pictures.
+board with `tools/board_shot.goose` (the app's renderer and `looks::of`, headless) for
+settings' board pictures.
 `--reset-skill`, which takes no value, puts the playing player back to easy with the
 computer's skill at every level at its start, and writes that to their file; stars and
 games stay. `--no-vsync`, which takes no value either, presents without waiting for the
@@ -187,9 +188,7 @@ the app again. The flags reach the tablet through the intent:
 `-S` stops the app first: the activity is `singleInstance`, so a start that finds it
 running only brings it back, with the flags it started with.
 On Android a clock counts only while the app has focus; on the Mac, where a window
-started from a terminal never has it, the clocks run while the window shows. `poc/` keeps
-the first proofs of concept (Goose on Android, an idle frame that draws nothing) and the
-3D board's prototype.
+started from a terminal never has it, the clocks run while the window shows.
 
 ## Run on Windows
 
@@ -528,9 +527,6 @@ version, the Goose-to-C step, the patched copies, and the launcher's names):
    which it creates if missing (each computer's own: The debug key, above). The
    script checks that every library's ELF segments and
    its offset in the APK are on 16 KB pages, as Play requires.
-
-The POC's APK is 2.8 MB: `libSDL3.so` 1.9 MB and `libmain.so` 0.9 MB stripped, SDL's dex
-43 KB.
 
 The CMake build directory is configured once. Delete `build/android/<program>/native`
 after changing `android/CMakeLists.txt`.
@@ -872,7 +868,7 @@ frames from the compositor: `scripts/device_perf.sh` runs `--bench 1000` in a ga
 wood) on each board once the device is cool, counts the presented frames with
 SurfaceFlinger's timestats between the bench's `presenting` and `presented` lines, then
 takes the idle CPU and memory. The bench's first phase waits for the GPU after every frame
-and drops frames by design, so a count must not overlap it. `poc/pace.goose` draws
+and drops frames by design, so a count must not overlap it. `tools/pace.goose` draws
 every frame with nothing else, or a set GPU load, to check the pacing alone.
 `scripts/ios_perf.py` takes the iPhone's rows: Instruments' Animation Hitches counts the
 frames the display showed between the bench's console lines, and `--rest 25` has the app
@@ -921,6 +917,4 @@ scripts/lifecycle_memory.sh 20     # with the app running on the tablet
 
 Each cycle goes home and back, then rotates to portrait and back. It prints PSS, native
 heap, and graphics memory per cycle and any errors in logcat, then restores the rotation
-settings. Graphics memory should stay flat apart from short driver spikes. On 2026-11-07,
-`poc/poc.goose` held it at 112 to 114 MB over 20 cycles, with the native heap at 25 MB
-and the same process throughout.
+settings. Graphics memory should stay flat apart from short driver spikes.

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Build a Goose program into an Android APK, without Gradle, and optionally install it.
 
-    scripts/android.py poc/poc.goose             build build/android/<name>/<name>.apk
-    scripts/android.py poc/poc.goose --run       build, install over adb, and start it
+    scripts/android.py src/app/draughts.goose    build build/android/<name>/<name>.apk
+    scripts/android.py src/app/draughts.goose --run
+                                                 build, install over adb, and start it
     scripts/android.py src/app/draughts.goose --release
                                                  <name>-release.apk and <name>-release.aab
                                                  beside it, signed with the upload key, for Play
@@ -164,7 +165,7 @@ def main():
     if args.debuggable and args.release: sys.exit("--debuggable is for test builds, not a release")
     program = args.program.resolve()
     name = program.stem
-    # Another program (a prototype in poc/) gets its own id, so it installs beside the app.
+    # Another program (tools/pace.goose) gets its own id, so it installs beside the app.
     app_id = APP_ID if name == "draughts" else f"{APP_ID}.{name}"
     if args.id_suffix: app_id += "." + args.id_suffix
     out = ROOT / "build/android" / name

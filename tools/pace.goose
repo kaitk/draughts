@@ -4,7 +4,7 @@
 // device by the compositor (SurfaceFlinger's timestats), it shows how many frames miss
 // the display's refresh at a given load, with no app logic at all.
 //
-//   scripts/android.py poc/pace.goose --run
+//   scripts/android.py tools/pace.goose --run
 //   adb shell am start -S -n io.github.kaitk.draughts.pace/io.github.kaitk.draughts.DraughtsActivity --es args 40
 
 import std;
