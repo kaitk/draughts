@@ -150,6 +150,8 @@ the repo with a facade per twin in every build, a forwarding one for Android's b
 dispatching one, twice the facades for no gain; and the dispatch written into the
 drawers' 52 call sites with a stub of goose-ngfx's C API linked on Android, which puts
 ngfx's code and blobs in the APK.
+Replaced on 2026-11-14 by one seam, `backend::with` over drawers generic in the backend,
+and a second root in place of the tree ([rendering](rendering.md#two-renderers)).
 
 The renderer chosen at start (2026-11-12, task 073): `--renderer auto|gfx|ngfx`, `auto`
 the default and the only one players see (no setting). `auto` takes each platform's first

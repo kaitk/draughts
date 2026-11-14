@@ -26,6 +26,35 @@ NoGraphicsAPI's ideas, inside SDL_GPU:
   into textures first, then the screen's one pass, ended there; the app holds no gfx
   handle ([architecture](README.md#code-layout)).
 
+### Two renderers
+
+gfx ships everywhere; the build holding goose-ngfx too (`scripts/ngfx.py`) draws the same
+frames through either, chosen at start (`--renderer auto|gfx|ngfx`). The drawers (`draw`,
+`scene`, `widgets`, `draw3d`, `render3d`) are shared: each records through a backend
+handed to it, `be`, calling the few calls every drawer makes on it (`be.flush()`,
+`be.begin_pass(...)`) and its own recorder on a field (`be.draw.board(...)`, `be.r3d.bake(...)`,
+`be.host.frame()`). A backend is one struct per renderer holding each recorder's state:
+`gpu::Gfx` (`draw_gpu`, `scene_gpu`, `widgets_gpu`, `render3d::Own`, `host_gpu`) and
+`gpu_ngfx::Ngfx` (`draw_ngfx`, ..., `render3d_ngfx::Own`, `host_ngfx`). The drawers are
+generic over its type, so each is compiled once per backend and every call goes straight
+to that renderer's recorder, with no branch.
+
+The one seam is `backend`, a file per root: `with`, which runs a block on the chosen
+backend, and `open`, which chooses it and opens the window. `render.goose`'s calls that
+reach the GPU (`frame`, `new`, `reload`, `upload_text`, `thumbs`, `wait`, `rest`,
+`drop3d`, `toggle_aa`, `fewer_samples`, `screen_shadow`) and `host.goose`'s window calls
+(`close`, `frame`, `exposed`, `screenshot`) each run their drawer in `backend::with() {
+be => ... }`. The gfx build's `src/app/backend.goose` hands gfx's backend and opens gfx's
+window; `src/ngfx/backend.goose`, in the second root `src/ngfx/draughts_ngfx.goose`, makes
+the choice ([architecture](README.md#code-layout)) and holds both backends, the chosen
+one's filled as it draws. Both roots run `src/app/app.goose`'s program.
+
+goose-ngfx's shaders are gfx's GLSL, written as Slang at each build into
+`build/ngfx/shaders/` (`scripts/ngfx_2d_shaders.py`, `ngfx_3d_shaders.py`) and compiled
+ahead into `build/ngfx/blobs/`, which `src/ngfx/` embeds. `scripts/ngfx.py` also links the
+goose-ngfx checkout at `build/ngfx/goose-ngfx`, where the root declares its package, and
+writes the app's version for the crash marker (`build/ngfx/draughts_version.h`).
+
 ## UI layer
 
 The UI is a small immediate-mode layer in Goose, drawn the way Goose's Mini Minecraft

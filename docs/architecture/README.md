@@ -78,25 +78,29 @@ ends there. The glyphs, the badges, and the season's photograph reach the render
 pixels: `text::bake` and `badges::atlas` return R8 bytes, `background.c` decodes into
 pixels that the renderer's own C (`photo.c`) uploads, the embedded ASTC blocks with no
 copy, and `resize.c` takes the pixels the renderer reads back for a Mac window's cover.
-Each drawer is what it draws, renderer-free, and its recording, a `_gpu` file per
-renderer: `scene_gpu`, `draw_gpu`, `widgets_gpu`, `host_gpu` (opening the window,
-presenting, the screenshot), `render3d_gpu` (a second file in namespace `render3d`), and
-`photo_gpu.h` for `photo.c`; `gpu` names the renderer's handle types and the few calls
-the drawers make themselves. gfx's are in `src/app/` and `src/render3d/`. goose-ngfx's
-are in `src/ngfx/` (`draw_ngfx` and so on), and `scripts/ngfx.py` builds an executable
-holding both: gfx's recorders compiled again under names of their own (`draw_gfx`), and in
-their place facades (`src/ngfx/`'s `draw_gpu`, ...) that call one or the other, as the
-renderer chosen at start says (`nx::ngfx_on`). The drawers hold gfx's handle types; `nx`
-gives goose-ngfx's calls those types. The choice is the host facade's
-(`src/ngfx/app/host_gpu.goose`): `--renderer gfx` or `ngfx`, or `auto`, each platform's
-first choice; where that is ngfx, a check that needs no window (`renderer.c`), then ngfx
-opened in a hidden window of gfx's, gfx starting alone if it won't, and a marker beside
-the settings that sends the next start to gfx if ngfx never presented a frame on this GPU,
-driver, and app. Its shaders are gfx's GLSL written as Slang at each build
-(`scripts/ngfx_2d_shaders.py` and `ngfx_3d_shaders.py`), so each shader has one source,
-and compiled ahead; `src/ngfx/shaders/` holds in Slang only what they include, the
-antialiasing and mip passes ngfx alone has, and SMAA's wrapper. The gfx build is what
-ships.
+Each drawer is what it draws, renderer-free, and records through a backend it is handed
+(`be`): the few calls every drawer makes on it (`be.flush()`, `be.target(...)`) and a
+recorder per drawer on its fields (`be.draw`, `be.scene`, `be.widgets`, `be.r3d` for the
+3D board, `be.host` for the window: opening, presenting, the screenshot). gfx's backend is
+`gpu::Gfx` (`src/app/gpu.goose`) over its recorders `draw_gpu`, `scene_gpu`, `widgets_gpu`,
+`render3d_gpu` (in namespace `render3d`), and `host_gpu`; `photo.c` uploads the photograph
+through gfx's C. The drawers are generic over the backend's type, so each call resolves
+at compile time to one renderer's recorder. The one seam is `backend` (rendering.md, "Two
+renderers"): `render.goose` and `host.goose` run their drawers in `backend::with`, and
+`backend::open` opens the window. The gfx build's root (`src/app/draughts.goose`) takes
+`src/app/backend.goose`, gfx's alone; `src/ngfx/draughts_ngfx.goose`, a second root over
+the same program (`src/app/app.goose`), adds goose-ngfx's backend (`gpu_ngfx::Ngfx` and
+`src/ngfx/`'s `_ngfx` recorders, its photograph's upload in `photo_ngfx.c`, and `nx`,
+which gives goose-ngfx's calls gfx's handle types) and its own `backend.goose`, whose
+`open` chooses: `--renderer gfx` or `ngfx`, or `auto`, each platform's first choice; where
+that is ngfx, a check that needs no window (`renderer.c`), then ngfx opened in a hidden
+window of gfx's, gfx starting alone if it won't, and a marker beside the settings that
+sends the next start to gfx if ngfx never presented a frame on this GPU, driver, and app.
+Its shaders are gfx's GLSL written as Slang at each build (`scripts/ngfx_2d_shaders.py`
+and `ngfx_3d_shaders.py`), so each shader has one source, and compiled ahead;
+`src/ngfx/shaders/` holds in Slang only what they include, the antialiasing and mip passes
+ngfx alone has, and SMAA's wrapper. `scripts/ngfx.py` builds that root. The gfx build is
+what ships.
 
 The targets this keeps open, each replacing or adding to `app/` alone:
 
@@ -113,8 +117,8 @@ The targets this keeps open, each replacing or adding to `app/` alone:
   way out (`home::closable`), and nothing is drawn while the app hasn't focus: iOS ends
   an app that uses the GPU in the background, and SDL doesn't block the loop there.
 - **A second renderer**, the NoGraphicsAPI version through goose-ngfx on desktop and
-  Apple devices that support it ([product](../product.md)): its recorders in `src/ngfx/`,
-  a build option today, the packages and the drawers unchanged.
+  Apple devices that support it ([product](../product.md)): its backend in `src/ngfx/`,
+  a second root beside the gfx build's, the packages and the drawers shared.
 - **Chess** ([product](../product.md)): new rules and board packages beside these,
   reusing `gui/`, `shell/`'s screens, and `app/` as they are.
 

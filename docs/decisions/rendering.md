@@ -11,6 +11,43 @@ screen (the fork's `screen-without-depth`). Together they kept SDL from a second
 the first rotation, about 70 MB of graphics memory on the tablet, before SDL's blocks
 were sized to their resources ([GPU memory](#gpu-memory)).
 
+### Two renderers
+
+One seam between the app and its renderer, at compile time below it (2026-11-14), replacing
+the facades of 2026-11-12 ([decisions](README.md), "Both renderers in one executable by
+facades") and their copied tree. Before, `scripts/ngfx.py` copied `src/` into
+`build/ngfx/tree/`, rewrote gfx's recorders' namespace lines (`draw_gpu` compiled again as
+`draw_gfx`), and laid seven facade files over them, about 100 forwarders of the form `if
+nx::ngfx_on { X_ngfx::f() } else { X_gfx::f() }`, with `photo_gpu.h` the same in C by
+`#define`d names. Now the drawers take a backend `be` and are generic over its type: each
+calls the few calls every drawer makes on `be` itself and its recorder on a field
+(`be.draw.board(...)`, `be.r3d.bake(...)`), which Goose resolves by the field's type at
+compile time, so each drawer is compiled once per backend and calls that renderer's
+recorder directly. The choice is one `if`, in `backend::with`, which `render.goose` and
+`host.goose` call; the seam's functions are `backend::with` and `backend::open`, one file
+per root (`src/app/backend.goose` for gfx alone, `src/ngfx/backend.goose` holding both),
+and the ngfx build is a second root (`src/ngfx/draughts_ngfx.goose`) over the same program
+(`src/app/app.goose`), with no copy and no rewriting. The recorders stayed as they were,
+gfx's in `src/app/` and `src/render3d/` under their names and goose-ngfx's in `src/ngfx/`,
+each taking its state as its first parameter (`render3d::Own`, held by the backend, not
+`render3d::Gpu`); the photograph's upload is `photo.c`'s for gfx and `photo_ngfx.c`'s for
+goose-ngfx over one shared `draughts_photo_with`. Goose: 153 lines fewer, Python 85. The
+gfx executable is 128 bytes larger, and nothing moved in `--bench 60` headless at 1280 ×
+800 (medians of eight runs, the builds in turn, before → after): gfx's flat waited P50 0.62
+→ 0.60 ms, 3D 0.70 → 0.67; goose-ngfx's flat 0.64 → 0.64, 3D 0.74 → 0.75; the frame's CPU
+time 0.07 → 0.06 ms flat on gfx, the rest the same to 0.001 ms. Shots of home and the
+game, flat and 3D, on both renderers match the commit before within 1 of 255.
+
+Rejected: the split at `render::frame`, one renderer interface with each renderer drawing
+the whole frame, which duplicates the shared drawers (`draw3d`, `draw`, `scene`,
+`widgets`, `render3d.goose`, about 2,000 lines) or leaves them to one renderer; a list of
+pass commands the drawers fill and each renderer replays, which is the wrapper over single
+GPU calls rejected on 2026-11-10 under another name and costs a copy of every draw's data;
+and the facades kept but in the repository, gfx's recorders renamed apart, which needs a
+forwarding facade per recorder in the gfx build too, the rejection of 2026-11-12. The
+recorder's calls stay as many as before (each renderer's ~60), as they record whole passes
+in each API's own terms; only their dispatch went.
+
 ## UI layer
 
 The UI's shader is built three times, its base kinds, the icons, and the players' faces,
