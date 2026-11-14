@@ -85,6 +85,7 @@ let LIST = gui::REPLAY_IDS + 5;     // the list's scroll
 let PLAY_ID = gui::REPLAY_IDS + 6;  // play from here
 let BULB_ID = gui::REPLAY_IDS + 7;  // the best move shown: the fifth step tile,
 let BEST_LINE_ID = gui::REPLAY_IDS + 8; // or the glass's line for it
+let WAS_ID = gui::REPLAY_IDS + 9;   // the line saying what was best: back to it, shown
 let MOVE_ID = gui::REPLAY_IDS + 10; // a move's tap, by its index in the game
 
 // The keys' groups (gui::group), in Tab's order: the head, the steps, the list.
@@ -119,6 +120,7 @@ struct Replay {
     note: float4 = float4 { 0.0, 0.0, 0.0, 0.0 },
     why:  bool   = false,
     rows: f32    = 0.0,     // the list's rows in view, for the layout's tests
+    was:  float4 = float4 { 0.0, 0.0, 0.0, 0.0 }, // the line saying what was best, as a tap, or none: for the tests
     // The best move on the board (the bulb), kept through the steps; whether the game has
     // any best move (a game written before the history kept them has none: no line for
     // it, and the bulb stays dimmed).
@@ -483,13 +485,31 @@ fn say(r: Replay&, g: gui::Gui&, box: float4, icon: i64, style: i64, words: cons
     gui::text(g, face, float4 { x + w, box.y, room - w, box.w }, way, 1.0, 0.0, gui::LEFT);
 }
 
-// After a marked move, the best there instead: the star and "The best was 31-26".
-fn was_line(r: Replay&, g: gui::Gui&, box: float4) {
+// After a marked move, the best there instead: the star and "The best was 31-26". Where
+// it is a `tap` (beside the bulb tile: the tablet, a desktop), lit under the mouse as the
+// list's moves are; true when tapped, which goes back to the position it was best in and
+// shows it on the board (2026-11-14).
+fn was_line(r: Replay&, g: gui::Gui&, box: float4, tap: bool) -> bool {
     let p .= r.plies[r.ply - 1];
     let v .= rules::VARIANTS[r.game.variant];
     var way: gui::Text = [];
     way_text(way, v, p.best);
+    var clicked = false;
+    if tap {
+        let c, press = gui::hold(g, WAS_ID, box, false);
+        clicked = c;
+        lit_line(g, box, gui::hover(g, WAS_ID), press);
+    }
     say(r, g, box, gui::STAR, gui::ON, strings::get(strings::REPLAY_BEST_WAS), way[..]);
+    return clicked;
+}
+
+// A line of the glass that is a tap, lit faintly under the mouse and by a press.
+fn lit_line(g: gui::Gui&, box: float4, hover: f32, press: f32) {
+    guard hover > 0.0 || press > 0.0 else { return; }
+    let u = g.scale;
+    gui::fill(g, float4 { box.x - 6.0 * u, box.y, box.z + 12.0 * u, box.w }, float4 { 1.0, 1.0, 1.0, 0.04 + 0.06 * hover + 0.08 * press },
+              8.0 * u);
 }
 
 // The line for the next move in box: the best next for the side to move (the bulb, lit in
@@ -525,8 +545,9 @@ fn next_line(r: Replay&, g: gui::Gui&, box: float4, tile: bool) -> bool {
                                 extra: float4 { u, if r.best { gui::CHOSEN } else { gui::CHOICE }, gui::hover(g, BEST_LINE_ID), 0.0 } });
         inner = float4 { box.x + 12.0 * u, box.y, box.z - 24.0 * u, box.w };
     } else {
-        let c, unused = gui::hold(g, BEST_LINE_ID, box, false);
+        let c, press = gui::hold(g, BEST_LINE_ID, box, false);
         clicked = c;
+        lit_line(g, box, gui::hover(g, BEST_LINE_ID), press);
     }
     say(r, g, inner, gui::HINT, if r.best || !tile { gui::ON } else { gui::PLAIN }, strings::get(strings::REPLAY_NEXT + side), way[..]);
     return clicked;
@@ -681,7 +702,13 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     }
     shown_line(r, g, gui::cut_top(c, 2.0 * LINE * ku), over);
     let landscape = area.z > area.w;
-    if (o.five || !landscape) && was_shown(r) { was_line(r, g, gui::cut_top(c, LINE * ku)); }
+    var to_best = false;
+    r.was = float4 { 0.0, 0.0, 0.0, 0.0 };
+    if (o.five || !landscape) && was_shown(r) {
+        let line = gui::cut_top(c, LINE * ku);
+        if o.five { r.was = line; }
+        to_best = was_line(r, g, line, o.five);
+    }
     if r.any_best {
         gui::group(g, GROUP_STEPS);
         if o.five {
@@ -694,6 +721,10 @@ fn frame(r: Replay&, g: gui::Gui&, area: float4, l: board::Layout&, over: board:
     }
     if toggled && has_best(r) {
         r.best = !r.best;
+        ask = SHOWN;
+    }
+    if to_best && go(r, r.ply - 1, now) {
+        r.best = true;
         ask = SHOWN;
     }
     show_best(r);

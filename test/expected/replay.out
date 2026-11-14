@@ -23,6 +23,8 @@ on: move 14 of 80, the board right, last b8-d6, the best move on true, a best mo
 at move 3, forced: no best move on the board; the bulb still on true
   the bulb there, dimmed, changes nothing: on true
 the bulb again: on false, no best move on the board
+move 12, marked 6: the line saying what was best a tap true
+  tapped: move 11 of 80, the board right, last i3-g5, the best move on true, the best move c7-d6 on the board, 0 stops ringed, right, the one that was best true
 a jump: its marks 1.0
 on: its marks 0.0 while the piece moves
   as it arrives 0.0, 0.125 s on 0.5, 0.25 s on 1.0; drawn while they fade true, after false

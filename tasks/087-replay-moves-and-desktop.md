@@ -104,6 +104,9 @@ marks are made up and disagree with the engine's in places (the engine finds 15-
       board, its faces a size up (body to label, small to heading) and sizes 1.5×; the
       results at most 1640 dp, centered, a face up, rows 96 dp, panel 480. The replay's
       head keeps its 64 dp tiles and faces.
+- [x] "The best was" a tap too on the tablet and a desktop (2026-11-14, the user: ship it
+      with this): back one move to where it was best, the best move turned on; lit under
+      the mouse, as the next move's line now is. `test/shell/replay` taps it.
 - [ ] Home's menu glass on an ultrawide runs from the window's edge to the capped area's
       (352 px wider at 3440): fine for now, maybe not bled there later.
 

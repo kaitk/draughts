@@ -1215,7 +1215,9 @@ color with a glow border. On the tablet that line is a tap too.
 
 **The glass's lines** under the move shown: after a `?!`, `?`, or `??` move with another
 best, the star and "The best was 27-21" (not on a phone in landscape, which keeps its
-rows); then, where the game has best moves, the line for the next move: the bulb and
+rows; on the tablet and a desktop a tap, lit under the mouse, that goes back to the
+position it was best in and shows it on the board); then, where the game has best moves,
+the line for the next move: the bulb and
 "Best next for black: 10-14", or a lock and "Black must take: 22x33x24" ("has one move"
 for a quiet one), or a crown and "The game ended here". Moves are written with every
 stop of a capture; the words dimmed, the move bright. Portrait and a phone's landscape

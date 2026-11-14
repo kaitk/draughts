@@ -353,6 +353,25 @@ fn main() {
     drive::idle(sh, g, tick());
     print("the bulb again: on ", sh.past.replay.best, ", ", hint(sh));
 
+    // The line saying what was best after a marked move, tapped: the position it was best
+    // in, that move on the board.
+    var marked = -1;
+    for p, i in sh.past.replay.plies {
+        let m = p.mark;
+        let other = p.best.from != p.move.from || p.best.to != p.move.to;
+        if marked < 0 && i > 10 && p.has_best && other && (m == ai::INACCURACY || m == ai::MISTAKE || m == ai::BLUNDER) { marked = i; }
+    }
+    replay::go(sh.past.replay, marked + 1, 0.0);
+    drive::idle(sh, g, tick());
+    let was = sh.past.replay.was;
+    print("move ", marked + 1, ", marked ", sh.past.replay.plies[marked].mark, ": the line saying what was best a tap ", was.z > 0.0);
+    drive::tap(sh, g, drive::middle(was), tick());
+    drive::idle(sh, g, tick());
+    print("  tapped: ", shown(sh), ", the best move on ", sh.past.replay.best, ", ", hint(sh), ", the one that was best ",
+          sh.past.replay.b.glow == sh.past.replay.plies[marked].best.from && sh.past.replay.b.hint_to == sh.past.replay.plies[marked].best.to);
+    press(sh, g, replay::BULB_ID);
+    drive::idle(sh, g, tick());
+
     // The move shown's marks: once its piece has arrived, fading in over 0.25 s, drawn
     // while they fade; at once after a jump.
     replay::go(sh.past.replay, free_at, 0.0);
