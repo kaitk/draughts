@@ -8,7 +8,8 @@
 // by its tile, and the two must end alike: the screen, home's column, and where the
 // board rests. On home's menu back changes nothing and says so (false), for the app to
 // hand it to the system. In a transition it turns round, as a tap on the screen come to
-// does.
+// does. The board's rect prints verbose (DRAUGHTS_TEST_VERBOSE); by default the test
+// says whether it is on the screen, and at home checks it is at home's place.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -32,6 +33,30 @@ fn name(sh: shell::Shell&) -> const u8[:] {
 fn state(sh: shell::Shell&) -> u8[>..] {
     return str(name(sh), ", setup ", sh.setup, ", in a transition ", sh.from >= 0, ", the board at ",
                sh.out.layout.board, ", the game ", rules::fen(sh.game.b.pos));
+}
+
+// Home's board at rest, in the orientation under test.
+var home_at = float4 { 0.0, 0.0, 0.0, 0.0 };
+
+// The state as printed: verbose, the board's rect; else where it is, home's place at home.
+fn shown(sh: shell::Shell&) -> u8[>..] {
+    if drive::verbose { return state(sh); }
+    let r = sh.out.layout.board;
+    let off = r.x + r.z <= 0.0 || r.x >= drive::size.x;
+    var s = str(name(sh), ", setup ", sh.setup, ", in a transition ", sh.from >= 0, ", the board ");
+    if sh.screen == shell::HOME { format(s, "at home's place: ", drive::ok(r == home_at)); }
+    else { s.append(if off { "off the screen" } else { "on the screen" }); }
+    format(s, ", the game ", rules::fen(sh.game.b.pos));
+    return s;
+}
+
+// Where home puts the board on a screen of drive::size.
+fn home_place() -> float4 {
+    var g = gui::Gui {};
+    gui::test_faces(g);
+    var sh = shell::new(rules::RUSSIAN);
+    drive::idle(sh, g, 0.0);
+    return sh.out.layout.board;
 }
 
 // A fresh shell at home with a game under way, then the tiles `path` tapped in
@@ -77,6 +102,7 @@ fn check(what: const u8[:], path: i64[:]) {
     let went = shell::back(sh, now + 0.1);
     drive::idle(sh, g, now + 0.6);
     let by_back = state(sh);
+    let back_shown = shown(sh);
 
     var h = gui::Gui {};
     gui::test_faces(h);
@@ -85,13 +111,14 @@ fn check(what: const u8[:], path: i64[:]) {
     drive::tap(other, h, drive::tile(h, 0), now + 0.1);
     drive::idle(other, h, now + 0.6);
     let by_tile = state(other);
-    print(what, " (", was, "): back ", went, " -> ", by_back);
+    print(what, " (", was, "): back ", went, " -> ", back_shown);
     print("  its first tile (", arrow, ") -> ", if by_tile == by_back { "the same" } else { by_tile });
 }
 
 // Each screen, reached from home's menu, whose rows start at tile `o` (after the gear in
 // portrait) and whose settings is tile `gear`; a friend's setup by its first tile.
 fn screens(o: i64, gear: i64) {
+    home_at = home_place();
     check("the computer's setup", [1 + o]);
     check("a friend's setup", [1 + o, 1]);
     check("the game", [o]);
@@ -138,5 +165,6 @@ fn main() {
     drive::idle(other, h, 0.25);
     print("  then ", name(other), ", in a transition ", other.from >= 0);
     drive::idle(other, h, 0.6);
-    print("  at rest ", state(other));
+    home_at = home_place();
+    print("  at rest ", shown(other));
 }

@@ -4,11 +4,12 @@
 // indicator, each both ways, in English and Estonian. In landscape the list is a 480 dp
 // column at the left, the preview right of it; in portrait the preview is a band at the
 // top, 40% of the safe area's height on the tablet and 30% on a phone, the list a sheet
-// under it. A line a size: the column's width or the sheet's top, the list's view and how
-// far it scrolls, the picture rows' gaps (10 dp, closing to fit five across a phone), the
-// lines each row's tiles take, the smallest tap, the preview's flat board and the 3D
-// board's room, in dp; and the language list opened from the title row, its rows' size.
-// Every tap is 88 dp at least, every tile and the language list inside the safe area
+// under it. A line a size: the lines each row's tiles take, whether the list scrolls, the
+// preview shows, and a row's gaps (10 dp) close to fit five across a phone, and the
+// language list opened from the title row, its rows; verbose (DRAUGHTS_TEST_VERBOSE) the
+// column's width or the sheet's top, the list's view and how far it scrolls, the picture
+// rows' gaps, the smallest tap, the preview's flat board and the 3D board's room, and the
+// language rows' size, in dp. Every tap is 88 dp at least, every tile and the language list inside the safe area
 // across, and the preview at least board::SMALLEST where it shows; a line with anything
 // wrong fails the test. The words are the test faces' (each character half its face
 // wide), wider than the real font's.
@@ -34,13 +35,17 @@ fn whole(x: f32) -> i64 { floor(x + 0.5) as i64 }
 fn inside_across(r: float4, a: float4) -> bool { r.x >= a.x - 0.5 && r.x + r.z <= a.x + a.z + 0.5 }
 
 // How many lines a row's tiles take, from tile `first`, `n` of them, and the gap between
-// the first two in dp.
+// the first two in dp (verbose) or whether it is closed under 10 dp.
 fn row_of(g: gui::Gui&, first: i64, n: i64) -> u8[>..] {
     var lines = 1;
     for i in 1..n { if drive::rect(g, first + i).y > drive::rect(g, first + i - 1).y + 0.5 { lines++; } }
     let a = drive::rect(g, first);
     let b = drive::rect(g, first + 1);
-    return str(lines, if lines == 1 { " line" } else { " lines" }, " ", whole((b.x - a.x - a.z) / g.scale), " apart");
+    let gap = (b.x - a.x - a.z) / g.scale;
+    var out = str(lines, if lines == 1 { " line" } else { " lines" });
+    if drive::verbose { format(out, " ", whole(gap), " apart"); }
+    else if gap < 9.5 { out.append(" closed up"); }
+    return out;
 }
 
 var failures = 0;
@@ -57,10 +62,16 @@ fn layout(g: gui::Gui&, name: const u8[:]) {
     for q in g.quads { if q.look.x == gui::GLASS { glass = q.rect; break; } }
     let landscape = drive::size.x >= drive::size.y;
     var wrong: u8[>..] = [];
-    var out = if landscape { str("the column ", whole((glass.x + glass.z - safe.x) / u), " dp") }
-              else { str("the sheet from ", whole((glass.y - safe.y) / u), " dp") };
+    var out: u8[>..] = [];
     let v = g.scroll.view;
-    format(out, ", the list ", whole(v.w / u), " dp tall, scrolls ", whole(g.scroll.max / u), " dp");
+    if drive::verbose {
+        if landscape { format(out, "the column ", whole((glass.x + glass.z - safe.x) / u), " dp"); }
+        else { format(out, "the sheet from ", whole((glass.y - safe.y) / u), " dp"); }
+        format(out, ", the list ", whole(v.w / u), " dp tall, scrolls ", whole(g.scroll.max / u), " dp");
+    } else {
+        out.append(if landscape { "the column" } else { "the sheet" });
+        out.append(if g.scroll.max > 0.0 { ", the list scrolls" } else { ", the list still" });
+    }
     format(out, "; background ", row_of(g, FIRST_TILE, 2), ", theme ", row_of(g, FIRST_TILE + 2, 5), ", board ",
            row_of(g, FIRST_TILE + 7, 5));
     let n = drive::tiles(g);
@@ -76,14 +87,18 @@ fn layout(g: gui::Gui&, name: const u8[:]) {
         if !inside_across(r, safe) { format(wrong, " tile ", i, " off the safe area;"); }
     }
     if small > 0 { format(wrong, " ", small, " taps under 88 dp;"); }
-    format(out, "; smallest tap ", whole(narrow / u), " x ", whole(low / u), " dp");
+    if drive::verbose { format(out, "; smallest tap ", whole(narrow / u), " x ", whole(low / u), " dp"); }
     // The flat preview as the layout places it, and the 3D board's bounds in its room.
     var flat = sh.prefs;
     flat.board = settings::FLAT;
     let b = settings::layout(flat, g, safe).board.board;
     let raised = sh.came_view.rect;
     if b.z > 0.0 {
-        format(out, "; preview ", whole(b.z / u), " dp, the 3D board ", whole(raised.z / u), " x ", whole(raised.w / u));
+        if drive::verbose {
+            format(out, "; preview ", whole(b.z / u), " dp, the 3D board ", whole(raised.z / u), " x ", whole(raised.w / u));
+        } else {
+            out.append("; a preview");
+        }
         if raised.x < safe.x - 0.5 || raised.x + raised.z > safe.x + safe.z + 0.5 || raised.y < safe.y - 0.5 { wrong.append(" the 3D board off the safe area;"); }
         if landscape && raised.x < glass.x + glass.z { wrong.append(" the 3D board on the column;"); }
         if !landscape && raised.y + raised.w > glass.y + 0.5 { wrong.append(" the 3D board on the sheet;"); }
@@ -101,7 +116,8 @@ fn layout(g: gui::Gui&, name: const u8[:]) {
     let row = drive::rect(g, n);
     var list = row;
     for q in g.quads { if q.look.x == gui::GLASS { list = q.rect; } }
-    format(out, "; the language list ", rows, " rows ", whole(row.z / u), " x ", whole(row.w / u), " dp");
+    format(out, "; the language list ", rows, " rows");
+    if drive::verbose { format(out, " ", whole(row.z / u), " x ", whole(row.w / u), " dp"); }
     if rows != strings::LANGUAGES.len || !sh.prefs.languages_open { wrong.append(" the language list not open;"); }
     if row.w < gui::TAP * u - 0.5 { wrong.append(" a language under 88 dp;"); }
     if !inside_across(list, safe) || list.y + list.w > safe.y + safe.w + 0.5 { wrong.append(" the language list off the safe area;"); }

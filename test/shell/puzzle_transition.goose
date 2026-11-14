@@ -5,7 +5,9 @@
 // lies off the screen. The frame after the end is drawn, at rest, as the puzzle opened
 // straight is, and then nothing more. A tap during it lands on the puzzle: its way out
 // turns the transition round where it is. The picker's rows, tiles, and the panels are
-// hidden where the board passes (the hole) while it runs.
+// hidden where the board passes (the hole) while it runs. The board's rects and the quad
+// counts print verbose (DRAUGHTS_TEST_VERBOSE); by default the test checks where the
+// board is and goes.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -38,9 +40,24 @@ fn look(sh: shell::Shell&, g: gui::Gui&, now: f64, what: const u8[:]) {
     let b .= shell::fill(sh, now);
     var faint = 0;
     for p in b.pieces { if p.look.w < 1.0 { faint++; } }
-    print(what, " ", now, ": ", screen(sh), ", board ", rect(sh.out.layout.board), " ", sh.out.layout.n, "x", sh.out.layout.n,
-          ", mix ", pc(sh.mix), "%, blur ", pc(sh.out.blur), "%, quads ", g.quads.len, " faded ", faded, ", pieces ",
-          b.pieces.len, " faint ", faint, ", hole ", hole(sh), ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
+    if drive::verbose {
+        print(what, " ", now, ": ", screen(sh), ", board ", rect(sh.out.layout.board), " ", sh.out.layout.n, "x", sh.out.layout.n,
+              ", mix ", pc(sh.mix), "%, blur ", pc(sh.out.blur), "%, quads ", g.quads.len, " faded ", faded, ", pieces ",
+              b.pieces.len, " faint ", faint, ", hole ", hole(sh), ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
+    } else {
+        let r = sh.out.layout.board;
+        let off = r.x + r.z <= 0.0 || r.x >= drive::size.x;
+        let fade = if faded == 0 { "none" } else if faded == g.quads.len { "all" } else { "some" };
+        print(what, " ", now, ": ", screen(sh), ", board ", sh.out.layout.n, "x", sh.out.layout.n,
+              if off { " off" } else { " on" }, " the screen, mix ", pc(sh.mix), "%, blur ", pc(sh.out.blur), "%, quads faded ", fade, ", pieces ",
+              b.pieces.len, " faint ", faint, ", hole ", hole(sh), ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
+    }
+}
+
+// Whether r lies between a and b, its corner and size each between theirs.
+fn between(r: float4, a: float4, b: float4) -> bool {
+    return r.x >= min(a.x, b.x) && r.x <= max(a.x, b.x) && r.y >= min(a.y, b.y) && r.y <= max(a.y, b.y)
+           && r.z >= min(a.z, b.z) && r.z <= max(a.z, b.z);
 }
 
 fn main() {
@@ -61,14 +78,21 @@ fn main() {
           && sh.out.layout.board.z == first_tile.z, ", blur ", pc(sh.out.blur), "%");
     var size = sh.out.layout.board.z;
     var grew = true;
+    var mid: float4[4] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4];
     for i in 1..5 {
         look(sh, g, 1.02 + 0.0625 * i, "  ");
         if sh.out.layout.board.z < size { grew = false; }
         size = sh.out.layout.board.z;
+        mid[i - 1] = sh.out.layout.board;
     }
     look(sh, g, 1.4, "idle");
     print("the board grew all the way ", grew);
     let arrived = sh.out.layout.board;
+    if !drive::verbose {
+        var on = true;
+        for r in mid { if !between(r, first_tile, arrived) { on = false; } }
+        print("midway the board between the tile and the puzzle's place: ", drive::ok(on));
+    }
     let quads = g.quads.len;
     let way_out = drive::control(g, 0);
 
@@ -84,6 +108,10 @@ fn main() {
     // Back to the picker: the board shrinks into its tile, then lies off the screen.
     drive::tap(sh, g, way_out, 2.0);
     look(sh, g, 2.145, "back");
+    if !drive::verbose {
+        print("  midway back the board between the puzzle's place and the tile: ",
+              drive::ok(between(sh.out.layout.board, arrived, first_tile)));
+    }
     look(sh, g, 2.4, "ended");
     look(sh, g, 2.5, "idle");
 
@@ -96,8 +124,15 @@ fn main() {
     drive::frame(sh, g, way_out, false, false, true, 3.17);
     let turned = sh.out.layout.board;
     drive::idle(sh, g, 3.18);
-    print("its way out during it: ", screen(sh), ", the board on the frames ", rect(before), ", ", rect(turned), ", ",
-          rect(sh.out.layout.board));
+    if drive::verbose {
+        print("its way out during it: ", screen(sh), ", the board on the frames ", rect(before), ", ", rect(turned), ", ",
+              rect(sh.out.layout.board));
+    } else {
+        // The tap's frame still grows it; the next shrinks it from there, not yet to the tile.
+        let after = sh.out.layout.board;
+        let back = turned.z > before.z && after.z < turned.z && after.z > first_tile.z;
+        print("its way out during it: ", screen(sh), ", the board turned round where it was: ", drive::ok(back));
+    }
     look(sh, g, 3.3, "  ");
     look(sh, g, 3.4, "ended");
     look(sh, g, 3.5, "idle");

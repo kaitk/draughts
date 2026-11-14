@@ -23,7 +23,9 @@
 // panel, over nothing, and next as on the middle one, round the 3D board and flat.
 // Last, home with all of today's solved at those sizes and the iPhone 13 mini's, in
 // English and Estonian: the note that new ones come tomorrow before the check where it
-// fits, clear of the row's label, and the check alone where it doesn't.
+// fits, clear of the row's label, and the check alone where it doesn't. Positions and
+// sizes in dp, glyph and quad counts are printed verbose (DRAUGHTS_TEST_VERBOSE); by
+// default the checks alone.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -169,8 +171,13 @@ fn home_note(g: gui::Gui&) -> u8[>..] {
     let room = check.x - home::CHECK_GAP * u - label - home::TOMORROW_GAP * u;
     let wants = gui::text_width(g, gui::SMALL, strings::get(strings::DAILY_HOME_TOMORROW));
     var out: u8[>..] = [];
-    format(out, "room ", floor(room / u + 0.5) as i64, " dp, the note wants ", floor(wants / u + 0.5) as i64, ": ");
-    if n == 0 { format(out, "the check alone"); } else { format(out, "the note, ", n, " glyphs"); }
+    if drive::verbose {
+        format(out, "room ", floor(room / u + 0.5) as i64, " dp, the note wants ", floor(wants / u + 0.5) as i64, ": ");
+        if n == 0 { format(out, "the check alone"); } else { format(out, "the note, ", n, " glyphs"); }
+    } else {
+        out.append(if wants <= room { "room for the note: " } else { "no room for the note: " });
+        out.append(if n == 0 { "the check alone" } else { "the note" });
+    }
     var wrong: u8[>..] = [];
     if (n > 0) != (wants <= room) { format(wrong, " shown ", n > 0, " where it fits ", wants <= room, ";"); }
     if n > 0 {
@@ -305,9 +312,12 @@ fn check(g: gui::Gui&, what: const u8[:], extra: const u8[:]) {
         for i in n { if overlaps(d, drive::rect(g, i)) { format(wrong, " a dot on tile ", i, ";"); } }
     }
     var scrolled: u8[>..] = [];
-    if below > 0 { format(scrolled, ", ", below, " below the foot (the list scrolls)"); }
-    print("  ", what, ": ", n, " tiles", extra, scrolled[..], ", ", g.quads.len, " quads",
-          if wrong.len > 0 { str(";", wrong) } else { str(", all in place") });
+    if below > 0 && drive::verbose { format(scrolled, ", ", below, " below the foot (the list scrolls)"); }
+    else if below > 0 { scrolled.append(", the list scrolls"); }
+    if g.quads.len >= gui::MAX_QUADS { format(wrong, " quads at the limit;"); }
+    var quads: u8[>..] = [];
+    if drive::verbose { format(quads, ", ", g.quads.len, " quads"); }
+    print("  ", what, ": ", n, " tiles", extra, scrolled[..], quads[..], if wrong.len > 0 { str(";", wrong) } else { str(", all in place") });
 }
 
 // The slot's word under a daily puzzle's goal: its glyphs in the glow (gui::GLOW_TEXT),
@@ -340,12 +350,20 @@ fn word(g: gui::Gui&, next_was: const u8[:]) -> u8[>..] {
         if (q.look.z == gui::STAR || q.look.z == gui::STAR_OFF) && star.z == 0.0 { star = q.rect; }
     }
     var out: u8[>..] = [];
-    format(out, "goal ", dp(goal, u), ", a star ", dp(star, u), ", ");
+    if drive::verbose { format(out, "goal ", dp(goal, u), ", a star ", dp(star, u), ", "); }
     guard n > 0 else {
-        format(out, "no word, next ", dp(next, u));
+        if drive::verbose { format(out, "no word, next ", dp(next, u)); } else { out.append("no word"); }
         return out;
     }
-    format(out, n, " glyphs in the glow at ", dp(box, u), ", next ", dp(next, u));
+    if drive::verbose { format(out, n, " glyphs in the glow at ", dp(box, u), ", next ", dp(next, u)); }
+    else {
+        // Which word, by its glyphs: Warm-up's or A bit harder's.
+        let warm = strings::get(strings::DAILY_WARMUP).len;
+        let stretch = strings::get(strings::DAILY_STRETCH).len;
+        if n == warm { out.append("the warm-up's word"); }
+        else if n == stretch { out.append("the harder one's word"); }
+        else { format(out, "a word of ", n, " glyphs"); }
+    }
     var wrong: u8[>..] = [];
     var inside = false;
     for q in g.quads {
@@ -403,14 +421,16 @@ fn layouts(text: const u8[:], g: gui::Gui&, count: i64) {
         var tiles: float4[..16] = [];
         today_tiles(g, tiles);
         var where: u8[>..] = [];
-        format(where, ", Today's ", tiles.len, " from ", dp(tiles[0], g.scale), " to ", dp(tiles[tiles.len - 1], g.scale));
+        format(where, ", Today's ", tiles.len);
+        if drive::verbose { format(where, " from ", dp(tiles[0], g.scale), " to ", dp(tiles[tiles.len - 1], g.scale)); }
         print(names[i], ", ", count, " a day:");
         check(g, "the library", where[..]);
         open(sh, g, 1, 1.0);
         var at: float4[..16] = [];
         dots(g, at);
         var each: u8[>..] = [];
-        format(each, ", ", at.len, " dots from ", dp(at[0], g.scale), ", next ", dp(drive::rect(g, 3), g.scale));
+        format(each, ", ", at.len, " dots");
+        if drive::verbose { format(each, " from ", dp(at[0], g.scale), ", next ", dp(drive::rect(g, 3), g.scale)); }
         check(g, "a daily puzzle", each[..]);
         // Round the 3D board, in its corner panels.
         sh.prefs.board = settings::RAISED;
@@ -418,7 +438,8 @@ fn layouts(text: const u8[:], g: gui::Gui&, count: i64) {
         drive::idle(sh, g, 3.0);
         dots(g, at);
         each.clear();
-        format(each, ", ", at.len, " dots from ", dp(at[0], g.scale), ", next ", dp(drive::rect(g, 3), g.scale));
+        format(each, ", ", at.len, " dots");
+        if drive::verbose { format(each, " from ", dp(at[0], g.scale), ", next ", dp(drive::rect(g, 3), g.scale)); }
         check(g, "on the 3D board", each[..]);
         // The slot's word, round the 3D board and on the flat one.
         slots(sh, g, count, settings::RAISED, 4.0);

@@ -9,6 +9,8 @@
 // safe area and apart, the board clear of them, back and play from here as tall and
 // level, the line saying a game from here doesn't count over the board, on no tile, and
 // inside the safe area, with why or without, and the frame's quads under gui::MAX_QUADS.
+// Sizes in dp, the rows in view, and the quad counts are printed verbose
+// (DRAUGHTS_TEST_VERBOSE); by default the checks alone.
 import std;
 import vec;
 import math;
@@ -196,11 +198,18 @@ fn check(g: gui::Gui&, sh: shell::Shell&, safe: float4) -> u8[>..] {
         if s.id == replay::BULB_ID { bulb = "a step tile"; }
         if s.id == replay::BEST_LINE_ID { bulb = "the glass's line"; }
     }
+    let why = if sh.past.replay.why { "why" } else { "short" };
+    if !drive::verbose {
+        return str(n, " tiles, inside ", inside, ", apart ", apart, ", off the board ", off_board, "; taps a tap at least ",
+                   tap >= gui::tap() - 0.5, ", inside ", taps_in, "; the bulb ", bulb, "; a board ", b.z > 0.0, ", inside ", board_in,
+                   "; the line ", why, ", over the board ", over, ", inside ", within(note, safe),
+                   "; back and play from here level ", level, "; moves listed ", moves > 0, "; quads under the limit ",
+                   g.quads.len < gui::MAX_QUADS);
+    }
     return str(n, " tiles, smallest ", (least + 0.5) as i64, " dp, inside ", inside, ", apart ", apart, ", off the board ",
                off_board, "; taps ", (tap + 0.5) as i64, " dp at least, inside ", taps_in, "; the bulb ", bulb, "; board ",
-               (b.z / g.scale + 0.5) as i64, " dp, inside ", board_in, "; the line ",
-               if sh.past.replay.why { "why" } else { "short" }, ", over the board ", over, ", inside ", within(note, safe),
-               "; back and play from here level ", level, "; ",
+               (b.z / g.scale + 0.5) as i64, " dp, inside ", board_in, "; the line ", why, ", over the board ", over, ", inside ",
+               within(note, safe), "; back and play from here level ", level, "; ",
                moves, " moves listed, ", rows, " rows in view; quads ", g.quads.len);
 }
 
@@ -490,12 +499,15 @@ fn main() {
         let note = sh.past.replay.note;
         let top_left = abs(back.x - b.x) < 0.5 && back.y + back.w <= b.y + 0.5;
         let line_level = abs(note.y + 0.5 * note.w - (back.y + 0.5 * back.w)) < 0.5;
+        var column = str(", the column at most LARGE_COL ", o.glass.z <= replay::LARGE_COL * g.scale + 0.5);
+        if drive::verbose { column = str(", the column ", (o.glass.z / g.scale + 0.5) as i64, " dp"); }
+        var sizes: u8[>..] = [];
+        if drive::verbose { format(sizes, "; play from here ", (play.z / g.scale + 0.5) as i64, " x ", (play.w / g.scale + 0.5) as i64, " dp"); }
         print("  a desktop's ", d.x as i64, " x ", d.y as i64, ": ", check(g, sh, safe), "; large ", big, ", words ",
-              sh.past.replay.k, " times, the column ", (o.glass.z / g.scale + 0.5) as i64, " dp, centered ",
+              sh.past.replay.k, " times", column, ", centered ",
               abs(left - right) < 1.0, "; back at the top left over the board ", top_left, ", the board's and glass's tops level ",
               abs(b.y - o.glass.y) < 0.5, ", play from here at the column's head ", play.x >= o.glass.x - 0.5 && play.y < b.y,
-              ", the line level with back ", line_level, "; play from here ", (play.z / g.scale + 0.5) as i64, " x ",
-              (play.w / g.scale + 0.5) as i64, " dp");
+              ", the line level with back ", line_level, sizes);
     }
     gui::desktop_scale = 0.0;
 }

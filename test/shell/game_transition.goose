@@ -11,7 +11,9 @@
 // for nothing, both ways; once it is over the clock counts and the computer is asked.
 // Leaving a won game, its dim, lifts, and card fade out with the game's panels. Both
 // screens' UI is hidden where the board passes (the hole), but for the card and its
-// piece, which lie on the board.
+// piece, which lie on the board. The board's rects, the quad counts, and the lift in
+// pixels print verbose (DRAUGHTS_TEST_VERBOSE); by default the test checks where the
+// board goes and says how many quads fade.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -44,6 +46,7 @@ fn on_board(sh: shell::Shell&, g: gui::Gui&) -> u8[>..] {
     // On the board: ON_BOARD in extra.z under a scrolling list's CLIP, as the renderer reads it.
     for q in g.quads { if q.extra.z - gui::CLIP * floor(q.extra.z / gui::CLIP) >= gui::ON_BOARD { quads++; } }
     for p in sh.out.over { if p.win.w > 0.5 { pieces++; } }
+    if !drive::verbose { return str(if quads > 0 { "the card" } else { "no card" }, " and ", pieces, " piece"); }
     return str(quads, " quads and ", pieces, " piece");
 }
 fn pc(x: f32) -> f64 { round(100.0 * x) }
@@ -62,11 +65,22 @@ fn look(sh: shell::Shell&, g: gui::Gui&, now: f64, what: const u8[:]) {
     let b .= shell::fill(sh, now);
     var faint = 0;
     for p in b.pieces { if p.look.w < 1.0 { faint++; } }
-    print(what, " ", now, ": ", screen(sh), ", board ", rect(sh.out.layout.board), " ", sh.out.layout.n, "x", sh.out.layout.n,
-          ", mix ", pc(sh.mix), "%, blur ", pc(sh.out.blur), "%, quads ", g.quads.len, " faded ", faded, " mostly ", gone,
-          if minis > 0 { str(", small boards ", minis) } else { str("") }, ", pieces ", b.pieces.len, " faint ", faint,
-          ", over the UI ", sh.out.over.len, ", hole ", hole(sh), ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
+    let small = if minis > 0 { str(", small boards ", minis) } else { str("") };
+    if drive::verbose {
+        print(what, " ", now, ": ", screen(sh), ", board ", rect(sh.out.layout.board), " ", sh.out.layout.n, "x", sh.out.layout.n,
+              ", mix ", pc(sh.mix), "%, blur ", pc(sh.out.blur), "%, quads ", g.quads.len, " faded ", faded, " mostly ", gone,
+              small, ", pieces ", b.pieces.len, " faint ", faint, ", over the UI ", sh.out.over.len, ", hole ", hole(sh),
+              ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
+    } else {
+        print(what, " ", now, ": ", screen(sh), ", board ", sh.out.layout.n, "x", sh.out.layout.n, ", mix ", pc(sh.mix),
+              "%, blur ", pc(sh.out.blur), "%, quads faded ", share(faded, g.quads.len), ", mostly ", share(gone, g.quads.len),
+              small, ", pieces ", b.pieces.len, " faint ", faint, ", over the UI ", sh.out.over.len, ", hole ", hole(sh),
+              ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
+    }
 }
+
+// How many of n: none, some, or all.
+fn share(k: i64, n: i64) -> const u8[:] { if k == 0 { "none" } else if k == n { "all" } else { "some" } }
 
 // The game's clocks and the computer's ask.
 fn clocks(sh: shell::Shell&) -> u8[>..] {
@@ -108,6 +122,12 @@ fn lift(b: board::Board&) -> f32 {
     var up: f32 = 0.0;
     for p in b.pieces { up = max(up, p.at.w); }
     return up;
+}
+
+// The lift as printed: in pixels verbose, else whether there is one.
+fn lifted(b: board::Board&) -> u8[>..] {
+    if drive::verbose { return str("lifted ", round(lift(b)), " px"); }
+    return str(if lift(b) > 0.0 { "lifted" } else { "not lifted" });
 }
 
 fn arrived(sh: shell::Shell&, g: gui::Gui&) -> u8[>..] {
@@ -152,7 +172,8 @@ fn main() {
     look(sh, g, 2.4, "  ");
     look(sh, g, 2.5, "idle");
     print("the board went left and grew all the way ", left);
-    print("the game as opened straight ", arrived(sh, g) == into, ": ", into);
+    if drive::verbose { print("the game as opened straight ", arrived(sh, g) == into, ": ", into); }
+    else { print("the game as opened straight ", arrived(sh, g) == into); }
 
     // Home from the game, and back to it; halfway, take back lands on the game and takes
     // back the move.
@@ -183,8 +204,17 @@ fn main() {
     let turned = sh.out.layout.board;
     drive::idle(sh, g, 5.29);
     let after = sh.out.layout.board;
-    print("home during it: ", screen(sh), ", from the game ", sh.from == shell::GAME, ", the board on the frames ",
-          rect(before), ", ", rect(turned), ", ", rect(after));
+    if drive::verbose {
+        print("home during it: ", screen(sh), ", from the game ", sh.from == shell::GAME, ", the board on the frames ",
+              rect(before), ", ", rect(turned), ", ", rect(after));
+    } else {
+        // The tap's frame still goes on towards the game; the next comes back from there,
+        // short of home's place.
+        let on = turned.x < before.x && turned.z > before.z;
+        let back = after.x > turned.x && after.z < turned.z && after.x < home_at.x;
+        print("home during it: ", screen(sh), ", from the game ", sh.from == shell::GAME,
+              ", the board turned round where it was: ", drive::ok(on && back));
+    }
     look(sh, g, 5.34, "  ");
     look(sh, g, 5.42, "  ");
     look(sh, g, 5.46, "ended");
@@ -246,14 +276,13 @@ fn main() {
     print("won: ", ok, ", winner ", game::winner(sh.game), ", the card's back ", opacity(g, 4), ", on the board ",
           on_board(sh, g));
     let gone .= shell::fill(sh, 25.0);
-    print("  at rest: the board dimmed ", pc(gone.dim), "%, lifted ", round(lift(gone)), " px");
+    print("  at rest: the board dimmed ", pc(gone.dim), "%, ", lifted(gone));
     drive::tap(sh, g, drive::control(g, 0), 26.0);
     for i in 1..6 {
         let t = 26.02 + 0.0625 * i;
         drive::idle(sh, g, t);
         let b .= shell::fill(sh, t);
-        print("  ", t, ": ", screen(sh), ", the board dimmed ", pc(b.dim), "%, lifted ", round(lift(b)),
-              " px, the card's back ", if sh.from >= 0 { opacity(g, 4) } else { -1.0 }, ", over the UI ", sh.out.over.len,
+        print("  ", t, ": ", screen(sh), ", the board dimmed ", pc(b.dim), "%, ", lifted(b), ", the card's back ", if sh.from >= 0 { opacity(g, 4) } else { -1.0 }, ", over the UI ", sh.out.over.len,
               ", on the board ", on_board(sh, g), ", hole ", hole(sh));
     }
 
@@ -275,6 +304,7 @@ fn main() {
         z = q.out.layout.board.z;
     }
     look(q, g, 1.4, "idle");
-    print("the board went down and grew all the way ", down, ", from ", rect(top), " to ", rect(q.out.layout.board));
+    if drive::verbose { print("the board went down and grew all the way ", down, ", from ", rect(top), " to ", rect(q.out.layout.board)); }
+    else { print("the board went down and grew all the way ", down); }
     print("the game as opened straight ", arrived(q, g) == straight(q, 1.4));
 }

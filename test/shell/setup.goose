@@ -159,9 +159,10 @@ fn turning(sh: shell::Shell&, g: gui::Gui&, now: f64) {
 // computer's and a friend's, on the tablet's landscape and portrait (1280 x 800 and 800 x
 // 1280 dp), the Pixel 7a's at 540 dp with its insets (cutout and gesture bar) in both
 // orientations, and the iPhone 13 mini's (500 dp, its notch and home indicator): where
-// play is (under the choices or in the head row), whether the choices scroll and by how
-// much, the four tiles' width, the lowest tile's foot against the list's, and the board's
-// size, in dp. Every tile a tap wide and tall at least.
+// play is (under the choices or in the head row), whether the choices scroll, the clock
+// above play, whether a board shows, and every tile a tap wide and tall at least; verbose
+// (DRAUGHTS_TEST_VERBOSE) how far the choices scroll, the four tiles' width, the lowest
+// tile's foot against play, and the board's size, in dp.
 fn layouts(g: gui::Gui&) {
     let sizes = [float2 { 1280.0, 800.0 }, float2 { 800.0, 1280.0 }, float2 { 2400.0, 1080.0 }, float2 { 1080.0, 2400.0 },
                  float2 { 2436.0, 1125.0 }, float2 { 1125.0, 2436.0 }];
@@ -219,6 +220,13 @@ fn placed(sh: shell::Shell&, g: gui::Gui&) -> u8[>..] {
         if r.z < gui::TAP * u - 0.5 || r.w < gui::TAP * u - 0.5 { small++; }
     }
     var out = str("play ", if up { "in the head row" } else { "under the choices" });
+    if !drive::verbose {
+        out.append(if scrolls { ", the choices scroll" } else { ", the choices fit" });
+        if !scrolls { format(out, ", the clock above play: ", drive::ok(clock.y + clock.w <= play.y + 0.5)); }
+        format(out, if sh.out.layout.board.z > 0.0 { ", a board" } else { ", no board" }, ", every tap 88 dp at least: ",
+               drive::ok(small == 0));
+        return out;
+    }
     if scrolls {
         format(out, ", the choices scroll ", whole(g.scroll.max / u), " dp in a view ", whole(view.w / u), " dp tall");
     } else {

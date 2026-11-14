@@ -17,7 +17,9 @@
 // their fades. In landscape the board is right of the list; in portrait above it. The
 // language list closes on a tap outside it and on back, which then stays on settings.
 // The game's lookout, off for a new player, is kept in the file too, and the puzzles a
-// day (task 088), chosen in the Game section's last row.
+// day (task 088), chosen in the Game section's last row. The list's and the board's rects,
+// in pixels, and a language row's height in dp print verbose (DRAUGHTS_TEST_VERBOSE); by
+// default whether the list scrolls and the checks they stand for.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -165,12 +167,17 @@ fn main() {
     drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 0.0);
     print("tiles ", drive::tiles(g), " of ", TILES, ", the kings' tiles' pieces ", sh.out.over.len, ": ",
           sh.out.over[0].look.y, " and ", sh.out.over[1].look.y);
-    print("the list: ", g.scroll.view, " scrolls ", g.scroll.max, " px");
+    if drive::verbose { print("the list: ", g.scroll.view, " scrolls ", g.scroll.max, " px"); }
+    else { print("the list: ", if g.scroll.max > 0.0 { "scrolls" } else { "still" }); }
     // The board is right of the list: every tile and the glass end left of it.
     var right: f32 = 0.0;
     for q in g.quads { right = max(right, q.rect.x + q.rect.z); }
-    print("landscape: board at ", sh.out.layout.board, ", the list ends at ", right, ", clear ",
-          right < sh.out.layout.board.x);
+    if drive::verbose {
+        print("landscape: board at ", sh.out.layout.board, ", the list ends at ", right, ", clear ",
+              right < sh.out.layout.board.x);
+    } else {
+        print("landscape: the board right of the list, clear ", right < sh.out.layout.board.x);
+    }
     print("opened, defaults:");
     preview(sh, 0.0);
     preview(sh, 1.0);
@@ -241,8 +248,13 @@ fn main() {
     // The language: its button opens a list over the screen, its rows after the
     // screen's tiles; a tap on a language switches and closes it.
     tap(sh, g, LANGUAGE, 9.3);
-    print("the language list open ", sh.prefs.languages_open, ", tiles ", drive::tiles(g), ", changed ", sh.changed,
-          ", each row ", drive::rect(g, ENGLISH).w / g.scale, " dp tall");
+    if drive::verbose {
+        print("the language list open ", sh.prefs.languages_open, ", tiles ", drive::tiles(g), ", changed ", sh.changed,
+              ", each row ", drive::rect(g, ENGLISH).w / g.scale, " dp tall");
+    } else {
+        print("the language list open ", sh.prefs.languages_open, ", tiles ", drive::tiles(g), ", changed ", sh.changed,
+              ", each row 88 dp tall at least: ", drive::ok(drive::rect(g, ENGLISH).w >= gui::TAP * g.scale - 0.5));
+    }
     sh.changed = false;
     tap(sh, g, EESTI, 9.31);
     show(sh, "Eesti");
@@ -288,9 +300,13 @@ fn main() {
     drive::size = float2 { 800.0, 1280.0 };
     drive::frame(sh, g, float2 { -1.0, -1.0 }, false, false, false, 10.0);
     let first = drive::rect(g, PHOTO);
-    print("portrait: board at ", sh.out.layout.board, ", the list from ", g.scroll.view.y, ", clear ",
-          sh.out.layout.board.y + sh.out.layout.board.z < g.scroll.view.y && g.scroll.view.y < first.y,
-          ", tiles ", drive::tiles(g));
+    let clear = sh.out.layout.board.y + sh.out.layout.board.z < g.scroll.view.y && g.scroll.view.y < first.y;
+    if drive::verbose {
+        print("portrait: board at ", sh.out.layout.board, ", the list from ", g.scroll.view.y, ", clear ", clear,
+              ", tiles ", drive::tiles(g));
+    } else {
+        print("portrait: the board above the list, clear ", clear, ", tiles ", drive::tiles(g));
+    }
     tap(sh, g, STACK, 10.1);
     show(sh, "portrait stack");
     drive::tap(sh, g, drive::tile(g, BACK), 10.2);

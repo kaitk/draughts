@@ -11,7 +11,8 @@
 // on the line, its head a tile, the board still taking a tap in landscape, closed by its
 // head, in portrait by the dim layer too, and by back; opened and closed by the keys (the
 // line focused, Enter, then Enter on the head the sheet focuses). The setting off shows no
-// line and the column as built; the list alone, no legend.
+// line and the column as built; the list alone, no legend. Positions and sizes in dp and
+// the quad counts are printed verbose (DRAUGHTS_TEST_VERBOSE) and checked by default.
 //
 // On the tablet's panel: a touch on a marked move shows its tip, the next tap elsewhere
 // only closes it (settings' tile under it isn't pressed), a tap on another mark moves
@@ -112,16 +113,26 @@ fn device(name: const u8[:], g: gui::Gui&, raised: bool) {
         print(line, "no line");
         return;
     }
-    format(line, if land { "the line " } else { "the bar's line " }, dp(l.line, safe, u), ", its tap ", whole(l.line_tap.z / u), "x",
-           whole(l.line_tap.w / u), " dp");
-    if land {
-        format(line, ", the column ", dp(l.left, safe, u), if l.counts { ", the catch as counts" } else { "" });
-        if l.taken_as != panel::TAKEN_NONE { format(line, ", the catch ", dp(l.taken, safe, u)); }
-    }
-    format(line, ", the sheet ", whole(l.sheet.z / u), "x", whole(l.sheet.w / u), " dp");
     let b = sh.out.layout.board;
     let sq = float4 { b.x, b.y, b.z, b.z };
-    format(line, if raised { ", the 3D board " } else { ", the board " }, whole((if raised { sh.out.view.rect.z } else { b.z }) / u), " dp");
+    if drive::verbose {
+        format(line, if land { "the line " } else { "the bar's line " }, dp(l.line, safe, u), ", its tap ", whole(l.line_tap.z / u), "x",
+               whole(l.line_tap.w / u), " dp");
+        if land {
+            format(line, ", the column ", dp(l.left, safe, u), if l.counts { ", the catch as counts" } else { "" });
+            if l.taken_as != panel::TAKEN_NONE { format(line, ", the catch ", dp(l.taken, safe, u)); }
+        }
+        format(line, ", the sheet ", whole(l.sheet.z / u), "x", whole(l.sheet.w / u), " dp");
+        format(line, if raised { ", the 3D board " } else { ", the board " }, whole((if raised { sh.out.view.rect.z } else { b.z }) / u), " dp");
+    } else {
+        line.append(if land { "the line" } else { "the bar's line" });
+        if land {
+            line.append(", the column");
+            if l.counts { line.append(", the catch as counts"); }
+            if l.taken_as != panel::TAKEN_NONE { line.append(", the catch"); }
+        }
+        line.append(if raised { ", the sheet, the 3D board" } else { ", the sheet, the board" });
+    }
     let tap = l.line_tap;
     if tap.z < gui::TAP * u - 0.5 || tap.w < gui::TAP * u - 0.5 { wrong.append(" the tap under 88 dp;"); }
     if !inside(tap, safe) || !inside(l.line, safe) { wrong.append(" the line off the safe area;"); }
@@ -147,7 +158,9 @@ fn device(name: const u8[:], g: gui::Gui&, raised: bool) {
     var head = float4 { 0.0, 0.0, 0.0, 0.0 };
     for q in g.quads { if q.look.x == gui::BUTTON && abs(q.rect.x - l.sheet_in.x) < 0.5 && abs(q.rect.y - l.sheet_in.y) < 0.5 { head = q.rect; } }
     var said = str("    a tap on it: ", if opened { "open" } else { "closed" }, ", ", drive::tiles(g), " tiles (", closed_tiles,
-                   " closed), the head ", whole(head.z / u), "x", whole(head.w / u), " dp, ", g.quads.len, " quads");
+                   " closed), ");
+    if drive::verbose { format(said, "the head ", whole(head.z / u), "x", whole(head.w / u), " dp, ", g.quads.len, " quads"); }
+    else { format(said, if head.z > 0.0 { "the head shown" } else { "no head" }, ", quads under the limit ", g.quads.len < gui::MAX_QUADS); }
     if land && !raised {
         // The board still plays: a white piece taken up by a tap.
         let v .= rules::VARIANTS[rules::RUSSIAN];
@@ -200,12 +213,20 @@ fn settings_line(g: gui::Gui&) {
     let safe = gui::safe(g, w, h);
     var off = played(false, settings::MOVES_HIDDEN, g);
     let lo = shell::game_layout(off, safe, u, 20.0);
-    print("  the setting off: line ", lo.line_as, ", the column ", dp(lo.left, safe, u), ", ", drive::tiles(g), " tiles");
+    let tiles_off = drive::tiles(g);
+    if drive::verbose { print("  the setting off: line ", lo.line_as, ", the column ", dp(lo.left, safe, u), ", ", tiles_off, " tiles"); }
+    else {
+        // The column as built: where it stands with the line on.
+        var on = played(false, settings::MOVES_MARKS, g);
+        let lm = shell::game_layout(on, safe, u, 20.0);
+        print("  the setting off: line ", lo.line_as, ", the column as with the line ", lo.left == lm.left, ", ", tiles_off, " tiles");
+    }
     // The 3D board with the line and without it.
     var off3 = played(true, settings::MOVES_HIDDEN, g);
     let w3 = off3.out.view.rect.z / u;
     var on3 = played(true, settings::MOVES_MARKS, g);
-    print("  the 3D board ", whole(on3.out.view.rect.z / u), " dp across with the line, ", whole(w3), " with the setting off");
+    if drive::verbose { print("  the 3D board ", whole(on3.out.view.rect.z / u), " dp across with the line, ", whole(w3), " with the setting off"); }
+    else { print("  the 3D board as large with the line as with the setting off: ", drive::ok(abs(on3.out.view.rect.z / u - w3) < 0.5)); }
     var list = played(false, settings::MOVES_LIST, g);
     let ll = shell::game_layout(list, safe, u, 20.0);
     drive::tap(list, g, drive::middle(ll.line_tap), 30.0);
@@ -239,8 +260,10 @@ fn tips(g: gui::Gui&) {
     var tip = float4 { 0.0, 0.0, 0.0, 0.0 };
     for q in g.quads { if q.look.x == gui::GLASS { tip = q.rect; } }
     let safe = gui::safe(g, 1280.0, 800.0);
-    print("  a touch on note ", first, ": tip ", gm.tip, ", ", whole(tip.z), "x", whole(tip.w), " dp at ", whole(tip.x), ",",
-          whole(tip.y), if inside(tip, safe) { ", in the safe area" } else { ", off the safe area" },
+    var size: u8[>..] = [];
+    if drive::verbose { format(size, ", ", whole(tip.z), "x", whole(tip.w), " dp at ", whole(tip.x), ",", whole(tip.y)); }
+    else if tip.z <= 0.0 { size.append(", no tip drawn"); }
+    print("  a touch on note ", first, ": tip ", gm.tip, size, if inside(tip, safe) { ", in the safe area" } else { ", off the safe area" },
           if tip.y + tip.w <= at.y || tip.y >= at.y + at.w { ", clear of its move" } else { ", on its move" });
     // Settings' tile: the next tap only closes the tip.
     drive::tap(sh, g, drive::control(g, 1), 31.0);
@@ -297,8 +320,10 @@ fn main() {
             gui::test_faces(g);
             g.insets = if turned { port[i] } else { land[i] };
             let safe = gui::safe(g, drive::size.x, drive::size.y);
-            print(name, if turned { ", portrait" } else { ", landscape" }, ", ", whole(dps[i]), " dp, safe ",
-                  whole(safe.z / g.scale), " x ", whole(safe.w / g.scale), " dp:");
+            if drive::verbose {
+                print(name, if turned { ", portrait" } else { ", landscape" }, ", ", whole(dps[i]), " dp, safe ",
+                      whole(safe.z / g.scale), " x ", whole(safe.w / g.scale), " dp:");
+            } else { print(name, if turned { ", portrait" } else { ", landscape" }, ", ", whole(dps[i]), " dp:"); }
             for raised in [false, true] { device(if turned { "portrait" } else { "landscape" }, g, raised); }
             if i == 0 && !turned { settings_line(g); }
         }

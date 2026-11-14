@@ -11,6 +11,8 @@
 // on screen, clear of the winning piece where the perspective shows it. The transitions:
 // home to the game and a puzzle's tile to the puzzle move one image, drawn once through
 // the larger end's view, the flat layout steady while it moves, a tile crossfading it in.
+// The bounds and where the image is placed print in dp verbose (DRAUGHTS_TEST_VERBOSE);
+// by default the test checks them.
 import std;
 import vec;
 import math;
@@ -59,10 +61,11 @@ fn screen_at(sh: shell::Shell&, g: gui::Gui&, size: float2, short: f32, what: co
     let r = sh.out.view.rect;
     let sq = view3d::square(sh.out.view, u);
     let flat_mid = abs(sh.out.layout.board.x + 0.5 * sh.out.layout.board.z - (r.x + 0.5 * r.z)) < 0.5;
-    print(what, " ", whole(size.x), " x ", whole(size.y), " at ", whole(short), " dp: raised ", sh.out.raised, ", bounds ",
-          dp(r, u), " (", whole(100.0 * r.z / r.w), ":100), on screen ", inside(r, float4 { 0.0, 0.0, size.x, size.y }),
-          ", tiles touched ", touching(sh, g), " of ", drive::tiles(g), ", flat square in the middle ",
-          flat_mid && abs(sh.out.layout.board.z - sq.board.z) < 0.5, ", drawn as placed ", sh.out.place == r && sh.out.fade == 1.0 && !sh.out.hold);
+    let bounds = if drive::verbose { str(", bounds ", dp(r, u), " (", whole(100.0 * r.z / r.w), ":100)") } else { str("") };
+    print(what, " ", whole(size.x), " x ", whole(size.y), " at ", whole(short), " dp: raised ", sh.out.raised, bounds,
+          ", on screen ", inside(r, float4 { 0.0, 0.0, size.x, size.y }), ", tiles touched ", touching(sh, g), " of ",
+          drive::tiles(g), ", flat square in the middle ", flat_mid && abs(sh.out.layout.board.z - sq.board.z) < 0.5,
+          ", drawn as placed ", sh.out.place == r && sh.out.fade == 1.0 && !sh.out.hold);
     gui::short_dp = 800.0;
 }
 
@@ -114,8 +117,9 @@ fn main() {
     let u = g.scale;
     var all_in = true;
     for i in drive::tiles(g) { if !inside(drive::rect(g, i), float4 { 0.0, 0.0, 1280.0, 800.0 }) { all_in = false; } }
-    print("puzzle: raised ", sh.out.raised, ", bounds ", dp(sh.out.view.rect, u), ", tiles ", drive::tiles(g), " on screen ", all_in,
-          ", touched ", touching(sh, g), ", kings drawn as ", sh.puzzle.b.king_look);
+    let bounds = if drive::verbose { str(", bounds ", dp(sh.out.view.rect, u)) } else { str("") };
+    print("puzzle: raised ", sh.out.raised, bounds, ", tiles ", drive::tiles(g), " on screen ", all_in, ", touched ",
+          touching(sh, g), ", kings drawn as ", sh.puzzle.b.king_look);
     let pl .= sh.puzzle;
     let vr .= rules::VARIANTS[pl.b.variant];
     let un = view3d::unit(sh.out.layout.n);
@@ -206,8 +210,9 @@ fn main() {
     let spot = view3d::on_screen(w.out.view, w.out.layout, board::center(w.out.layout, rv, w.game.won_on));
     let clear = spot.x + spot.z <= card.x || spot.x - spot.z >= card.x + card.z || spot.y + spot.z <= card.y
                 || spot.y - spot.z >= card.y + card.w;
-    print("won: ", rules::fen(w.game.b.pos), ", winning piece on ", drive::name(rv, w.game.won_on), ", card ", dp(card, u),
-          " inside the 3D bounds ", inside(card, w.out.view.rect), ", centered across them ",
+    let card_at = if drive::verbose { str(", card ", dp(card, u), " inside") } else { str(", the card inside") };
+    print("won: ", rules::fen(w.game.b.pos), ", winning piece on ", drive::name(rv, w.game.won_on), card_at,
+          " the 3D bounds ", inside(card, w.out.view.rect), ", centered across them ",
           abs(card.x + 0.5 * card.z - (w.out.view.rect.x + 0.5 * w.out.view.rect.z)) < 1.0, ", clear of the winning piece ", clear);
     var ws = view3d::Scene {};
     let wb .= shell::fill(w, t);
@@ -230,15 +235,21 @@ fn main() {
     var steady = true;
     var last_view = view3d::View {};
     var first = tr.out.layout;
+    var grew = true;
+    var was = tr.out.place;
     for k in 0..6 {
         let at = 1.0 + 0.05 * k;
         drive::idle(tr, g, at);
         if k == 0 { first = tr.out.layout; }
+        if k == 0 && tr.out.place != home_rect { grew = false; }
+        if tr.out.place.z < was.z { grew = false; }
+        was = tr.out.place;
         if !view3d::same_view(tr.out.view, last_view) { views++; last_view = tr.out.view; }
         if tr.from >= 0 && tr.out.layout != first { steady = false; }
-        print("  home to the game ", at, ": raised ", tr.out.raised, ", hold ", tr.out.hold, ", placed ", dp(tr.out.place, u), ", fade ",
-              tr.out.fade);
+        let placed = if drive::verbose { str(", placed ", dp(tr.out.place, u)) } else { str("") };
+        print("  home to the game ", at, ": raised ", tr.out.raised, ", hold ", tr.out.hold, placed, ", fade ", tr.out.fade);
     }
+    if !drive::verbose { print("  the image placed from home's bounds, growing all the way: ", drive::ok(grew)); }
     print("  views drawn through ", views, ", the flat layout steady ", steady, ", at rest placed at the game's bounds ",
           tr.out.place == tr.out.view.rect, ", the game's larger than home's ", tr.out.view.rect.z > home_rect.z);
 
@@ -250,10 +261,18 @@ fn main() {
     print("picker: raised ", pk.out.raised);
     drive::frame(pk, g, drive::tile(g, 1), true, true, false, 1.0);
     drive::frame(pk, g, drive::tile(g, 1), false, false, true, 1.02);
+    var bigger = true;
+    var low = 0.0;
     for k in 1..6 {
         let at = 1.02 + 0.05 * k;
         drive::idle(pk, g, at);
-        print("  tile to the puzzle ", at, ": raised ", pk.out.raised, ", placed ", dp(pk.out.place, u), ", fade ",
-              floor(pk.out.fade * 100.0 + 0.5) / 100.0, ", hole as tall as the image ", pk.from < 0 || pk.out.tall == pk.out.place.w);
+        if pk.out.place.z < low { bigger = false; }
+        low = pk.out.place.z;
+        let placed = if drive::verbose { str(", placed ", dp(pk.out.place, u)) } else { str("") };
+        print("  tile to the puzzle ", at, ": raised ", pk.out.raised, placed, ", fade ", floor(pk.out.fade * 100.0 + 0.5) / 100.0,
+              ", hole as tall as the image ", pk.from < 0 || pk.out.tall == pk.out.place.w);
+    }
+    if !drive::verbose {
+        print("  the image growing all the way to the puzzle's bounds: ", drive::ok(bigger && pk.out.place == pk.out.view.rect));
     }
 }

@@ -6,7 +6,8 @@
 // goes down while held as the other tiles do. It is clear of the board and of the column
 // or sheet: in portrait the board moves down to 16 dp under it and shrinks to keep 24 dp
 // above the sheet. On iOS, where an app never closes itself, home shows none
-// (home::closable): a tap where it would be does nothing.
+// (home::closable): a tap where it would be does nothing. The rects and dp print verbose
+// (DRAUGHTS_TEST_VERBOSE); by default the test checks them.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -45,10 +46,24 @@ fn check(what: const u8[:], setup: i64) {
     // The column or sheet: the first glass.
     var col = float4 { 0.0, 0.0, 0.0, 0.0 };
     for q in g.quads { if q.look.x == gui::GLASS && col.z == 0.0 { col = q.rect; } }
-    print(what, ": the way out at ", r, " (", (drive::size.x - r.x - r.z) / u, " dp from the right, ", r.y / u,
-          " from the top, ", r.z / u, " across), the board at ", b, ", clear of the board ", !overlaps(r, b),
-          ", of the column ", !overlaps(r, col), ", the board's gap under it ", (b.y - r.y - r.w) / u,
-          " dp, beside it ", (r.x - b.x - b.z) / u, " dp");
+    let right = (drive::size.x - r.x - r.z) / u;
+    let top = r.y / u;
+    let under = (b.y - r.y - r.w) / u;
+    let beside = (r.x - b.x - b.z) / u;
+    if drive::verbose {
+        print(what, ": the way out at ", r, " (", right, " dp from the right, ", top, " from the top, ", r.z / u,
+              " across), the board at ", b, ", clear of the board ", !overlaps(r, b), ", of the column ", !overlaps(r, col),
+              ", the board's gap under it ", under, " dp, beside it ", beside, " dp");
+    } else {
+        // 24 dp from the top and the right, round and a tap's size at least; a board under
+        // it 16 dp down at least.
+        let corner = abs(right - 24.0) < 0.5 && abs(top - 24.0) < 0.5;
+        let size = r.z == r.w && r.z >= gui::TAP * u - 0.5;
+        var board = str(", the board beside it");
+        if beside < 0.0 { board = str(", the board 16 dp under it: ", drive::ok(under >= 15.5)); }
+        print(what, ": the way out 24 dp into the top right: ", drive::ok(corner), ", round and 88 dp: ", drive::ok(size),
+              ", clear of the board ", !overlaps(r, b), ", of the column ", !overlaps(r, col), board);
+    }
 
     // Just outside it, left and under: nothing.
     drive::tap(sh, g, float2 { r.x - 1.0, r.y + 0.5 * r.w }, 1.0);

@@ -14,7 +14,8 @@
 // with the game, which brings back the picker instead. Stars are kept under
 // `stars.international`, and an older file's `stars` is read as it. Half of Learn solved
 // opens the other themes. Next after a theme's last puzzle goes back to the library. In
-// portrait the theme's tiles keep 88 dp.
+// portrait the theme's tiles keep 88 dp. Where squares, the board, and tiles lie prints
+// verbose (DRAUGHTS_TEST_VERBOSE); by default the checks they stand for.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -192,9 +193,13 @@ fn main() {
     shell::play_puzzle(sh, index(33));
     drive::idle(sh, g, 24.0);
     show(sh, "puzzle 33");
+    var squares: u8[>..] = [];
+    let f6 = drive::at(sh.out.layout, "f6");
+    let d6 = drive::at(sh.out.layout, "d6");
+    if drive::verbose { format(squares, ", 21 at ", f6, ", 23 at ", d6); }
+    else { format(squares, ", 21 left of 23: ", drive::ok(f6.x < d6.x && abs(f6.y - d6.y) < 0.5)); }
     print("  turned ", sh.out.layout.flip, ", it says ", puzzle::to_move(puzzle::current(sh.puzzle)), ", its turn piece ",
-          sh.out.over[0].look.x, " lit ", sh.out.over[0].ring.y, ", 21 at ",
-          drive::at(sh.out.layout, "f6"), ", 23 at ", drive::at(sh.out.layout, "d6"));
+          sh.out.over[0].look.x, " lit ", sh.out.over[0].ring.y, squares);
     tap_number(sh, g, 21, 24.1);
     tap_number(sh, g, 23, 24.2);
     show(sh, "21 takes two");
@@ -244,13 +249,22 @@ fn main() {
     // Portrait: the left panel above the board, the goal, stars, and next below it.
     drive::size = float2 { 800.0, 1280.0 };
     drive::idle(sh, g, 40.0);
-    print("portrait: board ", sh.out.layout.board, ", next at ", drive::rect(g, 3));
+    let next = drive::rect(g, 3);
+    let b = sh.out.layout.board;
+    if drive::verbose { print("portrait: board ", b, ", next at ", next); }
+    else { print("portrait: next below the board: ", drive::ok(b.y + b.z <= next.y + 0.5 && next.y + next.w <= drive::size.y + 0.5)); }
     // The portrait picker on Learn's page: back, then its tiles of at least 88 dp.
     sh.screen = shell::PICKER;
     sh.theme = puzzles::LEARN;
     drive::idle(sh, g, 41.0);
     let first = drive::rect(g, 1);
     let fifth = drive::rect(g, 5);
-    print("portrait Learn: tiles ", drive::tiles(g), ", the first ", first, ", the fifth ", fifth, ", at least 88 dp ",
-          first.z >= 88.0, ", the last ends at ", drive::rect(g, 12).y + first.w);
+    if drive::verbose {
+        print("portrait Learn: tiles ", drive::tiles(g), ", the first ", first, ", the fifth ", fifth, ", at least 88 dp ",
+              first.z >= 88.0, ", the last ends at ", drive::rect(g, 12).y + first.w);
+    } else {
+        print("portrait Learn: tiles ", drive::tiles(g), ", the fifth under the first ",
+              abs(fifth.x - first.x) < 0.5 && fifth.y > first.y + first.w, ", at least 88 dp ", first.z >= 88.0,
+              ", the last on the screen ", drive::rect(g, 12).y + first.w <= drive::size.y);
+    }
 }

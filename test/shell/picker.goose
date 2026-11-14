@@ -1,8 +1,9 @@
 // The puzzles' library and each theme's page (shell/picker.goose, take a), headless, at
 // the tablet's size (1920 × 1200, 800 dp across its shorter side) and a 20:9 phone's at
 // 480 dp, in both orientations: each screen's taps, where the first and the last lie in
-// dp, the smallest across and down, and whether any lies off the screen, overlaps
-// another, or is under 88 dp. In the library the rows are one column where they fit the
+// dp and the smallest across and down (printed verbose, DRAUGHTS_TEST_VERBOSE), how many
+// rows they lie in (by default), and whether any lies off the screen, overlaps another,
+// or is under 88 dp. In the library the rows are one column where they fit the
 // height and two where they don't; on a page the levels' tiles go in rows as even as
 // they go. With half of Learn solved the other themes open, and the first puzzle
 // without stars is lit, one per page.
@@ -33,6 +34,18 @@ fn icons(g: gui::Gui&, icon: i64) -> i64 {
     var n = 0;
     for q in g.quads { if q.look.x == gui::ICON && q.look.z == icon { n++; } }
     return n;
+}
+
+// How many rows the tiles after back lie in, each row's tops alike.
+fn rows(g: gui::Gui&, n: i64) -> i64 {
+    var k = 0;
+    for i in 1..n {
+        let r = drive::rect(g, i);
+        var seen = false;
+        for j in 1..i { if abs(drive::rect(g, j).y - r.y) < 0.5 { seen = true; } }
+        if !seen { k++; }
+    }
+    return k;
 }
 
 fn lit(g: gui::Gui&) -> i64 {
@@ -69,10 +82,16 @@ fn report(what: const u8[:], g: gui::Gui&) {
     }
     var scrolled: u8[>..] = [];
     if below > 0 { format(scrolled, ", ", below, " below the foot (the list scrolls)"); }
-    print("  ", what, ": ", n, " tiles, lit ", lit(g), ", locks ", icons(g, gui::LOCK), ", stars ", icons(g, gui::STAR), ", back ", dp(drive::rect(g, 0), u), ", the first ",
-          dp(drive::rect(g, 1), u), ", the last ", dp(drive::rect(g, n - 1), u), ", smallest ",
-          floor(narrow / u + 0.5) as i64, " x ", floor(low / u + 0.5) as i64, " dp",
-          scrolled[..], if wrong.len > 0 { str(";", wrong) } else { str(", all in place") });
+    var sizes: u8[>..] = [];
+    if drive::verbose {
+        format(sizes, ", back ", dp(drive::rect(g, 0), u), ", the first ", dp(drive::rect(g, 1), u), ", the last ",
+               dp(drive::rect(g, n - 1), u), ", smallest ", floor(narrow / u + 0.5) as i64, " x ",
+               floor(low / u + 0.5) as i64, " dp");
+    } else {
+        format(sizes, ", ", rows(g, n), " rows");
+    }
+    print("  ", what, ": ", n, " tiles, lit ", lit(g), ", locks ", icons(g, gui::LOCK), ", stars ", icons(g, gui::STAR),
+          sizes[..], scrolled[..], if wrong.len > 0 { str(";", wrong) } else { str(", all in place") });
 }
 
 fn screens(g: gui::Gui&, stars: i64[:]) {

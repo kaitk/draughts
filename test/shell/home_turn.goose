@@ -5,7 +5,9 @@
 // home stays open; a drag far past the range stops at its ends. A drag that starts off
 // the board (beside it, or on the column's glass) and a tap on a menu row leave it alone.
 // Leaving home (continue, to the game) eases it back to rest over the transition, and
-// home shows its board at rest again on return. The flat board has none of it.
+// home shows its board at rest again on return. The flat board has none of it. How large
+// the turned board is drawn, against its size at rest, prints verbose
+// (DRAUGHTS_TEST_VERBOSE); by default the test checks it is no larger.
 import std;
 import vec;
 import math;
@@ -51,6 +53,12 @@ fn in_room(sh: shell::Shell&, g: gui::Gui&, mid: float2, k0: f32) -> bool {
            && abs(v.x + 0.5 * v.z - mid.x) < 0.5 && abs(v.y + 0.5 * v.w - mid.y) < 0.5 && sh.out.view.k <= k0;
 }
 
+// How large the board is drawn against its size at rest (k0): verbose only, in percent.
+fn sized(prefix: const u8[:], sh: shell::Shell&, k0: f32, suffix: const u8[:]) -> u8[>..] {
+    if drive::verbose { return str(prefix, r1(100.0 * sh.out.view.k / k0), suffix); }
+    return str("");
+}
+
 // Frames at rest from `now`: how many changed or kept animating.
 fn rest(sh: shell::Shell&, g: gui::Gui&, now: f64) -> i64 {
     var drawn = 0;
@@ -84,8 +92,7 @@ fn main() {
     // On the board: 100 px left and 50 down turn it 30° and tip it 15° toward the top.
     let d1 = drag(sh, g, mid, mid + float2 { -100.0, 50.0 }, 5, 2.0);
     print("dragged on the board: ", angle(sh, 2.2), ", frames drawn ", d1, " of 7, the view drawn turned ",
-          r1(sh.out.view.eye.x) != 0.0, ", in its room ", in_room(sh, g, mid, k0), " at ",
-          r1(100.0 * sh.out.view.k / k0), "% of its size");
+          r1(sh.out.view.eye.x) != 0.0, ", in its room ", in_room(sh, g, mid, k0), sized(" at ", sh, k0, "% of its size"));
     print("let go: frames drawn at rest ", rest(sh, g, 3.0), ", ", angle(sh, 4.0));
     // Off the board: beside it in the stage, under its outline's foot, and on the column's
     // glass between rows; a tap on the new game row opens the setup and back.
@@ -105,11 +112,10 @@ fn main() {
           setup, " and closed ", sh.setup == home::NO_SETUP);
     // Far past the range, the other way: it stops at its ends.
     drag(sh, g, mid, mid + float2 { 600.0, 400.0 }, 4, 11.0);
-    print("dragged far: ", angle(sh, 11.2), ", in its room ", in_room(sh, g, mid, k0), " at ", r1(100.0 * sh.out.view.k / k0),
-          "%");
+    print("dragged far: ", angle(sh, 11.2), ", in its room ", in_room(sh, g, mid, k0), sized(" at ", sh, k0, "%"));
     drag(sh, g, mid, mid + float2 { -600.0, -600.0 }, 4, 11.5);
-    print("dragged far back: ", angle(sh, 11.7), ", in its room ", in_room(sh, g, mid, k0), " at ",
-          r1(100.0 * sh.out.view.k / k0), "%, frames drawn at rest ", rest(sh, g, 12.0));
+    print("dragged far back: ", angle(sh, 11.7), ", in its room ", in_room(sh, g, mid, k0), sized(" at ", sh, k0, "%"),
+          ", frames drawn at rest ", rest(sh, g, 12.0));
 
     // In the setup the board turns too.
     drive::tap(sh, g, drive::tile(g, 1), 13.1);

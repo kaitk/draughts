@@ -14,7 +14,9 @@
 // both orientations, the phone at 480 dp, with one and four players and in English and
 // Estonian: every tile of theirs inside the safe area, none overlapping another, every
 // one 88 dp at least, and the sheet's pictures and holds; with the name typed, the card
-// at the top.
+// at the top. By default each says whether the card is centred in the safe area or at its
+// top; verbose (DRAUGHTS_TEST_VERBOSE) the smallest tap and the card's top and size in dp,
+// and home's chip and way out as rects.
 import std;
 import vec;
 import os;
@@ -60,8 +62,8 @@ fn inside(r: float4, a: float4) -> bool {
 
 fn whole(x: f32) -> i64 { floor(x + 0.5) as i64 }
 
-// The card's tiles from `first` on: how many, the smallest across and down in dp, the
-// card's glass in dp, and anything out of place.
+// The card's tiles from `first` on: how many, the smallest across and down in dp and the
+// card's glass in dp (verbose) or whether the card is centred, and anything out of place.
 fn report(what: const u8[:], g: gui::Gui&, first: i64) {
     let u = g.scale;
     let safe = gui::safe(g, drive::size.x, drive::size.y);
@@ -84,9 +86,17 @@ fn report(what: const u8[:], g: gui::Gui&, first: i64) {
         if veiled && q.look.x == gui::GLASS && card.z == 0.0 { card = q.rect; }
     }
     if narrow < gui::TAP * u - 0.5 || low < gui::TAP * u - 0.5 { wrong.append(" a tap under 88 dp;"); }
-    print("  ", what, ": ", n - first, " tiles, smallest ", whole(narrow / u), " x ", whole(low / u), " dp, card at ",
-          whole(card.y / u), " dp, ", whole(card.z / u), " x ", whole(card.w / u), " dp",
-          if wrong.len > 0 { wrong[..] } else { ", all in place" });
+    if drive::verbose {
+        print("  ", what, ": ", n - first, " tiles, smallest ", whole(narrow / u), " x ", whole(low / u), " dp, card at ",
+              whole(card.y / u), " dp, ", whole(card.z / u), " x ", whole(card.w / u), " dp",
+              if wrong.len > 0 { wrong[..] } else { ", all in place" });
+    } else {
+        let centred = abs(card.y + 0.5 * card.w - (safe.y + 0.5 * safe.w)) < u;
+        let top = card.y < safe.y + gui::TAP * u;
+        print("  ", what, ": ", n - first, " tiles, the card ",
+              if centred { "centred" } else if top { "at the top" } else { "off centre" },
+              if wrong.len > 0 { wrong[..] } else { ", all in place" });
+    }
 }
 
 // Home's tiles with the card closed; the card's tiles follow them when it is open.
@@ -155,7 +165,10 @@ fn main() {
     drive::idle(sh, g, t);
     let home = drive::tiles(g);
     // The chip: the last tile but one, beside the way out.
-    print("home's chip at ", drive::rect(g, home - 2), ", the way out at ", drive::rect(g, home - 1));
+    let chip = drive::rect(g, home - 2);
+    let way = drive::rect(g, home - 1);
+    if drive::verbose { print("home's chip at ", chip, ", the way out at ", way); }
+    else { print("home's chip in the way out's row, left of it: ", drive::ok(abs(chip.y - way.y) < 0.5 && chip.x + chip.z <= way.x)); }
     drive::tap(sh, g, drive::tile(g, home - 2), tick());
     print("chip tapped: ", state(sh));
     let first = home_tiles(sh, g, t);

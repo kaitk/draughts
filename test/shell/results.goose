@@ -3,7 +3,8 @@
 // rating; the draughts' tiles stand on one glass; back goes home. The move list's setting
 // is settings' alone (2026-11-13). Laid out at the tablet's and a phone's
 // size in both orientations: every tile at least a tap, inside the safe area, none over
-// another; the frame's quads under gui::MAX_QUADS with a full list.
+// another; the frame's quads under gui::MAX_QUADS with a full list. Sizes in dp and the
+// quad counts are printed verbose (DRAUGHTS_TEST_VERBOSE) and checked by default.
 import std;
 import vec;
 import os;
@@ -45,7 +46,9 @@ fn check(g: gui::Gui&, area: float4) -> u8[>..] {
             if r.x < q.x + q.z - 0.5 && q.x < r.x + r.z - 0.5 && r.y < q.y + q.w - 0.5 && q.y < r.y + r.w - 0.5 { apart = false; }
         }
     }
-    return str(n, " tiles, smallest ", least as i64, " dp, inside ", inside, ", apart ", apart, ", quads ", g.quads.len);
+    if drive::verbose { return str(n, " tiles, smallest ", least as i64, " dp, inside ", inside, ", apart ", apart, ", quads ", g.quads.len); }
+    return str(n, " tiles, each a tap ", least >= gui::tap() - 0.5, ", inside ", inside, ", apart ", apart, ", quads under the limit ",
+               g.quads.len < gui::MAX_QUADS);
 }
 
 var now = 1.0;
@@ -128,9 +131,15 @@ fn main() {
         }
         let left = back.x - safe.x;
         let right = safe.x + safe.z - (row.x + row.z);
-        print("a desktop's ", size.x as i64, " x ", size.y as i64, ": ", check(g, safe), "; large ", gui::large(safe, g.scale),
-              ", from back to the list's right ", ((row.x + row.z - back.x) / g.scale + 0.5) as i64, " dp, a row ",
-              (row.w / g.scale + 0.5) as i64, " dp tall, centered ", abs(left - right) < 14.0 * g.scale);
+        if drive::verbose {
+            print("a desktop's ", size.x as i64, " x ", size.y as i64, ": ", check(g, safe), "; large ", gui::large(safe, g.scale),
+                  ", from back to the list's right ", ((row.x + row.z - back.x) / g.scale + 0.5) as i64, " dp, a row ",
+                  (row.w / g.scale + 0.5) as i64, " dp tall, centered ", abs(left - right) < 14.0 * g.scale);
+        } else {
+            print("a desktop's ", size.x as i64, " x ", size.y as i64, ": ", check(g, safe), "; large ", gui::large(safe, g.scale),
+                  ", at most LARGE_W wide ", row.x + row.z - back.x <= results::LARGE_W * g.scale + 0.5, ", rows larger ",
+                  row.w > results::ROW * g.scale + 0.5, ", centered ", abs(left - right) < 14.0 * g.scale);
+        }
     }
     gui::desktop_scale = 0.0;
 }

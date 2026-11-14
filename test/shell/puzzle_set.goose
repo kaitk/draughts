@@ -7,9 +7,10 @@
 // top after a switch. Then the library with each draughts chosen at the tablet's size in
 // both orientations, a 20:9 phone's at 480 dp in both, in English and Estonian, and the
 // 11" iPad's smallest window (a compact layout): its tiles (back, the switch's three, a
-// row per theme), where the switch stands, the title's lines, and whether any tile lies
-// off the screen, overlaps another, or is under 88 dp, or the title runs into a tile or
-// off the screen.
+// row per theme), where the switch stands (beside back or under it), the title's lines,
+// and whether any tile lies off the screen, overlaps another, or is under 88 dp, or the
+// title runs into a tile or off the screen; verbose (DRAUGHTS_TEST_VERBOSE) also the
+// tiles' places and sizes in dp, the scroll in dp, and the quads drawn.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -108,10 +109,16 @@ fn report(what: const u8[:], g: gui::Gui&) {
     let first = drive::rect(g, 1);
     let last = drive::rect(g, 3);
     let sw = float4 { first.x, first.y, last.x + last.z - first.x, first.w };
-    print("  ", what, ": ", n, " tiles, back ", dp(drive::rect(g, 0), u), ", the switch ", dp(sw, u), " (",
-          floor(drive::rect(g, 1).z / u + 0.5) as i64, " ", floor(drive::rect(g, 2).z / u + 0.5) as i64, " ",
-          floor(drive::rect(g, 3).z / u + 0.5) as i64, "), the first row ", dp(drive::rect(g, 4), u), ", ",
-          bare_lines(g), " lines of title, ", g.quads.len, " quads", if wrong.len > 0 { str(";", wrong) } else { str(", all in place") });
+    if drive::verbose {
+        print("  ", what, ": ", n, " tiles, back ", dp(drive::rect(g, 0), u), ", the switch ", dp(sw, u), " (",
+              floor(drive::rect(g, 1).z / u + 0.5) as i64, " ", floor(drive::rect(g, 2).z / u + 0.5) as i64, " ",
+              floor(drive::rect(g, 3).z / u + 0.5) as i64, "), the first row ", dp(drive::rect(g, 4), u), ", ",
+              bare_lines(g), " lines of title, ", g.quads.len, " quads", if wrong.len > 0 { str(";", wrong) } else { str(", all in place") });
+    } else {
+        let beside = abs(first.y - drive::rect(g, 0).y) < 0.5;
+        print("  ", what, ": ", n, " tiles, the switch ", if beside { "beside back" } else { "under back" }, ", ",
+              bare_lines(g), " lines of title", if wrong.len > 0 { str(";", wrong) } else { str(", all in place") });
+    }
 }
 
 fn at_size(g: gui::Gui&, size: float2, short: f32, display: f32) {
@@ -176,11 +183,18 @@ fn main() {
     for k in 10 { drive::frame(ph, g, float2 { p.x, p.y - 30.0 * (k + 1) * g.scale }, true, false, false, 0.12 + 0.01 * k); }
     drive::frame(ph, g, float2 { p.x, p.y - 300.0 * g.scale }, false, false, true, 0.3);
     drive::idle(ph, g, 0.4);
-    print("the smallest window's list dragged: ", floor(g.scroll.offset / g.scale + 0.5) as i64, " dp down");
+    if drive::verbose { print("the smallest window's list dragged: ", floor(g.scroll.offset / g.scale + 0.5) as i64, " dp down"); }
+    else { print("the smallest window's list dragged: ", if g.scroll.offset > 0.5 { "down" } else { "not moved" }); }
     drive::tap(ph, g, drive::tile(g, 3), 1.0);
     drive::idle(ph, g, 1.1);
-    print("Russian tapped: ", floor(g.scroll.offset / g.scale + 0.5) as i64, " dp down, the first row at ",
-          dp(drive::rect(g, 4), g.scale));
+    if drive::verbose {
+        print("Russian tapped: ", floor(g.scroll.offset / g.scale + 0.5) as i64, " dp down, the first row at ",
+              dp(drive::rect(g, 4), g.scale));
+    } else {
+        let row_seen = inside(drive::rect(g, 4), gui::safe(g, drive::size.x, drive::size.y));
+        print("Russian tapped: ", if g.scroll.offset < 0.5 { "at the top" } else { "still scrolled" },
+              ", the first row in view: ", drive::ok(row_seen));
+    }
 
     at_size(g, float2 { 1920.0, 1200.0 }, 800.0, 0.0);
     layouts(g, "the tablet, landscape");

@@ -11,7 +11,9 @@
 // at rest, as settings at rest are; the preview's wrong move flashes then, and once it
 // and the pulse are over nothing more is drawn. A tap during it lands on settings: their
 // back turns it round where it is, the board going back from where it was, and home's
-// rows, still showing faintly, take no tap.
+// rows, still showing faintly, take no tap. The board's rects and the quad counts print
+// verbose (DRAUGHTS_TEST_VERBOSE); by default the test checks where the board goes and
+// says how many quads fade.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -50,11 +52,22 @@ fn look(sh: shell::Shell&, g: gui::Gui&, now: f64, what: const u8[:]) {
     let b .= shell::fill(sh, now);
     var faint = 0;
     for p in b.pieces { if p.look.w < 1.0 { faint++; } }
-    print(what, " ", now, ": ", screen(sh), ", board ", rect(sh.out.layout.board), " ", sh.out.layout.n, "x", sh.out.layout.n,
-          ", mix ", round(100.0 * sh.mix), "%, quads ", g.quads.len, " faded ", faded, " mostly ", gone, ", pieces ",
-          b.pieces.len, " faint ", faint, if b.flash.x >= 0.0 { ", a wrong move" } else { "" }, ", over the UI ",
-          sh.out.over.len, ", hole ", hole(sh), ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
+    let wrong = if b.flash.x >= 0.0 { ", a wrong move" } else { "" };
+    if drive::verbose {
+        print(what, " ", now, ": ", screen(sh), ", board ", rect(sh.out.layout.board), " ", sh.out.layout.n, "x", sh.out.layout.n,
+              ", mix ", round(100.0 * sh.mix), "%, quads ", g.quads.len, " faded ", faded, " mostly ", gone, ", pieces ",
+              b.pieces.len, " faint ", faint, wrong, ", over the UI ", sh.out.over.len, ", hole ", hole(sh), ", drawn ", drawn,
+              ", animating ", shell::animating(sh, g, now));
+    } else {
+        print(what, " ", now, ": ", screen(sh), ", board ", sh.out.layout.n, "x", sh.out.layout.n, ", mix ",
+              round(100.0 * sh.mix), "%, quads faded ", share(faded, g.quads.len), ", mostly ", share(gone, g.quads.len),
+              ", pieces ", b.pieces.len, " faint ", faint, wrong, ", over the UI ", sh.out.over.len, ", hole ", hole(sh),
+              ", drawn ", drawn, ", animating ", shell::animating(sh, g, now));
+    }
 }
+
+// How many of n: none, some, or all.
+fn share(k: i64, n: i64) -> const u8[:] { if k == 0 { "none" } else if k == n { "all" } else { "some" } }
 
 fn main() {
     var g = gui::Gui {};
@@ -125,8 +138,17 @@ fn main() {
     let turned = sh.out.layout.board;
     drive::idle(sh, g, 7.19);
     let after = sh.out.layout.board;
-    print("back during it: ", screen(sh), ", from settings ", sh.from == shell::SETTINGS, ", the board on the frames ",
-          rect(before), ", ", rect(turned), ", ", rect(after));
+    if drive::verbose {
+        print("back during it: ", screen(sh), ", from settings ", sh.from == shell::SETTINGS, ", the board on the frames ",
+              rect(before), ", ", rect(turned), ", ", rect(after));
+    } else {
+        // The tap's frame still goes on up; the next comes back down from there, short of
+        // home's place.
+        let on = turned.y < before.y;
+        let back = after.y > turned.y && after.y < home_at.y;
+        print("back during it: ", screen(sh), ", from settings ", sh.from == shell::SETTINGS,
+              ", the board turned round where it was: ", drive::ok(on && back));
+    }
     look(sh, g, 7.24, "  ");
     look(sh, g, 7.32, "  ");
     look(sh, g, 7.36, "ended");
@@ -142,6 +164,7 @@ fn main() {
     look(p, g, 0.0, "portrait home");
     let gear = drive::tile(g, 0);
     let low = p.out.layout.board.y;
+    let wide = p.out.layout.board.z;
     drive::tap(p, g, gear, 1.0);
     var up_p = true;
     var at_y = low;
@@ -154,5 +177,6 @@ fn main() {
     look(p, g, 1.3, "ended");
     look(p, g, 5.3, "after the flash and the pulse");
     look(p, g, 5.4, "idle");
-    print("the board went up all the way ", up_p, ", from ", round(low), " to ", round(p.out.layout.board.y));
+    if drive::verbose { print("the board went up all the way ", up_p, ", from ", round(low), " to ", round(p.out.layout.board.y)); }
+    else { print("the board went up all the way ", up_p, ", and shrank: ", drive::ok(p.out.layout.board.z < wide)); }
 }

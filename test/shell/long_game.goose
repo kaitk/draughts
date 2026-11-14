@@ -3,7 +3,8 @@
 // the win's card over the board. The UI's quads (gui::MAX_QUADS) must hold them all: at
 // 512 the list took them and the card's panel, words, and buttons were dropped unseen,
 // its crowned piece (an overlay, not a quad) left alone on the board (2026-11-14). On
-// the flat and the 3D board: the quads the frame used, and the card's quads on the board.
+// the flat and the 3D board: whether the frames stayed under the limit and the card's
+// quads are on the board; the quad counts themselves verbose (DRAUGHTS_TEST_VERBOSE).
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -74,7 +75,12 @@ fn main() {
         }
         var card = 0;
         for q in g.quads { if q.extra.z >= gui::ON_BOARD && q.extra.z < gui::CLIP { card++; } }
-        print(if raised { "3D" } else { "flat" }, ": won ", sh.game.won_at >= 0.0, ", moves ", sh.game.notes.len, ", quads ",
-              g.quads.len, ", at most ", most, ", under the limit ", most < gui::MAX_QUADS, ", the card's on the board ", card);
+        if drive::verbose {
+            print(if raised { "3D" } else { "flat" }, ": won ", sh.game.won_at >= 0.0, ", moves ", sh.game.notes.len, ", quads ",
+                  g.quads.len, ", at most ", most, ", under the limit ", most < gui::MAX_QUADS, ", the card's on the board ", card);
+        } else {
+            print(if raised { "3D" } else { "flat" }, ": won ", sh.game.won_at >= 0.0, ", moves ", sh.game.notes.len,
+                  ", under the limit ", most < gui::MAX_QUADS, ", the card on the board ", card > 0);
+        }
     }
 }

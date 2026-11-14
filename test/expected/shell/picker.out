@@ -1,40 +1,40 @@
 the tablet, landscape:
-  the library: 11 tiles, lit 1, locks 6, stars 1, back 34,24 134x88, the first 848,24 162x88, the last 34,124 1212x104, smallest 102 x 88 dp, all in place
-  learn: 13 tiles, lit 1, locks 0, stars 0, back 24,24 134x88, the first 579,257 96x96, the last 897,533 96x96, smallest 96 x 88 dp, all in place
-  captures: 11 tiles, lit 1, locks 0, stars 0, back 24,24 134x88, the first 579,257 96x96, the last 791,533 96x96, smallest 96 x 88 dp, all in place
-  crowning: 13 tiles, lit 1, locks 0, stars 0, back 24,24 134x88, the first 579,257 96x96, the last 897,533 96x96, smallest 96 x 88 dp, all in place
-  shots: 21 tiles, lit 1, locks 0, stars 0, back 24,24 134x88, the first 526,220 96x96, the last 950,570 96x96, smallest 96 x 88 dp, all in place
-  king-shots: 11 tiles, lit 1, locks 0, stars 0, back 24,24 134x88, the first 579,257 96x96, the last 791,533 96x96, smallest 96 x 88 dp, all in place
-  safe-move: 11 tiles, lit 1, locks 0, stars 0, back 24,24 134x88, the first 579,257 96x96, the last 897,533 96x96, smallest 96 x 88 dp, all in place
+  the library: 11 tiles, lit 1, locks 6, stars 1, 5 rows, all in place
+  learn: 13 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  captures: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  crowning: 13 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  shots: 21 tiles, lit 1, locks 0, stars 0, 4 rows, all in place
+  king-shots: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  safe-move: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
 the tablet, portrait:
-  the library: 11 tiles, lit 1, locks 6, stars 1, back 100,24 134x88, the first 104,128 245x88, the last 100,232 600x104, smallest 134 x 88 dp, all in place
-  learn: 13 tiles, lit 1, locks 0, stars 0, back 110,24 134x88, the first 260,140 96x96, the last 578,416 96x96, smallest 96 x 88 dp, all in place
-  captures: 11 tiles, lit 1, locks 0, stars 0, back 110,24 134x88, the first 260,140 96x96, the last 472,416 96x96, smallest 96 x 88 dp, all in place
-  crowning: 13 tiles, lit 1, locks 0, stars 0, back 110,24 134x88, the first 260,140 96x96, the last 578,416 96x96, smallest 96 x 88 dp, all in place
-  shots: 21 tiles, lit 1, locks 0, stars 0, back 57,24 134x88, the first 207,140 96x96, the last 631,490 96x96, smallest 96 x 88 dp, all in place
-  king-shots: 11 tiles, lit 1, locks 0, stars 0, back 110,24 134x88, the first 260,140 96x96, the last 472,416 96x96, smallest 96 x 88 dp, all in place
-  safe-move: 11 tiles, lit 1, locks 0, stars 0, back 110,24 134x88, the first 260,140 96x96, the last 578,416 96x96, smallest 96 x 88 dp, all in place
+  the library: 11 tiles, lit 1, locks 6, stars 1, 8 rows, all in place
+  learn: 13 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  captures: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  crowning: 13 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  shots: 21 tiles, lit 1, locks 0, stars 0, 4 rows, all in place
+  king-shots: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  safe-move: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
 a 20:9 phone at 480 dp, landscape:
-  the library: 11 tiles, lit 1, locks 6, stars 1, back 16,16 134x88, the first 653,16 162x88, the last 16,116 1035x88, smallest 102 x 88 dp, 2 below the foot (the list scrolls), all in place
-  learn: 13 tiles, lit 1, locks 0, stars 0, back 16,16 134x88, the first 480,123 88x88, the last 768,327 88x88, smallest 88 x 88 dp, all in place
-  captures: 11 tiles, lit 1, locks 0, stars 0, back 16,16 134x88, the first 480,123 88x88, the last 672,327 88x88, smallest 88 x 88 dp, all in place
-  crowning: 13 tiles, lit 1, locks 0, stars 0, back 16,16 134x88, the first 480,123 88x88, the last 768,327 88x88, smallest 88 x 88 dp, all in place
-  shots: 21 tiles, lit 1, locks 0, stars 0, back 16,16 134x88, the first 432,78 88x88, the last 816,372 88x88, smallest 88 x 88 dp, all in place
-  king-shots: 11 tiles, lit 1, locks 0, stars 0, back 16,16 134x88, the first 480,123 88x88, the last 672,327 88x88, smallest 88 x 88 dp, all in place
-  safe-move: 11 tiles, lit 1, locks 0, stars 0, back 16,16 134x88, the first 480,123 88x88, the last 768,327 88x88, smallest 88 x 88 dp, all in place
+  the library: 11 tiles, lit 1, locks 6, stars 1, 5 rows, 2 below the foot (the list scrolls), all in place
+  learn: 13 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  captures: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  crowning: 13 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  shots: 21 tiles, lit 1, locks 0, stars 0, 4 rows, all in place
+  king-shots: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  safe-move: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
 a 20:9 phone at 480 dp, portrait:
-  the library: 11 tiles, lit 1, locks 6, stars 1, back 16,16 134x88, the first 20,120 181x88, the last 16,224 448x88, smallest 114 x 88 dp, all in place
-  learn: 13 tiles, lit 1, locks 0, stars 0, back 16,16 134x88, the first 49,170 88x88, the last 343,506 88x88, smallest 88 x 88 dp, all in place
-  captures: 11 tiles, lit 1, locks 0, stars 0, back 16,16 134x88, the first 49,170 88x88, the last 294,506 88x88, smallest 88 x 88 dp, all in place
-  crowning: 13 tiles, lit 1, locks 0, stars 0, back 16,16 134x88, the first 49,170 88x88, the last 343,506 88x88, smallest 88 x 88 dp, all in place
-  shots: 21 tiles, lit 1, locks 0, stars 0, back 16,16 134x88, the first 49,170 88x88, the last 245,730 88x88, smallest 88 x 88 dp, all in place
-  king-shots: 11 tiles, lit 1, locks 0, stars 0, back 16,16 134x88, the first 49,170 88x88, the last 294,506 88x88, smallest 88 x 88 dp, all in place
-  safe-move: 11 tiles, lit 1, locks 0, stars 0, back 16,16 134x88, the first 147,170 88x88, the last 343,506 88x88, smallest 88 x 88 dp, all in place
+  the library: 11 tiles, lit 1, locks 6, stars 1, 8 rows, all in place
+  learn: 13 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  captures: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  crowning: 13 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  shots: 21 tiles, lit 1, locks 0, stars 0, 6 rows, all in place
+  king-shots: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  safe-move: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
 the tablet, half of Learn solved:
-  the library: 11 tiles, lit 1, locks 1, stars 6, back 34,24 134x88, the first 848,24 162x88, the last 34,124 1212x104, smallest 102 x 88 dp, all in place
-  learn: 13 tiles, lit 1, locks 0, stars 18, back 24,24 134x88, the first 579,257 96x96, the last 897,533 96x96, smallest 96 x 88 dp, all in place
-  captures: 11 tiles, lit 1, locks 0, stars 0, back 24,24 134x88, the first 579,257 96x96, the last 791,533 96x96, smallest 96 x 88 dp, all in place
-  crowning: 13 tiles, lit 1, locks 0, stars 0, back 24,24 134x88, the first 579,257 96x96, the last 897,533 96x96, smallest 96 x 88 dp, all in place
-  shots: 21 tiles, lit 1, locks 0, stars 0, back 24,24 134x88, the first 526,220 96x96, the last 950,570 96x96, smallest 96 x 88 dp, all in place
-  king-shots: 11 tiles, lit 1, locks 0, stars 0, back 24,24 134x88, the first 579,257 96x96, the last 791,533 96x96, smallest 96 x 88 dp, all in place
-  safe-move: 11 tiles, lit 1, locks 0, stars 0, back 24,24 134x88, the first 579,257 96x96, the last 897,533 96x96, smallest 96 x 88 dp, all in place
+  the library: 11 tiles, lit 1, locks 1, stars 6, 5 rows, all in place
+  learn: 13 tiles, lit 1, locks 0, stars 18, 3 rows, all in place
+  captures: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  crowning: 13 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  shots: 21 tiles, lit 1, locks 0, stars 0, 4 rows, all in place
+  king-shots: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place
+  safe-move: 11 tiles, lit 1, locks 0, stars 0, 3 rows, all in place

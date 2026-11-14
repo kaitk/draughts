@@ -14,7 +14,9 @@
 // third is too narrow for "International" in the body face, each takes its name's width
 // and a share of the rest. A tap that switches between home and the game or settings
 // starts a transition, so the next tap waits until it is over
-// (test/shell/transition.goose, test/shell/game_transition.goose).
+// (test/shell/transition.goose, test/shell/game_transition.goose). The boards' rects,
+// the glyph counts, and the tiles' widths print verbose (DRAUGHTS_TEST_VERBOSE); by
+// default the test checks them.
 import std;
 import vec;
 import rules from "../../src/rules";
@@ -33,10 +35,41 @@ let H = 800.0;
 
 // The setup's three draughts tiles' widths (after back and whom to play's four), rounded, and whether the first's name has its
 // face's room (gui::pick).
+// Verbose, the widths; else whether they are equal or the first is the widest.
 fn draughts_widths(g: gui::Gui&) -> u8[>..] {
     let name = gui::text_width(g, gui::BODY, strings::get(strings::VARIANT_INTERNATIONAL));
-    return str(round(drive::rect(g, 5).z), " ", round(drive::rect(g, 6).z), " ", round(drive::rect(g, 7).z),
-               ", the first's name in the body face ", name <= drive::rect(g, 5).z - 8.0);
+    let a = drive::rect(g, 5).z;
+    let b = drive::rect(g, 6).z;
+    let c = drive::rect(g, 7).z;
+    var widths = str(round(a), " ", round(b), " ", round(c));
+    if !drive::verbose {
+        if abs(a - b) < 0.5 && abs(a - c) < 0.5 { widths = str("thirds"); }
+        else { widths = str("by their names, the first widest: ", drive::ok(a > b && a > c)); }
+    }
+    return str(widths, ", the first's name in the body face ", name <= a - 8.0);
+}
+
+// Where home and the game put the board, opened straight on a screen of drive::size.
+var home_at = float4 { 0.0, 0.0, 0.0, 0.0 };
+var game_at = float4 { 0.0, 0.0, 0.0, 0.0 };
+
+fn straight(screen: i64) -> float4 {
+    var g = gui::Gui {};
+    gui::test_faces(g);
+    var sh = shell::new(rules::RUSSIAN);
+    sh.screen = screen;
+    drive::idle(sh, g, 0.0);
+    return sh.out.layout.board;
+}
+
+// Where the board is: verbose, its rect; else at home's or the game's place, or on or off
+// the screen.
+fn board_at(sh: shell::Shell&) -> u8[>..] {
+    let r = sh.out.layout.board;
+    if drive::verbose { return str("board at ", r); }
+    if sh.screen == shell::HOME { return str("board at home's place: ", drive::ok(r == home_at)); }
+    if sh.screen == shell::GAME { return str("board at the game's place: ", drive::ok(r == game_at)); }
+    return str(if r.x + r.z <= 0.0 || r.x >= W { "board off the screen" } else { "board on the screen" });
 }
 
 fn screen(sh: shell::Shell&) -> const u8[:] {
@@ -47,8 +80,9 @@ fn screen(sh: shell::Shell&) -> const u8[:] {
 fn show(sh: shell::Shell&, g: gui::Gui&, what: const u8[:]) {
     var glyphs = 0;
     for q in g.quads { if q.look.x == gui::TEXT { glyphs++; } }
-    print(what, ": ", screen(sh), ", sharp ", sh.out.blur == 0.0, ", board at ", sh.out.layout.board, ", glyphs ", glyphs,
-          ", ", rules::fen(sh.game.b.pos), ", history ", sh.game.b.history.len);
+    let text = if drive::verbose { str(", glyphs ", glyphs) } else { str("") };
+    print(what, ": ", screen(sh), ", sharp ", sh.out.blur == 0.0, ", ", board_at(sh), text, ", ", rules::fen(sh.game.b.pos),
+          ", history ", sh.game.b.history.len);
 }
 
 fn prefs(sh: shell::Shell&) -> u8[>..] {
@@ -77,6 +111,8 @@ fn main() {
     gui::test_faces(g);
     strings::use(strings::EN);
     puzzles::load();
+    home_at = straight(shell::HOME);
+    game_at = straight(shell::GAME);
     var sh = shell::new(rules::RUSSIAN);
     let off = float2 { -1.0, -1.0 };
     drive::frame(sh, g, off, false, false, false, 0.0);
@@ -86,7 +122,10 @@ fn main() {
     // The player's chip, mirroring the way out: the last tile but one, and their face.
     var faces = 0;
     for q in g.quads { if q.look.x == gui::FACE { faces++; } }
-    print("the player's chip at ", drive::rect(g, drive::tiles(g) - 2), ", faces ", faces);
+    let chip = drive::rect(g, drive::tiles(g) - 2);
+    let way = drive::rect(g, drive::tiles(g) - 1);
+    if drive::verbose { print("the player's chip at ", chip, ", faces ", faces); }
+    else { print("the player's chip level with the way out and as tall: ", drive::ok(chip.y == way.y && chip.w == way.w), ", faces ", faces); }
 
     switch(sh, g, drive::tile(g, 0), 1.0);                // continue
     show(sh, g, "continue");
@@ -97,6 +136,8 @@ fn main() {
     drive::frame(sh, g, off, false, false, false, 2.0);
     switch(sh, g, drive::tile(g, 0), 2.0);                // home
     show(sh, g, "home");
+    var plain = 0;
+    for q in g.quads { if q.look.x == gui::TEXT { plain++; } }
     switch(sh, g, drive::tile(g, 2), 2.5);                // puzzles
     show(sh, g, "puzzles");
     switch(sh, g, drive::tile(g, 0), 3.0);                // back
@@ -109,7 +150,7 @@ fn main() {
     gui::begin(g, gui::Input { at: off, .. }, 1.0, 4.0);
     let first = shell::frame(sh, g, W, H, 4.0).changed;
     gui::begin(g, gui::Input { at: off, .. }, 1.0, 4.1);
-    print("settings: ", screen(sh), ", board at ", sh.out.layout.board, ", sharp ", sh.out.blur == 0.0, ", its first frame drawn ", first,
+    print("settings: ", screen(sh), ", ", board_at(sh), ", sharp ", sh.out.blur == 0.0, ", its first frame drawn ", first,
           ", the next ", shell::frame(sh, g, W, H, 4.1).changed);
     switch(sh, g, drive::tile(g, 0), 4.2);                // back
     print("back from settings: ", screen(sh));
@@ -156,7 +197,8 @@ fn main() {
     switch(sh, g, drive::tile(g, 0), 8.4);                // home
     var note = 0;
     for q in g.quads { if q.look.x == gui::TEXT { note++; } }
-    print("home: new game notes hard; glyphs ", note, ", turned ", sh.out.layout.flip);
+    if drive::verbose { print("home: new game notes hard; glyphs ", note, ", turned ", sh.out.layout.flip); }
+    else { print("home: new game notes hard: ", drive::ok(note > plain), ", turned ", sh.out.layout.flip); }
 
     // Home in portrait: the board above the sheet; the setup too.
     sh.screen = shell::HOME;
@@ -165,14 +207,18 @@ fn main() {
     // The sheet is the first glass; the way out's is the last.
     var sheet = float4 { 0.0, 0.0, 0.0, 0.0 };
     for q in g.quads { if q.look.x == gui::GLASS && sheet.z == 0.0 { sheet = q.rect; } }
-    print("portrait: board ", sh.out.layout.board, ", sheet from ", sheet.y, ", clear ",
-          sh.out.layout.board.y + sh.out.layout.board.z < sheet.y);
+    if drive::verbose {
+        print("portrait: board ", sh.out.layout.board, ", sheet from ", sheet.y, ", clear ",
+              sh.out.layout.board.y + sh.out.layout.board.z < sheet.y);
+    } else { print("portrait: the board above the sheet, clear ", sh.out.layout.board.y + sh.out.layout.board.z < sheet.y); }
     sh.setup = home::NEW_GAME;
     gui::begin(g, gui::Input {}, 1.0, 9.1);
     shell::frame(sh, g, H, W, 9.1);
     sheet.z = 0.0;
     for q in g.quads { if q.look.x == gui::GLASS && sheet.z == 0.0 { sheet = q.rect; } }
-    print("portrait setup: board ", sh.out.layout.board, ", sheet from ", sheet.y, ", clear ",
-          sh.out.layout.board.y + sh.out.layout.board.z < sheet.y);
+    if drive::verbose {
+        print("portrait setup: board ", sh.out.layout.board, ", sheet from ", sheet.y, ", clear ",
+              sh.out.layout.board.y + sh.out.layout.board.z < sheet.y);
+    } else { print("portrait setup: the board above the sheet, clear ", sh.out.layout.board.y + sh.out.layout.board.z < sheet.y); }
     print("draughts tiles: ", draughts_widths(g));
 }

@@ -29,15 +29,15 @@ the setup, the computer: 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6
 play: 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, white at the bottom false, whole true; the tap's frame whole true, then drawn false animating true
 the game: computer 0, turned true, as the setup showed true
 home: 8x8 W:Wa1,c1,e1,g1,b2,d2,f2,h2,a3,c3,e3,g3:Bb6,d6,f6,h6,a7,c7,e7,g7,b8,d8,f8,h8, white at the bottom false, whole true, turned true
-the tablet, landscape, the computer: play under the choices, the choices fit, the clock's foot 18 dp above play, whom to play's tiles 93 dp wide, board 560 dp, 0 taps under 88 dp
-the tablet, landscape, a friend: play under the choices, the choices fit, the clock's foot 18 dp above play, whom to play's tiles 93 dp wide, board 560 dp, 0 taps under 88 dp
-the tablet, portrait, the computer: play under the choices, the choices fit, the clock's foot 18 dp above play, whom to play's tiles 177 dp wide, board 404 dp, 0 taps under 88 dp
-the tablet, portrait, a friend: play under the choices, the choices fit, the clock's foot 18 dp above play, whom to play's tiles 177 dp wide, board 404 dp, 0 taps under 88 dp
-the Pixel 7a, landscape, the computer: play in the head row, the choices scroll 102 dp in a view 436 dp tall, whom to play's tiles 93 dp wide, board 349 dp, 0 taps under 88 dp
-the Pixel 7a, landscape, a friend: play in the head row, the choices scroll 102 dp in a view 436 dp tall, whom to play's tiles 93 dp wide, board 349 dp, 0 taps under 88 dp
-the Pixel 7a, portrait, the computer: play under the choices, the choices fit, the clock's foot 18 dp above play, whom to play's tiles 112 dp wide, board 223 dp, 0 taps under 88 dp
-the Pixel 7a, portrait, a friend: play under the choices, the choices fit, the clock's foot 18 dp above play, whom to play's tiles 112 dp wide, board 223 dp, 0 taps under 88 dp
-the iPhone 13 mini, landscape, the computer: play in the head row, the choices scroll 142 dp in a view 396 dp tall, whom to play's tiles 93 dp wide, board 328 dp, 0 taps under 88 dp
-the iPhone 13 mini, landscape, a friend: play in the head row, the choices scroll 142 dp in a view 396 dp tall, whom to play's tiles 93 dp wide, board 328 dp, 0 taps under 88 dp
-the iPhone 13 mini, portrait, the computer: play under the choices, the choices fit, the clock's foot 18 dp above play, whom to play's tiles 102 dp wide, board 0 dp, 0 taps under 88 dp
-the iPhone 13 mini, portrait, a friend: play under the choices, the choices fit, the clock's foot 18 dp above play, whom to play's tiles 102 dp wide, board 0 dp, 0 taps under 88 dp
+the tablet, landscape, the computer: play under the choices, the choices fit, the clock above play: ok, a board, every tap 88 dp at least: ok
+the tablet, landscape, a friend: play under the choices, the choices fit, the clock above play: ok, a board, every tap 88 dp at least: ok
+the tablet, portrait, the computer: play under the choices, the choices fit, the clock above play: ok, a board, every tap 88 dp at least: ok
+the tablet, portrait, a friend: play under the choices, the choices fit, the clock above play: ok, a board, every tap 88 dp at least: ok
+the Pixel 7a, landscape, the computer: play in the head row, the choices scroll, a board, every tap 88 dp at least: ok
+the Pixel 7a, landscape, a friend: play in the head row, the choices scroll, a board, every tap 88 dp at least: ok
+the Pixel 7a, portrait, the computer: play under the choices, the choices fit, the clock above play: ok, a board, every tap 88 dp at least: ok
+the Pixel 7a, portrait, a friend: play under the choices, the choices fit, the clock above play: ok, a board, every tap 88 dp at least: ok
+the iPhone 13 mini, landscape, the computer: play in the head row, the choices scroll, a board, every tap 88 dp at least: ok
+the iPhone 13 mini, landscape, a friend: play in the head row, the choices scroll, a board, every tap 88 dp at least: ok
+the iPhone 13 mini, portrait, the computer: play under the choices, the choices fit, the clock above play: ok, no board, every tap 88 dp at least: ok
+the iPhone 13 mini, portrait, a friend: play under the choices, the choices fit, the clock above play: ok, no board, every tap 88 dp at least: ok
