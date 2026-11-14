@@ -124,7 +124,8 @@ fn follow_3d(lp: Loop&, rd: render::Renderer&, sh: shell::Shell&, now: f64) -> b
     render::material(rd, sh.prefs.material);
     let ready = want != shell::WANTED || render::ready3d(rd, shell::board_n(sh));
     let shown = render::shown3d(rd);
-    if want == shell::WANTED && (!ready || !shown || render::appearing3d(rd, now)) { lp.dirty = true; }
+    // Only a screen showing the board prepares it, so only there is it waited for.
+    if want == shell::WANTED && sh.out.raised && (!ready || !shown || render::appearing3d(rd, now)) { lp.dirty = true; }
     if sh.out.raised && render::moving3d(rd) { lp.dirty = true; }
     if want == shell::DROPPED { render::drop3d(rd); }
     return ready, shown;
