@@ -257,8 +257,7 @@ fn still(sh: Shell&, g: gui::Gui&, screen: i64, area: float4, now: f64, over: bo
         PICKER => {
             var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
             var variant = sh.prefs.variant;
-            picker::frame(g, area, sh.prefs.stars[puzzles::loaded], sh.puzzle.index, sh.theme, spot, variant,
-                          learned(sh), tutorial::count(sh.prefs.variant as u8), today_of(sh), sh.puzzle.daily);
+            declare_picker(sh, g, area, spot, variant);
             l = in_tile(sh, spot, g.scale);
         },
         PUZZLE => {
@@ -830,13 +829,19 @@ fn in_tile(sh: Shell&, spot: float4, scale: f32) -> board::Layout {
     return l;
 }
 
+// The puzzles to pick from declared in `area`, as the screen and a transition's still
+// frame both show them: `spot` the tile the board grows out of, `variant` the switch's.
+fn declare_picker(sh: Shell&, g: gui::Gui&, area: float4, spot: float4&, variant: i64&) -> i64 {
+    return picker::frame(g, area, sh.prefs.stars[puzzles::loaded], sh.puzzle.index, sh.theme, spot, variant, learned(sh),
+                         tutorial::count(sh.prefs.variant as u8), today_of(sh), sh.puzzle.daily);
+}
+
 // The puzzles to pick from for this frame. Returns whether anything on screen changed.
 fn picker_screen(sh: Shell&, g: gui::Gui&, area: float4, now: f64) -> bool {
     sh.out.over.clear();
     var spot = float4 { 0.0, 0.0, 0.0, 0.0 };
     var variant = sh.prefs.variant;
-    let pick = picker::frame(g, area, sh.prefs.stars[puzzles::loaded], sh.puzzle.index, sh.theme, spot, variant,
-                             learned(sh), tutorial::count(sh.prefs.variant as u8), today_of(sh), sh.puzzle.daily);
+    let pick = declare_picker(sh, g, area, spot, variant);
     let daily = pick <= picker::TODAY && pick > picker::TODAY - puzzles::MAX_DAILY;
     if pick == picker::LEARN { learn(sh, PICKER, now); }
     if pick == picker::SWITCHED {
