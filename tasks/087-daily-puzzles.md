@@ -115,6 +115,13 @@ counts. The user finds them medium to hard, not a warm-up (2026-11-14): the auth
 labels order them, but the estimate should place them by the user's reading, and by how
 the user's children find them.
 
+Puzzle 1, the warm-up, transcribed from its diagram: `W:Wc7,f2,h2,g1:Bd2,Ka7`, Russian
+(the page's "e2:f4" is the man on d2's capture). `build/puzzles try --variant russian ...
+win 6` finds the one first move, `f2-e3`, and the win in 6 (the page's 5 stops before
+the black king's last move, which loses it), searching 16,485 positions. Listing its line
+then stops at a full array (`tools/puzzles.goose:195`): the tool's buffers are sized for
+the course's short lines, and grown-up puzzles need them larger.
+
 ## The player's rating
 
 An Elo-style puzzle rating per player and draughts, in the player's file beside the
